@@ -1,0 +1,519 @@
+# HG changeset patch
+# Parent 09e791b17e89cd97507590328e18a1a77a682eea
+Add network driver for AR10
+
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -31,6 +31,7 @@ COBJS-$(CONFIG_ALTERA_TSE) += altera_tse
+ COBJS-$(CONFIG_DRIVER_AT91EMAC) += at91_emac.o
+ COBJS-$(CONFIG_DRIVER_AX88180) += ax88180.o
+ COBJS-$(CONFIG_DRIVER_AR9) += ar9_sw.o
++COBJS-$(CONFIG_DRIVER_AR10) += ar10_sw.o
+ COBJS-$(CONFIG_BCM570x) += bcm570x.o bcm570x_autoneg.o 5701rls.o
+ COBJS-$(CONFIG_BFIN_MAC) += bfin_mac.o
+ COBJS-$(CONFIG_CS8900) += cs8900.o
+--- /dev/null
++++ b/drivers/net/ar10_sw.c
+@@ -0,0 +1,502 @@
++
++/*
++ * AMAZON_S internal switch ethernet driver.
++ *
++ * (C) Copyright 2003
++ * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++
++#include <common.h>
++#include <config.h>
++#include <malloc.h>
++#include <net.h>
++#include <asm/addrspace.h>
++#include <asm/pinstrap.h>
++#include <asm/lq_dma.h>
++
++#define TX_CHAN_NO   1
++#define RX_CHAN_NO   0
++
++#define NUM_RX_DESC	PKTBUFSRX
++#define NUM_TX_DESC	8
++#define MAX_PACKET_SIZE 	1536
++#define TOUT_LOOP	100
++
++
++#define RGMII 0
++#define GMII  1
++#define TMII  2
++#define MII   3
++#define RMII  4
++				
++#define CONFIG_AR10_SW_PORT(NUM)   CONFIG_AR10_SW_PORT_##NUM
++
++#define MDIO_WRITE_CMD  ((0 << 11)| (1 <<10))
++#define MDIO_READ_CMD  ((1 << 11) | (0<<10))
++
++extern int dcache_linesize_mips32(void);
++extern void dcache_writeback_invalidate(u32 size, u32  dcache_line_size, u32 start_addr);
++extern void dcache_hit_invalidate(u32 size, u32  dcache_line_size, u32 start_addr);
++extern void mdelay (unsigned long msec);
++
++typedef struct
++{
++    int on;
++	int miimode;
++	int miirate;
++}ar10_sw_port;
++
++
++static dma_rx_descriptor_t rx_des_ring[NUM_RX_DESC] __attribute__ ((aligned(8)));
++static dma_tx_descriptor_t tx_des_ring[NUM_TX_DESC] __attribute__ ((aligned(8)));
++static ar10_sw_port ar10_port[7];
++static int tx_num, rx_num;
++#if CONFIG_AR10_SW_PORT_2 | CONFIG_AR10_SW_PORT_3 | CONFIG_AR10_SW_PORT_4 | CONFIG_AR10_SW_PORT_5b 
++static u8 gphy_fw[65536] __attribute__ ((aligned(32)));
++#endif
++
++int ar10_switch_init(struct eth_device *dev, bd_t * bis);
++int ar10_switch_send(struct eth_device *dev, volatile void *packet,int length);
++int ar10_switch_recv(struct eth_device *dev);
++void ar10_switch_halt(struct eth_device *dev);
++static void ar10_sw_chip_init();
++static void ar10_dma_init(void);
++
++u16 ar10_mdio_init()
++{
++    *AR10_GPIO_P2_ALTSEL0 = *AR10_GPIO_P2_ALTSEL0 | (0xc00);
++    *AR10_GPIO_P2_ALTSEL1 = *AR10_GPIO_P2_ALTSEL1 & ~(0xc00);
++    *AR10_GPIO_P2_DIR = *AR10_GPIO_P2_DIR  | 0x800;
++    *AR10_GPIO_P2_OD = *AR10_GPIO_P2_OD | 0xc00;
++}
++	
++u16 ar10_mdio_read(u8 phyaddr, u8 phyreg)
++{
++        u16 i=0;
++        while(REG32(AR10_ETHSW_MDIO_CTRL) & 0x1000);
++        REG32(AR10_ETHSW_MDIO_CTRL) = MDIO_READ_CMD | (((u32)phyaddr)<<5) | ((u32) phyreg)|0x1000 ;
++        while(REG32(AR10_ETHSW_MDIO_CTRL) & 0x1000)
++        {
++        	i++;
++        	if(i>0x7fff)
++        	{
++        		  printf("MDIO access time out!\n");
++        		  break;
++        	}
++        }
++        return((u16) (REG32(AR10_ETHSW_MDIO_READ)));
++}
++
++void ar10_mdio_write(u8 phyaddr, u8 phyreg, u16 data)
++{
++        u16 i=0;
++        
++        REG32(AR10_ETHSW_MDIO_WRITE)= data;
++        while(REG32(AR10_ETHSW_MDIO_CTRL) & 0x1000);
++        REG32(AR10_ETHSW_MDIO_CTRL) =  MDIO_WRITE_CMD | (((u32)phyaddr)<<5) | ((u32) phyreg)|0x1000 ;
++        while(REG32(AR10_ETHSW_MDIO_CTRL) & 0x1000)
++        {
++        	i++;
++        	if(i>0x7fff)
++        	{
++        		  printf("MDIO access time out!\n");
++        		  break;
++        	}
++        }
++}
++					
++
++
++int ar10_eth_initialize(bd_t * bis)
++{
++	struct eth_device *dev;
++
++	if (!(dev = (struct eth_device *) malloc (sizeof *dev)))
++        {
++                printf("Failed to allocate memory\n");
++                return 0;
++        }
++        memset(dev, 0, sizeof(*dev));
++
++        asm("sync");
++        ar10_sw_chip_init();
++        asm("sync");
++	/***************/
++	sprintf(dev->name, "ar10 Switch");
++	dev->init = ar10_switch_init;
++	dev->halt = ar10_switch_halt;
++	dev->send = ar10_switch_send;
++	dev->recv = ar10_switch_recv;
++
++	eth_register(dev);
++
++
++	return 1;
++}
++
++int ar10_switch_init(struct eth_device *dev, bd_t * bis)
++{
++	int i;
++	tx_num=0;
++	rx_num=0;
++
++		/* Reset DMA
++		 */
++
++    *AR10_DMA_CS=RX_CHAN_NO;
++    *AR10_DMA_CCTRL=0x2;/*fix me, need to reset this channel first?*/
++    *AR10_DMA_CPOLL= 0x80000040;
++    /*set descriptor base*/
++    *AR10_DMA_CDBA=(u32)rx_des_ring & 0x0ffffff0;
++    *AR10_DMA_CDLEN=NUM_RX_DESC;
++    *AR10_DMA_CIE = 0;
++    *AR10_DMA_CCTRL=0x30000;
++
++    *AR10_DMA_CS=TX_CHAN_NO;
++    *AR10_DMA_CCTRL=0x2;/*fix me, need to reset this channel first?*/
++    *AR10_DMA_CPOLL= 0x80000040;
++    *AR10_DMA_CDBA=(u32)tx_des_ring & 0x0ffffff0;
++    *AR10_DMA_CDLEN=NUM_TX_DESC;
++    *AR10_DMA_CIE = 0;
++    *AR10_DMA_CCTRL=0x30100;
++
++	for(i=0;i < NUM_RX_DESC; i++)
++	{
++		dma_rx_descriptor_t * rx_desc = KSEG1ADDR(&rx_des_ring[i]);
++		rx_desc->status.word=0;
++		rx_desc->status.field.OWN=1;
++		rx_desc->status.field.DataLen=PKTSIZE_ALIGN;   /* 1536  */
++		rx_desc->DataPtr=(u32)NetRxPackets[i] & 0x0ffffff0;
++	}
++
++	for(i=0;i < NUM_TX_DESC; i++)
++	{
++		dma_tx_descriptor_t * tx_desc = KSEG1ADDR(&tx_des_ring[i]);
++		memset(tx_desc, 0, sizeof(tx_des_ring[0]));
++	}
++		/* turn on DMA rx & tx channel
++		 */
++    *AR10_DMA_CS=RX_CHAN_NO;
++    *AR10_DMA_CCTRL|=1;/*reset and turn on the channel*/
++	return 0;
++}
++
++void ar10_switch_halt(struct eth_device *dev)
++{
++    int i;
++        for(i=0;i<8;i++)
++	{
++	   *AR10_DMA_CS=i;
++	   *AR10_DMA_CCTRL&=~1;/*stop the dma channel*/
++	}
++}
++
++int ar10_switch_send(struct eth_device *dev, volatile void *packet,int length)
++{
++
++	int                 	i;
++	int 		 	res = -1;
++    int datalen, cache_linesize;
++	dma_tx_descriptor_t * tx_desc= KSEG1ADDR(&tx_des_ring[tx_num]);
++
++	if (length <= 0)
++	{
++		printf ("%s: bad packet size: %d\n", dev->name, length);
++		goto Done;
++	}
++
++	for(i=0; tx_desc->status.field.OWN==1; i++)
++	{
++		if(i>=TOUT_LOOP)
++		{
++			printf("NO Tx Descriptor...");
++			goto Done;
++		}
++	}
++
++	//serial_putc('s');
++
++	tx_desc->status.field.Sop=1;
++	tx_desc->status.field.Eop=1;
++	tx_desc->status.field.C=0;
++	//tx_desc->DataPtr = (u32)KSEG1ADDR(packet);
++	tx_desc->DataPtr = (u32)packet & 0x0ffffff0;
++        if(length<60)
++		tx_desc->status.field.DataLen = 60;
++	else
++		tx_desc->status.field.DataLen = (u32)length;
++        cache_linesize = dcache_linesize_mips32() ;
++	datalen = cache_linesize *((tx_desc->status.field.DataLen/cache_linesize)+1);
++        dcache_writeback_invalidate(datalen, cache_linesize, (u32)packet );
++	asm("SYNC");
++
++	tx_desc->status.field.OWN=1;
++
++	res=length;
++	tx_num++;
++        if(tx_num==NUM_TX_DESC) tx_num=0;
++	*AR10_DMA_CS=TX_CHAN_NO;
++
++	if(!(*AR10_DMA_CCTRL & 1))
++	*AR10_DMA_CCTRL|=1;
++
++Done:
++	return res;
++}
++
++int ar10_switch_recv(struct eth_device *dev)
++{
++
++	int                    length  = 0;
++	dma_rx_descriptor_t * rx_desc;
++	int datalen, cache_linesize;
++	for (;;)
++	{
++	        rx_desc = KSEG1ADDR(&rx_des_ring[rx_num]);
++               
++
++		if ((rx_desc->status.field.C == 0) || (rx_desc->status.field.OWN == 1))
++		{
++                        //printf("@");
++                        break;
++                        //continue;
++		}
++
++                
++		length = rx_desc->status.field.DataLen;
++		if (length)
++		{
++            cache_linesize = dcache_linesize_mips32() ;
++	        datalen = cache_linesize *((rx_desc->status.field.DataLen/cache_linesize)+1);
++            dcache_hit_invalidate(datalen, cache_linesize, (u32)NetRxPackets[rx_num] );
++			NetReceive((void*)KSEG1ADDR(NetRxPackets[rx_num]), length - 4);
++			//serial_putc('*');
++		}
++		else
++		{
++			printf("Zero length!!!\n");
++		}
++		rx_desc->status.field.Sop=0;
++		rx_desc->status.field.Eop=0;
++		rx_desc->status.field.C=0;
++		rx_desc->status.field.DataLen=PKTSIZE_ALIGN;
++		rx_desc->status.field.OWN=1;
++		rx_num++;
++		if(rx_num==NUM_RX_DESC) rx_num=0;
++
++	}
++	return length;
++}
++
++
++static void ar10_dma_init(void)
++{
++	  *AR10_PMU_PWDCR &=~(BSP_PMU_DMA);/*enable DMA from PMU*/
++
++    /* Reset DMA
++		 */
++    
++	//*AR10_DMA_CTRL|=1;
++    *AR10_DMA_IRNEN=0;/*disable all the interrupts first*/
++    
++    /* Clear Interrupt Status Register
++	*/
++    *AR10_DMA_IRNCR=0xfffff;
++    /*disable all the dma interrupts*/
++    *AR10_DMA_IRNEN=0;
++	/*disable channel 0 and channel 1 interrupts*/
++    
++    *AR10_DMA_CS=RX_CHAN_NO;
++    *AR10_DMA_CCTRL=0x2;/*fix me, need to reset this channel first?*/
++    *AR10_DMA_CPOLL= 0x80000040;
++     /*set descriptor base*/
++    *AR10_DMA_CDBA=(u32)rx_des_ring;
++    *AR10_DMA_CDLEN=NUM_RX_DESC;
++    *AR10_DMA_CIE = 0;
++    *AR10_DMA_CCTRL=0x30000;
++
++    *AR10_DMA_CS=TX_CHAN_NO;
++    *AR10_DMA_CCTRL=0x2;/*fix me, need to reset this channel first?*/
++    *AR10_DMA_CPOLL= 0x80000040;
++    *AR10_DMA_CDBA=(u32)tx_des_ring;
++    *AR10_DMA_CDLEN=NUM_TX_DESC;
++    *AR10_DMA_CIE = 0;
++    *AR10_DMA_CCTRL=0x30100;
++
++       
++     /*enable the poll function and set the poll counter*/
++     //*AMAZON_S_DMA_CPOLL=AMAZON_S_DMA_POLL_EN | (AMAZON_S_DMA_POLL_COUNT<<4);
++     /*set port properties, enable endian conversion for switch*/
++     __asm__("sync");
++    *AR10_DMA_PS=0;
++	  *AR10_DMA_PCTRL=0x1f3c;
++    __asm__("sync");
++    //return;
++
++    
++   
++    
++}
++
++
++void config_mdio_gpio()
++{
++	  *AR10_GPIO_P2_ALTSEL0 = *AR10_GPIO_P2_ALTSEL0 | (0xc00);
++    *AR10_GPIO_P2_ALTSEL1 = *AR10_GPIO_P2_ALTSEL1 & ~(0xc00);
++    *AR10_GPIO_P2_DIR     |= 0xc00;
++    *AR10_GPIO_P2_OD      |= 0xc00;
++	
++	
++}
++
++void config_port()
++{
++      int i;
++	  for(i=0;i<7;i++)
++	    ar10_port[i].on=0;
++
++#ifdef CONFIG_AR10_SW_PORT_0
++        ar10_port[0].on=1;
++        ar10_port[0].miimode=CONFIG_AR10_SW_PORT0_MIIMODE;
++        ar10_port[0].miirate=CONFIG_AR10_SW_PORT0_MIIRATE;
++#endif
++#ifdef CONFIG_AR10_SW_PORT_1
++        ar10_port[1].on=1;
++		ar10_port[1].miimode=CONFIG_AR10_SW_PORT1_MIIMODE;
++		ar10_port[1].miirate=CONFIG_AR10_SW_PORT1_MIIRATE;
++#endif
++#ifdef CONFIG_AR10_SW_PORT_2
++	    ar10_port[2].on=1;
++		ar10_port[2].miimode=CONFIG_AR10_SW_PORT2_MIIMODE;
++		ar10_port[2].miirate=CONFIG_AR10_SW_PORT2_MIIRATE;
++#endif
++#ifdef CONFIG_AR10_SW_PORT_3
++        ar10_port[3].on=1;
++		ar10_port[3].miimode=CONFIG_AR10_SW_PORT3_MIIMODE;
++		ar10_port[3].miirate=CONFIG_AR10_SW_PORT3_MIIRATE;
++#endif
++#ifdef CONFIG_AR10_SW_PORT_4
++	    ar10_port[4].on=1;
++		ar10_port[4].miimode=CONFIG_AR10_SW_PORT4_MIIMODE;
++		ar10_port[4].miirate=CONFIG_AR10_SW_PORT4_MIIRATE;
++#endif
++#ifdef CONFIG_AR10_SW_PORT_5a
++        ar10_port[5].on=1;
++		ar10_port[5].miimode=CONFIG_AR10_SW_PORT5a_MIIMODE;
++		ar10_port[5].miirate=CONFIG_AR10_SW_PORT5a_MIIRATE;
++#endif
++#ifdef CONFIG_AR10_SW_PORT_5b
++	    ar10_port[5].on=1;
++		ar10_port[5].miimode=CONFIG_AR10_SW_PORT5b_MIIMODE;
++		ar10_port[5].miirate=CONFIG_AR10_SW_PORT5b_MIIRATE;
++#endif
++											  
++
++    return;
++}
++
++static void ar10_sw_chip_init()
++{
++      int i,num,port;
++	  u32 fw_addr,gphy_reset_value; 
++	  u8 interface_mode;
++   	
++	  asm("sync");
++    /*turn on ephy, switch and dma in PMU*/
++    *AR10_PMU_PWDCR &= ~(BSP_PMU_DMA| BSP_PMU_AHBS| BSP_PMU_GPHY );
++     udelay(20);
++    
++    *AR10_PMU_PWDCR &= 0xEFFFFFFF;
++    udelay(20);
++
++	  // Reset PPE Dplus Master / Slave
++    REG32(PPE32_SRST) &= ~(1<<4); //
++    REG32(PPE32_SRST) &= ~(1<<10); //
++    udelay(20);
++
++    REG32(AR10_RCU_RST_REQ) |= (0xB0200100) ;  /*GPHY (31),Switch(21) and PPE(8) */
++    REG32(AR10_RCU_RST_REQ2) |= (0x06000000) ;  /*GPHY (31),Switch(21) and PPE(8) */
++    udelay(20);
++
++    // Release Reset PPE Dplus Master / Slave
++    REG32(PPE32_SRST) |= (1<<4);
++    REG32(PPE32_SRST) |= (1<<10);
++    udelay(20);
++
++    REG32(AR10_RCU_RST_REQ) &= ~(0xB<< 28) ;  /*GPHY (31),GPHY (29) */
++    udelay(20);
++
++
++    
++	  /*Turn on switch macro*/  
++    REG32(AR10_ETHSW_GLOB_CTRL) |= (1<<15);
++   
++   config_port();
++   
++   for(num=0;num<7;num++){
++    if(ar10_port[num].on){
++     
++     REG32(AR10_ETHSW_MII_CFG_0 + ( port * 8)) |= (1<<AR10_ETHSW_MII_CFG_RES);  /*Hardware reset */
++     for (i=0; i<100;i++)
++     udelay(10);
++
++     /*MAC setting, hard coded*/
++     if(ar10_port[num].miirate == 4){
++        /*auto-polling mode*/	
++        REG16(AR10_ETHSW_MAC_CTRL_0 + ( num * 0x30))= 0x180; /*auto MII/GMII interface selection, enable padding*/
++     }else{
++     	  REG32(AR10_ETHSW_MAC_CTRL_0 + ( num * 0x30)) = 0x1c4; /*no flow control, full duplex, RGMII at 1000 Mbit/s*/     	  
++     }
++     
++     
++     /*MII setting*/
++     /* set xMII port interface clock rate */
++     REG32(AR10_ETHSW_MII_CFG_0 + ( num * 8)) &= ~0x3f;
++     REG32(AR10_ETHSW_MII_CFG_0 + ( num * 8)) |= ((ar10_port[num].miirate & 0x7)<<AR10_ETHSW_MII_CFG_MIIRATE) |
++                                                 ((ar10_port[num].miimode & 0xf)<<AR10_ETHSW_MII_CFG_MIIMODE) |
++                                                 (1<<AR10_ETHSW_MII_CFG_EN);
++
++     
++     /*phy setting*/
++     if(ar10_port[num].miirate == 4){
++        /*auto-polling mode*/	
++         REG32(AR10_ETHSW_MDC_CFG_0) |=1<<num;
++     }else{
++     	  /*disable auto polling mode for phy*/
++     	   REG32(AR10_ETHSW_MDC_CFG_0) &=~(1<<num);
++     	   REG32(AR10_ETHSW_PHY_ADDR_0- (num *4)) &= ~(0x1f<<11);//Modified by Aik Ann for Rel29p1
++         REG32(AR10_ETHSW_PHY_ADDR_0- (num *4)) |= (0x2<<11); // 1G data rate
++         REG32(AR10_ETHSW_PHY_ADDR_0- (num *4)) |= (1<<13);// Link Up
++     }
++     
++     }
++    }
++     REG32(AR10_ETHSW_PMAC_HD_CTL) |= (1<<2);
++   
++        asm("sync");  
++        
++          
++	  ar10_dma_init();
++}
++
++
++

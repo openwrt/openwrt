@@ -1,0 +1,643 @@
+# HG changeset patch
+# Parent de6570a484e0d62ed16faa54a83312dcc13e49eb
+Add common includes for Lantiq platforms
+
+--- /dev/null
++++ b/arch/mips/include/asm/lq_dma.h
+@@ -0,0 +1,42 @@
++typedef struct
++{
++    union
++    {
++        struct
++        {
++            volatile u32 OWN                 :1;
++            volatile u32 C                   :1;
++            volatile u32 Sop                 :1;
++            volatile u32 Eop             :1;
++            volatile u32 reserved        :3;
++            volatile u32 Byteoffset      :2;
++            volatile u32 reserve             :7;
++            volatile u32 DataLen             :16;
++        }field;
++
++        volatile u32 word;
++    }status;
++
++    volatile u32 DataPtr;
++} dma_rx_descriptor_t;
++
++typedef struct
++{
++    union
++    {
++        struct
++        {
++            volatile u32 OWN                 :1;
++            volatile u32 C                   :1;
++            volatile u32 Sop                 :1;
++            volatile u32 Eop             :1;
++            volatile u32 Byteoffset      :5;
++            volatile u32 reserved            :7;
++            volatile u32 DataLen             :16;
++        }field;
++
++        volatile u32 word;
++    }status;
++
++    volatile u32 DataPtr;
++} dma_tx_descriptor_t;
+--- /dev/null
++++ b/arch/mips/include/asm/pinstrap.h
+@@ -0,0 +1,12 @@
++#define FLASH_STRAP		0x1		
++#define MII_0_STRAP		0x2
++#define MII_1_STRAP		0x3
++#define ASC_STRAP		0x4
++#define SFLASH_STRAP		0x5
++#define RESERVE_STRAP		0x6
++#define PRODUCT_TEST_STRAP	0x7
++#define PIN_STRAP_MASK		0x001C0000
++#define PIN_STRAP_SHIFT		18
++#define PIN_STRAP		0xB0100914
++#define SDRAM_WIDTH_MASK	0x400000
++#define SDRAM_WIDTH_SHIFT	22
+--- /dev/null
++++ b/arch/mips/include/asm/yamon.h
+@@ -0,0 +1,497 @@
++/*
++ * Values in the Company ID field
++ */
++#define K_PRIdCoID_MIPS	1
++#define K_PRIdCoID_Broadcom 2
++#define K_PRIdCoID_Alchemy 3
++#define K_PRIdCoID_SiByte 4
++#define K_PRIdCoID_SandCraft 5
++#define K_PRIdCoID_Philips 6
++#define K_PRIdCoID_Toshiba 7
++#define K_PRIdCoID_LSI 8
++#define K_PRIdCoID_Intrinsity 9
++#define K_PRIdCoID_UNANNOUNCED10 10
++#define K_PRIdCoID_Lexra 11
++#define K_PRIdCoID_UNANNOUNCED12 12
++#define K_PRIdCoID_UNANNOUNCED13 13
++#define K_PRIdCoID_NextAvailable 14 /* Next available encoding */
++
++
++/*
++ * Values in the implementation number field
++ */
++#define K_PRIdImp_4KC		0x80	/* MIPS32 4Kc with TLB MMU and Release 1 Architecture*/
++#define K_PRIdImp_Jade		0x80	/*   Alternate (obsolete) name */
++#define K_PRIdImp_5KC		0x81	/* MIPS64 5Kc/5Kf with TLB MMU and Release 1 Architecture */
++#define K_PRIdImp_Opal		0x81	/*   Alternate (obsolete) name */
++#define K_PRIdImp_20KC		0x82	/* MIPS64 20Kc with TLB MMU and Release 1 Architecture */
++#define K_PRIdImp_Ruby		0x82	/*   Alternate (obsolete) name */
++#define K_PRIdImp_4KMP		0x83	/* MIPS32 4Kp/4Km with FM MMU and Release 1 Architectur */
++#define K_PRIdImp_JadeLite	0x83	/*   Alternate (obsolete) name */
++#define K_PRIdImp_4KEc		0x84	/* MIPS32 4KEc with TLB MMU and Release 1 Architecture */
++#define K_PRIdImp_4KEmp		0x85	/* MIPS32 4KEm/4KEp with FM MMU and Release 1 Architecture */
++#define K_PRIdImp_4KSc		0x86	/* MIPS32 4KSc with TLB MMU and Release 1 Architecture */
++#define K_PRIdImp_M4K		0x87	/* MIPS32 M4K with FM MMU and Release 2 Architecture */
++#define K_PRIdImp_25Kf		0x88	/* MIPS64 25Kf with TLB MMU and Release 1 Architecture */
++#define K_PRIdImp_Amethyst	0x88	/*   Alternate (obsolete) name */
++#define K_PRIdImp_5KE		0x89	/* MIPS64 5KE with TLB MMU and Release 2 Architecture */
++#define K_PRIdImp_4KEc_R2	0x90	/* MIPS32 4KEc with TLB MMU and Release 2 Architecture */
++#define K_PRIdImp_4KEmp_R2	0x91	/* MIPS32 4KEm/4KEp with FM MMU and Release 2 Architecture */
++#define K_PRIdImp_4KSd		0x92	/* MIPS32 4KSd with TLB MMU and Release 2 Architecture */
++
++#define K_PRIdImp_24K		0x93	/* MIPS32 24K (Topaz) with Release 2 Architecture */
++#define K_PRIdImp_Topaz		0x93	/*   Alternate (obsolete) name */
++#define K_PRIdImp_TopazTLB	0x93	/*   Alternate (obsolete) name */
++
++#define K_PRIdImp_34K		0x95	/* MIPS32 34K */
++#define K_PRIdImp_24KE		0x96	/* MIPS32 24KE */
++
++#define K_PRIdImp_R3000		0x01
++#define K_PRIdImp_R4000		0x04
++#define K_PRIdImp_R10000	0x09
++#define K_PRIdImp_R4300		0x0b
++#define K_PRIdImp_R5000		0x23
++#define K_PRIdImp_R5200		0x28
++#define K_PRIdImp_R5400		0x54
++
++
++
++/*  We use ssnop instead of nop operations in order to handle 
++ *  superscalar CPUs.
++ *  The "sll zero,zero,1" notation is compiler backwards compatible.
++ */
++#define SSNOP   sll zero,zero,1
++#define EHB     sll zero,zero,3
++#define NOPS	SSNOP; SSNOP; SSNOP; EHB
++
++/*  Workaround for bug in early revisions of MIPS 4K family of 
++ *  processors.
++ *
++ *  This concerns the nop instruction before mtc0 in the 
++ *  MTC0 macro below.
++ *
++ *  The bug is described in :
++ *
++ *  MIPS32 4K(tm) Processor Core Family RTL Errata Sheet
++ *  MIPS Document No: MD00003
++ *
++ *  The bug is identified as : C27
++ */
++
++#define MTC0(src, dst)       \
++		nop;	     \
++	        mtc0 src,dst;\
++		NOPS
++
++#define DMTC0(src, dst)       \
++		nop;	      \
++	        dmtc0 src,dst;\
++		NOPS
++
++#define MFC0(dst, src)       \
++	  	mfc0 dst,src
++
++#define DMFC0(dst, src)       \
++	  	dmfc0 dst,src
++
++#define MFC0_SEL_OPCODE(dst, src, sel)\
++	  	.##word (0x40000000 | ((dst)<<16) | ((src)<<11) | (sel))
++
++#define MTC0_SEL_OPCODE(src, dst, sel)\
++	  	.##word (0x40800000 | ((src)<<16) | ((dst)<<11) | (sel));\
++		NOPS
++
++#define LDC1(dst, src, offs)\
++		.##word (0xd4000000 | ((src)<<21) | ((dst)<<16) | (offs))
++
++#define SDC1(src, dst, offs)\
++		.##word (0xf4000000 | ((dst)<<21) | ((src)<<16) | (offs))
++
++
++/*
++ * Cache attribute values in the C field of EntryLo and the
++ * K0 field of Config
++ */
++#define K_CacheAttrCWTnWA	0			/* Cacheable, write-thru, no write allocate */
++#define K_CacheAttrCWTWA	1			/* Cacheable, write-thru, write allocate */
++#define K_CacheAttrU		2			/* Uncached */
++#define K_CacheAttrC		3			/* Cacheable */
++#define K_CacheAttrCN		3			/* Cacheable, non-coherent */
++#define K_CacheAttrCCE		4			/* Cacheable, coherent, exclusive */
++#define K_CacheAttrCCS		5			/* Cacheable, coherent, shared */
++#define K_CacheAttrCCU		6			/* Cacheable, coherent, update */
++#define K_CacheAttrUA		7			/* Uncached accelerated */
++
++/*
++ * The following definitions are technically part of the "reserved for
++ * implementations" field, but are the semi-standard definition used in
++ * fixed-mapping MMUs to control the cacheability of kuseg and kseg2/3
++ * references.  For that reason, they are included here, but may be
++ * overridden by true implementation-specific definitions
++ */
++#define S_ConfigK23		28			/* Kseg2/3 coherency algorithm (FM MMU only) (R/W) */
++#define M_ConfigK23		(0x7 << S_ConfigK23)
++#define W_ConfigK23		3
++#define S_ConfigKU		25			/* Kuseg coherency algorithm (FM MMU only) (R/W) */
++#define M_ConfigKU		(0x7 << S_ConfigKU)
++#define W_ConfigKU		3
++
++#define S_ConfigK0		0			/* Kseg0 coherency algorithm (R/W) */
++#define M_ConfigK0		(0x7 << S_ConfigK0)
++
++
++/*
++ ************************************************************************
++ *                T A G L O   R E G I S T E R   ( 2 8 )                 * TagLo
++ ************************************************************************
++ * 	
++ *  3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
++ *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ * |                            TagLo                              | TagLo
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ */
++
++#define C0_TagLo		$28
++#define R_C0_TagLo		28
++#define R_C0_SelTagLo		0
++
++/*
++ ************************************************************************
++ *                T A G H I   R E G I S T E R   ( 2 9 )                 * TagHi
++ ************************************************************************
++ * 	
++ *  3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
++ *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ * |                            TagHi                              | TagHi
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ */
++
++#define C0_TagHi		$29
++#define R_C0_TagHi		29
++#define R_C0_SelTagHi		0
++
++
++
++/*
++ ************************************************************************
++ *               S T A T U S   R E G I S T E R   ( 1 2 )                *
++ ************************************************************************
++ * 	
++ *  3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
++ *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ * |C|C|C|C|R|F|R|M|P|B|T|S|M| | R |I|I|I|I|I|I|I|I|K|S|U|U|R|E|E|I|
++ * |U|U|U|U|P|R|E|X|X|E|S|R|M| | s |M|M|M|M|M|M|M|M|X|X|X|M|s|R|X|E| Status
++ * |3|2|1|0| | | | | |V| | |I| | v |7|6|5|4|3|2|1|0| | | | |v|L|L| |
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ */
++
++#define C0_Status		$12
++
++/*
++ ************************************************************************
++ *                  P R I D   R E G I S T E R   ( 1 5 )                 *
++ ************************************************************************
++ * 	
++ *  3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
++ *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ * |  Company Opts |   Company ID  |  Procesor ID  |   Revision    | PRId
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ */
++#define C0_PRId			$15
++
++
++/*
++ ************************************************************************
++ *               C O N F I G   R E G I S T E R   ( 1 6 )                *
++ ************************************************************************
++ * 	
++ *  3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
++ *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ * |M|                             |B| A |  A  |  M  |RSVD |V|  K  | Config
++ * | | Reserved for Implementations|E| T |  R  |  T  |     |I|  0  |
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ */
++
++#define C0_Config		$16
++
++#define S_StatusBEV		22			/* Enable Boot Exception Vectors (R/W) */
++#define M_StatusBEV		(0x1 << S_StatusBEV)
++
++#define S_StatusFR		26			/* Enable 64-bit FPRs (R/W) */
++#define M_StatusFR		(0x1 << S_StatusFR)
++
++#ifdef KSEG0_UNCACHED
++#define CONFIG0_MIPS32_64    (K_CacheAttrU << S_ConfigK0)
++#else
++#define CONFIG0_MIPS32_64    (K_CacheAttrCN << S_ConfigK0)
++//#define CONFIG0_MIPS32_64    (K_CacheAttrCWTnWA << S_ConfigK0)
++#endif
++
++
++/*
++ ************************************************************************
++ *         C O N F I G 1   R E G I S T E R   ( 1 6, SELECT 1 )          *
++ ************************************************************************
++ * 	
++ *  3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
++ *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ * |M|  MMU Size |  IS |  IL |  IA |  DS |  DL |  DA |C|M|P|W|C|E|F| Config1
++ * | |           |     |     |     |     |     |     |2|D|C|R|A|P|P|
++ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++ */
++
++#define C0_Config1		$16,1
++#define R_C0_Config1		16
++#define R_C0_SelConfig1		1
++
++
++
++/* MIPS32/MIPS64 specifics */
++
++/*  Setup of STATUS register used for MIPS32/MIPS64 processors
++ *  FR field only relevant for MIPS64 (Read only for MIPS32)
++ */
++#define STATUS_MIPS32_64   (M_StatusBEV | M_StatusFR)
++
++/*  Generic MIPS32/MIPS64 fields of STATUS register (ie the ones not 
++ *  reserved for implementations)
++ */
++#define STATUS_MIPS32_64_MSK   0xfffcffff
++
++
++/*  Generic MIPS32/MIPS64 fields of CONFIG0 register (ie the ones not
++ *  reserved for implementations)
++ */
++#define CONFIG0_MIPS32_64_MSK  0x8000ffff
++
++/* MIPS 4K/5K family specifics (excluding generic MIPS32/MIPS64 fields) */
++#define STATUS_MIPS4K5K	    0
++#define CONFIG0_MIPS4K5K ((K_CacheAttrCN << S_ConfigK23) |\
++			  (K_CacheAttrCN << S_ConfigKU))
++
++#define S_ConfigMM              18     /* 24K specific, merging enable/disable */
++#define M_ConfigMM              (0x1 << S_ConfigMM)
++		  
++/* MIPS 34K specifics */
++#define STATUS_MIPS34K	    0
++#define CONFIG0_MIPS34K  ((K_CacheAttrCN << S_ConfigK23) |\
++			  (K_CacheAttrCN << S_ConfigKU)  |\
++			  (M_ConfigMM))
++
++
++#define S_PRIdCoID		16			/* Company ID (R) */
++#define M_PRIdCoID		(0xff << S_PRIdCoID)
++#define S_PRIdImp		8			/* Implementation ID (R) */
++#define M_PRIdImp		(0xff << S_PRIdImp)
++
++#define MIPS_4Kc			( (K_PRIdCoID_MIPS << S_PRIdCoID) | \
++					  (K_PRIdImp_Jade  << S_PRIdImp) )
++
++#define MIPS_4KEc			( (K_PRIdCoID_MIPS << S_PRIdCoID) | \
++					  (K_PRIdImp_4KEc  << S_PRIdImp) )
++
++#define MIPS_24KE           ( (K_PRIdCoID_MIPS << S_PRIdCoID) | \
++                      (K_PRIdImp_24KE   << S_PRIdImp) )
++										  
++
++#define MIPS_34K			( (K_PRIdCoID_MIPS << S_PRIdCoID) | \
++					  (K_PRIdImp_34K   << S_PRIdImp) )
++
++#define S_Config1IS		22			/* Icache sets per way (R) */
++#define M_Config1IS		(0x7 << S_Config1IS)
++#define S_Config1IL		19			/* Icache line size (R) */
++#define M_Config1IL		(0x7 << S_Config1IL)
++#define S_Config1IA		16			/* Icache associativity - 1 (R) */
++#define M_Config1IA		(0x7 << S_Config1IA)
++					  
++#define S_Config1DS		13			/* Dcache sets per way (R) */
++#define M_Config1DS		(0x7 << S_Config1DS)
++#define W_Config1DS		3
++#define S_Config1DL		10			/* Dcache line size (R) */
++#define M_Config1DL		(0x7 << S_Config1DL)
++#define W_Config1DL		3
++#define S_Config1DA		7			/* Dcache associativity (R) */
++#define M_Config1DA		(0x7 << S_Config1DA)
++
++
++/*
++ *************************************************************************
++ *                H A R D W A R E   G P R   I N D I C E S                *
++ *************************************************************************
++ *
++ * These definitions provide the index (number) of the GPR, as opposed
++ * to the assembler register name ($n).
++ */
++
++#define R_r0			 0
++#define R_r1			 1
++#define R_r2			 2
++#define R_r3			 3
++#define R_r4			 4
++#define R_r5			 5
++#define R_r6			 6
++#define R_r7			 7
++#define R_r8			 8
++#define R_r9			 9
++#define R_r10			10
++#define R_r11			11
++#define R_r12			12
++#define R_r13			13
++#define R_r14			14
++#define R_r15			15
++#define R_r16			16
++#define R_r17			17
++#define R_r18			18
++#define R_r19			19
++#define R_r20			20
++#define R_r21			21
++#define R_r22			22
++#define R_r23			23
++#define R_r24			24
++#define R_r25			25
++#define R_r26			26
++#define R_r27			27
++#define R_r28			28
++#define R_r29			29
++#define R_r30			30
++#define R_r31			31
++#define R_hi			32			/* Hi register */
++#define R_lo			33			/* Lo register */
++
++
++/*
++ *************************************************************************
++ *                S O F T W A R E   G P R   I N D I C E S                *
++ *************************************************************************
++ *
++ * These definitions provide the index (number) of the GPR, as opposed
++ * to the assembler register name ($n).
++ */
++
++#define R_zero			 0
++#define R_AT			 1
++#define R_v0			 2
++#define R_v1			 3
++#define R_a0			 4
++#define R_a1			 5
++#define R_a2			 6
++#define R_a3			 7
++#define R_t0			 8
++#define R_t1			 9
++#define R_t2			10
++#define R_t3			11
++#define R_t4			12
++#define R_t5			13
++#define R_t6			14
++#define R_t7			15
++#define R_s0			16
++#define R_s1			17
++#define R_s2			18
++#define R_s3			19
++#define R_s4			20
++#define R_s5			21
++#define R_s6			22
++#define R_s7			23
++#define R_t8			24
++#define R_t9			25
++#define R_k0			26
++#define R_k1			27
++#define R_gp			28
++#define R_sp			29
++#define R_fp			30
++#define R_s8			30
++#define R_ra			31
++
++
++/* cache operations */
++
++#define CACHE_OP( code, type )			( ((code) << 2) | (type) )
++
++#define ICACHE_INDEX_INVALIDATE			CACHE_OP(0x0, 0)
++#define ICACHE_INDEX_LOAD_TAG			CACHE_OP(0x1, 0)
++#define ICACHE_INDEX_STORE_TAG			CACHE_OP(0x2, 0)
++#define DCACHE_INDEX_WRITEBACK_INVALIDATE	CACHE_OP(0x0, 1)
++#define DCACHE_INDEX_LOAD_TAG			CACHE_OP(0x1, 1)
++#define DCACHE_INDEX_STORE_TAG			CACHE_OP(0x2, 1)
++#define SCACHE_INDEX_WRITEBACK_INVALIDATE	CACHE_OP(0x0, 3)
++#define SCACHE_INDEX_STORE_TAG			CACHE_OP(0x2, 3)
++
++#define ICACHE_ADDR_HIT_INVALIDATE		CACHE_OP(0x4, 0)
++#define ICACHE_ADDR_FILL			CACHE_OP(0x5, 0)
++#define ICACHE_ADDR_FETCH_LOCK			CACHE_OP(0x7, 0)
++#define DCACHE_ADDR_HIT_INVALIDATE		CACHE_OP(0x4, 1)
++#define DCACHE_ADDR_HIT_WRITEBACK_INVALIDATE	CACHE_OP(0x5, 1)
++#define DCACHE_ADDR_HIT_WRITEBACK		CACHE_OP(0x6, 1)
++#define DCACHE_ADDR_FETCH_LOCK			CACHE_OP(0x7, 1)
++
++#define SCACHE_ADDR_HIT_WRITEBACK_INVALIDATE	CACHE_OP(0x5, 3)
++
++/*  Workaround for bug in early revisions of MIPS 4K family of 
++ *  processors. Only relevant in early engineering samples of test
++ *  chips (RTL revision <= 3.0).
++ *
++ *  The bug is described in :
++ *
++ *  MIPS32 4K(tm) Processor Core Family RTL Errata Sheet
++ *  MIPS Document No: MD00003
++ *
++ *  The bug is identified as : C16
++ */
++#define ICACHE_INVALIDATE_WORKAROUND(reg) \
++SET_PUSH();				  \
++SET_MIPS0();				  \
++	la     reg, 999f;		  \
++SET_POP();				  \
++	cache  ICACHE_ADDR_FILL, 0(reg);  \
++	sync;				  \
++	nop; nop; nop; nop;		  \
++999:
++
++#define ICACHE_INDEX_INVALIDATE_OP(index,scratch)		  \
++	    ICACHE_INVALIDATE_WORKAROUND(scratch);		  \
++	    cache ICACHE_INDEX_INVALIDATE, 0(index)
++
++#define ICACHE_ADDR_INVALIDATE_OP(addr,scratch)			  \
++	    ICACHE_INVALIDATE_WORKAROUND(scratch);		  \
++	    cache ICACHE_ADDR_HIT_INVALIDATE, 0(addr)
++
++#define SCACHE_ADDR_HIT_WB_INVALIDATE_OP(reg)			  \
++	    cache   SCACHE_ADDR_HIT_WRITEBACK_INVALIDATE, 0(reg);
++
++#define SCACHE_INDEX_WRITEBACK_INVALIDATE_OP(reg)			  \
++	    cache   SCACHE_INDEX_WRITEBACK_INVALIDATE, 0(reg);
++
++/* Config1 cache field decoding */
++#define CACHE_CALC_SPW(s)	( 64 << (s) )
++#define CACHE_CALC_LS(l)	( (l) ? 2 << (l) : 0 )
++#define CACHE_CALC_BPW(l,s)	( CACHE_CALC_LS(l) * CACHE_CALC_SPW(s) )
++#define CACHE_CALC_ASSOC(a)	( (a) + 1 )
++
++#define R_C0_ITagLo		28
++#define R_C0_SelITagLo		0
++
++#define R_C0_DTagLo	        28
++#define R_C0_SelDTagLo	        2
++#define R_C0_DTagHi	        29
++#define R_C0_SelDTagHi	        2
++
++#if 0					  
++#define DISP_STR( s );\
++		la   a0, s;\
++		move t8, ra;\
++		jal  asc_puts_asm;\
++		nop;\
++		move ra, t8
++
++#define MSG( name, s ) \
++	.##align 3;      \
++name:   .##asciiz  s
++
++MSG( hello_infineon, "\n\n\nhello_infineon\n\n");
++#endif
+--- /dev/null
++++ b/include/configs/lq_extra_env.h
+@@ -0,0 +1,76 @@
++  "mem="CONFIG_MEM"\0"                              
++  "phym="CONFIG_PHYM"\0"                            
++  "ipaddr=" CONFIG_IP_ADDRESS "\0"                  
++  "serverip=" CONFIG_SERVER_IP_ADDRESS "\0"         
++  "ethaddr=" CONFIG_ETHERNET_ADDRESS "\0"           
++  "netdev=" CONFIG_ETHERNET_DEVICE "\0"             
++  "console="CONFIG_CONSOLE"\0"                      
++  "baudrate=" CONFIG_ASC_BAUDRATE "\0"              
++  "tftppath="CONFIG_TFTPPATH"\0"                    
++  "loadaddr=" CONFIG_TFTP_LOAD_ADDRESS "\0"         
++  "rootpath="CONFIG_ROOT_PATH "\0"                  
++  "rootfsmtd="CONFIG_ROOTFSMTD"\0"                  
++  "nfsargs= "CONFIG_NFSARGS"\0"                     
++  "ramargs="CONFIG_RAMARGS"\0"                      
++  "addip="CONFIG_ADDIP"\0"                          
++  "addmisc="CONFIG_ADDMISC" \0"                     
++  "flash_nfs="CONFIG_FLASH_NFS"\0"                  
++  "net_nfs="CONFIG_NET_NFS"\0"                      
++  "net_flash="CONFIG_NET_FLASH"\0"                  
++  "net_ram="CONFIG_NET_RAM"\0"                      
++  "u-boot="CONFIG_U_BOOT"\0"                        
++  "rootfs="CONFIG_ROOTFS"\0"                        
++  "firmware="CONFIG_FIRMWARE"\0"                    
++  "fullimage="CONFIG_FULLIMAGE"\0"                  
++  "totalimage="CONFIG_TOTALIMAGE"\0"                
++  "load=tftp $(loadaddr) $(u-boot)\0"               
++  "update=protect off 1:0-2;era 1:0-2;cp.b $(loadaddr) B0000000 $(filesize)\0"  
++  "flashargs="CONFIG_FLASHARGS"\0"                  
++  "flash_flash="CONFIG_FLASH_FLASH"\0"              
++#ifdef CONFIG_BOOT_FROM_NAND  
++  "update_nandboot="CONFIG_UPDATE_NANDBOOT"\0"
++#endif
++  "update_uboot="CONFIG_UPDATE_UBOOT"\0"            
++  "update_kernel="CONFIG_UPDATE_KERNEL"\0"          
++  "update_rootfs="CONFIG_UPDATE_ROOTFS"\0"          
++  "update_firmware="CONFIG_UPDATE_FIRMWARE"\0"      
++  "update_fullimage="CONFIG_UPDATE_FULLIMAGE"\0"    
++  "update_totalimage="CONFIG_UPDATE_TOTALIMAGE"\0"  
++#ifndef CONFIG_ENV_IS_NOWHERE 
++  "reset_uboot_config="CONFIG_RESET_UBOOT_CONFIG"\0" 
++  "reset_ddr_config="CONFIG_RESET_DDR_CONFIG"\0" 
++  "mtdparts="CONFIG_MTDPARTS"\0"                     
++  IFX_CFG_FLASH_PARTITIONS_INFO   
++  "flash_end=" MK_STR(IFX_CFG_FLASH_END_ADDR) "\0"   
++  IFX_CFG_FLASH_DATA_BLOCKS_INFO  
++  "f_uboot_addr=" MK_STR(IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR) "\0"      
++  "f_uboot_size=" MK_STR(IFX_CFG_FLASH_UBOOT_IMAGE_SIZE) "\0"            
++  "f_ubootconfig_addr=" MK_STR(IFX_CFG_FLASH_UBOOT_CFG_START_ADDR) "\0"  
++  "f_ubootconfig_size=" MK_STR(IFX_CFG_FLASH_UBOOT_CFG_SIZE) "\0"        
++  "f_ubootconfig_end=" MK_STR(IFX_CFG_FLASH_UBOOT_CFG_END_ADDR) "\0"     
++  "f_kernel_addr=" MK_STR(IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR) "\0"    
++  "f_kernel_size=" MK_STR(IFX_CFG_FLASH_KERNEL_IMAGE_SIZE) "\0"          
++  "f_kernel_end=" MK_STR(IFX_CFG_FLASH_KERNEL_IMAGE_END_ADDR) "\0"       
++  "f_rootfs_addr=" MK_STR(IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR) "\0"    
++  "f_rootfs_size=" MK_STR(IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE) "\0"          
++  "f_rootfs_end=" MK_STR(IFX_CFG_FLASH_ROOTFS_IMAGE_END_ADDR) "\0"       
++#ifndef CONFIG_FIRMWARE_IN_ROOTFS  
++  "f_firmware_addr=" MK_STR(IFX_CFG_FLASH_FIRMWARE_IMAGE_START_ADDR) "\0" 
++  "f_firmware_size=" MK_STR(IFX_CFG_FLASH_FIRMWARE_IMAGE_SIZE) "\0"       
++#endif
++  "f_sysconfig_addr=" MK_STR(IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR) "\0"    
++  "f_sysconfig_size=" MK_STR(IFX_CFG_FLASH_SYSTEM_CFG_SIZE) "\0"          
++  "f_fwdiag_addr=" MK_STR(IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR) "\0"    
++  "f_fwdiag_size=" MK_STR(IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE) "\0"          
++  "f_calibration_addr= " MK_STR(IFX_CFG_FLASH_CALIBRATION_START_ADDR) "\0"  
++  "f_calibration_size=" MK_STR(IFX_CFG_FLASH_CALIBRATION_CFG_SIZE) "\0"   
++  "f_ddrconfig_addr=" MK_STR(IFX_CFG_FLASH_DDR_CFG_START_ADDR) "\0"       
++  "f_ddrconfig_size=" MK_STR(IFX_CFG_FLASH_DDR_CFG_SIZE) "\0"             
++  "f_ddrconfig_end=" MK_STR(IFX_CFG_FLASH_DDR_CFG_END_ADDR) "\0"          
++#ifdef CONFIG_OVERLAY
++  "f_overlay_addr=" MK_STR(IFX_CFG_FLASH_OVERLAY_IMAGE_START_ADDR) "\0"       
++  "f_overlay_size=" MK_STR(IFX_CFG_FLASH_OVERLAY_IMAGE_SIZE) "\0"             
++  "f_overlay_end=" MK_STR(IFX_CFG_FLASH_OVERLAY_IMAGE_END_ADDR) "\0"   
++#endif
++#endif
++  "" 

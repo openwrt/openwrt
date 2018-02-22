@@ -1,0 +1,50 @@
+# HG changeset patch
+# Parent 43edefe77919cbb01b557822e88fc37869141a42
+
+--- a/common/cmd_bootm.c
++++ b/common/cmd_bootm.c
+@@ -348,7 +348,7 @@ static int bootm_load_os(image_info_t os
+ 		*load_end = load + image_len;
+ 		puts("OK\n");
+ 		break;
+-#ifdef CONFIG_GZIP
++#ifdef CONFIG_OS_GZIP
+ 	case IH_COMP_GZIP:
+ 		printf ("   Uncompressing %s ... ", type_name);
+ 		if (gunzip ((void *)load, unc_len,
+@@ -363,7 +363,7 @@ static int bootm_load_os(image_info_t os
+ 		*load_end = load + image_len;
+ 		break;
+ #endif /* CONFIG_GZIP */
+-#ifdef CONFIG_BZIP2
++#ifdef CONFIG_OS_BZIP2
+ 	case IH_COMP_BZIP2:
+ 		printf ("   Uncompressing %s ... ", type_name);
+ 		/*
+@@ -385,7 +385,7 @@ static int bootm_load_os(image_info_t os
+ 		*load_end = load + unc_len;
+ 		break;
+ #endif /* CONFIG_BZIP2 */
+-#ifdef CONFIG_LZMA
++#ifdef CONFIG_OS_LZMA
+ 	case IH_COMP_LZMA:
+ 		printf ("   Uncompressing %s ... ", type_name);
+ 
+@@ -401,7 +401,7 @@ static int bootm_load_os(image_info_t os
+ 		*load_end = load + unc_len;
+ 		break;
+ #endif /* CONFIG_LZMA */
+-#ifdef CONFIG_LZO
++#ifdef CONFIG_OS_LZO
+ 	case IH_COMP_LZO:
+ 		printf ("   Uncompressing %s ... ", type_name);
+ 
+@@ -419,7 +419,7 @@ static int bootm_load_os(image_info_t os
+ 		*load_end = load + unc_len;
+ 		break;
+ #endif /* CONFIG_LZO */
+-	default:
++     default:
+ 		printf ("Unimplemented compression type %d\n", comp);
+ 		return BOOTM_ERR_UNIMPLEMENTED;
+ 	}

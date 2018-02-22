@@ -1,0 +1,512 @@
+
+config UBOOT_CONFIG_DRIVER_VR9
+      bool
+	  default y
+
+config UBOOT_CONFIG_BOARD_NAME
+    string 
+	default "EASY80920"
+	depends on UBOOT_CONFIG_IFX_IMAGE_EXTRA_CHECKS
+
+config UBOOT_CONFIG_BOARD_VERSION
+    string
+	default "1.2"
+	depends on UBOOT_CONFIG_IFX_IMAGE_EXTRA_CHECKS
+
+config UBOOT_CONFIG_CHIP_NAME
+    string
+    default "XRX200"
+    depends on UBOOT_CONFIG_IFX_IMAGE_EXTRA_CHECKS
+
+config UBOOT_CONFIG_CHIP_VERSION
+    string
+    default "1" if VR9_CPU_VERSION_1
+	default "2" if VR9_CHIP_VERSION_2
+    depends on UBOOT_CONFIG_IFX_IMAGE_EXTRA_CHECKS
+
+
+menu "CPU/DDR FREQUENCY"
+
+choice 
+    prompt "PLATFORM"
+    default UBOOT_CONFIG_VRX200
+
+config UBOOT_CONFIG_GRX200
+    bool "GRX200"
+
+config UBOOT_CONFIG_VRX200
+    bool "VRX200"
+
+endchoice
+
+choice 
+    prompt "CRYSTAL CLOCK FREQUENCY"
+	default UBOOT_CONFIG_VR9_CRYSTAL_36M
+    
+config UBOOT_CONFIG_VR9_CRYSTAL_6M
+    bool "6M"
+	depends on UBOOT_CONFIG_VRX200
+
+config UBOOT_CONFIG_VR9_CRYSTAL_CPLD
+    bool "6M change to 36M via CPLD"
+    depends on UBOOT_CONFIG_VRX200
+
+config UBOOT_CONFIG_VR9_CRYSTAL_25M
+    bool "25M"
+	depends on UBOOT_CONFIG_GRX200
+
+config UBOOT_CONFIG_VR9_CRYSTAL_36M
+    bool "36M"
+	depends on UBOOT_CONFIG_VRX200
+
+endchoice
+
+choice 
+    prompt "DDR TYPE SELECTION"
+    default UBOOT_CONFIG_VR9_DDR2
+
+config UBOOT_CONFIG_VR9_DDR1
+    bool "DDR1"
+
+config UBOOT_CONFIG_VR9_DDR2
+    bool "DDR2"
+
+endchoice
+
+choice
+    prompt "CPU AND RAM CONFIGURATION"
+
+
+config UBOOT_CONFIG_VR9_CPU_125M_RAM_125M
+    bool "125M/125M"
+
+config UBOOT_CONFIG_VR9_CPU_333M_RAM_166M
+    bool "333M/166M" 
+
+config UBOOT_CONFIG_VR9_CPU_393M_RAM_196M
+    bool "393M/196M"
+   
+config UBOOT_CONFIG_VR9_CPU_500M_RAM_200M
+    bool "500M/200M"
+    depends on !UBOOT_CONFIG_VR9_CRYSTAL_6M
+
+config UBOOT_CONFIG_VR9_CPU_500M_RAM_250M
+    bool "500M/250M"
+	depends on !UBOOT_CONFIG_VR9_CRYSTAL_6M && UBOOT_CONFIG_VR9_DDR2
+
+config UBOOT_CONFIG_VR9_CPU_600M_RAM_200M
+    bool "600M/200M"
+
+config UBOOT_CONFIG_VR9_CPU_600M_RAM_300M
+    bool "600M/300M"
+	depends on UBOOT_CONFIG_VR9_DDR2
+
+endchoice
+
+config UBOOT_CONFIG_ENABLE_POWER_MANAGEMENT
+    bool "Enable power management(EXPERIMENTAL)"
+	default n
+
+config UBOOT_CONFIG_USE_DEFAULT_LOWPOWER_SETTING
+    bool "USE DEFAULT LOWPOWER SETTING"
+    default y
+    depends on UBOOT_CONFIG_ENABLE_POWER_MANAGEMENT
+
+
+config UBOOT_CONFIG_LOWPOWER_CONTROL
+    hex 'LOWPOWER_CONTROL'
+    default "0x14"
+    depends on !UBOOT_CONFIG_USE_DEFAULT_LOWPOWER_SETTING
+    depends on UBOOT_CONFIG_ENABLE_POWER_MANAGEMENT
+
+config UBOOT_CONFIG_LOWPOWER_AUTO_ENABLE
+    hex 'LOWERPOWER_AUTO_ENABLE'
+    default "0x14"
+    depends on !UBOOT_CONFIG_USE_DEFAULT_LOWPOWER_SETTING
+    depends on UBOOT_CONFIG_ENABLE_POWER_MANAGEMENT
+
+config UBOOT_CONFIG_LOWPOWER_POWER_DOWN_CNT
+    hex 'LOWPOWER_POWER_DOWN_CNT'
+    default "0x40"
+    depends on !UBOOT_CONFIG_USE_DEFAULT_LOWPOWER_SETTING
+	depends on UBOOT_CONFIG_ENABLE_POWER_MANAGEMENT
+
+config UBOOT_CONFIG_LOWPOWER_SELF_REFRESH_CNT
+    hex 'LOWPOWER_SELF_REFRESH_CNT'
+    default "0x80"
+    depends on !UBOOT_CONFIG_USE_DEFAULT_LOWPOWER_SETTING
+    depends on UBOOT_CONFIG_ENABLE_POWER_MANAGEMENT
+
+endmenu
+
+
+menu "SWITCH OPTIONS"
+
+config UBOOT_CONFIG_VR9_SW_PORT_0
+    bool "USE PORT 0"
+
+choice
+   prompt "INTERFACE"
+   depends on UBOOT_CONFIG_VR9_SW_PORT_0
+   default UBOOT_CONFIG_VR9_SW_PORT0_RGMII_MAC
+
+config UBOOT_CONFIG_VR9_SW_PORT0_MII_PHY
+   bool "MII PHY"
+
+config UBOOT_CONFIG_VR9_SW_PORT0_MII_MAC
+   bool "MII MAC"
+
+config UBOOT_CONFIG_VR9_SW_PORT0_RMII_PHY
+   bool "RMII PHY"
+
+config UBOOT_CONFIG_VR9_SW_PORT0_RMII_MAC
+   bool "RMII MAC"
+
+config UBOOT_CONFIG_VR9_SW_PORT0_RGMII_MAC
+   bool "RGMII MAC"
+
+endchoice  
+
+config UBOOT_CONFIG_VR9_SW_PORT0_MIIMODE
+   int
+   depends on UBOOT_CONFIG_VR9_SW_PORT_0
+   default 0 if UBOOT_CONFIG_VR9_SW_PORT0_MII_PHY
+   default 1 if UBOOT_CONFIG_VR9_SW_PORT0_MII_MAC
+   default 2 if UBOOT_CONFIG_VR9_SW_PORT0_RMII_PHY
+   default 3 if UBOOT_CONFIG_VR9_SW_PORT0_RMII_MAC
+   default 4 if UBOOT_CONFIG_VR9_SW_PORT0_RGMII_MAC
+
+   
+choice
+   prompt "xMII CLOCK RATE"
+   depends on UBOOT_CONFIG_VR9_SW_PORT_0
+   default UBOOT_CONFIG_VR9_SW_PORT0_MIIRATE_AUTO
+	
+config UBOOT_CONFIG_VR9_SW_PORT0_MIIRATE_M2P5
+	 bool "2.5MHz"
+	 depends on !UBOOT_CONFIG_VR9_SW_PORT0_RMII_MAC && !UBOOT_CONFIG_VR9_SW_PORT0_RMII_PHY
+	
+config UBOOT_CONFIG_VR9_SW_PORT0_MIIRATE_M25
+    bool "25MHz"
+    depends on !UBOOT_CONFIG_VR9_SW_PORT0_RMII_MAC && !UBOOT_CONFIG_VR9_SW_PORT0_RMII_PHY
+
+config UBOOT_CONFIG_VR9_SW_PORT0_MIIRATE_M125
+    bool "125MHz"
+    depends on !UBOOT_CONFIG_VR9_SW_PORT0_RMII_MAC && !UBOOT_CONFIG_VR9_SW_PORT0_RMII_PHY
+
+config UBOOT_CONFIG_VR9_SW_PORT0_MIIRATE_M50	
+	  bool "50MHz"
+	  
+config UBOOT_CONFIG_VR9_SW_PORT0_MIIRATE_AUTO
+    bool "AUTO"
+    depends on !UBOOT_CONFIG_VR9_SW_PORT0_RMII_MAC && !UBOOT_CONFIG_VR9_SW_PORT0_RMII_PHY
+		
+endchoice
+
+config UBOOT_CONFIG_VR9_SW_PORT0_MIIRATE
+    int 
+	depends on UBOOT_CONFIG_VR9_SW_PORT_0
+	default 0 if UBOOT_CONFIG_VR9_SW_PORT0_MIIRATE_M2P5
+	default 1 if UBOOT_CONFIG_VR9_SW_PORT0_MIIRATE_M25
+	default 2 if UBOOT_CONFIG_VR9_SW_PORT0_MIIRATE_M125
+	default 3 if UBOOT_CONFIG_VR9_SW_PORT0_MIIRATE_M50
+	default 4 if UBOOT_CONFIG_VR9_SW_PORT0_MIIRATE_AUTO
+
+choice 
+    prompt "RMII REF CLOCK DIRECTIOM"
+	  default UBOOT_CONFIG_VR9_SW_PORT0_RMII_CLK_IN
+	  depends on UBOOT_CONFIG_VR9_SW_PORT0_RMII_PHY || UBOOT_CONFIG_VR9_SW_PORT0_RMII_MAC
+
+config UBOOT_CONFIG_VR9_SW_PORT0_RMII_CLK_IN
+    bool "IN"
+
+config UBOOT_CONFIG_VR9_SW_PORT0_RMII_CLK_OUT
+    bool "OUT"
+	
+endchoice
+
+
+config UBOOT_CONFIG_VR9_SW_PORT_1
+    bool "USE PORT 1"
+    
+choice
+   prompt "INTERFACE"
+   depends on UBOOT_CONFIG_VR9_SW_PORT_1
+   default UBOOT_CONFIG_VR9_SW_PORT1_RGMII_MAC
+
+config UBOOT_CONFIG_VR9_SW_PORT1_MII_PHY
+   bool "MII PHY"
+
+config UBOOT_CONFIG_VR9_SW_PORT1_MII_MAC
+   bool "MII MAC"
+
+config UBOOT_CONFIG_VR9_SW_PORT1_RMII_PHY
+   bool "RMII PHY"
+
+config UBOOT_CONFIG_VR9_SW_PORT1_RMII_MAC
+   bool "RMII MAC"
+
+config UBOOT_CONFIG_VR9_SW_PORT1_RGMII_MAC
+   bool "RGMII MAC"
+endchoice  
+
+config UBOOT_CONFIG_VR9_SW_PORT1_MIIMODE
+   int
+   depends on UBOOT_CONFIG_VR9_SW_PORT_1
+   default 0 if UBOOT_CONFIG_VR9_SW_PORT1_MII_PHY
+   default 1 if UBOOT_CONFIG_VR9_SW_PORT1_MII_MAC
+   default 2 if UBOOT_CONFIG_VR9_SW_PORT1_RMII_PHY
+   default 3 if UBOOT_CONFIG_VR9_SW_PORT1_RMII_MAC
+   default 4 if UBOOT_CONFIG_VR9_SW_PORT1_RGMII_MAC
+								   
+   
+choice
+   prompt "xMII CLOCK RATE"
+   depends on UBOOT_CONFIG_VR9_SW_PORT_1
+   default UBOOT_CONFIG_VR9_SW_PORT1_MIIRATE_AUTO
+	
+config UBOOT_CONFIG_VR9_SW_PORT1_MIIRATE_M2P5
+	bool "2.5MHz"
+	depends on !UBOOT_CONFIG_VR9_SW_PORT1_RMII_MAC && !UBOOT_CONFIG_VR9_SW_PORT1_RMII_PHY
+	
+config UBOOT_CONFIG_VR9_SW_PORT1_MIIRATE_M25
+    bool "25MHz"
+    depends on !UBOOT_CONFIG_VR9_SW_PORT1_RMII_MAC && !UBOOT_CONFIG_VR9_SW_PORT1_RMII_PHY
+
+config UBOOT_CONFIG_VR9_SW_PORT1_MIIRATE_M125
+    bool "125MHz"
+    depends on !UBOOT_CONFIG_VR9_SW_PORT1_RMII_MAC && !UBOOT_CONFIG_VR9_SW_PORT1_RMII_PHY
+
+config UBOOT_CONFIG_VR9_SW_PORT1_MIIRATE_M50	
+	  bool "50MHz"
+
+config UBOOT_CONFIG_VR9_SW_PORT1_MIIRATE_AUTO
+    bool "AUTO"
+		depends on !UBOOT_CONFIG_VR9_SW_PORT1_RMII_MAC && !UBOOT_CONFIG_VR9_SW_PORT1_RMII_PHY
+		
+endchoice
+
+config UBOOT_CONFIG_VR9_SW_PORT1_MIIRATE
+    int 
+	depends on UBOOT_CONFIG_VR9_SW_PORT_1
+	default 0 if UBOOT_CONFIG_VR9_SW_PORT1_MIIRATE_M2P5
+	default 1 if UBOOT_CONFIG_VR9_SW_PORT1_MIIRATE_M25
+	default 2 if UBOOT_CONFIG_VR9_SW_PORT1_MIIRATE_M125
+	default 3 if UBOOT_CONFIG_VR9_SW_PORT1_MIIRATE_M50
+	default 4 if UBOOT_CONFIG_VR9_SW_PORT1_MIIRATE_AUTO
+
+choice 
+    prompt "RMII REF CLOCK DIRECTIOM"
+	  default UBOOT_CONFIG_VR9_SW_PORT1_RMII_CLK_IN
+	  depends on UBOOT_CONFIG_VR9_SW_PORT1_RMII_MAC || UBOOT_CONFIG_VR9_SW_PORT1_RMII_PHY
+
+config UBOOT_CONFIG_VR9_SW_PORT1_RMII_CLK_IN
+    bool "IN"
+
+config UBOOT_CONFIG_VR9_SW_PORT1_RMII_CLK_OUT
+    bool "OUT"
+	
+endchoice
+
+config UBOOT_CONFIG_VR9_SW_PORT_2
+    bool "USE PORT 2"
+    default y
+
+choice
+   prompt "INTERFACE FOR PORT 2 AND PORT4"
+   depends on UBOOT_CONFIG_VR9_SW_PORT_2
+   default UBOOT_CONFIG_VR9_SW_PORT2_GMII
+
+config UBOOT_CONFIG_VR9_SW_PORT2_GMII
+   bool "GMII"
+
+config UBOOT_CONFIG_VR9_SW_PORT2_MII
+   bool "MII"
+
+endchoice  
+
+choice
+   prompt "GPHY_LED_MODE"
+   depends on UBOOT_CONFIG_VR9_SW_PORT_2
+   default UBOOT_CONFIG_GPHY_LED_SHIFT_REG
+
+config UBOOT_CONFIG_GPHY_LED_SHIFT_REG   
+   bool "SHIFT REGISTER"
+
+config UBOOT_CONFIG_GPHY_LED_GPIO
+   bool "GPIO"
+
+### ctc ###
+config UBOOT_CONFIG_GPHY_LED_NONE
+   bool "NONE"
+###########
+   
+endchoice
+
+config  UBOOT_CONFIG_VR9_SW_PORT2_MIIRATE
+   int
+   depends on UBOOT_CONFIG_VR9_SW_PORT_2
+   default 4 
+					 
+config UBOOT_CONFIG_VR9_SW_PORT2_MIIMODE
+    int
+	depends on UBOOT_CONFIG_VR9_SW_PORT_2
+	default 1 
+								
+
+config UBOOT_CONFIG_VR9_SW_PORT_3
+    bool "USE PORT 3"
+	default y
+    depends on UBOOT_CONFIG_VR9_SW_PORT2_MII
+    
+choice
+   prompt "INTERFACE"
+   depends on UBOOT_CONFIG_VR9_SW_PORT_3
+   default UBOOT_CONFIG_VR9_SW_PORT3_MII
+
+config UBOOT_CONFIG_VR9_SW_PORT3_MII
+   bool "MII"
+
+endchoice    
+    
+config UBOOT_CONFIG_VR9_SW_PORT3_MIIRATE
+   int
+   depends on UBOOT_CONFIG_VR9_SW_PORT_3
+   default 4 
+					 
+config UBOOT_CONFIG_VR9_SW_PORT3_MIIMODE
+    int
+	depends on UBOOT_CONFIG_VR9_SW_PORT_3
+    default 1 if UBOOT_CONFIG_VR9_SW_PORT3_MII
+
+config UBOOT_CONFIG_VR9_SW_PORT_4
+    bool "USE PORT 4"
+	default y
+	depends on UBOOT_CONFIG_VR9_SW_PORT_2
+
+config UBOOT_CONFIG_VR9_SW_PORT4_GMII
+   bool  
+   default y
+   depends on UBOOT_CONFIG_VR9_SW_PORT2_GMII
+
+config UBOOT_CONFIG_VR9_SW_PORT4_MII
+   bool
+   default y
+   depends on UBOOT_CONFIG_VR9_SW_PORT2_MII
+
+
+config UBOOT_CONFIG_VR9_SW_PORT4_MIIRATE
+   int
+   depends on UBOOT_CONFIG_VR9_SW_PORT_4
+   default 4
+					 
+config UBOOT_CONFIG_VR9_SW_PORT4_MIIMODE
+    int
+	depends on UBOOT_CONFIG_VR9_SW_PORT_4
+	default 1 
+	
+
+config UBOOT_CONFIG_VR9_SW_PORT_5a
+    bool "USE PORT 5a"
+	default y
+    depends on !UBOOT_CONFIG_VR9_SW_PORT_5b
+
+choice
+   prompt "INTERFACE"
+   depends on UBOOT_CONFIG_VR9_SW_PORT_5a
+   default UBOOT_CONFIG_VR9_SW_PORT5a_RGMII
+
+config UBOOT_CONFIG_VR9_SW_PORT5a_RGMII
+   bool "RGMII"
+endchoice
+
+config UBOOT_CONFIG_VR9_SW_PORT5a_MIIMODE
+   int
+   depends on UBOOT_CONFIG_VR9_SW_PORT_5a
+   default 4
+
+config UBOOT_CONFIG_VR9_SW_PORT5a_MIIRATE
+    int
+	depends on UBOOT_CONFIG_VR9_SW_PORT_5a
+	default 4 if UBOOT_CONFIG_VR9_SW_PORT5a_RGMII
+			
+
+config UBOOT_CONFIG_VR9_SW_PORT_5b
+    bool "USE PORT 5b"
+	default y
+    depends on UBOOT_CONFIG_VR9_SW_PORT2_MII
+    
+choice
+   prompt "INTERFACE"
+   depends on UBOOT_CONFIG_VR9_SW_PORT_5b
+   default UBOOT_CONFIG_VR9_SW_PORT5b_MII
+
+config UBOOT_CONFIG_VR9_SW_PORT5b_MII
+   bool "MII"
+
+endchoice       
+
+config UBOOT_CONFIG_VR9_SW_PORT5b_MIIMODE
+   int
+   depends on UBOOT_CONFIG_VR9_SW_PORT_5b
+   default 1 
+
+config UBOOT_CONFIG_VR9_SW_PORT5b_MIIRATE
+    int
+	depends on UBOOT_CONFIG_VR9_SW_PORT_5b
+	default 4
+
+config UBOOT_CONFIG_VR9_GPHY_FW_EMBEDDED
+    bool "gphy firmware embedded"
+	default y
+
+config UBOOT_CONFIG_VR9_GPHY_FW_ADDR
+    hex 'gphy firmware address'
+	default "0xb0010000" if (UBOOT_CONFIG_BOOT_FROM_NOR && !UBOOT_CONFIG_NAND_FLASH)
+	default "0xb0020000" if (UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_NAND_FLASH)
+	default "0xa0110000" if ( UBOOT_CONFIG_BOOT_FROM_SPI )
+	default "0xa0120000" if ( UBOOT_CONFIG_BOOT_FROM_NAND )
+	depends on UBOOT_CONFIG_VR9_SW_PORT_2 || UBOOT_CONFIG_VR9_SW_PORT_3 || UBOOT_CONFIG_VR9_SW_PORT_4 || UBOOT_CONFIG_VR9_SW_PORT_5b
+    depends on UBOOT_CONFIG_VR9_GPHY_FW_EMBEDDED
+
+config UBOOT_CONFIG_VR9_EXTERN_GPHY_FW_ADDR
+    hex "gphy firmware address"
+	default "0xb0010000"
+	depends on !UBOOT_CONFIG_VR9_GPHY_FW_EMBEDDED
+
+config UBOOT_CONFIG_VR9_GPHY_DEBUG
+    bool "DEBUG GPHY"
+	default y
+    depends on !UBOOT_CONFIG_NAND_FLASH
+	
+endmenu
+
+config UBOOT_CONFIG_TUNE_DDR
+    bool "DDR tuning support"
+	default y
+
+config UBOOT_CONFIG_DDR_TUNING_TEXT_BASE
+    hex 
+    default "0x9e220000"
+    depends on UBOOT_CONFIG_TUNE_DDR
+
+config UBOOT_CONFIG_ENABLE_DCDC
+	bool "ENABLE_DCDC"
+	default y
+
+config UBOOT_CONFIG_POWER_DOWN_REGULATOR
+    bool "POWER DOWN 2.5V REGULATOR"
+	default y
+
+config UBOOT_CONFIG_CHECK_PLL2_LOCK
+    bool "CHECK PLL2 LOCK"
+	default n
+
+config UBOOT_CONFIG_ON_VENUS
+    bool "ON VENUS"
+	default n
+	
+config UBOOT_CONFIG_ON_PALLADIUM
+    bool "ON PALLADIUM"
+	default n
+	

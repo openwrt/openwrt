@@ -1,0 +1,213 @@
+menu "Supported commands"
+
+config UBOOT_CONFIG_CMD_AUTOSCRIPT
+     bool "autoscript"
+
+config UBOOT_CONFIG_CMD_BDI
+     bool "bdinfo"
+	 
+config UBOOT_CONFIG_CMD_BEDBUG
+     bool "bedbug"
+
+config UBOOT_CONFIG_CMD_BMP
+     bool "bmp"
+
+config UBOOT_CONFIG_CMD_CACHE
+     bool "cache"
+
+config UBOOT_CONFIG_CMD_CONSOLE
+     bool "console"
+	 
+config UBOOT_CONFIG_CMD_DATE
+     bool "date"
+
+config UBOOT_CONFIG_CMD_SETGETDCR
+     bool "dcr"
+
+config UBOOT_CONFIG_CMD_DIAG
+     bool "diag"
+
+config UBOOT_CONFIG_CMD_DOC
+     bool "doc"
+
+config UBOOT_CONFIG_CMD_DTT
+     bool "dtt"
+
+config UBOOT_CONFIG_CMD_DISPLAY
+     bool "display"
+
+config UBOOT_CONFIG_CMD_ECHO
+     bool "echo"
+	 default y
+
+config UBOOT_CONFIG_CMD_EEPROM
+     bool "eeprom"
+	 depends on UBOOT_CONFIG_SPI_EEPROM
+
+config UBOOT_CONFIG_CMD_ELF
+     bool "elf"
+
+config UBOOT_CONFIG_CMD_EXT2
+     bool "ext2"
+
+config UBOOT_CONFIG_CMD_FAT
+     bool "fat"
+
+config UBOOT_CONFIG_CMD_FDC
+     bool "fdc"
+
+config UBOOT_CONFIG_CMD_LIBFDT
+     bool "libfdt"
+
+config UBOOT_CONFIG_CMD_LOADB
+     bool "loadb"
+
+config UBOOT_CONFIG_CMD_LOADS
+	 bool "loads"
+
+config UBOOT_CONFIG_CMD_FDOS
+     bool "fdos"
+
+config UBOOT_CONFIG_CMD_FLASH
+     bool "flash"
+     depends on UBOOT_CONFIG_NOR_FLASH
+
+config UBOOT_CONFIG_CMD_FPGA
+     bool "fpga"
+
+config UBOOT_CONFIG_CMD_HTTPD
+     bool "httpd"
+
+config UBOOT_CONFIG_CMD_I2C
+     bool "i2c"
+
+config UBOOT_CONFIG_CMD_IDE
+     bool "ide"
+
+config UBOOT_CONFIG_CMD_IMMAP
+     bool "immap"
+
+config UBOOT_CONFIG_CMD_ITEST
+     bool "itest"
+
+config UBOOT_CONFIG_CMD_JFFS2
+     bool "jffs2"
+
+config UBOOT_CONFIG_CMD_LOGBUFFER
+     bool "log"
+
+config UBOOT_CONFIG_CMD_MEMORY
+     bool "mem"
+     default y
+
+config UBOOT_CONFIG_MII
+     bool "miibase"
+     default y
+
+config UBOOT_CONFIG_CMD_MII
+     bool "mii"
+     depends on UBOOT_CONFIG_MII
+
+config UBOOT_CONFIG_CMD_MTDPARTS
+     bool "mtdparts"
+
+config UBOOT_CONFIG_MTD_DEVICE
+     bool
+	 default y
+	 depends on UBOOT_CONFIG_CMD_MTDPARTS
+	 
+config UBOOT_CONFIG_MTD_PARTITIONS
+     bool
+	 default y
+	 depends on UBOOT_CONFIG_CMD_MTDPARTS
+			   
+
+config UBOOT_CONFIG_PHY_GIGE
+     bool "MII gphy detection"
+	 depends on UBOOT_CONFIG_MII
+
+config UBOOT_CONFIG_CMD_MISC
+     bool "misc"
+
+config UBOOT_CONFIG_CMD_MMC
+     bool "mmc"
+
+config UBOOT_CONFIG_CMD_NAND
+     bool "nand"
+	 depends on UBOOT_CONFIG_NAND_FLASH
+	 
+config UBOOT_CONFIG_CMD_NET
+     bool "net"
+     default y
+
+config UBOOT_CONFIG_CMD_PCI
+     bool "pci"
+
+config UBOOT_CONFIG_CMD_PCMCIA
+     bool "pcmcia"
+
+config UBOOT_CONFIG_CMD_PING
+     bool "ping"
+
+config UBOOT_CONFIG_CMD_PORTIO
+     bool "portio"
+
+config UBOOT_CONFIG_CMD_REGINFO
+     bool "reginfo"
+
+config UBOOT_CONFIG_CMD_RUN
+	 bool "run"
+     default y
+
+config UBOOT_CONFIG_CMD_SAVEENV
+     bool "saveenv"
+	 default y
+	 
+config UBOOT_CONFIG_CMD_SAVES
+     bool "saves"
+	 depends on UBOOT_CONFIG_CMD_LOADS
+
+config UBOOT_CONFIG_CMD_SF
+     bool "sf"
+     depends on UBOOT_CONFIG_SPI_FLASH 
+
+config UBOOT_CONFIG_CMD_SCSI
+     bool "scsi"
+
+config UBOOT_CONFIG_CMD_SPI
+     bool "spi"
+
+config UBOOT_CONFIG_CMD_UBI
+	 bool "ubi"
+
+config UBOOT_CONFIG_CMD_UBIFS
+     bool "ubifs"
+
+config UBOOT_CONFIG_CMD_UNIVERSE
+     bool "universe"
+
+config UBOOT_CONFIG_CMD_UPGRADE
+     bool "upgrade"
+	 default y
+     depends on !UBOOT_CONFIG_ENV_IS_NOWHERE
+
+config UBOOT_CONFIG_CMD_USB
+     bool "usb"
+
+config UBOOT_CONFIG_USB_STORAGE
+     bool "usb storage"
+     depends on UBOOT_CONFIG_CMD_USB
+	 
+config UBOOT_CONFIG_CMD_VFD
+     bool "vfd"
+
+config UBOOT_CONFIG_CMD_KGDB
+     bool "kgdb"
+
+config UBOOT_CONFIG_CMD_LCD
+     bool "lcd"
+
+config UBOOT_CONFIG_YAFFS2
+     bool "YAFFS2"
+	 
+endmenu

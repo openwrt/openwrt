@@ -1,0 +1,873 @@
+# HG changeset patch
+# Parent 321306340245b17efc63810d1083aa87753f95f6
+Add upgrade command
+
+--- a/common/Makefile
++++ b/common/Makefile
+@@ -165,7 +165,7 @@ COBJS-$(CONFIG_LYNXKDI) += lynxkdi.o
+ COBJS-$(CONFIG_MODEM_SUPPORT) += modem.o
+ COBJS-$(CONFIG_UPDATE_TFTP) += update.o
+ COBJS-$(CONFIG_USB_KEYBOARD) += usb_kbd.o
+-
++COBJS-$(CONFIG_CMD_UPGRADE) += upgrade.o cmd_upgrade.o
+ 
+ COBJS	:= $(sort $(COBJS-y))
+ SRCS	:= $(AOBJS:.o=.S) $(COBJS:.o=.c)
+--- /dev/null
++++ b/common/cmd_upgrade.c
+@@ -0,0 +1,427 @@
++/*
++ * (C) Copyright 2000
++ * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++/*
++ * Cache support: switch on or off, get status
++ */
++#include <common.h>
++#include <command.h>
++#include <cmd_upgrade.h>
++
++#if defined(BUILD_FROM_IFX_UTILITIES)
++#include "crc32.h"
++#include <syslog.h>
++#define getenv(x)		get_env(x)
++#define simple_strtoul(a,b,c)	strtoul(a,b,c)
++#define setenv(x,y)		set_env(x,y)
++#define uchar			unsigned char
++#define ulong			unsigned long
++#define uint32_t		unsigned int
++#define uint8_t			unsigned char
++//#define printf(format, args...)	syslog(LOG_INFO, format, ##args)
++#endif //BUILD_FROM_IFX_UTILITIES
++
++
++#include "image.h"
++
++#ifdef CONFIG_IFX_IMAGE_EXTRA_CHECKS
++char* get_string_value(char* str, char* delim, int n)
++{
++   int i;
++   char* ptr=NULL;
++   ptr = strtok(str, delim);
++   if(n==0) return ptr;
++   for(i=0;i<n;i++){
++     ptr = strtok(NULL, delim);
++   }
++   return ptr;
++}
++
++
++
++
++/* compare the version with the built-in-version,
++   return 1 if v_new is equal to or bigger than v_old
++   return 0 otherwise 
++*/
++int compare_version(char *v_old, char *v_new)
++{
++	
++	 int res=0;
++   int i=0;
++   char* p=NULL;
++   char tmp_str[32];
++   int old_v_num=0;
++   int new_v_num=0;
++   for(i=0;i<32;i++){
++     strcpy(tmp_str, v_old);
++     p = get_string_value(tmp_str,".",i);
++     if(!p) break;
++     old_v_num=simple_strtoul(p,NULL,0);
++     //printf("old_v_num=%d\n",old_v_num);
++     strcpy(tmp_str, v_new);
++     p = get_string_value(tmp_str,".",i);
++     if(!p) { break;}
++     new_v_num=simple_strtoul(p,NULL,0);
++     //printf("new_v_num=%d\n",new_v_num);
++     if(new_v_num>=old_v_num) res=1;
++     else res=0;
++   }
++   return res;
++}
++#endif
++
++#if !defined(BUILD_FROM_IFX_UTILITIES)
++int do_upgrade( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]) {
++	ulong srcAddr=0;
++	int srcLen;
++	ulong srcHeader=0;
++	int curParSize=0, dir, pad;
++	image_header_t *pimg_header = NULL;
++	char name[16], strimg_crc[32], buf[32];;
++  if(argc != 3) {
++		printf("Usage :\n%s\n",cmdtp->usage);
++		return 1;
++	}
++
++	srcAddr = simple_strtoul(argv[1], NULL, 16);
++	srcLen = simple_strtoul(argv[2], NULL, 16);
++
++	do {
++		srcHeader = (!srcHeader ? srcAddr : srcHeader + curParSize);
++		pimg_header = (image_header_t *)srcHeader;		
++		curParSize = sizeof(image_header_t) + pimg_header->ih_size;
++		pad = (16 - (curParSize % 16)) % 16;
++
++		switch(pimg_header->ih_type) {
++			case IH_TYPE_MULTI:
++#ifdef CONFIG_IFX_IMAGE_EXTRA_CHECKS
++        printf("checking image validity...\n");
++        /*check vendor name*/
++        if(strncmp(pimg_header->ih_vendor, CONFIG_VENDOR_NAME, sizeof(pimg_header->ih_vendor)) == 0)
++        	{
++        		printf("vendor name correct...\n");
++        	}
++        else
++        	{
++        		printf("wrong vendor name, update rejected!\n");
++        		return 0;
++        	}
++        /*check board name*/	
++        if(strncmp(pimg_header->ih_board, CONFIG_BOARD_NAME, sizeof(pimg_header->ih_board)) == 0)
++        	{
++        		printf("board name correct...\n");
++        	}
++        else
++        	{
++        		printf("wrong board name, update rejected!\n");
++        		return 0;
++        	}
++        	
++        /*check board version*/	
++        if(compare_version(CONFIG_BOARD_VERSION, pimg_header->ih_boardVer))
++        	{
++        		printf("board version correct...\n");
++        	}
++        else
++        	{
++        		printf("wrong board version, update rejected!\n");
++        		return 0;
++        	}	
++        	
++        /*check chip name*/	
++        if(strncmp(pimg_header->ih_chip, CONFIG_CHIP_NAME, sizeof(pimg_header->ih_chip)) == 0)
++        	{
++        		printf("chip name correct...\n");
++        	}
++        else
++        	{
++        		printf("wrong chip name, update rejected!\n");
++        		return 0;
++        	}	
++        	
++        /*check chip version*/	
++        if(compare_version(CONFIG_CHIP_VERSION, pimg_header->ih_chipVer))
++        	{
++        		printf("chip version correct...\n");
++        	}
++        else
++        	{
++        		printf("wrong chip version, update rejected!\n");
++        		return 0;
++        	}	
++        	
++        /*check software version*/	
++        if(compare_version(CONFIG_SW_VERSION, pimg_header->ih_swVer))
++        	{
++        		printf("sw version correct...\n");
++        	}
++        else
++        	{
++        		printf("wrong sw version, update rejected!\n");
++        		return 0;
++        	}	
++#endif				
++				curParSize = sizeof(image_header_t) + 8;
++				continue;
++			case IH_TYPE_FILESYSTEM:
++				sprintf(name, "rootfs");
++				dir = 0;
++				break;
++			case IH_TYPE_KERNEL:
++				sprintf(name, "kernel");
++				dir = 1;
++				break;
++			case IH_TYPE_FIRMWARE:
++				sprintf(name, "firmware");
++				dir = 0;
++				break;
++			case IH_TYPE_UBOOT:
++				sprintf(name, "uboot");
++				dir = 0;
++				break;	
++			default:
++				printf("Unknown image type!!\n");
++				continue;
++		}
++
++		if(upgrade_img(srcHeader, curParSize, name, dir, 0)) {
++			printf("Can not upgrade the image %s\n", name);
++		} else {
++			sprintf(strimg_crc, "f_%s_crc", name);
++			sprintf(buf, "%lX", ntohl(pimg_header->ih_dcrc));
++			setenv(strimg_crc, buf);
++			saveenv();
++#ifdef UBOOT_ENV_COPY
++			saveenv_copy();
++#endif
++		}
++		curParSize = curParSize + pad;
++	} while(srcLen > (srcHeader - srcAddr) + curParSize);
++
++	return 0;
++}
++
++
++int http_upgrade(ulong srcAddr, int srcLen) {
++	ulong srcHeader=0;
++	int curParSize=0, dir, pad;
++	image_header_t *pimg_header = NULL;
++	char name[16], strimg_crc[32], buf[32];;
++	
++	printf("srcAddr=%08x\n",srcAddr);
++	printf("srcLen=%d\n",srcLen);
++	do {
++		srcHeader = (!srcHeader ? srcAddr : srcHeader + curParSize);
++		printf("srcHeader=0x%08x\n",srcHeader);
++		pimg_header = (image_header_t *)srcHeader;		
++		curParSize = sizeof(image_header_t) + pimg_header->ih_size;
++		printf("curParSize=0x%x\n",curParSize);
++		
++		pad = (16 - (curParSize % 16)) % 16;
++        printf("pad=0x%x\n",pad);
++		switch(pimg_header->ih_type) {
++			case IH_TYPE_MULTI:
++				curParSize = sizeof(image_header_t) + 8;
++				continue;
++			case IH_TYPE_FILESYSTEM:
++				sprintf(name, "rootfs");
++				dir = 0;
++				break;
++			case IH_TYPE_KERNEL:
++				sprintf(name, "kernel");
++				dir = 1;
++				break;
++			case IH_TYPE_FIRMWARE:
++				sprintf(name, "firmware");
++				dir = 0;
++				break;
++			default:
++				printf("Unknown image type!!\n");
++				continue;
++		}
++        printf("upgrade now!\n");
++		if(upgrade_img(srcHeader, curParSize, name, dir, 0)) {
++			printf("Can not upgrade the image %s\n", name);
++		} else {
++			sprintf(strimg_crc, "f_%s_crc", name);
++			sprintf(buf, "%lX", ntohl(pimg_header->ih_dcrc));
++			setenv(strimg_crc, buf);
++			saveenv();
++		}
++		printf("upgrade_img done!!\n");
++		curParSize = curParSize + pad;
++	} while(srcLen > (srcHeader - srcAddr) + curParSize);
++	printf("http_upgrade done!\n");
++	return 0;
++}
++
++
++#else
++
++#ifdef CONFIG_FEATURE_LQ_NEW_UPGRADE
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <sys/mman.h>
++#endif
++
++int do_upgrade( int file_fd , int srcLen) {
++	ulong srcHeader=0;
++	uint32_t curParSize=0, dir, pad;
++	char name[16], strimg_crc[32], buf[32];;
++	image_header_t xImgHeader;
++	char *xHeader = NULL;
++	uint32_t iFileReadSize =0, iTotalFileReadSize = 0;
++	int iRet = 0;
++
++#ifdef CONFIG_FEATURE_LQ_NEW_UPGRADE
++	char *p;
++	p = mmap(0, srcLen, PROT_READ, MAP_SHARED, file_fd, 0);
++	if (p == MAP_FAILED) {
++		fprintf(stderr, "mmap failed\n");
++	}
++	xHeader = p;
++#endif
++	do {
++
++#ifndef CONFIG_FEATURE_LQ_NEW_UPGRADE
++		//first read only the header to figure our the image total size
++		iRet = read(file_fd, (void *)&xImgHeader , (size_t)sizeof(image_header_t)); 
++		if(iRet < sizeof(image_header_t)){
++			printf("Failure : could read %d out of %d bytes from image\n", iRet, sizeof(image_header_t));
++			return 1; //failure
++		}
++#else
++		xImgHeader = *((image_header_t *)xHeader);
++#endif
++
++		printf("\nImage Header --> Data Size = %d\n Image Name = %s\n",xImgHeader.ih_size , xImgHeader.ih_name);
++
++                if(xImgHeader.ih_type == IH_TYPE_MULTI){
++                        curParSize = sizeof(image_header_t) + 8;
++                        iTotalFileReadSize += curParSize;
++#ifndef CONFIG_FEATURE_LQ_NEW_UPGRADE
++                        if( lseek(file_fd, iTotalFileReadSize, SEEK_SET) == -1){
++                                printf("Can not move the offset for image to upgrade\n");
++                                return 1;  //failure
++                        }
++#else
++			xHeader = p + iTotalFileReadSize;
++#endif
++                        continue;
++                }
++
++
++		curParSize = sizeof(image_header_t) + xImgHeader.ih_size;
++		pad = (16 - (curParSize % 16)) % 16;
++
++#ifndef CONFIG_FEATURE_LQ_NEW_UPGRADE
++		// reposition the file read offset to the start of image
++		if( lseek(file_fd, iTotalFileReadSize, SEEK_SET) == -1){
++			printf("Can not move the offset for image to upgrade\n");
++		        return 1;  //failure	
++		}
++#else
++		xHeader = p + iTotalFileReadSize;
++
++#endif
++
++		// then read the total size into a buffer to be passed to upgrade_img
++		iFileReadSize = curParSize + pad;
++#ifndef CONFIG_FEATURE_LQ_NEW_UPGRADE
++	        xHeader = (char *)malloc(iFileReadSize);			
++
++		iRet = read(file_fd, xHeader , (size_t)iFileReadSize);
++       		if(iRet < iFileReadSize){
++			printf("Failure : could read %d out of %d bytes from image\n", iRet, iFileReadSize);
++			return 1; //failure
++		}
++#endif        
++
++		switch(xImgHeader.ih_type) {
++			case IH_TYPE_MULTI:
++				curParSize = sizeof(image_header_t) + 8;
++				continue;
++			case IH_TYPE_FILESYSTEM:
++				sprintf(name, "rootfs");
++				dir = 0;
++				break;
++			case IH_TYPE_KERNEL:
++				sprintf(name, "kernel");
++				dir = 1;
++				break;
++			case IH_TYPE_FIRMWARE:
++				sprintf(name, "firmware");
++				dir = 0;
++				break;
++			default:
++				printf("Unknown image type!!\n");
++				continue;
++		}
++
++		if(upgrade_img(xHeader, curParSize, name, dir, 0)) {
++			printf("Can not upgrade the image %s\n", name);
++		} else {
++			sprintf(strimg_crc, "f_%s_crc", name);
++			sprintf(buf, "%lX", ntohl(xImgHeader.ih_dcrc));
++			setenv(strimg_crc, buf);
++			saveenv();
++#ifdef UBOOT_ENV_COPY
++			saveenv_copy();
++#endif
++		}
++		iTotalFileReadSize += iFileReadSize;
++
++#ifndef CONFIG_FEATURE_LQ_NEW_UPGRADE
++		if(xHeader != NULL){
++			free(xHeader);
++			xHeader = NULL;
++		}
++#else
++		xHeader += iFileReadSize; 
++#endif
++
++	} while(srcLen > iTotalFileReadSize );
++
++#ifdef CONFIG_FEATURE_LQ_NEW_UPGRADE
++	munmap(p, srcLen);
++#endif
++
++	return 0;
++}
++#endif
++
++
++#if !defined(BUILD_FROM_IFX_UTILITIES)
++U_BOOT_CMD(                                       
++	upgrade,	3,	1,	do_upgrade,
++	"upgrade - forward/backward copy memory to pre-defined flash location\n",
++	"upgrade <source addr> <size> \n	- upgrade image to pre-define partition.\n"
++);
++#endif
++
++
++
++
+--- /dev/null
++++ b/common/upgrade.c
+@@ -0,0 +1,375 @@
++#include "common.h"
++#include "command.h"
++#include "cmd_upgrade.h"
++#include "flash.h"
++
++#ifdef CONFIG_BOOT_FROM_SPI
++#if defined(BUILD_FROM_IFX_UTILITIES)
++#define u32 unsigned int
++#endif
++
++#include <spi_flash.h>
++static struct spi_flash *flash_spi;
++#ifndef CONFIG_ENV_SPI_BUS
++# define CONFIG_ENV_SPI_BUS	0
++#endif
++#ifndef CONFIG_ENV_SPI_CS
++# define CONFIG_ENV_SPI_CS		0
++#endif
++#ifndef CONFIG_ENV_SPI_MAX_HZ
++# define CONFIG_ENV_SPI_MAX_HZ	1000000
++#endif
++#ifndef CONFIG_ENV_SPI_MODE
++# define CONFIG_ENV_SPI_MODE	SPI_MODE_3
++#endif
++
++DECLARE_GLOBAL_DATA_PTR;
++#endif
++
++#ifdef CONFIG_BOOT_FROM_NAND
++#if defined(BUILD_FROM_IFX_UTILITIES)
++#define u16 unsigned short
++#define u32 unsigned int
++#define phys_addr_t unsigned long
++#include <stdint.h>
++#endif
++#include <nand.h>
++extern nand_info_t nand_info[];
++#endif
++
++#if defined(BUILD_FROM_IFX_UTILITIES)
++#include "crc32.h"
++#define getenv(x)					get_env(x)
++#define simple_strtoul(a,b,c)				strtoul(a,b,c)
++#define setenv(x,y)					set_env(x,y)
++#define uchar						unsigned char
++#define ulong						unsigned long
++#define uint32_t					unsigned int					
++#define uint8_t						unsigned char					
++#endif
++
++
++
++
++
++
++#include "image.h"
++
++#ifdef DEBUG_UPGRADE_MECHANISM
++#	ifdef BUILD_FROM_IFX_UTILITIES
++#		define upgrade_debug_printf(...)	printf
++#	else
++#		define upgrade_debug_printf		debug
++#	endif
++#else
++#	ifdef BUILD_FROM_IFX_UTILITIES
++#		define upgrade_debug_printf(...)
++#	else
++#		define upgrade_debug_printf(...)
++#	endif
++#endif
++#define  upgrade_debug_printf(...)    printf
++
++#if !defined(BUILD_FROM_IFX_UTILITIES)
++extern int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
++#endif
++
++static int rootfs_programming=0;
++
++int program_img(ulong srcAddr,int srcLen,ulong destAddr)
++{
++	upgrade_debug_printf("program_img : the srcAddr is 0x%08lx, length is %d while destAddr is 0x%08lx\n",srcAddr,srcLen,destAddr);
++#if (!defined(CONFIG_BOOT_FROM_NAND) && (defined(CONFIG_BOOT_FROM_NOR) || defined(BUILD_FROM_IFX_UTILITIES))) 
++	flash_sect_protect(0,destAddr,destAddr + srcLen-1);
++	upgrade_debug_printf("Erase Flash from 0x%08lx to 0x%08lx\n", destAddr, destAddr + srcLen-1);
++	if(flash_sect_erase(destAddr,destAddr + srcLen-1)) {
++		return 1;
++	}
++
++	//puts ("Writing to Flash... ");
++#if !defined(BUILD_FROM_IFX_UTILITIES)
++	if(flash_write((char *)srcAddr,destAddr,srcLen)) {
++#else
++	if(flash_write(srcAddr,destAddr,srcLen)) {
++#endif
++		return 1;
++	}
++	//printf("flash writing finished!\n");
++	upgrade_debug_printf("Image at 0x%08lx with size %d is programmed at 0x%08lx successfully\n",srcAddr,srcLen,destAddr);
++	//printf ("Saving Environment ...\n");
++	flash_sect_protect(1,destAddr,destAddr + srcLen-1);
++#elif defined(CONFIG_BOOT_FROM_SPI)
++	//puts ("Writing to Serial Flash... ");
++	flash_spi = spi_flash_probe(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
++			CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE);
++	if (!flash_spi){
++		  printf("probe fails!\n");
++		  return 1;
++	}		
++	spi_flash_write(flash_spi, destAddr, srcLen, (uchar *)srcAddr);
++	/*
++	if(eeprom_write (NULL, destAddr, (uchar *)srcAddr, srcLen)) {
++		puts ("Serial flash write failed !!");
++		return (1);
++	}
++	*/
++	//puts ("done\n");
++#elif defined(CONFIG_BOOT_FROM_NAND)
++ #if !defined(BUILD_FROM_IFX_UTILITIES)
++  if(rootfs_programming)
++  {
++      int ret;
++      ulong rootfs_size; 
++	  u64 srcLen64=(u64)srcLen;
++	  nand_erase_options_t opts;
++	  rootfs_size = simple_strtoul((char *)getenv("f_rootfs_size"),NULL,16);
++      memset(&opts, 0, sizeof(opts));
++		  opts.offset = destAddr;
++		  opts.length = rootfs_size;
++		  opts.jffs2  = 1;
++		  opts.quiet  = 0;
++		  printf("erasing 0x%08x size 0x%08x\n",destAddr,srcLen);
++		  ret = nand_erase_opts(&nand_info[0], &opts);
++		  printf("erase %s\n", ret ? "ERROR" : "OK");
++	
++	    printf("writing to 0x%08x size 0x%08x\n",destAddr,srcLen);
++	    ret = nand_write_skip_bad(&nand_info[0], destAddr, &srcLen64,
++							  (u_char *)srcAddr);
++	    printf(" write 0x%08x bytes: %s\n", srcLen, ret ? "ERROR" : "OK");		
++	  
++	   rootfs_programming = 0;		
++   }else{
++     u64 srcLen64=(u64)srcLen;
++     nand_write_partial(&nand_info[0], destAddr, &srcLen64, (u_char*)srcAddr);
++   }
++ #else
++   nand_flash_write(srcAddr, destAddr, srcLen);       
++   puts ("NAND write done\n");
++ #endif                                                           
++
++#endif
++	return 0;
++}
++
++int FindPartBoundary(ulong img_addr,ulong *curpart_begin,ulong *nextpart_begin)
++{
++	char strPartName[16];
++	ulong part_begin_addr[MAX_PARTITION];
++	int nPartNo,i;
++
++	nPartNo = simple_strtoul((char *)getenv("total_part"),NULL,10);
++	if(nPartNo <= 0 || nPartNo >= MAX_PARTITION){
++		printf("Total no. of current partitions [%d] is out of limit (0,%d)\n",MAX_PARTITION);
++		return 1;
++	}
++
++	for(i = 0; i < nPartNo; i++){
++		memset(strPartName,0x00,sizeof(strPartName));
++		sprintf(strPartName,"part%d_begin",i);
++		part_begin_addr[i] = simple_strtoul((char *)getenv(strPartName),NULL,16);
++	}
++
++	part_begin_addr[i] = simple_strtoul((char *)getenv("flash_end"),NULL,16) + 1;
++
++	for(i = 0; i < nPartNo; i++){
++		if(img_addr >= part_begin_addr[i] && img_addr < part_begin_addr[i+1]){
++			*curpart_begin = part_begin_addr[i];
++			*nextpart_begin = part_begin_addr[i+1];
++			return 0;
++		}
++	}
++
++	printf("The begining of the image to be programmed [0x%08lx] is not within current patition boundary\n",img_addr);
++	return 1;
++}
++
++int FindNPImgLoc(ulong img_addr,ulong *nextStartAddr,ulong *preEndAddr)
++{
++	ulong Img_startAddr[MAX_DATABLOCK];
++	ulong Img_size[MAX_DATABLOCK];
++	ulong nDBNo;
++	char strDBName[MAX_DATABLOCK][32];
++	char strTemp[32];
++	char *strT;
++	ulong curpart_begin,nextpart_begin;
++	int i;
++
++	nDBNo = simple_strtoul((char *)getenv("total_db"),NULL,10);
++	if(nDBNo <= 0 || nDBNo >= MAX_DATABLOCK){
++		printf("Total no. of current data blocks [%d] is out of limit (0,%d)\n",nDBNo,MAX_PARTITION);
++		return 1;
++	}
++	
++	if(FindPartBoundary(img_addr,&curpart_begin,&nextpart_begin))
++		return 1;
++
++	upgrade_debug_printf("For the image address 0x%08lx, partition boundary is found as [0x%08lx,0x%08lx]\n",img_addr,curpart_begin,nextpart_begin);
++	*nextStartAddr = nextpart_begin;
++	*preEndAddr = curpart_begin;
++
++	for(i = 0; i < nDBNo; i++){
++		memset(strDBName[i],0x00,sizeof(strDBName[i]));
++		memset(strTemp,0x00,sizeof(strTemp));
++		sprintf(strTemp,"data_block%d",i);
++		strcpy(strDBName[i],(char *)getenv(strTemp));
++		if(strcmp(strDBName[i],"") == 0){
++			printf("Variable %s is not set\n",strTemp);
++			return 1;
++		}
++	}
++	
++	for(i = 0; i < nDBNo; i++){
++		memset(strTemp,0x00,sizeof(strTemp));
++		strT = NULL;
++		sprintf(strTemp,"f_%s_addr",strDBName[i]);
++		strT = (char *)getenv(strTemp);
++		if(strT == NULL){
++			printf("Variable %s is not set\n",strTemp);
++			return 1;
++		}
++		Img_startAddr[i] = simple_strtoul((char *)strT,NULL,16);
++
++		memset(strTemp,0x00,sizeof(strTemp));
++		strT = NULL;
++		sprintf(strTemp,"f_%s_size",strDBName[i]);
++		strT = (char *)getenv(strTemp);
++		if(strT == NULL){
++			printf("Variable %s is not set\n",strTemp);
++			return 1;
++		}
++		Img_size[i] = simple_strtoul((char *)strT,NULL,16);
++	}
++
++	for(i = 0; i < nDBNo; i++){
++		if(Img_startAddr[i] > img_addr && Img_startAddr[i] < *nextStartAddr)
++			*nextStartAddr = Img_startAddr[i];
++		if(Img_startAddr[i] + Img_size[i] < img_addr && Img_startAddr[i] + Img_size[i] > *preEndAddr)
++			*preEndAddr = Img_startAddr[i] + Img_size[i];
++	}
++	//printf("For img_addr 0x%08lx, nextStartAddr 0x%08lx and preEndAddr 0x%08lx\n",img_addr,*nextStartAddr,*preEndAddr);
++	return 0;
++}
++
++int upgrade_img(ulong srcAddr, ulong srcLen, char *imgName, enum ExpandDir dir, int bSaveEnv)
++{
++	ulong img_addr,img_size,img_endaddr;
++	char newimg_para[32];
++	char strimg_addr[32],strimg_size[32];
++	ulong nextStartAddr,preEndAddr;
++	image_header_t *pimg_header = NULL;
++	char *srcData_Copy=NULL;
++
++	memset(strimg_addr,0x00,sizeof(strimg_addr));
++	sprintf(strimg_addr,"f_%s_addr",imgName);
++	sprintf(strimg_size,"f_%s_size",imgName);
++	img_addr = simple_strtoul((char *)getenv(strimg_addr),NULL,16);
++	if (img_addr == 0) {
++		printf("The environment variable %s not found\n",strimg_addr);
++		return 1;
++	}
++
++	if (FindNPImgLoc(img_addr,&nextStartAddr,&preEndAddr))
++		return 1;
++	pimg_header = (image_header_t *)srcAddr;
++	if (pimg_header->ih_magic == IH_MAGIC) {
++		printf("Image contains header with name [%s]\n",pimg_header->ih_name);
++		if(pimg_header->ih_type != IH_TYPE_KERNEL) {
++			upgrade_debug_printf("This is not kernel image and so removing header\n");
++			srcAddr += sizeof(*pimg_header);
++			srcLen -= sizeof(*pimg_header);
++		}
++		img_size = simple_strtoul((char *)getenv(strimg_size),NULL,16); //509061:tc.chen
++	} else if (!strcmp(imgName,"uboot")) {
++		img_size = simple_strtoul((char *)getenv(strimg_size),NULL,16); //509061:tc.chen
++	}
++	 else {
++		struct conf_header *header;
++#if !defined(BUILD_FROM_IFX_UTILITIES)
++		srcData_Copy = (char *)srcAddr;
++		memmove(srcData_Copy + sizeof(struct conf_header) ,(void *)srcAddr,srcLen);
++#else
++		srcData_Copy = malloc(srcLen + sizeof(struct conf_header));
++		memcpy(srcData_Copy+sizeof(struct conf_header),(char *)srcAddr,srcLen);
++#endif
++		header = (struct conf_header *)srcData_Copy;
++		header->size = srcLen;
++#if defined(BUILD_FROM_IFX_UTILITIES)
++		header->crc = 0 ^ 0xffffffffL;
++#else
++		header->crc = 0;
++#endif
++		header->crc = crc32(header->crc,srcData_Copy+sizeof(struct conf_header),srcLen);
++#if defined(BUILD_FROM_IFX_UTILITIES)
++		header->crc ^= 0xffffffffL;
++#endif
++	}	
++    if (!strcmp(imgName,"rootfs")) rootfs_programming=1;
++	if (dir == FORWARD) {
++		if (img_addr + srcLen > nextStartAddr) {
++			printf("Cannot upgrade image %s.\n Error : From start address 0x%08lx, the new size %d is bigger than begining of next image/end of the partition 0x%08lx\n",strimg_addr,img_addr,srcLen,nextStartAddr);
++			return 1;
++		}
++		upgrade_debug_printf("Programming for FORWARD direction\n");
++	} else if (dir == BACKWARD) {
++		img_endaddr = nextStartAddr - 1;
++		if(img_endaddr - srcLen < preEndAddr) {
++			printf("Cannot upgrade image %s.\n Error : From end address 0x%08lx, the new size %d is bigger than end of previous image/begining of the partition 0x%08lx\n",strimg_addr,img_endaddr,srcLen,preEndAddr);
++			return 1;
++		}
++
++		img_addr = img_endaddr - srcLen + 1;
++		img_addr = (img_addr/16)*16;
++
++		upgrade_debug_printf("Programming for BACKWARD direction\n");
++	} else {
++		printf("The expansion direction [%d] is invalid\n",dir);
++		return 1;
++	}
++	if (srcData_Copy) {
++		if (program_img((ulong)srcData_Copy,srcLen+sizeof(struct conf_header),img_addr)) {
++#if defined(BUILD_FROM_IFX_UTILITIES)
++			free(srcData_Copy);
++#endif
++			return 1;
++		}
++	} else {
++		if (program_img(srcAddr,srcLen,img_addr)) {
++			return 1;
++		}
++	}
++	
++	memset(newimg_para,0x00,sizeof(newimg_para));
++	sprintf(newimg_para,"0x%08lx",srcLen);
++	setenv(strimg_size,newimg_para);
++	upgrade_debug_printf("New variables %s = %s set\n",strimg_size,newimg_para);
++
++	memset(newimg_para,0x00,sizeof(newimg_para));
++	sprintf(newimg_para,"0x%08lx",img_addr);
++	setenv(strimg_addr,newimg_para);
++	upgrade_debug_printf("New variables %s = %s set\n",strimg_addr,newimg_para);
++
++	if (strcmp(strimg_addr,"f_kernel_addr") == 0) {
++		setenv("kernel_addr",newimg_para);
++		upgrade_debug_printf("New variables kernel_addr = %s set\n",newimg_para);
++	}
++
++	if (strcmp(strimg_addr,"f_rootfs_addr") == 0) {
++		memset(newimg_para,0x00,sizeof(newimg_para));
++		sprintf(newimg_para,"0x%08lx",img_addr + srcLen);
++		setenv("f_rootfs_end",newimg_para);
++		upgrade_debug_printf("New variables kernel_addr = %s set\n",newimg_para);
++	}
++
++	if (bSaveEnv) {
++		saveenv();
++#ifdef UBOOT_ENV_COPY
++		saveenv_copy();
++#endif //UBOOT_ENV_COPY
++	}
++#if defined(BUILD_FROM_IFX_UTILITIES)
++	if (srcData_Copy)
++		free(srcData_Copy);
++#endif
++	return 0;
++}
++
+--- /dev/null
++++ b/include/cmd_upgrade.h
+@@ -0,0 +1,47 @@
++/*
++ * (C) Copyright 2000
++ * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++// 509071:tc.che 2005/09/07 Reduced flash writing time.
++
++//509071:tc.chen start
++// the header of configuration data.
++struct conf_header {
++	unsigned long size;
++	unsigned long crc;
++};
++//509061:tc.chen end
++
++enum ExpandDir { FORWARD = 0, BACKWARD = 1 };
++#define MAX_PARTITION	10
++#define MAX_DATABLOCK	16
++
++#define UBOOTCONFIG_COPY_HEADER	"123456789ABCDEF"
++
++#ifndef BUILD_FOR_KERNEL
++
++int do_upgrade(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
++int upgrade_img(ulong srcAddr,ulong srcLen,char *imgName,enum ExpandDir dir,int bSaveEnv);/*000001:Nirav*/
++
++int saveenv_copy();
++
++#endif

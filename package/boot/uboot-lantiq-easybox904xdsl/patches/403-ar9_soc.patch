@@ -1,0 +1,4734 @@
+# HG changeset patch
+# Parent 4436810f2d37f8083c02838a56e79a95567cc626
+add AR9 SoC
+
+--- /dev/null
++++ b/arch/mips/cpu/ar9/Makefile
+@@ -0,0 +1,49 @@
++#
++# (C) Copyright 2003-2006
++# Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++#
++# See file CREDITS for list of people who contributed to this
++# project.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++# MA 02111-1307 USA
++#
++
++include $(TOPDIR)/config.mk
++
++LIB	= $(obj)lib$(CPU).a
++
++START	= start.o
++SOBJS-y	=  
++COBJS-y	= cpu.o clock.o interrupts.o cache.o
++
++
++SRCS	:= $(START:.o=.S) $(SOBJS-y:.o=.S) $(COBJS-y:.o=.c)
++OBJS	:= $(addprefix $(obj),$(SOBJS-y) $(COBJS-y))
++START	:= $(addprefix $(obj),$(START))
++
++all:	$(obj).depend $(START) $(LIB)
++
++$(LIB):	$(OBJS)
++	$(AR) $(ARFLAGS) $@ $(OBJS)
++
++#########################################################################
++
++# defines $(obj).depend target
++include $(SRCTREE)/rules.mk
++
++sinclude $(obj).depend
++
++#########################################################################
+--- /dev/null
++++ b/arch/mips/cpu/ar9/asc.c
+@@ -0,0 +1,308 @@
++/*****************************************************************************
++ * DANUBE BootROM
++ * Copyright (c) 2005, Infineon Technologies AG, All rights reserved
++ * IFAP DC COM SD
++ *****************************************************************************/
++
++#include <config.h>
++//#include <lib.h>
++#include <asm/ar9.h>
++#include <asm/addrspace.h>
++#include <asm/lq_asc.h>
++
++
++#define ASC_FIFO_PRESENT
++#define SET_BIT(reg, mask)                  reg |= (mask)
++#define CLEAR_BIT(reg, mask)                reg &= (~mask)
++#define CLEAR_BITS(reg, mask)               CLEAR_BIT(reg, mask)
++#define SET_BITS(reg, mask)                 SET_BIT(reg, mask)
++#define SET_BITFIELD(reg, mask, off, val)   {reg &= (~mask); reg |= (val << off);}
++
++
++typedef unsigned char u8;
++typedef unsigned short u16;
++typedef unsigned long u32;
++typedef signed   long s32;
++typedef unsigned int uint;
++typedef unsigned long ulong;
++typedef volatile unsigned short vuint;
++
++
++
++void serial_setbrg (void);
++
++/*TODO: undefine this !!!*/
++#undef DEBUG_ASC_RAW
++#ifdef DEBUG_ASC_RAW
++#define DEBUG_ASC_RAW_RX_BUF		0xA0800000
++#define DEBUG_ASC_RAW_TX_BUF		0xA0900000
++#endif
++
++static volatile IFX_Asc_t *pAsc = (IFX_Asc_t *)AMAZON_S_ASC1;
++
++typedef struct{
++  u16 fdv; /* 0~511 fractional divider value*/
++  u16 reload; /* 13 bit reload value*/
++} ifx_asc_baud_reg_t;
++
++#ifdef ON_VENUS
++/*9600 @1.25M rel 00.08*/
++//#define FDV 503
++//#define RELOAD 7
++/*9600 @0.625M rel final00.01 & rtl_freeze*/
++#define FDV 503
++#define RELOAD 3
++/* first index is DDR_SEL, second index is FPI_SEL */
++#endif
++/*
++* 
++* asc_init - initialize a Danube ASC channel
++*
++* This routine initializes the number of data bits, parity
++* and set the selected baud rate. Interrupts are disabled.
++* Set the modem control signals if the option is selected.
++*
++* RETURNS: N/A
++*/
++
++int serial_init (void)
++{
++
++	/* and we have to set CLC register*/
++	CLEAR_BIT(pAsc->asc_clc, ASCCLC_DISS);
++	SET_BITFIELD(pAsc->asc_clc, ASCCLC_RMCMASK, ASCCLC_RMCOFFSET, 0x0001);
++
++
++	/* initialy we are in async mode */
++	pAsc->asc_con = ASCCON_M_8ASYNC;
++
++	/* select input port */
++	pAsc->asc_pisel = (CONSOLE_TTY & 0x1);
++
++	/* TXFIFO's filling level */
++	SET_BITFIELD(pAsc->asc_txfcon, ASCTXFCON_TXFITLMASK,
++			ASCTXFCON_TXFITLOFF, DANUBEASC_TXFIFO_FL);
++	/* enable TXFIFO */
++	SET_BIT(pAsc->asc_txfcon, ASCTXFCON_TXFEN);
++
++	/* RXFIFO's filling level */
++	SET_BITFIELD(pAsc->asc_txfcon, ASCRXFCON_RXFITLMASK,
++			ASCRXFCON_RXFITLOFF, DANUBEASC_RXFIFO_FL);
++	/* enable RXFIFO */
++	SET_BIT(pAsc->asc_rxfcon, ASCRXFCON_RXFEN);
++
++	/* set baud rate */
++	serial_setbrg();
++
++	/* enable error signals &  Receiver enable  */
++	SET_BIT(pAsc->asc_whbstate, ASCWHBSTATE_SETREN|ASCCON_FEN|ASCCON_TOEN|ASCCON_ROEN);
++
++	return 0;
++}
++
++void serial_setbrg (void)
++{
++	u32 uiReloadValue=0;
++        u32 fdv=0;
++	u32 fpiclock;
++
++	//f_ASC = amazon_s_get_fpiclk();
++
++        fpiclock = REG32(0xbf103010);
++        switch(fpiclock & 0x59)
++        {
++	      case 0x80 :
++	      /*115200 @250M*/
++		      fdv=453;
++		      uiReloadValue=119;
++			break;
++            case 0x48 :
++		/*115200 @125M*/
++			fdv=453;
++			uiReloadValue=59;
++			break;
++
++            case 0x41 :
++            /*115200 @55.5M, delta 0.000231*/
++	            fdv=510;
++	            uiReloadValue=29;
++                  break;
++		case 0x49 :
++            case 0x40 :
++		/*115200 @83.33M, delta 0.000231*/
++	            fdv=487;
++	            uiReloadValue=42;
++	            break;
++	     
++            case 0x1 :
++	      /*115200 @111.1M */
++	            fdv=68;
++                  uiReloadValue=7;
++                  break ;
++		case 0x9:
++               case 0x0:
++        	/*115200 @166.67M, delta 0.000231*/
++         	      fdv=436;
++	            uiReloadValue=76;
++	            break;
++		case 0x10: //for PLL1 to set DDR166
++        	/*115200 @166.67M, delta 0.000231*/
++        	if(REG32(0xbf103008)==0x9800f25f)
++        	{
++         	     fdv=436;
++	             uiReloadValue=76;
++                }
++		else if((REG32(0xbf103008) & ~(1<<29))==0x9d26f017) //cpu/ddr=393/196
++
++		{
++                    fdv=504;
++		    uiReloadValue=104;
++		}
++		else //cpu/ddr=442/221
++		{
++                    fdv=448;
++		    uiReloadValue=104;
++
++		}
++	        break;
++		case 0x08://cpu 500M hz,DDR=250Mhz,FPI=250Mhz
++		     fdv=151;
++		     uiReloadValue=39;
++		break;
++                case 0x11://cpu 442M, RAM 147M
++                     fdv=442;
++                     uiReloadValue=68;
++        }
++
++
++	/*use for Venus testing --- to be remove for realchip */
++	#if 0  
++	fdv = 503;
++	uiReloadValue=7;
++	#endif
++
++	/* Disable Baud Rate Generator; BG should only be written when R=0 */
++	CLEAR_BIT(pAsc->asc_con, ASCCON_R);
++
++	/* Enable Fractional Divider */
++	SET_BIT(pAsc->asc_con, ASCCON_FDE); /* FDE = 1 */
++
++	/* Set fractional divider value */
++	pAsc->asc_fdv = fdv & ASCFDV_VALUE_MASK;
++
++	/* Set reload value in BG */
++	pAsc->asc_bg = uiReloadValue;
++
++	/* Enable Baud Rate Generator */
++	SET_BIT(pAsc->asc_con, ASCCON_R);           /* R = 1 */
++}
++
++
++void serial_putc (const char c)
++{
++	u32 txFl = 0;
++#ifdef DEBUG_ASC_RAW
++	static u8 * debug = (u8 *) DEBUG_ASC_RAW_TX_BUF;
++	*debug++=c;
++#endif
++	if (c == '\n')
++		serial_putc ('\r');
++	/* check do we have a free space in the TX FIFO */
++	/* get current filling level */
++	do
++	{
++		txFl = ( pAsc->asc_fstat & ASCFSTAT_TXFFLMASK ) >> ASCFSTAT_TXFFLOFF;
++	}
++	while ( txFl == DANUBEASC_TXFIFO_FULL );
++
++	pAsc->asc_tbuf = c; /* write char to Transmit Buffer Register */
++
++	/* check for errors */
++	if ( pAsc->asc_state & ASCSTATE_TOE )
++	{
++		SET_BIT(pAsc->asc_whbstate, ASCWHBSTATE_CLRTOE);
++		return;
++	}
++}
++
++void serial_puts (const char *s)
++{
++	while (*s)
++	{
++		serial_putc (*s++);
++	}
++}
++
++int asc_inb(int timeout)
++{
++	u32 symbol_mask;
++	char c;
++	while ((pAsc->asc_fstat & ASCFSTAT_RXFFLMASK) == 0 ) {
++	}
++	symbol_mask = ((ASC_OPTIONS & ASCOPT_CSIZE) == ASCOPT_CS7) ? (0x7f) : (0xff);
++	c = (char)(pAsc->asc_rbuf & symbol_mask);
++	return (c);
++}
++
++int serial_getc (void)
++{
++	char c;
++	while ((pAsc->asc_fstat & ASCFSTAT_RXFFLMASK) == 0 );
++	c = (char)(pAsc->asc_rbuf & 0xff);
++
++#ifdef 	DEBUG_ASC_RAW
++	static u8* debug=(u8*)(DEBUG_ASC_RAW_RX_BUF);
++	*debug++=c;
++#endif
++	return c;
++}
++
++
++
++int serial_tstc (void)
++{
++         int res = 1;
++
++#ifdef ASC_FIFO_PRESENT
++    if ( (pAsc->asc_fstat & ASCFSTAT_RXFFLMASK) == 0 )
++    {
++        res = 0;
++    }
++#else
++    if (!(*(volatile unsigned long*)(SFPI_INTCON_BASEADDR + FBS_ISR) &
++			    					FBS_ISR_AR))
++    
++    {
++        res = 0;
++    }
++#endif
++#if 0
++    else if ( pAsc->asc_con & ASCCON_FE )
++    {
++        SET_BIT(pAsc->asc_whbcon, ASCWHBCON_CLRFE);
++        res = 0;
++    }
++    else if ( pAsc->asc_con & ASCCON_PE )
++    {
++        SET_BIT(pAsc->asc_whbcon, ASCWHBCON_CLRPE);
++        res = 0;
++    }
++    else if ( pAsc->asc_con & ASCCON_OE )
++    {
++        SET_BIT(pAsc->asc_whbcon, ASCWHBCON_CLROE);
++        res = 0;
++    }
++#endif
++  return res;
++}
++
++
++int serial_start(void)
++{
++   return 1;
++}
++
++int serial_stop(void)
++{
++   return 1;
++}
+--- /dev/null
++++ b/arch/mips/cpu/ar9/cache.c
+@@ -0,0 +1,211 @@
++/*
++ * (C) Copyright 2003
++ * Wolfgang Denk, DENX Software Engineering, <wd@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++#include <asm/addrspace.h>
++#include <asm/yamon.h>
++#include <asm/types.h>
++#include <asm/mipsregs.h>
++#include <asm/cacheops.h>
++
++typedef unsigned long ulong;
++
++#define cache_op(op,addr)						\
++	__asm__ __volatile__(						\
++	"	.set	push					\n"	\
++	"	.set	noreorder				\n"	\
++	"	.set	mips3\n\t				\n"	\
++	"	cache	%0, %1					\n"	\
++	"	.set	pop					\n"	\
++	:								\
++	: "i" (op), "R" (*(unsigned char *)(addr)))
++
++u32 get_cpu_id()
++{  
++   u32 config = read_c0_prid();
++   return ((config>>8) & 0xff);
++
++}
++
++u32 icache_lines()
++{
++   /* I-cache lines
++    * Calculated as associativity * sets per way
++	*/
++
++   u32 config,associativity,sets;
++   config = read_c0_config1();
++   associativity = 1+ ((config & M_Config1IA) >> S_Config1IA);
++   sets = (1<<((config & M_Config1IS) >> S_Config1IS)) * 64;
++   return (associativity * sets);
++}
++
++u32 icache_line_size()
++{
++    u32 config, line_size;
++    config=read_c0_config1();
++    line_size= 0x02 <<((config & M_Config1IL) >> (S_Config1IL));
++    return line_size;
++}
++									  
++
++u32 dcache_lines()
++{
++   /* I-cache lines
++    * Calculated as associativity * sets per way
++	*/
++
++   u32 config,associativity,sets;
++   config = read_c0_config1();
++   associativity = 1+ ((config & M_Config1DA) >> S_Config1DA);
++   sets = (1<<((config & M_Config1DS) >> S_Config1DS)) * 64;
++   return (associativity * sets);
++}
++
++u32 dcache_line_size()
++{
++    u32 config, line_size;
++    config=read_c0_config1();
++    line_size= 0x02 <<((config & M_Config1DL) >> (S_Config1DL));
++    return line_size;
++}
++										  
++
++void init_icache()
++{
++    u32 lsize = icache_line_size();
++    u32 start_addr  = KSEG0;
++	u32 aend  = KSEG0  + (icache_lines()*lsize);
++	u32 cpu_id = get_cpu_id();    
++    u32 addr;
++ 
++	write_c0_taglo(0); 
++	//write_c0_taghi(0); /*not applicable to 4kec, 24kec and 34kc, will add if it is needed in the future*/
++    for(addr=start_addr;addr<aend; addr+=lsize){
++        cache_op(Index_Store_Tag_I, addr);
++	}
++
++	
++}
++
++
++void lock_icache()
++{
++    u32 lsize = icache_line_size();
++    u32 start_addr  = 0x9fc00000;
++    u32 aend  = 0x9fc00000 + (icache_lines()*lsize);
++    u32 cpu_id = get_cpu_id();
++    u32 addr;
++
++    for(addr=start_addr;addr<=aend; addr+=lsize){
++	       cache_op(ICACHE_ADDR_FETCH_LOCK, addr);
++      }
++
++}
++
++
++void init_dcache()
++{
++     u32 lsize = dcache_line_size();
++	 u32 start_addr  = 0x9fc00000;
++	 u32 aend  = 0x9fc00000 + (dcache_lines()*lsize);
++	 u32 cpu_id = get_cpu_id();
++	 u32 addr;
++
++     write_c0_dtaglo(0);
++    //write_c0_taghi(0); /*not applicable to 4kec, 24kec and 34kc, will add if it is needed in the future*/
++    for(addr=start_addr;addr<aend; addr+=lsize){
++        cache_op(Index_Store_Tag_D, addr);
++     }
++						 
++}
++
++
++void lock_dcache()
++{
++    u32 lsize = dcache_line_size();
++    u32 start_addr  = 0x9fc00000;
++    u32 aend  = 0x9fc00000 + (dcache_lines()*lsize);
++    u32 cpu_id = get_cpu_id();
++    u32 addr;
++
++    for(addr=start_addr;addr<=aend; addr+=lsize){
++           cache_op(DCACHE_ADDR_FETCH_LOCK, addr);
++		   }
++}
++								 
++
++void flush_cache(ulong start_addr, ulong size)
++{
++	unsigned long lsize = dcache_line_size();
++	unsigned long addr = start_addr & ~(lsize - 1);
++	unsigned long aend = (start_addr + size - 1) & ~(lsize - 1);
++
++	while (1) {
++		cache_op(Hit_Writeback_Inv_D, addr);
++		cache_op(Hit_Invalidate_I, addr);
++		if (addr == aend)
++			break;
++		addr += lsize;
++	}
++}
++
++void flush_dcache_range(ulong start_addr, ulong stop)
++{
++	unsigned long lsize = dcache_line_size();
++	unsigned long addr = start_addr & ~(lsize - 1);
++	unsigned long aend = (stop - 1) & ~(lsize - 1);
++
++	while (1) {
++		cache_op(Hit_Writeback_Inv_D, addr);
++		if (addr == aend)
++			break;
++		addr += lsize;
++	}
++}
++
++void invalidate_dcache_range(ulong start_addr, ulong stop)
++{
++	unsigned long lsize = dcache_line_size();
++	unsigned long addr = start_addr & ~(lsize - 1);
++	unsigned long aend = (stop - 1) & ~(lsize - 1);
++
++	while (1) {
++		cache_op(Hit_Invalidate_D, addr);
++		if (addr == aend)
++			break;
++		addr += lsize;
++	}
++}
++
++
++
++
++void write_one_tlb(int index, u32 pagemask, u32 hi, u32 low0, u32 low1)
++{
++	write_c0_entrylo0(low0);
++	write_c0_pagemask(pagemask);
++	write_c0_entrylo1(low1);
++	write_c0_entryhi(hi);
++	write_c0_index(index);
++	tlb_write_indexed();
++}
++
+--- /dev/null
++++ b/arch/mips/cpu/ar9/clock.c
+@@ -0,0 +1,98 @@
++/*
++ * (C) Copyright 2003
++ * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++/*history
++ * Wu Qi Ming Oct 18,2010 initial version
++ *
++ */
++
++
++#include <asm/ar9.h>
++#include <common.h>
++
++
++unsigned int get_sys_clk(void){
++	      unsigned int sys_clock;
++        switch((*AMAZON_S_CGU_SYS >> 3) & 0x3){
++        	    case 0:
++        	    	 sys_clock = 333333333;
++        	    	 break;
++        	    case 1:
++        	    	 sys_clock = 500000000;
++        	    	 break;
++        	    case 2:/*assume that we only have 393/196 or 442/147 combination and cpu clock is always the same as system clock if PLL1 is used*/
++        	    	 if( *AMAZON_S_CGU_SYS & 0x1 ){
++        	    	  sys_clock = 442000000;
++        	    	}else{
++        	    		sys_clock = 393000000;
++        	    	}
++        	    	 break;	 
++        	    default:
++        	    	 sys_clock = 500000000;
++        	    	 break;
++        }
++	    return sys_clock;
++}
++
++
++unsigned int get_ddr_clk(void)
++{
++	      unsigned int ddr_clk;
++        if ((*AMAZON_S_CGU_SYS) & 0x1){
++               ddr_clk = get_sys_clk()/3;
++        }else{
++        	     ddr_clk = get_sys_clk()/2;
++        }
++        return ddr_clk;
++}
++
++
++uint get_cpu_clk(void)
++{
++	      unsigned int cpu_clk;
++        if(*AMAZON_S_CGU_SYS & 0x04 ){
++        	 cpu_clk = get_ddr_clk(); 
++        }else{
++        	 cpu_clk = get_sys_clk();  
++        }
++        	
++        return cpu_clk;
++    
++}
++
++
++uint get_fpi_clk(void)
++{
++        unsigned int fpi_clk;
++        if(*AMAZON_S_CGU_SYS & 0x40 ){
++           fpi_clk = get_ddr_clk()/2;
++        }else{
++        	 fpi_clk = get_ddr_clk();
++        }
++        return fpi_clk;
++}
++
++uint get_ssc_clk(void)
++{
++	  return get_fpi_clk(); /*ssc clock is the same as fpi clock*/
++}
+--- /dev/null
++++ b/arch/mips/cpu/ar9/config.mk
+@@ -0,0 +1,39 @@
++#
++# (C) Copyright 2003
++# Wolfgang Denk, DENX Software Engineering, <wd@denx.de>
++#
++# See file CREDITS for list of people who contributed to this
++# project.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++# MA 02111-1307 USA
++#
++v=$(shell $(AS) --version | grep 'GNU assembler' | egrep -o '2\.[0-9\.]+' | cut -d. -f2)
++MIPSFLAGS:=$(shell \
++if [ "$v" -lt "14" ]; then \
++	echo "-mcpu=4kc"; \
++else \
++	echo "-march=4kc -mtune=4kc"; \
++fi)
++
++ifneq (,$(findstring 4KCle,$(CROSS_COMPILE)))
++ENDIANNESS = -EL
++else
++ENDIANNESS = -EB
++endif
++
++MIPSFLAGS += $(ENDIANNESS)
++
++PLATFORM_CPPFLAGS += $(MIPSFLAGS)
+--- /dev/null
++++ b/arch/mips/cpu/ar9/cpu.c
+@@ -0,0 +1,36 @@
++/*
++ * (C) Copyright 2003
++ * Wolfgang Denk, DENX Software Engineering, <wd@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++#include <command.h>
++#include <asm/mipsregs.h>
++#include <asm/ar9.h>
++int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
++{
++	*AMAZON_S_RCU_RST_REQ |=1<<30;
++	fprintf(stderr, "*** reset failed ***\n");
++	return 0;
++}
++
++
++
+--- /dev/null
++++ b/arch/mips/cpu/ar9/interrupts.c
+@@ -0,0 +1,33 @@
++/*
++ * (C) Copyright 2003
++ * Wolfgang Denk, DENX Software Engineering, <wd@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++
++void enable_interrupts(void)
++{
++}
++
++int disable_interrupts(void)
++{
++	return 0;
++}
+--- /dev/null
++++ b/arch/mips/cpu/ar9/start.S
+@@ -0,0 +1,605 @@
++/*
++ *  Startup Code for MIPS32 CPU-core
++ *
++ *  Copyright (c) 2003	Wolfgang Denk <wd@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++
++#include <config.h>
++#include <version.h>
++#include <asm/regdef.h>
++#include <asm/mipsregs.h>
++#include <asm/cacheops.h>
++#include <asm/addrspace.h>
++#include <asm/yamon.h>
++
++/*****************************************************************************
++ * Local assembler register definitions
++ *****************************************************************************/
++#define C0_EBASe     $15,1
++
++#define S_EBASeExpBase     12       /* Exception Base */
++#define M_EBASeExpBase     (0x3ffff << S_EBASeExpBase)
++#define S_EBASeCPUNum      0        /* CPU Number */
++#define M_EBASeCPUNum      (0x1ff << S_EBASeCPUNum)
++
++/*
++ * Values in the CPU Number field
++ */
++#define K_EBASeCPUNum_Host 0
++#define K_EBASeCPUNum_Voice 1
++
++/* C0_EBASE register encoding */
++#define CO_EBASE_EXPBASE_SHF     S_EBASeExpBase
++#define CO_EBASE_EXPBASE_MSK     M_EBASeExpBase
++
++#define CO_EBASE_CPUNUM_SHF      S_EBASeCPUNum
++#define CO_EBASE_CPUNUM_MSK      M_EBASeCPUNum
++
++#define CO_EBASE_CPU_HOST     K_EBASeCPUNum_Host
++#define CO_EBASE_CPU_VOICE    K_EBASeCPUNum_Voice
++
++#define CFG_EBU_BOOTWORD              0x688c688c
++
++
++/* FixMe: Adresses not defined... */
++#define RST_STAT   0xbf203014
++/* POR,SRST, WDT0, WDT1,HRST*/
++#define HARD_RST 0xE8000001
++    .set noreorder
++/*	  .option pic0*/
++   	.globl _start
++   	.globl __exception_vector_tlb_refill
++   	.globl __exception_vector_xtlb_refill
++   	.globl __exception_vector_general
++   	.globl __exception_vector_int
++   	.text
++_start:
++	/* RESET entry */
++   	b     reset
++   	nop
++   	nop
++   	nop
++   .org 0x10
++   .word CFG_EBU_BOOTWORD     /* EBU init code, fetched during booting */
++   .word 0x00000000           /* phase of the flash                    */
++
++   .org 0x18
++   .string "1.1.0"            /* version 1.1.0                         */
++   .word 0x00000000
++   .align 4
++
++reset:
++    mtc0    zero, CP0_WATCHLO
++	mtc0    zero, CP0_WATCHHI
++    mtc0    zero, CP0_CAUSE
++					
++       /* Determine processor */
++	mfc0    k1, C0_PRId
++	li	t0, M_PRIdImp | M_PRIdCoID
++	and     k1, t0
++
++/* Check if it is a MIPS 34K processor */
++	li	t0, MIPS_34K
++	bne	k1, t0, 2f
++	nop
++
++	/* Setup MIPS34K specifics (implementation dependent fields) */
++	MFC0(   t0, C0_Config )
++	li	t1, CONFIG0_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, CONFIG0_MIPS34K
++	or	t0, t1
++	MTC0(	t0, C0_Config )
++
++	MFC0(   t0, C0_Status )
++	li	t1, STATUS_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, STATUS_MIPS34K
++	or	t0, t1
++	MTC0(	t0, C0_Status )
++
++2:
++	/* Check if it is a MIPS 4K/5K family processor */
++	li	t0, MIPS_4Kc
++	beq	k1, t0, 1f
++	nop
++	li	t0, MIPS_4KEc
++	beq	k1, t0, 1f
++	nop
++
++	b	mips32_64
++	nop
++
++1:
++	/* Setup MIPS 4K/5K specifics (implementation dependent fields) */
++	MFC0(   t0, C0_Config )
++	li	t1, CONFIG0_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, CONFIG0_MIPS4K5K
++	or	t0, t1
++	MTC0(	t0, C0_Config )
++
++	MFC0(   t0, C0_Status )
++	li	t1, STATUS_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, STATUS_MIPS4K5K
++	or	t0, t1
++	MTC0(	t0, C0_Status )
++
++/************************************************************************
++ *  MIPS32/MIPS64 specific cpu initialisation
++ ************************************************************************/
++mips32_64:
++
++	/* Setup generic MIPS32/MIPS64 fields of STATUS register */
++	MFC0(   t0, C0_Status )
++	li	t1, ~STATUS_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, STATUS_MIPS32_64
++	or	t0, t1
++	MTC0(	t0, C0_Status )
++
++	/* Setup generic MIPS32 fields of CONFIG0 register */
++	MFC0(   t0, C0_Config )
++	li	t1, ~CONFIG0_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, CONFIG0_MIPS32_64
++	or	t0, t1
++	MTC0(	t0, C0_Config )
++
++
++	/* Initialize GOT pointer.
++	*/
++	bal     1f
++	nop
++	.word   _GLOBAL_OFFSET_TABLE_
++1:
++	move    gp, ra
++	lw      t1, 0(ra)
++	move	gp, t1
++
++    //la      t9, lowlevel_init
++	//jalr    t9
++	//nop
++lowlevel_init_done:
++
++sys_init_cache:
++
++#define RA                      t4
++#define icache_size             t3
++#define icache_linesize         t2
++#define dcache_size             t1
++#define dcache_linesize         t0
++        move    RA, ra
++        move    a0, k1
++        bal     sys_determine_icache_linesize_flash
++        nop
++    	move    icache_linesize, v0 /*icache_linesize=0x20 for amazon_s*/
++
++        bal     sys_determine_icache_lines_flash /*icache lines=0x400 for amazon_s*/
++        nop
++        multu   icache_linesize, v0
++        mflo    icache_size /*icache_size=0x8000 for amazon_s*/
++
++        bal             sys_determine_dcache_linesize_flash
++        nop
++        move    dcache_linesize, v0 /*dcache_linesize=0x20 for amazon_s*/
++
++        bal         sys_determine_dcache_lines_flash /*dcache lines=0x200 for amazon_s*/
++        nop
++        multu   dcache_linesize, v0
++        mflo    dcache_size  /*dcache_size=0x4000 for amazon_s*/
++
++        /* Initialise instruction cache */
++        move    a0, icache_size
++        move    a1, icache_linesize
++        bal             sys_init_icache
++        move    a2, k1
++		nop
++
++        /* Initialise data cache */
++        move    a0, dcache_size
++        move    a1, dcache_linesize
++        bal         sys_init_dcache
++        move    a2, k1
++
++
++	/* Set up temporary stack.
++	 */
++	li	t0, 0xa0400000
++	
++	la	sp, 0(t0)
++
++	la	t9, board_init_f
++
++	j	t9
++	nop
++        
++
++
++/*
++ * void relocate_code (addr_sp, gd, addr_moni)
++ *
++ * This "function" does not return, instead it continues in RAM
++ * after relocating the monitor code.
++ *
++ * a0 = addr_sp
++ * a1 = gd
++ * a2 = destination address
++ */
++
++	.globl	relocate_code
++	.ent	relocate_code
++relocate_code:
++	move	sp, a0		/* Set new stack pointer		*/
++
++	li	t0, CONFIG_SYS_MONITOR_BASE
++	la	t3, in_ram
++	lw	t2, -12(t3)	/* t2 <-- uboot_end_data	*/
++	move	t1, a2
++
++	/*
++	 * Fix GOT pointer:
++	 *
++	 * New GOT-PTR = (old GOT-PTR - CFG_MONITOR_BASE) + Destination Address
++	 */
++	move	t6, gp
++	sub	gp, CONFIG_SYS_MONITOR_BASE
++	add	gp, a2			/* gp now adjusted		*/
++	sub	t6, gp, t6		/* t6 <-- relocation offset	*/
++
++
++	sub	t4, t2, t0
++	move    t5, t1
++	/*
++	 * t0 = source address
++	 * t1 = target address
++	 * t2 = source end address
++	 * t4 = content length
++	 */
++
++1:
++	lw	t3, 0(t0)
++	sw	t3, 0(t1)
++    addu	t0, 4
++	ble	t0, t2, 1b
++	addu	t1, 4			/* delay slot			*/
++
++
++	/* Jump to where we've relocated ourselves.
++	 */
++	addi	t0, a2, in_ram - _start
++	j	t0
++	nop
++
++	.word	uboot_end_data
++	.word	uboot_end
++	.word	num_got_entries
++
++in_ram:
++	/* Now we want to update GOT.
++	 */
++	lw	t3, -4(t0)	/* t3 <-- num_got_entries	*/
++	addi	t4, gp, 8	/* Skipping first two entries.	*/
++	li	t2, 2
++1:
++	lw	t1, 0(t4)
++	beqz	t1, 2f
++	add	t1, t6
++	sw	t1, 0(t4)
++2:
++	addi	t2, 1
++	blt	t2, t3, 1b
++	addi	t4, 4		/* delay slot			*/
++clear_bss:
++	/* Clear BSS.
++	 */
++	lw	t1, -12(t0)	/* t1 <-- uboot_end_data	*/
++	lw	t2, -8(t0)	/* t2 <-- uboot_end		*/
++	add	t1, t6		/* adjust pointers		*/
++	add	t2, t6
++
++	sub	t1, 4
++1:	addi	t1, 4
++	bltl	t1, t2, 1b
++	sw	zero, 0(t1)	/* delay slot			*/
++
++	move	a0, a1
++	la	t9, board_init_r
++	j	t9
++	move	a1, a2		/* delay slot			*/
++	.end	relocate_code
++
++	/* Exception handlers.
++	 */
++romReserved:
++	b romReserved
++
++romExcHandle:
++	b romExcHandle
++
++
++
++
++/* icache init */
++
++sys_init_icache:
++	li	 a3, MIPS_34K 
++	beq	 a3, a2, 2f
++	nop
++
++1:
++	/* 20Kc/25Kf : Clear ITagLo/ITagHi */
++	/* Note: Use the default case because ITagLo==TagLo and ITagHI=TagHi */
++
++	/* default: Clear TagLo/TagHi */
++	MTC0( zero, C0_TagLo )
++	MTC0( zero, C0_TagHi )
++	b	0f
++	 nop
++
++2:
++	/* 24K/24KE/34K : Clear ITagLo */
++	MTC0_SEL_OPCODE( R_zero, R_C0_ITagLo, R_C0_SelITagLo )
++
++0:
++	/* Calc an address that will correspond to the first cache line */
++	// li	a2, KSEG0BASE
++	li 		a2, 0x9fc00000
++
++	/* Calc an address that will correspond to the last cache line  */
++	addu	a3, a2, a0
++	subu    a3, a1
++
++	/* Loop through all lines, invalidating each of them */
++1:
++	cache	ICACHE_INDEX_STORE_TAG, 0(a2)	/* clear tag */
++	bne	a2, a3, 1b
++	addu	a2, a1
++
++9:
++	jr	ra
++	nop
++
++
++/* dcache init */
++
++sys_init_dcache:
++	li	 a3, MIPS_34K
++	beq	 a3, a2, 2f
++	nop
++
++	/* default: Clear TagLo/TagHi */
++	MTC0( zero, C0_TagLo )
++	MTC0( zero, C0_TagHi )
++	b	0f
++	 nop
++
++1:
++	/* 20Kc/25Kf : Clear DTagLo and DTagHi */
++	MTC0_SEL_OPCODE( R_zero, R_C0_DTagLo, R_C0_SelDTagLo )
++	MTC0_SEL_OPCODE( R_zero, R_C0_DTagHi, R_C0_SelDTagHi )
++	b	0f
++	 nop
++2:
++	/* 24K/24KE/34K : Clear DTagLo */
++	MTC0_SEL_OPCODE( R_zero, R_C0_DTagLo, R_C0_SelDTagLo )
++
++
++/************************************************************************
++ *  invalidating all dcache lines
++ ************************************************************************/
++0:
++	/* Calc an address that will correspond to the first cache line */
++//	li	a2, KSEG0BASE
++	li	a2, 0x9fc00000
++
++	/* Calc an address that will correspond to the last cache line  */
++	addu	a3, a2, a0
++	subu    a3, a1
++
++	/* Loop through all lines, invalidating each of them */
++1:
++	cache	DCACHE_INDEX_STORE_TAG, 0(a2)	/* clear tag */
++	bne		a2, a3, 1b
++	addu	a2, a1
++#if 0
++/************************************************************************
++ *  fetch and lock all dcache lines
++ ************************************************************************/
++	/* Calc an address that will correspond to the first cache line */
++//	li	a2, KSEG0BASE
++	li	a2, 0x9fc00000
++
++	/* Calc an address that will correspond to the last cache line  */
++	addu	a3, a2, a0
++	subu    a3, a1
++
++	/* Loop through all lines, invalidating each of them */
++1:
++	cache	DCACHE_ADDR_FETCH_LOCK, 0(a2)	/* clear tag */
++        //cache   DCACHE_ADDR_HIT_WRITEBACK_INVALIDATE, 0(a2)  /* invalidate */
++	bne		a2, a3, 1b
++	addu	a2, a1
++
++9:
++
++#endif
++	jr	ra
++	 nop
++
++
++
++
++
++/* Subroutine : Determine icache line size */
++
++sys_determine_icache_linesize_flash:
++icache_linesize_mips32:
++
++	/* Read CONFIG1 register, which holds implementation data */
++	MFC0_SEL_OPCODE( R_t9, R_C0_Config1, R_C0_SelConfig1 )
++
++#define config1	t9
++
++	/* I-cache line size */
++	li	t8, M_Config1IL
++	and	t8, config1
++	//beq	t8, zero, icache_linesize_zero
++	li	t7, S_Config1IL
++	srl	t8, t7
++	li	t7, 0x2
++	sll	v0, t7, t8
++
++	jr	ra
++	nop
++
++/* Subroutine : Determine icache line */
++
++sys_determine_icache_lines_flash:
++icache_lines_mips32:
++
++	/* Read CONFIG1 register, which holds implementation data */
++	MFC0_SEL_OPCODE( R_t9, R_C0_Config1, R_C0_SelConfig1 )
++
++#define config1	t9
++
++	/* I-cache lines
++	 * Calculated as associativity * sets per way
++	 */
++	li	t8, M_Config1IA
++	and	t8, config1
++	li	t7, S_Config1IA
++	srl	t8, t7
++	addiu	t8,1				/* t8 = associativity	*/
++
++	li	t7, M_Config1IS
++	and	t7, config1
++	li	t9, S_Config1IS
++	srl	t7, t9
++	li	t9, 0x40
++	sll	t7, t9, t7			/* t7 = sets per way	*/
++
++	multu	t8, t7
++	mflo    v0
++
++	jr	ra
++	nop
++
++
++/* Subroutine : Determine dcache line size */
++
++sys_determine_dcache_linesize_flash:
++dcache_linesize_mips32:
++.globl   dcache_linesize_mips32
++.ent     dcache_linesize_mips32
++	/* Read CONFIG1 register, which holds implementation data */
++	MFC0_SEL_OPCODE( R_t9, R_C0_Config1, R_C0_SelConfig1 )
++
++#define config1	t9
++
++	/* D-cache line size */
++	li	t8, M_Config1DL
++	and	t8, config1
++	//beq	t8, zero, dcache_linesize_zero
++	li	t7, S_Config1DL
++	srl	t8, t7
++	li	t7, 0x2
++	sll	v0, t7, t8
++
++	jr	ra
++	nop
++.end    dcache_linesize_mips32
++/* Subroutine : Determine dcache line */
++
++sys_determine_dcache_lines_flash:
++dcache_lines_mips32:
++
++	/* Read CONFIG1 register, which holds implementation data */
++	MFC0_SEL_OPCODE( R_t9, R_C0_Config1, R_C0_SelConfig1 )
++
++#define config1	t9
++
++	/* D-cache lines
++	 * Calculated as associativity * sets per way
++	 */
++	li	t8, M_Config1DA
++	and	t8, config1
++	li	t7, S_Config1DA
++	srl	t8, t7
++	addiu	t8,1				/* t8 = associativity	*/
++
++	li	t7, M_Config1DS
++	and	t7, config1
++	li	t9, S_Config1DS
++	srl	t7, t9
++	li	t9, 0x40
++	sll	t7, t9, t7			/* t7 = sets per way	*/
++
++	multu	t8, t7
++	mflo    v0
++
++	jr	ra
++	nop
++
++dcache_writeback_invalidate:
++//    a0 : size
++//    a1 : dcache_line_size
++//    a2 : start addr
++.globl   dcache_writeback_invalidate
++.ent     dcache_writeback_invalidate
++
++	addu	t8, a2, a0
++	subu  t8, a1
++	/* Loop through all address */
++1:
++	cache	DCACHE_ADDR_HIT_WRITEBACK_INVALIDATE, 0(a2)	/* clear tag */
++//	bne		a2, t8, 1b
++	sub	t9, a2, t8
++	blez	t9, 1b
++	addu	a2, a1
++
++9:
++	jr	ra
++	nop
++        .end    dcache_writeback_invalidate
++
++dcache_hit_invalidate:
++//    a0 : size
++//    a1 : dcache_line_size
++//    a2 : start addr
++.globl   dcache_hit_invalidate
++.ent     dcache_hit_invalidate
++
++	addu	t8, a2, a0
++	subu  t8, a1
++	/* Loop through all address */
++1:
++	cache	DCACHE_ADDR_HIT_INVALIDATE, 0(a2)	/* clear tag */
++	bne		a2, t8, 1b
++	addu	a2, a1
++
++9:
++	jr	ra
++	nop
++        .end dcache_hit_invalidate
++
+--- /dev/null
++++ b/arch/mips/cpu/ar9/start_bootstrap.S
+@@ -0,0 +1,637 @@
++/*
++ *  Startup Code for MIPS32 CPU-core
++ *
++ *  Copyright (c) 2003	Wolfgang Denk <wd@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++
++#include <config.h>
++#include <version.h>
++#include <asm/regdef.h>
++#include <asm/mipsregs.h>
++#include <asm/cacheops.h>
++#include <asm/addrspace.h>
++#include <asm/yamon.h>
++
++/*****************************************************************************
++ * Local assembler register definitions
++ *****************************************************************************/
++#define C0_EBASe     $15,1
++
++#define S_EBASeExpBase     12       /* Exception Base */
++#define M_EBASeExpBase     (0x3ffff << S_EBASeExpBase)
++#define S_EBASeCPUNum      0        /* CPU Number */
++#define M_EBASeCPUNum      (0x1ff << S_EBASeCPUNum)
++
++/*
++ * Values in the CPU Number field
++ */
++#define K_EBASeCPUNum_Host 0
++#define K_EBASeCPUNum_Voice 1
++
++/* C0_EBASE register encoding */
++#define CO_EBASE_EXPBASE_SHF     S_EBASeExpBase
++#define CO_EBASE_EXPBASE_MSK     M_EBASeExpBase
++
++#define CO_EBASE_CPUNUM_SHF      S_EBASeCPUNum
++#define CO_EBASE_CPUNUM_MSK      M_EBASeCPUNum
++
++#define CO_EBASE_CPU_HOST     K_EBASeCPUNum_Host
++#define CO_EBASE_CPU_VOICE    K_EBASeCPUNum_Voice
++
++#define CFG_EBU_BOOTWORD              0x688c688c
++
++
++/* FixMe: Adresses not defined... */
++#define RST_STAT   0xbf203014
++/* POR,SRST, WDT0, WDT1,HRST*/
++#define HARD_RST 0xE8000001
++     .set noreorder
++/*	  .option pic0*/
++   	.globl _start
++   	.globl __exception_vector_tlb_refill
++   	.globl __exception_vector_xtlb_refill
++   	.globl __exception_vector_general
++   	.globl __exception_vector_int
++   	.text
++_start:
++	/* RESET entry */
++   	b     reset
++   	nop
++   	nop
++   	nop
++   .org 0x10
++   .word CFG_EBU_BOOTWORD     /* EBU init code, fetched during booting */
++   .word 0x00000000           /* phase of the flash                    */
++
++   .org 0x18
++   .string "1.1.0"            /* version 1.1.0                         */
++   .word 0x00000000
++   .align 4
++
++reset:
++  mtc0    zero, CP0_WATCHLO
++	mtc0    zero, CP0_WATCHHI
++  mtc0    zero, CP0_CAUSE
++					
++       /* Determine processor */
++	mfc0    k1, C0_PRId
++	li	t0, M_PRIdImp | M_PRIdCoID
++	and     k1, t0
++
++/* Check if it is a MIPS 34K processor */
++	li	t0, MIPS_34K
++	bne	k1, t0, 2f
++	nop
++
++	/* Setup MIPS34K specifics (implementation dependent fields) */
++	MFC0(   t0, C0_Config )
++	li	t1, CONFIG0_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, CONFIG0_MIPS34K
++	or	t0, t1
++	MTC0(	t0, C0_Config )
++
++	MFC0(   t0, C0_Status )
++	li	t1, STATUS_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, STATUS_MIPS34K
++	or	t0, t1
++	MTC0(	t0, C0_Status )
++
++2:
++	/* Check if it is a MIPS 4K/5K family processor */
++	li	t0, MIPS_4Kc
++	beq	k1, t0, 1f
++	nop
++	li	t0, MIPS_4KEc
++	beq	k1, t0, 1f
++	nop
++
++	b	mips32_64
++	nop
++
++1:
++	/* Setup MIPS 4K/5K specifics (implementation dependent fields) */
++	MFC0(   t0, C0_Config )
++	li	t1, CONFIG0_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, CONFIG0_MIPS4K5K
++	or	t0, t1
++	MTC0(	t0, C0_Config )
++
++	MFC0(   t0, C0_Status )
++	li	t1, STATUS_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, STATUS_MIPS4K5K
++	or	t0, t1
++	MTC0(	t0, C0_Status )
++
++/************************************************************************
++ *  MIPS32/MIPS64 specific cpu initialisation
++ ************************************************************************/
++mips32_64:
++
++	/* Setup generic MIPS32/MIPS64 fields of STATUS register */
++	MFC0(   t0, C0_Status )
++	li	t1, ~STATUS_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, STATUS_MIPS32_64
++	or	t0, t1
++	MTC0(	t0, C0_Status )
++
++	/* Setup generic MIPS32 fields of CONFIG0 register */
++	MFC0(   t0, C0_Config )
++	li	t1, ~CONFIG0_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, CONFIG0_MIPS32_64
++	or	t0, t1
++	MTC0(	t0, C0_Config )
++
++
++	/* Initialize GOT pointer.
++	*/
++	bal     1f
++	nop
++	.word   _GLOBAL_OFFSET_TABLE_
++1:
++	move    gp, ra
++	lw      t1, 0(ra)
++	move	gp, t1
++
++  la      t9, lowlevel_init
++	jalr    t9
++	nop
++lowlevel_init_done:
++
++sys_init_cache:
++
++#define RA                      t4
++#define icache_size             t3
++#define icache_linesize         t2
++#define dcache_size             t1
++#define dcache_linesize         t0
++        move    RA, ra
++        move    a0, k1
++        bal     sys_determine_icache_linesize_flash
++        nop
++    	  move    icache_linesize, v0 
++
++        bal     sys_determine_icache_lines_flash 
++        nop
++        multu   icache_linesize, v0
++        mflo    icache_size 
++
++        bal     sys_determine_dcache_linesize_flash
++        nop
++        move    dcache_linesize, v0 
++
++        bal     sys_determine_dcache_lines_flash 
++        nop
++        multu   dcache_linesize, v0
++        mflo    dcache_size  
++
++        /* Initialise instruction cache */
++        move    a0, icache_size
++        move    a1, icache_linesize
++        bal         sys_init_icache
++        move    a2, k1
++		    nop
++
++        /* Initialise data cache */
++        move    a0, dcache_size
++        move    a1, dcache_linesize
++        bal         sys_init_dcache
++        move    a2, k1
++
++
++	/* Set up temporary stack.
++	 */
++	li	t0, 0x9e1a7f00
++	
++	la	sp, 0(t0)
++
++	la	t9, board_init_f
++
++	j	t9
++	nop
++        
++
++
++/*
++ * void relocate_code (addr_sp, gd, addr_moni)
++ *
++ * This "function" does not return, instead it continues in RAM
++ * after relocating the monitor code.
++ *
++ * a0 = addr_sp
++ * a1 = gd
++ * a2 = destination address
++ */
++
++	.globl	relocate_code
++	.ent	relocate_code
++relocate_code:
++	move	sp, a0		/* Set new stack pointer		*/
++
++	li	t0, CONFIG_BOOTSTRAP_TEXT_BASE
++	la	t3, in_ram
++	lw	t2, -12(t3)	/* t2 <-- uboot_end_data	*/
++	move	t1, a2
++
++	/*
++	 * Fix GOT pointer:
++	 *
++	 * New GOT-PTR = (old GOT-PTR - CFG_MONITOR_BASE) + Destination Address
++	 */
++	move	t6, gp
++	sub	gp, CONFIG_BOOTSTRAP_TEXT_BASE
++	add	gp, a2			/* gp now adjusted		*/
++	sub	t6, gp, t6		/* t6 <-- relocation offset	*/
++
++
++	sub	t4, t2, t0
++	move    t5, t1
++	/*
++	 * t0 = source address
++	 * t1 = target address
++	 * t2 = source end address
++	 * t4 = content length
++	 */
++
++1:
++	lw	t3, 0(t0)
++	sw	t3, 0(t1)
++    addu	t0, 4
++	ble	t0, t2, 1b
++	addu	t1, 4			/* delay slot			*/
++
++
++/* If caches were enabled, we would have to flush them here.
++     */
++	 //    a0 : size
++	 //    a1 : dcache_line_size
++	 //    a2 : start addr
++     move    t1, a2
++     move    a0, t4
++     li      a1, 0x20 /*amazon_s dcache linesize*/
++     move    a2, t5
++     bal dcache_writeback_invalidate
++     nop
++     nop
++     move    a2, t1
++										 
++
++
++	/* Jump to where we've relocated ourselves.
++	 */
++	addi	t0, a2, in_ram - _start
++	j	t0
++	nop
++
++	.word	uboot_end_data
++	.word	uboot_end
++	.word	num_got_entries
++
++in_ram:
++	/* Now we want to update GOT.
++	 */
++	lw	t3, -4(t0)	/* t3 <-- num_got_entries	*/
++	addi	t4, gp, 8	/* Skipping first two entries.	*/
++	li	t2, 2
++1:
++	lw	t1, 0(t4)
++	beqz	t1, 2f
++	add	t1, t6
++	sw	t1, 0(t4)
++2:
++	addi	t2, 1
++	blt	t2, t3, 1b
++	addi	t4, 4		/* delay slot			*/
++clear_bss:
++	/* Clear BSS.
++	 */
++	lw	t1, -12(t0)	/* t1 <-- uboot_end_data	*/
++	lw	t2, -8(t0)	/* t2 <-- uboot_end		*/
++	add	t1, t6		/* adjust pointers		*/
++	add	t2, t6
++
++	sub	t1, 4
++1:	addi	t1, 4
++	bltl	t1, t2, 1b
++	sw	zero, 0(t1)	/* delay slot			*/
++
++	move	a0, a1
++	
++#if CONFIG_TUNE_DDR
++  li      t3, 0xBe1a7f20
++  lw      t3, 0(t3)
++  li      t4, 0x1
++  beq     t3, t4, 1f //ddr already tuned
++  nop
++  li      t4, 0x2
++  beq     t3, t4, 1f //ddr already tuned
++  nop
++  la      t9, tune_ddr
++  b       2f
++  nop
++#endif
++1:
++	la	t9, board_init_r
++2:	
++	j	t9
++	move	a1, a2		/* delay slot			*/
++	.end	relocate_code
++
++	/* Exception handlers.
++	 */
++romReserved:
++	b romReserved
++
++romExcHandle:
++	b romExcHandle
++
++
++
++
++/* icache init */
++
++sys_init_icache:
++	li	 a3, MIPS_34K 
++	beq	 a3, a2, 2f
++	nop
++
++1:
++	/* 20Kc/25Kf : Clear ITagLo/ITagHi */
++	/* Note: Use the default case because ITagLo==TagLo and ITagHI=TagHi */
++
++	/* default: Clear TagLo/TagHi */
++	MTC0( zero, C0_TagLo )
++	MTC0( zero, C0_TagHi )
++	b	0f
++	 nop
++
++2:
++	/* 24K/24KE/34K : Clear ITagLo */
++	MTC0_SEL_OPCODE( R_zero, R_C0_ITagLo, R_C0_SelITagLo )
++
++0:
++	/* Calc an address that will correspond to the first cache line */
++	// li	a2, KSEG0BASE
++	li 		a2, 0x9fc00000
++
++	/* Calc an address that will correspond to the last cache line  */
++	addu	a3, a2, a0
++	subu    a3, a1
++
++	/* Loop through all lines, invalidating each of them */
++1:
++	cache	ICACHE_INDEX_STORE_TAG, 0(a2)	/* clear tag */
++	bne	a2, a3, 1b
++	addu	a2, a1
++
++9:
++	jr	ra
++	nop
++
++
++/* dcache init */
++
++sys_init_dcache:
++	li	 a3, MIPS_34K
++	beq	 a3, a2, 2f
++	nop
++
++	/* default: Clear TagLo/TagHi */
++	MTC0( zero, C0_TagLo )
++	MTC0( zero, C0_TagHi )
++	b	0f
++	 nop
++
++1:
++	/* 20Kc/25Kf : Clear DTagLo and DTagHi */
++	MTC0_SEL_OPCODE( R_zero, R_C0_DTagLo, R_C0_SelDTagLo )
++	MTC0_SEL_OPCODE( R_zero, R_C0_DTagHi, R_C0_SelDTagHi )
++	b	0f
++	 nop
++2:
++	/* 24K/24KE/34K : Clear DTagLo */
++	MTC0_SEL_OPCODE( R_zero, R_C0_DTagLo, R_C0_SelDTagLo )
++
++
++/************************************************************************
++ *  invalidating all dcache lines
++ ************************************************************************/
++0:
++	/* Calc an address that will correspond to the first cache line */
++//	li	a2, KSEG0BASE
++	li	a2, 0x9fc00000
++
++	/* Calc an address that will correspond to the last cache line  */
++	addu	a3, a2, a0
++	subu    a3, a1
++
++	/* Loop through all lines, invalidating each of them */
++1:
++	cache	DCACHE_INDEX_STORE_TAG, 0(a2)	/* clear tag */
++	bne		a2, a3, 1b
++	addu	a2, a1
++#if 0
++/************************************************************************
++ *  fetch and lock all dcache lines
++ ************************************************************************/
++	/* Calc an address that will correspond to the first cache line */
++//	li	a2, KSEG0BASE
++	li	a2, 0x9fc00000
++
++	/* Calc an address that will correspond to the last cache line  */
++	addu	a3, a2, a0
++	subu    a3, a1
++
++	/* Loop through all lines, invalidating each of them */
++1:
++	cache	DCACHE_ADDR_FETCH_LOCK, 0(a2)	/* clear tag */
++        //cache   DCACHE_ADDR_HIT_WRITEBACK_INVALIDATE, 0(a2)  /* invalidate */
++	bne		a2, a3, 1b
++	addu	a2, a1
++
++9:
++
++#endif
++	jr	ra
++	 nop
++
++
++
++
++
++/* Subroutine : Determine icache line size */
++
++sys_determine_icache_linesize_flash:
++icache_linesize_mips32:
++
++	/* Read CONFIG1 register, which holds implementation data */
++	MFC0_SEL_OPCODE( R_t9, R_C0_Config1, R_C0_SelConfig1 )
++
++#define config1	t9
++
++	/* I-cache line size */
++	li	t8, M_Config1IL
++	and	t8, config1
++	//beq	t8, zero, icache_linesize_zero
++	li	t7, S_Config1IL
++	srl	t8, t7
++	li	t7, 0x2
++	sll	v0, t7, t8
++
++	jr	ra
++	nop
++
++/* Subroutine : Determine icache line */
++
++sys_determine_icache_lines_flash:
++icache_lines_mips32:
++
++	/* Read CONFIG1 register, which holds implementation data */
++	MFC0_SEL_OPCODE( R_t9, R_C0_Config1, R_C0_SelConfig1 )
++
++#define config1	t9
++
++	/* I-cache lines
++	 * Calculated as associativity * sets per way
++	 */
++	li	t8, M_Config1IA
++	and	t8, config1
++	li	t7, S_Config1IA
++	srl	t8, t7
++	addiu	t8,1				/* t8 = associativity	*/
++
++	li	t7, M_Config1IS
++	and	t7, config1
++	li	t9, S_Config1IS
++	srl	t7, t9
++	li	t9, 0x40
++	sll	t7, t9, t7			/* t7 = sets per way	*/
++
++	multu	t8, t7
++	mflo    v0
++
++	jr	ra
++	nop
++
++
++/* Subroutine : Determine dcache line size */
++
++sys_determine_dcache_linesize_flash:
++dcache_linesize_mips32:
++.globl   dcache_linesize_mips32
++.ent     dcache_linesize_mips32
++	/* Read CONFIG1 register, which holds implementation data */
++	MFC0_SEL_OPCODE( R_t9, R_C0_Config1, R_C0_SelConfig1 )
++
++#define config1	t9
++
++	/* D-cache line size */
++	li	t8, M_Config1DL
++	and	t8, config1
++	//beq	t8, zero, dcache_linesize_zero
++	li	t7, S_Config1DL
++	srl	t8, t7
++	li	t7, 0x2
++	sll	v0, t7, t8
++
++	jr	ra
++	nop
++.end    dcache_linesize_mips32
++/* Subroutine : Determine dcache line */
++
++sys_determine_dcache_lines_flash:
++dcache_lines_mips32:
++
++	/* Read CONFIG1 register, which holds implementation data */
++	MFC0_SEL_OPCODE( R_t9, R_C0_Config1, R_C0_SelConfig1 )
++
++#define config1	t9
++
++	/* D-cache lines
++	 * Calculated as associativity * sets per way
++	 */
++	li	t8, M_Config1DA
++	and	t8, config1
++	li	t7, S_Config1DA
++	srl	t8, t7
++	addiu	t8,1				/* t8 = associativity	*/
++
++	li	t7, M_Config1DS
++	and	t7, config1
++	li	t9, S_Config1DS
++	srl	t7, t9
++	li	t9, 0x40
++	sll	t7, t9, t7			/* t7 = sets per way	*/
++
++	multu	t8, t7
++	mflo    v0
++
++	jr	ra
++	nop
++
++dcache_writeback_invalidate:
++//    a0 : size
++//    a1 : dcache_line_size
++//    a2 : start addr
++.globl   dcache_writeback_invalidate
++.ent     dcache_writeback_invalidate
++
++	addu	t8, a2, a0
++	subu  t8, a1
++	/* Loop through all address */
++1:
++	cache	DCACHE_ADDR_HIT_WRITEBACK_INVALIDATE, 0(a2)	/* clear tag */
++//	bne		a2, t8, 1b
++	sub	t9, a2, t8
++	blez	t9, 1b
++	addu	a2, a1
++
++9:
++	jr	ra
++	nop
++        .end    dcache_writeback_invalidate
++
++dcache_hit_invalidate:
++//    a0 : size
++//    a1 : dcache_line_size
++//    a2 : start addr
++.globl   dcache_hit_invalidate
++.ent     dcache_hit_invalidate
++
++	addu	t8, a2, a0
++	subu  t8, a1
++	/* Loop through all address */
++1:
++	cache	DCACHE_ADDR_HIT_INVALIDATE, 0(a2)	/* clear tag */
++	bne		a2, t8, 1b
++	addu	a2, a1
++
++9:
++	jr	ra
++	nop
++        .end dcache_hit_invalidate
++
+--- /dev/null
++++ b/arch/mips/cpu/ar9/start_nand_spl.S
+@@ -0,0 +1,531 @@
++/*
++ *  Startup Code for MIPS32 CPU-core
++ *
++ *  Copyright (c) 2003	Wolfgang Denk <wd@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++
++#include <config.h>
++#include <version.h>
++#include <asm/regdef.h>
++#include <asm/mipsregs.h>
++#include <asm/cacheops.h>
++#include <asm/addrspace.h>
++#include <asm/yamon.h>
++
++/*****************************************************************************
++ * Local assembler register definitions
++ *****************************************************************************/
++#define C0_EBASe     $15,1
++
++#define CFG_BOOTSTRAP_CODE
++
++#define S_EBASeExpBase     12       /* Exception Base */
++#define M_EBASeExpBase     (0x3ffff << S_EBASeExpBase)
++#define S_EBASeCPUNum      0        /* CPU Number */
++#define M_EBASeCPUNum      (0x1ff << S_EBASeCPUNum)
++
++/*
++ * Values in the CPU Number field
++ */
++#define K_EBASeCPUNum_Host 0
++#define K_EBASeCPUNum_Voice 1
++
++/* C0_EBASE register encoding */
++#define CO_EBASE_EXPBASE_SHF     S_EBASeExpBase
++#define CO_EBASE_EXPBASE_MSK     M_EBASeExpBase
++
++#define CO_EBASE_CPUNUM_SHF      S_EBASeCPUNum
++#define CO_EBASE_CPUNUM_MSK      M_EBASeCPUNum
++
++#define CO_EBASE_CPU_HOST     K_EBASeCPUNum_Host
++#define CO_EBASE_CPU_VOICE    K_EBASeCPUNum_Voice
++
++#define CFG_EBU_BOOTWORD              0x688c688c
++
++
++/* FixMe: Adresses not defined... */
++#define RST_STAT   0xbf203014
++/* POR,SRST, WDT0, WDT1,HRST*/
++#define HARD_RST 0xE8000001
++    .set noreorder
++	.globl _start
++   	.globl __exception_vector_tlb_refill
++   	.globl __exception_vector_xtlb_refill
++   	.globl __exception_vector_general
++   	.globl __exception_vector_int
++   	.text
++
++_start:
++	/* RESET entry */
++   	b     reset
++   	nop
++   	nop
++   	nop
++   .org 0x10
++   .word CFG_EBU_BOOTWORD     /* EBU init code, fetched during booting */
++   .word 0x00000000           /* phase of the flash                    */
++
++   .org 0x18
++   .string "1.1.0"            /* version 1.1.0                         */
++   .word 0x00000000
++   .align 4
++
++reset:
++  mtc0    zero, CP0_WATCHLO
++	mtc0    zero, CP0_WATCHHI
++	mtc0    zero, CP0_CAUSE
++				
++       /* Determine processor */
++	mfc0    k1, C0_PRId
++	li	t0, M_PRIdImp | M_PRIdCoID
++	and     k1, t0
++
++/* Check if it is a MIPS 34K processor */
++	li	t0, MIPS_34K
++	bne	k1, t0, 2f
++	nop
++
++	/* Setup MIPS34K specifics (implementation dependent fields) */
++	MFC0(   t0, C0_Config )
++	li	t1, CONFIG0_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, CONFIG0_MIPS34K
++	or	t0, t1
++	MTC0(	t0, C0_Config )
++
++	MFC0(   t0, C0_Status )
++	li	t1, STATUS_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, STATUS_MIPS34K
++	or	t0, t1
++	MTC0(	t0, C0_Status )
++
++2:
++	/* Check if it is a MIPS 4K/5K family processor */
++	li	t0, MIPS_4Kc
++	beq	k1, t0, 1f
++	nop
++	li	t0, MIPS_4KEc
++	beq	k1, t0, 1f
++	nop
++
++	b	mips32_64
++	nop
++
++1:
++	/* Setup MIPS 4K/5K specifics (implementation dependent fields) */
++	MFC0(   t0, C0_Config )
++	li	t1, CONFIG0_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, CONFIG0_MIPS4K5K
++	or	t0, t1
++	MTC0(	t0, C0_Config )
++
++	MFC0(   t0, C0_Status )
++	li	t1, STATUS_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, STATUS_MIPS4K5K
++	or	t0, t1
++	MTC0(	t0, C0_Status )
++
++/************************************************************************
++ *  MIPS32/MIPS64 specific cpu initialisation
++ ************************************************************************/
++mips32_64:
++
++	/* Setup generic MIPS32/MIPS64 fields of STATUS register */
++	MFC0(   t0, C0_Status )
++	li	t1, ~STATUS_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, STATUS_MIPS32_64
++	or	t0, t1
++	MTC0(	t0, C0_Status )
++
++	/* Setup generic MIPS32 fields of CONFIG0 register */
++	MFC0(   t0, C0_Config )
++	li	t1, ~CONFIG0_MIPS32_64_MSK
++	and	t0, t1
++	li	t1, CONFIG0_MIPS32_64
++	or	t0, t1
++	MTC0(	t0, C0_Config )
++
++
++	/* Initialize GOT pointer.
++	*/
++	bal     1f
++	nop
++	.word   _GLOBAL_OFFSET_TABLE_
++1:
++	move    gp, ra
++	lw      t1, 0(ra)
++	move	gp, t1
++       
++    
++   	/* Initialize any external memory.
++	 */
++	la      t9, lowlevel_init
++	jalr    t9
++	nop
++lowlevel_init_done:
++
++sys_init_cache:
++
++#define RA                      t4
++#define icache_size             t3
++#define icache_linesize         t2
++#define dcache_size             t1
++#define dcache_linesize         t0
++        move    RA, ra
++        move    a0, k1
++        bal     sys_determine_icache_linesize_flash
++        nop
++	move    icache_linesize, v0 /*icache_linesize=0x20 for amazon_s*/
++
++        bal     sys_determine_icache_lines_flash /*icache lines=0x400 for amazon_s*/
++        nop
++        multu   icache_linesize, v0
++        mflo    icache_size /*icache_size=0x8000 for amazon_s*/
++
++        bal             sys_determine_dcache_linesize_flash
++        nop
++        move    dcache_linesize, v0 /*dcache_linesize=0x20 for amazon_s*/
++
++        bal         sys_determine_dcache_lines_flash /*dcache lines=0x200 for amazon_s*/
++        nop
++        multu   dcache_linesize, v0
++        mflo    dcache_size  /*dcache_size=0x4000 for amazon_s*/
++
++        /* Initialise instruction cache */
++        move    a0, icache_size
++        move    a1, icache_linesize
++        bal             sys_init_icache
++        nop
++
++        /* Initialise data cache */
++        move    a0, dcache_size
++        move    a1, dcache_linesize
++        bal         sys_init_dcache
++        move    a2, k1
++
++#if 1
++change_got_table: 
++        bal     1f
++	      nop
++        .word   got_size
++1:
++        move    t1, ra
++	      lw      t1, 0(t1)
++	      
++        move    t0, gp
++        add     t1, t0, t1
++        addi    t0, 8 /*skip first 2 entries*/
++2:    
++        lw      t2, 0(t0)
++        subu    t2, 0x20000000
++        sw      t2, 0(t0)
++        bne     t0, t1, 2b  
++        addi    t0, t0, 4        
++
++      	subu    gp, 0x20000000
++#endif
++    	li	t0, 0xbe1a7f00 
++	    la	sp, 0(t0)
++	    //la	t9, nand_boot
++	    la  t9, nand_spl_init
++		j	t9
++	    nop
++
++
++	/* Exception handlers.
++	 */
++romReserved:
++	b romReserved
++
++romExcHandle:
++	b romExcHandle
++
++
++
++
++/* icache init */
++
++sys_init_icache:
++	li	 a3, MIPS_34K
++	beq	 a3, a2, 2f
++	nop
++
++1:
++	/* 20Kc/25Kf : Clear ITagLo/ITagHi */
++	/* Note: Use the default case because ITagLo==TagLo and ITagHI=TagHi */
++
++	/* default: Clear TagLo/TagHi */
++	MTC0( zero, C0_TagLo )
++	MTC0( zero, C0_TagHi )
++	b	0f
++	 nop
++
++2:
++	/* 24K/24KE/34K : Clear ITagLo */
++	MTC0_SEL_OPCODE( R_zero, R_C0_ITagLo, R_C0_SelITagLo )
++
++0:
++	/* Calc an address that will correspond to the first cache line */
++	// li	a2, KSEG0BASE
++	li 		a2, 0x9fc00000
++
++	/* Calc an address that will correspond to the last cache line  */
++	addu	a3, a2, a0
++	subu    a3, a1
++
++	/* Loop through all lines, invalidating each of them */
++1:
++	cache	ICACHE_INDEX_STORE_TAG, 0(a2)	/* clear tag */
++	bne	a2, a3, 1b
++	addu	a2, a1
++
++9:
++	jr	ra
++	nop
++
++
++/* dcache init */
++
++sys_init_dcache:
++	li	 a3, MIPS_34K
++	beq	 a3, a2, 2f
++	nop
++
++	/* default: Clear TagLo/TagHi */
++	MTC0( zero, C0_TagLo )
++	MTC0( zero, C0_TagHi )
++	b	0f
++	 nop
++
++1:
++	/* 20Kc/25Kf : Clear DTagLo and DTagHi */
++	MTC0_SEL_OPCODE( R_zero, R_C0_DTagLo, R_C0_SelDTagLo )
++	MTC0_SEL_OPCODE( R_zero, R_C0_DTagHi, R_C0_SelDTagHi )
++	b	0f
++	 nop
++2:
++	/* 24K/24KE/34K : Clear DTagLo */
++	MTC0_SEL_OPCODE( R_zero, R_C0_DTagLo, R_C0_SelDTagLo )
++
++
++/************************************************************************
++ *  invalidating all dcache lines
++ ************************************************************************/
++0:
++	/* Calc an address that will correspond to the first cache line */
++//	li	a2, KSEG0BASE
++	li	a2, 0x9fc00000
++
++	/* Calc an address that will correspond to the last cache line  */
++	addu	a3, a2, a0
++	subu    a3, a1
++
++	/* Loop through all lines, invalidating each of them */
++1:
++	cache	DCACHE_INDEX_STORE_TAG, 0(a2)	/* clear tag */
++	bne		a2, a3, 1b
++	addu	a2, a1
++#if 0
++/************************************************************************
++ *  fetch and lock all dcache lines
++ ************************************************************************/
++	/* Calc an address that will correspond to the first cache line */
++//	li	a2, KSEG0BASE
++	li	a2, 0x9fc00000
++
++	/* Calc an address that will correspond to the last cache line  */
++	addu	a3, a2, a0
++	subu    a3, a1
++
++	/* Loop through all lines, invalidating each of them */
++1:
++	cache	DCACHE_ADDR_FETCH_LOCK, 0(a2)	/* clear tag */
++        //cache   DCACHE_ADDR_HIT_WRITEBACK_INVALIDATE, 0(a2)  /* invalidate */
++	bne		a2, a3, 1b
++	addu	a2, a1
++
++9:
++
++#endif
++	jr	ra
++	 nop
++
++
++
++
++
++/* Subroutine : Determine icache line size */
++
++sys_determine_icache_linesize_flash:
++icache_linesize_mips32:
++
++	/* Read CONFIG1 register, which holds implementation data */
++	MFC0_SEL_OPCODE( R_t9, R_C0_Config1, R_C0_SelConfig1 )
++
++#define config1	t9
++
++	/* I-cache line size */
++	li	t8, M_Config1IL
++	and	t8, config1
++	//beq	t8, zero, icache_linesize_zero
++	li	t7, S_Config1IL
++	srl	t8, t7
++	li	t7, 0x2
++	sll	v0, t7, t8
++
++	jr	ra
++	nop
++
++/* Subroutine : Determine icache line */
++
++sys_determine_icache_lines_flash:
++icache_lines_mips32:
++
++	/* Read CONFIG1 register, which holds implementation data */
++	MFC0_SEL_OPCODE( R_t9, R_C0_Config1, R_C0_SelConfig1 )
++
++#define config1	t9
++
++	/* I-cache lines
++	 * Calculated as associativity * sets per way
++	 */
++	li	t8, M_Config1IA
++	and	t8, config1
++	li	t7, S_Config1IA
++	srl	t8, t7
++	addiu	t8,1				/* t8 = associativity	*/
++
++	li	t7, M_Config1IS
++	and	t7, config1
++	li	t9, S_Config1IS
++	srl	t7, t9
++	li	t9, 0x40
++	sll	t7, t9, t7			/* t7 = sets per way	*/
++
++	multu	t8, t7
++	mflo    v0
++
++	jr	ra
++	nop
++
++
++/* Subroutine : Determine dcache line size */
++
++sys_determine_dcache_linesize_flash:
++dcache_linesize_mips32:
++.globl   dcache_linesize_mips32
++.ent     dcache_linesize_mips32
++	/* Read CONFIG1 register, which holds implementation data */
++	MFC0_SEL_OPCODE( R_t9, R_C0_Config1, R_C0_SelConfig1 )
++
++#define config1	t9
++
++	/* D-cache line size */
++	li	t8, M_Config1DL
++	and	t8, config1
++	//beq	t8, zero, dcache_linesize_zero
++	li	t7, S_Config1DL
++	srl	t8, t7
++	li	t7, 0x2
++	sll	v0, t7, t8
++
++	jr	ra
++	nop
++.end    dcache_linesize_mips32
++/* Subroutine : Determine dcache line */
++
++sys_determine_dcache_lines_flash:
++dcache_lines_mips32:
++
++	/* Read CONFIG1 register, which holds implementation data */
++	MFC0_SEL_OPCODE( R_t9, R_C0_Config1, R_C0_SelConfig1 )
++
++#define config1	t9
++
++	/* D-cache lines
++	 * Calculated as associativity * sets per way
++	 */
++	li	t8, M_Config1DA
++	and	t8, config1
++	li	t7, S_Config1DA
++	srl	t8, t7
++	addiu	t8,1				/* t8 = associativity	*/
++
++	li	t7, M_Config1DS
++	and	t7, config1
++	li	t9, S_Config1DS
++	srl	t7, t9
++	li	t9, 0x40
++	sll	t7, t9, t7			/* t7 = sets per way	*/
++
++	multu	t8, t7
++	mflo    v0
++
++	jr	ra
++	nop
++
++dcache_writeback_invalidate:
++//    a0 : size
++//    a1 : dcache_line_size
++//    a2 : start addr
++.globl   dcache_writeback_invalidate
++.ent     dcache_writeback_invalidate
++
++	addu	t8, a2, a0
++	subu  t8, a1
++	/* Loop through all address */
++1:
++	cache	DCACHE_ADDR_HIT_WRITEBACK_INVALIDATE, 0(a2)	/* clear tag */
++//	bne		a2, t8, 1b
++	sub	t9, a2, t8
++	blez	t9, 1b
++	addu	a2, a1
++
++9:
++	jr	ra
++	nop
++        .end    dcache_writeback_invalidate
++
++dcache_hit_invalidate:
++//    a0 : size
++//    a1 : dcache_line_size
++//    a2 : start addr
++.globl   dcache_hit_invalidate
++.ent     dcache_hit_invalidate
++
++	addu	t8, a2, a0
++	subu  t8, a1
++	/* Loop through all address */
++1:
++	cache	DCACHE_ADDR_HIT_INVALIDATE, 0(a2)	/* clear tag */
++	bne		a2, t8, 1b
++	addu	a2, a1
++
++9:
++	jr	ra
++	nop
++        .end dcache_hit_invalidate
++
+--- /dev/null
++++ b/arch/mips/cpu/ar9/start_uncomp.S
+@@ -0,0 +1,46 @@
++/*
++ *  Startup Code for MIPS32 CPU-core
++ *
++ *  Copyright (c) 2003	Wolfgang Denk <wd@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++
++#include <config.h>
++#include <version.h>
++#include <asm/regdef.h>
++#include <asm/mipsregs.h>
++#include <asm/cacheops.h>
++#include <asm/addrspace.h>
++#include <asm/yamon.h>
++
++    .set noreorder
++	  .option pic0
++
++   	.globl _start
++   	.text
++_start:
++    li   t0, 0xa0600000
++    la      sp, 0(t0)
++    
++    la   t9, uncompress
++    j    t9
++    nop
++    
+--- /dev/null
++++ b/arch/mips/include/asm/ar9.h
+@@ -0,0 +1,2101 @@
++
++/******************************************************************************
++       Copyright (c) 2002, Infineon Technologies.  All rights reserved.
++
++                               No Warranty
++   Because the program is licensed free of charge, there is no warranty for
++   the program, to the extent permitted by applicable law.  Except when
++   otherwise stated in writing the copyright holders and/or other parties
++   provide the program "as is" without warranty of any kind, either
++   expressed or implied, including, but not limited to, the implied
++   warranties of merchantability and fitness for a particular purpose. The
++   entire risk as to the quality and performance of the program is with
++   you.  should the program prove defective, you assume the cost of all
++   necessary servicing, repair or correction.
++
++   In no event unless required by applicable law or agreed to in writing
++   will any copyright holder, or any other party who may modify and/or
++   redistribute the program as permitted above, be liable to you for
++   damages, including any general, special, incidental or consequential
++   damages arising out of the use or inability to use the program
++   (including but not limited to loss of data or data being rendered
++   inaccurate or losses sustained by you or third parties or a failure of
++   the program to operate with any other programs), even if such holder or
++   other party has been advised of the possibility of such damages.
++******************************************************************************/
++
++/***********************************************************************/
++/*  Module      :  WDT register address and bits                       */
++/***********************************************************************/
++
++#define DANUBE_BIU_WDT                           (KSEG1+0x1F880000)
++
++/***Watchdog Timer Control Register ***/
++#define DANUBE_BIU_WDT_CR                   ((volatile u32*)(DANUBE_BIU_WDT + 0x03F0))
++#define DANUBE_BIU_WDT_CR_GEN               (1 << 31)
++#define DANUBE_BIU_WDT_CR_DSEN              (1 << 30)
++#define DANUBE_BIU_WDT_CR_LPEN              (1 << 29)
++#define DANUBE_BIU_WDT_CR_PWL_GET(value)    (((value) >> 26) & ((1 << 2) - 1))
++#define DANUBE_BIU_WDT_CR_PWL_SET(value)    (((( 1 << 2) - 1) & (value)) << 26)
++#define DANUBE_BIU_WDT_CR_CLKDIV_GET(value) (((value) >> 24) & ((1 << 2) - 1))
++#define DANUBE_BIU_WDT_CR_CLKDIV_SET(value) (((( 1 << 2) - 1) & (value)) << 24)
++#define DANUBE_BIU_WDT_CR_PW_GET(value)     (((value) >> 16) & ((1 << 8) - 1))
++#define DANUBE_BIU_WDT_CR_PW_SET(value)     (((( 1 << 8) - 1) & (value)) << 16)
++#define DANUBE_BIU_WDT_CR_RELOAD_GET(value) (((value) >> 0) & ((1 << 16) - 1))
++#define DANUBE_BIU_WDT_CR_RELOAD_SET(value) (((( 1 << 16) - 1) & (value)) << 0)
++
++/***Watchdog Timer Status Register***/
++#define DANUBE_BIU_WDT_SR                   ((volatile u32*)(DANUBE_BIU_WDT + 0x03F8))
++#define DANUBE_BIU_WDT_SR_EN                (1 << 31)
++#define DANUBE_BIU_WDT_SR_AE                (1 << 30)
++#define DANUBE_BIU_WDT_SR_PRW               (1 << 29)
++#define DANUBE_BIU_WDT_SR_EXP               (1 << 28)
++#define DANUBE_BIU_WDT_SR_PWD               (1 << 27)
++#define DANUBE_BIU_WDT_SR_DS                (1 << 26)
++#define DANUBE_BIU_WDT_SR_VALUE_GET(value)  (((value) >> 0) & ((1 << 16) - 1))
++#define DANUBE_BIU_WDT_SR_VALUE_SET(value)  (((( 1 << 16) - 1) & (value)) << 0)
++
++/***********************************************************************/
++/*  Module      :  PMU register address and bits                       */
++/***********************************************************************/
++
++#define AMAZON_S_PMU                        (KSEG1 | 0x1F102000)
++
++/* PMU Power down Control Register */
++#define AMAZON_S_PMU_PWDCR                  ((volatile u32*)(AMAZON_S_PMU + 0x001C))
++
++/* PMU Status Register */
++#define AMAZON_S_PMU_SR                     ((volatile u32*)(AMAZON_S_PMU + 0x0020))
++
++#define AMAZON_S_PMU_DMA_SHIFT              5
++#define AMAZON_S_PMU_PPE_SHIFT              13
++#define AMAZON_S_PMU_SDIO_SHIFT             16
++#define AMAZON_S_PMU_ETOP_SHIFT             22
++#define AMAZON_S_PMU_ENET0_SHIFT            24
++#define AMAZON_S_PMU_ENET1_SHIFT            25
++
++/***********************************************************************/
++/*  Module      :  RCU register address and bits                       */
++/***********************************************************************/
++#define AMAZON_S_RCU_BASE_ADDR        (0xBF203000)
++
++#define AMAZON_S_RCU_REQ          (0x0010 + AMAZON_S_RCU_BASE_ADDR) /* will remove this, pls use AMAZON_S_RCU_RST_REQ */
++
++#define AMAZON_S_RCU_RST_REQ              ((volatile u32*)(AMAZON_S_RCU_BASE_ADDR + 0x0010))
++#define AMAZON_S_RCU_RST_STAT             ((volatile u32*)(AMAZON_S_RCU_BASE_ADDR + 0x0014))
++#define AMAZON_S_USB_CFG                  ((volatile u32*)(AMAZON_S_RCU_BASE_ADDR + 0x0018))
++#define AMAZON_S_RST_ALL                  (0x40000000)
++
++/***Reset Request Register***/
++#define AMAZON_S_RCU_RST_REQ_CPU0                 (1 << 31)
++#define AMAZON_S_RCU_RST_REQ_CPU1                 (1 << 3)
++#define AMAZON_S_RCU_RST_REQ_CPUSUB               (1 << 29)
++#define AMAZON_S_RCU_RST_REQ_HRST                 (1 << 28)
++#define AMAZON_S_RCU_RST_REQ_WDT0                 (1 << 27)
++#define AMAZON_S_RCU_RST_REQ_WDT1                 (1 << 26)
++#define AMAZON_S_RCU_RST_REQ_CFG_GET(value)       (((value) >> 23) & ((1 << 3) - 1))
++#define AMAZON_S_RCU_RST_REQ_CFG_SET(value)       (((( 1 << 3) - 1) & (value)) << 23)
++#define AMAZON_S_RCU_RST_REQ_SWTBOOT              (1 << 22)
++#define AMAZON_S_RCU_RST_REQ_DMA                  (1 << 21)
++#define AMAZON_S_RCU_RST_REQ_ARC_JTAG              (1 << 20)
++#define AMAZON_S_RCU_RST_REQ_ETHPHY0              (1 << 19)
++#define AMAZON_S_RCU_RST_REQ_CPU0_BR              (1 << 18)
++
++#define DANBUE_RCU_RST_REQ_AFE          (1 << 11)
++#define DANBUE_RCU_RST_REQ_DFE          (1 << 7)
++
++/* CPU0, CPU1, CPUSUB, HRST, WDT0, WDT1, DMA, ETHPHY1, ETHPHY0 */
++#define AMAZON_S_RCU_RST_REQ_ALL                  AMAZON_S_RST_ALL
++
++#define AMAZON_S_RCU_STAT             (0x0014 + AMAZON_S_RCU_BASE_ADDR)
++#define AMAZON_S_RCU_RST_SR           ( (volatile u32 *)(AMAZON_S_RCU_STAT))/* will remove this, pls use AMAZON_S_RCU_RST_STAT */
++
++/*#define DANUBE_RCU_MON                  (0x0030 + DANUBE_RCU_BASE_ADDR) */
++
++/***********************************************************************/
++/*  Module      :  BCU  register address and bits                       */
++/***********************************************************************/
++#define DANUBE_BCU_BASE_ADDR                    (KSEG1+0x1E100000)
++#define DANUBE_SLAVE_BCU_BASE_ADDR              (KSEG1+0x1C200400)
++
++/***BCU Control Register (0010H)***/
++#define DANUBE_BCU_CON                          ((volatile u32*)(0x0010 + DANUBE_BCU_BASE_ADDR))
++#define DANUBE_SLAVE_BCU_CON                    ((volatile u32*)(0x0010 + DANUBE_SLAVE_BCU_BASE_ADDR))
++#define DANUBE_BCU_STARVATION_MASK                   (0xFF << 24)
++#define DANUBE_BCU_STARVATION_SHIFT                  24
++#define DANUBE_BCU_TOUT_MASK                         0xFFFF
++#define DANUBE_BCU_BCU_CON_SPC (value)                (((( 1 << 8) - 1) & (value)) << 24)
++#define DANUBE_BCU_BCU_CON_SPE                              (1 << 19)
++#define DANUBE_BCU_BCU_CON_PSE                              (1 << 18)
++#define DANUBE_BCU_BCU_CON_DBG                              (1 << 16)
++#define DANUBE_BCU_BCU_CON_TOUT (value)               (((( 1 << 16) - 1) & (value)) << 0)
++
++/***BCU Error Control Capture Register (0020H)***/
++#define DANUBE_BCU_ECON                         ((volatile u32*)(0x0020 + DANUBE_BCU_BASE_ADDR))
++#define DANUBE_SLAVE_BCU_ECON                   ((volatile u32*)(0x0020 + DANUBE_SLAVE_BCU_BASE_ADDR))
++#define DANUBE_BCU_BCU_ECON_TAG (value)                (((( 1 << 4) - 1) & (value)) << 24)
++#define DANUBE_BCU_BCU_ECON_RDN                              (1 << 23)
++#define DANUBE_BCU_BCU_ECON_WRN                              (1 << 22)
++#define DANUBE_BCU_BCU_ECON_SVM                              (1 << 21)
++#define DANUBE_BCU_BCU_ECON_ACK (value)                (((( 1 << 2) - 1) & (value)) << 19)
++#define DANUBE_BCU_BCU_ECON_ABT                              (1 << 18)
++#define DANUBE_BCU_BCU_ECON_RDY                              (1 << 17)
++#define DANUBE_BCU_BCU_ECON_TOUT                             (1 << 16)
++#define DANUBE_BCU_BCU_ECON_ERRCNT (value)             (((( 1 << 16) - 1) & (value)) << 0)
++#define DANUBE_BCU_BCU_ECON_OPC (value)                (((( 1 << 4) - 1) & (value)) << 28)
++
++/***BCU Error Address Capture Register (0024 H)***/
++#define DANUBE_BCU_EADD                         ((volatile u32*)(0x0024 + DANUBE_BCU_BASE_ADDR))
++#define DANUBE_SLAVE_BCU_EADD                   ((volatile u32*)(0x0024 + DANUBE_SLAVE_BCU_BASE_ADDR))
++
++/***BCU Error Data Capture Register (0028H)***/
++#define DANUBE_BCU_EDAT                         ((volatile u32*)(0x0028 + DANUBE_BCU_BASE_ADDR))
++#define DANUBE_SLAVE_BCU_EDAT                   ((volatile u32*)(0x0028 + DANUBE_SLAVE_BCU_BASE_ADDR))
++#define DANUBE_BCU_IRNEN                        ((volatile u32*)(0x00F4 + DANUBE_BCU_BASE_ADDR))
++#define DANUBE_SLAVE_BCU_IRNEN                  ((volatile u32*)(0x00F4 + DANUBE_SLAVE_BCU_BASE_ADDR))
++#define DANUBE_BCU_IRNICR                       ((volatile u32*)(0x00F8 + DANUBE_BCU_BASE_ADDR))
++#define DANUBE_SLAVE_BCU_IRNICR                 ((volatile u32*)(0x00F8 + DANUBE_SLAVE_BCU_BASE_ADDR))
++#define DANUBE_BCU_IRNCR                        ((volatile u32*)(0x00FC + DANUBE_BCU_BASE_ADDR))
++#define DANUBE_SLAVE_BCU_IRNCR                  ((volatile u32*)(0x00FC + DANUBE_SLAVE_BCU_BASE_ADDR))
++
++/***********************************************************************/
++/*  Module      :  MBC register address and bits                       */
++/***********************************************************************/
++
++#define DANUBE_MBC                          (0xBF103000)
++/***********************************************************************/
++
++
++/***Mailbox CPU Configuration Register***/
++#define DANUBE_MBC_MBC_CFG                      ((volatile u32*)(DANUBE_MBC+ 0x0080))
++#define DANUBE_MBC_MBC_CFG_SWAP (value)               (((( 1 << 2) - 1) & (value)) << 6)
++#define DANUBE_MBC_MBC_CFG_RES                              (1 << 5)
++#define DANUBE_MBC_MBC_CFG_FWID (value)               (((( 1 << 4) - 1) & (value)) << 1)
++#define DANUBE_MBC_MBC_CFG_SIZE                            (1 << 0)
++
++/***Mailbox CPU Interrupt Status Register***/
++#define DANUBE_MBC_MBC_ISR                      ((volatile u32*)(DANUBE_MBC+ 0x0084))
++#define DANUBE_MBC_MBC_ISR_B3DA                            (1 << 31)
++#define DANUBE_MBC_MBC_ISR_B2DA                            (1 << 30)
++#define DANUBE_MBC_MBC_ISR_B1E                              (1 << 29)
++#define DANUBE_MBC_MBC_ISR_B0E                              (1 << 28)
++#define DANUBE_MBC_MBC_ISR_WDT                              (1 << 27)
++#define DANUBE_MBC_MBC_ISR_DS260 (value)             (((( 1 << 27) - 1) & (value)) << 0)
++
++/***Mailbox CPU Mask Register***/
++#define DANUBE_MBC_MBC_MSK                      ((volatile u32*)(DANUBE_MBC+ 0x0088))
++#define DANUBE_MBC_MBC_MSK_B3DA                            (1 << 31)
++#define DANUBE_MBC_MBC_MSK_B2DA                            (1 << 30)
++#define DANUBE_MBC_MBC_MSK_B1E                              (1 << 29)
++#define DANUBE_MBC_MBC_MSK_B0E                              (1 << 28)
++#define DANUBE_MBC_MBC_MSK_WDT                              (1 << 27)
++#define DANUBE_MBC_MBC_MSK_DS260 (value)             (((( 1 << 27) - 1) & (value)) << 0)
++
++/***Mailbox CPU Mask 01 Register***/
++#define DANUBE_MBC_MBC_MSK01                    ((volatile u32*)(DANUBE_MBC+ 0x008C))
++#define DANUBE_MBC_MBC_MSK01_B3DA                            (1 << 31)
++#define DANUBE_MBC_MBC_MSK01_B2DA                            (1 << 30)
++#define DANUBE_MBC_MBC_MSK01_B1E                              (1 << 29)
++#define DANUBE_MBC_MBC_MSK01_B0E                              (1 << 28)
++#define DANUBE_MBC_MBC_MSK01_WDT                              (1 << 27)
++#define DANUBE_MBC_MBC_MSK01_DS260 (value)             (((( 1 << 27) - 1) & (value)) << 0)
++
++/***Mailbox CPU Mask 10 Register***/
++#define DANUBE_MBC_MBC_MSK10                    ((volatile u32*)(DANUBE_MBC+ 0x0090))
++#define DANUBE_MBC_MBC_MSK10_B3DA                            (1 << 31)
++#define DANUBE_MBC_MBC_MSK10_B2DA                            (1 << 30)
++#define DANUBE_MBC_MBC_MSK10_B1E                              (1 << 29)
++#define DANUBE_MBC_MBC_MSK10_B0E                              (1 << 28)
++#define DANUBE_MBC_MBC_MSK10_WDT                              (1 << 27)
++#define DANUBE_MBC_MBC_MSK10_DS260 (value)             (((( 1 << 27) - 1) & (value)) << 0)
++
++/***Mailbox CPU Short Command Register***/
++#define DANUBE_MBC_MBC_CMD                      ((volatile u32*)(DANUBE_MBC+ 0x0094))
++#define DANUBE_MBC_MBC_CMD_CS270 (value)             (((( 1 << 28) - 1) & (value)) << 0)
++
++/***Mailbox CPU Input Data of Buffer 0***/
++#define DANUBE_MBC_MBC_ID0                      ((volatile u32*)(DANUBE_MBC+ 0x0000))
++#define DANUBE_MBC_MBC_ID0_INDATA
++
++/***Mailbox CPU Input Data of Buffer 1***/
++#define DANUBE_MBC_MBC_ID1                      ((volatile u32*)(DANUBE_MBC+ 0x0020))
++#define DANUBE_MBC_MBC_ID1_INDATA
++
++/***Mailbox CPU Output Data of Buffer 2***/
++#define DANUBE_MBC_MBC_OD2                      ((volatile u32*)(DANUBE_MBC+ 0x0040))
++#define DANUBE_MBC_MBC_OD2_OUTDATA
++
++/***Mailbox CPU Output Data of Buffer 3***/
++#define DANUBE_MBC_MBC_OD3                      ((volatile u32*)(DANUBE_MBC+ 0x0060))
++#define DANUBE_MBC_MBC_OD3_OUTDATA
++
++/***Mailbox CPU Control Register of Buffer 0***/
++#define DANUBE_MBC_MBC_CR0                      ((volatile u32*)(DANUBE_MBC+ 0x0004))
++#define DANUBE_MBC_MBC_CR0_RDYABTFLS (value)          (((( 1 << 3) - 1) & (value)) << 0)
++
++/***Mailbox CPU Control Register of Buffer 1***/
++#define DANUBE_MBC_MBC_CR1                      ((volatile u32*)(DANUBE_MBC+ 0x0024))
++#define DANUBE_MBC_MBC_CR1_RDYABTFLS (value)          (((( 1 << 3) - 1) & (value)) << 0)
++
++/***Mailbox CPU Control Register of Buffer 2***/
++#define DANUBE_MBC_MBC_CR2                      ((volatile u32*)(DANUBE_MBC+ 0x0044))
++#define DANUBE_MBC_MBC_CR2_RDYABTFLS (value)          (((( 1 << 3) - 1) & (value)) << 0)
++
++/***Mailbox CPU Control Register of Buffer 3***/
++#define DANUBE_MBC_MBC_CR3                      ((volatile u32*)(DANUBE_MBC+ 0x0064))
++#define DANUBE_MBC_MBC_CR3_RDYABTFLS (value)          (((( 1 << 3) - 1) & (value)) << 0)
++
++/***Mailbox CPU Free Space of Buffer 0***/
++#define DANUBE_MBC_MBC_FS0                      ((volatile u32*)(DANUBE_MBC+ 0x0008))
++#define DANUBE_MBC_MBC_FS0_FS
++
++/***Mailbox CPU Free Space of Buffer 1***/
++#define DANUBE_MBC_MBC_FS1                      ((volatile u32*)(DANUBE_MBC+ 0x0028))
++#define DANUBE_MBC_MBC_FS1_FS
++
++/***Mailbox CPU Free Space of Buffer 2***/
++#define DANUBE_MBC_MBC_FS2                      ((volatile u32*)(DANUBE_MBC+ 0x0048))
++#define DANUBE_MBC_MBC_FS2_FS
++
++/***Mailbox CPU Free Space of Buffer 3***/
++#define DANUBE_MBC_MBC_FS3                      ((volatile u32*)(DANUBE_MBC+ 0x0068))
++#define DANUBE_MBC_MBC_FS3_FS
++
++/***Mailbox CPU Data Available in Buffer 0***/
++#define DANUBE_MBC_MBC_DA0                      ((volatile u32*)(DANUBE_MBC+ 0x000C))
++#define DANUBE_MBC_MBC_DA0_DA
++
++/***Mailbox CPU Data Available in Buffer 1***/
++#define DANUBE_MBC_MBC_DA1                      ((volatile u32*)(DANUBE_MBC+ 0x002C))
++#define DANUBE_MBC_MBC_DA1_DA
++
++/***Mailbox CPU Data Available in Buffer 2***/
++#define DANUBE_MBC_MBC_DA2                      ((volatile u32*)(DANUBE_MBC+ 0x004C))
++#define DANUBE_MBC_MBC_DA2_DA
++
++/***Mailbox CPU Data Available in Buffer 3***/
++#define DANUBE_MBC_MBC_DA3                      ((volatile u32*)(DANUBE_MBC+ 0x006C))
++#define DANUBE_MBC_MBC_DA3_DA
++
++/***Mailbox CPU Input Absolute Pointer of Buffer 0***/
++#define DANUBE_MBC_MBC_IABS0                    ((volatile u32*)(DANUBE_MBC+ 0x0010))
++#define DANUBE_MBC_MBC_IABS0_IABS
++
++/***Mailbox CPU Input Absolute Pointer of Buffer 1***/
++#define DANUBE_MBC_MBC_IABS1                    ((volatile u32*)(DANUBE_MBC+ 0x0030))
++#define DANUBE_MBC_MBC_IABS1_IABS
++
++/***Mailbox CPU Input Absolute Pointer of Buffer 2***/
++#define DANUBE_MBC_MBC_IABS2                    ((volatile u32*)(DANUBE_MBC+ 0x0050))
++#define DANUBE_MBC_MBC_IABS2_IABS
++
++/***Mailbox CPU Input Absolute Pointer of Buffer 3***/
++#define DANUBE_MBC_MBC_IABS3                    ((volatile u32*)(DANUBE_MBC+ 0x0070))
++#define DANUBE_MBC_MBC_IABS3_IABS
++
++/***Mailbox CPU Input Temporary Pointer of Buffer 0***/
++#define DANUBE_MBC_MBC_ITMP0                    ((volatile u32*)(DANUBE_MBC+ 0x0014))
++#define DANUBE_MBC_MBC_ITMP0_ITMP
++
++/***Mailbox CPU Input Temporary Pointer of Buffer 1***/
++#define DANUBE_MBC_MBC_ITMP1                    ((volatile u32*)(DANUBE_MBC+ 0x0034))
++#define DANUBE_MBC_MBC_ITMP1_ITMP
++
++/***Mailbox CPU Input Temporary Pointer of Buffer 2***/
++#define DANUBE_MBC_MBC_ITMP2                    ((volatile u32*)(DANUBE_MBC+ 0x0054))
++#define DANUBE_MBC_MBC_ITMP2_ITMP
++
++/***Mailbox CPU Input Temporary Pointer of Buffer 3***/
++#define DANUBE_MBC_MBC_ITMP3                    ((volatile u32*)(DANUBE_MBC+ 0x0074))
++#define DANUBE_MBC_MBC_ITMP3_ITMP
++
++/***Mailbox CPU Output Absolute Pointer of Buffer 0***/
++#define DANUBE_MBC_MBC_OABS0                    ((volatile u32*)(DANUBE_MBC+ 0x0018))
++#define DANUBE_MBC_MBC_OABS0_OABS
++
++/***Mailbox CPU Output Absolute Pointer of Buffer 1***/
++#define DANUBE_MBC_MBC_OABS1                    ((volatile u32*)(DANUBE_MBC+ 0x0038))
++#define DANUBE_MBC_MBC_OABS1_OABS
++
++/***Mailbox CPU Output Absolute Pointer of Buffer 2***/
++#define DANUBE_MBC_MBC_OABS2                    ((volatile u32*)(DANUBE_MBC+ 0x0058))
++#define DANUBE_MBC_MBC_OABS2_OABS
++
++/***Mailbox CPU Output Absolute Pointer of Buffer 3***/
++#define DANUBE_MBC_MBC_OABS3                    ((volatile u32*)(DANUBE_MBC+ 0x0078))
++#define DANUBE_MBC_MBC_OABS3_OABS
++
++/***Mailbox CPU Output Temporary Pointer of Buffer 0***/
++#define DANUBE_MBC_MBC_OTMP0                    ((volatile u32*)(DANUBE_MBC+ 0x001C))
++#define DANUBE_MBC_MBC_OTMP0_OTMP
++
++/***Mailbox CPU Output Temporary Pointer of Buffer 1***/
++#define DANUBE_MBC_MBC_OTMP1                    ((volatile u32*)(DANUBE_MBC+ 0x003C))
++#define DANUBE_MBC_MBC_OTMP1_OTMP
++
++/***Mailbox CPU Output Temporary Pointer of Buffer 2***/
++#define DANUBE_MBC_MBC_OTMP2                    ((volatile u32*)(DANUBE_MBC+ 0x005C))
++#define DANUBE_MBC_MBC_OTMP2_OTMP
++
++/***Mailbox CPU Output Temporary Pointer of Buffer 3***/
++#define DANUBE_MBC_MBC_OTMP3                    ((volatile u32*)(DANUBE_MBC+ 0x007C))
++#define DANUBE_MBC_MBC_OTMP3_OTMP
++
++/***DSP Control Register***/
++#define DANUBE_MBC_DCTRL                        ((volatile u32*)(DANUBE_MBC+ 0x00A0))
++#define DANUBE_MBC_DCTRL_BA                              (1 << 0)
++#define DANUBE_MBC_DCTRL_BMOD (value)               (((( 1 << 3) - 1) & (value)) << 1)
++#define DANUBE_MBC_DCTRL_IDL                              (1 << 4)
++#define DANUBE_MBC_DCTRL_RES                              (1 << 15)
++
++/***DSP Status Register***/
++#define DANUBE_MBC_DSTA                         ((volatile u32*)(DANUBE_MBC+ 0x00A4))
++#define DANUBE_MBC_DSTA_IDLE                            (1 << 0)
++#define DANUBE_MBC_DSTA_PD                              (1 << 1)
++
++/***DSP Test 1 Register***/
++#define DANUBE_MBC_DTST1                        ((volatile u32*)(DANUBE_MBC+ 0x00A8))
++#define DANUBE_MBC_DTST1_ABORT                          (1 << 0)
++#define DANUBE_MBC_DTST1_HWF32                          (1 << 1)
++#define DANUBE_MBC_DTST1_HWF4M                          (1 << 2)
++#define DANUBE_MBC_DTST1_HWFOP                          (1 << 3)
++
++
++/***********************************************************************/
++/*  Module      :  MEI register address and bits                       */
++/***********************************************************************/
++#define MEI_SPACE_ACCESS    0xBE116000
++
++/***    Register address offsets, relative to MEI_SPACE_ADDRESS ***/
++#define MEI_DATA_XFR                ((volatile u32*)(0x0000 + MEI_SPACE_ACCESS))
++#define MEI_VERSION             ((volatile u32*)(0x0004 + MEI_SPACE_ACCESS))
++#define MEI_ARC_GP_STAT             ((volatile u32*)(0x0008 + MEI_SPACE_ACCESS))
++#define MEI_DATA_XFR_STAT           ((volatile u32*)(0x000C + MEI_SPACE_ACCESS))
++#define MEI_XFR_ADDR                ((volatile u32*)(0x0010 + MEI_SPACE_ACCESS))
++#define MEI_MAX_WAIT                ((volatile u32*)(0x0014 + MEI_SPACE_ACCESS))
++#define MEI_TO_ARC_INT              ((volatile u32*)(0x0018 + MEI_SPACE_ACCESS))
++#define ARC_TO_MEI_INT              ((volatile u32*)(0x001C + MEI_SPACE_ACCESS))
++#define ARC_TO_MEI_INT_MASK         ((volatile u32*)(0x0020 + MEI_SPACE_ACCESS))
++#define MEI_DEBUG_WAD               ((volatile u32*)(0x0024 + MEI_SPACE_ACCESS))
++#define MEI_DEBUG_RAD               ((volatile u32*)(0x0028 + MEI_SPACE_ACCESS))
++#define MEI_DEBUG_DATA              ((volatile u32*)(0x002C + MEI_SPACE_ACCESS))
++#define MEI_DEBUG_DEC               ((volatile u32*)(0x0030 + MEI_SPACE_ACCESS))
++#define MEI_CONFIG              ((volatile u32*)(0x0034 + MEI_SPACE_ACCESS))
++#define MEI_RST_CONTROL             ((volatile u32*)(0x0038 + MEI_SPACE_ACCESS))
++#define MEI_DBG_MASTER              ((volatile u32*)(0x003C + MEI_SPACE_ACCESS))
++#define MEI_CLK_CONTROL             ((volatile u32*)(0x0040 + MEI_SPACE_ACCESS))
++#define MEI_BIST_CONTROL            ((volatile u32*)(0x0044 + MEI_SPACE_ACCESS))
++#define MEI_BIST_STAT               ((volatile u32*)(0x0048 + MEI_SPACE_ACCESS))
++#define MEI_XDATA_BASE_SH           ((volatile u32*)(0x004c + MEI_SPACE_ACCESS))
++#define MEI_XDATA_BASE              ((volatile u32*)(0x0050 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR_BASE           ((volatile u32*)(0x0054 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR0               ((volatile u32*)(0x0054 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR1               ((volatile u32*)(0x0058 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR2               ((volatile u32*)(0x005C + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR3               ((volatile u32*)(0x0060 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR4               ((volatile u32*)(0x0064 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR5               ((volatile u32*)(0x0068 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR6               ((volatile u32*)(0x006C + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR7               ((volatile u32*)(0x0070 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR8               ((volatile u32*)(0x0074 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR9               ((volatile u32*)(0x0078 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR10              ((volatile u32*)(0x007C + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR11              ((volatile u32*)(0x0080 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR12              ((volatile u32*)(0x0084 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR13              ((volatile u32*)(0x0088 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR14              ((volatile u32*)(0x008C + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR15              ((volatile u32*)(0x0090 + MEI_SPACE_ACCESS))
++#define MEI_XMEM_BAR16              ((volatile u32*)(0x0094 + MEI_SPACE_ACCESS))
++
++
++/***********************************************************************/
++/*  Module      :  SSC1 register address and bits                      */
++/***********************************************************************/
++
++#define AMAZON_S_SSC1                         (KSEG1+0x1e100800)
++/***********************************************************************/
++/***SSC Clock Control Register***/
++#define AMAZON_S_SSC_CLC                          (0x0000)
++#define AMAZON_S_SSC_CLC_RMC(value)               (((( 1 << 8) - 1) & (value)) << 8)
++#define AMAZON_S_SSC_CLC_DISS                     (1 << 1)
++#define AMAZON_S_SSC_CLC_DISR                     (1 << 0)
++/***SSC Port Input Selection Register***/
++#define AMAZON_S_SSC_PISEL                        (0x0004)
++/***SSC Identification Register***/
++#define AMAZON_S_SSC_ID                           (0x0008)
++/***Control Register (Programming Mode)***/
++#define AMAZON_S_SSC_CON          (0x0010)
++#define AMAZON_S_SSC_CON_RUEN     (1 << 12)
++#define AMAZON_S_SSC_CON_TUEN     (1 << 11)
++#define AMAZON_S_SSC_CON_AEN      (1 << 10)
++#define AMAZON_S_SSC_CON_REN      (1 << 9)
++#define AMAZON_S_SSC_CON_TEN      (1 << 8)
++#define AMAZON_S_SSC_CON_LB       (1 << 7)
++#define AMAZON_S_SSC_CON_PO       (1 << 6)
++#define AMAZON_S_SSC_CON_PH       (1 << 5)
++#define AMAZON_S_SSC_CON_HB       (1 << 4)
++#define AMAZON_S_SSC_CON_BM(value)    (((( 1 << 5) - 1) & (value)) << 16)
++#define AMAZON_S_SSC_CON_RX_OFF       (1 << 1)
++#define AMAZON_S_SSC_CON_TX_OFF       (1 << 0)
++/***SCC Status Register***/
++#define AMAZON_S_SSC_STATE        (0x0014)
++#define AMAZON_S_SSC_STATE_EN     (1 << 0)
++#define AMAZON_S_SSC_STATE_MS     (1 << 1)
++#define AMAZON_S_SSC_STATE_BSY        (1 << 13)
++#define AMAZON_S_SSC_STATE_RUE        (1 << 12)
++#define AMAZON_S_SSC_STATE_TUE        (1 << 11)
++#define AMAZON_S_SSC_STATE_AE     (1 << 10)
++#define AMAZON_S_SSC_STATE_RE     (1 << 9)
++#define AMAZON_S_SSC_STATE_TE     (1 << 8)
++#define AMAZON_S_SSC_STATE_BC(value)  (((( 1 << 5) - 1) & (value)) << 16)
++/***SSC Write Hardware Modified Control Register***/
++#define AMAZON_S_SSC_WHBSTATE     ( 0x0018)
++#define AMAZON_S_SSC_WHBSTATE_SETBE   (1 << 15)
++#define AMAZON_S_SSC_WHBSTATE_SETPE   (1 << 14)
++#define AMAZON_S_SSC_WHBSTATE_SETRE   (1 << 13)
++#define AMAZON_S_SSC_WHBSTATE_SETTE   (1 << 12)
++#define AMAZON_S_SSC_WHBSTATE_CLRBE   (1 << 11)
++#define AMAZON_S_SSC_WHBSTATE_CLRPE   (1 << 10)
++#define AMAZON_S_SSC_WHBSTATE_CLRRE   (1 << 9)
++#define AMAZON_S_SSC_WHBSTATE_CLRTE   (1 << 8)
++/***SSC Transmitter Buffer Register***/
++#define AMAZON_S_SSC_TB           (0x0020)
++#define AMAZON_S_SSC_TB_TB_VALUE(value)   (((( 1 << 16) - 1) & (value)) << 0)
++/***SSC Receiver Buffer Register***/
++#define AMAZON_S_SSC_RB           (0x0024)
++#define AMAZON_S_SSC_RB_RB_VALUE(value)   (((( 1 << 16) - 1) & (value)) << 0)
++/***SSC Receive FIFO Control Register***/
++#define AMAZON_S_SSC_RXFCON       (0x0030)
++#define AMAZON_S_SSC_RXFCON_RXFITL(value) (((( 1 << 6) - 1) & (value)) << 8)
++#define AMAZON_S_SSC_RXFCON_RXTMEN    (1 << 2)
++#define AMAZON_S_SSC_RXFCON_RXFLU     (1 << 1)
++#define AMAZON_S_SSC_RXFCON_RXFEN     (1 << 0)
++/***SSC Transmit FIFO Control Register***/
++#define AMAZON_S_SSC_TXFCON       ( 0x0034)
++#define AMAZON_S_SSC_TXFCON_RXFITL(value) (((( 1 << 6) - 1) & (value)) << 8)
++#define AMAZON_S_SSC_TXFCON_TXTMEN    (1 << 2)
++#define AMAZON_S_SSC_TXFCON_TXFLU     (1 << 1)
++#define AMAZON_S_SSC_TXFCON_TXFEN     (1 << 0)
++/***SSC FIFO Status Register***/
++#define AMAZON_S_SSC_FSTAT        (0x0038)
++#define AMAZON_S_SSC_FSTAT_TXFFL(value)   (((( 1 << 6) - 1) & (value)) << 8)
++#define AMAZON_S_SSC_FSTAT_RXFFL(value)   (((( 1 << 6) - 1) & (value)) << 0)
++/***SSC Baudrate Timer Reload Register***/
++#define AMAZON_S_SSC_BR           (0x0040)
++#define AMAZON_S_SSC_BR_BR_VALUE(value)   (((( 1 << 16) - 1) & (value)) << 0)
++#define AMAZON_S_SSC_BRSTAT       (0x0044)
++#define AMAZON_S_SSC_SFCON        (0x0060)
++#define AMAZON_S_SSC_SFSTAT       (0x0064)
++#define AMAZON_S_SSC_GPOCON       (0x0070)
++#define AMAZON_S_SSC_GPOSTAT      (0x0074)
++#define AMAZON_S_SSC_WHBGPOSTAT       (0x0078)
++#define AMAZON_S_SSC_RXREQ        (0x0080)
++#define AMAZON_S_SSC_RXCNT        (0x0084)
++/*DMA Registers in Bus Clock Domain*/
++#define AMAZON_S_SSC_DMA_CON      (0x00EC)
++/*interrupt Node Registers in Bus Clock Domain*/
++#define AMAZON_S_SSC_IRNEN        (0x00F4)
++#define AMAZON_S_SSC_IRNCR        (0x00F8)
++#define AMAZON_S_SSC_IRNICR       (0x00FC)
++#define AMAZON_S_SSC_IRN_FIR      0x8
++#define AMAZON_S_SSC_IRN_EIR      0x4
++#define AMAZON_S_SSC_IRN_RIR      0x2
++#define AMAZON_S_SSC_IRN_TIR      0x1
++
++
++#define AMAZON_S_SSC1_CLC         ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_CLC))
++#define AMAZON_S_SSC1_ID          ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_ID))
++#define AMAZON_S_SSC1_CON         ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_CON))
++#define AMAZON_S_SSC1_STATE       ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_STATE))
++#define AMAZON_S_SSC1_WHBSTATE        ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_WHBSTATE))
++#define AMAZON_S_SSC1_TB          ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_TB))
++#define AMAZON_S_SSC1_RB          ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_RB))
++#define AMAZON_S_SSC1_FSTAT       ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_FSTAT))
++#define AMAZON_S_SSC1_PISEL       ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_PISEL))
++#define AMAZON_S_SSC1_RXFCON      ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_RXFCON))
++#define AMAZON_S_SSC1_TXFCON      ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_TXFCON))
++#define AMAZON_S_SSC1_BR          ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_BR))
++#define AMAZON_S_SSC1_BRSTAT      ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_BRSTAT))
++#define AMAZON_S_SSC1_SFCON       ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_SFCON))
++#define AMAZON_S_SSC1_SFSTAT      ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_SFSTAT))
++#define AMAZON_S_SSC1_GPOCON      ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_GPOCON))
++#define AMAZON_S_SSC1_GPOSTAT     ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_GPOSTAT))
++#define AMAZON_S_SSC1_WHBGPOSTAT      ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_WHBGPOSTAT))
++#define AMAZON_S_SSC1_RXREQ       ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_RXREQ))
++#define AMAZON_S_SSC1_RXCNT       ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_RXCNT))
++#define AMAZON_S_SSC1_DMA_CON     ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_DMA_CON))
++#define AMAZON_S_SSC1_IRNEN       ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_IRNEN))
++#define AMAZON_S_SSC1_IRNICR      ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_IRNICR))
++#define AMAZON_S_SSC1_IRNCR       ((volatile u32*)(AMAZON_S_SSC1+AMAZON_S_SSC_IRNCR))
++
++/***********************************************************************/
++/*  Module      :  GPIO register address and bits                       */
++/***********************************************************************/
++#define AMAZON_S_GPIO                       (0xBE100B00)
++/***Port 0 Data Output Register (0010H)***/
++#define AMAZON_S_GPIO_P0_OUT                ((volatile u32 *)(AMAZON_S_GPIO+ 0x0010))
++/***Port 1 Data Output Register (0040H)***/
++#define AMAZON_S_GPIO_P1_OUT                ((volatile u32 *)(AMAZON_S_GPIO+ 0x0040))
++/***Port 2 Data Output Register (0070H)***/
++#define AMAZON_S_GPIO_P2_OUT                ((volatile u32 *)(AMAZON_S_GPIO+ 0x0070))
++/***Port 3 Data Output Register (00A0H)***/
++#define AMAZON_S_GPIO_P3_OUT                ((volatile u32 *)(AMAZON_S_GPIO+ 0x00A0))
++/***Port 0 Data Input Register (0014H)***/
++#define AMAZON_S_GPIO_P0_IN                 ((volatile u32 *)(AMAZON_S_GPIO+ 0x0014))
++/***Port 1 Data Input Register (0044H)***/
++#define AMAZON_S_GPIO_P1_IN                 ((volatile u32 *)(AMAZON_S_GPIO+ 0x0044))
++/***Port 2 Data Input Register (0074H)***/
++#define AMAZON_S_GPIO_P2_IN                 ((volatile u32 *)(AMAZON_S_GPIO+ 0x0074))
++/***Port 3 Data Input Register (00A4H)***/
++#define AMAZON_S_GPIO_P3_IN                 ((volatile u32 *)(AMAZON_S_GPIO+ 0x00A4))
++/***Port 0 Direction Register (0018H)***/
++#define AMAZON_S_GPIO_P0_DIR                ((volatile u32 *)(AMAZON_S_GPIO+ 0x0018))
++/***Port 1 Direction Register (0048H)***/
++#define AMAZON_S_GPIO_P1_DIR                ((volatile u32 *)(AMAZON_S_GPIO+ 0x0048))
++/***Port 2 Direction Register (0078H)***/
++#define AMAZON_S_GPIO_P2_DIR                ((volatile u32 *)(AMAZON_S_GPIO+ 0x0078))
++/***Port 3 Direction Register (0048H)***/
++#define AMAZON_S_GPIO_P3_DIR                ((volatile u32 *)(AMAZON_S_GPIO+ 0x00A8))
++/***Port 0 Alternate Function Select Register 0 (001C H) ***/
++#define AMAZON_S_GPIO_P0_ALTSEL0            ((volatile u32 *)(AMAZON_S_GPIO+ 0x001C))
++/***Port 1 Alternate Function Select Register 0 (004C H) ***/
++#define AMAZON_S_GPIO_P1_ALTSEL0            ((volatile u32 *)(AMAZON_S_GPIO+ 0x004C))
++/***Port 2 Alternate Function Select Register 0 (007C H) ***/
++#define AMAZON_S_GPIO_P2_ALTSEL0            ((volatile u32 *)(AMAZON_S_GPIO+ 0x007C))
++/***Port 3 Alternate Function Select Register 0 (00AC H) ***/
++#define AMAZON_S_GPIO_P3_ALTSEL0            ((volatile u32 *)(AMAZON_S_GPIO+ 0x00AC))
++/***Port 0 Alternate Function Select Register 1 (0020 H) ***/
++#define AMAZON_S_GPIO_P0_ALTSEL1            ((volatile u32 *)(AMAZON_S_GPIO+ 0x0020))
++/***Port 1 Alternate Function Select Register 0 (0050 H) ***/
++#define AMAZON_S_GPIO_P1_ALTSEL1            ((volatile u32 *)(AMAZON_S_GPIO+ 0x0050))
++/***Port 2 Alternate Function Select Register 0 (0080 H) ***/
++#define AMAZON_S_GPIO_P2_ALTSEL1            ((volatile u32 *)(AMAZON_S_GPIO+ 0x0080))
++/***Port 3 Alternate Function Select Register 0 (0064 H) ***/
++#define AMAZON_S_GPIO_P3_ALTSEL1            ((volatile u32 *)(AMAZON_S_GPIO+ 0x0064))
++/***Port 0 Open Drain Control Register (0024H)***/
++#define AMAZON_S_GPIO_P0_OD                 ((volatile u32 *)(AMAZON_S_GPIO+ 0x0024))
++/***Port 1 Open Drain Control Register (0054H)***/
++#define AMAZON_S_GPIO_P1_OD                 ((volatile u32 *)(AMAZON_S_GPIO+ 0x0054))
++/***Port 2 Open Drain Control Register (0084H)***/
++#define AMAZON_S_GPIO_P2_OD                 ((volatile u32 *)(AMAZON_S_GPIO+ 0x0084))
++/***Port 3 Open Drain Control Register (0034H)***/
++#define AMAZON_S_GPIO_P3_OD                 ((volatile u32 *)(AMAZON_S_GPIO+ 0x0034))
++/***Port 0 Input Schmitt-Trigger Off Register (0028 H) ***/
++#define AMAZON_S_GPIO_P0_STOFF              ((volatile u32 *)(AMAZON_S_GPIO+ 0x0028))
++/***Port 1 Input Schmitt-Trigger Off Register (0058 H) ***/
++#define AMAZON_S_GPIO_P1_STOFF              ((volatile u32 *)(AMAZON_S_GPIO+ 0x0058))
++/***Port 2 Input Schmitt-Trigger Off Register (0088 H) ***/
++#define AMAZON_S_GPIO_P2_STOFF              ((volatile u32 *)(AMAZON_S_GPIO+ 0x0088))
++/***Port 3 Input Schmitt-Trigger Off Register (0094 H) ***/
++//#define AMAZON_S_GPIO_P3_STOFF              ((volatile u32 *)(AMAZON_S_GPIO+ 0x0094))
++/***Port 0 Pull Up/Pull Down Select Register (002C H)***/
++#define AMAZON_S_GPIO_P0_PUDSEL             ((volatile u32 *)(AMAZON_S_GPIO+ 0x002C))
++/***Port 1 Pull Up/Pull Down Select Register (005C H)***/
++#define AMAZON_S_GPIO_P1_PUDSEL             ((volatile u32 *)(AMAZON_S_GPIO+ 0x005C))
++/***Port 2 Pull Up/Pull Down Select Register (008C H)***/
++#define AMAZON_S_GPIO_P2_PUDSEL             ((volatile u32 *)(AMAZON_S_GPIO+ 0x008C))
++/***Port 3 Pull Up/Pull Down Select Register (0038 H)***/
++#define AMAZON_S_GPIO_P3_PUDSEL             ((volatile u32 *)(AMAZON_S_GPIO+ 0x0038))
++/***Port 0 Pull Up Device Enable Register (0030 H)***/
++#define AMAZON_S_GPIO_P0_PUDEN              ((volatile u32 *)(AMAZON_S_GPIO+ 0x0030))
++/***Port 1 Pull Up Device Enable Register (0060 H)***/
++#define AMAZON_S_GPIO_P1_PUDEN              ((volatile u32 *)(AMAZON_S_GPIO+ 0x0060))
++/***Port 2 Pull Up Device Enable Register (0090 H)***/
++#define AMAZON_S_GPIO_P2_PUDEN              ((volatile u32 *)(AMAZON_S_GPIO+ 0x0090))
++/***Port 3 Pull Up Device Enable Register (003c H)***/
++#define AMAZON_S_GPIO_P3_PUDEN              ((volatile u32 *)(AMAZON_S_GPIO+ 0x003C))
++
++#define AMAZON_S_LED_CON0            ((volatile u32 *)(AMAZON_S_GPIO+ 0x00B0))
++#define AMAZON_S_LED_CON1            ((volatile u32 *)(AMAZON_S_GPIO+ 0x00B4))
++#define AMAZON_S_LED_CPU0            ((volatile u32 *)(AMAZON_S_GPIO+ 0x00B8))
++#define AMAZON_S_LED_CPU1            ((volatile u32 *)(AMAZON_S_GPIO+ 0x00BC))
++#define AMAZON_S_LED_AR              ((volatile u32 *)(AMAZON_S_GPIO+ 0x00C0))
++
++
++
++/***********************************************************************/
++/*  Module      :  CGU register address and bits                       */
++/***********************************************************************/
++
++#define AMAZON_S_CGU                          (0xBF103000)
++/***********************************************************************/
++/***CGU Clock PLL0 ***/
++#define AMAZON_S_CGU_PLL0_CFG                 ((volatile u32*)(AMAZON_S_CGU+ 0x0004))
++/***CGU Clock PLL1 ***/
++#define AMAZON_S_CGU_PLL1_CFG                 ((volatile u32*)(AMAZON_S_CGU+ 0x0008))
++/***CGU Clock SYS Mux Register***/
++#define AMAZON_S_CGU_SYS                      ((volatile u32*)(AMAZON_S_CGU+ 0x0010))
++/***CGU Interface Clock Control Register***/
++#define AMAZON_S_CGU_IFCCR                        ((volatile u32*)(AMAZON_S_CGU+ 0x0018))
++/***CGU PCI Clock Control Register**/
++#define AMAZON_S_CGU_PCICR                          ((volatile u32*)(AMAZON_S_CGU+ 0x0034))
++#define CLOCK_60M                60000000
++#define CLOCK_83M                83333333
++#define CLOCK_111M               111111111
++#define CLOCK_133M               133333333
++#define CLOCK_167M               166666667
++#define CLOCK_333M               333333333
++
++/***********************************************************************/
++/*  Module      :  MCD register address and bits                       */
++/***********************************************************************/
++#define DANUBE_MCD                                  (KSEG1+0x1F106000)
++
++/***Manufacturer Identification Register***/
++#define DANUBE_MCD_MANID                            ((volatile u32*)(DANUBE_MCD+ 0x0024))
++#define DANUBE_MCD_MANID_MANUF(value)               (((( 1 << 11) - 1) & (value)) << 5)
++
++/***Chip Identification Register***/
++#define DANUBE_MCD_CHIPID                           ((volatile u32*)(DANUBE_MCD+ 0x0028))
++#define DANUBE_MCD_CHIPID_VERSION_GET(value)             (((value) >> 28) & ((1 << 4) - 1))
++#define DANUBE_MCD_CHIPID_VERSION_SET(value)             (((( 1 << 4) - 1) & (value)) << 28)
++#define DANUBE_MCD_CHIPID_PART_NUMBER_GET(value)         (((value) >> 12) & ((1 << 16) - 1))
++#define DANUBE_MCD_CHIPID_PART_NUMBER_SET(value)         (((( 1 << 16) - 1) & (value)) << 12)
++#define DANUBE_MCD_CHIPID_MANID_GET(value)               (((value) >> 1) & ((1 << 11) - 1))
++#define DANUBE_MCD_CHIPID_MANID_SET(value)               (((( 1 << 11) - 1) & (value)) << 1)
++
++#define DANUBE_CHIPID_STANDARD              0x00EB
++#define DANUBE_CHIPID_YANGTSE               0x00ED
++
++/***Redesign Tracing Identification Register***/
++#define DANUBE_MCD_RTID                             ((volatile u32*)(DANUBE_MCD+ 0x002C))
++#define DANUBE_MCD_RTID_LC                              (1 << 15)
++#define DANUBE_MCD_RTID_RIX(value)                  (((( 1 << 3) - 1) & (value)) << 0)
++
++
++/***********************************************************************/
++/*  Module      :  EBU register address and bits                       */
++/***********************************************************************/
++
++#define AMAZON_S_EBU                                (0xBE105300)
++
++/***********************************************************************/
++
++
++/***EBU Clock Control Register***/
++#define AMAZON_S_EBU_CLC                            ((volatile u32*)(AMAZON_S_EBU+ 0x0000))
++#define AMAZON_S_EBU_CLC_DISS                       (1 << 1)
++#define AMAZON_S_EBU_CLC_DISR                       (1 << 0)
++
++#define AMAZON_S_EBU_ID                             ((volatile u32*)(AMAZON_S_EBU+ 0x0008))
++
++/***EBU Global Control Register***/
++#define AMAZON_S_EBU_CON                            ((volatile u32*)(AMAZON_S_EBU+ 0x0010))
++#define AMAZON_S_EBU_CON_DTACS (value)              (((( 1 << 3) - 1) & (value)) << 20)
++#define AMAZON_S_EBU_CON_DTARW (value)              (((( 1 << 3) - 1) & (value)) << 16)
++#define AMAZON_S_EBU_CON_TOUTC (value)              (((( 1 << 8) - 1) & (value)) << 8)
++#define AMAZON_S_EBU_CON_ARBMODE (value)            (((( 1 << 2) - 1) & (value)) << 6)
++#define AMAZON_S_EBU_CON_ARBSYNC                    (1 << 5)
++//#define AMAZON_S_EBU_CON_1                          (1 << 3)
++
++/***EBU Address Select Register 0***/
++#define AMAZON_S_EBU_ADDSEL0                        ((volatile u32*)(AMAZON_S_EBU + 0x0020))
++#define AMAZON_S_EBU_ADDSEL0_BASE (value)           (((( 1 << 20) - 1) & (value)) << 12)
++#define AMAZON_S_EBU_ADDSEL0_MASK (value)           (((( 1 << 4) - 1) & (value)) << 4)
++#define AMAZON_S_EBU_ADDSEL0_MIRRORE                (1 << 1)
++#define AMAZON_S_EBU_ADDSEL0_REGEN                  (1 << 0)
++
++/***EBU Address Select Register 1***/
++#define AMAZON_S_EBU_ADDSEL1                        ((volatile u32*)(AMAZON_S_EBU + 0x0024))
++#define AMAZON_S_EBU_ADDSEL1_BASE (value)           (((( 1 << 20) - 1) & (value)) << 12)
++#define AMAZON_S_EBU_ADDSEL1_MASK (value)           (((( 1 << 4) - 1) & (value)) << 4)
++#define AMAZON_S_EBU_ADDSEL1_MIRRORE                (1 << 1)
++#define AMAZON_S_EBU_ADDSEL1_REGEN                  (1 << 0)
++
++/***EBU Address Select Register 2***/
++#define AMAZON_S_EBU_ADDSEL2                        ((volatile u32*)(AMAZON_S_EBU + 0x0028))
++#define AMAZON_S_EBU_ADDSEL2_BASE (value)           (((( 1 << 20) - 1) & (value)) << 12)
++#define AMAZON_S_EBU_ADDSEL2_MASK (value)           (((( 1 << 4) - 1) & (value)) << 4)
++#define AMAZON_S_EBU_ADDSEL2_MIRRORE                (1 << 1)
++#define AMAZON_S_EBU_ADDSEL2_REGEN                  (1 << 0)
++
++/***EBU Address Select Register 3***/
++#define AMAZON_S_EBU_ADDSEL3                        ((volatile u32*)(AMAZON_S_EBU + 0x002C))
++#define AMAZON_S_EBU_ADDSEL3_BASE (value)           (((( 1 << 20) - 1) & (value)) << 12)
++#define AMAZON_S_EBU_ADDSEL3_MASK (value)           (((( 1 << 4) - 1) & (value)) << 4)
++#define AMAZON_S_EBU_ADDSEL3_MIRRORE                (1 << 1)
++#define AMAZON_S_EBU_ADDSEL3_REGEN                  (1 << 0)
++
++/***EBU Bus Configuration Register 0***/
++#define AMAZON_S_EBU_BUSCON0                        ((volatile u32*)(AMAZON_S_EBU+ 0x0060))
++#define AMAZON_S_EBU_BUSCON0_WRDIS                  (1 << 31)
++#define AMAZON_S_EBU_BUSCON0_ADSWP (value)          (1 << 30)
++#define AMAZON_S_EBU_BUSCON0_PG_EN (value)          (1 << 29)
++#define AMAZON_S_EBU_BUSCON0_AGEN (value)           (((( 1 << 3) - 1) & (value)) << 24)
++#define AMAZON_S_EBU_BUSCON0_SETUP                  (1 << 22)
++#define AMAZON_S_EBU_BUSCON0_WAIT (value)           (((( 1 << 2) - 1) & (value)) << 20)
++#define AMAZON_S_EBU_BUSCON0_WAITINV                (1 << 19)
++#define AMAZON_S_EBU_BUSCON0_VN_EN                  (1 << 18)
++#define AMAZON_S_EBU_BUSCON0_PORTW (value)          (((( 1 << 2) - 1) & (value)) << 16)
++#define AMAZON_S_EBU_BUSCON0_ALEC (value)           (((( 1 << 2) - 1) & (value)) << 14)
++#define AMAZON_S_EBU_BUSCON0_BCGEN (value)          (((( 1 << 2) - 1) & (value)) << 12)
++#define AMAZON_S_EBU_BUSCON0_WAITWDC (value)        (((( 1 << 4) - 1) & (value)) << 8)
++#define AMAZON_S_EBU_BUSCON0_WAITRRC (value)        (((( 1 << 2) - 1) & (value)) << 6)
++#define AMAZON_S_EBU_BUSCON0_HOLDC (value)          (((( 1 << 2) - 1) & (value)) << 4)
++#define AMAZON_S_EBU_BUSCON0_RECOVC (value)         (((( 1 << 2) - 1) & (value)) << 2)
++#define AMAZON_S_EBU_BUSCON0_CMULT (value)          (((( 1 << 2) - 1) & (value)) << 0)
++
++/***EBU Bus Configuration Register 1***/
++#define AMAZON_S_EBU_BUSCON1                        ((volatile u32*)(AMAZON_S_EBU+ 0x0064))
++#define AMAZON_S_EBU_BUSCON1_WRDIS                  (1 << 31)
++#define AMAZON_S_EBU_BUSCON1_ALEC (value)           (((( 1 << 2) - 1) & (value)) << 29)
++#define AMAZON_S_EBU_BUSCON1_BCGEN (value)          (((( 1 << 2) - 1) & (value)) << 27)
++#define AMAZON_S_EBU_BUSCON1_AGEN (value)           (((( 1 << 2) - 1) & (value)) << 24)
++#define AMAZON_S_EBU_BUSCON1_CMULTR (value)         (((( 1 << 2) - 1) & (value)) << 22)
++#define AMAZON_S_EBU_BUSCON1_WAIT (value)           (((( 1 << 2) - 1) & (value)) << 20)
++#define AMAZON_S_EBU_BUSCON1_WAITINV                (1 << 19)
++#define AMAZON_S_EBU_BUSCON1_SETUP                  (1 << 18)
++#define AMAZON_S_EBU_BUSCON1_PORTW (value)          (((( 1 << 2) - 1) & (value)) << 16)
++#define AMAZON_S_EBU_BUSCON1_WAITRDC (value)        (((( 1 << 7) - 1) & (value)) << 9)
++#define AMAZON_S_EBU_BUSCON1_WAITWRC (value)        (((( 1 << 3) - 1) & (value)) << 6)
++#define AMAZON_S_EBU_BUSCON1_HOLDC (value)          (((( 1 << 2) - 1) & (value)) << 4)
++#define AMAZON_S_EBU_BUSCON1_RECOVC (value)         (((( 1 << 2) - 1) & (value)) << 2)
++#define AMAZON_S_EBU_BUSCON1_CMULT (value)          (((( 1 << 2) - 1) & (value)) << 0)
++
++/***EBU Bus Configuration Register 2***/
++#define AMAZON_S_EBU_BUSCON2                        ((volatile u32*)(AMAZON_S_EBU+ 0x0068))
++#define AMAZON_S_EBU_BUSCON2_WRDIS                  (1 << 31)
++#define AMAZON_S_EBU_BUSCON2_ALEC (value)           (((( 1 << 2) - 1) & (value)) << 29)
++#define AMAZON_S_EBU_BUSCON2_BCGEN (value)          (((( 1 << 2) - 1) & (value)) << 27)
++#define AMAZON_S_EBU_BUSCON2_AGEN (value)           (((( 1 << 2) - 1) & (value)) << 24)
++#define AMAZON_S_EBU_BUSCON2_CMULTR (value)         (((( 1 << 2) - 1) & (value)) << 22)
++#define AMAZON_S_EBU_BUSCON2_WAIT (value)           (((( 1 << 2) - 1) & (value)) << 20)
++#define AMAZON_S_EBU_BUSCON2_WAITINV                (1 << 19)
++#define AMAZON_S_EBU_BUSCON2_SETUP                  (1 << 18)
++#define AMAZON_S_EBU_BUSCON2_PORTW (value)          (((( 1 << 2) - 1) & (value)) << 16)
++#define AMAZON_S_EBU_BUSCON2_WAITRDC (value)        (((( 1 << 7) - 1) & (value)) << 9)
++#define AMAZON_S_EBU_BUSCON2_WAITWRC (value)        (((( 1 << 3) - 1) & (value)) << 6)
++#define AMAZON_S_EBU_BUSCON2_HOLDC (value)          (((( 1 << 2) - 1) & (value)) << 4)
++#define AMAZON_S_EBU_BUSCON2_RECOVC (value)         (((( 1 << 2) - 1) & (value)) << 2)
++#define AMAZON_S_EBU_BUSCON2_CMULT (value)          (((( 1 << 2) - 1) & (value)) << 0)
++
++/***EBU Bus Configuration Register 2***/
++#define AMAZON_S_EBU_BUSCON3                        ((volatile u32*)(AMAZON_S_EBU+ 0x006C))
++#define AMAZON_S_EBU_BUSCON3_WRDIS                  (1 << 31)
++#define AMAZON_S_EBU_BUSCON3_ADSWP (value)          (1 << 30)
++#define AMAZON_S_EBU_BUSCON3_PG_EN (value)          (1 << 29)
++#define AMAZON_S_EBU_BUSCON3_AGEN (value)           (((( 1 << 3) - 1) & (value)) << 24)
++#define AMAZON_S_EBU_BUSCON3_SETUP                  (1 << 22)
++#define AMAZON_S_EBU_BUSCON3_WAIT (value)           (((( 1 << 2) - 1) & (value)) << 20)
++#define AMAZON_S_EBU_BUSCON3_WAITINV                (1 << 19)
++#define AMAZON_S_EBU_BUSCON3_VN_EN                  (1 << 18)
++#define AMAZON_S_EBU_BUSCON3_PORTW (value)          (((( 1 << 2) - 1) & (value)) << 16)
++#define AMAZON_S_EBU_BUSCON3_ALEC (value)           (((( 1 << 2) - 1) & (value)) << 14)
++#define AMAZON_S_EBU_BUSCON3_BCGEN (value)          (((( 1 << 2) - 1) & (value)) << 12)
++#define AMAZON_S_EBU_BUSCON3_WAITWDC (value)        (((( 1 << 4) - 1) & (value)) << 8)
++#define AMAZON_S_EBU_BUSCON3_WAITRRC (value)        (((( 1 << 2) - 1) & (value)) << 6)
++#define AMAZON_S_EBU_BUSCON3_HOLDC (value)          (((( 1 << 2) - 1) & (value)) << 4)
++#define AMAZON_S_EBU_BUSCON3_RECOVC (value)         (((( 1 << 2) - 1) & (value)) << 2)
++#define AMAZON_S_EBU_BUSCON3_CMULT (value)          (((( 1 << 2) - 1) & (value)) << 0)
++
++#define AMAZON_S_EBU_PCC_CON                        ((volatile u32*)(AMAZON_S_EBU+ 0x0090))
++#define AMAZON_S_EBU_PCC_STAT                       ((volatile u32*)(AMAZON_S_EBU+ 0x0094))
++#define AMAZON_S_EBU_PCC_ISTAT                      ((volatile u32*)(AMAZON_S_EBU+ 0x00A0))
++#define AMAZON_S_EBU_PCC_IEN                        ((volatile u32*)(AMAZON_S_EBU+ 0x00A4))
++#define AMAZON_S_EBU_PCC_INT_OUT                    ((volatile u32*)(AMAZON_S_EBU+ 0x00A8))
++#define AMAZON_S_EBU_PCC_IRS                        ((volatile u32*)(AMAZON_S_EBU+ 0x00AC))
++
++
++/***********************************************************************/
++/*  Module      :  EBU register address and bits                       */
++/***********************************************************************/
++
++#define AMAZONS_EBU                          (0xBE105300)
++#define EBU_ADDR_SEL_0     (volatile u32*)(AMAZONS_EBU + 0x20)
++#define EBU_ADDR_SEL_1     (volatile u32*)(AMAZONS_EBU + 0x24)
++#define EBU_CON_0          (volatile u32*)(AMAZONS_EBU + 0x60)
++#define EBU_CON_1          (volatile u32*)(AMAZONS_EBU + 0x64)
++#define EBU_NAND_CON       (volatile u32*)(AMAZONS_EBU + 0xB0)
++#define EBU_NAND_WAIT      (volatile u32*)(AMAZONS_EBU + 0xB4)
++#define EBU_NAND_ECC0      (volatile u32*)(AMAZONS_EBU + 0xB8)
++#define EBU_NAND_ECC_AC    (volatile u32*)(AMAZONS_EBU + 0xBC)
++
++
++/***********************************************************************/
++/*  Module      :  SDRAM register address and bits                     */
++/***********************************************************************/
++
++#define DANUBE_SDRAM                        (0xBF800000)
++/***********************************************************************/
++
++
++/***MC Access Error Cause Register***/
++#define DANUBE_SDRAM_MC_ERRCAUSE                  ((volatile u32*)(DANUBE_SDRAM+ 0x0100))
++#define DANUBE_SDRAM_MC_ERRCAUSE_ERR                              (1 << 31)
++#define DANUBE_SDRAM_MC_ERRCAUSE_PORT (value)               (((( 1 << 4) - 1) & (value)) << 16)
++#define DANUBE_SDRAM_MC_ERRCAUSE_CAUSE (value)              (((( 1 << 2) - 1) & (value)) << 0)
++#define DANUBE_SDRAM_MC_ERRCAUSE_Res (value)                (((( 1 << NaN) - 1) & (value)) << NaN)
++
++/***MC Access Error Address Register***/
++#define DANUBE_SDRAM_MC_ERRADDR                   ((volatile u32*)(DANUBE_SDRAM+ 0x0108))
++#define DANUBE_SDRAM_MC_ERRADDR_ADDR
++
++/***MC I/O General Purpose Register***/
++#define DANUBE_SDRAM_MC_IOGP                      ((volatile u32*)(DANUBE_SDRAM+ 0x0800))
++#define DANUBE_SDRAM_MC_IOGP_GPR6 (value)               (((( 1 << 4) - 1) & (value)) << 28)
++#define DANUBE_SDRAM_MC_IOGP_GPR5 (value)               (((( 1 << 4) - 1) & (value)) << 24)
++#define DANUBE_SDRAM_MC_IOGP_GPR4 (value)               (((( 1 << 4) - 1) & (value)) << 20)
++#define DANUBE_SDRAM_MC_IOGP_GPR3 (value)               (((( 1 << 4) - 1) & (value)) << 16)
++#define DANUBE_SDRAM_MC_IOGP_GPR2 (value)               (((( 1 << 4) - 1) & (value)) << 12)
++#define DANUBE_SDRAM_MC_IOGP_CPS                              (1 << 11)
++#define DANUBE_SDRAM_MC_IOGP_CLKDELAY (value)          (((( 1 << 3) - 1) & (value)) << 8)
++#define DANUBE_SDRAM_MC_IOGP_CLKRAT (value)             (((( 1 << 4) - 1) & (value)) << 4)
++#define DANUBE_SDRAM_MC_IOGP_RDDEL (value)              (((( 1 << 4) - 1) & (value)) << 0)
++
++/***MC Self Refresh Register***/
++#define DANUBE_SDRAM_MC_SELFRFSH                  ((volatile u32*)(DANUBE_SDRAM+ 0x0A00))
++#define DANUBE_SDRAM_MC_SELFRFSH_PWDS                            (1 << 1)
++#define DANUBE_SDRAM_MC_SELFRFSH_PWD                              (1 << 0)
++#define DANUBE_SDRAM_MC_SELFRFSH_Res (value)                (((( 1 << 30) - 1) & (value)) << 2)
++
++/***MC Enable Register***/
++#define DANUBE_SDRAM_MC_CTRLENA                   ((volatile u32*)(DANUBE_SDRAM+ 0x1000))
++#define DANUBE_SDRAM_MC_CTRLENA_ENA                              (1 << 0)
++#define DANUBE_SDRAM_MC_CTRLENA_Res (value)                (((( 1 << 31) - 1) & (value)) << 1)
++
++/***MC Mode Register Setup Code***/
++#define DANUBE_SDRAM_MC_MRSCODE                   ((volatile u32*)(DANUBE_SDRAM+ 0x1008))
++#define DANUBE_SDRAM_MC_MRSCODE_UMC (value)                (((( 1 << 5) - 1) & (value)) << 7)
++#define DANUBE_SDRAM_MC_MRSCODE_CL (value)                (((( 1 << 3) - 1) & (value)) << 4)
++#define DANUBE_SDRAM_MC_MRSCODE_WT                              (1 << 3)
++#define DANUBE_SDRAM_MC_MRSCODE_BL (value)                (((( 1 << 3) - 1) & (value)) << 0)
++
++/***MC Configuration Data-word Width Register***/
++#define DANUBE_SDRAM_MC_CFGDW                    ((volatile u32*)(DANUBE_SDRAM+ 0x1010))
++#define DANUBE_SDRAM_MC_CFGDW_DW (value)                (((( 1 << 4) - 1) & (value)) << 0)
++#define DANUBE_SDRAM_MC_CFGDW_Res (value)                (((( 1 << 28) - 1) & (value)) << 4)
++
++/***MC Configuration Physical Bank 0 Register***/
++#define DANUBE_SDRAM_MC_CFGPB0                    ((volatile u32*)(DANUBE_SDRAM+ 0x1018))
++#define DANUBE_SDRAM_MC_CFGPB0_MCSEN0 (value)             (((( 1 << 4) - 1) & (value)) << 12)
++#define DANUBE_SDRAM_MC_CFGPB0_BANKN0 (value)             (((( 1 << 4) - 1) & (value)) << 8)
++#define DANUBE_SDRAM_MC_CFGPB0_ROWW0 (value)              (((( 1 << 4) - 1) & (value)) << 4)
++#define DANUBE_SDRAM_MC_CFGPB0_COLW0 (value)              (((( 1 << 4) - 1) & (value)) << 0)
++#define DANUBE_SDRAM_MC_CFGPB0_Res (value)                (((( 1 << 16) - 1) & (value)) << 16)
++
++/***MC Latency Register***/
++#define DANUBE_SDRAM_MC_LATENCY                   ((volatile u32*)(DANUBE_SDRAM+ 0x1038))
++#define DANUBE_SDRAM_MC_LATENCY_TRP (value)                (((( 1 << 4) - 1) & (value)) << 16)
++#define DANUBE_SDRAM_MC_LATENCY_TRAS (value)               (((( 1 << 4) - 1) & (value)) << 12)
++#define DANUBE_SDRAM_MC_LATENCY_TRCD (value)               (((( 1 << 4) - 1) & (value)) << 8)
++#define DANUBE_SDRAM_MC_LATENCY_TDPL (value)               (((( 1 << 4) - 1) & (value)) << 4)
++#define DANUBE_SDRAM_MC_LATENCY_TDAL (value)               (((( 1 << 4) - 1) & (value)) << 0)
++#define DANUBE_SDRAM_MC_LATENCY_Res (value)                (((( 1 << 12) - 1) & (value)) << 20)
++
++/***MC Refresh Cycle Time Register***/
++#define DANUBE_SDRAM_MC_TREFRESH                  ((volatile u32*)(DANUBE_SDRAM+ 0x1040))
++#define DANUBE_SDRAM_MC_TREFRESH_TREF (value)               (((( 1 << 13) - 1) & (value)) << 0)
++#define DANUBE_SDRAM_MC_TREFRESH_Res (value)                (((( 1 << 19) - 1) & (value)) << 13)
++
++
++/***********************************************************************/
++/*  Module      :  GPTC register address and bits                       */
++/***********************************************************************/
++
++#define DANUBE_GPTC                   (KSEG1 + 0x1E100A00)
++#define DANUBE_GPTC_CLC               ((volatile u32*) (DANUBE_GPTC + 0x0000))
++#define DANUBE_GPTC_ID                ((volatile u32*) (DANUBE_GPTC + 0x0008))
++#define DANUBE_GPTC_IRNEN             ((volatile u32*) (DANUBE_GPTC + 0x00F4))
++#define DANUBE_GPTC_IRNICR    ((volatile u32*) (DANUBE_GPTC + 0x00F8)
++#define DANUBE_GPTC_IRNCR             ((volatile u32*) (DANUBE_GPTC + 0x00FC))
++
++#define DANUBE_GPTC_CON_1A    ((volatile u32*) (DANUBE_GPTC + 0x0010))
++#define DANUBE_GPTC_RUN_1A    ((volatile u32*) (DANUBE_GPTC + 0x0018))
++#define DANUBE_GPTC_RELOAD_1A ((volatile u32*) (DANUBE_GPTC + 0x0020))
++#define DANUBE_GPTC_COUNT_1A  ((volatile u32*) (DANUBE_GPTC + 0x0028))
++
++#define DANUBE_GPTC_CON_1B    ((volatile u32*) (DANUBE_GPTC + 0x0014))
++#define DANUBE_GPTC_RUN_1B    ((volatile u32*) (DANUBE_GPTC + 0x001C))
++#define DANUBE_GPTC_RELOAD_1B ((volatile u32*) (DANUBE_GPTC + 0x0024))
++#define DANUBE_GPTC_COUNT_1B  ((volatile u32*) (DANUBE_GPTC + 0x002C))
++
++#define DANUBE_GPTC_CON_2A    ((volatile u32*) (DANUBE_GPTC + 0x0030))
++#define DANUBE_GPTC_RUN_2A    ((volatile u32*) (DANUBE_GPTC + 0x0038))
++#define DANUBE_GPTC_RELOAD_2A ((volatile u32*) (DANUBE_GPTC + 0x0040))
++#define DANUBE_GPTC_COUNT_2A  ((volatile u32*) (DANUBE_GPTC + 0x0048))
++
++#define DANUBE_GPTC_CON_2B    ((volatile u32*) (DANUBE_GPTC + 0x0034))
++#define DANUBE_GPTC_RUN_2B    ((volatile u32*) (DANUBE_GPTC + 0x003C))
++#define DANUBE_GPTC_RELOAD_2B ((volatile u32*) (DANUBE_GPTC + 0x0044))
++#define DANUBE_GPTC_COUNT_2B  ((volatile u32*) (DANUBE_GPTC + 0x004C))
++
++
++
++/***********************************************************************/
++/*  Module      :  GPTU register address and bits                      */
++/***********************************************************************/
++
++#define DANUBE_GPTU                         (0xB8000300)
++/***********************************************************************/
++
++
++/***GPT Clock Control Register***/
++#define DANUBE_GPTU_GPT_CLC                      ((volatile u32*)(DANUBE_GPTU+ 0x0000))
++#define DANUBE_GPTU_GPT_CLC_RMC (value)                (((( 1 << 8) - 1) & (value)) << 8)
++#define DANUBE_GPTU_GPT_CLC_DISS                            (1 << 1)
++#define DANUBE_GPTU_GPT_CLC_DISR                            (1 << 0)
++
++/***GPT Timer 3 Control Register***/
++#define DANUBE_GPTU_GPT_T3CON                    ((volatile u32*)(DANUBE_GPTU+ 0x0014))
++#define DANUBE_GPTU_GPT_T3CON_T3RDIR                        (1 << 15)
++#define DANUBE_GPTU_GPT_T3CON_T3CHDIR                      (1 << 14)
++#define DANUBE_GPTU_GPT_T3CON_T3EDGE                        (1 << 13)
++#define DANUBE_GPTU_GPT_T3CON_BPS1 (value)               (((( 1 << 2) - 1) & (value)) << 11)
++#define DANUBE_GPTU_GPT_T3CON_T3OTL                          (1 << 10)
++#define DANUBE_GPTU_GPT_T3CON_T3UD                            (1 << 7)
++#define DANUBE_GPTU_GPT_T3CON_T3R                              (1 << 6)
++#define DANUBE_GPTU_GPT_T3CON_T3M (value)                (((( 1 << 3) - 1) & (value)) << 3)
++#define DANUBE_GPTU_GPT_T3CON_T3I (value)                (((( 1 << 3) - 1) & (value)) << 0)
++
++/***GPT Write Hardware Modified Timer 3 Control Register
++If set and clear bit are written concurrently with 1, the associated bit is not changed.***/
++#define DANUBE_GPTU_GPT_WHBT3CON                 ((volatile u32*)(DANUBE_GPTU+ 0x004C))
++#define DANUBE_GPTU_GPT_WHBT3CON_SETT3CHDIR                (1 << 15)
++#define DANUBE_GPTU_GPT_WHBT3CON_CLRT3CHDIR                (1 << 14)
++#define DANUBE_GPTU_GPT_WHBT3CON_SETT3EDGE                  (1 << 13)
++#define DANUBE_GPTU_GPT_WHBT3CON_CLRT3EDGE                  (1 << 12)
++#define DANUBE_GPTU_GPT_WHBT3CON_SETT3OTL                  (1 << 11)
++#define DANUBE_GPTU_GPT_WHBT3CON_CLRT3OTL                  (1 << 10)
++
++/***GPT Timer 2 Control Register***/
++#define DANUBE_GPTU_GPT_T2CON                    ((volatile u32*)(DANUBE_GPTU+ 0x0010))
++#define DANUBE_GPTU_GPT_T2CON_TxRDIR                        (1 << 15)
++#define DANUBE_GPTU_GPT_T2CON_TxCHDIR                      (1 << 14)
++#define DANUBE_GPTU_GPT_T2CON_TxEDGE                        (1 << 13)
++#define DANUBE_GPTU_GPT_T2CON_TxIRDIS                      (1 << 12)
++#define DANUBE_GPTU_GPT_T2CON_TxRC                            (1 << 9)
++#define DANUBE_GPTU_GPT_T2CON_TxUD                            (1 << 7)
++#define DANUBE_GPTU_GPT_T2CON_TxR                              (1 << 6)
++#define DANUBE_GPTU_GPT_T2CON_TxM (value)                (((( 1 << 3) - 1) & (value)) << 3)
++#define DANUBE_GPTU_GPT_T2CON_TxI (value)                (((( 1 << 3) - 1) & (value)) << 0)
++
++/***GPT Timer 4 Control Register***/
++#define DANUBE_GPTU_GPT_T4CON                    ((volatile u32*)(DANUBE_GPTU+ 0x0018))
++#define DANUBE_GPTU_GPT_T4CON_TxRDIR                        (1 << 15)
++#define DANUBE_GPTU_GPT_T4CON_TxCHDIR                      (1 << 14)
++#define DANUBE_GPTU_GPT_T4CON_TxEDGE                        (1 << 13)
++#define DANUBE_GPTU_GPT_T4CON_TxIRDIS                      (1 << 12)
++#define DANUBE_GPTU_GPT_T4CON_TxRC                            (1 << 9)
++#define DANUBE_GPTU_GPT_T4CON_TxUD                            (1 << 7)
++#define DANUBE_GPTU_GPT_T4CON_TxR                              (1 << 6)
++#define DANUBE_GPTU_GPT_T4CON_TxM (value)                (((( 1 << 3) - 1) & (value)) << 3)
++#define DANUBE_GPTU_GPT_T4CON_TxI (value)                (((( 1 << 3) - 1) & (value)) << 0)
++
++/***GPT Write HW Modified Timer 2 Control Register If set
++ and clear bit are written concurrently with 1, the associated bit is not changed.***/
++#define DANUBE_GPTU_GPT_WHBT2CON                 ((volatile u32*)(DANUBE_GPTU+ 0x0048))
++#define DANUBE_GPTU_GPT_WHBT2CON_SETTxCHDIR                (1 << 15)
++#define DANUBE_GPTU_GPT_WHBT2CON_CLRTxCHDIR                (1 << 14)
++#define DANUBE_GPTU_GPT_WHBT2CON_SETTxEDGE                  (1 << 13)
++#define DANUBE_GPTU_GPT_WHBT2CON_CLRTxEDGE                  (1 << 12)
++
++/***GPT Write HW Modified Timer 4 Control Register If set
++ and clear bit are written concurrently with 1, the associated bit is not changed.***/
++#define DANUBE_GPTU_GPT_WHBT4CON                 ((volatile u32*)(DANUBE_GPTU+ 0x0050))
++#define DANUBE_GPTU_GPT_WHBT4CON_SETTxCHDIR                (1 << 15)
++#define DANUBE_GPTU_GPT_WHBT4CON_CLRTxCHDIR                (1 << 14)
++#define DANUBE_GPTU_GPT_WHBT4CON_SETTxEDGE                  (1 << 13)
++#define DANUBE_GPTU_GPT_WHBT4CON_CLRTxEDGE                  (1 << 12)
++
++/***GPT Capture Reload Register***/
++#define DANUBE_GPTU_GPT_CAPREL                   ((volatile u32*)(DANUBE_GPTU+ 0x0030))
++#define DANUBE_GPTU_GPT_CAPREL_CAPREL (value)             (((( 1 << 16) - 1) & (value)) << 0)
++
++/***GPT Timer 2 Register***/
++#define DANUBE_GPTU_GPT_T2                       ((volatile u32*)(DANUBE_GPTU+ 0x0034))
++#define DANUBE_GPTU_GPT_T2_TVAL (value)               (((( 1 << 16) - 1) & (value)) << 0)
++
++/***GPT Timer 3 Register***/
++#define DANUBE_GPTU_GPT_T3                       ((volatile u32*)(DANUBE_GPTU+ 0x0038))
++#define DANUBE_GPTU_GPT_T3_TVAL (value)               (((( 1 << 16) - 1) & (value)) << 0)
++
++/***GPT Timer 4 Register***/
++#define DANUBE_GPTU_GPT_T4                       ((volatile u32*)(DANUBE_GPTU+ 0x003C))
++#define DANUBE_GPTU_GPT_T4_TVAL (value)               (((( 1 << 16) - 1) & (value)) << 0)
++
++/***GPT Timer 5 Register***/
++#define DANUBE_GPTU_GPT_T5                       ((volatile u32*)(DANUBE_GPTU+ 0x0040))
++#define DANUBE_GPTU_GPT_T5_TVAL (value)               (((( 1 << 16) - 1) & (value)) << 0)
++
++/***GPT Timer 6 Register***/
++#define DANUBE_GPTU_GPT_T6                       ((volatile u32*)(DANUBE_GPTU+ 0x0044))
++#define DANUBE_GPTU_GPT_T6_TVAL (value)               (((( 1 << 16) - 1) & (value)) << 0)
++
++/***GPT Timer 6 Control Register***/
++#define DANUBE_GPTU_GPT_T6CON                    ((volatile u32*)(DANUBE_GPTU+ 0x0020))
++#define DANUBE_GPTU_GPT_T6CON_T6SR                            (1 << 15)
++#define DANUBE_GPTU_GPT_T6CON_T6CLR                          (1 << 14)
++#define DANUBE_GPTU_GPT_T6CON_BPS2 (value)               (((( 1 << 2) - 1) & (value)) << 11)
++#define DANUBE_GPTU_GPT_T6CON_T6OTL                          (1 << 10)
++#define DANUBE_GPTU_GPT_T6CON_T6UD                            (1 << 7)
++#define DANUBE_GPTU_GPT_T6CON_T6R                              (1 << 6)
++#define DANUBE_GPTU_GPT_T6CON_T6M (value)                (((( 1 << 3) - 1) & (value)) << 3)
++#define DANUBE_GPTU_GPT_T6CON_T6I (value)                (((( 1 << 3) - 1) & (value)) << 0)
++
++/***GPT Write HW Modified Timer 6 Control Register If set
++ and clear bit are written concurrently with 1, the associated bit is not changed.***/
++#define DANUBE_GPTU_GPT_WHBT6CON                 ((volatile u32*)(DANUBE_GPTU+ 0x0054))
++#define DANUBE_GPTU_GPT_WHBT6CON_SETT6OTL                  (1 << 11)
++#define DANUBE_GPTU_GPT_WHBT6CON_CLRT6OTL                  (1 << 10)
++
++/***GPT Timer 5 Control Register***/
++#define DANUBE_GPTU_GPT_T5CON                    ((volatile u32*)(DANUBE_GPTU+ 0x001C))
++#define DANUBE_GPTU_GPT_T5CON_T5SC                            (1 << 15)
++#define DANUBE_GPTU_GPT_T5CON_T5CLR                          (1 << 14)
++#define DANUBE_GPTU_GPT_T5CON_CI (value)                (((( 1 << 2) - 1) & (value)) << 12)
++#define DANUBE_GPTU_GPT_T5CON_T5CC                            (1 << 11)
++#define DANUBE_GPTU_GPT_T5CON_CT3                              (1 << 10)
++#define DANUBE_GPTU_GPT_T5CON_T5RC                            (1 << 9)
++#define DANUBE_GPTU_GPT_T5CON_T5UDE                          (1 << 8)
++#define DANUBE_GPTU_GPT_T5CON_T5UD                            (1 << 7)
++#define DANUBE_GPTU_GPT_T5CON_T5R                              (1 << 6)
++#define DANUBE_GPTU_GPT_T5CON_T5M (value)                (((( 1 << 3) - 1) & (value)) << 3)
++#define DANUBE_GPTU_GPT_T5CON_T5I (value)                (((( 1 << 3) - 1) & (value)) << 0)
++
++
++/***********************************************************************/
++/*  Module      :  IOM register address and bits                       */
++/***********************************************************************/
++
++#define DANUBE_IOM                          (0xBF105000)
++/***********************************************************************/
++
++
++/***Receive FIFO***/
++#define DANUBE_IOM_RFIFO                        ((volatile u32*)(DANUBE_IOM+ 0x0000))
++#define DANUBE_IOM_RFIFO_RXD (value)                (((( 1 << 8) - 1) & (value)) << 0)
++
++/***Transmit FIFO***/
++#define DANUBE_IOM_XFIFO                        ((volatile u32*)(DANUBE_IOM+ 0x0000))
++#define DANUBE_IOM_XFIFO_TXD (value)                (((( 1 << 8) - 1) & (value)) << 0)
++
++/***Interrupt Status Register HDLC***/
++#define DANUBE_IOM_ISTAH                        ((volatile u32*)(DANUBE_IOM+ 0x0080))
++#define DANUBE_IOM_ISTAH_RME                              (1 << 7)
++#define DANUBE_IOM_ISTAH_RPF                              (1 << 6)
++#define DANUBE_IOM_ISTAH_RFO                              (1 << 5)
++#define DANUBE_IOM_ISTAH_XPR                              (1 << 4)
++#define DANUBE_IOM_ISTAH_XMR                              (1 << 3)
++#define DANUBE_IOM_ISTAH_XDU                              (1 << 2)
++
++/***Interrupt Mask Register HDLC***/
++#define DANUBE_IOM_MASKH                        ((volatile u32*)(DANUBE_IOM+ 0x0080))
++#define DANUBE_IOM_MASKH_RME                              (1 << 7)
++#define DANUBE_IOM_MASKH_RPF                              (1 << 6)
++#define DANUBE_IOM_MASKH_RFO                              (1 << 5)
++#define DANUBE_IOM_MASKH_XPR                              (1 << 4)
++#define DANUBE_IOM_MASKH_XMR                              (1 << 3)
++#define DANUBE_IOM_MASKH_XDU                              (1 << 2)
++
++/***Status Register***/
++#define DANUBE_IOM_STAR                         ((volatile u32*)(DANUBE_IOM+ 0x0084))
++#define DANUBE_IOM_STAR_XDOV                            (1 << 7)
++#define DANUBE_IOM_STAR_XFW                              (1 << 6)
++#define DANUBE_IOM_STAR_RACI                            (1 << 3)
++#define DANUBE_IOM_STAR_XACI                            (1 << 1)
++
++/***Command Register***/
++#define DANUBE_IOM_CMDR                         ((volatile u32*)(DANUBE_IOM+ 0x0084))
++#define DANUBE_IOM_CMDR_RMC                              (1 << 7)
++#define DANUBE_IOM_CMDR_RRES                            (1 << 6)
++#define DANUBE_IOM_CMDR_XTF                              (1 << 3)
++#define DANUBE_IOM_CMDR_XME                              (1 << 1)
++#define DANUBE_IOM_CMDR_XRES                            (1 << 0)
++
++/***Mode Register***/
++#define DANUBE_IOM_MODEH                        ((volatile u32*)(DANUBE_IOM+ 0x0088))
++#define DANUBE_IOM_MODEH_MDS2                            (1 << 7)
++#define DANUBE_IOM_MODEH_MDS1                            (1 << 6)
++#define DANUBE_IOM_MODEH_MDS0                            (1 << 5)
++#define DANUBE_IOM_MODEH_RAC                              (1 << 3)
++#define DANUBE_IOM_MODEH_DIM2                            (1 << 2)
++#define DANUBE_IOM_MODEH_DIM1                            (1 << 1)
++#define DANUBE_IOM_MODEH_DIM0                            (1 << 0)
++
++/***Extended Mode Register***/
++#define DANUBE_IOM_EXMR                         ((volatile u32*)(DANUBE_IOM+ 0x008C))
++#define DANUBE_IOM_EXMR_XFBS                            (1 << 7)
++#define DANUBE_IOM_EXMR_RFBS (value)               (((( 1 << 2) - 1) & (value)) << 5)
++#define DANUBE_IOM_EXMR_SRA                              (1 << 4)
++#define DANUBE_IOM_EXMR_XCRC                            (1 << 3)
++#define DANUBE_IOM_EXMR_RCRC                            (1 << 2)
++#define DANUBE_IOM_EXMR_ITF                              (1 << 0)
++
++/***SAPI1 Register***/
++#define DANUBE_IOM_SAP1                         ((volatile u32*)(DANUBE_IOM+ 0x0094))
++#define DANUBE_IOM_SAP1_SAPI1 (value)              (((( 1 << 6) - 1) & (value)) << 2)
++#define DANUBE_IOM_SAP1_MHA                              (1 << 0)
++
++/***Receive Frame Byte Count Low***/
++#define DANUBE_IOM_RBCL                         ((volatile u32*)(DANUBE_IOM+ 0x0098))
++#define DANUBE_IOM_RBCL_RBC(value)              (1 << value)
++
++
++/***SAPI2 Register***/
++#define DANUBE_IOM_SAP2                         ((volatile u32*)(DANUBE_IOM+ 0x0098))
++#define DANUBE_IOM_SAP2_SAPI2 (value)              (((( 1 << 6) - 1) & (value)) << 2)
++#define DANUBE_IOM_SAP2_MLA                              (1 << 0)
++
++/***Receive Frame Byte Count High***/
++#define DANUBE_IOM_RBCH                         ((volatile u32*)(DANUBE_IOM+ 0x009C))
++#define DANUBE_IOM_RBCH_OV                              (1 << 4)
++#define DANUBE_IOM_RBCH_RBC11                          (1 << 3)
++#define DANUBE_IOM_RBCH_RBC10                          (1 << 2)
++#define DANUBE_IOM_RBCH_RBC9                            (1 << 1)
++#define DANUBE_IOM_RBCH_RBC8                            (1 << 0)
++
++/***TEI1 Register 1***/
++#define DANUBE_IOM_TEI1                         ((volatile u32*)(DANUBE_IOM+ 0x009C))
++#define DANUBE_IOM_TEI1_TEI1 (value)               (((( 1 << 7) - 1) & (value)) << 1)
++#define DANUBE_IOM_TEI1_EA                              (1 << 0)
++
++/***Receive Status Register***/
++#define DANUBE_IOM_RSTA                         ((volatile u32*)(DANUBE_IOM+ 0x00A0))
++#define DANUBE_IOM_RSTA_VFR                              (1 << 7)
++#define DANUBE_IOM_RSTA_RDO                              (1 << 6)
++#define DANUBE_IOM_RSTA_CRC                              (1 << 5)
++#define DANUBE_IOM_RSTA_RAB                              (1 << 4)
++#define DANUBE_IOM_RSTA_SA1                              (1 << 3)
++#define DANUBE_IOM_RSTA_SA0                              (1 << 2)
++#define DANUBE_IOM_RSTA_TA                              (1 << 0)
++#define DANUBE_IOM_RSTA_CR                              (1 << 1)
++
++/***TEI2 Register***/
++#define DANUBE_IOM_TEI2                         ((volatile u32*)(DANUBE_IOM+ 0x00A0))
++#define DANUBE_IOM_TEI2_TEI2 (value)               (((( 1 << 7) - 1) & (value)) << 1)
++#define DANUBE_IOM_TEI2_EA                              (1 << 0)
++
++/***Test Mode Register HDLC***/
++#define DANUBE_IOM_TMH                          ((volatile u32*)(DANUBE_IOM+ 0x00A4))
++#define DANUBE_IOM_TMH_TLP                              (1 << 0)
++
++/***Command/Indication Receive 0***/
++#define DANUBE_IOM_CIR0                         ((volatile u32*)(DANUBE_IOM+ 0x00B8))
++#define DANUBE_IOM_CIR0_CODR0 (value)              (((( 1 << 4) - 1) & (value)) << 4)
++#define DANUBE_IOM_CIR0_CIC0                            (1 << 3)
++#define DANUBE_IOM_CIR0_CIC1                            (1 << 2)
++#define DANUBE_IOM_CIR0_SG                              (1 << 1)
++#define DANUBE_IOM_CIR0_BAS                              (1 << 0)
++
++/***Command/Indication Transmit 0***/
++#define DANUBE_IOM_CIX0                         ((volatile u32*)(DANUBE_IOM+ 0x00B8))
++#define DANUBE_IOM_CIX0_CODX0 (value)              (((( 1 << 4) - 1) & (value)) << 4)
++#define DANUBE_IOM_CIX0_TBA2                            (1 << 3)
++#define DANUBE_IOM_CIX0_TBA1                            (1 << 2)
++#define DANUBE_IOM_CIX0_TBA0                            (1 << 1)
++#define DANUBE_IOM_CIX0_BAC                              (1 << 0)
++
++/***Command/Indication Receive 1***/
++#define DANUBE_IOM_CIR1                         ((volatile u32*)(DANUBE_IOM+ 0x00BC))
++#define DANUBE_IOM_CIR1_CODR1 (value)              (((( 1 << 6) - 1) & (value)) << 2)
++
++/***Command/Indication Transmit 1***/
++#define DANUBE_IOM_CIX1                         ((volatile u32*)(DANUBE_IOM+ 0x00BC))
++#define DANUBE_IOM_CIX1_CODX1 (value)              (((( 1 << 6) - 1) & (value)) << 2)
++#define DANUBE_IOM_CIX1_CICW                            (1 << 1)
++#define DANUBE_IOM_CIX1_CI1E                            (1 << 0)
++
++/***Controller Data Access Reg. (CH10)***/
++#define DANUBE_IOM_CDA10                        ((volatile u32*)(DANUBE_IOM+ 0x0100))
++#define DANUBE_IOM_CDA10_CDA (value)                (((( 1 << 8) - 1) & (value)) << 0)
++
++/***Controller Data Access Reg. (CH11)***/
++#define DANUBE_IOM_CDA11                        ((volatile u32*)(DANUBE_IOM+ 0x0104))
++#define DANUBE_IOM_CDA11_CDA (value)                (((( 1 << 8) - 1) & (value)) << 0)
++
++/***Controller Data Access Reg. (CH20)***/
++#define DANUBE_IOM_CDA20                        ((volatile u32*)(DANUBE_IOM+ 0x0108))
++#define DANUBE_IOM_CDA20_CDA (value)                (((( 1 << 8) - 1) & (value)) << 0)
++
++/***Controller Data Access Reg. (CH21)***/
++#define DANUBE_IOM_CDA21                        ((volatile u32*)(DANUBE_IOM+ 0x010C))
++#define DANUBE_IOM_CDA21_CDA (value)                (((( 1 << 8) - 1) & (value)) << 0)
++
++/***Time Slot and Data Port Sel. (CH10)***/
++#define DANUBE_IOM_CDA_TSDP10                   ((volatile u32*)(DANUBE_IOM+ 0x0110))
++#define DANUBE_IOM_CDA_TSDP10_DPS                              (1 << 7)
++#define DANUBE_IOM_CDA_TSDP10_TSS (value)                (((( 1 << 4) - 1) & (value)) << 0)
++
++/***Time Slot and Data Port Sel. (CH11)***/
++#define DANUBE_IOM_CDA_TSDP11                   ((volatile u32*)(DANUBE_IOM+ 0x0114))
++#define DANUBE_IOM_CDA_TSDP11_DPS                              (1 << 7)
++#define DANUBE_IOM_CDA_TSDP11_TSS (value)                (((( 1 << 4) - 1) & (value)) << 0)
++
++/***Time Slot and Data Port Sel. (CH20)***/
++#define DANUBE_IOM_CDA_TSDP20                   ((volatile u32*)(DANUBE_IOM+ 0x0118))
++#define DANUBE_IOM_CDA_TSDP20_DPS                              (1 << 7)
++#define DANUBE_IOM_CDA_TSDP20_TSS (value)                (((( 1 << 4) - 1) & (value)) << 0)
++
++/***Time Slot and Data Port Sel. (CH21)***/
++#define DANUBE_IOM_CDA_TSDP21                   ((volatile u32*)(DANUBE_IOM+ 0x011C))
++#define DANUBE_IOM_CDA_TSDP21_DPS                              (1 << 7)
++#define DANUBE_IOM_CDA_TSDP21_TSS (value)                (((( 1 << 4) - 1) & (value)) << 0)
++
++/***Time Slot and Data Port Sel. (CH10)***/
++#define DANUBE_IOM_CO_TSDP10                    ((volatile u32*)(DANUBE_IOM+ 0x0120))
++#define DANUBE_IOM_CO_TSDP10_DPS                              (1 << 7)
++#define DANUBE_IOM_CO_TSDP10_TSS (value)                (((( 1 << 4) - 1) & (value)) << 0)
++
++/***Time Slot and Data Port Sel. (CH11)***/
++#define DANUBE_IOM_CO_TSDP11                    ((volatile u32*)(DANUBE_IOM+ 0x0124))
++#define DANUBE_IOM_CO_TSDP11_DPS                              (1 << 7)
++#define DANUBE_IOM_CO_TSDP11_TSS (value)                (((( 1 << 4) - 1) & (value)) << 0)
++
++/***Time Slot and Data Port Sel. (CH20)***/
++#define DANUBE_IOM_CO_TSDP20                    ((volatile u32*)(DANUBE_IOM+ 0x0128))
++#define DANUBE_IOM_CO_TSDP20_DPS                              (1 << 7)
++#define DANUBE_IOM_CO_TSDP20_TSS (value)                (((( 1 << 4) - 1) & (value)) << 0)
++
++/***Time Slot and Data Port Sel. (CH21)***/
++#define DANUBE_IOM_CO_TSDP21                    ((volatile u32*)(DANUBE_IOM+ 0x012C))
++#define DANUBE_IOM_CO_TSDP21_DPS                              (1 << 7)
++#define DANUBE_IOM_CO_TSDP21_TSS (value)                (((( 1 << 4) - 1) & (value)) << 0)
++
++/***Ctrl. Reg. Contr. Data Access CH1x***/
++#define DANUBE_IOM_CDA1_CR                      ((volatile u32*)(DANUBE_IOM+ 0x0138))
++#define DANUBE_IOM_CDA1_CR_EN_TBM                        (1 << 5)
++#define DANUBE_IOM_CDA1_CR_EN_I1                          (1 << 4)
++#define DANUBE_IOM_CDA1_CR_EN_I0                          (1 << 3)
++#define DANUBE_IOM_CDA1_CR_EN_O1                          (1 << 2)
++#define DANUBE_IOM_CDA1_CR_EN_O0                          (1 << 1)
++#define DANUBE_IOM_CDA1_CR_SWAP                            (1 << 0)
++
++/***Ctrl. Reg. Contr. Data Access CH1x***/
++#define DANUBE_IOM_CDA2_CR                      ((volatile u32*)(DANUBE_IOM+ 0x013C))
++#define DANUBE_IOM_CDA2_CR_EN_TBM                        (1 << 5)
++#define DANUBE_IOM_CDA2_CR_EN_I1                          (1 << 4)
++#define DANUBE_IOM_CDA2_CR_EN_I0                          (1 << 3)
++#define DANUBE_IOM_CDA2_CR_EN_O1                          (1 << 2)
++#define DANUBE_IOM_CDA2_CR_EN_O0                          (1 << 1)
++#define DANUBE_IOM_CDA2_CR_SWAP                            (1 << 0)
++
++/***Control Register B-Channel Data***/
++#define DANUBE_IOM_BCHA_CR                      ((volatile u32*)(DANUBE_IOM+ 0x0144))
++#define DANUBE_IOM_BCHA_CR_EN_BC2                        (1 << 4)
++#define DANUBE_IOM_BCHA_CR_EN_BC1                        (1 << 3)
++
++/***Control Register B-Channel Data***/
++#define DANUBE_IOM_BCHB_CR                      ((volatile u32*)(DANUBE_IOM+ 0x0148))
++#define DANUBE_IOM_BCHB_CR_EN_BC2                        (1 << 4)
++#define DANUBE_IOM_BCHB_CR_EN_BC1                        (1 << 3)
++
++/***Control Reg. for HDLC and CI1 Data***/
++#define DANUBE_IOM_DCI_CR                       ((volatile u32*)(DANUBE_IOM+ 0x014C))
++#define DANUBE_IOM_DCI_CR_DPS_CI1                      (1 << 7)
++#define DANUBE_IOM_DCI_CR_EN_CI1                        (1 << 6)
++#define DANUBE_IOM_DCI_CR_EN_D                            (1 << 5)
++
++/***Control Reg. for HDLC and CI1 Data***/
++#define DANUBE_IOM_DCIC_CR                      ((volatile u32*)(DANUBE_IOM+ 0x014C))
++#define DANUBE_IOM_DCIC_CR_DPS_CI0                      (1 << 7)
++#define DANUBE_IOM_DCIC_CR_EN_CI0                        (1 << 6)
++#define DANUBE_IOM_DCIC_CR_DPS_D                          (1 << 5)
++
++/***Control Reg. Serial Data Strobe x***/
++#define DANUBE_IOM_SDS_CR                       ((volatile u32*)(DANUBE_IOM+ 0x0154))
++#define DANUBE_IOM_SDS_CR_ENS_TSS                      (1 << 7)
++#define DANUBE_IOM_SDS_CR_ENS_TSS_1                  (1 << 6)
++#define DANUBE_IOM_SDS_CR_ENS_TSS_3                  (1 << 5)
++#define DANUBE_IOM_SDS_CR_TSS (value)                (((( 1 << 4) - 1) & (value)) << 0)
++
++/***Control Register IOM Data***/
++#define DANUBE_IOM_IOM_CR                       ((volatile u32*)(DANUBE_IOM+ 0x015C))
++#define DANUBE_IOM_IOM_CR_SPU                              (1 << 7)
++#define DANUBE_IOM_IOM_CR_CI_CS                          (1 << 5)
++#define DANUBE_IOM_IOM_CR_TIC_DIS                      (1 << 4)
++#define DANUBE_IOM_IOM_CR_EN_BCL                        (1 << 3)
++#define DANUBE_IOM_IOM_CR_CLKM                            (1 << 2)
++#define DANUBE_IOM_IOM_CR_Res                              (1 << 1)
++#define DANUBE_IOM_IOM_CR_DIS_IOM                      (1 << 0)
++
++/***Synchronous Transfer Interrupt***/
++#define DANUBE_IOM_STI                          ((volatile u32*)(DANUBE_IOM+ 0x0160))
++#define DANUBE_IOM_STI_STOV21                        (1 << 7)
++#define DANUBE_IOM_STI_STOV20                        (1 << 6)
++#define DANUBE_IOM_STI_STOV11                        (1 << 5)
++#define DANUBE_IOM_STI_STOV10                        (1 << 4)
++#define DANUBE_IOM_STI_STI21                          (1 << 3)
++#define DANUBE_IOM_STI_STI20                          (1 << 2)
++#define DANUBE_IOM_STI_STI11                          (1 << 1)
++#define DANUBE_IOM_STI_STI10                          (1 << 0)
++
++/***Acknowledge Synchronous Transfer Interrupt***/
++#define DANUBE_IOM_ASTI                         ((volatile u32*)(DANUBE_IOM+ 0x0160))
++#define DANUBE_IOM_ASTI_ACK21                          (1 << 3)
++#define DANUBE_IOM_ASTI_ACK20                          (1 << 2)
++#define DANUBE_IOM_ASTI_ACK11                          (1 << 1)
++#define DANUBE_IOM_ASTI_ACK10                          (1 << 0)
++
++/***Mask Synchronous Transfer Interrupt***/
++#define DANUBE_IOM_MSTI                         ((volatile u32*)(DANUBE_IOM+ 0x0164))
++#define DANUBE_IOM_MSTI_STOV21                        (1 << 7)
++#define DANUBE_IOM_MSTI_STOV20                        (1 << 6)
++#define DANUBE_IOM_MSTI_STOV11                        (1 << 5)
++#define DANUBE_IOM_MSTI_STOV10                        (1 << 4)
++#define DANUBE_IOM_MSTI_STI21                          (1 << 3)
++#define DANUBE_IOM_MSTI_STI20                          (1 << 2)
++#define DANUBE_IOM_MSTI_STI11                          (1 << 1)
++#define DANUBE_IOM_MSTI_STI10                          (1 << 0)
++
++/***Configuration Register for Serial Data Strobes***/
++#define DANUBE_IOM_SDS_CONF                    ((volatile u32*)(DANUBE_IOM+ 0x0168))
++#define DANUBE_IOM_SDS_CONF_SDS_BCL                      (1 << 0)
++
++/***Monitoring CDA Bits***/
++#define DANUBE_IOM_MCDA                         ((volatile u32*)(DANUBE_IOM+ 0x016C))
++#define DANUBE_IOM_MCDA_MCDA21 (value)             (((( 1 << 2) - 1) & (value)) << 6)
++#define DANUBE_IOM_MCDA_MCDA20 (value)             (((( 1 << 2) - 1) & (value)) << 4)
++#define DANUBE_IOM_MCDA_MCDA11 (value)             (((( 1 << 2) - 1) & (value)) << 2)
++#define DANUBE_IOM_MCDA_MCDA10 (value)             (((( 1 << 2) - 1) & (value)) << 0)
++
++/***********************************************************************/
++/*  Module      :  ASC0 register address and bits                      */
++/***********************************************************************/
++#define AMAZON_S_ASC0                               (KSEG1 | 0x1E100400)
++/***********************************************************************/
++#define AMAZON_S_ASC0_TBUF                          ((volatile u32*)(AMAZON_S_ASC0 + 0x0020))
++#define AMAZON_S_ASC0_RBUF                          ((volatile u32*)(AMAZON_S_ASC0 + 0x0024))
++#define AMAZON_S_ASC0_FSTAT                         ((volatile u32*)(AMAZON_S_ASC0 + 0x0048))
++
++
++/***********************************************************************/
++/*  Module      :  ASC1 register address and bits                      */
++/***********************************************************************/
++#define AMAZON_S_DMA_BASE                           0xBE104100
++#define AMAZON_S_ASC1                               (KSEG1 | 0x1E100C00)
++/***********************************************************************/
++#define AMAZON_S_ASC1_TBUF                          ((volatile u32*)(AMAZON_S_ASC1 + 0x0020))
++#define AMAZON_S_ASC1_RBUF                          ((volatile u32*)(AMAZON_S_ASC1 + 0x0024))
++#define AMAZON_S_ASC1_FSTAT                         ((volatile u32*)(AMAZON_S_ASC1 + 0x0048))
++
++
++/***********************************************************************/
++/*  Module      :  DMA register address and bits                       */
++/***********************************************************************/
++#define AMAZONS_DMA_OFFSET 0xBE104100
++/***********************************************************************/
++#define AMAZON_S_DMA_CLC                   ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x0000))
++#define AMAZON_S_DMA_ID                    ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x0008))
++#define AMAZON_S_DMA_CTRL                  (volatile u32*)(AMAZON_S_DMA_BASE + 0x10)
++
++#define AMAZON_S_DMA_PS                    ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x0040))
++#define AMAZON_S_DMA_PCTRL                 ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x0044))
++#define AMAZON_S_DMA_IRNEN                 ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x00F4))
++#define AMAZON_S_DMA_IRNCR                 ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x00F8))
++#define AMAZON_S_DMA_IRNICR                ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x00FC))
++
++#define AMAZON_S_DMA_CS                    ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x0018))
++#define AMAZON_S_DMA_CCTRL                 ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x001C))
++#define AMAZON_S_DMA_CDBA                  ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x0020))
++#define AMAZON_S_DMA_CIE                   ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x002C))
++#define AMAZON_S_DMA_CIS                   ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x0028))
++#define AMAZON_S_DMA_CDLEN                 ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x0024))
++#define AMAZON_S_DMA_CPOLL                 ((volatile u32*)(AMAZONS_DMA_OFFSET + 0x0014))
++
++
++/***********************************************************************/
++/*  Module      :  Debug register address and bits                     */
++/***********************************************************************/
++
++#define DANUBE_Debug                        (0xBF106000)
++/***********************************************************************/
++
++
++/***MCD Break Bus Switch Register***/
++#define DANUBE_Debug_MCD_BBS                    ((volatile u32*)(DANUBE_Debug+ 0x0000))
++#define DANUBE_Debug_MCD_BBS_BTP1               (1 << 19)
++#define DANUBE_Debug_MCD_BBS_BTP0               (1 << 18)
++#define DANUBE_Debug_MCD_BBS_BSP1               (1 << 17)
++#define DANUBE_Debug_MCD_BBS_BSP0               (1 << 16)
++#define DANUBE_Debug_MCD_BBS_BT5EN              (1 << 15)
++#define DANUBE_Debug_MCD_BBS_BT4EN              (1 << 14)
++#define DANUBE_Debug_MCD_BBS_BT5                (1 << 13)
++#define DANUBE_Debug_MCD_BBS_BT4                (1 << 12)
++#define DANUBE_Debug_MCD_BBS_BS5EN              (1 << 7)
++#define DANUBE_Debug_MCD_BBS_BS4EN              (1 << 6)
++#define DANUBE_Debug_MCD_BBS_BS5                (1 << 5)
++#define DANUBE_Debug_MCD_BBS_BS4                (1 << 4)
++
++/***MCD Multiplexer Control Register***/
++#define DANUBE_Debug_MCD_MCR                    ((volatile u32*)(DANUBE_Debug+ 0x0008))
++#define DANUBE_Debug_MCD_MCR_MUX5               (1 << 4)
++#define DANUBE_Debug_MCD_MCR_MUX4               (1 << 3)
++#define DANUBE_Debug_MCD_MCR_MUX1               (1 << 0)
++
++
++/***********************************************************************/
++/*  Module      :  SRAM register address and bits                      */
++/***********************************************************************/
++
++#define DANUBE_SRAM                             (0xBF980000)
++/***********************************************************************/
++
++
++/***SRAM Size Register***/
++#define DANUBE_SRAM_SRAM_SIZE                   ((volatile u32*)(DANUBE_SRAM+ 0x0800))
++#define DANUBE_SRAM_SRAM_SIZE_SIZE (value)      (((( 1 << 23) - 1) & (value)) << 0)
++
++/***********************************************************************/
++/*  Module      :  BIU register address and bits                       */
++/***********************************************************************/
++
++#define DANUBE_BIU                          (0xBFA80000)
++/***********************************************************************/
++
++
++/***BIU Identification Register***/
++#define DANUBE_BIU_BIU_ID                       ((volatile u32*)(DANUBE_BIU+ 0x0000))
++#define DANUBE_BIU_BIU_ID_ARCH                            (1 << 16)
++#define DANUBE_BIU_BIU_ID_ID (value)                (((( 1 << 8) - 1) & (value)) << 8)
++#define DANUBE_BIU_BIU_ID_REV (value)                (((( 1 << 8) - 1) & (value)) << 0)
++
++/***BIU Access Error Cause Register***/
++#define DANUBE_BIU_BIU_ERRCAUSE                 ((volatile u32*)(DANUBE_BIU+ 0x0100))
++#define DANUBE_BIU_BIU_ERRCAUSE_ERR                              (1 << 31)
++#define DANUBE_BIU_BIU_ERRCAUSE_PORT (value)               (((( 1 << 4) - 1) & (value)) << 16)
++#define DANUBE_BIU_BIU_ERRCAUSE_CAUSE (value)              (((( 1 << 2) - 1) & (value)) << 0)
++
++/***BIU Access Error Address Register***/
++#define DANUBE_BIU_BIU_ERRADDR                  ((volatile u32*)(DANUBE_BIU+ 0x0108))
++#define DANUBE_BIU_BIU_ERRADDR_ADDR
++
++
++/***********************************************************************/
++/*  Module      :  ICU register address and bits                       */
++/***********************************************************************/
++
++#define AMAZON_S_ICU                            (KSEG1 | 0x1F880200)
++/***********************************************************************/
++#define AMAZON_S_ICU_IM0_ISR                    ((volatile u32*)(AMAZON_S_ICU + 0x0000))
++#define AMAZON_S_ICU_IM0_IER                    ((volatile u32*)(AMAZON_S_ICU + 0x0008))
++#define AMAZON_S_ICU_IM0_IOSR                   ((volatile u32*)(AMAZON_S_ICU + 0x0010))
++#define AMAZON_S_ICU_IM0_IRSR                   ((volatile u32*)(AMAZON_S_ICU + 0x0018))
++#define AMAZON_S_ICU_IM0_IMR                    ((volatile u32*)(AMAZON_S_ICU + 0x0020))
++
++#define AMAZON_S_ICU_IM1_ISR                    ((volatile u32*)(AMAZON_S_ICU + 0x0028))
++#define AMAZON_S_ICU_IM1_IER                    ((volatile u32*)(AMAZON_S_ICU + 0x0030))
++#define AMAZON_S_ICU_IM1_IOSR                   ((volatile u32*)(AMAZON_S_ICU + 0x0038))
++#define AMAZON_S_ICU_IM1_IRSR                   ((volatile u32*)(AMAZON_S_ICU + 0x0040))
++#define AMAZON_S_ICU_IM1_IMR                    ((volatile u32*)(AMAZON_S_ICU + 0x0048))
++
++#define AMAZON_S_ICU_IM2_ISR                    ((volatile u32*)(AMAZON_S_ICU + 0x0050))
++#define AMAZON_S_ICU_IM2_IER                    ((volatile u32*)(AMAZON_S_ICU + 0x0058))
++#define AMAZON_S_ICU_IM2_IOSR                   ((volatile u32*)(AMAZON_S_ICU + 0x0060))
++#define AMAZON_S_ICU_IM2_IRSR                   ((volatile u32*)(AMAZON_S_ICU + 0x0068))
++#define AMAZON_S_ICU_IM2_IMR                    ((volatile u32*)(AMAZON_S_ICU + 0x0070))
++
++#define AMAZON_S_ICU_IM3_ISR                    ((volatile u32*)(AMAZON_S_ICU + 0x0078))
++#define AMAZON_S_ICU_IM3_IER                    ((volatile u32*)(AMAZON_S_ICU + 0x0080))
++#define AMAZON_S_ICU_IM3_IOSR                   ((volatile u32*)(AMAZON_S_ICU + 0x0088))
++#define AMAZON_S_ICU_IM3_IRSR                   ((volatile u32*)(AMAZON_S_ICU + 0x0090))
++#define AMAZON_S_ICU_IM3_IMR                    ((volatile u32*)(AMAZON_S_ICU + 0x0098))
++
++#define AMAZON_S_ICU_IM4_ISR                    ((volatile u32*)(AMAZON_S_ICU + 0x00A0))
++#define AMAZON_S_ICU_IM4_IER                    ((volatile u32*)(AMAZON_S_ICU + 0x00A8))
++#define AMAZON_S_ICU_IM4_IOSR                   ((volatile u32*)(AMAZON_S_ICU + 0x00B0))
++#define AMAZON_S_ICU_IM4_IRSR                   ((volatile u32*)(AMAZON_S_ICU + 0x00B8))
++#define AMAZON_S_ICU_IM4_IMR                    ((volatile u32*)(AMAZON_S_ICU + 0x00C0))
++
++/***Interrupt Vector Value Register***/
++#define AMAZON_S_ICU_IM_VEC                     ((volatile u32*)(AMAZON_S_ICU + 0x00F8))
++
++/***Interrupt Vector Value Mask***/
++#define AMAZON_S_ICU_IM0_VEC_MASK               (0x3F << 0)
++#define AMAZON_S_ICU_IM1_VEC_MASK               (0x3F << 6)
++#define AMAZON_S_ICU_IM2_VEC_MASK               (0x3F << 12)
++#define AMAZON_S_ICU_IM3_VEC_MASK               (0x3F << 18)
++#define AMAZON_S_ICU_IM4_VEC_MASK               (0x3F << 24)
++
++#define AMAZON_S_ICU_IM0_ISR_IR(value)          (1 << (value))
++#define AMAZON_S_ICU_IM0_IER_IR(value)          (1 << (value))
++#define AMAZON_S_ICU_IM1_ISR_IR(value)          (1 << (value))
++#define AMAZON_S_ICU_IM1_IER_IR(value)          (1 << (value))
++#define AMAZON_S_ICU_IM2_ISR_IR(value)          (1 << (value))
++#define AMAZON_S_ICU_IM2_IER_IR(value)          (1 << (value))
++#define AMAZON_S_ICU_IM3_ISR_IR(value)          (1 << (value))
++#define AMAZON_S_ICU_IM3_IER_IR(value)          (1 << (value))
++#define AMAZON_S_ICU_IM4_ISR_IR(value)          (1 << (value))
++#define AMAZON_S_ICU_IM4_IER_IR(value)          (1 << (value))
++#define AMAZON_S_ICU_IM5_ISR_IR(value)          (1 << (value))
++#define AMAZON_S_ICU_IM5_IER_IR(value)          (1 << (value))
++
++/***DMA Interrupt Mask Value***/
++#define AMAZON_S_DMA_H_MASK                     0x00000fff
++
++/***External Interrupt Control Register***/
++#define AMAZON_S_ICU_EIU                        (KSEG1 | 0x1F101000)
++#define AMAZON_S_ICU_EIU_EXIN_C                 ((volatile u32 *)(AMAZON_S_ICU_EIU + 0x0000))
++#define AMAZON_S_ICU_EIU_INIC                   ((volatile u32 *)(AMAZON_S_ICU_EIU + 0x0004))
++#define AMAZON_S_ICU_EIU_INC                    ((volatile u32 *)(AMAZON_S_ICU_EIU + 0x0008))
++#define AMAZON_S_ICU_EIU_INEN                   ((volatile u32 *)(AMAZON_S_ICU_EIU + 0x000C))
++#define AMAZON_S_YIELDEN(n)                     ((volatile u32 *)(AMAZON_S_ICU_EIU + 0x0010 + (n) * 4)
++#define AMAZON_S_NMI_CR                         ((volatile u32 *)(AMAZON_S_ICU_EIU + 0x00F0))
++#define AMAZON_S_NMI_SR                         ((volatile u32 *)(AMAZON_S_ICU_EIU + 0x00F4))
++
++
++/***********************************************************************/
++/*  Module      :  MPS register address and bits                       */
++/***********************************************************************/
++
++#define DANUBE_MPS                          (KSEG1+0x1F107000)
++/***********************************************************************/
++
++#define DANUBE_MPS_CHIPID                       ((volatile u32*)(DANUBE_MPS + 0x0344))
++#define DANUBE_MPS_CHIPID_VERSION_GET(value)    (((value) >> 28) & ((1 << 4) - 1))
++#define DANUBE_MPS_CHIPID_VERSION_SET(value)    (((( 1 << 4) - 1) & (value)) << 28)
++#define DANUBE_MPS_CHIPID_PARTNUM_GET(value)    (((value) >> 12) & ((1 << 16) - 1))
++#define DANUBE_MPS_CHIPID_PARTNUM_SET(value)    (((( 1 << 16) - 1) & (value)) << 12)
++#define DANUBE_MPS_CHIPID_MANID_GET(value)      (((value) >> 1) & ((1 << 10) - 1))
++#define DANUBE_MPS_CHIPID_MANID_SET(value)      (((( 1 << 10) - 1) & (value)) << 1)
++
++
++/* voice channel 0 ... 3 interrupt enable register */
++#define DANUBE_MPS_VC0ENR ((volatile u32*)(DANUBE_MPS + 0x0000))
++#define DANUBE_MPS_VC1ENR ((volatile u32*)(DANUBE_MPS + 0x0004))
++#define DANUBE_MPS_VC2ENR ((volatile u32*)(DANUBE_MPS + 0x0008))
++#define DANUBE_MPS_VC3ENR ((volatile u32*)(DANUBE_MPS + 0x000C))
++/* voice channel 0 ... 3 interrupt status read register */
++#define DANUBE_MPS_RVC0SR ((volatile u32*)(DANUBE_MPS + 0x0010))
++#define DANUBE_MPS_RVC1SR ((volatile u32*)(DANUBE_MPS + 0x0014))
++#define DANUBE_MPS_RVC2SR ((volatile u32*)(DANUBE_MPS + 0x0018))
++#define DANUBE_MPS_RVC3SR ((volatile u32*)(DANUBE_MPS + 0x001C))
++/* voice channel 0 ... 3 interrupt status set register */
++#define DANUBE_MPS_SVC0SR ((volatile u32*)(DANUBE_MPS + 0x0020))
++#define DANUBE_MPS_SVC1SR ((volatile u32*)(DANUBE_MPS + 0x0024))
++#define DANUBE_MPS_SVC2SR ((volatile u32*)(DANUBE_MPS + 0x0028))
++#define DANUBE_MPS_SVC3SR ((volatile u32*)(DANUBE_MPS + 0x002C))
++/* voice channel 0 ... 3 interrupt status clear register */
++#define DANUBE_MPS_CVC0SR ((volatile u32*)(DANUBE_MPS + 0x0030))
++#define DANUBE_MPS_CVC1SR ((volatile u32*)(DANUBE_MPS + 0x0034))
++#define DANUBE_MPS_CVC2SR ((volatile u32*)(DANUBE_MPS + 0x0038))
++#define DANUBE_MPS_CVC3SR ((volatile u32*)(DANUBE_MPS + 0x003C))
++/* common status 0 and 1 read register */
++#define DANUBE_MPS_RAD0SR ((volatile u32*)(DANUBE_MPS + 0x0040))
++#define DANUBE_MPS_RAD1SR ((volatile u32*)(DANUBE_MPS + 0x0044))
++/* common status 0 and 1 set register */
++#define DANUBE_MPS_SAD0SR ((volatile u32*)(DANUBE_MPS + 0x0048))
++#define DANUBE_MPS_SAD1SR ((volatile u32*)(DANUBE_MPS + 0x004C))
++/* common status 0 and 1 clear register */
++#define DANUBE_MPS_CAD0SR ((volatile u32*)(DANUBE_MPS + 0x0050))
++#define DANUBE_MPS_CAD1SR ((volatile u32*)(DANUBE_MPS + 0x0054))
++/* common status 0 and 1 enable register */
++#define DANUBE_MPS_AD0ENR ((volatile u32*)(DANUBE_MPS + 0x0058))
++#define DANUBE_MPS_AD1ENR ((volatile u32*)(DANUBE_MPS + 0x005C))
++/* notification enable register */
++#define DANUBE_MPS_CPU0_NFER ((volatile u32*)(DANUBE_MPS + 0x0060))
++#define DANUBE_MPS_CPU1_NFER ((volatile u32*)(DANUBE_MPS + 0x0064))
++/* CPU to CPU interrup request register */
++#define DANUBE_MPS_CPU0_2_CPU1_IRR ((volatile u32*)(DANUBE_MPS + 0x0070))
++#define DANUBE_MPS_CPU0_2_CPU1_IER ((volatile u32*)(DANUBE_MPS + 0x0074))
++/* Global interrupt request and request enable register */
++#define DANUBE_MPS_GIRR ((volatile u32*)(DANUBE_MPS + 0x0078))
++#define DANUBE_MPS_GIER ((volatile u32*)(DANUBE_MPS + 0x007C))
++
++#define DANUBE_MPS_SRAM ((volatile u32*)(KSEG1 + 0x1F200000))
++
++#define DANUBE_MPS_VCPU_FW_AD ((volatile u32*)(KSEG1 + 0x1F2001E0))
++
++#define DANUBE_FUSE_BASE_ADDR   (KSEG1+0x1F107354)
++
++/************************************************************************/
++/*   Module       :   DEU register address and bits             */
++/************************************************************************/
++//#define DANUBE_DEU_BASE_ADDR               (0xBE102000)
++#define DANUBE_DEU_BASE_ADDR               (KSEG1 + 0x1E103100)
++/*   DEU Control Register */
++#define DANUBE_DEU_CLK                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0000))
++#define DANUBE_DEU_ID                      ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0008))
++
++/*   DEU control register */
++#define DANUBE_DES_CON                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0010))
++#define DANUBE_DES_IHR                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0014))
++#define DANUBE_DES_ILR                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0018))
++#define DANUBE_DES_K1HR                    ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x001C))
++#define DANUBE_DES_K1LR                    ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0020))
++#define DANUBE_DES_K3HR                    ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0024))
++#define DANUBE_DES_K3LR                    ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0028))
++#define DANUBE_DES_IVHR                    ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x002C))
++#define DANUBE_DES_IVLR                    ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0030))
++#define DANUBE_DES_OHR                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0040))
++#define DANUBE_DES_OLR                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0050))
++
++/* AES DEU register */
++#define DANUBE_AES_CON             ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0050))
++#define DANUBE_AES_ID3R                    ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0054))
++#define DANUBE_AES_ID2R                    ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0058))
++#define DANUBE_AES_ID1R                    ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x005C))
++#define DANUBE_AES_ID0R                    ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0060))
++
++/* AES Key register */
++#define DANUBE_AES_K7R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0064))
++#define DANUBE_AES_K6R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0068))
++#define DANUBE_AES_K5R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x006C))
++#define DANUBE_AES_K4R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0070))
++#define DANUBE_AES_K3R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0074))
++#define DANUBE_AES_K2R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0078))
++#define DANUBE_AES_K1R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x007C))
++#define DANUBE_AES_K0R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0080))
++
++/* AES vector register */
++#define DANUBE_AES_IV3R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0084))
++#define DANUBE_AES_IV2R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0088))
++#define DANUBE_AES_IV1R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x008C))
++#define DANUBE_AES_IV0R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0090))
++#define DANUBE_AES_0D3R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0094))
++#define DANUBE_AES_0D2R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x0098))
++#define DANUBE_AES_OD1R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x009C))
++#define DANUBE_AES_OD0R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x00A0))
++
++/* hash control registe */
++#define DANUBE_HASH_CON                    ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x00B0))
++#define DANUBE_HASH_MR                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x00B4))
++#define DANUBE_HASH_D1R                    ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x00B8 ))
++#define DANUBE_HASH_D2R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x00BC ))
++#define DANUBE_HASH_D3R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x00C0 ))
++#define DANUBE_HASH_D4R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x00C4))
++#define DANUBE_HASH_D5R                     ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x00C8))
++
++#define DANUBE_CON                         ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x00EC))
++
++#define DANUBE_DEU_IRNEN                         ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x00F4))
++#define DANUBE_DEU_IRNCR                         ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x00F8))
++#define DANUBE_DEU_IRNICR                         ((volatile u32 *)(DANUBE_DEU_BASE_ADDR + 0x00FC))
++
++
++#if 1
++/************************************************************************/
++/*   Module       :   PPE register address and bits             */
++/************************************************************************/
++#define DANUBE_PPE32_BASE  0xBE180000
++#define DANUBE_PPE32_DEBUG_BREAK_TRACE_REG   (DANUBE_PPE32_BASE + (0x0000 * 4))
++#define DANUBE_PPE32_INT_MASK_STATUS_REG     (DANUBE_PPE32_BASE + (0x0030 * 4))
++#define DANUBE_PPE32_INT_RESOURCE_REG        (DANUBE_PPE32_BASE + (0x0040 * 4))
++#define DANUBE_PPE32_CDM_CODE_MEM_B0         (DANUBE_PPE32_BASE + (0x1000 * 4))
++#define DANUBE_PPE32_CDM_CODE_MEM_B1         (DANUBE_PPE32_BASE + (0x2000 * 4))
++#define DANUBE_PPE32_DATA_MEM_MAP_REG_BASE   (DANUBE_PPE32_BASE + (0x4000 * 4))
++
++#define DANUBE_PPE32_SRST            (DANUBE_PPE32_BASE + 0x10080)
++
++/*
++ *    ETOP MDIO Registers
++ */
++#define DANUBE_PPE32_ETOP_MDIO_CFG           ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0600 * 4)))
++#define DANUBE_PPE32_ETOP_MDIO_ACC           ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0601 * 4)))
++#define DANUBE_PPE32_ETOP_CFG                ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0602 * 4)))
++#define DANUBE_PPE32_ETOP_IG_VLAN_COS        ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0603 * 4)))
++#define DANUBE_PPE32_ETOP_IG_DSCP_COS3       ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0604 * 4)))
++#define DANUBE_PPE32_ETOP_IG_DSCP_COS2       ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0605 * 4)))
++#define DANUBE_PPE32_ETOP_IG_DSCP_COS1       ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0606 * 4)))
++#define DANUBE_PPE32_ETOP_IG_DSCP_COS0       ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0607 * 4)))
++#define DANUBE_PPE32_ETOP_IG_PLEN_CTRL       ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0608 * 4)))
++#define DANUBE_PPE32_ETOP_ISR                ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x060A * 4)))
++#define DANUBE_PPE32_ETOP_IER                ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x060B * 4)))
++#define DANUBE_PPE32_ETOP_VPID               ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x060C * 4)))
++
++
++/* ENET Register */
++#define DANUBE_PPE32_ENET_MAC_CFG               ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0610 * 4)))
++#define DANUBE_PPE32_ENET_IG_PKTDROP            ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0619 * 4)))
++#define DANUBE_PPE32_ENET_CoS_CFG           ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0618 * 4)))
++
++/* Sharebuff SB RAM2 control data */
++
++#define DANUBE_PPE32_SB2_DATABASE   ((DANUBE_PPE32_BASE + (0x8C00 * 4)))
++#define DANUBE_PPE32_SB2_CTRLBASE   ((DANUBE_PPE32_BASE + (0x92E0 * 4)))
++/************************************************************************/
++/*   Module       :   PPE register address and bits             */
++/************************************************************************/
++#define DANUBE_PPE32_BASE  0xBE180000
++#define DANUBE_PPE32_DEBUG_BREAK_TRACE_REG   (DANUBE_PPE32_BASE + (0x0000 * 4))
++#define DANUBE_PPE32_INT_MASK_STATUS_REG     (DANUBE_PPE32_BASE + (0x0030 * 4))
++#define DANUBE_PPE32_INT_RESOURCE_REG        (DANUBE_PPE32_BASE + (0x0040 * 4))
++#define DANUBE_PPE32_CDM_CODE_MEM_B0         (DANUBE_PPE32_BASE + (0x1000 * 4))
++#define DANUBE_PPE32_CDM_CODE_MEM_B1         (DANUBE_PPE32_BASE + (0x2000 * 4))
++#define DANUBE_PPE32_DATA_MEM_MAP_REG_BASE   (DANUBE_PPE32_BASE + (0x4000 * 4))
++
++/*
++ *    ETOP MDIO Registers
++ */
++#define ETOP_MDIO_CFG           ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0600 * 4)))
++#define ETOP_MDIO_ACC           ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0601 * 4)))
++#define ETOP_CFG                ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0602 * 4)))
++#define ETOP_IG_VLAN_COS        ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0603 * 4)))
++#define ETOP_IG_DSCP_COS3       ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0604 * 4)))
++#define ETOP_IG_DSCP_COS2       ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0605 * 4)))
++#define ETOP_IG_DSCP_COS1       ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0606 * 4)))
++#define ETOP_IG_DSCP_COS0       ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0607 * 4)))
++#define ETOP_IG_PLEN_CTRL       ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0608 * 4)))
++#define ETOP_ISR                ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x060A * 4)))
++#define ETOP_IER                ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x060B * 4)))
++#define ETOP_VPID               ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x060C * 4)))
++#define ENET_MAC_CFG            ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0610 * 4)))
++#define ENETS_DBA               ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0612 * 4)))
++#define ENETS_CBA               ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0613 * 4)))
++#define ENETS_CFG               ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0614 * 4)))
++#define ENETS_PGCNT             ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0615 * 4)))
++#define ENETS_PKTCNT            ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0616 * 4)))
++#define ENETS_BUF_CTRL          ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0617 * 4)))
++#define ENETS_COS_CFG           ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0618 * 4)))
++#define ENETS_IGDROP            ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0619 * 4)))
++#define ENETS_IGERR             ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x061A * 4)))
++#define ENET_MAC_DA0           ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x061B * 4)))
++#define ENET_MAC_DA1           ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x061C * 4)))
++
++#define ENETF_DBA               ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0630 * 4)))
++#define ENETF_CBA               ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0631 * 4)))
++#define ENETF_CFG               ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0632 * 4)))
++#define ENETF_PGCNT             ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0633 * 4)))
++#define ENETF_PKTCNT            ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0634 * 4)))
++#define ENETF_HFCTRL            ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0635 * 4)))
++#define ENETF_TXCTRL            ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0636 * 4)))
++
++#define ENETF_VLCOS0            ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0638 * 4)))
++#define ENETF_VLCOS1            ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0639 * 4)))
++#define ENETF_VLCOS2            ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x063A * 4)))
++#define ENETF_VLCOS3            ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x063B * 4)))
++#define ENETF_EGERR             ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x063C * 4)))
++#define ENETF_EGDROP            ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x063D * 4)))
++
++/* ENET Register */
++#define DANUBE_PPE32_ENET_MAC_CFG               ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0610 * 4)))
++#define DANUBE_PPE32_ENET_IG_PKTDROP            ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0619 * 4)))
++#define DANUBE_PPE32_ENET_CoS_CFG           ((volatile u32 *)(DANUBE_PPE32_DATA_MEM_MAP_REG_BASE + (0x0618 * 4)))
++
++/* Sharebuff SB RAM2 control data */
++
++#define DANUBE_PPE32_SB2_DATABASE   ((DANUBE_PPE32_BASE + (0x8C00 * 4)))
++#define DANUBE_PPE32_SB2_CTRLBASE   ((DANUBE_PPE32_BASE + (0x92E0 * 4)))
++#endif
++
++/* AMAZON_S GPORT SWITCH Register */
++
++#define AMAZON_S_SW                      (0xBE108000)
++
++#define AMAZON_S_SW_PS                   (AMAZON_S_SW + 0x000)
++#define AMAZON_S_SW_P0_CTL               (AMAZON_S_SW + 0x004)
++#define AMAZON_S_SW_P1_CTL               (AMAZON_S_SW + 0x008)
++#define AMAZON_S_SW_P2_CTL               (AMAZON_S_SW + 0x00C)
++#define AMAZON_S_SW_P0_VLAN              (AMAZON_S_SW + 0x010)
++#define AMAZON_S_SW_P1_VLAN              (AMAZON_S_SW + 0x014)
++#define AMAZON_S_SW_P2_VLAN              (AMAZON_S_SW + 0x018)
++#define AMAZON_S_SW_P0_INCTL             (AMAZON_S_SW + 0x020)
++#define AMAZON_S_SW_P1_INCTL             (AMAZON_S_SW + 0x024)
++#define AMAZON_S_SW_P2_INCTL             (AMAZON_S_SW + 0x028)
++#define AMAZON_S_SW_DF_PORTMAP           (AMAZON_S_SW + 0x02C)
++#define AMAZON_S_SW_P0_ECS_Q32           (AMAZON_S_SW + 0x030)
++#define AMAZON_S_SW_P0_ECS_Q10           (AMAZON_S_SW + 0x034)
++#define AMAZON_S_SW_P0_ECW_Q32           (AMAZON_S_SW + 0x038)
++#define AMAZON_S_SW_P0_ECW_Q10           (AMAZON_S_SW + 0x03C)
++#define AMAZON_S_SW_P1_ECS_Q32           (AMAZON_S_SW + 0x040)
++#define AMAZON_S_SW_P1_ECS_Q10           (AMAZON_S_SW + 0x044)
++#define AMAZON_S_SW_P1_ECW_Q32           (AMAZON_S_SW + 0x048)
++#define AMAZON_S_SW_P1_ECW_Q10           (AMAZON_S_SW + 0x04C)
++#define AMAZON_S_SW_P2_ECS_Q32           (AMAZON_S_SW + 0x050)
++#define AMAZON_S_SW_P2_ECS_Q10           (AMAZON_S_SW + 0x054)
++#define AMAZON_S_SW_P2_ECW_Q32           (AMAZON_S_SW + 0x058)
++#define AMAZON_S_SW_P2_ECW_Q10           (AMAZON_S_SW + 0x05C)
++#define AMAZON_S_SW_INT_ENA              (AMAZON_S_SW + 0x060)
++#define AMAZON_S_SW_INT_ST               (AMAZON_S_SW + 0x064)
++#define AMAZON_S_SW_GCTL0                (AMAZON_S_SW + 0x068)
++#define AMAZON_S_SW_GCTL1                (AMAZON_S_SW + 0x06C)
++#define AMAZON_S_SW_ARP                  (AMAZON_S_SW + 0x070)
++#define AMAZON_S_SW_STRM_CTL             (AMAZON_S_SW + 0x074)
++#define AMAZON_S_SW_RGMII_CTL            (AMAZON_S_SW + 0x078)
++#define AMAZON_S_SW_1P_PRT               (AMAZON_S_SW + 0x07C)
++#define AMAZON_S_SW_GBKT_SZBS            (AMAZON_S_SW + 0x080)
++#define AMAZON_S_SW_GBKT_SZEBS           (AMAZON_S_SW + 0x084)
++#define AMAZON_S_SW_BF_TH                (AMAZON_S_SW + 0x088)
++#define AMAZON_S_SW_PMAC_HD_CTL          (AMAZON_S_SW + 0x08C)
++#define AMAZON_S_SW_PMAC_SA1             (AMAZON_S_SW + 0x090)
++#define AMAZON_S_SW_PMAC_SA2             (AMAZON_S_SW + 0x094)
++#define AMAZON_S_SW_PMAC_DA1             (AMAZON_S_SW + 0x098)
++#define AMAZON_S_SW_PMAC_DA2             (AMAZON_S_SW + 0x09C)
++#define AMAZON_S_SW_PMAC_VLAN            (AMAZON_S_SW + 0x0A0)
++#define AMAZON_S_SW_PMAC_TX_IPG          (AMAZON_S_SW + 0x0A4)
++#define AMAZON_S_SW_PMAC_RX_IPG          (AMAZON_S_SW + 0x0A8)
++#define AMAZON_S_SW_ADR_TB_CTL0          (AMAZON_S_SW + 0x0AC)
++#define AMAZON_S_SW_ADR_TB_CTL1          (AMAZON_S_SW + 0x0B0)
++#define AMAZON_S_SW_ADR_TB_CTL2          (AMAZON_S_SW + 0x0B4)
++#define AMAZON_S_SW_ADR_TB_ST0           (AMAZON_S_SW + 0x0B8)
++#define AMAZON_S_SW_ADR_TB_ST1           (AMAZON_S_SW + 0x0BC)
++#define AMAZON_S_SW_ADR_TB_ST2           (AMAZON_S_SW + 0x0C0)
++#define AMAZON_S_SW_RMON_CTL             (AMAZON_S_SW + 0x0C4)
++#define AMAZON_S_SW_RMON_ST              (AMAZON_S_SW + 0x0C8)
++#define AMAZON_S_SW_MDIO_CTL             (AMAZON_S_SW + 0x0CC)
++#define AMAZON_S_SW_MDIO_DATA            (AMAZON_S_SW + 0x0D0)
++#define AMAZON_S_SW_TP_FLT_ACT           (AMAZON_S_SW + 0x0D4)
++#define AMAZON_S_SW_PRTCL_FLT_ACT        (AMAZON_S_SW + 0x0D8)
++#define AMAZON_S_SW_VLAN_FLT0            (AMAZON_S_SW + 0x100)
++#define AMAZON_S_SW_VLAN_FLT1            (AMAZON_S_SW + 0x104)
++#define AMAZON_S_SW_VLAN_FLT2            (AMAZON_S_SW + 0x108)
++#define AMAZON_S_SW_VLAN_FLT3            (AMAZON_S_SW + 0x10C)
++#define AMAZON_S_SW_VLAN_FLT4            (AMAZON_S_SW + 0x110)
++#define AMAZON_S_SW_VLAN_FLT5            (AMAZON_S_SW + 0x114)
++#define AMAZON_S_SW_VLAN_FLT6            (AMAZON_S_SW + 0x118)
++#define AMAZON_S_SW_VLAN_FLT7            (AMAZON_S_SW + 0x11C)
++#define AMAZON_S_SW_VLAN_FLT8            (AMAZON_S_SW + 0x120)
++#define AMAZON_S_SW_VLAN_FLT9            (AMAZON_S_SW + 0x124)
++#define AMAZON_S_SW_VLAN_FLT10           (AMAZON_S_SW + 0x128)
++#define AMAZON_S_SW_VLAN_FLT11           (AMAZON_S_SW + 0x12C)
++#define AMAZON_S_SW_VLAN_FLT12           (AMAZON_S_SW + 0x130)
++#define AMAZON_S_SW_VLAN_FLT13           (AMAZON_S_SW + 0x134)
++#define AMAZON_S_SW_VLAN_FLT14           (AMAZON_S_SW + 0x138)
++#define AMAZON_S_SW_VLAN_FLT15           (AMAZON_S_SW + 0x13C)
++#define AMAZON_S_SW_TP_FLT10             (AMAZON_S_SW + 0x140)
++#define AMAZON_S_SW_TP_FLT32             (AMAZON_S_SW + 0x144)
++#define AMAZON_S_SW_TP_FLT54             (AMAZON_S_SW + 0x148)
++#define AMAZON_S_SW_TP_FLT76             (AMAZON_S_SW + 0x14C)
++#define AMAZON_S_SW_DFSRV_MAP0           (AMAZON_S_SW + 0x150)
++#define AMAZON_S_SW_DFSRV_MAP1           (AMAZON_S_SW + 0x154)
++#define AMAZON_S_SW_DFSRV_MAP2           (AMAZON_S_SW + 0x158)
++#define AMAZON_S_SW_DFSRV_MAP3           (AMAZON_S_SW + 0x15C)
++#define AMAZON_S_SW_TCP_PF0              (AMAZON_S_SW + 0x160)
++#define AMAZON_S_SW_TCP_PF1              (AMAZON_S_SW + 0x164)
++#define AMAZON_S_SW_TCP_PF2              (AMAZON_S_SW + 0x168)
++#define AMAZON_S_SW_TCP_PF3              (AMAZON_S_SW + 0x16C)
++#define AMAZON_S_SW_TCP_PF4              (AMAZON_S_SW + 0x170)
++#define AMAZON_S_SW_TCP_PF5              (AMAZON_S_SW + 0x174)
++#define AMAZON_S_SW_TCP_PF6              (AMAZON_S_SW + 0x178)
++#define AMAZON_S_SW_TCP_PF7              (AMAZON_S_SW + 0x17C)
++#define AMAZON_S_SW_RA_03_00             (AMAZON_S_SW + 0x180)
++#define AMAZON_S_SW_RA_07_04             (AMAZON_S_SW + 0x184)
++#define AMAZON_S_SW_RA_0B_08             (AMAZON_S_SW + 0x188)
++#define AMAZON_S_SW_RA_0F_0C             (AMAZON_S_SW + 0x18C)
++#define AMAZON_S_SW_RA_13_10             (AMAZON_S_SW + 0x190)
++#define AMAZON_S_SW_RA_17_14             (AMAZON_S_SW + 0x194)
++#define AMAZON_S_SW_RA_1B_18             (AMAZON_S_SW + 0x198)
++#define AMAZON_S_SW_RA_1F_1C             (AMAZON_S_SW + 0x19C)
++#define AMAZON_S_SW_RA_23_20             (AMAZON_S_SW + 0x1A0)
++#define AMAZON_S_SW_RA_27_24             (AMAZON_S_SW + 0x1A4)
++#define AMAZON_S_SW_RA_2B_28             (AMAZON_S_SW + 0x1A8)
++#define AMAZON_S_SW_RA_2F_2C             (AMAZON_S_SW + 0x1AC)
++#define AMAZON_S_SW_F0                   (AMAZON_S_SW + 0x1B0)
++#define AMAZON_S_SW_F1                   (AMAZON_S_SW + 0x1B4)
++
++
++
++
++
++
++
++
++
++/***********************************************************************/
++/*  Module      :  PCI register address and bits                       */
++/***********************************************************************/
++#define DANUBE_PCI_CFG_BASE     0x17000000
++#define PCI_CR_PR_OFFSET            (KSEG1+0x1E105400)
++#define PCI_CFG_BASE                  (KSEG1+0x17000000)
++#define PCI_MEM_BASE                  (KSEG1+0x18000000)
++#define PCI_CS_PR_OFFSET            (KSEG1+0x17000000)
++
++/* PCI CONTROLLER REGISTER ADDRESS MAP */
++#define PCI_CR_CLK_CTRL_REG         (PCI_CR_PR_OFFSET + 0x0000)
++#define PCI_CR_PCI_ID_REG           (PCI_CR_PR_OFFSET + 0x0004)
++#define PCI_CR_SFT_RST_REG          (PCI_CR_PR_OFFSET + 0x0010)
++#define PCI_CR_PCI_FPI_ERR_ADDR_REG (PCI_CR_PR_OFFSET + 0x0014)
++#define PCI_CR_FCI_PCI_ERR_ADDR_REG (PCI_CR_PR_OFFSET + 0x0018)
++#define PCI_CR_FPI_ERR_TAG_REG      (PCI_CR_PR_OFFSET + 0x001C)
++#define PCI_CR_PCI_IRR_REG          (PCI_CR_PR_OFFSET + 0x0020)
++#define PCI_CR_PCI_IRA_REG          (PCI_CR_PR_OFFSET + 0x0024)
++#define PCI_CR_PCI_IRM_REG          (PCI_CR_PR_OFFSET + 0x0028)
++#define PCI_CR_PCI_EOI_REG          (PCI_CR_PR_OFFSET + 0x002C)
++#define PCI_CR_PCI_MOD_REG          (PCI_CR_PR_OFFSET + 0x0030)
++#define PCI_CR_DV_ID_REG            (PCI_CR_PR_OFFSET + 0x0034)
++#define PCI_CR_SUBSYS_ID_REG        (PCI_CR_PR_OFFSET + 0x0038)
++#define PCI_CR_PCI_PM_REG           (PCI_CR_PR_OFFSET + 0x003C)
++#define PCI_CR_CLASS_CODE1_REG      (PCI_CR_PR_OFFSET + 0x0040)
++#define PCI_CR_BAR11MASK_REG        (PCI_CR_PR_OFFSET + 0x0044)
++#define PCI_CR_BAR12MASK_REG        (PCI_CR_PR_OFFSET + 0x0048)
++#define PCI_CR_BAR13MASK_REG        (PCI_CR_PR_OFFSET + 0x004C)
++#define PCI_CR_BAR14MASK_REG        (PCI_CR_PR_OFFSET + 0x0050)
++#define PCI_CR_BAR15MASK_REG        (PCI_CR_PR_OFFSET + 0x0054)
++#define PCI_CR_BAR16MASK_REG        (PCI_CR_PR_OFFSET + 0x0058)
++#define PCI_CR_CIS_PT1_REG          (PCI_CR_PR_OFFSET + 0x005C)
++#define PCI_CR_SUBSYS_ID1_REG       (PCI_CR_PR_OFFSET + 0x0060)
++#define PCI_CR_PCI_ADDR_MAP11_REG   (PCI_CR_PR_OFFSET + 0x0064)
++#define PCI_CR_PCI_ADDR_MAP12_REG   (PCI_CR_PR_OFFSET + 0x0068)
++#define PCI_CR_PCI_ADDR_MAP13_REG   (PCI_CR_PR_OFFSET + 0x006C)
++#define PCI_CR_PCI_ADDR_MAP14_REG   (PCI_CR_PR_OFFSET + 0x0070)
++#define PCI_CR_PCI_ADDR_MAP15_REG   (PCI_CR_PR_OFFSET + 0x0074)
++#define PCI_CR_PCI_ADDR_MAP16_REG   (PCI_CR_PR_OFFSET + 0x0078)
++#define PCI_CR_FPI_SEG_EN_REG       (PCI_CR_PR_OFFSET + 0x007C)
++#define PCI_CR_PC_ARB_REG           (PCI_CR_PR_OFFSET + 0x0080)
++#define PCI_CR_BAR21MASK_REG        (PCI_CR_PR_OFFSET + 0x0084)
++#define PCI_CR_BAR22MASK_REG        (PCI_CR_PR_OFFSET + 0x0088)
++#define PCI_CR_BAR23MASK_REG        (PCI_CR_PR_OFFSET + 0x008C)
++#define PCI_CR_BAR24MASK_REG        (PCI_CR_PR_OFFSET + 0x0090)
++#define PCI_CR_BAR25MASK_REG        (PCI_CR_PR_OFFSET + 0x0094)
++#define PCI_CR_BAR26MASK_REG        (PCI_CR_PR_OFFSET + 0x0098)
++#define PCI_CR_CIS_PT2_REG          (PCI_CR_PR_OFFSET + 0x009C)
++#define PCI_CR_SUBSYS_ID2_REG       (PCI_CR_PR_OFFSET + 0x00A0)
++#define PCI_CR_PCI_ADDR_MAP21_REG   (PCI_CR_PR_OFFSET + 0x00A4)
++#define PCI_CR_PCI_ADDR_MAP22_REG   (PCI_CR_PR_OFFSET + 0x00A8)
++#define PCI_CR_PCI_ADDR_MAP23_REG   (PCI_CR_PR_OFFSET + 0x00AC)
++#define PCI_CR_PCI_ADDR_MAP24_REG   (PCI_CR_PR_OFFSET + 0x00B0)
++#define PCI_CR_PCI_ADDR_MAP25_REG   (PCI_CR_PR_OFFSET + 0x00B4)
++#define PCI_CR_PCI_ADDR_MAP26_REG   (PCI_CR_PR_OFFSET + 0x00B8)
++#define PCI_CR_FPI_ADDR_MASK_REG    (PCI_CR_PR_OFFSET + 0x00BC)
++#define PCI_CR_FCI_ADDR_MAP0_REG    (PCI_CR_PR_OFFSET + 0x00C0)
++#define PCI_CR_FCI_ADDR_MAP1_REG    (PCI_CR_PR_OFFSET + 0x00C4)
++#define PCI_CR_FCI_ADDR_MAP2_REG    (PCI_CR_PR_OFFSET + 0x00C8)
++#define PCI_CR_FCI_ADDR_MAP3_REG    (PCI_CR_PR_OFFSET + 0x00CC)
++#define PCI_CR_FCI_ADDR_MAP4_REG    (PCI_CR_PR_OFFSET + 0x00D0)
++#define PCI_CR_FCI_ADDR_MAP5_REG    (PCI_CR_PR_OFFSET + 0x00D4)
++#define PCI_CR_FCI_ADDR_MAP6_REG    (PCI_CR_PR_OFFSET + 0x00D8)
++#define PCI_CR_FCI_ADDR_MAP7_REG    (PCI_CR_PR_OFFSET + 0x00DC)
++#define PCI_CR_FCI_ADDR_MAP11lo_REG (PCI_CR_PR_OFFSET + 0x00E0)
++#define PCI_CR_FCI_ADDR_MAP11hg_REG (PCI_CR_PR_OFFSET + 0x00E4)
++#define PCI_CR_FCI_BURST_LENGTH_REG (PCI_CR_PR_OFFSET + 0x00E8)
++#define PCI_CR_PCI_SET_SERR_REG     (PCI_CR_PR_OFFSET + 0x00EC)
++#define PCI_CR_DMA_FPI_ST_ADDR_REG  (PCI_CR_PR_OFFSET + 0x00F0)
++#define PCI_CR_DMA_PCI_ST_ADDR_REG  (PCI_CR_PR_OFFSET + 0x00F4)
++#define PCI_CR_DMA_TRAN_CNT_REG     (PCI_CR_PR_OFFSET + 0x00F8)
++#define PCI_CR_DMA_TRAN_CTL_REG     (PCI_CR_PR_OFFSET + 0x00FC)
++
++/* PCI CONFIGURATION SPACE REGISTER Base Address */
++#define EXT_PCI1_CONFIG_SPACE_BASE_ADDR     PCI_CFG_BASE + 0x0800 /* slot 1 AD17 */
++#define EXT_PCI2_CONFIG_SPACE_BASE_ADDR     PCI_CFG_BASE + 0x1000 /* slot 2 AD18 */
++#define EXT_PCI3_CONFIG_SPACE_BASE_ADDR     PCI_CFG_BASE + 0x1800 /* slot 3 AD19 */
++#define EXT_PCI4_CONFIG_SPACE_BASE_ADDR     PCI_CFG_BASE + 0x2000 /* slot 4 AD20 */
++#define EXT_PCI5_CONFIG_SPACE_BASE_ADDR     PCI_CFG_BASE + 0x2800 /* slot 5 AD21 */
++#define EXT_PCI6_CONFIG_SPACE_BASE_ADDR     PCI_CFG_BASE + 0x3000 /* slot 6 AD22 */
++#define EXT_PCI7_CONFIG_SPACE_BASE_ADDR     PCI_CFG_BASE + 0x3800 /* slot 7 AD23 */
++#define EXT_PCI8_CONFIG_SPACE_BASE_ADDR     PCI_CFG_BASE + 0x4000 /* slot 8 AD24 */
++#define EXT_PCI9_CONFIG_SPACE_BASE_ADDR     PCI_CFG_BASE + 0x4800 /* slot 9 AD25 */
++#define EXT_PCI10_CONFIG_SPACE_BASE_ADDR    PCI_CFG_BASE + 0x5000 /* slot 10 AD26 */
++#define EXT_PCI11_CONFIG_SPACE_BASE_ADDR    PCI_CFG_BASE + 0x5800 /* slot 11 AD27 */
++#define EXT_PCI12_CONFIG_SPACE_BASE_ADDR    PCI_CFG_BASE + 0x6000 /* slot 12 AD28 */
++#define EXT_PCI13_CONFIG_SPACE_BASE_ADDR    PCI_CFG_BASE + 0x6800 /* slot 13 AD29 */
++#define EXT_PCI14_CONFIG_SPACE_BASE_ADDR    PCI_CFG_BASE + 0x7000 /* slot 14 AD30 */
++#define EXT_PCI15_CONFIG_SPACE_BASE_ADDR    PCI_CFG_BASE + 0x7800 /* slot 15 AD31 */
++#define EXT_CARDBUS_CONFIG_SPACE_BASE_ADDR      PCI_CFG_BASE + 0XF000 /* slot 16 AD32 */
++
++/* PCI CONFIGURATION SPACE REGISTER ADDRESS MAP */
++#define PCI_CS_DEV_VEN_ID_REG        (PCI_CS_PR_OFFSET + 0x0000)
++#define PCI_CS_STS_CMD_REG           (PCI_CS_PR_OFFSET + 0x0004)
++#define PCI_CS_CL_CODE_REVIDG        (PCI_CS_PR_OFFSET + 0x0008)
++#define PCI_CS_BST_HT_LT_CLS_REG     (PCI_CS_PR_OFFSET + 0x000C)
++#define PCI_CS_BASE_ADDR1_REG        (PCI_CS_PR_OFFSET + 0x0010)
++#define PCI_CS_BASE_ADDR2_REG        (PCI_CS_PR_OFFSET + 0x0014)
++#define PCI_CS_BASE_ADDR3_REG        (PCI_CS_PR_OFFSET + 0x0018)
++#define PCI_CS_BASE_ADDR4_REG        (PCI_CS_PR_OFFSET + 0x001C)
++#define PCI_CS_BASE_ADDR5_REG        (PCI_CS_PR_OFFSET + 0x0020)
++#define PCI_CS_BASE_ADDR6_REG        (PCI_CS_PR_OFFSET + 0x0024)
++#define PCI_CS_CARDBUS_CIS_PT_REG    (PCI_CS_PR_OFFSET + 0x0028)
++#define PCI_CS_SUBSYS_VEN_ID_REG     (PCI_CS_PR_OFFSET + 0x002C)
++#define PCI_CS_EXROM_BAS_ADDR_REG    (PCI_CS_PR_OFFSET + 0x0030)
++#define PCI_CS_RES1_REG              (PCI_CS_PR_OFFSET + 0x0034)
++#define PCI_CS_RES2_REG              (PCI_CS_PR_OFFSET + 0x0038)
++#define PCI_CS_LAT_GNT_INTR_REG      (PCI_CS_PR_OFFSET + 0x003C)
++#define PCI_CS_PM_PT_CPID_REG        (PCI_CS_PR_OFFSET + 0x0040)
++#define PCI_CS_DAT_PMCSR_PM_REG      (PCI_CS_PR_OFFSET + 0x0044)
++#define PCI_CS_RES3_REG              (PCI_CS_PR_OFFSET + 0x0048)
++#define PCI_CS_RES4_REG              (PCI_CS_PR_OFFSET + 0x004C)
++#define PCI_CS_ERR_ADDR_PCI_FPI_REG  (PCI_CS_PR_OFFSET + 0x0050)
++#define PCI_CS_ERR_ADDR_FPI_PCI_REG  (PCI_CS_PR_OFFSET + 0x0054)
++#define PCI_CS_ERR_TAG_FPI_PCI_REG   (PCI_CS_PR_OFFSET + 0x0058)
++#define PCI_CS_PC_ARB_REG            (PCI_CS_PR_OFFSET + 0x005C)
++#define PCI_CS_FPI_PCI_INT_STS_REG   (PCI_CS_PR_OFFSET + 0x0060)
++#define PCI_CS_FPI_PCI_INT_ACK_REG   (PCI_CS_PR_OFFSET + 0x0064)
++#define PCI_CS_FPI_PCI_INT_MASK_REG  (PCI_CS_PR_OFFSET + 0x0068)
++#define PCI_CS_CARDBUS_CTL_STS_REG   (PCI_CS_PR_OFFSET + 0x006C)
++
++// PCI CONTROLLER ADDRESS SPACE
++#define PCI_CA_PR_OFFSET 0xB8000000
++#define PCI_CA_PR_END    0xBBFFFFFF
++
++// PCI CONTROLLER REGISTER ADDRESS MASK
++#define PCI_CR_CLK_CTRL_MSK              0x82000000
++#define PCI_CR_PCI_ID_MSK                0x00000000
++#define PCI_CR_SFT_RST_MSK               0x00000002
++#define PCI_CR_PCI_FPI_ERR_ADDR_MSK      0x00000000
++#define PCI_CR_FCI_PCI_ERR_ADDR_MSK      0x00000000
++#define PCI_CR_FPI_ERR_TAG_MSK           0x00000000
++#define PCI_CR_PCI_IRR_MSK               0x07013B2F
++#define PCI_CR_PCI_IRA_MSK               0x07013B2F
++#define PCI_CR_PCI_IRM_MSK               0x07013B2F
++#define PCI_CR_PCI_EOI_MSK               0x07013B2F
++#define PCI_CR_PCI_MOD_MSK               0x1107070F
++#define PCI_CR_DV_ID_MSK                 0x00000000
++#define PCI_CR_SUBSYS_ID_MSK             0x00000000
++#define PCI_CR_PCI_PM_MSK                0x0000001F
++#define PCI_CR_CLASS_CODE1_MSK           0x00000000
++#define PCI_CR_BAR11MASK_MSK             0x8FFFFFF8
++#define PCI_CR_BAR12MASK_MSK             0x80001F08
++#define PCI_CR_BAR13MASK_MSK             0x8FF00008
++#define PCI_CR_BAR14MASK_MSK             0x8FFFFF08
++#define PCI_CR_BAR15MASK_MSK             0x8FFFFF08
++#define PCI_CR_BAR16MASK_MSK             0x8FFFFFF9
++#define PCI_CR_CIS_PT1_MSK               0x03FFFFFF
++#define PCI_CR_SUBSYS_ID1_MSK            0x00000000
++#define PCI_CR_PCI_ADDR_MAP11_MSK        0x7FFF0001
++#define PCI_CR_PCI_ADDR_MAP12_MSK        0x7FFFFF01
++#define PCI_CR_PCI_ADDR_MAP13_MSK        0x7FF00001
++#define PCI_CR_PCI_ADDR_MAP14_MSK        0x7FFFFF01
++#define PCI_CR_PCI_ADDR_MAP15_MSK        0x7FF00001
++#define PCI_CR_PCI_ADDR_MAP16_MSK        0x7FF00001
++#define PCI_CR_FPI_SEG_EN_MSK            0x000003FF
++#define PCI_CR_CLASS_CODE2_MSK           0x00000000
++#define PCI_CR_BAR21MASK_MSK             0x800F0008
++#define PCI_CR_BAR22MASK_MSK             0x807F0008
++#define PCI_CR_BAR23MASK_MSK             0x8FF00008
++#define PCI_CR_BAR24MASK_MSK             0x8FFFFF08
++#define PCI_CR_BAR25MASK_MSK             0x8FFFFF08
++#define PCI_CR_BAR26MASK_MSK             0x8FFFFFF9
++#define PCI_CR_CIS_PT2_MSK               0x03FFFFFF
++#define PCI_CR_SUBSYS_ID2_MSK            0x00000000
++#define PCI_CR_PCI_ADDR_MAP21_MSK        0x7FFE0001
++#define PCI_CR_PCI_ADDR_MAP22_MSK        0x7FFF0001
++#define PCI_CR_PCI_ADDR_MAP23_MSK        0x7FF00001
++#define PCI_CR_PCI_ADDR_MAP24_MSK        0x7FFFFF01
++#define PCI_CR_PCI_ADDR_MAP25_MSK        0x7FFFFF01
++#define PCI_CR_PCI_ADDR_MAP26_MSK        0x7FF00001
++#define PCI_CR_FPI_ADDR_MASK_MSK         0x00070000
++#define PCI_CR_FCI_ADDR_MAP0_MSK         0xFFF00000
++#define PCI_CR_FCI_ADDR_MAP1_MSK         0xFFF00000
++#define PCI_CR_FCI_ADDR_MAP2_MSK         0xFFF00000
++#define PCI_CR_FCI_ADDR_MAP3_MSK         0xFFF00000
++#define PCI_CR_FCI_ADDR_MAP4_MSK         0xFFF00000
++#define PCI_CR_FCI_ADDR_MAP5_MSK         0xFFF00000
++#define PCI_CR_FCI_ADDR_MAP6_MSK         0xFFF00000
++#define PCI_CR_FCI_ADDR_MAP7_MSK         0xFFF00000
++#define PCI_CR_FCI_ADDR_MAP11lo_MSK      0xFFFF0000
++#define PCI_CR_FCI_ADDR_MAP11hg_MSK      0xFFF00000
++#define PCI_CR_FCI_BURST_LENGTH_MSK      0x00000303
++#define PCI_CR_PCI_SET_SERR_MSK          0x00000001
++#define PCI_CR_DMA_FPI_ST_ADDR_MSK       0xFFFFFFFF
++#define PCI_CR_DMA_PCI_ST_ADDR_MSK       0xFFFFFFFF
++#define PCI_CR_DMA_TRAN_CNT_MSK          0x000003FF
++#define PCI_CR_DMA_TRAN_CTL_MSK          0x00000003
++
++#define INTERNAL_ARB_ENABLE_BIT             0
++#define ARB_SCHEME_BIT                      1
++#define PCI_MASTER0_PRIOR_2BITS             2
++#define PCI_MASTER1_PRIOR_2BITS             4
++#define PCI_MASTER2_PRIOR_2BITS             6
++#define PCI_MASTER0_REQ_MASK_2BITS          8
++#define PCI_MASTER1_REQ_MASK_2BITS          10
++#define PCI_MASTER2_REQ_MASK_2BITS          12
++
++//#define u32 unsigned long
++//#define u16 unsigned short
++//#define u8  unsigned char 
++
++/***********************************************************************/
++#define REG32(addr)     *((volatile u32 *)(addr))
++#define REG16(addr)     (*(volatile u16*)(addr))
++#define REG8(addr)      (*(volatile u8*)(addr))
++/***********************************************************************/
++
++/***********************************************************************/
++#define AMAZON_S_REG32(addr)               *((volatile u32 *)(addr))
++/***********************************************************************/
++
++
++
++
++/***********************************************************************/
++#define DANUBE_REG32(addr)         *((volatile u32 *)(addr))
++/***********************************************************************/
++

@@ -1,0 +1,2312 @@
+# HG changeset patch
+# Parent a7538c8429eaa33495bcf1548863a2d0d841fac7
+httpd support
+
+--- a/common/cmd_net.c
++++ b/common/cmd_net.c
+@@ -54,6 +54,21 @@ U_BOOT_CMD(
+ 	"[loadAddress] [[hostIPaddr:]bootfilename]"
+ );
+ 
++#ifdef CONFIG_CMD_HTTPD
++int do_httpd (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
++{
++    return netboot_common (HTTP, cmdtp, argc, argv);
++}
++
++U_BOOT_CMD(
++    httpd,   1,  1,  do_httpd,
++   "httpd- start http server\n",
++	    "using http default port\n"
++);
++#endif
++				
++
++
+ int do_rarpb (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+ {
+ 	return netboot_common (RARP, cmdtp, argc, argv);
+--- a/include/net.h
++++ b/include/net.h
+@@ -183,6 +183,7 @@ typedef struct {
+ #define PROT_VLAN	0x8100		/* IEEE 802.1q protocol		*/
+ 
+ #define IPPROTO_ICMP	 1	/* Internet Control Message Protocol	*/
++#define IPPROTO_TCP  6   /*Transmission Control Protocol*/
+ #define IPPROTO_UDP	17	/* User Datagram Protocol		*/
+ 
+ /*
+@@ -357,7 +358,7 @@ extern int		NetState;		/* Network loop s
+ extern int		NetRestartWrap;		/* Tried all network devices	*/
+ #endif
+ 
+-typedef enum { BOOTP, RARP, ARP, TFTP, DHCP, PING, DNS, NFS, CDP, NETCONS, SNTP } proto_t;
++typedef enum { BOOTP, RARP, ARP, TFTP, DHCP, PING, DNS, NFS, CDP, NETCONS, SNTP, HTTP } proto_t;
+ 
+ /* from net/net.c */
+ extern char	BootFile[128];			/* Boot File name		*/
+--- a/net/Makefile
++++ b/net/Makefile
+@@ -35,6 +35,7 @@ COBJS-$(CONFIG_CMD_NFS)  += nfs.o
+ COBJS-$(CONFIG_CMD_NET)  += rarp.o
+ COBJS-$(CONFIG_CMD_SNTP) += sntp.o
+ COBJS-$(CONFIG_CMD_NET)  += tftp.o
++COBJS-$(CONFIG_CMD_HTTPD)  += httpd.o tcp.o
+ 
+ COBJS	:= $(COBJS-y)
+ SRCS	:= $(COBJS:.o=.c)
+--- /dev/null
++++ b/net/http-strings.h
+@@ -0,0 +1,111 @@
++const char http_http[8] = 
++/* "http://" */
++{0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, };
++const char http_200[5] = 
++/* "200 " */
++{0x32, 0x30, 0x30, 0x20, };
++const char http_301[5] = 
++/* "301 " */
++{0x33, 0x30, 0x31, 0x20, };
++const char http_302[5] = 
++/* "302 " */
++{0x33, 0x30, 0x32, 0x20, };
++const char http_get[5] = 
++/* "GET " */
++{0x47, 0x45, 0x54, 0x20, };
++const char http_post[6] = 
++/* "POST " */
++{0x50, 0x4f, 0x53, 0x54, 0x20, };
++const char http_10[9] = 
++/* "HTTP/1.0" */
++{0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x30, };
++const char http_11[9] = 
++/* "HTTP/1.1" */
++{0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x31, };
++const char http_content_type[15] = 
++/* "content-type: " */
++{0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 0x20, };
++const char http_texthtml[10] = 
++/* "text/html" */
++{0x74, 0x65, 0x78, 0x74, 0x2f, 0x68, 0x74, 0x6d, 0x6c, };
++const char http_location[11] = 
++/* "location: " */
++{0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x3a, 0x20, };
++const char http_host[7] = 
++/* "host: " */
++{0x68, 0x6f, 0x73, 0x74, 0x3a, 0x20, };
++const char http_crnl[3] = 
++/* "\r\n" */
++{0xd, 0xa, };
++const char http_index_html[12] = 
++/* "/index.html" */
++{0x2f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x2e, 0x68, 0x74, 0x6d, 0x6c, };
++const char http_404_html[10] = 
++/* "/404.html" */
++{0x2f, 0x34, 0x30, 0x34, 0x2e, 0x68, 0x74, 0x6d, 0x6c, };
++const char http_update_done_html[17] =
++/*"/update_done.html"*/
++{0x2f, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x64, 0x6f, 0x6e, 0x65, 0x2e, 0x68, 0x74, 0x6d, 0x6c,};
++const char http_wait_html[10] =
++/*"/wait.html"*/
++{0x2f, 0x77, 0x61, 0x69, 0x74, 0x2e, 0x68, 0x74, 0x6d, 0x6c,};
++const char http_referer[9] = 
++/* "Referer:" */
++{0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x72, 0x3a, };
++const char http_header_200[84] = 
++/* "HTTP/1.0 200 OK\r\nServer: uIP/1.0 http://www.sics.se/~adam/uip/\r\nConnection: close\r\n" */
++{0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x30, 0x20, 0x32, 0x30, 0x30, 0x20, 0x4f, 0x4b, 0xd, 0xa, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x3a, 0x20, 0x75, 0x49, 0x50, 0x2f, 0x31, 0x2e, 0x30, 0x20, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x77, 0x77, 0x77, 0x2e, 0x73, 0x69, 0x63, 0x73, 0x2e, 0x73, 0x65, 0x2f, 0x7e, 0x61, 0x64, 0x61, 0x6d, 0x2f, 0x75, 0x69, 0x70, 0x2f, 0xd, 0xa, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x3a, 0x20, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0xd, 0xa, };
++const char http_header_404[91] = 
++/* "HTTP/1.0 404 Not found\r\nServer: uIP/1.0 http://www.sics.se/~adam/uip/\r\nConnection: close\r\n" */
++{0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x30, 0x20, 0x34, 0x30, 0x34, 0x20, 0x4e, 0x6f, 0x74, 0x20, 0x66, 0x6f, 0x75, 0x6e, 0x64, 0xd, 0xa, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x3a, 0x20, 0x75, 0x49, 0x50, 0x2f, 0x31, 0x2e, 0x30, 0x20, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x77, 0x77, 0x77, 0x2e, 0x73, 0x69, 0x63, 0x73, 0x2e, 0x73, 0x65, 0x2f, 0x7e, 0x61, 0x64, 0x61, 0x6d, 0x2f, 0x75, 0x69, 0x70, 0x2f, 0xd, 0xa, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x3a, 0x20, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0xd, 0xa, };
++const char http_content_type_plain[29] = 
++/* "Content-type: text/plain\r\n\r\n" */
++{0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 0x20, 0x74, 0x65, 0x78, 0x74, 0x2f, 0x70, 0x6c, 0x61, 0x69, 0x6e, 0xd, 0xa, 0xd, 0xa, };
++const char http_content_type_html[28] = 
++/* "Content-type: text/html\r\n\r\n" */
++{0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 0x20, 0x74, 0x65, 0x78, 0x74, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0xd, 0xa, 0xd, 0xa, };
++const char http_content_type_css [27] = 
++/* "Content-type: text/css\r\n\r\n" */
++{0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 0x20, 0x74, 0x65, 0x78, 0x74, 0x2f, 0x63, 0x73, 0x73, 0xd, 0xa, 0xd, 0xa, };
++const char http_content_type_text[28] = 
++/* "Content-type: text/text\r\n\r\n" */
++{0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 0x20, 0x74, 0x65, 0x78, 0x74, 0x2f, 0x74, 0x65, 0x78, 0x74, 0xd, 0xa, 0xd, 0xa, };
++const char http_content_type_png [28] = 
++/* "Content-type: image/png\r\n\r\n" */
++{0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 0x20, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x2f, 0x70, 0x6e, 0x67, 0xd, 0xa, 0xd, 0xa, };
++const char http_content_type_gif [28] = 
++/* "Content-type: image/gif\r\n\r\n" */
++{0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 0x20, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x2f, 0x67, 0x69, 0x66, 0xd, 0xa, 0xd, 0xa, };
++const char http_content_type_jpg [29] = 
++/* "Content-type: image/jpeg\r\n\r\n" */
++{0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 0x20, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x2f, 0x6a, 0x70, 0x65, 0x67, 0xd, 0xa, 0xd, 0xa, };
++const char http_content_type_binary[43] = 
++/* "Content-type: application/octet-stream\r\n\r\n" */
++{0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 0x20, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x6f, 0x63, 0x74, 0x65, 0x74, 0x2d, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6d, 0xd, 0xa, 0xd, 0xa, };
++const char http_html[6] = 
++/* ".html" */
++{0x2e, 0x68, 0x74, 0x6d, 0x6c, };
++const char http_shtml[7] = 
++/* ".shtml" */
++{0x2e, 0x73, 0x68, 0x74, 0x6d, 0x6c, };
++const char http_htm[5] = 
++/* ".htm" */
++{0x2e, 0x68, 0x74, 0x6d, };
++const char http_css[5] = 
++/* ".css" */
++{0x2e, 0x63, 0x73, 0x73, };
++const char http_png[5] = 
++/* ".png" */
++{0x2e, 0x70, 0x6e, 0x67, };
++const char http_gif[5] = 
++/* ".gif" */
++{0x2e, 0x67, 0x69, 0x66, };
++const char http_jpg[5] = 
++/* ".jpg" */
++{0x2e, 0x6a, 0x70, 0x67, };
++const char http_text[5] = 
++/* ".txt" */
++{0x2e, 0x74, 0x78, 0x74, };
++const char http_txt[5] = 
++/* ".txt" */
++{0x2e, 0x74, 0x78, 0x74, };
+--- /dev/null
++++ b/net/httpd-fsdata.c
+@@ -0,0 +1,324 @@
++static const unsigned char data_upload_html[] = {
++	/* /upload.html */
++	0x2f, 0x75, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0,
++	0x3c, 0x48, 0x54, 0x4d, 0x4c, 0x3e, 0xd, 0xa, 0x3c, 0x48, 
++	0x45, 0x41, 0x44, 0x3e, 0x3c, 0x2f, 0x48, 0x45, 0x41, 0x44, 
++	0x3e, 0xd, 0xa, 0x3c, 0x42, 0x4f, 0x44, 0x59, 0x3e, 0xd, 
++	0xa, 0x20, 0x20, 0x3c, 0x46, 0x4f, 0x52, 0x4d, 0x20, 0x41, 
++	0x43, 0x54, 0x49, 0x4f, 0x4e, 0x3d, 0x22, 0x75, 0x70, 0x64, 
++	0x61, 0x74, 0x65, 0x22, 0x20, 0x4d, 0x45, 0x54, 0x48, 0x4f, 
++	0x44, 0x3d, 0x22, 0x70, 0x6f, 0x73, 0x74, 0x22, 0x20, 0x45, 
++	0x4e, 0x43, 0x54, 0x59, 0x50, 0x45, 0x3d, 0x22, 0x6d, 0x75, 
++	0x6c, 0x74, 0x69, 0x70, 0x61, 0x72, 0x74, 0x2f, 0x66, 0x6f, 
++	0x72, 0x6d, 0x2d, 0x64, 0x61, 0x74, 0x61, 0x22, 0x3e, 0x20, 
++	0xd, 0xa, 0x20, 0x20, 0x20, 0x46, 0x69, 0x6c, 0x65, 0x20, 
++	0x74, 0x6f, 0x20, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x3a, 
++	0x20, 0xd, 0xa, 0x20, 0x20, 0x3c, 0x49, 0x4e, 0x50, 0x55, 
++	0x54, 0x20, 0x54, 0x59, 0x50, 0x45, 0x3d, 0x22, 0x66, 0x69, 
++	0x6c, 0x65, 0x22, 0x20, 0x4e, 0x41, 0x4d, 0x45, 0x3d, 0x22, 
++	0x66, 0x69, 0x72, 0x6d, 0x77, 0x61, 0x72, 0x65, 0x22, 0x3e, 
++	0x20, 0x20, 0xd, 0xa, 0x20, 0x20, 0x20, 0x3c, 0x62, 0x72, 
++	0x3e, 0x3c, 0x62, 0x72, 0x3e, 0x20, 0x20, 0x3c, 0x49, 0x4e, 
++	0x50, 0x55, 0x54, 0x20, 0x54, 0x59, 0x50, 0x45, 0x3d, 0x22, 
++	0x73, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x22, 0x20, 0x4e, 0x41, 
++	0x4d, 0x45, 0x3d, 0x22, 0x53, 0x75, 0x62, 0x6d, 0x69, 0x74, 
++	0x22, 0x20, 0x56, 0x41, 0x4c, 0x55, 0x45, 0x3d, 0x22, 0x75, 
++	0x70, 0x64, 0x61, 0x74, 0x65, 0x22, 0x3e, 0x20, 0xd, 0xa, 
++	0x3c, 0x2f, 0x46, 0x4f, 0x52, 0x4d, 0x3e, 0x20, 0x20, 0xd, 
++	0xa, 0x3c, 0x2f, 0x42, 0x4f, 0x44, 0x59, 0x3e, 0xd, 0xa, 
++	0x3c, 0x2f, 0x48, 0x54, 0x4d, 0x4c, 0x3e, 0xd, 0xa, 0};
++
++static const unsigned char data_update_done_html[] = {
++	/* /update_done.html */
++	0x2f, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x64, 0x6f, 0x6e, 0x65, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0,
++	0x3c, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0xa, 0x3c, 0x68, 0x65, 
++	0x61, 0x64, 0x3e, 0xa, 0x3c, 0x74, 0x69, 0x74, 0x6c, 0x65, 
++	0x3e, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x20, 0x66, 0x69, 
++	0x6e, 0x69, 0x73, 0x68, 0x65, 0x64, 0x3c, 0x2f, 0x74, 0x69, 
++	0x74, 0x6c, 0x65, 0x3e, 0xa, 0x3c, 0x2f, 0x68, 0x65, 0x61, 
++	0x64, 0x3e, 0xa, 0xa, 0x3c, 0x62, 0x6f, 0x64, 0x79, 0x3e, 
++	0xa, 0x3c, 0x62, 0x72, 0x3e, 0x3c, 0x62, 0x72, 0x3e, 0xa, 
++	0x20, 0x20, 0x20, 0x20, 0x20, 0x75, 0x70, 0x64, 0x61, 0x74, 
++	0x65, 0x5f, 0x66, 0x69, 0x6e, 0x69, 0x73, 0x68, 0x65, 0x64, 
++	0x21, 0xa, 0x3c, 0x62, 0x72, 0x3e, 0x3c, 0x62, 0x72, 0x3e, 
++	0xa, 0x9, 0x20, 0x3c, 0x68, 0x33, 0x3e, 0x20, 0x3c, 0x61, 
++	0x20, 0x68, 0x72, 0x65, 0x66, 0x3d, 0x22, 0x2f, 0x22, 0x3e, 
++	0x67, 0x6f, 0x20, 0x62, 0x61, 0x63, 0x6b, 0x3c, 0x2f, 0x61, 
++	0x3e, 0x20, 0x3c, 0x2f, 0x68, 0x33, 0x3e, 0xa, 0x3c, 0x2f, 
++	0x62, 0x6f, 0x64, 0x79, 0x3e, 0xa, 0x3c, 0x2f, 0x68, 0x74, 
++	0x6d, 0x6c, 0x3e, 0xa, 0};
++
++static const unsigned char data_fade_png[] = {
++	/* /fade.png */
++	0x2f, 0x66, 0x61, 0x64, 0x65, 0x2e, 0x70, 0x6e, 0x67, 0,
++	0x89, 0x50, 0x4e, 0x47, 0xd, 0xa, 0x1a, 0xa, 00, 00, 
++	00, 0xd, 0x49, 0x48, 0x44, 0x52, 00, 00, 00, 0x4, 
++	00, 00, 00, 0xa, 0x8, 0x2, 00, 00, 00, 0x1c, 
++	0x99, 0x68, 0x59, 00, 00, 00, 0x9, 0x70, 0x48, 0x59, 
++	0x73, 00, 00, 0xb, 0x13, 00, 00, 0xb, 0x13, 0x1, 
++	00, 0x9a, 0x9c, 0x18, 00, 00, 00, 0x7, 0x74, 0x49, 
++	0x4d, 0x45, 0x7, 0xd6, 0x6, 0x8, 0x14, 0x1b, 0x39, 0xaf, 
++	0x5b, 0xc0, 0xe3, 00, 00, 00, 0x1d, 0x74, 0x45, 0x58, 
++	0x74, 0x43, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x74, 00, 0x43, 
++	0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x20, 0x77, 0x69, 0x74, 
++	0x68, 0x20, 0x54, 0x68, 0x65, 0x20, 0x47, 0x49, 0x4d, 0x50, 
++	0xef, 0x64, 0x25, 0x6e, 00, 00, 00, 0x3a, 0x49, 0x44, 
++	0x41, 0x54, 0x8, 0xd7, 0x75, 0x8c, 0x31, 0x12, 00, 0x10, 
++	0x10, 0xc4, 0x2e, 0x37, 0x9e, 0x40, 0x65, 0xfd, 0xff, 0x83, 
++	0xf4, 0xa, 0x1c, 0x8d, 0x54, 0x9b, 0xc9, 0xcc, 0x9a, 0x3d, 
++	0x90, 0x73, 0x71, 0x67, 0x91, 0xd4, 0x74, 0x36, 0xa9, 0x55, 
++	0x1, 0xf8, 0x29, 0x58, 0xc8, 0xbf, 0x48, 0xc4, 0x81, 0x74, 
++	0xb, 0xa3, 0xf, 0x7c, 0xdb, 0x4, 0xe8, 0x40, 0x5, 0xdf, 
++	0xa1, 0xf3, 0xfc, 0x73, 00, 00, 00, 00, 0x49, 0x45, 
++	0x4e, 0x44, 0xae, 0x42, 0x60, 0x82, 0};
++
++static const unsigned char data_404_html[] = {
++	/* /404.html */
++	0x2f, 0x34, 0x30, 0x34, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0,
++	0x3c, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0xa, 0x20, 0x20, 0x3c, 
++	0x62, 0x6f, 0x64, 0x79, 0x20, 0x62, 0x67, 0x63, 0x6f, 0x6c, 
++	0x6f, 0x72, 0x3d, 0x22, 0x77, 0x68, 0x69, 0x74, 0x65, 0x22, 
++	0x3e, 0xa, 0x20, 0x20, 0x20, 0x20, 0x3c, 0x63, 0x65, 0x6e, 
++	0x74, 0x65, 0x72, 0x3e, 0xa, 0x20, 0x20, 0x20, 0x20, 0x20, 
++	0x20, 0x3c, 0x68, 0x31, 0x3e, 0x34, 0x30, 0x34, 0x20, 0x2d, 
++	0x20, 0x66, 0x69, 0x6c, 0x65, 0x20, 0x6e, 0x6f, 0x74, 0x20, 
++	0x66, 0x6f, 0x75, 0x6e, 0x64, 0x3c, 0x2f, 0x68, 0x31, 0x3e, 
++	0xa, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x3c, 0x68, 0x33, 
++	0x3e, 0x47, 0x6f, 0x20, 0x3c, 0x61, 0x20, 0x68, 0x72, 0x65, 
++	0x66, 0x3d, 0x22, 0x2f, 0x22, 0x3e, 0x68, 0x65, 0x72, 0x65, 
++	0x3c, 0x2f, 0x61, 0x3e, 0x20, 0x69, 0x6e, 0x73, 0x74, 0x65, 
++	0x61, 0x64, 0x2e, 0x3c, 0x2f, 0x68, 0x33, 0x3e, 0xa, 0x20, 
++	0x20, 0x20, 0x20, 0x3c, 0x2f, 0x63, 0x65, 0x6e, 0x74, 0x65, 
++	0x72, 0x3e, 0xa, 0x20, 0x20, 0x3c, 0x2f, 0x62, 0x6f, 0x64, 
++	0x79, 0x3e, 0xa, 0x3c, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 
++0};
++
++static const unsigned char data_footer_html[] = {
++	/* /footer.html */
++	0x2f, 0x66, 0x6f, 0x6f, 0x74, 0x65, 0x72, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0,
++	0x20, 0x20, 0x3c, 0x2f, 0x62, 0x6f, 0x64, 0x79, 0x3e, 0xa, 
++	0x3c, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0};
++
++static const unsigned char data_test_html[] = {
++	/* /test.html */
++	0x2f, 0x74, 0x65, 0x73, 0x74, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0,
++	0x3c, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0xa, 0x3c, 0x68, 0x65, 
++	0x61, 0x64, 0x3e, 0xa, 0x3c, 0x74, 0x69, 0x74, 0x6c, 0x65, 
++	0x3e, 0x43, 0x47, 0x49, 0x20, 0x54, 0x65, 0x73, 0x74, 0x3c, 
++	0x2f, 0x74, 0x69, 0x74, 0x6c, 0x65, 0x3e, 0xa, 0x3c, 0x2f, 
++	0x68, 0x65, 0x61, 0x64, 0x3e, 0xa, 0xa, 0x3c, 0x62, 0x6f, 
++	0x64, 0x79, 0x3e, 0xa, 0x3c, 0x66, 0x6f, 0x72, 0x6d, 0x20, 
++	0x6e, 0x61, 0x6d, 0x65, 0x3d, 0x22, 0x66, 0x6f, 0x72, 0x6d, 
++	0x31, 0x22, 0x20, 0x6d, 0x65, 0x74, 0x68, 0x6f, 0x64, 0x3d, 
++	0x22, 0x67, 0x65, 0x74, 0x22, 0x20, 0x61, 0x63, 0x74, 0x69, 
++	0x6f, 0x6e, 0x3d, 0x22, 0x2f, 0x63, 0x67, 0x69, 0x2d, 0x62, 
++	0x69, 0x6e, 0x2f, 0x73, 0x65, 0x63, 0x6f, 0x6e, 0x64, 0x2e, 
++	0x70, 0x6c, 0x22, 0x3e, 0xa, 0x20, 0x20, 0x3c, 0x70, 0x3e, 
++	0x54, 0x65, 0x78, 0x74, 0x20, 0x66, 0x69, 0x65, 0x6c, 0x64, 
++	0xa, 0x20, 0x20, 0x20, 0x20, 0x3c, 0x69, 0x6e, 0x70, 0x75, 
++	0x74, 0x20, 0x6e, 0x61, 0x6d, 0x65, 0x3d, 0x22, 0x54, 0x65, 
++	0x78, 0x74, 0x5f, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x22, 0x20, 
++	0x74, 0x79, 0x70, 0x65, 0x3d, 0x22, 0x74, 0x65, 0x78, 0x74, 
++	0x22, 0x20, 0x69, 0x64, 0x3d, 0x22, 0x54, 0x65, 0x78, 0x74, 
++	0x5f, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x22, 0x3e, 0xa, 0x20, 
++	0x20, 0x3c, 0x2f, 0x70, 0x3e, 0xa, 0x20, 0x20, 0x3c, 0x70, 
++	0x3e, 0x52, 0x61, 0x64, 0x69, 0x6f, 0x20, 0x62, 0x75, 0x74, 
++	0x74, 0x6f, 0x6e, 0x20, 0x20, 0x3c, 0x2f, 0x70, 0x3e, 0xa, 
++	0x20, 0x20, 0x3c, 0x70, 0x3e, 0xa, 0x20, 0x20, 0x20, 0x20, 
++	0x3c, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x20, 0x6e, 0x61, 0x6d, 
++	0x65, 0x3d, 0x22, 0x52, 0x61, 0x64, 0x69, 0x6f, 0x5f, 0x42, 
++	0x75, 0x74, 0x74, 0x6f, 0x6e, 0x22, 0x20, 0x74, 0x79, 0x70, 
++	0x65, 0x3d, 0x22, 0x72, 0x61, 0x64, 0x69, 0x6f, 0x22, 0x20, 
++	0x76, 0x61, 0x6c, 0x75, 0x65, 0x3d, 0x22, 0x31, 0x22, 0x3e, 
++	0x20, 0x31, 0x20, 0xa, 0x20, 0x20, 0x3c, 0x2f, 0x70, 0x3e, 
++	0xa, 0x20, 0x20, 0x3c, 0x70, 0x3e, 0xa, 0x20, 0x20, 0x20, 
++	0x20, 0x3c, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x20, 0x6e, 0x61, 
++	0x6d, 0x65, 0x3d, 0x22, 0x52, 0x61, 0x64, 0x69, 0x6f, 0x5f, 
++	0x42, 0x75, 0x74, 0x74, 0x6f, 0x6e, 0x22, 0x20, 0x74, 0x79, 
++	0x70, 0x65, 0x3d, 0x22, 0x72, 0x61, 0x64, 0x69, 0x6f, 0x22, 
++	0x20, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3d, 0x22, 0x32, 0x22, 
++	0x3e, 0x20, 0x32, 0xa, 0x20, 0x20, 0x3c, 0x2f, 0x70, 0x3e, 
++	0xa, 0x20, 0x20, 0x3c, 0x70, 0x3e, 0xa, 0x20, 0x20, 0x20, 
++	0x20, 0x3c, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x20, 0x6e, 0x61, 
++	0x6d, 0x65, 0x3d, 0x22, 0x52, 0x61, 0x64, 0x69, 0x6f, 0x5f, 
++	0x42, 0x75, 0x74, 0x74, 0x6f, 0x6e, 0x22, 0x20, 0x74, 0x79, 
++	0x70, 0x65, 0x3d, 0x22, 0x72, 0x61, 0x64, 0x69, 0x6f, 0x22, 
++	0x20, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3d, 0x22, 0x33, 0x22, 
++	0x3e, 0x20, 0x33, 0xa, 0x20, 0x20, 0x3c, 0x2f, 0x70, 0x3e, 
++	0xa, 0x20, 0x20, 0x3c, 0x70, 0x3e, 0x26, 0x6e, 0x62, 0x73, 
++	0x70, 0x3b, 0x3c, 0x2f, 0x70, 0x3e, 0xa, 0x20, 0x20, 0x3c, 
++	0x70, 0x3e, 0xa, 0x20, 0x20, 0x20, 0x20, 0x3c, 0x69, 0x6e, 
++	0x70, 0x75, 0x74, 0x20, 0x74, 0x79, 0x70, 0x65, 0x3d, 0x22, 
++	0x73, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x22, 0x20, 0x6e, 0x61, 
++	0x6d, 0x65, 0x3d, 0x22, 0x53, 0x75, 0x62, 0x6d, 0x69, 0x74, 
++	0x22, 0x20, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3d, 0x22, 0x53, 
++	0x75, 0x62, 0x6d, 0x69, 0x74, 0x22, 0x3e, 0xa, 0x20, 0x20, 
++	0x20, 0x20, 0x3c, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x20, 0x74, 
++	0x79, 0x70, 0x65, 0x3d, 0x22, 0x72, 0x65, 0x73, 0x65, 0x74, 
++	0x22, 0x20, 0x6e, 0x61, 0x6d, 0x65, 0x3d, 0x22, 0x52, 0x65, 
++	0x73, 0x65, 0x74, 0x22, 0x20, 0x76, 0x61, 0x6c, 0x75, 0x65, 
++	0x3d, 0x22, 0x52, 0x65, 0x73, 0x65, 0x74, 0x22, 0x3e, 0xa, 
++	0x20, 0x20, 0x3c, 0x2f, 0x70, 0x3e, 0xa, 0x20, 0x20, 0x3c, 
++	0x70, 0x3e, 0x26, 0x6e, 0x62, 0x73, 0x70, 0x3b, 0x3c, 0x2f, 
++	0x70, 0x3e, 0xa, 0x20, 0x20, 0x3c, 0x70, 0x3e, 0x26, 0x6e, 
++	0x62, 0x73, 0x70, 0x3b, 0x3c, 0x2f, 0x70, 0x3e, 0xa, 0x3c, 
++	0x2f, 0x66, 0x6f, 0x72, 0x6d, 0x3e, 0xa, 0x3c, 0x2f, 0x62, 
++	0x6f, 0x64, 0x79, 0x3e, 0xa, 0x3c, 0x2f, 0x68, 0x74, 0x6d, 
++	0x6c, 0x3e, 0xa, 0};
++
++static const unsigned char data_header_html[] = {
++	/* /header.html */
++	0x2f, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0,
++	0x3c, 0x21, 0x44, 0x4f, 0x43, 0x54, 0x59, 0x50, 0x45, 0x20, 
++	0x48, 0x54, 0x4d, 0x4c, 0x20, 0x50, 0x55, 0x42, 0x4c, 0x49, 
++	0x43, 0x20, 0x22, 0x2d, 0x2f, 0x2f, 0x57, 0x33, 0x43, 0x2f, 
++	0x2f, 0x44, 0x54, 0x44, 0x20, 0x48, 0x54, 0x4d, 0x4c, 0x20, 
++	0x34, 0x2e, 0x30, 0x31, 0x20, 0x54, 0x72, 0x61, 0x6e, 0x73, 
++	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x2f, 0x2f, 0x45, 
++	0x4e, 0x22, 0x20, 0x22, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 
++	0x2f, 0x77, 0x77, 0x77, 0x2e, 0x77, 0x33, 0x2e, 0x6f, 0x72, 
++	0x67, 0x2f, 0x54, 0x52, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0x34, 
++	0x2f, 0x6c, 0x6f, 0x6f, 0x73, 0x65, 0x2e, 0x64, 0x74, 0x64, 
++	0x22, 0x3e, 0xa, 0x3c, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0xa, 
++	0x20, 0x20, 0x3c, 0x68, 0x65, 0x61, 0x64, 0x3e, 0xa, 0x20, 
++	0x20, 0x20, 0x20, 0x3c, 0x74, 0x69, 0x74, 0x6c, 0x65, 0x3e, 
++	0x57, 0x65, 0x6c, 0x63, 0x6f, 0x6d, 0x65, 0x20, 0x74, 0x6f, 
++	0x20, 0x74, 0x68, 0x65, 0x20, 0x75, 0x49, 0x50, 0x20, 0x77, 
++	0x65, 0x62, 0x20, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x21, 
++	0x3c, 0x2f, 0x74, 0x69, 0x74, 0x6c, 0x65, 0x3e, 0xa, 0x20, 
++	0x20, 0x20, 0x20, 0x3c, 0x6c, 0x69, 0x6e, 0x6b, 0x20, 0x72, 
++	0x65, 0x6c, 0x3d, 0x22, 0x73, 0x74, 0x79, 0x6c, 0x65, 0x73, 
++	0x68, 0x65, 0x65, 0x74, 0x22, 0x20, 0x74, 0x79, 0x70, 0x65, 
++	0x3d, 0x22, 0x74, 0x65, 0x78, 0x74, 0x2f, 0x63, 0x73, 0x73, 
++	0x22, 0x20, 0x68, 0x72, 0x65, 0x66, 0x3d, 0x22, 0x73, 0x74, 
++	0x79, 0x6c, 0x65, 0x2e, 0x63, 0x73, 0x73, 0x22, 0x3e, 0x20, 
++	0x20, 0xa, 0x20, 0x20, 0x3c, 0x2f, 0x68, 0x65, 0x61, 0x64, 
++	0x3e, 0xa, 0x20, 0x20, 0x3c, 0x62, 0x6f, 0x64, 0x79, 0x20, 
++	0x62, 0x67, 0x63, 0x6f, 0x6c, 0x6f, 0x72, 0x3d, 0x22, 0x23, 
++	0x66, 0x66, 0x66, 0x65, 0x65, 0x63, 0x22, 0x20, 0x74, 0x65, 
++	0x78, 0x74, 0x3d, 0x22, 0x62, 0x6c, 0x61, 0x63, 0x6b, 0x22, 
++	0x3e, 0xa, 0xa, 0x20, 0x20, 0x3c, 0x64, 0x69, 0x76, 0x20, 
++	0x63, 0x6c, 0x61, 0x73, 0x73, 0x3d, 0x22, 0x6d, 0x65, 0x6e, 
++	0x75, 0x22, 0x3e, 0xa, 0x20, 0x20, 0x3c, 0x64, 0x69, 0x76, 
++	0x20, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x3d, 0x22, 0x6d, 0x65, 
++	0x6e, 0x75, 0x62, 0x6f, 0x78, 0x22, 0x3e, 0x3c, 0x61, 0x20, 
++	0x68, 0x72, 0x65, 0x66, 0x3d, 0x22, 0x2f, 0x22, 0x3e, 0x46, 
++	0x72, 0x6f, 0x6e, 0x74, 0x20, 0x70, 0x61, 0x67, 0x65, 0x3c, 
++	0x2f, 0x61, 0x3e, 0x3c, 0x2f, 0x64, 0x69, 0x76, 0x3e, 0xa, 
++	0x20, 0x20, 0x3c, 0x64, 0x69, 0x76, 0x20, 0x63, 0x6c, 0x61, 
++	0x73, 0x73, 0x3d, 0x22, 0x6d, 0x65, 0x6e, 0x75, 0x62, 0x6f, 
++	0x78, 0x22, 0x3e, 0x3c, 0x61, 0x20, 0x68, 0x72, 0x65, 0x66, 
++	0x3d, 0x22, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x73, 0x68, 
++	0x74, 0x6d, 0x6c, 0x22, 0x3e, 0x46, 0x69, 0x6c, 0x65, 0x20, 
++	0x73, 0x74, 0x61, 0x74, 0x69, 0x73, 0x74, 0x69, 0x63, 0x73, 
++	0x3c, 0x2f, 0x61, 0x3e, 0x3c, 0x2f, 0x64, 0x69, 0x76, 0x3e, 
++	0xa, 0x20, 0x20, 0x3c, 0x64, 0x69, 0x76, 0x20, 0x63, 0x6c, 
++	0x61, 0x73, 0x73, 0x3d, 0x22, 0x6d, 0x65, 0x6e, 0x75, 0x62, 
++	0x6f, 0x78, 0x22, 0x3e, 0x3c, 0x61, 0x20, 0x68, 0x72, 0x65, 
++	0x66, 0x3d, 0x22, 0x73, 0x74, 0x61, 0x74, 0x73, 0x2e, 0x73, 
++	0x68, 0x74, 0x6d, 0x6c, 0x22, 0x3e, 0x4e, 0x65, 0x74, 0x77, 
++	0x6f, 0x72, 0x6b, 0x20, 0x73, 0x74, 0x61, 0x74, 0x69, 0x73, 
++	0x74, 0x69, 0x63, 0x73, 0x3c, 0x2f, 0x61, 0x3e, 0x3c, 0x2f, 
++	0x64, 0x69, 0x76, 0x3e, 0xa, 0x20, 0x20, 0x3c, 0x64, 0x69, 
++	0x76, 0x20, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x3d, 0x22, 0x6d, 
++	0x65, 0x6e, 0x75, 0x62, 0x6f, 0x78, 0x22, 0x3e, 0x3c, 0x61, 
++	0x20, 0x68, 0x72, 0x65, 0x66, 0x3d, 0x22, 0x74, 0x63, 0x70, 
++	0x2e, 0x73, 0x68, 0x74, 0x6d, 0x6c, 0x22, 0x3e, 0x4e, 0x65, 
++	0x74, 0x77, 0x6f, 0x72, 0x6b, 0xa, 0x20, 0x20, 0x63, 0x6f, 
++	0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x3c, 
++	0x2f, 0x61, 0x3e, 0x3c, 0x2f, 0x64, 0x69, 0x76, 0x3e, 0xa, 
++	0x20, 0x20, 0x3c, 0x62, 0x72, 0x3e, 0xa, 0x20, 0x20, 0x3c, 
++	0x2f, 0x64, 0x69, 0x76, 0x3e, 0xa, 0x20, 0x20, 0xa, 0x20, 
++	0x20, 0x3c, 0x64, 0x69, 0x76, 0x20, 0x63, 0x6c, 0x61, 0x73, 
++	0x73, 0x3d, 0x22, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 
++	0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x22, 0x3e, 0xa, 0};
++
++static const unsigned char data_index_html[] = {
++	/* /index.html */
++	0x2f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0,
++	0x3c, 0x21, 0x44, 0x4f, 0x43, 0x54, 0x59, 0x50, 0x45, 0x20, 
++	0x48, 0x54, 0x4d, 0x4c, 0x20, 0x50, 0x55, 0x42, 0x4c, 0x49, 
++	0x43, 0x20, 0x22, 0x2d, 0x2f, 0x2f, 0x57, 0x33, 0x43, 0x2f, 
++	0x2f, 0x44, 0x54, 0x44, 0x20, 0x48, 0x54, 0x4d, 0x4c, 0x20, 
++	0x34, 0x2e, 0x30, 0x31, 0x20, 0x54, 0x72, 0x61, 0x6e, 0x73, 
++	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x2f, 0x2f, 0x45, 
++	0x4e, 0x22, 0x20, 0x22, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 
++	0x2f, 0x77, 0x77, 0x77, 0x2e, 0x77, 0x33, 0x2e, 0x6f, 0x72, 
++	0x67, 0x2f, 0x54, 0x52, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0x34, 
++	0x2f, 0x6c, 0x6f, 0x6f, 0x73, 0x65, 0x2e, 0x64, 0x74, 0x64, 
++	0x22, 0x3e, 0xa, 0x3c, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0xa, 
++	0x20, 0x20, 0x3c, 0x68, 0x65, 0x61, 0x64, 0x3e, 0xa, 0x20, 
++	0x20, 0x20, 0x20, 0x3c, 0x74, 0x69, 0x74, 0x6c, 0x65, 0x3e, 
++	0x57, 0x65, 0x6c, 0x63, 0x6f, 0x6d, 0x65, 0x20, 0x74, 0x6f, 
++	0x20, 0x74, 0x68, 0x65, 0x20, 0x75, 0x2d, 0x62, 0x6f, 0x6f, 
++	0x74, 0x20, 0x77, 0x65, 0x62, 0x20, 0x73, 0x65, 0x72, 0x76, 
++	0x65, 0x72, 0x21, 0x3c, 0x2f, 0x74, 0x69, 0x74, 0x6c, 0x65, 
++	0x3e, 0xa, 0x20, 0x20, 0x3c, 0x2f, 0x68, 0x65, 0x61, 0x64, 
++	0x3e, 0xa, 0x20, 0x20, 0x3c, 0x62, 0x6f, 0x64, 0x79, 0x20, 
++	0x62, 0x67, 0x63, 0x6f, 0x6c, 0x6f, 0x72, 0x3d, 0x22, 0x23, 
++	0x66, 0x66, 0x66, 0x65, 0x65, 0x63, 0x22, 0x20, 0x74, 0x65, 
++	0x78, 0x74, 0x3d, 0x22, 0x62, 0x6c, 0x61, 0x63, 0x6b, 0x22, 
++	0x3e, 0xa, 0xa, 0x20, 0x20, 0x3c, 0x64, 0x69, 0x76, 0x20, 
++	0x63, 0x6c, 0x61, 0x73, 0x73, 0x3d, 0x22, 0x6d, 0x65, 0x6e, 
++	0x75, 0x22, 0x3e, 0xa, 0x20, 0x20, 0x3c, 0x64, 0x69, 0x76, 
++	0x20, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x3d, 0x22, 0x6d, 0x65, 
++	0x6e, 0x75, 0x62, 0x6f, 0x78, 0x22, 0x3e, 0x3c, 0x61, 0x20, 
++	0x68, 0x72, 0x65, 0x66, 0x3d, 0x22, 0x74, 0x65, 0x73, 0x74, 
++	0x2e, 0x68, 0x74, 0x6d, 0x6c, 0x22, 0x3e, 0x74, 0x65, 0x73, 
++	0x74, 0x3c, 0x2f, 0x61, 0x3e, 0x3c, 0x2f, 0x64, 0x69, 0x76, 
++	0x3e, 0xa, 0x20, 0x20, 0x3c, 0x64, 0x69, 0x76, 0x20, 0x63, 
++	0x6c, 0x61, 0x73, 0x73, 0x3d, 0x22, 0x6d, 0x65, 0x6e, 0x75, 
++	0x62, 0x6f, 0x78, 0x22, 0x3e, 0x3c, 0x61, 0x20, 0x68, 0x72, 
++	0x65, 0x66, 0x3d, 0x22, 0x75, 0x70, 0x6c, 0x6f, 0x61, 0x64, 
++	0x2e, 0x68, 0x74, 0x6d, 0x6c, 0x22, 0x3e, 0x75, 0x70, 0x6c, 
++	0x6f, 0x61, 0x64, 0x3c, 0x2f, 0x61, 0x3e, 0x3c, 0x2f, 0x64, 
++	0x69, 0x76, 0x3e, 0xa, 0x20, 0x20, 0x3c, 0x62, 0x72, 0x3e, 
++	0xa, 0x20, 0x20, 0x3c, 0x2f, 0x64, 0x69, 0x76, 0x3e, 0xa, 
++	0xa, 0x20, 0x20, 0x3c, 0x64, 0x69, 0x76, 0x20, 0x63, 0x6c, 
++	0x61, 0x73, 0x73, 0x3d, 0x22, 0x63, 0x6f, 0x6e, 0x74, 0x65, 
++	0x6e, 0x74, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x22, 0x3e, 0xa, 
++	0xa, 0x20, 0x20, 0x3c, 0x2f, 0x62, 0x6f, 0x64, 0x79, 0x3e, 
++	0xa, 0x3c, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0xa, 0};
++
++static const unsigned char data_wait_html[] = {
++	/* /wait.html */
++	0x2f, 0x77, 0x61, 0x69, 0x74, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0,
++	0x3c, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0xa, 0x3c, 0x68, 0x65, 
++	0x61, 0x64, 0x3e, 0xa, 0x3c, 0x74, 0x69, 0x74, 0x6c, 0x65, 
++	0x3e, 0x77, 0x61, 0x69, 0x74, 0x3c, 0x2f, 0x74, 0x69, 0x74, 
++	0x6c, 0x65, 0x3e, 0xa, 0x3c, 0x6d, 0x65, 0x74, 0x61, 0x20, 
++	0x68, 0x74, 0x74, 0x70, 0x2d, 0x65, 0x71, 0x75, 0x69, 0x76, 
++	0x3d, 0x22, 0x52, 0x65, 0x66, 0x72, 0x65, 0x73, 0x68, 0x22, 
++	0x20, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x3d, 0x22, 
++	0x31, 0x30, 0x30, 0x3b, 0x75, 0x72, 0x6c, 0x3d, 0x2f, 0x75, 
++	0x70, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x64, 0x6f, 0x6e, 0x65, 
++	0x2e, 0x68, 0x74, 0x6d, 0x6c, 0x22, 0x3e, 0xa, 0x3c, 0x2f, 
++	0x68, 0x65, 0x61, 0x64, 0x3e, 0xa, 0xa, 0x3c, 0x62, 0x6f, 
++	0x64, 0x79, 0x3e, 0xa, 0x3c, 0x62, 0x72, 0x3e, 0x3c, 0x62, 
++	0x72, 0x3e, 0xa, 0x20, 0x20, 0x20, 0x20, 0x20, 0x70, 0x6c, 
++	0x65, 0x61, 0x73, 0x65, 0x20, 0x77, 0x61, 0x69, 0x74, 0x21, 
++	0xa, 0x3c, 0x62, 0x72, 0x3e, 0x3c, 0x62, 0x72, 0x3e, 0xa, 
++	0x3c, 0x2f, 0x62, 0x6f, 0x64, 0x79, 0x3e, 0xa, 0x3c, 0x2f, 
++	0x68, 0x74, 0x6d, 0x6c, 0x3e, 0xa, 0};
++
++const struct httpd_fsdata_file file_upload_html[] = {{NULL, data_upload_html, data_upload_html + 13, sizeof(data_upload_html) - 13}};
++
++const struct httpd_fsdata_file file_update_done_html[] = {{file_upload_html, data_update_done_html, data_update_done_html + 18, sizeof(data_update_done_html) - 18}};
++
++const struct httpd_fsdata_file file_fade_png[] = {{file_update_done_html, data_fade_png, data_fade_png + 10, sizeof(data_fade_png) - 10}};
++
++const struct httpd_fsdata_file file_404_html[] = {{file_fade_png, data_404_html, data_404_html + 10, sizeof(data_404_html) - 10}};
++
++const struct httpd_fsdata_file file_footer_html[] = {{file_404_html, data_footer_html, data_footer_html + 13, sizeof(data_footer_html) - 13}};
++
++const struct httpd_fsdata_file file_test_html[] = {{file_footer_html, data_test_html, data_test_html + 11, sizeof(data_test_html) - 11}};
++
++const struct httpd_fsdata_file file_header_html[] = {{file_test_html, data_header_html, data_header_html + 13, sizeof(data_header_html) - 13}};
++
++const struct httpd_fsdata_file file_index_html[] = {{file_header_html, data_index_html, data_index_html + 12, sizeof(data_index_html) - 12}};
++
++const struct httpd_fsdata_file file_wait_html[] = {{file_index_html, data_wait_html, data_wait_html + 11, sizeof(data_wait_html) - 11}};
++
++#define HTTPD_FS_ROOT file_wait_html
++
++#define HTTPD_FS_NUMFILES 9
+--- /dev/null
++++ b/net/httpd-fsdata.h
+@@ -0,0 +1,48 @@
++/*
++ * Copyright (c) 2001, Swedish Institute of Computer Science.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of the Institute nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ * This file is part of the lwIP TCP/IP stack.
++ *
++ * Author: Adam Dunkels <adam@sics.se>
++ *
++ * $Id: httpd-fsdata.h,v 1.1 2006/06/07 09:13:08 adam Exp $
++ */
++
++struct httpd_fsdata_file {
++  const struct httpd_fsdata_file *next;
++  const char *name;
++  const char *data;
++  const int len;
++};
++
++struct httpd_fsdata_file_noconst {
++  struct httpd_fsdata_file *next;
++  char *name;
++  char *data;
++  int len;
++};
+--- /dev/null
++++ b/net/httpd.c
+@@ -0,0 +1,495 @@
++/*
++ *	Copyright 2009 Lantiq
++ */
++
++
++#include <common.h>
++#include <command.h>
++#include <net.h>
++#include "tcp.h"
++#include "http-strings.h"
++#include "httpd-fsdata.h"
++#include "httpd-fsdata.c"
++//#include "httpd.h"
++
++
++#ifdef CONFIG_CMD_HTTPD
++#undef	ET_DEBUG
++
++
++
++
++#define ISO_nl      0x0a
++#define ISO_return  0x0d
++#define ISO_space   0x20
++#define ISO_bang    0x21
++#define ISO_percent 0x25
++#define ISO_period  0x2e
++#define ISO_slash   0x2f
++#define ISO_colon   0x3a
++
++static int post_flag=0;
++static int post_content_length=0;
++static int post_content_count=0;
++static int post_current_pos=0;
++static int post_file_pos=0;
++static int post_file_length=0;
++static char* post_file_p=NULL;
++
++
++static char post_boundary[100];
++static int post_boundary_found=0;
++
++extern int http_upgrade(ulong srcAddr, int srcLen);
++
++static void
++clear_buf(u8* data, int len)
++{
++	int i;
++	for(i=0;i<len;i++)
++	{
++		*(data+i)=0;
++	}
++	return;
++}
++
++static void
++print_buf(u8* data, int len)
++{
++	int i;
++	for(i=0;i<len;i++)
++	{
++		printf("%02x ",*(data+i));
++	}
++	printf("\n");
++	return;
++	
++}
++
++static int
++readto(struct tcp_appstate *s, char c)
++{
++	 int i;
++	 char value;
++	 //printf("readto %02x\n",c);
++	 for(i=0;i<((s->len)-(s->count));i++)
++	 {
++	     value=*(s->buf+s->count+i);
++	     //printf("%02x ",value);
++	     s->inputbuf[i]= value;
++	     if(value==c) break;
++	 }
++	 s->count+=i+1;
++	 //printf("\n");
++	 return i+1;
++}
++
++
++static u8 httpd_fs_strcmp(const char *str1, const char *str2)
++{
++  u8 i;
++  i = 0;
++loop:
++
++  if(str2[i] == 0 ||
++	 str1[i] == '\r' ||
++	 str1[i] == '\n') {
++				     return 0;
++					   }
++
++  if(str1[i] != str2[i]) {
++				     return 1;
++					   }
++
++   ++i;
++   goto loop;
++}
++								   
++
++int httpd_fs_open(const char *name, struct httpd_fs_file *file)
++{
++    struct httpd_fsdata_file_noconst *f;
++
++	  for(f = (struct httpd_fsdata_file_noconst *)HTTPD_FS_ROOT;
++          f != NULL;
++	      f = (struct httpd_fsdata_file_noconst *)f->next) {
++	      	if(httpd_fs_strcmp(name, f->name) == 0) {
++		        file->data = f->data;
++   	            file->len = f->len;
++				return 1;
++			   }
++      	    }
++	  return 0;
++}
++														  
++
++static void send_data(struct tcp_appstate *s, const char *data, int len)
++{
++	int slen;
++	int count=0;
++
++  if(len==0){/*no data, means FIN*/
++  	 tcp_send_data(0,0); 
++     return;
++  }
++	while(len>0){
++	//printf("send_data!\n");
++	//print_buf(data,len);
++	 if(len>tcp_conn->mss){
++	 	  slen=tcp_conn->mss;
++	  }else{
++	  	slen=len;
++	  }
++	 len-=slen;  
++	 tcp_send_data(data+count, slen);
++	 count+=slen;
++  }
++
++  //tcp_send_data(data, len);
++	return;
++}
++
++static void send_headers(struct tcp_appstate *s, const char *statushdr)
++{
++	 char *ptr;
++
++
++   send_data(s, statushdr, strlen(statushdr));
++
++  ptr = strrchr(s->filename, ISO_period);
++
++  if(ptr == NULL) {
++    send_data(s, http_content_type_binary, strlen(http_content_type_binary));
++  } else if(strncmp(http_html, ptr, 5) == 0 ||
++            strncmp(http_shtml, ptr, 6) == 0) {
++    send_data(s, http_content_type_html, strlen(http_content_type_html));
++  }else if(strncmp(http_css, ptr, 4) == 0) {
++    send_data(s, http_content_type_css, strlen(http_content_type_css));
++  } else if(strncmp(http_png, ptr, 4) == 0) {
++    send_data(s, http_content_type_png, strlen(http_content_type_png));
++  } else if(strncmp(http_gif, ptr, 4) == 0) {
++    send_data(s, http_content_type_gif, strlen(http_content_type_gif));
++  } else if(strncmp(http_jpg, ptr, 4) == 0) {
++    send_data(s, http_content_type_jpg, strlen(http_content_type_jpg));
++  }else {
++    send_data(s, http_content_type_plain, strlen(http_content_type_plain));
++  }
++  
++}
++
++static void send_file(struct tcp_appstate *s)
++{
++	 send_data(s, s->file.data, s->file.len);
++
++}
++
++static int find_value(char* str, int len, struct tcp_appstate *s)
++{
++	 int flag=0;
++	 int read_len=0;
++	 printf("find value %s\n", str);
++	 do{
++	 	clear_buf(s->inputbuf, 500);
++	  read_len=readto(s,ISO_nl);
++	  
++	  if(strncmp(str, s->inputbuf, len) == 0){
++	  	printf("readlen=%d\n",read_len);
++	    printf("%s\n",s->inputbuf);
++	  	 flag=1;
++	  	 break;
++	  }
++	 }while((s->count) < (s->len));
++	 
++	 return flag; 
++}
++
++static int find_post_file_length(struct tcp_appstate *s)
++{
++	  char *end=NULL;
++	  char *start=s->buf+s->count;
++	  int total_len=s->len - s->count;
++	  int i;
++	  for(i=0;i<total_len;i++){
++	    end=s->buf+s->count+i;
++	    if(*end==0x2d && *(end+1)==0x2d){
++	    	if(strncmp(end+2, post_boundary, strlen(post_boundary)) ==0 ){
++         break;
++        }
++	    }
++	  }
++	  end-=2; /*remove 2 bytes for CRLF*/
++	  printf("end=%08x\n",(u32)end);
++	  
++	  return end-start;
++}
++
++static void
++move_to_dual_CRLF(struct tcp_appstate *s)
++{
++	int i;
++	for(i=0;i<s->len-s->count;i++)
++      	{
++      		
++      		if(s->buf[s->count+i]==ISO_return &&
++      			 s->buf[s->count+i+1]==ISO_nl &&
++      			 s->buf[s->count+i+2]==ISO_return &&
++      			 s->buf[s->count+i+3]==ISO_nl){
++      			 	s->count+=i;
++     			 	 break;
++        	}
++      	}
++	return;
++}
++
++static void
++handle_output(struct tcp_appstate *s)
++{
++	char *ptr;
++  int flag;
++  
++  //printf("handle output!\n");
++  
++  if(post_flag ){
++  	s->count=(s->count) + strlen(post_boundary)+ 2 ;
++    //printf("buf=%08x\n",(u32)(s->buf + s->count));
++    move_to_dual_CRLF(s);
++    s->count=(s->count)+4;
++    post_file_p=s->buf + s->count;
++    //printf("buf=%08x\n",(u32)(post_file_p));
++    post_file_length=find_post_file_length(s);
++    //printf("file len=%d\n",post_file_length);
++    
++    httpd_fs_open(http_wait_html, &s->file);
++	  strcpy(s->filename, http_wait_html);
++	  send_headers(s, http_header_200);
++  	send_file(s);
++    send_data(s, 0, 0);
++    
++    memcpy((char*)0x80800000,post_file_p,post_file_length);
++	post_file_p = 0x80800000;
++	http_upgrade((u32)post_file_p, post_file_length);
++    
++  	post_flag=0;
++  	post_content_length=0;
++    post_content_count=0;
++    post_current_pos=0;
++    post_boundary_found=0;
++    post_file_length=0;
++    post_file_p=NULL;
++   
++	  
++    s->len=0;
++    s->count=0;
++    return;
++  }
++  
++  if(!httpd_fs_open(s->filename, &s->file)) {
++  	 printf("open file error!\n");
++     httpd_fs_open(http_404_html, &s->file);
++	   strcpy(s->filename, http_404_html);
++ 
++  }
++  
++  	 send_headers(s, http_header_200);
++  	 send_file(s);
++     send_data(s, 0, 0);
++  
++  
++  return;
++}
++
++
++
++
++
++static int find_boundary(struct tcp_appstate *s)
++{
++	  int flag=0;
++	  char *needle="boundary=";
++    char *p=NULL;
++	  flag=find_value("Content-Type",strlen("Content-Type"), s);
++    p=strstr(s->inputbuf,needle); 	  
++	  if(p){
++	  	clear_buf(post_boundary, 100);
++	  	strcpy(post_boundary, p+9);
++	  	//printf("boundary=%s\n",post_boundary);
++	  }
++	  
++	  return flag;
++}
++
++
++
++
++
++
++static void
++handle_post(struct tcp_appstate *s)
++{
++	 int i;
++	 char tmp;
++	 char *p=NULL;
++	 int found_flag=0;
++   //print_buf(s->buf,s->len);
++  
++   if(post_boundary_found==0){
++   	  
++     	post_boundary_found= find_boundary(s);  
++      
++   }
++   
++   if(post_content_length==0){
++   	  s->count=0;
++      found_flag=find_value("Content-Length",strlen("Content-Length"), s);
++      if(found_flag==0){
++      	/*if not found, then wait for new packets*/
++      	s->state = STATE_WAITING;
++      
++      }	else {
++      	//printf("value found!"); 
++      	//printf("%02x\n",s->inputbuf[strlen("Content-Length")+2]);
++      	for(i=0;i<500;i++)
++      	{
++      		tmp=s->inputbuf[strlen("Content-Length")+2+i];
++      		if(tmp==ISO_return) break;
++          post_content_length= (post_content_length*10)+(tmp-0x30);     		
++      	}
++      	//printf("post_content_length=%d\n",post_content_length);
++      	
++      	//printf("s->len=%d, s->count=%d\n",s->len,s->count);
++      	//joelin for firefox bugfix
++      	if ( s->buf[s->count]==ISO_return &&
++      			 s->buf[s->count+1]==ISO_nl ) s->count+=2;
++      	else {
++      			  move_to_dual_CRLF(s);// s->count, move to   \r\n
++      	
++      	s->count=s->count+4;/*remove dual CRLF*/
++       }//joelin for firefox
++      	//printf("after move s->len=%d, s->count=%d\n",s->len,s->count);
++      	post_content_count=(s->len)-(s->count);
++      	//printf("post_content_count=%d\npost_content_length=%d\n",post_content_count,post_content_length); 
++		    if(post_content_count==post_content_length){
++      		s->state=STATE_OUTPUT;
++      	}else{ 
++      	  s->state = STATE_WAITING;
++      	}  
++      }
++   }else if(post_content_count==post_content_length){
++      	s->state=STATE_OUTPUT;   	
++   }else{
++   	    s->state = STATE_WAITING;
++   }
++  
++    return; 
++}
++
++static void
++handle_input(struct tcp_appstate *s)
++{
++  int i,len;
++	
++  //printf("handle input!\n");
++  //print_buf(s->buf,s->len);
++  if(post_flag) {
++    handle_post(s);
++	  return;
++    }
++  clear_buf(s->inputbuf, 500);	
++  s->count=0;
++  len=readto(s, ISO_space);
++  //printf("got\n");
++  //print_buf(s->inputbuf,len);
++  if(strncmp(s->inputbuf, http_get, 4) == 0) {
++    //printf("http get!\n");
++    len=readto(s, ISO_space);
++    if(s->inputbuf[0] != ISO_slash) {
++     goto exit;
++    }
++    if(s->inputbuf[1] == ISO_space) {
++       strncpy(s->filename, http_index_html, sizeof(s->filename));
++    } else {
++       s->inputbuf[len + 1] = 0;
++       strncpy(s->filename, &s->inputbuf[0], sizeof(s->filename));
++       //printf("file=%s\n",s->filename);
++    }
++    s->state = STATE_OUTPUT;    
++  }else if(strncmp(s->inputbuf, http_post, 5) == 0){
++  	//printf("http post!\n");
++  	post_flag=1;
++	  handle_post(s);
++	  return;
++  }else{
++    print_buf(s->buf,s->len);
++    printf("unsupported method!\n");
++  }
++  
++
++exit:
++  s->count=0;
++  s->len=0;   	 
++  return;
++}
++
++
++
++static void
++handle_connection(struct tcp_appstate *s)
++{
++  
++  handle_input(s);
++  if(s->state == STATE_OUTPUT) {
++    handle_output(s);
++  }
++  return;
++}
++
++
++static void
++HttpdHandler (uchar * data, int len, unsigned unused1, unsigned unused2)
++{
++	
++	struct tcp_appstate *s = (struct tcp_appstate *)&(tcp_conn->appstate);
++	int i;
++
++  //print_buf(data,len);
++  
++  memcpy(s->buf + s->len, data, len); 
++  s->len= s->len + len;
++  if((s->len)%(102400)==0){
++    printf("#");
++  }
++  //printf("httpdhadler s->len=%d, s->count=%d\n",s->len,s->count);
++  //printf("httphandler post_content_length=%d\n",post_content_length);
++  //printf("httphandler post_content_count=%d\n",post_content_count);
++  if(post_content_length>0){
++  	post_content_count +=len;
++    handle_connection(s);
++  }else if(( *(data+len-2) == ISO_return ) && (*(data+len-1) == ISO_nl)){  
++    
++    handle_connection(s);
++  }else{
++  	s->state = STATE_WAITING;
++  }
++	return;
++	
++}
++
++void HttpSend (uchar * pkt, unsigned len)
++{
++	
++	return;
++}
++
++
++void HttpdStart (void)
++{
++   printf("http server start...\n");
++   tcp_init();
++   TcpSetHandler(HttpdHandler);
++   tcp_listen(80);
++   
++}
++
++
++
++#endif
+--- /dev/null
++++ b/net/httpd.h
+@@ -0,0 +1,23 @@
++/*
++ *	LiMon - BOOTP/TFTP.
++ *
++ *	Copyright 1994, 1995, 2000 Neil Russell.
++ *	(See License)
++ */
++
++#ifndef __HTTP_H__
++#define __HTTP_H__
++
++
++
++/**********************************************************************/
++/*
++ *	Global functions and variables.
++ */
++
++/* httpd.c */
++extern void	HttpdStart (void);	/* Begin HTTPD */
++
++/**********************************************************************/
++
++#endif /* __HTTP_H__ */
+--- /dev/null
++++ b/net/makefsdata
+@@ -0,0 +1,78 @@
++#!/usr/bin/perl
++
++open(OUTPUT, "> httpd-fsdata.c");
++
++chdir("httpd-fs");
++
++opendir(DIR, ".");
++@files =  grep { !/^\./ && !/(CVS|~)/ } readdir(DIR);
++closedir(DIR);
++
++foreach $file (@files) {  
++   
++    if(-d $file && $file !~ /^\./) {
++	print "Processing directory $file\n";
++	opendir(DIR, $file);
++	@newfiles =  grep { !/^\./ && !/(CVS|~)/ } readdir(DIR);
++	closedir(DIR);
++	printf "Adding files @newfiles\n";
++	@files = (@files, map { $_ = "$file/$_" } @newfiles);
++	next;
++    }
++}
++
++foreach $file (@files) {
++    if(-f $file) {
++	
++	print "Adding file $file\n";
++	
++	open(FILE, $file) || die "Could not open file $file\n";
++
++	$file =~ s-^-/-;
++	$fvar = $file;
++	$fvar =~ s-/-_-g;
++	$fvar =~ s-\.-_-g;
++	# for AVR, add PROGMEM here
++	print(OUTPUT "static const unsigned char data".$fvar."[] = {\n");
++	print(OUTPUT "\t/* $file */\n\t");
++	for($j = 0; $j < length($file); $j++) {
++	    printf(OUTPUT "%#02x, ", unpack("C", substr($file, $j, 1)));
++	}
++	printf(OUTPUT "0,\n");
++	
++	
++	$i = 0;        
++	while(read(FILE, $data, 1)) {
++	    if($i == 0) {
++		print(OUTPUT "\t");
++	    }
++	    printf(OUTPUT "%#02x, ", unpack("C", $data));
++	    $i++;
++	    if($i == 10) {
++		print(OUTPUT "\n");
++		$i = 0;
++	    }
++	}
++	print(OUTPUT "0};\n\n");
++	close(FILE);
++	push(@fvars, $fvar);
++	push(@pfiles, $file);
++    }
++}
++
++for($i = 0; $i < @fvars; $i++) {
++    $file = $pfiles[$i];
++    $fvar = $fvars[$i];
++
++    if($i == 0) {
++        $prevfile = "NULL";
++    } else {
++        $prevfile = "file" . $fvars[$i - 1];
++    }
++    print(OUTPUT "const struct httpd_fsdata_file file".$fvar."[] = {{$prevfile, data$fvar, ");
++    print(OUTPUT "data$fvar + ". (length($file) + 1) .", ");
++    print(OUTPUT "sizeof(data$fvar) - ". (length($file) + 1) ."}};\n\n");
++}
++
++print(OUTPUT "#define HTTPD_FS_ROOT file$fvars[$i - 1]\n\n");
++print(OUTPUT "#define HTTPD_FS_NUMFILES $i\n");
+--- a/net/net.c
++++ b/net/net.c
+@@ -95,6 +95,10 @@
+ #if defined(CONFIG_CMD_DNS)
+ #include "dns.h"
+ #endif
++#ifdef CONFIG_CMD_HTTPD
++#include "httpd.h"
++#endif
++
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -436,6 +440,12 @@ restart:
+ 			DnsStart();
+ 			break;
+ #endif
++#ifdef CONFIG_CMD_HTTPD
++         case HTTP:
++		    HttpdStart();
++		    break;
++#endif
++								 
+ 		default:
+ 			break;
+ 		}
+@@ -1616,10 +1626,7 @@ NetReceive(volatile uchar * inpkt, int l
+ 			default:
+ 				return;
+ 			}
+-		} else if (ip->ip_p != IPPROTO_UDP) {	/* Only UDP packets */
+-			return;
+-		}
+-
++		} else if (ip->ip_p == IPPROTO_UDP){
+ #ifdef CONFIG_UDP_CHECKSUM
+ 		if (ip->udp_xsum != 0) {
+ 			ulong   xsum;
+@@ -1676,7 +1683,16 @@ NetReceive(volatile uchar * inpkt, int l
+ 						ntohs(ip->udp_src),
+ 						ntohs(ip->udp_len) - 8);
+ 		break;
+-	}
++	}else if (ip->ip_p == IPPROTO_TCP){
++        /* save address for later use */
++        memcpy(NetServerEther, et->et_src, 6);
++        (*packetHandler)((uchar *)ip, /*pass the whole ip packet to upper layer*/
++                        ntohs(ip->udp_dst),/*don't care*/
++                        ntohs(ip->udp_src),/*don't care*/
++                        ntohs(ip->ip_len));
++          return;
++      }
++ }
+ }
+ 
+ 
+@@ -1733,7 +1749,11 @@ static int net_check_prereq (proto_t pro
+ 	case RARP:
+ 	case BOOTP:
+ 	case CDP:
+-		if (memcmp (NetOurEther, "\0\0\0\0\0\0", 6) == 0) {
++#ifdef CONFIG_CMD_HTTPD	
++	case HTTP:
++#endif
++
++    if (memcmp (NetOurEther, "\0\0\0\0\0\0", 6) == 0) {
+ #ifdef CONFIG_NET_MULTI
+ 			extern int eth_get_dev_index (void);
+ 			int num = eth_get_dev_index ();
+--- /dev/null
++++ b/net/tcp.c
+@@ -0,0 +1,741 @@
++/*
++ *	Code partially borrowed from uIP-1.0
++ *
++ *	Copyright 1994 - 2000 Neil Russell.
++ *	Copyright 2000 Roland Borde
++ *	Copyright 2000 Paolo Scaffardi
++ *  Copyright 2009 Wu Qi Ming, Lantiq
++ */
++/*
++ * General Desription:
++ * A simple tcp layer implementation for u-boot
++ */
++
++#include <common.h>
++#include <watchdog.h>
++#include <command.h>
++#include <net.h>
++#include "tcp.h"
++
++
++static u16 ipid;           /* Ths ipid variable is an increasing
++				number that is used for the IP ID
++				field. */
++
++u16 uip_len, uip_slen;
++                             /* The uip_len is either 8 or 16 bits,
++                                depending on the maximum packet
++                                size. */
++
++u8 uip_flags;     /* The uip_flags variable is used for
++                                communication between the TCP/IP stack
++                                and the application program. */
++
++
++
++struct tcp_conn *tcp_conn;   /* tcp_conn always points to the current
++				connection. */
++
++struct tcp_conn tcp_conns[MAX_CONNS];
++                             /* The tcp_conns array holds all TCP
++				connections. */
++u16 tcp_listenports[MAX_LISTENPORTS];
++                             /* The tcp_listenports list all currently
++				listning ports. */
++	
++static u8 iss[4];          /* The iss variable is used for the TCP
++				initial sequence number. */	
++	
++/* Temporary variables. */
++u8 uip_acc32[4];				
++				
++static rxhand_f *UpperHandler;     /* Current RX packet handler        */
++				
++/**
++ * \internal
++ *
++ * Check if a connection has outstanding (i.e., unacknowledged) data.
++ *
++ * \param conn A pointer to the uip_conn structure for the connection.
++ *
++ * \hideinitializer
++ */
++#define tcp_outstanding(conn) ((conn)->len)
++				
++				
++void TcpSetHandler(void * f)
++{
++    UpperHandler = f;
++}
++				
++/*check tcp chksum, pkt is the ip data packet*/				
++u16 tcp_chksum(uchar * pkt)
++{
++	
++	int i;
++	u8* p;
++	u32 sum;
++	u16 chksum=0;
++	u16 tmp;
++	struct ip_hdr * ip_head=(struct ip_hdr *)pkt;
++	struct tcp_hdr * tcp_head=NULL;
++	int ihl; /*ip header length and tcp packet length*/
++	u16 tcp_len;
++	ihl = (ip_head->vhl & 0x0f) * 4 ;
++	tcp_len = ((u16)(ip_head->len[0])<<8 & 0xff00) + (u16)(ip_head->len[1]) - (u16)ihl;
++  sum = (u16)(ip_head->srcipaddr[0]<<8) + (u16)(ip_head->srcipaddr[1]) + \
++        (u16)(ip_head->srcipaddr[2]<<8) + (u16)(ip_head->srcipaddr[3]) + \
++        (u16)(ip_head->destipaddr[0]<<8) + (u16)(ip_head->destipaddr[1]) + \
++        (u16)(ip_head->destipaddr[2]<<8) + (u16)(ip_head->destipaddr[3]) + \ 
++        0x0006 + tcp_len;
++  tcp_head = pkt + ihl;
++	p = (u8*)tcp_head;
++	 
++	for(i=0;i<tcp_len-1;i+=2)
++	{
++		tmp =(u16)(*(p + i))<<8;
++		tmp +=(u16)(*(p + i + 1 ));
++	 	sum +=tmp;
++	}
++	
++	if(tcp_len%2) {
++		tmp= ((u16)(*(p + i )))<<8;
++		sum += tmp;
++	}
++	chksum=(u16)(tcp_head->tcpchksum[0])<<8 & 0xff00 ;
++	chksum += (u16)(tcp_head->tcpchksum[1]);
++	sum -=chksum;
++	while((sum & 0xffff0000)>>16){
++	  sum = ((sum & 0xffff0000)>>16) + (sum & 0x0000ffff);
++  }
++	chksum = (u16)(sum  & 0xffff)+ chksum;
++	
++	
++ 	return chksum;
++  
++}				
++		
++void
++uip_add32(u8 *op32, u16 op16)
++{
++  uip_acc32[3] = op32[3] + (op16 & 0xff);
++  uip_acc32[2] = op32[2] + (op16 >> 8);
++  uip_acc32[1] = op32[1];
++  uip_acc32[0] = op32[0];
++
++  if(uip_acc32[2] < (op16 >> 8)) {
++    ++uip_acc32[1];
++    if(uip_acc32[1] == 0) {
++      ++uip_acc32[0];
++    }
++  }
++
++
++  if(uip_acc32[3] < (op16 & 0xff)) {
++    ++uip_acc32[2];
++    if(uip_acc32[2] == 0) {
++      ++uip_acc32[1];
++      if(uip_acc32[1] == 0) {
++        ++uip_acc32[0];
++      }
++    }
++  }
++}
++		
++static void
++tcp_add_rcv_nxt(u16 n)
++{
++  uip_add32(tcp_conn->rcv_nxt, n);
++  tcp_conn->rcv_nxt[0] = uip_acc32[0];
++  tcp_conn->rcv_nxt[1] = uip_acc32[1];
++  tcp_conn->rcv_nxt[2] = uip_acc32[2];
++  tcp_conn->rcv_nxt[3] = uip_acc32[3];
++}
++		
++static void seq_add32(u8* data, u32 value)
++{
++	u32 tmp;
++	tmp = ((u32)data[0]<<24) | ((u32)data[1]<<16) | ((u32)data[2]<<8) | ((u32)data[3]);
++	tmp +=value;
++	*data = (u8)((tmp>>24) & 0xff);
++	*(data+1) = (u8)((tmp>>16) & 0xff);
++	*(data+2) = (u8)((tmp>>8) & 0xff);
++	*(data+3) = (u8)(tmp & 0xff);
++}		
++				
++				
++u16 test(uchar * pkt)
++{
++	
++	int i;
++	u8* p;
++	u32 sum;
++	u16 chksum=0;
++	u16 tmp;
++	struct ip_hdr * ip_head=(struct ip_hdr *)pkt;
++	struct tcp_hdr * tcp_head=NULL;
++	int ihl; /*ip header length and tcp packet length*/
++	u16 tcp_len;
++	ihl = (ip_head->vhl & 0x0f) * 4 ;
++	tcp_len = ((u16)(ip_head->len[0])<<8 & 0xff00) + (u16)(ip_head->len[1]) - (u16)ihl;
++	
++	
++  sum = (u16)(ip_head->srcipaddr[0]<<8) + (u16)(ip_head->srcipaddr[1]) + \
++        (u16)(ip_head->srcipaddr[2]<<8) + (u16)(ip_head->srcipaddr[3]) + \
++        (u16)(ip_head->destipaddr[0]<<8) + (u16)(ip_head->destipaddr[1]) + \
++        (u16)(ip_head->destipaddr[2]<<8) + (u16)(ip_head->destipaddr[3]) + \ 
++        0x0006 + tcp_len;
++        
++  printf("pseudo header=%08x\n",sum);      
++  tcp_head = pkt + ihl;
++  
++  for(i=0;i<tcp_len;i++)
++	{
++	   printf("%02x ",*((u8*)tcp_head+i));  
++  }
++  
++	p = (u8*)tcp_head;
++	 
++	for(i=0;i<tcp_len-1;i+=2)
++	{
++		tmp =(u16)(*(p + i))<<8;
++		tmp +=(u16)(*(p + i + 1 ));
++	 	sum +=tmp;
++	}
++	printf("sum1=%08x\n",sum);
++	
++	if(tcp_len%2) {
++		tmp= ((u16)(*(p + i )))<<8;
++		sum += tmp;
++	}
++	printf("sum2=%08x\n",sum);
++	chksum=(u16)(tcp_head->tcpchksum[0])<<8 & 0xff00 ;
++	chksum += (u16)(tcp_head->tcpchksum[1]);
++	sum -=chksum;
++	printf("sum3=%08x\n",sum);
++	sum = ((sum & 0xffff0000)>>16) + (sum & 0x0000ffff);
++	chksum = (u16)(sum  & 0xffff)+ chksum;
++	printf("chksum=%04x\n",chksum);
++	
++ 	return chksum;
++  
++}				
++						
++				
++static void
++TcpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)		
++{
++  struct ip_hdr * ip_head=(struct ip_hdr *)pkt;
++	struct tcp_hdr * tcp_head=NULL;
++	int ihl; /*ip header length and tcp packet length*/
++	u16 tcp_len, destport, srcport,tmp;
++	int c,i;
++	u8* p;
++	u8* tcp_data_ptr;
++	int tcp_data_len;   
++	u8 opt;
++	uchar * tx_pkt;
++	
++tcp_input:	
++	
++	  if(tcp_chksum(pkt)!=0xffff){
++	  	printf("tcp bad checksum\n");
++	  	//test(pkt);
++	  	goto drop;
++	  }
++   
++  /* Increase the initial sequence number. */
++    if(++iss[3] == 0) {
++       if(++iss[2] == 0) {
++	       if(++iss[1] == 0) {
++	         ++iss[0];
++	        }
++      }
++    }
++  ihl = (ip_head->vhl & 0x0f) * 4 ;
++	tcp_len = ((u16)(ip_head->len[0])<<8 & 0xff00) + (u16)(ip_head->len[1]) - (u16)ihl;	 
++	tcp_head = (struct tcp_hdr *)(pkt + ihl);
++	tcp_data_len = tcp_len - ((tcp_head->tcpoffset)>>2);
++	tcp_data_ptr = (u8*)tcp_head + ((tcp_head->tcpoffset)>>2);
++	srcport = ((u16)(tcp_head->srcport[0])<<8) + ((u16)(tcp_head->srcport[1]));
++	destport= ((u16)(tcp_head->destport[0])<<8)+ ((u16)(tcp_head->destport[1]));  
++	
++	
++	
++	
++	//printf("ipid=%02x%02x\n",ip_head->ipid[0],ip_head->ipid[1]);
++	
++  /* Demultiplex this segment. */
++    
++  /* First check any active connections. */
++  for(tcp_conn = &tcp_conns[0]; tcp_conn <= &tcp_conns[MAX_CONNS - 1]; ++tcp_conn) {
++    if(tcp_conn->tcpstateflags != TCP_CLOSED &&
++       destport == tcp_conn->lport &&
++       srcport == tcp_conn->rport &&
++       tcp_ipaddr_cmp(ip_head->srcipaddr, tcp_conn->ripaddr)) {
++      goto found;
++     }
++   }
++  
++   /* If we didn't find and active connection that expected the packet,
++     either this packet is an old duplicate, or this is a SYN packet
++     destined for a connection in LISTEN. If the SYN flag isn't set,
++     it is an old packet and we send a RST. */
++  if((tcp_head->flags & TCP_CTL) != TCP_SYN) {
++    goto reset;
++  }
++   	//printf("TCP SYNC!\n");
++   	
++   	/* Next, check listening connections. */
++  for(c = 0; c < MAX_LISTENPORTS; ++c) {
++    if(destport == tcp_listenports[c])
++      goto found_listen;
++  }
++
++    /* No matching connection found, so we send a RST packet. */
++reset:  
++    /* We do not send resets in response to resets. */
++    if(tcp_head->flags & TCP_RST) {
++      goto drop;
++    }
++    /*fix me, should add code here*/
++  
++    goto drop;
++    
++found_listen:
++	   //printf("found listen!\n");
++	   /* First we check if there are any connections avaliable. Unused
++     connections are kept in the same table as used connections, but
++     unused ones have the tcpstate set to CLOSED. Also, connections in
++     TIME_WAIT are kept track of and we'll use the oldest one if no
++     CLOSED connections are found. Thanks to Eddie C. Dost for a very
++     nice algorithm for the TIME_WAIT search. */
++     tcp_conn = 0;
++     for(c = 0; c < MAX_CONNS; ++c) {
++       if(tcp_conns[c].tcpstateflags == TCP_CLOSED) {
++         tcp_conn = &tcp_conns[c];
++         break;
++       }
++       if(tcp_conns[c].tcpstateflags == TCP_TIME_WAIT) {
++        if(tcp_conn == 0 ||
++	        tcp_conns[c].timer > tcp_conn->timer) {
++	        tcp_conn = &tcp_conns[c];
++          }
++       }
++     }
++     if(tcp_conn == 0) {
++    /* All connections are used already, we drop packet and hope that
++       the remote end will retransmit the packet at a time when we
++       have more spare connections. */
++      goto drop;
++    }
++      /* Fill in the necessary fields for the new connection. */
++ 
++     tcp_conn->rto = tcp_conn->timer = TCP_RTO;
++     
++     tcp_conn->sa = 0;
++     tcp_conn->sv = 4;
++     tcp_conn->nrtx = 0;
++     tcp_conn->lport = destport;
++     tcp_conn->rport = srcport;
++     tcp_ipaddr_copy(tcp_conn->ripaddr, ip_head->srcipaddr);
++     tcp_conn->tcpstateflags = TCP_SYN_RCVD;
++	   
++	   
++	   tcp_conn->snd_nxt[0] = iss[0];
++     tcp_conn->snd_nxt[1] = iss[1];
++     tcp_conn->snd_nxt[2] = iss[2];
++     tcp_conn->snd_nxt[3] = iss[3];
++     tcp_conn->len = 1;
++     
++     /* rcv_nxt should be the seqno from the incoming packet + 1. */
++     tcp_conn->rcv_nxt[3] = tcp_head->seqno[3];
++     tcp_conn->rcv_nxt[2] = tcp_head->seqno[2];
++     tcp_conn->rcv_nxt[1] = tcp_head->seqno[1];
++     tcp_conn->rcv_nxt[0] = tcp_head->seqno[0];
++     tcp_add_rcv_nxt(1);
++  
++    
++     /* Parse the TCP MSS option, if present. */
++  if((tcp_head->tcpoffset & 0xf0) > 0x50) {
++    for(c = 0; c < ((tcp_head->tcpoffset >> 4) - 5) << 2 ;) {
++      opt = *((u8*)tcp_head + 20 + c);
++      printf("opt=%02x\n",opt);
++      if(opt == TCP_OPT_END) {
++	    /* End of options. */
++	    break;
++      } else if(opt == TCP_OPT_NOOP) {
++	   ++c;
++	   /* NOP option. */
++      } else if(opt == TCP_OPT_MSS &&
++		           *((u8*)tcp_head + 20 + c +1) == TCP_OPT_MSS_LEN) {
++	   /* An MSS option with the right option length. */
++     tmp =  ((u16)(*((u8*)tcp_head + 20 + c + 2))<<8) | (u16)(*((u8*)tcp_head + 20 + c + 3));
++     tcp_conn->initialmss = tcp_conn->mss =
++	    tmp > TCP_MSS? TCP_MSS:tmp;    
++	
++	   /* And we are done processing options. */
++	   break;
++      }
++     else {
++	     /* All other options have a length field, so that we easily
++	    can skip past them. */
++	   if(*((u8*)tcp_head + 20 + c +1 ) == 0) {
++	     /* If the length field is zero, the options are malformed
++	     and we don't process them further. */
++	      break;
++	    }
++	     c += *((u8*)tcp_head + 20 + c +1 );
++     }   
++   }
++  }
++  
++tcp_send_synack:
++	   tcp_head = (struct tcp_hdr*)((uchar *)NetTxPacket + ETHER_HDR_SIZE + 20);
++	   tcp_head->flags = TCP_SYN | TCP_ACK; 
++	   tcp_head->optdata[0] = TCP_OPT_MSS;
++     tcp_head->optdata[1] = TCP_OPT_MSS_LEN;
++     tcp_head->optdata[2] = (TCP_MSS) / 256;
++     tcp_head->optdata[3] = (TCP_MSS) & 255;
++     tcp_len = 20 + 20 + TCP_OPT_MSS_LEN;
++     tcp_head->tcpoffset = ((20 + TCP_OPT_MSS_LEN)/4)<<4;
++     tcp_conn->tcpstateflags = TCP_SYN_RCVD;
++     goto tcp_send;
++
++found:
++	 //printf("found!\n");
++
++	    /* We do a very naive form of TCP reset processing; we just accept
++     any RST and kill our connection. We should in fact check if the
++     sequence number of this reset is wihtin our advertised window
++     before we accept the reset. */
++    if(tcp_head->flags & TCP_RST) {
++      tcp_conn->tcpstateflags = TCP_CLOSED;
++      printf("tcp: got reset, aborting connection.");
++      goto drop;
++     }
++     /*
++     if(tcp_head->flags == TCP_FIN | TCP_ACK) {
++     	 tcp_conn->tcpstateflags = TCP_FIN_WAIT_2;
++     	 tcp_head = (struct tcp_hdr*)((uchar *)NetTxPacket + ETHER_HDR_SIZE + 20);
++     	 tcp_head->flags = TCP_FIN | TCP_ACK;
++       goto tcp_send_nodata;
++      }
++      */
++     /* Calculated the length of the data, if the application has sent
++     any data to us. */
++     c = (tcp_head->tcpoffset >> 4) << 2;
++	   
++  /* First, check if the sequence number of the incoming packet is
++     what we're expecting next. If not, we send out an ACK with the
++     correct numbers in. */
++#if 0     
++  if(!(((tcp_conn->tcpstateflags & TCP_TS_MASK) == TCP_SYN_SENT) &&
++       ((tcp_head->flags & TCP_CTL) == (TCP_SYN | TCP_ACK)))) {
++    if((tcp_len > 0 || ((tcp_head->flags & (TCP_SYN | TCP_FIN)) != 0)) &&
++       (tcp_head->seqno[0] != tcp_conn->rcv_nxt[0] ||
++        tcp_head->seqno[1] != tcp_conn->rcv_nxt[1] ||
++        tcp_head->seqno[2] != tcp_conn->rcv_nxt[2] ||
++        tcp_head->seqno[3] != tcp_conn->rcv_nxt[3])) {
++      goto drop;
++    }
++  }
++#endif
++    if( tcp_head->seqno[0] != tcp_conn->rcv_nxt[0] ||
++        tcp_head->seqno[1] != tcp_conn->rcv_nxt[1] ||
++        tcp_head->seqno[2] != tcp_conn->rcv_nxt[2] ||
++        tcp_head->seqno[3] != tcp_conn->rcv_nxt[3] ) {
++        /*
++        printf("seq=%02x %02x %02x %02x, rcv_nxt=%02x %02x %02x %02x\n",
++          tcp_head->seqno[0],tcp_head->seqno[1],tcp_head->seqno[2],tcp_head->seqno[3],
++          tcp_conn->rcv_nxt[0],tcp_conn->rcv_nxt[1],tcp_conn->rcv_nxt[2],tcp_conn->rcv_nxt[3]);	
++        */
++      goto drop;
++    }
++ 
++    
++     //uip_flags = UIP_ACKDATA;
++  
++  
++  
++  
++  /* Do different things depending on in what state the connection is. */
++  //printf("tcpstateflags=%02x\n",tcp_conn->tcpstateflags);
++  
++  switch(tcp_conn->tcpstateflags & TCP_TS_MASK) {
++    /* CLOSED and LISTEN are not handled here. CLOSE_WAIT is not
++	implemented, since we force the application to close when the
++	peer sends a FIN (hence the application goes directly from
++	ESTABLISHED to LAST_ACK). */
++	case TCP_SYN_RCVD:
++	  //printf("state=TCP_SYN_RCVD\n");
++	    if(!(tcp_head->flags & TCP_ACK)){
++      	 goto drop;/*if not ack, we go to drop*/
++      	}  
++      tcp_conn->tcpstateflags = TCP_ESTABLISHED;
++      tcp_conn->len = 0;
++      seq_add32(tcp_conn->snd_nxt, 1);
++      break;
++   
++	case TCP_ESTABLISHED:
++	  //	printf("state=TCP_ESTABLISHED\n");
++   
++      if(tcp_head->flags == (TCP_FIN | TCP_ACK)){
++      	  tcp_head = (struct tcp_hdr*)((uchar *)NetTxPacket + ETHER_HDR_SIZE + 20);
++      	  tcp_head->flags = (TCP_FIN |TCP_ACK);
++      	  //seq_add32(tcp_conn->snd_nxt, 1);
++   	      //seq_add32(tcp_conn->rcv_nxt, 1);
++      	  tcp_conn->tcpstateflags=TCP_FIN_WAIT_2;
++      	  goto tcp_send_nodata;
++      }
++   
++      if((tcp_len - 20) > 0 && !(tcp_conn->tcpstateflags & TCP_STOPPED)) {
++      tcp_add_rcv_nxt(tcp_len-20); /*20 bytes for tcp header*/
++      tmp = ((u16)tcp_head->wnd[0] << 8) + (u16)tcp_head->wnd[1];
++      if(tmp > tcp_conn->initialmss || tmp == 0) {
++         tmp = tcp_conn->initialmss;
++       }
++      tcp_conn->mss = tmp;
++      UpperHandler(tcp_data_ptr,tcp_data_len,0,0);
++      
++      if(tcp_conn->appstate.state==STATE_WAITING)
++      	{
++      		tcp_head = (struct tcp_hdr*)((uchar *)NetTxPacket + ETHER_HDR_SIZE + 20);
++      		goto tcp_send_ack;
++      	}
++      	
++     }
++      break;
++   case TCP_LAST_ACK:
++     //printf("state=TCP_LAST_ACK\n");
++     if(tcp_head->flags != (TCP_FIN | TCP_ACK)){
++	          goto drop;/*if not FIN, we go to drop*/
++	 }
++     //printf("send back ack now\n");					  
++   	 seq_add32(tcp_conn->snd_nxt, 1);
++   	 seq_add32(tcp_conn->rcv_nxt, 1);
++   	 tcp_head = (struct tcp_hdr*)((uchar *)NetTxPacket + ETHER_HDR_SIZE + 20);
++     tcp_conn->tcpstateflags = TCP_CLOSED;
++     goto tcp_send_ack;	
++   case TCP_FIN_WAIT_2:
++   	 //printf("state=TCP_FIN_WAIT_2\n");
++   	 tcp_conn->tcpstateflags = TCP_CLOSED;
++   	 break;  
++     
++  }
++       goto drop;
++
++      
++tcp_send_ack:
++  tcp_head->flags = TCP_ACK;
++tcp_send_nodata:
++  tcp_len = IPTCPH_LEN;
++tcp_send_noopts:
++  tcp_head->tcpoffset = (TCPH_LEN / 4) << 4;
++      
++	  //printf("tcp_len=%d\n",tcp_len);
++	      
++tcp_send:
++	   /* We're done with the input processing. We are now ready to send a
++     reply. Our job is to fill in all the fields of the TCP and IP
++     headers before calculating the checksum and finally send the
++     packet. */
++    
++     tcp_head->srcport[0]= (u8)(tcp_conn->lport>>8);
++     tcp_head->srcport[1]= (u8)(tcp_conn->lport & 0xff);
++     tcp_head->destport[0]= (u8)(tcp_conn->rport>>8);
++     tcp_head->destport[1]= (u8)(tcp_conn->rport & 0xff);
++     tcp_head->ackno[0] = tcp_conn->rcv_nxt[0];
++     tcp_head->ackno[1] = tcp_conn->rcv_nxt[1];
++     tcp_head->ackno[2] = tcp_conn->rcv_nxt[2];
++     tcp_head->ackno[3] = tcp_conn->rcv_nxt[3];
++  
++     tcp_head->seqno[0] = tcp_conn->snd_nxt[0];
++     tcp_head->seqno[1] = tcp_conn->snd_nxt[1];
++     tcp_head->seqno[2] = tcp_conn->snd_nxt[2];
++     tcp_head->seqno[3] = tcp_conn->snd_nxt[3];	   
++	   
++	   if(tcp_conn->tcpstateflags & TCP_STOPPED) {
++    /* If the connection has issued uip_stop(), we advertise a zero
++       window so that the remote host will stop sending data. */
++      tcp_head->wnd[0] = tcp_head->wnd[1] = 0;
++    } else {
++      tcp_head->wnd[0] = ((TCP_RECEIVE_WINDOW) >> 8);
++      tcp_head->wnd[1] = ((TCP_RECEIVE_WINDOW) & 0xff);
++    }
++tcp_send_noconn:
++       
++     tcp_head->urgp[0] = tcp_head->urgp[1] = 0;
++	   
++	   tx_pkt = (uchar *)NetTxPacket;
++	   tx_pkt += NetSetEther (tx_pkt, NetServerEther, PROT_IP);
++	   ip_head = (struct ip_hdr*)tx_pkt;
++	   
++	   ip_head->vhl  = 0x45;		/* IP_HDR_SIZE / 4 (not including UDP) */
++	   ip_head->tos   = 0;
++	   //ip_head->len[0] = (u8)((20 + tcp_len) >> 8)  ;
++	   //ip_head->len[1] = (u8)((20 + tcp_len) & 0xff);
++	   ip_head->len[0] = (u8)((tcp_len) >> 8)  ;
++	   ip_head->len[1] = (u8)((tcp_len) & 0xff);
++	   ip_head->ttl = IP_TTL;
++ 
++	   ++ipid;
++     ip_head->ipid[0] = ipid >> 8;
++     ip_head->ipid[1] = ipid & 0xff;
++	   ip_head->ipoffset[0] = (u8)(htons(0x4000)>>8);	/* No fragmentation */
++	   ip_head->ipoffset[1] = (u8)(htons(0x4000) & 0xff);
++	   ip_head->ttl   = 255;
++	   ip_head->proto     = IPPROTO_TCP;		/* TCP */
++	   ip_head->ipchksum[0]   = 0;
++	   ip_head->ipchksum[1]   = 0;
++	   tcp_ipaddr_copy(ip_head->srcipaddr, &NetOurIP);
++	   tcp_ipaddr_copy(ip_head->destipaddr, tcp_conn->ripaddr);
++	   tmp   = ~NetCksum((uchar *)ip_head, IP_HDR_SIZE_NO_UDP / 2);
++	   ip_head->ipchksum[0]   = (u8)(tmp>>8);
++	   ip_head->ipchksum[1]   = (u8)(tmp & 0xff);
++	   
++	   tcp_head->tcpchksum[0]=0;
++	   tcp_head->tcpchksum[1]=0;
++	   
++	   tmp=~tcp_chksum(ip_head);
++	   tcp_head->tcpchksum[0]= (u8)(tmp>>8);
++	   tcp_head->tcpchksum[1]= (u8)(tmp & 0xff);
++	   //printf("send ipid=%02x%02x\n",ip_head->ipid[0],ip_head->ipid[1]);
++	   eth_send(NetTxPacket,14 + 20 + tcp_len);
++	   
++	   
++	
++	
++drop:
++	return;	
++}		
++				
++				
++int tcp_send_data(char* data, int len)
++{
++	 struct ip_hdr * ip_head;
++	 struct tcp_hdr * tcp_head=NULL;
++	 int ihl; /*ip header length and tcp packet length*/
++	 int i;
++	 u16 tcp_len, destport, srcport,tmp;
++	 uchar * tx_pkt;
++	 tcp_len = 20 + len;
++	 tcp_head = (struct tcp_hdr*)((uchar *)NetTxPacket + ETHER_HDR_SIZE + 20);
++	 
++	 tcp_head->srcport[0]= (u8)(tcp_conn->lport>>8);
++   tcp_head->srcport[1]= (u8)(tcp_conn->lport & 0xff);
++   tcp_head->destport[0]= (u8)(tcp_conn->rport>>8);
++   tcp_head->destport[1]= (u8)(tcp_conn->rport & 0xff);
++   tcp_head->ackno[0] = tcp_conn->rcv_nxt[0];
++   tcp_head->ackno[1] = tcp_conn->rcv_nxt[1];
++   tcp_head->ackno[2] = tcp_conn->rcv_nxt[2];
++   tcp_head->ackno[3] = tcp_conn->rcv_nxt[3];
++  
++
++   tcp_head->seqno[0] = tcp_conn->snd_nxt[0];
++   tcp_head->seqno[1] = tcp_conn->snd_nxt[1];
++   tcp_head->seqno[2] = tcp_conn->snd_nxt[2];
++   tcp_head->seqno[3] = tcp_conn->snd_nxt[3];	   
++   
++   seq_add32(tcp_conn->snd_nxt, len);
++   tcp_head->tcpoffset = 5<<4;
++   
++   if(len>0){
++	 memcpy((u8*)tcp_head + 20, data, len);
++	 tcp_head->flags = TCP_PSH | TCP_ACK; 
++	 }else{
++	 tcp_head->flags = TCP_FIN | TCP_ACK;
++	 tcp_conn->tcpstateflags = TCP_LAST_ACK;	
++	}
++	
++	 if(tcp_conn->tcpstateflags & TCP_STOPPED) {
++    /* If the connection has issued uip_stop(), we advertise a zero
++       window so that the remote host will stop sending data. */
++      tcp_head->wnd[0] = tcp_head->wnd[1] = 0;
++    } else {
++      tcp_head->wnd[0] = ((TCP_RECEIVE_WINDOW) >> 8);
++      tcp_head->wnd[1] = ((TCP_RECEIVE_WINDOW) & 0xff);
++    }
++       
++     tcp_head->urgp[0] = tcp_head->urgp[1] = 0;
++	   
++	   tx_pkt = (uchar *)NetTxPacket;
++	   tx_pkt += NetSetEther (tx_pkt, NetServerEther, PROT_IP);
++	   ip_head = (struct ip_hdr*)tx_pkt;
++	   
++	   ip_head->vhl  = 0x45;		/* IP_HDR_SIZE / 4 (not including UDP) */
++	   ip_head->tos   = 0;
++	   ip_head->len[0] = (u8)((20 + tcp_len) >> 8)  ;
++	   ip_head->len[1] = (u8)((20 + tcp_len) & 0xff);
++	   ip_head->ttl = IP_TTL;
++ 
++	   ++ipid;
++       ip_head->ipid[0] = ipid >> 8;
++       ip_head->ipid[1] = ipid & 0xff;
++	   ip_head->ipoffset[0] = (u8)(htons(0x4000)>>8);	/* No fragmentation */
++	   ip_head->ipoffset[1] = (u8)(htons(0x4000) & 0xff);
++	   ip_head->ttl   = 255;
++	   ip_head->proto     = IPPROTO_TCP;		/* TCP */
++	   ip_head->ipchksum[0]   = 0;
++	   ip_head->ipchksum[1]   = 0;
++	   tcp_ipaddr_copy(ip_head->srcipaddr, &NetOurIP);
++	   tcp_ipaddr_copy(ip_head->destipaddr, tcp_conn->ripaddr);
++	   tmp   = ~NetCksum((uchar *)ip_head, IP_HDR_SIZE_NO_UDP / 2);
++	   ip_head->ipchksum[0]   = (u8)(tmp>>8);
++	   ip_head->ipchksum[1]   = (u8)(tmp & 0xff);
++	   
++	   tcp_head->tcpchksum[0]=0;
++	   tcp_head->tcpchksum[1]=0;
++	   
++	   tmp=~tcp_chksum(ip_head);
++	   tcp_head->tcpchksum[0]= (u8)(tmp>>8);
++	   tcp_head->tcpchksum[1]= (u8)(tmp & 0xff);
++	   //printf("send ipid=%02x%02x\n",ip_head->ipid[0],ip_head->ipid[1]);
++	   eth_send(NetTxPacket,14 + 20 + tcp_len);
++	   return tcp_len;
++}				
++				
++void tcp_init(void)
++{
++	int c;
++  for(c = 0; c < MAX_LISTENPORTS; ++c) {
++    tcp_listenports[c] = 0;
++  }
++  for(c = 0; c < MAX_CONNS; ++c) {
++    tcp_conns[c].tcpstateflags = TCP_CLOSED;
++    tcp_conns[c].appstate.count=0;
++    tcp_conns[c].appstate.len=0;
++    tcp_conns[c].appstate.buf=load_addr;
++    tcp_conns[c].appstate.state=STATE_WAITING;
++  }
++  NetSetHandler (TcpHandler);
++}
++
++void tcp_unlisten(u16 port)
++{
++	int c;
++  for(c = 0; c < MAX_LISTENPORTS; ++c) {
++    if(tcp_listenports[c] == port) {
++      tcp_listenports[c] = 0;
++      return;
++    }
++  }
++}
++/*---------------------------------------------------------------------------*/
++void tcp_listen(u16 port)
++{
++	int c;
++  for(c = 0; c < MAX_LISTENPORTS; ++c) {
++    if(tcp_listenports[c] == 0) {
++      tcp_listenports[c] = port;
++      return;
++    }
++  }
++}
++
++
++void tcp_send(u8* pkt, int len)
++{
++	
++	return;
++}
+--- /dev/null
++++ b/net/tcp.h
+@@ -0,0 +1,342 @@
++/*
++ *  Copyright 2009 Wu Qi Ming, Lantiq
++ */
++#define MAX_CONNS 40
++#define MAX_LISTENPORTS 80
++/* The TCP states used in the uip_conn->tcpstateflags. */
++#define TCP_CLOSED      0
++#define TCP_SYN_RCVD    1
++#define TCP_SYN_SENT    2
++#define TCP_ESTABLISHED 3
++#define TCP_FIN_WAIT_1  4
++#define TCP_FIN_WAIT_2  5
++#define TCP_CLOSING     6
++#define TCP_TIME_WAIT   7
++#define TCP_LAST_ACK    8
++#define TCP_TS_MASK     15
++
++#define TCP_STOPPED      16
++
++/* Structures and definitions. */
++#define TCP_FIN 0x01
++#define TCP_SYN 0x02
++#define TCP_RST 0x04
++#define TCP_PSH 0x08
++#define TCP_ACK 0x10
++#define TCP_URG 0x20
++#define TCP_CTL 0x3f
++
++
++#define TCP_OPT_END     0   /* End of TCP options list */
++#define TCP_OPT_NOOP    1   /* "No-operation" TCP option */
++#define TCP_OPT_MSS     2   /* Maximum segment size TCP option */
++
++#define TCP_OPT_MSS_LEN 4   /* Length of TCP MSS option. */
++
++#define IP_TTL         64
++
++#define IPH_LEN    20    /* Size of IP header */
++
++#define TCPH_LEN   20    /* Size of TCP header */
++
++#define IPTCPH_LEN (TCPH_LEN + IPH_LEN)    /* Size of IP +
++                                                          TCP
++                                                          header */
++
++/*application status*/
++#define STATE_WAITING 0
++#define STATE_OUTPUT  1
++#define STATE_DEBUG   2
++
++/**
++ * The TCP maximum segment size.
++ *
++ * This is should not be to set to more than
++ * UIP_BUFSIZE - UIP_LLH_LEN - UIP_TCPIP_HLEN.
++ */
++#define TCP_MSS    500
++ 
++#define TCP_RECEIVE_WINDOW TCP_MSS
++ 
++ 
++/**
++ * The initial retransmission timeout counted in timer pulses.
++ *
++ * This should not be changed.
++ */
++#define TCP_RTO         3
++
++
++/* The TCP and IP headers. */
++struct ip_hdr {
++  /* IPv4 header. */
++  u8  vhl;
++  u8  tos;
++  u8  len[2];
++  u8  ipid[2];
++  u8  ipoffset[2];
++  u8  ttl;
++  u8  proto;
++  u8  ipchksum[2];
++  u8  srcipaddr[4];
++  u8  destipaddr[4];
++};
++
++struct tcp_hdr {  
++  /* TCP header. */
++  u8 srcport[2],
++     destport[2];
++  u8 seqno[4],
++     ackno[4],
++     tcpoffset,
++     flags,
++     wnd[2];
++  u8 tcpchksum[2];
++  u8 urgp[2];
++  u8 optdata[4];
++};
++
++void tcp_init(void);
++
++int tcp_send_data(char* data, int len);
++
++void TcpSetHandler(void * f);
++
++struct httpd_fs_file {
++  char *data;
++  int len;
++};
++
++struct tcp_appstate {
++  unsigned char timer;
++  //struct psock sin, sout;
++  //struct pt outputpt, scriptpt;
++  char inputbuf[500];
++  char filename[50];
++  char state;
++  char* buf;
++  
++  struct httpd_fs_file file;
++  int len; /*total length of the packet*/
++  //char *scriptptr;
++  //int scriptlen;
++
++  unsigned short count; /*bytes processed*/
++}tcp_appstate_t;
++
++
++/**
++ * Representation of a uIP TCP connection.
++ *
++ * The tcp_conn structure is used for identifying a connection. All
++ * but one field in the structure are to be considered read-only by an
++ * application. The only exception is the appstate field whos purpose
++ * is to let the application store application-specific state (e.g.,
++ * file pointers) for the connection. The type of this field is
++ * configured in the "uipopt.h" header file.
++ */
++struct tcp_conn {
++  u8 ripaddr[6];   /**< The IP address of the remote host. */
++  
++  u16 lport;        /**< The local TCP port, in network byte order. */
++  u16 rport;        /**< The local remote TCP port, in network byte
++			 order. */
++  
++  u8 rcv_nxt[4];    /**< The sequence number that we expect to
++			 receive next. */
++  u8 snd_nxt[4];    /**< The sequence number that was last sent by
++                         us. */
++  u16 len;          /**< Length of the data that was previously sent. */
++  u16 mss;          /**< Current maximum segment size for the
++			 connection. */
++  u16 initialmss;   /**< Initial maximum segment size for the
++			 connection. */
++  u8 sa;            /**< Retransmission time-out calculation state
++			 variable. */
++  u8 sv;            /**< Retransmission time-out calculation state
++			 variable. */
++  u8 rto;           /**< Retransmission time-out. */
++  u8 tcpstateflags; /**< TCP state and flags. */
++  u8 timer;         /**< The retransmission timer. */
++  u8 nrtx;          /**< The number of retransmissions for the last
++			 segment sent. */
++
++  /** The application state. */
++  struct tcp_appstate appstate;
++};
++
++
++
++void tcp_listen(u16 port);
++
++/**
++ * Pointer to the current TCP connection.
++ *
++ * The uip_conn pointer can be used to access the current TCP
++ * connection.
++ */
++extern struct tcp_conn *tcp_conn;
++/* The array containing all uIP connections. */
++extern struct tcp_conn tcp_conns[MAX_CONNS];
++
++
++
++#define tcp_ipaddr_cmp(addr1, addr2) (((u8 *)addr1)[0] == ((u8 *)addr2)[0] && \
++				      ((u8 *)addr1)[1] == ((u8 *)addr2)[1] && \
++				      ((u8 *)addr1)[2] == ((u8 *)addr2)[2] && \
++				      ((u8 *)addr1)[3] == ((u8 *)addr2)[3])
++				      
++#define tcp_ipaddr_copy(dest, src) do { \
++                     ((u8 *)dest)[0] = ((u8 *)src)[0]; \
++                     ((u8 *)dest)[1] = ((u8 *)src)[1]; \
++                     ((u8 *)dest)[2] = ((u8 *)src)[2]; \
++                     ((u8 *)dest)[3] = ((u8 *)src)[3]; \
++                  } while(0)			      
++                  
++                  
++/*---------------------------------------------------------------------------*/
++/* u8_t uip_flags:
++ *
++ * When the application is called, uip_flags will contain the flags
++ * that are defined in this file. Please read below for more
++ * infomation.
++ */
++extern u8 uip_flags;
++
++/* The following flags may be set in the global variable uip_flags
++   before calling the application callback. The UIP_ACKDATA,
++   UIP_NEWDATA, and UIP_CLOSE flags may both be set at the same time,
++   whereas the others are mutualy exclusive. Note that these flags
++   should *NOT* be accessed directly, but only through the uIP
++   functions/macros. */
++
++#define UIP_ACKDATA   1     /* Signifies that the outstanding data was
++                               acked and the application should send
++                               out new data instead of retransmitting
++                               the last data. */
++#define UIP_NEWDATA   2     /* Flags the fact that the peer has sent
++                               us new data. */
++#define UIP_REXMIT    4     /* Tells the application to retransmit the
++                               data that was last sent. */
++#define UIP_POLL      8     /* Used for polling the application, to
++                               check if the application has data that
++                               it wants to send. */
++#define UIP_CLOSE     16    /* The remote host has closed the
++                               connection, thus the connection has
++                               gone away. Or the application signals
++                               that it wants to close the
++                               connection. */
++#define UIP_ABORT     32    /* The remote host has aborted the
++                               connection, thus the connection has
++                               gone away. Or the application signals
++                               that it wants to abort the
++                               connection. */
++#define UIP_CONNECTED 64    /* We have got a connection from a remote
++                               host and have set up a new connection
++                               for it, or an active connection has
++                               been successfully established. */
++
++#define UIP_TIMEDOUT  128   /* The connection has been aborted due to
++                               too many retransmissions. */
++                  
++                  
++                  
++
++/**
++ * Is new incoming data available?
++ *
++ * Will reduce to non-zero if there is new data for the application
++ * present at the uip_appdata pointer. The size of the data is
++ * avaliable through the uip_len variable.
++ *
++ * \hideinitializer
++ */
++#define uip_newdata()   (uip_flags & UIP_NEWDATA)
++
++/**
++ * Has the connection just been connected?
++ *
++ * Reduces to non-zero if the current connection has been connected to
++ * a remote host. This will happen both if the connection has been
++ * actively opened (with uip_connect()) or passively opened (with
++ * uip_listen()).
++ *
++ * \hideinitializer
++ */
++#define uip_connected() (uip_flags & UIP_CONNECTED)
++
++/**
++ * Has the connection been closed by the other end?
++ *
++ * Is non-zero if the connection has been closed by the remote
++ * host. The application may then do the necessary clean-ups.
++ *
++ * \hideinitializer
++ */
++#define uip_closed()    (uip_flags & UIP_CLOSE)
++
++/**
++ * Has the connection been aborted by the other end?
++ *
++ * Non-zero if the current connection has been aborted (reset) by the
++ * remote host.
++ *
++ * \hideinitializer
++ */
++#define uip_aborted()    (uip_flags & UIP_ABORT)
++
++/**
++ * Has the connection timed out?
++ *
++ * Non-zero if the current connection has been aborted due to too many
++ * retransmissions.
++ *
++ * \hideinitializer
++ */
++#define uip_timedout()    (uip_flags & UIP_TIMEDOUT)
++
++/**
++ * Do we need to retransmit previously data?
++ *
++ * Reduces to non-zero if the previously sent data has been lost in
++ * the network, and the application should retransmit it. The
++ * application should send the exact same data as it did the last
++ * time, using the uip_send() function.
++ *
++ * \hideinitializer
++ */
++#define uip_rexmit()     (uip_flags & UIP_REXMIT)
++
++/**
++ * Is the connection being polled by uIP?
++ *
++ * Is non-zero if the reason the application is invoked is that the
++ * current connection has been idle for a while and should be
++ * polled.
++ *
++ * The polling event can be used for sending data without having to
++ * wait for the remote host to send data.
++ *
++ * \hideinitializer
++ */
++#define uip_poll()       (uip_flags & UIP_POLL)
++
++/**
++ * Get the initial maxium segment size (MSS) of the current
++ * connection.
++ *
++ * \hideinitializer
++ */
++#define uip_initialmss()             (uip_conn->initialmss)
++
++/**
++ * Abort the current connection.
++ *
++ * This function will abort (reset) the current connection, and is
++ * usually used when an error has occured that prevents using the
++ * uip_close() function.
++ *
++ * \hideinitializer
++ */
++#define uip_abort()         (uip_flags = UIP_ABORT)
++                  

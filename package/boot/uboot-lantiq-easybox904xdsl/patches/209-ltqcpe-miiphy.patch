@@ -1,0 +1,37 @@
+# HG changeset patch
+# Parent 95e64f01c74cf4b2ced863c6aaf323a6b1fa3d9c
+
+--- a/common/miiphyutil.c
++++ b/common/miiphyutil.c
+@@ -121,6 +121,7 @@ void miiphy_register (char *name,
+ 		current_mii = new_dev;
+ }
+ 
++#if defined(CONFIG_CMD_MII)
+ int miiphy_set_current_dev (char *devname)
+ {
+ 	struct list_head *entry;
+@@ -146,6 +147,7 @@ char *miiphy_get_current_dev ()
+ 
+ 	return NULL;
+ }
++#endif
+ 
+ /*****************************************************************************
+  *
+@@ -221,6 +223,7 @@ int miiphy_write (char *devname, unsigne
+ 	return ((found_dev) ? write_ret : 1);
+ }
+ 
++#if defined(CONFIG_CMD_MII)
+ /*****************************************************************************
+  *
+  * Print out list of registered MII capable devices.
+@@ -327,6 +330,7 @@ int miiphy_reset (char *devname, unsigne
+ 	}
+ 	return (0);
+ }
++#endif
+ 
+ /*****************************************************************************
+  *

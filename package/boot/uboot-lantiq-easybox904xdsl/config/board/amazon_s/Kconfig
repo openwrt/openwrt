@@ -1,0 +1,135 @@
+#
+# For a description of the syntax of this configuration file,
+# see Linux Documentation
+#
+#
+
+config UBOOT_CONFIG_DRIVER_AMAZON_S
+      bool
+      default y
+
+choice
+    prompt 'SUB PLATFORM SELECTION'
+    default UBOOT_CONFIG_AR9
+
+config UBOOT_CONFIG_AR9
+    bool "AR9"
+
+config UBOOT_CONFIG_GR9
+    bool "GR9"
+
+endchoice
+
+
+config UBOOT_CONFIG_BOARD_NAME
+    string 
+	default "EASY50812"
+	depends on UBOOT_CONFIG_IFX_IMAGE_EXTRA_CHECKS 
+
+config UBOOT_CONFIG_BOARD_VERSION
+    string 
+	default "1.23"
+	depends on UBOOT_CONFIG_IFX_IMAGE_EXTRA_CHECKS
+
+config UBOOT_CONFIG_CHIP_NAME
+    string 
+	default "ARX188"
+	depends on UBOOT_CONFIG_IFX_IMAGE_EXTRA_CHECKS
+
+config UBOOT_CONFIG_CHIP_VERSION
+    string 
+	default "1.2"
+	depends on UBOOT_CONFIG_IFX_IMAGE_EXTRA_CHECKS
+
+config UBOOT_CONFIG_TUNE_DDR
+    bool "DDR tuning support"
+
+config UBOOT_CONFIG_DDR_TUNING_TEXT_BASE
+    hex 
+	default "0x9e1a0000"
+    depends on UBOOT_CONFIG_TUNE_DDR		
+
+
+choice 
+    prompt 'PLL SETTING'
+    default UBOOT_CONFIG_USE_PLL0
+
+config UBOOT_CONFIG_USE_PLL0
+    bool "PLL0"
+
+config UBOOT_CONFIG_USE_PLL1
+    bool "PLL1"
+
+endchoice	
+
+choice 
+    prompt 'RAM BRAND'
+	default UBOOT_CONFIG_QIMONDA
+
+config UBOOT_CONFIG_QIMONDA_RAM
+    bool "QIMONDA"
+
+config UBOOT_CONFIG_ETRON_RAM
+    bool "ETRON"
+
+config UBOOT_CONFIG_HYNIX_RAM
+    bool "HYNIX"
+
+config UBOOT_CONFIG_NANYA_RAM
+    bool "NANYA"
+    depends on UBOOT_CONFIG_CPU_333M_RAM_166M
+  
+endchoice
+
+choice 
+    prompt 'CPU/RAM SPEED SETTING'
+    default UBOOT_CONFIG_CPU_333M_RAM_166M
+
+config UBOOT_CONFIG_CPU_111M_RAM_111M
+    bool "111M/111M"
+	depends on UBOOT_CONFIG_USE_PLL0
+
+config UBOOT_CONFIG_CPU_333M_RAM_111M
+    bool "333M/111M"
+	depends on UBOOT_CONFIG_USE_PLL0
+
+config UBOOT_CONFIG_CPU_166M_RAM_166M
+    bool "166M/166M"
+	depends on UBOOT_CONFIG_USE_PLL0
+
+config UBOOT_CONFIG_CPU_333M_RAM_166M
+    bool "333M/166M"
+
+config UBOOT_CONFIG_CPU_500M_RAM_166M
+    bool "500M/166M"
+	depends on UBOOT_CONFIG_USE_PLL0
+	
+config UBOOT_CONFIG_CPU_500M_RAM_250M
+    bool "500M/250M"
+	depends on UBOOT_CONFIG_USE_PLL0
+
+config UBOOT_CONFIG_CPU_393M_RAM_196M
+    bool "393M/196M"
+	depends on UBOOT_CONFIG_USE_PLL1
+
+config UBOOT_CONFIG_CPU_442M_RAM_221M	
+    bool "442M/221M"
+	depends on UBOOT_CONFIG_USE_PLL1
+
+config UBOOT_CONFIG_CPU_442M_RAM_147M
+    bool "442M/147M"
+	depends on UBOOT_CONFIG_USE_PLL1
+
+endchoice	
+
+config UBOOT_CONFIG_CLASS_II_DDR_PAD
+    bool "CLASS II DDR PAD"
+
+config UBOOT_CONFIG_USE_25MHz_CLOCK
+    bool "USE 25MHz Crystal Clock"
+
+config UBOOT_CONFIG_EBU_ADDR_SWAP
+        bool "EBU ADDRESS SWAP"
+        depends on UBOOT_CONFIG_NOR_FLASH
+
+					

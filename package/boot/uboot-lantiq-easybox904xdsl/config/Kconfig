@@ -1,0 +1,28 @@
+
+config LANTIQ_UBOOT_danube
+	bool
+	default y
+	depends on ( TARGET_ltqcpe_platform_danube || TARGET_ifxcpe_platform_danube )
+
+config LANTIQ_UBOOT_amazon_se
+    bool
+	default y
+	depends on ( TARGET_ltqcpe_platform_amazon_se || TARGET_ifxcpe_platform_amazon_se )
+			
+config LANTIQ_UBOOT_ar9
+    bool
+    default y
+    depends on ( TARGET_ltqcpe_platform_ar9 || TARGET_ifxcpe_platform_ar9 )
+
+config LANTIQ_UBOOT_vr9
+    bool
+	default y
+	depends on ( TARGET_ltqcpe_platform_vr9 || TARGET_ifxcpe_platform_vr9 || TARGET_lantiq_xrx200_DEVICE_VGV952CJW33-E-IR )
+			
+config LANTIQ_UBOOT_ar10
+    bool
+	default y
+	depends on ( TARGET_ltqcpe_platform_ar10 || TARGET_ifxcpe_platform_ar10 )
+
+
+source package/boot/uboot-lantiq-easybox904xdsl/config/scripts_platform/Kconfig

@@ -1,0 +1,79 @@
+#
+# For a description of the syntax of this configuration file,
+# see Linux Documentation
+#
+#
+
+config UBOOT_CONFIG_DRIVER_AMAZON_SE
+      bool
+	  default y
+
+config UBOOT_CONFIG_BOARD_NAME
+    string
+	default "EASY50601"
+	depends on UBOOT_CONFIG_IFX_IMAGE_EXTRA_CHECKS
+
+config UBOOT_CONFIG_BOARD_VERSION
+    string
+    default "1.0"
+    depends on UBOOT_CONFIG_IFX_IMAGE_EXTRA_CHECKS
+
+config UBOOT_CONFIG_CHIP_NAME
+    string
+    default "AMAZON_SE"
+    depends on UBOOT_CONFIG_IFX_IMAGE_EXTRA_CHECKS
+
+config UBOOT_CONFIG_CHIP_VERSION
+    string
+    default "1.2"
+    depends on UBOOT_CONFIG_IFX_IMAGE_EXTRA_CHECKS
+												
+
+choice 
+        prompt 'CPU CLOCK'
+	    default UBOOT_CONFIG_ASE_CPU_266M
+	  
+config UBOOT_CONFIG_ASE_CPU_133M
+		bool "133M"
+
+config UBOOT_CONFIG_ASE_CPU_266M
+		bool "266M"
+		
+endchoice
+
+choice
+        prompt 'ETHERNET TYPE'
+	    default UBOOT_CONFIG_ETHERNET_TYPE_EPHY
+
+config UBOOT_CONFIG_ETHERNET_TYPE_EPHY
+       bool "EPHY"
+
+config UBOOT_CONFIG_ETHERNET_TYPE_RMII
+       bool "RMII"
+		
+endchoice
+
+choice
+       prompt "CLOCK SOURCE"
+	   default UBOOT_CONFIG_EPHY_INTERNAL_CLOCK
+	   depends on UBOOT_CONFIG_ETHERNET_TYPE_EPHY
+
+config UBOOT_CONFIG_EPHY_INTERNAL_CLOCK
+       bool "INTERNAL"
+
+config UBOOT_CONFIG_EPHY_EXTERNAL_CLOCK
+       bool "EXTERNAL"
+
+endchoice
+								   
+
+config UBOOT_CONFIG_EPHY_WITH_TANTOS_SWITCH
+       bool "EPHY WITH TANTOS SWITCH"
+       depends on UBOOT_CONFIG_ETHERNET_TYPE_EPHY
+
+config UBOOT_CONFIG_OLD_ASE_BOOTROM_VERSION
+       bool "BOOTROM VERSION<=1.1.0"
+	   default n
+	   depends on UBOOT_CONFIG_BOOT_FROM_SPI
+
+	

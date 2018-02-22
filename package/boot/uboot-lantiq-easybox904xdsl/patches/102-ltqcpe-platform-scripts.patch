@@ -1,0 +1,1560 @@
+# HG changeset patch
+# Parent e02825edc060878724b6037290781147d5bedaf9
+Add platform scripts to generate images for specific boot modes
+
+--- /dev/null
++++ b/scripts_platform/Kconfig
+@@ -0,0 +1,700 @@
++#
++# For a description of the syntax of this configuration file,
++# see Linux Documentation
++#
++#
++
++config IFX_UBOOT_OPTIMIZED
++      bool
++      default y
++
++config CONFIG_REMOVE_GZIP
++      bool
++    default y
++
++config CONFIG_IFX_MIPS
++      bool
++      default y
++
++config CROSS_COMPILE_UCLIBC
++      bool
++      default y
++
++config LANTIQ_UART
++	  bool
++	  default y
++
++menu "Build Options"
++
++choice
++    prompt 'Boot From'
++
++config BOOT_FROM_NOR
++    bool "NOR Flash"
++    select ENV_IS_IN_FLASH
++	depends on !LANTIQ_UBOOT_ar10
++
++config BOOT_FROM_SPI
++    bool "SPI Flash"
++    select ENV_IS_IN_SPI_FLASH
++    select SPI_FLASH
++    help
++    Boots from SPI flash.
++
++config BOOT_FROM_NAND
++    bool "NAND Flash"
++    select NAND_FLASH
++    select NAND_U_BOOT
++	help
++    Boots from NAND flash.
++
++config BOOT_FROM_ETHERNET
++    bool "ETHERNET"
++	select ENV_IS_NOWHERE
++    help
++    Boots from ethernet port.
++
++config BOOT_FROM_UART
++    bool "UART"
++    select ENV_IS_IN_FLASH
++    help
++    Boots from asc port.
++
++config BOOT_WITH_NO_FLASH
++    bool "NO FLASH"
++    select ENV_IS_NOWHERE
++
++endchoice
++
++config ENV_IS_NOWHERE
++    bool 
++	default n
++
++config ENV_IS_IN_FLASH
++    bool
++
++config ENV_IS_IN_SPI_FLASH
++    bool
++
++config ENV_IS_IN_NAND
++    bool
++	default y
++	depends on BOOT_FROM_NAND && !ENV_IS_NOWHERE
++
++config ENV_IS_NOWHERE
++    bool
++
++config NAND_U_BOOT
++    bool
++
++config RAM_TEXT_BASE
++    hex "RAM TEXTBASE" 
++	default "0xA0400000"
++
++config BOOTSTRAP_TEXT_BASE
++    hex
++	default "0xB0000000" if ( BOOT_FROM_NOR )
++	default "0xa0100000" if ( !BOOT_FROM_NOR )
++
++config NAND_PRELOAD_TEXT_BASE
++	hex
++	default "0xbe1a0000" if LANTIQ_UBOOT_ar9
++	default "0xbe220000" if LANTIQ_UBOOT_vr9
++	default "0xbe1a0000" if LANTIQ_UBOOT_ar10
++
++config NAND_SPL_TEXT_BASE
++    hex 
++	default "0xBE1a0400"  if LANTIQ_UBOOT_ar9
++    default "0xBE220400"  if LANTIQ_UBOOT_vr9
++	default "0xBE1A0000"  if LANTIQ_UBOOT_ar10
++	depends on BOOT_FROM_NAND
++
++config SFDDR_TEXT_BASE
++	hex 
++	default "0xbe1a0000" if LANTIQ_UBOOT_ar9
++	default "0xbe220500" if LANTIQ_UBOOT_vr9
++	depends on BOOT_FROM_SPI
++
++choice
++     prompt "OS COMPRESSION TYPE"
++     default OS_LZMA
++
++config OS_GZIP
++     bool "GZIP"
++
++config OS_LZMA
++     bool "LZMA"
++
++config OS_LZO
++     bool "LZO"
++
++config OS_BZIP2
++     bool "BZIP2"
++
++endchoice
++						   
++
++
++config IFX_IMAGE_EXTRA_CHECKS
++    bool "IFX IMAGE EXTRA CHECK"
++	default n
++		
++config VENDOR_NAME
++    string 
++	default "LANTIQ"
++	depends on IFX_IMAGE_EXTRA_CHECKS
++
++config SW_VERSION
++    string 
++	default "4.2.0"
++	depends on IFX_IMAGE_EXTRA_CHECKS
++
++config DEBUG
++    bool "VERBOSE"
++	default n
++
++endmenu
++
++menu "Board Settings"
++
++config IFX_MEMORY_SIZE
++        int "RAM Size(M)"
++        default 32
++
++config ASC_BAUDRATE
++  string "ASC BAUDRATE"
++  default "115200"
++
++
++config NOR_FLASH
++        bool "NOR FLASH SUPPORT"
++        default y
++        select CMD_FLASH
++		depends on !LANTIQ_UBOOT_ar10
++
++config SYS_NO_FLASH
++       bool
++	   default y
++	   depends on !NOR_FLASH
++
++config FLASH_CFI_DRIVER
++       bool
++	   default y
++	   depends on NOR_FLASH
++
++config SYS_FLASH_CFI
++       bool
++	   default y
++	   depends on NOR_FLASH
++
++config FLASH_CFI_MTD
++	   bool "MTD SUPPORT"
++	   default n
++	   depends on NOR_FLASH
++
++choice
++     prompt "NOR Flash Size(M)"
++     depends on BOOT_FROM_NOR
++     default NOR_FLASH_8M
++
++config NOR_FLASH_8M
++     bool "8M"
++
++config NOR_FLASH_4M
++     bool "4M"
++
++config NOR_FLASH_2M
++     bool "2M"
++
++config NOR_FLASH_AUTO
++     bool "auto detect"
++
++endchoice
++
++
++config SPI_FLASH
++      bool "SPI FLASH SUPPORT"
++        select LANTIQ_SPI
++      select CMD_SF
++
++choice
++     prompt "SPI Flash Size(M)"
++	 depends on BOOT_FROM_SPI
++	 default SPI_FLASH_4M
++
++config SPI_FLASH_8M
++     bool "8M"
++
++config SPI_FLASH_4M
++     bool "4M"
++
++config SPI_FLASH_2M
++     bool "2M"
++
++config SPI_FLASH_1M
++     bool "1M"
++
++endchoice
++							  
++
++config SPI_FLASH_ATMEL
++        bool "ATMEL SFLASH SUPPORT"
++    depends on SPI_FLASH
++
++config SPI_FLASH_STMICRO
++        bool  "STMICRO SFLASH SUPPORT"
++    depends on SPI_FLASH
++
++config SPI_FLASH_SST
++        bool "SST SFLASH SUPPORT"
++        depends on SPI_FLASH
++
++config SPI_FLASH_SPANSION
++        bool "SPANSION SFLASH SUPPORT"
++    depends on SPI_FLASH
++
++config SPI_FLASH_MXIC
++        bool "MXIC SFLASH SUPPORT"
++    depends on SPI_FLASH
++
++config LANTIQ_SPI
++        bool
++
++config  SF_DEFAULT_SPEED
++        int "SPI FLASH BAUDRATE(Hz)"
++    default "1000000"
++        depends on SPI_FLASH
++
++config SF_DEFAULT_MODE
++        int "SFLASH SPI MODE"
++    default "0"
++    depends on LANTIQ_SPI
++
++config SPI_EEPROM
++        bool "SPI EEPROM SUPPORT"
++    select CMD_EEPROM
++    select LANTIQ_SPI
++    select SPI_EEPROM_ATMEL
++
++
++config SPI_EEPROM_ATMEL
++        bool "ATMEL 250X0 SUPPORT"
++        depends on SPI_EEPROM
++
++
++config  EEPROM_DEFAULT_SPEED
++        int "EEPROM BAUDRATE(Hz)"
++    default "1000000"
++    depends on SPI_EEPROM
++
++config  EEPROM_DEFAULT_MODE
++        int "EEPROM SPI MODE"
++        default "0"
++        depends on SPI_EEPROM
++
++
++config NAND_FLASH
++      bool "NAND FLASH_SUPPORT"
++      select CMD_NAND
++      select NAND_LANTIQ
++
++choice 
++      prompt "ECC MODE"
++	  depends on NAND_FLASH
++	  default NAND_ECC_SOFT
++
++config NAND_ECC_SOFT
++       bool "SOFTWARE"
++	  
++config NAND_ECC_HW_HAMMING
++       bool "HARDWARE HAMMING"
++
++config NAND_ECC_HW_REED_SOLOMON
++       bool "HARDWARE REED SOLOMON"
++
++endchoice
++
++choice 
++     prompt "ECC LOCATION"
++     depends on NAND_ECC_HW_REED_SOLOMON
++     default NAND_HW_ECC_SPARE_AREA
++
++config NAND_HW_ECC_SPARE_AREA
++      bool "ECC IN OOB AREA"
++
++config NAND_HW_ECC_EMBEDDED
++      bool "ECC EMBEDDED IN DATA AREA"
++	  
++endchoice
++
++
++config NAND_ECC_HW
++	  bool
++	  depends on NAND_ECC_HW_HAMMING || NAND_ECC_HW_REED_SOLOMON
++	  default y
++
++config NAND_BBT_SCAN
++        bool "BAD NAND BLOCK SCAN"
++        depends on NAND_FLASH
++
++config NAND_LANTIQ
++       bool
++       depends on NAND_FLASH
++
++config NAND_CS0
++       bool "NAND FLASH ON CS0"
++	   default y
++	   depends on NAND_FLASH 
++	   depends on LANTIQ_UBOOT_ar10
++
++choice
++     prompt "NAND Flash Size(M)"
++	 depends on BOOT_FROM_NAND
++	 default NAND_FLASH_4M
++
++config NAND_FLASH_4096M
++	 bool "4096M" 
++
++config NAND_FLASH_128M
++     bool "128M"
++
++config NAND_FLASH_512M
++     bool "512M"
++
++config NAND_FLASH_32M
++     bool "32M"
++
++config NAND_FLASH_8M
++     bool "8M"
++
++config NAND_FLASH_4M
++     bool "4M"
++
++config NAND_FLASH_2M
++     bool "2M"
++
++endchoice
++
++
++config NAND_FLASH_SIZE
++    hex 
++	default "2" if ( NAND_FLASH_2M )
++	default "4" if ( NAND_FLASH_4M )
++	default "8" if ( NAND_FLASH_8M )
++	default "32" if ( NAND_FLASH_32M )
++	default "128" if ( NAND_FLASH_128M )
++	default "512" if ( NAND_FLASH_512M )
++	default "4096" if ( NAND_FLASH_4096M )
++	
++config NAND_PAGE_SIZE
++     hex "NAND flash page size(bytes)"
++     default "0x200"
++     depends on ( TUNE_DDR && BOOT_FROM_NAND)
++
++
++config FIRMWARE_IN_ROOTFS
++     bool "firmware in rootfs"
++     default n
++
++config OVERLAY
++	 bool "overlay fs support"
++	 default n
++	 depends on DRIVER_VR9 || DRIVER_AR9 || DRIVER_DANUBE
++
++if LANTIQ_UBOOT_ar9
++   source board/ar9/Kconfig
++endif
++
++if LANTIQ_UBOOT_danube
++   source board/danube/Kconfig
++endif
++
++if LANTIQ_UBOOT_amazon_se
++   source board/amazon_se/Kconfig
++endif
++
++if LANTIQ_UBOOT_vr9
++   source board/vr9/Kconfig
++endif
++
++if LANTIQ_UBOOT_ar10
++   source board/ar10/Kconfig
++endif
++   
++
++endmenu
++
++
++menu "Network Settings"
++config IP_ADDRESS
++    string "IP address"
++    default "192.168.1.1"
++
++config SERVER_IP_ADDRESS
++    string "Server IP address"
++    default "192.168.1.2"
++
++config ETHERNET_ADDRESS
++    string "Ethernet Address"
++    default "00:E0:92:00:01:40"
++
++config ETHERNET_DEVICE
++    string "Ethernet Interface"
++    default "eth0"
++endmenu
++
++menu "Environment Settings"
++
++config ENV_REDUND
++    bool "redundant env"
++	default no
++	depends on ENV_IS_IN_FLASH
++
++config ENV_OVERWRITE
++	bool "enable env overwrite"
++	default y
++
++config TFTP_LOAD_ADDRESS
++    string "tftp load address"
++    default "0x80800000"
++    
++config MEM
++    string "mem"
++    default "31M"
++
++config PHYM
++    string "phym"
++    default "32M"
++
++config BOOTDELAY
++    int "BOOTDELAY(seconds)"
++	default 5
++
++config ROOT_PATH
++    string "rootpath"
++    default "/mnt/full_fs"
++
++
++config CONSOLE
++    string "console"
++	default "ttyS1"   
++
++config TFTPPATH
++    string "tftppath"
++	default ""
++
++config ROOTFSMTD
++    string  
++	default "/dev/mtdblock1" if ( FIRMWARE_IN_ROOTFS && !BOOT_FROM_NAND )
++	default "/dev/mtdblock2" if ( !FIRMWARE_IN_ROOTFS && !BOOT_FROM_NAND )
++	default "/dev/mtdblock2" if ( FIRMWARE_IN_ROOTFS && BOOT_FROM_NAND )
++	default "/dev/mtdblock3" if ( !FIRMWARE_IN_ROOTFS && BOOT_FROM_NAND )
++
++config NFSARGS
++    string "nfsargs"
++    default "setenv bootargs root=/dev/nfs rw nfsroot=$(serverip):$(rootpath)"
++
++config RAMARGS
++    string "ramargs"
++    default "setenv bootargs root=/dev/ram rw"
++
++config FLASHARGS
++    string "flashargs"
++    default "setenv bootargs root=$(rootfsmtd) ro rootfstype=squashfs init=/etc/preinit"
++
++config ADDIP
++    string "addip"
++    default "setenv bootargs $(bootargs) ip=$(ipaddr):$(serverip):$(gatewayip):$(netmask):$(hostname):$(netdev):on"
++
++config ADDMISC
++    string "addmisc"
++	default "setenv bootargs $(bootargs) console=$(console),$(baudrate) ethaddr=$(ethaddr) phym=$(phym) mem=$(mem) panic=1 mtdparts=$(mtdparts)" 
++
++config BOOTFILE
++    string "bootfile"
++    default "uImage"
++
++config U_BOOT
++    string "u-boot"
++    default "u-boot.lq"
++
++config ROOTFS
++    string "rootfs"
++    default "rootfs.img"
++
++config FIRMWARE
++    string "firmware"
++    default "firmware.img"
++
++config FULLIMAGE
++    string "fullimage"
++	default "fullimage.img"
++
++config TOTALIMAGE
++    string "totalimage"
++	default "totalimage.img"
++
++config USE_DEFAULT_MTDPARTS
++    bool "use default MTDPARTS"
++	default y
++
++
++if LANTIQ_UBOOT_danube
++config MTDPARTS
++    string
++	default "ifx_nor0:64k(uboot),256k(firmware),7744k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M  && !FIRMWARE_IN_ROOTFS && !OVERLAY )
++  default "ifx_nor0:64k(uboot),256k(firmware),7424k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M  && !FIRMWARE_IN_ROOTFS && OVERLAY )
++  default "ifx_nor0:64k(uboot),8000k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M && FIRMWARE_IN_ROOTFS && !OVERLAY)
++  default "ifx_nor0:64k(uboot),7680k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M && FIRMWARE_IN_ROOTFS && OVERLAY )
++	default "ifx_nor0:64k(uboot),-(rootfs)" if ( BOOT_FROM_UART )
++	default "" if ( NOR_FLASH_AUTO )
++	depends on USE_DEFAULT_MTDPARTS
++endif
++
++if LANTIQ_UBOOT_amazon_se
++config MTDPARTS
++    string
++    default "ifx_nor0:64k(uboot),3904k(rootfs),32k(sysconfig),4k(ubootconfig),4k(fwdiag),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_4M && FIRMWARE_IN_ROOTFS )  
++    default "ifx_nor0:64k(uboot),192k(firmware),3796k(rootfs),32k(sysconfig),4k(ubootconfig),4k(fwdiag),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_4M && !FIRMWARE_IN_ROOTFS )
++	default "ifx_nor0:64k(uboot),256k(firmware),7744k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M  && !FIRMWARE_IN_ROOTFS )
++	default "ifx_nor0:64k(uboot),8000k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M && FIRMWARE_IN_ROOTFS )
++	default "ifx_sflash:64k(uboot),3904k(rootfs),32k(sysconfig),4k(ubootconfig),4k(fwdiag),-(res)" if ( BOOT_FROM_SPI && SPI_FLASH_4M && FIRMWARE_IN_ROOTFS )
++	default "ifx_sflash:64k(uboot),192k(firmware),3796k(rootfs),32k(sysconfig),4k(ubootconfig),4k(fwdiag),-(res)" if ( BOOT_FROM_SPI && SPI_FLASH_4M && !FIRMWARE_IN_ROOTFS )
++	default "ifx_sflash:64kk(uboot),192k(firmware),7744k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_SPI && SPI_FLASH_8M && !FIRMWARE_IN_ROOTFS )
++	default "ifx_sflash:64k(uboot),-(rootfs)" if ( BOOT_FROM_SPI && FIRMWARE_IN_ROOTFS )
++	default "ifx_nand:64k(uboot),-(rootfs)" if ( BOOT_FROM_NAND && FIRMWARE_IN_ROOTFS )
++	default "ifx_nand:64k(uboot),192k(firmware),-(rootfs)" if ( BOOT_FROM_NAND && !FIRMWARE_IN_ROOTFS )
++	default "ifx_nor0:64k(uboot),-(rootfs)" if ( BOOT_FROM_UART )
++	default "" if ( NOR_FLASH_AUTO )
++	depends on USE_DEFAULT_MTDPARTS
++endif
++
++
++if LANTIQ_UBOOT_ar9
++config MTDPARTS
++    string
++	default "ifx_nor0:64k(uboot),192k(firmware),-(rootfs)" if ( BOOT_FROM_NOR && NOR_FLASH_4M && !FIRMWARE_IN_ROOTFS )
++	default "ifx_sflash:64k(uboot),3904k(rootfs),32k(sysconfig),4k(ubootconfig),-(res)" if ( BOOT_FROM_SPI && SPI_FLASH_4M && !FIRMWARE_IN_ROOTFS )
++	default "ifx_nor0:64k(uboot),256k(firmware),7744k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M  && !FIRMWARE_IN_ROOTFS && !OVERLAY )
++  default "ifx_nor0:64k(uboot),256k(firmware),7424k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M  && !FIRMWARE_IN_ROOTFS && OVERLAY )
++  default "ifx_nor0:64k(uboot),8000k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M && FIRMWARE_IN_ROOTFS && !OVERLAY )
++  default "ifx_nor0:64k(uboot),7680k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M && FIRMWARE_IN_ROOTFS && OVERLAY )
++  default "ifx_sflash:128k(uboot),192k(firmware),-(rootfs)" if ( BOOT_FROM_SPI && SPI_FLASH_1M && !FIRMWARE_IN_ROOTFS )
++	default "ifx_sflash:128k(uboot),192k(firmware),7744k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_SPI && SPI_FLASH_8M && !FIRMWARE_IN_ROOTFS )
++	default "ifx_sflash:128k(uboot),-(rootfs)" if ( BOOT_FROM_SPI && FIRMWARE_IN_ROOTFS )
++	default "ifx_nand:128k(uboot),2688k(kernel),28800k(rootfs),64k(sysconfig),16k(ubootconfig),16k(fwdiag),-(res)" if ( BOOT_FROM_NAND && FIRMWARE_IN_ROOTFS )
++	default "ifx_nand:128k(uboot),192k(firmware),-(rootfs)" if ( BOOT_FROM_NAND && !FIRMWARE_IN_ROOTFS )
++	default "ifx_nor0:64k(uboot),-(rootfs)" if ( BOOT_FROM_UART )
++	default "" if ( NOR_FLASH_AUTO )
++	depends on USE_DEFAULT_MTDPARTS
++endif
++
++
++
++if LANTIQ_UBOOT_vr9
++config MTDPARTS
++    string 
++	default "ifx_nor0:128k(uboot),7936k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && FIRMWARE_IN_ROOTFS && !OVERLAY )
++	default "ifx_nor0:128k(uboot),7616k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && FIRMWARE_IN_ROOTFS && OVERLAY )
++	default "ifx_nor0:128k(uboot),512k(firmware),7424k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && !FIRMWARE_IN_ROOTFS && !OVERLAY )
++	default "ifx_nor0:128k(uboot),512k(firmware),7104k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && !FIRMWARE_IN_ROOTFS && OVERLAY )
++	default "ifx_sflash:128k(uboot),512k(firmware),-(rootfs)" if ( SPI_FLASH_4M && !FIRMWARE_IN_ROOTFS )
++	default "ifx_sflash:128k(uboot),512k(firmware),-(rootfs)" if ( SPI_FLASH_8M && !FIRMWARE_IN_ROOTFS )
++	default "ifx_sflash:128k(uboot),-(rootfs)" if ( BOOT_FROM_SPI && FIRMWARE_IN_ROOTFS )
++  default "ifx_nand:256k(uboot),2560k(kernel),111872k(rootfs),256k(sysconfig),256k(ubootconfig),256k(fwdiag),-(res)" if ( BOOT_FROM_NAND && FIRMWARE_IN_ROOTFS )
++	default "ifx_nand:256k(uboot),512k(firmware),2m(kernel),111872k(rootfs),256k(sysconfig),256k(ubootconfig),256k(fwdiag),-(res)" if ( BOOT_FROM_NAND && !FIRMWARE_IN_ROOTFS )
++	default "ifx_nor0:128k(uboot),-(rootfs)" if ( BOOT_FROM_UART )
++	depends on USE_DEFAULT_MTDPARTS
++endif
++
++
++if LANTIQ_UBOOT_ar10
++config MTDPARTS
++    string 
++    default "ifx_nand:64k(uboot),-(rootfs)"
++	depends on USE_DEFAULT_MTDPARTS
++endif
++
++config MTDPARTS
++    string "MTDPARTS"
++	default "ifx_nor0:64k(uboot),-(rootfs)"
++	depends on !USE_DEFAULT_MTDPARTS
++
++
++config NET_RAM
++    string "net_ram"
++    default "tftp $(loadaddr) $(tftppath)$(bootfile); run ramargs addip addmisc; bootm"
++
++config NET_FLASH
++    string "net_flash"
++    default "tftp $(loadaddr) $(tftppath)$(bootfile); run flashargs addip addmisc; bootm"
++
++config FLASH_NFS
++    string "flash_nfs"
++    default "run nfsargs addip addmisc;bootm $(kernel_addr)"
++
++config NET_NFS
++    string "net_nfs"
++    default "tftp $(loadaddr) $(tftppath)$(bootfile);run nfsargs addip addmisc;bootm"
++
++config FLASH_FLASH
++    string "flash_flash"
++    default "run flashargs addip addmisc; bootm $(kernel_addr)"
++
++config UPDATE_NANDBOOT
++    string "update_nandboot"
++	default "tftp $(loadaddr) $(tftppath)u-boot-nand.bin; nand erase clean 0 0x08000000; nand write $(loadaddr) 0 $(filesize)"
++	depends on BOOT_FROM_NAND
++
++config UPDATE_UBOOT
++    string "update_uboot"
++    default "tftpboot $(loadaddr) $(tftppath)$(u-boot);erase b0000000 b001ffff;cp.b $(loadaddr) b0000000 $(filesize);reset"
++
++config UPDATE_KERNEL
++    string "update_kernel"
++    default "tftpboot $(loadaddr) $(tftppath)$(bootfile);upgrade $(loadaddr) $(filesize)"
++
++config UPDATE_ROOTFS
++    string "update_rootfs"
++    default "tftpboot $(loadaddr) $(tftppath)$(rootfs); upgrade $(loadaddr) $(filesize)"
++
++config UPDATE_FIRMWARE
++    string "update_firmware"
++    default "tftpboot $(loadaddr) $(tftppath)$(firmware);upgrade $(loadaddr) $(filesize)"
++
++config UPDATE_FULLIMAGE
++    string "update_fullimage"
++	default "tftpboot $(loadaddr) $(tftppath)$(fullimage);upgrade $(loadaddr) $(filesize)"
++
++config UPDATE_TOTALIMAGE
++    string "update_totalimage"
++	default "tftpboot $(loadaddr) $(tftppath)$(totalimage);upgrade $(loadaddr) $(filesize)"
++
++config BOOTCOMMAND
++    string "bootcmd"
++	default "run flash_flash"
++
++config RESET_UBOOT_CONFIG
++	string    
++	default "prot off $(f_ubootconfig_addr) $(f_ubootconfig_end); erase $(f_ubootconfig_addr) $(f_ubootconfig_end)" if ( BOOT_FROM_NOR )
++	default "sf probe 3; sf write 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_ar9 ) 
++	default "sf probe 0; sf write 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_amazon_se )
++	default "sf probe 3; sf write 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_vr9 )
++	default "sf probe 3; sf write 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_ar10 )
++	default "nand write.partial 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)" if ( BOOT_FROM_NAND )
++
++config RESET_DDR_CONFIG
++    string
++	default "prot off $(f_ddrconfig_addr) $(f_ddrconfig_end); erase $(f_ddrconfig_addr) $(f_ddrconfig_end)" if ( BOOT_FROM_NOR )
++    default "sf probe 3; sf write 80400000 $(f_ddrconfig_addr) $(f_ddrconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_ar9 )
++    default "sf probe 0; sf write 80400000 $(f_ddrconfig_addr) $(f_ddrconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_amazon_se	)
++    default "sf probe 3; sf write 80400000 $(f_ddrconfig_addr) $(f_ddrconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_vr9 )
++    default "sf probe 3; sf write 80400000 $(f_ddrconfig_addr) $(f_ddrconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_ar10 )
++	default "nand write.partial 80400000 $(f_ddrconfig_addr) $(f_ddrconfig_size)" if ( BOOT_FROM_NAND )
++					
++
++endmenu
++
++
++source lib/Kconfig
++source common/Kconfig
+--- /dev/null
++++ b/scripts_platform/big_nand_gct
+@@ -0,0 +1,52 @@
++# shell script for making u-boot image for big nand flash
++# Written by Wu Qi Ming Qi-Ming.Wu@infineon.com
++
++#!/bin/sh
++
++
++FILESIZE=0
++PADSIZE=0
++TARGET_FILE=u-boot.nand
++MINIBOOTROM=scripts_platform/minibootrom.img
++#modify this for different page size
++NAND_PAGE_SIZE=2048
++
++
++scripts_platform/sgct scripts_platform/minibootrom/dummy scripts_platform/minibootrom/bootrom.rec ${MINIBOOTROM}
++
++cat ${MINIBOOTROM} >${TARGET_FILE}
++
++FILESIZE=`ls -l ${TARGET_FILE} | awk '{print $5}'`  
++
++
++PADSIZE=`expr ${NAND_PAGE_SIZE} - ${FILESIZE}`
++
++
++dd if=/dev/zero of=zero bs=${PADSIZE} count=1
++
++cat zero >>${TARGET_FILE}
++
++sed -e '/^[[:space:]]*$/d' -e '/^#/d' -e's/0x//g' $2 | awk '{printf "%s %s\n", $1, $2}' >tmp
++
++scripts_platform/gen_ram.pl tmp ram_tmp
++
++cat ram_tmp >>${TARGET_FILE}
++
++FILESIZE=`ls -l ${TARGET_FILE} | awk '{print $5}'`
++
++
++PADSIZE=`expr ${NAND_PAGE_SIZE} + ${NAND_PAGE_SIZE} - ${FILESIZE}`
++
++
++dd if=/dev/zero of=zero bs=${PADSIZE} count=1
++
++cat zero >>${TARGET_FILE}
++
++cat $3 >>${TARGET_FILE}
++
++rm -rf tmp ram_tmp zero ${MINIBOOTROM} 
++
++
++
++
++
+--- /dev/null
++++ b/scripts_platform/eegct
+@@ -0,0 +1,120 @@
++#!/usr/bin/perl
++#perl script to generate spi bootable u-boot
++#Revision history
++#03/27/08 Author Wu Qi Ming
++
++my $SPI_MAGIC=0xAA55;
++my $PHY1=0x1;
++my $PHY0=0x0;
++my $MAC0=0x2c;
++my $MAC1=0x02;
++my $MAC2=0x00;
++my $MAC3=0x92;
++my $MAC4=0xe0;
++my $MAC5=0x00;
++my $VALID=0x1; #always valid
++my $OFFSET=0x0c;
++
++if(@ARGV < 2){
++	print "not enough arguments\n";
++	print "Syntax: ./sgct input output\n";
++	print "example: ./sgct ddr_setting.conf u-boot.srec u-boot.sflash\n";
++	exit;
++}
++print "converting now, please wait...\n";
++
++open(INFILE1, "<$ARGV[0]") || die("\ninput open fail\n");
++open(INFILE2, "<$ARGV[1]") || die("\ninput open fail\n");
++open(OUTFILE, ">$ARGV[2]") || die("\nOutput file open fail\n");
++
++#form a REGCFG head
++$head=sprintf("%08x",($SPI_MAGIC<<16)|($PHY1<<8)|($PHY0));
++$head=$head.sprintf("%08x",($MAC3<<24)|($MAC2<<16)|($MAC1<<8)|($MAC0));
++$head=$head.sprintf("%08x",($OFFSET<<24)|($VALID<<16)|($MAC5)|($MAC4));
++printf OUTFILE pack("H*",$head);
++$string="";
++$count=0;
++while ($line = <INFILE1>){
++            if($line=~/\w/){
++	     if($line!~/[;#\*]/){
++		  chomp($line);
++		  $line=~s/\t//;
++		  @array=split(/ +/,$line);
++                  $j=0;
++		  while(@array[$j]!~/\w/)
++		  {
++                    $j=$j+1;
++		  }
++		  $addr=@array[$j];
++	          $regval=@array[$j+1];
++                  $addr=~s/0x//;
++                  $regval=~s/0x//;
++		  $string=$string.sprintf("%08x%08x",hex($addr),hex($regval));
++                  $count=$count+1;
++               }
++             }
++}
++
++
++printf OUTFILE pack("H*",$string);
++$string="";
++$firsttime=1;
++$count=0;
++while($aline=<INFILE2>){
++	$aline=uc($aline);
++	chomp($aline);
++	next if($aline=~/^S0/);
++        ($lineid, $length, $address, @bytes) = unpack"A2A2A8"."A2"x300, $aline;
++        $length = hex($length);
++        $address = hex($address);
++	$i=0;
++        if($lineid eq "S3")
++        { 
++         if($firsttime==1)
++          {
++             $addstr = sprintf("%08x", $address+1); 
++             $string=$addstr;
++             $loadaddr=$address;
++             $firsttime=0;
++          }
++          $length=$length-4;
++          while($length>1){
++           $bytes[$i]=~tr/ABCDEF/abcdef/;
++	   #printf ("length=%d,i=%d,byte=%02x\n",$length,$i,hex(@bytes[$i]));
++           $string=$string.@bytes[$i];
++           #printf ("string=%s\n",$string);
++	   $length=$length-1;
++           $i=$i+1;
++           $count++;
++          }
++        }
++        elsif($lineid eq "S7")
++        {
++           $exehead=sprintf("%08x",0xffffffff).sprintf("%08x",$address);
++	   #print $exehead
++        }
++}
++
++
++
++
++if($firsttime==1){
++    $string=sprintf("%08x",3);
++    printf OUTFILE pack("H*",$string);
++}
++else{
++   printf("addstr=%s\n",$addstr); 
++   printf OUTFILE pack("H*",$addstr);
++   printf OUTFILE pack("H*",sprintf("%08x",$count/4));
++   #printf OUTFILE pack("H*",$string);
++   @bytes=unpack"A2"x$count,$string;
++   for ($i=0;$i<$count;$i++){
++    printf OUTFILE pack("H2",$bytes[$i]);  
++}
++   printf OUTFILE pack("H*",$exehead);
++}
++
++
++
++
++
+--- /dev/null
++++ b/scripts_platform/gct
+@@ -0,0 +1,157 @@
++#!/usr/bin/perl
++my $aline;
++my $lineid;
++my $length;
++my $address;
++my @bytes;
++my $addstr;
++my $chsum=0;
++my $count=0;
++my $firstime=1;
++my $i;
++my $currentaddr;
++my $tmp;
++my $holder="";
++my $loadaddr;
++
++if(@ARGV < 2){
++	print "\n not enough arguments";
++	print "\n Syntax: ./gct input output\n";
++}
++
++open(INFILE1, "<$ARGV[0]") || die("\ninput open fail\n");
++open(INFILE2, "<$ARGV[1]") || die("\ninput open fail\n");
++open(OUTFILE, ">$ARGV[2]") || die("\nOutput file open fail\n");
++
++$i=0;
++while ($line = <INFILE1>){
++            if($line=~/\w/){
++	     if($line!~/[;#\*]/){
++                  if($i eq 0){
++		  printf OUTFILE ("33333333");
++		  }
++		  chomp($line);
++		  $line=~s/\t//;
++		  @array=split(/ +/,$line);
++                  $j=0;
++		  while(@array[$j]!~/\w/)
++		  {
++                    $j=$j+1;
++
++		  }
++		  $addr=@array[$j];
++	          $regval=@array[$j+1];
++                  $addr=~s/0x//;
++                  $regval=~s/0x//;
++		  printf OUTFILE ("%08x%08x",hex($addr),hex($regval));
++                  $i=$i+1;
++		  if($i eq 8)
++		  {
++                      $i=0;
++		      printf OUTFILE ("\n");
++		  }
++
++               }
++             }
++
++	    }
++
++        while($i lt 8 && $i gt 0){
++                   printf OUTFILE "00"x8;
++		   $i=$i+1;
++		   }
++        if($i eq 8){
++	printf OUTFILE ("\n");
++        }
++
++while($aline=<INFILE2>){
++	$aline=uc($aline);
++	chomp($aline);
++	next if(($aline=~/^S0/) || ($aline=~/^S7/));
++	($lineid, $length, $address, @bytes) = unpack"A2A2A8"."A2"x300, $aline;
++	$length = hex($length);
++	$address = hex($address);
++	$length -=5;
++	$i=0;
++
++	while($length>0){
++		if($firstime==1){
++				$addstr = sprintf("%x", $address);
++				$addstr = "0"x(8-length($addstr)).$addstr;
++				print OUTFILE $addstr;
++				addchsum($addstr);
++				$firstime=0;
++				$currentaddr=$address;
++				$loadaddr = $addstr;
++		}
++		else{
++			if($count==64){
++				$addstr = sprintf("%x", $currentaddr);
++				$addstr = "0"x(8-length($addstr)).$addstr;
++				print OUTFILE $addstr;
++				addchsum($addstr);
++				$count=0;
++			}
++		}
++		while($count<64){
++		        $bytes[$i]=~tr/ABCDEF/abcdef/;
++			print OUTFILE "$bytes[$i]";
++			addchsum($bytes[$i]);
++			$i++;
++			$count++;
++			$length--;
++			last if($length==0);
++		}
++		if($count==64){
++			print OUTFILE "\n";
++			#print OUTFILE "\r";
++			$currentaddr+=64;
++		}
++	}
++}
++if($count != 64){
++	$tmp = "00";
++	for($i=0;$i<(64-$count);$i++){
++		print OUTFILE "00";
++		addchsum($tmp);
++	}
++	print OUTFILE "\n";
++	#print OUTFILE "\r";
++}
++
++
++print OUTFILE "11"x4;
++use integer;
++$chsum=$chsum & 0xffffffff;
++$chsum = sprintf("%X", $chsum);
++$chsum = "0"x(8-length($chsum)).$chsum;
++$chsum =~tr/ABCDEF/abcdef/;
++print OUTFILE $chsum;
++print OUTFILE "00"x60;
++print OUTFILE "\n";
++#print OUTFILE "\r";
++
++print OUTFILE "99"x4;
++print OUTFILE $loadaddr;
++print OUTFILE "00"x60;
++print OUTFILE "\n";
++#print OUTFILE "\r";
++
++
++close OUTFILE;
++#END of Program
++
++
++
++sub addchsum{
++	my $cc=$_[0];
++	$holder=$holder.$cc;
++	if(length($holder)==8){
++		$holder = hex($holder);
++		$chsum+=$holder;
++		$holder="";
++	}
++}
++#END
++
++
+--- /dev/null
++++ b/scripts_platform/gen_ram.pl
+@@ -0,0 +1,21 @@
++#!/usr/bin/perl
++#perl script to generate ram parameters for big nand flash
++#Revision history
++#7/7/08 Author Wu Qi Ming
++
++
++open(INFILE1, "<$ARGV[0]") || die("\ninput open fail\n");
++open(OUTFILE, ">$ARGV[1]") || die("\nOutput file open fail\n");
++
++$string="";
++while ($line = <INFILE1>){
++		  chomp($line);
++		  $line=~s/\t//;
++		  @array=split(/ +/,$line);
++		  $addr=@array[0];
++	          $regval=@array[1];
++		  $string=$string.sprintf("%08x%08x",hex($addr),hex($regval));
++}
++
++printf OUTFILE pack("H*",$string);
++
+--- /dev/null
++++ b/scripts_platform/mk_eeprom.pl
+@@ -0,0 +1,77 @@
++#!/usr/bin/perl
++#perl script to generate an bootable image for eeprom
++#Revision history
++#03/27/08 Author Wu Qi Ming
++
++my $SPI_MAGIC=0xAA55;
++my $PHY1=0x1;
++my $PHY0=0x0;
++my $MAC0=0x2c;
++my $MAC1=0x02;
++my $MAC2=0x00;
++my $MAC3=0x92;
++my $MAC4=0xe0;
++my $MAC5=0x00;
++my $VALID=0x1; #always valid
++my $OFFSET=0x0c;
++
++if(@ARGV < 2){
++	print "not enough arguments\n";
++    print "Syntax: ./mk_eeprom.pl config data address output\n";
++	print "example: ./mk_eeprom.pl ram.conf u-boot.ifx 0xa0100000 u-boot.eeprom\n";
++    exit;
++}
++print "converting now, please wait...\n";
++
++open(INFILE1, "<$ARGV[0]") || die("\ninput open fail\n");
++open(INFILE2, "<$ARGV[1]") || die("\ninput open fail\n");
++open(OUTFILE, ">$ARGV[3]") || die("\nOutput file open fail\n");
++
++#form a REGCFG head
++$head=sprintf("%08x",($SPI_MAGIC<<16)|($PHY1<<8)|($PHY0));
++$head=$head.sprintf("%08x",($MAC3<<24)|($MAC2<<16)|($MAC1<<8)|($MAC0));
++$head=$head.sprintf("%08x",($OFFSET<<24)|($VALID<<16)|($MAC5)|($MAC4));
++printf OUTFILE pack("H*",$head);
++$string="";
++$count=0;
++while ($line = <INFILE1>){
++            if($line=~/\w/){
++	     if($line!~/[;#\*]/){
++		  chomp($line);
++		  $line=~s/\t//;
++		  @array=split(/ +/,$line);
++                  $j=0;
++		  while(@array[$j]!~/\w/)
++		  {
++                    $j=$j+1;
++		  }
++		  $addr=@array[$j];
++	          $regval=@array[$j+1];
++                  $addr=~s/0x//;
++                  $regval=~s/0x//;
++		  $string=$string.sprintf("%08x%08x",hex($addr),hex($regval));
++                  $count=$count+1;
++               }
++             }
++}
++
++
++printf OUTFILE pack("H*",$string);
++
++
++$datafile_size=(-s $ARGV[1]);
++$datafile_size=sprintf("%08x",$datafile_size/4);
++$start_address=sprintf("%08x",hex($ARGV[2])+1);
++printf OUTFILE pack("H*",$start_address.$datafile_size);
++
++binmode(INFILE2,":raw");
++binmode(OUTFILE,":raw");
++
++read(INFILE2,$buf,(-s $ARGV[1]));
++print OUTFILE $buf;
++
++$exehead=sprintf("%08x",0xffffffff);
++$start_address=sprintf("%08x",hex($ARGV[2]));
++
++printf OUTFILE pack("H*", $exehead.$start_address);
++
+--- /dev/null
++++ b/scripts_platform/mk_sf.pl
+@@ -0,0 +1,89 @@
++#!/usr/bin/perl
++#perl script to generate spi bootable u-boot using binary file
++#Revision history
++#1/7/2009 Author Wu Qi Ming
++
++my $TAG_DEBUG=0x11000000;
++my $TAG_REGCFG=0x22000000;
++my $TAG_IDWNLD=0x33000000;
++my $TAG_CDWNLD=0x44000000;
++my $TAG_DWNLD=0x55000000;
++my $TAG_IFCFG=0x66000000;
++my $TAG_START=0x77000000;
++
++my $FLAG_RST=0x00800000;
++my $FLAG_CFG=0x00700000;
++my $FLAG_CFG2=0x00400000;
++my $FLAG_CFG1=0x00200000;
++my $FLAG_CFG0=0x00100000;
++my $FLAG_SDBG=0x00080000;
++my $FLAG_DBG=0x00040000;
++my $FLAG_DEC=0x00020000;
++my $FLAG_START=0x00010000;
++
++
++
++if(@ARGV < 2){
++	print "not enough arguments\n";
++	print "Syntax: ./mk_sf.pl config data address output\n";
++	print "example: ./mk_sf.pl ram.conf u-boot.ifx 0xa0100000 u-boot.sflash\n";
++	exit;
++}
++print "converting now, please wait...\n";
++
++open(INFILE1, "<$ARGV[0]") || die("\ninput open fail\n");
++open(INFILE2, "<$ARGV[1]") || die("\ninput open fail\n");
++open(OUTFILE, ">$ARGV[3]") || die("\nOutput file open fail\n");
++
++#form a REGCFG head
++$head=$TAG_REGCFG|$FLAG_SDBG|$FLAG_DBG;
++$head=$head|(0xffff-($head>>16));
++
++$string="";
++$count=0;
++while ($line = <INFILE1>){
++            if($line=~/\w/){
++	     if($line!~/[;#\*]/){
++		  chomp($line);
++		  $line=~s/\t//;
++		  @array=split(/ +/,$line);
++                  $j=0;
++		  while(@array[$j]!~/\w/)
++		  {
++                    $j=$j+1;
++		  }
++		  $addr=@array[$j];
++	          $regval=@array[$j+1];
++                  $addr=~s/0x//;
++                  $regval=~s/0x//;
++		  $string=$string.sprintf("%08x%08x",hex($addr),hex($regval));
++                  $count=$count+1;
++               }
++             }
++}
++
++$head=sprintf("%08x",$head).sprintf("%08x",$count*8);
++printf OUTFILE pack("H*",$head.$string);
++
++#form a TAG_DWNLD head
++$head=$TAG_DWNLD|$FLAG_SDBG|$FLAG_START;
++$head=$head|(0xffff-($head>>16));
++$head=sprintf("%08x",$head);
++$datafile_size=(-s $ARGV[1]) + 4;
++#printf "datafilesize=$datafile_size\n";
++$datafile_size=sprintf("%08x",$datafile_size);
++$start_address=sprintf("%08x",hex($ARGV[2]));
++printf OUTFILE pack("H*",$head.$datafile_size.$start_address);
++binmode(INFILE2,":raw");
++binmode(OUTFILE,":raw");
++#while(<INFILE2>){
++#  printf OUTFILE $_;
++#}
++read(INFILE2,$buf,(-s $ARGV[1]));
++print OUTFILE $buf;
++
++$exehead=$TAG_START|$FLAG_SDBG;
++$exehead=$exehead|(0xffff-($exehead>>16));
++$exehead=sprintf("%08x",$exehead).sprintf("%08x%08x",0x4,hex($ARGV[2]));
++
++printf OUTFILE pack("H*", $exehead);
+--- /dev/null
++++ b/scripts_platform/mk_vr9_nand.sh
+@@ -0,0 +1,10 @@
++#!/bin/sh
++touch scripts_platform/dummy
++scripts_platform/sgct scripts_platform/dummy board/vr9/bootrom.rec u-boot.nand
++scripts_platform/pad2align.sh -n 2048 u-boot.nand
++sed -e '/^[[:space:]]*$/d' -e '/^#/d' -e's/0x//g' ram.conf | awk '{printf "%s %s\n", $1, $2}' >tmp
++scripts_platform/gen_ram.pl tmp ram_tmp
++scripts_platform/pad2align.sh -n 2048 ram_tmp
++cat ram_tmp >>u-boot.nand
++cat u-boot.ifx >>u-boot.nand
++rm tmp ram_tmp u-boot.ifx
+--- /dev/null
++++ b/scripts_platform/mk_vr9_sf.sh
+@@ -0,0 +1,10 @@
++#!/bin/sh
++touch scripts_platform/dummy
++scripts_platform/sgct scripts_platform/dummy board/vr9/sf_bootrom.rec u-boot.sflash
++scripts_platform/pad2align.sh -n 2048 u-boot.sflash
++sed -e '/^[[:space:]]*$/d' -e '/^#/d' -e's/0x//g' ram.conf | awk '{printf "%s %s\n", $1, $2}' >tmp
++scripts_platform/gen_ram.pl tmp ram_tmp
++scripts_platform/pad2align.sh -n 2048 ram_tmp
++cat ram_tmp >>u-boot.sflash
++cat u-boot.ifx >>u-boot.sflash
++rm tmp ram_tmp u-boot.ifx
+--- /dev/null
++++ b/scripts_platform/pad2align.sh
+@@ -0,0 +1,52 @@
++#!/bin/sh
++#pad file to align with specific alignments
++#Revision history
++#30/4/2009 Author: Wu Qi Ming Qi-Ming.Wu@infineon.com
++
++Usage(){
++  echo "Usage: pad2align [option]...[file]..."
++  echo "Pad file to align with specified number of bytes"
++  echo "-n  --number bytes    specify alignment boundary"
++  echo "-h  --help            print help information"
++  return
++}
++
++ALIGNMENT=
++ALIGNFILE=
++
++parse_args() {
++  while [ "$#" -gt "0" ]
++  do
++     case $1 in
++	        --number | -n)
++		        ALIGNMENT=$2
++		        ALIGNFILE=$3		
++				;;
++			--help | -h)
++				Usage
++				exit 1
++				;;
++	 esac			
++	 shift
++  done
++  return
++}
++ 
++
++
++parse_args $@
++
++if [ "$ALIGNFILE" == "" ]; then
++      echo "no file specified!"
++	  exit 1;
++fi
++
++FILESIZE=`wc -c $ALIGNFILE | awk '{print $1}'`
++MODULO=`expr $FILESIZE % $ALIGNMENT`
++
++if [ $MODULO != 0 ];then
++  PADSIZE=`expr $ALIGNMENT - $MODULO` 
++  dd if=/dev/zero of=tmppad bs=$PADSIZE count=1 
++  cat tmppad >>$ALIGNFILE
++  rm tmppad
++fi
+--- /dev/null
++++ b/scripts_platform/sgct
+@@ -0,0 +1,131 @@
++#!/usr/bin/perl
++#perl script to generate spi bootable u-boot
++#Revision history
++#03/27/08 Author Wu Qi Ming
++
++my $TAG_DEBUG=0x11000000;
++my $TAG_REGCFG=0x22000000;
++my $TAG_IDWNLD=0x33000000;
++my $TAG_CDWNLD=0x44000000;
++my $TAG_DWNLD=0x55000000;
++my $TAG_IFCFG=0x66000000;
++my $TAG_START=0x77000000;
++
++my $FLAG_RST=0x00800000;
++my $FLAG_CFG=0x00700000;
++my $FLAG_CFG2=0x00400000;
++my $FLAG_CFG1=0x00200000;
++my $FLAG_CFG0=0x00100000;
++my $FLAG_SDBG=0x00080000;
++my $FLAG_DBG=0x00040000;
++my $FLAG_DEC=0x00020000;
++my $FLAG_START=0x00010000;
++
++
++
++if(@ARGV < 2){
++	print "not enough arguments\n";
++	print "Syntax: ./sgct input output\n";
++	print "example: ./sgct ddr_setting.conf u-boot.srec u-boot.sflash\n";
++	exit;
++}
++print "converting now, please wait...\n";
++
++open(INFILE1, "<$ARGV[0]") || die("\ninput open fail\n");
++open(INFILE2, "<$ARGV[1]") || die("\ninput open fail\n");
++open(OUTFILE, ">$ARGV[2]") || die("\nOutput file open fail\n");
++
++#form a REGCFG head
++$head=$TAG_REGCFG|$FLAG_SDBG|$FLAG_DBG;
++$head=$head|(0xffff-($head>>16));
++
++$string="";
++$count=0;
++while ($line = <INFILE1>){
++            if($line=~/\w/){
++	     if($line!~/[;#\*]/){
++		  chomp($line);
++		  $line=~s/\t//;
++		  @array=split(/ +/,$line);
++                  $j=0;
++		  while(@array[$j]!~/\w/)
++		  {
++                    $j=$j+1;
++		  }
++		  $addr=@array[$j];
++	          $regval=@array[$j+1];
++                  $addr=~s/0x//;
++                  $regval=~s/0x//;
++		  $string=$string.sprintf("%08x%08x",hex($addr),hex($regval));
++                  $count=$count+1;
++               }
++             }
++}
++
++$head=sprintf("%08x",$head).sprintf("%08x",$count*8);
++printf OUTFILE pack("H*",$head.$string);
++
++#form a TAG_DWNLD head
++$head=$TAG_DWNLD|$FLAG_SDBG|$FLAG_START;
++$head=$head|(0xffff-($head>>16));
++
++$firsttime=1;
++$count=0;
++while($aline=<INFILE2>){
++	$aline=uc($aline);
++	chomp($aline);
++	next if($aline=~/^S0/);
++        ($lineid, $length, $address, @bytes) = unpack"A2A2A8"."A2"x300, $aline;
++        $length = hex($length);
++        $address = hex($address);
++	$i=0;
++        if($lineid eq "S3")
++        { 
++         if($firsttime==1)
++          {
++             $addstr = sprintf("%x", $address); 
++             $count=$count+4;
++             
++             $string=$addstr;
++             $loadaddr=$address;
++             $firsttime=0;
++          }
++          $length=$length-4;
++          while($length>1){
++           $bytes[$i]=~tr/ABCDEF/abcdef/;
++	   #printf ("length=%d,i=%d,byte=%02x\n",$length,$i,hex(@bytes[$i]));
++           $string=$string.@bytes[$i];
++           #printf ("string=%s\n",$string);
++	   $length=$length-1;
++           $i=$i+1;
++           $count++;
++          }
++        }
++        elsif($lineid eq "S7")
++        {
++           $exehead=$TAG_START|$FLAG_SDBG;
++           $exehead=$exehead|(0xffff-($exehead>>16));
++           $exehead=sprintf("%08x",$exehead).sprintf("%08x%08x",0x4,$address);
++	   #print $exehead
++        }
++}
++
++
++$head=sprintf("%08x",$head).sprintf("%08x",$count);
++@bytes=unpack"A2"x8,$head;
++for ($i=0;$i<8;$i++){
++    printf OUTFILE pack("H2",$bytes[$i]);  
++}
++@bytes=unpack"A2"x$count,$string;
++for ($i=0;$i<$count;$i++){
++    printf OUTFILE pack("H2",$bytes[$i]);  
++}
++@bytes=unpack"A2"x12,$exehead;
++for ($i=0;$i<12;$i++){
++    printf OUTFILE pack("H2",$bytes[$i]);  
++}
++
++
++
++
++
+--- /dev/null
++++ b/scripts_platform/vr9_ddr.pl
+@@ -0,0 +1,101 @@
++#!/usr/bin/perl -w
++
++use strict;
++
++####################################################################################################
++# this perl script is used to convert vr9 chiptest/palladium image to support new ddr model in vr9 #
++####################################################################################################
++
++my $versioninfo = "V1.0.0 29 Oct 2008";
++
++my $infile = "";
++my $outfile = "";
++
++my $read_line;
++my $line1;
++my $line2;
++my $line3;
++my $line4;
++
++#
++# Verify the input/output parameters 
++#
++
++if (($#ARGV + 1) != 2 ) {
++    die "Usage: $0 <input asc file> <output asc file>\n"
++}
++
++$infile = shift(@ARGV);
++$outfile = shift(@ARGV);
++
++#
++# Read/Write file handler
++#
++open (INFILE, $infile) || go_die("Can't open $infile fo read :$!", 1);
++
++open (OUTFILE, ">$outfile") || go_die("Can't open $outfile for write :$!", 1);
++
++#
++# Force it to binary mode 
++#
++binmode (INFILE);
++
++binmode (OUTFILE);
++
++#
++# to skip @00000000, so that it still inherits the original address
++#
++$read_line = <INFILE>;  
++print OUTFILE $read_line;
++while (1) {
++    
++    if (eof(INFILE)){
++        go_die ("$0: Convert $infile to $outfile", 1)
++    }
++    $line1 = <INFILE>;
++    if (eof(INFILE)){
++        print OUTFILE $line1;
++        go_die ("$0: Convert $infile to $outfile", 1)
++    }    
++    $line2 = <INFILE>;
++    if (eof(INFILE)){
++        print OUTFILE $line1;
++        print OUTFILE $line2;        
++        go_die ("$0: Convert $infile to $outfile", 1)
++    }   
++    $line3 = <INFILE>;
++    
++    if (eof(INFILE)){
++        print OUTFILE $line3;
++        print OUTFILE $line1;
++        print OUTFILE $line2;        
++        go_die ("$0: Convert $infile to $outfile", 1)
++    }    
++    $line4 = <INFILE>;    
++    
++    print OUTFILE $line3;
++    print OUTFILE $line4;
++    print OUTFILE $line1;
++    print OUTFILE $line2;
++
++}
++
++#********************************************************************************************
++
++sub go_die
++{
++    my($message, $supressformat) = @_;
++
++    if ($message) {
++        print "$message";
++    }
++
++    close (INFILE);
++    close (OUTFILE);
++    
++    print " done\n";
++    exit (0);
++}
++
++
++

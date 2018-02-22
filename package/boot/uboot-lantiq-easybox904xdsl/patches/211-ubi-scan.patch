@@ -1,0 +1,16 @@
+# HG changeset patch
+# Parent b33a8e7af146d5dc206e27b5d6a4750f7dcce352
+
+--- a/drivers/mtd/ubi/scan.c
++++ b/drivers/mtd/ubi/scan.c
+@@ -793,7 +793,9 @@ static int process_eb(struct ubi_device
+ 		bitflips = 1;
+ 	}
+ 
+-	si->is_empty = 0;
++	if (err != UBI_IO_BAD_EC_HDR)
++		si->is_empty = 0;
++	
+ 
+ 	if (!ec_corr) {
+ 		/* Make sure UBI version is OK */

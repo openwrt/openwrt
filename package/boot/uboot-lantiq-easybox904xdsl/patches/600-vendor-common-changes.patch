@@ -1,0 +1,3932 @@
+diff --git a/Makefile.menu b/Makefile.menu
+index 0e00750..35f848a 100644
+--- a/Makefile.menu
++++ b/Makefile.menu
+@@ -439,7 +439,11 @@ ifeq ($(config-targets),1)
+ #include $(srctree)/arch/$(SRCARCH)/Makefile
+ export KBUILD_DEFCONFIG
+ 
+-config %config: scripts_basic outputmakefile FORCE
++config: scripts_basic outputmakefile FORCE
++	$(Q)mkdir -p include/linux include/config
++	$(Q)$(MAKE) $(build)=scripts/kconfig $@
++
++%config: scripts_basic outputmakefile FORCE
+ 	$(Q)mkdir -p include/linux include/config
+ 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
+ 
+@@ -1598,7 +1602,11 @@ endif
+ 	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
+ 
+ # Modules
+-/ %/: prepare scripts FORCE
++/: prepare scripts FORCE
++	$(cmd_crmodverdir)
++	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) \
++	$(build)=$(build-dir)
++%/: prepare scripts FORCE
+ 	$(cmd_crmodverdir)
+ 	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) \
+ 	$(build)=$(build-dir)
+diff --git a/board/vr9/Kconfig b/board/vr9/Kconfig
+old mode 100644
+new mode 100755
+index 93e3433..153446c
+--- a/board/vr9/Kconfig
++++ b/board/vr9/Kconfig
+@@ -335,6 +335,11 @@ config GPHY_LED_SHIFT_REG
+ 
+ config GPHY_LED_GPIO
+    bool "GPIO"
++
++### ctc ###
++config GPHY_LED_NONE
++   bool "NONE"
++###########
+    
+ endchoice
+ 
+@@ -456,7 +461,7 @@ config VR9_GPHY_FW_EMBEDDED
+ 	default y
+ 
+ config VR9_GPHY_FW_ADDR
+-    hex 
++    hex 'gphy firmware address'
+ 	default "0xb0010000" if ( BOOT_FROM_NOR )
+ 	default "0xa0110000" if ( BOOT_FROM_SPI )
+ 	default "0xa0120000" if ( BOOT_FROM_NAND )
+diff --git a/board/vr9/Makefile.lq b/board/vr9/Makefile.lq
+old mode 100644
+new mode 100755
+index dde6c76..1b4019b
+--- a/board/vr9/Makefile.lq
++++ b/board/vr9/Makefile.lq
+@@ -37,6 +37,9 @@ $(obj)u-boot.lq: $(obj)System.map $(obj)bootstrap.bin $(obj)u-boot.lzimg
+ 		@cat $(obj)u-boot.lzimg >> $(obj)u-boot.lq
+ 		@scripts_platform/pad2align.sh -n 65536 u-boot.lq 
+ 		@cat $(GPHY_FIRMWARE) >>u-boot.lq
++		### ctc ###
++		@scripts_platform/pad2align.sh -n 65536 u-boot.lq 
++		###########
+ endif
+ 
+ ifdef CONFIG_BOOT_FROM_NAND
+@@ -47,6 +50,9 @@ $(obj)u-boot.lq: $(obj)System.map $(obj)bootstrap.bin $(obj)u-boot.lzimg
+ 		@cat $(obj)u-boot.lzimg >> $(obj)u-boot.lq
+ 		@$(TOPDIR)/scripts_platform/pad2align.sh -n 65536 u-boot.lq
+ 		@cat $(GPHY_FIRMWARE) >>u-boot.lq
++		### ctc ###
++		@$(TOPDIR)/scripts_platform/pad2align.sh -n 65536 u-boot.lq
++		###########
+ endif
+ 
+ ifdef CONFIG_BOOT_FROM_SPI
+diff --git a/board/vr9/lowlevel_init.S b/board/vr9/lowlevel_init.S
+old mode 100644
+new mode 100755
+index a85dc02..536e459
+--- a/board/vr9/lowlevel_init.S
++++ b/board/vr9/lowlevel_init.S
+@@ -928,6 +928,11 @@ ddrram_init:
+    sw  a0, 0(t2)
+ 
+ #if defined(CONFIG_TUNE_DDR) && defined(CONFIG_BOOT_FROM_NOR)
++  #if 1 /*ctc add to extend address space*/
++	li	s4, 0xBE105300
++	li	s5, CONFIG_EBU_ADDSEL0 /* 0x10000021, ctc extend to 32MB */
++	sw	s5, 0x20(s4)
++  #endif
+    li      t3, IFX_CFG_FLASH_DDR_CFG_START_ADDR
+    lw      t4, 0(t3)
+    li      t3, 0x88888888
+diff --git a/board/vr9/vr9.c b/board/vr9/vr9.c
+old mode 100644
+new mode 100755
+index e312e67..33caf98
+--- a/board/vr9/vr9.c
++++ b/board/vr9/vr9.c
+@@ -123,8 +123,12 @@ phys_size_t initdram(int board_type)
+ 
+ int flash_probe(void)
+ {
+-   (*BSP_EBU_BUSCON0)=0x1d7ff;  //value from Aikann, should be used on the real chip
+-   (*BSP_EBU_ADDSEL0) = 0x10000031; //starting address from 0xb0000000
++   (*BSP_EBU_BUSCON0) = CONFIG_EBU_BUSCON0;  //0x1d7ff; ctc, value from Aikann, should be used on the real chip
++   (*BSP_EBU_ADDSEL0) = CONFIG_EBU_ADDSEL0;  //0x10000021; ctc extend to 32MB, //starting address from 0xb0000000
++  #if defined(CONFIG_SYS_MAX_FLASH_BANKS) && (CONFIG_SYS_MAX_FLASH_BANKS > 1) /* ctc */
++	(*BSP_EBU_BUSCON1) = CONFIG_EBU_BUSCON1;  //0x1d7ff; ctc, value from Aikann, should be used on the real chip
++	(*BSP_EBU_ADDSEL1) = CONFIG_EBU_ADDSEL1;  //0x10000021; ctc extend to 32MB, //starting address from 0xb0000000
++  #endif
+    (*BSP_EBU_NAND_CON)=0;
+    return 1;
+ }
+@@ -256,9 +260,75 @@ int checkboard (void)
+ #ifdef CONFIG_VR9_CRYSTAL_25M	
+ 	REG8(0xbf106b00)=0x3;
+ #endif	
+-   
+-    *EBU_ADDR_SEL_0 = 0x10000031; /*has to do this or nand probing will hang*/
++
++  #if 1 /*ctc, reset GPIO */
++	*BSP_GPIO_P0_OUT     = 0x00000000;
++	*BSP_GPIO_P0_DIR     = 0x00002070;
++	*BSP_GPIO_P0_ALTSEL0 = 0x00002070;
++	*BSP_GPIO_P0_ALTSEL1 = 0x00000080;
++	*BSP_GPIO_P0_OD      = 0x00002070;
++	*BSP_GPIO_P0_PUDSEL  = 0x00000010;
++	*BSP_GPIO_P0_PUDEN   = 0x00000010;
++	*BSP_GPIO_P1_OUT     = 0x00000000;
++	*BSP_GPIO_P1_DIR     = 0x00008180;
++	*BSP_GPIO_P1_ALTSEL0 = 0x000085a0;
++	*BSP_GPIO_P1_ALTSEL1 = 0x00000000;
++	*BSP_GPIO_P1_OD      = 0x00008180;
++	*BSP_GPIO_P1_PUDSEL  = 0x00008501;
++	*BSP_GPIO_P1_PUDEN   = 0x000085a1;
++	*BSP_GPIO_P2_OUT     = 0x00000000;
++	*BSP_GPIO_P2_DIR     = 0x00000800;
++	*BSP_GPIO_P2_ALTSEL0 = 0x00000000;
++	*BSP_GPIO_P2_ALTSEL1 = 0x00000000;
++	*BSP_GPIO_P2_OD      = 0x00000400;
++	*BSP_GPIO_P2_PUDSEL  = 0x00000400;
++	*BSP_GPIO_P2_PUDEN   = 0x00000400;
++	*BSP_GPIO_P3_OUT     = 0x00000000;
++	*BSP_GPIO_P3_DIR     = 0x00000002;
++	*BSP_GPIO_P3_ALTSEL0 = 0x00000003;
++	*BSP_GPIO_P3_ALTSEL1 = 0x00000000;
++	*BSP_GPIO_P3_OD      = 0x00000002;
++	*BSP_GPIO_P3_PUDSEL  = 0x00000000;
++	*BSP_GPIO_P3_PUDEN   = 0x00000000;
++  #else
++	printf( "BSP_GPIO_P0_OUT     : 0x%08x\n", *BSP_GPIO_P0_OUT );
++	printf( "BSP_GPIO_P0_DIR     : 0x%08x\n", *BSP_GPIO_P0_DIR );
++	printf( "BSP_GPIO_P0_ALTSEL0 : 0x%08x\n", *BSP_GPIO_P0_ALTSEL0 );
++	printf( "BSP_GPIO_P0_ALTSEL1 : 0x%08x\n", *BSP_GPIO_P0_ALTSEL1 );
++	printf( "BSP_GPIO_P0_OD      : 0x%08x\n", *BSP_GPIO_P0_OD );
++	printf( "BSP_GPIO_P0_PUDSEL  : 0x%08x\n", *BSP_GPIO_P0_PUDSEL );
++	printf( "BSP_GPIO_P0_PUDEN   : 0x%08x\n", *BSP_GPIO_P0_PUDEN );
++	printf( "BSP_GPIO_P1_OUT     : 0x%08x\n", *BSP_GPIO_P1_OUT );
++	printf( "BSP_GPIO_P1_DIR     : 0x%08x\n", *BSP_GPIO_P1_DIR );
++	printf( "BSP_GPIO_P1_ALTSEL0 : 0x%08x\n", *BSP_GPIO_P1_ALTSEL0 );
++	printf( "BSP_GPIO_P1_ALTSEL1 : 0x%08x\n", *BSP_GPIO_P1_ALTSEL1 );
++	printf( "BSP_GPIO_P1_OD      : 0x%08x\n", *BSP_GPIO_P1_OD );
++	printf( "BSP_GPIO_P1_PUDSEL  : 0x%08x\n", *BSP_GPIO_P1_PUDSEL );
++	printf( "BSP_GPIO_P1_PUDEN   : 0x%08x\n", *BSP_GPIO_P1_PUDEN );
++	printf( "BSP_GPIO_P2_OUT     : 0x%08x\n", *BSP_GPIO_P2_OUT );
++	printf( "BSP_GPIO_P2_DIR     : 0x%08x\n", *BSP_GPIO_P2_DIR );
++	printf( "BSP_GPIO_P2_ALTSEL0 : 0x%08x\n", *BSP_GPIO_P2_ALTSEL0 );
++	printf( "BSP_GPIO_P2_ALTSEL1 : 0x%08x\n", *BSP_GPIO_P2_ALTSEL1 );
++	printf( "BSP_GPIO_P2_OD      : 0x%08x\n", *BSP_GPIO_P2_OD );
++	printf( "BSP_GPIO_P2_PUDSEL  : 0x%08x\n", *BSP_GPIO_P2_PUDSEL );
++	printf( "BSP_GPIO_P2_PUDEN   : 0x%08x\n", *BSP_GPIO_P2_PUDEN );
++	printf( "BSP_GPIO_P3_OUT     : 0x%08x\n", *BSP_GPIO_P3_OUT );
++	printf( "BSP_GPIO_P3_DIR     : 0x%08x\n", *BSP_GPIO_P3_DIR );
++	printf( "BSP_GPIO_P3_ALTSEL0 : 0x%08x\n", *BSP_GPIO_P3_ALTSEL0 );
++	printf( "BSP_GPIO_P3_ALTSEL1 : 0x%08x\n", *BSP_GPIO_P3_ALTSEL1 );
++	printf( "BSP_GPIO_P3_OD      : 0x%08x\n", *BSP_GPIO_P3_OD );
++	printf( "BSP_GPIO_P3_PUDSEL  : 0x%08x\n", *BSP_GPIO_P3_PUDSEL );
++	printf( "BSP_GPIO_P3_PUDEN   : 0x%08x\n", *BSP_GPIO_P3_PUDEN );
++  #endif
++
++    *EBU_ADDR_SEL_0 = CONFIG_EBU_ADDSEL0; //0x10000021; ctc extend to 32MB, /*has to do this or nand probing will hang*/
+     *EBU_CON0 = CONFIG_EBU_BUSCON0;
++  #if defined(CONFIG_SYS_MAX_FLASH_BANKS) && (CONFIG_SYS_MAX_FLASH_BANKS > 1) /* ctc */
++	*EBU_ADDR_SEL_1 = CONFIG_EBU_ADDSEL1; //0x10000021; ctc extend to 32MB, /*has to do this or nand probing will hang*/
++	*EBU_CON1 = CONFIG_EBU_BUSCON1;
++  #endif
++
++	asm( "sync" );
+ 
+ #ifndef CONFIG_VR9_CPU_393M_RAM_196M
+     if(!check_pll1_lock()) return 1;
+diff --git a/board/vr9/xrx200_ddr2_197_CAS4_config.conf b/board/vr9/xrx200_ddr2_197_CAS4_config.conf
+index 3ab876c..cc96b93 100644
+--- a/board/vr9/xrx200_ddr2_197_CAS4_config.conf
++++ b/board/vr9/xrx200_ddr2_197_CAS4_config.conf
+@@ -1,10 +1,10 @@
+ 0xBF401070 0x0	
+-0xBF401000 0x10101	
+-0xBF401010 0x1000100	
++0xBF401000 0x101	
++0xBF401010 0x1000101	
+ 0xBF401020 0x1010000	
+ 0xBF401030 0x100	
+ 0xBF401040 0x1000000	
+-0xBF401050 0x1000100	
++0xBF401050 0x1000101	
+ 0xBF401060 0x1000100	
+ 0xBF401070 0x1010000	
+ 0xBF401080 0x1000101	
+@@ -17,36 +17,48 @@
+ 0xBF4010F0 0x2040F	
+ 0xBF401100 0x40000	
+ 0xBF401110 0x60102	
+-0xBF401120 0x3020002	
++0xBF401120 0x4020002	
+ 0xBF401130 0x30302	
+-0xBF401140 0x5000700	
+-0xBF401150 0x30C0208	
++0xBF401140 0x7000700	
++0xBF401150 0x40C0208	
+ 0xBF401160 0x0	
+-0xBF401170 0x9020000	
+-0xBF401180 0x4400F03	
++0xBF401170 0xA020000	
++0xBF401180 0x4401604	
+ 0xBF401190 0x0	
+ 0xBF4011A0 0x0	
+-0xBF4011B0 0x4420000	
++0xBF4011B0 0x6420000	
+ 0xBF4011C0 0x0	
+ 0xBF4011D0 0x0	
+-0xBF4011E0 0x5FB	
++0xBF4011E0 0x613	
+ 0xBF4011F0 0x0	 
+ 0xBF401200 0x0	
+-0xBF401210 0x4F0000	
++0xBF401210 0x510000	
+ 0xBF401220 0x200C8	
+-0xBF401230 0x1135DF	
++0xBF401230 0x1836B1	
+ 0xBF401240 0xC8
+-0xBF401250 0x99E9
++0xBF401250 0x9C41
+ 0xBF401260 0x0
+ 0xBF401270 0x1A1F04
+-0xBF401280 0x1A2304
+-0xBF4012B0 0x566404
+-0xBF4012C0 0x566404
++0xBF401280 0x1A2704
++0xBF401290 0x1A1C57
++0xBF4012A0 0x1A1C57
++0xBF4012B0 0x566504
++0xBF4012C0 0x566504
++0xBF4012D0 0x565F17
++0xBF4012E0 0x565F17
++0xBF4012F0 0x0
++0xBF401300 0x0
++0xBF401310 0x0
++0xBF401320 0x0
+ 0xBF401330 0x0
+ 0xBF401340 0x133	
+ 0xBF401350 0xF3014B27	
+ 0xBF401360 0xF3014B27	
+-0xBF401390 0x7C00301	
+-0xBF4013A0 0x7C00301	
++0xBF401370 0xF3014B27	
++0xBF401380 0xF3014B27	
++0xBF401390 0x7800301	
++0xBF4013A0 0x7800301	
++0xBF4013B0 0x7800301	
++0xBF4013C0 0x7800301	
+ 0xBF4013D0 0x4	
+ 0xBF401070 0x1010100	
+diff --git a/common/cmd_load.c b/common/cmd_load.c
+old mode 100644
+new mode 100755
+index d6bbb78..6055e7d
+--- a/common/cmd_load.c
++++ b/common/cmd_load.c
+@@ -485,6 +485,7 @@ int do_load_serial_bin (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+ 
+ 	} else {
+ 
++	  #if 0 //ctc
+ 		printf ("## Ready for binary (kermit) download "
+ 			"to 0x%08lX at %d bps...\n",
+ 			offset,
+@@ -499,6 +500,7 @@ int do_load_serial_bin (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+ 			printf ("## Start Addr      = 0x%08lX\n", addr);
+ 			load_addr = addr;
+ 		}
++	  #endif
+ 	}
+ 	if (load_baudrate != current_baudrate) {
+ 		printf ("## Switch baudrate to %d bps and press ESC ...\n",
+@@ -516,7 +518,7 @@ int do_load_serial_bin (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+ 	return rcode;
+ }
+ 
+-
++#if 0 //ctc
+ static ulong load_serial_bin (ulong offset)
+ {
+ 	int size, i;
+@@ -545,6 +547,7 @@ static ulong load_serial_bin (ulong offset)
+ 
+ 	return offset;
+ }
++#endif
+ 
+ void send_pad (void)
+ {
+@@ -644,12 +647,14 @@ static void bin_data_char (char new_char)
+ 	}
+ }
+ 
++#if 0 //ctc
+ static void set_kerm_bin_mode (unsigned long *addr)
+ {
+ 	bin_start_address = (char *) addr;
+ 	os_data_init = bin_data_init;
+ 	os_data_char = bin_data_char;
+ }
++#endif
+ 
+ 
+ /* k_data_* simply handles the kermit escape translations */
+@@ -781,6 +786,7 @@ void handle_send_packet (int n)
+ 	s1_sendpacket (a_b);
+ }
+ 
++#if 0 //ctc
+ /* k_recv receives a OS Open image file over kermit line */
+ static int k_recv (void)
+ {
+@@ -957,6 +963,7 @@ START:
+ 	}
+ 	return ((ulong) os_data_addr - (ulong) bin_start_address);
+ }
++#endif
+ 
+ static int getcxmodem(void) {
+ 	if (tstc())
+@@ -1070,6 +1077,7 @@ U_BOOT_CMD(
+ 
+ 
+ #if defined(CONFIG_CMD_LOADB)
++#if 0 //ctc
+ U_BOOT_CMD(
+ 	loadb, 3, 0,	do_load_serial_bin,
+ 	"load binary file over serial line (kermit mode)",
+@@ -1077,6 +1085,7 @@ U_BOOT_CMD(
+ 	"    - load binary file over serial line"
+ 	" with offset 'off' and baudrate 'baud'"
+ );
++#endif
+ 
+ U_BOOT_CMD(
+ 	loady, 3, 0,	do_load_serial_bin,
+diff --git a/common/cmd_mem.c b/common/cmd_mem.c
+old mode 100644
+new mode 100755
+index 1839330..70d0936
+--- a/common/cmd_mem.c
++++ b/common/cmd_mem.c
+@@ -1087,6 +1087,43 @@ mod_mem(cmd_tbl_t *cmdtp, int incrflag, int flag, int argc, char *argv[])
+ 	return 0;
+ }
+ 
++int do_mem_cal (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
++{
++	ulong	addr;
++	long	off;
++	ulong*	ptr;
++
++	if (argc < 3) {
++		cmd_usage(cmdtp);
++		return 1;
++	}
++
++	addr = simple_strtoul (argv[1], NULL, 16);
++	off = simple_strtol (argv[2], NULL, 16);
++
++	printf ("%s %s %s = %08lX\n", argv[1], (off >=0 ? "+" : ""), argv[2], addr+off);
++
++	addr += off;
++
++	if (argc > 3)
++	{
++		if ( argv[3][0] < '0' || argv[3][0] > '9' )
++		{
++			char sCmd[128];
++			extern int run_command (const char *cmd, int flag);
++			sprintf( sCmd, "set %s 0x%08lX", argv[3], addr );
++			run_command( sCmd, 0 );
++		}
++		else
++		{
++			ptr = (ulong *) simple_strtoul (argv[3], NULL, 16);
++			*ptr = addr;
++		}
++	}
++
++	return 0;
++}
++
+ #ifndef CONFIG_CRC32_VERIFY
+ 
+ int do_mem_crc (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+@@ -1111,6 +1148,15 @@ int do_mem_crc (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+ 			addr, addr + length - 1, crc);
+ 
+ 	if (argc > 3) {
++	  #if 1 /* ctc */
++		if (argv[3][0]<'0' || argv[3][0]>'9') {
++			char sCmd[128];
++			extern int run_command (const char *cmd, int flag);
++			sprintf( sCmd, "set %s %lx", argv[3], crc );
++			run_command( sCmd, 0 );
++			return 0;
++		}
++	  #endif
+ 		ptr = (ulong *) simple_strtoul (argv[3], NULL, 16);
+ 		*ptr = crc;
+ 	}
+@@ -1287,12 +1333,24 @@ U_BOOT_CMD(
+ 	"[.b, .w, .l] addr1 addr2 count"
+ );
+ 
++#if 1 /* ctc */
++U_BOOT_CMD(
++	cal,	4,	1,	do_mem_cal,
++	"address calculation",
++	"value offset [addr|variable]\n    - compute address offset [save at addr or variable], in hexadecimal"
++);
++#endif
++
+ #ifndef CONFIG_CRC32_VERIFY
+ 
+ U_BOOT_CMD(
+ 	crc32,	4,	1,	do_mem_crc,
+ 	"checksum calculation",
++  #if 1 /* ctc */
++	"address count [addr|variable]\n    - compute CRC32 checksum [save at addr or variable]"
++  #else
+ 	"address count [addr]\n    - compute CRC32 checksum [save at addr]"
++  #endif
+ );
+ 
+ #else	/* CONFIG_CRC32_VERIFY */
+diff --git a/common/cmd_misc.c b/common/cmd_misc.c
+old mode 100644
+new mode 100755
+index b0ced2f..7e194a2
+--- a/common/cmd_misc.c
++++ b/common/cmd_misc.c
+@@ -27,17 +27,9 @@
+ #include <common.h>
+ #include <command.h>
+ 
+-int do_sleep (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
++int do_sleep_msec( u32 delay )
+ {
+ 	ulong start = get_timer(0);
+-	ulong delay;
+-
+-	if (argc != 2) {
+-		cmd_usage(cmdtp);
+-		return 1;
+-	}
+-
+-	delay = simple_strtoul(argv[1], NULL, 10) * CONFIG_SYS_HZ;
+ 
+ 	while (get_timer(start) < delay) {
+ 		if (ctrlc ()) {
+@@ -49,9 +41,100 @@ int do_sleep (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+ 	return 0;
+ }
+ 
++int do_sleep (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
++{
++	ulong delay;
++
++	if (argc != 2) {
++		cmd_usage(cmdtp);
++		return 1;
++	}
++
++	delay = simple_strtoul(argv[1], NULL, 10) * CONFIG_SYS_HZ;
++
++	return do_sleep_msec( delay );
++}
++
+ U_BOOT_CMD(
+ 	sleep ,    2,    1,     do_sleep,
+ 	"delay execution for some time",
+ 	"N\n"
+-	"    - delay execution for N seconds (N is _decimal_ !!!)"
++	"    - delay execution for N seconds (N is _decimal_ !!!)\n"
++);
++
++
++#ifdef CONFIG_DRIVER_VR9 /* ctc added for RTL8367RB */
++
++
++int do_mdio (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
++{
++	u8	phy;
++	u8	reg;
++	u16	data;
++	u32	tmp;
++	extern u16  vr9_mdio_read( u8 phyaddr, u8 phyreg );
++	extern void vr9_mdio_write( u8 phyaddr, u8 phyreg, u16 data );
++
++	if ( argc == 4 && strcmp(argv[1],"read") == 0)
++	{
++		//
++		tmp = simple_strtoul(argv[2], NULL, 16);
++		if ( tmp > 0x1f )
++			goto do_mdio_err;
++		phy = (u8)tmp;
++		//
++		tmp = simple_strtoul(argv[3], NULL, 16);
++		if ( tmp > 0x1f )
++			goto do_mdio_err;
++		reg = (u8)tmp;
++		//
++		tmp = vr9_mdio_read( phy, reg );
++		printf( "data: 0x%04x\n", tmp );
++		return 0;
++	}
++	else if ( argc == 5 && strcmp(argv[1],"write") == 0)
++	{
++		//
++		tmp = simple_strtoul(argv[2], NULL, 16);
++		if ( tmp > 0x1f )
++			goto do_mdio_err;
++		phy = (u8)tmp;
++		//
++		tmp = simple_strtoul(argv[3], NULL, 16);
++		if ( tmp > 0x1f )
++			goto do_mdio_err;
++		reg = (u8)tmp;
++		//
++		tmp = simple_strtoul(argv[4], NULL, 16);
++		if ( tmp > 0xffff )
++			goto do_mdio_err;
++		data = (u16)tmp;
++		//
++		vr9_mdio_write( phy, reg, data );
++		return 0;
++	}
++	else
++	{
++		goto do_mdio_err;
++	}
++
++	return 0;
++
++do_mdio_err:
++
++	cmd_usage(cmdtp);
++
++	return 1;
++}
++
++U_BOOT_CMD(
++	mdio ,    5,    1,     do_mdio,
++	"mdio read and write",
++	"read  <phy> <reg>        - read MDIO register, hexadecimal\n"
++	"mdio write <phy> <reg> <data> - write MDIO register, hexadecimal\n"
++	"                        <phy> - 0x00-0x1F\n"
++	"                        <reg> - 0x00-0x1F\n"
++	"                       <data> - 0x0000-0xFFFF\n"
+ );
++
++#endif /* CONFIG_DRIVER_VR9 */
+diff --git a/common/cmd_nand.c b/common/cmd_nand.c
+old mode 100644
+new mode 100755
+index 56e2f29..b70eec9
+--- a/common/cmd_nand.c
++++ b/common/cmd_nand.c
+@@ -155,7 +155,7 @@ out:
+ 	if (*size == nand->size)
+ 		puts("whole chip\n");
+ 	else
+-		printf("offset 0x%llx, size 0x%llx\n", *off, *size);
++		printf("offset 0x%016llx, size 0x%016llx\n", *off, *size);
+ 	return 0;
+ }
+ 
+@@ -294,7 +294,7 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+ 		printf("\nDevice %d bad blocks:\n", nand_curr_device);
+ 		for (off = 0; off < nand->size; off += nand->erasesize)
+ 			if (nand_block_isbad(nand, off))
+-				printf(" 0x%llx\n", off);
++				printf(" 0x%016llx\n", off);
+ 		return 0;
+ 	}
+ 
+@@ -306,13 +306,26 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+ 	if (strcmp(cmd, "erase") == 0 || strcmp(cmd, "scrub") == 0) {
+ 		nand_erase_options_t opts;
+ 		/* "clean" at index 2 means request to write cleanmarker */
++	  #if 0 // ctc
+ 		int clean = argc > 2 && !strcmp("clean", argv[2]);
+ 		int o = clean ? 3 : 2;
++	  #else
++		int clean = argc > 4 && !strcmp("clean", argv[4]);
++	  #endif
+ 		int scrub = !strcmp(cmd, "scrub");
+ 
++	  #if 1 // ctc
++		if ( !scrub && argc < 4 )
++			goto usage;
++	  #endif
++
+ 		printf("\nNAND %s: ", scrub ? "scrub" : "erase");
+ 		/* skip first two or three arguments, look for offset and size */
++	  #if 0 // ctc
+ 		if (arg_off_size(argc - o, argv + o, nand, &off, &size) != 0)
++	  #else
++		if (arg_off_size(argc - 2, argv + 2, nand, &off, &size) != 0)
++	  #endif
+ 			return 1;
+ 
+ 		memset(&opts, 0, sizeof(opts));
+@@ -360,10 +373,29 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+ 		s = strchr(cmd, '.');
+ 		off = (int)simple_strtoul(argv[2], NULL, 16);
+ 
++	  #if 0 //ctc
+ 		if (s != NULL && strcmp(s, ".oob") == 0)
+ 			ret = nand_dump(nand, off, 1);
+ 		else
+ 			ret = nand_dump(nand, off, 0);
++	  #else
++		if (argc > 3)
++			size = simple_strtoul(argv[3], NULL, 16);
++		else
++			size = nand->writesize;
++		if (size < nand->writesize)
++			size = nand->writesize;
++
++		ret = 0;
++		while (size > 0) {
++			if (s != NULL && strcmp(s, ".oob") == 0)
++				ret |= nand_dump(nand, off, 1);
++			else
++				ret |= nand_dump(nand, off, 0);
++			size -= nand->writesize;
++			off  += nand->writesize;
++		}
++	  #endif
+ 
+ 		return ret == 0 ? 1 : 0;
+ 
+@@ -493,27 +525,36 @@ usage:
+ 
+ U_BOOT_CMD(nand, CONFIG_SYS_MAXARGS, 1, do_nand,
+ 	"NAND sub-system",
+-	"info - show available NAND devices\n"
+-	"nand device [dev] - show or set current device\n"
+-	"nand read - addr off|partition size\n"
+-	"nand write - addr off|partition size\n"
+-	"    read/write 'size' bytes starting at offset 'off'\n"
+-	"    to/from memory address 'addr', skipping bad blocks.\n"
+-	"nand erase [clean] [off size] - erase 'size' bytes from\n"
+-	"    offset 'off' (entire device if not specified)\n"
++	"info            - show available NAND devices\n"
++	"nand device [dev]      - show or set current device\n"
++	"nand read[.jffs2|.e|.i|.oob] addr off size\n"
++	"nand write[.jffs2|.e|.i|.partial|.oob] addr off size\n"
++	"                       - read/write `size' bytes starting\n"
++	"                      at offset `off' to/from memory address `addr'\n"
++  #if 0 // ctc
++	"nand erase [clean] [off [size]]\n"
++  #else
++	"nand erase off size [clean]\n"
++  #endif
++	"                       - erase `size' bytes from\n"
++	"                      offset `off' (entire device if not specified)\n"
++	"                       - [clean] is to set JFFS2 pattern\n"
+ 	"nand bad - show bad blocks\n"
+-	"nand dump[.oob] off - dump page\n"
++	"nand dump[.oob] off [size]\n"
++	"                       - dump page\n"
+ 	"nand scrub - really clean NAND erasing bad blocks (UNSAFE)\n"
+ 	"nand markbad off [...] - mark bad block(s) at offset (UNSAFE)\n"
+-	"nand biterr off - make a bit error at offset (UNSAFE)"
++	"nand biterr off        - make a bit error at offset (UNSAFE)\n"
+ #ifdef CONFIG_CMD_NAND_LOCK_UNLOCK
+-	"\n"
+ 	"nand lock [tight] [status]\n"
+-	"    bring nand to lock state or display locked pages\n"
+-	"nand unlock [offset] [size] - unlock section"
++	"                       - bring nand to lock state or display locked pages\n"
++	"nand unlock [offset] [size]\n"
++    "                       - unlock section\n"
+ #endif
+ );
+ 
++#if 0 //ctc
++
+ static int nand_load_image(cmd_tbl_t *cmdtp, nand_info_t *nand,
+ 			   ulong offset, ulong addr, char *cmd)
+ {
+@@ -690,4 +731,7 @@ usage:
+ U_BOOT_CMD(nboot, 4, 1, do_nandboot,
+ 	"boot from NAND device",
+ 	"[partition] | [[[loadAddr] dev] offset]"
++	"    - boot from NAND device loadAddr dev\n"
+ );
++
++#endif //0 ctc
+diff --git a/common/cmd_net.c b/common/cmd_net.c
+old mode 100644
+new mode 100755
+index 4cebcde..f70a003
+--- a/common/cmd_net.c
++++ b/common/cmd_net.c
+@@ -62,7 +62,11 @@ int do_httpd (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+ 
+ U_BOOT_CMD(
+     httpd,   1,  1,  do_httpd,
++  #if 0 //ctc
+    "httpd- start http server\n",
++  #else
++   "start http server",
++  #endif
+ 	    "using http default port\n"
+ );
+ #endif
+diff --git a/common/cmd_nvedit.c b/common/cmd_nvedit.c
+old mode 100644
+new mode 100755
+index eb89e9e..4be7a98
+--- a/common/cmd_nvedit.c
++++ b/common/cmd_nvedit.c
+@@ -419,12 +419,32 @@ void forceenv (char *varname, char *varvalue)
+ 
+ int do_setenv (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+ {
++  #if 1 /* ctc */
++	char*	argv3[3];
++
++	if (argc < 2) {
++		cmd_usage(cmdtp);
++		return 1;
++	}
++
++	if (argc >= 3)
++		return _do_setenv (flag, argc, argv);
++
++	argv3[0] = argv[0];
++	argv3[1] = argv[1];
++	argv3[2] = "";
++	return _do_setenv (flag, 3, argv3);
++
++  #else
++
+ 	if (argc < 2) {
+ 		cmd_usage(cmdtp);
+ 		return 1;
+ 	}
+ 
+ 	return _do_setenv (flag, argc, argv);
++
++  #endif
+ }
+ 
+ /************************************************************************
+@@ -650,9 +670,40 @@ U_BOOT_CMD(
+ 	"set environment variables",
+ 	"name value ...\n"
+ 	"    - set environment variable 'name' to 'value ...'\n"
++  #if 0 /* ctc */
+ 	"setenv name\n"
+ 	"    - delete environment variable 'name'"
++  #endif
++);
++
++#if 1 /* ctc */
++int do_unsetenv (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
++{
++	int		i;
++	int		retcode = 0;
++	char*	argv2[2];
++
++	if (argc < 2) {
++		cmd_usage(cmdtp);
++		return 1;
++	}
++
++	/* print selected env vars */
++	for (i = 1, argv2[0]=argv[0]; i < argc; ++i) {
++		argv2[1] = argv[i];
++		retcode |= _do_setenv(flag, 2, argv2);
++	}
++
++	return retcode;
++}
++
++U_BOOT_CMD(
++	unsetenv, CONFIG_SYS_MAXARGS, 0,	do_unsetenv,
++	"delete environment variables",
++	"name ...\n"
++	"    - delete environment variable 'name' ...\n"
+ );
++#endif
+ 
+ #if defined(CONFIG_CMD_ASKENV)
+ 
+diff --git a/common/env_nand.c b/common/env_nand.c
+old mode 100644
+new mode 100755
+index d97b882..6ec8a09
+--- a/common/env_nand.c
++++ b/common/env_nand.c
+@@ -233,6 +233,8 @@ int saveenv(void)
+ #else /* ! CONFIG_ENV_OFFSET_REDUND */
+ int saveenv(void)
+ {
++  #if 0 //ctc
++
+ 	int ret = 0;
+ 	u64 total;
+ 	/*
+@@ -262,9 +264,57 @@ int saveenv(void)
+     puts ("done\n");
+     return ret;
+ 
++  #else
++	u64						total;
++	int						ret = 0;
++	nand_info_t*			nand = &nand_info[0];
++	u64						ptr, len, end, blksize;
++	nand_erase_options_t	opts;
++
++    puts ("Writing to Nand... ");
++
++	blksize = nand->erasesize;
++
++	if ( (CONFIG_ENV_OFFSET % blksize) != 0 || (CONFIG_ENV_SIZE % blksize) != 0)
++	{
++		printf ("Offset and size must be sector aligned, erasesize = 0x%x\n", blksize);
++		return 1;
++	}
++
++	end = nand->size - 4 * blksize;
++
++	/* scan available block */
++	for ( len=0, total=0, ptr=CONFIG_ENV_OFFSET; len<CONFIG_ENV_SIZE && ptr<end; ptr+=blksize, total+=blksize )
++	{
++		if (nand->block_isbad( nand, ptr )) {
++			printf("skip bad block 0x%08lx\n", ptr);
++			continue;
++		}
++		len += blksize;
++	}
++	if ( len < CONFIG_ENV_SIZE ) {
++		printf("Run out of good flash blocks 0x%x\n", len );
++		return 1;
++	}
++
++	memset( &opts, 0, sizeof(opts) );
++	opts.offset = CONFIG_ENV_OFFSET;
++	opts.length = total;
++	if (nand_erase_opts( nand, &opts ) != 0) {
++		printf("fail to erase block 0x%08lx\n", ptr );
++		return 1;
++	}
++
++	len = CONFIG_ENV_RANGE;
++
++	if ( nand_write_skip_bad( nand, CONFIG_ENV_OFFSET, &len, (u_char*)env_ptr ) != 0)
++		return 1;
+ 
+ 	puts ("done\n");
+-	return ret;
++
++	return 0;
++
++  #endif
+ }
+ #endif /* CONFIG_ENV_OFFSET_REDUND */
+ #endif /* CMD_SAVEENV */
+@@ -287,6 +337,7 @@ int readenv (size_t offset, u_char * buf)
+ 	while (amount_loaded < CONFIG_ENV_SIZE && offset < end) {
+ 		if (nand_block_isbad(&nand_info[0], offset)) {
+ 			offset += blocksize;
++			end    += blocksize;	// Calvin Liang 2012.09.03
+ 		} else {
+ 			char_ptr = &buf[amount_loaded];
+ 			asm("sync");
+diff --git a/common/main.c b/common/main.c
+old mode 100644
+new mode 100755
+index f7e7c1c..d20b25d
+--- a/common/main.c
++++ b/common/main.c
+@@ -90,6 +90,11 @@ int do_mdm_init = 0;
+ extern void mdm_init(void); /* defined in board.c */
+ #endif
+ 
++#ifdef CONFIG_DRIVER_VR9 /* ctc, power down PHY */
++ extern u16  vr9_mdio_read( u8 phyaddr, u8 phyreg );
++ extern void vr9_mdio_write( u8 phyaddr, u8 phyreg, u16 data );
++#endif
++
+ /***************************************************************************
+  * Watch for 'delay' seconds for autoboot stop or autoboot delay string.
+  * returns: 0 -  no key string, allow autoboot
+@@ -293,6 +298,11 @@ void main_loop (void)
+ 	char *bcs;
+ 	char bcs_set[16];
+ #endif /* CONFIG_BOOTCOUNT_LIMIT */
++  #if 1 /* ctc, save bootloader version */
++	char* version;
++	extern const char version_string[];
++	extern int do_sleep_msec( u32 delay );
++  #endif
+ 
+ #if defined(CONFIG_VFD) && defined(VFD_TEST_LOGO)
+ 	ulong bmp = 0;		/* default bitmap */
+@@ -397,6 +407,23 @@ void main_loop (void)
+ 
+ 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
+ 
++  #ifdef CONFIG_DRIVER_VR9 /* ctc, power down PHY */
++	vr9_mdio_write( 0x00, 0x0, vr9_mdio_read( 0x00, 0x0 ) | 0x0800 );
++	vr9_mdio_write( 0x01, 0x0, vr9_mdio_read( 0x01, 0x0 ) | 0x0800 );
++	vr9_mdio_write( 0x11, 0x0, vr9_mdio_read( 0x11, 0x0 ) | 0x0800 );
++	vr9_mdio_write( 0x12, 0x0, vr9_mdio_read( 0x12, 0x0 ) | 0x0800 );
++	vr9_mdio_write( 0x13, 0x0, vr9_mdio_read( 0x13, 0x0 ) | 0x0800 );
++	vr9_mdio_write( 0x14, 0x0, vr9_mdio_read( 0x14, 0x0 ) | 0x0800 );
++  #endif
++
++  #if 1 /* ctc, save bootloader version */
++	version = getenv ("bl_version");
++	if ( version == NULL || strcmp(version,version_string) != 0 ) {
++		setenv ("bl_version", (char*)version_string);
++		saveenv();
++	}
++  #endif
++
+ 	if (bootdelay >= 0 && s && !abortboot (bootdelay)) {
+ # ifdef CONFIG_AUTOBOOT_KEYED
+ 		int prev = disable_ctrlc(1);	/* disable Control C checking */
+@@ -414,6 +441,16 @@ void main_loop (void)
+ # endif
+ 	}
+ 
++  #ifdef CONFIG_DRIVER_VR9 /* ctc, power up PHY */
++	do_sleep_msec( 1000 );
++	vr9_mdio_write( 0x00, 0x0, vr9_mdio_read( 0x00, 0x0 ) & ~0x0800 );
++	vr9_mdio_write( 0x01, 0x0, vr9_mdio_read( 0x01, 0x0 ) & ~0x0800 );
++	vr9_mdio_write( 0x11, 0x0, vr9_mdio_read( 0x11, 0x0 ) & ~0x0800 );
++	vr9_mdio_write( 0x12, 0x0, vr9_mdio_read( 0x12, 0x0 ) & ~0x0800 );
++	vr9_mdio_write( 0x13, 0x0, vr9_mdio_read( 0x13, 0x0 ) & ~0x0800 );
++	vr9_mdio_write( 0x14, 0x0, vr9_mdio_read( 0x14, 0x0 ) & ~0x0800 );
++  #endif
++
+ # ifdef CONFIG_MENUKEY
+ 	if (menukey == CONFIG_MENUKEY) {
+ 	    s = getenv("menucmd");
+diff --git a/drivers/mtd/nand/nand_bbt.c b/drivers/mtd/nand/nand_bbt.c
+old mode 100644
+new mode 100755
+index 2fe68ab..5363983
+--- a/drivers/mtd/nand/nand_bbt.c
++++ b/drivers/mtd/nand/nand_bbt.c
+@@ -71,6 +71,23 @@
+ #include <linux/vmalloc.h>
+ #endif
+ 
++
++#if 1 /*ctc*/
++ #define	BAD_BLK_OOB_MARK_START	4
++ #define	BAD_BLK_OOB_MARK_END	5
++ #define	BAD_BLK_OOB_MARK_PATT	0xFF
++#endif
++
++#if 0
++#undef	MTDDEBUG
++#define MTDDEBUG(n, args...)		\
++	do {							\
++		if (1)						\
++			printk(KERN_INFO args);	\
++	} while(0)
++#endif
++
++
+ /**
+  * check_pattern - [GENERIC] check if a pattern is in the buffer
+  * @buf:	the buffer to search
+@@ -92,7 +109,11 @@ static int check_pattern(uint8_t *buf, int len, int paglen, struct nand_bbt_desc
+ 	end = paglen + td->offs;
+ 	if (td->options & NAND_BBT_SCANEMPTY) {
+ 		for (i = 0; i < end; i++) {
++		  #if 1 /*ctc*/
++			if (p[i] != BAD_BLK_OOB_MARK_PATT)
++		  #else
+ 			if (p[i] != 0xff)
++		  #endif
+ 				return -1;
+ 		}
+ 	}
+@@ -104,14 +125,30 @@ static int check_pattern(uint8_t *buf, int len, int paglen, struct nand_bbt_desc
+ 			return -1;
+ 	}
+ 
++  #if 1 /*ctc*/
++	p += td->len;
++	end += td->len;
++  #endif
+ 	if (td->options & NAND_BBT_SCANEMPTY) {
++	  #if 0 /*ctc*/
+ 		p += td->len;
+ 		end += td->len;
++	  #endif
+ 		for (i = end; i < len; i++) {
+ 			if (*p++ != 0xff)
+ 				return -1;
+ 		}
+ 	}
++
++  #if 1 /*ctc*/
++	if ( (td->options & NAND_BBT_SCANEMPTY) == 0x0 ) {
++		for (i = BAD_BLK_OOB_MARK_START, p=buf+paglen; i <= BAD_BLK_OOB_MARK_END; i++) {
++			if (p[i] != BAD_BLK_OOB_MARK_PATT)
++				return -1;
++		}
++	}
++  #endif
++
+ 	return 0;
+ }
+ 
+@@ -1090,7 +1127,11 @@ int nand_update_bbt(struct mtd_info *mtd, loff_t offs)
+ static uint8_t scan_ff_pattern[] = { 0xff, 0xff };
+ 
+ static struct nand_bbt_descr smallpage_memorybased = {
+-	.options = NAND_BBT_SCAN2NDPAGE,
++  #if 1 /*ctc*/
++	.options = 0,
++  #else
++	.options = 0,NAND_BBT_SCAN2NDPAGE,
++  #endif
+ 	.offs = 5,
+ 	.len = 1,
+ 	.pattern = scan_ff_pattern
+@@ -1104,14 +1145,22 @@ static struct nand_bbt_descr largepage_memorybased = {
+ };
+ 
+ static struct nand_bbt_descr smallpage_flashbased = {
++  #if 1 /*ctc*/
++	.options = 0,
++  #else
+ 	.options = NAND_BBT_SCAN2NDPAGE,
++  #endif
+ 	.offs = 5,
+ 	.len = 1,
+ 	.pattern = scan_ff_pattern
+ };
+ 
+ static struct nand_bbt_descr largepage_flashbased = {
++  #if 1 /*ctc*/
++	.options = 0,
++  #else
+ 	.options = NAND_BBT_SCAN2NDPAGE,
++  #endif
+ 	.offs = 0,
+ 	.len = 2,
+ 	.pattern = scan_ff_pattern
+@@ -1120,7 +1169,11 @@ static struct nand_bbt_descr largepage_flashbased = {
+ static uint8_t scan_agand_pattern[] = { 0x1C, 0x71, 0xC7, 0x1C, 0x71, 0xC7 };
+ 
+ static struct nand_bbt_descr agand_flashbased = {
++  #if 1 /*ctc*/
++	.options = 0,
++  #else
+ 	.options = NAND_BBT_SCANEMPTY | NAND_BBT_SCANALLPAGES,
++  #endif
+ 	.offs = 0x20,
+ 	.len = 6,
+ 	.pattern = scan_agand_pattern
+@@ -1128,8 +1181,13 @@ static struct nand_bbt_descr agand_flashbased = {
+ 
+ /* Generic flash bbt decriptors
+ */
+-static uint8_t bbt_pattern[] = {'B', 'b', 't', '0' };
+-static uint8_t mirror_pattern[] = {'1', 't', 'b', 'B' };
++#if 1 /*ctc*/
++ static uint8_t bbt_pattern[] = {'A', 'R', 'C', 'A' };
++ static uint8_t mirror_pattern[] = {'a', 'c', 'r', 'a' };
++#else
++ static uint8_t bbt_pattern[] = {'B', 'b', 't', '0' };
++ static uint8_t mirror_pattern[] = {'1', 't', 'b', 'B' };
++#endif
+ 
+ static struct nand_bbt_descr bbt_main_descr = {
+ 	.options = NAND_BBT_LASTBLOCK | NAND_BBT_CREATE | NAND_BBT_WRITE
+diff --git a/drivers/mtd/spi/Makefile b/drivers/mtd/spi/Makefile
+old mode 100644
+new mode 100755
+diff --git a/drivers/mtd/spi/mxic.c b/drivers/mtd/spi/mxic.c
+old mode 100644
+new mode 100755
+index c604f54..db9db81
+--- a/drivers/mtd/spi/mxic.c
++++ b/drivers/mtd/spi/mxic.c
+@@ -108,6 +108,15 @@ static const struct mxic_spi_flash_params mxic_spi_flash_table[] = {
+ 		  .nr_blocks             = 128,
+ 		  .name                  = "MX25L6405D",
+ 	 },
++	{
++		.idcode1		= 0x20,
++		.idcode2                = 0x13,
++		.l2_page_size		= 8,
++		.pages_per_sector	= 16,
++		.sectors_per_block	= 16,
++		.nr_blocks		= 8,
++		.name			= "MX25L4006E",
++	},
+ };
+ 
+ 
+diff --git a/drivers/mtd/spi/spi_flash.c b/drivers/mtd/spi/spi_flash.c
+old mode 100644
+new mode 100755
+diff --git a/drivers/mtd/spi/winbond.c b/drivers/mtd/spi/winbond.c
+old mode 100644
+new mode 100755
+index b8da923..cda471a
+--- a/drivers/mtd/spi/winbond.c
++++ b/drivers/mtd/spi/winbond.c
+@@ -4,6 +4,7 @@
+  * Licensed under the GPL-2 or later.
+  */
+ 
++//#define DEBUG
+ #include <common.h>
+ #include <malloc.h>
+ #include <spi_flash.h>
+@@ -27,6 +28,7 @@
+ #define WINBOND_ID_W25X16		0x3015
+ #define WINBOND_ID_W25X32		0x3016
+ #define WINBOND_ID_W25X64		0x3017
++#define WINBOND_ID_W25Q40BV		0x3013
+ 
+ #define WINBOND_SR_WIP		(1 << 0)	/* Write-in-Progress */
+ 
+@@ -77,6 +79,15 @@ static const struct winbond_spi_flash_params winbond_spi_flash_table[] = {
+ 		.nr_blocks		= 128,
+ 		.name			= "W25X64",
+ 	},
++	{
++		.id			= WINBOND_ID_W25Q40BV,
++		.l2_page_size		= 8,
++		.pages_per_sector	= 16,
++		.sectors_per_block	= 16,
++		.nr_blocks		= 8,
++		.name			= "W25Q40BV",
++	},
++
+ };
+ 
+ static int winbond_wait_ready(struct spi_flash *flash, unsigned long timeout)
+diff --git a/drivers/net/vr9_sw.c b/drivers/net/vr9_sw.c
+old mode 100644
+new mode 100755
+index ad8fed7..692ab54
+--- a/drivers/net/vr9_sw.c
++++ b/drivers/net/vr9_sw.c
+@@ -587,6 +587,10 @@ static void vr9_sw_chip_init()
+ 	 
+ #ifdef CONFIG_ENABLE_DCDC
+     config_dcdc(0x7f);
++#else // ctc
++	REG8(PDI_DCDC_CONF_TEST_ANA) = 0x78;
++	REG8(PDI_DCDC_CONF_TEST_DIG) = 0x00;
++	REG8(PDI_DCDC_GENERAL) = 0x88;
+ #endif
+ 	 	
+ #if (CONFIG_VR9_SW_PORT_2 | CONFIG_VR9_SW_PORT_3 | CONFIG_VR9_SW_PORT_4 | CONFIG_VR9_SW_PORT_5b)
+@@ -690,7 +694,8 @@ static void vr9_sw_chip_init()
+     *BSP_GPIO_P2_ALTSEL1 |=0x2000;
+     *BSP_GPIO_P2_DIR |= (0x2000);
+     *BSP_GPIO_P2_DIR |= (0x2000);  
+-#else	 /*CONFIG_GPHY_SHIFT_REGISTER*/											
++#else
++  #ifdef CONFIG_GPHY_SHIFT_REGISTER /* ctc */
+ 	  /*enable led for gphy link status*/
+ 	  *(BSP_GPIO_P0_DIR) = (*BSP_GPIO_P0_DIR)|(0x070);
+ 	  *(BSP_GPIO_P0_ALTSEL0) = ((*BSP_GPIO_P0_ALTSEL0)|(0x70));
+@@ -699,6 +704,7 @@ static void vr9_sw_chip_init()
+ 							  
+       *BSP_LED_CON1 = 0x81a38007; // all LEDs enable, software update mode, FPI clock for shifting, no delay
+ 	  *BSP_LED_CON0 = 0x3f000000; // software update
++  #endif
+ #endif					 
+ 
+ 	  asm("sync");
+@@ -904,6 +910,9 @@ static void vr9_sw_chip_init()
+ 		REG32(VR9_ETHSW_BM_FSQM_GCTRL) &= (0xFD);
+ 		REG32(VR9_ETHSW_BM_GCTRL) |= (0x01);
+ 		REG32(VR9_ETHSW_BM_GCTRL) &= (0xFFFE);
++	  #if 1 // ctc
++		REG32(VR9_ETHSW_BM_QUEUE_GCTRL) = (0x00518);
++	  #endif
+ 
+         /*Fix switch MAC drop bug*/ 
+         REG32(ADR_ETHSW_PCE_PDI_PCE_TBL_KEY_0) = 0xf;
+diff --git a/include/cmd_upgrade.h b/include/cmd_upgrade.h
+old mode 100644
+new mode 100755
+index 584f277..17391fd
+--- a/include/cmd_upgrade.h
++++ b/include/cmd_upgrade.h
+@@ -32,8 +32,13 @@ struct conf_header {
+ //509061:tc.chen end
+ 
+ enum ExpandDir { FORWARD = 0, BACKWARD = 1 };
+-#define MAX_PARTITION	10
+-#define MAX_DATABLOCK	16
++#if 1 //ctc
++ #define MAX_PARTITION	20
++ #define MAX_DATABLOCK	20
++#else
++ #define MAX_PARTITION	10
++ #define MAX_DATABLOCK	16
++#endif
+ 
+ #define UBOOTCONFIG_COPY_HEADER	"123456789ABCDEF"
+ 
+diff --git a/include/configs/lq_extra_env.h b/include/configs/lq_extra_env.h
+old mode 100644
+new mode 100755
+index bfca07a..373bb51
+--- a/include/configs/lq_extra_env.h
++++ b/include/configs/lq_extra_env.h
+@@ -1,76 +1,132 @@
+-  "mem="CONFIG_MEM"\0"                              
+-  "phym="CONFIG_PHYM"\0"                            
+-  "ipaddr=" CONFIG_IP_ADDRESS "\0"                  
+-  "serverip=" CONFIG_SERVER_IP_ADDRESS "\0"         
+-  "ethaddr=" CONFIG_ETHERNET_ADDRESS "\0"           
+-  "netdev=" CONFIG_ETHERNET_DEVICE "\0"             
+-  "console="CONFIG_CONSOLE"\0"                      
+-  "baudrate=" CONFIG_ASC_BAUDRATE "\0"              
+-  "tftppath="CONFIG_TFTPPATH"\0"                    
+-  "loadaddr=" CONFIG_TFTP_LOAD_ADDRESS "\0"         
+-  "rootpath="CONFIG_ROOT_PATH "\0"                  
+-  "rootfsmtd="CONFIG_ROOTFSMTD"\0"                  
+-  "nfsargs= "CONFIG_NFSARGS"\0"                     
+-  "ramargs="CONFIG_RAMARGS"\0"                      
+-  "addip="CONFIG_ADDIP"\0"                          
+-  "addmisc="CONFIG_ADDMISC" \0"                     
+-  "flash_nfs="CONFIG_FLASH_NFS"\0"                  
+-  "net_nfs="CONFIG_NET_NFS"\0"                      
+-  "net_flash="CONFIG_NET_FLASH"\0"                  
+-  "net_ram="CONFIG_NET_RAM"\0"                      
+-  "u-boot="CONFIG_U_BOOT"\0"                        
+-  "rootfs="CONFIG_ROOTFS"\0"                        
+-  "firmware="CONFIG_FIRMWARE"\0"                    
+-  "fullimage="CONFIG_FULLIMAGE"\0"                  
+-  "totalimage="CONFIG_TOTALIMAGE"\0"                
+-  "load=tftp $(loadaddr) $(u-boot)\0"               
+-  "update=protect off 1:0-2;era 1:0-2;cp.b $(loadaddr) B0000000 $(filesize)\0"  
+-  "flashargs="CONFIG_FLASHARGS"\0"                  
+-  "flash_flash="CONFIG_FLASH_FLASH"\0"              
+-#ifdef CONFIG_BOOT_FROM_NAND  
+-  "update_nandboot="CONFIG_UPDATE_NANDBOOT"\0"
+-#endif
+-  "update_uboot="CONFIG_UPDATE_UBOOT"\0"            
+-  "update_kernel="CONFIG_UPDATE_KERNEL"\0"          
+-  "update_rootfs="CONFIG_UPDATE_ROOTFS"\0"          
+-  "update_firmware="CONFIG_UPDATE_FIRMWARE"\0"      
+-  "update_fullimage="CONFIG_UPDATE_FULLIMAGE"\0"    
+-  "update_totalimage="CONFIG_UPDATE_TOTALIMAGE"\0"  
+-#ifndef CONFIG_ENV_IS_NOWHERE 
+-  "reset_uboot_config="CONFIG_RESET_UBOOT_CONFIG"\0" 
+-  "reset_ddr_config="CONFIG_RESET_DDR_CONFIG"\0" 
+-  "mtdparts="CONFIG_MTDPARTS"\0"                     
+-  IFX_CFG_FLASH_PARTITIONS_INFO   
+-  "flash_end=" MK_STR(IFX_CFG_FLASH_END_ADDR) "\0"   
+-  IFX_CFG_FLASH_DATA_BLOCKS_INFO  
+-  "f_uboot_addr=" MK_STR(IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR) "\0"      
+-  "f_uboot_size=" MK_STR(IFX_CFG_FLASH_UBOOT_IMAGE_SIZE) "\0"            
+-  "f_ubootconfig_addr=" MK_STR(IFX_CFG_FLASH_UBOOT_CFG_START_ADDR) "\0"  
+-  "f_ubootconfig_size=" MK_STR(IFX_CFG_FLASH_UBOOT_CFG_SIZE) "\0"        
+-  "f_ubootconfig_end=" MK_STR(IFX_CFG_FLASH_UBOOT_CFG_END_ADDR) "\0"     
+-  "f_kernel_addr=" MK_STR(IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR) "\0"    
+-  "f_kernel_size=" MK_STR(IFX_CFG_FLASH_KERNEL_IMAGE_SIZE) "\0"          
+-  "f_kernel_end=" MK_STR(IFX_CFG_FLASH_KERNEL_IMAGE_END_ADDR) "\0"       
+-  "f_rootfs_addr=" MK_STR(IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR) "\0"    
+-  "f_rootfs_size=" MK_STR(IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE) "\0"          
+-  "f_rootfs_end=" MK_STR(IFX_CFG_FLASH_ROOTFS_IMAGE_END_ADDR) "\0"       
+-#ifndef CONFIG_FIRMWARE_IN_ROOTFS  
+-  "f_firmware_addr=" MK_STR(IFX_CFG_FLASH_FIRMWARE_IMAGE_START_ADDR) "\0" 
+-  "f_firmware_size=" MK_STR(IFX_CFG_FLASH_FIRMWARE_IMAGE_SIZE) "\0"       
+-#endif
+-  "f_sysconfig_addr=" MK_STR(IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR) "\0"    
+-  "f_sysconfig_size=" MK_STR(IFX_CFG_FLASH_SYSTEM_CFG_SIZE) "\0"          
+-  "f_fwdiag_addr=" MK_STR(IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR) "\0"    
+-  "f_fwdiag_size=" MK_STR(IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE) "\0"          
+-  "f_calibration_addr= " MK_STR(IFX_CFG_FLASH_CALIBRATION_START_ADDR) "\0"  
+-  "f_calibration_size=" MK_STR(IFX_CFG_FLASH_CALIBRATION_CFG_SIZE) "\0"   
+-  "f_ddrconfig_addr=" MK_STR(IFX_CFG_FLASH_DDR_CFG_START_ADDR) "\0"       
+-  "f_ddrconfig_size=" MK_STR(IFX_CFG_FLASH_DDR_CFG_SIZE) "\0"             
+-  "f_ddrconfig_end=" MK_STR(IFX_CFG_FLASH_DDR_CFG_END_ADDR) "\0"          
+-#ifdef CONFIG_OVERLAY
+-  "f_overlay_addr=" MK_STR(IFX_CFG_FLASH_OVERLAY_IMAGE_START_ADDR) "\0"       
+-  "f_overlay_size=" MK_STR(IFX_CFG_FLASH_OVERLAY_IMAGE_SIZE) "\0"             
+-  "f_overlay_end=" MK_STR(IFX_CFG_FLASH_OVERLAY_IMAGE_END_ADDR) "\0"   
+-#endif
+-#endif
+-  "" 
++  "mem=" CONFIG_MEM "\0"
++  "phym=" CONFIG_PHYM "\0"
++  "ipaddr=" CONFIG_IP_ADDRESS "\0"
++  "serverip=" CONFIG_SERVER_IP_ADDRESS "\0"
++  "ethaddr=" CONFIG_ETHERNET_ADDRESS "\0"
++  "netdev=" CONFIG_ETHERNET_DEVICE "\0"
++  "console=" CONFIG_CONSOLE "\0"
++  "baudrate=" CONFIG_ASC_BAUDRATE "\0"
++  "tftppath=" CONFIG_TFTPPATH "\0"
++  "loadaddr=" CONFIG_TFTP_LOAD_ADDRESS "\0"
++  "rootpath=" CONFIG_ROOT_PATH "\0"
++  "rootfsmtd=" CONFIG_ROOTFSMTD "\0"
++#if 0
++  "nfsargs= " CONFIG_NFSARGS "\0"
++  "ramargs=" CONFIG_RAMARGS "\0"
++#endif
++  "addip=" CONFIG_ADDIP "\0"
++  "addmisc=" CONFIG_ADDMISC "\0"
++#if 0
++  "flash_nfs=" CONFIG_FLASH_NFS "\0"
++  "net_nfs=" CONFIG_NET_NFS "\0"
++  "net_flash=" CONFIG_NET_FLASH "\0"
++  "net_ram=" CONFIG_NET_RAM "\0"
++#endif
++  "u-boot=" CONFIG_U_BOOT "\0"
++  "rootfs=" CONFIG_ROOTFS "\0"
++#ifndef CONFIG_FIRMWARE_IN_ROOTFS
++  "firmware=" CONFIG_FIRMWARE "\0"
++#endif
++  "fullimage=" CONFIG_FULLIMAGE "\0"
++#ifdef CONFIG_JFFS2IMAGE
++  "jffs2image=" CONFIG_JFFS2IMAGE "\0"
++#endif
++  "totalimage=" CONFIG_TOTALIMAGE "\0"
++#if 0
++  "load=tftp $(loadaddr) $(u-boot)\0"
++  "update=protect off 1:0-2;era 1:0-2;cp.b $(loadaddr) B0000000 $(filesize)\0"
++#endif
++  "flashargs=" CONFIG_FLASHARGS "\0"
++  "flash_flash=" CONFIG_FLASH_FLASH "\0"
++#ifdef CONFIG_BOOT_FROM_NAND
++  "update_nandboot=" CONFIG_UPDATE_NANDBOOT "\0"
++#endif
++  "update_uboot=" CONFIG_UPDATE_UBOOT "\0"
++  "update_kernel=" CONFIG_UPDATE_KERNEL "\0"
++  "update_rootfs=" CONFIG_UPDATE_ROOTFS "\0"
++#ifndef CONFIG_FIRMWARE_IN_ROOTFS
++  "update_firmware=" CONFIG_UPDATE_FIRMWARE "\0"
++#endif
++  "update_fullimage=" CONFIG_UPDATE_FULLIMAGE "\0"
++#if 0
++  "update_totalimage=" CONFIG_UPDATE_TOTALIMAGE "\0"
++#endif
++#ifdef CONFIG_UPDATE_SYSCONFIG
++  "update_sysconfig=" CONFIG_UPDATE_SYSCONFIG "\0"
++#endif
++#ifndef CONFIG_ENV_IS_NOWHERE
++#if 0
++  "reset_ddr_config=prot off " MK_STR(IFX_CFG_FLASH_DDR_CFG_START_ADDR) " \
++  "MK_STR(IFX_CFG_FLASH_DDR_CFG_END_ADDR)";\
++  erase " MK_STR(IFX_CFG_FLASH_DDR_CFG_START_ADDR) " " MK_STR(IFX_CFG_FLASH_DDR_CFG_END_ADDR) "\0"
++#endif
++  "mtdparts=" CONFIG_MTDPARTS "\0"
++#ifdef CONFIG_BOOT_FROM_NOR  
++  "reset_uboot_config=prot off $(f_ubootconfig_addr) +$(f_ubootconfig_size); erase $(f_ubootconfig_addr) +$(f_ubootconfig_size)\0"
++#elif defined(CONFIG_BOOT_FROM_SPI)
++  "reset_uboot_config=sf probe " MK_STR(CONFIG_ENV_SPI_CS) "; sf erase $(f_ubootconfig_addr) $(f_ubootconfig_size)\0" 
++#elif defined(CONFIG_BOOT_FROM_NAND)
++  "reset_uboot_config=nand erase $(f_ubootconfig_addr) $(f_ubootconfig_size)\0" 
++#endif
++  IFX_CFG_FLASH_PARTITIONS_INFO
++  "flash_end=" MK_STR(IFX_CFG_FLASH_END_ADDR) "\0"
++  IFX_CFG_FLASH_DATA_BLOCKS_INFO
++  "f_uboot_addr=" MK_STR(IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR) "\0"
++  "f_uboot_size=" MK_STR(IFX_CFG_FLASH_UBOOT_IMAGE_SIZE) "\0"
++  "f_ubootconfig_addr=" MK_STR(IFX_CFG_FLASH_UBOOT_CFG_START_ADDR) "\0"
++  "f_ubootconfig_size=" MK_STR(IFX_CFG_FLASH_UBOOT_CFG_SIZE) "\0"
++  "f_ubootconfig_end=" MK_STR(IFX_CFG_FLASH_UBOOT_CFG_END_ADDR) "\0"
++  "f_kernel_addr=" MK_STR(IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR) "\0"
++  "f_kernel_size=" MK_STR(IFX_CFG_FLASH_KERNEL_IMAGE_SIZE) "\0"
++  "f_kernel_end=" MK_STR(IFX_CFG_FLASH_KERNEL_IMAGE_END_ADDR) "\0"
++  "f_rootfs_addr=" MK_STR(IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR) "\0"
++  "f_rootfs_size=" MK_STR(IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE) "\0"
++  "f_rootfs_end=" MK_STR(IFX_CFG_FLASH_ROOTFS_IMAGE_END_ADDR) "\0"
++#ifdef CONFIG_DUAL_IMAGE
++  "f_kernel2_addr=" MK_STR(IFX_CFG_FLASH_KERNEL2_IMAGE_START_ADDR) "\0"
++  "f_kernel2_size=" MK_STR(IFX_CFG_FLASH_KERNEL2_IMAGE_SIZE) "\0"
++  "f_kernel2_end=" MK_STR(IFX_CFG_FLASH_KERNEL2_IMAGE_END_ADDR) "\0"
++  "f_rootfs2_addr=" MK_STR(IFX_CFG_FLASH_ROOTFS2_IMAGE_START_ADDR) "\0"
++  "f_rootfs2_size=" MK_STR(IFX_CFG_FLASH_ROOTFS2_IMAGE_SIZE) "\0"
++  "f_rootfs2_end=" MK_STR(IFX_CFG_FLASH_ROOTFS2_IMAGE_END_ADDR) "\0"
++  "rootfsmtd2="CONFIG_ROOTFSMTD2"\0"
++  "flashargs2=" CONFIG_FLASHARGS2 "\0"
++  "flash_flash2=" CONFIG_FLASH_FLASH2 "\0"
++#endif
++#ifdef IFX_CFG_FLASH_VOICE_MAIL_BLOCK_NAME
++  "f_voicemail_addr=" MK_STR(IFX_CFG_FLASH_VOICE_MAIL_START_ADDR) "\0"
++  "f_voicemail_size=" MK_STR(IFX_CFG_FLASH_VOICE_MAIL_SIZE) "\0"
++  "f_voicemail_end=" MK_STR(IFX_CFG_FLASH_VOICE_MAIL_END_ADDR) "\0"
++#endif
++#ifndef CONFIG_FIRMWARE_IN_ROOTFS
++  "f_firmware_addr=" MK_STR(IFX_CFG_FLASH_FIRMWARE_IMAGE_START_ADDR) "\0"
++  "f_firmware_size=" MK_STR(IFX_CFG_FLASH_FIRMWARE_IMAGE_SIZE) "\0"
++#endif
++  "f_sysconfig_addr=" MK_STR(IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR) "\0"
++  "f_sysconfig_size=" MK_STR(IFX_CFG_FLASH_SYSTEM_CFG_SIZE) "\0"
++  "f_fwdiag_addr=" MK_STR(IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR) "\0"
++  "f_fwdiag_size=" MK_STR(IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE) "\0"
++#if 0
++  "f_calibration_addr= " MK_STR(IFX_CFG_FLASH_CALIBRATION_START_ADDR) "\0"
++  "f_calibration_size=" MK_STR(IFX_CFG_FLASH_CALIBRATION_CFG_SIZE) "\0"
++#endif
++  "f_ddrconfig_addr=" MK_STR(IFX_CFG_FLASH_DDR_CFG_START_ADDR) "\0"
++  "f_ddrconfig_size=" MK_STR(IFX_CFG_FLASH_DDR_CFG_SIZE) "\0"
++#if defined(CONFIG_IN_SUPERTASK) && (CONFIG_IN_SUPERTASK==1)
++  "f_supertask1_addr=" MK_STR(IFX_CFG_FLASH_SUPERTASK1_START_ADDR) "\0"
++  "f_supertask1_size=" MK_STR(IFX_CFG_FLASH_SUPERTASK1_SIZE) "\0"
++  "f_uboot_bin_addr=" MK_STR(IFX_CFG_FLASH_UBOOT_BIN_START_ADDR) "\0"
++  "f_uboot_bin_size=" MK_STR(IFX_CFG_FLASH_UBOOT_BIN_SIZE) "\0"
++  "f_supertask2_addr=" MK_STR(IFX_CFG_FLASH_SUPERTASK2_START_ADDR) "\0"
++  "f_supertask2_size=" MK_STR(IFX_CFG_FLASH_SUPERTASK2_SIZE) "\0"
++#endif
++#endif //CONFIG_ENV_IS_NOWHERE
++#ifdef CONFIG_UPDATE_JFFS2IMAGE
++  "update_jffs2image=" CONFIG_UPDATE_JFFS2IMAGE "\0"
++#endif
++#ifdef CONFIG_UPDATE_FLASH
++  "update_flash=" CONFIG_UPDATE_FLASH "\0"
++#endif
++  "sw_version=" CONFIG_SW_VERSION "\0"
++  "hw_version=" CONFIG_HW_VERSION "\0"
++  "serial=" CONFIG_SERIAL "\0"
+diff --git a/include/configs/vr9.h b/include/configs/vr9.h
+old mode 100644
+new mode 100755
+index e54fe29..2d1061e
+--- a/include/configs/vr9.h
++++ b/include/configs/vr9.h
+@@ -86,6 +86,11 @@
+ #define CPU_CLOCK_RATE	150000000	/* default: 150 MHz clock for the MIPS core */
+ #endif
+ 
++#if 1 /* ctc */
++ #define CONFIG_BOOTDELAY	3	/* autoboot after 3 seconds	*/
++#else
++ #define CONFIG_BOOTDELAY	5	/* autoboot after 5 seconds	*/
++#endif
+ #define CONFIG_BAUDRATE		115200
+ 
+ 
+@@ -113,9 +118,13 @@
+ #define	CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)  /* Print Buffer Size */
+ #define	CONFIG_SYS_MAXARGS		32		/* max number of command args*/
+ 
+-#define CONFIG_SYS_MALLOC_LEN		4096*1024
+-
+-#define CONFIG_SYS_BOOTPARAMS_LEN	256*1024
++#if 0 /* ctc */
++  #define CONFIG_SYS_MALLOC_LEN		(4096*1024)
++  #define CONFIG_SYS_BOOTPARAMS_LEN	(256*1024)
++#else
++  #define CONFIG_SYS_MALLOC_LEN      ((4096+256)*1024)
++  #define CONFIG_SYS_BOOTPARAMS_LEN	(256*1024)
++#endif
+ 
+ 
+ /********************************************************************************************
+@@ -155,7 +164,11 @@
+ 
+ #define CONFIG_SYS_FLASH_CFI_WIDTH      FLASH_CFI_16BIT
+ 
+-#define CONFIG_EBU_ADDSEL0               0x10000031
++#if 1 /* ctc */
++ #define CONFIG_EBU_ADDSEL0               0x10000021 //0x10000031, ctc extend to 32MB
++#else
++ #define CONFIG_EBU_ADDSEL0               0x10000031
++#endif
+ #define CONFIG_EBU_BUSCON0               0x0001D7FF
+ 
+ 
+@@ -220,21 +233,45 @@
+ #define IFX_NAND_CTL_SETALE *EBU_NAND_CON |=1<<18;
+ 
+ 
+-#define CONFIG_SYS_NAND_PAGE_SIZE   ( 2<<10 )   /* NAND chip page size        */
+-#define CONFIG_SYS_NAND_BLOCK_SIZE  ( 256 << 10 ) /* NAND chip block size       */
++#if 1 //ctc
++ #define CONFIG_SYS_NAND_PAGE_SIZE   CONFIG_NAND_PAGE_SIZE   /* NAND chip page size        */
++ #if CONFIG_SYS_NAND_PAGE_SIZE <= 512
++  #define CONFIG_SYS_NAND_BLOCK_SIZE  ( CONFIG_SYS_NAND_PAGE_SIZE << 5 ) /* NAND chip block size       */
++ #else
++  #if CONFIG_NAND_FLASH_SIZE>=128
++  #define CONFIG_SYS_NAND_BLOCK_SIZE  0x20000 /* NAND chip block size, some flashes are 0x40000       */
++  #endif
++ #endif
++#else
++ #define CONFIG_SYS_NAND_PAGE_SIZE   ( 2<<10 )   /* NAND chip page size        */
++ #define CONFIG_SYS_NAND_BLOCK_SIZE  ( 256 << 10 ) /* NAND chip block size       */
++#endif
+ #define CONFIG_SYS_NAND_PAGE_COUNT  (CONFIG_SYS_NAND_BLOCK_SIZE / CONFIG_SYS_NAND_PAGE_SIZE)
+                         /* NAND chip page count       */
+-#define CONFIG_SYS_NAND_BAD_BLOCK_POS   0       /* Location of bad block marker*/
++#if CONFIG_SYS_NAND_PAGE_SIZE <= 512 //ctc
++ #define CONFIG_SYS_NAND_BAD_BLOCK_POS   5       /* Location of bad block marker*/
++#else
++ #define CONFIG_SYS_NAND_BAD_BLOCK_POS   0       /* Location of bad block marker*/
++#endif
+ #define CONFIG_SYS_NAND_5_ADDR_CYCLE            /* Fifth addr used (<=128MB)  */
+ 
+-#define CONFIG_SYS_NAND_ECCSIZE 256
+-#define CONFIG_SYS_NAND_ECCBYTES    3
+-#define CONFIG_SYS_NAND_ECCSTEPS    (CONFIG_SYS_NAND_PAGE_SIZE / CONFIG_SYS_NAND_ECCSIZE)
+-#define CONFIG_SYS_NAND_OOBSIZE 64
+-#define CONFIG_SYS_NAND_ECCTOTAL    (CONFIG_SYS_NAND_ECCBYTES * CONFIG_SYS_NAND_ECCSTEPS)
+-#define CONFIG_SYS_NAND_ECCPOS      {40, 41, 42, 43, 44, 45, 46, 47, \
+-					                 48, 49, 50, 51, 52, 53, 54, 55, \
++#if CONFIG_SYS_NAND_PAGE_SIZE <= 512 //ctc
++ #define CONFIG_SYS_NAND_ECCSIZE 512
++ #define CONFIG_SYS_NAND_ECCBYTES    2
++ #define CONFIG_SYS_NAND_ECCSTEPS    (CONFIG_SYS_NAND_PAGE_SIZE / CONFIG_SYS_NAND_ECCSIZE)
++ #define CONFIG_SYS_NAND_OOBSIZE 16
++ #define CONFIG_SYS_NAND_ECCTOTAL    (CONFIG_SYS_NAND_ECCBYTES * CONFIG_SYS_NAND_ECCSTEPS)
++ #define CONFIG_SYS_NAND_ECCPOS      {5, 6}
++#else
++ #define CONFIG_SYS_NAND_ECCSIZE 256
++ #define CONFIG_SYS_NAND_ECCBYTES    3
++ #define CONFIG_SYS_NAND_ECCSTEPS    (CONFIG_SYS_NAND_PAGE_SIZE / CONFIG_SYS_NAND_ECCSIZE)
++ #define CONFIG_SYS_NAND_OOBSIZE 64
++ #define CONFIG_SYS_NAND_ECCTOTAL    (CONFIG_SYS_NAND_ECCBYTES * CONFIG_SYS_NAND_ECCSTEPS)
++ #define CONFIG_SYS_NAND_ECCPOS      {40, 41, 42, 43, 44, 45, 46, 47, \
++					                  48, 49, 50, 51, 52, 53, 54, 55, \
+     				                  56, 57, 58, 59, 60, 61, 62, 63}
++#endif
+ 														  
+ 
+ 
+@@ -243,32 +280,42 @@
+ #define CONFIG_SYS_NAND_U_BOOT_START CONFIG_BOOTSTRAP_TEXT_BASE
+ #define CONFIG_SYS_NAND_U_BOOT_OFFS  16384
+ 
+-#ifdef CONFIG_BOOT_FROM_NOR
+-#define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0xB000FFE8
+-#define IFX_CFG_FLASH_DDR_CFG_SIZE            24
+-#define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0xb000ffff
++#if defined(CONFIG_BOOT_FROM_NOR)
++ #if defined(CONFIG_NAND_FLASH)
++  #define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0xB003FFE8
++  #define IFX_CFG_FLASH_DDR_CFG_SIZE            24
++  #define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0xb003ffff
++ #else
++  #define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0xB001FFE8
++  #define IFX_CFG_FLASH_DDR_CFG_SIZE            24
++  #define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0xb001ffff
++ #endif
+ #elif defined(CONFIG_BOOT_FROM_SPI)
+ #define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0x0000FFE8
+ #define IFX_CFG_FLASH_DDR_CFG_SIZE            24
+ #define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x0000ffff
+ #define CONFIG_ENV_SECT_SIZE 0x1000
+ #else /*CONFIG_BOOT_FRON_NAND*/
+-#define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0x00003fe8
++#define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0x00003FE8 //(CONFIG_SYS_NAND_U_BOOT_SIZE-24)
+ #define IFX_CFG_FLASH_DDR_CFG_SIZE            24
+-#define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x00003fff
++#define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x00003fff //(CONFIG_SYS_NAND_U_BOOT_SIZE-1)
+ #endif
+ 
+ /* Address and size of Primary Environment Sector	*/
+ #define CONFIG_ENV_OFFSET		IFX_CFG_FLASH_UBOOT_CFG_START_ADDR
+ #define CONFIG_ENV_ADDR		  IFX_CFG_FLASH_UBOOT_CFG_START_ADDR
+-#define CONFIG_ENV_SIZE		  IFX_CFG_FLASH_UBOOT_CFG_SIZE
++#ifdef IFX_CFG_FLASH_UBOOT_CFG_REAL_SIZE /* ctc */
++  #define CONFIG_ENV_SIZE		  IFX_CFG_FLASH_UBOOT_CFG_REAL_SIZE
++#else
++  #define CONFIG_ENV_SIZE		  IFX_CFG_FLASH_UBOOT_CFG_SIZE
++#endif
+ 
+ #define CONFIG_TUNING_STATUS 0xBE22FF20 
+ #define CONFIG_TUNING_SP     0xBE22FF00 
+ 
+ 
+ #define MTDIDS_DEFAULT      "nand0=ifx_nand"
+-#define MTDPARTS_DEFAULT    "mtdparts=ifx_nand:512k(uboot),10m(rootfs),-(res)"
++#define MTDPARTS_DEFAULT    "mtdparts=ifx_nand:256k(uboot),10m(rootfs),-(res)"
+ 
+ 
+ #endif	/* __CONFIG_H */
+diff --git a/include/configs/vr9_cfg.h b/include/configs/vr9_cfg.h
+old mode 100644
+new mode 100755
+index d90aa60..b12b055
+--- a/include/configs/vr9_cfg.h
++++ b/include/configs/vr9_cfg.h
+@@ -44,28 +44,32 @@
+ #define IFX_CONFIG_FLASH_SIZE 4
+ #elif CONFIG_NOR_FLASH_8M
+ #define IFX_CONFIG_FLASH_SIZE 8
++#elif CONFIG_NOR_FLASH_16M
++#define IFX_CONFIG_FLASH_SIZE 16
++#elif CONFIG_NOR_FLASH_32M
++#define IFX_CONFIG_FLASH_SIZE 32
+ #endif
+ 
+ #ifndef IFX_CONFIG_FLASH_SIZE
+-#define IFX_CONFIG_FLASH_SIZE 4
++#define IFX_CONFIG_FLASH_SIZE 8
+ #endif
+ 
+ #ifdef CONFIG_FIRMWARE_IN_ROOTFS
+ //2MB flash partition
+ #if (IFX_CONFIG_FLASH_SIZE == 2)
+-#define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
++  #define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
+         "part0_begin=0xB0000000\0"                                      \
+         "part1_begin=0xB0020000\0"                                      \
+         "total_part=2\0"
+ 
+-#define IFX_CFG_FLASH_DATA_BLOCKS_INFO          \
+-  "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"  \
+-  "data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0" \
+-  "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0" \
+-  "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"   \
+-  "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"    \
+-  "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"  \
+-  "total_db=6\0"
++  #define IFX_CFG_FLASH_DATA_BLOCKS_INFO          \
++		"data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"  \
++		"data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0" \
++		"data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0" \
++		"data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"   \
++		"data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"    \
++		"data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"  \
++		"total_db=6\0"
+ 
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME          "uboot"
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR          0xB0000000
+@@ -152,18 +156,6 @@
+         "part1_begin=0xB0020000\0"                                      \
+         "total_part=2\0"
+ 
+-#ifdef CONFIG_OVERLAY
+-#define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
+-        "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"        \
+-        "data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"       \
+-        "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
+-        "data_block3=" IFX_CFG_FLASH_OVERLAY_IMAGE_BLOCK_NAME "\0"         \
+-        "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
+-        "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
+-        "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+-        "data_block7=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+-        "total_db=8\0"        
+-#else
+ #define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
+         "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"        \
+         "data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"       \
+@@ -171,54 +163,311 @@
+         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
+         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
+         "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+-        "data_block6=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+-        "total_db=7\0"
+-#endif
++        "total_db=6\0"
++
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR            0xB0000000
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_SIZE                  0
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_MTDBLOCK_NAME         "/dev/mtdblock0"
+ 
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME           "rootfs"
+-  #define IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR           0xB0020000
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR           0xB0040000
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE                 0
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock1"
+ 
+   #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME           "kernel"
+-#ifdef CONFIG_OVERLAY
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0xB078FFFF
+-#else
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0xB07DFFFF
+-#endif
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0xB07EDFFF
+   #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                 0
+-	
+-  #define IFX_CFG_FLASH_OVERLAY_IMAGE_BLOCK_NAME          "overlay"
+-  #define IFX_CFG_FLASH_OVERLAY_IMAGE_START_ADDR          0xB0790000
+-  #define IFX_CFG_FLASH_OVERLAY_IMAGE_SIZE                0x50000
+-  #define IFX_CFG_FLASH_OVERLAY_IMAGE_END_ADDR            0xB07DFFFF
+-	
++
+   #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME             "sysconfig"
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0xB07E0000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0xB07EE000
+   #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x10000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0xB07EFFFF
++  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0xB07FDFFF
+ 
+   #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME              "ubootconfig"
+-  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0xB07F0000
++  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0xB07FE000
+   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0xB07F0FFF
++  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0xB07FEFFF
+ 
+   #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0xB07F1000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x1000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0xB07F1FFF
+-  
+-  #define IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME	      "calibration"
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_START_ADDR	      0xB07F2000
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_SIZE		          0x1000
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_END_ADDR		      0xB07F2FFF  
+-
+-  #define IFX_CFG_FLASH_END_ADDR                          0xB07FFFFF
+-
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0xB07FF000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x400
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0xB07FF3FF
++
++  #define IFX_CFG_FLASH_END_ADDR                         0xB07FFFFF
++
++  #define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME			"/dev/mtdblock1"
++  #define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_START_ADDR	IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR
++
++#elif (IFX_CONFIG_FLASH_SIZE == 16)
++
++ #if defined(CONFIG_IN_SUPERTASK) && (CONFIG_IN_SUPERTASK==1)
++
++	#define IFX_CFG_FLASH_PARTITIONS_INFO								\
++			"part0_begin=0xB0000000\0"									\
++			"part1_begin=0xB0020000\0"									\
++			"part2_begin=0xB0860000\0"									\
++			"part3_begin=0xB0880000\0"									\
++			"part4_begin=0xB0FA0000\0"									\
++			"part5_begin=0xB0FC0000\0"									\
++			"total_part=6\0"
++
++	#define IFX_CFG_FLASH_DATA_BLOCKS_INFO								\
++			"data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"	\
++			"data_block1=" IFX_CFG_FLASH_SUPERTASK1_BLOCK_NAME "\0"		\
++			"data_block2=" IFX_CFG_FLASH_UBOOT_BIN_BLOCK_NAME "\0"		\
++			"data_block3=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"	\
++			"data_block4=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"	\
++			"data_block5=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"		\
++			"data_block6=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"		\
++			"data_block7=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"	\
++			"data_block8=" IFX_CFG_FLASH_SUPERTASK2_BLOCK_NAME "\0"		\
++			"total_db=9\0"
++
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME		"uboot"
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR		0xB0000000
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_SIZE				0x00020000
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_MTDBLOCK_NAME		"/dev/mtdblock0"
++
++	#define IFX_CFG_FLASH_SUPERTASK1_BLOCK_NAME			"supertask1"
++	#define IFX_CFG_FLASH_SUPERTASK1_START_ADDR 		0xB0020000
++	#define IFX_CFG_FLASH_SUPERTASK1_SIZE				0x00840000
++	#define IFX_CFG_FLASH_SUPERTASK1_MTDBLOCK_NAME		"/dev/mtdblock1"
++
++	#define IFX_CFG_FLASH_UBOOT_BIN_BLOCK_NAME			"uboot_bin"
++	#define IFX_CFG_FLASH_UBOOT_BIN_START_ADDR			0xB0860000
++	#define IFX_CFG_FLASH_UBOOT_BIN_SIZE				0x00020000
++	#define IFX_CFG_FLASH_UBOOT_BIN_MTDBLOCK_NAME		"/dev/mtdblock2"
++
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME		"rootfs"
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR 		0xB0880000
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE				0x00720000
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME	"/dev/mtdblock3"
++
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME		"kernel"
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR		0xB0F9FFFF
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE				0
++
++	#define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME			"sysconfig"
++	#define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR			0xB0FA0000
++	#define IFX_CFG_FLASH_SYSTEM_CFG_SIZE				0x0001EC00
++	#define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR			0xB0FBEBFF
++	#define IFX_CFG_FLASH_SYSTEM_CFG_MTDBLOCK_NAME		"/dev/mtdblock4"
++
++	#define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME			"ubootconfig"
++	#define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR			0xB0FBEC00
++	#define IFX_CFG_FLASH_UBOOT_CFG_SIZE				0x00001000
++	#define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR			0xB0FBFBFF
++
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME		"fwdiag"
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR		0xB0FBFC00
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE			0x00000400
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR		0xB0FBFFFF
++
++	#define IFX_CFG_FLASH_SUPERTASK2_BLOCK_NAME			"supertask2"
++	#define IFX_CFG_FLASH_SUPERTASK2_START_ADDR 		0xB0FC0000
++	#define IFX_CFG_FLASH_SUPERTASK2_SIZE				0x00040000
++	#define IFX_CFG_FLASH_SUPERTASK2_MTDBLOCK_NAME		"/dev/mtdblock5"
++
++	#define IFX_CFG_FLASH_END_ADDR						0xB0FFFFFF
++
++	#define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME		IFX_CFG_FLASH_SYSTEM_CFG_MTDBLOCK_NAME
++	#define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_START_ADDR	IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR
++
++  #else
++
++	#define IFX_CFG_FLASH_PARTITIONS_INFO								\
++			"part0_begin=0xB0000000\0"									\
++			"part1_begin=0xB0040000\0"									\
++			"part2_begin=0xB0D00000\0"									\
++			"part3_begin=0xB0F00000\0"									\
++			"part4_begin=0xB0FC0000\0"									\
++			"part5_begin=0xB0FE0000\0"									\
++			"total_part=6\0"
++
++	#define IFX_CFG_FLASH_DATA_BLOCKS_INFO								\
++			"data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"	\
++			"data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"	\
++			"data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"	\
++			"data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"		\
++			"data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"		\
++			"data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"	\
++			"total_db=6\0"
++
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME		"uboot"
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR		0xB0000000
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_SIZE				0x00040000
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_MTDBLOCK_NAME		"/dev/mtdblock0"
++
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME		"rootfs"
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR 		0xB0040000
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE				0x00CC0000
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME	"/dev/mtdblock1"
++
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME		"kernel"
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR		0xB0EFFFFF
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE				0x00200000
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_MTDBLOCK_NAME	"/dev/mtdblock2"
++
++	#define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME			"sysconfig"
++	#define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR			0xB0F00000
++	#define IFX_CFG_FLASH_SYSTEM_CFG_SIZE				0x000C0000
++	#define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR			0xB0FBFFFF
++	#define IFX_CFG_FLASH_SYSTEM_CFG_MTDBLOCK_NAME		"/dev/mtdblock3"
++
++	#define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME			"ubootconfig"
++	#define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR			0xB0FC0000
++	#define IFX_CFG_FLASH_UBOOT_CFG_SIZE				0x00020000
++	#define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR			0xB0FDFFFF
++	#define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAMEX		"/dev/mtdblock4"
++
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME		"fwdiag"
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR		0xB0FE0000
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE			0x00020000
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR		0xB0FFFFFF
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_MTDBLOCK_NAME	"/dev/mtdblock5"
++
++	#define IFX_CFG_FLASH_END_ADDR						0xB0FFFFFF
++
++	#define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME		IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAMEX
++	#define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_START_ADDR	IFX_CFG_FLASH_UBOOT_CFG_START_ADDR
++
++  #endif
++
++#elif (IFX_CONFIG_FLASH_SIZE == 32)
++
++  #if defined(CONFIG_IN_SUPERTASK) && (CONFIG_IN_SUPERTASK==1)
++
++	#define IFX_CFG_FLASH_PARTITIONS_INFO								\
++			"part0_begin=0xB0000000\0"									\
++			"part1_begin=0xB0020000\0"									\
++			"part2_begin=0xB0860000\0"									\
++			"part3_begin=0xB0880000\0"									\
++			"part4_begin=0xB0FA0000\0"									\
++			"part5_begin=0xB0FC0000\0"									\
++			"total_part=6\0"
++
++	#define IFX_CFG_FLASH_DATA_BLOCKS_INFO								\
++			"data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"	\
++			"data_block1=" IFX_CFG_FLASH_SUPERTASK1_BLOCK_NAME "\0"		\
++			"data_block2=" IFX_CFG_FLASH_UBOOT_BIN_BLOCK_NAME "\0"		\
++			"data_block3=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"	\
++			"data_block4=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"	\
++			"data_block5=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"		\
++			"data_block6=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"		\
++			"data_block7=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"	\
++			"data_block8=" IFX_CFG_FLASH_SUPERTASK2_BLOCK_NAME "\0"		\
++			"total_db=9\0"
++
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME		"uboot"
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR		0xB0000000
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_SIZE				0x00020000
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_MTDBLOCK_NAME		"/dev/mtdblock0"
++
++	#define IFX_CFG_FLASH_SUPERTASK1_BLOCK_NAME			"supertask1"
++	#define IFX_CFG_FLASH_SUPERTASK1_START_ADDR 		0xB0020000
++	#define IFX_CFG_FLASH_SUPERTASK1_SIZE				0x00840000
++	#define IFX_CFG_FLASH_SUPERTASK1_MTDBLOCK_NAME		"/dev/mtdblock1"
++
++	#define IFX_CFG_FLASH_UBOOT_BIN_BLOCK_NAME			"uboot_bin"
++	#define IFX_CFG_FLASH_UBOOT_BIN_START_ADDR			0xB0860000
++	#define IFX_CFG_FLASH_UBOOT_BIN_SIZE				0x00020000
++	#define IFX_CFG_FLASH_UBOOT_BIN_MTDBLOCK_NAME		"/dev/mtdblock2"
++
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME		"rootfs"
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR 		0xB0880000
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE				0x00720000
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME	"/dev/mtdblock3"
++
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME		"kernel"
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR		0xB0F9FFFF
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE				0
++
++	#define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME			"sysconfig"
++	#define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR			0xB0FA0000
++	#define IFX_CFG_FLASH_SYSTEM_CFG_SIZE				0x0001EC00
++	#define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR			0xB0FBEBFF
++	#define IFX_CFG_FLASH_SYSTEM_CFG_MTDBLOCK_NAME		"/dev/mtdblock4"
++
++	#define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME			"ubootconfig"
++	#define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR			0xB0FBEC00
++	#define IFX_CFG_FLASH_UBOOT_CFG_SIZE				0x00001000
++	#define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR			0xB0FBFBFF
++
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME		"fwdiag"
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR		0xB0FBFC00
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE			0x00000400
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR		0xB0FBFFFF
++
++	#define IFX_CFG_FLASH_SUPERTASK2_BLOCK_NAME			"supertask2"
++	#define IFX_CFG_FLASH_SUPERTASK2_START_ADDR 		0xB0FC0000
++	#define IFX_CFG_FLASH_SUPERTASK2_SIZE				0x01040000
++	#define IFX_CFG_FLASH_SUPERTASK2_MTDBLOCK_NAME		"/dev/mtdblock5"
++
++	#define IFX_CFG_FLASH_END_ADDR						0xB1FFFFFF
++
++	#define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME		IFX_CFG_FLASH_SYSTEM_CFG_MTDBLOCK_NAME
++	#define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_START_ADDR	IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR
++
++  #else
++
++	#define IFX_CFG_FLASH_PARTITIONS_INFO								\
++			"part0_begin=0xB0000000\0"									\
++			"part1_begin=0xB0040000\0"									\
++			"part2_begin=0xB1D00000\0"									\
++			"part3_begin=0xB1F00000\0"									\
++			"part4_begin=0xB1FC0000\0"									\
++			"part5_begin=0xB1FE0000\0"									\
++			"total_part=6\0"
++
++	#define IFX_CFG_FLASH_DATA_BLOCKS_INFO								\
++			"data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"	\
++			"data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"	\
++			"data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"	\
++			"data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"		\
++			"data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"		\
++			"data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"	\
++			"total_db=6\0"
++
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME		"uboot"
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR		0xB0000000
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_SIZE				0x00040000
++	#define IFX_CFG_FLASH_UBOOT_IMAGE_MTDBLOCK_NAME		"/dev/mtdblock0"
++
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME		"rootfs"
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR 		0xB0040000
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE				0x01CC0000
++	#define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME	"/dev/mtdblock1"
++
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME		"kernel"
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR		0xB1EFFFFF
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE				0x00200000
++	#define IFX_CFG_FLASH_KERNEL_IMAGE_MTDBLOCK_NAME	"/dev/mtdblock2"
++
++	#define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME			"sysconfig"
++	#define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR			0xB1F00000
++	#define IFX_CFG_FLASH_SYSTEM_CFG_SIZE				0x000C0000
++	#define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR			0xB1FBFFFF
++	#define IFX_CFG_FLASH_SYSTEM_CFG_MTDBLOCK_NAME		"/dev/mtdblock3"
++
++	#define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME			"ubootconfig"
++	#define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR			0xB1FC0000
++	#define IFX_CFG_FLASH_UBOOT_CFG_SIZE				0x00020000
++	#define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR			0xB1FDFFFF
++	#define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAMEX		"/dev/mtdblock4"
++
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME		"fwdiag"
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR		0xB1FE0000
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE			0x00020000
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR		0xB1FFFFFF
++	#define IFX_CFG_FLASH_FIRMWARE_DIAG_MTDBLOCK_NAME	"/dev/mtdblock5"
++
++	#define IFX_CFG_FLASH_END_ADDR						0xB1FFFFFF
++
++	#define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME		IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAMEX
++	#define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_START_ADDR	IFX_CFG_FLASH_UBOOT_CFG_START_ADDR
++
++  #endif
+ 
+ #else
+   #error "ERROR!! Define flash size first!"
+@@ -342,19 +591,6 @@
+         "part2_begin=0xB00A0000\0"                                      \
+         "total_part=3\0"
+ 
+-#ifdef CONFIG_OVERLAY
+-#define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
+-        "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"        \
+-        "data_block1=" IFX_CFG_FLASH_FIRMWARE_IMAGE_BLOCK_NAME "\0"     \
+-        "data_block2=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"       \
+-        "data_block3=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
+-        "data_block4=" IFX_CFG_FLASH_OVERLAY_IMAGE_BLOCK_NAME "\0"         \
+-        "data_block5=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
+-        "data_block6=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
+-        "data_block7=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+-        "data_block8=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+-        "total_db=9\0"
+-#else
+ #define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
+         "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"        \
+         "data_block1=" IFX_CFG_FLASH_FIRMWARE_IMAGE_BLOCK_NAME "\0"     \
+@@ -363,9 +599,8 @@
+         "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
+         "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
+         "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+-        "data_block7=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+-        "total_db=8\0"
+-#endif
++        "total_db=7\0"
++
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR            0xB0000000
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_SIZE                  0
+@@ -382,39 +617,25 @@
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock2"
+ 
+   #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME           "kernel"
+-#ifdef CONFIG_OVERLAY
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0xB078FFFF
+-#else
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0xB07DFFFF
+-#endif
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0xB07EDFFF
+   #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                 0
+ 
+-  #define IFX_CFG_FLASH_OVERLAY_IMAGE_BLOCK_NAME          "overlay"
+-  #define IFX_CFG_FLASH_OVERLAY_IMAGE_START_ADDR          0xB0790000
+-  #define IFX_CFG_FLASH_OVERLAY_IMAGE_SIZE                0x50000
+-  #define IFX_CFG_FLASH_OVERLAY_IMAGE_END_ADDR            0xB07DFFFF
+-
+   #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME             "sysconfig"
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0xB07E0000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0xB07EE000
+   #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x10000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0xB07EFFFF
++  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0xB07FDFFF
+ 
+   #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME              "ubootconfig"
+-  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0xB07F0000
++  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0xB07FE000
+   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0xB07F0FFF
++  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0xB07FEFFF
+ 
+   #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0xB07F1000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x1000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0xB07F1FFF
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0xB07FF000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x400
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0xB07FF3FF
+   
+-  #define IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME	      "calibration"
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_START_ADDR	      0xB07F2000
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_SIZE		          0x1000
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_END_ADDR		      0xB07F2FFF  
+-
+-  #define IFX_CFG_FLASH_END_ADDR                          0xB07FFFFF
++   #define IFX_CFG_FLASH_END_ADDR                          0xB07FFFFF
+ 
+ 
+ #else
+@@ -556,8 +777,7 @@
+         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
+         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
+         "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+-        "data_block6=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+-        "total_db=7\0"
++        "total_db=6\0"
+         
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME           "uboot"
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR           0x00000000
+@@ -569,29 +789,25 @@
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE                0
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME       "/dev/mtdblock1"
+ 
+- #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME           "kernel"
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0x003DFFFF
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                 0
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME          "kernel"
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR          0x003F5FFF  
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                0
+ 
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME             "sysconfig"
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0x003E0000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x10000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0x003EFFFF
++  #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME            "sysconfig"
++  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR            0x003F6000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                  0x8000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR              0x003FDFFF
+ 
+-  #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME              "ubootconfig"
+-  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0x003F0000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x003F0FFF
+ 
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x003F1000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x1000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x003F1FFF
+-  
+-  #define IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME	      "calibration"
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_START_ADDR	      0x003F2000
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_SIZE		          0x1000
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_END_ADDR		      0x003F2FFF  
++  #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME             "ubootconfig"
++  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR             0x003FE000
++  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                   0x1000
++  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR               0x003FEFFF
++
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME         "fwdiag"
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR         0x003FFE00
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE               0x0200
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR           0x003FFFFF
+ 
+   #define IFX_CFG_FLASH_END_ADDR                         0x003FFFFF
+ 
+@@ -608,8 +824,7 @@
+         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
+         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
+         "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+-        "data_block6=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+-        "total_db=7\0"
++        "total_db=6\0"
+ 
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR            0x00000000
+@@ -622,31 +837,28 @@
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock1"
+ 
+   #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME           "kernel"
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0x007DFFFF
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0x007EDFFF
+   #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                 0
+ 
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME             "sysconfig"
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0x007E0000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x10000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0x007EFFFF
++  #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME            "sysconfig"
++  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR            0x007EE000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                  0x10000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR              0x007FDFFF
+ 
+-  #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME              "ubootconfig"
+-  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0x007F0000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x007F0FFF
++  #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME             "ubootconfig"
++  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR             0x007FE000
++  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                   0x1000
++  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR               0x007FEFFF
++
++
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME         "fwdiag"
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR         0x007FF000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE               0x400
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR           0x007FFFFF
++
++  #define IFX_CFG_FLASH_END_ADDR                         0x007FFFFF
+ 
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x007F1000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x1000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x007F1FFF
+-  
+-  #define IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME	      "calibration"
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_START_ADDR	      0x007F2000
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_SIZE		          0x1000
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_END_ADDR		      0x007F2FFF  
+ 
+-  #define IFX_CFG_FLASH_END_ADDR                          0x007FFFFF
+-  
+ #else
+   #error "ERROR!! Define flash size first!"
+ #endif
+@@ -775,8 +987,7 @@
+         "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
+         "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
+         "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+-        "data_block7=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+-        "total_db=8\0"
++        "total_db=7\0"
+ 
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME           "uboot"
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR           0x00000000
+@@ -793,29 +1004,25 @@
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE                0
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME       "/dev/mtdblock2"
+ 
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME           "kernel"
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0x003DFFFF
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                 0
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME          "kernel"
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR          0x003F5FFF
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                0
+ 
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME             "sysconfig"
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0x003E0000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x10000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0x003EFFFF
++  #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME            "sysconfig"
++  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR            0x003F6000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                  0x8000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR              0x003FDFFF
+ 
+-  #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME              "ubootconfig"
+-  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0x003F0000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x003F0FFF
+ 
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x003F1000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x1000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x003F1FFF
+-  
+-  #define IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME	      "calibration"
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_START_ADDR	      0x003F2000
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_SIZE		          0x1000
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_END_ADDR		      0x003F2FFF  
++  #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME             "ubootconfig"
++  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR             0x003FE000
++  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                   0x1000
++  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR               0x003FEFFF
++
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME         "fwdiag"
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR         0x003FFE00
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE               0x0200
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR           0x003FFFFF
+ 
+   #define IFX_CFG_FLASH_END_ADDR                         0x003FFFFF
+ 
+@@ -834,8 +1041,7 @@
+         "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
+         "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
+         "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+-        "data_block7=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+-        "total_db=8\0"
++        "total_db=7\0"
+ 
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR            0x00000000
+@@ -852,31 +1058,28 @@
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE                 0
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock2"
+ 
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME           "kernel"
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0x007DFFFF
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                 0
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME          "kernel"
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR          0x007EDFFF
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                0
+ 
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME             "sysconfig"
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0x007E0000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x10000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0x007EFFFF
++  #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME            "sysconfig"
++  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR            0x007EE000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                  0x10000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR              0x007FDFFF
+ 
+-  #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME              "ubootconfig"
+-  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0x007F0000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x007F0FFF
++  #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME             "ubootconfig"
++  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR             0x007FE000
++  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                   0x1000
++  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR               0x007FEFFF
+ 
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x007F1000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x1000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x007F1FFF
+-  
+-  #define IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME	      "calibration"
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_START_ADDR	      0x007F2000
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_SIZE		          0x1000
+-	#define IFX_CFG_FLASH_CALIBRATION_CFG_END_ADDR		      0x007F2FFF  
+ 
+-  #define IFX_CFG_FLASH_END_ADDR                          0x007FFFFF
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME         "fwdiag"
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR         0x007FF000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE               0x400
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR           0x007FF3FF
++
++  #define IFX_CFG_FLASH_END_ADDR                         0x007FFFFF
++
+ 
+ #else
+   #error "ERROR!! Define flash size first!"
+@@ -906,6 +1109,10 @@
+ #define IFX_CONFIG_FLASH_SIZE 4
+ #elif CONFIG_NAND_FLASH_8M
+ #define IFX_CONFIG_FLASH_SIZE 8
++#elif CONFIG_NAND_FLASH_16M
++#define IFX_CONFIG_FLASH_SIZE 16
++#elif CONFIG_NAND_FLASH_32M
++#define IFX_CONFIG_FLASH_SIZE 32
+ #elif CONFIG_NAND_FLASH_128M
+ #define IFX_CONFIG_FLASH_SIZE 128
+ #elif CONFIG_NAND_FLASH_512M
+@@ -917,14 +1124,16 @@
+ #endif
+ 
+ #ifdef CONFIG_FIRMWARE_IN_ROOTFS
++
+ //2MB flash partition
+ #if (IFX_CONFIG_FLASH_SIZE == 2)
+-#define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
++
++  #define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
+         "part0_begin=0x00000000\0"                                      \
+         "part1_begin=0x00010000\0"                                      \
+         "total_part=2\0"
+ 
+-#define IFX_CFG_FLASH_DATA_BLOCKS_INFO          \
++  #define IFX_CFG_FLASH_DATA_BLOCKS_INFO          \
+   "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"  \
+   "data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0" \
+   "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0" \
+@@ -966,12 +1175,13 @@
+ 
+ //4MB flash partition
+ #elif (IFX_CONFIG_FLASH_SIZE == 4)
+-#define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
++
++  #define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
+         "part0_begin=0x00000000\0"                                      \
+         "part1_begin=0x00010000\0"                                      \
+         "total_part=2\0"
+ 
+-#define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
++  #define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
+         "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"        \
+         "data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"       \
+         "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
+@@ -1012,12 +1222,13 @@
+   #define IFX_CFG_FLASH_END_ADDR                          0x003FFFFF
+ 
+ #elif (IFX_CONFIG_FLASH_SIZE == 8)
+-#define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
++
++  #define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
+         "part0_begin=0x00000000\0"                                      \
+         "part1_begin=0x00010000\0"                                      \
+         "total_part=2\0"
+ 
+-#define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
++  #define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
+         "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"        \
+         "data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"       \
+         "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
+@@ -1058,20 +1269,168 @@
+  
+   #define IFX_CFG_FLASH_END_ADDR                         0x007FFFFF
+ 
++#elif (IFX_CONFIG_FLASH_SIZE == 32)
++
++ #ifndef CONFIG_DUAL_IMAGE
++
++  #define IFX_CFG_FLASH_PARTITIONS_INFO						\
++        "part0_begin=0x00000000\0" /* uboot, 256KB*/		\
++        "part1_begin=0x00040000\0" /* rootfs, 29440KB*/		\
++        "part2_begin=0x01D00000\0" /* kernel, 2M*/			\
++        "part3_begin=0x01F00000\0" /* sysconfig, 864KB*/	\
++        "part4_begin=0x01FD8000\0" /* ubootconfig, 48KB*/	\
++        "part5_begin=0x01FE4000\0" /* fwdiag, 48KB*/		\
++        "part6_begin=0x01FF0000\0" /* BBT, 64KB*/			\
++        "total_part=7\0"
++
++  #define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                \
++        "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"        \
++        "data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"       \
++        "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
++        "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
++        "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
++        "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
++        "total_db=6\0"
++
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR            0x00000000
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_SIZE                  0x00040000
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_END_ADDR              0x0003FFFF
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_MTDBLOCK_NAME         "/dev/mtdblock0"
++
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME           "rootfs"
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR           0x00040000
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE                 0x01CC0000
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_END_ADDR             0x01CFFFFF
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock1"
++
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME           "kernel"
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0x01D00000
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                 0x00200000
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_END_ADDR             0x01EFFFFF
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock2"
++
++  #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME             "sysconfig"
++  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0x01F00000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x000D8000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0x01FD7FFF
++  #define IFX_CFG_FLASH_SYSTEM_CFG_MTDBLOCK_NAME          "/dev/mtdblock3"
++
++  #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME              "ubootconfig"
++  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0x01FD8000
++  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x0000C000
++  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x01FE3FFF
++  #define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME           "/dev/mtdblock4"
++
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x01FE4000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x0000C000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x01FEFFFF
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_MTDBLOCK_NAME       "/dev/mtdblock5"
++
++  #define IFX_CFG_FLASH_END_ADDR                          0x01FFFFFF
++
++ #else /* CONFIG_DUAL_IMAGE */
++
++  #define IFX_CFG_FLASH_PARTITIONS_INFO						\
++        "part0_begin=0x00000000\0" /* uboot, 256KB*/		\
++        "part1_begin=0x00040000\0" /* rootfs, 13M*/			\
++        "part2_begin=0x00D40000\0" /* kernel, 2M*/			\
++        "part3_begin=0x00F40000\0" /* rootfs2, 13M*/		\
++        "part4_begin=0x01C40000\0" /* kernel2, 2M*/			\
++        "part5_begin=0x01E40000\0" /* sysconfig, 768KB*/	\
++        "part6_begin=0x01F00000\0" /* ubootconfig, 64KB*/	\
++        "part7_begin=0x01F10000\0" /* fwdiag, 64KB*/		\
++        "part8_begin=0x01E20000\0" /* voicemail, 832KB*/	\
++        "part9_begin=0x01FF0000\0" /* BBT, 64KB*/			\
++        "total_part=10\0"
++
++  #define IFX_CFG_FLASH_DATA_BLOCKS_INFO							\
++        "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"	\
++        "data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"	\
++        "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"	\
++        "data_block3=" IFX_CFG_FLASH_ROOTFS2_IMAGE_BLOCK_NAME "\0"	\
++        "data_block4=" IFX_CFG_FLASH_KERNEL2_IMAGE_BLOCK_NAME "\0"	\
++        "data_block5=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"		\
++        "data_block6=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"		\
++        "data_block7=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"	\
++        "data_block8=" IFX_CFG_FLASH_VOICE_MAIL_BLOCK_NAME "\0"		\
++        "total_db=9\0"
++
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR            0x00000000
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_SIZE                  0x00040000
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_END_ADDR              0x0003FFFF
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_MTDBLOCK_NAME         "/dev/mtdblock0"
++
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME           "rootfs"
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR           0x00040000
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE                 0x00D00000
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_END_ADDR             0x00D3FFFF
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock1"
++
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME           "kernel"
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0x00D40000
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                 0x00200000
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_END_ADDR             0x00F3FFFF
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock2"
++
++  #define IFX_CFG_FLASH_ROOTFS2_IMAGE_BLOCK_NAME          "rootfs2"
++  #define IFX_CFG_FLASH_ROOTFS2_IMAGE_START_ADDR          0x00F40000
++  #define IFX_CFG_FLASH_ROOTFS2_IMAGE_SIZE                0x00D00000
++  #define IFX_CFG_FLASH_ROOTFS2_IMAGE_END_ADDR            0x01C3FFFF
++  #define IFX_CFG_FLASH_ROOTFS2_IMAGE_MTDBLOCK_NAME       "/dev/mtdblock3"
++
++  #define IFX_CFG_FLASH_KERNEL2_IMAGE_BLOCK_NAME          "kernel2"
++  #define IFX_CFG_FLASH_KERNEL2_IMAGE_START_ADDR          0x01C40000
++  #define IFX_CFG_FLASH_KERNEL2_IMAGE_SIZE                0x00200000
++  #define IFX_CFG_FLASH_KERNEL2_IMAGE_END_ADDR            0x01E3FFFF
++  #define IFX_CFG_FLASH_KERNEL2_IMAGE_MTDBLOCK_NAME       "/dev/mtdblock4"
++
++  #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME             "sysconfig"
++  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0x01E40000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x000C0000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0x01EFFFFF
++  #define IFX_CFG_FLASH_SYSTEM_CFG_MTDBLOCK_NAME          "/dev/mtdblock5"
++
++  #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME              "ubootconfig"
++  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0x01F00000
++  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x00010000
++  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x01F0FFFF
++  #define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME           "/dev/mtdblock6"
++
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x01F10000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x00010000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x01F1FFFF
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_MTDBLOCK_NAME       "/dev/mtdblock7"
++
++  #define IFX_CFG_FLASH_VOICE_MAIL_BLOCK_NAME             "voicemail"
++  #define IFX_CFG_FLASH_VOICE_MAIL_START_ADDR             0x01F20000
++  #define IFX_CFG_FLASH_VOICE_MAIL_SIZE                   0x000D0000
++  #define IFX_CFG_FLASH_VOICE_MAIL_END_ADDR               0x01FEFFFF
++  #define IFX_CFG_FLASH_VOICE_MAIL_MTDBLOCK_NAME          "/dev/mtdblock8"
++
++  #define IFX_CFG_FLASH_END_ADDR                          0x01FFFFFF
++
++ #endif /* CONFIG_DUAL_IMAGE */
++
+ #elif (IFX_CONFIG_FLASH_SIZE == 128)
+-#define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
++
++  #define IFX_CFG_FLASH_PARTITIONS_INFO                                 \
+         "part0_begin=0x00000000\0"                                      \
+         "part1_begin=0x00040000\0"                                      \
+-        "part2_begin=0x002C0000\0"                                      \
+-        "part3_begin=0x06C40000\0"                                      \
+-        "part4_begin=0x07040000\0"                                      \
+-        "part5_begin=0x07080000\0"                                      \
+-        "total_part=6\0"
++        "part2_begin=0x07A00000\0"                                      \
++        "part3_begin=0x07D00000\0"                                      \
++        "part4_begin=0x07D80000\0"                                      \
++        "part5_begin=0x07DC0000\0"                                      \
++        "part6_begin=0x07F00000\0"                                      \
++        "total_part=7\0"
+ 
+-#define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
++  #define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                \
+         "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"        \
+-        "data_block1=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
+-        "data_block2=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"       \
++        "data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"       \
++        "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
+         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
+         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
+         "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+@@ -1079,46 +1438,57 @@
+ 
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR            0x00000000
+-  #define IFX_CFG_FLASH_UBOOT_IMAGE_SIZE                  0x40000
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_SIZE                  0x00040000
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_END_ADDR              0x0003FFFF
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_MTDBLOCK_NAME         "/dev/mtdblock0"
+ 
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME           "kernel"
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0x00040000
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                 0x0
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock1"
+-
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME           "rootfs"
+-  #define IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR           0x002C0000
+-  #define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE                 0x6980000
+-  #define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock2"
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR           0x00040000
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE                 0x079C0000
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_END_ADDR             0x079FFFFF
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock1"
++
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME           "kernel"
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0x07A00000
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                 0x00300000
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_END_ADDR             0x07CFFFFF
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock2"
+ 
+   #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME             "sysconfig"
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0x06C40000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x400000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0x0703FFFF
++  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0x07D00000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x00100000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0x07DFFFFF
+   #define IFX_CFG_FLASH_SYSTEM_CFG_MTDBLOCK_NAME          "/dev/mtdblock3"
+ 
+   #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME              "ubootconfig"
+-  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0x7040000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x10000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x0704FFFF
++  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0x07E00000
++  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x00100000
++  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x07EFFFFF
+   #define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME           "/dev/mtdblock4"
+ 
+   #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x07080000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x40000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x070BFFFF
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x07F00000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x00080000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x07F7FFFF
+   #define IFX_CFG_FLASH_FIRMWARE_DIAG_MTDBLOCK_NAME       "/dev/mtdblock5"
+ 
+-  #define IFX_CFG_FLASH_END_ADDR                         0x07FFFFFF
++  #define IFX_CFG_FLASH_END_ADDR                          0x07FFFFFF
+ 
+ #elif (IFX_CONFIG_FLASH_SIZE == 512)
+-#define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
++
++ #ifndef CONFIG_DUAL_IMAGE
++
++  #define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
+         "part0_begin=0x00000000\0"                                      \
+-        "part1_begin=0x00010000\0"                                      \
+-        "total_part=2\0"
++        "part1_begin=0x00040000\0"                                      \
++        "part2_begin=0x1FA00000\0"                                      \
++        "part3_begin=0x1FD00000\0"                                      \
++        "part4_begin=0x1FD80000\0"                                      \
++        "part5_begin=0x1FDC0000\0"                                      \
++        "part6_begin=0x1FF00000\0"                                      \
++        "total_part=7\0"
+ 
+-#define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
++  #define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
+         "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"        \
+         "data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"       \
+         "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
+@@ -1129,35 +1499,127 @@
+ 
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR            0x00000000
+-  #define IFX_CFG_FLASH_UBOOT_IMAGE_SIZE                  0x40000
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_SIZE                  0x00040000
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_END_ADDR              0x0003FFFF
+   #define IFX_CFG_FLASH_UBOOT_IMAGE_MTDBLOCK_NAME         "/dev/mtdblock0"
+ 
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME           "rootfs"
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR           0x00040000
+-  #define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE                 0
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE                 0x1F9C0000
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_END_ADDR             0x1F9FFFFF
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock1"
+ 
+   #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME           "kernel"
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0x007EDFFF
+-  #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                 0
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0x1FA00000
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                 0x00300000
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_END_ADDR             0x1FCFFFFF
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock2"
+ 
+   #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME             "sysconfig"
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0x007EE000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x10000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0x007FDFFF
++  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0x1FD00000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x00180000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0x1FE7FFFF
++  #define IFX_CFG_FLASH_SYSTEM_CFG_MTDBLOCK_NAME          "/dev/mtdblock3"
+ 
+   #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME              "ubootconfig"
+-  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0x007FE000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
+-  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x007FEFFF
++  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0x1FE80000
++  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x00040000
++  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x1FEBFFFF
++  #define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME           "/dev/mtdblock4"
+ 
+   #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x007FF000
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x400
+-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x007FF3FF
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x1FEC0000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x00040000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x1FEFFFFF
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_MTDBLOCK_NAME       "/dev/mtdblock5"
+ 
+-  #define IFX_CFG_FLASH_END_ADDR                         0x007FFFFF
++  #define IFX_CFG_FLASH_END_ADDR                          0x1FFFFFFF
++
++ #else /* CONFIG_DUAL_IMAGE */
++
++  #define IFX_CFG_FLASH_PARTITIONS_INFO							\
++        "part0_begin=0x00000000\0" /* uboot, 256KB*/			\
++        "part1_begin=0x00040000\0" /* rootfs, 30M*/				\
++        "part2_begin=0x01E40000\0" /* kernel, 4M*/				\
++        "part3_begin=0x02240000\0" /* rootfs2, 30M*/			\
++        "part4_begin=0x04040000\0" /* kernel2, 4M*/				\
++        "part5_begin=0x04440000\0" /* sysconfig, 1M*/		\
++        "part6_begin=0x04540000\0" /* ubootconfig, 1M*/		\
++        "part7_begin=0x04640000\0" /* fwdiag, 768K*/			\
++        "part8_begin=0x04700000\0" /* voicemail, 440M*/	\
++        "part9_begin=0x1FF00000\0" /* BBT, 1M*/				\
++        "total_part=10\0"
++
++  #define IFX_CFG_FLASH_DATA_BLOCKS_INFO							\
++        "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"	\
++        "data_block1=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"	\
++        "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"	\
++        "data_block3=" IFX_CFG_FLASH_ROOTFS2_IMAGE_BLOCK_NAME "\0"	\
++        "data_block4=" IFX_CFG_FLASH_KERNEL2_IMAGE_BLOCK_NAME "\0"	\
++        "data_block5=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"		\
++        "data_block6=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"		\
++        "data_block7=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"	\
++        "data_block8=" IFX_CFG_FLASH_VOICE_MAIL_BLOCK_NAME "\0"		\
++        "total_db=9\0"
++
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_START_ADDR            0x00000000
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_SIZE                  0x00040000
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_END_ADDR              0x0003FFFF
++  #define IFX_CFG_FLASH_UBOOT_IMAGE_MTDBLOCK_NAME         "/dev/mtdblock0"
++
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME           "rootfs"
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR           0x00040000
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE                 0x01E00000
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_END_ADDR             0x01E3FFFF
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock1"
++
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME           "kernel"
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_START_ADDR           0x01E40000
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_SIZE                 0x00400000
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_END_ADDR             0x0223FFFF
++  #define IFX_CFG_FLASH_KERNEL_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock2"
++
++  #define IFX_CFG_FLASH_ROOTFS2_IMAGE_BLOCK_NAME          "rootfs2"
++  #define IFX_CFG_FLASH_ROOTFS2_IMAGE_START_ADDR          0x02240000
++  #define IFX_CFG_FLASH_ROOTFS2_IMAGE_SIZE                0x01E00000
++  #define IFX_CFG_FLASH_ROOTFS2_IMAGE_END_ADDR            0x0403FFFF
++  #define IFX_CFG_FLASH_ROOTFS2_IMAGE_MTDBLOCK_NAME       "/dev/mtdblock3"
+ 
++  #define IFX_CFG_FLASH_KERNEL2_IMAGE_BLOCK_NAME          "kernel2"
++  #define IFX_CFG_FLASH_KERNEL2_IMAGE_START_ADDR          0x04040000
++  #define IFX_CFG_FLASH_KERNEL2_IMAGE_SIZE                0x00400000
++  #define IFX_CFG_FLASH_KERNEL2_IMAGE_END_ADDR            0x0443FFFF
++  #define IFX_CFG_FLASH_KERNEL2_IMAGE_MTDBLOCK_NAME       "/dev/mtdblock4"
++
++  #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME             "sysconfig"
++  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0x04440000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x00100000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0x0453FFFF
++  #define IFX_CFG_FLASH_SYSTEM_CFG_MTDBLOCK_NAME          "/dev/mtdblock5"
++
++  #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME              "ubootconfig"
++  #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0x04540000
++  #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x00100000
++  #define IFX_CFG_FLASH_UBOOT_CFG_REAL_SIZE               0x00040000
++  #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x0463FFFF
++  #define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME           "/dev/mtdblock6"
++
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x04640000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x000C0000
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x046FFFFF
++  #define IFX_CFG_FLASH_FIRMWARE_DIAG_MTDBLOCK_NAME       "/dev/mtdblock7"
++
++  #define IFX_CFG_FLASH_VOICE_MAIL_BLOCK_NAME             "voicemail"
++  #define IFX_CFG_FLASH_VOICE_MAIL_START_ADDR             0x04700000
++  #define IFX_CFG_FLASH_VOICE_MAIL_SIZE                   0x1B800000
++  #define IFX_CFG_FLASH_VOICE_MAIL_END_ADDR               0x1FEFFFFF
++  #define IFX_CFG_FLASH_VOICE_MAIL_MTDBLOCK_NAME          "/dev/mtdblock8"
++
++  #define IFX_CFG_FLASH_END_ADDR                          0x1FFFFFFF
++
++ #endif /* CONFIG_DUAL_IMAGE */
+ 
+ #else
+   #error "ERROR!! Define flash size first!"
+@@ -1327,17 +1789,18 @@
+   #define IFX_CFG_FLASH_END_ADDR                          0x007FFFFF
+   
+ #elif (IFX_CONFIG_FLASH_SIZE == 128)
+-#define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
++
++  #define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
+         "part0_begin=0x00000000\0"                                      \
+         "part1_begin=0x00040000\0"                                      \
+         "part2_begin=0x000C0000\0"                                      \
+         "part3_begin=0x002C0000\0"                                      \
+-        "part4_begin=0x06C40000\0"                                      \
++        "part4_begin=0x07000000\0"                                      \
+         "part5_begin=0x07040000\0"                                      \
+         "part6_begin=0x07080000\0"                                      \
+         "total_part=7\0"
+ 
+-#define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
++  #define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
+         "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"        \
+         "data_block1=" IFX_CFG_FLASH_FIRMWARE_IMAGE_BLOCK_NAME "\0"     \
+         "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
+@@ -1364,12 +1827,12 @@
+ 
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME           "rootfs"
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_START_ADDR           0x002C0000
+-  #define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE                 0x6980000
++  #define IFX_CFG_FLASH_ROOTFS_IMAGE_SIZE                 0x06D40000
+   #define IFX_CFG_FLASH_ROOTFS_IMAGE_MTDBLOCK_NAME        "/dev/mtdblock3"
+ 
+   #define IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME             "sysconfig"
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0x06C40000
+-  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x400000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_START_ADDR             0x07000000
++  #define IFX_CFG_FLASH_SYSTEM_CFG_SIZE                   0x40000
+   #define IFX_CFG_FLASH_SYSTEM_CFG_END_ADDR               0x0703FFFF
+   #define IFX_CFG_FLASH_SYSTEM_CFG_MTDBLOCK_NAME          "/dev/mtdblock4"
+ 
+@@ -1386,14 +1849,16 @@
+   #define IFX_CFG_FLASH_FIRMWARE_DIAG_MTDBLOCK_NAME       "/dev/mtdblock6"
+ 
+   #define IFX_CFG_FLASH_END_ADDR                          0x07FFFFFF
++
+ #elif (IFX_CONFIG_FLASH_SIZE == 512)
+-#define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
++
++  #define IFX_CFG_FLASH_PARTITIONS_INFO                                   \
+         "part0_begin=0x00000000\0"                                      \
+         "part1_begin=0x00040000\0"                                      \
+         "part2_begin=0x000C0000\0"                                      \
+         "total_part=3\0"
+ 
+-#define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
++  #define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
+         "data_block0=" IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME "\0"        \
+         "data_block1=" IFX_CFG_FLASH_FIRMWARE_IMAGE_BLOCK_NAME "\0"     \
+         "data_block2=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"       \
+diff --git a/include/flash.h b/include/flash.h
+old mode 100644
+new mode 100755
+index 8feca1b..d677e15
+--- a/include/flash.h
++++ b/include/flash.h
+@@ -159,6 +159,7 @@ extern flash_info_t *flash_get_info(ulong base);
+ #define FUJ_MANUFACT	0x00040004	/* FUJITSU manuf. ID in D23..D16, D7..D0 */
+ #define ATM_MANUFACT	0x001F001F	/* ATMEL */
+ #define STM_MANUFACT	0x00200020	/* STM (Thomson) manuf. ID in D23.. -"- */
++#define NU_MANUFACT     0x00200020  /* ctc, NU (Numonyx) take over STM */
+ #define SST_MANUFACT	0x00BF00BF	/* SST	   manuf. ID in D23..D16, D7..D0 */
+ #define MT_MANUFACT	0x00890089	/* MT	   manuf. ID in D23..D16, D7..D0 */
+ #define INTEL_MANUFACT	0x00890089	/* INTEL   manuf. ID in D23..D16, D7..D0 */
+@@ -169,9 +170,11 @@ extern flash_info_t *flash_get_info(ulong base);
+ #define EXCEL_MANUFACT	0x004A004A	/* Excel Semiconductor			*/
+ #define AMIC_MANUFACT	0x00370037	/* AMIC    manuf. ID in D23..D16, D7..D0 */
+ #define WINB_MANUFACT	0x00DA00DA	/* Winbond manuf. ID in D23..D16, D7..D0 */
++#define SPANSION_MANUFACT	0x00010001  /* ctc, spansion */
++#define EON_MANUFACT	0x007F007F	/* ctc, EON			*/
+ 
+ /* Manufacturers inside bank 1 have ids like 0x01xx01xx */
+-#define EON_MANUFACT	0x011C011C	/* EON     manuf. ID in D23..D16, D7..D0 */
++//#define EON_MANUFACT	0x011C011C	/* ctc, EON     manuf. ID in D23..D16, D7..D0 */
+ 
+ /* Manufacturers inside bank 2 have ids like 0x02xx02xx */
+ 
+@@ -228,6 +231,28 @@ extern flash_info_t *flash_get_info(ulong base);
+ #define AMD_ID_LV320B	0x22F922F9	/* 29LV320B ID (32 M, bottom boot sect) */
+ #define MX_ID_LV320B	0x22A822A8	/* 29LV320B by Macronix, AMD compatible */
+ 
++/***** ctc *****/
++#define MX_ID_29LV320AB 0x22A822A8      /* MXIC  MX29LV320AB ID (32 M, bottom ) joelin       */
++#define MX_ID_29LV160BB 0x22492249      /* MXIC  MX29LV160BB ID (16 M, bottom ) joelin       */
++#define MX_ID_29LV640BB 0x22cb22cb      /* MXIC  MX29LV640BB ID (64 M, bottom ) joelin       */
++
++#define MX_ID_29LV160BT 0x22C422C4      /* MXIC  MX29LV160BT ID (16 M, Top ) joelin       */
++#define MX_ID_29LV320ATT        0x22A722A7      /* MXIC  MX29LV320ATT ID (32 M, TOP ) joelin       */
++#define MX_ID_29LV320CT 0x22A722A7      /* MXIC  MX29LV320CT ID (32 M, TOP ) Subbi */
++#define MX_ID_29LV400CT 0x22B992B9      /* MXIC  MX29LV400CT ID (512K ) */
++#define MX_ID_29LV400CB 0x22BA22BA      /* MXIC  MX29LV400CT ID (512K ) */
++#define MX_ID_39LV400A  0x27802780
++#define MX_ID_29GL640EBTI1  0x227E227E
++#define MX_ID_29GL640EBTI2  0x22102210
++#define MX_ID_29GL640EBTI3  0x22002200
++#define MX_ID_29GL640EBTI4  0x22012201
++
++#define SPA_ID_S29GL064N	0x227E227E	/* SPANSION S29GL064N */
++#define NU_ID_29W640FT  0x227E227E
++/***** end of ctc *****/
++
++
++
+ #define AMD_ID_DL322T	0x22552255	/* 29DL322T ID (32 M, top boot sector)	*/
+ #define AMD_ID_DL322B	0x22562256	/* 29DL322B ID (32 M, bottom boot sect) */
+ #define AMD_ID_DL323T	0x22502250	/* 29DL323T ID (32 M, top boot sector)	*/
+@@ -255,6 +280,7 @@ extern flash_info_t *flash_get_info(ulong base);
+ #define AMD_ID_GL064MT_3 0x22012201	/* 3rd ID word for S29GL064M-R3 (top boot sector) */
+ #define AMD_ID_GL128N_2	0x22212221	/* 2nd ID word for S29GL128N */
+ #define AMD_ID_GL128N_3	0x22012201	/* 3rd ID word for S29GL128N */
++#define AMD_ID_LV642D   0x227E227E  /* ctc */
+ 
+ 
+ #define AMD_ID_LV320B_2 0x221A221A	/* 2d ID word for AM29LV320MB at 0x38 */
+@@ -346,6 +372,34 @@ extern flash_info_t *flash_get_info(ulong base);
+ #define TOSH_ID_FVB160	0x43		/* TC58FVT160 ID (16 M, bottom )	*/
+ #define PHILIPS_LPC2292 0x0401FF13  /* LPC2292 internal FLASH			*/
+ 
++/***** ctc *****/
++#define MX_ID_MIRROR	0x227E227E	/* 1st ID word for MirrorBit family */
++#define MX_ID_29LV320AB 0x22A822A8      /* MXIC  MX29LV320AB ID (32 M, bottom ) joelin       */
++#define MX_ID_29LV160BB 0x22492249      /* MXIC  MX29LV160BB ID (16 M, bottom ) joelin       */
++#define MX_ID_29LV640BB 0x22cb22cb      /* MXIC  MX29LV640BB ID (64 M, bottom ) joelin       */
++
++#define MX_ID_29LV160BT 0x22C422C4      /* MXIC  MX29LV160BT ID (16 M, Top ) joelin       */
++#define MX_ID_29LV320ATT        0x22A722A7      /* MXIC  MX29LV320ATT ID (32 M, TOP ) joelin       */
++#define MX_ID_29LV320CT 0x22A722A7      /* MXIC  MX29LV320CT ID (32 M, TOP ) Subbi */
++#define MX_ID_29LV400CT 0x22B992B9      /* MXIC  MX29LV400CT ID (512K ) */
++#define MX_ID_29LV400CB 0x22BA22BA      /* MXIC  MX29LV400CT ID (512K ) */
++#define MX_ID_39LV400A  0x27802780
++//leejack
++#define MX_ID_29LV128DB 0x227A227A
++#define MX_ID_29GL256E_2 0x22222222	/* 2nd ID word for MX29GL256E  at 0x38 */
++#define MX_ID_29GL256E_3 0x22012201	/* 3rd ID word for MX29GL256E  at 0x3c */
++#define MX_ID_29GL128E_2 0x22212221	/* 2nd ID word for MX29GL128E  at 0x38 */
++#define MX_ID_29GL128E_3 0x22012201	/* 3rd ID word for MX29GL128E  at 0x3c */
++
++#define EON_ID_MIRROR	 0x227E227E	/* 1st ID word for MirrorBit family */
++#define EON_ID_29GL256_2 0x22222222	/* 2nd ID word for EON29GL256  at 0x38 */
++#define EON_ID_29GL256_3 0x22012201	/* 3rd ID word for EON29GL256  at 0x3c */
++#define EON_ID_29GL128_2 0x22212221	/* 2nd ID word for EON29GL128  at 0x38 */
++#define EON_ID_29GL128_3 0x22012201	/* 3rd ID word for EON29GL128  at 0x3c */
++
++#define NU_ID_29W640FT  0x22ed22ed
++/***** end of ctc *****/
++
+ /*-----------------------------------------------------------------------
+  * Internal FLASH identification codes
+  *
+@@ -452,6 +506,7 @@ extern flash_info_t *flash_get_info(ulong base);
+ #define FLASH_AMLV256U	0x00AA		/* AMD 29LV256M	   ( 256M = 16M x 16 )	*/
+ #define FLASH_MXLV320B	0x00AB		/* MX  29LV320MB   ( 32M = 2M x 16 )	*/
+ #define FLASH_MXLV320T	0x00AC		/* MX  29LV320MT   ( 32M = 2M x 16 )	*/
++#define FLASH_MXL256E	0x00AD		/* ctc, MX  29GL256E	   ( 256M = 16M x 16 )	*/
+ #define FLASH_28F256L18T 0x00B0		/* Intel 28F256L18T 256M = 128K x 255 + 32k x 4 */
+ #define FLASH_AMDL163T	0x00B2		/* AMD AM29DL163T (2M x 16 )			*/
+ #define FLASH_AMDL163B	0x00B3
+@@ -469,6 +524,29 @@ extern flash_info_t *flash_get_info(ulong base);
+ #define FLASH_S29GL064M 0x00F0		/* Spansion S29GL064M-R6		*/
+ #define FLASH_S29GL128N 0x00F1		/* Spansion S29GL128N			*/
+ 
++/***** ctc *****/
++#define FLASH_S29GL064N 0x00F2		/* Spansion S29GL064N	*/	
++#define FLASH_29LV320AB 0x00B0          /* MXIC MX29LV320AB( 32M = 4M x 16 ) joelin 10/07/2004*/
++#define FLASH_29LV160BB 0x00B1          /* MXIC MX29LV160BB( 16M = 2M x 16 ) joelin 11/22/2004*/
++#define FLASH_29LV640BB 0x00B2          /* MXIC MX29LV640BB( 64M = 8M x 16 ) liupeng*/
++#define FLASH_29LV160BT 0x00B3
++#define FLASH_29LV320ATT 0x00B4         /* MXIC MX29LV320ATT( 32M = 4M x 16 ) joelin 03/01/2005*/
++#define FLASH_29LV320CT 0x00C2          /* MXIC MX29LV320CT( 16M = 2M x 16 ) */
++
++#define FLASH_29LV400CT 0xB4    /* MXIC  MX29LV400 ID (8 M, TOP ) */
++#define FLASH_29LV400CB 0xB5    /* MXIC  MX29LV400 ID (8 M, BOTTOM ) */
++#define FLASH_39LV400A  0xB6
++#define FLASH_29LV128DB 0x00B7
++#define FLASH_29GL256E  0x00B8		/* MXIC MX29GL256( 256M = 16M x 16 ) ctc*/
++#define FLASH_29GL128E  0x00B9		/* MXIC MX29GL128( 128M = 8M x 16 ) ctc*/
++#define FLASH_29GL256   0x00BA		/* EON EN29GL256( 256M = 16M x 16 ) ctc*/
++#define FLASH_29GL128   0x00BB		/* EON EN29GL128( 128M = 8M x 16 ) ctc*/
++
++#define FLASH_29GL640EBTI  0xB7
++#define FLASH_M29W640FT 0x54  /*Numoyx M29W640FT (4M, TOP)*/
++#define FLASH_M29W640GB 0x55  /*Numoyx M29W640GB */
++/***** end of ctc *****/
++
+ #define FLASH_UNKNOWN	0xFFFF		/* unknown flash type			*/
+ 
+ 
+@@ -482,11 +560,13 @@ extern flash_info_t *flash_get_info(ulong base);
+ #define FLASH_MAN_TOSH	0x00050000	/* Toshiba				*/
+ #define FLASH_MAN_EXCEL 0x00060000	/* Excel Semiconductor			*/
+ #define FLASH_MAN_SST	0x00100000
++#define FLASH_MAN_NU    0x00200000  /* ctc, Numonix */
+ #define FLASH_MAN_INTEL 0x00300000
+ #define FLASH_MAN_MT	0x00400000
+ #define FLASH_MAN_SHARP 0x00500000
+ #define FLASH_MAN_ATM	0x00600000
+ #define FLASH_MAN_CFI	0x01000000
++#define FLASH_MAN_EON	0x02000000	/* ctc, EON					*/
+ 
+ 
+ #define FLASH_TYPEMASK	0x0000FFFF	/* extract FLASH type	information	*/
+diff --git a/nand_spl/board/lantiq/Makefile b/nand_spl/board/lantiq/Makefile
+old mode 100644
+new mode 100755
+diff --git a/nand_spl/board/lantiq/board.c b/nand_spl/board/lantiq/board.c
+new file mode 100755
+index 0000000..e3717e3
+--- /dev/null
++++ b/nand_spl/board/lantiq/board.c
+@@ -0,0 +1,364 @@
++#include <config.h>
++#include <common.h>
++#include <command.h>
++#include <asm/addrspace.h>
++#include <asm/vr9.h>
++#include <environment.h>
++#include <nand.h>
++
++
++#define DDR_OFFSET   0xbf401000
++#define DDR_CCR00      (DDR_OFFSET + 0x0000 )
++#define DDR_CCR01      (DDR_OFFSET + 0x0010 )
++#define DDR_CCR02      (DDR_OFFSET + 0x0020 )
++#define DDR_CCR03      (DDR_OFFSET + 0x0030 )
++#define DDR_CCR04      (DDR_OFFSET + 0x0040 )
++#define DDR_CCR05      (DDR_OFFSET + 0x0050 )
++#define DDR_CCR06      (DDR_OFFSET + 0x0060 )
++#define DDR_CCR07      (DDR_OFFSET + 0x0070 )
++#define DDR_CCR08      (DDR_OFFSET + 0x0080 )
++#define DDR_CCR09      (DDR_OFFSET + 0x0090 )
++#define DDR_CCR10      (DDR_OFFSET + 0x00A0 )
++#define DDR_CCR11      (DDR_OFFSET + 0x00B0 )
++#define DDR_CCR12      (DDR_OFFSET + 0x00C0 )
++#define DDR_CCR13      (DDR_OFFSET + 0x00D0 )
++#define DDR_CCR14      (DDR_OFFSET + 0x00E0 )
++#define DDR_CCR15      (DDR_OFFSET + 0x00F0 )
++#define DDR_CCR16      (DDR_OFFSET + 0x0100 )
++#define DDR_CCR17      (DDR_OFFSET + 0x0110 )
++#define DDR_CCR18      (DDR_OFFSET + 0x0120 )
++#define DDR_CCR19      (DDR_OFFSET + 0x0130 )
++#define DDR_CCR20      (DDR_OFFSET + 0x0140 )
++#define DDR_CCR21      (DDR_OFFSET + 0x0150 )
++#define DDR_CCR22      (DDR_OFFSET + 0x0160 )
++#define DDR_CCR23      (DDR_OFFSET + 0x0170 )
++#define DDR_CCR24      (DDR_OFFSET + 0x0180 )
++#define DDR_CCR25      (DDR_OFFSET + 0x0190 )
++#define DDR_CCR26      (DDR_OFFSET + 0x01A0 )
++#define DDR_CCR27      (DDR_OFFSET + 0x01B0 )
++#define DDR_CCR28      (DDR_OFFSET + 0x01C0 )
++#define DDR_CCR29      (DDR_OFFSET + 0x01D0 )
++#define DDR_CCR30      (DDR_OFFSET + 0x01E0 )
++#define DDR_CCR31      (DDR_OFFSET + 0x01F0 )
++#define DDR_CCR32      (DDR_OFFSET + 0x0200 )
++#define DDR_CCR33      (DDR_OFFSET + 0x0210 )
++#define DDR_CCR34      (DDR_OFFSET + 0x0220 )
++#define DDR_CCR35      (DDR_OFFSET + 0x0230 )
++#define DDR_CCR36      (DDR_OFFSET + 0x0240 )
++#define DDR_CCR37      (DDR_OFFSET + 0x0250 )
++#define DDR_CCR38      (DDR_OFFSET + 0x0260 )
++#define DDR_CCR39      (DDR_OFFSET + 0x0270 )
++#define DDR_CCR40      (DDR_OFFSET + 0x0280 )
++#define DDR_CCR41      (DDR_OFFSET + 0x0290 )
++#define DDR_CCR42      (DDR_OFFSET + 0x02A0 )
++#define DDR_CCR43      (DDR_OFFSET + 0x02B0 )
++#define DDR_CCR44      (DDR_OFFSET + 0x02C0 )
++#define DDR_CCR45      (DDR_OFFSET + 0x02D0 )
++#define DDR_CCR46      (DDR_OFFSET + 0x02E0 )
++#define DDR_CCR47      (DDR_OFFSET + 0x02F0 )
++#define DDR_CCR48      (DDR_OFFSET + 0x0300 )
++#define DDR_CCR49      (DDR_OFFSET + 0x0310 )
++#define DDR_CCR50      (DDR_OFFSET + 0x0320 )
++#define DDR_CCR51      (DDR_OFFSET + 0x0330 )
++#define DDR_CCR52      (DDR_OFFSET + 0x0340 )
++#define DDR_CCR53      (DDR_OFFSET + 0x0350 )
++#define DDR_CCR54      (DDR_OFFSET + 0x0360 )
++#define DDR_CCR55      (DDR_OFFSET + 0x0370 )
++#define DDR_CCR56      (DDR_OFFSET + 0x0380 )
++#define DDR_CCR57      (DDR_OFFSET + 0x0390 )
++#define DDR_CCR58      (DDR_OFFSET + 0x03A0 )
++#define DDR_CCR59      (DDR_OFFSET + 0x03B0 )
++#define DDR_CCR60      (DDR_OFFSET + 0x03C0 )
++#define DDR_CCR61      (DDR_OFFSET + 0x03D0 )
++#define DDR_CCR62      (DDR_OFFSET + 0x03E0 )
++#define DDR_CCR63      (DDR_OFFSET + 0x03F0 )
++#define DDR_CCR64      (DDR_OFFSET + 0x0400 )
++#define DDR_CCR65      (DDR_OFFSET + 0x0410 )
++#define DDR_CCR66      (DDR_OFFSET + 0x0420 )
++#define DDR_CCR67      (DDR_OFFSET + 0x0430 )
++#define DDR_CCR68      (DDR_OFFSET + 0x0440 )
++#define DDR_CCR69      (DDR_OFFSET + 0x0450 )
++#define DDR_CCR70      (DDR_OFFSET + 0x0460 )
++#define DDR_CCR71      (DDR_OFFSET + 0x0470 )
++#define DDR_CCR72      (DDR_OFFSET + 0x0480 )
++#define DDR_CCR73      (DDR_OFFSET + 0x0490 )
++#define DDR_CCR74      (DDR_OFFSET + 0x04A0 )
++#define DDR_CCR75      (DDR_OFFSET + 0x04B0 )
++#define DDR_CCR76      (DDR_OFFSET + 0x04C0 )
++#define DDR_CCR77      (DDR_OFFSET + 0x04D0 )
++#define DDR_CCR78      (DDR_OFFSET + 0x04E0 )
++#define DDR_CCR79      (DDR_OFFSET + 0x04F0 )
++#define DDR_CCR80      (DDR_OFFSET + 0x0500 )
++#define DDR_CCR81      (DDR_OFFSET + 0x0510 )
++#define DDR_CCR82      (DDR_OFFSET + 0x0520 )
++#define DDR_CCR83      (DDR_OFFSET + 0x0530 )
++#define DDR_CCR84      (DDR_OFFSET + 0x0540 )
++#define DDR_CCR85      (DDR_OFFSET + 0x0550 )
++#define DDR_CCR86      (DDR_OFFSET + 0x0560 )
++#define DDR_CCR87      (DDR_OFFSET + 0x0570 )
++#define DDR_CCR88      (DDR_OFFSET + 0x0580 )
++#define DDR_CCR89      (DDR_OFFSET + 0x0590 )
++#define DDR_CCR90      (DDR_OFFSET + 0x05A0 )
++#define DDR_CCR91      (DDR_OFFSET + 0x05B0 )
++#define DDR_CCR92      (DDR_OFFSET + 0x05C0 )
++#define DDR_CCR93      (DDR_OFFSET + 0x05D0 )
++#define DDR_CCR94      (DDR_OFFSET + 0x05E0 )
++#define DDR_CCR95      (DDR_OFFSET + 0x05F0 )
++#define DDR_CCR96      (DDR_OFFSET + 0x0600 )
++#define DDR_CCR97      (DDR_OFFSET + 0x0610 )
++#define DDR_CCR98      (DDR_OFFSET + 0x0620 )
++#define DDR_CCR99      (DDR_OFFSET + 0x0630 )
++#define DDR_CCR100     (DDR_OFFSET + 0x0640 )
++#define DDR_CCR101     (DDR_OFFSET + 0x0650 )
++#define DDR_CCR102     (DDR_OFFSET + 0x0660 )
++#define DDR_CCR103     (DDR_OFFSET + 0x0670 )
++#define DDR_CCR104     (DDR_OFFSET + 0x0680 )
++#define DDR_CCR105     (DDR_OFFSET + 0x0690 )
++#define DDR_CCR106     (DDR_OFFSET + 0x06A0 )
++#define DDR_CCR107     (DDR_OFFSET + 0x06B0 )
++#define DDR_CCR108     (DDR_OFFSET + 0x06C0 )
++#define DDR_CCR109     (DDR_OFFSET + 0x06D0 )
++#define DDR_CCR110     (DDR_OFFSET + 0x06E0 )
++#define DDR_CCR111     (DDR_OFFSET + 0x06F0 )
++#define DDR_CCR112     (DDR_OFFSET + 0x0700 )
++#define DDR_CCR113     (DDR_OFFSET + 0x0710 )
++#define DDR_CCR114     (DDR_OFFSET + 0x0720 )
++#define DDR_CCR115     (DDR_OFFSET + 0x0730 )
++#define DDR_CCR116     (DDR_OFFSET + 0x0740 )
++#define DDR_CCR117     (DDR_OFFSET + 0x0750 )
++#define DDR_CCR118     (DDR_OFFSET + 0x0760 )
++#define DDR_CCR119     (DDR_OFFSET + 0x0770 )
++#define DDR_CCR120     (DDR_OFFSET + 0x0780 )
++#define DDR_CCR121     (DDR_OFFSET + 0x0790 )
++#define DDR_CCR122     (DDR_OFFSET + 0x07A0 )
++#define DDR_CCR123     (DDR_OFFSET + 0x07B0 )
++#define DDR_CCR124     (DDR_OFFSET + 0x07C0 )
++#define DDR_CCR125     (DDR_OFFSET + 0x07D0 )
++#define DDR_CCR126     (DDR_OFFSET + 0x07E0 )
++#define DDR_CCR127     (DDR_OFFSET + 0x07F0 )
++#define DDR_CCR128     (DDR_OFFSET + 0x0800 )
++#define DDR_CCR129     (DDR_OFFSET + 0x0810 )
++#define DDR_CCR130     (DDR_OFFSET + 0x0820 )
++#define DDR_CCR131     (DDR_OFFSET + 0x0830 )
++#define DDR_CCR132     (DDR_OFFSET + 0x0840 )
++#define DDR_CCR133     (DDR_OFFSET + 0x0850 )
++#define DDR_CCR134     (DDR_OFFSET + 0x0860 )
++#define DDR_CCR135     (DDR_OFFSET + 0x0870 )
++#define DDR_CCR136     (DDR_OFFSET + 0x0880 )
++#define DDR_CCR137     (DDR_OFFSET + 0x0890 )
++#define DDR_CCR138     (DDR_OFFSET + 0x08A0 )
++#define DDR_CCR139     (DDR_OFFSET + 0x08B0 )
++#define DDR_CCR140     (DDR_OFFSET + 0x08C0 )
++#define DDR_CCR141     (DDR_OFFSET + 0x08D0 )
++#define DDR_CCR142     (DDR_OFFSET + 0x08E0 )
++#define DDR_CCR143     (DDR_OFFSET + 0x08F0 )
++#define DDR_CCR144     (DDR_OFFSET + 0x0900 )
++#define DDR_CCR145     (DDR_OFFSET + 0x0910 )
++#define DDR_CCR146     (DDR_OFFSET + 0x0920 )
++#define DDR_CCR147     (DDR_OFFSET + 0x0930 )
++#define DDR_CCR148     (DDR_OFFSET + 0x0940 )
++#define DDR_CCR149     (DDR_OFFSET + 0x0950 )
++#define DDR_CCR150     (DDR_OFFSET + 0x0960 )
++#define DDR_CCR151     (DDR_OFFSET + 0x0970 )
++#define DDR_CCR152     (DDR_OFFSET + 0x0980 )
++#define DDR_CCR153     (DDR_OFFSET + 0x0990 )
++#define DDR_CCR154     (DDR_OFFSET + 0x09A0 )
++#define DDR_CCR155     (DDR_OFFSET + 0x09B0 )
++#define DDR_CCR156     (DDR_OFFSET + 0x09C0 )
++#define DDR_CCR157     (DDR_OFFSET + 0x09D0 )
++#define DDR_CCR158     (DDR_OFFSET + 0x09E0 )
++#define DDR_CCR159     (DDR_OFFSET + 0x09F0 )
++#define DDR_CCR160     (DDR_OFFSET + 0x0A00 )
++#define DDR_CCR161     (DDR_OFFSET + 0x0A10 )
++#define DDR_CCR162     (DDR_OFFSET + 0x0A20 )
++#define DDR_CCR163     (DDR_OFFSET + 0x0A30 )
++#define DDR_CCR164     (DDR_OFFSET + 0x0A40 )
++#define DDR_CCR165     (DDR_OFFSET + 0x0A50 )
++#define DDR_CCR166     (DDR_OFFSET + 0x0A60 )
++#define DDR_CCR167     (DDR_OFFSET + 0x0A70 )
++#define DDR_CCR168     (DDR_OFFSET + 0x0A80 )
++#define DDR_CCR169     (DDR_OFFSET + 0x0A90 )
++#define DDR_CCR170     (DDR_OFFSET + 0x0AA0 )
++#define DDR_CCR171     (DDR_OFFSET + 0x0AB0 )
++#define DDR_CCR172     (DDR_OFFSET + 0x0AC0 )
++#define DDR_CCR173     (DDR_OFFSET + 0x0AD0 )
++#define DDR_CCR174     (DDR_OFFSET + 0x0AE0 )
++#define DDR_CCR175     (DDR_OFFSET + 0x0AF0 )
++#define DDR_CCR176     (DDR_OFFSET + 0x0B00 )
++#define DDR_CCR177     (DDR_OFFSET + 0x0B10 )
++#define DDR_CCR178     (DDR_OFFSET + 0x0B20 )
++#define DDR_CCR179     (DDR_OFFSET + 0x0B30 )
++#define DDR_CCR180     (DDR_OFFSET + 0x0B40 )
++#define DDR_CCR181     (DDR_OFFSET + 0x0B50 )
++#define DDR_CCR182     (DDR_OFFSET + 0x0B60 )
++#define DDR_CCR183     (DDR_OFFSET + 0x0B70 )
++#define DDR_CCR184     (DDR_OFFSET + 0x0B80 )
++#define DDR_CCR185     (DDR_OFFSET + 0x0B90 )
++#define DDR_CCR186     (DDR_OFFSET + 0x0BA0 )
++#define DDR_CCR187     (DDR_OFFSET + 0x0BB0 )
++#define DDR_CCR188     (DDR_OFFSET + 0x0BC0 )
++#define DDR_CCR189     (DDR_OFFSET + 0x0BD0 )
++#define DDR_CCR190     (DDR_OFFSET + 0x0BE0 )
++#define DDR_CCR191     (DDR_OFFSET + 0x0BF0 )
++
++
++#define MC_MODUL_BASE		0xBF800000
++#define MC_ERRCAUSE   	MC_MODUL_BASE+0x0010
++#define MC_ERRADDR     	MC_MODUL_BASE+0x0020
++#define MC_CON		      MC_MODUL_BASE+0x0060
++#define MC_SRAM_ENABLE		0x00000004
++#define MC_SDRAM_ENABLE		0x00000002
++#define MC_DDRRAM_ENABLE	0x00000001
++#define MC_DDR_MODUL_BASE	0xBF801000
++
++#define MC_DC03		MC_DDR_MODUL_BASE+0x0030
++#define MC_DC15   MC_DDR_MODUL_BASE+0x00F0
++#define MC_DC21		MC_DDR_MODUL_BASE+0x0150
++#define MC_DC22		MC_DDR_MODUL_BASE+0x0160
++#define MC_DC24		MC_DDR_MODUL_BASE+0x0180
++
++void nand_gpio_init(void)
++{
++	  *BSP_GPIO_P3_DIR=0x2;
++    *BSP_GPIO_P3_ALTSEL0=0x3;
++    *BSP_GPIO_P3_ALTSEL1=0x0;
++    *BSP_GPIO_P3_OD=0x3;
++    
++    /* set GPIO pins for NAND */
++    /* P0.13 FL_A24 01:output*/
++    /* P1.8 FL_A23 01:output*/
++    *BSP_GPIO_P0_ALTSEL0 |= 0x2000;
++    *BSP_GPIO_P0_ALTSEL1 &= (~0x2000);
++    *BSP_GPIO_P0_DIR |= (0x2000);
++    *BSP_GPIO_P1_ALTSEL0 |= 0x100;
++    *BSP_GPIO_P1_ALTSEL1 &= (~0x100);
++    *BSP_GPIO_P1_DIR |= (0x100);
++}
++									  
++
++void *malloc(unsigned int size)
++{
++   
++    return NULL;
++}
++
++static void nand_read_page(u32 page_addr, u32 dest_addr)
++{
++   int i;
++   u8 *tmp;
++   u8 col_addr_num;
++     u8 page_addr_num;
++
++   if(CONFIG_NAND_PAGE_SIZE<=0x200){
++     col_addr_num=1;
++
++     if(CONFIG_NAND_FLASH_SIZE<32){
++        page_addr_num=2;
++      }else
++        page_addr_num=3;
++   }else{
++     col_addr_num=2;
++
++     if(CONFIG_NAND_FLASH_SIZE<128){
++          page_addr_num=2;
++      }else{
++        page_addr_num=3;
++      }
++   }
++   NAND_CE_SET;
++
++   NAND_SETCLE;
++   NAND_WRITE(WRITE_CMD,0);
++   NAND_CLRCLE;
++   NAND_SETALE;
++   for(i=0;i<col_addr_num;i++){
++    NAND_WRITE(WRITE_ADDR,0);
++  }
++   for(i=0;i<page_addr_num;i++){
++     NAND_WRITE(WRITE_ADDR,(u8)((page_addr>>(i*8)) & 0xff ));
++   }
++   NAND_CLRALE;
++
++   NAND_SETCLE;
++   if(CONFIG_NAND_PAGE_SIZE>0x200){
++     NAND_WRITE(WRITE_CMD,0x30);
++   }
++  NAND_CLRCLE;
++  while(!NAND_READY){}
++
++   /* Read page */
++   tmp = (u8*)dest_addr;
++   for (i = 0; i < CONFIG_NAND_PAGE_SIZE; i++)
++   {
++     NAND_READ(READ_DATA, *tmp++);
++   }
++   NAND_CE_CLEAR;
++
++   while(!NAND_READY){}
++}
++
++void nand_spl_init(void)
++{
++	ulong  buffer[6];
++  u8    page_buf[CONFIG_NAND_PAGE_SIZE];
++  ulong ddr_magic=0x88888888;
++  ulong erase_addr1=0, erase_addr2=0;
++  ulong  ecc;
++  int i;
++  
++  erase_addr1 = IFX_CFG_FLASH_DDR_CFG_START_ADDR;
++  erase_addr2 = IFX_CFG_FLASH_DDR_CFG_START_ADDR + IFX_CFG_FLASH_DDR_CFG_SIZE;
++
++  serial_init();
++
++  buffer[0] = 0;
++
++  asm("sync");
++ #if 1 //ctc
++  serial_puts("nand_read_page - "); print_u32(erase_addr2/CONFIG_NAND_PAGE_SIZE); serial_putc('\n');
++  nand_read_page((erase_addr2/CONFIG_NAND_PAGE_SIZE) - 1,page_buf);
++ #else
++  nand_read_page((16384/CONFIG_NAND_PAGE_SIZE)-1,page_buf);
++ #endif
++  asm("sync");
++  
++  for(i=0;i<6;i++){
++    buffer[i] = *(volatile u32*)(page_buf+CONFIG_NAND_PAGE_SIZE-24+i*4); /*last 24 bytes of 16k bytes*/
++  }
++  if(buffer[0]==ddr_magic)
++       {
++             ecc=buffer[1]^buffer[2]^buffer[3]^buffer[4];
++               if(ecc!=buffer[5]){
++                  REG32(0xBe22ff20)=0xff;
++                }else{
++                    REG32(0xBe22ff20)=0;
++                }
++         }
++     else{
++        REG32(0xBe22ff20)=0xff;
++    }
++
++     REG32(DDR_CCR07) = 0; /*put DDR controller inactive*/
++      asm("sync");
++	 if(REG32(0xBe22ff20)==0xff){ 
++	      REG32(DDR_CCR39)= REG32(DDR_CCR39) & 0xffff00ff;
++	      REG32(DDR_CCR40)= REG32(DDR_CCR40) & 0xffff00ff;
++	      REG32(0xBF400430) = 0x04;
++	    }else{
++	      REG32(DDR_CCR39)= buffer[1];
++	  	  REG32(DDR_CCR40)= buffer[2];
++        REG32(DDR_CCR43)= buffer[3];
++	      REG32(DDR_CCR44)= buffer[4];
++      }
++   asm("sync");   
++   REG32(DDR_CCR07) = 0x1010100; /*put DDR controller active*/
++   while(!(REG32(DDR_CCR47) & 0x01));
++   while(!(REG32(DDR_CCR48) & 0x01)); 
++
++	 asm("sync");
++	 tune_ddr();
++     
++	 asm("sync");
++   nand_boot();
++	
++}
+diff --git a/nand_spl/nand_boot.c b/nand_spl/nand_boot.c
+old mode 100644
+new mode 100755
+index b9fd6f5..05bd880
+--- a/nand_spl/nand_boot.c
++++ b/nand_spl/nand_boot.c
+@@ -141,6 +141,7 @@ static int nand_is_bad_block(struct mtd_info *mtd, int block)
+ 
+ static int nand_read_page(struct mtd_info *mtd, int block, int page, uchar *dst)
+ {
++  #if 0 //ctc
+ 	struct nand_chip *this = mtd->priv;
+ 	u_char *ecc_calc;
+ 	u_char *ecc_code;
+@@ -183,6 +184,15 @@ static int nand_read_page(struct mtd_info *mtd, int block, int page, uchar *dst)
+ 		stat = this->ecc.correct(mtd, p, &ecc_code[i], &ecc_calc[i]);
+ 	}
+ 
++  #else
++	struct nand_chip *this = mtd->priv;
++
++	nand_command(mtd, block, page, 0, NAND_CMD_READ0);
++	this->ecc.hwctl(mtd, NAND_ECC_READ);
++	this->read_buf(mtd, dst, CONFIG_SYS_NAND_PAGE_SIZE);
++
++  #endif
++
+ 	return 0;
+ }
+ 
+diff --git a/scripts_platform/Kconfig b/scripts_platform/Kconfig
+old mode 100644
+new mode 100755
+index 6192bf8..4e591fe
+--- a/scripts_platform/Kconfig
++++ b/scripts_platform/Kconfig
+@@ -67,9 +67,28 @@ config BOOT_WITH_NO_FLASH
+ endchoice
+ 
+ config ENV_IS_NOWHERE
+-    bool 
++    bool "ENV_IS_NOWHERE"
+ 	default n
+ 
++config JFFS2_PART
++    bool "writable JFFS2 partition support"
++	depends on NAND_FLASH && FIRMWARE_IN_ROOTFS
++    default n
++
++config IN_SUPERTASK
++	bool "Boot from supertask"
++	default n
++	depends on NOR_FLASH && (NOR_FLASH_16M || NOR_FLASH_32M) && FIRMWARE_IN_ROOTFS
++	help
++	Boots from supertask
++
++config DUAL_IMAGE
++	bool "dual image"
++	default n
++	depends on ( NAND_FLASH || NOR_FLASH && NOR_FLASH_32M ) && FIRMWARE_IN_ROOTFS
++	help
++	dual image support
++
+ config ENV_IS_IN_FLASH
+     bool
+ 
+@@ -92,9 +111,9 @@ config RAM_TEXT_BASE
+ 	default "0xA0400000"
+ 
+ config BOOTSTRAP_TEXT_BASE
+-    hex
++    hex "BOOTSTRAP TEXTBASE"
+ 	default "0xB0000000" if ( BOOT_FROM_NOR )
+-	default "0xa0100000" if ( !BOOT_FROM_NOR )
++	default "0xA0100000" if ( !BOOT_FROM_NOR )
+ 
+ config NAND_PRELOAD_TEXT_BASE
+ 	hex
+@@ -159,7 +178,7 @@ menu "Board Settings"
+ 
+ config IFX_MEMORY_SIZE
+         int "RAM Size(M)"
+-        default 32
++        default 64
+ 
+ config ASC_BAUDRATE
+   string "ASC BAUDRATE"
+@@ -197,6 +216,12 @@ choice
+      depends on BOOT_FROM_NOR
+      default NOR_FLASH_8M
+ 
++config NOR_FLASH_32M
++     bool "32M"
++
++config NOR_FLASH_16M
++     bool "16M"
++
+ config NOR_FLASH_8M
+      bool "8M"
+ 
+@@ -234,6 +259,12 @@ config SPI_FLASH_2M
+ config SPI_FLASH_1M
+      bool "1M"
+ 
++config SPI_FLASH_512K
++     bool "512K"
++
++config SPI_FLASH_256K
++     bool "256K"
++
+ endchoice
+ 							  
+ 
+@@ -257,6 +288,10 @@ config SPI_FLASH_MXIC
+         bool "MXIC SFLASH SUPPORT"
+     depends on SPI_FLASH
+ 
++config SPI_FLASH_WINBOND
++        bool "WINBOND SFLASH SUPPORT"
++    depends on SPI_FLASH
++
+ config LANTIQ_SPI
+         bool
+ 
+@@ -361,9 +396,15 @@ config NAND_FLASH_128M
+ config NAND_FLASH_512M
+      bool "512M"
+ 
++config NAND_FLASH_64M
++     bool "64M"
++
+ config NAND_FLASH_32M
+      bool "32M"
+ 
++config NAND_FLASH_16M
++     bool "16M"
++
+ config NAND_FLASH_8M
+      bool "8M"
+ 
+@@ -377,11 +418,18 @@ endchoice
+ 
+ 
+ config NAND_FLASH_SIZE
+-    hex 
++	### ctc ###
++#    hex
++	int 
++	###########
+ 	default "2" if ( NAND_FLASH_2M )
+ 	default "4" if ( NAND_FLASH_4M )
+ 	default "8" if ( NAND_FLASH_8M )
++	### ctc ###
++	default "16" if ( NAND_FLASH_16M )
++	###########
+ 	default "32" if ( NAND_FLASH_32M )
++	default "64" if ( NAND_FLASH_64M )
+ 	default "128" if ( NAND_FLASH_128M )
+ 	default "512" if ( NAND_FLASH_512M )
+ 	default "4096" if ( NAND_FLASH_4096M )
+@@ -389,12 +437,15 @@ config NAND_FLASH_SIZE
+ config NAND_PAGE_SIZE
+      hex "NAND flash page size(bytes)"
+      default "0x200"
+-     depends on ( TUNE_DDR && BOOT_FROM_NAND)
++	### ctc ###
++#     depends on ( TUNE_DDR && BOOT_FROM_NAND)
++     depends on ( BOOT_FROM_NAND)
++	###########
+ 
+ 
+ config FIRMWARE_IN_ROOTFS
+      bool "firmware in rootfs"
+-     default n
++     default y
+ 
+ config OVERLAY
+ 	 bool "overlay fs support"
+@@ -428,11 +479,11 @@ endmenu
+ menu "Network Settings"
+ config IP_ADDRESS
+     string "IP address"
+-    default "192.168.1.1"
++    default "192.168.2.1"
+ 
+ config SERVER_IP_ADDRESS
+     string "Server IP address"
+-    default "192.168.1.2"
++    default "192.168.2.100"
+ 
+ config ETHERNET_ADDRESS
+     string "Ethernet Address"
+@@ -460,15 +511,11 @@ config TFTP_LOAD_ADDRESS
+     
+ config MEM
+     string "mem"
+-    default "31M"
++    default "62M"
+ 
+ config PHYM
+     string "phym"
+-    default "32M"
+-
+-config BOOTDELAY
+-    int "BOOTDELAY(seconds)"
+-	default 5
++    default "64M"
+ 
+ config ROOT_PATH
+     string "rootpath"
+@@ -483,13 +530,6 @@ config TFTPPATH
+     string "tftppath"
+ 	default ""
+ 
+-config ROOTFSMTD
+-    string  
+-	default "/dev/mtdblock1" if ( FIRMWARE_IN_ROOTFS && !BOOT_FROM_NAND )
+-	default "/dev/mtdblock2" if ( !FIRMWARE_IN_ROOTFS && !BOOT_FROM_NAND )
+-	default "/dev/mtdblock2" if ( FIRMWARE_IN_ROOTFS && BOOT_FROM_NAND )
+-	default "/dev/mtdblock3" if ( !FIRMWARE_IN_ROOTFS && BOOT_FROM_NAND )
+-
+ config NFSARGS
+     string "nfsargs"
+     default "setenv bootargs root=/dev/nfs rw nfsroot=$(serverip):$(rootpath)"
+@@ -500,7 +540,7 @@ config RAMARGS
+ 
+ config FLASHARGS
+     string "flashargs"
+-    default "setenv bootargs root=$(rootfsmtd) ro rootfstype=squashfs init=/etc/preinit"
++    default "setenv bootargs root=$(rootfsmtd) rw rootfstype=squashfs,jffs2 init=/etc/preinit"
+ 
+ config ADDIP
+     string "addip"
+@@ -514,26 +554,6 @@ config BOOTFILE
+     string "bootfile"
+     default "uImage"
+ 
+-config U_BOOT
+-    string "u-boot"
+-    default "u-boot.lq"
+-
+-config ROOTFS
+-    string "rootfs"
+-    default "rootfs.img"
+-
+-config FIRMWARE
+-    string "firmware"
+-    default "firmware.img"
+-
+-config FULLIMAGE
+-    string "fullimage"
+-	default "fullimage.img"
+-
+-config TOTALIMAGE
+-    string "totalimage"
+-	default "totalimage.img"
+-
+ config USE_DEFAULT_MTDPARTS
+     bool "use default MTDPARTS"
+ 	default y
+@@ -543,9 +563,9 @@ if LANTIQ_UBOOT_danube
+ config MTDPARTS
+     string
+ 	default "ifx_nor0:64k(uboot),256k(firmware),7744k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M  && !FIRMWARE_IN_ROOTFS && !OVERLAY )
+-  default "ifx_nor0:64k(uboot),256k(firmware),7424k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M  && !FIRMWARE_IN_ROOTFS && OVERLAY )
+-  default "ifx_nor0:64k(uboot),8000k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M && FIRMWARE_IN_ROOTFS && !OVERLAY)
+-  default "ifx_nor0:64k(uboot),7680k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M && FIRMWARE_IN_ROOTFS && OVERLAY )
++	default "ifx_nor0:64k(uboot),256k(firmware),7424k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M  && !FIRMWARE_IN_ROOTFS && OVERLAY )
++	default "ifx_nor0:64k(uboot),8000k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M && FIRMWARE_IN_ROOTFS && !OVERLAY)
++	default "ifx_nor0:64k(uboot),7680k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M && FIRMWARE_IN_ROOTFS && OVERLAY )
+ 	default "ifx_nor0:64k(uboot),-(rootfs)" if ( BOOT_FROM_UART )
+ 	default "" if ( NOR_FLASH_AUTO )
+ 	depends on USE_DEFAULT_MTDPARTS
+@@ -576,10 +596,10 @@ config MTDPARTS
+ 	default "ifx_nor0:64k(uboot),192k(firmware),-(rootfs)" if ( BOOT_FROM_NOR && NOR_FLASH_4M && !FIRMWARE_IN_ROOTFS )
+ 	default "ifx_sflash:64k(uboot),3904k(rootfs),32k(sysconfig),4k(ubootconfig),-(res)" if ( BOOT_FROM_SPI && SPI_FLASH_4M && !FIRMWARE_IN_ROOTFS )
+ 	default "ifx_nor0:64k(uboot),256k(firmware),7744k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M  && !FIRMWARE_IN_ROOTFS && !OVERLAY )
+-  default "ifx_nor0:64k(uboot),256k(firmware),7424k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M  && !FIRMWARE_IN_ROOTFS && OVERLAY )
+-  default "ifx_nor0:64k(uboot),8000k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M && FIRMWARE_IN_ROOTFS && !OVERLAY )
+-  default "ifx_nor0:64k(uboot),7680k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M && FIRMWARE_IN_ROOTFS && OVERLAY )
+-  default "ifx_sflash:128k(uboot),192k(firmware),-(rootfs)" if ( BOOT_FROM_SPI && SPI_FLASH_1M && !FIRMWARE_IN_ROOTFS )
++	default "ifx_nor0:64k(uboot),256k(firmware),7424k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M  && !FIRMWARE_IN_ROOTFS && OVERLAY )
++	default "ifx_nor0:64k(uboot),8000k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M && FIRMWARE_IN_ROOTFS && !OVERLAY )
++	default "ifx_nor0:64k(uboot),7680k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && NOR_FLASH_8M && FIRMWARE_IN_ROOTFS && OVERLAY )
++	default "ifx_sflash:128k(uboot),192k(firmware),-(rootfs)" if ( BOOT_FROM_SPI && SPI_FLASH_1M && !FIRMWARE_IN_ROOTFS )
+ 	default "ifx_sflash:128k(uboot),192k(firmware),7744k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_SPI && SPI_FLASH_8M && !FIRMWARE_IN_ROOTFS )
+ 	default "ifx_sflash:128k(uboot),-(rootfs)" if ( BOOT_FROM_SPI && FIRMWARE_IN_ROOTFS )
+ 	default "ifx_nand:128k(uboot),2688k(kernel),28800k(rootfs),64k(sysconfig),16k(ubootconfig),16k(fwdiag),-(res)" if ( BOOT_FROM_NAND && FIRMWARE_IN_ROOTFS )
+@@ -593,16 +613,19 @@ endif
+ 
+ if LANTIQ_UBOOT_vr9
+ config MTDPARTS
+-    string 
+-	default "ifx_nor0:128k(uboot),7936k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && FIRMWARE_IN_ROOTFS && !OVERLAY )
+-	default "ifx_nor0:128k(uboot),7616k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && FIRMWARE_IN_ROOTFS && OVERLAY )
+-	default "ifx_nor0:128k(uboot),512k(firmware),7424k(rootfs),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && !FIRMWARE_IN_ROOTFS && !OVERLAY )
+-	default "ifx_nor0:128k(uboot),512k(firmware),7104k(rootfs),320k(overlay),64k(sysconfig),4k(ubootconfig),4k(fwdiag),4k(caliberation),-(res)" if ( BOOT_FROM_NOR && !FIRMWARE_IN_ROOTFS && OVERLAY )
+-	default "ifx_sflash:128k(uboot),512k(firmware),-(rootfs)" if ( SPI_FLASH_4M && !FIRMWARE_IN_ROOTFS )
+-	default "ifx_sflash:128k(uboot),512k(firmware),-(rootfs)" if ( SPI_FLASH_8M && !FIRMWARE_IN_ROOTFS )
+-	default "ifx_sflash:128k(uboot),-(rootfs)" if ( BOOT_FROM_SPI && FIRMWARE_IN_ROOTFS )
+-  default "ifx_nand:256k(uboot),2560k(kernel),111872k(rootfs),256k(sysconfig),256k(ubootconfig),256k(fwdiag),-(res)" if ( BOOT_FROM_NAND && FIRMWARE_IN_ROOTFS )
+-	default "ifx_nand:256k(uboot),512k(firmware),2m(kernel),111872k(rootfs),256k(sysconfig),256k(ubootconfig),256k(fwdiag),-(res)" if ( BOOT_FROM_NAND && !FIRMWARE_IN_ROOTFS )
++    string "MTDPARTS"
++	default "ifx_nor0:128k(uboot),-(rootfs)" if ( BOOT_FROM_NOR && FIRMWARE_IN_ROOTFS && !NOR_FLASH_16M && !NOR_FLASH_32M)
++	default "ifx_nor0:128k(uboot),512k(firmware),-(rootfs)" if ( BOOT_FROM_NOR && !FIRMWARE_IN_ROOTFS )
++	default "ifx_nor0:128k(uboot),13184k(rootfs),2m(kernel),768k(sysconfig),128k(ubootconfig),128k(fwdiag)" if ( BOOT_FROM_NOR && !NAND_FLASH && FIRMWARE_IN_ROOTFS && NOR_FLASH_16M && !IN_SUPERTASK )
++	default "ifx_nor0:256k(uboot),13056k(rootfs),2m(kernel),768k(sysconfig),128k(ubootconfig),128k(fwdiag)" if ( BOOT_FROM_NOR && NAND_FLASH && FIRMWARE_IN_ROOTFS && NOR_FLASH_16M && !IN_SUPERTASK )
++	default "ifx_nor0:128k(uboot),8448k(supertask1),128k(uboot-bin),7296k(rootfs),128k(linux-cfg),256k(supertask2)" if ( BOOT_FROM_NOR && FIRMWARE_IN_ROOTFS && NOR_FLASH_16M && IN_SUPERTASK )
++	default "ifx_nor0:128k(uboot),29568k(rootfs),2m(kernel),768k(sysconfig),128k(ubootconfig),128k(fwdiag)" if ( BOOT_FROM_NOR && !NAND_FLASH && FIRMWARE_IN_ROOTFS && NOR_FLASH_32M && !IN_SUPERTASK )
++	default "ifx_nor0:256k(uboot),29440k(rootfs),2m(kernel),768k(sysconfig),128k(ubootconfig),128k(fwdiag)" if ( BOOT_FROM_NOR && NAND_FLASH && FIRMWARE_IN_ROOTFS && NOR_FLASH_32M && !IN_SUPERTASK )
++	default "ifx_nor0:128k(uboot),8448k(supertask1),128k(uboot-bin),7296k(rootfs),128k(linux-cfg),16640k(supertask2)" if ( BOOT_FROM_NOR && FIRMWARE_IN_ROOTFS && NOR_FLASH_32M && IN_SUPERTASK )
++	default "ifx_sflash:192k(uboot),512k(firmware),-(rootfs)" if ( BOOT_FROM_SPI && !FIRMWARE_IN_ROOTFS )
++	default "ifx_sflash:192k(uboot),-(rootfs)" if ( BOOT_FROM_SPI && FIRMWARE_IN_ROOTFS )
++    default "ifx_nand:256k(uboot),-(rootfs)" if ( BOOT_FROM_NAND && FIRMWARE_IN_ROOTFS )
++	default "ifx_nand:256k(uboot),512k(firmware),-(rootfs)" if ( BOOT_FROM_NAND && !FIRMWARE_IN_ROOTFS )
+ 	default "ifx_nor0:128k(uboot),-(rootfs)" if ( BOOT_FROM_UART )
+ 	depends on USE_DEFAULT_MTDPARTS
+ endif
+@@ -617,7 +640,8 @@ endif
+ 
+ config MTDPARTS
+     string "MTDPARTS"
+-	default "ifx_nor0:64k(uboot),-(rootfs)"
++	default "ifx_nor0:128k(uboot),13184k(rootfs),2m(kernel),768k(sysconfig),128k(ubootconfig),128k(fwdiag)" if ( ( NOR_FLASH_16M || NOR_FLASH_32M ) && FIRMWARE_IN_ROOTFS )
++	default "ifx_nor0:64k(uboot),-(rootfs)"  if ( !NOR_FLASH_16M && !NOR_FLASH_32M || !FIRMWARE_IN_ROOTFS )
+ 	depends on !USE_DEFAULT_MTDPARTS
+ 
+ 
+@@ -639,7 +663,54 @@ config NET_NFS
+ 
+ config FLASH_FLASH
+     string "flash_flash"
+-    default "run flashargs addip addmisc; bootm $(kernel_addr)"
++    default "run flashargs addip addmisc; bootm $(kernel_addr)" if ( !UBOOT_CONFIG_BOOT_FROM_NAND )
++    default "nand read.e $(loadaddr) $(f_kernel_addr) $(f_kernel_size); run flashargs addip addmisc; bootm $(loadaddr)" if ( UBOOT_CONFIG_BOOT_FROM_NAND )
++
++config BOOTCOMMAND
++    string "bootcmd"
++	default "run flash_flash"
++
++
++if !BOOT_FROM_SPI || !SPI_FLASH_256K && !SPI_FLASH_512K
++
++config ROOTFSMTD
++    string "rootfsmtd"
++	default "/dev/mtdblock2" if ( BOOT_FROM_NAND && FIRMWARE_IN_ROOTFS )
++	default "/dev/mtdblock3" if ( BOOT_FROM_NAND && !FIRMWARE_IN_ROOTFS )
++	default "/dev/mtdblock1" if ( BOOT_FROM_NOR && FIRMWARE_IN_ROOTFS && !IN_SUPERTASK )
++	default "/dev/mtdblock3" if ( BOOT_FROM_NOR && FIRMWARE_IN_ROOTFS && IN_SUPERTASK )
++	default "/dev/mtdblock2" if ( BOOT_FROM_NOR && !FIRMWARE_IN_ROOTFS )
++	default "/dev/mtdblock2" if ( BOOT_FROM_SPI && !FIRMWARE_IN_ROOTFS )
++
++config FIRMWARE
++    string "firmware"
++    default "firmware.img"
++
++config FULLIMAGE
++    string "fullimage"
++	default "fullimage.img"
++
++config TOTALIMAGE
++    string "totalimage"
++	default "totalimage.img"
++
++config U_BOOT
++    string "u-boot"
++    default "u-boot.lq"
++
++config SYSCONFIG
++	string "sysconfig"
++	default "sysconfig.jffs2-128k.nand"
++
++config ROOTFS
++    string "rootfs"
++    default "rootfs.img"
++
++config JFFS2IMAGE
++    string "jffs2image"
++	default "root.jffs2-128k.nor" if ( BOOT_FROM_NOR &&  ( NOR_FLASH_16M || NOR_FLASH_32M ) )
++	default "root.jffs2-64k.nor"  if ( BOOT_FROM_NOR && !( NOR_FLASH_16M || NOR_FLASH_32M ) )
++	default "root.jffs2-16k.nand" if ( BOOT_FROM_NAND )
+ 
+ config UPDATE_NANDBOOT
+     string "update_nandboot"
+@@ -648,7 +719,9 @@ config UPDATE_NANDBOOT
+ 
+ config UPDATE_UBOOT
+     string "update_uboot"
+-    default "tftpboot $(loadaddr) $(tftppath)$(u-boot);erase b0000000 b001ffff;cp.b $(loadaddr) b0000000 $(filesize);reset"
++    default "tftpboot $(loadaddr) $(tftppath)$(u-boot); erase b0000000 +20000;cp.b $(loadaddr) b0000000 $(filesize); reset" if ( !NAND_FLASH )
++    default "tftpboot $(loadaddr) $(tftppath)$(u-boot); erase b0000000 +30000;cp.b $(loadaddr) b0000000 $(filesize); reset" if ( BOOT_FROM_NOR && NAND_FLASH )
++    default "tftpboot $(loadaddr) $(tftppath)$(u-boot); nand erase $(f_uboot_addr) $(f_uboot_size); nand write.partial $(loadaddr) $(f_uboot_addr) $(filesize); reset" if ( BOOT_FROM_NAND )
+ 
+ config UPDATE_KERNEL
+     string "update_kernel"
+@@ -658,6 +731,10 @@ config UPDATE_ROOTFS
+     string "update_rootfs"
+     default "tftpboot $(loadaddr) $(tftppath)$(rootfs); upgrade $(loadaddr) $(filesize)"
+ 
++config UPDATE_ALL
++	string "update_all"
++	default "run update_kernel; run update_rootfs"
++
+ config UPDATE_FIRMWARE
+     string "update_firmware"
+     default "tftpboot $(loadaddr) $(tftppath)$(firmware);upgrade $(loadaddr) $(filesize)"
+@@ -670,28 +747,136 @@ config UPDATE_TOTALIMAGE
+     string "update_totalimage"
+ 	default "tftpboot $(loadaddr) $(tftppath)$(totalimage);upgrade $(loadaddr) $(filesize)"
+ 
+-config BOOTCOMMAND
+-    string "bootcmd"
+-	default "run flash_flash"
++config UPDATE_JFFS2IMAGE
++    string "update_jffs2image"
++	default "tftpboot $(loadaddr) $(tftppath)$(jffs2image); erase $(f_rootfs_addr) 0xb07fffff; upgrade $(loadaddr) $(filesize)"  if ( BOOT_FROM_NOR && NOR_FLASH_8M )
++	default "tftpboot $(loadaddr) $(tftppath)$(jffs2image); erase $(f_rootfs_addr) +0x0ce0000; upgrade $(loadaddr) $(filesize)"  if ( BOOT_FROM_NOR && NOR_FLASH_16M )
++	default "tftpboot $(loadaddr) $(tftppath)$(jffs2image); erase $(f_rootfs_addr) +0x1ce0000; upgrade $(loadaddr) $(filesize)"  if ( BOOT_FROM_NOR && NOR_FLASH_32M )
++	default "mw.l 80800000 0xffffffff 800000; tftpboot 80800000 $(tftppath)$(jffs2image); nand erase $(f_rootfs_addr) $(f_rootfs_size); nand write.e 80800040 $(f_rootfs_addr) $(filesize)"  if ( BOOT_FROM_NAND )
++
++config UPDATE_FLASH
++    string "update_flash"
++	default "tftp $(loadaddr) flash3.img; protect off b1000000 +800000; erase b1000000 +800000; cp.b $(loadaddr) b1000000 800000;  tftp $(loadaddr) flash2.img; protect off b0800000 +800000; erase b0800000 +800000; cp.b $(loadaddr) b0800000 800000; tftp $(loadaddr) flash4.img; protect off b1800000 +800000; erase b1800000 +800000; cp.b $(loadaddr) b1800000 800000;  tftp $(loadaddr) flash1.img; protect off b0000000 +800000; erase b0000000 +800000; cp.b $(loadaddr) b0000000 800000" if ( BOOT_FROM_NOR && NOR_FLASH_32M )
++	default "tftp $(loadaddr) flash2.img; protect off b0800000 +800000; erase b0800000 +800000; cp.b $(loadaddr) b0800000 800000;  tftp $(loadaddr) flash1.img; protect off b0000000 +800000; erase b0000000 +800000; cp.b $(loadaddr) b0000000 800000" if ( BOOT_FROM_NOR && NOR_FLASH_16M )
++	default "tftp $(loadaddr) flash1.img; protect off b0000000 +$(filesize); erase b0000000 +$(filesize); cp.b $(loadaddr) b0000000 $(filesize)"  if ( BOOT_FROM_NOR && !NOR_FLASH_16M && !NOR_FLASH_8M )
++
++config UPDATE_SYSCONFIG
++    string "update_sysconfig"
++	depends on NAND_FLASH_32M || NAND_FLASH_512M
++    default "tftpboot $(loadaddr) $(tftppath)$(sysconfig); nand erase $(f_sysconfig_addr) $(f_sysconfig_size); nand write.partial $(loadaddr) $(f_sysconfig_addr) $(filesize)"
++
++config UPDATE_KERNEL2
++	string "update_kernel2"
++	depends on DUAL_IMAGE
++
++config UPDATE_ROOTFS2
++	string "update_rootfs2"
++	depends on DUAL_IMAGE
++
++config UPDATE_JFFS2IMAGE2
++	string "update_jffs2image2"
++	depends on DUAL_IMAGE
++
++config UPDATE_ALL2
++	string "upadte_all2"
++	depends on DUAL_IMAGE
++	default "run update_kernel2; run update_rootfs2"
++
++config UPDATE_DUAL
++	string "upadte_dual"
++	depends on DUAL_IMAGE
++	default "run update_kernel ; run update_rootfs ; run update_kernel2 ; run update_rootfs2"
++endif
++
++
++if BOOT_FROM_SPI && ( SPI_FLASH_256K || SPI_FLASH_512K )
++
++config ROOTFSMTD
++    string "rootfsmtd"
++	default "/dev/mtdblock1"
++    select ENV_IS_IN_NAND
++
++config U_BOOT
++    string "u-boot"
++    default "u-boot.sflash"
++
++config ROOTFS
++    string "rootfs"
++    default "rootfs.img"
++
++config JFFS2IMAGE
++    string "jffs2image"
++	default "root.jffs2.nand"
++
++config UPDATE_UBOOT
++    string "update_uboot"
++	default "tftpboot $(loadaddr) $(tftppath)$(u-boot); sf erase 0 40000; sf write $(loadaddr) 0 $(filesize); reset" if ( SPI_FLASH_256K )
++	default "tftpboot $(loadaddr) $(tftppath)$(u-boot); sf erase 0 80000; sf write $(loadaddr) 0 $(filesize); reset" if ( SPI_FLASH_512K )
++
++config UPDATE_KERNEL
++    string "update_kernel"
++    default "tftpboot $(loadaddr) $(tftppath)$(bootfile); nand erase $(f_kernel_addr) $(f_kernel_size); nand write $(loadaddr) $(f_kernel_addr) $(f_kernel_size)"
++
++config UPDATE_ROOTFS
++    string "update_rootfs"
++    default "tftpboot $(loadaddr) $(tftppath)$(jffs2image); nand erase $(f_rootfs_addr) $(f_rootfs_size); nand write.jffs2 $(loadaddr) $(f_rootfs_addr) $(filesize)"
++
++config UPDATE_FLASH
++    string "update_flash"
++	default "nand erase; tftp $(loadaddr) part0.img; nand write $(loadaddr) f_$(data_block0)_addr $(filesize); tftp $(loadaddr) part1.img; nand write $(loadaddr) f_$(data_block1)_addr $(filesize); tftp $(loadaddr) part2.img; nand write $(loadaddr) f_$(data_block2)_addr $(filesize); tftp $(loadaddr) part3.img; nand write $(loadaddr) f_$(data_block3)_addr $(filesize); tftp $(loadaddr) part4.img; nand write $(loadaddr) f_$(data_block4)_addr $(filesize); tftp $(loadaddr) part5.img; nand write $(loadaddr) f_$(data_block5)_addr $(filesize); tftp $(loadaddr) part6.img; nand write $(loadaddr) f_$(data_block6)_addr $(filesize)"
++
++config BOOT_PART
++    string "boot_part"
++	default "1"
++
++endif
+ 
+ config RESET_UBOOT_CONFIG
+-	string    
++	string "reset_uboot_config"
+ 	default "prot off $(f_ubootconfig_addr) $(f_ubootconfig_end); erase $(f_ubootconfig_addr) $(f_ubootconfig_end)" if ( BOOT_FROM_NOR )
+ 	default "sf probe 3; sf write 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_ar9 ) 
+ 	default "sf probe 0; sf write 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_amazon_se )
+ 	default "sf probe 3; sf write 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_vr9 )
+ 	default "sf probe 3; sf write 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_ar10 )
+-	default "nand write.partial 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)" if ( BOOT_FROM_NAND )
++	default "nand write.e 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)" if ( BOOT_FROM_NAND )
+ 
+ config RESET_DDR_CONFIG
+-    string
++    string "reset_ddr_config"
+ 	default "prot off $(f_ddrconfig_addr) $(f_ddrconfig_end); erase $(f_ddrconfig_addr) $(f_ddrconfig_end)" if ( BOOT_FROM_NOR )
+     default "sf probe 3; sf write 80400000 $(f_ddrconfig_addr) $(f_ddrconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_ar9 )
+     default "sf probe 0; sf write 80400000 $(f_ddrconfig_addr) $(f_ddrconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_amazon_se	)
+     default "sf probe 3; sf write 80400000 $(f_ddrconfig_addr) $(f_ddrconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_vr9 )
+     default "sf probe 3; sf write 80400000 $(f_ddrconfig_addr) $(f_ddrconfig_size)"  if ( BOOT_FROM_SPI && LANTIQ_UBOOT_ar10 )
+ 	default "nand write.partial 80400000 $(f_ddrconfig_addr) $(f_ddrconfig_size)" if ( BOOT_FROM_NAND )
+-					
++
++config SW_VERSION
++    string "sw_version"
++	default "01-01-100"
++
++config HW_VERSION
++    string "hw_version"
++	default "VR9"
++
++config SERIAL
++    string "serial"
++	default "00000000"
++
++if DUAL_IMAGE
++
++config ROOTFSMTD2
++    string "rootmtd2"
++	default "/dev/mtdblock3"
++
++config FLASHARGS2
++    string "flashargs2"
++    default "setenv bootargs root=$(rootfsmtd2) rw rootfstype=squashfs,jffs2 init=/etc/preinit"
++
++config FLASH_FLASH2
++	string "flash_flash2"
++	default "run flashargs2 addip addmisc; bootm $(f_kernel2_addr)" if ( !BOOT_FROM_NAND )
++	default "nand read.e $(loadaddr) $(f_kernel2_addr) $(f_kernel2_size); run flashargs2 addip addmisc; bootm $(loadaddr)" if ( BOOT_FROM_NAND )
++
++endif
+ 
+ endmenu
+ 

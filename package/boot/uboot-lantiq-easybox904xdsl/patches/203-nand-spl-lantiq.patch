@@ -1,0 +1,455 @@
+# HG changeset patch
+# Parent 35e0a4da01bca2e43f5770a3dd9d34e22f0f8d0a
+add nand-spl for Lantiq target
+
+--- /dev/null
++++ b/nand_spl/board/lantiq/Makefile
+@@ -0,0 +1,153 @@
++#
++# (C) Copyright 2006-2007
++# Stefan Roese, DENX Software Engineering, sr@denx.de.
++#
++# (C) Copyright 2008
++# Guennadi Liakhovetki, DENX Software Engineering, <lg@denx.de>
++#
++# See file CREDITS for list of people who contributed to this
++# project.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++# MA 02111-1307 USA
++#
++
++CONFIG_NAND_SPL	= y
++
++include $(TOPDIR)/config.mk
++include $(TOPDIR)/nand_spl/board/lantiq/config.mk
++
++LDSCRIPT= $(TOPDIR)/nand_spl/board/lantiq/u-boot.lds
++LDFLAGS	= -Bstatic -T $(nandobj)u-boot.lds -Ttext $(CONFIG_NAND_SPL_TEXT_BASE) $(PLATFORM_LDFLAGS)
++AFLAGS	+=-mabicalls -fpic -DCONFIG_NAND_SPL -I$(TOPDIR)/board/$(BOARD)/
++CFLAGS	+=-mabicalls -fpic -DCONFIG_NAND_SPL -I$(TOPDIR)/board/$(BOARD)/
++
++SOBJS	= start.o lowlevel_init.o 
++COBJS	= nand_boot.o nand_ecc.o lq_nand.o board.o asc.o clock.o tune_ddr.o string.o time.o
++
++SRCS	:= $(addprefix $(obj),$(SOBJS:.o=.S) $(COBJS:.o=.c))
++OBJS	:= $(addprefix $(obj),$(SOBJS) $(COBJS))
++__OBJS	:= $(SOBJS) $(COBJS)
++LNDIR	:= $(OBJTREE)/nand_spl/board/lantiq
++
++nandobj	:= $(OBJTREE)/nand_spl/board/lantiq
++
++ALL	= $(nandobj)u-boot-spl $(nandobj)u-boot-spl.bin $(nandobj)u-boot-spl-16k.bin nandpreload.bin
++
++all:	$(obj).depend $(ALL)
++	@rm -f u-boot-spl.bin u-boot-spl-16k.bin 
++	@ln -s $(nandobj)u-boot-spl.bin $(TOPDIR)/nand_spl/u-boot-spl.bin
++	@ln -s $(nandobj)u-boot-spl-16k.bin $(TOPDIR)/nand_spl/u-boot-spl-16k.bin
++
++LDFLAGS_NANDPRELOAD = -Bstatic -T nandpreload.lds -Ttext $(CONFIG_NAND_PRELOAD_TEXT_BASE)
++OBJS_NANDPRELOAD =  start_nandpreload.o
++OBJS_NANDPRELOAD += nand_preload.o
++
++nandpreload.bin: nandpreload
++	$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
++
++nandpreload:  $(OBJS_NANDPRELOAD)
++	$(LD) $(LDFLAGS_NANDPRELOAD) $(OBJS_NANDPRELOAD) -o nandpreload
++				
++
++$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin nandpreload.bin
++	touch dummy
++	$(TOPDIR)/scripts_platform/mk_sf.pl dummy nandpreload.bin $(CONFIG_NAND_PRELOAD_TEXT_BASE) $(nandobj)u-boot-spl-16k.bin
++	$(TOPDIR)/scripts_platform/pad2align.sh -n 512 $(nandobj)u-boot-spl-16k.bin
++	cat $(nandobj)u-boot-spl.bin >> $(nandobj)u-boot-spl-16k.bin
++	$(TOPDIR)/scripts_platform/pad2align.sh -n 16384 $(nandobj)u-boot-spl-16k.bin 
++
++$(nandobj)u-boot-spl.bin:	$(nandobj)u-boot-spl
++	$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
++
++$(nandobj)u-boot-spl:	$(OBJS) $(nandobj)u-boot.lds
++	cd $(LNDIR) && $(LD) $(LDFLAGS) $(__OBJS) \
++		-Map $(nandobj)u-boot-spl.map \
++		-o $(nandobj)u-boot-spl
++
++$(nandobj)u-boot.lds: $(LDSCRIPT)
++	$(CPP) $(CPPFLAGS) $(LDPPFLAGS) -ansi -D__ASSEMBLY__ -P - <$^ >$@
++
++# create symbolic links for common files
++
++# from cpu directory
++$(obj)start.S:
++	@rm -f $@
++	@ln -s $(TOPDIR)/arch/mips/cpu/$(BOARD)/start_nand_spl.S $@
++	
++clock.c:
++	@rm -f $@
++	@ln -s $(TOPDIR)/arch/mips/cpu/$(BOARD)/clock.c $@
++
++asc.c:
++	@rm -f $@
++	@ln -s $(TOPDIR)/drivers/serial/lq_asc.c $@
++
++# from board directory
++$(obj)lowlevel_init.S:
++	@rm -f $@
++	@ln -s $(TOPDIR)/board/$(BOARD)/lowlevel_init.S $@
++
++
++board.c:
++	@rm -f $@
++	@ln -s $(TOPDIR)/board/$(BOARD)/nand_spl_board.c $@
++		
++
++#from lib_bootstrap directory
++tune_ddr.c:
++	@rm -f $@
++	@ln -s $(TOPDIR)/lib_bootstrap/tune_ddr.c $@
++
++
++# from nand_spl directory
++$(obj)nand_boot.c:
++	@rm -f $@
++	@ln -s $(TOPDIR)/nand_spl/nand_boot.c $@
++
++# from drivers/mtd/nand directory
++$(obj)nand_ecc.c:
++	@rm -f $@
++	@ln -s $(TOPDIR)/drivers/mtd/nand/nand_ecc.c $@
++
++$(obj)lq_nand.c:
++	@rm -f $@
++	@ln -s $(TOPDIR)/drivers/mtd/nand/lq_nand.c $@
++
++
++#from lib directory
++string.c:
++	@rm -f $@
++	@ln -s $(TOPDIR)/lib/string.c $@
++
++time.c:
++	@rm -f $@
++	@ln -s $(TOPDIR)/arch/mips/lib/time.c $@
++		
++
++#########################################################################
++
++$(obj)%.o:	$(obj)%.S
++	$(CC) $(AFLAGS) -c -o $@ $<
++
++$(obj)%.o:	$(obj)%.c
++	$(CC) $(CFLAGS) -c -o $@ $<
++
++# defines $(obj).depend target
++include $(SRCTREE)/rules.mk
++
++sinclude $(obj).depend
++
++#########################################################################
+--- /dev/null
++++ b/nand_spl/board/lantiq/config.mk
+@@ -0,0 +1,40 @@
++#
++# (C) Copyright 2006
++# Stefan Roese, DENX Software Engineering, sr@denx.de.
++#
++# See file CREDITS for list of people who contributed to this
++# project.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++# MA 02111-1307 USA
++#
++#
++# Samsung S3C64xx Reference Platform (smdk6400) board
++
++# TEXT_BASE for SPL:
++#
++# On S3C64xx platforms the SPL is located in SRAM at 0.
++#
++# TEXT_BASE = 0
++
++include $(TOPDIR)/board/$(BOARDDIR)/config.mk
++
++# PAD_TO used to generate a 4kByte binary needed for the combined image
++# -> PAD_TO = TEXT_BASE + 4096
++PAD_TO	:= $(shell expr $$[$(TEXT_BASE) + 4096])
++
++ifeq ($(debug),1)
++PLATFORM_CPPFLAGS += -DDEBUG
++endif
+--- /dev/null
++++ b/nand_spl/board/lantiq/nand_preload.c
+@@ -0,0 +1,77 @@
++#include <common.h>
++
++
++static void read_page(u32 page_addr, u32 dest_addr)
++{
++   int i;
++   u8 *tmp;
++   u8 col_addr_num;
++	 u8 page_addr_num;
++
++   if(CONFIG_NAND_PAGE_SIZE<=0x200){
++     col_addr_num=1;
++           		
++     if(CONFIG_NAND_FLASH_SIZE<32){
++        page_addr_num=2;     	
++      }else
++      	page_addr_num=3;
++   }else{
++     col_addr_num=2;
++     
++     if(CONFIG_NAND_FLASH_SIZE<128){
++     	  page_addr_num=2;
++      }else{
++      	page_addr_num=3;
++      }
++   }
++   
++   NAND_CE_SET;
++   NAND_WRITE(WRITE_CMD,0);
++   IFX_NAND_CTL_SETALE;
++   for(i=0;i<col_addr_num;i++){
++    NAND_WRITE(WRITE_ADDR,0);
++  }
++   for(i=0;i<page_addr_num;i++){
++   	 NAND_WRITE(WRITE_ADDR,(u8)((page_addr>>(i*8)) & 0xff ));
++   } 
++   IFX_NAND_CTL_CLRALE;
++   
++   if(CONFIG_NAND_PAGE_SIZE>0x200){
++     NAND_WRITE(WRITE_CMD,0x30);
++   } 
++   
++  while(!NAND_READY){}
++   
++   /* Read page */
++   tmp = (u8*)dest_addr;
++   for (i = 0; i < CONFIG_NAND_PAGE_SIZE; i++)
++   {
++     NAND_READ(READ_DATA, *tmp++); 
++   }
++   NAND_CE_CLEAR;
++   
++   while(!NAND_READY){}
++}
++
++#define FILE_SIZE 0x4000
++//#define STARTING_ADDRESS 0xbe1a0200
++#define STARTING_ADDRESS CONFIG_NAND_PRELOAD_TEXT_BASE+0x200
++
++void nand_init(void)
++{
++   int i;
++   for(i=0;i<(FILE_SIZE/CONFIG_NAND_PAGE_SIZE+1);i++){    
++    read_page(i,STARTING_ADDRESS+CONFIG_NAND_PAGE_SIZE*i);   	 
++   }
++
++   // jump start
++   void (*start)(void);
++   
++  
++   start = (void *)CONFIG_NAND_SPL_TEXT_BASE;
++   start();
++
++}
++
++
++
+--- /dev/null
++++ b/nand_spl/board/lantiq/nandpreload.lds
+@@ -0,0 +1,47 @@
++/*
++ * (C) Copyright 2003
++ * Wolfgang Denk Engineering, <wd@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++OUTPUT_FORMAT("elf32-tradbigmips", "elf32-tradbigmips", "elf32-tradbigmips")
++OUTPUT_ARCH(mips)
++ENTRY(_start)
++SECTIONS
++{
++  . = 0x00000000;
++  . = ALIGN(4);
++	.text       :
++	{
++	  *(.text)
++	}
++  . = ALIGN(4);
++  .rodata  : { *(.rodata) }
++  . = ALIGN(4);
++  .data  : { *(.data) }
++	. = ALIGN(4);
++	.sdata  : { *(.sdata) }
++  _gp = ABSOLUTE(.);
++  _etext = ABSOLUTE(.);
++  .got  : { *(.got) }
++  .sbss  : { *(.sbss) }
++  .bss  : { *(.bss) }
++	
++}
+--- /dev/null
++++ b/nand_spl/board/lantiq/start_nandpreload.S
+@@ -0,0 +1,46 @@
++/*
++ *  Startup Code for MIPS32 CPU-core
++ *
++ *  Copyright (c) 2003	Wolfgang Denk <wd@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++
++#include <config.h>
++#include <version.h>
++#include <asm/regdef.h>
++#include <asm/mipsregs.h>
++#include <asm/cacheops.h>
++#include <asm/addrspace.h>
++#include <asm/yamon.h>
++
++    .set noreorder
++	  .option pic0
++
++   	.globl _start
++   	.text
++_start:
++    li   t0, CONFIG_TUNING_SP
++    la      sp, 0(t0)
++    
++    la   t9, nand_init
++    j    t9
++    nop
++    
+--- /dev/null
++++ b/nand_spl/board/lantiq/u-boot.lds
+@@ -0,0 +1,70 @@
++/*
++ * (C) Copyright 2003
++ * Wolfgang Denk Engineering, <wd@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++/*
++OUTPUT_FORMAT("elf32-bigmips", "elf32-bigmips", "elf32-bigmips")
++*/
++OUTPUT_FORMAT("elf32-tradbigmips", "elf32-tradbigmips", "elf32-tradbigmips")
++OUTPUT_ARCH(mips)
++ENTRY(_start)
++SECTIONS
++{
++        . = 0x00000000;
++
++        . = ALIGN(4);
++	.text       :
++	{
++	  *(.text)
++	}
++
++        . = ALIGN(4);
++        .rodata  : { *(.rodata) }
++
++        . = ALIGN(4);
++        .data  : { *(.data) }
++
++	. = ALIGN(4);
++	.sdata  : { *(.sdata) }
++
++	_gp = ALIGN(16);
++
++	. = ALIGN(16);
++	__got_start = .;
++	.got  : { *(.got) }
++	__got_end = .;
++
++	.sdata  : { *(.sdata) }
++
++	. = .;
++        __u_boot_cmd_start = .;
++        .u_boot_cmd : { *(.u_boot_cmd) }
++        __u_boot_cmd_end = .;
++    got_size = (__got_end - __got_start);
++	uboot_end_data = .;
++	num_got_entries = (__got_end - __got_start) >> 2;
++
++        . = ALIGN(4);
++	.sbss  : { *(.sbss) }
++        .bss  : { *(.bss) }
++	uboot_end = .;
++}
