@@ -64,6 +64,7 @@ endef
 PKG_INSTALL:=1
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
+TARGET_CFLAGS := $(filter-out -O%,$(TARGET_CFLAGS))
 
 CMAKE_OPTIONS += \
 	-DCMAKE_BUILD_TYPE:String="Release" \
