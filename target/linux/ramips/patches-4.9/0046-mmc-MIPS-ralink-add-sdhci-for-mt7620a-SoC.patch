@@ -1761,7 +1761,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/sd.c
-@@ -0,0 +1,3066 @@
+@@ -0,0 +1,3068 @@
 +/* Copyright Statement:
 + *
 + * This software/firmware and related documentation ("MediaTek Software") are
@@ -4572,7 +4572,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    host = mmc_priv(mmc);
 +    host->hw        = hw;
 +    host->mmc       = mmc;
-+    host->id        = pdev->id;
++    BUG_ON(pdev->id < -1);
++    BUG_ON(pdev->id >= ARRAY_SIZE(drv_mode));
++    host->id        = (pdev->id == -1) ? 0 : pdev->id;
 +    host->error     = 0;
 +    host->irq       = irq;    
 +    host->base      = (unsigned long) base;
