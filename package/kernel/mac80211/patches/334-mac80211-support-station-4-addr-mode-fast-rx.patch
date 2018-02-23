@@ -1,0 +1,52 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 23 Feb 2018 10:05:08 +0100
+Subject: [PATCH] mac80211: support station 4-addr mode fast-rx
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -160,7 +160,6 @@ static int ieee80211_change_iface(struct
+ 	if (type == NL80211_IFTYPE_AP_VLAN &&
+ 	    params && params->use_4addr == 0) {
+ 		RCU_INIT_POINTER(sdata->u.vlan.sta, NULL);
+-		ieee80211_check_fast_rx_iface(sdata);
+ 	} else if (type == NL80211_IFTYPE_STATION &&
+ 		   params && params->use_4addr >= 0) {
+ 		sdata->u.mgd.use_4addr = params->use_4addr;
+@@ -1574,7 +1573,6 @@ static int ieee80211_change_station(stru
+ 			}
+ 
+ 			rcu_assign_pointer(vlansdata->u.vlan.sta, sta);
+-			__ieee80211_check_fast_rx_iface(vlansdata);
+ 		}
+ 
+ 		if (sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -3738,10 +3738,6 @@ void ieee80211_check_fast_rx(struct sta_
+ 
+ 	switch (sdata->vif.type) {
+ 	case NL80211_IFTYPE_STATION:
+-		/* 4-addr is harder to deal with, later maybe */
+-		if (sdata->u.mgd.use_4addr)
+-			goto clear;
+-
+ 		if (sta->sta.tdls) {
+ 			fastrx.da_offs = offsetof(struct ieee80211_hdr, addr1);
+ 			fastrx.sa_offs = offsetof(struct ieee80211_hdr, addr2);
+@@ -3754,6 +3750,13 @@ void ieee80211_check_fast_rx(struct sta_
+ 				cpu_to_le16(IEEE80211_FCTL_FROMDS);
+ 		}
+ 
++		if (sdata->u.mgd.use_4addr && !sta->sta.tdls) {
++			fastrx.expected_ds_bits |=
++				cpu_to_le16(IEEE80211_FCTL_TODS);
++			fastrx.da_offs = offsetof(struct ieee80211_hdr, addr3);
++			fastrx.sa_offs = offsetof(struct ieee80211_hdr, addr4);
++		}
++
+ 		if (!sdata->u.mgd.powersave)
+ 		    break;
+ 
