@@ -126,11 +126,11 @@
 			interrupts = <126 127 128 129 130 131>;
 		};
 
-		asc0: serial@E100400 {
-			compatible = "lantiq,asc";
-			reg = <0xE100400 0x400>;
+		usif: usif@da00000 {
+			compatible = "lantiq,usif";
+			reg = <0xda00000 0x1000000>;
 			interrupt-parent = <&icu0>;
-			interrupts = <104 105 106>;
+			interrupts = <29 125 107 108 109 110>;
 			status = "disabled";
 		};
 
