@@ -22,7 +22,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
-@@ -243,6 +244,10 @@ static int m25p_probe(struct spi_device
+@@ -245,6 +246,10 @@ static int m25p_probe(struct spi_device
  	};
  	char *flash_name;
  	int ret;
@@ -33,7 +33,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	data = dev_get_platdata(&spi->dev);
  
-@@ -281,6 +286,8 @@ static int m25p_probe(struct spi_device
+@@ -283,6 +288,8 @@ static int m25p_probe(struct spi_device
  
  	if (data && data->name)
  		nor->mtd.name = data->name;

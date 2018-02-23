@@ -18,7 +18,7 @@ Signed-off-by: Cyrille Pitchen <cyrille.pitchen@atmel.com>
 
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
-@@ -172,7 +172,8 @@ static ssize_t m25p80_read(struct spi_no
+@@ -174,7 +174,8 @@ static ssize_t m25p80_read(struct spi_no
  
  	t[1].rx_buf = buf;
  	t[1].rx_nbits = m25p80_rx_nbits(nor);
