@@ -40,6 +40,10 @@ proto_dhcpv6_add_prefix() {
 	append "$3" "$1"
 }
 
+proto_dhcpv6_add_sendopts() {
+	[ -n "$1" ] && append "$3" "-x$1"
+}
+
 proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
@@ -80,12 +84,7 @@ proto_dhcpv6_setup() {
 		append opts "-r$opt"
 	done
 
-	sendopts_cb() {
-		local val="$1"
-		[ -n "$val" ] && append opts "-x$val"
-	}
-
-	json_for_each_item sendopts_cb sendopts
+	json_for_each_item proto_dhcpv6_add_sendopts sendopts opts
 
 	append opts "-t${soltimeout:-120}"
 
