@@ -24,7 +24,6 @@ define Device/alfa-network_awusfree1
   IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := ALFA Network AWUSFREE1
   DEVICE_PACKAGES := uboot-envtools
-  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 endef
 TARGET_DEVICES += alfa-network_awusfree1
 
