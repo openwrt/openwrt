@@ -938,6 +938,11 @@ void hostapd_ubus_add_bss(struct hostapd_data *hapd)
 	char *name;
 	int ret;
 
+#ifdef CONFIG_MESH
+	if (hapd->conf->mesh & MESH_ENABLED)
+		return;
+#endif
+
 	if (!hostapd_ubus_init())
 		return;
 
