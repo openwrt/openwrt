@@ -93,11 +93,18 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int __netdev_upper_dev_link(struct net_device *dev,
  				   struct net_device *upper_dev, bool master,
  				   void *upper_priv, void *upper_info)
-@@ -6021,6 +6066,8 @@ void netdev_upper_dev_unlink(struct net_
+@@ -5895,6 +5940,7 @@ static int __netdev_upper_dev_link(struc
+ 			goto rollback_lower_mesh;
+ 	}
+ 
++	netdev_update_addr_mask(dev);
+ 	ret = call_netdevice_notifiers_info(NETDEV_CHANGEUPPER, dev,
+ 					    &changeupper_info.info);
+ 	ret = notifier_to_errno(ret);
+@@ -6021,6 +6067,7 @@ void netdev_upper_dev_unlink(struct net_
  	list_for_each_entry(i, &upper_dev->all_adj_list.upper, list)
  		__netdev_adjacent_dev_unlink(dev, i->dev, i->ref_nr);
  
-+	netdev_update_addr_mask(dev);
 +	netdev_update_addr_mask(dev);
  	call_netdevice_notifiers_info(NETDEV_CHANGEUPPER, dev,
  				      &changeupper_info.info);
