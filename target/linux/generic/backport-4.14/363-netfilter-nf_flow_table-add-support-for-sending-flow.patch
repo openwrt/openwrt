@@ -1,0 +1,64 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 25 Feb 2018 15:41:11 +0100
+Subject: [PATCH] netfilter: nf_flow_table: add support for sending flows
+ back to the slow path
+
+Reset the timeout. For TCP, also set the state to indicate to use the
+next incoming packets to reset window tracking.
+This allows the slow path to take over again once the offload state has
+been torn down
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/netfilter/nf_flow_table_core.c
++++ b/net/netfilter/nf_flow_table_core.c
+@@ -100,6 +100,36 @@ err_ct_refcnt:
+ }
+ EXPORT_SYMBOL_GPL(flow_offload_alloc);
+ 
++static void flow_offload_fixup_ct_state(struct nf_conn *ct)
++{
++	const struct nf_conntrack_l4proto *l4proto;
++	struct net *net = nf_ct_net(ct);
++	unsigned int *timeouts;
++	unsigned int timeout;
++	int l4num;
++
++	l4num = nf_ct_protonum(ct);
++	l4proto = __nf_ct_l4proto_find(nf_ct_l3num(ct), l4num);
++	if (!l4proto)
++		return;
++
++	timeouts = l4proto->get_timeouts(net);
++	if (!timeouts)
++		return;
++
++	if (l4num == IPPROTO_TCP) {
++		timeout = timeouts[TCP_CONNTRACK_ESTABLISHED];
++		ct->proto.tcp.state = TCP_CONNTRACK_IGNORE;
++	} else if (l4num == IPPROTO_UDP) {
++		timeout = timeouts[UDP_CT_REPLIED];
++	} else {
++		return;
++	}
++
++	ct->timeout = nfct_time_stamp + timeout;
++	clear_bit(IPS_OFFLOAD_BIT, &ct->status);
++}
++
+ void flow_offload_free(struct flow_offload *flow)
+ {
+ 	struct flow_offload_entry *e;
+@@ -107,7 +137,10 @@ void flow_offload_free(struct flow_offlo
+ 	dst_release(flow->tuplehash[FLOW_OFFLOAD_DIR_ORIGINAL].tuple.dst_cache);
+ 	dst_release(flow->tuplehash[FLOW_OFFLOAD_DIR_REPLY].tuple.dst_cache);
+ 	e = container_of(flow, struct flow_offload_entry, flow);
+-	nf_ct_delete(e->ct, 0, 0);
++	if (flow->flags & FLOW_OFFLOAD_DYING)
++		nf_ct_delete(e->ct, 0, 0);
++	else
++		flow_offload_fixup_ct_state(e->ct);
+ 	nf_ct_put(e->ct);
+ 	kfree_rcu(e, rcu_head);
+ }
