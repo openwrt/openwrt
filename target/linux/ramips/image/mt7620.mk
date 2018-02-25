@@ -352,6 +352,24 @@ define Device/miwifi-mini
 endef
 TARGET_DEVICES += miwifi-mini
 
+define Device/miwifi-3
+  DTS := MIWIFI-3
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGE_SIZE := 32768k
+  UBINIZE_OPTS := -E 5
+  IMAGES := sysupgrade.tar kernel1.bin rootfs0.bin
+  IMAGE/kernel1.bin := append-kernel | check-size $$$$(KERNEL_SIZE)
+  IMAGE/rootfs0.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  DEVICE_TITLE := Xiaomi Mi Router 3
+  SUPPORTED_DEVICES += miwifi-3
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport uboot-envtools wpad-mini
+endef
+TARGET_DEVICES += miwifi-3
+
 define Device/gl-mt300a
   DTS := GL-MT300A
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

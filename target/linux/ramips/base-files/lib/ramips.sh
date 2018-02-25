@@ -286,6 +286,9 @@ ramips_board_detect() {
 	*"MiWiFi Mini")
 		name="miwifi-mini"
 		;;
+	*"Xiaomi Mi Router 3")
+		name="miwifi-3"
+		;;
 	*"MiWiFi Nano")
 		name="miwifi-nano"
 		;;

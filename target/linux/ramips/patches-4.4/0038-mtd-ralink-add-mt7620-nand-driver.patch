@@ -3,13 +3,17 @@ From: John Crispin <blogic@openwrt.org>
 Date: Sun, 17 Nov 2013 17:41:46 +0100
 Subject: [PATCH 38/53] mtd: ralink: add mt7620 nand driver
 
+Change/s:
+	add writebufsize on mtd nand
+
+Signed-off-by: Shibajee Roy <ador250@protonmail.com>
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  drivers/mtd/maps/Kconfig       |    4 +
  drivers/mtd/maps/Makefile      |    2 +
- drivers/mtd/maps/ralink_nand.c | 2136 ++++++++++++++++++++++++++++++++++++++++
+ drivers/mtd/maps/ralink_nand.c | 2137 ++++++++++++++++++++++++++++++++++++++++
  drivers/mtd/maps/ralink_nand.h |  232 +++++
- 4 files changed, 2374 insertions(+)
+ 4 files changed, 2375 insertions(+)
  create mode 100644 drivers/mtd/maps/ralink_nand.c
  create mode 100644 drivers/mtd/maps/ralink_nand.h
 
@@ -34,7 +38,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/drivers/mtd/maps/ralink_nand.c
-@@ -0,0 +1,2136 @@
+@@ -0,0 +1,2137 @@
 +#define DEBUG
 +#include <linux/device.h>
 +#undef DEBUG
@@ -2094,6 +2098,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	ranfc_mtd->size		= CONFIG_NUMCHIPS * CFG_CHIPSIZE;
 +	ranfc_mtd->erasesize	= CFG_BLOCKSIZE;
 +	ranfc_mtd->writesize	= CFG_PAGESIZE;
++	ranfc_mtd->writebufsize = ranfc_mtd->writesize;
 +	ranfc_mtd->oobsize 	= CFG_PAGE_OOBSIZE;
 +	ranfc_mtd->oobavail	= RA_CHIP_OOB_AVAIL;
 +	ranfc_mtd->name		= "ra_nfc";
