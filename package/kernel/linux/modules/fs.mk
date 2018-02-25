@@ -142,6 +142,22 @@ endef
 $(eval $(call KernelPackage,fs-cramfs))
 
 
+define KernelPackage/fs-efivarfs
+  SUBMENU:=$(FS_MENU)
+  TITLE:=efivar filesystem support
+  KCONFIG:=CONFIG_EFIVAR_FS
+  FILES:=$(LINUX_DIR)/fs/efivarfs/efivarfs.ko
+  DEPENDS:=@(x86_64||x86)
+  AUTOLOAD:=$(call Autoload,90,efivarfs)
+endef
+
+define KernelPackage/fs-efivarfs/description
+  Kernel module to support efivarfs file system mountpoint.
+endef
+
+$(eval $(call KernelPackage,fs-efivarfs))
+
+
 define KernelPackage/fs-exportfs
   SUBMENU:=$(FS_MENU)
   TITLE:=exportfs kernel server support
