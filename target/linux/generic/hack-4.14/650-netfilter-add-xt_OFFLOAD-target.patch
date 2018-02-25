@@ -216,7 +216,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +restart:
 +	hlist_for_each_entry(hook, &hooks, list) {
-+		if (hook->used)
++		if (hook->used || !hook->registered)
 +			continue;
 +
 +		hlist_del(&hook->list);
