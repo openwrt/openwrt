@@ -21,7 +21,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 +		compatible = "sff,sfp";
 +		i2c-bus = <&i2c1>;
 +		los-gpio = <&expander0 12 GPIO_ACTIVE_HIGH>;
-+		moddef0-gpio = <&expander0 15 GPIO_ACTIVE_LOW>;
++		mod-def0-gpio = <&expander0 15 GPIO_ACTIVE_LOW>;
 +		tx-disable-gpio = <&expander0 14 GPIO_ACTIVE_HIGH>;
 +		tx-fault-gpio = <&expander0 13 GPIO_ACTIVE_HIGH>;
 +	};
