@@ -32,7 +32,7 @@ define Device/alfa-network_ac1200rm
   DTS := AC1200RM
   IMAGE_SIZE := 16064k
   DEVICE_TITLE := ALFA Network AC1200RM
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci uboot-envtools
 endef
 TARGET_DEVICES += alfa-network_ac1200rm
 
