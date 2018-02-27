@@ -4,7 +4,8 @@ config GCC_VERSION_7_1_ARC
 
 config GCC_VERSION_7
 	default y if GCC_USE_VERSION_7
-	default y if x86_64 || i386
+	default y if (!TOOLCHAINOPTS && x86_64)
+	default y if (!TOOLCHAINOPTS && i386)
 	bool
 
 config GCC_VERSION
