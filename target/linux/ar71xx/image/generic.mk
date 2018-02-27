@@ -315,7 +315,7 @@ endef
 TARGET_DEVICES += dragino2
 
 define Device/e1700ac-v2-16M
-  DEVICE_TITLE := WHQX E1700AC v2 (16MB flash)
+  DEVICE_TITLE := Qxwlan E1700AC v2 (16MB flash)
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x kmod-usb-core \
 	kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := E1700AC-V2
@@ -329,13 +329,13 @@ TARGET_DEVICES += e1700ac-v2-16M
 
 define Device/e1700ac-v2-8M
   $(Device/e1700ac-v2-16M)
-  DEVICE_TITLE := WHQX E1700AC v2 (8MB flash)
+  DEVICE_TITLE := Qxwlan E1700AC v2 (8MB flash)
   IMAGE_SIZE := 7744k
 endef
 TARGET_DEVICES += e1700ac-v2-8M
 
 define Device/e600g-v2-16M
-  DEVICE_TITLE := WHQX E600G v2 (16MB flash)
+  DEVICE_TITLE := Qxwlan E600G v2 (16MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
   BOARDNAME := E600G-V2
   SUPPORTED_DEVICES := e600g-v2
@@ -348,13 +348,13 @@ TARGET_DEVICES += e600g-v2-16M
 
 define Device/e600g-v2-8M
   $(Device/e600g-v2-16M)
-  DEVICE_TITLE := WHQX E600G v2 (8MB flash)
+  DEVICE_TITLE := Qxwlan E600G v2 (8MB flash)
   IMAGE_SIZE := 7744k
 endef
 TARGET_DEVICES += e600g-v2-8M
 
 define Device/e600gac-v2-16M
-  DEVICE_TITLE := WHQX E600GAC v2 (16MB flash)
+  DEVICE_TITLE := Qxwlan E600GAC v2 (16MB flash)
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9887 kmod-usb-core \
 	kmod-usb2 -swconfig
   BOARDNAME := E600GAC-V2
@@ -368,7 +368,7 @@ TARGET_DEVICES += e600gac-v2-16M
 
 define Device/e600gac-v2-8M
   $(Device/e600gac-v2-16M)
-  DEVICE_TITLE := WHQX E600GAC v2 (8MB flash)
+  DEVICE_TITLE := Qxwlan E600GAC v2 (8MB flash)
   IMAGE_SIZE := 7744k
 endef
 TARGET_DEVICES += e600gac-v2-8M
