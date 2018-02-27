@@ -223,6 +223,7 @@ proto_map_init_config() {
 	proto_config_add_int "ealen"
 	proto_config_add_int "psidlen"
 	proto_config_add_int "psid"
+	proto_config_add_int "ealen"
 	proto_config_add_int "offset"
 
 	proto_config_add_string "tunlink"
