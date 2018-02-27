@@ -354,7 +354,7 @@ static int __init gpio_apu2_init (void)
 
 	pr_info ("%s: APU2 GPIO/LED driver module loaded\n", DEVNAME);
 
-	register_leds_gpio(-1, ARRAY_SIZE(apu2_leds_gpio), apu2_leds_gpio);
+	register_leds_gpio(0, ARRAY_SIZE(apu2_leds_gpio), apu2_leds_gpio);
 	register_gpio_keys_polled(-1, 20, ARRAY_SIZE(apu2_gpio_keys), apu2_gpio_keys);
 	return 0;
 
