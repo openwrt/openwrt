@@ -31,4 +31,4 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 +		sfp_upstream_stop(pl->netdev->sfp_bus);
  
  	set_bit(PHYLINK_DISABLE_STOPPED, &pl->phylink_disable_state);
- 	flush_work(&pl->resolve);
+ 	queue_work(system_power_efficient_wq, &pl->resolve);

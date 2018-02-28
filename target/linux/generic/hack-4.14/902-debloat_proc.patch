@@ -232,7 +232,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return -ENOMEM;
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -2765,6 +2765,8 @@ static const struct file_operations proc
+@@ -2769,6 +2769,8 @@ static const struct file_operations proc
  
  static int __init proc_vmalloc_init(void)
  {
@@ -327,7 +327,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -3380,6 +3380,8 @@ static __net_initdata struct pernet_oper
+@@ -3378,6 +3378,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {

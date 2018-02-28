@@ -579,11 +579,11 @@
 +
 --- a/arch/arm/boot/dts/mt7623.dtsi
 +++ b/arch/arm/boot/dts/mt7623.dtsi
-@@ -753,6 +753,7 @@
+@@ -322,6 +322,7 @@
  			     "syscon";
- 		reg = <0 0x1b000000 0 0x1000>;
+ 		reg = <0 0x10209000 0 0x1000>;
  		#clock-cells = <1>;
 +		#reset-cells = <1>;
  	};
  
- 	eth: ethernet@1b100000 {
+ 	rng: rng@1020f000 {
