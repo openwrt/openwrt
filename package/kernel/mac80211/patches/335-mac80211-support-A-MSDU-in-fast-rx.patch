@@ -16,7 +16,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  static ieee80211_rx_result debug_noinline
 -ieee80211_rx_h_amsdu(struct ieee80211_rx_data *rx)
-+__ieee80211_rx_h_amsdu(struct ieee80211_rx_data *rx)
++__ieee80211_rx_h_amsdu(struct ieee80211_rx_data *rx, u8 data_offset)
  {
  	struct net_device *dev = rx->sdata->dev;
  	struct sk_buff *skb = rx->skb;
@@ -52,7 +52,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		check_da = NULL;
  		check_sa = NULL;
  	} else switch (rx->sdata->vif.type) {
-@@ -2410,9 +2388,6 @@ ieee80211_rx_h_amsdu(struct ieee80211_rx
+@@ -2410,15 +2388,13 @@ ieee80211_rx_h_amsdu(struct ieee80211_rx
  			break;
  	}
  
@@ -62,7 +62,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	skb->dev = dev;
  	__skb_queue_head_init(&frame_list);
  
-@@ -2440,6 +2415,44 @@ ieee80211_rx_h_amsdu(struct ieee80211_rx
+ 	if (ieee80211_data_to_8023_exthdr(skb, &ethhdr,
+ 					  rx->sdata->vif.addr,
+-					  rx->sdata->vif.type))
++					  rx->sdata->vif.type,
++					  data_offset))
+ 		return RX_DROP_UNUSABLE;
+ 
+ 	ieee80211_amsdu_to_8023s(skb, &frame_list, dev->dev_addr,
+@@ -2440,6 +2416,44 @@ ieee80211_rx_h_amsdu(struct ieee80211_rx
  	return RX_QUEUED;
  }
  
@@ -101,21 +109,23 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (is_multicast_ether_addr(hdr->addr1))
 +		return RX_DROP_UNUSABLE;
 +
-+	return __ieee80211_rx_h_amsdu(rx);
++	return __ieee80211_rx_h_amsdu(rx, 0);
 +}
 +
  #ifdef CPTCFG_MAC80211_MESH
  static ieee80211_rx_result
  ieee80211_rx_h_mesh_fwding(struct ieee80211_rx_data *rx)
-@@ -3899,6 +3912,7 @@ static bool ieee80211_invoke_fast_rx(str
- 		u8 sa[ETH_ALEN];
- 	} addrs __aligned(2);
- 	struct ieee80211_sta_rx_stats *stats = &sta->rx_stats;
-+	int res;
- 
- 	if (fast_rx->uses_rss)
- 		stats = this_cpu_ptr(sta->pcpu_rx_stats);
-@@ -3920,10 +3934,6 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -3889,7 +3903,8 @@ static bool ieee80211_invoke_fast_rx(str
+ 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
+ 	struct sta_info *sta = rx->sta;
+ 	int orig_len = skb->len;
+-	int snap_offs = ieee80211_hdrlen(hdr->frame_control);
++	int hdrlen = ieee80211_hdrlen(hdr->frame_control);
++	int snap_offs = hdrlen;
+ 	struct {
+ 		u8 snap[sizeof(rfc1042_header)];
+ 		__be16 proto;
+@@ -3920,10 +3935,6 @@ static bool ieee80211_invoke_fast_rx(str
  	    (status->flag & FAST_RX_CRYPT_FLAGS) != FAST_RX_CRYPT_FLAGS)
  		return false;
  
@@ -126,14 +136,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (unlikely(!ieee80211_is_data_present(hdr->frame_control)))
  		return false;
  
-@@ -3951,25 +3961,31 @@ static bool ieee80211_invoke_fast_rx(str
- 	 * and strip the IV/MIC if necessary
- 	 */
- 	if (fast_rx->key && !(status->flag & RX_FLAG_IV_STRIPPED)) {
-+		if (status->rx_flags & IEEE80211_RX_AMSDU)
-+			return false;
-+
- 		/* GCMP header length is the same */
+@@ -3955,21 +3966,24 @@ static bool ieee80211_invoke_fast_rx(str
  		snap_offs += IEEE80211_CCMP_HDR_LEN;
  	}
  
@@ -171,7 +174,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* after this point, don't punt to the slowpath! */
  
-@@ -3983,12 +3999,6 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -3983,12 +3997,6 @@ static bool ieee80211_invoke_fast_rx(str
  	}
  
  	/* statistics part of ieee80211_rx_h_sta_process() */
@@ -184,13 +187,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!(status->flag & RX_FLAG_NO_SIGNAL_VAL)) {
  		stats->last_signal = status->signal;
  		if (!fast_rx->uses_rss)
-@@ -4017,6 +4027,20 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -4017,6 +4025,20 @@ static bool ieee80211_invoke_fast_rx(str
  	if (rx->key && !ieee80211_has_protected(hdr->frame_control))
  		goto drop;
  
 +	if (status->rx_flags & IEEE80211_RX_AMSDU) {
-+		res = __ieee80211_rx_h_amsdu(rx);
-+		if (res != RX_QUEUED)
++		if (__ieee80211_rx_h_amsdu(rx, snap_offs - hdrlen) !=
++		    RX_QUEUED)
 +			goto drop;
 +
 +		return true;
@@ -205,3 +208,49 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* do the header conversion - first grab the addresses */
  	ether_addr_copy(addrs.da, skb->data + fast_rx->da_offs);
  	ether_addr_copy(addrs.sa, skb->data + fast_rx->sa_offs);
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -4331,10 +4331,12 @@ unsigned int ieee80211_get_mesh_hdrlen(s
+  *	of it being pushed into the SKB
+  * @addr: the device MAC address
+  * @iftype: the virtual interface type
++ * @data_offset: offset of payload after the 802.11 header
+  * Return: 0 on success. Non-zero on error.
+  */
+ int ieee80211_data_to_8023_exthdr(struct sk_buff *skb, struct ethhdr *ehdr,
+-				  const u8 *addr, enum nl80211_iftype iftype);
++				  const u8 *addr, enum nl80211_iftype iftype,
++				  u8 data_offset);
+ 
+ /**
+  * ieee80211_data_to_8023 - convert an 802.11 data frame to 802.3
+@@ -4346,7 +4348,7 @@ int ieee80211_data_to_8023_exthdr(struct
+ static inline int ieee80211_data_to_8023(struct sk_buff *skb, const u8 *addr,
+ 					 enum nl80211_iftype iftype)
+ {
+-	return ieee80211_data_to_8023_exthdr(skb, NULL, addr, iftype);
++	return ieee80211_data_to_8023_exthdr(skb, NULL, addr, iftype, 0);
+ }
+ 
+ /**
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -419,7 +419,8 @@ unsigned int ieee80211_get_mesh_hdrlen(s
+ EXPORT_SYMBOL(ieee80211_get_mesh_hdrlen);
+ 
+ int ieee80211_data_to_8023_exthdr(struct sk_buff *skb, struct ethhdr *ehdr,
+-				  const u8 *addr, enum nl80211_iftype iftype)
++				  const u8 *addr, enum nl80211_iftype iftype,
++				  u8 data_offset)
+ {
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
+ 	struct {
+@@ -433,7 +434,7 @@ int ieee80211_data_to_8023_exthdr(struct
+ 	if (unlikely(!ieee80211_is_data_present(hdr->frame_control)))
+ 		return -1;
+ 
+-	hdrlen = ieee80211_hdrlen(hdr->frame_control);
++	hdrlen = ieee80211_hdrlen(hdr->frame_control) + data_offset;
+ 	if (skb->len < hdrlen + 8)
+ 		return -1;
+ 
