@@ -29,13 +29,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			idx += 4;
  	}
  	return &mi->groups[group].rates[idx];
-@@ -1080,18 +1081,22 @@ minstrel_ht_get_rate(void *priv, struct
+@@ -1080,18 +1081,23 @@ minstrel_ht_get_rate(void *priv, struct
  		return;
  
  	sample_group = &minstrel_mcs_groups[sample_idx / MCS_GROUP_RATES];
 +	sample_idx %= MCS_GROUP_RATES;
 +
-+	if ((sample_idx >= 4) != txrc->short_preamble)
++	if (sample_group == &minstrel_mcs_groups[MINSTREL_CCK_GROUP] &&
++	    (sample_idx >= 4) != txrc->short_preamble)
 +		return;
 +
  	info->flags |= IEEE80211_TX_CTL_RATE_CTRL_PROBE;
