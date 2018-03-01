@@ -218,21 +218,53 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/*
  	 * For the throughput calculation, limit the probability value to 90% to
-@@ -780,7 +784,7 @@ minstrel_calc_retransmit(struct minstrel
+@@ -755,12 +759,19 @@ minstrel_ht_tx_status(void *priv, struct
+ 		minstrel_ht_update_rates(mp, mi);
+ }
+ 
++static inline int
++minstrel_get_duration(int index)
++{
++	const struct mcs_group *group = &minstrel_mcs_groups[index / MCS_GROUP_RATES];
++	unsigned int duration = group->duration[index % MCS_GROUP_RATES];
++	return duration << group->shift;
++}
++
+ static void
+ minstrel_calc_retransmit(struct minstrel_priv *mp, struct minstrel_ht_sta *mi,
+                          int index)
+ {
+ 	struct minstrel_rate_stats *mrs;
+-	const struct mcs_group *group;
+ 	unsigned int tx_time, tx_time_rtscts, tx_time_data;
+ 	unsigned int cw = mp->cw_min;
+ 	unsigned int ctime = 0;
+@@ -779,8 +790,7 @@ minstrel_calc_retransmit(struct minstrel
+ 	mrs->retry_count_rtscts = 2;
  	mrs->retry_updated = true;
  
- 	group = &minstrel_mcs_groups[index / MCS_GROUP_RATES];
+-	group = &minstrel_mcs_groups[index / MCS_GROUP_RATES];
 -	tx_time_data = group->duration[index % MCS_GROUP_RATES] * ampdu_len / 1000;
-+	tx_time_data = (group->duration[index % MCS_GROUP_RATES] << group->shift) * ampdu_len / 1000;
++	tx_time_data = minstrel_get_duration(index) * ampdu_len / 1000;
  
  	/* Contention time for first 2 tries */
  	ctime = (t_slot * cw) >> 1;
-@@ -880,14 +884,14 @@ minstrel_ht_get_max_amsdu_len(struct min
+@@ -874,20 +884,24 @@ minstrel_ht_get_max_amsdu_len(struct min
+ 	int group = mi->max_prob_rate / MCS_GROUP_RATES;
+ 	const struct mcs_group *g = &minstrel_mcs_groups[group];
+ 	int rate = mi->max_prob_rate % MCS_GROUP_RATES;
++	unsigned int duration;
+ 
+ 	/* Disable A-MSDU if max_prob_rate is bad */
+ 	if (mi->groups[group].rates[rate].prob_ewma < MINSTREL_FRAC(50, 100))
  		return 1;
  
++	duration = g->duration[rate];
++	duration <<= g->shift;
++
  	/* If the rate is slower than single-stream MCS1, make A-MSDU limit small */
 -	if (g->duration[rate] > MCS_DURATION(1, 0, 52))
-+	if ((g->duration[rate] << g->shift) > MCS_DURATION(1, 0, 52))
++	if (duration > MCS_DURATION(1, 0, 52))
  		return 500;
  
  	/*
@@ -240,28 +272,33 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	 * data packet size
  	 */
 -	if (g->duration[rate] > MCS_DURATION(1, 0, 104))
-+	if ((g->duration[rate] << g->shift) > MCS_DURATION(1, 0, 104))
++	if (duration > MCS_DURATION(1, 0, 104))
  		return 1600;
  
  	/*
-@@ -895,7 +899,7 @@ minstrel_ht_get_max_amsdu_len(struct min
+@@ -895,7 +909,7 @@ minstrel_ht_get_max_amsdu_len(struct min
  	 * rate success probability is less than 75%, limit A-MSDU to twice the usual
  	 * data packet size
  	 */
 -	if (g->duration[rate] > MCS_DURATION(1, 0, 260) ||
-+	if ((g->duration[rate] << g->shift) > MCS_DURATION(1, 0, 260) ||
++	if (duration > MCS_DURATION(1, 0, 260) ||
  	    (minstrel_ht_get_prob_ewma(mi, mi->max_tp_rate[0]) <
  	     MINSTREL_FRAC(75, 100)))
  		return 3200;
-@@ -946,7 +950,7 @@ static inline int
- minstrel_get_duration(int index)
- {
- 	const struct mcs_group *group = &minstrel_mcs_groups[index / MCS_GROUP_RATES];
--	return group->duration[index % MCS_GROUP_RATES];
-+	return group->duration[index % MCS_GROUP_RATES] << group->shift;
+@@ -942,13 +956,6 @@ minstrel_ht_update_rates(struct minstrel
+ 	rate_control_set_rates(mp->hw, mi->sta, rates);
  }
  
+-static inline int
+-minstrel_get_duration(int index)
+-{
+-	const struct mcs_group *group = &minstrel_mcs_groups[index / MCS_GROUP_RATES];
+-	return group->duration[index % MCS_GROUP_RATES];
+-}
+-
  static int
+ minstrel_get_sample_rate(struct minstrel_priv *mp, struct minstrel_ht_sta *mi)
+ {
 --- a/net/mac80211/rc80211_minstrel_ht.h
 +++ b/net/mac80211/rc80211_minstrel_ht.h
 @@ -33,9 +33,10 @@
@@ -280,21 +317,42 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  extern const struct mcs_group minstrel_mcs_groups[];
 --- a/net/mac80211/rc80211_minstrel_ht_debugfs.c
 +++ b/net/mac80211/rc80211_minstrel_ht_debugfs.c
-@@ -95,7 +95,7 @@ minstrel_ht_stats_dump(struct minstrel_h
+@@ -58,6 +58,7 @@ minstrel_ht_stats_dump(struct minstrel_h
+ 		static const int bitrates[4] = { 10, 20, 55, 110 };
+ 		int idx = i * MCS_GROUP_RATES + j;
+ 		unsigned int prob_ewmsd;
++		unsigned int duration;
+ 
+ 		if (!(mi->supported[i] & BIT(j)))
+ 			continue;
+@@ -95,7 +96,9 @@ minstrel_ht_stats_dump(struct minstrel_h
  		p += sprintf(p, "  %3u  ", idx);
  
  		/* tx_time[rate(i)] in usec */
 -		tx_time = DIV_ROUND_CLOSEST(mg->duration[j], 1000);
-+		tx_time = DIV_ROUND_CLOSEST(mg->duration[j] << mg->shift, 1000);
++		duration = mg->duration[j];
++		duration <<= mg->shift;
++		tx_time = DIV_ROUND_CLOSEST(duration, 1000);
  		p += sprintf(p, "%6u  ", tx_time);
  
  		tp_max = minstrel_ht_get_tp_avg(mi, i, j, MINSTREL_FRAC(100, 100));
-@@ -238,7 +238,7 @@ minstrel_ht_stats_csv_dump(struct minstr
+@@ -204,6 +207,7 @@ minstrel_ht_stats_csv_dump(struct minstr
+ 		static const int bitrates[4] = { 10, 20, 55, 110 };
+ 		int idx = i * MCS_GROUP_RATES + j;
+ 		unsigned int prob_ewmsd;
++		unsigned int duration;
+ 
+ 		if (!(mi->supported[i] & BIT(j)))
+ 			continue;
+@@ -238,7 +242,10 @@ minstrel_ht_stats_csv_dump(struct minstr
  		}
  
  		p += sprintf(p, "%u,", idx);
 -		tx_time = DIV_ROUND_CLOSEST(mg->duration[j], 1000);
-+		tx_time = DIV_ROUND_CLOSEST(mg->duration[j] << mg->shift, 1000);
++
++		duration = mg->duration[j];
++		duration <<= mg->shift;
++		tx_time = DIV_ROUND_CLOSEST(duration, 1000);
  		p += sprintf(p, "%u,", tx_time);
  
  		tp_max = minstrel_ht_get_tp_avg(mi, i, j, MINSTREL_FRAC(100, 100));
