@@ -117,55 +117,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* IEEE80211_RATE_H */
 --- a/net/mac80211/rc80211_minstrel.c
 +++ b/net/mac80211/rc80211_minstrel.c
-@@ -482,6 +482,38 @@ init_sample_table(struct minstrel_sta_in
- }
- 
- static void
-+minstrel_init_cck_rates(struct minstrel_priv *mp,
-+			struct cfg80211_chan_def *chandef)
-+{
-+	static const int bitrates[4] = { 10, 20, 55, 110 };
-+	struct ieee80211_supported_band *sband;
-+	u32 rate_flags = ieee80211_chandef_rate_flags(chandef);
-+	int i, j;
-+
-+	sband = mp->hw->wiphy->bands[NL80211_BAND_2GHZ];
-+	if (!sband)
-+		return;
-+
-+	for (i = 0, j = 0; i < sband->n_bitrates; i++) {
-+		struct ieee80211_rate *rate = &sband->bitrates[i];
-+
-+		if (rate->flags & IEEE80211_RATE_ERP_G)
-+			continue;
-+
-+		if ((rate_flags & sband->bitrates[i].flags) != rate_flags)
-+			continue;
-+
-+		for (j = 0; j < ARRAY_SIZE(bitrates); j++) {
-+			if (rate->bitrate != bitrates[j])
-+				continue;
-+
-+			mp->cck_rates[j] = i;
-+			break;
-+		}
-+	}
-+}
-+
-+static void
- minstrel_rate_init(void *priv, struct ieee80211_supported_band *sband,
- 		   struct cfg80211_chan_def *chandef,
- 		   struct ieee80211_sta *sta, void *priv_sta)
-@@ -493,6 +525,8 @@ minstrel_rate_init(void *priv, struct ie
- 	unsigned int t_slot = 9; /* FIXME: get real slot time */
- 	u32 rate_flags;
- 
-+	minstrel_init_cck_rates(mp, chandef);
-+
- 	mi->sta = sta;
- 	mi->lowest_rix = rate_lowest_index(sband, sta);
- 	ctl_rate = &sband->bitrates[mi->lowest_rix];
-@@ -572,138 +606,6 @@ minstrel_rate_init(void *priv, struct ie
+@@ -572,138 +572,6 @@ minstrel_rate_init(void *priv, struct ie
  	minstrel_update_rates(mp, mi);
  }
  
@@ -304,7 +256,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static u32 minstrel_get_expected_throughput(void *priv_sta)
  {
  	struct minstrel_sta_info *mi = priv_sta;
-@@ -722,29 +624,8 @@ static u32 minstrel_get_expected_through
+@@ -722,29 +590,8 @@ static u32 minstrel_get_expected_through
  }
  
  const struct rate_control_ops mac80211_minstrel = {
@@ -463,7 +415,41 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			mi->supported[i] = mcs->rx_mask[nss - 1];
  			if (mi->supported[i])
  				n_supported++;
-@@ -1352,13 +1345,52 @@ minstrel_ht_free_sta(void *priv, struct
+@@ -1349,16 +1342,88 @@ minstrel_ht_free_sta(void *priv, struct
+ 	kfree(msp);
+ }
+ 
++static void
++minstrel_ht_init_cck_rates(struct minstrel_priv *mp)
++{
++	static const int bitrates[4] = { 10, 20, 55, 110 };
++	struct ieee80211_supported_band *sband;
++	u32 rate_flags = ieee80211_chandef_rate_flags(&mp->hw->conf.chandef);
++	int i, j;
++
++	sband = mp->hw->wiphy->bands[NL80211_BAND_2GHZ];
++	if (!sband)
++		return;
++
++	for (i = 0, j = 0; i < sband->n_bitrates; i++) {
++		struct ieee80211_rate *rate = &sband->bitrates[i];
++
++		if (rate->flags & IEEE80211_RATE_ERP_G)
++			continue;
++
++		if ((rate_flags & sband->bitrates[i].flags) != rate_flags)
++			continue;
++
++		for (j = 0; j < ARRAY_SIZE(bitrates); j++) {
++			if (rate->bitrate != bitrates[j])
++				continue;
++
++			mp->cck_rates[j] = i;
++			break;
++		}
++	}
++}
++
  static void *
  minstrel_ht_alloc(struct ieee80211_hw *hw, struct dentry *debugfsdir)
  {
@@ -507,6 +493,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			   &mp->fixed_rate_idx);
 +#endif
 +
++	minstrel_ht_init_cck_rates(mp);
++
 +	return mp;
  }
  
@@ -518,7 +506,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static u32 minstrel_ht_get_expected_throughput(void *priv_sta)
-@@ -1417,14 +1449,14 @@ static void __init init_sample_table(voi
+@@ -1417,14 +1482,14 @@ static void __init init_sample_table(voi
  }
  
  int __init
