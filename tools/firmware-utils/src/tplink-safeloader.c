@@ -1392,7 +1392,8 @@ static void usage(const char *argv0) {
 		"  -S              create sysupgrade instead of factory image\n"
 		"Extract an old image:\n"
 		"  -x <file>       extract all oem firmware partition\n"
-		"  -d <dir>        destination to extract the firmware partition\n",
+		"  -d <dir>        destination to extract the firmware partition\n"
+		"  -z <file>       convert an oem firmware into a sysupgade file. Use -o for output file\n",
 		argv0
 	);
 };
@@ -1632,9 +1633,100 @@ static int extract_firmware(const char *input, const char *output_directory)
 	return 0;
 }
 
+static struct flash_partition_entry *find_partition(
+		struct flash_partition_entry *entries, size_t max_entries,
+		const char *name, const char *error_msg)
+{
+	for (int i=0; i<max_entries; i++, entries++) {
+		if (strcmp(entries->name, name) == 0)
+			return entries;
+	}
+
+	error(1, 0, "%s", error_msg);
+	return NULL;
+}
+
+static void write_ff(FILE *output_file, size_t size)
+{
+	char buf[4096];
+	int offset;
+
+	memset(buf, 0xff, sizeof(buf));
+
+	for (offset = 0; offset + sizeof(buf) < size ; offset += sizeof(buf)) {
+		if (fwrite(buf, sizeof(buf), 1, output_file) < 0)
+			error(1, errno, "Can not write 0xff to output_file");
+	}
+
+	/* write last chunk smaller than buffer */
+	if (offset < size) {
+		offset = size - offset;
+		if (fwrite(buf, offset, 1, output_file) < 0)
+			error(1, errno, "Can not write partition to output_file");
+	}
+}
+
+static void convert_firmware(const char *input, const char *output)
+{
+	struct flash_partition_entry fwup[MAX_PARTITIONS] = { 0 };
+	struct flash_partition_entry flash[MAX_PARTITIONS] = { 0 };
+	struct flash_partition_entry *fwup_os_image = NULL, *fwup_file_system = NULL;
+	struct flash_partition_entry *flash_os_image = NULL, *flash_file_system = NULL;
+	struct flash_partition_entry *fwup_partition_table = NULL;
+	size_t firmware_offset = 0x1014;
+	FILE *input_file, *output_file;
+
+	struct stat statbuf;
+
+	/* check input file */
+	if (stat(input, &statbuf)) {
+		error(1, errno, "Can not read input firmware %s", input);
+	}
+
+	input_file = fopen(input, "rb");
+	if (!input_file)
+		error(1, 0, "Can not open input firmware %s", input);
+
+	output_file = fopen(output, "wb");
+	if (!output_file)
+		error(1, 0, "Can not open output firmware %s", output);
+
+	if (read_partition_table(input_file, firmware_offset, fwup, MAX_PARTITIONS, 0) != 0) {
+		error(1, 0, "Error can not read the partition table (fwup-ptn)");
+	}
+
+	fwup_os_image = find_partition(fwup, MAX_PARTITIONS,
+			"os-image", "Error can not find os-image partition (fwup)");
+	fwup_file_system = find_partition(fwup, MAX_PARTITIONS,
+			"file-system", "Error can not find file-system partition (fwup)");
+	fwup_partition_table = find_partition(fwup, MAX_PARTITIONS,
+			"partition-table", "Error can not find partition-table partition");
+
+	/* the flash partition table has a 0x00000004 magic haeder */
+	if (read_partition_table(input_file, firmware_offset + fwup_partition_table->base + 4, flash, MAX_PARTITIONS, 1) != 0)
+		error(1, 0, "Error can not read the partition table (flash)");
+
+	flash_os_image = find_partition(flash, MAX_PARTITIONS,
+			"os-image", "Error can not find os-image partition (flash)");
+	flash_file_system = find_partition(flash, MAX_PARTITIONS,
+			"file-system", "Error can not find file-system partition (flash)");
+
+	/* write os_image to 0x0 */
+	write_partition(input_file, firmware_offset, fwup_os_image, output_file);
+	write_ff(output_file, flash_os_image->size - fwup_os_image->size);
+
+	/* write file-system behind os_image */
+	fseek(output_file, flash_file_system->base - flash_os_image->base, SEEK_SET);
+	write_partition(input_file, firmware_offset, fwup_file_system, output_file);
+	write_ff(output_file, flash_file_system->size - fwup_file_system->size);
+
+	fclose(output_file);
+	fclose(input_file);
+}
+
 int main(int argc, char *argv[]) {
 	const char *board = NULL, *kernel_image = NULL, *rootfs_image = NULL, *output = NULL;
-	const char *extract_image = NULL, *output_directory = NULL;
+	const char *extract_image = NULL, *output_directory = NULL, *convert_image = NULL;
 	bool add_jffs2_eof = false, sysupgrade = false;
 	unsigned rev = 0;
 	const struct device_info *info;
@@ -1643,7 +1735,7 @@ int main(int argc, char *argv[]) {
 	while (true) {
 		int c;
 
-		c = getopt(argc, argv, "B:k:r:o:V:jSh:x:d:");
+		c = getopt(argc, argv, "B:k:r:o:V:jSh:x:d:z:");
 		if (c == -1)
 			break;
 
@@ -1688,6 +1780,10 @@ int main(int argc, char *argv[]) {
 			extract_image = optarg;
 			break;
 
+		case 'z':
+			convert_image = optarg;
+			break;
+
 		default:
 			usage(argv[0]);
 			return 1;
@@ -1700,6 +1796,10 @@ int main(int argc, char *argv[]) {
 		if (!output_directory)
 			error(1, 0, "Can not extract an image without output directory. Use -d <dir>");
 		extract_firmware(extract_image, output_directory);
+	} else if (convert_image) {
+		if (!output)
+			error(1, 0, "Can not convert a factory/oem image into sysupgrade image without output file. Use -o <file>");
+		convert_firmware(convert_image, output);
 	} else {
 		if (!board)
 			error(1, 0, "no board has been specified");
