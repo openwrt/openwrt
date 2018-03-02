@@ -64,6 +64,20 @@ define Device/avm_fritzbox-4040
 endef
 TARGET_DEVICES += avm_fritzbox-4040
 
+define Device/compex_wpj428
+	$(call Device/FitImage)
+	DEVICE_DTS := qcom-ipq4028-wpj428
+	DEVICE_DTS_CONFIG := config@4
+	BLOCKSIZE := 64k
+	DEVICE_TITLE := Compex WPJ428
+	IMAGE_SIZE := 31232k
+	KERNEL_SIZE := 4096k
+	IMAGES = sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := ath10k-firmware-qca4019 kmod-gpio-beeper
+endef
+TARGET_DEVICES += compex_wpj428
+
 define Device/glinet_gl-b1300
 	$(call Device/FitImage)
 	DEVICE_TITLE := GL.iNet GL-B1300
