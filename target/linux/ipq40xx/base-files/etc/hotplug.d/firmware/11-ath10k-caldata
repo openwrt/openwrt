@@ -128,6 +128,7 @@ case "$FIRMWARE" in
 		ath10kcal_is_caldata_valid "202f" || ath10kcal_extract "ART" 4096 12064
 		ath10kcal_patch_mac_crc $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 102) +2)
 		;;
+	compex,wpj428 |\
 	openmesh,a42)
 		ath10kcal_extract "0:ART" 4096 12064
 		;;
@@ -151,6 +152,7 @@ case "$FIRMWARE" in
 		ath10kcal_is_caldata_valid "202f" || ath10kcal_extract "ART" 20480 12064
 		ath10kcal_patch_mac_crc $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 102) +3)
 		;;
+	compex,wpj428 |\
 	openmesh,a42)
 		ath10kcal_extract "0:ART" 20480 12064
 		;;
