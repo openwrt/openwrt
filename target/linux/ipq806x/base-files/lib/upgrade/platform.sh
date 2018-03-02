@@ -10,6 +10,11 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	comfast,cf-e370ac)
+		KERNEL_NAME="0:HLOS"
+		ROOTFS_NAME="rootfs"
+		platform_do_upgrade_smem "$ARGV"
+		;;
 	linksys,ea8500)
 		platform_do_upgrade_linksys "$ARGV"
 		;;

@@ -88,6 +88,21 @@ define Device/avm_fritzbox-4040
 endef
 TARGET_DEVICES += avm_fritzbox-4040
 
+define Device/comfast_cf-e370ac
+	$(call Device/FitImage)
+	DEVICE_DTS := qcom-ipq4029-cf-e370ac
+	KERNEL_LOADADDR := 0x80208000
+	KERNEL_INSTALL := 1
+	KERNEL_SIZE := 4096k
+	IMAGE_SIZE := 26624k
+	BOARD_NAME := cf-e370ac
+	DEVICE_TITLE := COMFAST CF-E370AC
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := ath10k-firmware-qca4019 ipq-wifi-comfast_cf-e370ac
+endef
+TARGET_DEVICES += comfast_cf-e370ac
+
 define Device/linksys_ea8500
 	$(call Device/LegacyImage)
 	DEVICE_DTS := qcom-ipq8064-ea8500

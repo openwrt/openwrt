@@ -17,6 +17,9 @@ avm,fritzbox-4040)
 	ucidef_add_switch "switch0" \
 		"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
 	;;
+comfast,cf-e370ac)
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	;;
 linksys,ea8500)
 	hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 	ucidef_add_switch "switch0" \

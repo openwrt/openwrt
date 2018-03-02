@@ -11,6 +11,11 @@ board=$(board_name)
 boardname="${board##*,}"
 
 case "$board" in
+comfast,cf-e370ac)
+	ucidef_set_led_wlan "wlan" "WLAN" "${boardname}:blue:wlan" "phy0tpt" "phy1tpt"
+	ucidef_set_led_switch "wan" "WAN" "${boardname}:red:wan" "switch0" "0x20"
+	ucidef_set_led_switch "lan" "LAN" "${boardname}:green:lan" "switch0" "0x10"
+	;;
 avm,fritzbox-4040)
 	ucidef_set_led_wlan "wlan" "WLAN" "fritz4040:green:wlan" "phy0tpt" "phy1tpt"
 	ucidef_set_led_netdev "wan" "WAN" "fritz4040:green:wan" "eth1"
