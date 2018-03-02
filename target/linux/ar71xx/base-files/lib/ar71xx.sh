@@ -741,6 +741,9 @@ ar71xx_board_detect() {
 	*"Lima"*)
 		name="lima"
 		;;
+	*"Litebeam M5"*)
+		name="lbe-m5"
+		;;
 	*"Loco M XW")
 		name="loco-m-xw"
 		;;

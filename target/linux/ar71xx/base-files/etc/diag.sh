@@ -260,6 +260,9 @@ get_status_led() {
 	lan-turtle)
 		status_led="$board:orange:system"
 		;;
+	lbe-m5)
+		status_led="ubnt:green:sys"
+		;;
 	ls-sr71)
 		status_led="ubnt:green:d22"
 		;;
