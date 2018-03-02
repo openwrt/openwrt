@@ -21,6 +21,20 @@ define Build/netgear-uImage
 	$(call Build/uImage,$(1) -M $(NETGEAR_KERNEL_MAGIC))
 endef
 
+
+define Device/avm_fritz300e
+  ATH_SOC := ar7242
+  DEVICE_TITLE := AVM FRITZ!WLAN Repeater 300E
+  KERNEL := kernel-bin | append-dtb | lzma | eva-image
+  KERNEL_INITRAMFS := $$(KERNEL)
+  IMAGE_SIZE := 15232k
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | \
+	append-squashfs-fakeroot-be | pad-to 256 | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := fritz-tffs rssileds -swconfig
+endef
+TARGET_DEVICES += avm_fritz300e
+
 define Device/embeddedwireless_dorin
   ATH_SOC := ar9331
   DEVICE_TITLE := Embedded Wireless Dorin
