@@ -1,0 +1,48 @@
+--- a/config-site-generator/configure.ac
++++ b/config-site-generator/configure.ac
+@@ -23,6 +23,7 @@ AC_DEFUN([AC_MSG_ERROR], [
+     test -e conftest.dir && rm -rf conftest.dir ])
+ 
+ # Checks for programs.
++AC_PROG_CC
+ AC_PROG_CC_C89
+ AC_PROG_CC_C_O
+ AC_PROG_CPP
+@@ -52,9 +53,11 @@ AC_PROG_LEX
+ AC_PROG_LN_S
+ AC_PROG_RANLIB
+ AC_PROG_SED
++AC_PROG_LEX
+ #AC_PROG_YACC
+ 
+ AM_PROG_AS
++AM_PROG_AR
+ 
+ # Checks for system services.
+ #AC_PATH_X
+@@ -118,6 +121,8 @@ sys/ucontext.h sys/uio.h sys/un.h sys/us
+ sys/wait.h sys/xattr.h tar.h termios.h tgmath.h time.h ucontext.h ulimit.h \
+ unistd.h utime.h utmp.h utmpx.h wchar.h wctype.h wordexp.h
+ ])
++# extra headers
++AC_CHECK_HEADERS([sys/cdefs.h])
+ 
+ # Checks for typedefs, structures, and compiler characteristics.
+ AC_TYPE_GETGROUPS
+@@ -217,6 +222,16 @@ AC_FUNC_STRTOLD
+ AC_FUNC_UTIME_NULL
+ AC_FUNC_VPRINTF
+ 
++AC_CHECK_SIZEOF(short)
++AC_CHECK_SIZEOF(int)
++AC_CHECK_SIZEOF(long)
++AC_CHECK_SIZEOF(long long)
++AC_CHECK_SIZEOF(unsigned int)
++AC_CHECK_SIZEOF(unsigned long)
++AC_CHECK_SIZEOF(unsigned long long)
++AC_CHECK_SIZEOF(off_t)
++AC_CHECK_SIZEOF(size_t)
++
+ # Functions list scraped from musl 0.9.4 x86_64
+ AC_CHECK_FUNCS([ \
+ a64l abort abs accept access acos acosf acosh acoshf acoshl acosl addmntent \
