@@ -117,7 +117,7 @@ include $(INCLUDE_DIR)/autotools.mk
 _pkg_target:=$(if $(QUILT),,.)
 
 override MAKEFLAGS=
-CONFIG_SITE:=$(INCLUDE_DIR)/site/$(ARCH)
+CONFIG_SITE:=$(TOOLCHAIN_DIR)/config.site
 CUR_MAKEFILE:=$(filter-out Makefile,$(firstword $(MAKEFILE_LIST)))
 SUBMAKE:=$(NO_TRACE_MAKE) $(if $(CUR_MAKEFILE),-f $(CUR_MAKEFILE))
 PKG_CONFIG_PATH=$(STAGING_DIR)/usr/lib/pkgconfig:$(STAGING_DIR)/usr/share/pkgconfig
