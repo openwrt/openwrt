@@ -116,7 +116,9 @@ struct ag71xx_ring {
 
 struct ag71xx_mdio {
 	struct mii_bus		*mii_bus;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,5,0)
 	int			mii_irq[PHY_MAX_ADDR];
+#endif
 	void __iomem		*mdio_base;
 	struct ag71xx_mdio_platform_data *pdata;
 };
