@@ -318,6 +318,15 @@ define Package/namei/description
  files, directories, and so forth)
 endef
 
+define Package/nsenter
+$(call Package/util-linux/Default)
+  TITLE:=enter a namespace
+endef
+
+define Package/nsenter/description
+  run program with namespaces of other processes
+endef
+
 define Package/prlimit
 $(call Package/util-linux/Default)
   TITLE:=get and set process resource limits
@@ -393,6 +402,15 @@ endef
 
 define Package/swap-utils/description
  contains: mkswap, swaplabel
+endef
+
+define Package/unshare
+$(call Package/util-linux/Default)
+  TITLE:=unshare userspace tool
+endef
+
+define Package/unshare/description
+  run programs with some namespaces unshared from parent
 endef
 
 define Package/uuidd
@@ -633,6 +651,11 @@ define Package/namei/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/namei $(1)/usr/bin/
 endef
 
+define Package/nsenter/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nsenter $(1)/usr/bin/
+endef
+
 define Package/prlimit/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/prlimit $(1)/usr/bin/
@@ -670,6 +693,11 @@ define Package/swap-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/mkswap $(1)/usr/sbin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/swaplabel $(1)/usr/sbin/
+endef
+
+define Package/unshare/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/unshare $(1)/usr/bin/
 endef
 
 define Package/uuidd/install
@@ -722,6 +750,7 @@ $(eval $(call BuildPackage,lscpu))
 $(eval $(call BuildPackage,mcookie))
 $(eval $(call BuildPackage,mount-utils))
 $(eval $(call BuildPackage,namei))
+$(eval $(call BuildPackage,nsenter))
 $(eval $(call BuildPackage,prlimit))
 $(eval $(call BuildPackage,rename))
 $(eval $(call BuildPackage,partx-utils))
@@ -729,6 +758,7 @@ $(eval $(call BuildPackage,script-utils))
 $(eval $(call BuildPackage,setterm))
 $(eval $(call BuildPackage,sfdisk))
 $(eval $(call BuildPackage,swap-utils))
+$(eval $(call BuildPackage,unshare))
 $(eval $(call BuildPackage,uuidd))
 $(eval $(call BuildPackage,uuidgen))
 $(eval $(call BuildPackage,wall))
