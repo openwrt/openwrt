@@ -4592,7 +4592,7 @@ dwc_otg: Remove duplicate gadget probe/unregister function
 +module_exit(fsg_cleanup);
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
-@@ -735,6 +735,19 @@ config USB_HWA_HCD
+@@ -737,6 +737,19 @@ config USB_HWA_HCD
  	  To compile this driver a module, choose M here: the module
  	  will be called "hwa-hc".
  
