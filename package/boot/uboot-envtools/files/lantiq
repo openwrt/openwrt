@@ -13,6 +13,9 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+arcadyan,vgv7510kw22-nor)
+	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x20000" "0x20000" "1"
+	;;
 bt,homehub-v2b)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000" "1"
 	;;
