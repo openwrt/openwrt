@@ -82,13 +82,17 @@ ifneq ($(CONFIG_GRUB_IMAGES)$(CONFIG_EFI_IMAGES),)
 		-e 's#@TIMEOUT@#$(GRUB_TIMEOUT)#g' \
 		-e 's#set root.*#search --file /boot/grub/$(SIGNATURE).cfg --set=root#g' \
 		./grub.cfg > $(KDIR)/root.grub/boot/grub/grub.cfg
+	sed \
+		-e 's/(hd0,msdos1)/(hd0,gpt1)/' ./grub-early.cfg > \
+			$(KDIR)/root.grub/boot/grub/grub-early.cfg
+
 	$(CP) $(KDIR)/root.grub/boot/grub/grub.cfg $(KDIR)/root.grub/boot/grub/$(SIGNATURE).cfg
 	grub-mkimage \
 		-d $(STAGING_DIR_HOST)/lib/grub/i386-pc \
 		-o $(KDIR)/grub2/core.img \
 		-O i386-pc \
 		-p '(hd0,gpt1)/boot/grub' \
-		-c $(KDIR)/root.grub/boot/grub/grub.cfg \
+		-c $(KDIR)/root.grub/boot/grub/grub-early.cfg \
 		$(GRUB2_MODULES_LEGACY)
 	$(CP) $(STAGING_DIR_HOST)/lib/grub/i386-pc/*.img $(KDIR)/grub2/
 
