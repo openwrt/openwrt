@@ -229,6 +229,9 @@ miniembplug)
 miwifi-mini)
 	ucidef_set_led_default "power" "power" "$board:red:status" "1"
 	;;
+miwifi-3)
+	ucidef_set_led_default "power" "power" "$board:blue:status" "1"
+	;;
 mlw221|\
 mlwg2)
 	set_wifi_led "$board:blue:wifi"
