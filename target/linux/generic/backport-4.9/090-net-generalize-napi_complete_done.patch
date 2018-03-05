@@ -280,7 +280,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 --- a/drivers/net/ethernet/arc/emac_main.c
 +++ b/drivers/net/ethernet/arc/emac_main.c
-@@ -275,7 +275,7 @@ static int arc_emac_poll(struct napi_str
+@@ -284,7 +284,7 @@ static int arc_emac_poll(struct napi_str
  
  	work_done = arc_emac_rx(ndev, budget);
  	if (work_done < budget) {
