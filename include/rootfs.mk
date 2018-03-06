@@ -49,8 +49,15 @@ TARGET_DIR_ORIG := $(TARGET_ROOTFS_DIR)/root.orig-$(BOARD)
 
 ifdef CONFIG_CLEAN_IPKG
   define clean_ipkg
-	-find $(1)/usr/lib/opkg -type f -and -not -name '*.control' | $(XARGS) rm -rf
+	-find $(1)/usr/lib/opkg/info -type f -and -not -name '*.control' | $(XARGS) rm -rf
 	-sed -i -ne '/^Require-User: /p' $(1)/usr/lib/opkg/info/*.control
+	awk ' \
+		BEGIN { conffiles = 0; print "Conffiles:" } \
+		/^Conffiles:/ { conffiles = 1; next } \
+		!/^ / { conffiles = 0; next } \
+		conffiles == 1 { print } \
+	' $(1)/usr/lib/opkg/status >$(1)/usr/lib/opkg/status.new
+	mv $(1)/usr/lib/opkg/status.new $(1)/usr/lib/opkg/status
 	-find $(1)/usr/lib/opkg -empty | $(XARGS) rm -rf
   endef
 endif
