@@ -63,9 +63,9 @@ ifdef CONFIG_CLEAN_IPKG
 endif
 
 define prepare_rootfs
-	@if [ -d $(TOPDIR)/files ]; then \
-		$(call file_copy,$(TOPDIR)/files/.,$(1)); \
-	fi
+	$(if $(2),@if [ -d '$(2)' ]; then \
+		$(call file_copy,$(2)/.,$(1)); \
+	fi)
 	@mkdir -p $(1)/etc/rc.d
 	@mkdir -p $(1)/var/lock
 	@( \
