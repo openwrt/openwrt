@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
-PKG_VERSION:=2017.75
-PKG_RELEASE:=5
+PKG_VERSION:=2018.76
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://matt.ucc.asn.au/dropbear/releases/ \
 	https://dropbear.nl/mirror/releases/
-PKG_HASH:=6cbc1dcb1c9709d226dff669e5604172a18cf5dbf9a201474d5618ae4465098c
+PKG_HASH:=f2fb9167eca8cf93456a5fc1d4faf709902a3ab70dd44e352f3acbc3ffdaea65
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE libtomcrypt/LICENSE libtommath/LICENSE
@@ -85,33 +85,47 @@ CONFIGURE_ARGS += \
 TARGET_CFLAGS += -DARGTYPE=3 -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
 
+# remove when pull #786 will be upstreamed
+# ref: https://github.com/openwrt/openwrt/pull/786
+ESED:=$(STAGING_DIR_HOST)/bin/sed -E -i -e
+
 define Build/Configure
 	$(Build/Configure/Default)
+	cp $(PKG_BUILD_DIR)/default_options.h $(PKG_BUILD_DIR)/localoptions.h
 
-	$(SED) 's,^#define DEFAULT_PATH .*$$$$,#define DEFAULT_PATH "$(TARGET_INIT_PATH)",g' \
-		$(PKG_BUILD_DIR)/options.h
+	# replace obsolete patches/120-openwrt_options.patch
+	for OPTION in INETD_MODE DROPBEAR_CLI_NETCAT \
+	DROPBEAR_3DES DROPBEAR_ENABLE_CBC_MODE DROPBEAR_SHA1_HMAC \
+	DROPBEAR_SHA1_96_HMAC DROPBEAR_DSS DROPBEAR_DH_GROUP1 \
+	DROPBEAR_USE_PASSWORD_ENV; do \
+		$(ESED) 's,^(#define '$$$$OPTION') .*$$$$,\1 0,g' \
+		$(PKG_BUILD_DIR)/localoptions.h; \
+	done
 
-	awk 'BEGIN { rc = 1 } \
-	     /'DROPBEAR_CURVE25519'/ { $$$$0 = "$(if $(CONFIG_DROPBEAR_CURVE25519),,// )#define 'DROPBEAR_CURVE25519'"; rc = 0 } \
-	     { print } \
-	     END { exit(rc) }' $(PKG_BUILD_DIR)/options.h \
-	     >$(PKG_BUILD_DIR)/options.h.new && \
-	mv $(PKG_BUILD_DIR)/options.h.new $(PKG_BUILD_DIR)/options.h
+#	# disable server X11 forwarding
+#	$(ESED) 's,^(#define DROPBEAR_X11FWD) .*$$$$,\1 0,g' \
+#	$(PKG_BUILD_DIR)/localoptions.h
+
+#	# do not optimize for size
+#	$(ESED) 's,^(#define DROPBEAR_SMALL_CODE) .*$$$$,\1 0,g' \
+#	$(PKG_BUILD_DIR)/localoptions.h
+
+	$(ESED) 's,^(#define DEFAULT_PATH) .*$$$$,\1 "$(TARGET_INIT_PATH)",g' \
+	$(PKG_BUILD_DIR)/localoptions.h
+
+	$(ESED) 's,^(#define DROPBEAR_CURVE25519) .*$$$$,\1 $(if $(CONFIG_DROPBEAR_CURVE25519),1,0),g' \
+	$(PKG_BUILD_DIR)/localoptions.h
 
 	# Enforce that all replacements are made, otherwise options.h has changed
 	# format and this logic is broken.
 	for OPTION in DROPBEAR_ECDSA DROPBEAR_ECDH; do \
-	  awk 'BEGIN { rc = 1 } \
-	       /'$$$$OPTION'/ { $$$$0 = "$(if $(CONFIG_DROPBEAR_ECC),,// )#define '$$$$OPTION'"; rc = 0 } \
-	       { print } \
-	       END { exit(rc) }' $(PKG_BUILD_DIR)/options.h \
-	       >$(PKG_BUILD_DIR)/options.h.new && \
-	  mv $(PKG_BUILD_DIR)/options.h.new $(PKG_BUILD_DIR)/options.h || exit 1; \
+		$(ESED) 's,^(#define '$$$$OPTION') .*$$$$,\1 $(if $(CONFIG_DROPBEAR_ECC),1,0),g' \
+		$(PKG_BUILD_DIR)/localoptions.h; \
 	done
 
 	# remove protocol idented software version number
-	$(SED) 's,^#define LOCAL_IDENT .*$$$$,#define LOCAL_IDENT "SSH-2.0-dropbear",g' \
-		$(PKG_BUILD_DIR)/sysoptions.h
+	$(ESED) 's,^(#define LOCAL_IDENT) .*$$$$,\1 "SSH-2.0-dropbear",g' \
+	$(PKG_BUILD_DIR)/sysoptions.h
 
 	# Enforce rebuild of svr-chansession.c
 	rm -f $(PKG_BUILD_DIR)/svr-chansession.o
