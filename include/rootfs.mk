@@ -84,7 +84,6 @@ define prepare_rootfs
 	rm -rf $(1)/tmp/*
 	rm -f $(1)/usr/lib/opkg/lists/*
 	rm -f $(1)/usr/lib/opkg/info/*.postinst*
-	rm -f $(1)/usr/lib/opkg/info/*.prerm*
 	rm -f $(1)/var/lock/*.lock
 	$(call clean_ipkg,$(1))
 	$(call mklibs,$(1))
