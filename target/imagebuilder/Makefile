@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -63,7 +63,8 @@ endif
 	fi
 	rm -rf \
 		$(PKG_BUILD_DIR)/target/linux/*/files{,-*} \
-		$(PKG_BUILD_DIR)/target/linux/*/patches{,-*}
+		$(PKG_BUILD_DIR)/target/linux/*/patches{,-*} \
+		$(PKG_BUILD_DIR)/target/linux/generic/{pending,backport,hack}{,-*}
 	-cp $(KERNEL_BUILD_DIR)/* $(IB_KDIR)/ # don't copy subdirectories here
 	-cp $(LINUX_DIR)/.config $(IB_LDIR)/
 	rm -f $(IB_KDIR)/root.*
