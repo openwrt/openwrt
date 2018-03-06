@@ -82,7 +82,6 @@ define prepare_rootfs
 	@-find $(1) -name '.#*' | $(XARGS) rm -f
 	rm -f $(1)/usr/lib/opkg/lists/*
 	rm -f $(1)/usr/lib/opkg/info/*.postinst*
-	rm -f $(1)/usr/lib/opkg/info/*.prerm*
 	$(call clean_ipkg,$(1))
 	$(call mklibs,$(1))
 endef
