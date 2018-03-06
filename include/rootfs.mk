@@ -1,5 +1,3 @@
-include $(INCLUDE_DIR)/feeds.mk
-
 ifdef CONFIG_USE_MKLIBS
   define mklibs
 	rm -rf $(TMP_DIR)/mklibs-progs $(TMP_DIR)/mklibs-out

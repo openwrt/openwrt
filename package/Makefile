@@ -7,6 +7,7 @@
 
 curdir:=package
 
+include $(INCLUDE_DIR)/feeds.mk
 include $(INCLUDE_DIR)/rootfs.mk
 
 -include $(TMP_DIR)/.packagedeps
