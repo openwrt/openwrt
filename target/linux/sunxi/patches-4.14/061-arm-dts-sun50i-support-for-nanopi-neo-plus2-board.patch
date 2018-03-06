@@ -1,6 +1,6 @@
-From d7341305863bcc054ee168bd77864100e0c3b144 Mon Sep 17 00:00:00 2001
+From 54cc3330c2334a0cea8cafc105a29c5d67f9fd32 Mon Sep 17 00:00:00 2001
 From: Antony Antony <antony@phenome.org>
-Date: Thu, 7 Sep 2017 18:42:22 +0200
+Date: Fri, 2 Mar 2018 10:50:48 +0100
 Subject: [PATCH] arm64: allwinner: h5: add NanoPi NEO Plus2 DT support
 
 Add initial DT for NanoPi NEO Plus2 by FriendlyARM
@@ -13,6 +13,7 @@ Add initial DT for NanoPi NEO Plus2 by FriendlyARM
 - 2x USB 2.0 host ports & 2x USB via headers
 
 Kernel 4.15 commit d7341305863b
+Kernel 4.16 commit 27d7f9297027
 
 Signed-off-by: Antony Antony <antony@phenome.org>
 
@@ -28,7 +29,7 @@ Signed-off-by: Antony Antony <antony@phenome.org>
  subdir-y	:= $(dts-dirs)
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-h5-nanopi-neo-plus2.dts
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,210 @@
 +/*
 + * Copyright (C) 2017 Antony Antony <antony@phenome.org>
 + * Copyright (C) 2016 ARM Ltd.
@@ -84,6 +85,7 @@ Signed-off-by: Antony Antony <antony@phenome.org>
 +	compatible = "friendlyarm,nanopi-neo-plus2", "allwinner,sun50i-h5";
 +
 +	aliases {
++		ethernet0 = &emac;
 +		serial0 = &uart0;
 +	};
 +
@@ -162,6 +164,22 @@ Signed-off-by: Antony Antony <antony@phenome.org>
 +
 +&ehci3 {
 +	status = "okay";
++};
++
++&emac {
++	pinctrl-names = "default";
++	pinctrl-0 = <&emac_rgmii_pins>;
++	phy-supply = <&reg_gmac_3v3>;
++	phy-handle = <&ext_rgmii_phy>;
++	phy-mode = "rgmii";
++	status = "okay";
++};
++
++&external_mdio {
++	ext_rgmii_phy: ethernet-phy@7 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <7>;
++	};
 +};
 +
 +&mmc0 {
