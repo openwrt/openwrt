@@ -6,19 +6,15 @@
 #
 include $(TOPDIR)/rules.mk
 
-ARCH:=arm
 BOARD:=mvebu
 BOARDNAME:=Marvell Armada 37x/38x/XP
 FEATURES:=fpu usb pci pcie gpio nand squashfs ramdisk
-CPU_TYPE:=cortex-a9
-CPU_SUBTYPE:=vfpv3
+SUBTARGETS:=cortexa9
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 KERNEL_PATCHVER:=4.14
 
 include $(INCLUDE_DIR)/target.mk
-
-KERNELNAME:=zImage dtbs
 
 DEFAULT_PACKAGES += uboot-envtools kmod-gpio-button-hotplug
 
