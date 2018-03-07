@@ -19,6 +19,24 @@ ath10kcal_extract() {
 		ath10kcal_die "failed to extract calibration data from $mtd"
 }
 
+ath10kcal_ubi_extract() {
+	local part=$1
+	local offset=$2
+	local count=$3
+	local ubidev
+	local ubi
+
+	. /lib/upgrade/nand.sh
+
+	ubidev=$(nand_find_ubi $CI_UBIPART)
+	ubi=$(nand_find_volume $ubidev $part)
+	[ -n "$ubi" ] || \
+		ath10kcal_die "no UBI volume found for $part"
+
+	dd if=/dev/$ubi of=/lib/firmware/$FIRMWARE bs=1 skip=$offset count=$count 2>/dev/null || \
+		ath10kcal_die "failed to extract from $ubi"
+}
+
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
 . /lib/functions.sh
@@ -30,6 +48,10 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath10k/pre-cal-ahb-a000000.wifi.bin")
 	case "$board" in
+	asus,rt-ac58u)
+		CI_UBIPART=UBI_DEV
+		ath10kcal_ubi_extract "Factory" 4096 12064
+		;;
 	avm,fritzbox-4040)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x400 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader_config")
 		;;
@@ -44,6 +66,10 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-ahb-a800000.wifi.bin")
 	case "$board" in
+	asus,rt-ac58u)
+		CI_UBIPART=UBI_DEV
+		ath10kcal_ubi_extract "Factory" 20480 12064
+		;;
 	avm,fritzbox-4040)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x400 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader_config")
 		;;
