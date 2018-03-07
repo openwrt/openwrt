@@ -27,15 +27,26 @@ endef
 
 define Build/boot-scr
 	rm -f $@-boot.scr
-	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -d $(DEVICE_NAME).bootscript $@-boot.scr
+	sed -e 's#@ROOT@#$(SIGNATURE)#g' \
+		$(DEVICE_NAME).bootscript > $@-new.bootscript
+	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -d $@-new.bootscript $@-boot.scr
 endef
 
 define Build/boot-img
 	rm -f $@.boot
 	mkfs.fat -C $@.boot 16384
 	$(foreach dts,$(DEVICE_DTS), mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb ::$(dts).dtb;)
-	mcopy -i $@.boot $(IMAGE_KERNEL) ::zImage
+	mcopy -i $@.boot $(IMAGE_KERNEL) ::$(KERNEL_NAME)
 	-mcopy -i $@.boot $@-boot.scr ::boot.scr
+endef
+
+define Build/boot-img-ext4
+	rm -fR $@.boot
+	mkdir -p $@.boot
+	$(foreach dts,$(DEVICE_DTS), $(CP) $(DTS_DIR)/$(dts).dtb $@.boot;)
+	$(CP) $(IMAGE_KERNEL) $@.boot/$(KERNEL_NAME)
+	-$(CP) $@-boot.scr $@.boot/boot.scr
+	make_ext4fs -J -l 16384K $@.bootimg $@.boot
 endef
 
 define Build/sdcard-img
@@ -45,6 +56,16 @@ define Build/sdcard-img
 	./gen_mvebu_sdcard_img.sh $@ \
 		$$UBOOT \
 		c 32768 $@.boot \
+		83 $$ROOTFS_SIZE $(IMAGE_ROOTFS)
+endef
+
+define Build/sdcard-img-ext4
+	if [ -n "$(UBOOT)" ]; then UBOOT="$(STAGING_DIR_IMAGE)/$(UBOOT)"; fi; \
+	ROOTFS_SIZE=$$(( $(CONFIG_TARGET_ROOTFS_PARTSIZE) * 1024 * 2 )); \
+	SIGNATURE="$(SIGNATURE)" \
+	./gen_mvebu_sdcard_img.sh $@ \
+		$$UBOOT \
+		83 32768 $@.bootimg \
 		83 $$ROOTFS_SIZE $(IMAGE_ROOTFS)
 endef
 
@@ -101,5 +122,6 @@ define Device/NAND-512K
 endef
 
 include cortex-a9.mk
+include cortex-a53.mk
 
 $(eval $(call BuildImage))

@@ -17,6 +17,9 @@ mvebu_board_detect() {
 	*"Marvell Armada 370 Evaluation Board")
 		name="armada-370-db"
 		;;
+	*"Globalscale Marvell ESPRESSOBin Board")
+		name="globalscale,espressobin"
+		;;
 	*"Globalscale Mirabox")
 		name="mirabox"
 		;;

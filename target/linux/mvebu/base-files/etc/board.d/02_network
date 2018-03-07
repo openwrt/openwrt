@@ -42,6 +42,9 @@ armada-388-clearfog-*)
 armada-xp-gp)
 	ucidef_set_interface_lan "eth0 eth1 eth2 eth3"
 	;;
+globalscale,espressobin)
+	ucidef_set_interfaces_lan_wan "lan0 lan1" "wan"
+	;;
 *)
 	ucidef_set_interface_lan "eth0"
 	;;
