@@ -1,0 +1,28 @@
+From 4b98deaa353d8f7af3f7543d0b59497fe1275599 Mon Sep 17 00:00:00 2001
+Message-Id: <4b98deaa353d8f7af3f7543d0b59497fe1275599.1520544136.git.mschiffer@universe-factory.net>
+From: Matthias Schiffer <mschiffer@universe-factory.net>
+Date: Thu, 8 Mar 2018 22:22:08 +0100
+Subject: [PATCH] Revert "led: core: Fix brightness setting when setting
+ delay_off=0"
+
+This reverts commit 20ac8f72514b3af8b62c520d55656ded865eff00.
+---
+ drivers/leds/led-core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/leds/led-core.c b/drivers/leds/led-core.c
+index 92b6798ef5b3..c1c3af089634 100644
+--- a/drivers/leds/led-core.c
++++ b/drivers/leds/led-core.c
+@@ -149,7 +149,7 @@ void led_blink_set(struct led_classdev *led_cdev,
+ 		   unsigned long *delay_on,
+ 		   unsigned long *delay_off)
+ {
+-	led_stop_software_blink(led_cdev);
++	del_timer_sync(&led_cdev->blink_timer);
+ 
+ 	led_cdev->flags &= ~LED_BLINK_ONESHOT;
+ 	led_cdev->flags &= ~LED_BLINK_ONESHOT_STOP;
+-- 
+2.16.2
+
