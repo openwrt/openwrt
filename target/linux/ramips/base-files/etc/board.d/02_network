@@ -112,8 +112,6 @@ ramips_setup_interfaces()
 	witi|\
 	wl-wn575a3|\
 	wndr3700v5|\
-	wt1520-4M|\
-	wt1520-8M|\
 	youku-yk1|\
 	zbt-ape522ii|\
 	zbt-we1326|\
@@ -209,8 +207,6 @@ ramips_setup_interfaces()
 	wrtnode|\
 	wrtnode2p | \
 	wrtnode2r | \
-	wt3020-4M|\
-	wt3020-8M|\
 	zbt-wa05)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
@@ -323,7 +319,9 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
 		;;
-	vonets,var11n-300)
+	vonets,var11n-300|\
+	wt1520-4M|\
+	wt1520-8M)
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:wan" "6@eth0"
 		;;
@@ -355,6 +353,11 @@ ramips_setup_interfaces()
 	wizfi630a)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "0:wan" "6@eth0"
+		;;
+	wt3020-4M|\
+	wt3020-8M)
+		ucidef_add_switch "switch0" \
+			"4:lan" "0:wan" "6@eth0"
 		;;
 	zbtlink,zbt-we1226|\
 	y1)
