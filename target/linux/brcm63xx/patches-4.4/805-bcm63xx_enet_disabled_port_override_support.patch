@@ -1,0 +1,143 @@
+diff -Naurp a/drivers/net/ethernet/broadcom/bcm63xx_enet.c b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c	2018-03-09 04:29:06.228883637 +0100
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c	2018-03-09 04:31:43.694162958 +0100
+@@ -2058,6 +2058,39 @@ static inline int bcm_enet_port_is_rgmii
+ 	return portid >= ENETSW_RGMII_PORT0;
+ }
+ 
++static u8 bcm_enetsw_port_override(struct bcm63xx_enetsw_port *port,
++				   int warn)
++{
++	u8 override = ENETSW_PORTOV_ENABLE_MASK;
++
++	switch (port->force_speed) {
++	case 1000:
++		override |= ENETSW_PORTOV_1000_MASK;
++		break;
++	case 100:
++		override |= ENETSW_PORTOV_100_MASK;
++		/* fall through */
++	case 10:
++		break;
++	case 0:
++		if (warn && port->bypass_link)
++			goto print_warning;
++		break;
++	default:
++		if (warn)
++			goto print_warning;
++		break;
++	print_warning:
++		pr_warn("invalid forced speed on port %s: assume 10\n",
++			port->name);
++	}
++
++	if (port->force_duplex_full)
++		override |= ENETSW_PORTOV_FDX_MASK;
++
++	return override;
++}
++
+ /*
+  * enet sw PHY polling
+  */
+@@ -2097,7 +2130,9 @@ static void swphy_poll_timer(unsigned lo
+ 		if (!up) {
+ 			dev_info(&priv->pdev->dev, "link DOWN on %s\n",
+ 				 port->name);
+-			enetsw_writeb(priv, ENETSW_PORTOV_ENABLE_MASK,
++
++			enetsw_writeb(priv,
++				      bcm_enetsw_port_override(port, false),
+ 				      ENETSW_PORTOV_REG(i));
+ 			enetsw_writeb(priv, ENETSW_PTCTRL_RXDIS_MASK |
+ 				      ENETSW_PTCTRL_TXDIS_MASK,
+@@ -2142,11 +2177,11 @@ static void swphy_poll_timer(unsigned lo
+ 			ENETSW_PORTOV_LINKUP_MASK;
+ 
+ 		if (speed == 1000)
+-			override |= ENETSW_IMPOV_1000_MASK;
++			override |= ENETSW_PORTOV_1000_MASK;
+ 		else if (speed == 100)
+-			override |= ENETSW_IMPOV_100_MASK;
++			override |= ENETSW_PORTOV_100_MASK;
+ 		if (duplex)
+-			override |= ENETSW_IMPOV_FDX_MASK;
++			override |= ENETSW_PORTOV_FDX_MASK;
+ 
+ 		enetsw_writeb(priv, override, ENETSW_PORTOV_REG(i));
+ 		enetsw_writeb(priv, 0, ENETSW_PTCTRL_REG(i));
+@@ -2327,41 +2362,48 @@ static int bcm_enetsw_open(struct net_de
+ 	netif_carrier_on(dev);
+ 	netif_start_queue(dev);
+ 
+-	/* apply override config for bypass_link ports here. */
++	/* apply override config and setup auto negotiation. */
+ 	for (i = 0; i < priv->num_ports; i++) {
+ 		struct bcm63xx_enetsw_port *port;
++		int external_phy;
+ 		u8 override;
++		u16 val;
++
+ 		port = &priv->used_ports[i];
+ 		if (!port->used)
+ 			continue;
+ 
+-		if (!port->bypass_link)
+-			continue;
+-
+-		override = ENETSW_PORTOV_ENABLE_MASK |
+-			ENETSW_PORTOV_LINKUP_MASK;
++		override = bcm_enetsw_port_override(port, true);
+ 
+-		switch (port->force_speed) {
+-		case 1000:
+-			override |= ENETSW_IMPOV_1000_MASK;
+-			break;
+-		case 100:
+-			override |= ENETSW_IMPOV_100_MASK;
+-			break;
+-		case 10:
+-			break;
+-		default:
+-			pr_warn("invalid forced speed on port %s: assume 10\n",
+-			       port->name);
+-			break;
++		if (port->bypass_link) {
++			/* apply the override and enable the port */
++			override |= ENETSW_PORTOV_LINKUP_MASK;
++
++			enetsw_writeb(priv, override, ENETSW_PORTOV_REG(i));
++			enetsw_writeb(priv, 0, ENETSW_PTCTRL_REG(i));
++		} else if (override != ENETSW_PORTOV_ENABLE_MASK)
++			/* if the override value is different from that
++			 * which was already applied when disabling the
++			 * port then apply it but keep the port disabled */
++			enetsw_writeb(priv, override, ENETSW_PORTOV_REG(i));
++
++		external_phy = bcm_enet_port_is_rgmii(i);
++
++		/* make sure flow-control capability is advertised */
++		val = bcmenet_sw_mdio_read(priv, external_phy,
++					   port->phy_id, MII_ADVERTISE);
++		if (!(val & ADVERTISE_PAUSE_CAP)) {
++			val |= ADVERTISE_PAUSE_CAP;
++			bcmenet_sw_mdio_write(priv, external_phy, port->phy_id,
++					      MII_ADVERTISE, val);
+ 		}
+ 
+-		if (port->force_duplex_full)
+-			override |= ENETSW_IMPOV_FDX_MASK;
+-
+-
+-		enetsw_writeb(priv, override, ENETSW_PORTOV_REG(i));
+-		enetsw_writeb(priv, 0, ENETSW_PTCTRL_REG(i));
++		/* enable & restart auto negotiation */
++		val = bcmenet_sw_mdio_read(priv, external_phy,
++					   port->phy_id, MII_BMCR);
++		val |= BMCR_ANENABLE | BMCR_ANRESTART;
++		bcmenet_sw_mdio_write(priv, external_phy, port->phy_id,
++				      MII_BMCR, val);
+ 	}
+ 
+ 	/* start phy polling timer */
