@@ -18,6 +18,7 @@ ifndef IB
 endif
 
 include $(INCLUDE_DIR)/image-legacy.mk
+include $(INCLUDE_DIR)/feeds.mk
 include $(INCLUDE_DIR)/rootfs.mk
 
 override MAKE:=$(_SINGLE)$(SUBMAKE)
