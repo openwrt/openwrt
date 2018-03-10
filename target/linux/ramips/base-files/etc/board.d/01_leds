@@ -162,6 +162,11 @@ dlink,dwr-116-a1|\
 mzk-ex300np)
 	set_wifi_led "$boardname:green:wifi"
 	;;
+dlink,dwr-921-c1)
+	set_wifi_led "$boardname:green:wifi"
+	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x0f"
+	ucidef_set_led_default "sigstrength" "Signal Strength" "$boardname:green:sigstrength" "0"
+	;;
 dir-810l|\
 mzk-750dhp|\
 mzk-dp150n|\
