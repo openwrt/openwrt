@@ -162,6 +162,21 @@ define Device/dlink_dwr-116-a1
 endef
 TARGET_DEVICES += dlink_dwr-116-a1
 
+define Device/dlink_dwr-921-c1
+  DTS := DWR-921-C1
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := D-Link DWR-921 C1
+  DEVICE_PACKAGES := jboot-tools
+  DLINK_ROM_ID := DLK6E2414001
+  DLINK_FAMILY_MEMBER := 0x6E24
+  DLINK_FIRMWARE_SIZE := 0xFE0000
+  KERNEL := $(KERNEL_DTB)
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
+  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
+endef
+TARGET_DEVICES += dlink_dwr-921-c1
+
 define Device/e1700
   DTS := E1700
   IMAGES += factory.bin
