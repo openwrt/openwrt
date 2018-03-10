@@ -61,7 +61,7 @@ TARGET_DEVICES += glinet_gl-b1300
 
 define Device/openmesh_a42
 	$(call Device/FitImageLzma)
-	DEVICE_DTS := qcom-ipq4019-a42
+	DEVICE_DTS := qcom-ipq4018-a42
 	BLOCKSIZE := 64k
 	SUPPORTED_DEVICES := openmesh,a42
 	DEVICE_TITLE := OpenMesh A42
