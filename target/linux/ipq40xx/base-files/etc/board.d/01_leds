@@ -26,6 +26,9 @@ avm,fritzbox-4040)
 glinet,gl-b1300)
 	ucidef_set_led_wlan "wlan" "WLAN" "${boardname}:green:wlan" "phy0tpt"
 	;;
+meraki,mr33)
+	ucidef_set_interface_lan "eth0"
+	;;
 *)
 	;;
 esac

@@ -40,6 +40,10 @@ platform_do_upgrade() {
 		PART_NAME="inactive"
 		platform_do_upgrade_openmesh "$ARGV"
 		;;
+	meraki,mr33)
+		CI_KERNPART="part.safe"
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$ARGV"
 		;;
@@ -51,6 +55,9 @@ platform_nand_pre_upgrade() {
 	asus,rt-ac58u)
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"
+		;;
+	meraki,mr33)
+		CI_KERNPART="part.safe"
 		;;
 	esac
 }

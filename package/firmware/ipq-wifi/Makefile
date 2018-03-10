@@ -13,7 +13,7 @@ endef
 define Build/Compile
 endef
 
-ALLWIFIBOARDS:=asus_rt-ac58u avm_fritzbox-4040 glinet_gl-b1300
+ALLWIFIBOARDS:=asus_rt-ac58u avm_fritzbox-4040 glinet_gl-b1300 meraki_mr33
 ALLWIFIPACKAGES:=$(foreach BOARD,$(ALLWIFIBOARDS),ipq-wifi-$(BOARD))
 
 define Package/ipq-wifi-default
@@ -50,5 +50,6 @@ endef
 $(eval $(call generate-ipq-wifi-package,asus_rt-ac58u,board-asus_rt-ac58u.bin,ASUS RT-AC58U))
 $(eval $(call generate-ipq-wifi-package,avm_fritzbox-4040,board-avm_fritzbox-4040.bin,AVM FRITZ!Box 4040))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-b1300,board-glinet_gl-b1300.bin,GL.iNet GL-B1300))
+$(eval $(call generate-ipq-wifi-package,meraki_mr33,board-meraki_mr33.bin,Cisco Meraki MR33))
 
 $(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))

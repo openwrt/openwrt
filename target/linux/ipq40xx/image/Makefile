@@ -77,6 +77,17 @@ define Device/glinet_gl-b1300
 endef
 TARGET_DEVICES += glinet_gl-b1300
 
+define Device/meraki_mr33
+	$(call Device/FitImage)
+	DEVICE_DTS := qcom-ipq4029-mr33
+	BLOCKSIZE := 131072
+	PAGESIZE := 2048
+	DEVICE_TITLE := Cisco Meraki MR33
+	IMAGES = sysupgrade.bin
+	DEVICE_PACKAGES := -swconfig ipq-wifi-meraki_mr33 ath10k-firmware-qca9887
+endef
+TARGET_DEVICES += meraki_mr33
+
 define Device/openmesh_a42
 	$(call Device/FitImageLzma)
 	DEVICE_DTS := qcom-ipq4018-a42
