@@ -34,8 +34,6 @@ endef
 define Device/avm_fritzbox-4040
 	$(call Device/FitImageLzma)
 	DEVICE_DTS := qcom-ipq4019-fritz4040
-	BLOCKSIZE := 4k
-	PAGESIZE := 256
 	BOARD_NAME := fritz4040
 	DEVICE_TITLE := AVM Fritz!Box 4040
 	IMAGE_SIZE := 29753344
