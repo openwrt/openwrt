@@ -316,7 +316,7 @@
  	for (p = *head; p; p = p->next) {
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -458,7 +458,7 @@ static struct neighbour *ipv4_neigh_look
+@@ -461,7 +461,7 @@ static struct neighbour *ipv4_neigh_look
  	else if (skb)
  		pkey = &ip_hdr(skb)->daddr;
  
