@@ -37,6 +37,7 @@ define Build/Configure
 	$(HOSTCC) -o $(PKG_BUILD_DIR)/fritz/lzma2eva $(PKG_BUILD_DIR)/fritz/src/lzma2eva.c -lz
 	$(HOSTCC) -o $(PKG_BUILD_DIR)/fritz/tichksum $(PKG_BUILD_DIR)/fritz/src/tichksum.c
 	ln -sf $(STAGING_DIR_HOST)/bin/lzma $(PKG_BUILD_DIR)/fritz
+	ln -sf compiler-gcc5.h $(PKG_BUILD_DIR)/include/linux/compiler-gcc7.h
 endef
 
 define Build/Compile
