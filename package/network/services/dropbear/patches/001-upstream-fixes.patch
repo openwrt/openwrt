@@ -1,0 +1,690 @@
+Author: Konstantin Demin <rockdrilla@gmail.com>
+Subject: update dropbear (bugfixes, typos, etc)
+
+nota bene: removed parts:
+ - supplemental code for fuzzing
+ - DSS fixes
+
+merged upstream commits:
+
+149b21d ciphers/hashes/kex algorithms won't have string lengths, also use dictionary for fuzzer-preauth_nomaths
+145fb96 Don't read uninitialised value.
+084ff9b reduce number of params so it doesn't hit a timeout
+6b05aa4 fix some links
+366fc8f notes on the fuzzer
+35f479b Add kexdh and kexecdh fuzzers
+9d11cad dictionary for fuzzer-preauth
+0233dce try and improve the odds of useful fuzzer activity
+f7dedab - fuzzer-pubkey needs to free algoname, fix build - improve dictionary with lengths
+129c440 add a dictionary for fuzzer-pubkey
+abee809 use random keyblob from the fuzzer instead
+2583b18 travis fuzz build clang++
+1e1e477 set up CXX for fuzzing build
+85eda7d try fix travis sanitizer
+4b36e24 print config.log on failure
+a5eac0a add -fsanitize=address for fuzz test again
+7f15910 get rid of unused packet_type in encrypted write queue
+625b38d merge
+b9edf93 add cryptlib for all targets in fuzz build
+257bba0 some linting after fuzz merge (#60)
+8d0b48f Fix CFLAGS for configure
+ce1f9cd no werror for fuzzing clang
+e612aec Attempt to fix m_free for libtomcrypt/libtommath
+5bd0c0d avoid fsanitize=address for fuzzing
+26ad685 Only use malloc wrapper if fuzzing
+8a4f7fe avoid volatile cast warning
+294e98c don't try clang-5.0
+c1a2dcb add fuzzers to travis
+8062a4e mention localoptions.h being build directory, fix underscore in CHANGES
+a0ab5e8 more portable for `which hg` test
+a1dcaf8 Merge fuzzing branch
+
+--- a/CHANGES
++++ b/CHANGES
+@@ -2,12 +2,12 @@
+ 
+ > > > Configuration/compatibility changes
+   IMPORTANT
+-  Custom configuration is now specified in local_options.h rather than options.h
++  Custom configuration is now specified in localoptions.h rather than options.h
+   Available options and defaults can be seen in default_options.h
+ 
+   To migrate your configuration, compare your customised options.h against the
+   upstream options.h from your relevant version. Any customised options should
+-  be put in localoptions.h
++  be put in localoptions.h in the build directory.
+ 
+ - "configure --enable-static" should now be used instead of "make STATIC=1"
+   This will avoid 'hardened build' flags that conflict with static binaries
+--- a/INSTALL
++++ b/INSTALL
+@@ -3,6 +3,8 @@ Basic Dropbear build instructions:
+ - Edit localoptions.h to set which features you want. Available options
+   are described in default_options.h, these will be overridden by
+   anything set in localoptions.h
++  localoptions.h should be located in the build directory if you are
++  building out of tree.
+ 
+ - If using a Mercurial or Git checkout, "autoconf; autoheader"
+ 
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -36,6 +36,7 @@ COMMONOBJS=dbutil.o buffer.o dbhelpers.o
+ 		queue.o \
+ 		atomicio.o compat.o fake-rfc2553.o \
+ 		ltc_prng.o ecc.o ecdsa.o crypto_desc.o \
++		dbmalloc.o \
+ 		gensignkey.o gendss.o genrsa.o
+ 
+ SVROBJS=svr-kex.o svr-auth.o sshpty.o \
+@@ -180,7 +181,7 @@ dbclient: $(HEADERS) $(LIBTOM_DEPS) Make
+ 	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $($@objs) $(LIBTOM_LIBS) $(LIBS)
+ 
+ dropbearkey dropbearconvert: $(HEADERS) $(LIBTOM_DEPS) Makefile
+-	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $($@objs) $(LIBTOM_LIBS)
++	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $($@objs) $(LIBTOM_LIBS) $(LIBS)
+ 
+ # scp doesn't use the libs so is special.
+ scp: $(SCPOBJS)  $(HEADERS) Makefile
+--- a/buffer.c
++++ b/buffer.c
+@@ -209,6 +209,7 @@ char* buf_getstring(buffer* buf, unsigne
+ 
+ 	unsigned int len;
+ 	char* ret;
++	void* src = NULL;
+ 	len = buf_getint(buf);
+ 	if (len > MAX_STRING_LEN) {
+ 		dropbear_exit("String too long");
+@@ -217,8 +218,9 @@ char* buf_getstring(buffer* buf, unsigne
+ 	if (retlen != NULL) {
+ 		*retlen = len;
+ 	}
++	src = buf_getptr(buf, len);
+ 	ret = m_malloc(len+1);
+-	memcpy(ret, buf_getptr(buf, len), len);
++	memcpy(ret, src, len);
+ 	buf_incrpos(buf, len);
+ 	ret[len] = '\0';
+ 
+--- a/common-kex.c
++++ b/common-kex.c
+@@ -48,7 +48,6 @@ static void read_kex_algos(void);
+ /* helper function for gen_new_keys */
+ static void hashkeys(unsigned char *out, unsigned int outlen, 
+ 		const hash_state * hs, const unsigned char X);
+-static void finish_kexhashbuf(void);
+ 
+ 
+ /* Send our list of algorithms we can use */
+@@ -391,6 +390,14 @@ int is_compress_recv() {
+ 			&& ses.keys->recv.algo_comp == DROPBEAR_COMP_ZLIB_DELAY);
+ }
+ 
++static void* dropbear_zalloc(void* UNUSED(opaque), uInt items, uInt size) {
++	return m_calloc(items, size);
++}
++
++static void dropbear_zfree(void* UNUSED(opaque), void* ptr) {
++	m_free(ptr);
++}
++
+ /* Set up new zlib compression streams, close the old ones. Only
+  * called from gen_new_keys() */
+ static void gen_new_zstream_recv() {
+@@ -399,8 +406,8 @@ static void gen_new_zstream_recv() {
+ 	if (ses.newkeys->recv.algo_comp == DROPBEAR_COMP_ZLIB
+ 			|| ses.newkeys->recv.algo_comp == DROPBEAR_COMP_ZLIB_DELAY) {
+ 		ses.newkeys->recv.zstream = (z_streamp)m_malloc(sizeof(z_stream));
+-		ses.newkeys->recv.zstream->zalloc = Z_NULL;
+-		ses.newkeys->recv.zstream->zfree = Z_NULL;
++		ses.newkeys->recv.zstream->zalloc = dropbear_zalloc;
++		ses.newkeys->recv.zstream->zfree = dropbear_zfree;
+ 		
+ 		if (inflateInit(ses.newkeys->recv.zstream) != Z_OK) {
+ 			dropbear_exit("zlib error");
+@@ -423,8 +430,8 @@ static void gen_new_zstream_trans() {
+ 	if (ses.newkeys->trans.algo_comp == DROPBEAR_COMP_ZLIB
+ 			|| ses.newkeys->trans.algo_comp == DROPBEAR_COMP_ZLIB_DELAY) {
+ 		ses.newkeys->trans.zstream = (z_streamp)m_malloc(sizeof(z_stream));
+-		ses.newkeys->trans.zstream->zalloc = Z_NULL;
+-		ses.newkeys->trans.zstream->zfree = Z_NULL;
++		ses.newkeys->trans.zstream->zalloc = dropbear_zalloc;
++		ses.newkeys->trans.zstream->zfree = dropbear_zfree;
+ 	
+ 		if (deflateInit2(ses.newkeys->trans.zstream, Z_DEFAULT_COMPRESSION,
+ 					Z_DEFLATED, DROPBEAR_ZLIB_WINDOW_BITS, 
+@@ -761,8 +768,7 @@ void kexcurve25519_comb_key(const struct
+ #endif /* DROPBEAR_CURVE25519 */
+ 
+ 
+-
+-static void finish_kexhashbuf(void) {
++void finish_kexhashbuf(void) {
+ 	hash_state hs;
+ 	const struct ltc_hash_descriptor *hash_desc = ses.newkeys->algo_kex->hash_desc;
+ 
+--- a/common-session.c
++++ b/common-session.c
+@@ -298,6 +298,16 @@ void session_cleanup() {
+ 		buf_free(dequeue(&ses.writequeue));
+ 	}
+ 
++	m_free(ses.newkeys);
++#ifndef DISABLE_ZLIB
++	if (ses.keys->recv.zstream != NULL) {
++		if (inflateEnd(ses.keys->recv.zstream) == Z_STREAM_ERROR) {
++			dropbear_exit("Crypto error");
++		}
++		m_free(ses.keys->recv.zstream);
++	}
++#endif
++
+ 	m_free(ses.remoteident);
+ 	m_free(ses.authstate.pw_dir);
+ 	m_free(ses.authstate.pw_name);
+@@ -327,7 +337,7 @@ void session_cleanup() {
+ void send_session_identification() {
+ 	buffer *writebuf = buf_new(strlen(LOCAL_IDENT "\r\n") + 1);
+ 	buf_putbytes(writebuf, (const unsigned char *) LOCAL_IDENT "\r\n", strlen(LOCAL_IDENT "\r\n"));
+-	writebuf_enqueue(writebuf, 0);
++	writebuf_enqueue(writebuf);
+ }
+ 
+ static void read_session_identification() {
+--- a/configure.ac
++++ b/configure.ac
+@@ -9,6 +9,7 @@ AC_PREREQ(2.59)
+ AC_INIT
+ AC_CONFIG_SRCDIR(buffer.c)
+ 
++ORIGCFLAGS="$CFLAGS"
+ # Checks for programs.
+ AC_PROG_CC
+ 
+@@ -29,7 +30,7 @@ AC_DEFUN(DB_TRYADDCFLAGS,
+ }])
+ 
+ # set compile flags prior to other tests
+-if test -z "$OLDCFLAGS" && test "$GCC" = "yes"; then
++if test -z "$ORIGCFLAGS" && test "$GCC" = "yes"; then
+ 	AC_MSG_NOTICE(No \$CFLAGS set... using "-Os -W -Wall" for GCC)
+ 	CFLAGS="-Os -W -Wall"
+ fi
+--- a/dbhelpers.c
++++ b/dbhelpers.c
+@@ -9,16 +9,9 @@ void m_burn(void *data, unsigned int len
+ #elif defined(HAVE_EXPLICIT_BZERO)
+ 	explicit_bzero(data, len);
+ #else
+-/* Based on the method in David Wheeler's
+- * "Secure Programming for Linux and Unix HOWTO". May not be safe
+- * against link-time optimisation. */
+-	volatile char *p = data;
+-
+-	if (data == NULL)
+-		return;
+-	while (len--) {
+-		*p++ = 0x0;
+-	}
++	/* This must be volatile to avoid compiler optimisation */
++	volatile void *p = data;
++	memset((void*)p, 0x0, len);
+ #endif
+ }
+ 
+--- /dev/null
++++ b/dbmalloc.c
+@@ -0,0 +1,53 @@
++#include "dbmalloc.h"
++#include "dbutil.h"
++
++
++void * m_calloc(size_t nmemb, size_t size) {
++    if (SIZE_T_MAX / nmemb < size) {
++        dropbear_exit("m_calloc failed");
++    }
++    return m_malloc(nmemb*size);
++}
++
++void * m_strdup(const char * str) {
++    char* ret;
++    unsigned int len;
++    len = strlen(str);
++
++    ret = m_malloc(len+1);
++    if (ret == NULL) {
++        dropbear_exit("m_strdup failed");
++    }
++    memcpy(ret, str, len+1);
++    return ret;
++}
++
++/* Simple wrappers around malloc etc */
++void * m_malloc(size_t size) {
++
++	void* ret;
++
++	if (size == 0) {
++		dropbear_exit("m_malloc failed");
++	}
++	ret = calloc(1, size);
++	if (ret == NULL) {
++		dropbear_exit("m_malloc failed");
++	}
++	return ret;
++
++}
++
++void * m_realloc(void* ptr, size_t size) {
++
++	void *ret;
++
++	if (size == 0) {
++		dropbear_exit("m_realloc failed");
++	}
++	ret = realloc(ptr, size);
++	if (ret == NULL) {
++		dropbear_exit("m_realloc failed");
++	}
++	return ret;
++}
+--- /dev/null
++++ b/dbmalloc.h
+@@ -0,0 +1,18 @@
++#ifndef DBMALLOC_H_
++#define DBMALLOC_H_
++
++#include "stdint.h"
++#include "stdlib.h"
++#include "options.h"
++
++void * m_malloc(size_t size);
++void * m_calloc(size_t nmemb, size_t size);
++void * m_strdup(const char * str);
++void * m_realloc(void* ptr, size_t size);
++
++#define m_free_direct free
++
++#define m_free(X) do {m_free_direct(X); (X) = NULL;} while (0)
++
++
++#endif /* DBMALLOC_H_ */
+--- a/dbrandom.c
++++ b/dbrandom.c
+@@ -28,7 +28,6 @@
+ #include "bignum.h"
+ #include "dbrandom.h"
+ 
+-
+ /* this is used to generate unique output from the same hashpool */
+ static uint32_t counter = 0;
+ /* the max value for the counter, so it won't integer overflow */
+--- a/dbutil.c
++++ b/dbutil.c
+@@ -392,6 +392,7 @@ void printhex(const char * label, const
+ void printmpint(const char *label, mp_int *mp) {
+ 	buffer *buf = buf_new(1000);
+ 	buf_putmpint(buf, mp);
++	fprintf(stderr, "%d bits ", mp_count_bits(mp));
+ 	printhex(label, buf->data, buf->len);
+ 	buf_free(buf);
+ 
+@@ -520,45 +521,6 @@ void m_close(int fd) {
+ 	}
+ }
+ 	
+-void * m_malloc(size_t size) {
+-
+-	void* ret;
+-
+-	if (size == 0) {
+-		dropbear_exit("m_malloc failed");
+-	}
+-	ret = calloc(1, size);
+-	if (ret == NULL) {
+-		dropbear_exit("m_malloc failed");
+-	}
+-	return ret;
+-
+-}
+-
+-void * m_strdup(const char * str) {
+-	char* ret;
+-
+-	ret = strdup(str);
+-	if (ret == NULL) {
+-		dropbear_exit("m_strdup failed");
+-	}
+-	return ret;
+-}
+-
+-void * m_realloc(void* ptr, size_t size) {
+-
+-	void *ret;
+-
+-	if (size == 0) {
+-		dropbear_exit("m_realloc failed");
+-	}
+-	ret = realloc(ptr, size);
+-	if (ret == NULL) {
+-		dropbear_exit("m_realloc failed");
+-	}
+-	return ret;
+-}
+-
+ void setnonblocking(int fd) {
+ 
+ 	TRACE(("setnonblocking: %d", fd))
+@@ -569,8 +531,10 @@ void setnonblocking(int fd) {
+ 			 * can't be set to non-blocking */
+ 			TRACE(("ignoring ENODEV for setnonblocking"))
+ 		} else {
++		{
+ 			dropbear_exit("Couldn't set nonblocking");
+ 		}
++		}
+ 	}
+ 	TRACE(("leave setnonblocking"))
+ }
+@@ -653,6 +617,7 @@ static clockid_t get_linux_clock_source(
+ 
+ time_t monotonic_now() {
+ #if defined(__linux__) && defined(SYS_clock_gettime)
++	{
+ 	static clockid_t clock_source = -2;
+ 
+ 	if (clock_source == -2) {
+@@ -669,9 +634,11 @@ time_t monotonic_now() {
+ 		}
+ 		return ts.tv_sec;
+ 	}
++	}
+ #endif /* linux clock_gettime */
+ 
+ #if defined(HAVE_MACH_ABSOLUTE_TIME)
++	{
+ 	/* OS X, see https://developer.apple.com/library/mac/qa/qa1398/_index.html */
+ 	static mach_timebase_info_data_t timebase_info;
+ 	if (timebase_info.denom == 0) {
+@@ -679,6 +646,7 @@ time_t monotonic_now() {
+ 	}
+ 	return mach_absolute_time() * timebase_info.numer / timebase_info.denom
+ 		/ 1e9;
++	}
+ #endif /* osx mach_absolute_time */
+ 
+ 	/* Fallback for everything else - this will sometimes go backwards */
+@@ -700,6 +668,6 @@ void fsync_parent_dir(const char* fn) {
+ 		TRACE(("error opening directory %s for fsync: %s", dir, strerror(errno)))
+ 	}
+ 
+-	free(fn_dir);
++	m_free(fn_dir);
+ #endif
+ }
+--- a/dbutil.h
++++ b/dbutil.h
+@@ -30,6 +30,7 @@
+ #include "buffer.h"
+ #include "queue.h"
+ #include "dbhelpers.h"
++#include "dbmalloc.h"
+ 
+ #ifndef DISABLE_SYSLOG
+ void startsyslog(const char *ident);
+@@ -66,10 +67,6 @@ int buf_readfile(buffer* buf, const char
+ int buf_getline(buffer * line, FILE * authfile);
+ 
+ void m_close(int fd);
+-void * m_malloc(size_t size);
+-void * m_strdup(const char * str);
+-void * m_realloc(void* ptr, size_t size);
+-#define m_free(X) do {free(X); (X) = NULL;} while (0)
+ void setnonblocking(int fd);
+ void disallow_core(void);
+ int m_str_to_uint(const char* str, unsigned int *val);
+--- a/debug.h
++++ b/debug.h
+@@ -39,7 +39,9 @@
+ /*#define CHECKCLEARTOWRITE() assert(ses.writepayload->len == 0 && \
+ 		ses.writepayload->pos == 0)*/
+ 
++#ifndef CHECKCLEARTOWRITE
+ #define CHECKCLEARTOWRITE()
++#endif
+ 
+ /* Define this, compile with -pg and set GMON_OUT_PREFIX=gmon to get gmon
+  * output when Dropbear forks. This will allow it gprof to be used.
+@@ -54,6 +56,7 @@
+ 
+ /* you don't need to touch this block */
+ #if DEBUG_TRACE
++extern int debug_trace;
+ #define TRACE(X) dropbear_trace X;
+ #define TRACE2(X) dropbear_trace2 X;
+ #else /*DEBUG_TRACE*/
+--- a/default_options.h
++++ b/default_options.h
+@@ -6,8 +6,8 @@
+ default_options.h  documents compile-time options, and provides default values.
+ 
+ Local customisation should be added to localoptions.h which is
+-used if it exists. Options defined there will override any options in this
+-file.
++used if it exists in the build directory. Options defined there will override 
++any options in this file.
+ 
+ Options can also be defined with -DDROPBEAR_XXX=[0,1] in Makefile CFLAGS
+ 
+--- a/includes.h
++++ b/includes.h
+@@ -56,6 +56,7 @@
+ #include <stdarg.h>
+ #include <dirent.h>
+ #include <time.h>
++#include <setjmp.h>
+ 
+ #ifdef HAVE_UTMP_H
+ #include <utmp.h>
+@@ -155,6 +156,10 @@ typedef unsigned int u_int32_t;
+ typedef u_int32_t uint32_t;
+ #endif /* HAVE_UINT32_T */
+ 
++#ifndef SIZE_T_MAX
++#define SIZE_T_MAX ULONG_MAX
++#endif /* SIZE_T_MAX */
++
+ #ifdef HAVE_LINUX_PKT_SCHED_H
+ #include <linux/types.h>
+ #include <linux/pkt_sched.h>
+--- a/kex.h
++++ b/kex.h
+@@ -34,6 +34,7 @@ void recv_msg_kexinit(void);
+ void send_msg_newkeys(void);
+ void recv_msg_newkeys(void);
+ void kexfirstinitialise(void);
++void finish_kexhashbuf(void);
+ 
+ struct kex_dh_param *gen_kexdh_param(void);
+ void free_kexdh_param(struct kex_dh_param *param);
+--- a/libtomcrypt/src/headers/tomcrypt_custom.h
++++ b/libtomcrypt/src/headers/tomcrypt_custom.h
+@@ -12,6 +12,12 @@
+ 
+ #include "tomcrypt_dropbear.h"
+ 
++#include "dbmalloc.h"
++#define XMALLOC m_malloc
++#define XFREE m_free_direct
++#define XREALLOC m_realloc
++#define XCALLOC m_calloc
++
+ /* macros for various libc functions you can change for embedded targets */
+ #ifndef XMALLOC
+ #define XMALLOC  malloc
+--- a/libtommath/bn_fast_s_mp_mul_digs.c
++++ b/libtommath/bn_fast_s_mp_mul_digs.c
+@@ -87,7 +87,7 @@ int fast_s_mp_mul_digs (mp_int * a, mp_i
+   {
+     mp_digit *tmpc;
+     tmpc = c->dp;
+-    for (ix = 0; ix < (pa + 1); ix++) {
++    for (ix = 0; ix < pa; ix++) {
+       /* now extract the previous digit [below the carry] */
+       *tmpc++ = W[ix];
+     }
+--- a/libtommath/tommath_class.h
++++ b/libtommath/tommath_class.h
+@@ -1062,6 +1062,12 @@
+ #undef BN_MP_TOOM_MUL_C
+ #undef BN_MP_TOOM_SQR_C
+ 
++#include "dbmalloc.h"
++#define XMALLOC m_malloc
++#define XFREE m_free_direct
++#define XREALLOC m_realloc
++#define XCALLOC m_calloc
++
+ /* $Source$ */
+ /* $Revision$ */
+ /* $Date$ */
+--- a/netio.c
++++ b/netio.c
+@@ -245,6 +245,7 @@ void set_connect_fds(fd_set *writefd) {
+ 		}
+ 		iter = next_iter;
+ 	}
++	TRACE(("leave set_connect_fds"))
+ }
+ 
+ void handle_connect_fds(const fd_set *writefd) {
+@@ -305,10 +306,10 @@ void packet_queue_to_iovec(const struct
+ 	for (l = queue->head, i = 0; i < *iov_count; l = l->link, i++)
+ 	{
+ 		writebuf = (buffer*)l->item;
+-		len = writebuf->len - 1 - writebuf->pos;
++		len = writebuf->len - writebuf->pos;
+ 		dropbear_assert(len > 0);
+-		TRACE2(("write_packet writev #%d  type %d len %d/%d", i, writebuf->data[writebuf->len-1],
+-				len, writebuf->len-1))
++		TRACE2(("write_packet writev #%d len %d/%d", i,
++				len, writebuf->len))
+ 		iov[i].iov_base = buf_getptr(writebuf, len);
+ 		iov[i].iov_len = len;
+ 	}
+@@ -319,7 +320,7 @@ void packet_queue_consume(struct Queue *
+ 	int len;
+ 	while (written > 0) {
+ 		writebuf = (buffer*)examine(queue);
+-		len = writebuf->len - 1 - writebuf->pos;
++		len = writebuf->len - writebuf->pos;
+ 		if (len > written) {
+ 			/* partial buffer write */
+ 			buf_incrpos(writebuf, written);
+--- a/options.h
++++ b/options.h
+@@ -5,6 +5,7 @@
+             > > > Don't edit this file any more! < < <
+             
+ Local compile-time configuration should be defined in localoptions.h
++in the build directory.
+ See default_options.h.in for a description of the available options.
+ */
+ 
+--- a/packet.c
++++ b/packet.c
+@@ -64,7 +64,6 @@ void write_packet() {
+ #else
+ 	int len;
+ 	buffer* writebuf;
+-	int packet_type;
+ #endif
+ 	
+ 	TRACE2(("enter write_packet"))
+@@ -99,10 +98,7 @@ void write_packet() {
+ 
+ 	/* The last byte of the buffer is not to be transmitted, but is 
+ 	 * a cleartext packet_type indicator */
+-	packet_type = writebuf->data[writebuf->len-1];
+-	len = writebuf->len - 1 - writebuf->pos;
+-	TRACE2(("write_packet type %d len %d/%d", packet_type,
+-			len, writebuf->len-1))
++	len = writebuf->len - writebuf->pos;
+ 	dropbear_assert(len > 0);
+ 	/* Try to write as much as possible */
+ 	written = write(ses.sock_out, buf_getptr(writebuf, len), len);
+@@ -578,7 +574,7 @@ void encrypt_packet() {
+ 	/* Update counts */
+ 	ses.kexstate.datatrans += writebuf->len;
+ 
+-	writebuf_enqueue(writebuf, packet_type);
++	writebuf_enqueue(writebuf);
+ 
+ 	/* Update counts */
+ 	ses.transseq++;
+@@ -598,14 +594,11 @@ void encrypt_packet() {
+ 	TRACE2(("leave encrypt_packet()"))
+ }
+ 
+-void writebuf_enqueue(buffer * writebuf, unsigned char packet_type) {
+-	/* The last byte of the buffer stores the cleartext packet_type. It is not
+-	 * transmitted but is used for transmit timeout purposes */
+-	buf_putbyte(writebuf, packet_type);
++void writebuf_enqueue(buffer * writebuf) {
+ 	/* enqueue the packet for sending. It will get freed after transmission. */
+ 	buf_setpos(writebuf, 0);
+ 	enqueue(&ses.writequeue, (void*)writebuf);
+-	ses.writequeue_len += writebuf->len-1;
++	ses.writequeue_len += writebuf->len;
+ }
+ 
+ 
+--- a/packet.h
++++ b/packet.h
+@@ -35,7 +35,7 @@ void read_packet(void);
+ void decrypt_packet(void);
+ void encrypt_packet(void);
+ 
+-void writebuf_enqueue(buffer * writebuf, unsigned char packet_type);
++void writebuf_enqueue(buffer * writebuf);
+ 
+ void process_packet(void);
+ 
+--- a/signkey.c
++++ b/signkey.c
+@@ -580,6 +580,10 @@ int cmp_base64_key(const unsigned char*
+ 
+ 	/* now we have the actual data */
+ 	len = line->len - line->pos;
++	if (len == 0) {
++		/* base64_decode doesn't like NULL argument */
++		return DROPBEAR_FAILURE;
++	}
+ 	decodekeylen = len * 2; /* big to be safe */
+ 	decodekey = buf_new(decodekeylen);
+ 
+--- a/svr-auth.c
++++ b/svr-auth.c
+@@ -312,7 +312,7 @@ static int checkusername(const char *use
+ 			return DROPBEAR_FAILURE;
+ 		}
+ 	}
+-#endif HAVE_GETGROUPLIST
++#endif /* HAVE_GETGROUPLIST */
+ 
+ 	TRACE(("shell is %s", ses.authstate.pw_shell))
+ 
+--- a/svr-session.c
++++ b/svr-session.c
+@@ -238,7 +238,9 @@ void svr_dropbear_log(int priority, cons
+ static void svr_remoteclosed() {
+ 
+ 	m_close(ses.sock_in);
+-	m_close(ses.sock_out);
++	if (ses.sock_in != ses.sock_out) {
++		m_close(ses.sock_out);
++	}
+ 	ses.sock_in = -1;
+ 	ses.sock_out = -1;
+ 	dropbear_close("Exited normally");
