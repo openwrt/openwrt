@@ -98,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,335 @@
+@@ -0,0 +1,338 @@
 +/*
 + * Copyright (C) 2018 Felix Fietkau <nbd@nbd.name>
 + *
@@ -337,6 +337,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	switch (ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.protonum) {
 +	case IPPROTO_TCP:
++		if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED)
++			return XT_CONTINUE;
++		break;
 +	case IPPROTO_UDP:
 +		break;
 +	default:
