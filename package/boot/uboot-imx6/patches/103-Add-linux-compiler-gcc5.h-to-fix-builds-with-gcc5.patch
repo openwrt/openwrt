@@ -1,10 +1,7 @@
+From 478b02f1a7043b673565075ea5016376f3293b23 Mon Sep 17 00:00:00 2001
 From: Hans de Goede <hdegoede@redhat.com>
-Date: Sat, 7 Feb 2015 21:52:40 +0000 (+0100)
+Date: Sat, 7 Feb 2015 22:52:40 +0100
 Subject: Add linux/compiler-gcc5.h to fix builds with gcc5
-X-Git-Tag: v2015.04-rc2~31
-X-Git-Url: http://git.denx.de/?p=u-boot.git;a=commitdiff_plain;h=478b02f1a7043b673565075ea5016376f3293b23
-
-Add linux/compiler-gcc5.h to fix builds with gcc5
 
 Add linux/compiler-gcc5/h from the kernel sources at:
 
@@ -16,6 +13,9 @@ Date:   Sat Oct 25 15:09:42 2014 -0700
 
 Signed-off-by: Hans de Goede <hdegoede@redhat.com>
 ---
+ include/linux/compiler-gcc5.h | 65 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 65 insertions(+)
+ create mode 100644 include/linux/compiler-gcc5.h
 
 --- /dev/null
 +++ b/include/linux/compiler-gcc5.h
