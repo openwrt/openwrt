@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=e2fsprogs
 PKG_VERSION:=1.43.7
 PKG_HASH:=2a6367289047d68d9ba6a46cf89ab9a1efd0556cde02a51ebaf414ff51edded9
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/tytso/e2fsprogs/v$(PKG_VERSION)/
@@ -23,6 +23,7 @@ PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 
 define Package/e2fsprogs/Default
   URL:=http://e2fsprogs.sourceforge.net/
@@ -46,12 +47,38 @@ define Package/libext2fs
 $(call Package/e2fsprogs/Default)
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+libuuid +libblkid
+  DEPENDS:=+libuuid +libblkid +libss +libcom_err
   TITLE:=ext2/3/4 filesystem library
 endef
 
 define Package/libext2fs/description
  libext2fs is a library which can access ext2, ext3 and ext4 filesystems.
+endef
+
+define Package/libss
+$(call Package/e2fsprogs/Default)
+  SUBMENU:=
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=libss
+  DEPENDS:=+libcom_err
+endef
+
+define Package/libss/description
+  libss as packaged with e2fsprogs
+endef
+
+define Package/libcom_err
+$(call Package/e2fsprogs/Default)
+  SUBMENU:=
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=libcom_err
+  DEPENDS:=+libuuid
+endef
+
+define Package/libcom_err/description
+  libcom_err as packaged with e2fsprogs
 endef
 
 define Package/tune2fs
@@ -153,11 +180,36 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/lib/libext2fs.{so,a}* $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/lib/libcom_err.{so,a}* $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/lib/libss.{so,a}* $(1)/usr/lib
 
 	$(INSTALL_DIR) $(1)/usr/include/ext2fs
 	$(CP) $(PKG_BUILD_DIR)/lib/ext2fs/*.h $(1)/usr/include/ext2fs
 	$(INSTALL_DIR) $(1)/usr/include/et
-	$(CP) $(PKG_BUILD_DIR)/lib/et/*.h $(1)/usr/include/et
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/et/*.h $(1)/usr/include/et
+	# Apparently there is some confusion
+	echo "#include <et/com_err.h>" > $(1)/usr/include/com_err.h
+	$(INSTALL_DIR) $(1)/usr/include/ss
+	$(CP) \
+		$(PKG_BUILD_DIR)/lib/ss/ss.h \
+		$(PKG_BUILD_DIR)/lib/ss/ss_err.h \
+		$(1)/usr/include/ss/
+endef
+
+define Host/Compile
+	$(MAKE) $(PKG_JOBS) -C $(HOST_BUILD_DIR)/lib/ss mk_cmds
+	$(MAKE) $(PKG_JOBS) -C $(HOST_BUILD_DIR)/lib/et compile_et
+endef
+
+define Host/Install
+	$(INSTALL_DIR) $(1)/share/et
+	$(CP) $(HOST_BUILD_DIR)/lib/et/et_[ch].awk $(1)/share/et/
+	$(INSTALL_DIR) $(1)/share/ss
+	$(CP) $(HOST_BUILD_DIR)/lib/ss/ct_c.{sed,awk} $(1)/share/ss/
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin
+	$(CP) \
+		$(HOST_BUILD_DIR)/lib/et/compile_et \
+		$(HOST_BUILD_DIR)/lib/ss/mk_cmds \
+		$(1)/bin/
 endef
 
 define Package/e2fsprogs/conffiles
@@ -183,14 +235,18 @@ define Package/e2fsprogs/install
 endef
 
 define Package/libcom_err/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcom_err.so* $(1)/usr/lib/
+endef
+
+define Package/libss/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libss.so* $(1)/usr/lib/
 endef
 
 define Package/libext2fs/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) \
-		$(PKG_INSTALL_DIR)/usr/lib/libext2fs.so.* \
-		$(PKG_INSTALL_DIR)/usr/lib/libcom_err.so.* \
-		$(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libext2fs.so.* $(1)/usr/lib/
 endef
 
 define Package/libext2fs/install_lib
@@ -233,7 +289,6 @@ define Package/debugfs/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/debugfs $(1)/usr/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libss.so.* $(1)/usr/lib/
 endef
 
 define Package/chattr/install
@@ -247,6 +302,8 @@ define Package/lsattr/install
 endef
 
 $(eval $(call BuildPackage,e2fsprogs))
+$(eval $(call BuildPackage,libcom_err))
+$(eval $(call BuildPackage,libss))
 $(eval $(call BuildPackage,libext2fs))
 $(eval $(call BuildPackage,tune2fs))
 $(eval $(call BuildPackage,resize2fs))
@@ -257,3 +314,4 @@ $(eval $(call BuildPackage,filefrag))
 $(eval $(call BuildPackage,debugfs))
 $(eval $(call BuildPackage,chattr))
 $(eval $(call BuildPackage,lsattr))
+$(eval $(call HostBuild))
