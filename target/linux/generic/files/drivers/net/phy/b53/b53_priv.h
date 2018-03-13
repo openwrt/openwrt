@@ -310,14 +310,12 @@ static inline int b53_write64(struct b53_device *dev, u8 page, u8 reg,
 }
 
 #ifdef CONFIG_BCM47XX
+#include <bcm47xx_board.h>
 
 #include <linux/version.h>
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0))
 #include <linux/bcm47xx_nvram.h>
-#else
-#include <bcm47xx_nvram.h>
 #endif
-#include <bcm47xx_board.h>
 static inline int b53_switch_get_reset_gpio(struct b53_device *dev)
 {
 	enum bcm47xx_board board = bcm47xx_board_get();
