@@ -21,7 +21,9 @@ start() {
 
 stop() {
 	[ -e "$RTC_DEV" ] && [ -e "$HWCLOCK" ] && $HWCLOCK -w -u -f $RTC_DEV && \
-		logger -t sysfixtime "saved '$(date)' to $RTC_DEV"
+		logger -t sysfixtime "saved '$(date)' to $RTC_DEV" && exit 0
+
+	touch /etc/.adjtime
 }
 
 maxtime() {
