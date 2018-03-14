@@ -87,7 +87,9 @@ define Device/Default
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | append-dtb | uImage none
   SUPPORTED_DEVICES = $$(DEVICE_DTS)
+  UBOOT :=
 endef
+DEVICE_VARS += UBOOT
 
 define Device/UBI
   IMAGES := sysupgrade.bin
