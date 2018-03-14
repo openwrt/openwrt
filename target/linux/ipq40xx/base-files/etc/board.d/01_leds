@@ -15,12 +15,12 @@ asus,rt-ac58u)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "${boardname}:blue:wlan2G" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "${boardname}:blue:wlan5G" "phy1tpt"
 	ucidef_set_led_usbport "usb" "USB" "${boardname}:blue:usb" "usb1-port1" "usb2-port1" "usb3-port1" "usb4-port1"
-	ucidef_set_led_netdev "wan" "WAN" "${boardname}:blue:wan" "eth1"
+	ucidef_set_led_switch "wan" "WAN" "${boardname}:blue:wan" "switch0" "0x20"
 	ucidef_set_led_switch "lan" "LAN" "${boardname}:blue:lan" "switch0" "0x1e"
 	;;
 avm,fritzbox-4040)
 	ucidef_set_led_wlan "wlan" "WLAN" "fritz4040:green:wlan" "phy0tpt" "phy1tpt"
-	ucidef_set_led_netdev "wan" "WAN" "fritz4040:green:wan" "eth1"
+	ucidef_set_led_switch "wan" "WAN" "fritz4040:green:wan" "switch0" "0x20"
 	ucidef_set_led_switch "lan" "LAN" "fritz4040:green:lan" "switch0" "0x1e"
 	;;
 glinet,gl-b1300)
