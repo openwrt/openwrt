@@ -727,13 +727,11 @@ static u16 edma_rx_complete(struct edma_common_info *edma_cinfo,
 			edma_receive_checksum(rd, skb);
 
 			/* Process VLAN HW acceleration indication provided by HW */
-			if (unlikely(adapter->default_vlan_tag != rd->rrd4)) {
-				vlan = rd->rrd4;
-				if (likely(rd->rrd7 & EDMA_RRD_CVLAN))
-					__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan);
-				else if (rd->rrd1 & EDMA_RRD_SVLAN)
-					__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021AD), vlan);
-			}
+			vlan = rd->rrd4;
+			if (likely(rd->rrd7 & EDMA_RRD_CVLAN))
+				__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan);
+			else if (rd->rrd1 & EDMA_RRD_SVLAN)
+				__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021AD), vlan);
 
 			/* Update rx statistics */
 			adapter->stats.rx_packets++;
@@ -1411,8 +1409,6 @@ netdev_tx_t edma_xmit(struct sk_buff *skb,
 	/* Check and mark VLAN tag offload */
 	if (unlikely(skb_vlan_tag_present(skb)))
 		flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_FLAG;
-	else if (!adapter->edma_cinfo->is_single_phy && adapter->default_vlan_tag)
-		flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_DEFAULT_FLAG;
 
 	/* Check and mark checksum offload */
 	if (likely(skb->ip_summed == CHECKSUM_PARTIAL))

@@ -49,32 +49,7 @@
 
 		edma@c080000 {
 			status = "okay";
-			qcom,num_gmac = <3>;
-
-			gmac0 {
-				qcom,phy_mdio_addr = <3>;
-				qcom,poll_required = <1>;
-				/delete-property/ qcom,forced_speed;
-				/delete-property/ qcom,forced_duplex;
-				vlan_tag = <1 0x10>;
-			};
-
-			gmac1 {
-				qcom,phy_mdio_addr = <2>;
-				qcom,poll_required = <1>;
-				/delete-property/ qcom,forced_speed;
-				/delete-property/ qcom,forced_duplex;
-				vlan_tag = <1 0x08>;
-			};
-
-			gmac2 {
-				local-mac-address = [00 00 00 00 00 00];
-				qcom,phy_mdio_addr = <4>;
-				qcom,poll_required = <1>;
-				/delete-property/ qcom,forced_speed;
-				/delete-property/ qcom,forced_duplex;
-				vlan_tag = <1 0x20>;
-			};
+			qcom,num_gmac = <1>;
 		};
 
 		gpio_export {
