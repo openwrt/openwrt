@@ -171,7 +171,7 @@ define Package/base-files/install
 	mkdir -p $(1)/root
 	$(LN) /proc/mounts $(1)/etc/mtab
 	rm -f $(1)/var
-	$(LN) /tmp $(1)/var
+	$(LN) tmp $(1)/var
 	mkdir -p $(1)/etc
 	$(LN) /tmp/resolv.conf /tmp/TZ /tmp/localtime $(1)/etc/
 
