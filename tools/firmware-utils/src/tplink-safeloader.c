@@ -1417,8 +1417,9 @@ static int add_flash_partition(
 		unsigned long base,
 		unsigned long size)
 {
+	int ptr;
 	/* check if the list has a free entry */
-	for (int ptr=0; ptr<max_entries; ptr++, part_list++) {
+	for (ptr = 0; ptr < max_entries; ptr++, part_list++) {
 		if (part_list->name == NULL &&
 				part_list->base == 0 &&
 				part_list->size == 0)
@@ -1494,7 +1495,7 @@ static int read_partition_table(
 			break;
 		}
 
-		for (int i=0; i<=4; i++) {
+		for (int i = 0; i <= 4; i++) {
 			if (end_part <= ptr)
 				break;
 
@@ -1620,7 +1621,7 @@ static int extract_firmware(const char *input, const char *output_directory)
 		error(1, 0, "Error can not read the partition table (fwup-ptn)");
 	}
 
-	for (int i=0; i<max_entries; i++) {
+	for (int i = 0; i < max_entries; i++) {
 		if (entries[i].name == NULL &&
 				entries[i].base == 0 &&
 				entries[i].size == 0)
@@ -1636,7 +1637,7 @@ static struct flash_partition_entry *find_partition(
 		struct flash_partition_entry *entries, size_t max_entries,
 		const char *name, const char *error_msg)
 {
-	for (int i=0; i<max_entries; i++, entries++) {
+	for (int i = 0; i < max_entries; i++, entries++) {
 		if (strcmp(entries->name, name) == 0)
 			return entries;
 	}

@@ -42,7 +42,7 @@ define Host/Compile
 	$(call cc,mkplanexfw sha1)
 	$(call cc,mktplinkfw mktplinkfw-lib md5, -Wall -fgnu89-inline)
 	$(call cc,mktplinkfw2 mktplinkfw-lib md5, -fgnu89-inline)
-	$(call cc,tplink-safeloader md5, -Wall)
+	$(call cc,tplink-safeloader md5, -Wall --std=gnu99)
 	$(call cc,pc1crypt)
 	$(call cc,osbridge-crc)
 	$(call cc,wrt400n cyg_crc32)
