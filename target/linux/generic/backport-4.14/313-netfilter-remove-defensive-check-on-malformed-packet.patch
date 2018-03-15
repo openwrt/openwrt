@@ -196,7 +196,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
 --- a/net/ipv6/netfilter/nf_nat_l3proto_ipv6.c
 +++ b/net/ipv6/netfilter/nf_nat_l3proto_ipv6.c
-@@ -368,10 +368,6 @@ nf_nat_ipv6_out(void *priv, struct sk_bu
+@@ -372,10 +372,6 @@ nf_nat_ipv6_out(void *priv, struct sk_bu
  #endif
  	unsigned int ret;
  
@@ -207,7 +207,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	ret = nf_nat_ipv6_fn(priv, skb, state, do_chain);
  #ifdef CONFIG_XFRM
  	if (ret != NF_DROP && ret != NF_STOLEN &&
-@@ -407,10 +403,6 @@ nf_nat_ipv6_local_fn(void *priv, struct
+@@ -411,10 +407,6 @@ nf_nat_ipv6_local_fn(void *priv, struct
  	unsigned int ret;
  	int err;
  
