@@ -4,6 +4,7 @@
 
 preinit_set_mac_address() {
 	case $(board_name) in
+	asus,rt-acrh17|\
 	asus,rt-ac58u)
 		CI_UBIPART=UBI_DEV
 		mac=$(mtd_get_mac_binary_ubi Factory 4102)

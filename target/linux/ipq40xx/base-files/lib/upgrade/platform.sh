@@ -147,6 +147,7 @@ platform_do_upgrade() {
 	8dev,jalapeno)
 		nand_do_upgrade "$ARGV"
 		;;
+	asus,rt-acrh17|\
 	asus,rt-ac58u)
 		local magic=$(get_magic_long "$1")
 		CI_UBIPART="UBI_DEV"
