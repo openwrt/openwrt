@@ -27,6 +27,7 @@ ipq40xx_setup_interfaces()
 			"0t@eth0" "5:lan" "4:wan"
 		;;
 	aruba,ap-303h|\
+	asus,rt-acrh17|\
 	asus,rt-ac58u|\
 	avm,fritzbox-4040|\
 	ezviz,cs-w3-wd1200g-eup|\
@@ -97,6 +98,7 @@ ipq40xx_setup_macs()
 	8dev,habanero-dvk)
 		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
 		;;
+	asus,rt-acrh17|\
 	asus,rt-ac58u)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 1)

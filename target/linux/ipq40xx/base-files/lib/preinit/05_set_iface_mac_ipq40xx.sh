@@ -19,6 +19,7 @@ preinit_set_mac_address() {
 		base_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		ip link set dev eth0 address "${base_mac}"
 		;;
+	asus,rt-acrh17|\
 	asus,rt-ac58u)
 		CI_UBIPART=UBI_DEV
 		base_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)

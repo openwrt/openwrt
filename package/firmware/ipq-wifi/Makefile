@@ -27,6 +27,7 @@ endef
 ALLWIFIBOARDS:= \
 	8dev_habanero-dvk \
 	aruba_ap-303 \
+	asus_rt-acrh17 \
 	avm_fritzrepeater-1200 \
 	cellc_rtl30vw \
 	dlink_dap2610 \
@@ -98,6 +99,7 @@ endef
 
 $(eval $(call generate-ipq-wifi-package,8dev_habanero-dvk,8devices Habanero DVK))
 $(eval $(call generate-ipq-wifi-package,aruba_ap-303,Aruba AP-303))
+$(eval $(call generate-ipq-wifi-package,asus_rt-acrh17,ASUS RT-ACRH17/RT-AC82U/RT-AC42U))
 $(eval $(call generate-ipq-wifi-package,avm_fritzrepeater-1200,AVM FRITZRepeater 1200))
 $(eval $(call generate-ipq-wifi-package,cellc_rtl30vw, Cell C RTL30VW))
 $(eval $(call generate-ipq-wifi-package,dlink_dap2610,D-Link DAP-2610))
