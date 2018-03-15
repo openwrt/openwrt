@@ -1417,7 +1417,6 @@ static int add_flash_partition(
 		unsigned long base,
 		unsigned long size)
 {
-	int ptr = 0;
 	/* check if the list has a free entry */
 	for (int ptr=0; ptr<max_entries; ptr++, part_list++) {
 		if (part_list->name == NULL &&
