@@ -296,11 +296,19 @@ UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 UBOOT_MAKE_FLAGS += \
 	BL31=$(STAGING_DIR_IMAGE)/bl31.bin
 
+SUNXI_ROOT_PRE:= mmcblk0
+SUNXI_ROOT_PART:= $(if $(CONFIG_TARGET_SUNXI_BOOTFS_EXT4_ONLY),1,2)
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	sed -e s/$(SUNXI_ROOT_PRE)/$(SUNXI_ROOT_PRE)p$(SUNXI_ROOT_PART)/ uEnv-$(UENV).txt > $(STAGING_DIR_IMAGE)/uEnv-$(UENV)-usd-p$(SUNXI_ROOT_PART).txt
 	$(CP) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-u-boot-with-spl.bin
-	mkimage -C none -A arm -T script -d uEnv-$(UENV).txt \
-		$(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot.scr
+	mkimage -C none -A arm -T script -d $(STAGING_DIR_IMAGE)/uEnv-$(UENV)-usd-p$(SUNXI_ROOT_PART).txt \
+		$(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot-usd-p$(SUNXI_ROOT_PART).scr
+	$(CP) $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot-usd-p$(SUNXI_ROOT_PART).scr $(STAGING_DIR_IMAGE)/boot.scr
+	$(CP) $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot-usd-p$(SUNXI_ROOT_PART).scr $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot.scr
+	sed -e s/$(SUNXI_ROOT_PRE)/mmcblk2p1/ uEnv-$(UENV).txt > $(STAGING_DIR_IMAGE)/uEnv-$(UENV)-emmc-p1.txt
+	mkimage -C none -A arm -T script -d $(STAGING_DIR_IMAGE)/uEnv-$(UENV)-emmc-p1.txt \
+		$(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot-emmc-p1.scr
 endef
 
 define Package/u-boot/install/default

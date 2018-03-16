@@ -286,7 +286,22 @@ define Image/mkfs/ubifs
 		-o $@ -d $(call mkfs_target_dir,$(1))
 endef
 
+ifdef CONFIG_TARGET_SUNXI_BOOTFS_EXT4_ONLY
+SUNXI_DEV:=$(subst device-,,$(PROFILE_SANITIZED))
+EXT4_BOOT_DIR:=$(call mkfs_target_dir,$(1))/boot
+  define Image/mkfs/sunxi-add-boot-dir
+	mkdir -p $(EXT4_BOOT_DIR)
+	$(CP) $(KERNEL_BUILD_DIR)/Image $(EXT4_BOOT_DIR)/uImage
+	$(CP) $(STAGING_DIR_IMAGE)/$(SUNXI_DEV)-boot.scr $(EXT4_BOOT_DIR)/boot.scr
+	$(CP) $(STAGING_DIR_IMAGE)/$(SUNXI_DEV)-boot*.scr $(EXT4_BOOT_DIR)/
+	$(CP) $(STAGING_DIR_IMAGE)/$(SUNXI_DEV)-u-boot-with-spl.bin \
+		$(EXT4_BOOT_DIR)/
+	$(CP) $(DTS_DIR)//allwinner/$(SUNXI_DEV).dtb $(EXT4_BOOT_DIR)/dtb
+  endef
+endif
+
 define Image/mkfs/ext4
+	$(Image/mkfs/sunxi-add-boot-dir)
 	$(STAGING_DIR_HOST)/bin/make_ext4fs -L rootfs \
 		-l $(ROOTFS_PARTSIZE) -b $(CONFIG_TARGET_EXT4_BLOCKSIZE) \
 		$(if $(CONFIG_TARGET_EXT4_RESERVED_PCT),-m $(CONFIG_TARGET_EXT4_RESERVED_PCT)) \
@@ -319,6 +334,7 @@ endef
 
 ifdef CONFIG_TARGET_ROOTFS_TARGZ
   define Image/Build/targz
+	$(Image/mkfs/sunxi-add-boot-dir)
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 		-C $(TARGET_DIR)/ . | gzip -9n > $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED))-rootfs.tar.gz

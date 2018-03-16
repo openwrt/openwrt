@@ -82,6 +82,14 @@ menu "Target Images"
 		help
 		  Build an ext4 root filesystem.
 
+		config TARGET_SUNXI_BOOTFS_EXT4_ONLY
+			bool "EXT4 only image for Allwinner SUNXI"
+			depends on TARGET_ROOTFS_EXT4FS
+			depends on TARGET_sunxi
+			default y
+			help
+			  Create ext4 only image, for SUNXI One EXT4 bootable partition.
+
 		config TARGET_EXT4_RESERVED_PCT
 			int "Percentage of reserved blocks in root filesystem"
 			depends on TARGET_ROOTFS_EXT4FS

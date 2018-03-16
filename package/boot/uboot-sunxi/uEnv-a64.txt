@@ -1,5 +1,12 @@
-setenv loadkernel fatload mmc 0 \$kernel_addr_r uImage
-setenv loaddtb fatload mmc 0 \$fdt_addr_r dtb
-setenv bootargs console=ttyS0,115200 earlyprintk root=/dev/mmcblk0p2 rootwait earlycon=uart,mmio32,0x01c28000
+# Print boot source
+itest.b *0x10028 == 0x00 && echo "U-boot loaded from SD"
+itest.b *0x10028 == 0x02 && echo "U-boot loaded from eMMC or secondary SD"
+itest.b *0x10028 == 0x03 && echo "U-boot loaded from SPI"
+echo "Boot script loaded from ${devtype}"
+#
+#
+setenv loadkernel load ${devtype} ${devnum} \$kernel_addr_r /boot/uImage
+setenv loaddtb load ${devtype} ${devnum} \$fdt_addr_r /boot/dtb
+setenv bootargs console=ttyS0,115200 earlyprintk root=/dev/mmcblk0 rootwait earlycon=uart,mmio32,0x01c28000
 setenv uenvcmd run loadkernel \&\& run loaddtb \&\& booti \$kernel_addr_r - \$fdt_addr_r
 run uenvcmd
