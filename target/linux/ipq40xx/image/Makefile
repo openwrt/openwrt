@@ -39,7 +39,7 @@ define Device/8dev_jalapeno
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	DEVICE_TITLE := 8devices Jalapeno
-	DEVICE_PACKAGES := ath10k-firmware-qca4019
+	DEVICE_PACKAGES := ath10k-firmware-qca4019 ipq-wifi-8dev_jalapeno
 endef
 TARGET_DEVICES += 8dev_jalapeno
 
