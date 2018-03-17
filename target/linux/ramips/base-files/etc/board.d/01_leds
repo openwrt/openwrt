@@ -414,6 +414,11 @@ tplink,tl-mr3420-v5)
 	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x01"
 	;;
+tplink,tl-wr902ac-v3)
+	set_usb_led "$boardname:green:usb"
+	ucidef_set_led_netdev "wlan2g" "wlan2g" "$boardname:green:wlan" "wlan0"
+	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x10"
+	;;
 u25awf-h1)
 	set_wifi_led "u25awf:red:wifi"
 	ucidef_set_led_netdev "eth" "eth" "u25awf:green:lan" "eth0"
