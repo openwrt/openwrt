@@ -43,8 +43,6 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
  create mode 100644 configs/duckbill_defconfig
  create mode 100644 include/configs/duckbill.h
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 30e71b2..b77e778 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -373,6 +373,12 @@ config TARGET_MX28EVK
@@ -77,9 +75,6 @@ index 30e71b2..b77e778 100644
          default "arch/arm/cpu/arm1136/u-boot-spl.lds" if CPU_ARM1136
  	default "arch/arm/cpu/armv8/u-boot-spl.lds" if ARM64
  
-diff --git a/board/i2se/duckbill/Kconfig b/board/i2se/duckbill/Kconfig
-new file mode 100644
-index 0000000..98c1e46
 --- /dev/null
 +++ b/board/i2se/duckbill/Kconfig
 @@ -0,0 +1,15 @@
@@ -98,9 +93,6 @@ index 0000000..98c1e46
 +	default "duckbill"
 +
 +endif
-diff --git a/board/i2se/duckbill/MAINTAINERS b/board/i2se/duckbill/MAINTAINERS
-new file mode 100644
-index 0000000..5496baa
 --- /dev/null
 +++ b/board/i2se/duckbill/MAINTAINERS
 @@ -0,0 +1,6 @@
@@ -110,9 +102,6 @@ index 0000000..5496baa
 +F:	board/i2se/duckbill/
 +F:	include/configs/duckbill.h
 +F:	configs/duckbill_defconfig
-diff --git a/board/i2se/duckbill/Makefile b/board/i2se/duckbill/Makefile
-new file mode 100644
-index 0000000..66baec4
 --- /dev/null
 +++ b/board/i2se/duckbill/Makefile
 @@ -0,0 +1,12 @@
@@ -128,9 +117,6 @@ index 0000000..66baec4
 +else
 +obj-y	:= iomux.o
 +endif
-diff --git a/board/i2se/duckbill/duckbill.c b/board/i2se/duckbill/duckbill.c
-new file mode 100644
-index 0000000..caeb903
 --- /dev/null
 +++ b/board/i2se/duckbill/duckbill.c
 @@ -0,0 +1,181 @@
@@ -315,9 +301,6 @@ index 0000000..caeb903
 +
 +	return 0;
 +}
-diff --git a/board/i2se/duckbill/iomux.c b/board/i2se/duckbill/iomux.c
-new file mode 100644
-index 0000000..b3c4d92
 --- /dev/null
 +++ b/board/i2se/duckbill/iomux.c
 @@ -0,0 +1,157 @@
@@ -478,9 +461,6 @@ index 0000000..b3c4d92
 +	else
 +		mxs_iomux_setup_multiple_pads(iomux_setup_v1, ARRAY_SIZE(iomux_setup_v1));
 +}
-diff --git a/configs/duckbill_defconfig b/configs/duckbill_defconfig
-new file mode 100644
-index 0000000..2adce92
 --- /dev/null
 +++ b/configs/duckbill_defconfig
 @@ -0,0 +1,31 @@
@@ -515,9 +495,6 @@ index 0000000..2adce92
 +CONFIG_ENV_IS_IN_MMC=y
 +CONFIG_MMC_MXS=y
 +CONFIG_OF_LIBFDT=y
-diff --git a/include/configs/duckbill.h b/include/configs/duckbill.h
-new file mode 100644
-index 0000000..f9374c6
 --- /dev/null
 +++ b/include/configs/duckbill.h
 @@ -0,0 +1,199 @@
@@ -720,6 +697,3 @@ index 0000000..f9374c6
 +#include <configs/mxs.h>
 +
 +#endif /* __CONFIGS_DUCKBILL_H__ */
--- 
-2.7.4
-
