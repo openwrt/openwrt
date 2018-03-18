@@ -75,13 +75,9 @@ define Device/meraki_mr24
   BLOCKSIZE := 63k
   IMAGES := sysupgrade.tar
   DTB_SIZE := 64512
-  KERNEL_SIZE := 1984k
   IMAGE_SIZE := 8191k
   KERNEL := kernel-bin | lzma | uImage lzma | MerakiAdd-dtb | MerakiNAND
-  KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux | lzma | uImage lzma | \
-		      check-size $$(KERNEL_SIZE) | \
-		      MerakiAdd-dtb | pad-to 2047k | MerakiAdd-initramfs | \
-		      MerakiNAND
+  KERNEL_INITRAMFS := kernel-bin | lzma | dtb | MuImage-initramfs lzma
   IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
   SUPPORTED_DEVICES += mr24
@@ -123,7 +119,7 @@ define Build/create-uImage-dtb
 	@mv $@.new $@
 endef
 
-define Build/wndr4700-specialImage
+define Build/MuImage-initramfs
 	rm -rf $@.fakerd $@.new
 
 	dd if=/dev/zero of=$@.fakerd bs=32 count=1 conv=sync
@@ -170,7 +166,7 @@ define Device/netgear_wndr4700
   KERNEL_SIZE := 1920k
   KERNEL := dtb | kernel-bin | lzma | uImage lzma | pad-offset $$(BLOCKSIZE) 64 | \
 	  append-uImage-fakeroot-hdr
-  KERNEL_INITRAMFS := kernel-bin | gzip | dtb | wndr4700-specialImage gzip
+  KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
   IMAGE/factory.img := create-uImage-dtb | append-kernel | pad-to 2M | append-ubi | \
 		       netgear-dni | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
