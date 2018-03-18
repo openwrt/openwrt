@@ -101,6 +101,7 @@ endef
 
 define Device/AVM
   KERNEL := kernel-bin | append-dtb | lzma | eva-image
+  KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-avm-fakeroot | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
