@@ -270,6 +270,13 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	dlink,dwr-116-a1)
+		[ "$magic" != "0404242b" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
 	hc5962|\
 	mir3g|\
 	r6220|\
