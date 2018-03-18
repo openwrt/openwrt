@@ -201,7 +201,7 @@ define Host/Install
 	$(CP) $(HOST_BUILD_DIR)/lib/et/et_[ch].awk $(1)/share/et/
 	$(INSTALL_DIR) $(1)/share/ss
 	$(CP) $(HOST_BUILD_DIR)/lib/ss/ct_c.{sed,awk} $(1)/share/ss/
-	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin
+	$(INSTALL_DIR) $(1)/bin
 	$(CP) \
 		$(HOST_BUILD_DIR)/lib/et/compile_et \
 		$(HOST_BUILD_DIR)/lib/ss/mk_cmds \
