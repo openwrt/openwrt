@@ -39,7 +39,9 @@ get_status_led() {
 	pwh2004|\
 	r6220|\
 	tplink,c20-v4|\
+	tplink,c50-v3|\
 	tplink,tl-mr3420-v5|\
+	tplink,tl-wr902ac-v3|\
 	tl-wr840n-v4|\
 	tl-wr840n-v5|\
 	tl-wr841n-v13|\
@@ -77,6 +79,9 @@ get_status_led() {
 	wrh-300cr)
 		status_led="$boardname:green:wps"
 		;;
+	alfa-network,awusfree1)
+		status_led="$boardname:orange:system"
+		;;
 	all0239-3g|\
 	dcs-930|\
 	dir-300-b1|\
@@ -89,7 +94,9 @@ get_status_led() {
 	dir-620-a1|\
 	dir-620-d1|\
 	dwr-512-b|\
+	dlink,dwr-116-a1|\
 	gb-pc1|\
+	gnubee,gb-pc2|\
 	hpm|\
 	hw550-3g|\
 	mac1200rv2|\
@@ -145,6 +152,13 @@ get_status_led() {
 	youku-yk1)
 		status_led="$boardname:blue:power"
 		;;
+	dlink,dap-1522-a1|\
+	k2p|\
+	m3|\
+	mir3g|\
+	miwifi-nano)
+		status_led="$boardname:blue:status"
+		;;
 	db-wrt01|\
 	esr-9753|\
 	pbr-d1)
@@ -172,12 +186,6 @@ get_status_led() {
 	hc5962)
 		status_led="$boardname:white:status"
 		;;
-	k2p|\
-	m3|\
-	mir3g|\
-	miwifi-nano)
-		status_led="$boardname:blue:status"
-		;;
 	linkits7688)
 		status_led="linkit-smart-7688:orange:wifi"
 		;;
@@ -185,7 +193,7 @@ get_status_led() {
 		status_led="$boardname:blue:wifi"
 		;;
 	gl-mt300n-v2)
-		status_led="$boardname:red:wlan"
+		status_led="$boardname:green:power"
 		;;
 	m4-4M|\
 	m4-8M)

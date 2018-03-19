@@ -111,6 +111,26 @@ define Build/wrg-header
 	mv $@.new $@
 endef
 
+# combine kernel and rootfs into one image
+# mkdlinkfw <type> <optional extra arguments to mkdlinkfw binary>
+
+define Build/mkdlinkfw
+	-$(STAGING_DIR_HOST)/bin/mkdlinkfw \
+		-k $(IMAGE_KERNEL) \
+		-r $(IMAGE_ROOTFS) \
+		-o $@ \
+		-s $(DLINK_FIRMWARE_SIZE)
+endef
+
+define Build/mkdlinkfw-factory
+	-$(STAGING_DIR_HOST)/bin/mkdlinkfw \
+		-m $(DLINK_ROM_ID) -f $(DLINK_FAMILY_MEMBER) \
+		-F $@ \
+		-o $@.new \
+		-s $(DLINK_FIRMWARE_SIZE)
+	mv $@.new $@
+endef
+
 #
 # The real magic happens inside these templates
 #

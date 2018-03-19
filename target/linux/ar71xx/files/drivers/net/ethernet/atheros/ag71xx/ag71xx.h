@@ -116,7 +116,9 @@ struct ag71xx_ring {
 
 struct ag71xx_mdio {
 	struct mii_bus		*mii_bus;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,5,0)
 	int			mii_irq[PHY_MAX_ADDR];
+#endif
 	void __iomem		*mdio_base;
 	struct ag71xx_mdio_platform_data *pdata;
 };
@@ -168,8 +170,6 @@ struct ag71xx {
 	spinlock_t		lock;
 	struct napi_struct	napi;
 	u32			msg_enable;
-
-	unsigned long	timestamp;
 
 	/*
 	 * From this point onwards we're not looking at per-packet fields.

@@ -68,6 +68,8 @@ define Profile
   $(eval $(call ProfileDefault))
   $(eval $(call Profile/$(1)))
   dumpinfo : $(call shexport,Profile/$(1)/Description)
+  DEFAULT_PACKAGES := $(filter-out $(patsubst -%,%,$(filter -%,$(PACKAGES))),$(DEFAULT_PACKAGES))
+  PACKAGES := $(filter-out -%,$(PACKAGES))
   DUMPINFO += \
 	echo "Target-Profile: $(1)"; \
 	$(if $(PRIORITY), echo "Target-Profile-Priority: $(PRIORITY)"; ) \
@@ -269,9 +271,7 @@ ifeq ($(DUMP),1)
       FEATURES += virtio
     endif
     ifneq ($(CONFIG_CPU_MIPS32_R2),)
-      ifneq ($(CPU_SUBTYPE),nomips16)
-        FEATURES += mips16
-      endif
+      FEATURES += mips16
     endif
     FEATURES += $(foreach v,6 7,$(if $(CONFIG_CPU_V$(v)),arm_v$(v)))
 

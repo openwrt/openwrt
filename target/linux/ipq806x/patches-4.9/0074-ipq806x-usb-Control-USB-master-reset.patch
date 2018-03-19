@@ -35,7 +35,7 @@ Signed-off-by: Vasudevan Murugesan <vmuruges@codeaurora.org>
  };
  
  static int dwc3_of_simple_clk_init(struct dwc3_of_simple *simple, int count)
-@@ -100,6 +103,20 @@ static int dwc3_of_simple_probe(struct p
+@@ -102,6 +105,20 @@ static int dwc3_of_simple_probe(struct p
  	if (ret)
  		return ret;
  
@@ -56,7 +56,7 @@ Signed-off-by: Vasudevan Murugesan <vmuruges@codeaurora.org>
  	ret = of_platform_populate(np, NULL, NULL, dev);
  	if (ret) {
  		for (i = 0; i < simple->num_clocks; i++) {
-@@ -128,6 +145,12 @@ static int dwc3_of_simple_remove(struct
+@@ -130,6 +147,12 @@ static int dwc3_of_simple_remove(struct
  		clk_put(simple->clks[i]);
  	}
  

@@ -2,7 +2,8 @@
 # MT7620A Profiles
 #
 
-DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD TPLINK_HVERSION
+DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD TPLINK_HVERSION \
+	DLINK_ROM_ID DLINK_FAMILY_MEMBER DLINK_FIRMWARE_SIZE
 
 define Build/elecom-header
 	cp $@ $(KDIR)/v_0.0.0.bin
@@ -146,6 +147,20 @@ define Device/dir-810l
   DEVICE_TITLE := D-Link DIR-810L
 endef
 TARGET_DEVICES += dir-810l
+
+define Device/dlink_dwr-116-a1
+  DTS := DWR-116-A1
+  DEVICE_TITLE := D-Link DWR-116 A1/A2
+  DEVICE_PACKAGES := kmod-usb2 jboot-tools
+  DLINK_ROM_ID := DLK6E3803001
+  DLINK_FAMILY_MEMBER := 0x6E38
+  DLINK_FIRMWARE_SIZE := 0x7E0000
+  KERNEL := $(KERNEL_DTB)
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
+  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
+endef
+TARGET_DEVICES += dlink_dwr-116-a1
 
 define Device/e1700
   DTS := E1700

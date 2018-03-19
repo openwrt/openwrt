@@ -101,6 +101,7 @@ CONFIGURE_ARGS += \
 	--prefix=/ \
 	--disable-avahi \
 	--disable-cups \
+	--disable-external-libtalloc \
 	--disable-pie \
 	--disable-relro \
 	--disable-static \

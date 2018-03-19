@@ -1,10 +1,9 @@
 --- a/include/uapi/linux/pkt_sched.h
 +++ b/include/uapi/linux/pkt_sched.h
-@@ -872,4 +872,63 @@ struct tc_pie_xstats {
- 	__u32 maxq;             /* maximum queue size */
- 	__u32 ecn_mark;         /* packets marked with ecn*/
- };
-+
+@@ -934,4 +934,62 @@ enum {
+ 
+ #define TCA_CBS_MAX (__TCA_CBS_MAX - 1)
+ 
 +/* CAKE */
 +enum {
 +	TCA_CAKE_UNSPEC,
@@ -66,7 +65,7 @@
  #endif
 --- a/tc/Makefile
 +++ b/tc/Makefile
-@@ -65,6 +65,7 @@ TCMODULES += q_codel.o
+@@ -66,6 +66,7 @@ TCMODULES += q_codel.o
  TCMODULES += q_fq_codel.o
  TCMODULES += q_fq.o
  TCMODULES += q_pie.o

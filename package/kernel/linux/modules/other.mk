@@ -227,7 +227,7 @@ $(eval $(call KernelPackage,gpio-dev))
 define KernelPackage/gpio-mcp23s08
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Microchip MCP23xxx I/O expander
-  DEPENDS:=@GPIO_SUPPORT +PACKAGE_kmod-i2c-core:kmod-i2c-core
+  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core
   KCONFIG:=CONFIG_GPIO_MCP23S08
   FILES:=$(LINUX_DIR)/drivers/gpio/gpio-mcp23s08.ko
   AUTOLOAD:=$(call AutoLoad,40,gpio-mcp23s08)
@@ -286,18 +286,53 @@ endef
 $(eval $(call KernelPackage,gpio-pcf857x))
 
 
-define KernelPackage/lp
+define KernelPackage/ppdev
   SUBMENU:=$(OTHER_MENU)
-  TITLE:=Parallel port and line printer support
+  TITLE:=Parallel port support
   KCONFIG:= \
 	CONFIG_PARPORT \
-	CONFIG_PRINTER \
 	CONFIG_PPDEV
   FILES:= \
 	$(LINUX_DIR)/drivers/parport/parport.ko \
-	$(LINUX_DIR)/drivers/char/lp.ko \
 	$(LINUX_DIR)/drivers/char/ppdev.ko
-  AUTOLOAD:=$(call AutoLoad,50,parport lp ppdev)
+  AUTOLOAD:=$(call AutoLoad,50,parport ppdev)
+endef
+
+$(eval $(call KernelPackage,ppdev))
+
+
+define KernelPackage/parport-pc
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Parallel port interface (PC-style) support
+  DEPENDS:=+kmod-ppdev
+  KCONFIG:= \
+	CONFIG_KS0108=n \
+	CONFIG_PARPORT_PC \
+	CONFIG_PARPORT_1284=y \
+	CONFIG_PARPORT_PC_FIFO=y \
+	CONFIG_PARPORT_PC_PCMCIA=n \
+	CONFIG_PARPORT_PC_SUPERIO=y \
+	CONFIG_PARPORT_SERIAL=n \
+	CONFIG_PARIDE=n \
+	CONFIG_SCSI_IMM=n \
+	CONFIG_SCSI_PPA=n
+  FILES:= \
+	$(LINUX_DIR)/drivers/parport/parport_pc.ko
+  AUTOLOAD:=$(call AutoLoad,51,parport_pc)
+endef
+
+$(eval $(call KernelPackage,parport-pc))
+
+
+define KernelPackage/lp
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Parallel port line printer device support
+  DEPENDS:=+kmod-ppdev
+  KCONFIG:= \
+	CONFIG_PRINTER
+  FILES:= \
+	$(LINUX_DIR)/drivers/char/lp.ko
+  AUTOLOAD:=$(call AutoLoad,52,lp)
 endef
 
 $(eval $(call KernelPackage,lp))

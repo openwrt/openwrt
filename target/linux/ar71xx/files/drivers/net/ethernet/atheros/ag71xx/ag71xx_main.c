@@ -453,8 +453,8 @@ static void ag71xx_hw_setup(struct ag71xx *ag)
 	/* setup FIFO configuration registers */
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG0, FIFO_CFG0_INIT);
 	if (pdata->is_ar724x) {
-		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, pdata->fifo_cfg1);
-		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG2, pdata->fifo_cfg2);
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, 0x0010ffff);
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG2, 0x015500aa);
 	} else {
 		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, 0x0fff0000);
 		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG2, 0x00001fff);
@@ -596,7 +596,7 @@ __ag71xx_link_adjust(struct ag71xx *ag, bool update)
 	if (pdata->is_ar91xx)
 		fifo3 = 0x00780fff;
 	else if (pdata->is_ar724x)
-		fifo3 = pdata->fifo_cfg3;
+		fifo3 = 0x01f00140;
 	else
 		fifo3 = 0x008001ff;
 
@@ -816,7 +816,6 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 	i = (ring->curr + n - 1) & ring_mask;
 	ring->buf[i].len = skb->len;
 	ring->buf[i].skb = skb;
-	ag->timestamp = jiffies;
 
 	netdev_sent_queue(dev, skb->len);
 
@@ -928,9 +927,11 @@ static void ag71xx_restart_work_func(struct work_struct *work)
 
 static bool ag71xx_check_dma_stuck(struct ag71xx *ag)
 {
+	unsigned long timestamp;
 	u32 rx_sm, tx_sm, rx_fd;
 
-	if (likely(time_before(jiffies, ag->timestamp + HZ/10)))
+	timestamp = netdev_get_tx_queue(ag->dev, 0)->trans_start;
+	if (likely(time_before(jiffies, timestamp + HZ/10)))
 		return false;
 
 	if (!netif_carrier_ok(ag->dev))

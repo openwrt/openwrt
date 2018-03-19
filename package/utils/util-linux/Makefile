@@ -278,6 +278,16 @@ define Package/lsblk/description
  lsblk lists information about all or the specified block devices
 endef
 
+define Package/lscpu
+$(call Package/util-linux/Default)
+  TITLE:=display information about the CPU architecture
+  DEPENDS:= +libsmartcols
+endef
+
+define Package/lscpu/description
+ lscpu displays information about the CPU architecture
+endef
+
 define Package/mcookie
 $(call Package/util-linux/Default)
   TITLE:=generate magic cookies for xauth
@@ -306,6 +316,15 @@ endef
 define Package/namei/description
  namei uses its arguments as pathnames to any type of Unix file (symlinks,
  files, directories, and so forth)
+endef
+
+define Package/nsenter
+$(call Package/util-linux/Default)
+  TITLE:=enter a namespace
+endef
+
+define Package/nsenter/description
+  run program with namespaces of other processes
 endef
 
 define Package/prlimit
@@ -383,6 +402,15 @@ endef
 
 define Package/swap-utils/description
  contains: mkswap, swaplabel
+endef
+
+define Package/unshare
+$(call Package/util-linux/Default)
+  TITLE:=unshare userspace tool
+endef
+
+define Package/unshare/description
+  run programs with some namespaces unshared from parent
 endef
 
 define Package/uuidd
@@ -601,6 +629,11 @@ define Package/lsblk/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/lsblk $(1)/usr/bin/
 endef
 
+define Package/lscpu/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/lscpu $(1)/usr/bin/
+endef
+
 define Package/mcookie/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/mcookie $(1)/usr/bin/
@@ -616,6 +649,11 @@ endef
 define Package/namei/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/namei $(1)/usr/bin/
+endef
+
+define Package/nsenter/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nsenter $(1)/usr/bin/
 endef
 
 define Package/prlimit/install
@@ -655,6 +693,11 @@ define Package/swap-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/mkswap $(1)/usr/sbin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/swaplabel $(1)/usr/sbin/
+endef
+
+define Package/unshare/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/unshare $(1)/usr/bin/
 endef
 
 define Package/uuidd/install
@@ -703,9 +746,11 @@ $(eval $(call BuildPackage,logger))
 $(eval $(call BuildPackage,look))
 $(eval $(call BuildPackage,losetup))
 $(eval $(call BuildPackage,lsblk))
+$(eval $(call BuildPackage,lscpu))
 $(eval $(call BuildPackage,mcookie))
 $(eval $(call BuildPackage,mount-utils))
 $(eval $(call BuildPackage,namei))
+$(eval $(call BuildPackage,nsenter))
 $(eval $(call BuildPackage,prlimit))
 $(eval $(call BuildPackage,rename))
 $(eval $(call BuildPackage,partx-utils))
@@ -713,6 +758,7 @@ $(eval $(call BuildPackage,script-utils))
 $(eval $(call BuildPackage,setterm))
 $(eval $(call BuildPackage,sfdisk))
 $(eval $(call BuildPackage,swap-utils))
+$(eval $(call BuildPackage,unshare))
 $(eval $(call BuildPackage,uuidd))
 $(eval $(call BuildPackage,uuidgen))
 $(eval $(call BuildPackage,wall))
