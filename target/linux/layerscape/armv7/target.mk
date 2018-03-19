@@ -12,5 +12,5 @@ CPU_SUBTYPE:=neon-vfpv4
 KERNELNAME:=zImage dtbs
 
 define Target/Description
-	Build firmware images for NXP Layerscape ARMv8 32-bit based boards.
+	Build firmware images for NXP Layerscape ARMv7 32-bit based boards.
 endef
