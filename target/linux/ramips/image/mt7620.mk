@@ -190,6 +190,18 @@ define Device/dir-810l
 endef
 TARGET_DEVICES += dir-810l
 
+define Device/dlink_dir-510l
+  $(Device/amit_jboot)
+  DTS := DIR-510L
+  DEVICE_TITLE := D-Link DIR-510L
+  DEVICE_PACKAGES += kmod-mt76x0e
+  DLINK_ROM_ID := DLK6E3805001
+  DLINK_FAMILY_MEMBER := 0x6E38
+  DLINK_FIRMWARE_SIZE := 0xDE0000
+  DLINK_IMAGE_OFFSET := 0x210000
+endef
+TARGET_DEVICES += dlink_dir-510l
+
 define Device/dlink_dwr-116-a1
   $(Device/amit_jboot)
   DTS := DWR-116-A1

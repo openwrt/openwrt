@@ -368,6 +368,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5:wan" "6@eth0"
 		;;
+	dlink,dir-510l|\
 	re350-v1)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"
@@ -512,6 +513,7 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)
 		wan_mac=$(mtd_get_mac_ascii factory wanmac)
 		;;
+	dlink,dir-510l|\
 	dlink,dwr-116-a1|\
 	dlink,dwr-118-a1|\
 	dlink,dwr-118-a2|\
