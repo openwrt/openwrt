@@ -105,6 +105,7 @@ TARGET_DEVICES += meraki_mr33
 define Device/openmesh_a42
 	$(call Device/FitImageLzma)
 	DEVICE_DTS := qcom-ipq4018-a42
+	DEVICE_DTS_CONFIG := config@om.a42
 	BLOCKSIZE := 64k
 	DEVICE_TITLE := OpenMesh A42
 	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
