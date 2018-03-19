@@ -15,6 +15,7 @@
  */
 
 #include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	model = "Qualcomm Technologies, Inc. IPQ4019/AP-DK04.1";
@@ -101,7 +102,7 @@
 			pinctrl-0 = <&spi_0_pins>;
 			pinctrl-names = "default";
 			status = "okay";
-			cs-gpios = <&tlmm 12 0>;
+			cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
 
 			mx25l25635e@0 {
 				#address-cells = <1>;
