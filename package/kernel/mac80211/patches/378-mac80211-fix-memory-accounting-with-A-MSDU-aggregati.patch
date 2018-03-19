@@ -46,15 +46,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (!ieee80211_amsdu_prepare_head(sdata, fast_tx, head))
  		goto out;
-@@ -3241,6 +3243,7 @@ static bool ieee80211_amsdu_aggregate(st
- 
- 	head->len += skb->len;
- 	head->data_len += skb->len;
-+	head->truesize += skb->truesize;
- 	*frag_tail = skb;
- 
- 	flow->backlog += head->len - orig_len;
-@@ -3249,6 +3252,9 @@ static bool ieee80211_amsdu_aggregate(st
+@@ -3249,6 +3251,9 @@ static bool ieee80211_amsdu_aggregate(st
  	fq_recalc_backlog(fq, tin, flow);
  
  out:
