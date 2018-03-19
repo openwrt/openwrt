@@ -501,19 +501,19 @@ index 0000000..6634a4f
 +/* GPIO's */
 +#define SYS_GREEN_LED		(1 << 28)
 +#define SYS_RED_LED		(1 << 29)
-+#define SATA1_GREEN_LED		(1 << 41)
-+#define SATA1_RED_LED		(1 << 42)
++#define SATA1_GREEN_LED		(1ULL << 41)
++#define SATA1_RED_LED		(1ULL << 42)
 +#define SATA2_GREEN_LED		(1 << 12)
 +#define SATA2_RED_LED		(1 << 13)
 +#define USB_GREEN_LED		(1 << 15)
 +#define USB_RED_LED		(1 << 21)
-+#define COPY_GREEN_LED		(1 << 39)
-+#define COPY_RED_LED		(1 << 40)
++#define COPY_GREEN_LED		(1ULL << 39)
++#define COPY_RED_LED		(1ULL << 40)
 +
 +#define NSA310_OE_LOW   (0)
 +#define NSA310_VAL_LOW    (SYS_GREEN_LED)
-+#define NSA310_OE_HIGH		((COPY_GREEN_LED | COPY_RED_LED | \
-+                                   SATA1_GREEN_LED | SATA1_RED_LED))
++#define NSA310_OE_HIGH		(((COPY_GREEN_LED | COPY_RED_LED | \
++                                   SATA1_GREEN_LED | SATA1_RED_LED)) >> 32UL)
 +#define NSA310_VAL_HIGH		(0)
 +
 +/* PHY related */
@@ -528,9 +528,10 @@ new file mode 100644
 index 0000000..d26ef35
 --- /dev/null
 +++ b/configs/nsa310_defconfig
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,37 @@
 +CONFIG_ARM=y
 +CONFIG_KIRKWOOD=y
++CONFIG_SYS_TEXT_BASE=0x600000
 +CONFIG_TARGET_NSA310=y
 +CONFIG_IDENT_STRING="\nZyXEL NSA310 1-Bay Power Media Server"
 +CONFIG_BOOTDELAY=3
@@ -552,6 +553,7 @@ index 0000000..d26ef35
 +CONFIG_CMD_EXT4=y
 +CONFIG_CMD_FAT=y
 +CONFIG_CMD_JFFS2=y
++CONFIG_MTDPARTS_DEFAULT="mtdparts=orion_nand:0x0c0000(uboot),0x80000(uboot_env),0x7ec0000(ubi)"
 +CONFIG_CMD_MTDPARTS=y
 +CONFIG_CMD_ENV=y
 +CONFIG_CMD_NAND=y
@@ -563,12 +565,13 @@ index 0000000..d26ef35
 +CONFIG_USB_STORAGE=y
 +CONFIG_LZMA=y
 +CONFIG_LZO=y
++CONFIG_SYS_LONGHELP=y
 diff --git a/include/configs/nsa310.h b/include/configs/nsa310.h
 new file mode 100644
 index 0000000..86ef825
 --- /dev/null
 +++ b/include/configs/nsa310.h
-@@ -0,0 +1,126 @@
+@@ -0,0 +1,119 @@
 +/* Copyright (C) 2015-2016 bodhi <mibodhi@gmail.com>
 + *
 + * Based on
@@ -617,7 +620,6 @@ index 0000000..86ef825
 +/*
 + * Commands configuration
 + */
-+#define CONFIG_SYS_LONGHELP
 +#define CONFIG_PREBOOT
 +
 +/*
@@ -648,16 +650,10 @@ index 0000000..86ef825
 +	"ubi read 0x800000 kernel; " \
 +	"bootm 0x800000"
 +
-+#define CONFIG_MTDPARTS \
-+	"mtdparts=orion_nand:" \
-+	"0x0c0000(uboot)," \
-+	"0x80000(uboot_env)," \
-+	"0x7ec0000(ubi)\0"
-+
 +#define CONFIG_EXTRA_ENV_SETTINGS \
 +	"console=console=ttyS0,115200\0"	\
 +	"mtdids=nand0=orion_nand\0"		\
-+	"mtdparts="CONFIG_MTDPARTS		\
++	"mtdparts="CONFIG_MTDPARTS_DEFAULT	\
 +	"bootargs_root=\0"
 +
 +/*
