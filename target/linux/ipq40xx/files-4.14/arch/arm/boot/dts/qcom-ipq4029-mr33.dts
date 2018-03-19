@@ -60,7 +60,7 @@
 			status = "okay";
 			pinctrl-0 = <&mdio_pins>;
 			pinctrl-names = "default";
-			phy-reset-gpio = <&tlmm 47 0>;
+			phy-reset-gpio = <&tlmm 47 GPIO_ACTIVE_HIGH>;
 			/delete-node/ ethernet-phy@0;
 			/delete-node/ ethernet-phy@2;
 			/delete-node/ ethernet-phy@3;
