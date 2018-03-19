@@ -11,6 +11,10 @@ MUSL_MAKEOPTS = -C $(HOST_BUILD_DIR) \
 	DESTDIR="$(TOOLCHAIN_DIR)/" \
 	LIBCC="$(subst libgcc.a,libgcc_initial.a,$(shell $(TARGET_CC) -print-libgcc-file-name))"
 
+ifeq ($(CRYPTO_SIZE_HACK),y)
+TARGET_CFLAGS += -DSIZE_HACK
+endif
+
 define Host/SetToolchainInfo
 	$(SED) 's,^\(LIBC_TYPE\)=.*,\1=$(PKG_NAME),' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,^\(LIBC_URL\)=.*,\1=http://www.musl-libc.org/,' $(TOOLCHAIN_DIR)/info.mk

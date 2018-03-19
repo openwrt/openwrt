@@ -293,6 +293,13 @@ config USE_EXTERNAL_LIBC
 	bool
 	default y if EXTERNAL_TOOLCHAIN || NATIVE_TOOLCHAIN
 
+config CRYPTO_SIZE_HACK
+	bool
+	prompt "Strip other hash functions than DES from musl" if TOOLCHAINOPTS
+	default y
+	help
+	  Enable if you want to silently replace all hash function in crypt by DES and get extra space
+
 source "toolchain/binutils/Config.version"
 source "toolchain/gcc/Config.version"
 

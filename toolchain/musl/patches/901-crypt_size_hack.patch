@@ -1,15 +1,17 @@
 --- a/src/crypt/crypt_r.c
 +++ b/src/crypt/crypt_r.c
-@@ -19,12 +19,6 @@ char *__crypt_r(const char *key, const c
+@@ -19,12 +19,14 @@ char *__crypt_r(const char *key, const c
  	if (salt[0] == '$' && salt[1] && salt[2]) {
  		if (salt[1] == '1' && salt[2] == '$')
  			return __crypt_md5(key, salt, output);
--		if (salt[1] == '2' && salt[3] == '$')
--			return __crypt_blowfish(key, salt, output);
--		if (salt[1] == '5' && salt[2] == '$')
--			return __crypt_sha256(key, salt, output);
--		if (salt[1] == '6' && salt[2] == '$')
--			return __crypt_sha512(key, salt, output);
++#ifndef SIZE_HACK
+ 		if (salt[1] == '2' && salt[3] == '$')
+ 			return __crypt_blowfish(key, salt, output);
+ 		if (salt[1] == '5' && salt[2] == '$')
+ 			return __crypt_sha256(key, salt, output);
+ 		if (salt[1] == '6' && salt[2] == '$')
+ 			return __crypt_sha512(key, salt, output);
++#endif
  	}
  	return __crypt_des(key, salt, output);
  }
@@ -19,7 +21,7 @@
  #include <stdio.h>
  #include <string.h>
  #include <stdint.h>
-+#if 0
++#ifndef SIZE_HACK
  
  /* public domain sha512 implementation based on fips180-3 */
  /* >=2^64 bits messages are not supported (about 2000 peta bytes) */
@@ -34,7 +36,7 @@
  #include <string.h>
  #include <stdint.h>
  
-+#if 0
++#ifndef SIZE_HACK
  typedef uint32_t BF_word;
  typedef int32_t BF_word_signed;
  
@@ -49,7 +51,7 @@
  #include <string.h>
  #include <stdint.h>
  
-+#if 0
++#ifndef SIZE_HACK
  /* public domain sha256 implementation based on fips180-3 */
  
  struct sha256 {
