@@ -190,6 +190,15 @@ define U-Boot/pine64_plus
   UENV:=a64
 endef
 
+define U-Boot/sopine_baseboard
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Sopine Baseboard
+  BUILD_DEVICES:=sun50i-a64-sopine-baseboard
+  DEPENDS:=+PACKAGE_u-boot-sopine_baseboard:arm-trusted-firmware-sunxi
+  UENV:=a64
+endef
+
+
 define U-Boot/orangepi_zero_plus
   BUILD_SUBTARGET:=cortexa53
   NAME:=Xunlong Orange Pi Zero Plus
@@ -226,6 +235,7 @@ UBOOT_TARGETS := \
 	orangepi_2 \
 	pangolin \
 	pine64_plus \
+	sopine_baseboard \
 	orangepi_zero_plus
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
