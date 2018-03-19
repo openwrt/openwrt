@@ -106,7 +106,6 @@ define Device/openmesh_a42
 	$(call Device/FitImageLzma)
 	DEVICE_DTS := qcom-ipq4018-a42
 	BLOCKSIZE := 64k
-	SUPPORTED_DEVICES := openmesh,a42
 	DEVICE_TITLE := OpenMesh A42
 	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
 	IMAGE_SIZE := 15616k
