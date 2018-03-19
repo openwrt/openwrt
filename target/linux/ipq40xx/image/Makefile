@@ -54,7 +54,7 @@ TARGET_DEVICES += asus_rt-ac58u
 
 define Device/avm_fritzbox-4040
 	$(call Device/FitImageLzma)
-	DEVICE_DTS := qcom-ipq4019-fritz4040
+	DEVICE_DTS := qcom-ipq4018-fritz4040
 	BOARD_NAME := fritz4040
 	DEVICE_TITLE := AVM Fritz!Box 4040
 	IMAGE_SIZE := 29753344
