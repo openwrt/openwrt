@@ -106,6 +106,21 @@ endef
 
 $(eval $(call KernelPackage,cc2520))
 
+define KernelPackage/ca8210
+  SUBMENU:=$(WPAN_MENU)
+  TITLE:=Cascoda CA8210 transceiver driver
+  DEPENDS:=+kmod-mac802154 @!LINUX_3_18 @!LINUX_4_4 @!LINUX_4_9
+  KCONFIG:=CONFIG_IEEE802154_CA8210 \
+	CONFIG_IEEE802154_CA8210_DEBUGFS=n \
+	CONFIG_COMMON_CLK=y \
+	CONFIG_SPI=y \
+	CONFIG_SPI_MASTER=y
+  FILES:=$(LINUX_DIR)/drivers/net/ieee802154/ca8210.ko
+  AUTOLOAD:=$(call AutoLoad,92,ca8210)
+endef
+
+$(eval $(call KernelPackage,ca8210))
+
 define KernelPackage/ieee802154_6lowpan
   SUBMENU:=$(WPAN_MENU)
   TITLE:= 6LoWPAN support over IEEE-802.15.4
