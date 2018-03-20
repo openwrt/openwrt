@@ -1107,7 +1107,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		}
  	}
  done:
-@@ -5328,7 +5314,8 @@ static int nf_tables_getflowtable(struct
+@@ -5330,7 +5316,8 @@ static int nf_tables_getflowtable(struct
  	if (IS_ERR(afi))
  		return PTR_ERR(afi);
  
@@ -1117,7 +1117,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	if (IS_ERR(table))
  		return PTR_ERR(table);
  
-@@ -5371,7 +5358,7 @@ static void nf_tables_flowtable_notify(s
+@@ -5373,7 +5360,7 @@ static void nf_tables_flowtable_notify(s
  
  	err = nf_tables_fill_flowtable_info(skb, ctx->net, ctx->portid,
  					    ctx->seq, event, 0,
@@ -1126,7 +1126,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	if (err < 0) {
  		kfree_skb(skb);
  		goto err;
-@@ -5449,17 +5436,14 @@ static int nf_tables_flowtable_event(str
+@@ -5451,17 +5438,14 @@ static int nf_tables_flowtable_event(str
  	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
  	struct nft_flowtable *flowtable;
  	struct nft_table *table;
@@ -1147,7 +1147,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		}
  	}
  	nfnl_unlock(NFNL_SUBSYS_NFTABLES);
-@@ -6478,6 +6462,7 @@ EXPORT_SYMBOL_GPL(nft_data_dump);
+@@ -6480,6 +6464,7 @@ EXPORT_SYMBOL_GPL(nft_data_dump);
  static int __net_init nf_tables_init_net(struct net *net)
  {
  	INIT_LIST_HEAD(&net->nft.af_info);
@@ -1155,7 +1155,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	INIT_LIST_HEAD(&net->nft.commit_list);
  	net->nft.base_seq = 1;
  	return 0;
-@@ -6514,10 +6499,10 @@ static void __nft_release_afinfo(struct
+@@ -6516,10 +6501,10 @@ static void __nft_release_afinfo(struct
  	struct nft_set *set, *ns;
  	struct nft_ctx ctx = {
  		.net	= net,

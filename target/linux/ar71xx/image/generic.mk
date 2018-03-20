@@ -1267,6 +1267,7 @@ define Device/fritz300e
   SUPPORTED_DEVICES := fritz300e
   IMAGE_SIZE := 15232k
   KERNEL := kernel-bin | patch-cmdline | lzma | eva-image
+  KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | \
 	append-squashfs-fakeroot-be | pad-to 256 | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)

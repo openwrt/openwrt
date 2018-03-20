@@ -11,13 +11,9 @@ board=$(board_name)
 boardname="${board##*,}"
 
 case "$board" in
-avm,fritzbox-4040)
-	ucidef_set_led_wlan "wlan" "WLAN" "fritz4040:green:wlan" "phy0tpt" "phy1tpt"
-	ucidef_set_led_netdev "wan" "WAN" "fritz4040:green:wan" "eth1"
-	ucidef_set_led_switch "lan" "LAN" "fritz4040:green:lan" "switch0" "0x1e"
-	;;
-glinet,gl-b1300)
-	ucidef_set_led_wlan "wlan" "WLAN" "${boardname}:green:wlan" "phy0tpt"
+compex,wpq864)
+	ucidef_set_led_usbport "usb" "USB" "wpq864:green:usb" "usb1-port1" "usb2-port1"
+	ucidef_set_led_usbport "pcie-usb" "PCIe USB" "wpq864:green:usb-pcie" "usb3-port1"
 	;;
 netgear,d7800 |\
 netgear,r7500 |\

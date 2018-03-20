@@ -157,6 +157,13 @@ define Device/ubnt-nano-m-xw
 endef
 TARGET_DEVICES += ubnt-nano-m-xw
 
+define Device/ubnt-lbe-m5
+  $(Device/ubnt-xw)
+  DEVICE_TITLE := Ubiquiti Litebeam M5
+  BOARDNAME := UBNT-LBE-M5
+endef
+TARGET_DEVICES += ubnt-lbe-m5
+
 define Device/ubnt-loco-m-xw
   $(Device/ubnt-xw)
   DEVICE_TITLE := Ubiquiti Loco XW

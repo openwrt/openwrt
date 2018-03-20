@@ -80,6 +80,7 @@ ramips_setup_interfaces()
 	dir-320-b1|\
 	dir-610-a1|\
 	dir-615-h1|\
+	dlink,dwr-116-a1|\
 	ew1200|\
 	firewrt|\
 	hc5661a|\
@@ -112,8 +113,6 @@ ramips_setup_interfaces()
 	witi|\
 	wl-wn575a3|\
 	wndr3700v5|\
-	wt1520-4M|\
-	wt1520-8M|\
 	youku-yk1|\
 	zbt-ape522ii|\
 	zbt-we1326|\
@@ -209,8 +208,6 @@ ramips_setup_interfaces()
 	wrtnode|\
 	wrtnode2p | \
 	wrtnode2r | \
-	wt3020-4M|\
-	wt3020-8M|\
 	zbt-wa05)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
@@ -323,7 +320,13 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
 		;;
-	vonets,var11n-300)
+	tplink,tl-wr902ac-v3)
+		ucidef_add_switch "switch0" \
+			"4:lan" "6@eth0"
+		;;
+	vonets,var11n-300|\
+	wt1520-4M|\
+	wt1520-8M)
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:wan" "6@eth0"
 		;;
@@ -355,6 +358,11 @@ ramips_setup_interfaces()
 	wizfi630a)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "0:wan" "6@eth0"
+		;;
+	wt3020-4M|\
+	wt3020-8M)
+		ucidef_add_switch "switch0" \
+			"4:lan" "0:wan" "6@eth0"
 		;;
 	zbtlink,zbt-we1226|\
 	y1)
@@ -424,6 +432,10 @@ ramips_setup_macs()
 	dir-860l-b1)
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)
 		wan_mac=$(mtd_get_mac_ascii factory wanmac)
+		;;
+	dlink,dwr-116-a1)
+		wan_mac=$(jboot_config_read -m -i $(find_mtd_part "config") -o 0xE000)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
 	e1700)
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)

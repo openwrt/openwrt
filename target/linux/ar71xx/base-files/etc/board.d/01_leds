@@ -408,6 +408,10 @@ hornet-ub-x2)
 lan-turtle)
 	ucidef_set_led_netdev "wan" "WAN" "$board:orange:system" "eth1"
 	;;
+lbe-m5)
+	ucidef_set_led_netdev "lan" "LAN" "ubnt:green:lan" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "ubnt:green:wlan" "phy0tpt"
+	;;
 mc-mac1200r)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "mercury:green:wlan2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "mercury:green:wlan5g" "phy0tpt"

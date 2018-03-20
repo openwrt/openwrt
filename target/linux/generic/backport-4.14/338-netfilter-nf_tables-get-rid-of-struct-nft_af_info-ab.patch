@@ -1041,7 +1041,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  				goto done;
  
  			nl_dump_check_consistent(cb, nlmsg_hdr(skb));
-@@ -5279,7 +5119,6 @@ static int nf_tables_getflowtable(struct
+@@ -5281,7 +5121,6 @@ static int nf_tables_getflowtable(struct
  	u8 genmask = nft_genmask_cur(net);
  	int family = nfmsg->nfgen_family;
  	struct nft_flowtable *flowtable;
@@ -1049,7 +1049,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	const struct nft_table *table;
  	struct sk_buff *skb2;
  	int err;
-@@ -5305,12 +5144,8 @@ static int nf_tables_getflowtable(struct
+@@ -5307,12 +5146,8 @@ static int nf_tables_getflowtable(struct
  	if (!nla[NFTA_FLOWTABLE_NAME])
  		return -EINVAL;
  
@@ -1063,7 +1063,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	if (IS_ERR(table))
  		return PTR_ERR(table);
  
-@@ -6474,7 +6309,7 @@ int __nft_release_basechain(struct nft_c
+@@ -6476,7 +6311,7 @@ int __nft_release_basechain(struct nft_c
  }
  EXPORT_SYMBOL_GPL(__nft_release_basechain);
  
@@ -1072,7 +1072,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  {
  	struct nft_flowtable *flowtable, *nf;
  	struct nft_table *table, *nt;
-@@ -6487,7 +6322,7 @@ static void __nft_release_afinfo(struct
+@@ -6489,7 +6324,7 @@ static void __nft_release_afinfo(struct
  	};
  
  	list_for_each_entry_safe(table, nt, &net->nft.tables, list) {
@@ -1081,7 +1081,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  		list_for_each_entry(chain, &table->chains, list)
  			nf_tables_unregister_hook(net, table, chain);
-@@ -6539,7 +6374,7 @@ static int __net_init nf_tables_init_net
+@@ -6541,7 +6376,7 @@ static int __net_init nf_tables_init_net
  
  static void __net_exit nf_tables_exit_net(struct net *net)
  {
