@@ -3,6 +3,10 @@
 # This script assumes that there is a boot partition,
 # and that the root partition is always the next one.
 
+# Override DeviceTree for Clearfog Pro
+# removed once U-Boot has been updated to the new name.
+setenv fdtfile armada-388-clearfog-pro.dtb
+
 # rootfs is always on the next partition
 setexpr openwrt_rootpart ${distro_bootpart} + 1
 
