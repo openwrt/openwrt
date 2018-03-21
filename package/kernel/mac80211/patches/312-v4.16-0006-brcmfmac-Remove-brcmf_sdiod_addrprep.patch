@@ -71,7 +71,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  }
  
  u32 brcmf_sdiod_readl(struct brcmf_sdio_dev *sdiodev, u32 addr, int *ret)
-@@ -272,11 +256,16 @@ u32 brcmf_sdiod_readl(struct brcmf_sdio_dev *sdiodev, u32 addr, int *ret)
+@@ -272,11 +256,16 @@ u32 brcmf_sdiod_readl(struct brcmf_sdio_
  	u32 data = 0;
  	int retval;
  
@@ -111,7 +111,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	if (ret)
  		*ret = retval;
  }
-@@ -540,10 +534,13 @@ int brcmf_sdiod_recv_pkt(struct brcmf_sdio_dev *sdiodev, struct sk_buff *pkt)
+@@ -540,10 +534,13 @@ int brcmf_sdiod_recv_pkt(struct brcmf_sd
  
  	brcmf_dbg(SDIO, "addr = 0x%x, size = %d\n", addr, pkt->len);
  
