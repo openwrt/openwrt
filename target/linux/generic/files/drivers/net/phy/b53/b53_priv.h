@@ -326,6 +326,8 @@ static inline int b53_switch_get_reset_gpio(struct b53_device *dev)
 	case BCM47XX_BOARD_LINKSYS_WRT300NV11:
 	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
 		return 8;
+	default:
+		break;
 	}
 #endif
 
