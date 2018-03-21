@@ -64,52 +64,52 @@ define Download/ct-firmware-htt
   URL_FILE:=$($(1)_FIRMWARE_FILE_CT_HTT)
 endef
 
-QCA988X_FIRMWARE_FILE_CT:=firmware-2-ct-full-community-19.bin.lede
+QCA988X_FIRMWARE_FILE_CT:=firmware-2-ct-full-community-20.bin.lede.001
 define Download/ath10k-firmware-qca988x-ct
   $(call Download/ct-firmware,QCA988X,)
-  HASH:=bff98f028062dae9fc638c7596aec3c79bf9eddaff65cfacba067f6d72f217cd
+  HASH:=77a57d4e0da5fa1efab64cb36e0363ce49d7b7638bcfd1e8c8e323673c4abef8
 endef
 $(eval $(call Download,ath10k-firmware-qca988x-ct))
 
-QCA9887_FIRMWARE_FILE_CT:=firmware-2-ct-full-community-19.bin.lede
+QCA9887_FIRMWARE_FILE_CT:=firmware-2-ct-full-community-20.bin.lede.001
 define Download/ath10k-firmware-qca9887-ct
   $(call Download/ct-firmware,QCA9887,ath10k-9887)
-  HASH:=95dc106f98672bd9c7d3fe6881ed79ab079cb49b0a995650991b1beaff2b0101
+  HASH:=94081f86e7058083170fe25fa3735026a99fe535890b80ac81b28d0f5e0cc089
 endef
 $(eval $(call Download,ath10k-firmware-qca9887-ct))
 
-QCA99X0_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-9.bin-lede.004
+QCA99X0_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-10.bin-lede.001
 define Download/ath10k-firmware-qca99x0-ct
   $(call Download/ct-firmware,QCA99X0,ath10k-10-4)
-  HASH:=993c29fd64bb2a59b86d34f58601a1a48b83b541750bc511f78cc17152829b4d
+  HASH:=5d0765496982cb504a233395b91407b10b82a334adb928324489c67916f349f1
 endef
 $(eval $(call Download,ath10k-firmware-qca99x0-ct))
 
-QCA9984_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-9.bin-lede.004
+QCA9984_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-10.bin-lede.001
 define Download/ath10k-firmware-qca9984-ct
   $(call Download/ct-firmware,QCA9984,ath10k-9984-10-4)
-  HASH:=d997eed9a8bc6809c01d367759ba8545c10e3be93ea1f33d6d753127ef0f7c5e
+  HASH:=1bb526349182e23be79f73ca4e9761bc0f20b2672efdce9976f31804df750e96
 endef
 $(eval $(call Download,ath10k-firmware-qca9984-ct))
 
-QCA4019_FIRMWARE_FILE_CT_HTT:=firmware-5-ct-full-htt-mgt-community-10.bin-lede.002
+QCA4019_FIRMWARE_FILE_CT_HTT:=firmware-5-ct-full-htt-mgt-community-10.bin-lede.003
 define Download/ath10k-firmware-qca4019-ct-htt
   $(call Download/ct-firmware-htt,QCA4019,ath10k-4019-10-4)
-  HASH:=e67bbc8eba56bc72c1aa99a6304ea98345bddc34f4844d5d79a51db1d6d8c425
+  HASH:=7648902c9bc7b173b0845da79b7e469b87c192efb387e25505007edbe5661a17
 endef
 $(eval $(call Download,ath10k-firmware-qca4019-ct-htt))
 
-QCA4019_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-10.bin-lede.002
+QCA4019_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-10.bin-lede.003
 define Download/ath10k-firmware-qca4019-ct
   $(call Download/ct-firmware,QCA4019,ath10k-4019-10-4)
-  HASH:=f1ebb73903e4e6a6209b8acdc623bc43d355d32cce838ce0448befe9196c7866
+  HASH:=5167a5a3792bbd25c4285c8e6e44fc4564ebd0046597b00eb9bbcb1836a388bb
 endef
 $(eval $(call Download,ath10k-firmware-qca4019-ct))
 
-QCA9888_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-9.bin-lede.004
+QCA9888_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-10.bin-lede.003
 define Download/ath10k-firmware-qca9888-ct
   $(call Download/ct-firmware,QCA9888,ath10k-9888-10-4)
-  HASH:=bbaa71bc7dcaa264c5875e86639f174908fed09fbace975e325959d42f3754ff
+  HASH:=5fe7208894f52a11e99c45005370161c8f919e10b396b978652af06f43234ed2
 endef
 $(eval $(call Download,ath10k-firmware-qca9888-ct))
 
