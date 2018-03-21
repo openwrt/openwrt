@@ -34,6 +34,7 @@ define KernelPackage/ath10k-ct
 	$(PKG_BUILD_DIR)/ath10k$(CT_KVER)/ath10k_pci.ko \
 	$(PKG_BUILD_DIR)/ath10k$(CT_KVER)/ath10k_core.ko
   AUTOLOAD:=$(call AutoProbe,mac80211 ath ath10k_pci)
+  PROVIDES:=kmod-ath10k
 endef
 
 NOSTDINC_FLAGS = \

@@ -125,6 +125,7 @@ $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.1 firmware for QCA988x devices
   SECTION:=firmware
   CATEGORY:=Firmware
+  PROVIDES:=ath10k-firmware-qca988x
 endef
 
 define Package/ath10k-firmware-qca9887-ct
@@ -132,6 +133,7 @@ $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.1 firmware for QCA9887 devices
   SECTION:=firmware
   CATEGORY:=Firmware
+  PROVIDES:=ath10k-firmware-qca9887
 endef
 
 define Package/ath10k-firmware-qca988x-ct/description
@@ -198,6 +200,7 @@ $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.4 firmware for QCA99x0 devices
   SECTION:=firmware
   CATEGORY:=Firmware
+  PROVIDES:=ath10k-firmware-qca99x0
 endef
 
 define Package/ath10k-firmware-qca9984-ct
@@ -205,6 +208,7 @@ $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.4 firmware for QCA9984 devices
   SECTION:=firmware
   CATEGORY:=Firmware
+  PROVIDES:=ath10k-firmware-qca9984
 endef
 
 define Package/ath10k-firmware-qca4019-ct-htt
@@ -212,12 +216,15 @@ $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.4 htt-mgt for QCA4018/9
   SECTION:=firmware
   CATEGORY:=Firmware
+  PROVIDES:=ath10k-firmware-qca4019
+  DEPENDS:=+kmod-ath10k-ct
 endef
 define Package/ath10k-firmware-qca4019-ct
 $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.4 firmware for QCA4018/9
   SECTION:=firmware
   CATEGORY:=Firmware
+  PROVIDES:=ath10k-firmware-qca4019
 endef
 
 define Package/ath10k-firmware-qca9888-ct
@@ -225,6 +232,7 @@ $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.4 fw for QCA9886/8 devices
   SECTION:=firmware
   CATEGORY:=Firmware
+  PROVIDES:=ath10k-firmware-qca9888
 endef
 
 define Package/ath10k-firmware-qca9984
