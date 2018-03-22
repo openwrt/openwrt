@@ -1,0 +1,93 @@
+From 9a765881bf3dcd32847d7108cf48cb04a4ed993f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bj=C3=B8rn=20Mork?= <bjorn@mork.no>
+Date: Mon, 10 Oct 2016 21:12:49 +0200
+Subject: [PATCH] qmi_wwan: add support for Quectel EC21 and EC25
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The Quectel EC21 and EC25 need the same "set DTR" request as devices
+based on the MDM9230 chipset, but has no USB3 support. Our best guess
+is that the "set DTR" functionality depends on chipset and/or
+baseband firmware generation. But USB3 is still an optional feature.
+
+Since we cannot enable this unconditionally for all older devices, and
+there doesn't appear to be anything we can use in the USB descriptors
+to identify these chips, we are forced to use a device specific quirk
+flag.
+
+Reported-and-tested-by: Sebastian Sjoholm <sebastian.sjoholm@gmail.com>
+Signed-off-by: Bjørn Mork <bjorn@mork.no>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/usb/qmi_wwan.c | 30 ++++++++++++++++++++++++++++--
+ 1 file changed, 28 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/usb/qmi_wwan.c
++++ b/drivers/net/usb/qmi_wwan.c
+@@ -59,6 +59,10 @@ enum qmi_wwan_flags {
+ 	QMI_WWAN_FLAG_RAWIP = 1 << 0,
+ };
+ 
++enum qmi_wwan_quirks {
++	QMI_WWAN_QUIRK_DTR = 1 << 0,	/* needs "set DTR" request */
++};
++
+ static void qmi_wwan_netdev_setup(struct net_device *net)
+ {
+ 	struct usbnet *dev = netdev_priv(net);
+@@ -411,9 +415,14 @@ static int qmi_wwan_bind(struct usbnet *
+ 	 * clearing out state the clients might need.
+ 	 *
+ 	 * MDM9x30 is the first QMI chipset with USB3 support. Abuse
+-	 * this fact to enable the quirk.
++	 * this fact to enable the quirk for all USB3 devices.
++	 *
++	 * There are also chipsets with the same "set DTR" requirement
++	 * but without USB3 support.  Devices based on these chips
++	 * need a quirk flag in the device ID table.
+ 	 */
+-	if (le16_to_cpu(dev->udev->descriptor.bcdUSB) >= 0x0201) {
++	if (dev->driver_info->data & QMI_WWAN_QUIRK_DTR ||
++	    le16_to_cpu(dev->udev->descriptor.bcdUSB) >= 0x0201) {
+ 		qmi_wwan_manage_power(dev, 1);
+ 		qmi_wwan_change_dtr(dev, true);
+ 	}
+@@ -526,6 +535,16 @@ static const struct driver_info	qmi_wwan
+ 	.rx_fixup       = qmi_wwan_rx_fixup,
+ };
+ 
++static const struct driver_info	qmi_wwan_info_quirk_dtr = {
++	.description	= "WWAN/QMI device",
++	.flags		= FLAG_WWAN,
++	.bind		= qmi_wwan_bind,
++	.unbind		= qmi_wwan_unbind,
++	.manage_power	= qmi_wwan_manage_power,
++	.rx_fixup       = qmi_wwan_rx_fixup,
++	.data           = QMI_WWAN_QUIRK_DTR,
++};
++
+ #define HUAWEI_VENDOR_ID	0x12D1
+ 
+ /* map QMI/wwan function by a fixed interface number */
+@@ -533,6 +552,11 @@ static const struct driver_info	qmi_wwan
+ 	USB_DEVICE_INTERFACE_NUMBER(vend, prod, num), \
+ 	.driver_info = (unsigned long)&qmi_wwan_info
+ 
++/* devices requiring "set DTR" quirk */
++#define QMI_QUIRK_SET_DTR(vend, prod, num) \
++	USB_DEVICE_INTERFACE_NUMBER(vend, prod, num), \
++	.driver_info = (unsigned long)&qmi_wwan_info_quirk_dtr
++
+ /* Gobi 1000 QMI/wwan interface number is 3 according to qcserial */
+ #define QMI_GOBI1K_DEVICE(vend, prod) \
+ 	QMI_FIXED_INTF(vend, prod, 3)
+@@ -908,6 +932,8 @@ static const struct usb_device_id produc
+ 	{QMI_FIXED_INTF(0x03f0, 0x4e1d, 8)},	/* HP lt4111 LTE/EV-DO/HSPA+ Gobi 4G Module */
+ 	{QMI_FIXED_INTF(0x22de, 0x9061, 3)},	/* WeTelecom WPD-600N */
+ 	{QMI_FIXED_INTF(0x1e0e, 0x9001, 5)},	/* SIMCom 7230E */
++	{QMI_QUIRK_SET_DTR(0x2c7c, 0x0125, 4)},	/* Quectel EC25, EC20 R2.0  Mini PCIe */
++	{QMI_QUIRK_SET_DTR(0x2c7c, 0x0121, 4)},	/* Quectel EC21 Mini PCIe */
+ 
+ 	/* 4. Gobi 1000 devices */
+ 	{QMI_GOBI1K_DEVICE(0x05c6, 0x9212)},	/* Acer Gobi Modem Device */

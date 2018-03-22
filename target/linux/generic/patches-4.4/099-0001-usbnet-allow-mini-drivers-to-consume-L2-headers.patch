@@ -1,0 +1,34 @@
+From 81e0ce79f2919dbd5f025894d29aa806af8695c7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bj=C3=B8rn=20Mork?= <bjorn@mork.no>
+Date: Thu, 3 Dec 2015 19:24:20 +0100
+Subject: [PATCH] usbnet: allow mini-drivers to consume L2 headers
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Assume the minidriver has taken care of all L2 header parsing
+if it sets skb->protocol.  This allows the minidriver to
+support non-ethernet L2 headers, and even operate without
+any L2 header at all.
+
+Signed-off-by: Bjørn Mork <bjorn@mork.no>
+Acked-by: Oliver Neukum <oneukum@suse.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/usb/usbnet.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/usb/usbnet.c
++++ b/drivers/net/usb/usbnet.c
+@@ -324,7 +324,10 @@ void usbnet_skb_return (struct usbnet *d
+ 		return;
+ 	}
+ 
+-	skb->protocol = eth_type_trans (skb, dev->net);
++	/* only update if unset to allow minidriver rx_fixup override */
++	if (skb->protocol == 0)
++		skb->protocol = eth_type_trans (skb, dev->net);
++
+ 	dev->net->stats.rx_packets++;
+ 	dev->net->stats.rx_bytes += skb->len;
+ 

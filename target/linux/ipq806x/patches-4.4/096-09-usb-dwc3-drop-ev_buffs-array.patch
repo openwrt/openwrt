@@ -76,7 +76,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  	struct usb_gadget	gadget;
 --- a/drivers/usb/dwc3/gadget.c
 +++ b/drivers/usb/dwc3/gadget.c
-@@ -2576,7 +2576,7 @@ static irqreturn_t dwc3_process_event_bu
+@@ -2578,7 +2578,7 @@ static irqreturn_t dwc3_process_event_bu
  	int left;
  	u32 reg;
  
@@ -85,7 +85,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  	left = evt->count;
  
  	if (!(evt->flags & DWC3_EVENT_PENDING))
-@@ -2635,7 +2635,7 @@ static irqreturn_t dwc3_check_event_buf(
+@@ -2637,7 +2637,7 @@ static irqreturn_t dwc3_check_event_buf(
  	u32 count;
  	u32 reg;
  

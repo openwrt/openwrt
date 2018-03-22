@@ -34,16 +34,7 @@ Integrated-by: Zhao Qiang <qiang.zhao@nxp.com>
 
 --- a/drivers/mmc/host/sdhci-of-esdhc.c
 +++ b/drivers/mmc/host/sdhci-of-esdhc.c
-@@ -584,6 +584,8 @@ static int sdhci_esdhc_probe(struct plat
- {
- 	struct sdhci_host *host;
- 	struct device_node *np;
-+	struct sdhci_pltfm_host *pltfm_host;
-+	struct sdhci_esdhc *esdhc;
- 	int ret;
- 
- 	np = pdev->dev.of_node;
-@@ -611,6 +613,14 @@ static int sdhci_esdhc_probe(struct plat
+@@ -621,6 +621,14 @@ static int sdhci_esdhc_probe(struct plat
  	if (of_device_is_compatible(np, "fsl,ls1021a-esdhc"))
  		host->quirks |= SDHCI_QUIRK_BROKEN_TIMEOUT_VAL;
  

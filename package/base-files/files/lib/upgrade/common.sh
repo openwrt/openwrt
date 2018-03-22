@@ -208,7 +208,7 @@ get_magic_long() {
 }
 
 export_bootdevice() {
-	local cmdline uuid disk uevent
+	local cmdline uuid disk uevent line
 	local MAJOR MINOR DEVNAME DEVTYPE
 
 	if read cmdline < /proc/cmdline; then
@@ -241,8 +241,9 @@ export_bootdevice() {
 		esac
 
 		if [ -e "$uevent" ]; then
-			. "$uevent"
-
+			while read line; do
+				export -n "$line"
+			done < "$uevent"
 			export BOOTDEV_MAJOR=$MAJOR
 			export BOOTDEV_MINOR=$MINOR
 			return 0
@@ -254,10 +255,12 @@ export_bootdevice() {
 
 export_partdevice() {
 	local var="$1" offset="$2"
-	local uevent MAJOR MINOR DEVNAME DEVTYPE
+	local uevent line MAJOR MINOR DEVNAME DEVTYPE
 
 	for uevent in /sys/class/block/*/uevent; do
-		. "$uevent"
+		while read line; do
+			export -n "$line"
+		done < "$uevent"
 		if [ $BOOTDEV_MAJOR = $MAJOR -a $(($BOOTDEV_MINOR + $offset)) = $MINOR -a -b "/dev/$DEVNAME" ]; then
 			export "$var=$DEVNAME"
 			return 0

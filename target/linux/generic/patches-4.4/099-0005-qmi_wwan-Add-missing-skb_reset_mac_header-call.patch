@@ -1,0 +1,76 @@
+From 0de0add10e587effa880c741c9413c874f16be91 Mon Sep 17 00:00:00 2001
+From: Kristian Evensen <kristian.evensen@gmail.com>
+Date: Tue, 7 Nov 2017 13:47:56 +0100
+Subject: [PATCH] qmi_wwan: Add missing skb_reset_mac_header-call
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+When we receive a packet on a QMI device in raw IP mode, we should call
+skb_reset_mac_header() to ensure that skb->mac_header contains a valid
+offset in the packet. While it shouldn't really matter, the packets have
+no MAC header and the interface is configured as-such, it seems certain
+parts of the network stack expects a "good" value in skb->mac_header.
+
+Without the skb_reset_mac_header() call added in this patch, for example
+shaping traffic (using tc) triggers the following oops on the first
+received packet:
+
+[  303.642957] skbuff: skb_under_panic: text:8f137918 len:177 put:67 head:8e4b0f00 data:8e4b0eff tail:0x8e4b0fb0 end:0x8e4b1520 dev:wwan0
+[  303.655045] Kernel bug detected[#1]:
+[  303.658622] CPU: 1 PID: 1002 Comm: logd Not tainted 4.9.58 #0
+[  303.664339] task: 8fdf05e0 task.stack: 8f15c000
+[  303.668844] $ 0   : 00000000 00000001 0000007a 00000000
+[  303.674062] $ 4   : 8149a2fc 8149a2fc 8149ce20 00000000
+[  303.679284] $ 8   : 00000030 3878303a 31623465 20303235
+[  303.684510] $12   : ded731e3 2626a277 00000000 03bd0000
+[  303.689747] $16   : 8ef62b40 00000043 8f137918 804db5fc
+[  303.694978] $20   : 00000001 00000004 8fc13800 00000003
+[  303.700215] $24   : 00000001 8024ab10
+[  303.705442] $28   : 8f15c000 8fc19cf0 00000043 802cc920
+[  303.710664] Hi    : 00000000
+[  303.713533] Lo    : 74e58000
+[  303.716436] epc   : 802cc920 skb_panic+0x58/0x5c
+[  303.721046] ra    : 802cc920 skb_panic+0x58/0x5c
+[  303.725639] Status: 11007c03 KERNEL EXL IE
+[  303.729823] Cause : 50800024 (ExcCode 09)
+[  303.733817] PrId  : 0001992f (MIPS 1004Kc)
+[  303.737892] Modules linked in: rt2800pci rt2800mmio rt2800lib qcserial ppp_async option usb_wwan rt2x00pci rt2x00mmio rt2x00lib rndis_host qmi_wwan ppp_generic nf_nat_pptp nf_conntrack_pptp nf_conntrack_ipv6 mt76x2i
+Process logd (pid: 1002, threadinfo=8f15c000, task=8fdf05e0, tls=77b3eee4)
+[  303.962509] Stack : 00000000 80408990 8f137918 000000b1 00000043 8e4b0f00 8e4b0eff 8e4b0fb0
+[  303.970871]         8e4b1520 8fec1800 00000043 802cd2a4 6e000045 00000043 00000000 8ef62000
+[  303.979219]         8eef5d00 8ef62b40 8fea7300 8f137918 00000000 00000000 0002bb01 793e5664
+[  303.987568]         8ef08884 00000001 8fea7300 00000002 8fc19e80 8eef5d00 00000006 00000003
+[  303.995934]         00000000 8030ba90 00000003 77ab3fd0 8149dc80 8004d1bc 8f15c000 8f383700
+[  304.004324]         ...
+[  304.006767] Call Trace:
+[  304.009241] [<802cc920>] skb_panic+0x58/0x5c
+[  304.013504] [<802cd2a4>] skb_push+0x78/0x90
+[  304.017783] [<8f137918>] 0x8f137918
+[  304.021269] Code: 00602825  0c02a3b4  24842888 <000c000d> 8c870060  8c8200a0  0007382b  00070336  8c88005c
+[  304.031034]
+[  304.032805] ---[ end trace b778c482b3f0bda9 ]---
+[  304.041384] Kernel panic - not syncing: Fatal exception in interrupt
+[  304.051975] Rebooting in 3 seconds..
+
+While the oops is for a 4.9-kernel, I was able to trigger the same oops with
+net-next as of yesterday.
+
+Fixes: 32f7adf633b9 ("net: qmi_wwan: support "raw IP" mode")
+Signed-off-by: Kristian Evensen <kristian.evensen@gmail.com>
+Acked-by: Bjørn Mork <bjorn@mork.no>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/usb/qmi_wwan.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/usb/qmi_wwan.c
++++ b/drivers/net/usb/qmi_wwan.c
+@@ -203,6 +203,7 @@ static int qmi_wwan_rx_fixup(struct usbn
+ 		return 1;
+ 	}
+ 	if (rawip) {
++		skb_reset_mac_header(skb);
+ 		skb->dev = dev->net; /* normally set by eth_type_trans */
+ 		skb->protocol = proto;
+ 		return 1;

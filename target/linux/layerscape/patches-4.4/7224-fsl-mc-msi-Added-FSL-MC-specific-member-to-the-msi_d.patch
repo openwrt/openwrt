@@ -15,7 +15,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/include/linux/msi.h
 +++ b/include/linux/msi.h
-@@ -33,6 +33,14 @@ struct platform_msi_desc {
+@@ -39,6 +39,14 @@ struct platform_msi_desc {
  };
  
  /**
@@ -30,7 +30,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
   * struct msi_desc - Descriptor structure for MSI based interrupts
   * @list:	List head for management
   * @irq:	The base interrupt number
-@@ -87,6 +95,7 @@ struct msi_desc {
+@@ -93,6 +101,7 @@ struct msi_desc {
  		 * tree wide cleanup.
  		 */
  		struct platform_msi_desc platform;

@@ -1,0 +1,64 @@
+From a4abd7a80addb4a9547f7dfc7812566b60ec505c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bj=C3=B8rn=20Mork?= <bjorn@mork.no>
+Date: Wed, 6 Dec 2017 20:21:24 +0100
+Subject: [PATCH] usbnet: fix alignment for frames with no ethernet header
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The qmi_wwan minidriver support a 'raw-ip' mode where frames are
+received without any ethernet header. This causes alignment issues
+because the skbs allocated by usbnet are "IP aligned".
+
+Fix by allowing minidrivers to disable the additional alignment
+offset. This is implemented using a per-device flag, since the same
+minidriver also supports 'ethernet' mode.
+
+Fixes: 32f7adf633b9 ("net: qmi_wwan: support "raw IP" mode")
+Reported-and-tested-by: Jay Foster <jay@systech.com>
+Signed-off-by: Bjørn Mork <bjorn@mork.no>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/usb/qmi_wwan.c | 2 ++
+ drivers/net/usb/usbnet.c   | 5 ++++-
+ include/linux/usb/usbnet.h | 1 +
+ 3 files changed, 7 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/usb/qmi_wwan.c
++++ b/drivers/net/usb/qmi_wwan.c
+@@ -70,9 +70,11 @@ static void qmi_wwan_netdev_setup(struct
+ 		net->hard_header_len = 0;
+ 		net->addr_len        = 0;
+ 		net->flags           = IFF_POINTOPOINT | IFF_NOARP | IFF_MULTICAST;
++		set_bit(EVENT_NO_IP_ALIGN, &dev->flags);
+ 		netdev_dbg(net, "mode: raw IP\n");
+ 	} else if (!net->header_ops) { /* don't bother if already set */
+ 		ether_setup(net);
++		clear_bit(EVENT_NO_IP_ALIGN, &dev->flags);
+ 		netdev_dbg(net, "mode: Ethernet\n");
+ 	}
+ 
+--- a/drivers/net/usb/usbnet.c
++++ b/drivers/net/usb/usbnet.c
+@@ -482,7 +482,10 @@ static int rx_submit (struct usbnet *dev
+ 		return -ENOLINK;
+ 	}
+ 
+-	skb = __netdev_alloc_skb_ip_align(dev->net, size, flags);
++	if (test_bit(EVENT_NO_IP_ALIGN, &dev->flags))
++		skb = __netdev_alloc_skb(dev->net, size, flags);
++	else
++		skb = __netdev_alloc_skb_ip_align(dev->net, size, flags);
+ 	if (!skb) {
+ 		netif_dbg(dev, rx_err, dev->net, "no rx skb\n");
+ 		usbnet_defer_kevent (dev, EVENT_RX_MEMORY);
+--- a/include/linux/usb/usbnet.h
++++ b/include/linux/usb/usbnet.h
+@@ -79,6 +79,7 @@ struct usbnet {
+ #		define EVENT_RX_KILL	10
+ #		define EVENT_LINK_CHANGE	11
+ #		define EVENT_SET_RX_MODE	12
++#		define EVENT_NO_IP_ALIGN	13
+ };
+ 
+ static inline struct usb_driver *driver_of(struct usb_interface *intf)
