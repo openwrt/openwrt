@@ -25,7 +25,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  		return -ERANGE;
  
  	oobregion->length = ecc->total;
-@@ -4707,6 +4707,19 @@ int nand_scan_tail(struct mtd_info *mtd)
+@@ -4712,6 +4712,19 @@ int nand_scan_tail(struct mtd_info *mtd)
  			mtd_set_ooblayout(mtd, &nand_ooblayout_lp_hamming_ops);
  			break;
  		default:

@@ -1,6 +1,6 @@
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -1903,6 +1903,9 @@ static int nand_do_read_ops(struct mtd_i
+@@ -1908,6 +1908,9 @@ static int nand_do_read_ops(struct mtd_i
  						 __func__, buf);
  
  read_retry:
@@ -10,7 +10,7 @@
  			if (nand_standard_page_accessors(&chip->ecc))
  				chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
  
-@@ -1922,6 +1925,7 @@ read_retry:
+@@ -1927,6 +1930,7 @@ read_retry:
  			else
  				ret = chip->ecc.read_page(mtd, chip, bufpoi,
  							  oob_required, page);
@@ -18,7 +18,7 @@
  			if (ret < 0) {
  				if (use_bufpoi)
  					/* Invalidate page cache */
-@@ -3079,8 +3083,11 @@ int nand_erase_nand(struct mtd_info *mtd
+@@ -3084,8 +3088,11 @@ int nand_erase_nand(struct mtd_info *mtd
  		    (page + pages_per_block))
  			chip->pagebuf = -1;
  
@@ -31,7 +31,7 @@
  		/* See if block erase succeeded */
  		if (status & NAND_STATUS_FAIL) {
  			pr_debug("%s: failed erase, page 0x%08x\n",
-@@ -4210,6 +4217,7 @@ int nand_scan_ident(struct mtd_info *mtd
+@@ -4215,6 +4222,7 @@ int nand_scan_ident(struct mtd_info *mtd
  		 * cmdfunc() both expect cmd_ctrl() to be populated,
  		 * so we need to check that that's the case
  		 */
