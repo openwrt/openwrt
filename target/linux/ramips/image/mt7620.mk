@@ -178,6 +178,14 @@ define Device/dlink_dwr-921-c1
 endef
 TARGET_DEVICES += dlink_dwr-921-c1
 
+define Device/dlink_dwr-921-c3
+  $(Device/dlink_dwr-921-c1)
+  DEVICE_TITLE := D-Link DWR-921 C3
+  DLINK_ROM_ID := DLK6E2414009
+  SUPPORTED_DEVICES := dlink,dwr-921-c1
+endef
+TARGET_DEVICES += dlink_dwr-921-c3
+
 define Device/e1700
   DTS := E1700
   IMAGES += factory.bin
