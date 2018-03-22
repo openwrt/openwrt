@@ -109,7 +109,7 @@ get_status_led() {
 		status_led="$boardname:green:status"
 		;;
 	dlink,dwr-921-c1)
-		status_led="$boardname:red:sigstrength"
+		status_led="$boardname:green:sigstrength"
 		;;
 	asl26555-8M|\
 	asl26555-16M)

@@ -60,6 +60,17 @@
 		};
 	};
 
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		lte_modem_enable {
+			gpio-export,name = "lte_modem_enable";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
 };
 
 &gpio1 {
