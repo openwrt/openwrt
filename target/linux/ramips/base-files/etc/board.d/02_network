@@ -110,6 +110,7 @@ ramips_setup_interfaces()
 	u7621-06-256M-16M|\
 	vr500|\
 	wf-2881|\
+	whr-g300n|\
 	witi|\
 	wl-wn575a3|\
 	wndr3700v5|\
@@ -440,7 +441,8 @@ ramips_setup_macs()
 	e1700)
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
 		;;
-	gl-mt300n-v2)
+	gl-mt300n-v2|\
+	whr-g300n)
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		;;
 	hc5*61|\
