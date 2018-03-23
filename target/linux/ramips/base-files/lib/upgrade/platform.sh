@@ -271,7 +271,8 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	dlink,dwr-116-a1)
+	dlink,dwr-116-a1|\
+	dlink,dwr-921-c1)
 		[ "$magic" != "0404242b" ] && {
 			echo "Invalid image type."
 			return 1
