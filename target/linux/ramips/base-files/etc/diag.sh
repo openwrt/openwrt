@@ -108,6 +108,9 @@ get_status_led() {
 	zbt-wg2626)
 		status_led="$boardname:green:status"
 		;;
+	dlink,dwr-921-c1)
+		status_led="$boardname:green:sigstrength"
+		;;
 	asl26555-8M|\
 	asl26555-16M)
 		status_led="asl26555:green:power"
