@@ -70,9 +70,9 @@ static void fe_get_drvinfo(struct net_device *dev,
 	struct fe_priv *priv = netdev_priv(dev);
 	struct fe_soc_data *soc = priv->soc;
 
-	strlcpy(info->driver, priv->device->driver->name, sizeof(info->driver));
+	strlcpy(info->driver, priv->dev->driver->name, sizeof(info->driver));
 	strlcpy(info->version, MTK_FE_DRV_VERSION, sizeof(info->version));
-	strlcpy(info->bus_info, dev_name(priv->device), sizeof(info->bus_info));
+	strlcpy(info->bus_info, dev_name(priv->dev), sizeof(info->bus_info));
 
 	if (soc->reg_table[FE_REG_FE_COUNTER_BASE])
 		info->n_stats = ARRAY_SIZE(fe_gdma_str);

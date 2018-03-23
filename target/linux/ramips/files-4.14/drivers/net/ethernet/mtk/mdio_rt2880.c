@@ -101,7 +101,7 @@ static int rt2880_mdio_wait_ready(struct fe_priv *priv)
 		udelay(1);
 	}
 
-	dev_err(priv->device, "MDIO operation timed out\n");
+	dev_err(priv->dev, "MDIO operation timed out\n");
 	return -ETIMEDOUT;
 }
 
@@ -182,7 +182,7 @@ void rt2880_port_init(struct fe_priv *priv, struct device_node *np)
 		break;
 	default:
 		if (!priv->phy->phy_fixed[0])
-			dev_err(priv->device, "port %d - invalid phy mode\n",
+			dev_err(priv->dev, "port %d - invalid phy mode\n",
 				priv->phy->speed[0]);
 		break;
 	}
@@ -207,12 +207,12 @@ void rt2880_port_init(struct fe_priv *priv, struct device_node *np)
 		case SPEED_1000:
 			break;
 		default:
-			dev_err(priv->device, "invalid link speed: %d\n",
+			dev_err(priv->dev, "invalid link speed: %d\n",
 				priv->phy->speed[0]);
 			priv->phy->phy_fixed[0] = 0;
 			return;
 		}
-		dev_info(priv->device, "using fixed link parameters\n");
+		dev_info(priv->dev, "using fixed link parameters\n");
 		rt2880_mdio_link_adjust(priv, 0);
 		return;
 	}

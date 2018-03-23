@@ -1142,8 +1142,8 @@ static int fe_hw_init(struct net_device *dev)
 	struct fe_priv *priv = netdev_priv(dev);
 	int i, err;
 
-	err = devm_request_irq(priv->device, dev->irq, fe_handle_irq, 0,
-			       dev_name(priv->device), dev);
+	err = devm_request_irq(priv->dev, dev->irq, fe_handle_irq, 0,
+			       dev_name(priv->dev), dev);
 	if (err)
 		return err;
 
@@ -1261,14 +1261,14 @@ static int __init fe_init(struct net_device *dev)
 			return -ENODEV;
 		}
 
-	mac_addr = of_get_mac_address(priv->device->of_node);
+	mac_addr = of_get_mac_address(priv->dev->of_node);
 	if (mac_addr)
 		ether_addr_copy(dev->dev_addr, mac_addr);
 
 	/* If the mac address is invalid, use random mac address  */
 	if (!is_valid_ether_addr(dev->dev_addr)) {
 		random_ether_addr(dev->dev_addr);
-		dev_err(priv->device, "generated random MAC address %pM\n",
+		dev_err(priv->dev, "generated random MAC address %pM\n",
 			dev->dev_addr);
 	}
 
@@ -1277,7 +1277,7 @@ static int __init fe_init(struct net_device *dev)
 		return err;
 
 	if (priv->soc->port_init)
-		for_each_child_of_node(priv->device->of_node, port)
+		for_each_child_of_node(priv->dev->of_node, port)
 			if (of_device_is_compatible(port, "mediatek,eth-port") &&
 			    of_device_is_available(port))
 				priv->soc->port_init(priv, port);
@@ -1525,7 +1525,7 @@ static int fe_probe(struct platform_device *pdev)
 	}
 
 	priv->netdev = netdev;
-	priv->device = &pdev->dev;
+	priv->dev = &pdev->dev;
 	priv->soc = soc;
 	priv->msg_enable = netif_msg_init(fe_msg_level, FE_DEFAULT_MSG_ENABLE);
 	priv->rx_ring.frag_size = fe_max_frag_size(ETH_DATA_LEN);
