@@ -98,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,338 @@
+@@ -0,0 +1,340 @@
 +/*
 + * Copyright (C) 2018 Felix Fietkau <nbd@nbd.name>
 + *
@@ -121,6 +121,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +struct xt_flowoffload_hook {
 +	struct hlist_node list;
 +	struct nf_hook_ops ops;
++	struct net *net;
 +	bool registered;
 +	bool used;
 +};
@@ -201,8 +202,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			continue;
 +
 +		hook->registered = true;
++		hook->net = dev_net(hook->ops.dev);
 +		spin_unlock_bh(&hooks_lock);
-+		nf_register_net_hook(dev_net(hook->ops.dev), &hook->ops);
++		nf_register_net_hook(hook->net, &hook->ops);
 +		spin_lock_bh(&hooks_lock);
 +		goto restart;
 +	}
@@ -221,7 +223,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +		hlist_del(&hook->list);
 +		spin_unlock_bh(&hooks_lock);
-+		nf_unregister_net_hook(dev_net(hook->ops.dev), &hook->ops);
++		nf_unregister_net_hook(hook->net, &hook->ops);
 +		kfree(hook);
 +		spin_lock_bh(&hooks_lock);
 +		goto restart;
