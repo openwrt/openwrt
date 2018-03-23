@@ -8,6 +8,8 @@ mtk-eth-soc-$(CONFIG_NET_MEDIATEK_MDIO)		+= mdio.o
 mtk-eth-soc-$(CONFIG_NET_MEDIATEK_MDIO_RT2880)	+= mdio_rt2880.o
 mtk-eth-soc-$(CONFIG_NET_MEDIATEK_MDIO_MT7620)	+= mdio_mt7620.o
 
+mtk-eth-soc-$(CONFIG_NET_MEDIATEK_OFFLOAD)	+= mtk_offload.o mtk_debugfs.o
+
 mtk-eth-soc-$(CONFIG_NET_MEDIATEK_RT2880)	+= soc_rt2880.o
 mtk-eth-soc-$(CONFIG_NET_MEDIATEK_RT3050)	+= soc_rt3050.o
 mtk-eth-soc-$(CONFIG_NET_MEDIATEK_RT3883)	+= soc_rt3883.o

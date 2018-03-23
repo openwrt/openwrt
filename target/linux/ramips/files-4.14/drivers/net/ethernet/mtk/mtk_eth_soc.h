@@ -499,11 +499,17 @@ struct fe_priv {
 	unsigned long			vlan_map;
 	struct work_struct		pending_work;
 	DECLARE_BITMAP(pending_flags, FE_FLAG_MAX);
+
+	struct reset_control		*rst_ppe;
+	struct mtk_foe_entry		*foe_table;
+	dma_addr_t			foe_table_phys;
+	struct flow_offload __rcu	**foe_flow_table;
 };
 
 extern const struct of_device_id of_fe_match[];
 
 void fe_w32(u32 val, unsigned reg);
+void fe_m32(struct fe_priv *priv, u32 clear, u32 set, unsigned reg);
 u32 fe_r32(unsigned reg);
 
 int fe_set_clock_cycle(struct fe_priv *priv);
@@ -519,5 +525,15 @@ static inline void *priv_netdev(struct fe_priv *priv)
 {
 	return (char *)priv - ALIGN(sizeof(struct net_device), NETDEV_ALIGN);
 }
+
+int mtk_ppe_probe(struct fe_priv *eth);
+void mtk_ppe_remove(struct fe_priv *eth);
+int mtk_flow_offload(struct fe_priv *eth,
+		     enum flow_offload_type type,
+		     struct flow_offload *flow,
+		     struct flow_offload_hw_path *src,
+		     struct flow_offload_hw_path *dest);
+int mtk_offload_check_rx(struct fe_priv *eth, struct sk_buff *skb, u32 rxd4);
+
 
 #endif /* FE_ETH_H */
