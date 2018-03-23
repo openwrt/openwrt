@@ -98,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,351 @@
+@@ -0,0 +1,364 @@
 +/*
 + * Copyright (C) 2018 Felix Fietkau <nbd@nbd.name>
 + *
@@ -109,6 +109,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#include <linux/module.h>
 +#include <linux/init.h>
 +#include <linux/netfilter.h>
++#include <linux/netfilter/xt_FLOWOFFLOAD.h>
 +#include <net/ip.h>
 +#include <net/netfilter/nf_conntrack.h>
 +#include <net/netfilter/nf_flow_table.h>
@@ -335,6 +336,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +static unsigned int
 +flowoffload_tg(struct sk_buff *skb, const struct xt_action_param *par)
 +{
++	const struct xt_flowoffload_target_info *info = par->targinfo;
 +	enum ip_conntrack_info ctinfo;
 +	enum ip_conntrack_dir dir;
 +	struct nf_flow_route route;
@@ -387,6 +389,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	xt_flowoffload_check_device(xt_in(par));
 +	xt_flowoffload_check_device(xt_out(par));
 +
++	if (info->flags & XT_FLOWOFFLOAD_HW)
++		nf_flow_offload_hw_add(xt_net(par), flow, ct);
++
 +	return XT_CONTINUE;
 +
 +err_flow_add:
@@ -401,6 +406,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +static int flowoffload_chk(const struct xt_tgchk_param *par)
 +{
++	struct xt_flowoffload_target_info *info = par->targinfo;
++
++	if (info->flags & ~XT_FLOWOFFLOAD_MASK)
++		return -EINVAL;
++
 +	return 0;
 +}
 +
@@ -408,6 +418,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	.family		= NFPROTO_UNSPEC,
 +	.name		= "FLOWOFFLOAD",
 +	.revision	= 0,
++	.targetsize	= sizeof(struct xt_flowoffload_target_info),
++	.usersize	= sizeof(struct xt_flowoffload_target_info),
 +	.checkentry	= flowoffload_chk,
 +	.target		= flowoffload_tg,
 +	.me		= THIS_MODULE,
@@ -415,6 +427,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +static int xt_flowoffload_table_init(struct nf_flowtable *table)
 +{
++	table->flags = NF_FLOWTABLE_F_HW;
 +	nf_flow_table_init(table);
 +	return 0;
 +}
@@ -460,3 +473,23 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <net/netfilter/nf_flow_table.h>
  #include <net/netfilter/nf_conntrack.h>
  #include <net/netfilter/nf_conntrack_core.h>
+--- /dev/null
++++ b/include/uapi/linux/netfilter/xt_FLOWOFFLOAD.h
+@@ -0,0 +1,17 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _XT_FLOWOFFLOAD_H
++#define _XT_FLOWOFFLOAD_H
++
++#include <linux/types.h>
++
++enum {
++	XT_FLOWOFFLOAD_HW	= 1 << 0,
++
++	XT_FLOWOFFLOAD_MASK	= XT_FLOWOFFLOAD_HW
++};
++
++struct xt_flowoffload_target_info {
++	__u32 flags;
++};
++
++#endif /* _XT_FLOWOFFLOAD_H */
