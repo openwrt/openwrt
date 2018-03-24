@@ -8,15 +8,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mtd-utils
-PKG_VERSION:=1.5.2
+PKG_VERSION:=2.0.1
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=git://git.infradead.org/mtd-utils.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=aea36417067dade75192bafa03af70b6eb2677b1
-PKG_MIRROR_HASH:=e11b342b85a36b2e438a8412ec52f87621d3046aec1a93039f8c72de9990b2a7
+PKG_SOURCE_VERSION:=81049e599775bac4238361752f659a86f67328e6
+PKG_MIRROR_HASH:=a79784eb52c77dbc73a08863ce6651b3d22931e7c670cd1782168f9bba13f5a8
 
 PKG_INSTALL:=1
+PKG_FIXUP:=autoreconf
 
 PKG_FLAGS:=nonshared
 
@@ -54,12 +55,12 @@ define Package/nand-utils/description
   Utilities for NAND devices.
 endef
 
-MAKE_FLAGS += \
-	DESTDIR="$(PKG_INSTALL_DIR)" \
-	BUILDDIR="$(PKG_BUILD_DIR)" \
-	LDLIBS+="$(LIBGCC_S)" \
-	WITHOUT_XATTR=1 \
-	WITHOUT_LZO=1
+MAKE_FLAGS += LDLIBS+="$(LIBGCC_S)"
+
+CONFIGURE_ARGS += \
+	--disable-tests \
+	--without-xattr \
+	--without-lzo
 
 define Package/ubi-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
