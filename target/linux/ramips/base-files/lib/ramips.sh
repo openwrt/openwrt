@@ -391,6 +391,9 @@ ramips_board_detect() {
 	*"PBR-M1")
 		name="pbr-m1"
 		;;
+	*"PandoraBox PBR-C1")
+		name="pbr-c1"
+		;;
 	*"PSG1208")
 		name="psg1208"
 		;;

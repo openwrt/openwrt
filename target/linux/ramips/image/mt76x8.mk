@@ -299,3 +299,15 @@ define Device/zbtlink_zbt-we1226
   DEVICE_TITLE := ZBTlink ZBT-WE1226
 endef
 TARGET_DEVICES += zbtlink_zbt-we1226
+
+define Device/pbr-c1
+  DTS := PBR-C1
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := PBR-C1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-sdhci-mt7620 \
+  kmod-usb-net kmod-usb-net-qmi-wwan kmod-usb-net-cdc-mbim \
+  kmod-usb-serial kmod-usb-serial-option \
+  kmod-fs-vfat kmod-fs-ext4 block-mount chat umbim \
+  uhttpd 
+endef
+TARGET_DEVICES += pbr-c1

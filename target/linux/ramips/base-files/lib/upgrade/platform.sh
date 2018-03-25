@@ -119,6 +119,7 @@ platform_check_image() {
 	omega2p|\
 	oy-0001|\
 	pbr-d1|\
+	pbr-c1|\
 	pbr-m1|\
 	psg1208|\
 	psg1218a|\
