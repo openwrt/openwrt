@@ -306,6 +306,10 @@ oy-0001)
 pbr-d1)
 	set_usb_led "$boardname:orange:usb"
 	;;
+pbr-c1)
+	set_wifi_led "$boardname:wifi"
+	set_usb_led "$boardname:internet"
+	;;
 pbr-m1)
 	ucidef_set_led_netdev "internet" "internet" "$boardname:blue:internet" "eth0.2"
 	ucidef_set_led_default "power" "power" "$boardname:blue:power" "1"
