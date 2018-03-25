@@ -97,10 +97,10 @@ static int mt7620_gsw_config(struct fe_priv *priv)
 
 	/* is the mt7530 internal or external */
 	if (priv->mii_bus && mdiobus_get_phy(priv->mii_bus, 0x1f)) {
-		mt7530_probe(priv->device, gsw->base, NULL, 0);
-		mt7530_probe(priv->device, NULL, priv->mii_bus, 1);
+		mt7530_probe(priv->dev, gsw->base, NULL, 0);
+		mt7530_probe(priv->dev, NULL, priv->mii_bus, 1);
 	} else {
-		mt7530_probe(priv->device, gsw->base, NULL, 1);
+		mt7530_probe(priv->dev, gsw->base, NULL, 1);
 	}
 
 	return 0;
@@ -180,7 +180,7 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 		mask = 2;
 		break;
 	default:
-		dev_err(priv->device, "port %d - invalid phy mode\n", id);
+		dev_err(priv->dev, "port %d - invalid phy mode\n", id);
 		return;
 	}
 
@@ -215,7 +215,7 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 			val = 2;
 			break;
 		default:
-			dev_err(priv->device, "invalid link speed: %d\n",
+			dev_err(priv->dev, "invalid link speed: %d\n",
 				priv->phy->speed[id]);
 			priv->phy->phy_fixed[id] = 0;
 			return;
@@ -230,7 +230,7 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 		if (priv->phy->duplex[id])
 			val |= PMCR_DUPLEX;
 		mtk_switch_w32(gsw, val, GSW_REG_PORT_PMCR(id));
-		dev_info(priv->device, "using fixed link parameters\n");
+		dev_info(priv->dev, "using fixed link parameters\n");
 		return;
 	}
 

@@ -15,6 +15,7 @@
  */
 
 #include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	model = "Qualcomm Technologies, Inc. IPQ4019/AP-DK04.1";
@@ -94,14 +95,14 @@
 		};
 
 		blsp_dma: dma@7884000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		spi_0: spi@78b5000 {
 			pinctrl-0 = <&spi_0_pins>;
 			pinctrl-names = "default";
-			status = "ok";
-			cs-gpios = <&tlmm 12 0>;
+			status = "okay";
+			cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
 
 			mx25l25635e@0 {
 				#address-cells = <1>;
@@ -116,61 +117,61 @@
 			pinctrl-0 = <&i2c_0_pins>;
 			pinctrl-names = "default";
 
-			status = "ok";
+			status = "okay";
 		};
 
 		serial@78af000 {
 			pinctrl-0 = <&serial_0_pins>;
 			pinctrl-names = "default";
-			status = "ok";
+			status = "okay";
 		};
 
 		serial@78b0000 {
 			pinctrl-0 = <&serial_1_pins>;
 			pinctrl-names = "default";
-			status = "ok";
+			status = "okay";
 		};
 
 		usb3_ss_phy: ssphy@9a000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		usb3_hs_phy: hsphy@a6000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		usb3: usb3@8af8800 {
-			status = "ok";
+			status = "okay";
 		};
 
 		usb2_hs_phy: hsphy@a8000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		usb2: usb2@60f8800 {
-			status = "ok";
+			status = "okay";
 		};
 
 		cryptobam: dma@8e04000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		crypto@8e3a000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		watchdog@b017000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		qpic_bam: dma@7984000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		nand: qpic-nand@79b0000 {
 			pinctrl-0 = <&nand_pins>;
 			pinctrl-names = "default";
-			status = "ok";
+			status = "okay";
 		};
 	};
 };

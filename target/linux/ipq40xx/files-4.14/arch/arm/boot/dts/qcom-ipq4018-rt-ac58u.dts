@@ -86,21 +86,21 @@
 		};
 
 		usb2@60f8800 {
-			status = "ok";
+			status = "okay";
 		};
 
 		serial@78af000 {
 			pinctrl-0 = <&serial_pins>;
 			pinctrl-names = "default";
-			status = "ok";
+			status = "okay";
 		};
 
 		usb3@8af8800 {
-			status = "ok";
+			status = "okay";
 		};
 
 		crypto@8e3a000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		wifi@a000000 {
@@ -114,7 +114,7 @@
 		};
 
 		watchdog@b017000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		ess-switch@c000000 {
@@ -178,11 +178,11 @@
 };
 
 &cryptobam {
-	status = "ok";
+	status = "okay";
 };
 
 &blsp_dma {
-	status = "ok";
+	status = "okay";
 };
 
 &tlmm {
@@ -215,9 +215,9 @@
 &spi_0 { /* BLSP1 QUP1 */
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
-	status = "ok";
-	cs-gpios = <&tlmm 54 0>,
-		   <&tlmm 59 0>;
+	status = "okay";
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>,
+		   <&tlmm 59 GPIO_ACTIVE_HIGH>;
 
 	m25p80@0 {
 		#address-cells = <1>;
@@ -302,13 +302,13 @@
 };
 
 &usb3_ss_phy {
-	status = "ok";
+	status = "okay";
 };
 
 &usb3_hs_phy {
-	status = "ok";
+	status = "okay";
 };
 
 &usb2_hs_phy {
-	status = "ok";
+	status = "okay";
 };

@@ -98,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,335 @@
+@@ -0,0 +1,351 @@
 +/*
 + * Copyright (C) 2018 Felix Fietkau <nbd@nbd.name>
 + *
@@ -121,6 +121,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +struct xt_flowoffload_hook {
 +	struct hlist_node list;
 +	struct nf_hook_ops ops;
++	struct net *net;
 +	bool registered;
 +	bool used;
 +};
@@ -201,8 +202,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			continue;
 +
 +		hook->registered = true;
++		hook->net = dev_net(hook->ops.dev);
 +		spin_unlock_bh(&hooks_lock);
-+		nf_register_net_hook(dev_net(hook->ops.dev), &hook->ops);
++		nf_register_net_hook(hook->net, &hook->ops);
 +		spin_lock_bh(&hooks_lock);
 +		goto restart;
 +	}
@@ -221,7 +223,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +		hlist_del(&hook->list);
 +		spin_unlock_bh(&hooks_lock);
-+		nf_unregister_net_hook(dev_net(hook->ops.dev), &hook->ops);
++		nf_unregister_net_hook(hook->net, &hook->ops);
 +		kfree(hook);
 +		spin_lock_bh(&hooks_lock);
 +		goto restart;
@@ -288,27 +290,38 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	return false;
 +}
 +
-+static int
-+xt_flowoffload_route(struct sk_buff *skb, const struct nf_conn *ct,
-+		   const struct xt_action_param *par,
-+		   struct nf_flow_route *route, enum ip_conntrack_dir dir)
++static struct dst_entry *
++xt_flowoffload_dst(const struct nf_conn *ct, enum ip_conntrack_dir dir,
++		   const struct xt_action_param *par)
 +{
-+	struct dst_entry *this_dst = skb_dst(skb);
-+	struct dst_entry *other_dst = NULL;
++	struct dst_entry *dst;
 +	struct flowi fl;
 +
 +	memset(&fl, 0, sizeof(fl));
 +	switch (xt_family(par)) {
 +	case NFPROTO_IPV4:
-+		fl.u.ip4.daddr = ct->tuplehash[!dir].tuple.dst.u3.ip;
++		fl.u.ip4.daddr = ct->tuplehash[dir].tuple.src.u3.ip;
 +		break;
 +	case NFPROTO_IPV6:
-+		fl.u.ip6.daddr = ct->tuplehash[!dir].tuple.dst.u3.in6;
++		fl.u.ip6.daddr = ct->tuplehash[dir].tuple.src.u3.in6;
 +		break;
 +	}
 +
-+	nf_route(xt_net(par), &other_dst, &fl, false, xt_family(par));
-+	if (!other_dst)
++	nf_route(xt_net(par), &dst, &fl, false, xt_family(par));
++
++	return dst;
++}
++
++static int
++xt_flowoffload_route(struct sk_buff *skb, const struct nf_conn *ct,
++		   const struct xt_action_param *par,
++		   struct nf_flow_route *route, enum ip_conntrack_dir dir)
++{
++	struct dst_entry *this_dst, *other_dst;
++
++	this_dst = xt_flowoffload_dst(ct, dir, par);
++	other_dst = xt_flowoffload_dst(ct, !dir, par);
++	if (!this_dst || !other_dst)
 +		return -ENOENT;
 +
 +	route->tuple[dir].dst		= this_dst;
@@ -337,6 +350,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	switch (ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.protonum) {
 +	case IPPROTO_TCP:
++		if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED)
++			return XT_CONTINUE;
++		break;
 +	case IPPROTO_UDP:
 +		break;
 +	default:

@@ -238,9 +238,7 @@ int mtk_gsw_init(struct fe_priv *priv)
 static int mt7621_gsw_probe(struct platform_device *pdev)
 {
 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	const char *port4 = NULL;
 	struct mt7620_gsw *gsw;
-	struct device_node *np;
 
 	gsw = devm_kzalloc(&pdev->dev, sizeof(struct mt7620_gsw), GFP_KERNEL);
 	if (!gsw)
@@ -251,15 +249,6 @@ static int mt7621_gsw_probe(struct platform_device *pdev)
 		return -EADDRNOTAVAIL;
 
 	gsw->dev = &pdev->dev;
-
-	of_property_read_string(np, "mediatek,port4", &port4);
-	if (port4 && !strcmp(port4, "ephy"))
-		gsw->port4 = PORT4_EPHY;
-	else if (port4 && !strcmp(port4, "gmac"))
-		gsw->port4 = PORT4_EXT;
-	else
-		gsw->port4 = PORT4_EPHY;
-
 	gsw->irq = platform_get_irq(pdev, 0);
 
 	platform_set_drvdata(pdev, gsw);

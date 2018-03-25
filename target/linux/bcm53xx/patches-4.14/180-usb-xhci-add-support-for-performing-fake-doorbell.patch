@@ -127,11 +127,11 @@ it on BCM4708 family.
  /*
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1830,6 +1830,7 @@ struct xhci_hcd {
+@@ -1831,6 +1831,7 @@ struct xhci_hcd {
  #define XHCI_LIMIT_ENDPOINT_INTERVAL_7	(1 << 26)
  /* Reserved. It was XHCI_U2_DISABLE_WAKE */
  #define XHCI_ASMEDIA_MODIFY_FLOWCONTROL	(1 << 28)
 +#define XHCI_FAKE_DOORBELL	(1 << 29)
+ #define XHCI_SUSPEND_DELAY	(1 << 30)
  
  	unsigned int		num_active_eps;
- 	unsigned int		limit_active_eps;

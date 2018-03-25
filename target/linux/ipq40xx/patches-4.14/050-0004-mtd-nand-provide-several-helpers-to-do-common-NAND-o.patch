@@ -60,7 +60,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  			break;
  		touch_softlockup_watchdog();
  	} while (time_before(jiffies, timeo));
-@@ -1016,7 +1028,15 @@ static void panic_nand_wait(struct mtd_i
+@@ -1021,7 +1033,15 @@ static void panic_nand_wait(struct mtd_i
  			if (chip->dev_ready(mtd))
  				break;
  		} else {
@@ -77,7 +77,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  				break;
  		}
  		mdelay(1);
-@@ -1033,8 +1053,9 @@ static void panic_nand_wait(struct mtd_i
+@@ -1038,8 +1058,9 @@ static void panic_nand_wait(struct mtd_i
  static int nand_wait(struct mtd_info *mtd, struct nand_chip *chip)
  {
  
@@ -88,7 +88,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	/*
  	 * Apply this short delay always to ensure that we do wait tWB in any
-@@ -1042,7 +1063,9 @@ static int nand_wait(struct mtd_info *mt
+@@ -1047,7 +1068,9 @@ static int nand_wait(struct mtd_info *mt
  	 */
  	ndelay(100);
  
@@ -99,7 +99,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	if (in_interrupt() || oops_in_progress)
  		panic_nand_wait(mtd, chip, timeo);
-@@ -1053,14 +1076,22 @@ static int nand_wait(struct mtd_info *mt
+@@ -1058,14 +1081,22 @@ static int nand_wait(struct mtd_info *mt
  				if (chip->dev_ready(mtd))
  					break;
  			} else {
@@ -124,7 +124,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  	/* This can happen if in case of timeout or buggy dev_ready */
  	WARN_ON(!(status & NAND_STATUS_READY));
  	return status;
-@@ -1215,6 +1246,516 @@ static void nand_release_data_interface(
+@@ -1220,6 +1251,516 @@ static void nand_release_data_interface(
  }
  
  /**
@@ -641,7 +641,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
   * nand_reset - Reset and initialize a NAND device
   * @chip: The NAND chip
   * @chipnr: Internal die id
-@@ -1235,8 +1776,10 @@ int nand_reset(struct nand_chip *chip, i
+@@ -1240,8 +1781,10 @@ int nand_reset(struct nand_chip *chip, i
  	 * interface settings, hence this weird ->select_chip() dance.
  	 */
  	chip->select_chip(mtd, chipnr);
@@ -653,7 +653,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	chip->select_chip(mtd, chipnr);
  	ret = nand_setup_data_interface(chip, chipnr);
-@@ -1392,9 +1935,19 @@ EXPORT_SYMBOL(nand_check_erased_ecc_chun
+@@ -1397,9 +1940,19 @@ EXPORT_SYMBOL(nand_check_erased_ecc_chun
  int nand_read_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
  		       uint8_t *buf, int oob_required, int page)
  {
@@ -676,7 +676,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  	return 0;
  }
  EXPORT_SYMBOL(nand_read_page_raw);
-@@ -1416,29 +1969,46 @@ static int nand_read_page_raw_syndrome(s
+@@ -1421,29 +1974,46 @@ static int nand_read_page_raw_syndrome(s
  	int eccsize = chip->ecc.size;
  	int eccbytes = chip->ecc.bytes;
  	uint8_t *oob = chip->oob_poi;
@@ -730,7 +730,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	return 0;
  }
-@@ -1527,7 +2097,9 @@ static int nand_read_subpage(struct mtd_
+@@ -1532,7 +2102,9 @@ static int nand_read_subpage(struct mtd_
  		chip->cmdfunc(mtd, NAND_CMD_RNDOUT, data_col_addr, -1);
  
  	p = bufpoi + data_col_addr;
@@ -741,7 +741,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	/* Calculate ECC */
  	for (i = 0; i < eccfrag_len ; i += chip->ecc.bytes, p += chip->ecc.size)
-@@ -1545,8 +2117,11 @@ static int nand_read_subpage(struct mtd_
+@@ -1550,8 +2122,11 @@ static int nand_read_subpage(struct mtd_
  		gaps = 1;
  
  	if (gaps) {
@@ -755,7 +755,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  	} else {
  		/*
  		 * Send the command to read the particular ECC bytes take care
-@@ -1560,9 +2135,12 @@ static int nand_read_subpage(struct mtd_
+@@ -1565,9 +2140,12 @@ static int nand_read_subpage(struct mtd_
  		    (busw - 1))
  			aligned_len++;
  
@@ -771,7 +771,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  	}
  
  	ret = mtd_ooblayout_get_eccbytes(mtd, chip->buffers->ecccode,
-@@ -1619,10 +2197,17 @@ static int nand_read_page_hwecc(struct m
+@@ -1624,10 +2202,17 @@ static int nand_read_page_hwecc(struct m
  
  	for (i = 0; eccsteps; eccsteps--, i += eccbytes, p += eccsize) {
  		chip->ecc.hwctl(mtd, NAND_ECC_READ);
@@ -791,7 +791,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	ret = mtd_ooblayout_get_eccbytes(mtd, ecc_code, chip->oob_poi, 0,
  					 chip->ecc.total);
-@@ -1681,9 +2266,13 @@ static int nand_read_page_hwecc_oob_firs
+@@ -1686,9 +2271,13 @@ static int nand_read_page_hwecc_oob_firs
  	unsigned int max_bitflips = 0;
  
  	/* Read the OOB area first */
@@ -808,7 +808,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	ret = mtd_ooblayout_get_eccbytes(mtd, ecc_code, chip->oob_poi, 0,
  					 chip->ecc.total);
-@@ -1694,7 +2283,11 @@ static int nand_read_page_hwecc_oob_firs
+@@ -1699,7 +2288,11 @@ static int nand_read_page_hwecc_oob_firs
  		int stat;
  
  		chip->ecc.hwctl(mtd, NAND_ECC_READ);
@@ -821,7 +821,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  		chip->ecc.calculate(mtd, p, &ecc_calc[i]);
  
  		stat = chip->ecc.correct(mtd, p, &ecc_code[i], NULL);
-@@ -1731,7 +2324,7 @@ static int nand_read_page_hwecc_oob_firs
+@@ -1736,7 +2329,7 @@ static int nand_read_page_hwecc_oob_firs
  static int nand_read_page_syndrome(struct mtd_info *mtd, struct nand_chip *chip,
  				   uint8_t *buf, int oob_required, int page)
  {
@@ -830,7 +830,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  	int eccbytes = chip->ecc.bytes;
  	int eccsteps = chip->ecc.steps;
  	int eccpadbytes = eccbytes + chip->ecc.prepad + chip->ecc.postpad;
-@@ -1743,21 +2336,36 @@ static int nand_read_page_syndrome(struc
+@@ -1748,21 +2341,36 @@ static int nand_read_page_syndrome(struc
  		int stat;
  
  		chip->ecc.hwctl(mtd, NAND_ECC_READ);
@@ -871,7 +871,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  			oob += chip->ecc.postpad;
  		}
  
-@@ -1781,8 +2389,11 @@ static int nand_read_page_syndrome(struc
+@@ -1786,8 +2394,11 @@ static int nand_read_page_syndrome(struc
  
  	/* Calculate remaining oob bytes */
  	i = mtd->oobsize - (oob - chip->oob_poi);
@@ -885,7 +885,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	return max_bitflips;
  }
-@@ -1903,8 +2514,11 @@ static int nand_do_read_ops(struct mtd_i
+@@ -1908,8 +2519,11 @@ static int nand_do_read_ops(struct mtd_i
  						 __func__, buf);
  
  read_retry:
@@ -899,7 +899,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  			/*
  			 * Now read the page into the buffer.  Absent an error,
-@@ -2063,9 +2677,7 @@ static int nand_read(struct mtd_info *mt
+@@ -2068,9 +2682,7 @@ static int nand_read(struct mtd_info *mt
   */
  int nand_read_oob_std(struct mtd_info *mtd, struct nand_chip *chip, int page)
  {
@@ -910,7 +910,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  }
  EXPORT_SYMBOL(nand_read_oob_std);
  
-@@ -2083,25 +2695,43 @@ int nand_read_oob_syndrome(struct mtd_in
+@@ -2088,25 +2700,43 @@ int nand_read_oob_syndrome(struct mtd_in
  	int chunk = chip->ecc.bytes + chip->ecc.prepad + chip->ecc.postpad;
  	int eccsize = chip->ecc.size;
  	uint8_t *bufpoi = chip->oob_poi;
@@ -961,7 +961,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	return 0;
  }
-@@ -2115,18 +2745,8 @@ EXPORT_SYMBOL(nand_read_oob_syndrome);
+@@ -2120,18 +2750,8 @@ EXPORT_SYMBOL(nand_read_oob_syndrome);
   */
  int nand_write_oob_std(struct mtd_info *mtd, struct nand_chip *chip, int page)
  {
@@ -982,7 +982,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  }
  EXPORT_SYMBOL(nand_write_oob_std);
  
-@@ -2142,7 +2762,7 @@ int nand_write_oob_syndrome(struct mtd_i
+@@ -2147,7 +2767,7 @@ int nand_write_oob_syndrome(struct mtd_i
  {
  	int chunk = chip->ecc.bytes + chip->ecc.prepad + chip->ecc.postpad;
  	int eccsize = chip->ecc.size, length = mtd->oobsize;
@@ -991,7 +991,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  	const uint8_t *bufpoi = chip->oob_poi;
  
  	/*
-@@ -2156,7 +2776,10 @@ int nand_write_oob_syndrome(struct mtd_i
+@@ -2161,7 +2781,10 @@ int nand_write_oob_syndrome(struct mtd_i
  	} else
  		pos = eccsize;
  
@@ -1003,7 +1003,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  	for (i = 0; i < steps; i++) {
  		if (sndcmd) {
  			if (mtd->writesize <= 512) {
-@@ -2165,28 +2788,40 @@ int nand_write_oob_syndrome(struct mtd_i
+@@ -2170,28 +2793,40 @@ int nand_write_oob_syndrome(struct mtd_i
  				len = eccsize;
  				while (len > 0) {
  					int num = min_t(int, len, 4);
@@ -1054,7 +1054,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  }
  EXPORT_SYMBOL(nand_write_oob_syndrome);
  
-@@ -2341,9 +2976,18 @@ static int nand_read_oob(struct mtd_info
+@@ -2346,9 +2981,18 @@ static int nand_read_oob(struct mtd_info
  int nand_write_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
  			const uint8_t *buf, int oob_required, int page)
  {
@@ -1076,7 +1076,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	return 0;
  }
-@@ -2367,29 +3011,46 @@ static int nand_write_page_raw_syndrome(
+@@ -2372,29 +3016,46 @@ static int nand_write_page_raw_syndrome(
  	int eccsize = chip->ecc.size;
  	int eccbytes = chip->ecc.bytes;
  	uint8_t *oob = chip->oob_poi;
@@ -1130,7 +1130,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	return 0;
  }
-@@ -2443,7 +3104,11 @@ static int nand_write_page_hwecc(struct
+@@ -2448,7 +3109,11 @@ static int nand_write_page_hwecc(struct
  
  	for (i = 0; eccsteps; eccsteps--, i += eccbytes, p += eccsize) {
  		chip->ecc.hwctl(mtd, NAND_ECC_WRITE);
@@ -1143,7 +1143,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  		chip->ecc.calculate(mtd, p, &ecc_calc[i]);
  	}
  
-@@ -2452,7 +3117,9 @@ static int nand_write_page_hwecc(struct
+@@ -2457,7 +3122,9 @@ static int nand_write_page_hwecc(struct
  	if (ret)
  		return ret;
  
@@ -1154,7 +1154,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	return 0;
  }
-@@ -2488,7 +3155,9 @@ static int nand_write_subpage_hwecc(stru
+@@ -2493,7 +3160,9 @@ static int nand_write_subpage_hwecc(stru
  		chip->ecc.hwctl(mtd, NAND_ECC_WRITE);
  
  		/* write data (untouched subpages already masked by 0xFF) */
@@ -1165,7 +1165,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  		/* mask ECC of un-touched subpages by padding 0xFF */
  		if ((step < start_step) || (step > end_step))
-@@ -2515,7 +3184,9 @@ static int nand_write_subpage_hwecc(stru
+@@ -2520,7 +3189,9 @@ static int nand_write_subpage_hwecc(stru
  		return ret;
  
  	/* write OOB buffer to NAND device */
@@ -1176,7 +1176,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	return 0;
  }
-@@ -2542,31 +3213,49 @@ static int nand_write_page_syndrome(stru
+@@ -2547,31 +3218,49 @@ static int nand_write_page_syndrome(stru
  	int eccsteps = chip->ecc.steps;
  	const uint8_t *p = buf;
  	uint8_t *oob = chip->oob_poi;
@@ -1233,7 +1233,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	return 0;
  }
-@@ -2594,8 +3283,11 @@ static int nand_write_page(struct mtd_in
+@@ -2599,8 +3288,11 @@ static int nand_write_page(struct mtd_in
  	else
  		subpage = 0;
  
@@ -1247,7 +1247,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	if (unlikely(raw))
  		status = chip->ecc.write_page_raw(mtd, chip, buf,
-@@ -2610,13 +3302,8 @@ static int nand_write_page(struct mtd_in
+@@ -2615,13 +3307,8 @@ static int nand_write_page(struct mtd_in
  	if (status < 0)
  		return status;
  
@@ -1263,7 +1263,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	return 0;
  }
-@@ -2989,17 +3676,12 @@ out:
+@@ -2994,17 +3681,12 @@ out:
  static int single_erase(struct mtd_info *mtd, int page)
  {
  	struct nand_chip *chip = mtd_to_nand(mtd);
@@ -1284,7 +1284,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  }
  
  /**
-@@ -3226,22 +3908,12 @@ static int nand_max_bad_blocks(struct mt
+@@ -3231,22 +3913,12 @@ static int nand_max_bad_blocks(struct mt
  static int nand_onfi_set_features(struct mtd_info *mtd, struct nand_chip *chip,
  			int addr, uint8_t *subfeature_param)
  {
@@ -1308,7 +1308,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  }
  
  /**
-@@ -3254,17 +3926,12 @@ static int nand_onfi_set_features(struct
+@@ -3259,17 +3931,12 @@ static int nand_onfi_set_features(struct
  static int nand_onfi_get_features(struct mtd_info *mtd, struct nand_chip *chip,
  			int addr, uint8_t *subfeature_param)
  {
@@ -1327,7 +1327,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  }
  
  /**
-@@ -3407,12 +4074,11 @@ static u16 onfi_crc16(u16 crc, u8 const
+@@ -3412,12 +4079,11 @@ static u16 onfi_crc16(u16 crc, u8 const
  static int nand_flash_detect_ext_param_page(struct nand_chip *chip,
  					    struct nand_onfi_params *p)
  {
@@ -1341,7 +1341,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  	int len;
  	int i;
  
-@@ -3422,14 +4088,18 @@ static int nand_flash_detect_ext_param_p
+@@ -3427,14 +4093,18 @@ static int nand_flash_detect_ext_param_p
  		return -ENOMEM;
  
  	/* Send our own NAND_CMD_PARAM. */
@@ -1365,7 +1365,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  	if ((onfi_crc16(ONFI_CRC_BASE, ((uint8_t *)ep) + 2, len - 2)
  		!= le16_to_cpu(ep->crc))) {
  		pr_debug("fail in the CRC.\n");
-@@ -3482,19 +4152,23 @@ static int nand_flash_detect_onfi(struct
+@@ -3487,19 +4157,23 @@ static int nand_flash_detect_onfi(struct
  {
  	struct mtd_info *mtd = nand_to_mtd(chip);
  	struct nand_onfi_params *p = &chip->onfi_params;
@@ -1397,7 +1397,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  		if (onfi_crc16(ONFI_CRC_BASE, (uint8_t *)p, 254) ==
  				le16_to_cpu(p->crc)) {
  			break;
-@@ -3585,20 +4259,22 @@ static int nand_flash_detect_jedec(struc
+@@ -3590,20 +4264,22 @@ static int nand_flash_detect_jedec(struc
  	struct mtd_info *mtd = nand_to_mtd(chip);
  	struct nand_jedec_params *p = &chip->jedec_params;
  	struct jedec_ecc_info *ecc;
@@ -1429,7 +1429,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  		if (onfi_crc16(ONFI_CRC_BASE, (uint8_t *)p, 510) ==
  				le16_to_cpu(p->crc))
-@@ -3877,8 +4553,7 @@ static int nand_detect(struct nand_chip
+@@ -3882,8 +4558,7 @@ static int nand_detect(struct nand_chip
  {
  	const struct nand_manufacturer *manufacturer;
  	struct mtd_info *mtd = nand_to_mtd(chip);
@@ -1439,7 +1439,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  	u8 *id_data = chip->id.data;
  	u8 maf_id, dev_id;
  
-@@ -3886,17 +4561,21 @@ static int nand_detect(struct nand_chip
+@@ -3891,17 +4566,21 @@ static int nand_detect(struct nand_chip
  	 * Reset the chip, required by some chips (e.g. Micron MT29FxGxxxxx)
  	 * after power-up.
  	 */
@@ -1465,7 +1465,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	/*
  	 * Try again to make sure, as some systems the bus-hold or other
-@@ -3905,11 +4584,10 @@ static int nand_detect(struct nand_chip
+@@ -3910,11 +4589,10 @@ static int nand_detect(struct nand_chip
  	 * not match, ignore the device completely.
  	 */
  
@@ -1480,7 +1480,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	if (id_data[0] != maf_id || id_data[1] != dev_id) {
  		pr_info("second ID read did not match %02x,%02x against %02x,%02x\n",
-@@ -4233,15 +4911,16 @@ int nand_scan_ident(struct mtd_info *mtd
+@@ -4238,15 +4916,16 @@ int nand_scan_ident(struct mtd_info *mtd
  
  	/* Check for a chip array */
  	for (i = 1; i < maxchips; i++) {

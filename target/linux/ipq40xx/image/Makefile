@@ -54,7 +54,7 @@ TARGET_DEVICES += asus_rt-ac58u
 
 define Device/avm_fritzbox-4040
 	$(call Device/FitImageLzma)
-	DEVICE_DTS := qcom-ipq4019-fritz4040
+	DEVICE_DTS := qcom-ipq4018-fritz4040
 	BOARD_NAME := fritz4040
 	DEVICE_TITLE := AVM Fritz!Box 4040
 	IMAGE_SIZE := 29753344
@@ -105,8 +105,8 @@ TARGET_DEVICES += meraki_mr33
 define Device/openmesh_a42
 	$(call Device/FitImageLzma)
 	DEVICE_DTS := qcom-ipq4018-a42
+	DEVICE_DTS_CONFIG := config@om.a42
 	BLOCKSIZE := 64k
-	SUPPORTED_DEVICES := openmesh,a42
 	DEVICE_TITLE := OpenMesh A42
 	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
 	IMAGE_SIZE := 15616k

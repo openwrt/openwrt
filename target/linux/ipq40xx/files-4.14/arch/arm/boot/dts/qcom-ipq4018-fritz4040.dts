@@ -86,21 +86,21 @@
 		};
 
 		usb2@60f8800 {
-			status = "ok";
+			status = "okay";
 		};
 
 		serial@78af000 {
 			pinctrl-0 = <&serial_pins>;
 			pinctrl-names = "default";
-			status = "ok";
+			status = "okay";
 		};
 
 		usb3@8af8800 {
-			status = "ok";
+			status = "okay";
 		};
 
 		crypto@8e3a000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		wifi@a000000 {
@@ -112,7 +112,7 @@
 		};
 
 		watchdog@b017000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		qca8075: ess-switch@c000000 {
@@ -214,18 +214,18 @@
 };
 
 &cryptobam {
-	status = "ok";
+	status = "okay";
 };
 
 &blsp_dma {
-	status = "ok";
+	status = "okay";
 };
 
 &spi_0 { /* BLSP1 QUP1 */
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
-	status = "ok";
-	cs-gpios = <&tlmm 54 0>;
+	status = "okay";
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
 
 	mx25l25635f@0 {
 		compatible = "jedec,spi-nor";
@@ -233,7 +233,7 @@
 		#size-cells = <0>;
 		reg = <0>;
 		spi-max-frequency = <24000000>;
-		status = "ok";
+		status = "okay";
 		m25p,fast-read;
 
 		partitions {
@@ -310,13 +310,13 @@
 };
 
 &usb3_ss_phy {
-	status = "ok";
+	status = "okay";
 };
 
 &usb3_hs_phy {
-	status = "ok";
+	status = "okay";
 };
 
 &usb2_hs_phy {
-	status = "ok";
+	status = "okay";
 };

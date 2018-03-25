@@ -27,6 +27,16 @@ endef
 
 TARGET_DEVICES += sun50i-a64-pine64-plus
 
+define Device/sun50i-a64-sopine-baseboard
+  DEVICE_TITLE:=Pine64 Sopine
+  SUPPORTED_DEVICES:=pine64,sopine-baseboard
+  SUNXI_DTS:=allwinner/sun50i-a64-sopine-baseboard
+  KERNEL_NAME := Image
+  KERNEL := kernel-bin
+endef
+
+TARGET_DEVICES += sun50i-a64-sopine-baseboard
+
 
 define Device/sun50i-h5-orangepi-zero-plus
   DEVICE_TITLE:=Xunlong Orange Pi Zero Plus

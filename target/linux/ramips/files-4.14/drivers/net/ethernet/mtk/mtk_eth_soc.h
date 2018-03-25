@@ -480,7 +480,7 @@ struct fe_priv {
 	u32				msg_enable;
 	u32				flags;
 
-	struct device			*device;
+	struct device			*dev;
 	unsigned long			sysclk;
 
 	struct fe_rx_ring		rx_ring;

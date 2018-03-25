@@ -12,7 +12,7 @@
  	int (*onfi_get_features)(struct mtd_info *mtd, struct nand_chip *chip,
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -2756,9 +2756,14 @@ static int nand_do_write_ops(struct mtd_
+@@ -2761,9 +2761,14 @@ static int nand_do_write_ops(struct mtd_
  			memset(chip->oob_poi, 0xff, mtd->oobsize);
  		}
  
@@ -30,7 +30,7 @@
  		if (ret)
  			break;
  
-@@ -4714,6 +4719,9 @@ int nand_scan_tail(struct mtd_info *mtd)
+@@ -4719,6 +4724,9 @@ int nand_scan_tail(struct mtd_info *mtd)
  		}
  	}
  
