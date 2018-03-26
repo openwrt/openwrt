@@ -20,6 +20,9 @@ mvebu_board_detect() {
 	*"Globalscale Marvell ESPRESSOBin Board")
 		name="globalscale,espressobin"
 		;;
+	*"Marvell 8040 MACHIATOBin")
+		name="marvell,armada8040-mcbin"
+		;;
 	*"Globalscale Mirabox")
 		name="mirabox"
 		;;
