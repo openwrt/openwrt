@@ -125,5 +125,6 @@ endef
 
 include cortex-a9.mk
 include cortex-a53.mk
+include cortex-a72.mk
 
 $(eval $(call BuildImage))
