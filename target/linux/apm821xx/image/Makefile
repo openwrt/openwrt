@@ -21,6 +21,11 @@ define Build/dtb
 	$(call Image/BuildDTB,../dts/$(DEVICE_DTS).dts,$@.dtb,,--space $(DTB_SIZE))
 endef
 
+define Build/prepend-dtb
+	cat "$@.dtb.uimage" "$@" > "$@.new"
+	mv "$@.new" "$@"
+endef
+
 define Build/export-dtb
 	cp $(IMAGE_KERNEL).dtb $@
 endef
@@ -115,8 +120,7 @@ define Build/create-uImage-dtb
 	-$(STAGING_DIR_HOST)/bin/mkimage -A $(LINUX_KARCH) \
 		-O linux -T kernel -C none \
 		-n '$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)' \
-		-d $(IMAGE_KERNEL).dtb $@.new
-	@mv $@.new $@
+		-d "$@.dtb" "$@.dtb.uimage"
 endef
 
 define Build/MuImage-initramfs
@@ -163,11 +167,13 @@ define Device/netgear_wndr4700
   DTB_SIZE := 131008
   IMAGE_SIZE := 24960k
   IMAGES := factory.img sysupgrade.tar kernel.dtb
-  KERNEL_SIZE := 1920k
-  KERNEL := dtb | kernel-bin | lzma | uImage lzma | pad-offset $$(BLOCKSIZE) 64 | \
-	  append-uImage-fakeroot-hdr
+  KERNEL_SIZE := 3584k
+  # append a fake/empty rootfs to fool netgear's uboot
+  # CHECK_DNI_FIRMWARE_ROOTFS_INTEGRITY in do_chk_dniimg()
+  KERNEL := kernel-bin | lzma | uImage lzma | pad-offset $$(BLOCKSIZE) 64 | \
+	    append-uImage-fakeroot-hdr | dtb | create-uImage-dtb | prepend-dtb
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
-  IMAGE/factory.img := create-uImage-dtb | append-kernel | pad-to 2M | append-ubi | \
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 		       netgear-dni | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
   IMAGE/kernel.dtb := export-dtb | uImage none
