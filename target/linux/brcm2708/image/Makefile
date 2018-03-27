@@ -47,7 +47,6 @@ endef
 
 ### Devices ###
 define Device/Default
-  FILESYSTEMS := ext4
   KERNEL := kernel-bin | kernel-img
   KERNEL_IMG := kernel.img
   IMAGES := sdcard.img.gz
