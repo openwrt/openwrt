@@ -1,0 +1,86 @@
+From ae14aba7fc748b2da282b59a2f516a311ed1f6eb Mon Sep 17 00:00:00 2001
+From: Mathias Kresin <dev@kresin.me>
+Date: Tue, 27 Mar 2018 23:15:07 +0200
+Subject: [PATCH] MIPS: lantiq: gphy: Remove reboot/remove reset asserts
+
+While doing a global software reset, these bits are not cleared and let
+some bootloader fail to initialise the GPHYs. The bootloader don't expect
+these bits to be set, as they aren't during power on.
+
+The asserts were a workaround for a wrong syscon-reboot mask. With a mask
+set which includes the GPHY resets of the first reset register, the
+resets of the second reset register arn't required any more.
+
+Signed-off-by: Mathias Kresin <dev@kresin.me>
+---
+ drivers/soc/lantiq/gphy.c | 34 ----------------------------------
+ 1 file changed, 34 deletions(-)
+
+--- a/drivers/soc/lantiq/gphy.c
++++ b/drivers/soc/lantiq/gphy.c
+@@ -30,7 +30,6 @@ struct xway_gphy_priv {
+ 	struct clk *gphy_clk_gate;
+ 	struct reset_control *gphy_reset;
+ 	struct reset_control *gphy_reset2;
+-	struct notifier_block gphy_reboot_nb;
+ 	void __iomem *membase;
+ 	char *fw_name;
+ };
+@@ -65,24 +64,6 @@ static const struct of_device_id xway_gp
+ };
+ MODULE_DEVICE_TABLE(of, xway_gphy_match);
+ 
+-static struct xway_gphy_priv *to_xway_gphy_priv(struct notifier_block *nb)
+-{
+-	return container_of(nb, struct xway_gphy_priv, gphy_reboot_nb);
+-}
+-
+-static int xway_gphy_reboot_notify(struct notifier_block *reboot_nb,
+-				   unsigned long code, void *unused)
+-{
+-	struct xway_gphy_priv *priv = to_xway_gphy_priv(reboot_nb);
+-
+-	if (priv) {
+-		reset_control_assert(priv->gphy_reset);
+-		reset_control_assert(priv->gphy_reset2);
+-	}
+-
+-	return NOTIFY_DONE;
+-}
+-
+ static int xway_gphy_load(struct device *dev, struct xway_gphy_priv *priv,
+ 			  dma_addr_t *dev_addr)
+ {
+@@ -216,14 +197,6 @@ static int xway_gphy_probe(struct platfo
+ 	reset_control_deassert(priv->gphy_reset);
+ 	reset_control_deassert(priv->gphy_reset2);
+ 
+-	/* assert the gphy reset because it can hang after a reboot: */
+-	priv->gphy_reboot_nb.notifier_call = xway_gphy_reboot_notify;
+-	priv->gphy_reboot_nb.priority = -1;
+-
+-	ret = register_reboot_notifier(&priv->gphy_reboot_nb);
+-	if (ret)
+-		dev_warn(dev, "Failed to register reboot notifier\n");
+-
+ 	platform_set_drvdata(pdev, priv);
+ 
+ 	return ret;
+@@ -235,17 +208,10 @@ static int xway_gphy_remove(struct platf
+ 	struct xway_gphy_priv *priv = platform_get_drvdata(pdev);
+ 	int ret;
+ 
+-	reset_control_assert(priv->gphy_reset);
+-	reset_control_assert(priv->gphy_reset2);
+-
+ 	iowrite32be(0, priv->membase);
+ 
+ 	clk_disable_unprepare(priv->gphy_clk_gate);
+ 
+-	ret = unregister_reboot_notifier(&priv->gphy_reboot_nb);
+-	if (ret)
+-		dev_warn(dev, "Failed to unregister reboot notifier\n");
+-
+ 	return 0;
+ }
+ 
