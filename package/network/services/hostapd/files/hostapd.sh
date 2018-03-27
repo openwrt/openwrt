@@ -706,7 +706,11 @@ wpa_supplicant_add_network() {
 			if [ ${#key} -eq 64 ]; then
 				passphrase="psk=${key}"
 			else
-				passphrase="psk=\"${key}\""
+				if [ "$_w_mode" = "mesh" ]; then
+					passphrase="sae_password=\"${key}\""
+				else
+					passphrase="psk=\"${key}\""
+				fi
 			fi
 			append network_data "$passphrase" "$N$T"
 		;;
