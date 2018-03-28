@@ -35,7 +35,7 @@ ifeq ($(strip $(PKG_IREMAP)),1)
   TARGET_CFLAGS += $(IREMAP_CFLAGS)
 endif
 
-include $(INCLUDE_DIR)/hardening.mk
+include $(INCLUDE_DIR)/package-flags.mk
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/unpack.mk
 include $(INCLUDE_DIR)/depends.mk
