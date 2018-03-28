@@ -31,6 +31,18 @@ define Device/UbiFit
 	IMAGE/nand-sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
+define Device/DniImage
+	KERNEL_SUFFIX := -fit-uImage.itb
+	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+	KERNEL_NAME := Image
+	NETGEAR_BOARD_ID :=
+	NETGEAR_HW_ID :=
+	IMAGES := factory.img sysupgrade.bin
+	IMAGE/factory.img := append-kernel | pad-offset 64k 64 | append-uImage-fakeroot-hdr | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | netgear-dni
+	IMAGE/sysupgrade.bin := append-kernel | pad-offset 64k 64 | append-uImage-fakeroot-hdr | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | append-metadata
+endef
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
+
 
 define Device/8dev_jalapeno
 	$(call Device/FitImage)
@@ -112,6 +124,29 @@ define Device/meraki_mr33
 	DEVICE_PACKAGES := -swconfig ipq-wifi-meraki_mr33 ath10k-firmware-qca9887
 endef
 TARGET_DEVICES += meraki_mr33
+
+define Device/netgear_ex61x0v2
+	$(call Device/DniImage)
+	KERNEL_SIZE := 3080192
+	DEVICE_DTS_CONFIG := config@4
+	DEVICE_PACKAGES := ath10k-firmware-qca4019 ipq-wifi-netgear_ex61x0v2
+	NETGEAR_BOARD_ID := EX6150v2series
+	NETGEAR_HW_ID := 29765285+16+0+128+2x2
+endef
+
+define Device/netgear_ex6100v2
+	$(call Device/netgear_ex61x0v2)
+	DEVICE_DTS := qcom-ipq4018-ex6100v2
+	DEVICE_TITLE := Netgear EX6100v2
+endef
+TARGET_DEVICES += netgear_ex6100v2
+
+define Device/netgear_ex6150v2
+	$(call Device/netgear_ex61x0v2)
+	DEVICE_DTS := qcom-ipq4018-ex6150v2
+	DEVICE_TITLE := Netgear EX6150v2
+endef
+TARGET_DEVICES += netgear_ex6150v2
 
 define Device/openmesh_a42
 	$(call Device/FitImageLzma)
