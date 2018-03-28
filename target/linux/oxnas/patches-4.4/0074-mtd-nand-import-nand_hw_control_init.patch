@@ -87,7 +87,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  	}
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -3208,8 +3208,7 @@ static void nand_set_defaults(struct nan
+@@ -3213,8 +3213,7 @@ static void nand_set_defaults(struct nan
  
  	if (!chip->controller) {
  		chip->controller = &chip->hwcontrol;

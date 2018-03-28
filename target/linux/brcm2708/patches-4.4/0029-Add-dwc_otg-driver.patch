@@ -670,7 +670,7 @@ dwc_otg: Remove duplicate gadget probe/unregister function
  		msleep(100);	/* Cool down */
 --- a/drivers/usb/core/message.c
 +++ b/drivers/usb/core/message.c
-@@ -1909,6 +1909,85 @@ free_interfaces:
+@@ -1913,6 +1913,85 @@ free_interfaces:
  	if (cp->string == NULL &&
  			!(dev->quirks & USB_QUIRK_CONFIG_INTF_STRINGS))
  		cp->string = usb_cache_string(dev, cp->desc.iConfiguration);

@@ -50,16 +50,16 @@
  static bool
  ip_checkentry(const struct ipt_ip *ip)
  {
-@@ -655,6 +681,8 @@ find_check_entry(struct ipt_entry *e, st
+@@ -659,6 +685,8 @@ find_check_entry(struct ipt_entry *e, st
+ 	struct xt_mtchk_param mtpar;
  	struct xt_entry_match *ematch;
- 	unsigned long pcnt;
  
 +	ip_checkdefault(&e->ip);
 +
- 	pcnt = xt_percpu_counter_alloc();
- 	if (IS_ERR_VALUE(pcnt))
+ 	if (!xt_percpu_counter_alloc(alloc_state, &e->counters))
  		return -ENOMEM;
-@@ -953,6 +981,7 @@ copy_entries_to_user(unsigned int total_
+ 
+@@ -957,6 +985,7 @@ copy_entries_to_user(unsigned int total_
  	const struct xt_table_info *private = table->private;
  	int ret = 0;
  	const void *loc_cpu_entry;
@@ -67,7 +67,7 @@
  
  	counters = alloc_counters(table);
  	if (IS_ERR(counters))
-@@ -979,6 +1008,14 @@ copy_entries_to_user(unsigned int total_
+@@ -983,6 +1012,14 @@ copy_entries_to_user(unsigned int total_
  			ret = -EFAULT;
  			goto free_counters;
  		}

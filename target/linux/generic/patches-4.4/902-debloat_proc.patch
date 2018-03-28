@@ -111,7 +111,7 @@
  	if (!root_irq_dir)
 --- a/kernel/time/timer_list.c
 +++ b/kernel/time/timer_list.c
-@@ -393,6 +393,8 @@ static int __init init_timer_list_procfs
+@@ -399,6 +399,8 @@ static int __init init_timer_list_procfs
  {
  	struct proc_dir_entry *pe;
  
@@ -239,7 +239,7 @@
  
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -420,6 +420,9 @@ static struct pernet_operations ip_rt_pr
+@@ -423,6 +423,9 @@ static struct pernet_operations ip_rt_pr
  
  static int __init ip_rt_proc_init(void)
  {

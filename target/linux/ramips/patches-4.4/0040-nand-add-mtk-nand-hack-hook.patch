@@ -100,7 +100,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -1727,6 +1727,9 @@ static int nand_do_read_ops(struct mtd_i
+@@ -1732,6 +1732,9 @@ static int nand_do_read_ops(struct mtd_i
  						 __func__, buf);
  
  read_retry:
@@ -110,7 +110,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
  
  			/*
-@@ -1745,6 +1748,7 @@ read_retry:
+@@ -1750,6 +1753,7 @@ read_retry:
  			else
  				ret = chip->ecc.read_page(mtd, chip, bufpoi,
  							  oob_required, page);
@@ -118,7 +118,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			if (ret < 0) {
  				if (use_bufpoi)
  					/* Invalidate page cache */
-@@ -2938,8 +2942,11 @@ int nand_erase_nand(struct mtd_info *mtd
+@@ -2943,8 +2947,11 @@ int nand_erase_nand(struct mtd_info *mtd
  		if (page <= chip->pagebuf && chip->pagebuf <
  		    (page + pages_per_block))
  			chip->pagebuf = -1;
