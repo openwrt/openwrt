@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/version.mk
 include $(INCLUDE_DIR)/feeds.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=183
+PKG_RELEASE:=186
 PKG_FLAGS:=nonshared
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
@@ -137,7 +137,7 @@ define Package/base-files/install
 		fi; \
 	)
 
-	$(VERSION_SED) \
+	$(VERSION_SED_SCRIPT) \
 		$(1)/etc/banner \
 		$(1)/etc/openwrt_version \
 		$(1)/usr/lib/os-release
@@ -194,7 +194,7 @@ define Package/base-files/install
 	$(if $(CONFIG_CLEAN_IPKG),, \
 		mkdir -p $(1)/etc/opkg; \
 		$(call FeedSourcesAppend,$(1)/etc/opkg/distfeeds.conf); \
-		$(VERSION_SED) $(1)/etc/opkg/distfeeds.conf)
+		$(VERSION_SED_SCRIPT) $(1)/etc/opkg/distfeeds.conf)
 endef
 
 ifneq ($(DUMP),1)

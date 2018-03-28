@@ -23,8 +23,11 @@ get_status_led() {
 	antminer-s1|\
 	antminer-s3|\
 	antminer-r1|\
+	e1700ac-v2|\
+	e600gac-v2|\
 	eap120|\
 	minibox-v1|\
+	packet-squirrel|\
 	som9331|\
 	sr3200|\
 	tl-wr802n-v2|\
@@ -40,6 +43,7 @@ get_status_led() {
 	db120|\
 	dr342|\
 	dr344|\
+	rut900|\
 	tew-632brp|\
 	tl-wr942n-v1|\
 	wpj344|\
@@ -72,6 +76,23 @@ get_status_led() {
 	tl-wr902ac-v1)
 		status_led="$board:green:power"
 		;;
+	archer-c5|\
+	archer-c7|\
+	tl-mr10u|\
+	tl-mr12u|\
+	tl-mr13u|\
+	tl-wdr4300|\
+	tl-wdr4900-v2|\
+	tl-wr703n|\
+	tl-wr710n|\
+	tl-wr720n-v3|\
+	tl-wr802n-v1|\
+	tl-wr810n|\
+	tl-wr810n-v2|\
+	tl-wr940n-v4|\
+	tl-wr941nd-v6)
+		status_led="tp-link:blue:system"
+		;;
 	ap90q|\
 	cpe830|\
 	cpe870|\
@@ -79,6 +100,10 @@ get_status_led() {
 	gl-inet|\
 	gl-mifi)
 		status_led="$board:green:lan"
+		;;
+	ap91-5g|\
+	n5q)
+		status_led="$board:green:signal4"
 		;;
 	ap96)
 		status_led="$board:green:led2"
@@ -103,9 +128,6 @@ get_status_led() {
 	rocket-m-xw)
 		status_led="ubnt:green:link4"
 		;;
-	rocket-m-ti)
-		status_led="ubnt:green:link6"
-		;;
 	bxu2000n-2-a1)
 		status_led="bhu:green:status"
 		;;
@@ -127,8 +149,10 @@ get_status_led() {
 	cf-e320n-v2)
 		status_led="$board:blue:wlan"
 		;;
+	cf-e375ac|\
 	cf-e380ac-v1|\
-	cf-e380ac-v2)
+	cf-e380ac-v2|\
+	cf-e385ac)
 		status_led="$board:blue:wlan2g"
 		;;
 	cpe510)
@@ -173,11 +197,17 @@ get_status_led() {
 		status_led="$board:green:sig4"
 		;;
 	dragino2|\
-	oolite)
+	oolite-v1)
 		status_led="$board:red:system"
 		;;
-	dw33d)
+	dw33d|\
+	r36a)
 		status_led="$board:blue:status"
+		;;
+	e600g-v2|\
+	oolite-v5.2-dev|\
+	wifi-pineapple-nano)
+		status_led="$board:blue:system"
 		;;
 	eap300v2)
 		status_led="engenius:blue:power"
@@ -193,6 +223,9 @@ get_status_led() {
 	el-mini)
 		status_led="easylink:green:system"
 		;;
+	ew-balin)
+		status_led="balin:green:status"
+		;;
 	ew-dorin|\
 	ew-dorin-router)
 		status_led="dorin:green:status"
@@ -204,8 +237,10 @@ get_status_led() {
 	esr1750)
 		status_led="$board:amber:power"
 		;;
+	gl-ar750|\
 	hiveap-121|\
-	nbg6716)
+	nbg6716|\
+	wam250)
 		status_led="$board:white:power"
 		;;
 	hiwifi-hc6361)
@@ -221,6 +256,12 @@ get_status_led() {
 		;;
 	jwap230)
 		status_led="$board:green:led1"
+		;;
+	lan-turtle)
+		status_led="$board:orange:system"
+		;;
+	lbe-m5)
+		status_led="ubnt:green:sys"
 		;;
 	ls-sr71)
 		status_led="ubnt:green:d22"
@@ -312,6 +353,8 @@ get_status_led() {
 	rb-750-r2|\
 	rb-750p-pbr2|\
 	rb-750up-r2|\
+	rb-911-2hn|\
+	rb-911-5hn|\
 	rb-911g-2hpnd|\
 	rb-911g-5hpacd|\
 	rb-911g-5hpnd|\
@@ -333,9 +376,13 @@ get_status_led() {
 	rb-sxt5n)
 		status_led="rb:green:power"
 		;;
+	re355|\
 	re450|\
 	sc300m)
 		status_led="$board:blue:power"
+		;;
+	rocket-m-ti)
+		status_led="ubnt:green:link6"
 		;;
 	routerstation|\
 	routerstation-pro)
@@ -349,6 +396,9 @@ get_status_led() {
 		;;
 	qihoo-c301)
 		status_led="qihoo:green:status"
+		;;
+	t830)
+		status_led="$board:green:usb"
 		;;
 	tellstick-znet-lite)
 		status_led="tellstick:white:system"
@@ -413,23 +463,6 @@ get_status_led() {
 	tl-wr941nd|\
 	tl-wr941nd-v5)
 		status_led="tp-link:green:system"
-		;;
-	archer-c5|\
-	archer-c7|\
-	tl-mr10u|\
-	tl-mr12u|\
-	tl-mr13u|\
-	tl-wdr4300|\
-	tl-wdr4900-v2|\
-	tl-wr703n|\
-	tl-wr710n|\
-	tl-wr720n-v3|\
-	tl-wr802n-v1|\
-	tl-wr810n|\
-	tl-wr810n-v2|\
-	tl-wr940n-v4|\
-	tl-wr941nd-v6)
-		status_led="tp-link:blue:system"
 		;;
 	tl-wr841n-v9)
 		status_led="tp-link:green:qss"
@@ -521,7 +554,8 @@ set_state() {
 	done)
 		status_led_on
 		case $(board_name) in
-		gl-ar300m)
+		gl-ar300m|\
+		gl-ar750)
 			fw_printenv lc >/dev/null 2>&1 && fw_setenv "bootcount" 0
 			;;
 		qihoo-c301)

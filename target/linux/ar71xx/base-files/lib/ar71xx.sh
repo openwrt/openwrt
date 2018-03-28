@@ -215,6 +215,9 @@ tplink_board_detect() {
 
 		[ "$hwid" = '08020002' -a "$mid" = '00000002' ] && hwver=' v2'
 		;;
+	"081000"*)
+		model="TP-Link TL-WR810N"
+		;;
 	"083000"*)
 		model="TP-Link TL-WA830RE"
 
@@ -286,12 +289,6 @@ tplink_board_detect() {
 		;;
 	"360000"*)
 		model="TP-Link TL-WDR3600"
-		;;
-	"3C0001"*)
-		model="OOLITE"
-		;;
-	"3C0002"*)
-		model="MINIBOX_V1"
 		;;
 	"430000"*)
 		model="TP-Link TL-WDR4300"
@@ -446,6 +443,9 @@ ar71xx_board_detect() {
 	*"AP90Q")
 		name="ap90q"
 		;;
+	*"AP91-5G")
+		name="ap91-5g"
+		;;
 	*"Archer C25 v1")
 		name="archer-c25-v1"
 		;;
@@ -510,14 +510,23 @@ ar71xx_board_detect() {
 	*"CF-E320N v2")
 		name="cf-e320n-v2"
 		;;
-	*"CF-E355AC")
-		name="cf-e355ac"
+	*"CF-E355AC v1")
+		name="cf-e355ac-v1"
+		;;
+	*"CF-E355AC v2")
+		name="cf-e355ac-v2"
+		;;
+	*"CF-E375AC")
+		name="cf-e375ac"
 		;;
 	*"CF-E380AC v1")
 		name="cf-e380ac-v1"
 		;;
 	*"CF-E380AC v2")
 		name="cf-e380ac-v2"
+		;;
+	*"CF-E385AC")
+		name="cf-e385ac"
 		;;
 	*"CF-E520N")
 		name="cf-e520n"
@@ -618,8 +627,17 @@ ar71xx_board_detect() {
 	*"DW33D")
 		name="dw33d"
 		;;
+	*"E1700AC v2")
+		name="e1700ac-v2"
+		;;
 	*"E2100L")
 		name="e2100l"
+		;;
+	*"E600G v2")
+		name="e600g-v2"
+		;;
+	*"E600GAC v2")
+		name="e600gac-v2"
 		;;
 	*"EAP120")
 		name="eap120"
@@ -640,6 +658,9 @@ ar71xx_board_detect() {
 	*"EL-MINI")
 		name="el-mini"
 		;;
+	*"EmbWir-Balin")
+		name="ew-balin"
+		;;
 	*"EmbWir-Dorin")
 		name="ew-dorin"
 		;;
@@ -658,17 +679,23 @@ ar71xx_board_detect() {
 	*"ESR900")
 		name="esr900"
 		;;
+	*"eTactica EG-200")
+		name="rme-eg200"
+		;;
 	*"FRITZ!WLAN Repeater 300E")
 		name="fritz300e"
 		;;
-	*"GL AR150")
+	*"GL-AR150")
 		name="gl-ar150"
 		;;
-	*"GL AR300")
+	*"GL-AR300")
 		name="gl-ar300"
 		;;
 	*"GL-AR300M")
 		name="gl-ar300m"
+		;;
+	*"GL-AR750")
+		name="gl-ar750"
 		;;
 	*"GL-CONNECT INET v1")
 		name="gl-inet"
@@ -708,8 +735,14 @@ ar71xx_board_detect() {
 	*"JWAP230")
 		name="jwap230"
 		;;
+	*"LAN Turtle")
+		name="lan-turtle"
+		;;
 	*"Lima"*)
 		name="lima"
+		;;
+	*"Litebeam M5"*)
+		name="lbe-m5"
 		;;
 	*"Loco M XW")
 		name="loco-m-xw"
@@ -764,6 +797,9 @@ ar71xx_board_detect() {
 		;;
 	*"MZK-W300NH")
 		name="mzk-w300nh"
+		;;
+	*"N5Q")
+		name="n5q"
 		;;
 	*"Nanostation M")
 		name="nanostation-m"
@@ -827,7 +863,16 @@ ar71xx_board_detect() {
 		name="onion-omega"
 		;;
 	*"Oolite V1.0")
-		name="oolite"
+		name="oolite-v1"
+		;;
+	*"Packet Squirrel")
+		name="packet-squirrel"
+		;;
+	*"Oolite V5.2")
+		name="oolite-v5.2"
+		;;
+	*"Oolite V5.2-Dev")
+		name="oolite-v5.2-dev"
 		;;
 	*"PB42")
 		name="pb42"
@@ -841,6 +886,9 @@ ar71xx_board_detect() {
 	*"Qihoo 360 C301")
 		name="qihoo-c301"
 		;;
+	*"R36A")
+		name="r36a"
+		;;
 	*"R602N")
 		name="r602n"
 		;;
@@ -849,6 +897,9 @@ ar71xx_board_detect() {
 		;;
 	*"Rambutan"*)
 		name="rambutan"
+		;;
+	*"RE355")
+		name="re355"
 		;;
 	*"RE450")
 		name="re450"
@@ -929,6 +980,12 @@ ar71xx_board_detect() {
 	*"RouterBOARD 751G")
 		name="rb-751g"
 		;;
+	*"RouterBOARD 911-2Hn")
+		name="rb-911-2hn"
+		;;
+	*"RouterBOARD 911-5Hn")
+		name="rb-911-5hn"
+		;;
 	*"RouterBOARD 911G-2HPnD")
 		name="rb-911g-2hpnd"
 		;;
@@ -983,11 +1040,17 @@ ar71xx_board_detect() {
 	*"RouterBOARD wAP 2nD r2")
 		name="rb-wap-2nd"
 		;;
+	*"RouterBOARD wAP G-5HacT2HnD")
+		name="rb-wapg-5hact2hnd"
+		;;
 	*"RouterStation")
 		name="routerstation"
 		;;
 	*"RouterStation Pro")
 		name="routerstation-pro"
+		;;
+	*"RUT900")
+		name="rut900"
 		;;
 	*"RW2458N")
 		name="rw2458n"
@@ -1009,6 +1072,9 @@ ar71xx_board_detect() {
 		;;
 	*"SR3200")
 		name="sr3200"
+		;;
+	*"T830")
+		name="t830"
 		;;
 	*"TellStick ZNet Lite")
 		name="tellstick-znet-lite"
@@ -1244,6 +1310,9 @@ ar71xx_board_detect() {
 	*"UniFiAP Outdoor+")
 		name="unifi-outdoor-plus"
 		;;
+	*"WAM250")
+		name="wam250"
+		;;
 	*"WBS210")
 		name="wbs210"
 		tplink_pharos_board_detect
@@ -1266,6 +1335,9 @@ ar71xx_board_detect() {
 		;;
 	*"WHR-HP-GN")
 		name="whr-hp-gn"
+		;;
+	*"WiFi Pineapple NANO")
+		name="wifi-pineapple-nano"
 		;;
 	*"WLAE-AG300N")
 		name="wlae-ag300n"

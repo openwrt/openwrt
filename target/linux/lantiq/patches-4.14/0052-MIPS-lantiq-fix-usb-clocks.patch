@@ -1,0 +1,25 @@
+From 11e84fdfad0331555ca889c4ac6a9d5f37ae83df Mon Sep 17 00:00:00 2001
+From: Mathias Kresin <dev@kresin.me>
+Date: Sat, 20 Jan 2018 14:38:40 +0100
+Subject: [PATCH] MIPS: lantiq: fix danube usb clock
+
+On danube the USB0 registers are at 1e101000 similar to all other lantiq
+SoCs.
+
+Fixes: dea54fbad332 ("phy: Add an USB PHY driver for the Lantiq SoCs using the RCU module")
+Signed-off-by: Mathias Kresin <dev@kresin.me>
+---
+ arch/mips/lantiq/xway/sysctrl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/mips/lantiq/xway/sysctrl.c
++++ b/arch/mips/lantiq/xway/sysctrl.c
+@@ -581,7 +581,7 @@ void __init ltq_soc_init(void)
+ 	} else {
+ 		clkdev_add_static(ltq_danube_cpu_hz(), ltq_danube_fpi_hz(),
+ 				ltq_danube_fpi_hz(), ltq_danube_pp32_hz());
+-		clkdev_add_pmu("1f203018.usb2-phy", "ctrl", 1, 0, PMU_USB0);
++		clkdev_add_pmu("1e101000.usb", "otg", 1, 0, PMU_USB0);
+ 		clkdev_add_pmu("1f203018.usb2-phy", "phy", 1, 0, PMU_USB0_P);
+ 		clkdev_add_pmu("1e103000.sdio", NULL, 1, 0, PMU_SDIO);
+ 		clkdev_add_pmu("1e103100.deu", NULL, 1, 0, PMU_DEU);

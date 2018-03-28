@@ -24,7 +24,7 @@ PKG_CONFIG_DEPENDS:=\
 	CONFIG_LTQ_DSL_ENABLE_SOAP \
 	CONFIG_LTQ_DSL_ENABLE_DSL_EVENT_POLLING
 
-PKG_BUILD_DEPENDS:=TARGET_lantiq_xway:kmod-ltq-adsl-danube TARGET_lantiq_xway_legacy:kmod-ltq-adsl-danube TARGET_lantiq_ase:kmod-ltq-adsl-ase
+PKG_BUILD_DEPENDS:=ltq-adsl
 
 PKG_FLAGS:=nonshared
 

@@ -20,9 +20,9 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  	{NAND_MFR_INTEL, "Intel"},
  	{NAND_MFR_ATO, "ATO"},
 +	{NAND_MFR_GIGADEVICE, "Gigadevice"},
+ 	{NAND_MFR_WINBOND, "Winbond"},
  	{0x0, "Unknown"}
  };
- 
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
 @@ -928,6 +928,7 @@ static inline void nand_set_controller_d
@@ -30,6 +30,6 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  #define NAND_MFR_INTEL		0x89
  #define NAND_MFR_ATO		0x9b
 +#define NAND_MFR_GIGADEVICE	0xc8
+ #define NAND_MFR_WINBOND	0xef
  
  /* The maximum expected count of bytes in the NAND ID sequence */
- #define NAND_MAX_ID_LEN 8
