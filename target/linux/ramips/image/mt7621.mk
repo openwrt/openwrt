@@ -328,6 +328,15 @@ define Device/wndr3700v5
 endef
 TARGET_DEVICES += wndr3700v5
 
+define Device/youhua_wr1200js
+  DTS := WR1200JS
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := YouHua WR1200JS
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += youhua_wr1200js
+
 define Device/wsr-1166
   DTS := WSR-1166
   IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
