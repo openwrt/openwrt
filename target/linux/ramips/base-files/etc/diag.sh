@@ -132,7 +132,8 @@ get_status_led() {
 		status_led="$boardname:yellow:status"
 		;;
 	cy-swr1100|\
-	w502u)
+	w502u|\
+	youhua,wr1200js)
 		status_led="$boardname:blue:wps"
 		;;
 	d240|\
