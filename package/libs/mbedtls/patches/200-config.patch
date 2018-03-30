@@ -91,7 +91,7 @@
  
  /**
   * \def MBEDTLS_ENTROPY_NV_SEED
-@@ -1056,14 +1056,14 @@
+@@ -1057,14 +1057,14 @@
   * Uncomment this macro to disable the use of CRT in RSA.
   *
   */
@@ -108,7 +108,7 @@
  
  /**
   * \def MBEDTLS_SHA256_SMALLER
-@@ -1079,7 +1079,7 @@
+@@ -1080,7 +1080,7 @@
   *
   * Uncomment to enable the smaller implementation of SHA256.
   */
@@ -117,7 +117,7 @@
  
  /**
   * \def MBEDTLS_SSL_ALL_ALERT_MESSAGES
-@@ -1206,7 +1206,7 @@
+@@ -1207,7 +1207,7 @@
   *          configuration of this extension).
   *
   */
@@ -126,7 +126,7 @@
  
  /**
   * \def MBEDTLS_SSL_SRV_SUPPORT_SSLV2_CLIENT_HELLO
-@@ -1380,8 +1380,8 @@
+@@ -1381,8 +1381,8 @@
   * callbacks are provided by MBEDTLS_SSL_TICKET_C.
   *
   * Comment this macro to disable support for SSL session tickets
@@ -136,7 +136,7 @@
  
  /**
   * \def MBEDTLS_SSL_EXPORT_KEYS
-@@ -1411,7 +1411,7 @@
+@@ -1412,7 +1412,7 @@
   *
   * Comment this macro to disable support for truncated HMAC in SSL
   */
@@ -144,8 +144,8 @@
 +//#define MBEDTLS_SSL_TRUNCATED_HMAC
  
  /**
-  * \def MBEDTLS_THREADING_ALT
-@@ -1445,8 +1445,8 @@
+  * \def MBEDTLS_SSL_TRUNCATED_HMAC_COMPAT
+@@ -1470,8 +1470,8 @@
   * Requires: MBEDTLS_VERSION_C
   *
   * Comment this to disable run-time checking and save ROM space
@@ -155,7 +155,7 @@
  
  /**
   * \def MBEDTLS_X509_ALLOW_EXTENSIONS_NON_V3
-@@ -1773,7 +1773,7 @@
+@@ -1801,7 +1801,7 @@
   *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256
   *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
   */
@@ -164,7 +164,7 @@
  
  /**
   * \def MBEDTLS_CCM_C
-@@ -1787,7 +1787,7 @@
+@@ -1815,7 +1815,7 @@
   * This module enables the AES-CCM ciphersuites, if other requisites are
   * enabled as well.
   */
@@ -173,7 +173,7 @@
  
  /**
   * \def MBEDTLS_CERTS_C
-@@ -1799,7 +1799,7 @@
+@@ -1827,7 +1827,7 @@
   *
   * This module is used for testing (ssl_client/server).
   */
@@ -182,7 +182,7 @@
  
  /**
   * \def MBEDTLS_CIPHER_C
-@@ -1852,7 +1852,7 @@
+@@ -1880,7 +1880,7 @@
   *
   * This module provides debugging functions.
   */
@@ -191,7 +191,7 @@
  
  /**
   * \def MBEDTLS_DES_C
-@@ -1881,7 +1881,7 @@
+@@ -1909,7 +1909,7 @@
   * \warning   DES is considered a weak cipher and its use constitutes a
   *            security risk. We recommend considering stronger ciphers instead.
   */
@@ -200,7 +200,7 @@
  
  /**
   * \def MBEDTLS_DHM_C
-@@ -2042,8 +2042,8 @@
+@@ -2070,8 +2070,8 @@
   * Requires: MBEDTLS_MD_C
   *
   * Uncomment to enable the HMAC_DRBG random number geerator.
@@ -210,7 +210,7 @@
  
  /**
   * \def MBEDTLS_MD_C
-@@ -2337,7 +2337,7 @@
+@@ -2365,7 +2365,7 @@
   * Caller:  library/md.c
   *
   */
@@ -219,7 +219,7 @@
  
  /**
   * \def MBEDTLS_RSA_C
-@@ -2421,8 +2421,8 @@
+@@ -2449,8 +2449,8 @@
   * Caller:
   *
   * Requires: MBEDTLS_SSL_CACHE_C
@@ -229,7 +229,7 @@
  
  /**
   * \def MBEDTLS_SSL_COOKIE_C
-@@ -2443,8 +2443,8 @@
+@@ -2471,8 +2471,8 @@
   * Caller:
   *
   * Requires: MBEDTLS_CIPHER_C
@@ -239,7 +239,7 @@
  
  /**
   * \def MBEDTLS_SSL_CLI_C
-@@ -2543,8 +2543,8 @@
+@@ -2571,8 +2571,8 @@
   * Module:  library/version.c
   *
   * This module provides run-time version information.
@@ -249,7 +249,7 @@
  
  /**
   * \def MBEDTLS_X509_USE_C
-@@ -2654,7 +2654,7 @@
+@@ -2682,7 +2682,7 @@
   * Module:  library/xtea.c
   * Caller:
   */
