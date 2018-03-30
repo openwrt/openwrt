@@ -166,7 +166,7 @@ define Device/dlink_dwr-921-c1
   DTS := DWR-921-C1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := D-Link DWR-921 C1
-  DEVICE_PACKAGES := jboot-tools jboot-tools kmod-usb2 kmod-usb-net-qmi-wwan |\
+  DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-usb-net-qmi-wwan |\
 			kmod-usb-serial-option uqmi
   DLINK_ROM_ID := DLK6E2414001
   DLINK_FAMILY_MEMBER := 0x6E24
