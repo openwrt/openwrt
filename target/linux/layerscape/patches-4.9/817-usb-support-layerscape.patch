@@ -218,7 +218,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		reg &= ~DWC3_GFLADJ_30MHZ_MASK;
  		reg |= DWC3_GFLADJ_30MHZ_SDBND_SEL | dwc->fladj;
  		dwc3_writel(dwc->regs, DWC3_GFLADJ, reg);
-@@ -579,6 +599,99 @@ static int dwc3_phy_setup(struct dwc3 *d
+@@ -585,6 +605,99 @@ static int dwc3_phy_setup(struct dwc3 *d
  	return 0;
  }
  
@@ -318,7 +318,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static void dwc3_core_exit(struct dwc3 *dwc)
  {
  	dwc3_event_buffers_cleanup(dwc);
-@@ -721,6 +834,8 @@ static int dwc3_core_init(struct dwc3 *d
+@@ -727,6 +840,8 @@ static int dwc3_core_init(struct dwc3 *d
  	if (ret)
  		goto err1;
  
@@ -327,7 +327,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* Adjust Frame Length */
  	dwc3_frame_length_adjustment(dwc);
  
-@@ -919,11 +1034,117 @@ static void dwc3_core_exit_mode(struct d
+@@ -925,11 +1040,117 @@ static void dwc3_core_exit_mode(struct d
  	}
  }
  
@@ -445,7 +445,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	struct resource		*res;
  	struct dwc3		*dwc;
  	u8			lpm_nyet_threshold;
-@@ -955,6 +1176,11 @@ static int dwc3_probe(struct platform_de
+@@ -961,6 +1182,11 @@ static int dwc3_probe(struct platform_de
  	dwc->xhci_resources[0].flags = res->flags;
  	dwc->xhci_resources[0].name = res->name;
  
@@ -457,7 +457,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	res->start += DWC3_GLOBALS_REGS_START;
  
  	/*
-@@ -997,6 +1223,12 @@ static int dwc3_probe(struct platform_de
+@@ -1003,6 +1229,12 @@ static int dwc3_probe(struct platform_de
  	dwc->usb3_lpm_capable = device_property_read_bool(dev,
  				"snps,usb3_lpm_capable");
  
@@ -470,7 +470,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	dwc->disable_scramble_quirk = device_property_read_bool(dev,
  				"snps,disable_scramble_quirk");
  	dwc->u2exit_lfps_quirk = device_property_read_bool(dev,
-@@ -1041,6 +1273,8 @@ static int dwc3_probe(struct platform_de
+@@ -1047,6 +1279,8 @@ static int dwc3_probe(struct platform_de
  	dwc->hird_threshold = hird_threshold
  		| (dwc->is_utmi_l1_suspend << 4);
  
@@ -479,7 +479,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	platform_set_drvdata(pdev, dwc);
  	dwc3_cache_hwparams(dwc);
  
-@@ -1064,6 +1298,11 @@ static int dwc3_probe(struct platform_de
+@@ -1070,6 +1304,11 @@ static int dwc3_probe(struct platform_de
  	if (ret < 0)
  		goto err1;
  
@@ -534,7 +534,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  /* Global Debug Queue/FIFO Space Available Register */
  #define DWC3_GDBGFIFOSPACE_NUM(n)	((n) & 0x1f)
  #define DWC3_GDBGFIFOSPACE_TYPE(n)	(((n) << 5) & 0x1e0)
-@@ -180,7 +207,6 @@
+@@ -182,7 +209,6 @@
  #define DWC3_GCTL_CLK_PIPE	(1)
  #define DWC3_GCTL_CLK_PIPEHALF	(2)
  #define DWC3_GCTL_CLK_MASK	(3)
@@ -542,7 +542,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  #define DWC3_GCTL_PRTCAP(n)	(((n) & (3 << 12)) >> 12)
  #define DWC3_GCTL_PRTCAPDIR(n)	((n) << 12)
  #define DWC3_GCTL_PRTCAP_HOST	1
-@@ -289,6 +315,10 @@
+@@ -292,6 +318,10 @@
  /* Global Frame Length Adjustment Register */
  #define DWC3_GFLADJ_30MHZ_SDBND_SEL		(1 << 7)
  #define DWC3_GFLADJ_30MHZ_MASK			0x3f
@@ -553,7 +553,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  /* Global User Control Register 2 */
  #define DWC3_GUCTL2_RST_ACTBITLATER		(1 << 14)
-@@ -753,6 +783,7 @@ struct dwc3_scratchpad_array {
+@@ -756,6 +786,7 @@ struct dwc3_scratchpad_array {
   * @regs: base address for our registers
   * @regs_size: address space size
   * @fladj: frame length adjustment
@@ -561,7 +561,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * @irq_gadget: peripheral controller's IRQ number
   * @nr_scratch: number of scratch buffers
   * @u1u2: only used on revisions <1.83a for workaround
-@@ -829,6 +860,7 @@ struct dwc3_scratchpad_array {
+@@ -832,6 +863,7 @@ struct dwc3_scratchpad_array {
   * 	1	- -3.5dB de-emphasis
   * 	2	- No de-emphasis
   * 	3	- Reserved
@@ -569,7 +569,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   */
  struct dwc3 {
  	struct usb_ctrlrequest	*ctrl_req;
-@@ -847,6 +879,7 @@ struct dwc3 {
+@@ -850,6 +882,7 @@ struct dwc3 {
  	spinlock_t		lock;
  
  	struct device		*dev;
@@ -577,7 +577,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	struct platform_device	*xhci;
  	struct resource		xhci_resources[DWC3_XHCI_RESOURCES_NUM];
-@@ -872,6 +905,12 @@ struct dwc3 {
+@@ -875,6 +908,12 @@ struct dwc3 {
  	enum usb_phy_interface	hsphy_mode;
  
  	u32			fladj;
@@ -590,7 +590,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	u32			irq_gadget;
  	u32			nr_scratch;
  	u32			u1u2;
-@@ -948,9 +987,12 @@ struct dwc3 {
+@@ -951,9 +990,12 @@ struct dwc3 {
  	unsigned		ep0_bounced:1;
  	unsigned		ep0_expect_in:1;
  	unsigned		has_hibernation:1;
@@ -603,7 +603,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	unsigned		pending_events:1;
  	unsigned		pullups_connected:1;
  	unsigned		setup_packet_pending:1;
-@@ -971,9 +1013,16 @@ struct dwc3 {
+@@ -974,9 +1016,16 @@ struct dwc3 {
  	unsigned		dis_rxdet_inp3_quirk:1;
  	unsigned		dis_u2_freeclk_exists_quirk:1;
  	unsigned		dis_del_phy_power_chg_quirk:1;
