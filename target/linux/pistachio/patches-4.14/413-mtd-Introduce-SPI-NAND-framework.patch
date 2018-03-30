@@ -57,7 +57,7 @@ Signed-off-by: Ian Pozella <Ian.Pozella@imgtec.com>
  source "drivers/mtd/ubi/Kconfig"
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -36,5 +36,6 @@ inftl-objs		:= inftlcore.o inftlmount.o
+@@ -37,5 +37,6 @@ inftl-objs		:= inftlcore.o inftlmount.o
  
  obj-y		+= chips/ lpddr/ maps/ devices/ nand/ onenand/ tests/
  
@@ -100,7 +100,7 @@ Signed-off-by: Ian Pozella <Ian.Pozella@imgtec.com>
 +#include <linux/errno.h>
 +#include <linux/kernel.h>
 +#include <linux/module.h>
-+#include <linux/mtd/nand.h>
++#include <linux/mtd/rawnand.h>
 +#include <linux/mtd/mtd.h>
 +#include <linux/mtd/partitions.h>
 +#include <linux/mtd/spi-nand.h>
@@ -662,7 +662,7 @@ Signed-off-by: Ian Pozella <Ian.Pozella@imgtec.com>
 +#define __LINUX_MTD_SPI_NAND_H
 +
 +#include <linux/mtd/mtd.h>
-+#include <linux/mtd/nand.h>
++#include <linux/mtd/rawnand.h>
 +
 +struct spi_nand {
 +	struct nand_chip	nand_chip;
