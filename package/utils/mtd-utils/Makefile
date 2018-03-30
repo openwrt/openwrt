@@ -61,6 +61,9 @@ CONFIGURE_ARGS += \
 	--without-xattr \
 	--without-lzo
 
+TARGET_CFLAGS += -ffunction-sections -fdata-sections
+TARGET_LDFLAGS += -Wl,--gc-sections
+
 define Package/ubi-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) \
