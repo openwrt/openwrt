@@ -1,0 +1,94 @@
+--- a/arch/mips/boot/dts/img/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/img/pistachio_marduk.dts
+@@ -59,6 +59,38 @@
+ 		};
+ 	};
+ 
++	gpio_leds {
++		compatible = "gpio-leds";
++		user1 {
++			label = "marduk:red:user1";
++			gpios = <&sc16is752 0 GPIO_ACTIVE_LOW>;
++		};
++		user2 {
++			label = "marduk:red:user2";
++			gpios = <&sc16is752 1 GPIO_ACTIVE_LOW>;
++		};
++		user3 {
++			label = "marduk:red:user3";
++			gpios = <&sc16is752 2 GPIO_ACTIVE_LOW>;
++		};
++		user4 {
++			label = "marduk:red:user4";
++			gpios = <&sc16is752 3 GPIO_ACTIVE_LOW>;
++		};
++		user5 {
++			label = "marduk:red:user5";
++			gpios = <&sc16is752 4 GPIO_ACTIVE_LOW>;
++		};
++		user6 {
++			label = "marduk:red:user6";
++			gpios = <&sc16is752 5 GPIO_ACTIVE_LOW>;
++		};
++		user7 {
++			label = "marduk:red:user7";
++			gpios = <&sc16is752 6 GPIO_ACTIVE_LOW>;
++		};
++	};
++
+ 	keys {
+ 		compatible = "gpio-keys";
+ 		button@1 {
+@@ -72,12 +104,52 @@
+ 			gpios = <&gpio2 14 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	/* EXT clock from ca8210 is fed to sc16is752 */
++	ca8210_ext_clk: ca8210-ext-clk {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <16000000>;
++		clock-output-names = "ca8210_ext_clock";
++	};
+ };
+ 
+ &internal_dac {
+ 	VDD-supply = <&internal_dac_supply>;
+ };
+ 
++&spfi0 {
++	status = "okay";
++	pinctrl-0 = <&spim0_pins>, <&spim0_cs0_alt_pin>, <&spim0_cs2_alt_pin>, <&spim0_cs3_alt_pin>, <&spim0_cs4_alt_pin>;
++	pinctrl-names = "default";
++
++	cs-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>, <&gpio0 2 GPIO_ACTIVE_HIGH>,
++			<&gpio1 12 GPIO_ACTIVE_HIGH>, <&gpio1 13 GPIO_ACTIVE_HIGH>;
++
++	ca8210: ca8210@0 {
++		status = "okay";
++		compatible = "cascoda,ca8210";
++		reg = <0>;
++		spi-max-frequency = <4000000>;
++		spi-cpol;
++		reset-gpio = <&gpio0 12 GPIO_ACTIVE_HIGH>;
++		irq-gpio = <&gpio2 12 GPIO_ACTIVE_HIGH>;
++		extclock-enable;
++		extclock-freq = <16000000>;
++		extclock-gpio = <2>;
++	};
++
++	sc16is752: sc16is752@1 {
++		compatible = "nxp,sc16is752";
++		reg = <1>;
++		spi-max-frequency = <4000000>;
++		interrupt-parent = <&gpio0>;
++		interrupts = <11 IRQ_TYPE_EDGE_FALLING>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		clocks = <&ca8210_ext_clk>;
++	};
++
+ &spfi1 {
+ 	status = "okay";
+ 

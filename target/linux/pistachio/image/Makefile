@@ -29,7 +29,7 @@ define Device/marduk
   BLOCKSIZE := 256KiB
   PAGESIZE := 4KiB
   DEVICE_TITLE := Creator Ci40
-  DEVICE_PACKAGES := kmod-tpm-i2c-infineon
+  DEVICE_PACKAGES := kmod-ieee802154_6lowpan kmod-leds-gpio kmod-tpm-i2c-infineon kmod-ca8210 wpan-tools
 endef
 
 TARGET_DEVICES += marduk
