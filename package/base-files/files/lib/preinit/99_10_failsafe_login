@@ -1,10 +1,55 @@
 #!/bin/sh
 # Copyright (C) 2006-2015 OpenWrt.org
 # Copyright (C) 2010 Vertical Communications
+# Copyright (C) 2018 Jeff Kletsky
 
 failsafe_netlogin () {
-	dropbearkey -t rsa -s 1024 -f /tmp/dropbear_failsafe_host_key
-	dropbear -r /tmp/dropbear_failsafe_host_key <> /dev/null 2>&1
+
+	sshd_tmpdir=$(mktemp -d)
+
+	# Note that /etc/shadow in ROM needs a "valid"
+	# "date of last password change" (3rd field)
+	# or OpenSSH may not permit shell or execution
+
+	local sshd; local dropbear
+	local key; local type
+
+	sshd=$(which sshd)
+	dropbear=$(which dropbear)
+
+	if [ -x "${sshd}" ] ; then
+
+	for type in rsa ecdsa ed25519; do
+
+		key=${sshd_tmpdir}/ssh_host_${type}_key
+
+		ssh-keygen -N '' -t ${type} -f ${key}
+
+	done
+
+	mkdir -m 0700 -p /var/empty
+
+	cat > ${sshd_tmpdir}/sshd_config <<EOF
+HostKey ${sshd_tmpdir}/ssh_host_rsa_key
+HostKey ${sshd_tmpdir}/ssh_host_ecdsa_key
+HostKey ${sshd_tmpdir}/ssh_host_ed25519_key
+
+Match user root
+	PermitRootLogin		yes
+	PermitEmptyPasswords	yes
+
+EOF
+
+	${sshd} -f ${sshd_tmpdir}/sshd_config -E ${sshd_tmpdir}/sshd.log
+
+	elif [ -x "${dropbear}" ] ; then
+
+		key=${sshd_tmpdir}/dropbear_failsafe_host_key
+
+		dropbearkey -t rsa -s 1024 -f ${key}
+		${dropbear} -r ${key} <> /dev/null 2>&1
+
+	fi
 }
 
 failsafe_shell() {
