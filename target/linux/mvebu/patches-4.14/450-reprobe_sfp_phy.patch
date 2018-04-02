@@ -22,19 +22,15 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  {
  	struct phy_device *phy;
  	int err;
-@@ -497,12 +497,12 @@ static void sfp_sm_probe_phy(struct sfp
- 
+@@ -498,11 +498,11 @@ static void sfp_sm_probe_phy(struct sfp
  	phy = mdiobus_scan(sfp->i2c_mii, SFP_PHY_ADDR);
- 	if (IS_ERR(phy)) {
-+		if (PTR_ERR(phy) == -ENODEV) {
-+			dev_dbg(sfp->dev, "no PHY detected\n");
-+			return -EAGAIN;
-+		}
- 		dev_err(sfp->dev, "mdiobus scan returned %ld\n", PTR_ERR(phy));
+ 	if (phy == ERR_PTR(-ENODEV)) {
+ 		dev_info(sfp->dev, "no PHY detected\n");
 -		return;
--	}
--	if (!phy) {
--		dev_info(sfp->dev, "no PHY detected\n");
++		return -EAGAIN;
+ 	}
+ 	if (IS_ERR(phy)) {
+ 		dev_err(sfp->dev, "mdiobus scan returned %ld\n", PTR_ERR(phy));
 -		return;
 +		return PTR_ERR(phy);
  	}
