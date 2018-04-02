@@ -9,6 +9,66 @@ INCLUDE_ONLY=1
 ctl_device=""
 dat_device=""
 
+uci_set_wwan_led() {
+	uci set system.wwan_led=led
+	uci set system.wwan_led.name=wwan
+	uci set system.wwan_led.sysfs=$1
+	uci set system.wwan_led.trigger='netdev'
+	uci set system.wwan_led.mode='link tx rx'
+	uci set system.wwan_led.dev=$2
+}
+
+uci_cease_wwan_led() {
+	uci delete system.wwan_led
+}
+
+setup_wwan_led() {
+
+	json_init
+	led_2g=$(find /sys/class/leds/* -name *2g*)
+	[ $led_2g ] && led_2g=$(basename $led_2g)
+
+	led_3g=$(find /sys/class/leds/* -name *3g*)
+	echo "led_3g: $led_3g"
+	[ $led_3g ] && led_3g=$(basename $led_3g)
+	echo "led_3g after basename: $led_3g"
+
+	led_4g=$(find /sys/class/leds/* -name *4g*)
+	[ $led_4g ] && led_4g=$(basename $led_4g)
+
+	led_wwan=$(find /sys/class/leds/* -name *wwan*)
+	[ $led_wwan ] && led_wwan=$(basename $led_wwan)
+
+	[ $led_2g ] && {
+		[ $( echo $connection_type| grep -F -e "gsm" ) ] && {
+			uci_set_wwan_led $led_2g $1
+		}
+	}
+	[ $led_3g ] && {
+		[ $( echo $connection_type| grep -F -e "cdma" -e "td-scdma" -e "umts" -e "wcdma" ) ] && {
+			uci_set_wwan_led $led_3g $1
+		}
+	}
+	[ $led_4g ] && {
+		[ $( echo $connection_type| grep -F -e "lte" ) ] && {
+			uci_set_wwan_led $led_4g $1
+		}
+	}
+	[ $led_wwan ] && {
+		[ $( echo $connection_type| grep -F -e "cdma" -e "gsm" -e "lte" -e "td-scdma" -e "umts" -e "wcdma" ) ] && {
+			uci_set_wwan_led $led_wwan $1
+		}
+	}
+
+	/etc/init.d/led restart
+
+}
+
+cease_wwan_led() {
+	uci_cease_wwan_led
+	/etc/init.d/led restart
+}
+
 proto_mbim_setup() { echo "wwan[$$] mbim proto is missing"; }
 proto_qmi_setup() { echo "wwan[$$] qmi proto is missing"; }
 proto_ncm_setup() { echo "wwan[$$] ncm proto is missing"; }
@@ -79,6 +139,7 @@ proto_wwan_setup() {
 		*) continue;;
 		esac
 		echo "wwan[$$]" "Using proto:$proto device:$ctl_device iface:$net desc:$desc"
+		valid_netdev=$net
 	done
 
 	[ -n "$ctl_device" ] || {
@@ -99,6 +160,8 @@ proto_wwan_setup() {
 	comgt)			proto_3g_setup $@ ;;
 	cdc_ether|*cdc_ncm)	proto_ncm_setup $@ ;;
 	esac
+
+	setup_wwan_led $valid_netdev
 }
 
 proto_wwan_teardown() {
@@ -114,6 +177,8 @@ proto_wwan_teardown() {
 	comgt)			proto_3g_teardown $@ ;;
 	cdc_ether|*cdc_ncm)	proto_ncm_teardown $@ ;;
 	esac
+
+	cease_wwan_led
 }
 
 add_protocol wwan
