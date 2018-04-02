@@ -41,7 +41,7 @@
 
 static struct gpio_led gl_mifi_leds_gpio[] __initdata = {
 	{
-		.name = "gl-mifi:greeen:wan",
+		.name = "gl-mifi:green:wan",
 		.gpio = GL_MIFI_GPIO_LED_WAN,
 		.active_low = 0,
 	},
