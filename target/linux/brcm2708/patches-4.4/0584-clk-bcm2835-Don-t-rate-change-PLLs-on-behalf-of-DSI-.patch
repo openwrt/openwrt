@@ -31,7 +31,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  };
  
  struct bcm2835_clock_data {
-@@ -1286,7 +1287,7 @@ bcm2835_register_pll_divider(struct bcm2
+@@ -1290,7 +1291,7 @@ bcm2835_register_pll_divider(struct bcm2
  	init.num_parents = 1;
  	init.name = divider_name;
  	init.ops = &bcm2835_pll_divider_clk_ops;
@@ -40,7 +40,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
  	divider = devm_kzalloc(cprman->dev, sizeof(*divider), GFP_KERNEL);
  	if (!divider)
-@@ -1525,7 +1526,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1529,7 +1530,8 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLA_CORE,
  		.load_mask = CM_PLLA_LOADCORE,
  		.hold_mask = CM_PLLA_HOLDCORE,
@@ -50,7 +50,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	[BCM2835_PLLA_PER]	= REGISTER_PLL_DIV(
  		.name = "plla_per",
  		.source_pll = "plla",
-@@ -1533,7 +1535,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1537,7 +1539,8 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLA_PER,
  		.load_mask = CM_PLLA_LOADPER,
  		.hold_mask = CM_PLLA_HOLDPER,
@@ -60,7 +60,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	[BCM2835_PLLA_DSI0]	= REGISTER_PLL_DIV(
  		.name = "plla_dsi0",
  		.source_pll = "plla",
-@@ -1549,7 +1552,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1553,7 +1556,8 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLA_CCP2,
  		.load_mask = CM_PLLA_LOADCCP2,
  		.hold_mask = CM_PLLA_HOLDCCP2,
@@ -70,7 +70,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
  	/* PLLB is used for the ARM's clock. */
  	[BCM2835_PLLB]		= REGISTER_PLL(
-@@ -1573,7 +1577,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1577,7 +1581,8 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLB_ARM,
  		.load_mask = CM_PLLB_LOADARM,
  		.hold_mask = CM_PLLB_HOLDARM,
@@ -80,7 +80,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
  	/*
  	 * PLLC is the core PLL, used to drive the core VPU clock.
-@@ -1602,7 +1607,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1606,7 +1611,8 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLC_CORE0,
  		.load_mask = CM_PLLC_LOADCORE0,
  		.hold_mask = CM_PLLC_HOLDCORE0,
@@ -90,7 +90,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	[BCM2835_PLLC_CORE1]	= REGISTER_PLL_DIV(
  		.name = "pllc_core1",
  		.source_pll = "pllc",
-@@ -1610,7 +1616,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1614,7 +1620,8 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLC_CORE1,
  		.load_mask = CM_PLLC_LOADCORE1,
  		.hold_mask = CM_PLLC_HOLDCORE1,
@@ -100,7 +100,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	[BCM2835_PLLC_CORE2]	= REGISTER_PLL_DIV(
  		.name = "pllc_core2",
  		.source_pll = "pllc",
-@@ -1618,7 +1625,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1622,7 +1629,8 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLC_CORE2,
  		.load_mask = CM_PLLC_LOADCORE2,
  		.hold_mask = CM_PLLC_HOLDCORE2,
@@ -110,7 +110,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	[BCM2835_PLLC_PER]	= REGISTER_PLL_DIV(
  		.name = "pllc_per",
  		.source_pll = "pllc",
-@@ -1626,7 +1634,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1630,7 +1638,8 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLC_PER,
  		.load_mask = CM_PLLC_LOADPER,
  		.hold_mask = CM_PLLC_HOLDPER,
@@ -120,7 +120,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
  	/*
  	 * PLLD is the display PLL, used to drive DSI display panels.
-@@ -1655,7 +1664,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1659,7 +1668,8 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLD_CORE,
  		.load_mask = CM_PLLD_LOADCORE,
  		.hold_mask = CM_PLLD_HOLDCORE,
@@ -130,7 +130,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	[BCM2835_PLLD_PER]	= REGISTER_PLL_DIV(
  		.name = "plld_per",
  		.source_pll = "plld",
-@@ -1663,7 +1673,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1667,7 +1677,8 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLD_PER,
  		.load_mask = CM_PLLD_LOADPER,
  		.hold_mask = CM_PLLD_HOLDPER,
@@ -140,7 +140,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	[BCM2835_PLLD_DSI0]	= REGISTER_PLL_DIV(
  		.name = "plld_dsi0",
  		.source_pll = "plld",
-@@ -1708,7 +1719,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1712,7 +1723,8 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLH_RCAL,
  		.load_mask = CM_PLLH_LOADRCAL,
  		.hold_mask = 0,
@@ -150,7 +150,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	[BCM2835_PLLH_AUX]	= REGISTER_PLL_DIV(
  		.name = "pllh_aux",
  		.source_pll = "pllh",
-@@ -1716,7 +1728,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1720,7 +1732,8 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLH_AUX,
  		.load_mask = CM_PLLH_LOADAUX,
  		.hold_mask = 0,
@@ -160,7 +160,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	[BCM2835_PLLH_PIX]	= REGISTER_PLL_DIV(
  		.name = "pllh_pix",
  		.source_pll = "pllh",
-@@ -1724,7 +1737,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1728,7 +1741,8 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLH_PIX,
  		.load_mask = CM_PLLH_LOADPIX,
  		.hold_mask = 0,

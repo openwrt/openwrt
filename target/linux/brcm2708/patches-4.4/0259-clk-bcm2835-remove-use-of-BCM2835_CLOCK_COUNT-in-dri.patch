@@ -56,7 +56,7 @@ Reviewed-by: Eric Anholt <eric@anholt.net>
  struct bcm2835_pll {
  	struct clk_hw hw;
  	struct bcm2835_cprman *cprman;
-@@ -1660,14 +1679,81 @@ static struct clk *bcm2835_register_cloc
+@@ -1664,14 +1683,81 @@ static struct clk *bcm2835_register_cloc
  	return devm_clk_register(cprman->dev, &clock->hw);
  }
  
@@ -139,7 +139,7 @@ Reviewed-by: Eric Anholt <eric@anholt.net>
  	if (!cprman)
  		return -ENOMEM;
  
-@@ -1684,80 +1770,15 @@ static int bcm2835_clk_probe(struct plat
+@@ -1688,80 +1774,15 @@ static int bcm2835_clk_probe(struct plat
  
  	platform_set_drvdata(pdev, cprman);
  
