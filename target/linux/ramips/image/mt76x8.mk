@@ -299,3 +299,10 @@ define Device/zbtlink_zbt-we1226
   DEVICE_TITLE := ZBTlink ZBT-WE1226
 endef
 TARGET_DEVICES += zbtlink_zbt-we1226
+
+define Device/rak633
+  DTS := RAK633
+  DEVICE_TITLE := Rakwireless RAK633
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-i2c-core kmod-i2c-mt7628
+endef
+TARGET_DEVICES += rak633

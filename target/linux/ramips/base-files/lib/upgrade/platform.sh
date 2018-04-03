@@ -126,6 +126,7 @@ platform_check_image() {
 	psr-680w|\
 	px-4885-4M|\
 	px-4885-8M|\
+	rak633|\
 	rb750gr3|\
 	re6500|\
 	rp-n53|\

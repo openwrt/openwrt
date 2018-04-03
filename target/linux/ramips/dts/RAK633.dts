@@ -1,0 +1,117 @@
+/dts-v1/;
+
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "rakwireless,rak633", "mediatek,mt7628an-soc";
+	model = "RAK633";
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x4000000>;
+	};
+	
+	gpio-leds {
+		compatible = "gpio-leds";
+
+			wifiled {
+				label = "rak633:blue:wifiled";
+				gpios = <&gpio1 44 GPIO_ACTIVE_LOW>;
+			};
+			
+			link0 {
+				label = "rak633:link0";
+				gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			};
+			link1 {
+				label = "rak633:link1";
+				gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+			};
+			link2 {
+				label = "rak633:link2";
+				gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			};
+			link3 {
+				label = "rak633:link3";
+				gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			};
+			link4 {
+				label = "rak633:link4";
+				gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			};
+	};
+	
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "wled_an", "refclk", "wdt";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&wmac {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	m25p80@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		m25p,chunked-io = <32>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x30000>;
+			read-only;
+		};
+
+		partition@30000 {
+			label = "u-boot-env";
+			reg = <0x30000 0x10000>;
+			read-only;
+		};
+
+		factory: partition@40000 {
+			label = "factory";
+			reg = <0x40000 0x10000>;
+			read-only;
+		};
+
+		partition@50000 {
+			label = "firmware";
+			reg = <0x50000 0x7b0000>;
+		};
+	};
+};
+
+&i2c {
+	status = "okay";
+};
+
+&i2s {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&uart2 {
+	status = "okay";
+};
+
+&gdma {
+	status = "okay";
+};
+  
+
