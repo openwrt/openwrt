@@ -153,7 +153,8 @@ get_status_led() {
 	wli-tx4-ag300n|\
 	y1|\
 	y1s|\
-	youku-yk1)
+	youku-yk1|\
+	zorlik,zl5900v2)
 		status_led="$boardname:blue:power"
 		;;
 	dlink,dap-1522-a1|\

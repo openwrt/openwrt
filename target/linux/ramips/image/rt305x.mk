@@ -901,3 +901,10 @@ define Device/kn
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ehci kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += kn
+
+define Device/zorlik_zl5900v2
+  DTS := ZL5900V2
+  DEVICE_TITLE := Zorlik ZL5900V2
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev
+endef
+TARGET_DEVICES += zorlik_zl5900v2

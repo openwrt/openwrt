@@ -532,6 +532,9 @@ zbt-wr8305rt)
 	set_usb_led "$boardname:green:usb"
 	set_wifi_led "$boardname:green:wifi"
 	;;
+zorlik,zl5900v2)
+	ucidef_set_led_netdev "lan" "lan" "$boardname:green:lan" eth0
+	;;
 zte-q7)
 	set_wifi_led "$boardname:blue:status"
 	;;
