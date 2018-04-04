@@ -36,6 +36,7 @@ PKG_DRIVERS = \
 	mt7601u \
 	mwl8k mwifiex-pcie mwifiex-sdio \
 	p54-common p54-pci p54-spi p54-usb \
+	rsi91x rsi91x-usb rsi91x-sdio\
 	rt2x00-lib rt2x00-pci rt2x00-usb \
 	rt2400-pci rt2500-pci rt2500-usb \
 	rt2800-lib rt2800-mmio rt2800-pci rt2800-soc rt2800-usb \
@@ -1169,6 +1170,31 @@ define KernelPackage/p54-spi
   AUTOLOAD:=$(call AutoProbe,p54spi)
 endef
 
+define KernelPackage/rsi91x
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Redpine Signals Inc 91x WLAN driver support
+  DEPENDS+= +kmod-mac80211 +rs9113-firmware
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rsi/rsi_91x.ko
+endef
+
+define KernelPackage/rsi91x-usb
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Redpine Signals USB bus support
+  DEPENDS+= +kmod-mac80211 +kmod-usb2 +kmod-rsi91x +rs9113-firmware
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rsi/rsi_usb.ko
+  AUTOLOAD:=$(call AutoProbe,rsi_usb)
+endef
+
+define KernelPackage/rsi91x-sdio
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Redpine Signals SDIO bus support
+  DEPENDS+= +kmod-mac80211 +kmod-mmc +kmod-rsi91x +rs9113-firmware
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rsi/rsi_sdio.ko
+  AUTOLOAD:=$(call AutoProbe,rsi_sdio)
+endef
+
+
+
 define KernelPackage/rt2x00/Default
   $(call KernelPackage/mac80211/Default)
   TITLE:=Ralink Drivers for RT2x00 cards
@@ -1691,6 +1717,9 @@ config-$(call config_package,wl12xx) += WL12XX
 config-$(call config_package,wl18xx) += WL18XX
 config-y += WL_TI WILINK_PLATFORM_DATA
 config-$(call config_package,zd1211rw) += ZD1211RW
+config-$(call config_package,rsi91x) += RSI_91X
+config-$(call config_package,rsi91x-usb) += RSI_USB
+config-$(call config_package,rsi91x-sdio) += RSI_SDIO
 
 config-$(call config_package,rtlwifi) += RTL_CARDS RTLWIFI
 config-$(call config_package,rtlwifi-pci) += RTLWIFI_PCI
@@ -1883,6 +1912,9 @@ $(eval $(call KernelPackage,p54-common))
 $(eval $(call KernelPackage,p54-pci))
 $(eval $(call KernelPackage,p54-usb))
 $(eval $(call KernelPackage,p54-spi))
+$(eval $(call KernelPackage,rsi91x))
+$(eval $(call KernelPackage,rsi91x-usb))
+$(eval $(call KernelPackage,rsi91x-sdio))
 $(eval $(call KernelPackage,rt2x00-lib))
 $(eval $(call KernelPackage,rt2x00-mmio))
 $(eval $(call KernelPackage,rt2x00-pci))
