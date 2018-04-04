@@ -127,8 +127,14 @@ static int fe_phy_connect(struct fe_priv *priv)
 				priv->phy_dev = priv->phy->phy[i];
 				priv->phy_flags = FE_PHY_FLAG_PORT;
 			}
-		} else if (priv->mii_bus && mdiobus_get_phy(priv->mii_bus, i)) {
-			phy_init(priv, mdiobus_get_phy(priv->mii_bus, i));
+		} else if (priv->mii_bus) {
+			struct phy_device *phydev;
+
+			phydev = mdiobus_get_phy(priv->mii_bus, i);
+			if (!phydev || phydev->attached_dev)
+				continue;
+
+			phy_init(priv, phydev);
 			if (!priv->phy_dev) {
 				priv->phy_dev = mdiobus_get_phy(priv->mii_bus, i);
 				priv->phy_flags = FE_PHY_FLAG_ATTACH;
