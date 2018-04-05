@@ -2799,9 +2799,7 @@ static int msdc_drv_probe(struct platform_device *pdev)
     host = mmc_priv(mmc);
     host->hw        = hw;
     host->mmc       = mmc;
-    BUG_ON(pdev->id < -1);
-    BUG_ON(pdev->id >= ARRAY_SIZE(drv_mode));
-    host->id        = (pdev->id == -1) ? 0 : pdev->id;
+    host->id        = 0;
     host->error     = 0;
     host->irq       = irq;    
     host->base      = (unsigned long) base;
