@@ -1,0 +1,37 @@
+From 6f879697d6393aa6918537c4c46e44c8579dd2a1 Mon Sep 17 00:00:00 2001
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Fri, 30 Mar 2018 10:53:44 +0200
+Subject: [PATCH] Revert "genirq: Use irqd_get_trigger_type to compare the
+ trigger type for shared IRQs"
+
+This reverts commit 9d0273bb1c4b645817eccfe5c5975ea29add3300 which is
+commit 382bd4de61827dbaaf5fb4fb7b1f4be4a86505e7 upstream.
+
+It causes too many problems with the stable tree, and would require too
+many other things to be backported, so just revert it.
+
+Reported-by: Guenter Roeck <linux@roeck-us.net>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Hans de Goede <hdegoede@redhat.com>
+Cc: Marc Zyngier <marc.zyngier@arm.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Sasha Levin <alexander.levin@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ kernel/irq/manage.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+--- a/kernel/irq/manage.c
++++ b/kernel/irq/manage.c
+@@ -1189,10 +1189,8 @@ __setup_irq(unsigned int irq, struct irq
+ 		 * set the trigger type must match. Also all must
+ 		 * agree on ONESHOT.
+ 		 */
+-		unsigned int oldtype = irqd_get_trigger_type(&desc->irq_data);
+-
+ 		if (!((old->flags & new->flags) & IRQF_SHARED) ||
+-		    (oldtype != (new->flags & IRQF_TRIGGER_MASK)) ||
++		    ((old->flags ^ new->flags) & IRQF_TRIGGER_MASK) ||
+ 		    ((old->flags ^ new->flags) & IRQF_ONESHOT))
+ 			goto mismatch;
+ 
