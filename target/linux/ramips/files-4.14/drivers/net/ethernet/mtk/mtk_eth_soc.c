@@ -879,15 +879,18 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 			skb_checksum_none_assert(skb);
 		skb->protocol = eth_type_trans(skb, netdev);
 
+#ifdef CONFIG_NET_MEDIATEK_OFFLOAD
 		if (mtk_offload_check_rx(priv, skb, trxd.rxd4) == 0) {
+#endif
 			stats->rx_packets++;
 			stats->rx_bytes += pktlen;
 
 			napi_gro_receive(napi, skb);
+#ifdef CONFIG_NET_MEDIATEK_OFFLOAD
 		} else {
 			dev_kfree_skb(skb);
 		}
-
+#endif
 		ring->rx_data[idx] = new_data;
 		rxd->rxd1 = (unsigned int)dma_addr;
 
