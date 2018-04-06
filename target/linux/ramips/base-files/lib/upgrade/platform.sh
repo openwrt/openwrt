@@ -52,7 +52,6 @@ platform_check_image() {
 	dir-620-d1|\
 	dir-810l|\
 	duzun-dm06|\
-	dwr-512-b|\
 	e1700|\
 	esr-9753|\
 	ew1200|\
@@ -272,7 +271,8 @@ platform_check_image() {
 		return 0
 		;;
 	dlink,dwr-116-a1|\
-	dlink,dwr-921-c1)
+	dlink,dwr-921-c1|\
+	dwr-512-b)
 		[ "$magic" != "0404242b" ] && {
 			echo "Invalid image type."
 			return 1
