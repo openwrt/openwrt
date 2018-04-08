@@ -77,18 +77,13 @@ proto_ncm_setup() {
 	json_get_keys supported
 	manufacturer=`gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk 'index("'"$supported"'",tolower($1)){f=1;sub(/\+CGMI: /,"");print tolower($1);exit} END{exit 1-f}'`
 	[ $? -ne 0 ] && {
-		echo "Failed to get modem information"
+		echo "Failed to get modem information, only ($supported) supported"
 		proto_notify_error "$interface" GETINFO_FAILED
+		proto_set_available "$interface" 0
 		return 1
 	}
 
 	json_select "$manufacturer"
-	[ $? -ne 0 ] && {
-		echo "Unsupported modem"
-		proto_notify_error "$interface" UNSUPPORTED_MODEM
-		proto_set_available "$interface" 0
-		return 1
-	}
 	json_get_values initialize initialize
 	for i in $initialize; do
 		eval COMMAND="$i" gcom -d "$device" -s /etc/gcom/runcommand.gcom || {
