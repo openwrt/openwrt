@@ -75,7 +75,7 @@ proto_ncm_setup() {
 
 	json_load "$(cat /etc/gcom/ncm.json)"
 	json_get_keys supported
-	manufacturer=`gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk 'index("'"$supported"'",$1){f=1;print tolower($1);exit} END{exit 1-f}'`
+	manufacturer=`gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk 'index("'"$supported"'",tolower($1)){f=1;sub(/\+CGMI: /,"");print tolower($1);exit} END{exit 1-f}'`
 	[ $? -ne 0 ] && {
 		echo "Failed to get modem information"
 		proto_notify_error "$interface" GETINFO_FAILED
