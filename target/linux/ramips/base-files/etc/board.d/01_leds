@@ -555,6 +555,11 @@ zorlik,zl5900v2)
 zte-q7)
 	set_wifi_led "$boardname:blue:status"
 	;;
+zyxel,keenetic-extra-ii)
+	set_wifi_led "$boardname:green:wifi"
+	set_usb_led "$boardname:green:usb"
+	ucidef_set_led_switch "internet" "internet" "$boardname:green:internet" "switch0" "0x01"
+	;;
 youku-yk1)
 	set_wifi_led "$boardname:blue:air"
 	set_usb_led "$boardname:blue:usb"
