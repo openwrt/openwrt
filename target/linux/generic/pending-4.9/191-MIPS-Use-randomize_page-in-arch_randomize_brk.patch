@@ -1,0 +1,74 @@
+From 439551075b16726ea775ea0d62cae6817626f8aa Mon Sep 17 00:00:00 2001
+From: Julien Dusser <julien.dusser@free.fr>
+Date: Mon, 8 Jan 2018 23:08:44 +0100
+Subject: [PATCH 941/942] MIPS: Use randomize_page in arch_randomize_brk
+
+Use randomize_page() in function arch_randomize_brk() instead masking and move
+it to process.c like others architectures.
+
+Signed-off-by: Julien Dusser <julien.dusser@free.fr>
+---
+ arch/mips/kernel/process.c |  8 ++++++++
+ arch/mips/mm/mmap.c        | 27 ---------------------------
+ 2 files changed, 8 insertions(+), 27 deletions(-)
+
+diff --git a/arch/mips/kernel/process.c b/arch/mips/kernel/process.c
+index c558bce989cd..2341f8c13677 100644
+--- a/arch/mips/kernel/process.c
++++ b/arch/mips/kernel/process.c
+@@ -621,6 +621,14 @@ unsigned long get_wchan(struct task_struct *task)
+ 	return pc;
+ }
+ 
++unsigned long arch_randomize_brk(struct mm_struct *mm)
++{
++	if (TASK_IS_32BIT_ADDR)
++		return randomize_page(mm->brk, 0x00800000);
++	else
++		return randomize_page(mm->brk, 0x10000000);
++}
++
+ /*
+  * Don't forget that the stack pointer must be aligned on a 8 bytes
+  * boundary for 32-bits ABI and 16 bytes for 64-bits ABI.
+diff --git a/arch/mips/mm/mmap.c b/arch/mips/mm/mmap.c
+index b697c7e0e585..24579497cf42 100644
+--- a/arch/mips/mm/mmap.c
++++ b/arch/mips/mm/mmap.c
+@@ -172,33 +172,6 @@ void arch_pick_mmap_layout(struct mm_struct *mm)
+ 	}
+ }
+ 
+-static inline unsigned long brk_rnd(void)
+-{
+-	unsigned long rnd = get_random_long();
+-
+-	rnd = rnd << PAGE_SHIFT;
+-	/* 8MB for 32bit, 256MB for 64bit */
+-	if (TASK_IS_32BIT_ADDR)
+-		rnd = rnd & 0x7ffffful;
+-	else
+-		rnd = rnd & 0xffffffful;
+-
+-	return rnd;
+-}
+-
+-unsigned long arch_randomize_brk(struct mm_struct *mm)
+-{
+-	unsigned long base = mm->brk;
+-	unsigned long ret;
+-
+-	ret = PAGE_ALIGN(base + brk_rnd());
+-
+-	if (ret < mm->brk)
+-		return mm->brk;
+-
+-	return ret;
+-}
+-
+ int __virt_addr_valid(const volatile void *kaddr)
+ {
+ 	return pfn_valid(PFN_DOWN(virt_to_phys(kaddr)));
+-- 
+2.15.1
+
