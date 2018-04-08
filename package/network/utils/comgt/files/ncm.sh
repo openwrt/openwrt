@@ -73,14 +73,16 @@ proto_ncm_setup() {
 
 	[ -n "$delay" ] && sleep "$delay"
 
-	manufacturer=$(gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk 'NF && $0 !~ /AT\+CGMI/ { sub(/\+CGMI: /,""); print tolower($1); exit; }')
+	json_load "$(cat /etc/gcom/ncm.json)"
+	json_get_keys supported
+	manufacturer=$(gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk 'index("'"$supported"'",tolower($1)){f=1;sub(/\+CGMI: /,"");print tolower($1);exit} END{exit 1-f}')
 	[ $? -ne 0 -o -z "$manufacturer" ] && {
-		echo "Failed to get modem information"
+		echo "Failed to get modem information, only ($supported) supported"
 		proto_notify_error "$interface" GETINFO_FAILED
+		proto_set_available "$interface" 0
 		return 1
 	}
 
-	json_load "$(cat /etc/gcom/ncm.json)"
 	json_select "$manufacturer"
 	[ $? -ne 0 ] && {
 		echo "Unsupported modem"
@@ -222,12 +224,16 @@ proto_ncm_teardown() {
 	json_get_vars manufacturer
 	[ $? -ne 0 -o -z "$manufacturer" ] && {
 		# Fallback to direct detect, for proper handle device replug.
-		manufacturer=$(gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk 'NF && $0 !~ /AT\+CGMI/ { sub(/\+CGMI: /,""); print tolower($1); exit; }')
+		json_load "$(cat /etc/gcom/ncm.json)"
+		json_get_keys supported
+		manufacturer=$(gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk 'index("'"$supported"'",tolower($1)){f=1;sub(/\+CGMI: /,"");print tolower($1);exit} END{exit 1-f}')
 		[ $? -ne 0 -o -z "$manufacturer" ] && {
-			echo "Failed to get modem information"
+			echo "Failed to get modem information, only ($supported) supported"
 			proto_notify_error "$interface" GETINFO_FAILED
 			return 1
 		}
+		json_load "$(ubus call network.interface.$interface status)"
+		json_select data
 		json_add_string "manufacturer" "$manufacturer"
 	}
 
