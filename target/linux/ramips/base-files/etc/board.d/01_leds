@@ -495,6 +495,11 @@ y1s)
 	ucidef_set_led_netdev "wifi5g" "WIFI5G" "$boardname:blue:wifi" "wlan0"
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:blue:internet" "eth0.2" "tx rx"
 	;;
+youhua,wr1200js)
+	ucidef_set_led_switch "internet" "INTERNET" "$boardname:green:wan" "switch0" "0x01"
+	ucidef_set_led_usbdev "usb" "USB" "$boardname:blue:usb" "1-2"
+	ucidef_set_led_default "wps" "wps" "$boardname:blue:wps" "0"
+	;;
 zbt-ape522ii)
 	ucidef_set_led_netdev "wlan2g4" "wlan1-link" "$boardname:green:wlan2g4" "wlan1"
 	ucidef_set_led_netdev "sys1" "wlan1" "$boardname:green:sys1" "wlan1" "tx rx"
