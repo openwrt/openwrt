@@ -1,7 +1,8 @@
+From c0faf43482e7f7dfb6d61847cb93d17748560b24 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Tue, 30 Jan 2018 12:09:58 +0100
-Subject: [PATCH V10 2/3] mtd: rename "ofpart" parser to "fixed-partitions" as
- it fits it better
+Date: Wed, 14 Mar 2018 13:10:43 +0100
+Subject: [PATCH] mtd: rename "ofpart" parser to "fixed-partitions" as it fits
+ it better
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -12,7 +13,12 @@ lead to less confusion especially when parsers for new compatibility
 strings start to appear.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Reviewed-by: Richard Weinberger <richard@nod.at>
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
 ---
+ drivers/mtd/mtdpart.c |  4 ++--
+ drivers/mtd/ofpart.c  | 11 ++++++-----
+ 2 files changed, 8 insertions(+), 7 deletions(-)
 
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c

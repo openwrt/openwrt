@@ -1,7 +1,7 @@
+From 97b0c7c0df3efd7048ed39d7e2dee34cafd55887 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Thu, 4 Jan 2018 08:05:34 +0100
-Subject: [PATCH V10 3/3] mtd: ofpart: add of_match_table with
- "fixed-partitions"
+Date: Wed, 14 Mar 2018 13:10:44 +0100
+Subject: [PATCH] mtd: ofpart: add of_match_table with "fixed-partitions"
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -17,7 +17,11 @@ This matches existing bindings documentation.
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 Reviewed-by: Brian Norris <computersforpeace@gmail.com>
 Tested-by: Brian Norris <computersforpeace@gmail.com>
+Reviewed-by: Richard Weinberger <richard@nod.at>
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
 ---
+ drivers/mtd/ofpart.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
 --- a/drivers/mtd/ofpart.c
 +++ b/drivers/mtd/ofpart.c

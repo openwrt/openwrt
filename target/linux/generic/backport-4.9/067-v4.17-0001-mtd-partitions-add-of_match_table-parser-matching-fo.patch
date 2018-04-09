@@ -1,7 +1,8 @@
+From 5b644aa012f67fd211138a067b9f351f30bdcc60 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Tue, 30 Jan 2018 11:55:16 +0100
-Subject: [PATCH V10 1/3] mtd: partitions: add of_match_table parser matching
- for the "ofpart" type
+Date: Wed, 14 Mar 2018 13:10:42 +0100
+Subject: [PATCH] mtd: partitions: add of_match_table parser matching for the
+ "ofpart" type
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -37,7 +38,12 @@ though as compiling parsers as modules isn't a common choice.
 Signed-off-by: Brian Norris <computersforpeace@gmail.com>
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 Tested-by: Peter Rosin <peda@axentia.se>
+Reviewed-by: Richard Weinberger <richard@nod.at>
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
 ---
+ drivers/mtd/mtdpart.c          | 116 +++++++++++++++++++++++++++++++++++++----
+ include/linux/mtd/partitions.h |   1 +
+ 2 files changed, 108 insertions(+), 9 deletions(-)
 
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
@@ -49,7 +55,7 @@ Tested-by: Peter Rosin <peda@axentia.se>
  
  #include "mtdcore.h"
  
-@@ -894,6 +895,92 @@ static int mtd_part_do_parse(struct mtd_
+@@ -886,6 +887,92 @@ static int mtd_part_do_parse(struct mtd_
  }
  
  /**
@@ -142,7 +148,7 @@ Tested-by: Peter Rosin <peda@axentia.se>
   * parse_mtd_partitions - parse MTD partitions
   * @master: the master partition (describes whole MTD device)
   * @types: names of partition parsers to try or %NULL
-@@ -925,19 +1012,30 @@ int parse_mtd_partitions(struct mtd_info
+@@ -917,19 +1004,30 @@ int parse_mtd_partitions(struct mtd_info
  		types = default_mtd_part_types;
  
  	for ( ; *types; types++) {
