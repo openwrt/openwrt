@@ -754,7 +754,6 @@ $(eval $(call KernelPackage,arptables))
 define KernelPackage/br-netfilter
   SUBMENU:=$(NF_MENU)
   TITLE:=Bridge netfilter support modules
-  HIDDEN:=1
   DEPENDS:=+kmod-ipt-core
   FILES:=$(LINUX_DIR)/net/bridge/br_netfilter.ko
   KCONFIG:=CONFIG_BRIDGE_NETFILTER
