@@ -784,7 +784,7 @@ $(eval $(call KernelPackage,ebtables))
 
 define AddDepends/ebtables
   SUBMENU:=$(NF_MENU)
-  DEPENDS+=kmod-ebtables $(1)
+  DEPENDS+= +kmod-ebtables $(1)
 endef
 
 
