@@ -72,7 +72,15 @@ proto_qmi_setup() {
 	local uninitialized_timeout=0
 	while uqmi -s -d "$device" --get-pin-status | grep '"UIM uninitialized"' > /dev/null; do
 		[ -e "$device" ] || return 1
-		sleep 1;
+		if [ "$uninitialized_timeout" -lt "$timeout" ]; then
+			let uninitialized_timeout++
+			sleep 1;
+		else
+			echo "SIM not initialized"
+			proto_notify_error "$interface" SIM_NOT_INITIALIZED
+			proto_block_restart "$interface"
+			return 1
+		fi
 	done
 
 	[ -n "$pincode" ] && {
