@@ -1017,7 +1017,11 @@ IPW2200_NAME:=ipw2200-fw
 IPW2200_VERSION:=3.1
 
 define Download/ipw2200
-  URL:=http://bughost.org/firmware/
+  URL:= \
+	https://src.fedoraproject.org/repo/pkgs/ipw2200-firmware/ipw2200-fw-3.1.tgz/eaba788643c7cc7483dd67ace70f6e99/ \
+	https://archlinux.mirror.pkern.at/other/packages/ipw2200-fw/ \
+	http://mirror.ox.ac.uk/sites/ftp.openbsd.org/pub/OpenBSD/distfiles/firmware/ \
+	http://firmware.openbsd.org/firmware-dist/
   FILE:=$(IPW2200_NAME)-$(IPW2200_VERSION).tgz
   HASH:=c6818c11c18cc030d55ff83f64b2bad8feef485e7742f84f94a61d811a6258bd
 endef
