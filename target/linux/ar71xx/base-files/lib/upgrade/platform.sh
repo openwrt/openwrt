@@ -93,6 +93,22 @@ tplink_get_image_boot_size() {
 	get_image "$@" | dd bs=4 count=1 skip=37 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
 }
 
+tplink_pharos_check_support_list() {
+	local image="$1"
+	local offset="$2"
+	local model="$3"
+
+	# Here $image is given to dd directly instead of using get_image;
+	# otherwise the skip will take almost a second (as dd can't seek)
+	dd if="$image" bs=1 skip=$offset count=1024 2>/dev/null | (
+		while IFS= read -r line; do
+			[ "$line" = "$model" ] && exit 0
+		done
+
+		exit 1
+	)
+}
+
 tplink_pharos_check_image() {
 	local magic_long="$(get_magic_long "$1")"
 	[ "$magic_long" != "7f454c46" ] && {
@@ -101,18 +117,10 @@ tplink_pharos_check_image() {
 	}
 
 	local model_string="$(tplink_pharos_get_model_string)"
-	local line
 
-	# Here $1 is given to dd directly instead of get_image as otherwise the skip
-	# will take almost a second (as dd can't seek then)
-	#
-	# This will fail if the image isn't local, but that's fine: as the
-	# read loop won't be executed at all, it will return true, so the image
-	# is accepted (loading the first 1.5M of a remote image for this check seems
-	# a bit extreme)
-	dd if="$1" bs=1 skip=1511432 count=1024 2>/dev/null | while read line; do
-		[ "$line" = "$model_string" ] && break
-	done || {
+	# New images have the support list at 7802888, old ones at 1511432
+	tplink_pharos_check_support_list "$1" 7802888 "$model_string" || \
+	tplink_pharos_check_support_list "$1" 1511432 "$model_string" || {
 		echo "Unsupported image (model not in support-list)"
 		return 1
 	}
