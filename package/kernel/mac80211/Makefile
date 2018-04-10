@@ -989,7 +989,11 @@ IPW2100_NAME:=ipw2100-fw
 IPW2100_VERSION:=1.3
 
 define Download/ipw2100
-  URL:=http://bughost.org/firmware/
+  URL:= \
+	https://src.fedoraproject.org/repo/pkgs/ipw2100-firmware/ipw2100-fw-1.3.tgz/46aa75bcda1a00efa841f9707bbbd113/ \
+	https://archlinux.mirror.pkern.at/other/packages/ipw2100-fw/ \
+	http://mirror.ox.ac.uk/sites/ftp.openbsd.org/pub/OpenBSD/distfiles/firmware/ \
+	http://firmware.openbsd.org/firmware-dist/
   FILE:=$(IPW2100_NAME)-$(IPW2100_VERSION).tgz
   HASH:=e1107c455e48d324a616b47a622593bc8413dcce72026f72731c0b03dae3a7a2
 endef
