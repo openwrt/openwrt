@@ -81,14 +81,56 @@ proto_qmi_setup() {
 		fi
 	done
 
-	[ -n "$pincode" ] && {
-		uqmi -s -d "$device" --verify-pin1 "$pincode" > /dev/null || uqmi -s -d "$device" --uim-verify-pin1 "$pincode" > /dev/null || {
-			echo "Unable to verify PIN"
-			proto_notify_error "$interface" PIN_FAILED
-			proto_block_restart "$interface"
-			return 1
+	if uqmi -s -d "$device" --get-pin-status | grep '"Not supported"' > /dev/null; then
+		[ -n "$pincode" ] && {
+			uqmi -s -d "$device" --verify-pin1 "$pincode" > /dev/null || uqmi -s -d "$device" --uim-verify-pin1 "$pincode" > /dev/null || {
+				echo "Unable to verify PIN"
+				proto_notify_error "$interface" PIN_FAILED
+				proto_block_restart "$interface"
+				return 1
+			}
 		}
-	}
+	else
+		. /usr/share/libubox/jshn.sh
+		json_load "$(uqmi -s -d "$device" --get-pin-status)"
+		json_get_var pin1_status pin1_status
+
+		case "$pin1_status" in
+			disabled)
+				echo "PIN verification is disabled"
+				;;
+			blocked)
+				echo "SIM locked PUK required"
+				proto_notify_error "$interface" PUK_NEEDED
+				proto_block_restart "$interface"
+				return 1
+				;;
+			not_verified)
+				if [ -n "$pincode" ]; then
+					uqmi -s -d "$device" --verify-pin1 "$pincode" > /dev/null 2>&1 || uqmi -s -d "$device" --uim-verify-pin1 "$pincode" > /dev/null 2>&1 || {
+						echo "Unable to verify PIN"
+						proto_notify_error "$interface" PIN_FAILED
+						proto_block_restart "$interface"
+						return 1
+					}
+				else
+					echo "PIN not specified but required"
+					proto_notify_error "$interface" PIN_NOT_SPECIFIED
+					proto_block_restart "$interface"
+					return 1
+				fi
+				;;
+			verified)
+				echo "PIN already verified"
+				;;
+			*)
+				echo "PIN status failed ($pin1_status)"
+				proto_notify_error "$interface" PIN_STATUS_FAILED
+				proto_block_restart "$interface"
+				return 1
+			;;
+		esac
+	fi
 
 	[ -n "$plmn" ] && {
 		local mcc mnc
