@@ -258,9 +258,9 @@ TARGET_DEVICES += ubnt-ls-sr71
 
 define Device/ubnt-uap-pro
   DEVICE_TITLE := Ubiquiti UAP Pro
-  KERNEL_SIZE := 1536k
+  KERNEL_SIZE := 1792k
   IMAGE_SIZE := 15744k
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1536k(kernel),14208k(rootfs),256k(cfg)ro,64k(EEPROM)ro,15744k@0x50000(firmware)
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1792k(kernel),13952k(rootfs),256k(cfg)ro,64k(EEPROM)ro,15744k@0x50000(firmware)
   UBNT_TYPE := BZ
   UBNT_CHIP := ar934x
   BOARDNAME := UAP-PRO
@@ -270,6 +270,7 @@ define Device/ubnt-uap-pro
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage2
 endef
+TARGET_DEVICES += ubnt-uap-pro
 
 define Device/ubnt-unifi-outdoor-plus
   $(Device/ubnt-uap-pro)
@@ -278,3 +279,4 @@ define Device/ubnt-unifi-outdoor-plus
   BOARDNAME := UBNT-UOP
   DEVICE_PROFILE := UBNT
 endef
+TARGET_DEVICES += ubnt-unifi-outdoor-plus
