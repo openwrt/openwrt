@@ -97,7 +97,9 @@ static void __init ubnt_xm_init(void)
 	ap91_pci_init(eeprom, NULL);
 
 	ath79_register_mdio(0, ~UBNT_M_WAN_PHYMASK);
+	ath79_eth0_data.speed = SPEED_100;
 	ath79_init_mac(ath79_eth0_data.mac_addr, mac1, 0);
+	ath79_eth1_data.speed = SPEED_100;
 	ath79_init_mac(ath79_eth1_data.mac_addr, mac2, 0);
 	ath79_register_eth(0);
 }
