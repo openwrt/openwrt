@@ -140,10 +140,10 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x170000},
-			{"soft-version", 0x1b0000, 0x00100},
-			{"support-list", 0x1b1000, 0x00400},
-			{"file-system", 0x1c0000, 0x600000},
+			{"os-image", 0x40000, 0x180000},
+			{"file-system", 0x1c0000, 0x5f0000},
+			{"soft-version", 0x7b0000, 0x00100},
+			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
 			{"default-config", 0x7d0000, 0x10000},
 			{"log", 0x7e0000, 0x10000},
@@ -152,7 +152,7 @@ static struct device_info boards[] = {
 		},
 
 		.first_sysupgrade_partition = "os-image",
-		.last_sysupgrade_partition = "file-system",
+		.last_sysupgrade_partition = "support-list",
 	},
 
 	/** Firmware layout for the CPE510/520 */
@@ -178,10 +178,10 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x170000},
-			{"soft-version", 0x1b0000, 0x00100},
-			{"support-list", 0x1b1000, 0x00400},
-			{"file-system", 0x1c0000, 0x600000},
+			{"os-image", 0x40000, 0x180000},
+			{"file-system", 0x1c0000, 0x5f0000},
+			{"soft-version", 0x7b0000, 0x00100},
+			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
 			{"default-config", 0x7d0000, 0x10000},
 			{"log", 0x7e0000, 0x10000},
@@ -190,7 +190,7 @@ static struct device_info boards[] = {
 		},
 
 		.first_sysupgrade_partition = "os-image",
-		.last_sysupgrade_partition = "file-system",
+		.last_sysupgrade_partition = "support-list",
 	},
 
 	{
@@ -210,10 +210,10 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x170000},
-			{"soft-version", 0x1b0000, 0x00100},
-			{"support-list", 0x1b1000, 0x00400},
-			{"file-system", 0x1c0000, 0x600000},
+			{"os-image", 0x40000, 0x180000},
+			{"file-system", 0x1c0000, 0x5f0000},
+			{"soft-version", 0x7b0000, 0x00100},
+			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
 			{"default-config", 0x7d0000, 0x10000},
 			{"log", 0x7e0000, 0x10000},
@@ -222,7 +222,7 @@ static struct device_info boards[] = {
 		},
 
 		.first_sysupgrade_partition = "os-image",
-		.last_sysupgrade_partition = "file-system",
+		.last_sysupgrade_partition = "support-list",
 	},
 
 	{
@@ -242,10 +242,10 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x170000},
-			{"soft-version", 0x1b0000, 0x00100},
-			{"support-list", 0x1b1000, 0x00400},
-			{"file-system", 0x1c0000, 0x600000},
+			{"os-image", 0x40000, 0x180000},
+			{"file-system", 0x1c0000, 0x5f0000},
+			{"soft-version", 0x7b0000, 0x00100},
+			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
 			{"default-config", 0x7d0000, 0x10000},
 			{"log", 0x7e0000, 0x10000},
@@ -254,7 +254,7 @@ static struct device_info boards[] = {
 		},
 
 		.first_sysupgrade_partition = "os-image",
-		.last_sysupgrade_partition = "file-system",
+		.last_sysupgrade_partition = "support-list",
 	},
 
 	/** Firmware layout for the C2600 */
