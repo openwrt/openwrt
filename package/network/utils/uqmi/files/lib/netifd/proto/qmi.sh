@@ -158,7 +158,7 @@ proto_qmi_setup() {
 			${password:+--password $password} \
 			${autoconnect:+--autoconnect})
 
-        # pdh_4 is a numeric value on success
+		# pdh_4 is a numeric value on success
 		if ! [ "$pdh_4" -eq "$pdh_4" ] 2> /dev/null; then
 			echo "Unable to connect IPv4"
 			uqmi -s -d "$device" --set-client-id wds,"$cid_4" --release-client-id wds
@@ -166,14 +166,14 @@ proto_qmi_setup() {
 			return 1
 		fi
 
-        # Check data connection state
+		# Check data connection state
 		connstat=$(uqmi -s -d "$device" --get-data-status)
-                [ "$connstat" == '"connected"' ] || {
-                        echo "No data link!"
-                        uqmi -s -d "$device" --set-client-id wds,"$cid_4" --release-client-id wds
-                        proto_notify_error "$interface" CALL_FAILED
-                        return 1
-                }
+		[ "$connstat" == '"connected"' ] || {
+			echo "No data link!"
+			uqmi -s -d "$device" --set-client-id wds,"$cid_4" --release-client-id wds
+			proto_notify_error "$interface" CALL_FAILED
+			return 1
+		}
 	}
 
 	[ "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] && {
@@ -195,7 +195,7 @@ proto_qmi_setup() {
 			${password:+--password $password} \
 			${autoconnect:+--autoconnect})
 
-        # pdh_6 is a numeric value on success
+		# pdh_6 is a numeric value on success
 		if ! [ "$pdh_6" -eq "$pdh_6" ] 2> /dev/null; then
 			echo "Unable to connect IPv6"
 			uqmi -s -d "$device" --set-client-id wds,"$cid_6" --release-client-id wds
@@ -203,14 +203,14 @@ proto_qmi_setup() {
 			return 1
 		fi
 
-        # Check data connection state
+		# Check data connection state
 		connstat=$(uqmi -s -d "$device" --get-data-status)
-                [ "$connstat" == '"connected"' ] || {
-                        echo "No data link!"
-                        uqmi -s -d "$device" --set-client-id wds,"$cid_6" --release-client-id wds
-                        proto_notify_error "$interface" CALL_FAILED
-                        return 1
-                }
+		[ "$connstat" == '"connected"' ] || {
+			echo "No data link!"
+			uqmi -s -d "$device" --set-client-id wds,"$cid_6" --release-client-id wds
+			proto_notify_error "$interface" CALL_FAILED
+			return 1
+		}
 	}
 
 	echo "Setting up $ifname"
