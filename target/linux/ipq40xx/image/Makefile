@@ -32,6 +32,17 @@ define Device/UbiFit
 endef
 
 
+define Device/8dev_jalapeno
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_DTS := qcom-ipq4018-jalapeno
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_TITLE := 8devices Jalapeno
+	DEVICE_PACKAGES := ath10k-firmware-qca4019
+endef
+TARGET_DEVICES += 8dev_jalapeno
+
 define Device/asus_rt-ac58u
 	$(call Device/FitImageLzma)
 	DEVICE_DTS := qcom-ipq4018-rt-ac58u
