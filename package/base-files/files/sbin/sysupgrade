@@ -264,7 +264,7 @@ else
 	rm -f /tmp/sysupgrade.always.overwrite.bootdisk.partmap
 fi
 
-run_hooks "" $sysupgrade_pre_upgrade
+run_hooks "$IMAGE" $sysupgrade_pre_upgrade
 
 install_bin /sbin/upgraded
 v "Commencing upgrade. All shell sessions will be closed now."
