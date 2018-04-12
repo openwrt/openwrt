@@ -60,6 +60,11 @@ define Package/samba36-server/config
 		int "Maximum level of compiled-in debug messages"
 		depends on PACKAGE_samba36-server || PACKAGE_samba36-client
 		default -1
+	config PACKAGE_SAMBA_SERVER_HOTPLUG
+		bool "Hotplug script of autoshare"
+		depends on PACKAGE_samba36-server
+		select PACKAGE_block-mount
+		default n
 endef
 
 define Package/samba36-server/description
@@ -147,6 +152,12 @@ define Package/samba36-server/install
 	$(INSTALL_CONF) ./files/samba.config $(1)/etc/config/samba
 	$(INSTALL_DIR) $(1)/etc/samba
 	$(INSTALL_DATA) ./files/smb.conf.template $(1)/etc/samba
+ifeq ($(CONFIG_PACKAGE_SAMBA_SERVER_HOTPLUG),y)
+	$(INSTALL_DIR) $(1)/lib/samba
+	$(INSTALL_DATA) ./files/lib/samba.sh $(1)/lib/samba/samba.sh
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/block
+	$(INSTALL_DATA) ./files/samba.hotplug $(1)/etc/hotplug.d/block/60-samba
+endif
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/codepages/lowcase.dat $(1)/etc/samba
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/codepages/upcase.dat $(1)/etc/samba
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/codepages/valid.dat $(1)/etc/samba
