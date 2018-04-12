@@ -72,7 +72,7 @@
  
  ifndef CONFIG_NO_GITVER
  # Add VERSION_STR postfix for builds from a git repository
-@@ -358,7 +359,9 @@ endif
+@@ -354,7 +355,9 @@ endif
  ifdef CONFIG_IBSS_RSN
  NEED_RSN_AUTHENTICATOR=y
  CFLAGS += -DCONFIG_IBSS_RSN
@@ -82,7 +82,7 @@
  OBJS += ibss_rsn.o
  endif
  
-@@ -866,6 +869,10 @@ ifdef CONFIG_DYNAMIC_EAP_METHODS
+@@ -862,6 +865,10 @@ ifdef CONFIG_DYNAMIC_EAP_METHODS
  CFLAGS += -DCONFIG_DYNAMIC_EAP_METHODS
  LIBS += -ldl -rdynamic
  endif
@@ -93,7 +93,7 @@
  endif
  
  ifdef CONFIG_AP
-@@ -873,9 +880,11 @@ NEED_EAP_COMMON=y
+@@ -869,9 +876,11 @@ NEED_EAP_COMMON=y
  NEED_RSN_AUTHENTICATOR=y
  CFLAGS += -DCONFIG_AP
  OBJS += ap.o
@@ -105,7 +105,7 @@
  OBJS += ../src/ap/hostapd.o
  OBJS += ../src/ap/wpa_auth_glue.o
  OBJS += ../src/ap/utils.o
-@@ -957,6 +966,12 @@ endif
+@@ -953,6 +962,12 @@ endif
  ifdef CONFIG_HS20
  OBJS += ../src/ap/hs20.o
  endif
@@ -118,7 +118,7 @@
  endif
  
  ifdef CONFIG_MBO
-@@ -965,7 +980,9 @@ CFLAGS += -DCONFIG_MBO
+@@ -961,7 +976,9 @@ CFLAGS += -DCONFIG_MBO
  endif
  
  ifdef NEED_RSN_AUTHENTICATOR
@@ -128,7 +128,7 @@
  NEED_AES_WRAP=y
  OBJS += ../src/ap/wpa_auth.o
  OBJS += ../src/ap/wpa_auth_ie.o
-@@ -1895,6 +1912,12 @@ wpa_priv: $(BCHECK) $(OBJS_priv)
+@@ -1887,6 +1904,12 @@ wpa_priv: $(BCHECK) $(OBJS_priv)
  
  $(OBJS_c) $(OBJS_t) $(OBJS_t2) $(OBJS) $(BCHECK) $(EXTRA_progs): .config
  
@@ -141,7 +141,7 @@
  wpa_supplicant: $(BCHECK) $(OBJS) $(EXTRA_progs)
  	$(Q)$(LDO) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS) $(EXTRALIBS)
  	@$(E) "  LD " $@
-@@ -1997,6 +2020,12 @@ endif
+@@ -1989,6 +2012,12 @@ endif
  		-e 's|\@DBUS_INTERFACE\@|$(DBUS_INTERFACE)|g' $< >$@
  	@$(E) "  sed" $<
  
@@ -156,7 +156,7 @@
  wpa_cli.exe: wpa_cli
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -5418,8 +5418,8 @@ union wpa_event_data {
+@@ -5428,8 +5428,8 @@ union wpa_event_data {
   * Driver wrapper code should call this function whenever an event is received
   * from the driver.
   */
@@ -167,7 +167,7 @@
  
  /**
   * wpa_supplicant_event_global - Report a driver event for wpa_supplicant
-@@ -5431,7 +5431,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -5441,7 +5441,7 @@ void wpa_supplicant_event(void *ctx, enu
   * Same as wpa_supplicant_event(), but we search for the interface in
   * wpa_global.
   */
@@ -242,7 +242,7 @@
  {
  	struct wpa_supplicant *wpa_s = ctx;
  	int resched;
-@@ -4628,7 +4628,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -4632,7 +4632,7 @@ void wpa_supplicant_event(void *ctx, enu
  }
  
  
@@ -253,7 +253,7 @@
  	struct wpa_supplicant *wpa_s;
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -5678,7 +5678,6 @@ struct wpa_interface * wpa_supplicant_ma
+@@ -5725,7 +5725,6 @@ struct wpa_interface * wpa_supplicant_ma
  	return NULL;
  }
  
@@ -261,7 +261,7 @@
  /**
   * wpa_supplicant_match_existing - Match existing interfaces
   * @global: Pointer to global data from wpa_supplicant_init()
-@@ -5715,6 +5714,11 @@ static int wpa_supplicant_match_existing
+@@ -5762,6 +5761,11 @@ static int wpa_supplicant_match_existing
  
  #endif /* CONFIG_MATCH_IFACE */
  
@@ -273,7 +273,7 @@
  
  /**
   * wpa_supplicant_add_iface - Add a new network interface
-@@ -5971,6 +5975,8 @@ struct wpa_global * wpa_supplicant_init(
+@@ -6018,6 +6022,8 @@ struct wpa_global * wpa_supplicant_init(
  #ifndef CONFIG_NO_WPA_MSG
  	wpa_msg_register_ifname_cb(wpa_supplicant_msg_ifname_cb);
  #endif /* CONFIG_NO_WPA_MSG */
