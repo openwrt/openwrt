@@ -125,9 +125,18 @@ proto_qmi_setup() {
 	uqmi -s -d "$device" --sync > /dev/null 2>&1
 
 	echo "Waiting for network registration"
+	local registration_timeout=0
 	while uqmi -s -d "$device" --get-serving-system | grep '"searching"' > /dev/null; do
 		[ -e "$device" ] || return 1
-		sleep 5;
+		if [ "$registration_timeout" -lt "$timeout" ]; then
+			let registration_timeout++
+			sleep 1;
+		else
+			echo "Network registration failed"
+			proto_notify_error "$interface" NETWORK_REGISTRATION_FAILED
+			proto_block_restart "$interface"
+			return 1
+		fi
 	done
 
 	[ -n "$modes" ] && uqmi -s -d "$device" --set-network-modes "$modes" > /dev/null 2>&1
