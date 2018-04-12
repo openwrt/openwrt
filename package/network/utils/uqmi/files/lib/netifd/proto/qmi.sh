@@ -96,6 +96,7 @@ proto_qmi_setup() {
 		. /usr/share/libubox/jshn.sh
 		json_load "$(uqmi -s -d "$device" --get-pin-status)"
 		json_get_var pin1_status pin1_status
+		json_get_var pin1_verify_tries pin1_verify_tries
 
 		case "$pin1_status" in
 			disabled)
@@ -108,6 +109,12 @@ proto_qmi_setup() {
 				return 1
 				;;
 			not_verified)
+				[ "$pin1_verify_tries" -lt "3" ] && {
+					echo "PIN verify count value is $pin1_verify_tries this is below the limit of 3"
+					proto_notify_error "$interface" PIN_TRIES_BELOW_LIMIT
+					proto_block_restart "$interface"
+					return 1
+				}
 				if [ -n "$pincode" ]; then
 					uqmi -s -d "$device" --verify-pin1 "$pincode" > /dev/null 2>&1 || uqmi -s -d "$device" --uim-verify-pin1 "$pincode" > /dev/null 2>&1 || {
 						echo "Unable to verify PIN"
