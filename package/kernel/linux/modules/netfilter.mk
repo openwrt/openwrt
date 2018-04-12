@@ -101,6 +101,11 @@ define KernelPackage/nf-conntrack
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_CONNTRACK-m)))
 endef
 
+define KernelPackage/nf-conntrack/install
+	$(INSTALL_DIR) $(1)/etc/sysctl.d
+	$(INSTALL_DATA) ./files/sysctl-nf-conntrack.conf $(1)/etc/sysctl.d/11-nf-conntrack.conf
+endef
+
 $(eval $(call KernelPackage,nf-conntrack))
 
 
@@ -772,6 +777,11 @@ define KernelPackage/br-netfilter
   FILES:=$(LINUX_DIR)/net/bridge/br_netfilter.ko
   KCONFIG:=CONFIG_BRIDGE_NETFILTER
   AUTOLOAD:=$(call AutoProbe,br_netfilter)
+endef
+
+define KernelPackage/br-netfilter/install
+	$(INSTALL_DIR) $(1)/etc/sysctl.d
+	$(INSTALL_DATA) ./files/sysctl-br-netfilter.conf $(1)/etc/sysctl.d/11-br-netfilter.conf
 endef
 
 $(eval $(call KernelPackage,br-netfilter))
