@@ -1,15 +1,31 @@
 #
 # Copyright (C) 2015 OpenWrt.org
+# Copyright (C) 2018 Ian Leonard <antonlacon@gmail.com>
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
+# Graphite Options
+
+GCC_USE_GRAPHITE ?= 1
+
+
+ifdef CONFIG_GCC_USE_GRAPHITE
+  ifeq ($(strip $(GCC_USE_GRAPHITE)),1)
+    TARGET_CFLAGS += -fgraphite-identity -floop-nest-optimize -ftree-loop-distribution
+  endif
+endif
+
+
+# Hardening Options
 
 PKG_CHECK_FORMAT_SECURITY ?= 1
 PKG_ASLR_PIE ?= 1
 PKG_SSP ?= 1
 PKG_FORTIFY_SOURCE ?= 1
 PKG_RELRO ?= 1
+
 
 ifdef CONFIG_PKG_CHECK_FORMAT_SECURITY
   ifeq ($(strip $(PKG_CHECK_FORMAT_SECURITY)),1)

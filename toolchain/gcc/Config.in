@@ -28,7 +28,25 @@ endchoice
 
 config GCC_USE_GRAPHITE
 	bool
-	prompt "Compile in support for the new Graphite framework in GCC 4.4+" if TOOLCHAINOPTS
+	prompt "Compile in support for GCC's Graphite framework" if TOOLCHAINOPTS
+
+config GCC_GRAPHITE_FLAGS
+	bool
+	depends on GCC_USE_GRAPHITE && GCC_USE_VERSION_7 && LIBC_USE_GLIBC
+	prompt "Set CFLAGS to include Graphite options" if TOOLCHAINOPTS
+	default n
+	help
+		Adds standard Graphite options to CFLAGS:
+
+		-fgraphite-identity
+		-floop-nest-optimize
+
+		Also sets -ftree-loop-distribution from -O3 to split
+		loops, allowing for more possible optimizations from
+		Graphite.
+
+		Many, but not all, packages will complie with Graphite.
+		Submit a patch or choose N here if problems arise.
 
 config EXTRA_GCC_CONFIG_OPTIONS
 	string
