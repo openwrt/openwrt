@@ -633,7 +633,7 @@ mac80211_setup_vif() {
 			if [ -n "$key" ]; then
 				wireless_vif_parse_encryption
 				freq="$(get_freq "$phy" "$channel")"
-				mac80211_setup_supplicant_noctl || failed=1
+				mac80211_setup_supplicant || failed=1
 			else
 				json_get_vars mesh_id mcast_rate
 
