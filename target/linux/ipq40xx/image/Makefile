@@ -51,7 +51,7 @@ define Device/8dev_jalapeno
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	DEVICE_TITLE := 8devices Jalapeno
-	DEVICE_PACKAGES := ath10k-firmware-qca4019 ipq-wifi-8dev_jalapeno
+	DEVICE_PACKAGES := ipq-wifi-8dev_jalapeno
 endef
 TARGET_DEVICES += 8dev_jalapeno
 
@@ -97,7 +97,7 @@ define Device/compex_wpj428
 	KERNEL_SIZE := 4096k
 	IMAGES = sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca4019 kmod-gpio-beeper
+	DEVICE_PACKAGES := kmod-gpio-beeper
 endef
 TARGET_DEVICES += compex_wpj428
 
@@ -129,7 +129,7 @@ define Device/netgear_ex61x0v2
 	$(call Device/DniImage)
 	KERNEL_SIZE := 3080192
 	DEVICE_DTS_CONFIG := config@4
-	DEVICE_PACKAGES := ath10k-firmware-qca4019 ipq-wifi-netgear_ex61x0v2
+	DEVICE_PACKAGES := ipq-wifi-netgear_ex61x0v2
 	NETGEAR_BOARD_ID := EX6150v2series
 	NETGEAR_HW_ID := 29765285+16+0+128+2x2
 endef
@@ -159,7 +159,7 @@ define Device/openmesh_a42
 	IMAGES = factory.bin sysupgrade.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=A42
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca4019 uboot-envtools
+	DEVICE_PACKAGES := uboot-envtools
 endef
 TARGET_DEVICES += openmesh_a42
 
@@ -173,7 +173,6 @@ define Device/qcom_ap-dk01.1-c1
 	$(call Device/FitImage)
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca4019
 endef
 TARGET_DEVICES += qcom_ap-dk01.1-c1
 
