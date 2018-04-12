@@ -31,6 +31,9 @@ EOF
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	8dev,jalapeno)
+		nand_do_upgrade "$ARGV"
+		;;
 	asus,rt-ac58u)
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"
