@@ -44,6 +44,9 @@ ifeq ($(strip $(UNPACK_CMD)),)
     ifeq ($(EXT),zip)
       UNPACK_CMD=$(UNZIP_CMD)
     endif
+    ifeq ($(EXT),lz)
+      UNPACK_CMD=$(DECOMPRESS_CMD) $(TAR_CMD) --lzip
+    endif
   endif
 
   # compatibility code for packages that set PKG_CAT
