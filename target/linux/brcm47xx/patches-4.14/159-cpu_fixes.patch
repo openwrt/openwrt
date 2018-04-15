@@ -63,7 +63,7 @@
  	cache_op(Hit_Invalidate_D, addr);
  	__dflush_epilogue
  }
-@@ -205,6 +240,7 @@ static inline void protected_flush_icach
+@@ -205,6 +240,7 @@ static inline int protected_flush_icache
  #ifdef CONFIG_EVA
  		return protected_cachee_op(Hit_Invalidate_I, addr);
  #else
@@ -71,7 +71,7 @@
  		return protected_cache_op(Hit_Invalidate_I, addr);
  #endif
  	}
-@@ -218,6 +254,7 @@ static inline void protected_flush_icach
+@@ -218,6 +254,7 @@ static inline int protected_flush_icache
   */
  static inline int protected_writeback_dcache_line(unsigned long addr)
  {
@@ -457,7 +457,7 @@
  	/*
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -971,6 +971,9 @@ build_get_pgde32(u32 **p, unsigned int t
+@@ -971,6 +971,9 @@ void build_get_pgde32(u32 **p, unsigned
  		uasm_i_srl(p, ptr, ptr, SMP_CPUID_PTRSHIFT);
  		uasm_i_addu(p, ptr, tmp, ptr);
  #else
