@@ -12,7 +12,9 @@
 		]
 	} ],
 	[ "if",
-		[ "eq", "SUBSYSTEM", "button" ],
+		["and",
+			[ "eq", "SUBSYSTEM", "button" ],
+			[ "not" , [ "eq", "BUTTON", "eject" ] ] ],
 		[ "exec", "/etc/rc.button/failsafe" ]
 	]
 ]
