@@ -76,11 +76,6 @@ else
   zlib_link_flags := -lz
 endif
 
-$(eval $(call TestHostCommand,zlib, \
-	Please install a static zlib. (Missing libz.a or zlib.h), \
-	echo 'int main(int argc, char **argv) { gzdopen(0, "rb"); return 0; }' | \
-		gcc -include zlib.h -x c -o $(TMP_DIR)/a.out - $(zlib_link_flags)))
-
 $(eval $(call TestHostCommand,perl-thread-queue, \
 	Please install the Perl Thread::Queue module, \
 	perl -MThread::Queue -e 1))
