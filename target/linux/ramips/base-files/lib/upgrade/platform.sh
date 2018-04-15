@@ -165,6 +165,7 @@ platform_check_image() {
 	w2914nsv2|\
 	w306r-v20|\
 	w502u|\
+	ravpower,wd03|\
 	wf-2881|\
 	whr-1166d|\
 	whr-300hp2|\
