@@ -476,6 +476,9 @@ ar71xx_board_detect() {
 	*"Archer C7 v4")
 		name="archer-c7-v4"
 		;;
+	*"Archer C7 v5")
+		name="archer-c7-v5"
+		;;
 	*"Archer C58 v1")
 		name="archer-c58-v1"
 		;;
