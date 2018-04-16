@@ -1,0 +1,71 @@
+commit a60725740b65be8679afe612f7fec2639ed0eab7
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Tue Mar 6 21:51:51 2018 +0800
+
+    workaround memory sanitizer FD_ZERO false positives
+
+--- a/common-session.c
++++ b/common-session.c
+@@ -148,8 +148,9 @@ void session_loop(void(*loophandler)(voi
+ 
+ 		timeout.tv_sec = select_timeout();
+ 		timeout.tv_usec = 0;
+-		FD_ZERO(&writefd);
+-		FD_ZERO(&readfd);
++		DROPBEAR_FD_ZERO(&writefd);
++		DROPBEAR_FD_ZERO(&readfd);
++
+ 		dropbear_assert(ses.payload == NULL);
+ 
+ 		/* We get woken up when signal handlers write to this pipe.
+@@ -195,8 +196,8 @@ void session_loop(void(*loophandler)(voi
+ 			 * want to iterate over channels etc for reading, to handle
+ 			 * server processes exiting etc. 
+ 			 * We don't want to read/write FDs. */
+-			FD_ZERO(&writefd);
+-			FD_ZERO(&readfd);
++			DROPBEAR_FD_ZERO(&writefd);
++			DROPBEAR_FD_ZERO(&readfd);
+ 		}
+ 		
+ 		/* We'll just empty out the pipe if required. We don't do
+@@ -397,7 +398,7 @@ static int ident_readln(int fd, char* bu
+ 		return -1;
+ 	}
+ 
+-	FD_ZERO(&fds);
++	DROPBEAR_FD_ZERO(&fds);
+ 
+ 	/* select since it's a non-blocking fd */
+ 	
+--- a/dbrandom.c
++++ b/dbrandom.c
+@@ -88,7 +88,7 @@ process_file(hash_state *hs, const char
+  			timeout.tv_sec  = 2;
+  			timeout.tv_usec = 0;
+ 
+-			FD_ZERO(&read_fds);
++			DROPBEAR_FD_ZERO(&read_fds);
+ 			FD_SET(readfd, &read_fds);
+ 			res = select(readfd + 1, &read_fds, NULL, NULL, &timeout);
+ 			if (res == 0)
+--- a/dbutil.h
++++ b/dbutil.h
+@@ -88,4 +88,6 @@ char * expand_homedir_path(const char *i
+ 
+ void fsync_parent_dir(const char* fn);
+ 
++#define DROPBEAR_FD_ZERO(fds) FD_ZERO(fds)
++
+ #endif /* DROPBEAR_DBUTIL_H_ */
+--- a/svr-main.c
++++ b/svr-main.c
+@@ -178,7 +178,7 @@ static void main_noinetd() {
+ 	/* incoming connection select loop */
+ 	for(;;) {
+ 
+-		FD_ZERO(&fds);
++		DROPBEAR_FD_ZERO(&fds);
+ 		
+ 		/* listening sockets */
+ 		for (i = 0; i < listensockcount; i++) {

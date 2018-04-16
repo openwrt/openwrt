@@ -1,0 +1,57 @@
+commit 8062a4e8d622162a2eda72e09f930d2475c29070
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Thu Mar 1 22:12:30 2018 +0800
+
+    mention localoptions.h being build directory, fix underscore in CHANGES
+
+--- a/CHANGES
++++ b/CHANGES
+@@ -2,12 +2,12 @@
+ 
+ > > > Configuration/compatibility changes
+   IMPORTANT
+-  Custom configuration is now specified in local_options.h rather than options.h
++  Custom configuration is now specified in localoptions.h rather than options.h
+   Available options and defaults can be seen in default_options.h
+ 
+   To migrate your configuration, compare your customised options.h against the
+   upstream options.h from your relevant version. Any customised options should
+-  be put in localoptions.h
++  be put in localoptions.h in the build directory.
+ 
+ - "configure --enable-static" should now be used instead of "make STATIC=1"
+   This will avoid 'hardened build' flags that conflict with static binaries
+--- a/INSTALL
++++ b/INSTALL
+@@ -3,6 +3,8 @@ Basic Dropbear build instructions:
+ - Edit localoptions.h to set which features you want. Available options
+   are described in default_options.h, these will be overridden by
+   anything set in localoptions.h
++  localoptions.h should be located in the build directory if you are
++  building out of tree.
+ 
+ - If using a Mercurial or Git checkout, "autoconf; autoheader"
+ 
+--- a/default_options.h
++++ b/default_options.h
+@@ -6,8 +6,8 @@
+ default_options.h  documents compile-time options, and provides default values.
+ 
+ Local customisation should be added to localoptions.h which is
+-used if it exists. Options defined there will override any options in this
+-file.
++used if it exists in the build directory. Options defined there will override
++any options in this file.
+ 
+ Options can also be defined with -DDROPBEAR_XXX=[0,1] in Makefile CFLAGS
+ 
+--- a/options.h
++++ b/options.h
+@@ -5,6 +5,7 @@
+             > > > Don't edit this file any more! < < <
+             
+ Local compile-time configuration should be defined in localoptions.h
++in the build directory.
+ See default_options.h.in for a description of the available options.
+ */
+ 

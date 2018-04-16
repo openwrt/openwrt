@@ -1,0 +1,18 @@
+commit 145fb9698929d247dffb35189397a3daff497431
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Mon Mar 5 16:50:24 2018 +0800
+
+    Don't read uninitialised value.
+    From https://github.com/libtom/libtommath/commit/1d03522625f46214733e8e143a4765c01fc146f9
+
+--- a/libtommath/bn_fast_s_mp_mul_digs.c
++++ b/libtommath/bn_fast_s_mp_mul_digs.c
+@@ -87,7 +87,7 @@ int fast_s_mp_mul_digs (mp_int * a, mp_i
+   {
+     mp_digit *tmpc;
+     tmpc = c->dp;
+-    for (ix = 0; ix < (pa + 1); ix++) {
++    for (ix = 0; ix < pa; ix++) {
+       /* now extract the previous digit [below the carry] */
+       *tmpc++ = W[ix];
+     }

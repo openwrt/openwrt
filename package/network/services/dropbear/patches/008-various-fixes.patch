@@ -1,0 +1,157 @@
+commit ba94bcd2e876cf79a66f3f9f4e46473f89c288c8
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Thu Mar 8 22:37:54 2018 +0800
+
+    It turns out you can't have a single-quote in an #error
+
+commit b4b11c8155b09e4d56925d2d4336c10d802adf11
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Thu Mar 8 22:22:11 2018 +0800
+
+    #error if no ecc size is chosen
+
+commit 8d0b48f16550c9bf3693b2fa683f21e8276b1b1a
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Sat Mar 3 10:10:16 2018 +0800
+
+    Fix CFLAGS for configure
+
+commit 7f8702d3d6bec8832057103b46492b066cbc1426
+Author: François Perrad <francois.perrad@gadz.org>
+Date:   Wed Feb 28 15:10:14 2018 +0100
+
+    fix #endif (#59)
+
+commit 5f2447edbb04dff504396e426268fbaf83fa6bca
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Wed Feb 28 22:02:12 2018 +0800
+
+    Fix to be able to compile normal(ish) binaries with --enable-fuzz
+
+    --HG--
+    branch : fuzz
+
+commit 89bdf3b0b9376204b039f38f8bebffa92cb30d4e
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Tue Jan 23 23:05:47 2018 +0800
+
+    add fuzzer-preauth_nomaths
+
+    --HG--
+    branch : fuzz
+
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -181,7 +181,7 @@ dbclient: $(HEADERS) $(LIBTOM_DEPS) Make
+ 	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $($@objs) $(LIBTOM_LIBS) $(LIBS)
+ 
+ dropbearkey dropbearconvert: $(HEADERS) $(LIBTOM_DEPS) Makefile
+-	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $($@objs) $(LIBTOM_LIBS)
++	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $($@objs) $(LIBTOM_LIBS) $(LIBS)
+ 
+ # scp doesn't use the libs so is special.
+ scp: $(SCPOBJS)  $(HEADERS) Makefile
+--- a/common-kex.c
++++ b/common-kex.c
+@@ -48,7 +48,6 @@ static void read_kex_algos(void);
+ /* helper function for gen_new_keys */
+ static void hashkeys(unsigned char *out, unsigned int outlen, 
+ 		const hash_state * hs, const unsigned char X);
+-static void finish_kexhashbuf(void);
+ 
+ 
+ /* Send our list of algorithms we can use */
+@@ -769,8 +768,7 @@ void kexcurve25519_comb_key(const struct
+ #endif /* DROPBEAR_CURVE25519 */
+ 
+ 
+-
+-static void finish_kexhashbuf(void) {
++void finish_kexhashbuf(void) {
+ 	hash_state hs;
+ 	const struct ltc_hash_descriptor *hash_desc = ses.newkeys->algo_kex->hash_desc;
+ 
+--- a/configure
++++ b/configure
+@@ -2302,8 +2302,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS con
+ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ 
+-
+-
++ORIGCFLAGS="$CFLAGS"
+ 
+ # Checks for programs.
+ ac_ext=c
+@@ -3104,7 +3103,7 @@ fi
+ 
+ 
+ # set compile flags prior to other tests
+-if test -z "$OLDCFLAGS" && test "$GCC" = "yes"; then
++if test -z "$ORIGCFLAGS" && test "$GCC" = "yes"; then
+ 	{ $as_echo "$as_me:${as_lineno-$LINENO}: No \$CFLAGS set... using \"-Os -W -Wall\" for GCC" >&5
+ $as_echo "$as_me: No \$CFLAGS set... using \"-Os -W -Wall\" for GCC" >&6;}
+ 	CFLAGS="-Os -W -Wall"
+--- a/configure.ac
++++ b/configure.ac
+@@ -9,6 +9,7 @@ AC_PREREQ(2.59)
+ AC_INIT
+ AC_CONFIG_SRCDIR(buffer.c)
+ 
++ORIGCFLAGS="$CFLAGS"
+ # Checks for programs.
+ AC_PROG_CC
+ 
+@@ -29,7 +30,7 @@ AC_DEFUN(DB_TRYADDCFLAGS,
+ }])
+ 
+ # set compile flags prior to other tests
+-if test -z "$OLDCFLAGS" && test "$GCC" = "yes"; then
++if test -z "$ORIGCFLAGS" && test "$GCC" = "yes"; then
+ 	AC_MSG_NOTICE(No \$CFLAGS set... using "-Os -W -Wall" for GCC)
+ 	CFLAGS="-Os -W -Wall"
+ fi
+--- a/debug.h
++++ b/debug.h
+@@ -39,7 +39,9 @@
+ /*#define CHECKCLEARTOWRITE() assert(ses.writepayload->len == 0 && \
+ 		ses.writepayload->pos == 0)*/
+ 
++#ifndef CHECKCLEARTOWRITE
+ #define CHECKCLEARTOWRITE()
++#endif
+ 
+ /* Define this, compile with -pg and set GMON_OUT_PREFIX=gmon to get gmon
+  * output when Dropbear forks. This will allow it gprof to be used.
+--- a/ecdsa.h
++++ b/ecdsa.h
+@@ -16,7 +16,7 @@
+ #elif DROPBEAR_ECC_521
+ #define ECDSA_DEFAULT_SIZE 521
+ #else
+-#define ECDSA_DEFAULT_SIZE 0
++#error ECDSA cannot be enabled without enabling at least one size (256, 384, 521)
+ #endif
+ 
+ ecc_key *gen_ecdsa_priv_key(unsigned int bit_size);
+--- a/kex.h
++++ b/kex.h
+@@ -34,6 +34,7 @@ void recv_msg_kexinit(void);
+ void send_msg_newkeys(void);
+ void recv_msg_newkeys(void);
+ void kexfirstinitialise(void);
++void finish_kexhashbuf(void);
+ 
+ struct kex_dh_param *gen_kexdh_param(void);
+ void free_kexdh_param(struct kex_dh_param *param);
+--- a/svr-auth.c
++++ b/svr-auth.c
+@@ -312,7 +312,7 @@ static int checkusername(const char *use
+ 			return DROPBEAR_FAILURE;
+ 		}
+ 	}
+-#endif HAVE_GETGROUPLIST
++#endif /* HAVE_GETGROUPLIST */
+ 
+ 	TRACE(("shell is %s", ses.authstate.pw_shell))
+ 

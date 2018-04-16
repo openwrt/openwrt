@@ -1,0 +1,22 @@
+commit 27828c742c0c5e024aa5dd1a5333d64cb4a1b16c
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Wed Mar 7 22:16:21 2018 +0800
+
+    don't allow null characters in authorized_keys
+
+--- a/svr-authpubkey.c
++++ b/svr-authpubkey.c
+@@ -201,7 +201,12 @@ static int checkpubkey_line(buffer* line
+ 
+ 	if (line->len < MIN_AUTHKEYS_LINE || line->len > MAX_AUTHKEYS_LINE) {
+ 		TRACE(("checkpubkey_line: bad line length %d", line->len))
+-		return DROPBEAR_FAILURE;
++		goto out;
++	}
++
++	if (memchr(line->data, 0x0, line->len) != NULL) {
++		TRACE(("checkpubkey_line: bad line has null char"))
++		goto out;
+ 	}
+ 
+ 	/* compare the algorithm. +3 so we have enough bytes to read a space and some base64 characters too. */

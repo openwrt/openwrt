@@ -1,0 +1,66 @@
+commit 38c9408cf859525029f6eb4fe00b50259e08e3f2
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Thu Mar 8 23:51:33 2018 +0800
+
+    avoid leak of ecdh public key
+
+commit ed4c38ba467618a7193f4e5dec1d5f0169e0c227
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Wed Mar 7 22:14:36 2018 +0800
+
+    fix leak in option handling
+
+commit e9edbe8bb204b00c7f4b4fda7eeee9d0177934ae
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Tue Mar 6 22:18:20 2018 +0800
+
+    avoid leak of pubkey_options
+
+--- a/common-kex.c
++++ b/common-kex.c
+@@ -694,6 +694,9 @@ void kexecdh_comb_key(struct kex_ecdh_pa
+ 	/* K, the shared secret */
+ 	buf_putmpint(ses.kexhashbuf, ses.dh_K);
+ 
++	ecc_free(Q_them);
++	m_free(Q_them);
++
+ 	/* calculate the hash H to sign */
+ 	finish_kexhashbuf();
+ }
+--- a/svr-authpubkey.c
++++ b/svr-authpubkey.c
+@@ -167,6 +167,10 @@ out:
+ 		sign_key_free(key);
+ 		key = NULL;
+ 	}
++	/* Retain pubkey options only if auth succeeded */
++	if (!ses.authstate.authdone) {
++		svr_pubkey_options_cleanup();
++	}
+ 	TRACE(("leave pubkeyauth"))
+ }
+ 
+--- a/svr-authpubkeyoptions.c
++++ b/svr-authpubkeyoptions.c
+@@ -113,7 +113,6 @@ void svr_pubkey_options_cleanup() {
+ 			m_free(ses.authstate.pubkey_options->forced_command);
+ 		}
+ 		m_free(ses.authstate.pubkey_options);
+-		ses.authstate.pubkey_options = NULL;
+ 	}
+ }
+ 
+@@ -169,6 +168,12 @@ int svr_add_pubkey_options(buffer *optio
+ 		if (match_option(options_buf, "command=\"") == DROPBEAR_SUCCESS) {
+ 			int escaped = 0;
+ 			const unsigned char* command_start = buf_getptr(options_buf, 0);
++
++			if (ses.authstate.pubkey_options->forced_command) {
++				/* multiple command= options */
++				goto bad_option;
++			}
++
+ 			while (options_buf->pos < options_buf->len) {
+ 				const char c = buf_getbyte(options_buf);
+ 				if (!escaped && c == '"') {

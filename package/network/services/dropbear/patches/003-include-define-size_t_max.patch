@@ -1,0 +1,22 @@
+commit a43b6b032369853d92cb6ab11bf89906f256c6a7
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Mon May 22 22:09:46 2017 +0800
+
+    define SIZE_T_MAX
+
+    --HG--
+    branch : fuzz
+
+--- a/includes.h
++++ b/includes.h
+@@ -155,6 +155,10 @@ typedef unsigned int u_int32_t;
+ typedef u_int32_t uint32_t;
+ #endif /* HAVE_UINT32_T */
+ 
++#ifndef SIZE_T_MAX
++#define SIZE_T_MAX ULONG_MAX
++#endif /* SIZE_T_MAX */
++
+ #ifdef HAVE_LINUX_PKT_SCHED_H
+ #include <linux/types.h>
+ #include <linux/pkt_sched.h>

@@ -1,0 +1,22 @@
+commit ee5769f31fc5bef0c0f5f6977523918af892fa3b
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Thu May 25 00:09:40 2017 +0800
+
+    avoid NULL argument to base64 decode
+
+    --HG--
+    branch : fuzz
+
+--- a/signkey.c
++++ b/signkey.c
+@@ -580,6 +580,10 @@ int cmp_base64_key(const unsigned char*
+ 
+ 	/* now we have the actual data */
+ 	len = line->len - line->pos;
++	if (len == 0) {
++		/* base64_decode doesn't like NULL argument */
++		return DROPBEAR_FAILURE;
++	}
+ 	decodekeylen = len * 2; /* big to be safe */
+ 	decodekey = buf_new(decodekeylen);
+ 

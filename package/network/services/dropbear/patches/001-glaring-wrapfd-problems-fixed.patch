@@ -1,0 +1,60 @@
+commit 84a143a605cd2658ad359feafda8fc48c2f0d575
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Mon May 22 22:09:38 2017 +0800
+
+    remove unneeded check
+
+    --HG--
+    branch : fuzz
+
+commit c1694230516fe1c3d78e4fd23aebd5fbc00ce21c
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Sat May 20 22:47:19 2017 +0800
+
+    glaring wrapfd problems fixed
+
+    --HG--
+    branch : fuzz
+
+--- a/common-kex.c
++++ b/common-kex.c
+@@ -403,6 +403,7 @@ static void gen_new_zstream_recv() {
+ 		ses.newkeys->recv.zstream->zfree = Z_NULL;
+ 		
+ 		if (inflateInit(ses.newkeys->recv.zstream) != Z_OK) {
++			m_free(ses.newkeys->recv.zstream);
+ 			dropbear_exit("zlib error");
+ 		}
+ 	} else {
+--- a/common-session.c
++++ b/common-session.c
+@@ -298,6 +298,16 @@ void session_cleanup() {
+ 		buf_free(dequeue(&ses.writequeue));
+ 	}
+ 
++	m_free(ses.newkeys);
++#ifndef DISABLE_ZLIB
++	if (ses.keys->recv.zstream != NULL) {
++		if (inflateEnd(ses.keys->recv.zstream) == Z_STREAM_ERROR) {
++			dropbear_exit("Crypto error");
++		}
++		m_free(ses.keys->recv.zstream);
++	}
++#endif
++
+ 	m_free(ses.remoteident);
+ 	m_free(ses.authstate.pw_dir);
+ 	m_free(ses.authstate.pw_name);
+--- a/svr-session.c
++++ b/svr-session.c
+@@ -238,7 +238,9 @@ void svr_dropbear_log(int priority, cons
+ static void svr_remoteclosed() {
+ 
+ 	m_close(ses.sock_in);
+-	m_close(ses.sock_out);
++	if (ses.sock_in != ses.sock_out) {
++		m_close(ses.sock_out);
++	}
+ 	ses.sock_in = -1;
+ 	ses.sock_out = -1;
+ 	dropbear_close("Exited normally");

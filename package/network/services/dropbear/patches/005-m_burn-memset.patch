@@ -1,0 +1,49 @@
+commit 257bba00ac1c1461b18ff1f5d420ec83fa13a368
+Author: François Perrad <francois.perrad@gadz.org>
+Date:   Sat Mar 3 04:06:45 2018 +0100
+
+    some linting after fuzz merge (#60)
+
+    * fix prototype
+
+    * remove extra comma
+
+    * use m_free after m_strdup
+
+commit 8a4f7fe4f8435b9551c4145f93876e11de78cdcb
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Thu Mar 1 23:46:07 2018 +0800
+
+    avoid volatile cast warning
+
+commit b17254925ddd82aa633ca8128751b93840fabc9b
+Author: Matt Johnston <matt@ucc.asn.au>
+Date:   Thu May 25 22:19:46 2017 +0800
+
+    Just use memset, it should'be be optimised out in a separate file
+
+    --HG--
+    branch : fuzz
+
+--- a/dbhelpers.c
++++ b/dbhelpers.c
+@@ -9,16 +9,9 @@ void m_burn(void *data, unsigned int len
+ #elif defined(HAVE_EXPLICIT_BZERO)
+ 	explicit_bzero(data, len);
+ #else
+-/* Based on the method in David Wheeler's
+- * "Secure Programming for Linux and Unix HOWTO". May not be safe
+- * against link-time optimisation. */
+-	volatile char *p = data;
+-
+-	if (data == NULL)
+-		return;
+-	while (len--) {
+-		*p++ = 0x0;
+-	}
++	/* This must be volatile to avoid compiler optimisation */
++	volatile void *p = data;
++	memset((void*)p, 0x0, len);
+ #endif
+ }
+ 
