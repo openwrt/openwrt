@@ -695,6 +695,7 @@ platform_check_image() {
 		return 0;
 		;;
 	# these boards use metadata images
+	fritz1750e|\
 	fritz300e|\
 	fritz4020|\
 	fritz450e|\

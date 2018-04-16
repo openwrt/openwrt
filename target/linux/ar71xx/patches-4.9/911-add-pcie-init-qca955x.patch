@@ -1,0 +1,83 @@
+Index: linux-4.9.109/arch/mips/pci/pci-ar724x.c
+===================================================================
+--- linux-4.9.109.orig/arch/mips/pci/pci-ar724x.c
++++ linux-4.9.109/arch/mips/pci/pci-ar724x.c
+@@ -39,6 +39,7 @@
+ 				 PCI_COMMAND_SERR |		\
+ 				 PCI_COMMAND_FAST_BACK)
+ 
++
+ struct ar724x_pci_controller {
+ 	void __iomem *devcfg_base;
+ 	void __iomem *ctrl_base;
+@@ -334,19 +335,35 @@ static void ar724x_pci_hw_init(struct ar
+ 	u32 ppl, app;
+ 	int wait = 0;
+ 
+-	/* deassert PCIe host controller and PCIe PHY reset */
+-	ath79_device_reset_clear(AR724X_RESET_PCIE);
+-	ath79_device_reset_clear(AR724X_RESET_PCIE_PHY);
+-
+-	/* remove the reset of the PCIE PLL */
+-	ppl = ath79_pll_rr(AR724X_PLL_REG_PCIE_CONFIG);
+-	ppl &= ~AR724X_PLL_REG_PCIE_CONFIG_PPL_RESET;
+-	ath79_pll_wr(AR724X_PLL_REG_PCIE_CONFIG, ppl);
+-
+-	/* deassert bypass for the PCIE PLL */
+-	ppl = ath79_pll_rr(AR724X_PLL_REG_PCIE_CONFIG);
+-	ppl &= ~AR724X_PLL_REG_PCIE_CONFIG_PPL_BYPASS;
+-	ath79_pll_wr(AR724X_PLL_REG_PCIE_CONFIG, ppl);
++	if (soc_is_qca9556()) {
++		/* deassert PCIe host controller and PCIe PHY reset */
++		ath79_device_reset_clear(QCA955X_RESET_PCIE_PHY);
++		ath79_device_reset_clear(QCA955X_RESET_PCIE);
++
++		/* remove the reset of the PCIE PLL */
++		ppl = ath79_pll_rr(QCA955X_PLL_PCIE_CONFIG_REG);
++		ppl &= ~QCA955X_PLL_PCIE_CONFIG_PLL_PWD;
++		ath79_pll_wr(QCA955X_PLL_PCIE_CONFIG_REG, ppl);
++
++		/* deassert bypass for the PCIE PLL */
++		ppl = ath79_pll_rr(QCA955X_PLL_PCIE_CONFIG_REG);
++		ppl &= ~QCA955X_PLL_PCIE_CONFIG_PLL_BYPASS;
++		ath79_pll_wr(QCA955X_PLL_PCIE_CONFIG_REG, ppl);
++	} else if (soc_is_ar724x()) {
++		/* deassert PCIe host controller and PCIe PHY reset */
++		ath79_device_reset_clear(AR724X_RESET_PCIE);
++		ath79_device_reset_clear(AR724X_RESET_PCIE_PHY);
++
++		/* remove the reset of the PCIE PLL */
++		ppl = ath79_pll_rr(AR724X_PLL_REG_PCIE_CONFIG);
++		ppl &= ~AR724X_PLL_REG_PCIE_CONFIG_PPL_RESET;
++		ath79_pll_wr(AR724X_PLL_REG_PCIE_CONFIG, ppl);
++
++		/* deassert bypass for the PCIE PLL */
++		ppl = ath79_pll_rr(AR724X_PLL_REG_PCIE_CONFIG);
++		ppl &= ~AR724X_PLL_REG_PCIE_CONFIG_PPL_BYPASS;
++		ath79_pll_wr(AR724X_PLL_REG_PCIE_CONFIG, ppl);
++	}
+ 
+ 	/* set PCIE Application Control to ready */
+ 	app = __raw_readl(apc->ctrl_base + AR724X_PCI_REG_APP);
+Index: linux-4.9.109/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+===================================================================
+--- linux-4.9.109.orig/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ linux-4.9.109/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -382,6 +382,7 @@
+ #define QCA955X_PLL_CPU_CONFIG_REG		0x00
+ #define QCA955X_PLL_DDR_CONFIG_REG		0x04
+ #define QCA955X_PLL_CLK_CTRL_REG		0x08
++#define QCA955X_PLL_PCIE_CONFIG_REG		0x0c
+ #define QCA955X_PLL_ETH_XMII_CONTROL_REG	0x28
+ #define QCA955X_PLL_ETH_SGMII_CONTROL_REG	0x48
+ 
+@@ -416,6 +417,9 @@
+ #define QCA955X_PLL_CLK_CTRL_DDRCLK_FROM_DDRPLL		BIT(21)
+ #define QCA955X_PLL_CLK_CTRL_AHBCLK_FROM_DDRPLL		BIT(24)
+ 
++#define QCA955X_PLL_PCIE_CONFIG_PLL_PWD			BIT(30)
++#define QCA955X_PLL_PCIE_CONFIG_PLL_BYPASS		BIT(16)
++
+ #define QCA956X_PLL_CPU_CONFIG_REG			0x00
+ #define QCA956X_PLL_CPU_CONFIG1_REG			0x04
+ #define QCA956X_PLL_DDR_CONFIG_REG			0x08

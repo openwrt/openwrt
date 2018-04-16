@@ -80,6 +80,7 @@ ar71xx_setup_interfaces()
 	eap300v2|\
 	eap7660d|\
 	el-mini|\
+	fritz1750e|\
 	fritz300e|\
 	fritz450e|\
 	gl-usb150|\
@@ -590,6 +591,7 @@ ar71xx_setup_macs()
 		lan_mac=$(mtd_get_mac_binary caldata 0)
 		wan_mac=$(mtd_get_mac_binary caldata 6)
 		;;
+	fritz1750e|\
 	fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		;;

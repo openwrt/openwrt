@@ -1282,6 +1282,16 @@ define Device/AVM
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 
+define Device/fritz1750e
+  $(call Device/AVM)
+  DEVICE_TITLE := AVM FRITZ!WLAN Repeater 1750E
+  DEVICE_PACKAGES += kmod-ath10k ath10k-firmware-qca988x rssileds -swconfig
+  BOARDNAME := FRITZ1750E
+  SUPPORTED_DEVICES := fritz1750e
+  IMAGE_SIZE := 15232k
+endef
+TARGET_DEVICES += fritz1750e
+
 define Device/fritz300e
   $(call Device/AVM)
   DEVICE_TITLE := AVM FRITZ!WLAN Repeater 300E
