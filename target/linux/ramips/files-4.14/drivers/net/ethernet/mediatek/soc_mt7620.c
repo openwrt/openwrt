@@ -140,6 +140,7 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 {
 	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
 	const __be32 *_id = of_get_property(np, "reg", NULL);
+	const __be32 *phy_addr;
 	int phy_mode, size, id;
 	int shift = 12;
 	u32 val, mask = 0;
@@ -234,12 +235,13 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 		return;
 	}
 
-	if (priv->phy->phy_node[id] && mdiobus_get_phy(priv->mii_bus, id)) {
+	phy_addr = of_get_property(priv->phy->phy_node[id], "reg", NULL);
+	if (phy_addr && mdiobus_get_phy(priv->mii_bus, be32_to_cpup(phy_addr))) {
 		u32 val = PMCR_BACKPRES | PMCR_BACKOFF | PMCR_RX_EN |
 			PMCR_TX_EN |  PMCR_MAC_MODE | PMCR_IPG;
 
 		mtk_switch_w32(gsw, val, GSW_REG_PORT_PMCR(id));
-		fe_connect_phy_node(priv, priv->phy->phy_node[id]);
+		fe_connect_phy_node(priv, priv->phy->phy_node[id], id);
 		gsw->autopoll |= BIT(id);
 		mt7620_auto_poll(gsw);
 		return;
