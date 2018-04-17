@@ -105,16 +105,22 @@ platform_do_upgrade() {
 	sercomm,na502s|\
 	sim,simax1800t|\
 	tplink,ec330-g5u-v1|\
+	xiaomi,mi-router-cr6606|\
+	xiaomi,mi-router-cr6608|\
+	xiaomi,mi-router-cr6609|\
+	zyxel,nwa50ax|\
+	zyxel,nwa55axe)
+		nand_do_upgrade "$1"
+		;;
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\
 	xiaomi,mi-router-ac2100|\
-	xiaomi,mi-router-cr6606|\
-	xiaomi,mi-router-cr6608|\
-	xiaomi,mi-router-cr6609|\
-	xiaomi,redmi-router-ac2100|\
-	zyxel,nwa50ax|\
-	zyxel,nwa55axe)
+	xiaomi,redmi-router-ac2100)
+		# this make it compatible with breed
+		dd if=/dev/mtd0 bs=64 count=1 2>/dev/null | grep -qi breed && CI_KERNPART_EXT="kernel_stock"
+		dd if=/dev/mtd7 bs=64 count=1 2>/dev/null | grep -o MIPS.*Linux | grep -qi X-WRT && CI_KERNPART_EXT="kernel_stock"
+		dd if=/dev/mtd7 bs=64 count=1 2>/dev/null | grep -o MIPS.*Linux | grep -qi NATCAP && CI_KERNPART_EXT="kernel0_rsvd"
 		nand_do_upgrade "$1"
 		;;
 	iodata,wn-ax1167gr2|\
