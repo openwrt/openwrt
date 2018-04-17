@@ -77,12 +77,18 @@ platform_do_upgrade() {
 	netgear,wac104|\
 	netgear,wac124|\
 	netis,wf2881|\
-	sercomm,na502|\
+	sercomm,na502)
+		nand_do_upgrade "$1"
+		;;
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\
 	xiaomi,mi-router-ac2100|\
 	xiaomi,redmi-router-ac2100)
+		# this make it compatible with breed
+		dd if=/dev/mtd0 bs=64 count=1 2>/dev/null | grep -qi breed && CI_KERNPART_EXT="kernel_stock"
+		dd if=/dev/mtd7 bs=64 count=1 2>/dev/null | grep -o MIPS.*Linux | grep -qi X-WRT && CI_KERNPART_EXT="kernel_stock"
+		dd if=/dev/mtd7 bs=64 count=1 2>/dev/null | grep -o MIPS.*Linux | grep -qi NATCAP && CI_KERNPART_EXT="kernel0_rsvd"
 		nand_do_upgrade "$1"
 		;;
 	iodata,wn-ax1167gr2|\

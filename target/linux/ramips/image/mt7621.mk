@@ -1584,6 +1584,11 @@ endef
 
 define Device/xiaomi_mi-router-3g
   $(Device/xiaomi_nand_separate)
+  IMAGES += breed-factory.bin factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size
+  IMAGE/breed-factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+			     append-kernel | pad-to $$(KERNEL_SIZE) | \
+			     append-ubi | check-size
   DEVICE_MODEL := Mi Router 3G
   IMAGE_SIZE := 124416k
   DEVICE_PACKAGES += kmod-mt7603 kmod-mt76x2 kmod-usb3 \
@@ -1614,10 +1619,15 @@ define Device/xiaomi_mi-router-3-pro
   IMAGE_SIZE := 255488k
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 3 Pro
-  IMAGES += factory.bin
+  IMAGES += kernel1.bin rootfs0.bin breed-factory.bin factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size
+  IMAGE/kernel1.bin := append-kernel
+  IMAGE/rootfs0.bin := append-ubi | check-size
+  IMAGE/breed-factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+			     append-kernel | pad-to $$(KERNEL_SIZE) | \
+			     append-ubi | check-size
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
 	kmod-usb-ledtrig-usbport uboot-envtools
   SUPPORTED_DEVICES += xiaomi,mir3p
