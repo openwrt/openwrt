@@ -105,6 +105,11 @@ define Build/ubnt-erx-factory-image
 	fi
 endef
 
+define Build/mitrastarimage
+	uimage_padhdr -l 160 -i $@ -o $@.new
+	mv $@.new $@
+endef
+
 define Device/afoundry_ew1200
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := AFOUNDRY
@@ -1119,3 +1124,17 @@ define Device/zio_freezio
 	kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += zio_freezio
+
+define Device/zyxel_wap6805
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  UBINIZE_OPTS := -E 5
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := WAP6805
+  DEVICE_PACKAGES := kmod-mt7603 wpad-basic kmod-mt7621-qtn-rgmii
+  KERNEL := $(KERNEL_DTB) | uImage lzma | mitrastarimage
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zyxel_wap6805
