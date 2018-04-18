@@ -71,6 +71,15 @@ platform_do_upgrade() {
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
 		;;
+	zyxel,wap6805)
+		local kernel2_mtd="$(find_mtd_part Kernel2)"
+		[ "$(hexdump -n 4 -e '"%x"' $kernel2_mtd)" = "56190527" ] &&\
+		[ "$(hexdump -n 4 -s 104 -e '"%x"' $kernel2_mtd)" != "0" ] &&\
+		dd bs=4 count=1 seek=26 conv=notrunc if=/dev/zero of=$kernel2_mtd 2>/dev/null &&\
+		echo "Kernel2 sequence number was reset to 0"
+		CI_KERNPART="Kernel"
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
