@@ -51,7 +51,6 @@ define Device/8dev_jalapeno
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	DEVICE_TITLE := 8devices Jalapeno
-	DEVICE_PACKAGES := ipq-wifi-8dev_jalapeno
 endef
 TARGET_DEVICES += 8dev_jalapeno
 
@@ -71,7 +70,7 @@ define Device/asus_rt-ac58u
 #	string and call it a day.... Yeah, we do the latter!
 	UIMAGE_NAME:=$(shell echo -e '\03\01\01\01RT-AC58U')
 	IMAGES := sysupgrade.bin
-	DEVICE_PACKAGES := ipq-wifi-asus_rt-ac58u kmod-usb-ledtrig-usbport
+	DEVICE_PACKAGES := kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += asus_rt-ac58u
 
@@ -83,7 +82,7 @@ define Device/avm_fritzbox-4040
 	IMAGE_SIZE := 29753344
 	IMAGES = sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
-	DEVICE_PACKAGES := ipq-wifi-avm_fritzbox-4040 fritz-tffs fritz-caldata u-boot-fritz4040
+	DEVICE_PACKAGES := fritz-tffs fritz-caldata u-boot-fritz4040
 endef
 TARGET_DEVICES += avm_fritzbox-4040
 
@@ -110,7 +109,6 @@ define Device/glinet_gl-b1300
 	IMAGE_SIZE := 26624k
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel |append-rootfs | pad-rootfs | append-metadata
-	DEVICE_PACKAGES := ipq-wifi-glinet_gl-b1300
 endef
 TARGET_DEVICES += glinet_gl-b1300
 
@@ -121,7 +119,7 @@ define Device/meraki_mr33
 	PAGESIZE := 2048
 	DEVICE_TITLE := Cisco Meraki MR33
 	IMAGES = sysupgrade.bin
-	DEVICE_PACKAGES := -swconfig ipq-wifi-meraki_mr33 ath10k-firmware-qca9887
+	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887
 endef
 TARGET_DEVICES += meraki_mr33
 
@@ -129,7 +127,6 @@ define Device/netgear_ex61x0v2
 	$(call Device/DniImage)
 	KERNEL_SIZE := 3080192
 	DEVICE_DTS_CONFIG := config@4
-	DEVICE_PACKAGES := ipq-wifi-netgear_ex61x0v2
 	NETGEAR_BOARD_ID := EX6150v2series
 	NETGEAR_HW_ID := 29765285+16+0+128+2x2
 endef
