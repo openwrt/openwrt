@@ -30,6 +30,7 @@ define Host/Compile
 		HOSTCFLAGS="$(HOST_CFLAGS)" \
 		HOSTLDFLAGS="$(HOST_LDFLAGS)" \
 		no-dot-config-targets=tools-only \
+		CONFIG_MKIMAGE_DTC_PATH=dtc \
 		CONFIG_FIT_SIGNATURE=y \
 		tools-only
 endef
