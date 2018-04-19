@@ -87,6 +87,9 @@ dlink,dwr-922-e2)
 	ucidef_set_led_netdev "signalstrength" "signalstrength" "$boardname:green:sigstrength" "wwan0" "link"
 	ucidef_set_led_netdev "4g" "4g" "$boardname:green:4g" "wwan0" "tx rx"
 	;;
+dlink,dwr-960)
+	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x2e"
+	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x01"
 dovado,tiny-ac)
 	set_wifi_led "$boardname:orange:wifi"
 	;;
