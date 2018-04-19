@@ -80,10 +80,11 @@ endef
 # append a fake/empty rootfs uImage header, to fool the bootloaders
 # rootfs integrity check
 define Build/append-uImage-fakeroot-hdr
-	rm -f $@.fakeroot
+	touch $@.fakeroot
 	$(STAGING_DIR_HOST)/bin/mkimage \
 		-A $(LINUX_KARCH) -O linux -T filesystem -C none \
 		-n '$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) fakeroot' \
+		-d $@.fakeroot \
 		-s \
 		$@.fakeroot
 	cat $@.fakeroot >> $@
