@@ -3,7 +3,7 @@
 #
 
 DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD TPLINK_HVERSION \
-	DLINK_ROM_ID DLINK_FAMILY_MEMBER DLINK_FIRMWARE_SIZE
+	DLINK_ROM_ID DLINK_FAMILY_MEMBER DLINK_FIRMWARE_SIZE DLINK_IMAGE_OFFSET
 
 define Build/elecom-header
 	cp $@ $(KDIR)/v_0.0.0.bin
@@ -59,6 +59,15 @@ define Device/alfa-network_tube-e4g
 	-iwinfo -kmod-rt2800-pci -kmod-rt2800-soc -wpad-basic
 endef
 TARGET_DEVICES += alfa-network_tube-e4g
+
+define Device/amit_jboot
+  DLINK_IMAGE_OFFSET := 0x10000
+  KERNEL := $(KERNEL_DTB)
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
+  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
+  DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-usb-ohci
+endef
 
 define Device/Archer
   TPLINK_HWREVADD := 0
@@ -182,60 +191,46 @@ endef
 TARGET_DEVICES += dir-810l
 
 define Device/dlink_dwr-116-a1
+  $(Device/amit_jboot)
   DTS := DWR-116-A1
   DEVICE_TITLE := D-Link DWR-116 A1/A2
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci jboot-tools
   DLINK_ROM_ID := DLK6E3803001
   DLINK_FAMILY_MEMBER := 0x6E38
   DLINK_FIRMWARE_SIZE := 0x7E0000
-  KERNEL := $(KERNEL_DTB)
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
-  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
 endef
 TARGET_DEVICES += dlink_dwr-116-a1
 
 define Device/dlink_dwr-118-a1
+  $(Device/amit_jboot)
   DTS := DWR-118-A1
   DEVICE_TITLE := D-Link DWR-118 A1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci jboot-tools kmod-mt76x0e
+  DEVICE_PACKAGES += kmod-mt76x0e
   DLINK_ROM_ID := DLK6E3811001
   DLINK_FAMILY_MEMBER := 0x6E38
   DLINK_FIRMWARE_SIZE := 0xFE0000
-  KERNEL := $(KERNEL_DTB)
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
-  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
 endef
 TARGET_DEVICES += dlink_dwr-118-a1
 
 define Device/dlink_dwr-118-a2
+  $(Device/amit_jboot)
   DTS := DWR-118-A2
   DEVICE_TITLE := D-Link DWR-118 A2
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci jboot-tools
+  DEVICE_PACKAGES += kmod-mt76x2
   DLINK_ROM_ID := DLK6E3814001
   DLINK_FAMILY_MEMBER := 0x6E38
   DLINK_FIRMWARE_SIZE := 0xFE0000
-  KERNEL := $(KERNEL_DTB)
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
-  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
 endef
 TARGET_DEVICES += dlink_dwr-118-a2
 
 define Device/dlink_dwr-921-c1
+  $(Device/amit_jboot)
   DTS := DWR-921-C1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := D-Link DWR-921 C1
   DLINK_ROM_ID := DLK6E2414001
   DLINK_FAMILY_MEMBER := 0x6E24
   DLINK_FIRMWARE_SIZE := 0xFE0000
-  KERNEL := $(KERNEL_DTB)
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
-  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
-  DEVICE_PACKAGES := jboot-tools \
-	kmod-usb2 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += dlink_dwr-921-c1
 
@@ -248,18 +243,14 @@ endef
 TARGET_DEVICES += dlink_dwr-921-c3
 
 define Device/dlink_dwr-922-e2
+  $(Device/amit_jboot)
   DTS := DWR-922-E2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := D-Link DWR-922 E2
   DLINK_ROM_ID := DLK6E2414005
   DLINK_FAMILY_MEMBER := 0x6E24
   DLINK_FIRMWARE_SIZE := 0xFE0000
-  KERNEL := $(KERNEL_DTB)
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
-  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
-  DEVICE_PACKAGES := jboot-tools \
-	kmod-usb2 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += dlink_dwr-922-e2
 
@@ -418,16 +409,13 @@ endef
 TARGET_DEVICES += microwrt
 
 define Device/lava_lr-25g001
+  $(Device/amit_jboot)
   DTS := LR-25G001
   DEVICE_TITLE := LAVA LR-25G001
   DLINK_ROM_ID := LVA6E3804001
   DLINK_FAMILY_MEMBER := 0x6E38
   DLINK_FIRMWARE_SIZE := 0xFE0000
-  KERNEL := $(KERNEL_DTB)
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
-  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
-  DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-usb-ohci kmod-mt76x0e
+  DEVICE_PACKAGES += kmod-mt76x0e
 endef
 TARGET_DEVICES += lava_lr-25g001
 
