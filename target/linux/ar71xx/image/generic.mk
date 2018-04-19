@@ -631,6 +631,20 @@ define Device/wndr3700
 endef
 TARGET_DEVICES += wndr3700
 
+define Build/netgear-pad
+  dd if=/dev/zero bs=128 count=1 >> $@
+  dd if=$@ of=$@.new bs=$(1) conv=sync
+  head -c -128 $@.new > $@
+endef
+
+define Build/fake-uimage-footer
+  echo -n -e "\x27\x05\x19\x56" >> $@
+  echo -n -e "\x26\x02\x6c\xff" >> $@
+  dd if=/dev/zero bs=20 count=1 >> $@
+  echo -n -e "\x05\x05\x07\x00" >> $@
+  dd if=/dev/zero bs=32 count=1 >> $@
+endef
+
 define Device/wndr3700v2
   $(Device/wndr3700)
   DEVICE_TITLE := NETGEAR WNDR3700 v2
@@ -671,6 +685,24 @@ define Device/wndrmacv2
   NETGEAR_BOARD_ID := WNDRMACv2
 endef
 TARGET_DEVICES += wndrmacv2
+
+define Device/wnr2000v5
+  DEVICE_TITLE := NETGEAR WNR2000V5
+  DEVICE_PACKAGES := kmod-block2mtd kmod-gpio-nxp-74hc164
+  BOARDNAME = WNR2000V5
+  NETGEAR_KERNEL_MAGIC = 0x32303030
+  NETGEAR_HW_ID = 29764648+4+0+32+2x2+0
+  NETGEAR_BOARD_ID = WNR2000v5
+  IMAGE_SIZE := 3904k
+  MTDPARTS = spi0.0:128k(u-boot)ro,3904k(firmware),64k(art)ro
+  IMAGES := kernel.uImage dni.img
+  KERNEL := kernel-bin | patch-cmdline | lzma -d20
+  KERNEL_INITRAMFS := $$(KERNEL) | netgear-pad $$(BLOCKSIZE) | uImage lzma | fake-uimage-footer
+  KERNEL_INITRAMFS_SUFFIX = $$(KERNEL_SUFFIX).uImage
+  IMAGE/kernel.uImage = append-kernel | netgear-pad $$$$(BLOCKSIZE) | uImage lzma | fake-uimage-footer
+  IMAGE/dni.img = $$(IMAGE/kernel.uImage) | append-rootfs | pad-rootfs | netgear-dni | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += wnr2000v5
 
 define Device/cap324
   DEVICE_TITLE := PowerCloud Systems CAP324

@@ -1055,6 +1055,12 @@ wnr2000-v4)
 	ucidef_set_led_switch "lan4" "LAN4" "netgear:amber:lan4" "switch0" "0x10"
 	ucidef_set_led_usbport "usb" "USB" "netgear:amber:status" "usb1-port1"
 	;;
+wnr2000-v5)
+	ucidef_set_led_default "power" "System Power" "netgear:green:status" "1"
+	ucidef_set_led_netdev "wan-amber" "WAN (amber)" "netgear:amber:wan" "eth0" "rx tx"
+	ucidef_set_led_netdev "wan-green" "WAN (green)" "netgear:green:wan" "eth0" "link"
+	ucidef_set_led_netdev "wlan" "WLAN" "netgear:green:wlan" "wlan0"
+	;;
 wnr2200)
 	ucidef_set_led_netdev "wan-amber" "WAN (amber)" "netgear:amber:wan" "eth0"
 	ucidef_set_led_default "wan-green" "WAN (green)" "netgear:green:wan" "0"

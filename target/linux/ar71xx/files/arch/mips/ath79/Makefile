@@ -268,6 +268,7 @@ obj-$(CONFIG_ATH79_MACH_WNDR4300)		+= mach-wndr4300.o
 obj-$(CONFIG_ATH79_MACH_WNR2000)		+= mach-wnr2000.o
 obj-$(CONFIG_ATH79_MACH_WNR2000_V3)		+= mach-wnr2000-v3.o
 obj-$(CONFIG_ATH79_MACH_WNR2000_V4)		+= mach-wnr2000-v4.o
+obj-$(CONFIG_ATH79_MACH_WNR2000_V5)		+= mach-wnr2000-v5.o
 obj-$(CONFIG_ATH79_MACH_WNR2200)		+= mach-wnr2200.o
 obj-$(CONFIG_ATH79_MACH_WP543)			+= mach-wp543.o
 obj-$(CONFIG_ATH79_MACH_WPE72)			+= mach-wpe72.o
