@@ -6,7 +6,7 @@ ARCH:=arm
 BOARD:=mediatek
 BOARDNAME:=MediaTek Ralink ARM
 SUBTARGETS:=32
-FEATURES:=squashfs nand ubifs ramdisk fpu
+FEATURES:=squashfs nand ramdisk fpu
 MAINTAINER:=John Crispin <john@phrozen.org>
 
 KERNEL_PATCHVER:=4.14
