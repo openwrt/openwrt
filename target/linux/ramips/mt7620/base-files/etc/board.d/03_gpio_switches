@@ -11,6 +11,9 @@ dlink,dir-510l)
 	ucidef_add_gpio_switch "usb_enable1" "USB 1A enable" "12" "0"
 	ucidef_add_gpio_switch "usb_enable05" "USB 0.5A enable" "13" "1"
 	;;
+dlink,dwr-960)
+	ucidef_add_gpio_switch "power_mpcie" "mPCIe power" "0" "1"
+	;;
 head-weblink,hdrm200)
 	ucidef_add_gpio_switch "sim_switch" "SIM slot switch" "0"
 	ucidef_add_gpio_switch "io1" "I/O 1" "1"

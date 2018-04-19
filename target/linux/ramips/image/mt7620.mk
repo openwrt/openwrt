@@ -279,6 +279,20 @@ define Device/dlink_dwr-922-e2
 endef
 TARGET_DEVICES += dlink_dwr-922-e2
 
+define Device/dlink_dwr-960
+  $(Device/amit_jboot)
+  SOC := mt7620a
+  IMAGE_SIZE := 16256k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DWR-960
+  DLINK_ROM_ID := DLK6E2429001
+  DLINK_FAMILY_MEMBER := 0x6E24
+  DLINK_FIRMWARE_SIZE := 0xFE0000
+  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi \
+	kmod-mt76x0e
+endef
+TARGET_DEVICES += dlink_dwr-960
+
 define Device/dovado_tiny-ac
   SOC := mt7620a
   IMAGE_SIZE := 7872k
