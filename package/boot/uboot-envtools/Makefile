@@ -72,54 +72,11 @@ define Package/uboot-envtools/install
 	$(LN) fw_printenv $(1)/usr/sbin/fw_setenv
 	$(INSTALL_DIR) $(1)/lib
 	$(INSTALL_DATA) ./files/uboot-envtools.sh $(1)/lib
-ifneq ($(CONFIG_TARGET_ar71xx),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/ar71xx $(1)/etc/uci-defaults/30_uboot-envtools
-endif
-ifneq ($(CONFIG_TARGET_cns3xxx),)
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/cns3xxx $(1)/etc/uci-defaults/30_uboot-envtools
-endif
-ifneq ($(CONFIG_TARGET_imx6),)
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/imx6 $(1)/etc/uci-defaults/30_uboot-envtools
-endif
-ifneq ($(CONFIG_TARGET_ipq40xx),)
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/ipq40xx $(1)/etc/uci-defaults/30_uboot-envtools
-endif
-ifneq ($(CONFIG_TARGET_ipq806x),)
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/ipq806x $(1)/etc/uci-defaults/30_uboot-envtools
-endif
-ifneq ($(CONFIG_TARGET_kirkwood),)
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/kirkwood $(1)/etc/uci-defaults/30_uboot-envtools
-endif
-ifneq ($(CONFIG_TARGET_lantiq),)
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/lantiq $(1)/etc/uci-defaults/30_uboot-envtools
-endif
-ifneq ($(CONFIG_TARGET_mvebu),)
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/mvebu $(1)/etc/uci-defaults/30_uboot-envtools
-endif
-ifneq ($(CONFIG_TARGET_mxs),)
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/mxs $(1)/etc/uci-defaults/30_uboot-envtools
-endif
-ifneq ($(CONFIG_TARGET_oxnas),)
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/oxnas $(1)/etc/uci-defaults/30_uboot-envtools
-endif
-ifneq ($(CONFIG_TARGET_pistachio),)
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/pistachio $(1)/etc/uci-defaults/30_uboot-envtools
-endif
-ifneq ($(CONFIG_TARGET_ramips),)
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/ramips $(1)/etc/uci-defaults/30_uboot-envtools
-endif
+	$(if $(wildcard ./files/$(BOARD)), \
+		$(INSTALL_DATA) ./files/$(BOARD) \
+		$(1)/etc/uci-defaults/30_uboot-envtools \
+	)
 endef
 
 $(eval $(call BuildPackage,uboot-envtools))
