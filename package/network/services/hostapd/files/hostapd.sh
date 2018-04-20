@@ -647,6 +647,7 @@ wpa_supplicant_add_network() {
 	local ifname="$1"
 	local freq="$2"
 	local htmode="$3"
+	local noscan="$4"
 
 	_wpa_supplicant_common "$1"
 	wireless_vif_parse_encryption
@@ -682,6 +683,7 @@ wpa_supplicant_add_network() {
 		append network_data "mode=5" "$N$T"
 		[ -n "$mesh_fwding" ] && append network_data "mesh_fwding=${mesh_fwding}" "$N$T"
 		[ -n "$channel" ] && wpa_supplicant_set_fixed_freq "$freq" "$htmode"
+		[ "$noscan" = "1" ] && append network_data "noscan=1" "$N$T"
 		append wpa_key_mgmt "SAE"
 		scan_ssid=""
 	}
