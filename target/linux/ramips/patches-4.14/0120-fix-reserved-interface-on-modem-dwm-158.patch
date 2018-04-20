@@ -1,0 +1,27 @@
+From 4226d75769ee353bd38777dbcc13cd36c19ce8b0 Mon Sep 17 00:00:00 2001
+From: Giuseppe Lippolis <giu.lippolis@gmail.com>
+Date: Fri, 20 Apr 2018 16:04:54 +0200
+Subject: [PATCH] fix reserved interface on modem dwm-158
+
+Signed-off-by: Giuseppe Lippolis <giu.lippolis@gmail.com>
+---
+ drivers/usb/serial/option.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/serial/option.c b/drivers/usb/serial/option.c
+index ba672cf..a5a1d1a 100644
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -2021,7 +2021,8 @@ static const struct usb_device_id option_ids[] = {
+ 	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d01, 0xff) },			/* D-Link DWM-156 (variant) */
+ 	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d02, 0xff) },
+ 	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d03, 0xff) },
+-	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d04, 0xff) },			/* D-Link DWM-158 */
++	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d04, 0xff),			/* D-Link DWM-158 */
++	  .driver_info = (kernel_ulong_t)&cinterion_rmnet2_blacklist },
+ 	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d0e, 0xff) },			/* D-Link DWM-157 C1 */
+ 	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7e19, 0xff),			/* D-Link DWM-221 B1 */
+ 	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
+-- 
+2.7.4
+
