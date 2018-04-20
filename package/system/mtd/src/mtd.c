@@ -638,7 +638,7 @@ resume:
 					continue;
 				}
 
-				if (mtd_erase_block(fd, e) < 0) {
+				if (mtd_erase_block(fd, e + part_offset) < 0) {
 					if (next) {
 						if (w < e) {
 							write(fd, buf + offset, e - w);
