@@ -585,8 +585,8 @@ define Device/netgear_dm200
   DEVICE_DTS := DM200
   IMAGES := sysupgrade.bin factory.img
   IMAGE/sysupgrade.bin := append-kernel | \
-	pad-offset 64k 64 | append-uImage-fakeroot-hdr | \
-	pad-offset 64k 64 | append-uImage-fakeroot-hdr | \
+	pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
+	pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.img := $$(IMAGE/sysupgrade.bin) | netgear-dni
   IMAGE_SIZE := 7872k

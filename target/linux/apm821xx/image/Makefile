@@ -171,7 +171,7 @@ define Device/netgear_wndr4700
   # append a fake/empty rootfs to fool netgear's uboot
   # CHECK_DNI_FIRMWARE_ROOTFS_INTEGRITY in do_chk_dniimg()
   KERNEL := kernel-bin | lzma | uImage lzma | pad-offset $$(BLOCKSIZE) 64 | \
-	    append-uImage-fakeroot-hdr | dtb | create-uImage-dtb | prepend-dtb
+	    append-uImage-fakehdr filesystem | dtb | create-uImage-dtb | prepend-dtb
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 		       netgear-dni | check-size $$$$(IMAGE_SIZE)

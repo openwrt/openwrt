@@ -77,17 +77,17 @@ define Build/append-squashfs-fakeroot-be
 	cat $@.fakesquashfs >> $@
 endef
 
-# append a fake/empty rootfs uImage header, to fool the bootloaders
-# rootfs integrity check
-define Build/append-uImage-fakeroot-hdr
-	touch $@.fakeroot
+# append a fake/empty uImage header, to fool bootloaders rootfs integrity check
+# for example
+define Build/append-uImage-fakehdr
+	touch $@.fakehdr
 	$(STAGING_DIR_HOST)/bin/mkimage \
-		-A $(LINUX_KARCH) -O linux -T filesystem -C none \
-		-n '$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) fakeroot' \
-		-d $@.fakeroot \
+		-A $(LINUX_KARCH) -O linux -T $(1) -C none \
+		-n '$(VERSION_DIST) fake $(1)' \
+		-d $@.fakehdr \
 		-s \
-		$@.fakeroot
-	cat $@.fakeroot >> $@
+		$@.fakehdr
+	cat $@.fakehdr >> $@
 endef
 
 define Build/tplink-safeloader
