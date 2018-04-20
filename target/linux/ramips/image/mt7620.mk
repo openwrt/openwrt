@@ -479,6 +479,14 @@ define Device/vonets_var11n-300
 endef
 TARGET_DEVICES += vonets_var11n-300
 
+define Device/ravpower_wd03
+  DTS := WD03
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Ravpower WD03
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76 kmod-usb-ehci
+endef
+TARGET_DEVICES += ravpower_wd03
+
 define Device/whr-1166d
   DTS := WHR-1166D
   IMAGE_SIZE := 15040k
