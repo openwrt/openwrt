@@ -1,0 +1,238 @@
+#!/bin/sh
+# Copyright (C) 2018 Chen Minqiang <ptpt52@gmail.com>
+
+. /usr/share/libubox/jshn.sh
+
+json_select_array() {
+	local _json_no_warning=1
+
+	json_select "$1"
+	[ $? = 0 ] && return
+
+	json_add_array "$1"
+	json_close_array
+
+	json_select "$1"
+}
+
+json_select_object() {
+	local _json_no_warning=1
+
+	json_select "$1"
+	[ $? = 0 ] && return
+
+	json_add_object "$1"
+	json_close_object
+
+	json_select "$1"
+}
+
+SW_CFG_DATA="$(test -f /etc/board.json && cat /etc/board.json)"
+
+get_switch_device()
+{
+	local sw=$1
+	local sw_idx=0
+	json_init
+	json_load "$SW_CFG_DATA"
+	json_select_object switch
+
+	if json_is_a $sw object && json_select_object $sw; then
+		json_get_keys ports ports
+		json_select_array ports
+		for i in $ports; do
+			json_select $i
+			json_get_var device device
+			test -n "$device" && echo $device
+			json_select ..
+		done
+		json_select ..
+		json_select ..
+	fi
+	json_select ..
+}
+
+is_ifname_static()
+{
+	local ix=0;
+	local ifname=$1
+	while uci get network.@interface[$ix] >/dev/null 2>&1; do
+		if [ "x`uci get network.@interface[$ix].ifname 2>/dev/null`" = "x$ifname" -a "x`uci get network.@interface[$ix].proto 2>/dev/null`" = "xstatic" ]; then
+			return 0
+		fi
+		ix=$((ix+1))
+	done
+	return 1
+}
+
+TO="timeout"
+which timeout >/dev/null 2>&1 && timeout -t1 pwd >/dev/null 2>&1 && TO="timeout -t"
+
+LKDIR=/tmp/switch_ports_status
+STATE=$LKDIR/state
+RUNNING=$LKDIR/lock_$$
+
+call_link_changed()
+{
+	local ifname=$1
+	local port=$2
+	local link=$3
+	echo ifname=$ifname switch port $port status $link
+	local idx=0
+	while uci get network.@switch_vlan[$idx] >/dev/null 2>&1; do
+		ports=`uci get network.@switch_vlan[$idx].ports | grep -o "[0-9]*"`
+		ports=`echo $ports`
+		for p in $ports; do
+			if test $p -eq $port; then
+				sw=`uci get network.@switch_vlan[$idx].device`
+				ifi=`get_switch_device $sw`
+				for iff in $ifi; do
+					if [ "x$ifname" = "x$iff" ]; then
+						vlan=`uci get network.@switch_vlan[$idx].vlan`
+						echo $iff.$vlan link $link
+						if is_ifname_static $iff.$vlan; then
+							logger -t switch_port "$iff.$vlan link status changed: no action"
+							break
+						fi
+						ifconfig $iff.$vlan down 2>/dev/null && {
+							logger -t switch_port "$iff.$vlan link status changed: call hotplug"
+							ifconfig $iff.$vlan up
+						}
+						break
+					fi
+				done
+				break
+			fi
+		done
+		idx=$((idx+1))
+	done
+}
+
+get_switch_linkmap()
+{
+	sw=$1
+	max_port=$2
+	for i in `seq 0 $max_port`; do
+		swconfig dev $sw port $i get link | grep -o "link:\(up\|down\)" | sed 's/link:up/1/g;s/link:down/0/g'
+	done
+}
+
+# select a mode: kmsg swconfig
+mode="swconfig"
+test -n "`cat /proc/cpuinfo | grep -i MediaTek`" && mode="kmsg"
+
+SWNR=0
+while swconfig dev switch$SWNR port 0 get link >/dev/null 2>&1; do SWNR=$((SWNR+1)); done
+if test $SWNR -gt 0; then
+	SWNR=$((SWNR-1))
+	for s in `seq 0 $SWNR`; do
+		port=0
+		while swconfig dev switch$s port $port get link >/dev/null 2>&1; do port=$((port+1)); done
+		port=$((port-1))
+		eval switch${s}_max_port=${port}
+	done
+else
+	#no switch
+	exit 0
+fi
+
+for s in `seq 0 $SWNR`; do
+	sw=switch${s}
+	eval max_port=\${${sw}_max_port}
+	linkmap=`get_switch_linkmap $sw $max_port`
+	linkmap=`echo $linkmap`
+	i=0
+	status=0
+	for v in $linkmap; do
+		if [ "x$v" = "x1" ]; then
+			status=$((status|(1<<i)))
+		fi
+		i=$((i+1))
+	done
+	eval oldstatus=\${${sw}_status}
+	eval ${sw}_status=$status
+done
+
+switch_ports_watch()
+{
+	local i=0
+	local status diffstatus
+	local oldstatus
+
+	sw=switch0
+	eval oldstatus=\${${sw}_status}
+	echo $oldstatus >$STATE
+
+	#echo oldstatus=`printf 0x%02x $oldstatus`
+	while [ "$mode" = "swconfig" ]; do
+		sleep 3
+		for s in `seq 0 $SWNR`; do
+			sw=switch${s}
+			eval max_port=\${${sw}_max_port}
+			linkmap=`get_switch_linkmap $sw $max_port`
+			linkmap=`echo $linkmap`
+			i=0
+			status=0
+			for v in $linkmap; do
+				if [ "x$v" = "x1" ]; then
+					status=$((status|(1<<i)))
+				fi
+				i=$((i+1))
+			done
+			eval oldstatus=\${${sw}_status}
+			eval ${sw}_status=$status
+
+			echo linkmap=$linkmap
+			echo status=`printf 0x%02x $status` oldstatus=`printf 0x%02x $oldstatus`
+
+			diffstatus=$((oldstatus^status))
+			for i in `seq 0 $max_port`; do
+				if test $((diffstatus&(1<<i))) -ne 0; then
+					ifname="eth$s" #assume switch0 - eth0
+					port=$i
+					link="changed"
+					call_link_changed "$ifname" "$port" "$link"
+				fi
+			done
+		done
+	done
+	while [ "$mode" = "kmsg" ]; do
+		$TO 5 cat /proc/kmsg | while read line; do
+			#switch rt305x
+			echo $line | grep -o "esw: link.*" | while read _ _ _ status; do
+				oldstatus=`cat $STATE`
+				diffstatus=$((oldstatus^status))
+				echo $status >$STATE
+				for i in `seq 0 5`; do
+					if test $((diffstatus&(1<<i))) -ne 0; then
+						ifname="eth0" #assume it is eth0
+						port=$i
+						link="changed"
+						call_link_changed "$ifname" "$port" "$link"
+					fi
+				done
+			done
+			#switch mt7530 and others?
+			echo $line | grep -o "eth[0-9]*: port [0-9]* link .*" | while read ifname _ port _ link; do
+				ifname=${ifname%%:}
+				call_link_changed "$ifname" "$port" "$link"
+			done
+		done
+		test -f $RUNNING || break
+	done
+}
+
+mkdir -p $LKDIR
+[ x$1 = xstart ] && {
+	rm -f $LKDIR/lock_*
+	touch $RUNNING
+	switch_ports_watch
+	exit 0
+}
+
+[ x$1 = xstop ] && {
+	rm -rf $LKDIR
+	exit 0
+}
+
+echo Please run $0 start

@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+
+START=95
+
+start() {
+	uci get network.@switch[0] >/dev/null 2>&1 || return
+	SERVICE_DAEMONIZE=1 service_start /sbin/switch_ports_status start
+}
+
+stop() {
+	/sbin/switch_ports_status stop
+}
+
+restart() {
+	start
+}
+
+reload() {
+	start
+}
