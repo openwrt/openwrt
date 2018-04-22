@@ -1325,6 +1325,9 @@ ar71xx_board_detect() {
 	*"TL-WR942N v1")
 		name="tl-wr942n-v1"
 		;;
+	*"TS-D084")
+		name="ts-d084"
+		;;
 	*"Tube2H")
 		name="tube2h"
 		;;
