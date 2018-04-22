@@ -483,6 +483,7 @@ platform_check_image() {
 	tl-wr941nd|\
 	tl-wr941nd-v5|\
 	tl-wr941nd-v6|\
+	ts-d084|\
 	wifi-pineapple-nano)
 		local magic_ver="0100"
 

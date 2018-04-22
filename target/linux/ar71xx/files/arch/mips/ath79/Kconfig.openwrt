@@ -1997,6 +1997,16 @@ config ATH79_MACH_TL_WR2543N
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_USB
 
+config ATH79_MACH_TS_D084
+	bool "PISEN TS-D084 support"
+	select SOC_AR933X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_TEW_632BRP
 	bool "TRENDnet TEW-632BRP support"
 	select SOC_AR913X
