@@ -8,7 +8,7 @@
  
  	/*
  	 * Some really old flashes (like AT45DB*) had smaller erasesize-s, but
-@@ -384,12 +385,23 @@ static int bcm47xxpart_parse(struct mtd_
+@@ -398,12 +399,23 @@ static int bcm47xxpart_parse(struct mtd_
  		if (buf[0] == NVRAM_HEADER) {
  			bcm47xxpart_add_part(&parts[curr_part++], "nvram",
  					     master->size - blocksize, 0);
