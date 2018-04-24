@@ -1175,6 +1175,15 @@ void __init ath79_parse_ascii_mac(char *mac_str, u8 *mac)
 	}
 }
 
+void __init ath79_extract_mac_reverse(u8 *ptr, u8 *out)
+{
+	int i;
+
+	for (i = 0; i < ETH_ALEN; i++) {
+		out[i] = ptr[ETH_ALEN-i-1];
+	}
+}
+
 static void __init ath79_set_mac_base_ascii(char *str)
 {
 	u8 mac[ETH_ALEN];
