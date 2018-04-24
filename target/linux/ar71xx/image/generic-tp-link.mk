@@ -50,14 +50,11 @@ endef
 TARGET_DEVICES += archer-c59-v1
 
 define Device/archer-c60-v1
-  $(Device/archer-cxx)
+  $(Device/archer-c58-v1)
   DEVICE_TITLE := TP-LINK Archer C60 v1
-  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9888
   BOARDNAME := ARCHER-C60-V1
   TPLINK_BOARD_ID := ARCHER-C60-V1
   DEVICE_PROFILE := ARCHERC60V1
-  IMAGE_SIZE := 7936k
-  MTDPARTS := spi0.0:64k(u-boot)ro,64k(mac)ro,7936k(firmware),64k(tplink)ro,64k(art)ro
   SUPPORTED_DEVICES := archer-c60-v1
 endef
 TARGET_DEVICES += archer-c60-v1
