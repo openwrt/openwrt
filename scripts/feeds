@@ -133,6 +133,7 @@ my %update_method = (
 		'init_commit'   => "git clone '%s' '%s' && cd '%s' && git checkout -b '%s' '%s' && cd -",
 		'update'	=> "git pull --ff",
 		'update_force'	=> "git pull --ff || (git reset --hard HEAD; git pull --ff; exit 1)",
+		'post_update'	=> "git submodule update --init --recursive",
 		'controldir'	=> ".git",
 		'revision'	=> "git rev-parse --short HEAD | tr -d '\n'"},
 	'src-git-full' => {
@@ -141,6 +142,7 @@ my %update_method = (
 		'init_commit'   => "git clone '%s' '%s' && cd '%s' && git checkout -b '%s' '%s' && cd -",
 		'update'	=> "git pull --ff",
 		'update_force'	=> "git pull --ff || (git reset --hard HEAD; git pull --ff; exit 1)",
+		'post_update'	=> "git submodule update --init --recursive",
 		'controldir'	=> ".git",
 		'revision'	=> "git rev-parse --short HEAD | tr -d '\n'"},
 	'src-gitsvn' => {
@@ -196,6 +198,10 @@ sub update_feed_via($$$$$) {
 			$update_cmd = $m->{'update_force'};
 		}
 		system("cd '$safepath'; $update_cmd") == 0 or return 1;
+	}
+	if ($m->{'post_update'}) {
+		my $cmd = $m->{'post_update'};
+		system("cd '$safepath'; $cmd") == 0 or return 1;
 	}
 
 	return 0;
