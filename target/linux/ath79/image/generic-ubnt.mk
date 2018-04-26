@@ -52,6 +52,7 @@ define Device/ubnt-xm
   UBNT_TYPE := XM
   UBNT_CHIP := ar7240
   ATH_SOC := ar7241
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | uImage lzma
 endef
 
 define Device/ubnt-xw
