@@ -37,6 +37,7 @@ validate_section_dropbear()
 		'RootPasswordAuth:bool:1' \
 		'RootLogin:bool:1' \
 		'rsakeyfile:file' \
+		'keyfile:file' \
 		'BannerFile:file' \
 		'Port:list(port):22' \
 		'SSHKeepAlive:uinteger:300' \
@@ -49,7 +50,8 @@ validate_section_dropbear()
 dropbear_instance()
 {
 	local PasswordAuth enable Interface GatewayPorts \
-		RootPasswordAuth RootLogin rsakeyfile \
+		RootPasswordAuth RootLogin \
+		rsakeyfile keyfile \
 		BannerFile Port SSHKeepAlive IdleTimeout \
 		MaxAuthTries RecvWindowSize mdns ipaddrs
 
@@ -69,6 +71,10 @@ dropbear_instance()
 	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
 	local pid_file="/var/run/${NAME}.${PIDCOUNT}.pid"
 
+	[ -n "${rsakeyfile}" ] && logger -t ${NAME} \
+		"option 'rsakeyfile' is considered to be deprecated" \
+		"and will removed be in future releases, use 'keyfile' instead"
+
 	procd_open_instance
 	procd_set_param command "$PROG" -F -P "$pid_file"
 	[ "${PasswordAuth}" -eq 0 ] && procd_append_param command -s
@@ -76,6 +82,7 @@ dropbear_instance()
 	[ "${RootPasswordAuth}" -eq 0 ] && procd_append_param command -g
 	[ "${RootLogin}" -eq 0 ] && procd_append_param command -w
 	[ -n "${rsakeyfile}" ] && procd_append_param command -r "${rsakeyfile}"
+	[ -n "${keyfile}" ] && procd_append_param command -r "${keyfile}"
 	[ -n "${BannerFile}" ] && procd_append_param command -b "${BannerFile}"
 	append_ports "${ipaddrs}" "${Port}"
 	[ "${IdleTimeout}" -ne 0 ] && procd_append_param command -I "${IdleTimeout}"
