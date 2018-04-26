@@ -47,6 +47,7 @@ define Device/ubnt-xm
   UBNT_TYPE := XM
   UBNT_BOARD := XM
   UBNT_CHIP := ar7240
+  KERNEL := kernel-bin | patch-cmdline | relocate-kernel | lzma | uImage lzma
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/factory.bin = $$(IMAGE/sysupgrade.bin) | mkubntimage-split
   IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
