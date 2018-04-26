@@ -87,7 +87,12 @@ _runas_so() {
 			return 0;
 		}
 
-		__attribute__((section(".init_array")))
+		#ifdef __APPLE__
+			__attribute__((section("__DATA,__mod_init_func")))
+		#else
+			__attribute__((section(".init_array")))
+		#endif
+
 		static void *mangle_arg0_constructor = &mangle_arg0;
 	EOT
 
