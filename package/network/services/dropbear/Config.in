@@ -25,6 +25,26 @@ config DROPBEAR_ECC
 
 		Increases binary size by about 24 kB (MIPS).
 
+		If full ECC support is required, also select DROPBEAR_ECC_FULL.
+
+config DROPBEAR_ECC_FULL
+	bool "Elliptic curve cryptography (ECC), extended support"
+	default n
+	depends on DROPBEAR_ECC
+	help
+		Enables full support for elliptic curve cryptography (ECC)
+		in key exchange and public key authentication.
+
+		Key exchange algorithms:
+		  ecdh-sha2-nistp384
+		  ecdh-sha2-nistp521
+
+		Public key algorithms:
+		  ecdsa-sha2-nistp384
+		  ecdsa-sha2-nistp521
+
+		Increases binary size by about 4 kB (MIPS).
+
 config DROPBEAR_ZLIB
 	bool "Enable compression"
 	default n
