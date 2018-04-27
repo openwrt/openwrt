@@ -182,6 +182,10 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_pentium = -march=pentium-mmx
     CPU_CFLAGS_pentium4 = -march=pentium4
   endif
+  ifeq ($(ARCH),x86_64)
+    CPU_TYPE ?= generic64
+    CPU_CFLAGS_generic64 = -march=generic64
+  endif
   ifneq ($(findstring arm,$(ARCH)),)
     CPU_TYPE ?= xscale
     CPU_CFLAGS_arm920t = -mcpu=arm920t
