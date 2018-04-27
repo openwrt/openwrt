@@ -1,5 +1,6 @@
 ARCH:=x86_64
-BOARDNAME:=x86_64
+BOARDNAME:=generic64
+CPU_TYPE :=generic64
 DEFAULT_PACKAGES += kmod-button-hotplug kmod-e1000e kmod-e1000 kmod-r8169 kmod-igb
 
 define Target/Description
