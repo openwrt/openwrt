@@ -1,7 +1,7 @@
-From e223e851cbe776029a2768b56e7aa1a9f2873d09 Mon Sep 17 00:00:00 2001
+From e2f13b1fac9799db83a37fc57df9471d9bb5b711 Mon Sep 17 00:00:00 2001
 From: Peter Oh <peter.oh@bowerswilkins.com>
-Date: Thu, 12 Apr 2018 02:49:02 -0700
-Subject: [PATCH 05/15] mesh: reflect country setting to mesh configuration
+Date: Tue, 17 Apr 2018 21:55:02 -0700
+Subject: [PATCH 05/16] mesh: reflect country setting to mesh configuration
 
 wpa_supplicant configuration has country parameter that is
 supposed to be used in AP mode to indicate supporting 802.11h
@@ -15,12 +15,13 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 
 --- a/wpa_supplicant/mesh.c
 +++ b/wpa_supplicant/mesh.c
-@@ -252,6 +252,14 @@ static int wpa_supplicant_mesh_init(stru
+@@ -255,6 +255,15 @@ static int wpa_supplicant_mesh_init(stru
  	bss->conf->start_disabled = 1;
  	bss->conf->mesh = MESH_ENABLED;
  	bss->conf->ap_max_inactivity = wpa_s->conf->mesh_max_inactivity;
 +
-+	if (ieee80211_is_dfs(ssid->frequency) && wpa_s->conf->country[0]) {
++	if (ieee80211_is_dfs(ssid->frequency, wpa_s->hw.modes,
++			     wpa_s->hw.num_modes) && wpa_s->conf->country[0]) {
 +		conf->ieee80211h = 1;
 +		conf->ieee80211d = 1;
 +		conf->country[0] = wpa_s->conf->country[0];

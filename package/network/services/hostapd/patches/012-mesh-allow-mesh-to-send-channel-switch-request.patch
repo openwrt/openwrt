@@ -1,7 +1,7 @@
-From 851f67301a8b9bc96c3d8cce08e355a64d30350d Mon Sep 17 00:00:00 2001
+From 912b5c89328f1f9585e64fd13460928c71f28352 Mon Sep 17 00:00:00 2001
 From: Peter Oh <peter.oh@bowerswilkins.com>
-Date: Thu, 12 Apr 2018 02:49:09 -0700
-Subject: [PATCH 12/15] mesh: allow mesh to send channel switch request
+Date: Tue, 17 Apr 2018 21:55:09 -0700
+Subject: [PATCH 12/16] mesh: allow mesh to send channel switch request
 
 add mesh type to nl80211 channel switch request,
 so mesh is able to send the request to kernel drivers.
@@ -13,7 +13,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -8659,7 +8659,8 @@ static int nl80211_switch_channel(void *
+@@ -8685,7 +8685,8 @@ static int nl80211_switch_channel(void *
  	}
  
  	if ((drv->nlmode != NL80211_IFTYPE_AP) &&

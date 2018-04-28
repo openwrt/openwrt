@@ -29,7 +29,7 @@ Tested-by: Simon Wunderlich <simon.wunderlich@openmesh.com>
  /**
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -9217,6 +9217,18 @@ static int nl80211_put_mesh_id(struct nl
+@@ -9250,6 +9250,18 @@ static int nl80211_put_mesh_id(struct nl
  }
  
  
@@ -48,7 +48,7 @@ Tested-by: Simon Wunderlich <simon.wunderlich@openmesh.com>
  static int nl80211_put_mesh_config(struct nl_msg *msg,
  				   struct wpa_driver_mesh_bss_params *params)
  {
-@@ -9278,6 +9290,7 @@ static int nl80211_join_mesh(struct i802
+@@ -9311,6 +9323,7 @@ static int nl80211_join_mesh(struct i802
  	    nl80211_put_basic_rates(msg, params->basic_rates) ||
  	    nl80211_put_mesh_id(msg, params->meshid, params->meshid_len) ||
  	    nl80211_put_beacon_int(msg, params->beacon_int) ||

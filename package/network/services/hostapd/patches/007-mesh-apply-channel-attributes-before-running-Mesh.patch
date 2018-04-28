@@ -1,7 +1,7 @@
-From a0c5eea22d5d1181dbe0861b24e4b9bb598f4e50 Mon Sep 17 00:00:00 2001
+From 8190aab3344ae9746c897093f88f3679239d135d Mon Sep 17 00:00:00 2001
 From: Peter Oh <peter.oh@bowerswilkins.com>
-Date: Thu, 12 Apr 2018 02:49:04 -0700
-Subject: [PATCH 07/15] mesh: apply channel attributes before running Mesh
+Date: Tue, 17 Apr 2018 21:55:04 -0700
+Subject: [PATCH 07/16] mesh: apply channel attributes before running Mesh
 
 This helps mesh interface initializes with correct
 channel parameters.
@@ -13,7 +13,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 
 --- a/wpa_supplicant/mesh.c
 +++ b/wpa_supplicant/mesh.c
-@@ -334,6 +334,8 @@ static int wpa_supplicant_mesh_init(stru
+@@ -338,6 +338,8 @@ static int wpa_supplicant_mesh_init(stru
  		conf->basic_rates[rate_len] = -1;
  	}
  
@@ -22,7 +22,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  	if (hostapd_setup_interface(ifmsh)) {
  		wpa_printf(MSG_ERROR,
  			   "Failed to initialize hostapd interface for mesh");
-@@ -345,8 +347,6 @@ static int wpa_supplicant_mesh_init(stru
+@@ -349,8 +351,6 @@ static int wpa_supplicant_mesh_init(stru
  		return -1;
  	}
  

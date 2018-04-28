@@ -1,7 +1,7 @@
-From cbe8b9901f9cc254cbaa1ec1cee1c52af8f828bf Mon Sep 17 00:00:00 2001
+From 95425b5becaeda8a515c942f417696e5df34bbc8 Mon Sep 17 00:00:00 2001
 From: Peter Oh <peter.oh@bowerswilkins.com>
-Date: Thu, 12 Apr 2018 02:49:00 -0700
-Subject: [PATCH 03/15] mesh: relocate RSN init function
+Date: Tue, 17 Apr 2018 21:55:00 -0700
+Subject: [PATCH 03/16] mesh: relocate RSN init function
 
 RSN init function should work together with mesh join
 when it's used. Since mesh join could be called at different stage
@@ -16,7 +16,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 
 --- a/wpa_supplicant/mesh.c
 +++ b/wpa_supplicant/mesh.c
-@@ -333,9 +333,6 @@ static int wpa_supplicant_mesh_init(stru
+@@ -336,9 +336,6 @@ static int wpa_supplicant_mesh_init(stru
  		return -1;
  	}
  
@@ -26,7 +26,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  	wpa_supplicant_conf_ap_ht(wpa_s, ssid, conf);
  
  	return 0;
-@@ -381,6 +378,12 @@ void wpas_join_mesh(struct wpa_supplican
+@@ -384,6 +381,12 @@ void wpas_join_mesh(struct wpa_supplican
  	struct wpa_ssid *ssid = wpa_s->current_ssid;
  	int ret = 0;
  

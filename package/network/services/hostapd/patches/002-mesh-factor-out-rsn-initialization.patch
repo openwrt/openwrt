@@ -1,7 +1,7 @@
-From 04ebcadc059a6cfd45cd8ec06e6321b69bdb68b8 Mon Sep 17 00:00:00 2001
+From 6da64b1e056e0b1be18b6ab37c820acb4a0f3cf4 Mon Sep 17 00:00:00 2001
 From: Peter Oh <peter.oh@bowerswilkins.com>
-Date: Thu, 12 Apr 2018 02:48:59 -0700
-Subject: [PATCH 02/15] mesh: factor out rsn initialization
+Date: Tue, 17 Apr 2018 21:54:59 -0700
+Subject: [PATCH 02/16] mesh: factor out rsn initialization
 
 RSN initialization can be used in different phases
 if mesh initialization and mesh join don't happen
@@ -10,15 +10,15 @@ hence factor it out to help convering the case.
 
 Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 ---
- wpa_supplicant/mesh.c | 73 ++++++++++++++++++++++++++-----------------
+ wpa_supplicant/mesh.c | 84 +++++++++++++++++++++++++------------------
  wpa_supplicant/mesh.h |  1 +
- 2 files changed, 45 insertions(+), 29 deletions(-)
+ 2 files changed, 50 insertions(+), 35 deletions(-)
 
 --- a/wpa_supplicant/mesh.c
 +++ b/wpa_supplicant/mesh.c
-@@ -147,6 +147,48 @@ static void wpas_mesh_copy_groups(struct
- 			  groups_size);
+@@ -147,6 +147,53 @@ static void wpas_mesh_copy_groups(struct
  }
+ 
  
 +int wpas_mesh_init_rsn(struct wpa_supplicant *wpa_s)
 +{
@@ -27,10 +27,14 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 +	struct wpa_ssid *ssid = wpa_s->current_ssid;
 +	struct hostapd_data *bss = ifmsh->bss[0];
 +	static int default_groups[] = { 19, 20, 21, 25, 26, -1 };
++	const char *password;
 +	size_t len;
 +
 +	if (mconf->security != MESH_CONF_SEC_NONE) {
-+		if (ssid->passphrase == NULL) {
++		password = ssid->sae_password;
++		if (!password)
++			password = ssid->passphrase;
++		if (!password) {
 +			wpa_printf(MSG_ERROR,
 +				   "mesh: Passphrase for SAE not configured");
 +			return -1;
@@ -50,9 +54,9 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 +				return -1;
 +		}
 +
-+		len = os_strlen(ssid->passphrase);
++		len = os_strlen(password);
 +		bss->conf->ssid.wpa_passphrase =
-+			dup_binstr(ssid->passphrase, len);
++			dup_binstr(password, len);
 +
 +		wpa_s->mesh_rsn = mesh_rsn_auth_init(wpa_s, mconf);
 +		if (!wpa_s->mesh_rsn)
@@ -62,15 +66,29 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 +	return 0;
 +}
 +
- 
++
  static int wpa_supplicant_mesh_init(struct wpa_supplicant *wpa_s,
  				    struct wpa_ssid *ssid,
-@@ -291,35 +333,8 @@ static int wpa_supplicant_mesh_init(stru
+ 				    struct hostapd_freq_params *freq)
+@@ -156,9 +203,6 @@ static int wpa_supplicant_mesh_init(stru
+ 	struct hostapd_config *conf;
+ 	struct mesh_conf *mconf;
+ 	int basic_rates_erp[] = { 10, 20, 55, 60, 110, 120, 240, -1 };
+-	static int default_groups[] = { 19, 20, 21, 25, 26, -1 };
+-	const char *password;
+-	size_t len;
+ 	int rate_len;
+ 	int frequency;
+ 
+@@ -292,38 +336,8 @@ static int wpa_supplicant_mesh_init(stru
  		return -1;
  	}
  
 -	if (mconf->security != MESH_CONF_SEC_NONE) {
--		if (ssid->passphrase == NULL) {
+-		password = ssid->sae_password;
+-		if (!password)
+-			password = ssid->passphrase;
+-		if (!password) {
 -			wpa_printf(MSG_ERROR,
 -				   "mesh: Passphrase for SAE not configured");
 -			goto out_free;
@@ -90,9 +108,9 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 -				goto out_free;
 -		}
 -
--		len = os_strlen(ssid->passphrase);
+-		len = os_strlen(password);
 -		bss->conf->ssid.wpa_passphrase =
--			dup_binstr(ssid->passphrase, len);
+-			dup_binstr(password, len);
 -
 -		wpa_s->mesh_rsn = mesh_rsn_auth_init(wpa_s, mconf);
 -		if (!wpa_s->mesh_rsn)

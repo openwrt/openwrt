@@ -1,7 +1,7 @@
-From e7fc5d2e6b34102282ff94a6e5255af4b6e9ccb5 Mon Sep 17 00:00:00 2001
+From ce3e491e445ebea9705e76ac7ee3d4841ace1cad Mon Sep 17 00:00:00 2001
 From: Peter Oh <peter.oh@bowerswilkins.com>
-Date: Thu, 12 Apr 2018 02:49:08 -0700
-Subject: [PATCH 11/15] mesh: Allow DFS channels to be selected if dfs is
+Date: Tue, 17 Apr 2018 21:55:08 -0700
+Subject: [PATCH 11/16] mesh: Allow DFS channels to be selected if dfs is
  enabled
 
 Note: DFS is assumed to be usable if a country code has been set
@@ -14,7 +14,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -2033,6 +2033,8 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2040,6 +2040,8 @@ void ibss_mesh_setup_freq(struct wpa_sup
  	struct hostapd_freq_params vht_freq;
  	int chwidth, seg0, seg1;
  	u32 vht_caps = 0;
@@ -23,7 +23,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  	freq->freq = ssid->frequency;
  
-@@ -2109,8 +2111,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2116,8 +2118,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
  		return;
  
  	/* Check primary channel flags */
@@ -36,7 +36,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  #ifdef CONFIG_HT_OVERRIDES
  	if (ssid->disable_ht40)
-@@ -2136,8 +2141,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2143,8 +2148,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
  		return;
  
  	/* Check secondary channel flags */
@@ -49,7 +49,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  	freq->channel = pri_chan->chan;
  
-@@ -2227,8 +2235,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2234,8 +2242,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
  			return;
  
  		/* Back to HT configuration if channel not usable */
@@ -62,7 +62,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  	}
  
  	chwidth = VHT_CHANWIDTH_80MHZ;
-@@ -2248,10 +2259,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2255,10 +2266,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
  				if (!chan)
  					continue;
  
