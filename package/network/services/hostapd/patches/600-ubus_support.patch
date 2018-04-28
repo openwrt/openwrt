@@ -49,7 +49,7 @@
  struct hostapd_iface * hostapd_alloc_iface(void);
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -312,6 +312,7 @@ static void hostapd_free_hapd_data(struc
+@@ -315,6 +315,7 @@ static void hostapd_free_hapd_data(struc
  	hapd->started = 0;
  
  	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
@@ -57,7 +57,7 @@
  	iapp_deinit(hapd->iapp);
  	hapd->iapp = NULL;
  	accounting_deinit(hapd);
-@@ -1189,6 +1190,8 @@ static int hostapd_setup_bss(struct host
+@@ -1237,6 +1238,8 @@ static int hostapd_setup_bss(struct host
  	if (hapd->driver && hapd->driver->set_operstate)
  		hapd->driver->set_operstate(hapd->drv_priv, 1);
  
@@ -66,7 +66,7 @@
  	return 0;
  }
  
-@@ -1603,7 +1606,7 @@ static enum nr_chan_width hostapd_get_nr
+@@ -1651,7 +1654,7 @@ static enum nr_chan_width hostapd_get_nr
  #endif /* NEED_AP_MLME */
  
  
@@ -75,7 +75,7 @@
  {
  #ifdef NEED_AP_MLME
  	u16 capab = hostapd_own_capab_info(hapd);
-@@ -1810,6 +1813,7 @@ static int hostapd_setup_interface_compl
+@@ -1872,6 +1875,7 @@ static int hostapd_setup_interface_compl
  	if (err)
  		goto fail;
  
@@ -83,7 +83,7 @@
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (iface->conf->channel) {
  #ifdef NEED_AP_MLME
-@@ -1990,6 +1994,7 @@ dfs_offload:
+@@ -2052,6 +2056,7 @@ dfs_offload:
  
  fail:
  	wpa_printf(MSG_ERROR, "Interface initialization failed");
@@ -91,7 +91,7 @@
  	hostapd_set_state(iface, HAPD_IFACE_DISABLED);
  	wpa_msg(hapd->msg_ctx, MSG_INFO, AP_EVENT_DISABLED);
  #ifdef CONFIG_FST
-@@ -2444,6 +2449,7 @@ void hostapd_interface_deinit_free(struc
+@@ -2517,6 +2522,7 @@ void hostapd_interface_deinit_free(struc
  		   (unsigned int) iface->conf->num_bss);
  	driver = iface->bss[0]->driver;
  	drv_priv = iface->bss[0]->drv_priv;
@@ -143,7 +143,7 @@
  	if (res == HOSTAPD_ACL_PENDING)
  		return;
  
-@@ -3129,12 +3142,12 @@ void fils_hlp_timeout(void *eloop_ctx, v
+@@ -3137,12 +3150,12 @@ void fils_hlp_timeout(void *eloop_ctx, v
  
  static void handle_assoc(struct hostapd_data *hapd,
  			 const struct ieee80211_mgmt *mgmt, size_t len,
@@ -158,7 +158,7 @@
  	struct sta_info *sta;
  	u8 *tmp = NULL;
  	struct hostapd_sta_wpa_psk_short *psk = NULL;
-@@ -3143,6 +3156,11 @@ static void handle_assoc(struct hostapd_
+@@ -3151,6 +3164,11 @@ static void handle_assoc(struct hostapd_
  #ifdef CONFIG_FILS
  	int delay_assoc = 0;
  #endif /* CONFIG_FILS */
@@ -170,7 +170,7 @@
  
  	if (len < IEEE80211_HDRLEN + (reassoc ? sizeof(mgmt->u.reassoc_req) :
  				      sizeof(mgmt->u.assoc_req))) {
-@@ -3314,6 +3332,14 @@ static void handle_assoc(struct hostapd_
+@@ -3322,6 +3340,14 @@ static void handle_assoc(struct hostapd_
  	}
  #endif /* CONFIG_MBO */
  
@@ -185,7 +185,7 @@
  	/*
  	 * sta->capability is used in check_assoc_ies() for RRM enabled
  	 * capability element.
-@@ -3527,6 +3553,7 @@ static void handle_disassoc(struct hosta
+@@ -3535,6 +3561,7 @@ static void handle_disassoc(struct hosta
  	wpa_printf(MSG_DEBUG, "disassocation: STA=" MACSTR " reason_code=%d",
  		   MAC2STR(mgmt->sa),
  		   le_to_host16(mgmt->u.disassoc.reason_code));
@@ -193,7 +193,7 @@
  
  	sta = ap_get_sta(hapd, mgmt->sa);
  	if (sta == NULL) {
-@@ -3592,6 +3619,8 @@ static void handle_deauth(struct hostapd
+@@ -3600,6 +3627,8 @@ static void handle_deauth(struct hostapd
  		" reason_code=%d",
  		MAC2STR(mgmt->sa), le_to_host16(mgmt->u.deauth.reason_code));
  
@@ -202,7 +202,7 @@
  	sta = ap_get_sta(hapd, mgmt->sa);
  	if (sta == NULL) {
  		wpa_msg(hapd->msg_ctx, MSG_DEBUG, "Station " MACSTR " trying "
-@@ -3911,7 +3940,7 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -3919,7 +3948,7 @@ int ieee802_11_mgmt(struct hostapd_data
  
  
  	if (stype == WLAN_FC_STYPE_PROBE_REQ) {
@@ -211,7 +211,7 @@
  		return 1;
  	}
  
-@@ -3931,17 +3960,17 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -3939,17 +3968,17 @@ int ieee802_11_mgmt(struct hostapd_data
  	switch (stype) {
  	case WLAN_FC_STYPE_AUTH:
  		wpa_printf(MSG_DEBUG, "mgmt::auth");
@@ -315,7 +315,7 @@
  		wpabuf_free(sta->p2p_ie);
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -412,6 +412,7 @@ void ap_handle_timer(void *eloop_ctx, vo
+@@ -415,6 +415,7 @@ void ap_handle_timer(void *eloop_ctx, vo
  			       HOSTAPD_LEVEL_INFO, "deauthenticated due to "
  			       "local deauth request");
  		ap_free_sta(hapd, sta);
@@ -323,7 +323,7 @@
  		return;
  	}
  
-@@ -559,6 +560,7 @@ skip_poll:
+@@ -562,6 +563,7 @@ skip_poll:
  			hapd, sta,
  			WLAN_REASON_PREV_AUTH_NOT_VALID);
  		ap_free_sta(hapd, sta);
@@ -331,7 +331,7 @@
  		break;
  	}
  }
-@@ -1220,6 +1222,7 @@ void ap_sta_set_authorized(struct hostap
+@@ -1223,6 +1225,7 @@ void ap_sta_set_authorized(struct hostap
  					  buf, ip_addr);
  	} else {
  		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_DISCONNECTED "%s", buf);

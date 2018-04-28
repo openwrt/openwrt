@@ -7,13 +7,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_RELEASE:=5
+PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=http://w1.fi/hostap.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2018-04-09
-PKG_SOURCE_VERSION:=fa617ee6a0b2d39e6372c93ef9437caa3bd9065a
-PKG_MIRROR_HASH:=5e6f20153c3405ac905f89fea8a614a57e9ba19583b2de2777179381a74aa7b1
+PKG_SOURCE_DATE:=2018-05-21
+PKG_SOURCE_VERSION:=62566bc23d041e88f8e35933d5fd8c2fd0f7cf2a
+PKG_MIRROR_HASH:=f234b24f9471ae9cb34460feec6d6614641691544101535673595272c91448eb
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-3-Clause
@@ -47,7 +47,13 @@ ifneq ($(LOCAL_TYPE),hostapd)
   ifeq ($(LOCAL_VARIANT),full)
     PKG_CONFIG_DEPENDS += \
 		CONFIG_WPA_SUPPLICANT_INTERNAL \
-		CONFIG_WPA_SUPPLICANT_OPENSSL
+		CONFIG_WPA_SUPPLICANT_OPENSSL \
+		CONFIG_WPA_SUPPLICANT_WOLFSSL
+  endif
+  ifeq ($(LOCAL_VARIANT),mesh)
+    PKG_CONFIG_DEPENDS += \
+		CONFIG_WPA_SUPPLICANT_OPENSSL \
+		CONFIG_WPA_SUPPLICANT_WOLFSSL
   endif
 endif
 
@@ -83,10 +89,23 @@ ifneq ($(LOCAL_TYPE),hostapd)
       TARGET_LDFLAGS += -lcrypto -lssl
     endif
   endif
-  ifeq ($(LOCAL_VARIANT),mesh)
-    DRIVER_MAKEOPTS += CONFIG_TLS=openssl CONFIG_AP=y CONFIG_SAE=y CONFIG_MESH=y
-    TARGET_LDFLAGS += -lcrypto -lssl
+  ifdef CONFIG_WPA_SUPPLICANT_WOLFSSL
+    ifeq ($(LOCAL_VARIANT),full)
+      DRIVER_MAKEOPTS += CONFIG_TLS=wolfssl CONFIG_WPS_NFC=1
+      TARGET_LDFLAGS += -lwolfssl
+    endif
   endif
+
+  ifeq ($(LOCAL_VARIANT),mesh)
+    ifndef CONFIG_WPA_SUPPLICANT_WOLFSSL
+      DRIVER_MAKEOPTS += CONFIG_TLS=openssl CONFIG_AP=y CONFIG_SAE=y CONFIG_MESH=y
+      TARGET_LDFLAGS += -lcrypto -lssl
+    else
+      DRIVER_MAKEOPTS += CONFIG_TLS=wolfssl CONFIG_WPS_NFC=1 CONFIG_AP=y CONFIG_SAE=y CONFIG_MESH=y
+      TARGET_LDFLAGS += -lwolfssl
+    endif
+  endif
+
   ifdef CONFIG_WPA_SUPPLICANT_NO_TIMESTAMP_CHECK
     TARGET_CFLAGS += -DNO_TIMESTAMP_CHECK
   endif
@@ -157,7 +176,7 @@ endef
 define Package/wpad
 $(call Package/wpad/Default)
   TITLE+= (full)
-  DEPENDS+=+WPA_SUPPLICANT_OPENSSL:libopenssl
+  DEPENDS+=+WPA_SUPPLICANT_OPENSSL:libopenssl +WPA_SUPPLICANT_WOLFSSL:libwolfssl
   VARIANT:=wpad-full
 endef
 
@@ -179,7 +198,7 @@ endef
 define Package/wpad-mesh
 $(call Package/wpad/Default)
   TITLE+= (with 802.11s mesh and SAE support)
-  DEPENDS:=$(DRV_DEPENDS) +libubus +PACKAGE_wpad-mesh:libopenssl @PACKAGE_kmod-cfg80211 @(!TARGET_uml||BROKEN)
+  DEPENDS:=$(DRV_DEPENDS) +libubus +WPA_SUPPLICANT_OPENSSL:libopenssl +WPA_SUPPLICANT_INTERNAL:libopenssl +WPA_SUPPLICANT_WOLFSSL:libwolfssl @PACKAGE_kmod-cfg80211 @(!TARGET_uml||BROKEN)
   VARIANT:=wpad-mesh
 endef
 
@@ -192,7 +211,7 @@ define Package/wpa-supplicant
   CATEGORY:=Network
   TITLE:=WPA Supplicant
   URL:=http://hostap.epitest.fi/wpa_supplicant/
-  DEPENDS:=$(DRV_DEPENDS) +WPA_SUPPLICANT_OPENSSL:libopenssl
+  DEPENDS:=$(DRV_DEPENDS) +WPA_SUPPLICANT_OPENSSL:libopenssl +WPA_SUPPLICANT_WOLFSSL:libwolfssl
   CONFLICTS:=wpad wpad-mini wpad-mesh
   VARIANT:=supplicant-full
 endef
@@ -212,7 +231,7 @@ endef
 define Package/wpa-supplicant-mesh
   $(Package/wpa-supplicant)
   TITLE:=WPA Supplicant (with 802.11s and SAE)
-  DEPENDS:=$(DRV_DEPENDS) +PACKAGE_wpa-supplicant-mesh:libopenssl @PACKAGE_kmod-cfg80211 @(!TARGET_uml||BROKEN)
+  DEPENDS:=$(DRV_DEPENDS) +WPA_SUPPLICANT_OPENSSL:libopenssl +WPA_SUPPLICANT_INTERNAL:libopenssl +WPA_SUPPLICANT_WOLFSSL:libwolfssl @PACKAGE_kmod-cfg80211 @(!TARGET_uml||BROKEN)
   CONFLICTS:=wpad wpad-mesh wpad-mesh
   VARIANT:=supplicant-mesh
 endef
@@ -243,7 +262,7 @@ define Package/eapol-test
   SECTION:=net
   CATEGORY:=Network
   VARIANT:=supplicant-full
-  DEPENDS:=$(DRV_DEPENDS) +WPA_SUPPLICANT_OPENSSL:libopenssl
+  DEPENDS:=$(DRV_DEPENDS) +WPA_SUPPLICANT_OPENSSL:libopenssl +WPA_SUPPLICANT_WOLFSSL:libwolfssl
 endef
 
 

@@ -1,7 +1,7 @@
 # wpa_supplicant config
 config WPA_SUPPLICANT_NO_TIMESTAMP_CHECK
 	bool "Disable timestamp check"
-	depends on PACKAGE_wpa-supplicant || PACKAGE_wpa-supplicant-mesh || PACKAGE_wpa-supplicant-mini || PACKAGE_wpad || PACKAGE_wpad-mini || PACAKGE_wpad-mesh
+	depends on PACKAGE_wpa-supplicant || PACKAGE_wpa-supplicant-mesh || PACKAGE_wpa-supplicant-mini || PACKAGE_wpad || PACKAGE_wpad-mini || PACKAGE_wpad-mesh
 	default n
 	help
 	  This disables the timestamp check for certificates in wpa_supplicant
@@ -10,14 +10,29 @@ config WPA_SUPPLICANT_NO_TIMESTAMP_CHECK
 choice
 	prompt "Choose TLS provider"
 	default WPA_SUPPLICANT_INTERNAL
-	depends on PACKAGE_wpa-supplicant || PACKAGE_wpad
+	depends on PACKAGE_wpa-supplicant || PACKAGE_wpad || PACKAGE_wpad-mesh
 
 config WPA_SUPPLICANT_INTERNAL
 	bool "internal"
+	depends on PACKAGE_wpa-supplicant || PACKAGE_wpad
 
 config WPA_SUPPLICANT_OPENSSL
 	bool "openssl"
 	select PACKAGE_libopenssl
+
+config WPA_SUPPLICANT_WOLFSSL
+	bool "wolfssl"
+	select PACKAGE_libwolfssl
+	select WOLFSSL_HAS_AES_CCM
+	select WOLFSSL_HAS_AES_GCM
+	select WOLFSSL_HAS_ARC4
+	select WOLFSSL_HAS_DES3
+	select WOLFSSL_HAS_DH
+	select WOLFSSL_HAS_ECC
+	select WOLFSSL_HAS_OCSP
+	select WOLFSSL_HAS_PSK
+	select WOLFSSL_HAS_SESSION_TICKET
+	select WOLFSSL_HAS_WPAS
 
 endchoice
 

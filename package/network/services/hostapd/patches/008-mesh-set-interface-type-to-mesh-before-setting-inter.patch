@@ -1,7 +1,7 @@
-From 143809f1e60f749a5a5c72735ffa8eb99d602cc1 Mon Sep 17 00:00:00 2001
+From e001251cb5708c406d477eca6aa912e5692b17fe Mon Sep 17 00:00:00 2001
 From: Peter Oh <peter.oh@bowerswilkins.com>
-Date: Thu, 12 Apr 2018 02:49:05 -0700
-Subject: [PATCH 08/15] mesh: set interface type to mesh before setting
+Date: Tue, 17 Apr 2018 21:55:05 -0700
+Subject: [PATCH 08/16] mesh: set interface type to mesh before setting
  interface
 
 Correct interface type is required to start DFS CAC that can be
@@ -14,7 +14,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 
 --- a/wpa_supplicant/mesh.c
 +++ b/wpa_supplicant/mesh.c
-@@ -336,14 +336,14 @@ static int wpa_supplicant_mesh_init(stru
+@@ -339,14 +339,14 @@ static int wpa_supplicant_mesh_init(stru
  
  	wpa_supplicant_conf_ap_ht(wpa_s, ssid, conf);
  

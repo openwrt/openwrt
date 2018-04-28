@@ -1,7 +1,7 @@
-From 91c0f3f6a9ecae3c9106bef8a8606fab0792dd28 Mon Sep 17 00:00:00 2001
+From 032e70833de4b251fc4a159b2cc4ef28d0f1df0d Mon Sep 17 00:00:00 2001
 From: Peter Oh <peter.oh@bowerswilkins.com>
-Date: Thu, 12 Apr 2018 02:48:58 -0700
-Subject: [PATCH 01/15] mesh: factor out mesh join function
+Date: Tue, 17 Apr 2018 21:54:58 -0700
+Subject: [PATCH 01/16] mesh: factor out mesh join function
 
 mesh join function consitss of 2 parts which are preparing
 configurations and sending join event to driver.
@@ -12,22 +12,14 @@ into 2 parts to reduce redundant calls.
 
 Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 ---
- wpa_supplicant/mesh.c             | 120 ++++++++++++++++--------------
+ wpa_supplicant/mesh.c             | 119 ++++++++++++++++--------------
  wpa_supplicant/mesh.h             |   1 +
  wpa_supplicant/wpa_supplicant_i.h |   1 +
- 3 files changed, 68 insertions(+), 54 deletions(-)
+ 3 files changed, 67 insertions(+), 54 deletions(-)
 
 --- a/wpa_supplicant/mesh.c
 +++ b/wpa_supplicant/mesh.c
-@@ -25,6 +25,7 @@
- #include "mesh_mpm.h"
- #include "mesh_rsn.h"
- #include "mesh.h"
-+#include "drivers/driver_nl80211.h"
- 
- 
- static void wpa_supplicant_mesh_deinit(struct wpa_supplicant *wpa_s)
-@@ -359,13 +360,48 @@ void wpa_supplicant_mesh_add_scan_ie(str
+@@ -363,13 +363,48 @@ void wpa_supplicant_mesh_add_scan_ie(str
  }
  
  
@@ -78,7 +70,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  		ret = -ENOENT;
  		goto out;
  	}
-@@ -376,22 +412,22 @@ int wpa_supplicant_join_mesh(struct wpa_
+@@ -380,22 +415,22 @@ int wpa_supplicant_join_mesh(struct wpa_
  	wpa_s->group_cipher = WPA_CIPHER_NONE;
  	wpa_s->mgmt_group_cipher = 0;
  
@@ -112,7 +104,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  			} else {
  				ssid->max_oper_chwidth = VHT_CHANWIDTH_80MHZ;
  			}
-@@ -405,67 +441,43 @@ int wpa_supplicant_join_mesh(struct wpa_
+@@ -409,67 +444,43 @@ int wpa_supplicant_join_mesh(struct wpa_
  		}
  	}
  	if (ssid->beacon_int > 0)
