@@ -580,6 +580,9 @@ ramips_board_detect() {
 	*"WiTi")
                 name="witi"
 		;;
+        *"WiTi-512")
+                name="witi-512"
+		;;
 	*"WIZARD 8800")
 		name="wizard8800"
 		;;

@@ -173,6 +173,7 @@ platform_check_image() {
 	widora,neo-16m|\
 	widora,neo-32m|\
 	witi|\
+	witi-512|\
 	wizfi630a|\
 	wl-330n|\
 	wl-330n3g|\
