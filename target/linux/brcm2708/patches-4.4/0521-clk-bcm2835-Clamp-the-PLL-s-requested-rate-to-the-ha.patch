@@ -27,7 +27,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	bcm2835_pll_choose_ndiv_and_fdiv(rate, *parent_rate, &ndiv, &fdiv);
  
  	return bcm2835_pll_rate_from_divisors(*parent_rate, ndiv, fdiv, 1);
-@@ -631,13 +635,6 @@ static int bcm2835_pll_set_rate(struct c
+@@ -633,13 +637,6 @@ static int bcm2835_pll_set_rate(struct c
  	u32 ana[4];
  	int i;
  

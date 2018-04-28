@@ -18,7 +18,7 @@ Subject: [PATCH] phy device tree support for emac
  #include <linux/slab.h>
  
  #include <asm/processor.h>
-@@ -2392,6 +2393,246 @@ static int emac_read_uint_prop(struct de
+@@ -2410,6 +2411,246 @@ static int emac_read_uint_prop(struct de
  	return 0;
  }
  
@@ -265,7 +265,7 @@ Subject: [PATCH] phy device tree support for emac
  static int emac_init_phy(struct emac_instance *dev)
  {
  	struct device_node *np = dev->ofdev->dev.of_node;
-@@ -2462,6 +2703,18 @@ static int emac_init_phy(struct emac_ins
+@@ -2480,6 +2721,18 @@ static int emac_init_phy(struct emac_ins
  
  	emac_configure(dev);
  
@@ -284,7 +284,7 @@ Subject: [PATCH] phy device tree support for emac
  	if (dev->phy_address != 0xffffffff)
  		phy_map = ~(1 << dev->phy_address);
  
-@@ -2489,6 +2742,7 @@ static int emac_init_phy(struct emac_ins
+@@ -2507,6 +2760,7 @@ static int emac_init_phy(struct emac_ins
  		return -ENXIO;
  	}
  
@@ -292,7 +292,7 @@ Subject: [PATCH] phy device tree support for emac
  	/* Init PHY */
  	if (dev->phy.def->ops->init)
  		dev->phy.def->ops->init(&dev->phy);
-@@ -2907,6 +3161,8 @@ static int emac_probe(struct platform_de
+@@ -2925,6 +3179,8 @@ static int emac_probe(struct platform_de
  	/* I have a bad feeling about this ... */
  
   err_detach_tah:
@@ -301,7 +301,7 @@ Subject: [PATCH] phy device tree support for emac
  	if (emac_has_feature(dev, EMAC_FTR_HAS_TAH))
  		tah_detach(dev->tah_dev, dev->tah_port);
   err_detach_rgmii:
-@@ -2957,6 +3213,11 @@ static int emac_remove(struct platform_d
+@@ -2975,6 +3231,11 @@ static int emac_remove(struct platform_d
  	if (emac_has_feature(dev, EMAC_FTR_HAS_ZMII))
  		zmii_detach(dev->zmii_dev, dev->zmii_port);
  

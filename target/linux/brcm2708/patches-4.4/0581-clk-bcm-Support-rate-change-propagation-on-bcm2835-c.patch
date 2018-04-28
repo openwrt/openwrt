@@ -34,7 +34,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	u32 ctl_reg;
  	u32 div_reg;
  
-@@ -1059,10 +1062,60 @@ bcm2835_clk_is_pllc(struct clk_hw *hw)
+@@ -1061,10 +1064,60 @@ bcm2835_clk_is_pllc(struct clk_hw *hw)
  	return strncmp(clk_hw_get_name(hw), "pllc", 4) == 0;
  }
  
@@ -96,7 +96,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	struct clk_hw *parent, *best_parent = NULL;
  	bool current_parent_is_pllc;
  	unsigned long rate, best_rate = 0;
-@@ -1090,9 +1143,8 @@ static int bcm2835_clock_determine_rate(
+@@ -1092,9 +1145,8 @@ static int bcm2835_clock_determine_rate(
  		if (bcm2835_clk_is_pllc(parent) && !current_parent_is_pllc)
  			continue;
  
@@ -108,7 +108,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  		if (rate > best_rate && rate <= req->rate) {
  			best_parent = parent;
  			best_prate = prate;
-@@ -1312,6 +1364,13 @@ static struct clk *bcm2835_register_cloc
+@@ -1314,6 +1366,13 @@ static struct clk *bcm2835_register_cloc
  	if ((cprman_read(cprman, data->ctl_reg) & CM_ENABLE) == 0)
  		init.flags &= ~CLK_IS_CRITICAL;
  

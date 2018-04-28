@@ -267,7 +267,7 @@
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/ip6_gre.c
 +++ b/net/ipv6/ip6_gre.c
-@@ -395,7 +395,7 @@ static void ip6gre_err(struct sk_buff *s
+@@ -397,7 +397,7 @@ static void ip6gre_err(struct sk_buff *s
  		return;
  	ipv6h = (const struct ipv6hdr *)skb->data;
  	greh = (const struct gre_base_hdr *)(skb->data + offset);
@@ -276,7 +276,7 @@
  
  	t = ip6gre_tunnel_lookup(skb->dev, &ipv6h->daddr, &ipv6h->saddr,
  				 key, greh->protocol);
-@@ -482,11 +482,11 @@ static int ip6gre_rcv(struct sk_buff *sk
+@@ -484,11 +484,11 @@ static int ip6gre_rcv(struct sk_buff *sk
  			offset += 4;
  		}
  		if (flags&GRE_KEY) {
@@ -290,7 +290,7 @@
  			offset += 4;
  		}
  	}
-@@ -748,7 +748,7 @@ static netdev_tx_t ip6gre_xmit2(struct s
+@@ -750,7 +750,7 @@ static netdev_tx_t ip6gre_xmit2(struct s
  
  		if (tunnel->parms.o_flags&GRE_SEQ) {
  			++tunnel->o_seqno;
@@ -299,7 +299,7 @@
  			ptr--;
  		}
  		if (tunnel->parms.o_flags&GRE_KEY) {
-@@ -844,7 +844,7 @@ static inline int ip6gre_xmit_ipv6(struc
+@@ -846,7 +846,7 @@ static inline int ip6gre_xmit_ipv6(struc
  
  	dsfield = ipv6_get_dsfield(ipv6h);
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_TCLASS)
@@ -310,7 +310,7 @@
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_FWMARK)
 --- a/net/ipv6/ip6_tunnel.c
 +++ b/net/ipv6/ip6_tunnel.c
-@@ -1307,7 +1307,7 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
+@@ -1310,7 +1310,7 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
  
  	dsfield = ipv6_get_dsfield(ipv6h);
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_TCLASS)
@@ -838,7 +838,7 @@
  
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -3818,14 +3818,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -3820,14 +3820,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  

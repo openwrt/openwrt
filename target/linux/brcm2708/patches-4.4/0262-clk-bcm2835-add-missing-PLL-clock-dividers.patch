@@ -14,7 +14,7 @@ Reviewed-by: Eric Anholt <eric@anholt.net>
 
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -1393,6 +1393,22 @@ static const struct bcm2835_clk_desc clk
+@@ -1395,6 +1395,22 @@ static const struct bcm2835_clk_desc clk
  		.load_mask = CM_PLLA_LOADPER,
  		.hold_mask = CM_PLLA_HOLDPER,
  		.fixed_divider = 1),
@@ -37,7 +37,7 @@ Reviewed-by: Eric Anholt <eric@anholt.net>
  
  	/* PLLB is used for the ARM's clock. */
  	[BCM2835_PLLB]		= REGISTER_PLL(
-@@ -1507,6 +1523,22 @@ static const struct bcm2835_clk_desc clk
+@@ -1509,6 +1525,22 @@ static const struct bcm2835_clk_desc clk
  		.load_mask = CM_PLLD_LOADPER,
  		.hold_mask = CM_PLLD_HOLDPER,
  		.fixed_divider = 1),
