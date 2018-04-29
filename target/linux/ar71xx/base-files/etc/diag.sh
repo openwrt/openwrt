@@ -335,6 +335,7 @@ get_status_led() {
 		status_led="$board:green:wan"
 		;;
 	rb-2011il|\
+	rb-2011ils|\
 	rb-2011l|\
 	rb-2011uas|\
 	rb-2011uas-2hnd)

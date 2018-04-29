@@ -550,6 +550,7 @@ platform_check_image() {
 	rb-951ui-2hnd|\
 	rb-2011l|\
 	rb-2011il|\
+	rb-2011ils|\
 	rb-2011uas|\
 	rb-2011uas-2hnd|\
 	rb-2011uias|\
@@ -843,6 +844,7 @@ platform_do_upgrade() {
 	rb-951g-2hnd|\
 	rb-951ui-2hnd|\
 	rb-2011il|\
+	rb-2011ils|\
 	rb-2011l|\
 	rb-2011uas|\
 	rb-2011uas-2hnd|\
