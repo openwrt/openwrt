@@ -12,10 +12,13 @@ ROOTFS="$3"
 BOOTFSSIZE="$4"
 ROOTFSSIZE="$5"
 
+[ -z "$SOURCE_DATE_EPOCH" ] || \
+	SIGNATURE="-S 0x$(printf "%.8s" $SOURCE_DATE_EPOCH)"
+
 head=4
 sect=63
 
-set `ptgen -o $OUTPUT -h $head -s $sect -l 1024 -t c -p ${BOOTFSSIZE}M -t 83 -p ${ROOTFSSIZE}M`
+set `ptgen -o $OUTPUT -h $head -s $sect -l 1024 -t c -p ${BOOTFSSIZE}M -t 83 -p ${ROOTFSSIZE}M $SIGNATURE`
 
 BOOTOFFSET="$(($1 / 512))"
 BOOTSIZE="$(($2 / 512))"
