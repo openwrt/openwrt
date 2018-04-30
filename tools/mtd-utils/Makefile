@@ -17,6 +17,15 @@ PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/host-build.mk
 
+ifneq ($(HOST_OS),Linux)
+  HOST_CFLAGS += \
+	-I$(CURDIR)/include \
+	-Dloff_t=off_t \
+	-D__BYTE_ORDER=BYTE_ORDER \
+	-include endian.h \
+	-DNO_NATIVE_SUPPORT \
+	-include fls.h
+endif
 
 HOST_CONFIGURE_VARS+= \
 	UUID_CFLAGS="-I$(STAGING_DIR_HOST)/include/e2fsprogs/uuid"
@@ -25,6 +34,9 @@ HOST_CONFIGURE_ARGS+= \
 	--disable-tests \
 	--without-xattr \
 	--without-lzo
+
+HOST_MAKE_FLAGS += \
+	PROGRAMS="mkfs.jffs2 ubinize mkfs.ubifs"
 
 define Host/Install
 	$(CP) \
