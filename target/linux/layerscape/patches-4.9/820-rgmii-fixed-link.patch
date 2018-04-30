@@ -5,8 +5,8 @@ Subject: [PATCH] Recognize when an RGMII Link is set as fixed (in the device
  tree) and set up the MAC accordingly
 
 ---
- drivers/net/ethernet/freescale/sdk_dpaa/mac.c               |  1 +
- .../ethernet/freescale/sdk_fman/Peripherals/FM/MAC/memac.c  | 13 +++++++++++++
+ drivers/net/ethernet/freescale/sdk_dpaa/mac.c                      |    1 
+ drivers/net/ethernet/freescale/sdk_fman/Peripherals/FM/MAC/memac.c |   13 ++++++++++
  2 files changed, 14 insertions(+)
 
 --- a/drivers/net/ethernet/freescale/sdk_dpaa/mac.c
@@ -43,19 +43,19 @@ Subject: [PATCH] Recognize when an RGMII Link is set as fixed (in the device
  {
      t_Memac     *p_Memac = (t_Memac *)h_Memac;
  
-+	struct mac_device *mac_dev = (struct mac_device *)p_Memac->h_App;
++    struct mac_device *mac_dev = (struct mac_device *)p_Memac->h_App;
 +
      SANITY_CHECK_RETURN_ERROR(p_Memac, E_INVALID_HANDLE);
      SANITY_CHECK_RETURN_ERROR(!p_Memac->p_MemacDriverParam, E_INVALID_STATE);
  
      fman_memac_enable(p_Memac->p_MemMap, (mode & e_COMM_MODE_RX), (mode & e_COMM_MODE_TX));
  
-+	if (ENET_INTERFACE_FROM_MODE(p_Memac->enetMode) == e_ENET_IF_RGMII) {
-+		if (mac_dev->fixed_link) {
-+			printk("This is a fixed-link, forcing speed %d duplex %d\n",mac_dev->fixed_link->speed,mac_dev->fixed_link->duplex);
-+			MemacAdjustLink(h_Memac,mac_dev->fixed_link->speed,mac_dev->fixed_link->duplex);
-+		}
++    if (ENET_INTERFACE_FROM_MODE(p_Memac->enetMode) == e_ENET_IF_RGMII) {
++	if (mac_dev->fixed_link) {
++		printk(KERN_INFO "This is a fixed-link, forcing speed %d duplex %d\n",mac_dev->fixed_link->speed,mac_dev->fixed_link->duplex);
++		MemacAdjustLink(h_Memac,mac_dev->fixed_link->speed,mac_dev->fixed_link->duplex);
 +	}
++    }
 +
      return E_OK;
  }
