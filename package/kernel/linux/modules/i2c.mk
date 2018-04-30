@@ -225,6 +225,20 @@ endef
 $(eval $(call KernelPackage,i2c-smbus))
 
 
+I2C_DESIGNWARE_PCI_MODULES:= \
+  CONFIG_I2C_DESIGNWARE_PCI:drivers/i2c/busses/i2c-designware-pci
+
+define KernelPackage/i2c-designware-pci
+  $(call i2c_defaults,$(I2C_DESIGNWARE_PCI_MODULES),59)
+  TITLE:=Synopsys DesignWare I2C adapter for PCI
+  DEPENDS:=@PCI_SUPPORT kmod-i2c-core
+endef
+
+define KernelPackage/i2c-designware-pci/description
+  Support for Synopsys DesignWare I2C adapter interfaces
+  for pci bus.
+endef
+
 
 I2C_TINY_USB_MODULES:= \
   CONFIG_I2C_TINY_USB:drivers/i2c/busses/i2c-tiny-usb
