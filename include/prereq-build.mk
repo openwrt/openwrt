@@ -138,6 +138,10 @@ $(eval $(call SetupHostCommand,bzip2,Please install 'bzip2', \
 $(eval $(call SetupHostCommand,wget,Please install GNU 'wget', \
 	wget --version | grep GNU))
 
+$(eval $(call SetupHostCommand,gtime,Please install GNU 'time', \
+	gtime --version 2>&1 | grep GNU, \
+	time --version 2>&1 | grep GNU))
+
 $(eval $(call SetupHostCommand,perl,Please install Perl 5.x, \
 	perl --version | grep "perl.*v5"))
 
