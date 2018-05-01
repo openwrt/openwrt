@@ -1,0 +1,15 @@
+--- a/arch/arm/boot/dts/gemini-dlink-dir-685.dts
++++ b/arch/arm/boot/dts/gemini-dlink-dir-685.dts
+@@ -86,6 +86,12 @@
+ 		};
+ 	};
+ 
++	rtl8366rb {
++		compatible = "realtek,rtl8366rb";
++		gpio-sda = <&gpio0 22 GPIO_ACTIVE_HIGH>;
++		gpio-sck = <&gpio0 21 GPIO_ACTIVE_HIGH>;
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led-wps {

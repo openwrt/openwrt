@@ -79,7 +79,8 @@ DIR685_CMDLINE:=-console=ttyS0,19200n8 root=/dev/sda1 rw rootwait
 define Device/dlink-dir-685
 	DEVICE_TITLE := D-Link DIR-685 Xtreme N Storage Router
 	CMDLINE := $(DIR685_CMDLINE)
-	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
+	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) \
+			kmod-switch-rtl8366rb swconfig
 endef
 TARGET_DEVICES += dlink-dir-685
 
