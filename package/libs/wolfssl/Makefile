@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wolfssl
 PKG_VERSION:=3.14.4
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).zip
 # PKG_SOURCE_URL:=https://www.wolfssl.com/
@@ -65,6 +65,11 @@ WOLFSSL_DEFAULT_OFF_OPTS:= \
 	aes:aesctr \
 	aes:aescfb \
 	aes:aeskeywrap \
+	asm:armasm \
+	asm:intelasm \
+	asm:intelrand \
+	asm:aesni \
+	asm:fast-rsa \
 	coding:base16 \
 	coding:base64encode \
 	crl \
@@ -176,13 +181,6 @@ endef
 
 $(foreach opt,$(subst $(comma), ,$(WOLFSSL_DEFAULT_ON_OPTS)$(WOLFSSL_DEFAULT_OFF_OPTS)), \
 	$(eval $(call configureArgs,$(opt))))
-
-#ifneq ($(CONFIG_TARGET_x86),)
-#	CONFIGURE_ARGS += --enable-intelasm
-#endif
-#ifneq ($(CONFIG_TARGET_x86_64),)
-#	CONFIGURE_ARGS += --enable-intelasm
-#endif
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include $(1)/usr/lib/pkgconfig
