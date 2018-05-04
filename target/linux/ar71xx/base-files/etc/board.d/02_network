@@ -402,7 +402,7 @@ ar71xx_setup_interfaces()
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
 		;;
 	ew-balin)
-		ucidef_set_interface_raw "usb2" "usb0" "static"
+		ucidef_set_interface "usb2" ifname "usb0" proto "static"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "5:lan:4" "4:lan:5" "3:wan"
 		;;
@@ -469,7 +469,7 @@ ar71xx_setup_interfaces()
 		;;
 	tellstick-znet-lite)
 		ucidef_set_interface_wan "eth0"
-		ucidef_set_interface_raw "wlan" "wlan0" "dhcp"
+		ucidef_set_interface "wlan" ifname "wlan0" proto "dhcp"
 		;;
 	tl-mr3420-v2|\
 	tl-wr841n-v8|\
@@ -500,7 +500,7 @@ ar71xx_setup_interfaces()
 		;;
 	tl-wr841n-v1|\
 	tl-wr941nd)
-		ucidef_set_interface_raw "eth" "eth0"
+		ucidef_set_interface "eth" ifname "eth0"
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	tl-wr741nd|\
