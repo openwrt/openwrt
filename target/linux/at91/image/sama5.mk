@@ -11,13 +11,15 @@ define Build/at91-sdcard
 
   $(foreach dts,$(DEVICE_DTS), \
      mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb \
-        ::$(dts).dtb; \
-     mcopy -i $@.boot \
-        $(BIN_DIR)/u-boot-$(dts:at91-%=%)_mmc/u-boot.bin \
-            ::u-boot.bin; \
-     $(CP) $(BIN_DIR)/at91bootstrap-$(dts:at91-%=%)sd_uboot*/*.bin \
-         $@.BOOT.bin; \
-     mcopy -i $@.boot $@.BOOT.bin ::BOOT.bin;)
+        ::$(dts).dtb;)
+
+  mcopy -i $@.boot \
+    $(BIN_DIR)/u-boot-$(DEVICE_NAME:at91-%=%)_mmc/u-boot.bin \
+    ::u-boot.bin
+
+  $(CP) $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd*/at91bootstrap.bin \
+    $@.BOOT.bin; \
+    mcopy -i $@.boot $@.BOOT.bin ::BOOT.bin
 
   ./gen_at91_sdcard_img.sh \
       $@.img \
