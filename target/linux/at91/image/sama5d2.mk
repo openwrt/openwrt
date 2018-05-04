@@ -21,3 +21,11 @@ define Device/at91-sama5d27_som1_ek
   $(Device/evaluation-sdimage)
 endef
 TARGET_DEVICES += at91-sama5d27_som1_ek
+
+define Device/at91-sama5d2_ptc_ek
+  $(Device/evaluation-dtb)
+  DEVICE_TITLE := Microchip(Atmel AT91) SAMA5D2 PTC Ek
+  KERNEL_SIZE := 6144k
+  $(Device/evaluation-sdimage)
+endef
+TARGET_DEVICES += at91-sama5d2_ptc_ek

@@ -94,6 +94,18 @@ define AT91Bootstrap/sama5d27_som1_ekqspi_uboot
   BUILD_DEVICES:=at91-sama5d27_som1_ek
 endef
 
+define AT91Bootstrap/sama5d2_ptc_eknf_uboot
+  TITLE:=AT91Bootstrap for SAMA5D2 PTC EK (Nand Flash)
+  BUILD_SUBTARGET:=sama5d2
+  BUILD_DEVICES:=at91-sama5d2_ptc_ek
+endef
+
+define AT91Bootstrap/sama5d2_ptc_eksd_uboot
+  TITLE:=AT91Bootstrap for SAMA5D2 PTC EK (SDCard)
+  BUILD_SUBTARGET:=sama5d2
+  BUILD_DEVICES:=at91-sama5d2_ptc_ek
+endef
+
 AT91BOOTSTRAP_TARGETS := \
     sama5d2_xplaineddf_uboot \
     sama5d2_xplaineddf_qspi_uboot \
@@ -104,7 +116,9 @@ AT91BOOTSTRAP_TARGETS := \
     sama5d4_xplaineddf_uboot_secure \
     sama5d4_xplainedsd_uboot_secure \
 	sama5d27_som1_eksd_uboot \
-	sama5d27_som1_ekqspi_uboot
+	sama5d27_som1_ekqspi_uboot \
+	sama5d2_ptc_eknf_uboot \
+    sama5d2_ptc_eksd_uboot
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
