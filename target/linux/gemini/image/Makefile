@@ -70,24 +70,20 @@ endef
 # of devices out of the box (former NAS42x0 IcyBox defaults)
 GEMINI_NAS_PACKAGES:=kmod-md-mod kmod-md-linear kmod-md-multipath \
 		kmod-md-raid0 kmod-md-raid1 kmod-md-raid10 kmod-md-raid456 \
-		kmod-fs-btrfs kmod-fs-cifs kmod-fs-ext4 kmod-fs-nfs \
+		kmod-fs-btrfs kmod-fs-cifs kmod-fs-nfs \
 		kmod-fs-nfsd kmod-fs-ntfs kmod-fs-reiserfs kmod-fs-vfat \
 		kmod-nls-utf8 kmod-usb-storage-extras \
 		samba36-server mdadm cfdisk fdisk e2fsprogs badblocks
 
-DIR685_CMDLINE:=-console=ttyS0,19200n8 root=/dev/sda1 rw rootwait
 define Device/dlink-dir-685
 	DEVICE_TITLE := D-Link DIR-685 Xtreme N Storage Router
-	CMDLINE := $(DIR685_CMDLINE)
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) \
 			kmod-switch-rtl8366rb swconfig
 endef
 TARGET_DEVICES += dlink-dir-685
 
-DNS313_CMDLINE:=-console=ttyS0,19200n8 root=/dev/sda4 rw rootwait
 define Device/dlink-dns-313
 	DEVICE_TITLE := D-Link DNS-313 1-Bay Network Storage Enclosure
-	CMDLINE := $(DNS313_CMDLINE)
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 	IMAGES += dns313-image
 	IMAGE/dns313-image := dns313-images
@@ -108,10 +104,8 @@ define Device/rut1xx
 endef
 TARGET_DEVICES += rut1xx
 
-SQ201_CMDLINE:=-console=ttyS0,115200n8
 define Device/sq201
 	DEVICE_TITLE := ITian Square One SQ201
-	CMDLINE := $(SQ201_CMDLINE)
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) rt61-pci-firmware
 endef
 TARGET_DEVICES += sq201
