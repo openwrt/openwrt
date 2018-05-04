@@ -7,10 +7,12 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2016.05
+PKG_VERSION:=linux4sam_5.8
 PKG_RELEASE:=1
 
-PKG_HASH:=87d02275615aaf0cd007b54cbe9fbadceef2bee7c79e6c323ea1ae8956dcb171
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://github.com/linux4sam/u-boot-at91.git
+PKG_SOURCE_VERSION:=59f202622154f82e708a6ca2bf86350a5c1b2d33
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -30,7 +32,9 @@ endef
 define U-Boot/at91sam9x5ek_nandflash
   NAME:=AT91SAM9X5-EK board (NandFlash)
   BUILD_SUBTARGET:=legacy
-  BUILD_DEVICES:=at91sam9g15ek at91sam9g25ek at91sam9g35ek at91sam9x25ek at91sam9x35ek
+  BUILD_DEVICES:=at91sam9g15ek at91sam9g25ek \
+                 at91sam9g35ek at91sam9x25ek \
+				 at91sam9x35ek
 endef
 
 define U-Boot/sama5d3_xplained_nandflash
@@ -87,9 +91,10 @@ UBOOT_TARGETS := \
 	sama5d4_xplained_nandflash
 
 define Build/Compile
-	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
-		CROSS_COMPILE=$(TARGET_CROSS) \
-		KCFLAGS="$(filter-out -fstack-protector -mfloat-abi=hard, $(TARGET_CFLAGS)) -mfloat-abi=soft" 
+  +$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
+     CROSS_COMPILE=$(TARGET_CROSS) \
+     KCFLAGS="$(filter-out -fstack-protector \
+      -mfloat-abi=hard, $(TARGET_CFLAGS)) -mfloat-abi=soft"
 endef
 
 $(eval $(call BuildPackage/U-Boot))
