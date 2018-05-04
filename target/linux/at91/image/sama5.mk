@@ -11,15 +11,15 @@ define Build/at91-sdcard
 
   $(foreach dts,$(DEVICE_DTS), \
      mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb \
-        ::$(dts).dtb;)
+        ::$(dts).dtb)
 
   mcopy -i $@.boot \
     $(BIN_DIR)/u-boot-$(DEVICE_NAME:at91-%=%)_mmc/u-boot.bin \
     ::u-boot.bin
 
-  $(CP) $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd*/at91bootstrap.bin \
-    $@.BOOT.bin; \
-    mcopy -i $@.boot $@.BOOT.bin ::BOOT.bin
+  mcopy -i $@.boot \
+    $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd*/at91bootstrap.bin \
+    ::BOOT.bin
 
   ./gen_at91_sdcard_img.sh \
       $@.img \
@@ -30,7 +30,7 @@ define Build/at91-sdcard
 
   gzip -nc9 $@.img > $@
 
-  rm -f $@.img $@.boot $@.BOOT.bin
+  rm -f $@.img $@.boot
 endef
 
 define Device/evaluation-sdimage
@@ -72,6 +72,14 @@ define Device/at91-sama5d4_xplained
   $(Device/evaluation-sdimage)
 endef
 TARGET_DEVICES += at91-sama5d4_xplained
+
+define Device/at91-sama5d27_som1_ek
+  $(Device/evaluation-dtb)
+  DEVICE_TITLE := Microchip(Atmel AT91) SAMA5D27 SOM1 Ek
+  KERNEL_SIZE := 6144k
+  $(Device/evaluation-sdimage)
+endef
+TARGET_DEVICES += at91-sama5d27_som1_ek
 
 ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
  ifeq ($(strip $(CONFIG_KERNEL_GIT_CLONE_URI)),"")

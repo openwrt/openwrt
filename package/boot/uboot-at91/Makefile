@@ -79,6 +79,18 @@ define U-Boot/sama5d4_xplained_nandflash
   BUILD_DEVICES:=at91-sama5d4_xplained
 endef
 
+define U-Boot/sama5d27_som1_ek_mmc
+  NAME:=SAMA5D27 SOM1 Ek (SDCard)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=at91-sama5d27_som1_ek
+endef
+
+define U-Boot/sama5d27_som1_ek_spiflash
+  NAME:=SAMA5D27 SOM1 Ek (QSPI Flash)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=at91-sama5d27_som1_ek
+endef
+
 UBOOT_TARGETS := \
 	at91sam9m10g45ek_nandflash \
 	at91sam9x5ek_nandflash \
@@ -88,7 +100,9 @@ UBOOT_TARGETS := \
 	sama5d2_xplained_spiflash \
 	sama5d4_xplained_mmc \
 	sama5d4_xplained_spiflash \
-	sama5d4_xplained_nandflash
+	sama5d4_xplained_nandflash\
+    sama5d27_som1_ek_mmc \
+    sama5d27_som1_ek_spiflash
 
 define Build/Compile
   +$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
