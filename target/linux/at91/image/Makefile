@@ -23,7 +23,7 @@ endif
 define Device/Default
   $(Device/default-nand)
   PROFILES := Default
-  FILESYSTEMS := squashfs ubifs
+  FILESYSTEMS := squashfs ubifs ext4
   DEVICE_DTS := $(1)
   KERNEL_NAME := zImage
   KERNEL_SIZE := 4096k

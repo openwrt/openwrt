@@ -4,6 +4,7 @@ FAT32_BLOCKS:=$(shell echo \
   $$(($(AT91_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
 define Build/at91-sdcard
+  $(if $(findstring ext4,$@), \
   rm -f $@.boot
   mkfs.fat -C $@.boot $(FAT32_BLOCKS)
 
@@ -30,7 +31,7 @@ define Build/at91-sdcard
 
   gzip -nc9 $@.img > $@
 
-  rm -f $@.img $@.boot
+  rm -f $@.img $@.boot )
 endef
 
 define Device/evaluation-sdimage
