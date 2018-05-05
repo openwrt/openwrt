@@ -31,6 +31,7 @@ platform_check_image() {
 	awm002-evb-4M|\
 	awm002-evb-8M|\
 	bc2|\
+	b-link,bl-r7628ae4|\
 	broadway|\
 	c108|\
 	carambola|\

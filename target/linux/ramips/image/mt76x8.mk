@@ -299,3 +299,11 @@ define Device/zbtlink_zbt-we1226
   DEVICE_TITLE := ZBTlink ZBT-WE1226
 endef
 TARGET_DEVICES += zbtlink_zbt-we1226
+
+define Device/b-link_bl-r7628ae4
+  DTS := BL-R7628AE4
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  DEVICE_TITLE := B-Link BL-R7628AE4
+endef
+TARGET_DEVICES += b-link_bl-r7628ae4
