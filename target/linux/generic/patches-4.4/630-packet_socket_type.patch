@@ -26,7 +26,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define PACKET_FANOUT_LB		1
 --- a/net/packet/af_packet.c
 +++ b/net/packet/af_packet.c
-@@ -1777,6 +1777,7 @@ static int packet_rcv_spkt(struct sk_buf
+@@ -1784,6 +1784,7 @@ static int packet_rcv_spkt(struct sk_buf
  {
  	struct sock *sk;
  	struct sockaddr_pkt *spkt;
@@ -34,7 +34,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/*
  	 *	When we registered the protocol we saved the socket in the data
-@@ -1784,6 +1785,7 @@ static int packet_rcv_spkt(struct sk_buf
+@@ -1791,6 +1792,7 @@ static int packet_rcv_spkt(struct sk_buf
  	 */
  
  	sk = pt->af_packet_priv;
@@ -42,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/*
  	 *	Yank back the headers [hope the device set this
-@@ -1796,7 +1798,7 @@ static int packet_rcv_spkt(struct sk_buf
+@@ -1803,7 +1805,7 @@ static int packet_rcv_spkt(struct sk_buf
  	 *	so that this procedure is noop.
  	 */
  
@@ -51,7 +51,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto out;
  
  	if (!net_eq(dev_net(dev), sock_net(sk)))
-@@ -1999,12 +2001,12 @@ static int packet_rcv(struct sk_buff *sk
+@@ -2006,12 +2008,12 @@ static int packet_rcv(struct sk_buff *sk
  	int skb_len = skb->len;
  	unsigned int snaplen, res;
  
@@ -67,7 +67,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!net_eq(dev_net(dev), sock_net(sk)))
  		goto drop;
  
-@@ -2124,12 +2126,12 @@ static int tpacket_rcv(struct sk_buff *s
+@@ -2131,12 +2133,12 @@ static int tpacket_rcv(struct sk_buff *s
  	BUILD_BUG_ON(TPACKET_ALIGN(sizeof(*h.h2)) != 32);
  	BUILD_BUG_ON(TPACKET_ALIGN(sizeof(*h.h3)) != 48);
  
@@ -83,7 +83,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!net_eq(dev_net(dev), sock_net(sk)))
  		goto drop;
  
-@@ -3126,6 +3128,7 @@ static int packet_create(struct net *net
+@@ -3135,6 +3137,7 @@ static int packet_create(struct net *net
  	mutex_init(&po->pg_vec_lock);
  	po->rollover = NULL;
  	po->prot_hook.func = packet_rcv;
@@ -91,7 +91,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (sock->type == SOCK_PACKET)
  		po->prot_hook.func = packet_rcv_spkt;
-@@ -3755,6 +3758,16 @@ packet_setsockopt(struct socket *sock, i
+@@ -3793,6 +3796,16 @@ packet_setsockopt(struct socket *sock, i
  		po->xmit = val ? packet_direct_xmit : dev_queue_xmit;
  		return 0;
  	}
@@ -108,7 +108,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	default:
  		return -ENOPROTOOPT;
  	}
-@@ -3807,6 +3820,13 @@ static int packet_getsockopt(struct sock
+@@ -3845,6 +3858,13 @@ static int packet_getsockopt(struct sock
  	case PACKET_VNET_HDR:
  		val = po->has_vnet_hdr;
  		break;
