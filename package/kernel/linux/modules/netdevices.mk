@@ -828,7 +828,7 @@ $(eval $(call KernelPackage,ifb))
 define KernelPackage/dm9000
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Davicom 9000 Ethernet support
-  DEPENDS:=@PCI_SUPPORT +kmod-mii
+  DEPENDS:=+kmod-mii
   KCONFIG:=CONFIG_DM9000 \
     CONFIG_DM9000_DEBUGLEVEL=4 \
     CONFIG_DM9000_FORCE_SIMPLE_PHY_POLL=y
