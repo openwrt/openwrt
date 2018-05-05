@@ -280,6 +280,7 @@ get_status_led() {
 		;;
 	w306r-v20|\
 	witi|\
+	witi-512|\
 	zbt-wr8305rt)
 		status_led="$boardname:green:sys"
 		;;

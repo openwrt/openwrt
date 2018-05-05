@@ -320,6 +320,16 @@ define Device/witi
 endef
 TARGET_DEVICES += witi
 
+define Device/witi-512
+  DTS := WITI512
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := MQmaker WiTi 512
+  DEVICE_PACKAGES := \
+       kmod-ata-core kmod-ata-ahci kmod-mt76x2 kmod-sdhci-mt7620 kmod-usb3 \
+       kmod-usb-ledtrig-usbport wpad-mini
+endef
+TARGET_DEVICES += witi-512
+
 define Device/wndr3700v5
   DTS := WNDR3700V5
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

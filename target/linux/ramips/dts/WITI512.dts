@@ -1,0 +1,15 @@
+/dts-v1/;
+
+#include "WITI.dtsi"
+
+/ {
+        compatible = "witi-512", "mediatek,mt7621-soc";
+        model = "MQmaker WiTi (512)";
+
+	memory@0 {
+		device_type = "memory";
+                reg = <0x0 0x1c000000>, <0x20000000 0x4000000>;
+	};
+
+};
+
