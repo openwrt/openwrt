@@ -269,6 +269,13 @@ proto_qmi_setup() {
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
 	}
+
+	json_init
+        uqmi_info=$(uqmi -d "$device" --get-signal-info)
+        json_load "$(uqmi -d "$device" --get-signal-info)"
+        json_select
+        json_get_var connection_type type
+
 }
 
 qmi_wds_stop() {
