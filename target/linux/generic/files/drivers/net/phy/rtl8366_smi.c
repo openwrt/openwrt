@@ -20,6 +20,7 @@
 #include <linux/of_gpio.h>
 #include <linux/rtl8366.h>
 #include <linux/version.h>
+#include <linux/of_mdio.h>
 
 #ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 #include <linux/debugfs.h>
@@ -915,6 +916,11 @@ static inline void rtl8366_debugfs_remove(struct rtl8366_smi *smi) {}
 static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
 {
 	int ret;
+	struct device_node *np = NULL;
+
+#ifdef CONFIG_OF
+	np = of_get_child_by_name(smi->parent->of_node, "mdio-bus");
+#endif
 
 	smi->mii_bus = mdiobus_alloc();
 	if (smi->mii_bus == NULL) {
@@ -939,7 +945,10 @@ static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
 	}
 #endif
 
-	ret = mdiobus_register(smi->mii_bus);
+	if (np)
+		ret = of_mdiobus_register(smi->mii_bus, np);
+	else
+		ret = mdiobus_register(smi->mii_bus);
 	if (ret)
 		goto err_free;
 
