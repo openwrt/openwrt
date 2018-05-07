@@ -94,20 +94,26 @@
 		reg = <0>;
 		spi-max-frequency = <25000000>;
 
-		partition@0 {
-			label = "u-boot";
-			reg = <0x000000 0x020000>;
-		};
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		partition@1 {
-			label = "firmware";
-			reg = <0x020000 0x7D0000>;
-		};
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x020000>;
+			};
 
-		partition@2 {
-			label = "art";
-			reg = <0x7F0000 0x010000>;
-			read-only;
+			partition@1 {
+				label = "firmware";
+				reg = <0x020000 0x7D0000>;
+			};
+
+			partition@2 {
+				label = "art";
+				reg = <0x7F0000 0x010000>;
+				read-only;
+			};
 		};
 	};
 };
