@@ -1,0 +1,49 @@
+From 8e99c881e497e7f7528f693c563e204ae888a846 Mon Sep 17 00:00:00 2001
+From: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
+Date: Tue, 6 Feb 2018 15:37:52 -0800
+Subject: tools/lib/subcmd/pager.c: do not alias select() params
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+commit ad343a98e74e85aa91d844310e797f96fee6983b upstream.
+
+Use a separate fd set for select()-s exception fds param to fix the
+following gcc warning:
+
+  pager.c:36:12: error: passing argument 2 to restrict-qualified parameter aliases with argument 4 [-Werror=restrict]
+    select(1, &in, NULL, &in, NULL);
+              ^~~        ~~~
+
+Link: http://lkml.kernel.org/r/20180101105626.7168-1-sergey.senozhatsky@gmail.com
+Signed-off-by: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
+Cc: Arnaldo Carvalho de Melo <acme@redhat.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Fredrik Schön <fredrikschon@gmail.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ tools/lib/subcmd/pager.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/tools/lib/subcmd/pager.c b/tools/lib/subcmd/pager.c
+index 5ba754d..9997a88 100644
+--- a/tools/lib/subcmd/pager.c
++++ b/tools/lib/subcmd/pager.c
+@@ -30,10 +30,13 @@ static void pager_preexec(void)
+ 	 * have real input
+ 	 */
+ 	fd_set in;
++	fd_set exception;
+ 
+ 	FD_ZERO(&in);
++	FD_ZERO(&exception);
+ 	FD_SET(0, &in);
+-	select(1, &in, NULL, &in, NULL);
++	FD_SET(0, &exception);
++	select(1, &in, NULL, &exception, NULL);
+ 
+ 	setenv("LESS", "FRSX", 0);
+ }
+-- 
+cgit v1.1
