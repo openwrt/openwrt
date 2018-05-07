@@ -18,6 +18,12 @@ case "$board" in
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "$boardname:green:rssi3" "wlan0" "60" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "$boardname:green:rssi4" "wlan0" "80" "100"
 	;;
+"etactica,eg200")
+	ucidef_set_led_netdev "lan" "LAN" "$boardname:red:eth0" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "$boardname:red:wlan" "phy0tpt"
+	ucidef_set_led_oneshot "modbus" "Modbus" "$boardname:red:modbus" "100" "33"
+	ucidef_set_led_default "etactica" "etactica" "$boardname:red:etactica" "ignore"
+	;;
 "glinet,ar150")
 	ucidef_set_led_wlan "wlan" "WLAN" "gl-ar150:orange:wlan" "phy0tpt"
 	;;

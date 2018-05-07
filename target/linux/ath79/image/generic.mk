@@ -44,6 +44,15 @@ define Device/embeddedwireless_dorin
 endef
 TARGET_DEVICES += embeddedwireless_dorin
 
+define Device/etactica-eg200
+  ATH_SOC := ar9331
+  DEVICE_TITLE := eTactica EG200
+  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-ledtrig-oneshot \
+	kmod-usb-serial kmod-usb-serial-ftdi kmod-usb-storage  kmod-fs-ext4
+  SUPPORTED_DEVICES += etactica,eg200 rme-eg200
+endef
+TARGET_DEVICES += etactica-eg200
+
 define Device/glinet_ar150
   ATH_SOC := ar9330
   DEVICE_TITLE := GL.iNet GL-AR150
