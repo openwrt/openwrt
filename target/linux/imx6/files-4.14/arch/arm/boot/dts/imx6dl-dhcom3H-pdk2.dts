@@ -1,0 +1,51 @@
+/*
+ * Copyright 2016 DH electronics GmbH
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/dts-v1/;
+
+//******************************************************************************
+// C P U - T Y P E
+//******************************************************************************
+#include "imx6dl.dtsi"
+#define IMX6_CPU_SOLO_DUALLITE // Used to distinguish the CPU types
+
+
+//******************************************************************************
+// D H C O M - M O D U L E
+//******************************************************************************
+
+// Hispeed configuration
+//**********************************************************
+// Activate 1GBit ethernet onBoard, otherwise 100MBit onModule is active
+#define DHCOM_ETH_1G
+
+// HW300 hispeed
+#include "imx6qdl-dhcom3H.dtsi"
+
+// Special configurations
+//**********************************************************
+// Enables NAND, disables eMMC
+//#include "imx6qdl-dhcom_cfg-nand.dtsi"
+
+// Enable RS485 for UART2 (ttymxc4)
+//#include "imx6qdl-dhcom_cfg-rs485.dtsi"
+
+// Enables WEIM example config with UIO-Driver
+//#include "imx6qdl-dhcom_cfg-weim.dtsi"
+
+
+//******************************************************************************
+// B O A R D - C O N F I G U R A T I O N
+//******************************************************************************
+#include "imx6qdl-dh_pdk2.dtsi"
+
+
+/ {
+	model = "Freescale i.MX6 DualLite DHCOM Premium Developer Kit (2)";
+	compatible = "fsl,imx6dl-dhcom3H-pdk2", "fsl,imx6dl";
+};

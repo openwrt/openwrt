@@ -69,6 +69,12 @@ define Device/Default
   IMAGES :=
 endef
 
+define Device/FitImageMulti
+  KERNEL_SUFFIX := -fit-multi-uImage.itb
+  KERNEL = kernel-bin | gzip | fit-multi gzip $$(DTS_DIR) $$(DEVICE_DTS)
+  KERNEL_NAME := Image
+endef
+
 define Device/ventana
   DEVICE_TITLE := Gateworks Ventana family (normal NAND flash)
   DEVICE_DTS:= \
@@ -122,5 +128,23 @@ define Device/wandboard
   DEVICE_DTS := imx6dl-wandboard
 endef
 TARGET_DEVICES += wandboard
+
+define Device/dhcom-imx
+  $(call Device/FitImageMulti)
+  DEVICE_TITLE := DHCOM i.MX6
+  DEVICE_DTS := \
+    imx6dl-dhcom2B-pdk1 \
+    imx6dl-dhcom3B-drc02 \
+    imx6dl-dhcom3B-pdk2 \
+    imx6dl-dhcom3B-picoitx02 \
+    imx6dl-dhcom3H-pdk2 \
+    imx6q-dhcom2B-pdk1 \
+    imx6q-dhcom3B-drc02 \
+    imx6q-dhcom3B-pdk2 \
+    imx6q-dhcom3B-picoitx02 \
+    imx6q-dhcom3H-pdk2
+  KERNEL_INSTALL := 1
+endef
+TARGET_DEVICES += dhcom-imx
 
 $(eval $(call BuildImage))

@@ -1,0 +1,462 @@
+/*
+ * Copyright 2015 DH electronics GmbH
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+#include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/clock/imx6qdl-clock.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	bl_display {
+		compatible = "pwm-backlight";
+		pwms = <&pwm1 0 50000 PWM_POLARITY_INVERTED>;			// PWM polarity can be overwritten by bootargs
+		backlight-sysfs-name = "display";
+		// brightness value  0 1  2  3  4  5  6  7   8   9   10
+		brightness-levels = <0 16 22 30 40 55 75 102 138 188 255>;
+		default-brightness-level = <8>;					// Default level can be set to 0 by bootargs
+		enable-gpios = <&gpio3 27 GPIO_ACTIVE_HIGH>;			// GPIO number and its polarity can be overwritten by bootargs
+		power-supply = <&reg_24v_ext>;
+		status = "okay";
+	};
+
+	regulators {
+		reg_24v_ext: 24V_EXT {
+			compatible = "regulator-fixed";
+			regulator-name = "24V_EXT";
+			regulator-min-microvolt = <24000000>;
+			regulator-max-microvolt = <24000000>;
+			regulator-always-on;
+		};
+
+		reg_3p3v: 3P3V {
+			compatible = "regulator-fixed";
+			regulator-name = "3P3V";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+		};
+	};
+
+	display@di0 {								// Parallel display interface
+		compatible = "fsl,imx-parallel-display";
+		interface-pix-fmt = "rgb24";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_dhcom_ipu1>;
+		status = "okay";
+
+		port {
+			display0_in: endpoint {
+				remote-endpoint = <&ipu1_di0_disp0>;
+			};
+		};
+
+		display-timings {
+			// DH display ID 13
+			DataImage_7inch_FG0700G3DSSW {
+				dh-display-ID = "013";
+				clock-frequency = <33260000>;
+				hactive = <800>;
+				vactive = <480>;
+				hfront-porch = <42>;
+				hback-porch = <86>;
+				hsync-len = <128>;
+				vfront-porch = <10>;
+				vback-porch = <33>;
+				vsync-len = <2>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <1>;
+				pixelclk-active = <1>;
+			};
+		};
+	};
+
+	/* GPIO keys */
+	/* Linux key codes ==> include/dt-bindings/input/linux-event-codes.h */
+	/*
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		pdk2_ta1 {
+			label = "Esc";
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;			// TA1: GPIO A
+			gpio-key,wakeup;
+			linux,code = <KEY_ESC>;
+		};
+
+		pdk2_ta2 {
+			label = "Enter";
+			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;			// TA2: GPIO B
+			gpio-key,wakeup;
+			linux,code = <KEY_ENTER>;
+		};
+
+		pdk2_ta3 {
+			label = "left";
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;			// TA3: GPIO C
+			gpio-key,wakeup;
+			linux,code = <KEY_LEFT>;
+		};
+
+		pdk2_ta4 {
+			label = "right";
+			gpios = <&gpio6 3 GPIO_ACTIVE_LOW>;			// TA4: GPIO D
+			gpio-key,wakeup;
+			linux,code = <KEY_RIGHT>;
+		};
+	};*/
+
+	/* LEDs */
+	/*
+	leds {
+		compatible = "gpio-leds";
+
+		pdk2_led5 {							// ==> /sys/class/leds/led5
+			label = "led5";
+			gpios = <&gpio4 5 GPIO_ACTIVE_HIGH>;			// GPIO E
+			default-state = "keep";					// Keep bootloader state
+		};
+
+		pdk2_led6 {							// ==> /sys/class/leds/led6
+			label = "led6";
+			gpios = <&gpio4 20 GPIO_ACTIVE_HIGH>;			// GPIO F
+			default-state = "keep";					// Keep bootloader state
+		};
+
+		pdk2_led7 {							// ==> /sys/class/leds/led7
+			label = "led7";
+			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>;			// GPIO H
+			default-state = "keep";					// Keep bootloader state
+		};
+
+		pdk2_led8 {							// ==> /sys/class/leds/led8
+			label = "led8";
+			gpios = <&gpio4 8 GPIO_ACTIVE_HIGH>;			// GPIO I
+			default-state = "keep";					// Keep bootloader state
+		};
+	};*/
+
+	clocks {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clk_ext_audio_codec: clock@0 {
+			compatible = "fixed-clock";
+			reg = <0>;
+			#clock-cells = <0>;
+			clock-frequency = <24000000>;
+		};
+	};
+
+	sound {
+		compatible = "fsl,imx-audio-sgtl5000";
+		model = "imx-sgtl5000";
+		ssi-controller = <&ssi1>;
+		audio-codec = <&codec>;
+		audio-routing =
+			"MIC_IN", "Mic Jack",
+			"Mic Jack", "Mic Bias",
+			"LINE_IN", "Line In Jack",
+			"Headphone Jack", "HP_OUT";
+		mux-int-port = <1>;
+		mux-ext-port = <3>;
+	};
+};
+
+&audmux {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_audmux_ext>;				// AUD3 <-> sgtl5000
+	status = "okay";
+};
+
+&ipu1_di0_disp0 {
+	remote-endpoint = <&display0_in>;
+};
+
+&ldb {										// LVDS display interface
+	status = "okay";
+
+	lvds-channel@0 {
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <24>;
+		status = "okay";
+
+		// Set your LVDS display timings here
+		// To Avoid interference comment the parallel display timings out
+	/*	display-timings {						
+			// DH display ID 10
+			LG_7inch_LB070WV8 {
+				dh-display-ID = "010";
+				clock-frequency = <33250000>;
+				hactive = <800>;
+				vactive = <480>;
+				hfront-porch = <64>;
+				hback-porch = <64>;
+				hsync-len = <128>;
+				vfront-porch = <10>;
+				vback-porch = <10>;
+				vsync-len = <25>;
+				hsync-active = <1>;
+				vsync-active = <1>;
+				de-active = <1>;
+				pixelclk-active = <0>;
+			};
+		};*/
+	};
+
+	lvds-channel@1 {
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <24>;
+		status = "okay";
+	};
+};
+
+&pwm1 {										// Backlight PWM
+	#pwm-cells = <3>;							// Needed for inversion
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_pwm1>;
+	status = "okay";
+};
+
+&ssi1 {
+	status = "okay";
+};
+
+&ecspi1 {									// ********** SPI 1 **********
+	spidev@2 {								// ==> /dev/spidev0.2
+		compatible =  "spidev", "fsl,ecspi";
+		reg = <2>;							// SS2
+		spi-max-frequency = <54000000>;
+		spi-cpha;							// Shifted clock phase (CPHA) mode
+		spi-cpol;							// Inverse clock polarity (CPOL) mode
+	};
+};
+
+&ecspi2 {									// ********** SPI 2 **********
+	spidev@0 {								// ==> /dev/spidev1.0
+		compatible =  "spidev", "fsl,ecspi";
+		reg = <0>;							// SS0
+		spi-max-frequency = <54000000>;
+		spi-cpha;							// Shifted clock phase (CPHA) mode
+		spi-cpol;							// Inverse clock polarity (CPOL) mode
+	};
+};
+
+&DHCOM_I2C1 {									// ********** I2C 1 **********
+	codec: sgtl5000@0a {							// Audio codec SGTL5000XNAA3/R2
+		compatible = "fsl,sgtl5000";
+		reg = <0x0a>;
+		clocks = <&clk_ext_audio_codec>;				// External clock
+		VDDA-supply = <&reg_3p3v>;
+		VDDIO-supply = <&reg_3p3v>;
+	};
+
+	tmg120_ts@20 {								// Touch controller "DH-Touch"
+		compatible = "dh,tmg120_ts";
+		reg = <0x20>;
+		interrupt-parent = <&gpio4>;
+		interrupts = <7 2>;
+		status = "okay";
+	};
+
+	polytouch: edt-ft5x06@38 {						// Glyn Polytouch
+		compatible = "edt,edt-ft5x06";
+		reg = <0x38>;
+		interrupt-parent = <&gpio4>;
+		interrupts = <5 0>;
+		//linux,wakeup;
+	};
+};
+
+&DHCOM_I2C2 {									// ********** I2C 2 **********
+};
+
+&DHCOM_I2C_ONMODULE {								// ****** I2C onModule *******
+	tsc2004@49 {								// Touch controller TI TSC2014 (on Board)
+		status = "okay";
+	};
+};
+
+&iomuxc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_hog_base &pinctrl_dhcom_hog>;
+
+	imx6qdl-pdk2_base {
+		pinctrl_dhcom_hog: hog_grp {
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_2__GPIO1_IO02       0x400120B0	// GPIO A
+				MX6QDL_PAD_GPIO_4__GPIO1_IO04       0x400120B0	// GPIO B
+				MX6QDL_PAD_GPIO_5__GPIO1_IO05       0x400120B0	// GPIO C
+				MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03   0x400120B0	// GPIO D
+				MX6QDL_PAD_GPIO_19__GPIO4_IO05      0x120B0	// GPIO E -> Touch Interrupt PDK2 Glyn Polytouch
+				MX6QDL_PAD_DI0_PIN4__GPIO4_IO20     0x400120B0	// GPIO F
+				MX6QDL_PAD_EIM_D27__GPIO3_IO27      0x120B0	// GPIO G -> Backlight Enable
+				MX6QDL_PAD_KEY_ROW0__GPIO4_IO07     0x120B0	// GPIO H -> Touch Interrupt picoITX dh-touch
+				MX6QDL_PAD_KEY_COL1__GPIO4_IO08     0x400120B0	// GPIO I
+				MX6QDL_PAD_NANDF_CS1__GPIO6_IO14    0x400120B0	// GPIO J -> PCIe Reset (if hispeed device tree)
+				MX6QDL_PAD_NANDF_CS2__GPIO6_IO15    0x400120B0	// GPIO K
+				MX6QDL_PAD_KEY_ROW1__GPIO4_IO09     0x400120B0	// GPIO L
+				MX6QDL_PAD_SD3_DAT5__GPIO7_IO00     0x400120B0	// GPIO M
+				MX6QDL_PAD_SD3_DAT4__GPIO7_IO01     0x400120B0	// GPIO N
+				MX6QDL_PAD_CSI0_VSYNC__GPIO5_IO21   0x400120B0	// GPIO O
+				MX6QDL_PAD_GPIO_18__GPIO7_IO13      0x400120B0	// GPIO P
+				MX6QDL_PAD_SD1_CMD__GPIO1_IO18      0x400120B0	// GPIO Q
+				MX6QDL_PAD_SD1_DAT0__GPIO1_IO16     0x400120B0	// GPIO R
+				MX6QDL_PAD_SD1_DAT1__GPIO1_IO17     0x400120B0	// GPIO S
+				MX6QDL_PAD_SD1_DAT2__GPIO1_IO19     0x400120B0	// GPIO T
+				MX6QDL_PAD_SD1_CLK__GPIO1_IO20      0x400120B0	// GPIO U
+				MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18  0x400120B0	// GPIO V
+				MX6QDL_PAD_CSI0_MCLK__GPIO5_IO19    0x400120B0	// GPIO W
+				MX6QDL_PAD_KEY_COL0__GPIO4_IO06     0x400120B0	// INT_HIGHEST_PRIORITY
+			>;
+		};
+
+		pinctrl_dhcom_audmux_ext: audmux_ext_grp { 			// HW300: Audio on external clock
+			fsl,pins = <
+				MX6QDL_PAD_CSI0_DAT7__AUD3_RXD      0x130b0
+				MX6QDL_PAD_CSI0_DAT4__AUD3_TXC      0x130b0
+				MX6QDL_PAD_CSI0_DAT5__AUD3_TXD      0x110b0
+				MX6QDL_PAD_CSI0_DAT6__AUD3_TXFS     0x130b0
+			>;
+		};
+
+		pinctrl_dhcom_pwm1: pwm1_grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD1_DAT3__PWM1_OUT       0x1b0b1
+			>;
+		};
+
+		pinctrl_dhcom_ipu1: ipu1_grp {
+			fsl,pins = <
+				MX6QDL_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK 0x10	// RGB_PCLK
+				MX6QDL_PAD_DI0_PIN15__IPU1_DI0_PIN15       0x10	// RGB_DATA_EN
+				MX6QDL_PAD_DI0_PIN2__IPU1_DI0_PIN02        0x10	// RGB_HSYNC
+				MX6QDL_PAD_DI0_PIN3__IPU1_DI0_PIN03        0x10	// RGB_VSYNC
+				MX6QDL_PAD_DISP0_DAT0__IPU1_DISP0_DATA00   0x10
+				MX6QDL_PAD_DISP0_DAT1__IPU1_DISP0_DATA01   0x10
+				MX6QDL_PAD_DISP0_DAT2__IPU1_DISP0_DATA02   0x10
+				MX6QDL_PAD_DISP0_DAT3__IPU1_DISP0_DATA03   0x10
+				MX6QDL_PAD_DISP0_DAT4__IPU1_DISP0_DATA04   0x10
+				MX6QDL_PAD_DISP0_DAT5__IPU1_DISP0_DATA05   0x10
+				MX6QDL_PAD_DISP0_DAT6__IPU1_DISP0_DATA06   0x10
+				MX6QDL_PAD_DISP0_DAT7__IPU1_DISP0_DATA07   0x10
+				MX6QDL_PAD_DISP0_DAT8__IPU1_DISP0_DATA08   0x10
+				MX6QDL_PAD_DISP0_DAT9__IPU1_DISP0_DATA09   0x10
+				MX6QDL_PAD_DISP0_DAT10__IPU1_DISP0_DATA10  0x10
+				MX6QDL_PAD_DISP0_DAT11__IPU1_DISP0_DATA11  0x10
+				MX6QDL_PAD_DISP0_DAT12__IPU1_DISP0_DATA12  0x10
+				MX6QDL_PAD_DISP0_DAT13__IPU1_DISP0_DATA13  0x10
+				MX6QDL_PAD_DISP0_DAT14__IPU1_DISP0_DATA14  0x10
+				MX6QDL_PAD_DISP0_DAT15__IPU1_DISP0_DATA15  0x10
+				MX6QDL_PAD_DISP0_DAT16__IPU1_DISP0_DATA16  0x10
+				MX6QDL_PAD_DISP0_DAT17__IPU1_DISP0_DATA17  0x10
+				MX6QDL_PAD_DISP0_DAT18__IPU1_DISP0_DATA18  0x10
+				MX6QDL_PAD_DISP0_DAT19__IPU1_DISP0_DATA19  0x10
+				MX6QDL_PAD_DISP0_DAT20__IPU1_DISP0_DATA20  0x10
+				MX6QDL_PAD_DISP0_DAT21__IPU1_DISP0_DATA21  0x10
+				MX6QDL_PAD_DISP0_DAT22__IPU1_DISP0_DATA22  0x10
+				MX6QDL_PAD_DISP0_DAT23__IPU1_DISP0_DATA23  0x10
+			>;
+		};
+	};
+};
+
+
+// Interfaces of the DHCOM hispeed connector will be activated here. Baord
+// specific configuration can also be made here. This section is only active if
+// you load an hispeed device tree e.g. imx6q-dhcom4H-pdk2
+#ifdef DHCOM_HISPEED
+
+#ifdef DHCOM_ETH_1G
+&fec {										// Ethernet (1GBit)
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_enet_1G>;
+	phy-mode = "rgmii";
+	phy-reset-gpios = <&gpio3 29 GPIO_ACTIVE_LOW>;
+	//phy-reset-duration = <1>;						// 1ms is the default value
+	phy-reset-post-delay = <1>;
+	phy-handle = <&ethphy>;
+	//local-mac-address = [00 11 22 33 44 55];				// Is set by the bootloader
+	status = "okay";
+
+	mdio {									// PHY: Micrel KSZ9021RN
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ethphy: ethernet-phy@7 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <7>;
+			max-speed = <1000>;
+			ksz9021-skew-step-ps = <120>;	// Overwrite value from old specification (If unused the driver uses 200ps)
+							// KSZ 9021 (0.12ns/step) | KSZ 9031 (0.06ns/step)
+			txen-skew-ps = <0>;		// 0..1800 default=840    | 0..900  default=420
+			txc-skew-ps = <1800>;		// 0..1800 default=840    | 0..1860 default=900
+			rxdv-skew-ps = <0>;		// 0..1800 default=840    | 0..900  default=420
+			rxc-skew-ps = <1800>;		// 0..1800 default=840    | 0..1860 default=900
+			rxd0-skew-ps = <0>;		// 0..1800 default=840    | 0..900  default=420
+			rxd1-skew-ps = <0>;		// 0..1800 default=840    | 0..900  default=420
+			rxd2-skew-ps = <0>;		// 0..1800 default=840    | 0..900  default=420
+			rxd3-skew-ps = <0>;		// 0..1800 default=840    | 0..900  default=420
+			txd0-skew-ps = <0>;		// 0..1800 default=840    | 0..900  default=420
+			txd1-skew-ps = <0>;		// 0..1800 default=840    | 0..900  default=420
+			txd2-skew-ps = <0>;		// 0..1800 default=840    | 0..900  default=420
+			txd3-skew-ps = <0>;		// 0..1800 default=840    | 0..900  default=420
+		};
+	};
+};
+#endif
+
+&pcie {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_pcie>;
+	reset-gpio = <&gpio6 14 GPIO_ACTIVE_LOW>;				// GPIO J
+	status = "okay";
+};
+
+// Only for DUAL and QUAD architecture
+#ifdef IMX6_CPU_DUAL_QUAD
+&sata {
+	status = "okay";
+};
+#endif
+
+&iomuxc {
+	imx6qdl-pdk2_hispeed {
+		pinctrl_dhcom_pcie: pcie_grp {
+			fsl,pins = <
+				MX6QDL_PAD_CSI0_DATA_EN__GPIO5_IO20 0x1b0b1	// PCIe_WAKE (#148)
+			>;
+		};
+
+		pinctrl_dhcom_enet_1G: enet_1G_grp {				// 1GBit ethernet
+			fsl,pins = <
+				MX6QDL_PAD_ENET_MDIO__ENET_MDIO       0x100b0
+				MX6QDL_PAD_ENET_MDC__ENET_MDC         0x100b0
+				MX6QDL_PAD_RGMII_TXC__RGMII_TXC       0x100b0
+				MX6QDL_PAD_RGMII_TD0__RGMII_TD0       0x100b0
+				MX6QDL_PAD_RGMII_TD1__RGMII_TD1       0x100b0
+				MX6QDL_PAD_RGMII_TD2__RGMII_TD2       0x100b0
+				MX6QDL_PAD_RGMII_TD3__RGMII_TD3       0x100b0
+				MX6QDL_PAD_RGMII_TX_CTL__RGMII_TX_CTL 0x100b0
+				MX6QDL_PAD_ENET_REF_CLK__ENET_TX_CLK  0x100b0
+				MX6QDL_PAD_RGMII_RXC__RGMII_RXC       0x1b0b0
+				MX6QDL_PAD_RGMII_RD0__RGMII_RD0       0x1b0b0
+				MX6QDL_PAD_RGMII_RD1__RGMII_RD1       0x1b0b0
+				MX6QDL_PAD_RGMII_RD2__RGMII_RD2       0x1b0b0
+				MX6QDL_PAD_RGMII_RD3__RGMII_RD3       0x1b0b0
+				MX6QDL_PAD_RGMII_RX_CTL__RGMII_RX_CTL 0x1b0b0
+				MX6QDL_PAD_EIM_D29__GPIO3_IO29        0x000b0	// RGMII_RESET
+				MX6QDL_PAD_GPIO_0__GPIO1_IO00         0x000b1	// RGMII_INT
+				MX6QDL_PAD_EIM_D26__GPIO3_IO26        0x000b1	// RGMII_WOL_INT
+			>;
+		};
+	};
+};
+#endif

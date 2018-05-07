@@ -1,0 +1,93 @@
+/*
+ * Copyright 2015 DH electronics GmbH
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+#include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/clock/imx6qdl-clock.h>
+
+/ {
+};
+
+&ecspi1 {									// ********** SPI 1 **********
+	spidev@2 {								// ==> /dev/spidev0.2 (Display connector)
+		compatible =  "spidev", "fsl,ecspi";
+		reg = <2>;							// SS2
+		spi-max-frequency = <54000000>;
+		spi-cpha;							// Shifted clock phase (CPHA) mode
+		spi-cpol;							// Inverse clock polarity (CPOL) mode
+	};
+};
+
+&ecspi2 {									// ********** SPI 2 **********
+	status = "disabled";							// Not connected
+};
+
+&DHCOM_I2C1 {									// ********** I2C 1 **********
+};
+
+&DHCOM_I2C2 {									// ********** I2C 2 **********
+	eeprom@50 {
+		compatible = "atmel,24c04";					// Atmel AT24HC04B
+		reg = <0x50>;
+		pagesize = <16>;
+	};
+};
+
+&DHCOM_I2C_ONMODULE {								// ****** I2C onModule *******
+};
+
+&uart5 { 									// UART 2 (BT) ==> /dev/ttymxc4
+	fsl,rs485-mode;								// Enable rs485 mode
+	rts_gpio = <&gpio7 13 0>;						// GPIO P: rs485 rts = Receive Transmit Switch GPIO
+	rxen_gpio = <&gpio1 18 0>;						// GPIO Q: rs485 rxen = RX Enable GPIO
+	//rs485-rx-during-tx;							// Receive data during transfer
+	status = "okay";
+};
+
+&usbotg {									// USB OTG
+	status = "disabled";							// Not connected
+};
+
+&iomuxc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_hog_base &pinctrl_dhcom_hog>;
+
+	imx6qdl-drc02_base {
+		pinctrl_dhcom_hog: hog_grp {
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_2__GPIO1_IO02       0x400120B0	// GPIO A -> Display connector
+				MX6QDL_PAD_GPIO_4__GPIO1_IO04       0x400120B0	// GPIO B -> Display connector
+				MX6QDL_PAD_GPIO_5__GPIO1_IO05       0x400120B0	// GPIO C -> Display connector
+				MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03   0x400120B0	// GPIO D -> OUT 2
+				MX6QDL_PAD_GPIO_19__GPIO4_IO05      0x400120B0	// GPIO E -> Display connector
+				MX6QDL_PAD_DI0_PIN4__GPIO4_IO20     0x400120B0	// GPIO F -> OUT 1
+				MX6QDL_PAD_EIM_D27__GPIO3_IO27      0x400120B0	// GPIO G -> IN 1
+				MX6QDL_PAD_KEY_ROW0__GPIO4_IO07     0x400120B0	// GPIO H -> Reset USB hub
+				MX6QDL_PAD_KEY_COL1__GPIO4_IO08     0x400120B0	// GPIO I -> UART1 RTS
+				MX6QDL_PAD_NANDF_CS1__GPIO6_IO14    0x400120B0	// GPIO J -> Code_HW_2
+				MX6QDL_PAD_NANDF_CS2__GPIO6_IO15    0x400120B0	// GPIO K -> Code_HW_1
+				MX6QDL_PAD_KEY_ROW1__GPIO4_IO09     0x400120B0	// GPIO L -> Code_HW_0
+				MX6QDL_PAD_SD3_DAT5__GPIO7_IO00     0x400120B0	// GPIO M -> UART1 CTS
+				MX6QDL_PAD_SD3_DAT4__GPIO7_IO01     0x400120B0	// GPIO N -> Extension connector (XLON U10R2, MBUS, ...)
+				MX6QDL_PAD_CSI0_VSYNC__GPIO5_IO21   0x400120B0	// GPIO O -> Extension connector (XLON U10R2, MBUS, ...)
+				MX6QDL_PAD_GPIO_18__GPIO7_IO13      0x400120B0	// GPIO P -> rs485 rts
+				MX6QDL_PAD_SD1_CMD__GPIO1_IO18      0x400120B0	// GPIO Q -> rs485 rxen
+				MX6QDL_PAD_SD1_DAT0__GPIO1_IO16     0x400120B0	// GPIO R -> Not connected
+				MX6QDL_PAD_SD1_DAT1__GPIO1_IO17     0x400120B0	// GPIO S -> Not connected
+				MX6QDL_PAD_SD1_DAT2__GPIO1_IO19     0x400120B0	// GPIO T -> Not connected
+				MX6QDL_PAD_SD1_CLK__GPIO1_IO20      0x400120B0	// GPIO U -> Not connected
+				MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18  0x400120B0	// GPIO V -> Not connected
+				MX6QDL_PAD_CSI0_MCLK__GPIO5_IO19    0x400120B0	// GPIO W -> Not connected
+				MX6QDL_PAD_KEY_COL0__GPIO4_IO06     0x400120B0	// INT_HIGHEST_PRIORITY -> IN 2
+			>;
+		};
+	};
+};
