@@ -41,7 +41,7 @@ define Device/tplink
   TPLINK_HEADER_VERSION := 1
   LOADER_TYPE := gz
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade
+  IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade | append-metadata
 endef
 
 define Device/tplink-nolzma
@@ -71,5 +71,6 @@ define Device/tl_wr1043nd_v1
   DEVICE_TITLE := TP-LINK TL-WR1043N/ND v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x10430001
+  SUPPORTED_DEVICES := tplink,tl-wr1043nd-v1 tl-wr1043nd
 endef
 #TARGET_DEVICES += tl_wr1043nd_v1

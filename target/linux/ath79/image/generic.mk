@@ -26,6 +26,7 @@ define Device/embeddedwireless_dorin
   DEVICE_TITLE := Embedded Wireless Dorin
   DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += ew-dorin
 endef
 TARGET_DEVICES += embeddedwireless_dorin
 
@@ -34,6 +35,7 @@ define Device/glinet_ar150
   DEVICE_TITLE := GL.iNet GL-AR150
   DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += gl-ar150
 endef
 TARGET_DEVICES += glinet_ar150
 
@@ -42,6 +44,7 @@ define Device/openmesh_om5p-ac-v2
   DEVICE_TITLE := OpenMesh OM5P-AC v2
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x om-watchdog
   IMAGE_SIZE := 7808k
+  SUPPORTED_DEVICES += om5p-acv2
 endef
 TARGET_DEVICES += openmesh_om5p-ac-v2
 
@@ -56,9 +59,10 @@ define Device/netgear_wndr3800
   IMAGE_SIZE := 15872k
   IMAGES := sysupgrade.bin factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size $$$$(IMAGE_SIZE)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset
+  SUPPORTED_DEVICES += wndr3800
 endef
 TARGET_DEVICES += netgear_wndr3800
 
@@ -67,5 +71,6 @@ define Device/buffalo_wzr-hp-g450h
   DEVICE_TITLE := Buffalo WZR-HP-G450H
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   IMAGE_SIZE := 32256k
+  SUPPORTED_DEVICES += wzr-hp-g450h
 endef
 TARGET_DEVICES += buffalo_wzr-hp-g450h

@@ -31,9 +31,9 @@ define Device/ubnt
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   IMAGE_SIZE := 7552k
   UBNT_BOARD := XM
-  IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | mkubntimage-split
 endef
 
 define Device/ubnt-xm
@@ -55,23 +55,27 @@ endef
 define Device/ubnt_bullet-m
   $(Device/ubnt-xm)
   DEVICE_TITLE := Ubiquiti Bullet-M
+  SUPPORTED_DEVICES += bullet-m
 endef
 TARGET_DEVICES += ubnt_bullet-m
 
 define Device/ubnt_rocket-m
   $(Device/ubnt-xm)
   DEVICE_TITLE := Ubiquiti Rocket-M
+  SUPPORTED_DEVICES += rocket-m
 endef
 TARGET_DEVICES += ubnt_rocket-m
 
 define Device/ubnt_nano-m
   $(Device/ubnt-xm)
   DEVICE_TITLE := Ubiquiti Nano-M
+  SUPPORTED_DEVICES += nano-m
 endef
 TARGET_DEVICES += ubnt_nano-m
 
 define Device/ubnt_unifi
   $(Device/ubnt-bz)
   DEVICE_TITLE := Ubiquiti UniFi
+  SUPPORTED_DEVICES += unifi
 endef
 TARGET_DEVICES += ubnt_unifi
