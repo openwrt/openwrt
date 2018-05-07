@@ -52,6 +52,12 @@ marvell,armada-3720-db)
 marvell,armada8040-mcbin)
 	ucidef_set_interfaces_lan_wan "eth0 eth1 eth3" "eth2"
 	;;
+marvell,armada8040-db)
+	ucidef_set_interfaces_lan_wan "eth0 eth2 eth3" "eth1"
+	;;
+marvell,armada7040-db)
+	ucidef_set_interfaces_lan_wan "eth0 eth2" "eth1"
+	;;
 *)
 	ucidef_set_interface_lan "eth0"
 	;;
