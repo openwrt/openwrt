@@ -3,14 +3,13 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR = 0x80060000
 
-DEVICE_VARS += CMDLINE CONSOLE IMAGE_SIZE BOARDNAME LOADER_FLASH_OFFS LOADER_TYPE ATH_SOC
+DEVICE_VARS += IMAGE_SIZE LOADER_FLASH_OFFS LOADER_TYPE ATH_SOC
 
 define Build/loader-common
 	rm -rf $@.src
 	$(MAKE) -C lzma-loader \
 		PKG_BUILD_DIR="$@.src" \
 		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
-		BOARD="$(BOARDNAME)" \
 		LZMA_TEXT_START=0x80a00000 LOADADDR=0x80060000 \
 		$(1) compile loader.$(LOADER_TYPE)
 	mv "$@.$(LOADER_TYPE)" "$@"
@@ -22,12 +21,12 @@ define Build/loader-kernel
 endef
 
 define Build/loader-kernel-cmdline
-	$(call Build/loader-common,LOADER_DATA="$@" KERNEL_CMDLINE="$(CMDLINE)")
+	$(call Build/loader-common,LOADER_DATA="$@")
 endef
 
 
 define Build/loader-okli-compile
-	$(call Build/loader-common,FLASH_OFFS=$(LOADER_FLASH_OFFS) FLASH_MAX=0 KERNEL_CMDLINE="$(CMDLINE)")
+	$(call Build/loader-common,FLASH_OFFS=$(LOADER_FLASH_OFFS) FLASH_MAX=0)
 endef
 
 define Build/loader-okli
@@ -55,15 +54,11 @@ endef
 
 define Device/Default
   ATH_SOC :=
-  BOARDNAME :=
-  DEVICE_PROFILE = $$(BOARDNAME)
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS = $$(ATH_SOC)_$(1)
-  PROFILES = Default Minimal $$(DEVICE_PROFILE)
+  PROFILES = Default
   MTDPARTS :=
   BLOCKSIZE := 64k
-  CONSOLE = ttyS0,115200
-  CMDLINE = $$(if $$(BOARDNAME),board=$$(BOARDNAME)) $$(if $$(MTDPARTS),mtdparts=$$(MTDPARTS)) $$(if $$(CONSOLE),console=$$(CONSOLE))
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
   COMPILE :=
@@ -72,8 +67,8 @@ define Device/Default
 endef
 
 ifeq ($(SUBTARGET),generic)
-include ./tp-link.mk
 include ./generic.mk
+include ./generic-tp-link.mk
 include ./generic-ubnt.mk
 endif
 $(eval $(call BuildImage))

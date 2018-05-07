@@ -25,8 +25,8 @@ define Device/embeddedwireless_dorin
   ATH_SOC := ar9331
   DEVICE_TITLE := Embedded Wireless Dorin
   DEVICE_PACKAGES := kmod-usb-chipidea2
+  IMAGE_SIZE := 16000k
 endef
-
 TARGET_DEVICES += embeddedwireless_dorin
 
 define Device/glinet_ar150
@@ -40,54 +40,32 @@ TARGET_DEVICES += glinet_ar150
 define Device/openmesh_om5p-ac-v2
   ATH_SOC := qca9558
   DEVICE_TITLE := OpenMesh OM5P-AC v2
-  DEVICE_PROFILE := OM5P-AC
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x om-watchdog
+  IMAGE_SIZE := 7808k
 endef
-
 TARGET_DEVICES += openmesh_om5p-ac-v2
 
-define Device/netgear_wndr3700
-  ATH_SOC:=ar7100
-  DEVICE_TITLE := NETGEAR WNDR3700
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset
-  NETGEAR_KERNEL_MAGIC := 0x33373030
-  NETGEAR_BOARD_ID := WNDR3700
-  IMAGE_SIZE := 7680k
-  IMAGES := sysupgrade.bin factory.img factory-NA.img
+define Device/netgear_wndr3800
+  ATH_SOC := ar7161
+  DEVICE_TITLE := NETGEAR WNDR3800
+  NETGEAR_KERNEL_MAGIC := 0x33373031
   KERNEL := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
+  NETGEAR_BOARD_ID := WNDR3800
+  NETGEAR_HW_ID := 29763654+16+128
+  IMAGE_SIZE := 15872k
+  IMAGES := sysupgrade.bin factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory-NA.img := $$(IMAGE/default) | netgear-dni NA | check-size $$$$(IMAGE_SIZE)
-endef
-#TARGET_DEVICES += netgear_wndr3700
-
-define Device/netgear_wndr3700v2
-  $(Device/netgear_wndr3700)
-  DEVICE_TITLE := NETGEAR WNDR3700 v2
-  NETGEAR_BOARD_ID := WNDR3700v2
-  NETGEAR_KERNEL_MAGIC := 0x33373031
-  NETGEAR_HW_ID := 29763654+16+64
-  IMAGE_SIZE := 15872k
-  IMAGES := sysupgrade.bin factory.img
-endef
-#TARGET_DEVICES += netgear_wndr3700v2
-
-define Device/netgear_wndr3800
-  $(Device/netgear_wndr3700v2)
-  ATH_SOC := ar7161
-  DEVICE_TITLE := NETGEAR WNDR3800
-  NETGEAR_BOARD_ID := WNDR3800
-  NETGEAR_HW_ID := 29763654+16+128
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset
 endef
 TARGET_DEVICES += netgear_wndr3800
 
 define Device/buffalo_wzr-hp-g450h
   ATH_SOC := ar7242
   DEVICE_TITLE := Buffalo WZR-HP-G450H
-  DEVICE_PROFILE := WZR-HP-G450H
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  IMAGE_SIZE := 32256k
 endef
-
 TARGET_DEVICES += buffalo_wzr-hp-g450h
