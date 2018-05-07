@@ -125,6 +125,16 @@ define Build/fit
 	@mv $@.new $@
 endef
 
+define Build/fit-multi
+	$(TOPDIR)/scripts/mkitsmulti.sh \
+		-D $(DEVICE_NAME) -o $@.its -k $@ \
+		-C $(word 1,$(1)) -p $(word 2,$(1)) -d "$(wordlist 3, $(words $(1)), $(1))" \
+		-a $(KERNEL_LOADADDR) -e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
+		-A $(LINUX_KARCH) -v $(LINUX_VERSION)
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
+endef
+
 define Build/lzma
 	$(call Build/lzma-no-dict,-lc1 -lp2 -pb2 $(1))
 endef
