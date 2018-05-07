@@ -686,6 +686,7 @@ platform_check_image() {
 		;;
 	# these boards use metadata images
 	fritz300e|\
+	fritz4020|\
 	rb-750-r2|\
 	rb-750p-pbr2|\
 	rb-750up-r2|\
