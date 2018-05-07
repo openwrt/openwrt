@@ -3,12 +3,6 @@
 #
 
 PART_NAME=firmware
-RAMFS_COPY_BIN='nandwrite'
-
-CI_BLKSZ=65536
-CI_LDADR=0x80060000
-
-PLATFORM_DO_UPGRADE_COMBINED_SEPARATE_MTD=0
 
 platform_check_image() {
 	local board=$(board_name)
