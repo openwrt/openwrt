@@ -1042,10 +1042,22 @@ dnsmasq_stop()
 	rm -f ${BASEDHCPSTAMPFILE}.${cfg}.*.dhcp
 }
 
+add_interface_trigger()
+{
+	local interface ignore
+
+	config_get interface "$1" interface
+	config_get_bool ignore "$1" ignore 0
+
+	[ -n "$interface" -a $ignore -eq 0 ] && procd_add_interface_trigger "interface.*" "$interface" /etc/init.d/dnsmasq reload
+}
+
 service_triggers()
 {
 	procd_add_reload_trigger "dhcp" "system"
-	procd_add_raw_trigger "interface.*" 2000 /etc/init.d/dnsmasq reload
+
+	config_load dhcp
+	config_foreach add_interface_trigger dhcp
 }
 
 boot()
