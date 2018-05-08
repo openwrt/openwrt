@@ -1,0 +1,84 @@
+From 854e55ad289ef8888e7991f0ada85d5846f5afb9 Mon Sep 17 00:00:00 2001
+From: Josh Poimboeuf <jpoimboe@redhat.com>
+Date: Thu, 15 Mar 2018 22:11:54 -0500
+Subject: [PATCH] objtool, perf: Fix GCC 8 -Wrestrict error
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Starting with recent GCC 8 builds, objtool and perf fail to build with
+the following error:
+
+  ../str_error_r.c: In function ‘str_error_r’:
+  ../str_error_r.c:25:3: error: passing argument 1 to restrict-qualified parameter aliases with argument 5 [-Werror=restrict]
+     snprintf(buf, buflen, "INTERNAL ERROR: strerror_r(%d, %p, %zd)=%d", errnum, buf, buflen, err);
+
+The code seems harmless, but there's probably no benefit in printing the
+'buf' pointer in this situation anyway, so just remove it to make GCC
+happy.
+
+Reported-by: Laura Abbott <labbott@redhat.com>
+Signed-off-by: Josh Poimboeuf <jpoimboe@redhat.com>
+Tested-by: Laura Abbott <labbott@redhat.com>
+Cc: Adrian Hunter <adrian.hunter@intel.com>
+Cc: Jiri Olsa <jolsa@kernel.org>
+Cc: Namhyung Kim <namhyung@kernel.org>
+Cc: Wang Nan <wangnan0@huawei.com>
+Link: http://lkml.kernel.org/r/20180316031154.juk2uncs7baffctp@treble
+Signed-off-by: Arnaldo Carvalho de Melo <acme@redhat.com>
+---
+ tools/lib/str_error_r.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/lib/str_error_r.c b/tools/lib/str_error_r.c
+index d6d65537b0d9b..6aad8308a0acf 100644
+--- a/tools/lib/str_error_r.c
++++ b/tools/lib/str_error_r.c
+@@ -22,6 +22,6 @@ char *str_error_r(int errnum, char *buf, size_t buflen)
+ {
+ 	int err = strerror_r(errnum, buf, buflen);
+ 	if (err)
+-		snprintf(buf, buflen, "INTERNAL ERROR: strerror_r(%d, %p, %zd)=%d", errnum, buf, buflen, err);
++		snprintf(buf, buflen, "INTERNAL ERROR: strerror_r(%d, [buf], %zd)=%d", errnum, buflen, err);
+ 	return buf;
+ }
+From ad343a98e74e85aa91d844310e797f96fee6983b Mon Sep 17 00:00:00 2001
+From: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
+Date: Tue, 6 Feb 2018 15:37:52 -0800
+Subject: [PATCH] tools/lib/subcmd/pager.c: do not alias select() params
+
+Use a separate fd set for select()-s exception fds param to fix the
+following gcc warning:
+
+  pager.c:36:12: error: passing argument 2 to restrict-qualified parameter aliases with argument 4 [-Werror=restrict]
+    select(1, &in, NULL, &in, NULL);
+              ^~~        ~~~
+
+Link: http://lkml.kernel.org/r/20180101105626.7168-1-sergey.senozhatsky@gmail.com
+Signed-off-by: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
+Cc: Arnaldo Carvalho de Melo <acme@redhat.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+---
+ tools/lib/subcmd/pager.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/tools/lib/subcmd/pager.c b/tools/lib/subcmd/pager.c
+index 5ba754d179520..9997a8805a82d 100644
+--- a/tools/lib/subcmd/pager.c
++++ b/tools/lib/subcmd/pager.c
+@@ -30,10 +30,13 @@ static void pager_preexec(void)
+ 	 * have real input
+ 	 */
+ 	fd_set in;
++	fd_set exception;
+ 
+ 	FD_ZERO(&in);
++	FD_ZERO(&exception);
+ 	FD_SET(0, &in);
+-	select(1, &in, NULL, &in, NULL);
++	FD_SET(0, &exception);
++	select(1, &in, NULL, &exception, NULL);
+ 
+ 	setenv("LESS", "FRSX", 0);
+ }
