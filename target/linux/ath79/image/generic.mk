@@ -21,30 +21,30 @@ define Build/netgear-uImage
 	$(call Build/uImage,$(1) -M $(NETGEAR_KERNEL_MAGIC))
 endef
 
-define Device/ew_dorin
+define Device/embeddedwireless_dorin
   ATH_SOC := ar9331
   DEVICE_TITLE := Embedded Wireless Dorin
   DEVICE_PACKAGES := kmod-usb-chipidea2
 endef
 
-TARGET_DEVICES += ew_dorin
+TARGET_DEVICES += embeddedwireless_dorin
 
-define Device/gl_ar150
+define Device/glinet_ar150
   ATH_SOC := ar9330
   DEVICE_TITLE := GL.iNet GL-AR150
   DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 16000k
 endef
-TARGET_DEVICES += gl_ar150
+TARGET_DEVICES += glinet_ar150
 
-define Device/om5p_ac
+define Device/openmesh_om5p-ac-v2
   ATH_SOC := qca9558
-  DEVICE_TITLE := OpenMesh OM5P-AC
+  DEVICE_TITLE := OpenMesh OM5P-AC v2
   DEVICE_PROFILE := OM5P-AC
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x om-watchdog
 endef
 
-TARGET_DEVICES += om5p_ac
+TARGET_DEVICES += openmesh_om5p-ac-v2
 
 define Device/netgear_wndr3700
   ATH_SOC:=ar7100

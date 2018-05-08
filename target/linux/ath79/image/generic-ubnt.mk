@@ -81,35 +81,35 @@ define Device/ubnt-airrouter
 endef
 #TARGET_DEVICES += ubnt-airrouter
 
-define Device/ubnt-bullet-m
+define Device/ubnt_bullet-m
   $(Device/ubnt-xm)
   DEVICE_TITLE := Ubiquiti Bullet-M
   BOARDNAME := UBNT-BM
 endef
-TARGET_DEVICES += ubnt-bullet-m
+TARGET_DEVICES += ubnt_bullet-m
 
-define Device/ubnt-rocket-m
+define Device/ubnt_rocket-m
   $(Device/ubnt-xm)
   DEVICE_TITLE := Ubiquiti Rocket-M
   BOARDNAME := UBNT-RM
 endef
-TARGET_DEVICES += ubnt-rocket-m
+TARGET_DEVICES += ubnt_rocket-m
 
-define Device/ubnt-nano-m
+define Device/ubnt_nano-m
   $(Device/ubnt-xm)
   DEVICE_TITLE := Ubiquiti Nano-M
   BOARDNAME := UBNT-NM
 endef
-TARGET_DEVICES += ubnt-nano-m
+TARGET_DEVICES += ubnt_nano-m
 
-define Device/ubnt-unifi
+define Device/ubnt_unifi
   $(Device/ubnt-bz)
   ATH_SOC := ar7241
   DEVICE_TITLE := Ubiquiti UniFi
   BOARDNAME := UBNT-UF
   DEVICE_PROFILE += UBNTUNIFI
 endef
-TARGET_DEVICES += ubnt-unifi
+TARGET_DEVICES += ubnt_unifi
 
 define Device/ubnt-unifiac
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
