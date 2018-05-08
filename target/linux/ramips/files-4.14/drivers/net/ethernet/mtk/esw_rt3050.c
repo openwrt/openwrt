@@ -618,24 +618,29 @@ static void esw_hw_init(struct rt305x_esw *esw)
 		fe_reset(RT5350_RESET_EPHY);
 
 		rt305x_mii_write(esw, 0, 31, 0x2000); /* change G2 page */
-		rt305x_mii_write(esw, 0, 26, 0x0020);
+		rt305x_mii_write(esw, 0, 26, 0x0000);
 
 		for (i = 0; i < 5; i++) {
-			rt305x_mii_write(esw, i, 31, 0x8000);
+			rt305x_mii_write(esw, i, 31, 0x8000); /* change L0 page */
 			rt305x_mii_write(esw, i,  0, 0x3100);
+
+			/* disable EEE */
+			rt305x_mii_write(esw, i, 13, 0x7);
+			rt305x_mii_write(esw, i, 14, 0x3c);
+			rt305x_mii_write(esw, i, 13, 0x4007);
+			rt305x_mii_write(esw, i, 14, 0x0);
+
 			rt305x_mii_write(esw, i, 30, 0xa000);
-			rt305x_mii_write(esw, i, 31, 0xa000);
+			rt305x_mii_write(esw, i, 31, 0xa000); /* change L2 page */
 			rt305x_mii_write(esw, i, 16, 0x0606);
 			rt305x_mii_write(esw, i, 23, 0x0f0e);
 			rt305x_mii_write(esw, i, 24, 0x1610);
 			rt305x_mii_write(esw, i, 30, 0x1f15);
 			rt305x_mii_write(esw, i, 28, 0x6111);
-			rt305x_mii_write(esw, i, 31, 0x2000);
-			rt305x_mii_write(esw, i, 26, 0x0000);
 		}
 
 		/* 100Base AOI setting */
-		rt305x_mii_write(esw, 0, 31, 0x5000);
+		rt305x_mii_write(esw, 0, 31, 0x5000); /* change G5 page */
 		rt305x_mii_write(esw, 0, 19, 0x004a);
 		rt305x_mii_write(esw, 0, 20, 0x015a);
 		rt305x_mii_write(esw, 0, 21, 0x00ee);
@@ -648,6 +653,11 @@ static void esw_hw_init(struct rt305x_esw *esw)
 		rt305x_mii_write(esw, 0, 28, 0x0233);
 		rt305x_mii_write(esw, 0, 29, 0x000a);
 		rt305x_mii_write(esw, 0, 30, 0x0000);
+
+		/* Fix EPHY idle state abnormal behavior */
+		rt305x_mii_write(esw, 0, 31, 0x4000); /* change G4 page */
+		rt305x_mii_write(esw, 0, 29, 0x000d);
+		rt305x_mii_write(esw, 0, 30, 0x0500);
 	} else {
 		rt305x_mii_write(esw, 0, 31, 0x8000);
 		for (i = 0; i < 5; i++) {
