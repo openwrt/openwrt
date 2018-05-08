@@ -2739,6 +2739,34 @@ static int msdc_drv_probe(struct platform_device *pdev)
     struct msdc_host *host;
     struct msdc_hw *hw;
     int ret, irq;
+	u32 reg;
+
+    printk("MTK MSDC device init.\n");
+    mtk_sd_device.dev.platform_data = &msdc0_hw;
+	if (ralink_soc == MT762X_SOC_MT7620A || ralink_soc == MT762X_SOC_MT7621AT) {
+	//#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+		reg = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x60)) & ~(0x3<<18);
+	//#if defined (CONFIG_RALINK_MT7620)
+		if (ralink_soc == MT762X_SOC_MT7620A)
+				reg |= 0x1<<18;
+	//#endif
+	} else {
+	//#elif defined (CONFIG_RALINK_MT7628)
+		/* TODO: maybe omitted when RAether already toggle AGPIO_CFG */
+		reg = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x3c));
+		reg |= 0x1e << 16;
+		sdr_write32((volatile u32*)(RALINK_SYSCTL_BASE + 0x3c), reg);
+
+		reg = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x60)) & ~(0x3<<10);
+#if defined (CONFIG_MTK_MMC_EMMC_8BIT)
+		reg |= 0x3<<26 | 0x3<<28 | 0x3<<30;
+		msdc0_hw.data_pins      = 8,
+#endif
+	//#endif
+	}
+	sdr_write32((volatile u32*)(RALINK_SYSCTL_BASE + 0x60), reg);
+    //platform_device_register(&mtk_sd_device);
+/* end of +++ */
  
     pdev->dev.platform_data = &msdc0_hw;
  
@@ -2995,42 +3023,6 @@ static struct platform_driver mt_msdc_driver = {
 static int __init mt_msdc_init(void)
 {
     int ret;
-/* +++ by chhung */
-    u32 reg;
-
-#if defined (CONFIG_MTD_ANY_RALINK)
-    extern int ra_check_flash_type(void);
-    if(ra_check_flash_type() == 2) { /* NAND */
-	    printk("%s: !!!!! SDXC Module Initialize Fail !!!!!", __func__);
-	    return 0;
-    }
-#endif
-    printk("MTK MSDC device init.\n");
-    mtk_sd_device.dev.platform_data = &msdc0_hw;
-if (ralink_soc == MT762X_SOC_MT7620A || ralink_soc == MT762X_SOC_MT7621AT) {
-//#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
-    reg = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x60)) & ~(0x3<<18);
-//#if defined (CONFIG_RALINK_MT7620)
-	if (ralink_soc == MT762X_SOC_MT7620A)
-    		reg |= 0x1<<18;
-//#endif
-} else {
-//#elif defined (CONFIG_RALINK_MT7628)
-    /* TODO: maybe omitted when RAether already toggle AGPIO_CFG */
-    reg = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x3c));
-    reg |= 0x1e << 16;
-    sdr_write32((volatile u32*)(RALINK_SYSCTL_BASE + 0x3c), reg);
-
-    reg = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x60)) & ~(0x3<<10);
-#if defined (CONFIG_MTK_MMC_EMMC_8BIT)
-    reg |= 0x3<<26 | 0x3<<28 | 0x3<<30;
-    msdc0_hw.data_pins      = 8,
-#endif
-//#endif
-}
-    sdr_write32((volatile u32*)(RALINK_SYSCTL_BASE + 0x60), reg);
-    //platform_device_register(&mtk_sd_device);
-/* end of +++ */
 
     ret = platform_driver_register(&mt_msdc_driver);
     if (ret) {
