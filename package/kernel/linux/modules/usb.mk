@@ -1536,7 +1536,7 @@ $(eval $(call KernelPackage,usb-chipidea))
 
 define KernelPackage/usb-chipidea2
   TITLE:=Host and device support for Chipidea2 controllers
-  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget @TARGET_ar71xx||TARGET_ath79 +kmod-usb-ehci +kmod-usb-phy-nop
+  DEPENDS:=+kmod-usb-chipidea
   KCONFIG:= \
 	CONFIG_EXTCON \
 	CONFIG_USB_CHIPIDEA \
