@@ -1,0 +1,25 @@
+From bc5603afafd014a481be93f203582020f3891d0e Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Thu, 10 May 2018 07:54:59 +0800
+Subject: [PATCH] fw3: make compat with natcap
+
+---
+ defaults.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/defaults.c b/defaults.c
+index 11fbf0d..b554f71 100644
+--- a/defaults.c
++++ b/defaults.c
+@@ -235,7 +235,7 @@ fw3_print_default_head_rules(struct fw3_ipt_handle *handle,
+ 		{
+ 			r = fw3_ipt_rule_new(handle);
+ 			fw3_ipt_rule_comment(r, "Traffic offloading");
+-			fw3_ipt_rule_extra(r, "-m conntrack --ctstate RELATED,ESTABLISHED");
++			fw3_ipt_rule_extra(r, "-m mark ! --mark 0x99/0xff -m conntrack --ctstate RELATED,ESTABLISHED");
+ 			fw3_ipt_rule_target(r, "FLOWOFFLOAD");
+ 			if (defs->flow_offloading_hw)
+ 				fw3_ipt_rule_addarg(r, false, "--hw", NULL);
+-- 
+2.17.0
+
