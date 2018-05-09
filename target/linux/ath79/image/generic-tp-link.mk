@@ -1,5 +1,9 @@
 DEVICE_VARS += TPLINK_HWID TPLINK_HWREV TPLINK_FLASHLAYOUT TPLINK_HEADER_VERSION TPLINK_BOARD_NAME
 
+define rootfs_align
+$(patsubst %-256k,0x40000,$(patsubst %-128k,0x20000,$(patsubst %-64k,0x10000,$(patsubst squashfs%,0x4,$(patsubst root.%,%,$(1))))))
+endef
+
 # combine kernel and rootfs into one image
 # mktplinkfw <type> <optional extra arguments to mktplinkfw binary>
 # <type> is "sysupgrade" or "factory"
@@ -40,8 +44,11 @@ define Device/tplink
   TPLINK_HWREV := 0x1
   TPLINK_HEADER_VERSION := 1
   LOADER_TYPE := gz
-  IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade | append-metadata
+  KERNEL := kernel-bin | append-dtb | lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | tplink-v1-header
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade
+  IMAGE/factory.bin := append-rootfs | mktplinkfw factory
 endef
 
 define Device/tplink-nolzma
@@ -49,8 +56,8 @@ define Device/tplink-nolzma
   LOADER_FLASH_OFFS := 0x22000
   COMPILE := loader-$(1).gz
   COMPILE/loader-$(1).gz := loader-okli-compile
-  KERNEL:= kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1)
-  KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux-initramfs.bin.lzma | loader-kernel-cmdline | mktplinkfw-combined
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1)
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | tplink-v1-header
 endef
 
 define Device/tplink-4m
