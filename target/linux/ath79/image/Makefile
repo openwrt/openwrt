@@ -48,9 +48,6 @@ define Build/relocate-kernel
 	rm -rf $@.relocate
 endef
 
-define Build/copy-file
-	cat "$(1)" > "$@"
-endef
 
 define Device/Default
   ATH_SOC :=
