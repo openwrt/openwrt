@@ -7,9 +7,12 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-# Build the special D-Link DNS-313 header generator tool
-# needed to generate the hard disk boot images then
-# build D-Link DNS-313 images using the special header tool.
+# Just copy the zImage for D-Link DIR-685
+define Build/dir685-images
+	cp $(IMAGE_KERNEL) $(BIN_DIR)/$(IMG_PREFIX)-dir685-zImage
+endef
+
+# Build D-Link DNS-313 images using the special header tool.
 # rootfs.tgz and rd.tgz contains nothing, we only need them
 # to satisfy the boot loader on the device. The zImage is
 # the only real content.
@@ -79,6 +82,8 @@ define Device/dlink-dir-685
 	DEVICE_TITLE := D-Link DIR-685 Xtreme N Storage Router
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) \
 			kmod-switch-rtl8366rb swconfig
+	IMAGES += dir685-image
+	IMAGE/dir685-image := dir685-images
 endef
 TARGET_DEVICES += dlink-dir-685
 
