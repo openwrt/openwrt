@@ -1317,7 +1317,7 @@ static int ag71xx_setup_gmac(struct device_node *np)
 	}
 
 	if (of_device_is_compatible(np_dev, "qca,ar9330-gmac"))
-		ag71xx_setup_gmac_933x(np_dev, base);
+		ag71xx_setup_gmac_933x(np, base);
 
 	iounmap(base);
 
