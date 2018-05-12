@@ -74,9 +74,6 @@ extern void chk_phy_pll(void);
 
 #define RALINK_PCI_CONFIG_ADDR                         0x20
 #define RALINK_PCI_CONFIG_DATA_VIRTUAL_REG     0x24
-#define RALINK_INT_PCIE0         pcie_irq[0]
-#define RALINK_INT_PCIE1         pcie_irq[1]
-#define RALINK_INT_PCIE2         pcie_irq[2]
 #define RALINK_PCI_MEMBASE              *(volatile u32 *)(RALINK_PCI_BASE + 0x0028)
 #define RALINK_PCI_IOBASE               *(volatile u32 *)(RALINK_PCI_BASE + 0x002C)
 #define RALINK_PCIE0_RST                (1<<24)
@@ -367,68 +364,12 @@ pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	u16 cmd;
 	u32 val;
-	int irq = 0;
+	int irq;
 
-	if ((dev->bus->number == 0) && (slot == 0)) {
-		write_config(0, 0, 0, PCI_BASE_ADDRESS_0, MEMORY_BASE);
-		read_config(0, 0, 0, PCI_BASE_ADDRESS_0, (unsigned long *)&val);
-		printk("BAR0 at slot 0 = %x\n", val);
-		printk("bus=0x%x, slot = 0x%x\n",dev->bus->number, slot);
-	} else if((dev->bus->number == 0) && (slot == 0x1)) {
-		write_config(0, 1, 0, PCI_BASE_ADDRESS_0, MEMORY_BASE);
-		read_config(0, 1, 0, PCI_BASE_ADDRESS_0, (unsigned long *)&val);
-		printk("BAR0 at slot 1 = %x\n", val);
-		printk("bus=0x%x, slot = 0x%x\n",dev->bus->number, slot);
-	} else if((dev->bus->number == 0) && (slot == 0x2)) {
-		write_config(0, 2, 0, PCI_BASE_ADDRESS_0, MEMORY_BASE);
-		read_config(0, 2, 0, PCI_BASE_ADDRESS_0, (unsigned long *)&val);
-		printk("BAR0 at slot 2 = %x\n", val);
-		printk("bus=0x%x, slot = 0x%x\n",dev->bus->number, slot);
-	} else if ((dev->bus->number == 1) && (slot == 0x0)) {
-		switch (pcie_link_status) {
-		case 2:
-		case 6:
-			irq = RALINK_INT_PCIE1;
-			break;
-		case 4:
-			irq = RALINK_INT_PCIE2;
-			break;
-		default:
-			irq = RALINK_INT_PCIE0;
-		}
-		printk("bus=0x%x, slot = 0x%x, irq=0x%x\n",dev->bus->number, slot, dev->irq);
-	} else if ((dev->bus->number == 2) && (slot == 0x0)) {
-		switch (pcie_link_status) {
-		case 5:
-		case 6:
-			irq = RALINK_INT_PCIE2;
-			break;
-		default:
-			irq = RALINK_INT_PCIE1;
-		}
-		printk("bus=0x%x, slot = 0x%x, irq=0x%x\n",dev->bus->number, slot, dev->irq);
-	} else if ((dev->bus->number == 2) && (slot == 0x1)) {
-		switch (pcie_link_status) {
-		case 5:
-		case 6:
-			irq = RALINK_INT_PCIE2;
-			break;
-		default:
-			irq = RALINK_INT_PCIE1;
-		}
-		printk("bus=0x%x, slot = 0x%x, irq=0x%x\n",dev->bus->number, slot, dev->irq);
-	} else if ((dev->bus->number ==3) && (slot == 0x0)) {
-		irq = RALINK_INT_PCIE2;
-		printk("bus=0x%x, slot = 0x%x, irq=0x%x\n",dev->bus->number, slot, dev->irq);
-	} else if ((dev->bus->number ==3) && (slot == 0x1)) {
-		irq = RALINK_INT_PCIE2;
-		printk("bus=0x%x, slot = 0x%x, irq=0x%x\n",dev->bus->number, slot, dev->irq);
-	} else if ((dev->bus->number ==3) && (slot == 0x2)) {
-		irq = RALINK_INT_PCIE2;
-		printk("bus=0x%x, slot = 0x%x, irq=0x%x\n",dev->bus->number, slot, dev->irq);
-	} else {
-		printk("bus=0x%x, slot = 0x%x\n",dev->bus->number, slot);
-		return 0;
+	if (dev->bus->number == 0) {
+		write_config(0, slot, 0, PCI_BASE_ADDRESS_0, MEMORY_BASE);
+		read_config(0, slot, 0, PCI_BASE_ADDRESS_0, (unsigned long *)&val);
+		printk("BAR0 at slot %d = %x\n", slot, val);
 	}
 
 	pci_write_config_byte(dev, PCI_CACHE_LINE_SIZE, 0x14);  //configure cache line size 0x14
@@ -436,6 +377,9 @@ pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 	pci_read_config_word(dev, PCI_COMMAND, &cmd);
 	cmd = cmd | PCI_COMMAND_MASTER | PCI_COMMAND_IO | PCI_COMMAND_MEMORY;
 	pci_write_config_word(dev, PCI_COMMAND, cmd);
+
+	irq = of_irq_parse_and_map_pci(dev, slot, pin);
+
 	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, irq);
 	return irq;
 }
