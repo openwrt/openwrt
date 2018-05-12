@@ -674,7 +674,7 @@ wpa_supplicant_add_network() {
 
 	[[ "$_w_mode" = "adhoc" ]] && {
 		append network_data "mode=1" "$N$T"
-		[ -n "$channel" ] && wpa_supplicant_set_fixed_freq "$freq" "$htmode"
+		[ -n "$freq" ] && wpa_supplicant_set_fixed_freq "$freq" "$htmode"
 
 		scan_ssid="scan_ssid=0"
 
@@ -683,11 +683,11 @@ wpa_supplicant_add_network() {
 
 	[[ "$_w_mode" = "mesh" ]] && {
 		json_get_vars mesh_id mesh_fwding
-		ssid="${mesh_id}"
+		[ -n "$mesh_id" ] && ssid="${mesh_id}"
 
 		append network_data "mode=5" "$N$T"
 		[ -n "$mesh_fwding" ] && append network_data "mesh_fwding=${mesh_fwding}" "$N$T"
-		[ -n "$channel" ] && wpa_supplicant_set_fixed_freq "$freq" "$htmode"
+		[ -n "$freq" ] && wpa_supplicant_set_fixed_freq "$freq" "$htmode"
 		[ "$noscan" = "1" ] && append network_data "noscan=1" "$N$T"
 		append wpa_key_mgmt "SAE"
 		scan_ssid=""
