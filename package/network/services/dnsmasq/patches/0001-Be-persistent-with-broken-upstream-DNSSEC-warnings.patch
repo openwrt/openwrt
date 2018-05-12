@@ -1,0 +1,26 @@
+From f84e674d8aa2316fea8d2145a40fcef0441e3856 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 4 May 2018 16:29:57 +0100
+Subject: [PATCH 01/10] Be persistent with broken-upstream-DNSSEC warnings.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/dnssec.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+--- a/src/dnssec.c
++++ b/src/dnssec.c
+@@ -876,12 +876,7 @@ int dnssec_validate_ds(time_t now, struc
+   
+   if (rc == STAT_INSECURE)
+     {
+-      static int reported = 0;
+-      if (!reported)
+-	{
+-	  reported = 1;
+-	  my_syslog(LOG_WARNING, _("Insecure DS reply received, do upstream DNS servers support DNSSEC?"));
+-	}
++      my_syslog(LOG_WARNING, _("Insecure DS reply received, do upstream DNS servers support DNSSEC?"));
+       rc = STAT_BOGUS;
+     }
+   
