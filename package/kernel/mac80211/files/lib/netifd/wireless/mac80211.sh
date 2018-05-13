@@ -518,7 +518,11 @@ mac80211_prepare_vif() {
 
 mac80211_setup_supplicant() {
 	wpa_supplicant_prepare_interface "$ifname" nl80211 || return 1
-	wpa_supplicant_add_network "$ifname"
+	if [ "$mode" = "sta" ]; then
+		wpa_supplicant_add_network "$ifname"
+	else
+		wpa_supplicant_add_network "$ifname" "$freq" "$htmode" "$noscan"
+	fi
 	wpa_supplicant_run "$ifname" ${hostapd_ctrl:+-H $hostapd_ctrl}
 }
 
@@ -630,10 +634,10 @@ mac80211_setup_vif() {
 	case "$mode" in
 		mesh)
 			json_get_vars key
-			if [ -n "$key" ]; then
+			if [ "$wpa" -gt 0 -o "$auto_channel" -gt 0 ] || chan_is_dfs "$phy" "$channel"; then
 				wireless_vif_parse_encryption
 				freq="$(get_freq "$phy" "$channel")"
-				mac80211_setup_supplicant_noctl || failed=1
+				mac80211_setup_supplicant || failed=1
 			else
 				json_get_vars mesh_id mcast_rate
 
@@ -708,6 +712,13 @@ get_freq() {
 	local phy="$1"
 	local chan="$2"
 	iw "$phy" info | grep -E -m1 "(\* ${chan:-....} MHz${chan:+|\\[$chan\\]})" | grep MHz | awk '{print $2}'
+}
+
+chan_is_dfs() {
+	local phy="$1"
+	local chan="$2"
+	iw "$phy" info | grep -E -m1 "(\* ${chan:-....} MHz${chan:+|\\[$chan\\]})" | grep -q "MHz.*radar detection"
+	return $!
 }
 
 mac80211_interface_cleanup() {
