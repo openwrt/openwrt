@@ -7,9 +7,9 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2016.03
+PKG_VERSION:=2017.03
 
-PKG_HASH:=e49337262ecac44dbdeac140f2c6ebd1eba345e0162b0464172e7f05583ed7bb
+PKG_HASH:=f54baf3f9325bf444c7905f3a5b6f83680edb1e6e1a4d5f8a5ad80abe885113f
 
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/u-boot.mk
@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define U-Boot/Default
   BUILD_TARGET:=zynq
-  UBOOT_IMAGE:=u-boot u-boot-dtb.bin u-boot.dtb u-boot-dtb.img spl/boot.bin spl/u-boot-spl spl/u-boot-spl-dtb.bin
+  UBOOT_IMAGE:=spl/boot.bin u-boot.img
   UBOOT_CONFIG:=zynq_$(1)
 endef
 
