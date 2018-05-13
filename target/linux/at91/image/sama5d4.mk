@@ -13,7 +13,7 @@ define Device/at91-sama5d4_xplained
   BLOCKSIZE := 256k
   PAGESIZE := 4096
   SUBPAGESIZE := 2048
-  MKUBIFS_OPTS := -m $$(PAGESIZE) -e 248KiB -c 2082 -x lzo
+  MKUBIFS_OPTS := -m $$(PAGESIZE) -e 248KiB -c 2082
   $(Device/evaluation-sdimage)
 endef
 TARGET_DEVICES += at91-sama5d4_xplained
