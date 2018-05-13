@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=zynq
 BOARDNAME:=Xilinx Zynq 7000 SoCs
-FEATURES:=fpu gpio rtc usb usbgadget targz source-only
+FEATURES:=fpu gpio rtc usb usbgadget ramdisk targz source-only
 CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=neon
 MAINTAINER:=Jason Wu <jason.wu.misc@gmail.com>
@@ -24,7 +24,7 @@ KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
 
-KERNELNAME:=zImage dtbs
+KERNELNAME:=Image dtbs
 
 DEFAULT_PACKAGES += uboot-envtools
 
