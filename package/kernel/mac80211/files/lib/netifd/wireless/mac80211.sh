@@ -634,8 +634,8 @@ mac80211_setup_vif() {
 	case "$mode" in
 		mesh)
 			json_get_vars key
+			wireless_vif_parse_encryption
 			if [ "$wpa" -gt 0 -o "$auto_channel" -gt 0 ] || chan_is_dfs "$phy" "$channel"; then
-				wireless_vif_parse_encryption
 				freq="$(get_freq "$phy" "$channel")"
 				mac80211_setup_supplicant || failed=1
 			else
