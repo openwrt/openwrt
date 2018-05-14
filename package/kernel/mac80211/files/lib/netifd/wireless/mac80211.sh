@@ -610,6 +610,51 @@ mac80211_setup_adhoc() {
 		${keyspec:+keys $keyspec}
 }
 
+mac80211_setup_mesh() {
+	json_get_vars ssid mesh_id mcast_rate
+
+	mcval=
+	[ -n "$mcast_rate" ] && wpa_supplicant_add_rate mcval "$mcast_rate"
+	[ -n "$mesh_id" ] && ssid="$mesh_id"
+
+	case "$htmode" in
+		VHT20|HT20) mesh_htmode=HT20;;
+		HT40*|VHT40)
+			case "$hwmode" in
+				a)
+					case "$(( ($channel / 4) % 2 ))" in
+						1) mesh_htmode="HT40+" ;;
+						0) mesh_htmode="HT40-";;
+					esac
+				;;
+				*)
+					case "$htmode" in
+						HT40+) mesh_htmode="HT40+";;
+						HT40-) mesh_htmode="HT40-";;
+						*)
+							if [ "$channel" -lt 7 ]; then
+								mesh_htmode="HT40+"
+							else
+								mesh_htmode="HT40-"
+							fi
+						;;
+					esac
+				;;
+			esac
+		;;
+		VHT80)
+			mesh_htmode="80Mhz"
+		;;
+		VHT160)
+			mesh_htmode="160Mhz"
+		;;
+		*) mesh_htmode="NOHT" ;;
+	esac
+	iw dev "$ifname" mesh join "$ssid" freq $freq $mesh_htmode \
+		${mcval:+mcast-rate $mcval} \
+		beacon-interval $beacon_int
+}
+
 mac80211_setup_vif() {
 	local name="$1"
 	local failed
@@ -633,57 +678,13 @@ mac80211_setup_vif() {
 
 	case "$mode" in
 		mesh)
-			json_get_vars key
 			wireless_vif_parse_encryption
+			freq="$(get_freq "$phy" "$channel")"
 			if [ "$wpa" -gt 0 -o "$auto_channel" -gt 0 ] || chan_is_dfs "$phy" "$channel"; then
-				freq="$(get_freq "$phy" "$channel")"
 				mac80211_setup_supplicant || failed=1
 			else
-				json_get_vars mesh_id mcast_rate
-
-				mcval=
-				[ -n "$mcast_rate" ] && wpa_supplicant_add_rate mcval "$mcast_rate"
-
-				case "$htmode" in
-					VHT20|HT20) mesh_htmode=HT20;;
-					HT40*|VHT40)
-						case "$hwmode" in
-							a)
-								case "$(( ($channel / 4) % 2 ))" in
-									1) mesh_htmode="HT40+" ;;
-									0) mesh_htmode="HT40-";;
-								esac
-							;;
-							*)
-								case "$htmode" in
-									HT40+) mesh_htmode="HT40+";;
-									HT40-) mesh_htmode="HT40-";;
-									*)
-										if [ "$channel" -lt 7 ]; then
-											mesh_htmode="HT40+"
-										else
-											mesh_htmode="HT40-"
-										fi
-									;;
-								esac
-							;;
-						esac
-					;;
-					VHT80)
-						mesh_htmode="80Mhz"
-					;;
-					VHT160)
-						mesh_htmode="160Mhz"
-					;;
-					*) mesh_htmode="NOHT" ;;
-				esac
-
-				freq="$(get_freq "$phy" "$channel")"
-				iw dev "$ifname" mesh join "$mesh_id" freq $freq $mesh_htmode \
-					${mcval:+mcast-rate $mcval} \
-					beacon-interval $beacon_int
+				mac80211_setup_mesh
 			fi
-
 			for var in $MP_CONFIG_INT $MP_CONFIG_BOOL $MP_CONFIG_STRING; do
 				json_get_var mp_val "$var"
 				[ -n "$mp_val" ] && iw dev "$ifname" set mesh_param "$var" "$mp_val"
