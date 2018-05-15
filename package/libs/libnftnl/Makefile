@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnftnl
-PKG_VERSION:=1.0.9
-PKG_RELEASE:=2
+PKG_VERSION:=1.1.0
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://netfilter.org/projects/$(PKG_NAME)/files
-PKG_HASH:=fec1d824aee301e59a11aeaae2a2d429cb99ead81e6bafab791a4dd6569b3635
+PKG_HASH:=ec0eaca11b165110c2b61e6a7b50a7a0a9b17fa04a0c333f795bec2d19f78f6c
 PKG_MAINTAINER:=Steven Barth <steven@midlink.org>
 PKG_LICENSE:=GPL-2.0+
 
