@@ -1,0 +1,3 @@
+[ -n "$DISK_MEDIA_CHANGE" ] && /sbin/block info
+
+[ $ACTION == "add" -a $DEVTYPE == "disk" -a $DEVICENAME != mtd* ] && { echo 2000 > /sys/block/$DEVNAME/events_poll_msecs; }
