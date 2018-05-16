@@ -194,6 +194,7 @@ ramips_setup_interfaces()
 	gl-mt300n|\
 	gl-mt750|\
 	hg255d|\
+	iodata,wn-gx300gr|\
 	jhr-n805r|\
 	jhr-n825r|\
 	jhr-n926r|\
@@ -458,6 +459,9 @@ ramips_setup_macs()
 		lan_mac=`mtd_get_mac_ascii bdinfo "Vfac_mac "`
 		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
+		;;
+	iodata,wn-gx300gr)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary Factory 4)" 1)
 		;;
 	kn_rc|\
 	kn_rf|\
