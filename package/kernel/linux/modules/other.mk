@@ -599,6 +599,22 @@ endef
 
 $(eval $(call KernelPackage,rtc-pcf2123))
 
+define KernelPackage/rtc-pcf2127
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=NXP PCF2127 and PCF2129 RTC support
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  KCONFIG:=CONFIG_RTC_DRV_PCF2127 \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf2127.ko
+  AUTOLOAD:=$(call AutoProbe,rtc-pcf2127)
+endef
+
+define KernelPackage/rtc-pcf2127/description
+ Kernel module for NXP PCF2127 and PCF2129 RTC chip
+endef
+
+$(eval $(call KernelPackage,rtc-pcf2127))
+
 define KernelPackage/rtc-pt7c4338
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Pericom PT7C4338 RTC support
