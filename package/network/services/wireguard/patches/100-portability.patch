@@ -7,12 +7,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/src/tools/Makefile
 +++ b/src/tools/Makefile
-@@ -43,7 +43,7 @@ CFLAGS += -DRUNSTATEDIR="\"$(RUNSTATEDIR
- ifeq ($(DEBUG_TOOLS),y)
- CFLAGS += -g
+@@ -36,6 +36,9 @@ endif
  endif
--ifeq ($(shell uname -s),Linux)
+ 
+ PLATFORM ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
 +ifeq ($(strip $(shell echo __linux__ | $(CC) -E - | grep -v '^\#')),1)
- LIBMNL_CFLAGS := $(shell $(PKG_CONFIG) --cflags libmnl 2>/dev/null)
- LIBMNL_LDLIBS := $(shell $(PKG_CONFIG) --libs libmnl 2>/dev/null || echo -lmnl)
- CFLAGS += $(LIBMNL_CFLAGS)
++PLATFORM := linux
++endif
+ 
+ CFLAGS ?= -O3
+ CFLAGS += -std=gnu11 -D_GNU_SOURCE
