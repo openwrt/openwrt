@@ -1,5 +1,3 @@
-diff --git a/Documentation/devicetree/bindings/pinctrl/atmel,at91-pio4-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/atmel,at91-pio4-pinctrl.txt
-index 61ac757..9820227 100644
 --- a/Documentation/devicetree/bindings/pinctrl/atmel,at91-pio4-pinctrl.txt
 +++ b/Documentation/devicetree/bindings/pinctrl/atmel,at91-pio4-pinctrl.txt
 @@ -35,7 +35,12 @@ right representation of the pin.
@@ -13,24 +11,19 @@ index 61ac757..9820227 100644
 +ATMEL_PIO_DRVSTR_LO, ATMEL_PIO_DRVSTR_ME, ATMEL_PIO_DRVSTR_HI. The current
 +depends on VDDIOP. You can find the details in the DC Characteristics table
 +from the datasheet.
-
+ 
  Example:
-
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 1218005..c88e426 100644
+ 
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -49,6 +49,7 @@ dtb-$(CONFIG_SOC_AT91SAM9) += \
-	wb45n.dtb
+ 	wb45n.dtb
  dtb-$(CONFIG_SOC_SAM_V7) += \
-	at91-kizbox2.dtb \
+ 	at91-kizbox2.dtb \
 +	at91-sama5d27_som1_ek.dtb \
-	at91-sama5d2_xplained.dtb \
-	at91-sama5d3_xplained.dtb \
-	sama5d31ek.dtb \
-diff --git a/arch/arm/boot/dts/at91-sama5d27_som1.dtsi b/arch/arm/boot/dts/at91-sama5d27_som1.dtsi
-new file mode 100644
-index 0000000..7d7575f
+ 	at91-sama5d2_xplained.dtb \
+ 	at91-sama5d3_xplained.dtb \
+ 	sama5d31ek.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/at91-sama5d27_som1.dtsi
 @@ -0,0 +1,175 @@
@@ -209,9 +202,6 @@ index 0000000..7d7575f
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/at91-sama5d27_som1_ek.dts b/arch/arm/boot/dts/at91-sama5d27_som1_ek.dts
-new file mode 100644
-index 0000000..fd12b68
 --- /dev/null
 +++ b/arch/arm/boot/dts/at91-sama5d27_som1_ek.dts
 @@ -0,0 +1,53 @@
@@ -268,9 +258,6 @@ index 0000000..fd12b68
 +	model = "Atmel SAMA5D27 SOM1 EK";
 +	compatible = "atmel,sama5d27-som1-ek", "atmel,sama5d27-som1", "atmel,sama5d27", "atmel,sama5d2", "atmel,sama5";
 +};
-diff --git a/arch/arm/boot/dts/at91-sama5d27_som1_ek_common.dtsi b/arch/arm/boot/dts/at91-sama5d27_som1_ek_common.dtsi
-new file mode 100644
-index 0000000..7201a8e
 --- /dev/null
 +++ b/arch/arm/boot/dts/at91-sama5d27_som1_ek_common.dtsi
 @@ -0,0 +1,619 @@
@@ -893,14 +880,12 @@ index 0000000..7201a8e
 +		};
 +	};
 +};
-diff --git a/include/dt-bindings/pinctrl/at91.h b/include/dt-bindings/pinctrl/at91.h
-index bbca3d0..88eb7d0 100644
 --- a/include/dt-bindings/pinctrl/at91.h
 +++ b/include/dt-bindings/pinctrl/at91.h
 @@ -37,4 +37,8 @@
  #define AT91_PERIPH_C		3
  #define AT91_PERIPH_D		4
-
+ 
 +#define ATMEL_PIO_DRVSTR_LO	1
 +#define ATMEL_PIO_DRVSTR_ME	2
 +#define ATMEL_PIO_DRVSTR_HI	3

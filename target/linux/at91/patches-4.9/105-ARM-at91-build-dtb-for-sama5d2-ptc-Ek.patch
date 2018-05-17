@@ -1,18 +1,13 @@
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index c88e426..cb47e80 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -49,6 +49,7 @@ dtb-$(CONFIG_SOC_AT91SAM9) += \
-	wb45n.dtb
+ 	wb45n.dtb
  dtb-$(CONFIG_SOC_SAM_V7) += \
-	at91-kizbox2.dtb \
+ 	at91-kizbox2.dtb \
 +	at91-sama5d2_ptc_ek.dtb \
-	at91-sama5d27_som1_ek.dtb \
-	at91-sama5d2_xplained.dtb \
-	at91-sama5d3_xplained.dtb \
-diff --git a/arch/arm/boot/dts/at91-sama5d2_ptc_ek.dts b/arch/arm/boot/dts/at91-sama5d2_ptc_ek.dts
-new file mode 100644
-index 0000000..257eaac
+ 	at91-sama5d27_som1_ek.dtb \
+ 	at91-sama5d2_xplained.dtb \
+ 	at91-sama5d3_xplained.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/at91-sama5d2_ptc_ek.dts
 @@ -0,0 +1,422 @@
@@ -438,5 +433,3 @@ index 0000000..257eaac
 +		};
 +	};
 +};
---
-2.7.4
