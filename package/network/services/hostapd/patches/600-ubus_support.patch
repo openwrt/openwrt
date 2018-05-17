@@ -242,7 +242,7 @@
  	int ret;
  	u16 csa_offs[2];
  	size_t csa_offs_len;
-@@ -737,6 +738,11 @@ void handle_probe_req(struct hostapd_dat
+@@ -737,6 +738,12 @@ void handle_probe_req(struct hostapd_dat
  	struct hostapd_sta_wpa_psk_short *psk = NULL;
  	char *identity = NULL;
  	char *radius_cui = NULL;
@@ -250,11 +250,12 @@
 +		.type = HOSTAPD_UBUS_PROBE_REQ,
 +		.mgmt_frame = mgmt,
 +		.frame_info = fi,
++		.elems = &elems,
 +	};
  
  	if (len < IEEE80211_HDRLEN)
  		return;
-@@ -914,6 +920,12 @@ void handle_probe_req(struct hostapd_dat
+@@ -914,6 +921,12 @@ void handle_probe_req(struct hostapd_dat
  	}
  #endif /* CONFIG_P2P */
  
