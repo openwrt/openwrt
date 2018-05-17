@@ -11,11 +11,9 @@ Signed-off-by: Hans Ulli Kroll <ulli.kroll@googlemail.com>
  drivers/usb/host/fotg210-hcd.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/usb/host/fotg210-hcd.c b/drivers/usb/host/fotg210-hcd.c
-index 2acc51b0be5a..bc9efb49adc7 100644
 --- a/drivers/usb/host/fotg210-hcd.c
 +++ b/drivers/usb/host/fotg210-hcd.c
-@@ -1658,6 +1658,10 @@ static int fotg210_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
+@@ -1658,6 +1658,10 @@ static int fotg210_hub_control(struct us
  			/* see what we found out */
  			temp = check_reset_complete(fotg210, wIndex, status_reg,
  					fotg210_readl(fotg210, status_reg));
@@ -26,6 +24,3 @@ index 2acc51b0be5a..bc9efb49adc7 100644
  		}
  
  		if (!(temp & (PORT_RESUME|PORT_RESET))) {
--- 
-2.16.2
-
