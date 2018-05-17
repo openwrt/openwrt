@@ -464,6 +464,19 @@ define Device/tiny-ac
 endef
 TARGET_DEVICES += tiny-ac
 
+define Device/tplink_c2
+  $(Device/Archer)
+  DTS := ArcherC2
+  SUPPORTED_DEVICES := c2
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0xc7500001
+  TPLINK_HWREV := 50
+  IMAGES += factory.bin
+  DEVICE_TITLE := TP-Link ArcherC2
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-switch-rtl8366-smi kmod-switch-rtl8367b
+endef
+TARGET_DEVICES += tplink_c2
+
 define Device/tplink_c20-v1
   $(Device/Archer)
   DTS := ArcherC20v1
