@@ -60,6 +60,7 @@ include $(INCLUDE_DIR)/package-defaults.mk
 
 # Used by Build/Compile/Default
 MAKE_PATH:=src/tools
+MAKE_VARS += PLATFORM=linux
 
 define Build/Compile
 	$(MAKE) $(KERNEL_MAKEOPTS) M="$(PKG_BUILD_DIR)/src" modules
