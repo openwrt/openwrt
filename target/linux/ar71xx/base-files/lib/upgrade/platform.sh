@@ -191,6 +191,40 @@ alfa_check_image() {
 	return 0
 }
 
+gl_board_is_nand() {
+        local size="$(mtd_get_part_size 'ubi')"
+        case "$size" in
+        132120576)
+                return 0
+                ;;
+        134217728)
+                return 0
+                ;;
+        *)
+                return 1
+                ;;
+        esac
+}
+
+# $(1) image file
+# $(2) board name
+# $(3) magic
+platform_check_image_gl_nand() {
+        local board=$2
+        local magic=$3
+
+        if gl_board_is_nand; then
+                nand_do_platform_check $board $1
+                return $?
+        else
+                [ "$magic" != "2705" ] && {
+                        echo "Invalid image type."
+                        return 1
+                }
+                return 0
+        fi
+}
+
 platform_check_image() {
 	local board=$(board_name)
 	local magic="$(get_magic_word "$1")"
@@ -326,6 +360,10 @@ platform_check_image() {
 
 		return 0
 		;;
+        gl-ar750s)
+                platform_check_image_gl_nand "$1" "$board" "$magic" && return 0
+                return 1
+                ;;
 	alfa-ap96|\
 	alfa-nx|\
 	ap121|\
@@ -710,6 +748,12 @@ platform_check_image() {
 	return 1
 }
 
+platform_pre_upgrade_gl_nand() {
+        if gl_board_is_nand; then
+                nand_do_upgrade "$1"
+        fi
+}
+
 platform_pre_upgrade() {
 	local board=$(board_name)
 
@@ -730,6 +774,9 @@ platform_pre_upgrade() {
 	rb-wapg-5hact2hnd)
 		# erase firmware if booted from initramfs
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
+		;;
+	gl-ar750s)
+		platform_pre_upgrade_gl_nand "$1"
 		;;
 	esac
 }
