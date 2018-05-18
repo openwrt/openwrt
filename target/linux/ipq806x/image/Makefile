@@ -215,7 +215,7 @@ define Device/tplink_vr2600v
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none
 	KERNEL_NAME := zImage
-	KERNEL_SIZE := 2097152
+	KERNEL_SIZE := 3145728
 	DEVICE_DTS := qcom-ipq8064-vr2600v
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
