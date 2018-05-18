@@ -149,7 +149,7 @@ TARGET_DEVICES += netgear_r7500v2
 define Device/netgear_r7800
 	$(call Device/DniImage)
 	DEVICE_DTS := qcom-ipq8065-r7800
-	KERNEL_SIZE := 2097152
+	KERNEL_SIZE := 4194304
 	NETGEAR_BOARD_ID := R7800
 	NETGEAR_HW_ID := 29764958+0+128+512+4x4+4x4+cascade
 	BLOCKSIZE := 128k
