@@ -294,7 +294,6 @@ platform_check_image() {
 	gl-ar300m|\
 	gl-ar300|\
 	gl-ar750|\
-	gl-ar750s|\
 	gl-domino|\
 	gl-mifi|\
 	gl-usb150|\
