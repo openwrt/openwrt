@@ -32,6 +32,13 @@ config DROPBEAR_ECC
 
 		Increases binary size by about 23 kB (MIPS).
 
+config DROPBEAR_ECDSA_KEYGEN
+	bool "Generate ECDSA host key"
+	default n
+	depends on DROPBEAR_ECC
+	help
+		Enables ECDSA host key generation.
+
 config DROPBEAR_ZLIB
 	bool "Enable compression"
 	default n

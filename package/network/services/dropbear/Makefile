@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
 PKG_VERSION:=2017.75
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
@@ -27,7 +27,8 @@ PKG_USE_MIPS16:=0
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_TARGET_INIT_PATH CONFIG_DROPBEAR_ECC \
 	CONFIG_DROPBEAR_CURVE25519 CONFIG_DROPBEAR_ZLIB \
-	CONFIG_DROPBEAR_UTMP CONFIG_DROPBEAR_PUTUTLINE
+	CONFIG_DROPBEAR_UTMP CONFIG_DROPBEAR_PUTUTLINE \
+	CONFIG_DROPBEAR_ECDSA_KEYGEN
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -57,6 +58,7 @@ endef
 
 define Package/dropbear/conffiles
 /etc/dropbear/dropbear_rsa_host_key
+$(if $(CONFIG_DROPBEAR_ECDSA_KEYGEN),/etc/dropbear/dropbear_ecdsa_host_key, )
 /etc/config/dropbear 
 endef
 
@@ -142,6 +144,12 @@ define Package/dropbear/install
 	$(INSTALL_DIR) $(1)/usr/lib/opkg/info
 	$(INSTALL_DIR) $(1)/etc/dropbear
 	touch $(1)/etc/dropbear/dropbear_rsa_host_key
+ifeq ($(CONFIG_DROPBEAR_ECDSA_KEYGEN),y)
+	sed -i \
+		'/[ -s \/etc\/dropbear\/dropbear_rsa_host_key ] || keygen rsa/a \\t[ -s \/etc\/dropbear\/dropbear_ecdsa_host_key ] || keygen ecdsa' \
+		$(1)/etc/init.d/dropbear
+	touch $(1)/etc/dropbear/dropbear_ecdsa_host_key
+endif
 endef
 
 define Package/dropbearconvert/install
