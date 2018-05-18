@@ -1,0 +1,37 @@
+--- a/drivers/net/phy/ar8327.c
++++ b/drivers/net/phy/ar8327.c
+@@ -1279,6 +1279,21 @@ ar8327_sw_set_igmp_v3(struct switch_dev
+ 	return 0;
+ }
+ 
++int
++ar8xxx_hw_reset(struct switch_dev *dev,
++			      const struct switch_attr *attr,
++			      struct switch_val *val)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	int ret;
++
++	mutex_lock(&priv->reg_mutex);
++	ret = priv->chip->hw_init(priv);
++	mutex_unlock(&priv->reg_mutex);
++
++	return ret;
++}
++
+ static int
+ ar8327_sw_set_port_vlan_prio(struct switch_dev *dev, const struct switch_attr *attr,
+ 			     struct switch_val *val)
+@@ -1393,6 +1408,12 @@ static const struct switch_attr ar8327_s
+ 		.get = ar8327_sw_get_igmp_v3,
+ 		.max = 1
+ 	},
++	{
++		.type = SWITCH_TYPE_NOVAL,
++		.name = "phy_reset",
++		.description = "phy hw reset",
++		.set = ar8xxx_hw_reset,
++	},
+ };
+ 
+ static const struct switch_attr ar8327_sw_attr_port[] = {

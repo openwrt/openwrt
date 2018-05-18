@@ -130,8 +130,16 @@ define LegacyDevice/WNDR4300V1
 endef
 LEGACY_DEVICES += WNDR4300V1
 
+
 define LegacyDevice/NBG6716
   DEVICE_TITLE := Zyxel NBG 6716
   DEVICE_PACKAGES := kmod-rtc-pcf8563 kmod-ath10k ath10k-firmware-qca988x
 endef
 LEGACY_DEVICES += NBG6716
+
+define LegacyDevice/GL-AR750S
+	DEVICE_TITLE := GL-AR750S with nand flash
+	DEVICE_PACKAGES :=  kmod-ath10k ath10k-firmware-qca9887 kmod-usb-core \
+	      kmod-usb2 kmod-usb-storage
+endef
+LEGACY_DEVICES += GL-AR750S

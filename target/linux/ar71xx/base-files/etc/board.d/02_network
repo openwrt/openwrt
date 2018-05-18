@@ -175,6 +175,10 @@ ar71xx_setup_interfaces()
 	wrtnode2q)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+	gl-ar750s)
+		ucidef_add_switch "switch0" \
+ 			"0@eth0" "2:lan:2" "3:lan:1" "1:wan"
+		;;
 	rb-750-r2|\
 	rb-750p-pbr2|\
 	rb-750up-r2|\
