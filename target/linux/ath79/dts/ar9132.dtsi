@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 #include <dt-bindings/clock/ath79-clk.h>
+#include "ath79.dtsi"
 
 / {
 	compatible = "qca,ar9132";
@@ -172,4 +173,13 @@
 
 		status = "disabled";
 	};
+};
+
+&eth0 {
+	compatible = "qca,ar9130-eth", "syscon";
+	pll-data = <0x1a000000 0 0>;
+	pll-reg = <0x4 0x10 17>;
+	pll-handle = <&pll>;
+	resets = <&rst 8>, <&rst 9>;
+	reset-names = "phy", "mac";
 };
