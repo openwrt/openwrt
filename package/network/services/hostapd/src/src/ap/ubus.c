@@ -998,6 +998,8 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 	const char *type = "mgmt";
 	struct ubus_event_req ureq = {};
 	const u8 *addr;
+	void *supp_rates, *ext_supp_rates;
+	int i;
 
 	if (req->mgmt_frame)
 		addr = req->mgmt_frame->sa;
@@ -1021,6 +1023,22 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 	if (req->frame_info)
 		blobmsg_add_u32(&b, "signal", req->frame_info->ssi_signal);
 	blobmsg_add_u32(&b, "freq", hapd->iface->freq);
+	if (req->elems) {
+		if (req->elems->supp_rates) {
+			supp_rates = blobmsg_open_array(&b, "supp_rates");
+			for (i = 0; req->elems->supp_rates && i < req->elems->supp_rates_len; i++) {
+				blobmsg_add_u16(&b, NULL, req->elems->supp_rates[i]);
+			}
+			blobmsg_close_array(&b, supp_rates);
+		}
+		if (req->elems->ext_supp_rates) {
+			ext_supp_rates = blobmsg_open_array(&b, "ext_supp_rates");
+			for (i = 0; req->elems->ext_supp_rates && i < req->elems->ext_supp_rates_len; i++) {
+				blobmsg_add_u16(&b, NULL, req->elems->ext_supp_rates[i]);
+			}
+			blobmsg_close_array(&b, ext_supp_rates);
+		}
+	}
 
 	if (!hapd->ubus.notify_response) {
 		ubus_notify(ctx, &hapd->ubus.obj, type, b.head, -1);
