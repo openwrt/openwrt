@@ -78,7 +78,7 @@ $(Device/tplink)
   IMAGE_SIZE := 7936k
 endef
 
-define Device/tl_wr1043nd_v1
+define Device/tl-wr1043nd-v1
   $(Device/tplink-8m)
   ATH_SOC := ar9132
   DEVICE_TITLE := TP-LINK TL-WR1043N/ND v1
@@ -86,7 +86,7 @@ define Device/tl_wr1043nd_v1
   TPLINK_HWID := 0x10430001
   SUPPORTED_DEVICES := tplink,tl-wr1043nd-v1 tl-wr1043nd
 endef
-#TARGET_DEVICES += tl_wr1043nd_v1
+TARGET_DEVICES += tl-wr1043nd-v1
 
 define Device/tl-wdr3600
   $(Device/tplink-8mlzma)
