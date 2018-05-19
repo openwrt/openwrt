@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <linux/phy.h>
  #include <net/arp.h>
  #include <net/switchdev.h>
-+#ifdef CONFIG_NF_FLOW_TABLE
++#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
 +#include <linux/netfilter.h>
 +#include <net/netfilter/nf_flow_table.h>
 +#endif
@@ -24,7 +24,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return real_dev->ifindex;
  }
  
-+#ifdef CONFIG_NF_FLOW_TABLE
++#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
 +static int vlan_dev_flow_offload_check(struct flow_offload_hw_path *path)
 +{
 +	struct net_device *dev = path->dev;
@@ -52,7 +52,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	.ndo_fix_features	= vlan_dev_fix_features,
  	.ndo_get_lock_subclass  = vlan_dev_get_lock_subclass,
  	.ndo_get_iflink		= vlan_dev_get_iflink,
-+#ifdef CONFIG_NF_FLOW_TABLE
++#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
 +	.ndo_flow_offload_check = vlan_dev_flow_offload_check,
 +#endif
  };

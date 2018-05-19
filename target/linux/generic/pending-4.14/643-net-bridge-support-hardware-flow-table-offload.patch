@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <linux/ethtool.h>
  #include <linux/list.h>
  #include <linux/netfilter_bridge.h>
-+#ifdef CONFIG_NF_FLOW_TABLE
++#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
 +#include <linux/netfilter.h>
 +#include <net/netfilter/nf_flow_table.h>
 +#endif
@@ -24,7 +24,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	.get_link	= ethtool_op_get_link,
  };
  
-+#ifdef CONFIG_NF_FLOW_TABLE
++#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
 +static int br_flow_offload_check(struct flow_offload_hw_path *path)
 +{
 +	struct net_device *dev = path->dev;
@@ -53,7 +53,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	.ndo_bridge_setlink	 = br_setlink,
  	.ndo_bridge_dellink	 = br_dellink,
  	.ndo_features_check	 = passthru_features_check,
-+#ifdef CONFIG_NF_FLOW_TABLE
++#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
 +	.ndo_flow_offload_check	 = br_flow_offload_check,
 +#endif
  };
