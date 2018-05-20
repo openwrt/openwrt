@@ -142,6 +142,23 @@ endef
 
 $(eval $(call KernelPackage,usb-lib-composite))
 
+define KernelPackage/usb-gadget-hid
+  TITLE:=USB HID Gadget Support
+  KCONFIG:=CONFIG_USB_G_HID
+  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite
+  FILES:= \
+	  $(LINUX_DIR)/drivers/usb/gadget/legacy/g_hid.ko \
+	  $(LINUX_DIR)/drivers/usb/gadget/function/usb_f_hid.ko
+  AUTOLOAD:=$(call AutoLoad,52,usb_f_hid)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-gadget-hid/description
+  Kernel support for USB HID Gadget.
+endef
+
+$(eval $(call KernelPackage,usb-gadget-hid))
+
 define KernelPackage/usb-gadget-ehci-debug
   TITLE:=USB EHCI debug port Gadget support
   KCONFIG:=\
