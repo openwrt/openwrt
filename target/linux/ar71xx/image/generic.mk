@@ -818,6 +818,18 @@ define Device/koala
 endef
 TARGET_DEVICES += koala
 
+define Device/k2t
+  DEVICE_TITLE := Phicomm K2T A1/A2/A3 board (16MB flash)
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9888-ct
+  BOARDNAME := K2T
+  IMAGE_SIZE := 15744k
+  MTDPARTS := spi0.0:192k(u-boot)ro,64k(config)ro,320k(permanent),15744k(firmware),64k(art)ro
+  SUPPORTED_DEVICES := k2t
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += k2t
+
 define Device/r36a
   DEVICE_TITLE := ALFA Network R36A
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport -swconfig
