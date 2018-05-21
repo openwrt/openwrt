@@ -36,7 +36,7 @@ define Build/mkdapimg2
 	$(STAGING_DIR_HOST)/bin/mkdapimg2 \
 		-i $@ -o $@.new \
 		-s $(DAP_SIGNATURE) \
-		-v $(VERSION_DIST)-$(firstword $(subst -, ,$(REVISION))) \
+		-v $(VERSION_DIST)-$(firstword $(subst +, ,$(firstword $(subst -, ,$(REVISION))))) \
 		-r Default \
 		$(if $(1),-k $(1))
 	mv $@.new $@
