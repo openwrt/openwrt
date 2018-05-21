@@ -1,0 +1,338 @@
+From c707bbf8cc0cdb965125df2d9f5e8eb78461689d Mon Sep 17 00:00:00 2001
+From: Pavel Kubelun <be.dissent@gmail.com>
+Date: Tue, 9 Jan 2018 10:40:16 +0300
+Subject: [PATCH] ipq806x: support rpm clocks scaling
+
+Add the driver that scales APPS and DDR fabric clocks according to CPU
+frequency.
+
+This is a reworked/simplified version of QSDK fab-scaling driver [1] that
+utilizes upstream kernel qcom clk-rpm driver and cpufreq-dt.
+
+I've decided to keep it as a separate driver not to pollute the
+CPUFREQ-DT code.
+Scaling happens on the following logic:
+APPS and DDR nominal frequency is 400mhz, max frequency is 533mhz.
+Whenever CPU scales to > 1ghz then those fabrics are scaled to max
+frequency. Those values are adjustable through the DT.
+
+[1]
+https://source.codeaurora.org/quic/qsdk/oss/kernel/linux-msm/commit/?h=
+eggplant&id=7f4d9b5c8814329a66fe44d0dac55a4bd3cbcb78
+
+Signed-off-by: Pavel Kubelun <be.dissent@gmail.com>
+---
+ drivers/clk/qcom/Makefile      |   1 +
+ drivers/clk/qcom/fab_scaling.c | 160 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/cpufreq/cpufreq-dt.c   |  76 ++++++++++++++++++++++++++++++++++++++++++----------------------------------
+ include/linux/fab_scaling.h    |  31 +++++++++++++++++++++++++++++++
+ 4 files changed, 234 insertions(+), 34 deletions(-)
+ create mode 100644 drivers/clk/qcom/fab_scaling.c
+ create mode 100644 include/linux/fab_scaling.h
+
+--- a/drivers/clk/qcom/Makefile
++++ b/drivers/clk/qcom/Makefile
+@@ -13,6 +13,7 @@ clk-qcom-$(CONFIG_KRAIT_CLOCKS) += clk-k
+ clk-qcom-y += clk-hfpll.o
+ clk-qcom-y += reset.o
+ clk-qcom-$(CONFIG_QCOM_GDSC) += gdsc.o
++clk-qcom-y += fab_scaling.o
+ 
+ # Keep alphabetically sorted by config
+ obj-$(CONFIG_APQ_GCC_8084) += gcc-apq8084.o
+--- /dev/null
++++ b/drivers/clk/qcom/fab_scaling.c
+@@ -0,0 +1,160 @@
++/*
++ * Copyright (c) 2015, The Linux Foundation. All rights reserved.
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
++ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
++ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
++ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/err.h>
++#include <linux/io.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/clk.h>
++#include <linux/clk-provider.h>
++#include <linux/fab_scaling.h>
++
++#define APPS_FAB_CLK	"apps-fab-clk"
++#define DDR_FAB_CLK		"ddr-fab-clk"
++
++static u32 fab_freq_high;
++static u32 fab_freq_nominal;
++static u32 cpu_freq_threshold;
++static u32 fab_cur_freq;
++
++static struct clk *apps_fab_clk;
++static struct clk *ddr_fab_clk;
++
++void scale_fabrics(unsigned long max_cpu_freq)
++{	
++	unsigned long new_freq;
++
++	if (!apps_fab_clk || !ddr_fab_clk)
++		return;
++
++	if (max_cpu_freq > cpu_freq_threshold)
++		new_freq = fab_freq_high;
++	else
++		new_freq = fab_freq_nominal;
++
++	if (new_freq != fab_cur_freq) {
++		clk_set_rate(apps_fab_clk, new_freq);
++		clk_set_rate(ddr_fab_clk, new_freq);
++		fab_cur_freq = new_freq;
++	}
++
++	return;
++}
++EXPORT_SYMBOL(scale_fabrics);
++
++static int ipq806x_fab_scaling_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	int ret;
++
++	if (!np)
++		return -ENODEV;
++
++	if (of_property_read_u32(np, "fab_freq_high", &fab_freq_high)) {
++		pr_err("FABRICS turbo freq not found. Using defaults...\n");
++		fab_freq_high = 533000000;
++	}
++
++	if (of_property_read_u32(np, "fab_freq_nominal", &fab_freq_nominal)) {
++		pr_err("FABRICS nominal freq not found. Using defaults...\n");
++		fab_freq_nominal = 400000000;
++	}
++
++	if (of_property_read_u32(np, "cpu_freq_threshold", &cpu_freq_threshold)) {
++		pr_err("FABRICS cpu freq threshold not found. Using defaults...\n");
++		cpu_freq_threshold = 1000000000;
++	}
++
++	apps_fab_clk = devm_clk_get(&pdev->dev, APPS_FAB_CLK);
++	ret = PTR_ERR_OR_ZERO(apps_fab_clk);
++	if (ret) {
++		/*
++		 * If apps fab clk node is present, but clock is not yet
++		 * registered, we should try defering probe.
++		 */
++		if (ret == -EPROBE_DEFER) {
++			pr_warn("APPS FABRIC clock is not ready, retry\n");
++			return ret;
++		} else {
++			pr_err("Failed to get APPS FABRIC clock: %d\n", ret);
++			apps_fab_clk = 0;
++			return -ENODEV;
++		}
++	}
++
++	clk_set_rate(apps_fab_clk, fab_freq_nominal);
++	clk_prepare_enable(apps_fab_clk);
++
++	ddr_fab_clk = devm_clk_get(&pdev->dev, DDR_FAB_CLK);
++	ret = PTR_ERR_OR_ZERO(ddr_fab_clk);
++	if (ret) {
++		/*
++		 * If ddr fab clk node is present, but clock is not yet
++		 * registered, we should try defering probe.
++		 */
++		if (ret == -EPROBE_DEFER) {
++			pr_warn("DDR FABRIC clock is not ready, retry\n");
++			return ret;
++		} else {
++			pr_err("Failed to get DDR FABRIC clock: %d\n", ret);
++			ddr_fab_clk = 0;
++			return -ENODEV;
++		}
++	}
++
++	clk_set_rate(ddr_fab_clk, fab_freq_nominal);
++	clk_prepare_enable(ddr_fab_clk);
++
++	return 0;
++}
++
++static int ipq806x_fab_scaling_remove(struct platform_device *pdev)
++{
++	cpu_freq_threshold = 0;
++
++	return 0;
++}
++
++static const struct of_device_id fab_scaling_ipq806x_match_table[] = {
++	{ .compatible = "qcom,fab-scaling" },
++	{ }
++};
++
++static struct platform_driver fab_scaling_ipq806x_driver = {
++	.probe		= ipq806x_fab_scaling_probe,
++	.remove		= ipq806x_fab_scaling_remove,
++	.driver		= {
++		.name   = "fab-scaling",
++		.owner  = THIS_MODULE,
++		.of_match_table = fab_scaling_ipq806x_match_table,
++	},
++};
++
++static int __init fab_scaling_ipq806x_init(void)
++{
++	return platform_driver_register(&fab_scaling_ipq806x_driver);
++}
++late_initcall(fab_scaling_ipq806x_init);
++
++static void __exit fab_scaling_ipq806x_exit(void)
++{
++	platform_driver_unregister(&fab_scaling_ipq806x_driver);
++}
++module_exit(fab_scaling_ipq806x_exit);
+--- a/drivers/cpufreq/cpufreq-dt.c
++++ b/drivers/cpufreq/cpufreq-dt.c
+@@ -24,6 +24,7 @@
+ #include <linux/regulator/consumer.h>
+ #include <linux/slab.h>
+ #include <linux/thermal.h>
++#include <linux/fab_scaling.h>
+ 
+ #include "cpufreq-dt.h"
+ 
+@@ -52,50 +53,57 @@ static int set_target(struct cpufreq_pol
+ 	
+ 	ret = dev_pm_opp_set_rate(priv->cpu_dev, target_freq);
+ 
+-	if (!ret && policy->l2_rate_set) {
+-		int cpu, i, tol = 0;
++	if (!ret) {
+ 		unsigned long freq, max_cpu_freq = 0;
+-		unsigned long new_l2_freq = 0, new_l2_volt = 0;
++		int cpu;
++		
++		for_each_possible_cpu(cpu) {
++			freq = clk_get_rate(per_cpu(cpu_cores_clks, cpu));
++			max_cpu_freq = max(max_cpu_freq, freq);
++		}
++		
++		if (policy->l2_rate_set) {
++			unsigned long new_l2_freq = 0, new_l2_volt = 0;
++			int i, tol = 0;
++
++			/* Unlike regulators, clock rate is adjusted on any request. Let's pick
++			 * the highest core frequency and set the L2 cache frequency, so we 
++			 * don't pull the L2 cache frequency down prematurely if either cores is 
++			 * running at max.
++			 */
+ 
+-		/* L2 cache supply has a single regulator shared by cores and each core
+-		 * registers itself as a regulator consumer. N of consumers = N of cores.
+-		 * Regulator driver sets the regulator output to highest voltage requested
+-		 * among all consumers. We set the regulator voltage per core and let the
+-		 * driver set the highest voltage requested - either core can be running
+-		 * at max and l2 cache should get the needed voltage.
+-		 */
+-		if (policy->l2_volt_set) {
+ 			for (i = 2; i >= 0; i--) {
+-				if (target_freq >= policy->l2_cpufreq[i]) {
+-					tol = policy->l2_volt[i] * policy->l2_volt_tol / 100;
+-					new_l2_volt = policy->l2_volt[i];
++				if (max_cpu_freq >= policy->l2_cpufreq[i]) {
++					new_l2_freq = policy->l2_rate[i];
+ 
+-					regulator_set_voltage_tol(l2_regulator,new_l2_volt,tol);
++					clk_set_rate(l2_clk, new_l2_freq);
+ 
+ 					break;
+ 				}
+ 			}
+-		}
+-
+-		/* Unlike regulators, clock rate is adjusted on any request. Let's pick
+-		 * the highest core frequency and set the L2 cache frequency, so we 
+-		 * don't pull the L2 cache frequency down prematurely if either cores is 
+-		 * running at max.
+-		 */
+-		for_each_possible_cpu(cpu) {
+-			freq = clk_get_rate(per_cpu(cpu_cores_clks, cpu));
+-			max_cpu_freq = max(max_cpu_freq, freq);
+-		}
+ 
+-		for (i = 2; i >= 0; i--) {
+-			if (max_cpu_freq >= policy->l2_cpufreq[i]) {
+-				new_l2_freq = policy->l2_rate[i];
++			/* L2 cache supply has a single regulator shared by cores and each core
++			 * registers itself as a regulator consumer. N of consumers = N of cores.
++			 * Regulator driver sets the regulator output to highest voltage requested
++			 * among all consumers. We set the regulator voltage per core and let the
++			 * driver set the highest voltage requested - either core can be running
++			 * at max and l2 cache should get the needed voltage.
++			 */
++			if (policy->l2_volt_set) {
++				for (i = 2; i >= 0; i--) {
++					if (target_freq >= policy->l2_cpufreq[i]) {
++						tol = policy->l2_volt[i] * policy->l2_volt_tol / 100;
++						new_l2_volt = policy->l2_volt[i];
+ 
+-				clk_set_rate(l2_clk, new_l2_freq);
++						regulator_set_voltage_tol(l2_regulator,new_l2_volt,tol);
+ 
+-				break;
++						break;
++					}
++				}
+ 			}
+ 		}
++
++		scale_fabrics(max_cpu_freq);
+ 	}
+ 
+ 	return ret;
+--- /dev/null
++++ b/include/linux/fab_scaling.h
+@@ -0,0 +1,31 @@
++/*
++ * Copyright (c) 2015, The Linux Foundation. All rights reserved.
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
++ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
++ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
++ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++
++#ifndef __FAB_SCALING_H
++#define __FAB_SCALING_H
++
++/**
++ * scale_fabrics - Scale DDR and APPS FABRICS
++ *
++ * This function monitors all the registered clocks and does APPS
++ * and DDR FABRIC scaling based on the idle frequencies with which
++ * it was registered.
++ *
++ */
++void scale_fabrics(unsigned long max_cpu_freq);
++
++#endif
