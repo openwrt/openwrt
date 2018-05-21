@@ -1,0 +1,202 @@
+From 9982da6a9ed9156172bb09e18c54cd94e5ceb9a4 Mon Sep 17 00:00:00 2001
+From: Eneas U de Queiroz <cote2004-github@yahoo.com>
+Date: Mon, 21 May 2018 10:23:52 -0300
+Subject: [PATCH] Make it build using OpenSSL 1.1.0
+
+This is a backport of @kroeckx patch that was merged in
+release-2.1.7-rc:
+
+    Rebased (azat):
+    - tabs instead of whitespaces
+    - make openssl-compat.h safe for complex expressions
+    - do not call sk_SSL_COMP_free() in 1.1 (fixes double free)
+
+Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
+---
+ bufferevent_openssl.c | 62 +++++++++++++++++++++++++--------------------------
+ openssl-compat.h      | 33 +++++++++++++++++++++++++++
+ 2 files changed, 63 insertions(+), 32 deletions(-)
+ create mode 100644 openssl-compat.h
+
+diff --git a/bufferevent_openssl.c b/bufferevent_openssl.c
+index 7582d9b4..5b177f0b 100644
+--- a/bufferevent_openssl.c
++++ b/bufferevent_openssl.c
+@@ -60,6 +60,7 @@
+ #include <openssl/bio.h>
+ #include <openssl/ssl.h>
+ #include <openssl/err.h>
++#include "openssl-compat.h"
+ 
+ /*
+  * Define an OpenSSL bio that targets a bufferevent.
+@@ -103,10 +104,8 @@ print_err(int val)
+ static int
+ bio_bufferevent_new(BIO *b)
+ {
+-	b->init = 0;
+-	b->num = -1;
+-	b->ptr = NULL; /* We'll be putting the bufferevent in this field.*/
+-	b->flags = 0;
++	BIO_set_init(b, 0);
++	BIO_set_data(b, NULL); /* We'll be putting the bufferevent in this field.*/
+ 	return 1;
+ }
+ 
+@@ -116,12 +115,10 @@ bio_bufferevent_free(BIO *b)
+ {
+ 	if (!b)
+ 		return 0;
+-	if (b->shutdown) {
+-		if (b->init && b->ptr)
+-			bufferevent_free(b->ptr);
+-		b->init = 0;
+-		b->flags = 0;
+-		b->ptr = NULL;
++	if (BIO_get_shutdown(b)) {
++		if (BIO_get_init(b) && BIO_get_data(b))
++			bufferevent_free(BIO_get_data(b));
++		BIO_free(b);
+ 	}
+ 	return 1;
+ }
+@@ -137,10 +134,10 @@ bio_bufferevent_read(BIO *b, char *out, int outlen)
+ 
+ 	if (!out)
+ 		return 0;
+-	if (!b->ptr)
++	if (!BIO_get_data(b))
+ 		return -1;
+ 
+-	input = bufferevent_get_input(b->ptr);
++	input = bufferevent_get_input(BIO_get_data(b));
+ 	if (evbuffer_get_length(input) == 0) {
+ 		/* If there's no data to read, say so. */
+ 		BIO_set_retry_read(b);
+@@ -156,13 +153,13 @@ bio_bufferevent_read(BIO *b, char *out, int outlen)
+ static int
+ bio_bufferevent_write(BIO *b, const char *in, int inlen)
+ {
+-	struct bufferevent *bufev = b->ptr;
++	struct bufferevent *bufev = BIO_get_data(b);
+ 	struct evbuffer *output;
+ 	size_t outlen;
+ 
+ 	BIO_clear_retry_flags(b);
+ 
+-	if (!b->ptr)
++	if (!BIO_get_data(b))
+ 		return -1;
+ 
+ 	output = bufferevent_get_output(bufev);
+@@ -188,15 +185,15 @@ bio_bufferevent_write(BIO *b, const char *in, int inlen)
+ static long
+ bio_bufferevent_ctrl(BIO *b, int cmd, long num, void *ptr)
+ {
+-	struct bufferevent *bufev = b->ptr;
++	struct bufferevent *bufev = BIO_get_data(b);
+ 	long ret = 1;
+ 
+ 	switch (cmd) {
+ 	case BIO_CTRL_GET_CLOSE:
+-		ret = b->shutdown;
++		ret = BIO_get_shutdown(b);
+ 		break;
+ 	case BIO_CTRL_SET_CLOSE:
+-		b->shutdown = (int)num;
++		BIO_set_shutdown(b, (int)num);
+ 		break;
+ 	case BIO_CTRL_PENDING:
+ 		ret = evbuffer_get_length(bufferevent_get_input(bufev)) != 0;
+@@ -225,23 +222,24 @@ bio_bufferevent_puts(BIO *b, const char *s)
+ }
+ 
+ /* Method table for the bufferevent BIO */
+-static BIO_METHOD methods_bufferevent = {
+-	BIO_TYPE_LIBEVENT, "bufferevent",
+-	bio_bufferevent_write,
+-	bio_bufferevent_read,
+-	bio_bufferevent_puts,
+-	NULL /* bio_bufferevent_gets */,
+-	bio_bufferevent_ctrl,
+-	bio_bufferevent_new,
+-	bio_bufferevent_free,
+-	NULL /* callback_ctrl */,
+-};
++static BIO_METHOD *methods_bufferevent;
+ 
+ /* Return the method table for the bufferevents BIO */
+ static BIO_METHOD *
+ BIO_s_bufferevent(void)
+ {
+-	return &methods_bufferevent;
++	if (methods_bufferevent == NULL) {
++		methods_bufferevent = BIO_meth_new(BIO_TYPE_LIBEVENT, "bufferevent");
++		if (methods_bufferevent == NULL)
++			return NULL;
++		BIO_meth_set_write(methods_bufferevent, bio_bufferevent_write);
++		BIO_meth_set_read(methods_bufferevent, bio_bufferevent_read);
++		BIO_meth_set_puts(methods_bufferevent, bio_bufferevent_puts);
++		BIO_meth_set_ctrl(methods_bufferevent, bio_bufferevent_ctrl);
++		BIO_meth_set_create(methods_bufferevent, bio_bufferevent_new);
++		BIO_meth_set_destroy(methods_bufferevent, bio_bufferevent_free);
++	}
++	return methods_bufferevent;
+ }
+ 
+ /* Create a new BIO to wrap communication around a bufferevent.  If close_flag
+@@ -254,9 +252,9 @@ BIO_new_bufferevent(struct bufferevent *bufferevent, int close_flag)
+ 		return NULL;
+ 	if (!(result = BIO_new(BIO_s_bufferevent())))
+ 		return NULL;
+-	result->init = 1;
+-	result->ptr = bufferevent;
+-	result->shutdown = close_flag ? 1 : 0;
++	BIO_set_init(result, 1);
++	BIO_set_data(result, bufferevent);
++	BIO_set_shutdown(result, close_flag ? 1 : 0);
+ 	return result;
+ }
+ 
+diff --git a/openssl-compat.h b/openssl-compat.h
+new file mode 100644
+index 00000000..628f5661
+--- /dev/null
++++ b/openssl-compat.h
+@@ -0,0 +1,33 @@
++#ifndef OPENSSL_COMPAT_H
++#define OPENSSL_COMPAT_H
++
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
++
++static BIO_METHOD *BIO_meth_new(int type, const char *name)
++{
++	BIO_METHOD *biom = calloc(1, sizeof(BIO_METHOD));
++
++	if (biom != NULL) {
++		biom->type = type;
++		biom->name = name;
++	}
++	return biom;
++}
++
++#define BIO_meth_set_write(b, f) (b)->bwrite = (f)
++#define BIO_meth_set_read(b, f) (b)->bread = (f)
++#define BIO_meth_set_puts(b, f) (b)->bputs = (f)
++#define BIO_meth_set_ctrl(b, f) (b)->ctrl = (f)
++#define BIO_meth_set_create(b, f) (b)->create = (f)
++#define BIO_meth_set_destroy(b, f) (b)->destroy = (f)
++
++#define BIO_set_init(b, val) (b)->init = (val)
++#define BIO_set_data(b, val) (b)->ptr = (val)
++#define BIO_set_shutdown(b, val) (b)->shutdown = (val)
++#define BIO_get_init(b) (b)->init
++#define BIO_get_data(b) (b)->ptr
++#define BIO_get_shutdown(b) (b)->shutdown
++
++#endif /* OPENSSL_VERSION_NUMBER < 0x10100000L */
++
++#endif /* OPENSSL_COMPAT_H */
+-- 
+2.16.1
+
