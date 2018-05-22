@@ -625,6 +625,7 @@ __ag71xx_link_adjust(struct ag71xx *ag, bool update)
 			ath79_set_pll(ag);
 		} else if (of_device_is_compatible(np, "qca,ar9130-eth")) {
 		} else if (of_device_is_compatible(np, "qca,ar9340-eth")) {
+			ath79_set_pll(ag);
 		} else if (of_device_is_compatible(np, "qca,qca9550-eth")) {
 		} else if (of_device_is_compatible(np, "qca,qca9560-eth")) {
 		}
