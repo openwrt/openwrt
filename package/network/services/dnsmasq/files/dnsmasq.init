@@ -938,7 +938,7 @@ dnsmasq_start()
 
 	xappend "--dhcp-broadcast=tag:needs-broadcast"
 
-	xappend "--addn-hosts=$(dirname $HOSTFILE)"
+	xappend "--hostsdir=$(dirname $HOSTFILE)"
 
 	config_get dnsmasqconfdir "$cfg" confdir "/tmp/dnsmasq.d"
 	[ ! -d "$dnsmasqconfdir" ] && mkdir -p $dnsmasqconfdir
