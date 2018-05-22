@@ -1,0 +1,27 @@
+From c9701bab45cf3fa244033fcf5e4341a1de627807 Mon Sep 17 00:00:00 2001
+From: Quallenauge <Hamsi2k@freenet.de>
+Date: Mon, 21 May 2018 23:55:01 -0100
+Subject: [PATCH] VGV952CJW33-E-IR: Revert "wireless: wext: remove ndo_do_ioctl
+ fallback" This reverts commit 8bfb3676606454ffec836f56c5dc3e69dfc0956a.
+
+The ralink inic driver currently uses this for controlling the network
+adapters. In future versions the driver has to be modernized to comply
+with future kernel drivers.
+---
+ net/wireless/wext-core.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+Index: linux-4.14.41/net/wireless/wext-core.c
+===================================================================
+--- linux-4.14.41.orig/net/wireless/wext-core.c
++++ linux-4.14.41/net/wireless/wext-core.c
+@@ -956,6 +956,9 @@ static int wireless_process_ioctl(struct
+ 		else if (private)
+ 			return private(dev, iwr, cmd, info, handler);
+ 	}
++	/* Old driver API : call driver ioctl handler */
++	if (dev->netdev_ops->ndo_do_ioctl)
++		return dev->netdev_ops->ndo_do_ioctl(dev, (struct ifreq *)iwr, cmd);
+ 	return -EOPNOTSUPP;
+ }
+ 
