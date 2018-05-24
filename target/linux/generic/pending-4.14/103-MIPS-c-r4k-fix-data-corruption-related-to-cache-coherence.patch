@@ -62,11 +62,9 @@ Signed-off-by: NeilBrown <neil@brown.name>
  arch/mips/mm/c-r4k.c | 9 ++++++---
  1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/arch/mips/mm/c-r4k.c b/arch/mips/mm/c-r4k.c
-index 6f534b209971..e12dfa48b478 100644
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
-@@ -851,9 +851,12 @@ static void r4k_dma_cache_wback_inv(unsigned long addr, unsigned long size)
+@@ -851,9 +851,12 @@ static void r4k_dma_cache_wback_inv(unsi
  	/*
  	 * Either no secondary cache or the available caches don't have the
  	 * subset property so we have to flush the primary caches
@@ -81,7 +79,7 @@ index 6f534b209971..e12dfa48b478 100644
  		r4k_blast_dcache();
  	} else {
  		R4600_HIT_CACHEOP_WAR_IMPL;
-@@ -890,7 +893,7 @@ static void r4k_dma_cache_inv(unsigned long addr, unsigned long size)
+@@ -890,7 +893,7 @@ static void r4k_dma_cache_inv(unsigned l
  		return;
  	}
  
