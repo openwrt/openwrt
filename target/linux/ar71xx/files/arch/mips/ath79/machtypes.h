@@ -186,6 +186,7 @@ enum ath79_mach_type {
 	ATH79_MACH_R36A,			/* ALFA Network R36A */
 	ATH79_MACH_R602N,			/* P&W R602N */
 	ATH79_MACH_R6100,			/* NETGEAR R6100 */
+	ATH79_MACH_RACCOON,			/* Ocedo Raccoon */
 	ATH79_MACH_RAMBUTAN,			/* 8devices Rambutan */
 	ATH79_MACH_RB_2011G,			/* Mikrotik RouterBOARD 2011UAS-2HnD */
 	ATH79_MACH_RB_2011L,			/* Mikrotik RouterBOARD 2011L */

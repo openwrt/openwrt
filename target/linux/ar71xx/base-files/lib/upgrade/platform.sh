@@ -690,6 +690,7 @@ platform_check_image() {
 	fritz300e|\
 	fritz4020|\
 	koala|\
+	raccoon|\
 	rb-750-r2|\
 	rb-750p-pbr2|\
 	rb-750up-r2|\

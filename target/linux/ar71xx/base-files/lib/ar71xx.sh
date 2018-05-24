@@ -931,6 +931,9 @@ ar71xx_board_detect() {
 	*"R6100")
 		name="r6100"
 		;;
+	*"Raccoon")
+		name="raccoon"
+		;;
 	*"Rambutan"*)
 		name="rambutan"
 		;;
