@@ -11,6 +11,11 @@ include $(INCLUDE_DIR)/image.mk
 # for arm
 KERNEL_LOADADDR := 0x80008000
 
+# for arm64
+ifeq ($(SUBTARGET),mt7622)
+KERNEL_LOADADDR = 0x41080000
+endif
+
 # build dtb
 define Build/dtb
         $(call Image/BuildDTB,$(DEVICE_DTS_DIR)/$(DEVICE_DTS).dts,$(DEVICE_DTS_DIR)/$(DEVICE_DTS).dtb)
@@ -25,10 +30,21 @@ define Device/Default
   DEVICE_DTS_DIR := $(DTS_DIR)
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata 
+ifeq ($(SUBTARGET),mt7623)
   KERNEL_NAME := zImage
   KERNEL := dtb | kernel-bin | append-dtb | uImage none
   KERNEL_INITRAMFS := dtb | kernel-bin | append-dtb | uImage none
+endif
+ifeq ($(SUBTARGET),mt7622)
+  KERNEL_NAME := Image
+  KERNEL = dtb | kernel-bin | lzma | fit lzma $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL_INITRAMFS = dtb | kernel-bin | lzma | fit lzma $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
+endif
 endef
+
+ifeq ($(SUBTARGET),mt7622)
+include mt7622.mk
+endif
 
 ifeq ($(SUBTARGET),mt7623)
 include mt7623.mk
