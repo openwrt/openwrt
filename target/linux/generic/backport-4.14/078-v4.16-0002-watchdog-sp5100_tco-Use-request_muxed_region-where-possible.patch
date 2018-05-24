@@ -1,0 +1,62 @@
+From 16e7730bd7ec7f4ec19628e5ddd172df28cf996d Mon Sep 17 00:00:00 2001
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Sun, 24 Dec 2017 13:04:08 -0800
+Subject: watchdog: sp5100_tco: Use request_muxed_region where possible
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Use request_muxed_region for multiplexed IO memory regions.
+Also, SP5100_IO_PM_INDEX_REG/SP5100_IO_PM_DATA_REG are only
+used during initialization; it is unnecessary to keep the
+address range reserved.
+
+Cc: Zoltán Böszörményi <zboszor@pr.hu>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+Signed-off-by: Wim Van Sebroeck <wim@iguana.be>
+---
+ drivers/watchdog/sp5100_tco.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/watchdog/sp5100_tco.c b/drivers/watchdog/sp5100_tco.c
+index 05f9d27..11109ac 100644
+--- a/drivers/watchdog/sp5100_tco.c
++++ b/drivers/watchdog/sp5100_tco.c
+@@ -379,8 +379,8 @@ static unsigned char sp5100_tco_setupdevice(void)
+ 	}
+ 
+ 	/* Request the IO ports used by this driver */
+-	if (!request_region(SP5100_IO_PM_INDEX_REG, SP5100_PM_IOPORTS_SIZE,
+-			    dev_name)) {
++	if (!request_muxed_region(SP5100_IO_PM_INDEX_REG,
++				  SP5100_PM_IOPORTS_SIZE, dev_name)) {
+ 		pr_err("I/O address 0x%04x already in use\n",
+ 		       SP5100_IO_PM_INDEX_REG);
+ 		goto exit;
+@@ -468,6 +468,7 @@ setup_wdt:
+ 	 */
+ 	tco_timer_stop();
+ 
++	release_region(SP5100_IO_PM_INDEX_REG, SP5100_PM_IOPORTS_SIZE);
+ 	/* Done */
+ 	return 1;
+ 
+@@ -521,7 +522,6 @@ static int sp5100_tco_init(struct platform_device *dev)
+ exit:
+ 	iounmap(tcobase);
+ 	release_mem_region(tcobase_phys, SP5100_WDT_MEM_MAP_SIZE);
+-	release_region(SP5100_IO_PM_INDEX_REG, SP5100_PM_IOPORTS_SIZE);
+ 	return ret;
+ }
+ 
+@@ -535,7 +535,6 @@ static void sp5100_tco_cleanup(void)
+ 	misc_deregister(&sp5100_tco_miscdev);
+ 	iounmap(tcobase);
+ 	release_mem_region(tcobase_phys, SP5100_WDT_MEM_MAP_SIZE);
+-	release_region(SP5100_IO_PM_INDEX_REG, SP5100_PM_IOPORTS_SIZE);
+ }
+ 
+ static int sp5100_tco_remove(struct platform_device *dev)
+-- 
+cgit v1.1
+
