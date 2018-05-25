@@ -66,9 +66,13 @@ menu "GL.iNet packages choice shortcut"
 
 		config GLINET_SHADOWSOCKS
 			bool "Support Shadowsocks"
-			select PACKAGE_shadowsocks-libev
-			select PACKAGE_shadowsocks-libev-server
-			select PACKAGE_luci-app-shadowsocks
+			select PACKAGE_shadowsocks-libev-config
+			select PACKAGE_shadowsocks-libev-ss-local
+			select PACKAGE_shadowsocks-libev-ss-redir
+			select PACKAGE_shadowsocks-libev-ss-rules
+			select PACKAGE_shadowsocks-libev-ss-server
+			select PACKAGE_shadowsocks-libev-ss-tunnel
+			select PACKAGE_luci-app-shadowsocks-libev
 			help
 			  Choose packages to support shadowsocks.
 	endmenu
