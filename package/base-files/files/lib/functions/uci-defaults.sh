@@ -28,23 +28,29 @@ json_select_object() {
 }
 
 ucidef_set_interface() {
-	local network=$1
+	local network=$1; shift
 
 	[ -z "$network" ] && return
 
 	json_select_object network
 	json_select_object "$network"
-	shift
 
 	while [ -n "$1" ]; do
-		local opt="$1"
-		local val="$2"
-		shift; shift;
+		local opt=$1; shift
+		local val=$1; shift
 
 		[ -n "$opt" -a -n "$val" ] || break
 
 		json_add_string "$opt" "$val"
 	done
+
+	if ! json_is_a protocol string; then
+		case "$network" in
+			lan) json_add_string protocol static ;;
+			wan) json_add_string protocol dhcp ;;
+			*) json_add_string protocol none ;;
+		esac
+	fi
 
 	json_select ..
 	json_select ..
