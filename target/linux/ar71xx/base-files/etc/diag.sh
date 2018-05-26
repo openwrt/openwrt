@@ -68,6 +68,7 @@ get_status_led() {
 	archer-c7-v4|\
 	fritz300e|\
 	fritz4020|\
+	fritz450e|\
 	gl-usb150|\
 	mr12|\
 	mr16|\

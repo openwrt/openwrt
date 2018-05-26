@@ -1334,3 +1334,13 @@ define Device/fritz4020
   IMAGE_SIZE := 15232k
 endef
 TARGET_DEVICES += fritz4020
+
+define Device/fritz450e
+  $(call Device/AVM)
+  DEVICE_TITLE := AVM FRITZ!WLAN Repeater 450E
+  DEVICE_PACKAGES += -swconfig
+  BOARDNAME := FRITZ450E
+  SUPPORTED_DEVICES := fritz450e
+  IMAGE_SIZE := 15232k
+endef
+TARGET_DEVICES += fritz450e
