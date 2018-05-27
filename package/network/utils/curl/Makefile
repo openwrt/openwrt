@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=curl
 PKG_VERSION:=7.60.0
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://dl.uxnr.de/mirror/curl/ \
@@ -88,7 +88,7 @@ define Package/libcurl
   CATEGORY:=Libraries
   DEPENDS:= +LIBCURL_WOLFSSL:libwolfssl +LIBCURL_OPENSSL:libopenssl +LIBCURL_GNUTLS:libgnutls +LIBCURL_MBEDTLS:libmbedtls
   DEPENDS += +LIBCURL_ZLIB:zlib +LIBCURL_THREADED_RESOLVER:libpthread +LIBCURL_LDAP:libopenldap +LIBCURL_LIBIDN2:libidn2
-  DEPENDS += +LIBCURL_SSH2:libssh2 +LIBCURL_NGHTTP2:libnghttp2
+  DEPENDS += +LIBCURL_SSH2:libssh2 +LIBCURL_NGHTTP2:libnghttp2 +ca-bundle
   TITLE:=A client-side URL transfer library
   MENU:=1
 endef
