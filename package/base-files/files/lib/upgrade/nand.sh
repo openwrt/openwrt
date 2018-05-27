@@ -213,9 +213,9 @@ nand_upgrade_prepare_ubi() {
 	[ "$data_ubivol" ] && { nand_remove_ubiblock $data_ubivol || return 1; }
 
 	# kill volumes
-	[ "$kern_ubivol" ] && ubirmvol /dev/$kern_ubidev -N "$CI_KERNPART" || :
-	[ "$root_ubivol" ] && ubirmvol /dev/$root_ubidev -N "$CI_ROOTPART" || :
 	[ "$data_ubivol" ] && ubirmvol /dev/$root_ubidev -N rootfs_data || :
+	[ "$root_ubivol" ] && ubirmvol /dev/$root_ubidev -N "$CI_ROOTPART" || :
+	[ "$kern_ubivol" ] && ubirmvol /dev/$kern_ubidev -N "$CI_KERNPART" || :
 
 	# create kernel vol
 	if [ -n "$kernel_length" ]; then
