@@ -13,8 +13,6 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  sound/soc/mediatek/mt2701/mt2701-reg.h     |  1 -
  2 files changed, 20 insertions(+), 26 deletions(-)
 
-diff --git a/sound/soc/mediatek/mt2701/mt2701-afe-pcm.c b/sound/soc/mediatek/mt2701/mt2701-afe-pcm.c
-index 0edadca12a5e..f0cd08fa5c5d 100644
 --- a/sound/soc/mediatek/mt2701/mt2701-afe-pcm.c
 +++ b/sound/soc/mediatek/mt2701/mt2701-afe-pcm.c
 @@ -17,6 +17,7 @@
@@ -25,7 +23,7 @@ index 0edadca12a5e..f0cd08fa5c5d 100644
  #include <linux/of.h>
  #include <linux/of_address.h>
  #include <linux/pm_runtime.h>
-@@ -1368,14 +1369,6 @@ static const struct mt2701_i2s_data mt2701_i2s_data[MT2701_I2S_NUM][2] = {
+@@ -1368,14 +1369,6 @@ static const struct mt2701_i2s_data mt27
  	},
  };
  
@@ -40,7 +38,7 @@ index 0edadca12a5e..f0cd08fa5c5d 100644
  static irqreturn_t mt2701_asys_isr(int irq_id, void *dev)
  {
  	int id;
-@@ -1414,9 +1407,9 @@ static int mt2701_afe_runtime_resume(struct device *dev)
+@@ -1414,9 +1407,9 @@ static int mt2701_afe_runtime_resume(str
  
  static int mt2701_afe_pcm_dev_probe(struct platform_device *pdev)
  {
@@ -51,7 +49,7 @@ index 0edadca12a5e..f0cd08fa5c5d 100644
  	struct device *dev;
  	int i, irq_id, ret;
  
-@@ -1446,17 +1439,11 @@ static int mt2701_afe_pcm_dev_probe(struct platform_device *pdev)
+@@ -1446,17 +1439,11 @@ static int mt2701_afe_pcm_dev_probe(stru
  		return ret;
  	}
  
@@ -74,7 +72,7 @@ index 0edadca12a5e..f0cd08fa5c5d 100644
  
  	mutex_init(&afe->irq_alloc_lock);
  
-@@ -1490,6 +1477,12 @@ static int mt2701_afe_pcm_dev_probe(struct platform_device *pdev)
+@@ -1490,6 +1477,12 @@ static int mt2701_afe_pcm_dev_probe(stru
  			= &mt2701_i2s_data[i][I2S_IN];
  	}
  
@@ -87,7 +85,7 @@ index 0edadca12a5e..f0cd08fa5c5d 100644
  	afe->mtk_afe_hardware = &mt2701_afe_hardware;
  	afe->memif_fs = mt2701_memif_fs;
  	afe->irq_fs = mt2701_irq_fs;
-@@ -1502,7 +1495,7 @@ static int mt2701_afe_pcm_dev_probe(struct platform_device *pdev)
+@@ -1502,7 +1495,7 @@ static int mt2701_afe_pcm_dev_probe(stru
  	ret = mt2701_init_clock(afe);
  	if (ret) {
  		dev_err(dev, "init clock error\n");
@@ -96,7 +94,7 @@ index 0edadca12a5e..f0cd08fa5c5d 100644
  	}
  
  	platform_set_drvdata(pdev, afe);
-@@ -1521,10 +1514,10 @@ static int mt2701_afe_pcm_dev_probe(struct platform_device *pdev)
+@@ -1521,10 +1514,10 @@ static int mt2701_afe_pcm_dev_probe(stru
  		goto err_platform;
  	}
  
@@ -111,7 +109,7 @@ index 0edadca12a5e..f0cd08fa5c5d 100644
  	if (ret) {
  		dev_warn(dev, "err_dai_component\n");
  		goto err_dai_component;
-@@ -1538,6 +1531,8 @@ static int mt2701_afe_pcm_dev_probe(struct platform_device *pdev)
+@@ -1538,6 +1531,8 @@ err_platform:
  	pm_runtime_put_sync(dev);
  err_pm_disable:
  	pm_runtime_disable(dev);
@@ -120,8 +118,6 @@ index 0edadca12a5e..f0cd08fa5c5d 100644
  
  	return ret;
  }
-diff --git a/sound/soc/mediatek/mt2701/mt2701-reg.h b/sound/soc/mediatek/mt2701/mt2701-reg.h
-index f17c76f37b5f..18e676974f22 100644
 --- a/sound/soc/mediatek/mt2701/mt2701-reg.h
 +++ b/sound/soc/mediatek/mt2701/mt2701-reg.h
 @@ -145,5 +145,4 @@
@@ -130,6 +126,3 @@ index f17c76f37b5f..18e676974f22 100644
  
 -#define AFE_END_ADDR 0x15e0
  #endif
--- 
-2.11.0
-

@@ -13,11 +13,9 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/usb/mtu3/mtu3_plat.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/usb/mtu3/mtu3_plat.c b/drivers/usb/mtu3/mtu3_plat.c
-index 9ff33579b42e..a2523ead46cf 100644
 --- a/drivers/usb/mtu3/mtu3_plat.c
 +++ b/drivers/usb/mtu3/mtu3_plat.c
-@@ -317,7 +317,7 @@ static int get_ssusb_rscs(struct platform_device *pdev, struct ssusb_mtk *ssusb)
+@@ -317,7 +317,7 @@ static int get_ssusb_rscs(struct platfor
  		otg_sx->edev = extcon_get_edev_by_phandle(ssusb->dev, 0);
  		if (IS_ERR(otg_sx->edev)) {
  			dev_err(ssusb->dev, "couldn't get extcon device\n");
@@ -26,6 +24,3 @@ index 9ff33579b42e..a2523ead46cf 100644
  		}
  	}
  
--- 
-2.11.0
-

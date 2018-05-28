@@ -20,8 +20,6 @@ Reviewed-by: Rob Herring <robh@kernel.org>
  Documentation/devicetree/bindings/arm/mediatek/mediatek,ssusbsys.txt | 2 ++
  3 files changed, 5 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,ethsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,ethsys.txt
-index 7aa3fa167668..52757adf86bb 100644
 --- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,ethsys.txt
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,ethsys.txt
 @@ -9,6 +9,7 @@ Required Properties:
@@ -32,8 +30,6 @@ index 7aa3fa167668..52757adf86bb 100644
  
  The ethsys controller uses the common clk binding from
  Documentation/devicetree/bindings/clock/clock-bindings.txt
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,pciesys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,pciesys.txt
-index d5d5f1227665..7fe5dc6097a6 100644
 --- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,pciesys.txt
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,pciesys.txt
 @@ -8,6 +8,7 @@ Required Properties:
@@ -50,8 +46,6 @@ index d5d5f1227665..7fe5dc6097a6 100644
  	#clock-cells = <1>;
 +	#reset-cells = <1>;
  };
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,ssusbsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,ssusbsys.txt
-index 00760019da00..b8184da2508c 100644
 --- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,ssusbsys.txt
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,ssusbsys.txt
 @@ -8,6 +8,7 @@ Required Properties:
@@ -68,6 +62,3 @@ index 00760019da00..b8184da2508c 100644
  	#clock-cells = <1>;
 +	#reset-cells = <1>;
  };
--- 
-2.11.0
-

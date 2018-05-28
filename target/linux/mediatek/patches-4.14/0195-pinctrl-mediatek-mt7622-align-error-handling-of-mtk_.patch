@@ -14,11 +14,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/mediatek/pinctrl-mt7622.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mt7622.c b/drivers/pinctrl/mediatek/pinctrl-mt7622.c
-index dc32e3c3bd73..06e8406c4440 100644
 --- a/drivers/pinctrl/mediatek/pinctrl-mt7622.c
 +++ b/drivers/pinctrl/mediatek/pinctrl-mt7622.c
-@@ -1160,7 +1160,7 @@ static int mtk_pinconf_get(struct pinctrl_dev *pctldev,
+@@ -1160,7 +1160,7 @@ static int mtk_pinconf_get(struct pinctr
  	case PIN_CONFIG_OUTPUT_ENABLE:
  		err = mtk_hw_get_value(hw, pin, PINCTRL_PIN_REG_DIR, &val);
  		if (err)
@@ -27,7 +25,7 @@ index dc32e3c3bd73..06e8406c4440 100644
  
  		/* HW takes input mode as zero; output mode as non-zero */
  		if ((val && param == PIN_CONFIG_INPUT_ENABLE) ||
-@@ -1184,11 +1184,11 @@ static int mtk_pinconf_get(struct pinctrl_dev *pctldev,
+@@ -1184,11 +1184,11 @@ static int mtk_pinconf_get(struct pinctr
  	case PIN_CONFIG_DRIVE_STRENGTH:
  		err = mtk_hw_get_value(hw, pin, PINCTRL_PIN_REG_E4, &val);
  		if (err)
@@ -41,7 +39,7 @@ index dc32e3c3bd73..06e8406c4440 100644
  
  		/* 4mA when (e8, e4) = (0, 0); 8mA when (e8, e4) = (0, 1)
  		 * 12mA when (e8, e4) = (1, 0); 16mA when (e8, e4) = (1, 1)
-@@ -1203,7 +1203,7 @@ static int mtk_pinconf_get(struct pinctrl_dev *pctldev,
+@@ -1203,7 +1203,7 @@ static int mtk_pinconf_get(struct pinctr
  
  		err = mtk_hw_get_value(hw, pin, reg, &val);
  		if (err)
@@ -50,6 +48,3 @@ index dc32e3c3bd73..06e8406c4440 100644
  
  		ret = val;
  
--- 
-2.11.0
-

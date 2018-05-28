@@ -1,7 +1,5 @@
-Index: linux-4.14.42/arch/mips/ath79/common.c
-===================================================================
---- linux-4.14.42.orig/arch/mips/ath79/common.c
-+++ linux-4.14.42/arch/mips/ath79/common.c
+--- a/arch/mips/ath79/common.c
++++ b/arch/mips/ath79/common.c
 @@ -34,11 +34,13 @@ EXPORT_SYMBOL_GPL(ath79_ddr_freq);
  
  enum ath79_soc_type ath79_soc;
@@ -17,10 +15,8 @@ Index: linux-4.14.42/arch/mips/ath79/common.c
  static void __iomem *ath79_ddr_wb_flush_base;
  static void __iomem *ath79_ddr_pci_win_base;
  
-Index: linux-4.14.42/arch/mips/include/asm/mach-ath79/ath79.h
-===================================================================
---- linux-4.14.42.orig/arch/mips/include/asm/mach-ath79/ath79.h
-+++ linux-4.14.42/arch/mips/include/asm/mach-ath79/ath79.h
+--- a/arch/mips/include/asm/mach-ath79/ath79.h
++++ b/arch/mips/include/asm/mach-ath79/ath79.h
 @@ -152,6 +152,7 @@ void ath79_ddr_wb_flush(unsigned int reg
  void ath79_ddr_set_pci_windows(void);
  

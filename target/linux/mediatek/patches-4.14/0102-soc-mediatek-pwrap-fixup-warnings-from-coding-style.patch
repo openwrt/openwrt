@@ -13,11 +13,9 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  drivers/soc/mediatek/mtk-pmic-wrap.c | 20 +++++++++++++-------
  1 file changed, 13 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
-index c2048382830f..f095faac1e04 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
-@@ -827,7 +827,8 @@ static int pwrap_init_cipher(struct pmic_wrapper *wrp)
+@@ -827,7 +827,8 @@ static int pwrap_init_cipher(struct pmic
  	/* wait for cipher data ready@PMIC */
  	ret = pwrap_wait_for_state(wrp, pwrap_is_pmic_cipher_ready);
  	if (ret) {
@@ -27,7 +25,7 @@ index c2048382830f..f095faac1e04 100644
  		return ret;
  	}
  
-@@ -1159,23 +1160,27 @@ static int pwrap_probe(struct platform_device *pdev)
+@@ -1159,23 +1160,27 @@ static int pwrap_probe(struct platform_d
  		if (IS_ERR(wrp->bridge_base))
  			return PTR_ERR(wrp->bridge_base);
  
@@ -59,7 +57,7 @@ index c2048382830f..f095faac1e04 100644
  		return PTR_ERR(wrp->clk_wrap);
  	}
  
-@@ -1220,8 +1225,9 @@ static int pwrap_probe(struct platform_device *pdev)
+@@ -1220,8 +1225,9 @@ static int pwrap_probe(struct platform_d
  	pwrap_writel(wrp, wrp->master->int_en_all, PWRAP_INT_EN);
  
  	irq = platform_get_irq(pdev, 0);
@@ -71,6 +69,3 @@ index c2048382830f..f095faac1e04 100644
  	if (ret)
  		goto err_out2;
  
--- 
-2.11.0
-

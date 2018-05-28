@@ -29,8 +29,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  create mode 100644 Documentation/devicetree/bindings/arm/mediatek/mediatek,mcucfg.txt
  create mode 100644 Documentation/devicetree/bindings/arm/mediatek/mediatek,mfgcfg.txt
 
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,apmixedsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,apmixedsys.txt
-index cd977db7630c..19fc116346d6 100644
 --- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,apmixedsys.txt
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,apmixedsys.txt
 @@ -7,6 +7,7 @@ Required Properties:
@@ -41,8 +39,6 @@ index cd977db7630c..19fc116346d6 100644
  	- "mediatek,mt6797-apmixedsys"
  	- "mediatek,mt8135-apmixedsys"
  	- "mediatek,mt8173-apmixedsys"
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,bdpsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,bdpsys.txt
-index 4137196dd686..4010e37c53a0 100644
 --- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,bdpsys.txt
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,bdpsys.txt
 @@ -7,6 +7,7 @@ Required Properties:
@@ -53,8 +49,6 @@ index 4137196dd686..4010e37c53a0 100644
  - #clock-cells: Must be 1
  
  The bdpsys controller uses the common clk binding from
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,imgsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,imgsys.txt
-index 047b11ae5f45..868bd51a98be 100644
 --- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,imgsys.txt
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,imgsys.txt
 @@ -7,6 +7,7 @@ Required Properties:
@@ -65,8 +59,6 @@ index 047b11ae5f45..868bd51a98be 100644
  	- "mediatek,mt6797-imgsys", "syscon"
  	- "mediatek,mt8173-imgsys", "syscon"
  - #clock-cells: Must be 1
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,infracfg.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,infracfg.txt
-index 58d58e2006b8..a3430cd96d0f 100644
 --- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,infracfg.txt
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,infracfg.txt
 @@ -8,6 +8,7 @@ Required Properties:
@@ -77,9 +69,6 @@ index 58d58e2006b8..a3430cd96d0f 100644
  	- "mediatek,mt6797-infracfg", "syscon"
  	- "mediatek,mt8135-infracfg", "syscon"
  	- "mediatek,mt8173-infracfg", "syscon"
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,jpgdecsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,jpgdecsys.txt
-new file mode 100644
-index 000000000000..2df799cd06a7
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,jpgdecsys.txt
 @@ -0,0 +1,22 @@
@@ -105,9 +94,6 @@ index 000000000000..2df799cd06a7
 +	reg = <0 0x19000000 0 0x1000>;
 +	#clock-cells = <1>;
 +};
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,mcucfg.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,mcucfg.txt
-new file mode 100644
-index 000000000000..b8fb03f3613e
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,mcucfg.txt
 @@ -0,0 +1,22 @@
@@ -133,9 +119,6 @@ index 000000000000..b8fb03f3613e
 +	reg = <0 0x10220000 0 0x1000>;
 +	#clock-cells = <1>;
 +};
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,mfgcfg.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,mfgcfg.txt
-new file mode 100644
-index 000000000000..859e67b416d5
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,mfgcfg.txt
 @@ -0,0 +1,22 @@
@@ -161,8 +144,6 @@ index 000000000000..859e67b416d5
 +	reg = <0 0x13000000 0 0x1000>;
 +	#clock-cells = <1>;
 +};
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,mmsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,mmsys.txt
-index 70529e0b58e9..4eb8bbe15c01 100644
 --- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,mmsys.txt
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,mmsys.txt
 @@ -7,6 +7,7 @@ Required Properties:
@@ -173,8 +154,6 @@ index 70529e0b58e9..4eb8bbe15c01 100644
  	- "mediatek,mt6797-mmsys", "syscon"
  	- "mediatek,mt8173-mmsys", "syscon"
  - #clock-cells: Must be 1
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,pericfg.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,pericfg.txt
-index e494366782aa..d9f092eb3550 100644
 --- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,pericfg.txt
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,pericfg.txt
 @@ -8,6 +8,7 @@ Required Properties:
@@ -185,8 +164,6 @@ index e494366782aa..d9f092eb3550 100644
  	- "mediatek,mt8135-pericfg", "syscon"
  	- "mediatek,mt8173-pericfg", "syscon"
  - #clock-cells: Must be 1
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,topckgen.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,topckgen.txt
-index ec93ecbb9f3c..2024fc909d69 100644
 --- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,topckgen.txt
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,topckgen.txt
 @@ -7,6 +7,7 @@ Required Properties:
@@ -197,8 +174,6 @@ index ec93ecbb9f3c..2024fc909d69 100644
  	- "mediatek,mt6797-topckgen"
  	- "mediatek,mt8135-topckgen"
  	- "mediatek,mt8173-topckgen"
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,vdecsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,vdecsys.txt
-index d150104f928a..ea40d05089f8 100644
 --- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,vdecsys.txt
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,vdecsys.txt
 @@ -7,6 +7,7 @@ Required Properties:
@@ -209,11 +184,9 @@ index d150104f928a..ea40d05089f8 100644
  	- "mediatek,mt6797-vdecsys", "syscon"
  	- "mediatek,mt8173-vdecsys", "syscon"
  - #clock-cells: Must be 1
-diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,vencsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,vencsys.txt
-index 8a93be643647..851545357e94 100644
 --- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,vencsys.txt
 +++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,vencsys.txt
-@@ -6,6 +6,7 @@ The Mediatek vencsys controller provides various clocks to the system.
+@@ -6,6 +6,7 @@ The Mediatek vencsys controller provides
  Required Properties:
  
  - compatible: Should be one of:
@@ -221,6 +194,3 @@ index 8a93be643647..851545357e94 100644
  	- "mediatek,mt6797-vencsys", "syscon"
  	- "mediatek,mt8173-vencsys", "syscon"
  - #clock-cells: Must be 1
--- 
-2.11.0
-

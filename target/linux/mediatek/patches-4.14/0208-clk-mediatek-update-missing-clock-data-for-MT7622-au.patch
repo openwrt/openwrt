@@ -14,11 +14,9 @@ Reviewed-by: Matthias Brugger <matthias.bgg@gmail.com>
  include/dt-bindings/clock/mt7622-clk.h | 3 ++-
  2 files changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clk/mediatek/clk-mt7622-aud.c b/drivers/clk/mediatek/clk-mt7622-aud.c
-index fad7d9fc53ba..13f752de7adc 100644
 --- a/drivers/clk/mediatek/clk-mt7622-aud.c
 +++ b/drivers/clk/mediatek/clk-mt7622-aud.c
-@@ -106,6 +106,7 @@ static const struct mtk_gate audio_clks[] = {
+@@ -106,6 +106,7 @@ static const struct mtk_gate audio_clks[
  	GATE_AUDIO1(CLK_AUDIO_INTDIR, "audio_intdir", "intdir_sel", 20),
  	GATE_AUDIO1(CLK_AUDIO_A1SYS, "audio_a1sys", "a1sys_hp_sel", 21),
  	GATE_AUDIO1(CLK_AUDIO_A2SYS, "audio_a2sys", "a2sys_hp_sel", 22),
@@ -26,8 +24,6 @@ index fad7d9fc53ba..13f752de7adc 100644
  	/* AUDIO2 */
  	GATE_AUDIO2(CLK_AUDIO_UL1, "audio_ul1", "a1sys_hp_sel", 0),
  	GATE_AUDIO2(CLK_AUDIO_UL2, "audio_ul2", "a1sys_hp_sel", 1),
-diff --git a/include/dt-bindings/clock/mt7622-clk.h b/include/dt-bindings/clock/mt7622-clk.h
-index 3e514ed51d15..e9d77f0e8bce 100644
 --- a/include/dt-bindings/clock/mt7622-clk.h
 +++ b/include/dt-bindings/clock/mt7622-clk.h
 @@ -235,7 +235,8 @@
@@ -40,6 +36,3 @@ index 3e514ed51d15..e9d77f0e8bce 100644
  
  /* SSUSBSYS */
  
--- 
-2.11.0
-

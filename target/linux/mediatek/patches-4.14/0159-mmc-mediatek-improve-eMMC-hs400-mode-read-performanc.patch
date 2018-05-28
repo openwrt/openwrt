@@ -13,8 +13,6 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  drivers/mmc/host/mtk-sd.c | 9 +++++++++
  1 file changed, 9 insertions(+)
 
-diff --git a/drivers/mmc/host/mtk-sd.c b/drivers/mmc/host/mtk-sd.c
-index d75a93d6803f..95759bba0dd0 100644
 --- a/drivers/mmc/host/mtk-sd.c
 +++ b/drivers/mmc/host/mtk-sd.c
 @@ -81,6 +81,7 @@
@@ -42,7 +40,7 @@ index d75a93d6803f..95759bba0dd0 100644
  	u32 sdc_fifo_cfg;
  };
  
-@@ -1747,6 +1751,9 @@ static int msdc_prepare_hs400_tuning(struct mmc_host *mmc, struct mmc_ios *ios)
+@@ -1747,6 +1751,9 @@ static int msdc_prepare_hs400_tuning(str
  	writel(host->hs400_ds_delay, host->base + PAD_DS_TUNE);
  	/* hs400 mode must set it to 0 */
  	sdr_clr_bits(host->base + MSDC_PATCH_BIT2, MSDC_PATCH_BIT2_CFGCRCSTS);
@@ -52,7 +50,7 @@ index d75a93d6803f..95759bba0dd0 100644
  	return 0;
  }
  
-@@ -1997,6 +2004,7 @@ static void msdc_save_reg(struct msdc_host *host)
+@@ -1997,6 +2004,7 @@ static void msdc_save_reg(struct msdc_ho
  	host->save_para.pad_ds_tune = readl(host->base + PAD_DS_TUNE);
  	host->save_para.pad_cmd_tune = readl(host->base + PAD_CMD_TUNE);
  	host->save_para.emmc50_cfg0 = readl(host->base + EMMC50_CFG0);
@@ -60,7 +58,7 @@ index d75a93d6803f..95759bba0dd0 100644
  	host->save_para.sdc_fifo_cfg = readl(host->base + SDC_FIFO_CFG);
  }
  
-@@ -2014,6 +2022,7 @@ static void msdc_restore_reg(struct msdc_host *host)
+@@ -2014,6 +2022,7 @@ static void msdc_restore_reg(struct msdc
  	writel(host->save_para.pad_ds_tune, host->base + PAD_DS_TUNE);
  	writel(host->save_para.pad_cmd_tune, host->base + PAD_CMD_TUNE);
  	writel(host->save_para.emmc50_cfg0, host->base + EMMC50_CFG0);
@@ -68,6 +66,3 @@ index d75a93d6803f..95759bba0dd0 100644
  	writel(host->save_para.sdc_fifo_cfg, host->base + SDC_FIFO_CFG);
  }
  
--- 
-2.11.0
-

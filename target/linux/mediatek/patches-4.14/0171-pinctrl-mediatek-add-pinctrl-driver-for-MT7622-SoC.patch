@@ -32,19 +32,15 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  4 files changed, 1608 insertions(+), 2 deletions(-)
  create mode 100644 drivers/pinctrl/mediatek/pinctrl-mt7622.c
 
-diff --git a/drivers/pinctrl/Makefile b/drivers/pinctrl/Makefile
-index c16e27900dbb..3a798d5b0900 100644
 --- a/drivers/pinctrl/Makefile
 +++ b/drivers/pinctrl/Makefile
-@@ -63,5 +63,5 @@ obj-$(CONFIG_PINCTRL_SUNXI)	+= sunxi/
+@@ -64,5 +64,5 @@ obj-$(CONFIG_PINCTRL_SUNXI)	+= sunxi/
  obj-y				+= ti/
  obj-$(CONFIG_PINCTRL_UNIPHIER)	+= uniphier/
  obj-$(CONFIG_ARCH_VT8500)	+= vt8500/
 -obj-$(CONFIG_PINCTRL_MTK)	+= mediatek/
 +obj-y				+= mediatek/
  obj-$(CONFIG_PINCTRL_ZX)	+= zte/
-diff --git a/drivers/pinctrl/mediatek/Kconfig b/drivers/pinctrl/mediatek/Kconfig
-index 03b3023d5fe5..3e598740b379 100644
 --- a/drivers/pinctrl/mediatek/Kconfig
 +++ b/drivers/pinctrl/mediatek/Kconfig
 @@ -32,6 +32,16 @@ config PINCTRL_MT8127
@@ -64,11 +60,10 @@ index 03b3023d5fe5..3e598740b379 100644
  config PINCTRL_MT8173
  	bool "Mediatek MT8173 pin control"
  	depends on OF
-diff --git a/drivers/pinctrl/mediatek/Makefile b/drivers/pinctrl/mediatek/Makefile
-index e59c613d4ddd..6e3ca6bbda7a 100644
 --- a/drivers/pinctrl/mediatek/Makefile
 +++ b/drivers/pinctrl/mediatek/Makefile
-@@ -1,9 +1,10 @@
+@@ -1,10 +1,11 @@
+ # SPDX-License-Identifier: GPL-2.0
  # Core
 -obj-y				+= pinctrl-mtk-common.o
 +obj-$(CONFIG_PINCTRL_MTK)	+= pinctrl-mtk-common.o
@@ -80,9 +75,6 @@ index e59c613d4ddd..6e3ca6bbda7a 100644
 +obj-$(CONFIG_PINCTRL_MT7622)	+= pinctrl-mt7622.o
  obj-$(CONFIG_PINCTRL_MT8173)	+= pinctrl-mt8173.o
  obj-$(CONFIG_PINCTRL_MT6397)	+= pinctrl-mt6397.o
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mt7622.c b/drivers/pinctrl/mediatek/pinctrl-mt7622.c
-new file mode 100644
-index 000000000000..3824d82888ac
 --- /dev/null
 +++ b/drivers/pinctrl/mediatek/pinctrl-mt7622.c
 @@ -0,0 +1,1595 @@
@@ -1681,6 +1673,3 @@ index 000000000000..3824d82888ac
 +	return platform_driver_register(&mtk_pinctrl_driver);
 +}
 +arch_initcall(mtk_pinctrl_init);
--- 
-2.11.0
-

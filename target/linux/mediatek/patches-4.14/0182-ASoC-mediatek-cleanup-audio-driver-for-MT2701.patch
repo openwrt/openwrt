@@ -15,8 +15,6 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  sound/soc/mediatek/mt2701/mt2701-reg.h            | 41 +---------
  4 files changed, 24 insertions(+), 145 deletions(-)
 
-diff --git a/sound/soc/mediatek/mt2701/mt2701-afe-clock-ctrl.c b/sound/soc/mediatek/mt2701/mt2701-afe-clock-ctrl.c
-index 75ccdca5811d..56a057c78c9a 100644
 --- a/sound/soc/mediatek/mt2701/mt2701-afe-clock-ctrl.c
 +++ b/sound/soc/mediatek/mt2701/mt2701-afe-clock-ctrl.c
 @@ -14,10 +14,6 @@
@@ -30,7 +28,7 @@ index 75ccdca5811d..56a057c78c9a 100644
  #include "mt2701-afe-common.h"
  #include "mt2701-afe-clock-ctrl.h"
  
-@@ -223,8 +219,8 @@ int mt2701_afe_enable_clock(struct mtk_base_afe *afe)
+@@ -223,8 +219,8 @@ int mt2701_afe_enable_clock(struct mtk_b
  	}
  
  	regmap_update_bits(afe->regmap, ASYS_TOP_CON,
@@ -41,7 +39,7 @@ index 75ccdca5811d..56a057c78c9a 100644
  	regmap_update_bits(afe->regmap, AFE_DAC_CON0,
  			   AFE_DAC_CON0_AFE_ON,
  			   AFE_DAC_CON0_AFE_ON);
-@@ -239,7 +235,7 @@ int mt2701_afe_enable_clock(struct mtk_base_afe *afe)
+@@ -239,7 +235,7 @@ int mt2701_afe_enable_clock(struct mtk_b
  int mt2701_afe_disable_clock(struct mtk_base_afe *afe)
  {
  	regmap_update_bits(afe->regmap, ASYS_TOP_CON,
@@ -50,7 +48,7 @@ index 75ccdca5811d..56a057c78c9a 100644
  	regmap_update_bits(afe->regmap, AFE_DAC_CON0,
  			   AFE_DAC_CON0_AFE_ON, 0);
  
-@@ -272,7 +268,3 @@ void mt2701_mclk_configuration(struct mtk_base_afe *afe, int id, int domain,
+@@ -272,7 +268,3 @@ void mt2701_mclk_configuration(struct mt
  	if (ret)
  		dev_err(afe->dev, "failed to set mclk divider %d\n", ret);
  }
@@ -58,8 +56,6 @@ index 75ccdca5811d..56a057c78c9a 100644
 -MODULE_DESCRIPTION("MT2701 afe clock control");
 -MODULE_AUTHOR("Garlic Tseng <garlic.tseng@mediatek.com>");
 -MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/mediatek/mt2701/mt2701-afe-common.h b/sound/soc/mediatek/mt2701/mt2701-afe-common.h
-index ce5bd4dc864d..9a2b301a4c21 100644
 --- a/sound/soc/mediatek/mt2701/mt2701-afe-common.h
 +++ b/sound/soc/mediatek/mt2701/mt2701-afe-common.h
 @@ -16,6 +16,7 @@
@@ -98,7 +94,7 @@ index ce5bd4dc864d..9a2b301a4c21 100644
  	MT2701_IRQ_ASYS_IRQ2,
  	MT2701_IRQ_ASYS_IRQ3,
  	MT2701_IRQ_ASYS_END,
-@@ -100,9 +91,6 @@ static const unsigned int mt2701_afe_backup_list[] = {
+@@ -100,9 +91,6 @@ static const unsigned int mt2701_afe_bac
  	AFE_MEMIF_PBUF_SIZE,
  };
  
@@ -117,8 +113,6 @@ index ce5bd4dc864d..9a2b301a4c21 100644
  	struct clk *hop_ck[I2S_DIR_NUM];
  	struct clk *sel_ck;
  	struct clk *div_ck;
-diff --git a/sound/soc/mediatek/mt2701/mt2701-afe-pcm.c b/sound/soc/mediatek/mt2701/mt2701-afe-pcm.c
-index 33f809228f25..0edadca12a5e 100644
 --- a/sound/soc/mediatek/mt2701/mt2701-afe-pcm.c
 +++ b/sound/soc/mediatek/mt2701/mt2701-afe-pcm.c
 @@ -20,16 +20,12 @@
@@ -138,7 +132,7 @@ index 33f809228f25..0edadca12a5e 100644
  static const struct snd_pcm_hardware mt2701_afe_hardware = {
  	.info = SNDRV_PCM_INFO_MMAP | SNDRV_PCM_INFO_INTERLEAVED
  		| SNDRV_PCM_INFO_RESUME | SNDRV_PCM_INFO_MMAP_VALID,
-@@ -107,21 +103,16 @@ static int mt2701_afe_i2s_startup(struct snd_pcm_substream *substream,
+@@ -107,21 +103,16 @@ static int mt2701_afe_i2s_startup(struct
  
  static int mt2701_afe_i2s_path_shutdown(struct snd_pcm_substream *substream,
  					struct snd_soc_dai *dai,
@@ -162,7 +156,7 @@ index 33f809228f25..0edadca12a5e 100644
  	if (dir_invert)	{
  		if (stream_dir == SNDRV_PCM_STREAM_PLAYBACK)
  			stream_dir = SNDRV_PCM_STREAM_CAPTURE;
-@@ -167,11 +158,11 @@ static void mt2701_afe_i2s_shutdown(struct snd_pcm_substream *substream,
+@@ -167,11 +158,11 @@ static void mt2701_afe_i2s_shutdown(stru
  	else
  		goto I2S_UNSTART;
  
@@ -176,7 +170,7 @@ index 33f809228f25..0edadca12a5e 100644
  
  I2S_UNSTART:
  	/* disable mclk */
-@@ -180,24 +171,19 @@ static void mt2701_afe_i2s_shutdown(struct snd_pcm_substream *substream,
+@@ -180,24 +171,19 @@ I2S_UNSTART:
  
  static int mt2701_i2s_path_prepare_enable(struct snd_pcm_substream *substream,
  					  struct snd_soc_dai *dai,
@@ -203,7 +197,7 @@ index 33f809228f25..0edadca12a5e 100644
  	if (dir_invert) {
  		if (stream_dir == SNDRV_PCM_STREAM_PLAYBACK)
  			stream_dir = SNDRV_PCM_STREAM_CAPTURE;
-@@ -288,13 +274,13 @@ static int mt2701_afe_i2s_prepare(struct snd_pcm_substream *substream,
+@@ -288,13 +274,13 @@ static int mt2701_afe_i2s_prepare(struct
  	mt2701_mclk_configuration(afe, i2s_num, clk_domain, mclk_rate);
  
  	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
@@ -220,7 +214,7 @@ index 33f809228f25..0edadca12a5e 100644
  	}
  
  	return 0;
-@@ -562,7 +548,6 @@ static const struct snd_soc_dai_ops mt2701_single_memif_dai_ops = {
+@@ -562,7 +548,6 @@ static const struct snd_soc_dai_ops mt27
  	.hw_free	= mtk_afe_fe_hw_free,
  	.prepare	= mtk_afe_fe_prepare,
  	.trigger	= mtk_afe_fe_trigger,
@@ -228,7 +222,7 @@ index 33f809228f25..0edadca12a5e 100644
  };
  
  static const struct snd_soc_dai_ops mt2701_dlm_memif_dai_ops = {
-@@ -903,31 +888,6 @@ static const struct snd_kcontrol_new mt2701_afe_multi_ch_out_i2s4[] = {
+@@ -903,31 +888,6 @@ static const struct snd_kcontrol_new mt2
  				    PWR2_TOP_CON, 19, 1, 0),
  };
  
@@ -260,7 +254,7 @@ index 33f809228f25..0edadca12a5e 100644
  static const struct snd_soc_dapm_widget mt2701_afe_pcm_widgets[] = {
  	/* inter-connections */
  	SND_SOC_DAPM_MIXER("I00", SND_SOC_NOPM, 0, 0, NULL, 0),
-@@ -987,19 +947,6 @@ static const struct snd_soc_dapm_widget mt2701_afe_pcm_widgets[] = {
+@@ -987,19 +947,6 @@ static const struct snd_soc_dapm_widget
  	SND_SOC_DAPM_MIXER("I18I19", SND_SOC_NOPM, 0, 0,
  			   mt2701_afe_multi_ch_out_i2s3,
  			   ARRAY_SIZE(mt2701_afe_multi_ch_out_i2s3)),
@@ -280,7 +274,7 @@ index 33f809228f25..0edadca12a5e 100644
  };
  
  static const struct snd_soc_dapm_route mt2701_afe_pcm_routes[] = {
-@@ -1009,7 +956,6 @@ static const struct snd_soc_dapm_route mt2701_afe_pcm_routes[] = {
+@@ -1009,7 +956,6 @@ static const struct snd_soc_dapm_route m
  
  	{"I2S0 Playback", NULL, "O15"},
  	{"I2S0 Playback", NULL, "O16"},
@@ -288,7 +282,7 @@ index 33f809228f25..0edadca12a5e 100644
  	{"I2S1 Playback", NULL, "O17"},
  	{"I2S1 Playback", NULL, "O18"},
  	{"I2S2 Playback", NULL, "O19"},
-@@ -1026,7 +972,6 @@ static const struct snd_soc_dapm_route mt2701_afe_pcm_routes[] = {
+@@ -1026,7 +972,6 @@ static const struct snd_soc_dapm_route m
  
  	{"I00", NULL, "I2S0 Capture"},
  	{"I01", NULL, "I2S0 Capture"},
@@ -296,7 +290,7 @@ index 33f809228f25..0edadca12a5e 100644
  	{"I02", NULL, "I2S1 Capture"},
  	{"I03", NULL, "I2S1 Capture"},
  	/* I02,03 link to UL2, also need to open I2S0 */
-@@ -1034,15 +979,10 @@ static const struct snd_soc_dapm_route mt2701_afe_pcm_routes[] = {
+@@ -1034,15 +979,10 @@ static const struct snd_soc_dapm_route m
  
  	{"I26", NULL, "BT Capture"},
  
@@ -316,7 +310,7 @@ index 33f809228f25..0edadca12a5e 100644
  
  	{ "I12", NULL, "I12I13" },
  	{ "I13", NULL, "I12I13" },
-@@ -1067,7 +1007,6 @@ static const struct snd_soc_dapm_route mt2701_afe_pcm_routes[] = {
+@@ -1067,7 +1007,6 @@ static const struct snd_soc_dapm_route m
  	{ "O21", "I18 Switch", "I18" },
  	{ "O22", "I19 Switch", "I19" },
  	{ "O31", "I35 Switch", "I35" },
@@ -324,7 +318,7 @@ index 33f809228f25..0edadca12a5e 100644
  };
  
  static const struct snd_soc_component_driver mt2701_afe_pcm_dai_component = {
-@@ -1484,12 +1423,13 @@ static int mt2701_afe_pcm_dev_probe(struct platform_device *pdev)
+@@ -1484,12 +1423,13 @@ static int mt2701_afe_pcm_dev_probe(stru
  	afe = devm_kzalloc(&pdev->dev, sizeof(*afe), GFP_KERNEL);
  	if (!afe)
  		return -ENOMEM;
@@ -339,7 +333,7 @@ index 33f809228f25..0edadca12a5e 100644
  	afe->dev = &pdev->dev;
  	dev = afe->dev;
  
-@@ -1524,7 +1464,6 @@ static int mt2701_afe_pcm_dev_probe(struct platform_device *pdev)
+@@ -1524,7 +1464,6 @@ static int mt2701_afe_pcm_dev_probe(stru
  	afe->memif_size = MT2701_MEMIF_NUM;
  	afe->memif = devm_kcalloc(dev, afe->memif_size, sizeof(*afe->memif),
  				  GFP_KERNEL);
@@ -347,7 +341,7 @@ index 33f809228f25..0edadca12a5e 100644
  	if (!afe->memif)
  		return -ENOMEM;
  
-@@ -1537,7 +1476,6 @@ static int mt2701_afe_pcm_dev_probe(struct platform_device *pdev)
+@@ -1537,7 +1476,6 @@ static int mt2701_afe_pcm_dev_probe(stru
  	afe->irqs_size = MT2701_IRQ_ASYS_END;
  	afe->irqs = devm_kcalloc(dev, afe->irqs_size, sizeof(*afe->irqs),
  				 GFP_KERNEL);
@@ -355,7 +349,7 @@ index 33f809228f25..0edadca12a5e 100644
  	if (!afe->irqs)
  		return -ENOMEM;
  
-@@ -1555,7 +1493,6 @@ static int mt2701_afe_pcm_dev_probe(struct platform_device *pdev)
+@@ -1555,7 +1493,6 @@ static int mt2701_afe_pcm_dev_probe(stru
  	afe->mtk_afe_hardware = &mt2701_afe_hardware;
  	afe->memif_fs = mt2701_memif_fs;
  	afe->irq_fs = mt2701_irq_fs;
@@ -363,13 +357,11 @@ index 33f809228f25..0edadca12a5e 100644
  	afe->reg_back_up_list = mt2701_afe_backup_list;
  	afe->reg_back_up_list_num = ARRAY_SIZE(mt2701_afe_backup_list);
  	afe->runtime_resume = mt2701_afe_runtime_resume;
-@@ -1646,4 +1583,3 @@ module_platform_driver(mt2701_afe_pcm_driver);
+@@ -1646,4 +1583,3 @@ module_platform_driver(mt2701_afe_pcm_dr
  MODULE_DESCRIPTION("Mediatek ALSA SoC AFE platform driver for 2701");
  MODULE_AUTHOR("Garlic Tseng <garlic.tseng@mediatek.com>");
  MODULE_LICENSE("GPL v2");
 -
-diff --git a/sound/soc/mediatek/mt2701/mt2701-reg.h b/sound/soc/mediatek/mt2701/mt2701-reg.h
-index bb62b1c55957..f17c76f37b5f 100644
 --- a/sound/soc/mediatek/mt2701/mt2701-reg.h
 +++ b/sound/soc/mediatek/mt2701/mt2701-reg.h
 @@ -17,17 +17,6 @@
@@ -434,6 +426,3 @@ index bb62b1c55957..f17c76f37b5f 100644
  
  /* PWR2_ASM_CON1 (0x1070) */
  #define PWR2_ASM_CON1_INIT_VAL		(0x492492)
--- 
-2.11.0
-

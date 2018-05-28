@@ -16,11 +16,9 @@ Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
  drivers/phy/mediatek/phy-mtk-tphy.c | 19 +++++++------------
  1 file changed, 7 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/phy/mediatek/phy-mtk-tphy.c b/drivers/phy/mediatek/phy-mtk-tphy.c
-index 402385f2562a..54cc44b2d289 100644
 --- a/drivers/phy/mediatek/phy-mtk-tphy.c
 +++ b/drivers/phy/mediatek/phy-mtk-tphy.c
-@@ -440,9 +440,9 @@ static void u2_phy_instance_init(struct mtk_tphy *tphy,
+@@ -440,9 +440,9 @@ static void u2_phy_instance_init(struct
  	u32 index = instance->index;
  	u32 tmp;
  
@@ -32,7 +30,7 @@ index 402385f2562a..54cc44b2d289 100644
  	tmp |= P2C_RG_XCVRSEL_VAL(1) | P2C_RG_DATAIN_VAL(0);
  	writel(tmp, com + U3P_U2PHYDTM0);
  
-@@ -502,10 +502,8 @@ static void u2_phy_instance_power_on(struct mtk_tphy *tphy,
+@@ -502,10 +502,8 @@ static void u2_phy_instance_power_on(str
  	u32 index = instance->index;
  	u32 tmp;
  
@@ -44,7 +42,7 @@ index 402385f2562a..54cc44b2d289 100644
  	writel(tmp, com + U3P_U2PHYDTM0);
  
  	/* OTG Enable */
-@@ -540,7 +538,6 @@ static void u2_phy_instance_power_off(struct mtk_tphy *tphy,
+@@ -540,7 +538,6 @@ static void u2_phy_instance_power_off(st
  
  	tmp = readl(com + U3P_U2PHYDTM0);
  	tmp &= ~(P2C_RG_XCVRSEL | P2C_RG_DATAIN);
@@ -52,7 +50,7 @@ index 402385f2562a..54cc44b2d289 100644
  	writel(tmp, com + U3P_U2PHYDTM0);
  
  	/* OTG Disable */
-@@ -548,18 +545,16 @@ static void u2_phy_instance_power_off(struct mtk_tphy *tphy,
+@@ -548,18 +545,16 @@ static void u2_phy_instance_power_off(st
  	tmp &= ~PA6_RG_U2_OTG_VBUSCMP_EN;
  	writel(tmp, com + U3P_USBPHYACR6);
  
@@ -75,6 +73,3 @@ index 402385f2562a..54cc44b2d289 100644
  		tmp = readl(com + U3D_U2PHYDCR0);
  		tmp &= ~P2C_RG_SIF_U2PLL_FORCE_ON;
  		writel(tmp, com + U3D_U2PHYDCR0);
--- 
-2.11.0
-

@@ -19,8 +19,6 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  drivers/usb/mtu3/mtu3_plat.c    | 38 ++-----------------------
  6 files changed, 74 insertions(+), 56 deletions(-)
 
-diff --git a/drivers/usb/mtu3/mtu3.h b/drivers/usb/mtu3/mtu3.h
-index ef2dc92a2109..b0c2b5dca045 100644
 --- a/drivers/usb/mtu3/mtu3.h
 +++ b/drivers/usb/mtu3/mtu3.h
 @@ -115,6 +115,19 @@ enum mtu3_g_ep0_state {
@@ -62,11 +60,9 @@ index ef2dc92a2109..b0c2b5dca045 100644
  	bool manual_drd_enabled;
  };
  
-diff --git a/drivers/usb/mtu3/mtu3_dr.c b/drivers/usb/mtu3/mtu3_dr.c
-index 560256115b23..ec442cd5a1ad 100644
 --- a/drivers/usb/mtu3/mtu3_dr.c
 +++ b/drivers/usb/mtu3/mtu3_dr.c
-@@ -261,21 +261,22 @@ static void extcon_register_dwork(struct work_struct *work)
+@@ -261,21 +261,22 @@ static void extcon_register_dwork(struct
   * depending on user input.
   * This is useful in special cases, such as uses TYPE-A receptacle but also
   * wants to support dual-role mode.
@@ -97,7 +93,7 @@ index 560256115b23..ec442cd5a1ad 100644
  static int ssusb_mode_show(struct seq_file *sf, void *unused)
  {
  	struct ssusb_mtk *ssusb = sf->private;
-@@ -388,17 +389,45 @@ static void ssusb_debugfs_exit(struct ssusb_mtk *ssusb)
+@@ -388,17 +389,45 @@ static void ssusb_debugfs_exit(struct ss
  	debugfs_remove_recursive(ssusb->dbgfs_root);
  }
  
@@ -133,13 +129,12 @@ index 560256115b23..ec442cd5a1ad 100644
 -	if (otg_sx->manual_drd_enabled)
 +	if (otg_sx->manual_drd_enabled) {
  		ssusb_debugfs_init(ssusb);
--
--	/* It is enough to delay 1s for waiting for host initialization */
--	schedule_delayed_work(&otg_sx->extcon_reg_dwork, HZ);
 +	} else {
 +		INIT_DELAYED_WORK(&otg_sx->extcon_reg_dwork,
 +				  extcon_register_dwork);
-+
+ 
+-	/* It is enough to delay 1s for waiting for host initialization */
+-	schedule_delayed_work(&otg_sx->extcon_reg_dwork, HZ);
 +		/*
 +		 * It is enough to delay 1s for waiting for
 +		 * host initialization
@@ -149,7 +144,7 @@ index 560256115b23..ec442cd5a1ad 100644
  
  	return 0;
  }
-@@ -407,8 +436,8 @@ void ssusb_otg_switch_exit(struct ssusb_mtk *ssusb)
+@@ -407,8 +436,8 @@ void ssusb_otg_switch_exit(struct ssusb_
  {
  	struct otg_switch_mtk *otg_sx = &ssusb->otg_switch;
  
@@ -160,11 +155,9 @@ index 560256115b23..ec442cd5a1ad 100644
 +	else
 +		cancel_delayed_work(&otg_sx->extcon_reg_dwork);
  }
-diff --git a/drivers/usb/mtu3/mtu3_dr.h b/drivers/usb/mtu3/mtu3_dr.h
-index 9b228b5811b0..0f0cbac00192 100644
 --- a/drivers/usb/mtu3/mtu3_dr.h
 +++ b/drivers/usb/mtu3/mtu3_dr.h
-@@ -87,6 +87,8 @@ static inline void ssusb_gadget_exit(struct ssusb_mtk *ssusb)
+@@ -87,6 +87,8 @@ static inline void ssusb_gadget_exit(str
  int ssusb_otg_switch_init(struct ssusb_mtk *ssusb);
  void ssusb_otg_switch_exit(struct ssusb_mtk *ssusb);
  int ssusb_set_vbus(struct otg_switch_mtk *otg_sx, int is_on);
@@ -173,7 +166,7 @@ index 9b228b5811b0..0f0cbac00192 100644
  
  #else
  
-@@ -103,6 +105,10 @@ static inline int ssusb_set_vbus(struct otg_switch_mtk *otg_sx, int is_on)
+@@ -103,6 +105,10 @@ static inline int ssusb_set_vbus(struct
  	return 0;
  }
  
@@ -184,11 +177,9 @@ index 9b228b5811b0..0f0cbac00192 100644
  #endif
  
  #endif		/* _MTU3_DR_H_ */
-diff --git a/drivers/usb/mtu3/mtu3_host.c b/drivers/usb/mtu3/mtu3_host.c
-index edcc59148171..ec76b86dd887 100644
 --- a/drivers/usb/mtu3/mtu3_host.c
 +++ b/drivers/usb/mtu3/mtu3_host.c
-@@ -189,6 +189,8 @@ int ssusb_host_disable(struct ssusb_mtk *ssusb, bool suspend)
+@@ -189,6 +189,8 @@ int ssusb_host_disable(struct ssusb_mtk
  
  static void ssusb_host_setup(struct ssusb_mtk *ssusb)
  {
@@ -197,7 +188,7 @@ index edcc59148171..ec76b86dd887 100644
  	host_ports_num_get(ssusb);
  
  	/*
-@@ -197,6 +199,9 @@ static void ssusb_host_setup(struct ssusb_mtk *ssusb)
+@@ -197,6 +199,9 @@ static void ssusb_host_setup(struct ssus
  	 */
  	ssusb_host_enable(ssusb);
  
@@ -207,8 +198,6 @@ index edcc59148171..ec76b86dd887 100644
  	/* if port0 supports dual-role, works as host mode by default */
  	ssusb_set_vbus(&ssusb->otg_switch, 1);
  }
-diff --git a/drivers/usb/mtu3/mtu3_hw_regs.h b/drivers/usb/mtu3/mtu3_hw_regs.h
-index b6059752dc12..a7e35f6ad90a 100644
 --- a/drivers/usb/mtu3/mtu3_hw_regs.h
 +++ b/drivers/usb/mtu3/mtu3_hw_regs.h
 @@ -472,6 +472,8 @@
@@ -220,8 +209,6 @@ index b6059752dc12..a7e35f6ad90a 100644
  #define SSUSB_U2_PORT_VBUSVALID	BIT(9)
  #define SSUSB_U2_PORT_OTG_SEL		BIT(7)
  #define SSUSB_U2_PORT_HOST		BIT(2)
-diff --git a/drivers/usb/mtu3/mtu3_plat.c b/drivers/usb/mtu3/mtu3_plat.c
-index fb8992011bde..1e473b068650 100644
 --- a/drivers/usb/mtu3/mtu3_plat.c
 +++ b/drivers/usb/mtu3/mtu3_plat.c
 @@ -21,7 +21,6 @@
@@ -232,7 +219,7 @@ index fb8992011bde..1e473b068650 100644
  #include <linux/platform_device.h>
  
  #include "mtu3.h"
-@@ -212,33 +211,6 @@ static void ssusb_ip_sw_reset(struct ssusb_mtk *ssusb)
+@@ -212,33 +211,6 @@ static void ssusb_ip_sw_reset(struct ssu
  	mtu3_clrbits(ssusb->ippc_base, U3D_SSUSB_IP_PW_CTRL0, SSUSB_IP_SW_RST);
  }
  
@@ -266,7 +253,7 @@ index fb8992011bde..1e473b068650 100644
  /* ignore the error if the clock does not exist */
  static struct clk *get_optional_clk(struct device *dev, const char *id)
  {
-@@ -349,15 +321,11 @@ static int get_ssusb_rscs(struct platform_device *pdev, struct ssusb_mtk *ssusb)
+@@ -349,15 +321,11 @@ static int get_ssusb_rscs(struct platfor
  			dev_err(ssusb->dev, "couldn't get extcon device\n");
  			return -EPROBE_DEFER;
  		}
@@ -285,6 +272,3 @@ index fb8992011bde..1e473b068650 100644
  
  	return 0;
  }
--- 
-2.11.0
-

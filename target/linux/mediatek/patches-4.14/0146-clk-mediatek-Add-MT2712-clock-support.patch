@@ -32,8 +32,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  create mode 100644 drivers/clk/mediatek/clk-mt2712-venc.c
  create mode 100644 drivers/clk/mediatek/clk-mt2712.c
 
-diff --git a/drivers/clk/mediatek/Kconfig b/drivers/clk/mediatek/Kconfig
-index 28739a9a6e37..300dbb551bf7 100644
 --- a/drivers/clk/mediatek/Kconfig
 +++ b/drivers/clk/mediatek/Kconfig
 @@ -50,6 +50,56 @@ config COMMON_CLK_MT2701_BDPSYS
@@ -93,11 +91,9 @@ index 28739a9a6e37..300dbb551bf7 100644
  config COMMON_CLK_MT6797
         bool "Clock driver for Mediatek MT6797"
         depends on (ARCH_MEDIATEK && ARM64) || COMPILE_TEST
-diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
-index 2a755b5fb51b..a4e5c47c73a4 100644
 --- a/drivers/clk/mediatek/Makefile
 +++ b/drivers/clk/mediatek/Makefile
-@@ -12,5 +12,13 @@ obj-$(CONFIG_COMMON_CLK_MT2701_HIFSYS) += clk-mt2701-hif.o
+@@ -13,5 +13,13 @@ obj-$(CONFIG_COMMON_CLK_MT2701_HIFSYS) +
  obj-$(CONFIG_COMMON_CLK_MT2701_IMGSYS) += clk-mt2701-img.o
  obj-$(CONFIG_COMMON_CLK_MT2701_MMSYS) += clk-mt2701-mm.o
  obj-$(CONFIG_COMMON_CLK_MT2701_VDECSYS) += clk-mt2701-vdec.o
@@ -111,9 +107,6 @@ index 2a755b5fb51b..a4e5c47c73a4 100644
 +obj-$(CONFIG_COMMON_CLK_MT2712_VENCSYS) += clk-mt2712-venc.o
  obj-$(CONFIG_COMMON_CLK_MT8135) += clk-mt8135.o
  obj-$(CONFIG_COMMON_CLK_MT8173) += clk-mt8173.o
-diff --git a/drivers/clk/mediatek/clk-mt2712-bdp.c b/drivers/clk/mediatek/clk-mt2712-bdp.c
-new file mode 100644
-index 000000000000..5fe4728c076e
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt2712-bdp.c
 @@ -0,0 +1,102 @@
@@ -219,9 +212,6 @@ index 000000000000..5fe4728c076e
 +};
 +
 +builtin_platform_driver(clk_mt2712_bdp_drv);
-diff --git a/drivers/clk/mediatek/clk-mt2712-img.c b/drivers/clk/mediatek/clk-mt2712-img.c
-new file mode 100644
-index 000000000000..139ff55d495e
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt2712-img.c
 @@ -0,0 +1,80 @@
@@ -305,9 +295,6 @@ index 000000000000..139ff55d495e
 +};
 +
 +builtin_platform_driver(clk_mt2712_img_drv);
-diff --git a/drivers/clk/mediatek/clk-mt2712-jpgdec.c b/drivers/clk/mediatek/clk-mt2712-jpgdec.c
-new file mode 100644
-index 000000000000..c7d4aada4892
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt2712-jpgdec.c
 @@ -0,0 +1,76 @@
@@ -387,9 +374,6 @@ index 000000000000..c7d4aada4892
 +};
 +
 +builtin_platform_driver(clk_mt2712_jpgdec_drv);
-diff --git a/drivers/clk/mediatek/clk-mt2712-mfg.c b/drivers/clk/mediatek/clk-mt2712-mfg.c
-new file mode 100644
-index 000000000000..570f72d48d4d
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt2712-mfg.c
 @@ -0,0 +1,75 @@
@@ -468,9 +452,6 @@ index 000000000000..570f72d48d4d
 +};
 +
 +builtin_platform_driver(clk_mt2712_mfg_drv);
-diff --git a/drivers/clk/mediatek/clk-mt2712-mm.c b/drivers/clk/mediatek/clk-mt2712-mm.c
-new file mode 100644
-index 000000000000..a8b4b6d42488
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt2712-mm.c
 @@ -0,0 +1,170 @@
@@ -644,9 +625,6 @@ index 000000000000..a8b4b6d42488
 +};
 +
 +builtin_platform_driver(clk_mt2712_mm_drv);
-diff --git a/drivers/clk/mediatek/clk-mt2712-vdec.c b/drivers/clk/mediatek/clk-mt2712-vdec.c
-new file mode 100644
-index 000000000000..55c64ee8cc91
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt2712-vdec.c
 @@ -0,0 +1,94 @@
@@ -744,9 +722,6 @@ index 000000000000..55c64ee8cc91
 +};
 +
 +builtin_platform_driver(clk_mt2712_vdec_drv);
-diff --git a/drivers/clk/mediatek/clk-mt2712-venc.c b/drivers/clk/mediatek/clk-mt2712-venc.c
-new file mode 100644
-index 000000000000..ccbfe98777c8
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt2712-venc.c
 @@ -0,0 +1,77 @@
@@ -827,9 +802,6 @@ index 000000000000..ccbfe98777c8
 +};
 +
 +builtin_platform_driver(clk_mt2712_venc_drv);
-diff --git a/drivers/clk/mediatek/clk-mt2712.c b/drivers/clk/mediatek/clk-mt2712.c
-new file mode 100644
-index 000000000000..498d13799388
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt2712.c
 @@ -0,0 +1,1435 @@
@@ -2268,8 +2240,6 @@ index 000000000000..498d13799388
 +}
 +
 +arch_initcall(clk_mt2712_init);
-diff --git a/drivers/clk/mediatek/clk-mtk.h b/drivers/clk/mediatek/clk-mtk.h
-index f5d6b70ce189..f48df75cc901 100644
 --- a/drivers/clk/mediatek/clk-mtk.h
 +++ b/drivers/clk/mediatek/clk-mtk.h
 @@ -207,6 +207,8 @@ struct mtk_pll_data {
@@ -2281,8 +2251,6 @@ index f5d6b70ce189..f48df75cc901 100644
  	int pd_shift;
  	unsigned int flags;
  	const struct clk_ops *ops;
-diff --git a/drivers/clk/mediatek/clk-pll.c b/drivers/clk/mediatek/clk-pll.c
-index a409142e9346..3c546bae6955 100644
 --- a/drivers/clk/mediatek/clk-pll.c
 +++ b/drivers/clk/mediatek/clk-pll.c
 @@ -47,6 +47,7 @@ struct mtk_clk_pll {
@@ -2293,7 +2261,7 @@ index a409142e9346..3c546bae6955 100644
  	void __iomem	*pcw_addr;
  	const struct mtk_pll_data *data;
  };
-@@ -227,7 +228,10 @@ static int mtk_pll_prepare(struct clk_hw *hw)
+@@ -227,7 +228,10 @@ static int mtk_pll_prepare(struct clk_hw
  	r |= pll->data->en_mask;
  	writel(r, pll->base_addr + REG_CON0);
  
@@ -2305,7 +2273,7 @@ index a409142e9346..3c546bae6955 100644
  		r = readl(pll->tuner_addr) | AUDPLL_TUNER_EN;
  		writel(r, pll->tuner_addr);
  	}
-@@ -254,7 +258,10 @@ static void mtk_pll_unprepare(struct clk_hw *hw)
+@@ -254,7 +258,10 @@ static void mtk_pll_unprepare(struct clk
  		writel(r, pll->base_addr + REG_CON0);
  	}
  
@@ -2317,7 +2285,7 @@ index a409142e9346..3c546bae6955 100644
  		r = readl(pll->tuner_addr) & ~AUDPLL_TUNER_EN;
  		writel(r, pll->tuner_addr);
  	}
-@@ -297,6 +304,8 @@ static struct clk *mtk_clk_register_pll(const struct mtk_pll_data *data,
+@@ -297,6 +304,8 @@ static struct clk *mtk_clk_register_pll(
  	pll->pcw_addr = base + data->pcw_reg;
  	if (data->tuner_reg)
  		pll->tuner_addr = base + data->tuner_reg;
@@ -2326,6 +2294,3 @@ index a409142e9346..3c546bae6955 100644
  	pll->hw.init = &init;
  	pll->data = data;
  
--- 
-2.11.0
-

@@ -16,10 +16,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |  3 +++
  2 files changed, 24 insertions(+), 14 deletions(-)
 
-Index: linux-4.14.37/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-===================================================================
---- linux-4.14.37.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ linux-4.14.37/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -1976,14 +1976,16 @@ static int mtk_hw_init(struct mtk_eth *e
  	}
  	regmap_write(eth->ethsys, ETHSYS_SYSCFG0, val);
@@ -86,10 +84,8 @@ Index: linux-4.14.37/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  };
  
  const struct of_device_id of_mtk_match[] = {
-Index: linux-4.14.37/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-===================================================================
---- linux-4.14.37.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-+++ linux-4.14.37/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -574,10 +574,13 @@ struct mtk_rx_ring {
   * @caps			Flags shown the extra capability for the SoC
   * @required_clks		Flags shown the bitmap for required clocks on

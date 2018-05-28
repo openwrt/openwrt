@@ -13,11 +13,9 @@ Signed-off-by: Cyrille Pitchen <cyrille.pitchen@wedev4u.fr>
  drivers/mtd/spi-nor/mtk-quadspi.c | 70 ++++++++++++++++++++++++++++++++-------
  1 file changed, 58 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/mtd/spi-nor/mtk-quadspi.c b/drivers/mtd/spi-nor/mtk-quadspi.c
-index c258c7adf1c5..abe455ccd68b 100644
 --- a/drivers/mtd/spi-nor/mtk-quadspi.c
 +++ b/drivers/mtd/spi-nor/mtk-quadspi.c
-@@ -404,6 +404,29 @@ static int mt8173_nor_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf,
+@@ -404,6 +404,29 @@ static int mt8173_nor_write_reg(struct s
  	return ret;
  }
  
@@ -47,7 +45,7 @@ index c258c7adf1c5..abe455ccd68b 100644
  static int mtk_nor_init(struct mt8173_nor *mt8173_nor,
  			struct device_node *flash_node)
  {
-@@ -468,15 +491,11 @@ static int mtk_nor_drv_probe(struct platform_device *pdev)
+@@ -468,15 +491,11 @@ static int mtk_nor_drv_probe(struct plat
  		return PTR_ERR(mt8173_nor->nor_clk);
  
  	mt8173_nor->dev = &pdev->dev;
@@ -65,7 +63,7 @@ index c258c7adf1c5..abe455ccd68b 100644
  	/* only support one attached flash */
  	flash_np = of_get_next_available_child(pdev->dev.of_node, NULL);
  	if (!flash_np) {
-@@ -487,10 +506,9 @@ static int mtk_nor_drv_probe(struct platform_device *pdev)
+@@ -487,10 +506,9 @@ static int mtk_nor_drv_probe(struct plat
  	ret = mtk_nor_init(mt8173_nor, flash_np);
  
  nor_free:
@@ -79,7 +77,7 @@ index c258c7adf1c5..abe455ccd68b 100644
  	return ret;
  }
  
-@@ -498,11 +516,38 @@ static int mtk_nor_drv_remove(struct platform_device *pdev)
+@@ -498,11 +516,38 @@ static int mtk_nor_drv_remove(struct pla
  {
  	struct mt8173_nor *mt8173_nor = platform_get_drvdata(pdev);
  
@@ -120,7 +118,7 @@ index c258c7adf1c5..abe455ccd68b 100644
  static const struct of_device_id mtk_nor_of_ids[] = {
  	{ .compatible = "mediatek,mt8173-nor"},
  	{ /* sentinel */ }
-@@ -514,6 +559,7 @@ static struct platform_driver mtk_nor_driver = {
+@@ -514,6 +559,7 @@ static struct platform_driver mtk_nor_dr
  	.remove = mtk_nor_drv_remove,
  	.driver = {
  		.name = "mtk-nor",
@@ -128,6 +126,3 @@ index c258c7adf1c5..abe455ccd68b 100644
  		.of_match_table = mtk_nor_of_ids,
  	},
  };
--- 
-2.11.0
-

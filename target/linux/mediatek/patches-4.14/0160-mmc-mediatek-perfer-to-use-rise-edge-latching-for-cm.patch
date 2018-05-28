@@ -14,11 +14,9 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  drivers/mmc/host/mtk-sd.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mmc/host/mtk-sd.c b/drivers/mmc/host/mtk-sd.c
-index 95759bba0dd0..27a62254f12f 100644
 --- a/drivers/mmc/host/mtk-sd.c
 +++ b/drivers/mmc/host/mtk-sd.c
-@@ -1550,7 +1550,8 @@ static int msdc_tune_response(struct mmc_host *mmc, u32 opcode)
+@@ -1550,7 +1550,8 @@ static int msdc_tune_response(struct mmc
  	}
  	final_rise_delay = get_best_delay(host, rise_delay);
  	/* if rising edge has enough margin, then do not scan falling edge */
@@ -28,6 +26,3 @@ index 95759bba0dd0..27a62254f12f 100644
  		goto skip_fall;
  
  	sdr_set_bits(host->base + MSDC_IOCON, MSDC_IOCON_RSPL);
--- 
-2.11.0
-

@@ -15,11 +15,9 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/usb/host/xhci-mtk.h |  2 ++
  2 files changed, 62 insertions(+), 19 deletions(-)
 
-diff --git a/drivers/usb/host/xhci-mtk.c b/drivers/usb/host/xhci-mtk.c
-index d60463c07c54..e5caabe7eebe 100644
 --- a/drivers/usb/host/xhci-mtk.c
 +++ b/drivers/usb/host/xhci-mtk.c
-@@ -221,6 +221,44 @@ static int xhci_mtk_ssusb_config(struct xhci_hcd_mtk *mtk)
+@@ -221,6 +221,44 @@ static int xhci_mtk_ssusb_config(struct
  	return xhci_mtk_host_enable(mtk);
  }
  
@@ -64,7 +62,7 @@ index d60463c07c54..e5caabe7eebe 100644
  static int xhci_mtk_clks_enable(struct xhci_hcd_mtk *mtk)
  {
  	int ret;
-@@ -237,16 +275,34 @@ static int xhci_mtk_clks_enable(struct xhci_hcd_mtk *mtk)
+@@ -237,16 +275,34 @@ static int xhci_mtk_clks_enable(struct x
  		goto sys_clk_err;
  	}
  
@@ -100,7 +98,7 @@ index d60463c07c54..e5caabe7eebe 100644
  	clk_disable_unprepare(mtk->sys_clk);
  	clk_disable_unprepare(mtk->ref_clk);
  }
-@@ -529,24 +585,9 @@ static int xhci_mtk_probe(struct platform_device *pdev)
+@@ -529,24 +585,9 @@ static int xhci_mtk_probe(struct platfor
  		return PTR_ERR(mtk->vusb33);
  	}
  
@@ -128,8 +126,6 @@ index d60463c07c54..e5caabe7eebe 100644
  
  	mtk->lpm_support = of_property_read_bool(node, "usb3-lpm-capable");
  	/* optional property, ignore the error if it does not exist */
-diff --git a/drivers/usb/host/xhci-mtk.h b/drivers/usb/host/xhci-mtk.h
-index 67783a7af509..45ff5c67efb5 100644
 --- a/drivers/usb/host/xhci-mtk.h
 +++ b/drivers/usb/host/xhci-mtk.h
 @@ -126,6 +126,8 @@ struct xhci_hcd_mtk {
@@ -141,6 +137,3 @@ index 67783a7af509..45ff5c67efb5 100644
  	struct regmap *pericfg;
  	struct phy **phys;
  	int num_phys;
--- 
-2.11.0
-

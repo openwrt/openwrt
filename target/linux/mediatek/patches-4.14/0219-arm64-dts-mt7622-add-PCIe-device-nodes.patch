@@ -12,8 +12,6 @@ Signed-off-by: Sean Wang <sean.wang@mediatek.com>
  arch/arm64/boot/dts/mediatek/mt7622.dtsi     | 74 ++++++++++++++++++++++++++++
  2 files changed, 84 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
-index e2bd93e1b49b..72ef4434bcef 100644
 --- a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
 @@ -54,6 +54,16 @@
@@ -33,8 +31,6 @@ index e2bd93e1b49b..72ef4434bcef 100644
  &pio {
  	/* eMMC is shared pin with parallel NAND */
  	emmc_pins_default: emmc-pins-default {
-diff --git a/arch/arm64/boot/dts/mediatek/mt7622.dtsi b/arch/arm64/boot/dts/mediatek/mt7622.dtsi
-index 95f947eb824c..cc026ebda2f4 100644
 --- a/arch/arm64/boot/dts/mediatek/mt7622.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7622.dtsi
 @@ -542,6 +542,80 @@
@@ -118,6 +114,3 @@ index 95f947eb824c..cc026ebda2f4 100644
  	ethsys: syscon@1b000000 {
  		compatible = "mediatek,mt7622-ethsys",
  			     "syscon";
--- 
-2.11.0
-

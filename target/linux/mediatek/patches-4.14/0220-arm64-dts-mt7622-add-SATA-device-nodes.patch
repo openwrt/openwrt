@@ -12,8 +12,6 @@ Signed-off-by: Sean Wang <sean.wang@mediatek.com>
  arch/arm64/boot/dts/mediatek/mt7622.dtsi     | 40 ++++++++++++++++++++++++++++
  2 files changed, 48 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
-index 72ef4434bcef..6715ffa5c15e 100644
 --- a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
 @@ -323,6 +323,14 @@
@@ -31,8 +29,6 @@ index 72ef4434bcef..6715ffa5c15e 100644
  &spi0 {
  	pinctrl-names = "default";
  	pinctrl-0 = <&spic0_pins>;
-diff --git a/arch/arm64/boot/dts/mediatek/mt7622.dtsi b/arch/arm64/boot/dts/mediatek/mt7622.dtsi
-index cc026ebda2f4..881bc17f8f0d 100644
 --- a/arch/arm64/boot/dts/mediatek/mt7622.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7622.dtsi
 @@ -9,6 +9,7 @@
@@ -89,6 +85,3 @@ index cc026ebda2f4..881bc17f8f0d 100644
  	ethsys: syscon@1b000000 {
  		compatible = "mediatek,mt7622-ethsys",
  			     "syscon";
--- 
-2.11.0
-
