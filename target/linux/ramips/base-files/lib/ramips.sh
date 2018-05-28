@@ -76,6 +76,9 @@ ramips_board_detect() {
 	*"BC2")
 		name="bc2"
 		;;
+	*"BOCCO")
+		name="bocco"
+		;;
 	*"BR-6475nD")
 		name="br-6475nd"
 		;;

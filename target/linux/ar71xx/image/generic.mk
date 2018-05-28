@@ -36,7 +36,7 @@ define Build/mkdapimg2
 	$(STAGING_DIR_HOST)/bin/mkdapimg2 \
 		-i $@ -o $@.new \
 		-s $(DAP_SIGNATURE) \
-		-v $(VERSION_DIST)-$(firstword $(subst -, ,$(REVISION))) \
+		-v $(VERSION_DIST)-$(firstword $(subst +, ,$(firstword $(subst -, ,$(REVISION))))) \
 		-r Default \
 		$(if $(1),-k $(1))
 	mv $@.new $@
@@ -1010,6 +1010,17 @@ define Device/tellstick-znet-lite
   CONSOLE := ttyATH0,115200
 endef
 TARGET_DEVICES += tellstick-znet-lite
+
+define Device/ts-d084
+  $(Device/tplink-8mlzma)
+  DEVICE_TITLE := PISEN TS-D084
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME := TS-D084
+  DEVICE_PROFILE := TSD084
+  TPLINK_HWID := 0x07030101
+  CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += ts-d084
 
 define Device/n5q
   DEVICE_TITLE := ALFA Network N5Q

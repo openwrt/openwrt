@@ -11,10 +11,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 487 insertions(+)
  create mode 100644 drivers/spi/spi-mt7621.c
 
-Index: linux-4.14.37/drivers/spi/Kconfig
-===================================================================
---- linux-4.14.37.orig/drivers/spi/Kconfig
-+++ linux-4.14.37/drivers/spi/Kconfig
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
 @@ -569,6 +569,12 @@ config SPI_RT2880
  	help
  	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
@@ -28,10 +26,8 @@ Index: linux-4.14.37/drivers/spi/Kconfig
  config SPI_S3C24XX
  	tristate "Samsung S3C24XX series SPI"
  	depends on ARCH_S3C24XX
-Index: linux-4.14.37/drivers/spi/Makefile
-===================================================================
---- linux-4.14.37.orig/drivers/spi/Makefile
-+++ linux-4.14.37/drivers/spi/Makefile
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
 @@ -60,6 +60,7 @@ obj-$(CONFIG_SPI_MPC512x_PSC)		+= spi-mp
  obj-$(CONFIG_SPI_MPC52xx_PSC)		+= spi-mpc52xx-psc.o
  obj-$(CONFIG_SPI_MPC52xx)		+= spi-mpc52xx.o
@@ -40,10 +36,8 @@ Index: linux-4.14.37/drivers/spi/Makefile
  obj-$(CONFIG_SPI_MXS)			+= spi-mxs.o
  obj-$(CONFIG_SPI_NUC900)		+= spi-nuc900.o
  obj-$(CONFIG_SPI_OC_TINY)		+= spi-oc-tiny.o
-Index: linux-4.14.37/drivers/spi/spi-mt7621.c
-===================================================================
 --- /dev/null
-+++ linux-4.14.37/drivers/spi/spi-mt7621.c
++++ b/drivers/spi/spi-mt7621.c
 @@ -0,0 +1,494 @@
 +/*
 + * spi-mt7621.c -- MediaTek MT7621 SPI controller driver

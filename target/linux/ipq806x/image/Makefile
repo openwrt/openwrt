@@ -104,7 +104,7 @@ TARGET_DEVICES += linksys_ea8500
 define Device/netgear_d7800
 	$(call Device/DniImage)
 	DEVICE_DTS := qcom-ipq8064-d7800
-	KERNEL_SIZE := 2097152
+	KERNEL_SIZE := 4096k
 	NETGEAR_BOARD_ID := D7800
 	NETGEAR_HW_ID := 29764958+0+128+512+4x4+4x4
 	BLOCKSIZE := 128k
@@ -119,7 +119,7 @@ TARGET_DEVICES += netgear_d7800
 define Device/netgear_r7500
 	$(call Device/DniImage)
 	DEVICE_DTS := qcom-ipq8064-r7500
-	KERNEL_SIZE := 2097152
+	KERNEL_SIZE := 4096k
 	NETGEAR_BOARD_ID := R7500
 	NETGEAR_HW_ID := 29764841+0+128+256+3x3+4x4
 	BLOCKSIZE := 128k
@@ -134,7 +134,7 @@ TARGET_DEVICES += netgear_r7500
 define Device/netgear_r7500v2
 	$(call Device/DniImage)
 	DEVICE_DTS := qcom-ipq8064-r7500v2
-	KERNEL_SIZE := 2097152
+	KERNEL_SIZE := 4096k
 	NETGEAR_BOARD_ID := R7500v2
 	NETGEAR_HW_ID := 29764958+0+128+512+3x3+4x4
 	BLOCKSIZE := 128k
@@ -149,7 +149,7 @@ TARGET_DEVICES += netgear_r7500v2
 define Device/netgear_r7800
 	$(call Device/DniImage)
 	DEVICE_DTS := qcom-ipq8065-r7800
-	KERNEL_SIZE := 2097152
+	KERNEL_SIZE := 4096k
 	NETGEAR_BOARD_ID := R7800
 	NETGEAR_HW_ID := 29764958+0+128+512+4x4+4x4+cascade
 	BLOCKSIZE := 128k
@@ -215,7 +215,7 @@ define Device/tplink_vr2600v
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none
 	KERNEL_NAME := zImage
-	KERNEL_SIZE := 2097152
+	KERNEL_SIZE := 3072k
 	DEVICE_DTS := qcom-ipq8064-vr2600v
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048

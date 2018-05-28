@@ -186,6 +186,10 @@ define Build/append-ubi
 	rm $@.tmp
 endef
 
+define Build/append-uboot
+	dd if=$(UBOOT_PATH) >> $@
+endef
+
 define Build/pad-to
 	dd if=$@ of=$@.new bs=$(1) conv=sync
 	mv $@.new $@

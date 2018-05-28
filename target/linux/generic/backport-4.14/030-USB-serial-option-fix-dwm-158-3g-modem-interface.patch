@@ -1,7 +1,7 @@
-From ebe37f322acbb95966094cb2b0fff6e44b5893a6 Mon Sep 17 00:00:00 2001
+From 4d304a6fe93538ce356b4593dc43476b50c023e7 Mon Sep 17 00:00:00 2001
 From: Giuseppe Lippolis <giu.lippolis@gmail.com>
 Date: Mon, 23 Apr 2018 09:03:06 +0200
-Subject: [PATCH] USB: serial: option: fix dwm-158 3g modem interface
+Subject: USB: serial: option: blacklist unused dwm-158 interfaces
 
 The dwm-158 interface 4 and 5 doesn't answer to the AT commands
 and doesn't appears a option interface.
@@ -20,9 +20,9 @@ Lars Melin also writes:
 	MI_06 USB Mass Storage Device
 
 Signed-off-by: Giuseppe Lippolis <giu.lippolis@gmail.com>
-[ johan: add Lars's comment on the interface layout ]
+[ johan: add Lars's comment on the interface layout and reword summary ]
 Cc: Lars Melin <larsm17@gmail.com>
-Cc: stable <stable@vger.kernel.org>	# c3a65808f04a
+Cc: Dan Williams <dcbw@redhat.com>
 Signed-off-by: Johan Hovold <johan@kernel.org>
 ---
  drivers/usb/serial/option.c | 3 ++-
@@ -30,13 +30,13 @@ Signed-off-by: Johan Hovold <johan@kernel.org>
 
 --- a/drivers/usb/serial/option.c
 +++ b/drivers/usb/serial/option.c
-@@ -2046,7 +2046,8 @@ static const struct usb_device_id option
+@@ -1919,7 +1919,8 @@ static const struct usb_device_id option
  	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d01, 0xff) },			/* D-Link DWM-156 (variant) */
  	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d02, 0xff) },
  	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d03, 0xff) },
 -	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d04, 0xff) },			/* D-Link DWM-158 */
 +	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d04, 0xff),			/* D-Link DWM-158 */
-+	 .driver_info = (kernel_ulong_t)&cinterion_rmnet2_blacklist },
++	 .driver_info = RSVD(4) | RSVD(5) },
  	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d0e, 0xff) },			/* D-Link DWM-157 C1 */
  	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7e19, 0xff),			/* D-Link DWM-221 B1 */
- 	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
+ 	  .driver_info = RSVD(4) },
