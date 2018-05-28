@@ -186,7 +186,7 @@
 +	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x05C6) &&
 +			serial->dev->descriptor.idProduct == cpu_to_le16(0x9215)) {
 +		pm_runtime_set_autosuspend_delay(&serial->dev->dev, 3000);
-+		usb_set_serial_data(serial, (void *)blacklist);
++		usb_set_serial_data(serial, (void *)device_flags);
 +		usb_enable_autosuspend(serial->dev);
 +	}
 +	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x2C7C)) {
