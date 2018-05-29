@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=odhcp6c
-PKG_RELEASE:=11
+PKG_RELEASE:=12
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/odhcp6c.git
