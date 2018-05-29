@@ -260,6 +260,9 @@ get_status_led() {
 	jwap230)
 		status_led="$board:green:led1"
 		;;
+	koala)
+		status_led="$board:blue:sys"
+		;;
 	lan-turtle)
 		status_led="$board:orange:system"
 		;;
