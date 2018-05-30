@@ -4,8 +4,10 @@ config WPA_SUPPLICANT_NO_TIMESTAMP_CHECK
 	depends on PACKAGE_wpa-supplicant || \
 		   PACKAGE_wpa-supplicant-openssl || \
 		   PACKAGE_wpa-supplicant-wolfssl || \
-		   PACKAGE_wpa-supplicant-mesh || \
+		   PACKAGE_wpa-supplicant-mesh-openssl || \
+		   PACKAGE_wpa-supplicant-mesh-wolfssl || \
 		   PACKAGE_wpa-supplicant-mini || \
+		   PACKAGE_wpa-supplicant-p2p || \
 		   PACKAGE_wpad || \
 		   PACKAGE_wpad-openssl || \
 		   PACKAGE_wpad-wolfssl || \
@@ -22,8 +24,10 @@ config WPA_RFKILL_SUPPORT
 	depends on PACKAGE_wpa-supplicant || \
 		   PACKAGE_wpa-supplicant-openssl || \
 		   PACKAGE_wpa-supplicant-wolfssl || \
-		   PACKAGE_wpa-supplicant-mesh || \
+		   PACKAGE_wpa-supplicant-mesh-openssl || \
+		   PACKAGE_wpa-supplicant-mesh-wolfssl || \
 		   PACKAGE_wpa-supplicant-mini || \
+		   PACKAGE_wpa-supplicant-p2p || \
 		   PACKAGE_wpad || \
 		   PACKAGE_wpad-openssl || \
 		   PACKAGE_wpad-wolfssl || \
@@ -37,8 +41,10 @@ config WPA_MSG_MIN_PRIORITY
 	depends on PACKAGE_wpa-supplicant || \
 		   PACKAGE_wpa-supplicant-openssl || \
 		   PACKAGE_wpa-supplicant-wolfssl || \
-		   PACKAGE_wpa-supplicant-mesh || \
+		   PACKAGE_wpa-supplicant-mesh-openssl || \
+		   PACKAGE_wpa-supplicant-mesh-wolfssl || \
 		   PACKAGE_wpa-supplicant-mini || \
+		   PACKAGE_wpa-supplicant-p2p || \
 		   PACKAGE_wpad || \
 		   PACKAGE_wpad-openssl || \
 		   PACKAGE_wpad-wolfssl || \

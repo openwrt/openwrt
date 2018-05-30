@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_URL:=http://w1.fi/hostap.git
 PKG_SOURCE_PROTO:=git
@@ -31,6 +31,23 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_DRIVER_WEXT_SUPPORT \
 	CONFIG_DRIVER_11N_SUPPORT \
 	CONFIG_DRIVER_11AC_SUPPORT \
+
+WPAD_PROVIDERS:=wpad-mini wpad wpad-openssl wpad-wolfssl \
+		wpad-mesh-openssl wpad-mesh-wolfssl
+
+SUPPLICANT_ONLY_PROVIDERS:=wpa-supplicant-mini wpa-supplicant-p2p \
+			   wpa-supplicant wpa-supplicant-openssl wpa-supplicant-wolfssl \
+			   wpa-supplicant-mesh-openssl wpa-supplicant-mesh-wolfssl
+
+HOSTAPD_ONLY_PROVIDERS:=hostapd-mini hostapd hostapd-openssl hostapd-wolfssl
+
+EAPOL_TEST_PROVIDERS:=eapol-test eapol-test-openssl eapol-test-wolfssl
+
+SUPPLICANT_PROVIDERS:=$(WPAD_PROVIDERS) $(SUPPLICANT_ONLY_PROVIDERS)
+HOSTAPD_PROVIDERS:=$(WPAD_PROVIDERS) $(HOSTAPD_ONLY_PROVIDERS)
+ANY_SUPPLICANT_PROVIDERS:=$(WPAD_PROVIDERS) $(SUPPLICANT_ONLY_PROVIDERS)
+ANY_HOSTAPD_PROVIDERS:=$(WPAD_PROVIDERS) $(HOSTAPD_ONLY_PROVIDERS)
+ANY_PROVIDERS:=$(WPAD_PROVIDERS) $(SUPPLICANT_ONLY_PROVIDERS) $(HOSTAPD_ONLY_PROVIDERS)
 
 LOCAL_TYPE=$(strip \
 		$(if $(findstring wpad,$(BUILD_VARIANT)),wpad, \
@@ -67,20 +84,6 @@ include $(INCLUDE_DIR)/package.mk
 
 STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(CONFIG_WPA_MSG_MIN_PRIORITY)
 
-WPAD_PROVIDERS:=wpad-mini wpad wpad-openssl wpad-wolfssl \
-		wpad-mesh-openssl wpad-mesh-wolfssl
-
-SUPPLICANT_ONLY_PROVIDERS:=wpa_supplicant-mini wpa_supplicant-p2p \
-			   wpa_supplicant wpa_supplicant-openssl wpa_supplicant-wolfssl \
-			   wpa_supplicant-mesh-openssl wpa_supplicant-mesh-wolfssl
-
-HOSTAPD_ONLY_PROVIDERS:=hostapd-mini hostapd hostapd-openssl hostapd-wolfssl
-
-EAPOL_TEST_PROVIDERS:=eapol-test eapol-test-openssl eapol-test-wolfssl
-
-SUPPLICANT_PROVIDERS:=$(WPAD_PROVIDERS) $(SUPPLICANT_ONLY_PROVIDERS)
-HOSTAPD_PROVIDERS:=$(WPAD_PROVIDERS) $(HOSTAPD_ONLY_PROVIDERS)
-ANY_PROVIDERS:=$(WPAD_PROVIDERS) $(HOSTAPD_ONLY_PROVIDERS) $(SUPPLICANT_ONLY_PROVIDERS)
 
 ifneq ($(CONFIG_DRIVER_11N_SUPPORT),)
   HOSTAPD_IEEE80211N:=y
@@ -200,7 +203,7 @@ endef
 define Package/hostapd-utils
   $(call Package/hostapd/Default)
   TITLE+= (utils)
-  DEPENDS:=@$(subst $(space),||,$(foreach pkg,$(HOSTAPD_PROVIDERS),PACKAGE_$(pkg)))
+  DEPENDS:=@$(subst $(space),||,$(foreach pkg,$(ANY_HOSTAPD_PROVIDERS),PACKAGE_$(pkg)))
 endef
 
 define Package/hostapd-utils/description
@@ -221,6 +224,14 @@ define Package/wpad
 $(call Package/wpad/Default)
   TITLE+= (full)
   VARIANT:=wpad-full-internal
+  CONFLICTS:=$(filter-out wpad-mesh-wolfssl,\
+             $(filter-out wpad-mesh-openssl ,\
+             $(filter-out wpad-openssl ,\
+             $(filter-out wpad-wolfssl ,\
+             $(filter-out wpad-wolfssl ,\
+             $(filter-out wpad ,\
+             $(ANY_PROVIDERS)\
+             ))))))
 endef
 
 define Package/wpad-openssl
@@ -258,6 +269,7 @@ define Package/wpad-mini
 $(call Package/wpad/Default)
   TITLE+= (WPA-PSK only)
   VARIANT:=wpad-mini
+  CONFLICTS:=$(SUPPLICANT_ONLY_PROVIDERS)
 endef
 
 define Package/wpad-mini/description
@@ -299,13 +311,18 @@ endef
 
 define Package/wpa-supplicant
   $(Package/wpa-supplicant/Default)
-  CONFLICTS:=$(filter-out wpa-supplicant ,$(SUPPLICANT_ONLY_PROVIDERS))
   VARIANT:=supplicant-full-internal
+  CONFLICTS:=wpa-supplicant-mini
 endef
 
 define Package/wpa-supplicant-openssl
   $(Package/wpa-supplicant/Default)
-  CONFLICTS:=$(filter-out wpa-supplicant-openssl ,$(SUPPLICANT_ONLY_PROVIDERS))
+  CONFLICTS:=$(filter-out wpa-supplicant-wolfssl ,\
+	     $(filter-out wpa-supplicant-openssl ,\
+	     $(filter-out wpa-supplicant-mesh-openssl ,\
+	     $(filter-out wpa-supplicant-mesh-wolfssl ,\
+	     $(SUPPLICANT_ONLY_PROVIDERS)\
+	     ))))
   VARIANT:=supplicant-full-openssl
   DEPENDS+=+libopenssl
   PROVIDES:=wpa-supplicant
@@ -313,7 +330,12 @@ endef
 
 define Package/wpa-supplicant-wolfssl
   $(Package/wpa-supplicant/Default)
-  CONFLICTS:=$(filter-out wpa-supplicant-wolfssl ,$(SUPPLICANT_ONLY_PROVIDERS))
+  CONFLICTS:=$(filter-out wpa-supplicant-wolfssl ,\
+	     $(filter-out wpa-supplicant-openssl ,\
+	     $(filter-out wpa-supplicant-mesh-openssl ,\
+	     $(filter-out wpa-supplicant-mesh-wolfssl ,\
+	     $(SUPPLICANT_ONLY_PROVIDERS)\
+	     ))))
   VARIANT:=supplicant-full-wolfssl
   DEPENDS+=+libwolfssl
   PROVIDES:=wpa-supplicant
@@ -327,13 +349,19 @@ define Package/wpa-supplicant-p2p
   $(Package/wpa-supplicant)
   TITLE:=WPA Supplicant (with Wi-Fi P2P support)
   DEPENDS:=$(DRV_DEPENDS) @PACKAGE_kmod-cfg80211
-  CONFLICTS:=$(filter-out wpa-supplicant-p2p ,$(SUPPLICANT_ONLY_PROVIDERS))
+  CONFLICTS:=$(filter-out wpa-supplicant-openssl ,\
+	     $(filter-out wpa-supplicant-wolfssl ,\
+	     $(filter-out wpa-supplicant-p2p ,\
+	     $(filter-out wpa-supplicant-mesh-openssl ,\
+	     $(filter-out wpa-supplicant-mesh-wolfssl ,\
+	     $(SUPPLICANT_ONLY_PROVIDERS)\
+	     )))))
   VARIANT:=supplicant-p2p-internal
   PROVIDES:=wpa-supplicant
 endef
 
 define Package/wpa-supplicant-mesh/Default
-  $(Package/wpa-supplicant)
+  $(Package/wpa-supplicant/Default)
   TITLE:=WPA Supplicant (with 802.11s and SAE)
   DEPENDS:=$(DRV_DEPENDS) @PACKAGE_kmod-cfg80211 @(!TARGET_uml||BROKEN)
   PROVIDES:=wpa-supplicant wpa-supplicant-mesh
@@ -354,10 +382,9 @@ define Package/wpa-supplicant-mesh-wolfssl
 endef
 
 define Package/wpa-supplicant-mini
-  $(Package/wpa-supplicant)
+  $(Package/wpa-supplicant/Default)
   TITLE:=WPA Supplicant (minimal version)
   DEPENDS:=$(DRV_DEPENDS)
-  CONFLICTS:=$(filter-out wpa-supplicant-mini ,$(SUPPLICANT_ONLY_PROVIDERS))
   VARIANT:=supplicant-mini
   PROVIDES:=wpa-supplicant
 endef
@@ -365,7 +392,7 @@ endef
 define Package/wpa-cli
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=@$(subst $(space),||,$(foreach pkg,$(SUPPLICANT_PROVIDERS),PACKAGE_$(pkg)))
+  DEPENDS:=@$(subst $(space),||,$(foreach pkg,$(ANY_SUPPLICANT_PROVIDERS),PACKAGE_$(pkg)))
   TITLE:=WPA Supplicant command line control utility
 endef
 
@@ -390,6 +417,7 @@ define Package/eapol-test-openssl
   VARIANT:=supplicant-full-openssl
   CONFLICTS:=$(filter-out eapol-test-openssl ,$(EAPOL_TEST_PROVIDERS))
   DEPENDS:=$(DRV_DEPENDS) +libopenssl
+  PROVIDES:=eapol-test
 endef
 
 define Package/eapol-test-wolfssl
@@ -399,6 +427,7 @@ define Package/eapol-test-wolfssl
   VARIANT:=supplicant-full-wolfssl
   CONFLICTS:=$(filter-out eapol-test-openssl ,$(filter-out eapol-test-wolfssl ,$(EAPOL_TEST_PROVIDERS)))
   DEPENDS:=$(DRV_DEPENDS) +libwolfssl
+  PROVIDES:=eapol-test
 endef
 
 

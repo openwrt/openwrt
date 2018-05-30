@@ -1,7 +1,7 @@
-From e2f13b1fac9799db83a37fc57df9471d9bb5b711 Mon Sep 17 00:00:00 2001
+From dbe9afab3b2dceb35d478ac43dfcf8fdc5e23a22 Mon Sep 17 00:00:00 2001
 From: Peter Oh <peter.oh@bowerswilkins.com>
-Date: Tue, 17 Apr 2018 21:55:02 -0700
-Subject: [PATCH 05/16] mesh: reflect country setting to mesh configuration
+Date: Tue, 29 May 2018 14:39:09 -0700
+Subject: [PATCH 05/18] mesh: reflect country setting to mesh configuration
 
 wpa_supplicant configuration has country parameter that is
 supposed to be used in AP mode to indicate supporting 802.11h
@@ -9,13 +9,15 @@ and 802.11d. Reflect this configuration to Mesh also since Mesh
 is required to support 802.11h and 802.11d to use DFS channels.
 
 Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+[daniel@makrotopia.org: adapted to changed ieee80211_is_dfs prototype]
 ---
- wpa_supplicant/mesh.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ wpa_supplicant/mesh.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
 --- a/wpa_supplicant/mesh.c
 +++ b/wpa_supplicant/mesh.c
-@@ -254,6 +254,15 @@ static int wpa_supplicant_mesh_init(stru
+@@ -255,6 +255,15 @@ static int wpa_supplicant_mesh_init(stru
  	bss->conf->start_disabled = 1;
  	bss->conf->mesh = MESH_ENABLED;
  	bss->conf->ap_max_inactivity = wpa_s->conf->mesh_max_inactivity;
