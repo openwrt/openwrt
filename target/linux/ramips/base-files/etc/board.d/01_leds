@@ -414,7 +414,8 @@ tplink,c50-v3)
 	ucidef_set_led_wlan "wlan2g" "wlan2g" "$boardname:green:wlan2g" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "wlan5g" "$boardname:green:wlan5g" "phy1tpt"
 	;;
-tplink,tl-mr3420-v5)
+tplink,tl-mr3420-v5|\
+tplink,tl-wr842n-v5)
 	set_usb_led "$boardname:green:usb"
 	ucidef_set_led_wlan "wlan2g" "wlan2g" "$boardname:green:wlan" "phy0tpt"
 	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x1e"
