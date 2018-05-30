@@ -164,6 +164,20 @@ define Device/ubnt-unifiac-pro
 endef
 TARGET_DEVICES += ubnt-unifiac-pro
 
+define Device/ubnt-lbe-5ac-16-120
+  $(Device/ubnt-wa)
+  DEVICE_TITLE := Ubiquiti LiteBeam ac AP
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PROFILE += UBNTLITEBEAMACAP
+  BOARDNAME := UBNT-LITEBEAMACAP
+  IMAGE_SIZE := 15744k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,15744k(firmware),256k(cfg)ro,64k(EEPROM)ro
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split-wa
+endef
+TARGET_DEVICES += ubnt-lbe-5ac-16-120
+
 define Device/ubnt-nanostationacl
   $(Device/ubnt-wa)
   DEVICE_TITLE := Ubiquiti Nanostation AC loco

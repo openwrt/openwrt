@@ -92,5 +92,8 @@ static void __init ubnt_wa_setup(void)
 MIPS_MACHINE(ATH79_MACH_UBNT_WA, "UBNT-WA",
 	     "Ubiquiti Networks WA board", ubnt_wa_setup);
 
+MIPS_MACHINE(ATH79_MACH_UBNT_LITEBEAMACAP, "UBNT-LITEBEAMACAP",
+	     "Ubiquiti LiteBeam ac AP", ubnt_wa_setup);
+
 MIPS_MACHINE(ATH79_MACH_UBNT_NANOSTATIONACL, "UBNT-NANOSTATION-ACL",
 	     "Ubiquiti Nanostation AC loco", ubnt_wa_setup);
