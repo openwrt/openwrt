@@ -14,7 +14,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -1071,15 +1071,28 @@ static void mvneta_defaults_set(struct m
+@@ -1072,15 +1072,28 @@ static void mvneta_defaults_set(struct m
  		       MVNETA_GMAC_AN_SPEED_EN |
  		       MVNETA_GMAC_AN_DUPLEX_EN;
  		mvreg_write(pp, MVNETA_GMAC_AUTONEG_CONFIG, val);
@@ -43,7 +43,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  
  	mvneta_set_ucast_table(pp, -1);
-@@ -3232,9 +3245,6 @@ static int mvneta_port_power_up(struct m
+@@ -3233,9 +3246,6 @@ static int mvneta_port_power_up(struct m
  		return -EINVAL;
  	}
  

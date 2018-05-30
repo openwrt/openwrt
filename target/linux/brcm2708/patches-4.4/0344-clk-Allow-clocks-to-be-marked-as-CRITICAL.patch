@@ -19,7 +19,7 @@ Link: lkml.kernel.org/r/1455225554-13267-2-git-send-email-mturquette@baylibre.co
 
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -2466,6 +2466,11 @@ static int __clk_init(struct device *dev
+@@ -2469,6 +2469,11 @@ static int __clk_init(struct device *dev
  	if (core->ops->init)
  		core->ops->init(core->hw);
  

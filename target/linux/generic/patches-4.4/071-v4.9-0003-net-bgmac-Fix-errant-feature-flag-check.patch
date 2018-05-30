@@ -22,7 +22,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -1049,7 +1049,7 @@ static void bgmac_enable(struct bgmac *b
+@@ -1050,7 +1050,7 @@ static void bgmac_enable(struct bgmac *b
  
  	mode = (bgmac_read(bgmac, BGMAC_DEV_STATUS) & BGMAC_DS_MM_MASK) >>
  		BGMAC_DS_MM_SHIFT;

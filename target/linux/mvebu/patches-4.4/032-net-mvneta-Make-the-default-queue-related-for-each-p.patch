@@ -19,16 +19,16 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/* Core clock */
  	struct clk *clk;
-@@ -819,7 +820,7 @@ static void mvneta_port_up(struct mvneta
- 	mvreg_write(pp, MVNETA_TXQ_CMD, q_map);
+@@ -820,7 +821,7 @@ static void mvneta_port_up(struct mvneta
  
+ 	q_map = 0;
  	/* Enable all initialized RXQs. */
 -	mvreg_write(pp, MVNETA_RXQ_CMD, BIT(rxq_def));
 +	mvreg_write(pp, MVNETA_RXQ_CMD, BIT(pp->rxq_def));
  }
  
  /* Stop the Ethernet port activity */
-@@ -1071,7 +1072,7 @@ static void mvneta_defaults_set(struct m
+@@ -1072,7 +1073,7 @@ static void mvneta_defaults_set(struct m
  	mvreg_write(pp, MVNETA_ACC_MODE, val);
  
  	/* Update val of portCfg register accordingly with all RxQueue types */
@@ -37,7 +37,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	mvreg_write(pp, MVNETA_PORT_CONFIG, val);
  
  	val = 0;
-@@ -2105,19 +2106,19 @@ static void mvneta_set_rx_mode(struct ne
+@@ -2106,19 +2107,19 @@ static void mvneta_set_rx_mode(struct ne
  	if (dev->flags & IFF_PROMISC) {
  		/* Accept all: Multicast + Unicast */
  		mvneta_rx_unicast_promisc_set(pp, 1);
@@ -63,7 +63,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		} else {
  			/* Accept only initialized multicast */
  			mvneta_set_special_mcast_table(pp, -1);
-@@ -2126,7 +2127,7 @@ static void mvneta_set_rx_mode(struct ne
+@@ -2127,7 +2128,7 @@ static void mvneta_set_rx_mode(struct ne
  			if (!netdev_mc_empty(dev)) {
  				netdev_for_each_mc_addr(ha, dev) {
  					mvneta_mcast_addr_set(pp, ha->addr,
@@ -72,7 +72,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  				}
  			}
  		}
-@@ -2209,7 +2210,7 @@ static int mvneta_poll(struct napi_struc
+@@ -2210,7 +2211,7 @@ static int mvneta_poll(struct napi_struc
  	 * RX packets
  	 */
  	cause_rx_tx |= port->cause_rx_tx;
@@ -81,7 +81,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	budget -= rx_done;
  
  	if (budget > 0) {
-@@ -2422,17 +2423,17 @@ static void mvneta_cleanup_txqs(struct m
+@@ -2423,17 +2424,17 @@ static void mvneta_cleanup_txqs(struct m
  /* Cleanup all Rx queues */
  static void mvneta_cleanup_rxqs(struct mvneta_port *pp)
  {
@@ -102,7 +102,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		mvneta_cleanup_rxqs(pp);
  		return err;
  	}
-@@ -2638,7 +2639,7 @@ static int mvneta_set_mac_addr(struct ne
+@@ -2639,7 +2640,7 @@ static int mvneta_set_mac_addr(struct ne
  	mvneta_mac_addr_set(pp, dev->dev_addr, -1);
  
  	/* Set new addr in hw */
@@ -111,7 +111,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	eth_commit_mac_addr_change(dev, addr);
  	return 0;
-@@ -2757,7 +2758,7 @@ static void mvneta_percpu_elect(struct m
+@@ -2758,7 +2759,7 @@ static void mvneta_percpu_elect(struct m
  {
  	int online_cpu_idx, cpu, i = 0;
  
@@ -120,7 +120,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	for_each_online_cpu(cpu) {
  		if (i == online_cpu_idx)
-@@ -3365,6 +3366,8 @@ static int mvneta_probe(struct platform_
+@@ -3366,6 +3367,8 @@ static int mvneta_probe(struct platform_
  				 strcmp(managed, "in-band-status") == 0);
  	pp->cpu_notifier.notifier_call = mvneta_percpu_notifier;
  

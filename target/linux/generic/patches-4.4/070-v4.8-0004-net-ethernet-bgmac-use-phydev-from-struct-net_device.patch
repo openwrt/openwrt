@@ -17,7 +17,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -1324,7 +1324,7 @@ static int bgmac_open(struct net_device
+@@ -1325,7 +1325,7 @@ static int bgmac_open(struct net_device
  	}
  	napi_enable(&bgmac->napi);
  
@@ -26,7 +26,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	netif_start_queue(net_dev);
  
-@@ -1337,7 +1337,7 @@ static int bgmac_stop(struct net_device
+@@ -1338,7 +1338,7 @@ static int bgmac_stop(struct net_device
  
  	netif_carrier_off(net_dev);
  
@@ -35,7 +35,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	napi_disable(&bgmac->napi);
  	bgmac_chip_intrs_off(bgmac);
-@@ -1375,12 +1375,10 @@ static int bgmac_set_mac_address(struct
+@@ -1376,12 +1376,10 @@ static int bgmac_set_mac_address(struct
  
  static int bgmac_ioctl(struct net_device *net_dev, struct ifreq *ifr, int cmd)
  {
@@ -49,7 +49,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static const struct net_device_ops bgmac_netdev_ops = {
-@@ -1523,7 +1521,7 @@ static int bgmac_get_settings(struct net
+@@ -1524,7 +1522,7 @@ static int bgmac_get_settings(struct net
  {
  	struct bgmac *bgmac = netdev_priv(net_dev);
  
@@ -58,7 +58,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static int bgmac_set_settings(struct net_device *net_dev,
-@@ -1531,7 +1529,7 @@ static int bgmac_set_settings(struct net
+@@ -1532,7 +1530,7 @@ static int bgmac_set_settings(struct net
  {
  	struct bgmac *bgmac = netdev_priv(net_dev);
  
@@ -67,7 +67,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static void bgmac_get_drvinfo(struct net_device *net_dev,
-@@ -1568,7 +1566,7 @@ static int bgmac_mii_write(struct mii_bu
+@@ -1569,7 +1567,7 @@ static int bgmac_mii_write(struct mii_bu
  static void bgmac_adjust_link(struct net_device *net_dev)
  {
  	struct bgmac *bgmac = netdev_priv(net_dev);
@@ -76,7 +76,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	bool update = false;
  
  	if (phy_dev->link) {
-@@ -1612,8 +1610,6 @@ static int bgmac_fixed_phy_register(stru
+@@ -1613,8 +1611,6 @@ static int bgmac_fixed_phy_register(stru
  		return err;
  	}
  
@@ -85,7 +85,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	return err;
  }
  
-@@ -1666,7 +1662,6 @@ static int bgmac_mii_register(struct bgm
+@@ -1667,7 +1663,6 @@ static int bgmac_mii_register(struct bgm
  		err = PTR_ERR(phy_dev);
  		goto err_unregister_bus;
  	}

@@ -689,7 +689,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			      ring->mmio_base + BGMAC_DMA_RX_STATUS,
  			      BGMAC_DMA_RX_STAT, BGMAC_DMA_RX_STAT_DISABLED,
  			      10000))
-@@ -643,7 +619,7 @@ static int bgmac_dma_alloc(struct bgmac
+@@ -644,7 +620,7 @@ static int bgmac_dma_alloc(struct bgmac
  	BUILD_BUG_ON(BGMAC_MAX_TX_RINGS > ARRAY_SIZE(ring_base));
  	BUILD_BUG_ON(BGMAC_MAX_RX_RINGS > ARRAY_SIZE(ring_base));
  
@@ -698,7 +698,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		dev_err(bgmac->dev, "Core does not report 64-bit DMA\n");
  		return -ENOTSUPP;
  	}
-@@ -875,12 +851,10 @@ static void bgmac_mac_speed(struct bgmac
+@@ -876,12 +852,10 @@ static void bgmac_mac_speed(struct bgmac
  
  static void bgmac_miiconfig(struct bgmac *bgmac)
  {
@@ -714,7 +714,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		bgmac->mac_speed = SPEED_2500;
  		bgmac->mac_duplex = DUPLEX_FULL;
  		bgmac_mac_speed(bgmac);
-@@ -900,12 +874,11 @@ static void bgmac_miiconfig(struct bgmac
+@@ -901,12 +875,11 @@ static void bgmac_miiconfig(struct bgmac
  /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipreset */
  static void bgmac_chip_reset(struct bgmac *bgmac)
  {
@@ -728,7 +728,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		if (!bgmac->stats_grabbed) {
  			/* bgmac_chip_stats_update(bgmac); */
  			bgmac->stats_grabbed = true;
-@@ -923,7 +896,7 @@ static void bgmac_chip_reset(struct bgma
+@@ -924,7 +897,7 @@ static void bgmac_chip_reset(struct bgma
  		/* TODO: Clear software multicast filter list */
  	}
  
@@ -737,7 +737,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (bgmac->feature_flags & BGMAC_FEAT_IOST_ATTACHED)
  		iost &= ~BGMAC_BCMA_IOST_ATTACHED;
  
-@@ -935,21 +908,20 @@ static void bgmac_chip_reset(struct bgma
+@@ -936,21 +909,20 @@ static void bgmac_chip_reset(struct bgma
  			if (!bgmac->has_robosw)
  				flags |= BGMAC_BCMA_IOCTL_SW_RESET;
  		}
@@ -761,7 +761,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		u8 et_swtype = 0;
  		u8 sw_type = BGMAC_CHIPCTL_1_SW_TYPE_EPHY |
  			     BGMAC_CHIPCTL_1_IF_TYPE_MII;
-@@ -968,16 +940,15 @@ static void bgmac_chip_reset(struct bgma
+@@ -969,16 +941,15 @@ static void bgmac_chip_reset(struct bgma
  			sw_type = BGMAC_CHIPCTL_1_IF_TYPE_RGMII |
  				  BGMAC_CHIPCTL_1_SW_TYPE_RGMII;
  		}
@@ -784,7 +784,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/gmac_reset
  	 * Specs don't say about using BGMAC_CMDCFG_SR, but in this routine
-@@ -1013,8 +984,8 @@ static void bgmac_chip_reset(struct bgma
+@@ -1014,8 +985,8 @@ static void bgmac_chip_reset(struct bgma
  
  	bgmac_clear_mib(bgmac);
  	if (bgmac->feature_flags & BGMAC_FEAT_CMN_PHY_CTL)
@@ -795,7 +795,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	else
  		bgmac_set(bgmac, BGMAC_PHY_CNTL, BGMAC_PC_MTE);
  	bgmac_miiconfig(bgmac);
-@@ -1059,8 +1030,8 @@ static void bgmac_enable(struct bgmac *b
+@@ -1060,8 +1031,8 @@ static void bgmac_enable(struct bgmac *b
  	if (bgmac->feature_flags & BGMAC_FEAT_CLKCTLST || mode != 0)
  		bgmac_set(bgmac, BCMA_CLKCTLST, BCMA_CLKCTLST_FORCEHT);
  	if (bgmac->feature_flags & BGMAC_FEAT_CLKCTLST && mode == 2)
@@ -806,7 +806,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	if (bgmac->feature_flags & (BGMAC_FEAT_FLW_CTRL1 |
  				    BGMAC_FEAT_FLW_CTRL2)) {
-@@ -1082,8 +1053,7 @@ static void bgmac_enable(struct bgmac *b
+@@ -1083,8 +1054,7 @@ static void bgmac_enable(struct bgmac *b
  
  		rxq_ctl = bgmac_read(bgmac, BGMAC_RXQ_CTL);
  		rxq_ctl &= ~BGMAC_RXQ_CTL_MDP_MASK;
@@ -816,7 +816,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		mdp = (bp_clk * 128 / 1000) - 3;
  		rxq_ctl |= (mdp << BGMAC_RXQ_CTL_MDP_SHIFT);
  		bgmac_write(bgmac, BGMAC_RXQ_CTL, rxq_ctl);
-@@ -1178,7 +1148,7 @@ static int bgmac_open(struct net_device
+@@ -1179,7 +1149,7 @@ static int bgmac_open(struct net_device
  	/* Specs say about reclaiming rings here, but we do that in DMA init */
  	bgmac_chip_init(bgmac);
  
@@ -825,7 +825,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			  KBUILD_MODNAME, net_dev);
  	if (err < 0) {
  		dev_err(bgmac->dev, "IRQ request error: %d!\n", err);
-@@ -1204,7 +1174,7 @@ static int bgmac_stop(struct net_device
+@@ -1205,7 +1175,7 @@ static int bgmac_stop(struct net_device
  
  	napi_disable(&bgmac->napi);
  	bgmac_chip_intrs_off(bgmac);
@@ -834,7 +834,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	bgmac_chip_reset(bgmac);
  	bgmac_dma_cleanup(bgmac);
-@@ -1399,7 +1369,7 @@ static void bgmac_get_drvinfo(struct net
+@@ -1400,7 +1370,7 @@ static void bgmac_get_drvinfo(struct net
  			      struct ethtool_drvinfo *info)
  {
  	strlcpy(info->driver, KBUILD_MODNAME, sizeof(info->driver));
@@ -843,7 +843,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static const struct ethtool_ops bgmac_ethtool_ops = {
-@@ -1483,116 +1453,41 @@ static int bgmac_phy_connect(struct bgma
+@@ -1484,116 +1454,41 @@ static int bgmac_phy_connect(struct bgma
  	return 0;
  }
  
@@ -976,7 +976,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	err = bgmac_dma_alloc(bgmac);
  	if (err) {
  		dev_err(bgmac->dev, "Unable to alloc memory for DMA\n");
-@@ -1603,103 +1498,15 @@ static int bgmac_probe(struct bcma_devic
+@@ -1604,103 +1499,15 @@ static int bgmac_probe(struct bcma_devic
  	if (bcm47xx_nvram_getenv("et0_no_txint", NULL, 0) == 0)
  		bgmac->int_mask &= ~BGMAC_IS_TX_MASK;
  
@@ -1081,7 +1081,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  
  	net_dev->features = NETIF_F_SG | NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM;
-@@ -1718,56 +1525,24 @@ static int bgmac_probe(struct bcma_devic
+@@ -1719,56 +1526,24 @@ static int bgmac_probe(struct bcma_devic
  
  err_phy_disconnect:
  	phy_disconnect(net_dev->phydev);

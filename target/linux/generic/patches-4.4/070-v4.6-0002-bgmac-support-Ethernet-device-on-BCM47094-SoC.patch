@@ -25,7 +25,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	case BCMA_CHIP_ID_BCM53018:
  		return true;
  	default:
-@@ -1056,8 +1057,9 @@ static void bgmac_chip_reset(struct bgma
+@@ -1057,8 +1058,9 @@ static void bgmac_chip_reset(struct bgma
  	    (ci->id == BCMA_CHIP_ID_BCM53572 && ci->pkg == BCMA_PKG_ID_BCM47188))
  		iost &= ~BGMAC_BCMA_IOST_ATTACHED;
  

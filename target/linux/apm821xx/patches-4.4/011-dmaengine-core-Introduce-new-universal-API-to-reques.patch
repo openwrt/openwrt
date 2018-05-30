@@ -283,7 +283,7 @@ Signed-off-by: Vinod Koul <vinod.koul@intel.com>
  	dma_cap_mask_t  cap_mask;
  	unsigned short max_xor;
  	unsigned short max_pq;
-@@ -1140,9 +1168,11 @@ enum dma_status dma_wait_for_async_tx(st
+@@ -1158,9 +1186,11 @@ enum dma_status dma_wait_for_async_tx(st
  void dma_issue_pending_all(void);
  struct dma_chan *__dma_request_channel(const dma_cap_mask_t *mask,
  					dma_filter_fn fn, void *fn_param);
@@ -297,7 +297,7 @@ Signed-off-by: Vinod Koul <vinod.koul@intel.com>
  void dma_release_channel(struct dma_chan *chan);
  int dma_get_slave_caps(struct dma_chan *chan, struct dma_slave_caps *caps);
  #else
-@@ -1166,16 +1196,21 @@ static inline struct dma_chan *__dma_req
+@@ -1184,16 +1214,21 @@ static inline struct dma_chan *__dma_req
  {
  	return NULL;
  }
@@ -324,7 +324,7 @@ Signed-off-by: Vinod Koul <vinod.koul@intel.com>
  static inline void dma_release_channel(struct dma_chan *chan)
  {
  }
-@@ -1186,6 +1221,8 @@ static inline int dma_get_slave_caps(str
+@@ -1204,6 +1239,8 @@ static inline int dma_get_slave_caps(str
  }
  #endif
  

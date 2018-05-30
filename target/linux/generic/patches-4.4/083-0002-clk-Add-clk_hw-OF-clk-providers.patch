@@ -30,7 +30,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -3001,6 +3001,7 @@ struct of_clk_provider {
+@@ -3004,6 +3004,7 @@ struct of_clk_provider {
  
  	struct device_node *node;
  	struct clk *(*get)(struct of_phandle_args *clkspec, void *data);
@@ -38,7 +38,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	void *data;
  };
  
-@@ -3017,6 +3018,12 @@ struct clk *of_clk_src_simple_get(struct
+@@ -3020,6 +3021,12 @@ struct clk *of_clk_src_simple_get(struct
  }
  EXPORT_SYMBOL_GPL(of_clk_src_simple_get);
  
@@ -51,7 +51,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  struct clk *of_clk_src_onecell_get(struct of_phandle_args *clkspec, void *data)
  {
  	struct clk_onecell_data *clk_data = data;
-@@ -3031,6 +3038,21 @@ struct clk *of_clk_src_onecell_get(struc
+@@ -3034,6 +3041,21 @@ struct clk *of_clk_src_onecell_get(struc
  }
  EXPORT_SYMBOL_GPL(of_clk_src_onecell_get);
  
@@ -73,7 +73,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  /**
   * of_clk_add_provider() - Register a clock provider for a node
   * @np: Device node pointer associated with clock provider
-@@ -3067,6 +3089,41 @@ int of_clk_add_provider(struct device_no
+@@ -3070,6 +3092,41 @@ int of_clk_add_provider(struct device_no
  EXPORT_SYMBOL_GPL(of_clk_add_provider);
  
  /**
@@ -115,7 +115,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
   * of_clk_del_provider() - Remove a previously registered clock provider
   * @np: Device node pointer associated with clock provider
   */
-@@ -3087,11 +3144,32 @@ void of_clk_del_provider(struct device_n
+@@ -3090,11 +3147,32 @@ void of_clk_del_provider(struct device_n
  }
  EXPORT_SYMBOL_GPL(of_clk_del_provider);
  
@@ -148,7 +148,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
  	if (!clkspec)
  		return ERR_PTR(-EINVAL);
-@@ -3100,10 +3178,9 @@ struct clk *__of_clk_get_from_provider(s
+@@ -3103,10 +3181,9 @@ struct clk *__of_clk_get_from_provider(s
  	mutex_lock(&of_clk_mutex);
  	list_for_each_entry(provider, &of_clk_providers, link) {
  		if (provider->node == clkspec->np)

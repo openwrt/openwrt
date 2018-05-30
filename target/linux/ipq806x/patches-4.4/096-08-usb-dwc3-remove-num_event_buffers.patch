@@ -143,7 +143,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  static int dwc3_alloc_scratch_buffers(struct dwc3 *dwc)
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
-@@ -663,7 +663,6 @@ struct dwc3_scratchpad_array {
+@@ -665,7 +665,6 @@ struct dwc3_scratchpad_array {
   * @regs: base address for our registers
   * @regs_size: address space size
   * @nr_scratch: number of scratch buffers
@@ -151,7 +151,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
   * @u1u2: only used on revisions <1.83a for workaround
   * @maximum_speed: maximum speed requested (mainly for testing purposes)
   * @revision: revision register contents
-@@ -773,7 +772,6 @@ struct dwc3 {
+@@ -775,7 +774,6 @@ struct dwc3 {
  	u32			gctl;
  
  	u32			nr_scratch;

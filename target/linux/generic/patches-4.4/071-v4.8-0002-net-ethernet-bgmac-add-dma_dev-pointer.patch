@@ -65,7 +65,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct bgmac_dma_desc *dma_desc = ring->cpu_base;
  	struct bgmac_slot_info *slot;
  	int i;
-@@ -573,7 +573,7 @@ static void bgmac_dma_tx_ring_free(struc
+@@ -574,7 +574,7 @@ static void bgmac_dma_tx_ring_free(struc
  static void bgmac_dma_rx_ring_free(struct bgmac *bgmac,
  				   struct bgmac_dma_ring *ring)
  {
@@ -74,7 +74,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct bgmac_slot_info *slot;
  	int i;
  
-@@ -594,7 +594,7 @@ static void bgmac_dma_ring_desc_free(str
+@@ -595,7 +595,7 @@ static void bgmac_dma_ring_desc_free(str
  				     struct bgmac_dma_ring *ring,
  				     int num_slots)
  {
@@ -83,7 +83,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int size;
  
  	if (!ring->cpu_base)
-@@ -632,7 +632,7 @@ static void bgmac_dma_free(struct bgmac
+@@ -633,7 +633,7 @@ static void bgmac_dma_free(struct bgmac
  
  static int bgmac_dma_alloc(struct bgmac *bgmac)
  {
@@ -92,7 +92,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct bgmac_dma_ring *ring;
  	static const u16 ring_base[] = { BGMAC_DMA_BASE0, BGMAC_DMA_BASE1,
  					 BGMAC_DMA_BASE2, BGMAC_DMA_BASE3, };
-@@ -1733,6 +1733,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -1734,6 +1734,7 @@ static int bgmac_probe(struct bcma_devic
  	net_dev->ethtool_ops = &bgmac_ethtool_ops;
  	bgmac = netdev_priv(net_dev);
  	bgmac->dev = &core->dev;

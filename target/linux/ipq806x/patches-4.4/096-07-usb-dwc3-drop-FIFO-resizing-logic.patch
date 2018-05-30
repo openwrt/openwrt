@@ -82,7 +82,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
-@@ -705,9 +705,7 @@ struct dwc3_scratchpad_array {
+@@ -707,9 +707,7 @@ struct dwc3_scratchpad_array {
   * 	0	- utmi_sleep_n
   * 	1	- utmi_l1_suspend_n
   * @is_fpga: true when we are using the FPGA board
@@ -92,7 +92,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
   * @setup_packet_pending: true when there's a Setup Packet in FIFO. Workaround
   * @start_config_issued: true when StartConfig command has been issued
   * @three_stage_setup: set if we perform a three phase setup
-@@ -850,9 +848,7 @@ struct dwc3 {
+@@ -852,9 +850,7 @@ struct dwc3 {
  	unsigned		has_lpm_erratum:1;
  	unsigned		is_utmi_l1_suspend:1;
  	unsigned		is_fpga:1;
@@ -102,7 +102,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  	unsigned		setup_packet_pending:1;
  	unsigned		three_stage_setup:1;
  	unsigned		usb3_lpm_capable:1;
-@@ -1020,7 +1016,6 @@ struct dwc3_gadget_ep_cmd_params {
+@@ -1022,7 +1018,6 @@ struct dwc3_gadget_ep_cmd_params {
  
  /* prototypes */
  void dwc3_set_mode(struct dwc3 *dwc, u32 mode);

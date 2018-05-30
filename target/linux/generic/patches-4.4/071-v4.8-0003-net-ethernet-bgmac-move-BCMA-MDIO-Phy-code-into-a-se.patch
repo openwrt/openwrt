@@ -317,7 +317,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +MODULE_LICENSE("GPL");
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -759,150 +759,6 @@ error:
+@@ -760,150 +760,6 @@ error:
  	return err;
  }
  
@@ -468,7 +468,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  /**************************************************
   * Chip ops
-@@ -1159,7 +1015,8 @@ static void bgmac_chip_reset(struct bgma
+@@ -1160,7 +1016,8 @@ static void bgmac_chip_reset(struct bgma
  	else
  		bgmac_set(bgmac, BGMAC_PHY_CNTL, BGMAC_PC_MTE);
  	bgmac_miiconfig(bgmac);
@@ -478,7 +478,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	netdev_reset_queue(bgmac->net_dev);
  }
-@@ -1553,17 +1410,6 @@ static const struct ethtool_ops bgmac_et
+@@ -1554,17 +1411,6 @@ static const struct ethtool_ops bgmac_et
   * MII
   **************************************************/
  
@@ -496,7 +496,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static void bgmac_adjust_link(struct net_device *net_dev)
  {
  	struct bgmac *bgmac = netdev_priv(net_dev);
-@@ -1588,7 +1434,7 @@ static void bgmac_adjust_link(struct net
+@@ -1589,7 +1435,7 @@ static void bgmac_adjust_link(struct net
  	}
  }
  
@@ -505,7 +505,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  {
  	struct fixed_phy_status fphy_status = {
  		.link = 1,
-@@ -1614,81 +1460,24 @@ static int bgmac_fixed_phy_register(stru
+@@ -1615,81 +1461,24 @@ static int bgmac_fixed_phy_register(stru
  	return err;
  }
  
@@ -591,7 +591,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static int bgmac_probe(struct bcma_device *core)
  {
  	struct net_device *net_dev;
-@@ -1809,9 +1598,6 @@ static int bgmac_probe(struct bcma_devic
+@@ -1810,9 +1599,6 @@ static int bgmac_probe(struct bcma_devic
  	if (bcm47xx_nvram_getenv("et0_no_txint", NULL, 0) == 0)
  		bgmac->int_mask &= ~BGMAC_IS_TX_MASK;
  
@@ -601,7 +601,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	bgmac->has_robosw = !!(core->bus->sprom.boardflags_lo &
  			       BGMAC_BFL_ENETROBO);
  	if (bgmac->has_robosw)
-@@ -1822,10 +1608,25 @@ static int bgmac_probe(struct bcma_devic
+@@ -1823,10 +1609,25 @@ static int bgmac_probe(struct bcma_devic
  
  	netif_napi_add(net_dev, &bgmac->napi, bgmac_poll, BGMAC_WEIGHT);
  
@@ -629,7 +629,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  
  	net_dev->features = NETIF_F_SG | NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM;
-@@ -1835,18 +1636,19 @@ static int bgmac_probe(struct bcma_devic
+@@ -1836,18 +1637,19 @@ static int bgmac_probe(struct bcma_devic
  	err = register_netdev(bgmac->net_dev);
  	if (err) {
  		dev_err(bgmac->dev, "Cannot register net device\n");
@@ -652,7 +652,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  err_netdev_free:
  	bcma_set_drvdata(core, NULL);
  	free_netdev(net_dev);
-@@ -1859,7 +1661,8 @@ static void bgmac_remove(struct bcma_dev
+@@ -1860,7 +1662,8 @@ static void bgmac_remove(struct bcma_dev
  	struct bgmac *bgmac = bcma_get_drvdata(core);
  
  	unregister_netdev(bgmac->net_dev);

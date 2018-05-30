@@ -13,7 +13,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -1105,7 +1105,7 @@ static void mvneta_port_down(struct mvne
+@@ -1106,7 +1106,7 @@ static void mvneta_port_down(struct mvne
  	do {
  		if (count++ >= MVNETA_RX_DISABLE_TIMEOUT_MSEC) {
  			netdev_warn(pp->dev,
@@ -22,7 +22,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  				    val);
  			break;
  		}
-@@ -1144,7 +1144,7 @@ static void mvneta_port_down(struct mvne
+@@ -1145,7 +1145,7 @@ static void mvneta_port_down(struct mvne
  	do {
  		if (count++ >= MVNETA_TX_FIFO_EMPTY_TIMEOUT) {
  			netdev_warn(pp->dev,

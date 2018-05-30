@@ -36,7 +36,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
    dmam_alloc_coherent()
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -2595,6 +2595,22 @@ fail_out:
+@@ -2598,6 +2598,22 @@ fail_out:
  }
  EXPORT_SYMBOL_GPL(clk_register);
  
@@ -59,7 +59,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  /* Free memory allocated for a clock. */
  static void __clk_release(struct kref *ref)
  {
-@@ -2696,11 +2712,26 @@ void clk_unregister(struct clk *clk)
+@@ -2699,11 +2715,26 @@ void clk_unregister(struct clk *clk)
  }
  EXPORT_SYMBOL_GPL(clk_unregister);
  
@@ -86,7 +86,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  /**
   * devm_clk_register - resource managed clk_register()
   * @dev: device that is registering this clock
-@@ -2731,6 +2762,36 @@ struct clk *devm_clk_register(struct dev
+@@ -2734,6 +2765,36 @@ struct clk *devm_clk_register(struct dev
  }
  EXPORT_SYMBOL_GPL(devm_clk_register);
  
@@ -123,7 +123,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  static int devm_clk_match(struct device *dev, void *res, void *data)
  {
  	struct clk *c = res;
-@@ -2739,6 +2800,15 @@ static int devm_clk_match(struct device
+@@ -2742,6 +2803,15 @@ static int devm_clk_match(struct device
  	return c == data;
  }
  
@@ -139,7 +139,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  /**
   * devm_clk_unregister - resource managed clk_unregister()
   * @clk: clock to unregister
-@@ -2753,6 +2823,22 @@ void devm_clk_unregister(struct device *
+@@ -2756,6 +2826,22 @@ void devm_clk_unregister(struct device *
  }
  EXPORT_SYMBOL_GPL(devm_clk_unregister);
  

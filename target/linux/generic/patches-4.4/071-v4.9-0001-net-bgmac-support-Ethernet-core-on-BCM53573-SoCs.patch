@@ -75,7 +75,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		bgmac->feature_flags |= BGMAC_FEAT_SET_RXQ_CLK;
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -943,6 +943,27 @@ static void bgmac_chip_reset(struct bgma
+@@ -944,6 +944,27 @@ static void bgmac_chip_reset(struct bgma
  		bgmac_cco_ctl_maskset(bgmac, 1, ~(BGMAC_CHIPCTL_1_IF_TYPE_MASK |
  						  BGMAC_CHIPCTL_1_SW_TYPE_MASK),
  				      sw_type);
@@ -103,7 +103,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  
  	if (iost & BGMAC_BCMA_IOST_ATTACHED && !bgmac->has_robosw)
-@@ -1486,6 +1507,10 @@ int bgmac_enet_probe(struct bgmac *info)
+@@ -1487,6 +1508,10 @@ int bgmac_enet_probe(struct bgmac *info)
  	 */
  	bgmac_clk_enable(bgmac, 0);
  

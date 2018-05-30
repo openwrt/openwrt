@@ -41,7 +41,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		ctl &= ~BGMAC_DMA_RX_BL_MASK;
  		ctl |= BGMAC_DMA_RX_BL_128 << BGMAC_DMA_RX_BL_SHIFT;
  
-@@ -772,14 +772,20 @@ static void bgmac_cmdcfg_maskset(struct
+@@ -773,14 +773,20 @@ static void bgmac_cmdcfg_maskset(struct
  {
  	u32 cmdcfg = bgmac_read(bgmac, BGMAC_CMDCFG);
  	u32 new_val = (cmdcfg & mask) | set;
@@ -64,7 +64,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	udelay(2);
  }
  
-@@ -808,7 +814,7 @@ static void bgmac_chip_stats_update(stru
+@@ -809,7 +815,7 @@ static void bgmac_chip_stats_update(stru
  {
  	int i;
  
@@ -73,7 +73,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		for (i = 0; i < BGMAC_NUM_MIB_TX_REGS; i++)
  			bgmac->mib_tx_regs[i] =
  				bgmac_read(bgmac,
-@@ -827,7 +833,7 @@ static void bgmac_clear_mib(struct bgmac
+@@ -828,7 +834,7 @@ static void bgmac_clear_mib(struct bgmac
  {
  	int i;
  
@@ -82,7 +82,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return;
  
  	bgmac_set(bgmac, BGMAC_DEV_CTL, BGMAC_DC_MROR);
-@@ -870,9 +876,8 @@ static void bgmac_mac_speed(struct bgmac
+@@ -871,9 +877,8 @@ static void bgmac_mac_speed(struct bgmac
  static void bgmac_miiconfig(struct bgmac *bgmac)
  {
  	struct bcma_device *core = bgmac->core;
@@ -93,7 +93,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		bcma_awrite32(core, BCMA_IOCTL,
  			      bcma_aread32(core, BCMA_IOCTL) | 0x40 |
  			      BGMAC_BCMA_IOCTL_SW_CLKEN);
-@@ -880,6 +885,8 @@ static void bgmac_miiconfig(struct bgmac
+@@ -881,6 +886,8 @@ static void bgmac_miiconfig(struct bgmac
  		bgmac->mac_duplex = DUPLEX_FULL;
  		bgmac_mac_speed(bgmac);
  	} else {
@@ -102,7 +102,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		imode = (bgmac_read(bgmac, BGMAC_DEV_STATUS) &
  			BGMAC_DS_MM_MASK) >> BGMAC_DS_MM_SHIFT;
  		if (imode == 0 || imode == 1) {
-@@ -894,9 +901,7 @@ static void bgmac_miiconfig(struct bgmac
+@@ -895,9 +902,7 @@ static void bgmac_miiconfig(struct bgmac
  static void bgmac_chip_reset(struct bgmac *bgmac)
  {
  	struct bcma_device *core = bgmac->core;
@@ -113,7 +113,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	u32 iost;
  	int i;
  
-@@ -919,15 +924,12 @@ static void bgmac_chip_reset(struct bgma
+@@ -920,15 +925,12 @@ static void bgmac_chip_reset(struct bgma
  	}
  
  	iost = bcma_aread32(core, BCMA_IOST);
@@ -132,7 +132,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		if (iost & BGMAC_BCMA_IOST_ATTACHED) {
  			flags = BGMAC_BCMA_IOCTL_SW_CLKEN;
  			if (!bgmac->has_robosw)
-@@ -937,7 +939,7 @@ static void bgmac_chip_reset(struct bgma
+@@ -938,7 +940,7 @@ static void bgmac_chip_reset(struct bgma
  	}
  
  	/* Request Misc PLL for corerev > 2 */
@@ -141,7 +141,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		bgmac_set(bgmac, BCMA_CLKCTLST,
  			  BGMAC_BCMA_CLKCTLST_MISC_PLL_REQ);
  		bgmac_wait_value(bgmac->core, BCMA_CLKCTLST,
-@@ -946,9 +948,7 @@ static void bgmac_chip_reset(struct bgma
+@@ -947,9 +949,7 @@ static void bgmac_chip_reset(struct bgma
  				 1000);
  	}
  
@@ -152,7 +152,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		struct bcma_drv_cc *cc = &bgmac->core->bus->drv_cc;
  		u8 et_swtype = 0;
  		u8 sw_type = BGMAC_CHIPCTL_1_SW_TYPE_EPHY |
-@@ -962,11 +962,9 @@ static void bgmac_chip_reset(struct bgma
+@@ -963,11 +963,9 @@ static void bgmac_chip_reset(struct bgma
  			et_swtype &= 0x0f;
  			et_swtype <<= 4;
  			sw_type = et_swtype;
@@ -166,7 +166,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			sw_type = BGMAC_CHIPCTL_1_IF_TYPE_RGMII |
  				  BGMAC_CHIPCTL_1_SW_TYPE_RGMII;
  		}
-@@ -986,6 +984,11 @@ static void bgmac_chip_reset(struct bgma
+@@ -987,6 +985,11 @@ static void bgmac_chip_reset(struct bgma
  	 * BGMAC_CMDCFG is read _after_ putting chip in a reset. So it has to
  	 * be keps until taking MAC out of the reset.
  	 */
@@ -178,7 +178,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	bgmac_cmdcfg_maskset(bgmac,
  			     ~(BGMAC_CMDCFG_TE |
  			       BGMAC_CMDCFG_RE |
-@@ -1003,13 +1006,13 @@ static void bgmac_chip_reset(struct bgma
+@@ -1004,13 +1007,13 @@ static void bgmac_chip_reset(struct bgma
  			     BGMAC_CMDCFG_PROM |
  			     BGMAC_CMDCFG_NLC |
  			     BGMAC_CMDCFG_CFE |
@@ -194,7 +194,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		bcma_maskset32(bgmac->cmn, BCMA_GMAC_CMN_PHY_CTL, ~0,
  			       BCMA_GMAC_CMN_PC_MTE);
  	else
-@@ -1035,46 +1038,48 @@ static void bgmac_chip_intrs_off(struct
+@@ -1036,46 +1039,48 @@ static void bgmac_chip_intrs_off(struct
  /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/gmac_enable */
  static void bgmac_enable(struct bgmac *bgmac)
  {
@@ -263,7 +263,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		rxq_ctl = bgmac_read(bgmac, BGMAC_RXQ_CTL);
  		rxq_ctl &= ~BGMAC_RXQ_CTL_MDP_MASK;
  		bp_clk = bcma_pmu_get_bus_clock(&bgmac->core->bus->drv_cc) /
-@@ -1606,6 +1611,74 @@ static int bgmac_probe(struct bcma_devic
+@@ -1607,6 +1612,74 @@ static int bgmac_probe(struct bcma_devic
  	if (core->bus->sprom.boardflags_lo & BGMAC_BFL_ENETADM)
  		dev_warn(bgmac->dev, "Support for ADMtek ethernet switch not implemented\n");
  
