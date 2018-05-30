@@ -59,7 +59,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -9230,6 +9230,9 @@ static int nl80211_put_mesh_config(struc
+@@ -9228,6 +9228,9 @@ static int nl80211_put_mesh_config(struc
  	if (((params->flags & WPA_DRIVER_MESH_CONF_FLAG_AUTO_PLINKS) &&
  	     nla_put_u8(msg, NL80211_MESHCONF_AUTO_OPEN_PLINKS,
  			params->auto_plinks)) ||
@@ -164,7 +164,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
 --- a/wpa_supplicant/mesh.c
 +++ b/wpa_supplicant/mesh.c
-@@ -120,6 +120,7 @@ static struct mesh_conf * mesh_config_cr
+@@ -121,6 +121,7 @@ static struct mesh_conf * mesh_config_cr
  	conf->mesh_cc_id = 0;
  	conf->mesh_sp_id = MESH_SYNC_METHOD_NEIGHBOR_OFFSET;
  	conf->mesh_auth_id = (conf->security & MESH_CONF_SEC_AUTH) ? 1 : 0;
@@ -172,7 +172,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	conf->dot11MeshMaxRetries = ssid->dot11MeshMaxRetries;
  	conf->dot11MeshRetryTimeout = ssid->dot11MeshRetryTimeout;
  	conf->dot11MeshConfirmTimeout = ssid->dot11MeshConfirmTimeout;
-@@ -255,6 +256,7 @@ static int wpa_supplicant_mesh_init(stru
+@@ -256,6 +257,7 @@ static int wpa_supplicant_mesh_init(stru
  	bss->conf->start_disabled = 1;
  	bss->conf->mesh = MESH_ENABLED;
  	bss->conf->ap_max_inactivity = wpa_s->conf->mesh_max_inactivity;
@@ -180,7 +180,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (ieee80211_is_dfs(ssid->frequency, wpa_s->hw.modes,
  			     wpa_s->hw.num_modes) && wpa_s->conf->country[0]) {
-@@ -508,6 +510,10 @@ int wpa_supplicant_join_mesh(struct wpa_
+@@ -534,6 +536,10 @@ int wpa_supplicant_join_mesh(struct wpa_
  	}
  	params->conf.peer_link_timeout = wpa_s->conf->mesh_max_inactivity;
  
