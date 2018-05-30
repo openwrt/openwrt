@@ -9,6 +9,7 @@ ath79_setup_interfaces()
 
 	case "$board" in
 	"avm,fritz300e"|\
+	"tplink,tl-wr703n"|\
 	"ubnt,unifi")
 		ucidef_set_interface_lan "eth0"
 		;;
