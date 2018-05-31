@@ -1,6 +1,14 @@
 --- a/drivers/spi/spi-ath79.c
 +++ b/drivers/spi/spi-ath79.c
-@@ -102,9 +102,6 @@ static void ath79_spi_enable(struct ath7
+@@ -24,6 +24,7 @@
+ #include <linux/gpio.h>
+ #include <linux/clk.h>
+ #include <linux/err.h>
++#include <linux/mtd/spi-nor.h>
+ 
+ #include <asm/mach-ath79/ar71xx_regs.h>
+ #include <asm/mach-ath79/ath79_spi_platform.h>
+@@ -102,9 +103,6 @@ static void ath79_spi_enable(struct ath7
  	/* save CTRL register */
  	sp->reg_ctrl = ath79_spi_rr(sp, AR71XX_SPI_REG_CTRL);
  	sp->ioc_base = ath79_spi_rr(sp, AR71XX_SPI_REG_IOC);
@@ -10,7 +18,7 @@
  }
  
  static void ath79_spi_disable(struct ath79_spi *sp)
-@@ -205,6 +202,38 @@ static u32 ath79_spi_txrx_mode0(struct s
+@@ -205,6 +203,41 @@ static u32 ath79_spi_txrx_mode0(struct s
  	return ath79_spi_rr(sp, AR71XX_SPI_REG_RDS);
  }
  
@@ -28,6 +36,9 @@
 +	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
 +
 +	if (msg->addr_width > 3)
++		return -EOPNOTSUPP;
++	if (msg->read_opcode != SPINOR_OP_READ &&
++	    msg->read_opcode != SPINOR_OP_READ_FAST)
 +		return -EOPNOTSUPP;
 +
 +	/* disable GPIO mode */
@@ -49,7 +60,7 @@
  static int ath79_spi_probe(struct platform_device *pdev)
  {
  	struct spi_master *master;
-@@ -234,6 +263,8 @@ static int ath79_spi_probe(struct platfo
+@@ -234,6 +267,8 @@ static int ath79_spi_probe(struct platfo
  		master->num_chipselect = pdata->num_chipselect;
  		master->cs_gpios = pdata->cs_gpios;
  	}
