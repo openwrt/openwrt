@@ -1,0 +1,346 @@
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -17,6 +17,7 @@
+ #include <linux/mutex.h>
+ #include <linux/math64.h>
+ #include <linux/sizes.h>
++#include <linux/slab.h>
+ 
+ #include <linux/mtd/mtd.h>
+ #include <linux/of_platform.h>
+@@ -1540,6 +1541,289 @@ static int s3an_nor_scan(const struct fl
+ 	return 0;
+ }
+ 
++/*
++ * Serial Flash Discoverable Parameters (SFDP) parsing.
++ */
++
++/**
++ * spi_nor_read_sfdp() - read Serial Flash Discoverable Parameters.
++ * @nor:	pointer to a 'struct spi_nor'
++ * @addr:	offset in the SFDP area to start reading data from
++ * @len:	number of bytes to read
++ * @buf:	buffer where the SFDP data are copied into
++ *
++ * Whatever the actual numbers of bytes for address and dummy cycles are
++ * for (Fast) Read commands, the Read SFDP (5Ah) instruction is always
++ * followed by a 3-byte address and 8 dummy clock cycles.
++ *
++ * Return: 0 on success, -errno otherwise.
++ */
++static int spi_nor_read_sfdp(struct spi_nor *nor, u32 addr,
++			     size_t len, void *buf)
++{
++	u8 addr_width, read_opcode, read_dummy;
++	int ret;
++
++	read_opcode = nor->read_opcode;
++	addr_width = nor->addr_width;
++	read_dummy = nor->read_dummy;
++
++	nor->read_opcode = SPINOR_OP_RDSFDP;
++	nor->addr_width = 3;
++	nor->read_dummy = 8;
++
++	while (len) {
++		ret = nor->read(nor, addr, len, (u8 *)buf);
++		if (!ret || ret > len) {
++			ret = -EIO;
++			goto read_err;
++		}
++		if (ret < 0)
++			goto read_err;
++
++		buf += ret;
++		addr += ret;
++		len -= ret;
++	}
++	ret = 0;
++
++read_err:
++	nor->read_opcode = read_opcode;
++	nor->addr_width = addr_width;
++	nor->read_dummy = read_dummy;
++
++	return ret;
++}
++
++struct sfdp_parameter_header {
++	u8		id_lsb;
++	u8		minor;
++	u8		major;
++	u8		length; /* in double words */
++	u8		parameter_table_pointer[3]; /* byte address */
++	u8		id_msb;
++};
++
++#define SFDP_PARAM_HEADER_ID(p)	(((p)->id_msb << 8) | (p)->id_lsb)
++#define SFDP_PARAM_HEADER_PTP(p) \
++	(((p)->parameter_table_pointer[2] << 16) | \
++	 ((p)->parameter_table_pointer[1] <<  8) | \
++	 ((p)->parameter_table_pointer[0] <<  0))
++
++#define SFDP_BFPT_ID		0xff00	/* Basic Flash Parameter Table */
++#define SFDP_SECTOR_MAP_ID	0xff81	/* Sector Map Table */
++
++#define SFDP_SIGNATURE		0x50444653U
++#define SFDP_JESD216_MAJOR	1
++#define SFDP_JESD216_MINOR	0
++#define SFDP_JESD216A_MINOR	5
++#define SFDP_JESD216B_MINOR	6
++
++struct sfdp_header {
++	u32		signature; /* Ox50444653U <=> "SFDP" */
++	u8		minor;
++	u8		major;
++	u8		nph; /* 0-base number of parameter headers */
++	u8		unused;
++
++	/* Basic Flash Parameter Table. */
++	struct sfdp_parameter_header	bfpt_header;
++};
++
++/* Basic Flash Parameter Table */
++
++/*
++ * JESD216 rev B defines a Basic Flash Parameter Table of 16 DWORDs.
++ * They are indexed from 1 but C arrays are indexed from 0.
++ */
++#define BFPT_DWORD(i)		((i) - 1)
++#define BFPT_DWORD_MAX		16
++
++/* The first version of JESB216 defined only 9 DWORDs. */
++#define BFPT_DWORD_MAX_JESD216			9
++
++/* 16th DWORD */
++#define BFPT_DWORD16_4B_INSTR_SET		BIT(29)
++
++struct sfdp_bfpt {
++	u32	dwords[BFPT_DWORD_MAX];
++};
++
++/**
++ * spi_nor_parse_bfpt() - read and parse the Basic Flash Parameter Table.
++ * @nor:		pointer to a 'struct spi_nor'
++ * @bfpt_header:	pointer to the 'struct sfdp_parameter_header' describing
++ *			the Basic Flash Parameter Table length and version
++ *
++ * The Basic Flash Parameter Table is the main and only mandatory table as
++ * defined by the SFDP (JESD216) specification.
++ * It provides us with the total size (memory density) of the data array and
++ * the number of address bytes for Fast Read, Page Program and Sector Erase
++ * commands.
++ * For Fast READ commands, it also gives the number of mode clock cycles and
++ * wait states (regrouped in the number of dummy clock cycles) for each
++ * supported instruction op code.
++ * For Page Program, the page size is now available since JESD216 rev A, however
++ * the supported instruction op codes are still not provided.
++ * For Sector Erase commands, this table stores the supported instruction op
++ * codes and the associated sector sizes.
++ * Finally, the Quad Enable Requirements (QER) are also available since JESD216
++ * rev A. The QER bits encode the manufacturer dependent procedure to be
++ * executed to set the Quad Enable (QE) bit in some internal register of the
++ * Quad SPI memory. Indeed the QE bit, when it exists, must be set before
++ * sending any Quad SPI command to the memory. Actually, setting the QE bit
++ * tells the memory to reassign its WP# and HOLD#/RESET# pins to functions IO2
++ * and IO3 hence enabling 4 (Quad) I/O lines.
++ *
++ * Return: 0 on success, -errno otherwise.
++ */
++static int spi_nor_parse_bfpt(struct spi_nor *nor,
++			      const struct sfdp_parameter_header *bfpt_header)
++{
++	struct mtd_info *mtd = &nor->mtd;
++	struct sfdp_bfpt bfpt;
++	size_t len;
++	int i, cmd, err;
++	u32 addr;
++	u16 half;
++
++	/* JESD216 Basic Flash Parameter Table length is at least 9 DWORDs. */
++	if (bfpt_header->length < BFPT_DWORD_MAX_JESD216)
++		return -EINVAL;
++
++	/* Read the Basic Flash Parameter Table. */
++	len = min_t(size_t, sizeof(bfpt),
++		    bfpt_header->length * sizeof(u32));
++	addr = SFDP_PARAM_HEADER_PTP(bfpt_header);
++	memset(&bfpt, 0, sizeof(bfpt));
++	err = spi_nor_read_sfdp(nor,  addr, len, &bfpt);
++	if (err < 0)
++		return err;
++
++	/* Fix endianness of the BFPT DWORDs. */
++	for (i = 0; i < BFPT_DWORD_MAX; i++)
++		bfpt.dwords[i] = le32_to_cpu(bfpt.dwords[i]);
++
++	/* Stop here if not JESD216 rev A or later. */
++	if (bfpt_header->length < BFPT_DWORD_MAX)
++		return 0;
++
++	if (bfpt.dwords[BFPT_DWORD(16)] & BFPT_DWORD16_4B_INSTR_SET) {
++		nor->flags |= SNOR_F_HAS_4B_OPCODES;
++	}
++
++	return 0;
++}
++
++/**
++ * spi_nor_parse_sfdp() - parse the Serial Flash Discoverable Parameters.
++ * @nor:		pointer to a 'struct spi_nor'
++ *
++ * The Serial Flash Discoverable Parameters are described by the JEDEC JESD216
++ * specification. This is a standard which tends to supported by almost all
++ * (Q)SPI memory manufacturers. Those hard-coded tables allow us to learn at
++ * runtime the main parameters needed to perform basic SPI flash operations such
++ * as Fast Read, Page Program or Sector Erase commands.
++ *
++ * Return: 0 on success, -errno otherwise.
++ */
++static int spi_nor_parse_sfdp(struct spi_nor *nor)
++{
++	const struct sfdp_parameter_header *param_header, *bfpt_header;
++	struct sfdp_parameter_header *param_headers = NULL;
++	struct sfdp_header header;
++	struct device *dev = nor->dev;
++	size_t psize;
++	int i, err;
++
++	/* Get the SFDP header. */
++	err = spi_nor_read_sfdp(nor, 0, sizeof(header), &header);
++	if (err < 0)
++		return err;
++
++	/* Check the SFDP header version. */
++	if (le32_to_cpu(header.signature) != SFDP_SIGNATURE ||
++	    header.major != SFDP_JESD216_MAJOR ||
++	    header.minor < SFDP_JESD216_MINOR)
++		return -EINVAL;
++
++	/*
++	 * Verify that the first and only mandatory parameter header is a
++	 * Basic Flash Parameter Table header as specified in JESD216.
++	 */
++	bfpt_header = &header.bfpt_header;
++	if (SFDP_PARAM_HEADER_ID(bfpt_header) != SFDP_BFPT_ID ||
++	    bfpt_header->major != SFDP_JESD216_MAJOR)
++		return -EINVAL;
++
++	/*
++	 * Allocate memory then read all parameter headers with a single
++	 * Read SFDP command. These parameter headers will actually be parsed
++	 * twice: a first time to get the latest revision of the basic flash
++	 * parameter table, then a second time to handle the supported optional
++	 * tables.
++	 * Hence we read the parameter headers once for all to reduce the
++	 * processing time. Also we use kmalloc() instead of devm_kmalloc()
++	 * because we don't need to keep these parameter headers: the allocated
++	 * memory is always released with kfree() before exiting this function.
++	 */
++	if (header.nph) {
++		psize = header.nph * sizeof(*param_headers);
++
++		param_headers = kmalloc(psize, GFP_KERNEL);
++		if (!param_headers)
++			return -ENOMEM;
++
++		err = spi_nor_read_sfdp(nor, sizeof(header),
++					psize, param_headers);
++		if (err < 0) {
++			dev_err(dev, "failed to read SFDP parameter headers\n");
++			goto exit;
++		}
++	}
++
++	/*
++	 * Check other parameter headers to get the latest revision of
++	 * the basic flash parameter table.
++	 */
++	for (i = 0; i < header.nph; i++) {
++		param_header = &param_headers[i];
++
++		if (SFDP_PARAM_HEADER_ID(param_header) == SFDP_BFPT_ID &&
++		    param_header->major == SFDP_JESD216_MAJOR &&
++		    (param_header->minor > bfpt_header->minor ||
++		     (param_header->minor == bfpt_header->minor &&
++		      param_header->length > bfpt_header->length)))
++			bfpt_header = param_header;
++	}
++
++	err = spi_nor_parse_bfpt(nor, bfpt_header);
++	if (err)
++		goto exit;
++
++	/* Parse other parameter headers. */
++	for (i = 0; i < header.nph; i++) {
++		param_header = &param_headers[i];
++
++		switch (SFDP_PARAM_HEADER_ID(param_header)) {
++		case SFDP_SECTOR_MAP_ID:
++			dev_info(dev, "non-uniform erase sector maps are not supported yet.\n");
++			break;
++
++		default:
++			break;
++		}
++
++		if (err)
++			goto exit;
++	}
++
++exit:
++	kfree(param_headers);
++	return err;
++}
++
++
+ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
+ {
+ 	const struct flash_info *info = NULL;
+@@ -1647,6 +1931,8 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 	if (info->flags & SPI_NOR_HAS_TB)
+ 		nor->flags |= SNOR_F_HAS_SR_TB;
+ 
++	spi_nor_parse_sfdp(nor);
++
+ #ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
+ 	/* prefer "small sector" erase if possible */
+ 	if ((info->flags & SECT_4K) && (mtd->size <=
+@@ -1686,6 +1972,9 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 	if (info->flags & SPI_NOR_NO_FR)
+ 		nor->flash_read = SPI_NOR_NORMAL;
+ 
++	if (info->flags & SPI_NOR_4B_OPCODES)
++		nor->flags |= SNOR_F_HAS_4B_OPCODES;
++
+ 	/* Quad/Dual-read mode takes precedence over fast/normal */
+ 	if (mode == SPI_NOR_QUAD && info->flags & SPI_NOR_QUAD_READ) {
+ 		ret = set_quad_mode(nor, info);
+@@ -1725,7 +2014,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 		/* enable 4-byte addressing if the device exceeds 16MiB */
+ 		nor->addr_width = 4;
+ 		if (JEDEC_MFR(info) == SNOR_MFR_SPANSION ||
+-		    info->flags & SPI_NOR_4B_OPCODES)
++		    nor->flags & SNOR_F_HAS_4B_OPCODES)
+ 			spi_nor_set_4byte_opcodes(nor, info);
+ 		else
+ 			set_4byte(nor, info, 1);
+--- a/include/linux/mtd/spi-nor.h
++++ b/include/linux/mtd/spi-nor.h
+@@ -56,6 +56,7 @@
+ #define SPINOR_OP_CHIP_ERASE	0xc7	/* Erase whole flash chip */
+ #define SPINOR_OP_SE		0xd8	/* Sector erase (usually 64KiB) */
+ #define SPINOR_OP_RDID		0x9f	/* Read JEDEC ID */
++#define SPINOR_OP_RDSFDP	0x5a	/* Read SFDP */
+ #define SPINOR_OP_RDCR		0x35	/* Read configuration register */
+ #define SPINOR_OP_RDFSR		0x70	/* Read flag status register */
+ 
+@@ -141,6 +142,7 @@ enum spi_nor_option_flags {
+ 	SNOR_F_NO_OP_CHIP_ERASE	= BIT(2),
+ 	SNOR_F_S3AN_ADDR_DEFAULT = BIT(3),
+ 	SNOR_F_READY_XSR_RDY	= BIT(4),
++	SNOR_F_HAS_4B_OPCODES	= BIT(5),
+ };
+ 
+ /**
