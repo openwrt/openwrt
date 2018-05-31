@@ -17,6 +17,8 @@ STAMP_PREPARED := $(STAMP_PREPARED)_$(call confvar,CONFIG_MTD_REDBOOT_PARTS)
 PKG_LICENSE:=GPL-2.0+
 PKG_LICENSE_FILES:=
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/mtd
