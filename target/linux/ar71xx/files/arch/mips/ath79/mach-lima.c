@@ -47,11 +47,25 @@ static struct gpio_keys_button lima_gpio_keys[] __initdata = {
 	}
 };
 
+static struct spi_board_info lima_spi_info[] = {
+	{
+		.bus_num	= 0,
+		.chip_select	= 0,
+		.max_speed_hz	= 25000000,
+		.modalias	= "m25p80",
+	}
+};
+
+static struct ath79_spi_platform_data lima_spi_data =
+{
+	.bus_num		= 0,
+	.num_chipselect 	= 1,
+	.use_hw_shiftreg 	= true,
+};
+
 static void __init lima_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1f080000);
-
-	ath79_register_m25p80(NULL);
 
 	ath79_register_gpio_keys_polled(-1, LIMA_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(lima_gpio_keys),
@@ -79,6 +93,7 @@ static void __init lima_setup(void)
 	ath79_register_eth(0);
 
 	ath79_register_wmac(art + LIMA_CALDATA_OFFSET, NULL);
+	ath79_register_spi(&lima_spi_data, lima_spi_info, ARRAY_SIZE(lima_spi_info));
 	ath79_register_usb();
 	ath79_register_pci();
 }
