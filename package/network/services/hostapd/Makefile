@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE_URL:=http://w1.fi/hostap.git
 PKG_SOURCE_PROTO:=git
@@ -107,18 +107,18 @@ ifeq ($(LOCAL_VARIANT),full)
   DRIVER_MAKEOPTS += CONFIG_IEEE80211W=$(CONFIG_DRIVER_11W_SUPPORT)
 endif
 
-ifneq ($(LOCAL_TYPE),hostapd)
-  ifeq ($(LOCAL_VARIANT),full)
-    ifeq ($(SSL_VARIANT),openssl)
-      DRIVER_MAKEOPTS += CONFIG_TLS=openssl
-      TARGET_LDFLAGS += -lcrypto -lssl
-    endif
-    ifeq ($(SSL_VARIANT),wolfssl)
-      DRIVER_MAKEOPTS += CONFIG_TLS=wolfssl CONFIG_WPS_NFC=1
-      TARGET_LDFLAGS += -lwolfssl
-    endif
+ifeq ($(LOCAL_VARIANT),full)
+  ifeq ($(SSL_VARIANT),openssl)
+    DRIVER_MAKEOPTS += CONFIG_TLS=openssl
+    TARGET_LDFLAGS += -lcrypto -lssl
   endif
+  ifeq ($(SSL_VARIANT),wolfssl)
+    DRIVER_MAKEOPTS += CONFIG_TLS=wolfssl CONFIG_WPS_NFC=1
+    TARGET_LDFLAGS += -lwolfssl
+  endif
+endif
 
+ifneq ($(LOCAL_TYPE),hostapd)
   ifeq ($(LOCAL_VARIANT),mesh)
     ifeq ($(SSL_VARIANT),openssl)
       DRIVER_MAKEOPTS += CONFIG_TLS=openssl CONFIG_AP=y CONFIG_SAE=y CONFIG_MESH=y
