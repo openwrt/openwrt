@@ -1,0 +1,16 @@
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -175,6 +175,13 @@ static ssize_t m25p80_read(struct spi_no
+ 	t[1].rx_buf = buf;
+ 	t[1].rx_nbits = m25p80_rx_nbits(nor);
+ 	t[1].len = min(len, spi_max_transfer_size(spi));
++
++	/* Set wider transaction if alignment and controller allows */
++	if (len % 4 == 0 && (spi->master->bits_per_word_mask & SPI_BPW_MASK(32)))
++		t[1].bits_per_word = 32;
++	else if (len % 2 == 0 && (spi->master->bits_per_word_mask & SPI_BPW_MASK(16)))
++		t[1].bits_per_word = 16;
++
+ 	spi_message_add_tail(&t[1], &m);
+ 
+ 	ret = spi_sync(spi, &m);
