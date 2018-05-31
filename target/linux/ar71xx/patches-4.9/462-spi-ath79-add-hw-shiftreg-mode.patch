@@ -1,0 +1,65 @@
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -494,6 +494,8 @@
+ #define AR71XX_SPI_REG_CTRL	0x04	/* SPI Control */
+ #define AR71XX_SPI_REG_IOC	0x08	/* SPI I/O Control */
+ #define AR71XX_SPI_REG_RDS	0x0c	/* Read Data Shift */
++#define AR71XX_SPI_REG_WDS	0x10	/* Write Data Shift */
++#define AR71XX_SPI_REG_CDS	0x14	/* Control Data Shift */
+ 
+ #define AR71XX_SPI_FS_GPIO	BIT(0)	/* Enable GPIO mode */
+ 
+@@ -509,6 +511,9 @@
+ #define AR71XX_SPI_IOC_CS_ALL	(AR71XX_SPI_IOC_CS0 | AR71XX_SPI_IOC_CS1 | \
+ 				 AR71XX_SPI_IOC_CS2)
+ 
++#define AR71XX_SPI_CDS_EN	BIT(31)	/* Enable Shifting */
++#define AR71XX_SPI_CDS_CS(n)	BIT(28 + (n)) /* CS enable */
++
+ /*
+  * GPIO block
+  */
+--- a/arch/mips/include/asm/mach-ath79/ath79_spi_platform.h
++++ b/arch/mips/include/asm/mach-ath79/ath79_spi_platform.h
+@@ -15,6 +15,7 @@ struct ath79_spi_platform_data {
+ 	unsigned	bus_num;
+ 	unsigned	num_chipselect;
+ 	int *cs_gpios;
++	bool		use_hw_shiftreg;
+ };
+ 
+ #endif /* _ATH79_SPI_PLATFORM_H */
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -202,6 +202,19 @@ static u32 ath79_spi_txrx_mode0(struct s
+ 	return ath79_spi_rr(sp, AR71XX_SPI_REG_RDS);
+ }
+ 
++static u32 ath79_spi_txrx_shiftreg_mode0(struct spi_device *spi, unsigned nsecs,
++					u32 word, u8 bits)
++{
++	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
++
++	ath79_spi_wr(sp, AR71XX_SPI_REG_WDS, word);
++	ath79_spi_wr(sp, AR71XX_SPI_REG_CDS, AR71XX_SPI_CDS_EN |
++					     AR71XX_SPI_CDS_CS(spi->chip_select) | bits);
++
++	return ath79_spi_rr(sp, AR71XX_SPI_REG_RDS);
++}
++
++
+ static bool ath79_spi_flash_read_supported(struct spi_device *spi)
+ {
+ 	if (spi->chip_select || gpio_is_valid(spi->cs_gpio))
+@@ -268,7 +281,10 @@ static int ath79_spi_probe(struct platfo
+ 
+ 	sp->bitbang.master = master;
+ 	sp->bitbang.chipselect = ath79_spi_chipselect;
+-	sp->bitbang.txrx_word[SPI_MODE_0] = ath79_spi_txrx_mode0;
++	if (pdata->use_hw_shiftreg == true)
++		sp->bitbang.txrx_word[SPI_MODE_0] = ath79_spi_txrx_shiftreg_mode0;
++	else
++		sp->bitbang.txrx_word[SPI_MODE_0] = ath79_spi_txrx_mode0;
+ 	sp->bitbang.setup_transfer = spi_bitbang_setup_transfer;
+ 	sp->bitbang.flags = SPI_CS_HIGH;
+ 
