@@ -8,9 +8,9 @@ PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/greearb/ath10k-ct.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2018-03-16
-PKG_SOURCE_VERSION:=30827f7d5b9841905c4efe918da2d95fc518c921
-PKG_MIRROR_HASH:=aac023d7f9b09becf27058b1d09ae6d068b14bb6f10c5b5a248c7ee5ecff04dc
+PKG_SOURCE_DATE:=2018-05-30
+PKG_SOURCE_VERSION:=127f98189ee57260ed175a60d6654a43c32a8f4b
+PKG_MIRROR_HASH:=f8856c9d950d3b12ce0d8770e56e861df14878a1b3601592205c5d51edc794ac
 
 # Build the 4.13 ath10k-ct driver version.  Other options are "-4.9", or
 # leave un-defined for 4.7 kernel.  Probably this should match as closely as
