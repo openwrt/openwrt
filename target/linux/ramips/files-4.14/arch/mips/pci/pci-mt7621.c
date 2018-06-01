@@ -65,6 +65,9 @@ extern void chk_phy_pll(void);
  * devices.
  */
 
+#define CONFIG_PCIE_PORT0
+#define CONFIG_PCIE_PORT1
+#define CONFIG_PCIE_PORT2
 #define RALINK_PCIE0_CLK_EN             (1<<24)
 #define RALINK_PCIE1_CLK_EN             (1<<25)
 #define RALINK_PCIE2_CLK_EN             (1<<26)
@@ -141,7 +144,7 @@ extern void chk_phy_pll(void);
 #define RALINK_PCI_IO_MAP_BASE	0x1e160000
 
 #define RALINK_SYSTEM_CONTROL_BASE	0xbe000000
-
+#define GPIO_PERST
 #define ASSERT_SYSRST_PCIE(val)		do {	\
 						if (*(unsigned int *)(0xbe00000c) == 0x00030101)	\
 							RALINK_RSTCTRL |= val;	\
@@ -394,15 +397,21 @@ set_pcie_phy(u32 *addr, int start_b, int bits, int val)
 void
 bypass_pipe_rst(void)
 {
+#if defined (CONFIG_PCIE_PORT0)
 	/* PCIe Port 0 */
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x02c), 12, 1, 0x01);	// rg_pe1_pipe_rst_b
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x02c),  4, 1, 0x01);	// rg_pe1_pipe_cmd_frc[4]
+#endif
+#if defined (CONFIG_PCIE_PORT1)
 	/* PCIe Port 1 */
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x12c), 12, 1, 0x01);	// rg_pe1_pipe_rst_b
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x12c),  4, 1, 0x01);	// rg_pe1_pipe_cmd_frc[4]
+#endif
+#if defined (CONFIG_PCIE_PORT2)
 	/* PCIe Port 2 */
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x02c), 12, 1, 0x01);	// rg_pe1_pipe_rst_b
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x02c),  4, 1, 0x01);	// rg_pe1_pipe_cmd_frc[4]
+#endif
 }
 
 void
@@ -411,6 +420,7 @@ set_phy_for_ssc(void)
 	unsigned long reg = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x10));
 
 	reg = (reg >> 6) & 0x7;
+#if defined (CONFIG_PCIE_PORT0) || defined (CONFIG_PCIE_PORT1)
 	/* Set PCIe Port0 & Port1 PHY to disable SSC */
 	/* Debug Xtal Type */
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x400),  8, 1, 0x01);	// rg_pe1_frc_h_xtal_type
@@ -451,7 +461,8 @@ set_phy_for_ssc(void)
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x100),  5, 1, 0x01);	// rg_pe1_phy_en                   //Port 1 enable
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x000),  4, 1, 0x00);	// rg_pe1_frc_phy_en               //Force Port 0 disable control
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x100),  4, 1, 0x00);	// rg_pe1_frc_phy_en               //Force Port 1 disable control
-
+#endif
+#if defined (CONFIG_PCIE_PORT2)
 	/* Set PCIe Port2 PHY to disable SSC */
 	/* Debug Xtal Type */
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x400),  8, 1, 0x01);	// rg_pe1_frc_h_xtal_type
@@ -484,6 +495,7 @@ set_phy_for_ssc(void)
 	/* Enable PHY and disable force mode */
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x000),  5, 1, 0x01);	// rg_pe1_phy_en                   //Port 0 enable
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x000),  4, 1, 0x00);	// rg_pe1_frc_phy_en               //Force Port 0 disable control
+#endif
 }
 
 void setup_cm_memory_region(struct resource *mem_resource)
@@ -516,13 +528,18 @@ static int mt7621_pci_probe(struct platform_device *pdev)
 	ioport_resource.start= 0;
 	ioport_resource.end = ~0;
 
+#if defined (CONFIG_PCIE_PORT0)
 	val = RALINK_PCIE0_RST;
+#endif
+#if defined (CONFIG_PCIE_PORT1)
 	val |= RALINK_PCIE1_RST;
+#endif
+#if defined (CONFIG_PCIE_PORT2)
 	val |= RALINK_PCIE2_RST;
-
+#endif
 	ASSERT_SYSRST_PCIE(RALINK_PCIE0_RST | RALINK_PCIE1_RST | RALINK_PCIE2_RST);
 	printk("pull PCIe RST: RALINK_RSTCTRL = %x\n", RALINK_RSTCTRL);
-
+#if defined GPIO_PERST /* add GPIO control instead of PERST_N */ /*chhung*/
 	*(unsigned int *)(0xbe000060) &= ~(0x3<<10 | 0x3<<3);
 	*(unsigned int *)(0xbe000060) |= 0x1<<10 | 0x1<<3;
 	mdelay(100);
@@ -531,11 +548,18 @@ static int mt7621_pci_probe(struct platform_device *pdev)
 	*(unsigned int *)(0xbe000620) &= ~(0x1<<19 | 0x1<<8 | 0x1<<7);		// clear DATA
 
 	mdelay(100);
-
+#else
+	*(unsigned int *)(0xbe000060) &= ~0x00000c00;
+#endif
+#if defined (CONFIG_PCIE_PORT0)
 	val = RALINK_PCIE0_RST;
+#endif
+#if defined (CONFIG_PCIE_PORT1)
 	val |= RALINK_PCIE1_RST;
+#endif
+#if defined (CONFIG_PCIE_PORT2)
 	val |= RALINK_PCIE2_RST;
-
+#endif
 	DEASSERT_SYSRST_PCIE(val);
 	printk("release PCIe RST: RALINK_RSTCTRL = %x\n", RALINK_RSTCTRL);
 
@@ -544,12 +568,18 @@ static int mt7621_pci_probe(struct platform_device *pdev)
 	set_phy_for_ssc();
 	printk("release PCIe RST: RALINK_RSTCTRL = %x\n", RALINK_RSTCTRL);
 
+#if defined (CONFIG_PCIE_PORT0)
 	read_config(0, 0, 0, 0x70c, &val);
 	printk("Port 0 N_FTS = %x\n", (unsigned int)val);
+#endif
+#if defined (CONFIG_PCIE_PORT1)
 	read_config(0, 1, 0, 0x70c, &val);
 	printk("Port 1 N_FTS = %x\n", (unsigned int)val);
+#endif
+#if defined (CONFIG_PCIE_PORT2)
 	read_config(0, 2, 0, 0x70c, &val);
 	printk("Port 2 N_FTS = %x\n", (unsigned int)val);
+#endif
 
 	RALINK_RSTCTRL = (RALINK_RSTCTRL | RALINK_PCIE_RST);
 	RALINK_SYSCFG1 &= ~(0x30);
@@ -560,11 +590,19 @@ static int mt7621_pci_probe(struct platform_device *pdev)
 	RALINK_PCIE_CLK_GEN |= 0x80000000;
 	mdelay(50);
 	RALINK_RSTCTRL = (RALINK_RSTCTRL & ~RALINK_PCIE_RST);
+	
 
-	/* Use GPIO control instead of PERST_N */
+#if defined GPIO_PERST /* add GPIO control instead of PERST_N */  /*chhung*/
 	*(unsigned int *)(0xbe000620) |= 0x1<<19 | 0x1<<8 | 0x1<<7;		// set DATA
-	mdelay(1000);
+	mdelay(100);
+#else
+	RALINK_PCI_PCICFG_ADDR &= ~(1<<1); //de-assert PERST
+#endif
+	mdelay(500);
 
+
+	mdelay(500);
+#if defined (CONFIG_PCIE_PORT0)
 	if(( RALINK_PCI0_STATUS & 0x1) == 0)
 	{
 		printk("PCIE0 no card, disable it(RST&CLK)\n");
@@ -575,6 +613,8 @@ static int mt7621_pci_probe(struct platform_device *pdev)
 		pcie_link_status |= 1<<0;
 		RALINK_PCI_PCIMSK_ADDR |= (1<<20); // enable pcie1 interrupt
 	}
+#endif
+#if defined (CONFIG_PCIE_PORT1)
 	if(( RALINK_PCI1_STATUS & 0x1) == 0)
 	{
 		printk("PCIE1 no card, disable it(RST&CLK)\n");
@@ -585,6 +625,8 @@ static int mt7621_pci_probe(struct platform_device *pdev)
 		pcie_link_status |= 1<<1;
 		RALINK_PCI_PCIMSK_ADDR |= (1<<21); // enable pcie1 interrupt
 	}
+#endif
+#if defined (CONFIG_PCIE_PORT2)
 	if (( RALINK_PCI2_STATUS & 0x1) == 0) {
 		printk("PCIE2 no card, disable it(RST&CLK)\n");
 		ASSERT_SYSRST_PCIE(RALINK_PCIE2_RST);
@@ -594,6 +636,7 @@ static int mt7621_pci_probe(struct platform_device *pdev)
 		pcie_link_status |= 1<<2;
 		RALINK_PCI_PCIMSK_ADDR |= (1<<22); // enable pcie2 interrupt
 	}
+#endif
 	if (pcie_link_status == 0)
 		return 0;
 
@@ -644,6 +687,7 @@ pcie(2/1/0) link status	pcie2_num	pcie1_num	pcie0_num
 	RALINK_PCI_MEMBASE = 0xffffffff; //RALINK_PCI_MM_MAP_BASE;
 	RALINK_PCI_IOBASE = RALINK_PCI_IO_MAP_BASE;
 
+#if defined (CONFIG_PCIE_PORT0)
 	//PCIe0
 	if((pcie_link_status & 0x1) != 0) {
 		RALINK_PCI0_BAR0SETUP_ADDR = 0x7FFF0001;	//open 7FFF:2G; ENABLE
@@ -651,6 +695,8 @@ pcie(2/1/0) link status	pcie2_num	pcie1_num	pcie0_num
 		RALINK_PCI0_CLASS = 0x06040001;
 		printk("PCIE0 enabled\n");
 	}
+#endif
+#if defined (CONFIG_PCIE_PORT1)
 	//PCIe1
 	if ((pcie_link_status & 0x2) != 0) {
 		RALINK_PCI1_BAR0SETUP_ADDR = 0x7FFF0001;	//open 7FFF:2G; ENABLE
@@ -658,6 +704,8 @@ pcie(2/1/0) link status	pcie2_num	pcie1_num	pcie0_num
 		RALINK_PCI1_CLASS = 0x06040001;
 		printk("PCIE1 enabled\n");
 	}
+#endif
+#if defined (CONFIG_PCIE_PORT2)
 	//PCIe2
 	if ((pcie_link_status & 0x4) != 0) {
 		RALINK_PCI2_BAR0SETUP_ADDR = 0x7FFF0001;	//open 7FFF:2G; ENABLE
@@ -665,6 +713,8 @@ pcie(2/1/0) link status	pcie2_num	pcie1_num	pcie0_num
 		RALINK_PCI2_CLASS = 0x06040001;
 		printk("PCIE2 enabled\n");
 	}
+#endif
+
 
 	switch(pcie_link_status) {
 	case 7:
