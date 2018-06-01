@@ -164,12 +164,16 @@
 
 	pcie0 {
 		rt5592@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			device_type = "pci";
 			ralink,mtd-eeprom = <&factory 0x8000>;
 		};
 	};
 
 	pcie1 {
 		mt76@1,0 {
+			reg = <0x0000 0 0 0 0>;
+			device_type = "pci";
 			mediatek,mtd-eeprom = <&factory 0x0000>;
 		};
 	};
