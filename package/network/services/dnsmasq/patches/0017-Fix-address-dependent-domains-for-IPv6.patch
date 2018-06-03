@@ -1,0 +1,24 @@
+From 51e4eeeb04b8dd8510ed267d580751525e77cb77 Mon Sep 17 00:00:00 2001
+From: Paul Maddock <Paul@whitefall.co.uk>
+Date: Tue, 12 Jun 2018 16:37:40 +0100
+Subject: [PATCH 17/17] Fix address-dependent domains for IPv6.
+
+Thanks to Paul Maddock for spotting this.
+It seems to have been broken forever.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/lease.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/lease.c
++++ b/src/lease.c
+@@ -87,7 +87,7 @@ static int read_leases(time_t now, FILE
+ 	    if ((lease = lease6_allocate(&addr.addr.addr6, lease_type)))
+ 	      {
+ 		lease_set_iaid(lease, strtoul(s, NULL, 10));
+-		domain = get_domain6((struct in6_addr *)lease->hwaddr);
++		domain = get_domain6(&lease->addr6);
+ 	      }
+ 	  }
+ #endif

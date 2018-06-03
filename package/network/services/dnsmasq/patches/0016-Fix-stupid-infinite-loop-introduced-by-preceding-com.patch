@@ -1,0 +1,23 @@
+From 05ff659a3c0d95be6d41fae755243988a1bb3387 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Tue, 12 Jun 2018 16:03:09 +0100
+Subject: [PATCH 16/17] Fix stupid infinite loop introduced by preceding
+ commit.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/dhcp6.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/dhcp6.c
++++ b/src/dhcp6.c
+@@ -692,8 +692,8 @@ static int construct_worker(struct in6_a
+ 		      if (context->flags & CONTEXT_RA_NAME)
+ 			param->newname = 1;
+ 		    
+-		      break;
+ 		    }
++		  break;
+ 		}
+ 	    }
+ 	
