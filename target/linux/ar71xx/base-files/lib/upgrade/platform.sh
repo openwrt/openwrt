@@ -430,6 +430,7 @@ platform_check_image() {
 	tl-mr3220-v2|\
 	tl-mr3420|\
 	tl-mr3420-v2|\
+	tl-mr3420-v3|\
 	tl-mr6400|\
 	tl-wa701nd-v2|\
 	tl-wa7210n-v2|\

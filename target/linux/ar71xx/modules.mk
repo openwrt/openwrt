@@ -53,6 +53,22 @@ endef
 $(eval $(call KernelPackage,leds-wndr3700-usb))
 
 
+define KernelPackage/leds-tl-mr3420-v3
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=TL-MR3420 v3 LED support
+  DEPENDS:=@TARGET_ar71xx
+  KCONFIG:=CONFIG_LEDS_TL_MR3420_V3
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-tl-mr3420-v3.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-tl-mr3420-v3)
+endef
+
+define KernelPackage/leds-tl-mr3420-v3/description
+ Kernel module for some LEDs on TP-LINK MR3420 v3 board.
+endef
+
+$(eval $(call KernelPackage,leds-tl-mr3420-v3))
+
+
 define KernelPackage/spi-vsc7385
   SUBMENU:=$(SPI_MENU)
   TITLE:=Vitesse VSC7385 ethernet switch driver
