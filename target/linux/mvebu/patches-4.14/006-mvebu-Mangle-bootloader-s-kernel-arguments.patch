@@ -28,7 +28,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1948,6 +1948,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
+@@ -1938,6 +1938,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
  	  The command-line arguments provided by the boot loader will be
  	  appended to the the device tree bootargs property.
  
@@ -48,7 +48,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  config CMDLINE
 --- a/arch/arm/boot/compressed/atags_to_fdt.c
 +++ b/arch/arm/boot/compressed/atags_to_fdt.c
-@@ -3,6 +3,8 @@
+@@ -4,6 +4,8 @@
  
  #if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND)
  #define do_extend_cmdline 1
@@ -57,7 +57,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  #else
  #define do_extend_cmdline 0
  #endif
-@@ -66,6 +68,65 @@ static uint32_t get_cell_size(const void
+@@ -67,6 +69,65 @@ static uint32_t get_cell_size(const void
  	return cell_size;
  }
  
@@ -123,7 +123,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  static void merge_fdt_bootargs(void *fdt, const char *fdt_cmdline)
  {
  	char cmdline[COMMAND_LINE_SIZE];
-@@ -85,12 +140,21 @@ static void merge_fdt_bootargs(void *fdt
+@@ -86,12 +147,21 @@ static void merge_fdt_bootargs(void *fdt
  
  	/* and append the ATAG_CMDLINE */
  	if (fdt_cmdline) {
@@ -145,7 +145,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  	}
  	*ptr = '\0';
  
-@@ -147,7 +211,9 @@ int atags_to_fdt(void *atag_list, void *
+@@ -148,7 +218,9 @@ int atags_to_fdt(void *atag_list, void *
  			else
  				setprop_string(fdt, "/chosen", "bootargs",
  					       atag->u.cmdline.cmdline);
@@ -156,7 +156,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  			if (memcount >= sizeof(mem_reg_property)/4)
  				continue;
  			if (!atag->u.mem.size)
-@@ -186,6 +252,10 @@ int atags_to_fdt(void *atag_list, void *
+@@ -187,6 +259,10 @@ int atags_to_fdt(void *atag_list, void *
  		setprop(fdt, "/memory", "reg", mem_reg_property,
  			4 * memcount * memsize);
  	}
@@ -169,7 +169,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  }
 --- a/init/main.c
 +++ b/init/main.c
-@@ -89,6 +89,10 @@
+@@ -95,6 +95,10 @@
  #include <asm/sections.h>
  #include <asm/cacheflush.h>
  
@@ -180,7 +180,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  static int kernel_init(void *);
  
  extern void init_IRQ(void);
-@@ -540,6 +544,18 @@ asmlinkage __visible void __init start_k
+@@ -574,6 +578,18 @@ asmlinkage __visible void __init start_k
  	page_alloc_init();
  
  	pr_notice("Kernel command line: %s\n", boot_command_line);
