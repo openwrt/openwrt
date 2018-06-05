@@ -91,6 +91,9 @@ case "$FIRMWARE" in
 		ath10kcal_extract "ART" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
 		;;
+	"ubnt,ubnt-unifiac-lite")
+		ath10kcal_extract "EEPROM" 20480 2116
+		;;
 	esac
 	;;
 "ath10k/pre-cal-pci-0000:00:00.0.bin")
