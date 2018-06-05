@@ -461,6 +461,19 @@ define Device/gl-ar750
 endef
 TARGET_DEVICES += gl-ar750
 
+define Device/gl-x750-4g
+  DEVICE_TITLE := GL.iNet GL-X750-4G
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9887 kmod-usb-core \
+	kmod-usb2 kmod-usb-storage
+  BOARDNAME := GL-X750-4G
+  SUPPORTED_DEVICES := gl-x750-4g
+  IMAGE_SIZE := 16000k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += gl-x750-4g
+
 define Device/gl-ar750s
   DEVICE_TITLE := GL.iNet GL-AR750S
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9887 kmod-usb-core \
