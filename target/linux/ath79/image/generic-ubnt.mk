@@ -79,3 +79,22 @@ define Device/ubnt_unifi
   SUPPORTED_DEVICES += unifi
 endef
 TARGET_DEVICES += ubnt_unifi
+
+define Device/ubnt-unifiac
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  DEVICE_PROFILE := UBNT
+  IMAGE_SIZE := 7744k
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+endef
+
+
+define Device/ubnt-unifiac-lite
+  $(Device/ubnt-unifiac)
+  DEVICE_TITLE := Ubiquiti UniFi AC-Lite
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PROFILE += UBNTUNIFIACLITE
+  BOARDNAME := UBNT-UF-AC-LITE
+  ATH_SOC := qca9563
+endef
+TARGET_DEVICES += ubnt-unifiac-lite
