@@ -698,6 +698,22 @@ endef
 $(eval $(call KernelPackage,serial-8250))
 
 
+define KernelPackage/serial-8250-exar
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Exar 8250 UARTs
+  KCONFIG:= CONFIG_SERIAL_8250_EXAR
+  FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/8250_exar.ko
+  AUTOLOAD:=$(call AutoProbe,8250 8250_base 8250_exar)
+  DEPENDS:=+kmod-serial-8250
+endef
+
+define KernelPackage/serial-8250-exar/description
+ Kernel module for Exar serial ports
+endef
+
+$(eval $(call KernelPackage,serial-8250-exar))
+
+
 define KernelPackage/regmap
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Generic register map support
