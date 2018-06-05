@@ -12,6 +12,9 @@ get_status_led() {
 	"avm,fritz300e")
 		status_led="${boardname}:green:power"
 		;;
+	"embeddedwireless,dorin")
+		status_led="dorin:green:status"
+		;;
 	"glinet,ar150")
 		status_led="gl-ar150:orange:wlan"
 		;;

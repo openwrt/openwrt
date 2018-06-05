@@ -111,20 +111,21 @@
 	status = "okay";
 
 	mtd-mac-address = <&art 0x1002>;
+	mtd-mac-address-increment = <0x40>;
 
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
 	};
 
-	gmac-config {
-		device = <&gmac>;
-
-		switch-phy-addr-swap = <1>;
-		switch-phy-swap = <1>;
-	};
 };
 
 &mdio1 {
 	status = "okay";
+};
+
+&wmac {
+	status = "okay";
+	mtd-cal-data = <&art 0x1000>;
+	mtd-mac-address = <&art 0x1002>;
 };
