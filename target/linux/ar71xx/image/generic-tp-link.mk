@@ -150,7 +150,10 @@ define Device/cpe510-520-v1
   TPLINK_BOARD_ID := CPE510
   DEVICE_PROFILE := CPE510
   LOADER_TYPE := elf
-  KERNEL := kernel-bin | patch-cmdline | lzma | loader-kernel
+  LOADER_FLASH_OFFS := 0x43000
+  COMPILE := loader-$(1).elf
+  COMPILE/loader-$(1).elf := loader-okli-compile
+  KERNEL := kernel-bin | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 12288
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
