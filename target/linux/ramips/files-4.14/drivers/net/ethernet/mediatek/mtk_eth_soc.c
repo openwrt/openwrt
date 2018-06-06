@@ -307,24 +307,20 @@ no_rx_mem:
 
 static void fe_txd_unmap(struct device *dev, struct fe_tx_buf *tx_buf)
 {
-	if (tx_buf->flags & FE_TX_FLAGS_SINGLE0) {
-		dma_unmap_single(dev,
-				 dma_unmap_addr(tx_buf, dma_addr0),
-				 dma_unmap_len(tx_buf, dma_len0),
-				 DMA_TO_DEVICE);
-	} else if (tx_buf->flags & FE_TX_FLAGS_PAGE0) {
+	if (dma_unmap_len(tx_buf, dma_len0))
 		dma_unmap_page(dev,
 			       dma_unmap_addr(tx_buf, dma_addr0),
 			       dma_unmap_len(tx_buf, dma_len0),
 			       DMA_TO_DEVICE);
-	}
-	if (tx_buf->flags & FE_TX_FLAGS_PAGE1)
+
+	if (dma_unmap_len(tx_buf, dma_len1))
 		dma_unmap_page(dev,
 			       dma_unmap_addr(tx_buf, dma_addr1),
 			       dma_unmap_len(tx_buf, dma_len1),
 			       DMA_TO_DEVICE);
 
-	tx_buf->flags = 0;
+	dma_unmap_len_set(tx_buf, dma_addr0, 0);
+	dma_unmap_len_set(tx_buf, dma_addr1, 0);
 	if (tx_buf->skb && (tx_buf->skb != (struct sk_buff *)DMA_DUMMY_DESC))
 		dev_kfree_skb_any(tx_buf->skb);
 	tx_buf->skb = NULL;
@@ -559,6 +555,54 @@ static inline u32 fe_empty_txd(struct fe_tx_ring *ring)
 			 (ring->tx_ring_size - 1)));
 }
 
+static int fe_tx_dma_map_page(struct device *dev, struct fe_tx_buf *tx_buf,
+			      struct fe_tx_dma *txd, int idx,
+			      struct page *page, size_t offset, size_t size)
+{
+	dma_addr_t mapped_addr;
+
+	mapped_addr = dma_map_page(dev, page, offset, size, DMA_TO_DEVICE);
+	if (unlikely(dma_mapping_error(dev, mapped_addr)))
+		return -EIO;
+
+	if (idx & 1) {
+		txd->txd3 = mapped_addr;
+		txd->txd2 |= TX_DMA_PLEN1(size);
+		dma_unmap_addr_set(tx_buf, dma_addr1, mapped_addr);
+		dma_unmap_len_set(tx_buf, dma_len1, size);
+	} else {
+		tx_buf->skb = (struct sk_buff *)DMA_DUMMY_DESC;
+		txd->txd1 = mapped_addr;
+		txd->txd2 = TX_DMA_PLEN0(size);
+		dma_unmap_addr_set(tx_buf, dma_addr0, mapped_addr);
+		dma_unmap_len_set(tx_buf, dma_len0, size);
+	}
+	return 0;
+}
+
+static int fe_tx_dma_map_skb(struct device *dev, struct fe_tx_buf *tx_buf,
+			     struct fe_tx_dma *txd, int idx,
+			     struct sk_buff *skb)
+{
+	struct page *page = virt_to_page(skb->data);
+	size_t offset = offset_in_page(skb->data);
+	size_t size = skb_headlen(skb);
+
+	return fe_tx_dma_map_page(dev, tx_buf, txd, idx, page, offset, size);
+}
+
+static inline struct sk_buff *
+fe_next_frag(struct sk_buff *head, struct sk_buff *skb)
+{
+	if (skb != head)
+		return skb->next;
+
+	if (skb_has_frag_list(skb))
+		return skb_shinfo(skb)->frag_list;
+
+	return NULL;
+}
+
 static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 			 int tx_num, struct fe_tx_ring *ring)
 {
@@ -566,7 +610,7 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 	struct skb_frag_struct *frag;
 	struct fe_tx_dma txd, *ptxd;
 	struct fe_tx_buf *tx_buf;
-	dma_addr_t mapped_addr;
+	struct sk_buff *head = skb;
 	unsigned int nr_frags;
 	u32 def_txd4;
 	int i, j, k, frag_size, frag_map_size, offset;
@@ -574,7 +618,6 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 	tx_buf = &ring->tx_buf[ring->tx_next_idx];
 	memset(tx_buf, 0, sizeof(*tx_buf));
 	memset(&txd, 0, sizeof(txd));
-	nr_frags = skb_shinfo(skb)->nr_frags;
 
 	/* init tx descriptor */
 	if (priv->soc->tx_dma)
@@ -613,82 +656,68 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 		}
 	}
 
-	mapped_addr = dma_map_single(&dev->dev, skb->data,
-				     skb_headlen(skb), DMA_TO_DEVICE);
-	if (unlikely(dma_mapping_error(&dev->dev, mapped_addr)))
-		goto err_out;
-	txd.txd1 = mapped_addr;
-	txd.txd2 = TX_DMA_PLEN0(skb_headlen(skb));
+	k = 0;
+	j = ring->tx_next_idx;
 
-	tx_buf->flags |= FE_TX_FLAGS_SINGLE0;
-	dma_unmap_addr_set(tx_buf, dma_addr0, mapped_addr);
-	dma_unmap_len_set(tx_buf, dma_len0, skb_headlen(skb));
+next_frag:
+	if (skb_headlen(skb)) {
+		if (fe_tx_dma_map_skb(&dev->dev, tx_buf, &txd, k++, skb))
+			goto err_dma;
+	}
 
 	/* TX SG offload */
-	j = ring->tx_next_idx;
-	k = 0;
+	nr_frags = skb_shinfo(skb)->nr_frags;
 	for (i = 0; i < nr_frags; i++) {
-		offset = 0;
+		struct page *page;
+
 		frag = &skb_shinfo(skb)->frags[i];
 		frag_size = skb_frag_size(frag);
+		offset = frag->page_offset;
+		page = skb_frag_page(frag);
 
 		while (frag_size > 0) {
 			frag_map_size = min(frag_size, TX_DMA_BUF_LEN);
-			mapped_addr = skb_frag_dma_map(&dev->dev, frag, offset,
-						       frag_map_size,
-						       DMA_TO_DEVICE);
-			if (unlikely(dma_mapping_error(&dev->dev, mapped_addr)))
+			if (!(k & 0x1)) {
+				fe_set_txd(&txd, &ring->tx_dma[j]);
+				memset(&txd, 0, sizeof(txd));
+				txd.txd4 = def_txd4;
+				j = NEXT_TX_DESP_IDX(j);
+				tx_buf = &ring->tx_buf[j];
+			}
+
+			if (fe_tx_dma_map_page(&dev->dev, tx_buf, &txd, k++,
+					       page, offset, frag_map_size))
 				goto err_dma;
 
-			if (k & 0x1) {
-				j = NEXT_TX_DESP_IDX(j);
-				txd.txd1 = mapped_addr;
-				txd.txd2 = TX_DMA_PLEN0(frag_map_size);
-				txd.txd4 = def_txd4;
-
-				tx_buf = &ring->tx_buf[j];
-				memset(tx_buf, 0, sizeof(*tx_buf));
-
-				tx_buf->flags |= FE_TX_FLAGS_PAGE0;
-				dma_unmap_addr_set(tx_buf, dma_addr0,
-						   mapped_addr);
-				dma_unmap_len_set(tx_buf, dma_len0,
-						  frag_map_size);
-			} else {
-				txd.txd3 = mapped_addr;
-				txd.txd2 |= TX_DMA_PLEN1(frag_map_size);
-
-				tx_buf->skb = (struct sk_buff *)DMA_DUMMY_DESC;
-				tx_buf->flags |= FE_TX_FLAGS_PAGE1;
-				dma_unmap_addr_set(tx_buf, dma_addr1,
-						   mapped_addr);
-				dma_unmap_len_set(tx_buf, dma_len1,
-						  frag_map_size);
-
-				if (!((i == (nr_frags - 1)) &&
-				      (frag_map_size == frag_size))) {
-					fe_set_txd(&txd, &ring->tx_dma[j]);
-					memset(&txd, 0, sizeof(txd));
-				}
-			}
 			frag_size -= frag_map_size;
 			offset += frag_map_size;
-			k++;
 		}
+	}
+
+	skb = fe_next_frag(head, skb);
+	if (skb) {
+		if (!(k & 0x1)) {
+			fe_set_txd(&txd, &ring->tx_dma[j]);
+			memset(&txd, 0, sizeof(txd));
+			txd.txd4 = def_txd4;
+			j = NEXT_TX_DESP_IDX(j);
+			tx_buf = &ring->tx_buf[j];
+		}
+		goto next_frag;
 	}
 
 	/* set last segment */
 	if (k & 0x1)
-		txd.txd2 |= TX_DMA_LS1;
-	else
 		txd.txd2 |= TX_DMA_LS0;
+	else
+		txd.txd2 |= TX_DMA_LS1;
 	fe_set_txd(&txd, &ring->tx_dma[j]);
 
 	/* store skb to cleanup */
-	tx_buf->skb = skb;
+	tx_buf->skb = head;
 
-	netdev_sent_queue(dev, skb->len);
-	skb_tx_timestamp(skb);
+	netdev_sent_queue(dev, head->len);
+	skb_tx_timestamp(head);
 
 	ring->tx_next_idx = NEXT_TX_DESP_IDX(j);
 	/* make sure that all changes to the dma ring are flushed before we
@@ -702,7 +731,7 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 			netif_wake_queue(dev);
 	}
 
-	if (netif_xmit_stopped(netdev_get_tx_queue(dev, 0)) || !skb->xmit_more)
+	if (netif_xmit_stopped(netdev_get_tx_queue(dev, 0)) || !head->xmit_more)
 		fe_reg_w32(ring->tx_next_idx, FE_REG_TX_CTX_IDX0);
 
 	return 0;
@@ -762,10 +791,12 @@ static inline int fe_skb_padto(struct sk_buff *skb, struct fe_priv *priv)
 
 static inline int fe_cal_txd_req(struct sk_buff *skb)
 {
-	int i, nfrags;
+	struct sk_buff *head = skb;
+	int i, nfrags = 0;
 	struct skb_frag_struct *frag;
 
-	nfrags = 1;
+next_frag:
+	nfrags++;
 	if (skb_is_gso(skb)) {
 		for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
 			frag = &skb_shinfo(skb)->frags[i];
@@ -774,6 +805,10 @@ static inline int fe_cal_txd_req(struct sk_buff *skb)
 	} else {
 		nfrags += skb_shinfo(skb)->nr_frags;
 	}
+
+	skb = fe_next_frag(head, skb);
+	if (skb)
+		goto next_frag;
 
 	return DIV_ROUND_UP(nfrags, 2);
 }
