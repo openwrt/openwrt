@@ -421,7 +421,8 @@ dhcp_mac_add() {
 
 	xappend "--dhcp-mac=$networkid,$mac"
 
-	dhcp_option_add "$cfg" "$networkid"
+	dhcp_option_add "$cfg" "$networkid" 0
+	dhcp_option_add "$cfg" "$networkid" 2
 }
 
 dhcp_boot_add() {
