@@ -158,6 +158,10 @@ case "$FIRMWARE" in
 	rb-962uigs-5hact2hnt)
 		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 20480 2116
 		;;
+	ursus)
+		ath10kcal_extract "art" 20480 2116
+		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary art 18) +0)
+		;;
 	wlr8100)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +1)
