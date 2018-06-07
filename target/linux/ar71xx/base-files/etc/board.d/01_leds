@@ -423,6 +423,11 @@ hornet-ub-x2)
 	ucidef_set_led_wlan "wlan" "WLAN" "alfa:blue:wlan" "phy0tpt"
 	ucidef_set_led_usbdev "usb" "USB" "alfa:blue:usb" "1-1"
 	;;
+koala)
+	ucidef_set_led_default "power" "POWER" "$board:green:power" "1"
+	ucidef_set_led_wlan "wlan2g" "WLAN 2.4GHz" "$board:yellow:wlan2" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN 5GHz" "$board:red:wlan58" "phy0tpt"
+	;;
 lan-turtle)
 	ucidef_set_led_netdev "wan" "WAN" "$board:orange:system" "eth1"
 	;;

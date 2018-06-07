@@ -768,6 +768,9 @@ ar71xx_board_detect() {
 	*"JWAP230")
 		name="jwap230"
 		;;
+	*"Koala")
+		name="koala"
+		;;
 	*"LAN Turtle")
 		name="lan-turtle"
 		;;
