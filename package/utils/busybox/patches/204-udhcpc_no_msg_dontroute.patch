@@ -1,0 +1,11 @@
+--- a/networking/udhcp/dhcpc.c
++++ b/networking/udhcp/dhcpc.c
+@@ -700,7 +700,7 @@
+ 		return udhcp_send_kernel_packet(packet,
+ 			ciaddr, CLIENT_PORT,
+ 			server, SERVER_PORT,
+-			/*send_flags: "to hosts only on directly connected networks" */ MSG_DONTROUTE
++			0 /*Was MSG_DONTROUTE here. It prevented unicast renewal requests to server in different subnet*/
+ 		);
+ 	}
+ 	return raw_bcast_from_client_config_ifindex(packet, ciaddr);
