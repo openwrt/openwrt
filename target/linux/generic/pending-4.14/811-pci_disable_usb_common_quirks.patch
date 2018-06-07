@@ -19,17 +19,17 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static struct amd_chipset_info {
  	struct pci_dev	*nb_dev;
  	struct pci_dev	*smbus_dev;
-@@ -528,6 +530,10 @@ void usb_amd_dev_put(void)
+@@ -620,6 +622,10 @@ bool usb_amd_pt_check_port(struct device
  }
- EXPORT_SYMBOL_GPL(usb_amd_dev_put);
+ EXPORT_SYMBOL_GPL(usb_amd_pt_check_port);
  
 +#endif /* CONFIG_PCI_DISABLE_COMMON_QUIRKS */
 +
 +#if IS_ENABLED(CONFIG_USB_UHCI_HCD)
 +
  /*
-  * Check if port is disabled in BIOS on AMD Promontory host.
-  * BIOS Disabled ports may wake on connect/disconnect and need
+  * Make sure the controller is completely inactive, unable to
+  * generate interrupts or do DMA.
 @@ -699,8 +705,17 @@ reset_needed:
  	uhci_reset_hc(pdev, base);
  	return 1;
@@ -65,7 +65,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  int usb_amd_find_chipset_info(void);
  int usb_hcd_amd_remote_wakeup_quirk(struct pci_dev *pdev);
  bool usb_amd_hang_symptom_quirk(void);
-@@ -20,12 +23,29 @@ bool usb_xhci_needs_pci_reset(struct pci
+@@ -20,6 +23,18 @@ bool usb_xhci_needs_pci_reset(struct pci
  bool usb_amd_pt_check_port(struct device *device, int port);
  #else
  struct pci_dev;
@@ -84,17 +84,18 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static inline void usb_amd_quirk_pll_disable(void) {}
  static inline void usb_amd_quirk_pll_enable(void) {}
  static inline void usb_asmedia_modifyflowcontrol(struct pci_dev *pdev) {}
- static inline void usb_amd_dev_put(void) {}
- static inline void usb_disable_xhci_ports(struct pci_dev *xhci_pdev) {}
- static inline void sb800_prefetch(struct device *dev, int on) {}
+@@ -30,6 +45,11 @@ static inline bool usb_amd_pt_check_port
+ {
+ 	return false;
+ }
 +static inline void usb_enable_intel_xhci_ports(struct pci_dev *xhci_pdev) {}
 +static inline bool usb_xhci_needs_pci_reset(struct pci_dev *pdev)
 +{
 +	return false;
 +}
- static inline bool usb_amd_pt_check_port(struct device *device, int port)
- {
- 	return false;
+ #endif  /* CONFIG_USB_PCI */
+ 
+ #endif  /*  __LINUX_USB_PCI_QUIRKS_H  */
 --- a/include/linux/usb/hcd.h
 +++ b/include/linux/usb/hcd.h
 @@ -465,7 +465,14 @@ extern int usb_hcd_pci_probe(struct pci_
