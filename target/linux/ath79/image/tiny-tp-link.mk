@@ -11,6 +11,16 @@ define Device/tl-mr10u
 endef
 TARGET_DEVICES += tl-mr10u
 
+define Device/tl-mr3020-v1
+  $(Device/tplink-4mlzma)
+  ATH_SOC := ar9331
+  DEVICE_TITLE := TP-LINK TL-MR3020 v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x30200001
+  SUPPORTED_DEVICES := tplink,tl-mr3020-v1 tl-mr3020-v1
+endef
+TARGET_DEVICES += tl-mr3020-v1
+
 define Device/tl-wr703n
   $(Device/tplink-4mlzma)
   ATH_SOC := ar9331
