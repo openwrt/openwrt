@@ -1318,7 +1318,7 @@ endef
 define Device/fritz300e
   $(call Device/AVM)
   DEVICE_TITLE := AVM FRITZ!WLAN Repeater 300E
-  DEVICE_PACKAGES := rssileds -swconfig
+  DEVICE_PACKAGES += rssileds -swconfig
   BOARDNAME := FRITZ300E
   SUPPORTED_DEVICES := fritz300e
   IMAGE_SIZE := 15232k
@@ -1328,7 +1328,7 @@ TARGET_DEVICES += fritz300e
 define Device/fritz4020
   $(call Device/AVM)
   DEVICE_TITLE := AVM FRITZ!Box 4020
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage
+  DEVICE_PACKAGES += kmod-usb-core kmod-usb2 kmod-usb-storage
   BOARDNAME := FRITZ4020
   SUPPORTED_DEVICES := fritz4020
   IMAGE_SIZE := 15232k
