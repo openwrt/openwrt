@@ -51,6 +51,8 @@
 
 			mdio0: mdio-bus {
 				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
 
 				regmap = <&eth0>;
 
@@ -70,6 +72,8 @@
 
 			mdio1: mdio-bus {
 				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
 
 				regmap = <&eth1>;
 
