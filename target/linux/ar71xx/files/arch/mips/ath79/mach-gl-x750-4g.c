@@ -38,6 +38,7 @@
 #define GL_X750_4G_GPIO_I2C_SDA		1
 
 #define GL_X750_4G_GPIO_USB_POWER		2
+#define GL_X750_4G_GPIO_PCI_POWER		0
 
 #define GL_X750_4G_KEYS_POLL_INTERVAL	20
 #define GL_X750_4G_KEYS_DEBOUNCE_INTERVAL	(3 * GL_X750_4G_KEYS_POLL_INTERVAL)
@@ -133,8 +134,12 @@ static void __init gl_x750_4g_setup(void)
 					gl_x750_4g_gpio_keys);
 
 	gpio_request_one(GL_X750_4G_GPIO_USB_POWER,
-			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,
 			 "USB power");
+
+        gpio_request_one(GL_X750_4G_GPIO_PCI_POWER,
+                         GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,
+                         "PCI power");
 
 //	platform_device_register(&gl_x750_4g_i2c_gpio);
 
