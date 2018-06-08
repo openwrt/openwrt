@@ -4,7 +4,7 @@ ARCH:=mips
 BOARD:=ath79
 BOARDNAME:=Atheros ATH79 (DTS)
 CPU_TYPE:=24kc
-SUBTARGETS:=generic nand tiny
+SUBTARGETS:=generic nand tiny mikrotik
 
 FEATURES:=ramdisk source-only
 

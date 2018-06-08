@@ -1,0 +1,21 @@
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -563,4 +563,8 @@
+ 	  Enables support for NAND controller on MTK SoCs.
+ 	  This controller is found on mt27xx, mt81xx, mt65xx SoCs.
+ 
++config MTD_NAND_RB91X
++	tristate "NAND flash driver for the RouterBOARD 91x series"
++	depends on MTD_NAND
++
+ endif # MTD_NAND
+--- a/drivers/mtd/nand/Makefile
++++ b/drivers/mtd/nand/Makefile
+@@ -60,6 +60,7 @@
+ obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= brcmnand/
+ obj-$(CONFIG_MTD_NAND_QCOM)		+= qcom_nandc.o
+ obj-$(CONFIG_MTD_NAND_MTK)		+= mtk_nand.o mtk_ecc.o
++obj-$(CONFIG_MTD_NAND_RB91X)		+= rb91x_nand.o
+ 
+ nand-objs := nand_base.o nand_bbt.o nand_timings.o nand_ids.o
+ nand-objs += nand_amd.o
