@@ -211,7 +211,6 @@ ramips_setup_interfaces()
 	ubnt-erx|\
 	ubnt-erx-sfp|\
 	ur-326n4g|\
-	ravpower,wd03|\
 	wrtnode|\
 	wrtnode2p | \
 	wrtnode2r | \
@@ -305,6 +304,9 @@ ramips_setup_interfaces()
 	newifi-d1)
 		ucidef_add_switch "switch0" \
 		"1:lan:2" "2:lan:1" "4:wan" "6@eth0"
+		;;
+	ravpower,wd03)
+		ucidef_set_interface_lan "eth0"
 		;;
 	re350-v1)
 		ucidef_add_switch "switch0" \
