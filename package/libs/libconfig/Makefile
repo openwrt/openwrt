@@ -12,7 +12,7 @@ PKG_VERSION:=1.5
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.hyperrealm.com/libconfig
+PKG_SOURCE_URL:=http://distfiles.gentoo.org/distfiles/
 PKG_HASH:=e31daa390d8e4461c8830512fe2e13ba1a3d6a02a2305a02429eec61e68703f6
 
 PKG_FIXUP:=autoreconf
@@ -27,7 +27,7 @@ define Package/libconfig
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Configuration File Library
-  URL:=http://www.hyperrealm.com/libconfig/
+  URL:=https://hyperrealm.github.io/libconfig/
 endef
 
 define Package/libconfig/description
