@@ -205,4 +205,15 @@ define Device/qcom_ap-dk04.1-c1
 endef
 TARGET_DEVICES += qcom_ap-dk04.1-c1
 
+define Device/zyxel_wre6606
+	$(call Device/FitImage)
+	DEVICE_TITLE := ZyXEL WRE6606
+	DEVICE_DTS_CONFIG := config@4
+	DEVICE_DTS := qcom-ipq4018-wre6606
+	DEVICE_PACKAGES := ipq-wifi-zyxel_wre6606
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += zyxel_wre6606
+
 $(eval $(call BuildImage))
