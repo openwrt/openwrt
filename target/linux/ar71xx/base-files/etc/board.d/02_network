@@ -199,6 +199,10 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "2:wan"
 		;;
+	k2t)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "3:lan:1" "5:lan:2" "4:wan"
+		;;
 	ap132|\
 	ap136|\
 	ap152|\
@@ -296,6 +300,10 @@ ar71xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
+		;;
+	k2t)
+		lan_mac=$(head -c400 $(find_mtd_chardev config) | grep -o wan_mac.* | cut -d\" -f3)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	cr5000|\
 	dgl-5500-a1|\

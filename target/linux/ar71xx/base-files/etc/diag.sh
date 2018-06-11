@@ -261,6 +261,9 @@ get_status_led() {
 	jwap230)
 		status_led="$board:green:led1"
 		;;
+	k2t)
+		status_led="$board:yellow:lan"
+		;;
 	koala)
 		status_led="$board:blue:sys"
 		;;
