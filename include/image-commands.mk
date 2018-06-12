@@ -123,6 +123,16 @@ define Build/tplink-safeloader
 		$(if $(findstring sysupgrade,$(word 1,$(1))),-S) && mv $@.new $@ || rm -f $@
 endef
 
+define Build/mksercommfw
+	-$(STAGING_DIR_HOST)/bin/mksercommfw \
+		$@ \
+		$(KERNEL_OFFSET) \
+		$(HWID) \
+		$(HWVER) \
+		$(SWVER)
+endef
+
+
 define Build/append-dtb
 	cat $(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb >> $@
 endef
