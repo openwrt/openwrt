@@ -2,6 +2,17 @@
 # MT76x8 Profiles
 #
 
+DEVICE_VARS += SERCOMM_KERNEL_OFFSET SERCOMM_HWID SERCOMM_HWVER SERCOMM_SWVER
+
+define Build/mksercommfw
+	$(STAGING_DIR_HOST)/bin/mksercommfw \
+		$@ \
+		$(SERCOMM_KERNEL_OFFSET) \
+		$(SERCOMM_HWID) \
+		$(SERCOMM_HWVER) \
+		$(SERCOMM_SWVER)
+endef
+
 define Device/tplink
   TPLINK_FLASHLAYOUT :=
   TPLINK_HWID :=
@@ -90,6 +101,23 @@ define Device/mt7628
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += mt7628
+
+define Device/netgear_r6120
+  DTS := R6120
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Netgear AC1200 R6120
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SERCOMM_KERNEL_OFFSET := 90000
+  SERCOMM_HWID := CGQ
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0040
+  IMAGES += factory.img
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE)| append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.img := $$(IMAGE/default) | mksercommfw
+endef
+TARGET_DEVICES += netgear_r6120
 
 define Device/omega2
   DTS := OMEGA2
