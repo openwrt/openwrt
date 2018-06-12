@@ -1,0 +1,55 @@
+--- backports-2017-11-01.orig/drivers/net/wireless/ath/ath9k/ahb.c
++++ backports-2017-11-01/drivers/net/wireless/ath/ath9k/ahb.c
+@@ -122,6 +122,23 @@ static int of_get_wifi_cal(struct device
+ 	return 0;
+ }
+ 
++
++static int ath9k_of_eeprom_request(struct platform_device *pdev,
++						const char *name, struct ath9k_platform_data *pdata)
++{
++	int err;
++	const struct firmware *fw;
++	err = request_firmware(&fw, name, &pdev->dev);
++	if (err < 0) {
++		dev_err(&pdev->dev,	"failed to load calibration data from firmware file\n");
++		return err;
++	}
++	memcpy(pdata->eeprom_data, fw->data, sizeof(pdata->eeprom_data));
++	release_firmware(fw);
++	return 0;
++}
++
++
+ static int ar913x_wmac_reset(void)
+ {
+ 	ath79_device_reset_set(AR913X_RESET_AMBA2WMAC);
+@@ -263,6 +280,7 @@ static int of_ath_ahb_probe(struct platf
+ 	const struct of_device_id *match;
+ 	const struct of_ath_ahb_data *data;
+ 	u8 led_pin;
++		const char *eeprom_name;
+ 
+ 	match = of_match_device(of_ath_ahb_match, &pdev->dev);
+ 	data = (const struct of_ath_ahb_data *)match->data;
+@@ -298,8 +316,14 @@ static int of_ath_ahb_probe(struct platf
+ 
+ 	pdata->get_mac_revision = data->soc_revision;
+ 
+-	if (of_get_wifi_cal(pdev->dev.of_node, pdata))
++        if (of_get_wifi_cal(pdev->dev.of_node, pdata)) {
+ 		dev_err(&pdev->dev, "failed to load calibration data from mtd device\n");
++		}
++			
++		if(of_find_property(pdev->dev.of_node, "eeprom-name", NULL)) {
++				of_property_read_string(pdev->dev.of_node,"eeprom-name", &eeprom_name);
++				ath9k_of_eeprom_request(pdev, eeprom_name, pdata);
++		}
+ 
+ 	return data->dev_id;
+ }
+@@ -439,3 +463,4 @@ void ath_ahb_exit(void)
+ {
+ 	platform_driver_unregister(&ath_ahb_driver);
+ }
++
