@@ -313,6 +313,11 @@ mzk-ex750np)
 na930)
 	set_usb_led "$boardname:blue:status"
 	;;
+netgear,r6120)
+	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x0f"
+	ucidef_set_led_wlan "wlan2g" "WiFi 2.4GHz" "$boardname:green:wlan2g" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WiFi 5GHz" "$boardname:green:wlan5g" "phy1tpt"
+	;;
 newifi-d1)
 	set_usb_led "$boardname:red:status"
 	;;
