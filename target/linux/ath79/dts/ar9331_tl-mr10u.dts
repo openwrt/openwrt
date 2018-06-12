@@ -1,19 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 /dts-v1/;
 
-#include "ar9331_tl-wr703n.dtsi"
+#include "ar9331_tl-wr703n_tl-mr10u.dtsi"
 
 / {
-	model = "TP-Link MR10U";
-	compatible = "tplink,tl-mr10u";
+	model = "TP-Link TL-MR10U";
+	compatible = "tplink,tl-mr10u", "qca,ar9331";
+};
 
-	reg_usb_vbus: reg_usb_vbus {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpio = <&gpio 28 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
-
+&reg_usb_vbus {
+	gpio = <&gpio 18 GPIO_ACTIVE_HIGH>;
 };
