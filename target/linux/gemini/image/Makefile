@@ -7,9 +7,17 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-# Just copy the zImage for D-Link DIR-685
+# Cook a "WRGG" image, this board is apparently one in the D-Link
+# WRGG family and uses the exact same firmware format as other
+# D-Link devices.
 define Build/dir685-images
-	cp $(IMAGE_KERNEL) $(BIN_DIR)/$(IMG_PREFIX)-dir685-zImage
+	mkwrggimg -i $(IMAGE_KERNEL) \
+	-o $(BIN_DIR)/$(IMG_PREFIX)-dir685-fwupdate.bin \
+	-d /dev/mtdblock/1 \
+	-s wrgns01_dlwbr_dir685RBWW \
+	-v 'N/A' \
+	-m dir685 \
+	-B 96bb
 endef
 
 # Build D-Link DNS-313 images using the special header tool.
