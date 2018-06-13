@@ -89,7 +89,8 @@ GEMINI_NAS_PACKAGES:=kmod-md-mod kmod-md-linear kmod-md-multipath \
 define Device/dlink-dir-685
 	DEVICE_TITLE := D-Link DIR-685 Xtreme N Storage Router
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) \
-			kmod-switch-rtl8366rb swconfig
+			kmod-switch-rtl8366rb swconfig \
+			rt2800-pci
 	IMAGES += dir685-image
 	IMAGE/dir685-image := dir685-images
 endef
@@ -119,7 +120,7 @@ TARGET_DEVICES += rut1xx
 
 define Device/sq201
 	DEVICE_TITLE := ITian Square One SQ201
-	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) rt61-pci-firmware
+	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) rt61-pci
 endef
 TARGET_DEVICES += sq201
 
