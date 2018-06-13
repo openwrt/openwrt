@@ -21,7 +21,7 @@
 #include "dev-eth.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
-#include "dev-m25p80.h"
+#include "dev-spi.h"
 #include "dev-usb.h"
 #include "dev-wmac.h"
 #include "machtypes.h"
@@ -96,11 +96,33 @@ static struct platform_device gl_x750_4g_i2c_gpio = {
 	},
 };*/
 
+static struct spi_board_info gl_x750_4g_spi_info[] = {
+    {
+        .bus_num    = 0,
+        .chip_select    = 0,
+        .max_speed_hz   = 25000000,
+        .modalias   = "m25p80",
+        .platform_data  = NULL,
+    },
+    {
+        .bus_num    = 0,
+        .chip_select    = 1,
+        .max_speed_hz   = 25000000,
+        .modalias   = "generic-spinand-controller",
+        .platform_data  = NULL,
+    }
+};
+
+static struct ath79_spi_platform_data gl_x750_4g_spi_data = {
+    .bus_num        = 0,
+    .num_chipselect     = 2,
+};
+
 static void __init gl_x750_4g_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1f050000);
 
-	ath79_register_m25p80(NULL);
+	ath79_register_spi(&gl_x750_4g_spi_data, gl_x750_4g_spi_info, 2);
 
 	ath79_register_mdio(0, 0x0);
 	//ath79_register_mdio(1, 0x0);

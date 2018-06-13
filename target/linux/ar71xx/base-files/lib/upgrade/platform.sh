@@ -294,7 +294,6 @@ platform_check_image() {
 	gl-ar300m|\
 	gl-ar300|\
 	gl-ar750|\
-	gl-x750-4g|\
 	gl-domino|\
 	gl-mifi|\
 	gl-usb150|\
@@ -360,6 +359,7 @@ platform_check_image() {
 
 		return 0
 		;;
+	gl-x750-4g|\
         gl-ar750s)
                 platform_check_image_gl_nand "$1" "$board" "$magic" && return 0
                 return 1
@@ -776,6 +776,7 @@ platform_pre_upgrade() {
 		# erase firmware if booted from initramfs
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
 		;;
+	gl-x750-4g|\
 	gl-ar750s)
 		platform_pre_upgrade_gl_nand "$1"
 		;;
