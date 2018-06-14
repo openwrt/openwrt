@@ -120,10 +120,9 @@ ipq40xx_setup_macs()
 		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
 		;;
 	asus,rt-ac58u)
-		CI_UBIPART=UBI_DEV
-		wan_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
-		lan_mac=$(mtd_get_mac_binary_ubi Factory 0x5006)
-		label_mac=$wan_mac
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
+		label_mac=$lan_mac
 		;;
 	cilab,meshpoint-one)
 		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
