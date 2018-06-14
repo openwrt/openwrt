@@ -150,3 +150,9 @@ define LegacyDevice/GL-X750-4G
 	      kmod-usb2 kmod-usb-storage
 endef
 LEGACY_DEVICES += GL-X750-4G
+
+define LegacyDevice/GL-AR300M
+	DEVICE_TITLE := GL-AR300M with nand flash
+	DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-usb-storage
+endef
+LEGACY_DEVICES += GL-AR300M

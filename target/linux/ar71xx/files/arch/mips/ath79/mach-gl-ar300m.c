@@ -22,7 +22,6 @@
 #include "dev-eth.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
-#include "dev-m25p80.h"
 #include "dev-usb.h"
 #include "dev-spi.h"
 #include "dev-wmac.h"
@@ -109,7 +108,7 @@ static struct spi_board_info gl_ar300m_spi_info[] = {
 		.bus_num	= 0,
 		.chip_select	= 1,
 		.max_speed_hz	= 25000000,
-		.modalias	= "ath79-spinand",
+		.modalias	= "generic-spinand-controller",
 		.platform_data	= NULL,
 	}
 };

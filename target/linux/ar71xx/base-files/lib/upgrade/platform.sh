@@ -291,7 +291,6 @@ platform_check_image() {
 	ew-dorin|\
 	ew-dorin-router|\
 	gl-ar150|\
-	gl-ar300m|\
 	gl-ar300|\
 	gl-ar750|\
 	gl-domino|\
@@ -359,6 +358,7 @@ platform_check_image() {
 
 		return 0
 		;;
+	gl-ar300m|\
 	gl-x750-4g|\
         gl-ar750s)
                 platform_check_image_gl_nand "$1" "$board" "$magic" && return 0
@@ -776,6 +776,7 @@ platform_pre_upgrade() {
 		# erase firmware if booted from initramfs
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
 		;;
+	gl-ar300m|\
 	gl-x750-4g|\
 	gl-ar750s)
 		platform_pre_upgrade_gl_nand "$1"

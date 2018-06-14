@@ -276,6 +276,7 @@ mynet_rext_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,7808k(firmware),64k(nvram)ro
 zyx_nbg6716_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(env)ro,64k(RFdata)ro,-(nbu);ar934x-nfc:2048k(zyxel_rfsd),2048k(romd),1024k(header),2048k(kernel),-(ubi)
 gl-ar750s_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(art)ro,2048k(kernel),13052k(reserved);spi0.1:-(ubi)
 gl-x750-4g_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(art)ro,2048k(kernel),13052k(reserved);spi0.1:-(ubi)
+gl-ar300m_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(reserved),64k(art)ro;spi0.1:2048k(kernel),-(ubi)
 
 define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(VMLINUX).elf
@@ -1052,6 +1053,7 @@ $(eval $(call SingleProfile,NetgearNAND,64k,R6100,r6100,R6100,ttyS0,115200,$$(r6
 $(eval $(call SingleProfile,ZyXELNAND,128k,NBG6716,nbg6716,NBG6716,ttyS0,115200,NBG6716,$$(zyx_nbg6716_mtdlayout),mem=256M))
 $(eval $(call SingleProfile,GLNAND,64k,GL-AR750S,gl-ar750s,GL-AR750S,ttyS0,115200,$$(gl-ar750s_mtdlayout),gl-ar750s))
 $(eval $(call SingleProfile,GLNAND,64k,GL-X750-4G,gl-x750-4g,GL-X750-4G,ttyS0,115200,$$(gl-x750-4g_mtdlayout),gl-x750-4g))
+$(eval $(call SingleProfile,GLNAND,64k,GL-AR300M,gl-ar300m,GL-AR300M,ttyS0,115200,$$(gl-ar300m_mtdlayout),gl-ar300m))
 
 endif # ifeq ($(SUBTARGET),nand)
 
