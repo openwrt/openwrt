@@ -19,6 +19,11 @@ preinit_set_mac_address() {
 		base_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		ip link set dev eth0 address "${base_mac}"
 		;;
+	asus,rt-ac58u)
+		CI_UBIPART=UBI_DEV
+		base_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
+		ip link set dev eth0 address $(macaddr_add "$base_mac" +1)
+		;;
 	meraki,mr33)
 		mac_lan=$(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66)
 		[ -n "$mac_lan" ] && ip link set dev eth0 address "$mac_lan"
