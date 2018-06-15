@@ -1,6 +1,4 @@
 #!/bin/sh
-. /lib/functions.sh
-
 FW="/tmp/firmware-speedport-w921v-1.44.000.bin"
 URL="https://www.telekom.de/hilfe/downloads/firmware-speedport-w921v-1.44.000.bin"
 FW_TAPI="vr9_tapi_fw.bin"
@@ -47,12 +45,4 @@ D=`md5sum -b ${FW_DSL} | cut -d" " -f1`
 	exit 1
 }
 
-MTD=$(find_mtd_index dsl_fw)
-if [ "$MTD" -gt 0 -a -e "/dev/mtd$MTD" ]; then
-	echo "Storing firmware in flash"
-	tar cvz ${FW_TAPI} ${FW_DSL} | mtd write - "/dev/mtd$MTD"
-	/etc/init.d/dsl_fs boot
-else
-	cp ${FW_TAPI} ${FW_DSL} /lib/firmware/
-	ln -s /lib/firmware/vr9_dsl_fw_annex_b.bin /lib/firmware/vdsl.bin
-fi
+cp ${FW_TAPI} ${FW_DSL} /lib/firmware/
