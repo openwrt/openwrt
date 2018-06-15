@@ -54,6 +54,21 @@ define Build/nas4220b-images
 	rm -f $(BIN_DIR)/ImageInfo
 endef
 
+# The Itian Square One SQ201 uses the same method.
+define Build/sq201-images
+	dd if=$(IMAGE_ROOTFS) of=$(BIN_DIR)/rd.gz bs=6144k conv=sync
+	dd if=$(IMAGE_ROOTFS) of=$(BIN_DIR)/hddapp.tgz bs=6144k count=1 seek=1
+	cp $(IMAGE_KERNEL) $(BIN_DIR)/zImage
+	cp ./ImageInfo-sq201 $(BIN_DIR)/ImageInfo
+	sed -i -e "s/DATESTR/`date +%Y%m%d`/g" $(BIN_DIR)/ImageInfo
+	(cd $(BIN_DIR); tar -czf $(IMG_PREFIX)-sysupgrade-sq201.tar.gz ImageInfo zImage rd.gz hddapp.tgz)
+	mv $(BIN_DIR)/rd.gz $(BIN_DIR)/$(IMG_PREFIX)-sq201-rd.gz
+	mv $(BIN_DIR)/hddapp.tgz $(BIN_DIR)/$(IMG_PREFIX)-sq201-hddapp.tgz
+	mv $(BIN_DIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-sq201-zImage
+	rm -f $(BIN_DIR)/ImageInfo
+endef
+
+
 # WBD-111 and WBD-222:
 # work around the bootloader's bug with extra nops
 # FIXME: is this really needed now that we no longer append the code
@@ -120,6 +135,8 @@ TARGET_DEVICES += rut1xx
 
 define Device/sq201
 	DEVICE_TITLE := ITian Square One SQ201
+	IMAGES += sq201-image
+	IMAGE/sq201-image := sq201-images
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) rt61-pci
 endef
 TARGET_DEVICES += sq201
