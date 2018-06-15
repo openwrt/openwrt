@@ -226,7 +226,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan:3" "2:lan:4" "3:lan:1" "4:lan:2" "0:wan" "6@eth0"
 		;;
-	dir-860l-b1)
+	dir-860l-b1|\
+	elecom,wrc-1167ghbk2-s)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
 		;;
@@ -450,6 +451,10 @@ ramips_setup_macs()
 	e1700)
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
 		;;
+	elecom,wrc-1167ghbk2-s|\
+	sk-wb8)
+		wan_mac=$(mtd_get_mac_binary factory 57350)
+		;;
 	gl-mt300n-v2|\
 	whr-g300n)
 		wan_mac=$(mtd_get_mac_binary factory 4)
@@ -513,9 +518,6 @@ ramips_setup_macs()
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_setbit_la "$lan_mac")
 		wan_mac=$(mtd_get_mac_binary factory 32772)
-		;;
-	sk-wb8)
-		wan_mac=$(mtd_get_mac_binary factory 57350)
 		;;
 	tew-691gr)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 3)
