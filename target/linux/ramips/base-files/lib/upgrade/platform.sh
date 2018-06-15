@@ -255,6 +255,7 @@ platform_check_image() {
 	tplink,c20-v4|\
 	tplink,c50-v3|\
 	tplink,tl-mr3420-v5|\
+	tplink,tl-wr842n-v5|\
 	tplink,tl-wr902ac-v3|\
 	tl-wr840n-v4|\
 	tl-wr840n-v5|\
