@@ -9,12 +9,12 @@ PKG_NAME:=ltq-vdsl-fw
 PKG_VERSION:=1
 PKG_RELEASE:=1
 
-PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
+PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/ltq-vdsl-vr9-fw-installer
-  TITLE:=Firmware installer
+define Package/ltq-vdsl-vr9-vectoring-fw-installer
+  TITLE:=VDSL2 Vectoring Firmware installer
   SECTION:=net
   CATEGORY:=Network
   DEPENDS:=@TARGET_lantiq_xrx200 +kmod-ltq-vdsl-vr9
@@ -37,4 +37,4 @@ define Package/ltq-vdsl-vr9-fw-installer/install
 	$(CP) $(PKG_BUILD_DIR)/w921v_fw_cutter $(PKG_BUILD_DIR)/vdsl_fw_install.sh $(1)/sbin/
 endef
 
-$(eval $(call BuildPackage,ltq-vdsl-vr9-fw-installer))
+$(eval $(call BuildPackage,ltq-vdsl-vr9-vectoring-fw-installer))
