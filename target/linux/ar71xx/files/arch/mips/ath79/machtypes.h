@@ -47,6 +47,7 @@ enum ath79_mach_type {
 	ATH79_MACH_ARCHER_C5,			/* TP-LINK Archer C5 board */
 	ATH79_MACH_ARCHER_C58_V1,		/* TP-LINK Archer C58 V1 board */
 	ATH79_MACH_ARCHER_C59_V1,		/* TP-LINK Archer C59 V1 board */
+	ATH79_MACH_ARCHER_C59_V2,		/* TP-LINK Archer C59 V2 board */
 	ATH79_MACH_ARCHER_C60_V1,		/* TP-LINK Archer C60 V1 board */
 	ATH79_MACH_ARCHER_C60_V2,		/* TP-LINK Archer C60 V2 board */
 	ATH79_MACH_ARCHER_C7,			/* TP-LINK Archer C7 board */

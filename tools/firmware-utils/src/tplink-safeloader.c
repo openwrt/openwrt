@@ -463,6 +463,46 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system",
 	},
 
+	/** Firmware layout for the C59v2 */
+	{
+		.id	= "ARCHER-C59-V2",
+		.vendor	= "",
+		.support_list =
+			"SupportList:\r\n"
+			"{product_name:Archer C59,product_ver:2.0.0,special_id:00000000}\r\n"
+			"{product_name:Archer C59,product_ver:2.0.0,special_id:45550000}\r\n"
+			"{product_name:Archer C59,product_ver:2.0.0,special_id:55530000}\r\n",
+		.support_trail = '\x00',
+		.soft_ver = "soft_ver:2.0.0 Build 20161206 rel.7303\n",
+
+		/** We're using a dynamic kernel/rootfs split here */
+		.partitions = {
+			{"factory-boot", 0x00000, 0x20000},
+			{"fs-uboot", 0x20000, 0x10000},
+			{"default-mac", 0x30000, 0x00200},
+			{"pin", 0x30200, 0x00200},
+			{"device-id", 0x30400, 0x00100},
+			{"product-info", 0x30500, 0x0fb00},
+			{"firmware", 0x40000, 0xe10000},
+			{"partition-table", 0xe50000, 0x10000},
+			{"soft-version", 0xe60000, 0x10000},
+			{"support-list", 0xe70000, 0x10000},
+			{"profile", 0xe80000, 0x10000},
+			{"default-config", 0xe90000, 0x10000},
+			{"user-config", 0xea0000, 0x40000},
+			{"usb-config", 0xee0000, 0x10000},
+			{"certificate", 0xef0000, 0x10000},
+			{"extra-para", 0xf00000, 0x10000},
+			{"qos-db", 0xf10000, 0x30000},
+			{"log", 0xfe0000, 0x10000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
 	/** Firmware layout for the C60v1 */
 	{
 		.id	= "ARCHER-C60-V1",
@@ -1550,6 +1590,7 @@ static void build_image(const char *output,
 
 	/* Some devices need the extra-para partition to accept the firmware */
 	if (strcasecmp(info->id, "ARCHER-C25-V1") == 0 ||
+	    strcasecmp(info->id, "ARCHER-C59-V2") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C60-V2") == 0 ||
 	    strcasecmp(info->id, "TLWR1043NV5") == 0) {
 		const char mdat[11] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
