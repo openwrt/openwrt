@@ -10,6 +10,10 @@
 	compatible = "ubnt,unifi", "qca,ar7241";
 	model = "Ubiquiti UniFi AP";
 
+	aliases {
+		led-status = &dome_green;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x4000000>;
@@ -36,7 +40,7 @@
 
 	leds {
 		compatible = "gpio-leds";
-		dome-green {
+		dome_green: dome-green {
 			label = "ubnt:green:dome";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
