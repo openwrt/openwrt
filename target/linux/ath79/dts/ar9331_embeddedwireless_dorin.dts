@@ -11,6 +11,7 @@
 	compatible = "embeddedwireless,dorin", "qca,ar9331";
 
 	aliases {
+		led-status = &status;
 		serial0 = &uart;
 	};
 
@@ -22,7 +23,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		status {
+		status: status {
 			label = "dorin:green:status";
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 			default-state = "off";

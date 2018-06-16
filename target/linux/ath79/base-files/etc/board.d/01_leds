@@ -10,7 +10,6 @@ boardname="${board##*,}"
 case "$board" in
 "avm,fritz300e")
 	ucidef_set_led_netdev "lan" "LAN" "$boardname:green:lan" "eth0"
-	ucidef_set_led_wlan "wlan" "WLAN" "$boardname:green:wlan" "phy0tpt"
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_led_rssi "rssilow" "RSSILOW" "$boardname:green:rssi0" "wlan0" "1" "100"
 	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "$boardname:green:rssi1" "wlan0" "20" "100"
@@ -20,12 +19,8 @@ case "$board" in
 	;;
 "etactica,eg200")
 	ucidef_set_led_netdev "lan" "LAN" "$boardname:red:eth0" "eth0"
-	ucidef_set_led_wlan "wlan" "WLAN" "$boardname:red:wlan" "phy0tpt"
 	ucidef_set_led_oneshot "modbus" "Modbus" "$boardname:red:modbus" "100" "33"
 	ucidef_set_led_default "etactica" "etactica" "$boardname:red:etactica" "ignore"
-	;;
-"glinet,ar150")
-	ucidef_set_led_wlan "wlan" "WLAN" "gl-ar150:orange:wlan" "phy0tpt"
 	;;
 "tplink,tl-mr3020-v1")
 	ucidef_set_led_switch "lan" "LAN" "tp-link:green:lan" "switch0" "0x02"
