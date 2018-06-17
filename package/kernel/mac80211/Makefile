@@ -296,9 +296,9 @@ define KernelPackage/ath9k/config
 		bool "Support chips used in PC OEM cards"
 		depends on PACKAGE_kmod-ath9k
 
-       config ATH9K_TX99
-               bool "Enable TX99 support (WARNING: testing only, breaks normal operation!)"
-               depends on PACKAGE_kmod-ath9k
+	config ATH9K_TX99
+		bool "Enable TX99 support (WARNING: testing only, breaks normal operation!)"
+		depends on PACKAGE_kmod-ath9k
 
 	config ATH9K_UBNTHSR
 		bool "Support for Ubiquiti UniFi Outdoor+ access point"
@@ -341,11 +341,14 @@ PCI is supported.
 endef
 
 define KernelPackage/ath10k/config
-
-       config ATH10K_THERMAL
-               bool "Enable thermal sensors and throttling support"
-               depends on PACKAGE_kmod-ath10k
-
+	config ATH10K_THERMAL
+		bool "Enable thermal sensors and throttling support"
+		depends on PACKAGE_kmod-ath10k
+		   
+	config ATH10K_LEDS
+		bool "Enable led support LED support for chipset connected led pins"
+		default y
+		depends on PACKAGE_kmod-ath10k
 endef
 
 #Broadcom firmware
@@ -1636,6 +1639,7 @@ config-$(CONFIG_ATH9K_SUPPORT_PCOEM) += ATH9K_PCOEM
 config-$(CONFIG_ATH9K_TX99) += ATH9K_TX99
 config-$(CONFIG_ATH9K_UBNTHSR) += ATH9K_UBNTHSR
 config-$(CONFIG_ATH10K_THERMAL) += ATH10K_THERMAL
+config-$(CONFIG_ATH10K_LEDS) += ATH10K_LEDS
 
 config-$(call config_package,ath9k-htc) += ATH9K_HTC
 config-$(call config_package,ath10k) += ATH10K ATH10K_PCI
