@@ -244,6 +244,36 @@ define Device/linksys-ea9500
 endef
 # TARGET_DEVICES += linksys-ea9500
 
+define Device/luxul-xap-1410
+  DEVICE_TITLE := Luxul XAP-1410
+  IMAGE/trx := append-rootfs | trx-serial
+endef
+TARGET_DEVICES += luxul-xap-1410
+
+define Device/luxul-xap-1510
+  DEVICE_TITLE := Luxul XAP-1510
+  IMAGE/trx := append-rootfs | trx-serial
+endef
+TARGET_DEVICES += luxul-xap-1510
+
+define Device/luxul-xwc-1000
+  DEVICE_TITLE := Luxul XWC-1000
+  IMAGE/trx := append-rootfs | trx-serial
+endef
+TARGET_DEVICES += luxul-xwc-1000
+
+define Device/luxul-xwr-1200
+  DEVICE_TITLE := Luxul XWR-1200
+  DEVICE_PACKAGES := $(USB2_PACKAGES)
+endef
+TARGET_DEVICES += luxul-xwr-1200
+
+define Device/luxul-xwr-3100
+  DEVICE_TITLE := Luxul XWR-3100
+  DEVICE_PACKAGES := $(IEEE8021X) kmod-brcmfmac $(USB3_PACKAGES)
+endef
+TARGET_DEVICES += luxul-xwr-3100
+
 define Device/netgear
   IMAGES := chk
   IMAGE/chk := append-ubi | trx-nand | netgear-chk
