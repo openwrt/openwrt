@@ -13,7 +13,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -1310,6 +1310,7 @@ int __init brcmf_core_init(void)
+@@ -1314,6 +1314,7 @@ int __init brcmf_core_init(void)
  {
  	if (!schedule_work(&brcmf_driver_work))
  		return -EBUSY;
@@ -23,7 +23,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  }
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
-@@ -444,6 +444,7 @@ struct brcmf_fw {
+@@ -445,6 +445,7 @@ struct brcmf_fw {
  	u16 bus_nr;
  	void (*done)(struct device *dev, int err, const struct firmware *fw,
  		     void *nvram_image, u32 nvram_len);
@@ -31,7 +31,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  };
  
  static void brcmf_fw_request_nvram_done(const struct firmware *fw, void *ctx)
-@@ -478,6 +479,8 @@ static void brcmf_fw_request_nvram_done(
+@@ -479,6 +480,8 @@ static void brcmf_fw_request_nvram_done(
  		goto fail;
  
  	fwctx->done(fwctx->dev, 0, fwctx->code, nvram, nvram_length);
@@ -40,7 +40,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	kfree(fwctx);
  	return;
  
-@@ -485,6 +488,8 @@ fail:
+@@ -486,6 +489,8 @@ fail:
  	brcmf_dbg(TRACE, "failed: dev=%s\n", dev_name(fwctx->dev));
  	release_firmware(fwctx->code);
  	fwctx->done(fwctx->dev, -ENOENT, NULL, NULL, 0);
@@ -49,7 +49,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	kfree(fwctx);
  }
  
-@@ -516,6 +521,8 @@ fail:
+@@ -517,6 +522,8 @@ fail:
  	brcmf_dbg(TRACE, "failed: dev=%s\n", dev_name(fwctx->dev));
  done:
  	fwctx->done(fwctx->dev, ret, fw, NULL, 0);
@@ -58,7 +58,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	kfree(fwctx);
  }
  
-@@ -527,6 +534,8 @@ int brcmf_fw_get_firmwares_pcie(struct d
+@@ -528,6 +535,8 @@ int brcmf_fw_get_firmwares_pcie(struct d
  				u16 domain_nr, u16 bus_nr)
  {
  	struct brcmf_fw *fwctx;
@@ -67,7 +67,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  	brcmf_dbg(TRACE, "enter: dev=%s\n", dev_name(dev));
  	if (!fw_cb || !code)
-@@ -547,9 +556,17 @@ int brcmf_fw_get_firmwares_pcie(struct d
+@@ -548,9 +557,17 @@ int brcmf_fw_get_firmwares_pcie(struct d
  	fwctx->domain_nr = domain_nr;
  	fwctx->bus_nr = bus_nr;
  
