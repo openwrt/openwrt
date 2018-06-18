@@ -343,6 +343,9 @@ tplink_board_detect() {
 	"c70000"*)
 		model="TP-Link Archer C7"
 		;;
+	"89300001")
+		model="TP-Link Archer D7"
+		;;
 	"751000"*)
 		model="TP-Link TL-WA7510N"
 		;;
@@ -490,6 +493,9 @@ ar71xx_board_detect() {
 		;;
 	*"Archer C7")
 		name="archer-c7"
+		;;
+	*"Archer D7 v1")
+		name="archer-d7-v1"
 		;;
 	*"Arduino Yun")
 		name="arduino-yun"
