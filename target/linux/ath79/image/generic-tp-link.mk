@@ -1,16 +1,5 @@
 include ./common-tp-link.mk
 
-
-define Device/tl-wr1043nd-v1
-  $(Device/tplink-8m)
-  ATH_SOC := ar9132
-  DEVICE_TITLE := TP-LINK TL-WR1043N/ND v1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
-  TPLINK_HWID := 0x10430001
-  SUPPORTED_DEVICES := tplink,tl-wr1043nd-v1 tl-wr1043nd
-endef
-TARGET_DEVICES += tl-wr1043nd-v1
-
 define Device/tl-wdr3600
   $(Device/tplink-8mlzma)
   ATH_SOC := ar9344
@@ -28,3 +17,28 @@ define Device/tl-wdr4300
   SUPPORTED_DEVICES := tplink,tl-wdr4300 tl-wdr4300
 endef
 TARGET_DEVICES += tl-wdr4300
+
+define Device/tl-wr1043nd-v1
+  $(Device/tplink-8m)
+  ATH_SOC := ar9132
+  DEVICE_TITLE := TP-LINK TL-WR1043N/ND v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x10430001
+  SUPPORTED_DEVICES := tplink,tl-wr1043nd-v1 tl-wr1043nd
+endef
+TARGET_DEVICES += tl-wr1043nd-v1
+
+define Device/tl-wr1043nd-v4
+  $(Device/tplink)
+  ATH_SOC := qca9563
+  IMAGE_SIZE := 15552k
+  DEVICE_TITLE := TP-LINK TL-WR1043N/ND v4
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x10430004
+  TPLINK_BOARD_ID := TLWR1043NDV4
+  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+  SUPPORTED_DEVICES := tplink,tl-wr1043nd-v4 tl-wr1043nd-v4
+endef
+TARGET_DEVICES += tl-wr1043nd-v4
