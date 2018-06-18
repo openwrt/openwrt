@@ -60,7 +60,7 @@ endef
 
 define Build/netgear-dni
 	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		-B $(NETGEAR_BOARD_ID) -v $(VERSION_DIST).$(REVISION) \
+		-B $(NETGEAR_BOARD_ID) -v $(VERSION_DIST).$(firstword $(subst -, ,$(REVISION))) \
 		$(if $(NETGEAR_HW_ID),-H $(NETGEAR_HW_ID)) \
 		-r "$(1)" \
 		-i $@ -o $@.new
