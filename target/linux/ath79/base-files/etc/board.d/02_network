@@ -57,6 +57,12 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
 		;;
+	"tplink,tl-wr1043nd-v2"|\
+	"tplink,tl-wr1043nd-v3")
+		ucidef_set_interfaces_lan_wan "eth1.1" "eth0.2"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan" "6@eth0"
+		;;
 	"netgear,wndr3800")
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
