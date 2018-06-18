@@ -141,6 +141,27 @@ define Device/archer-c7-v4
 endef
 TARGET_DEVICES += archer-c7-v4
 
+define Device/archer-d7-v1
+  DEVICE_TITLE := TP-LINK Archer D7 v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
+  BOARDNAME := ARCHER-D7-V1
+  DEVICE_PROFILE := ARCHERD7
+  TPLINK_HWID := 0x89300001
+  TPLINK_HWREV := 0x0000002D
+  TPLINK_FLASHLAYOUT := 16Mltq
+  TPLINK_HWREVADD := 0x00000002
+  TPLINK_HVERSION := 3
+  MTDPARTS := spi0.0:128k(u-boot)ro,1280k(kernel),14656k(rootfs),64k(radioDECT)ro,64k(config)ro,64k(romfs)ro,64k(rom)ro,64k(art)ro
+  KERNEL := kernel-bin | patch-cmdline | lzma
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | \
+	tplink-v2-header -s -V "ver. 1.0"
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := tplink-v2-image -s -V "ver. 1.0" | \
+        append-metadata | check-size $$$$(IMAGE_SIZE)
+  SUPPORTED_DEVICES := archer-d7-v1
+endef
+TARGET_DEVICES += archer-d7-v1
+
 define Device/cpe510-520-v1
   DEVICE_TITLE := TP-LINK CPE510/520 v1
   DEVICE_PACKAGES := rssileds
