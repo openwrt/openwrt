@@ -634,7 +634,8 @@ __ag71xx_link_adjust(struct ag71xx *ag, bool update)
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, fifo5);
 	ag71xx_wr(ag, AG71XX_REG_MAC_IFCTL, ifctl);
 
-	if (of_device_is_compatible(np, "qca,qca9530-eth")) {
+	if (of_device_is_compatible(np, "qca,qca9530-eth") ||
+	    of_device_is_compatible(np, "qca,qca9560-eth")) {
 		/*
 		 * The rx ring buffer can stall on small packets on QCA953x and
 		 * QCA956x. Disabling the inline checksum engine fixes the stall.
