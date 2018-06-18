@@ -1,0 +1,35 @@
+From 0669ee7a69a004ce34fed41e50aa575f8e04427b Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 4 May 2018 16:46:24 +0100
+Subject: [PATCH 02/10] Fix DHCP broken-ness when --no-ping AND
+ --dhcp-sequential-ip are set.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ CHANGELOG  | 3 ++-
+ src/dhcp.c | 2 +-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+--- a/CHANGELOG
++++ b/CHANGELOG
+@@ -14,7 +14,8 @@ version 2.80
+         when the upstream namesevers do not support DNSSEC, and in this
+         case no DNSSEC validation at all is occuring.
+ 
+-
++        Fix DHCP broken-ness when --no-ping AND --dhcp-sequential-ip
++	are set. Thanks to Daniel Miess for help with this.
+ 
+ 
+ version 2.79
+--- a/src/dhcp.c
++++ b/src/dhcp.c
+@@ -678,7 +678,7 @@ struct ping_result *do_icmp_ping(time_t
+   if ((count >= max) || option_bool(OPT_NO_PING) || loopback)
+     {
+       /* overloaded, or configured not to check, loopback interface, return "not in use" */
+-      dummy.hash = 0;
++      dummy.hash = hash;
+       return &dummy;
+     }
+   else if (icmp_ping(addr))

@@ -76,7 +76,7 @@
 			};
 		};
 
-		usb: usb@1b000100 {
+		usb: usb@1b000000 {
 			compatible = "chipidea,usb2";
 			reg = <0x1b000000 0x200>;
 
@@ -104,8 +104,17 @@
 		};
 
 		gmac: gmac@18070000 {
-			compatible = "qca,qr9330-gmac";
+			compatible = "qca,ar9330-gmac";
 			reg = <0x18070000 0x4>;
+		};
+
+		wmac: wmac@18100000 {
+			compatible = "qca,ar9330-wmac";
+			reg = <0x18100000 0x20000>;
+
+			interrupts = <2>;
+
+			status = "disabled";
 		};
 	};
 

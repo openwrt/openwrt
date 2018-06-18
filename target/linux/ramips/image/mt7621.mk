@@ -83,13 +83,13 @@ define Device/firewrt
 endef
 TARGET_DEVICES += firewrt
 
-define Device/gb-pc1
+define Device/gnubee_gb-pc1
   DTS := GB-PC1
   DEVICE_TITLE := GnuBee Personal Cloud One
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
 endef
-TARGET_DEVICES += gb-pc1
+TARGET_DEVICES += gnubee_gb-pc1
 
 define Device/gnubee_gb-pc2
   DTS := GB-PC2
@@ -113,6 +113,14 @@ define Device/hc5962
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 wpad-mini
 endef
 TARGET_DEVICES += hc5962
+
+define Device/iodata_wn-gx300gr
+  DTS := WN-GX300GR
+  IMAGE_SIZE := 7798784
+  DEVICE_TITLE := I-O DATA WN-GX300GR
+  DEVICE_PACKAGES := kmod-mt7603 wpad-mini
+endef
+TARGET_DEVICES += iodata_wn-gx300gr
 
 define Device/k2p
   DTS := K2P

@@ -36,7 +36,7 @@ define Build/mkdapimg2
 	$(STAGING_DIR_HOST)/bin/mkdapimg2 \
 		-i $@ -o $@.new \
 		-s $(DAP_SIGNATURE) \
-		-v $(VERSION_DIST)-$(firstword $(subst -, ,$(REVISION))) \
+		-v $(VERSION_DIST)-$(firstword $(subst +, ,$(firstword $(subst -, ,$(REVISION))))) \
 		-r Default \
 		$(if $(1),-k $(1))
 	mv $@.new $@
@@ -460,6 +460,19 @@ define Device/gl-ar750
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += gl-ar750
+
+define Device/gl-ar750s
+  DEVICE_TITLE := GL.iNet GL-AR750S
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9887 kmod-usb-core \
+	kmod-usb2 kmod-usb-storage
+  BOARDNAME := GL-AR750S
+  SUPPORTED_DEVICES := gl-ar750s
+  IMAGE_SIZE := 16000k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += gl-ar750s
 
 define Device/gl-domino
   DEVICE_TITLE := GL.iNet Domino Pi
@@ -998,6 +1011,17 @@ define Device/tellstick-znet-lite
 endef
 TARGET_DEVICES += tellstick-znet-lite
 
+define Device/ts-d084
+  $(Device/tplink-8mlzma)
+  DEVICE_TITLE := PISEN TS-D084
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME := TS-D084
+  DEVICE_PROFILE := TSD084
+  TPLINK_HWID := 0x07030101
+  CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += ts-d084
+
 define Device/n5q
   DEVICE_TITLE := ALFA Network N5Q
   DEVICE_PACKAGES := rssileds -swconfig
@@ -1294,7 +1318,7 @@ endef
 define Device/fritz300e
   $(call Device/AVM)
   DEVICE_TITLE := AVM FRITZ!WLAN Repeater 300E
-  DEVICE_PACKAGES := rssileds -swconfig
+  DEVICE_PACKAGES += rssileds -swconfig
   BOARDNAME := FRITZ300E
   SUPPORTED_DEVICES := fritz300e
   IMAGE_SIZE := 15232k
@@ -1304,7 +1328,7 @@ TARGET_DEVICES += fritz300e
 define Device/fritz4020
   $(call Device/AVM)
   DEVICE_TITLE := AVM FRITZ!Box 4020
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage
+  DEVICE_PACKAGES += kmod-usb-core kmod-usb2 kmod-usb-storage
   BOARDNAME := FRITZ4020
   SUPPORTED_DEVICES := fritz4020
   IMAGE_SIZE := 15232k

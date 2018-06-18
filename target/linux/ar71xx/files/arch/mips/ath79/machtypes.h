@@ -125,6 +125,7 @@ enum ath79_mach_type {
 	ATH79_MACH_GL_AR300,			/* GL-AR300 */
 	ATH79_MACH_GL_AR300M,			/* GL-AR300M */
 	ATH79_MACH_GL_AR750,			/* GL.iNet GL-AR750 */
+	ATH79_MACH_GL_AR750S,			/* GL.iNet GL-AR750S */
 	ATH79_MACH_GL_DOMINO,			/* Domino */
 	ATH79_MACH_GL_INET,			/* GL-CONNECT GL-INET */
 	ATH79_MACH_GL_MIFI,			/* GL-MIFI support */
@@ -140,6 +141,7 @@ enum ath79_mach_type {
 	ATH79_MACH_JA76PF2,			/* jjPlus JA76PF2 */
 	ATH79_MACH_JWAP003,			/* jjPlus JWAP003 */
 	ATH79_MACH_JWAP230,			/* jjPlus JWAP230 */
+	ATH79_MACH_KOALA,			/* OCEDO Koala */
 	ATH79_MACH_LAN_TURTLE,			/* Hak5 LAN Turtle */
 	ATH79_MACH_LIMA,			/* 8devices Lima */
 	ATH79_MACH_MC_MAC1200R,			/* MERCURY MAC1200R */
@@ -302,6 +304,7 @@ enum ath79_mach_type {
 	ATH79_MACH_TL_WR940N_V4,		/* TP-LINK TL-WR940N v4 */
 	ATH79_MACH_TL_WR940N_V6,		/* TP-LINK TL-WR940N v6 */
 	ATH79_MACH_TL_WR942N_V1,		/* TP-LINK TL-WR942N v1 */
+	ATH79_MACH_TS_D084,			/* PISEN TS-D084 */
 	ATH79_MACH_TUBE2H,			/* Alfa Network Tube2H */
 	ATH79_MACH_UBNT_AIRGW,			/* Ubiquiti AirGateway */
 	ATH79_MACH_UBNT_AIRGWP,			/* Ubiquiti AirGateway Pro */

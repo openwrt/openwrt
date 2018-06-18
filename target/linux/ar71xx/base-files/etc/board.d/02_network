@@ -82,6 +82,7 @@ ar71xx_setup_interfaces()
 	fritz300e|\
 	gl-usb150|\
 	hiveap-121|\
+	koala|\
 	lbe-m5|\
 	loco-m-xw|\
 	mr12|\
@@ -139,6 +140,7 @@ ar71xx_setup_interfaces()
 	tl-wr802n-v1|\
 	tl-wr802n-v2|\
 	tl-wr902ac-v1|\
+	ts-d084|\
 	tube2h|\
 	unifi|\
 	unifiac-lite|\
@@ -401,7 +403,7 @@ ar71xx_setup_interfaces()
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
 		;;
 	ew-balin)
-		ucidef_set_interface_raw "usb2" "usb0" "static"
+		ucidef_set_interface "usb2" ifname "usb0" protocol "static"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "5:lan:4" "4:lan:5" "3:wan"
 		;;
@@ -431,6 +433,10 @@ ar71xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan" "2:lan"
+		;;
+	gl-ar750s)
+		ucidef_add_switch "switch0" \
+ 			"0@eth0" "2:lan:2" "3:lan:1" "1:wan"
 		;;
 	jwap230)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth1.2"
@@ -468,7 +474,7 @@ ar71xx_setup_interfaces()
 		;;
 	tellstick-znet-lite)
 		ucidef_set_interface_wan "eth0"
-		ucidef_set_interface_raw "wlan" "wlan0" "dhcp"
+		ucidef_set_interface "wlan" ifname "wlan0" protocol "dhcp"
 		;;
 	tl-mr3420-v2|\
 	tl-wr841n-v8|\
@@ -499,7 +505,7 @@ ar71xx_setup_interfaces()
 		;;
 	tl-wr841n-v1|\
 	tl-wr941nd)
-		ucidef_set_interface_raw "eth" "eth0"
+		ucidef_set_interface "eth" ifname "eth0"
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	tl-wr741nd|\

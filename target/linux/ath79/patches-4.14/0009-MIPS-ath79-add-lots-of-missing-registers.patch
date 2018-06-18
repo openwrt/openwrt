@@ -8,8 +8,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
  arch/mips/include/asm/mach-ath79/ar71xx_regs.h | 773 ++++++++++++++++++++++++-
  1 file changed, 771 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
-index aa3800c82332..284b4fa23e03 100644
 --- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 +++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 @@ -20,6 +20,10 @@
@@ -158,7 +156,7 @@ index aa3800c82332..284b4fa23e03 100644
  /*
   * PLL block
   */
-@@ -166,8 +260,14 @@
+@@ -166,9 +260,15 @@
  #define AR71XX_AHB_DIV_SHIFT		20
  #define AR71XX_AHB_DIV_MASK		0x7
  
@@ -166,14 +164,14 @@ index aa3800c82332..284b4fa23e03 100644
 +#define AR71XX_ETH1_PLL_SHIFT		19
 +
  #define AR724X_PLL_REG_CPU_CONFIG	0x00
--#define AR724X_PLL_REG_PCIE_CONFIG	0x18
-+#define AR724X_PLL_REG_PCIE_CONFIG	0x10
-+
+ #define AR724X_PLL_REG_PCIE_CONFIG	0x10
+ 
 +#define AR724X_PLL_REG_PCIE_CONFIG_PPL_BYPASS	BIT(16)
 +#define AR724X_PLL_REG_PCIE_CONFIG_PPL_RESET	BIT(25)
- 
++
  #define AR724X_PLL_FB_SHIFT		0
  #define AR724X_PLL_FB_MASK		0x3ff
+ #define AR724X_PLL_REF_DIV_SHIFT	10
 @@ -178,6 +278,8 @@
  #define AR724X_DDR_DIV_SHIFT		22
  #define AR724X_DDR_DIV_MASK		0x3
@@ -399,7 +397,6 @@ index aa3800c82332..284b4fa23e03 100644
  #define AR934X_RESET_USB_HOST		BIT(5)
  #define AR934X_RESET_USB_PHY		BIT(4)
  #define AR934X_RESET_USBSUS_OVERRIDE	BIT(3)
--
 +#define AR934X_RESET_LUT		BIT(2)
 +#define AR934X_RESET_MBOX		BIT(1)
 +#define AR934X_RESET_I2S		BIT(0)
@@ -476,7 +473,7 @@ index aa3800c82332..284b4fa23e03 100644
 +#define QCA956X_RESET_USBSUS_OVERRIDE	BIT(3)
 +#define QCA956X_RESET_SWITCH_ANALOG	BIT(2)
 +#define QCA956X_RESET_SWITCH		BIT(0)
-+
+ 
 +#define AR933X_BOOTSTRAP_MDIO_GPIO_EN	BIT(18)
 +#define AR933X_BOOTSTRAP_EEPBUSY	BIT(4)
  #define AR933X_BOOTSTRAP_REF_CLK_40	BIT(0)
@@ -972,6 +969,3 @@ index aa3800c82332..284b4fa23e03 100644
 +#define QCA956X_SGMII_CONFIG_MODE_CTRL_MASK	0x7
 +
  #endif /* __ASM_MACH_AR71XX_REGS_H */
--- 
-2.11.0
-

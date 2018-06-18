@@ -8,8 +8,38 @@ ath79_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+	"etactica,eg200")
+		ucidef_set_interface_lan "eth0" "dhcp"
+		;;
+	"avm,fritz300e"|\
+	"tplink,tl-mr10u"|\
+	"tplink,tl-wr703n"|\
 	"ubnt,unifi")
 		ucidef_set_interface_lan "eth0"
+		;;
+
+	"embeddedwireless,dorin")
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:wan" "2:lan:3" "3:lan:2"
+		;;
+
+	"glinet,ar150")
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		;;
+	"tplink,tl-mr3020-v1")
+		ucidef_set_interface_lan "eth0.1"
+		ucidef_add_switch "switch0" "0@eth0" "1:lan"
+		;;
+	"tplink,tl-wdr3600"|\
+	"tplink,tl-wdr4300")
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "1:wan"
+		;;
+
+	"tplink,tl-wr740n-v2")
+		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan"
 		;;
 
 	"tplink,tl-wr1043nd-v1")
@@ -36,9 +66,23 @@ ath79_setup_interfaces()
 	esac
 }
 
+ath79_setup_macs()
+{
+	local board="$1"
+
+	case "$board" in
+	avm,fritz300e)
+		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
+		;;
+	esac
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+}
+
 board_config_update
 board=$(board_name)
 ath79_setup_interfaces $board
+ath79_setup_macs $board
 board_config_flush
 
 exit 0

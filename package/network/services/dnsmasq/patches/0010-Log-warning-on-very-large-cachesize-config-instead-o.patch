@@ -1,0 +1,38 @@
+From 1f1873aadd092a0fab505dd278a484d887ba0ec3 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 11 May 2018 23:38:23 +0100
+Subject: [PATCH 10/10] Log warning on very large cachesize config, instead of
+ truncating it.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/dnsmasq.c | 6 +++++-
+ src/option.c  | 2 --
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+--- a/src/dnsmasq.c
++++ b/src/dnsmasq.c
+@@ -740,7 +740,11 @@ int main (int argc, char **argv)
+   else 
+     {
+       if (daemon->cachesize != 0)
+-	my_syslog(LOG_INFO, _("started, version %s cachesize %d"), VERSION, daemon->cachesize);
++	{
++	  my_syslog(LOG_INFO, _("started, version %s cachesize %d"), VERSION, daemon->cachesize);
++	  if (daemon->cachesize > 10000)
++	    my_syslog(LOG_WARNING, _("cache size greater than 10000 may cause performance issues, and is unlikely to be useful."));
++	}
+       else
+ 	my_syslog(LOG_INFO, _("started, version %s cache disabled"), VERSION);
+ 
+--- a/src/option.c
++++ b/src/option.c
+@@ -2603,8 +2603,6 @@ static int one_opt(int option, char *arg
+ 	    
+ 	    if (size < 0)
+ 	      size = 0;
+-	    else if (size > 10000)
+-	      size = 10000;
+ 	    
+ 	    daemon->cachesize = size;
+ 	  }

@@ -7,9 +7,20 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-# Build the special D-Link DNS-313 header generator tool
-# needed to generate the hard disk boot images then
-# build D-Link DNS-313 images using the special header tool.
+# Cook a "WRGG" image, this board is apparently one in the D-Link
+# WRGG family and uses the exact same firmware format as other
+# D-Link devices.
+define Build/dir685-images
+	mkwrggimg -i $(IMAGE_KERNEL) \
+	-o $(BIN_DIR)/$(IMG_PREFIX)-dir685-fwupdate.bin \
+	-d /dev/mtdblock/1 \
+	-s wrgns01_dlwbr_dir685RBWW \
+	-v 'N/A' \
+	-m dir685 \
+	-B 96bb
+endef
+
+# Build D-Link DNS-313 images using the special header tool.
 # rootfs.tgz and rd.tgz contains nothing, we only need them
 # to satisfy the boot loader on the device. The zImage is
 # the only real content.
@@ -42,6 +53,21 @@ define Build/nas4220b-images
 	mv $(BIN_DIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-nas4220b-zImage
 	rm -f $(BIN_DIR)/ImageInfo
 endef
+
+# The Itian Square One SQ201 uses the same method.
+define Build/sq201-images
+	dd if=$(IMAGE_ROOTFS) of=$(BIN_DIR)/rd.gz bs=6144k conv=sync
+	dd if=$(IMAGE_ROOTFS) of=$(BIN_DIR)/hddapp.tgz bs=6144k count=1 seek=1
+	cp $(IMAGE_KERNEL) $(BIN_DIR)/zImage
+	cp ./ImageInfo-sq201 $(BIN_DIR)/ImageInfo
+	sed -i -e "s/DATESTR/`date +%Y%m%d`/g" $(BIN_DIR)/ImageInfo
+	(cd $(BIN_DIR); tar -czf $(IMG_PREFIX)-sysupgrade-sq201.tar.gz ImageInfo zImage rd.gz hddapp.tgz)
+	mv $(BIN_DIR)/rd.gz $(BIN_DIR)/$(IMG_PREFIX)-sq201-rd.gz
+	mv $(BIN_DIR)/hddapp.tgz $(BIN_DIR)/$(IMG_PREFIX)-sq201-hddapp.tgz
+	mv $(BIN_DIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-sq201-zImage
+	rm -f $(BIN_DIR)/ImageInfo
+endef
+
 
 # WBD-111 and WBD-222:
 # work around the bootloader's bug with extra nops
@@ -78,7 +104,10 @@ GEMINI_NAS_PACKAGES:=kmod-md-mod kmod-md-linear kmod-md-multipath \
 define Device/dlink-dir-685
 	DEVICE_TITLE := D-Link DIR-685 Xtreme N Storage Router
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) \
-			kmod-switch-rtl8366rb swconfig
+			kmod-switch-rtl8366rb swconfig \
+			rt2800-pci
+	IMAGES += dir685-image
+	IMAGE/dir685-image := dir685-images
 endef
 TARGET_DEVICES += dlink-dir-685
 
@@ -106,7 +135,9 @@ TARGET_DEVICES += rut1xx
 
 define Device/sq201
 	DEVICE_TITLE := ITian Square One SQ201
-	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) rt61-pci-firmware
+	IMAGES += sq201-image
+	IMAGE/sq201-image := sq201-images
+	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) rt61-pci
 endef
 TARGET_DEVICES += sq201
 

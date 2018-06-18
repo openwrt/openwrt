@@ -102,7 +102,7 @@
 	led_spi {
 		compatible = "spi-gpio";
 		#address-cells = <1>;
-		ranges;
+		#size-cells = <0>;
 
 		gpio-sck = <&tlmm 5 GPIO_ACTIVE_HIGH>;
 		gpio-mosi = <&tlmm 4 GPIO_ACTIVE_HIGH>;

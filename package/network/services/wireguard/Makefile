@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2016-2017 Jason A. Donenfeld <Jason@zx2c4.com>
+# Copyright (C) 2016-2018 Jason A. Donenfeld <Jason@zx2c4.com>
 # Copyright (C) 2016 Baptiste Jonglez <openwrt@bitsofnetworks.org>
 # Copyright (C) 2016-2017 Dan Luedtke <mail@danrl.com>
 #
@@ -11,12 +11,12 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=wireguard
 
-PKG_VERSION:=0.0.20180420
+PKG_VERSION:=0.0.20180531
 PKG_RELEASE:=1
 
 PKG_SOURCE:=WireGuard-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://git.zx2c4.com/WireGuard/snapshot/
-PKG_HASH:=b58cd2acf9e8d3fe9044c06c0056bd74da1f5673a456f011d36eee3f6fb1da16
+PKG_HASH:=ff653095cc0e4c491ab6cd095ddf5d1db207f48f947fb92873a73220363f423c
 
 PKG_LICENSE:=GPL-2.0 Apache-2.0
 PKG_LICENSE_FILES:=COPYING
@@ -35,9 +35,8 @@ define Package/wireguard/Default
   CATEGORY:=Network
   SUBMENU:=VPN
   URL:=https://www.wireguard.com
-  MAINTAINER:=Baptiste Jonglez <openwrt@bitsofnetworks.org>, \
-              Dan Luedtke <mail@danrl.com>, \
-              Jason A. Donenfeld <Jason@zx2c4.com>
+  MAINTAINER:=Jason A. Donenfeld <Jason@zx2c4.com> \
+              Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 endef
 
 define Package/wireguard/Default/description
@@ -60,6 +59,7 @@ include $(INCLUDE_DIR)/package-defaults.mk
 
 # Used by Build/Compile/Default
 MAKE_PATH:=src/tools
+MAKE_VARS += PLATFORM=linux
 
 define Build/Compile
 	$(MAKE) $(KERNEL_MAKEOPTS) M="$(PKG_BUILD_DIR)/src" modules

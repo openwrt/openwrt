@@ -76,6 +76,9 @@ ramips_board_detect() {
 	*"BC2")
 		name="bc2"
 		;;
+	*"BOCCO")
+		name="bocco"
+		;;
 	*"BR-6475nD")
 		name="br-6475nd"
 		;;
@@ -201,9 +204,6 @@ ramips_board_detect() {
 		;;
 	*"FreeStation5")
 		name="freestation5"
-		;;
-	*"GB-PC1")
-		name="gb-pc1"
 		;;
 	*"GL-MT300A")
 		name="gl-mt300a"

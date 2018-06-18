@@ -1,0 +1,172 @@
+From 9bbe60a67be5a1c6f79b3c9be5003481a50529ff Mon Sep 17 00:00:00 2001
+From: David Woodhouse <dwmw2@infradead.org>
+Date: Sat, 16 Jun 2018 11:55:44 +0100
+Subject: atm: Preserve value of skb->truesize when accounting to vcc
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+ATM accounts for in-flight TX packets in sk_wmem_alloc of the VCC on
+which they are to be sent. But it doesn't take ownership of those
+packets from the sock (if any) which originally owned them. They should
+remain owned by their actual sender until they've left the box.
+
+There's a hack in pskb_expand_head() to avoid adjusting skb->truesize
+for certain skbs, precisely to avoid messing up sk_wmem_alloc
+accounting. Ideally that hack would cover the ATM use case too, but it
+doesn't — skbs which aren't owned by any sock, for example PPP control
+frames, still get their truesize adjusted when the low-level ATM driver
+adds headroom.
+
+This has always been an issue, it seems. The truesize of a packet
+increases, and sk_wmem_alloc on the VCC goes negative. But this wasn't
+for normal traffic, only for control frames. So I think we just got away
+with it, and we probably needed to send 2GiB of LCP echo frames before
+the misaccounting would ever have caused a problem and caused
+atm_may_send() to start refusing packets.
+
+Commit 14afee4b609 ("net: convert sock.sk_wmem_alloc from atomic_t to
+refcount_t") did exactly what it was intended to do, and turned this
+mostly-theoretical problem into a real one, causing PPPoATM to fail
+immediately as sk_wmem_alloc underflows and atm_may_send() *immediately*
+starts refusing to allow new packets.
+
+The least intrusive solution to this problem is to stash the value of
+skb->truesize that was accounted to the VCC, in a new member of the
+ATM_SKB(skb) structure. Then in atm_pop_raw() subtract precisely that
+value instead of the then-current value of skb->truesize.
+
+Fixes: 158f323b9868 ("net: adjust skb->truesize in pskb_expand_head()")
+Signed-off-by: David Woodhouse <dwmw2@infradead.org>
+Tested-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ include/linux/atmdev.h | 15 +++++++++++++++
+ net/atm/br2684.c       |  3 +--
+ net/atm/clip.c         |  3 +--
+ net/atm/common.c       |  3 +--
+ net/atm/lec.c          |  3 +--
+ net/atm/mpc.c          |  3 +--
+ net/atm/pppoatm.c      |  3 +--
+ net/atm/raw.c          |  4 ++--
+ 8 files changed, 23 insertions(+), 14 deletions(-)
+
+--- a/include/linux/atmdev.h
++++ b/include/linux/atmdev.h
+@@ -214,6 +214,7 @@ struct atmphy_ops {
+ struct atm_skb_data {
+ 	struct atm_vcc	*vcc;		/* ATM VCC */
+ 	unsigned long	atm_options;	/* ATM layer options */
++	unsigned int	acct_truesize;  /* truesize accounted to vcc */
+ };
+ 
+ #define VCC_HTABLE_SIZE 32
+@@ -241,6 +242,20 @@ void vcc_insert_socket(struct sock *sk);
+ 
+ void atm_dev_release_vccs(struct atm_dev *dev);
+ 
++static inline void atm_account_tx(struct atm_vcc *vcc, struct sk_buff *skb)
++{
++	/*
++	 * Because ATM skbs may not belong to a sock (and we don't
++	 * necessarily want to), skb->truesize may be adjusted,
++	 * escaping the hack in pskb_expand_head() which avoids
++	 * doing so for some cases. So stash the value of truesize
++	 * at the time we accounted it, and atm_pop_raw() can use
++	 * that value later, in case it changes.
++	 */
++	refcount_add(skb->truesize, &sk_atm(vcc)->sk_wmem_alloc);
++	ATM_SKB(skb)->acct_truesize = skb->truesize;
++	ATM_SKB(skb)->atm_options = vcc->atm_options;
++}
+ 
+ static inline void atm_force_charge(struct atm_vcc *vcc,int truesize)
+ {
+--- a/net/atm/br2684.c
++++ b/net/atm/br2684.c
+@@ -252,8 +252,7 @@ static int br2684_xmit_vcc(struct sk_buf
+ 
+ 	ATM_SKB(skb)->vcc = atmvcc = brvcc->atmvcc;
+ 	pr_debug("atm_skb(%p)->vcc(%p)->dev(%p)\n", skb, atmvcc, atmvcc->dev);
+-	refcount_add(skb->truesize, &sk_atm(atmvcc)->sk_wmem_alloc);
+-	ATM_SKB(skb)->atm_options = atmvcc->atm_options;
++	atm_account_tx(atmvcc, skb);
+ 	dev->stats.tx_packets++;
+ 	dev->stats.tx_bytes += skb->len;
+ 
+--- a/net/atm/clip.c
++++ b/net/atm/clip.c
+@@ -381,8 +381,7 @@ static netdev_tx_t clip_start_xmit(struc
+ 		memcpy(here, llc_oui, sizeof(llc_oui));
+ 		((__be16 *) here)[3] = skb->protocol;
+ 	}
+-	refcount_add(skb->truesize, &sk_atm(vcc)->sk_wmem_alloc);
+-	ATM_SKB(skb)->atm_options = vcc->atm_options;
++	atm_account_tx(vcc, skb);
+ 	entry->vccs->last_use = jiffies;
+ 	pr_debug("atm_skb(%p)->vcc(%p)->dev(%p)\n", skb, vcc, vcc->dev);
+ 	old = xchg(&entry->vccs->xoff, 1);	/* assume XOFF ... */
+--- a/net/atm/common.c
++++ b/net/atm/common.c
+@@ -630,10 +630,9 @@ int vcc_sendmsg(struct socket *sock, str
+ 		goto out;
+ 	}
+ 	pr_debug("%d += %d\n", sk_wmem_alloc_get(sk), skb->truesize);
+-	refcount_add(skb->truesize, &sk->sk_wmem_alloc);
++	atm_account_tx(vcc, skb);
+ 
+ 	skb->dev = NULL; /* for paths shared with net_device interfaces */
+-	ATM_SKB(skb)->atm_options = vcc->atm_options;
+ 	if (!copy_from_iter_full(skb_put(skb, size), size, &m->msg_iter)) {
+ 		kfree_skb(skb);
+ 		error = -EFAULT;
+--- a/net/atm/lec.c
++++ b/net/atm/lec.c
+@@ -182,9 +182,8 @@ lec_send(struct atm_vcc *vcc, struct sk_
+ 	struct net_device *dev = skb->dev;
+ 
+ 	ATM_SKB(skb)->vcc = vcc;
+-	ATM_SKB(skb)->atm_options = vcc->atm_options;
++	atm_account_tx(vcc, skb);
+ 
+-	refcount_add(skb->truesize, &sk_atm(vcc)->sk_wmem_alloc);
+ 	if (vcc->send(vcc, skb) < 0) {
+ 		dev->stats.tx_dropped++;
+ 		return;
+--- a/net/atm/mpc.c
++++ b/net/atm/mpc.c
+@@ -555,8 +555,7 @@ static int send_via_shortcut(struct sk_b
+ 					sizeof(struct llc_snap_hdr));
+ 	}
+ 
+-	refcount_add(skb->truesize, &sk_atm(entry->shortcut)->sk_wmem_alloc);
+-	ATM_SKB(skb)->atm_options = entry->shortcut->atm_options;
++	atm_account_tx(entry->shortcut, skb);
+ 	entry->shortcut->send(entry->shortcut, skb);
+ 	entry->packets_fwded++;
+ 	mpc->in_ops->put(entry);
+--- a/net/atm/pppoatm.c
++++ b/net/atm/pppoatm.c
+@@ -350,8 +350,7 @@ static int pppoatm_send(struct ppp_chann
+ 		return 1;
+ 	}
+ 
+-	refcount_add(skb->truesize, &sk_atm(ATM_SKB(skb)->vcc)->sk_wmem_alloc);
+-	ATM_SKB(skb)->atm_options = ATM_SKB(skb)->vcc->atm_options;
++	atm_account_tx(vcc, skb);
+ 	pr_debug("atm_skb(%p)->vcc(%p)->dev(%p)\n",
+ 		 skb, ATM_SKB(skb)->vcc, ATM_SKB(skb)->vcc->dev);
+ 	ret = ATM_SKB(skb)->vcc->send(ATM_SKB(skb)->vcc, skb)
+--- a/net/atm/raw.c
++++ b/net/atm/raw.c
+@@ -35,8 +35,8 @@ static void atm_pop_raw(struct atm_vcc *
+ 	struct sock *sk = sk_atm(vcc);
+ 
+ 	pr_debug("(%d) %d -= %d\n",
+-		 vcc->vci, sk_wmem_alloc_get(sk), skb->truesize);
+-	WARN_ON(refcount_sub_and_test(skb->truesize, &sk->sk_wmem_alloc));
++		 vcc->vci, sk_wmem_alloc_get(sk), ATM_SKB(skb)->acct_truesize);
++	WARN_ON(refcount_sub_and_test(ATM_SKB(skb)->acct_truesize, &sk->sk_wmem_alloc));
+ 	dev_kfree_skb_any(skb);
+ 	sk->sk_write_space(sk);
+ }

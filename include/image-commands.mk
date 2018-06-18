@@ -135,7 +135,7 @@ define Build/lzma-no-dict
 endef
 
 define Build/gzip
-	gzip --force -9n -c $@ $(1) > $@.new
+	gzip -f -9n -c $@ $(1) > $@.new
 	@mv $@.new $@
 endef
 
@@ -184,6 +184,10 @@ define Build/append-ubi
 		$(UBINIZE_OPTS)
 	cat $@.tmp >> $@
 	rm $@.tmp
+endef
+
+define Build/append-uboot
+	dd if=$(UBOOT_PATH) >> $@
 endef
 
 define Build/pad-to
