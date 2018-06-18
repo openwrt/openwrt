@@ -618,18 +618,15 @@ __ag71xx_link_adjust(struct ag71xx *ag, bool update)
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3, ag->fifodata[2]);
 
 	if (update) {
-		if (of_device_is_compatible(np, "qca,ar7100-eth")) {
+		if (of_device_is_compatible(np, "qca,ar7100-eth") ||
+		    of_device_is_compatible(np, "qca,ar9130-eth")) {
 			ath79_set_pll(ag);
 			ath79_mii_ctrl_set_speed(ag);
-		} else if (of_device_is_compatible(np, "qca,ar7242-eth")) {
-			ath79_set_pll(ag);
-		} else if (of_device_is_compatible(np, "qca,ar9130-eth")) {
-			ath79_set_pll(ag);
-			ath79_mii_ctrl_set_speed(ag);
-		} else if (of_device_is_compatible(np, "qca,ar9340-eth")) {
-			ath79_set_pll(ag);
-		} else if (of_device_is_compatible(np, "qca,qca9550-eth")) {
-		} else if (of_device_is_compatible(np, "qca,qca9560-eth")) {
+		} else if (of_device_is_compatible(np, "qca,ar7242-eth") ||
+			   of_device_is_compatible(np, "qca,ar9340-eth") ||
+			   of_device_is_compatible(np, "qca,qca9550-eth") ||
+			   of_device_is_compatible(np, "qca,qca9560-eth")) {
+			ath79_set_pllval(ag);
 		}
 	}
 

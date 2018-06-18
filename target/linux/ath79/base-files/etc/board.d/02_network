@@ -2,6 +2,7 @@
 
 . /lib/functions/system.sh
 . /lib/functions/uci-defaults.sh
+. /lib/functions/k2t.sh
 
 ath79_setup_interfaces()
 {
@@ -60,6 +61,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:lan" "4:lan" "5:lan" "1:wan"
 		;;
+	"phicomm,k2t")
+		ucidef_add_switch "switch0" \
+			"0@eth0" "3:lan:1" "5:lan:2" "4:wan"
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
@@ -74,9 +79,14 @@ ath79_setup_macs()
 	avm,fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		;;
+	phicomm,k2t)
+		lan_mac=$(k2t_get_mac "lan_mac")
+		wan_mac=$(k2t_get_mac "wan_mac")
+		;;
 	esac
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
 }
 
 board_config_update

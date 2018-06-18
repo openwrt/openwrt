@@ -75,3 +75,17 @@ define Device/buffalo_wzr-hp-g450h
   SUPPORTED_DEVICES += wzr-hp-g450h
 endef
 TARGET_DEVICES += buffalo_wzr-hp-g450h
+
+define Device/phicomm-k2t
+  ATH_SOC := qca9563
+  DEVICE_TITLE := Phicomm K2T
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  IMAGE_SIZE := 15744k
+  IMAGES := sysupgrade.bin
+  IMAGE/default := append-kernel | append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := kmod-leds-reset kmod-ath10k ath10k-firmware-qca9888
+  SUPPORTED_DEVICES += phicomm,k2t
+endef
+TARGET_DEVICES += phicomm-k2t
