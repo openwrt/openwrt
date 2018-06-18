@@ -127,7 +127,7 @@ archer-c7)
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "tp-link:blue:wlan5g" "phy0tpt"
 	;;
 archer-d7-v1)
-	#ucidef_set_led_switch "lan" "LAN" "$board:white:lan" "switch0" "0x1E"
+	ucidef_set_led_switch "lan" "LAN" "$board:white:lan" "switch0" "0x1E"
 	ucidef_set_led_usbdev "usb" "USB" "$board:white:usb" "1-1"
 	#ucidef_set_led_usbdev "usb2" "USB2" "$board:white:usb" "2-1"
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:white:wlan" "phy1tpt"

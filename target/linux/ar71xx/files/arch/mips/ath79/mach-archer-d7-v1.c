@@ -49,6 +49,7 @@
 #define ARCHER_D7_GPIO_LED_SYSTEM	14
 #define ARCHER_D7_GPIO_LED_WPS		15
 #define ARCHER_D7_GPIO_LED_USB		18
+#define ARCHER_D7_GPIO_LED_LAN		23
 
 
 
@@ -126,6 +127,11 @@ static struct gpio_led archer_d7_leds_gpio[] __initdata = {
 	{
 		.name		= "archer-d7-v1:white:usb",
 		.gpio		= ARCHER_D7_GPIO_LED_USB,
+		.active_low	= 1,
+	},
+	{
+		.name		= "archer-d7-v1:white:lan",
+		.gpio		= ARCHER_D7_GPIO_LED_LAN,
 		.active_low	= 1,
 	}
 };
