@@ -10,6 +10,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=aarch64
 BOARDNAME:=Marvell Armada 3700LP (ARM64)
 CPU_TYPE:=cortex-a53
+CPU_SUBTYPE:=neon-vfpv4
 FEATURES+=ext4
 
 KERNELNAME:=Image dtbs
