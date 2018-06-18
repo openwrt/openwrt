@@ -40,6 +40,15 @@ define Device/glinet_ar150
 endef
 TARGET_DEVICES += glinet_ar150
 
+define Device/glinet_ar300m_nor
+  ATH_SOC := qca9533
+  DEVICE_TITLE := GL.iNet GL-AR300M
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += gl-ar300m
+endef
+TARGET_DEVICES += glinet_ar300m_nor
+
 define Device/openmesh_om5p-ac-v2
   ATH_SOC := qca9558
   DEVICE_TITLE := OpenMesh OM5P-AC v2
