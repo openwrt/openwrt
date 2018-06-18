@@ -14,7 +14,7 @@ define Build/Compile
 endef
 
 #ALLWIFIBOARDS:=<devicename>
-ALLWIFIBOARDS:=
+ALLWIFIBOARDS:=rt-acrh17
 ALLWIFIPACKAGES:=$(foreach BOARD,$(ALLWIFIBOARDS),ipq-wifi-$(BOARD))
 
 define Package/ipq-wifi-default
@@ -49,5 +49,6 @@ Don't install it for any other device!
 endef
 
 #$(eval $(call generate-ipq-wifi-package,<devicename>,<filename>,<displayname>))
+$(eval $(call generate-ipq-wifi-package,rt-acrh17,board-rt-acrh17.bin,ASUS RT-ACRH17/RT-AC82U/RT-AC42U))
 
 $(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))
