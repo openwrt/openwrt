@@ -11,6 +11,8 @@ PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ltq-vdsl-vr9-vectoring-fw-installer
