@@ -22,6 +22,16 @@ define Build/dtb
 	$(CP) $(DEVICE_DTS_DIR)/$(DEVICE_DTS).dtb $(BIN_DIR)/
 endef
 
+define Build/sysupgrade-emmc
+	rm -f $@.recovery
+	mkfs.fat -C $@.recovery 3070
+
+	./gen_mt7623_emmc_img.sh $@ \
+		$(IMAGE_KERNEL) \
+		$@.recovery \
+		$(IMAGE_ROOTFS)
+endef
+
 # default all platform image(fit) build 
 define Device/Default
   PROFILES = Default $$(DEVICE_NAME)
