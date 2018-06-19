@@ -171,7 +171,7 @@ define Device/d-team_newifi-d2
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_TITLE := Newifi D2
   DEVICE_PACKAGES := \
-	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini
 endef
 TARGET_DEVICES += d-team_newifi-d2
 
@@ -299,8 +299,7 @@ define Device/w2914nsv2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := WeVO W2914NS v2
   DEVICE_PACKAGES := \
-	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport kmod-mt76 \
-	wpad-mini
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini
 endef
 TARGET_DEVICES += w2914nsv2
 
@@ -314,7 +313,7 @@ define Device/wf-2881
   UBINIZE_OPTS := -E 5
   IMAGE/sysupgrade.bin := append-kernel | append-ubi | append-metadata | check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := NETIS WF-2881
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini
 endef
 TARGET_DEVICES += wf-2881
 
@@ -352,7 +351,7 @@ define Device/youhua_wr1200js
   IMAGE_SIZE := 16064k
   DEVICE_TITLE := YouHua WR1200JS
   DEVICE_PACKAGES := \
-	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini
 endef
 TARGET_DEVICES += youhua_wr1200js
 
