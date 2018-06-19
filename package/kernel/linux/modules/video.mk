@@ -895,3 +895,25 @@ define KernelPackage/video-gspca-konica/description
 endef
 
 $(eval $(call KernelPackage,video-gspca-konica))
+
+define KernelPackage/video-em28xx
+  TITLE:=Empia EM28xx USB devices support
+  KCONFIG:= \
+	CONFIG_VIDEO_EM28XX=m \
+	CONFIG_VIDEO_EM28XX_V4L2=m \
+	CONFIG_VIDEO_EM28XX_ALSA=m \
+	CONFIG_VIDEO_EM28XX_DVB=m \
+	CONFIG_VIDEO_EM28XX_RC=m
+  FILES:=$(LINUX_DIR)/drivers/media/usb/em28xx/em28xx.ko \
+         $(LINUX_DIR)/drivers/media/common/tveeprom.ko
+  AUTOLOAD:=$(call AutoProbe,video-em28xx tveeprom)
+  DEPENDS+=+kmod-tveeprom +kmod-video-core
+  $(call AddDepends/dvb-usb)
+  SUBMENU:=$(VIDEO_MENU)
+endef
+
+define KernelPackage/video-em28xx/description
+  Empia EM28xx USB devices support
+endef
+
+$(eval $(call KernelPackage,video-em28xx))
