@@ -11,7 +11,7 @@ case "$board" in
 meraki,mr24|\
 wd,mybooklive|\
 wd,mybooklive-duo)
-	ucidef_set_interface_lan "eth0"
+	ucidef_set_interface_lan "eth0" "dhcp"
 	;;
 
 meraki,mx60|\
