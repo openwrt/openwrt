@@ -115,14 +115,16 @@
 				interrupt-parent = <&cpuintc>;
 
 				intc3: interrupt-controller@3 {
-					compatible = "qcom,qca9556-intc";
+					compatible = "qca,ar9340-intc";
 
+					interrupt-parent = <&cpuintc>;
 					interrupts = <3>;
 
 					interrupt-controller;
 					#interrupt-cells = <1>;
 
-					qcom,pending-bits = <0x1f000>,		/* pcie rc */
+					qca,int-status-addr = <0xac>;
+					qca,pending-bits = <0x1f000>,		/* pcie rc */
 							    <0x1000000>,	/* usb1 */
 							    <0x10000000>;	/* usb2 */
 				};
