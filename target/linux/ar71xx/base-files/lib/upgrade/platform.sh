@@ -402,6 +402,7 @@ platform_check_image() {
 	antrouter-r1|\
 	archer-c5|\
 	archer-c7|\
+	cloud-easy-power|\
 	el-m150|\
 	el-mini|\
 	gl-inet|\

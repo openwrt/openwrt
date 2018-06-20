@@ -561,6 +561,9 @@ ar71xx_board_detect() {
 	*"CF-E530N")
 		name="cf-e530n"
 		;;
+	*"Cloud Easy Power")
+		name="cloud-easy-power"
+		;;
 	*"CPE210/220")
 		name="cpe210"
 		tplink_pharos_board_detect
