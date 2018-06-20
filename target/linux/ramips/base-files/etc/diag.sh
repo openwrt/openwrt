@@ -207,6 +207,9 @@ get_status_led() {
 	m4-8M)
 		status_led="m4:blue:status"
 		;;
+	mikrotik,rbm33g)
+		status_led="rbm33g:green:usr"
+		;;
 	miwifi-mini|\
 	zte-q7)
 		status_led="$boardname:red:status"

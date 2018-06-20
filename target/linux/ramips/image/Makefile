@@ -57,6 +57,22 @@ define Build/trx
 		-a 4 -f $(IMAGE_ROOTFS)
 endef
 
+define Build/loader-common
+	rm -rf $@.src
+	$(MAKE) -C lzma-loader \
+		PKG_BUILD_DIR="$@.src" \
+		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
+		BOARD="$(BOARDNAME)" PLATFORM="$(PLATFORM)" \
+		LZMA_TEXT_START=0x82000000 LOADADDR=$(KERNEL_LOADADDR) \
+		$(1) compile loader.$(LOADER_TYPE)
+	mv "$@.$(LOADER_TYPE)" "$@"
+	rm -rf $@.src
+endef
+
+define Build/loader-kernel
+	$(call Build/loader-common,LOADER_DATA="$@")
+endef
+
 define Build/relocate-kernel
 	( \
 		dd if=$(KDIR)/loader.bin bs=32 conv=sync && \
