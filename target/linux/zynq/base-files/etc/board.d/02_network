@@ -9,7 +9,7 @@ case "$(board_name)" in
 digilent,zynq-zybo | \
 xlnx,zynq-zc702 | \
 xlnx,zynq-zed)
-	ucidef_set_interface_lan 'eth0'
+	ucidef_set_interface_lan 'eth0' 'dhcp'
 	;;
 *)
 	echo "Unsupported hardware. Network interfaces not intialized"
