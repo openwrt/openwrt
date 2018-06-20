@@ -62,3 +62,16 @@ define Device/tl-wr1043nd-v4
   SUPPORTED_DEVICES := tplink,tl-wr1043nd-v4 tl-wr1043nd-v4
 endef
 TARGET_DEVICES += tl-wr1043nd-v4
+
+define Device/tl-wr2543-v1
+  $(Device/tplink-8mlzma)
+  ATH_SOC := ar7242
+  DEVICE_TITLE := TP-LINK TL-WR2543N/ND v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x25430001
+  IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade -v 3.13.99 | \
+    append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := append-rootfs | mktplinkfw factory -v 3.13.99
+  SUPPORTED_DEVICES := tplink,tl-wr2543-v1 tl-wr2543-v1
+endef
+TARGET_DEVICES += tl-wr2543-v1
