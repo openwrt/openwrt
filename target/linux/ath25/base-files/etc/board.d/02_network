@@ -20,7 +20,7 @@ elif [ -d /sys/class/net/eth1 ]; then
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 
 else
-	ucidef_set_interface_lan "eth0"
+	ucidef_set_interface_lan "eth0" "dhcp"
 fi
 
 board_config_flush
