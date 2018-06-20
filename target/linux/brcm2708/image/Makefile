@@ -57,6 +57,7 @@ define Device/rpi
   DEVICE_TITLE := Raspberry Pi B/B+/CM/Zero/ZeroW
   DEVICE_DTS := bcm2708-rpi-b bcm2708-rpi-b-plus bcm2708-rpi-cm bcm2708-rpi-0-w
   SUPPORTED_DEVICES := rpi-b rpi-b-plus rpi-cm rpi-zero rpi-zero-w raspberrypi,model-b raspberrypi,model-b-plus raspberrypi,compute-module-1 raspberrypi,model-b-rev2 raspberrypi,model-zero raspberrypi,model-zero-w
+  DEVICE_PACKAGES := brcmfmac-firmware-43430-sdio brcmfmac-board-rpi2 kmod-brcmfmac wpad-mini
 endef
 ifeq ($(SUBTARGET),bcm2708)
   TARGET_DEVICES += rpi
