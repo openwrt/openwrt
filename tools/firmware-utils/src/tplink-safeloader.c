@@ -977,14 +977,10 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = NULL,
 
-		/**
-			The original os-image partition is too small,
-			so we enlarge it to 1.75M
-		*/
+		/** We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x1c0000},
-			{"file-system", 0x1e0000, 0x420000},
+			{"firmware", 0x20000, 0x5e0000},
 			{"partition-table", 0x600000, 0x02000},
 			{"default-mac", 0x610000, 0x00020},
 			{"pin", 0x610100, 0x00020},
