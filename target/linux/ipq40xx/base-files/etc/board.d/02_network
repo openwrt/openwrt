@@ -46,7 +46,7 @@ meraki,mr33 |\
 netgear,ex6100v2 |\
 netgear,ex6150v2 |\
 zyxel,wre6606)
-	ucidef_set_interface_lan "eth0"
+	ucidef_set_interface_lan "eth0" "dhcp"
 	;;
 *)
 	echo "Unsupported hardware. Network interfaces not intialized"
