@@ -78,7 +78,7 @@ define Device/rpi-3
   DEVICE_TITLE := Raspberry Pi 3B/3B+
   DEVICE_DTS := broadcom/bcm2710-rpi-3-b broadcom/bcm2710-rpi-3-b-plus
   SUPPORTED_DEVICES := rpi-3-b rpi-3-b-plus raspberrypi,3-model-b raspberrypi,3-model-b-plus
-  DEVICE_PACKAGES := brcmfmac-firmware-43455-sdio brcmfmac-board-rpi3 kmod-brcmfmac wpad-mini
+  DEVICE_PACKAGES := brcmfmac-firmware-43430-sdio brcmfmac-board-rpi2 brcmfmac-firmware-43455-sdio brcmfmac-board-rpi3 kmod-brcmfmac wpad-mini
 endef
 ifeq ($(SUBTARGET),bcm2710)
   TARGET_DEVICES += rpi-3
