@@ -256,7 +256,7 @@ define Device/re350-v1
   TPLINK_HWREV := 0
   TPLINK_HEADER_VERSION := 1
   IMAGE_SIZE := 6016k
-  KERNEL := $(KERNEL_DTB) | tplink-v1-header -e
+  KERNEL := $(KERNEL_DTB) | tplink-v1-header -e -O
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
