@@ -65,6 +65,27 @@ config KERNEL_PROFILING
 	  Enable the extended profiling support mechanisms used by profilers such
 	  as OProfile.
 
+config KERNEL_TASKSTATS
+	bool "Compile the kernel with task resource/io statistics and accounting"
+	default n
+	help
+	  Enable the collection and publishing of task/io statistics and
+	  accounting.  Enable this option to enable i/o monitoring in system
+	  monitors.
+
+if KERNEL_TASKSTATS
+
+	config KERNEL_TASK_DELAY_ACCT
+		def_bool y
+
+	config KERNEL_TASK_IO_ACCOUNTING
+		def_bool y
+
+	config KERNEL_TASK_XACCT
+		def_bool y
+
+endif
+
 config KERNEL_KALLSYMS
 	bool "Compile the kernel with symbol table information"
 	default y if !SMALL_FLASH
