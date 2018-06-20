@@ -1061,17 +1061,9 @@ service_triggers()
 	config_foreach add_interface_trigger dhcp
 }
 
-boot()
-{
-	BOOT=1
-	start "$@"
-}
-
 start_service() {
 	local instance="$1"
 	local instance_found=0
-
-	[ -n "$BOOT" ] && return
 
 	. /lib/functions/network.sh
 
