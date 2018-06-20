@@ -1,0 +1,80 @@
+--- a/drivers/net/wireless/ath/ath10k/core.c
++++ b/drivers/net/wireless/ath/ath10k/core.c
+@@ -54,6 +54,30 @@ MODULE_PARM_DESC(rawmode, "Use raw 802.1
+ static const struct ath10k_hw_params ath10k_hw_params_list[] = {
+ 	{
+ 		.id = QCA988X_HW_2_0_VERSION,
++		.dev_id = QCA988X_2_0_DEVICE_ID_UBNT,
++		.name = "qca988x hw2.0",
++		.patch_load_addr = QCA988X_HW_2_0_PATCH_LOAD_ADDR,
++		.uart_pin = 7,
++		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_ALL,
++		.otp_exe_param = 0,
++		.channel_counters_freq_hz = 88000,
++		.max_probe_resp_desc_thres = 0,
++		.cal_data_len = 2116,
++		.fw = {
++			.dir = QCA988X_HW_2_0_FW_DIR,
++			.board = QCA988X_HW_2_0_BOARD_DATA_FILE,
++			.board_size = QCA988X_BOARD_DATA_SZ,
++			.board_ext_size = QCA988X_BOARD_EXT_DATA_SZ,
++		},
++		.hw_ops = &qca988x_ops,
++		.decap_align_bytes = 4,
++		.spectral_bin_discard = 0,
++		.vht160_mcs_rx_highest = 0,
++		.vht160_mcs_tx_highest = 0,
++		.n_cipher_suites = 8,
++	},
++	{
++		.id = QCA988X_HW_2_0_VERSION,
+ 		.dev_id = QCA988X_2_0_DEVICE_ID,
+ 		.name = "qca988x hw2.0",
+ 		.patch_load_addr = QCA988X_HW_2_0_PATCH_LOAD_ADDR,
+--- a/drivers/net/wireless/ath/ath10k/hw.h
++++ b/drivers/net/wireless/ath/ath10k/hw.h
+@@ -22,6 +22,7 @@
+ 
+ #define ATH10K_FW_DIR			"ath10k"
+ 
++#define QCA988X_2_0_DEVICE_ID_UBNT   (0x11ac)
+ #define QCA988X_2_0_DEVICE_ID   (0x003c)
+ #define QCA6164_2_1_DEVICE_ID   (0x0041)
+ #define QCA6174_2_1_DEVICE_ID   (0x003e)
+--- a/drivers/net/wireless/ath/ath10k/pci.c
++++ b/drivers/net/wireless/ath/ath10k/pci.c
+@@ -51,7 +51,10 @@ MODULE_PARM_DESC(reset_mode, "0: auto, 1
+ #define ATH10K_PCI_TARGET_WAIT 3000
+ #define ATH10K_PCI_NUM_WARM_RESET_ATTEMPTS 3
+ 
++#define PCI_VENDOR_ID_UBNT 0x0777
++
+ static const struct pci_device_id ath10k_pci_id_table[] = {
++	{ PCI_VDEVICE(UBNT, QCA988X_2_0_DEVICE_ID_UBNT) }, /* PCI-E QCA988X V2 */
+ 	{ PCI_VDEVICE(ATHEROS, QCA988X_2_0_DEVICE_ID) }, /* PCI-E QCA988X V2 */
+ 	{ PCI_VDEVICE(ATHEROS, QCA6164_2_1_DEVICE_ID) }, /* PCI-E QCA6164 V2.1 */
+ 	{ PCI_VDEVICE(ATHEROS, QCA6174_2_1_DEVICE_ID) }, /* PCI-E QCA6174 V2.1 */
+@@ -68,6 +71,7 @@ static const struct ath10k_pci_supp_chip
+ 	 * hacks. ath10k doesn't have them and these devices crash horribly
+ 	 * because of that.
+ 	 */
++	{ QCA988X_2_0_DEVICE_ID_UBNT, QCA988X_HW_2_0_CHIP_ID_REV },
+ 	{ QCA988X_2_0_DEVICE_ID, QCA988X_HW_2_0_CHIP_ID_REV },
+ 
+ 	{ QCA6164_2_1_DEVICE_ID, QCA6174_HW_2_1_CHIP_ID_REV },
+@@ -1976,6 +1980,7 @@ static int ath10k_pci_get_num_banks(stru
+ 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
+ 
+ 	switch (ar_pci->pdev->device) {
++	case QCA988X_2_0_DEVICE_ID_UBNT:
+ 	case QCA988X_2_0_DEVICE_ID:
+ 	case QCA99X0_2_0_DEVICE_ID:
+ 	case QCA9888_2_0_DEVICE_ID:
+@@ -3208,6 +3213,7 @@ static int ath10k_pci_probe(struct pci_d
+ 	u32 (*targ_cpu_to_ce_addr)(struct ath10k *ar, u32 addr);
+ 
+ 	switch (pci_dev->device) {
++	case QCA988X_2_0_DEVICE_ID_UBNT:
+ 	case QCA988X_2_0_DEVICE_ID:
+ 		hw_rev = ATH10K_HW_QCA988X;
+ 		pci_ps = false;
