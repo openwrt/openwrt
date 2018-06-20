@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-PKG_VERSION:=1.44.1
-PKG_HASH:=0ca164c1c87724df904c918b2d7051ef989b51de725db66c67514dbe6dd2b9ef
+PKG_VERSION:=1.44.2
+PKG_HASH:=8324cf0b6e81805a741d94087b00e99f7e16144f1ee5a413709a1fa6948b126c
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -104,6 +104,12 @@ endef
 define Package/e2freefrag
 $(call Package/e2fsprogs)
   TITLE:=Ext2 Filesystem free space fragmentation information utility
+  DEPENDS:= +e2fsprogs
+endef
+
+define Package/e4defrag
+$(call Package/e2fsprogs)
+  TITLE:=Ext4 Filesystem defrag utility
   DEPENDS:= +e2fsprogs
 endef
 
@@ -276,6 +282,11 @@ define Package/e2freefrag/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/e2freefrag $(1)/usr/sbin/
 endef
 
+define Package/e4defrag/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/e4defrag $(1)/usr/sbin/
+endef
+
 define Package/filefrag/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/filefrag $(1)/usr/sbin/
@@ -306,6 +317,7 @@ $(eval $(call BuildPackage,resize2fs))
 $(eval $(call BuildPackage,badblocks))
 $(eval $(call BuildPackage,dumpe2fs))
 $(eval $(call BuildPackage,e2freefrag))
+$(eval $(call BuildPackage,e4defrag))
 $(eval $(call BuildPackage,filefrag))
 $(eval $(call BuildPackage,debugfs))
 $(eval $(call BuildPackage,chattr))
