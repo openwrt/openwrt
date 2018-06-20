@@ -9,7 +9,7 @@ board=$(board_name)
 
 case "$board" in
 *)
-	ucidef_set_interface_lan 'eth0'
+	ucidef_set_interface_lan 'eth0' 'dhcp'
 	;;
 esac
 
