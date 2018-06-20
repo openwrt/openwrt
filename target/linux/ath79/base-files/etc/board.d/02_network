@@ -33,7 +33,8 @@ ath79_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
 
-	"netgear,wnr612-v2")
+	"netgear,wnr612-v2"|\
+	"on,n150r")
 		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
 		ucidef_add_switch "switch0" \
 		"0@eth1" "1:lan" "2:lan" "3:lan:3" "4:lan:4"
