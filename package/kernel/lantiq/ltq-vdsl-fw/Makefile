@@ -34,7 +34,7 @@ define Build/Compile
 		$(MAKE) -C $(PKG_BUILD_DIR)
 endef
 
-define Package/ltq-vdsl-vr9-fw-installer/install
+define Package/ltq-vdsl-vr9-vectoring-fw-installer/install
 	$(INSTALL_DIR) $(1)/sbin
 	$(CP) $(PKG_BUILD_DIR)/w921v_fw_cutter $(PKG_BUILD_DIR)/vdsl_fw_install.sh $(1)/sbin/
 endef
