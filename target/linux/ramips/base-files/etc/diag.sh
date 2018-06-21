@@ -161,6 +161,7 @@ get_status_led() {
 		status_led="$boardname:blue:power"
 		;;
 	dlink,dap-1522-a1|\
+	phicomm,k2g|\
 	k2p|\
 	m3|\
 	mir3g|\
