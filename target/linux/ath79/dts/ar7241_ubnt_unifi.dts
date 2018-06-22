@@ -14,11 +14,6 @@
 		led-status = &dome_green;
 	};
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x4000000>;
-	};
-
 	extosc: ref {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;

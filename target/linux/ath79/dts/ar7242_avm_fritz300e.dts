@@ -14,11 +14,6 @@
 		led-status = &power;
 	};
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x4000000>;
-	};
-
 	gpio-keys {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
