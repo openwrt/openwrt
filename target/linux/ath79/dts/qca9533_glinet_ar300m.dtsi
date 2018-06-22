@@ -9,11 +9,6 @@
 	compatible = "glinet,ar300m", "qca,qca9533";
 	model = "GL.iNet GL-AR300M";
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x8000000>;
-	};
-
 	extosc: ref {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
