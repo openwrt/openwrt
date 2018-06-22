@@ -74,6 +74,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_RTLWIFI_DEBUG \
 	CONFIG_ATH9K_SUPPORT_PCOEM \
 	CONFIG_ATH9K_TX99 \
+	CONFIG_ATH10K_LEDS \
 	CONFIG_ATH10K_THERMAL \
 	CONFIG_ATH_USER_REGD \
 
@@ -341,6 +342,11 @@ PCI is supported.
 endef
 
 define KernelPackage/ath10k/config
+
+       config ATH10K_LEDS
+               bool "Enable LED support"
+               default y
+               depends on PACKAGE_kmod-ath10k
 
        config ATH10K_THERMAL
                bool "Enable thermal sensors and throttling support"
@@ -1635,6 +1641,7 @@ config-$(CONFIG_ATH_USER_REGD) += ATH_USER_REGD
 config-$(CONFIG_ATH9K_SUPPORT_PCOEM) += ATH9K_PCOEM
 config-$(CONFIG_ATH9K_TX99) += ATH9K_TX99
 config-$(CONFIG_ATH9K_UBNTHSR) += ATH9K_UBNTHSR
+config-$(CONFIG_ATH10K_LEDS) += ATH10K_LEDS
 config-$(CONFIG_ATH10K_THERMAL) += ATH10K_THERMAL
 
 config-$(call config_package,ath9k-htc) += ATH9K_HTC
