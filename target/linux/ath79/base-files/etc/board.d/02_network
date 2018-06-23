@@ -92,12 +92,16 @@ ath79_setup_macs()
 	local board="$1"
 
 	case "$board" in
-	avm,fritz300e)
+	"avm,fritz300e")
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		;;
-	phicomm,k2t)
+	"phicomm,k2t")
 		lan_mac=$(k2t_get_mac "lan_mac")
 		wan_mac=$(k2t_get_mac "wan_mac")
+		;;
+	"tplink,tl-wr1043nd-v4")
+		lan_mac=$(mtd_get_mac_binary product-info 8)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	esac
 
