@@ -1,0 +1,57 @@
+--- src/include/netlink/handlers.h
++++ src/include/netlink/handlers.h
+@@ -24,6 +24,21 @@
+ extern "C" {
+ #endif
+ 
++/*
++ * struct ucred is only available under _GNU_SOURCE
++ * in sys/socket.h
++ */
++#ifndef _GNU_SOURCE
++#ifndef __LIBNL_TINY_UCRED_PATCHED
++#define __LIBNL_TINY_UCRED_PATCHED
++struct ucred {
++	pid_t pid;
++	uid_t uid;
++	gid_t gid;
++};
++#endif /* __LIBNL_TINY_UCRED_PATCHED */
++#endif /* _GNU_SOURCE */
++
+ struct nl_sock;
+ struct nl_msg;
+ struct nl_cb;
+@@ -117,7 +132,7 @@
+ {
+ 	nl_recvmsg_msg_cb_t	cb_set[NL_CB_TYPE_MAX+1];
+ 	void *			cb_args[NL_CB_TYPE_MAX+1];
+-	
++
+ 	nl_recvmsg_err_cb_t	cb_err;
+ 	void *			cb_err_arg;
+ 
+--- src/include/netlink/msg.h
++++ src/include/netlink/msg.h
+@@ -19,6 +19,21 @@
+ extern "C" {
+ #endif
+ 
++/*
++ * struct ucred is only available under _GNU_SOURCE
++ * in sys/socket.h
++ */
++#ifndef _GNU_SOURCE
++#ifndef __LIBNL_TINY_UCRED_PATCHED
++#define __LIBNL_TINY_UCRED_PATCHED
++struct ucred {
++	pid_t pid;
++	uid_t uid;
++	gid_t gid;
++};
++#endif /* __LIBNL_TINY_UCRED_PATCHED */
++#endif /* _GNU_SOURCE */
++
+ struct nla_policy;
+ 
+ #define NL_DONTPAD	0
