@@ -199,8 +199,10 @@ config_cb() {
 			config_set "$2" "upload" "128"
 		;;
 		classify|default|reclassify)
+			unset options
 			option_cb() {
 				append options "$1"
+				config_set "$CONFIG_SECTION" options "$options"
 			}
 		;;
 	esac
@@ -229,9 +231,7 @@ config_cb() {
 				*) var="rules";;
 			esac
 			config_get target "$CONFIG_SECTION" target
-			config_set "$CONFIG_SECTION" options "$options"
 			append "$var" "$CONFIG_SECTION"
-			unset options
 		;;
 	esac
 }
