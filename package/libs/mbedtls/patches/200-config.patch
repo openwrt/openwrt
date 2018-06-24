@@ -1,5 +1,5 @@
 diff --git a/include/mbedtls/config.h b/include/mbedtls/config.h
-index 77b7fc6..69e701f 100644
+index 77b7fc6..3ee4808 100644
 --- a/include/mbedtls/config.h
 +++ b/include/mbedtls/config.h
 @@ -522,14 +522,14 @@
@@ -48,15 +48,6 @@ index 77b7fc6..69e701f 100644
  
  /**
   * \def MBEDTLS_ECP_NIST_OPTIM
-@@ -656,7 +656,7 @@
-  *
-  * Comment this macro to disable deterministic ECDSA.
-  */
--#define MBEDTLS_ECDSA_DETERMINISTIC
-+//#define MBEDTLS_ECDSA_DETERMINISTIC
- 
- /**
-  * \def MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
 @@ -709,7 +709,7 @@
   *             See dhm.h for more details.
   *
@@ -209,15 +200,6 @@ index 77b7fc6..69e701f 100644
  
  /**
   * \def MBEDTLS_DHM_C
-@@ -2203,7 +2203,7 @@
-  *
-  * Uncomment to enable the HMAC_DRBG random number geerator.
-  */
--#define MBEDTLS_HMAC_DRBG_C
-+//#define MBEDTLS_HMAC_DRBG_C
- 
- /**
-  * \def MBEDTLS_MD_C
 @@ -2486,7 +2486,7 @@
   *
   * This module enables abstraction of common (libc) functions.
