@@ -1,7 +1,24 @@
 diff --git a/include/mbedtls/config.h b/include/mbedtls/config.h
-index 77b7fc6..7ccc1b1 100644
+index 77b7fc6..5047db1 100644
 --- a/include/mbedtls/config.h
 +++ b/include/mbedtls/config.h
+@@ -522,14 +522,14 @@
+  *
+  * Enable Output Feedback mode (OFB) for symmetric ciphers.
+  */
+-#define MBEDTLS_CIPHER_MODE_OFB
++//#define MBEDTLS_CIPHER_MODE_OFB
+ 
+ /**
+  * \def MBEDTLS_CIPHER_MODE_XTS
+  *
+  * Enable Xor-encrypt-xor with ciphertext stealing mode (XTS) for AES.
+  */
+-#define MBEDTLS_CIPHER_MODE_XTS
++//#define MBEDTLS_CIPHER_MODE_XTS
+ 
+ /**
+  * \def MBEDTLS_CIPHER_NULL_CIPHER
 @@ -619,19 +619,19 @@
   *
   * Comment macros to disable the curve and functions for it
