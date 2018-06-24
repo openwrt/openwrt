@@ -77,6 +77,7 @@ get_status_led() {
 		;;
 	alfa-network,ac1200rm|\
 	awapn2403|\
+	tplink,c2|\
 	dir-645|\
 	sk-wb8|\
 	wrh-300cr)
