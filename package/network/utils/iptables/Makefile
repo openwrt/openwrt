@@ -151,6 +151,7 @@ Includes support for:
 
  Matches:
   - string
+  - bpf
 
 endef
 
