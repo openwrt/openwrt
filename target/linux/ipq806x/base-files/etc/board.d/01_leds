@@ -47,6 +47,11 @@ zyxel,nbg6817)
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "${boardname}:amber:wifi5g" "phy0tpt"
 	ucidef_set_led_netdev "wan" "WAN" "${boardname}:white:internet" "eth1"
 	;;
+netgear,d7800 |\
+netgear,r7800)
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "ath10k-phy1" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "ath10k-phy0" "phy0tpt"
+	;;
 *)
 	;;
 esac
