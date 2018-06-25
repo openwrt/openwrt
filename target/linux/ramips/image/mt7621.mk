@@ -247,6 +247,19 @@ define Device/mikrotik_rbm33g
 endef
 TARGET_DEVICES += mikrotik_rbm33g
 
+define Device/mikrotik_rbm11g
+  DTS := RBM11G
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 16128k
+  DEVICE_TITLE := MikroTik RBM11G
+  LOADER_TYPE := elf
+  PLATFORM := mt7621
+  KERNEL := kernel-bin | patch-dtb | lzma | loader-kernel
+  IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += mikrotik_rbm11g
+
 define Device/re350-v1
   DTS := RE350
   DEVICE_TITLE := TP-LINK RE350 v1

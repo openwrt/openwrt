@@ -297,6 +297,7 @@ platform_check_image() {
 		nand_do_platform_check "$board" "$1"
 		return $?;
 		;;
+	mikrotik,rbm11g|\
 	mikrotik,rbm33g|\
 	re350-v1)
 		[ "$magic" != "01000000" ] && {
@@ -323,6 +324,7 @@ platform_pre_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	mikrotik,rbm11g|\
 	mikrotik,rbm33g)
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
 		;;
