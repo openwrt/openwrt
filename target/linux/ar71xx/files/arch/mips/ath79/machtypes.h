@@ -316,6 +316,7 @@ enum ath79_mach_type {
 	ATH79_MACH_UBNT_LOCO_M_XW,		/* Ubiquiti Loco M XW */
 	ATH79_MACH_UBNT_LSSR71,			/* Ubiquiti LS-SR71 */
 	ATH79_MACH_UBNT_LSX,			/* Ubiquiti LSX */
+	ATH79_MACH_UBNT_NANOSTATIONAC,		/* Ubiquiti Nanostation AC */
 	ATH79_MACH_UBNT_NANOSTATIONACL,		/* Ubiquiti Nanostation AC loco */
 	ATH79_MACH_UBNT_NANO_M,			/* Ubiquiti NanoStation M */
 	ATH79_MACH_UBNT_NANO_M_XW,		/* Ubiquiti NanoStation M XW */

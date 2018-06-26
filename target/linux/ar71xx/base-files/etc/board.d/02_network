@@ -450,6 +450,10 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "5:lan" "1:wan"
 		;;
+	nanostationac)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "3:lan" "2:wan"
+		;;
 	onion-omega)
 		ucidef_set_interface_lan "wlan0"
 		;;
