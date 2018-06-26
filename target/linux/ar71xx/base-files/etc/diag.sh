@@ -23,6 +23,11 @@ get_status_led() {
 	antminer-s1|\
 	antminer-s3|\
 	antminer-r1|\
+	e1700ac-v2|\
+	e558-v2|\
+	e600gac-v2|\
+	e750a-v4|\
+	e750g-v8|\
 	minibox-v1|\
 	som9331|\
 	sr3200|\
@@ -162,6 +167,9 @@ get_status_led() {
 		;;
 	dw33d)
 		status_led="$board:blue:status"
+		;;
+	e600g-v2)
+		status_led="$board:blue:system"
 		;;
 	eap120)
 		status_led="$(ar71xx_board_name):green:system"

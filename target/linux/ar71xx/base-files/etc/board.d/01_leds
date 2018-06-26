@@ -71,7 +71,10 @@ ap147-010)
 ap90q|\
 cpe830|\
 cpe870|\
-dr531)
+dr531|\
+e600g-v2|\
+e600gac-v2|\
+e750a-v4)
 	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
 	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth1"
 
@@ -303,6 +306,14 @@ wrt160nl)
 gl-inet)
 	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:red:wlan" "phy0tpt"
+	;;
+e1700ac-v2)
+	ucidef_set_led_usbdev "usb" "USB" "$board:green:usb" "1-1"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:green:wlan2g" "phy1tpt"
+	;;
+e750g-v8|\
+e558-v2)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
 	;;
 esr900)
 	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "engenius:blue:wlan-2g" "phy0tpt"
