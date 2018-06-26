@@ -44,7 +44,6 @@ PKG_DRIVERS = \
 	rtl8180 rtl8187 \
 	rtlwifi rtlwifi-pci rtlwifi-btcoexist rtlwifi-usb rtl8192c-common \
 	rtl8192ce rtl8192se rtl8192de rtl8192cu rtl8821ae \
-	rtl8xxxu \
 	wlcore wl12xx wl18xx \
 	zd1211rw
 
@@ -1476,39 +1475,6 @@ define KernelPackage/rtl8821ae
   AUTOLOAD:=$(call AutoProbe,rtl8821ae)
 endef
 
-define KernelPackage/rtl8xxxu
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=alternative Realtek RTL8XXXU support
-  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-mac80211
-  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko
-  AUTOLOAD:=$(call AutoProbe,rtl8xxxu)
-endef
-
-define KernelPackage/rtl8xxxu/description
-  This is an alternative driver for various Realtek RTL8XXX
-  parts written to utilize the Linux mac80211 stack.
-  The driver is known to work with a number of RTL8723AU,
-  RL8188CU, RTL8188RU, RTL8191CU, and RTL8192CU devices
-
-  This driver is under development and has a limited feature
-  set. In particular it does not yet support 40MHz channels
-  and power management. However it should have a smaller
-  memory footprint than the vendor drivers and benetifs
-  from the in kernel mac80211 stack.
-
-  It can coexist with drivers from drivers/staging/rtl8723au,
-  drivers/staging/rtl8192u, and drivers/net/wireless/rtlwifi,
-  but you will need to control which module you wish to load.
-
-  RTL8XXXU_UNTESTED is enabled
-  This option enables detection of Realtek 8723/8188/8191/8192 WiFi
-  USB devices which have not been tested directly by the driver
-  author or reported to be working by third parties.
-
-  Please report your results!
-endef
-
-
 define KernelPackage/wlcore
   $(call KernelPackage/mac80211/Default)
   TITLE:=TI common driver part
@@ -1760,9 +1726,6 @@ config-$(call config_package,rtl8192cu) += RTL8192CU
 config-$(call config_package,rtl8821ae) += RTL8821AE
 config-$(CONFIG_PACKAGE_RTLWIFI_DEBUG) += RTLWIFI_DEBUG
 
-config-$(call config_package,rtl8xxxu) += RTL8XXXU
-config-y += RTL8XXXU_UNTESTED
-
 config-$(CONFIG_LEDS_TRIGGERS) += MAC80211_LEDS B43_LEDS B43LEGACY_LEDS
 
 MAKE_OPTS:= -C "$(PKG_BUILD_DIR)" \
@@ -1973,7 +1936,6 @@ $(eval $(call KernelPackage,rtl8192se))
 $(eval $(call KernelPackage,rtl8192de))
 $(eval $(call KernelPackage,rtl8192cu))
 $(eval $(call KernelPackage,rtl8821ae))
-$(eval $(call KernelPackage,rtl8xxxu))
 $(eval $(call KernelPackage,wlcore))
 $(eval $(call KernelPackage,wl12xx))
 $(eval $(call KernelPackage,wl18xx))
