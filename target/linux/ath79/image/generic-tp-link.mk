@@ -1,5 +1,18 @@
 include ./common-tp-link.mk
 
+define Device/tl-archer-c7-v2
+  $(Device/tplink-16mlzma)
+  ATH_SOC := qca9558
+  DEVICE_TITLE := TP-LINK Archer C7 v2
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
+  TPLINK_HWID := 0xc7000002
+  SUPPORTED_DEVICES := tplink,tl-archer-c7-v2
+  IMAGES := sysupgrade.bin factory.bin factory-us.bin factory-eu.bin
+  IMAGE/factory-us.bin := append-rootfs | mktplinkfw factory -C US
+  IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
+endef
+TARGET_DEVICES += tl-archer-c7-v2
+
 define Device/tl-wdr3600
   $(Device/tplink-8mlzma)
   ATH_SOC := ar9344

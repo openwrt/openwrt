@@ -82,3 +82,9 @@ $(Device/tplink)
   TPLINK_FLASHLAYOUT := 8Mlzma
   IMAGE_SIZE := 7936k
 endef
+
+define Device/tplink-16mlzma
+  $(Device/tplink)
+  TPLINK_FLASHLAYOUT := 16Mlzma
+  IMAGE_SIZE := 15872k
+endef
