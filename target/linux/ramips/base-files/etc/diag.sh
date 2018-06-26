@@ -42,6 +42,7 @@ get_status_led() {
 	r6220|\
 	tplink,c20-v4|\
 	tplink,c50-v3|\
+	tplink,tl-wa801nd-v5|\
 	tplink,tl-mr3420-v5|\
 	tplink,tl-wr842n-v5|\
 	tplink,tl-wr902ac-v3|\
