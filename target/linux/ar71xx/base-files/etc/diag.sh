@@ -446,6 +446,7 @@ get_status_led() {
 	tl-wa701nd-v2|\
 	tl-wa801nd-v2|\
 	tl-wa801nd-v3|\
+	tl-wa801nd-v4|\
 	tl-wa830re-v2|\
 	tl-wa901nd|\
 	tl-wa901nd-v2|\

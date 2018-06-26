@@ -1,6 +1,7 @@
 /*
  *  TP-LINK TL-WA801ND v3 adapted from TP-LINK TL-WR841N/ND v9
- *
+ *  TP-LINK TL-WA801ND v4
+ * 
  *  Copyright (C) 2014 Matthias Schiffer <mschiffer@universe-factory.net>
  *  Copyright (C) 2016 Tiziano Bacocco <tizbac2@gmail.com>
  *
@@ -134,3 +135,19 @@ static void __init tl_wa801n_v3_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_TL_WA801ND_V3, "TL-WA801ND-v3", "TP-LINK TL-WA801ND v3",
 	     tl_wa801n_v3_setup);
+
+static void __init tl_wa801n_v4_setup(void)
+{
+        tl_ap143_setup();
+
+        ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wa801n_v3_leds_gpio),
+                                 tl_wa801n_v3_leds_gpio);
+
+        ath79_register_gpio_keys_polled(1, TL_WA801NDV3_KEYS_POLL_INTERVAL,
+                                        ARRAY_SIZE(tl_wa801n_v3_gpio_keys),
+                                        tl_wa801n_v3_gpio_keys);
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_WA801ND_V4, "TL-WA801ND-v4", "TP-LINK TL-WA801ND v4",
+             tl_wa801n_v4_setup);
+

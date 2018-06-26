@@ -490,6 +490,9 @@ ramips_board_detect() {
 	*"Timecloud")
 		name="timecloud"
 		;;
+	*"TL-WA801ND v5")
+		name="tl-wa801nd-v5"
+		;;
 	*"TL-WR840N v4")
 		name="tl-wr840n-v4"
 		;;
