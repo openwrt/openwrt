@@ -305,7 +305,7 @@ class DownloadMethodGitHubTarball(DownloadMethod):
     def _init_commit_ts(self):
         if self.commit_ts is not None:
             return
-        url = self._make_repo_url_path('commits', self.version)
+        url = self._make_repo_url_path('git', 'commits', self.version)
         ct = self.commit_ts_cache.get(url)
         if ct is not None:
             self.commit_ts = ct
@@ -313,7 +313,7 @@ class DownloadMethodGitHubTarball(DownloadMethod):
         resp = self._make_request(url)
         data = resp.read()
         data = json.loads(data)
-        date = data['commit']['committer']['date']
+        date = data['committer']['date']
         date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
         date = date.timetuple()
         ct = calendar.timegm(date)
