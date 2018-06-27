@@ -80,7 +80,7 @@ define Device/ubnt_unifi
 endef
 TARGET_DEVICES += ubnt_unifi
 
-define Device/ubnt-unifiac
+define Device/ubnt_unifiac
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7744k
@@ -89,12 +89,13 @@ define Device/ubnt-unifiac
 endef
 
 
-define Device/ubnt-unifiac-lite
-  $(Device/ubnt-unifiac)
+define Device/ubnt_unifiac-lite
+  $(Device/ubnt_unifiac)
   DEVICE_TITLE := Ubiquiti UniFi AC-Lite
+  SUPPORTED_DEVICES += ubnt-unifiac-lite
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
   DEVICE_PROFILE += UBNTUNIFIACLITE
   BOARDNAME := UBNT-UF-AC-LITE
   ATH_SOC := qca9563
 endef
-TARGET_DEVICES += ubnt-unifiac-lite
+TARGET_DEVICES += ubnt_unifiac-lite
