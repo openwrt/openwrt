@@ -10,11 +10,6 @@
 	compatible = "ubnt,ubnt-unifiac-lite", "qca,qca9563";
 	model = "Ubiquiti UniFi-AC-LITE/MESH/LR";
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x8000000>;
-	};
-
 	chosen {
 		bootargs = "console=ttyS0,115200n8";
 	};
