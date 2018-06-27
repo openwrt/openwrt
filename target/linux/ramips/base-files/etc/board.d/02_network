@@ -231,6 +231,7 @@ ramips_setup_interfaces()
 		;;
 	dir-860l-b1|\
 	elecom,wrc-1167ghbk2-s|\
+	iodata,wn-ax1167gr|\
 	iodata,wn-gx300gr)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
@@ -478,6 +479,7 @@ ramips_setup_macs()
 		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
+	iodata,wn-ax1167gr|\
 	iodata,wn-gx300gr)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary Factory 4)" 1)
 		;;
