@@ -69,8 +69,9 @@ define Device/tl-wr1043nd-v4
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x10430004
   TPLINK_BOARD_ID := TLWR1043NDV4
-  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
+  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
+    append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
   SUPPORTED_DEVICES := tplink,tl-wr1043nd-v4 tl-wr1043nd-v4
 endef
