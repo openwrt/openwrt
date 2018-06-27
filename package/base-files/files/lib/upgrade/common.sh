@@ -89,7 +89,7 @@ get_image() { # <source> [ <command> ]
 		esac
 	fi
 
-	cat "$from" 2>/dev/null | $cmd
+	"$cmd" "$from" 2>/dev/null
 }
 
 get_magic_word() {
