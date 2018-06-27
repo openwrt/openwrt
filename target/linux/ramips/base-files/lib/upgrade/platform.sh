@@ -76,6 +76,7 @@ platform_check_image() {
 	hpm|\
 	ht-tm02|\
 	hw550-3g|\
+	iodata,wn-ax1167gr|\
 	iodata,wn-gx300gr|\
 	ip2202|\
 	jhr-n805r|\
