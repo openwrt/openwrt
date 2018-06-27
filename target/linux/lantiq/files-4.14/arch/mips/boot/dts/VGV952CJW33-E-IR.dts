@@ -157,9 +157,9 @@
 		//gpio-sda = <&gpio0 1 0>;
 		//gpio-sck = <&gpio0 2 0>;
 		//cpu_port = <7>;
-		realtek,extif0 = <1 0 1 1 1 1 1 1 2>; // default found on other profiles
-		//realtek,extif1   = <1 0 1 1 0 0 1 1 2>; // based on vendor uboot-config
-		mdio = <&mdio>;
+		//realtek,extif0 = <1 0 1 1 1 1 1 1 2>; // default found on other profiles
+		realtek,extif1   = <1 0 1 1 0 0 1 1 2>; // based on vendor uboot-config
+		mii-bus = <&mdio>;
 	};
 };
 

@@ -1,0 +1,54 @@
+From 5a5d5130a628583c4137110a3189fe2f3c5c265a Mon Sep 17 00:00:00 2001
+From: Quallenauge <Hamsi2k@freenet.de>
+Date: Wed, 27 Jun 2018 20:35:47 +0200
+Subject: [PATCH] rtl8367b: Defer init until mdio bus appears.
+
+---
+ drivers/net/phy/rtl8367b.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/drivers/net/phy/rtl8367b.c b/drivers/net/phy/rtl8367b.c
+index e6ea6509..770bf0bc 100644
+--- a/drivers/net/phy/rtl8367b.c
++++ b/drivers/net/phy/rtl8367b.c
+@@ -17,9 +17,11 @@
+ #include <linux/delay.h>
+ #include <linux/skbuff.h>
+ #include <linux/rtl8367.h>
++#include <linux/of_mdio.h>
+ 
+ #include "rtl8366_smi.h"
+ 
++
+ #define RTL8367B_RESET_DELAY	1000	/* msecs*/
+ 
+ #define RTL8367B_PHY_ADDR_MAX	8
+@@ -1526,6 +1528,25 @@ static int  rtl8367b_probe(struct platform_device *pdev)
+ 	struct rtl8366_smi *smi;
+ 	int err;
+ 
++#ifdef CONFIG_OF
++    struct device_node *np = pdev->dev.of_node;
++	struct device_node *mdio_node;
++	struct mii_bus * ext_mbus;
++	mdio_node = of_parse_phandle(np, "mii-bus", 0);
++	if (!mdio_node) {
++		dev_err(&pdev->dev, "cannot find mdio node phandle");
++		goto try_gpio;
++	}
++
++	ext_mbus = of_mdio_find_bus(mdio_node);
++	if (!ext_mbus) {
++		dev_err(&pdev->dev,
++			"cannot find mdio bus from bus handle, try again later");
++		return -EPROBE_DEFER;
++	}
++
++try_gpio:
++#endif
+ 	smi = rtl8366_smi_probe(pdev);
+ 	if (!smi)
+ 		return -ENODEV;
+-- 
+2.18.0
+
