@@ -1,0 +1,8 @@
+config I2C_LED_AW9523
+	tristate "AW9523 GPIO-based I2C expander LED driver"
+	depends on LEDS_CLASS && I2C
+	help
+	  This is an I2C driver to register AW9523 LEDs expander.
+
+	  This support is also available as a module.  If so, the module
+	  will be called i2c-led-aw9523.

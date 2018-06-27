@@ -93,6 +93,44 @@
 	};
 };
 
+&i2c {
+	clock-frequency = <400000>;
+	status = "okay";
+
+	leds: aw9523-leds@5b {
+		compatible = "allwinc,aw9523";
+		reg = <0x5b>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reset-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+		reset-active-low;
+
+		led-current = <0>;
+		ch0-config = [fd];
+		ch1-config = [f1];
+
+		led1: led@1 {
+			label = "aw9523:signal";
+			reg = <1>;
+		};
+
+		led9: led@9 {
+			label = "aw9523:4g";
+			reg = <9>;
+		};
+
+		led10: led@10 {
+			label = "aw9523:internet";
+			reg = <10>;
+		};
+
+		led11: led@11 {
+			label = "aw9523:wps";
+			reg = <11>;
+		};
+	};
+};
+
 &ehci {
 	status = "okay";
 };
