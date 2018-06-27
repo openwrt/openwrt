@@ -354,6 +354,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "2:lan" "6t@eth0"
 		;;
+	v-fl500)
+		ucidef_add_switch "switch0" \
+			"2:lan:1" "3:lan:2" "4:wan" "6t@eth0"
+		;;
 	f5d8235-v1|\
 	tew-714tru|\
 	v11st-fe|\

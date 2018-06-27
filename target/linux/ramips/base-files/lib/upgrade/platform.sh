@@ -158,6 +158,7 @@ platform_check_image() {
 	u7628-01-128M-16M|\
 	ur-326n4g|\
 	ur-336un|\
+	v-fl500|\
 	v22rw-2x2|\
 	vonets,var11n-300|\
 	vocore-8M|\

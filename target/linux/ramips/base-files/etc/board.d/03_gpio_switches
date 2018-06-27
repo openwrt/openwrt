@@ -17,6 +17,9 @@ ubnt-erx-sfp)
 	ucidef_add_gpio_switch "poe_power_port3" "PoE Power Port3" "499"
 	ucidef_add_gpio_switch "poe_power_port4" "PoE Power Port4" "500"
 	;;
+v-fl500)
+	ucidef_add_gpio_switch "minipci_power" "Mini-PCI power" "39" "1"
+	;;
 esac
 
 board_config_flush
