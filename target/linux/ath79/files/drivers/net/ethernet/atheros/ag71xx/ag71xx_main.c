@@ -27,6 +27,7 @@
 	| NETIF_MSG_TX_ERR)
 
 static int ag71xx_msg_level = -1;
+static bool ag71xx_probe_delayed = 0;
 
 module_param_named(msg_level, ag71xx_msg_level, int, 0);
 MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
@@ -720,6 +721,8 @@ static void ag71xx_hw_disable(struct ag71xx *ag)
 static int ag71xx_open(struct net_device *dev)
 {
 	struct ag71xx *ag = netdev_priv(dev);
+	struct device *parent = &ag->pdev->dev;
+	struct device_node *np;
 	unsigned int max_frame_len;
 	int ret;
 
@@ -735,7 +738,12 @@ static int ag71xx_open(struct net_device *dev)
 	if (ret)
 		goto err;
 
-	ag71xx_ar7240_start(ag);
+	if ((np = of_get_child_by_name(parent->of_node, "mdio-bus"))) {
+		if (of_property_read_bool(np, "builtin-switch")) {
+			ag71xx_ar7240_start(ag);
+		}
+	}
+
 	phy_start(ag->phy_dev);
 
 	return 0;
@@ -1276,13 +1284,26 @@ static void ag71xx_of_bit(struct device_node *np, const char *prop,
 {
 	u32 val;
 
+	*reg &= ~mask;
+
 	if (of_property_read_u32(np, prop, &val))
 		return;
 
 	if (val)
 		*reg |= mask;
-	else
-		*reg &= ~mask;
+}
+
+static void ag71xx_setup_gmac_934x(struct device_node *np, void __iomem *base)
+{
+	u32 val = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+
+	ag71xx_of_bit(np, "switch-phy-swap", &val, AR934X_ETH_CFG_SW_PHY_SWAP);
+	ag71xx_of_bit(np, "switch-only-mode", &val, AR934X_ETH_CFG_SW_ONLY_MODE);
+	ag71xx_of_bit(np, "rgmii-gmac0", &val, AR934X_ETH_CFG_RGMII_GMAC0);
+	ag71xx_of_bit(np, "mii-gmac0", &val, AR934X_ETH_CFG_MII_GMAC0);
+	ag71xx_of_bit(np, "gmii-gmac0", &val, AR934X_ETH_CFG_GMII_GMAC0);
+
+	__raw_writel(val, base + AR933X_GMAC_REG_ETH_CFG);
 }
 
 static void ag71xx_setup_gmac_933x(struct device_node *np, void __iomem *base)
@@ -1317,7 +1338,9 @@ static int ag71xx_setup_gmac(struct device_node *np)
 		goto err_iomap;
 	}
 
-	if (of_device_is_compatible(np_dev, "qca,ar9330-gmac"))
+	if (of_device_is_compatible(np_dev, "qca,ar9340-gmac"))
+		ag71xx_setup_gmac_934x(np, base);
+	 else if (of_device_is_compatible(np_dev, "qca,ar9330-gmac"))
 		ag71xx_setup_gmac_933x(np, base);
 
 	iounmap(base);
@@ -1342,6 +1365,15 @@ static int ag71xx_probe(struct platform_device *pdev)
 	if (!np)
 		return -ENODEV;
 
+	err = ag71xx_setup_gmac(np);
+	if (err)
+		return err;
+
+	if (of_property_read_bool(np, "qca,delay-probe") && (!ag71xx_probe_delayed)) {
+		ag71xx_probe_delayed = 1;
+		return -EPROBE_DEFER;
+	}
+
 	dev = alloc_etherdev(sizeof(*ag));
 	if (!dev)
 		return -ENOMEM;
@@ -1349,10 +1381,6 @@ static int ag71xx_probe(struct platform_device *pdev)
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res)
 		return -EINVAL;
-
-	err = ag71xx_setup_gmac(np);
-	if (err)
-		return err;
 
 	SET_NETDEV_DEV(dev, &pdev->dev);
 
