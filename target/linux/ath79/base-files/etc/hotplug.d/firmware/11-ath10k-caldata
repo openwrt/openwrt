@@ -96,6 +96,7 @@ case "$FIRMWARE" in
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -2)
 		;;
 	"ubnt,unifiac-lite"|\
+	"ubnt,unifiac-mesh"|\
 	"ubnt,unifiac-pro")
 		ath10kcal_extract "EEPROM" 20480 2116
 		;;
