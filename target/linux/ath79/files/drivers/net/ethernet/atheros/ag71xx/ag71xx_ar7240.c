@@ -1313,7 +1313,16 @@ void ag71xx_ar7240_start(struct ag71xx *ag)
 
 int ag71xx_ar7240_init(struct ag71xx *ag, struct device_node *np)
 {
+	struct reset_control *switch_reset;
 	struct ar7240sw *as;
+
+	switch_reset = of_reset_control_get_exclusive(np, "switch");
+	if (!IS_ERR(switch_reset)) {
+		reset_control_assert(switch_reset);
+		msleep(100);
+		reset_control_deassert(switch_reset);
+		msleep(200);
+	}
 
 	as = ar7240_probe(ag, np);
 	if (!as)
