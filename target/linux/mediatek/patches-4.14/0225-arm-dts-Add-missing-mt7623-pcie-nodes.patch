@@ -7,11 +7,9 @@ Subject: [PATCH] arm: dts: Add missing mt7623 pcie nodes
  arch/arm/boot/dts/mt7623.dtsi | 105 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 105 insertions(+)
 
-diff --git a/arch/arm/boot/dts/mt7623.dtsi b/arch/arm/boot/dts/mt7623.dtsi
-index 36983a7d7..714245365 100644
 --- a/arch/arm/boot/dts/mt7623.dtsi
 +++ b/arch/arm/boot/dts/mt7623.dtsi
-@@ -669,6 +669,111 @@
+@@ -670,6 +670,111 @@
  		#reset-cells = <1>;
  	};
  
@@ -123,6 +121,3 @@ index 36983a7d7..714245365 100644
  	usb1: usb@1a1c0000 {
  		compatible = "mediatek,mt7623-xhci",
  			     "mediatek,mt8173-xhci";
--- 
-2.14.1
-
