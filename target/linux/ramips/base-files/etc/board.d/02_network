@@ -195,7 +195,6 @@ ramips_setup_interfaces()
 	gl-mt300n|\
 	gl-mt750|\
 	hg255d|\
-	iodata,wn-gx300gr|\
 	jhr-n805r|\
 	jhr-n825r|\
 	jhr-n926r|\
@@ -228,7 +227,8 @@ ramips_setup_interfaces()
 			"1:lan:3" "2:lan:4" "3:lan:1" "4:lan:2" "0:wan" "6@eth0"
 		;;
 	dir-860l-b1|\
-	elecom,wrc-1167ghbk2-s)
+	elecom,wrc-1167ghbk2-s|\
+	iodata,wn-gx300gr)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
 		;;
