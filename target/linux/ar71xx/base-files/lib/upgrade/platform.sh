@@ -582,7 +582,6 @@ platform_check_image() {
 		return $?
 		;;
 	cpe210|\
-	cpe510|\
 	eap120|\
 	wbs210|\
 	wbs510)
@@ -592,6 +591,20 @@ platform_check_image() {
 	cpe210-v2)
 		tplink_pharos_check_image "$1" "01000000" "$(tplink_pharos_v2_get_model_string)" '\0\xff\r' && return 0
 		return 1
+		;;
+	cpe510)
+		local modelstr="$(tplink_pharos_v2_get_model_string)"
+		tplink_pharos_board_detect $modelstr
+		case $AR71XX_MODEL in
+		'TP-Link CPE510 v2.0')
+			tplink_pharos_check_image "$1" "7f454c46" "$modelstr" '\0\xff\r' && return 0
+			return 1
+			;;
+		*)
+			tplink_pharos_check_image "$1" "7f454c46" "$(tplink_pharos_get_model_string)" '' && return 0
+			return 1
+			;;
+		esac
 		;;
 	a40|\
 	a60|\
