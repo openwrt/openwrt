@@ -243,4 +243,9 @@
 
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
+
+	gmac-config {
+		device = <&gmac>;
+		rgmii-gmac0 = <1>;
+	};
 };

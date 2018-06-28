@@ -16,3 +16,8 @@
 	interrupt-parent = <&cpuintc>;
 	interrupts = <2>;
 };
+
+&eth0 {
+	phy-mode = "mii";
+	qca,delay-probe;
+};
