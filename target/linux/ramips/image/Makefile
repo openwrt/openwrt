@@ -147,6 +147,10 @@ define Build/mkdlinkfw-factory
 	mv $@.new $@
 endef
 
+define Build/zyimage
+	$(STAGING_DIR_HOST)/bin/zyimage $(1) $@
+endef
+
 #
 # The real magic happens inside these templates
 #
