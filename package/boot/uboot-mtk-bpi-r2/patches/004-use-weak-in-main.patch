@@ -1,0 +1,14 @@
+Index: uboot-mtk-bpi-r2-v1.0/common/main.c
+===================================================================
+--- uboot-mtk-bpi-r2-v1.0.orig/common/main.c
++++ uboot-mtk-bpi-r2-v1.0/common/main.c
+@@ -27,8 +27,7 @@ DECLARE_GLOBAL_DATA_PTR;
+ /*
+  * Board-specific Platform code can reimplement show_boot_progress () if needed
+  */
+-void inline __show_boot_progress (int val) {}
+-void show_boot_progress (int val) __attribute__((weak, alias("__show_boot_progress")));
++__weak void show_boot_progress(int val) {}
+ 
+ #define MAX_DELAY_STOP_STR 32
+ 
