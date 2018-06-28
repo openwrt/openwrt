@@ -334,6 +334,25 @@ define Device/e1700ac-v2-8M
 endef
 TARGET_DEVICES += e1700ac-v2-8M
 
+define Device/e558-v2-16M
+  DEVICE_TITLE := Qxwlan E558 v2 (16MB flash)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
+  BOARDNAME := E558-V2
+  SUPPORTED_DEVICES := e558-v2
+  IMAGE_SIZE := 15936k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art),-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += e558-v2-16M
+
+define Device/e558-v2-8M
+  $(Device/e558-v2-16M)
+  DEVICE_TITLE := Qxwlan E558 v2 (8MB flash)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += e558-v2-8M
+
 define Device/e600g-v2-16M
   DEVICE_TITLE := Qxwlan E600G v2 (16MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
@@ -372,6 +391,44 @@ define Device/e600gac-v2-8M
   IMAGE_SIZE := 7744k
 endef
 TARGET_DEVICES += e600gac-v2-8M
+
+define Device/e750a-v4-16M
+  DEVICE_TITLE := Qxwlan E750A v4 (16MB flash)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
+  BOARDNAME := E750A-V4
+  SUPPORTED_DEVICES := e750a-v4
+  IMAGE_SIZE := 15936k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art),-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += e750a-v4-16M
+
+define Device/e750a-v4-8M
+  $(Device/e750a-v4-16M)
+  DEVICE_TITLE := Qxwlan E750A v4 (8MB flash)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += e750a-v4-8M
+
+define Device/e750g-v8-16M
+  DEVICE_TITLE := Qxwlan E750G v8 (16MB flash)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
+  BOARDNAME := E750G-V8
+  SUPPORTED_DEVICES := e750g-v8
+  IMAGE_SIZE := 15936k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art),-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += e750g-v8-16M
+
+define Device/e750g-v8-8M
+  $(Device/e750g-v8-16M)
+  DEVICE_TITLE := Qxwlan E750G v8 (8MB flash)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += e750g-v8-8M
 
 define Device/ew-balin
   DEVICE_TITLE := Embedded Wireless Balin Platform

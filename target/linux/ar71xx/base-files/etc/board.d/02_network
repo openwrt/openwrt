@@ -381,6 +381,7 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch_attr "switch0" "enable" "false"
 		;;
 	e1700ac-v2|\
+	e750g-v8|\
 	unifiac-pro|\
 	xd3200)
 		ucidef_add_switch "switch0" \
@@ -390,6 +391,11 @@ ar71xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "2:lan:2" "3:lan:3" "4:lan:4"
+		;;
+	e558-v2)
+		ucidef_set_interfaces_lan_wan "eth1.1" "eth0.2"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "4:lan" "5:lan" "6@eth0" "3:wan"
 		;;
 	el-m150)
 		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
