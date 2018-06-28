@@ -1,34 +1,26 @@
 #
-# Copyright (C) 2016 Daniel Golle <daniel@makrotopia.org>
-#
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=yasm
-PKG_VERSION:=1.3.0
+PKG_NAME:=nasm
+PKG_VERSION:=2.13.03
 
-PKG_SOURCE_URL:=http://www.tortall.net/projects/yasm/releases/
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://www.nasm.us/pub/nasm/releasebuilds/$(PKG_VERSION)/
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 
-PKG_HASH:=3dce6601b495f5b3d45b59f7d2492a340ee7e84b5beca17e48f862502bd5603f
+PKG_HASH:=812ecfb0dcbc5bd409aaa8f61c7de94c5b8752a7b00c632883d15b2ed6452573
 
 HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
-YASM_CONFIGURE:= \
-	./configure \
-		--prefix=$(TOOLCHAIN_DIR) \
-		--build=$(GNU_HOST_NAME) \
-		--host=$(GNU_HOST_NAME) \
+HOST_CONFIGURE_ARGS+= \
 		--target=$(REAL_GNU_TARGET_NAME) \
 		--with-sysroot=$(TOOLCHAIN_DIR) \
-		--disable-multilib \
+		--enable-lto \
 		--disable-werror \
-		--disable-nls \
-		--disable-sim \
 		--disable-gdb \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 
@@ -40,8 +32,9 @@ endef
 
 define Host/Configure
 	(cd $(HOST_BUILD_DIR); \
-		$(YASM_CONFIGURE) \
+		./autogen.sh \
 	);
+	$(call Host/Configure/Default)
 endef
 
 define Host/Compile
