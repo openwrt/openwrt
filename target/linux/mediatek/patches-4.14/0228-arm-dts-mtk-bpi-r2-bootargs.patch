@@ -1,0 +1,12 @@
+Index: linux-4.14.51/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
+===================================================================
+--- linux-4.14.51.orig/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
++++ linux-4.14.51/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
+@@ -19,6 +19,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial2:115200n8";
++		bootargs = "earlyprintk console=tty1 fbcon=map:0 console=ttyS0,115200 block2mtd.block2mtd=/dev/mmcblk1,65536,RootFs,5 mtdparts=RootFs:512k(mbr)ro,512k(uboot)ro,512k(config)ro,512k(factory)ro,32M(kernel),32M(recovery),1024M(rootfs),2048M(usrdata),-(bmtpool) rootfstype=squashfs,jffs2";
+ 	};
+ 
+ 	memory {
