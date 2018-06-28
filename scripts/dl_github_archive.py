@@ -10,6 +10,7 @@ import calendar
 import datetime
 import errno
 import fcntl
+import hashlib
 import json
 import os
 import os.path
@@ -23,26 +24,31 @@ import urllib2
 
 TMPDIR = os.environ.get('TMP_DIR') or '/tmp'
 TMPDIR_DL = os.path.join(TMPDIR, 'dl')
-DOWNLOAD_METHODS = []
+
 
 class PathException(Exception): pass
-class DownloadException(Exception): pass
+class DownloadGitHubError(Exception): pass
 
 
 class Path(object):
     """Context class for preparing and cleaning up directories.
+
+    If ```preclean` is ``False``, ``path`` will NOT be removed on context enter
 
     If ``path`` ``isdir``, then it will be created on context enter.
 
     If ``keep`` is True, then ``path`` will NOT be removed on context exit
     """
 
-    def __init__(self, path, isdir=True, keep=False):
+    def __init__(self, path, isdir=True, preclean=False, keep=False):
         self.path = path
         self.isdir = isdir
+        self.preclean = preclean
         self.keep = keep
 
     def __enter__(self):
+        if self.preclean:
+            self.rm_all(self.path)
         if self.isdir:
             self.mkdir_all(self.path)
         return self
@@ -61,14 +67,11 @@ class Path(object):
             Path._mkdir(p)
 
     @staticmethod
-    def _rmdir_all(dir_):
+    def _rmdir_dir(dir_):
         names = Path._listdir(dir_)
         for name in names:
             p = os.path.join(dir_, name)
-            if os.path.isdir(p):
-                Path._rmdir_all(p)
-            else:
-                Path._remove(p)
+            Path.rm_all(p)
         Path._rmdir(dir_)
 
     @staticmethod
@@ -105,8 +108,10 @@ class Path(object):
     @staticmethod
     def rm_all(path):
         """Same as rm -r."""
-        if os.path.isdir(path):
-            Path._rmdir_all(path)
+        if os.path.islink(path):
+            Path._remove(path)
+        elif os.path.isdir(path):
+            Path._rmdir_dir(path)
         else:
             Path._remove(path)
 
@@ -201,59 +206,46 @@ class GitHubCommitTsCache(object):
             fout.write(line)
 
 
-class DownloadMethod(object):
-    """Base class of all download method."""
+class DownloadGitHubTarball(object):
+    """Download and repack archive tarabll from GitHub.
 
-    def __init__(self, args):
-        self.args = args
-        self.urls = args.urls
-        self.url = self.urls[0]
-        self.dl_dir = args.dl_dir
+    Compared with the method of packing after cloning the whole repo, this
+    method is more friendly to users with fragile internet connection.
 
-    @classmethod
-    def resolve(cls, args):
-        """Resolve download method to use.
+    However, there are limitations with this method
 
-        return instance of subclass of DownloadMethod
-        """
-        for c in DOWNLOAD_METHODS:
-            if c.match(args):
-                return c(args)
+     - GitHub imposes a 60 reqs/hour limit for unauthenticated API access.
+       This affects fetching commit date for reproducible tarballs.  Download
+       through the archive link is not affected.
 
-    @staticmethod
-    def match(args):
-        """Return True if it can do the download."""
-        return NotImplemented
+     - GitHub archives do not contain source codes for submodules.
 
-    def download(self):
-        """Do the download and put it into the download dir."""
-        return NotImplemented
+     - GitHub archives seem to respect .gitattributes and ignore pathes with
+       export-ignore attributes.
 
+    For the first two issues, the method will fail loudly to allow fallback to
+    clone-then-pack method.
 
-class DownloadMethodGitHubTarball(DownloadMethod):
-    """Download and repack archive tarabll from GitHub."""
+    As for the 3rd issue, to make sure that this method only produces identical
+    tarballs as the fallback method, we require the expected hash value to be
+    supplied.  That means the first tarball will need to be prepared by the
+    clone-then-pack method
+    """
 
     __repo_url_regex = re.compile(r'^(?:https|git)://github.com/(?P<owner>[^/]+)/(?P<repo>[^/]+)')
 
     def __init__(self, args):
-        super(DownloadMethodGitHubTarball, self).__init__(args)
-        self._init_owner_repo()
+        self.dl_dir = args.dl_dir
         self.version = args.version
         self.subdir = args.subdir
         self.source = args.source
+        self.url = args.url
+        self._init_owner_repo()
+        self.xhash = args.hash
+        self._init_hasher()
         self.commit_ts = None           # lazy load commit timestamp
         self.commit_ts_cache = GitHubCommitTsCache()
         self.name = 'github-tarball'
-
-    @staticmethod
-    def match(args):
-        """Match if it's a GitHub clone url."""
-        url = args.urls[0]
-        proto = args.proto
-        if proto == 'git' and isinstance(url, basestring) \
-                and (url.startswith('https://github.com/') or url.startswith('git://github.com/')):
-            return True
-        return False
 
     def download(self):
         """Download and repack GitHub archive tarball."""
@@ -265,18 +257,23 @@ class DownloadMethodGitHubTarball(DownloadMethod):
                 self._fetch(tarball_path)
                 # unpack
                 d = os.path.join(dir_dl.path, self.subdir + '.untar')
-                with Path(d) as dir_untar:
+                with Path(d, preclean=True) as dir_untar:
                     tarball_prefix = Path.untar(tarball_path, into=dir_untar.path)
                     dir0 = os.path.join(dir_untar.path, tarball_prefix)
                     dir1 = os.path.join(dir_untar.path, self.subdir)
                     # submodules check
                     if self._has_submodule(dir0):
-                        raise DownloadException('unable to fetch submodules\' source code')
+                        raise self._error('Fetching submodules is not yet supported')
                     # rename subdir
                     os.rename(dir0, dir1)
                     # repack
                     into=os.path.join(TMPDIR_DL, self.source)
                     Path.tar(dir_untar.path, self.subdir, into=into, ts=self.commit_ts)
+                    try:
+                        self._hash_check(into)
+                    except Exception:
+                        Path.rm_all(into)
+                        raise
                     # move to target location
                     file1 = os.path.join(self.dl_dir, self.source)
                     if into != file1:
@@ -291,10 +288,9 @@ class DownloadMethodGitHubTarball(DownloadMethod):
             return e.errno != errno.ENOENT
 
     def _init_owner_repo(self):
-        url = self.url
-        m = self.__repo_url_regex.search(url)
+        m = self.__repo_url_regex.search(self.url)
         if m is None:
-            raise DownloadException('invalid github url: %s' % url)
+            raise self._error('Invalid github url: {}'.format(self.url))
         owner = m.group('owner')
         repo = m.group('repo')
         if repo.endswith('.git'):
@@ -302,23 +298,79 @@ class DownloadMethodGitHubTarball(DownloadMethod):
         self.owner = owner
         self.repo = repo
 
+    def _init_hasher(self):
+        xhash = self.xhash
+        if len(xhash) == 64:
+            self.hasher = hashlib.sha256()
+        elif len(xhash) == 32:
+            self.hasher = hashlib.md5()
+        else:
+            raise self._error('Requires sha256sum for verification')
+        self.xhash = xhash
+
+    def _hash_check(self, f):
+        with open(f, 'rb') as fin:
+            while True:
+                d = fin.read(4096)
+                if not d:
+                    break
+                self.hasher.update(d)
+        xhash = self.hasher.hexdigest()
+        if xhash != self.xhash:
+            raise self._error('Wrong hash (probably caused by .gitattributes), expecting {}, got {}'.format(self.xhash, xhash))
+
     def _init_commit_ts(self):
         if self.commit_ts is not None:
             return
-        url = self._make_repo_url_path('git', 'commits', self.version)
-        ct = self.commit_ts_cache.get(url)
-        if ct is not None:
-            self.commit_ts = ct
-            return
+        # GitHub provides 2 APIs[1,2] for fetching commit data.  API[1] is more
+        # terse while API[2] provides more verbose info such as commit diff
+        # etc.  That's the main reason why API[1] is preferred: the response
+        # size is predictable.
+        #
+        # However, API[1] only accepts complete commit sha1sum as the parameter
+        # while API[2] is more liberal accepting also partial commit id and
+        # tags, etc.
+        #
+        # [1] Get a single commit, Repositories, https://developer.github.com/v3/repos/commits/#get-a-single-commit
+        # [2] Git Commits, Git Data, https://developer.github.com/v3/git/commits/#get-a-commit
+        apis = [
+            {
+                'url': self._make_repo_url_path('git', 'commits', self.version),
+                'attr_path': ('committer', 'date'),
+            }, {
+                'url': self._make_repo_url_path('commits', self.version),
+                'attr_path': ('commit', 'committer', 'date'),
+            },
+        ]
+        version_is_sha1sum = len(self.version) == 40
+        if not version_is_sha1sum:
+            apis.insert(0, apis.pop())
+        for api in apis:
+            url = api['url']
+            attr_path = api['attr_path']
+            try:
+                ct = self.commit_ts_cache.get(url)
+                if ct is not None:
+                    self.commit_ts = ct
+                    return
+                ct = self._init_commit_ts_remote_get(url, attr_path)
+                self.commit_ts = ct
+                self.commit_ts_cache.set(url, ct)
+                return
+            except Exception:
+                pass
+        raise self._error('Cannot fetch commit ts: {}'.format(url))
+
+    def _init_commit_ts_remote_get(self, url, attrpath):
         resp = self._make_request(url)
         data = resp.read()
-        data = json.loads(data)
-        date = data['committer']['date']
+        date = json.loads(data)
+        for attr in attrpath:
+            date = date[attr]
         date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
         date = date.timetuple()
         ct = calendar.timegm(date)
-        self.commit_ts = ct
-        self.commit_ts_cache.set(url, ct)
+        return ct
 
     def _fetch(self, path):
         """Fetch tarball of the specified version ref."""
@@ -350,72 +402,25 @@ class DownloadMethodGitHubTarball(DownloadMethod):
         fileobj = urllib2.urlopen(req, context=sslcontext)
         return fileobj
 
-
-class DownloadMethodCatchall(DownloadMethod):
-    """Dummy method that knows names but not ways of download."""
-
-    def __init__(self, args):
-        super(DownloadMethodCatchall, self).__init__(args)
-        self.args = args
-        self.proto = args.proto
-        self.name = self._resolve_name()
-
-    def _resolve_name(self):
-        if self.proto:
-            return self.proto
-        methods_map = (
-            ('default', ('@APACHE/', '@GITHUB/', '@GNOME/', '@GNU/',
-                         '@KERNEL/', '@SF/', '@SAVANNAH/', 'ftp://', 'http://',
-                         'https://', 'file://')),
-            ('git', ('git://', )),
-            ('svn', ('svn://', )),
-            ('cvs', ('cvs://', )),
-            ('bzr', ('sftp://', )),
-            ('bzr', ('sftp://', )),
-            ('unknown', ('', )),
-        )
-        for name, prefixes in methods_map:
-            if any(url.startswith(prefix) for prefix in prefixes for url in self.urls):
-                return name
-
-    @staticmethod
-    def match(args):
-        """Return True."""
-        return True
-
-    def download(self):
-        """Not implemented.
-
-        raise DownloadException
-        """
-        raise DownloadException('download method for %s is not yet implemented' % self.name)
-
-# order matters
-DOWNLOAD_METHODS = [
-    DownloadMethodGitHubTarball,
-    DownloadMethodCatchall,
-]
+    def _error(self, msg):
+        return DownloadGitHubError('{}: {}'.format(self.source, msg))
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=('dl_method', 'dl'), help='Action to take')
-    parser.add_argument('--urls', nargs='+', metavar='URL', help='Download URLs')
-    parser.add_argument('--proto', help='Download proto')
+    parser.add_argument('--dl-dir', default=os.getcwd(), help='Download dir')
+    parser.add_argument('--url', help='Download URL')
     parser.add_argument('--subdir', help='Source code subdir name')
     parser.add_argument('--version', help='Source code version')
     parser.add_argument('--source', help='Source tarball filename')
-    parser.add_argument('--dl-dir', default=os.getcwd(), help='Download dir')
+    parser.add_argument('--hash', help='Source tarball\'s expected sha256sum')
     args = parser.parse_args()
-    if args.action == 'dl_method':
-        method = DownloadMethod.resolve(args)
-        sys.stdout.write(method.name + '\n')
-    elif args.action == 'dl':
-        method = DownloadMethod.resolve(args)
-        try:
-            method.download()
-        except Exception:
-            raise
+    method = DownloadGitHubTarball(args)
+    try:
+        method.download()
+    except Exception:
+        sys.stderr.write('download {} from {} failed\n'.format(args.source, args.url))
+        raise
 
 if __name__ == '__main__':
     main()

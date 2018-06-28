@@ -172,25 +172,25 @@ endef
 
 define DownloadMethod/git
 	$(call wrap_mirror,$(1),$(2), \
-		$(call DownloadMethod/git-raw) \
+		$(call DownloadMethod/rawgit) \
 	)
 endef
 
-define DownloadMethod/github-tarball
+define DownloadMethod/github_archive
 	$(call wrap_mirror,$(1),$(2), \
-		$(SCRIPT_DIR)/download.py dl \
+		$(SCRIPT_DIR)/dl_github_archive.py \
 			--dl-dir="$(DL_DIR)" \
-			--url $(foreach url,$(URL),"$(url)") \
-			--proto="$(PROTO)" \
+			--url="$(URL)" \
 			--version="$(VERSION)" \
 			--subdir="$(SUBDIR)" \
 			--source="$(FILE)" \
-		|| ( $(call DownloadMethod/git-raw) ); \
+			--hash="$(MIRROR_HASH)" \
+		|| ( $(call DownloadMethod/rawgit) ); \
 	)
 endef
 
 # Only intends to be called as a submethod from other DownloadMethod
-define DownloadMethod/git-raw
+define DownloadMethod/rawgit
 	echo "Checking out files from the git repository..."; \
 	mkdir -p $(TMP_DIR)/dl && \
 	cd $(TMP_DIR)/dl && \
