@@ -30,6 +30,10 @@ include $(INCLUDE_DIR)/package.mk
 
 HOST_CFLAGS += -I$(LINUX_DIR)/user_headers/include
 
+ifeq ($(ARCH),aarch64)
+  CONFIGURE_ARGS += --enable-mpers=check
+endif
+
 CONFIGURE_VARS+= \
 	LDFLAGS_FOR_BUILD="$(HOST_LDFLAGS)" \
 	CPPFLAGS_FOR_BUILD="$(HOST_CPPFLAGS)" \
