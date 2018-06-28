@@ -1,0 +1,27 @@
+Index: linux-4.14.51/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
+===================================================================
+--- linux-4.14.51.orig/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
++++ linux-4.14.51/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
+@@ -87,19 +87,19 @@
+ 
+ 		blue {
+ 			label = "bpi-r2:pio:blue";
+-			gpios = <&pio 241 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 240 GPIO_ACTIVE_LOW>;
+ 			default-state = "off";
+ 		};
+ 
+ 		green {
+ 			label = "bpi-r2:pio:green";
+-			gpios = <&pio 240 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 241 GPIO_ACTIVE_LOW>;
+ 			default-state = "off";
+ 		};
+ 
+ 		red {
+ 			label = "bpi-r2:pio:red";
+-			gpios = <&pio 239 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 239 GPIO_ACTIVE_LOW>;
+ 			default-state = "off";
+ 		};
+ 	};
