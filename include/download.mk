@@ -21,7 +21,23 @@ DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
 # Try to guess the download method from the URL
 define dl_method
-$(shell $(SCRIPT_DIR)/download.py dl_method --url $(foreach url,$(1),"$(url)") --proto="$(2)")
+$(strip \
+  $(if $(2),$(2), \
+    $(if $(filter @APACHE/% @GITHUB/% @GNOME/% @GNU/% @KERNEL/% @SF/% @SAVANNAH/% ftp://% http://% https://% file://%,$(1)),default, \
+      $(if $(filter git://%,$(1)),git, \
+        $(if $(filter svn://%,$(1)),svn, \
+          $(if $(filter cvs://%,$(1)),cvs, \
+            $(if $(filter hg://%,$(1)),hg, \
+              $(if $(filter sftp://%,$(1)),bzr, \
+                unknown \
+              ) \
+            ) \
+          ) \
+        ) \
+      ) \
+    ) \
+  ) \
+)
 endef
 
 # code for creating tarballs from cvs/svn/git/bzr/hg/darcs checkouts - useful for mirror support
