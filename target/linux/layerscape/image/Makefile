@@ -80,7 +80,7 @@ endef
 define Device/ls1043ardb
   DEVICE_TITLE := ls1043ardb-$(SUBTARGET)
   DEVICE_PACKAGES +=	rcw-layerscape-ls1043ardb uboot-layerscape-$(SUBTARGET)-ls1043ardb \
-			fman-layerscape-ls1043ardb layerscape-ppa-ls1043ardb
+			layerscape-fman-ls1043ardb layerscape-ppa-ls1043ardb
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1043a-rdb-sdk
   IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
 			append-ls-uboot $(1) | pad-to 4M | \
@@ -95,7 +95,7 @@ TARGET_DEVICES += ls1043ardb
 define Device/ls1046ardb
   DEVICE_TITLE := ls1046ardb-$(SUBTARGET)
   DEVICE_PACKAGES +=	rcw-layerscape-ls1046ardb uboot-layerscape-$(SUBTARGET)-ls1046ardb \
-			fman-layerscape-ls1046ardb layerscape-ppa-ls1046ardb
+			layerscape-fman-ls1046ardb layerscape-ppa-ls1046ardb
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1046a-rdb-sdk
   FILESYSTEMS := ubifs
   UBIFS_OPTS := -m 1 -e 262016 -c 128
@@ -201,7 +201,7 @@ define Device/traverse-five64
   KERNEL_INSTALL := 1
   FILESYSTEMS := ubifs
   DEVICE_TITLE := Traverse LS1043 Boards (Five64, LS1043S)
-  DEVICE_PACKAGES += fman-layerscape-ls1043ardb kmod-i2c-core kmod-rtc-isl1208 uboot-envtools \
+  DEVICE_PACKAGES += layerscape-fman-ls1043ardb kmod-i2c-core kmod-rtc-isl1208 uboot-envtools \
 	uboot-traverse-ls1043v uboot-traverse-ls1043v-sdcard \
 	kmod-hwmon-core kmod-hwmon-ltc2990 kmod-gpio-pca953x kmod-input-gpio-keys-polled \
 	kmod-i2c-mux-pca954x kmod-hwmon-pac1934 kmod-hwmon-emc17xx
