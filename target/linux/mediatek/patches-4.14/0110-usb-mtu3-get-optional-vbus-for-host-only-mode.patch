@@ -14,11 +14,9 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  drivers/usb/mtu3/mtu3_plat.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/usb/mtu3/mtu3_plat.c b/drivers/usb/mtu3/mtu3_plat.c
-index 1e473b068650..7ca81f4e78a3 100644
 --- a/drivers/usb/mtu3/mtu3_plat.c
 +++ b/drivers/usb/mtu3/mtu3_plat.c
-@@ -300,10 +300,6 @@ static int get_ssusb_rscs(struct platform_device *pdev, struct ssusb_mtk *ssusb)
+@@ -300,10 +300,6 @@ static int get_ssusb_rscs(struct platfor
  	of_property_read_u32(node, "mediatek,u3p-dis-msk",
  			     &ssusb->u3p_dis_msk);
  
@@ -29,7 +27,7 @@ index 1e473b068650..7ca81f4e78a3 100644
  	vbus = devm_regulator_get(&pdev->dev, "vbus");
  	if (IS_ERR(vbus)) {
  		dev_err(dev, "failed to get vbus\n");
-@@ -311,6 +307,10 @@ static int get_ssusb_rscs(struct platform_device *pdev, struct ssusb_mtk *ssusb)
+@@ -311,6 +307,10 @@ static int get_ssusb_rscs(struct platfor
  	}
  	otg_sx->vbus = vbus;
  
@@ -40,6 +38,3 @@ index 1e473b068650..7ca81f4e78a3 100644
  	otg_sx->is_u3_drd = of_property_read_bool(node, "mediatek,usb3-drd");
  	otg_sx->manual_drd_enabled =
  		of_property_read_bool(node, "enable-manual-drd");
--- 
-2.11.0
-

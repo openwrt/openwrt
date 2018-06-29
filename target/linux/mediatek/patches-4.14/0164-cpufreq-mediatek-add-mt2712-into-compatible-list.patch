@@ -12,11 +12,9 @@ Signed-off-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
  drivers/cpufreq/mediatek-cpufreq.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/cpufreq/mediatek-cpufreq.c b/drivers/cpufreq/mediatek-cpufreq.c
-index 18c4bd9a5c65..62aec5cdbb26 100644
 --- a/drivers/cpufreq/mediatek-cpufreq.c
 +++ b/drivers/cpufreq/mediatek-cpufreq.c
-@@ -574,6 +574,7 @@ static struct platform_driver mtk_cpufreq_platdrv = {
+@@ -574,6 +574,7 @@ static struct platform_driver mtk_cpufre
  /* List of machines supported by this driver */
  static const struct of_device_id mtk_cpufreq_machines[] __initconst = {
  	{ .compatible = "mediatek,mt2701", },
@@ -24,6 +22,3 @@ index 18c4bd9a5c65..62aec5cdbb26 100644
  	{ .compatible = "mediatek,mt7622", },
  	{ .compatible = "mediatek,mt7623", },
  	{ .compatible = "mediatek,mt817x", },
--- 
-2.11.0
-

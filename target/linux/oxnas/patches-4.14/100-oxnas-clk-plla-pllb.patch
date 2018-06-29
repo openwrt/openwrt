@@ -43,7 +43,7 @@
  /* Standard regmap gate clocks */
  struct clk_oxnas_gate {
  	struct clk_hw hw;
-@@ -49,6 +70,135 @@ struct oxnas_stdclk_data {
+@@ -47,6 +70,135 @@ struct oxnas_stdclk_data {
  #define CLK_SET_REGOFFSET	0x2c
  #define CLK_CLR_REGOFFSET	0x30
  
@@ -179,7 +179,7 @@
  static inline struct clk_oxnas_gate *to_clk_oxnas_gate(struct clk_hw *hw)
  {
  	return container_of(hw, struct clk_oxnas_gate, hw);
-@@ -262,3 +412,42 @@ static struct platform_driver oxnas_stdc
+@@ -260,3 +412,42 @@ static struct platform_driver oxnas_stdc
  	},
  };
  builtin_platform_driver(oxnas_stdclk_driver);

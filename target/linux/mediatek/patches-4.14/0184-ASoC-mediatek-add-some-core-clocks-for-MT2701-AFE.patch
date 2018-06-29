@@ -12,8 +12,6 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  sound/soc/mediatek/mt2701/mt2701-afe-common.h     |  3 +++
  2 files changed, 32 insertions(+), 1 deletion(-)
 
-diff --git a/sound/soc/mediatek/mt2701/mt2701-afe-clock-ctrl.c b/sound/soc/mediatek/mt2701/mt2701-afe-clock-ctrl.c
-index 56a057c78c9a..949fc3a1d025 100644
 --- a/sound/soc/mediatek/mt2701/mt2701-afe-clock-ctrl.c
 +++ b/sound/soc/mediatek/mt2701/mt2701-afe-clock-ctrl.c
 @@ -18,8 +18,11 @@
@@ -28,7 +26,7 @@ index 56a057c78c9a..949fc3a1d025 100644
  	[MT2701_AUDSYS_AFE] = "audio_afe_pd",
  	[MT2701_AUDSYS_AFE_CONN] = "audio_afe_conn_pd",
  	[MT2701_AUDSYS_A1SYS] = "audio_a1sys_pd",
-@@ -169,10 +172,26 @@ static int mt2701_afe_enable_audsys(struct mtk_base_afe *afe)
+@@ -169,10 +172,26 @@ static int mt2701_afe_enable_audsys(stru
  	struct mt2701_afe_private *afe_priv = afe->platform_priv;
  	int ret;
  
@@ -56,7 +54,7 @@ index 56a057c78c9a..949fc3a1d025 100644
  	ret = clk_prepare_enable(afe_priv->base_ck[MT2701_AUDSYS_A1SYS]);
  	if (ret)
  		goto err_audio_a1sys;
-@@ -193,6 +212,12 @@ static int mt2701_afe_enable_audsys(struct mtk_base_afe *afe)
+@@ -193,6 +212,12 @@ err_audio_a2sys:
  	clk_disable_unprepare(afe_priv->base_ck[MT2701_AUDSYS_A1SYS]);
  err_audio_a1sys:
  	clk_disable_unprepare(afe_priv->base_ck[MT2701_AUDSYS_AFE]);
@@ -69,7 +67,7 @@ index 56a057c78c9a..949fc3a1d025 100644
  
  	return ret;
  }
-@@ -205,6 +230,9 @@ static void mt2701_afe_disable_audsys(struct mtk_base_afe *afe)
+@@ -205,6 +230,9 @@ static void mt2701_afe_disable_audsys(st
  	clk_disable_unprepare(afe_priv->base_ck[MT2701_AUDSYS_A2SYS]);
  	clk_disable_unprepare(afe_priv->base_ck[MT2701_AUDSYS_A1SYS]);
  	clk_disable_unprepare(afe_priv->base_ck[MT2701_AUDSYS_AFE]);
@@ -79,8 +77,6 @@ index 56a057c78c9a..949fc3a1d025 100644
  }
  
  int mt2701_afe_enable_clock(struct mtk_base_afe *afe)
-diff --git a/sound/soc/mediatek/mt2701/mt2701-afe-common.h b/sound/soc/mediatek/mt2701/mt2701-afe-common.h
-index 9a2b301a4c21..ae8ddeacfbfe 100644
 --- a/sound/soc/mediatek/mt2701/mt2701-afe-common.h
 +++ b/sound/soc/mediatek/mt2701/mt2701-afe-common.h
 @@ -61,8 +61,11 @@ enum {
@@ -95,6 +91,3 @@ index 9a2b301a4c21..ae8ddeacfbfe 100644
  	MT2701_AUDSYS_AFE,
  	MT2701_AUDSYS_AFE_CONN,
  	MT2701_AUDSYS_A1SYS,
--- 
-2.11.0
-

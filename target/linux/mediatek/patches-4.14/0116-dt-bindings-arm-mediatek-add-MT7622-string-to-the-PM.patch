@@ -12,8 +12,6 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  Documentation/devicetree/bindings/soc/mediatek/pwrap.txt | 6 +++++-
  1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/soc/mediatek/pwrap.txt b/Documentation/devicetree/bindings/soc/mediatek/pwrap.txt
-index 107700d00df4..bf80e3f96f8c 100644
 --- a/Documentation/devicetree/bindings/soc/mediatek/pwrap.txt
 +++ b/Documentation/devicetree/bindings/soc/mediatek/pwrap.txt
 @@ -19,6 +19,7 @@ IP Pairing
@@ -24,7 +22,7 @@ index 107700d00df4..bf80e3f96f8c 100644
  	"mediatek,mt8135-pwrap" for MT8135 SoCs
  	"mediatek,mt8173-pwrap" for MT8173 SoCs
  - interrupts: IRQ for pwrap in SOC
-@@ -36,9 +37,12 @@ Required properties in pwrap device node.
+@@ -36,9 +37,12 @@ Required properties in pwrap device node
  - clocks: Must contain an entry for each entry in clock-names.
  
  Optional properities:
@@ -38,6 +36,3 @@ index 107700d00df4..bf80e3f96f8c 100644
  
  Example:
  	pwrap: pwrap@1000f000 {
--- 
-2.11.0
-

@@ -14,8 +14,6 @@ Signed-off-by: Cyrille Pitchen <cyrille.pitchen@wedev4u.fr>
  drivers/mtd/spi-nor/mtk-quadspi.c | 240 +++++++++++++++++++-------------------
  1 file changed, 120 insertions(+), 120 deletions(-)
 
-diff --git a/drivers/mtd/spi-nor/mtk-quadspi.c b/drivers/mtd/spi-nor/mtk-quadspi.c
-index abe455ccd68b..5442993b71ff 100644
 --- a/drivers/mtd/spi-nor/mtk-quadspi.c
 +++ b/drivers/mtd/spi-nor/mtk-quadspi.c
 @@ -110,7 +110,7 @@
@@ -90,7 +88,7 @@ index abe455ccd68b..5442993b71ff 100644
  {
  	int len = 1 + txlen + rxlen;
  	int i, ret, idx;
-@@ -167,26 +167,26 @@ static int mt8173_nor_do_tx_rx(struct mt8173_nor *mt8173_nor, u8 op,
+@@ -167,26 +167,26 @@ static int mt8173_nor_do_tx_rx(struct mt
  	if (len > MTK_NOR_MAX_SHIFT)
  		return -EINVAL;
  
@@ -122,7 +120,7 @@ index abe455ccd68b..5442993b71ff 100644
  	if (ret)
  		return ret;
  
-@@ -195,20 +195,20 @@ static int mt8173_nor_do_tx_rx(struct mt8173_nor *mt8173_nor, u8 op,
+@@ -195,20 +195,20 @@ static int mt8173_nor_do_tx_rx(struct mt
  
  	/* read out RX data */
  	for (i = 0; i < rxlen; i++, idx--)
@@ -149,7 +147,7 @@ index abe455ccd68b..5442993b71ff 100644
  {
  	u8 reg;
  
-@@ -216,27 +216,27 @@ static int mt8173_nor_write_buffer_enable(struct mt8173_nor *mt8173_nor)
+@@ -216,27 +216,27 @@ static int mt8173_nor_write_buffer_enabl
  	 * 0: pre-fetch buffer use for read
  	 * 1: pre-fetch buffer use for page program
  	 */
@@ -185,7 +183,7 @@ index abe455ccd68b..5442993b71ff 100644
  
  	switch (nor->addr_width) {
  	case 3:
-@@ -246,115 +246,115 @@ static void mt8173_nor_set_addr_width(struct mt8173_nor *mt8173_nor)
+@@ -246,115 +246,115 @@ static void mt8173_nor_set_addr_width(st
  		val |= MTK_NOR_4B_ADDR_EN;
  		break;
  	default:
@@ -336,7 +334,7 @@ index abe455ccd68b..5442993b71ff 100644
  			return ret;
  		}
  	}
-@@ -362,72 +362,72 @@ static ssize_t mt8173_nor_write(struct spi_nor *nor, loff_t to, size_t len,
+@@ -362,72 +362,72 @@ static ssize_t mt8173_nor_write(struct s
  	return len;
  }
  
@@ -429,7 +427,7 @@ index abe455ccd68b..5442993b71ff 100644
  			struct device_node *flash_node)
  {
  	const struct spi_nor_hwcaps hwcaps = {
-@@ -439,18 +439,18 @@ static int mtk_nor_init(struct mt8173_nor *mt8173_nor,
+@@ -439,18 +439,18 @@ static int mtk_nor_init(struct mt8173_no
  	struct spi_nor *nor;
  
  	/* initialize controller to accept commands */
@@ -456,7 +454,7 @@ index abe455ccd68b..5442993b71ff 100644
  	nor->mtd.name = "mtk_nor";
  	/* initialized with NULL */
  	ret = spi_nor_scan(nor, NULL, &hwcaps);
-@@ -465,34 +465,34 @@ static int mtk_nor_drv_probe(struct platform_device *pdev)
+@@ -465,34 +465,34 @@ static int mtk_nor_drv_probe(struct plat
  	struct device_node *flash_np;
  	struct resource *res;
  	int ret;
@@ -506,7 +504,7 @@ index abe455ccd68b..5442993b71ff 100644
  	if (ret)
  		return ret;
  
-@@ -503,20 +503,20 @@ static int mtk_nor_drv_probe(struct platform_device *pdev)
+@@ -503,20 +503,20 @@ static int mtk_nor_drv_probe(struct plat
  		ret = -ENODEV;
  		goto nor_free;
  	}
@@ -531,7 +529,7 @@ index abe455ccd68b..5442993b71ff 100644
  
  	return 0;
  }
-@@ -524,18 +524,18 @@ static int mtk_nor_drv_remove(struct platform_device *pdev)
+@@ -524,18 +524,18 @@ static int mtk_nor_drv_remove(struct pla
  #ifdef CONFIG_PM_SLEEP
  static int mtk_nor_suspend(struct device *dev)
  {
@@ -554,6 +552,3 @@ index abe455ccd68b..5442993b71ff 100644
  }
  
  static const struct dev_pm_ops mtk_nor_dev_pm_ops = {
--- 
-2.11.0
-

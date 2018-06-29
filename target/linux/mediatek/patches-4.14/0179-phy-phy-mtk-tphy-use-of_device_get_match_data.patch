@@ -11,8 +11,6 @@ Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
  drivers/phy/mediatek/phy-mtk-tphy.c | 11 +++++------
  1 file changed, 5 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/phy/mediatek/phy-mtk-tphy.c b/drivers/phy/mediatek/phy-mtk-tphy.c
-index 11cab1d84a02..1e96d0740ef5 100644
 --- a/drivers/phy/mediatek/phy-mtk-tphy.c
 +++ b/drivers/phy/mediatek/phy-mtk-tphy.c
 @@ -20,6 +20,7 @@
@@ -23,7 +21,7 @@ index 11cab1d84a02..1e96d0740ef5 100644
  #include <linux/phy/phy.h>
  #include <linux/platform_device.h>
  
-@@ -995,7 +996,6 @@ MODULE_DEVICE_TABLE(of, mtk_tphy_id_table);
+@@ -995,7 +996,6 @@ MODULE_DEVICE_TABLE(of, mtk_tphy_id_tabl
  
  static int mtk_tphy_probe(struct platform_device *pdev)
  {
@@ -31,7 +29,7 @@ index 11cab1d84a02..1e96d0740ef5 100644
  	struct device *dev = &pdev->dev;
  	struct device_node *np = dev->of_node;
  	struct device_node *child_np;
-@@ -1005,15 +1005,14 @@ static int mtk_tphy_probe(struct platform_device *pdev)
+@@ -1005,15 +1005,14 @@ static int mtk_tphy_probe(struct platfor
  	struct resource res;
  	int port, retval;
  
@@ -51,6 +49,3 @@ index 11cab1d84a02..1e96d0740ef5 100644
  	tphy->nphys = of_get_child_count(np);
  	tphy->phys = devm_kcalloc(dev, tphy->nphys,
  				       sizeof(*tphy->phys), GFP_KERNEL);
--- 
-2.11.0
-

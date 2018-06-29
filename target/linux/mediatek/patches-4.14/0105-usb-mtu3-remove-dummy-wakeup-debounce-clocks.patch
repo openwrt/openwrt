@@ -13,8 +13,6 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  drivers/usb/mtu3/mtu3_host.c | 57 ++++----------------------------------------
  2 files changed, 4 insertions(+), 57 deletions(-)
 
-diff --git a/drivers/usb/mtu3/mtu3.h b/drivers/usb/mtu3/mtu3.h
-index 112723d6e7bc..6d3278e46431 100644
 --- a/drivers/usb/mtu3/mtu3.h
 +++ b/drivers/usb/mtu3/mtu3.h
 @@ -214,8 +214,6 @@ struct otg_switch_mtk {
@@ -35,11 +33,9 @@ index 112723d6e7bc..6d3278e46431 100644
  	struct regmap *pericfg;
  };
  
-diff --git a/drivers/usb/mtu3/mtu3_host.c b/drivers/usb/mtu3/mtu3_host.c
-index 4dd9508a60b5..edcc59148171 100644
 --- a/drivers/usb/mtu3/mtu3_host.c
 +++ b/drivers/usb/mtu3/mtu3_host.c
-@@ -79,20 +79,6 @@ int ssusb_wakeup_of_property_parse(struct ssusb_mtk *ssusb,
+@@ -79,20 +79,6 @@ int ssusb_wakeup_of_property_parse(struc
  	if (!ssusb->wakeup_en)
  		return 0;
  
@@ -60,7 +56,7 @@ index 4dd9508a60b5..edcc59148171 100644
  	ssusb->pericfg = syscon_regmap_lookup_by_phandle(dn,
  						"mediatek,syscon-wakeup");
  	if (IS_ERR(ssusb->pericfg)) {
-@@ -103,36 +89,6 @@ int ssusb_wakeup_of_property_parse(struct ssusb_mtk *ssusb,
+@@ -103,36 +89,6 @@ int ssusb_wakeup_of_property_parse(struc
  	return 0;
  }
  
@@ -97,7 +93,7 @@ index 4dd9508a60b5..edcc59148171 100644
  static void host_ports_num_get(struct ssusb_mtk *ssusb)
  {
  	u32 xhci_cap;
-@@ -286,19 +242,14 @@ void ssusb_host_exit(struct ssusb_mtk *ssusb)
+@@ -286,19 +242,14 @@ void ssusb_host_exit(struct ssusb_mtk *s
  
  int ssusb_wakeup_enable(struct ssusb_mtk *ssusb)
  {
@@ -121,6 +117,3 @@ index 4dd9508a60b5..edcc59148171 100644
 -		ssusb_wakeup_clks_disable(ssusb);
 -	}
  }
--- 
-2.11.0
-

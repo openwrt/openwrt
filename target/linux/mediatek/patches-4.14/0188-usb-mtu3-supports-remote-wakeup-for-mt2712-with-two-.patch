@@ -18,8 +18,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/usb/mtu3/mtu3_plat.c |   8 +--
  4 files changed, 70 insertions(+), 67 deletions(-)
 
-diff --git a/drivers/usb/mtu3/mtu3.h b/drivers/usb/mtu3/mtu3.h
-index d80e4e813248..ed3aec46eda1 100644
 --- a/drivers/usb/mtu3/mtu3.h
 +++ b/drivers/usb/mtu3/mtu3.h
 @@ -238,7 +238,10 @@ struct otg_switch_mtk {
@@ -47,11 +45,9 @@ index d80e4e813248..ed3aec46eda1 100644
  };
  
  /**
-diff --git a/drivers/usb/mtu3/mtu3_dr.h b/drivers/usb/mtu3/mtu3_dr.h
-index 0f0cbac00192..1fa62ce136b6 100644
 --- a/drivers/usb/mtu3/mtu3_dr.h
 +++ b/drivers/usb/mtu3/mtu3_dr.h
-@@ -27,8 +27,7 @@ int ssusb_wakeup_of_property_parse(struct ssusb_mtk *ssusb,
+@@ -27,8 +27,7 @@ int ssusb_wakeup_of_property_parse(struc
  				struct device_node *dn);
  int ssusb_host_enable(struct ssusb_mtk *ssusb);
  int ssusb_host_disable(struct ssusb_mtk *ssusb, bool suspend);
@@ -61,8 +57,6 @@ index 0f0cbac00192..1fa62ce136b6 100644
  
  #else
  
-diff --git a/drivers/usb/mtu3/mtu3_host.c b/drivers/usb/mtu3/mtu3_host.c
-index ec76b86dd887..1a1b6cf432a1 100644
 --- a/drivers/usb/mtu3/mtu3_host.c
 +++ b/drivers/usb/mtu3/mtu3_host.c
 @@ -27,66 +27,77 @@
@@ -101,7 +95,8 @@ index ec76b86dd887..1a1b6cf432a1 100644
  {
 -	u32 tmp;
 -	struct regmap *pericfg = ssusb->pericfg;
--
++	u32 reg, msk, val;
+ 
 -	regmap_read(pericfg, PERI_WK_CTRL1, &tmp);
 -	tmp &= ~UWK_CTL1_IS_P;
 -	tmp &= ~(UWK_CTL1_IS_C(0xf));
@@ -121,8 +116,6 @@ index ec76b86dd887..1a1b6cf432a1 100644
 -	regmap_read(ssusb->pericfg, PERI_WK_CTRL1, &tmp);
 -	tmp &= ~UWK_CTL1_IS_E;
 -	regmap_write(ssusb->pericfg, PERI_WK_CTRL1, tmp);
-+	u32 reg, msk, val;
-+
 +	switch (ssusb->uwk_vers) {
 +	case SSUSB_UWK_V1:
 +		reg = ssusb->uwk_reg_base + PERI_WK_CTRL1;
@@ -188,7 +181,7 @@ index ec76b86dd887..1a1b6cf432a1 100644
  }
  
  static void host_ports_num_get(struct ssusb_mtk *ssusb)
-@@ -244,17 +255,3 @@ void ssusb_host_exit(struct ssusb_mtk *ssusb)
+@@ -244,17 +255,3 @@ void ssusb_host_exit(struct ssusb_mtk *s
  	of_platform_depopulate(ssusb->dev);
  	ssusb_host_cleanup(ssusb);
  }
@@ -206,11 +199,9 @@ index ec76b86dd887..1a1b6cf432a1 100644
 -	if (ssusb->wakeup_en)
 -		ssusb_wakeup_ip_sleep_dis(ssusb);
 -}
-diff --git a/drivers/usb/mtu3/mtu3_plat.c b/drivers/usb/mtu3/mtu3_plat.c
-index a2523ead46cf..4cafd4ca8457 100644
 --- a/drivers/usb/mtu3/mtu3_plat.c
 +++ b/drivers/usb/mtu3/mtu3_plat.c
-@@ -291,8 +291,10 @@ static int get_ssusb_rscs(struct platform_device *pdev, struct ssusb_mtk *ssusb)
+@@ -291,8 +291,10 @@ static int get_ssusb_rscs(struct platfor
  
  	/* if host role is supported */
  	ret = ssusb_wakeup_of_property_parse(ssusb, node);
@@ -222,7 +213,7 @@ index a2523ead46cf..4cafd4ca8457 100644
  
  	/* optional property, ignore the error if it does not exist */
  	of_property_read_u32(node, "mediatek,u3p-dis-msk",
-@@ -466,7 +468,7 @@ static int __maybe_unused mtu3_suspend(struct device *dev)
+@@ -466,7 +468,7 @@ static int __maybe_unused mtu3_suspend(s
  	ssusb_host_disable(ssusb, true);
  	ssusb_phy_power_off(ssusb);
  	ssusb_clks_disable(ssusb);
@@ -231,7 +222,7 @@ index a2523ead46cf..4cafd4ca8457 100644
  
  	return 0;
  }
-@@ -482,7 +484,7 @@ static int __maybe_unused mtu3_resume(struct device *dev)
+@@ -482,7 +484,7 @@ static int __maybe_unused mtu3_resume(st
  	if (!ssusb->is_host)
  		return 0;
  
@@ -240,6 +231,3 @@ index a2523ead46cf..4cafd4ca8457 100644
  	ret = ssusb_clks_enable(ssusb);
  	if (ret)
  		goto clks_err;
--- 
-2.11.0
-

@@ -16,8 +16,6 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  drivers/soc/mediatek/mtk-pmic-wrap.c | 24 +++++++++++++++++++++---
  1 file changed, 21 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
-index e3398e37a7a6..45c3e44d8f40 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -507,6 +507,7 @@ struct pmic_wrapper;
@@ -28,7 +26,7 @@ index e3398e37a7a6..45c3e44d8f40 100644
  	/* Flags indicating the capability for the target slave */
  	u32 caps;
  	/*
-@@ -1149,7 +1150,7 @@ static irqreturn_t pwrap_interrupt(int irqno, void *dev_id)
+@@ -1149,7 +1150,7 @@ static irqreturn_t pwrap_interrupt(int i
  	return IRQ_HANDLED;
  }
  
@@ -37,7 +35,7 @@ index e3398e37a7a6..45c3e44d8f40 100644
  	.reg_bits = 16,
  	.val_bits = 16,
  	.reg_stride = 2,
-@@ -1158,9 +1159,19 @@ static const struct regmap_config pwrap_regmap_config = {
+@@ -1158,9 +1159,19 @@ static const struct regmap_config pwrap_
  	.max_register = 0xffff,
  };
  
@@ -57,7 +55,7 @@ index e3398e37a7a6..45c3e44d8f40 100644
  	.caps = PWRAP_SLV_CAP_SPI | PWRAP_SLV_CAP_DUALIO |
  		PWRAP_SLV_CAP_SECURITY,
  	.pwrap_read = pwrap_read16,
-@@ -1170,6 +1181,7 @@ static const struct pwrap_slv_type pmic_mt6323 = {
+@@ -1170,6 +1181,7 @@ static const struct pwrap_slv_type pmic_
  static const struct pwrap_slv_type pmic_mt6380 = {
  	.dew_regs = NULL,
  	.type = PMIC_MT6380,
@@ -65,7 +63,7 @@ index e3398e37a7a6..45c3e44d8f40 100644
  	.caps = 0,
  	.pwrap_read = pwrap_read32,
  	.pwrap_write = pwrap_write32,
-@@ -1178,6 +1190,7 @@ static const struct pwrap_slv_type pmic_mt6380 = {
+@@ -1178,6 +1190,7 @@ static const struct pwrap_slv_type pmic_
  static const struct pwrap_slv_type pmic_mt6397 = {
  	.dew_regs = mt6397_regs,
  	.type = PMIC_MT6397,
@@ -73,7 +71,7 @@ index e3398e37a7a6..45c3e44d8f40 100644
  	.caps = PWRAP_SLV_CAP_SPI | PWRAP_SLV_CAP_DUALIO |
  		PWRAP_SLV_CAP_SECURITY,
  	.pwrap_read = pwrap_read16,
-@@ -1189,9 +1202,14 @@ static const struct of_device_id of_slave_match_tbl[] = {
+@@ -1189,9 +1202,14 @@ static const struct of_device_id of_slav
  		.compatible = "mediatek,mt6323",
  		.data = &pmic_mt6323,
  	}, {
@@ -89,7 +87,7 @@ index e3398e37a7a6..45c3e44d8f40 100644
  		/* sentinel */
  	}
  };
-@@ -1372,7 +1390,7 @@ static int pwrap_probe(struct platform_device *pdev)
+@@ -1372,7 +1390,7 @@ static int pwrap_probe(struct platform_d
  	if (ret)
  		goto err_out2;
  
@@ -98,6 +96,3 @@ index e3398e37a7a6..45c3e44d8f40 100644
  	if (IS_ERR(wrp->regmap)) {
  		ret = PTR_ERR(wrp->regmap);
  		goto err_out2;
--- 
-2.11.0
-

@@ -15,11 +15,9 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/usb/host/xhci-mtk.c     | 3 ---
  2 files changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/usb/host/xhci-mtk-sch.c b/drivers/usb/host/xhci-mtk-sch.c
-index 6e7ddf6cafae..bfc51bc902b8 100644
 --- a/drivers/usb/host/xhci-mtk-sch.c
 +++ b/drivers/usb/host/xhci-mtk-sch.c
-@@ -287,12 +287,13 @@ static bool need_bw_sch(struct usb_host_endpoint *ep,
+@@ -287,12 +287,13 @@ static bool need_bw_sch(struct usb_host_
  
  int xhci_mtk_sch_init(struct xhci_hcd_mtk *mtk)
  {
@@ -34,11 +32,9 @@ index 6e7ddf6cafae..bfc51bc902b8 100644
  
  	sch_array = kcalloc(num_usb_bus, sizeof(*sch_array), GFP_KERNEL);
  	if (sch_array == NULL)
-diff --git a/drivers/usb/host/xhci-mtk.c b/drivers/usb/host/xhci-mtk.c
-index c197a6d9e157..9502ca408f01 100644
 --- a/drivers/usb/host/xhci-mtk.c
 +++ b/drivers/usb/host/xhci-mtk.c
-@@ -492,7 +492,6 @@ static void xhci_mtk_quirks(struct device *dev, struct xhci_hcd *xhci)
+@@ -492,7 +492,6 @@ static void xhci_mtk_quirks(struct devic
  /* called during probe() after chip reset completes */
  static int xhci_mtk_setup(struct usb_hcd *hcd)
  {
@@ -46,7 +42,7 @@ index c197a6d9e157..9502ca408f01 100644
  	struct xhci_hcd_mtk *mtk = hcd_to_mtk(hcd);
  	int ret;
  
-@@ -507,8 +506,6 @@ static int xhci_mtk_setup(struct usb_hcd *hcd)
+@@ -507,8 +506,6 @@ static int xhci_mtk_setup(struct usb_hcd
  		return ret;
  
  	if (usb_hcd_is_primary_hcd(hcd)) {
@@ -55,6 +51,3 @@ index c197a6d9e157..9502ca408f01 100644
  		ret = xhci_mtk_sch_init(mtk);
  		if (ret)
  			return ret;
--- 
-2.11.0
-

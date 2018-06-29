@@ -27,8 +27,6 @@ Cc: Julia Lawall <julia.lawall@lip6.fr>
  create mode 100644 drivers/dma/mediatek/Makefile
  create mode 100644 drivers/dma/mediatek/mtk-hsdma.c
 
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index fadc4d8783bd..3100b6dfa6e8 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -604,6 +604,8 @@ config ZX_DMA
@@ -40,20 +38,15 @@ index fadc4d8783bd..3100b6dfa6e8 100644
  source "drivers/dma/qcom/Kconfig"
  
  source "drivers/dma/dw/Kconfig"
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index f08f8de1b567..26b0ef43a8f9 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
-@@ -71,5 +71,6 @@ obj-$(CONFIG_XGENE_DMA) += xgene-dma.o
+@@ -72,5 +72,6 @@ obj-$(CONFIG_XGENE_DMA) += xgene-dma.o
  obj-$(CONFIG_ZX_DMA) += zx_dma.o
  obj-$(CONFIG_ST_FDMA) += st_fdma.o
  
 +obj-y += mediatek/
  obj-y += qcom/
  obj-y += xilinx/
-diff --git a/drivers/dma/mediatek/Kconfig b/drivers/dma/mediatek/Kconfig
-new file mode 100644
-index 000000000000..27bac0bba09e
 --- /dev/null
 +++ b/drivers/dma/mediatek/Kconfig
 @@ -0,0 +1,13 @@
@@ -70,16 +63,10 @@ index 000000000000..27bac0bba09e
 +	  This controller provides the channels which is dedicated to
 +	  memory-to-memory transfer to offload from CPU through ring-
 +	  based descriptor management.
-diff --git a/drivers/dma/mediatek/Makefile b/drivers/dma/mediatek/Makefile
-new file mode 100644
-index 000000000000..6e778f842f01
 --- /dev/null
 +++ b/drivers/dma/mediatek/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_MTK_HSDMA) += mtk-hsdma.o
-diff --git a/drivers/dma/mediatek/mtk-hsdma.c b/drivers/dma/mediatek/mtk-hsdma.c
-new file mode 100644
-index 000000000000..b7ec56ae02a6
 --- /dev/null
 +++ b/drivers/dma/mediatek/mtk-hsdma.c
 @@ -0,0 +1,1056 @@
@@ -1139,6 +1126,3 @@ index 000000000000..b7ec56ae02a6
 +MODULE_DESCRIPTION("MediaTek High-Speed DMA Controller Driver");
 +MODULE_AUTHOR("Sean Wang <sean.wang@mediatek.com>");
 +MODULE_LICENSE("GPL v2");
--- 
-2.11.0
-

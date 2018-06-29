@@ -16,8 +16,6 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  drivers/usb/mtu3/mtu3_qmu.c     | 102 +++++++++++++++++++++++++++++++++-------
  4 files changed, 142 insertions(+), 21 deletions(-)
 
-diff --git a/drivers/usb/mtu3/mtu3.h b/drivers/usb/mtu3/mtu3.h
-index 2795294ec92a..ef2dc92a2109 100644
 --- a/drivers/usb/mtu3/mtu3.h
 +++ b/drivers/usb/mtu3/mtu3.h
 @@ -46,6 +46,9 @@ struct mtu3_request;
@@ -66,8 +64,6 @@ index 2795294ec92a..ef2dc92a2109 100644
  	__u8 ext_flag;
  } __packed;
  
-diff --git a/drivers/usb/mtu3/mtu3_core.c b/drivers/usb/mtu3/mtu3_core.c
-index 947579842ad7..cd4528f5f337 100644
 --- a/drivers/usb/mtu3/mtu3_core.c
 +++ b/drivers/usb/mtu3/mtu3_core.c
 @@ -17,6 +17,7 @@
@@ -78,7 +74,7 @@ index 947579842ad7..cd4528f5f337 100644
  #include <linux/kernel.h>
  #include <linux/module.h>
  #include <linux/of_address.h>
-@@ -759,7 +760,31 @@ static void mtu3_hw_exit(struct mtu3 *mtu)
+@@ -759,7 +760,31 @@ static void mtu3_hw_exit(struct mtu3 *mt
  	mtu3_mem_free(mtu);
  }
  
@@ -111,7 +107,7 @@ index 947579842ad7..cd4528f5f337 100644
  
  int ssusb_gadget_init(struct ssusb_mtk *ssusb)
  {
-@@ -820,6 +845,12 @@ int ssusb_gadget_init(struct ssusb_mtk *ssusb)
+@@ -820,6 +845,12 @@ int ssusb_gadget_init(struct ssusb_mtk *
  		return ret;
  	}
  
@@ -124,7 +120,7 @@ index 947579842ad7..cd4528f5f337 100644
  	ret = devm_request_irq(dev, mtu->irq, mtu3_irq, 0, dev_name(dev), mtu);
  	if (ret) {
  		dev_err(dev, "request irq %d failed!\n", mtu->irq);
-@@ -845,6 +876,7 @@ int ssusb_gadget_init(struct ssusb_mtk *ssusb)
+@@ -845,6 +876,7 @@ int ssusb_gadget_init(struct ssusb_mtk *
  gadget_err:
  	device_init_wakeup(dev, false);
  
@@ -132,8 +128,6 @@ index 947579842ad7..cd4528f5f337 100644
  irq_err:
  	mtu3_hw_exit(mtu);
  	ssusb->u3d = NULL;
-diff --git a/drivers/usb/mtu3/mtu3_hw_regs.h b/drivers/usb/mtu3/mtu3_hw_regs.h
-index 06b29664470f..b6059752dc12 100644
 --- a/drivers/usb/mtu3/mtu3_hw_regs.h
 +++ b/drivers/usb/mtu3/mtu3_hw_regs.h
 @@ -58,6 +58,8 @@
@@ -167,8 +161,6 @@ index 06b29664470f..b6059752dc12 100644
  #define VBUS_ON			BIT(1)
  #define VBUS_FRC_EN		BIT(0)
  
-diff --git a/drivers/usb/mtu3/mtu3_qmu.c b/drivers/usb/mtu3/mtu3_qmu.c
-index 7d9ba8a52368..42145a3f1422 100644
 --- a/drivers/usb/mtu3/mtu3_qmu.c
 +++ b/drivers/usb/mtu3/mtu3_qmu.c
 @@ -40,7 +40,58 @@
@@ -230,7 +222,7 @@ index 7d9ba8a52368..42145a3f1422 100644
  
  static struct qmu_gpd *gpd_dma_to_virt(struct mtu3_gpd_ring *ring,
  		dma_addr_t dma_addr)
-@@ -193,21 +244,27 @@ static int mtu3_prepare_tx_gpd(struct mtu3_ep *mep, struct mtu3_request *mreq)
+@@ -193,21 +244,27 @@ static int mtu3_prepare_tx_gpd(struct mt
  	struct mtu3_gpd_ring *ring = &mep->gpd_ring;
  	struct qmu_gpd *gpd = ring->enqueue;
  	struct usb_request *req = &mreq->request;
@@ -262,7 +254,7 @@ index 7d9ba8a52368..42145a3f1422 100644
  
  	if (req->zero)
  		gpd->ext_flag |= GPD_EXT_FLAG_ZLP;
-@@ -226,21 +283,27 @@ static int mtu3_prepare_rx_gpd(struct mtu3_ep *mep, struct mtu3_request *mreq)
+@@ -226,21 +283,27 @@ static int mtu3_prepare_rx_gpd(struct mt
  	struct mtu3_gpd_ring *ring = &mep->gpd_ring;
  	struct qmu_gpd *gpd = ring->enqueue;
  	struct usb_request *req = &mreq->request;
@@ -316,7 +308,7 @@ index 7d9ba8a52368..42145a3f1422 100644
  		mtu3_setbits(mbase, U3D_QCR0, QMU_RX_CS_EN(epnum));
  		/* don't expect ZLP */
  		mtu3_clrbits(mbase, U3D_QCR3, QMU_RX_ZLP(epnum));
-@@ -353,9 +416,9 @@ static void qmu_tx_zlp_error_handler(struct mtu3 *mtu, u8 epnum)
+@@ -353,9 +416,9 @@ static void qmu_tx_zlp_error_handler(str
  	struct mtu3_gpd_ring *ring = &mep->gpd_ring;
  	void __iomem *mbase = mtu->mac_base;
  	struct qmu_gpd *gpd_current = NULL;
@@ -327,7 +319,7 @@ index 7d9ba8a52368..42145a3f1422 100644
  	u32 txcsr = 0;
  	int ret;
  
-@@ -365,7 +428,8 @@ static void qmu_tx_zlp_error_handler(struct mtu3 *mtu, u8 epnum)
+@@ -365,7 +428,8 @@ static void qmu_tx_zlp_error_handler(str
  	else
  		return;
  
@@ -337,7 +329,7 @@ index 7d9ba8a52368..42145a3f1422 100644
  
  	if (le16_to_cpu(gpd_current->buf_len) != 0) {
  		dev_err(mtu->dev, "TX EP%d buffer length error(!=0)\n", epnum);
-@@ -408,12 +472,13 @@ static void qmu_done_tx(struct mtu3 *mtu, u8 epnum)
+@@ -408,12 +472,13 @@ static void qmu_done_tx(struct mtu3 *mtu
  	void __iomem *mbase = mtu->mac_base;
  	struct qmu_gpd *gpd = ring->dequeue;
  	struct qmu_gpd *gpd_current = NULL;
@@ -353,7 +345,7 @@ index 7d9ba8a52368..42145a3f1422 100644
  
  	dev_dbg(mtu->dev, "%s EP%d, last=%p, current=%p, enq=%p\n",
  		__func__, epnum, gpd, gpd_current, ring->enqueue);
-@@ -446,11 +511,12 @@ static void qmu_done_rx(struct mtu3 *mtu, u8 epnum)
+@@ -446,11 +511,12 @@ static void qmu_done_rx(struct mtu3 *mtu
  	void __iomem *mbase = mtu->mac_base;
  	struct qmu_gpd *gpd = ring->dequeue;
  	struct qmu_gpd *gpd_current = NULL;
@@ -368,6 +360,3 @@ index 7d9ba8a52368..42145a3f1422 100644
  
  	dev_dbg(mtu->dev, "%s EP%d, last=%p, current=%p, enq=%p\n",
  		__func__, epnum, gpd, gpd_current, ring->enqueue);
--- 
-2.11.0
-

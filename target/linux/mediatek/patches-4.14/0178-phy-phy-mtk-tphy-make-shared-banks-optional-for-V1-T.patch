@@ -13,11 +13,9 @@ Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
  drivers/phy/mediatek/phy-mtk-tphy.c | 5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/phy/mediatek/phy-mtk-tphy.c b/drivers/phy/mediatek/phy-mtk-tphy.c
-index 54cc44b2d289..11cab1d84a02 100644
 --- a/drivers/phy/mediatek/phy-mtk-tphy.c
 +++ b/drivers/phy/mediatek/phy-mtk-tphy.c
-@@ -1023,9 +1023,10 @@ static int mtk_tphy_probe(struct platform_device *pdev)
+@@ -1023,9 +1023,10 @@ static int mtk_tphy_probe(struct platfor
  	tphy->dev = dev;
  	platform_set_drvdata(pdev, tphy);
  
@@ -30,6 +28,3 @@ index 54cc44b2d289..11cab1d84a02 100644
  		tphy->sif_base = devm_ioremap_resource(dev, sif_res);
  		if (IS_ERR(tphy->sif_base)) {
  			dev_err(dev, "failed to remap sif regs\n");
--- 
-2.11.0
-

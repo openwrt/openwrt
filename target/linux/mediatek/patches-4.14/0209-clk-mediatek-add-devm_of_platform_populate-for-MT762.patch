@@ -12,11 +12,9 @@ Signed-off-by: Ryder Lee <ryder.lee@mediatek.com>
  drivers/clk/mediatek/clk-mt7622-aud.c | 8 ++++++--
  1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clk/mediatek/clk-mt7622-aud.c b/drivers/clk/mediatek/clk-mt7622-aud.c
-index 13f752de7adc..0a1109ff65b9 100644
 --- a/drivers/clk/mediatek/clk-mt7622-aud.c
 +++ b/drivers/clk/mediatek/clk-mt7622-aud.c
-@@ -142,6 +142,7 @@ static int clk_mt7622_audiosys_init(struct platform_device *pdev)
+@@ -142,6 +142,7 @@ static int clk_mt7622_audiosys_init(stru
  {
  	struct clk_onecell_data *clk_data;
  	struct device_node *node = pdev->dev.of_node;
@@ -24,7 +22,7 @@ index 13f752de7adc..0a1109ff65b9 100644
  	int r;
  
  	clk_data = mtk_alloc_clk_data(CLK_AUDIO_NR_CLK);
-@@ -150,12 +151,15 @@ static int clk_mt7622_audiosys_init(struct platform_device *pdev)
+@@ -150,12 +151,15 @@ static int clk_mt7622_audiosys_init(stru
  			       clk_data);
  
  	r = of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
@@ -42,6 +40,3 @@ index 13f752de7adc..0a1109ff65b9 100644
  }
  
  static const struct of_device_id of_match_clk_mt7622_aud[] = {
--- 
-2.11.0
-

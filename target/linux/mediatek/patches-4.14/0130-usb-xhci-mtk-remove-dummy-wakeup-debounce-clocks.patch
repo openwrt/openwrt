@@ -15,11 +15,9 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/usb/host/xhci-mtk.h |  2 --
  2 files changed, 35 deletions(-)
 
-diff --git a/drivers/usb/host/xhci-mtk.c b/drivers/usb/host/xhci-mtk.c
-index 97ba51e4e149..d60463c07c54 100644
 --- a/drivers/usb/host/xhci-mtk.c
 +++ b/drivers/usb/host/xhci-mtk.c
-@@ -237,25 +237,8 @@ static int xhci_mtk_clks_enable(struct xhci_hcd_mtk *mtk)
+@@ -237,25 +237,8 @@ static int xhci_mtk_clks_enable(struct x
  		goto sys_clk_err;
  	}
  
@@ -45,7 +43,7 @@ index 97ba51e4e149..d60463c07c54 100644
  sys_clk_err:
  	clk_disable_unprepare(mtk->ref_clk);
  ref_clk_err:
-@@ -264,10 +247,6 @@ static int xhci_mtk_clks_enable(struct xhci_hcd_mtk *mtk)
+@@ -264,10 +247,6 @@ ref_clk_err:
  
  static void xhci_mtk_clks_disable(struct xhci_hcd_mtk *mtk)
  {
@@ -56,7 +54,7 @@ index 97ba51e4e149..d60463c07c54 100644
  	clk_disable_unprepare(mtk->sys_clk);
  	clk_disable_unprepare(mtk->ref_clk);
  }
-@@ -371,18 +350,6 @@ static int usb_wakeup_of_property_parse(struct xhci_hcd_mtk *mtk,
+@@ -371,18 +350,6 @@ static int usb_wakeup_of_property_parse(
  	if (!mtk->wakeup_src)
  		return 0;
  
@@ -75,8 +73,6 @@ index 97ba51e4e149..d60463c07c54 100644
  	mtk->pericfg = syscon_regmap_lookup_by_phandle(dn,
  						"mediatek,syscon-wakeup");
  	if (IS_ERR(mtk->pericfg)) {
-diff --git a/drivers/usb/host/xhci-mtk.h b/drivers/usb/host/xhci-mtk.h
-index db55a12f1585..67783a7af509 100644
 --- a/drivers/usb/host/xhci-mtk.h
 +++ b/drivers/usb/host/xhci-mtk.h
 @@ -126,8 +126,6 @@ struct xhci_hcd_mtk {
@@ -88,6 +84,3 @@ index db55a12f1585..67783a7af509 100644
  	struct regmap *pericfg;
  	struct phy **phys;
  	int num_phys;
--- 
-2.11.0
-

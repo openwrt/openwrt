@@ -14,11 +14,9 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  drivers/clk/Makefile | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clk/Makefile b/drivers/clk/Makefile
-index c99f363826f0..838000f92b69 100644
 --- a/drivers/clk/Makefile
 +++ b/drivers/clk/Makefile
-@@ -66,7 +66,7 @@ obj-$(CONFIG_ARCH_MXC)			+= imx/
+@@ -67,7 +67,7 @@ obj-$(CONFIG_ARCH_MXC)			+= imx/
  obj-$(CONFIG_MACH_INGENIC)		+= ingenic/
  obj-$(CONFIG_ARCH_KEYSTONE)		+= keystone/
  obj-$(CONFIG_MACH_LOONGSON32)		+= loongson1/
@@ -27,6 +25,3 @@ index c99f363826f0..838000f92b69 100644
  obj-$(CONFIG_COMMON_CLK_AMLOGIC)	+= meson/
  obj-$(CONFIG_MACH_PIC32)		+= microchip/
  ifeq ($(CONFIG_COMMON_CLK), y)
--- 
-2.11.0
-

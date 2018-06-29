@@ -12,8 +12,6 @@ Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
  drivers/phy/mediatek/phy-mtk-tphy.c | 39 +++++++++++++++++++++++++++++++++++++
  1 file changed, 39 insertions(+)
 
-diff --git a/drivers/phy/mediatek/phy-mtk-tphy.c b/drivers/phy/mediatek/phy-mtk-tphy.c
-index 721a2a1c97ef..402385f2562a 100644
 --- a/drivers/phy/mediatek/phy-mtk-tphy.c
 +++ b/drivers/phy/mediatek/phy-mtk-tphy.c
 @@ -96,9 +96,11 @@
@@ -28,7 +26,7 @@ index 721a2a1c97ef..402385f2562a 100644
  
  #define U3P_U3_CHIP_GPIO_CTLD		0x0c
  #define P3C_REG_IP_SW_RST		BIT(31)
-@@ -585,6 +587,31 @@ static void u2_phy_instance_exit(struct mtk_tphy *tphy,
+@@ -585,6 +587,31 @@ static void u2_phy_instance_exit(struct
  	}
  }
  
@@ -78,7 +76,7 @@ index 721a2a1c97ef..402385f2562a 100644
  static struct phy *mtk_phy_xlate(struct device *dev,
  					struct of_phandle_args *args)
  {
-@@ -931,6 +969,7 @@ static const struct phy_ops mtk_tphy_ops = {
+@@ -931,6 +969,7 @@ static const struct phy_ops mtk_tphy_ops
  	.exit		= mtk_phy_exit,
  	.power_on	= mtk_phy_power_on,
  	.power_off	= mtk_phy_power_off,
@@ -86,6 +84,3 @@ index 721a2a1c97ef..402385f2562a 100644
  	.owner		= THIS_MODULE,
  };
  
--- 
-2.11.0
-
