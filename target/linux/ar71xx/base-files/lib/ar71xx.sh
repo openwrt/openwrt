@@ -1475,6 +1475,9 @@ ar71xx_board_detect() {
 	*"WRTnode2Q"*)
 		name="wrtnode2q"
 		;;
+	*"wy-wr101ac")
+		name="wy-wr101ac"
+		;;		
 	*"WZR-450HP2")
 		name="wzr-450hp2"
 		;;

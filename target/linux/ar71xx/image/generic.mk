@@ -1344,3 +1344,14 @@ define Device/fritz450e
   IMAGE_SIZE := 15232k
 endef
 TARGET_DEVICES += fritz450e
+
+define Device/wy-wr101ac
+  $(Device/tplink-16mlzma)
+  DEVICE_TITLE := Wayne wy-wr101ac model support 
+  DEVICE_PACKAGES := ath10k-firmware-qca9887 kmod-ath10k kmod-usb-core kmod-usb2
+  BOARDNAME := WY-WR101AC
+  DEVICE_PROFILE := WY-WR101AC 
+  TPLINK_HWID := 0x3C00010B
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += wy-wr101ac
