@@ -38,7 +38,7 @@ define Download/usb_ids
   FILE:=$(USB_IDS_FILE)
   URL_FILE:=usb.ids
   URL:=@GITHUB/gentoo/hwids/$(USB_IDS_REV)
-  HASH:=2d0403ffccc0ff7150e32c0bf8e2878816b76ba08d2c3bb1059f33627a3da30f
+  HASH:=49214de0abe87ed2f1d854a38387d97ddda61bb0a4bd41b91b3deb72242dfa68
 endef
 $(eval $(call Download,usb_ids))
 
