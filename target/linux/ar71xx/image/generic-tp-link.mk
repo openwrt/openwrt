@@ -141,6 +141,17 @@ define Device/archer-c7-v4
 endef
 TARGET_DEVICES += archer-c7-v4
 
+define Device/archer-c7-v5
+  $(Device/archer-c7-v4)
+  DEVICE_TITLE := TP-LINK Archer C7 v5
+  BOARDNAME := ARCHER-C7-V5
+  TPLINK_BOARD_ID := ARCHER-C7-V5
+  IMAGE_SIZE := 15104k
+  MTDPARTS := spi0.0:128k(factory-uboot)ro,128k(u-boot)ro,64k@0x50000(art)ro,1536k@0xc0000(kernel),13824k(rootfs),15360k@0xc0000(firmware)
+  SUPPORTED_DEVICES := archer-c7-v5
+endef
+TARGET_DEVICES += archer-c7-v5
+
 define Device/cpe510-520-v1
   DEVICE_TITLE := TP-LINK CPE510/520 v1
   DEVICE_PACKAGES := rssileds
@@ -150,7 +161,10 @@ define Device/cpe510-520-v1
   TPLINK_BOARD_ID := CPE510
   DEVICE_PROFILE := CPE510
   LOADER_TYPE := elf
-  KERNEL := kernel-bin | patch-cmdline | lzma | loader-kernel
+  LOADER_FLASH_OFFS := 0x43000
+  COMPILE := loader-$(1).elf
+  COMPILE/loader-$(1).elf := loader-okli-compile
+  KERNEL := kernel-bin | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 12288
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory

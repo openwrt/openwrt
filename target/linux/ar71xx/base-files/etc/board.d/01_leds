@@ -373,9 +373,12 @@ epg5000)
 	ucidef_set_led_wlan "wlan5g" "WLAN 5 GHz" "$board:blue:wlan-5g" "phy0tpt"
 	;;
 fritz4020)
-	ucidef_set_led_default "power" "Power" "$board:green:power" "1"
 	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth1"
 	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+	;;
+fritz450e)
+	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
 	;;
 gl-ar300m)
@@ -425,6 +428,11 @@ hornet-ub-x2)
 	ucidef_set_led_netdev "wan" "WAN" "alfa:blue:wan" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "alfa:blue:wlan" "phy0tpt"
 	ucidef_set_led_usbdev "usb" "USB" "alfa:blue:usb" "1-1"
+	;;
+koala)
+	ucidef_set_led_default "power" "POWER" "$board:green:power" "1"
+	ucidef_set_led_wlan "wlan2g" "WLAN 2.4GHz" "$board:yellow:wlan2" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN 5GHz" "$board:red:wlan58" "phy0tpt"
 	;;
 lan-turtle)
 	ucidef_set_led_netdev "wan" "WAN" "$board:orange:system" "eth1"

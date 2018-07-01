@@ -66,7 +66,10 @@ get_status_led() {
 	archer-c60-v1|\
 	archer-c60-v2|\
 	archer-c7-v4|\
+	archer-c7-v5|\
 	fritz300e|\
+	fritz4020|\
+	fritz450e|\
 	gl-usb150|\
 	mr12|\
 	mr16|\
@@ -259,6 +262,9 @@ get_status_led() {
 		;;
 	jwap230)
 		status_led="$board:green:led1"
+		;;
+	koala)
+		status_led="$board:blue:sys"
 		;;
 	lan-turtle)
 		status_led="$board:orange:system"
