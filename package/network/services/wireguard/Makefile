@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=wireguard
 
 PKG_VERSION:=0.0.20180718
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=WireGuard-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://git.zx2c4.com/WireGuard/snapshot/
@@ -84,12 +84,13 @@ define Package/wireguard-tools/description
   $(call Package/wireguard/Default/description)
 
   This package provides the userspace control program for WireGuard,
-  `wg(8)`, and a netifd protocol helper.
+  `wg(8)`, a netifd protocol helper, and a re-resolve watchdog script.
 endef
 
 define Package/wireguard-tools/install
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/tools/wg $(1)/usr/bin/
+	$(INSTALL_BIN) ./files/wireguard_watchdog $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/lib/netifd/proto/
 	$(INSTALL_BIN) ./files/wireguard.sh $(1)/lib/netifd/proto/
 endef
