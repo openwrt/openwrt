@@ -26,17 +26,17 @@
 
 		usb1 {
 			label = "tp-link:green:usb1";
-			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 			default-state = "off";
-			trigger-sources = <&hub_port0>;
+			trigger-sources = <&hub_port1>;
 			linux,default-trigger = "usbport";
 		};
 
 		usb2 {
 			label = "tp-link:green:usb2";
-			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			default-state = "off";
-			trigger-sources = <&hub_port1>;
+			trigger-sources = <&hub_port0>;
 			linux,default-trigger = "usbport";
 		};
 
@@ -87,13 +87,13 @@
 		gpio_usb1_power {
 			gpio-export,name = "tp-link:power:usb1";
 			gpio-export,output = <1>;
-			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio_usb2_power {
 			gpio-export,name = "tp-link:power:usb2";
 			gpio-export,output = <1>;
-			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
 		};
 
 	};
