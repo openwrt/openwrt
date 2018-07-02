@@ -1,0 +1,245 @@
+/*
+ * Copyright 2015 DH electronics GmbH
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+#include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/clock/imx6qdl-clock.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	bl_display {
+		compatible = "pwm-backlight";
+		pwms = <&pwm1 0 50000 PWM_POLARITY_INVERTED>;			// PWM polarity can be overwritten by bootargs
+		backlight-sysfs-name = "display";
+		// brightness value  0 1  2  3  4  5  6  7   8   9   10
+		brightness-levels = <0 16 22 30 40 55 75 102 138 188 255>;
+		default-brightness-level = <8>;					// Default level can be set to 0 by bootargs
+		enable-gpios = <&gpio3 27 GPIO_ACTIVE_HIGH>;			// GPIO number and its polarity can be overwritten by bootargs
+		power-supply = <&reg_24v_ext>;
+		status = "okay";
+	};
+
+	regulators {
+		reg_24v_ext: 24V_EXT {
+			compatible = "regulator-fixed";
+			regulator-name = "24V_EXT";
+			regulator-min-microvolt = <24000000>;
+			regulator-max-microvolt = <24000000>;
+			regulator-always-on;
+		};
+	};
+
+	display@di0 {								// Parallel display interface
+		compatible = "fsl,imx-parallel-display";
+		interface-pix-fmt = "rgb24";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_dhcom_ipu1>;
+		status = "okay";
+
+		port {
+			display0_in: endpoint {
+				remote-endpoint = <&ipu1_di0_disp0>;
+			};
+		};
+
+		display-timings {
+			// DH display ID 13
+			DataImage_7inch_FG0700G3DSSW {
+				dh-display-ID = "013";
+				clock-frequency = <33260000>;
+				hactive = <800>;
+				vactive = <480>;
+				hfront-porch = <42>;
+				hback-porch = <86>;
+				hsync-len = <128>;
+				vfront-porch = <10>;
+				vback-porch = <33>;
+				vsync-len = <2>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <1>;
+				pixelclk-active = <1>;
+			};
+		};
+	};
+
+};
+
+&ipu1_di0_disp0 {
+	remote-endpoint = <&display0_in>;
+};
+
+&ldb {										// LVDS display interface
+	status = "okay";
+
+	lvds-channel@0 {
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <24>;
+		status = "okay";
+
+		// Set your LVDS display timings here
+		// To Avoid interference comment the parallel display timings out
+	/*	display-timings {						
+			// DH display ID 10
+			LG_7inch_LB070WV8 {
+				dh-display-ID = "010";
+				clock-frequency = <33250000>;
+				hactive = <800>;
+				vactive = <480>;
+				hfront-porch = <64>;
+				hback-porch = <64>;
+				hsync-len = <128>;
+				vfront-porch = <10>;
+				vback-porch = <10>;
+				vsync-len = <25>;
+				hsync-active = <1>;
+				vsync-active = <1>;
+				de-active = <1>;
+				pixelclk-active = <0>;
+			};
+		};*/
+	};
+
+	lvds-channel@1 {
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <24>;
+		status = "okay";
+	};
+};
+
+&pwm1 {										// Backlight PWM
+	#pwm-cells = <3>;							// Needed for inversion
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_pwm1>;
+	status = "okay";
+};
+
+&ecspi1 {									// ********** SPI 1 **********
+	spidev@2 {								// ==> /dev/spidev0.2
+		compatible =  "spidev", "fsl,ecspi";
+		reg = <2>;							// SS2
+		spi-max-frequency = <54000000>;
+		spi-cpha;							// Shifted clock phase (CPHA) mode
+		spi-cpol;							// Inverse clock polarity (CPOL) mode
+	};
+};
+
+&ecspi2 {									// ********** SPI 2 **********
+	spidev@0 {								// ==> /dev/spidev1.0
+		compatible =  "spidev", "fsl,ecspi";
+		reg = <0>;							// SS0
+		spi-max-frequency = <54000000>;
+		spi-cpha;							// Shifted clock phase (CPHA) mode
+		spi-cpol;							// Inverse clock polarity (CPOL) mode
+	};
+};
+
+&DHCOM_I2C1 {									// ********** I2C 1 **********
+	tmg120_ts@20 {								// Touch controller "DH-Touch"
+		compatible = "dh,tmg120_ts";
+		reg = <0x20>;
+		interrupt-parent = <&gpio4>;
+		interrupts = <7 2>;
+		status = "okay";
+	};
+
+	polytouch: edt-ft5x06@38 {						// Glyn Polytouch
+		compatible = "edt,edt-ft5x06";
+		reg = <0x38>;
+		interrupt-parent = <&gpio4>;
+		interrupts = <5 0>;
+		//linux,wakeup;
+	};
+};
+
+&DHCOM_I2C2 {									// ********** I2C 2 **********
+};
+
+&DHCOM_I2C_ONMODULE {								// ****** I2C onModule *******
+	tsc2004@49 {								// Touch controller TI TSC2014 (on Board)
+		status = "okay";
+	};
+};
+
+&iomuxc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_hog_base &pinctrl_dhcom_hog>;
+
+	imx6qdl-pdk2_base {
+		pinctrl_dhcom_hog: hog_grp {
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_2__GPIO1_IO02       0x400120B0	// GPIO A
+				MX6QDL_PAD_GPIO_4__GPIO1_IO04       0x400120B0	// GPIO B
+				MX6QDL_PAD_GPIO_5__GPIO1_IO05       0x400120B0	// GPIO C
+				MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03   0x400120B0	// GPIO D
+				MX6QDL_PAD_GPIO_19__GPIO4_IO05      0x120B0	// GPIO E -> Touch Interrupt PDK2 Glyn Polytouch
+				MX6QDL_PAD_DI0_PIN4__GPIO4_IO20     0x400120B0	// GPIO F
+				MX6QDL_PAD_EIM_D27__GPIO3_IO27      0x120B0	// GPIO G -> Backlight Enable
+				MX6QDL_PAD_KEY_ROW0__GPIO4_IO07     0x120B0	// GPIO H -> Touch Interrupt picoITX dh-touch
+				MX6QDL_PAD_KEY_COL1__GPIO4_IO08     0x400120B0	// GPIO I
+				MX6QDL_PAD_NANDF_CS1__GPIO6_IO14    0x400120B0	// GPIO J
+				MX6QDL_PAD_NANDF_CS2__GPIO6_IO15    0x400120B0	// GPIO K
+				MX6QDL_PAD_KEY_ROW1__GPIO4_IO09     0x400120B0	// GPIO L
+				MX6QDL_PAD_SD3_DAT5__GPIO7_IO00     0x400120B0	// GPIO M
+				MX6QDL_PAD_SD3_DAT4__GPIO7_IO01     0x400120B0	// GPIO N
+				MX6QDL_PAD_CSI0_VSYNC__GPIO5_IO21   0x400120B0	// GPIO O
+				MX6QDL_PAD_GPIO_18__GPIO7_IO13      0x400120B0	// GPIO P
+				MX6QDL_PAD_SD1_CMD__GPIO1_IO18      0x400120B0	// GPIO Q
+				MX6QDL_PAD_SD1_DAT0__GPIO1_IO16     0x400120B0	// GPIO R
+				MX6QDL_PAD_SD1_DAT1__GPIO1_IO17     0x400120B0	// GPIO S
+				MX6QDL_PAD_SD1_DAT2__GPIO1_IO19     0x400120B0	// GPIO T
+				MX6QDL_PAD_SD1_CLK__GPIO1_IO20      0x400120B0	// GPIO U
+				MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18  0x400120B0	// GPIO V
+				MX6QDL_PAD_CSI0_MCLK__GPIO5_IO19    0x400120B0	// GPIO W
+				MX6QDL_PAD_KEY_COL0__GPIO4_IO06     0x400120B0	// INT_HIGHEST_PRIORITY
+			>;
+		};
+
+		pinctrl_dhcom_pwm1: pwm1_grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD1_DAT3__PWM1_OUT       0x1b0b1
+			>;
+		};
+
+		pinctrl_dhcom_ipu1: ipu1_grp {
+			fsl,pins = <
+				MX6QDL_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK 0x10	// RGB_PCLK
+				MX6QDL_PAD_DI0_PIN15__IPU1_DI0_PIN15       0x10	// RGB_DATA_EN
+				MX6QDL_PAD_DI0_PIN2__IPU1_DI0_PIN02        0x10	// RGB_HSYNC
+				MX6QDL_PAD_DI0_PIN3__IPU1_DI0_PIN03        0x10	// RGB_VSYNC
+				MX6QDL_PAD_DISP0_DAT0__IPU1_DISP0_DATA00   0x10
+				MX6QDL_PAD_DISP0_DAT1__IPU1_DISP0_DATA01   0x10
+				MX6QDL_PAD_DISP0_DAT2__IPU1_DISP0_DATA02   0x10
+				MX6QDL_PAD_DISP0_DAT3__IPU1_DISP0_DATA03   0x10
+				MX6QDL_PAD_DISP0_DAT4__IPU1_DISP0_DATA04   0x10
+				MX6QDL_PAD_DISP0_DAT5__IPU1_DISP0_DATA05   0x10
+				MX6QDL_PAD_DISP0_DAT6__IPU1_DISP0_DATA06   0x10
+				MX6QDL_PAD_DISP0_DAT7__IPU1_DISP0_DATA07   0x10
+				MX6QDL_PAD_DISP0_DAT8__IPU1_DISP0_DATA08   0x10
+				MX6QDL_PAD_DISP0_DAT9__IPU1_DISP0_DATA09   0x10
+				MX6QDL_PAD_DISP0_DAT10__IPU1_DISP0_DATA10  0x10
+				MX6QDL_PAD_DISP0_DAT11__IPU1_DISP0_DATA11  0x10
+				MX6QDL_PAD_DISP0_DAT12__IPU1_DISP0_DATA12  0x10
+				MX6QDL_PAD_DISP0_DAT13__IPU1_DISP0_DATA13  0x10
+				MX6QDL_PAD_DISP0_DAT14__IPU1_DISP0_DATA14  0x10
+				MX6QDL_PAD_DISP0_DAT15__IPU1_DISP0_DATA15  0x10
+				MX6QDL_PAD_DISP0_DAT16__IPU1_DISP0_DATA16  0x10
+				MX6QDL_PAD_DISP0_DAT17__IPU1_DISP0_DATA17  0x10
+				MX6QDL_PAD_DISP0_DAT18__IPU1_DISP0_DATA18  0x10
+				MX6QDL_PAD_DISP0_DAT19__IPU1_DISP0_DATA19  0x10
+				MX6QDL_PAD_DISP0_DAT20__IPU1_DISP0_DATA20  0x10
+				MX6QDL_PAD_DISP0_DAT21__IPU1_DISP0_DATA21  0x10
+				MX6QDL_PAD_DISP0_DAT22__IPU1_DISP0_DATA22  0x10
+				MX6QDL_PAD_DISP0_DAT23__IPU1_DISP0_DATA23  0x10
+			>;
+		};
+	};
+};

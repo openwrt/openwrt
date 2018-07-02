@@ -1,0 +1,46 @@
+/*
+ * Copyright 2015 DH electronics GmbH
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+&usdhc4 {									// Disable eMMC (onModule)
+	status = "disable";
+};
+
+&gpmi {										// GPMI (NAND)
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_gpmi_nand>;
+	nand-on-flash-bbt;
+	status = "okay";
+};
+
+&iomuxc {
+	imx6qdl-dhcom {
+		pinctrl_dhcom_gpmi_nand: gpmi_nand_grp {
+			fsl,pins = <
+				MX6QDL_PAD_NANDF_CLE__NAND_CLE      0xb0b1
+				MX6QDL_PAD_NANDF_ALE__NAND_ALE      0xb0b1
+				MX6QDL_PAD_NANDF_WP_B__NAND_WP_B    0xb0b1
+				MX6QDL_PAD_NANDF_RB0__NAND_READY_B  0xb000
+				MX6QDL_PAD_NANDF_CS0__NAND_CE0_B    0xb0b1
+				MX6QDL_PAD_SD4_CMD__NAND_RE_B       0xb0b1
+				MX6QDL_PAD_SD4_CLK__NAND_WE_B       0xb0b1
+				MX6QDL_PAD_NANDF_D0__NAND_DATA00    0xb0b1
+				MX6QDL_PAD_NANDF_D1__NAND_DATA01    0xb0b1
+				MX6QDL_PAD_NANDF_D2__NAND_DATA02    0xb0b1
+				MX6QDL_PAD_NANDF_D3__NAND_DATA03    0xb0b1
+				MX6QDL_PAD_NANDF_D4__NAND_DATA04    0xb0b1
+				MX6QDL_PAD_NANDF_D5__NAND_DATA05    0xb0b1
+				MX6QDL_PAD_NANDF_D6__NAND_DATA06    0xb0b1
+				MX6QDL_PAD_NANDF_D7__NAND_DATA07    0xb0b1
+				MX6QDL_PAD_SD4_DAT0__NAND_DQS       0x00b1
+			>;
+		};
+	};
+};

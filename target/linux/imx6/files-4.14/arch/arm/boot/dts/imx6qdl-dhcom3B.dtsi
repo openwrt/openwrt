@@ -1,0 +1,486 @@
+/*
+ * Copyright 2015 DH electronics GmbH
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+#include <dt-bindings/gpio/gpio.h>
+#define DHCOM_HW300								// Use it in other device tree files, e.g. imx6qdl-dhcom_cfg-xxxx.dtsi
+
+/ {
+	aliases {
+		mmcblk0 = &usdhc2;
+		mmcblk1 = &usdhc3;
+		mmcblk2 = &usdhc4;
+		mmcblk3 = &usdhc1; 						// Unused at dhcom, put at the end to be compatible with uboot
+	};
+
+	memory {
+		reg = <0 0>;							// Will be filled by uboot
+	};
+	
+	chosen {
+		bootargs = "console=ttymxc0,115200";
+	};
+
+	regulators {
+		compatible = "simple-bus";
+
+		reg_usb_otg_vbus: usb_otg_vbus {
+			compatible = "regulator-fixed";
+			regulator-name = "usb_otg_vbus";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+		};
+
+		reg_usb_h1_vbus: usb_h1_vbus {
+			compatible = "regulator-fixed";
+			regulator-name = "usb_h1_vbus";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			gpio = <&gpio3 31 0>;					// GPIO: USB Host 1 Power
+			enable-active-high;
+		};
+
+		reg_3p3v: 3P3V {
+			compatible = "regulator-fixed";
+			regulator-name = "3P3V";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+		};
+	};
+};
+
+&can1 {										// CAN
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_flexcan1>;
+	status = "okay";
+};
+
+&ecspi1 {									// ********** SPI 1 **********
+	fsl,spi-num-chipselects = <4>;
+	cs-gpios = <&gpio2 30 1>, <0>, <&gpio4 11 1>, <0>;			// SS0, (SS1), SS2, (SS3)
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_ecspi1>;
+	status = "okay";
+
+	s25fl116k@0 {								// SPI Flash: Spansion S25FL116K0PMFI010 (used to store bootloader)
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spansion,s25fl116k", "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+		reg = <0>;							// SS0
+		m25p,fast-read;
+	};
+};
+
+&ecspi2 {									// ********** SPI 2 **********
+	fsl,spi-num-chipselects = <4>;
+	cs-gpios = <&gpio5 29 1>, <0>, <0>, <0>;				// SS0, (SS1), (SS2), (SS3)
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_ecspi2>;
+	status = "okay";
+};
+
+#ifndef DHCOM_ETH_1G
+&fec {										// Ethernet (100MBit)
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_enet_100M>;
+	phy-mode = "rmii";
+	phy-reset-gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
+	//phy-reset-duration = <1>;						// 1ms is the default value
+	phy-reset-post-delay = <1>;
+	phy-handle = <&ethphy>;
+	//local-mac-address = [00 11 22 33 44 55];				// Is set by the bootloader
+	power-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;				// Power for LAN-Transformer 7499111614A (Isn't yet supported by driver)
+	status = "okay";
+
+	mdio {									// PHY: SMSC LAN8710Ai
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ethphy: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0>;
+			max-speed = <100>;
+		};
+	};
+};
+#endif
+
+#define DHCOM_I2C1                  i2c2					// Use this define in board files!
+#define DHCOM_I2C1_PINCTRL          pinctrl_dhcom_i2c2				// ==> /dev/i2c-1
+&DHCOM_I2C1 {									// ********** I2C 1 **********
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&DHCOM_I2C1_PINCTRL>;
+	status = "okay";
+};
+
+#define DHCOM_I2C2                  i2c1					// Use this define in board files!
+#define DHCOM_I2C2_PINCTRL          pinctrl_dhcom_i2c1				// ==> /dev/i2c-0
+&DHCOM_I2C2 {									// ********** I2C 2 **********
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&DHCOM_I2C2_PINCTRL>;
+	status = "okay";
+};
+
+#define DHCOM_I2C_ONMODULE          i2c3					// Use this define in board files!
+#define DHCOM_I2C_ONMODULE_PINCTRL  pinctrl_dhcom_i2c3				// ==> /dev/i2c-2
+&DHCOM_I2C_ONMODULE {								// ****** I2C onModule *******
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&DHCOM_I2C_ONMODULE_PINCTRL>;
+	status = "okay";
+
+	/* TODO PMIC */
+	/*
+	pmic: ltc3676@3c {							// Power Management LTC3676EUJ#PBF
+		compatible = "lltc,ltc3676";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_dhcom_pmic_hw300>;
+		reg = <0x3c>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <2 2>;
+
+		regulators {
+			sw1_reg: sw1 {						// VCC_SOC
+				regulator-min-microvolt = <787500>;
+				regulator-max-microvolt = <1527272>;
+				lltc,fb-voltage-divider = <100000 110000>;
+				regulator-suspend-mem-microvolt = <1040000>;
+				regulator-ramp-delay = <7000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+			sw2_reg: sw2 {						// VCC_3V3
+				regulator-min-microvolt = <1885714>;
+				regulator-max-microvolt = <3657142>;
+				lltc,fb-voltage-divider = <100000 28000>;
+				regulator-ramp-delay = <7000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+			sw3_reg: sw3 {						// VCC_ARM
+				regulator-min-microvolt = <787500>;
+				regulator-max-microvolt = <1527272>;
+				lltc,fb-voltage-divider = <100000 110000>;
+				regulator-suspend-mem-microvolt = <980000>;
+				regulator-ramp-delay = <7000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+			sw4_reg: sw4 {						// VCC_DDR3
+				regulator-min-microvolt = <855571>;
+				regulator-max-microvolt = <1659291>;
+				lltc,fb-voltage-divider = <100000 93100>;
+				regulator-ramp-delay = <7000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+			ldo1_reg: ldo1 {					// VCC_SNVS
+				regulator-min-microvolt = <3240306>;
+				regulator-max-microvolt = <3240306>;
+				lltc,fb-voltage-divider = <102000 29400>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+			ldo2_reg: ldo2 {					// VCC_2V5_LDO2
+				regulator-min-microvolt = <2484708>;
+				regulator-max-microvolt = <2484708>;
+				lltc,fb-voltage-divider = <100000 41200>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+		};
+	};*/
+
+	tsc2004@49 {								// Touch controller TI TSC2014 (onModule)
+		compatible = "ti,tsc2014", "ti,tsc2004";
+		reg = <0x49>;
+		vio-supply = <&reg_3p3v>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_dhcom_tsc2004_hw300>;
+		interrupts-extended = <&gpio4 14 IRQ_TYPE_EDGE_FALLING>;
+		status = "disabled";						// It isn't actived by default (if needed it should be actived in dts layers above)
+	};
+
+	eeprom@50 {								// EEPROM Microchip 24AA025E48T-I/OT
+		compatible = "atmel,24c02";
+		reg = <0x50>;
+		pagesize = <16>;
+	};
+
+	/* If not available use internal rtc (snvs-rtc-lp) */
+	rtc@56 {								// Micro Crystal RV-3029-C3 (onModule)
+		device_type = "rtc";						// ==> /dev/rtc0
+		compatible = "microc,rtc-rv3029c3", "microc,rtc-rv3029c2";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_dhcom_rtc_hw300>;
+		reg = <0x56>;
+		interrupt-parent = <&gpio7>;
+		interrupts = <12 2>;
+		irq-gpios = <&gpio7 12 0>;
+		status = "okay";
+	};
+};
+
+&weim {										// Memory interface is not active by default
+	status = "disabled";
+};
+
+&uart1 {									// UART 1 (FF)
+	pinctrl-names = "default";						// ==> /dev/ttymxc0
+	pinctrl-0 = <&pinctrl_dhcom_uart1>;
+	fsl,uart-has-rtscts;
+	dtr-gpios = <&gpio3 24 GPIO_ACTIVE_LOW>;
+	dsr-gpios = <&gpio3 25 GPIO_ACTIVE_LOW>;
+	dcd-gpios = <&gpio3 23 GPIO_ACTIVE_LOW>;
+	rng-gpios = <&gpio2 31 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&uart4 {									// UART 3 (STD)
+	pinctrl-names = "default";						// ==> /dev/ttymxc3
+	pinctrl-0 = <&pinctrl_dhcom_uart4>;
+	status = "okay";
+};
+
+&uart5 {									// UART 2 (BT)
+	pinctrl-names = "default";						// ==> /dev/ttymxc4
+	pinctrl-0 = <&pinctrl_dhcom_uart5>;
+	fsl,uart-has-rtscts;
+	status = "okay";
+};
+
+&usbh1 {									// USB Host 1
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_usbh1>;
+	vbus-supply = <&reg_usb_h1_vbus>;
+	status = "okay";
+	dr_mode = "host";
+//	maximum-speed = "full-speed";						// Reducing speed (full-speed = 12M)
+};
+
+&usbotg {									// USB OTG
+	vbus-supply = <&reg_usb_otg_vbus>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_usbotg>;					// Defined USB OTG ID pin
+	disable-over-current;
+	status = "okay";
+	dr_mode = "otg";							// "host", "peripheral" or "otg" default = "otg"
+//	maximum-speed = "full-speed";						// Reducing speed (full-speed = 12M)
+};
+
+&usdhc2 {									// SD card (external via DHCOM)
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_usdhc2>;
+	cd-gpios = <&gpio6 16 GPIO_ACTIVE_HIGH>;
+	keep-power-in-suspend;
+	status = "okay";
+};
+
+&usdhc3 {									// Micro SD card (onModule)
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_usdhc3>;
+	cd-gpios = <&gpio7 8 GPIO_ACTIVE_LOW>;
+	fsl,wp-controller;
+	keep-power-in-suspend;
+	status = "okay";
+};
+
+&usdhc4 {									// eMMC (onModule)
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_usdhc4>;
+	non-removable;
+	bus-width = <8>;
+	no-1-8-v;
+	keep-power-in-suspend;
+	status = "okay";
+};
+
+&iomuxc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dhcom_hog_base>;
+
+	imx6qdl-dhcom_base {
+		pinctrl_dhcom_hog_base: hog_base_grp {
+			fsl,pins = <                                       	// DHCOM HW Version  | 100/200 | 300 | 400 |
+				MX6QDL_PAD_EIM_A19__GPIO2_IO19      0x120B0	// Code_HW_0 (#51)        0       1     0
+				MX6QDL_PAD_EIM_A23__GPIO6_IO06      0x120B0	// Code_HW_1 (#166)       0       0     1
+				MX6QDL_PAD_EIM_A22__GPIO2_IO16      0x120B0	// Code_HW_2 (#48)        0       0     0
+				MX6QDL_PAD_EIM_A16__GPIO2_IO22      0x120B0	// HW300: Code_DDR3_0 (#54)
+				MX6QDL_PAD_EIM_A17__GPIO2_IO21      0x120B0	// HW300: Code_DDR3_1 (#53)
+			>;
+		};
+
+		pinctrl_dhcom_pmic_hw300: pmic_hw300_grp {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_A25__GPIO5_IO02      0x1B0B0	// GPIO 5.2: PMIC_IRQ#
+			>;
+		};
+
+		pinctrl_dhcom_tsc2004_hw300: tsc2004_hw300_grp {
+			fsl,pins = <
+				MX6QDL_PAD_KEY_COL4__GPIO4_IO14     0x120B0	// GPIO 4.14: Touch Interrupt resistive
+			>;
+		};
+
+		pinctrl_dhcom_rtc_hw300: rtc_hw300_grp {
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_17__GPIO7_IO12      0x120B0	// GPIO 7.12: RTC Interrupt pin (#204)
+			>;
+		};
+
+		pinctrl_dhcom_ecspi1: ecspi1_grp {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_D17__ECSPI1_MISO     0x100b1
+				MX6QDL_PAD_EIM_D18__ECSPI1_MOSI     0x100b1
+				MX6QDL_PAD_EIM_D16__ECSPI1_SCLK     0x100b1
+				MX6QDL_PAD_EIM_EB2__GPIO2_IO30      0x1b0b0	// SS0
+				MX6QDL_PAD_KEY_ROW2__GPIO4_IO11     0x1b0b0	// SS2
+			>;
+		};
+
+		pinctrl_dhcom_ecspi2: ecspi2_grp {
+			fsl,pins = <
+				MX6QDL_PAD_CSI0_DAT10__ECSPI2_MISO  0x100b1
+				MX6QDL_PAD_CSI0_DAT9__ECSPI2_MOSI   0x100b1
+				MX6QDL_PAD_CSI0_DAT8__ECSPI2_SCLK   0x100b1
+				MX6QDL_PAD_CSI0_DAT11__GPIO5_IO29   0x1b0b0	// SS0
+			>;
+		};
+
+		pinctrl_dhcom_enet_100M: enet_100M_grp {			// 100MBit ethernet
+			fsl,pins = <
+				MX6QDL_PAD_ENET_MDIO__ENET_MDIO     0x1b0b0
+				MX6QDL_PAD_ENET_MDC__ENET_MDC       0x1b0b0
+				MX6QDL_PAD_ENET_CRS_DV__ENET_RX_EN  0x1b0b0
+				MX6QDL_PAD_ENET_RX_ER__ENET_RX_ER   0x1b0b0
+				MX6QDL_PAD_ENET_RXD0__ENET_RX_DATA0 0x1b0b0
+				MX6QDL_PAD_ENET_RXD1__ENET_RX_DATA1 0x1b0b0
+				MX6QDL_PAD_ENET_TX_EN__ENET_TX_EN   0x1b0b0
+				MX6QDL_PAD_ENET_TXD0__ENET_TX_DATA0 0x1b0b0
+				MX6QDL_PAD_ENET_TXD1__ENET_TX_DATA1 0x1b0b0
+				MX6QDL_PAD_GPIO_16__ENET_REF_CLK    0x4001b0a8
+				MX6QDL_PAD_EIM_WAIT__GPIO5_IO00     0x000b0	// ENET_RESET
+				MX6QDL_PAD_KEY_ROW4__GPIO4_IO15     0x000b1	// ENET_INT
+				MX6QDL_PAD_GPIO_7__GPIO1_IO07       0x120B0	// Power for LAN-Transformer 7499111614A
+			>;
+		};
+
+		pinctrl_dhcom_flexcan1: flexcan1_grp {
+			fsl,pins = <
+				MX6QDL_PAD_KEY_COL2__FLEXCAN1_TX    0x1b0b0
+				MX6QDL_PAD_GPIO_8__FLEXCAN1_RX      0x1b0b0
+			>;
+		};
+
+		pinctrl_dhcom_i2c1: i2c1_grp {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_D21__I2C1_SCL        0x4001b8b1
+				MX6QDL_PAD_EIM_D28__I2C1_SDA        0x4001b8b1
+			>;
+		};
+
+		pinctrl_dhcom_i2c2: i2c2_grp {
+			fsl,pins = <
+				MX6QDL_PAD_KEY_COL3__I2C2_SCL       0x4001b8b1
+				MX6QDL_PAD_KEY_ROW3__I2C2_SDA       0x4001b8b1
+			>;
+		};
+
+		pinctrl_dhcom_i2c3: i2c3_grp {
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_3__I2C3_SCL         0x4001b8b1
+				MX6QDL_PAD_GPIO_6__I2C3_SDA         0x4001b8b1
+			>;
+		};
+
+		pinctrl_dhcom_uart1: uart1_grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD3_DAT7__UART1_TX_DATA  0x1b0b1
+				MX6QDL_PAD_SD3_DAT6__UART1_RX_DATA  0x1b0b1
+				MX6QDL_PAD_EIM_D20__UART1_RTS_B     0x1b0b1
+				MX6QDL_PAD_EIM_D19__UART1_CTS_B     0x4001b0b1
+				MX6QDL_PAD_EIM_D23__GPIO3_IO23      0x4001b0b1	// DCD
+				MX6QDL_PAD_EIM_D24__GPIO3_IO24      0x4001b0b1	// DTR
+				MX6QDL_PAD_EIM_D25__GPIO3_IO25      0x4001b0b1	// DSR
+				MX6QDL_PAD_EIM_EB3__GPIO2_IO31      0x4001b0b1	// RI
+			>;
+		};
+
+		pinctrl_dhcom_uart4: uart4_grp {
+			fsl,pins = <
+				MX6QDL_PAD_CSI0_DAT12__UART4_TX_DATA 0x1b0b1
+				MX6QDL_PAD_CSI0_DAT13__UART4_RX_DATA 0x1b0b1
+			>;
+		};
+	
+		pinctrl_dhcom_uart5: uart5_grp {
+			fsl,pins = <
+				MX6QDL_PAD_CSI0_DAT14__UART5_TX_DATA 0x1b0b1
+				MX6QDL_PAD_CSI0_DAT15__UART5_RX_DATA 0x1b0b1
+				MX6QDL_PAD_CSI0_DAT18__UART5_RTS_B   0x1b0b1
+				MX6QDL_PAD_CSI0_DAT19__UART5_CTS_B   0x4001b0b1
+			>;
+		};
+
+		pinctrl_dhcom_usbh1: usbh1_grp {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_D31__GPIO3_IO31      0x120B0	// GPIO: USB Host 1 Power
+			>;
+		};
+
+		pinctrl_dhcom_usbotg: usbotg_grp {
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_1__USB_OTG_ID       0x17059
+			>;
+		};
+
+		pinctrl_dhcom_usdhc2: usdhc2_grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD2_CMD__SD2_CMD         0x17059
+				MX6QDL_PAD_SD2_CLK__SD2_CLK         0x10059
+				MX6QDL_PAD_SD2_DAT0__SD2_DATA0      0x17059
+				MX6QDL_PAD_SD2_DAT1__SD2_DATA1      0x17059
+				MX6QDL_PAD_SD2_DAT2__SD2_DATA2      0x17059
+				MX6QDL_PAD_SD2_DAT3__SD2_DATA3      0x17059
+				MX6QDL_PAD_NANDF_CS3__GPIO6_IO16    0x120B0	// GPIO: Card detection
+			>;
+		};
+
+		pinctrl_dhcom_usdhc3: usdhc3_grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD3_CMD__SD3_CMD         0x17059
+				MX6QDL_PAD_SD3_CLK__SD3_CLK         0x10059
+				MX6QDL_PAD_SD3_DAT0__SD3_DATA0      0x17059
+				MX6QDL_PAD_SD3_DAT1__SD3_DATA1      0x17059
+				MX6QDL_PAD_SD3_DAT2__SD3_DATA2      0x17059
+				MX6QDL_PAD_SD3_DAT3__SD3_DATA3      0x17059
+				MX6QDL_PAD_SD3_RST__GPIO7_IO08      0x120B0	// GPIO: Card detection
+			>;
+		};
+
+		pinctrl_dhcom_usdhc4: usdhc4_grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD4_CMD__SD4_CMD         0x17059
+				MX6QDL_PAD_SD4_CLK__SD4_CLK         0x10059
+				MX6QDL_PAD_SD4_DAT0__SD4_DATA0      0x17059
+				MX6QDL_PAD_SD4_DAT1__SD4_DATA1      0x17059
+				MX6QDL_PAD_SD4_DAT2__SD4_DATA2      0x17059
+				MX6QDL_PAD_SD4_DAT3__SD4_DATA3      0x17059
+				MX6QDL_PAD_SD4_DAT4__SD4_DATA4      0x17059
+				MX6QDL_PAD_SD4_DAT5__SD4_DATA5      0x17059
+				MX6QDL_PAD_SD4_DAT6__SD4_DATA6      0x17059
+				MX6QDL_PAD_SD4_DAT7__SD4_DATA7      0x17059
+			>;
+		};
+	};
+};

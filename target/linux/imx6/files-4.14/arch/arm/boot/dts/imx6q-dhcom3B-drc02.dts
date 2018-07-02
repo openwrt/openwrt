@@ -1,0 +1,44 @@
+/*
+ * Copyright 2016 DH electronics GmbH
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/dts-v1/;
+
+//******************************************************************************
+// C P U - T Y P E
+//******************************************************************************
+#include "imx6q.dtsi"
+#define IMX6_CPU_DUAL_QUAD // Used to distinguish the CPU types
+
+
+//******************************************************************************
+// D H C O M - M O D U L E
+//******************************************************************************
+
+// Basic configuration
+//**********************************************************
+// HW300 base
+#include "imx6qdl-dhcom3B.dtsi"
+
+// Special configurations
+//**********************************************************
+// Enables NAND, disables eMMC
+//#include "imx6qdl-dhcom_cfg-nand.dtsi"
+
+// Enables CAN2, disables micro SD card and UART 1 RTS/CTS
+#include "imx6qdl-dhcom_cfg-can2.dtsi"
+
+
+//******************************************************************************
+// B O A R D - C O N F I G U R A T I O N
+//******************************************************************************
+#include "imx6qdl-dh_drc02.dtsi"
+
+/ {
+	model = "Freescale i.MX6 Quad DHCOM DRC02";
+	compatible = "fsl,imx6q-dhcom3B-drc02", "fsl,imx6q";
+};

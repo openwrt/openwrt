@@ -1,0 +1,18 @@
+/*
+ * Copyright 2015 DH electronics GmbH
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+&uart5 { 									// UART 2 (BT) ==> /dev/ttymxc4
+	fsl,rs485-mode;								// Enable rs485 mode
+	rts_gpio = <&gpio7 0 0>;						// GPIO M: rs485 rts = Receive Transmit Switch GPIO
+	rxen_gpio = <&gpio7 1 0>;						// GPIO N: rs485 rxen = RX Enable GPIO
+	//rs485-rx-during-tx;							// Receive data during transfer
+	status = "okay";
+};
