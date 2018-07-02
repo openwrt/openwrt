@@ -60,6 +60,24 @@ define Device/tl-wr740n-v2
 endef
 TARGET_DEVICES += tl-wr740n-v2
 
+define Device/tl-wr740nd-v4
+  $(Device/tplink-4mlzma)
+  ATH_SOC := ar9331
+  DEVICE_TITLE := TP-LINK TL-WR740N/ND v4
+  TPLINK_HWID := 0x07400004
+  SUPPORTED_DEVICES := tplink,tl-wr740n-v4 tl-wr740n-v4
+endef
+TARGET_DEVICES += tl-wr740nd-v4
+
+define Device/tl-wr741nd-v4
+  $(Device/tplink-4mlzma)
+  ATH_SOC := ar9331
+  DEVICE_TITLE := TP-LINK TL-WR741N/ND v4
+  TPLINK_HWID := 0x07410004
+  SUPPORTED_DEVICES := tplink,tl-wr741n-v4 tl-wr741n-v4
+endef
+TARGET_DEVICES += tl-wr741nd-v4
+
 define Device/tl-wr841-v7
   $(Device/tplink-4m)
   ATH_SOC := ar7241
