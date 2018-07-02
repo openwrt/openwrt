@@ -114,6 +114,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:lan:1" "5:lan:2" "4:wan"
 		;;
+	"ubnt,unifiac-mesh-pro"|\
 	"ubnt,unifiac-pro")
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:wan"
