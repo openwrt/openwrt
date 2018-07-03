@@ -54,7 +54,8 @@ get_status_led() {
 	x5|\
 	x8|\
 	xdxrn502j|\
-	wn3000rpv3)
+	wn3000rpv3|\
+	zyxel,keenetic-extra-ii)
 		status_led="$boardname:green:power"
 		;;
 	3g-6200nl)

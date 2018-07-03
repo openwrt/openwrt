@@ -226,6 +226,7 @@ platform_check_image() {
 	zbt-wr8305rt|\
 	zorlik,zl5900v2|\
 	zte-q7|\
+	zyxel,keenetic-extra-ii|\
 	youku-yk1)
 		[ "$magic" != "27051956" ] && {
 			echo "Invalid image type."

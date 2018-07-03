@@ -16,10 +16,6 @@ define Build/elecom-header
 		-f $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 
-define Build/zyimage
-	$(STAGING_DIR_HOST)/bin/zyimage $(1) $@
-endef
-
 define Device/ai-br100
   DTS := AI-BR100
   IMAGE_SIZE := 7936k
