@@ -1638,6 +1638,10 @@ static int add_flash_partition(
 	}
 
 	part_list->name = calloc(1, strlen(name) + 1);
+	if (!part_list->name) {
+		error(1, 0, "Unable to allocate memory");
+	}
+
 	memcpy((char *)part_list->name, name, strlen(name));
 	part_list->base = base;
 	part_list->size = size;
