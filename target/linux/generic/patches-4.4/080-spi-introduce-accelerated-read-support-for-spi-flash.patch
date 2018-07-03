@@ -24,7 +24,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
 
 --- a/drivers/spi/spi.c
 +++ b/drivers/spi/spi.c
-@@ -1135,6 +1135,7 @@ static void __spi_pump_messages(struct s
+@@ -1141,6 +1141,7 @@ static void __spi_pump_messages(struct s
  		}
  	}
  
@@ -32,7 +32,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	trace_spi_message_start(master->cur_msg);
  
  	if (master->prepare_message) {
-@@ -1144,6 +1145,7 @@ static void __spi_pump_messages(struct s
+@@ -1150,6 +1151,7 @@ static void __spi_pump_messages(struct s
  				"failed to prepare message: %d\n", ret);
  			master->cur_msg->status = ret;
  			spi_finalize_current_message(master);
@@ -40,7 +40,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  			return;
  		}
  		master->cur_msg_prepared = true;
-@@ -1153,6 +1155,7 @@ static void __spi_pump_messages(struct s
+@@ -1159,6 +1161,7 @@ static void __spi_pump_messages(struct s
  	if (ret) {
  		master->cur_msg->status = ret;
  		spi_finalize_current_message(master);
@@ -48,7 +48,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  		return;
  	}
  
-@@ -1160,8 +1163,10 @@ static void __spi_pump_messages(struct s
+@@ -1166,8 +1169,10 @@ static void __spi_pump_messages(struct s
  	if (ret) {
  		dev_err(&master->dev,
  			"failed to transfer one message from queue\n");
@@ -59,7 +59,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  }
  
  /**
-@@ -2329,6 +2334,46 @@ int spi_async_locked(struct spi_device *
+@@ -2335,6 +2340,46 @@ int spi_async_locked(struct spi_device *
  EXPORT_SYMBOL_GPL(spi_async_locked);
  
  
