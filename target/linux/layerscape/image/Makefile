@@ -79,7 +79,7 @@ endef
 
 define Device/ls1043ardb
   DEVICE_TITLE := ls1043ardb-$(SUBTARGET)
-  DEVICE_PACKAGES +=	rcw-layerscape-ls1043ardb uboot-layerscape-$(SUBTARGET)-ls1043ardb \
+  DEVICE_PACKAGES +=	layerscape-rcw-ls1043ardb uboot-layerscape-$(SUBTARGET)-ls1043ardb \
 			layerscape-fman-ls1043ardb layerscape-ppa-ls1043ardb
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1043a-rdb-sdk
   IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
@@ -94,7 +94,7 @@ TARGET_DEVICES += ls1043ardb
 
 define Device/ls1046ardb
   DEVICE_TITLE := ls1046ardb-$(SUBTARGET)
-  DEVICE_PACKAGES +=	rcw-layerscape-ls1046ardb uboot-layerscape-$(SUBTARGET)-ls1046ardb \
+  DEVICE_PACKAGES +=	layerscape-rcw-ls1046ardb uboot-layerscape-$(SUBTARGET)-ls1046ardb \
 			layerscape-fman-ls1046ardb layerscape-ppa-ls1046ardb
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1046a-rdb-sdk
   FILESYSTEMS := ubifs
@@ -114,7 +114,7 @@ TARGET_DEVICES += ls1046ardb
 
 define Device/ls1012ardb
   DEVICE_TITLE := ls1012ardb-$(SUBTARGET)
-  DEVICE_PACKAGES +=	rcw-layerscape-ls1012ardb uboot-layerscape-$(SUBTARGET)-ls1012ardb \
+  DEVICE_PACKAGES +=	layerscape-rcw-ls1012ardb uboot-layerscape-$(SUBTARGET)-ls1012ardb \
 			kmod-ppfe layerscape-ppfe layerscape-ppa-ls1012ardb
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1012a-rdb
   FILESYSTEMS := ubifs
@@ -134,7 +134,7 @@ TARGET_DEVICES += ls1012ardb
 
 define Device/ls1012afrdm
   DEVICE_TITLE := ls1012afrdm-$(SUBTARGET)
-  DEVICE_PACKAGES +=	rcw-layerscape-ls1012afrdm uboot-layerscape-$(SUBTARGET)-ls1012afrdm \
+  DEVICE_PACKAGES +=	layerscape-rcw-ls1012afrdm uboot-layerscape-$(SUBTARGET)-ls1012afrdm \
 			kmod-ppfe layerscape-ppfe layerscape-ppa-ls1012afrdm
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1012a-frdm
   FILESYSTEMS := ubifs
@@ -155,7 +155,7 @@ TARGET_DEVICES += ls1012afrdm
 ifeq ($(SUBTARGET),armv8_64b)
 define Device/ls1088ardb
   DEVICE_TITLE := ls1088ardb-$(SUBTARGET)
-  DEVICE_PACKAGES +=	rcw-layerscape-ls1088ardb uboot-layerscape-$(SUBTARGET)-ls1088ardb \
+  DEVICE_PACKAGES +=	layerscape-rcw-ls1088ardb uboot-layerscape-$(SUBTARGET)-ls1088ardb \
 			layerscape-mc-ls1088ardb layerscape-dpl-ls1088ardb restool \
 			layerscape-ppa-ls1088ardb
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1088a-rdb
@@ -178,7 +178,7 @@ TARGET_DEVICES += ls1088ardb
 
 define Device/ls2088ardb
   DEVICE_TITLE := ls2088ardb-$(SUBTARGET)
-  DEVICE_PACKAGES +=	rcw-layerscape-ls2088ardb uboot-layerscape-$(SUBTARGET)-ls2088ardb \
+  DEVICE_PACKAGES +=	layerscape-rcw-ls2088ardb uboot-layerscape-$(SUBTARGET)-ls2088ardb \
 			layerscape-mc-ls2088ardb layerscape-dpl-ls2088ardb restool \
 			layerscape-ppa-ls2088ardb
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls2088a-rdb
