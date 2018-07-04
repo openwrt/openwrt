@@ -15,7 +15,7 @@ define Build/append-ls-rcw
 endef
 
 define Build/append-ls-uboot
-	dd if=$(STAGING_DIR_IMAGE)/$(1)-$(SUBTARGET)-uboot.bin >> $@
+	dd if=$(STAGING_DIR_IMAGE)/$(1)-uboot.bin >> $@
 endef
 
 define Build/append-ls-ppa
@@ -79,8 +79,11 @@ endef
 
 define Device/ls1043ardb
   DEVICE_TITLE := ls1043ardb-$(SUBTARGET)
-  DEVICE_PACKAGES +=	layerscape-rcw-ls1043ardb uboot-layerscape-$(SUBTARGET)-ls1043ardb \
-			layerscape-fman-ls1043ardb layerscape-ppa-ls1043ardb
+  DEVICE_PACKAGES +=	layerscape-rcw-ls1043ardb layerscape-fman-ls1043ardb \
+			layerscape-ppa-ls1043ardb
+  ifeq ($(SUBTARGET),armv8_32b)
+    DEVICE_PACKAGES += u-boot-ls1043ardb-image
+  endif
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1043a-rdb-sdk
   IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
 			append-ls-uboot $(1) | pad-to 4M | \
@@ -94,8 +97,11 @@ TARGET_DEVICES += ls1043ardb
 
 define Device/ls1046ardb
   DEVICE_TITLE := ls1046ardb-$(SUBTARGET)
-  DEVICE_PACKAGES +=	layerscape-rcw-ls1046ardb uboot-layerscape-$(SUBTARGET)-ls1046ardb \
-			layerscape-fman-ls1046ardb layerscape-ppa-ls1046ardb
+  DEVICE_PACKAGES +=	layerscape-rcw-ls1046ardb layerscape-fman-ls1046ardb \
+			layerscape-ppa-ls1046ardb
+  ifeq ($(SUBTARGET),armv8_32b)
+    DEVICE_PACKAGES += u-boot-ls1046ardb-image
+  endif
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1046a-rdb-sdk
   FILESYSTEMS := ubifs
   UBIFS_OPTS := -m 1 -e 262016 -c 128
@@ -114,8 +120,11 @@ TARGET_DEVICES += ls1046ardb
 
 define Device/ls1012ardb
   DEVICE_TITLE := ls1012ardb-$(SUBTARGET)
-  DEVICE_PACKAGES +=	layerscape-rcw-ls1012ardb uboot-layerscape-$(SUBTARGET)-ls1012ardb \
-			kmod-ppfe layerscape-ppfe layerscape-ppa-ls1012ardb
+  DEVICE_PACKAGES +=	layerscape-rcw-ls1012ardb layerscape-ppfe \
+			layerscape-ppa-ls1012ardb kmod-ppfe
+  ifeq ($(SUBTARGET),armv8_32b)
+    DEVICE_PACKAGES += u-boot-ls1012ardb-image
+  endif
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1012a-rdb
   FILESYSTEMS := ubifs
   UBIFS_OPTS := -m 1 -e 262016 -c 128
@@ -134,8 +143,11 @@ TARGET_DEVICES += ls1012ardb
 
 define Device/ls1012afrdm
   DEVICE_TITLE := ls1012afrdm-$(SUBTARGET)
-  DEVICE_PACKAGES +=	layerscape-rcw-ls1012afrdm uboot-layerscape-$(SUBTARGET)-ls1012afrdm \
-			kmod-ppfe layerscape-ppfe layerscape-ppa-ls1012afrdm
+  DEVICE_PACKAGES +=	layerscape-rcw-ls1012afrdm layerscape-ppfe \
+			layerscape-ppa-ls1012afrdm kmod-ppfe
+  ifeq ($(SUBTARGET),armv8_32b)
+    DEVICE_PACKAGES += u-boot-ls1012afrdm-image
+  endif
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1012a-frdm
   FILESYSTEMS := ubifs
   UBIFS_OPTS := -m 1 -e 262016 -c 128
