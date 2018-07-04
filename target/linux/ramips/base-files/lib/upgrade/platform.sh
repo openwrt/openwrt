@@ -83,6 +83,7 @@ platform_check_image() {
 	jhr-n825r|\
 	jhr-n926r|\
 	k2p|\
+	kimax,u35wf|\
 	kn|\
 	kn_rc|\
 	kn_rf|\

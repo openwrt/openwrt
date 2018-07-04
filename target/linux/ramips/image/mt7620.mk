@@ -280,6 +280,13 @@ define Device/hc5861
 endef
 TARGET_DEVICES += hc5861
 
+define Device/kimax_u35wf
+  DTS := U35WF
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := Kimax U35WF
+endef
+TARGET_DEVICES += kimax_u35wf
+
 define Device/kng_rc
   DTS := kng_rc
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
