@@ -17,7 +17,6 @@ define Device/archer-c25-v1
   TPLINK_BOARD_ID := ARCHER-C25-V1
   DEVICE_PROFILE := ARCHERC25V1
   IMAGE_SIZE := 7808k
-  LOADER_TYPE := elf
   MTDPARTS := spi0.0:128k(factory-uboot)ro,64k(u-boot)ro,1536k(kernel),6272k(rootfs),128k(config)ro,64k(art)ro,7808k@0x30000(firmware)
   SUPPORTED_DEVICES := archer-c25-v1
 endef
@@ -135,7 +134,6 @@ define Device/archer-c7-v4
   BOARDNAME := ARCHER-C7-V4
   TPLINK_BOARD_ID := ARCHER-C7-V4
   IMAGE_SIZE := 15104k
-  LOADER_TYPE := elf
   MTDPARTS := spi0.0:128k(factory-uboot)ro,128k(u-boot)ro,1536k(kernel),13568k(rootfs),960k(config)ro,64k(art)ro,15104k@0x40000(firmware)
   SUPPORTED_DEVICES := archer-c7-v4
 endef
@@ -157,7 +155,6 @@ define Device/cpexxx
   MTDPARTS := spi0.0:128k(u-boot)ro,64k(partition-table)ro,64k(product-info)ro,1792k(kernel),5888k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
   IMAGE_SIZE := 7680k
   DEVICE_PROFILE := CPE510
-  LOADER_TYPE := elf
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
@@ -168,6 +165,7 @@ define Device/cpe510-520-v1
   DEVICE_TITLE := TP-LINK CPE510/520 v1
   BOARDNAME := CPE510
   TPLINK_BOARD_ID := CPE510
+  LOADER_TYPE := elf
   LOADER_FLASH_OFFS := 0x43000
   COMPILE := loader-$(1).elf
   COMPILE/loader-$(1).elf := loader-okli-compile
@@ -234,7 +232,6 @@ define Device/re355-v1
   BOARDNAME := RE355
   TPLINK_BOARD_ID := RE355
   DEVICE_PROFILE := RE355
-  LOADER_TYPE := elf
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
   TPLINK_HEADER_VERSION := 1
@@ -253,7 +250,6 @@ define Device/re450-v1
   BOARDNAME := RE450
   TPLINK_BOARD_ID := RE450
   DEVICE_PROFILE := RE450
-  LOADER_TYPE := elf
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
   TPLINK_HEADER_VERSION := 1
