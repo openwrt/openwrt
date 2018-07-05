@@ -1,0 +1,70 @@
+#!/bin/sh /etc/rc.common
+
+START=19
+
+check_mtk_device() {
+	config_get phy "$1" phy
+	[ "$phy" = "mtkp2p0" ] && radiop2p="$1"
+}
+
+find_radio() {
+	config_load wireless
+	radiop2p=""
+	config_foreach check_mtk_device wifi-device
+}
+
+stop_ap() {
+	find_radio
+	[ -n "$radiop2p" ] && wifi down "$radiop2p" 2>/dev/null
+	echo 0 > /dev/wmtWifi
+}
+
+start_ap() {
+	echo A > /dev/wmtWifi
+	# Those are recommended by vendor to avoid chip lockup.
+	tc qdisc add dev mtkap0 root handle 1: htb default 11
+	tc class add dev mtkap0 parent 1:1 classid 1:2 htb rate 8Mbit ceil 4Mbit prio 2
+
+	find_radio
+	if [ -n "$radiop2p" ]; then
+		config_get_bool disabled "$radiop2p" disabled
+		[ "$disabled" = "1" ] || wifi up "$radiop2p" 2>/dev/null
+	fi
+}
+
+start() {
+	find_radio
+
+	[ -c /dev/stpwmt ] || /usr/bin/wmt_loader 2>&1
+	/usr/bin/stp_uart_launcher -p /etc/firmware 2>&1 | logger -t stp_uart_launcher &
+	echo "$!" > /var/run/stp_uart_launcher.pid
+	sleep 3
+	if [ -c /dev/wmtWifi ]; then
+		start_ap
+		return 0
+	else
+		return 1
+	fi
+}
+
+stop() {
+	find_radio
+
+	if [ -c /dev/wmtWifi ]; then
+		stop_ap
+		stp_pid="$(cat /var/run/stp_uart_launcher.pid 2>/dev/null)"
+		if [ -n "$stp_pid" ]; then
+			kill "$stp_pid"
+			rm /var/run/stp_uart_launcher.pid
+		fi
+	fi
+}
+
+reload() {
+	find_radio
+
+	if [ -c /dev/wmtWifi ]; then
+		stop_ap
+		start_ap
+	fi
+}
