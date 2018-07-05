@@ -871,6 +871,7 @@ tl-wpa8630)
 	ucidef_set_led_netdev "wlan" "WLAN" "$board:green:wlan" "wlan1"
 	ucidef_set_led_netdev "wlan5" "WLAN5" "$board:green:wlan5" "wlan0"
 	;;
+tl-mr3420-v3|\
 tl-wr740n-v6|\
 tl-wr841n-v9|\
 tl-wr841n-v11|\
@@ -883,6 +884,7 @@ tl-wr842n-v3)
 	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
 
 	case "$board" in
+	tl-mr3420-v3|\
 	tl-wr842n-v3)
 		ucidef_set_led_usbdev "usb" "USB" "tp-link:green:3g" "1-1"
 		;;

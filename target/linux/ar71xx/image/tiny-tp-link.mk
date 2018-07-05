@@ -118,6 +118,16 @@ define Device/tl-mr3420-v2
 endef
 TARGET_DEVICES += tl-mr3420-v2
 
+define Device/tl-mr3420-v3
+  $(Device/tplink-4mlzma)
+  DEVICE_TITLE := TP-LINK TL-MR3420 v3
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-tl-mr3420-v3
+  BOARDNAME := TL-MR3420-v3
+  DEVICE_PROFILE := TLMR3420
+  TPLINK_HWID := 0x34200003
+endef
+TARGET_DEVICES += tl-mr3420-v3
+
 define Device/tl-wa701nd-v1
   $(Device/tplink-4m)
   DEVICE_TITLE := TP-LINK TL-WA701N/ND v1
