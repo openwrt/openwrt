@@ -1,0 +1,127 @@
+Index: linux-4.14.51/drivers/misc/mediatek/connectivity/common/conn_soc/mt7623/mtk_wcn_consys_hw.c
+===================================================================
+--- linux-4.14.51.orig/drivers/misc/mediatek/connectivity/common/conn_soc/mt7623/mtk_wcn_consys_hw.c
++++ linux-4.14.51/drivers/misc/mediatek/connectivity/common/conn_soc/mt7623/mtk_wcn_consys_hw.c
+@@ -519,6 +519,9 @@ INT32 mtk_wcn_consys_hw_wifi_paldo_ctrl(
+ }
+ 
+ #endif
++
++EXPORT_SYMBOL(mtk_wcn_consys_hw_wifi_paldo_ctrl);
++
+ INT32 mtk_wcn_consys_hw_vcn28_ctrl(UINT32 enable)
+ {
+ 	if (enable) {
+Index: linux-4.14.51/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_kal.c
+===================================================================
+--- linux-4.14.51.orig/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_kal.c
++++ linux-4.14.51/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_kal.c
+@@ -4530,13 +4530,10 @@ INT_32 kalHaltLock(UINT_32 waitMs)
+ 			DBGLOG(INIT, ERROR,
+ 				"kalIoctl was executed longer than %u ms, show backtrace of tx_thread!\n",
+ 				kalGetTimeTick() - rHaltCtrl.u4HoldStart);
+-			if (prGlueInfo)
+-				show_stack(prGlueInfo->main_thread, NULL);
+ 		} else {
+ 			DBGLOG(INIT, ERROR, "halt lock held by %s pid %d longer than %u ms!\n",
+ 				rHaltCtrl.owner->comm, rHaltCtrl.owner->pid,
+ 				kalGetTimeTick() - rHaltCtrl.u4HoldStart);
+-			show_stack(rHaltCtrl.owner, NULL);
+ 		}
+ 		return i4Ret;
+ 	}
+Index: linux-4.14.51/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_rst.c
+===================================================================
+--- linux-4.14.51.orig/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_rst.c
++++ linux-4.14.51/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_rst.c
+@@ -58,7 +58,6 @@
+ ********************************************************************************
+ */
+ BOOLEAN fgIsResetting = FALSE;
+-UINT_32 g_IsNeedDoChipReset = 0;
+ 
+ /*******************************************************************************
+ *                           P R I V A T E   D A T A
+Index: linux-4.14.51/drivers/misc/mediatek/connectivity/common/conn_soc/linux/pub/wmt_chrdev_wifi.c
+===================================================================
+--- linux-4.14.51.orig/drivers/misc/mediatek/connectivity/common/conn_soc/linux/pub/wmt_chrdev_wifi.c
++++ linux-4.14.51/drivers/misc/mediatek/connectivity/common/conn_soc/linux/pub/wmt_chrdev_wifi.c
+@@ -44,6 +44,9 @@ MODULE_LICENSE("Dual BSD/GPL");
+ #define WIFI_LOG_WARN                 1
+ #define WIFI_LOG_ERR                  0
+ 
++UINT32 g_IsNeedDoChipReset = 0;
++EXPORT_SYMBOL(g_IsNeedDoChipReset);
++
+ UINT32 gDbgLevel = WIFI_LOG_DBG;
+ 
+ #define WIFI_DBG_FUNC(fmt, arg...)\
+Index: linux-4.14.51/drivers/misc/mediatek/connectivity/common/conn_soc/linux/pub/Makefile
+===================================================================
+--- linux-4.14.51.orig/drivers/misc/mediatek/connectivity/common/conn_soc/linux/pub/Makefile
++++ linux-4.14.51/drivers/misc/mediatek/connectivity/common/conn_soc/linux/pub/Makefile
+@@ -21,7 +21,11 @@ endif
+ obj-y += osal.o \
+          bgw_desense.o \
+          wmt_idc.o
+-obj-$(CONFIG_MTK_COMBO_BT)		+= stp_chrdev_bt.o
+-obj-$(CONFIG_MTK_COMBO_WIFI)	+= wmt_chrdev_wifi.o
++ifneq ($(CONFIG_MTK_COMBO_BT),)
++    obj-y += stp_chrdev_bt.o
++endif
++ifneq ($(CONFIG_MTK_COMBO_WIFI),)
++    obj-y += wmt_chrdev_wifi.o
++endif
+ 
+ endif
+Index: linux-4.14.51/drivers/misc/mediatek/connectivity/common/common_detect/drv_init/wlan_drv_init.c
+===================================================================
+--- linux-4.14.51.orig/drivers/misc/mediatek/connectivity/common/common_detect/drv_init/wlan_drv_init.c
++++ linux-4.14.51/drivers/misc/mediatek/connectivity/common/common_detect/drv_init/wlan_drv_init.c
+@@ -25,7 +25,7 @@ int do_wlan_drv_init(int chip_id)
+ {
+ 	int i_ret = 0;
+ 
+-#ifdef CONFIG_MTK_COMBO_WIFI
++#ifdef MTK_WIFI_ENABLED
+ 	int ret = 0;
+ 
+ 	WMT_DETECT_INFO_FUNC("start to do wlan module init 0x%x\n", chip_id);
+@@ -35,6 +35,7 @@ int do_wlan_drv_init(int chip_id)
+ 	WMT_DETECT_INFO_FUNC("WMT-WIFI char dev init, ret:%d\n", ret);
+ 	i_ret += ret;
+ 
++#ifdef CONFIG_MTK_COMBO_WIFI
+ 	switch (chip_id) {
+ 	case 0x6630:
+ 	case 0x6797:
+@@ -61,13 +62,10 @@ int do_wlan_drv_init(int chip_id)
+ #endif
+ 		break;
+ 	}
+-
++#endif
+ 	WMT_DETECT_INFO_FUNC("finish wlan module init\n");
+-
+ #else
+-
+ 	WMT_DETECT_INFO_FUNC("CONFIG_MTK_COMBO_WIFI is not defined\n");
+-
+ #endif
+ 
+ 	return i_ret;
+Index: linux-4.14.51/drivers/misc/mediatek/connectivity/common/common_detect/drv_init/Makefile
+===================================================================
+--- linux-4.14.51.orig/drivers/misc/mediatek/connectivity/common/common_detect/drv_init/Makefile
++++ linux-4.14.51/drivers/misc/mediatek/connectivity/common/common_detect/drv_init/Makefile
+@@ -11,6 +11,10 @@ else ifneq ($(filter "CONSYS_%",$(CONFIG
+ 	ccflags-y += -D MTK_WCN_WLAN_GEN2
+ endif
+ 
++ifneq ($(CONFIG_MTK_COMBO_WIFI),)
++	ccflags-y += -D MTK_WIFI_ENABLED
++endif
++
+ 	obj-y += conn_drv_init.o
+ 	obj-y += common_drv_init.o
+ 	obj-y += bluetooth_drv_init.o
