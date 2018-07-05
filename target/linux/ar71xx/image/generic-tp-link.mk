@@ -2,11 +2,8 @@ include ./common-tp-link.mk
 
 
 define Device/archer-cxx
+  $(Device/tplink-safeloader)
   KERNEL := kernel-bin | patch-cmdline | lzma | uImageArcher lzma
-  IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
 
 define Device/archer-c25-v1
@@ -150,18 +147,7 @@ define Device/archer-c7-v5
 endef
 TARGET_DEVICES += archer-c7-v5
 
-define Device/cpexxx
-  DEVICE_PACKAGES := rssileds
-  MTDPARTS := spi0.0:128k(u-boot)ro,64k(partition-table)ro,64k(product-info)ro,1792k(kernel),5888k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
-  IMAGE_SIZE := 7680k
-  DEVICE_PROFILE := CPE510
-  IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
-  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
-endef
-
 define Device/cpe510-520-v1
-  $(Device/cpexxx)
   DEVICE_TITLE := TP-LINK CPE510/520 v1
   BOARDNAME := CPE510
   TPLINK_BOARD_ID := CPE510
@@ -170,6 +156,12 @@ define Device/cpe510-520-v1
   COMPILE := loader-$(1).elf
   COMPILE/loader-$(1).elf := loader-okli-compile
   KERNEL := kernel-bin | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 12288
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+  DEVICE_PACKAGES := rssileds
+  MTDPARTS := spi0.0:128k(u-boot)ro,64k(partition-table)ro,64k(product-info)ro,1792k(kernel),5888k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
+  IMAGE_SIZE := 7680k
 endef
 TARGET_DEVICES += cpe510-520-v1
 
@@ -182,14 +174,15 @@ endef
 TARGET_DEVICES += cpe210-220-v1
 
 define Device/cpe210-v2
-  $(Device/cpexxx)
+  $(Device/tplink-safeloader)
   DEVICE_TITLE := TP-LINK CPE210 v2
   BOARDNAME := CPE210V2
   TPLINK_BOARD_ID := CPE210V2
-  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
-  TPLINK_HEADER_VERSION := 1
+  MTDPARTS := spi0.0:128k(u-boot)ro,64k(partition-table)ro,64k(product-info)ro,1792k(kernel),5888k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
+  IMAGE_SIZE := 7680k
+  DEVICE_PACKAGES := rssileds
 endef
 TARGET_DEVICES += cpe210-v2
 
@@ -225,6 +218,7 @@ endef
 TARGET_DEVICES += eap120-v1
 
 define Device/re355-v1
+  $(Device/tplink-safeloader)
   DEVICE_TITLE := TP-LINK RE355 v1
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
   MTDPARTS := spi0.0:128k(u-boot)ro,6016k(firmware),64k(partition-table)ro,64k(product-info)ro,1856k(config)ro,64k(art)ro
@@ -234,15 +228,11 @@ define Device/re355-v1
   DEVICE_PROFILE := RE355
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
-  TPLINK_HEADER_VERSION := 1
-  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header
-  IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
-  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
 TARGET_DEVICES += re355-v1
 
 define Device/re450-v1
+  $(Device/tplink-safeloader)
   DEVICE_TITLE := TP-LINK RE450 v1
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
   MTDPARTS := spi0.0:128k(u-boot)ro,6016k(firmware),64k(partition-table)ro,64k(product-info)ro,1856k(config)ro,64k(art)ro
@@ -252,11 +242,6 @@ define Device/re450-v1
   DEVICE_PROFILE := RE450
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
-  TPLINK_HEADER_VERSION := 1
-  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header
-  IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
-  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
 TARGET_DEVICES += re450-v1
 
@@ -391,7 +376,7 @@ endef
 TARGET_DEVICES += tl-wr1043nd-v3
 
 define Device/tl-wr1043nd-v4
-  $(Device/tplink)
+  $(Device/tplink-safeloader)
   DEVICE_TITLE := TP-LINK TL-WR1043N/ND v4
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-WR1043ND-v4
@@ -401,9 +386,7 @@ define Device/tl-wr1043nd-v4
   IMAGE_SIZE := 15552k
   TPLINK_BOARD_ID := TLWR1043NDV4
   KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header -O
-  IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
-  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | tplink-v1-header
 endef
 TARGET_DEVICES += tl-wr1043nd-v4
 
@@ -489,6 +472,7 @@ endef
 TARGET_DEVICES += tl-wr842n-v3
 
 define Device/tl-wr902ac-v1
+  $(Device/tplink-safeloader)
   DEVICE_TITLE := TP-LINK TL-WR902AC v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport \
 	kmod-ath10k ath10k-firmware-qca9887 -swconfig -uboot-envtools
@@ -497,30 +481,20 @@ define Device/tl-wr902ac-v1
   TPLINK_BOARD_ID := TL-WR902AC-V1
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
-  TPLINK_HEADER_VERSION := 1
   SUPPORTED_DEVICES := tl-wr902ac-v1
   IMAGE_SIZE := 7360k
-  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
   MTDPARTS := spi0.0:128k(u-boot)ro,7360k(firmware),640k(tplink)ro,64k(art)ro
 endef
 TARGET_DEVICES += tl-wr902ac-v1
 
 define Device/tl-wr942n-v1
+  $(Device/archer-cxx)
   DEVICE_TITLE := TP-LINK TL-WR942N v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-WR942N-V1
   TPLINK_BOARD_ID := TLWR942NV1
   DEVICE_PROFILE := TLWR942
   IMAGE_SIZE := 14464k
-  KERNEL := kernel-bin | patch-cmdline | lzma | uImageArcher lzma
-  IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
   MTDPARTS := spi0.0:128k(u-boot)ro,14464k(firmware),64k(product-info)ro,64k(partition-table)ro,256k(oem-config)ro,1344k(oem-vars)ro,64k(ART)ro
   SUPPORTED_DEVICES := tl-wr942n-v1
 endef
