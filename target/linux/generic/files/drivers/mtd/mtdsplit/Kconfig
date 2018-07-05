@@ -65,6 +65,11 @@ config MTD_SPLIT_EVA_FW
 	depends on MTD_SPLIT_SUPPORT
 	select MTD_SPLIT
 
+config MTD_SPLIT_CVIMG_FW
+	bool "Realtek cvimg image based firmware partition parser"
+	depends on MTD_SPLIT_SUPPORT
+	select MTD_SPLIT
+
 config MTD_SPLIT_MINOR_FW
 	bool "Mikrotik NOR image based firmware partition parser"
 	depends on MTD_SPLIT_SUPPORT

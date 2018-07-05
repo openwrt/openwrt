@@ -1,0 +1,16 @@
+if REALTEK
+
+menu "Realtek RLX based machine selection"
+
+config REALTEK_MACH_GENERIC
+	bool "Generic Realtek RLX based board"
+
+config REALTEK_MACH_AU_HOME_SPOT_CUBE
+	bool "AU HOME SPOT CUBE board"
+	help
+	  Say 'Y' here if you want your kernel to support the
+	  AU HOME SPOT CUBE board.
+
+endmenu
+
+endif

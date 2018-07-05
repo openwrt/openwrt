@@ -1,0 +1,43 @@
+From 1e008ed076fe634ba1de0f039758b63bb2fc0ed6 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <hackpascal@gmail.com>
+Date: Mon, 20 Feb 2017 21:53:25 +0800
+Subject: [PATCH 4/5] spi: add SPI driver support for realtek mach
+
+Signed-off-by: Weijie Gao <hackpascal@gmail.com>
+---
+ drivers/spi/Kconfig  | 6 ++++++
+ drivers/spi/Makefile | 1 +
+ 2 files changed, 7 insertions(+)
+
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index 618aa91..334dd95 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -464,6 +464,12 @@ config SPI_RSPI
+ 	help
+ 	  SPI driver for Renesas RSPI and QSPI blocks.
+ 
++config SPI_REALTEK
++	tristate "Realtek SoC SPI controller driver"
++	depends on REALTEK
++	help
++	  SPI controller driver for the Realtek SoCs.
++
+ config SPI_QUP
+ 	tristate "Qualcomm SPI controller with QUP interface"
+ 	depends on ARCH_QCOM || (ARM && COMPILE_TEST)
+diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
+index 461730f..4f6ca64 100644
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -67,6 +67,7 @@ spi-pxa2xx-platform-$(CONFIG_SPI_PXA2XX_DMA)	+= spi-pxa2xx-dma.o
+ obj-$(CONFIG_SPI_PXA2XX)		+= spi-pxa2xx-platform.o
+ obj-$(CONFIG_SPI_PXA2XX_PCI)		+= spi-pxa2xx-pci.o
+ obj-$(CONFIG_SPI_QUP)			+= spi-qup.o
++obj-$(CONFIG_SPI_REALTEK)		+= spi-realtek.o
+ obj-$(CONFIG_SPI_ROCKCHIP)		+= spi-rockchip.o
+ obj-$(CONFIG_SPI_RB4XX)			+= spi-rb4xx.o
+ obj-$(CONFIG_SPI_RSPI)			+= spi-rspi.o
+-- 
+2.5.0
+

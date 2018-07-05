@@ -1,0 +1,15 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults.sh
+. /lib/realtek.sh
+
+board_config_update
+
+ucidef_add_switch "eth0" \
+		"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0"
+
+ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+
+board_config_flush
+
+exit 0
