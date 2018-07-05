@@ -124,7 +124,7 @@ static void write_header(void* mem, const char *magic, const char* version)
 	memset(header, 0, sizeof(header_t));
 
 	memcpy(header->magic, magic, MAGIC_LENGTH);
-	strncpy(header->version, version, sizeof(header->version));
+	strncpy(header->version, version, sizeof(header->version) - 1);
 	header->crc = htonl(crc32(0L, (unsigned char *)header,
 				sizeof(header_t) - 2 * sizeof(u_int32_t)));
 	header->pad = 0L;
@@ -166,9 +166,9 @@ static int write_part(void* mem, part_data_t* d)
 	memcpy(mem + sizeof(part_t), addr, d->stats.st_size);
 	munmap(addr, d->stats.st_size);
 
-	memset(p->name, 0, sizeof(p->name));
-	strncpy(p->magic, MAGIC_PART, MAGIC_LENGTH);
-	strncpy(p->name, d->partition_name, sizeof(p->name));
+	memset(p->name, 0, sizeof(p->name) - 1);
+	memcpy(p->magic, MAGIC_PART, MAGIC_LENGTH);
+	strncpy(p->name, d->partition_name, sizeof(p->name) - 1);
 	p->index = htonl(d->partition_index);
 	p->data_size = htonl(d->stats.st_size);
 	p->part_size = htonl(d->partition_length);
@@ -254,7 +254,7 @@ static int create_image_layout(const char* kernelfile, const char* rootfsfile, c
 	if ( (kernel->partition_length = filelength(kernelfile)) == (u_int32_t)-1) return (-1);
 	kernel->partition_memaddr = p->kern_entry;
 	kernel->partition_entryaddr = p->kern_entry;
-	strncpy(kernel->filename, kernelfile, sizeof(kernel->filename));
+	strncpy(kernel->filename, kernelfile, sizeof(kernel->filename) - 1);
 
 	if (filelength(rootfsfile) + kernel->partition_length > p->firmware_max_length)
 		return (-2);
@@ -265,7 +265,7 @@ static int create_image_layout(const char* kernelfile, const char* rootfsfile, c
 	rootfs->partition_length = p->firmware_max_length - kernel->partition_length;
 	rootfs->partition_memaddr = 0x00000000;
 	rootfs->partition_entryaddr = 0x00000000;
-	strncpy(rootfs->filename, rootfsfile, sizeof(rootfs->filename));
+	strncpy(rootfs->filename, rootfsfile, sizeof(rootfs->filename) - 1);
 
 	printf("kernel: %d 0x%08x\n", kernel->partition_length, kernel->partition_baseaddr);
 	printf("root: %d 0x%08x\n", rootfs->partition_length, rootfs->partition_baseaddr);
@@ -396,37 +396,37 @@ int main(int argc, char* argv[])
 
 	strcpy(im.outputfile, DEFAULT_OUTPUT_FILE);
 	strcpy(im.version, DEFAULT_VERSION);
-	strncpy(im.magic, MAGIC_HEADER, sizeof(im.magic));
+	strncpy(im.magic, MAGIC_HEADER, sizeof(im.magic) - 1);
 
 	while ((o = getopt(argc, argv, OPTIONS)) != -1)
 	{
 		switch (o) {
 		case 'v':
 			if (optarg)
-				strncpy(im.version, optarg, sizeof(im.version));
+				strncpy(im.version, optarg, sizeof(im.version) - 1);
 			break;
 		case 'o':
 			if (optarg)
-				strncpy(im.outputfile, optarg, sizeof(im.outputfile));
+				strncpy(im.outputfile, optarg, sizeof(im.outputfile) - 1);
 			break;
 		case 'm':
 			if (optarg)
-				strncpy(im.magic, optarg, sizeof(im.magic));
+				strncpy(im.magic, optarg, sizeof(im.magic) - 1);
 			break;
 		case 'h':
 			usage(argv[0]);
 			return -1;
 		case 'k':
 			if (optarg)
-				strncpy(kernelfile, optarg, sizeof(kernelfile));
+				strncpy(kernelfile, optarg, sizeof(kernelfile) - 1);
 			break;
 		case 'r':
 			if (optarg)
-				strncpy(rootfsfile, optarg, sizeof(rootfsfile));
+				strncpy(rootfsfile, optarg, sizeof(rootfsfile) - 1);
 			break;
 		case 'B':
 			if (optarg)
-				strncpy(board_name, optarg, sizeof(board_name));
+				strncpy(board_name, optarg, sizeof(board_name) - 1);
 			break;
 		}
 	}
