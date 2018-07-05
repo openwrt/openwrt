@@ -1,9 +1,5 @@
 DEVICE_VARS += LOADER_FLASH_OFFS TPLINK_BOARD_ID TPLINK_FLASHLAYOUT TPLINK_HEADER_VERSION TPLINK_HWID TPLINK_HWREV
 
-define Build/copy-file
-	cat "$(1)" > "$@"
-endef
-
 # Arguments: <output name> <kernel offset>
 define Build/loader-okli
 	dd if=$(KDIR)/loader-$(word 1,$(1)).$(LOADER_TYPE) bs=$(word 2,$(1)) conv=sync of="$@.new"
@@ -61,8 +57,10 @@ define Device/tplink-nolzma
   LOADER_FLASH_OFFS := 0x22000
   COMPILE := loader-$(1).gz
   COMPILE/loader-$(1).gz := loader-okli-compile
-  KERNEL := copy-file $(KDIR)/vmlinux.bin.lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 7680
-  KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux-initramfs.bin.lzma | loader-kernel-cmdline | tplink-v1-header
+  KERNEL_NAME := vmlinux.bin.lzma
+  KERNEL := kernel-bin | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 7680
+  KERNEL_INITRAMFS_NAME := vmlinux-initramfs.bin.lzma
+  KERNEL_INITRAMFS := kernel-bin | loader-kernel-cmdline | tplink-v1-header
 endef
 
 define Device/tplink-4m
