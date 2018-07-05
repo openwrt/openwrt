@@ -1,0 +1,235 @@
+From 5c5442bcccf4873507c02c6bfbd66e93c7cd49d4 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <hackpascal@gmail.com>
+Date: Fri, 17 Feb 2017 03:43:29 +0800
+Subject: [PATCH] mips: add lexra compat
+
+Fixed load instruction interlock bug
+Fixed lacking unaligned load/store instrctions for memcpy/memset
+
+Signed-off-by: Weijie Gao <hackpascal@gmail.com>
+---
+ ldso/ldso/mips/dl-startup.h             |  6 ++++++
+ ldso/ldso/mips/dl-sysdep.h              |  3 +++
+ libc/string/mips/memcpy.S               | 22 ++++++++++++++++++++++
+ libc/string/mips/memset.S               |  7 +++++++
+ libc/sysdeps/linux/mips/clone.S         |  3 +++
+ libc/sysdeps/linux/mips/crt1.S          |  3 +++
+ libc/sysdeps/linux/mips/crtn.S          |  8 ++++++--
+ libc/sysdeps/linux/mips/makecontext.S   |  6 ++++++
+ libc/sysdeps/linux/mips/setjmp.S        |  3 +++
+ libc/sysdeps/linux/mips/syscall_error.S |  3 +++
+ 10 files changed, 62 insertions(+), 2 deletions(-)
+
+diff --git a/ldso/ldso/mips/dl-startup.h b/ldso/ldso/mips/dl-startup.h
+index 8026f17..e7f52bf 100644
+--- a/ldso/ldso/mips/dl-startup.h
++++ b/ldso/ldso/mips/dl-startup.h
+@@ -85,8 +85,14 @@ __asm__(""
+     "	dla	$2, _dl_fini\n"
+ #else	/* O32 || N32 */
+     "	lw	$2, _dl_skip_args\n"
++#ifndef __mlexra
+     "	beq	$2, $0, 1f\n"
+     "	lw	$4, 0($29)\n"
++#else	/* __mlexra */
++    "	lw	$4, 0($29)\n"
++    "	beq	$2, $0, 1f\n"
++    "	nop\n"
++#endif	/* !__mlexra */
+     "	subu	$4, $2\n"
+     "	sll	$2, 2\n"
+     "	addu	$29, $2\n"
+diff --git a/ldso/ldso/mips/dl-sysdep.h b/ldso/ldso/mips/dl-sysdep.h
+index 0122199..31c330a 100644
+--- a/ldso/ldso/mips/dl-sysdep.h
++++ b/ldso/ldso/mips/dl-sysdep.h
+@@ -222,6 +222,9 @@ elf_machine_load_address (void)
+ 	__asm__ ("        .set noreorder\n"
+ # if !defined __mips_isa_rev || __mips_isa_rev < 6
+ 	     "        " STRINGXP (PTR_LA) " %0, 0f\n"
++#ifdef __mlexra
++	     "        nop\n"
++#endif /* __mlexra */
+ 	     "        bltzal $0, 0f\n"
+ 	     "        nop\n"
+ 	     "0:      " STRINGXP (PTR_SUBU) " %0, $31, %0\n"
+diff --git a/libc/string/mips/memcpy.S b/libc/string/mips/memcpy.S
+index 3825875..b2beb4b 100644
+--- a/libc/string/mips/memcpy.S
++++ b/libc/string/mips/memcpy.S
+@@ -319,10 +319,19 @@ L(memcpy):
+ 	beq	a3,zero,L(aligned)	/* if a3=0, it is already aligned */
+ 	PTR_SUBU a2,a2,a3		/* a2 is the remining bytes count */
+ 
++#ifndef __mlexra
+ 	C_LDHI	t8,0(a1)
+ 	PTR_ADDU a1,a1,a3
+ 	C_STHI	t8,0(a0)
+ 	PTR_ADDU a0,a0,a3
++#else /* __mlexra */
++1:	lbu	t8, 0(a1)
++	PTR_SUBU a3, 1
++	sb	t8, 0(a0)
++	PTR_ADDIU a1, 1
++	bnez	a3, 1b
++	PTR_ADDIU a0, 1
++#endif /* __mlexra */
+ 
+ #else /* R6_CODE */
+ 
+@@ -614,6 +623,7 @@ L(wcopy_loop):
+ 	move	a2,t8
+ 
+ #ifndef R6_CODE
++# ifndef __mlexra
+ /*
+  * UNALIGNED case, got here with a3 = "negu a0"
+  * This code is nearly identical to the aligned code above
+@@ -804,6 +814,18 @@ L(ua_smallCopy_loop):
+ 
+ 	j	ra
+ 	nop
++# else /* __mlexra */
++L(unaligned):
++	lbu	v1,  0(a1)
++	PTR_SUBU a2,  a2, 1
++	sb	v1,  0(a0)
++	PTR_ADDIU a1,  a1, 1
++	bnez	a2,  L(unaligned)
++	PTR_ADDIU a0,  a0, 1
++
++	j	ra
++	nop
++# endif /* !__mlexra */
+ 
+ #else /* R6_CODE */
+ 
+diff --git a/libc/string/mips/memset.S b/libc/string/mips/memset.S
+index 1c9f14c..6f8015a 100644
+--- a/libc/string/mips/memset.S
++++ b/libc/string/mips/memset.S
+@@ -253,8 +253,15 @@ L(set0):
+ 	andi	t2,a3,(NSIZE-1)		/* word-unaligned address?          */
+ 	beq	t2,zero,L(aligned)	/* t2 is the unalignment count      */
+ 	PTR_SUBU a2,a2,t2
++#ifndef __mlexra
+ 	C_STHI	a1,0(a0)
+ 	PTR_ADDU a0,a0,t2
++#else /* __mlexra */
++	PTR_ADDU t1, a0, t2
++1:	PTR_ADDIU a0, 1
++	bne	a0, t1, 1b
++	sb	a1, -1(a0)
++#endif /* !__mlexra */
+ #else /* R6_CODE */
+ 	andi	t2,a0,(NSIZE-1)
+ 	lapc	t9,L(atable)
+diff --git a/libc/sysdeps/linux/mips/clone.S b/libc/sysdeps/linux/mips/clone.S
+index 326d1d3..b847c9f 100644
+--- a/libc/sysdeps/linux/mips/clone.S
++++ b/libc/sysdeps/linux/mips/clone.S
+@@ -127,6 +127,9 @@ L(thread_start):
+ 	move		a0,v0
+ #ifdef __PIC__
+ 	PTR_LA		t9,_exit
++#ifdef __mlexra
++	nop
++#endif /* __mlexra */
+ 	jalr		t9
+ #else
+ 	jal		_exit
+diff --git a/libc/sysdeps/linux/mips/crt1.S b/libc/sysdeps/linux/mips/crt1.S
+index 0836155..e5e9659 100644
+--- a/libc/sysdeps/linux/mips/crt1.S
++++ b/libc/sysdeps/linux/mips/crt1.S
+@@ -105,6 +105,9 @@ __start:
+ #endif
+ 	PTR_LA $7, _init		/* init */
+ 	PTR_LA $8, _fini
++#ifdef __mlexra
++	nop
++#endif /* __mlexra */
+ #if _MIPS_SIM == _MIPS_SIM_ABI32
+ 	PTR_S $8, 16($29)		/* fini */
+ 	PTR_S $2, 20($29)		/* rtld_fini */
+diff --git a/libc/sysdeps/linux/mips/crtn.S b/libc/sysdeps/linux/mips/crtn.S
+index f3756a2..b124ce4 100644
+--- a/libc/sysdeps/linux/mips/crtn.S
++++ b/libc/sysdeps/linux/mips/crtn.S
+@@ -13,7 +13,9 @@
+ 	.type	_init, @function
+ #NO_APP
+ 	lw	$31,28($sp)
+-	#nop
++#ifdef __mlexra
++	nop
++#endif /* __mlexra */
+ 	.set	noreorder
+ 	.set	nomacro
+ 	j	$31
+@@ -30,7 +32,9 @@
+ 	.type	_fini, @function
+ #NO_APP
+ 	lw	$31,28($sp)
+-	#nop
++#ifdef __mlexra
++	nop
++#endif /* __mlexra */
+ 	.set	noreorder
+ 	.set	nomacro
+ 	j	$31
+diff --git a/libc/sysdeps/linux/mips/makecontext.S b/libc/sysdeps/linux/mips/makecontext.S
+index 8b225ed..fa6b8c3 100644
+--- a/libc/sysdeps/linux/mips/makecontext.S
++++ b/libc/sysdeps/linux/mips/makecontext.S
+@@ -154,6 +154,9 @@ NESTED (__makecontext, FRAMESZ, ra)
+ 	move	a0, s0
+ #ifdef __PIC__
+ 	PTR_LA	t9, JUMPTARGET (__setcontext)
++#ifdef __mlexra
++	nop
++#endif /* __mlexra */
+ 	jalr	t9
+ # if _MIPS_SIM == _ABIO32
+ 	move	gp, s1
+@@ -167,6 +170,9 @@ NESTED (__makecontext, FRAMESZ, ra)
+ 	/* exit (a0) */
+ #ifdef __PIC__
+ 	PTR_LA	t9, HIDDEN_JUMPTARGET (exit)
++#ifdef __mlexra
++	nop
++#endif /* __mlexra */
+ 	jalr	t9
+ #else
+ 	jal	HIDDEN_JUMPTARGET (exit)
+diff --git a/libc/sysdeps/linux/mips/setjmp.S b/libc/sysdeps/linux/mips/setjmp.S
+index 59b76cc..6872b4a 100644
+--- a/libc/sysdeps/linux/mips/setjmp.S
++++ b/libc/sysdeps/linux/mips/setjmp.S
+@@ -50,6 +50,9 @@ __sigsetjmp:
+ #endif
+ #ifdef __PIC__
+ 	PTR_LA	t9, __sigsetjmp_aux
++#ifdef __mlexra
++	nop
++#endif /* __mlexra */
+ #if _MIPS_SIM != _MIPS_SIM_ABI32
+ 	.cpreturn
+ 	move 	a4, gp
+diff --git a/libc/sysdeps/linux/mips/syscall_error.S b/libc/sysdeps/linux/mips/syscall_error.S
+index 2fb56b1..8ba3b10 100644
+--- a/libc/sysdeps/linux/mips/syscall_error.S
++++ b/libc/sysdeps/linux/mips/syscall_error.S
+@@ -50,6 +50,9 @@ ENTRY(__syscall_error)
+ 
+ 	/* Store the error value.  */
+ 	REG_L	t0, V0OFF(sp)
++#ifdef __mlexra
++	nop
++#endif /* __mlexra */
+ 	sw	t0, 0(v0)
+ 
+ 	/* And just kick back a -1.  */
+-- 
+2.5.0
+
