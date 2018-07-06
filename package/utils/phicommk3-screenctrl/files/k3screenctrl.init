@@ -1,0 +1,42 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=99
+
+NAME=k3screenctrl
+
+SCRIPTS_BASE=/lib/k3screenctrl/
+TEMP_DIR=/tmp/k3screenctrl
+DEVICE_CUSTOM_FILE=$TEMP_DIR/device_custom
+
+device_custom() {
+    config_get mac $1 mac
+    config_get name $1 name
+    config_get icon $1 icon
+    [ -z "$name" ] && name="?"
+    [ $icon -eq 0 ] && icon=""
+    echo "$mac $name $icon" >> $DEVICE_CUSTOM_FILE
+}
+
+start() {
+    [ -z "$(grep "/lib/k3screenctrl/oui/update_oui.sh" /etc/crontabs/root)" ] && echo "0 6 * * * /lib/k3screenctrl/oui/update_oui.sh" >> /etc/crontabs/root
+    mkdir -p $TEMP_DIR/device_speed
+    touch $DEVICE_CUSTOM_FILE
+    nvram get et0macaddr > $TEMP_DIR/macaddr
+    config_load $NAME
+    config_get m general screen_time
+    config_get d general refresh_time
+    config_foreach device_custom device_custom
+    echo "$(wc -l $DEVICE_CUSTOM_FILE | awk '{print $1}')" >> $DEVICE_CUSTOM_FILE
+    [ -z "$(iptables --list | grep K3_SEREEN_U)" ] && iptables -N K3_SEREEN_U
+    [ -z "$(iptables --list | grep K3_SEREEN_D)" ] && iptables -N K3_SEREEN_D
+    $SCRIPTS_BASE"device_online.sh" &
+    /usr/bin/k3screenctrl -m $m -d $d >/var/log/k3screenctrl.log 2>&1 &
+    
+}
+
+stop() {
+    killall k3screenctrl
+    kill -9 $(cat /var/run/device_online.sh.pid) >/dev/null 2>&1
+    rm -rf $TEMP_DIR
+}
