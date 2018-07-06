@@ -26,13 +26,12 @@
  #define MBEDTLS_ECP_DP_CURVE25519_ENABLED
  
  /**
-@@ -601,8 +601,8 @@
-  * Requires: MBEDTLS_HMAC_DRBG_C
+@@ -602,7 +602,7 @@
   *
   * Comment this macro to disable deterministic ECDSA.
-- */
- #define MBEDTLS_ECDSA_DETERMINISTIC
-+ */
+  */
+-#define MBEDTLS_ECDSA_DETERMINISTIC
++//#define MBEDTLS_ECDSA_DETERMINISTIC
  
  /**
   * \def MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
@@ -45,13 +44,12 @@
  
  /**
   * \def MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
-@@ -674,8 +674,8 @@
-  *      MBEDTLS_TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256
+@@ -675,7 +675,7 @@
   *      MBEDTLS_TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA
   *      MBEDTLS_TLS_ECDHE_PSK_WITH_RC4_128_SHA
-- */
- #define MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
-+ */
+  */
+-#define MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
++//#define MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
  
  /**
   * \def MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
@@ -126,13 +124,12 @@
  
  /**
   * \def MBEDTLS_SSL_SRV_SUPPORT_SSLV2_CLIENT_HELLO
-@@ -1381,8 +1381,8 @@
-  * callbacks are provided by MBEDTLS_SSL_TICKET_C.
+@@ -1382,7 +1382,7 @@
   *
   * Comment this macro to disable support for SSL session tickets
-- */
- #define MBEDTLS_SSL_SESSION_TICKETS
-+ */
+  */
+-#define MBEDTLS_SSL_SESSION_TICKETS
++//#define MBEDTLS_SSL_SESSION_TICKETS
  
  /**
   * \def MBEDTLS_SSL_EXPORT_KEYS
@@ -145,13 +142,12 @@
  
  /**
   * \def MBEDTLS_SSL_TRUNCATED_HMAC_COMPAT
-@@ -1470,8 +1470,8 @@
-  * Requires: MBEDTLS_VERSION_C
+@@ -1471,7 +1471,7 @@
   *
   * Comment this to disable run-time checking and save ROM space
-- */
- #define MBEDTLS_VERSION_FEATURES
-+ */
+  */
+-#define MBEDTLS_VERSION_FEATURES
++//#define MBEDTLS_VERSION_FEATURES
  
  /**
   * \def MBEDTLS_X509_ALLOW_EXTENSIONS_NON_V3
@@ -200,13 +196,12 @@
  
  /**
   * \def MBEDTLS_DHM_C
-@@ -2070,8 +2070,8 @@
-  * Requires: MBEDTLS_MD_C
+@@ -2071,7 +2071,7 @@
   *
   * Uncomment to enable the HMAC_DRBG random number geerator.
-- */
- #define MBEDTLS_HMAC_DRBG_C
-+ */
+  */
+-#define MBEDTLS_HMAC_DRBG_C
++//#define MBEDTLS_HMAC_DRBG_C
  
  /**
   * \def MBEDTLS_MD_C
@@ -228,33 +223,30 @@
  
  /**
   * \def MBEDTLS_RSA_C
-@@ -2449,8 +2449,8 @@
-  * Caller:
+@@ -2450,7 +2450,7 @@
   *
   * Requires: MBEDTLS_SSL_CACHE_C
-- */
- #define MBEDTLS_SSL_CACHE_C
-+ */
+  */
+-#define MBEDTLS_SSL_CACHE_C
++//#define MBEDTLS_SSL_CACHE_C
  
  /**
   * \def MBEDTLS_SSL_COOKIE_C
-@@ -2471,8 +2471,8 @@
-  * Caller:
+@@ -2472,7 +2472,7 @@
   *
   * Requires: MBEDTLS_CIPHER_C
-- */
- #define MBEDTLS_SSL_TICKET_C
-+ */
+  */
+-#define MBEDTLS_SSL_TICKET_C
++//#define MBEDTLS_SSL_TICKET_C
  
  /**
   * \def MBEDTLS_SSL_CLI_C
-@@ -2571,8 +2571,8 @@
-  * Module:  library/version.c
+@@ -2572,7 +2572,7 @@
   *
   * This module provides run-time version information.
-- */
- #define MBEDTLS_VERSION_C
-+ */
+  */
+-#define MBEDTLS_VERSION_C
++//#define MBEDTLS_VERSION_C
  
  /**
   * \def MBEDTLS_X509_USE_C
