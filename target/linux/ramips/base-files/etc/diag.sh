@@ -201,6 +201,7 @@ get_status_led() {
 	linkits7688)
 		status_led="linkit-smart-7688:orange:wifi"
 		;;
+	kimax,u35wf|\
 	m2m)
 		status_led="$boardname:blue:wifi"
 		;;

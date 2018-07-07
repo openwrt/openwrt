@@ -240,6 +240,13 @@ define Device/u25awf-h1
 endef
 TARGET_DEVICES += u25awf-h1
 
+define Device/kimax_u35wf
+  DTS := U35WF
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := Kimax U35WF
+endef
+TARGET_DEVICES += kimax_u35wf
+
 define Device/gl-mt300n
   DTS := GL-MT300N
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
