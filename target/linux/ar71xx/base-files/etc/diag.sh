@@ -341,6 +341,9 @@ get_status_led() {
 	r602n)
 		status_led="$board:green:wan"
 		;;
+	raccoon)
+		status_led="$board:blue:sys"
+		;;
 	rb-2011il|\
 	rb-2011ils|\
 	rb-2011l|\

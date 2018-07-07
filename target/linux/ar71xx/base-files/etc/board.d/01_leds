@@ -604,6 +604,11 @@ r6100)
 	ucidef_set_led_usbdev "usb" "USB" "netgear:blue:usb" "1-1"
 	ucidef_set_led_wlan "wlan" "WLAN" "netgear:blue:wlan" "phy1tpt"
 	;;
+raccoon)
+	ucidef_set_led_default "power" "POWER" "$board:green:power" "1"
+	ucidef_set_led_wlan "wlan2g" "WLAN 2.4GHz" "$board:yellow:wlan24" "phy0tpt"
+	ucidef_set_led_default "wps" "WPS" "$board:blue:wps" "0"
+	;;
 rb-750)
 	ucidef_set_led_default "act" "act" "rb750:green:act" "1"
 	ucidef_set_led_netdev "port1" "port1" "rb750:green:port1" "eth1"

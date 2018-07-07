@@ -39,3 +39,12 @@ define Device/koala
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += koala
+
+define Device/raccoon
+  DEVICE_TITLE := OCEDO Raccoon
+  BOARDNAME := RACCOON
+  IMAGE_SIZE := 7424k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),7424k(firmware),7424k(vendor)ro,1088k(data)ro,64k(id)ro,64k(art)ro
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += raccoon
