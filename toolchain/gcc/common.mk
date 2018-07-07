@@ -170,6 +170,10 @@ ifneq ($(GCC_ARCH),)
   GCC_CONFIGURE+= --with-arch=$(GCC_ARCH)
 endif
 
+ifneq ($(CONFIG_TARGET_realtek_lexra),)
+  GCC_CONFIGURE+= --with-arch=lexra
+endif
+
 ifneq ($(CONFIG_SOFT_FLOAT),y)
   ifeq ($(CONFIG_arm),y)
     GCC_CONFIGURE+= \

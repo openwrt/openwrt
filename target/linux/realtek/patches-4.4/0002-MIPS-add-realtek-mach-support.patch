@@ -1,0 +1,81 @@
+From 194d50e9f857dc6fe1fa7db4522c162f2e40b0b8 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <hackpascal@gmail.com>
+Date: Mon, 27 Feb 2017 17:08:06 +0800
+Subject: [PATCH 2/5] MIPS: add realtek mach support
+
+This patch adds mach support for Realtek's RLX-based SoCs.
+
+Signed-off-by: Weijie Gao <hackpascal@gmail.com>
+---
+ arch/mips/Kbuild.platforms |  1 +
+ arch/mips/Kconfig          | 22 ++++++++++++++++++++++
+ arch/mips/pci/Makefile     |  1 +
+ 3 files changed, 24 insertions(+)
+
+diff --git a/arch/mips/Kbuild.platforms b/arch/mips/Kbuild.platforms
+index a96c81d..f9676fe 100644
+--- a/arch/mips/Kbuild.platforms
++++ b/arch/mips/Kbuild.platforms
+@@ -25,6 +25,7 @@ platforms += pistachio
+ platforms += pmcs-msp71xx
+ platforms += pnx833x
+ platforms += ralink
++platforms += realtek
+ platforms += rb532
+ platforms += sgi-ip22
+ platforms += sgi-ip27
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 4ac291b..fa6327a 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -969,6 +969,27 @@ config MIPS_PARAVIRT
+ 	help
+ 	  This option supports guest running under ????
+ 
++config REALTEK
++	bool "Realtek RLX based SoC support"
++	select BOOT_RAW
++	select DMA_NONCOHERENT
++	select IRQ_MIPS_CPU
++	select IRQ_DOMAIN
++	select HW_HAS_PCI
++	select MIPS_MACHINE
++	select HAVE_CLK
++	select COMMON_CLK
++	select CLKDEV_LOOKUP
++	select GENERIC_CSUM
++	select ARCH_REQUIRE_GPIOLIB
++	select SYS_HAS_CPU_R3000
++	select SYS_SUPPORTS_BIG_ENDIAN
++	select SYS_SUPPORTS_MIPS16
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SYS_HAS_EARLY_PRINTK
++	help
++	  Support for Realtek RLX SoC based boards
++
+ endchoice
+ 
+ source "arch/mips/alchemy/Kconfig"
+@@ -994,6 +1015,7 @@ source "arch/mips/loongson64/Kconfig"
+ source "arch/mips/netlogic/Kconfig"
+ source "arch/mips/paravirt/Kconfig"
+ source "arch/mips/xilfpga/Kconfig"
++source "arch/mips/realtek/Kconfig"
+ 
+ endmenu
+ 
+diff --git a/arch/mips/pci/Makefile b/arch/mips/pci/Makefile
+index 2eda01e..11e50b4 100644
+--- a/arch/mips/pci/Makefile
++++ b/arch/mips/pci/Makefile
+@@ -23,6 +23,7 @@ obj-$(CONFIG_PCI_AR2315)	+= pci-ar2315.o
+ obj-$(CONFIG_SOC_AR71XX)	+= pci-ar71xx.o
+ obj-$(CONFIG_PCI_AR724X)	+= pci-ar724x.o
+ obj-$(CONFIG_MIPS_PCI_VIRTIO)	+= pci-virtio-guest.o
++obj-$(CONFIG_REALTEK)		+= pci-realtek.o
+ #
+ # These are still pretty much in the old state, watch, go blind.
+ #
+-- 
+2.5.0
+

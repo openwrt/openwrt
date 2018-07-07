@@ -1,0 +1,48 @@
+From 7c13cabfc02d2fa365a67e239be6ccf39778e4b7 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <hackpascal@gmail.com>
+Date: Mon, 20 Feb 2017 21:53:52 +0800
+Subject: [PATCH 5/5] net: add support for realtek re865x ethernet driver
+
+Signed-off-by: Weijie Gao <hackpascal@gmail.com>
+---
+ drivers/net/ethernet/Kconfig  | 1 +
+ drivers/net/ethernet/Makefile | 1 +
+ 2 files changed, 2 insertions(+)
+
+Index: linux-4.14.13/drivers/net/ethernet/Kconfig
+===================================================================
+--- linux-4.14.13.orig/drivers/net/ethernet/Kconfig
++++ linux-4.14.13/drivers/net/ethernet/Kconfig
+@@ -159,6 +159,7 @@ source "drivers/net/ethernet/packetengin
+ source "drivers/net/ethernet/pasemi/Kconfig"
+ source "drivers/net/ethernet/qlogic/Kconfig"
+ source "drivers/net/ethernet/qualcomm/Kconfig"
++source "drivers/net/ethernet/re865x/Kconfig"
+ source "drivers/net/ethernet/realtek/Kconfig"
+ source "drivers/net/ethernet/renesas/Kconfig"
+ source "drivers/net/ethernet/rdc/Kconfig"
+Index: linux-4.14.13/drivers/net/ethernet/Makefile
+===================================================================
+--- linux-4.14.13.orig/drivers/net/ethernet/Makefile
++++ linux-4.14.13/drivers/net/ethernet/Makefile
+@@ -70,6 +70,7 @@ obj-$(CONFIG_NET_PACKET_ENGINE) += packe
+ obj-$(CONFIG_NET_VENDOR_PASEMI) += pasemi/
+ obj-$(CONFIG_NET_VENDOR_QLOGIC) += qlogic/
+ obj-$(CONFIG_NET_VENDOR_QUALCOMM) += qualcomm/
++obj-$(CONFIG_RE865X) += re865x/
+ obj-$(CONFIG_NET_VENDOR_REALTEK) += realtek/
+ obj-$(CONFIG_NET_VENDOR_RENESAS) += renesas/
+ obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
+Index: linux-4.14.13/arch/mips/include/asm/pgtable-bits.h
+===================================================================
+--- linux-4.14.13.orig/arch/mips/include/asm/pgtable-bits.h
++++ linux-4.14.13/arch/mips/include/asm/pgtable-bits.h
+@@ -147,7 +147,7 @@ enum pgtable_bits {
+ #define _PAGE_GLOBAL		(1 << _PAGE_GLOBAL_SHIFT)
+ #define _PAGE_VALID		(1 << _PAGE_VALID_SHIFT)
+ #define _PAGE_DIRTY		(1 << _PAGE_DIRTY_SHIFT)
+-#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || defined(CONFIG_CPU_LEXRA)
+ # define _CACHE_UNCACHED	(1 << _CACHE_UNCACHED_SHIFT)
+ # define _CACHE_MASK		_CACHE_UNCACHED
+ # define _PFN_SHIFT		PAGE_SHIFT

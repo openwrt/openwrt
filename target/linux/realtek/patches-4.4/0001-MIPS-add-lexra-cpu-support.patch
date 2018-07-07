@@ -1,0 +1,764 @@
+From b76dd1b6aca123a09ee4e796633d74bfdbc14cf8 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <hackpascal@gmail.com>
+Date: Mon, 27 Feb 2017 17:06:38 +0800
+Subject: [PATCH 1/5] MIPS: add lexra cpu support
+
+This patch add architecture support for Lexra's R3000-style CPUs.
+The major differences are caches and lacks of unaligned load/store
+instructions.
+
+Signed-off-by: Weijie Gao <hackpascal@gmail.com>
+---
+ arch/mips/Kconfig                    | 17 ++++++---
+ arch/mips/Makefile                   |  1 +
+ arch/mips/include/asm/cpu-type.h     |  8 ++++
+ arch/mips/include/asm/cpu.h          | 15 ++++++++
+ arch/mips/include/asm/isadep.h       |  3 +-
+ arch/mips/include/asm/mmu_context.h  |  3 +-
+ arch/mips/include/asm/module.h       |  2 +
+ arch/mips/include/asm/pgtable-32.h   |  5 ++-
+ arch/mips/include/asm/pgtable-bits.h |  6 ++-
+ arch/mips/include/asm/pgtable.h      |  6 ++-
+ arch/mips/include/asm/stackframe.h   |  9 +++--
+ arch/mips/include/asm/string.h       |  4 +-
+ arch/mips/kernel/Makefile            |  1 +
+ arch/mips/kernel/cpu-probe.c         | 72 ++++++++++++++++++++++++++++++++++++
+ arch/mips/kernel/entry.S             |  3 +-
+ arch/mips/kernel/genex.S             |  6 ++-
+ arch/mips/kernel/mips_ksyms.c        |  2 +-
+ arch/mips/kernel/process.c           |  3 +-
+ arch/mips/kernel/unaligned.c         | 10 ++---
+ arch/mips/kernel/vmlinux.lds.S       | 13 +++++++
+ arch/mips/lib/Makefile               |  1 +
+ arch/mips/lib/memcpy.S               | 10 ++---
+ arch/mips/lib/memset.S               |  8 ++--
+ arch/mips/mm/Makefile                |  1 +
+ arch/mips/mm/tlb-r3k.c               | 43 +++++++++++++++++++++
+ arch/mips/mm/tlbex.c                 |  8 ++++
+ 26 files changed, 222 insertions(+), 38 deletions(-)
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index cd138a0..4ac291b 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -1486,6 +1486,11 @@ config CPU_R3000
+ 	  might be a safe bet.  If the resulting kernel does not work,
+ 	  try to recompile with R3000.
+ 
++config CPU_LEXRA
++	bool "Lexra"
++	depends on SYS_HAS_CPU_R3000
++	select CPU_SUPPORTS_32BIT_KERNEL
++
+ config CPU_TX39XX
+ 	bool "R39XX"
+ 	depends on SYS_HAS_CPU_TX39XX
+@@ -2059,7 +2064,7 @@ config PAGE_SIZE_8KB
+ 
+ config PAGE_SIZE_16KB
+ 	bool "16kB"
+-	depends on !CPU_R3000 && !CPU_TX39XX
++	depends on !CPU_R3000 && !CPU_LEXRA && !CPU_TX39XX
+ 	help
+ 	  Using 16kB page size will result in higher performance kernel at
+ 	  the price of higher memory consumption.  This option is available on
+@@ -2077,7 +2082,7 @@ config PAGE_SIZE_32KB
+ 
+ config PAGE_SIZE_64KB
+ 	bool "64kB"
+-	depends on !CPU_R3000 && !CPU_TX39XX
++	depends on !CPU_R3000 && !CPU_LEXRA && !CPU_TX39XX
+ 	help
+ 	  Using 64kB page size will result in higher performance kernel at
+ 	  the price of higher memory consumption.  This option is available on
+@@ -2145,15 +2150,15 @@ config CPU_HAS_PREFETCH
+ 
+ config CPU_GENERIC_DUMP_TLB
+ 	bool
+-	default y if !(CPU_R3000 || CPU_R6000 || CPU_R8000 || CPU_TX39XX)
++	default y if !(CPU_R3000 || CPU_LEXRA || CPU_R6000 || CPU_R8000 || CPU_TX39XX)
+ 
+ config CPU_R4K_FPU
+ 	bool
+-	default y if !(CPU_R3000 || CPU_R6000 || CPU_TX39XX || CPU_CAVIUM_OCTEON)
++	default y if !(CPU_R3000 || CPU_LEXRA || CPU_R6000 || CPU_TX39XX || CPU_CAVIUM_OCTEON)
+ 
+ config CPU_R4K_CACHE_TLB
+ 	bool
+-	default y if !(CPU_R3000 || CPU_R8000 || CPU_SB1 || CPU_TX39XX || CPU_CAVIUM_OCTEON)
++	default y if !(CPU_R3000 || CPU_LEXRA || CPU_R8000 || CPU_SB1 || CPU_TX39XX || CPU_CAVIUM_OCTEON)
+ 
+ config MIPS_MT_SMP
+ 	bool "MIPS MT SMP support (1 TC on each available VPE)"
+@@ -2385,7 +2390,7 @@ config CPU_MIPSR2_IRQ_EI
+ 
+ config CPU_HAS_SYNC
+ 	bool
+-	depends on !CPU_R3000
++	depends on !CPU_R3000 && !CPU_LEXRA
+ 	default y
+ 
+ #
+diff --git a/arch/mips/Makefile b/arch/mips/Makefile
+index 868056b..b0bd36e 100644
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -137,6 +137,7 @@ cflags-$(CONFIG_SB1XXX_CORELIS)	+= $(call cc-option,-mno-sched-prolog) \
+ # CPU-dependent compiler/assembler options for optimization.
+ #
+ cflags-$(CONFIG_CPU_R3000)	+= -march=r3000
++cflags-$(CONFIG_CPU_LEXRA)	+= -march=lexra -mno-llsc
+ cflags-$(CONFIG_CPU_TX39XX)	+= -march=r3900
+ cflags-$(CONFIG_CPU_R6000)	+= -march=r6000 -Wa,--trap
+ cflags-$(CONFIG_CPU_R4300)	+= -march=r4300 -Wa,--trap
+diff --git a/arch/mips/include/asm/cpu-type.h b/arch/mips/include/asm/cpu-type.h
+index abee2bf..e5c282c 100644
+--- a/arch/mips/include/asm/cpu-type.h
++++ b/arch/mips/include/asm/cpu-type.h
+@@ -90,6 +90,14 @@ static inline int __pure __get_cpu_type(const int cpu_type)
+ 	case CPU_R3052:
+ 	case CPU_R3081:
+ 	case CPU_R3081E:
++	case CPU_LX4180:
++	case CPU_LX4189:
++	case CPU_LX4280:
++	case CPU_LX4380:
++	case CPU_LX5180:
++	case CPU_LX5280:
++	case CPU_LX8000:
++	case CPU_LX8380:
+ #endif
+ 
+ #ifdef CONFIG_SYS_HAS_CPU_TX39XX
+diff --git a/arch/mips/include/asm/cpu.h b/arch/mips/include/asm/cpu.h
+index 82ad15f..45644de 100644
+--- a/arch/mips/include/asm/cpu.h
++++ b/arch/mips/include/asm/cpu.h
+@@ -88,6 +88,15 @@
+ #define PRID_IMP_R5432		0x5400
+ #define PRID_IMP_R5500		0x5500
+ #define PRID_IMP_LOONGSON_64	0x6300  /* Loongson-2/3 */
++#define PRID_IMP_LX4180		0xc100
++#define PRID_IMP_LX4280		0xc200
++#define PRID_IMP_LX4189		0xc400
++#define PRID_IMP_LX5180		0xc500
++#define PRID_IMP_LX5280		0xc600
++#define PRID_IMP_LX8000		0xc700
++#define PRID_IMP_LX4380		0xcd00  /* Lexra LX4380 / RLX4181 */
++#define PRID_IMP_LX8380		0xce00
++
+ 
+ #define PRID_IMP_UNKNOWN	0xff00
+ 
+@@ -277,6 +286,12 @@ enum cpu_type_enum {
+ 	CPU_R3081, CPU_R3081E,
+ 
+ 	/*
++	 * Lexra processors
++	 */
++	CPU_LX4180, CPU_LX4189, CPU_LX4280, CPU_LX4380, CPU_LX5180, CPU_LX5280,
++	CPU_LX8000, CPU_LX8380,
++
++	/*
+ 	 * R6000 class processors
+ 	 */
+ 	CPU_R6000, CPU_R6000A,
+diff --git a/arch/mips/include/asm/isadep.h b/arch/mips/include/asm/isadep.h
+index b4af6eb..0a9ee70 100644
+--- a/arch/mips/include/asm/isadep.h
++++ b/arch/mips/include/asm/isadep.h
+@@ -9,7 +9,8 @@
+ #ifndef __ASM_ISADEP_H
+ #define __ASM_ISADEP_H
+ 
+-#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || \
++	defined(CONFIG_CPU_LEXRA)
+ /*
+  * R2000 or R3000
+  */
+diff --git a/arch/mips/include/asm/mmu_context.h b/arch/mips/include/asm/mmu_context.h
+index 45914b5..1b395b8 100644
+--- a/arch/mips/include/asm/mmu_context.h
++++ b/arch/mips/include/asm/mmu_context.h
+@@ -65,7 +65,8 @@ extern unsigned long pgd_current[];
+ 	back_to_back_c0_hazard();					\
+ 	TLBMISS_HANDLER_SETUP_PGD(swapper_pg_dir)
+ #endif /* CONFIG_MIPS_PGD_C0_CONTEXT*/
+-#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || \
++	 defined(CONFIG_CPU_LEXRA)
+ 
+ #define ASID_INC	0x40
+ #define ASID_MASK	0xfc0
+diff --git a/arch/mips/include/asm/module.h b/arch/mips/include/asm/module.h
+index 03ece76..8cd147c 100644
+--- a/arch/mips/include/asm/module.h
++++ b/arch/mips/include/asm/module.h
+@@ -103,6 +103,8 @@ search_module_dbetables(unsigned long addr)
+ #define MODULE_PROC_FAMILY "MIPS64_R6 "
+ #elif defined CONFIG_CPU_R3000
+ #define MODULE_PROC_FAMILY "R3000 "
++#elif defined CONFIG_CPU_LEXRA
++#define MODULE_PROC_FAMILY "LEXRA "
+ #elif defined CONFIG_CPU_TX39XX
+ #define MODULE_PROC_FAMILY "TX39XX "
+ #elif defined CONFIG_CPU_VR41XX
+diff --git a/arch/mips/include/asm/pgtable-32.h b/arch/mips/include/asm/pgtable-32.h
+index 832e216..be87904 100644
+--- a/arch/mips/include/asm/pgtable-32.h
++++ b/arch/mips/include/asm/pgtable-32.h
+@@ -155,7 +155,8 @@ pfn_pte(unsigned long pfn, pgprot_t prot)
+ 	((pte_t *)page_address(pmd_page(*(dir))) + __pte_offset(address))
+ #define pte_unmap(pte) ((void)(pte))
+ 
+-#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || \
++	defined(CONFIG_CPU_LEXRA)
+ 
+ /* Swap entries must have VALID bit cleared. */
+ #define __swp_type(x)			(((x).val >> 10) & 0x1f)
+@@ -191,6 +192,6 @@ pfn_pte(unsigned long pfn, pgprot_t prot)
+ 
+ #endif /* defined(CONFIG_PHYS_ADDR_T_64BIT) && defined(CONFIG_CPU_MIPS32) */
+ 
+-#endif /* defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) */
++#endif /* defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || defined(CONFIG_CPU_LEXRA) */
+ 
+ #endif /* _ASM_PGTABLE_32_H */
+diff --git a/arch/mips/include/asm/pgtable-bits.h b/arch/mips/include/asm/pgtable-bits.h
+index ff7ad91..402c488 100644
+--- a/arch/mips/include/asm/pgtable-bits.h
++++ b/arch/mips/include/asm/pgtable-bits.h
+@@ -71,7 +71,8 @@
+  */
+ #define _PFNX_MASK		0xffffff
+ 
+-#elif defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
++#elif defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || \
++	defined(CONFIG_CPU_LEXRA)
+ 
+ /*
+  * The following bits are implemented in software
+@@ -225,7 +226,8 @@ static inline uint64_t pte_to_entrylo(unsigned long pte_val)
+ /*
+  * Cache attributes
+  */
+-#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || \
++	defined(CONFIG_CPU_LEXRA)
+ 
+ #define _CACHE_CACHABLE_NONCOHERENT 0
+ #define _CACHE_UNCACHED_ACCELERATED _CACHE_UNCACHED
+diff --git a/arch/mips/include/asm/pgtable.h b/arch/mips/include/asm/pgtable.h
+index 4e68c64..f566a9c 100644
+--- a/arch/mips/include/asm/pgtable.h
++++ b/arch/mips/include/asm/pgtable.h
+@@ -179,7 +179,8 @@ static inline void pte_clear(struct mm_struct *mm, unsigned long addr, pte_t *pt
+ static inline void set_pte(pte_t *ptep, pte_t pteval)
+ {
+ 	*ptep = pteval;
+-#if !defined(CONFIG_CPU_R3000) && !defined(CONFIG_CPU_TX39XX)
++#if !defined(CONFIG_CPU_R3000) && !defined(CONFIG_CPU_TX39XX) && \
++	!defined(CONFIG_CPU_LEXRA)
+ 	if (pte_val(pteval) & _PAGE_GLOBAL) {
+ 		pte_t *buddy = ptep_buddy(ptep);
+ 		/*
+@@ -226,7 +227,8 @@ static inline void set_pte(pte_t *ptep, pte_t pteval)
+ static inline void pte_clear(struct mm_struct *mm, unsigned long addr, pte_t *ptep)
+ {
+ 	htw_stop();
+-#if !defined(CONFIG_CPU_R3000) && !defined(CONFIG_CPU_TX39XX)
++#if !defined(CONFIG_CPU_R3000) && !defined(CONFIG_CPU_TX39XX) && \
++	!defined(CONFIG_CPU_LEXRA)
+ 	/* Preserve global status for the pair */
+ 	if (pte_val(*ptep_buddy(ptep)) & _PAGE_GLOBAL)
+ 		set_pte_at(mm, addr, ptep, __pte(_PAGE_GLOBAL));
+diff --git a/arch/mips/include/asm/stackframe.h b/arch/mips/include/asm/stackframe.h
+index 5347f13..33977dd 100644
+--- a/arch/mips/include/asm/stackframe.h
++++ b/arch/mips/include/asm/stackframe.h
+@@ -19,7 +19,8 @@
+ #include <asm/asm-offsets.h>
+ #include <asm/thread_info.h>
+ 
+-#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || \
++	defined(CONFIG_CPU_LEXRA)
+ #define STATMASK 0x3f
+ #else
+ #define STATMASK 0x1f
+@@ -289,7 +290,8 @@
+ 		LONG_L	$30, PT_R30(sp)
+ 		.endm
+ 
+-#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || \
++	defined(CONFIG_CPU_LEXRA)
+ 
+ 		.macro	RESTORE_SOME
+ 		.set	push
+@@ -425,7 +427,8 @@
+ 		.macro	KMODE
+ 		mfc0	t0, CP0_STATUS
+ 		li	t1, ST0_CU0 | (STATMASK & ~1)
+-#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || \
++	defined(CONFIG_CPU_LEXRA)
+ 		andi	t2, t0, ST0_IEP
+ 		srl	t2, 2
+ 		or	t0, t2
+diff --git a/arch/mips/include/asm/string.h b/arch/mips/include/asm/string.h
+index a6506ca..03c51f6 100644
+--- a/arch/mips/include/asm/string.h
++++ b/arch/mips/include/asm/string.h
+@@ -84,7 +84,7 @@ static __inline__ int strcmp(__const__ char *__cs, __const__ char *__ct)
+ 	"addiu\t%1,1\n\t"
+ 	"bnez\t%2,1b\n\t"
+ 	"lbu\t%2,(%0)\n\t"
+-#if defined(CONFIG_CPU_R3000)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_LEXRA)
+ 	"nop\n\t"
+ #endif
+ 	"move\t%2,$1\n"
+@@ -117,7 +117,7 @@ strncmp(__const__ char *__cs, __const__ char *__ct, size_t __count)
+ 	"bnez\t%3,1b\n\t"
+ 	"addiu\t%1,1\n"
+ 	"2:\n\t"
+-#if defined(CONFIG_CPU_R3000)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_LEXRA)
+ 	"nop\n\t"
+ #endif
+ 	"move\t%3,$1\n"
+diff --git a/arch/mips/kernel/Makefile b/arch/mips/kernel/Makefile
+index 68e2b7d..7d56309 100644
+--- a/arch/mips/kernel/Makefile
++++ b/arch/mips/kernel/Makefile
+@@ -38,6 +38,7 @@ obj-$(CONFIG_FUNCTION_TRACER)	+= mcount.o ftrace.o
+ 
+ obj-$(CONFIG_CPU_R4K_FPU)	+= r4k_fpu.o r4k_switch.o
+ obj-$(CONFIG_CPU_R3000)		+= r2300_fpu.o r2300_switch.o
++obj-$(CONFIG_CPU_LEXRA)		+= r2300_switch.o
+ obj-$(CONFIG_CPU_R6000)		+= r6000_fpu.o r4k_switch.o
+ obj-$(CONFIG_CPU_TX39XX)	+= r2300_fpu.o r2300_switch.o
+ obj-$(CONFIG_CPU_CAVIUM_OCTEON)	+= r4k_fpu.o octeon_switch.o
+diff --git a/arch/mips/kernel/cpu-probe.c b/arch/mips/kernel/cpu-probe.c
+index 6b90644..c7254e8 100644
+--- a/arch/mips/kernel/cpu-probe.c
++++ b/arch/mips/kernel/cpu-probe.c
+@@ -1044,6 +1044,78 @@ static inline void cpu_probe_legacy(struct cpuinfo_mips *c, unsigned int cpu)
+ 		}
+ 
+ 		break;
++	case PRID_IMP_LX4180:
++		c->cputype = CPU_LX4180;
++		__cpu_name[cpu] = "Lexra LX4180";
++
++		c->options = MIPS_CPU_TLB | MIPS_CPU_3K_CACHE |
++			     MIPS_CPU_NOFPUEX;
++		c->ases = MIPS_ASE_MIPS16;
++		c->tlbsize = 64;	/* Assuming maximum number of TLB entries */
++		break;
++	case PRID_IMP_LX4189:
++		c->cputype = CPU_LX4189;
++		__cpu_name[cpu] = "Lexra LX4189";
++
++		c->options = MIPS_CPU_TLB | MIPS_CPU_3K_CACHE |
++			     MIPS_CPU_NOFPUEX;
++		c->ases = MIPS_ASE_MIPS16;
++		c->tlbsize = 64;	/* Assuming maximum number of TLB entries */
++		break;
++	case PRID_IMP_LX4280:
++		c->cputype = CPU_LX4280;
++		__cpu_name[cpu] = "Lexra LX4280";
++
++		c->options = MIPS_CPU_TLB | MIPS_CPU_3K_CACHE |
++			     MIPS_CPU_NOFPUEX;
++		c->ases = MIPS_ASE_MIPS16;
++		c->tlbsize = 64;	/* Assuming maximum number of TLB entries */
++		break;
++	case PRID_IMP_LX4380:
++		c->cputype = CPU_LX4380;
++		__cpu_name[cpu] = "Lexra LX4380 / RLX4181";
++
++		c->options = MIPS_CPU_TLB | MIPS_CPU_3K_CACHE |
++			     MIPS_CPU_NOFPUEX;
++		c->ases = MIPS_ASE_MIPS16;
++		c->tlbsize = 64;	/* Assuming maximum number of TLB entries */
++		break;
++	case PRID_IMP_LX5180:
++		c->cputype = CPU_LX5180;
++		__cpu_name[cpu] = "Lexra LX5180";
++
++		c->options = MIPS_CPU_TLB | MIPS_CPU_3K_CACHE |
++			     MIPS_CPU_NOFPUEX;
++		c->ases = MIPS_ASE_MIPS16;
++		c->tlbsize = 64;	/* Assuming maximum number of TLB entries */
++		break;
++	case PRID_IMP_LX5280:
++		c->cputype = CPU_LX5280;
++		__cpu_name[cpu] = "Lexra LX5280";
++
++		c->options = MIPS_CPU_TLB | MIPS_CPU_3K_CACHE |
++			     MIPS_CPU_NOFPUEX;
++		c->ases = MIPS_ASE_MIPS16;
++		c->tlbsize = 64;	/* Assuming maximum number of TLB entries */
++		break;
++	case PRID_IMP_LX8000:
++		c->cputype = CPU_LX8000;
++		__cpu_name[cpu] = "Lexra LX8000";
++
++		c->options = MIPS_CPU_TLB | MIPS_CPU_3K_CACHE |
++			     MIPS_CPU_NOFPUEX;
++		c->ases = MIPS_ASE_MIPS16;
++		c->tlbsize = 64;	/* Assuming maximum number of TLB entries */
++		break;
++	case PRID_IMP_LX8380:
++		c->cputype = CPU_LX8380;
++		__cpu_name[cpu] = "Lexra LX8380";
++
++		c->options = MIPS_CPU_TLB | MIPS_CPU_3K_CACHE |
++			     MIPS_CPU_NOFPUEX;
++		c->ases = MIPS_ASE_MIPS16;
++		c->tlbsize = 64;	/* Assuming maximum number of TLB entries */
++		break;
+ 	}
+ }
+ 
+diff --git a/arch/mips/kernel/entry.S b/arch/mips/kernel/entry.S
+index 7791840..b425be0 100644
+--- a/arch/mips/kernel/entry.S
++++ b/arch/mips/kernel/entry.S
+@@ -102,7 +102,8 @@ restore_partial:		# restore partial frame
+ 	SAVE_AT
+ 	SAVE_TEMP
+ 	LONG_L	v0, PT_STATUS(sp)
+-#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || \
++	defined(CONFIG_CPU_LEXRA)
+ 	and	v0, ST0_IEP
+ #else
+ 	and	v0, ST0_IE
+diff --git a/arch/mips/kernel/genex.S b/arch/mips/kernel/genex.S
+index 619e30e..3a898e4 100644
+--- a/arch/mips/kernel/genex.S
++++ b/arch/mips/kernel/genex.S
+@@ -165,7 +165,8 @@ NESTED(handle_int, PT_SIZE, sp)
+ 	.set	push
+ 	.set	noat
+ 	mfc0	k0, CP0_STATUS
+-#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || \
++	defined(CONFIG_CPU_LEXRA)
+ 	and	k0, ST0_IEP
+ 	bnez	k0, 1f
+ 
+@@ -578,7 +579,8 @@ isrdhwr:
+ 	get_saved_sp	/* k1 := current_thread_info */
+ 	.set	noreorder
+ 	MFC0	k0, CP0_EPC
+-#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || \
++	defined(CONFIG_CPU_LEXRA)
+ 	ori	k1, _THREAD_MASK
+ 	xori	k1, _THREAD_MASK
+ 	LONG_L	v1, TI_TP_VALUE(k1)
+diff --git a/arch/mips/kernel/mips_ksyms.c b/arch/mips/kernel/mips_ksyms.c
+index e2b6ab7..a97faee 100644
+--- a/arch/mips/kernel/mips_ksyms.c
++++ b/arch/mips/kernel/mips_ksyms.c
+@@ -79,7 +79,7 @@ EXPORT_SYMBOL(__strnlen_kernel_asm);
+ EXPORT_SYMBOL(__strnlen_user_nocheck_asm);
+ EXPORT_SYMBOL(__strnlen_user_asm);
+ 
+-#ifndef CONFIG_CPU_MIPSR6
++#if !defined(CONFIG_CPU_MIPSR6) && !defined(CONFIG_CPU_LEXRA)
+ EXPORT_SYMBOL(csum_partial);
+ EXPORT_SYMBOL(csum_partial_copy_nocheck);
+ EXPORT_SYMBOL(__csum_partial_copy_kernel);
+diff --git a/arch/mips/kernel/process.c b/arch/mips/kernel/process.c
+index 60af2ce..835d2bc 100644
+--- a/arch/mips/kernel/process.c
++++ b/arch/mips/kernel/process.c
+@@ -135,7 +135,8 @@ int copy_thread(unsigned long clone_flags, unsigned long usp,
+ 		p->thread.reg17 = kthread_arg;
+ 		p->thread.reg29 = childksp;
+ 		p->thread.reg31 = (unsigned long) ret_from_kernel_thread;
+-#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX) || \
++	defined(CONFIG_CPU_LEXRA)
+ 		status = (status & ~(ST0_KUP | ST0_IEP | ST0_IEC)) |
+ 			 ((status & (ST0_KUC | ST0_IEC)) << 2);
+ #else
+diff --git a/arch/mips/kernel/unaligned.c b/arch/mips/kernel/unaligned.c
+index 5c62065..49f776a 100644
+--- a/arch/mips/kernel/unaligned.c
++++ b/arch/mips/kernel/unaligned.c
+@@ -130,7 +130,7 @@ do {                                                        \
+ 			: "r" (addr), "i" (-EFAULT));       \
+ } while(0)
+ 
+-#ifndef CONFIG_CPU_MIPSR6
++#if !defined(CONFIG_CPU_MIPSR6) && !defined(CONFIG_CPU_LEXRA)
+ #define     _LoadW(addr, value, res, type)   \
+ do {                                                        \
+ 		__asm__ __volatile__ (                      \
+@@ -365,7 +365,7 @@ do {                                                        \
+ 			: "r" (value), "r" (addr), "i" (-EFAULT));\
+ } while(0)
+ 
+-#ifndef CONFIG_CPU_MIPSR6
++#if !defined(CONFIG_CPU_MIPSR6) && !defined(CONFIG_CPU_LEXRA)
+ #define     _StoreW(addr, value, res, type)  \
+ do {                                                        \
+ 		__asm__ __volatile__ (                      \
+@@ -509,7 +509,7 @@ do {                                                        \
+ 			: "r" (addr), "i" (-EFAULT));       \
+ } while(0)
+ 
+-#ifndef CONFIG_CPU_MIPSR6
++#if !defined(CONFIG_CPU_MIPSR6) && !defined(CONFIG_CPU_LEXRA)
+ #define     _LoadW(addr, value, res, type)   \
+ do {                                                        \
+ 		__asm__ __volatile__ (                      \
+@@ -592,7 +592,7 @@ do {                                                        \
+ 			: "r" (addr), "i" (-EFAULT));       \
+ } while(0)
+ 
+-#ifndef CONFIG_CPU_MIPSR6
++#if !defined(CONFIG_CPU_MIPSR6) && !defined(CONFIG_CPU_LEXRA)
+ #define     _LoadWU(addr, value, res, type)  \
+ do {                                                        \
+ 		__asm__ __volatile__ (                      \
+@@ -743,7 +743,7 @@ do {                                                        \
+ 			: "r" (value), "r" (addr), "i" (-EFAULT));\
+ } while(0)
+ 
+-#ifndef CONFIG_CPU_MIPSR6
++#if !defined(CONFIG_CPU_MIPSR6) && !defined(CONFIG_CPU_LEXRA)
+ #define     _StoreW(addr, value, res, type)  \
+ do {                                                        \
+ 		__asm__ __volatile__ (                      \
+diff --git a/arch/mips/kernel/vmlinux.lds.S b/arch/mips/kernel/vmlinux.lds.S
+index 6dc6789..072d170 100644
+--- a/arch/mips/kernel/vmlinux.lds.S
++++ b/arch/mips/kernel/vmlinux.lds.S
+@@ -62,6 +62,11 @@ SECTIONS
+ 		*(.fixup)
+ 		*(.gnu.warning)
+ 	} :text = 0
++	. = ALIGN(0x4000);
++	__iram = .;
++	.iram : {
++		*(.iram)
++	}
+ 	_etext = .;	/* End of text section */
+ 
+ 	EXCEPTION_TABLE(16)
+@@ -95,6 +100,14 @@ SECTIONS
+ 		DATA_DATA
+ 		CONSTRUCTORS
+ 	}
++	. = ALIGN(0x2000);
++	__dram = .;
++	__dram_start = .;
++	.dram : {
++		*(.dram)
++	}
++	. = ALIGN(0x2000);
++	__dram_end = .;
+ 	_gp = . + 0x8000;
+ 	.lit8 : {
+ 		*(.lit8)
+diff --git a/arch/mips/lib/Makefile b/arch/mips/lib/Makefile
+index 33a0211..3667db2 100644
+--- a/arch/mips/lib/Makefile
++++ b/arch/mips/lib/Makefile
+@@ -12,6 +12,7 @@ lib-$(CONFIG_GENERIC_CSUM)	:= $(filter-out csum_partial.o, $(lib-y))
+ 
+ obj-$(CONFIG_CPU_GENERIC_DUMP_TLB) += dump_tlb.o
+ obj-$(CONFIG_CPU_R3000)		+= r3k_dump_tlb.o
++obj-$(CONFIG_CPU_LEXRA)		+= r3k_dump_tlb.o
+ obj-$(CONFIG_CPU_TX39XX)	+= r3k_dump_tlb.o
+ 
+ # libgcc-style stuff needed in the kernel
+diff --git a/arch/mips/lib/memcpy.S b/arch/mips/lib/memcpy.S
+index 9245e17..f1ba082 100644
+--- a/arch/mips/lib/memcpy.S
++++ b/arch/mips/lib/memcpy.S
+@@ -293,7 +293,7 @@
+ 	 and	t0, src, ADDRMASK
+ 	PREFS(	0, 2*32(src) )
+ 	PREFD(	1, 2*32(dst) )
+-#ifndef CONFIG_CPU_MIPSR6
++#if !defined(CONFIG_CPU_MIPSR6) && !defined(CONFIG_CPU_LEXRA)
+ 	bnez	t1, .Ldst_unaligned\@
+ 	 nop
+ 	bnez	t0, .Lsrc_unaligned_dst_aligned\@
+@@ -381,7 +381,7 @@
+ 	bne	rem, len, 1b
+ 	.set	noreorder
+ 
+-#ifndef CONFIG_CPU_MIPSR6
++#if !defined(CONFIG_CPU_MIPSR6) && !defined(CONFIG_CPU_LEXRA)
+ 	/*
+ 	 * src and dst are aligned, need to copy rem bytes (rem < NBYTES)
+ 	 * A loop would do only a byte at a time with possible branch
+@@ -483,7 +483,7 @@
+ 	bne	len, rem, 1b
+ 	.set	noreorder
+ 
+-#endif /* !CONFIG_CPU_MIPSR6 */
++#endif /* !CONFIG_CPU_MIPSR6 && !CCONFIG_CPU_LEXRA */
+ .Lcopy_bytes_checklen\@:
+ 	beqz	len, .Ldone\@
+ 	 nop
+@@ -512,7 +512,7 @@
+ 	jr	ra
+ 	 nop
+ 
+-#ifdef CONFIG_CPU_MIPSR6
++#if defined(CONFIG_CPU_MIPSR6) || defined(CONFIG_CPU_LEXRA)
+ .Lcopy_unaligned_bytes\@:
+ 1:
+ 	COPY_BYTE(0)
+@@ -526,7 +526,7 @@
+ 	ADD	src, src, 8
+ 	b	1b
+ 	 ADD	dst, dst, 8
+-#endif /* CONFIG_CPU_MIPSR6 */
++#endif /* CONFIG_CPU_MIPSR6 || CONFIG_CPU_LEXRA */
+ 	.if __memcpy == 1
+ 	END(memcpy)
+ 	.set __memcpy, 0
+diff --git a/arch/mips/lib/memset.S b/arch/mips/lib/memset.S
+index 8f0019a..f94cfed 100644
+--- a/arch/mips/lib/memset.S
++++ b/arch/mips/lib/memset.S
+@@ -111,7 +111,7 @@
+ 	.set		at
+ #endif
+ 
+-#ifndef CONFIG_CPU_MIPSR6
++#if !defined(CONFIG_CPU_MIPSR6) && !defined(CONFIG_CPU_LEXRA)
+ 	R10KCBARRIER(0(ra))
+ #ifdef __MIPSEB__
+ 	EX(LONG_S_L, a1, (a0), .Lfirst_fixup\@)	/* make word/dword aligned */
+@@ -121,7 +121,7 @@
+ 	PTR_SUBU	a0, t0			/* long align ptr */
+ 	PTR_ADDU	a2, t0			/* correct size */
+ 
+-#else /* CONFIG_CPU_MIPSR6 */
++#else /* !CONFIG_CPU_MIPSR6 && !CONFIG_CPU_LEXRA */
+ #define STORE_BYTE(N)				\
+ 	EX(sb, a1, N(a0), .Lbyte_fixup\@);	\
+ 	beqz		t0, 0f;			\
+@@ -144,7 +144,7 @@
+ 	ori		a0, STORMASK
+ 	xori		a0, STORMASK
+ 	PTR_ADDIU	a0, STORSIZE
+-#endif /* CONFIG_CPU_MIPSR6 */
++#endif /* !CONFIG_CPU_MIPSR6 && !CONFIG_CPU_LEXRA */
+ 1:	ori		t1, a2, 0x3f		/* # of full blocks */
+ 	xori		t1, 0x3f
+ 	beqz		t1, .Lmemset_partial\@	/* no block to fill */
+@@ -184,7 +184,7 @@
+ 	andi		a2, STORMASK		/* At most one long to go */
+ 
+ 	beqz		a2, 1f
+-#ifndef CONFIG_CPU_MIPSR6
++#if !defined(CONFIG_CPU_MIPSR6) && !defined(CONFIG_CPU_LEXRA)
+ 	PTR_ADDU	a0, a2			/* What's left */
+ 	R10KCBARRIER(0(ra))
+ #ifdef __MIPSEB__
+diff --git a/arch/mips/mm/Makefile b/arch/mips/mm/Makefile
+index b4c64bd..3baac81 100644
+--- a/arch/mips/mm/Makefile
++++ b/arch/mips/mm/Makefile
+@@ -19,6 +19,7 @@ obj-$(CONFIG_HUGETLB_PAGE)	+= hugetlbpage.o
+ 
+ obj-$(CONFIG_CPU_R4K_CACHE_TLB) += c-r4k.o cex-gen.o tlb-r4k.o
+ obj-$(CONFIG_CPU_R3000)		+= c-r3k.o tlb-r3k.o
++obj-$(CONFIG_CPU_LEXRA)		+= c-lexra.o tlb-r3k.o
+ obj-$(CONFIG_CPU_R8000)		+= c-r4k.o cex-gen.o tlb-r8k.o
+ obj-$(CONFIG_CPU_SB1)		+= c-r4k.o cerr-sb1.o cex-sb1.o tlb-r4k.o
+ obj-$(CONFIG_CPU_TX39XX)	+= c-tx39.o tlb-r3k.o
+diff --git a/arch/mips/mm/tlb-r3k.c b/arch/mips/mm/tlb-r3k.c
+index b4f366f..70d91fa 100644
+--- a/arch/mips/mm/tlb-r3k.c
++++ b/arch/mips/mm/tlb-r3k.c
+@@ -278,9 +278,52 @@ void add_wired_entry(unsigned long entrylo0, unsigned long entrylo1,
+ 	}
+ }
+ 
++static unsigned long lexra_num_tlb_entries_probe(void)
++{
++	unsigned long i, flags;
++	int idx;
++
++	local_irq_save(flags);
++
++	for (i = 0; i < 64; i++) {
++		write_c0_entrylo0(0);
++		write_c0_entryhi(PAGE_SIZE * i);
++		write_c0_index(i << 8);
++		BARRIER;
++		tlb_write_indexed();
++		write_c0_index(i << 8);
++		BARRIER;
++		tlb_probe();
++		idx = read_c0_index();
++		if (idx < 0)
++			break;
++	}
++
++	local_irq_restore(flags);
++
++	local_flush_tlb_all();
++
++	pr_debug("Lexra: CPU has %lu TLB entries\n", i);
++
++	return i;
++}
++
+ void tlb_init(void)
+ {
+ 	switch (current_cpu_type()) {
++	case CPU_LX4180:
++	case CPU_LX4189:
++	case CPU_LX4280:
++	case CPU_LX4380:
++	case CPU_LX5180:
++	case CPU_LX5280:
++	case CPU_LX8000:
++	case CPU_LX8380:
++		/*
++		 * tlbsize of Lexra CPU can vary from 16 to 64,
++		 * thus must be detected dynamically.
++		 */
++		current_cpu_data.tlbsize = lexra_num_tlb_entries_probe();
+ 	case CPU_TX3922:
+ 	case CPU_TX3927:
+ 		r3k_have_wired_reg = 1;
+diff --git a/arch/mips/mm/tlbex.c b/arch/mips/mm/tlbex.c
+index 29f73e0..3f1f198 100644
+--- a/arch/mips/mm/tlbex.c
++++ b/arch/mips/mm/tlbex.c
+@@ -2410,6 +2410,14 @@ void build_tlb_refill_handler(void)
+ 	case CPU_TX3912:
+ 	case CPU_TX3922:
+ 	case CPU_TX3927:
++	case CPU_LX4180:
++	case CPU_LX4189:
++	case CPU_LX4280:
++	case CPU_LX4380:
++	case CPU_LX5180:
++	case CPU_LX5280:
++	case CPU_LX8000:
++	case CPU_LX8380:
+ #ifndef CONFIG_MIPS_PGD_C0_CONTEXT
+ 		if (cpu_has_local_ebase)
+ 			build_r3000_tlb_refill_handler();
+-- 
+2.5.0
+

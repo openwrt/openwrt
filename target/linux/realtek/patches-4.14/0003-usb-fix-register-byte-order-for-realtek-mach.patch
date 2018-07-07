@@ -1,0 +1,63 @@
+From 24b025a16961d21b945171e617445429bdb54bd1 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <hackpascal@gmail.com>
+Date: Mon, 20 Feb 2017 21:52:54 +0800
+Subject: [PATCH 3/5] usb: fix register byte order for realtek mach
+
+The register byte order of Realtek's EHCI/OHCI is little-endian,
+while Realtek's RLX-based SoCs have big-endian CPU.
+
+Both readl/writel and readl_be/writel_be return original byte order.
+
+This patch adds byte-order conversion for ehci_readl/ehci_writel and
+ohci_readl/ohci_writel functions.
+
+Signed-off-by: Weijie Gao <hackpascal@gmail.com>
+---
+ drivers/usb/host/ehci.h | 4 ++++
+ drivers/usb/host/ohci.h | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+Index: linux-4.14.13/drivers/usb/host/ehci.h
+===================================================================
+--- linux-4.14.13.orig/drivers/usb/host/ehci.h
++++ linux-4.14.13/drivers/usb/host/ehci.h
+@@ -755,6 +755,8 @@ static inline unsigned int ehci_readl(co
+ 	return ehci_big_endian_mmio(ehci) ?
+ 		readl_be(regs) :
+ 		readl(regs);
++#elif defined(CONFIG_REALTEK)
++	return __le32_to_cpu(readl(regs));
+ #else
+ 	return readl(regs);
+ #endif
+@@ -779,6 +781,8 @@ static inline void ehci_writel(const str
+ 	ehci_big_endian_mmio(ehci) ?
+ 		writel_be(val, regs) :
+ 		writel(val, regs);
++#elif defined(CONFIG_REALTEK)
++	writel(__le32_to_cpu(val), regs);
+ #else
+ 	if (ehci->imx28_write_fix)
+ 		imx28_ehci_writel(val, regs);
+Index: linux-4.14.13/drivers/usb/host/ohci.h
+===================================================================
+--- linux-4.14.13.orig/drivers/usb/host/ohci.h
++++ linux-4.14.13/drivers/usb/host/ohci.h
+@@ -565,6 +565,8 @@ static inline unsigned int _ohci_readl (
+ 	return big_endian_mmio(ohci) ?
+ 		readl_be (regs) :
+ 		readl (regs);
++#elif defined(CONFIG_REALTEK)
++	return __le32_to_cpu(readl(regs));
+ #else
+ 	return readl (regs);
+ #endif
+@@ -577,6 +579,8 @@ static inline void _ohci_writel (const s
+ 	big_endian_mmio(ohci) ?
+ 		writel_be (val, regs) :
+ 		writel (val, regs);
++#elif defined(CONFIG_REALTEK)
++	writel(__le32_to_cpu(val), regs);
+ #else
+ 		writel (val, regs);
+ #endif
