@@ -1,4 +1,4 @@
-From 0c88c72bf130c9276958dc6f595ea473ea357a75 Mon Sep 17 00:00:00 2001
+From 13872b8abfadfe70598c065c19d1db759477c4e6 Mon Sep 17 00:00:00 2001
 From: Kristian Evensen <kristian.evensen@gmail.com>
 Date: Sun, 17 Jun 2018 14:41:47 +0200
 Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
@@ -6,11 +6,13 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
 ---
  arch/arm/boot/dts/Makefile                         |   1 +
  .../dts/mt7623a-unielec-u7623-02-emmc-512M.dts     |  17 +
- .../boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi    | 374 +++++++++++++++++++++
- 3 files changed, 392 insertions(+)
+ .../boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi    | 375 +++++++++++++++++++++
+ 3 files changed, 393 insertions(+)
  create mode 100644 arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
  create mode 100644 arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi
 
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 3fec84fa0..e685ce9a4 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -1062,6 +1062,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
@@ -21,6 +23,9 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
  	mt7623n-rfb-nand.dtb \
  	mt7623n-bananapi-bpi-r2.dtb \
  	mt8127-moose.dtb \
+diff --git a/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
+new file mode 100644
+index 000000000..3b14eccd3
 --- /dev/null
 +++ b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
 @@ -0,0 +1,17 @@
@@ -41,9 +46,12 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
 +		reg = <0 0x80000000 0 0x20000000>;
 +	};
 +};
+diff --git a/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi
+new file mode 100644
+index 000000000..436b02f2d
 --- /dev/null
 +++ b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi
-@@ -0,0 +1,374 @@
+@@ -0,0 +1,375 @@
 +/*
 + * Copyright 2018 Kristian Evensen <kristian.evensen@gmail.com>
 + *
@@ -146,6 +154,7 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
 +	};
 +
 +	memory@80000000 {
++		device_type = "memory";
 +		reg = <0 0x80000000 0 0x40000000>;
 +	};
 +
@@ -418,3 +427,6 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
 +	status = "okay";
 +};
 +
+-- 
+2.14.1
+
