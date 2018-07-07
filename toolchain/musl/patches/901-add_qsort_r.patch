@@ -1,0 +1,136 @@
+Index: musl/include/stdlib.h
+===================================================================
+--- musl.orig/include/stdlib.h
++++ musl/include/stdlib.h
+@@ -54,6 +54,9 @@ int system (const char *);
+ 
+ void *bsearch (const void *, const void *, size_t, size_t, int (*)(const void *, const void *));
+ void qsort (void *, size_t, size_t, int (*)(const void *, const void *));
++#ifdef _GNU_SOURCE
++void qsort_r (void *, size_t, size_t, int (*)(const void *, const void *, void *), void *);
++#endif
+ 
+ int abs (int);
+ long labs (long);
+Index: musl/src/stdlib/qsort.c
+===================================================================
+--- musl.orig/src/stdlib/qsort.c
++++ musl/src/stdlib/qsort.c
+@@ -29,6 +29,7 @@
+ #define ntz(x) a_ctz_l((x))
+ 
+ typedef int (*cmpfun)(const void *, const void *);
++typedef int (*cmpfun_r)(const void *, const void *, void *);
+ 
+ static inline int pntz(size_t p[2]) {
+ 	int r = ntz(p[0] - 1);
+@@ -85,7 +86,7 @@ static inline void shr(size_t p[2], int
+ 	p[1] >>= n;
+ }
+ 
+-static void sift(unsigned char *head, size_t width, cmpfun cmp, int pshift, size_t lp[])
++static void sift(unsigned char *head, size_t width, cmpfun_r cmp, void *arg, int pshift, size_t lp[])
+ {
+ 	unsigned char *rt, *lf;
+ 	unsigned char *ar[14 * sizeof(size_t) + 1];
+@@ -96,10 +97,10 @@ static void sift(unsigned char *head, si
+ 		rt = head - width;
+ 		lf = head - width - lp[pshift - 2];
+ 
+-		if((*cmp)(ar[0], lf) >= 0 && (*cmp)(ar[0], rt) >= 0) {
++		if((*cmp)(ar[0], lf, arg) >= 0 && (*cmp)(ar[0], rt, arg) >= 0) {
+ 			break;
+ 		}
+-		if((*cmp)(lf, rt) >= 0) {
++		if((*cmp)(lf, rt, arg) >= 0) {
+ 			ar[i++] = lf;
+ 			head = lf;
+ 			pshift -= 1;
+@@ -112,7 +113,7 @@ static void sift(unsigned char *head, si
+ 	cycle(width, ar, i);
+ }
+ 
+-static void trinkle(unsigned char *head, size_t width, cmpfun cmp, size_t pp[2], int pshift, int trusty, size_t lp[])
++static void trinkle(unsigned char *head, size_t width, cmpfun_r cmp, void *arg, size_t pp[2], int pshift, int trusty, size_t lp[])
+ {
+ 	unsigned char *stepson,
+ 	              *rt, *lf;
+@@ -127,13 +128,13 @@ static void trinkle(unsigned char *head,
+ 	ar[0] = head;
+ 	while(p[0] != 1 || p[1] != 0) {
+ 		stepson = head - lp[pshift];
+-		if((*cmp)(stepson, ar[0]) <= 0) {
++		if((*cmp)(stepson, ar[0], arg) <= 0) {
+ 			break;
+ 		}
+ 		if(!trusty && pshift > 1) {
+ 			rt = head - width;
+ 			lf = head - width - lp[pshift - 2];
+-			if((*cmp)(rt, stepson) >= 0 || (*cmp)(lf, stepson) >= 0) {
++			if((*cmp)(rt, stepson, arg) >= 0 || (*cmp)(lf, stepson, arg) >= 0) {
+ 				break;
+ 			}
+ 		}
+@@ -147,11 +148,11 @@ static void trinkle(unsigned char *head,
+ 	}
+ 	if(!trusty) {
+ 		cycle(width, ar, i);
+-		sift(head, width, cmp, pshift, lp);
++		sift(head, width, cmp, arg, pshift, lp);
+ 	}
+ }
+ 
+-void qsort(void *base, size_t nel, size_t width, cmpfun cmp)
++void qsort_r(void *base, size_t nel, size_t width, cmpfun_r cmp, void *arg)
+ {
+ 	size_t lp[12*sizeof(size_t)];
+ 	size_t i, size = width * nel;
+@@ -170,14 +171,14 @@ void qsort(void *base, size_t nel, size_
+ 
+ 	while(head < high) {
+ 		if((p[0] & 3) == 3) {
+-			sift(head, width, cmp, pshift, lp);
++			sift(head, width, cmp, arg, pshift, lp);
+ 			shr(p, 2);
+ 			pshift += 2;
+ 		} else {
+ 			if(lp[pshift - 1] >= high - head) {
+-				trinkle(head, width, cmp, p, pshift, 0, lp);
++				trinkle(head, width, cmp, arg, p, pshift, 0, lp);
+ 			} else {
+-				sift(head, width, cmp, pshift, lp);
++				sift(head, width, cmp, arg, pshift, lp);
+ 			}
+ 			
+ 			if(pshift == 1) {
+@@ -193,7 +194,7 @@ void qsort(void *base, size_t nel, size_
+ 		head += width;
+ 	}
+ 
+-	trinkle(head, width, cmp, p, pshift, 0, lp);
++	trinkle(head, width, cmp, arg, p, pshift, 0, lp);
+ 
+ 	while(pshift != 1 || p[0] != 1 || p[1] != 0) {
+ 		if(pshift <= 1) {
+@@ -205,11 +206,19 @@ void qsort(void *base, size_t nel, size_
+ 			pshift -= 2;
+ 			p[0] ^= 7;
+ 			shr(p, 1);
+-			trinkle(head - lp[pshift] - width, width, cmp, p, pshift + 1, 1, lp);
++			trinkle(head - lp[pshift] - width, width, cmp, arg, p, pshift + 1, 1, lp);
+ 			shl(p, 1);
+ 			p[0] |= 1;
+-			trinkle(head - width, width, cmp, p, pshift, 1, lp);
++			trinkle(head - width, width, cmp, arg, p, pshift, 1, lp);
+ 		}
+ 		head -= width;
+ 	}
+ }
++
++static int helper(const void *a, const void *b, void *arg) {
++	return (*(cmpfun)arg)(a, b);
++}
++
++void qsort(void *base, size_t nel, size_t width, cmpfun cmp) {
++	qsort_r(base, nel, width, helper, (void *)cmp);
++}
