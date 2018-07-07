@@ -24,6 +24,10 @@ HOST_CONFIGURE_ARGS+= \
 		--disable-gdb \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 
+HOST_MAKE_FLAGS = \
+	AR=ar \
+	RANLIB=ranlib
+
 define Host/Prepare
 	$(call Host/Prepare/Default)
 	ln -snf $(notdir $(HOST_BUILD_DIR)) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
@@ -37,12 +41,9 @@ define Host/Configure
 	$(call Host/Configure/Default)
 endef
 
-define Host/Compile
-	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) all
-endef
-
 define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR) \
+		$(HOST_MAKE_FLAGS) \
 		prefix=$(TOOLCHAIN_DIR) \
 		install
 endef
