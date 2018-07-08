@@ -1,0 +1,393 @@
+--- a/drivers/base/firmware_loader.c
++++ b/drivers/base/firmware_loader.c
+@@ -158,8 +158,6 @@
+ 			fw->data = b_fw->data;
+ 			fw_copy_to_prealloc_buf(fw, buf, size);
+ 
+-							   
+-									
+ 			return true;
+ 		}
+ 	}
+@@ -193,30 +191,6 @@
+ }
+ #endif
+ 
+-				
+-				   
+-				   
+-				
+-				   
+-  
+-
+-static int loading_timeout = 60;	/* In seconds */
+-
+-static inline long firmware_loading_timeout(void)
+-{
+-	return loading_timeout > 0 ? loading_timeout * HZ : MAX_JIFFY_OFFSET;
+-}
+-
+-  
+-																 
+-																	  
+-								 
+-   
+-				 
+-							  
+-					   
+-  
+-
+ static void fw_state_init(struct fw_priv *fw_priv)
+ {
+ 	struct fw_state *fw_st = &fw_priv->fw_st;
+@@ -225,11 +199,6 @@
+ 	fw_st->status = FW_STATUS_UNKNOWN;
+ }
+ 
+-															
+- 
+-																
+- 
+-
+ static int __fw_state_wait_common(struct fw_priv *fw_priv, long timeout)
+ {
+ 	struct fw_state *fw_st = &fw_priv->fw_st;
+@@ -256,33 +225,10 @@
+ }
+ 
+ static inline void fw_state_start(struct fw_priv *fw_priv)
+-										 
+-								  
+-									  
+-									 
+-										 
+-								  
+-													
+-
+-																		  
+ {
+ 	__fw_state_set(fw_priv, FW_STATUS_LOADING);
+ }
+ 
+-									   
+-										   
+-
+-								   
+-
+-									 
+-										 
+-									 
+-										
+-									   
+-										   
+-												 
+-									   
+-
+ static inline void fw_state_done(struct fw_priv *fw_priv)
+ {
+ 	__fw_state_set(fw_priv, FW_STATUS_DONE);
+@@ -292,33 +238,16 @@
+ {
+ 	__fw_state_set(fw_priv, FW_STATUS_ABORTED);
+ }
+-								   
+-	 
+-						   
+-	  
+-											
+-										  
+-	 
+-						  
+-	  
+-								
+-								
+ 
+ static inline int fw_state_wait(struct fw_priv *fw_priv)
+ {
+ 	return __fw_state_wait_common(fw_priv, MAX_SCHEDULE_TIMEOUT);
+ }
+-		   
+ 
+ static bool __fw_state_check(struct fw_priv *fw_priv,
+ 			     enum fw_status status)
+ {
+ 	struct fw_state *fw_st = &fw_priv->fw_st;
+-														   
+-		   
+-	
+-					  
+-						   
+ 
+ 	return fw_st->status == status;
+ }
+@@ -328,24 +257,66 @@
+ 	return __fw_state_check(fw_priv, FW_STATUS_ABORTED);
+ }
+ 
+-					 
+-				 
+-					   
+-							
+-					   
+-			
+-			 
+-					   
+ #ifdef CONFIG_FW_LOADER_USER_HELPER
+-				   
+-				  
+-					 
+-			  
+-					 
+-							   
+-	  
+-				   
+-  
++
++/**
++ * struct firmware_fallback_config - firmware fallback configuratioon settings
++ *
++ * Helps describe and fine tune the fallback mechanism.
++ *
++ * @force_sysfs_fallback: force the sysfs fallback mechanism to be used
++ * 	as if one had enabled CONFIG_FW_LOADER_USER_HELPER_FALLBACK=y.
++ * @old_timeout: for internal use
++ * @loading_timeout: the timeout to wait for the fallback mechanism before
++ * 	giving up, in seconds.
++ */
++struct firmware_fallback_config {
++	const bool force_sysfs_fallback;
++	int old_timeout;
++	int loading_timeout;
++};
++
++static struct firmware_fallback_config fw_fallback_config = {
++	.force_sysfs_fallback = IS_ENABLED(CONFIG_FW_LOADER_USER_HELPER_FALLBACK),
++	.loading_timeout = 60,
++	.old_timeout = 60,
++};
++
++/* These getters are vetted to use int properly */
++static inline int __firmware_loading_timeout(void)
++{
++	return fw_fallback_config.loading_timeout;
++}
++
++/* These setters are vetted to use int properly */
++static void __fw_fallback_set_timeout(int timeout)
++{
++	fw_fallback_config.loading_timeout = timeout;
++}
++
++static inline long firmware_loading_timeout(void)
++{
++	return __firmware_loading_timeout() > 0 ?
++		__firmware_loading_timeout() * HZ : MAX_JIFFY_OFFSET;
++}
++
++/*
++ * use small loading timeout for caching devices' firmware because all these
++ * firmware images have been loaded successfully at lease once, also system is
++ * ready for completing firmware loading now. The maximum size of firmware in
++ * current distributions is about 2M bytes, so 10 secs should be enough.
++ */
++static void fw_fallback_set_cache_timeout(void)
++{
++	fw_fallback_config.old_timeout = __firmware_loading_timeout();
++	__fw_fallback_set_timeout(10);
++}
++
++/* Restores the timeout to the value last configured during normal operation */
++static void fw_fallback_set_default_timeout(void)
++{
++	__fw_fallback_set_timeout(fw_fallback_config.old_timeout);
++}
+ 
+ static inline bool fw_sysfs_done(struct fw_priv *fw_priv)
+ {
+@@ -363,16 +334,9 @@
+ }
+ 
+ #endif /* CONFIG_FW_LOADER_USER_HELPER */
+-							   
+ 
+ static int fw_cache_piggyback_on_request(const char *name);
+ 
+-																		
+-														  
+-							 
+-
+-									  
+-
+ static struct fw_priv *__allocate_fw_priv(const char *fw_name,
+ 					  struct firmware_cache *fwc,
+ 					  void *dbuf, size_t size)
+@@ -730,7 +694,7 @@
+ static ssize_t timeout_show(struct class *class, struct class_attribute *attr,
+ 			    char *buf)
+ {
+-	return sprintf(buf, "%d\n", loading_timeout);
++	return sprintf(buf, "%d\n", __firmware_loading_timeout());
+ }
+ 
+ /**
+@@ -749,9 +713,12 @@
+ static ssize_t timeout_store(struct class *class, struct class_attribute *attr,
+ 			     const char *buf, size_t count)
+ {
+-	loading_timeout = simple_strtol(buf, NULL, 10);
+-	if (loading_timeout < 0)
+-		loading_timeout = 0;
++	int tmp_loading_timeout = simple_strtol(buf, NULL, 10);
++
++	if (tmp_loading_timeout < 0)
++		tmp_loading_timeout = 0;
++
++	__fw_fallback_set_timeout(tmp_loading_timeout);
+ 
+ 	return count;
+ }
+@@ -774,7 +741,7 @@
+ {
+ 	if (add_uevent_var(env, "FIRMWARE=%s", fw_sysfs->fw_priv->fw_name))
+ 		return -ENOMEM;
+-	if (add_uevent_var(env, "TIMEOUT=%i", loading_timeout))
++	if (add_uevent_var(env, "TIMEOUT=%i", __firmware_loading_timeout()))
+ 		return -ENOMEM;
+ 	if (add_uevent_var(env, "ASYNC=%d", fw_sysfs->nowait))
+ 		return -ENOMEM;
+@@ -1239,19 +1206,14 @@
+ 	return ret;
+ }
+ 
+-#ifdef CONFIG_FW_LOADER_USER_HELPER_FALLBACK
+-static bool fw_force_sysfs_fallback(unsigned int opt_flags)
+-{
+-	return true;
+-}
+-#else
+ static bool fw_force_sysfs_fallback(unsigned int opt_flags)
+ {
++	if (fw_fallback_config.force_sysfs_fallback)
++		return true;
+ 	if (!(opt_flags & FW_OPT_USERHELPER))
+ 		return false;
+ 	return true;
+ }
+-#endif
+ 
+ static bool fw_run_sysfs_fallback(unsigned int opt_flags)
+ {
+@@ -1274,7 +1236,6 @@
+ }
+ #else /* CONFIG_FW_LOADER_USER_HELPER */
+ static int fw_sysfs_fallback(struct firmware *fw, const char *name,
+-																	 
+ 			     struct device *device,
+ 			     unsigned int opt_flags,
+ 			     int ret)
+@@ -1284,6 +1245,8 @@
+ }
+ 
+ static inline void kill_pending_fw_fallback_reqs(bool only_kill_custom) { }
++static inline void fw_fallback_set_cache_timeout(void) { }
++static inline void fw_fallback_set_default_timeout(void) { }
+ 
+ static inline int register_sysfs_loader(void)
+ {
+@@ -1390,11 +1353,7 @@
+ 			dev_warn(device,
+ 				 "Direct firmware load for %s failed with error %d\n",
+ 				 name, ret);
+-									  
+-													 
+ 		ret = fw_sysfs_fallback(fw, name, device, opt_flags, ret);
+-						
+-   
+ 	} else
+ 		ret = assign_fw(fw, device, opt_flags);
+ 
+@@ -1493,7 +1452,6 @@
+ 	__module_get(THIS_MODULE);
+ 	ret = _request_firmware(firmware_p, name, device, buf, size,
+ 				FW_OPT_UEVENT | FW_OPT_NOCACHE);
+-					
+ 	module_put(THIS_MODULE);
+ 	return ret;
+ }
+@@ -1835,7 +1793,6 @@
+ static void device_cache_fw_images(void)
+ {
+ 	struct firmware_cache *fwc = &fw_cache;
+-	int old_timeout;
+ 	DEFINE_WAIT(wait);
+ 
+ 	pr_debug("%s\n", __func__);
+@@ -1843,16 +1800,7 @@
+ 	/* cancel uncache work */
+ 	cancel_delayed_work_sync(&fwc->work);
+ 
+-	/*
+-	 * use small loading timeout for caching devices' firmware
+-	 * because all these firmware images have been loaded
+-	 * successfully at lease once, also system is ready for
+-	 * completing firmware loading now. The maximum size of
+-	 * firmware in current distributions is about 2M bytes,
+-	 * so 10 secs should be enough.
+-	 */
+-	old_timeout = loading_timeout;
+-	loading_timeout = 10;
++	fw_fallback_set_cache_timeout();
+ 
+ 	mutex_lock(&fw_lock);
+ 	fwc->state = FW_LOADER_START_CACHE;
+@@ -1862,7 +1810,7 @@
+ 	/* wait for completion of caching firmware for all devices */
+ 	async_synchronize_full_domain(&fw_cache_domain);
+ 
+-	loading_timeout = old_timeout;
++	fw_fallback_set_default_timeout();
+ }
+ 
+ /**
+@@ -1938,20 +1886,11 @@
+ static struct syscore_ops fw_syscore_ops = {
+ 	.suspend = fw_suspend,
+ };
+-	 
+-														  
+- 
+-		  
+- 
+-	  
+ 
+ static int __init register_fw_pm_ops(void)
+ {
+ 	int ret;
+-								
+-									 
+ 
+-					  
+ 	spin_lock_init(&fw_cache.name_lock);
+ 	INIT_LIST_HEAD(&fw_cache.fw_names);
+ 
+@@ -2030,19 +1969,13 @@
+ out:
+ 	unregister_fw_pm_ops();
+ 	return ret;
+-	  
+ }
+ 
+ static void __exit firmware_class_exit(void)
+ {
+ 	unregister_fw_pm_ops();
+-										 
+-											 
+-	  
+ 	unregister_reboot_notifier(&fw_shutdown_nb);
+ 	unregister_sysfs_loader();
+-								   
+-	  
+ }
+ 
+ fs_initcall(firmware_class_init);
+

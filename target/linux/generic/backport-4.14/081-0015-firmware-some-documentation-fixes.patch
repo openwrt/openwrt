@@ -1,0 +1,46 @@
+From b93815d0f37e7c4a056a143e6d782abc084ea56b Mon Sep 17 00:00:00 2001
+From: Andres Rodriguez <andresx7@gmail.com>
+Date: Wed, 25 Apr 2018 12:25:39 -0400
+Subject: [PATCH] firmware: some documentation fixes
+
+Including:
+ - Fixup outdated kernel-doc paths
+ - Slightly too short title underline
+ - Some typos
+
+Signed-off-by: Andres Rodriguez <andresx7@gmail.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ Documentation/driver-api/firmware/request_firmware.rst | 6 +++---
+ drivers/base/firmware_loader/fallback.c                | 4 ++--
+ drivers/base/firmware_loader/fallback.h                | 2 +-
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/base/firmware_loader/fallback.c b/drivers/base/firmware_loader/fallback.c
+index 31b5015b59fec..358354148decc 100644
+--- a/drivers/base/firmware_loader/fallback.c
++++ b/drivers/base/firmware_loader/fallback.c
+@@ -537,8 +537,8 @@ fw_create_instance(struct firmware *firmware, const char *fw_name,
+ }
+ 
+ /**
+- * fw_load_sysfs_fallback - load a firmware via the syfs fallback mechanism
+- * @fw_sysfs: firmware syfs information for the firmware to load
++ * fw_load_sysfs_fallback - load a firmware via the sysfs fallback mechanism
++ * @fw_sysfs: firmware sysfs information for the firmware to load
+  * @opt_flags: flags of options, FW_OPT_*
+  * @timeout: timeout to wait for the load
+  *
+diff --git a/drivers/base/firmware_loader/fallback.h b/drivers/base/firmware_loader/fallback.h
+index dfebc644ed35a..f8255670a6635 100644
+--- a/drivers/base/firmware_loader/fallback.h
++++ b/drivers/base/firmware_loader/fallback.h
+@@ -6,7 +6,7 @@
+ #include <linux/device.h>
+ 
+ /**
+- * struct firmware_fallback_config - firmware fallback configuratioon settings
++ * struct firmware_fallback_config - firmware fallback configuration settings
+  *
+  * Helps describe and fine tune the fallback mechanism.
+  *

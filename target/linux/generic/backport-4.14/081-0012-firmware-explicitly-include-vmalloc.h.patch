@@ -1,0 +1,51 @@
+From ccce305bd411f1c3a15eb8ca3b3cf827e38bd47c Mon Sep 17 00:00:00 2001
+From: Stephen Rothwell <sfr@canb.auug.org.au>
+Date: Wed, 21 Mar 2018 19:06:35 +1100
+Subject: [PATCH] firmware: explicitly include vmalloc.h
+
+After some other include file changes, fixes:
+
+drivers/base/firmware_loader/fallback.c: In function 'map_fw_priv_pages':
+drivers/base/firmware_loader/fallback.c:232:2: error: implicit declaration of function 'vunmap'; did you mean 'kunmap'? [-Werror=implicit-function-declaration]
+  vunmap(fw_priv->data);
+  ^~~~~~
+  kunmap
+drivers/base/firmware_loader/fallback.c:233:18: error: implicit declaration of function 'vmap'; did you mean 'kmap'? [-Werror=implicit-function-declaration]
+  fw_priv->data = vmap(fw_priv->pages, fw_priv->nr_pages, 0,
+                  ^~~~
+                  kmap
+drivers/base/firmware_loader/fallback.c:233:16: warning: assignment makes pointer from integer without a cast [-Wint-conversion]
+  fw_priv->data = vmap(fw_priv->pages, fw_priv->nr_pages, 0,
+                ^
+drivers/base/firmware_loader/fallback.c: In function 'firmware_loading_store':
+drivers/base/firmware_loader/fallback.c:274:4: error: implicit declaration of function 'vfree'; did you mean 'kvfree'? [-Werror=implicit-function-declaration]
+    vfree(fw_priv->pages);
+    ^~~~~
+    kvfree
+drivers/base/firmware_loader/fallback.c: In function 'fw_realloc_pages':
+drivers/base/firmware_loader/fallback.c:405:15: error: implicit declaration of function 'vmalloc'; did you mean 'kvmalloc'? [-Werror=implicit-function-declaration]
+   new_pages = vmalloc(new_array_size * sizeof(void *));
+               ^~~~~~~
+               kvmalloc
+drivers/base/firmware_loader/fallback.c:405:13: warning: assignment makes pointer from integer without a cast [-Wint-conversion]
+   new_pages = vmalloc(new_array_size * sizeof(void *));
+             ^
+
+Signed-off-by: Stephen Rothwell <sfr@canb.auug.org.au>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/base/firmware_loader/fallback.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/base/firmware_loader/fallback.c b/drivers/base/firmware_loader/fallback.c
+index 0a8ec7fec5857..d231bbcb95d7a 100644
+--- a/drivers/base/firmware_loader/fallback.c
++++ b/drivers/base/firmware_loader/fallback.c
+@@ -8,6 +8,7 @@
+ #include <linux/highmem.h>
+ #include <linux/umh.h>
+ #include <linux/sysctl.h>
++#include <linux/vmalloc.h>
+ 
+ #include "fallback.h"
+ #include "firmware.h"
