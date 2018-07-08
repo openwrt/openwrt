@@ -24,9 +24,11 @@ HOST_CONFIGURE_ARGS+= \
 		--disable-gdb \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 
-HOST_MAKE_FLAGS = \
-	AR=ar \
-	RANLIB=ranlib
+ifeq ($(HOST_OS),Darwin)
+	HOST_MAKE_FLAGS = \
+		AR=ar \
+		RANLIB=ranlib
+endif
 
 define Host/Prepare
 	$(call Host/Prepare/Default)
