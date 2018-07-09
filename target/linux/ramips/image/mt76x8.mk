@@ -220,7 +220,6 @@ define Device/tplink_tl-wr902ac-v3
   TPLINK_HWREV := 0x89
   TPLINK_HWREVADD := 0x1
   TPLINK_HVERSION := 3
-  IMAGES += factory.bin
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += tplink_tl-wr902ac-v3
