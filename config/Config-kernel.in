@@ -31,7 +31,7 @@ config KERNEL_CRASHLOG
 
 config KERNEL_SWAP
 	bool "Support for paging of anonymous memory (swap)"
-	default y
+	default y if !SMALL_FLASH
 
 config KERNEL_DEBUG_FS
 	bool "Compile the kernel with debug filesystem enabled"
@@ -133,7 +133,7 @@ config KERNEL_DEBUG_KERNEL
 
 config KERNEL_DEBUG_INFO
 	bool "Compile the kernel with debug information"
-	default y
+	default y if !SMALL_FLASH
 	select KERNEL_DEBUG_KERNEL
 	help
 	  This will compile your kernel and modules with debug information.
@@ -226,7 +226,7 @@ config KERNEL_COREDUMP
 config KERNEL_ELF_CORE
 	bool "Enable process core dump support"
 	select KERNEL_COREDUMP
-	default y
+	default y if !SMALL_FLASH
 
 config KERNEL_PROVE_LOCKING
 	bool "Enable kernel lock checking"
@@ -806,6 +806,11 @@ config KERNEL_DEVKMEM
 	  Say Y here if you want to support the /dev/kmem device. The
 	  /dev/kmem device is rarely used, but can be used for certain
 	  kind of kernel debugging operations.
+
+config KERNEL_SQUASHFS_FRAGMENT_CACHE_SIZE
+	int "Number of squashfs fragments cached"
+	default 2 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
+	default 3
 
 #
 # compile optimiziation setting
