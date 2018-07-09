@@ -20,6 +20,12 @@ define U-Boot/Default
   UBOOT_IMAGE:=u-boot.imx
 endef
 
+define U-Boot/mx6cuboxi
+   NAME:=SolidRun Cubox-i boards
+   UBOOT_IMAGE:=SPL u-boot.img
+   UBOOT_MAKE_FLAGS:=SPL u-boot.img
+endef
+
 define U-Boot/mx6sabresd
   NAME:=SABRE i.MX6Quad board
 endef
@@ -54,6 +60,7 @@ define U-Boot/wandboard
 endef
 
 UBOOT_TARGETS := \
+	mx6cuboxi \
 	mx6sabresd \
 	nitrogen6dl \
 	nitrogen6dl2g \
