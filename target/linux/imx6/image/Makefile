@@ -51,6 +51,13 @@ define Build/bootfs.tar.gz
 		-czvf $@ .
 endef
 
+define Build/boot-scr
+	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
+	-n '$(DEVICE_ID) OpenWrt bootscript' \
+	-d ./bootscript-$(DEVICE_NAME) \
+	$(BIN_DIR)/boot.scr
+endef
+
 #################################################
 # Devices
 #################################################
@@ -122,5 +129,14 @@ define Device/wandboard
   DEVICE_DTS := imx6dl-wandboard
 endef
 TARGET_DEVICES += wandboard
+
+define Device/cubox-i
+  KERNEL := kernel-bin | install-dtb | boot-scr
+  DEVICE_NAME := cubox
+  DEVICE_TITLE := SolidRun CuBox-i
+  DEVICE_PACKAGES := u-boot-mx6cuboxi kmod-drm-imx kmod-drm-imx-hdmi kmod-usb-hid
+  DEVICE_DTS := imx6q-cubox-i imx6dl-cubox-i
+endef
+TARGET_DEVICES += cubox-i
 
 $(eval $(call BuildImage))

@@ -1,0 +1,26 @@
+echo "CuBox OpenWrt Boot script"
+
+# Set console variable for both UART and HDMI
+setenv console console=ttymxc0,115200 video=mxcfb0:dev=hdmi,1920x1080M@60,if=RGB24,bpp=32
+
+# Find correct dtb
+if test ${board_name} = CUBOXI && test ${board_rev} = MX6DL; then
+	setenv fdt_name imx6dl.dtb;
+elif test ${board_name} = CUBOXI && test ${board_rev} = MX6Q; then
+	setenv fdt_name imx6q-cubox-i.dtb;
+fi
+
+# Set correct devtype and partition
+if test ${devtype} != mmc; then setenv devtype mmc; fi
+if mmc dev 0; then
+	setenv mmcdev 0
+elif mmc dev 1; then
+	setenv mmcdev 1
+fi
+
+# Boot from the SD card is supported at the moment
+setenv bootargs "${console} root=/dev/mmcblk1p1 rw rootwait"
+mmc dev ${mmcdev}
+load ${devtype} ${mmcdev}:${devplist} ${kernel_addr_r} /boot/openwrt-imx6-cubox-i-uImage
+load ${devtype} ${mmcdev}:${devplist} ${fdt_addr_r} /boot/openwrt-imx6-${fdt_name}
+bootz ${kernel_addr_r} - ${fdt_addr_r}
