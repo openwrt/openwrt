@@ -16,11 +16,7 @@ FEEDS_DISABLED:=$(filter-out $(FEEDS_ENABLED),$(FEEDS_AVAILABLE))
 PACKAGE_SUBDIRS=$(PACKAGE_DIR)
 ifneq ($(CONFIG_PER_FEED_REPO),)
   PACKAGE_SUBDIRS += $(OUTPUT_DIR)/packages/$(ARCH_PACKAGES)/base
-  ifneq ($(CONFIG_PER_FEED_REPO_ADD_DISABLED),)
-    PACKAGE_SUBDIRS += $(foreach FEED,$(FEEDS_AVAILABLE),$(OUTPUT_DIR)/packages/$(ARCH_PACKAGES)/$(FEED))
-  else
-    PACKAGE_SUBDIRS += $(foreach FEED,$(FEEDS_ENABLED),$(OUTPUT_DIR)/packages/$(ARCH_PACKAGES)/$(FEED))
-  endif
+  PACKAGE_SUBDIRS += $(foreach FEED,$(FEEDS_AVAILABLE),$(OUTPUT_DIR)/packages/$(ARCH_PACKAGES)/$(FEED))
 endif
 
 opkg_package_files = $(wildcard \
