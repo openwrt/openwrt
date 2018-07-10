@@ -19,16 +19,10 @@ include $(INCLUDE_DIR)/toolchain-build.mk
 HOST_CONFIGURE_ARGS+= \
 		--target=$(REAL_GNU_TARGET_NAME) \
 		--with-sysroot=$(TOOLCHAIN_DIR) \
-		--enable-lto \
+		--disable-lto \
 		--disable-werror \
 		--disable-gdb \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
-
-ifeq ($(HOST_OS),Darwin)
-	HOST_MAKE_FLAGS = \
-		AR=ar \
-		RANLIB=ranlib
-endif
 
 define Host/Prepare
 	$(call Host/Prepare/Default)
