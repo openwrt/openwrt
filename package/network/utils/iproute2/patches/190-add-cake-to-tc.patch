@@ -1563,14 +1563,3 @@
 +	.print_qopt	= cake_print_opt,
 +	.print_xstats	= cake_print_xstats,
 +};
---- a/tc/q_ingress.c
-+++ b/tc/q_ingress.c
-@@ -40,7 +40,7 @@ static int ingress_parse_opt(struct qdis
- static int ingress_print_opt(struct qdisc_util *qu, FILE *f,
- 			     struct rtattr *opt)
- {
--	fprintf(f, "---------------- ");
-+	print_string(PRINT_FP, NULL, "---------------- ", NULL);
- 	return 0;
- }
- 

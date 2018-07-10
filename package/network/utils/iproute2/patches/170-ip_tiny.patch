@@ -40,7 +40,7 @@
 +"                   vrf | sr }\n"
 +#endif
  "       OPTIONS := { -V[ersion] | -s[tatistics] | -d[etails] | -r[esolve] |\n"
- "                    -h[uman-readable] | -iec |\n"
+ "                    -h[uman-readable] | -iec | -j[son] | -p[retty] |\n"
  "                    -f[amily] { inet | inet6 | ipx | dnet | mpls | bridge | link } |\n"
 @@ -73,32 +79,44 @@ static const struct cmd {
  	int (*func)(int argc, char **argv);
@@ -89,7 +89,7 @@
  	{ "help",	do_help },
 --- a/lib/utils.c
 +++ b/lib/utils.c
-@@ -983,6 +983,7 @@ const char *rt_addr_n2a_r(int af, int le
+@@ -1010,6 +1010,7 @@ const char *rt_addr_n2a_r(int af, int le
  		return inet_ntop(af, addr, buf, buflen);
  	case AF_MPLS:
  		return mpls_ntop(af, addr, buf, buflen);
@@ -97,7 +97,7 @@
  	case AF_IPX:
  		return ipx_ntop(af, addr, buf, buflen);
  	case AF_DECnet:
-@@ -992,6 +993,7 @@ const char *rt_addr_n2a_r(int af, int le
+@@ -1019,6 +1020,7 @@ const char *rt_addr_n2a_r(int af, int le
  		memcpy(dna.a_addr, addr, 2);
  		return dnet_ntop(af, &dna, buf, buflen);
  	}
@@ -115,6 +115,6 @@
 +  CFLAGS += -DIPROUTE2_TINY
 +endif
 +
- UTILOBJ = utils.o rt_names.o ll_types.o ll_proto.o ll_addr.o \
+ UTILOBJ = utils.o rt_names.o ll_map.o ll_types.o ll_proto.o ll_addr.o \
  	inet_proto.o namespace.o json_writer.o json_print.o \
  	names.o color.o bpf.o exec.o fs.o
