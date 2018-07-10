@@ -10,7 +10,7 @@ BOARD:=layerscape
 BOARDNAME:=NXP Layerscape
 KERNEL_PATCHVER:=4.9
 FEATURES:=squashfs nand usb pcie gpio fpu ubifs
-SUBTARGETS:=armv8_64b armv8_32b
+SUBTARGETS:=armv8_64b armv8_32b armv7
 MAINTAINER:=Yangbo Lu <yangbo.lu@nxp.com>
 
 define Target/Description
