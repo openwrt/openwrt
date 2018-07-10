@@ -46,6 +46,10 @@
 #define TL_WR841NV9_GPIO_BTN_RESET	12
 #define TL_WR841NV9_GPIO_BTN_WIFI	17
 
+#define TL_WR841NV10_CN_GPIO_LED_SYSTEM	13
+
+#define TL_WR841NV10_CN_GPIO_BTN_RESET	12
+
 #define TL_WR841NV11_GPIO_LED_SYSTEM	1
 #define TL_WR841NV11_GPIO_LED_QSS	3
 #define TL_WR841NV11_GPIO_LED_WAN	4
@@ -179,6 +183,25 @@ static struct gpio_keys_button tl_wr841n_v9_gpio_keys[] __initdata = {
 		.code		= KEY_RFKILL,
 		.debounce_interval = TL_WR841NV9_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= TL_WR841NV9_GPIO_BTN_WIFI,
+		.active_low	= 1,
+	}
+};
+
+static struct gpio_led tl_wr841n_v10_cn_leds_gpio[] __initdata = {
+	{
+		.name		= "tp-link:green:system",
+		.gpio		= TL_WR841NV10_CN_GPIO_LED_SYSTEM,
+		.active_low	= 1,
+	}
+};
+
+static struct gpio_keys_button tl_wr841n_v10_cn_gpio_keys[] __initdata = {
+	{
+		.desc		= "QSS button",
+		.type		= EV_KEY,
+		.code		= KEY_WPS_BUTTON,
+		.debounce_interval = TL_WR841NV9_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= TL_WR841NV10_CN_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}
 };
@@ -408,6 +431,21 @@ static void __init tl_wr841n_v9_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_TL_WR841N_V9, "TL-WR841N-v9", "TP-LINK TL-WR841N/ND v9",
 	     tl_wr841n_v9_setup);
+
+static void __init tl_wr841n_v10_cn_setup(void)
+{
+	tl_ap143_setup();
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wr841n_v10_cn_leds_gpio),
+				 tl_wr841n_v10_cn_leds_gpio);
+
+	ath79_register_gpio_keys_polled(1, TL_WR841NV9_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_wr841n_v10_cn_gpio_keys),
+					tl_wr841n_v10_cn_gpio_keys);
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_WR841N_V10_CN, "TL-WR841N-v10-cn", "TP-LINK TL-WR841N/ND v10 (CN)",
+	     tl_wr841n_v10_cn_setup);
 
 static void __init tl_wr841n_v11_setup(void)
 {
