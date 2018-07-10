@@ -58,6 +58,11 @@ define Package/layerscape-rcw/ls2088ardb
   CONFIG:=ls2088ardb/FFFFFFFF_PP_HH_0x2a_0x41/rcw_1800.bin
 endef
 
+define Package/layerscape-rcw/ls1021atwr
+  TITLE:=NXP LS1021ATWR RCW binary
+  CONFIG:=ls1021atwr/SSR_PNS_30/rcw_1200.bin
+endef
+
 define Package/layerscape-rcw/Install
   define Package/layerscape-rcw-$(1)/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
@@ -71,7 +76,8 @@ RCWS := \
   ls1043ardb \
   ls1046ardb \
   ls1088ardb \
-  ls2088ardb
+  ls2088ardb \
+  ls1021atwr
 
 $(foreach rcw,$(RCWS), \
 	$(eval $(Package/layerscape-rcw/$(rcw))) \

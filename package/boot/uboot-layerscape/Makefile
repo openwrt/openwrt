@@ -59,13 +59,21 @@ define U-Boot/ls2088ardb
   UBOOT_CONFIG:=ls2080ardb
 endef
 
+define U-Boot/ls1021atwr
+  NAME:=NXP LS1021ATWR
+  BUILD_SUBTARGET:=armv7
+  UBOOT_CONFIG:=ls1021atwr_nor
+  ENV_SIZE:=0x20000
+endef
+
 UBOOT_TARGETS := \
   ls1012ardb \
   ls1012afrdm \
   ls1043ardb \
   ls1046ardb \
   ls1088ardb \
-  ls2088ardb
+  ls2088ardb \
+  ls1021atwr
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)

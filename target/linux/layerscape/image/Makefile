@@ -43,4 +43,8 @@ ifeq ($(SUBTARGET),armv8_32b)
 include armv8_32b.mk
 endif
 
+ifeq ($(SUBTARGET),armv7)
+include armv7.mk
+endif
+
 $(eval $(call BuildImage))
