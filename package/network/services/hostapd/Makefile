@@ -32,20 +32,10 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_DRIVER_11N_SUPPORT \
 	CONFIG_DRIVER_11AC_SUPPORT \
 
-WPAD_PROVIDERS:=wpad-mini wpad wpad-openssl wpad-wolfssl \
-		wpad-mesh-openssl wpad-mesh-wolfssl
-
-SUPPLICANT_ONLY_PROVIDERS:=wpa-supplicant-mini wpa-supplicant-p2p \
-			   wpa-supplicant wpa-supplicant-openssl wpa-supplicant-wolfssl \
-			   wpa-supplicant-mesh-openssl wpa-supplicant-mesh-wolfssl
-
-HOSTAPD_ONLY_PROVIDERS:=hostapd-mini hostapd hostapd-openssl hostapd-wolfssl
-
 EAPOL_TEST_PROVIDERS:=eapol-test eapol-test-openssl eapol-test-wolfssl
 
-SUPPLICANT_PROVIDERS:=$(WPAD_PROVIDERS) $(SUPPLICANT_ONLY_PROVIDERS)
-HOSTAPD_PROVIDERS:=$(WPAD_PROVIDERS) $(HOSTAPD_ONLY_PROVIDERS)
-ANY_PROVIDERS:=$(WPAD_PROVIDERS) $(SUPPLICANT_ONLY_PROVIDERS) $(HOSTAPD_ONLY_PROVIDERS)
+SUPPLICANT_PROVIDERS:=
+HOSTAPD_PROVIDERS:=
 
 LOCAL_TYPE=$(strip \
 		$(if $(findstring wpad,$(BUILD_VARIANT)),wpad, \
@@ -153,10 +143,12 @@ define Package/hostapd/Default
   URL:=http://hostap.epitest.fi/
   DEPENDS:=$(DRV_DEPENDS) +hostapd-common +libubus
   PROVIDES:=hostapd
+  CONFLICTS:=$(HOSTAPD_PROVIDERS)
+  HOSTAPD_PROVIDERS+=$(1)
 endef
 
 define Package/hostapd
-$(call Package/hostapd/Default)
+$(call Package/hostapd/Default,$(1))
   TITLE+= (full)
   VARIANT:=full-internal
 endef
@@ -167,34 +159,181 @@ define Package/hostapd/description
 endef
 
 define Package/hostapd-openssl
-$(call Package/hostapd/Default)
+$(call Package/hostapd/Default,$(1))
   TITLE+= (full)
   VARIANT:=full-openssl
   DEPENDS+=+libopenssl
-  CONFLICTS:=$(filter-out hostapd-openssl ,$(HOSTAPD_ONLY_PROVIDERS))
 endef
 
 Package/hostapd-openssl/description = $(Package/hostapd/description)
 
 define Package/hostapd-wolfssl
-$(call Package/hostapd/Default)
+$(call Package/hostapd/Default,$(1))
   TITLE+= (full)
   VARIANT:=full-wolfssl
   DEPENDS+=+libwolfssl
-  CONFLICTS:=$(filter-out hostapd-openssl ,$(filter-out hostapd-wolfssl ,$(HOSTAPD_ONLY_PROVIDERS)))
 endef
 
 Package/hostapd-wolfssl/description = $(Package/hostapd/description)
 
 define Package/hostapd-mini
-$(call Package/hostapd/Default)
+$(call Package/hostapd/Default,$(1))
   TITLE+= (WPA-PSK only)
   VARIANT:=mini
-  CONFLICTS:=$(filter-out hostapd-wolfssl ,$(filter-out hostapd-openssl ,$(filter-out hostapd-mini ,$(HOSTAPD_ONLY_PROVIDERS))))
 endef
 
 define Package/hostapd-mini/description
  This package contains a minimal IEEE 802.1x/WPA Authenticator (WPA-PSK only).
+endef
+
+
+define Package/wpad/Default
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=IEEE 802.1x Authenticator/Supplicant
+  DEPENDS:=$(DRV_DEPENDS) +hostapd-common +libubus
+  URL:=http://hostap.epitest.fi/
+  PROVIDES:=hostapd wpa-supplicant
+  CONFLICTS:=$(HOSTAPD_PROVIDERS) $(SUPPLICANT_PROVIDERS)
+  HOSTAPD_PROVIDERS+=$(1)
+  SUPPLICANT_PROVIDERS+=$(1)
+endef
+
+define Package/wpad
+$(call Package/wpad/Default,$(1))
+  TITLE+= (full)
+  VARIANT:=wpad-full-internal
+endef
+
+define Package/wpad/description
+ This package contains a full featured IEEE 802.1x/WPA/EAP/RADIUS
+ Authenticator and Supplicant
+endef
+
+define Package/wpad-openssl
+$(call Package/wpad/Default,$(1))
+  TITLE+= (full)
+  VARIANT:=wpad-full-openssl
+  DEPENDS+=+libopenssl
+endef
+
+Package/wpad-openssl/description = $(Package/wpad/description)
+
+define Package/wpad-wolfssl
+$(call Package/wpad/Default,$(1))
+  TITLE+= (full)
+  VARIANT:=wpad-full-wolfssl
+  DEPENDS+=+libwolfssl
+endef
+
+Package/wpad-wolfssl/description = $(Package/wpad/description)
+
+define Package/wpad-mini
+$(call Package/wpad/Default,$(1))
+  TITLE+= (WPA-PSK only)
+  VARIANT:=wpad-mini
+endef
+
+define Package/wpad-mini/description
+ This package contains a minimal IEEE 802.1x/WPA Authenticator and Supplicant (WPA-PSK only).
+endef
+
+define Package/wpad-mesh
+$(call Package/wpad/Default,$(1))
+  TITLE+= (with 802.11s mesh and SAE support)
+  DEPENDS+=@PACKAGE_kmod-cfg80211 @(!TARGET_uml||BROKEN)
+  PROVIDES+=wpa-supplicant-mesh wpad-mesh
+endef
+
+define Package/wpad-mesh/description
+ This package contains a minimal IEEE 802.1x/WPA Authenticator and Supplicant (with 802.11s mesh and SAE support).
+endef
+
+define Package/wpad-mesh-openssl
+$(call Package/wpad-mesh,$(1))
+  DEPENDS+=+libopenssl
+  VARIANT:=wpad-mesh-openssl
+endef
+
+Package/wpad-mesh-openssl/description = $(Package/wpad-mesh/description)
+
+define Package/wpad-mesh-wolfssl
+$(call Package/wpad-mesh,$(1))
+  DEPENDS+=+libwolfssl
+  VARIANT:=wpad-mesh-wolfssl
+endef
+
+Package/wpad-mesh-wolfssl/description = $(Package/wpad-mesh/description)
+
+
+define Package/wpa-supplicant/Default
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=WPA Supplicant
+  URL:=http://hostap.epitest.fi/wpa_supplicant/
+  DEPENDS:=$(DRV_DEPENDS)
+  PROVIDES:=wpa-supplicant
+  CONFLICTS:=$(SUPPLICANT_PROVIDERS)
+  SUPPLICANT_PROVIDERS+=$(1)
+endef
+
+define Package/wpa-supplicant
+$(call Package/wpa-supplicant/Default,$(1))
+  VARIANT:=supplicant-full-internal
+endef
+
+define Package/wpa-supplicant-openssl
+$(call Package/wpa-supplicant/Default,$(1))
+  VARIANT:=supplicant-full-openssl
+  DEPENDS+=+libopenssl
+endef
+
+define Package/wpa-supplicant-wolfssl
+$(call Package/wpa-supplicant/Default,$(1))
+  VARIANT:=supplicant-full-wolfssl
+  DEPENDS+=+libwolfssl
+endef
+
+define Package/wpa-supplicant/config
+	source "$(SOURCE)/Config.in"
+endef
+
+define Package/wpa-supplicant-p2p
+$(call Package/wpa-supplicant/Default,$(1))
+  TITLE+= (with Wi-Fi P2P support)
+  DEPENDS+=@PACKAGE_kmod-cfg80211
+endef
+
+define Package/wpa-supplicant-mesh/Default
+$(call Package/wpa-supplicant/Default,$(1))
+  TITLE+= (with 802.11s and SAE)
+  DEPENDS+=@PACKAGE_kmod-cfg80211 @(!TARGET_uml||BROKEN)
+  PROVIDES+=wpa-supplicant-mesh
+endef
+
+define Package/wpa-supplicant-mesh-openssl
+$(call Package/wpa-supplicant-mesh/Default,$(1))
+  VARIANT:=supplicant-mesh-openssl
+  DEPENDS+=+libopenssl
+endef
+
+define Package/wpa-supplicant-mesh-wolfssl
+$(call Package/wpa-supplicant-mesh/Default,$(1))
+  VARIANT:=supplicant-mesh-wolfssl
+  DEPENDS+=+libwolfssl
+endef
+
+define Package/wpa-supplicant-mini
+$(call Package/wpa-supplicant/Default,$(1))
+  TITLE+= (minimal version)
+  VARIANT:=supplicant-mini
+endef
+
+
+define Package/hostapd-common
+  TITLE:=hostapd/wpa_supplicant common support files
+  SECTION:=net
+  CATEGORY:=Network
 endef
 
 define Package/hostapd-utils
@@ -210,198 +349,11 @@ define Package/hostapd-utils/description
  IEEE 802.1x/WPA/EAP/RADIUS Authenticator.
 endef
 
-
-define Package/wpad/Default
-  SECTION:=net
-  CATEGORY:=Network
-  TITLE:=IEEE 802.1x Authenticator/Supplicant
-  DEPENDS:=$(DRV_DEPENDS) +hostapd-common +libubus
-  URL:=http://hostap.epitest.fi/
-  PROVIDES:=hostapd wpa-supplicant
-endef
-
-define Package/wpad
-$(call Package/wpad/Default)
-  TITLE+= (full)
-  VARIANT:=wpad-full-internal
-  CONFLICTS:=$(filter-out wpad-mesh-wolfssl,\
-             $(filter-out wpad-mesh-openssl ,\
-             $(filter-out wpad-openssl ,\
-             $(filter-out wpad-wolfssl ,\
-             $(filter-out wpad-wolfssl ,\
-             $(filter-out wpad ,\
-             $(ANY_PROVIDERS)\
-             ))))))
-endef
-
-define Package/wpad/description
- This package contains a full featured IEEE 802.1x/WPA/EAP/RADIUS
- Authenticator and Supplicant
-endef
-
-define Package/wpad-openssl
-$(call Package/wpad/Default)
-  TITLE+= (full)
-  VARIANT:=wpad-full-openssl
-  DEPENDS+=+libopenssl
-  CONFLICTS:=$(filter-out wpad-mesh-wolfssl,\
-             $(filter-out wpad-mesh-openssl ,\
-             $(filter-out wpad-openssl ,\
-             $(ANY_PROVIDERS))))
-endef
-
-Package/wpad-openssl/description = $(Package/wpad/description)
-
-define Package/wpad-wolfssl
-$(call Package/wpad/Default)
-  TITLE+= (full)
-  VARIANT:=wpad-full-wolfssl
-  DEPENDS+=+libwolfssl
-  CONFLICTS:=$(filter-out wpad-mesh-wolfssl ,\
-             $(filter-out wpad-mesh-openssl ,\
-             $(filter-out wpad-openssl ,\
-             $(filter-out wpad-wolfssl ,\
-             $(ANY_PROVIDERS)))))
-endef
-
-Package/wpad-wolfssl/description = $(Package/wpad/description)
-
-define Package/wpad-mini
-$(call Package/wpad/Default)
-  TITLE+= (WPA-PSK only)
-  VARIANT:=wpad-mini
-  CONFLICTS:=$(SUPPLICANT_ONLY_PROVIDERS)
-endef
-
-define Package/wpad-mini/description
- This package contains a minimal IEEE 802.1x/WPA Authenticator and Supplicant (WPA-PSK only).
-endef
-
-define Package/wpad-mesh
-$(call Package/wpad/Default)
-  TITLE+= (with 802.11s mesh and SAE support)
-  DEPENDS+=@PACKAGE_kmod-cfg80211 @(!TARGET_uml||BROKEN)
-  PROVIDES+=wpa-supplicant-mesh wpad-mesh
-endef
-
-define Package/wpad-mesh/description
- This package contains a minimal IEEE 802.1x/WPA Authenticator and Supplicant (with 802.11s mesh and SAE support).
-endef
-
-define Package/wpad-mesh-openssl
-$(call Package/wpad-mesh)
-  DEPENDS+=+libopenssl
-  VARIANT:=wpad-mesh-openssl
-  CONFLICTS:=$(filter-out wpad-mesh-openssl ,$(ANY_PROVIDERS))
-endef
-
-Package/wpad-mesh-openssl/description = $(Package/wpad-mesh/description)
-
-define Package/wpad-mesh-wolfssl
-$(call Package/wpad-mesh)
-  DEPENDS+=+libwolfssl
-  VARIANT:=wpad-mesh-wolfssl
-  CONFLICTS:=$(filter-out wpad-mesh-openssl ,$(filter-out wpad-mesh-wolfssl ,$(ANY_PROVIDERS)))
-endef
-
-Package/wpad-mesh-wolfssl/description = $(Package/wpad-mesh/description)
-
-
-define Package/wpa-supplicant/Default
-  SECTION:=net
-  CATEGORY:=Network
-  TITLE:=WPA Supplicant
-  URL:=http://hostap.epitest.fi/wpa_supplicant/
-  DEPENDS:=$(DRV_DEPENDS)
-  PROVIDES:=wpa-supplicant
-endef
-
-define Package/wpa-supplicant
-  $(Package/wpa-supplicant/Default)
-  VARIANT:=supplicant-full-internal
-  CONFLICTS:=wpa-supplicant-mini
-endef
-
-define Package/wpa-supplicant-openssl
-  $(Package/wpa-supplicant/Default)
-  CONFLICTS:=$(filter-out wpa-supplicant-wolfssl ,\
-	     $(filter-out wpa-supplicant-openssl ,\
-	     $(filter-out wpa-supplicant-mesh-openssl ,\
-	     $(filter-out wpa-supplicant-mesh-wolfssl ,\
-	     $(SUPPLICANT_ONLY_PROVIDERS)\
-	     ))))
-  VARIANT:=supplicant-full-openssl
-  DEPENDS+=+libopenssl
-endef
-
-define Package/wpa-supplicant-wolfssl
-  $(Package/wpa-supplicant/Default)
-  CONFLICTS:=$(filter-out wpa-supplicant-wolfssl ,\
-	     $(filter-out wpa-supplicant-openssl ,\
-	     $(filter-out wpa-supplicant-mesh-openssl ,\
-	     $(filter-out wpa-supplicant-mesh-wolfssl ,\
-	     $(SUPPLICANT_ONLY_PROVIDERS)\
-	     ))))
-  VARIANT:=supplicant-full-wolfssl
-  DEPENDS+=+libwolfssl
-endef
-
-define Package/wpa-supplicant/config
-	source "$(SOURCE)/Config.in"
-endef
-
-define Package/wpa-supplicant-p2p
-  $(Package/wpa-supplicant/Default)
-  TITLE+= (with Wi-Fi P2P support)
-  DEPENDS+=@PACKAGE_kmod-cfg80211
-  CONFLICTS:=$(filter-out wpa-supplicant-openssl ,\
-	     $(filter-out wpa-supplicant-wolfssl ,\
-	     $(filter-out wpa-supplicant-p2p ,\
-	     $(filter-out wpa-supplicant-mesh-openssl ,\
-	     $(filter-out wpa-supplicant-mesh-wolfssl ,\
-	     $(SUPPLICANT_ONLY_PROVIDERS)\
-	     )))))
-  VARIANT:=supplicant-p2p-internal
-endef
-
-define Package/wpa-supplicant-mesh/Default
-  $(Package/wpa-supplicant/Default)
-  TITLE+= (with 802.11s and SAE)
-  DEPENDS+=@PACKAGE_kmod-cfg80211 @(!TARGET_uml||BROKEN)
-  PROVIDES+=wpa-supplicant-mesh
-endef
-
-define Package/wpa-supplicant-mesh-openssl
-  $(Package/wpa-supplicant-mesh/Default)
-  VARIANT:=supplicant-mesh-openssl
-  CONFLICTS:=$(filter-out wpa-supplicant-mesh-openssl ,$(SUPPLICANT_ONLY_PROVIDERS))
-  DEPENDS+=+libopenssl
-endef
-
-define Package/wpa-supplicant-mesh-wolfssl
-  $(Package/wpa-supplicant-mesh/Default)
-  VARIANT:=supplicant-mesh-wolfssl
-  CONFLICTS:=$(filter-out wpa-supplicant-mesh-openssl ,$(filter-out wpa-supplicant-mesh-wolfssl ,$(SUPPLICANT_ONLY_PROVIDERS)))
-  DEPENDS+=+libwolfssl
-endef
-
-define Package/wpa-supplicant-mini
-  $(Package/wpa-supplicant/Default)
-  TITLE+= (minimal version)
-  VARIANT:=supplicant-mini
-endef
-
 define Package/wpa-cli
   SECTION:=net
   CATEGORY:=Network
   DEPENDS:=@$(subst $(space),||,$(foreach pkg,$(SUPPLICANT_PROVIDERS),PACKAGE_$(pkg)))
   TITLE:=WPA Supplicant command line control utility
-endef
-
-define Package/hostapd-common
-  TITLE:=hostapd/wpa_supplicant common support files
-  SECTION:=net
-  CATEGORY:=Network
 endef
 
 define Package/eapol-test
