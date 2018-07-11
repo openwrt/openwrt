@@ -96,14 +96,17 @@ detect_mac80211() {
 		else
 			path=""
 		fi
+		macaddr="$(cat /sys/class/ieee80211/${dev}/macaddress)"
 		if [ -n "$path" ]; then
 			path="${path##/sys/devices/}"
 			case "$path" in
 				platform*/pci*) path="${path##platform/}";;
 			esac
 			dev_id="set wireless.radio${devidx}.path='$path'"
+		elif [ "$macaddr" != "00:00:00:00:00:00" ]; then
+			dev_id="set wireless.radio${devidx}.macaddr=$macaddr"
 		else
-			dev_id="set wireless.radio${devidx}.macaddr=$(cat /sys/class/ieee80211/${dev}/macaddress)"
+			dev_id="set wireless.radio${devidx}.phy=$dev"
 		fi
 
 		uci -q batch <<-EOF
