@@ -1040,12 +1040,15 @@ void __init ath79_register_eth(unsigned int id)
 			pdata->set_speed = qca955x_set_speed_xmii;
 
 			/* QCA9556 only has SGMII interface */
-			if (ath79_soc == ATH79_SOC_QCA9556)
+			if (ath79_soc == ATH79_SOC_QCA9556) {
 				pdata->set_speed = qca9556_set_speed_sgmii;
+				pdata->enable_sgmii_fixup = 1;
+			}
 		} else {
 			pdata->reset_bit = QCA955X_RESET_GE1_MAC |
 					   QCA955X_RESET_GE1_MDIO;
 			pdata->set_speed = qca9558_set_speed_sgmii;
+			pdata->enable_sgmii_fixup = 1;
 		}
 
 		pdata->has_gbit = 1;
