@@ -704,6 +704,7 @@ platform_check_image() {
 	rb-750up-r2|\
 	rb-911-2hn|\
 	rb-911-5hn|\
+	rb-931-2nd|\
 	rb-941-2nd|\
 	rb-951ui-2nd|\
 	rb-952ui-5ac2nd|\
@@ -731,6 +732,7 @@ platform_pre_upgrade() {
 	rb-750up-r2|\
 	rb-911-2hn|\
 	rb-911-5hn|\
+	rb-931-2nd|\
 	rb-941-2nd|\
 	rb-951ui-2nd|\
 	rb-952ui-5ac2nd|\

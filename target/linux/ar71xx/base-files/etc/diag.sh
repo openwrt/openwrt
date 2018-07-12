@@ -368,6 +368,7 @@ get_status_led() {
 	rb-911g-2hpnd|\
 	rb-911g-5hpacd|\
 	rb-911g-5hpnd|\
+	rb-931-2nd|\
 	rb-941-2nd|\
 	rb-951ui-2nd|\
 	rb-952ui-5ac2nd|\
