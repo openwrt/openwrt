@@ -239,6 +239,9 @@ get_status_led() {
 	f9k1115v2)
 		status_led="belkin:blue:status"
 		;;
+	emr3000)
+		status_led="$board:white:front"
+		;;
 	epg5000|\
 	esr1750)
 		status_led="$board:amber:power"
