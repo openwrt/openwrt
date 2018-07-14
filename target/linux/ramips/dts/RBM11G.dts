@@ -7,7 +7,7 @@
 
 / {
 	compatible = "mikrotik,rbm11g", "mediatek,mt7621-soc";
-	model = "MikroTik RBM11G";
+	model = "MikroTik RouterBOARD M11G";
 
 	aliases {
 		led-status = &led_usr;
@@ -90,29 +90,54 @@
 		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
+		// XXX empiric value to obtain actual 10MHz SCK at the chip
 		spi-max-frequency = <3125000>;
 
-		partition@0 {
-			label = "routerboot";
-			reg = <0x000000 0x00F000>;
-			read-only;
-		};
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		factory: partition@f000 {
-			label = "factory";
-			reg = <0x00F000 0x031000>;
-			read-only;
-		};
+			partition@0 {
+				label = "RouterBoot";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
 
-		partition@40000 {
-			label = "firmware";
-			reg = <0x040000 0xFC0000>;
+			routerboot@0 {
+				reg = <0x0 0xf000>;
+				read-only;
+			};
+
+			hard_config: hard_config@f000 {
+				reg = <0xf000 0x1000>;
+				read-only;
+			};
+
+			routerboot2@10000 {
+				reg = <0x10000 0xf000>;
+				read-only;
+			};
+
+			soft_config@20000 {
+				reg = <0x20000 0x1000>;
+			};
+
+			// valid data only extends up to 0x4f but make it 0x1000 to match ar71xx
+			bios@30000 {
+				reg = <0x30000 0x1000>;
+				read-only;
+			};
+
+			firmware@40000 {
+				reg = <0x040000 0xFC0000>;
+			};
 		};
 	};
 };
 
 &ethernet {
-	mtd-mac-address = <&factory 0x0010>;
+	mtd-mac-address = <&hard_config 0x0010>;
 	mtd-mac-address-increment = <1>;
 };
 
@@ -133,3 +158,6 @@
 &pcie {
 	status = "okay";
 };
+
+// XXX this device has hardware crypto
+//&crypto {};
