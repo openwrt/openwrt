@@ -138,10 +138,10 @@ $(eval $(call SetupHostCommand,bzip2,Please install 'bzip2', \
 $(eval $(call SetupHostCommand,wget,Please install GNU 'wget', \
 	wget --version | grep GNU))
 
-$(eval $(call SetupHostCommand,time,Please install GNU 'time' or BusyBox 'time', \
+$(eval $(call SetupHostCommand,time,Please install GNU 'time' or BusyBox 'time' that supports -f, \
 	gtime --version 2>&1 | grep GNU, \
 	time --version 2>&1 | grep GNU, \
-	busybox time 2>&1 | grep BusyBox))
+	busybox time 2>&1 | grep -- '-f FMT'))
 
 $(eval $(call SetupHostCommand,perl,Please install Perl 5.x, \
 	perl --version | grep "perl.*v5"))
