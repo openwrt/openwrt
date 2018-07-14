@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-PKG_VERSION:=1.44.2
-PKG_HASH:=8324cf0b6e81805a741d94087b00e99f7e16144f1ee5a413709a1fa6948b126c
+PKG_VERSION:=1.44.3
+PKG_HASH:=5d899f7d30f481cc0c6a049ebe26ebe145f1b524182ea1ecde4086162d4e4bb6
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -131,7 +131,8 @@ $(call Package/e2fsprogs)
   DEPENDS:= +e2fsprogs
 endef
 
-TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections
+TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections -flto
+TARGET_LDFLAGS += -flto
 
 CONFIGURE_ARGS += \
 	--disable-testio-debug \
@@ -142,7 +143,6 @@ CONFIGURE_ARGS += \
 	--disable-tls		\
 	--disable-nls		\
 	--disable-rpath		\
-	--disable-threads	\
 	--disable-fuse2fs
 
 define Build/Prepare
