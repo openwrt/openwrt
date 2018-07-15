@@ -255,6 +255,8 @@ static struct gpio_led rb952_leds[] __initdata = {
 
 
 /* RB 962UiGS-5HacT2HnT gpios */
+#define RB962_WIFI_LED_1	1
+#define RB962_WIFI_LED_2	2
 #define RB962_GPIO_POE_STATUS	2
 #define RB962_GPIO_POE_POWER	3
 #define RB962_GPIO_LED_USER	12
@@ -520,7 +522,7 @@ static struct platform_device rbwapgsc_phy_device = {
 #define RB911L_GPIO_LED_ETH	20
 #define RB911L_GPIO_LED_POWER	11
 #define RB911L_GPIO_LED_USER	3
-#define RB911L_GPIO_PIN_HOLE	14 /* for reference */
+#define RB911L_GPIO_PIN_HOLE	14 /* for reference, active low */
 
 static struct gpio_led rb911l_leds[] __initdata = {
 	{
@@ -551,6 +553,7 @@ static struct gpio_led rb911l_leds[] __initdata = {
 		.name = "rb:green:power",
 		.gpio = RB911L_GPIO_LED_POWER,
 		.default_state = LEDS_GPIO_DEFSTATE_ON,
+		.active_low = 1,
 		.open_drain = 1,
 	}, {
 		.name = "rb:green:user",
