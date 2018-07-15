@@ -207,13 +207,6 @@ mtd_fixtrx(const char *mtd, size_t offset, size_t data_size)
 		exit(1);
 	}
 
-	if (trx->len == STORE32_LE(data_size + TRX_CRC32_DATA_OFFSET)) {
-		if (quiet < 2)
-			fprintf(stderr, "Header already fixed, exiting\n");
-		close(fd);
-		return 0;
-	}
-
 	buf = malloc(data_size);
 	if (!buf) {
 		perror("malloc");
@@ -242,6 +235,14 @@ mtd_fixtrx(const char *mtd, size_t offset, size_t data_size)
 		data_size -= read_chunk;
 	}
 	data_size = to - buf;
+
+	if (trx->len == STORE32_LE(data_size + TRX_CRC32_DATA_OFFSET) &&
+	    trx->crc32 == STORE32_LE(crc32buf(buf, data_size))) {
+		if (quiet < 2)
+			fprintf(stderr, "Header already fixed, exiting\n");
+		close(fd);
+		return 0;
+	}
 
 	trx->len = STORE32_LE(data_size + offsetof(struct trx_header, flag_version));
 
