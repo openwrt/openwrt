@@ -156,6 +156,10 @@ ramips_setup_interfaces()
 	wrh-300cr)
 		ucidef_set_interface_lan "eth0"
 		;;
+	xiaomi,miwifi-r3)
+		ucidef_add_switch "switch0" \
+			"1:lan" "4:lan" "0:wan" "6@eth0"
+		;;
 	mir3g)
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "3:lan:1" "1:wan" "6t@eth0"
@@ -500,6 +504,7 @@ ramips_setup_macs()
 	mir3g)
 		lan_mac=$(mtd_get_mac_binary Factory 0xe006)
 		;;
+	xiaomi,miwifi-r3|\
 	miwifi-mini)
 		wan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_setbit_la "$wan_mac")

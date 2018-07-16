@@ -169,6 +169,7 @@ get_status_led() {
 	k2p|\
 	m3|\
 	mir3g|\
+	xiaomi,miwifi-r3|\
 	miwifi-nano)
 		status_led="$boardname:blue:status"
 		;;
