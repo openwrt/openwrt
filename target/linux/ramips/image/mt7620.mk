@@ -683,3 +683,10 @@ define Device/zte-q7
   DEVICE_TITLE := ZTE Q7
 endef
 TARGET_DEVICES += zte-q7
+
+define Device/v-fl500
+  DTS := V-FL500
+  DEVICE_TITLE := Unitac V-FL500
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-net-rndis kmod-usb-acm kmod-i2c-leds-aw9523-expander
+endef
+TARGET_DEVICES += v-fl500

@@ -249,6 +249,7 @@ get_status_led() {
 		status_led="px-4885:orange:wifi"
 		;;
 	re6500|\
+	v-fl500|\
 	whr-1166d|\
 	whr-600d)
 		status_led="$boardname:orange:wifi"
