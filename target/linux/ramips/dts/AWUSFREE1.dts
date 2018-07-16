@@ -41,6 +41,10 @@
 	compatible = "alfa-network,awusfree1", "mediatek,mt7628an-soc";
 	model = "ALFA Network AWUSFREE1";
 
+	aliases {
+		led-status = &led_system;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -61,7 +65,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		system {
+		led_system: system {
 			label = "awusfree1:orange:system";
 			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 		};

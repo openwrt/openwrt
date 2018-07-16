@@ -9,6 +9,10 @@
 	compatible = "mercury,mac1200r-v2", "mediatek,mt7628an-soc";
 	model = "Mercury MAC1200R v2";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,57600";
 	};
@@ -20,7 +24,7 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		status {
+		led_status: status {
 			label = "mac1200rv2:green:status";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};

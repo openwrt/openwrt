@@ -9,6 +9,10 @@
 	compatible = "argus,atp-52b", "ralink,rt3052-soc";
 	model = "Argus ATP-52B";
 
+	aliases {
+		led-status = &led_run;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -42,7 +46,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		run {
+		led_run: run {
 			label = "atp-52b:green:run";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};

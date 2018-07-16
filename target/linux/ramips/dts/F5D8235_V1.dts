@@ -11,6 +11,10 @@
 	compatible = "belkin,f5d8235-v1", "ralink,rt2880-soc";
 	model = "Belkin F5D8235 v1";
 
+	aliases {
+		led-status = &led_wired_blue;
+	};
+
 	pci@440000 {
 		status = "ok";
 	};
@@ -161,7 +165,7 @@
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 
-		wired {
+		led_wired_blue: wired {
 			label = "f5d8235-v1:blue:wired";
 			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 		};

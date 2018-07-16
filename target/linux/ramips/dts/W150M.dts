@@ -9,6 +9,10 @@
 	compatible = "tenda,w150m", "ralink,rt3050-soc";
 	model = "Tenda W150M";
 
+	aliases {
+		led-status = &led_ap;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -49,7 +53,7 @@
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
-		ap {
+		led_ap: ap {
 			label = "w150m:blue:ap";
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};

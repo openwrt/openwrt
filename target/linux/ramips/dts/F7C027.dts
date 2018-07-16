@@ -9,6 +9,10 @@
 	compatible = "belkin,f7c027", "ralink,rt5350-soc";
 	model = "Belkin F7C027";
 
+	aliases {
+		led-status = &led_status_orange;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -22,7 +26,7 @@
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
-		orange {
+		led_status_orange: orange {
 			label = "f7c027:orange:status";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};

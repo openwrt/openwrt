@@ -9,6 +9,10 @@
 	compatible = "tplink,c50-v3", "mediatek,mt7628an-soc";
 	model = "TP-Link Archer C50 v3";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -36,7 +40,7 @@
 			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_power: power {
 			label = "c50-v3:green:power";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};

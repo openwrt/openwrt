@@ -9,10 +9,14 @@
 	compatible = "omnima,miniembwifi", "ralink,rt3052-soc";
 	model = "Omnima MiniEMBWiFi";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		status {
+		led_status: status {
 			label = "miniembwifi:green:status";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};

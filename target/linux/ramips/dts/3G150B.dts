@@ -9,10 +9,14 @@
 	compatible = "tenda,3g150b", "ralink,rt5350-soc";
 	model = "Tenda 3G150B";
 
+	aliases {
+		led-status = &led_ap;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		ap {
+		led_ap: ap {
 			label = "3g150b:blue:ap";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};

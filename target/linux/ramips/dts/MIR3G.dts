@@ -9,6 +9,10 @@
 	compatible = "xiaomi,mir3g", "mediatek,mt7621-soc";
 	model = "Xiaomi Mi Router 3G";
 
+	aliases {
+		led-status = &led_status_blue;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x10000000>;
@@ -26,7 +30,7 @@
 			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 		};
 
-		status_blue {
+		led_status_blue: status_blue {
 			label = "mir3g:blue:status";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};

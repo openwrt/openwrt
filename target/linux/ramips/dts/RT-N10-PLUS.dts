@@ -9,6 +9,10 @@
 	compatible = "asus,rt-n10-plus", "ralink,rt3050-soc";
 	model = "Asus RT-N10+";
 
+	aliases {
+		led-status = &led_wps;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -44,7 +48,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		wps {
+		led_wps: wps {
 			label = "rt-n10-plus:green:wps";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};

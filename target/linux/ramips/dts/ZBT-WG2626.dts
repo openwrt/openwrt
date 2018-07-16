@@ -9,6 +9,10 @@
 	compatible = "zbtlink,zbt-wg2626", "mediatek,mt7621-soc";
 	model = "ZBT-WG2626";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x1c000000>, <0x20000000 0x4000000>;
@@ -40,7 +44,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		status {
+		led_status: status {
 			label = "zbt-wg2626:green:status";
 			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
 		};

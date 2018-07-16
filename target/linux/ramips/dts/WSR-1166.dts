@@ -9,6 +9,10 @@
 	compatible = "buffalo,wsr-1166dhp", "mediatek,mt7621-soc";
 	model = "Buffalo WSR-1166DHP";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
@@ -46,7 +50,7 @@
 			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_power: power {
 			label = "wsr-1166:green:power";
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 		};

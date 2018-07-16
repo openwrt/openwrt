@@ -9,6 +9,10 @@
 	compatible = "storylink,sap-g3200u3", "mediatek,mt7621-soc";
 	model = "STORYLiNK SAP-G3200U3";
 
+	aliases {
+		led-status = &led_usb;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
@@ -21,7 +25,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		usb {
+		led_usb: usb {
 			label = "sap-g3200u3:green:usb";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};

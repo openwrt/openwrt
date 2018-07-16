@@ -9,6 +9,10 @@
 	compatible = "kimax,u25awf-h1","ralink,mt7620a-soc";
 	model = "Kimax U25AWF-H1";
 
+	aliases {
+		led-status = &led_wifi;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -25,7 +29,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		wifi {
+		led_wifi: wifi {
 			label = "u25awf:red:wifi";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};

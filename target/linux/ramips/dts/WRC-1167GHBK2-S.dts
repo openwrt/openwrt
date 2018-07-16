@@ -9,6 +9,10 @@
 	compatible = "elecom,wrc-1167ghbk2-s", "mediatek,mt7621-soc";
 	model = "ELECOM WRC-1167GHBK2-S";
 
+	aliases {
+		led-status = &led_power_green;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
@@ -31,7 +35,7 @@
 			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
 		};
 
-		power_green {
+		led_power_green: power_green {
 			label = "wrc-1167ghbk2-s:green:power";
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		};

@@ -9,6 +9,10 @@
 	compatible = "hiwifi,hc5661a", "mediatek,mt7628an-soc";
 	model = "HiWiFi HC5661A";
 
+	aliases {
+		led-status = &led_system;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -21,7 +25,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		system {
+		led_system: system {
 			label = "hc5661a:blue:system";
 			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 		};

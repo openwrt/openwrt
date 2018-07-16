@@ -9,6 +9,10 @@
 	compatible = "mofinetwork,mofi3500-3gn", "ralink,rt3052-soc";
 	model = "MoFi Network MOFI3500-3GN";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -54,7 +58,7 @@
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
-		status {
+		led_status: status {
 			label = "mofi3500-3gn:green:status";
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};

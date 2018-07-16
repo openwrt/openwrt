@@ -6,6 +6,10 @@
 / {
 	compatible = "alphanetworks,asl26555", "ralink,rt3050-soc";
 
+	aliases {
+		led-status = &led_power_green;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -48,7 +52,7 @@
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		};
 
-		power-green {
+		led_power_green: power-green {
 			label = "asl26555:green:power";
 			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		};
