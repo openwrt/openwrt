@@ -9,6 +9,10 @@
 	compatible = "asus,rt-n13u", "ralink,rt3052-soc";
 	model = "Asus RT-N13U";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -44,7 +48,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "rt-n13u:blue:power";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};

@@ -8,6 +8,10 @@
 	compatible = "samknows,whitebox-v8", "mediatek,mt7621-soc";
 	model = "SamKnows Whitebox 8";
 
+	aliases {
+		led-status = &led_wps;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
@@ -20,7 +24,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		wps {
+		led_wps: wps {
 			label = "sk-wb8:green:wps";
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 		};

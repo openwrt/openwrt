@@ -9,10 +9,14 @@
 	compatible = "dlink,dir-620-d1", "ralink,rt3352-soc";
 	model = "D-Link DIR-620 D1";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		status {
+		led_status: status {
 			label = "dir-620-d1:green:status";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};

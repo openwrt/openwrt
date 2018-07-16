@@ -9,6 +9,10 @@
 	compatible = "dlink,dap-1522-a1", "ralink,rt2880-soc";
 	model = "D-Link DAP-1522 A1";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	cfi@bc400000 {
 		compatible = "cfi-flash";
 		reg = <0xbc400000 0x800000>;
@@ -92,7 +96,7 @@
 			gpios = <&gpio2 19 GPIO_ACTIVE_LOW>;
 		};
 
-		status {
+		led_status: status {
 			label = "dap-1522-a1:blue:status";
 			gpios = <&gpio2 20 GPIO_ACTIVE_LOW>;
 		};

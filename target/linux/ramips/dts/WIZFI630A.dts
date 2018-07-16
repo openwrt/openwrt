@@ -9,6 +9,10 @@
 	compatible = "wiznet,wizfi630a", "ralink,rt5350-soc";
 	model = "WIZnet WizFi630A";
 
+	aliases {
+		led-status = &led_run;
+	};
+
 	chosen {
 		bootargs = "console=ttyS1,115200";
 	};
@@ -16,7 +20,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		run {
+		led_run: run {
 			label = "wizfi630a::run";
 			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 		};

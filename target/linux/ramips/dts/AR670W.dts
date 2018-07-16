@@ -9,6 +9,10 @@
 	compatible = "airlink101,ar670w", "ralink,rt2880-soc";
 	model = "Airlink101 AR670W";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	cfi@bdc00000 {
 		compatible = "cfi-flash";
 		reg = <0xbc400000 0x800000>;
@@ -37,7 +41,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		status {
+		led_power: power {
 			label = "ar670w:green:power";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};

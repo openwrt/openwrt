@@ -9,6 +9,10 @@
 	compatible = "zyxel,nbg-419n-v2", "ralink,rt3352-soc";
 	model = "ZyXEL NBG-419N v2";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
@@ -48,7 +52,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "nbg-419n2:green:power";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};

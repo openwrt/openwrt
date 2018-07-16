@@ -9,6 +9,10 @@
 	compatible = "iodata,wn-ax1167gr", "mediatek,mt7621-soc";
 	model = "I-O DATA WN-AX1167GR";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x4000000>;
@@ -21,7 +25,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "wn-ax1167gr:green:power";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};

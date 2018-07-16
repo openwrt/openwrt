@@ -9,6 +9,10 @@
 	compatible = "xiaomi,miwifi-mini", "ralink,mt7620a-soc";
 	model = "Xiaomi MiWiFi Mini";
 
+	aliases {
+		led-status = &led_blue;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -16,7 +20,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		blue {
+		led_blue: blue {
 			label = "miwifi-mini:blue:status";
 			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
 		};

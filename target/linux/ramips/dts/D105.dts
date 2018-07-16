@@ -9,6 +9,10 @@
 	compatible = "huawei,d105", "ralink,rt3050-soc";
 	model = "Huawei D105";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -44,12 +48,12 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "d105:red:power";
 			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 		};
 
-		wps {
+		usb {
 			label = "d105:green:usb";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};

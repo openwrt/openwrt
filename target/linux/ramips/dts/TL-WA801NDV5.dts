@@ -9,6 +9,10 @@
 	compatible = "tplink,tl-wa801nd-v5", "mediatek,mt7628an-soc";
 	model = "TP-Link TL-WA801ND v5";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -25,7 +29,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "tl-wa801nd-v5:green:power";
 			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
 		};

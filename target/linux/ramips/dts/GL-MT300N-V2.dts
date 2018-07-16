@@ -9,6 +9,10 @@
 	compatible = "glinet,gl-mt300n-v2", "ralink,mt7620an-soc";
 	model = "GL-MT300N-V2";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -21,7 +25,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "gl-mt300n-v2:green:power";
 			default-state = "on";
 			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;

@@ -9,10 +9,15 @@
 	compatible = "asiarf,awapn2403", "ralink,rt3052-soc";
 	model = "AsiaRF AWAPN2403";
 
+	aliases {
+		led-status = &led_wps;
+	};
+
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		link {
+		led_wps: wps {
 			label = "awapn2403:green:wps";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};

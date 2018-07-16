@@ -9,6 +9,10 @@
 	compatible = "dlink,dwr-512-b", "ralink,rt5350-soc";
 	model = "D-Link DWR-512 B";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -35,7 +39,7 @@
 			label = "dwr-512-b:green:sms";
 			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		};
-		status {
+		led_status: status {
 			label = "dwr-512-b:green:status";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};

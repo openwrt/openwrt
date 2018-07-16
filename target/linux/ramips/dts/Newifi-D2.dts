@@ -9,6 +9,10 @@
 	compatible = "d-team,newifi-d2", "mediatek,mt7621-soc";
 	model = "Newifi-D2";
 
+	aliases {
+		led-status = &led_power_blue;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x1c000000>, <0x20000000 0x4000000>;
@@ -26,7 +30,7 @@
 			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 		};
 
-		power-blue {
+		led_power_blue: power-blue {
 			label = "newifi-d2:blue:power";
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		};

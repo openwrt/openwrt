@@ -9,6 +9,10 @@
 	compatible = "linksys,re6500", "mediatek,mt7621-soc";
 	model = "Linksys RE6500";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x4000000>;
@@ -26,7 +30,7 @@
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 		};
 
-		power {
+		led_power: power {
 			label = "re6500:white:power";
 			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
 		};

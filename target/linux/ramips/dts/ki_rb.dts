@@ -9,6 +9,10 @@
 	compatible = "zyxel,keenetic-extra-ii", "mediatek,mt7628an-soc";
 	model = "ZyXEL Keenetic Extra II";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
@@ -46,7 +50,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "keenetic-extra-ii:green:power";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 			default-state = "keep";

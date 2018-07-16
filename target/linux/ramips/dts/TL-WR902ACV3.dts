@@ -9,6 +9,10 @@
 	compatible = "tplink,tl-wr902ac-v3", "mediatek,mt7628an-soc";
 	model = "TP-Link TL-WR902AC v3";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -48,7 +52,7 @@
 			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
 		};
 
-		power {
+		led_power: power {
 			label = "tl-wr902ac-v3:green:power";
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 		};

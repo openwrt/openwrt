@@ -9,6 +9,10 @@
 	compatible = "upvel,ur-336un", "ralink,rt3052-soc";
 	model = "UPVEL UR-336UN";
 
+	aliases {
+		led-status = &led_wps;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -59,7 +63,7 @@
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 
-		wps {
+		led_wps: wps {
 			label = "ur-336un:green:wps";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
