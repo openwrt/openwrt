@@ -1,0 +1,39 @@
+From b3b0dd8da363308355c0d7fcd3270962c05bd6d2 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Sat, 23 Jun 2018 12:08:27 +0200
+Subject: [PATCH] mtd: spi-nor: Add Winbond w25q128jv support
+
+mtd: spi-nor: Add Winbond w25q128jv support
+
+Datasheet:
+http://www.winbond.com/resource-files/w25q128jv%20revf%2003272018%20plus.pdf
+
+Testing done on Mikrotik Routerboard wAP R board which does not support
+Dual or Quad modes.
+
+This patch has been submitted upstream:
+https://patchwork.ozlabs.org/patch/934181/
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+[description message edited]
+Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
+---
+ spi-nor.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+index 9a6a6a8..d4983e0 100644
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -1149,6 +1149,11 @@ static const struct flash_info spi_nor_ids[] = {
+ 			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
+ 			SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB)
+ 	},
++	{ 
++		"w25q128jv", INFO(0xef7018, 0, 64 * 1024, 256,
++			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
++			SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB)
++	},
+ 	{ "w25q80", INFO(0xef5014, 0, 64 * 1024,  16, SECT_4K) },
+ 	{ "w25q80bl", INFO(0xef4014, 0, 64 * 1024,  16, SECT_4K) },
+ 	{ "w25q128", INFO(0xef4018, 0, 64 * 1024, 256, SECT_4K) },
