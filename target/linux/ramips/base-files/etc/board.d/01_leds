@@ -86,6 +86,12 @@ asl26555-16M)
 bc2)
 	set_usb_led "$boardname:blue:usb"
 	;;
+br-6478ac-v2)
+	ucidef_set_led_default "power" "POWER" "$boardname:white:power" "1"
+	ucidef_set_led_netdev "wan" "wan" "$boardname:blue:wan" "eth0.2"
+	set_wifi_led "$boardname:blue:wlan"
+	set_usb_led "$boardname:blue:usb"
+	;;
 broadway)
 	set_usb_led "$boardname:red:diskmounted"
 	set_wifi_led "$boardname:red:wps_active"
