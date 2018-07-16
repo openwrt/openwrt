@@ -941,8 +941,9 @@ dnsmasq_start()
 	xappend "--addn-hosts=$(dirname $HOSTFILE)"
 
 	config_get dnsmasqconfdir "$cfg" confdir "/tmp/dnsmasq.d"
-	[ ! -d "$dnsmasqconfdir" ] && mkdir -p $dnsmasqconfdir
 	xappend "--conf-dir=$dnsmasqconfdir"
+	dnsmasqconfdir="${dnsmasqconfdir%%,*}"
+	[ ! -d "$dnsmasqconfdir" ] && mkdir -p $dnsmasqconfdir
 	xappend "--user=dnsmasq"
 	xappend "--group=dnsmasq"
 	echo >> $CONFIGFILE_TMP
@@ -1060,17 +1061,9 @@ service_triggers()
 	config_foreach add_interface_trigger dhcp
 }
 
-boot()
-{
-	BOOT=1
-	start "$@"
-}
-
 start_service() {
 	local instance="$1"
 	local instance_found=0
-
-	[ -n "$BOOT" ] && return
 
 	. /lib/functions/network.sh
 

@@ -476,6 +476,9 @@ ar71xx_board_detect() {
 	*"Archer C7 v4")
 		name="archer-c7-v4"
 		;;
+	*"Archer C7 v5")
+		name="archer-c7-v5"
+		;;
 	*"Archer C58 v1")
 		name="archer-c58-v1"
 		;;
@@ -715,6 +718,9 @@ ar71xx_board_detect() {
 	*"FRITZ!WLAN Repeater 300E")
 		name="fritz300e"
 		;;
+	*"FRITZ!WLAN Repeater 450E")
+		name="fritz450e"
+		;;
 	*"GL-AR150")
 		name="gl-ar150"
 		;;
@@ -770,6 +776,9 @@ ar71xx_board_detect() {
 		;;
 	*"JWAP230")
 		name="jwap230"
+		;;
+	*"Koala")
+		name="koala"
 		;;
 	*"LAN Turtle")
 		name="lan-turtle"

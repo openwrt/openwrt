@@ -59,7 +59,7 @@ proto_wwan_setup() {
 		json_set_namespace $old_cb
 
 		[ -n "$control" -a -n "$data" ] && {
-			ttys=$(ls -d /sys/bus/usb/devices/$devicename/${devicename}*/tty* | sed "s/.*\///g" | tr "\n" " ")
+			ttys=$(ls -d /sys/bus/usb/devices/$devicename/${devicename}*/tty?* /sys/bus/usb/devices/$devicename/${devicename}*/tty/tty?* | sed "s/.*\///g" | tr "\n" " ")
 			ctl_device=/dev/$(echo $ttys | cut -d" " -f $((control + 1)))
 			dat_device=/dev/$(echo $ttys | cut -d" " -f $((data + 1)))
 			driver=comgt
