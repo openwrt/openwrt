@@ -8,10 +8,14 @@
 	compatible = "vocore,vocore2", "mediatek,mt7628an-soc";
 	model = "VoCore2";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		status {
+		led_status: status {
 			label = "vocore2:fuchsia:status";
 			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		};

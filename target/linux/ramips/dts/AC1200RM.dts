@@ -41,6 +41,10 @@
 	compatible = "alfa-network,ac1200rm", "ralink,mt7620a-soc";
 	model = "ALFA Network AC1200RM";
 
+	aliases {
+		led-status = &led_wps;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -66,7 +70,7 @@
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
-		wps {
+		led_wps: wps {
 			label = "ac1200rm:green:wps";
 			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		};

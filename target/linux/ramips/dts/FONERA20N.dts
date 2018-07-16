@@ -9,6 +9,10 @@
 	compatible = "fon,fonera20n", "ralink,rt3052-soc";
 	model = "La Fonera 2.0N";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -49,7 +53,7 @@
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_power: power {
 			label = "fonera20n:green:power";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};

@@ -9,6 +9,10 @@
 	compatible = "mikrotik,rbm11g", "mediatek,mt7621-soc";
 	model = "MikroTik RBM11G";
 
+	aliases {
+		led-status = &led_usr;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x10000000>;
@@ -21,7 +25,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		usr {
+		led_usr: usr {
 			label = "rbm11g:green:usr";
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 		};

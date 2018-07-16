@@ -9,6 +9,10 @@
 	compatible = "gnubee,gb-pc2", "mediatek,mt7621-soc";
 	model = "GB-PC2";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x1c000000>, <0x20000000 0x4000000>;
@@ -39,7 +43,7 @@
 			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 		};
 
-		status {
+		led_status: status {
 			label = "gb-pc2:green:status";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};

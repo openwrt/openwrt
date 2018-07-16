@@ -9,6 +9,10 @@
 	compatible = "dlink,dwr-116-a1", "ralink,mt7620n-soc";
 	model = "D-Link DWR-116 A1/A2";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -31,7 +35,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		status {
+		led_status: status {
 			label = "dwr-116-a1:green:status";
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 		};

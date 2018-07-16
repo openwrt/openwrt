@@ -9,6 +9,10 @@
 	compatible = "tplink,c2-v1", "ralink,mt7620a-soc";
 	model = "TP-Link Archer C2 v1";
 
+	aliases {
+		led-status = &led_wps;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -35,7 +39,7 @@
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
-		wps {
+		led_wps: wps {
 			label = "c2-v1:green:wps";
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};

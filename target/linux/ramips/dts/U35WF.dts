@@ -9,6 +9,10 @@
 	compatible = "kimax,u35wf","ralink,mt7620n-soc";
 	model = "Kimax U35WF";
 
+	aliases {
+		led-status = &led_wifi;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -25,7 +29,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		wifi {
+		led_wifi: wifi {
 			label = "u35wf:blue:wifi";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};

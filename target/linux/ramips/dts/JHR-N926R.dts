@@ -9,6 +9,10 @@
 	compatible = "jcg,jhr-n926r", "ralink,rt3052-soc";
 	model = "JCG JHR-N926R";
 
+	aliases {
+		led-status = &led_system;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -59,7 +63,7 @@
 			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 		};
 
-		system {
+		led_system: system {
 			label = "jhr-n926r:blue:system";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};

@@ -9,6 +9,10 @@
 	compatible = "dlink,dir-645", "ralink,rt3883-soc";
 	model = "D-Link DIR-645";
 
+	aliases {
+		led-status = &led_wps;
+	};
+
 	rtl8367b {
 		compatible = "realtek,rtl8367b";
 		gpio-sda = <&gpio0 1 GPIO_ACTIVE_HIGH>;
@@ -43,7 +47,7 @@
 			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 		};
 
-		wps {
+		led_wps: wps {
 			label = "dir-645:green:wps";
 			gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
 		};

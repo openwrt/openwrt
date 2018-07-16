@@ -9,6 +9,10 @@
 	compatible = "dlink,dwr-921-c1", "ralink,mt7620n-soc";
 	model = "D-Link DWR-921 C1";
 
+	aliases {
+		led-status = &led_sstrenghg;
+	};
+
 	gpio-keys-polled {
 	compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -41,7 +45,7 @@
 			gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
 		};
 
-		sstrengthg {
+		led_sstrenghg: sstrengthg {
 			label = "dwr-921-c1:green:sigstrength";
 			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		};

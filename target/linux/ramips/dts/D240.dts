@@ -42,6 +42,10 @@
 	compatible = "sanlinking,d240", "ralink,mt7620a-soc";
 	model = "Sanlinking Technologies D240";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -67,7 +71,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "d240:blue:power";
 			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		};

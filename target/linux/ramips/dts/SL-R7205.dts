@@ -9,6 +9,10 @@
 	compatible = "skyline,sl-r7205", "ralink,rt3052-soc";
 	model = "Skyline SL-R7205 Wireless 3G Router";
 
+	aliases {
+		led-status = &led_wifi;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -44,7 +48,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		wifi {
+		led_wifi: wifi {
 			label = "sl-r7205:green:wifi";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};

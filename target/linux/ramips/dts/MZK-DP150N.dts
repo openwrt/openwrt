@@ -9,10 +9,14 @@
 	compatible = "planex,mzk-dp150n", "ralink,rt5350-soc";
 	model = "Planex MZK-DP150N";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "mzk-dp150n:green:power";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};

@@ -9,6 +9,10 @@
 	compatible = "thunder,timecloud", "mediatek,mt7621-soc";
 	model = "Thunder Timecloud";
 
+	aliases {
+		led-status = &led_statuso;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x10000000>;
@@ -26,7 +30,7 @@
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		};
 
-		stato {
+		led_statuso: stato {
 			label = "timecloud:orange:status";
 			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		};

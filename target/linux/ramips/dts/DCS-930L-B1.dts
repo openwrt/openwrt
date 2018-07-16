@@ -9,10 +9,14 @@
 	compatible = "dlink,dcs-930l-b1", "ralink,rt5350-soc";
 	model = "D-Link DCS-930L B1";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "dcs-930l-b1:red:power";
 			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 		};

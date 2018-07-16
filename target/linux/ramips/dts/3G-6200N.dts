@@ -9,6 +9,10 @@
 	compatible = "edimax,3g-6200n", "ralink,rt3050-soc";
 	model = "Edimax 3g-6200n";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -50,7 +54,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "3g-6200n:green:power";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
