@@ -37,8 +37,10 @@
 
 #include "ar8216.h"
 
+#ifdef CONFIG_AR83XX_PHY
 extern const struct ar8xxx_chip ar8327_chip;
 extern const struct ar8xxx_chip ar8337_chip;
+#endif
 
 #define AR8XXX_MIB_WORK_DELAY	2000 /* msecs */
 
@@ -1840,12 +1842,14 @@ ar8xxx_id_chip(struct ar8xxx_priv *priv)
 	case AR8XXX_VER_AR8316:
 		priv->chip = &ar8316_chip;
 		break;
+#ifdef CONFIG_AR83XX_PHY
 	case AR8XXX_VER_AR8327:
 		priv->chip = &ar8327_chip;
 		break;
 	case AR8XXX_VER_AR8337:
 		priv->chip = &ar8337_chip;
 		break;
+#endif
 	default:
 		pr_err("ar8216: Unknown Atheros device [ver=%d, rev=%d]\n",
 		       priv->chip_ver, priv->chip_rev);
@@ -2120,8 +2124,10 @@ ar8xxx_phy_config_aneg(struct phy_device *phydev)
 
 static const u32 ar8xxx_phy_ids[] = {
 	0x004dd033,
+#ifdef CONFIG_AR83XX_PHY
 	0x004dd034, /* AR8327 */
 	0x004dd036, /* AR8337 */
+#endif
 	0x004dd041,
 	0x004dd042,
 	0x004dd043, /* AR8236 */
