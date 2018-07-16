@@ -63,11 +63,12 @@ proto_3g_setup() {
 				SIERRA=1
 			elif echo "$cardinfo" | grep -qi huawei; then
 				case "$service" in
-					umts_only) CODE="14,2";;
-					gprs_only) CODE="13,1";;
-					*) CODE="2,2";;
+					lte_only)  CODE='SYSCFGEX="03",3FFFFFFF,2,4,7FFFFFFFFFFFFFFF,,';;
+					umts_only) CODE='SYSCFG=14,2,3FFFFFFF,2,4';;
+					gprs_only) CODE='SYSCFG=13,1,3FFFFFFF,2,4';;
+					*) CODE='SYSCFG=2,2,3FFFFFFF,2,4';;
 				esac
-				export MODE="AT^SYSCFG=${CODE},3FFFFFFF,2,4"
+				export MODE="AT^${CODE}"
 			fi
 
 			if [ -n "$pincode" ]; then
