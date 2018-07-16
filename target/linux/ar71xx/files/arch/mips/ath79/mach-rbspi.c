@@ -594,6 +594,36 @@ static struct gpio_led rb931_leds[] __initdata = {
 	},
 };
 
+/* RB wAP R-2nD (wAP R) gpios*/
+#define RBWAPR_GPIO_LED_USER	14
+#define RBWAPR_GPIO_LED1	12
+#define RBWAPR_GPIO_LED2	13
+#define RBWAPR_GPIO_LED3	3
+#define RBWAPR_GPIO_PCIE_PWROFF	15
+#define RBWAPR_GPIO_CONTROL	10
+#define RBWAPR_GPIO_BTN_RESET	16
+
+static struct gpio_led rbwapr_leds[] __initdata = {
+	{
+		.name = "rb:green:user",
+		.gpio = RBWAPR_GPIO_LED_USER,
+		.active_low = 0,
+	},{
+		.name = "rb:green:led1",
+		.gpio = RBWAPR_GPIO_LED1,
+		.active_low = 1,
+	},{
+		.name = "rb:green:led2",
+		.gpio = RBWAPR_GPIO_LED2,
+		.active_low = 1,
+	},{
+		.name = "rb:green:led3",
+		.gpio = RBWAPR_GPIO_LED3,
+		.active_low = 0,
+	},
+};
+
+
 static struct gen_74x164_chip_platform_data rbspi_ssr_data = {
 	.base = RBSPI_SSR_GPIO_BASE,
 	.num_registers = 1,
@@ -1170,6 +1200,37 @@ static void __init rb931_setup(void)
 					rb931_gpio_keys);
 }
 
+/*
+ * Init the wAP R hardware.
+ * The wAP R-2nD has a single ethernet port and a mini PCIe slot.
+ * The OEM source shows it has usb (used over PCIe for LTE devices),
+ * and the 'control' GPIO is assumed to be an output pin not tied to an LED.
+ */
+static void __init rbwapr_setup(void)
+{
+	u32 flags = RBSPI_HAS_WLAN0 | RBSPI_HAS_USB | RBSPI_HAS_PCI;
+
+	if (!rbspi_platform_setup())
+		return;
+
+	rbspi_peripherals_setup(flags);
+
+	/* GMAC1 is HW MAC, WLAN0 MAC is HW MAC + 1 */
+	rbspi_network_setup(flags, 0, 1, 0);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rbwapr_leds), rbwapr_leds);
+
+	gpio_request_one(RBWAPR_GPIO_PCIE_PWROFF, GPIOF_OUT_INIT_HIGH |
+			GPIOF_ACTIVE_LOW | GPIOF_EXPORT_DIR_FIXED,
+			"PCIE power off");
+
+	gpio_request_one(RBWAPR_GPIO_CONTROL, GPIOF_OUT_INIT_LOW |
+			GPIOF_ACTIVE_LOW | GPIOF_EXPORT_DIR_FIXED,
+			"control");
+
+	rbspi_register_reset_button(RBWAPR_GPIO_BTN_RESET);
+}
+
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAPL, "map-hb", rbmapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_941, "H951L", rbhapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_911L, "911L", rb911l_setup);
@@ -1178,7 +1239,7 @@ MIPS_MACHINE_NONAME(ATH79_MACH_RB_962, "962", rb962_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_750UPR2, "750-hb", rb750upr2_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_LHG5, "lhg", rblhg_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_WAP, "wap-hb", rbwap_setup);
-MIPS_MACHINE_NONAME(ATH79_MACH_RB_WAPR, "wap-lte", rbwap_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_WAPR, "wap-lte", rbwapr_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_CAP, "cap-hb", rbcap_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAP, "map2-hb", rbmap_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_WAPAC, "wapg-sc", rbwapgsc_setup);
