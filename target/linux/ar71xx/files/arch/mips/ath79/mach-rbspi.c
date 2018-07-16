@@ -5,6 +5,7 @@
  *  - MikroTik RouterBOARD mAP L-2nD
  *  - MikroTik RouterBOARD 911-2Hn (911 Lite2)
  *  - MikroTik RouterBOARD 911-5Hn (911 Lite5)
+ *  - MikroTik RouterBOARD 931-2nD (hAP mini)
  *  - MikroTik RouterBOARD 941L-2nD
  *  - MikroTik RouterBOARD 951Ui-2nD
  *  - MikroTik RouterBOARD 952Ui-5ac2nD
@@ -23,7 +24,7 @@
  *  hardware as the mAP L-2nD. It is unknown if they share the same board
  *  identifier.
  *
- *  Copyright (C) 2017 Thibaut VARENE <varenet@parisc-linux.org>
+ *  Copyright (C) 2017-2018 Thibaut VARENE <varenet@parisc-linux.org>
  *  Copyright (C) 2016 David Hutchison <dhutchison@bluemesh.net>
  *  Copyright (C) 2017 Ryan Mounce <ryan@mounce.com.au>
  *
@@ -559,6 +560,37 @@ static struct gpio_led rb911l_leds[] __initdata = {
 		.gpio = RB911L_GPIO_LED_USER,
 		.active_low = 1,
 		.open_drain = 1,
+	},
+};
+
+/* RB 931-2nD gpios */
+#define RB931_GPIO_BTN_RESET	0
+#define RB931_GPIO_BTN_MODE	9
+#define RB931_GPIO_LED_USER	1
+
+static struct gpio_keys_button rb931_gpio_keys[] __initdata = {
+	{
+		.desc = "Reset button",
+		.type = EV_KEY,
+		.code = KEY_RESTART,
+		.debounce_interval = RBSPI_KEYS_DEBOUNCE_INTERVAL,
+		.gpio = RB931_GPIO_BTN_RESET,
+		.active_low = 1,
+	}, {
+		.desc = "Mode button",
+		.type = EV_KEY,
+		.code = BTN_0,
+		.debounce_interval = RBSPI_KEYS_DEBOUNCE_INTERVAL,
+		.gpio = RB931_GPIO_BTN_MODE,
+		.active_low = 1,
+	}
+};
+
+static struct gpio_led rb931_leds[] __initdata = {
+	{
+		.name = "rb:green:user",
+		.gpio = RB931_GPIO_LED_USER,
+		.active_low = 1,
 	},
 };
 
@@ -1112,6 +1144,33 @@ static void __init rb911l_setup(void)
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(rb911l_leds), rb911l_leds);
 }
 
+/*
+ * Init the hAP mini hardware (QCA953x).
+ * The 931-2nD (hAP mini) has 3 ethernet ports, with port 2-3
+ * being assigned to LAN on the casing, and port 1 being assigned
+ * to "internet" (WAN) on the casing. Port 1 is connected to PHY2.
+ * Since WAN is neither PHY0 nor PHY4, we cannot use GMAC0 with this device.
+ */
+static void __init rb931_setup(void)
+{
+	u32 flags = RBSPI_HAS_WLAN0;
+
+	if (!rbspi_platform_setup())
+		return;
+
+	rbspi_peripherals_setup(flags);
+
+	/* GMAC1 is HW MAC, WLAN0 MAC is HW MAC + 3 */
+	rbspi_network_setup(flags, 0, 3, 0);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rb931_leds), rb931_leds);
+
+	/* hAP mini has two buttons */
+	ath79_register_gpio_keys_polled(-1, RBSPI_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(rb931_gpio_keys),
+					rb931_gpio_keys);
+}
+
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAPL, "map-hb", rbmapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_941, "H951L", rbhapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_911L, "911L", rb911l_setup);
@@ -1124,3 +1183,4 @@ MIPS_MACHINE_NONAME(ATH79_MACH_RB_WAPR, "wap-lte", rbwap_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_CAP, "cap-hb", rbcap_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAP, "map2-hb", rbmap_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_WAPAC, "wapg-sc", rbwapgsc_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_931, "931", rb931_setup);
