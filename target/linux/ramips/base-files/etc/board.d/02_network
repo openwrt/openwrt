@@ -341,6 +341,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
 		;;
+	br-6478ac-v2|\
 	tplink,c2-v1)
 		ucidef_add_switch "switch1" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
@@ -445,6 +446,10 @@ ramips_setup_macs()
 	br-6475nd)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(mtd_get_mac_binary devdata 7)
+		;;
+	br-6478ac-v2)
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		wan_mac=$(macaddr_add "$lan_mac" 2)
 		;;
 	cy-swr1100|\
 	dch-m225)

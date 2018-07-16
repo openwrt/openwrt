@@ -475,6 +475,18 @@ define Device/tiny-ac
 endef
 TARGET_DEVICES += tiny-ac
 
+define Device/br-6478ac-v2
+  DTS := BR-6478AC-V2
+  DEVICE_TITLE := Edimax BR-6478AC V2
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 7616k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m RN68 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := kmod-mt76
+endef
+TARGET_DEVICES += br-6478ac-v2
+
 define Device/tplink_c2-v1
   $(Device/Archer)
   DTS := ArcherC2-v1
