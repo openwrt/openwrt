@@ -1,0 +1,25 @@
+--- a/drivers/dma/dw/core.c
++++ b/drivers/dma/dw/core.c
+@@ -150,6 +150,8 @@ static void dwc_initialize(struct dw_dma
+ 	cfghi |= DWC_CFGH_DST_PER(dwc->dst_id);
+ 	cfghi |= DWC_CFGH_SRC_PER(dwc->src_id);
+ 
++	cfghi |= DWC_CFGH_PROTCTL(3); /* bufferable + privileged access */
++
+ 	channel_writel(dwc, CFG_LO, cfglo);
+ 	channel_writel(dwc, CFG_HI, cfghi);
+ 
+@@ -1539,11 +1541,8 @@ int dw_dma_probe(struct dw_dma_chip *chi
+ 		else
+ 			list_add(&dwc->chan.device_node, &dw->dma.channels);
+ 
+-		/* 7 is highest priority & 0 is lowest. */
+-		if (pdata->chan_priority == CHAN_PRIORITY_ASCENDING)
+-			dwc->priority = pdata->nr_channels - i - 1;
+-		else
+-			dwc->priority = i;
++		/* set all channels to the same priority */
++		dwc->priority = pdata->nr_channels - 1;
+ 
+ 		dwc->ch_regs = &__dw_regs(dw)->CHAN[i];
+ 		spin_lock_init(&dwc->lock);
