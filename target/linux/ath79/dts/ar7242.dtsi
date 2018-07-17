@@ -51,8 +51,8 @@
 	pll-reg = <0x4 0x2c 17>;
 	pll-handle = <&pll>;
 
-	resets = <&rst 8>, <&rst 9>;
-	reset-names = "mac", "phy";
+	resets = <&rst 9>;
+	reset-names = "mac";
 };
 
 &mdio1 {
@@ -71,8 +71,8 @@
 &eth1 {
 	compatible = "qca,ar7242-eth", "syscon", "simple-mfd";
 
-	resets = <&rst 12>, <&rst 13>;
-	reset-names = "mac", "phy";
+	resets = <&rst 13>;
+	reset-names = "mac";
 
 	phy-mode = "gmii";
 
