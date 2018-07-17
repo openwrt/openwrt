@@ -392,6 +392,25 @@ define Device/e600gac-v2-8M
 endef
 TARGET_DEVICES += e600gac-v2-8M
 
+define Device/e750a-v4-16M
+  DEVICE_TITLE := Qxwlan E750A v4 (16MB flash)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
+  BOARDNAME := E750A-V4
+  SUPPORTED_DEVICES := e750a-v4
+  IMAGE_SIZE := 15936k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art),-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += e750a-v4-16M
+
+define Device/e750a-v4-8M
+  $(Device/e750a-v4-16M)
+  DEVICE_TITLE := Qxwlan E750A v4 (8MB flash)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += e750a-v4-8M
+
 define Device/ew-balin
   DEVICE_TITLE := Embedded Wireless Balin Platform
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea

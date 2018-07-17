@@ -253,6 +253,7 @@ platform_check_image() {
 	e558-v2|\
 	e600g-v2|\
 	e600gac-v2|\
+	e750a-v4|\
 	ebr-2310-c1|\
 	ens202ext|\
 	epg5000|\
