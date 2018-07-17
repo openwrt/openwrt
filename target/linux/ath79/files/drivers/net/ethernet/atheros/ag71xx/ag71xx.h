@@ -440,7 +440,6 @@ static inline void ag71xx_debugfs_update_napi_stats(struct ag71xx *ag,
 
 int ag71xx_ar7240_init(struct ag71xx *ag, struct device_node *np);
 void ag71xx_ar7240_cleanup(struct ag71xx *ag);
-void ag71xx_ar7240_start(struct ag71xx *ag);
 
 int ag71xx_mdio_init(struct ag71xx *ag);
 void ag71xx_mdio_cleanup(struct ag71xx *ag);
