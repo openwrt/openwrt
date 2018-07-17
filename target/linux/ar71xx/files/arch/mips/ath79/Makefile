@@ -112,6 +112,7 @@ obj-$(CONFIG_ATH79_MACH_DR344)			+= mach-dr344.o
 obj-$(CONFIG_ATH79_MACH_DR531)			+= mach-dr531.o
 obj-$(CONFIG_ATH79_MACH_DRAGINO2)		+= mach-dragino2.o
 obj-$(CONFIG_ATH79_MACH_E1700AC_V2)		+= mach-e1700ac-v2.o
+obj-$(CONFIG_ATH79_MACH_E558_V2)		+= mach-e558-v2.o
 obj-$(CONFIG_ATH79_MACH_E600G_V2)		+= mach-e600g-v2.o
 obj-$(CONFIG_ATH79_MACH_EAP120)			+= mach-eap120.o
 obj-$(CONFIG_ATH79_MACH_EAP300V2)		+= mach-eap300v2.o
