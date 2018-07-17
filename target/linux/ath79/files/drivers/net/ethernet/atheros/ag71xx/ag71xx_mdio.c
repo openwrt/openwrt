@@ -84,14 +84,62 @@ static int ag71xx_mdio_mii_write(struct mii_bus *bus, int addr, int reg, u16 val
 	return 0;
 }
 
-static int ar934x_mdio_clock_div(unsigned int rate)
+static const u32 ar71xx_mdio_div_table[] = {
+	4, 4, 6, 8, 10, 14, 20, 28,
+};
+
+static const u32 ar7240_mdio_div_table[] = {
+	2, 2, 4, 6, 8, 12, 18, 26, 32, 40, 48, 56, 62, 70, 78, 96,
+};
+
+static const u32 ar933x_mdio_div_table[] = {
+	4, 4, 6, 8, 10, 14, 20, 28, 34, 42, 50, 58, 66, 74, 82, 98,
+};
+
+static int ag71xx_mdio_get_divider(struct device_node *np, u32 *div)
 {
-	if (rate == 100 * 1000 * 1000)
-		return 6; /* 100 MHz clock divided by 20 => 5 MHz */
-	else if (rate == 25 * 1000 * 1000)
-		return 0; /* 25 MHz clock divided by 4 => 6.25 MHz */
-	else
-		return 3; /* 40 MHz clock divided by 8 => 5 MHz */
+	struct clk *ref_clk = of_clk_get(np, 0);
+	unsigned long ref_clock;
+	u32 mdio_clock;
+	const u32 *table;
+	int ndivs, i;
+
+	if (IS_ERR(ref_clk))
+		return -EINVAL;
+
+	ref_clock = clk_get_rate(ref_clk);
+	clk_put(ref_clk);
+
+	if(of_property_read_u32(np, "qca,mdio-max-frequency", &mdio_clock)) {
+		if (of_property_read_bool(np, "builtin-switch"))
+			mdio_clock = 5000000;
+		else
+			mdio_clock = 2000000;
+	}
+
+	if (of_device_is_compatible(np, "qca,ar9330-mdio") ||
+		of_device_is_compatible(np, "qca,ar9340-mdio")) {
+		table = ar933x_mdio_div_table;
+		ndivs = ARRAY_SIZE(ar933x_mdio_div_table);
+	} else if (of_device_is_compatible(np, "qca,ar7240-mdio")) {
+		table = ar7240_mdio_div_table;
+		ndivs = ARRAY_SIZE(ar7240_mdio_div_table);
+	} else {
+		table = ar71xx_mdio_div_table;
+		ndivs = ARRAY_SIZE(ar71xx_mdio_div_table);
+	}
+
+	for (i = 0; i < ndivs; i++) {
+		unsigned long t;
+
+		t = ref_clock / table[i];
+		if (t <= mdio_clock) {
+			*div = i;
+			return 0;
+		}
+	}
+
+	return -ENOENT;
 }
 
 static int ag71xx_mdio_reset(struct mii_bus *bus)
@@ -103,26 +151,13 @@ static int ag71xx_mdio_reset(struct mii_bus *bus)
 
 	builtin_switch = of_property_read_bool(np, "builtin-switch");
 
-	if (of_device_is_compatible(np, "qca,ar7240-mdio"))
-		t = MII_CFG_CLK_DIV_6;
-	else if (of_device_is_compatible(np, "qca,ar9340-mdio"))
-		t = MII_CFG_CLK_DIV_58;
-	else if (builtin_switch)
-		t = MII_CFG_CLK_DIV_10;
-	else
-		t = MII_CFG_CLK_DIV_28;
-
-	if (builtin_switch && of_device_is_compatible(np, "qca,ar9340-mdio")) {
-		struct clk *ref_clk = of_clk_get(np, 0);
-		int clock_rate;
-
-		if (WARN_ON_ONCE(!ref_clk))
-			clock_rate = 40 * 1000 * 1000;
+	if (ag71xx_mdio_get_divider(np, &t)) {
+		if (of_device_is_compatible(np, "qca,ar9340-mdio"))
+			t = MII_CFG_CLK_DIV_58;
+		else if (builtin_switch)
+			t = MII_CFG_CLK_DIV_10;
 		else
-			clock_rate = clk_get_rate(ref_clk);
-
-		t = ar934x_mdio_clock_div(clock_rate);
-		clk_put(ref_clk);
+			t = MII_CFG_CLK_DIV_28;
 	}
 
 	regmap_write(am->mii_regmap, AG71XX_REG_MII_CFG, t | MII_CFG_RESET);
@@ -200,6 +235,7 @@ static int ag71xx_mdio_remove(struct platform_device *pdev)
 
 static const struct of_device_id ag71xx_mdio_match[] = {
 	{ .compatible = "qca,ar7240-mdio" },
+	{ .compatible = "qca,ar9330-mdio" },
 	{ .compatible = "qca,ar9340-mdio" },
 	{ .compatible = "qca,ath79-mdio" },
 	{}
