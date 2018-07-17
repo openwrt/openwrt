@@ -219,11 +219,6 @@
 						<&ddr_ctrl 1>;
 };
 
-&mdio0 {
-	resets = <&rst 22>;
-	reset-names = "mdio";
-};
-
 &eth0 {
 	compatible = "qca,qca9530-eth", "syscon";
 	pll-data = <0x82000101 0x80000101 0x80001313>;
@@ -234,17 +229,51 @@
 
 	reset-names = "mac";
 	resets = <&rst 9>;
+
+	phy-mode = "mii";
 };
 
 
 &mdio1 {
+	status = "okay";
 	resets = <&rst 23>;
 	reset-names = "mdio";
 	builtin-switch;
+
+	builtin_switch: switch0@1f {
+		compatible = "qca,ar8229-builtin";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg = <0x1f>;
+		phy-mode = "gmii";
+		phy4-mii-enable;
+
+		mdio-bus {
+			swphy0: ethernet-phy@0 {
+				reg = <0>;
+				phy-mode = "mii";
+			};
+
+			swphy4: ethernet-phy@4 {
+				reg = <4>;
+				phy-mode = "mii";
+			};
+		};
+	};
 };
 
 &eth1 {
-	compatible = "qca,qca9530-eth", "syscon";
+	status = "okay";
+
+	compatible = "qca,qca9530-eth", "syscon", "simple-mfd";
 	resets = <&rst 13>;
 	reset-names = "mac";
+
+	phy-mode = "gmii";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
