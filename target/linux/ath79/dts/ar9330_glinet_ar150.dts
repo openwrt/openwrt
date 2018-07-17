@@ -123,32 +123,16 @@
 	};
 };
 
-&mdio0 {
-	status = "okay";
-
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-		phy-mode = "mii";
-	};
-};
-
 &eth0 {
 	status = "okay";
 
 	mtd-mac-address = <&art 0x0>;
-
-	phy-handle = <&phy4>;
 };
 
 &eth1 {
 	status = "okay";
 
 	mtd-mac-address = <&art 0x0>;
-
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
 
 	gmac-config {
 		device = <&gmac>;
