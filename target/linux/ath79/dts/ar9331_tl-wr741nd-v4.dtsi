@@ -121,19 +121,8 @@
 	};
 };
 
-&mdio0 {
-	status = "okay";
-
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-		phy-mode = "mii";
-	};
-};
-
 &eth0 {
 	status = "okay";
-
-	phy-handle = <&phy4>;
 
 	mtd-mac-address = <&uboot 0x1fc00>;
 	mtd-mac-address-increment = <1>;
@@ -151,11 +140,6 @@
 
 	mtd-mac-address = <&uboot 0x1fc00>;
 	mtd-mac-address-increment = <(-1)>;
-
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
 };
 
 &gpio {

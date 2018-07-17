@@ -84,8 +84,6 @@
 &eth0 {
 	status = "okay";
 
-	phy-handle = <&phy4>;
-
 	mtd-mac-address = <&uboot 0x1fc00>;
 
 	gmac-config {
@@ -96,17 +94,13 @@
 	};
 };
 
-&gpio {
+&eth1 {
 	status = "okay";
+	compatible = "syscon", "simple-mfd";
 };
 
-&mdio0 {
+&gpio {
 	status = "okay";
-
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-		phy-mode = "mii";
-	};
 };
 
 &uart {
