@@ -1,0 +1,94 @@
+--- a/drivers/watchdog/ath79_wdt.c
++++ b/drivers/watchdog/ath79_wdt.c
+@@ -33,6 +33,7 @@
+ #include <linux/watchdog.h>
+ #include <linux/clk.h>
+ #include <linux/err.h>
++#include <linux/interrupt.h>
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
+ #include <linux/uaccess.h>
+@@ -101,7 +102,11 @@ static inline void ath79_wdt_enable(void
+ 	 */
+ 	udelay(2);
+ 
+-	ath79_wdt_wr(WDOG_REG_CTRL, WDOG_CTRL_ACTION_FCR);
++	/*
++	 * Watchdog reset is unreliable, sometimes causing hangs.
++	 * Use GPI to trigger panic instead, which is well handled
++	 */
++	ath79_wdt_wr(WDOG_REG_CTRL, WDOG_CTRL_ACTION_GPI);
+ 	/* flush write */
+ 	ath79_wdt_rr(WDOG_REG_CTRL);
+ }
+@@ -252,9 +257,15 @@ static struct miscdevice ath79_wdt_miscd
+ 	.fops = &ath79_wdt_fops,
+ };
+ 
++static irqreturn_t ath79_wdt_interrupt(int irq, void *dev_id)
++{
++	/* Let the kernel handle watchdog failure instead */
++	panic("watchdog death, game over man");
++}
++
+ static int ath79_wdt_probe(struct platform_device *pdev)
+ {
+-	struct resource *res;
++	struct resource *res, *irq_res;
+ 	u32 ctrl;
+ 	int err;
+ 
+@@ -288,6 +299,18 @@ static int ath79_wdt_probe(struct platfo
+ 			max_timeout, timeout);
+ 	}
+ 
++	irq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
++	if (!irq_res) {
++		dev_err(&pdev->dev, "no IRQ resource\n");
++		return -EINVAL;
++	}
++
++	err = request_irq(irq_res->start, ath79_wdt_interrupt, 0, DRIVER_NAME, NULL);
++	if (err) {
++		dev_err(&pdev->dev, "Failed to register wdt IRQ, err=%d\n", err);
++		goto err_clk_disable;
++	}
++
+ 	ctrl = ath79_wdt_rr(WDOG_REG_CTRL);
+ 	boot_status = (ctrl & WDOG_CTRL_LAST_RESET) ? WDIOF_CARDRESET : 0;
+ 
+--- a/arch/mips/ath79/dev-common.c
++++ b/arch/mips/ath79/dev-common.c
+@@ -107,17 +107,23 @@ void __init ath79_register_uart(void)
+ 	}
+ }
+ 
++static struct resource ath79_wdt_resources[] = {
++	{
++		.flags = IORESOURCE_MEM,
++		.start = AR71XX_RESET_BASE + AR71XX_RESET_REG_WDOG_CTRL,
++		.end = AR71XX_RESET_BASE + AR71XX_RESET_REG_WDOG_CTRL + 0x8 -1,
++	},
++	{
++		.flags = IORESOURCE_IRQ,
++		.start = ATH79_MISC_IRQ(4),
++		.end = ATH79_MISC_IRQ(4),
++	},
++};
++
+ void __init ath79_register_wdt(void)
+ {
+-	struct resource res;
+-
+-	memset(&res, 0, sizeof(res));
+-
+-	res.flags = IORESOURCE_MEM;
+-	res.start = AR71XX_RESET_BASE + AR71XX_RESET_REG_WDOG_CTRL;
+-	res.end = res.start + 0x8 - 1;
+-
+-	platform_device_register_simple("ath79-wdt", -1, &res, 1);
++	platform_device_register_simple("ath79-wdt", -1, ath79_wdt_resources,
++		ARRAY_SIZE(ath79_wdt_resources));
+ }
+ 
+ static struct ath79_gpio_platform_data ath79_gpio_pdata;
