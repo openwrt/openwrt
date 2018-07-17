@@ -50,7 +50,6 @@ ath79_setup_interfaces()
 		;;
 
 	"tplink,tl-archer-c7-v2")
-		ucidef_set_interfaces_lan_wan "eth1.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"0@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth0" "1:wan"
 		;;
