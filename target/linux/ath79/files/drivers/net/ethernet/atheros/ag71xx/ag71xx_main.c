@@ -1438,11 +1438,10 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, 0);
 	ag71xx_hw_init(ag);
-	ag71xx_mdio_init(ag);
 
 	err = ag71xx_phy_connect(ag);
 	if (err)
-		goto err_mdio_free;
+		goto err_free;
 
 	err = ag71xx_debugfs_init(ag);
 	if (err)
@@ -1466,8 +1465,6 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 err_phy_disconnect:
 	ag71xx_phy_disconnect(ag);
-err_mdio_free:
-	ag71xx_mdio_cleanup(ag);
 err_free:
 	free_netdev(dev);
 	return err;
@@ -1484,7 +1481,6 @@ static int ag71xx_remove(struct platform_device *pdev)
 	ag = netdev_priv(dev);
 	ag71xx_debugfs_exit(ag);
 	ag71xx_phy_disconnect(ag);
-	ag71xx_mdio_cleanup(ag);
 	unregister_netdev(dev);
 	free_irq(dev->irq, dev);
 	iounmap(ag->mac_base);
