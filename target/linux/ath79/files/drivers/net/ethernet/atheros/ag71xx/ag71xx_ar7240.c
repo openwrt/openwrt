@@ -753,20 +753,6 @@ static void ar7240sw_setup_port(struct ar7240sw *as, unsigned port, u8 portmask)
 	}
 }
 
-static int ar7240_set_addr(struct ar7240sw *as, u8 *addr)
-{
-	struct mii_bus *mii = as->mii_bus;
-	u32 t;
-
-	t = (addr[4] << 8) | addr[5];
-	ar7240sw_reg_write(mii, AR7240_REG_MAC_ADDR0, t);
-
-	t = (addr[0] << 24) | (addr[1] << 16) | (addr[2] << 8) | addr[3];
-	ar7240sw_reg_write(mii, AR7240_REG_MAC_ADDR1, t);
-
-	return 0;
-}
-
 static int
 ar7240_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
 		struct switch_val *val)
@@ -1298,19 +1284,6 @@ err_free:
 	return NULL;
 }
 
-void ag71xx_ar7240_start(struct ag71xx *ag)
-{
-	struct ar7240sw *as = ag->phy_priv;
-
-	if (!as)
-		return;
-
-	ar7240sw_reset(as);
-
-	ar7240_set_addr(as, ag->dev->dev_addr);
-	ar7240_hw_apply(&as->swdev);
-}
-
 int ag71xx_ar7240_init(struct ag71xx *ag, struct device_node *np)
 {
 	struct ar7240sw *as;
@@ -1321,6 +1294,7 @@ int ag71xx_ar7240_init(struct ag71xx *ag, struct device_node *np)
 
 	ag->phy_priv = as;
 	ar7240sw_reset(as);
+	ar7240_hw_apply(&as->swdev);
 
 	rwlock_init(&as->stats_lock);
 

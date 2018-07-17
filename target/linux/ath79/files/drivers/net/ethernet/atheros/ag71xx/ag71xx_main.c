@@ -735,7 +735,6 @@ static int ag71xx_open(struct net_device *dev)
 	if (ret)
 		goto err;
 
-	ag71xx_ar7240_start(ag);
 	phy_start(ag->phy_dev);
 
 	return 0;
