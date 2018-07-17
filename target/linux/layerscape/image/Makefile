@@ -18,6 +18,10 @@ define Build/append-ls-uboot
 	dd if=$(STAGING_DIR_IMAGE)/$(1)-uboot.bin >> $@
 endef
 
+define Build/append-ls-uboot-env
+	dd if=$(STAGING_DIR_IMAGE)/$(1)-uboot-env.bin >> $@
+endef
+
 define Build/append-ls-ppa
 	dd if=$(STAGING_DIR_IMAGE)/$(1)-ppa.itb >> $@
 endef
@@ -86,7 +90,8 @@ define Device/ls1043ardb
   endif
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1043a-rdb-sdk
   IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
-			append-ls-uboot $(1) | pad-to 4M | \
+			append-ls-uboot $(1) | pad-to 3M | \
+			append-ls-uboot-env $(1) | pad-to 4M | \
 			append-ls-ppa $(1) | pad-to 9M | \
 			append-ls-fman $(1) | pad-to 15M | \
 			append-ls-dtb $$(DEVICE_DTS) | pad-to 16M | \
@@ -109,7 +114,8 @@ define Device/ls1046ardb
   BLOCKSIZE := 256KiB
   PAGESIZE := 1
   IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
-			append-ls-uboot $(1) | pad-to 4M | \
+			append-ls-uboot $(1) | pad-to 3M | \
+			append-ls-uboot-env $(1) | pad-to 4M | \
 			append-ls-ppa $(1) | pad-to 9M | \
 			append-ls-fman $(1) | pad-to 15M | \
 			append-ls-dtb $$(DEVICE_DTS) | pad-to 16M | \
@@ -132,7 +138,8 @@ define Device/ls1012ardb
   BLOCKSIZE := 256KiB
   PAGESIZE := 1
   IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
-			append-ls-uboot $(1) | pad-to 4M | \
+			append-ls-uboot $(1) | pad-to 3M | \
+			append-ls-uboot-env $(1) | pad-to 4M | \
 			append-ls-ppa $(1) | pad-to 10M | \
 			append-ls-ppfe | pad-to 15M | \
 			append-ls-dtb $$(DEVICE_DTS) | pad-to 16M | \
@@ -155,7 +162,8 @@ define Device/ls1012afrdm
   BLOCKSIZE := 256KiB
   PAGESIZE := 1
   IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
-			append-ls-uboot $(1) | pad-to 4M | \
+			append-ls-uboot $(1) | pad-to 3M | \
+			append-ls-uboot-env $(1) | pad-to 4M | \
 			append-ls-ppa $(1) | pad-to 10M | \
 			append-ls-ppfe | pad-to 15M | \
 			append-ls-dtb $$(DEVICE_DTS) | pad-to 16M | \
@@ -177,7 +185,8 @@ define Device/ls1088ardb
   BLOCKSIZE := 256KiB
   PAGESIZE := 1
   IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
-			append-ls-uboot $(1) | pad-to 4M | \
+			append-ls-uboot $(1) | pad-to 3M | \
+			append-ls-uboot-env $(1) | pad-to 4M | \
 			append-ls-ppa $(1) | pad-to 10M | \
 			append-ls-mc $(1) | pad-to 13M | \
 			append-ls-dpl $(1) | pad-to 14M | \
@@ -195,7 +204,8 @@ define Device/ls2088ardb
 			layerscape-ppa-ls2088ardb
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls2088a-rdb
   IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
-			append-ls-uboot $(1) | pad-to 4M | \
+			append-ls-uboot $(1) | pad-to 3M | \
+			append-ls-uboot-env $(1) | pad-to 4M | \
 			append-ls-ppa $(1) | pad-to 10M | \
 			append-ls-mc $(1) | pad-to 13M | \
 			append-ls-dpl $(1) | pad-to 14M | \
