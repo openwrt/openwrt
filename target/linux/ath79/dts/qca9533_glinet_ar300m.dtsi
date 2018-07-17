@@ -9,13 +9,6 @@
 	compatible = "glinet,ar300m", "qca,qca9533";
 	model = "GL.iNet GL-AR300M";
 
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-output-names = "ref";
-		clock-frequency = <25000000>;
-	};
-
 	keys {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -90,10 +83,6 @@
 
 &usb_phy {
 	status = "okay";
-};
-
-&pll {
-	clocks = <&extosc>;
 };
 
 &mdio0 {
