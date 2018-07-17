@@ -744,6 +744,17 @@ config ATH79_MACH_E750A_V4
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_E750G_V8
+	bool "Qxwlan E750G v8 support"
+	select SOC_AR934X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_ESR900
 	bool "EnGenius ESR900 board support"
 	select SOC_QCA955X

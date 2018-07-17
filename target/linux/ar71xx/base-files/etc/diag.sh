@@ -27,6 +27,7 @@ get_status_led() {
 	e558-v2|\
 	e600gac-v2|\
 	e750a-v4|\
+	e750g-v8|\
 	eap120|\
 	minibox-v1|\
 	packet-squirrel|\

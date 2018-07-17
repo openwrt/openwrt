@@ -67,7 +67,7 @@ cpe870|\
 dr531|\
 e600g-v2|\
 e600gac-v2|\
-e750a-v2)
+e750a-v4)
 	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
 	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth1"
 
@@ -373,7 +373,8 @@ e1700ac-v2)
 	ucidef_set_led_usbdev "usb" "USB" "$board:green:usb" "1-1"
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:green:wlan2g" "phy1tpt"
 	;;
-e558-v2)
+e558-v2|\
+e750g-v8)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
 	;;
 esr900)

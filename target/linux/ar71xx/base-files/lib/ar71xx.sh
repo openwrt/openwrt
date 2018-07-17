@@ -687,6 +687,9 @@ ar71xx_board_detect() {
 	*"E750A v4")
 		name="e750a-v4"
 		;;
+	*"E750G v8")
+		name="e750g-v8"
+		;;
 	*"EAP120")
 		name="eap120"
 		tplink_pharos_board_detect "$(tplink_pharos_get_model_string | tr -d '\r')"

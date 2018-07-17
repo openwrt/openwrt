@@ -109,6 +109,7 @@ enum ath79_mach_type {
 	ATH79_MACH_E600G_V2,			/* Qxwlan E600G v2 */
 	ATH79_MACH_E600GAC_V2,			/* Qxwlan E600GAC v2 */
 	ATH79_MACH_E750A_V4,			/* Qxwlan E750A v4 */
+	ATH79_MACH_E750G_V8,			/* Qxwlan E750G v8 */
 	ATH79_MACH_EAP120,			/* TP-LINK EAP120 */
 	ATH79_MACH_EAP300V2,			/* EnGenius EAP300 v2 */
 	ATH79_MACH_EAP7660D,			/* Senao EAP7660D */
