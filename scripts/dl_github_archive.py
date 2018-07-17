@@ -25,10 +25,11 @@ import urllib2
 TMPDIR = os.environ.get('TMP_DIR') or '/tmp'
 TMPDIR_DL = os.path.join(TMPDIR, 'dl')
 
+def ScriptError(type, Exception, traceback): 
+    if type == "DownloadError" or type == "UncompressError": 
+	    print("%s : %s" % (type, Exception))
 
-class PathException(Exception): pass
-class DownloadGitHubError(Exception): pass
-
+sys.excepthook = ScriptError
 
 class Path(object):
     """Context class for preparing and cleaning up directories.
@@ -127,7 +128,7 @@ class Path(object):
         if len(dirs) == 1:
             return dirs[0]
         else:
-            raise PathException('untar %s: expecting a single subdir, got %s' % (path, dirs))
+            raise ScriptError("UncompressError",'untar %s: expecting a single subdir, got %s' % (path, dirs),"")
 
     @staticmethod
     def tar(path, subdir, into=None, ts=None):
@@ -147,7 +148,7 @@ class Path(object):
             args.append('-z')
             envs['GZIP'] = '-n'
         else:
-            raise PathException('unknown compression type %s' % into)
+            raise ScriptError("UncompressError",'unknown compression type %s' % into,"")
         subprocess.check_call(args, env=envs)
 
 
@@ -403,8 +404,7 @@ class DownloadGitHubTarball(object):
         return fileobj
 
     def _error(self, msg):
-        return DownloadGitHubError('{}: {}'.format(self.source, msg))
-
+        return ScriptError("DownloadError" , '{}: {}'.format(self.source, msg) , "")
 
 def main():
     parser = argparse.ArgumentParser()
