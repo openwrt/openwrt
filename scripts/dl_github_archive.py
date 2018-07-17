@@ -415,12 +415,13 @@ def main():
     parser.add_argument('--source', help='Source tarball filename')
     parser.add_argument('--hash', help='Source tarball\'s expected sha256sum')
     args = parser.parse_args()
-    method = DownloadGitHubTarball(args)
     try:
+        method = DownloadGitHubTarball(args)
         method.download()
-    except Exception:
-        sys.stderr.write('download {} from {} failed\n'.format(args.source, args.url))
-        raise
+    except Exception as ex:
+        sys.stderr.write('{}: Download from {} failed\n'.format(args.source, args.url))
+        sys.stderr.write('{}\n'.format(ex))
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
