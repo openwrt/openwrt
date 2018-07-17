@@ -1271,64 +1271,6 @@ static const char *ag71xx_get_phy_if_mode_name(phy_interface_t mode)
 	return "unknown";
 }
 
-static void ag71xx_of_bit(struct device_node *np, const char *prop,
-			  u32 *reg, u32 mask)
-{
-	u32 val;
-
-	if (of_property_read_u32(np, prop, &val))
-		return;
-
-	if (val)
-		*reg |= mask;
-	else
-		*reg &= ~mask;
-}
-
-static void ag71xx_setup_gmac_933x(struct device_node *np, void __iomem *base)
-{
-	u32 val = __raw_readl(base + AR933X_GMAC_REG_ETH_CFG);
-
-	ag71xx_of_bit(np, "switch-phy-swap", &val, AR933X_ETH_CFG_SW_PHY_SWAP);
-	ag71xx_of_bit(np, "switch-phy-addr-swap", &val,
-		      AR933X_ETH_CFG_SW_PHY_ADDR_SWAP);
-
-	__raw_writel(val, base + AR933X_GMAC_REG_ETH_CFG);
-}
-
-static int ag71xx_setup_gmac(struct device_node *np)
-{
-	struct device_node *np_dev;
-	void __iomem *base;
-	int err = 0;
-
-	np = of_get_child_by_name(np, "gmac-config");
-	if (!np)
-		return 0;
-
-	np_dev = of_parse_phandle(np, "device", 0);
-	if (!np_dev)
-		goto out;
-
-	base = of_iomap(np_dev, 0);
-	if (!base) {
-		pr_err("%pOF: can't map GMAC registers\n", np_dev);
-		err = -ENOMEM;
-		goto err_iomap;
-	}
-
-	if (of_device_is_compatible(np_dev, "qca,ar9330-gmac"))
-		ag71xx_setup_gmac_933x(np, base);
-
-	iounmap(base);
-
-err_iomap:
-	of_node_put(np_dev);
-out:
-	of_node_put(np);
-	return err;
-}
-
 static int ag71xx_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;

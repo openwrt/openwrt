@@ -447,6 +447,8 @@ void ag71xx_mdio_cleanup(struct ag71xx *ag);
 int ag71xx_mdio_mii_read(struct mii_bus *bus, int addr, int reg);
 int ag71xx_mdio_mii_write(struct mii_bus *bus, int addr, int reg, u16 val);
 
+int ag71xx_setup_gmac(struct device_node *np);
+
 int ar7240sw_phy_read(struct mii_bus *mii, int addr, int reg);
 int ar7240sw_phy_write(struct mii_bus *mii, int addr, int reg, u16 val);
 
