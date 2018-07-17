@@ -24,20 +24,24 @@ define U-Boot/Default
   BUILD_SUBTARGET:=armv8_64b
   BUILD_DEVICES:=$(1)
   UBOOT_IMAGE:=u-boot-dtb.bin
+  ENV_SIZE:=0x2000
 endef
 
 define U-Boot/ls1012ardb
   NAME:=NXP LS1012ARDB
   UBOOT_CONFIG:=ls1012ardb_qspi
+  ENV_SIZE:=0x40000
 endef
 
 define U-Boot/ls1012afrdm
   NAME:=NXP LS1012AFRDM
   UBOOT_CONFIG:=ls1012afrdm_qspi
+  ENV_SIZE:=0x40000
 endef
 
 define U-Boot/ls1043ardb
   NAME:=NXP LS1043ARDB
+  ENV_SIZE:=0x20000
 endef
 
 define U-Boot/ls1046ardb
@@ -67,6 +71,9 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) \
 		$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-uboot.bin
+	$(PKG_BUILD_DIR)/tools/mkenvimage -s $(ENV_SIZE) \
+		-o $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-uboot-env.bin \
+		files/$(BUILD_VARIANT)-uEnv.txt
 endef
 
 define Package/u-boot/install/default

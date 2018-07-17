@@ -29,27 +29,32 @@ define Package/uboot-layerscape-armv8_32b/Config
     TITLE:=$(2)
     DEPENDS:=@TARGET_layerscape_armv8_32b
     CONFIG:=$(3)
+    ENV_SIZE:=$(4)
   endef
 endef
 
 define Package/uboot-layerscape-armv8_32b/ls1012ardb
   TITLE:=U-Boot image for NXP LS1012ARDB
   CONFIG:=ls1012ardb-uboot.bin
+  ENV_SIZE:=0x40000
 endef
 
 define Package/uboot-layerscape-armv8_32b/ls1012afrdm
   TITLE:=U-Boot image for NXP LS1012FRDM
   CONFIG:=ls1012afrdm-uboot.bin
+  ENV_SIZE:=0x40000
 endef
 
 define Package/uboot-layerscape-armv8_32b/ls1043ardb
   TITLE:=U-Boot image for NXP LS1043ARDB
   CONFIG:=ls1043ardb-uboot.bin
+  ENV_SIZE:=0x20000
 endef
 
 define Package/uboot-layerscape-armv8_32b/ls1046ardb
   TITLE:=U-Boot image for NXP LS1046ARDB
   CONFIG:=ls1046ardb-uboot.bin
+  ENV_SIZE:=0x2000
 endef
 
 define Build/Compile
@@ -59,6 +64,9 @@ define Package/uboot-layerscape-armv8_32b/Install
   define Package/u-boot-$(1)-image/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
 	$(CP) $(PKG_BUILD_DIR)/$(CONFIG) $(STAGING_DIR_IMAGE)/
+	$(PKG_BUILD_DIR)/tools/mkenvimage -s $(ENV_SIZE) \
+		-o $(STAGING_DIR_IMAGE)/$(1)-uboot-env.bin \
+		../uboot-layerscape/files/$(1)-uEnv.txt
   endef
 endef
 
@@ -70,7 +78,7 @@ UBOOTS := \
 
 $(foreach u,$(UBOOTS), \
 	$(eval $(Package/uboot-layerscape-armv8_32b/$(u))) \
-	$(eval $(call Package/uboot-layerscape-armv8_32b/Config,$(u),$(TITLE),$(CONFIG))) \
+	$(eval $(call Package/uboot-layerscape-armv8_32b/Config,$(u),$(TITLE),$(CONFIG),$(ENV_SIZE))) \
 	$(eval $(call Package/uboot-layerscape-armv8_32b/Install,$(u))) \
 	$(eval $(call BuildPackage,u-boot-$(u)-image)) \
 )
