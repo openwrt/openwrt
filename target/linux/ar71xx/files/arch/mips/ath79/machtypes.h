@@ -105,6 +105,7 @@ enum ath79_mach_type {
 	ATH79_MACH_DR531,			/* Wallys DR531 */
 	ATH79_MACH_DRAGINO2,			/* Dragino Version 2 */
 	ATH79_MACH_E1700AC_V2,			/* Qxwlan E1700AC v2 */
+	ATH79_MACH_E558_V2,			/* Qxwlan E558 v2 */
 	ATH79_MACH_E600G_V2,			/* Qxwlan E600G v2 */
 	ATH79_MACH_E600GAC_V2,			/* Qxwlan E600GAC v2 */
 	ATH79_MACH_EAP120,			/* TP-LINK EAP120 */

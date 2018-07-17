@@ -372,6 +372,9 @@ e1700ac-v2)
 	ucidef_set_led_usbdev "usb" "USB" "$board:green:usb" "1-1"
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:green:wlan2g" "phy1tpt"
 	;;
+e558-v2)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+	;;
 esr900)
 	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "engenius:blue:wlan-2g" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN 5 GHz" "engenius:blue:wlan-5g" "phy1tpt"
