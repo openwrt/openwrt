@@ -675,11 +675,17 @@ ar71xx_board_detect() {
 	*"E2100L")
 		name="e2100l"
 		;;
+	*"E558 v2")
+		name="e558-v2"
+		;;
 	*"E600G v2")
 		name="e600g-v2"
 		;;
 	*"E600GAC v2")
 		name="e600gac-v2"
+		;;
+	*"E750A v4")
+		name="e750a-v4"
 		;;
 	*"EAP120")
 		name="eap120"
