@@ -3,6 +3,7 @@
 #
 
 ag71xx-y	+= ag71xx_main.o
+ag71xx-y	+= ag71xx_gmac.o
 ag71xx-y	+= ag71xx_ethtool.o
 ag71xx-y	+= ag71xx_phy.o
 ag71xx-y	+= ag71xx_mdio.o
