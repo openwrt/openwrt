@@ -260,11 +260,9 @@ define Device/rb750gr3
 endef
 TARGET_DEVICES += rb750gr3
 
-define Device/mikrotik_rbm33g
-  DTS := RBM33G
+define Device/MikroTik
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16128k
-  DEVICE_TITLE := MikroTik RBM33G
   DEVICE_PACKAGES := kmod-usb3
   LOADER_TYPE := elf
   PLATFORM := mt7621
@@ -272,18 +270,18 @@ define Device/mikrotik_rbm33g
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
+
+define Device/mikrotik_rbm33g
+  $(Device/MikroTik)
+  DTS := RBM33G
+  DEVICE_TITLE := MikroTik RouterBOARD M33G
+endef
 TARGET_DEVICES += mikrotik_rbm33g
 
 define Device/mikrotik_rbm11g
+  $(Device/MikroTik)
   DTS := RBM11G
-  BLOCKSIZE := 64k
-  IMAGE_SIZE := 16128k
-  DEVICE_TITLE := MikroTik RBM11G
-  LOADER_TYPE := elf
-  PLATFORM := mt7621
-  KERNEL := kernel-bin | patch-dtb | lzma | loader-kernel
-  IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_TITLE := MikroTik RouterBOARD M11G
 endef
 TARGET_DEVICES += mikrotik_rbm11g
 

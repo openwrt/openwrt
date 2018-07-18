@@ -7,7 +7,7 @@
 
 / {
 	compatible = "mikrotik,rbm33g", "mediatek,mt7621-soc";
-	model = "MikroTik RBM33G";
+	model = "MikroTik RouterBOARD M33G";
 
 	aliases {
 		led-status = &led_usr;
@@ -39,7 +39,7 @@
 		poll-interval = <20>;
 
 		res {
-			label = "res";
+			label = "reset";
 			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
@@ -69,6 +69,7 @@
 		regulator-always-on;
 	};
 
+	// not defined in OEM source, this controls the M.2 slot
 	pcie2_vcc_reg {
 		compatible = "regulator-fixed";
 		regulator-name = "pcie2_vcc";
@@ -104,18 +105,42 @@
 		reg = <0>;
 		spi-max-frequency = <3125000>;
 
-		partition@0 {
-			label = "routerboot";
-			reg = <0x0 0xf000>;
-			read-only;
-		};
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		factory: partition@f000 {
-			label = "factory";
-			reg = <0xf000 0x71000>;
-			read-only;
-		};
+			partition@0 {
+				label = "RouterBoot";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
 
+			routerboot@0 {
+				reg = <0x0 0xf000>;
+				read-only;
+			};
+
+			hard_config: hard_config@f000 {
+				reg = <0xf000 0x1000>;
+				read-only;
+			};
+
+			routerboot2@10000 {
+				reg = <0x10000 0xf000>;
+				read-only;
+			};
+
+			soft_config@20000 {
+				reg = <0x20000 0x1000>;
+			};
+
+			// valid data only extends up to 0x4f but make it 0x1000 to match ar71xx
+			bios@30000 {
+				reg = <0x30000 0x1000>;
+				read-only;
+			};
+		};
 	};
 
 	w25q128@0 {
@@ -123,7 +148,15 @@
 		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <1>;
+		// XXX empiric value to obtain actual 10MHz SCK at the chip 
 		spi-max-frequency = <3125000>;
+
+		// this contains no data but is defined in OEM source
+		partition@0 {
+			label = "RouterBootFake";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
 
 		partition@40000 {
 			label = "firmware";
@@ -133,7 +166,7 @@
 };
 
 &ethernet {
-	mtd-mac-address = <&factory 0x0010>;
+	mtd-mac-address = <&hard_config 0x0010>;
 	mtd-mac-address-increment = <1>;
 };
 
@@ -158,3 +191,6 @@
 &pcie {
 	status = "okay";
 };
+
+// XXX this device has hardware crypto
+//&crypto {};
