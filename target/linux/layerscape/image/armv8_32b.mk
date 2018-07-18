@@ -41,31 +41,33 @@ define Device/ls1012ardb
 endef
 TARGET_DEVICES += ls1012ardb
 
-define Device/ls1012afrdm
-  DEVICE_TITLE := LS1012AFRDM
+define Device/ls1012afrwy
+  DEVICE_TITLE := LS1012AFRWY
   DEVICE_PACKAGES += \
-    layerscape-rcw-ls1012afrdm \
+    layerscape-rcw-ls1012afrwy \
     layerscape-ppfe \
-    layerscape-ppa-ls1012afrdm \
-    u-boot-ls1012afrdm-image \
+    layerscape-ppa-ls1012afrwy \
+    u-boot-ls1012afrwy-image \
     kmod-ppfe
-  DEVICE_DTS := ../../../arm64/boot/dts/freescale/fsl-ls1012a-frdm
-  UBIFS_OPTS := -m 1 -e 262016 -c 128
-  UBINIZE_OPTS := -E 5
-  BLOCKSIZE := 256KiB
-  PAGESIZE := 1
+  DEVICE_DTS := ../../../arm64/boot/dts/freescale/fsl-ls1012a-frwy
+  FILESYSTEMS := ext4
+  IMAGES := firmware.bin sdcard.img
   IMAGE/firmware.bin := \
     ls-clean | \
-    ls-append $(1)-rcw.bin | pad-to 1M | \
-    ls-append $(1)-uboot.bin | pad-to 3M | \
-    ls-append $(1)-uboot-env.bin | pad-to 4M | \
-    ls-append $(1)-ppa.itb | pad-to 10M | \
-    ls-append pfe.itb | pad-to 15M | \
+    ls-append $(1)-rcw.bin | pad-to 128K | \
+    ls-append pfe.itb | pad-to 384K | \
+    ls-append $(1)-ppa.itb | pad-to 1024K | \
+    ls-append $(1)-uboot.bin | pad-to 1856K | \
+    ls-append $(1)-uboot-env.bin | pad-to 2048K | \
+    check-size 2097153
+  IMAGE/sdcard.img := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 15M | \
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to 32M | \
-    append-ubi | check-size 67108865
+    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
 endef
-TARGET_DEVICES += ls1012afrdm
+TARGET_DEVICES += ls1012afrwy
 
 define Device/ls1043ardb
   DEVICE_TITLE := LS1043ARDB

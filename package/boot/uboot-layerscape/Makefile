@@ -33,10 +33,10 @@ define U-Boot/ls1012ardb
   ENV_SIZE:=0x40000
 endef
 
-define U-Boot/ls1012afrdm
-  NAME:=NXP LS1012AFRDM
-  UBOOT_CONFIG:=ls1012afrdm_qspi
-  ENV_SIZE:=0x40000
+define U-Boot/ls1012afrwy
+  NAME:=NXP LS1012AFRWY
+  UBOOT_CONFIG:=ls1012afrwy_qspi
+  ENV_SIZE:=0x10000
 endef
 
 define U-Boot/ls1043ardb
@@ -94,7 +94,7 @@ endef
 
 UBOOT_TARGETS := \
   ls1012ardb \
-  ls1012afrdm \
+  ls1012afrwy \
   ls1043ardb \
   ls1043ardb-sdboot \
   ls1046ardb \

@@ -39,10 +39,10 @@ define Package/uboot-layerscape-armv8_32b/ls1012ardb
   ENV_SIZE:=0x40000
 endef
 
-define Package/uboot-layerscape-armv8_32b/ls1012afrdm
-  TITLE:=U-Boot image for NXP LS1012FRDM
-  CONFIG:=ls1012afrdm-uboot.bin
-  ENV_SIZE:=0x40000
+define Package/uboot-layerscape-armv8_32b/ls1012afrwy
+  TITLE:=U-Boot image for NXP LS1012FRWY
+  CONFIG:=ls1012afrwy-uboot.bin
+  ENV_SIZE:=0x10000
 endef
 
 define Package/uboot-layerscape-armv8_32b/ls1043ardb
@@ -72,7 +72,7 @@ endef
 
 UBOOTS := \
   ls1012ardb \
-  ls1012afrdm \
+  ls1012afrwy \
   ls1043ardb \
   ls1046ardb
 
