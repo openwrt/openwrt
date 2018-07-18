@@ -9,6 +9,10 @@ include $(INCLUDE_DIR)/image.mk
 
 ITB_BOARDS = traverse-five64
 
+LS_SD_ROOTFSPART_OFFSET = 64
+LS_SD_IMAGE_SIZE = $(shell echo $$((($(LS_SD_ROOTFSPART_OFFSET) + \
+	$(CONFIG_TARGET_ROOTFS_PARTSIZE)) * 1024 * 1024)))
+
 define Build/ls-clean
 	rm -f $@
 endef
@@ -20,6 +24,12 @@ endef
 define Build/ls-append-dtb
 	$(call Image/BuildDTB,$(DTS_DIR)/$(1).dts,$(DTS_DIR)/$(1).dtb)
 	dd if=$(DTS_DIR)/$(1).dtb >> $@
+endef
+
+define Build/ls-append-sdhead
+	./gen_sdcard_head_img.sh $(STAGING_DIR_IMAGE)/$(1)-sdcard-head.img \
+		$(LS_SD_ROOTFSPART_OFFSET) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
+	dd if=$(STAGING_DIR_IMAGE)/$(1)-sdcard-head.img >> $@
 endef
 
 define Build/traverse-fit

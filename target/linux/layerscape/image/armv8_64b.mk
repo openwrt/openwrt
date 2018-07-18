@@ -85,6 +85,27 @@ define Device/ls1043ardb
 endef
 TARGET_DEVICES += ls1043ardb
 
+define Device/ls1043ardb-sdboot
+  DEVICE_TITLE := LS1043ARDB (SD Card Boot)
+  DEVICE_PACKAGES += \
+    layerscape-fman-ls1043ardb \
+    layerscape-ppa-ls1043ardb
+  DEVICE_DTS := freescale/fsl-ls1043a-rdb-sdk
+  FILESYSTEMS := ext4
+  IMAGES := sdcard.img
+  IMAGE/sdcard.img := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 4K | \
+    ls-append $(1)-uboot.bin | pad-to 3M | \
+    ls-append $(1)-uboot-env.bin | pad-to 4M | \
+    ls-append ls1043ardb-ppa.itb | pad-to 9M | \
+    ls-append ls1043ardb-fman.bin | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
+endef
+TARGET_DEVICES += ls1043ardb-sdboot
+
 define Device/ls1046ardb
   DEVICE_TITLE := LS1046ARDB
   DEVICE_PACKAGES += \
@@ -108,6 +129,27 @@ define Device/ls1046ardb
     append-ubi | check-size 67108865
 endef
 TARGET_DEVICES += ls1046ardb
+
+define Device/ls1046ardb-sdboot
+  DEVICE_TITLE := LS1046ARDB (SD Card Boot)
+  DEVICE_PACKAGES += \
+    layerscape-fman-ls1046ardb \
+    layerscape-ppa-ls1046ardb
+  DEVICE_DTS := freescale/fsl-ls1046a-rdb-sdk
+  FILESYSTEMS := ext4
+  IMAGES := sdcard.img
+  IMAGE/sdcard.img := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 4K | \
+    ls-append $(1)-uboot.bin | pad-to 3M | \
+    ls-append $(1)-uboot-env.bin | pad-to 4M | \
+    ls-append ls1046ardb-ppa.itb | pad-to 9M | \
+    ls-append ls1046ardb-fman.bin | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
+endef
+TARGET_DEVICES += ls1046ardb-sdboot
 
 define Device/ls1088ardb
   DEVICE_TITLE := LS1088ARDB
@@ -136,6 +178,33 @@ define Device/ls1088ardb
     append-ubi | check-size 67108865
 endef
 TARGET_DEVICES += ls1088ardb
+
+define Device/ls1088ardb-sdboot
+  DEVICE_TITLE := LS1088ARDB (SD Card Boot)
+  DEVICE_PACKAGES += \
+    layerscape-rcw-ls1088ardb-sdboot \
+    layerscape-mc-ls1088ardb \
+    layerscape-dpl-ls1088ardb \
+    layerscape-ppa-ls1088ardb \
+    restool
+  DEVICE_DTS := freescale/fsl-ls1088a-rdb
+  FILESYSTEMS := ext4
+  IMAGES := sdcard.img
+  IMAGE/sdcard.img := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 4K | \
+    ls-append $(1)-rcw.bin | pad-to 1M | \
+    ls-append $(1)-uboot.bin | pad-to 3M | \
+    ls-append $(1)-uboot-env.bin | pad-to 4M | \
+    ls-append ls1088ardb-ppa.itb | pad-to 10M | \
+    ls-append ls1088ardb-mc.itb | pad-to 13M | \
+    ls-append ls1088ardb-dpl.dtb | pad-to 14M | \
+    ls-append ls1088ardb-dpc.dtb | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
+endef
+TARGET_DEVICES += ls1088ardb-sdboot
 
 define Device/ls2088ardb
   DEVICE_TITLE := LS2088ARDB

@@ -29,3 +29,19 @@ define Device/ls1021atwr
     append-rootfs | pad-rootfs | check-size 67108865
 endef
 TARGET_DEVICES += ls1021atwr
+
+define Device/ls1021atwr-sdboot
+  DEVICE_TITLE := LS1021ATWR (SD Card Boot)
+  DEVICE_DTS := ls1021a-twr
+  FILESYSTEMS := ext4
+  IMAGES := sdcard.img
+  IMAGE/sdcard.img := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 4K | \
+    ls-append $(1)-uboot.bin | pad-to 3M | \
+    ls-append $(1)-uboot-env.bin | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
+endef
+TARGET_DEVICES += ls1021atwr-sdboot

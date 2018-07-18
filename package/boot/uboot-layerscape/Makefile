@@ -44,14 +44,32 @@ define U-Boot/ls1043ardb
   ENV_SIZE:=0x20000
 endef
 
+define U-Boot/ls1043ardb-sdboot
+  NAME:=NXP LS1043ARDB SD Card Boot
+  UBOOT_CONFIG:=ls1043ardb_sdcard
+  UBOOT_IMAGE:=u-boot-with-spl-pbl.bin
+endef
+
 define U-Boot/ls1046ardb
   NAME:=NXP LS1046ARDB
   UBOOT_CONFIG:=ls1046ardb_qspi
 endef
 
+define U-Boot/ls1046ardb-sdboot
+  NAME:=NXP LS1046ARDB SD Card Boot
+  UBOOT_CONFIG:=ls1046ardb_sdcard
+  UBOOT_IMAGE:=u-boot-with-spl-pbl.bin
+endef
+
 define U-Boot/ls1088ardb
   NAME:=NXP LS1088ARDB
   UBOOT_CONFIG:=ls1088ardb_qspi
+endef
+
+define U-Boot/ls1088ardb-sdboot
+  NAME:=NXP LS1088ARDB SD Card Boot
+  UBOOT_CONFIG:=ls1088ardb_sdcard_qspi
+  UBOOT_IMAGE:=u-boot-with-spl.bin
 endef
 
 define U-Boot/ls2088ardb
@@ -66,14 +84,26 @@ define U-Boot/ls1021atwr
   ENV_SIZE:=0x20000
 endef
 
+define U-Boot/ls1021atwr-sdboot
+  NAME:=NXP LS1021ATWR SD Card Boot
+  BUILD_SUBTARGET:=armv7
+  UBOOT_CONFIG:=ls1021atwr_sdcard_ifc
+  UBOOT_IMAGE:=u-boot-with-spl-pbl.bin
+  ENV_SIZE:=0x20000
+endef
+
 UBOOT_TARGETS := \
   ls1012ardb \
   ls1012afrdm \
   ls1043ardb \
+  ls1043ardb-sdboot \
   ls1046ardb \
+  ls1046ardb-sdboot \
   ls1088ardb \
+  ls1088ardb-sdboot \
   ls2088ardb \
-  ls1021atwr
+  ls1021atwr \
+  ls1021atwr-sdboot
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
