@@ -53,6 +53,11 @@ define Package/layerscape-rcw/ls1088ardb
   CONFIG:=ls1088ardb/FCQQQQQQQQ_PPP_H_0x1d_0x0d/rcw_1600_qspi.bin
 endef
 
+define Package/layerscape-rcw/ls1088ardb-sdboot
+  TITLE:=NXP LS1088ARDB SD card boot RCW binary
+  CONFIG:=ls1088ardb/FCQQQQQQQQ_PPP_H_0x1d_0x0d/rcw_1600_sd.bin
+endef
+
 define Package/layerscape-rcw/ls2088ardb
   TITLE:=NXP LS2088ARDB RCW binary
   CONFIG:=ls2088ardb/FFFFFFFF_PP_HH_0x2a_0x41/rcw_1800.bin
@@ -76,6 +81,7 @@ RCWS := \
   ls1043ardb \
   ls1046ardb \
   ls1088ardb \
+  ls1088ardb-sdboot \
   ls2088ardb \
   ls1021atwr
 
