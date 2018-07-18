@@ -33,8 +33,8 @@ define Package/layerscape-ppa/ls1012ardb
   CONFIG:=ppa-ls1012a.itb
 endef
 
-define Package/layerscape-ppa/ls1012afrdm
-  TITLE:=NXP LS1012AFRDM PPA binary
+define Package/layerscape-ppa/ls1012afrwy
+  TITLE:=NXP LS1012AFRWY PPA binary
   CONFIG:=ppa-ls1012a.itb
 endef
 
@@ -70,7 +70,7 @@ endef
 
 PPAS := \
   ls1012ardb \
-  ls1012afrdm \
+  ls1012afrwy \
   ls1043ardb \
   ls1046ardb \
   ls1088ardb \

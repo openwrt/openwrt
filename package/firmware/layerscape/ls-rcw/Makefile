@@ -33,9 +33,9 @@ define Package/layerscape-rcw/ls1012ardb
   CONFIG:=ls1012ardb/R_SPNH_3508/rcw_1000_default.bin.swapped
 endef
 
-define Package/layerscape-rcw/ls1012afrdm
-  TITLE:=NXP LS1012AFRDM RCW binary
-  CONFIG:=ls1012afrdm/N_SSNP_3305/rcw_800.bin.swapped
+define Package/layerscape-rcw/ls1012afrwy
+  TITLE:=NXP LS1012AFRWY RCW binary
+  CONFIG:=ls1012afrwy/N_SSNP_3305/rcw_1000_default.bin.swapped
 endef
 
 define Package/layerscape-rcw/ls1043ardb
@@ -77,7 +77,7 @@ endef
 
 RCWS := \
   ls1012ardb \
-  ls1012afrdm \
+  ls1012afrwy \
   ls1043ardb \
   ls1046ardb \
   ls1088ardb \
