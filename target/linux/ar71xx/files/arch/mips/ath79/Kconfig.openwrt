@@ -1867,3 +1867,13 @@ config ATH79_MACH_TL_WPA8630
 	select ATH79_DEV_LEDS_GPIO
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
+
+config ATH79_MACH_TL_HS110
+	bool "TP-Link HS-110 board support"
+	select SOC_AS934X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
