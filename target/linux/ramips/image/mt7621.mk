@@ -225,14 +225,6 @@ define Device/r6220
 endef
 TARGET_DEVICES += r6220
 
-define Device/rb750gr3
-  DTS := RB750Gr3
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := MikroTik RB750Gr3
-  DEVICE_PACKAGES := kmod-usb3 uboot-envtools
-endef
-TARGET_DEVICES += rb750gr3
-
 define Device/mikrotik_rbm33g
   DTS := RBM33G
   BLOCKSIZE := 64k
