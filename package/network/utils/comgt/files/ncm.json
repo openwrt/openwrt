@@ -15,7 +15,8 @@
 			"lte": "AT^SYSCFGEX=\\\"03\\\",3fffffff,2,4,7fffffffffffffff,,",
 			"umts": "AT^SYSCFGEX=\\\"02\\\",3fffffff,2,4,7fffffffffffffff,,",
 			"gsm": "AT^SYSCFGEX=\\\"01\\\",3fffffff,2,4,7fffffffffffffff,,",
-			"auto": "AT^SYSCFGEX=\\\"00\\\",3fffffff,2,4,7fffffffffffffff,,"
+			"auto": "AT^SYSCFGEX=\\\"00\\\",3fffffff,2,4,7fffffffffffffff,,",
+			"default": "AT"
 		},
 		"connect": "AT^NDISDUP=${profile},1${apn:+,\\\"$apn\\\"}${username:+,\\\"$username\\\"}${password:+,\\\"$password\\\"}${auth:+,$auth}",
 		"disconnect": "AT^NDISDUP=${profile},0"
@@ -29,7 +30,8 @@
 			"AT+CGDCONT=${profile},\\\"${pdptype}\\\"${apn:+,\\\"$apn\\\"}"
 		],
 		"modes": {
-			"umts": "AT+CHANGEALLPATH=1"
+			"umts": "AT+CHANGEALLPATH=1",
+			"default": "AT"
 		},
 		"connect": "AT+CGATT=1",
 		"disconnect": "AT+CGATT=0"
@@ -46,7 +48,8 @@
 			"lte": "AT!SELRAT=06",
 			"umts": "AT!SELRAT=01",
 			"gsm": "AT!SELRAT=02",
-			"auto": "AT!SELRAT=00"
+			"auto": "AT!SELRAT=00",
+			"default": "AT"
 		},
 		"connect": "AT!SCACT=1,${profile}",
 		"disconnect": "AT!SCACT=0,${profile}"
@@ -59,7 +62,8 @@
 		],
 		"modes": {
 			"umts": "AT+CFUN=6",
-			"gsm": "AT+CFUN=5"
+			"gsm": "AT+CFUN=5",
+			"default": "AT"
 		},
 		"connect": "AT*ENAP=1,${profile}",
 		"disconnect": "AT*ENAP=0"
