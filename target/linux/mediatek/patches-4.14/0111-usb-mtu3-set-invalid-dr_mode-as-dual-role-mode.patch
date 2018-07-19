@@ -12,11 +12,9 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  drivers/usb/mtu3/mtu3_plat.c | 6 ++----
  1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/usb/mtu3/mtu3_plat.c b/drivers/usb/mtu3/mtu3_plat.c
-index 7ca81f4e78a3..9ff33579b42e 100644
 --- a/drivers/usb/mtu3/mtu3_plat.c
 +++ b/drivers/usb/mtu3/mtu3_plat.c
-@@ -283,10 +283,8 @@ static int get_ssusb_rscs(struct platform_device *pdev, struct ssusb_mtk *ssusb)
+@@ -283,10 +283,8 @@ static int get_ssusb_rscs(struct platfor
  		return PTR_ERR(ssusb->ippc_base);
  
  	ssusb->dr_mode = usb_get_dr_mode(dev);
@@ -29,6 +27,3 @@ index 7ca81f4e78a3..9ff33579b42e 100644
  
  	if (ssusb->dr_mode == USB_DR_MODE_PERIPHERAL)
  		return 0;
--- 
-2.11.0
-

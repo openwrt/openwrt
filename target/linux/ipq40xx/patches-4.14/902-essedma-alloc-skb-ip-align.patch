@@ -8,11 +8,9 @@ Signed-off-by: Chen Minqiang <ptpt52@gmail.com>
  drivers/net/ethernet/qualcomm/essedma/edma.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/qualcomm/essedma/edma.c b/drivers/net/ethernet/qualcomm/essedma/edma.c
-index a3c0d66..29bc9f8 100644
 --- a/drivers/net/ethernet/qualcomm/essedma/edma.c
 +++ b/drivers/net/ethernet/qualcomm/essedma/edma.c
-@@ -193,7 +193,7 @@ static int edma_alloc_rx_buf(struct edma_common_info
+@@ -201,7 +201,7 @@ static int edma_alloc_rx_buf(struct edma
  			skb = sw_desc->skb;
  		} else {
  			/* alloc skb */
@@ -21,6 +19,3 @@ index a3c0d66..29bc9f8 100644
  			if (!skb) {
  				/* Better luck next round */
  				break;
--- 
-2.17.1
-

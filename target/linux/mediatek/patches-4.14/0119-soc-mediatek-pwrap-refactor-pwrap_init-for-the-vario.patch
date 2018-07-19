@@ -19,8 +19,6 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  drivers/soc/mediatek/mtk-pmic-wrap.c | 130 ++++++++++++++++++++++++-----------
  1 file changed, 90 insertions(+), 40 deletions(-)
 
-diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
-index 2d3a8faae124..e3398e37a7a6 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -70,6 +70,12 @@
@@ -45,7 +43,7 @@ index 2d3a8faae124..e3398e37a7a6 100644
  	/*
  	 * pwrap operations are highly associated with the PMIC types,
  	 * so the pointers added increases flexibility allowing determination
-@@ -787,6 +795,37 @@ static int pwrap_init_sidly(struct pmic_wrapper *wrp)
+@@ -787,6 +795,37 @@ static int pwrap_init_sidly(struct pmic_
  	return 0;
  }
  
@@ -83,7 +81,7 @@ index 2d3a8faae124..e3398e37a7a6 100644
  static int pwrap_mt8135_init_reg_clock(struct pmic_wrapper *wrp)
  {
  	pwrap_writel(wrp, 0x4, PWRAP_CSHEXT);
-@@ -935,6 +974,30 @@ static int pwrap_init_cipher(struct pmic_wrapper *wrp)
+@@ -935,6 +974,30 @@ static int pwrap_init_cipher(struct pmic
  	return 0;
  }
  
@@ -114,7 +112,7 @@ index 2d3a8faae124..e3398e37a7a6 100644
  static int pwrap_mt8135_init_soc_specific(struct pmic_wrapper *wrp)
  {
  	/* enable pwrap events and pwrap bridge in AP side */
-@@ -995,7 +1058,6 @@ static int pwrap_mt2701_init_soc_specific(struct pmic_wrapper *wrp)
+@@ -995,7 +1058,6 @@ static int pwrap_mt2701_init_soc_specifi
  static int pwrap_init(struct pmic_wrapper *wrp)
  {
  	int ret;
@@ -122,7 +120,7 @@ index 2d3a8faae124..e3398e37a7a6 100644
  
  	reset_control_reset(wrp->rstc);
  	if (wrp->rstc_bridge)
-@@ -1007,10 +1069,12 @@ static int pwrap_init(struct pmic_wrapper *wrp)
+@@ -1007,10 +1069,12 @@ static int pwrap_init(struct pmic_wrappe
  		pwrap_writel(wrp, 0, PWRAP_DCM_DBC_PRD);
  	}
  
@@ -139,7 +137,7 @@ index 2d3a8faae124..e3398e37a7a6 100644
  
  	pwrap_writel(wrp, 1, PWRAP_WRAP_EN);
  
-@@ -1022,45 +1086,26 @@ static int pwrap_init(struct pmic_wrapper *wrp)
+@@ -1022,45 +1086,26 @@ static int pwrap_init(struct pmic_wrappe
  	if (ret)
  		return ret;
  
@@ -201,7 +199,7 @@ index 2d3a8faae124..e3398e37a7a6 100644
  
  	if (wrp->master->type == PWRAP_MT8135)
  		pwrap_writel(wrp, 0x7, PWRAP_RRARB_EN);
-@@ -1116,6 +1161,8 @@ static const struct regmap_config pwrap_regmap_config = {
+@@ -1116,6 +1161,8 @@ static const struct regmap_config pwrap_
  static const struct pwrap_slv_type pmic_mt6323 = {
  	.dew_regs = mt6323_regs,
  	.type = PMIC_MT6323,
@@ -210,7 +208,7 @@ index 2d3a8faae124..e3398e37a7a6 100644
  	.pwrap_read = pwrap_read16,
  	.pwrap_write = pwrap_write16,
  };
-@@ -1123,6 +1170,7 @@ static const struct pwrap_slv_type pmic_mt6323 = {
+@@ -1123,6 +1170,7 @@ static const struct pwrap_slv_type pmic_
  static const struct pwrap_slv_type pmic_mt6380 = {
  	.dew_regs = NULL,
  	.type = PMIC_MT6380,
@@ -218,7 +216,7 @@ index 2d3a8faae124..e3398e37a7a6 100644
  	.pwrap_read = pwrap_read32,
  	.pwrap_write = pwrap_write32,
  };
-@@ -1130,6 +1178,8 @@ static const struct pwrap_slv_type pmic_mt6380 = {
+@@ -1130,6 +1178,8 @@ static const struct pwrap_slv_type pmic_
  static const struct pwrap_slv_type pmic_mt6397 = {
  	.dew_regs = mt6397_regs,
  	.type = PMIC_MT6397,
@@ -227,6 +225,3 @@ index 2d3a8faae124..e3398e37a7a6 100644
  	.pwrap_read = pwrap_read16,
  	.pwrap_write = pwrap_write16,
  };
--- 
-2.11.0
-

@@ -13,11 +13,9 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  drivers/char/hw_random/mtk-rng.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/char/hw_random/mtk-rng.c b/drivers/char/hw_random/mtk-rng.c
-index 8da7bcf54105..7f99cd52b40e 100644
 --- a/drivers/char/hw_random/mtk-rng.c
 +++ b/drivers/char/hw_random/mtk-rng.c
-@@ -135,6 +135,7 @@ static int mtk_rng_probe(struct platform_device *pdev)
+@@ -135,6 +135,7 @@ static int mtk_rng_probe(struct platform
  #endif
  	priv->rng.read = mtk_rng_read;
  	priv->rng.priv = (unsigned long)&pdev->dev;
@@ -25,6 +23,3 @@ index 8da7bcf54105..7f99cd52b40e 100644
  
  	priv->clk = devm_clk_get(&pdev->dev, "rng");
  	if (IS_ERR(priv->clk)) {
--- 
-2.11.0
-

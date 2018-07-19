@@ -14,8 +14,6 @@ Signed-off-by: Shunli Wang <shunli.wang@mediatek.com>
  drivers/thermal/mtk_thermal.c | 35 +++++++++++++++++++++++++++++++++++
  1 file changed, 35 insertions(+)
 
-diff --git a/drivers/thermal/mtk_thermal.c b/drivers/thermal/mtk_thermal.c
-index c75661a3801a..e709acb2235e 100644
 --- a/drivers/thermal/mtk_thermal.c
 +++ b/drivers/thermal/mtk_thermal.c
 @@ -153,6 +153,12 @@
@@ -31,7 +29,7 @@ index c75661a3801a..e709acb2235e 100644
  struct mtk_thermal;
  
  struct thermal_bank_cfg {
-@@ -242,6 +248,12 @@ static const int mt2712_adcpnp[MT2712_NUM_SENSORS_PER_ZONE] = {
+@@ -242,6 +248,12 @@ static const int mt2712_adcpnp[MT2712_NU
  
  static const int mt2712_mux_values[MT2712_NUM_SENSORS] = { 0, 1, 2, 3 };
  
@@ -44,7 +42,7 @@ index c75661a3801a..e709acb2235e 100644
  /**
   * The MT8173 thermal controller has four banks. Each bank can read up to
   * four temperature sensors simultaneously. The MT8173 has a total of 5
-@@ -329,6 +341,25 @@ static const struct mtk_thermal_data mt2712_thermal_data = {
+@@ -329,6 +341,25 @@ static const struct mtk_thermal_data mt2
  	.sensor_mux_values = mt2712_mux_values,
  };
  
@@ -70,7 +68,7 @@ index c75661a3801a..e709acb2235e 100644
  /**
   * raw_to_mcelsius - convert a raw ADC value to mcelsius
   * @mt:		The thermal controller
-@@ -631,6 +662,10 @@ static const struct of_device_id mtk_thermal_of_match[] = {
+@@ -631,6 +662,10 @@ static const struct of_device_id mtk_the
  	{
  		.compatible = "mediatek,mt2712-thermal",
  		.data = (void *)&mt2712_thermal_data,
@@ -81,6 +79,3 @@ index c75661a3801a..e709acb2235e 100644
  	}, {
  	},
  };
--- 
-2.11.0
-

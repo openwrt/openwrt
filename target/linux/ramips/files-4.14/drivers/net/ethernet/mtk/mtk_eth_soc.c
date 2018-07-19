@@ -219,8 +219,9 @@ static inline void fe_set_txd(struct fe_tx_dma *txd, struct fe_tx_dma *dma_txd)
 
 static void fe_clean_rx(struct fe_priv *priv)
 {
-	int i;
 	struct fe_rx_ring *ring = &priv->rx_ring;
+	struct page *page;
+	int i;
 
 	if (ring->rx_data) {
 		for (i = 0; i < ring->rx_ring_size; i++)
@@ -230,7 +231,7 @@ static void fe_clean_rx(struct fe_priv *priv)
 							 ring->rx_dma[i].rxd1,
 							 ring->rx_buf_size,
 							 DMA_FROM_DEVICE);
-				put_page(virt_to_head_page(ring->rx_data[i]));
+				skb_free_frag(ring->rx_data[i]);
 			}
 
 		kfree(ring->rx_data);
@@ -244,6 +245,13 @@ static void fe_clean_rx(struct fe_priv *priv)
 				  ring->rx_phys);
 		ring->rx_dma = NULL;
 	}
+
+	if (!ring->frag_cache.va)
+	    return;
+
+	page = virt_to_page(ring->frag_cache.va);
+	__page_frag_cache_drain(page, ring->frag_cache.pagecnt_bias);
+	memset(&ring->frag_cache, 0, sizeof(ring->frag_cache));
 }
 
 static int fe_alloc_rx(struct fe_priv *priv)
@@ -258,7 +266,9 @@ static int fe_alloc_rx(struct fe_priv *priv)
 		goto no_rx_mem;
 
 	for (i = 0; i < ring->rx_ring_size; i++) {
-		ring->rx_data[i] = netdev_alloc_frag(ring->frag_size);
+		ring->rx_data[i] = page_frag_alloc(&ring->frag_cache,
+						   ring->frag_size,
+						   GFP_KERNEL);
 		if (!ring->rx_data[i])
 			goto no_rx_mem;
 	}
@@ -846,7 +856,8 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 			break;
 
 		/* alloc new buffer */
-		new_data = netdev_alloc_frag(ring->frag_size);
+		new_data = page_frag_alloc(&ring->frag_cache, ring->frag_size,
+					   GFP_ATOMIC);
 		if (unlikely(!new_data)) {
 			stats->rx_dropped++;
 			goto release_desc;
@@ -856,14 +867,14 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 					  ring->rx_buf_size,
 					  DMA_FROM_DEVICE);
 		if (unlikely(dma_mapping_error(&netdev->dev, dma_addr))) {
-			put_page(virt_to_head_page(new_data));
+			skb_free_frag(new_data);
 			goto release_desc;
 		}
 
 		/* receive data */
 		skb = build_skb(data, ring->frag_size);
 		if (unlikely(!skb)) {
-			put_page(virt_to_head_page(new_data));
+			skb_free_frag(new_data);
 			goto release_desc;
 		}
 		skb_reserve(skb, NET_SKB_PAD + NET_IP_ALIGN);

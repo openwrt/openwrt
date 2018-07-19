@@ -14,8 +14,6 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  drivers/mmc/host/mtk-sd.c | 82 +++++++++++++++++++++++++++++++++++++++--------
  1 file changed, 69 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/mmc/host/mtk-sd.c b/drivers/mmc/host/mtk-sd.c
-index 267f7ab08420..643c795f1bdd 100644
 --- a/drivers/mmc/host/mtk-sd.c
 +++ b/drivers/mmc/host/mtk-sd.c
 @@ -95,6 +95,9 @@
@@ -79,7 +77,7 @@ index 267f7ab08420..643c795f1bdd 100644
  static void sdr_set_bits(void __iomem *reg, u32 bs)
  {
  	u32 val = readl(reg);
-@@ -509,7 +542,12 @@ static void msdc_set_timeout(struct msdc_host *host, u32 ns, u32 clks)
+@@ -509,7 +542,12 @@ static void msdc_set_timeout(struct msdc
  		timeout = (ns + clk_ns - 1) / clk_ns + clks;
  		/* in 1048576 sclk cycle unit */
  		timeout = (timeout + (0x1 << 20) - 1) >> 20;
@@ -93,7 +91,7 @@ index 267f7ab08420..643c795f1bdd 100644
  		/*DDR mode will double the clk cycles for data timeout */
  		timeout = mode >= 2 ? timeout * 2 : timeout;
  		timeout = timeout > 1 ? timeout - 1 : 0;
-@@ -548,7 +586,11 @@ static void msdc_set_mclk(struct msdc_host *host, unsigned char timing, u32 hz)
+@@ -548,7 +586,11 @@ static void msdc_set_mclk(struct msdc_ho
  
  	flags = readl(host->base + MSDC_INTEN);
  	sdr_clr_bits(host->base + MSDC_INTEN, flags);
@@ -106,7 +104,7 @@ index 267f7ab08420..643c795f1bdd 100644
  	if (timing == MMC_TIMING_UHS_DDR50 ||
  	    timing == MMC_TIMING_MMC_DDR52 ||
  	    timing == MMC_TIMING_MMC_HS400) {
-@@ -568,8 +610,12 @@ static void msdc_set_mclk(struct msdc_host *host, unsigned char timing, u32 hz)
+@@ -568,8 +610,12 @@ static void msdc_set_mclk(struct msdc_ho
  
  		if (timing == MMC_TIMING_MMC_HS400 &&
  		    hz >= (host->src_clk_freq >> 1)) {
@@ -121,7 +119,7 @@ index 267f7ab08420..643c795f1bdd 100644
  			sclk = host->src_clk_freq >> 1;
  			div = 0; /* div is ignore when bit18 is set */
  		}
-@@ -587,8 +633,15 @@ static void msdc_set_mclk(struct msdc_host *host, unsigned char timing, u32 hz)
+@@ -587,8 +633,15 @@ static void msdc_set_mclk(struct msdc_ho
  			sclk = (host->src_clk_freq >> 2) / div;
  		}
  	}
@@ -139,7 +137,7 @@ index 267f7ab08420..643c795f1bdd 100644
  	sdr_set_bits(host->base + MSDC_CFG, MSDC_CFG_CKPDN);
  	while (!(readl(host->base + MSDC_CFG) & MSDC_CFG_CKSTB))
  		cpu_relax();
-@@ -1617,12 +1670,17 @@ static int msdc_drv_probe(struct platform_device *pdev)
+@@ -1617,12 +1670,17 @@ static int msdc_drv_probe(struct platfor
  	struct mmc_host *mmc;
  	struct msdc_host *host;
  	struct resource *res;
@@ -157,7 +155,7 @@ index 267f7ab08420..643c795f1bdd 100644
  	/* Allocate MMC host for this device */
  	mmc = mmc_alloc_host(sizeof(struct msdc_host), &pdev->dev);
  	if (!mmc)
-@@ -1686,11 +1744,15 @@ static int msdc_drv_probe(struct platform_device *pdev)
+@@ -1686,11 +1744,15 @@ static int msdc_drv_probe(struct platfor
  	msdc_of_property_parse(pdev, host);
  
  	host->dev = &pdev->dev;
@@ -174,7 +172,7 @@ index 267f7ab08420..643c795f1bdd 100644
  
  	mmc->caps |= MMC_CAP_ERASE | MMC_CAP_CMD23;
  	/* MMC core transfer sizes tunable parameters */
-@@ -1839,12 +1901,6 @@ static const struct dev_pm_ops msdc_dev_pm_ops = {
+@@ -1839,12 +1901,6 @@ static const struct dev_pm_ops msdc_dev_
  	SET_RUNTIME_PM_OPS(msdc_runtime_suspend, msdc_runtime_resume, NULL)
  };
  
@@ -187,6 +185,3 @@ index 267f7ab08420..643c795f1bdd 100644
  static struct platform_driver mt_msdc_driver = {
  	.probe = msdc_drv_probe,
  	.remove = msdc_drv_remove,
--- 
-2.11.0
-

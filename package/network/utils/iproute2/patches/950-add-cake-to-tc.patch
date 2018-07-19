@@ -1,13 +1,14 @@
 --- a/include/uapi/linux/pkt_sched.h
 +++ b/include/uapi/linux/pkt_sched.h
-@@ -934,4 +934,110 @@ enum {
+@@ -934,4 +934,118 @@ enum {
  
  #define TCA_CBS_MAX (__TCA_CBS_MAX - 1)
  
 +/* CAKE */
 +enum {
 +	TCA_CAKE_UNSPEC,
-+	TCA_CAKE_BASE_RATE,
++	TCA_CAKE_PAD,
++	TCA_CAKE_BASE_RATE64,
 +	TCA_CAKE_DIFFSERV_MODE,
 +	TCA_CAKE_ATM,
 +	TCA_CAKE_FLOW_MODE,
@@ -29,7 +30,8 @@
 +
 +enum {
 +	__TCA_CAKE_STATS_INVALID,
-+	TCA_CAKE_STATS_CAPACITY_ESTIMATE,
++	TCA_CAKE_STATS_PAD,
++	TCA_CAKE_STATS_CAPACITY_ESTIMATE64,
 +	TCA_CAKE_STATS_MEMORY_LIMIT,
 +	TCA_CAKE_STATS_MEMORY_USED,
 +	TCA_CAKE_STATS_AVG_NETOFF,
@@ -38,6 +40,12 @@
 +	TCA_CAKE_STATS_MIN_ADJLEN,
 +	TCA_CAKE_STATS_MAX_ADJLEN,
 +	TCA_CAKE_STATS_TIN_STATS,
++	TCA_CAKE_STATS_DEFICIT,
++	TCA_CAKE_STATS_COBALT_COUNT,
++	TCA_CAKE_STATS_DROPPING,
++	TCA_CAKE_STATS_DROP_NEXT_US,
++	TCA_CAKE_STATS_P_DROP,
++	TCA_CAKE_STATS_BLUE_TIMER_US,
 +	__TCA_CAKE_STATS_MAX
 +};
 +#define TCA_CAKE_STATS_MAX (__TCA_CAKE_STATS_MAX - 1)
@@ -54,8 +62,8 @@
 +	TCA_CAKE_TIN_STATS_ECN_MARKED_PACKETS,
 +	TCA_CAKE_TIN_STATS_ECN_MARKED_BYTES64,
 +	TCA_CAKE_TIN_STATS_BACKLOG_PACKETS,
-+	TCA_CAKE_TIN_STATS_BACKLOG_BYTES64,
-+	TCA_CAKE_TIN_STATS_THRESHOLD_RATE,
++	TCA_CAKE_TIN_STATS_BACKLOG_BYTES,
++	TCA_CAKE_TIN_STATS_THRESHOLD_RATE64,
 +	TCA_CAKE_TIN_STATS_TARGET_US,
 +	TCA_CAKE_TIN_STATS_INTERVAL_US,
 +	TCA_CAKE_TIN_STATS_WAY_INDIRECT_HITS,
@@ -758,7 +766,7 @@
  TCMODULES += q_hhf.o
 --- /dev/null
 +++ b/tc/q_cake.c
-@@ -0,0 +1,749 @@
+@@ -0,0 +1,796 @@
 +/* SPDX-License-Identifier: (GPL-2.0 OR BSD-3-Clause) */
 +/*
 + * Common Applications Kept Enhanced  --  CAKE
@@ -831,7 +839,7 @@
 +			  struct nlmsghdr *n, const char *dev)
 +{
 +	int unlimited = 0;
-+	unsigned bandwidth = 0;
++	__u64 bandwidth = 0;
 +	unsigned interval = 0;
 +	unsigned target = 0;
 +	unsigned diffserv = 0;
@@ -853,7 +861,7 @@
 +	while (argc > 0) {
 +		if (strcmp(*argv, "bandwidth") == 0) {
 +			NEXT_ARG();
-+			if (get_rate(&bandwidth, *argv)) {
++			if (get_rate64(&bandwidth, *argv)) {
 +				fprintf(stderr, "Illegal \"bandwidth\"\n");
 +				return -1;
 +			}
@@ -1088,7 +1096,7 @@
 +	tail = NLMSG_TAIL(n);
 +	addattr_l(n, 1024, TCA_OPTIONS, NULL, 0);
 +	if (bandwidth || unlimited)
-+		addattr_l(n, 1024, TCA_CAKE_BASE_RATE, &bandwidth, sizeof(bandwidth));
++		addattr_l(n, 1024, TCA_CAKE_BASE_RATE64, &bandwidth, sizeof(bandwidth));
 +	if (diffserv)
 +		addattr_l(n, 1024, TCA_CAKE_DIFFSERV_MODE, &diffserv, sizeof(diffserv));
 +	if (atm != -1)
@@ -1128,7 +1136,7 @@
 +static int cake_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 +{
 +	struct rtattr *tb[TCA_CAKE_MAX + 1];
-+	unsigned bandwidth = 0;
++	__u64 bandwidth = 0;
 +	unsigned diffserv = 0;
 +	unsigned flowmode = 0;
 +	unsigned interval = 0;
@@ -1151,9 +1159,9 @@
 +
 +	parse_rtattr_nested(tb, TCA_CAKE_MAX, opt);
 +
-+	if (tb[TCA_CAKE_BASE_RATE] &&
-+	    RTA_PAYLOAD(tb[TCA_CAKE_BASE_RATE]) >= sizeof(__u32)) {
-+		bandwidth = rta_getattr_u32(tb[TCA_CAKE_BASE_RATE]);
++	if (tb[TCA_CAKE_BASE_RATE64] &&
++	    RTA_PAYLOAD(tb[TCA_CAKE_BASE_RATE64]) >= sizeof(bandwidth)) {
++		bandwidth = rta_getattr_u64(tb[TCA_CAKE_BASE_RATE64]);
 +		if(bandwidth) {
 +			print_uint(PRINT_JSON, "bandwidth", NULL, bandwidth);
 +			print_string(PRINT_FP, NULL, "bandwidth %s ", sprint_rate(bandwidth, b1));
@@ -1306,7 +1314,7 @@
 +	else if (!raw)
 +		print_string(PRINT_ANY, "atm", "%s ", "noatm");
 +
-+	print_uint(PRINT_ANY, "overhead", "overhead %d ", overhead);
++	print_int(PRINT_ANY, "overhead", "overhead %d ", overhead);
 +
 +	if (mpu)
 +		print_uint(PRINT_ANY, "mpu", "mpu %u ", mpu);
@@ -1322,18 +1330,19 @@
 +static void cake_print_json_tin(struct rtattr **tstat)
 +{
 +#define PRINT_TSTAT_JSON(type, name, attr) if (tstat[TCA_CAKE_TIN_STATS_ ## attr]) \
-+		print_uint(PRINT_JSON, name, NULL,			\
++		print_u64(PRINT_JSON, name, NULL,			\
 +			rta_getattr_ ## type((struct rtattr *)tstat[TCA_CAKE_TIN_STATS_ ## attr]))
 +
 +	open_json_object(NULL);
-+	PRINT_TSTAT_JSON(u32, "threshold_rate", THRESHOLD_RATE);
++	PRINT_TSTAT_JSON(u64, "threshold_rate", THRESHOLD_RATE64);
++	PRINT_TSTAT_JSON(u64, "sent_bytes", SENT_BYTES64);
++	PRINT_TSTAT_JSON(u32, "backlog_bytes", BACKLOG_BYTES);
 +	PRINT_TSTAT_JSON(u32, "target_us", TARGET_US);
 +	PRINT_TSTAT_JSON(u32, "interval_us", INTERVAL_US);
 +	PRINT_TSTAT_JSON(u32, "peak_delay_us", PEAK_DELAY_US);
 +	PRINT_TSTAT_JSON(u32, "avg_delay_us", AVG_DELAY_US);
 +	PRINT_TSTAT_JSON(u32, "base_delay_us", BASE_DELAY_US);
 +	PRINT_TSTAT_JSON(u32, "sent_packets", SENT_PACKETS);
-+	PRINT_TSTAT_JSON(u64, "sent_bytes", SENT_BYTES64);
 +	PRINT_TSTAT_JSON(u32, "way_indirect_hits", WAY_INDIRECT_HITS);
 +	PRINT_TSTAT_JSON(u32, "way_misses", WAY_MISSES);
 +	PRINT_TSTAT_JSON(u32, "way_collisions", WAY_COLLISIONS);
@@ -1361,6 +1370,8 @@
 +		return 0;
 +
 +#define GET_STAT_U32(attr) rta_getattr_u32(st[TCA_CAKE_STATS_ ## attr])
++#define GET_STAT_S32(attr) (*(__s32*)RTA_DATA(st[TCA_CAKE_STATS_ ## attr]))
++#define GET_STAT_U64(attr) rta_getattr_u64(st[TCA_CAKE_STATS_ ## attr])
 +
 +	parse_rtattr_nested(st, TCA_CAKE_STATS_MAX, xstats);
 +
@@ -1378,11 +1389,11 @@
 +			GET_STAT_U32(MEMORY_LIMIT));
 +	}
 +
-+	if (st[TCA_CAKE_STATS_CAPACITY_ESTIMATE]) {
++	if (st[TCA_CAKE_STATS_CAPACITY_ESTIMATE64]) {
 +		print_string(PRINT_FP, NULL, " capacity estimate: %s\n",
-+			sprint_rate(GET_STAT_U32(CAPACITY_ESTIMATE), b1));
++			sprint_rate(GET_STAT_U64(CAPACITY_ESTIMATE64), b1));
 +		print_uint(PRINT_JSON, "capacity_estimate", NULL,
-+			GET_STAT_U32(CAPACITY_ESTIMATE));
++			GET_STAT_U64(CAPACITY_ESTIMATE64));
 +	}
 +
 +	if (st[TCA_CAKE_STATS_MIN_NETLEN] &&
@@ -1408,7 +1419,50 @@
 +			   " average network hdr offset:     %8u\n\n",
 +			   GET_STAT_U32(AVG_NETOFF));
 +
++	/* class stats */
++	if (st[TCA_CAKE_STATS_DEFICIT])
++		print_int(PRINT_ANY, "deficit", "  deficit %u",
++			  GET_STAT_S32(DEFICIT));
++	if (st[TCA_CAKE_STATS_COBALT_COUNT])
++		print_uint(PRINT_ANY, "count", " count %u",
++			   GET_STAT_U32(COBALT_COUNT));
++
++	if (st[TCA_CAKE_STATS_DROPPING] && GET_STAT_U32(DROPPING)) {
++		print_bool(PRINT_ANY, "dropping", " dropping", true);
++		if (st[TCA_CAKE_STATS_DROP_NEXT_US]) {
++			int drop_next = GET_STAT_S32(DROP_NEXT_US);
++			if (drop_next < 0) {
++				print_string(PRINT_FP, NULL, " drop_next -%s",
++					sprint_time(drop_next, b1));
++			} else {
++				print_uint(PRINT_JSON, "drop_next", NULL,
++					drop_next);
++				print_string(PRINT_FP, NULL, " drop_next %s",
++					sprint_time(drop_next, b1));
++			}
++		}
++	}
++
++	if (st[TCA_CAKE_STATS_P_DROP]) {
++		print_uint(PRINT_ANY, "blue_prob", " blue_prob %u",
++			   GET_STAT_U32(P_DROP));
++		if (st[TCA_CAKE_STATS_BLUE_TIMER_US]) {
++			int blue_timer = GET_STAT_S32(BLUE_TIMER_US);
++			if (blue_timer < 0) {
++				print_string(PRINT_FP, NULL, " blue_timer -%s",
++					sprint_time(blue_timer, b1));
++			} else {
++				print_uint(PRINT_JSON, "blue_timer", NULL,
++					blue_timer);
++				print_string(PRINT_FP, NULL, " blue_timer %s",
++					sprint_time(blue_timer, b1));
++			}
++		}
++	}
++
 +#undef GET_STAT_U32
++#undef GET_STAT_S32
++#undef GET_STAT_U64
 +
 +	if (st[TCA_CAKE_STATS_TIN_STATS]) {
 +		struct rtattr *tins[TC_CAKE_MAX_TINS + 1];
@@ -1461,9 +1515,9 @@
 +			}						\
 +		} while (0)
 +
-+#define SPRINT_TSTAT(pfunc, name, attr) PRINT_TSTAT(		\
++#define SPRINT_TSTAT(pfunc, type, name, attr) PRINT_TSTAT(		\
 +			name, attr, "s", sprint_ ## pfunc(		\
-+				rta_getattr_u32(GET_TSTAT(i, attr)), b1))
++				rta_getattr_ ## type(GET_TSTAT(i, attr)), b1))
 +
 +#define PRINT_TSTAT_U32(name, attr)	PRINT_TSTAT(			\
 +			name, attr, "u", rta_getattr_u32(GET_TSTAT(i, attr)))
@@ -1471,12 +1525,13 @@
 +#define PRINT_TSTAT_U64(name, attr)	PRINT_TSTAT(			\
 +			name, attr, "llu", rta_getattr_u64(GET_TSTAT(i, attr)))
 +
-+		SPRINT_TSTAT(rate, "  thresh  ", THRESHOLD_RATE);
-+		SPRINT_TSTAT(time, "  target  ", TARGET_US);
-+		SPRINT_TSTAT(time, "  interval", INTERVAL_US);
-+		SPRINT_TSTAT(time, "  pk_delay", PEAK_DELAY_US);
-+		SPRINT_TSTAT(time, "  av_delay", AVG_DELAY_US);
-+		SPRINT_TSTAT(time, "  sp_delay", BASE_DELAY_US);
++		SPRINT_TSTAT(rate, u64, "  thresh  ", THRESHOLD_RATE64);
++		SPRINT_TSTAT(time, u32, "  target  ", TARGET_US);
++		SPRINT_TSTAT(time, u32, "  interval", INTERVAL_US);
++		SPRINT_TSTAT(time, u32, "  pk_delay", PEAK_DELAY_US);
++		SPRINT_TSTAT(time, u32, "  av_delay", AVG_DELAY_US);
++		SPRINT_TSTAT(time, u32, "  sp_delay", BASE_DELAY_US);
++		SPRINT_TSTAT(size, u32, "  backlog ", BACKLOG_BYTES);
 +
 +		PRINT_TSTAT_U32("  pkts    ", SENT_PACKETS);
 +		PRINT_TSTAT_U64("  bytes   ", SENT_BYTES64);

@@ -14,8 +14,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/usb/host/xhci-mtk.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/usb/host/xhci-mtk.c b/drivers/usb/host/xhci-mtk.c
-index 9502ca408f01..7a92bb782e5c 100644
 --- a/drivers/usb/host/xhci-mtk.c
 +++ b/drivers/usb/host/xhci-mtk.c
 @@ -43,6 +43,7 @@
@@ -26,7 +24,7 @@ index 9502ca408f01..7a92bb782e5c 100644
  #define STS1_XHCI_RST		BIT(11)
  #define STS1_SYS125_RST	BIT(10)
  #define STS1_REF_RST		BIT(8)
-@@ -125,6 +126,9 @@ static int xhci_mtk_host_enable(struct xhci_hcd_mtk *mtk)
+@@ -125,6 +126,9 @@ static int xhci_mtk_host_enable(struct x
  	check_val = STS1_SYSPLL_STABLE | STS1_REF_RST |
  			STS1_SYS125_RST | STS1_XHCI_RST;
  
@@ -36,6 +34,3 @@ index 9502ca408f01..7a92bb782e5c 100644
  	ret = readl_poll_timeout(&ippc->ip_pw_sts1, value,
  			  (check_val == (value & check_val)), 100, 20000);
  	if (ret) {
--- 
-2.11.0
-

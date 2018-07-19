@@ -14,11 +14,9 @@ Tested-by: Jumin Li <jumin.li@mediatek.com>
  drivers/mmc/host/mtk-sd.c | 12 ++++++++++++
  1 file changed, 12 insertions(+)
 
-diff --git a/drivers/mmc/host/mtk-sd.c b/drivers/mmc/host/mtk-sd.c
-index 27a62254f12f..f5e0662f2590 100644
 --- a/drivers/mmc/host/mtk-sd.c
 +++ b/drivers/mmc/host/mtk-sd.c
-@@ -438,11 +438,23 @@ static const struct mtk_mmc_compatible mt2712_compat = {
+@@ -438,11 +438,23 @@ static const struct mtk_mmc_compatible m
  	.enhance_rx = true,
  };
  
@@ -42,6 +40,3 @@ index 27a62254f12f..f5e0662f2590 100644
  	{}
  };
  MODULE_DEVICE_TABLE(of, msdc_of_ids);
--- 
-2.11.0
-

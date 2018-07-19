@@ -13,8 +13,6 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  .../devicetree/bindings/sound/mt2701-afe-pcm.txt   | 171 +++++++++++----------
  1 file changed, 93 insertions(+), 78 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/sound/mt2701-afe-pcm.txt b/Documentation/devicetree/bindings/sound/mt2701-afe-pcm.txt
-index 0450baad2813..6df87b97f7cb 100644
 --- a/Documentation/devicetree/bindings/sound/mt2701-afe-pcm.txt
 +++ b/Documentation/devicetree/bindings/sound/mt2701-afe-pcm.txt
 @@ -2,15 +2,17 @@ Mediatek AFE PCM controller for mt2701
@@ -84,6 +82,46 @@ index 0450baad2813..6df87b97f7cb 100644
 -			 <&audiosys CLK_AUD_A1SYS>,
 -			 <&audiosys CLK_AUD_A2SYS>,
 -			 <&audiosys CLK_AUD_AFE_MRGIF>;
+-
+-		clock-names = "top_audio_mux1_sel",
+-			      "top_audio_mux2_sel",
+-			      "i2s0_src_sel",
+-			      "i2s1_src_sel",
+-			      "i2s2_src_sel",
+-			      "i2s3_src_sel",
+-			      "i2s0_src_div",
+-			      "i2s1_src_div",
+-			      "i2s2_src_div",
+-			      "i2s3_src_div",
+-			      "i2s0_mclk_en",
+-			      "i2s1_mclk_en",
+-			      "i2s2_mclk_en",
+-			      "i2s3_mclk_en",
+-			      "i2so0_hop_ck",
+-			      "i2so1_hop_ck",
+-			      "i2so2_hop_ck",
+-			      "i2so3_hop_ck",
+-			      "i2si0_hop_ck",
+-			      "i2si1_hop_ck",
+-			      "i2si2_hop_ck",
+-			      "i2si3_hop_ck",
+-			      "asrc0_out_ck",
+-			      "asrc1_out_ck",
+-			      "asrc2_out_ck",
+-			      "asrc3_out_ck",
+-			      "audio_afe_pd",
+-			      "audio_afe_conn_pd",
+-			      "audio_a1sys_pd",
+-			      "audio_a2sys_pd",
+-			      "audio_mrgif_pd";
+-
+-		assigned-clocks = <&topckgen CLK_TOP_AUD_MUX1_SEL>,
+-				  <&topckgen CLK_TOP_AUD_MUX2_SEL>,
+-				  <&topckgen CLK_TOP_AUD_MUX1_DIV>,
+-				  <&topckgen CLK_TOP_AUD_MUX2_DIV>;
+-		assigned-clock-parents = <&topckgen CLK_TOP_AUD1PLL_98M>,
+-					 <&topckgen CLK_TOP_AUD2PLL_90M>;
+-		assigned-clock-rates = <0>, <0>, <49152000>, <45158400>;
 +	audsys: audio-subsystem@11220000 {
 +		compatible = "mediatek,mt2701-audsys", "syscon", "simple-mfd";
 +		...
@@ -129,38 +167,7 @@ index 0450baad2813..6df87b97f7cb 100644
 +				 <&audsys CLK_AUD_A1SYS>,
 +				 <&audsys CLK_AUD_A2SYS>,
 +				 <&audsys CLK_AUD_AFE_MRGIF>;
- 
--		clock-names = "top_audio_mux1_sel",
--			      "top_audio_mux2_sel",
--			      "i2s0_src_sel",
--			      "i2s1_src_sel",
--			      "i2s2_src_sel",
--			      "i2s3_src_sel",
--			      "i2s0_src_div",
--			      "i2s1_src_div",
--			      "i2s2_src_div",
--			      "i2s3_src_div",
--			      "i2s0_mclk_en",
--			      "i2s1_mclk_en",
--			      "i2s2_mclk_en",
--			      "i2s3_mclk_en",
--			      "i2so0_hop_ck",
--			      "i2so1_hop_ck",
--			      "i2so2_hop_ck",
--			      "i2so3_hop_ck",
--			      "i2si0_hop_ck",
--			      "i2si1_hop_ck",
--			      "i2si2_hop_ck",
--			      "i2si3_hop_ck",
--			      "asrc0_out_ck",
--			      "asrc1_out_ck",
--			      "asrc2_out_ck",
--			      "asrc3_out_ck",
--			      "audio_afe_pd",
--			      "audio_afe_conn_pd",
--			      "audio_a1sys_pd",
--			      "audio_a2sys_pd",
--			      "audio_mrgif_pd";
++
 +			clock-names = "infra_sys_audio_clk",
 +				      "top_audio_mux1_sel",
 +				      "top_audio_mux2_sel",
@@ -195,14 +202,7 @@ index 0450baad2813..6df87b97f7cb 100644
 +				      "audio_a1sys_pd",
 +				      "audio_a2sys_pd",
 +				      "audio_mrgif_pd";
- 
--		assigned-clocks = <&topckgen CLK_TOP_AUD_MUX1_SEL>,
--				  <&topckgen CLK_TOP_AUD_MUX2_SEL>,
--				  <&topckgen CLK_TOP_AUD_MUX1_DIV>,
--				  <&topckgen CLK_TOP_AUD_MUX2_DIV>;
--		assigned-clock-parents = <&topckgen CLK_TOP_AUD1PLL_98M>,
--					 <&topckgen CLK_TOP_AUD2PLL_90M>;
--		assigned-clock-rates = <0>, <0>, <49152000>, <45158400>;
++
 +			assigned-clocks = <&topckgen CLK_TOP_AUD_MUX1_SEL>,
 +					  <&topckgen CLK_TOP_AUD_MUX2_SEL>,
 +					  <&topckgen CLK_TOP_AUD_MUX1_DIV>,
@@ -212,6 +212,3 @@ index 0450baad2813..6df87b97f7cb 100644
 +			assigned-clock-rates = <0>, <0>, <49152000>, <45158400>;
 +		};
  	};
--- 
-2.11.0
-

@@ -16,11 +16,9 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/usb/host/xhci-mtk.h |  1 +
  2 files changed, 16 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/usb/host/xhci-mtk.c b/drivers/usb/host/xhci-mtk.c
-index 7a92bb782e5c..97ba51e4e149 100644
 --- a/drivers/usb/host/xhci-mtk.c
 +++ b/drivers/usb/host/xhci-mtk.c
-@@ -92,6 +92,7 @@ static int xhci_mtk_host_enable(struct xhci_hcd_mtk *mtk)
+@@ -92,6 +92,7 @@ static int xhci_mtk_host_enable(struct x
  {
  	struct mu3c_ippc_regs __iomem *ippc = mtk->ippc_regs;
  	u32 value, check_val;
@@ -28,7 +26,7 @@ index 7a92bb782e5c..97ba51e4e149 100644
  	int ret;
  	int i;
  
-@@ -103,8 +104,13 @@ static int xhci_mtk_host_enable(struct xhci_hcd_mtk *mtk)
+@@ -103,8 +104,13 @@ static int xhci_mtk_host_enable(struct x
  	value &= ~CTRL1_IP_HOST_PDN;
  	writel(value, &ippc->ip_pw_ctr1);
  
@@ -43,7 +41,7 @@ index 7a92bb782e5c..97ba51e4e149 100644
  		value = readl(&ippc->u3_ctrl_p[i]);
  		value &= ~(CTRL_U3_PORT_PDN | CTRL_U3_PORT_DIS);
  		value |= CTRL_U3_PORT_HOST_SEL;
-@@ -126,7 +132,7 @@ static int xhci_mtk_host_enable(struct xhci_hcd_mtk *mtk)
+@@ -126,7 +132,7 @@ static int xhci_mtk_host_enable(struct x
  	check_val = STS1_SYSPLL_STABLE | STS1_REF_RST |
  			STS1_SYS125_RST | STS1_XHCI_RST;
  
@@ -52,7 +50,7 @@ index 7a92bb782e5c..97ba51e4e149 100644
  		check_val |= STS1_U3_MAC_RST;
  
  	ret = readl_poll_timeout(&ippc->ip_pw_sts1, value,
-@@ -149,8 +155,11 @@ static int xhci_mtk_host_disable(struct xhci_hcd_mtk *mtk)
+@@ -149,8 +155,11 @@ static int xhci_mtk_host_disable(struct
  	if (!mtk->has_ippc)
  		return 0;
  
@@ -65,7 +63,7 @@ index 7a92bb782e5c..97ba51e4e149 100644
  		value = readl(&ippc->u3_ctrl_p[i]);
  		value |= CTRL_U3_PORT_PDN;
  		writel(value, &ippc->u3_ctrl_p[i]);
-@@ -573,6 +582,9 @@ static int xhci_mtk_probe(struct platform_device *pdev)
+@@ -573,6 +582,9 @@ static int xhci_mtk_probe(struct platfor
  	}
  
  	mtk->lpm_support = of_property_read_bool(node, "usb3-lpm-capable");
@@ -75,8 +73,6 @@ index 7a92bb782e5c..97ba51e4e149 100644
  
  	ret = usb_wakeup_of_property_parse(mtk, node);
  	if (ret)
-diff --git a/drivers/usb/host/xhci-mtk.h b/drivers/usb/host/xhci-mtk.h
-index 3aa5e1d25064..db55a12f1585 100644
 --- a/drivers/usb/host/xhci-mtk.h
 +++ b/drivers/usb/host/xhci-mtk.h
 @@ -121,6 +121,7 @@ struct xhci_hcd_mtk {
@@ -87,6 +83,3 @@ index 3aa5e1d25064..db55a12f1585 100644
  	struct regulator *vusb33;
  	struct regulator *vbus;
  	struct clk *sys_clk;	/* sys and mac clock */
--- 
-2.11.0
-

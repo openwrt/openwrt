@@ -14,11 +14,9 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/usb/host/xhci-mtk.c | 7 +------
  1 file changed, 1 insertion(+), 6 deletions(-)
 
-diff --git a/drivers/usb/host/xhci-mtk.c b/drivers/usb/host/xhci-mtk.c
-index 8fb60657ed4f..c197a6d9e157 100644
 --- a/drivers/usb/host/xhci-mtk.c
 +++ b/drivers/usb/host/xhci-mtk.c
-@@ -606,15 +606,10 @@ static int xhci_mtk_probe(struct platform_device *pdev)
+@@ -606,15 +606,10 @@ static int xhci_mtk_probe(struct platfor
  	}
  
  	/* Initialize dma_mask and coherent_dma_mask to 32-bits */
@@ -35,6 +33,3 @@ index 8fb60657ed4f..c197a6d9e157 100644
  	hcd = usb_create_hcd(driver, dev, dev_name(dev));
  	if (!hcd) {
  		ret = -ENOMEM;
--- 
-2.11.0
-

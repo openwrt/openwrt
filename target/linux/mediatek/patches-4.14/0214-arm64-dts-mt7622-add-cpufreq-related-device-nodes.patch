@@ -14,8 +14,6 @@ Cc: Viresh Kumar <viresh.kumar@linaro.org>
  arch/arm64/boot/dts/mediatek/mt7622.dtsi     | 52 ++++++++++++++++++++++++++++
  2 files changed, 64 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
-index 42bd3a4c9a93..b3878656475c 100644
 --- a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
 @@ -20,6 +20,18 @@
@@ -37,8 +35,6 @@ index 42bd3a4c9a93..b3878656475c 100644
  	gpio-keys {
  		compatible = "gpio-keys-polled";
  		poll-interval = <100>;
-diff --git a/arch/arm64/boot/dts/mediatek/mt7622.dtsi b/arch/arm64/boot/dts/mediatek/mt7622.dtsi
-index c387c4cb7d3e..7256879de4c9 100644
 --- a/arch/arm64/boot/dts/mediatek/mt7622.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7622.dtsi
 @@ -18,6 +18,50 @@
@@ -114,6 +110,3 @@ index c387c4cb7d3e..7256879de4c9 100644
  			enable-method = "psci";
  			clock-frequency = <1300000000>;
  		};
--- 
-2.11.0
-

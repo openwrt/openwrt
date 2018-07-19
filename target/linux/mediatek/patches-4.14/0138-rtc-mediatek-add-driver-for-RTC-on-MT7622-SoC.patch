@@ -15,8 +15,6 @@ Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
  3 files changed, 433 insertions(+)
  create mode 100644 drivers/rtc/rtc-mt7622.c
 
-diff --git a/drivers/rtc/Kconfig b/drivers/rtc/Kconfig
-index e0e58f3b1420..322752ebc5a7 100644
 --- a/drivers/rtc/Kconfig
 +++ b/drivers/rtc/Kconfig
 @@ -1715,6 +1715,16 @@ config RTC_DRV_MT6397
@@ -36,11 +34,9 @@ index e0e58f3b1420..322752ebc5a7 100644
  config RTC_DRV_XGENE
  	tristate "APM X-Gene RTC"
  	depends on HAS_IOMEM
-diff --git a/drivers/rtc/Makefile b/drivers/rtc/Makefile
-index 7230014c92af..5ec891a81f4f 100644
 --- a/drivers/rtc/Makefile
 +++ b/drivers/rtc/Makefile
-@@ -102,6 +102,7 @@ obj-$(CONFIG_RTC_DRV_MPC5121)	+= rtc-mpc5121.o
+@@ -103,6 +103,7 @@ obj-$(CONFIG_RTC_DRV_MPC5121)	+= rtc-mpc
  obj-$(CONFIG_RTC_DRV_VRTC)	+= rtc-mrst.o
  obj-$(CONFIG_RTC_DRV_MSM6242)	+= rtc-msm6242.o
  obj-$(CONFIG_RTC_DRV_MT6397)	+= rtc-mt6397.o
@@ -48,9 +44,6 @@ index 7230014c92af..5ec891a81f4f 100644
  obj-$(CONFIG_RTC_DRV_MV)	+= rtc-mv.o
  obj-$(CONFIG_RTC_DRV_MXC)	+= rtc-mxc.o
  obj-$(CONFIG_RTC_DRV_NUC900)	+= rtc-nuc900.o
-diff --git a/drivers/rtc/rtc-mt7622.c b/drivers/rtc/rtc-mt7622.c
-new file mode 100644
-index 000000000000..d79b9ae4d237
 --- /dev/null
 +++ b/drivers/rtc/rtc-mt7622.c
 @@ -0,0 +1,422 @@
@@ -476,6 +469,3 @@ index 000000000000..d79b9ae4d237
 +MODULE_DESCRIPTION("MediaTek SoC based RTC Driver");
 +MODULE_AUTHOR("Sean Wang <sean.wang@mediatek.com>");
 +MODULE_LICENSE("GPL");
--- 
-2.11.0
-

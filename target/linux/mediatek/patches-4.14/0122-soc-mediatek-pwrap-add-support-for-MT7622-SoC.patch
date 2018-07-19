@@ -14,8 +14,6 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  drivers/soc/mediatek/mtk-pmic-wrap.c | 170 +++++++++++++++++++++++++++++++++++
  1 file changed, 170 insertions(+)
 
-diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
-index cbc3f0e82337..5d61d127e1d7 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -214,6 +214,36 @@ enum pwrap_regs {
@@ -182,7 +180,7 @@ index cbc3f0e82337..5d61d127e1d7 100644
  	PWRAP_MT8135,
  	PWRAP_MT8173,
  };
-@@ -927,6 +1070,9 @@ static int pwrap_init_cipher(struct pmic_wrapper *wrp)
+@@ -927,6 +1070,9 @@ static int pwrap_init_cipher(struct pmic
  	case PWRAP_MT8173:
  		pwrap_writel(wrp, 1, PWRAP_CIPHER_EN);
  		break;
@@ -192,7 +190,7 @@ index cbc3f0e82337..5d61d127e1d7 100644
  	}
  
  	/* Config cipher mode @PMIC */
-@@ -1071,6 +1217,15 @@ static int pwrap_mt2701_init_soc_specific(struct pmic_wrapper *wrp)
+@@ -1071,6 +1217,15 @@ static int pwrap_mt2701_init_soc_specifi
  	return 0;
  }
  
@@ -208,7 +206,7 @@ index cbc3f0e82337..5d61d127e1d7 100644
  static int pwrap_init(struct pmic_wrapper *wrp)
  {
  	int ret;
-@@ -1242,6 +1397,18 @@ static const struct pmic_wrapper_type pwrap_mt2701 = {
+@@ -1242,6 +1397,18 @@ static const struct pmic_wrapper_type pw
  	.init_soc_specific = pwrap_mt2701_init_soc_specific,
  };
  
@@ -227,7 +225,7 @@ index cbc3f0e82337..5d61d127e1d7 100644
  static const struct pmic_wrapper_type pwrap_mt8135 = {
  	.regs = mt8135_regs,
  	.type = PWRAP_MT8135,
-@@ -1271,6 +1438,9 @@ static const struct of_device_id of_pwrap_match_tbl[] = {
+@@ -1271,6 +1438,9 @@ static const struct of_device_id of_pwra
  		.compatible = "mediatek,mt2701-pwrap",
  		.data = &pwrap_mt2701,
  	}, {
@@ -237,6 +235,3 @@ index cbc3f0e82337..5d61d127e1d7 100644
  		.compatible = "mediatek,mt8135-pwrap",
  		.data = &pwrap_mt8135,
  	}, {
--- 
-2.11.0
-

@@ -15,8 +15,6 @@ Signed-off-by: Thierry Reding <thierry.reding@gmail.com>
  drivers/pwm/pwm-mediatek.c | 53 ++++++++++++++++++++++++++++++++++++++--------
  1 file changed, 44 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/pwm/pwm-mediatek.c b/drivers/pwm/pwm-mediatek.c
-index b52f3afb2ba1..f5d97e0ad52b 100644
 --- a/drivers/pwm/pwm-mediatek.c
 +++ b/drivers/pwm/pwm-mediatek.c
 @@ -16,6 +16,7 @@
@@ -60,7 +58,7 @@ index b52f3afb2ba1..f5d97e0ad52b 100644
  static inline struct mtk_pwm_chip *to_mtk_pwm_chip(struct pwm_chip *chip)
  {
  	return container_of(chip, struct mtk_pwm_chip, chip);
-@@ -103,14 +116,14 @@ static void mtk_pwm_clk_disable(struct pwm_chip *chip, struct pwm_device *pwm)
+@@ -103,14 +116,14 @@ static void mtk_pwm_clk_disable(struct p
  static inline u32 mtk_pwm_readl(struct mtk_pwm_chip *chip, unsigned int num,
  				unsigned int offset)
  {
@@ -77,7 +75,7 @@ index b52f3afb2ba1..f5d97e0ad52b 100644
  }
  
  static int mtk_pwm_config(struct pwm_chip *chip, struct pwm_device *pwm,
-@@ -185,6 +198,7 @@ static const struct pwm_ops mtk_pwm_ops = {
+@@ -185,6 +198,7 @@ static const struct pwm_ops mtk_pwm_ops
  
  static int mtk_pwm_probe(struct platform_device *pdev)
  {
@@ -85,7 +83,7 @@ index b52f3afb2ba1..f5d97e0ad52b 100644
  	struct mtk_pwm_chip *pc;
  	struct resource *res;
  	unsigned int i;
-@@ -194,15 +208,22 @@ static int mtk_pwm_probe(struct platform_device *pdev)
+@@ -194,15 +208,22 @@ static int mtk_pwm_probe(struct platform
  	if (!pc)
  		return -ENOMEM;
  
@@ -110,7 +108,7 @@ index b52f3afb2ba1..f5d97e0ad52b 100644
  	}
  
  	platform_set_drvdata(pdev, pc);
-@@ -210,7 +231,7 @@ static int mtk_pwm_probe(struct platform_device *pdev)
+@@ -210,7 +231,7 @@ static int mtk_pwm_probe(struct platform
  	pc->chip.dev = &pdev->dev;
  	pc->chip.ops = &mtk_pwm_ops;
  	pc->chip.base = -1;
@@ -119,7 +117,7 @@ index b52f3afb2ba1..f5d97e0ad52b 100644
  
  	ret = pwmchip_add(&pc->chip);
  	if (ret < 0) {
-@@ -228,9 +249,23 @@ static int mtk_pwm_remove(struct platform_device *pdev)
+@@ -228,9 +249,23 @@ static int mtk_pwm_remove(struct platfor
  	return pwmchip_remove(&pc->chip);
  }
  
@@ -145,6 +143,3 @@ index b52f3afb2ba1..f5d97e0ad52b 100644
  };
  MODULE_DEVICE_TABLE(of, mtk_pwm_of_match);
  
--- 
-2.11.0
-

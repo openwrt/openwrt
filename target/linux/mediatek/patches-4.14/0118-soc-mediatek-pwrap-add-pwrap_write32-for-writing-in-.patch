@@ -18,8 +18,6 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  drivers/soc/mediatek/mtk-pmic-wrap.c | 70 +++++++++++++++++++++++++++---------
  1 file changed, 54 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
-index 06930e2ebe4c..2d3a8faae124 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -507,6 +507,7 @@ struct pwrap_slv_type {
@@ -30,7 +28,7 @@ index 06930e2ebe4c..2d3a8faae124 100644
  };
  
  struct pmic_wrapper {
-@@ -601,22 +602,6 @@ static int pwrap_wait_for_state(struct pmic_wrapper *wrp,
+@@ -601,22 +602,6 @@ static int pwrap_wait_for_state(struct p
  	} while (1);
  }
  
@@ -53,7 +51,7 @@ index 06930e2ebe4c..2d3a8faae124 100644
  static int pwrap_read16(struct pmic_wrapper *wrp, u32 adr, u32 *rdata)
  {
  	int ret;
-@@ -673,6 +658,56 @@ static int pwrap_read(struct pmic_wrapper *wrp, u32 adr, u32 *rdata)
+@@ -673,6 +658,56 @@ static int pwrap_read(struct pmic_wrappe
  	return wrp->slave->pwrap_read(wrp, adr, rdata);
  }
  
@@ -110,7 +108,7 @@ index 06930e2ebe4c..2d3a8faae124 100644
  static int pwrap_regmap_read(void *context, u32 adr, u32 *rdata)
  {
  	return pwrap_read(context, adr, rdata);
-@@ -1082,18 +1117,21 @@ static const struct pwrap_slv_type pmic_mt6323 = {
+@@ -1082,18 +1117,21 @@ static const struct pwrap_slv_type pmic_
  	.dew_regs = mt6323_regs,
  	.type = PMIC_MT6323,
  	.pwrap_read = pwrap_read16,
@@ -132,6 +130,3 @@ index 06930e2ebe4c..2d3a8faae124 100644
  };
  
  static const struct of_device_id of_slave_match_tbl[] = {
--- 
-2.11.0
-

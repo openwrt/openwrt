@@ -17,11 +17,9 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  drivers/usb/mtu3/mtu3_core.c | 9 +++++++--
  1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/usb/mtu3/mtu3_core.c b/drivers/usb/mtu3/mtu3_core.c
-index 67f7a309aba7..7c149a7da14e 100644
 --- a/drivers/usb/mtu3/mtu3_core.c
 +++ b/drivers/usb/mtu3/mtu3_core.c
-@@ -115,7 +115,9 @@ static int mtu3_device_enable(struct mtu3 *mtu)
+@@ -115,7 +115,9 @@ static int mtu3_device_enable(struct mtu
  	mtu3_clrbits(ibase, SSUSB_U2_CTRL(0),
  		(SSUSB_U2_PORT_DIS | SSUSB_U2_PORT_PDN |
  		SSUSB_U2_PORT_HOST_SEL));
@@ -32,7 +30,7 @@ index 67f7a309aba7..7c149a7da14e 100644
  
  	return ssusb_check_clocks(mtu->ssusb, check_clk);
  }
-@@ -130,7 +132,10 @@ static void mtu3_device_disable(struct mtu3 *mtu)
+@@ -130,7 +132,10 @@ static void mtu3_device_disable(struct m
  
  	mtu3_setbits(ibase, SSUSB_U2_CTRL(0),
  		SSUSB_U2_PORT_DIS | SSUSB_U2_PORT_PDN);
@@ -44,6 +42,3 @@ index 67f7a309aba7..7c149a7da14e 100644
  	mtu3_setbits(ibase, U3D_SSUSB_IP_PW_CTRL2, SSUSB_IP_DEV_PDN);
  }
  
--- 
-2.11.0
-

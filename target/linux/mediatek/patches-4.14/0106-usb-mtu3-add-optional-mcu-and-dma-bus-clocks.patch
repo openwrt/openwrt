@@ -13,8 +13,6 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  drivers/usb/mtu3/mtu3_plat.c | 121 +++++++++++++++++++++++++++++--------------
  2 files changed, 86 insertions(+), 40 deletions(-)
 
-diff --git a/drivers/usb/mtu3/mtu3.h b/drivers/usb/mtu3/mtu3.h
-index 6d3278e46431..2795294ec92a 100644
 --- a/drivers/usb/mtu3/mtu3.h
 +++ b/drivers/usb/mtu3/mtu3.h
 @@ -206,6 +206,9 @@ struct otg_switch_mtk {
@@ -36,11 +34,9 @@ index 6d3278e46431..2795294ec92a 100644
  	/* otg */
  	struct otg_switch_mtk otg_switch;
  	enum usb_dr_mode dr_mode;
-diff --git a/drivers/usb/mtu3/mtu3_plat.c b/drivers/usb/mtu3/mtu3_plat.c
-index 9edad30c8ae5..fb8992011bde 100644
 --- a/drivers/usb/mtu3/mtu3_plat.c
 +++ b/drivers/usb/mtu3/mtu3_plat.c
-@@ -110,15 +110,9 @@ static void ssusb_phy_power_off(struct ssusb_mtk *ssusb)
+@@ -110,15 +110,9 @@ static void ssusb_phy_power_off(struct s
  		phy_power_off(ssusb->phys[i]);
  }
  
@@ -58,7 +54,7 @@ index 9edad30c8ae5..fb8992011bde 100644
  
  	ret = clk_prepare_enable(ssusb->sys_clk);
  	if (ret) {
-@@ -132,6 +126,52 @@ static int ssusb_rscs_init(struct ssusb_mtk *ssusb)
+@@ -132,6 +126,52 @@ static int ssusb_rscs_init(struct ssusb_
  		goto ref_clk_err;
  	}
  
@@ -111,7 +107,7 @@ index 9edad30c8ae5..fb8992011bde 100644
  	ret = ssusb_phy_init(ssusb);
  	if (ret) {
  		dev_err(ssusb->dev, "failed to init phy\n");
-@@ -149,20 +189,16 @@ static int ssusb_rscs_init(struct ssusb_mtk *ssusb)
+@@ -149,20 +189,16 @@ static int ssusb_rscs_init(struct ssusb_
  phy_err:
  	ssusb_phy_exit(ssusb);
  phy_init_err:
@@ -135,7 +131,7 @@ index 9edad30c8ae5..fb8992011bde 100644
  	regulator_disable(ssusb->vusb33);
  	ssusb_phy_power_off(ssusb);
  	ssusb_phy_exit(ssusb);
-@@ -203,6 +239,19 @@ static int get_iddig_pinctrl(struct ssusb_mtk *ssusb)
+@@ -203,6 +239,19 @@ static int get_iddig_pinctrl(struct ssus
  	return 0;
  }
  
@@ -155,7 +151,7 @@ index 9edad30c8ae5..fb8992011bde 100644
  static int get_ssusb_rscs(struct platform_device *pdev, struct ssusb_mtk *ssusb)
  {
  	struct device_node *node = pdev->dev.of_node;
-@@ -225,18 +274,17 @@ static int get_ssusb_rscs(struct platform_device *pdev, struct ssusb_mtk *ssusb)
+@@ -225,18 +274,17 @@ static int get_ssusb_rscs(struct platfor
  		return PTR_ERR(ssusb->sys_clk);
  	}
  
@@ -168,12 +164,13 @@ index 9edad30c8ae5..fb8992011bde 100644
 -	if (IS_ERR(ssusb->ref_clk)) {
 -		if (PTR_ERR(ssusb->ref_clk) == -EPROBE_DEFER)
 -			return -EPROBE_DEFER;
+-
+-		ssusb->ref_clk = NULL;
+-	}
 +	ssusb->ref_clk = get_optional_clk(dev, "ref_ck");
 +	if (IS_ERR(ssusb->ref_clk))
 +		return PTR_ERR(ssusb->ref_clk);
- 
--		ssusb->ref_clk = NULL;
--	}
++
 +	ssusb->mcu_clk = get_optional_clk(dev, "mcu_ck");
 +	if (IS_ERR(ssusb->mcu_clk))
 +		return PTR_ERR(ssusb->mcu_clk);
@@ -184,7 +181,7 @@ index 9edad30c8ae5..fb8992011bde 100644
  
  	ssusb->num_phys = of_count_phandle_with_args(node,
  			"phys", "#phy-cells");
-@@ -451,8 +499,7 @@ static int __maybe_unused mtu3_suspend(struct device *dev)
+@@ -451,8 +499,7 @@ static int __maybe_unused mtu3_suspend(s
  
  	ssusb_host_disable(ssusb, true);
  	ssusb_phy_power_off(ssusb);
@@ -194,7 +191,7 @@ index 9edad30c8ae5..fb8992011bde 100644
  	ssusb_wakeup_enable(ssusb);
  
  	return 0;
-@@ -470,27 +517,21 @@ static int __maybe_unused mtu3_resume(struct device *dev)
+@@ -470,27 +517,21 @@ static int __maybe_unused mtu3_resume(st
  		return 0;
  
  	ssusb_wakeup_disable(ssusb);
@@ -228,6 +225,3 @@ index 9edad30c8ae5..fb8992011bde 100644
  	return ret;
  }
  
--- 
-2.11.0
-

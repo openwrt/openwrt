@@ -38,8 +38,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/usb/host/xhci.h                                     | 2 ++
  7 files changed, 23 insertions(+), 5 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/usb/mediatek,mtk-xhci.txt b/Documentation/devicetree/bindings/usb/mediatek,mtk-xhci.txt
-index 30595964876a..9ff560298498 100644
 --- a/Documentation/devicetree/bindings/usb/mediatek,mtk-xhci.txt
 +++ b/Documentation/devicetree/bindings/usb/mediatek,mtk-xhci.txt
 @@ -46,6 +46,7 @@ Optional properties:
@@ -58,11 +56,9 @@ index 30595964876a..9ff560298498 100644
  };
  
  2nd: dual-role mode with xHCI driver
-diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
-index 2d80b60eeabe..2390ae58636b 100644
 --- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
 +++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
-@@ -28,6 +28,7 @@ Optional properties:
+@@ -29,6 +29,7 @@ Optional properties:
    - clocks: reference to a clock
    - usb3-lpm-capable: determines if platform is USB3 LPM capable
    - quirk-broken-port-ped: set if the controller has broken port disable mechanism
@@ -70,11 +66,9 @@ index 2d80b60eeabe..2390ae58636b 100644
  
  Example:
  	usb@f0931000 {
-diff --git a/drivers/usb/host/xhci-mtk.c b/drivers/usb/host/xhci-mtk.c
-index 8e51b3fec386..8e4495be6592 100644
 --- a/drivers/usb/host/xhci-mtk.c
 +++ b/drivers/usb/host/xhci-mtk.c
-@@ -629,6 +629,15 @@ static int xhci_mtk_probe(struct platform_device *pdev)
+@@ -629,6 +629,15 @@ static int xhci_mtk_probe(struct platfor
  
  	xhci = hcd_to_xhci(hcd);
  	xhci->main_hcd = hcd;
@@ -90,11 +84,9 @@ index 8e51b3fec386..8e4495be6592 100644
  	xhci->shared_hcd = usb_create_shared_hcd(driver, dev,
  			dev_name(dev), hcd);
  	if (!xhci->shared_hcd) {
-diff --git a/drivers/usb/host/xhci-pci.c b/drivers/usb/host/xhci-pci.c
-index 8071c8fdd15e..cdd7d7bdfc0f 100644
 --- a/drivers/usb/host/xhci-pci.c
 +++ b/drivers/usb/host/xhci-pci.c
-@@ -258,6 +258,9 @@ static int xhci_pci_setup(struct usb_hcd *hcd)
+@@ -266,6 +266,9 @@ static int xhci_pci_setup(struct usb_hcd
  	if (!xhci->sbrn)
  		pci_read_config_byte(pdev, XHCI_SBRN_OFFSET, &xhci->sbrn);
  
@@ -104,11 +96,9 @@ index 8071c8fdd15e..cdd7d7bdfc0f 100644
  	retval = xhci_gen_setup(hcd, xhci_pci_quirks);
  	if (retval)
  		return retval;
-diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
-index 163bafde709f..47230453a876 100644
 --- a/drivers/usb/host/xhci-plat.c
 +++ b/drivers/usb/host/xhci-plat.c
-@@ -265,6 +265,11 @@ static int xhci_plat_probe(struct platform_device *pdev)
+@@ -269,6 +269,11 @@ static int xhci_plat_probe(struct platfo
  	if (device_property_read_bool(&pdev->dev, "quirk-broken-port-ped"))
  		xhci->quirks |= XHCI_BROKEN_PORT_PED;
  
@@ -120,8 +110,6 @@ index 163bafde709f..47230453a876 100644
  	hcd->usb_phy = devm_usb_get_phy_by_phandle(sysdev, "usb-phy", 0);
  	if (IS_ERR(hcd->usb_phy)) {
  		ret = PTR_ERR(hcd->usb_phy);
-diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
-index b2ff1ff1a02f..ac1b26a81e77 100644
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
 @@ -597,11 +597,7 @@ int xhci_run(struct usb_hcd *hcd)
@@ -137,11 +125,9 @@ index b2ff1ff1a02f..ac1b26a81e77 100644
  	writel(temp, &xhci->ir_set->irq_control);
  
  	/* Set the HCD state before we enable the irqs */
-diff --git a/drivers/usb/host/xhci.h b/drivers/usb/host/xhci.h
-index 2abaa4d6d39d..614380af0f96 100644
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1723,6 +1723,8 @@ struct xhci_hcd {
+@@ -1726,6 +1726,8 @@ struct xhci_hcd {
  	u8		max_interrupters;
  	u8		max_ports;
  	u8		isoc_threshold;
@@ -150,6 +136,3 @@ index 2abaa4d6d39d..614380af0f96 100644
  	int		event_ring_max;
  	/* 4KB min, 128MB max */
  	int		page_size;
--- 
-2.11.0
-

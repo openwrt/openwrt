@@ -15,8 +15,6 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  drivers/usb/mtu3/mtu3_plat.c |  8 ++++++--
  3 files changed, 22 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/usb/mtu3/mtu3.h b/drivers/usb/mtu3/mtu3.h
-index b26fffc58446..112723d6e7bc 100644
 --- a/drivers/usb/mtu3/mtu3.h
 +++ b/drivers/usb/mtu3/mtu3.h
 @@ -210,6 +210,8 @@ struct otg_switch_mtk {
@@ -36,11 +34,9 @@ index b26fffc58446..112723d6e7bc 100644
  	struct dentry *dbgfs_root;
  	/* usb wakeup for host mode */
  	bool wakeup_en;
-diff --git a/drivers/usb/mtu3/mtu3_host.c b/drivers/usb/mtu3/mtu3_host.c
-index e42d308b8dc2..4dd9508a60b5 100644
 --- a/drivers/usb/mtu3/mtu3_host.c
 +++ b/drivers/usb/mtu3/mtu3_host.c
-@@ -151,6 +151,7 @@ int ssusb_host_enable(struct ssusb_mtk *ssusb)
+@@ -151,6 +151,7 @@ int ssusb_host_enable(struct ssusb_mtk *
  	void __iomem *ibase = ssusb->ippc_base;
  	int num_u3p = ssusb->u3_ports;
  	int num_u2p = ssusb->u2_ports;
@@ -48,7 +44,7 @@ index e42d308b8dc2..4dd9508a60b5 100644
  	u32 check_clk;
  	u32 value;
  	int i;
-@@ -158,8 +159,14 @@ int ssusb_host_enable(struct ssusb_mtk *ssusb)
+@@ -158,8 +159,14 @@ int ssusb_host_enable(struct ssusb_mtk *
  	/* power on host ip */
  	mtu3_clrbits(ibase, U3D_SSUSB_IP_PW_CTRL1, SSUSB_IP_HOST_PDN);
  
@@ -64,7 +60,7 @@ index e42d308b8dc2..4dd9508a60b5 100644
  		value = mtu3_readl(ibase, SSUSB_U3_CTRL(i));
  		value &= ~(SSUSB_U3_PORT_PDN | SSUSB_U3_PORT_DIS);
  		value |= SSUSB_U3_PORT_HOST_SEL;
-@@ -175,7 +182,7 @@ int ssusb_host_enable(struct ssusb_mtk *ssusb)
+@@ -175,7 +182,7 @@ int ssusb_host_enable(struct ssusb_mtk *
  	}
  
  	check_clk = SSUSB_XHCI_RST_B_STS;
@@ -73,7 +69,7 @@ index e42d308b8dc2..4dd9508a60b5 100644
  		check_clk = SSUSB_U3_MAC_RST_B_STS;
  
  	return ssusb_check_clocks(ssusb, check_clk);
-@@ -190,8 +197,11 @@ int ssusb_host_disable(struct ssusb_mtk *ssusb, bool suspend)
+@@ -190,8 +197,11 @@ int ssusb_host_disable(struct ssusb_mtk
  	int ret;
  	int i;
  
@@ -86,11 +82,9 @@ index e42d308b8dc2..4dd9508a60b5 100644
  		value = mtu3_readl(ibase, SSUSB_U3_CTRL(i));
  		value |= SSUSB_U3_PORT_PDN;
  		value |= suspend ? 0 : SSUSB_U3_PORT_DIS;
-diff --git a/drivers/usb/mtu3/mtu3_plat.c b/drivers/usb/mtu3/mtu3_plat.c
-index 088e3e685c4f..9edad30c8ae5 100644
 --- a/drivers/usb/mtu3/mtu3_plat.c
 +++ b/drivers/usb/mtu3/mtu3_plat.c
-@@ -276,6 +276,10 @@ static int get_ssusb_rscs(struct platform_device *pdev, struct ssusb_mtk *ssusb)
+@@ -276,6 +276,10 @@ static int get_ssusb_rscs(struct platfor
  	if (ret)
  		return ret;
  
@@ -101,7 +95,7 @@ index 088e3e685c4f..9edad30c8ae5 100644
  	if (ssusb->dr_mode != USB_DR_MODE_OTG)
  		return 0;
  
-@@ -304,8 +308,8 @@ static int get_ssusb_rscs(struct platform_device *pdev, struct ssusb_mtk *ssusb)
+@@ -304,8 +308,8 @@ static int get_ssusb_rscs(struct platfor
  		}
  	}
  
@@ -112,6 +106,3 @@ index 088e3e685c4f..9edad30c8ae5 100644
  
  	return 0;
  }
--- 
-2.11.0
-

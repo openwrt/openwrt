@@ -23,8 +23,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  create mode 100644 drivers/clk/mediatek/clk-mt7622-hif.c
  create mode 100644 drivers/clk/mediatek/clk-mt7622.c
 
-diff --git a/drivers/clk/mediatek/Kconfig b/drivers/clk/mediatek/Kconfig
-index 300dbb551bf7..59dc0aad553c 100644
 --- a/drivers/clk/mediatek/Kconfig
 +++ b/drivers/clk/mediatek/Kconfig
 @@ -132,6 +132,36 @@ config COMMON_CLK_MT6797_VENCSYS
@@ -64,11 +62,9 @@ index 300dbb551bf7..59dc0aad553c 100644
  config COMMON_CLK_MT8135
  	bool "Clock driver for Mediatek MT8135"
  	depends on (ARCH_MEDIATEK && ARM) || COMPILE_TEST
-diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
-index a4e5c47c73a4..de8c3d0bb4ca 100644
 --- a/drivers/clk/mediatek/Makefile
 +++ b/drivers/clk/mediatek/Makefile
-@@ -20,5 +20,9 @@ obj-$(CONFIG_COMMON_CLK_MT2712_MFGCFG) += clk-mt2712-mfg.o
+@@ -21,5 +21,9 @@ obj-$(CONFIG_COMMON_CLK_MT2712_MFGCFG) +
  obj-$(CONFIG_COMMON_CLK_MT2712_MMSYS) += clk-mt2712-mm.o
  obj-$(CONFIG_COMMON_CLK_MT2712_VDECSYS) += clk-mt2712-vdec.o
  obj-$(CONFIG_COMMON_CLK_MT2712_VENCSYS) += clk-mt2712-venc.o
@@ -78,9 +74,6 @@ index a4e5c47c73a4..de8c3d0bb4ca 100644
 +obj-$(CONFIG_COMMON_CLK_MT7622_AUDSYS) += clk-mt7622-aud.o
  obj-$(CONFIG_COMMON_CLK_MT8135) += clk-mt8135.o
  obj-$(CONFIG_COMMON_CLK_MT8173) += clk-mt8173.o
-diff --git a/drivers/clk/mediatek/clk-mt7622-aud.c b/drivers/clk/mediatek/clk-mt7622-aud.c
-new file mode 100644
-index 000000000000..fad7d9fc53ba
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt7622-aud.c
 @@ -0,0 +1,195 @@
@@ -279,9 +272,6 @@ index 000000000000..fad7d9fc53ba
 +};
 +
 +builtin_platform_driver(clk_mt7622_aud_drv);
-diff --git a/drivers/clk/mediatek/clk-mt7622-eth.c b/drivers/clk/mediatek/clk-mt7622-eth.c
-new file mode 100644
-index 000000000000..6328127bbb3c
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt7622-eth.c
 @@ -0,0 +1,156 @@
@@ -441,9 +431,6 @@ index 000000000000..6328127bbb3c
 +};
 +
 +builtin_platform_driver(clk_mt7622_eth_drv);
-diff --git a/drivers/clk/mediatek/clk-mt7622-hif.c b/drivers/clk/mediatek/clk-mt7622-hif.c
-new file mode 100644
-index 000000000000..a6e8534276c6
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt7622-hif.c
 @@ -0,0 +1,169 @@
@@ -616,9 +603,6 @@ index 000000000000..a6e8534276c6
 +};
 +
 +builtin_platform_driver(clk_mt7622_hif_drv);
-diff --git a/drivers/clk/mediatek/clk-mt7622.c b/drivers/clk/mediatek/clk-mt7622.c
-new file mode 100644
-index 000000000000..92f7e32770c6
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt7622.c
 @@ -0,0 +1,780 @@
@@ -1402,6 +1386,3 @@ index 000000000000..92f7e32770c6
 +}
 +
 +arch_initcall(clk_mt7622_init);
--- 
-2.11.0
-
