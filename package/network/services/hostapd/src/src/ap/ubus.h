@@ -30,10 +30,6 @@ struct hostapd_data;
 #include <libubox/avl.h>
 #include <libubus.h>
 
-struct hostapd_ubus_iface {
-	struct ubus_object obj;
-};
-
 struct hostapd_ubus_bss {
 	struct ubus_object obj;
 	struct avl_tree banned;
@@ -49,8 +45,6 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *mac);
 
 #else
-
-struct hostapd_ubus_iface {};
 
 struct hostapd_ubus_bss {};
 
