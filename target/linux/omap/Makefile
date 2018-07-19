@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=omap
 BOARDNAME:=TI OMAP3/4/AM33xx
-FEATURES:=usb usbgadget ext4 targz fpu audio display nand squashfs ubifs
+FEATURES:=usb usbgadget ext4 targz fpu audio display nand squashfs
 CPU_TYPE:=cortex-a8
 CPU_SUBTYPE:=vfpv3
 
