@@ -10,6 +10,10 @@
 	model = "OCEDO Raccoon";
 	compatible = "ocedo,raccoon", "qca,ar9344";
 
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+	};
+
 	aliases {
 		led-status = &system;
 	};
