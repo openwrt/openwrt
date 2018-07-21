@@ -124,26 +124,15 @@
 
 &pci {
 	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&pci_pins>;
+};
 
-	pci_pins: pci {
-		pci {
-			ralink,group = "pci";
-			ralink,function = "pci-fnc";
-		};
-	};
+&pci1 {
+	status = "okay";
 
-	host-bridge {
-		pci-bridge@1 {
-			status = "okay";
-
-			wifi@0,0 {
-				compatible = "pci0,0";
-				reg = < 0x10000 0 0 0 0 >;
-				ralink,2ghz = <0>;
-			};
-		};
+	wifi@0,0 {
+		compatible = "pci0,0";
+		reg = < 0x10000 0 0 0 0 >;
+		ralink,2ghz = <0>;
 	};
 };
 

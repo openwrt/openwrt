@@ -555,13 +555,15 @@
 
 		status = "disabled";
 
-		pcie-bridge {
+		pcie0: pcie@0,0 {
 			reg = <0x0000 0 0 0 0>;
 
 			#address-cells = <3>;
 			#size-cells = <2>;
 
 			device_type = "pci";
+
+			ranges;
 		};
 	};
 

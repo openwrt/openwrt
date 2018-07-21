@@ -163,13 +163,13 @@
 
 &pcie {
 	status = "okay";
+};
 
-	pcie-bridge {
-		wifi@1814,5592 {
-			compatible = "pci1814,5592";
-			reg = <0x0000 0 0 0 0>;
-			ralink,2ghz = <0>;
-			ralink,mtd-eeprom = <&factory 0x8000>;
-		};
+&pcie0 {
+	wifi@1814,5592 {
+		compatible = "pci1814,5592";
+		reg = <0x0000 0 0 0 0>;
+		ralink,2ghz = <0>;
+		ralink,mtd-eeprom = <&factory 0x8000>;
 	};
 };

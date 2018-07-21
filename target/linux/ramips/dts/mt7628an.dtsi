@@ -473,13 +473,15 @@
 			0x01000000 0 0x00000000 0x10160000 0 0x00010000 /* io space */
 		>;
 
-		pcie-bridge {
+		pcie0: pcie@0,0 {
 			reg = <0x0000 0 0 0 0>;
 
 			#address-cells = <3>;
 			#size-cells = <2>;
 
 			device_type = "pci";
+
+			ranges;
 		};
 	};
 

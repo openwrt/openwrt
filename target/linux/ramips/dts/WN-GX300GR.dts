@@ -145,13 +145,12 @@
 
 &pcie {
 	status = "okay";
+};
 
-	pcie0 {
-		mt76@0,0 {
-			reg = <0x0000 0 0 0 0>;
-			device_type = "pci";
-			mediatek,mtd-eeprom = <&Factory 0x0>;
-		};
+&pcie0 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&Factory 0x0>;
 	};
 };
 

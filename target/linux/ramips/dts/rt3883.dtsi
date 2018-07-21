@@ -306,6 +306,13 @@
 				ralink,function = "uartlite";
 			};
 		};
+
+		pci_pins: pci {
+			pci {
+				ralink,group = "pci";
+				ralink,function = "pci-fnc";
+			};
+		};
 	};
 
 	ethernet: ethernet@10100000 {
@@ -350,6 +357,9 @@
 		#size-cells = <1>;
 		ranges; /* direct mapping */
 
+		pinctrl-names = "default";
+		pinctrl-0 = <&pci_pins>;
+
 		status = "disabled";
 
 		pciintc: interrupt-controller {
@@ -361,7 +371,7 @@
 			interrupts = <4>;
 		};
 
-		host-bridge {
+		pci@0 {
 			#address-cells = <3>;
 			#size-cells = <2>;
 			#interrupt-cells = <1>;
@@ -388,7 +398,7 @@
 				0x9000 0 0 4 &pciintc 19
 			>;
 
-			pci-bridge@1 {
+			pci1: pci@1 {
 				reg = <0x0800 0 0 0 0>;
 				device_type = "pci";
 				#interrupt-cells = <1>;
@@ -397,32 +407,27 @@
 
 				status = "disabled";
 
-				ralink,pci-slot = <1>;
-
 				interrupt-map-mask = <0x0 0 0 0>;
 				interrupt-map = <0x0 0 0 0 &pciintc 20>;
+
+				bus-range = <1 255>;
+				ranges;
 			};
 
-			pci-slot@17 {
+			pci17: pci@11,0 {
 				reg = <0x8800 0 0 0 0>;
-				device_type = "pci";
 				#interrupt-cells = <1>;
 				#address-cells = <3>;
 				#size-cells = <2>;
-
-				ralink,pci-slot = <17>;
 
 				status = "disabled";
 			};
 
-			pci-slot@18 {
+			pci18: pci@12,0 {
 				reg = <0x9000 0 0 0 0>;
-				device_type = "pci";
 				#interrupt-cells = <1>;
 				#address-cells = <3>;
 				#size-cells = <2>;
-
-				ralink,pci-slot = <18>;
 
 				status = "disabled";
 			};

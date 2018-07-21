@@ -15,10 +15,6 @@
 		led-status = &led_wired_blue;
 	};
 
-	pci@440000 {
-		status = "ok";
-	};
-
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0xbc400000 0x800000>;
@@ -207,6 +203,10 @@
 	port@0 {
 		mediatek,fixed-link = <1000 1 1 1>;
 	};
+};
+
+&pci {
+	status = "okay";
 };
 
 &wmac {

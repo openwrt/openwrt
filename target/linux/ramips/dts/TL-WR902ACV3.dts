@@ -98,15 +98,14 @@
 
 &pcie {
 	status = "okay";
+};
 
-	pcie-bridge {
-		mt76@1,0 {
-			reg = <0x0000 0 0 0 0>;
-			device_type = "pci";
-			mediatek,mtd-eeprom = <&factory 0x28000>;
-			ieee80211-freq-limit = <5000000 6000000>;
-			mtd-mac-address = <&factory 0xf100>;
-			mtd-mac-address-increment = <(-1)>;
-		};
+&pcie0 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x28000>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		mtd-mac-address = <&factory 0xf100>;
+		mtd-mac-address-increment = <(-1)>;
 	};
 };
