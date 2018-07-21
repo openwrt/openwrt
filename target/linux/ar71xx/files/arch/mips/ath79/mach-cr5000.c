@@ -58,7 +58,7 @@
 #define CR5000_WMAC_CALDATA_OFFSET	0x1000
 #define CR5000_WMAC_MAC_OFFSET	        0x1002
 #define CR5000_PCIE_CALDATA_OFFSET	0x5000
-#define CR5000_PCIE_MAC_OFFSET	        0x5002
+#define CR5000_PCIE_WMAC_OFFSET		0x5002
 
 static struct gpio_led cr5000_leds_gpio[] __initdata = {
 	{
@@ -153,7 +153,7 @@ static void __init cr5000_setup(void)
 					cr5000_gpio_keys);
 	ath79_register_usb();
 	ath79_register_wmac(art + CR5000_WMAC_CALDATA_OFFSET, art + CR5000_WMAC_MAC_OFFSET);
-	ap94_pci_init(NULL, NULL, NULL, art + CR5000_PCIE_MAC_OFFSET);
+	ap94_pci_init(NULL, NULL, NULL, art + CR5000_PCIE_WMAC_OFFSET);
 
         ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0);
 
