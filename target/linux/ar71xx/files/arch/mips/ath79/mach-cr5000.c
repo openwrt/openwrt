@@ -90,7 +90,7 @@ static struct gpio_keys_button cr5000_gpio_keys[] __initdata = {
 	{
 		.desc		= "Reset button",
 		.type		= EV_KEY,
-		.code		= KEY_WPS_BUTTON,
+		.code		= KEY_RESTART,
 		.debounce_interval = CR5000_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= CR5000_GPIO_BTN_RESET,
 		.active_low	= 1,
