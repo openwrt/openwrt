@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
 PKG_VERSION:=2.32
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.32
@@ -139,6 +139,17 @@ endef
 define Package/blkid/description
  The blkid program is the command-line interface to working with the libblkid
  library.
+endef
+
+define Package/blockdev
+$(call Package/util-linux/Default)
+ TITLE:=call block device ioctls from the command line
+ SUBMENU=Disc
+endef
+
+define Package/blockdev/description
+ The utility blockdev allows one to call block device ioctls from the
+command line
 endef
 
 define Package/cal
@@ -565,6 +576,11 @@ define Package/blkid/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/blkid $(1)/usr/sbin/
 endef
 
+define Package/blockdev/install
+	 $(INSTALL_DIR) $(1)/usr/sbin
+	 $(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/blockdev $(1)/usr/sbin/
+endef
+
 define Package/cal/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/cal $(1)/usr/bin/
@@ -734,6 +750,7 @@ $(eval $(call BuildPackage,libuuid))
 $(eval $(call BuildPackage,agetty))
 $(eval $(call BuildPackage,blkdiscard))
 $(eval $(call BuildPackage,blkid))
+$(eval $(call BuildPackage,blockdev))
 $(eval $(call BuildPackage,cal))
 $(eval $(call BuildPackage,cfdisk))
 $(eval $(call BuildPackage,dmesg))
