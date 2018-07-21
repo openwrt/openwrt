@@ -37,11 +37,7 @@ menu "GL.iNet packages choice shortcut"
 		select PACKAGE_bridge
 		select PACKAGE_wpad
 		select PACKAGE_wget
-		select PACKAGE_kmod-i2c-core
 		select PACKAGE_ip-full
-		select PACKAGE_kmod-nls-cp437
-		select PACKAGE_kmod-nls-iso8859-1
-		select PACKAGE_kmod-nls-utf8
 		select PACKAGE_kmod-nf-nathelper-extra
 		help
 		  Choose basic packages and various Busybox options.
@@ -110,6 +106,9 @@ menu "GL.iNet packages choice shortcut"
 		select PACKAGE_kmod-usb-uhci
 		select PACKAGE_kmod-usb2
 		select PACKAGE_kmod-usb-ohci
+		select PACKAGE_kmod-nls-cp437
+		select PACKAGE_kmod-nls-iso8859-1
+		select PACKAGE_kmod-nls-utf8
 		select PACKAGE_samba36-server
 		help
 		  Choose packages to support USB storage.
