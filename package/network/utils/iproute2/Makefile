@@ -19,6 +19,10 @@ PKG_LICENSE:=GPL-2.0
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
+USE_CAKE:=$(if $(filter 1y,$(SDK)$(CONFIG_BUILDBOT)),cake-legacy,cake-upstream)
+PKG_FLAGS:=$(if $(filter cake-upstream,$(USE_CAKE)),nonshared)
+PKG_RELEASE:=$(PKG_RELEASE)-$(USE_CAKE)
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/iproute2/Default
@@ -69,6 +73,14 @@ endef
 ifeq ($(BUILD_VARIANT),tiny)
   IP_CONFIG_TINY:=y
 endif
+
+PATCH_DIR:=$(PKG_BUILD_DIR)/openwrt-patches
+
+define Build/Patch
+	$(INSTALL_DIR) $(PATCH_DIR)
+	$(CP) ./patches/* ./patches-$(USE_CAKE)/* $(PATCH_DIR)/
+	$(call Build/Patch/Default)
+endef
 
 define Build/Configure
 	$(SED) "s,-I/usr/include/db3,," $(PKG_BUILD_DIR)/Makefile
