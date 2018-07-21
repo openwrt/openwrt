@@ -4,8 +4,12 @@
 	compatible = "ralink,rt3883-soc";
 
 	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		cpu@0 {
 			compatible = "mips,mips74Kc";
+			reg = <0>;
 		};
 	};
 
