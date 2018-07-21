@@ -241,6 +241,9 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "0:wan" "6@eth0"
 		;;
+	gl-mt300n-v3)
+		ucidef_set_interface_lan "eth0"
+		;;
 	awapn2403)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:wan" "6@eth0"
