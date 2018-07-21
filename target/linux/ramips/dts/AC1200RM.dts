@@ -51,8 +51,6 @@
 
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <20>;
 
 		reset {
@@ -155,7 +153,7 @@
 			reg = <0x30000 0x1000>;
 		};
 
-		partition@031000 {
+		partition@31000 {
 			label = "config";
 			reg = <0x31000 0xf000>;
 			read-only;

@@ -11,8 +11,6 @@
 
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <20>;
 
 		touch {
@@ -166,7 +164,7 @@
 };
 
 &pcie0 {
-	wifi@1814,5592 {
+	wifi@0,0 {
 		compatible = "pci1814,5592";
 		reg = <0x0000 0 0 0 0>;
 		ralink,2ghz = <0>;

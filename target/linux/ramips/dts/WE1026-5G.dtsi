@@ -63,8 +63,6 @@
 
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <20>;
 		reset {
 			label = "reset";
@@ -116,7 +114,7 @@
 };
 
 &pcie0 {
-	wifi@14c3,7662 {
+	wifi@0,0 {
 		compatible = "pci14c3,7662";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x8000>;
