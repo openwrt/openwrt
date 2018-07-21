@@ -385,22 +385,12 @@
 		#size-cells = <1>;
 	};
 
-	hnat: hnat@1e100000 {
-		compatible = "mediatek,mt7623-hnat";
-		reg = <0x1e100000 0x10000>;
-		mtketh-ppd = "eth0";
-		mtketh-lan = "eth0";
-		mtketh-wan = "eth0";
-		resets = <&rstctrl 0>;
-		reset-names = "mtketh";
-	};
-
 	ethernet: ethernet@1e100000 {
 		compatible = "mediatek,mt7621-eth";
 		reg = <0x1e100000 0x10000>;
 
 		#address-cells = <1>;
-		#size-cells = <0>;
+		#size-cells = <1>;
 
 		resets = <&rstctrl 6 &rstctrl 23>;
 		reset-names = "fe", "eth";
@@ -418,6 +408,16 @@
 				reg = <0x1f>;
 				phy-mode = "rgmii";
 			};
+		};
+
+		hnat: hnat@0 {
+			compatible = "mediatek,mt7623-hnat";
+			reg = <0 0x10000>;
+			mtketh-ppd = "eth0";
+			mtketh-lan = "eth0";
+			mtketh-wan = "eth0";
+			resets = <&rstctrl 0>;
+			reset-names = "mtketh";
 		};
 	};
 
