@@ -103,6 +103,13 @@ define Device/ubnt_unifiac-mesh
 endef
 TARGET_DEVICES += ubnt_unifiac-mesh
 
+define Device/ubnt_unifiac-mesh-pro
+  $(Device/ubnt_unifiac)
+  DEVICE_TITLE := Ubiquiti UniFi AC-Mesh Pro
+  SUPPORTED_DEVICES += ubnt-unifiac-mesh-pro
+endef
+TARGET_DEVICES += ubnt_unifiac-mesh-pro
+
 define Device/ubnt_unifiac-pro
   $(Device/ubnt_unifiac)
   DEVICE_TITLE := Ubiquiti UniFi AC-Pro

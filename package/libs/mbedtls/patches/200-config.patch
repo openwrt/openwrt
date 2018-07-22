@@ -1,6 +1,23 @@
 --- a/include/mbedtls/config.h
 +++ b/include/mbedtls/config.h
-@@ -599,19 +599,19 @@
+@@ -522,14 +522,14 @@
+  *
+  * Enable Output Feedback mode (OFB) for symmetric ciphers.
+  */
+-#define MBEDTLS_CIPHER_MODE_OFB
++//#define MBEDTLS_CIPHER_MODE_OFB
+ 
+ /**
+  * \def MBEDTLS_CIPHER_MODE_XTS
+  *
+  * Enable Xor-encrypt-xor with ciphertext stealing mode (XTS) for AES.
+  */
+-#define MBEDTLS_CIPHER_MODE_XTS
++//#define MBEDTLS_CIPHER_MODE_XTS
+ 
+ /**
+  * \def MBEDTLS_CIPHER_NULL_CIPHER
+@@ -619,19 +619,19 @@
   *
   * Comment macros to disable the curve and functions for it
   */
@@ -29,17 +46,7 @@
  
  /**
   * \def MBEDTLS_ECP_NIST_OPTIM
-@@ -635,8 +635,8 @@
-  * Requires: MBEDTLS_HMAC_DRBG_C
-  *
-  * Comment this macro to disable deterministic ECDSA.
-- */
- #define MBEDTLS_ECDSA_DETERMINISTIC
-+ */
- 
- /**
-  * \def MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
-@@ -689,7 +689,7 @@
+@@ -709,7 +709,7 @@
   *             See dhm.h for more details.
   *
   */
@@ -48,17 +55,16 @@
  
  /**
   * \def MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
-@@ -708,8 +708,8 @@
-  *      MBEDTLS_TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256
+@@ -729,7 +729,7 @@
   *      MBEDTLS_TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA
   *      MBEDTLS_TLS_ECDHE_PSK_WITH_RC4_128_SHA
-- */
- #define MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
-+ */
+  */
+-#define MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
++//#define MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
  
  /**
   * \def MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
-@@ -734,7 +734,7 @@
+@@ -754,7 +754,7 @@
   *      MBEDTLS_TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA
   *      MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA
   */
@@ -67,7 +73,7 @@
  
  /**
   * \def MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
-@@ -868,7 +868,7 @@
+@@ -888,7 +888,7 @@
   *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256
   *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384
   */
@@ -76,7 +82,7 @@
  
  /**
   * \def MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
-@@ -892,7 +892,7 @@
+@@ -912,7 +912,7 @@
   *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256
   *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384
   */
@@ -85,7 +91,7 @@
  
  /**
   * \def MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
-@@ -996,7 +996,7 @@
+@@ -1016,7 +1016,7 @@
   * This option is only useful if both MBEDTLS_SHA256_C and
   * MBEDTLS_SHA512_C are defined. Otherwise the available hash module is used.
   */
@@ -94,7 +100,7 @@
  
  /**
   * \def MBEDTLS_ENTROPY_NV_SEED
-@@ -1091,14 +1091,14 @@
+@@ -1111,14 +1111,14 @@
   * Uncomment this macro to disable the use of CRT in RSA.
   *
   */
@@ -111,16 +117,7 @@
  
  /**
   * \def MBEDTLS_SHA256_SMALLER
-@@ -1114,7 +1114,7 @@
-  *
-  * Uncomment to enable the smaller implementation of SHA256.
-  */
--//#define MBEDTLS_SHA256_SMALLER
-+#define MBEDTLS_SHA256_SMALLER
- 
- /**
-  * \def MBEDTLS_SSL_ALL_ALERT_MESSAGES
-@@ -1241,7 +1241,7 @@
+@@ -1272,7 +1272,7 @@
   *          configuration of this extension).
   *
   */
@@ -129,17 +126,16 @@
  
  /**
   * \def MBEDTLS_SSL_SRV_SUPPORT_SSLV2_CLIENT_HELLO
-@@ -1415,8 +1415,8 @@
-  * callbacks are provided by MBEDTLS_SSL_TICKET_C.
+@@ -1447,7 +1447,7 @@
   *
   * Comment this macro to disable support for SSL session tickets
-- */
- #define MBEDTLS_SSL_SESSION_TICKETS
-+ */
+  */
+-#define MBEDTLS_SSL_SESSION_TICKETS
++//#define MBEDTLS_SSL_SESSION_TICKETS
  
  /**
   * \def MBEDTLS_SSL_EXPORT_KEYS
-@@ -1446,7 +1446,7 @@
+@@ -1477,7 +1477,7 @@
   *
   * Comment this macro to disable support for truncated HMAC in SSL
   */
@@ -148,17 +144,16 @@
  
  /**
   * \def MBEDTLS_SSL_TRUNCATED_HMAC_COMPAT
-@@ -1504,8 +1504,8 @@
-  * Requires: MBEDTLS_VERSION_C
+@@ -1536,7 +1536,7 @@
   *
   * Comment this to disable run-time checking and save ROM space
-- */
- #define MBEDTLS_VERSION_FEATURES
-+ */
+  */
+-#define MBEDTLS_VERSION_FEATURES
++//#define MBEDTLS_VERSION_FEATURES
  
  /**
   * \def MBEDTLS_X509_ALLOW_EXTENSIONS_NON_V3
-@@ -1835,7 +1835,7 @@
+@@ -1866,7 +1866,7 @@
   *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256
   *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
   */
@@ -166,8 +161,8 @@
 +//#define MBEDTLS_CAMELLIA_C
  
  /**
-  * \def MBEDTLS_CCM_C
-@@ -1849,7 +1849,7 @@
+  * \def MBEDTLS_ARIA_C
+@@ -1932,7 +1932,7 @@
   * This module enables the AES-CCM ciphersuites, if other requisites are
   * enabled as well.
   */
@@ -176,7 +171,7 @@
  
  /**
   * \def MBEDTLS_CERTS_C
-@@ -1861,7 +1861,7 @@
+@@ -1944,7 +1944,7 @@
   *
   * This module is used for testing (ssl_client/server).
   */
@@ -185,7 +180,7 @@
  
  /**
   * \def MBEDTLS_CIPHER_C
-@@ -1914,7 +1914,7 @@
+@@ -1997,7 +1997,7 @@
   *
   * This module provides debugging functions.
   */
@@ -194,7 +189,7 @@
  
  /**
   * \def MBEDTLS_DES_C
-@@ -1943,7 +1943,7 @@
+@@ -2026,7 +2026,7 @@
   * \warning   DES is considered a weak cipher and its use constitutes a
   *            security risk. We recommend considering stronger ciphers instead.
   */
@@ -203,17 +198,16 @@
  
  /**
   * \def MBEDTLS_DHM_C
-@@ -2104,8 +2104,8 @@
-  * Requires: MBEDTLS_MD_C
-  *
-  * Uncomment to enable the HMAC_DRBG random number geerator.
-- */
- #define MBEDTLS_HMAC_DRBG_C
-+ */
+@@ -2189,7 +2189,7 @@
+  * This module adds support for the Hashed Message Authentication Code
+  * (HMAC)-based key derivation function (HKDF).
+  */
+-#define MBEDTLS_HKDF_C
++//#define MBEDTLS_HKDF_C
  
  /**
-  * \def MBEDTLS_MD_C
-@@ -2388,7 +2388,7 @@
+  * \def MBEDTLS_HMAC_DRBG_C
+@@ -2486,7 +2486,7 @@
   *
   * This module enables abstraction of common (libc) functions.
   */
@@ -222,7 +216,7 @@
  
  /**
   * \def MBEDTLS_RIPEMD160_C
-@@ -2399,7 +2399,7 @@
+@@ -2497,7 +2497,7 @@
   * Caller:  library/md.c
   *
   */
@@ -231,27 +225,25 @@
  
  /**
   * \def MBEDTLS_RSA_C
-@@ -2505,8 +2505,8 @@
-  * Caller:
+@@ -2604,7 +2604,7 @@
   *
   * Requires: MBEDTLS_CIPHER_C
-- */
- #define MBEDTLS_SSL_TICKET_C
-+ */
+  */
+-#define MBEDTLS_SSL_TICKET_C
++//#define MBEDTLS_SSL_TICKET_C
  
  /**
   * \def MBEDTLS_SSL_CLI_C
-@@ -2605,8 +2605,8 @@
-  * Module:  library/version.c
+@@ -2704,7 +2704,7 @@
   *
   * This module provides run-time version information.
-- */
- #define MBEDTLS_VERSION_C
-+ */
+  */
+-#define MBEDTLS_VERSION_C
++//#define MBEDTLS_VERSION_C
  
  /**
   * \def MBEDTLS_X509_USE_C
-@@ -2716,7 +2716,7 @@
+@@ -2814,7 +2814,7 @@
   * Module:  library/xtea.c
   * Caller:
   */

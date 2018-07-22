@@ -31,7 +31,7 @@ loadaddr-$(CONFIG_TARGET_ramips_mt7621) := 0x80001000
 
 KERNEL_LOADADDR := $(loadaddr-y)
 
-KERNEL_DTB = kernel-bin | patch-dtb | lzma
+KERNEL_DTB = kernel-bin | patch-dtb | lzma -d21
 define Device/Default
   PROFILES = Default $$(DTS)
   KERNEL_DEPENDS = $$(wildcard ../dts/$$(DTS).dts)
@@ -145,6 +145,10 @@ define Build/mkdlinkfw-factory
 		-o $@.new \
 		-s $(DLINK_FIRMWARE_SIZE)
 	mv $@.new $@
+endef
+
+define Build/zyimage
+	$(STAGING_DIR_HOST)/bin/zyimage $(1) $@
 endef
 
 #

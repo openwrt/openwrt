@@ -11,6 +11,10 @@
 	compatible = "netgear,wn3000rp-v3", "ralink,mt7620a-soc";
 	model = "Netgear WN3000RPv3";
 
+	aliases {
+		led-status = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,57600";
 	};
@@ -18,7 +22,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power_g {
+		led_power_green: power_g {
 			label = "wn3000rpv3:green:power";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 			default-state = "on";

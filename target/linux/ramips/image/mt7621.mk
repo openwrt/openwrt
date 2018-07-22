@@ -16,6 +16,23 @@ define Build/elecom-wrc-factory
   mv $@.new $@
 endef
 
+define Build/iodata-factory
+  $(eval fw_size=$(word 1,$(1)))
+  $(eval fw_type=$(word 2,$(1)))
+  $(eval product=$(word 3,$(1)))
+  $(eval factory_bin=$(word 4,$(1)))
+  if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(fw_size)" ]; then \
+    $(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) $(factory_bin); \
+    $(STAGING_DIR_HOST)/bin/mksenaofw \
+      -r 0x30a -p $(product) -t $(fw_type) \
+      -e $(factory_bin) -o $(factory_bin).new; \
+    mv $(factory_bin).new $(factory_bin); \
+    $(CP) $(factory_bin) $(BIN_DIR)/; \
+	else \
+		echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
+	fi
+endef
+
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:6' > $(1).compat; \
@@ -136,6 +153,16 @@ define Device/hc5962
 endef
 TARGET_DEVICES += hc5962
 
+define Device/iodata_wn-ax1167gr
+  DTS := WN-AX1167GR
+  IMAGE_SIZE := 15552k
+  KERNEL_INITRAMFS := $$(KERNEL) | \
+    iodata-factory 7864320 4 0x1055 $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
+  DEVICE_TITLE := I-O DATA WN-AX1167GR
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 wpad-mini
+endef
+TARGET_DEVICES += iodata_wn-ax1167gr
+
 define Device/iodata_wn-gx300gr
   DTS := WN-GX300GR
   IMAGE_SIZE := 7798784
@@ -233,11 +260,9 @@ define Device/rb750gr3
 endef
 TARGET_DEVICES += rb750gr3
 
-define Device/mikrotik_rbm33g
-  DTS := RBM33G
+define Device/MikroTik
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16128k
-  DEVICE_TITLE := MikroTik RBM33G
   DEVICE_PACKAGES := kmod-usb3
   LOADER_TYPE := elf
   PLATFORM := mt7621
@@ -245,7 +270,20 @@ define Device/mikrotik_rbm33g
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
+
+define Device/mikrotik_rbm33g
+  $(Device/MikroTik)
+  DTS := RBM33G
+  DEVICE_TITLE := MikroTik RouterBOARD M33G
+endef
 TARGET_DEVICES += mikrotik_rbm33g
+
+define Device/mikrotik_rbm11g
+  $(Device/MikroTik)
+  DTS := RBM11G
+  DEVICE_TITLE := MikroTik RouterBOARD M11G
+endef
+TARGET_DEVICES += mikrotik_rbm11g
 
 define Device/re350-v1
   DTS := RE350

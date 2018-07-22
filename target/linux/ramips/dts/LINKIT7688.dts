@@ -9,6 +9,10 @@
 	compatible = "mediatek,linkit-smart-7688", "mediatek,mt7628an-soc";
 	model = "MediaTek LinkIt Smart 7688";
 
+	aliases {
+		led-status = &led_wifi;
+	};
+
 	chosen {
 		bootargs = "console=ttyS2,57600";
 	};
@@ -31,7 +35,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		wifi {
+		led_wifi: wifi {
 			label = "linkit-smart-7688:orange:wifi";
 			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 		};

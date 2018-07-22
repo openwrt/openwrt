@@ -9,10 +9,14 @@
 	compatible = "planex,mzk-ex750np", "ralink,mt7620a-soc";
 	model = "Planex MZK-EX750NP";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "mzk-ex750np:red:power";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};

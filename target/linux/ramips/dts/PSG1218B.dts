@@ -6,9 +6,13 @@
 	compatible = "phicomm,psg1218b", "phicomm,psg1218", "ralink,mt7620a-soc";
 	model = "Phicomm PSG1218 rev.B";
 
+	aliases {
+		led-status = &led_blue;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
-		blue {
+		led_blue: blue {
 			label = "psg1218b:blue:status";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};

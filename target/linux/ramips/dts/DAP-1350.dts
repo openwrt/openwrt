@@ -9,6 +9,10 @@
 	compatible = "dlink,dap-1350", "ralink,rt3052-soc";
 	model = "D-Link DAP-1350";
 
+	aliases {
+		led-status = &led_power_blue;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -54,7 +58,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power_blue: power {
 			label = "dap-1350:blue:power";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};

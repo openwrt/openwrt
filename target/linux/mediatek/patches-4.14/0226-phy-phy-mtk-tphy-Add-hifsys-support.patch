@@ -7,12 +7,10 @@ Subject: [PATCH] phy: phy-mtk-tphy: Add hifsys-support
  drivers/phy/mediatek/phy-mtk-tphy.c | 20 ++++++++++++++++++++
  1 file changed, 20 insertions(+)
 
-diff --git a/drivers/phy/mediatek/phy-mtk-tphy.c b/drivers/phy/mediatek/phy-mtk-tphy.c
-index 721a2a1c9..0cb1cea53 100644
 --- a/drivers/phy/mediatek/phy-mtk-tphy.c
 +++ b/drivers/phy/mediatek/phy-mtk-tphy.c
-@@ -22,6 +22,8 @@
- #include <linux/of_address.h>
+@@ -23,6 +23,8 @@
+ #include <linux/of_device.h>
  #include <linux/phy/phy.h>
  #include <linux/platform_device.h>
 +#include <linux/mfd/syscon.h>
@@ -20,7 +18,7 @@ index 721a2a1c9..0cb1cea53 100644
  
  /* version V1 sub-banks offset base address */
  /* banks shared by multiple phys */
-@@ -259,6 +261,9 @@
+@@ -262,6 +264,9 @@
  #define RG_CDR_BIRLTD0_GEN3_MSK		GENMASK(4, 0)
  #define RG_CDR_BIRLTD0_GEN3_VAL(x)	(0x1f & (x))
  
@@ -30,7 +28,7 @@ index 721a2a1c9..0cb1cea53 100644
  enum mtk_phy_version {
  	MTK_PHY_V1 = 1,
  	MTK_PHY_V2,
-@@ -302,6 +307,7 @@ struct mtk_tphy {
+@@ -305,6 +310,7 @@ struct mtk_tphy {
  	struct clk *u3phya_ref;	/* reference clock of usb3 anolog phy */
  	const struct mtk_phy_pdata *pdata;
  	struct mtk_phy_instance **phys;
@@ -38,7 +36,7 @@ index 721a2a1c9..0cb1cea53 100644
  	int nphys;
  };
  
-@@ -594,6 +600,10 @@ static void pcie_phy_instance_init(struct mtk_tphy *tphy,
+@@ -617,6 +623,10 @@ static void pcie_phy_instance_init(struc
  	if (tphy->pdata->version != MTK_PHY_V1)
  		return;
  
@@ -49,7 +47,7 @@ index 721a2a1c9..0cb1cea53 100644
  	tmp = readl(u3_banks->phya + U3P_U3_PHYA_DA_REG0);
  	tmp &= ~(P3A_RG_XTAL_EXT_PE1H | P3A_RG_XTAL_EXT_PE2H);
  	tmp |= P3A_RG_XTAL_EXT_PE1H_VAL(0x2) | P3A_RG_XTAL_EXT_PE2H_VAL(0x2);
-@@ -1008,6 +1018,16 @@ static int mtk_tphy_probe(struct platform_device *pdev)
+@@ -1042,6 +1052,16 @@ static int mtk_tphy_probe(struct platfor
  		tphy->u3phya_ref = NULL;
  	}
  
@@ -66,6 +64,3 @@ index 721a2a1c9..0cb1cea53 100644
  	port = 0;
  	for_each_child_of_node(np, child_np) {
  		struct mtk_phy_instance *instance;
--- 
-2.14.1
-

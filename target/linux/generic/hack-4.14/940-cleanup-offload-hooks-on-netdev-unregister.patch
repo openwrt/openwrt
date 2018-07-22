@@ -37,11 +37,9 @@ Signed-off-by: Chen Minqiang <ptpt52@gmail.com>
  net/netfilter/xt_FLOWOFFLOAD.c | 32 ++++++++++++++++++++++++++++++++
  1 file changed, 32 insertions(+)
 
-diff --git a/net/netfilter/xt_FLOWOFFLOAD.c b/net/netfilter/xt_FLOWOFFLOAD.c
-index ab6259e..3bea08e 100644
 --- a/net/netfilter/xt_FLOWOFFLOAD.c
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -337,10 +337,41 @@ static void xt_flowoffload_table_cleanup(struct nf_flowtable *table)
+@@ -340,10 +340,41 @@ static void xt_flowoffload_table_cleanup
  	nf_flow_table_free(table);
  }
  
@@ -83,7 +81,7 @@ index ab6259e..3bea08e 100644
  	INIT_DELAYED_WORK(&hook_work, xt_flowoffload_hook_work);
  
  	ret = xt_flowoffload_table_init(&nf_flowtable);
-@@ -358,6 +389,7 @@ static void __exit xt_flowoffload_tg_exit(void)
+@@ -361,6 +392,7 @@ static void __exit xt_flowoffload_tg_exi
  {
  	xt_unregister_target(&offload_tg_reg);
  	xt_flowoffload_table_cleanup(&nf_flowtable);
@@ -91,6 +89,3 @@ index ab6259e..3bea08e 100644
  }
  
  MODULE_LICENSE("GPL");
--- 
-2.17.0
-

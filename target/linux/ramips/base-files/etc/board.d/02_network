@@ -49,14 +49,17 @@ ramips_setup_interfaces()
 	dcs-930|\
 	dcs-930l-b1|\
 	ht-tm02|\
+	kimax,u35wf|\
 	linkits7688 | \
 	m2m|\
 	microwrt|\
+	mikrotik,rbm11g|\
 	mpr-a2|\
 	ncs601w|\
 	omega2 | \
 	omega2p | \
 	timecloud|\
+	tplink,tl-wa801nd-v5|\
 	w150m|\
 	widora,neo-16m|\
 	widora,neo-32m|\
@@ -217,7 +220,8 @@ ramips_setup_interfaces()
 	wrtnode2p | \
 	wrtnode2r | \
 	youhua,wr1200js|\
-	zbt-wa05)
+	zbt-wa05|\
+	zyxel,keenetic-extra-ii)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
@@ -228,6 +232,7 @@ ramips_setup_interfaces()
 		;;
 	dir-860l-b1|\
 	elecom,wrc-1167ghbk2-s|\
+	iodata,wn-ax1167gr|\
 	iodata,wn-gx300gr)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
@@ -376,7 +381,7 @@ ramips_setup_interfaces()
 		;;
 	wizfi630a)
 		ucidef_add_switch "switch0" \
-			"1:lan" "2:lan" "0:wan" "6@eth0"
+			"0:lan" "1:lan" "2:wan" "6@eth0"
 		;;
 	wt3020-4M|\
 	wt3020-8M)
@@ -475,6 +480,7 @@ ramips_setup_macs()
 		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
+	iodata,wn-ax1167gr|\
 	iodata,wn-gx300gr)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary Factory 4)" 1)
 		;;

@@ -16,10 +16,6 @@ define Build/elecom-header
 		-f $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 
-define Build/zyimage
-	$(STAGING_DIR_HOST)/bin/zyimage $(1) $@
-endef
-
 define Device/ai-br100
   DTS := AI-BR100
   IMAGE_SIZE := 7936k
@@ -283,6 +279,13 @@ define Device/hc5861
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += hc5861
+
+define Device/kimax_u35wf
+  DTS := U35WF
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := Kimax U35WF
+endef
+TARGET_DEVICES += kimax_u35wf
 
 define Device/kng_rc
   DTS := kng_rc

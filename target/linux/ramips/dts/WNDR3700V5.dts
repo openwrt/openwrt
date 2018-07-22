@@ -9,6 +9,10 @@
 	compatible = "netgear,wndr3700-v5", "mediatek,mt7621-soc";
 	model = "Netgear WNDR3700v5";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
@@ -26,7 +30,7 @@
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_power: power {
 			label = "wndr3700v5:green:power";
 			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
 		};

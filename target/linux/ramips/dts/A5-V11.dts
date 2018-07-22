@@ -9,6 +9,10 @@
 	compatible = "unbranded,a5-v11", "ralink,rt5350-soc";
 	model = "A5-V11";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -17,7 +21,7 @@
 			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_power: power {
 			label = "a5-v11:red:power";
 			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 		};

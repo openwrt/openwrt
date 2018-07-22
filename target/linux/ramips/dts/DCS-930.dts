@@ -9,6 +9,10 @@
 	compatible = "dlink,dcs-930", "ralink,rt3050-soc";
 	model = "D-Link DCS-930";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x400000>;
@@ -59,7 +63,7 @@
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_status: status {
 			label = "dcs-930:green:status";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};

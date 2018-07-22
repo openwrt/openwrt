@@ -9,6 +9,10 @@
 	compatible = "omnima,hpm", "ralink,rt3883-soc";
 	model = "Omnima HPM";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -34,7 +38,7 @@
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
 
-		status {
+		led_status: status {
 			label = "hpm:green:status";
 			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		};

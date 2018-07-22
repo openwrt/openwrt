@@ -9,10 +9,14 @@
 	compatible = "netcore,nw718", "ralink,rt3050-soc";
 	model = "Netcore NW718";
 
+	aliases {
+		led-status = &led_cpu;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		cpu {
+		led_cpu: cpu {
 			label = "nw718:amber:cpu";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};

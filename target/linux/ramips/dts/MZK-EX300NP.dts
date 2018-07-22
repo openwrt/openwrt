@@ -9,6 +9,10 @@
 	compatible = "planex,mzk-ex300np", "ralink,mt7620a-soc";
 	model = "Planex MZK-EX300NP";
 
+	aliases {
+		led-status = &led_wps;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -17,7 +21,7 @@
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
-		wps {
+		led_wps: wps {
 			label = "mzk-ex300np:green:wps";
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		};

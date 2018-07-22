@@ -267,7 +267,7 @@ fi
 run_hooks "" $sysupgrade_pre_upgrade
 
 install_bin /sbin/upgraded
-v "Commencing upgrade. All shell sessions will be closed now."
+v "Commencing upgrade. Closing all shell sessions."
 
 COMMAND='. /lib/functions.sh; include /lib/upgrade; do_upgrade_stage2'
 

@@ -9,6 +9,10 @@
 	compatible = "buffalo,whr-g300n", "ralink,rt3052-soc";
 	model = "Buffalo WHR-G300N";
 
+	aliases {
+		led-status = &led_router;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -55,7 +59,7 @@
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
 
-		router {
+		led_router: router {
 			label = "whr-g300n:green:router";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};

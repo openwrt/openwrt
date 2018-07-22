@@ -9,10 +9,14 @@
 	compatible = "hootoo,ht-tm02", "ralink,rt5350-soc";
 	model = "HooToo HT-TM02";
 
+	aliases {
+		led-status = &led_wlan;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		wlan {
+		led_wlan: wlan {
 			label = "ht-tm02:blue:wlan";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};

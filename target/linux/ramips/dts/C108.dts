@@ -42,6 +42,10 @@
 	compatible = "hnet,c108", "ralink,mt7620a-soc";
 	model = "HNET C108";
 
+	aliases {
+		led-status = &led_lan_green;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -80,7 +84,7 @@
 			gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
 		};
 
-		lan_green {
+		led_lan_green: lan_green {
 			label = "c108:green:lan";
 			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
 		};

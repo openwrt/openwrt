@@ -9,10 +9,14 @@
 	compatible = "teltonika,rut5xx", "ralink,rt3050-soc";
 	model = "Teltonika RUT5XX";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		status {
+		led_status: status {
 			label = "rut5xx:green:status";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};

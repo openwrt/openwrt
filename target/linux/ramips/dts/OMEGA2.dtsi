@@ -6,6 +6,10 @@
 / {
 	compatible = "onion,omega2", "mediatek,mt7628an-soc";
 
+	aliases {
+		led-status = &system_led;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};

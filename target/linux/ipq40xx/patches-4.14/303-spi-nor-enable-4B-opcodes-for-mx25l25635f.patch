@@ -1,7 +1,5 @@
-Index: linux-4.14.50/drivers/mtd/spi-nor/spi-nor.c
-===================================================================
---- linux-4.14.50.orig/drivers/mtd/spi-nor/spi-nor.c
-+++ linux-4.14.50/drivers/mtd/spi-nor/spi-nor.c
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
 @@ -1025,6 +1025,7 @@ static const struct flash_info spi_nor_i
  	{ "mx25l12805d", INFO(0xc22018, 0, 64 * 1024, 256, 0) },
  	{ "mx25l12855e", INFO(0xc22618, 0, 64 * 1024, 256, 0) },

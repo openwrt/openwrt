@@ -9,10 +9,14 @@
 	compatible = "phicomm,psg1208", "ralink,mt7620a-soc";
 	model = "Phicomm PSG1208";
 
+	aliases {
+		led-status = &led_wps;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		wan {
+		led_wps: wps {
 			label = "psg1208:white:wps";
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};

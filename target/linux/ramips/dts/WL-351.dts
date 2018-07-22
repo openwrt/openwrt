@@ -9,6 +9,10 @@
 	compatible = "sitecom,wl-351", "ralink,rt3052-soc";
 	model = "Sitecom WL-351 v1 002";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -44,7 +48,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "wl-351:amber:power";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};

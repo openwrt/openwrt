@@ -6,10 +6,14 @@
 / {
 	compatible = "poray,m4", "ralink,rt5350-soc";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		status {
+		led_status: status {
 			label = "m4:blue:status";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};

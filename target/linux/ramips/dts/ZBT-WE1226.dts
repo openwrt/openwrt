@@ -8,6 +8,10 @@
 	compatible = "zbtlink,zbt-we1226", "mediatek,mt7628an-soc";
 	model = "Zbtlink ZBT-WE1226";
 
+	aliases {
+		led-status = &led_wlan;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -48,7 +52,7 @@
 			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
 		};
 
-		wlan {
+		led_wlan: wlan {
 			label = "zbt-we1226:green:wlan";
 			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 		};

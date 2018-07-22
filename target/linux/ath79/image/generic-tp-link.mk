@@ -13,6 +13,24 @@ define Device/tl-archer-c7-v2
 endef
 TARGET_DEVICES += tl-archer-c7-v2
 
+define Device/tl-re450-v2
+  $(Device/tplink)
+  ATH_SOC := qca9563
+  IMAGE_SIZE := 6016k
+  DEVICE_TITLE := TP-LINK RE450 v2
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  TPLINK_HWID := 0x0
+  TPLINK_HWREV := 0
+  TPLINK_BOARD_ID := RE450-V2
+  LOADER_TYPE := elf
+  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
+    append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+  SUPPORTED_DEVICES := tplink,re450-v2
+endef
+TARGET_DEVICES += tl-re450-v2
+
 define Device/tl-wdr3600
   $(Device/tplink-8mlzma)
   ATH_SOC := ar9344
