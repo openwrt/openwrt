@@ -13,11 +13,11 @@
 	gpio_export {
 		compatible = "gpio-export";
 		#size-cells = <0>;
-		/* GPIO 54、55、56 USB1、2、3 */
+
 		usb0 {
 			gpio-export,name = "usb0";
-			gpio-export,output = <1>; // GPIOF_OUT_INIT_HIGH
-			gpios = <&gpio2 14 GPIO_ACTIVE_HIGH>; // GPIO2:40+14=GPIO 54
+			gpio-export,output = <1>;
+			gpios = <&gpio2 14 GPIO_ACTIVE_HIGH>;
 		};
 		usb1 {
 			gpio-export,name = "usb1";

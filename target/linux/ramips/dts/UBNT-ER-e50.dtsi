@@ -77,10 +77,12 @@
 };
 
 &spi0 {
-	/* This board has 2Mb spi flash soldered in and visible
-	   from manufacturer's firmware.
-	   But this SoC shares spi and nand pins,
-	   and current driver does't handle this sharing well */
+	/*
+	 * This board has 2Mb spi flash soldered in and visible
+	 * from manufacturer's firmware.
+	 * But this SoC shares spi and nand pins,
+	 * and current driver doesn't handle this sharing well
+	 */
 	status = "disabled";
 
 	m25p80@0 {

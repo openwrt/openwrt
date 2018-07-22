@@ -48,20 +48,24 @@
 	gpio-export {
 		compatible = "gpio-export";
 
-		// Used to enable power-over-ethernet passthrough from port0 to port1.
-		// Disable passthrough by default to prevent accidental equipment damage.
+		/*
+		 * Used to enable power-over-ethernet passthrough from port0 to port1.
+		 * Disable passthrough by default to prevent accidental equipment damage.
+		 */
 		poe {
 			gpio-export,name = "poe-passthrough";
-			gpio-export,output = <1>; // OUT_INIT_HIGH
-			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;    // GPIO 11, ACTIVE_LOW
+			gpio-export,output = <1>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 	};
 
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		// The following leds are defined in the ArcOS firmware, but reportedly
-		// not present in the Freestation5 device.
+		/*
+		 * The following leds are defined in the ArcOS firmware, but reportedly
+		 * not present in the Freestation5 device.
+		 */
 		wifi {
 			label = "freestation5:unknown:wifi";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
