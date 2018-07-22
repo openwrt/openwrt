@@ -934,13 +934,17 @@ static void ag71xx_bit_clear(void __iomem *reg, u32 bit)
 static void ag71xx_qca955x_sgmii_init()
 {
 	void __iomem *gmac_base;
-	u32 sgmii_status;
+	u32 mr_an_status, sgmii_status;
 	u8 tries = 0;
 
 	gmac_base = ioremap_nocache(QCA955X_GMAC_BASE, QCA955X_GMAC_SIZE);
 
 	if (!gmac_base)
-		return;
+		goto sgmii_out;
+
+	mr_an_status = __raw_readl(gmac_base + QCA955X_GMAC_REG_MR_AN_STATUS);
+	if (!(mr_an_status & QCA955X_MR_AN_STATUS_AN_ABILITY))
+		goto sgmii_out;
 
 	__raw_writel(QCA955X_SGMII_RESET_RX_CLK_N_RESET ,
 		     gmac_base + QCA955X_GMAC_REG_SGMII_RESET);
@@ -984,6 +988,7 @@ static void ag71xx_qca955x_sgmii_init()
 		}
 	} while (!(sgmii_status == 0xf || sgmii_status == 0x10));
 
+sgmii_out:
 	iounmap(gmac_base);
 }
 
