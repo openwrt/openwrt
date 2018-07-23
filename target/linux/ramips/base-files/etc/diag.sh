@@ -1,14 +1,11 @@
 #!/bin/sh
 # Copyright (C) 2010-2013 OpenWrt.org
 
-. /lib/functions.sh
 . /lib/functions/leds.sh
 
 status_led="$(get_dt_led status)"
 
 set_state() {
-	get_status_led $1
-
 	case "$1" in
 	preinit)
 		status_led_blink_preinit
