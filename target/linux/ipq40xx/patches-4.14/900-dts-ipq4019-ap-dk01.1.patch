@@ -1,5 +1,7 @@
---- a/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
-+++ b/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
+Index: linux-4.14.54/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
+===================================================================
+--- linux-4.14.54.orig/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
++++ linux-4.14.54/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
 @@ -15,12 +15,39 @@
   */
  
@@ -40,9 +42,7 @@
  		rng@22000 {
  			status = "ok";
  		};
---- a/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
-+++ b/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
-@@ -93,14 +93,6 @@
+@@ -66,14 +93,6 @@
  			pinctrl-names = "default";
  			status = "ok";
  			cs-gpios = <&tlmm 54 0>;
@@ -57,11 +57,38 @@
  		};
  
  		serial@78af000 {
---- a/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1-c1.dts
-+++ b/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1-c1.dts
-@@ -19,4 +19,71 @@
+@@ -102,6 +121,22 @@
+ 			status = "ok";
+ 		};
+ 
++		mdio@90000 {
++			status = "okay";
++		};
++
++		ess-switch@c000000 {
++			status = "okay";
++		};
++
++		ess-psgmii@98000 {
++			status = "okay";
++		};
++
++		edma@c080000 {
++			status = "okay";
++		};
++
+ 		usb3_ss_phy: ssphy@9a000 {
+ 			status = "ok";
+ 		};
+Index: linux-4.14.54/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1-c1.dts
+===================================================================
+--- linux-4.14.54.orig/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1-c1.dts
++++ linux-4.14.54/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1-c1.dts
+@@ -18,5 +18,73 @@
+ 
  / {
  	model = "Qualcomm Technologies, Inc. IPQ40xx/AP-DK01.1-C1";
++	compatible = "qcom,ap-dk01.1-c1", "qcom,ap-dk01.2-c1", "qcom,ipq4019";
  
 +	memory {
 +		device_type = "memory";
@@ -69,7 +96,7 @@
 +	};
 +};
 +
-+&spi_0 {
++&blsp1_spi1 {
 +	mx25l25635f@0 {
 +		compatible = "mx25l25635f", "jedec,spi-nor";
 +		#address-cells = <1>;
@@ -131,38 +158,3 @@
 +		};
 +	};
  };
---- a/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1-c1.dts
-+++ b/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1-c1.dts
-@@ -18,6 +18,7 @@
- 
- / {
- 	model = "Qualcomm Technologies, Inc. IPQ40xx/AP-DK01.1-C1";
-+	compatible = "qcom,ap-dk01.1-c1", "qcom,ap-dk01.2-c1", "qcom,ipq4019";
- 
- 	memory {
- 		device_type = "memory";
---- a/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
-+++ b/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
-@@ -121,6 +121,22 @@
- 			status = "ok";
- 		};
- 
-+		mdio@90000 {
-+			status = "okay";
-+		};
-+
-+		ess-switch@c000000 {
-+			status = "okay";
-+		};
-+
-+		ess-psgmii@98000 {
-+			status = "okay";
-+		};
-+
-+		edma@c080000 {
-+			status = "okay";
-+		};
-+
- 		usb3_ss_phy: ssphy@9a000 {
- 			status = "ok";
- 		};

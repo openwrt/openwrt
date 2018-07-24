@@ -1,7 +1,7 @@
-From 12e9319da1adacac92930c899c99f0e1970cac11 Mon Sep 17 00:00:00 2001
+From f2b87dc1028b710ec8ce25808b9d21f92b376184 Mon Sep 17 00:00:00 2001
 From: Christian Lamparter <chunkeey@googlemail.com>
-Date: Thu, 11 Mar 2018 14:41:31 +0100
-Subject: [PATCH] clk: fix apss cpu overclocking
+Date: Sun, 11 Mar 2018 14:41:31 +0100
+Subject: [PATCH 2/2] clk: fix apss cpu overclocking
 
 There's an interaction issue between the clk changes:"
 clk: qcom: ipq4019: Add the apss cpu pll divider clock node
@@ -37,10 +37,16 @@ try to overclock to 761 MHz.
 
 Fixes: d83dcacea18 ("clk: qcom: ipq4019: Add the apss cpu pll divider clock node")
 Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
+Signed-off-by: John Crispin <john@phrozen.org>
 ---
+ drivers/clk/qcom/gcc-ipq4019.c | 34 +++++++++++++++++++++++++++++++---
+ 1 file changed, 31 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/clk/qcom/gcc-ipq4019.c b/drivers/clk/qcom/gcc-ipq4019.c
+index 46cb256b4aa2..4ec43f7d2e52 100644
 --- a/drivers/clk/qcom/gcc-ipq4019.c
 +++ b/drivers/clk/qcom/gcc-ipq4019.c
-@@ -1253,6 +1253,29 @@ static const struct clk_fepll_vco gcc_fe
+@@ -1253,6 +1253,29 @@ static const struct clk_fepll_vco gcc_fepll_vco = {
  	.reg = 0x2f020,
  };
  
@@ -70,7 +76,7 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  /*
   * Round rate function for APSS CPU PLL Clock divider.
   * It looks up the frequency table and returns the next higher frequency
-@@ -1265,7 +1288,7 @@ static long clk_cpu_div_round_rate(struc
+@@ -1265,7 +1288,7 @@ static long clk_cpu_div_round_rate(struct clk_hw *hw, unsigned long rate,
  	struct clk_hw *p_hw;
  	const struct freq_tbl *f;
  
@@ -79,7 +85,7 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  	if (!f)
  		return -EINVAL;
  
-@@ -1288,7 +1311,7 @@ static int clk_cpu_div_set_rate(struct c
+@@ -1288,7 +1311,7 @@ static int clk_cpu_div_set_rate(struct clk_hw *hw, unsigned long rate,
  	u32 mask;
  	int ret;
  
@@ -96,7 +102,7 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  	struct clk_fepll *pll = to_clk_fepll(hw);
  	u32 cdiv, pre_div;
  	u64 rate;
-@@ -1335,7 +1359,11 @@ clk_cpu_div_recalc_rate(struct clk_hw *h
+@@ -1335,7 +1359,11 @@ clk_cpu_div_recalc_rate(struct clk_hw *hw,
  	rate = clk_fepll_vco_calc_rate(pll, parent_rate) * 2;
  	do_div(rate, pre_div);
  
@@ -109,3 +115,6 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  };
  
  static const struct clk_ops clk_regmap_cpu_div_ops = {
+-- 
+2.11.0
+

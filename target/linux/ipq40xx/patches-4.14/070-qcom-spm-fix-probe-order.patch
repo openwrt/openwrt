@@ -1,10 +1,22 @@
-Check for SCM availability before attempting to use SPM
+From 341844c7e06afccd64261719fa388339a589b0a4 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 22 Jul 2018 12:53:04 +0200
+Subject: [PATCH] soc: qcom: spm: add SCM probe dependency
+
+Check for SCM availability before attempting to use SPM. SPM probe will
+fail otherwise.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/soc/qcom/spm.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
+diff --git a/drivers/soc/qcom/spm.c b/drivers/soc/qcom/spm.c
+index f9d7a85b2822..53807e839664 100644
 --- a/drivers/soc/qcom/spm.c
 +++ b/drivers/soc/qcom/spm.c
-@@ -219,6 +219,9 @@ static int __init qcom_cpuidle_init(stru
+@@ -219,6 +219,9 @@ static int __init qcom_cpuidle_init(struct device_node *cpu_node, int cpu)
  	cpumask_t mask;
  	bool use_scm_power_down = false;
  
@@ -14,3 +26,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	for (i = 0; ; i++) {
  		state_node = of_parse_phandle(cpu_node, "cpu-idle-states", i);
  		if (!state_node)
+-- 
+2.11.0
+

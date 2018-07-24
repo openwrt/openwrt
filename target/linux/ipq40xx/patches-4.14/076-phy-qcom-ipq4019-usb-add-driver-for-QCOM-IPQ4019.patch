@@ -1,138 +1,24 @@
-From ea5f4d6f4716f3a0bb4fc3614b7a0e8c0df1cb81 Mon Sep 17 00:00:00 2001
-From: Matthew McClintock <mmcclint@codeaurora.org>
-Date: Thu, 17 Mar 2016 16:22:28 -0500
-Subject: [PATCH] qcom: ipq4019: add USB nodes to ipq4019 SoC device tree
+From 633f0e08498aebfdb932bd71319b4cb136709499 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 24 Jul 2018 14:45:49 +0200
+Subject: [PATCH 2/3] phy: qcom-ipq4019-usb: add driver for QCOM/IPQ4019
 
-This adds the SoC nodes to the ipq4019 device tree and
-enable it for the DK01.1 board.
+Add a driver to setup the USB phy on Qualcom Dakota SoCs.
+The driver sets up HS and SS phys. In case of HS some magic values need to
+be written to magic offsets. These were taken from the SDK driver.
 
-Signed-off-by: Matthew McClintock <mmcclint@codeaurora.org>
-Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
+Signed-off-by: John Crispin <john@phrozen.org>
 ---
-Changes:
-	- replaced space with tab
-	- added sleep and mock_utmi clocks
-	- added registers for usb2 and usb3 parent node
-	- changed compatible to qca,ipa4019-dwc3
-	- updated usb2 and usb3 names
-	  (included the reg - in case they become necessary later)
----
- arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi | 20 ++++++++
- arch/arm/boot/dts/qcom-ipq4019.dtsi           | 71 +++++++++++++++++++++++++++
- 2 files changed, 91 insertions(+)
+ drivers/phy/qualcomm/Kconfig                |   7 ++
+ drivers/phy/qualcomm/Makefile               |   1 +
+ drivers/phy/qualcomm/phy-qcom-ipq4019-usb.c | 188 ++++++++++++++++++++++++++++
+ 3 files changed, 196 insertions(+)
+ create mode 100644 drivers/phy/qualcomm/phy-qcom-ipq4019-usb.c
 
---- a/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
-+++ b/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
-@@ -101,5 +101,25 @@
- 		wifi@a800000 {
- 			status = "ok";
- 		};
-+
-+		usb3_ss_phy: ssphy@9a000 {
-+			status = "ok";
-+		};
-+
-+		usb3_hs_phy: hsphy@a6000 {
-+			status = "ok";
-+		};
-+
-+		usb3: usb3@8af8800 {
-+			status = "ok";
-+		};
-+
-+		usb2_hs_phy: hsphy@a8000 {
-+			status = "ok";
-+		};
-+
-+		usb2: usb2@60f8800 {
-+			status = "ok";
-+		};
- 	};
- };
---- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
-+++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
-@@ -539,5 +539,79 @@
- 					  "legacy";
- 			status = "disabled";
- 		};
-+
-+		usb3_ss_phy: ssphy@9a000 {
-+			compatible = "qcom,usb-ss-ipq4019-phy";
-+			#phy-cells = <0>;
-+			reg = <0x9a000 0x800>;
-+			reg-names = "phy_base";
-+			resets = <&gcc USB3_UNIPHY_PHY_ARES>;
-+			reset-names = "por_rst";
-+			status = "disabled";
-+		};
-+
-+		usb3_hs_phy: hsphy@a6000 {
-+			compatible = "qcom,usb-hs-ipq4019-phy";
-+			#phy-cells = <0>;
-+			reg = <0xa6000 0x40>;
-+			reg-names = "phy_base";
-+			resets = <&gcc USB3_HSPHY_POR_ARES>, <&gcc USB3_HSPHY_S_ARES>;
-+			reset-names = "por_rst", "srif_rst";
-+			status = "disabled";
-+		};
-+
-+		usb3@8af8800 {
-+			compatible = "qcom,dwc3";
-+			reg = <0x8af8800 0x100>;
-+			#address-cells = <1>;
-+			#size-cells = <1>;
-+			clocks = <&gcc GCC_USB3_MASTER_CLK>,
-+				 <&gcc GCC_USB3_SLEEP_CLK>,
-+				 <&gcc GCC_USB3_MOCK_UTMI_CLK>;
-+			clock-names = "master", "sleep", "mock_utmi";
-+			ranges;
-+			status = "disabled";
-+
-+			dwc3@8a00000 {
-+				compatible = "snps,dwc3";
-+				reg = <0x8a00000 0xf8000>;
-+				interrupts = <0 132 0>;
-+				phys = <&usb3_hs_phy>, <&usb3_ss_phy>;
-+				phy-names = "usb2-phy", "usb3-phy";
-+				dr_mode = "host";
-+			};
-+		};
-+
-+		usb2_hs_phy: hsphy@a8000 {
-+			compatible = "qcom,usb-hs-ipq4019-phy";
-+			#phy-cells = <0>;
-+			reg = <0xa8000 0x40>;
-+			reg-names = "phy_base";
-+			resets = <&gcc USB2_HSPHY_POR_ARES>, <&gcc USB2_HSPHY_S_ARES>;
-+			reset-names = "por_rst", "srif_rst";
-+			status = "disabled";
-+		};
-+
-+		usb2@60f8800 {
-+			compatible = "qcom,dwc3";
-+			reg = <0x60f8800 0x100>;
-+			#address-cells = <1>;
-+			#size-cells = <1>;
-+			clocks = <&gcc GCC_USB2_MASTER_CLK>,
-+				 <&gcc GCC_USB2_SLEEP_CLK>,
-+				 <&gcc GCC_USB2_MOCK_UTMI_CLK>;
-+			clock-names = "master", "sleep", "mock_utmi";
-+			ranges;
-+			status = "disabled";
-+
-+			dwc3@6000000 {
-+				compatible = "snps,dwc3";
-+				reg = <0x6000000 0xf8000>;
-+				interrupts = <0 136 0>;
-+				phys = <&usb2_hs_phy>;
-+				phy-names = "usb2-phy";
-+				dr_mode = "host";
-+			};
-+		};
- 	};
- };
---- a/drivers/phy/qualcomm/Kconfig
-+++ b/drivers/phy/qualcomm/Kconfig
+Index: linux-4.14.54/drivers/phy/qualcomm/Kconfig
+===================================================================
+--- linux-4.14.54.orig/drivers/phy/qualcomm/Kconfig
++++ linux-4.14.54/drivers/phy/qualcomm/Kconfig
 @@ -8,6 +8,13 @@ config PHY_QCOM_APQ8064_SATA
  	depends on OF
  	select GENERIC_PHY
@@ -147,17 +33,10 @@ Changes:
  config PHY_QCOM_IPQ806X_SATA
  	tristate "Qualcomm IPQ806x SATA SerDes/PHY driver"
  	depends on ARCH_QCOM
---- a/drivers/phy/qualcomm/Makefile
-+++ b/drivers/phy/qualcomm/Makefile
-@@ -1,5 +1,6 @@
- # SPDX-License-Identifier: GPL-2.0
- obj-$(CONFIG_PHY_QCOM_APQ8064_SATA)	+= phy-qcom-apq8064-sata.o
-+obj-$(CONFIG_PHY_QCOM_IPQ4019_USB) 	+= phy-qcom-ipq4019-usb.o
- obj-$(CONFIG_PHY_QCOM_IPQ806X_SATA)	+= phy-qcom-ipq806x-sata.o
- obj-$(CONFIG_PHY_QCOM_QMP)		+= phy-qcom-qmp.o
- obj-$(CONFIG_PHY_QCOM_QUSB2)		+= phy-qcom-qusb2.o
+Index: linux-4.14.54/drivers/phy/qualcomm/phy-qcom-ipq4019-usb.c
+===================================================================
 --- /dev/null
-+++ b/drivers/phy/qualcomm/phy-qcom-ipq4019-usb.c
++++ linux-4.14.54/drivers/phy/qualcomm/phy-qcom-ipq4019-usb.c
 @@ -0,0 +1,188 @@
 +/*
 + * Copyright (C) 2018 John Crispin <john@phrozen.org>
@@ -347,3 +226,14 @@ Changes:
 +MODULE_DESCRIPTION("QCOM/IPQ4019 USB phy driver");
 +MODULE_AUTHOR("John Crispin <john@phrozen.org>");
 +MODULE_LICENSE("GPL v2");
+Index: linux-4.14.54/drivers/phy/qualcomm/Makefile
+===================================================================
+--- linux-4.14.54.orig/drivers/phy/qualcomm/Makefile
++++ linux-4.14.54/drivers/phy/qualcomm/Makefile
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ obj-$(CONFIG_PHY_QCOM_APQ8064_SATA)	+= phy-qcom-apq8064-sata.o
++obj-$(CONFIG_PHY_QCOM_IPQ4019_USB)	+= phy-qcom-ipq4019-usb.o
+ obj-$(CONFIG_PHY_QCOM_IPQ806X_SATA)	+= phy-qcom-ipq806x-sata.o
+ obj-$(CONFIG_PHY_QCOM_QMP)		+= phy-qcom-qmp.o
+ obj-$(CONFIG_PHY_QCOM_QUSB2)		+= phy-qcom-qusb2.o
