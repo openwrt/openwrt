@@ -44,6 +44,8 @@
 		#size-cells = <0>;
 
 		reg = <0x1f>;
+		resets = <&rst 8>;
+		reset-names = "switch";
 
 		mdio-bus {
 			swphy4: ethernet-phy@4 {
