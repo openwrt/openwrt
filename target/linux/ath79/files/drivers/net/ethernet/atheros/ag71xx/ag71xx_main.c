@@ -14,6 +14,7 @@
 #include <linux/sizes.h>
 #include <linux/of_net.h>
 #include <linux/of_address.h>
+#include <linux/of_platform.h>
 #include "ag71xx.h"
 
 #define AG71XX_DEFAULT_MSG_ENABLE	\
@@ -1273,6 +1274,7 @@ static const char *ag71xx_get_phy_if_mode_name(phy_interface_t mode)
 static int ag71xx_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
+	struct device_node *mdio_node;
 	struct net_device *dev;
 	struct resource *res;
 	struct ag71xx *ag;
@@ -1438,6 +1440,12 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, 0);
 	ag71xx_hw_init(ag);
+
+	if(!of_device_is_compatible(np, "simple-mfd")) {
+		mdio_node = of_get_child_by_name(np, "mdio-bus");
+		if(!IS_ERR(mdio_node))
+			of_platform_device_create(mdio_node, NULL, NULL);
+	}
 
 	err = ag71xx_phy_connect(ag);
 	if (err)
