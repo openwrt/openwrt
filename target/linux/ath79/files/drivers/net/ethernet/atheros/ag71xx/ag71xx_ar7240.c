@@ -1218,6 +1218,7 @@ ag71xx_ar7240_probe(struct mdio_device *mdiodev)
 	struct mii_bus *mii = mdiodev->bus;
 	struct ar7240sw *as;
 	struct switch_dev *swdev;
+	struct reset_control *switch_reset;
 	u32 ctrl;
 	int phy_if_mode, err, i;
 
@@ -1230,6 +1231,14 @@ ag71xx_ar7240_probe(struct mdio_device *mdiodev)
 	as->mdio_node = of_get_child_by_name(as->of_node, "mdio-bus");
 
 	swdev = &as->swdev;
+
+	switch_reset = devm_reset_control_get_optional(&mdiodev->dev, "switch");
+	if (switch_reset) {
+		reset_control_assert(switch_reset);
+		msleep(50);
+		reset_control_deassert(switch_reset);
+		msleep(200);
+	}
 
 	ctrl = ar7240sw_reg_read(mii, AR7240_REG_MASK_CTRL);
 	as->ver = (ctrl >> AR7240_MASK_CTRL_VERSION_S) &
