@@ -97,6 +97,17 @@ static int ag71xx_phy_connect_fixed(struct ag71xx *ag)
 	ag->duplex = pdata->duplex;
 	ag->speed = pdata->speed;
 
+	if (!ret) {
+		dev_info(dev, "connected to fixed PHY at %s [uid=%08x, driver=%s]\n",
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,5,0)
+			    dev_name(&ag->phy_dev->dev),
+#else
+			    phydev_name(ag->phy_dev),
+#endif
+			    ag->phy_dev->phy_id, ag->phy_dev->drv->name);
+	} else {
+		pr_err("Failed to connect to fixed PHY\n");
+	}
 	return ret;
 }
 
