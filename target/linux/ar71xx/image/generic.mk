@@ -629,22 +629,13 @@ endef
 TARGET_DEVICES += wndrmacv2
 
 define Device/cap324
-  DEVICE_TITLE := PowerCloud Systems CAP324 Cloud AP
-  BOARDNAME := CAP324
-  DEVICE_PROFILE := CAP324
-  IMAGE_SIZE := 15296k
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,15296k(firmware),640k(certs),64k(nvram),64k(art)ro
-endef
-TARGET_DEVICES += cap324
-
-define Device/cap324-nocloud
-  DEVICE_TITLE := PowerCloud Systems CAP324 Cloud AP (No-Cloud)
+  DEVICE_TITLE := PowerCloud Systems CAP324
   BOARDNAME := CAP324
   DEVICE_PROFILE := CAP324
   IMAGE_SIZE := 16000k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
 endef
-TARGET_DEVICES += cap324-nocloud
+TARGET_DEVICES += cap324
 
 define Device/cr3000
   DEVICE_TITLE := PowerCloud CR3000 Cloud Router
