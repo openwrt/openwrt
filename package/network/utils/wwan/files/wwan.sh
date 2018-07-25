@@ -35,17 +35,24 @@ proto_wwan_init_config() {
 }
 
 proto_wwan_setup() {
-	local driver usb devicename desc
+	local cfg="$1"
+	local driver usb devicename desc ifname
+
+	json_get_var ifname ifname
 
 	for a in `ls /sys/bus/usb/devices`; do
 		local vendor product
-		[ -z "$usb" -a -f /sys/bus/usb/devices/$a/idVendor -a -f /sys/bus/usb/devices/$a/idProduct ] || continue
-		vendor=$(cat /sys/bus/usb/devices/$a/idVendor)
-		product=$(cat /sys/bus/usb/devices/$a/idProduct)
-		[ -f /lib/network/wwan/$vendor:$product ] && {
-			usb=/lib/network/wwan/$vendor:$product
-			devicename=$a
-		}
+		[ -z "$usb" -a -f "/sys/bus/usb/devices/$a/idVendor" -a -f "/sys/bus/usb/devices/$a/idProduct" ] || continue
+		vendor=$(cat "/sys/bus/usb/devices/$a/idVendor")
+		product=$(cat "/sys/bus/usb/devices/$a/idProduct")
+		for endpoint in "/sys/bus/usb/devices/$a/"*/; do
+			[ -d "${endpoint}net/${ifname}" ] && {
+				[ -f "/lib/network/wwan/$vendor:$product" ] && {
+					usb="/lib/network/wwan/$vendor:$product"
+					devicename="$a"
+				}
+			}
+		done
 	done
 
 	[ -n "$usb" ] && {
@@ -53,10 +60,10 @@ proto_wwan_setup() {
 
 		json_set_namespace wwan old_cb
 		json_init
-		json_load "$(cat $usb)"
+		json_load "$(cat "$usb")"
 		json_select
 		json_get_vars desc control data
-		json_set_namespace $old_cb
+		json_set_namespace "$old_cb"
 
 		[ -n "$control" -a -n "$data" ] && {
 			ttys=$(ls -d /sys/bus/usb/devices/$devicename/${devicename}*/tty?* /sys/bus/usb/devices/$devicename/${devicename}*/tty/tty?* | sed "s/.*\///g" | tr "\n" " ")
@@ -67,14 +74,14 @@ proto_wwan_setup() {
 	}
 
 	[ -z "$ctl_device" ] && for net in $(ls /sys/class/net/ | grep -e wwan -e usb); do
-		[ -z "$ctl_device" ] || continue
-		driver=$(grep DRIVER /sys/class/net/$net/device/uevent | cut -d= -f2)
+		[ "$net" = "$ifname" ] || continue
+		driver=$(grep DRIVER "/sys/class/net/$net/device/uevent" | cut -d= -f2)
 		case "$driver" in
 		qmi_wwan|cdc_mbim)
-			ctl_device=/dev/$(ls /sys/class/net/$net/device/usbmisc)
+			ctl_device=/dev/$(ls "/sys/class/net/$net/device/usbmisc")
 			;;
 		sierra_net|cdc_ether|*cdc_ncm)
-			ctl_device=/dev/$(cd /sys/class/net/$net/; find ../../../ -name ttyUSB* |xargs -n1 basename | head -n1)
+			ctl_device=/dev/$(cd "/sys/class/net/$net/"; find ../../../ -name ttyUSB* |xargs -n1 basename | head -n1)
 			;;
 		*) continue;;
 		esac
@@ -88,31 +95,31 @@ proto_wwan_setup() {
 		return 1
 	}
 
-	uci_set_state network $interface driver "$driver"
-	uci_set_state network $interface ctl_device "$ctl_device"
-	uci_set_state network $interface dat_device "$dat_device"
+	uci_set_state network "$interface" driver "$driver"
+	uci_set_state network "$interface" ctl_device "$ctl_device"
+	uci_set_state network "$interface" dat_device "$dat_device"
 
 	case $driver in
-	qmi_wwan)		proto_qmi_setup $@ ;;
-	cdc_mbim)		proto_mbim_setup $@ ;;
-	sierra_net)		proto_directip_setup $@ ;;
-	comgt)			proto_3g_setup $@ ;;
-	cdc_ether|*cdc_ncm)	proto_ncm_setup $@ ;;
+	qmi_wwan)		proto_qmi_setup "$@" ;;
+	cdc_mbim)		proto_mbim_setup "$@" ;;
+	sierra_net)		proto_directip_setup "$@" ;;
+	comgt)			proto_3g_setup "$@" ;;
+	cdc_ether|*cdc_ncm)	proto_ncm_setup "$@" ;;
 	esac
 }
 
 proto_wwan_teardown() {
 	local interface=$1
-	local driver=$(uci_get_state network $interface driver)
-	ctl_device=$(uci_get_state network $interface ctl_device)
-	dat_device=$(uci_get_state network $interface dat_device)
+	local driver=$(uci_get_state network "$interface" driver)
+	ctl_device=$(uci_get_state network "$interface" ctl_device)
+	dat_device=$(uci_get_state network "$interface" dat_device)
 
 	case $driver in
-	qmi_wwan)		proto_qmi_teardown $@ ;;
-	cdc_mbim)		proto_mbim_teardown $@ ;;
-	sierra_net)		proto_mbim_teardown $@ ;;
-	comgt)			proto_3g_teardown $@ ;;
-	cdc_ether|*cdc_ncm)	proto_ncm_teardown $@ ;;
+	qmi_wwan)		proto_qmi_teardown "$@" ;;
+	cdc_mbim)		proto_mbim_teardown "$@" ;;
+	sierra_net)		proto_mbim_teardown "$@" ;;
+	comgt)			proto_3g_teardown "$@" ;;
+	cdc_ether|*cdc_ncm)	proto_ncm_teardown "$@" ;;
 	esac
 }
 
