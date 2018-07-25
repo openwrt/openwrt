@@ -695,22 +695,13 @@ endef
 TARGET_DEVICES += cap324
 
 define Device/cr3000
-  DEVICE_TITLE := PowerCloud CR3000 Cloud Router
-  BOARDNAME := CR3000
-  DEVICE_PROFILE := CR3000
-  IMAGE_SIZE := 7104k
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7104k(firmware),640k(certs),64k(nvram),64k(art)ro
-endef
-TARGET_DEVICES += cr3000
-
-define Device/cr3000-nocloud
-  DEVICE_TITLE := PowerCloud CR3000 (No-Cloud)
+  DEVICE_TITLE := PowerCloud Systems CR3000
   BOARDNAME := CR3000
   DEVICE_PROFILE := CR3000
   IMAGE_SIZE := 7808k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7808k(firmware),64k(art)ro
 endef
-TARGET_DEVICES += cr3000-nocloud
+TARGET_DEVICES += cr3000
 
 define Device/cr5000
   DEVICE_TITLE := PowerCloud Systems CR5000
