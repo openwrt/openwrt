@@ -119,7 +119,8 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 		DBG("%s: PHY found at %s, uid=%08x\n",
 			dev_name(dev),
 			dev_name(&ag->mii_bus->phy_map[phy_addr]->dev),
-			ag->mii_bus->phy_map[phy_addr]->phy_id);
+			&ag->mii_bus->phy_map[phy_addr]->phy_id),
+			&ag->mii_bus->phy_map[phy_addr]->phy_id : 0);
 
 		if (phydev == NULL)
 			phydev = ag->mii_bus->phy_map[phy_addr];
@@ -130,7 +131,8 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 		DBG("%s: PHY found at %s, uid=%08x\n",
 			dev_name(dev),
 			dev_name(&ag->mii_bus->mdio_map[phy_addr]->dev),
-			ag->mii_bus->mdio_map[phy_addr]->phy_id);
+			mdiobus_get_phy(ag->mii_bus, phy_addr) ?
+			mdiobus_get_phy(ag->mii_bus, phy_addr)->phy_id : 0);
 
 		if (phydev == NULL)
 			phydev = mdiobus_get_phy(ag->mii_bus, phy_addr);
