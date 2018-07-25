@@ -1,5 +1,5 @@
 /*
- * PowerCloud CR5000 support
+ * PowerCloud Systems CR5000 support
  *
  * Copyright (c) 2011 Qualcomm Atheros
  * Copyright (c) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
@@ -172,5 +172,5 @@ static void __init cr5000_setup(void)
 	ath79_register_eth(0);
 }
 
-MIPS_MACHINE(ATH79_MACH_CR5000, "CR5000", "PowerCloud CR5000",
+MIPS_MACHINE(ATH79_MACH_CR5000, "CR5000", "PowerCloud Systems CR5000",
 	     cr5000_setup);
