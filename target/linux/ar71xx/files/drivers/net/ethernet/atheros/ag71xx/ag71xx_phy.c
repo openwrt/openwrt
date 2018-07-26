@@ -76,9 +76,23 @@ void ag71xx_phy_stop(struct ag71xx *ag)
 
 static int ag71xx_phy_connect_fixed(struct ag71xx *ag)
 {
-	struct device *dev = &ag->pdev->dev;
+	struct platform_device *pdev = ag->pdev;
+	struct device *dev = NULL;
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	int ret = 0;
+
+	if (!pdev)
+		return -ENODEV;
+
+	dev = &pdev->dev;
+
+	if (!dev)
+		return -ENODEV;
+
+	if (!ag->phy_dev) {
+		pr_err("Missing PHY for %s", dev_name(dev));
+		return -ENODEV;
+	}
 
 	/* use fixed settings */
 	switch (pdata->speed) {
