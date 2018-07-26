@@ -16,9 +16,86 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		pca9555@25 {
-			compatible = "pca9555";
+		/*
+		 * PCA9655 GPIO expander
+		 *  0-POE power port eth0
+		 *  1-POE power port eth1
+		 *  2-POE power port eth2
+		 *  3-POE power port eth3
+		 *  4-POE power port eth4
+		 *  5-SFP_MOD_DEF0#
+		 *  6-
+		 *  7-
+		 *  8-Pull up to VCC
+		 *  9-Pull down to GND
+		 * 10-Pull down to GND
+		 * 11-Pull down to GND
+		 * 12-Pull down to GND
+		 * 13-Pull down to GND
+		 * 14-Pull down to GND
+		 * 15-Pull down to GND
+		 */
+		expander0: pca9555@25 {
+			compatible = "nxp,pca9555";
+			interrupt-parent = <&gpio0>;
+			interrupts = <8 IRQ_TYPE_EDGE_FALLING>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
 			reg = <0x25>;
+		};
+	};
+
+	gpio_soc_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		sfp_i2c_clk_disable {
+			/* i2c data is always connected to sfp cage */
+			gpio-export,name = "sfp_i2c_clk_disable";
+			gpio-export,output = <0>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_expander_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		poe_power_port0 {
+			gpio-export,name = "poe_power_port0";
+			gpio-export,output = <0>;
+			gpios = <&expander0 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_power_port1 {
+			gpio-export,name = "poe_power_port1";
+			gpio-export,output = <0>;
+			gpios = <&expander0 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_power_port2 {
+			gpio-export,name = "poe_power_port2";
+			gpio-export,output = <0>;
+			gpios = <&expander0 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_power_port3 {
+			gpio-export,name = "poe_power_port3";
+			gpio-export,output = <0>;
+			gpios = <&expander0 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_power_port4 {
+			gpio-export,name = "poe_power_port4";
+			gpio-export,output = <0>;
+			gpios = <&expander0 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		sfp_mod_def0 {
+			gpio-export,name = "sfp_mod_def0";
+			gpios = <&expander0 5 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
