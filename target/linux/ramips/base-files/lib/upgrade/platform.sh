@@ -55,6 +55,7 @@ platform_check_image() {
 	duzun-dm06|\
 	e1700|\
 	elecom,wrc-1167ghbk2-s|\
+	elecom,wrc-2533gst|\
 	esr-9753|\
 	ew1200|\
 	ex2700|\
