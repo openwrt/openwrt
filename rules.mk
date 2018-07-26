@@ -140,10 +140,10 @@ else
 endif
 
 ifeq ($(or $(CONFIG_EXTERNAL_TOOLCHAIN),$(CONFIG_GCC_VERSION_4_8),$(CONFIG_TARGET_uml)),)
-  iremap = -iremap$(1):$(2)
-  # just overwrite iremap for GCC 8.1 and higher to keep backward compatibility
-  ifeq ($(CONFIG_GCC_VERSION_8),y)
+  ifeq ($(CONFIG_GCC_USE_EMBEDDED_PATH_REMAP),y)
     iremap = -fmacro-prefix-map=$(1)=$(2)
+  else
+    iremap = -iremap$(1):$(2)
   endif
 endif
 

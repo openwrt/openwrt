@@ -10,6 +10,11 @@ config GCC_VERSION_8
 	default y if GCC_USE_VERSION_8
 	bool
 
+config GCC_USE_EMBEDDED_PATH_REMAP
+	default y if GCC_VERSION_8
+	default n
+	bool
+
 config GCC_VERSION
 	string
 	default "5.5.0"		if GCC_VERSION_5
