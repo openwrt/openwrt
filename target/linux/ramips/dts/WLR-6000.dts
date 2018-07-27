@@ -9,6 +9,10 @@
 	compatible = "sitecom,wlr-6000", "ralink,rt3883-soc";
 	model = "Sitecom WLR-6000";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -25,7 +29,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "wlr-6000:red:power";
 			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 		};

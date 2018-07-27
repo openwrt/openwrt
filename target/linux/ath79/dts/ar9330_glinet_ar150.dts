@@ -12,20 +12,17 @@
 
 	aliases {
 		serial0 = &uart;
-	};
-
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x4000000>;
+		led-status = &wlan;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		wlan {
+		wlan: wlan {
 			label = "gl-ar150:orange:wlan";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
+			linux,default-trigger = "phy0tpt";
 		};
 
 		lan {
@@ -89,7 +86,7 @@
 	num-chipselects = <1>;
 	status = "okay";
 
-	spiflash {
+	spiflash@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
@@ -159,4 +156,10 @@
 		switch-phy-addr-swap = <0>;
 		switch-phy-swap = <0>;
 	};
+};
+
+&wmac {
+	status = "okay";
+	mtd-cal-data = <&art 0x1000>;
+	mtd-mac-address = <&art 0x0>;
 };

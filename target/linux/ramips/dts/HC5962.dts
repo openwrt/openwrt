@@ -9,6 +9,10 @@
 	compatible = "hiwifi,hc5962", "mediatek,mt7621-soc";
 	model = "HiWiFi HC5962";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x10000000>;
@@ -21,7 +25,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		status {
+		led_status: status {
 			label = "hc5962:white:status";
 			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 		};

@@ -19,6 +19,10 @@
 	compatible = "linksys,e1700", "ralink,mt7620a-soc";
 	model = "Linksys E1700";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -41,7 +45,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "e1700:green:power";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};

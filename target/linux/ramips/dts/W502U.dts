@@ -9,6 +9,10 @@
 	compatible = "alfanetworks,w502u", "ralink,rt3052-soc";
 	model = "ALFA Networks W502U";
 
+	aliases {
+		led-status = &led_wps;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -53,7 +57,7 @@
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 
-		wps {
+		led_wps: wps {
 			label = "w502u:blue:wps";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};

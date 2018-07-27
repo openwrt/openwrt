@@ -9,6 +9,10 @@
 	compatible = "comfast,cf-wr800n", "ralink,mt7620n-soc";
 	model = "Comfast CF-WR800N";
 
+	aliases {
+		led-status = &led_wps;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -26,7 +30,7 @@
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
-		wps {
+		led_wps: wps {
 			label = "cf-wr800n:white:wps";
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};

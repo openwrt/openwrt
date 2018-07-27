@@ -9,6 +9,10 @@
 	compatible = "buffalo,wsr-600dhp", "mediatek,mt7621-soc";
 	model = "Buffalo WSR-600DHP";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x4000000>;
@@ -21,7 +25,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "wsr-600:green:power";
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};

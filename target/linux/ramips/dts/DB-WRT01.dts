@@ -9,10 +9,14 @@
 	compatible = "planex,db-wrt01", "ralink,mt7620a-soc";
 	model = "Planex DB-WRT01";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "db-wrt01:orange:power";
 			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
 		};

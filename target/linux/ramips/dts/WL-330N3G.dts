@@ -9,6 +9,10 @@
 	compatible = "asus,wl-330n3g", "ralink,rt3050-soc";
 	model = "Asus WL-330N3G";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -22,7 +26,7 @@
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_power: power {
 			label = "wl-330n3g:blue:power";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};

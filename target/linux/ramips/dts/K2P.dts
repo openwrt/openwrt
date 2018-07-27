@@ -9,6 +9,10 @@
 	compatible = "phicomm,k2p", "mediatek,mt7621-soc";
 	model = "Phicomm K2P";
 
+	aliases {
+		led-status = &led_blue;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
@@ -31,7 +35,7 @@
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 
-		stat_b {
+		led_blue: stat_b {
 			label = "k2p:blue:status";
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		};

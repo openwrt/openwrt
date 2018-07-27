@@ -9,6 +9,10 @@
 	compatible = "huawei,hg255d", "ralink,rt3052-soc";
 	model = "HuaWei HG255D";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x1000000>;
@@ -50,7 +54,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "hg255d:green:power";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};

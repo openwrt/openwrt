@@ -1,26 +1,4 @@
-define Build/netgear-squashfs
-	rm -rf $@.fs $@.squashfs
-	mkdir -p $@.fs/image
-	cp $@ $@.fs/image/uImage
-	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
-		$@.fs $@.squashfs \
-		-noappend -root-owned -be -b 65536 \
-		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
-
-	dd if=/dev/zero bs=1k count=1 >> $@.squashfs
-	mkimage \
-		-A mips -O linux -T filesystem -C none \
-		-M $(NETGEAR_KERNEL_MAGIC) \
-		-a 0xbf070000 -e 0xbf070000 \
-		-n 'MIPS $(VERSION_DIST) Linux-$(LINUX_VERSION)' \
-		-d $@.squashfs $@
-	rm -rf $@.squashfs $@.fs
-endef
-
-define Build/netgear-uImage
-	$(call Build/uImage,$(1) -M $(NETGEAR_KERNEL_MAGIC))
-endef
-
+include ./common-netgear.mk
 
 define Device/avm_fritz300e
   ATH_SOC := ar7242
@@ -44,6 +22,15 @@ define Device/embeddedwireless_dorin
 endef
 TARGET_DEVICES += embeddedwireless_dorin
 
+define Device/etactica-eg200
+  ATH_SOC := ar9331
+  DEVICE_TITLE := eTactica EG200
+  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-ledtrig-oneshot \
+	kmod-usb-serial kmod-usb-serial-ftdi kmod-usb-storage  kmod-fs-ext4
+  SUPPORTED_DEVICES += etactica,eg200 rme-eg200
+endef
+TARGET_DEVICES += etactica-eg200
+
 define Device/glinet_ar150
   ATH_SOC := ar9330
   DEVICE_TITLE := GL.iNet GL-AR150
@@ -52,6 +39,23 @@ define Device/glinet_ar150
   SUPPORTED_DEVICES += gl-ar150
 endef
 TARGET_DEVICES += glinet_ar150
+
+define Device/glinet_ar300m_nor
+  ATH_SOC := qca9533
+  DEVICE_TITLE := GL.iNet GL-AR300M
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += gl-ar300m
+endef
+TARGET_DEVICES += glinet_ar300m_nor
+
+define Device/ocedo_raccoon
+  ATH_SOC := ar9344
+  DEVICE_TITLE := OCEDO Raccoon
+  IMAGE_SIZE := 7424k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += ocedo_raccoon
 
 define Device/openmesh_om5p-ac-v2
   ATH_SOC := qca9558
@@ -88,3 +92,17 @@ define Device/buffalo_wzr-hp-g450h
   SUPPORTED_DEVICES += wzr-hp-g450h
 endef
 TARGET_DEVICES += buffalo_wzr-hp-g450h
+
+define Device/phicomm-k2t
+  ATH_SOC := qca9563
+  DEVICE_TITLE := Phicomm K2T
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  IMAGE_SIZE := 15744k
+  IMAGES := sysupgrade.bin
+  IMAGE/default := append-kernel | append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := kmod-leds-reset kmod-ath10k ath10k-firmware-qca9888
+  SUPPORTED_DEVICES += phicomm,k2t
+endef
+TARGET_DEVICES += phicomm-k2t

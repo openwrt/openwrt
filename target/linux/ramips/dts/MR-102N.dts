@@ -9,6 +9,10 @@
 	compatible = "aximcom,mr-102n", "ralink,rt3052-soc";
 	model = "AXIMCom MR-102N";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -59,7 +63,7 @@
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
-		status {
+		led_status: status {
 			label = "mr-102n:amber:status";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};

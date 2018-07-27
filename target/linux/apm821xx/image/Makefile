@@ -214,7 +214,11 @@ define Build/hdd-img
 	./mbl_gen_hdd_img.sh $@ $@.boot $(IMAGE_ROOTFS)
 endef
 
-define Device/MyBookLiveDefault
+define Device/wd_mybooklive
+  DEVICE_TITLE := Western Digital My Book Live Series (Single + Duo)
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-fs-vfat wpad-mini
+  DEVICE_DTS := wd-mybooklive
+  SUPPORTED_DEVICES += mbl wd_mybooklive-duo
   IMAGE_SIZE := 48m
   BLOCKSIZE := 1k
   DTB_SIZE := 16384
@@ -228,24 +232,7 @@ define Device/MyBookLiveDefault
   IMAGE/rootfs.img.gz := boot-script | boot-img | hdd-img | gzip | append-metadata
 endef
 
-define Device/wd_mybooklive
-$(Device/MyBookLiveDefault)
-  DEVICE_TITLE := Western Digital My Book Live
-  DEVICE_DTS := wd-mybooklive
-  SUPPORTED_DEVICES += mbl
-endef
-
 TARGET_DEVICES += wd_mybooklive
-
-define Device/wd_mybooklive-duo
-$(Device/MyBookLiveDefault)
-  DEVICE_TITLE := Western Digital My Book Live Duo
-  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-fs-vfat wpad-mini
-  DEVICE_DTS := wd-mybooklive-duo
-  SUPPORTED_DEVICES += mbl
-endef
-
-TARGET_DEVICES += wd_mybooklive-duo
 
 endif
 

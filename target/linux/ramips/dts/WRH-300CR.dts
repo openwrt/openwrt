@@ -9,10 +9,14 @@
 	compatible = "elecom,wrh-300cr", "ralink,mt7620n-soc";
 	model = "ELECOM WRH-300CR";
 
+	aliases {
+		led-status = &led_wps;
+	};
+
 		gpio-leds {
 		compatible = "gpio-leds";
 
-		wps {
+		led_wps: wps {
 			label = "wrh-300cr:green:wps";
 			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		};

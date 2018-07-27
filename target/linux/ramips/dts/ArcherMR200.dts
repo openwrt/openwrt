@@ -9,6 +9,10 @@
 	compatible = "tplink,mr200", "ralink,mt7620a-soc";
 	model = "TP-Link Archer MR200";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -26,7 +30,7 @@
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_power: power {
 			label = "mr200:white:power";
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};

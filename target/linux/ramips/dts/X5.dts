@@ -9,10 +9,14 @@
 	compatible = "poray,x5", "ralink,rt5350-soc";
 	model = "Poray X5";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "x5:green:power";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};

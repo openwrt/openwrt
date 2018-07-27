@@ -9,6 +9,10 @@
 	compatible = "gnubee,gb-pc1", "mediatek,mt7621-soc";
 	model = "GB-PC1";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x1c000000>, <0x20000000 0x4000000>;
@@ -16,12 +20,6 @@
 
 	chosen {
 		bootargs = "console=ttyS0,57600";
-	};
-
-	palmbus: palmbus@1E000000 {
-		i2c@900 {
-			status = "okay";
-		};
 	};
 
 	gpio-keys-polled {
@@ -45,7 +43,7 @@
 			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 		};
 
-		status {
+		led_status: status {
 			label = "gb-pc1:green:status";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
@@ -64,6 +62,9 @@
 
 &sdhci {
 	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdhci_pins>;
 };
 
 &spi0 {
@@ -118,7 +119,7 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "wdt", "rgmii2", "uart3";
+			ralink,group = "jtag", "rgmii2", "uart3", "wdt";
 			ralink,function = "gpio";
 		};
 	};

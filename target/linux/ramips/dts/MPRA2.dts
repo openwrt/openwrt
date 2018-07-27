@@ -9,10 +9,14 @@
 	compatible = "hame,mpr-a2", "ralink,rt5350-soc";
 	model = "HAME MPR-A2";
 
+	aliases {
+		led-status = &led_system;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		system {
+		led_system: system {
 			label = "mpr-a2:blue:system";
 			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 		};
