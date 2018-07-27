@@ -20,6 +20,7 @@
 #include "beacon.h"
 #include "rrm.h"
 #include "wnm_ap.h"
+#include "taxonomy.h"
 
 static struct ubus_context *ctx;
 static struct blob_buf b;
@@ -184,6 +185,11 @@ hostapd_bss_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 			blobmsg_add_u32(&b, "", sta->rrm_enabled_capa[i]);
 		blobmsg_close_array(&b, r);
 		blobmsg_add_u32(&b, "aid", sta->aid);
+#ifdef CONFIG_TAXONOMY
+		r = blobmsg_alloc_string_buffer(&b, "signature", 1024);
+		if (retrieve_sta_taxonomy(hapd, sta, r, 1024) > 0)
+			blobmsg_add_string_buffer(&b);
+#endif
 		blobmsg_close_table(&b, c);
 	}
 	blobmsg_close_array(&b, list);

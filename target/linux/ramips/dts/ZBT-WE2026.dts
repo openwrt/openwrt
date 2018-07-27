@@ -9,6 +9,10 @@
 	compatible = "zbtlink,zbt-we2026", "ralink,mt7620n-soc";
 	model = "Zbtlink ZBT-WE2026";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -16,7 +20,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "zbt-we2026:red:power";
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 		};

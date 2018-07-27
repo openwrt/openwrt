@@ -9,6 +9,10 @@
 	compatible = "airlink101,ar725w", "ralink,rt2880-soc";
 	model = "Airlink101 AR725W";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	cfi@bdc00000 {
 		compatible = "cfi-flash";
 		reg = <0xbc400000 0x800000>;
@@ -42,7 +46,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		status {
+		led_power: power {
 			label = "ar725w:green:power";
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		};

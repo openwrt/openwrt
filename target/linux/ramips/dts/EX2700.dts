@@ -19,6 +19,10 @@
 	compatible = "netgear,ex2700", "ralink,mt7620a-soc";
 	model = "Netgear EX2700";
 
+	aliases {
+		led-status = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,57600";
 	};
@@ -26,7 +30,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power_g {
+		led_power_green: power_g {
 			label = "ex2700:green:power";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 			default-state = "on";

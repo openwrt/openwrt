@@ -814,6 +814,17 @@ config ATH79_MACH_GL_AR750
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_GL_AR750S
+	bool "GL.iNet GL-AR750S support"
+	select SOC_QCA956X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_GL_DOMINO
 	bool "DOMINO support"
 	select SOC_AR933X
@@ -947,6 +958,16 @@ config ATH79_MACH_JWAP230
 	select ATH79_DEV_LEDS_GPIO
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
+config ATH79_MACH_KOALA
+	bool "OCEDO Koala board support"
+	select SOC_QCA955X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_ETH
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
 
 config ATH79_MACH_WAM250
@@ -1112,6 +1133,7 @@ config ATH79_MACH_RBSPI
 	  MikroTik ROuterBOARD 911-5Hn (911 Lite5)
 	  MikroTik RouterBOARD mAP
 	  MikroTik RouterBOARD mAP lite
+	  MikroTik RouterBOARD hAP mini
 	  MikroTik RouterBOARD hAP lite
 	  MikroTik RouterBOARD hAP
 	  MikroTik RouterBOARD hAP ac
@@ -1122,6 +1144,7 @@ config ATH79_MACH_RBSPI
 	  MikroTik RouterBOARD LHG 5
 	  MikroTik RouterBOARD cAP (EXPERIMENTAL)
 	  MikroTik RouterBOARD wAP
+	  MikroTik RouterBOARD wAP R-2nD
 
 config ATH79_MACH_RBSXTLITE
 	bool "MikroTik RouterBOARD SXT Lite"
@@ -1563,6 +1586,7 @@ config ATH79_MACH_CPE505N
 config ATH79_MACH_CPE510
 	bool "TP-LINK CPE510 support"
 	select SOC_AR934X
+	select SOC_QCA953X
 	select ATH79_DEV_ETH
 	select ATH79_DEV_GPIO_BUTTONS
 	select ATH79_DEV_LEDS_GPIO
@@ -1997,6 +2021,16 @@ config ATH79_MACH_TL_WR2543N
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_USB
 
+config ATH79_MACH_TS_D084
+	bool "PISEN TS-D084 support"
+	select SOC_AR933X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_TEW_632BRP
 	bool "TRENDnet TEW-632BRP support"
 	select SOC_AR913X
@@ -2356,3 +2390,12 @@ config ATH79_MACH_FRITZ4020
 	select ATH79_DEV_LEDS_GPIO
 	select ATH79_DEV_USB
 	select ATH79_DEV_M25P80
+
+config ATH79_MACH_FRITZ450E
+	bool "AVM FRITZ!WLAN Repeater 450E support"
+	select SOC_QCA955X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC

@@ -9,6 +9,10 @@
 	compatible = "tplink,c20-v4", "mediatek,mt7628an-soc";
 	model = "TP-Link Archer C20 v4";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -17,7 +21,7 @@
 			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_power: power {
 			label = "c20-v4:green:power";
 			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 		};

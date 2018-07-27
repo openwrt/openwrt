@@ -4,6 +4,35 @@
 
 DEVICE_VARS += TPLINK_BOARD_ID TPLINK_HEADER_VERSION TPLINK_HWID TPLINK_HWREV
 
+define Build/elecom-wrc-factory
+  $(eval product=$(word 1,$(1)))
+  $(eval version=$(word 2,$(1)))
+  $(STAGING_DIR_HOST)/bin/mkhash md5 $@ >> $@
+  ( \
+    echo -n "ELECOM $(product) v$(version)" | \
+      dd bs=32 count=1 conv=sync; \
+    dd if=$@; \
+  ) > $@.new
+  mv $@.new $@
+endef
+
+define Build/iodata-factory
+  $(eval fw_size=$(word 1,$(1)))
+  $(eval fw_type=$(word 2,$(1)))
+  $(eval product=$(word 3,$(1)))
+  $(eval factory_bin=$(word 4,$(1)))
+  if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(fw_size)" ]; then \
+    $(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) $(factory_bin); \
+    $(STAGING_DIR_HOST)/bin/mksenaofw \
+      -r 0x30a -p $(product) -t $(fw_type) \
+      -e $(factory_bin) -o $(factory_bin).new; \
+    mv $(factory_bin).new $(factory_bin); \
+    $(CP) $(factory_bin) $(BIN_DIR)/; \
+	else \
+		echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
+	fi
+endef
+
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:6' > $(1).compat; \
@@ -65,6 +94,16 @@ define Device/mediatek_ap-mt7621a-v60
 endef
 TARGET_DEVICES += mediatek_ap-mt7621a-v60
 
+define Device/elecom_wrc-1167ghbk2-s
+  DTS := WRC-1167GHBK2-S
+  IMAGE_SIZE := 15488k
+  DEVICE_TITLE := ELECOM WRC-1167GHBK2-S
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) |\
+    elecom-wrc-factory WRC-1167GHBK2-S 0.00
+endef
+TARGET_DEVICES += elecom_wrc-1167ghbk2-s
+
 define Device/ew1200
   DTS := EW1200
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
@@ -83,13 +122,13 @@ define Device/firewrt
 endef
 TARGET_DEVICES += firewrt
 
-define Device/gb-pc1
+define Device/gnubee_gb-pc1
   DTS := GB-PC1
   DEVICE_TITLE := GnuBee Personal Cloud One
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
 endef
-TARGET_DEVICES += gb-pc1
+TARGET_DEVICES += gnubee_gb-pc1
 
 define Device/gnubee_gb-pc2
   DTS := GB-PC2
@@ -113,6 +152,24 @@ define Device/hc5962
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 wpad-mini
 endef
 TARGET_DEVICES += hc5962
+
+define Device/iodata_wn-ax1167gr
+  DTS := WN-AX1167GR
+  IMAGE_SIZE := 15552k
+  KERNEL_INITRAMFS := $$(KERNEL) | \
+    iodata-factory 7864320 4 0x1055 $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
+  DEVICE_TITLE := I-O DATA WN-AX1167GR
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 wpad-mini
+endef
+TARGET_DEVICES += iodata_wn-ax1167gr
+
+define Device/iodata_wn-gx300gr
+  DTS := WN-GX300GR
+  IMAGE_SIZE := 7798784
+  DEVICE_TITLE := I-O DATA WN-GX300GR
+  DEVICE_PACKAGES := kmod-mt7603 wpad-mini
+endef
+TARGET_DEVICES += iodata_wn-gx300gr
 
 define Device/k2p
   DTS := K2P
@@ -163,7 +220,7 @@ define Device/d-team_newifi-d2
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_TITLE := Newifi D2
   DEVICE_PACKAGES := \
-	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini
 endef
 TARGET_DEVICES += d-team_newifi-d2
 
@@ -203,6 +260,31 @@ define Device/rb750gr3
 endef
 TARGET_DEVICES += rb750gr3
 
+define Device/MikroTik
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 16128k
+  DEVICE_PACKAGES := kmod-usb3
+  LOADER_TYPE := elf
+  PLATFORM := mt7621
+  KERNEL := kernel-bin | patch-dtb | lzma | loader-kernel
+  IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+
+define Device/mikrotik_rbm33g
+  $(Device/MikroTik)
+  DTS := RBM33G
+  DEVICE_TITLE := MikroTik RouterBOARD M33G
+endef
+TARGET_DEVICES += mikrotik_rbm33g
+
+define Device/mikrotik_rbm11g
+  $(Device/MikroTik)
+  DTS := RBM11G
+  DEVICE_TITLE := MikroTik RouterBOARD M11G
+endef
+TARGET_DEVICES += mikrotik_rbm11g
+
 define Device/re350-v1
   DTS := RE350
   DEVICE_TITLE := TP-LINK RE350 v1
@@ -212,7 +294,7 @@ define Device/re350-v1
   TPLINK_HWREV := 0
   TPLINK_HEADER_VERSION := 1
   IMAGE_SIZE := 6016k
-  KERNEL := $(KERNEL_DTB) | tplink-v1-header -e
+  KERNEL := $(KERNEL_DTB) | tplink-v1-header -e -O
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
@@ -291,8 +373,7 @@ define Device/w2914nsv2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := WeVO W2914NS v2
   DEVICE_PACKAGES := \
-	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport kmod-mt76 \
-	wpad-mini
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini
 endef
 TARGET_DEVICES += w2914nsv2
 
@@ -306,7 +387,7 @@ define Device/wf-2881
   UBINIZE_OPTS := -E 5
   IMAGE/sysupgrade.bin := append-kernel | append-ubi | append-metadata | check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := NETIS WF-2881
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini
 endef
 TARGET_DEVICES += wf-2881
 
@@ -344,7 +425,7 @@ define Device/youhua_wr1200js
   IMAGE_SIZE := 16064k
   DEVICE_TITLE := YouHua WR1200JS
   DEVICE_PACKAGES := \
-	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini
 endef
 TARGET_DEVICES += youhua_wr1200js
 

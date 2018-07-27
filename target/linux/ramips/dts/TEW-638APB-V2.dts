@@ -9,6 +9,10 @@
 	compatible = "trendnet,tew-638apb-v2", "ralink,rt3050-soc";
 	model = "TRENDnet TEW-638APB v2";
 
+	aliases {
+		led-status = &led_wps_green;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x400000>;
@@ -68,7 +72,7 @@
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
-		wps2 {
+		led_wps_green: wps2 {
 			label = "tew-638apb-v2:green:wps";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};

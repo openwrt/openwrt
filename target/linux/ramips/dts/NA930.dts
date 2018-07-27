@@ -9,6 +9,10 @@
 	compatible = "sercomm,na930", "ralink,mt7620a-soc";
 	model = "Sercomm NA930";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	chosen {
 		bootargs = "console=ttyS1,57600";
 	};
@@ -85,7 +89,7 @@
 			gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_power: power {
 			label = "na930:blue:power";
 			gpios = <&gpio2 29 GPIO_ACTIVE_LOW>;
 		};

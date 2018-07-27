@@ -9,6 +9,10 @@
 	compatible = "samsung,cy-swr1100", "ralink,rt3883-soc";
 	model = "Samsung CY-SWR1100";
 
+	aliases {
+		led-status = &led_wps;
+	};
+
 	nor-flash@1c000000 {
 		compatible = "cfi-flash";
 		reg = <0x1c000000 0x800000>;
@@ -80,7 +84,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		wps {
+		led_wps: wps {
 			label = "cy-swr1100:blue:wps";
 			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 		};

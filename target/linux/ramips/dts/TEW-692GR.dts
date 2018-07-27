@@ -9,6 +9,10 @@
 	compatible = "trendnet,tew-692gr", "ralink,rt3883-soc";
 	model = "TRENDnet TEW-692GR";
 
+	aliases {
+		led-status = &led_wps_green;
+	};
+
 	nor-flash@1c000000 {
 		compatible = "cfi-flash";
 		reg = <0x1c000000 0x800000>;
@@ -67,7 +71,7 @@
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
-		wps2 {
+		led_wps_green: wps2 {
 			label = "tew-692gr:green:wps";
 			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
 		};

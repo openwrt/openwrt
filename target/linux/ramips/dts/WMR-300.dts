@@ -9,6 +9,10 @@
 	compatible = "buffalo,wmr-300", "ralink,mt7620n-soc";
 	model = "Buffalo WMR-300";
 
+	aliases {
+		led-status = &led_status;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -22,7 +26,7 @@
 			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_status: status {
 			label = "wmr-300:green:status";
 			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
 		};

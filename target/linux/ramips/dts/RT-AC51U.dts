@@ -9,10 +9,14 @@
 	compatible = "asus,rt-ac51u", "ralink,mt7620a-soc";
 	model = "Asus RT-AC51U";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "rt-ac51u:blue:power";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};

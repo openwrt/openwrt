@@ -1,0 +1,100 @@
+From 364123029d8d547336323fbd3d659ecd0bba913f Mon Sep 17 00:00:00 2001
+From: Matthew McClintock <mmcclint@codeaurora.org>
+Date: Mon, 23 Jul 2018 08:41:02 +0200
+Subject: [PATCH 5/8] qcom: ipq4019: use v2 of the kpss bringup mechanism
+
+v1 was the incorrect choice here and sometimes the board
+would not come up properly.
+
+Signed-off-by: Matthew McClintock <mmcclint@codeaurora.org>
+Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ arch/arm/boot/dts/qcom-ipq4019.dtsi | 25 +++++++++++++++++--------
+ 1 file changed, 17 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/boot/dts/qcom-ipq4019.dtsi b/arch/arm/boot/dts/qcom-ipq4019.dtsi
+index 93647db5d90b..06434fd02d40 100644
+--- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
+@@ -52,7 +52,8 @@
+ 		cpu@0 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a7";
+-			enable-method = "qcom,kpss-acc-v1";
++			enable-method = "qcom,kpss-acc-v2";
++			next-level-cache = <&L2>;
+ 			qcom,acc = <&acc0>;
+ 			qcom,saw = <&saw0>;
+ 			reg = <0x0>;
+@@ -71,7 +72,8 @@
+ 		cpu@1 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a7";
+-			enable-method = "qcom,kpss-acc-v1";
++			enable-method = "qcom,kpss-acc-v2";
++			next-level-cache = <&L2>;
+ 			qcom,acc = <&acc1>;
+ 			qcom,saw = <&saw1>;
+ 			reg = <0x1>;
+@@ -82,7 +84,8 @@
+ 		cpu@2 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a7";
+-			enable-method = "qcom,kpss-acc-v1";
++			enable-method = "qcom,kpss-acc-v2";
++			next-level-cache = <&L2>;
+ 			qcom,acc = <&acc2>;
+ 			qcom,saw = <&saw2>;
+ 			reg = <0x2>;
+@@ -93,13 +96,19 @@
+ 		cpu@3 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a7";
+-			enable-method = "qcom,kpss-acc-v1";
++			enable-method = "qcom,kpss-acc-v2";
++			next-level-cache = <&L2>;
+ 			qcom,acc = <&acc3>;
+ 			qcom,saw = <&saw3>;
+ 			reg = <0x3>;
+ 			clocks = <&gcc GCC_APPS_CLK_SRC>;
+ 			clock-frequency = <0>;
+ 		};
++
++		L2: l2-cache {
++			compatible = "cache";
++			cache-level = <2>;
++		};
+ 	};
+ 
+ 	pmu {
+@@ -268,22 +277,22 @@
+ 		};
+ 
+                 acc0: clock-controller@b088000 {
+-                        compatible = "qcom,kpss-acc-v1";
++			compatible = "qcom,kpss-acc-v2";
+                         reg = <0x0b088000 0x1000>, <0xb008000 0x1000>;
+                 };
+ 
+                 acc1: clock-controller@b098000 {
+-                        compatible = "qcom,kpss-acc-v1";
++			compatible = "qcom,kpss-acc-v2";
+                         reg = <0x0b098000 0x1000>, <0xb008000 0x1000>;
+                 };
+ 
+                 acc2: clock-controller@b0a8000 {
+-                        compatible = "qcom,kpss-acc-v1";
++			compatible = "qcom,kpss-acc-v2";
+                         reg = <0x0b0a8000 0x1000>, <0xb008000 0x1000>;
+                 };
+ 
+                 acc3: clock-controller@b0b8000 {
+-                        compatible = "qcom,kpss-acc-v1";
++			compatible = "qcom,kpss-acc-v2";
+                         reg = <0x0b0b8000 0x1000>, <0xb008000 0x1000>;
+                 };
+ 
+-- 
+2.11.0
+

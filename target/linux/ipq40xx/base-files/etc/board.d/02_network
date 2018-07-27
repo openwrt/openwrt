@@ -44,8 +44,14 @@ openmesh,a62)
 	;;
 meraki,mr33 |\
 netgear,ex6100v2 |\
-netgear,ex6150v2)
+netgear,ex6150v2 |\
+zyxel,wre6606)
 	ucidef_set_interface_lan "eth0"
+	;;
+zyxel,nbg6617)
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	ucidef_add_switch "switch0" \
+		"0u@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 	;;
 *)
 	echo "Unsupported hardware. Network interfaces not intialized"

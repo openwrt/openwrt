@@ -237,6 +237,7 @@ define KernelPackage/ipt-filter/description
  Netfilter (IPv4) kernel modules for packet content inspection
  Includes:
  - string
+ - bpf
 endef
 
 $(eval $(call KernelPackage,ipt-filter))

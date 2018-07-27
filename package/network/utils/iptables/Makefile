@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.6.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://git.netfilter.org/iptables
@@ -18,6 +18,7 @@ PKG_SOURCE_VERSION:=c16bdec15137b241586310d0e61bc88cc3726004
 PKG_MIRROR_HASH:=72e4bec94a56dd600097846c773e1074ff705e38f800ef221db646c064371a53
 
 PKG_FIXUP:=autoreconf
+PKG_FLAGS:=nonshared
 
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
@@ -88,6 +89,7 @@ IP firewall administration tool.
   - DNAT
   - DROP
   - REJECT
+  - FLOWOFFLOAD
   - LOG
   - MARK
   - MASQUERADE
@@ -149,6 +151,7 @@ Includes support for:
 
  Matches:
   - string
+  - bpf
 
 endef
 

@@ -1,0 +1,126 @@
+From 028c9191bdf88f120f65626920a6a679170fcc3e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Antti=20Sepp=C3=A4l=C3=A4?= <a.seppala@gmail.com>
+Date: Thu, 5 Jul 2018 11:37:03 +0300
+Subject: [PATCH 1/2] usb: dwc2: Fix DMA alignment to start at allocated
+ boundary
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The commit 3bc04e28a030 ("usb: dwc2: host: Get aligned DMA in a more
+supported way") introduced a common way to align DMA allocations.
+The code in the commit aligns the struct dma_aligned_buffer but the
+actual DMA address pointed by data[0] gets aligned to an offset from
+the allocated boundary by the kmalloc_ptr and the old_xfer_buffer
+pointers.
+
+This is against the recommendation in Documentation/DMA-API.txt which
+states:
+
+  Therefore, it is recommended that driver writers who don't take
+  special care to determine the cache line size at run time only map
+  virtual regions that begin and end on page boundaries (which are
+  guaranteed also to be cache line boundaries).
+
+The effect of this is that architectures with non-coherent DMA caches
+may run into memory corruption or kernel crashes with Unhandled
+kernel unaligned accesses exceptions.
+
+Fix the alignment by positioning the DMA area in front of the allocation
+and use memory at the end of the area for storing the orginal
+transfer_buffer pointer. This may have the added benefit of increased
+performance as the DMA area is now fully aligned on all architectures.
+
+Tested with Lantiq xRX200 (MIPS) and RPi Model B Rev 2 (ARM).
+
+Fixes: 3bc04e28a030 ("usb: dwc2: host: Get aligned DMA in a more
+supported way")
+
+Signed-off-by: Antti Seppälä <a.seppala@gmail.com>
+---
+ drivers/usb/dwc2/hcd.c | 44 +++++++++++++++++++++++---------------------
+ 1 file changed, 23 insertions(+), 21 deletions(-)
+
+--- a/drivers/usb/dwc2/hcd.c
++++ b/drivers/usb/dwc2/hcd.c
+@@ -2628,34 +2628,29 @@ static void dwc2_hc_init_xfer(struct dwc
+ 
+ #define DWC2_USB_DMA_ALIGN 4
+ 
+-struct dma_aligned_buffer {
+-	void *kmalloc_ptr;
+-	void *old_xfer_buffer;
+-	u8 data[0];
+-};
+-
+ static void dwc2_free_dma_aligned_buffer(struct urb *urb)
+ {
+-	struct dma_aligned_buffer *temp;
++	void *stored_xfer_buffer;
+ 
+ 	if (!(urb->transfer_flags & URB_ALIGNED_TEMP_BUFFER))
+ 		return;
+ 
+-	temp = container_of(urb->transfer_buffer,
+-			    struct dma_aligned_buffer, data);
++	/* Restore urb->transfer_buffer from the end of the allocated area */
++	memcpy(&stored_xfer_buffer, urb->transfer_buffer +
++	       urb->transfer_buffer_length, sizeof(urb->transfer_buffer));
+ 
+ 	if (usb_urb_dir_in(urb))
+-		memcpy(temp->old_xfer_buffer, temp->data,
++		memcpy(stored_xfer_buffer, urb->transfer_buffer,
+ 		       urb->transfer_buffer_length);
+-	urb->transfer_buffer = temp->old_xfer_buffer;
+-	kfree(temp->kmalloc_ptr);
++	kfree(urb->transfer_buffer);
++	urb->transfer_buffer = stored_xfer_buffer;
+ 
+ 	urb->transfer_flags &= ~URB_ALIGNED_TEMP_BUFFER;
+ }
+ 
+ static int dwc2_alloc_dma_aligned_buffer(struct urb *urb, gfp_t mem_flags)
+ {
+-	struct dma_aligned_buffer *temp, *kmalloc_ptr;
++	void *kmalloc_ptr;
+ 	size_t kmalloc_size;
+ 
+ 	if (urb->num_sgs || urb->sg ||
+@@ -2663,22 +2658,29 @@ static int dwc2_alloc_dma_aligned_buffer
+ 	    !((uintptr_t)urb->transfer_buffer & (DWC2_USB_DMA_ALIGN - 1)))
+ 		return 0;
+ 
+-	/* Allocate a buffer with enough padding for alignment */
++	/*
++	 * Allocate a buffer with enough padding for original transfer_buffer
++	 * pointer. This allocation is guaranteed to be aligned properly for
++	 * DMA
++	 */
+ 	kmalloc_size = urb->transfer_buffer_length +
+-		sizeof(struct dma_aligned_buffer) + DWC2_USB_DMA_ALIGN - 1;
++		sizeof(urb->transfer_buffer);
+ 
+ 	kmalloc_ptr = kmalloc(kmalloc_size, mem_flags);
+ 	if (!kmalloc_ptr)
+ 		return -ENOMEM;
+ 
+-	/* Position our struct dma_aligned_buffer such that data is aligned */
+-	temp = PTR_ALIGN(kmalloc_ptr + 1, DWC2_USB_DMA_ALIGN) - 1;
+-	temp->kmalloc_ptr = kmalloc_ptr;
+-	temp->old_xfer_buffer = urb->transfer_buffer;
++	/*
++	 * Position value of original urb->transfer_buffer pointer to the end
++	 * of allocation for later referencing
++	 */
++	memcpy(kmalloc_ptr + urb->transfer_buffer_length,
++	       &urb->transfer_buffer, sizeof(urb->transfer_buffer));
++
+ 	if (usb_urb_dir_out(urb))
+-		memcpy(temp->data, urb->transfer_buffer,
++		memcpy(kmalloc_ptr, urb->transfer_buffer,
+ 		       urb->transfer_buffer_length);
+-	urb->transfer_buffer = temp->data;
++	urb->transfer_buffer = kmalloc_ptr;
+ 
+ 	urb->transfer_flags |= URB_ALIGNED_TEMP_BUFFER;
+ 

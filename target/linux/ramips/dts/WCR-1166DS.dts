@@ -9,6 +9,10 @@
 	compatible = "buffalo,wcr-1166ds", "mediatek,mt7628an-soc";
 	model = "Buffalo WCR-1166DS";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -73,7 +77,7 @@
 			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_power: power {
 			label = "wcr-1166ds:green:power";
 			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 		};

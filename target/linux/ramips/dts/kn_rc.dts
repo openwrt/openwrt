@@ -9,6 +9,10 @@
 	compatible = "zyxel,keenetic-omni", "ralink,mt7620n-soc";
 	model = "ZyXEL Keenetic Omni";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -27,7 +31,7 @@
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_power: power {
 			label = "kn_rc:green:power";
 			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 		};

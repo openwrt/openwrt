@@ -149,6 +149,7 @@ menu "Target Images"
 			int "Block size (in KiB)"
 			depends on TARGET_ROOTFS_SQUASHFS
 			default 64 if LOW_MEMORY_FOOTPRINT
+			default 1024 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
 			default 256
 
 	menuconfig TARGET_ROOTFS_UBIFS

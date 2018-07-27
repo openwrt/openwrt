@@ -9,6 +9,10 @@
 	compatible = "zorlik,zl5900v2", "ralink,rt5350-soc";
 	model = "Zorlik ZL5900V2";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -17,7 +21,7 @@
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 		};
 
-		power {
+		led_power: power {
 			label = "zl5900v2:blue:power";
 			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 		};

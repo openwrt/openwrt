@@ -9,6 +9,10 @@
 	compatible = "ralink,v22rw-2x2", "ralink,rt3052-soc";
 	model = "Ralink AP-RT3052-V22RW-2X2";
 
+	aliases {
+		led-status = &led_security;
+	};
+
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -44,7 +48,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		security {
+		led_security: security {
 			label = "v22rw-2x2:green:security";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};

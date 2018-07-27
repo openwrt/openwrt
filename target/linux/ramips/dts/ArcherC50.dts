@@ -9,6 +9,10 @@
 	compatible = "tplink,c50", "ralink,mt7620a-soc";
 	model = "TP-Link Archer C50";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -21,7 +25,7 @@
 			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 		};
 
-		power {
+		led_power: power {
 			label = "c50:green:power";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 			default-state = "on";

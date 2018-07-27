@@ -139,7 +139,6 @@ detect_by_model() {
 		;;
 
 	"Asus WL500G" | \
-	"Asus WL500W" | \
 	"Microsoft MN-700")
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
@@ -159,6 +158,7 @@ detect_by_model() {
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "5@eth0"
 		;;
 
+	"Asus WL500W" | \
 	"Dell TrueMobile 2300")
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \

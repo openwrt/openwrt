@@ -9,6 +9,10 @@
 	compatible = "dlink,dch-m225", "ralink,mt7620a-soc";
 	model = "D-Link DCH-M225";
 
+	aliases {
+		led-status = &led_power;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -31,7 +35,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		led_power: power {
 			label = "dch-m225:green:power";
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		};

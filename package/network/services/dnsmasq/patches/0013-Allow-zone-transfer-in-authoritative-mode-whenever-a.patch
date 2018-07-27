@@ -1,0 +1,55 @@
+From 090856c7e6d483bc4d7ec41f55208a9842769c45 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Sat, 2 Jun 2018 18:37:07 +0100
+Subject: [PATCH 13/17] Allow zone transfer in authoritative mode whenever
+ auth-peer is specified.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ CHANGELOG     | 4 ++++
+ man/dnsmasq.8 | 6 +++++-
+ src/auth.c    | 5 +++--
+ 3 files changed, 12 insertions(+), 3 deletions(-)
+
+--- a/CHANGELOG
++++ b/CHANGELOG
+@@ -29,6 +29,10 @@ version 2.80
+ 	have different parameters and avoids advertising the same
+ 	prefix twice. Thanks to Luis Marsano for spotting this case.
+ 
++	Allow zone transfer in authoritative mode if auth-peer is specified,
++	even if auth-sec-servers is not. Thanks to Raphaël Halimi for
++	the suggestion.
++
+ 
+ version 2.79
+ 	Fix parsing of CNAME arguments, which are confused by extra spaces.
+--- a/man/dnsmasq.8
++++ b/man/dnsmasq.8
+@@ -817,7 +817,11 @@ authoritative zones as dnsmasq.
+ Specify the addresses of secondary servers which are allowed to
+ initiate zone transfer (AXFR) requests for zones for which dnsmasq is
+ authoritative. If this option is not given, then AXFR requests will be
+-accepted from any secondary. 
++accepted from any secondary. Specifying
++.B auth-peer
++without
++.B auth-sec-servers
++enables zone transfer but does not advertise the secondary in NS records returned by dnsmasq.
+ .TP 
+ .B --conntrack
+ Read the Linux connection track mark associated with incoming DNS
+--- a/src/auth.c
++++ b/src/auth.c
+@@ -436,8 +436,9 @@ size_t answer_auth(struct dns_header *he
+ 		if (sockaddr_isequal(peer_addr, &peers->addr))
+ 		  break;
+ 	      
+-	      /* Refuse all AXFR unless --auth-sec-servers is set */
+-	      if ((!peers && daemon->auth_peers) || !daemon->secondary_forward_server)
++	      /* Refuse all AXFR unless --auth-sec-servers or auth-peers is set */
++	      if ((!daemon->secondary_forward_server && !daemon->auth_peers) ||
++		  (daemon->auth_peers && !peers)) 
+ 		{
+ 		  if (peer_addr->sa.sa_family == AF_INET)
+ 		    inet_ntop(AF_INET, &peer_addr->in.sin_addr, daemon->addrbuff, ADDRSTRLEN);

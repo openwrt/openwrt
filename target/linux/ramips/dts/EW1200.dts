@@ -9,6 +9,10 @@
 	compatible = "afoundry,ew1200", "mediatek,mt7621-soc";
 	model = "EW1200";
 
+	aliases {
+		led-status = &led_run;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
@@ -40,7 +44,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		status {
+		led_run: run {
 			label = "ew1200:green:run";
 			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
 		};
