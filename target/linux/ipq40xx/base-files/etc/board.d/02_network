@@ -38,6 +38,11 @@ glinet,gl-b1300)
 	ucidef_add_switch "switch0" \
 		"0u@eth0" "3:lan" "4:lan"
 	;;
+linksys,ea8300)
+        hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+        ucidef_add_switch "switch0" \
+                "1:lan" "2:lan" "3:lan" "4:lan" "0@eth1" "5:wan" "0@eth0"
+        ;;
 openmesh,a42 |\
 openmesh,a62)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"

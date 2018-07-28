@@ -1,0 +1,41 @@
+// SPDX-License-Identifier: GPL-2.0
+// Copyright (c) 2018, The Linux Foundation. All rights reserved.
+// DTS for Linksys EA8300 2018-07-15 25:53 by Oliver Welter <contact@verbotene.zone>
+
+#include "qcom-ipq4019-ea8300.dtsi"
+
+/ {
+	model = "Linksys EA8300 Qualcomm IPQ4019 AP DK07.1-c1";
+	compatible = "linksys,ea8300", "qcom,ipq4019-ap-dk07.1-c1";
+
+        memory {
+                device_type = "memory";
+                reg = <0x80000000 0x10000000>; /* 256MB */
+        };
+
+        reserved-memory {
+                #address-cells = <1>;
+                #size-cells = <1>;
+                ranges;
+                rsvd1@87000000 {
+                        /* Reserved for other subsystem */
+                        reg = <0x87000000 0x500000>;
+                        no-map;
+                };
+                wifi_dump@87500000 {
+                        reg = <0x87500000 0x600000>;
+                        no-map;
+                };
+
+                rsvd2@87B00000 {
+                        /* Reserved for other subsystem */
+                        reg = <0x87B00000 0x500000>;
+                        no-map;
+                };
+        };
+
+        chosen {
+                stdout-path = "serial0:115200n8";
+                bootargs-append = " clk_ignore_unused";
+        };
+};
