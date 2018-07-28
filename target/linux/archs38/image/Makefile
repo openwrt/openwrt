@@ -55,7 +55,7 @@ define Image/Build/SDCard
 	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(BIN_DIR)/$(IMG_PREFIX)-uImage ::uImage
 	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(BIN_DIR)/uboot.env ::uboot.env
 
-	./gen_axs10x_sdcard_img.sh \
+	$(SCRIPT_DIR)/gen_sdcard_image.sh \
 		$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-sdcard-vfat-$(1).img \
 		$(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img \
 		$(KDIR)/root.$(1) \

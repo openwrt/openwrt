@@ -256,6 +256,18 @@ menu "Target Images"
 
 	comment "Image Options"
 
+	menuconfig TARGET_ROOTFS_SDCARD
+		bool "sdcard"
+		default y if USES_SDCARD
+		depends on USES_SDCARD
+		help
+		  Build an sdcard root filesystem.
+
+		config TARGET_SDCARD_BOOT_PARTSIZE
+			int "Boot partition size on SD Card (in MB)"
+			depends on TARGET_ROOTFS_SDCARD
+			default 20
+
 	source "target/linux/*/image/Config.in"
 
 	config TARGET_KERNEL_PARTSIZE

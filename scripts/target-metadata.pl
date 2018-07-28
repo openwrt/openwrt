@@ -31,6 +31,7 @@ sub target_config_features(@) {
 		/^ubifs$/ and $ret .= "\tselect USES_UBIFS\n";
 		/^fpu$/ and $ret .= "\tselect HAS_FPU\n";
 		/^spe_fpu$/ and $ret .= "\tselect HAS_SPE_FPU\n";
+		/^sdcard$/ and $ret .= "\tselect USES_SDCARD\n";
 		/^ramdisk$/ and $ret .= "\tselect USES_INITRAMFS\n";
 		/^powerpc64$/ and $ret .= "\tselect powerpc64\n";
 		/^nommu$/ and $ret .= "\tselect NOMMU\n";

@@ -315,3 +315,11 @@ define Build/kernel2minor
 	kernel2minor -k $@ -r $@.new $(1)
 	mv $@.new $@
 endef
+
+define Build/sdcard-image
+	if [ -n "$(UBOOT_IMAGE)" ]; then UBOOT_IMAGE="$(STAGING_DIR_IMAGE)/$(UBOOT_IMAGE)"; fi; \
+	$(SCRIPT_DIR)/gen_sdcard_image.sh "$@" "$@.boot" "$(IMAGE_ROOTFS)" \
+		"$(CONFIG_TARGET_SDCARD_BOOT_PARTSIZE)" \
+		"$(CONFIG_TARGET_ROOTFS_PARTSIZE)" \
+		"$$UBOOT_IMAGE"
+endef

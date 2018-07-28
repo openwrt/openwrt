@@ -19,12 +19,6 @@ define Build/dtb
 	$(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,$@.dtb)
 endef
 
-# SD-Card Images:
-# these values are optimized for a 4GB labeled sdcard that actually holds 7744512 sectors of 512 byte
-# MBR:            2048 sectors
-# Partition 1:   32768 sectors
-# Partition 2:   98304 sectors (configurable)
-
 define Build/boot-scr
 	rm -f $@-boot.scr
 	sed -e 's#@ROOT@#$(SIGNATURE)#g' \
@@ -47,26 +41,8 @@ define Build/boot-img-ext4
 	$(CP) $(IMAGE_KERNEL) $@.boot/$(KERNEL_NAME)
 	-$(CP) $@-boot.scr $@.boot/boot.scr
 	make_ext4fs -J -l 16384K $@.bootimg $@.boot
-endef
-
-define Build/sdcard-img
-	if [ -n "$(UBOOT)" ]; then UBOOT="$(STAGING_DIR_IMAGE)/$(UBOOT)"; fi; \
-	ROOTFS_SIZE=$$(( $(CONFIG_TARGET_ROOTFS_PARTSIZE) * 1024 * 2 )); \
-	SIGNATURE="$(SIGNATURE)" \
-	./gen_mvebu_sdcard_img.sh $@ \
-		$$UBOOT \
-		c 32768 $@.boot \
-		83 $$ROOTFS_SIZE $(IMAGE_ROOTFS)
-endef
-
-define Build/sdcard-img-ext4
-	if [ -n "$(UBOOT)" ]; then UBOOT="$(STAGING_DIR_IMAGE)/$(UBOOT)"; fi; \
-	ROOTFS_SIZE=$$(( $(CONFIG_TARGET_ROOTFS_PARTSIZE) * 1024 * 2 )); \
-	SIGNATURE="$(SIGNATURE)" \
-	./gen_mvebu_sdcard_img.sh $@ \
-		$$UBOOT \
-		83 32768 $@.bootimg \
-		83 $$ROOTFS_SIZE $(IMAGE_ROOTFS)
+	rm -fR $@.boot
+	mv $@.bootimg $@.boot
 endef
 
 define Build/omnia-medkit-initramfs
