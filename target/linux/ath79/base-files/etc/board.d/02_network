@@ -44,6 +44,12 @@ ath79_setup_interfaces()
 		"0@eth1" "1:lan" "2:lan" "3:lan:3" "4:lan:4"
 		;;
 
+	"pcs,cr3000")
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
+		ucidef_set_interface_wan "eth0"
+		;;
+
 	"pcs,cr5000")
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
