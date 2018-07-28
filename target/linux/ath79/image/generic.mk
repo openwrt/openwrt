@@ -66,6 +66,15 @@ define Device/openmesh_om5p-ac-v2
 endef
 TARGET_DEVICES += openmesh_om5p-ac-v2
 
+define Device/pcs_cap324
+  ATH_SOC := ar9344
+  DEVICE_TITLE := PowerCloud Systems CAP324
+  IMAGE_SIZE := 16000k
+  IMAGES := sysupgrade.bin
+  SUPPORTED_DEVICES += cap324
+endef
+TARGET_DEVICES += pcs_cap324
+
 define Device/pcs_cr5000
   ATH_SOC := ar9344
   DEVICE_TITLE := PowerCloud Systems CR5000

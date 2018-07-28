@@ -29,6 +29,10 @@ case "$board" in
 	ucidef_set_led_switch "lan2" "LAN2" "netgear:green:lan2" "switch0" "0x04" "0x0f"
 	;;
 
+"pcs,cap324")
+	ucidef_set_led_netdev "lan" "LAN" "pcs:lan:green" "eth0"
+	;;
+
 "pcs,cr5000")
 	ucidef_set_led_usbdev "usb" "USB" "pcs:white:wps" "1-1"
 	;;
