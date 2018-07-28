@@ -9,10 +9,11 @@ CONFIGFILE=/var/etc/igmpproxy.conf
 igmp_header() {
 	local quickleave verbose
 	config_get_bool quickleave "$1" quickleave 0
-	config_get verbose "$1" verbose 0
+	config_get verbose "$1" verbose 1
 
-	[ $verbose = "1" ] && logopts="-v"
-	[ $verbose = "2" ] && logopts="-v -v"
+	[ $verbose = "0" ] && logopts="-d"
+	[ $verbose = "2" ] && logopts="-v"
+	[ $verbose = "3" ] && logopts="-v -v"
 
 	mkdir -p /var/etc
 	rm -f /var/etc/igmpproxy.conf
