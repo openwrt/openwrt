@@ -68,6 +68,18 @@ igmp_add_firewall_routing() {
 
 	[[ "$direction" = "downstream" && ! -z "$zone" ]] || return 0
 
+# First drop SSDP packets then accept all other multicast
+
+	json_add_object ""
+	json_add_string type rule
+	json_add_string src "$upstream"
+	json_add_string dest "$zone"
+	json_add_string family ipv4
+	json_add_string proto udp
+	json_add_string dest_ip "239.255.255.250"
+	json_add_string target DROP
+	json_close_object
+
 	json_add_object ""
 	json_add_string type rule
 	json_add_string src "$upstream"
