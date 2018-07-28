@@ -75,6 +75,15 @@ define Device/pcs_cap324
 endef
 TARGET_DEVICES += pcs_cap324
 
+define Device/pcs_cr3000
+  ATH_SOC := ar9341
+  DEVICE_TITLE := PowerCloud Systems CR3000
+  IMAGE_SIZE := 7808k
+  IMAGES := sysupgrade.bin
+  SUPPORTED_DEVICES += cr3000
+endef
+TARGET_DEVICES += pcs_cr3000
+
 define Device/pcs_cr5000
   ATH_SOC := ar9344
   DEVICE_TITLE := PowerCloud Systems CR5000

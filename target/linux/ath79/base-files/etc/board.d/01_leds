@@ -28,15 +28,19 @@ case "$board" in
 	ucidef_set_led_switch "lan1" "LAN1" "netgear:green:lan1" "switch0" "0x02" "0x0f"
 	ucidef_set_led_switch "lan2" "LAN2" "netgear:green:lan2" "switch0" "0x04" "0x0f"
 	;;
-
 "pcs,cap324")
 	ucidef_set_led_netdev "lan" "LAN" "pcs:lan:green" "eth0"
 	;;
-
+"pcs,cr3000")
+	ucidef_set_led_netdev "wan" "WAN" "pcs:blue:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "pcs:blue:lan1" "switch0" "0x04"
+	ucidef_set_led_switch "lan2" "LAN2" "pcs:blue:lan2" "switch0" "0x08"
+	ucidef_set_led_switch "lan3" "LAN3" "pcs:blue:lan3" "switch0" "0x10"
+	ucidef_set_led_switch "lan4" "LAN4" "pcs:blue:lan4" "switch0" "0x02"
+	;;
 "pcs,cr5000")
 	ucidef_set_led_usbdev "usb" "USB" "pcs:white:wps" "1-1"
 	;;
-
 "tplink,re450-v2")
 	ucidef_set_led_netdev "lan_data" "LAN Data" "tp-link:green:lan_data" "eth0" "tx rx"
 	ucidef_set_led_netdev "lan_link" "LAN Link" "tp-link:green:lan_link" "eth0" "link"
