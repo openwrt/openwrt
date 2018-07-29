@@ -213,7 +213,7 @@ static struct gpio_led rbhapl_leds[] __initdata = {
 #define RB952_GPIO_POE_POWER	14
 #define RB952_GPIO_POE_STATUS	12
 #define RB952_GPIO_BTN_RESET	16
-#define RB952_GPIO_USB_POWER	RBSPI_SSR_GPIO(RB952_SSR_BIT_USB_POWER)
+#define RB952_GPIO_USB_PWROFF	RBSPI_SSR_GPIO(RB952_SSR_BIT_USB_POWER)
 #define RB952_GPIO_LED_LAN1	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN1)
 #define RB952_GPIO_LED_LAN2	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN2)
 #define RB952_GPIO_LED_LAN3	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN3)
@@ -258,7 +258,7 @@ static struct gpio_led rb952_leds[] __initdata = {
 #define RB962_GPIO_POE_STATUS	2
 #define RB962_GPIO_POE_POWER	3
 #define RB962_GPIO_LED_USER	12
-#define RB962_GPIO_USB_POWER	13
+#define RB962_GPIO_USB_PWROFF	13
 #define RB962_GPIO_BTN_RESET	20
 
 static struct gpio_led rb962_leds_gpio[] __initdata = {
@@ -388,7 +388,7 @@ static struct gpio_led rbcap_leds[] __initdata = {
 #define RBMAP_GPIO_LED_POWER	4
 #define RBMAP_GPIO_POE_POWER	14
 #define RBMAP_GPIO_POE_STATUS	12
-#define RBMAP_GPIO_USB_POWER	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_USB_POWER)
+#define RBMAP_GPIO_USB_PWROFF	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_USB_POWER)
 #define RBMAP_GPIO_LED_LAN1	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_LED_LAN1)
 #define RBMAP_GPIO_LED_LAN2	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_LED_LAN2)
 #define RBMAP_GPIO_LED_POEO	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_LED_POEO)
@@ -828,9 +828,9 @@ static void __init rbspi_952_750r2_setup(u32 flags)
 	rbspi_network_setup(flags, 1, 5, 6);
 
 	if (flags & RBSPI_HAS_USB)
-		gpio_request_one(RB952_GPIO_USB_POWER,
+		gpio_request_one(RB952_GPIO_USB_PWROFF, GPIOF_ACTIVE_LOW |
 				GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
-				"USB power");
+				"USB power off");
 
 	if (flags & RBSPI_HAS_POE)
 		gpio_request_one(RB952_GPIO_POE_POWER,
@@ -938,9 +938,9 @@ static void __init rb962_setup(void)
 	rbspi_wlan_init(1, 7);
 
 	if (flags & RBSPI_HAS_USB)
-		gpio_request_one(RB962_GPIO_USB_POWER,
+		gpio_request_one(RB962_GPIO_USB_PWROFF, GPIOF_ACTIVE_LOW |
 				GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
-				"USB power");
+				"USB power off");
 
 	/* PoE output GPIO is inverted, set GPIOF_ACTIVE_LOW for consistency */
 	if (flags & RBSPI_HAS_POE)
@@ -1047,12 +1047,11 @@ static void __init rbmap_setup(void)
 				GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,
 				"POE power");
 
-	/* USB power GPIO is inverted, set GPIOF_ACTIVE_LOW for consistency */
 	if (flags & RBSPI_HAS_USB)
-		gpio_request_one(RBMAP_GPIO_USB_POWER,
+		gpio_request_one(RBMAP_GPIO_USB_PWROFF,
 				GPIOF_OUT_INIT_HIGH | GPIOF_ACTIVE_LOW |
 					GPIOF_EXPORT_DIR_FIXED,
-				"USB power");
+				"USB power off");
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(rbmap_leds), rbmap_leds);
 
