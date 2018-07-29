@@ -224,11 +224,12 @@ define Device/wd_mybooklive
   KERNEL := kernel-bin | dtb | gzip | uImage gzip
   KERNEL_INITRAMFS := kernel-bin | dtb | gzip | uImage gzip
   BOOT_SIZE := 8
-  IMAGES := rootfs.img.gz kernel.dtb
+  IMAGES := factory.img.gz kernel.dtb sysupgrade.img.gz
   DEVICE_DTB := apollo3g.dtb
   FILESYSTEMS := ext4 squashfs
+  IMAGE/factory.img.gz := boot-script | boot-img | hdd-img | gzip
   IMAGE/kernel.dtb := export-dtb
-  IMAGE/rootfs.img.gz := boot-script | boot-img | hdd-img | gzip | append-metadata
+  IMAGE/sysupgrade.img.gz := boot-script | boot-img | hdd-img | gzip | append-metadata
 endef
 
 TARGET_DEVICES += wd_mybooklive
