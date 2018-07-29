@@ -129,5 +129,5 @@ static void __init cap324_setup(void)
 	ath79_register_eth(0);
 }
 
-MIPS_MACHINE(ATH79_MACH_CAP324, "CAP324", "PowerCloud CAP324",
+MIPS_MACHINE(ATH79_MACH_CAP324, "CAP324", "PowerCloud Systems CAP324",
 	     cap324_setup);
