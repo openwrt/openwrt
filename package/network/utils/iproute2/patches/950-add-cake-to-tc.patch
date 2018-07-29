@@ -776,7 +776,7 @@
  TCMODULES += e_bpf.o
 --- /dev/null
 +++ b/tc/q_cake.c
-@@ -0,0 +1,790 @@
+@@ -0,0 +1,799 @@
 +// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 +
 +/*
@@ -858,6 +858,7 @@
 +"                  dual-srchost | dual-dsthost | triple-isolate* ]\n"
 +"                [ nat | nonat* ]\n"
 +"                [ wash | nowash* ]\n"
++"                [ split-gso* | no-split-gso ]\n"
 +"                [ ack-filter | ack-filter-aggressive | no-ack-filter* ]\n"
 +"                [ memlimit LIMIT ]\n"
 +"                [ ptm | atm | noatm* ] [ overhead N | conservative | raw* ]\n"
@@ -887,6 +888,7 @@
 +	int nat = -1;
 +	int atm = -1;
 +	int mpu = 0;
++	int split_gso = -1;
 +
 +	while (argc > 0) {
 +		if (strcmp(*argv, "bandwidth") == 0) {
@@ -934,6 +936,10 @@
 +			wash = 0;
 +		} else if (strcmp(*argv, "wash") == 0) {
 +			wash = 1;
++		} else if (strcmp(*argv, "split-gso") == 0) {
++			split_gso = 1;
++		} else if (strcmp(*argv, "no-split-gso") == 0) {
++			split_gso = 0;
 +		} else if (strcmp(*argv, "flowblind") == 0) {
 +			flowmode = CAKE_FLOW_NONE;
 +		} else if (strcmp(*argv, "srchost") == 0) {
@@ -1153,6 +1159,9 @@
 +		addattr_l(n, 1024, TCA_CAKE_NAT, &nat, sizeof(nat));
 +	if (wash != -1)
 +		addattr_l(n, 1024, TCA_CAKE_WASH, &wash, sizeof(wash));
++	if (split_gso != -1)
++		addattr_l(n, 1024, TCA_CAKE_SPLIT_GSO, &split_gso,
++			  sizeof(split_gso));
 +	if (ingress != -1)
 +		addattr_l(n, 1024, TCA_CAKE_INGRESS, &ingress, sizeof(ingress));
 +	if (ack_filter != -1)
