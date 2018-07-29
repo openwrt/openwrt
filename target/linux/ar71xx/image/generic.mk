@@ -629,7 +629,7 @@ endef
 TARGET_DEVICES += wndrmacv2
 
 define Device/cap324
-  DEVICE_TITLE := PowerCloud CAP324 Cloud AP
+  DEVICE_TITLE := PowerCloud Systems CAP324 Cloud AP
   BOARDNAME := CAP324
   DEVICE_PROFILE := CAP324
   IMAGE_SIZE := 15296k
@@ -638,7 +638,7 @@ endef
 TARGET_DEVICES += cap324
 
 define Device/cap324-nocloud
-  DEVICE_TITLE := PowerCloud CAP324 Cloud AP (No-Cloud)
+  DEVICE_TITLE := PowerCloud Systems CAP324 Cloud AP (No-Cloud)
   BOARDNAME := CAP324
   DEVICE_PROFILE := CAP324
   IMAGE_SIZE := 16000k
