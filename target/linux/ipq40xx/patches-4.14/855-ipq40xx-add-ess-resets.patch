@@ -1,0 +1,39 @@
+--- a/drivers/clk/qcom/gcc-ipq4019.c	2018-07-17 01:57:48.504648996 +0200
++++ b/drivers/clk/qcom/gcc-ipq4019.c	2018-07-17 01:59:59.553495019 +0200
+@@ -1746,6 +1746,17 @@
+ 	[GCC_TCSR_BCR] = {0x22000, 0},
+ 	[GCC_MPM_BCR] = {0x24000, 0},
+ 	[GCC_SPDM_BCR] = {0x25000, 0},
++	[ESS_MAC1_ARES] = {0x1200C, 0},
++	[ESS_MAC2_ARES] = {0x1200C, 1},
++	[ESS_MAC3_ARES] = {0x1200C, 2},
++	[ESS_MAC4_ARES] = {0x1200C, 3},
++	[ESS_MAC5_ARES] = {0x1200C, 4},
++	[ESS_PSGMII_ARES] = {0x1200C, 5},
++	[ESS_MAC1_CLK_DIS] = {0x1200C, 8},
++	[ESS_MAC2_CLK_DIS] = {0x1200C, 9},
++	[ESS_MAC3_CLK_DIS] = {0x1200C, 10},
++	[ESS_MAC4_CLK_DIS] = {0x1200C, 11},
++	[ESS_MAC5_CLK_DIS] = {0x1200C, 12},
+ };
+ 
+ static const struct regmap_config gcc_ipq4019_regmap_config = {
+--- a/include/dt-bindings/clock/qcom,gcc-ipq4019.h	2018-07-17 02:07:20.261842967 +0200
++++ b/include/dt-bindings/clock/qcom,gcc-ipq4019.h	2018-07-17 02:07:55.659160182 +0200
+@@ -165,5 +165,16 @@
+ #define GCC_QDSS_BCR					69
+ #define GCC_MPM_BCR					70
+ #define GCC_SPDM_BCR					71
++#define ESS_MAC1_ARES					72
++#define ESS_MAC2_ARES					73
++#define ESS_MAC3_ARES					74
++#define ESS_MAC4_ARES					75
++#define ESS_MAC5_ARES					76
++#define ESS_PSGMII_ARES					77
++#define ESS_MAC1_CLK_DIS				78
++#define ESS_MAC2_CLK_DIS				79
++#define ESS_MAC3_CLK_DIS				80
++#define ESS_MAC4_CLK_DIS				81
++#define ESS_MAC5_CLK_DIS				82
+ 
+ #endif

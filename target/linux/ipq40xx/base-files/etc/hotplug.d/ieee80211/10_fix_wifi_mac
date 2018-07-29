@@ -1,0 +1,20 @@
+#!/bin/ash
+
+[ "$ACTION" == "add" ] || exit 0
+
+PHYNBR=${DEVPATH##*/phy}
+
+[ -n $PHYNBR ] || exit 0
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+board=$(board_name)
+
+case "$board" in
+	linksys,ea8300)
+		echo $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) $(($PHYNBR + 1)) ) > /sys${DEVPATH}/macaddress
+		;;
+	*)
+		;;
+esac
