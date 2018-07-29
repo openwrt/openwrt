@@ -157,5 +157,5 @@ static void __init cr3000_setup(void)
 	ath79_register_eth(0);
 }
 
-MIPS_MACHINE(ATH79_MACH_CR3000, "CR3000", "PowerCloud CR3000",
+MIPS_MACHINE(ATH79_MACH_CR3000, "CR3000", "PowerCloud Systems CR3000",
 	     cr3000_setup);
