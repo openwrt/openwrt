@@ -374,7 +374,8 @@ get_status_led() {
 	rb-962uigs-5hact2hnt|\
 	rb-lhg-5nd|\
 	rb-map-2nd|\
-	rb-mapl-2nd)
+	rb-mapl-2nd|\
+	rb-wap-2nd)
 		status_led="rb:green:user"
 		;;
 	rb-951ui-2hnd)
