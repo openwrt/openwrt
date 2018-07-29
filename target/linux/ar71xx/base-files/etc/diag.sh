@@ -384,7 +384,8 @@ get_status_led() {
 	rb-912uag-2hpnd|\
 	rb-912uag-5hpnd|\
 	rb-sxt2n|\
-	rb-sxt5n)
+	rb-sxt5n|\
+	rb-wapg-5hact2hnd)
 		status_led="rb:green:power"
 		;;
 	re355|\
