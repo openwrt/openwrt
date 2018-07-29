@@ -36,7 +36,7 @@ define Package/libjson-c
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=javascript object notation
-  URL:=http://oss.metaparadigm.com/json-c/
+  URL:=https://json-c.github.io/json-c/
 endef
 
 define Package/libjson-c/description
