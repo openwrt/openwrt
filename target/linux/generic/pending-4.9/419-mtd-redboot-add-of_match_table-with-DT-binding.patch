@@ -12,12 +12,20 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 
 --- a/drivers/mtd/redboot.c
 +++ b/drivers/mtd/redboot.c
-@@ -289,9 +289,16 @@ static int parse_redboot_partitions(stru
+@@ -29,6 +29,7 @@
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/module.h>
++#include <linux/mod_devicetable.h>
+ 
+ struct fis_image_desc {
+     unsigned char name[16];      // Null terminated name
+@@ -289,9 +290,16 @@ static int parse_redboot_partitions(stru
  	return ret;
  }
  
 +static const struct of_device_id redboot_parser_of_match_table[] = {
-+	{ .compatible = "redhat,redboot-partitions" },
++	{ .compatible = "ecoscentric,redboot-fis-partitions" },
 +	{},
 +};
 +MODULE_DEVICE_TABLE(of, redboot_parser_of_match_table);
