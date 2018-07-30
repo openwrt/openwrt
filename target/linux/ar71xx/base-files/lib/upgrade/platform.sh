@@ -718,7 +718,8 @@ platform_check_image() {
 	rb-mapl-2nd|\
 	rb-wap-2nd|\
 	rb-wapg-5hact2hnd|\
-	rb-wapr-2nd)
+	rb-wapr-2nd|\
+	ursus)
 		return 0
 		;;
 	esac

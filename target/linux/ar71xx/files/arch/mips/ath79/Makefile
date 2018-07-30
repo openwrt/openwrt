@@ -255,6 +255,7 @@ obj-$(CONFIG_ATH79_MACH_TUBE2H)			+= mach-tube2h.o
 obj-$(CONFIG_ATH79_MACH_UBNT)			+= mach-ubnt.o
 obj-$(CONFIG_ATH79_MACH_UBNT_UNIFIAC)		+= mach-ubnt-unifiac.o
 obj-$(CONFIG_ATH79_MACH_UBNT_XM)		+= mach-ubnt-xm.o
+obj-$(CONFIG_ATH79_MACH_URSUS)			+= mach-ursus.o
 obj-$(CONFIG_ATH79_MACH_WAM250)			+= mach-wam250.o
 obj-$(CONFIG_ATH79_MACH_WEIO)			+= mach-weio.o
 obj-$(CONFIG_ATH79_MACH_WHR_HP_G300N)		+= mach-whr-hp-g300n.o

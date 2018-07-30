@@ -337,6 +337,7 @@ enum ath79_mach_type {
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR,		/* Ubiquiti UnifiAP Outdoor */
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR_PLUS,	/* Ubiquiti UnifiAP Outdoor+ */
 	ATH79_MACH_UBNT_XM,			/* Ubiquiti Networks XM board rev 1.0 */
+	ATH79_MACH_URSUS,			/* OCEDO Ursus */
 	ATH79_MACH_WAM250,			/* Samsung WAM250 */
 	ATH79_MACH_WBS210,			/* TP-LINK WBS210 */
 	ATH79_MACH_WBS510,			/* TP-LINK WBS510 */

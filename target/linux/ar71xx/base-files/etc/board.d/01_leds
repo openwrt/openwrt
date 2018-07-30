@@ -974,6 +974,10 @@ tube2h)
 	ucidef_set_led_rssi "signal3" "SIGNAL3" "alfa:green:signal3" "wlan0" "51" "100" "-50" "13"
 	ucidef_set_led_rssi "signal4" "SIGNAL4" "alfa:green:signal4" "wlan0" "76" "100" "-75" "13"
 	;;
+ursus)
+	ucidef_set_led_wlan "wlan2g" "WLAN 2.4GHz" "$board:yellow:wlan2" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN 5GHz" "$board:red:wlan58" "phy0tpt"
+	;;
 wam250)
 	ucidef_set_led_netdev "lan" "LAN" "$board:white:lan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:white:wlan" "phy0tpt"

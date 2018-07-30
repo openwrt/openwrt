@@ -1392,6 +1392,9 @@ ar71xx_board_detect() {
 	*"UniFiAP Outdoor+")
 		name="unifi-outdoor-plus"
 		;;
+	*"Ursus")
+		name="ursus"
+		;;
 	*"WAM250")
 		name="wam250"
 		;;
