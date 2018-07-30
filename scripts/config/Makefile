@@ -9,6 +9,8 @@
 #         Utilizes the lxdialog package
 # qconf:  Used for the xconfig target
 #         Based on Qt which needs to be installed to compile it
+# nconf:  Used for the nconfig target.
+#         Utilizes ncurses
 # object files used by all kconfig flavours
 
 
@@ -21,9 +23,15 @@ export CFLAGS += -DKBUILD_NO_NLS -I. $(call check_lxdialog,ccflags)
 export CXXFLAGS += -DKBUILD_NO_NLS
 
 DISTRO-PKG-CONFIG := $(shell which -a pkg-config | grep -E '\/usr' | head -n 1)
+ifneq ($(DISTRO-PKG-CONFIG),)
+nconf-libs-flags = $(shell \
+		$(DISTRO-PKG-CONFIG) --libs menuw panelw ncursesw 2>/dev/null \
+		|| $(DISTRO-PKG-CONFIG) --libs menu panel ncurses 2>/dev/null )
+endif
 
 conf-objs	:= conf.o zconf.tab.o
 mconf-objs	:= mconf.o zconf.tab.o
+nconf-objs	:= nconf.o zconf.tab.o nconf.gui.o
 qconf-cxxobjs	:= qconf.o
 qconf-objs	:= zconf.tab.o
 
@@ -34,6 +42,8 @@ lxdialog-objs := \
 clean-files	:= zconf.tab.c lex.zconf.c zconf.hash.c
 # Remove qconf junk files
 clean-files	+= $(qconf-cxxobjs) qconf.moc .tmp_qtcheck qconf
+# Remove leftover nconf files
+clean-files	+= nconf
 
 all: conf mconf
 
@@ -46,6 +56,13 @@ ifneq ($(DISTRO-PKG-CONFIG),)
 else
 	echo "You don't have 'pkg-config' installed. Cannot continue"
 	echo "For now, you may use 'make menuconfig' instead of 'make xconfig'"
+endif
+nconf: $(nconf-objs)
+ifneq ($(nconf-libs-flags),)
+	$(CC) -o $@ $^ $(nconf-libs-flags)
+else
+	echo "You don't have 'pkg-config' installed. Cannot continue"
+	echo "For now, you may use 'make menuconfig' instead of 'make nconfig'"
 endif
 
 clean:

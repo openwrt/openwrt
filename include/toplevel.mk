@@ -107,6 +107,9 @@ $(eval $(call rdep,scripts/config,scripts/config/mconf))
 scripts/config/qconf:
 	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config qconf CC="$(HOSTCC_WRAPPER)"
 
+scripts/config/nconf:
+	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config nconf CC="$(HOSTCC_WRAPPER)"
+
 scripts/config/conf:
 	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config conf CC="$(HOSTCC_WRAPPER)"
 
@@ -140,6 +143,12 @@ menuconfig: scripts/config/mconf prepare-tmpinfo FORCE
 		$< Config.in
 
 xconfig: scripts/config/qconf prepare-tmpinfo FORCE
+	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
+		cp $(HOME)/.openwrt/defconfig .config; \
+	fi
+	$< Config.in
+
+nconfig: scripts/config/nconf prepare-tmpinfo FORCE
 	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
 		cp $(HOME)/.openwrt/defconfig .config; \
 	fi
