@@ -45,6 +45,18 @@ define Device/archer-c59-v1
 endef
 TARGET_DEVICES += archer-c59-v1
 
+define Device/archer-c59-v2
+  $(Device/archer-c59-v1)
+  DEVICE_TITLE := TP-LINK Archer C59 v2
+  BOARDNAME := ARCHER-C59-V2
+  TPLINK_BOARD_ID := ARCHER-C59-V2
+  DEVICE_PROFILE := ARCHERC59V2
+  IMAGE_SIZE := 14400k
+  MTDPARTS := spi0.0:128k(factory-boot)ro,64k(u-boot)ro,64k(mac)ro,14400k(firmware),1664k(tplink)ro,64k@0xff0000(art)ro
+  SUPPORTED_DEVICES := archer-c59-v2
+endef
+TARGET_DEVICES += archer-c59-v2
+
 define Device/archer-c60-v1
   $(Device/archer-cxx)
   DEVICE_TITLE := TP-LINK Archer C60 v1

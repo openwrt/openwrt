@@ -71,6 +71,7 @@ ar71xx_setup_interfaces()
 	aw-nr580|\
 	bullet-m|\
 	c-55|\
+	cap324|\
 	cap4200ag|\
 	cf-e380ac-v1|\
 	cf-e380ac-v2|\
@@ -170,7 +171,6 @@ ar71xx_setup_interfaces()
 	pb42|\
 	pb44|\
 	rb-951ui-2hnd|\
-	rb-952ui-5ac2nd|\
 	routerstation|\
 	tl-wr710n|\
 	tl-wr720n-v3|\
@@ -183,7 +183,8 @@ ar71xx_setup_interfaces()
 	rb-750-r2|\
 	rb-750p-pbr2|\
 	rb-750up-r2|\
-	rb-951ui-2nd)
+	rb-951ui-2nd|\
+	rb-952ui-5ac2nd)
 		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
@@ -248,6 +249,7 @@ ar71xx_setup_interfaces()
 		;;
 	archer-c58-v1|\
 	archer-c59-v1|\
+	archer-c59-v2|\
 	fritz4020|\
 	rb-450g)
 		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
@@ -274,7 +276,6 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:wan" "4:lan"
 		;;
-	cap324|\
 	rme-eg200)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
@@ -307,10 +308,13 @@ ar71xx_setup_interfaces()
 	dir-835-a1|\
 	esr900|\
 	mynet-n750|\
-	sr3200|\
-	tl-wr1043n-v5)
+	sr3200)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
+		;;
+	tl-wr1043n-v5)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
 		;;
 	dap-2695-a1)
 		ucidef_add_switch "switch0" "0@eth0" "2:lan" "3:wan" "6@eth1"
@@ -385,10 +389,16 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch_attr "switch0" "enable" "false"
 		;;
 	e1700ac-v2|\
+	e750g-v8|\
 	unifiac-pro|\
 	xd3200)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:wan"
+		;;
+	e558-v2)
+		ucidef_set_interfaces_lan_wan "eth1.1" "eth0.2"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "4:lan" "5:lan" "6@eth0"  "3:wan"
 		;;
 	ebr-2310-c1)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth1"

@@ -326,6 +326,25 @@ define Device/e1700ac-v2-8M
 endef
 TARGET_DEVICES += e1700ac-v2-8M
 
+define Device/e558-v2-16M
+  DEVICE_TITLE := Qxwlan E558 v2 (16MB flash)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
+  BOARDNAME := E558-V2
+  SUPPORTED_DEVICES := e558-v2
+  IMAGE_SIZE := 15936k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art),-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += e558-v2-16M
+
+define Device/e558-v2-8M
+  $(Device/e558-v2-16M)
+  DEVICE_TITLE := Qxwlan E558 v2 (8MB flash)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += e558-v2-8M
+
 define Device/e600g-v2-16M
   DEVICE_TITLE := Qxwlan E600G v2 (16MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
@@ -364,6 +383,44 @@ define Device/e600gac-v2-8M
   IMAGE_SIZE := 7744k
 endef
 TARGET_DEVICES += e600gac-v2-8M
+
+define Device/e750a-v4-16M
+  DEVICE_TITLE := Qxwlan E750A v4 (16MB flash)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
+  BOARDNAME := E750A-V4
+  SUPPORTED_DEVICES := e750a-v4
+  IMAGE_SIZE := 15936k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art),-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += e750a-v4-16M
+
+define Device/e750a-v4-8M
+  $(Device/e750a-v4-16M)
+  DEVICE_TITLE := Qxwlan E750A v4 (8MB flash)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += e750a-v4-8M
+
+define Device/e750g-v8-16M
+  DEVICE_TITLE := Qxwlan E750G v8 (16MB flash)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
+  BOARDNAME := E750G-V8
+  SUPPORTED_DEVICES := e750g-v8
+  IMAGE_SIZE := 15936k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art),-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += e750g-v8-16M
+
+define Device/e750g-v8-8M
+  $(Device/e750g-v8-16M)
+  DEVICE_TITLE := Qxwlan E750G v8 (8MB flash)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += e750g-v8-8M
 
 define Device/ew-balin
   DEVICE_TITLE := Embedded Wireless Balin Platform
@@ -629,22 +686,13 @@ endef
 TARGET_DEVICES += wndrmacv2
 
 define Device/cap324
-  DEVICE_TITLE := PowerCloud CAP324 Cloud AP
-  BOARDNAME := CAP324
-  DEVICE_PROFILE := CAP324
-  IMAGE_SIZE := 15296k
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,15296k(firmware),640k(certs),64k(nvram),64k(art)ro
-endef
-TARGET_DEVICES += cap324
-
-define Device/cap324-nocloud
-  DEVICE_TITLE := PowerCloud CAP324 Cloud AP (No-Cloud)
+  DEVICE_TITLE := PowerCloud Systems CAP324
   BOARDNAME := CAP324
   DEVICE_PROFILE := CAP324
   IMAGE_SIZE := 16000k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
 endef
-TARGET_DEVICES += cap324-nocloud
+TARGET_DEVICES += cap324
 
 define Device/cr3000
   DEVICE_TITLE := PowerCloud CR3000 Cloud Router
@@ -665,24 +713,14 @@ endef
 TARGET_DEVICES += cr3000-nocloud
 
 define Device/cr5000
-  DEVICE_TITLE := PowerCloud CR5000 Cloud Router
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-core
-  BOARDNAME := CR5000
-  DEVICE_PROFILE := CR5000
-  IMAGE_SIZE := 7104k
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7104k(firmware),640k(certs),64k(nvram),64k(art)ro
-endef
-TARGET_DEVICES += cr5000
-
-define Device/cr5000-nocloud
-  DEVICE_TITLE := PowerCloud CR5000 (No-Cloud)
+  DEVICE_TITLE := PowerCloud Systems CR5000
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-core
   BOARDNAME := CR5000
   DEVICE_PROFILE := CR5000
   IMAGE_SIZE := 7808k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7808k(firmware),64k(art)ro
 endef
-TARGET_DEVICES += cr5000-nocloud
+TARGET_DEVICES += cr5000
 
 define Device/packet-squirrel
   $(Device/tplink-16mlzma)

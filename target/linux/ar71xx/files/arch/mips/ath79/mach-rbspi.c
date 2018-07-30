@@ -213,7 +213,7 @@ static struct gpio_led rbhapl_leds[] __initdata = {
 #define RB952_GPIO_POE_POWER	14
 #define RB952_GPIO_POE_STATUS	12
 #define RB952_GPIO_BTN_RESET	16
-#define RB952_GPIO_USB_POWER	RBSPI_SSR_GPIO(RB952_SSR_BIT_USB_POWER)
+#define RB952_GPIO_USB_PWROFF	RBSPI_SSR_GPIO(RB952_SSR_BIT_USB_POWER)
 #define RB952_GPIO_LED_LAN1	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN1)
 #define RB952_GPIO_LED_LAN2	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN2)
 #define RB952_GPIO_LED_LAN3	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN3)
@@ -255,10 +255,12 @@ static struct gpio_led rb952_leds[] __initdata = {
 
 
 /* RB 962UiGS-5HacT2HnT gpios */
+#define RB962_WIFI_LED_1	1
+#define RB962_WIFI_LED_2	2
 #define RB962_GPIO_POE_STATUS	2
 #define RB962_GPIO_POE_POWER	3
 #define RB962_GPIO_LED_USER	12
-#define RB962_GPIO_USB_POWER	13
+#define RB962_GPIO_USB_PWROFF	13
 #define RB962_GPIO_BTN_RESET	20
 
 static struct gpio_led rb962_leds_gpio[] __initdata = {
@@ -388,7 +390,7 @@ static struct gpio_led rbcap_leds[] __initdata = {
 #define RBMAP_GPIO_LED_POWER	4
 #define RBMAP_GPIO_POE_POWER	14
 #define RBMAP_GPIO_POE_STATUS	12
-#define RBMAP_GPIO_USB_POWER	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_USB_POWER)
+#define RBMAP_GPIO_USB_PWROFF	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_USB_POWER)
 #define RBMAP_GPIO_LED_LAN1	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_LED_LAN1)
 #define RBMAP_GPIO_LED_LAN2	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_LED_LAN2)
 #define RBMAP_GPIO_LED_POEO	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_LED_POEO)
@@ -478,10 +480,10 @@ static struct gpio_led rblhg_leds[] __initdata = {
 };
 
 /* RB w APG-5HacT2HnD (wAP AC) gpios*/
-#define RBWAPGSC_LED1		1
-#define RBWAPGSC_LED2		8
-#define RBWAPGSC_LED3		9
-#define RBWAPGSC_POWERLED		16
+#define RBWAPGSC_WIFI_LED_1		1
+#define RBWAPGSC_WIFI_LED_2		8
+#define RBWAPGSC_WIFI_LED_3		9
+#define RBWAPGSC_GPIO_LED_POWER		16
 #define RBWAPGSC_GPIO_BTN_RESET		1
 #define RBWAPGSC_GPIO_MDIO_MDC		12
 #define RBWAPGSC_GPIO_MDIO_DATA		11
@@ -489,13 +491,10 @@ static struct gpio_led rblhg_leds[] __initdata = {
 
 static struct gpio_led rbwapgsc_leds[] __initdata = {
 	{
-		.name = "rb:green:led1",
-		.gpio = RBWAPGSC_LED1,
+		.name = "rb:green:power",
+		.gpio = RBWAPGSC_GPIO_LED_POWER,
 		.active_low = 1,
-	},{
-		.name = "rb:blue:power",
-		.gpio = RBWAPGSC_POWERLED,
-		.active_low = 1,
+		.default_state = LEDS_GPIO_DEFSTATE_ON,
 	},
 };
 
@@ -523,7 +522,7 @@ static struct platform_device rbwapgsc_phy_device = {
 #define RB911L_GPIO_LED_ETH	20
 #define RB911L_GPIO_LED_POWER	11
 #define RB911L_GPIO_LED_USER	3
-#define RB911L_GPIO_PIN_HOLE	14 /* for reference */
+#define RB911L_GPIO_PIN_HOLE	14 /* for reference, active low */
 
 static struct gpio_led rb911l_leds[] __initdata = {
 	{
@@ -554,6 +553,7 @@ static struct gpio_led rb911l_leds[] __initdata = {
 		.name = "rb:green:power",
 		.gpio = RB911L_GPIO_LED_POWER,
 		.default_state = LEDS_GPIO_DEFSTATE_ON,
+		.active_low = 1,
 		.open_drain = 1,
 	}, {
 		.name = "rb:green:user",
@@ -593,6 +593,36 @@ static struct gpio_led rb931_leds[] __initdata = {
 		.active_low = 1,
 	},
 };
+
+/* RB wAP R-2nD (wAP R) gpios*/
+#define RBWAPR_GPIO_LED_USER	14
+#define RBWAPR_GPIO_LED1	12
+#define RBWAPR_GPIO_LED2	13
+#define RBWAPR_GPIO_LED3	3
+#define RBWAPR_GPIO_PCIE_PWROFF	15
+#define RBWAPR_GPIO_CONTROL	10
+#define RBWAPR_GPIO_BTN_RESET	16
+
+static struct gpio_led rbwapr_leds[] __initdata = {
+	{
+		.name = "rb:green:user",
+		.gpio = RBWAPR_GPIO_LED_USER,
+		.active_low = 0,
+	},{
+		.name = "rb:green:led1",
+		.gpio = RBWAPR_GPIO_LED1,
+		.active_low = 1,
+	},{
+		.name = "rb:green:led2",
+		.gpio = RBWAPR_GPIO_LED2,
+		.active_low = 1,
+	},{
+		.name = "rb:green:led3",
+		.gpio = RBWAPR_GPIO_LED3,
+		.active_low = 0,
+	},
+};
+
 
 static struct gen_74x164_chip_platform_data rbspi_ssr_data = {
 	.base = RBSPI_SSR_GPIO_BASE,
@@ -828,9 +858,9 @@ static void __init rbspi_952_750r2_setup(u32 flags)
 	rbspi_network_setup(flags, 1, 5, 6);
 
 	if (flags & RBSPI_HAS_USB)
-		gpio_request_one(RB952_GPIO_USB_POWER,
+		gpio_request_one(RB952_GPIO_USB_PWROFF, GPIOF_ACTIVE_LOW |
 				GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
-				"USB power");
+				"USB power off");
 
 	if (flags & RBSPI_HAS_POE)
 		gpio_request_one(RB952_GPIO_POE_POWER,
@@ -938,9 +968,9 @@ static void __init rb962_setup(void)
 	rbspi_wlan_init(1, 7);
 
 	if (flags & RBSPI_HAS_USB)
-		gpio_request_one(RB962_GPIO_USB_POWER,
+		gpio_request_one(RB962_GPIO_USB_PWROFF, GPIOF_ACTIVE_LOW |
 				GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
-				"USB power");
+				"USB power off");
 
 	/* PoE output GPIO is inverted, set GPIOF_ACTIVE_LOW for consistency */
 	if (flags & RBSPI_HAS_POE)
@@ -1047,12 +1077,11 @@ static void __init rbmap_setup(void)
 				GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,
 				"POE power");
 
-	/* USB power GPIO is inverted, set GPIOF_ACTIVE_LOW for consistency */
 	if (flags & RBSPI_HAS_USB)
-		gpio_request_one(RBMAP_GPIO_USB_POWER,
+		gpio_request_one(RBMAP_GPIO_USB_PWROFF,
 				GPIOF_OUT_INIT_HIGH | GPIOF_ACTIVE_LOW |
 					GPIOF_EXPORT_DIR_FIXED,
-				"USB power");
+				"USB power off");
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(rbmap_leds), rbmap_leds);
 
@@ -1171,6 +1200,37 @@ static void __init rb931_setup(void)
 					rb931_gpio_keys);
 }
 
+/*
+ * Init the wAP R hardware.
+ * The wAP R-2nD has a single ethernet port and a mini PCIe slot.
+ * The OEM source shows it has usb (used over PCIe for LTE devices),
+ * and the 'control' GPIO is assumed to be an output pin not tied to an LED.
+ */
+static void __init rbwapr_setup(void)
+{
+	u32 flags = RBSPI_HAS_WLAN0 | RBSPI_HAS_USB | RBSPI_HAS_PCI;
+
+	if (!rbspi_platform_setup())
+		return;
+
+	rbspi_peripherals_setup(flags);
+
+	/* GMAC1 is HW MAC, WLAN0 MAC is HW MAC + 1 */
+	rbspi_network_setup(flags, 0, 1, 0);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rbwapr_leds), rbwapr_leds);
+
+	gpio_request_one(RBWAPR_GPIO_PCIE_PWROFF, GPIOF_OUT_INIT_HIGH |
+			GPIOF_ACTIVE_LOW | GPIOF_EXPORT_DIR_FIXED,
+			"PCIE power off");
+
+	gpio_request_one(RBWAPR_GPIO_CONTROL, GPIOF_OUT_INIT_LOW |
+			GPIOF_ACTIVE_LOW | GPIOF_EXPORT_DIR_FIXED,
+			"control");
+
+	rbspi_register_reset_button(RBWAPR_GPIO_BTN_RESET);
+}
+
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAPL, "map-hb", rbmapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_941, "H951L", rbhapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_911L, "911L", rb911l_setup);
@@ -1179,7 +1239,7 @@ MIPS_MACHINE_NONAME(ATH79_MACH_RB_962, "962", rb962_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_750UPR2, "750-hb", rb750upr2_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_LHG5, "lhg", rblhg_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_WAP, "wap-hb", rbwap_setup);
-MIPS_MACHINE_NONAME(ATH79_MACH_RB_WAPR, "wap-lte", rbwap_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_WAPR, "wap-lte", rbwapr_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_CAP, "cap-hb", rbcap_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAP, "map2-hb", rbmap_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_WAPAC, "wapg-sc", rbwapgsc_setup);

@@ -40,7 +40,6 @@ define Package/libwolfssl
   CATEGORY:=Libraries
   TITLE:=wolfSSL library
   URL:=http://www.wolfssl.com/
-  MAINTAINER:=Alexandru Ardelean <ardeleanalex@gmail.com>
   MENU:=1
   PROVIDES:=libcyassl
 endef

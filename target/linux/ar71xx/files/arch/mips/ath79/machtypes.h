@@ -47,6 +47,7 @@ enum ath79_mach_type {
 	ATH79_MACH_ARCHER_C5,			/* TP-LINK Archer C5 board */
 	ATH79_MACH_ARCHER_C58_V1,		/* TP-LINK Archer C58 V1 board */
 	ATH79_MACH_ARCHER_C59_V1,		/* TP-LINK Archer C59 V1 board */
+	ATH79_MACH_ARCHER_C59_V2,		/* TP-LINK Archer C59 V2 board */
 	ATH79_MACH_ARCHER_C60_V1,		/* TP-LINK Archer C60 V1 board */
 	ATH79_MACH_ARCHER_C60_V2,		/* TP-LINK Archer C60 V2 board */
 	ATH79_MACH_ARCHER_C7,			/* TP-LINK Archer C7 board */
@@ -60,7 +61,7 @@ enum ath79_mach_type {
 	ATH79_MACH_BSB,				/* Smart Electronics Black Swift board */
 	ATH79_MACH_C55,				/* AirTight Networks C-55 */
 	ATH79_MACH_C60,				/* AirTight Networks C-60 */
-	ATH79_MACH_CAP324,			/* PowerCloud CAP324 */
+	ATH79_MACH_CAP324,			/* PowerCloud Systems CAP324 */
 	ATH79_MACH_CAP4200AG,			/* Senao CAP4200AG */
 	ATH79_MACH_CARAMBOLA2,			/* 8devices Carambola2 */
 	ATH79_MACH_CF_E316N_V2,			/* COMFAST CF-E316N v2 */
@@ -80,7 +81,7 @@ enum ath79_mach_type {
 	ATH79_MACH_CPE830,			/* YunCore CPE830 */
 	ATH79_MACH_CPE870,			/* YunCore CPE870 */
 	ATH79_MACH_CR3000,			/* PowerCloud CR3000 */
-	ATH79_MACH_CR5000,			/* PowerCloud CR5000 */
+	ATH79_MACH_CR5000,			/* PowerCloud Systems CR5000 */
 	ATH79_MACH_DAP_1330_A1,			/* D-Link DAP-1330 rev. A1 */
 	ATH79_MACH_DAP_2695_A1,			/* D-Link DAP-2695 rev. A1 */
 	ATH79_MACH_DB120,			/* Atheros DB120 reference board */
@@ -105,8 +106,11 @@ enum ath79_mach_type {
 	ATH79_MACH_DR531,			/* Wallys DR531 */
 	ATH79_MACH_DRAGINO2,			/* Dragino Version 2 */
 	ATH79_MACH_E1700AC_V2,			/* Qxwlan E1700AC v2 */
+	ATH79_MACH_E558_V2,			/* Qxwlan E558 v2 */
 	ATH79_MACH_E600G_V2,			/* Qxwlan E600G v2 */
 	ATH79_MACH_E600GAC_V2,			/* Qxwlan E600GAC v2 */
+	ATH79_MACH_E750A_V4,			/* Qxwlan E750A v4 */
+	ATH79_MACH_E750G_V8,			/* Qxwlan E750G v8 */
 	ATH79_MACH_EAP120,			/* TP-LINK EAP120 */
 	ATH79_MACH_EAP300V2,			/* EnGenius EAP300 v2 */
 	ATH79_MACH_EAP7660D,			/* Senao EAP7660D */

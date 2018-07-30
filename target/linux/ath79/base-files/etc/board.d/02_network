@@ -14,6 +14,7 @@ ath79_setup_interfaces()
 		;;
 	"avm,fritz300e"|\
 	"ocedo,raccoon"|\
+	"pcs,cap324"|\
 	"tplink,re450-v2"|\
 	"tplink,tl-mr10u"|\
 	"tplink,tl-wr703n"|\
@@ -43,8 +44,12 @@ ath79_setup_interfaces()
 		"0@eth1" "1:lan" "2:lan" "3:lan:3" "4:lan:4"
 		;;
 
+	"pcs,cr5000")
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
+		;;
+
 	"tplink,tl-archer-c7-v2")
-		ucidef_set_interfaces_lan_wan "eth1.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"0@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth0" "1:wan"
 		;;
@@ -78,7 +83,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
-
+	"tplink,tl-wr841n-v9")
+		ucidef_set_interface_wan "eth0"
+		ucidef_add_switch "switch0" \
+		"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
+		;;
 	"tplink,tl-wr1043nd-v1")
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "5@eth0"

@@ -9,13 +9,6 @@
 	compatible = "glinet,ar300m", "qca,qca9533";
 	model = "GL.iNet GL-AR300M";
 
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-output-names = "ref";
-		clock-frequency = <25000000>;
-	};
-
 	keys {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -92,41 +85,14 @@
 	status = "okay";
 };
 
-&pll {
-	clocks = <&extosc>;
-};
-
-&mdio0 {
-	status = "okay";
-
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-		phy-mode = "mii";
-	};
-};
-
-&mdio1 {
-	status = "okay";
-};
-
 &eth0 {
 	status = "okay";
-
 	mtd-mac-address = <&art 0x0>;
-	phy-handle = <&phy4>;
-	phy-mode = "mii";
+	phy-handle = <&swphy4>;
 };
 
 &eth1 {
-	status = "okay";
-
 	mtd-mac-address = <&art 0x6>;
-	phy-mode = "gmii";
-
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
 };
 
 &wmac {

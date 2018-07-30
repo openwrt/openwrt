@@ -212,6 +212,7 @@ platform_check_image() {
 	archer-c25-v1|\
 	archer-c58-v1|\
 	archer-c59-v1|\
+	archer-c59-v2|\
 	archer-c60-v1|\
 	archer-c60-v2|\
 	archer-c7-v4|\
@@ -250,8 +251,11 @@ platform_check_image() {
 	dr531|\
 	dragino2|\
 	e1700ac-v2|\
+	e558-v2|\
 	e600g-v2|\
 	e600gac-v2|\
+	e750a-v4|\
+	e750g-v8|\
 	ebr-2310-c1|\
 	ens202ext|\
 	epg5000|\

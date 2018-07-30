@@ -66,6 +66,25 @@ define Device/openmesh_om5p-ac-v2
 endef
 TARGET_DEVICES += openmesh_om5p-ac-v2
 
+define Device/pcs_cap324
+  ATH_SOC := ar9344
+  DEVICE_TITLE := PowerCloud Systems CAP324
+  IMAGE_SIZE := 16000k
+  IMAGES := sysupgrade.bin
+  SUPPORTED_DEVICES += cap324
+endef
+TARGET_DEVICES += pcs_cap324
+
+define Device/pcs_cr5000
+  ATH_SOC := ar9344
+  DEVICE_TITLE := PowerCloud Systems CR5000
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-core
+  IMAGE_SIZE := 7808k
+  IMAGES := sysupgrade.bin
+  SUPPORTED_DEVICES += cr5000
+endef
+TARGET_DEVICES += pcs_cr5000
+
 define Device/netgear_wndr3800
   ATH_SOC := ar7161
   DEVICE_TITLE := NETGEAR WNDR3800
