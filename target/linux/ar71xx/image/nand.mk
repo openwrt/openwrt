@@ -57,6 +57,22 @@ define Device/hiveap-121
 endef
 TARGET_DEVICES += hiveap-121
 
+define Device/gl-ar300m
+  DEVICE_TITLE := GL-AR300M (NAND)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-usb-ledtrig-usbport
+  BOARDNAME = GL-AR300M
+  CONSOLE = ttyS0,115200
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(reserved),64k(art)ro;spi0.1:2048k(kernel),-(ubi)
+  KERNEL_SIZE := 2048k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  VID_HDR_OFFSET := 512
+  IMAGES := factory.ubi sysupgrade.tar
+  IMAGE/sysupgrade.tar := sysupgrade-tar
+  IMAGE/factory.ubi := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+endef
+TARGET_DEVICES += gl-ar300m
+
 define Device/mr18
   DEVICE_TITLE := Meraki MR18
   DEVICE_PACKAGES := kmod-spi-gpio kmod-ath9k
