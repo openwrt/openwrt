@@ -169,6 +169,7 @@ ar71xx_setup_interfaces()
 	pb42|\
 	pb44|\
 	rb-951ui-2hnd|\
+	rb-952ui-5ac2nd|\
 	routerstation|\
 	tl-wr710n|\
 	tl-wr720n-v3|\
@@ -181,8 +182,7 @@ ar71xx_setup_interfaces()
 	rb-750-r2|\
 	rb-750p-pbr2|\
 	rb-750up-r2|\
-	rb-951ui-2nd|\
-	rb-952ui-5ac2nd)
+	rb-951ui-2nd)
 		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
