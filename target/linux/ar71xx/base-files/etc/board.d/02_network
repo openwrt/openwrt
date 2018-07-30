@@ -71,6 +71,7 @@ ar71xx_setup_interfaces()
 	aw-nr580|\
 	bullet-m|\
 	c-55|\
+	cap324|\
 	cap4200ag|\
 	cf-e380ac-v1|\
 	cf-e380ac-v2|\
@@ -274,7 +275,6 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:wan" "4:lan"
 		;;
-	cap324|\
 	rme-eg200)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;

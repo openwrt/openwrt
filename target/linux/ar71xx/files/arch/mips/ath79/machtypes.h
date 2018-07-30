@@ -60,7 +60,7 @@ enum ath79_mach_type {
 	ATH79_MACH_BSB,				/* Smart Electronics Black Swift board */
 	ATH79_MACH_C55,				/* AirTight Networks C-55 */
 	ATH79_MACH_C60,				/* AirTight Networks C-60 */
-	ATH79_MACH_CAP324,			/* PowerCloud CAP324 */
+	ATH79_MACH_CAP324,			/* PowerCloud Systems CAP324 */
 	ATH79_MACH_CAP4200AG,			/* Senao CAP4200AG */
 	ATH79_MACH_CARAMBOLA2,			/* 8devices Carambola2 */
 	ATH79_MACH_CF_E316N_V2,			/* COMFAST CF-E316N v2 */
@@ -80,7 +80,7 @@ enum ath79_mach_type {
 	ATH79_MACH_CPE830,			/* YunCore CPE830 */
 	ATH79_MACH_CPE870,			/* YunCore CPE870 */
 	ATH79_MACH_CR3000,			/* PowerCloud CR3000 */
-	ATH79_MACH_CR5000,			/* PowerCloud CR5000 */
+	ATH79_MACH_CR5000,			/* PowerCloud Systems CR5000 */
 	ATH79_MACH_DAP_1330_A1,			/* D-Link DAP-1330 rev. A1 */
 	ATH79_MACH_DAP_2695_A1,			/* D-Link DAP-2695 rev. A1 */
 	ATH79_MACH_DB120,			/* Atheros DB120 reference board */
