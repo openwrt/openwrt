@@ -1,0 +1,26 @@
+From 4d9d73b718e0938c21e3fea09e90b3e0645bdc81 Mon Sep 17 00:00:00 2001
+From: Eneas U de Queiroz <cote2004-github@yahoo.com>
+Date: Fri, 25 May 2018 11:59:48 -0300
+Subject: [PATCH] Makefile.am: omit building sample and test
+
+Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
+---
+ Makefile.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 75e376dc..00ffa6ba 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -127,7 +127,7 @@ else
+ noinst_LTLIBRARIES =  $(LIBEVENT_LIBS_LA)
+ endif
+ 
+-SUBDIRS = . include sample test
++SUBDIRS = . include
+ 
+ if BUILD_WIN32
+ 
+-- 
+2.16.1
+
