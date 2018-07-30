@@ -198,6 +198,21 @@ hostapd_bss_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 	return 0;
 }
 
+static int
+hostapd_bss_get_features(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u8(&b, "ht_supported", ht_supported(hapd->iface->hw_features));
+	blobmsg_add_u8(&b, "vht_supported", vht_supported(hapd->iface->hw_features));
+	ubus_send_reply(ctx, req, b.head);
+
+	return 0;
+}
+
 enum {
 	NOTIFY_RESPONSE,
 	__NOTIFY_MAX
@@ -915,6 +930,7 @@ static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD_NOARG("wps_start", hostapd_bss_wps_start),
 	UBUS_METHOD_NOARG("wps_cancel", hostapd_bss_wps_cancel),
 	UBUS_METHOD_NOARG("update_beacon", hostapd_bss_update_beacon),
+	UBUS_METHOD_NOARG("get_features", hostapd_bss_get_features),
 #ifdef NEED_AP_MLME
 	UBUS_METHOD("switch_chan", hostapd_switch_chan, csa_policy),
 #endif
