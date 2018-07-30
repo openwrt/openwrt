@@ -15,7 +15,7 @@
 		led-status = &system;
 	};
 
-	leds {
+	gpio_leds: leds {
 		compatible = "gpio-leds";
 
 		system: system {
@@ -40,7 +40,7 @@
 			linux,default-trigger = "usbport";
 		};
 
-		wlan2g {
+		led_wlan2g: wlan2g {
 			label = "tp-link:green:wlan2g";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			default-state = "off";
@@ -52,16 +52,9 @@
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
-
-		wlan5g {
-			label = "tp-link:green:wlan5g";
-			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
-			default-state = "off";
-			linux,default-trigger = "phy0tpt";
-		};
 	};
 
-	keys {
+	gpio_keys: keys {
 		compatible = "gpio-keys";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -70,12 +63,6 @@
 			label = "Reset button";
 			linux,code = <KEY_RESTART>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
-			debounce-interval = <60>;
-		};
-
-		rfkill: wifi {
-			linux,code = <KEY_RFKILL>;
-			linux,input-type = <EV_SW>;
 			debounce-interval = <60>;
 		};
 	};
@@ -148,27 +135,10 @@
 		reg = <0>;
 		spi-max-frequency = <25000000>;
 
-		partitions {
+		mtdparts: partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-
-			uboot: partition@0 {
-				label = "u-boot";
-				reg = <0x000000 0x020000>;
-				read-only;
-			};
-
-			partition@20000 {
-				label = "firmware";
-				reg = <0x020000 0xfd0000>;
-			};
-
-			art: partition@ff0000 {
-				label = "art";
-				reg = <0xff0000 0x010000>;
-				read-only;
-			};
 		};
 	};
 };
@@ -192,27 +162,23 @@
 	};
 };
 
-&mdio1 {
-	status = "okay";
-
-	phy1: ethernet-phy@1 {
-		reg = <1>;
-	};
-};
-
 &eth0 {
 	status = "okay";
 
 	mtd-mac-address = <&uboot 0x1fc00>;
 	mtd-mac-address-increment = <1>;
 	phy-handle = <&phy0>;
+
+	gmac-config {
+		device = <&gmac>;
+		rgmii-enabled = <1>;
+	};
 };
 
 &eth1 {
 	status = "okay";
 
 	mtd-mac-address = <&uboot 0x1fc00>;
-	phy-handle = <&phy1>;
 
 	fixed-link {
 		speed = <1000>;

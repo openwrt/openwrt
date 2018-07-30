@@ -8,6 +8,10 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -20,9 +24,11 @@
 		};
 	};
 
-	ref: ref {
+	extosc: ref {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
+		clock-output-names = "ref";
+		clock-frequency = <25000000>;
 	};
 
 	ahb {
@@ -90,9 +96,7 @@
 				#pinctrl-cells = <2>;
 
 				jtag_disable_pins: pinmux_jtag_disable_pins {
-					pinctrl-single,bits = <
-						0x40 0x2 0x2
-						>;
+					pinctrl-single,bits = <0x40 0x2 0x2>;
 				};
 			};
 
@@ -101,9 +105,8 @@
 				reg = <0x18050000 0x48>;
 
 				#clock-cells = <1>;
-				clocks = <&ref>;
-				clock-names = "ref";
 				clock-output-names = "cpu", "ddr", "ahb";
+				clocks = <&extosc>;
 			};
 
 			wdt: wdt@18060008 {
@@ -124,15 +127,20 @@
 				#reset-cells = <1>;
 
 				intc2: interrupt-controller@2 {
-					compatible = "qcom,qca9556-intc";
+					compatible = "qca,ar9340-intc";
 
+					interrupt-parent = <&cpuintc>;
 					interrupts = <2>;
 
 					interrupt-controller;
 					#interrupt-cells = <1>;
 
-					qcom,pending-bits = <0x1f0>,	/* pcie rc1 */
-							    <0xf>;	/* wmac */
+					qca,int-status-addr = <0xac>;
+					qca,pending-bits = <0xf>,       /* wmac */
+							<0x1f0>;        /* pcie rc1 */
+
+					qca,ddr-wb-channel-interrupts = <0>, <1>;
+					qca,ddr-wb-channels = <&ddr_ctrl 4>, <&ddr_ctrl 3>;
 				};
 			};
 
@@ -148,7 +156,7 @@
 				ranges = <0x2000000 0 0x10000000 0x10000000 0 0x04000000	/* pci memory */
 					  0x1000000 0 0x00000000 0x0000000 0 0x000001>;		/* io space */
 				interrupt-parent = <&intc2>;
-				interrupts = <0>;
+				interrupts = <1>;
 
 				interrupt-controller;
 				#interrupt-cells = <1>;
@@ -158,12 +166,17 @@
 				status = "disabled";
 			};
 
-			wmac: gmac@18100000 {
+			gmac: gmac@18070000 {
+				compatible = "qca,ar9330-gmac";
+				reg = <0x18070000 0x4>;
+			};
+
+			wmac: wmac@18100000 {
 				compatible = "qca,qca9530-wmac";
 				reg = <0x18100000 0x230000>;
 
-				interrupt-parent = <&cpuintc>;
-				interrupts = <2>;
+				interrupt-parent = <&intc2>;
+				interrupts = <0>;
 
 				status = "disabled";
 			};
@@ -204,9 +217,10 @@
 
 };
 
-&mdio0 {
-	resets = <&rst 22>;
-	reset-names = "mdio";
+&cpuintc {
+	qca,ddr-wb-channel-interrupts = <3>, <4>, <5>;
+	qca,ddr-wb-channels = <&ddr_ctrl 2>, <&ddr_ctrl 0>,
+						<&ddr_ctrl 1>;
 };
 
 &eth0 {
@@ -219,17 +233,53 @@
 
 	reset-names = "mac";
 	resets = <&rst 9>;
+
+	phy-mode = "mii";
 };
 
 
 &mdio1 {
+	status = "okay";
 	resets = <&rst 23>;
 	reset-names = "mdio";
 	builtin-switch;
+
+	builtin_switch: switch0@1f {
+		compatible = "qca,ar8229-builtin";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg = <0x1f>;
+		resets = <&rst 8>;
+		reset-names = "switch";
+		phy-mode = "gmii";
+		phy4-mii-enable;
+
+		mdio-bus {
+			swphy0: ethernet-phy@0 {
+				reg = <0>;
+				phy-mode = "mii";
+			};
+
+			swphy4: ethernet-phy@4 {
+				reg = <4>;
+				phy-mode = "mii";
+			};
+		};
+	};
 };
 
 &eth1 {
-	compatible = "qca,qca9530-eth", "syscon";
+	status = "okay";
+
+	compatible = "qca,qca9530-eth", "syscon", "simple-mfd";
 	resets = <&rst 13>;
 	reset-names = "mac";
+
+	phy-mode = "gmii";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };

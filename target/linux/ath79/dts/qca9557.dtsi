@@ -220,6 +220,11 @@
 				status = "disabled";
 			};
 
+			gmac: gmac@18070000 {
+				compatible = "qca,qca9550-gmac";
+				reg = <0x18070000 0x14>;
+			};
+
 			wmac: wmac@18100000 {
 				compatible = "qca,qca9550-wmac";
 				reg = <0x18100000 0x10000>;
@@ -288,7 +293,7 @@
 };
 
 &eth0 {
-	compatible = "qca,qca9550-eth", "syscon";
+	compatible = "qca,qca9550-eth", "syscon", "simple-mfd";
 
 	pll-data = <0x82000101 0x80000101 0x80001313>;
 	phy-mode = "rgmii";
@@ -303,7 +308,7 @@
 };
 
 &eth1 {
-	compatible = "qca,qca9550-eth", "syscon";
+	compatible = "qca,qca9550-eth", "syscon", "simple-mfd";
 
 	pll-data = <0x82000101 0x80000101 0x80001313>;
 	phy-mode = "sgmii";
