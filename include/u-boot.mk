@@ -61,6 +61,7 @@ define Build/U-Boot/Target
       DEPENDS += @$(TARGET_DEP)
       ifneq ($(BUILD_DEVICES),)
         DEFAULT := y if ($(TARGET_DEP)_Default \
+		|| TARGET_MULTI_PROFILE \
 		$(patsubst %,|| $(TARGET_DEP)_DEVICE_%,$(BUILD_DEVICES)) \
 		$(patsubst %,|| $(patsubst TARGET_%,TARGET_DEVICE_%,$(TARGET_DEP))_DEVICE_%,$(BUILD_DEVICES)))
       endif
