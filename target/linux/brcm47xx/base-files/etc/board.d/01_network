@@ -4,7 +4,7 @@
 . /lib/functions/system.sh
 . /lib/functions/uci-defaults.sh
 
-detect_by_vlanports() {
+configure_by_vlanports() {
 	local vlan0ports="$(nvram get vlan0ports)"
 	local vlan1ports="$(nvram get vlan1ports)"
 	local vlan2ports="$(nvram get vlan2ports)"
@@ -44,7 +44,7 @@ detect_by_vlanports() {
 	fi
 }
 
-detect_by_boardnum() {
+configure_by_boardnum() {
 	local boardnum="$1"
 
 	case "$boardnum" in
@@ -56,12 +56,12 @@ detect_by_boardnum() {
 
 	# Generic detection fallback
 	*)
-		detect_by_vlanports
+		configure_by_vlanports
 		;;
 	esac
 }
 
-detect_by_boardtype() {
+configure_by_boardtype() {
 	local boardtype="$1"
 	local boardnum="$2"
 
@@ -111,12 +111,12 @@ detect_by_boardtype() {
 		;;
 
 	*)
-		detect_by_boardnum "$boardnum"
+		configure_by_boardnum "$boardnum"
 		;;
 	esac
 }
 
-detect_by_model() {
+configure_by_model() {
 	local model="$1"
 	local boardtype="$2"
 	local boardnum="$3"
@@ -172,21 +172,24 @@ detect_by_model() {
 		;;
 
 	*)
-		detect_by_boardtype "$boardtype" "$boardnum"
+		configure_by_boardtype "$boardtype" "$boardnum"
 		;;
 	esac
 }
 
 
-model="$(board_name)"
-boardtype="$(nvram get boardtype)"
-boardnum="$(nvram get boardnum)"
+model="$(cat /tmp/sysinfo/model)"
+boardtype="$(board_name)"
+
+case "$boardtype" in
+	*:*)
+		boardnum="${boardtype##*:}"
+		boardtype="${boardtype%:*}"
+	;;
+esac
 
 board_config_update
 
-ucidef_set_board_id "$boardtype${boardnum:+:$boardnum}"
-ucidef_set_model_name "$model"
-
-detect_by_model "$model" "$boardtype" "$boardnum"
+configure_by_model "$model" "$boardtype" "$boardnum"
 
 board_config_flush
