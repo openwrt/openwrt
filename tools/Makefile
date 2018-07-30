@@ -28,7 +28,12 @@ tools-y += firmware-utils patch-image quilt padjffs2
 tools-y += mm-macros missing-macros cmake scons bc findutils gengetopt patchelf
 tools-y += mtools dosfstools libressl
 tools-$(CONFIG_TARGET_orion_generic) += wrt350nv2-builder upslug2
-tools-$(CONFIG_TARGET_x86) += qemu
+ifeq ($(CONFIG_TARGET_armserver),y)
+	tools-y += qemu
+endif
+ifeq ($(CONFIG_TARGET_x86),y)
+	tools-y += qemu
+endif
 tools-$(CONFIG_TARGET_mxs) += elftosb sdimage
 tools-$(CONFIG_TARGET_ar71xx) += lzma-old
 tools-$(CONFIG_TARGET_ar71xx)$(CONFIG_TARGET_ath79) += squashfs
@@ -38,6 +43,7 @@ tools-$(BUILD_B43_TOOLS) += b43-tools
 tools-$(BUILD_ISL) += isl
 tools-$(CONFIG_USE_SPARSE) += sparse
 tools-$(CONFIG_TARGET_apm821xx) += genext2fs
+tools-$(CONFIG_TARGET_armserver) += gptfdisk
 
 # builddir dependencies
 $(curdir)/bison/compile := $(curdir)/flex/compile
