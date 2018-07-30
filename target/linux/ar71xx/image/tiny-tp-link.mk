@@ -203,6 +203,15 @@ define Device/tl-wa801nd-v3
 endef
 TARGET_DEVICES += tl-wa801nd-v3
 
+define Device/tl-wa801nd-v4
+    $(Device/tplink-4mlzma)
+	DEVICE_TITLE := TP-LINK TL-WA801N/ND v4
+    BOARDNAME := TL-WA801ND-v4
+    DEVICE_PROFILE := TLWA801
+    TPLINK_HWID := 0x08010004
+endef
+TARGET_DEVICES += tl-wa801nd-v4
+
 define Device/tl-wa830re-v1
   $(Device/tplink-4m)
   DEVICE_TITLE := TP-LINK TL-WA830RE v1
