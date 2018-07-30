@@ -1,0 +1,41 @@
+From 0e89b2fec748177899c1f9ebfbe87714ffa248eb Mon Sep 17 00:00:00 2001
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Mon, 26 Feb 2018 12:46:52 -0800
+Subject: i2c: piix4: Use usleep_range()
+
+The piix4 i2c driver is extremely slow. Replacing msleep()
+with usleep_range() increases its speed substantially.
+Use sleep ranges similar to those used in the i2c-801 driver
+to keep things simple.
+
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+Reviewed-by: Jean Delvare <jdelvare@suse.de>
+Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
+---
+ drivers/i2c/busses/i2c-piix4.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-piix4.c b/drivers/i2c/busses/i2c-piix4.c
+index 462948e..4c1f6aa 100644
+--- a/drivers/i2c/busses/i2c-piix4.c
++++ b/drivers/i2c/busses/i2c-piix4.c
+@@ -462,13 +462,13 @@ static int piix4_transaction(struct i2c_adapter *piix4_adapter)
+ 
+ 	/* We will always wait for a fraction of a second! (See PIIX4 docs errata) */
+ 	if (srvrworks_csb5_delay) /* Extra delay for SERVERWORKS_CSB5 */
+-		msleep(2);
++		usleep_range(2000, 2100);
+ 	else
+-		msleep(1);
++		usleep_range(250, 500);
+ 
+ 	while ((++timeout < MAX_TIMEOUT) &&
+ 	       ((temp = inb_p(SMBHSTSTS)) & 0x01))
+-		msleep(1);
++		usleep_range(250, 500);
+ 
+ 	/* If the SMBus is still busy, we give up */
+ 	if (timeout == MAX_TIMEOUT) {
+-- 
+cgit v1.1
+
