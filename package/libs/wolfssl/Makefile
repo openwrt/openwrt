@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wolfssl
 PKG_VERSION:=3.14.4
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).zip
 # PKG_SOURCE_URL:=https://www.wolfssl.com/
@@ -23,14 +23,83 @@ PKG_BUILD_PARALLEL:=1
 PKG_LICENSE:=GPL-2.0+
 PKG_CPE_ID:=cpe:/a:yassl:cyassl
 
+define symdep
+$(firstword $(subst :, ,$(1)))
+endef
+
+define symdep_upper
+$(call toupper,$(call symdep,$(1)))
+endef
+
+define confsym
+$(firstword $(subst $(comma), ,$(lastword $(subst :, ,$(1)))))
+endef
+
+define confsym_upper
+$(call toupper,$(call confsym,$(1)))
+endef
+
+# Define symbols here that will be grouped later in menuconfig
+WOLFSSL_GROUP_DEP_SYMBOLS:= \
+	aes asn ecc asm coding rsa tls13
+
+# Note:
+#   sym1|sym2|...|synN means that `sym1` enables/disables all sym2..symN symbols
+#   sym1:sym2 means that `sym2` depdends on `sym1`
+WOLFSSL_DEFAULT_ON_OPTS:= \
+	wpas,sha512,fortress,fastmath \
+	ocsp,ocspstapling,ocspstapling2 \
+	aes \
+	aes:aesgcm \
+	asn \
+	asn:ecc \
+	ecc:eccshamir \
+	ecc:supportedcurves \
+	rsa \
+	asm rng harden sha512 errorstrings oldtls memory dh coding \
+	md5 sha chacha poly1305 hashdrbg filesystem inline extended-master \
+	oldnames asyncthreads
+
+WOLFSSL_DEFAULT_OFF_OPTS:= \
+	aes:aesccm \
+	aes:aesctr \
+	aes:aescfb \
+	aes:aeskeywrap \
+	asm:armasm \
+	asm:intelasm \
+	asm:intelrand \
+	asm:aesni \
+	asm:fast-rsa \
+	coding:base16 \
+	coding:base64encode \
+	crl \
+	crl:crl-monitor \
+	ecc:ecccustcurves \
+	ecc:curve25519 \
+	ecc:ed25519 \
+	ecc:fpecc \
+	ecc:eccencrypt \
+	rsa:rsapss \
+	tls13 \
+	tls13:tls13-draft18 \
+	tls13:tls13-draft22 \
+	tls13:tls13-draft23 \
+	distro 32bit singlethreaded dtls postauth hrrcookie sctp mcast openssh \
+	nginx haproxy bump sniffer signal maxstrength leanpsk leantls \
+	lowresource bigcache hugecache smallcache savesession savecert writedup \
+	atomicuser pkcallbacks xilinx camellia md2 nullcipher ripemd blake2 \
+	sessioncerts keygen certgen certreq certext sep hkdf x963kdf dsa \
+	compkey psk tlsv10 sslv3 trackmemory des3 idea arc4 cmac xts \
+	webserver fips hc128 rabbit sha224 sha3 qsh sni maxfragment alpn \
+	truncatedhmac renegotiation-indication secure-renegotiation \
+	session-ticket tlsx earlydata pkcs7 ssh scep srp indef smallstack \
+	valgrind testcert iopool certservice jni lighty md4 pwdbased script \
+	cryptonly fastmath fasthugemath crypttests sp sp-math staticmemory mcapi \
+	asynccrypt sessionexport 
+
 PKG_CONFIG_DEPENDS:=\
-	CONFIG_WOLFSSL_HAS_AES_CCM CONFIG_WOLFSSL_HAS_AES_GCM \
-	CONFIG_WOLFSSL_HAS_ARC4 CONFIG_WOLFSSL_HAS_CHACHA \
-	CONFIG_WOLFSSL_HAS_DES3 CONFIG_WOLFSSL_HAS_DH CONFIG_WOLFSSL_HAS_DTLS \
-	CONFIG_WOLFSSL_HAS_ECC CONFIG_WOLFSSL_HAS_ECC25519 \
-	CONFIG_WOLFSSL_HAS_OCSP CONFIG_WOLFSSL_HAS_POLY_1305 \
-	CONFIG_WOLFSSL_HAS_PSK CONFIG_WOLFSSL_HAS_SESSION_TICKET \
-	CONFIG_WOLFSSL_HAS_WPAS
+	$(foreach o,$(subst $(comma), ,$(WOLFSSL_DEFAULT_ON_OPTS)$(WOLFSSL_DEFAULT_OFF_OPTS)), \
+		CONFIG_WOLFSSL_HAS_$(call confsym_upper,$(o)))
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -50,109 +119,68 @@ wolfSSL (formerly CyaSSL) is an SSL library optimized for small
 footprint, both on disk and for memory use.
 endef
 
+define boolMenuConfig
+config WOLFSSL_HAS_$(call confsym_upper,$(1))
+	bool "Include $(call confsym_upper,$(1)) support"
+	default $(2)
+	$(if $(findstring :,$(1)),depends on WOLFSSL_HAS_$(call symdep_upper,$(1))$(newline))
+
+endef
+
+define boolMenuConfigGroup
+$(if $(findstring $(call symdep,$(2)),$(1)),$(call boolMenuConfig,$(2),$(3)))
+endef
+
+define boolMenuConfigSingle
+$(if $(findstring $(call symdep,$(1)),$(WOLFSSL_GROUP_DEP_SYMBOLS)),,$(call boolMenuConfig,$(1),$(2)))
+endef
+
 define Package/libwolfssl/config
-	source "$(SOURCE)/Config.in"
+if PACKAGE_libwolfssl
+# Grouped options first
+$(foreach group,$(WOLFSSL_GROUP_DEP_SYMBOLS),\
+$(foreach opt,$(subst $(comma), ,$(WOLFSSL_DEFAULT_ON_OPTS)),$(call boolMenuConfigGroup,$(group),$(opt),y)) \
+$(foreach opt,$(subst $(comma), ,$(WOLFSSL_DEFAULT_OFF_OPTS)),$(call boolMenuConfigGroup,$(group),$(opt),n)))
+# Non-grouped options
+$(foreach opt,$(subst $(comma), ,$(WOLFSSL_DEFAULT_ON_OPTS)),$(call boolMenuConfigSingle,$(opt),y))\
+$(foreach opt,$(subst $(comma), ,$(WOLFSSL_DEFAULT_OFF_OPTS)),$(call boolMenuConfigSingle,$(opt),n))
+endif
 endef
 
 TARGET_CFLAGS += $(FPIC)
 
 # --enable-stunnel needed for OpenSSL API compatibility bits
+# --disable-opensslcoexist - requires that OpenSSL exist to build
+# --disable-optflags - we want to use OpenWrt's CFLAGS
+# --disable-stacksize - stack size info on examples (we disable examples)
+# --disable-selftest - requires CAVP selftest license
 CONFIGURE_ARGS += \
 	--enable-opensslextra \
-	--enable-sni \
 	--enable-stunnel \
-	--disable-examples \
-	--disable-leanpsk \
-	--disable-leantls \
+	--disable-opensslcoexist \
+	--disable-optflags \
+	--disable-stacksize \
+	--disable-selftest \
+	--disable-examples
 
 ifeq ($(CONFIG_IPV6),y)
 CONFIGURE_ARGS += \
         --enable-ipv6
-endif
-
-ifeq ($(CONFIG_WOLFSSL_HAS_AES_CCM),y)
-CONFIGURE_ARGS += \
-	--enable-aesccm
-endif
-
-ifneq ($(CONFIG_WOLFSSL_HAS_AES_GCM),y)
-CONFIGURE_ARGS += \
-	--disable-aesgcm
-endif
-
-ifneq ($(CONFIG_WOLFSSL_HAS_CHACHA),y)
-CONFIGURE_ARGS += \
-	--disable-chacha
-endif
-
-ifeq ($(CONFIG_WOLFSSL_HAS_ECC),y)
-CONFIGURE_ARGS += \
-	--enable-ecc \
-	--enable-supportedcurves
-endif
-
-ifeq ($(CONFIG_WOLFSSL_HAS_DH),y)
-CONFIGURE_ARGS += \
-	--enable-dh
-endif
-
-ifneq ($(CONFIG_WOLFSSL_HAS_ARC4),y)
-CONFIGURE_ARGS += \
-	--disable-arc4
 else
 CONFIGURE_ARGS += \
-	--enable-arc4
+	--disable-ipv6
 endif
 
-ifneq ($(CONFIG_WOLFSSL_HAS_DES3),y)
-CONFIGURE_ARGS += \
-	--disable-des3
+define configureArgs
+ifeq ($(CONFIG_WOLFSSL_HAS_$(call confsym_upper,$(1))),y)
+CONFIGURE_ARGS += --enable-$(call confsym,$(1))
 else
-CONFIGURE_ARGS += \
-	--enable-des3
+CONFIGURE_ARGS += --disable-$(call confsym,$(1))
 endif
+endef
 
-ifeq ($(CONFIG_WOLFSSL_HAS_PSK),y)
-CONFIGURE_ARGS += \
-	--enable-psk
-endif
-
-ifeq ($(CONFIG_WOLFSSL_HAS_SESSION_TICKET),y)
-CONFIGURE_ARGS += \
-	--enable-session-ticket
-endif
-
-ifeq ($(CONFIG_WOLFSSL_HAS_DTLS),y)
-CONFIGURE_ARGS += \
-	--enable-dtls
-endif
-
-ifeq ($(CONFIG_WOLFSSL_HAS_OCSP),y)
-CONFIGURE_ARGS += \
-	--enable-ocsp --enable-ocspstapling --enable-ocspstapling2
-endif
-
-ifeq ($(CONFIG_WOLFSSL_HAS_WPAS),y)
-CONFIGURE_ARGS += \
-	--enable-wpas --enable-sha512 --enable-fortress --enable-fastmath
-endif
-
-ifeq ($(CONFIG_WOLFSSL_HAS_ECC25519),y)
-CONFIGURE_ARGS += \
-	--enable-curve25519
-endif
-
-ifneq ($(CONFIG_WOLFSSL_HAS_POLY1305),y)
-CONFIGURE_ARGS += \
-	--enable-poly1305
-endif
-
-#ifneq ($(CONFIG_TARGET_x86),)
-#	CONFIGURE_ARGS += --enable-intelasm
-#endif
-#ifneq ($(CONFIG_TARGET_x86_64),)
-#	CONFIGURE_ARGS += --enable-intelasm
-#endif
+$(foreach opt,$(subst $(comma), ,$(WOLFSSL_DEFAULT_ON_OPTS)$(WOLFSSL_DEFAULT_OFF_OPTS)), \
+	$(eval $(call configureArgs,$(opt))))
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include $(1)/usr/lib/pkgconfig
