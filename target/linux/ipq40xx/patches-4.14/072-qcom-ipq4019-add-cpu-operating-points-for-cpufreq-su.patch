@@ -12,10 +12,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
  arch/arm/boot/dts/qcom-ipq4019.dtsi | 34 ++++++++++++++++++++++++++--------
  1 file changed, 26 insertions(+), 8 deletions(-)
 
-Index: linux-4.14.54/arch/arm/boot/dts/qcom-ipq4019.dtsi
-===================================================================
---- linux-4.14.54.orig/arch/arm/boot/dts/qcom-ipq4019.dtsi
-+++ linux-4.14.54/arch/arm/boot/dts/qcom-ipq4019.dtsi
+--- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
 @@ -41,14 +41,7 @@
  			reg = <0x0>;
  			clocks = <&gcc GCC_APPS_CLK_SRC>;
@@ -48,14 +46,18 @@ Index: linux-4.14.54/arch/arm/boot/dts/qcom-ipq4019.dtsi
  		};
  
  		cpu@3 {
-@@ -85,6 +80,29 @@
+@@ -85,6 +80,7 @@
  			reg = <0x3>;
  			clocks = <&gcc GCC_APPS_CLK_SRC>;
  			clock-frequency = <0>;
 +			operating-points-v2 = <&cpu0_opp_table>;
-+		};
-+	};
-+
+ 		};
+ 
+ 		L2: l2-cache {
+@@ -94,6 +90,28 @@
+ 		};
+ 	};
+ 
 +	cpu0_opp_table: opp_table0 {
 +		compatible = "operating-points-v2";
 +		opp-shared;
@@ -75,6 +77,9 @@ Index: linux-4.14.54/arch/arm/boot/dts/qcom-ipq4019.dtsi
 +		opp-716000000 {
 +			opp-hz = /bits/ 64 <716000000>;
 +			clock-latency-ns = <256000>;
- 		};
- 
- 		L2: l2-cache {
++		};
++	};
++
+ 	pmu {
+ 		compatible = "arm,cortex-a7-pmu";
+ 		interrupts = <GIC_PPI 7 (GIC_CPU_MASK_SIMPLE(4) |
