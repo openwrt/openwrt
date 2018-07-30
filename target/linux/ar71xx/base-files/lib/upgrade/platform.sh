@@ -428,6 +428,7 @@ platform_check_image() {
 	tl-mr11u|\
 	tl-mr12u|\
 	tl-mr13u|\
+	tl-mr22u|\
 	tl-mr3020|\
 	tl-mr3040|\
 	tl-mr3040-v2|\
@@ -493,7 +494,7 @@ platform_check_image() {
 		local magic_ver="0100"
 
 		case "$board" in
-		tl-wdr6500-v2)
+		tl-mr22u | tl-wdr6500-v2)
 			magic_ver="0200"
 			;;
 		esac

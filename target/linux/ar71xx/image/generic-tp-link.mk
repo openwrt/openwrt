@@ -245,6 +245,17 @@ define Device/re450-v1
 endef
 TARGET_DEVICES += re450-v1
 
+define Device/tl-mr22u-v1
+    $(Device/tplink-8mlzma)
+    DEVICE_TITLE := TP-LINK TL-MR22U v1
+    BOARDNAME := TL-MR22U
+    DEVICE_PROFILE := TLMR22U
+    TPLINK_HWID := 0x00220101
+    CONSOLE := ttyATH0,115200
+    TPLINK_HEADER_VERSION := 2
+endef
+TARGET_DEVICES += tl-mr22u-v1
+
 define Device/tl-mr6400-v1
   $(Device/tplink-8mlzma)
   DEVICE_TITLE := TP-LINK TL-MR6400 v1

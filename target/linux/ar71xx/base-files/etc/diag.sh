@@ -85,6 +85,7 @@ get_status_led() {
 	tl-mr10u|\
 	tl-mr12u|\
 	tl-mr13u|\
+	tl-mr22u|\
 	tl-wdr4300|\
 	tl-wdr4900-v2|\
 	tl-wr703n|\
