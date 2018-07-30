@@ -117,6 +117,8 @@ ifeq ($(CONFIG_NAND_SUPPORT),)
   endef
 endif
 
+ROOT_PASSWORD:=$(call qstrip,$(CONFIG_TARGET_ROOT_PASSWORD))
+
 define Package/base-files/install
 	$(CP) ./files/* $(1)/
 	$(Package/base-files/install-key)
@@ -170,6 +172,10 @@ define Package/base-files/install
 	$(LN) tmp $(1)/var
 	mkdir -p $(1)/etc
 	$(LN) /tmp/resolv.conf /tmp/TZ /tmp/localtime $(1)/etc/
+
+	if [ -n '$(call dollar2,$(ROOT_PASSWORD))' ]; then \
+		$(SED) 's/^root::0:/root:$(call dollar2,$(ROOT_PASSWORD))::/' $(1)/etc/shadow; \
+	fi
 
 	chmod 0600 $(1)/etc/shadow
 	chmod 1777 $(1)/tmp
