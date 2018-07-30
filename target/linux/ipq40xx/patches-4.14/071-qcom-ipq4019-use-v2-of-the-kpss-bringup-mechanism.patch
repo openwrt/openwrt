@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  arch/arm/boot/dts/qcom-ipq4019.dtsi | 25 +++++++++++++++++--------
  1 file changed, 17 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/qcom-ipq4019.dtsi b/arch/arm/boot/dts/qcom-ipq4019.dtsi
-index 93647db5d90b..06434fd02d40 100644
 --- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
-@@ -52,7 +52,8 @@
+@@ -34,7 +34,8 @@
  		cpu@0 {
  			device_type = "cpu";
  			compatible = "arm,cortex-a7";
@@ -27,7 +25,7 @@ index 93647db5d90b..06434fd02d40 100644
  			qcom,acc = <&acc0>;
  			qcom,saw = <&saw0>;
  			reg = <0x0>;
-@@ -71,7 +72,8 @@
+@@ -53,7 +54,8 @@
  		cpu@1 {
  			device_type = "cpu";
  			compatible = "arm,cortex-a7";
@@ -37,7 +35,7 @@ index 93647db5d90b..06434fd02d40 100644
  			qcom,acc = <&acc1>;
  			qcom,saw = <&saw1>;
  			reg = <0x1>;
-@@ -82,7 +84,8 @@
+@@ -64,7 +66,8 @@
  		cpu@2 {
  			device_type = "cpu";
  			compatible = "arm,cortex-a7";
@@ -47,7 +45,7 @@ index 93647db5d90b..06434fd02d40 100644
  			qcom,acc = <&acc2>;
  			qcom,saw = <&saw2>;
  			reg = <0x2>;
-@@ -93,13 +96,19 @@
+@@ -75,13 +78,20 @@
  		cpu@3 {
  			device_type = "cpu";
  			compatible = "arm,cortex-a7";
@@ -64,11 +62,12 @@ index 93647db5d90b..06434fd02d40 100644
 +		L2: l2-cache {
 +			compatible = "cache";
 +			cache-level = <2>;
++			qcom,saw = <&saw_l2>;
 +		};
  	};
  
  	pmu {
-@@ -268,22 +277,22 @@
+@@ -213,22 +223,22 @@
  		};
  
                  acc0: clock-controller@b088000 {
@@ -95,6 +94,16 @@ index 93647db5d90b..06434fd02d40 100644
                          reg = <0x0b0b8000 0x1000>, <0xb008000 0x1000>;
                  };
  
--- 
-2.11.0
-
+@@ -256,6 +266,12 @@
+                         regulator;
+                 };
+ 
++		saw_l2: regulator@b012000 {
++			compatible = "qcom,saw2";
++			reg = <0xb012000 0x1000>;
++			regulator;
++		};
++
+ 		serial@78af000 {
+ 			compatible = "qcom,msm-uartdm-v1.4", "qcom,msm-uartdm";
+ 			reg = <0x78af000 0x200>;
