@@ -175,15 +175,19 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	ar71xx_pci_reset();
  
  	/* setup COMMAND register */
-@@ -380,9 +376,11 @@ static int ar71xx_pci_probe(struct platf
+@@ -378,11 +374,13 @@ static int ar71xx_pci_probe(struct platf
+ 	/* clear bus errors */
+ 	ar71xx_pci_check_error(apc, 1);
  
- 	ar71xx_pci_irq_init(apc);
- 
+-	ar71xx_pci_irq_init(apc);
+-
 +	apc->np = pdev->dev.of_node;
  	apc->pci_ctrl.pci_ops = &ar71xx_pci_ops;
  	apc->pci_ctrl.mem_resource = &apc->mem_res;
  	apc->pci_ctrl.io_resource = &apc->io_res;
 +	pci_load_of_ranges(&apc->pci_ctrl, pdev->dev.of_node);
++
++	ar71xx_pci_irq_init(apc);
  
  	register_pci_controller(&apc->pci_ctrl);
  
