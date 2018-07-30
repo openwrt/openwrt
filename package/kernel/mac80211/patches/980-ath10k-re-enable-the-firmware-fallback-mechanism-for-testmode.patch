@@ -1,0 +1,23 @@
+The ath10k testmode uses request_firmware_direct() in order to avoid
+producing firmware load warnings. Disabling the fallback mechanism was a
+side effect of disabling warnings.
+
+We now have a new API that allows us to avoid warnings while keeping the
+fallback mechanism enabled. So use that instead.
+
+Signed-off-by: Andres Rodriguez <andresx7@gmail.com>
+Reviewed-by: Kees Cook <keescook@chromium.org>
+Acked-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+--- a/drivers/net/wireless/ath/ath10k/testmode.c
++++ b/drivers/net/wireless/ath/ath10k/testmode.c
+@@ -157,7 +157,7 @@ static int ath10k_tm_fetch_utf_firmware_
+ 		 ar->hw_params.fw.dir, ATH10K_FW_UTF_FILE);
+ 
+ 	/* load utf firmware image */
+-	ret = request_firmware_direct(&fw_file->firmware, filename, ar->dev);
++	ret = firmware_request_nowarn(&fw_file->firmware, filename, ar->dev);
+ 	ath10k_dbg(ar, ATH10K_DBG_TESTMODE, "testmode fw request '%s': %d\n",
+ 		   filename, ret);
+ 

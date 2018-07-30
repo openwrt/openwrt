@@ -1,0 +1,44 @@
+From 3194d06a7e41d31ea4d8771b1ff3d93445e27403 Mon Sep 17 00:00:00 2001
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
+Date: Sat, 10 Mar 2018 06:14:57 -0800
+Subject: [PATCH] firmware: add helper to check to see if fw cache is setup
+
+Add a helper to check if the firmware cache is already setup for a device.
+This will be used later.
+
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/base/firmware_loader/main.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/base/firmware_loader/main.c b/drivers/base/firmware_loader/main.c
+index f5046887e3625..b569d8a093926 100644
+--- a/drivers/base/firmware_loader/main.c
++++ b/drivers/base/firmware_loader/main.c
+@@ -396,13 +396,23 @@ static struct fw_name_devm *fw_find_devm_name(struct device *dev,
+ 	return fwn;
+ }
+ 
+-/* add firmware name into devres list */
+-static int fw_add_devm_name(struct device *dev, const char *name)
++static bool fw_cache_is_setup(struct device *dev, const char *name)
+ {
+ 	struct fw_name_devm *fwn;
+ 
+ 	fwn = fw_find_devm_name(dev, name);
+ 	if (fwn)
++		return true;
++
++	return false;
++}
++
++/* add firmware name into devres list */
++static int fw_add_devm_name(struct device *dev, const char *name)
++{
++	struct fw_name_devm *fwn;
++
++	if (fw_cache_is_setup(dev, name))
+ 		return 0;
+ 
+ 	fwn = devres_alloc(fw_name_devm_release, sizeof(struct fw_name_devm),

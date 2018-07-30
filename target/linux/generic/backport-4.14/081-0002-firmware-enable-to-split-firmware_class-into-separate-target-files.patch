@@ -1,0 +1,50 @@
+From ad4365f138363cc9c2271d4181bc35e3f06551de Mon Sep 17 00:00:00 2001
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
+Date: Sat, 10 Mar 2018 06:14:45 -0800
+Subject: [PATCH] firmware: enable to split firmware_class into separate target
+ files
+
+The firmware loader code has grown quite a bit over the years.
+The practice of stuffing everything we need into one file makes
+the code hard to follow.
+
+In order to split the firmware loader code into different components
+we must pick a module name and a first object target file. We must
+keep the firmware_class name to remain compatible with scripts which
+have been relying on the sysfs loader path for years, so the old module
+name stays. We can however rename the C file without affecting the
+module name.
+
+The firmware_class used to represent the idea that the code was a simple
+sysfs firmware loader, provided by the struct class firmware_class.
+The sysfs firmware loader used to be the default, today its only the
+fallback mechanism.
+
+This only renames the target code then to make emphasis of what the code
+does these days. With this change new features can also use a new object
+files.
+
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/base/Makefile                                | 1 +
+ drivers/base/{firmware_class.c => firmware_loader.c} | 0
+ 2 files changed, 1 insertion(+)
+ rename drivers/base/{firmware_class.c => firmware_loader.c} (100%)
+
+diff --git a/drivers/base/Makefile b/drivers/base/Makefile
+index e32a52490051d..f261143fafbf9 100644
+--- a/drivers/base/Makefile
++++ b/drivers/base/Makefile
+@@ -13,6 +13,7 @@ obj-$(CONFIG_HAS_DMA)	+= dma-mapping.o
+ obj-$(CONFIG_HAVE_GENERIC_DMA_COHERENT) += dma-coherent.o
+ obj-$(CONFIG_ISA_BUS_API)	+= isa.o
+ obj-$(CONFIG_FW_LOADER)	+= firmware_class.o
++firmware_class-objs := firmware_loader.o
+ obj-$(CONFIG_NUMA)	+= node.o
+ obj-$(CONFIG_MEMORY_HOTPLUG_SPARSE) += memory.o
+ ifeq ($(CONFIG_SYSFS),y)
+diff --git a/drivers/base/firmware_class.c b/drivers/base/firmware_loader.c
+similarity index 100%
+rename from drivers/base/firmware_class.c
+rename to drivers/base/firmware_loader.c

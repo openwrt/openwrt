@@ -1,0 +1,26 @@
+From 367d09824193e5a9aea98490ae0506cec8abe9c4 Mon Sep 17 00:00:00 2001
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
+Date: Thu, 10 May 2018 13:08:42 -0700
+Subject: [PATCH] firmware_loader: replace ---help--- with help
+
+As per checkpatch using help is preferred over ---help---.
+
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/base/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/base/Kconfig b/drivers/base/Kconfig
+index db2bbe483927a..0c38df32c7fe4 100644
+--- a/drivers/base/Kconfig
++++ b/drivers/base/Kconfig
+@@ -93,7 +93,7 @@ menu "Firmware loader"
+ config FW_LOADER
+ 	tristate "Firmware loading facility" if EXPERT
+ 	default y
+-	---help---
++	help
+ 	  This enables the firmware loading facility in the kernel. The kernel
+ 	  will first look for built-in firmware, if it has any. Next, it will
+ 	  look for the requested firmware in a series of filesystem paths:

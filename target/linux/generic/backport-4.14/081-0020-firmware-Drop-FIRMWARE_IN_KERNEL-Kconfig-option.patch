@@ -1,0 +1,749 @@
+From 7f55c733b6607d6bfc16057641f18280e587cca8 Mon Sep 17 00:00:00 2001
+From: Benjamin Gilbert <benjamin.gilbert@coreos.com>
+Date: Tue, 23 Jan 2018 18:06:31 -0800
+Subject: [PATCH] firmware: Drop FIRMWARE_IN_KERNEL Kconfig option
+
+It doesn't actually do anything.  Merge its help text into
+EXTRA_FIRMWARE.
+
+Fixes: 5620a0d1aacd ("firmware: delete in-kernel firmware")
+Fixes: 0946b2fb38fd ("firmware: cleanup FIRMWARE_IN_KERNEL message")
+Signed-off-by: Benjamin Gilbert <benjamin.gilbert@coreos.com>
+Signed-off-by: Robin H. Johnson <robbat2@gentoo.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ arch/arc/configs/axs101_defconfig          |  1 -
+ arch/arc/configs/axs103_defconfig          |  1 -
+ arch/arc/configs/axs103_smp_defconfig      |  1 -
+ arch/arc/configs/haps_hs_defconfig         |  1 -
+ arch/arc/configs/haps_hs_smp_defconfig     |  1 -
+ arch/arc/configs/hsdk_defconfig            |  1 -
+ arch/arc/configs/nsim_700_defconfig        |  1 -
+ arch/arc/configs/nsim_hs_defconfig         |  1 -
+ arch/arc/configs/nsim_hs_smp_defconfig     |  1 -
+ arch/arc/configs/nsimosci_defconfig        |  1 -
+ arch/arc/configs/nsimosci_hs_defconfig     |  1 -
+ arch/arc/configs/nsimosci_hs_smp_defconfig |  1 -
+ arch/arc/configs/tb10x_defconfig           |  1 -
+ arch/arc/configs/vdk_hs38_defconfig        |  1 -
+ arch/arc/configs/vdk_hs38_smp_defconfig    |  1 -
+ arch/arm/configs/cns3420vb_defconfig       |  1 -
+ arch/arm/configs/magician_defconfig        |  1 -
+ arch/arm/configs/mini2440_defconfig        |  1 -
+ arch/arm/configs/mv78xx0_defconfig         |  1 -
+ arch/arm/configs/mxs_defconfig             |  1 -
+ arch/arm/configs/orion5x_defconfig         |  1 -
+ arch/arm/configs/tegra_defconfig           |  1 -
+ arch/arm/configs/vf610m4_defconfig         |  1 -
+ arch/m68k/configs/amiga_defconfig          |  1 -
+ arch/m68k/configs/apollo_defconfig         |  1 -
+ arch/m68k/configs/atari_defconfig          |  1 -
+ arch/m68k/configs/bvme6000_defconfig       |  1 -
+ arch/m68k/configs/hp300_defconfig          |  1 -
+ arch/m68k/configs/mac_defconfig            |  1 -
+ arch/m68k/configs/multi_defconfig          |  1 -
+ arch/m68k/configs/mvme147_defconfig        |  1 -
+ arch/m68k/configs/mvme16x_defconfig        |  1 -
+ arch/m68k/configs/q40_defconfig            |  1 -
+ arch/m68k/configs/sun3_defconfig           |  1 -
+ arch/m68k/configs/sun3x_defconfig          |  1 -
+ arch/mips/configs/ar7_defconfig            |  1 -
+ arch/mips/configs/ath25_defconfig          |  1 -
+ arch/mips/configs/ath79_defconfig          |  1 -
+ arch/mips/configs/pic32mzda_defconfig      |  1 -
+ arch/mips/configs/qi_lb60_defconfig        |  1 -
+ arch/mips/configs/rt305x_defconfig         |  1 -
+ arch/mips/configs/xway_defconfig           |  1 -
+ arch/mn10300/configs/asb2364_defconfig     |  1 -
+ arch/powerpc/configs/44x/warp_defconfig    |  1 -
+ arch/powerpc/configs/mpc512x_defconfig     |  1 -
+ arch/powerpc/configs/ppc6xx_defconfig      |  1 -
+ arch/powerpc/configs/ps3_defconfig         |  1 -
+ arch/powerpc/configs/wii_defconfig         |  1 -
+ arch/s390/configs/zfcpdump_defconfig       |  1 -
+ arch/sh/configs/polaris_defconfig          |  1 -
+ arch/tile/configs/tilegx_defconfig         |  1 -
+ arch/tile/configs/tilepro_defconfig        |  1 -
+ drivers/base/Kconfig                       | 28 +++++-----------------------
+ 53 files changed, 5 insertions(+), 75 deletions(-)
+
+diff --git a/arch/arc/configs/axs101_defconfig b/arch/arc/configs/axs101_defconfig
+index ec7c849a5c8e9..09f85154c5a4b 100644
+--- a/arch/arc/configs/axs101_defconfig
++++ b/arch/arc/configs/axs101_defconfig
+@@ -44,7 +44,6 @@ CONFIG_IP_PNP_RARP=y
+ CONFIG_DEVTMPFS=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+diff --git a/arch/arc/configs/axs103_defconfig b/arch/arc/configs/axs103_defconfig
+index 63d3cf69e0b02..09fed3ef22b6a 100644
+--- a/arch/arc/configs/axs103_defconfig
++++ b/arch/arc/configs/axs103_defconfig
+@@ -44,7 +44,6 @@ CONFIG_IP_PNP_RARP=y
+ CONFIG_DEVTMPFS=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+diff --git a/arch/arc/configs/axs103_smp_defconfig b/arch/arc/configs/axs103_smp_defconfig
+index f613ecac14a75..ea2f6d817d1ae 100644
+--- a/arch/arc/configs/axs103_smp_defconfig
++++ b/arch/arc/configs/axs103_smp_defconfig
+@@ -45,7 +45,6 @@ CONFIG_IP_PNP_RARP=y
+ CONFIG_DEVTMPFS=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+diff --git a/arch/arc/configs/haps_hs_defconfig b/arch/arc/configs/haps_hs_defconfig
+index db04ea4dd2d97..ab231c040efe5 100644
+--- a/arch/arc/configs/haps_hs_defconfig
++++ b/arch/arc/configs/haps_hs_defconfig
+@@ -40,7 +40,6 @@ CONFIG_INET=y
+ CONFIG_DEVTMPFS=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ # CONFIG_BLK_DEV is not set
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_ARC is not set
+diff --git a/arch/arc/configs/haps_hs_smp_defconfig b/arch/arc/configs/haps_hs_smp_defconfig
+index 3507be2af6fe3..cf449cbf440df 100644
+--- a/arch/arc/configs/haps_hs_smp_defconfig
++++ b/arch/arc/configs/haps_hs_smp_defconfig
+@@ -43,7 +43,6 @@ CONFIG_INET=y
+ CONFIG_DEVTMPFS=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ # CONFIG_BLK_DEV is not set
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_ARC is not set
+diff --git a/arch/arc/configs/hsdk_defconfig b/arch/arc/configs/hsdk_defconfig
+index 7b8f8faf8a243..128d615d1ca75 100644
+--- a/arch/arc/configs/hsdk_defconfig
++++ b/arch/arc/configs/hsdk_defconfig
+@@ -32,7 +32,6 @@ CONFIG_INET=y
+ CONFIG_DEVTMPFS=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+diff --git a/arch/arc/configs/nsim_700_defconfig b/arch/arc/configs/nsim_700_defconfig
+index 6dff83a238b85..31c2c70b34a17 100644
+--- a/arch/arc/configs/nsim_700_defconfig
++++ b/arch/arc/configs/nsim_700_defconfig
+@@ -36,7 +36,6 @@ CONFIG_INET=y
+ CONFIG_DEVTMPFS=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ # CONFIG_BLK_DEV is not set
+ CONFIG_NETDEVICES=y
+ CONFIG_ARC_EMAC=y
+diff --git a/arch/arc/configs/nsim_hs_defconfig b/arch/arc/configs/nsim_hs_defconfig
+index 31ee51b987e7c..a578c721d50fb 100644
+--- a/arch/arc/configs/nsim_hs_defconfig
++++ b/arch/arc/configs/nsim_hs_defconfig
+@@ -40,7 +40,6 @@ CONFIG_INET=y
+ CONFIG_DEVTMPFS=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ # CONFIG_BLK_DEV is not set
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+ # CONFIG_INPUT_KEYBOARD is not set
+diff --git a/arch/arc/configs/nsim_hs_smp_defconfig b/arch/arc/configs/nsim_hs_smp_defconfig
+index 8d3b1f67cae42..37d7395f3272a 100644
+--- a/arch/arc/configs/nsim_hs_smp_defconfig
++++ b/arch/arc/configs/nsim_hs_smp_defconfig
+@@ -39,7 +39,6 @@ CONFIG_INET=y
+ CONFIG_DEVTMPFS=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ # CONFIG_BLK_DEV is not set
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+ # CONFIG_INPUT_KEYBOARD is not set
+diff --git a/arch/arc/configs/nsimosci_defconfig b/arch/arc/configs/nsimosci_defconfig
+index 6168ce2ac2efd..1e1470e2a7f00 100644
+--- a/arch/arc/configs/nsimosci_defconfig
++++ b/arch/arc/configs/nsimosci_defconfig
+@@ -35,7 +35,6 @@ CONFIG_INET=y
+ CONFIG_DEVTMPFS=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ # CONFIG_BLK_DEV is not set
+ CONFIG_NETDEVICES=y
+ CONFIG_EZCHIP_NPS_MANAGEMENT_ENET=y
+diff --git a/arch/arc/configs/nsimosci_hs_defconfig b/arch/arc/configs/nsimosci_hs_defconfig
+index a70bdeb2b3fd0..084a6e42685bf 100644
+--- a/arch/arc/configs/nsimosci_hs_defconfig
++++ b/arch/arc/configs/nsimosci_hs_defconfig
+@@ -36,7 +36,6 @@ CONFIG_INET=y
+ CONFIG_DEVTMPFS=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ # CONFIG_BLK_DEV is not set
+ CONFIG_NETDEVICES=y
+ CONFIG_EZCHIP_NPS_MANAGEMENT_ENET=y
+diff --git a/arch/arc/configs/nsimosci_hs_smp_defconfig b/arch/arc/configs/nsimosci_hs_smp_defconfig
+index ef96406c446e8..f36d479904152 100644
+--- a/arch/arc/configs/nsimosci_hs_smp_defconfig
++++ b/arch/arc/configs/nsimosci_hs_smp_defconfig
+@@ -39,7 +39,6 @@ CONFIG_INET=y
+ CONFIG_DEVTMPFS=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ # CONFIG_BLK_DEV is not set
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_ARC is not set
+diff --git a/arch/arc/configs/tb10x_defconfig b/arch/arc/configs/tb10x_defconfig
+index f301825493950..1aca2e8fd1ba2 100644
+--- a/arch/arc/configs/tb10x_defconfig
++++ b/arch/arc/configs/tb10x_defconfig
+@@ -42,7 +42,6 @@ CONFIG_IP_MULTICAST=y
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+ CONFIG_DEVTMPFS=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_CADENCE is not set
+ # CONFIG_NET_VENDOR_BROADCOM is not set
+diff --git a/arch/arc/configs/vdk_hs38_defconfig b/arch/arc/configs/vdk_hs38_defconfig
+index 4fcf4f2503f61..f629493929ea6 100644
+--- a/arch/arc/configs/vdk_hs38_defconfig
++++ b/arch/arc/configs/vdk_hs38_defconfig
+@@ -31,7 +31,6 @@ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_BLOCK=y
+diff --git a/arch/arc/configs/vdk_hs38_smp_defconfig b/arch/arc/configs/vdk_hs38_smp_defconfig
+index 7b71464f6c2f2..21f0ca26a05d5 100644
+--- a/arch/arc/configs/vdk_hs38_smp_defconfig
++++ b/arch/arc/configs/vdk_hs38_smp_defconfig
+@@ -34,7 +34,6 @@ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_BLOCK=y
+diff --git a/arch/arm/configs/cns3420vb_defconfig b/arch/arm/configs/cns3420vb_defconfig
+index 63a953d855a67..c6dcd6e4f4e6c 100644
+--- a/arch/arm/configs/cns3420vb_defconfig
++++ b/arch/arm/configs/cns3420vb_defconfig
+@@ -28,7 +28,6 @@ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+ CONFIG_CMDLINE="console=ttyS0,38400 mem=128M root=/dev/mmcblk0p1 ro rootwait"
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_BLOCK=y
+diff --git a/arch/arm/configs/magician_defconfig b/arch/arm/configs/magician_defconfig
+index ec5674c229a3c..de5be2fc7306a 100644
+--- a/arch/arm/configs/magician_defconfig
++++ b/arch/arm/configs/magician_defconfig
+@@ -54,7 +54,6 @@ CONFIG_BT_BNEP_PROTO_FILTER=y
+ CONFIG_BT_HIDP=m
+ CONFIG_BT_HCIBTUSB=m
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_BLOCK=y
+diff --git a/arch/arm/configs/mini2440_defconfig b/arch/arm/configs/mini2440_defconfig
+index cf7dcb2c86e69..88ea02e7ba19b 100644
+--- a/arch/arm/configs/mini2440_defconfig
++++ b/arch/arm/configs/mini2440_defconfig
+@@ -77,7 +77,6 @@ CONFIG_MAC80211=m
+ CONFIG_MAC80211_MESH=y
+ CONFIG_MAC80211_LEDS=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_CONNECTOR=m
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+diff --git a/arch/arm/configs/mv78xx0_defconfig b/arch/arm/configs/mv78xx0_defconfig
+index 752e2e74de5b7..0448bd8075acd 100644
+--- a/arch/arm/configs/mv78xx0_defconfig
++++ b/arch/arm/configs/mv78xx0_defconfig
+@@ -37,7 +37,6 @@ CONFIG_IP_PNP_BOOTP=y
+ # CONFIG_IPV6 is not set
+ CONFIG_NET_PKTGEN=m
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_BLOCK=y
+diff --git a/arch/arm/configs/mxs_defconfig b/arch/arm/configs/mxs_defconfig
+index e5822ab01b7de..bbfb6759447b2 100644
+--- a/arch/arm/configs/mxs_defconfig
++++ b/arch/arm/configs/mxs_defconfig
+@@ -46,7 +46,6 @@ CONFIG_CAN_FLEXCAN=m
+ # CONFIG_WIRELESS is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_BLOCK=y
+diff --git a/arch/arm/configs/orion5x_defconfig b/arch/arm/configs/orion5x_defconfig
+index b831baddae026..bf9046331f6ef 100644
+--- a/arch/arm/configs/orion5x_defconfig
++++ b/arch/arm/configs/orion5x_defconfig
+@@ -60,7 +60,6 @@ CONFIG_IP_PNP_BOOTP=y
+ CONFIG_NET_DSA=y
+ CONFIG_NET_PKTGEN=m
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_BLOCK=y
+diff --git a/arch/arm/configs/tegra_defconfig b/arch/arm/configs/tegra_defconfig
+index 6678f2929356e..9dccd305132b3 100644
+--- a/arch/arm/configs/tegra_defconfig
++++ b/arch/arm/configs/tegra_defconfig
+@@ -76,7 +76,6 @@ CONFIG_RFKILL_INPUT=y
+ CONFIG_RFKILL_GPIO=y
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_DMA_CMA=y
+ CONFIG_CMA_SIZE_MBYTES=64
+ CONFIG_TEGRA_GMI=y
+diff --git a/arch/arm/configs/vf610m4_defconfig b/arch/arm/configs/vf610m4_defconfig
+index b7ecb83a95b6a..a89f035c3b01b 100644
+--- a/arch/arm/configs/vf610m4_defconfig
++++ b/arch/arm/configs/vf610m4_defconfig
+@@ -23,7 +23,6 @@ CONFIG_BINFMT_SHARED_FLAT=y
+ # CONFIG_UEVENT_HELPER is not set
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ # CONFIG_ALLOW_DEV_COREDUMP is not set
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_COUNT=4
+diff --git a/arch/m68k/configs/amiga_defconfig b/arch/m68k/configs/amiga_defconfig
+index 5b5fa9831b4d1..c911adf52b53f 100644
+--- a/arch/m68k/configs/amiga_defconfig
++++ b/arch/m68k/configs/amiga_defconfig
+@@ -313,7 +313,6 @@ CONFIG_NET_DEVLINK=m
+ # CONFIG_UEVENT_HELPER is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_TEST_ASYNC_DRIVER_PROBE=m
+ CONFIG_CONNECTOR=m
+ CONFIG_PARPORT=m
+diff --git a/arch/m68k/configs/apollo_defconfig b/arch/m68k/configs/apollo_defconfig
+index 72a7764b74edf..0e32b85661797 100644
+--- a/arch/m68k/configs/apollo_defconfig
++++ b/arch/m68k/configs/apollo_defconfig
+@@ -311,7 +311,6 @@ CONFIG_NET_DEVLINK=m
+ # CONFIG_UEVENT_HELPER is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_TEST_ASYNC_DRIVER_PROBE=m
+ CONFIG_CONNECTOR=m
+ CONFIG_BLK_DEV_LOOP=y
+diff --git a/arch/m68k/configs/atari_defconfig b/arch/m68k/configs/atari_defconfig
+index 884b43a2f0d92..e873c6f97f008 100644
+--- a/arch/m68k/configs/atari_defconfig
++++ b/arch/m68k/configs/atari_defconfig
+@@ -311,7 +311,6 @@ CONFIG_NET_DEVLINK=m
+ # CONFIG_UEVENT_HELPER is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_TEST_ASYNC_DRIVER_PROBE=m
+ CONFIG_CONNECTOR=m
+ CONFIG_PARPORT=m
+diff --git a/arch/m68k/configs/bvme6000_defconfig b/arch/m68k/configs/bvme6000_defconfig
+index fcfa60d31499b..7b42cc1c2e613 100644
+--- a/arch/m68k/configs/bvme6000_defconfig
++++ b/arch/m68k/configs/bvme6000_defconfig
+@@ -309,7 +309,6 @@ CONFIG_NET_DEVLINK=m
+ # CONFIG_UEVENT_HELPER is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_TEST_ASYNC_DRIVER_PROBE=m
+ CONFIG_CONNECTOR=m
+ CONFIG_BLK_DEV_LOOP=y
+diff --git a/arch/m68k/configs/hp300_defconfig b/arch/m68k/configs/hp300_defconfig
+index 9d597bbbbbfe6..9f4b83541c31d 100644
+--- a/arch/m68k/configs/hp300_defconfig
++++ b/arch/m68k/configs/hp300_defconfig
+@@ -311,7 +311,6 @@ CONFIG_NET_DEVLINK=m
+ # CONFIG_UEVENT_HELPER is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_TEST_ASYNC_DRIVER_PROBE=m
+ CONFIG_CONNECTOR=m
+ CONFIG_BLK_DEV_LOOP=y
+diff --git a/arch/m68k/configs/mac_defconfig b/arch/m68k/configs/mac_defconfig
+index 45da20d1286ce..64094bf74822c 100644
+--- a/arch/m68k/configs/mac_defconfig
++++ b/arch/m68k/configs/mac_defconfig
+@@ -313,7 +313,6 @@ CONFIG_NET_DEVLINK=m
+ # CONFIG_UEVENT_HELPER is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_TEST_ASYNC_DRIVER_PROBE=m
+ CONFIG_CONNECTOR=m
+ CONFIG_BLK_DEV_SWIM=m
+diff --git a/arch/m68k/configs/multi_defconfig b/arch/m68k/configs/multi_defconfig
+index fda880c108615..9ae1f91ea690b 100644
+--- a/arch/m68k/configs/multi_defconfig
++++ b/arch/m68k/configs/multi_defconfig
+@@ -323,7 +323,6 @@ CONFIG_NET_DEVLINK=m
+ # CONFIG_UEVENT_HELPER is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_TEST_ASYNC_DRIVER_PROBE=m
+ CONFIG_CONNECTOR=m
+ CONFIG_PARPORT=m
+diff --git a/arch/m68k/configs/mvme147_defconfig b/arch/m68k/configs/mvme147_defconfig
+index 7d5e4863efec0..31586b2f852e3 100644
+--- a/arch/m68k/configs/mvme147_defconfig
++++ b/arch/m68k/configs/mvme147_defconfig
+@@ -308,7 +308,6 @@ CONFIG_NET_DEVLINK=m
+ # CONFIG_UEVENT_HELPER is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_TEST_ASYNC_DRIVER_PROBE=m
+ CONFIG_CONNECTOR=m
+ CONFIG_BLK_DEV_LOOP=y
+diff --git a/arch/m68k/configs/mvme16x_defconfig b/arch/m68k/configs/mvme16x_defconfig
+index 7763b71a9c497..7fd5e2de8a508 100644
+--- a/arch/m68k/configs/mvme16x_defconfig
++++ b/arch/m68k/configs/mvme16x_defconfig
+@@ -309,7 +309,6 @@ CONFIG_NET_DEVLINK=m
+ # CONFIG_UEVENT_HELPER is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_TEST_ASYNC_DRIVER_PROBE=m
+ CONFIG_CONNECTOR=m
+ CONFIG_BLK_DEV_LOOP=y
+diff --git a/arch/m68k/configs/q40_defconfig b/arch/m68k/configs/q40_defconfig
+index 17eaebfa3e198..0339309b51751 100644
+--- a/arch/m68k/configs/q40_defconfig
++++ b/arch/m68k/configs/q40_defconfig
+@@ -309,7 +309,6 @@ CONFIG_NET_DEVLINK=m
+ # CONFIG_UEVENT_HELPER is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_TEST_ASYNC_DRIVER_PROBE=m
+ CONFIG_CONNECTOR=m
+ CONFIG_PARPORT=m
+diff --git a/arch/m68k/configs/sun3_defconfig b/arch/m68k/configs/sun3_defconfig
+index d1cb7a04ae1d3..5aef62938f326 100644
+--- a/arch/m68k/configs/sun3_defconfig
++++ b/arch/m68k/configs/sun3_defconfig
+@@ -306,7 +306,6 @@ CONFIG_NET_DEVLINK=m
+ # CONFIG_UEVENT_HELPER is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_TEST_ASYNC_DRIVER_PROBE=m
+ CONFIG_CONNECTOR=m
+ CONFIG_BLK_DEV_LOOP=y
+diff --git a/arch/m68k/configs/sun3x_defconfig b/arch/m68k/configs/sun3x_defconfig
+index ea3a331c62d5b..45df9a6559e58 100644
+--- a/arch/m68k/configs/sun3x_defconfig
++++ b/arch/m68k/configs/sun3x_defconfig
+@@ -306,7 +306,6 @@ CONFIG_NET_DEVLINK=m
+ # CONFIG_UEVENT_HELPER is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_TEST_ASYNC_DRIVER_PROBE=m
+ CONFIG_CONNECTOR=m
+ CONFIG_BLK_DEV_LOOP=y
+diff --git a/arch/mips/configs/ar7_defconfig b/arch/mips/configs/ar7_defconfig
+index 92fca3c42eac3..5651f4d8f45c4 100644
+--- a/arch/mips/configs/ar7_defconfig
++++ b/arch/mips/configs/ar7_defconfig
+@@ -82,7 +82,6 @@ CONFIG_MAC80211=m
+ CONFIG_MAC80211_RC_PID=y
+ CONFIG_MAC80211_RC_DEFAULT_PID=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_BLOCK=y
+ CONFIG_MTD_CFI=y
+diff --git a/arch/mips/configs/ath25_defconfig b/arch/mips/configs/ath25_defconfig
+index 2c829950be17d..b8d48038e74f5 100644
+--- a/arch/mips/configs/ath25_defconfig
++++ b/arch/mips/configs/ath25_defconfig
+@@ -38,7 +38,6 @@ CONFIG_CFG80211=m
+ CONFIG_MAC80211=m
+ CONFIG_MAC80211_DEBUGFS=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_REDBOOT_PARTS=y
+ CONFIG_MTD_REDBOOT_DIRECTORY_BLOCK=-2
+diff --git a/arch/mips/configs/ath79_defconfig b/arch/mips/configs/ath79_defconfig
+index 25ed914933e5c..951c4231bdb85 100644
+--- a/arch/mips/configs/ath79_defconfig
++++ b/arch/mips/configs/ath79_defconfig
+@@ -39,7 +39,6 @@ CONFIG_CFG80211=m
+ CONFIG_MAC80211=m
+ CONFIG_MAC80211_DEBUGFS=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_REDBOOT_PARTS=y
+ CONFIG_MTD_REDBOOT_DIRECTORY_BLOCK=-2
+diff --git a/arch/mips/configs/pic32mzda_defconfig b/arch/mips/configs/pic32mzda_defconfig
+index 52192c632ae8d..41190c2036e60 100644
+--- a/arch/mips/configs/pic32mzda_defconfig
++++ b/arch/mips/configs/pic32mzda_defconfig
+@@ -26,7 +26,6 @@ CONFIG_BINFMT_MISC=m
+ # CONFIG_SUSPEND is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ # CONFIG_ALLOW_DEV_COREDUMP is not set
+ CONFIG_BLK_DEV_LOOP=m
+ CONFIG_SCSI=y
+diff --git a/arch/mips/configs/qi_lb60_defconfig b/arch/mips/configs/qi_lb60_defconfig
+index 3f13335174057..3b02ff9a7c64f 100644
+--- a/arch/mips/configs/qi_lb60_defconfig
++++ b/arch/mips/configs/qi_lb60_defconfig
+@@ -42,7 +42,6 @@ CONFIG_TCP_CONG_WESTWOOD=y
+ # CONFIG_TCP_CONG_HTCP is not set
+ # CONFIG_IPV6 is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_BLOCK=y
+ CONFIG_MTD_NAND=y
+diff --git a/arch/mips/configs/rt305x_defconfig b/arch/mips/configs/rt305x_defconfig
+index c695b7b1c4ae8..dbe6a4639d051 100644
+--- a/arch/mips/configs/rt305x_defconfig
++++ b/arch/mips/configs/rt305x_defconfig
+@@ -76,7 +76,6 @@ CONFIG_VLAN_8021Q=y
+ CONFIG_NET_SCHED=y
+ CONFIG_HAMRADIO=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_BLOCK=y
+diff --git a/arch/mips/configs/xway_defconfig b/arch/mips/configs/xway_defconfig
+index 4365108bef776..fa750d501c112 100644
+--- a/arch/mips/configs/xway_defconfig
++++ b/arch/mips/configs/xway_defconfig
+@@ -75,7 +75,6 @@ CONFIG_VLAN_8021Q=y
+ CONFIG_NET_SCHED=y
+ CONFIG_HAMRADIO=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_BLOCK=y
+diff --git a/arch/mn10300/configs/asb2364_defconfig b/arch/mn10300/configs/asb2364_defconfig
+index b1d80cee97eef..a84c3153f22a5 100644
+--- a/arch/mn10300/configs/asb2364_defconfig
++++ b/arch/mn10300/configs/asb2364_defconfig
+@@ -44,7 +44,6 @@ CONFIG_IPV6=y
+ # CONFIG_INET6_XFRM_MODE_TRANSPORT is not set
+ # CONFIG_INET6_XFRM_MODE_TUNNEL is not set
+ # CONFIG_INET6_XFRM_MODE_BEET is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_CONNECTOR=y
+ CONFIG_MTD=y
+ CONFIG_MTD_DEBUG=y
+diff --git a/arch/powerpc/configs/44x/warp_defconfig b/arch/powerpc/configs/44x/warp_defconfig
+index b5c866073efda..6c02f53271cdc 100644
+--- a/arch/powerpc/configs/44x/warp_defconfig
++++ b/arch/powerpc/configs/44x/warp_defconfig
+@@ -28,7 +28,6 @@ CONFIG_NETFILTER=y
+ CONFIG_VLAN_8021Q=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ # CONFIG_STANDALONE is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_BLOCK=y
+diff --git a/arch/powerpc/configs/mpc512x_defconfig b/arch/powerpc/configs/mpc512x_defconfig
+index 10be5773ad5dc..c2b1c44046837 100644
+--- a/arch/powerpc/configs/mpc512x_defconfig
++++ b/arch/powerpc/configs/mpc512x_defconfig
+@@ -39,7 +39,6 @@ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_BLOCK=y
+diff --git a/arch/powerpc/configs/ppc6xx_defconfig b/arch/powerpc/configs/ppc6xx_defconfig
+index da0e8d535eb88..7ee736f207740 100644
+--- a/arch/powerpc/configs/ppc6xx_defconfig
++++ b/arch/powerpc/configs/ppc6xx_defconfig
+@@ -347,7 +347,6 @@ CONFIG_MAC80211_DEBUGFS=y
+ CONFIG_NET_9P=m
+ CONFIG_NET_9P_VIRTIO=m
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_DEBUG_DEVRES=y
+ CONFIG_CONNECTOR=y
+ CONFIG_PARPORT=m
+diff --git a/arch/powerpc/configs/ps3_defconfig b/arch/powerpc/configs/ps3_defconfig
+index 2efa025bf4836..187e2f7c12c83 100644
+--- a/arch/powerpc/configs/ps3_defconfig
++++ b/arch/powerpc/configs/ps3_defconfig
+@@ -64,7 +64,6 @@ CONFIG_CFG80211_WEXT=y
+ CONFIG_MAC80211=m
+ # CONFIG_MAC80211_RC_MINSTREL is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_SIZE=65535
+diff --git a/arch/powerpc/configs/wii_defconfig b/arch/powerpc/configs/wii_defconfig
+index 9c7400a19e9df..0b0f78823a1bf 100644
+--- a/arch/powerpc/configs/wii_defconfig
++++ b/arch/powerpc/configs/wii_defconfig
+@@ -43,7 +43,6 @@ CONFIG_CFG80211=y
+ CONFIG_MAC80211=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ # CONFIG_STANDALONE is not set
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_COUNT=2
+diff --git a/arch/s390/configs/zfcpdump_defconfig b/arch/s390/configs/zfcpdump_defconfig
+index 04e042edbab76..7dc7f58c42877 100644
+--- a/arch/s390/configs/zfcpdump_defconfig
++++ b/arch/s390/configs/zfcpdump_defconfig
+@@ -26,7 +26,6 @@ CONFIG_NET=y
+ # CONFIG_IUCV is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_DEVTMPFS=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_BLK_DEV_RAM=y
+ # CONFIG_BLK_DEV_XPRAM is not set
+ # CONFIG_DCSSBLK is not set
+diff --git a/arch/sh/configs/polaris_defconfig b/arch/sh/configs/polaris_defconfig
+index 0a432b5f50e74..87641b7d6c4e7 100644
+--- a/arch/sh/configs/polaris_defconfig
++++ b/arch/sh/configs/polaris_defconfig
+@@ -38,7 +38,6 @@ CONFIG_IP_MULTICAST=y
+ # CONFIG_INET_XFRM_MODE_BEET is not set
+ # CONFIG_IPV6 is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_BLOCK=y
+diff --git a/arch/tile/configs/tilegx_defconfig b/arch/tile/configs/tilegx_defconfig
+index 9f94435cc44f4..357a4c271ad46 100644
+--- a/arch/tile/configs/tilegx_defconfig
++++ b/arch/tile/configs/tilegx_defconfig
+@@ -159,7 +159,6 @@ CONFIG_DNS_RESOLVER=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_CONNECTOR=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_CRYPTOLOOP=m
+diff --git a/arch/tile/configs/tilepro_defconfig b/arch/tile/configs/tilepro_defconfig
+index 1c5bd4f8ffca3..da2858755fa1e 100644
+--- a/arch/tile/configs/tilepro_defconfig
++++ b/arch/tile/configs/tilepro_defconfig
+@@ -289,7 +289,6 @@ CONFIG_DNS_RESOLVER=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_CONNECTOR=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_CRYPTOLOOP=m
+diff --git a/drivers/base/Kconfig b/drivers/base/Kconfig
+index bdc87907d6a1b..698db8549686e 100644
+--- a/drivers/base/Kconfig
++++ b/drivers/base/Kconfig
+@@ -86,10 +86,9 @@ config FW_LOADER
+ 	  require userspace firmware loading support, but a module built
+ 	  out-of-tree does.
+ 
+-config FIRMWARE_IN_KERNEL
+-	bool "Include in-kernel firmware blobs in kernel binary"
++config EXTRA_FIRMWARE
++	string "External firmware blobs to build into the kernel binary"
+ 	depends on FW_LOADER
+-	default y
+ 	help
+ 	  Various drivers in the kernel source tree may require firmware,
+ 	  which is generally available in your distribution's linux-firmware
+@@ -99,23 +98,6 @@ config FIRMWARE_IN_KERNEL
+ 	  /lib/firmware/ on your system, so they can be loaded by userspace
+ 	  helpers on request.
+ 
+-	  Enabling this option will build each required firmware blob
+-	  specified by EXTRA_FIRMWARE into the kernel directly, where
+-	  request_firmware() will find them without having to call out to
+-	  userspace. This may be useful if your root file system requires a
+-	  device that uses such firmware and you do not wish to use an
+-	  initrd.
+-
+-	  This single option controls the inclusion of firmware for
+-	  every driver that uses request_firmware(), which avoids a
+-	  proliferation of 'Include firmware for xxx device' options.
+-
+-	  Say 'N' and let firmware be loaded from userspace.
+-
+-config EXTRA_FIRMWARE
+-	string "External firmware blobs to build into the kernel binary"
+-	depends on FW_LOADER
+-	help
+ 	  This option allows firmware to be built into the kernel for the case
+ 	  where the user either cannot or doesn't want to provide it from
+ 	  userspace at runtime (for example, when the firmware in question is
+@@ -126,11 +108,11 @@ config EXTRA_FIRMWARE
+ 	  firmware files -- the same names that appear in MODULE_FIRMWARE()
+ 	  and request_firmware() in the source. These files should exist under
+ 	  the directory specified by the EXTRA_FIRMWARE_DIR option, which is
+-	  by default the firmware subdirectory of the kernel source tree.
++	  /lib/firmware by default.
+ 
+ 	  For example, you might set CONFIG_EXTRA_FIRMWARE="usb8388.bin", copy
+-	  the usb8388.bin file into the firmware directory, and build the kernel.
+-	  Then any request_firmware("usb8388.bin") will be satisfied internally
++	  the usb8388.bin file into /lib/firmware, and build the kernel. Then
++	  any request_firmware("usb8388.bin") will be satisfied internally
+ 	  without needing to call out to userspace.
+ 
+ 	  WARNING: If you include additional firmware files into your binary

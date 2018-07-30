@@ -1,0 +1,20 @@
+This reduces the unnecessary spew when trying to load optional firmware:
+"Direct firmware load for ... failed with error -2"
+
+Signed-off-by: Andres Rodriguez <andresx7@gmail.com>
+Reviewed-by: Kees Cook <keescook@chromium.org>
+Acked-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+--- a/drivers/net/wireless/ath/ath10k/core.c
++++ b/drivers/net/wireless/ath/ath10k/core.c
+@@ -550,7 +550,7 @@ static const struct firmware *ath10k_fet
+ 		dir = ".";
+ 
+ 	snprintf(filename, sizeof(filename), "%s/%s", dir, file);
+-	ret = request_firmware(&fw, filename, ar->dev);
++	ret = firmware_request_nowarn(&fw, filename, ar->dev);
+ 	ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot fw request '%s': %d\n",
+ 		   filename, ret);
+ 

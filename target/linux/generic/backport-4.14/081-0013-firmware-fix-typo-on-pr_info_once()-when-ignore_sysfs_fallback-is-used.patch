@@ -1,0 +1,29 @@
+From c6263a48459934c9d07153e6d7f0fa43462d8dd2 Mon Sep 17 00:00:00 2001
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
+Date: Wed, 21 Mar 2018 15:34:28 -0700
+Subject: [PATCH] firmware: fix typo on pr_info_once() when
+ ignore_sysfs_fallback is used
+
+When the sysctl knob is used ignore the fallback mechanism we pr_info_once()
+to ensure its noted the knob was used. The print incorrectly states its a
+debugfs knob, its a sysctl knob, so correct this typo.
+
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/base/firmware_loader/fallback.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/base/firmware_loader/fallback.c b/drivers/base/firmware_loader/fallback.c
+index d231bbcb95d7a..31b5015b59fec 100644
+--- a/drivers/base/firmware_loader/fallback.c
++++ b/drivers/base/firmware_loader/fallback.c
+@@ -652,7 +652,7 @@ static bool fw_force_sysfs_fallback(unsigned int opt_flags)
+ static bool fw_run_sysfs_fallback(unsigned int opt_flags)
+ {
+ 	if (fw_fallback_config.ignore_sysfs_fallback) {
+-		pr_info_once("Ignoring firmware sysfs fallback due to debugfs knob\n");
++		pr_info_once("Ignoring firmware sysfs fallback due to sysctl knob\n");
+ 		return false;
+ 	}
+ 
