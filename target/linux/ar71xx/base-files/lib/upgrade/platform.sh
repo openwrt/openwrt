@@ -584,6 +584,7 @@ platform_check_image() {
 	cpe210|\
 	cpe510|\
 	eap120|\
+	eap245-v1|\
 	wbs210|\
 	wbs510)
 		tplink_pharos_check_image "$1" "7f454c46" "$(tplink_pharos_get_model_string)" '' && return 0

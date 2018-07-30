@@ -697,6 +697,10 @@ ar71xx_board_detect() {
 		name="eap120"
 		tplink_pharos_board_detect "$(tplink_pharos_get_model_string | tr -d '\r')"
 		;;
+	*"EAP245 v1")
+		name="eap245-v1"
+		tplink_pharos_board_detect
+		;;
 	*"EAP300 v2")
 		name="eap300v2"
 		;;

@@ -29,6 +29,7 @@ get_status_led() {
 	e750a-v4|\
 	e750g-v8|\
 	eap120|\
+	eap245-v1|\
 	minibox-v1|\
 	packet-squirrel|\
 	som9331|\

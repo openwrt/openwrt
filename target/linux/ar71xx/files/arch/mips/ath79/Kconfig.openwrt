@@ -906,6 +906,16 @@ config ATH79_MACH_EAP120
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_EAP245_V1
+	bool "TP-LINK EAP245 v1 support"
+	select SOC_QCA956X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_ENS202EXT
 	bool "EnGenius ENS202EXT support"
 	select SOC_AR934X

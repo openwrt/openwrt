@@ -117,6 +117,7 @@ obj-$(CONFIG_ATH79_MACH_E600G_V2)		+= mach-e600g-v2.o
 obj-$(CONFIG_ATH79_MACH_E750A_V4)		+= mach-e750a-v4.o
 obj-$(CONFIG_ATH79_MACH_E750G_V8)		+= mach-e750g-v8.o
 obj-$(CONFIG_ATH79_MACH_EAP120)			+= mach-eap120.o
+obj-$(CONFIG_ATH79_MACH_EAP245_V1)		+= mach-eap245-v1.o
 obj-$(CONFIG_ATH79_MACH_EAP300V2)		+= mach-eap300v2.o
 obj-$(CONFIG_ATH79_MACH_EAP7660D)		+= mach-eap7660d.o
 obj-$(CONFIG_ATH79_MACH_EL_M150)		+= mach-el-m150.o

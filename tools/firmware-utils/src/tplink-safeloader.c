@@ -771,6 +771,35 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the EAP245 v1 */
+	{
+		.id     = "EAP245_V1",
+		.support_list =
+			"SupportList:\r\n"
+			"EAP245(TP-LINK|UN|AC1750-D):1.0\r\n",
+		.support_trail = '\xff',
+		.soft_ver = NULL,
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"partition-table", 0x20000, 0x02000},
+			{"default-mac", 0x30000, 0x01000},
+			{"support-list", 0x31000, 0x00100},
+			{"product-info", 0x31100, 0x00400},
+			{"soft-version", 0x32000, 0x00100},
+			{"os-image", 0x40000, 0x180000},
+			{"file-system", 0x1c0000, 0xc00000},
+			{"user-config", 0xdc0000, 0x10000},
+			{"backup-config", 0xdd0000, 0x10000},
+			{"log", 0xde0000, 0x10000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
 	/** Firmware layout for the TL-WA850RE v2 */
 	{
 		.id     = "TLWA850REV2",
@@ -1598,6 +1627,15 @@ static void build_image(const char *output,
 	} else if (strcasecmp(info->id, "ARCHER-C7-V4") == 0 || strcasecmp(info->id, "ARCHER-C7-V5") == 0) {
 		const char mdat[11] = {0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0xca, 0x00, 0x01, 0x00, 0x00};
 		parts[5] = put_data("extra-para", mdat, 11);
+	} else if(strcasecmp(info->id, "EAP245_V1") == 0) {
+		/* EAP245 stock images are missing padding bytes and partition order is different */
+		struct image_partition_entry tmp = parts[1];
+		struct soft_version *s = (struct soft_version *) parts[1].data;
+		s->version_major = 1;
+		parts[1] = parts[2];
+		parts[2] = tmp;
+		parts[1].size--;
+		parts[2].size--;
 	}
 
 	size_t len;
