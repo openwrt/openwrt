@@ -13,11 +13,9 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  drivers/w1/masters/w1-gpio.c | 7 +++----
  1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/w1/masters/w1-gpio.c b/drivers/w1/masters/w1-gpio.c
-index a90728ceec5a..7b80762941af 100644
 --- a/drivers/w1/masters/w1-gpio.c
 +++ b/drivers/w1/masters/w1-gpio.c
-@@ -112,17 +112,16 @@ static int w1_gpio_probe_dt(struct platform_device *pdev)
+@@ -113,17 +113,16 @@ static int w1_gpio_probe_dt(struct platf
  static int w1_gpio_probe(struct platform_device *pdev)
  {
  	struct w1_bus_master *master;
@@ -38,6 +36,3 @@ index a90728ceec5a..7b80762941af 100644
  	if (!pdata) {
  		dev_err(&pdev->dev, "No configuration data\n");
  		return -ENXIO;
--- 
-2.14.1
-
