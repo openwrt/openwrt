@@ -112,9 +112,19 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-pci-0000:01:00.0.bin")
 	case "$board" in
+        linksys,ea8300)
+                ath10kcal_extract "0:ART" 4096 12064
+                ;;
 	openmesh,a62)
 		ath10kcal_extract "0:ART" 36864 12064
 		;;
+        esac
+        ;;
+"ath10k/pre-cal-pci-0001:01:00.0.bin")
+        case $board in
+        linksys,ea8300)
+                ath10kcal_extract "0:ART" 20480 12064
+                ;;
 	esac
 	;;
 "ath10k/pre-cal-ahb-a000000.wifi.bin")

@@ -15,8 +15,10 @@ KERNELNAME:=zImage Image dtbs
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += \
 	kmod-leds-gpio kmod-gpio-button-hotplug swconfig \
-	kmod-ath10k wpad-mini \
+	kmod-usb-phy-dwc3-ipq40xx kmod-ath10k wpad-mini \
 	kmod-usb3 kmod-usb-dwc3-of-simple kmod-usb-phy-qcom-dwc3 \
-	ath10k-firmware-qca4019
+	kmod-ata-core kmod-ata-ahci kmod-ata-ahci-platform \
+	kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
+	ath10k-firmware-qca4019 uboot-envtools
 
 $(eval $(call BuildTarget))

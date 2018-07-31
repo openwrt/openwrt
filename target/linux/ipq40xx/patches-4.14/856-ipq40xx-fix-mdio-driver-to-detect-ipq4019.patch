@@ -1,0 +1,84 @@
+--- a/drivers/net/phy/mdio-ipq40xx.c	2018-07-17 02:13:40.347995141 +0200
++++ b/drivers/net/phy/mdio-ipq40xx.c	2018-07-17 02:16:57.231355837 +0200
+@@ -22,6 +22,7 @@
+ #include <linux/of_mdio.h>
+ #include <linux/phy.h>
+ #include <linux/platform_device.h>
++#include <linux/of_gpio.h>
+ 
+ #define MDIO_CTRL_0_REG		0x40
+ #define MDIO_CTRL_1_REG		0x44
+@@ -122,11 +123,61 @@
+ 	return 0;
+ }
+ 
++static int ipq40xx_phy_reset(struct platform_device *pdev)
++{
++	struct device_node *mdio_node;
++	int phy_reset_gpio_number;
++	int ret;
++
++	mdio_node = of_find_node_by_name(NULL, "mdio");
++	if (!mdio_node) {
++		dev_err(&pdev->dev, "Could not find mdio node\n");
++		return -ENOENT;
++	}
++
++	ret = of_get_named_gpio(mdio_node, "phy-reset-gpio", 0);
++	if (ret < 0) {
++		dev_warn(&pdev->dev, "Could not find DT gpio phy-reset-gpio missing/malformed:%d\n",ret);
++		ret = 0;
++		return ret;
++	}
++
++	phy_reset_gpio_number = ret;
++
++	ret = gpio_request(phy_reset_gpio_number, "phy-reset-gpio");
++	if (ret) {
++		dev_err(&pdev->dev, "Can't get phy-reset-gpio %d\n", ret);
++		return ret;
++	}
++
++	ret = gpio_direction_output(phy_reset_gpio_number, 0x0);
++	if (ret) {
++		dev_err(&pdev->dev,
++			"Can't set direction for phy-reset-gpio %d\n", ret);
++		goto phy_reset_out;
++	}
++
++	usleep_range(1000, 10005);
++
++	gpio_set_value(phy_reset_gpio_number, 0x01);
++
++phy_reset_out:
++	gpio_free(phy_reset_gpio_number);
++
++	return ret;
++}
++
+ static int ipq40xx_mdio_probe(struct platform_device *pdev)
+ {
+ 	struct ipq40xx_mdio_data *am;
+ 	struct resource *res;
+-	int i;
++	int i, ret;
++
++	ret = ipq40xx_phy_reset(pdev);
++	if (ret) {
++		dev_err(&pdev->dev, "Could not find qca8075 reset gpio\n");
++		return ret;
++	}
+ 
+ 	am = devm_kzalloc(&pdev->dev, sizeof(*am), GFP_KERNEL);
+ 	if (!am)
+@@ -151,8 +202,8 @@
+ 	writel(CTRL_0_REG_DEFAULT_VALUE, am->membase + MDIO_CTRL_0_REG);
+ 
+ 	am->mii_bus->name = "ipq40xx_mdio";
+-	am->mii_bus->read = ipq40xx_mdio_read;
+-	am->mii_bus->write = ipq40xx_mdio_write;
++	am->mii_bus->read = &ipq40xx_mdio_read;
++	am->mii_bus->write = &ipq40xx_mdio_write;
+ 	memcpy(am->mii_bus->irq, am->phy_irq, sizeof(am->phy_irq));
+ 	am->mii_bus->priv = am;
+ 	am->mii_bus->parent = &pdev->dev;
