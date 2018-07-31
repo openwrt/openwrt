@@ -15,11 +15,9 @@ Signed-off-by: Andy Gross <andy.gross@linaro.org>
  arch/arm/boot/dts/qcom-ipq4019.dtsi           | 156 ++++++++++++++++++++++++--
  2 files changed, 146 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi b/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
-index ef8d8c88ed7b..418f9a022336 100644
 --- a/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
-@@ -69,7 +69,7 @@
+@@ -61,7 +61,7 @@
  			status = "ok";
  		};
  
@@ -28,12 +26,10 @@ index ef8d8c88ed7b..418f9a022336 100644
  			pinctrl-0 = <&spi_0_pins>;
  			pinctrl-names = "default";
  			status = "ok";
-diff --git a/arch/arm/boot/dts/qcom-ipq4019.dtsi b/arch/arm/boot/dts/qcom-ipq4019.dtsi
-index 2efc8a2d41a7..737097e9fb4f 100644
 --- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
-@@ -40,8 +40,10 @@
- 	};
+@@ -24,8 +24,10 @@
+ 	interrupt-parent = <&intc>;
  
  	aliases {
 -		spi0 = &spi_0;
@@ -45,7 +41,7 @@ index 2efc8a2d41a7..737097e9fb4f 100644
  	};
  
  	cpus {
-@@ -120,6 +122,12 @@
+@@ -132,6 +134,12 @@
  		};
  	};
  
@@ -58,7 +54,7 @@ index 2efc8a2d41a7..737097e9fb4f 100644
  	timer {
  		compatible = "arm,armv7-timer";
  		interrupts = <1 2 0xf08>,
-@@ -165,13 +173,13 @@
+@@ -177,13 +185,13 @@
  			#gpio-cells = <2>;
  			interrupt-controller;
  			#interrupt-cells = <2>;
@@ -74,7 +70,7 @@ index 2efc8a2d41a7..737097e9fb4f 100644
  			clocks = <&gcc GCC_BLSP1_AHB_CLK>;
  			clock-names = "bam_clk";
  			#dma-cells = <1>;
-@@ -179,7 +187,7 @@
+@@ -191,7 +199,7 @@
  			status = "disabled";
  		};
  
@@ -83,7 +79,7 @@ index 2efc8a2d41a7..737097e9fb4f 100644
  			compatible = "qcom,spi-qup-v2.2.1";
  			reg = <0x78b5000 0x600>;
  			interrupts = <GIC_SPI 95 IRQ_TYPE_LEVEL_HIGH>;
-@@ -188,10 +196,26 @@
+@@ -200,10 +208,26 @@
  			clock-names = "core", "iface";
  			#address-cells = <1>;
  			#size-cells = <0>;
@@ -111,7 +107,7 @@ index 2efc8a2d41a7..737097e9fb4f 100644
  			compatible = "qcom,i2c-qup-v2.2.1";
  			reg = <0x78b7000 0x600>;
  			interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL_HIGH>;
-@@ -200,14 +224,29 @@
+@@ -212,14 +236,29 @@
  			clock-names = "iface", "core";
  			#address-cells = <1>;
  			#size-cells = <0>;
@@ -142,8 +138,8 @@ index 2efc8a2d41a7..737097e9fb4f 100644
  			clocks = <&gcc GCC_CRYPTO_AHB_CLK>;
  			clock-names = "bam_clk";
  			#dma-cells = <1>;
-@@ -275,7 +314,7 @@
- 		blsp1_uart1: serial@78af000 {
+@@ -293,7 +332,7 @@
+ 		serial@78af000 {
  			compatible = "qcom,msm-uartdm-v1.4", "qcom,msm-uartdm";
  			reg = <0x78af000 0x200>;
 -			interrupts = <0 107 0>;
@@ -151,7 +147,7 @@ index 2efc8a2d41a7..737097e9fb4f 100644
  			status = "disabled";
  			clocks = <&gcc GCC_BLSP1_UART1_APPS_CLK>,
  				<&gcc GCC_BLSP1_AHB_CLK>;
-@@ -287,7 +326,7 @@
+@@ -305,7 +344,7 @@
  		serial@78b0000 {
  			compatible = "qcom,msm-uartdm-v1.4", "qcom,msm-uartdm";
  			reg = <0x78b0000 0x200>;
@@ -160,7 +156,7 @@ index 2efc8a2d41a7..737097e9fb4f 100644
  			status = "disabled";
  			clocks = <&gcc GCC_BLSP1_UART2_APPS_CLK>,
  				<&gcc GCC_BLSP1_AHB_CLK>;
-@@ -309,6 +348,101 @@
+@@ -327,6 +366,101 @@
  			reg = <0x4ab000 0x4>;
  		};
  
@@ -262,7 +258,7 @@ index 2efc8a2d41a7..737097e9fb4f 100644
  		wifi0: wifi@a000000 {
  			compatible = "qcom,ipq4019-wifi";
  			reg = <0xa000000 0x200000>;
-@@ -342,7 +476,7 @@
+@@ -360,7 +494,7 @@
  				     <GIC_SPI 45 IRQ_TYPE_EDGE_RISING>,
  				     <GIC_SPI 46 IRQ_TYPE_EDGE_RISING>,
  				     <GIC_SPI 47 IRQ_TYPE_EDGE_RISING>,
@@ -271,7 +267,7 @@ index 2efc8a2d41a7..737097e9fb4f 100644
  			interrupt-names =  "msi0",  "msi1",  "msi2",  "msi3",
  					   "msi4",  "msi5",  "msi6",  "msi7",
  					   "msi8",  "msi9", "msi10", "msi11",
-@@ -384,7 +518,7 @@
+@@ -402,7 +536,7 @@
  				     <GIC_SPI 61 IRQ_TYPE_EDGE_RISING>,
  				     <GIC_SPI 62 IRQ_TYPE_EDGE_RISING>,
  				     <GIC_SPI 63 IRQ_TYPE_EDGE_RISING>,
@@ -280,6 +276,3 @@ index 2efc8a2d41a7..737097e9fb4f 100644
  			interrupt-names =  "msi0",  "msi1",  "msi2",  "msi3",
  					   "msi4",  "msi5",  "msi6",  "msi7",
  					   "msi8",  "msi9", "msi10", "msi11",
--- 
-2.11.0
-

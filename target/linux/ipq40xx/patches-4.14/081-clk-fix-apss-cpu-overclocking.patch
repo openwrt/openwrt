@@ -42,11 +42,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/clk/qcom/gcc-ipq4019.c | 34 +++++++++++++++++++++++++++++++---
  1 file changed, 31 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/clk/qcom/gcc-ipq4019.c b/drivers/clk/qcom/gcc-ipq4019.c
-index 46cb256b4aa2..4ec43f7d2e52 100644
 --- a/drivers/clk/qcom/gcc-ipq4019.c
 +++ b/drivers/clk/qcom/gcc-ipq4019.c
-@@ -1253,6 +1253,29 @@ static const struct clk_fepll_vco gcc_fepll_vco = {
+@@ -1253,6 +1253,29 @@ static const struct clk_fepll_vco gcc_fe
  	.reg = 0x2f020,
  };
  
@@ -76,7 +74,7 @@ index 46cb256b4aa2..4ec43f7d2e52 100644
  /*
   * Round rate function for APSS CPU PLL Clock divider.
   * It looks up the frequency table and returns the next higher frequency
-@@ -1265,7 +1288,7 @@ static long clk_cpu_div_round_rate(struct clk_hw *hw, unsigned long rate,
+@@ -1265,7 +1288,7 @@ static long clk_cpu_div_round_rate(struc
  	struct clk_hw *p_hw;
  	const struct freq_tbl *f;
  
@@ -85,7 +83,7 @@ index 46cb256b4aa2..4ec43f7d2e52 100644
  	if (!f)
  		return -EINVAL;
  
-@@ -1288,7 +1311,7 @@ static int clk_cpu_div_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -1288,7 +1311,7 @@ static int clk_cpu_div_set_rate(struct c
  	u32 mask;
  	int ret;
  
@@ -102,7 +100,7 @@ index 46cb256b4aa2..4ec43f7d2e52 100644
  	struct clk_fepll *pll = to_clk_fepll(hw);
  	u32 cdiv, pre_div;
  	u64 rate;
-@@ -1335,7 +1359,11 @@ clk_cpu_div_recalc_rate(struct clk_hw *hw,
+@@ -1335,7 +1359,11 @@ clk_cpu_div_recalc_rate(struct clk_hw *h
  	rate = clk_fepll_vco_calc_rate(pll, parent_rate) * 2;
  	do_div(rate, pre_div);
  
@@ -115,6 +113,3 @@ index 46cb256b4aa2..4ec43f7d2e52 100644
  };
  
  static const struct clk_ops clk_regmap_cpu_div_ops = {
--- 
-2.11.0
-

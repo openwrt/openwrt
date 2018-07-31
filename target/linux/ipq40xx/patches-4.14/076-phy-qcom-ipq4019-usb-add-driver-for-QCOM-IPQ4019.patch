@@ -15,10 +15,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
  3 files changed, 196 insertions(+)
  create mode 100644 drivers/phy/qualcomm/phy-qcom-ipq4019-usb.c
 
-Index: linux-4.14.54/drivers/phy/qualcomm/Kconfig
-===================================================================
---- linux-4.14.54.orig/drivers/phy/qualcomm/Kconfig
-+++ linux-4.14.54/drivers/phy/qualcomm/Kconfig
+--- a/drivers/phy/qualcomm/Kconfig
++++ b/drivers/phy/qualcomm/Kconfig
 @@ -8,6 +8,13 @@ config PHY_QCOM_APQ8064_SATA
  	depends on OF
  	select GENERIC_PHY
@@ -33,10 +31,8 @@ Index: linux-4.14.54/drivers/phy/qualcomm/Kconfig
  config PHY_QCOM_IPQ806X_SATA
  	tristate "Qualcomm IPQ806x SATA SerDes/PHY driver"
  	depends on ARCH_QCOM
-Index: linux-4.14.54/drivers/phy/qualcomm/phy-qcom-ipq4019-usb.c
-===================================================================
 --- /dev/null
-+++ linux-4.14.54/drivers/phy/qualcomm/phy-qcom-ipq4019-usb.c
++++ b/drivers/phy/qualcomm/phy-qcom-ipq4019-usb.c
 @@ -0,0 +1,188 @@
 +/*
 + * Copyright (C) 2018 John Crispin <john@phrozen.org>
@@ -226,10 +222,8 @@ Index: linux-4.14.54/drivers/phy/qualcomm/phy-qcom-ipq4019-usb.c
 +MODULE_DESCRIPTION("QCOM/IPQ4019 USB phy driver");
 +MODULE_AUTHOR("John Crispin <john@phrozen.org>");
 +MODULE_LICENSE("GPL v2");
-Index: linux-4.14.54/drivers/phy/qualcomm/Makefile
-===================================================================
---- linux-4.14.54.orig/drivers/phy/qualcomm/Makefile
-+++ linux-4.14.54/drivers/phy/qualcomm/Makefile
+--- a/drivers/phy/qualcomm/Makefile
++++ b/drivers/phy/qualcomm/Makefile
 @@ -1,5 +1,6 @@
  # SPDX-License-Identifier: GPL-2.0
  obj-$(CONFIG_PHY_QCOM_APQ8064_SATA)	+= phy-qcom-apq8064-sata.o
