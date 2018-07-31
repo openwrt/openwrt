@@ -34,9 +34,20 @@ define Package/nftables
   CATEGORY:=Network
   SUBMENU:=Firewall
   TITLE:=nftables packet filtering userspace utility
-  DEPENDS:=+kmod-nft-core +libnftnl
+  DEPENDS:=+kmod-nft-core +libnftnl +PACKAGE_NFT_WITH_JSON:jansson
   URL:=http://netfilter.org/projects/nftables/
 endef
+
+define Package/nftables/config
+	config PACKAGE_NFT_WITH_JSON
+		bool "Build nftables with json support"
+		depends on PACKAGE_nftables
+		default n
+endef
+
+ifeq ($(CONFIG_PACKAGE_NFT_WITH_JSON),y)
+CONFIGURE_ARGS += --with-json
+endif
 
 define Package/nftables/install
 	$(INSTALL_DIR) $(1)/usr/sbin
