@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/soc/qcom/spm.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/soc/qcom/spm.c b/drivers/soc/qcom/spm.c
-index f9d7a85b2822..53807e839664 100644
 --- a/drivers/soc/qcom/spm.c
 +++ b/drivers/soc/qcom/spm.c
-@@ -219,6 +219,9 @@ static int __init qcom_cpuidle_init(struct device_node *cpu_node, int cpu)
+@@ -219,6 +219,9 @@ static int __init qcom_cpuidle_init(stru
  	cpumask_t mask;
  	bool use_scm_power_down = false;
  
@@ -26,6 +24,3 @@ index f9d7a85b2822..53807e839664 100644
  	for (i = 0; ; i++) {
  		state_node = of_parse_phandle(cpu_node, "cpu-idle-states", i);
  		if (!state_node)
--- 
-2.11.0
-

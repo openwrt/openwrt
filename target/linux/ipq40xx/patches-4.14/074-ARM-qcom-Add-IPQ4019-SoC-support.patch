@@ -12,10 +12,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
  arch/arm/mach-qcom/Kconfig | 5 +++++
  2 files changed, 6 insertions(+)
 
-Index: linux-4.14.54/arch/arm/Makefile
-===================================================================
---- linux-4.14.54.orig/arch/arm/Makefile
-+++ linux-4.14.54/arch/arm/Makefile
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
 @@ -150,6 +150,7 @@ endif
  textofs-$(CONFIG_ARCH_MSM8X60) := 0x00208000
  textofs-$(CONFIG_ARCH_MSM8960) := 0x00208000
@@ -24,10 +22,8 @@ Index: linux-4.14.54/arch/arm/Makefile
  
  # Machine directory name.  This list is sorted alphanumerically
  # by CONFIG_* macro name.
-Index: linux-4.14.54/arch/arm/mach-qcom/Kconfig
-===================================================================
---- linux-4.14.54.orig/arch/arm/mach-qcom/Kconfig
-+++ linux-4.14.54/arch/arm/mach-qcom/Kconfig
+--- a/arch/arm/mach-qcom/Kconfig
++++ b/arch/arm/mach-qcom/Kconfig
 @@ -27,4 +27,9 @@ config ARCH_MDM9615
  	bool "Enable support for MDM9615"
  	select CLKSRC_QCOM

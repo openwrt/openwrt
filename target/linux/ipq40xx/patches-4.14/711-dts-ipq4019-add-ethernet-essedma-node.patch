@@ -14,10 +14,8 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  arch/arm/boot/dts/qcom-ipq4019.dtsi | 60 +++++++++++++++++++++++++++++++++++++
  1 file changed, 60 insertions(+)
 
-Index: linux-4.14.54/arch/arm/boot/dts/qcom-ipq4019.dtsi
-===================================================================
---- linux-4.14.54.orig/arch/arm/boot/dts/qcom-ipq4019.dtsi
-+++ linux-4.14.54/arch/arm/boot/dts/qcom-ipq4019.dtsi
+--- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
 @@ -44,6 +44,8 @@
  		spi1 = &blsp1_spi2;
  		i2c0 = &blsp1_i2c3;
@@ -27,7 +25,7 @@ Index: linux-4.14.54/arch/arm/boot/dts/qcom-ipq4019.dtsi
  	};
  
  	cpus {
-@@ -606,6 +608,64 @@
+@@ -613,6 +615,64 @@
  			status = "disabled";
  		};
  
