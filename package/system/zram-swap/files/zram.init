@@ -93,6 +93,19 @@ zram_comp_algo()
 	fi
 }
 
+zram_comp_streams()
+{
+	local dev="$1"
+	local logical_cpus=$( grep -ci "^processor" /proc/cpuinfo )
+	[ $logical_cpus -gt 1 ] || return 1
+	local zram_comp_streams="$( uci -q get system.@system[0].zram_comp_streams )"
+	[ -n "$zram_comp_streams" ] && [ "$zram_comp_streams" -le "$logical_cpus" ] || zram_comp_streams=$logical_cpus
+	if [ -e /sys/block/$( basename $dev )/max_comp_streams ]; then
+		logger -s -t zram_comp_streams -p daemon.debug "Set max compression streams to '$zram_comp_streams' for zram '$dev'"
+		echo $zram_comp_streams > /sys/block/$( basename $dev )/max_comp_streams
+	fi
+}
+
 start()
 {
 	local zram_size="$( zram_size )"
@@ -110,6 +123,7 @@ start()
 
 	zram_reset "$zram_dev" "enforcing defaults"
 	zram_comp_algo "$zram_dev"
+	zram_comp_streams "$zram_dev"
 	echo $(( $zram_size * 1024 * 1024 )) >"/sys/block/$( basename "$zram_dev" )/disksize"
 	mkswap "$zram_dev"
 	swapon "$zram_dev"
