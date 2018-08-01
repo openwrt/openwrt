@@ -8,7 +8,6 @@ menu "GL.iNet packages choice shortcut"
 
 	config GLINET_BASIC_PACKAGES
 		bool "Select basic packages"
- 		select RTC_SUPPORT
 		select PACKAGE_ethtool
 		select PACKAGE_fcgi
 		select BUSYBOX_CUSTOM
@@ -32,12 +31,24 @@ menu "GL.iNet packages choice shortcut"
 		select PACKAGE_lighttpd-mod-expire
 		select PACKAGE_lighttpd-mod-fastcgi
 		select PACKAGE_lighttpd-mod-proxy
+		select PACKAGE_luci
+		select PACKAGE_luci-mod-rpc
+		select LUCI_LANG_zh-cn
+		select LUCI_LANG_en
 		select PACKAGE_unzip
 		select PACKAGE_wpa-cli
 		select PACKAGE_bridge
 		select PACKAGE_wpad
 		select PACKAGE_wget
+		select PACKAGE_curl
+		select PACKAGE_mwan3
+		select PACKAGE_relayd
+		select PACKAGE_unbound
 		select PACKAGE_ip-full
+		select PACKAGE_ca-bundle
+		select PACKAGE_kmod-nls-cp437
+		select PACKAGE_kmod-nls-iso8859-1
+		select PACKAGE_kmod-nls-utf8
 		select PACKAGE_kmod-nf-nathelper-extra
 		help
 		  Choose basic packages and various Busybox options.
@@ -53,12 +64,12 @@ menu "GL.iNet packages choice shortcut"
 			help
 			  Choose packages to support openvpn.
 
-		config GLINET_L2TP
-			bool "Support L2TP/IPsec"
-			select PACKAGE_ppp-mod-pptp
-			select PACKAGE_xl2tpd
+		config GLINET_WIREGUARD
+			bool "Support WireGuard"
+			select PACKAGE_wireguard
+			select PACKAGE_luci-proto-wireguard
 			help
-			  Choose packages to support PPTP and L2TP/IPsec.
+			  Choose packages to support wireguard.
 
 		config GLINET_SHADOWSOCKS
 			bool "Support Shadowsocks"
@@ -67,28 +78,14 @@ menu "GL.iNet packages choice shortcut"
 			select PACKAGE_luci-app-shadowsocks
 			help
 			  Choose packages to support shadowsocks.
+
+		config GLINET_L2TP
+			bool "Support L2TP/IPsec"
+			select PACKAGE_ppp-mod-pptp
+			select PACKAGE_xl2tpd
+			help
+			  Choose packages to support PPTP and L2TP/IPsec.
 	endmenu
-
-	config GLINET_ATH10K
-		bool "Support 5GHz Wi-Fi"
-		select PACKAGE_kmod-ath10k
-		select PACKAGE_ath10k-firmware-qca9887
-		help
-		  Choose pacakges to support ac routers.
-
-	config GLINET_LUCI
-		bool "Support luci"
-		select PACKAGE_luci
-		select PACKAGE_luci-mod-rpc
-		select PACKAGE_luci-app-qos
-		select PACKAGE_luci-app-samba
-		select PACKAGE_luci-app-upnp
-		select PACKAGE_luci-proto-3g
-		select LUCI_LANG_zh-cn
-		select LUCI_LANG_en
-		select PACKAGE_luci-app-mwan3
-		help
-		  Choose packages to support luci core web framework.
 
 	config GLINET_STORAGE
 		bool "Support storage"
@@ -99,36 +96,17 @@ menu "GL.iNet packages choice shortcut"
 		select PACKAGE_kmod-fs-ext4
 		select PACKAGE_kmod-fs-exfat
 		select PACKAGE_ntfs-3g
-		select PACKAGE_kmod-nls-cp437
-		select PACKAGE_kmod-nls-iso8859-1
-		select PACKAGE_kmod-nls-utf8
 		select PACKAGE_kmod-usb-storage
-		select PACKAGE_kmod-usb-uhci
-		select PACKAGE_kmod-usb2
-		select PACKAGE_kmod-usb-ohci
-		select PACKAGE_kmod-nls-cp437
-		select PACKAGE_kmod-nls-iso8859-1
-		select PACKAGE_kmod-nls-utf8
 		select PACKAGE_samba36-server
 		help
 		  Choose packages to support USB storage.
 
-	menu "Select USB dongle"
-		config HUAWEI_NCM
-			bool "Support huawei ncm"
-			select PACKAGE_kmod-usb-acm
-			select PACKAGE_kmod-usb-net-huawei-cdc-ncm
-			select PACKAGE_comgt
-			select PACKAGE_chat
-			select PACKAGE_comgt-directip
-			select PACKAGE_comgt-ncm
-			help
-			  Choose packages to support huawei ncm. 
-
-	endmenu
-
-	config GLINET_MODEM
-		bool "Support modem"
+	config GLINET_USB
+		bool "Support USB"
+		select PACKAGE_kmod-usb-uhci
+		select PACKAGE_kmod-usb2
+		select PACKAGE_kmod-usb-ohci
+		select PACKAGE_kmod-rt2800-usb
 		select PACKAGE_wwan
 		select PACKAGE_kmod-usb-serial
 		select PACKAGE_kmod-usb-serial-cp210x
@@ -138,21 +116,16 @@ menu "GL.iNet packages choice shortcut"
 		select PACKAGE_usb-modeswitch
 		select PACKAGE_kmod-mppe
 		select PACKAGE_kmod-usb-net
-		select PACKAGE_kmod-usb-cdc-ether
+		select PACKAGE_kmod-usb-net-cdc-ether
 		select PACKAGE_kmod-usb-net-rndis
 		select PACKAGE_kmod-usb-net-qmi-wwan
 		select PACKAGE_uqmi
-		help
-		  Choose packages to support modem which support ttyUSB mode and qmi mode.
-
-	config GLINET_TETHERING
-		bool "Support tethering"
 		select PACKAGE_kmod-usb-net-ipheth
 		select PACKAGE_libusbmuxd
 		select PACKAGE_libimobiledevice
 		select PACKAGE_usbmuxd
 		help
-		  Choose packages to support tethering.
+		  Choose packages to support USB related.
 
 	config GLINET_WEBCAM
 		bool "Support webcam"
@@ -168,20 +141,7 @@ menu "GL.iNet packages choice shortcut"
 		help
 		  Choose packages to support webcam.
 
-# 	config GLINET_MC
-# 		bool "Support Midnight Commander"
-# 		select PACKAGE_mc
-# 		select MC_DIFFVIEWER
-# 		select MC_EDITOR
-# 		select MC_SUBSHEL
-# 		select MC_LARGEFILE
-# 		select MC_BACKGROUND
-# 		select MC_CHARSET
-# 		select MC_VFS
-# 		help
-# 		  Choose packages to support Midnight Commander.
-# 
-# 	config GLINET_RTC
-# 		bool "Support rtc"
-# 		select RTC_SUPPORT
+ 	config GLINET_RTC
+ 		bool "Support rtc"
+ 		select RTC_SUPPORT
 endmenu
