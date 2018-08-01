@@ -133,18 +133,16 @@ start()
 
 stop()
 {
-	local zram_dev proc_entry
+	local zram_dev
 
-	for core in $( list_cpu_idx ); do {
-		zram_dev="$( zram_dev "$core" )"
-		proc_entry="/sys/block/$( basename "$zram_dev" )/reset"
-
-		grep -sq ^"$zram_dev " /proc/swaps && {
-			logger -s -t zram_stop -p daemon.debug "deactivate swap $zram_dev"
-			swapoff "$zram_dev"
-		}
-
-		zram_reset "$zram_dev" "claiming memory back"
+	for zram_dev in $( grep zram /proc/swaps |awk '{print $1}' ); do {
+		logger -s -t zram_stop -p daemon.debug "deactivate swap $zram_dev"
+		swapoff "$zram_dev" && zram_reset "$zram_dev" "claiming memory back"
+		local dev_index="$( echo $zram_dev | grep -o "[0-9]*$" )"
+		if [ $dev_index -ne 0 ]; then
+			logger -s -t zram_stop -p daemon.debug "removing zram $zram_dev"
+			echo $dev_index > /sys/class/zram-control/hot_remove
+		fi
 	} done
 }
 
