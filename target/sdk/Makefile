@@ -84,6 +84,10 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		$(SDK_DIRS) $(KERNEL_FILES) | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
 
+	# Copy usbip sources, this is required for the usbip userspace packages to be buildable by the SDK.
+	$(TAR) -cf - -C $(TOPDIR) $(KDIR_BASE)/tools/usb/usbip/ | \
+		$(TAR) -xf - -C $(SDK_BUILD_DIR)
+
 	(cd $(SDK_BUILD_DIR); find $(STAGING_SUBDIR_HOST)/bin $(STAGING_SUBDIR_HOST)/usr/bin \
 		$(STAGING_SUBDIR_TOOLCHAIN)/bin $(STAGING_SUBDIR_TOOLCHAIN)/*/bin $(STAGING_SUBDIR_TOOLCHAIN)/libexec \
 		-type f | $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST))
