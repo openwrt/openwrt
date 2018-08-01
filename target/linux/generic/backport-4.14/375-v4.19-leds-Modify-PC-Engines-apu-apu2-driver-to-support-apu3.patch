@@ -1,0 +1,94 @@
+From 8cb21086cc6359c6d4f003a788050308afb211ad Mon Sep 17 00:00:00 2001
+From: "Raffaello D. Di Napoli" <rafdev@dinapo.li>
+Date: Mon, 25 Jun 2018 08:50:02 -0400
+Subject: leds: Modify PC Engines apu/apu2 driver to support apu3
+
+PC Engines apu3 is an improved version of the apu2, using the same SoC
+and almost everything else.
+
+This patch reuses as much as possible from the apu2 definitions, to
+avoid redundancy.
+
+Signed-off-by: Raffaello D. Di Napoli <rafdev@dinapo.li>
+Acked-by: Pavel Machek <pavel@ucw.cz>
+Signed-off-by: Jacek Anaszewski <jacek.anaszewski@gmail.com>
+---
+ drivers/leds/leds-apu.c | 44 +++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 43 insertions(+), 1 deletion(-)
+
+(limited to 'drivers/leds/leds-apu.c')
+
+--- a/drivers/leds/leds-apu.c
++++ b/drivers/leds/leds-apu.c
+@@ -102,6 +102,13 @@ static const struct apu_led_profile apu2
+ 	{ "apu2:green:3", LED_OFF, APU2_FCH_GPIO_BASE + 70 * APU2_IOSIZE },
+ };
+ 
++/* Same as apu2_led_profile, but with "3" in the LED names. */
++static const struct apu_led_profile apu3_led_profile[] = {
++	{ "apu3:green:1", LED_ON,  APU2_FCH_GPIO_BASE + 68 * APU2_IOSIZE },
++	{ "apu3:green:2", LED_OFF, APU2_FCH_GPIO_BASE + 69 * APU2_IOSIZE },
++	{ "apu3:green:3", LED_OFF, APU2_FCH_GPIO_BASE + 70 * APU2_IOSIZE },
++};
++
+ static const struct dmi_system_id apu_led_dmi_table[] __initconst = {
+ 	{
+ 		.ident = "apu",
+@@ -134,6 +141,30 @@ static const struct dmi_system_id apu_le
+ 			DMI_MATCH(DMI_BOARD_NAME, "PC Engines apu2")
+ 		}
+ 	},
++	/* PC Engines APU3 with "Legacy" bios < 4.0.8 */
++	{
++		.ident = "apu3",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "PC Engines"),
++			DMI_MATCH(DMI_BOARD_NAME, "APU3")
++		}
++	},
++	/* PC Engines APU3 with "Legacy" bios >= 4.0.8 */
++	{
++		.ident = "apu3",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "PC Engines"),
++			DMI_MATCH(DMI_BOARD_NAME, "apu3")
++		}
++	},
++	/* PC Engines APU2 with "Mainline" bios */
++	{
++		.ident = "apu3",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "PC Engines"),
++			DMI_MATCH(DMI_BOARD_NAME, "PC Engines apu3")
++		}
++	},
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(dmi, apu_led_dmi_table);
+@@ -235,6 +266,14 @@ static int __init apu_led_probe(struct p
+ 		apu_led->platform = APU2_LED_PLATFORM;
+ 		apu_led->num_led_instances = ARRAY_SIZE(apu2_led_profile);
+ 		apu_led->iosize = APU2_IOSIZE;
++	} else if (dmi_match(DMI_BOARD_NAME, "APU3") ||
++		   dmi_match(DMI_BOARD_NAME, "apu3") ||
++		   dmi_match(DMI_BOARD_NAME, "PC Engines apu3")) {
++		apu_led->profile = apu3_led_profile;
++		/* Otherwise identical to APU2. */
++		apu_led->platform = APU2_LED_PLATFORM;
++		apu_led->num_led_instances = ARRAY_SIZE(apu3_led_profile);
++		apu_led->iosize = APU2_IOSIZE;
+ 	}
+ 
+ 	spin_lock_init(&apu_led->lock);
+@@ -259,7 +298,10 @@ static int __init apu_led_init(void)
+ 	if (!(dmi_match(DMI_PRODUCT_NAME, "APU") ||
+ 	      dmi_match(DMI_PRODUCT_NAME, "APU2") ||
+ 	      dmi_match(DMI_PRODUCT_NAME, "apu2") ||
+-	      dmi_match(DMI_PRODUCT_NAME, "PC Engines apu2"))) {
++	      dmi_match(DMI_PRODUCT_NAME, "PC Engines apu2") ||
++	      dmi_match(DMI_PRODUCT_NAME, "APU3") ||
++	      dmi_match(DMI_PRODUCT_NAME, "apu3") ||
++	      dmi_match(DMI_PRODUCT_NAME, "PC Engines apu3"))) {
+ 		pr_err("Unknown PC Engines board: %s\n",
+ 				dmi_get_system_info(DMI_PRODUCT_NAME));
+ 		return -ENODEV;
