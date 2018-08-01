@@ -80,7 +80,7 @@ enum ath79_mach_type {
 	ATH79_MACH_CPE510,			/* TP-LINK CPE510 */
 	ATH79_MACH_CPE830,			/* YunCore CPE830 */
 	ATH79_MACH_CPE870,			/* YunCore CPE870 */
-	ATH79_MACH_CR3000,			/* PowerCloud CR3000 */
+	ATH79_MACH_CR3000,			/* PowerCloud Systems CR3000 */
 	ATH79_MACH_CR5000,			/* PowerCloud Systems CR5000 */
 	ATH79_MACH_DAP_1330_A1,			/* D-Link DAP-1330 rev. A1 */
 	ATH79_MACH_DAP_2695_A1,			/* D-Link DAP-2695 rev. A1 */
