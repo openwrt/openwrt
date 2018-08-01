@@ -34,3 +34,19 @@ define KernelPackage/sp5100_tco/description
 endef
 
 $(eval $(call KernelPackage,sp5100_tco))
+
+
+define KernelPackage/leds-apu
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=PC Engines APU/APU2/APU3 LED support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_LEDS_APU
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-apu.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-apu)
+endef
+
+define KernelPackage/leds-apu/description
+ Driver for the PC Engines APU/APU2/APU3 LEDs.
+endef
+
+$(eval $(call KernelPackage,leds-apu))
