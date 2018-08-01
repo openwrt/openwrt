@@ -197,6 +197,22 @@ define Device/cf-e320n-v2
 endef
 TARGET_DEVICES += cf-e320n-v2
 
+define Device/cf-wr630ac
+  $(Device/cf-e316n-v2)
+  DEVICE_TITLE := COMFAST CF-WR630AC
+  DEVICE_PACKAGES += kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca9887
+  BOARDNAME := CF-WR630AC
+endef
+TARGET_DEVICES += cf-wr630ac
+
+define Device/cf-wr635ac
+  $(Device/cf-e316n-v2)
+  DEVICE_TITLE := COMFAST CF-WR635AC
+  DEVICE_PACKAGES += kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca9887
+  BOARDNAME := CF-WR635AC
+endef
+TARGET_DEVICES += cf-wr635ac
+
 define Device/cf-e355ac-v1
   DEVICE_TITLE := COMFAST CF-E355AC v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x \

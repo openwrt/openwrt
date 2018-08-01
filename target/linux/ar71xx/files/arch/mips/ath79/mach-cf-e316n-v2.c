@@ -56,6 +56,8 @@
 
 #define CF_E316N_V2_GPIO_BTN_RESET	20
 
+#define CF_PCIE_CALDATA_OFFSET		0x5000
+
 static struct gpio_led cf_e316n_v2_leds_gpio[] __initdata = {
 	{
 		.name		= "cf-e316n-v2:blue:diag",
@@ -489,6 +491,7 @@ static void __init cf_e320n_v2_setup(void)
 MIPS_MACHINE(ATH79_MACH_CF_E320N_V2, "CF-E320N-V2", "COMFAST CF-E320N v2",
 	     cf_e320n_v2_setup);
 
+
 static void __init cf_e355ac_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1f010000);
@@ -763,3 +766,109 @@ static void __init cf_e530n_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_CF_E530N, "CF-E530N", "COMFAST CF-E530N",
 	     cf_e530n_setup);
+
+//cf-wr630ac |cf-wr635ac
+#define CF_WR630AC_GPIO_BTN_RESET	17
+#define	CF_WR630AC_GPIO_XWDT_TRIGGER	13
+
+#define CF_WR630AC_GPIO_LED_58G		12
+#define CF_WR630AC_GPIO_LED_NETWORK	3
+#define CF_WR630AC_GPIO_LED_WPS		1
+#define CF_WR630AC_GPIO_LED_24G		2
+
+#define CF_WR630AC_GPIO_LED_WAN1	4
+#define CF_WR630AC_GPIO_LED_LAN1	16
+#define CF_WR630AC_GPIO_LED_LAN2	15
+#define CF_WR630AC_GPIO_LED_LAN3	14
+#define CF_WR630AC_GPIO_LED_LAN4	11
+
+static struct gpio_led cf_wr630ac_leds_gpio[] __initdata = {
+	{
+		.name		= "comfast:green:wan1",
+		.gpio		= CF_WR630AC_GPIO_LED_WAN1,
+		.active_low	= 1,
+	}, {
+		.name		= "comfast:green:lan1",
+		.gpio		= CF_WR630AC_GPIO_LED_LAN1,
+		.active_low	= 1,
+	}, {
+		.name		= "comfast:green:lan2",
+		.gpio		= CF_WR630AC_GPIO_LED_LAN2,
+		.active_low	= 1,
+	}, {
+		.name		= "comfast:green:lan3",
+		.gpio		= CF_WR630AC_GPIO_LED_LAN3,
+		.active_low	= 1,
+	}, {
+		.name		= "comfast:green:lan4",
+		.gpio		= CF_WR630AC_GPIO_LED_LAN4,
+		.active_low	= 1,
+	},{
+		.name		= "comfast:blue:24g",
+		.gpio		= CF_WR630AC_GPIO_LED_24G,
+		.active_low	= 1,
+	}, {
+		.name		= "comfast:blue:wps",
+		.gpio		= CF_WR630AC_GPIO_LED_WPS,
+		.active_low	= 1,
+	},{
+		.name		= "comfast:blue:58g",
+		.gpio		= CF_WR630AC_GPIO_LED_58G,
+		.active_low	= 1,
+	}, {
+		.name		= "comfast:blue:network",
+		.gpio		= CF_WR630AC_GPIO_LED_NETWORK,
+		.active_low	= 1,
+	},
+};
+
+static struct gpio_keys_button cf_wr630ac_gpio_keys[] __initdata = {
+	{
+		.desc		= "Reset button",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = CF_EXXXN_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= CF_WR630AC_GPIO_BTN_RESET,
+		.active_low	= 1,
+	}
+};
+
+static void __init cf_wr630ac_setup(void)
+{
+	u8 *art = (u8 *) KSEG1ADDR(0x1f010000);
+	cf_exxxn_common_setup(0x10000, CF_WR630AC_GPIO_XWDT_TRIGGER);
+
+	cf_exxxn_qca953x_eth_setup();
+
+	/* Disable JTAG (enables GPIO0-3) */
+	ath79_gpio_function_enable(AR934X_GPIO_FUNC_JTAG_DISABLE);
+
+	ath79_gpio_direction_select(CF_WR630AC_GPIO_LED_NETWORK, true);
+	ath79_gpio_direction_select(CF_WR630AC_GPIO_LED_58G, true);
+	ath79_gpio_direction_select(CF_WR630AC_GPIO_LED_24G, true);
+	ath79_gpio_direction_select(CF_WR630AC_GPIO_LED_WPS, true);
+
+	ath79_gpio_output_select(CF_WR630AC_GPIO_LED_NETWORK, 0);
+	ath79_gpio_output_select(CF_WR630AC_GPIO_LED_58G, 0);	
+	ath79_gpio_output_select(CF_WR630AC_GPIO_LED_24G, 0);
+	ath79_gpio_output_select(CF_WR630AC_GPIO_LED_WPS, 0);
+
+	/* Enable GPIO function for GPIOs in J9 header */
+	ath79_gpio_output_select(CF_WR630AC_GPIO_LED_LAN1, 0);
+	ath79_gpio_output_select(CF_WR630AC_GPIO_LED_LAN2, 0);
+	ath79_gpio_output_select(CF_WR630AC_GPIO_LED_LAN3, 0);
+	ath79_gpio_output_select(CF_WR630AC_GPIO_LED_LAN4, 0);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(cf_wr630ac_leds_gpio),
+				 cf_wr630ac_leds_gpio);
+
+	ath79_register_gpio_keys_polled(-1, CF_EXXXN_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(cf_wr630ac_gpio_keys),
+					cf_wr630ac_gpio_keys);
+	ap91_pci_init(art + CF_PCIE_CALDATA_OFFSET, NULL);
+}
+
+MIPS_MACHINE(ATH79_MACH_CF_WR630AC, "CF-WR630AC", "COMFAST CF-WR630AC",
+	     cf_wr630ac_setup);
+MIPS_MACHINE(ATH79_MACH_CF_WR635AC, "CF-WR635AC", "COMFAST CF-WR635AC",
+	     cf_wr630ac_setup);
