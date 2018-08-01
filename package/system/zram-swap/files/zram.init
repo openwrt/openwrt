@@ -69,6 +69,23 @@ zram_reset()
 	echo "1" >"$proc_entry"
 }
 
+zram_comp_algo()
+{
+	local dev="$1"
+	local zram_comp_algo="$( uci -q get system.@system[0].zram_comp_algo )"
+
+	if [ -z "$zram_comp_algo" ] || [ ! -e /sys/block/$( basename $dev )/comp_algorithm ]; then
+		return 0
+	fi
+
+	if [ `grep -c "$zram_comp_algo" /sys/block/$( basename $dev )/comp_algorithm` -ne 0 ]; then
+		logger -s -t zram_comp_algo -p daemon.debug "Set compression algorithm '$zram_comp_algo' for zram '$dev'"
+		echo $zram_comp_algo > "/sys/block/$( basename $dev )/comp_algorithm"
+	else
+		logger -s -t zram_comp_algo -p daemon.debug "Compression algorithm '$zram_comp_algo' is not supported for '$dev'"
+	fi
+}
+
 list_cpu_idx()
 {
 	# Offset by 1 if /dev/zram0 is in use by /tmp
@@ -108,6 +125,7 @@ start()
 
 		zram_reset "$zram_dev" "enforcing defaults"
 		echo $(( zram_size * 1024 * 1024 )) >"/sys/block/$( basename "$zram_dev" )/disksize"
+		zram_comp_algo "$zram_dev"
 		mkswap "$zram_dev"
 		swapon "$zram_dev"
 	} done
