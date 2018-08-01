@@ -22,6 +22,9 @@
 #include "wnm_ap.h"
 #include "taxonomy.h"
 
+#define PROBE_FLAG_HT_CAP 		((u32) BIT(6))
+#define PROBE_FLAG_VHT_CAP		((u32) BIT(16))
+
 static struct ubus_context *ctx;
 static struct blob_buf b;
 static int ctx_ref;
@@ -215,11 +218,17 @@ hostapd_bss_get_features(struct ubus_context *ctx, struct ubus_object *obj,
 
 enum {
 	NOTIFY_RESPONSE,
+	NOTIFY_PROBE_FLAGS_UPDATE,
+	NOTIFY_PROBE_FLAGS_SET,
+	NOTIFY_PROBE_FLAGS_REMOVE,
 	__NOTIFY_MAX
 };
 
 static const struct blobmsg_policy notify_policy[__NOTIFY_MAX] = {
-	[NOTIFY_RESPONSE] = { "notify_response", BLOBMSG_TYPE_INT32 },
+	[NOTIFY_RESPONSE] = { "notify_response", BLOBMSG_TYPE_INT8 },
+	[NOTIFY_PROBE_FLAGS_SET] = { "probe_flags_set", BLOBMSG_TYPE_INT32 },
+	[NOTIFY_PROBE_FLAGS_UPDATE] = { "probe_flags_update", BLOBMSG_TYPE_INT32 },
+	[NOTIFY_PROBE_FLAGS_REMOVE] = { "probe_flags_remove", BLOBMSG_TYPE_INT32 }
 };
 
 static int
@@ -236,10 +245,17 @@ hostapd_notify_response(struct ubus_context *ctx, struct ubus_object *obj,
 	blobmsg_parse(notify_policy, __NOTIFY_MAX, tb,
 		      blob_data(msg), blob_len(msg));
 
-	if (!tb[NOTIFY_RESPONSE])
-		return UBUS_STATUS_INVALID_ARGUMENT;
+	if (tb[NOTIFY_RESPONSE])
+		hapd->ubus.notify_response = blobmsg_get_u8(tb[NOTIFY_RESPONSE]);
 
-	hapd->ubus.notify_response = blobmsg_get_u32(tb[NOTIFY_RESPONSE]);
+	if (tb[NOTIFY_PROBE_FLAGS_SET])
+		hapd->ubus.probe_flags = blobmsg_get_u32(tb[NOTIFY_PROBE_FLAGS_SET]);
+
+	if (tb[NOTIFY_PROBE_FLAGS_UPDATE])
+		hapd->ubus.probe_flags |= blobmsg_get_u32(tb[NOTIFY_PROBE_FLAGS_UPDATE]);
+
+	if (tb[NOTIFY_PROBE_FLAGS_REMOVE])
+		hapd->ubus.probe_flags &= ~(blobmsg_get_u32(tb[NOTIFY_PROBE_FLAGS_REMOVE]));
 
 	return UBUS_STATUS_OK;
 }
@@ -1045,7 +1061,7 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 	blobmsg_add_u32(&b, "freq", hapd->iface->freq);
 
 	if (req->elems) {
-		if(req->elems->ht_capabilities)
+		if((hapd->ubus.probe_flags & PROBE_FLAG_HT_CAP) && req->elems->ht_capabilities)
 		{
 			struct ieee80211_ht_capabilities *ht_capabilities;
 			void *ht_cap, *ht_cap_mcs_set, *mcs_set;
@@ -1067,7 +1083,7 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 			blobmsg_close_table(&b, ht_cap_mcs_set);
 			blobmsg_close_table(&b, ht_cap);		
 		}
-		if(req->elems->vht_capabilities)
+		if((hapd->ubus.probe_flags & PROBE_FLAG_VHT_CAP) && req->elems->vht_capabilities)
 		{
 			struct ieee80211_vht_capabilities *vht_capabilities;
 			void *vht_cap, *vht_cap_mcs_set;
