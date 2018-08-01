@@ -1,0 +1,172 @@
+// SPDX-License-Identifier: GPL-2.0
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+#include "ar9342.dtsi"
+
+/ {
+	compatible = "mikrotik,rb912UAG-2HPnD", "qca,ar9342";
+	model = "Mikrotik RouterBOARD 912UAG-2HPnD";
+
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x4000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		
+		led1 {
+			label = "rb:green:led1";
+			gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led2 {
+			label = "rb:green:led2";
+			gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		led3 {
+			label = "rb:green:led3";
+			gpios = <&gpio2 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		led4 {
+			label = "rb:green:led4";
+			gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
+		};
+		led5 {
+			label = "rb:green:led5";
+			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		user {
+			label = "rb:green:user";
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		};
+		power {
+			label = "rb:green:power";
+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+	};
+	
+	nand@0 {
+		compatible = "mikrotik,rb91x-nand";
+		gpios = <&gpio 13 0>, <&gpio 15 0>, <&gpio 14 0>, <&gpio 3 0>, <&gpio 12 0>, <&gpio 4 0>, <&gpio 11 0>;
+	};
+
+};
+
+&wmac {
+	status = "okay";
+
+	eeprom-name = "soc_wmac.eeprom";
+	mtd-mac-address = <&hard_config 0x10>;
+	mtd-mac-address-increment = <1>;
+};
+
+
+&ref {
+	clock-frequency = <25000000>;
+};
+
+&uart {
+	status = "okay";
+};
+
+&gpio {
+	status = "okay";
+};
+
+&spi {
+	status = "okay";
+	num-cs = <2>;
+	cs-gpios = <0>, <&gpio 0 0>;
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			routerboot: partition@0 {
+				label = "routerboot";
+				reg = <0x000000 0xc000>;
+			};
+
+			hard_config: partition@c000 {
+				label = "hard_config";
+				reg = <0xc000 0x1000>;
+			};
+
+			bios: partition@d000 {
+				label = "bios";
+				reg = <0xd000 0x1000>;
+			};
+			soft_config: partition@e000 {
+				label = "soft_config";
+				reg = <0xe000 0x1000>;
+			};
+		};
+	};
+	gpio2: 74x164@1 {
+		compatible = "74x164";
+		reg = <1>;
+		spi-max-frequency = <10000000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		registers-number = <1>;
+		init-data = /bits/ 8 <0xe0>;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy-mask = <0>;
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+		phy-mode = "rgmii";
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	/* default for ar934x, except for 1000M */
+	pll-data = <0x06000000 0x00000101 0x00001616>;
+
+	mtd-mac-address = <&hard_config 0x10>;
+
+	phy-mode = "rgmii";
+	phy-handle = <&phy0>;
+};
+
+&usb {
+	status = "okay";
+
+	port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&pcie {
+	status = "okay";
+};

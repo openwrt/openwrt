@@ -1,0 +1,30 @@
+--- a/drivers/gpio/gpio-74x164.c
++++ b/drivers/gpio/gpio-74x164.c
+@@ -107,6 +107,8 @@ static int gen_74x164_probe(struct spi_d
+ 	struct gen_74x164_chip *chip;
+ 	u32 nregs;
+ 	int ret;
++	u8 *init_data;
++	int i;
+ 
+ 	/*
+ 	 * bits_per_word cannot be configured in platform data
+@@ -151,6 +153,18 @@ static int gen_74x164_probe(struct spi_d
+ 	chip->gpio_chip.parent = &spi->dev;
+ 	chip->gpio_chip.owner = THIS_MODULE;
+ 
++	init_data = kmalloc(sizeof(u8)*chip->registers, GFP_KERNEL);
++	if(init_data == NULL)
++		return -ENOMEM;
++
++	ret = of_property_read_variable_u8_array(spi->dev.of_node, "init-data", init_data,
++					0, chip->registers);
++	if(ret > 0) {
++		for (i = 0; i < chip->registers; i++) {
++			chip->buffer[i] = init_data[i];
++		}
++	}
++
+ 	mutex_init(&chip->lock);
+ 
+ 	ret = __gen_74x164_write_config(chip);

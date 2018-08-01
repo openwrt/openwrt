@@ -71,4 +71,14 @@ case "$FIRMWARE" in
 		;;
 	esac
 	;;
+"soc_wmac.eeprom")
+	case $board in
+	"mikrotik,rb912UAG-2HPnD")
+		rbextract /dev/mtd1 /lib/firmware/soc_wmac.eeprom
+		;;
+	*)
+		ath9k_eeprom_die "board $board is not supported yet"
+		;;
+	esac
+	;;
 esac
