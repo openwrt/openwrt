@@ -121,6 +121,10 @@ ifneq ($(LOCAL_TYPE),hostapd)
   ifdef CONFIG_WPA_SUPPLICANT_NO_TIMESTAMP_CHECK
     TARGET_CFLAGS += -DNO_TIMESTAMP_CHECK
   endif
+  ifeq ($(LOCAL_VARIANT),mini)
+    TARGET_CFLAGS += -flto
+    TARGET_LDFLAGS += -flto
+  endif
   ifdef CONFIG_WPA_RFKILL_SUPPORT
     DRIVER_MAKEOPTS += NEED_RFKILL=y
   endif
