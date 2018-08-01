@@ -95,34 +95,38 @@
 	status = "okay";
 
 	w25q64@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <10000000>;
 		m25p,chunked-io = <32>;
 
-		partition@0 {
-			label = "u-boot";
-			reg = <0x0 0x20000>;
-			read-only;
-		};
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		partition@20000 {
-			label = "firmware";
-			reg = <0x20000 0x5e0000>;
-		};
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x20000>;
+				read-only;
+			};
 
-		config: partition@600000 {
-			label = "config";
-			reg = <0x600000 0x50000>;
-			read-only;
-		};
+			partition@20000 {
+				label = "firmware";
+				reg = <0x20000 0x5e0000>;
+			};
 
-		radio: partition@7f0000 {
-			label = "radio";
-			reg = <0x7f0000 0x10000>;
-			read-only;
+			config: partition@600000 {
+				label = "config";
+				reg = <0x600000 0x50000>;
+				read-only;
+			};
+
+			radio: partition@7f0000 {
+				label = "radio";
+				reg = <0x7f0000 0x10000>;
+				read-only;
+			};
 		};
 	};
 };

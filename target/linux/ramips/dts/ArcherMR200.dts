@@ -116,39 +116,43 @@
 	status = "okay";
 
 	m25p80@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <10000000>;
 
-		partition@0 {
-			label = "u-boot";
-			reg = <0x0 0x20000>;
-			read-only;
-		};
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		partition@20000 {
-			label = "firmware";
-			reg = <0x20000 0x7b0000>;
-		};
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x20000>;
+				read-only;
+			};
 
-		rom: partition@7d0000 {
-			label = "rom";
-			reg = <0x7d0000 0x10000>;
-			read-only;
-		};
+			partition@20000 {
+				label = "firmware";
+				reg = <0x20000 0x7b0000>;
+			};
 
-		partition@7e0000 {
-			label = "romfile";
-			reg = <0x7e0000 0x10000>;
-			read-only;
-		};
+			rom: partition@7d0000 {
+				label = "rom";
+				reg = <0x7d0000 0x10000>;
+				read-only;
+			};
 
-		radio: partition@7f0000 {
-			label = "radio";
-			reg = <0x7f0000 0x10000>;
-			read-only;
+			partition@7e0000 {
+				label = "romfile";
+				reg = <0x7e0000 0x10000>;
+				read-only;
+			};
+
+			radio: partition@7f0000 {
+				label = "radio";
+				reg = <0x7f0000 0x10000>;
+				read-only;
+			};
 		};
 	};
 };
