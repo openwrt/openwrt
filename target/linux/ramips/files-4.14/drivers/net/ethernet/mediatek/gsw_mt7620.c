@@ -60,7 +60,28 @@ static irqreturn_t gsw_interrupt_mt7620(int irq, void *_priv)
 	return IRQ_HANDLED;
 }
 
-static void mt7620_hw_init(struct mt7620_gsw *gsw, struct device_node *np)
+static int mt7620_mdio_mode(struct device_node *eth_node)
+{
+	struct device_node *phy_node, *mdiobus_node;
+	const __be32 *id;
+	int ret = 0;
+
+	mdiobus_node = of_get_child_by_name(eth_node, "mdio-bus");
+
+	if (mdiobus_node) {
+		for_each_child_of_node(mdiobus_node, phy_node) {
+			id = of_get_property(phy_node, "reg", NULL);
+			if (id && (be32_to_cpu(*id) == 0x1f))
+				ret = 1;
+		}
+
+		of_node_put(mdiobus_node);
+	}
+
+	return ret;
+}
+
+static void mt7620_hw_init(struct mt7620_gsw *gsw, int mdio_mode)
 {
 	u32 is_BGA = (rt_sysc_r32(0x0c) >> 16) & 1;
 
@@ -70,7 +91,7 @@ static void mt7620_hw_init(struct mt7620_gsw *gsw, struct device_node *np)
 	/* Enable MIB stats */
 	mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_MIB_CNT_EN) | (1 << 1), GSW_REG_MIB_CNT_EN);
 
-	if (of_property_read_bool(np, "mediatek,mt7530")) {
+	if (mdio_mode) {
 		u32 val;
 
 		/* turn off ephy and set phy base addr to 12 */
@@ -192,7 +213,7 @@ int mtk_gsw_init(struct fe_priv *priv)
 	gsw = platform_get_drvdata(pdev);
 	priv->soc->swpriv = gsw;
 
-	mt7620_hw_init(gsw, np);
+	mt7620_hw_init(gsw, mt7620_mdio_mode(priv->dev->of_node));
 
 	if (gsw->irq) {
 		request_irq(gsw->irq, gsw_interrupt_mt7620, 0,
