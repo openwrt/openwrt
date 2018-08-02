@@ -154,14 +154,6 @@
 	};
 };
 
-&mdio1 {
-	status = "okay";
-
-	phy1: ethernet-phy@1 {
-		reg = <1>;
-	};
-};
-
 &eth0 {
 	status = "okay";
 
@@ -174,7 +166,6 @@
 	status = "okay";
 
 	mtd-mac-address = <&uboot 0x1fc00>;
-	phy-handle = <&phy1>;
 
 	fixed-link {
 		speed = <1000>;
