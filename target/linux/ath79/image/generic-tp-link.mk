@@ -1,6 +1,6 @@
 include ./common-tp-link.mk
 
-define Device/tplink_tl-archer-c7-v2
+define Device/tplink_archer-c7-v2
   $(Device/tplink-16mlzma)
   ATH_SOC := qca9558
   DEVICE_TITLE := TP-LINK Archer C7 v2
@@ -10,7 +10,7 @@ define Device/tplink_tl-archer-c7-v2
   IMAGE/factory-us.bin := append-rootfs | mktplinkfw factory -C US
   IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
 endef
-TARGET_DEVICES += tplink_tl-archer-c7-v2
+TARGET_DEVICES += tplink_archer-c7-v2
 
 define Device/tplink_tl-re450-v2
   $(Device/tplink)
