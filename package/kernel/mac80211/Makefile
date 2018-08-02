@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2017-11-01
-PKG_RELEASE:=9
+PKG_VERSION:=v4.18.5
+PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_HASH:=8437ab7886b988c8152e7a4db30b7f41009e49a3b2cb863edd05da1ecd7eb05a
+PKG_HASH:=9c13660e98b9397260266f98c9db76bdad2b48462cb376b5862dfbd18369edf2
 
 PKG_SOURCE:=backports-$(PKG_VERSION).tar.xz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/backports-$(PKG_VERSION)
@@ -1116,7 +1116,7 @@ endef
 define KernelPackage/mt7601u
   $(call KernelPackage/mac80211/Default)
   TITLE:=MT7601U-based USB dongles Wireless Driver
-  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT @USB_SUPPORT +kmod-usb-core +mt7601u-firmware
+  DEPENDS+= @BROKEN +kmod-mac80211 +@DRIVER_11N_SUPPORT @USB_SUPPORT +kmod-usb-core +mt7601u-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mediatek/mt7601u/mt7601u.ko
   AUTOLOAD:=$(call AutoProbe,mt7601u)
 endef
@@ -1838,6 +1838,26 @@ ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
     endef
   endif
 endif
+
+define Build/Patch
+	$(if $(QUILT),rm -rf $(PKG_BUILD_DIR)/patches; mkdir -p $(PKG_BUILD_DIR)/patches)
+	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/build,build/)
+	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/subsys,subsys/)
+	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/ath,ath/)
+	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/rt2x00,rt2x00/)
+	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/mwl,mwl/)
+	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/brcm,brcm/)
+	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
+endef
+
+define Quilt/Refresh/Package
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/build,build/)
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/subsys,subsys/)
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/ath,ath/)
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/rt2x00,rt2x00/)
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/mwl,mwl/)
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/brcm,brcm/)
+endef
 
 define Build/Compile
 	$(SH_FUNC) var2file "$(call shvar,mac80211_config)" $(PKG_BUILD_DIR)/.config
