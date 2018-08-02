@@ -61,10 +61,17 @@ case "$FIRMWARE" in
 	tplink,tl-mr3220-v1|\
 	tplink,tl-mr3420-v1|\
 	tplink,tl-wr2543-v1|\
-	tplink,tl-wr740n-v2|\
+	tplink,tl-wr740n-v1|\
+	tplink,tl-wr740n-v3|\
+	tplink,tl-wr741-v1|\
+	tplink,tl-wr743nd-v1|\
 	tplink,tl-wr841-v7|\
 	ubnt,unifi)
 		ath9k_eeprom_extract "art" 4096 2048
+		;;
+	tplink,tl-wr841-v5|\
+	tplink,tl-wr941-v4)
+		ath9k_eeprom_extract "art" 4096 3768
 		;;
 	*)
 		ath9k_eeprom_die "board $board is not supported yet"
