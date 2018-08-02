@@ -18,10 +18,9 @@ define Device/netgear_wnr612-v2
 endef
 TARGET_DEVICES += netgear_wnr612-v2
 
-define Device/n150r
+define Device/on_n150r
   ATH_SOC := ar7240
   DEVICE_TITLE := ON Network N150R
-  DEVICE_DTS := ar7240_on_n150r
   NETGEAR_KERNEL_MAGIC := 0x32303631
   KERNEL := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
@@ -31,6 +30,6 @@ define Device/n150r
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size $$$$(IMAGE_SIZE)
-  SUPPORTED_DEVICES := on,n150r n150r
+  SUPPORTED_DEVICES += n150r
 endef
-TARGET_DEVICES += n150r
+TARGET_DEVICES += on_n150r
