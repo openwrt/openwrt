@@ -46,7 +46,7 @@ case "$board" in
 	ucidef_set_led_netdev "lan_link" "LAN Link" "tp-link:green:lan_link" "eth0" "link"
 	;;
 "tplink,tl-mr3020-v1")
-	ucidef_set_led_switch "lan" "LAN" "tp-link:green:lan" "switch0" "0x02"
+	ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan" "eth0"
 	;;
 "tplink,tl-wr1043nd-v4")
 	ucidef_set_led_switch "wan" "WAN" "tp-link:green:wan" "switch0" "0x20"

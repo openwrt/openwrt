@@ -17,6 +17,7 @@ ath79_setup_interfaces()
 	"pcs,cap324"|\
 	"tplink,re450-v2"|\
 	"tplink,tl-mr10u"|\
+	"tplink,tl-mr3020-v1"|\
 	"tplink,tl-wr703n"|\
 	"ubnt,unifiac-lite"|\
 	"ubnt,unifiac-mesh"|\
@@ -58,11 +59,6 @@ ath79_setup_interfaces()
 	"tplink,tl-archer-c7-v2")
 		ucidef_add_switch "switch0" \
 			"0@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth0" "1:wan"
-		;;
-
-	"tplink,tl-mr3020-v1")
-		ucidef_set_interface_lan "eth0.1"
-		ucidef_add_switch "switch0" "0@eth0" "1:lan"
 		;;
 	"tplink,tl-mr3220-v1"|\
 	"tplink,tl-mr3420-v1"|\
