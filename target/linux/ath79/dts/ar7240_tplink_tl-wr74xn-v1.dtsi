@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -7,9 +6,6 @@
 #include "ar7240.dtsi"
 
 / {
-	compatible = "tplink,tl-wr740n-v2", "qca,ar7240";
-	model = "TP-Link TL-WR740N v2";
-
 	aliases {
 		led-status = &led_system;
 	};
@@ -39,45 +35,49 @@
 		pinctrl-0 = <&switch_led_pins>;
 
 		led_system: system {
-			label = "tl-wr740n-v2:green:system";
+			label = "tp-link:green:system";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
+		qss {
+			label = "tp-link:green:qss";
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		};
+
 		lan1 {
-			label = "tl-wr740n-v2:green:lan1";
+			label = "tp-link:green:lan1";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		lan2 {
-			label = "tl-wr740n-v2:green:lan2";
+			label = "tp-link:green:lan2";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		lan3 {
-			label = "tl-wr740n-v2:green:lan3";
+			label = "tp-link:green:lan3";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		lan4 {
-			label = "tl-wr740n-v2:green:lan4";
+			label = "tp-link:green:lan4";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			label = "tl-wr740n-v2:green:wan";
+			label = "tp-link:green:wan";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	ath9k-leds {
+		compatible = "gpio-leds";
 
 		wlan {
-			label = "tl-wr740n-v2:green:wlan";
+			label = "tp-link:green:wlan";
 			gpios = <&ath9k 1 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 			linux,default-trigger = "phy0tpt";
-		};
-
-		wps {
-			label = "tl-wr740n-v2:green:wps";
-			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
