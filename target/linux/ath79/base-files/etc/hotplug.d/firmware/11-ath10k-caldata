@@ -87,22 +87,22 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:00:00.0.bin")
 	case $board in
-	"openmesh,om5p-ac-v2")
+	openmesh,om5p-ac-v2)
 		ath10kcal_extract "ART" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
 		;;
-	"tplink,re450-v2")
+	tplink,re450-v2)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
 		;;
-	"tplink,tl-archer-c7-v2")
+	tplink,tl-archer-c7-v2)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -1)
 		;;
-	"ubnt,unifiac-lite"|\
-	"ubnt,unifiac-mesh"|\
-	"ubnt,unifiac-mesh-pro"|\
-	"ubnt,unifiac-pro")
+	ubnt,unifiac-lite|\
+	ubnt,unifiac-mesh|\
+	ubnt,unifiac-mesh-pro|\
+	ubnt,unifiac-pro)
 		ath10kcal_extract "EEPROM" 20480 2116
 		;;
 	esac
@@ -112,7 +112,6 @@ case "$FIRMWARE" in
 	phicomm,k2t)
 		ath10kcal_extract "art" 20480 12064
 		ath10kcal_patch_mac_crc $(k2t_get_mac "5g_mac")
-
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
