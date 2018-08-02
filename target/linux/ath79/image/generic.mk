@@ -13,6 +13,15 @@ define Device/avm_fritz300e
 endef
 TARGET_DEVICES += avm_fritz300e
 
+define Device/buffalo_wzr-hp-g450h
+  ATH_SOC := ar7242
+  DEVICE_TITLE := Buffalo WZR-HP-G450H
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  IMAGE_SIZE := 32256k
+  SUPPORTED_DEVICES += wzr-hp-g450h
+endef
+TARGET_DEVICES += buffalo_wzr-hp-g450h
+
 define Device/embeddedwireless_dorin
   ATH_SOC := ar9331
   DEVICE_TITLE := Embedded Wireless Dorin
@@ -110,15 +119,6 @@ define Device/netgear_wndr3800
   SUPPORTED_DEVICES += wndr3800
 endef
 TARGET_DEVICES += netgear_wndr3800
-
-define Device/buffalo_wzr-hp-g450h
-  ATH_SOC := ar7242
-  DEVICE_TITLE := Buffalo WZR-HP-G450H
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
-  IMAGE_SIZE := 32256k
-  SUPPORTED_DEVICES += wzr-hp-g450h
-endef
-TARGET_DEVICES += buffalo_wzr-hp-g450h
 
 define Device/phicomm_k2t
   ATH_SOC := qca9563
