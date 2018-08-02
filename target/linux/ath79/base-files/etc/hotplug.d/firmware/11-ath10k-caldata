@@ -91,13 +91,13 @@ case "$FIRMWARE" in
 		ath10kcal_extract "ART" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
 		;;
+	tplink,archer-c7-v2)
+		ath10kcal_extract "art" 20480 2116
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -1)
+		;;
 	tplink,re450-v2)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
-		;;
-	tplink,tl-archer-c7-v2)
-		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -1)
 		;;
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-mesh|\
