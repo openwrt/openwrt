@@ -20,19 +20,19 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		u-boot@0 {
+		partition@0 {
 			reg = <0x0 0x30000>;
 			label = "u-boot";
 			read-only;
 		};
 
-		factory: factory@30000 {
+		factory: partition@30000 {
 			reg = <0x30000 0x10000>;
 			label = "factory";
 			read-only;
 		};
 
-		firmware@40000 {
+		partition@40000 {
 			reg = <0x40000 0x3c0000>;
 			label = "firmware";
 		};

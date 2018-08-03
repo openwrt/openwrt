@@ -58,28 +58,33 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			u-boot@0 {
+			partition@0 {
 				reg = <0x0 0x30000>;
+				label = "u-boot";
 				read-only;
 			};
 
-			u-boot-env@30000 {
+			partition@30000 {
 				reg = <0x30000 0x10000>;
+				label = "u-boot-env";
 				read-only;
 			};
 
-			factory: factory@40000 {
+			factory: partition@40000 {
 				reg = <0x40000 0x10000>;
+				label = "factory";
 				read-only;
 			};
 
-			permanent_config@50000 {
+			partition@50000 {
 				reg = <0x50000 0x50000>;
+				label = "permanent_config";
 				read-only;
 			};
 
-			firmware@a0000 {
+			partition@a0000 {
 				reg = <0xa0000 0x760000>;
+				label = "firmware";
 			};
 		};
 	};
