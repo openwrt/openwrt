@@ -718,7 +718,7 @@ define KernelPackage/regmap
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Generic register map support
   DEPENDS:=+kmod-lib-lzo +kmod-i2c-core
-  KCONFIG:=CONFIG_REGMAP=y \
+  KCONFIG:=CONFIG_REGMAP \
 	   CONFIG_REGMAP_MMIO \
 	   CONFIG_REGMAP_SPI \
 	   CONFIG_REGMAP_I2C \
