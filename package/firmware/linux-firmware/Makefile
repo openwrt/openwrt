@@ -11,10 +11,10 @@ PKG_NAME:=linux-firmware
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
-PKG_SOURCE_DATE:=2017-09-06
-PKG_SOURCE_VERSION:=a61ac5cf8374edbfe692d12f805a1b194f7fead2
-PKG_MIRROR_HASH:=b827bf760de57b907df159c8d38d7c3fb5b4a691781114c47739e20bffb3a312
+PKG_SOURCE_DATE:=2018-08-03
+PKG_SOURCE_VERSION:=7b5835fd37630d18ac0c755329172f6a17c1af29
+#PKG_MIRROR_HASH:=dd300f3f28b8f8c07c93065fd9dc1c9785ebda8f15398b4d2d33f9418adcaf46
+PKG_SOURCE_URL:=git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
