@@ -49,6 +49,12 @@ BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C svn inf
 BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),src-git base $(PROJECT_GIT)/openwrt/openwrt.git$(if $(GIT_BRANCH),;$(GIT_BRANCH),$(if $(GIT_TAGNAME),;$(GIT_TAGNAME))))
 
 KDIR_BASE = $(patsubst $(TOPDIR)/%,%,$(LINUX_DIR))
+KDIR_ARCHES = $(LINUX_KARCH)
+
+# arch/arm64/ includes reference files in arch/arm/, so we'll need both
+ifeq ($(LINUX_KARCH),arm64)
+  KDIR_ARCHES += arm
+endif
 
 KERNEL_FILES_ARCH = \
 	Makefile* \
@@ -67,7 +73,7 @@ KERNEL_FILES_BASE := \
 	include \
 	Module.symvers \
 	modules.builtin \
-	$(addprefix arch/$(LINUX_KARCH)/,$(KERNEL_FILES_ARCH))
+	$(foreach arch,$(KDIR_ARCHES),$(addprefix arch/$(arch)/,$(KERNEL_FILES_ARCH)))
 
 KERNEL_FILES := $(patsubst $(TOPDIR)/%,%,$(wildcard $(addprefix $(LINUX_DIR)/,$(KERNEL_FILES_BASE))))
 
