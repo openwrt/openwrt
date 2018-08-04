@@ -729,7 +729,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	return 0;
  }
  
-@@ -2926,7 +2801,7 @@ static int nf_tables_dump_sets(struct sk
+@@ -2927,7 +2802,7 @@ static int nf_tables_dump_sets(struct sk
  
  	list_for_each_entry_rcu(table, &net->nft.tables, list) {
  		if (ctx->family != NFPROTO_UNSPEC &&
@@ -738,7 +738,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  			continue;
  
  		if (ctx->table && ctx->table != table)
-@@ -2947,7 +2822,7 @@ static int nf_tables_dump_sets(struct sk
+@@ -2948,7 +2823,7 @@ static int nf_tables_dump_sets(struct sk
  
  			ctx_set = *ctx;
  			ctx_set.table = table;
@@ -747,7 +747,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  			if (nf_tables_fill_set(skb, &ctx_set, set,
  					       NFT_MSG_NEWSET,
-@@ -3059,8 +2934,8 @@ static int nf_tables_newset(struct net *
+@@ -3060,8 +2935,8 @@ static int nf_tables_newset(struct net *
  {
  	const struct nfgenmsg *nfmsg = nlmsg_data(nlh);
  	u8 genmask = nft_genmask_next(net);
@@ -757,7 +757,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	struct nft_table *table;
  	struct nft_set *set;
  	struct nft_ctx ctx;
-@@ -3167,16 +3042,12 @@ static int nf_tables_newset(struct net *
+@@ -3168,16 +3043,12 @@ static int nf_tables_newset(struct net *
  
  	create = nlh->nlmsg_flags & NLM_F_CREATE ? true : false;
  
@@ -776,7 +776,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	set = nf_tables_set_lookup(table, nla[NFTA_SET_NAME], genmask);
  	if (IS_ERR(set)) {
-@@ -3438,19 +3309,15 @@ static int nft_ctx_init_from_elemattr(st
+@@ -3439,19 +3310,15 @@ static int nft_ctx_init_from_elemattr(st
  				      u8 genmask)
  {
  	const struct nfgenmsg *nfmsg = nlmsg_data(nlh);
@@ -799,7 +799,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	return 0;
  }
  
-@@ -3568,7 +3435,7 @@ static int nf_tables_dump_set(struct sk_
+@@ -3569,7 +3436,7 @@ static int nf_tables_dump_set(struct sk_
  	rcu_read_lock();
  	list_for_each_entry_rcu(table, &net->nft.tables, list) {
  		if (dump_ctx->ctx.family != NFPROTO_UNSPEC &&
@@ -808,7 +808,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  			continue;
  
  		if (table != dump_ctx->ctx.table)
-@@ -3598,7 +3465,7 @@ static int nf_tables_dump_set(struct sk_
+@@ -3599,7 +3466,7 @@ static int nf_tables_dump_set(struct sk_
  		goto nla_put_failure;
  
  	nfmsg = nlmsg_data(nlh);
@@ -817,7 +817,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	nfmsg->version      = NFNETLINK_V0;
  	nfmsg->res_id	    = htons(net->nft.base_seq & 0xffff);
  
-@@ -4477,7 +4344,6 @@ static int nf_tables_newobj(struct net *
+@@ -4478,7 +4345,6 @@ static int nf_tables_newobj(struct net *
  	const struct nft_object_type *type;
  	u8 genmask = nft_genmask_next(net);
  	int family = nfmsg->nfgen_family;
@@ -825,7 +825,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	struct nft_table *table;
  	struct nft_object *obj;
  	struct nft_ctx ctx;
-@@ -4489,11 +4355,7 @@ static int nf_tables_newobj(struct net *
+@@ -4490,11 +4356,7 @@ static int nf_tables_newobj(struct net *
  	    !nla[NFTA_OBJ_DATA])
  		return -EINVAL;
  
@@ -838,7 +838,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  				       genmask);
  	if (IS_ERR(table))
  		return PTR_ERR(table);
-@@ -4512,7 +4374,7 @@ static int nf_tables_newobj(struct net *
+@@ -4513,7 +4375,7 @@ static int nf_tables_newobj(struct net *
  		return 0;
  	}
  
@@ -847,7 +847,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	type = nft_obj_type_get(objtype);
  	if (IS_ERR(type))
-@@ -4604,7 +4466,7 @@ static int nf_tables_dump_obj(struct sk_
+@@ -4605,7 +4467,7 @@ static int nf_tables_dump_obj(struct sk_
  	cb->seq = net->nft.base_seq;
  
  	list_for_each_entry_rcu(table, &net->nft.tables, list) {
@@ -856,7 +856,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  			continue;
  
  		list_for_each_entry_rcu(obj, &table->objects, list) {
-@@ -4627,7 +4489,7 @@ static int nf_tables_dump_obj(struct sk_
+@@ -4628,7 +4490,7 @@ static int nf_tables_dump_obj(struct sk_
  						    cb->nlh->nlmsg_seq,
  						    NFT_MSG_NEWOBJ,
  						    NLM_F_MULTI | NLM_F_APPEND,
@@ -865,7 +865,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  						    obj, reset) < 0)
  				goto done;
  
-@@ -4685,7 +4547,6 @@ static int nf_tables_getobj(struct net *
+@@ -4686,7 +4548,6 @@ static int nf_tables_getobj(struct net *
  	const struct nfgenmsg *nfmsg = nlmsg_data(nlh);
  	u8 genmask = nft_genmask_cur(net);
  	int family = nfmsg->nfgen_family;
@@ -873,7 +873,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	const struct nft_table *table;
  	struct nft_object *obj;
  	struct sk_buff *skb2;
-@@ -4716,11 +4577,7 @@ static int nf_tables_getobj(struct net *
+@@ -4717,11 +4578,7 @@ static int nf_tables_getobj(struct net *
  	    !nla[NFTA_OBJ_TYPE])
  		return -EINVAL;
  
@@ -886,7 +886,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  				       genmask);
  	if (IS_ERR(table))
  		return PTR_ERR(table);
-@@ -4767,7 +4624,6 @@ static int nf_tables_delobj(struct net *
+@@ -4768,7 +4625,6 @@ static int nf_tables_delobj(struct net *
  	const struct nfgenmsg *nfmsg = nlmsg_data(nlh);
  	u8 genmask = nft_genmask_next(net);
  	int family = nfmsg->nfgen_family;
@@ -894,7 +894,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	struct nft_table *table;
  	struct nft_object *obj;
  	struct nft_ctx ctx;
-@@ -4777,11 +4633,7 @@ static int nf_tables_delobj(struct net *
+@@ -4778,11 +4634,7 @@ static int nf_tables_delobj(struct net *
  	    !nla[NFTA_OBJ_NAME])
  		return -EINVAL;
  
@@ -907,7 +907,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  				       genmask);
  	if (IS_ERR(table))
  		return PTR_ERR(table);
-@@ -4793,7 +4645,7 @@ static int nf_tables_delobj(struct net *
+@@ -4794,7 +4646,7 @@ static int nf_tables_delobj(struct net *
  	if (obj->use > 0)
  		return -EBUSY;
  
@@ -916,7 +916,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	return nft_delobj(&ctx, obj);
  }
-@@ -4978,33 +4830,31 @@ err1:
+@@ -4979,33 +4831,31 @@ err1:
  	return err;
  }
  
@@ -956,7 +956,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  			return ERR_PTR(-EAGAIN);
  	}
  #endif
-@@ -5052,7 +4902,6 @@ static int nf_tables_newflowtable(struct
+@@ -5053,7 +4903,6 @@ static int nf_tables_newflowtable(struct
  	u8 genmask = nft_genmask_next(net);
  	int family = nfmsg->nfgen_family;
  	struct nft_flowtable *flowtable;
@@ -964,7 +964,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	struct nft_table *table;
  	struct nft_ctx ctx;
  	int err, i, k;
-@@ -5062,12 +4911,8 @@ static int nf_tables_newflowtable(struct
+@@ -5063,12 +4912,8 @@ static int nf_tables_newflowtable(struct
  	    !nla[NFTA_FLOWTABLE_HOOK])
  		return -EINVAL;
  
@@ -978,7 +978,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	if (IS_ERR(table))
  		return PTR_ERR(table);
  
-@@ -5084,7 +4929,7 @@ static int nf_tables_newflowtable(struct
+@@ -5085,7 +4930,7 @@ static int nf_tables_newflowtable(struct
  		return 0;
  	}
  
@@ -987,7 +987,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	flowtable = kzalloc(sizeof(*flowtable), GFP_KERNEL);
  	if (!flowtable)
-@@ -5097,7 +4942,7 @@ static int nf_tables_newflowtable(struct
+@@ -5098,7 +4943,7 @@ static int nf_tables_newflowtable(struct
  		goto err1;
  	}
  
@@ -996,7 +996,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	if (IS_ERR(type)) {
  		err = PTR_ERR(type);
  		goto err2;
-@@ -5157,16 +5002,11 @@ static int nf_tables_delflowtable(struct
+@@ -5158,16 +5003,11 @@ static int nf_tables_delflowtable(struct
  	u8 genmask = nft_genmask_next(net);
  	int family = nfmsg->nfgen_family;
  	struct nft_flowtable *flowtable;
@@ -1014,7 +1014,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	if (IS_ERR(table))
  		return PTR_ERR(table);
  
-@@ -5177,7 +5017,7 @@ static int nf_tables_delflowtable(struct
+@@ -5178,7 +5018,7 @@ static int nf_tables_delflowtable(struct
  	if (flowtable->use > 0)
  		return -EBUSY;
  
@@ -1023,7 +1023,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	return nft_delflowtable(&ctx, flowtable);
  }
-@@ -5252,7 +5092,7 @@ static int nf_tables_dump_flowtable(stru
+@@ -5253,7 +5093,7 @@ static int nf_tables_dump_flowtable(stru
  	cb->seq = net->nft.base_seq;
  
  	list_for_each_entry_rcu(table, &net->nft.tables, list) {
@@ -1032,7 +1032,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  			continue;
  
  		list_for_each_entry_rcu(flowtable, &table->flowtables, list) {
-@@ -5271,7 +5111,7 @@ static int nf_tables_dump_flowtable(stru
+@@ -5272,7 +5112,7 @@ static int nf_tables_dump_flowtable(stru
  							  cb->nlh->nlmsg_seq,
  							  NFT_MSG_NEWFLOWTABLE,
  							  NLM_F_MULTI | NLM_F_APPEND,
@@ -1041,7 +1041,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  				goto done;
  
  			nl_dump_check_consistent(cb, nlmsg_hdr(skb));
-@@ -5331,7 +5171,6 @@ static int nf_tables_getflowtable(struct
+@@ -5332,7 +5172,6 @@ static int nf_tables_getflowtable(struct
  	u8 genmask = nft_genmask_cur(net);
  	int family = nfmsg->nfgen_family;
  	struct nft_flowtable *flowtable;
@@ -1049,7 +1049,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	const struct nft_table *table;
  	struct sk_buff *skb2;
  	int err;
-@@ -5357,12 +5196,8 @@ static int nf_tables_getflowtable(struct
+@@ -5358,12 +5197,8 @@ static int nf_tables_getflowtable(struct
  	if (!nla[NFTA_FLOWTABLE_NAME])
  		return -EINVAL;
  
@@ -1063,7 +1063,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	if (IS_ERR(table))
  		return PTR_ERR(table);
  
-@@ -6528,7 +6363,7 @@ int __nft_release_basechain(struct nft_c
+@@ -6529,7 +6364,7 @@ int __nft_release_basechain(struct nft_c
  }
  EXPORT_SYMBOL_GPL(__nft_release_basechain);
  
@@ -1072,7 +1072,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  {
  	struct nft_flowtable *flowtable, *nf;
  	struct nft_table *table, *nt;
-@@ -6541,7 +6376,7 @@ static void __nft_release_afinfo(struct
+@@ -6542,7 +6377,7 @@ static void __nft_release_afinfo(struct
  	};
  
  	list_for_each_entry_safe(table, nt, &net->nft.tables, list) {
@@ -1081,7 +1081,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  		list_for_each_entry(chain, &table->chains, list)
  			nf_tables_unregister_hook(net, table, chain);
-@@ -6593,7 +6428,7 @@ static int __net_init nf_tables_init_net
+@@ -6594,7 +6429,7 @@ static int __net_init nf_tables_init_net
  
  static void __net_exit nf_tables_exit_net(struct net *net)
  {
