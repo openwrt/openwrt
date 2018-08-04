@@ -31,6 +31,8 @@
 
 #define GL_MIFI_GPIO_BTN_RESET    11
 
+#define GL_MIFI_GPIO_USB_POWER		6
+
 #define GL_MIFI_KEYS_POLL_INTERVAL	20	/* msecs */
 #define GL_MIFI_KEYS_DEBOUNCE_INTERVAL	(3 * GL_MIFI_KEYS_POLL_INTERVAL)
 
@@ -96,6 +98,10 @@ static void __init gl_mifi_setup(void)
 	ath79_register_gpio_keys_polled(-1, GL_MIFI_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(gl_mifi_gpio_keys),
 					gl_mifi_gpio_keys);
+
+	gpio_request_one(GL_MIFI_GPIO_USB_POWER,
+			 GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,
+			 "usbpower");
 
 	/* enable usb */
 	ath79_register_usb();
