@@ -1,0 +1,40 @@
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -3057,7 +3057,7 @@ out_null:
+ 
+ struct sk_buff *validate_xmit_skb_list(struct sk_buff *skb, struct net_device *dev)
+ {
+-	struct sk_buff *next, *head = NULL, *tail;
++	struct sk_buff *next, *head = NULL, *tail = NULL;
+ 
+ 	for (; skb != NULL; skb = next) {
+ 		next = skb->next;
+@@ -3072,7 +3072,7 @@ struct sk_buff *validate_xmit_skb_list(s
+ 
+ 		if (!head)
+ 			head = skb;
+-		else
++		else if (tail)
+ 			tail->next = skb;
+ 		/* If skb was segmented, skb->prev points to
+ 		 * the last segment. If not, it still contains skb.
+--- a/net/ipv4/fib_trie.c
++++ b/net/ipv4/fib_trie.c
+@@ -1717,7 +1717,7 @@ struct fib_table *fib_trie_unmerge(struc
+ 	lt = (struct trie *)local_tb->tb_data;
+ 
+ 	while ((l = leaf_walk_rcu(&tp, key)) != NULL) {
+-		struct key_vector *local_l = NULL, *local_tp;
++		struct key_vector *local_l = NULL, *local_tp = NULL;
+ 
+ 		hlist_for_each_entry_rcu(fa, &l->leaf, fa_list) {
+ 			struct fib_alias *new_fa;
+@@ -1736,7 +1736,7 @@ struct fib_table *fib_trie_unmerge(struc
+ 			if (!local_l)
+ 				local_l = fib_find_node(lt, &local_tp, l->key);
+ 
+-			if (fib_insert_alias(lt, local_tp, local_l, new_fa,
++			if (local_tp && fib_insert_alias(lt, local_tp, local_l, new_fa,
+ 					     NULL, l->key)) {
+ 				kmem_cache_free(fn_alias_kmem, new_fa);
+ 				goto out;
