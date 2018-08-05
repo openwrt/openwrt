@@ -54,6 +54,7 @@ define Device/hc5661a
   DTS := HC5661A
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := HiWiFi HC5661A
+  DEVICE_PACKAGES := kmod-sdhci-mt7620
 endef
 TARGET_DEVICES += hc5661a
 
@@ -113,6 +114,19 @@ define Device/pbr-d1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += pbr-d1
+
+define Device/tplink_tl-wa801nd-v5
+  $(Device/tplink)
+  DTS := TL-WA801NDV5
+  IMAGE_SIZE := 7808k
+  DEVICE_TITLE := TP-Link TL-WA801ND v5
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x08010005
+  TPLINK_HWREV := 0x1
+  TPLINK_HWREVADD := 0x5
+  TPLINK_HVERSION := 3
+endef
+TARGET_DEVICES += tplink_tl-wa801nd-v5
 
 define Device/tl-wr840n-v4
   $(Device/tplink)
@@ -196,6 +210,20 @@ define Device/tplink_tl-mr3420-v5
 endef
 TARGET_DEVICES += tplink_tl-mr3420-v5
 
+define Device/tplink_tl-wr842n-v5
+  $(Device/tplink)
+  DTS := TL-WR842NV5
+  IMAGE_SIZE := 7808k
+  DEVICE_TITLE := TP-Link TL-WR842N v5
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x08420005
+  TPLINK_HWREV := 0x5
+  TPLINK_HWREVADD := 0x5
+  TPLINK_HVERSION := 3
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += tplink_tl-wr842n-v5
+
 define Device/tplink_tl-wr902ac-v3
   $(Device/tplink)
   DTS := TL-WR902ACV3
@@ -206,7 +234,6 @@ define Device/tplink_tl-wr902ac-v3
   TPLINK_HWREV := 0x89
   TPLINK_HWREVADD := 0x1
   TPLINK_HVERSION := 3
-  IMAGES += factory.bin
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += tplink_tl-wr902ac-v3
@@ -299,3 +326,15 @@ define Device/zbtlink_zbt-we1226
   DEVICE_TITLE := ZBTlink ZBT-WE1226
 endef
 TARGET_DEVICES += zbtlink_zbt-we1226
+
+define Device/zyxel_keenetic-extra-ii
+  DTS := ki_rb
+  IMAGE_SIZE := 14912k
+  BLOCKSIZE := 64k
+  DEVICE_TITLE := ZyXEL Keenetic Extra II
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size $$$$(IMAGE_SIZE) | zyimage -d 6162 -v "ZyXEL Keenetic Extra II"
+endef
+TARGET_DEVICES += zyxel_keenetic-extra-ii

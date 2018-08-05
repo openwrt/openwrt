@@ -13,11 +13,6 @@
 		led-status = &system;
 	};
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x8000000>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -158,7 +153,7 @@
 				reg = <0x020000 0x7d0000>;
 			};
 
-			partition@7f0000 {
+			art: partition@7f0000 {
 				label = "art";
 				reg = <0x7f0000 0x010000>;
 				read-only;
@@ -201,6 +196,14 @@
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
+};
+
+&wmac {
+	status = "okay";
+
+	mtd-cal-data = <&art 0x1000>;
+	mtd-mac-address = <&uboot 0x1fc00>;
+	mtd-mac-address-increment = <(-1)>;
 };
 
 &mdio0 {

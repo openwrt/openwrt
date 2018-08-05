@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mbedtls
-PKG_VERSION:=2.9.0
+PKG_VERSION:=2.12.0
 PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-gpl.tgz
 PKG_SOURCE_URL:=https://tls.mbed.org/download/
-PKG_HASH:=361837d0d8d4e178ac51ea1a4eacfbc0c57ea3cafb460fd6b46a1f4223a4e151
+PKG_HASH:=8661d19a896a5a7a232ed01ac7f05cf0ec3514798f18076c2c9ef965fbeb5a28
 
 PKG_BUILD_PARALLEL:=1
 PKG_LICENSE:=GPL-2.0+
@@ -64,9 +64,9 @@ endef
 PKG_INSTALL:=1
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
+TARGET_CFLAGS := $(filter-out -O%,$(TARGET_CFLAGS))
 
 CMAKE_OPTIONS += \
-	-DCMAKE_BUILD_TYPE:String="Release" \
 	-DUSE_SHARED_MBEDTLS_LIBRARY:Bool=ON \
 	-DENABLE_TESTING:Bool=OFF \
 	-DENABLE_PROGRAMS:Bool=ON

@@ -10,9 +10,8 @@
 	compatible = "avm,fritz300e", "qca,ar7242";
 	model = "AVM FRITZ!WLAN Repeater 300E";
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x4000000>;
+	aliases {
+		led-status = &power;
 	};
 
 	gpio-keys {
@@ -32,7 +31,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		power {
+		power: power {
 			label = "fritz300e:green:power";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			default-state = "on";
@@ -46,6 +45,7 @@
 		wlan {
 			label = "fritz300e:green:wlan";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 	};
 

@@ -10,9 +10,12 @@
 	compatible = "netgear,wndr3800", "qca,ar7161";
 	model = "Netgear WNDR3800";
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x8000000>;
+	aliases {
+		led-status = &power_green;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
 	};
 
 	extosc: ref {
@@ -25,9 +28,11 @@
 	reset-leds {
 		compatible = "reset-leds";
 
-		wps {
+		usb_led {
 			label = "netgear:green:usb";
 			resets = <&rst 12>;
+			trigger-sources = <&usb_ochi_port>, <&usb_echi_port>;
+			linux,default-trigger = "usbport";
 		};
 	};
 
@@ -40,15 +45,15 @@
 			default-state = "off";
 		};
 
-		power_green {
+		power_green: power_green {
 			label = "netgear:green:power";
-			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 
 		power_orange {
 			label = "netgear:orange:power";
-			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 
@@ -71,21 +76,21 @@
 		#size-cells = <0>;
 		poll-interval = <100>;
 
-		button@0 {
+		wps {
 			label = "wps";
 			linux,code = <KEY_WPS_BUTTON>;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 
-		button@1 {
+		reset {
 			label = "reset";
 			linux,code = <KEY_RESTART>;
-			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 
-		button@2 {
-			label = "wifi";
-			linux,code = <BTN_2>;
+		rfkill {
+			label = "rfkill";
+			linux,code = <KEY_RFKILL>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -114,10 +119,20 @@
 
 &usb1 {
 	status = "okay";
+
+	usb_ochi_port: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
 };
 
 &usb2 {
 	status = "okay";
+
+	usb_echi_port: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
 };
 
 &pcie0 {
@@ -153,14 +168,15 @@
 			partition@1 {
 				label = "u-boot-env";
 				reg = <0x050000 0x020000>;
+				read-only;
 			};
 
 			partition@2 {
 				label = "firmware";
-				reg = <0x70000 0xf80000>;
+				reg = <0x070000 0xf80000>;
 			};
 
-			partition@3 {
+			art: partition@3 {
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
@@ -174,6 +190,8 @@
 
 	pll-data = <0x11110000 0x00001099 0x00991099>;
 
+	mtd-mac-address = <&art 0x00>;
+
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
@@ -184,6 +202,8 @@
 	status = "okay";
 
 	pll-data = <0x11110000 0x00001099 0x00991099>;
+
+	mtd-mac-address = <&art 0x06>;
 
 	resets = <&rst 13>;
 	reset-names = "mac";

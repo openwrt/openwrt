@@ -1,7 +1,5 @@
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath9k/ahb.c
-===================================================================
---- backports-2017-11-01.orig/drivers/net/wireless/ath/ath9k/ahb.c
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath9k/ahb.c
+--- a/drivers/net/wireless/ath/ath9k/ahb.c
++++ b/drivers/net/wireless/ath/ath9k/ahb.c
 @@ -19,7 +19,15 @@
  #include <linux/nl80211.h>
  #include <linux/platform_device.h>
@@ -310,10 +308,8 @@ Index: backports-2017-11-01/drivers/net/wireless/ath/ath9k/ahb.c
  	},
  	.id_table    = ath9k_platform_id_table,
  };
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath9k/ath9k.h
-===================================================================
---- backports-2017-11-01.orig/drivers/net/wireless/ath/ath9k/ath9k.h
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath9k/ath9k.h
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
 @@ -25,6 +25,7 @@
  #include <linux/time.h>
  #include <linux/hw_random.h>

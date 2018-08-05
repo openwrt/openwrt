@@ -72,7 +72,6 @@ define Profile
   $(eval $(call ProfileDefault))
   $(eval $(call Profile/$(1)))
   dumpinfo : $(call shexport,Profile/$(1)/Description)
-  DEFAULT_PACKAGES := $(filter-out $(patsubst -%,%,$(filter -%,$(PACKAGES))),$(DEFAULT_PACKAGES))
   PACKAGES := $(filter-out -%,$(PACKAGES))
   DUMPINFO += \
 	echo "Target-Profile: $(1)"; \
@@ -176,6 +175,7 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_24kc = -mips32r2 -mtune=24kc
     CPU_CFLAGS_74kc = -mips32r2 -mtune=74kc
     CPU_CFLAGS_octeon = -march=octeon -mabi=64
+    CPU_CFLAGS_octeonplus = -march=octeon+ -mabi=64
   endif
   ifeq ($(ARCH),i386)
     CPU_TYPE ?= pentium

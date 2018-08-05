@@ -169,7 +169,7 @@ define KernelPackage/phy-broadcom
    KCONFIG:=CONFIG_BROADCOM_PHY
    DEPENDS:=+kmod-libphy +kmod-phylib-broadcom
    FILES:=$(LINUX_DIR)/drivers/net/phy/broadcom.ko
-   AUTOLOAD:=$(call AutoLoad,18,broadcom)
+   AUTOLOAD:=$(call AutoLoad,18,broadcom,1)
 endef
 
 define KernelPackage/phy-broadcom/description

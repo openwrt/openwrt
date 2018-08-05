@@ -11,18 +11,14 @@
 	compatible = "embeddedwireless,dorin", "qca,ar9331";
 
 	aliases {
+		led-status = &status;
 		serial0 = &uart;
-	};
-
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x4000000>;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		status {
+		status: status {
 			label = "dorin:green:status";
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 			default-state = "off";
@@ -112,12 +108,6 @@
 
 	mtd-mac-address = <&art 0x1002>;
 	mtd-mac-address-increment = <0x40>;
-
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
-
 };
 
 &mdio1 {

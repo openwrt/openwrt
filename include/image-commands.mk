@@ -49,6 +49,19 @@ define Build/eva-image
 	mv $@.new $@
 endef
 
+define Build/make-ras
+	let \
+		newsize="$(subst k,* 1024,$(RAS_ROOTFS_SIZE))"; \
+		$(TOPDIR)/scripts/make-ras.sh \
+			--board $(RAS_BOARD) \
+			--version $(RAS_VERSION) \
+			--kernel $(call param_get_default,kernel,$(1),$(IMAGE_KERNEL)) \
+			--rootfs $@ \
+			--rootfssize $$newsize \
+			$@.new
+	@mv $@.new $@
+endef
+
 define Build/netgear-chk
 	$(STAGING_DIR_HOST)/bin/mkchkimg \
 		-o $@.new \
@@ -60,7 +73,7 @@ endef
 
 define Build/netgear-dni
 	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		-B $(NETGEAR_BOARD_ID) -v $(VERSION_DIST).$(REVISION) \
+		-B $(NETGEAR_BOARD_ID) -v $(VERSION_DIST).$(firstword $(subst -, ,$(REVISION))) \
 		$(if $(NETGEAR_HW_ID),-H $(NETGEAR_HW_ID)) \
 		-r "$(1)" \
 		-i $@ -o $@.new

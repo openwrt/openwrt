@@ -17,6 +17,8 @@ PKG_LICENSE_FILES:=COPYING
 
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
+PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -24,7 +26,6 @@ include $(INCLUDE_DIR)/cmake.mk
 CMAKE_HOST_OPTIONS += -DUCERT_FULL=1 -DUCERT_HOST_BUILD=1
 HOST_BUILD_DEPENDS:=libubox/host libjson-c/host usign/host
 PKG_BUILD_DEPENDS:=ucert/host
-PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
 define Package/ucert-full
   SECTION:=base
@@ -47,6 +48,11 @@ endef
 ifeq ($(BUILD_VARIANT),full)
   CMAKE_OPTIONS += -DUCERT_FULL=1
 endif
+
+define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
+	$(call Build/Prepare/Default)
+endef
 
 define Package/ucert/install
 	$(INSTALL_DIR) $(1)/usr/bin

@@ -2,6 +2,7 @@
 
 . /lib/functions/system.sh
 . /lib/functions/uci-defaults.sh
+. /lib/functions/k2t.sh
 
 ath79_setup_interfaces()
 {
@@ -12,8 +13,13 @@ ath79_setup_interfaces()
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
 	"avm,fritz300e"|\
+	"ocedo,raccoon"|\
+	"pcs,cap324"|\
+	"tplink,re450-v2"|\
 	"tplink,tl-mr10u"|\
 	"tplink,tl-wr703n"|\
+	"ubnt,unifiac-lite"|\
+	"ubnt,unifiac-mesh"|\
 	"ubnt,unifi")
 		ucidef_set_interface_lan "eth0"
 		;;
@@ -26,9 +32,44 @@ ath79_setup_interfaces()
 	"glinet,ar150")
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+
+	"glinet,ar300m")
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		;;
+
+	"netgear,wnr612-v2"|\
+	"on,n150r")
+		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
+		ucidef_add_switch "switch0" \
+		"0@eth1" "1:lan" "2:lan" "3:lan:3" "4:lan:4"
+		;;
+
+	"pcs,cr3000")
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
+		ucidef_set_interface_wan "eth0"
+		;;
+
+	"pcs,cr5000")
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
+		;;
+
+	"tplink,tl-archer-c7-v2")
+		ucidef_add_switch "switch0" \
+			"0@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth0" "1:wan"
+		;;
+
 	"tplink,tl-mr3020-v1")
 		ucidef_set_interface_lan "eth0.1"
 		ucidef_add_switch "switch0" "0@eth0" "1:lan"
+		;;
+	"tplink,tl-mr3220-v1"|\
+	"tplink,tl-mr3420-v1"|\
+	"tplink,tl-wr841-v7")
+		ucidef_set_interface_wan "eth0"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
 	"tplink,tl-wdr3600"|\
 	"tplink,tl-wdr4300")
@@ -42,9 +83,34 @@ ath79_setup_interfaces()
 			"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan"
 		;;
 
+	"tplink,tl-wr741nd-v4"|\
+	"tplink,tl-wr740nd-v4")
+		ucidef_set_interfaces_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
+		;;
+	"tplink,tl-wr841n-v9")
+		ucidef_set_interface_wan "eth0"
+		ucidef_add_switch "switch0" \
+		"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
+		;;
 	"tplink,tl-wr1043nd-v1")
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "5@eth0"
+		;;
+	"tplink,tl-wr1043nd-v4")
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
+		;;
+	"tplink,tl-wr1043nd-v2"|\
+	"tplink,tl-wr1043nd-v3")
+		ucidef_set_interfaces_lan_wan "eth1.1" "eth0.2"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan" "6@eth0"
+		;;
+	"tplink,tl-wr2543-v1")
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "9@eth0"
 		;;
 	"netgear,wndr3800")
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
@@ -60,6 +126,15 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:lan" "4:lan" "5:lan" "1:wan"
 		;;
+	"phicomm,k2t")
+		ucidef_add_switch "switch0" \
+			"0@eth0" "3:lan:1" "5:lan:2" "4:wan"
+		;;
+	"ubnt,unifiac-mesh-pro"|\
+	"ubnt,unifiac-pro")
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan" "3:wan"
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
@@ -74,9 +149,18 @@ ath79_setup_macs()
 	avm,fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		;;
+	phicomm,k2t)
+		lan_mac=$(k2t_get_mac "lan_mac")
+		wan_mac=$(k2t_get_mac "wan_mac")
+		;;
+	"tplink,tl-wr1043nd-v4")
+		base_mac=$(mtd_get_mac_binary product-info 8)
+		wan_mac=$(macaddr_add "$base_mac" 1)
+		;;
 	esac
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
 }
 
 board_config_update

@@ -15,11 +15,6 @@
 		led-status = &system;
 	};
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x2000000>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -160,29 +155,22 @@
 	};
 };
 
-&mdio1 {
+
+&eth0 {
 	status = "okay";
-	phy4: ethernet-phy@4 {
-		reg = <4>;
+
+	mtd-mac-address = <&uboot 0x1fc00>;
+	gmac-config {
+		device = <&gmac>;
+
+		switch-phy-addr-swap = <0>;
+		switch-phy-swap = <0>;
 	};
 };
 
 &eth1 {
 	status = "okay";
-	phy-handle = <&phy4>;
-
-	mtd-mac-address = <&uboot 0x1fc00>;
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
-
-	gmac-config {
-	        device = <&gmac>;
-
-		switch-phy-addr-swap = <1>;
-		switch-phy-swap = <1>;
-	};
+	compatible = "syscon", "simple-mfd";
 };
 
 &wmac {

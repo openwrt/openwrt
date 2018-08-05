@@ -1639,3 +1639,19 @@ endef
 
 $(eval $(call KernelPackage,usb-net2280))
 
+define KernelPackage/chaoskey
+  SUBMENU:=$(USB_MENU)
+  TITLE:=Chaoskey hardware RNG support
+  DEPENDS:=+kmod-random-core
+  KCONFIG:=CONFIG_USB_CHAOSKEY
+  FILES:=$(LINUX_DIR)/drivers/usb/misc/chaoskey.ko
+  AUTOLOAD:=$(call AutoProbe,chaoskey)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/chaoskey/description
+  Kernel module for chaoskey, USB attached true random number generator
+endef
+
+$(eval $(call KernelPackage,chaoskey))
+

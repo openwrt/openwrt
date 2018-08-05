@@ -101,6 +101,18 @@ define Device/linksys_ea8500
 endef
 TARGET_DEVICES += linksys_ea8500
 
+define Device/nec_wg2600hp
+	$(call Device/LegacyImage)
+	DEVICE_DTS := qcom-ipq8064-wg2600hp
+	BLOCKSIZE := 64k
+	BOARD_NAME := wg2600hp
+	DEVICE_TITLE := NEC Aterm WG2600HP
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
+endef
+TARGET_DEVICES += nec_wg2600hp
+
 define Device/netgear_d7800
 	$(call Device/DniImage)
 	DEVICE_DTS := qcom-ipq8064-d7800

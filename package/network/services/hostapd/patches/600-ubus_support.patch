@@ -30,16 +30,7 @@
  	int interface_added; /* virtual interface added for this BSS */
  	unsigned int started:1;
  	unsigned int disabled:1;
-@@ -392,6 +394,8 @@ struct hostapd_iface {
- 	struct hostapd_config *conf;
- 	char phy[16]; /* Name of the PHY (radio) */
- 
-+	struct hostapd_ubus_iface ubus;
-+
- 	enum hostapd_iface_state {
- 		HAPD_IFACE_UNINITIALIZED,
- 		HAPD_IFACE_DISABLED,
-@@ -544,6 +548,7 @@ hostapd_alloc_bss_data(struct hostapd_if
+@@ -544,6 +546,7 @@ hostapd_alloc_bss_data(struct hostapd_if
  		       struct hostapd_bss_config *bss);
  int hostapd_setup_interface(struct hostapd_iface *iface);
  int hostapd_setup_interface_complete(struct hostapd_iface *iface, int err);
@@ -251,7 +242,7 @@
  	int ret;
  	u16 csa_offs[2];
  	size_t csa_offs_len;
-@@ -737,6 +738,11 @@ void handle_probe_req(struct hostapd_dat
+@@ -737,6 +738,12 @@ void handle_probe_req(struct hostapd_dat
  	struct hostapd_sta_wpa_psk_short *psk = NULL;
  	char *identity = NULL;
  	char *radius_cui = NULL;
@@ -259,11 +250,12 @@
 +		.type = HOSTAPD_UBUS_PROBE_REQ,
 +		.mgmt_frame = mgmt,
 +		.frame_info = fi,
++		.elems = &elems,
 +	};
  
  	if (len < IEEE80211_HDRLEN)
  		return;
-@@ -914,6 +920,12 @@ void handle_probe_req(struct hostapd_dat
+@@ -914,6 +921,12 @@ void handle_probe_req(struct hostapd_dat
  	}
  #endif /* CONFIG_P2P */
  

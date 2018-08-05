@@ -11,12 +11,12 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=wireguard
 
-PKG_VERSION:=0.0.20180531
+PKG_VERSION:=0.0.20180802
 PKG_RELEASE:=1
 
 PKG_SOURCE:=WireGuard-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://git.zx2c4.com/WireGuard/snapshot/
-PKG_HASH:=ff653095cc0e4c491ab6cd095ddf5d1db207f48f947fb92873a73220363f423c
+PKG_HASH:=cd1da34b377d58df760aadf69ced045081517570586fc2d4eed7f09f5d5a47c6
 
 PKG_LICENSE:=GPL-2.0 Apache-2.0
 PKG_LICENSE_FILES:=COPYING
@@ -84,12 +84,13 @@ define Package/wireguard-tools/description
   $(call Package/wireguard/Default/description)
 
   This package provides the userspace control program for WireGuard,
-  `wg(8)`, and a netifd protocol helper.
+  `wg(8)`, a netifd protocol helper, and a re-resolve watchdog script.
 endef
 
 define Package/wireguard-tools/install
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/tools/wg $(1)/usr/bin/
+	$(INSTALL_BIN) ./files/wireguard_watchdog $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/lib/netifd/proto/
 	$(INSTALL_BIN) ./files/wireguard.sh $(1)/lib/netifd/proto/
 endef

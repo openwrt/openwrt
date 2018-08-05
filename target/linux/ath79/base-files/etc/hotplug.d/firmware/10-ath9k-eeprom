@@ -50,11 +50,19 @@ case "$FIRMWARE" in
 	"avm,fritz300e")
 		ath9k_eeprom_extract_reverse "urloader" 5441 1088
 		;;
+	"ocedo,raccoon"|\
 	"tplink,tl-wdr3600"|\
 	"tplink,tl-wdr4300")
 		ath9k_eeprom_extract "art" 20480 1088
 		;;
+	"netgear,wnr612-v2"|\
+	"on,n150r"|\
+	"pcs,cap324"|\
+	"tplink,tl-mr3220-v1"|\
+	"tplink,tl-mr3420-v1"|\
 	"tplink,tl-wr740n-v2"|\
+	"tplink,tl-wr841-v7"|\
+	"tplink,tl-wr2543-v1"|\
 	"ubnt,unifi")
 		ath9k_eeprom_extract "art" 4096 2048
 		;;

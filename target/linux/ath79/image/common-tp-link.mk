@@ -1,4 +1,4 @@
-DEVICE_VARS += TPLINK_HWID TPLINK_HWREV TPLINK_FLASHLAYOUT TPLINK_HEADER_VERSION TPLINK_BOARD_NAME
+DEVICE_VARS += TPLINK_HWID TPLINK_HWREV TPLINK_FLASHLAYOUT TPLINK_HEADER_VERSION TPLINK_BOARD_NAME TPLINK_BOARD_ID
 
 define rootfs_align
 $(patsubst %-256k,0x40000,$(patsubst %-128k,0x20000,$(patsubst %-64k,0x10000,$(patsubst squashfs%,0x4,$(patsubst root.%,%,$(1))))))
@@ -81,4 +81,10 @@ define Device/tplink-8mlzma
 $(Device/tplink)
   TPLINK_FLASHLAYOUT := 8Mlzma
   IMAGE_SIZE := 7936k
+endef
+
+define Device/tplink-16mlzma
+  $(Device/tplink)
+  TPLINK_FLASHLAYOUT := 16Mlzma
+  IMAGE_SIZE := 15872k
 endef

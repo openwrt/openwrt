@@ -14,11 +14,6 @@
                 serial0 = &uart;
         };
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x4000000>;
-	};
-
 	keys {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -56,6 +51,7 @@
 			label = "eg200:red:wlan";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 			default-state = "off";
+			linux,default-trigger = "phy0tpt";
 		};
 	};
 };
@@ -77,24 +73,20 @@
 	status = "okay";
 };
 
-&mdio0 {
-	status = "okay";
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-		phy-mode = "mii";
-	};
-};
-
 &eth0 {
 	status = "okay";
 	mtd-mac-address = <&art 0x0>;
-	phy-handle = <&phy4>;
 
 	gmac-config {
 		device = <&gmac>;
 		switch-phy-addr-swap = <1>;
 		switch-phy-swap = <1>;
 	};
+};
+
+&eth1 {
+	status = "okay";
+	compatible = "syscon", "simple-mfd";
 };
 
 &spi {
