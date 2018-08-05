@@ -2,14 +2,37 @@
 
 use strict;
 use warnings;
-use Time::HiRes qw(gettimeofday);
+use Config;
 
 if (@ARGV < 2) {
 	die "Usage: $0 <prefix> <command...>\n";
 }
 
+sub gettime {
+	my ($sec, $usec);
+
+	eval {
+		require Time::HiRes;
+		($sec, $usec) = Time::HiRes::gettimeofday();
+	};
+
+	unless (defined($sec) && defined($usec)) {
+		my $tv_t = ($Config{'longsize'} == 8) ? 'qq' : 'll';
+		my $tv = pack $tv_t, 0, 0;
+
+		eval {
+			require 'syscall.ph';
+			syscall(SYS_gettimeofday(), $tv, 0);
+		};
+
+		($sec, $usec) = unpack $tv_t, $tv;
+	}
+
+	return ($sec, $usec);
+}
+
 my ($prefix, @cmd) = @ARGV;
-my ($sec, $msec) = gettimeofday();
+my ($sec, $usec) = gettime();
 my $pid = fork();
 
 if (!defined($pid)) {
@@ -28,12 +51,12 @@ else {
 	}
 
 	my $exitcode = $? >> 8;
-	my ($sec2, $msec2) = gettimeofday();
+	my ($sec2, $usec2) = gettime();
 	my (undef, undef, $cuser, $csystem) = times();
 
 	printf STDERR "%s#%.2f#%.2f#%.2f\n",
 		$prefix, $cuser, $csystem,
-		($sec2 - $sec) + ($msec2 - $msec) / 1000000;
+		($sec2 - $sec) + ($usec2 - $usec) / 1000000;
 
 	$SIG{'INT'} = 'DEFAULT';
 	$SIG{'QUIT'} = 'DEFAULT';
