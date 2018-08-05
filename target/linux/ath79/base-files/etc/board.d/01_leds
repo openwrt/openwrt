@@ -22,6 +22,14 @@ etactica,eg200)
 	ucidef_set_led_oneshot "modbus" "Modbus" "$boardname:red:modbus" "100" "33"
 	ucidef_set_led_default "etactica" "etactica" "$boardname:red:etactica" "ignore"
 	;;
+ligowawe,dlb5-propeller)
+	ucidef_set_led_netdev "lan0" "LAN0" "ligowawe:green:lan" "eth0"
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "ligowawe:yellow:link1" "wlan0" "1" "100"
+	ucidef_set_led_rssi "rssimedium" "RSSIMEDIUM" "ligowawe:yellow:link2" "wlan0" "25" "100"
+	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "ligowawe:yellow:link3" "wlan0" "50" "100"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "ligowawe:yellow:link4" "wlan0" "75" "100"
+	;;
 netgear,wnr612-v2|\
 on,n150r)
 	ucidef_set_led_netdev "wan" "WAN" "netgear:green:wan" "eth0"
