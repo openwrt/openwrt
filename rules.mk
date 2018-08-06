@@ -395,9 +395,11 @@ endef
 # Calculate sha256sum of any plain file within a given directory
 # $(1) => Input directory
 # $(2) => If set, recurse into subdirectories
+# $(3) => If set, sign sha256sums via usign
 define sha256sums
 	(cd $(1); find . $(if $(2),,-maxdepth 1) -type f -not -name 'sha256sums' -printf "%P\n" | sort | \
-		xargs -r $(STAGING_DIR_HOST)/bin/mkhash -n sha256 | sed -ne 's!^\(.*\) \(.*\)$$!\1 *\2!p' > sha256sums)
+		xargs -r $(STAGING_DIR_HOST)/bin/mkhash -n sha256 | sed -ne 's!^\(.*\) \(.*\)$$!\1 *\2!p' > sha256sums; \
+		$(if $(3),usign -S -s $(TOPDIR)/keys/key-build -m sha256sums,))
 endef
 
 # file extension

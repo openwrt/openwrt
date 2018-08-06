@@ -53,6 +53,10 @@ Print manifest:
 	make manifest PROFILE="<profilename>" # override the default target profile
 	make manifest PACKAGES="<pkg1> [<pkg2> [<pkg3> ...]]" # include extra packages
 
+Create signing keys:
+    Create keys to sign created images
+
+    make usign_setup
 endef
 $(eval $(call shexport,Helptext))
 
@@ -67,6 +71,7 @@ OPKG:=$(call opkg,$(TARGET_DIR)) \
 	-f $(TOPDIR)/repositories.conf \
 	--cache $(DL_DIR) \
 	--lists-dir $(LISTS_DIR)
+USIGN:=$(call usign,$(TARGET_DIR))
 
 include $(INCLUDE_DIR)/target.mk
 -include .profiles.mk
@@ -168,7 +173,7 @@ build_image: FORCE
 checksum: FORCE
 	@echo
 	@echo Calculating checksums...
-	@$(call sha256sums,$(BIN_DIR))
+	@$(call sha256sums,$(BIN_DIR),,$(CONFIG_SIGNED_IMAGES))
 
 clean:
 	rm -rf $(TMP_DIR) $(DL_DIR) $(TARGET_DIR) $(BIN_DIR)
@@ -203,5 +208,9 @@ manifest: FORCE
 	$(MAKE) -s _call_manifest \
 		$(if $(PROFILE),USER_PROFILE="$(PROFILE_FILTER)") \
 		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)"))
+
+usign_setup:
+	mkdir -p ./keys
+	$(USIGN) -G -p ./keys/key-build.pub -s ./keys/key-build
 
 .SILENT: help info image manifest

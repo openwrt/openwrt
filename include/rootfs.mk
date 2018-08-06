@@ -31,6 +31,8 @@ ifdef CONFIG_USE_MKLIBS
   endef
 endif
 
+usign = $(STAGING_DIR_HOST)/bin/usign
+
 # where to build (and put) .ipk packages
 opkg = \
   IPKG_NO_SCRIPT=1 \
