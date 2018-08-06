@@ -64,7 +64,7 @@
 	status = "okay";
 
 	/* Winbond 25Q128FVSG SPI flash */
-	spiflash: w25q128@0 {
+	flash@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "winbond,w25q128", "jedec,spi-nor";
