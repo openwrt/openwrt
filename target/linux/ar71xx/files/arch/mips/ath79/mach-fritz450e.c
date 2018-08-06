@@ -155,6 +155,7 @@ static void __init fritz450E_setup(void) {
 	ath79_eth0_data.mii_bus_dev = &ath79_mdio1_device.dev;
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
 	ath79_eth0_data.phy_mask = BIT(FRITZ450E_PHY_ADDRESS);
+	ath79_eth0_data.enable_sgmii_fixup = 1;
 	ath79_eth0_pll_data.pll_1000 = 0x03000000;
 	ath79_eth0_pll_data.pll_100 = 0x00000101;
 	ath79_eth0_pll_data.pll_10 = 0x00001313;
