@@ -65,8 +65,6 @@
 
 	keys {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <20>;
 
 		reset {
@@ -85,7 +83,6 @@
 
 	gpio-export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		gpio_usb1_power {
 			gpio-export,name = "tp-link:power:usb1";
@@ -131,8 +128,6 @@
 	status = "okay";
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <25000000>;
@@ -163,9 +158,13 @@
 };
 
 &usb {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
 
 	port@1 {
+		#address-cells = <1>;
+		#size-cells = <0>;
 		reg = <1>;
 		#trigger-source-cells = <0>;
 
@@ -188,7 +187,7 @@
 &pcie {
 	status = "okay";
 
-	ath9k: wifi@168c,0033 {
+	ath9k: wifi@0,0 {
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
 		mtd-mac-address = <&uboot 0x1fc00>;

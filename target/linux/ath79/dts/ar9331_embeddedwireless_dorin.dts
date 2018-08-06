@@ -27,8 +27,6 @@
 
 	keys {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <100>;
 
 		wps {
@@ -67,8 +65,6 @@
 	status = "okay";
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		spi-max-frequency = <104000000>;
 		reg = <0>;

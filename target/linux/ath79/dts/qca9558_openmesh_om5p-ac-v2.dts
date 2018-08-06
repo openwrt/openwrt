@@ -47,11 +47,9 @@
 
 	keys {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <100>;
 
-		button@0 {
+		button0 {
 			label = "reset";
 			linux,code = <KEY_RESTART>;
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
@@ -102,8 +100,6 @@
 	num-cs = <1>;
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <25000000>;

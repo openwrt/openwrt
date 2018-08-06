@@ -72,8 +72,6 @@
 
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <100>;
 
 		wps {
@@ -101,6 +99,8 @@
 		gpio-sck = <&gpio 7 GPIO_ACTIVE_HIGH>;
 
 		mdio-bus {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "okay";
 
 			phy-mask = <0x10>;
@@ -118,6 +118,8 @@
 };
 
 &usb1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
 
 	usb_ochi_port: port@1 {
@@ -127,6 +129,8 @@
 };
 
 &usb2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
 
 	usb_echi_port: port@1 {
@@ -148,8 +152,6 @@
 	num-cs = <1>;
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <25000000>;

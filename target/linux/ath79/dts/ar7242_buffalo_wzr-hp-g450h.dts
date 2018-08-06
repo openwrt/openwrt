@@ -12,10 +12,8 @@
 
 	keys {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
-
 		poll-interval = <20>;
+
 		usb {
 			linux,code = <BTN_2>;
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
@@ -110,7 +108,7 @@
 &pcie {
 	status = "okay";
 
-	wifi@0 {
+	wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
 	};

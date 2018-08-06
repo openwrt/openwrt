@@ -26,8 +26,6 @@
 
 	gpio-keys {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <20>;
 
 		reset {
@@ -89,6 +87,8 @@
 		realtek,extif0 = <1 0 1 1 1 1 1 1 2>;
 
 		mdio-bus {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "okay";
 
 			phy0: ethernet-phy@0 {
@@ -107,8 +107,6 @@
 	num-cs = <1>;
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <25000000>;
@@ -143,6 +141,8 @@
 };
 
 &usb {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
 
 	hub_port: port@1 {
@@ -158,7 +158,7 @@
 &pcie {
 	status = "okay";
 
-	ath9k: wifi@0 {
+	ath9k: wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		#gpio-cells = <2>;
 		gpio-controller;

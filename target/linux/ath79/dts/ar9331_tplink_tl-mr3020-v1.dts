@@ -48,8 +48,6 @@
 
 	keys {
 		compatible = "gpio-keys";
-		#address-cells = <1>;
-		#size-cells = <0>;
 
 		button0 {
 			label = "reset";
@@ -98,6 +96,8 @@
 };
 
 &usb {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	dr_mode = "host";
 	vbus-supply = <&reg_usb_vbus>;
 	status = "okay";
@@ -118,8 +118,6 @@
 
 	/* Spansion S25FL032PIF SPI flash */
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		spi-max-frequency = <104000000>;
 		reg = <0>;

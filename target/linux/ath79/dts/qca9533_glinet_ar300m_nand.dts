@@ -7,8 +7,6 @@
 	num-cs = <1>;
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "winbond,w25q128", "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <25000000>;
@@ -42,8 +40,6 @@
 	};
 
 	flash@1 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "spinand,mt29f";
 		reg = <1>;
 		spi-max-frequency = <25000000>;

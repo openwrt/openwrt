@@ -11,25 +11,23 @@
 
 	keys {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <20>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&jtag_disable_pins>;
 
-		button@0 {
+		button0 {
 			label = "reset";
 			linux,code = <KEY_RESTART>;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 
-		button@1 {
+		button1 {
 			label = "button right";
 			linux,code = <BTN_0>;
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 
-		button@3 {
+		button3 {
 			label = "button left";
 			linux,code = <BTN_1>;
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
@@ -73,6 +71,8 @@
 };
 
 &usb0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
 
 	hub_port: port@1 {

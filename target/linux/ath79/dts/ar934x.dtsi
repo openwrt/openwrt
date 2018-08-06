@@ -217,8 +217,6 @@
 
 	builtin_switch: switch0@1f {
 		compatible = "qca,ar8229-builtin";
-		#address-cells = <1>;
-		#size-cells = <0>;
 
 		reg = <0x1f>;
 		resets = <&rst 8>;
@@ -227,6 +225,9 @@
 		phy4-mii-enable;
 
 		mdio-bus {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			swphy0: ethernet-phy@0 {
 				reg = <0>;
 				phy-mode = "mii";

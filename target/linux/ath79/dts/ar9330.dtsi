@@ -174,14 +174,14 @@
 
 	builtin_switch: switch0@1f {
 		compatible = "qca,ar8216-builtin";
-		#address-cells = <1>;
-		#size-cells = <0>;
-
 		reg = <0x1f>;
 		resets = <&rst 8>;
 		reset-names = "switch";
 
 		mdio-bus {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			swphy4: ethernet-phy@4 {
 				reg = <4>;
 				phy-mode = "mii";

@@ -56,8 +56,6 @@
 
 	gpio_keys: keys {
 		compatible = "gpio-keys";
-		#address-cells = <1>;
-		#size-cells = <0>;
 
 		reset {
 			label = "Reset button";
@@ -69,7 +67,6 @@
 
 	gpio-export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		gpio_usb1_power {
 			gpio-export,name = "tp-link:power:usb1";
@@ -103,6 +100,8 @@
 };
 
 &usb0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
 
 	hub_port0: port@1 {
@@ -116,6 +115,8 @@
 };
 
 &usb1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
 
 	hub_port1: port@1 {
@@ -129,8 +130,6 @@
 	num-cs = <1>;
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <25000000>;

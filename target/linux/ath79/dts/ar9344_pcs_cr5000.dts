@@ -15,12 +15,10 @@
 		led-status = &status;
 	};
 
-
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
-		#address-cells = <1>;
-		#size-cells = <0>;
+
 		pinctrl-names = "default";
 		pinctrl-0 = <&jtag_disable_pins>;
 
@@ -83,8 +81,6 @@
 	status = "okay";
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <25000000>;
@@ -122,17 +118,13 @@
 
 &usb {
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
 
-	port@1 {
+	hub_port1: port@1 {
 		reg = <1>;
 		#trigger-source-cells = <0>;
-
-		hub_port1: port@1 {
-			reg = <1>;
-			#trigger-source-cells = <0>;
-		};
 	};
-
 };
 
 &usb_phy {
@@ -142,8 +134,9 @@
 &pcie {
 	status = "okay";
 
-	ath9k: wifi@168c,0030 {
+	ath9k: wifi@0,0 {
 		compatible = "pci168c,0030";
+		reg = <0x0000 0 0 0 0>;
 		mtd-mac-address = <&art 0x5002>;
 		#gpio-cells = <2>;
 		gpio-controller;
@@ -171,6 +164,8 @@
 };
 
 &eth0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
 
 	/* default for ar934x, except for 1000M */
@@ -188,30 +183,35 @@
 
 	port@0 {
 		compatible = "swconfig,port";
+		reg = <0>;
 		swconfig,segment = "lan";
 		swconfig,portmap = <1 1>;
 	};
 
 	port@1 {
 		compatible = "swconfig,port";
+		reg = <1>;
 		swconfig,segment = "lan";
 		swconfig,portmap = <2 2>;
 	};
 
 	port@2 {
 		compatible = "swconfig,port";
+		reg = <2>;
 		swconfig,segment = "lan";
 		swconfig,portmap = <3 3>;
 	};
 
 	port@3 {
 		compatible = "swconfig,port";
+		reg = <3>;
 		swconfig,segment = "lan";
 		swconfig,portmap = <4 4>;
 	};
 
 	port@4 {
 		compatible = "swconfig,port";
+		reg = <4>;
 		swconfig,segment = "wan";
 		swconfig,portmap = <5 5>;
 	};

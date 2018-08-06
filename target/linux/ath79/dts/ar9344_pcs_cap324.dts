@@ -18,8 +18,7 @@
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
-		#address-cells = <1>;
-		#size-cells = <0>;
+
 		pinctrl-names = "default";
 		pinctrl-0 = <&jtag_disable_pins>;
 
@@ -93,8 +92,6 @@
 	status = "okay";
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <25000000>;
@@ -133,7 +130,7 @@
 &pcie {
 	status = "okay";
 
-	ath9k: wifi@168c,0030 {
+	ath9k: wifi@0,0 {
 		compatible = "168c,0030";
 		reg = <0x0000 0 0 0 0>;
 		mtd-mac-address = <&art 0x0>;

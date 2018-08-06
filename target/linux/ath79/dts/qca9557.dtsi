@@ -53,7 +53,7 @@
 				status = "disabled";
 			};
 
-			usb_phy0: usb-phy@18030000 {
+			usb_phy0: usb-phy0 {
 				compatible ="qca,qca9550-usb-phy", "qca,ar7200-usb-phy";
 
 				reset-names = "usb-phy", "usb-suspend-override";
@@ -64,7 +64,7 @@
 				status = "disabled";
 			};
 
-			usb_phy1: usb-phy {
+			usb_phy1: usb-phy1 {
 				compatible = "qca,qca9550-usb-phy", "qca,ar7200-usb-phy";
 
 				reset-names = "usb-phy", "usb-suspend-override";
@@ -137,7 +137,7 @@
 				#reset-cells = <1>;
 				interrupt-parent = <&cpuintc>;
 
-				intc2: interrupt-controller@2 {
+				intc2: interrupt-controller2 {
 					compatible = "qca,ar9340-intc";
 
 					interrupt-parent = <&cpuintc>;
@@ -151,7 +151,7 @@
 							<0x1f0>;	/* pcie rc 0 */
 				};
 
-				intc3: interrupt-controller@3 {
+				intc3: interrupt-controller3 {
 					compatible = "qca,ar9340-intc";
 
 					interrupt-parent = <&cpuintc>;
