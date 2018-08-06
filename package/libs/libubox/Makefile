@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libubox
-PKG_RELEASE=1
+PKG_RELEASE=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/libubox.git
@@ -17,6 +17,7 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 PKG_BUILD_DEPENDS:=lua
 HOST_BUILD_DEPENDS:=libjson-c/host
+HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
