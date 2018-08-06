@@ -586,19 +586,6 @@ endef
 
 $(eval $(call KernelPackage,ipt-tee))
 
-define KernelPackage/ip6t-tee
-  TITLE:=TEE support (IPv6)
-  DEPENDS:=+kmod-ipt-tee
-  FILES:= $(foreach mod,$(IP6T_TEE-m),$(LINUX_DIR)/net/$(mod).ko)
-  AUTOLOAD:=$(call AutoProbe,$(notdir nf_tee $(IP6T_TEE-m)))
-  $(call AddDepends/ipt)
-endef
-
-define KernelPackage/ip6t-tee/description
-  Kernel modules for TEE (IPv6)
-endef
-
-$(eval $(call KernelPackage,ip6t-tee))
 
 define KernelPackage/ipt-u32
   TITLE:=U32 support
@@ -964,8 +951,10 @@ define KernelPackage/ipt-rpfilter
   TITLE:=Netfilter rpfilter match
   DEPENDS:=+kmod-ipt-core
   KCONFIG:=$(KCONFIG_IPT_RPFILTER)
-  FILES:=$(realpath $(LINUX_DIR)/net/ipv4/netfilter/ipt_rpfilter.ko)
-  AUTOLOAD:=$(call AutoProbe,ipt_rpfilter)
+  FILES:=$(realpath \
+	$(LINUX_DIR)/net/ipv4/netfilter/ipt_rpfilter.ko \
+	$(LINUX_DIR)/net/ipv6/netfilter/ip6t_rpfilter.ko)
+  AUTOLOAD:=$(call AutoProbe,ipt_rpfilter ip6t_rpfilter)
   $(call KernelPackage/ipt)
 endef
 
@@ -976,27 +965,10 @@ endef
 $(eval $(call KernelPackage,ipt-rpfilter))
 
 
-define KernelPackage/ip6t-rpfilter
-  SUBMENU:=$(NF_MENU)
-  TITLE:=Netfilter rpfilter match (IPv6)
-  DEPENDS:=+kmod-ipt-core
-  KCONFIG:=$(KCONFIG_IP6T_RPFILTER)
-  FILES:=$(realpath $(LINUX_DIR)/net/ipv6/netfilter/ip6t_rpfilter.ko)
-  AUTOLOAD:=$(call AutoProbe,ip6t_rpfilter)
-  $(call KernelPackage/ipt)
-endef
-
-define KernelPackage/ip6t-rpfilter/description
- Kernel modules support for the Netfilter rpfilter match (IPv6)
-endef
-
-$(eval $(call KernelPackage,ip6t-rpfilter))
-
-
 define KernelPackage/nft-core
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter nf_tables support
-  DEPENDS:=+kmod-nfnetlink +kmod-nf-reject +kmod-nf-conntrack
+  DEPENDS:=+kmod-nfnetlink +kmod-nf-reject +kmod-nf-reject6 +kmod-nf-conntrack6
   FILES:=$(foreach mod,$(NFT_CORE-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_CORE-m)))
   KCONFIG:= \
@@ -1011,20 +983,6 @@ endef
 
 $(eval $(call KernelPackage,nft-core))
 
-define KernelPackage/nft-core6
-  SUBMENU:=$(NF_MENU)
-  TITLE:=Netfilter nf_tables support (IPv6)
-  DEPENDS:=+kmod-nft-core +kmod-nf-reject6 +kmod-nf-conntrack6
-  FILES:=$(foreach mod,$(NFT_CORE6-m),$(LINUX_DIR)/net/$(mod).ko)
-  AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_CORE6-m)))
-  KCONFIG:= $(KCONFIG_NFT_CORE6)
-endef
-
-define KernelPackage/nft-core6/description
- Kernel module support for nftables (IPv6)
-endef
-
-$(eval $(call KernelPackage,nft-core6))
 
 define KernelPackage/nft-arp
   SUBMENU:=$(NF_MENU)
@@ -1083,17 +1041,6 @@ endef
 
 $(eval $(call KernelPackage,nft-offload))
 
-
-define KernelPackage/nft-offload6
-  SUBMENU:=$(NF_MENU)
-  TITLE:=Netfilter nf_tables routing/NAT offload support (IPv6)
-  DEPENDS:=+kmod-nft-offload
-  KCONFIG:=CONFIG_NF_FLOW_TABLE_IPV6
-  FILES:=$(LINUX_DIR)/net/ipv6/netfilter/nf_flow_table_ipv6.ko
-  AUTOLOAD:=$(call AutoProbe,nf_flow_table_ipv6)
-endef
-
-$(eval $(call KernelPackage,nft-offload6))
 
 define KernelPackage/nft-nat6
   SUBMENU:=$(NF_MENU)
