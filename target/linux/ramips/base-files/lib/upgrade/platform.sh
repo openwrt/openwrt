@@ -241,7 +241,7 @@ platform_check_image() {
 	3g-6200n|\
 	3g-6200nl|\
 	br-6475nd|\
-	br-6478ac-v2)
+	edimax,br-6478ac-v2)
 		[ "$magic" != "43535953" ] && {
 			echo "Invalid image type."
 			return 1

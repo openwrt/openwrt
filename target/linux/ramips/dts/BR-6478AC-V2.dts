@@ -32,8 +32,6 @@
 
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <20>;
 
 		reset_wps {
@@ -50,8 +48,8 @@
 			label = "br-6478ac-v2:white:power";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
-		wan {
-			label = "br-6478ac-v2:blue:wan";
+		internet {
+			label = "br-6478ac-v2:blue:internet";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
 		wlan {
@@ -71,7 +69,7 @@
 		usb-power {
 			gpio-export,name="usb-power";
 			gpio-export,output=<1>;
-			gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;  /* pin45 */
+			gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
@@ -81,45 +79,47 @@
 	status = "okay";
 };
 
-
 &spi0 {
 	status = "okay";
 
-	m25p80@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
+	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0 0>;
-		linux,modalias = "m25p80", "mx25l6405d";
 		spi-max-frequency = <10000000>;
 
-		partition@0 {
-			label = "u-boot";
-			reg = <0x0 0x30000>;
-			read-only;
-		};
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		partition@30000 {
-			label = "u-boot-env";
-			reg = <0x30000 0x10000>;
-			read-only;
-		};
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
 
-		factory: partition@40000 {
-			label = "factory";
-			reg = <0x40000 0x10000>;
-			read-only;
-		};
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
 
-		partition@50000 {
-			label = "cimage";
-			reg = <0x50000 0x20000>;
-			read-only;
-		};
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
 
-		partition@70000 {
-			label = "firmware";
-			reg = <0x00070000 0x00790000>;
+			partition@50000 {
+				label = "cimage";
+				reg = <0x50000 0x20000>;
+				read-only;
+			};
+
+			partition@70000 {
+				label = "firmware";
+				reg = <0x00070000 0x00790000>;
+			};
 		};
 	};
 };
@@ -127,8 +127,7 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "i2c", "uartf", "wdt", "pa",
-					"ephy", "nd_sd", "wled";
+			ralink,group = "i2c", "uartf", "nd_sd";
 			ralink,function = "gpio";
 		};
 	};
@@ -186,23 +185,20 @@
 	mediatek,port4 = "gmac";
 };
 
-
 &wmac {
 	ralink,mtd-eeprom = <&factory 0>;
 };
 
 &pcie {
 	status = "okay";
+};
 
-	pcie-bridge {
-		mt76@0,0 {
-			reg = <0x0000 0 0 0 0>;
-			device_type = "pci";
-			mediatek,mtd-eeprom = <&factory 0x8000>;
-			mediatek,2ghz = <0>;
-		};
+&pcie0 {
+	wifi@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x8000>;
+		mediatek,2ghz = <0>;
 	};
-
 };
 
 &ehci {

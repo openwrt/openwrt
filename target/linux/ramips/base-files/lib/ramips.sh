@@ -82,9 +82,6 @@ ramips_board_detect() {
 	*"BR-6475nD")
 		name="br-6475nd"
 		;;
-	*"BR-6478AC v2")
-		name="br-6478ac-v2"
-		;;
 	*"Broadway")
 		name="broadway"
 		;;
