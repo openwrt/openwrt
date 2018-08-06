@@ -109,7 +109,7 @@
 
 			pll: pll-controller@18050000 {
 				compatible = "qca,ar9557-pll",
-						"qca,qca9550-pll";
+						"qca,qca9550-pll", "syscon";
 				reg = <0x18050000 0x50>;
 
 				#clock-cells = <1>;
@@ -295,6 +295,9 @@
 &eth0 {
 	compatible = "qca,qca9550-eth", "syscon", "simple-mfd";
 
+	pll-reg = <0 0x28 0>;
+	pll-handle = <&pll>;
+
 	pll-data = <0x82000101 0x80000101 0x80001313>;
 	phy-mode = "rgmii";
 
@@ -309,6 +312,9 @@
 
 &eth1 {
 	compatible = "qca,qca9550-eth", "syscon", "simple-mfd";
+
+	pll-reg = <0 0x48 0>;
+	pll-handle = <&pll>;
 
 	pll-data = <0x82000101 0x80000101 0x80001313>;
 	phy-mode = "sgmii";
