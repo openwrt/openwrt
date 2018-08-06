@@ -122,6 +122,7 @@ static struct gpio_keys_button fritz450E_gpio_keys[] __initdata = {
 static struct at803x_platform_data fritz450E_at803x_data = {
 	.disable_smarteee = 1,
 	.has_reset_gpio = 1,
+	.override_sgmii_aneg = 1,
 	.reset_gpio = FRITZ450E_GPIO_PHY_RESET,
 };
 
