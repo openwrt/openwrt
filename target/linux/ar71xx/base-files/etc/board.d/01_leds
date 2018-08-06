@@ -89,7 +89,6 @@ e600gac-v2)
 	esac
 	;;
 ap531b0|\
-gl-usb150|\
 sc1750|\
 sc450)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
@@ -389,6 +388,10 @@ fritz4020)
 fritz450e)
 	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+	;;
+gl-usb150)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+	ucidef_set_led_default "power" "POWER" "$board:green:power" "1"
 	;;
 gl-ar300m)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:red:wlan" "phy0tpt"

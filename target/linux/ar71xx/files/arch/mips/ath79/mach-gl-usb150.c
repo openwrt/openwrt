@@ -37,6 +37,7 @@ static struct gpio_led gl_usb150_leds_gpio[] __initdata = {
 	{
 		.name		= "gl-usb150:green:power",
 		.gpio		= GL_USB150_GPIO_LED_POWER,
+		.default_state	= LEDS_GPIO_DEFSTATE_KEEP,
 		.active_low	= 0,
 	}, {
 		.name		= "gl-usb150:green:wlan",
