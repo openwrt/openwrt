@@ -1,12 +1,3 @@
-define Build/mkbuffaloimg
-	$(STAGING_DIR_HOST)/bin/mkbuffaloimg -B $(BOARDNAME) \
-		-R $$(($(subst k, * 1024,$(ROOTFS_SIZE)))) \
-		-K $$(($(subst k, * 1024,$(KERNEL_SIZE)))) \
-		-i $@ -o $@.new
-	mv $@.new $@
-endef
-
-
 define Device/bhr-4grv2
   DEVICE_TITLE := Buffalo BHR-4GRV2
   BOARDNAME := BHR-4GRV2
