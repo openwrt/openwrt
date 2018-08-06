@@ -1,0 +1,28 @@
+#!/bin/sh
+
+uci batch <<-EOF
+	set wireless.mtk_ap=wifi-device
+	set wireless.mtk_ap.type=mac80211
+	set wireless.mtk_ap.channel=11
+	set wireless.mtk_ap.hwmode=11g
+	set wireless.mtk_ap.phy=mtkp2p0
+	set wireless.mtk_ap.htmode=HT20
+	set wireless.mtk_ap.disabled=1
+
+	set wireless.mtk_managed=wifi-device
+	set wireless.mtk_managed.type=mac80211
+	set wireless.mtk_managed.phy=mtkphy0
+	set wireless.mtk_managed.disabled=1
+
+	set wireless.default_mtk_ap=wifi-iface
+	set wireless.default_mtk_ap.device=mtk_ap
+	set wireless.default_mtk_ap.ifname=mtkap0
+	set wireless.default_mtk_ap.bss_load_update_period=0
+	set wireless.default_mtk_ap.network=lan
+	set wireless.default_mtk_ap.mode=ap
+	set wireless.default_mtk_ap.ssid=OpenWrt
+	set wireless.default_mtk_ap.encryption=none
+
+	commit wireless
+EOF
+exit 0

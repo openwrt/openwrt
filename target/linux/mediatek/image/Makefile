@@ -26,6 +26,22 @@ define Build/sysupgrade-emmc
 		$(IMAGE_ROOTFS)
 endef
 
+define Build/sysupgrade-bpi-r2-sd
+        ./make_bpi-r2_bundle_image.sh $@ \
+                               $(STAGING_DIR_IMAGE)/mtk-bpi-r2-preloader-sd.bin \
+                               $(STAGING_DIR_IMAGE)/mtk-bpi-r2-uboot.bin \
+                               $(IMAGE_KERNEL) \
+                               $(IMAGE_ROOTFS)
+endef
+
+define Build/sysupgrade-bpi-r2-emmc
+        ./make_bpi-r2_bundle_image.sh $@ \
+                               $(STAGING_DIR_IMAGE)/mtk-bpi-r2-preloader-emmc.bin \
+                               $(STAGING_DIR_IMAGE)/mtk-bpi-r2-uboot.bin \
+                               $(IMAGE_KERNEL) \
+                               $(IMAGE_ROOTFS)
+endef
+
 # default all platform image(fit) build 
 define Device/Default
   PROFILES = Default $$(DEVICE_NAME)

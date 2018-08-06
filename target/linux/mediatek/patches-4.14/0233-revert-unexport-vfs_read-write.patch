@@ -1,0 +1,35 @@
+From 16c20209050ce9dc0d67e256c3dfba902868c3ed Mon Sep 17 00:00:00 2001
+From: Nikolay Amiantov <ab@fmap.me>
+Date: Tue, 3 Jul 2018 12:40:04 +0000
+Subject: [PATCH] Revert "fs: unexport vfs_read and vfs_write"
+
+This reverts commit bd8df82be66698042d11e7919e244c8d72b042ca.
+---
+ fs/read_write.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/fs/read_write.c b/fs/read_write.c
+index 0046d72efe94..62b9c341afa9 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -455,6 +455,8 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
+ 	return ret;
+ }
+ 
++EXPORT_SYMBOL(vfs_read);
++
+ static ssize_t new_sync_write(struct file *filp, const char __user *buf, size_t len, loff_t *ppos)
+ {
+ 	struct iovec iov = { .iov_base = (void __user *)buf, .iov_len = len };
+@@ -553,6 +555,8 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_
+ 	return ret;
+ }
+ 
++EXPORT_SYMBOL(vfs_write);
++
+ static inline loff_t file_pos_read(struct file *file)
+ {
+ 	return file->f_pos;
+-- 
+2.17.1
+

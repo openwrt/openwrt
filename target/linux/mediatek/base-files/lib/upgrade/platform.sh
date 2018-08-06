@@ -1,4 +1,4 @@
-platform_do_upgrade() {                 
+platform_do_upgrade() {
 	local board=$(board_name)
 	case "$board" in
 	"unielec,u7623"*)
@@ -18,6 +18,15 @@ platform_do_upgrade() {
 		sync
 		umount /tmp/recovery
 		;;
+	bananapi,bpi-r2)
+		local tar_file="$1"
+
+		echo "flashing kernel"
+		tar xf $tar_file sysupgrade-7623n-bananapi-bpi-r2/kernel -O | mtd write - kernel
+
+		echo "flashing rootfs"
+		tar xf $tar_file sysupgrade-7623n-bananapi-bpi-r2/root -O | mtd write - rootfs
+		;;
 	*)
 		default_do_upgrade "$ARGV"
 		;;
@@ -26,29 +35,37 @@ platform_do_upgrade() {
 
 PART_NAME=firmware
 
-platform_check_image() {                                                         
-	local board=$(board_name)                                                
-	local magic="$(get_magic_long "$1")"                                     
+platform_check_image() {
+	local board=$(board_name)
 
-	[ "$#" -gt 1 ] && return 1                                               
+	[ "$#" -gt 1 ] && return 1
 
-	case "$board" in                                                       
-	bananapi,bpi-r2|\
+	case "$board" in
+	bananapi,bpi-r2)
+		local tar_file="$1"
+		local kernel_length=`(tar xf $tar_file sysupgrade-7623n-bananapi-bpi-r2/kernel -O | wc -c) 2> /dev/null`
+		local rootfs_length=`(tar xf $tar_file sysupgrade-7623n-bananapi-bpi-r2/root -O | wc -c) 2> /dev/null`
+		[ "$kernel_length" = 0 -o "$rootfs_length" = 0 ] && {
+			echo "The upgrade image is corrupt."
+			return 1
+		}
+		;;
 	"unielec,u7623"*)
-		[ "$magic" != "27051956" ] && {   
+		local magic="$(get_magic_long "$1")"
+		[ "$magic" != "27051956" ] && {
 			echo "Invalid image type."
-			return 1                                     
-		}                                                    
-		return 0                                             
-		;;                                                   
+			return 1
+		}
+		return 0
+		;;
 
-	*)                                                           
+	*)
 		echo "Sysupgrade is not supported on your board yet."
-		return 1                                             
-		;;                                
-	esac                                      
+		return 1
+		;;
+	esac
 
-	return 0                                                                                         
+	return 0
 }
 
 platform_copy_config_emmc() {
