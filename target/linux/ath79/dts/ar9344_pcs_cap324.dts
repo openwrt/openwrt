@@ -21,7 +21,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		pinctrl-names = "default";
-                pinctrl-0 = <&jtag_disable_pins>;
+		pinctrl-0 = <&jtag_disable_pins>;
 
 		reset {
 			label = "Reset button";
@@ -133,7 +133,7 @@
 &pcie {
 	status = "okay";
 
-        ath9k: wifi@168c,0030 {
+	ath9k: wifi@168c,0030 {
 		compatible = "168c,0030";
 		reg = <0x0000 0 0 0 0>;
 		mtd-mac-address = <&art 0x0>;
@@ -143,7 +143,7 @@
 		qca,disable-5ghz;
 		#gpio-cells = <2>;
 		gpio-controller;
-        };
+	};
 };
 
 &wmac {

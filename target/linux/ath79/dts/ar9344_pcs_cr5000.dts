@@ -22,7 +22,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		pinctrl-names = "default";
-                pinctrl-0 = <&jtag_disable_pins>;
+		pinctrl-0 = <&jtag_disable_pins>;
 
 		reset {
 			label = "Reset button";
@@ -142,12 +142,12 @@
 &pcie {
 	status = "okay";
 
-        ath9k: wifi@168c,0030 {
+	ath9k: wifi@168c,0030 {
 		compatible = "168c,0030";
 		mtd-mac-address = <&art 0x5002>;
 		#gpio-cells = <2>;
 		gpio-controller;
-        };
+	};
 };
 
 &mdio0 {
@@ -158,7 +158,7 @@
 	phy0: ethernet-phy@0 {
 		reg = <0>;
 		phy-mode = "rgmii";
-                qca,ar8327-initvals = <
+		qca,ar8327-initvals = <
 			0x04 0x07600000 /* PORT0 PAD MODE CTRL */
 			0x10 0x81000080 /* POWER_ON_STRAP */
 			0x50 0xcc35cc35 /* LED_CTRL0 */
