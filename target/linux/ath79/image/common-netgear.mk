@@ -1,3 +1,5 @@
+DEVICE_VARS += NETGEAR_KERNEL_MAGIC NETGEAR_BOARD_ID NETGEAR_HW_ID
+
 define Build/netgear-squashfs
 	rm -rf $@.fs $@.squashfs
 	mkdir -p $@.fs/image
