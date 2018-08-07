@@ -75,13 +75,13 @@ list_cpu_idx()
 	if [ "$(mount | grep /dev/zram0)" ]; then
 		local line i=1
 		# Hot-add new ZRAM device (if necessary)
-		if [ ! -b /dev/zram1 ]; then 
+		if [ ! -b /dev/zram1 ]; then
 			cat /sys/class/zram-control/hot_add
 		fi
 	else
 		local line i=0
 	fi
-	
+
 	while read line; do {
 		case "$line" in
 			[Pp]rocessor*)
