@@ -180,8 +180,8 @@
 	pll-handle = <&pll>;
 	phy-mode = "rgmii";
 
-	resets = <&rst 8>, <&rst 9>;
-	reset-names = "phy", "mac";
+	resets = <&rst 9>;
+	reset-names = "mac";
 };
 
 &mdio1 {
@@ -199,6 +199,6 @@
 
 	phy-mode = "rgmii";
 
-	resets = <&rst 12>, <&rst 13>;
-	reset-names = "phy", "mac";
+	resets = <&rst 13>;
+	reset-names = "mac";
 };
