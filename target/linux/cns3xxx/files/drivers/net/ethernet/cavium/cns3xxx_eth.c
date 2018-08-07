@@ -761,7 +761,7 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 	int nr_desc = nr_frags;
 	int index0, index, index_last;
 	int len0;
-	unsigned int i;
+	int i;
 	u32 config0;
 
 	if (pmap == 8)
