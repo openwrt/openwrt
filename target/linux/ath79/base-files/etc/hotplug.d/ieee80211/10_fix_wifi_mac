@@ -18,6 +18,15 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			echo $(k2t_get_mac "lan_mac") > /sys${DEVPATH}/macaddress
 		;;
+	dlink,dir-825-b1)
+		[ "$PHYNBR" -eq 0 ] && \
+			mac0=$(dd if=$(find_mtd_part "caldata") bs=1 skip=65440 count=17 2>/dev/null)
+			echo $mac0 > /sys${DEVPATH}/macaddress
+
+		[ "$PHYNBR" -eq 1 ] && \
+			mac1=$(dd if=$(find_mtd_part "caldata") bs=1 skip=65460 count=17 2>/dev/null)
+			echo $(macaddr_add "$mac1" 1) > /sys${DEVPATH}/macaddress
+		;;
 	*)
 		;;
 esac
