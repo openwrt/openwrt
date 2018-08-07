@@ -595,21 +595,23 @@ static void eth_complete_tx(struct sw *sw)
 	desc = &(tx_ring)->desc[index];
 
 	for (i = 0; i < num_used; i++) {
-		if (desc->cown) {
-			skb = tx_ring->buff_tab[index];
-			tx_ring->buff_tab[index] = 0;
-			if (skb)
-				dev_kfree_skb_any(skb);
-			dma_unmap_single(sw->dev, tx_ring->phys_tab[index],
-				desc->sdl, DMA_TO_DEVICE);
-			if (++index == TX_DESCS) {
-				index = 0;
-				desc = &(tx_ring)->desc[index];
-			} else {
-				desc++;
-			}
-		} else {
+		if (!desc->cown)
 			break;
+
+		skb = tx_ring->buff_tab[index];
+		tx_ring->buff_tab[index] = 0;
+
+		if (skb)
+			dev_kfree_skb_any(skb);
+
+		dma_unmap_single(sw->dev, tx_ring->phys_tab[index], desc->sdl, DMA_TO_DEVICE);
+
+		if (index == TX_DESCS - 1) {
+			index = 0;
+			desc = &(tx_ring)->desc[index];
+		} else {
+			index++;
+			desc++;
 		}
 	}
 
@@ -705,10 +707,11 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		}
 
 		received++;
-		if (++i == RX_DESCS) {
+		if (i == RX_DESCS - 1) {
 			i = 0;
 			desc = &(rx_ring)->desc[i];
 		} else {
+			i++;
 			desc++;
 		}
 	}
