@@ -70,6 +70,22 @@
 		};
 	};
 
+	ath9k-leds {
+		compatible = "gpio-leds";
+		wlan2g {
+			label = "netgear:green:wlan2g";
+			gpios = <&ath9k0 5 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+			linux,default-trigger = "phy0tpt";
+		};
+		wlan5g {
+			label = "netgear:blue:wlan5g";
+			gpios = <&ath9k1 5 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
@@ -141,6 +157,24 @@
 
 &pcie0 {
 	status = "okay";
+
+	ath9k0: wifi@0,11 {
+		compatible = "pci168c,0029";
+		reg = <0x8800 0 0 0 0x10000>;
+		mtd-mac-address = <&art 0x0>;
+		qca,no-eeprom;
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
+
+	ath9k1: wifi@0,12 {
+		compatible = "pci168c,0029";
+		reg = <0x9000 0 0 0 0x10000>;
+		mtd-mac-address = <&art 0xc>;
+		qca,no-eeprom;
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
 };
 
 &uart {
@@ -193,6 +227,10 @@
 	pll-data = <0x11110000 0x00001099 0x00991099>;
 
 	mtd-mac-address = <&art 0x00>;
+	mtd-mac-address-local-admin;
+
+	resets = <&rst 9>;
+	reset-names = "mac";
 
 	fixed-link {
 		speed = <1000>;
