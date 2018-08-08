@@ -14,7 +14,7 @@ define Device/netgear_wnr612-v2
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size $$$$(IMAGE_SIZE)
-  SUPPORTED_DEVICES := netgear,wnr612-v2 wnr612-v2
+  SUPPORTED_DEVICES += wnr612-v2
 endef
 TARGET_DEVICES += netgear_wnr612-v2
 
