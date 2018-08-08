@@ -1,16 +1,18 @@
-From 13872b8abfadfe70598c065c19d1db759477c4e6 Mon Sep 17 00:00:00 2001
+From 004eb24e939b5b31f828333f37fb5cb2a877d6f2 Mon Sep 17 00:00:00 2001
 From: Kristian Evensen <kristian.evensen@gmail.com>
 Date: Sun, 17 Jun 2018 14:41:47 +0200
 Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
 
 ---
  arch/arm/boot/dts/Makefile                         |   1 +
- .../dts/mt7623a-unielec-u7623-02-emmc-512M.dts     |  17 +
- .../boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi    | 375 +++++++++++++++++++++
- 3 files changed, 393 insertions(+)
+ .../dts/mt7623a-unielec-u7623-02-emmc-512M.dts     |  18 +
+ .../boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi    | 366 +++++++++++++++++++++
+ 3 files changed, 385 insertions(+)
  create mode 100644 arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
  create mode 100644 arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi
 
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 3fec84fa0..e685ce9a4 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -1062,6 +1062,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
@@ -21,9 +23,12 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
  	mt7623n-rfb-nand.dtb \
  	mt7623n-bananapi-bpi-r2.dtb \
  	mt8127-moose.dtb \
+diff --git a/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
+new file mode 100644
+index 000000000..857d440d0
 --- /dev/null
 +++ b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,18 @@
 +/*
 + * Copyright 2018 Kristian Evensen <kristian.evensen@gmail.com>
 + *
@@ -37,13 +42,17 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
 +	model = "UniElec U7623-02 eMMC (512M RAM)";
 +	compatible = "unielec,u7623-02-emmc-512m", "unielec,u7623-02-emmc", "mediatek,mt7623";
 +
-+	memory {
++	memory@80000000 {
++		device_type = "memory";
 +		reg = <0 0x80000000 0 0x20000000>;
 +	};
 +};
+diff --git a/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi
+new file mode 100644
+index 000000000..adc91266e
 --- /dev/null
 +++ b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi
-@@ -0,0 +1,375 @@
+@@ -0,0 +1,366 @@
 +/*
 + * Copyright 2018 Kristian Evensen <kristian.evensen@gmail.com>
 + *
@@ -64,10 +73,6 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
 +	chosen {
 +		bootargs = "root=/dev/mmcblk0p2 rootfstype=squashfs,f2fs";
 +		stdout-path = "serial2:115200n8";
-+	};
-+
-+	memory {
-+		reg = <0 0x80000000 0 0x20000000>;
 +	};
 +
 +	cpus {
@@ -143,11 +148,6 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
 +			gpios = <&pio 15 GPIO_ACTIVE_LOW>;
 +			default-state = "off";
 +		};
-+	};
-+
-+	memory@80000000 {
-+		device_type = "memory";
-+		reg = <0 0x80000000 0 0x40000000>;
 +	};
 +
 +	mt7530: switch@0 {
@@ -419,3 +419,6 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
 +	status = "okay";
 +};
 +
+-- 
+2.14.1
+
