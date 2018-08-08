@@ -1,0 +1,162 @@
+From c8be44a1258f18471b00c7de416e2d1feae4204b Mon Sep 17 00:00:00 2001
+From: Florian Eckert <fe@dev.tdt.de>
+Date: Tue, 13 Nov 2018 11:13:50 +0100
+Subject: [PATCH v3 2/2] platform: Add reset button device for PC Engines APU boards
+
+Add a platform/x86 device "gpio-keys-polled" for the frontpanel reset button.
+This device uses the gpio-apu driver for APU borads from PC Engines.
+
+Signed-off-by: Florian Eckert <fe@dev.tdt.de>
+---
+ arch/x86/Kconfig               | 14 ++++++++
+ arch/x86/platform/Makefile     |  1 +
+ arch/x86/platform/amd/Makefile |  1 +
+ arch/x86/platform/amd/apu.c    | 72 ++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 88 insertions(+)
+ create mode 100644 arch/x86/platform/amd/Makefile
+ create mode 100644 arch/x86/platform/amd/apu.c
+
+--- a/drivers/platform/x86/Kconfig
++++ b/drivers/platform/x86/Kconfig
+@@ -1139,6 +1139,17 @@ config SILEAD_DMI
+ 	  with the OS-image for the device. This option supplies the missing
+ 	  information. Enable this for x86 tablets with Silead touchscreens.
+ 
++config PCENGINES_APU_PLATFORM
++	bool "PCEngines APU System Support"
++	depends on X86_64 && DMI && GPIOLIB
++	help
++	  This option enables system support for the PCEngines APU platform.
++	  At present this just adds the GPIO reset button platform device on
++	  APU2/APU3 boards.
++
++	  Note: You must still enable the drivers for GPIO and LED support
++	  (GPIO_APU & LEDS_APU) to actually use the LEDs and the GPIOs.
++
+ endif # X86_PLATFORM_DEVICES
+ 
+ config PMC_ATOM
+--- a/drivers/platform/x86/Makefile
++++ b/drivers/platform/x86/Makefile
+@@ -84,3 +84,4 @@ obj-$(CONFIG_PMC_ATOM)		+= pmc_atom.o
+ obj-$(CONFIG_MLX_PLATFORM)	+= mlx-platform.o
+ obj-$(CONFIG_MLX_CPLD_PLATFORM)	+= mlxcpld-hotplug.o
+ obj-$(CONFIG_INTEL_TURBO_MAX_3) += intel_turbo_max_3.o
++obj-$(CONFIG_PCENGINES_APU_PLATFORM)	+= pcengines-apu-platform.o
+--- /dev/null
++++ b/drivers/platform/x86/pcengines-apu-platform.c
+@@ -0,0 +1,114 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * System Specific setup for PC-Engines APU2/APU3 devices
++ *
++ * Copyright (C) 2018 Florian Eckert <fe@dev.tdt.de>
++ */
++
++#include <linux/dmi.h>
++#include <linux/gpio_keys.h>
++#include <linux/input.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++
++static const struct dmi_system_id apu2_gpio_dmi_table[] __initconst = {
++	/* PC Engines APU2 with "Legacy" bios < 4.0.8 */
++	{
++		.ident = "apu2",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "PC Engines"),
++			DMI_MATCH(DMI_BOARD_NAME, "APU2")
++		}
++	},
++	/* PC Engines APU2 with "Legacy" bios >= 4.0.8 */
++	{
++		.ident = "apu2",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "PC Engines"),
++			DMI_MATCH(DMI_BOARD_NAME, "apu2")
++		}
++	},
++	/* PC Engines APU2 with "Mainline" bios */
++	{
++		.ident = "apu2",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "PC Engines"),
++			DMI_MATCH(DMI_BOARD_NAME, "PC Engines apu2")
++		}
++	},
++	{}
++};
++MODULE_DEVICE_TABLE(dmi, apu2_gpio_dmi_table);
++
++static const struct dmi_system_id apu3_gpio_dmi_table[] __initconst = {
++	/* PC Engines APU3 with "Legacy" bios < 4.0.8 */
++	{
++		.ident = "apu3",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "PC Engines"),
++			DMI_MATCH(DMI_BOARD_NAME, "APU3")
++		}
++	},
++	/* PC Engines APU3 with "Legacy" bios >= 4.0.8 */
++	{
++		.ident = "apu3",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "PC Engines"),
++			DMI_MATCH(DMI_BOARD_NAME, "apu3")
++		}
++	},
++	/* PC Engines APU3 with "Mainline" bios */
++	{
++		.ident = "apu3",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "PC Engines"),
++			DMI_MATCH(DMI_BOARD_NAME, "PC Engines apu3")
++		}
++	},
++	{}
++};
++MODULE_DEVICE_TABLE(dmi, apu3_gpio_dmi_table);
++
++
++static struct gpio_keys_button apu_gpio_buttons[] = {
++	{
++		.code			= KEY_RESTART,
++		.gpio			= 20,
++		.active_low		= 1,
++		.desc			= "Reset button",
++		.type			= EV_KEY,
++		.debounce_interval	= 60,
++	}
++};
++
++static struct gpio_keys_platform_data apu_buttons_data = {
++	.buttons		= apu_gpio_buttons,
++	.nbuttons		= ARRAY_SIZE(apu_gpio_buttons),
++	.poll_interval		= 20,
++};
++
++static struct platform_device apu_button_dev = {
++	.name			= "gpio-keys-polled",
++	.id			= 1,
++	.dev = {
++		.platform_data		= &apu_buttons_data,
++	}
++};
++
++static int __init apu_init(void)
++{
++	if (!(dmi_check_system(apu2_gpio_dmi_table)) &&
++		!(dmi_check_system(apu3_gpio_dmi_table))) {
++		return -ENODEV;
++	}
++
++	return platform_device_register(&apu_button_dev);
++}
++
++static void __exit apu_exit(void)
++{
++	platform_device_unregister(&apu_button_dev);
++}
++
++module_init(apu_init);
++module_exit(apu_exit);
