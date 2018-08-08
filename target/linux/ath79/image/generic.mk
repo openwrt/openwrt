@@ -57,6 +57,16 @@ define Device/glinet_ar300m_nor
 endef
 TARGET_DEVICES += glinet_ar300m_nor
 
+define Device/ocedo_koala
+  ATH_SOC := qca9558
+  DEVICE_TITLE := OCEDO Koala
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  SUPPORTED_DEVICES += koala
+  IMAGE_SIZE := 7424k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += ocedo_koala
+
 define Device/ocedo_raccoon
   ATH_SOC := ar9344
   DEVICE_TITLE := OCEDO Raccoon
