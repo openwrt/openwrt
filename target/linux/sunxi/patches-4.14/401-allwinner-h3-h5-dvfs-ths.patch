@@ -1,0 +1,1207 @@
+diff '--exclude=scripts' -Naur a/arch/arm/boot/dts/sun8i-h3.dtsi b/arch/arm/boot/dts/sun8i-h3.dtsi
+--- a/arch/arm/boot/dts/sun8i-h3.dtsi	2018-02-16 20:23:12.000000000 +0100
++++ b/arch/arm/boot/dts/sun8i-h3.dtsi	2018-03-02 10:13:21.608352001 +0100
+@@ -47,28 +47,34 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 
+-		cpu@0 {
++		cpu0: cpu@0 {
+ 			compatible = "arm,cortex-a7";
+ 			device_type = "cpu";
+ 			reg = <0>;
++			clocks = <&ccu CLK_CPUX>;
++			clock-latency = <244144>; /* 8 32k periods */
++			clock-frequency = <1200000000>;
+ 		};
+ 
+ 		cpu@1 {
+ 			compatible = "arm,cortex-a7";
+ 			device_type = "cpu";
+ 			reg = <1>;
++			clock-frequency = <1200000000>;
+ 		};
+ 
+ 		cpu@2 {
+ 			compatible = "arm,cortex-a7";
+ 			device_type = "cpu";
+ 			reg = <2>;
++			clock-frequency = <1200000000>;
+ 		};
+ 
+ 		cpu@3 {
+ 			compatible = "arm,cortex-a7";
+ 			device_type = "cpu";
+ 			reg = <3>;
++			clock-frequency = <1200000000>;
+ 		};
+ 	};
+ 
+diff '--exclude=scripts' -Naur a/arch/arm/boot/dts/sun8i-h3-orangepi-one.dts b/arch/arm/boot/dts/sun8i-h3-orangepi-one.dts
+--- a/arch/arm/boot/dts/sun8i-h3-orangepi-one.dts	2018-03-02 10:10:46.450811999 +0100
++++ b/arch/arm/boot/dts/sun8i-h3-orangepi-one.dts	2018-03-02 10:12:25.156140000 +0100
+@@ -46,6 +46,7 @@
+ 
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/input/input.h>
++#include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+ 	model = "Xunlong Orange Pi One";
+@@ -88,6 +89,82 @@
+ 			gpios = <&r_pio 0 3 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	vdd_cpux: gpio-regulator {
++		compatible = "regulator-gpio";
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&vdd_cpux_r_opc>;
++
++		regulator-name = "vdd-cpux";
++		regulator-type = "voltage";
++		regulator-boot-on;
++		regulator-always-on;
++		regulator-min-microvolt = <1100000>;
++		regulator-max-microvolt = <1300000>;
++		regulator-ramp-delay = <50>; /* 4ms */
++
++		gpios = <&r_pio 0 6 GPIO_ACTIVE_HIGH>;
++		gpios-states = <0x1>;
++		states = <1100000 0x0
++			  1300000 0x1>;
++	};
++};
++
++&cpu0 {
++	operating-points = <
++		1008000	1300000
++		816000	1100000
++		624000	1100000
++		480000	1100000
++		312000	1100000
++		240000	1100000
++		120000	1100000
++		>;
++	#cooling-cells = <2>;
++	cooling-min-level = <0>;
++	cooling-max-level = <6>;
++	cpu0-supply = <&vdd_cpux>;
++};
++
++&cpu_thermal {
++	trips {
++		cpu_warm: cpu_warm {
++			temperature = <65000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++		cpu_hot: cpu_hot {
++			temperature = <75000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++		cpu_very_hot: cpu_very_hot {
++			temperature = <90000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++		cpu_crit: cpu_crit {
++			temperature = <105000>;
++			hysteresis = <2000>;
++			type = "critical";
++		};
++	};
++
++	cooling-maps {
++		cpu_warm_limit_cpu {
++			trip = <&cpu_warm>;
++			cooling-device = <&cpu0 THERMAL_NO_LIMIT 1>;
++		};
++		cpu_hot_limit_cpu {
++			trip = <&cpu_hot>;
++			cooling-device = <&cpu0 2 3>;
++		};
++		cpu_very_hot_limit_cpu {
++			trip = <&cpu_very_hot>;
++			cooling-device = <&cpu0 5 THERMAL_NO_LIMIT>;
++		};
++	};
+ };
+ 
+ &ehci0 {
+@@ -140,6 +217,11 @@
+ 		pins = "PL3";
+ 		function = "gpio_in";
+ 	};
++
++	vdd_cpux_r_opc: regulator_pins@0 {
++		pins = "PL6";
++		function = "gpio_out";
++	};
+ };
+ 
+ &reg_usb0_vbus {
+diff '--exclude=scripts' -Naur a/arch/arm/boot/dts/sun8i-h3-orangepi-pc.dts b/arch/arm/boot/dts/sun8i-h3-orangepi-pc.dts
+--- a/arch/arm/boot/dts/sun8i-h3-orangepi-pc.dts	2018-03-02 10:10:46.458816000 +0100
++++ b/arch/arm/boot/dts/sun8i-h3-orangepi-pc.dts	2018-03-02 10:14:00.351714000 +0100
+@@ -46,6 +46,7 @@
+ 
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/input/input.h>
++#include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+ 	model = "Xunlong Orange Pi PC";
+@@ -102,6 +103,72 @@
+ 	status = "okay";
+ };
+ 
++&cpu0 {
++	operating-points = <
++		/* kHz	  uV */
++		1368000	1400000
++		1344000	1400000
++		1296000	1340000
++		1248000	1340000
++		1224000	1340000
++		1200000	1320000
++		1152000	1320000
++		1104000	1320000
++		1056000	1320000
++		1008000	1200000
++		960000	1200000
++		816000	1100000
++		648000	1100000
++		480000	1100000
++		240000	1100000
++		120000	1100000
++		>;
++	#cooling-cells = <2>;
++	cooling-min-level = <0>;
++	cooling-max-level = <15>;
++	cpu0-supply = <&vdd_cpu>;
++};
++
++&cpu_thermal {
++	trips {
++		cpu_warm: cpu_warm {
++			temperature = <65000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++		cpu_hot: cpu_hot {
++			temperature = <75000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++		cpu_very_hot: cpu_very_hot {
++			temperature = <90000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++		cpu_crit: cpu_crit {
++			temperature = <105000>;
++			hysteresis = <2000>;
++			type = "critical";
++		};
++	};
++
++	cooling-maps {
++		cpu_warm_limit_cpu {
++			trip = <&cpu_warm>;
++			cooling-device = <&cpu0 THERMAL_NO_LIMIT 10>;
++		};
++		cpu_hot_limit_cpu {
++			trip = <&cpu_hot>;
++			cooling-device = <&cpu0 12 12>;
++		};
++		cpu_very_hot_limit_cpu {
++			trip = <&cpu_very_hot>;
++			cooling-device = <&cpu0 14 THERMAL_NO_LIMIT>;
++		};
++	};
++};
++
+ &ehci1 {
+ 	status = "okay";
+ };
+@@ -160,6 +227,20 @@
+ 	};
+ };
+ 
++&r_i2c {
++	status = "okay";
++
++	vdd_cpu: regulator@65 {
++		compatible = "silergy,sy8106a";
++		reg = <0x65>;
++		regulator-min-microvolt = <1000000>;
++		regulator-max-microvolt = <1400000>;
++		regulator-ramp-delay = <200>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
++
+ &r_pio {
+ 	leds_r_opc: led_pins@0 {
+ 		pins = "PL10";
+diff '--exclude=scripts' -Naur a/arch/arm/boot/dts/sun8i-h3-orangepi-plus.dts b/arch/arm/boot/dts/sun8i-h3-orangepi-plus.dts
+--- a/arch/arm/boot/dts/sun8i-h3-orangepi-plus.dts	2018-03-02 10:10:46.458816000 +0100
++++ b/arch/arm/boot/dts/sun8i-h3-orangepi-plus.dts	2018-03-02 10:13:32.561826000 +0100
+@@ -42,6 +42,7 @@
+ 
+ /* The Orange Pi Plus is an extended version of the Orange Pi 2 */
+ #include "sun8i-h3-orangepi-2.dts"
++#include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+ 	model = "Xunlong Orange Pi Plus / Plus 2";
+@@ -74,6 +75,86 @@
+ 	};
+ };
+ 
++&cpu0 {
++	operating-points = <
++		/* kHz	  uV */
++		1368000	1500000
++		1344000	1500000
++		1296000	1340000
++		1248000	1340000
++		1224000	1340000
++		1200000	1340000
++		1152000	1320000
++		1104000	1320000
++		1056000	1320000
++		1008000	1200000
++		960000	1200000
++		816000	1100000
++		648000	1100000
++		480000	1040000
++		240000	1040000
++		120000	1040000
++		>;
++	#cooling-cells = <2>;
++	cooling-min-level = <0>;
++	cooling-max-level = <15>;
++	cpu0-supply = <&vdd_cpu>;
++};
++
++&cpu_thermal {
++	trips {
++		cpu_warm: cpu_warm {
++			temperature = <65000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++		cpu_hot: cpu_hot {
++			temperature = <75000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++		cpu_very_hot: cpu_very_hot {
++			temperature = <90000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++		cpu_crit: cpu_crit {
++			temperature = <105000>;
++			hysteresis = <2000>;
++			type = "critical";
++		};
++	};
++
++	cooling-maps {
++		cpu_warm_limit_cpu {
++			trip = <&cpu_warm>;
++			cooling-device = <&cpu0 THERMAL_NO_LIMIT 10>;
++		};
++		cpu_hot_limit_cpu {
++			trip = <&cpu_hot>;
++			cooling-device = <&cpu0 12 12>;
++		};
++		cpu_very_hot_limit_cpu {
++			trip = <&cpu_very_hot>;
++			cooling-device = <&cpu0 14 THERMAL_NO_LIMIT>;
++		};
++	};
++};
++
++&r_i2c {
++	status = "okay";
++
++	vdd_cpu: regulator@65 {
++		compatible = "silergy,sy8106a";
++		reg = <0x65>;
++		regulator-min-microvolt = <1040000>;
++		regulator-max-microvolt = <1500000>;
++		regulator-ramp-delay = <200>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
++
+ &ehci3 {
+ 	status = "okay";
+ };
+diff '--exclude=scripts' -Naur a/arch/arm/boot/dts/sunxi-h3-h5.dtsi b/arch/arm/boot/dts/sunxi-h3-h5.dtsi
+--- a/arch/arm/boot/dts/sunxi-h3-h5.dtsi	2018-03-02 10:10:46.462818000 +0100
++++ b/arch/arm/boot/dts/sunxi-h3-h5.dtsi	2018-03-02 10:14:12.845958001 +0100
+@@ -383,6 +383,18 @@
+ 			};
+ 		};
+ 
++		ths: ths@01c25000 {
++			#thermal-sensor-cells = <0>;
++			compatible = "allwinner,sun8i-h3-ths";
++			reg = <0x01c25000 0x400>,
++			      <0x01c14234 0x4>;
++			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&ccu RST_BUS_THS>;
++			reset-names = "ahb";
++			clocks = <&ccu CLK_BUS_THS>, <&ccu CLK_THS>;
++			clock-names = "ahb", "ths";
++		};
++
+ 		timer@01c20c00 {
+ 			compatible = "allwinner,sun4i-a10-timer";
+ 			reg = <0x01c20c00 0xa0>;
+@@ -647,6 +659,20 @@
+ 			status = "disabled";
+ 		};
+ 
++		r_i2c: i2c@01f02400 {
++			compatible = "allwinner,sun6i-a31-i2c";
++			reg = <0x01f02400 0x400>;
++			interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&r_i2c_pins_a>;
++			clocks = <&r_ccu CLK_APB0_I2C>;
++			clock-frequency = <100000>;
++			resets = <&r_ccu RST_APB0_I2C>;
++			status = "disabled";
++			#address-cells = <1>;
++			#size-cells = <0>;
++		};
++
+ 		r_pio: pinctrl@01f02c00 {
+ 			compatible = "allwinner,sun8i-h3-r-pinctrl";
+ 			reg = <0x01f02c00 0x400>;
+@@ -662,6 +688,19 @@
+ 				pins = "PL11";
+ 				function = "s_cir_rx";
+ 			};
++
++			r_i2c_pins_a: r_i2c@0 {
++				pins = "PL0", "PL1";
++				function = "s_i2c";
++			};
++		};
++	};
++
++	thermal-zones {
++		cpu_thermal: cpu_thermal {
++			polling-delay-passive = <330>;
++			polling-delay = <1000>;
++			thermal-sensors = <&ths 0>;
+ 		};
+ 	};
+ };
+diff '--exclude=scripts' -Naur a/arch/arm64/boot/dts/allwinner/sun50i-h5.dtsi b/arch/arm64/boot/dts/allwinner/sun50i-h5.dtsi
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h5.dtsi	2018-02-16 20:23:12.000000000 +0100
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h5.dtsi	2018-03-02 10:12:17.444286000 +0100
+@@ -47,11 +47,14 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 
+-		cpu@0 {
++		cpu0: cpu@0 {
+ 			compatible = "arm,cortex-a53", "arm,armv8";
+ 			device_type = "cpu";
+ 			reg = <0>;
+ 			enable-method = "psci";
++			clocks = <&ccu CLK_CPUX>;
++			clock-latency = <244144>; /* 8 32k periods */
++			clock-frequency = <1200000000>;
+ 		};
+ 
+ 		cpu@1 {
+@@ -59,6 +62,7 @@
+ 			device_type = "cpu";
+ 			reg = <1>;
+ 			enable-method = "psci";
++			clock-frequency = <1200000000>;
+ 		};
+ 
+ 		cpu@2 {
+@@ -66,6 +70,7 @@
+ 			device_type = "cpu";
+ 			reg = <2>;
+ 			enable-method = "psci";
++			clock-frequency = <1200000000>;
+ 		};
+ 
+ 		cpu@3 {
+@@ -73,6 +78,7 @@
+ 			device_type = "cpu";
+ 			reg = <3>;
+ 			enable-method = "psci";
++			clock-frequency = <1200000000>;
+ 		};
+ 	};
+ 
+diff '--exclude=scripts' -Naur a/arch/arm64/boot/dts/allwinner/sun50i-h5-orangepi-pc2.dts b/arch/arm64/boot/dts/allwinner/sun50i-h5-orangepi-pc2.dts
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h5-orangepi-pc2.dts	2018-03-02 10:10:46.502838000 +0100
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h5-orangepi-pc2.dts	2018-03-02 10:12:19.757442001 +0100
+@@ -46,6 +46,7 @@
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/input/input.h>
+ #include <dt-bindings/pinctrl/sun4i-a10.h>
++#include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+ 	model = "Xunlong Orange Pi PC 2";
+@@ -113,6 +114,72 @@
+ 	};
+ };
+ 
++&cpu0 {
++	operating-points = <
++		/* kHz	  uV */
++		1368000	1400000
++		1344000	1400000
++		1296000	1340000
++		1248000	1340000
++		1224000	1340000
++		1200000	1320000
++		1152000	1320000
++		1104000	1320000
++		1056000	1320000
++		1008000	1200000
++		960000	1200000
++		816000	1100000
++		648000	1100000
++		480000	1100000
++		240000	1100000
++		120000	1100000
++		>;
++	#cooling-cells = <2>;
++	cooling-min-level = <0>;
++	cooling-max-level = <15>;
++	cpu0-supply = <&vdd_cpu>;
++};
++
++&cpu_thermal {
++	trips {
++		cpu_warm: cpu_warm {
++			temperature = <65000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++		cpu_hot: cpu_hot {
++			temperature = <75000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++		cpu_very_hot: cpu_very_hot {
++			temperature = <90000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++		cpu_crit: cpu_crit {
++			temperature = <105000>;
++			hysteresis = <2000>;
++			type = "critical";
++		};
++	};
++
++	cooling-maps {
++		cpu_warm_limit_cpu {
++			trip = <&cpu_warm>;
++			cooling-device = <&cpu0 THERMAL_NO_LIMIT 10>;
++		};
++		cpu_hot_limit_cpu {
++			trip = <&cpu_hot>;
++			cooling-device = <&cpu0 12 12>;
++		};
++		cpu_very_hot_limit_cpu {
++			trip = <&cpu_very_hot>;
++			cooling-device = <&cpu0 14 THERMAL_NO_LIMIT>;
++		};
++	};
++};
++
+ &codec {
+ 	allwinner,audio-routing =
+ 		"Line Out", "LINEOUT",
+@@ -184,6 +251,20 @@
+ 	status = "okay";
+ };
+ 
++&r_i2c {
++	status = "okay";
++
++	vdd_cpu: regulator@65 {
++		compatible = "silergy,sy8106a";
++		reg = <0x65>;
++		regulator-min-microvolt = <1000000>;
++		regulator-max-microvolt = <1400000>;
++		regulator-ramp-delay = <200>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_pins_a>;
+diff '--exclude=scripts' -Naur a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
+--- a/arch/arm64/Kconfig.platforms	2018-02-16 20:23:12.000000000 +0100
++++ b/arch/arm64/Kconfig.platforms	2018-03-02 10:15:32.982006000 +0100
+@@ -12,8 +12,11 @@
+ 	select GENERIC_IRQ_CHIP
+ 	select PINCTRL
+ 	select RESET_CONTROLLER
++	select PINCTRL_SUN50I_H5
++	select PINCTRL_SUN8I_H3_R
+ 	help
+-	  This enables support for Allwinner sunxi based SoCs like the A64.
++	  This enables support for Allwinner sunxi based SoCs like the A64
++	  and H5.
+ 
+ config ARCH_ALPINE
+ 	bool "Annapurna Labs Alpine platform"
+diff '--exclude=scripts' -Naur a/Documentation/devicetree/bindings/regulator/sy8106a-regulator.txt b/Documentation/devicetree/bindings/regulator/sy8106a-regulator.txt
+--- a/Documentation/devicetree/bindings/regulator/sy8106a-regulator.txt	1970-01-01 01:00:00.000000000 +0100
++++ b/Documentation/devicetree/bindings/regulator/sy8106a-regulator.txt	2018-03-02 10:14:31.935498001 +0100
+@@ -0,0 +1,21 @@
++SY8106A Voltage regulator
++
++Required properties:
++- compatible: Must be "silergy,sy8106a"
++- reg: I2C slave address - must be <0x65>
++
++Any property defined as part of the core regulator binding, defined in
++regulator.txt, can also be used.
++
++Example:
++
++	sy8106a {
++		compatible = "silergy,sy8106a";
++		reg = <0x65>;
++		regulator-name = "sy8106a-vdd";
++		regulator-min-microvolt = <1000000>;
++		regulator-max-microvolt = <1400000>;
++		regulator-ramp-delay = <200>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
+diff '--exclude=scripts' -Naur a/Documentation/devicetree/bindings/thermal/sun8i-ths.txt b/Documentation/devicetree/bindings/thermal/sun8i-ths.txt
+--- a/Documentation/devicetree/bindings/thermal/sun8i-ths.txt	1970-01-01 01:00:00.000000000 +0100
++++ b/Documentation/devicetree/bindings/thermal/sun8i-ths.txt	2018-03-02 10:14:49.344198000 +0100
+@@ -0,0 +1,24 @@
++* Thermal sensor driver for Allwinner H3 SoC
++
++Required properties:
++- compatible : "allwinner,sun8i-h3-ths"
++- reg : Address range of the thermal sensor registers
++- resets : Must contain phandles to reset controls matching the entries
++  of the names
++- reset-names : Must include the name "ahb"
++- clocks : Must contain phandles to clock controls matching the entries
++  of the names
++- clock-names : Must contain "ahb" for the bus gate and "ths" for the THS
++  clock
++
++Example:
++ths: ths@01c25000 {
++	#thermal-sensor-cells = <0>;
++	compatible = "allwinner,sun8i-h3-ths";
++	reg = <0x01c25000 0x400>;
++	interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
++	resets = <&bus_rst 136>;
++	reset-names = "ahb";
++	clocks = <&bus_gates 72>, <&ths_clk>;
++	clock-names = "ahb", "ths";
++};
+diff '--exclude=scripts' -Naur a/drivers/clk/sunxi-ng/ccu_nkmp.c b/drivers/clk/sunxi-ng/ccu_nkmp.c
+--- a/drivers/clk/sunxi-ng/ccu_nkmp.c	2018-02-16 20:23:12.000000000 +0100
++++ b/drivers/clk/sunxi-ng/ccu_nkmp.c	2018-03-02 10:15:14.204622000 +0100
+@@ -21,16 +21,19 @@
+ };
+ 
+ static void ccu_nkmp_find_best(unsigned long parent, unsigned long rate,
+-			       struct _ccu_nkmp *nkmp)
++			       struct _ccu_nkmp *nkmp, struct ccu_nkmp *_nkmp)
+ {
+ 	unsigned long best_rate = 0;
+ 	unsigned long best_n = 0, best_k = 0, best_m = 0, best_p = 0;
+-	unsigned long _n, _k, _m, _p;
++	unsigned long _n, _k, _m, _p, _max_p;
++
++	_max_p = (_nkmp->max_rate_for_p == 0 || rate <= _nkmp->max_rate_for_p) ?
++		nkmp->max_p : nkmp->min_p;
+ 
+ 	for (_k = nkmp->min_k; _k <= nkmp->max_k; _k++) {
+ 		for (_n = nkmp->min_n; _n <= nkmp->max_n; _n++) {
+ 			for (_m = nkmp->min_m; _m <= nkmp->max_m; _m++) {
+-				for (_p = nkmp->min_p; _p <= nkmp->max_p; _p <<= 1) {
++				for (_p = nkmp->min_p; _p <= _max_p; _p <<= 1) {
+ 					unsigned long tmp_rate;
+ 
+ 					tmp_rate = parent * _n * _k / (_m * _p);
+@@ -125,7 +128,7 @@
+ 	_nkmp.min_p = 1;
+ 	_nkmp.max_p = nkmp->p.max ?: 1 << ((1 << nkmp->p.width) - 1);
+ 
+-	ccu_nkmp_find_best(*parent_rate, rate, &_nkmp);
++	ccu_nkmp_find_best(*parent_rate, rate, &_nkmp, nkmp);
+ 
+ 	return *parent_rate * _nkmp.n * _nkmp.k / (_nkmp.m * _nkmp.p);
+ }
+@@ -147,7 +150,7 @@
+ 	_nkmp.min_p = 1;
+ 	_nkmp.max_p = nkmp->p.max ?: 1 << ((1 << nkmp->p.width) - 1);
+ 
+-	ccu_nkmp_find_best(parent_rate, rate, &_nkmp);
++	ccu_nkmp_find_best(parent_rate, rate, &_nkmp, nkmp);
+ 
+ 	spin_lock_irqsave(nkmp->common.lock, flags);
+ 
+diff '--exclude=scripts' -Naur a/drivers/clk/sunxi-ng/ccu_nkmp.h b/drivers/clk/sunxi-ng/ccu_nkmp.h
+--- a/drivers/clk/sunxi-ng/ccu_nkmp.h	2018-02-16 20:23:12.000000000 +0100
++++ b/drivers/clk/sunxi-ng/ccu_nkmp.h	2018-03-02 10:15:14.204622000 +0100
+@@ -33,6 +33,7 @@
+ 	struct ccu_mult_internal	k;
+ 	struct ccu_div_internal		m;
+ 	struct ccu_div_internal		p;
++	unsigned long max_rate_for_p;
+ 
+ 	struct ccu_common	common;
+ };
+diff '--exclude=scripts' -Naur a/drivers/clk/sunxi-ng/ccu-sun8i-h3.c b/drivers/clk/sunxi-ng/ccu-sun8i-h3.c
+--- a/drivers/clk/sunxi-ng/ccu-sun8i-h3.c	2018-02-16 20:23:12.000000000 +0100
++++ b/drivers/clk/sunxi-ng/ccu-sun8i-h3.c	2018-03-02 10:15:23.565300000 +0100
+@@ -29,15 +29,22 @@
+ 
+ #include "ccu-sun8i-h3.h"
+ 
+-static SUNXI_CCU_NKMP_WITH_GATE_LOCK(pll_cpux_clk, "pll-cpux",
+-				     "osc24M", 0x000,
+-				     8, 5,	/* N */
+-				     4, 2,	/* K */
+-				     0, 2,	/* M */
+-				     16, 2,	/* P */
+-				     BIT(31),	/* gate */
+-				     BIT(28),	/* lock */
+-				     0);
++static struct ccu_nkmp pll_cpux_clk = {
++	.enable		= BIT(31),
++	.lock		= BIT(28),
++	.n		= _SUNXI_CCU_MULT(8, 5),
++	.k		= _SUNXI_CCU_MULT(4, 2),
++	.m		= _SUNXI_CCU_DIV_MAX(0, 2, 1),
++	.p		= _SUNXI_CCU_DIV(16, 2),
++	.max_rate_for_p	= 288000000,
++	.common		= {
++		.reg		= 0x000,
++		.hw.init	= CLK_HW_INIT("pll-cpux",
++					      "osc24M",
++					      &ccu_nkmp_ops,
++					      0),
++	},
++};
+ 
+ /*
+  * The Audio PLL is supposed to have 4 outputs: 3 fixed factors from
+diff '--exclude=scripts' -Naur a/drivers/cpufreq/cpufreq-dt-platdev.c b/drivers/cpufreq/cpufreq-dt-platdev.c
+--- a/drivers/cpufreq/cpufreq-dt-platdev.c	2018-02-16 20:23:12.000000000 +0100
++++ b/drivers/cpufreq/cpufreq-dt-platdev.c	2018-03-02 10:14:21.826446000 +0100
+@@ -29,6 +29,7 @@
+ 	{ .compatible = "allwinner,sun8i-a23", },
+ 	{ .compatible = "allwinner,sun8i-a83t", },
+ 	{ .compatible = "allwinner,sun8i-h3", },
++	{ .compatible = "allwinner,sun50i-h5", },
+ 
+ 	{ .compatible = "apm,xgene-shadowcat", },
+ 
+diff '--exclude=scripts' -Naur a/drivers/regulator/Kconfig b/drivers/regulator/Kconfig
+--- a/drivers/regulator/Kconfig	2018-02-16 20:23:12.000000000 +0100
++++ b/drivers/regulator/Kconfig	2018-03-02 10:14:35.421240000 +0100
+@@ -785,6 +785,13 @@
+ 	  This driver supports the internal VMMC regulator in the STw481x
+ 	  PMIC chips.
+ 
++config REGULATOR_SY8106A
++	tristate "Silergy SY8106A"
++	depends on I2C && (OF || COMPILE_TEST)
++	select REGMAP_I2C
++	help
++	  This driver provides support for SY8106A voltage regulator.
++
+ config REGULATOR_TPS51632
+ 	tristate "TI TPS51632 Power Regulator"
+ 	depends on I2C
+@@ -959,4 +966,3 @@
+ 	  WM8994 CODEC.
+ 
+ endif
+-
+diff '--exclude=scripts' -Naur a/drivers/regulator/Makefile b/drivers/regulator/Makefile
+--- a/drivers/regulator/Makefile	2018-02-16 20:23:12.000000000 +0100
++++ b/drivers/regulator/Makefile	2018-03-02 10:14:35.421240000 +0100
+@@ -98,6 +98,7 @@
+ obj-$(CONFIG_REGULATOR_SKY81452) += sky81452-regulator.o
+ obj-$(CONFIG_REGULATOR_STM32_VREFBUF) += stm32-vrefbuf.o
+ obj-$(CONFIG_REGULATOR_STW481X_VMMC) += stw481x-vmmc.o
++obj-$(CONFIG_REGULATOR_SY8106A) += sy8106a-regulator.o
+ obj-$(CONFIG_REGULATOR_TI_ABB) += ti-abb-regulator.o
+ obj-$(CONFIG_REGULATOR_TPS6105X) += tps6105x-regulator.o
+ obj-$(CONFIG_REGULATOR_TPS62360) += tps62360-regulator.o
+@@ -123,5 +124,4 @@
+ obj-$(CONFIG_REGULATOR_WM8400) += wm8400-regulator.o
+ obj-$(CONFIG_REGULATOR_WM8994) += wm8994-regulator.o
+ 
+-
+ ccflags-$(CONFIG_REGULATOR_DEBUG) += -DDEBUG
+diff '--exclude=scripts' -Naur a/drivers/regulator/sy8106a-regulator.c b/drivers/regulator/sy8106a-regulator.c
+--- a/drivers/regulator/sy8106a-regulator.c	1970-01-01 01:00:00.000000000 +0100
++++ b/drivers/regulator/sy8106a-regulator.c	2018-03-02 10:14:35.421240000 +0100
+@@ -0,0 +1,167 @@
++/*
++ * sy8106a-regulator.c - Regulator device driver for SY8106A
++ *
++ * Copyright (C) 2016  Ondřej Jirman <megous@megous.com>
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Library General Public
++ * License as published by the Free Software Foundation; either
++ * version 2 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Library General Public License for more details.
++ *
++ * You should have received a copy of the GNU Library General Public
++ * License along with this library; if not, write to the
++ * Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
++ * Boston, MA  02110-1301, USA.
++ */
++
++#include <linux/err.h>
++#include <linux/i2c.h>
++#include <linux/module.h>
++#include <linux/regmap.h>
++#include <linux/regulator/driver.h>
++#include <linux/regulator/of_regulator.h>
++
++#define SY8106A_REG_VOUT1_SEL		0x01
++#define SY8106A_REG_VOUT_COM		0x02
++#define SY8106A_REG_VOUT1_SEL_MASK	0x7f
++#define SY8106A_DISABLE_REG		BIT(0)
++#define SY8106A_GO_BIT			BIT(7)
++
++struct sy8106a {
++	struct regulator_dev *rdev;
++	struct regmap *regmap;
++};
++
++static const struct regmap_config sy8106a_regmap_config = {
++	.reg_bits = 8,
++	.val_bits = 8,
++};
++
++static int sy8106a_set_voltage_sel(struct regulator_dev *rdev, unsigned sel)
++{
++	/* We use our set_voltage_sel in order to avoid unnecessary I2C chatter,
++	 * because the regulator_get_voltage_sel_regmap using apply_bit
++	 * would perform 4 unnecessary transfers instead of one, increasing the
++	 * chance of error.
++	 */
++	return regmap_write(rdev->regmap, rdev->desc->vsel_reg,
++			    sel | SY8106A_GO_BIT);
++}
++
++static const struct regulator_ops sy8106a_ops = {
++	.is_enabled = regulator_is_enabled_regmap,
++	.set_voltage_sel = sy8106a_set_voltage_sel,
++	.set_voltage_time_sel = regulator_set_voltage_time_sel,
++	.get_voltage_sel = regulator_get_voltage_sel_regmap,
++	.list_voltage = regulator_list_voltage_linear,
++};
++
++/* Default limits measured in millivolts and milliamps */
++#define SY8106A_MIN_MV		680
++#define SY8106A_MAX_MV		1950
++#define SY8106A_STEP_MV		10
++
++static const struct regulator_desc sy8106a_reg = {
++	.name = "SY8106A",
++	.id = 0,
++	.ops = &sy8106a_ops,
++	.type = REGULATOR_VOLTAGE,
++	.n_voltages = ((SY8106A_MAX_MV - SY8106A_MIN_MV) / SY8106A_STEP_MV) + 1,
++	.min_uV = (SY8106A_MIN_MV * 1000),
++	.uV_step = (SY8106A_STEP_MV * 1000),
++	.vsel_reg = SY8106A_REG_VOUT1_SEL,
++	.vsel_mask = SY8106A_REG_VOUT1_SEL_MASK,
++	.enable_reg = SY8106A_REG_VOUT_COM,
++	.enable_mask = SY8106A_DISABLE_REG,
++	.disable_val = SY8106A_DISABLE_REG,
++	.enable_is_inverted = 1,
++	.owner = THIS_MODULE,
++};
++
++/*
++ * I2C driver interface functions
++ */
++static int sy8106a_i2c_probe(struct i2c_client *i2c,
++			    const struct i2c_device_id *id)
++{
++	struct sy8106a *chip;
++	struct device *dev = &i2c->dev;
++	struct regulator_dev *rdev = NULL;
++	struct regulator_config config = { };
++	unsigned int selector;
++	int error;
++
++	chip = devm_kzalloc(&i2c->dev, sizeof(struct sy8106a), GFP_KERNEL);
++	if (!chip)
++		return -ENOMEM;
++
++	chip->regmap = devm_regmap_init_i2c(i2c, &sy8106a_regmap_config);
++	if (IS_ERR(chip->regmap)) {
++		error = PTR_ERR(chip->regmap);
++		dev_err(&i2c->dev, "Failed to allocate register map: %d\n",
++			error);
++		return error;
++	}
++
++	config.dev = &i2c->dev;
++	config.regmap = chip->regmap;
++	config.driver_data = chip;
++
++	config.of_node = dev->of_node;
++	config.init_data = of_get_regulator_init_data(dev, dev->of_node, &sy8106a_reg);
++	if (!config.init_data) {
++		return -ENOMEM;
++	}
++
++	/* Probe regulator */
++	error = regmap_read(chip->regmap, SY8106A_REG_VOUT1_SEL, &selector);
++	if (error) {
++		dev_err(&i2c->dev, "Failed to read voltage at probe time: %d\n", error);
++		return error;
++	}
++
++	rdev = devm_regulator_register(&i2c->dev, &sy8106a_reg, &config);
++	if (IS_ERR(rdev)) {
++		error = PTR_ERR(rdev);
++		dev_err(&i2c->dev, "Failed to register SY8106A regulator: %d\n", error);
++		return error;
++	}
++
++	chip->rdev = rdev;
++
++	i2c_set_clientdata(i2c, chip);
++
++	return 0;
++}
++
++static const struct of_device_id sy8106a_i2c_of_match[] = {
++	{ .compatible = "silergy,sy8106a" },
++	{ },
++};
++MODULE_DEVICE_TABLE(of, sy8106a_i2c_of_match);
++
++static const struct i2c_device_id sy8106a_i2c_id[] = {
++	{ "sy8106a", 0 },
++	{ },
++};
++MODULE_DEVICE_TABLE(i2c, sy8106a_i2c_id);
++
++static struct i2c_driver sy8106a_regulator_driver = {
++	.driver = {
++		.name = "sy8106a",
++		.of_match_table	= of_match_ptr(sy8106a_i2c_of_match),
++	},
++	.probe = sy8106a_i2c_probe,
++	.id_table = sy8106a_i2c_id,
++};
++
++module_i2c_driver(sy8106a_regulator_driver);
++
++MODULE_AUTHOR("Ondřej Jirman <megous@megous.com>");
++MODULE_DESCRIPTION("Regulator device driver for Silergy SY8106A");
++MODULE_LICENSE("GPL v2");
+diff '--exclude=scripts' -Naur a/drivers/thermal/Kconfig b/drivers/thermal/Kconfig
+--- a/drivers/thermal/Kconfig	2018-02-16 20:23:12.000000000 +0100
++++ b/drivers/thermal/Kconfig	2018-03-02 10:14:59.889468000 +0100
+@@ -412,6 +412,13 @@
+ source "drivers/thermal/broadcom/Kconfig"
+ endmenu
+ 
++config SUN8I_THS
++	tristate "Thermal sensor driver for Allwinner H3"
++	depends on MACH_SUN8I || (ARM64 && ARCH_SUNXI)
++	depends on OF
++	help
++	  Enable this to support thermal reporting on some newer Allwinner SoCs.
++
+ menu "Texas Instruments thermal drivers"
+ depends on ARCH_HAS_BANDGAP || COMPILE_TEST
+ depends on HAS_IOMEM
+diff '--exclude=scripts' -Naur a/drivers/thermal/Makefile b/drivers/thermal/Makefile
+--- a/drivers/thermal/Makefile	2018-02-16 20:23:12.000000000 +0100
++++ b/drivers/thermal/Makefile	2018-03-02 10:14:52.021536000 +0100
+@@ -61,3 +61,4 @@
+ obj-$(CONFIG_GENERIC_ADC_THERMAL)	+= thermal-generic-adc.o
+ obj-$(CONFIG_ZX2967_THERMAL)	+= zx2967_thermal.o
+ obj-$(CONFIG_UNIPHIER_THERMAL)	+= uniphier_thermal.o
++obj-$(CONFIG_SUN8I_THS)		+= sun8i_ths.o
+diff '--exclude=scripts' -Naur a/drivers/thermal/sun8i_ths.c b/drivers/thermal/sun8i_ths.c
+--- a/drivers/thermal/sun8i_ths.c	1970-01-01 01:00:00.000000000 +0100
++++ b/drivers/thermal/sun8i_ths.c	2018-03-02 10:14:52.021536000 +0100
+@@ -0,0 +1,239 @@
++/*
++ * Thermal sensor driver for Allwinner H3 SoC
++ *
++ * Copyright (C) 2016 Ondřej Jirman
++ * Based on the work of Josef Gajdusek <atx@atx.name>
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <linux/clk.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/of_device.h>
++#include <linux/platform_device.h>
++#include <linux/reset.h>
++#include <linux/slab.h>
++#include <linux/thermal.h>
++#include <linux/printk.h>
++
++#define THS_H3_CTRL0		0x00
++#define THS_H3_CTRL2		0x40
++#define THS_H3_INT_CTRL		0x44
++#define THS_H3_STAT		0x48
++#define THS_H3_FILTER		0x70
++#define THS_H3_CDATA		0x74
++#define THS_H3_DATA		0x80
++
++#define THS_H3_CTRL0_SENSOR_ACQ0(x)     (x)
++#define THS_H3_CTRL2_SENSE_EN           BIT(0)
++#define THS_H3_CTRL2_SENSOR_ACQ1(x)     ((x) << 16)
++#define THS_H3_INT_CTRL_DATA_IRQ_EN     BIT(8)
++#define THS_H3_INT_CTRL_THERMAL_PER(x)  ((x) << 12)
++#define THS_H3_STAT_DATA_IRQ_STS        BIT(8)
++#define THS_H3_FILTER_TYPE(x)           ((x) << 0)
++#define THS_H3_FILTER_EN                BIT(2)
++
++#define THS_H3_CLK_IN 40000000  /* Hz */
++#define THS_H3_DATA_PERIOD 330  /* ms */
++
++#define THS_H3_FILTER_TYPE_VALUE		2  /* average over 2^(n+1) samples */
++#define THS_H3_FILTER_DIV			(1 << (THS_H3_FILTER_TYPE_VALUE + 1))
++#define THS_H3_INT_CTRL_THERMAL_PER_VALUE \
++	(THS_H3_DATA_PERIOD * (THS_H3_CLK_IN / 1000) / THS_H3_FILTER_DIV / 4096 - 1)
++#define THS_H3_CTRL0_SENSOR_ACQ0_VALUE		0x3f /* 16us */
++#define THS_H3_CTRL2_SENSOR_ACQ1_VALUE		0x3f
++
++struct sun8i_ths_data {
++	struct reset_control *reset;
++	struct clk *clk;
++	struct clk *busclk;
++	void __iomem *regs;
++	struct thermal_zone_device *tzd;
++	u32 temp;
++};
++
++static int sun8i_ths_get_temp(void *_data, int *out)
++{
++	struct sun8i_ths_data *data = _data;
++
++	if (data->temp == 0)
++		return -EBUSY;
++
++	/* Formula and parameters from the Allwinner 3.4 kernel */
++	*out = 217000 - (int)((data->temp * 1000000) / 8253);
++	return 0;
++}
++
++static irqreturn_t sun8i_ths_irq_thread(int irq, void *_data)
++{
++	struct sun8i_ths_data *data = _data;
++
++	writel(THS_H3_STAT_DATA_IRQ_STS, data->regs + THS_H3_STAT);
++
++	data->temp = readl(data->regs + THS_H3_DATA);
++	if (data->temp)
++		thermal_zone_device_update(data->tzd, THERMAL_EVENT_TEMP_SAMPLE);
++
++	return IRQ_HANDLED;
++}
++
++static void sun8i_ths_h3_init(struct sun8i_ths_data *data)
++{
++	writel(THS_H3_CTRL0_SENSOR_ACQ0(THS_H3_CTRL0_SENSOR_ACQ0_VALUE),
++		data->regs + THS_H3_CTRL0);
++	writel(THS_H3_FILTER_EN | THS_H3_FILTER_TYPE(THS_H3_FILTER_TYPE_VALUE),
++		data->regs + THS_H3_FILTER);
++	writel(THS_H3_CTRL2_SENSOR_ACQ1(THS_H3_CTRL2_SENSOR_ACQ1_VALUE) |
++		THS_H3_CTRL2_SENSE_EN,
++		data->regs + THS_H3_CTRL2);
++	writel(THS_H3_INT_CTRL_THERMAL_PER(THS_H3_INT_CTRL_THERMAL_PER_VALUE) |
++		THS_H3_INT_CTRL_DATA_IRQ_EN,
++		data->regs + THS_H3_INT_CTRL);
++}
++
++static const struct thermal_zone_of_device_ops sun8i_ths_thermal_ops = {
++	.get_temp = sun8i_ths_get_temp,
++};
++
++static int sun8i_ths_probe(struct platform_device *pdev)
++{
++	struct sun8i_ths_data *data;
++	struct resource *res;
++	int ret;
++	int irq;
++
++	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
++	if (!data)
++		return -ENOMEM;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++        if (!res) {
++                dev_err(&pdev->dev, "no memory resources defined\n");
++                return -EINVAL;
++        }
++
++	data->regs = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(data->regs)) {
++		ret = PTR_ERR(data->regs);
++		dev_err(&pdev->dev, "failed to ioremap THS registers: %d\n", ret);
++		return ret;
++	}
++
++	irq = platform_get_irq(pdev, 0);
++	if (irq < 0) {
++		dev_err(&pdev->dev, "failed to get IRQ: %d\n", irq);
++		return irq;
++	}
++
++	ret = devm_request_threaded_irq(&pdev->dev, irq, NULL,
++					sun8i_ths_irq_thread, IRQF_ONESHOT,
++					dev_name(&pdev->dev), data);
++	if (ret)
++		return ret;
++
++	data->busclk = devm_clk_get(&pdev->dev, "ahb");
++	if (IS_ERR(data->busclk)) {
++		ret = PTR_ERR(data->busclk);
++		dev_err(&pdev->dev, "failed to get ahb clk: %d\n", ret);
++		return ret;
++	}
++
++	data->clk = devm_clk_get(&pdev->dev, "ths");
++	if (IS_ERR(data->clk)) {
++		ret = PTR_ERR(data->clk);
++		dev_err(&pdev->dev, "failed to get ths clk: %d\n", ret);
++		return ret;
++	}
++
++	data->reset = devm_reset_control_get(&pdev->dev, "ahb");
++	if (IS_ERR(data->reset)) {
++		ret = PTR_ERR(data->reset);
++		dev_err(&pdev->dev, "failed to get reset: %d\n", ret);
++		return ret;
++	}
++
++	ret = reset_control_deassert(data->reset);
++	if (ret) {
++		dev_err(&pdev->dev, "reset deassert failed: %d\n", ret);
++		return ret;
++	}
++
++	ret = clk_prepare_enable(data->busclk);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to enable bus clk: %d\n", ret);
++		goto err_assert_reset;
++	}
++
++	ret = clk_prepare_enable(data->clk);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to enable ths clk: %d\n", ret);
++		goto err_disable_bus;
++	}
++
++	ret = clk_set_rate(data->clk, THS_H3_CLK_IN);
++	if (ret)
++		goto err_disable_ths;
++
++	data->tzd = devm_thermal_zone_of_sensor_register(&pdev->dev, 0, data,
++						    &sun8i_ths_thermal_ops);
++	if (IS_ERR(data->tzd)) {
++		ret = PTR_ERR(data->tzd);
++		dev_err(&pdev->dev, "failed to register thermal zone: %d\n",
++				ret);
++		goto err_disable_ths;
++	}
++
++	sun8i_ths_h3_init(data);
++
++	platform_set_drvdata(pdev, data);
++	return 0;
++
++err_disable_ths:
++	clk_disable_unprepare(data->clk);
++err_disable_bus:
++	clk_disable_unprepare(data->busclk);
++err_assert_reset:
++	reset_control_assert(data->reset);
++	return ret;
++}
++
++static int sun8i_ths_remove(struct platform_device *pdev)
++{
++	struct sun8i_ths_data *data = platform_get_drvdata(pdev);
++
++	reset_control_assert(data->reset);
++	clk_disable_unprepare(data->clk);
++	clk_disable_unprepare(data->busclk);
++	return 0;
++}
++
++static const struct of_device_id sun8i_ths_id_table[] = {
++	{ .compatible = "allwinner,sun8i-h3-ths", },
++	{ /* sentinel */ },
++};
++MODULE_DEVICE_TABLE(of, sun8i_ths_id_table);
++
++static struct platform_driver sun8i_ths_driver = {
++	.probe = sun8i_ths_probe,
++	.remove = sun8i_ths_remove,
++	.driver = {
++		.name = "sun8i_ths",
++		.of_match_table = sun8i_ths_id_table,
++	},
++};
++
++module_platform_driver(sun8i_ths_driver);
++
++MODULE_AUTHOR("Ondřej Jirman <megous@megous.com>");
++MODULE_DESCRIPTION("Thermal sensor driver for Allwinner H3 SoC");
++MODULE_LICENSE("GPL v2");

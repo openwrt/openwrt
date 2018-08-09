@@ -1,0 +1,20 @@
+diff -Naur linux-4.14.20.ori/arch/arm64/boot/dts/allwinner/sun50i-h5-orangepi-pc2.dts linux-4.14.20/arch/arm64/boot/dts/allwinner/sun50i-h5-orangepi-pc2.dts
+--- linux-4.14.20.ori/arch/arm64/boot/dts/allwinner/sun50i-h5-orangepi-pc2.dts	2018-03-02 09:40:04.794444000 +0100
++++ linux-4.14.20/arch/arm64/boot/dts/allwinner/sun50i-h5-orangepi-pc2.dts	2018-03-02 09:41:04.880472000 +0100
+@@ -88,7 +88,7 @@
+ 
+ 		sw4 {
+ 			label = "sw4";
+-			linux,code = <BTN_0>;
++			linux,code = <KEY_POWER>;
+ 			gpios = <&r_pio 0 3 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
+@@ -203,7 +203,7 @@
+ };
+ 
+ &usb_otg {
+-	dr_mode = "otg";
++	dr_mode = "host";
+ 	status = "okay";
+ };
