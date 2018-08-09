@@ -13,7 +13,11 @@
 #include <linux/platform_device.h>
 #include <linux/ath9k_platform.h>
 #include <linux/mtd/mtd.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
 #include <linux/mtd/nand.h>
+#else
+#include <linux/mtd/rawnand.h>
+#endif
 #include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
@@ -108,7 +112,7 @@ static struct at803x_platform_data rb922gs_at803x_data = {
 static struct mdio_board_info rb922gs_mdio0_info[] = {
 	{
 		.bus_id = "ag71xx-mdio.0",
-		.phy_addr = RB922_PHY_ADDR,
+		.mdio_addr = RB922_PHY_ADDR,
 		.platform_data = &rb922gs_at803x_data,
 	},
 };
