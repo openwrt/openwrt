@@ -11,8 +11,6 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
  create mode 100644 arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
  create mode 100644 arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 3fec84fa0..e685ce9a4 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -1062,6 +1062,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
@@ -23,9 +21,6 @@ index 3fec84fa0..e685ce9a4 100644
  	mt7623n-rfb-nand.dtb \
  	mt7623n-bananapi-bpi-r2.dtb \
  	mt8127-moose.dtb \
-diff --git a/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
-new file mode 100644
-index 000000000..857d440d0
 --- /dev/null
 +++ b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
 @@ -0,0 +1,18 @@
@@ -47,9 +42,6 @@ index 000000000..857d440d0
 +		reg = <0 0x80000000 0 0x20000000>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi
-new file mode 100644
-index 000000000..adc91266e
 --- /dev/null
 +++ b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi
 @@ -0,0 +1,366 @@
@@ -419,6 +411,3 @@ index 000000000..adc91266e
 +	status = "okay";
 +};
 +
--- 
-2.14.1
-
