@@ -14,6 +14,7 @@ board=$(board_name)
 
 case "$board" in
 glinet,ar300m|\
+ligowawe,dlb5-propeller|\
 ocedo,raccoon|\
 openmesh,om5p-ac-v2)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"

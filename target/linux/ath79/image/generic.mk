@@ -57,6 +57,15 @@ define Device/glinet_ar300m_nor
 endef
 TARGET_DEVICES += glinet_ar300m_nor
 
+define Device/ligowawe_dlb5_propeller
+  ATH_SOC := ar9342
+  DEVICE_TITLE := LigoWawe DLB 5 Propeller
+  DEVICE_PACKAGES := rssileds uboot-envtools
+  SUPPORTED_DEVICES += ligowawe,dlb5-propeller dlb5-propeller
+  IMAGE_SIZE := 7680k
+endef
+TARGET_DEVICES += ligowawe_dlb5_propeller
+
 define Device/ocedo_raccoon
   ATH_SOC := ar9344
   DEVICE_TITLE := OCEDO Raccoon
