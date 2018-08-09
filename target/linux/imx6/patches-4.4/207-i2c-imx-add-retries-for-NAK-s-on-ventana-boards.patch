@@ -1,6 +1,6 @@
 --- a/drivers/i2c/busses/i2c-imx.c
 +++ b/drivers/i2c/busses/i2c-imx.c
-@@ -468,6 +468,8 @@ static int i2c_imx_acked(struct imx_i2c_
+@@ -469,6 +469,8 @@ static int i2c_imx_acked(struct imx_i2c_
  {
  	if (imx_i2c_read_reg(i2c_imx, IMX_I2C_I2SR) & I2SR_RXAK) {
  		dev_dbg(&i2c_imx->adapter.dev, "<%s> No ACK\n", __func__);
@@ -9,7 +9,7 @@
  		return -ENXIO;  /* No ACK */
  	}
  
-@@ -1073,6 +1075,10 @@ static int i2c_imx_probe(struct platform
+@@ -1072,6 +1074,10 @@ static int i2c_imx_probe(struct platform
  	i2c_imx->adapter.nr		= pdev->id;
  	i2c_imx->adapter.dev.of_node	= pdev->dev.of_node;
  	i2c_imx->base			= base;

@@ -75,7 +75,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  		elbc_fcm_ctrl = fsl_lbc_ctrl_dev->nand;
 --- a/drivers/mtd/nand/fsl_ifc_nand.c
 +++ b/drivers/mtd/nand/fsl_ifc_nand.c
-@@ -1074,8 +1074,7 @@ static int fsl_ifc_nand_probe(struct pla
+@@ -1077,8 +1077,7 @@ static int fsl_ifc_nand_probe(struct pla
  		ifc_nand_ctrl->addr = NULL;
  		fsl_ifc_ctrl_dev->nand = ifc_nand_ctrl;
  

@@ -424,7 +424,7 @@ Signed-off-by: Raghav Dogra <raghav@freescale.com>
  
  	/* clear the read buffer */
  	ifc_nand_ctrl->read_bytes = 0;
-@@ -724,7 +724,7 @@ static int fsl_ifc_wait(struct mtd_info
+@@ -727,7 +727,7 @@ static int fsl_ifc_wait(struct mtd_info
  {
  	struct fsl_ifc_mtd *priv = chip->priv;
  	struct fsl_ifc_ctrl *ctrl = priv->ctrl;
@@ -433,7 +433,7 @@ Signed-off-by: Raghav Dogra <raghav@freescale.com>
  	u32 nand_fsr;
  	int status;
  
-@@ -827,39 +827,42 @@ static int fsl_ifc_chip_init_tail(struct
+@@ -830,39 +830,42 @@ static int fsl_ifc_chip_init_tail(struct
  static void fsl_ifc_sram_init(struct fsl_ifc_mtd *priv)
  {
  	struct fsl_ifc_ctrl *ctrl = priv->ctrl;
@@ -491,7 +491,7 @@ Signed-off-by: Raghav Dogra <raghav@freescale.com>
  
  	/* wait for command complete flag or timeout */
  	wait_event_timeout(ctrl->nand_wait, ctrl->nand_stat,
-@@ -869,14 +872,15 @@ static void fsl_ifc_sram_init(struct fsl
+@@ -872,14 +875,15 @@ static void fsl_ifc_sram_init(struct fsl
  		printk(KERN_ERR "fsl-ifc: Failed to Initialise SRAM\n");
  
  	/* Restore CSOR and CSOR_ext */
@@ -510,7 +510,7 @@ Signed-off-by: Raghav Dogra <raghav@freescale.com>
  	struct nand_chip *chip = &priv->chip;
  	struct nand_ecclayout *layout;
  	u32 csor;
-@@ -887,7 +891,8 @@ static int fsl_ifc_chip_init(struct fsl_
+@@ -890,7 +894,8 @@ static int fsl_ifc_chip_init(struct fsl_
  
  	/* fill in nand_chip structure */
  	/* set up function call table */
@@ -520,7 +520,7 @@ Signed-off-by: Raghav Dogra <raghav@freescale.com>
  		chip->read_byte = fsl_ifc_read_byte16;
  	else
  		chip->read_byte = fsl_ifc_read_byte;
-@@ -901,13 +906,14 @@ static int fsl_ifc_chip_init(struct fsl_
+@@ -904,13 +909,14 @@ static int fsl_ifc_chip_init(struct fsl_
  	chip->bbt_td = &bbt_main_descr;
  	chip->bbt_md = &bbt_mirror_descr;
  
@@ -537,7 +537,7 @@ Signed-off-by: Raghav Dogra <raghav@freescale.com>
  		chip->read_byte = fsl_ifc_read_byte16;
  		chip->options |= NAND_BUSWIDTH_16;
  	} else {
-@@ -920,7 +926,7 @@ static int fsl_ifc_chip_init(struct fsl_
+@@ -923,7 +929,7 @@ static int fsl_ifc_chip_init(struct fsl_
  	chip->ecc.read_page = fsl_ifc_read_page;
  	chip->ecc.write_page = fsl_ifc_write_page;
  
@@ -546,7 +546,7 @@ Signed-off-by: Raghav Dogra <raghav@freescale.com>
  
  	/* Hardware generates ECC per 512 Bytes */
  	chip->ecc.size = 512;
-@@ -1006,10 +1012,10 @@ static int fsl_ifc_chip_remove(struct fs
+@@ -1009,10 +1015,10 @@ static int fsl_ifc_chip_remove(struct fs
  	return 0;
  }
  
@@ -559,7 +559,7 @@ Signed-off-by: Raghav Dogra <raghav@freescale.com>
  
  	if (!(cspr & CSPR_V))
  		return 0;
-@@ -1023,7 +1029,7 @@ static DEFINE_MUTEX(fsl_ifc_nand_mutex);
+@@ -1026,7 +1032,7 @@ static DEFINE_MUTEX(fsl_ifc_nand_mutex);
  
  static int fsl_ifc_nand_probe(struct platform_device *dev)
  {
@@ -568,7 +568,7 @@ Signed-off-by: Raghav Dogra <raghav@freescale.com>
  	struct fsl_ifc_mtd *priv;
  	struct resource res;
  	static const char *part_probe_types[]
-@@ -1034,9 +1040,9 @@ static int fsl_ifc_nand_probe(struct pla
+@@ -1037,9 +1043,9 @@ static int fsl_ifc_nand_probe(struct pla
  	struct mtd_part_parser_data ppdata;
  
  	ppdata.of_node = dev->dev.of_node;
@@ -580,7 +580,7 @@ Signed-off-by: Raghav Dogra <raghav@freescale.com>
  
  	/* get, allocate and map the memory resource */
  	ret = of_address_to_resource(node, 0, &res);
-@@ -1047,7 +1053,7 @@ static int fsl_ifc_nand_probe(struct pla
+@@ -1050,7 +1056,7 @@ static int fsl_ifc_nand_probe(struct pla
  
  	/* find which chip select it is connected to */
  	for (bank = 0; bank < fsl_ifc_ctrl_dev->banks; bank++) {

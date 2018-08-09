@@ -59,7 +59,7 @@
  	if (!xt_percpu_counter_alloc(alloc_state, &e->counters))
  		return -ENOMEM;
  
-@@ -957,6 +985,7 @@ copy_entries_to_user(unsigned int total_
+@@ -958,6 +986,7 @@ copy_entries_to_user(unsigned int total_
  	const struct xt_table_info *private = table->private;
  	int ret = 0;
  	const void *loc_cpu_entry;
@@ -67,7 +67,7 @@
  
  	counters = alloc_counters(table);
  	if (IS_ERR(counters))
-@@ -983,6 +1012,14 @@ copy_entries_to_user(unsigned int total_
+@@ -984,6 +1013,14 @@ copy_entries_to_user(unsigned int total_
  			ret = -EFAULT;
  			goto free_counters;
  		}

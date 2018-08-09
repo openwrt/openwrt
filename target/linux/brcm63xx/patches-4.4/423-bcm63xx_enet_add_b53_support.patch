@@ -20,7 +20,7 @@
  
  #include <bcm63xx_dev_enet.h>
  #include "bcm63xx_enet.h"
-@@ -1974,7 +1975,8 @@ static int bcm_enet_remove(struct platfo
+@@ -1982,7 +1983,8 @@ static int bcm_enet_remove(struct platfo
  	return 0;
  }
  
@@ -30,7 +30,7 @@
  	.probe	= bcm_enet_probe,
  	.remove	= bcm_enet_remove,
  	.driver	= {
-@@ -1983,6 +1985,42 @@ struct platform_driver bcm63xx_enet_driv
+@@ -1991,6 +1993,42 @@ struct platform_driver bcm63xx_enet_driv
  	},
  };
  
@@ -73,7 +73,7 @@
  /*
   * switch mii access callbacks
   */
-@@ -2241,29 +2279,6 @@ static int bcm_enetsw_open(struct net_de
+@@ -2249,29 +2287,6 @@ static int bcm_enetsw_open(struct net_de
  		enetsw_writeb(priv, rgmii_ctrl, ENETSW_RGMII_CTRL_REG(i));
  	}
  
@@ -103,7 +103,7 @@
  	/* initialize flow control buffer allocation */
  	enet_dma_writel(priv, ENETDMA_BUFALLOC_FORCE_MASK | 0,
  			ENETDMA_BUFALLOC_REG(priv->rx_chan));
-@@ -2722,6 +2737,9 @@ static int bcm_enetsw_probe(struct platf
+@@ -2730,6 +2745,9 @@ static int bcm_enetsw_probe(struct platf
  	struct bcm63xx_enetsw_platform_data *pd;
  	struct resource *res_mem;
  	int ret, irq_rx, irq_tx;
@@ -113,7 +113,7 @@
  
  	/* stop if shared driver failed, assume driver->probe will be
  	 * called in the same order we register devices (correct ?)
-@@ -2811,6 +2829,43 @@ static int bcm_enetsw_probe(struct platf
+@@ -2821,6 +2839,43 @@ static int bcm_enetsw_probe(struct platf
  	priv->pdev = pdev;
  	priv->net_dev = dev;
  
@@ -156,8 +156,8 @@
 +
  	return 0;
  
- out_put_clk:
-@@ -2839,6 +2894,9 @@ static int bcm_enetsw_remove(struct plat
+ out_disable_clk:
+@@ -2852,6 +2907,9 @@ static int bcm_enetsw_remove(struct plat
  	priv = netdev_priv(dev);
  	unregister_netdev(dev);
  

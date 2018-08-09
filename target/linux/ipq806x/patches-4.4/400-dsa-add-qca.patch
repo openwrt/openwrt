@@ -820,7 +820,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  #endif
 --- a/net/dsa/slave.c
 +++ b/net/dsa/slave.c
-@@ -1180,6 +1180,11 @@ int dsa_slave_create(struct dsa_switch *
+@@ -1186,6 +1186,11 @@ int dsa_slave_create(struct dsa_switch *
  		p->xmit = brcm_netdev_ops.xmit;
  		break;
  #endif

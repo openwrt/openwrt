@@ -250,7 +250,7 @@
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -770,12 +770,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -773,12 +773,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
@@ -370,7 +370,7 @@
  	return neigh_create(&arp_tbl, pkey, dev);
 --- a/net/ipv4/tcp_output.c
 +++ b/net/ipv4/tcp_output.c
-@@ -451,48 +451,53 @@ static void tcp_options_write(__be32 *pt
+@@ -456,48 +456,53 @@ static void tcp_options_write(__be32 *pt
  	u16 options = opts->options;	/* mungable copy */
  
  	if (unlikely(OPTION_MD5 & options)) {
@@ -447,7 +447,7 @@
  	}
  
  	if (unlikely(opts->num_sack_blocks)) {
-@@ -500,16 +505,17 @@ static void tcp_options_write(__be32 *pt
+@@ -505,16 +510,17 @@ static void tcp_options_write(__be32 *pt
  			tp->duplicate_sack : tp->selective_acks;
  		int this_sack;
  
@@ -471,7 +471,7 @@
  		}
  
  		tp->rx_opt.dsack = 0;
-@@ -522,13 +528,14 @@ static void tcp_options_write(__be32 *pt
+@@ -527,13 +533,14 @@ static void tcp_options_write(__be32 *pt
  
  		if (foc->exp) {
  			len = TCPOLEN_EXP_FASTOPEN_BASE + foc->len;
@@ -838,7 +838,7 @@
  
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -3822,14 +3822,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -3836,14 +3836,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  

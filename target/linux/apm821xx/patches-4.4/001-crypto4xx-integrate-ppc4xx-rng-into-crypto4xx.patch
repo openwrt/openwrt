@@ -248,7 +248,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  	return 0;
  
  err_start_dev:
-@@ -1248,6 +1250,8 @@ static int crypto4xx_remove(struct platf
+@@ -1247,6 +1249,8 @@ static int crypto4xx_remove(struct platf
  	struct device *dev = &ofdev->dev;
  	struct crypto4xx_core_device *core_dev = dev_get_drvdata(dev);
  
@@ -257,7 +257,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  	free_irq(core_dev->irq, dev);
  	irq_dispose_mapping(core_dev->irq);
  
-@@ -1268,7 +1272,7 @@ MODULE_DEVICE_TABLE(of, crypto4xx_match)
+@@ -1267,7 +1271,7 @@ MODULE_DEVICE_TABLE(of, crypto4xx_match)
  
  static struct platform_driver crypto4xx_driver = {
  	.driver = {
@@ -266,7 +266,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  		.of_match_table = crypto4xx_match,
  	},
  	.probe		= crypto4xx_probe,
-@@ -1280,4 +1284,3 @@ module_platform_driver(crypto4xx_driver)
+@@ -1279,4 +1283,3 @@ module_platform_driver(crypto4xx_driver)
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("James Hsiao <jhsiao@amcc.com>");
  MODULE_DESCRIPTION("Driver for AMCC PPC4xx crypto accelerator");

@@ -8,7 +8,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
-@@ -2857,7 +2857,7 @@ static int bcm_enet_shared_probe(struct
+@@ -2873,7 +2873,7 @@ static int bcm_enet_shared_probe(struct
  
  	memset(bcm_enet_shared_base, 0, sizeof(bcm_enet_shared_base));
  
@@ -17,7 +17,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	if (IS_ERR(ephy_reset))
  		return PTR_ERR(ephy_reset);
  
-@@ -2871,7 +2871,7 @@ static int bcm_enet_shared_probe(struct
+@@ -2887,7 +2887,7 @@ static int bcm_enet_shared_probe(struct
  	memcpy(bcm_enet_shared_base, p, sizeof(bcm_enet_shared_base));
  
  	if (ephy_reset)

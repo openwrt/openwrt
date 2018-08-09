@@ -1487,7 +1487,7 @@ Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
  	writel(temp, &xhci->ir_set->irq_control);
  
  	/* Set the HCD state before we enable the irqs */
-@@ -1691,6 +1696,9 @@ int xhci_drop_endpoint(struct usb_hcd *h
+@@ -1725,6 +1730,9 @@ int xhci_drop_endpoint(struct usb_hcd *h
  
  	xhci_endpoint_zero(xhci, xhci->devs[udev->slot_id], ep);
  
@@ -1497,7 +1497,7 @@ Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
  	xhci_dbg(xhci, "drop ep 0x%x, slot id %d, new drop flags = %#x, new add flags = %#x\n",
  			(unsigned int) ep->desc.bEndpointAddress,
  			udev->slot_id,
-@@ -1786,6 +1794,15 @@ int xhci_add_endpoint(struct usb_hcd *hc
+@@ -1820,6 +1828,15 @@ int xhci_add_endpoint(struct usb_hcd *hc
  		return -ENOMEM;
  	}
  
@@ -1515,7 +1515,7 @@ Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
  
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1634,6 +1634,7 @@ struct xhci_hcd {
+@@ -1638,6 +1638,7 @@ struct xhci_hcd {
  /* For controllers with a broken beyond repair streams implementation */
  #define XHCI_BROKEN_STREAMS	(1 << 19)
  #define XHCI_PME_STUCK_QUIRK	(1 << 20)

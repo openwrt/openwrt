@@ -18,7 +18,7 @@ Allow using a named optional gpio for ephy reset gpio registration.
  
  #include <bcm63xx_dev_enet.h>
  #include "bcm63xx_enet.h"
-@@ -2851,10 +2852,15 @@ static int bcm_enet_shared_probe(struct
+@@ -2867,10 +2868,15 @@ static int bcm_enet_shared_probe(struct
  {
  	struct resource *res;
  	void __iomem *p[3];
@@ -34,7 +34,7 @@ Allow using a named optional gpio for ephy reset gpio registration.
  	for (i = 0; i < 3; i++) {
  		res = platform_get_resource(pdev, IORESOURCE_MEM, i);
  		p[i] = devm_ioremap_resource(&pdev->dev, res);
-@@ -2864,6 +2870,9 @@ static int bcm_enet_shared_probe(struct
+@@ -2880,6 +2886,9 @@ static int bcm_enet_shared_probe(struct
  
  	memcpy(bcm_enet_shared_base, p, sizeof(bcm_enet_shared_base));
  
