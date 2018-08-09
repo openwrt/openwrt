@@ -28,10 +28,8 @@ w1-gpio: Sort out the pullup/parasitic power tangle
  include/linux/w1-gpio.h      |  1 +
  5 files changed, 99 insertions(+), 9 deletions(-)
 
-Index: linux-4.9.111/drivers/w1/masters/w1-gpio.c
-===================================================================
---- linux-4.9.111.orig/drivers/w1/masters/w1-gpio.c
-+++ linux-4.9.111/drivers/w1/masters/w1-gpio.c
+--- a/drivers/w1/masters/w1-gpio.c
++++ b/drivers/w1/masters/w1-gpio.c
 @@ -23,6 +23,19 @@
  #include "../w1.h"
  #include "../w1_int.h"
@@ -145,10 +143,8 @@ Index: linux-4.9.111/drivers/w1/masters/w1-gpio.c
  	return 0;
  }
  
-Index: linux-4.9.111/drivers/w1/w1.h
-===================================================================
---- linux-4.9.111.orig/drivers/w1/w1.h
-+++ linux-4.9.111/drivers/w1/w1.h
+--- a/drivers/w1/w1.h
++++ b/drivers/w1/w1.h
 @@ -173,6 +173,12 @@ struct w1_bus_master
  
  	u8		(*set_pullup)(void *, int);
@@ -162,10 +158,8 @@ Index: linux-4.9.111/drivers/w1/w1.h
  	void		(*search)(void *, struct w1_master *,
  		u8, w1_slave_found_callback);
  };
-Index: linux-4.9.111/drivers/w1/w1_int.c
-===================================================================
---- linux-4.9.111.orig/drivers/w1/w1_int.c
-+++ linux-4.9.111/drivers/w1/w1_int.c
+--- a/drivers/w1/w1_int.c
++++ b/drivers/w1/w1_int.c
 @@ -122,6 +122,20 @@ int w1_add_master_device(struct w1_bus_m
  		return(-EINVAL);
  	}
@@ -187,10 +181,8 @@ Index: linux-4.9.111/drivers/w1/w1_int.c
  	/* Lock until the device is added (or not) to w1_masters. */
  	mutex_lock(&w1_mlock);
  	/* Search for the first available id (starting at 1). */
-Index: linux-4.9.111/drivers/w1/w1_io.c
-===================================================================
---- linux-4.9.111.orig/drivers/w1/w1_io.c
-+++ linux-4.9.111/drivers/w1/w1_io.c
+--- a/drivers/w1/w1_io.c
++++ b/drivers/w1/w1_io.c
 @@ -134,10 +134,22 @@ static void w1_pre_write(struct w1_maste
  static void w1_post_write(struct w1_master *dev)
  {
@@ -217,10 +209,8 @@ Index: linux-4.9.111/drivers/w1/w1_io.c
  		dev->pullup_duration = 0;
  	}
  }
-Index: linux-4.9.111/include/linux/w1-gpio.h
-===================================================================
---- linux-4.9.111.orig/include/linux/w1-gpio.h
-+++ linux-4.9.111/include/linux/w1-gpio.h
+--- a/include/linux/w1-gpio.h
++++ b/include/linux/w1-gpio.h
 @@ -18,6 +18,7 @@
  struct w1_gpio_platform_data {
  	unsigned int pin;
