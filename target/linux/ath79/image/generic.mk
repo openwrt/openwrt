@@ -22,6 +22,16 @@ define Device/buffalo_wzr-hp-g450h
 endef
 TARGET_DEVICES += buffalo_wzr-hp-g450h
 
+define Device/dlink_dir-825-b1
+  ATH_SOC := ar7161
+  DEVICE_TITLE := D-LINK DIR-825 B1
+  IMAGE_SIZE := 6208k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
+  SUPPORTED_DEVICES += dir-825-b1
+endef
+TARGET_DEVICES += dlink_dir-825-b1
+
 define Device/embeddedwireless_dorin
   ATH_SOC := ar9331
   DEVICE_TITLE := Embedded Wireless Dorin
