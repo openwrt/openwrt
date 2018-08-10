@@ -8,8 +8,8 @@ the new library with binaries compiled against the old library.
  
  if(USE_SHARED_MBEDTLS_LIBRARY)
      add_library(mbedcrypto SHARED ${src_crypto})
--    set_target_properties(mbedcrypto PROPERTIES VERSION 2.7.3 SOVERSION 2)
-+    set_target_properties(mbedcrypto PROPERTIES VERSION 2.7.3 SOVERSION 0)
+-    set_target_properties(mbedcrypto PROPERTIES VERSION 2.7.5 SOVERSION 2)
++    set_target_properties(mbedcrypto PROPERTIES VERSION 2.7.5 SOVERSION 0)
      target_link_libraries(mbedcrypto ${libs})
  
      add_library(mbedx509 SHARED ${src_x509})
