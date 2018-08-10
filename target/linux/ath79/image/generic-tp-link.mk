@@ -12,7 +12,7 @@ define Device/tplink_archer-c7-v2
 endef
 TARGET_DEVICES += tplink_archer-c7-v2
 
-define Device/tplink_tl-re450-v2
+define Device/tplink_re450-v2
   $(Device/tplink)
   ATH_SOC := qca9563
   IMAGE_SIZE := 6016k
@@ -27,7 +27,7 @@ define Device/tplink_tl-re450-v2
     append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
-TARGET_DEVICES += tplink_tl-re450-v2
+TARGET_DEVICES += tplink_re450-v2
 
 define Device/tplink_tl-wdr3600
   $(Device/tplink-8mlzma)
