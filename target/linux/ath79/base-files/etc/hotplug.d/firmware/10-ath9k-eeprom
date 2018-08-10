@@ -95,6 +95,17 @@ ath9k_patch_fw_mac_crc() {
 board=$(board_name)
 
 case "$FIRMWARE" in
+"ath9k-eeprom-ahb-18100000.wmac.bin")
+	case $board in
+	iodata,wn-ac1600dgr2)
+		ath9k_eeprom_extract "art" 4096 1088
+		ath9k_patch_fw_mac $(mtd_get_mac_ascii u-boot-env ethaddr) 2
+		;;
+	*)
+		ath9k_eeprom_die "board $board is not supported yet"
+		;;
+	esac
+	;;
 "ath9k-eeprom-pci-0000:00:00.0.bin")
 	case $board in
 	avm,fritz300e)

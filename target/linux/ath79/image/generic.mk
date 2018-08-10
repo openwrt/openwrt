@@ -67,6 +67,18 @@ define Device/glinet_ar300m_nor
 endef
 TARGET_DEVICES += glinet_ar300m_nor
 
+define Device/iodata_wn-ac1600dgr2
+  ATH_SOC := qca9557
+  DEVICE_TITLE := I-O DATA WN-AC1600DGR2
+  IMAGE_SIZE := 14656k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+    append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | \
+    senao-header -r 0x30a -p 0x60 -t 2 -v 200
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x
+endef
+TARGET_DEVICES += iodata_wn-ac1600dgr2
+
 define Device/ocedo_koala
   ATH_SOC := qca9558
   DEVICE_TITLE := OCEDO Koala
