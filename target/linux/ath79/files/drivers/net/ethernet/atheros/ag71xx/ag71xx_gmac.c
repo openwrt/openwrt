@@ -57,6 +57,14 @@ static void ag71xx_setup_gmac_934x(struct device_node *np, void __iomem *base)
 	ag71xx_of_bit(np, "switch-phy-swap", &val, AR934X_ETH_CFG_SW_PHY_SWAP);
 	ag71xx_of_bit(np, "switch-only-mode", &val,
 		AR934X_ETH_CFG_SW_ONLY_MODE);
+	ag71xx_of_set(np, "rxdv-delay", &val,
+		      AR934X_ETH_CFG_RDV_DELAY_SHIFT, 0x3);
+	ag71xx_of_set(np, "rxd-delay", &val,
+		      AR934X_ETH_CFG_RXD_DELAY_SHIFT, 0x3);
+	ag71xx_of_set(np, "txd-delay", &val,
+		      AR934X_ETH_CFG_TXD_DELAY_SHIFT, 0x3);
+	ag71xx_of_set(np, "txen-delay", &val,
+		      AR934X_ETH_CFG_TXE_DELAY_SHIFT, 0x3);
 
 	__raw_writel(val, base + AR934X_GMAC_REG_ETH_CFG);
 }

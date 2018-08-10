@@ -650,7 +650,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  /*
   * SRIF block
-@@ -552,4 +1007,318 @@
+@@ -552,4 +1007,322 @@
  #define AR934X_SRIF_DPLL2_OUTDIV_SHIFT	13
  #define AR934X_SRIF_DPLL2_OUTDIV_MASK	0x7
  
@@ -876,6 +876,10 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +#define AR934X_ETH_CFG_RDV_DELAY        BIT(16)
 +#define AR934X_ETH_CFG_RDV_DELAY_MASK   0x3
 +#define AR934X_ETH_CFG_RDV_DELAY_SHIFT  16
++#define AR934X_ETH_CFG_TXD_DELAY_MASK   0x3
++#define AR934X_ETH_CFG_TXD_DELAY_SHIFT  18
++#define AR934X_ETH_CFG_TXE_DELAY_MASK   0x3
++#define AR934X_ETH_CFG_TXE_DELAY_SHIFT  20
 +
 +/*
 + * QCA953X GMAC Interface
