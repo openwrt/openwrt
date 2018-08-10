@@ -9,11 +9,9 @@ vtls must set wait for read/write flags for the socket.
  lib/vtls/vtls.c | 5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/lib/vtls/vtls.c b/lib/vtls/vtls.c
-index fad9335bbf..871622fef1 100644
 --- a/lib/vtls/vtls.c
 +++ b/lib/vtls/vtls.c
-@@ -485,8 +485,9 @@ void Curl_ssl_close_all(struct Curl_easy *data)
+@@ -488,8 +488,9 @@ void Curl_ssl_close_all(struct Curl_easy
  }
  
  #if defined(USE_OPENSSL) || defined(USE_GNUTLS) || defined(USE_SCHANNEL) || \
