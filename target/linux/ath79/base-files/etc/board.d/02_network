@@ -41,6 +41,11 @@ ath79_setup_interfaces()
 	glinet,ar300m)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+	iodata,wn-ac1600dgr2|\
+	pcs,cr5000)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
+		;;
 	netgear,wndr3800)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
@@ -60,10 +65,6 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
 		ucidef_set_interface_wan "eth0"
-		;;
-	pcs,cr5000)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
 		;;
 	phicomm,k2t)
 		ucidef_add_switch "switch0" \
@@ -141,6 +142,10 @@ ath79_setup_macs()
 	case "$board" in
 	avm,fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
+		;;
+	iodata,wn-ac1600dgr2)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		;;
 	phicomm,k2t)
 		lan_mac=$(k2t_get_mac "lan_mac")

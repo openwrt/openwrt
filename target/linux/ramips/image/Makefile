@@ -108,11 +108,6 @@ define Build/poray-header
 	mv $@.new $@
 endef
 
-define Build/senao-header
-	$(STAGING_DIR_HOST)/bin/mksenaofw $(1) -e $@ -o $@.new
-	mv $@.new $@
-endef
-
 define Build/seama
 	$(STAGING_DIR_HOST)/bin/seama -i $@ $(1)
 	mv $@.seama $@

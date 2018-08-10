@@ -42,9 +42,28 @@ ath9k_eeprom_extract_reverse() {
 	printf "%b" "$caldata" > /lib/firmware/$FIRMWARE
 }
 
+ath9kcal_patch_mac() {
+	local mac=$1
+
+	[ -z "$mac" ] && return
+
+	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=2 count=6
+}
+
 board=$(board_name)
 
 case "$FIRMWARE" in
+"ath9k-eeprom-ahb-18100000.wmac.bin")
+	case $board in
+	iodata,wn-ac1600dgr2)
+		ath9k_eeprom_extract "art" 4096 1088
+		ath9kcal_patch_mac $(mtd_get_mac_ascii u-boot-env ethaddr)
+		;;
+	*)
+		ath9k_eeprom_die "board $board is not supported yet"
+		;;
+	esac
+	;;
 "ath9k-eeprom-pci-0000:00:00.0.bin")
 	case $board in
 	avm,fritz300e)
