@@ -586,6 +586,10 @@ ar71xx_board_detect() {
 		name="cpe210-v2"
 		tplink_pharos_board_detect "$(tplink_pharos_v2_get_model_string)"
 		;;
+	*"CPE210 v3")
+		name="cpe210-v3"
+		tplink_pharos_board_detect "$(tplink_pharos_v2_get_model_string)"
+		;;
 	*"CPE505N")
 		name="cpe505n"
 		;;
