@@ -155,7 +155,7 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "support-list",
 	},
 
-	/** Firmware layout for the CPE210 V2 */
+	/** Firmware layout for the CPE210 V2 and V3 */
 	{
 		.id     = "CPE210V2",
 		.vendor = "CPE210(TP-LINK|UN|N300-2|00000000):2.0\r\n",
@@ -170,7 +170,11 @@ static struct device_info boards[] = {
 			"CPE210(TP-LINK|US|N300-2|55530000):2.0\r\n"
 			"CPE210(TP-LINK|UN|N300-2):2.0\r\n"
 			"CPE210(TP-LINK|EU|N300-2):2.0\r\n"
-			"CPE210(TP-LINK|US|N300-2):2.0\r\n",
+			"CPE210(TP-LINK|US|N300-2):2.0\r\n"
+			"CPE210(TP-LINK|EU|N300-2|45550000):3.0\r\n"
+			"CPE210(TP-LINK|UN|N300-2|00000000):3.0\r\n"
+			"CPE210(TP-LINK|UN|N300-2):3.0\r\n"
+			"CPE210(TP-LINK|EU|N300-2):3.0\r\n",
 		.support_trail = '\xff',
 		.soft_ver = NULL,
 
