@@ -239,6 +239,7 @@ cf-e530n)
 	;;
 cpe210|\
 cpe210-v2|\
+cpe210-v3|\
 cpe510|\
 wbs210|\
 wbs510)
@@ -249,7 +250,8 @@ wbs510)
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "tp-link:green:link4" "wlan0" "76" "100" "-75" "13"
 
 	case "$board" in
-	cpe210-v2)
+	cpe210-v2|\
+	cpe210-v3)
 		ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan0" "eth0"
 		;;
 	*)

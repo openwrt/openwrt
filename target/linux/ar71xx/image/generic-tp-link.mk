@@ -198,6 +198,13 @@ define Device/cpe210-v2
 endef
 TARGET_DEVICES += cpe210-v2
 
+define Device/cpe210-v3
+  $(Device/cpe210-v2)
+  DEVICE_TITLE := TP-LINK CPE210 v3
+  BOARDNAME := CPE210V3
+endef
+TARGET_DEVICES += cpe210-v3
+
 define Device/wbs210-v1
   $(Device/cpe510-520-v1)
   DEVICE_TITLE := TP-LINK WBS210 v1
