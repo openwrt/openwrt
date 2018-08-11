@@ -30,6 +30,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6@eth0"
 		;;
+	dlink,dir-825-b1)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "5@eth0"
+		;;
 	embeddedwireless,dorin)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:wan" "2:lan:3" "3:lan:2"
@@ -141,6 +146,10 @@ ath79_setup_macs()
 	case "$board" in
 	avm,fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
+		;;
+	dlink,dir-825-b1)
+		lan_mac=$(mtd_get_mac_text "caldata" 65440)
+		wan_mac=$(mtd_get_mac_text "caldata" 65460)
 		;;
 	phicomm,k2t)
 		lan_mac=$(k2t_get_mac "lan_mac")
