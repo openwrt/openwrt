@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct property *pp = of_find_property(np, name, NULL);
  
-@@ -47,6 +48,73 @@ static const void *of_get_mac_addr(struc
+@@ -47,6 +48,76 @@ static const void *of_get_mac_addr(struc
  	return NULL;
  }
  
@@ -76,6 +76,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!of_property_read_u32(np, "mtd-mac-address-increment", &mac_inc))
 +		mac[5] += mac_inc;
 +
++	if (of_property_read_bool(np, "mtd-mac-address-local-admin"))
++		mac[0] |= 0x02;
++
 +	if (!is_valid_ether_addr(mac))
 +		return NULL;
 +
@@ -106,7 +109,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /**
   * Search the device tree for the best MAC address to use.  'mac-address' is
   * checked first, because that is supposed to contain to "most recent" MAC
-@@ -64,11 +132,18 @@ static const void *of_get_mac_addr(struc
+@@ -64,11 +135,18 @@ static const void *of_get_mac_addr(struc
   * addresses.  Some older U-Boots only initialized 'local-mac-address'.  In
   * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
   * but is all zeros.
