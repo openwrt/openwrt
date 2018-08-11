@@ -20,8 +20,7 @@ find_mtd_chardev() {
 	echo "${INDEX:+$PREFIX$INDEX}"
 }
 
-mtd_get_mac_ascii()
-{
+mtd_get_mac_ascii() {
 	local mtdname="$1"
 	local key="$2"
 	local part
@@ -87,22 +86,19 @@ macaddr_add() {
 	echo $oui:$nic
 }
 
-macaddr_setbit_la()
-{
+macaddr_setbit_la() {
 	local mac=$1
 
 	printf "%02x:%s" $((0x${mac%%:*} | 0x02)) ${mac#*:}
 }
 
-macaddr_2bin()
-{
+macaddr_2bin() {
 	local mac=$1
 
 	echo -ne \\x${mac//:/\\x}
 }
 
-macaddr_canonicalize()
-{
+macaddr_canonicalize() {
 	local mac="$1"
 	local canon=""
 
