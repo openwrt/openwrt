@@ -93,7 +93,7 @@
 
 			pll: pll-controller@18050000 {
 				compatible = "qca,ar9132-pll",
-						"qca,ar9130-pll";
+						"qca,ar9130-pll", "syscon";
 				reg = <0x18050000 0x20>;
 
 				clock-names = "ref";
