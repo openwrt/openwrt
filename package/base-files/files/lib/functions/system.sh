@@ -20,8 +20,7 @@ find_mtd_chardev() {
 	echo "${INDEX:+$PREFIX$INDEX}"
 }
 
-mtd_get_mac_ascii()
-{
+mtd_get_mac_ascii() {
 	local mtdname="$1"
 	local key="$2"
 	local part
@@ -37,6 +36,13 @@ mtd_get_mac_ascii()
 
 	# "canonicalize" mac
 	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
+}
+
+mtd_get_mac_text() {
+	local mtdname=$1
+	local offcet=$2
+
+	dd if=$(find_mtd_part $1) bs=1 skip=$2 count=17 2>/dev/null
 }
 
 mtd_get_mac_binary() {
