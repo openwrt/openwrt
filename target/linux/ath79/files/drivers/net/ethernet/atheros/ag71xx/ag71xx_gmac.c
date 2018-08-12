@@ -75,6 +75,17 @@ static void ag71xx_setup_gmac_955x(struct device_node *np, void __iomem *base)
 	__raw_writel(val, base + QCA955X_GMAC_REG_ETH_CFG);
 }
 
+static void ag71xx_setup_gmac_956x(struct device_node *np, void __iomem *base)
+{
+	u32 val = __raw_readl(base + QCA956X_GMAC_REG_ETH_CFG);
+
+	ag71xx_of_bit(np, "switch-phy-swap", &val, QCA956X_ETH_CFG_SW_PHY_SWAP);
+	ag71xx_of_bit(np, "switch-phy-addr-swap", &val,
+		QCA956X_ETH_CFG_SW_PHY_ADDR_SWAP);
+
+	__raw_writel(val, base + QCA956X_GMAC_REG_ETH_CFG);
+}
+
 int ag71xx_setup_gmac(struct device_node *np)
 {
 	struct device_node *np_dev;
@@ -102,6 +113,8 @@ int ag71xx_setup_gmac(struct device_node *np)
 		ag71xx_setup_gmac_934x(np, base);
 	else if (of_device_is_compatible(np_dev, "qca,qca9550-gmac"))
 		ag71xx_setup_gmac_955x(np, base);
+	else if (of_device_is_compatible(np_dev, "qca,qca9560-gmac"))
+		ag71xx_setup_gmac_956x(np, base);
 
 	iounmap(base);
 

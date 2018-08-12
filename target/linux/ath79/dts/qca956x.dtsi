@@ -222,6 +222,11 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
+		gmac: gmac@18070000 {
+			compatible = "qca,qca9560-gmac";
+			reg = <0x18070000 0x64>;
+		};
 	};
 
 	usb_phy0: usb-phy {
