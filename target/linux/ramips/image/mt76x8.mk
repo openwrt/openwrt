@@ -91,6 +91,23 @@ define Device/mt7628
 endef
 TARGET_DEVICES += mt7628
 
+define Device/netgear_r6120
+  DTS := R6120
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Netgear AC1200 R6120
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  HWID := CGQ
+  KERNEL_OFFSET := 90000
+  HWVER := A001
+  SWVER := 0040
+  IMAGE/default := append-kernel | pad-to 64k | append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGES += factory.img
+  IMAGE/factory.img := $$(IMAGE/default) | mksercommfw
+endef
+TARGET_DEVICES += netgear_r6120
+
 define Device/omega2
   DTS := OMEGA2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
