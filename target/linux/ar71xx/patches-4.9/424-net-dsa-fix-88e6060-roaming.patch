@@ -1,0 +1,22 @@
+--- a/drivers/net/dsa/mv88e6060.c
++++ b/drivers/net/dsa/mv88e6060.c
+@@ -114,8 +114,7 @@
+ 	/* Reset the switch. */
+ 	REG_WRITE(REG_GLOBAL, GLOBAL_ATU_CONTROL,
+ 		  GLOBAL_ATU_CONTROL_SWRESET |
+-		  GLOBAL_ATU_CONTROL_ATUSIZE_1024 |
+-		  GLOBAL_ATU_CONTROL_ATE_AGE_5MIN);
++		  GLOBAL_ATU_CONTROL_LEARNDIS);
+ 
+ 	/* Wait up to one second for reset to complete. */
+ 	timeout = jiffies + 1 * HZ;
+@@ -145,8 +144,7 @@
+ 	 * time to 5 minutes.
+ 	 */
+ 	REG_WRITE(REG_GLOBAL, GLOBAL_ATU_CONTROL,
+-		  GLOBAL_ATU_CONTROL_ATUSIZE_1024 |
+-		  GLOBAL_ATU_CONTROL_ATE_AGE_5MIN);
++		  GLOBAL_ATU_CONTROL_LEARNDIS);
+ 
+ 	return 0;
+ }
