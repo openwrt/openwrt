@@ -552,8 +552,8 @@ static void ath79_mii_ctrl_set_speed(struct ag71xx *ag)
 	}
 
 	t = __raw_readl(ag->mii_base);
-	t &= ~(AR71XX_MII_CTRL_IF_MASK);
-	t |= (mii_speed & AR71XX_MII_CTRL_IF_MASK);
+	t &= ~(AR71XX_MII_CTRL_SPEED_MASK << AR71XX_MII_CTRL_SPEED_SHIFT);
+	t |= mii_speed << AR71XX_MII_CTRL_SPEED_SHIFT;
 	__raw_writel(t, ag->mii_base);
 }
 
