@@ -134,20 +134,46 @@ define Device/pcs_cr5000
 endef
 TARGET_DEVICES += pcs_cr5000
 
-define Device/netgear_wndr3800
+define Device/netgear_wndr3x00
   ATH_SOC := ar7161
-  DEVICE_TITLE := NETGEAR WNDR3800
-  NETGEAR_KERNEL_MAGIC := 0x33373031
   KERNEL := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
-  NETGEAR_BOARD_ID := WNDR3800
-  NETGEAR_HW_ID := 29763654+16+128
-  IMAGE_SIZE := 15872k
   IMAGES := sysupgrade.bin factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size $$$$(IMAGE_SIZE)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset
+endef
+
+define Device/netgear_wndr3700
+  $(Device/netgear_wndr3x00)
+  DEVICE_TITLE := NETGEAR WNDR3700
+  NETGEAR_KERNEL_MAGIC := 0x33373030
+  NETGEAR_BOARD_ID := WNDR3700
+  IMAGE_SIZE := 7680k
+  IMAGES += factory-NA.img
+  IMAGE/factory-NA.img := $$(IMAGE/default) | netgear-dni NA | check-size $$$$(IMAGE_SIZE)
+  SUPPORTED_DEVICES += wndr3700
+endef
+TARGET_DEVICES += netgear_wndr3700
+
+define Device/netgear_wndr3700v2
+  $(Device/netgear_wndr3x00)
+  DEVICE_TITLE := NETGEAR WNDR3700v2
+  NETGEAR_KERNEL_MAGIC := 0x33373031
+  NETGEAR_BOARD_ID := WNDR3700v2
+  NETGEAR_HW_ID := 29763654+16+64
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += wndr3700v2
+endef
+TARGET_DEVICES += netgear_wndr3700v2
+
+define Device/netgear_wndr3800
+  $(Device/netgear_wndr3x00)
+  DEVICE_TITLE := NETGEAR WNDR3800
+  NETGEAR_KERNEL_MAGIC := 0x33373031
+  NETGEAR_BOARD_ID := WNDR3800
+  NETGEAR_HW_ID := 29763654+16+128
+  IMAGE_SIZE := 15872k
   SUPPORTED_DEVICES += wndr3800
 endef
 TARGET_DEVICES += netgear_wndr3800
