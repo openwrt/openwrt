@@ -134,6 +134,17 @@ define Device/pcs_cr5000
 endef
 TARGET_DEVICES += pcs_cr5000
 
+define Device/pisen_wmm003n
+  $(Device/tplink-8mlzma)
+  ATH_SOC := ar9331
+  DEVICE_TITLE := Pisen WMM003N (Cloud Easy Power)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-chipidea2
+  TPLINK_HWID := 0x07030101
+  SUPPORTED_DEVICES += wmm003n
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += pisen_wmm003n
+
 define Device/netgear_wndr3800
   ATH_SOC := ar7161
   DEVICE_TITLE := NETGEAR WNDR3800
