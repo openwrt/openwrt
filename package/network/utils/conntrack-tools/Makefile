@@ -12,9 +12,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://git.netfilter.org/conntrack-tools
-PKG_SOURCE_DATE:=2017-09-27
-PKG_SOURCE_VERSION:=eefe649ca51ed0cbb995454cdc366f5072f6443c
-PKG_MIRROR_HASH:=1c207c3e423d741fbb31e3c29486a811e6dad493f26ec47a2df75b6262a1b4bd
+PKG_SOURCE_DATE:=2018-05-01
+PKG_SOURCE_VERSION:=88610abee7e58f4da7ec6f198e00ff70a92c870f
+PKG_MIRROR_HASH:=cccc5e25e3cb159385b170f63f9b7fd2186f68d32239718080f605c060ea1cb8
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0
@@ -23,7 +23,7 @@ PKG_CPE_ID:=cpe:/a:conntrack-tools_project:conntrack-tools
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 
-PKG_BUILD_DEPENDS:=librpc
+PKG_BUILD_DEPENDS:=libtirpc
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -45,6 +45,9 @@ define Package/conntrack/description
  administrators. It enables them to view and manage the in-kernel
  connection tracking state table.
 endef
+
+CONFIGURE_ARGS += \
+	--with-libtirpc
 
 define Package/conntrack/install
 	$(INSTALL_DIR) $(1)/usr/sbin

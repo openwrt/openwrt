@@ -1,0 +1,41 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -50,6 +50,25 @@
+         AS_HELP_STRING([--enable-systemd], [Build systemd support]),
+         [enable_systemd="$enableval"], [enable_systemd="no"])
+ 
++AC_ARG_WITH([libtirpc],
++           AS_HELP_STRING([--with-libtirpc], [Use libtirpc as RPC implementation (instead of sunrpc)]),
++           [], [ with_libtirpc=no ])
++
++AS_IF([test "x$with_libtirpc" != xno],
++      [PKG_CHECK_MODULES([TIRPC],
++                         [libtirpc],
++                         [RPC_CFLAGS=$TIRPC_CFLAGS; RPC_LIBS=$TIRPC_LIBS;],
++                        [AC_MSG_ERROR([libtirpc requested, but library not found.])]
++                       )],
++      [AC_CHECK_HEADER(rpc/rpc.h,
++                      [RPC_CFLAGS=""; RPC_LIBS="";],
++                      [AC_MSG_ERROR([sunrpc requested, but headers are not present.])]
++                     )]
++)
++
++AC_SUBST(RPC_CFLAGS)
++AC_SUBST(RPC_LIBS)
++
+ PKG_CHECK_MODULES([LIBNFNETLINK], [libnfnetlink >= 1.0.1])
+ PKG_CHECK_MODULES([LIBMNL], [libmnl >= 1.0.3])
+ PKG_CHECK_MODULES([LIBNETFILTER_CONNTRACK], [libnetfilter_conntrack >= 1.0.7])
+--- a/src/helpers/Makefile.am
++++ b/src/helpers/Makefile.am
+@@ -30,8 +30,8 @@
+ ct_helper_mdns_la_CFLAGS = $(HELPER_CFLAGS)
+ 
+ ct_helper_rpc_la_SOURCES = rpc.c
+-ct_helper_rpc_la_LDFLAGS = $(HELPER_LDFLAGS)
+-ct_helper_rpc_la_CFLAGS = $(HELPER_CFLAGS)
++ct_helper_rpc_la_LDFLAGS = $(HELPER_LDFLAGS) $(RPC_LIBS)
++ct_helper_rpc_la_CFLAGS = $(HELPER_CFLAGS) $(RPC_CFLAGS)
+ 
+ ct_helper_tftp_la_SOURCES = tftp.c
+ ct_helper_tftp_la_LDFLAGS = $(HELPER_LDFLAGS)
