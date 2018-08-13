@@ -133,6 +133,9 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 		"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
+	tplink,tl-wr941-v2)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
 	ubnt,unifiac-mesh-pro|\
 	ubnt,unifiac-pro)
 		ucidef_add_switch "switch0" \
@@ -171,6 +174,10 @@ ath79_setup_macs()
 		;;
 	tplink,tl-wr1043nd-v4)
 		base_mac=$(mtd_get_mac_binary product-info 8)
+		wan_mac=$(macaddr_add "$base_mac" 1)
+		;;
+	tplink,tl-wr941-v2)
+		base_mac=$(mtd_get_mac_binary u-boot 130048)
 		wan_mac=$(macaddr_add "$base_mac" 1)
 		;;
 	esac
