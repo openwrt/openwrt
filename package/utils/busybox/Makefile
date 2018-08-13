@@ -17,7 +17,7 @@ PKG_SOURCE_URL:=https://www.busybox.net/downloads \
 		http://sources.buildroot.net
 PKG_HASH:=9553da068c0a30b1b8b72479908c1ba58672e2be7b535363a88de5e0f7bc04ce
 
-PKG_BUILD_DEPENDS:=BUSYBOX_USE_LIBRPC:librpc BUSYBOX_CONFIG_PAM:libpam
+PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_PAM:libpam
 PKG_BUILD_PARALLEL:=1
 PKG_CHECK_FORMAT_SECURITY:=0
 
@@ -43,7 +43,7 @@ define Package/busybox
   MAINTAINER:=Felix Fietkau <nbd@nbd.name>
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
-  DEPENDS:=+BUSYBOX_USE_LIBRPC:librpc +BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter
+  DEPENDS:=+BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter
   MENU:=1
   ALTERNATIVES:=\
     $(call BUSYBOX_IF_ENABLED,FIND,	100:/usr/bin/find:/bin/busybox) \
@@ -82,9 +82,6 @@ LDLIBS:=m crypt
 endif
 
 LDLIBS += $(call BUSYBOX_IF_ENABLED,PAM,pam pam_misc pthread)
-ifdef CONFIG_BUSYBOX_USE_LIBRPC
-  LDLIBS += rpc
-endif
 ifeq ($(CONFIG_USE_GLIBC),y)
   LDLIBS += $(call BUSYBOX_IF_ENABLED,NSLOOKUP_OPENWRT,resolv)
 endif
