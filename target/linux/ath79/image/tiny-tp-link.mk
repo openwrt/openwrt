@@ -127,6 +127,15 @@ define Device/tplink_tl-wr841-v9
 endef
 TARGET_DEVICES += tplink_tl-wr841-v9
 
+define Device/tplink_tl-wr941-v2
+  $(Device/tplink-4m)
+  ATH_SOC := ar9132
+  DEVICE_TITLE := TP-Link TL-WR941N/ND v2/v3
+  TPLINK_HWID := 0x09410002
+  TPLINK_HWREV := 2
+endef
+TARGET_DEVICES += tplink_tl-wr941-v2
+
 define Device/tplink_tl-wr941-v4
   $(Device/tplink-4m)
   ATH_SOC := ar7240
