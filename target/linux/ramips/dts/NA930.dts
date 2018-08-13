@@ -84,6 +84,8 @@
 		status {
 			label = "na930:blue:status";
 			gpios = <&gpio2 26 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&ohci_port1>, <&ehci_port1>;
+			linux,default-trigger = "usbport";
 		};
 
 		service {

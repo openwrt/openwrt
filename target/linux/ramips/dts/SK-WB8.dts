@@ -32,6 +32,8 @@
 		usb {
 			label = "sk-wb8:green:usb";
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&xhci_ehci_port1>, <&ehci_port2>;
+			linux,default-trigger = "usbport";
 		};
 	};
 

@@ -76,6 +76,8 @@
 		usb {
 			label = "hg255d:green:usb";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&otg_port1>;
+			linux,default-trigger = "usbport";
 		};
 
 		wps {

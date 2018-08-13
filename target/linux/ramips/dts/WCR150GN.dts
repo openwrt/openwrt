@@ -55,6 +55,8 @@
 		user {
 			label = "wcr-150gn:amber:user";
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&otg_port1>;
+			linux,default-trigger = "usbport";
 		};
 
 		led_power: power {

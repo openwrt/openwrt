@@ -57,6 +57,8 @@
 		wan {
 			label = "tl-mr3020-v3:green:3g";
 			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&ehci_port1>, <&ohci_port1>;
+			linux,default-trigger = "usbport";
 		};
 
 		wlan {

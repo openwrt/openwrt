@@ -84,6 +84,8 @@
 		storage {
 			label = "f5d8235-v2:blue:storage";
 			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&otg_port1>;
+			linux,default-trigger = "usbport";
 		};
 
 		storage2 {

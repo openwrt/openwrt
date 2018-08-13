@@ -65,6 +65,8 @@
 		usb {
 			label = "mr-102n:green:usb";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&otg_port1>;
+			linux,default-trigger = "usbport";
 		};
 
 		led_status: status {

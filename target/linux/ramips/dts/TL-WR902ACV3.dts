@@ -58,6 +58,8 @@
 		usb {
 			label = "tl-wr902ac-v3:green:usb";
 			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&ohci_port1>, <&ehci_port1>;
+			linux,default-trigger = "usbport";
 		};
 
 		wan {

@@ -71,6 +71,8 @@
 		3g {
 			label = "3g-6200n:blue:3g";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&otg_port1>;
+			linux,default-trigger = "usbport";
 		};
 	};
 

@@ -60,6 +60,8 @@
 		usb {
 			label = "d105:green:usb";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&otg_port1>;
+			linux,default-trigger = "usbport";
 		};
 	};
 

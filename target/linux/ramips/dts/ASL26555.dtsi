@@ -63,6 +63,8 @@
 		3g-green {
 			label = "asl26555:green:3g";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&otg_port1>;
+			linux,default-trigger = "usbport";
 		};
 
 		3g-red {

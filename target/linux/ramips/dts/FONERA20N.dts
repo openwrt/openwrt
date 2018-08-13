@@ -65,6 +65,8 @@
 		usb {
 			label = "fonera20n:orange:usb";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&otg_port1>;
+			linux,default-trigger = "usbport";
 		};
 	};
 

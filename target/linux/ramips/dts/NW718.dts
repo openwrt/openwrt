@@ -24,6 +24,8 @@
 		usb {
 			label = "nw718:amber:usb";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&otg_port1>;
+			linux,default-trigger = "usbport";
 		};
 
 		wps {
