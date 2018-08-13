@@ -21,6 +21,16 @@ define Device/tplink_tl-mr3020-v1
 endef
 TARGET_DEVICES += tplink_tl-mr3020-v1
 
+define Device/tplink_tl-mr3040-v2
+  $(Device/tplink-4mlzma)
+  ATH_SOC := ar9331
+  DEVICE_TITLE := TP-LINK TL-MR3040 v2
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x30400002
+  SUPPORTED_DEVICES += tl-mr3040-v2
+endef
+TARGET_DEVICES += tplink_tl-mr3040-v2
+
 define Device/tplink_tl-mr3220-v1
   $(Device/tplink-4m)
   ATH_SOC := ar7241
