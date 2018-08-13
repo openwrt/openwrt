@@ -455,13 +455,6 @@ config BUSYBOX_CONFIG_FEATURE_INETD_SUPPORT_BUILTIN_CHARGEN
 	help
 	  Familiar character generator internal inetd service
 
-config BUSYBOX_CONFIG_FEATURE_INETD_RPC
-	bool "Support RPC services"
-	default BUSYBOX_DEFAULT_FEATURE_INETD_RPC  # very rarely used, and needs Sun RPC support in libc
-	depends on BUSYBOX_CONFIG_INETD
-	select BUSYBOX_CONFIG_FEATURE_HAVE_RPC
-	help
-	  Support Sun-RPC based services
 config BUSYBOX_CONFIG_IP
 	bool "ip"
 	default BUSYBOX_DEFAULT_IP

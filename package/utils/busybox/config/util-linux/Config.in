@@ -627,20 +627,6 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_LABEL
 	  name. This feature utilizes the same functionality as blkid/findfs.
 	  This also enables label or uuid support for swapon.
 
-config BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
-	bool "Support mounting NFS file systems on Linux < 2.6.23"
-	default BUSYBOX_DEFAULT_FEATURE_MOUNT_NFS
-	depends on BUSYBOX_CONFIG_MOUNT
-	select BUSYBOX_CONFIG_FEATURE_HAVE_RPC
-	select BUSYBOX_CONFIG_FEATURE_SYSLOG
-	help
-	  Enable mounting of NFS file systems on Linux kernels prior
-	  to version 2.6.23. Note that in this case mounting of NFS
-	  over IPv6 will not be possible.
-
-	  Note that this option links in RPC support from libc,
-	  which is rather large (~10 kbytes on uclibc).
-
 config BUSYBOX_CONFIG_FEATURE_MOUNT_CIFS
 	bool "Support mounting CIFS/SMB file systems"
 	default BUSYBOX_DEFAULT_FEATURE_MOUNT_CIFS

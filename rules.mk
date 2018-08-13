@@ -183,8 +183,6 @@ else
 LIBGCC_A=$(lastword $(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc.a))
 LIBGCC_S=$(if $(wildcard $(TOOLCHAIN_DIR)/lib/libgcc_s.so),-L$(TOOLCHAIN_DIR)/lib -lgcc_s,$(LIBGCC_A))
 endif
-LIBRPC=-lrpc
-LIBRPC_DEPENDS=+librpc
 
 ifeq ($(CONFIG_ARCH_64BIT),y)
   LIB_SUFFIX:=64
