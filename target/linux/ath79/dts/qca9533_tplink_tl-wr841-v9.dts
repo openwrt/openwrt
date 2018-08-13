@@ -9,4 +9,8 @@
 / {
 	compatible = "tplink,tl-wr841-v9", "qca,qca9533";
 	model = "TP-Link TL-WR841N/ND Version 9";
+
+	aliases {
+		led-status = &qss_led;
+	};
 };
