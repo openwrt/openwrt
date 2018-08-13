@@ -159,6 +159,11 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		;;
+	netgear,wndr3700|\
+	netgear,wndr3700v2|\
+	netgear,wndr3800)
+		lan_mac=$(macaddr_setbit_la "$(mtd_get_mac_binary art 0)")
+		;;
 	phicomm,k2t)
 		lan_mac=$(k2t_get_mac "lan_mac")
 		wan_mac=$(k2t_get_mac "wan_mac")
