@@ -12,6 +12,7 @@
 
 	aliases {
 		led-status = &orange_power;
+		led-running = &blue_power;
 	};
 
 	chosen {
@@ -40,7 +41,7 @@
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
-		blue_power {
+		blue_power: blue_power {
 			label = "d-link:blue:power";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "off";
