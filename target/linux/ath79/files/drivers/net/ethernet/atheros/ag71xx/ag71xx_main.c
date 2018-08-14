@@ -529,6 +529,60 @@ static void ath79_set_pll(struct ag71xx *ag)
 	udelay(100);
 }
 
+static void ath79_mii_ctrl_set_if(struct ag71xx *ag, unsigned int mii_if)
+{
+	u32 t;
+
+	t = __raw_readl(ag->mii_base);
+	t &= ~(AR71XX_MII_CTRL_IF_MASK);
+	t |= (mii_if & AR71XX_MII_CTRL_IF_MASK);
+	__raw_writel(t, ag->mii_base);
+}
+
+static void ath79_mii0_ctrl_set_if(struct ag71xx *ag)
+{
+	unsigned int mii_if;
+
+	switch (ag->phy_if_mode) {
+	case PHY_INTERFACE_MODE_MII:
+		mii_if = AR71XX_MII0_CTRL_IF_MII;
+		break;
+	case PHY_INTERFACE_MODE_GMII:
+		mii_if = AR71XX_MII0_CTRL_IF_GMII;
+		break;
+	case PHY_INTERFACE_MODE_RGMII:
+		mii_if = AR71XX_MII0_CTRL_IF_RGMII;
+		break;
+	case PHY_INTERFACE_MODE_RMII:
+		mii_if = AR71XX_MII0_CTRL_IF_RMII;
+		break;
+	default:
+		WARN(1, "Impossible PHY mode defined.\n");
+		return;
+	}
+
+	ath79_mii_ctrl_set_if(ag, mii_if);
+}
+
+static void ath79_mii1_ctrl_set_if(struct ag71xx *ag)
+{
+	unsigned int mii_if;
+
+	switch (ag->phy_if_mode) {
+	case PHY_INTERFACE_MODE_RMII:
+		mii_if = AR71XX_MII1_CTRL_IF_RMII;
+		break;
+	case PHY_INTERFACE_MODE_RGMII:
+		mii_if = AR71XX_MII1_CTRL_IF_RGMII;
+		break;
+	default:
+		WARN(1, "Impossible PHY mode defined.\n");
+		return;
+	}
+
+	ath79_mii_ctrl_set_if(ag, mii_if);
+}
+
 static void ath79_mii_ctrl_set_speed(struct ag71xx *ag)
 {
 	unsigned int mii_speed;
@@ -1425,6 +1479,13 @@ static int ag71xx_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "missing phy-mode property in DT\n");
 		err = ag->phy_if_mode;
 		goto err_free;
+	}
+
+	if (ag->mii_base) {
+		if (of_device_is_compatible(np, "qca,ar7100-eth0"))
+			ath79_mii0_ctrl_set_if(ag);
+		else if (of_device_is_compatible(np, "qca,ar7100-eth1"))
+			ath79_mii1_ctrl_set_if(ag);
 	}
 
 	netif_napi_add(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);

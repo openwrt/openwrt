@@ -185,7 +185,7 @@
 };
 
 &eth0 {
-	compatible = "qca,ar9130-eth", "syscon";
+	compatible = "qca,ar9130-eth", "qca,ar7100-eth0", "syscon";
 	reg = <0x19000000 0x200
 		0x18070000 0x4>;
 	pll-data = <0x1a000000 0x13000a44 0x00441099>;
