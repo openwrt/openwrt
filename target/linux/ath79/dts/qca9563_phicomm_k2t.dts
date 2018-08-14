@@ -11,7 +11,10 @@
 	compatible = "phicomm,k2t";
 
 	aliases {
-		led-status = &status_red;
+		led-boot = &status_red;
+		led-failsafe = &status_red;
+		led-running = &status_red;
+		led-upgrade = &status_red;
 	};
 
 	chosen {

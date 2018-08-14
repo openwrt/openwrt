@@ -11,7 +11,10 @@
 	model = "I-O DATA WN-AC1600DGR2";
 
 	aliases {
-		led-status = &power;
+		led-boot = &power;
+		led-failsafe = &power;
+		led-running = &power;
+		led-upgrade = &power;
 	};
 
 	chosen {

@@ -8,7 +8,10 @@
 
 / {
 	aliases {
-		led-status = &power_green;
+		led-boot = &power_orange;
+		led-failsafe = &power_orange;
+		led-running = &power_green;
+		led-upgrade = &power_orange;
 	};
 
 	chosen {
@@ -48,7 +51,7 @@
 			default-state = "off";
 		};
 
-		power_orange {
+		power_orange: power_orange {
 			label = "netgear:orange:power";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			default-state = "off";

@@ -11,7 +11,10 @@
 	model = "Netgear WNR612 V2";
 
 	aliases {
-		led-status = &led_power;
+		led-boot = &power;
+		led-failsafe = &power;
+		led-running = &power;
+		led-upgrade = &power;
 	};
 
 	gpio-keys-polled {
@@ -28,7 +31,7 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		led_power: power {
+		power: power {
 			label = "netgear:green:power";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};

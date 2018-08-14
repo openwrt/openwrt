@@ -11,7 +11,10 @@
 	compatible = "embeddedwireless,dorin", "qca,ar9331";
 
 	aliases {
-		led-status = &status;
+		led-boot = &status;
+		led-failsafe = &status;
+		led-running = &status;
+		led-upgrade = &status;
 		serial0 = &uart;
 	};
 

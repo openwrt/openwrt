@@ -11,7 +11,10 @@
 	model = "TP-Link TL-WR841N/ND Version 11";
 
 	aliases {
-		led-status = &system_led;
+		led-boot = &system_led;
+		led-failsafe = &system_led;
+		led-running = &system_led;
+		led-upgrade = &system_led;
 	};
 };
 
