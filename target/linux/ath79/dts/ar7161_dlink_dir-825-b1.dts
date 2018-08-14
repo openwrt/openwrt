@@ -11,7 +11,10 @@
 	model = "D-Link DIR825B1";
 
 	aliases {
-		led-status = &orange_power;
+		led-boot = &orange_power;
+		led-failsafe = &orange_power;
+		led-running = &orange_power;
+		led-upgrade = &orange_power;
 	};
 
 	chosen {

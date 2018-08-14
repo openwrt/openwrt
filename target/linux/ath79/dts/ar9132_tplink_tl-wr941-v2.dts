@@ -11,7 +11,10 @@
 	model = "TP-Link TL-WR941N/ND v2/v3";
 
 	aliases {
-		led-status = &led_system;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
 	};
 
 	keys {

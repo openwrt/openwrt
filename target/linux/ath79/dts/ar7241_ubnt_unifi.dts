@@ -11,7 +11,10 @@
 	model = "Ubiquiti UniFi AP";
 
 	aliases {
-		led-status = &dome_green;
+		led-boot = &dome_green;
+		led-failsafe = &dome_green;
+		led-running = &dome_green;
+		led-upgrade = &dome_green;
 	};
 
 	extosc: ref {

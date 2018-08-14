@@ -12,7 +12,9 @@
 
 	aliases {
 		serial0 = &uart;
-		led-status = &wlan;
+		led-boot = &wlan;
+		led-failsafe = &wlan;
+		led-upgrade = &wlan;
 	};
 
 	leds {
