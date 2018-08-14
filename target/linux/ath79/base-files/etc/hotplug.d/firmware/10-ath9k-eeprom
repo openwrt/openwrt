@@ -111,6 +111,11 @@ case "$FIRMWARE" in
 	avm,fritz300e)
 		ath9k_eeprom_extract_reverse "urloader" 5441 1088
 		;;
+	buffalo,whr-g301n|\
+	tplink,tl-wr841-v5|\
+	tplink,tl-wr941-v4)
+		ath9k_eeprom_extract "art" 4096 3768
+		;;
 	ocedo,raccoon|\
 	tplink,tl-wdr3600|\
 	tplink,tl-wdr4300|\
@@ -130,10 +135,6 @@ case "$FIRMWARE" in
 	tplink,tl-wr841-v7|\
 	ubnt,unifi)
 		ath9k_eeprom_extract "art" 4096 2048
-		;;
-	tplink,tl-wr841-v5|\
-	tplink,tl-wr941-v4)
-		ath9k_eeprom_extract "art" 4096 3768
 		;;
 	*)
 		ath9k_eeprom_die "board $board is not supported yet"
