@@ -229,6 +229,15 @@ cf-wr635ac)
 	ucidef_set_led_wlan "wlan" "WLAN" "comfast:blue:24g" "phy1tpt"
 	ucidef_set_led_netdev "network" "NETWORK" "comfast:blue:network" "eth1"
 	;;
+
+cf-e351ac)
+	ucidef_set_led_netdev "wan" "WAN" "comfast:red:wan" "eth1"
+	ucidef_set_led_netdev "lan" "LAN" "comfast:green:lan" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "comfast:blue:wlan" "phy1tpt"
+	ucidef_set_led_netdev "wan1" "WAN1" "comfast:blue:ext_wan" "eth1"
+	ucidef_set_led_netdev "lan1" "LAN1" "comfast:blue:ext_lan" "eth0"
+	ucidef_set_led_wlan "wlan1" "WLAN1" "comfast:blue:ext_wlan" "phy1tpt"
+	;;
 cf-e355ac-v1|\
 cf-e355ac-v2|\
 cf-e375ac|\

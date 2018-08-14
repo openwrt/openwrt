@@ -872,3 +872,84 @@ MIPS_MACHINE(ATH79_MACH_CF_WR630AC, "CF-WR630AC", "COMFAST CF-WR630AC",
 	     cf_wr630ac_setup);
 MIPS_MACHINE(ATH79_MACH_CF_WR635AC, "CF-WR635AC", "COMFAST CF-WR635AC",
 	     cf_wr630ac_setup);
+
+
+//cf-e351ac
+
+#define CF_E351AC_GPIO_BTN_RESET		17
+#define	CF_E351AC_GPIO_XWDT_TRIGGER		13
+#define CF_E351AC_GPIO_LED_WAN			2
+#define CF_E351AC_GPIO_LED_LAN			3
+#define CF_E351AC_GPIO_LED_WLAN			0
+#define CF_E351AC_GPIO_LED_EXT_WAN		16
+#define CF_E351AC_GPIO_LED_EXT_LAN		14
+#define CF_E351AC_GPIO_LED_EXT_WLAN		11
+
+static struct gpio_led cf_e351ac_leds_gpio[] __initdata = {
+	{
+		.name		= "comfast:red:wan",
+		.gpio		= CF_E351AC_GPIO_LED_WAN,
+		.active_low	= 0,
+	}, {
+		.name		= "comfast:green:lan",
+		.gpio		= CF_E351AC_GPIO_LED_LAN,
+		.active_low	= 0,
+	}, {
+		.name		= "comfast:blue:wlan",
+		.gpio		= CF_E351AC_GPIO_LED_WLAN,
+		.active_low	= 0,
+	}, {
+		.name		= "comfast:blue:ext_wan",
+		.gpio		= CF_E351AC_GPIO_LED_EXT_WAN,
+		.active_low	= 1,
+	}, {
+		.name		= "comfast:blue:ext_lan",
+		.gpio		= CF_E351AC_GPIO_LED_EXT_LAN,
+		.active_low	= 1,
+	}, {
+		.name		= "comfast:blue:ext_wlan",
+		.gpio		= CF_E351AC_GPIO_LED_EXT_WLAN,
+		.active_low	= 1,
+	}, 
+};
+
+static struct gpio_keys_button cf_e351ac_gpio_keys[] __initdata = {
+	{
+		.desc		= "Reset button",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = CF_EXXXN_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= CF_E351AC_GPIO_BTN_RESET,
+		.active_low	= 1,
+	}
+};
+
+static void __init cf_e351ac_setup(void)
+{
+	u8 *art = (u8 *) KSEG1ADDR(0x1f010000);
+
+
+	cf_exxxn_common_setup(0x10000, CF_E351AC_GPIO_XWDT_TRIGGER);
+
+	cf_exxxn_qca953x_eth_setup();
+	ath79_gpio_function_enable(AR934X_GPIO_FUNC_JTAG_DISABLE);
+
+	
+
+	ath79_gpio_output_select(CF_E351AC_GPIO_LED_WAN, 0);
+	ath79_gpio_output_select(CF_E351AC_GPIO_LED_LAN, 0);
+	ath79_gpio_output_select(CF_E351AC_GPIO_LED_WLAN, 0);	
+
+	ath79_gpio_output_select(CF_E351AC_GPIO_LED_EXT_WAN, 0);
+	ath79_gpio_output_select(CF_E351AC_GPIO_LED_EXT_LAN, 0);
+	ath79_gpio_output_select(CF_E351AC_GPIO_LED_EXT_WLAN, 0);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(cf_e351ac_leds_gpio),
+				 cf_e351ac_leds_gpio);
+
+	ath79_register_gpio_keys_polled(1, CF_EXXXN_KEYS_DEBOUNCE_INTERVAL,
+					ARRAY_SIZE(cf_e351ac_gpio_keys),
+					cf_e351ac_gpio_keys);
+	ap91_pci_init(art + CF_PCIE_CALDATA_OFFSET, NULL);
+}
+MIPS_MACHINE(ATH79_MACH_CF_E351AC, "CF-E351AC", "COMFAST CF-E351AC", cf_e351ac_setup);

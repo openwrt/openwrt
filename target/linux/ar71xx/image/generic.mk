@@ -197,6 +197,14 @@ define Device/cf-e320n-v2
 endef
 TARGET_DEVICES += cf-e320n-v2
 
+define Device/cf-e351ac
+  $(Device/cf-e316n-v2)
+  DEVICE_TITLE := COMFAST CF-E351AC
+  DEVICE_PACKAGES += kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca9887
+  BOARDNAME := CF-E351AC
+endef
+TARGET_DEVICES += cf-e351ac
+
 define Device/cf-wr630ac
   $(Device/cf-e316n-v2)
   DEVICE_TITLE := COMFAST CF-WR630AC

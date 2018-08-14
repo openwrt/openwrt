@@ -572,6 +572,9 @@ ar71xx_board_detect() {
 	*"CF-WR630AC")
 		name="cf-wr630ac"
 		;;
+	*"CF-E351AC")
+		name="cf-e351ac"
+		;;
 	*"CF-WR635AC")
 		name="cf-wr635ac"
 		;;
