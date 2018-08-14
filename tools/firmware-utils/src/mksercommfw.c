@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 		bufferFile(&myfile, 0);
 		char chksum = getCheckSum(myfile.file_data, myfile.file_size);
 		printf("Checksum for File: %X.\n", chksum);
-		return;
+		return 0;
 	}
 
 	if (argc != 6) {
