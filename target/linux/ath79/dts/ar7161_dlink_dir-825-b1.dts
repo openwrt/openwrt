@@ -13,7 +13,7 @@
 	aliases {
 		led-boot = &orange_power;
 		led-failsafe = &orange_power;
-		led-running = &orange_power;
+		led-running = &blue_power;
 		led-upgrade = &orange_power;
 	};
 
@@ -41,9 +41,10 @@
 		orange_power: orange_power {
 			label = "d-link:orange:power";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			default-state = "on";
 		};
 
-		blue_power {
+		blue_power: blue_power {
 			label = "d-link:blue:power";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "off";
