@@ -156,7 +156,7 @@
 
 	ath9k0: wifi@0,11 {
 		compatible = "pci168c,0029";
-		reg = <0x8800 0 0 0 0x10000>;
+		reg = <0x8800 0 0 0 0>;
 		mtd-mac-address = <&art 0x0>;
 		qca,no-eeprom;
 		#gpio-cells = <2>;
@@ -165,7 +165,7 @@
 
 	ath9k1: wifi@0,12 {
 		compatible = "pci168c,0029";
-		reg = <0x9000 0 0 0 0x10000>;
+		reg = <0x9000 0 0 0 0>;
 		mtd-mac-address = <&art 0xc>;
 		qca,no-eeprom;
 		#gpio-cells = <2>;
