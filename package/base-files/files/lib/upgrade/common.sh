@@ -211,6 +211,11 @@ jffs2_copy_config() {
 	fi
 }
 
+indicate_upgrade() {
+	. /etc/diag.sh
+	set_state upgrade
+}
+
 # Flash firmware to MTD partition
 #
 # $(1): path to image
