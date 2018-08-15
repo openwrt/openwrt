@@ -10,6 +10,11 @@
 	model = "TP-Link TL-MR3040 V2";
 	compatible = "tplink,tl-mr3040-v2", "qca,ar9331";
 
+	aliases {
+		led-boot = &led_lan;
+		led-failsafe = &led_lan;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -20,7 +25,7 @@
 			linux,default-trigger = "phy0tpt";
 		};
 
-		lan {
+		led_lan: lan {
 			label = "tp-link:green:lan";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 			default-state = "off";
