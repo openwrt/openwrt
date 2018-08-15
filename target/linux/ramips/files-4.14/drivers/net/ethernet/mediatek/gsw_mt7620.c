@@ -154,13 +154,12 @@ static void mt7620_hw_init(struct mt7620_gsw *gsw, int mdio_mode)
 		_mt7620_mii_write(gsw, 1, 31, 0x1000);
 		_mt7620_mii_write(gsw, 1, 17, 0xe7f8);
 
-	/* turn on all PHYs */
-	for (i = 0; i <= 4; i++) {
-		val = _mt7620_mii_read(gsw, i, 0);
-		val &= ~BIT(11);
-		_mt7620_mii_write(gsw, i, 0, val);
-	}
-
+		/* turn on all PHYs */
+		for (i = 0; i <= 4; i++) {
+			val = _mt7620_mii_read(gsw, i, 0);
+			val &= ~BIT(11);
+			_mt7620_mii_write(gsw, i, 0, val);
+		}
 	}
 
 	/* global page 0 */
