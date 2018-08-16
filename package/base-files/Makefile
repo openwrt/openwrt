@@ -100,16 +100,16 @@ Build/Compile = $(Build/Compile/Default)
 ifdef CONFIG_SIGNED_PACKAGES
   define Build/Configure
 	[ -s $(BUILD_KEY) -a -s $(BUILD_KEY).pub ] || \
-		$(STAGING_DIR_HOST)/bin/usign -G -s $(BUILD_KEY) -p $(BUILD_KEY).pub -c "Local build key"
+		LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(STAGING_DIR_HOST)/lib $(STAGING_DIR_HOST)/bin/usign -G -s $(BUILD_KEY) -p $(BUILD_KEY).pub -c "Local build key"
 
 	[ -s $(BUILD_KEY).ucert ] || \
-		$(STAGING_DIR_HOST)/bin/ucert -I -c $(BUILD_KEY).ucert -p $(BUILD_KEY).pub -s $(BUILD_KEY)
+		LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(STAGING_DIR_HOST)/lib $(STAGING_DIR_HOST)/bin/ucert -I -c $(BUILD_KEY).ucert -p $(BUILD_KEY).pub -s $(BUILD_KEY)
 
   endef
 
   define Package/base-files/install-key
 	mkdir -p $(1)/etc/opkg/keys
-	$(CP) $(BUILD_KEY).pub $(1)/etc/opkg/keys/`$(STAGING_DIR_HOST)/bin/usign -F -p $(BUILD_KEY).pub`
+	$(CP) $(BUILD_KEY).pub $(1)/etc/opkg/keys/`LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(STAGING_DIR_HOST)/lib $(STAGING_DIR_HOST)/bin/usign -F -p $(BUILD_KEY).pub`
 
   endef
 endif
