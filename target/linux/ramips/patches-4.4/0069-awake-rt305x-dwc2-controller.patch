@@ -1,0 +1,15 @@
+--- a/drivers/usb/dwc2/platform.c
++++ b/drivers/usb/dwc2/platform.c
+@@ -375,6 +375,12 @@ static int dwc2_driver_probe(struct plat
+ 	dev_dbg(&dev->dev, "mapped PA %08lx to VA %p\n",
+ 		(unsigned long)res->start, hsotg->regs);
+ 
++	/* Enable USB port before any regs access */
++	if (dwc2_readl(hsotg->regs + PCGCTL) & 0x0f) {
++		dwc2_writel(0x00, hsotg->regs + PCGCTL);
++		/* TODO: mdelay(25) here? vendor driver don't use it */
++	}
++
+ 	hsotg->dr_mode = usb_get_dr_mode(&dev->dev);
+ 	if (IS_ENABLED(CONFIG_USB_DWC2_HOST) &&
+ 			hsotg->dr_mode != USB_DR_MODE_HOST) {

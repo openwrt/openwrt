@@ -1,0 +1,35 @@
+--- a/drivers/phy/phy-ralink-usb.c
++++ b/drivers/phy/phy-ralink-usb.c
+@@ -34,19 +34,19 @@
+ #define RT_SYSC_REG_CLKCFG1		0x030
+ #define RT_SYSC_REG_USB_PHY_CFG		0x05c
+ 
+-#define OFS_U2_PHY_AC0                  0x00
+-#define OFS_U2_PHY_AC1                  0x04
+-#define OFS_U2_PHY_AC2                  0x08
+-#define OFS_U2_PHY_ACR0                 0x10
+-#define OFS_U2_PHY_ACR1                 0x14
+-#define OFS_U2_PHY_ACR2                 0x18
+-#define OFS_U2_PHY_ACR3                 0x1C
+-#define OFS_U2_PHY_ACR4                 0x20
+-#define OFS_U2_PHY_AMON0                0x24
+-#define OFS_U2_PHY_DCR0                 0x60
+-#define OFS_U2_PHY_DCR1                 0x64
+-#define OFS_U2_PHY_DTM0                 0x68
+-#define OFS_U2_PHY_DTM1                 0x6C
++#define OFS_U2_PHY_AC0                  0x800
++#define OFS_U2_PHY_AC1                  0x804
++#define OFS_U2_PHY_AC2                  0x808
++#define OFS_U2_PHY_ACR0                 0x810
++#define OFS_U2_PHY_ACR1                 0x814
++#define OFS_U2_PHY_ACR2                 0x818
++#define OFS_U2_PHY_ACR3                 0x81C
++#define OFS_U2_PHY_ACR4                 0x820
++#define OFS_U2_PHY_AMON0                0x824
++#define OFS_U2_PHY_DCR0                 0x860
++#define OFS_U2_PHY_DCR1                 0x864
++#define OFS_U2_PHY_DTM0                 0x868
++#define OFS_U2_PHY_DTM1                 0x86C
+ 
+ #define RT_RSTCTRL_UDEV			BIT(25)
+ #define RT_RSTCTRL_UHST			BIT(22)

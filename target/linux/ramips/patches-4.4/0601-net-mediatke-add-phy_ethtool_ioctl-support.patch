@@ -1,0 +1,22 @@
+From 3c550ae0359be5bc4d5daa86a62f711a91ac8dde Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 13 Dec 2015 17:46:09 +0100
+Subject: [PATCH 2/2] net:mediatke: add phy_ethtool_ioctl() support
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1327,6 +1327,9 @@ static int fe_do_ioctl(struct net_device
+ 		return -ENODEV;
+ 
+ 	switch (cmd) {
++	case SIOCETHTOOL:
++		return phy_ethtool_ioctl(priv->phy_dev,
++				(void *) ifr->ifr_data);
+ 	case SIOCGMIIPHY:
+ 	case SIOCGMIIREG:
+ 	case SIOCSMIIREG:

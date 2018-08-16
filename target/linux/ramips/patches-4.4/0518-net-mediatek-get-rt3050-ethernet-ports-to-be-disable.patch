@@ -1,0 +1,81 @@
+From: Vittorio Gambaletta <openwrt@vittgam.net>
+Date: Fri, 01 Jan 2016 00:00:02 +0100
+Subject: [PATCH 3/3] net: mediatek: Get rt3050 ethernet ports to be disabled from the device tree.
+
+This patch allows configuring ports to be disabled in the device tree; this
+saves power, since disabling ports here actually disables power to ethernet
+PHYs.
+
+Line 444 enables all ethernet ports, so line 487 is getting zero ports to be
+disabled, except for port 5 in SoCs where this is not implemented as it will
+be sticky disabled in register POC0. Because of this, the code will still read
+the switch configuration and OR it to the device tree setting.
+
+Signed-off-by: Vittorio Gambaletta <openwrt@vittgam.net>
+---
+
+--- a/drivers/net/ethernet/mediatek/esw_rt3050.c
++++ b/drivers/net/ethernet/mediatek/esw_rt3050.c
+@@ -10,6 +10,7 @@
+  *   Copyright (C) 2009-2015 John Crispin <blogic@openwrt.org>
+  *   Copyright (C) 2009-2015 Felix Fietkau <nbd@nbd.name>
+  *   Copyright (C) 2013-2015 Michael Lee <igvtee@gmail.com>
++ *   Copyright (C) 2016 Vittorio Gambaletta <openwrt@vittgam.net>
+  */
+ 
+ #include <linux/module.h>
+@@ -219,6 +220,7 @@ struct rt305x_esw {
+ 	spinlock_t		reg_rw_lock;
+ 
+ 	unsigned char		port_map;
++	unsigned char		port_disable;
+ 	unsigned int		reg_led_polarity;
+ 
+ 	struct switch_dev	swdev;
+@@ -483,8 +485,14 @@ static void esw_hw_init(struct rt305x_es
+ 	esw_w32(esw, 0x00000005, RT305X_ESW_REG_P3LED);
+ 	esw_w32(esw, 0x00000005, RT305X_ESW_REG_P4LED);
+ 
+-	/* Copy disabled port configuration from bootloader setup */
+-	port_disable = esw_get_port_disable(esw);
++	/* Copy disabled port configuration from device tree setup */
++	port_disable = esw->port_disable;
++
++	/* Disable nonexistent ports by reading the switch config
++	 * after having enabled all possible ports above
++	 */
++	port_disable |= esw_get_port_disable(esw);
++
+ 	for (i = 0; i < 6; i++)
+ 		esw->ports[i].disable = (port_disable & (1 << i)) != 0;
+ 
+@@ -1330,7 +1338,7 @@ static int esw_probe(struct platform_dev
+ {
+ 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	struct device_node *np = pdev->dev.of_node;
+-	const __be32 *port_map, *reg_init;
++	const __be32 *port_map, *port_disable, *reg_init;
+ 	struct switch_dev *swdev;
+ 	struct rt305x_esw *esw;
+ 	int ret;
+@@ -1349,6 +1357,10 @@ static int esw_probe(struct platform_dev
+ 	if (port_map)
+ 		esw->port_map = be32_to_cpu(*port_map);
+ 
++	port_disable = of_get_property(np, "mediatek,portdisable", NULL);
++	if (port_disable)
++		esw->port_disable = be32_to_cpu(*port_disable);
++
+ 	reg_init = of_get_property(np, "mediatek,led_polarity", NULL);
+ 	if (reg_init)
+ 		esw->reg_led_polarity = be32_to_cpu(*reg_init);
+--- a/Documentation/devicetree/bindings/net/ralink,rt3050-esw.txt
++++ b/Documentation/devicetree/bindings/net/ralink,rt3050-esw.txt
+@@ -16,6 +16,7 @@ Required properties:
+ Optional properties:
+ - mediatek,portmap: can be used to choose if the default switch setup is
+   llllw or wllll
++- mediatek,portdisable: disable unused ethernet PHYs to save power
+ - mediatek,led_polarity: override the active high/low settings of the leds
+ 
+ Example:

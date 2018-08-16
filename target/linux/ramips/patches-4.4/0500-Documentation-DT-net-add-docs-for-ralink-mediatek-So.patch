@@ -1,0 +1,150 @@
+From 9c2487f148ee38807d86beaf12dc2b818a764a99 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Tue, 17 Nov 2015 00:20:07 +0100
+Subject: [PATCH 500/513] Documentation: DT: net: add docs for ralink/mediatek
+ SoC ethernet binding
+
+Add three files. ralink,rt2880-net.txt  descibes the actual frame engine
+and the other two describe the switch forntend bindings.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Michael Lee <igvtee@gmail.com>
+Cc: devicetree@vger.kernel.org
+---
+ .../bindings/net/mediatek,mt7620-gsw.txt           |   26 +++++++++
+ .../devicetree/bindings/net/ralink,rt2880-net.txt  |   61 ++++++++++++++++++++
+ .../devicetree/bindings/net/ralink,rt3050-esw.txt  |   32 ++++++++++
+ 3 files changed, 119 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/net/mediatek,mt7620-gsw.txt
+ create mode 100644 Documentation/devicetree/bindings/net/ralink,rt2880-net.txt
+ create mode 100644 Documentation/devicetree/bindings/net/ralink,rt3050-esw.txt
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/mediatek,mt7620-gsw.txt
+@@ -0,0 +1,26 @@
++Mediatek Gigabit Switch
++=======================
++
++The mediatek gigabit switch can be found on Mediatek SoCs (mt7620, mt7621).
++
++Required properties:
++- compatible: Should be "mediatek,mt7620-gsw"
++- reg: Address and length of the register set for the device
++- interrupt-parent: Should be the phandle for the interrupt controller
++  that services interrupts for this device
++- interrupts: Should contain the gigabit switches interrupt
++- resets: Should contain the gigabit switches resets
++- reset-names: Should contain the reset names "gsw"
++
++Example:
++
++gsw@10110000 {
++	compatible = "ralink,mt7620-gsw";
++	reg = <0x10110000 8000>;
++
++	resets = <&rstctrl 23>;
++	reset-names = "gsw";
++
++	interrupt-parent = <&intc>;
++	interrupts = <17>;
++};
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/ralink,rt2880-net.txt
+@@ -0,0 +1,61 @@
++Ralink Frame Engine Ethernet controller
++=======================================
++
++The Ralink frame engine ethernet controller can be found on Ralink and
++Mediatek SoCs (RT288x, RT3x5x, RT366x, RT388x, rt5350, mt7620, mt7621, mt76x8).
++
++Depending on the SoC, there is a number of ports connected to the CPU port
++directly and/or via a (gigabit-)switch.
++
++* Ethernet controller node
++
++Required properties:
++- compatible: Should be one of "ralink,rt2880-eth", "ralink,rt3050-eth",
++  "ralink,rt3050-eth", "ralink,rt3883-eth", "ralink,rt5350-eth",
++  "mediatek,mt7620-eth", "mediatek,mt7621-eth"
++- reg: Address and length of the register set for the device
++- interrupt-parent: Should be the phandle for the interrupt controller
++  that services interrupts for this device
++- interrupts: Should contain the frame engines interrupt
++- resets: Should contain the frame engines resets
++- reset-names: Should contain the reset names "fe". If a switch is present
++  "esw" is also required.
++
++
++* Ethernet port node
++
++Required properties:
++- compatible: Should be "ralink,eth-port"
++- reg: The number of the physical port
++- phy-handle: reference to the node describing the phy
++
++Example:
++
++mdio-bus {
++	...
++	phy0: ethernet-phy@0 {
++		phy-mode = "mii";
++		reg = <0>;
++	};
++};
++
++ethernet@400000 {
++	compatible = "ralink,rt2880-eth";
++	reg = <0x00400000 10000>;
++
++	#address-cells = <1>;
++	#size-cells = <0>;
++
++	resets = <&rstctrl 18>;
++	reset-names = "fe";
++
++	interrupt-parent = <&cpuintc>;
++	interrupts = <5>;
++
++	port@0 {
++		compatible = "ralink,eth-port";
++		reg = <0>;
++		phy-handle = <&phy0>;
++	};
++
++};
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/ralink,rt3050-esw.txt
+@@ -0,0 +1,32 @@
++Ralink Fast Ethernet Embedded Switch
++====================================
++
++The ralink fast ethernet embedded switch can be found on Ralink and Mediatek
++SoCs (RT3x5x, rt5350, mt76x8).
++
++Required properties:
++- compatible: Should be "ralink,rt3050-esw"
++- reg: Address and length of the register set for the device
++- interrupt-parent: Should be the phandle for the interrupt controller
++  that services interrupts for this device
++- interrupts: Should contain the embedded switches interrupt
++- resets: Should contain the embedded switches resets
++- reset-names: Should contain the reset names "esw"
++
++Optional properties:
++- ralink,portmap: can be used to choose if the default switch setup is
++  llllw or wllll
++- ralink,led_polarity: override the active high/low settings of the leds
++
++Example:
++
++esw@10110000 {
++	compatible = "ralink,rt3050-esw";
++	reg = <0x10110000 8000>;
++
++	resets = <&rstctrl 23>;
++	reset-names = "esw";
++
++	interrupt-parent = <&intc>;
++	interrupts = <17>;
++};

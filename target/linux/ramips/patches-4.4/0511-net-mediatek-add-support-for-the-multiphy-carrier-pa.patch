@@ -1,0 +1,80 @@
+From 6543b4cef96c12903f5ec5c015cd223a6b3c9a33 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 14 Dec 2015 21:16:59 +0100
+Subject: [PATCH 511/513] net: mediatek: add support for the multiphy carrier
+ patch
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/net/ethernet/mediatek/gsw_mt7620.c  |    1 +
+ drivers/net/ethernet/mediatek/gsw_mt7620.h  |    1 +
+ drivers/net/ethernet/mediatek/gsw_mt7621.c  |    1 +
+ drivers/net/ethernet/mediatek/mdio.c        |    1 +
+ drivers/net/ethernet/mediatek/mdio_mt7620.c |   12 ++++++++++++
+ 5 files changed, 16 insertions(+)
+
+--- a/drivers/net/ethernet/mediatek/gsw_mt7620.c
++++ b/drivers/net/ethernet/mediatek/gsw_mt7620.c
+@@ -54,6 +54,7 @@ static irqreturn_t gsw_interrupt_mt7620(
+ 
+ 			priv->link[i] = link;
+ 		}
++	mt7620_handle_carrier(priv);
+ 	mtk_switch_w32(gsw, status, GSW_REG_ISR);
+ 
+ 	return IRQ_HANDLED;
+--- a/drivers/net/ethernet/mediatek/gsw_mt7620.h
++++ b/drivers/net/ethernet/mediatek/gsw_mt7620.h
+@@ -119,5 +119,6 @@ u32 mt7530_mdio_r32(struct mt7620_gsw *g
+ u32 _mt7620_mii_write(struct mt7620_gsw *gsw, u32 phy_addr,
+ 			     u32 phy_register, u32 write_data);
+ u32 _mt7620_mii_read(struct mt7620_gsw *gsw, int phy_addr, int phy_reg);
++void mt7620_handle_carrier(struct fe_priv *priv);
+ 
+ #endif
+--- a/drivers/net/ethernet/mediatek/gsw_mt7621.c
++++ b/drivers/net/ethernet/mediatek/gsw_mt7621.c
+@@ -60,6 +60,7 @@ static irqreturn_t gsw_interrupt_mt7621(
+ 			}
+ 		}
+ 
++	mt7620_handle_carrier(priv);
+ 	mt7530_mdio_w32(gsw, 0x700c, 0x1f);
+ 
+ 	return IRQ_HANDLED;
+--- a/drivers/net/ethernet/mediatek/mdio.c
++++ b/drivers/net/ethernet/mediatek/mdio.c
+@@ -89,6 +89,7 @@ int fe_connect_phy_node(struct fe_priv *
+ 
+ 	phydev->supported &= PHY_GBIT_FEATURES;
+ 	phydev->advertising = phydev->supported;
++	phydev->no_auto_carrier_off = 1;
+ 
+ 	dev_info(priv->device,
+ 		 "connected port %d to PHY at %s [uid=%08x, driver=%s]\n",
+--- a/drivers/net/ethernet/mediatek/mdio_mt7620.c
++++ b/drivers/net/ethernet/mediatek/mdio_mt7620.c
+@@ -137,6 +137,17 @@ int mt7620_has_carrier(struct fe_priv *p
+ }
+ 
+ 
++void mt7620_handle_carrier(struct fe_priv *priv)
++{
++	if (!priv->phy)
++		return;
++
++	if (mt7620_has_carrier(priv))
++		netif_carrier_on(priv->netdev);
++	else
++		netif_carrier_off(priv->netdev);
++}
++
+ void mt7620_print_link_state(struct fe_priv *priv, int port, int link,
+ 			     int speed, int duplex)
+ {
+@@ -153,4 +164,5 @@ void mt7620_mdio_link_adjust(struct fe_p
+ 	mt7620_print_link_state(priv, port, priv->link[port],
+ 				priv->phy->speed[port],
+ 				(priv->phy->duplex[port] == DUPLEX_FULL));
++	mt7620_handle_carrier(priv);
+ }
