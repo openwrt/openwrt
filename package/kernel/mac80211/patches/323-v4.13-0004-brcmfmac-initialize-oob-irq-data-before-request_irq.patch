@@ -1,0 +1,46 @@
+From 3f426c96895556bb49adfa52f3aeafdedb2d02e7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micha=C5=82=20Miros=C5=82aw?= <mirq-linux@rere.qmqm.pl>
+Date: Tue, 13 Jun 2017 18:02:03 +0200
+Subject: [PATCH] brcmfmac: initialize oob irq data before request_irq()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This fixes spin-forever in irq handler when IRQ is already asserted
+at request_irq() time.
+
+Signed-off-by: Michał Mirosław <mirq-linux@rere.qmqm.pl>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcmsdh.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcmsdh.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcmsdh.c
+@@ -107,12 +107,14 @@ int brcmf_sdiod_intr_register(struct brc
+ 	int ret = 0;
+ 	u8 data;
+ 	u32 addr, gpiocontrol;
+-	unsigned long flags;
+ 
+ 	pdata = &sdiodev->settings->bus.sdio;
+ 	if (pdata->oob_irq_supported) {
+ 		brcmf_dbg(SDIO, "Enter, register OOB IRQ %d\n",
+ 			  pdata->oob_irq_nr);
++		spin_lock_init(&sdiodev->irq_en_lock);
++		sdiodev->irq_en = true;
++
+ 		ret = request_irq(pdata->oob_irq_nr, brcmf_sdiod_oob_irqhandler,
+ 				  pdata->oob_irq_flags, "brcmf_oob_intr",
+ 				  &sdiodev->func[1]->dev);
+@@ -121,10 +123,6 @@ int brcmf_sdiod_intr_register(struct brc
+ 			return ret;
+ 		}
+ 		sdiodev->oob_irq_requested = true;
+-		spin_lock_init(&sdiodev->irq_en_lock);
+-		spin_lock_irqsave(&sdiodev->irq_en_lock, flags);
+-		sdiodev->irq_en = true;
+-		spin_unlock_irqrestore(&sdiodev->irq_en_lock, flags);
+ 
+ 		ret = enable_irq_wake(pdata->oob_irq_nr);
+ 		if (ret != 0) {

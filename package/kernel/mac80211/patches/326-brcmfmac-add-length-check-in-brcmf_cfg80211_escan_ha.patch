@@ -25,7 +25,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	struct brcmf_bss_info_le *bss_info_le;
  	struct brcmf_bss_info_le *bss = NULL;
  	u32 bi_length;
-@@ -3104,11 +3105,23 @@ brcmf_cfg80211_escan_handler(struct brcm
+@@ -3107,11 +3108,23 @@ brcmf_cfg80211_escan_handler(struct brcm
  
  	if (status == BRCMF_E_STATUS_PARTIAL) {
  		brcmf_dbg(SCAN, "ESCAN Partial result\n");
@@ -49,7 +49,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		if (le16_to_cpu(escan_result_le->bss_count) != 1) {
  			brcmf_err("Invalid bss_count %d: ignoring\n",
  				  escan_result_le->bss_count);
-@@ -3125,9 +3138,8 @@ brcmf_cfg80211_escan_handler(struct brcm
+@@ -3128,9 +3141,8 @@ brcmf_cfg80211_escan_handler(struct brcm
  		}
  
  		bi_length = le32_to_cpu(bss_info_le->length);

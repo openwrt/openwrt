@@ -13,7 +13,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -1253,6 +1253,7 @@ int __init brcmf_core_init(void)
+@@ -1268,6 +1268,7 @@ int __init brcmf_core_init(void)
  {
  	if (!schedule_work(&brcmf_driver_work))
  		return -EBUSY;

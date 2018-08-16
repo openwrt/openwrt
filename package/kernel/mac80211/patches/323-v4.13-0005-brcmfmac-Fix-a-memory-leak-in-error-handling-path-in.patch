@@ -1,0 +1,36 @@
+From 57c00f2fac512837f8de73474ec1f54020015bae Mon Sep 17 00:00:00 2001
+From: Christophe Jaillet <christophe.jaillet@wanadoo.fr>
+Date: Wed, 21 Jun 2017 07:45:53 +0200
+Subject: [PATCH] brcmfmac: Fix a memory leak in error handling path in
+ 'brcmf_cfg80211_attach'
+
+If 'wiphy_new()' fails, we leak 'ops'. Add a new label in the error
+handling path to free it in such a case.
+
+Cc: stable@vger.kernel.org
+Fixes: 5c22fb85102a7 ("brcmfmac: add wowl gtk rekeying offload support")
+Signed-off-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -6842,7 +6842,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+ 	wiphy = wiphy_new(ops, sizeof(struct brcmf_cfg80211_info));
+ 	if (!wiphy) {
+ 		brcmf_err("Could not allocate wiphy device\n");
+-		return NULL;
++		goto ops_out;
+ 	}
+ 	memcpy(wiphy->perm_addr, drvr->mac, ETH_ALEN);
+ 	set_wiphy_dev(wiphy, busdev);
+@@ -6985,6 +6985,7 @@ priv_out:
+ 	ifp->vif = NULL;
+ wiphy_out:
+ 	brcmf_free_wiphy(wiphy);
++ops_out:
+ 	kfree(ops);
+ 	return NULL;
+ }

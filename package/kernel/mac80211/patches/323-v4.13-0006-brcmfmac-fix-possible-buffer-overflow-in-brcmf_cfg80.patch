@@ -1,0 +1,41 @@
+From 8f44c9a41386729fea410e688959ddaa9d51be7c Mon Sep 17 00:00:00 2001
+From: Arend van Spriel <arend.vanspriel@broadcom.com>
+Date: Fri, 7 Jul 2017 21:09:06 +0100
+Subject: [PATCH] brcmfmac: fix possible buffer overflow in
+ brcmf_cfg80211_mgmt_tx()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The lower level nl80211 code in cfg80211 ensures that "len" is between
+25 and NL80211_ATTR_FRAME (2304).  We subtract DOT11_MGMT_HDR_LEN (24) from
+"len" so thats's max of 2280.  However, the action_frame->data[] buffer is
+only BRCMF_FIL_ACTION_FRAME_SIZE (1800) bytes long so this memcpy() can
+overflow.
+
+	memcpy(action_frame->data, &buf[DOT11_MGMT_HDR_LEN],
+	       le16_to_cpu(action_frame->len));
+
+Cc: stable@vger.kernel.org # 3.9.x
+Fixes: 18e2f61db3b70 ("brcmfmac: P2P action frame tx.")
+Reported-by: "freenerguo(郭大兴)" <freenerguo@tencent.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -4850,6 +4850,11 @@ brcmf_cfg80211_mgmt_tx(struct wiphy *wip
+ 		cfg80211_mgmt_tx_status(wdev, *cookie, buf, len, true,
+ 					GFP_KERNEL);
+ 	} else if (ieee80211_is_action(mgmt->frame_control)) {
++		if (len > BRCMF_FIL_ACTION_FRAME_SIZE + DOT11_MGMT_HDR_LEN) {
++			brcmf_err("invalid action frame length\n");
++			err = -EINVAL;
++			goto exit;
++		}
+ 		af_params = kzalloc(sizeof(*af_params), GFP_KERNEL);
+ 		if (af_params == NULL) {
+ 			brcmf_err("unable to allocate frame\n");

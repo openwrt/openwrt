@@ -1,0 +1,45 @@
+From 1278bd149839f2281db45a910082ba143546a148 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Fri, 16 Jun 2017 15:14:49 +0200
+Subject: [PATCH] brcmfmac: Use separate firmware for revision 0 of the
+ brcm43430 chip
+
+The brcm43430 chip needs different firmware files for chip revision 0
+and 1. The file currently in linux-firmware is for revision 1 only.
+
+This commit makes brcmfmac request brcmfmac43430a0-sdio.bin instead
+of brcmfmac43430-sdio.bin for revision 0 chips.
+
+Note that the behavior for revision 1 chips is not changed, ideally those
+would load brcmfmac43430a1-sdio.bin, but that will break existing setups.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Acked-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -611,7 +611,9 @@ BRCMF_FW_NVRAM_DEF(43340, "brcmfmac43340
+ BRCMF_FW_NVRAM_DEF(4335, "brcmfmac4335-sdio.bin", "brcmfmac4335-sdio.txt");
+ BRCMF_FW_NVRAM_DEF(43362, "brcmfmac43362-sdio.bin", "brcmfmac43362-sdio.txt");
+ BRCMF_FW_NVRAM_DEF(4339, "brcmfmac4339-sdio.bin", "brcmfmac4339-sdio.txt");
+-BRCMF_FW_NVRAM_DEF(43430, "brcmfmac43430-sdio.bin", "brcmfmac43430-sdio.txt");
++BRCMF_FW_NVRAM_DEF(43430A0, "brcmfmac43430a0-sdio.bin", "brcmfmac43430a0-sdio.txt");
++/* Note the names are not postfixed with a1 for backward compatibility */
++BRCMF_FW_NVRAM_DEF(43430A1, "brcmfmac43430-sdio.bin", "brcmfmac43430-sdio.txt");
+ BRCMF_FW_NVRAM_DEF(43455, "brcmfmac43455-sdio.bin", "brcmfmac43455-sdio.txt");
+ BRCMF_FW_NVRAM_DEF(4354, "brcmfmac4354-sdio.bin", "brcmfmac4354-sdio.txt");
+ BRCMF_FW_NVRAM_DEF(4356, "brcmfmac4356-sdio.bin", "brcmfmac4356-sdio.txt");
+@@ -629,7 +631,8 @@ static struct brcmf_firmware_mapping brc
+ 	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4335_CHIP_ID, 0xFFFFFFFF, 4335),
+ 	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43362_CHIP_ID, 0xFFFFFFFE, 43362),
+ 	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4339_CHIP_ID, 0xFFFFFFFF, 4339),
+-	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43430_CHIP_ID, 0xFFFFFFFF, 43430),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43430_CHIP_ID, 0x00000001, 43430A0),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43430_CHIP_ID, 0xFFFFFFFE, 43430A1),
+ 	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4345_CHIP_ID, 0xFFFFFFC0, 43455),
+ 	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4354_CHIP_ID, 0xFFFFFFFF, 4354),
+ 	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4356_CHIP_ID, 0xFFFFFFFF, 4356)
