@@ -3,7 +3,7 @@
 . /lib/functions/uci-defaults.sh
 
 set_usb_led() {
-	ucidef_set_led_usbdev "usb" "USB" "${1}" "${2:-1-1}"
+	ucidef_set_led_usbport "usb" "USB" "$@"
 }
 
 set_wifi_led() {
@@ -97,7 +97,7 @@ c108)
 c20i)
 	ucidef_set_led_switch "lan" "lan" "$boardname:blue:lan" "switch0" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "$boardname:blue:wan" "switch0" "0x01"
-	set_usb_led "$boardname:blue:usb" "2-1"
+	set_usb_led "$boardname:blue:usb" "usb2-port1"
 	ucidef_set_led_wlan "wlan" "wlan" "$boardname:blue:wlan" "phy0radio"
 	;;
 c50)
@@ -390,7 +390,7 @@ rp-n53)
 	;;
 rt-ac51u)
 	set_wifi_led "$boardname:blue:wifi"
-	set_usb_led "$boardname:blue:usb" "1-1"
+	set_usb_led "$boardname:blue:usb" "usb1-port1"
 	;;
 rt-n12p)
 	ucidef_set_led_default "power" "power" "$board:green:power" "1"
@@ -433,7 +433,7 @@ tl-wr841n-v13)
 tplink,c2-v1)
 	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch1" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch1" "0x01"
-	set_usb_led "$boardname:green:usb" "2-1"
+	set_usb_led "$boardname:green:usb" "usb2-port1"
 	set_wifi_led "$boardname:green:wlan"
 	;;
 tplink,c20-v1)
@@ -503,7 +503,7 @@ wcr-150gn)
 we1026-5g-16m)
 	ucidef_set_led_netdev "lan" "LAN" "we1026-5g:green:lan" "eth0"
 	set_wifi_led "we1026-5g:green:wifi"
-	set_usb_led "we1026-5g:green:usb" "1-1.1"
+	set_usb_led "we1026-5g:green:usb" "1-1-port1"
 	;;
 whr-1166d|\
 whr-300hp2|\
@@ -542,7 +542,7 @@ y1s)
 	;;
 youhua,wr1200js)
 	ucidef_set_led_switch "internet" "INTERNET" "$boardname:green:wan" "switch0" "0x01"
-	ucidef_set_led_usbdev "usb" "USB" "$boardname:blue:usb" "1-2"
+	set_usb_led "$boardname:blue:usb" "usb1-port2"
 	ucidef_set_led_default "wps" "wps" "$boardname:blue:wps" "0"
 	;;
 zbt-ape522ii)
