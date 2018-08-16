@@ -1,0 +1,29 @@
+From 49fe9b59f0e9b750f173fbe44637c436ba1030d2 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Tue, 28 Mar 2017 11:43:27 +0100
+Subject: [PATCH] brcmfmac: restore bus state when enter_D3 fails
+
+In brcmf_pcie_suspend() we inform the firmware on the device that
+it will enter in D3 state. Before this is done we already bring down
+the bus state. However, When entering D3 fails we abort the suspend
+and the bus state need to be restored.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
+@@ -1877,6 +1877,7 @@ static int brcmf_pcie_pm_enter_D3(struct
+ 			   BRCMF_PCIE_MBDATA_TIMEOUT);
+ 	if (!devinfo->mbdata_completed) {
+ 		brcmf_err("Timeout on response for entering D3 substate\n");
++		brcmf_bus_change_state(bus, BRCMF_BUS_UP);
+ 		return -EIO;
+ 	}
+ 

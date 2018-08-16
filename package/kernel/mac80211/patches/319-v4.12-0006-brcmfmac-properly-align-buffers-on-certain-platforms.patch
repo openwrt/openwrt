@@ -1,0 +1,36 @@
+From 6e84ab604bdedaa16239bd1c6e5fcb5660309f02 Mon Sep 17 00:00:00 2001
+From: Heiner Kallweit <hkallweit1@gmail.com>
+Date: Wed, 5 Apr 2017 20:33:26 +0200
+Subject: [PATCH] brcmfmac: properly align buffers on certain platforms with 64
+ bit DMA
+
+Systems with 64 bit DMA at least partially require buffers to be used
+for DMA to be 8-byte-aligned. One example is Amlogic Meson GX.
+Switching the MMC/SDIO driver for this platform to SG DMA mode
+resulted in problems due to unaligned buffers.
+
+Fortunately the brcmfmac driver has a global define for the alignment.
+Changing it to 8 fixed the issues with Meson GX.
+
+Suggested-by: Helmut Klein <hgkr.klein@gmail.com>
+Tested-by: Helmut Klein <hgkr.klein@gmail.com>
+Signed-off-by: Heiner Kallweit <hkallweit1@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -539,7 +539,11 @@ static int qcount[NUMPRIO];
+ /* Limit on rounding up frames */
+ static const uint max_roundup = 512;
+ 
++#ifdef CONFIG_ARCH_DMA_ADDR_T_64BIT
++#define ALIGNMENT  8
++#else
+ #define ALIGNMENT  4
++#endif
+ 
+ enum brcmf_sdio_frmtype {
+ 	BRCMF_SDIO_FT_NORMAL,

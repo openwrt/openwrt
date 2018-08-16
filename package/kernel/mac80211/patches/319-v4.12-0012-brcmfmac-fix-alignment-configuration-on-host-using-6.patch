@@ -1,0 +1,40 @@
+From 1dbf647f31751a4e94fa0435c34f0f5ad5ce0adc Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Fri, 26 May 2017 13:02:55 +0200
+Subject: [PATCH] brcmfmac: fix alignment configuration on host using 64-bit
+ DMA
+
+For SDIO the alignment requirement for transfers from device to host
+is configured in firmware. This configuration is limited to minimum
+of 4-byte alignment. However, this is not correct for platforms using
+64-bit DMA when the minimum alignment should be 8 bytes. This issue
+appeared when the ALIGNMENT definition was set according the DMA
+configuration. The configuration in firmware was not using that macro
+defintion, but a hardcoded value of 4. Hence the driver reported
+alignment failures for data coming from the device and causing
+transfers to fail.
+
+Fixes: 6e84ab604bde ("brcmfmac: properly align buffers on certain platforms
+Reported-by: Hans de Goede <hdegoede@redhat.com>
+Tested-by: Hans de Goede <hdegoede@redhat.com>
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -3420,7 +3420,7 @@ static int brcmf_sdio_bus_preinit(struct
+ 		/* otherwise, set txglomalign */
+ 		value = sdiodev->settings->bus.sdio.sd_sgentry_align;
+ 		/* SDIO ADMA requires at least 32 bit alignment */
+-		value = max_t(u32, value, 4);
++		value = max_t(u32, value, ALIGNMENT);
+ 		err = brcmf_iovar_data_set(dev, "bus:txglomalign", &value,
+ 					   sizeof(u32));
+ 	}

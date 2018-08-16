@@ -1,0 +1,32 @@
+From 6594e1e8343645fe849a2ad42fcab94e2cf5b2c0 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Thu, 6 Apr 2017 13:14:41 +0100
+Subject: [PATCH] brcmfmac: remove bogus check in scheduled scan result handler
+
+Checking whether the address of an array element is null is bogus
+so removing it.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -3344,12 +3344,6 @@ brcmf_notify_sched_scan_results(struct b
+ 
+ 	for (i = 0; i < result_count; i++) {
+ 		netinfo = &netinfo_start[i];
+-		if (!netinfo) {
+-			brcmf_err("Invalid netinfo ptr. index: %d\n",
+-				  i);
+-			err = -EINVAL;
+-			goto out_err;
+-		}
+ 
+ 		if (netinfo->SSID_len > IEEE80211_MAX_SSID_LEN)
+ 			netinfo->SSID_len = IEEE80211_MAX_SSID_LEN;

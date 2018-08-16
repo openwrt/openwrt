@@ -1,0 +1,61 @@
+From 4835f37e3bafc138f8bfa3cbed2920dd56fed283 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Thu, 6 Apr 2017 13:14:40 +0100
+Subject: [PATCH] brcmfmac: add length checks in scheduled scan result handler
+
+Assure the event data buffer is long enough to hold the array
+of netinfo items and that SSID length does not exceed the maximum
+of 32 characters as per 802.11 spec.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -3300,6 +3300,7 @@ brcmf_notify_sched_scan_results(struct b
+ 	struct brcmf_pno_scanresults_le *pfn_result;
+ 	u32 result_count;
+ 	u32 status;
++	u32 datalen;
+ 
+ 	brcmf_dbg(SCAN, "Enter\n");
+ 
+@@ -3326,6 +3327,14 @@ brcmf_notify_sched_scan_results(struct b
+ 		brcmf_err("FALSE PNO Event. (pfn_count == 0)\n");
+ 		goto out_err;
+ 	}
++
++	netinfo_start = brcmf_get_netinfo_array(pfn_result);
++	datalen = e->datalen - ((void *)netinfo_start - (void *)pfn_result);
++	if (datalen < result_count * sizeof(*netinfo)) {
++		brcmf_err("insufficient event data\n");
++		goto out_err;
++	}
++
+ 	request = brcmf_alloc_internal_escan_request(wiphy,
+ 						     result_count);
+ 	if (!request) {
+@@ -3333,8 +3342,6 @@ brcmf_notify_sched_scan_results(struct b
+ 		goto out_err;
+ 	}
+ 
+-	netinfo_start = brcmf_get_netinfo_array(pfn_result);
+-
+ 	for (i = 0; i < result_count; i++) {
+ 		netinfo = &netinfo_start[i];
+ 		if (!netinfo) {
+@@ -3344,6 +3351,8 @@ brcmf_notify_sched_scan_results(struct b
+ 			goto out_err;
+ 		}
+ 
++		if (netinfo->SSID_len > IEEE80211_MAX_SSID_LEN)
++			netinfo->SSID_len = IEEE80211_MAX_SSID_LEN;
+ 		brcmf_dbg(SCAN, "SSID:%.32s Channel:%d\n",
+ 			  netinfo->SSID, netinfo->channel);
+ 		err = brcmf_internal_escan_add_info(request,

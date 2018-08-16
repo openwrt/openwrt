@@ -1,0 +1,48 @@
+From 9cc4b7cb86cbcc6330a3faa8cd65268cd2d3c227 Mon Sep 17 00:00:00 2001
+From: James Hughes <james.hughes@raspberrypi.org>
+Date: Tue, 25 Apr 2017 10:15:06 +0100
+Subject: [PATCH] brcmfmac: Make skb header writable before use
+
+The driver was making changes to the skb_header without
+ensuring it was writable (i.e. uncloned).
+This patch also removes some boiler plate header size
+checking/adjustment code as that is also handled by the
+skb_cow_header function used to make header writable.
+
+Signed-off-by: James Hughes <james.hughes@raspberrypi.org>
+Acked-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ .../net/wireless/broadcom/brcm80211/brcmfmac/core.c   | 19 +++++--------------
+ 1 file changed, 5 insertions(+), 14 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -211,22 +211,13 @@ static netdev_tx_t brcmf_netdev_start_xm
+ 		goto done;
+ 	}
+ 
+-	/* Make sure there's enough room for any header */
+-	if (skb_headroom(skb) < drvr->hdrlen) {
+-		struct sk_buff *skb2;
+-
+-		brcmf_dbg(INFO, "%s: insufficient headroom\n",
++	/* Make sure there's enough writable headroom*/
++	ret = skb_cow_head(skb, drvr->hdrlen);
++	if (ret < 0) {
++		brcmf_err("%s: skb_cow_head failed\n",
+ 			  brcmf_ifname(ifp));
+-		drvr->bus_if->tx_realloc++;
+-		skb2 = skb_realloc_headroom(skb, drvr->hdrlen);
+ 		dev_kfree_skb(skb);
+-		skb = skb2;
+-		if (skb == NULL) {
+-			brcmf_err("%s: skb_realloc_headroom failed\n",
+-				  brcmf_ifname(ifp));
+-			ret = -ENOMEM;
+-			goto done;
+-		}
++		goto done;
+ 	}
+ 
+ 	/* validate length for ether packet */

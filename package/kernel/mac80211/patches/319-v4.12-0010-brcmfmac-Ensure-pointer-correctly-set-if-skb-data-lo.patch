@@ -1,0 +1,39 @@
+From 455a1eb4654c24560eb9dfc634f29cba3d87601e Mon Sep 17 00:00:00 2001
+From: James Hughes <james.hughes@raspberrypi.org>
+Date: Mon, 24 Apr 2017 12:40:50 +0100
+Subject: [PATCH] brcmfmac: Ensure pointer correctly set if skb data location
+ changes
+
+The incoming skb header may be resized if header space is
+insufficient, which might change the data adddress in the skb.
+Ensure that a cached pointer to that data is correctly set by
+moving assignment to after any possible changes.
+
+Signed-off-by: James Hughes <james.hughes@raspberrypi.org>
+
+Acked-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -198,7 +198,7 @@ static netdev_tx_t brcmf_netdev_start_xm
+ 	int ret;
+ 	struct brcmf_if *ifp = netdev_priv(ndev);
+ 	struct brcmf_pub *drvr = ifp->drvr;
+-	struct ethhdr *eh = (struct ethhdr *)(skb->data);
++	struct ethhdr *eh;
+ 
+ 	brcmf_dbg(DATA, "Enter, bsscfgidx=%d\n", ifp->bsscfgidx);
+ 
+@@ -236,6 +236,8 @@ static netdev_tx_t brcmf_netdev_start_xm
+ 		goto done;
+ 	}
+ 
++	eh = (struct ethhdr *)(skb->data);
++
+ 	if (eh->h_proto == htons(ETH_P_PAE))
+ 		atomic_inc(&ifp->pend_8021x_cnt);
+ 

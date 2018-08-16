@@ -136,10 +136,10 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 +		goto done;
 +	}
 +
- 	/* Make sure there's enough room for any header */
- 	if (skb_headroom(skb) < drvr->hdrlen) {
- 		struct sk_buff *skb2;
-@@ -295,6 +343,15 @@ void brcmf_txflowblock(struct device *de
+ 	/* Make sure there's enough writable headroom*/
+ 	ret = skb_cow_head(skb, drvr->hdrlen);
+ 	if (ret < 0) {
+@@ -288,6 +336,15 @@ void brcmf_txflowblock(struct device *de
  
  void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb)
  {

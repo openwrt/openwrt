@@ -1,0 +1,56 @@
+From 6ea51fc708aedcf411f355de65a704ecda501bc4 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Thu, 6 Apr 2017 13:14:42 +0100
+Subject: [PATCH] brcmfmac: only add channels and ssids once in scan request
+
+When receiving pno results there may be duplicate channels and/or
+ssids. Assure each is added only once when preparing the internal
+escan request.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ .../wireless/broadcom/brcm80211/brcmfmac/cfg80211.c  | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -3216,7 +3216,7 @@ static int brcmf_internal_escan_add_info
+ {
+ 	struct ieee80211_channel *chan;
+ 	enum nl80211_band band;
+-	int freq;
++	int freq, i;
+ 
+ 	if (channel <= CH_MAX_2G_CHANNEL)
+ 		band = NL80211_BAND_2GHZ;
+@@ -3231,10 +3231,22 @@ static int brcmf_internal_escan_add_info
+ 	if (!chan)
+ 		return -EINVAL;
+ 
+-	req->channels[req->n_channels++] = chan;
+-	memcpy(req->ssids[req->n_ssids].ssid, ssid, ssid_len);
+-	req->ssids[req->n_ssids++].ssid_len = ssid_len;
+-
++	for (i = 0; i < req->n_channels; i++) {
++		if (req->channels[i] == chan)
++			break;
++	}
++	if (i == req->n_channels)
++		req->channels[req->n_channels++] = chan;
++
++	for (i = 0; i < req->n_ssids; i++) {
++		if (req->ssids[i].ssid_len == ssid_len &&
++		    !memcmp(req->ssids[i].ssid, ssid, ssid_len))
++			break;
++	}
++	if (i == req->n_ssids) {
++		memcpy(req->ssids[req->n_ssids].ssid, ssid, ssid_len);
++		req->ssids[req->n_ssids++].ssid_len = ssid_len;
++	}
+ 	return 0;
+ }
+ 
