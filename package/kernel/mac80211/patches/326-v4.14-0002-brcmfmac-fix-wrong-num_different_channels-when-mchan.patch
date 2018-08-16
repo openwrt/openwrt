@@ -1,0 +1,47 @@
+From 99976fc084129e07df3a066dc15651853386da19 Mon Sep 17 00:00:00 2001
+From: Wright Feng <wright.feng@cypress.com>
+Date: Thu, 3 Aug 2017 17:37:59 +0800
+Subject: [PATCH] brcmfmac: fix wrong num_different_channels when mchan feature
+ enabled
+
+When the device/firmware supports multi-channel, it can have P2P
+connection and regular connection with AP simultaneous. In this case,
+the num_different_channels in wiphy info was not correct when firmware
+supports multi-channel (The iw wiphy# info showed "#channels <= 1" in
+interface combinations). It caused association failed and error message
+"CTRL-EVENT-FREQ-CONFLICT error" in wpa_supplicant when P2P GO interface
+was running at the same time.
+The root cause is that the num_different_channels was always overridden
+to 1 in brcmf_setup_ifmodes even multi-channel was enabled.
+We correct the logic by moving num_different_channels setting forward.
+
+Signed-off-by: Wright Feng <wright.feng@cypress.com>
+Acked-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -6311,6 +6311,8 @@ static int brcmf_setup_ifmodes(struct wi
+ 	if (p2p) {
+ 		if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MCHAN))
+ 			combo[c].num_different_channels = 2;
++		else
++			combo[c].num_different_channels = 1;
+ 		wiphy->interface_modes |= BIT(NL80211_IFTYPE_P2P_CLIENT) |
+ 					  BIT(NL80211_IFTYPE_P2P_GO) |
+ 					  BIT(NL80211_IFTYPE_P2P_DEVICE);
+@@ -6320,10 +6322,10 @@ static int brcmf_setup_ifmodes(struct wi
+ 		c0_limits[i++].types = BIT(NL80211_IFTYPE_P2P_CLIENT) |
+ 				       BIT(NL80211_IFTYPE_P2P_GO);
+ 	} else {
++		combo[c].num_different_channels = 1;
+ 		c0_limits[i].max = 1;
+ 		c0_limits[i++].types = BIT(NL80211_IFTYPE_AP);
+ 	}
+-	combo[c].num_different_channels = 1;
+ 	combo[c].max_interfaces = i;
+ 	combo[c].n_limits = i;
+ 	combo[c].limits = c0_limits;

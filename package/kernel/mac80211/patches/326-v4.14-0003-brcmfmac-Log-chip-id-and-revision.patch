@@ -1,0 +1,27 @@
+From f38966a7ace842afd3a9bf5d0fb56640f49df60c Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Wed, 30 Aug 2017 15:54:49 +0200
+Subject: [PATCH] brcmfmac: Log chip id and revision
+
+For debugging some problems, it is useful to know the chip revision
+add a brcmf_info message logging this.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Acked-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
+@@ -602,6 +602,9 @@ int brcmf_fw_map_chip_to_name(u32 chip,
+ 	if ((nvram_name) && (mapping_table[i].nvram))
+ 		strlcat(nvram_name, mapping_table[i].nvram, BRCMF_FW_NAME_LEN);
+ 
++	brcmf_info("using %s for chip %#08x(%d) rev %#08x\n",
++		   fw_name, chip, chip, chiprev);
++
+ 	return 0;
+ }
+ 

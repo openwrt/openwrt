@@ -22,8 +22,8 @@ Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
  	case BRCM_CC_4366_CHIP_ID:
 +	case BRCM_CC_43664_CHIP_ID:
  		return 0x200000;
- 	default:
- 		brcmf_err("unknown chip: %s\n", ci->pub.name);
+ 	case CY_CC_4373_CHIP_ID:
+ 		return 0x160000;
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
 @@ -75,6 +75,7 @@ static struct brcmf_firmware_mapping brc
@@ -36,11 +36,11 @@ Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
  
 --- a/drivers/net/wireless/broadcom/brcm80211/include/brcm_hw_ids.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/include/brcm_hw_ids.h
-@@ -56,6 +56,7 @@
+@@ -57,6 +57,7 @@
  #define BRCM_CC_43602_CHIP_ID		43602
  #define BRCM_CC_4365_CHIP_ID		0x4365
  #define BRCM_CC_4366_CHIP_ID		0x4366
 +#define BRCM_CC_43664_CHIP_ID		43664
  #define BRCM_CC_4371_CHIP_ID		0x4371
+ #define CY_CC_4373_CHIP_ID		0x4373
  
- /* USB Device IDs */
