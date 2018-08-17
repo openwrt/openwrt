@@ -10,20 +10,30 @@ Reviewed-by: Arend van Spriel <arend.vanspriel@broadcom.com>
 Signed-off-by: Franky Lin <franky.lin@broadcom.com>
 Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
 Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+[rmilecki: add sdiod variable and use func[1]]
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 ---
  drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
-@@ -1095,8 +1095,10 @@ static u32 brcmf_sdio_hostmail(struct br
+@@ -1078,6 +1078,7 @@ static void brcmf_sdio_get_console_addr(
+ 
+ static u32 brcmf_sdio_hostmail(struct brcmf_sdio *bus)
+ {
++	struct brcmf_sdio_dev *sdiod = bus->sdiodev;
+ 	u32 intstatus = 0;
+ 	u32 hmb_data;
+ 	u8 fcbits;
+@@ -1095,8 +1096,10 @@ static u32 brcmf_sdio_hostmail(struct br
  	bus->sdcnt.f1regdata += 2;
  
  	/* dongle indicates the firmware has halted/crashed */
 -	if (hmb_data & HMB_DATA_FWHALT)
 +	if (hmb_data & HMB_DATA_FWHALT) {
  		brcmf_err("mailbox indicates firmware halted\n");
-+		brcmf_dev_coredump(&sdiod->func1->dev);
++		brcmf_dev_coredump(&sdiod->func[1]->dev);
 +	}
  
  	/* Dongle recomposed rx frames, accept them again */
