@@ -1,5 +1,14 @@
 include ./common-tp-link.mk
 
+define Device/tplink_archer-c7-v1
+  $(Device/tplink-8mlzma)
+  ATH_SOC := qca9558
+  DEVICE_TITLE := TP-LINK Archer C7 v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
+  TPLINK_HWID := 0x75000001
+endef
+TARGET_DEVICES += tplink_archer-c7-v1
+
 define Device/tplink_archer-c7-v2
   $(Device/tplink-16mlzma)
   ATH_SOC := qca9558
