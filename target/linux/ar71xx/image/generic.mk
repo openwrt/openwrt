@@ -271,6 +271,24 @@ define Device/cf-e530n
 endef
 TARGET_DEVICES += cf-e530n
 
+define Device/cf-wr650ac-v1
+  DEVICE_TITLE := COMFAST CF-WR650AC v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x
+  BOARDNAME := CF-WR650AC-V1
+  IMAGE_SIZE := 16128k
+  MTDPARTS := spi0.0:128k(u-boot)ro,64k(art)ro,16128k(firmware),64k(art-backup)ro
+endef
+TARGET_DEVICES += cf-wr650ac-v1
+
+define Device/cf-wr650ac-v2
+  $(Device/cf-wr650ac-v1)
+  DEVICE_TITLE := COMFAST CF-WR650AC v2
+  BOARDNAME := CF-WR650AC-V2
+  IMAGE_SIZE := 16000k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(art)ro,16000k(firmware),64k(art-backup)ro
+endef
+TARGET_DEVICES += cf-wr650ac-v2
+
 define Device/cpe505n
   DEVICE_TITLE := P&W CPE505N
   BOARDNAME := CPE505N

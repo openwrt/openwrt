@@ -8,9 +8,10 @@
  *  - CF-E380AC v1/v2 (QCA9558)
  *  - CF-E385AC (QCA9558 + QCA9984 + QCA8337)
  *  - CF-E520N/CF-E530N (QCA9531)
+ *  - CF-WR650AC v1/v2 (QCA9558 + QCA9880 + QCA8337)
  *
  *  Copyright (C) 2016 Piotr Dymacz <pepe2k@gmail.com>
- *  Copyright (C) 2016 Gareth Parker <gareth41@orcon.net.nz>
+ *  Copyright (C) 2018 Gareth Parker <gareth41@orcon.net.nz>
  *  Copyright (C) 2015 Paul Fertser <fercerpav@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -346,6 +347,58 @@ static struct gpio_led cf_e530n_leds_gpio[] __initdata = {
 		.gpio		= CF_E5X0N_GPIO_LED_WAN,
 		.active_low	= 1,
 	}
+};
+
+/* CF-WR650AC */
+#define	CF_WR650AC_GPIO_LED_NETWORK	4
+#define	CF_WR650AC_GPIO_LED_WLAN2G	13
+#define	CF_WR650AC_GPIO_LED_WLAN5G	2
+#define	CF_WR650AC_GPIO_LED_WPS		20
+
+static struct gpio_led cf_wr650ac_v1_leds_gpio[] __initdata = {
+	{
+		.name		= "cf-wr650ac-v1:blue:network",
+		.gpio		= CF_WR650AC_GPIO_LED_NETWORK,
+		.active_low	= 1,
+	},
+	{
+		.name		= "cf-wr650ac-v1:blue:wlan2g",
+		.gpio		= CF_WR650AC_GPIO_LED_WLAN2G,
+		.active_low	= 1,
+	},
+	{
+		.name		= "cf-wr650ac-v1:blue:wlan5g",
+		.gpio		= CF_WR650AC_GPIO_LED_WLAN5G,
+		.active_low	= 1,
+	},
+	{
+		.name		= "cf-wr650ac-v1:blue:wps",
+		.gpio		= CF_WR650AC_GPIO_LED_WPS,
+		.active_low	= 1,
+	},
+};
+
+static struct gpio_led cf_wr650ac_v2_leds_gpio[] __initdata = {
+	{
+		.name		= "cf-wr650ac-v2:blue:network",
+		.gpio		= CF_WR650AC_GPIO_LED_NETWORK,
+		.active_low	= 1,
+	},
+	{
+		.name		= "cf-wr650ac-v2:blue:wlan2g",
+		.gpio		= CF_WR650AC_GPIO_LED_WLAN2G,
+		.active_low	= 1,
+	},
+	{
+		.name		= "cf-wr650ac-v2:blue:wlan5g",
+		.gpio		= CF_WR650AC_GPIO_LED_WLAN5G,
+		.active_low	= 1,
+	},
+	{
+		.name		= "cf-wr650ac-v2:blue:wps",
+		.gpio		= CF_WR650AC_GPIO_LED_WPS,
+		.active_low	= 1,
+	},
 };
 
 /*
@@ -763,3 +816,57 @@ static void __init cf_e530n_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_CF_E530N, "CF-E530N", "COMFAST CF-E530N",
 	     cf_e530n_setup);
+
+static void __init cf_wr650ac_v1v2_common_setup(unsigned long art_ofs)
+{
+	u8 *mac = (u8 *) KSEG1ADDR(0x1f000000 + art_ofs);
+
+	cf_e38xac_common_setup(art_ofs);
+
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
+
+	ath79_register_mdio(0, 0x0);
+	mdiobus_register_board_info(cf_e385ac_mdio0_info,
+				ARRAY_SIZE(cf_e385ac_mdio0_info));
+
+	/* GMAC0 is connected to the RMGII interface */
+	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ath79_eth0_data.phy_mask = BIT(0);
+	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
+	ath79_eth0_pll_data.pll_1000 = 0xa6000000;
+
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);
+	ath79_register_eth(0);
+
+	/* GMAC1 is connected to the SGMII interface */
+	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ath79_eth1_data.speed = SPEED_1000;
+	ath79_eth1_data.duplex = DUPLEX_FULL;
+	ath79_eth1_pll_data.pll_1000 = 0x03000101;
+
+	ath79_init_mac(ath79_eth1_data.mac_addr, mac, 2);
+	ath79_register_eth(1);
+
+}
+
+static void __init cf_wr650ac_v1_setup(void)
+{
+	cf_wr650ac_v1v2_common_setup(0x20000);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(cf_wr650ac_v1_leds_gpio),
+				cf_wr650ac_v1_leds_gpio);
+}
+
+MIPS_MACHINE(ATH79_MACH_CF_WR650AC_V1, "CF-WR650AC-V1", "COMFAST CF-WR650AC v1",
+		cf_wr650ac_v1_setup);
+
+static void __init cf_wr650ac_v2_setup(void)
+{
+	cf_wr650ac_v1v2_common_setup(0x40000);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(cf_wr650ac_v2_leds_gpio),
+				cf_wr650ac_v2_leds_gpio);
+}
+
+MIPS_MACHINE(ATH79_MACH_CF_WR650AC_V2, "CF-WR650AC-V2", "COMFAST CF-WR650AC v2",
+                cf_wr650ac_v2_setup);

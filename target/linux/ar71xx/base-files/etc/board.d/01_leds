@@ -237,6 +237,11 @@ cf-e520n|\
 cf-e530n)
 	ucidef_set_led_netdev "wan" "WAN" "$board:blue:wan" "eth1"
 	;;
+cf-wr650ac-v1|\
+cf-wr650ac-v2)
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:blue:wlan2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:blue:wlan5g" "phy0tpt"
+	;;
 cpe210|\
 cpe210-v2|\
 cpe510|\

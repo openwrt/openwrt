@@ -230,6 +230,8 @@ platform_check_image() {
 	cf-e385ac|\
 	cf-e520n|\
 	cf-e530n|\
+	cf-wr650ac-v1|\
+	cf-wr650ac-v2|\
 	cpe505n|\
 	cpe830|\
 	cpe870|\

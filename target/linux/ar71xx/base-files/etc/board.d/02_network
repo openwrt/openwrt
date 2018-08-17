@@ -433,6 +433,8 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:lan"
 		;;
+	cf-wr650ac-v1|\
+	cf-wr650ac-v2|\
 	dw33d|\
 	f9k1115v2)
 		ucidef_set_interfaces_lan_wan "eth1.1" "eth0.2"
