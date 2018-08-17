@@ -2,10 +2,6 @@
 
 . /lib/functions/uci-defaults.sh
 
-set_usb_led() {
-	ucidef_set_led_usbdev "usb" "USB" "${1}" "${2:-1-1}"
-}
-
 set_wifi_led() {
 	ucidef_set_led_netdev "wifi_led" "wifi" "${1}" "${2:-wlan0}"
 }
@@ -144,7 +140,6 @@ ex3700)
 	;;
 f5d8235-v1)
 	ucidef_set_led_default "lan" "lan" "$boardname:blue:wired" "0"
-	set_usb_led "$boardname:blue:storage"
 	set_wifi_led "$boardname:blue:wireless"
 	;;
 fonera20n)
