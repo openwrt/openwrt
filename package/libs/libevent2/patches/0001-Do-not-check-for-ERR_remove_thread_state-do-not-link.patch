@@ -16,29 +16,10 @@ because it was introduced in openssl 1.0.0, and the previous line
 
 Fixes: #473
 ---
- CMakeLists.txt        | 4 ----
  configure.ac          | 4 ----
- event-config.h.cmake  | 3 ---
  sample/https-client.c | 4 ----
- 4 files changed, 15 deletions(-)
+ 2 files changed, 8 deletions(-)
 
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index b4a34f3d..28d6c22c 100644
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -877,10 +877,6 @@ if (NOT EVENT__DISABLE_SAMPLES)
-         time-test)
- 
-     if (NOT EVENT__DISABLE_OPENSSL AND OPENSSL_LIBRARIES)
--        set(CMAKE_REQUIRED_LIBRARIES ${OPENSSL_LIBRARIES})
--        CHECK_FUNCTION_EXISTS_EX(ERR_remove_thread_state EVENT__HAVE_ERR_REMOVE_THREAD_STATE)
--        set(CMAKE_REQUIRED_LIBRARIES "")
--
-         # Special sample with more than one file.
-         add_executable(https-client
-             sample/https-client.c
-diff --git a/configure.ac b/configure.ac
-index 7528d37e..3f137277 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -791,10 +791,6 @@ fi
@@ -52,22 +33,6 @@ index 7528d37e..3f137277 100644
  
  # Add some more warnings which we use in development but not in the
  # released versions.  (Some relevant gcc versions can't handle these.)
-diff --git a/event-config.h.cmake b/event-config.h.cmake
-index c1355be9..cb363be8 100644
---- a/event-config.h.cmake
-+++ b/event-config.h.cmake
-@@ -523,9 +523,6 @@
- 
- #cmakedefine EVENT__NEED_DLLIMPORT
- 
--/* Define to 1 if you have ERR_remove_thread_stat(). */
--#cmakedefine EVENT__HAVE_ERR_REMOVE_THREAD_STATE
--
- /* Define if waitpid() supports WNOWAIT */
- #cmakedefine EVENT__HAVE_WAITPID_WITH_WNOWAIT
- 
-diff --git a/sample/https-client.c b/sample/https-client.c
-index 74839565..2ed6fb74 100644
 --- a/sample/https-client.c
 +++ b/sample/https-client.c
 @@ -484,11 +484,7 @@ cleanup:
@@ -82,6 +47,3 @@ index 74839565..2ed6fb74 100644
  	CRYPTO_cleanup_all_ex_data();
  
  	sk_SSL_COMP_free(SSL_COMP_get_compression_methods());
--- 
-2.17.0
-
