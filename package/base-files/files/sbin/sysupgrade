@@ -30,13 +30,13 @@ while [ -n "$1" ]; do
 		-p) export SAVE_PARTITIONS=0;;
 		-b|--create-backup) export CONF_BACKUP="$2" NEED_IMAGE=1; shift;;
 		-r|--restore-backup) export CONF_RESTORE="$2" NEED_IMAGE=1; shift;;
-		-l|--list-backup) export CONF_BACKUP_LIST=1; break;;
+		-l|--list-backup) export CONF_BACKUP_LIST=1;;
 		-f) export CONF_IMAGE="$2"; shift;;
 		-F|--force) export FORCE=1;;
 		-T|--test) export TEST=1;;
 		-h|--help) export HELP=1; break;;
 		-*)
-			echo "Invalid option: $1"
+			echo "Invalid option: $1" >&2
 			exit 1
 		;;
 		*) break;;
@@ -49,10 +49,10 @@ export CONF_TAR=/tmp/sysupgrade.tgz
 
 IMAGE="$1"
 
-[ -z "$IMAGE" -a -z "$NEED_IMAGE" -o $HELP -gt 0 ] && {
+[ -z "$IMAGE" -a -z "$NEED_IMAGE" -a $CONF_BACKUP_LIST -eq 0 -o $HELP -gt 0 ] && {
 	cat <<EOF
 Usage: $0 [<upgrade-option>...] <image file or URL>
-       $0 [-q] [-i] <backup-command> <file>
+       $0 [-q] [-i] [-c] <backup-command> <file>
 
 upgrade-option:
 	-f <config>  restore configuration from .tar.gz (file or url)
@@ -115,7 +115,7 @@ list_changed_conffiles() {
 	done
 }
 
-add_uci_conffiles() {
+add_conffiles() {
 	local file="$1"
 	( find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
 		/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
@@ -131,6 +131,7 @@ add_overlayfiles() {
 		-e '\,/META_[a-zA-Z0-9]*$,d' \
 		-e '\,/functions.sh$,d' \
 		-e '\,/[^/]*-opkg$,d' \
+		-e '\,/etc/urandom.seed$,d' \
 	> "$file"
 	return 0
 }
@@ -140,21 +141,21 @@ sysupgrade_image_check="fwtool_check_signature fwtool_check_image platform_check
 
 if [ $SAVE_OVERLAY = 1 ]; then
 	[ ! -d /overlay/upper/etc ] && {
-		echo "Cannot find '/overlay/upper/etc', required for '-c'"
+		echo "Cannot find '/overlay/upper/etc', required for '-c'" >&2
 		exit 1
 	}
 	sysupgrade_init_conffiles="add_overlayfiles"
 else
-	sysupgrade_init_conffiles="add_uci_conffiles"
+	sysupgrade_init_conffiles="add_conffiles"
 fi
 
 include /lib/upgrade
 
 do_save_conffiles() {
-	local conf_tar="${1:-$CONF_TAR}"
+	local conf_tar="$1"
 
 	[ -z "$(rootfs_type)" ] && {
-		echo "Cannot save config while running from ramdisk."
+		echo "Cannot save config while running from ramdisk." >&2
 		ask_bool 0 "Abort" && exit
 		rm -f "$conf_tar"
 		return 0
@@ -188,7 +189,7 @@ fi
 
 if [ -n "$CONF_RESTORE" ]; then
 	if [ "$CONF_RESTORE" != "-" ] && [ ! -f "$CONF_RESTORE" ]; then
-		echo "Backup archive '$CONF_RESTORE' not found."
+		echo "Backup archive '$CONF_RESTORE' not found." >&2
 		exit 1
 	fi
 
@@ -198,7 +199,7 @@ if [ -n "$CONF_RESTORE" ]; then
 fi
 
 type platform_check_image >/dev/null 2>/dev/null || {
-	echo "Firmware upgrade is not implemented for this platform."
+	echo "Firmware upgrade is not implemented for this platform." >&2
 	exit 1
 }
 
@@ -214,7 +215,7 @@ IMAGE="$(readlink -f "$IMAGE")"
 
 case "$IMAGE" in
 	'')
-		echo "Image file not found."
+		echo "Image file not found." >&2
 		exit 1
 		;;
 	/tmp/*)	;;
@@ -231,10 +232,10 @@ export ARGC=1
 for check in $sysupgrade_image_check; do
 	( $check "$IMAGE" ) || {
 		if [ $FORCE -eq 1 ]; then
-			echo "Image check '$check' failed but --force given - will update anyway!"
+			echo "Image check '$check' failed but --force given - will update anyway!" >&2
 			break
 		else
-			echo "Image check '$check' failed."
+			echo "Image check '$check' failed." >&2
 			exit 1
 		fi
 	}
@@ -245,14 +246,14 @@ if [ -n "$CONF_IMAGE" ]; then
 		# .gz files
 		1f8b) ;;
 		*)
-			echo "Invalid config file. Please use only .tar.gz files"
+			echo "Invalid config file. Please use only .tar.gz files" >&2
 			exit 1
 		;;
 	esac
 	get_image "$CONF_IMAGE" "cat" > "$CONF_TAR"
 	export SAVE_CONFIG=1
 elif ask_bool $SAVE_CONFIG "Keep config files over reflash"; then
-	[ $TEST -eq 1 ] || do_save_conffiles
+	[ $TEST -eq 1 ] || do_save_conffiles "$CONF_TAR"
 	export SAVE_CONFIG=1
 else
 	[ $TEST -eq 1 ] || rm -f "$CONF_TAR"
