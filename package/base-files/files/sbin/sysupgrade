@@ -11,6 +11,7 @@ export SAVE_CONFIG=1
 export SAVE_OVERLAY=0
 export SAVE_OVERLAY_PATH=
 export SAVE_PARTITIONS=1
+export SAVE_INSTALLED_PKGS=0
 export SKIP_UNCHANGED=0
 export CONF_IMAGE=
 export CONF_BACKUP_LIST=0
@@ -20,6 +21,7 @@ export NEED_IMAGE=
 export HELP=0
 export FORCE=0
 export TEST=0
+export UMOUNT_ETCBACKUP_DIR=0
 
 # parse options
 while [ -n "$1" ]; do
@@ -31,6 +33,7 @@ while [ -n "$1" ]; do
 		-c) export SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/etc;;
 		-o) export SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/;;
 		-p) export SAVE_PARTITIONS=0;;
+		-k) export SAVE_INSTALLED_PKGS=1;;
 		-u) export SKIP_UNCHANGED=1;;
 		-b|--create-backup) export CONF_BACKUP="$2" NEED_IMAGE=1; shift;;
 		-r|--restore-backup) export CONF_RESTORE="$2" NEED_IMAGE=1; shift;;
@@ -50,13 +53,15 @@ done
 
 export CONFFILES=/tmp/sysupgrade.conffiles
 export CONF_TAR=/tmp/sysupgrade.tgz
+export ETCBACKUP_DIR=/etc/backup
+export INSTALLED_PACKAGES=${ETCBACKUP_DIR}/installed_packages.txt
 
 IMAGE="$1"
 
 [ -z "$IMAGE" -a -z "$NEED_IMAGE" -a $CONF_BACKUP_LIST -eq 0 -o $HELP -gt 0 ] && {
 	cat <<EOF
 Usage: $0 [<upgrade-option>...] <image file or URL>
-       $0 [-q] [-i] [-c] [-u] [-o] <backup-command> <file>
+       $0 [-q] [-i] [-c] [-u] [-o] [-k] <backup-command> <file>
 
 upgrade-option:
 	-f <config>  restore configuration from .tar.gz (file or url)
@@ -67,6 +72,8 @@ upgrade-option:
 	-u           skip from backup files that are equal to those in /rom
 	-n           do not save configuration over reflash
 	-p           do not attempt to restore the partition table after flash.
+	-k           include in backup a list of current installed packages at
+	             $INSTALLED_PACKAGES
 	-T | --test
 	             Verify image and config .tar.gz but do not actually flash.
 	-F | --force
@@ -174,6 +181,7 @@ add_overlayfiles() {
 		-e '\,^/etc/board.json$,d' \
 		-e '\,/[^/]*-opkg$,d' \
 		-e '\,^/etc/urandom.seed$,d' \
+		-e "\,^$INSTALLED_PACKAGES$,d" \
 		-e '\,^/usr/lib/opkg/.*,d' \
 	) | grep -v -x -F -f $packagesfiles > "$file"
 
@@ -218,6 +226,27 @@ do_save_conffiles() {
 	run_hooks "$CONFFILES" $sysupgrade_init_conffiles
 	ask_bool 0 "Edit config file list" && vi "$CONFFILES"
 
+	if [ "$SAVE_INSTALLED_PKGS" -eq 1 ]; then
+		echo "${INSTALLED_PACKAGES}" >> "$CONFFILES"
+		mkdir -p "$ETCBACKUP_DIR"
+		# Avoid touching filesystem on each backup
+		RAMFS="$(mktemp -d -t sysupgrade.XXXXXX)"
+		mkdir -p "$RAMFS/upper" "$RAMFS/work"
+		mount -t overlay overlay -o lowerdir=$ETCBACKUP_DIR,upperdir=$RAMFS/upper,workdir=$RAMFS/work $ETCBACKUP_DIR &&
+			UMOUNT_ETCBACKUP_DIR=1 || {
+				echo "Cannot mount '$ETCBACKUP_DIR' as tmpfs to avoid touching disk while saving the list of installed packages." >&2
+				ask_bool 0 "Abort" && exit
+			}
+
+		# Format: pkg-name<TAB>{rom,overlay,unkown}
+		# rom is used for pkgs in /rom, even if updated later
+		find /usr/lib/opkg/info -name "*.control" \( \
+			\( -exec test -f /rom/{} \; -exec echo {} rom \; \) -o \
+			\( -exec test -f /overlay/upper/{} \; -exec echo {} overlay \; \) -o \
+			\( -exec echo {} unknown \; \) \
+			\) | sed -e 's,.*/,,;s/\.control /\t/' > ${INSTALLED_PACKAGES}
+	fi
+
 	v "Saving config files..."
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
 	tar c${TAR_V}zf "$conf_tar" -T "$CONFFILES" 2>/dev/null
@@ -227,11 +256,16 @@ do_save_conffiles() {
 		exit 1
 	fi
 
+	[ "$UMOUNT_ETCBACKUP_DIR" -eq 1 ] && {
+		umount "$ETCBACKUP_DIR"
+		rm -rf "$RAMFS"
+	}
 	rm -f "$CONFFILES"
 }
 
 if [ $CONF_BACKUP_LIST -eq 1 ]; then
 	run_hooks "$CONFFILES" $sysupgrade_init_conffiles
+	[ "$SAVE_INSTALLED_PKGS" -eq 1 ] && echo ${INSTALLED_PACKAGES} >> "$CONFFILES"
 	cat "$CONFFILES"
 	rm -f "$CONFFILES"
 	exit 0
