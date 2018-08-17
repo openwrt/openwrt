@@ -10,6 +10,7 @@ export VERBOSE=1
 export SAVE_CONFIG=1
 export SAVE_OVERLAY=0
 export SAVE_PARTITIONS=1
+export SKIP_UNCHANGED=0
 export CONF_IMAGE=
 export CONF_BACKUP_LIST=0
 export CONF_BACKUP=
@@ -28,6 +29,7 @@ while [ -n "$1" ]; do
 		-n) export SAVE_CONFIG=0;;
 		-c) export SAVE_OVERLAY=1;;
 		-p) export SAVE_PARTITIONS=0;;
+		-u) export SKIP_UNCHANGED=1;;
 		-b|--create-backup) export CONF_BACKUP="$2" NEED_IMAGE=1; shift;;
 		-r|--restore-backup) export CONF_RESTORE="$2" NEED_IMAGE=1; shift;;
 		-l|--list-backup) export CONF_BACKUP_LIST=1;;
@@ -52,12 +54,13 @@ IMAGE="$1"
 [ -z "$IMAGE" -a -z "$NEED_IMAGE" -a $CONF_BACKUP_LIST -eq 0 -o $HELP -gt 0 ] && {
 	cat <<EOF
 Usage: $0 [<upgrade-option>...] <image file or URL>
-       $0 [-q] [-i] [-c] <backup-command> <file>
+       $0 [-q] [-i] [-c] [-u] <backup-command> <file>
 
 upgrade-option:
 	-f <config>  restore configuration from .tar.gz (file or url)
 	-i           interactive mode
 	-c           attempt to preserve all changed files in /etc/
+	-u           skip from backup files that are equal to those in /rom
 	-n           do not save configuration over reflash
 	-p           do not attempt to restore the partition table after flash.
 	-T | --test
@@ -119,20 +122,19 @@ add_conffiles() {
 	local file="$1"
 	( find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
 		/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
-		-type f -o -type l 2>/dev/null;
+		\( -type f -o -type l \) $find_filter 2>/dev/null;
 	  list_changed_conffiles ) | sort -u > "$file"
 	return 0
 }
 
 add_overlayfiles() {
 	local file="$1"
-	find /overlay/upper/etc/ -type f -o -type l | sed \
-		-e 's,^/overlay\/upper/,/,' \
-		-e '\,/META_[a-zA-Z0-9]*$,d' \
-		-e '\,/functions.sh$,d' \
+	( cd /overlay/upper/; find ./etc \( -type f -o -type l \) $find_filter | sed \
+		-e 's,^\.,,' \
+		-e '\,^/etc/board.json$,d' \
 		-e '\,/[^/]*-opkg$,d' \
-		-e '\,/etc/urandom.seed$,d' \
-	> "$file"
+		-e '\,^/etc/urandom.seed$,d' \
+	)> "$file"
 	return 0
 }
 
@@ -147,6 +149,15 @@ if [ $SAVE_OVERLAY = 1 ]; then
 	sysupgrade_init_conffiles="add_overlayfiles"
 else
 	sysupgrade_init_conffiles="add_conffiles"
+fi
+
+find_filter=""
+if [ $SKIP_UNCHANGED = 1 ]; then
+	[ ! -d /rom/ ] && {
+		echo "'/rom/' is required by '-u'"
+		exit 1
+	}
+	find_filter='( ( -exec test -e /rom/{} ; -exec cmp -s /{} /rom/{} ; ) -o -print )'
 fi
 
 include /lib/upgrade
