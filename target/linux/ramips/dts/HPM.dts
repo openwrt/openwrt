@@ -34,11 +34,13 @@
 		power {
 			label = "hpm:orange:power";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+			default-state = "on";
 		};
 
 		led_status: status {
 			label = "hpm:green:status";
 			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			default-state = "on";
 		};
 
 		eth {

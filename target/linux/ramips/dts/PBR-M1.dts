@@ -10,7 +10,7 @@
 	model = "PBR-M1";
 
 	aliases {
-		led-status = &led_power;
+		led-status = &led_sys;
 	};
 
 	memory@0 {
@@ -37,12 +37,13 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		led_power: power {
+		power {
 			label = "pbr-m1:blue:power";
 			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+			default-state = "on";
 		};
 
-		sys {
+		led_sys: sys {
 			label = "pbr-m1:blue:sys";
 			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
 		};

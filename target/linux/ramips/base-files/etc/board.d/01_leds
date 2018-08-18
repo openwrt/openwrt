@@ -117,9 +117,6 @@ d240)
 	set_wifi_led "$boardname:blue:wifi"
 	set_usb_led "$boardname:blue:usb"
 	;;
-dch-m225)
-	ucidef_set_led_default "status" "STATUS" "$board:red:status" "0"
-	;;
 dcs-930l-b1)
 	ucidef_set_led_netdev "wifi" "WiFi" "$boardname:blue:wps"
 	;;
@@ -143,7 +140,6 @@ wt1520-8M)
 	;;
 dir-615-d|\
 dir-615-h1)
-	ucidef_set_led_default "status" "Status LED (amber)" "$boardname:amber:status" "0"
 	set_wifi_led "rt2800pci-phy0::radio"
 	;;
 dir-620-d1|\
@@ -228,7 +224,6 @@ hiwifi,hc5861b)
 	set_wifi_led "$boardname:green:wlan2g"
 	;;
 hpm)
-	ucidef_set_led_default "power" "POWER" "$boardname:orange:power" "1"
 	ucidef_set_led_netdev "eth" "ETH" "$boardname:green:eth" "eth0"
 	set_wifi_led "$boardname:green:wifi"
 	;;
@@ -314,7 +309,6 @@ pbr-d1)
 	;;
 pbr-m1)
 	ucidef_set_led_netdev "internet" "internet" "$boardname:blue:internet" "eth0.2"
-	ucidef_set_led_default "sys" "sys" "$boardname:blue:sys" "1"
 	;;
 d-team,newifi-d2)
 	set_usb_led "$boardname:blue:usb"
