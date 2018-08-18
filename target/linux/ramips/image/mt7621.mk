@@ -127,6 +127,16 @@ define Device/elecom_wrc-2533gst
 endef
 TARGET_DEVICES += elecom_wrc-2533gst
 
+define Device/elecom_wrc-1900gst
+  DTS := WRC-1900GST
+  IMAGE_SIZE := 11264k
+  DEVICE_TITLE := ELECOM WRC-1900GST
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) |\
+    elecom-gst-factory WRC-1900GST 0.00
+endef
+TARGET_DEVICES += elecom_wrc-1900gst
+
 define Device/ew1200
   DTS := EW1200
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
