@@ -1,0 +1,24 @@
+#!/bin/sh
+for file in /etc/sysupgrade.conf /usr/lib/opkg/status /etc/rc.local; do
+    cp $file $file.bak
+    echo $file.bak >> /etc/sysupgrade.conf
+done
+
+cat <<\EOF > /etc/rc.local
+#!/bin/sh
+opkg update && {
+    opkg install diffutils
+    OPKGSTAT=/usr/lib/opkg/status
+    OPKGLIST=`diff $OPKGSTAT $OPKGSTAT.bak|grep '^> Package'|\
+              awk '{print $3}'|sort|xargs`
+    grep -q diffutils $OPKGSTAT.bak || opkg remove diffutils
+    opkg install $OPKGLIST
+    mv -f /etc/sysupgrade.conf.bak /etc/sysupgrade.conf
+    mv -f /etc/rc.local.bak /etc/rc.local
+    . /etc/rc.local
+    } || . /etc/rc.local.bak
+exit 0
+EOF
+echo "/etc/rc.local" >> /etc/sysupgrade.conf
+
+exit 0
