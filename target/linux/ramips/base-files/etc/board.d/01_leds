@@ -44,10 +44,6 @@ br-6475nd|\
 mzk-w300nh2)
 	set_wifi_led "$boardname:amber:wlan"
 	;;
-a5-v11|\
-cs-qr10)
-	ucidef_set_led_default "power" "POWER" "$boardname:red:power" "1"
-	;;
 ai-br100)
 	ucidef_set_led_netdev "wan" "wan" "$boardname:blue:wan" "eth0.2"
 	set_wifi_led "$boardname:blue:wlan"
@@ -78,7 +74,6 @@ awapn2403)
 	;;
 asl26555-8M|\
 asl26555-16M)
-	ucidef_set_led_default "power" "POWER" "asl26555:green:power" "1"
 	ucidef_set_led_netdev "eth" "ETH" "asl26555:green:eth" "eth0"
 	set_wifi_led "asl26555:green:wlan"
 	set_usb_led "asl26555:green:3g"
@@ -116,22 +111,16 @@ cy-swr1100)
 	set_usb_led "$boardname:blue:usb"
 	;;
 d105)
-	ucidef_set_led_default "power" "POWER" "$boardname:red:power" "1"
 	set_usb_led "$boardname:green:usb"
 	;;
 d240)
 	set_wifi_led "$boardname:blue:wifi"
 	set_usb_led "$boardname:blue:usb"
 	;;
-db-wrt01)
-	ucidef_set_led_default "power" "power" "$boardname:orange:power" "1"
-	;;
 dch-m225)
-	ucidef_set_led_default "power" "POWER" "$board:geeen:power" "1"
 	ucidef_set_led_default "status" "STATUS" "$board:red:status" "0"
 	;;
 dcs-930l-b1)
-	ucidef_set_led_default "power" "POWER" "$boardname:red:power" "1"
 	ucidef_set_led_netdev "wifi" "WiFi" "$boardname:blue:wps"
 	;;
 dir-300-b1|\
@@ -173,15 +162,6 @@ dlink,dwr-921-c1)
 	set_wifi_led "$boardname:green:wifi"
 	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x0f"
 	ucidef_set_led_default "sigstrength" "Signal Strength" "$boardname:green:sigstrength" "0"
-	;;
-dir-810l|\
-elecom,wrc-1167ghbk2-s|\
-iodata,wn-ax1167gr|\
-iodata,wn-gx300gr|\
-mzk-750dhp|\
-mzk-dp150n|\
-vr500)
-	ucidef_set_led_default "power" "power" "$boardname:green:power" "1"
 	;;
 dir-860l-b1)
 	ucidef_set_led_netdev "wan" "wan" "$boardname:green:net" "eth0.2"
@@ -225,18 +205,15 @@ gl-mt300n-v2)
 	;;
 hc5661|\
 hc5661a)
-	ucidef_set_led_default "system" "system" "$boardname:blue:system" "1"
 	ucidef_set_led_netdev "internet" "internet" "$boardname:blue:internet" "eth0.2"
 	set_wifi_led "$boardname:blue:wlan2g"
 	;;
 hc5761)
-	ucidef_set_led_default "system" "system" "$boardname:blue:system" "1"
 	ucidef_set_led_netdev "internet" "internet" "$boardname:blue:internet" "eth0.2"
 	set_wifi_led "$boardname:blue:wlan2g"
 	ucidef_set_led_netdev "wifi5g" "wifi5g" "$boardname:blue:wlan5g" "rai0"
 	;;
 hc5861)
-	ucidef_set_led_default "system" "system" "$boardname:blue:system" "1"
 	ucidef_set_led_netdev "internet" "internet" "$boardname:blue:internet" "eth0.2"
 	set_wifi_led "$boardname:blue:wlan2g"
 	ucidef_set_led_netdev "wifi5g" "wifi5g" "$boardname:blue:wlan5g" "rai0"
@@ -301,7 +278,6 @@ mir3g)
 mlw221|\
 mlwg2)
 	set_wifi_led "$boardname:blue:wifi"
-	ucidef_set_led_default "system" "system" "$boardname:blue:system" "1"
 	;;
 mpr-a1|\
 mpr-a2)
@@ -312,13 +288,11 @@ mr-102n)
 	set_usb_led "$boardname:green:usb"
 	;;
 mr200)
-	ucidef_set_led_default "power" "power" "$boardname:white:power" "1"
 	ucidef_set_led_netdev "lan" "lan" "$boardname:white:lan" "eth0.1"
 	ucidef_set_led_netdev "wan" "wan" "$boardname:white:wan" "usb0"
 	set_wifi_led "$boardname:white:wlan"
 	;;
 mzk-ex750np)
-	ucidef_set_led_default "power" "power" "$boardname:red:power" "1"
 	set_wifi_led "$boardname:red:wifi"
 	;;
 na930)
@@ -333,7 +307,6 @@ nw718)
 	set_usb_led "$boardname:amber:usb"
 	;;
 oy-0001)
-	ucidef_set_led_default "power" "power" "$boardname:green:power" "1"
 	set_wifi_led "$boardname:green:wifi"
 	;;
 pbr-d1)
@@ -341,7 +314,6 @@ pbr-d1)
 	;;
 pbr-m1)
 	ucidef_set_led_netdev "internet" "internet" "$boardname:blue:internet" "eth0.2"
-	ucidef_set_led_default "power" "power" "$boardname:blue:power" "1"
 	ucidef_set_led_default "sys" "sys" "$boardname:blue:sys" "1"
 	;;
 d-team,newifi-d2)
@@ -370,7 +342,6 @@ re350-v1)
 	ucidef_set_led_switch "eth_link" "LAN link" "$boardname:green:eth_link" "switch0" "0x01"
 	;;
 re6500)
-	ucidef_set_led_default "power" "power" "$boardname:white:power" "1"
 	ucidef_set_led_default "wifi" "wifi" "$boardname:orange:wifi" "1"
 	;;
 rp-n53)
@@ -382,13 +353,11 @@ rt-ac51u)
 	set_usb_led "$boardname:blue:usb" "1-1"
 	;;
 rt-n12p)
-	ucidef_set_led_default "power" "power" "$boardname:green:power" "1"
 	ucidef_set_led_netdev "lan" "lan" "$boardname:green:lan" eth0.1
 	ucidef_set_led_netdev "wan" "wan" "$boardname:green:wan" eth0.2
 	set_wifi_led "$boardname:green:air"
 	;;
 rt-n14u)
-	ucidef_set_led_default "power" "power" "$boardname:blue:power" "1"
 	ucidef_set_led_netdev "lan" "lan" "$boardname:blue:lan" eth0.1
 	ucidef_set_led_netdev "wan" "wan" "$boardname:blue:wan" eth0.2
 	set_wifi_led "$boardname:blue:air"
@@ -497,7 +466,6 @@ we1026-5g-16m)
 whr-1166d|\
 whr-300hp2|\
 whr-600d)
-	ucidef_set_led_default "power" "power" "$boardname:green:power" "1"
 	ucidef_set_led_default "router" "router" "$boardname:green:router" "1"
 	;;
 wl-wn575a3)
@@ -543,7 +511,6 @@ zbt-cpe102)
 	ucidef_set_led_default "power" "power" "$boardname:green:4g-0" "0"
 	;;
 zbt-wa05)
-	ucidef_set_led_default "power" "power" "$boardname:blue:power" "1"
 	set_wifi_led "$boardname:blue:air"
 	set_usb_led "$boardname:blue:usb"
 	;;
@@ -562,7 +529,6 @@ zbtlink,zbt-we1226)
 	ucidef_set_led_switch "wan" "WAN" "$boardname:green:wan" "switch0" "0x10"
 	;;
 zbt-wr8305rt)
-	ucidef_set_led_default "power" "power" "$boardname:green:sys" "1"
 	set_usb_led "$boardname:green:usb"
 	set_wifi_led "$boardname:green:wifi"
 	;;
