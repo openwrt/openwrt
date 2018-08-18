@@ -1301,10 +1301,18 @@ static int ag71xx_change_mtu(struct net_device *dev, int new_mtu)
 	if (new_mtu < 68 || max_frame_len > MAX_JUMBO_FRAME_SIZE)
 		return -EINVAL;
 
-	if (netif_running(dev))
-		return -EBUSY;
+	int should_restart = netif_running(dev);
+
+	if (should_restart) {
+		ag71xx_stop(dev);
+	}
 
 	dev->mtu = new_mtu;
+
+	if (should_restart) {
+		ag71xx_open(dev);
+	}
+
 	return 0;
 }
 
