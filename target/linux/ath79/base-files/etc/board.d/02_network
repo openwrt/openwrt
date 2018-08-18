@@ -26,6 +26,11 @@ ath79_setup_interfaces()
 	ubnt,unifi)
 		ucidef_set_interface_lan "eth0"
 		;;
+	buffalo,wzr-hp-ag300h)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
+		;;
 	buffalo,wzr-hp-g450h)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:lan" "4:lan" "5:lan" "1:wan"

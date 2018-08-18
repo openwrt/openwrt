@@ -1,3 +1,4 @@
+include ./common-buffalo.mk
 include ./common-netgear.mk
 
 define Device/avm_fritz300e
@@ -25,6 +26,19 @@ define Device/avm_fritz4020
   DEVICE_PACKAGES := fritz-tffs
 endef
 TARGET_DEVICES += avm_fritz4020
+
+define Device/buffalo_wzr-hp-ag300h
+  ATH_SOC := ar7161
+  DEVICE_TITLE := Buffalo WZR-HP-AG300H
+  IMAGE_SIZE := 32256k
+  IMAGES += factory.bin tftp.bin
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/default) | buffalo-enc WZR-HP-AG300H 1.99 | buffalo-tag WZR-HP-AG300H
+  IMAGE/tftp.bin := $$(IMAGE/default) | buffalo-tftp-header
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
+  SUPPORTED_DEVICES += wzr-hp-ag300h
+endef
+TARGET_DEVICES += buffalo_wzr-hp-ag300h
 
 define Device/buffalo_wzr-hp-g450h
   ATH_SOC := ar7242
