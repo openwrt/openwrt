@@ -46,7 +46,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  static inline bool ar724x_pci_check_link(struct ar724x_pci_controller *apc)
  {
  	u32 reset;
-@@ -231,35 +238,31 @@ static struct pci_ops ar724x_pci_ops = {
+@@ -231,36 +238,31 @@ static struct pci_ops ar724x_pci_ops = {
  
  static void ar724x_pci_irq_handler(struct irq_desc *desc)
  {
@@ -86,11 +86,12 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -	offset = apc->irq_base - d->irq;
  
 -	switch (offset) {
-+	switch (irq_linear_revmap(apc->domain, d->irq)) {
- 	case 0:
+-	case 0:
++	if (d->hwirq == 1) {
  		t = __raw_readl(base + AR724X_PCI_REG_INT_MASK);
  		__raw_writel(t | AR724X_PCI_INT_DEV0,
-@@ -273,14 +276,12 @@ static void ar724x_pci_irq_mask(struct i
+ 			     base + AR724X_PCI_REG_INT_MASK);
+@@ -273,15 +275,12 @@ static void ar724x_pci_irq_mask(struct i
  {
  	struct ar724x_pci_controller *apc;
  	void __iomem *base;
@@ -102,11 +103,12 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -	offset = apc->irq_base - d->irq;
  
 -	switch (offset) {
-+	switch (irq_linear_revmap(apc->domain, d->irq)) {
- 	case 0:
+-	case 0:
++	if (d->hwirq == 1) {
  		t = __raw_readl(base + AR724X_PCI_REG_INT_MASK);
  		__raw_writel(t & ~AR724X_PCI_INT_DEV0,
-@@ -305,26 +306,32 @@ static struct irq_chip ar724x_pci_irq_ch
+ 			     base + AR724X_PCI_REG_INT_MASK);
+@@ -305,26 +304,32 @@ static struct irq_chip ar724x_pci_irq_ch
  	.irq_mask_ack	= ar724x_pci_irq_mask,
  };
  
@@ -149,7 +151,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	irq_set_chained_handler_and_data(apc->irq, ar724x_pci_irq_handler,
  					 apc);
  }
-@@ -394,29 +401,11 @@ static int ar724x_pci_probe(struct platf
+@@ -394,29 +399,11 @@ static int ar724x_pci_probe(struct platf
  	if (apc->irq < 0)
  		return -EINVAL;
  
@@ -181,7 +183,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  	/*
  	 * Do the full PCIE Root Complex Initialization Sequence if the PCIe
-@@ -429,6 +418,10 @@ static int ar724x_pci_probe(struct platf
+@@ -429,6 +416,10 @@ static int ar724x_pci_probe(struct platf
  	if (!apc->link_up)
  		dev_warn(&pdev->dev, "PCIe link is down\n");
  
@@ -192,7 +194,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	ar724x_pci_irq_init(apc, id);
  
  	ar724x_pci_local_write(apc, PCI_COMMAND, 4, AR724X_PCI_CMD_INIT);
-@@ -438,10 +431,16 @@ static int ar724x_pci_probe(struct platf
+@@ -438,10 +429,16 @@ static int ar724x_pci_probe(struct platf
  	return 0;
  }
  
