@@ -163,12 +163,16 @@
 				interrupt-parent = <&intc3>;
 				interrupts = <0>;
 
-				interrupt-controller;
 				#interrupt-cells = <1>;
-
-				interrupt-map-mask = <0 0 0 1>;
-				interrupt-map = <0 0 0 0 &pcie 0>;
+				interrupt-map-mask = <0 0 0 0>;
+				interrupt-map = <0 0 0 0 &pcie0_intc 1>;
 				status = "disabled";
+
+				pcie0_intc: interrupt-controller {
+					interrupt-controller;
+					#address-cells = <0>;
+					#interrupt-cells = <1>;
+				};
 			};
 		};
 
