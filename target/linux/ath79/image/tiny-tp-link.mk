@@ -17,7 +17,7 @@ define Device/tplink_tl-mr3020-v1
   DEVICE_TITLE := TP-LINK TL-MR3020 v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x30200001
-  SUPPORTED_DEVICES += tl-mr3020-v1
+  SUPPORTED_DEVICES += tl-mr3020
 endef
 TARGET_DEVICES += tplink_tl-mr3020-v1
 
