@@ -44,6 +44,7 @@ ath79_setup_interfaces()
 	etactica,eg200)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
+	avm,fritz4020|\
 	glinet,ar150|\
 	glinet,ar300m)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
@@ -155,6 +156,10 @@ ath79_setup_macs()
 	case "$board" in
 	avm,fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
+		;;
+	avm,fritz4020)
+		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
+		wan_mac=$(fritz_tffs -n macb -i $(find_mtd_part "tffs (1)"))
 		;;
 	dlink,dir-825-b1)
 		lan_mac=$(mtd_get_mac_text "caldata" 65440)
