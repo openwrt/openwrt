@@ -39,6 +39,8 @@ get_status_led() {
 	nbg-419n|\
 	nbg-419n2|\
 	pwh2004|\
+	r6220b|\
+	r6220a|\
 	r6220|\
 	tplink,c20-v4|\
 	tplink,c50-v3|\

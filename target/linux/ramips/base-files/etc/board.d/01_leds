@@ -337,6 +337,8 @@ px-4885-8M)
 	set_wifi_led "px-4885:orange:wifi"
 	set_usb_led "px-4885:blue:storage"
 	;;
+r6220a|\
+r6220b|\
 r6220)
 	ucidef_set_led_netdev "wan" "wan" "$boardname:green:wan" eth0.2
 	set_wifi_led "$boardname:green:wifi"
