@@ -18,6 +18,7 @@ include ./generic-legacy-devices.mk
 include ./generic-senao.mk
 include ./generic-tp-link.mk
 include ./generic-ubnt.mk
+include ./atheros.mk
 endif
 ifeq ($(SUBTARGET),tiny)
 include ./tiny.mk

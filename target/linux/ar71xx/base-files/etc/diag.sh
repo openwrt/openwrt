@@ -556,6 +556,9 @@ get_status_led() {
 	wlr8100)
 		status_led="sitecom:amber:status"
 		;;
+	anonabox-pro)
+		status_led="anonabox_pro:green:status"
+		;;
 	esac
 }
 
