@@ -198,7 +198,6 @@ define Device/pisen_wmm003n
   DEVICE_TITLE := Pisen WMM003N (Cloud Easy Power)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-chipidea2
   TPLINK_HWID := 0x07030101
-  SUPPORTED_DEVICES += wmm003n
   IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += pisen_wmm003n
