@@ -110,7 +110,7 @@ proto_wwan_teardown() {
 	case $driver in
 	qmi_wwan)		proto_qmi_teardown $@ ;;
 	cdc_mbim)		proto_mbim_teardown $@ ;;
-	sierra_net)		proto_mbim_teardown $@ ;;
+	sierra_net)		proto_directip_teardown $@ ;;
 	comgt)			proto_3g_teardown $@ ;;
 	cdc_ether|*cdc_ncm)	proto_ncm_teardown $@ ;;
 	esac

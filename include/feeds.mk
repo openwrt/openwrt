@@ -34,8 +34,8 @@ endef
 define FeedSourcesAppend
 ( \
   echo 'src/gz %d_core %U/targets/%S/packages'; \
-  echo 'src/gz %d_base %U/packages/%A/base'; \
   $(strip $(if $(CONFIG_PER_FEED_REPO), \
+	echo 'src/gz %d_base %U/packages/%A/base'; \
 	$(foreach feed,$(FEEDS_AVAILABLE), \
 		$(if $(CONFIG_FEED_$(feed)), \
 			echo '$(if $(filter m,$(CONFIG_FEED_$(feed))),# )src/gz %d_$(feed) %U/packages/%A/$(feed)';)))) \

@@ -476,10 +476,10 @@ static struct gpio_led rblhg_leds[] __initdata = {
 };
 
 /* RB w APG-5HacT2HnD (wAP AC) gpios*/
-#define RBWAPGSC_LED1		1
-#define RBWAPGSC_LED2		8
-#define RBWAPGSC_LED3		9
-#define RBWAPGSC_POWERLED		16
+#define RBWAPGSC_WIFI_LED_1		1
+#define RBWAPGSC_WIFI_LED_2		8
+#define RBWAPGSC_WIFI_LED_3		9
+#define RBWAPGSC_GPIO_LED_POWER		16
 #define RBWAPGSC_GPIO_BTN_RESET		1
 #define RBWAPGSC_GPIO_MDIO_MDC		12
 #define RBWAPGSC_GPIO_MDIO_DATA		11
@@ -487,13 +487,10 @@ static struct gpio_led rblhg_leds[] __initdata = {
 
 static struct gpio_led rbwapgsc_leds[] __initdata = {
 	{
-		.name = "rb:green:led1",
-		.gpio = RBWAPGSC_LED1,
+		.name = "rb:green:power",
+		.gpio = RBWAPGSC_GPIO_LED_POWER,
 		.active_low = 1,
-	},{
-		.name = "rb:blue:power",
-		.gpio = RBWAPGSC_POWERLED,
-		.active_low = 1,
+		.default_state = LEDS_GPIO_DEFSTATE_ON,
 	},
 };
 

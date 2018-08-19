@@ -284,8 +284,11 @@ platform_check_image() {
 	dr531|\
 	dragino2|\
 	e1700ac-v2|\
+	e558-v2|\
 	e600g-v2|\
 	e600gac-v2|\
+	e750a-v4|\
+	e750g-v8|\
 	ebr-2310-c1|\
 	ens202ext|\
 	epg5000|\

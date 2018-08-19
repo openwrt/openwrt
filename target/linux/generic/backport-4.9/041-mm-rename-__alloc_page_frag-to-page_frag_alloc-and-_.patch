@@ -63,7 +63,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  void *napi_alloc_frag(unsigned int fragsz);
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -3960,8 +3960,8 @@ void __page_frag_drain(struct page *page
+@@ -3959,8 +3959,8 @@ void __page_frag_drain(struct page *page
  }
  EXPORT_SYMBOL(__page_frag_drain);
  
@@ -74,7 +74,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  {
  	unsigned int size = PAGE_SIZE;
  	struct page *page;
-@@ -4012,19 +4012,19 @@ refill:
+@@ -4011,19 +4011,19 @@ refill:
  
  	return nc->va + offset;
  }

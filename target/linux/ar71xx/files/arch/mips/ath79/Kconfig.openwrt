@@ -711,9 +711,42 @@ config ATH79_MACH_E2100L
 	select ATH79_DEV_WMAC
 	select ATH79_NVRAM
 
+config ATH79_MACH_E558_V2
+	bool "Qxwlan E558 v2 support"
+	select SOC_QCA955X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_E600G_V2
 	bool "Qxwlan E600G/E600GAC v2 support"
 	select SOC_QCA953X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
+config ATH79_MACH_E750A_V4
+	bool "Qxwlan E750A v4 support"
+	select SOC_AR934X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
+config ATH79_MACH_E750G_V8
+	bool "Qxwlan E750G v8 support"
+	select SOC_AR934X
 	select ATH79_DEV_AP9X_PCI if PCI
 	select ATH79_DEV_ETH
 	select ATH79_DEV_GPIO_BUTTONS
