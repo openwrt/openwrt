@@ -174,7 +174,6 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_mips64 = -mips64 -mtune=mips64 -mabi=64
     CPU_CFLAGS_24kc = -mips32r2 -mtune=24kc
     CPU_CFLAGS_74kc = -mips32r2 -mtune=74kc
-    CPU_CFLAGS_octeon = -march=octeon -mabi=64
     CPU_CFLAGS_octeonplus = -march=octeon+ -mabi=64
   endif
   ifeq ($(ARCH),i386)
