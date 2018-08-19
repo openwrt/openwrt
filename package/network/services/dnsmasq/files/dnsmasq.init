@@ -869,9 +869,6 @@ dnsmasq_start()
 		ADD_LOCAL_FQDN="$ADD_LOCAL_HOSTNAME"
 	fi
 
-	config_get_bool readethers "$cfg" readethers
-	[ "$readethers" = "1" -a \! -e "/etc/ethers" ] && touch /etc/ethers
-
 	config_get user_dhcpscript $cfg dhcpscript
 	if has_handler || [ -n "$user_dhcpscript" ]; then
 		xappend "--dhcp-script=$DHCPSCRIPT"
