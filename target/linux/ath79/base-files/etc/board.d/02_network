@@ -49,6 +49,7 @@ ath79_setup_interfaces()
 	glinet,ar300m)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+	iodata,etg3-r|\
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr2|\
 	pcs,cr5000)
@@ -164,6 +165,10 @@ ath79_setup_macs()
 	dlink,dir-825-b1)
 		lan_mac=$(mtd_get_mac_text "caldata" 65440)
 		wan_mac=$(mtd_get_mac_text "caldata" 65460)
+		;;
+	iodata,etg3-r)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		wan_mac=$(macaddr_add "$lan_mac" -1)
 		;;
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr2)
