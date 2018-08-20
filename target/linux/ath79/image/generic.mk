@@ -80,6 +80,13 @@ define Device/glinet_ar300m_nor
 endef
 TARGET_DEVICES += glinet_ar300m_nor
 
+define Device/iodata_etg3-r
+  ATH_SOC := ar9342
+  DEVICE_TITLE := I-O DATA ETG3-R
+  IMAGE_SIZE := 7680k
+endef
+TARGET_DEVICES += iodata_etg3-r
+
 define Device/iodata_wn-ac1167dgr
   ATH_SOC := qca9557
   DEVICE_TITLE := I-O DATA WN-AC1167DGR
