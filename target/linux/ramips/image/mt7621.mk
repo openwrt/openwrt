@@ -207,6 +207,38 @@ define Device/pbr-m1
 endef
 TARGET_DEVICES += pbr-m1
 
+define Device/r6220b
+  DTS := R6220B
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGE_SIZE := 28672k
+  UBINIZE_OPTS := -E 5
+  IMAGES := sysupgrade.tar kernel.bin rootfs.bin
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/kernel.bin := append-kernel
+  IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  DEVICE_TITLE := Netgear R6220B
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini
+endef
+define Device/r6220a
+  DTS := R6220A
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGE_SIZE := 28672k
+  UBINIZE_OPTS := -E 5
+  IMAGES := sysupgrade.tar kernel.bin rootfs.bin
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/kernel.bin := append-kernel
+  IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  DEVICE_TITLE := Netgear R6220A
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini
+endef
 define Device/r6220
   DTS := R6220
   BLOCKSIZE := 128k
@@ -223,7 +255,7 @@ define Device/r6220
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini
 endef
-TARGET_DEVICES += r6220
+TARGET_DEVICES += r6220b r6220a r6220
 
 define Device/rb750gr3
   DTS := RB750Gr3

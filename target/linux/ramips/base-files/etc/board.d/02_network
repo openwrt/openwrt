@@ -106,6 +106,8 @@ ramips_setup_interfaces()
 	pbr-m1|\
 	psg1208|\
 	psg1218a|\
+	r6220b|\
+	r6220a|\
 	r6220|\
 	rt-n12p|\
 	sap-g3200u3|\
@@ -516,6 +518,8 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_binary factory 40)
 		wan_mac=$(mtd_get_mac_binary factory 46)
 		;;
+	r6220b|\
+	r6220a|\
 	r6220)
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
