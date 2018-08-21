@@ -137,6 +137,12 @@ case "$FIRMWARE" in
 	tplink,tl-wr741-v1|\
 	tplink,tl-wr743nd-v1|\
 	tplink,tl-wr841-v7|\
+	ubnt,xm|\
+	ubnt,bullet-m|\
+	ubnt,nano-m|\
+	ubnt,rocket-m)
+		ath9k_eeprom_extract "art" 4096 4096
+		;;
 	ubnt,unifi)
 		ath9k_eeprom_extract "art" 4096 2048
 		;;
