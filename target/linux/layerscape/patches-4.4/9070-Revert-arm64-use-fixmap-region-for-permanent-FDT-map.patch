@@ -303,5 +303,5 @@ Signed-off-by: Yutang Jiang <yutang.jiang@nxp.com>
 -}
 -
  #ifdef CONFIG_HAVE_ARCH_HUGE_VMAP
- int pud_free_pmd_page(pud_t *pud)
+ int pud_free_pmd_page(pud_t *pud, unsigned long addr)
  {
