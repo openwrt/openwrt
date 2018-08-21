@@ -9,6 +9,11 @@
 	compatible = "ubnt,xm", "qca,ar7241";
 	model = "Ubiquiti Networks XM (rev 1.0) board";
 
+	aliases {
+		led-boot = &link4;
+		led-failsafe = &link4;
+	};
+
 /*	extosc: ref {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
@@ -42,7 +47,7 @@
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 
-		link4 {
+		link4: link4 {
 			label = "ubnt:green:link4";
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 		};
