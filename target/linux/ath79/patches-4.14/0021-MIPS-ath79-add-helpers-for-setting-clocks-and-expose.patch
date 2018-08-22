@@ -1,17 +1,22 @@
+From 288a8eb0d41f09fda242e05f8a7bd1f5b3489477 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
 Date: Tue, 6 Mar 2018 13:19:26 +0100
-Subject: [PATCH] MIPS: ath79: add helpers for setting clocks and expose
+Subject: [PATCH 21/33] MIPS: ath79: add helpers for setting clocks and expose
  the ref clock
 
-Preparation for transitioning legacy the legacy clock setup code over
+Preparation for transitioning the legacy clock setup code over
 to OF.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: John Crispin <john@phrozen.org>
 ---
+ arch/mips/ath79/clock.c               | 128 ++++++++++++++++++----------------
+ include/dt-bindings/clock/ath79-clk.h |   3 +-
+ 2 files changed, 68 insertions(+), 63 deletions(-)
 
 --- a/arch/mips/ath79/clock.c
 +++ b/arch/mips/ath79/clock.c
-@@ -36,20 +36,46 @@ static struct clk_onecell_data clk_data
+@@ -37,20 +37,46 @@ static struct clk_onecell_data clk_data
  	.clk_num = ARRAY_SIZE(clks),
  };
  
@@ -67,7 +72,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return clk;
  }
  
-@@ -79,27 +105,15 @@ static void __init ar71xx_clocks_init(vo
+@@ -80,27 +106,15 @@ static void __init ar71xx_clocks_init(vo
  	div = (((pll >> AR71XX_AHB_DIV_SHIFT) & AR71XX_AHB_DIV_MASK) + 1) * 2;
  	ahb_rate = cpu_rate / div;
  
@@ -99,7 +104,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void __init ar724x_clk_init(struct clk *ref_clk, void __iomem *pll_base)
  {
  	u32 pll;
-@@ -113,24 +127,19 @@ static void __init ar724x_clk_init(struc
+@@ -114,24 +128,19 @@ static void __init ar724x_clk_init(struc
  	ddr_div = ((pll >> AR724X_DDR_DIV_SHIFT) & AR724X_DDR_DIV_MASK) + 1;
  	ahb_div = (((pll >> AR724X_AHB_DIV_SHIFT) & AR724X_AHB_DIV_MASK) + 1) * 2;
  
@@ -128,7 +133,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	clk_add_alias("wdt", NULL, "ahb", NULL);
  	clk_add_alias("uart", NULL, "ahb", NULL);
  }
-@@ -185,12 +194,12 @@ static void __init ar9330_clk_init(struc
+@@ -186,12 +195,12 @@ static void __init ar9330_clk_init(struc
  		     AR933X_PLL_CLOCK_CTRL_AHB_DIV_MASK) + 1;
  	}
  
@@ -147,7 +152,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static void __init ar933x_clocks_init(void)
-@@ -205,15 +214,10 @@ static void __init ar933x_clocks_init(vo
+@@ -206,15 +215,10 @@ static void __init ar933x_clocks_init(vo
  	else
  		ref_rate = (25 * 1000 * 1000);
  
@@ -164,7 +169,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	clk_add_alias("wdt", NULL, "ahb", NULL);
  	clk_add_alias("uart", NULL, "ref", NULL);
  }
-@@ -343,10 +347,10 @@ static void __init ar934x_clocks_init(vo
+@@ -344,10 +348,10 @@ static void __init ar934x_clocks_init(vo
  	else
  		ahb_rate = cpu_pll / (postdiv + 1);
  
@@ -179,7 +184,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	clk_add_alias("wdt", NULL, "ref", NULL);
  	clk_add_alias("uart", NULL, "ref", NULL);
-@@ -430,10 +434,10 @@ static void __init qca953x_clocks_init(v
+@@ -431,10 +435,10 @@ static void __init qca953x_clocks_init(v
  	else
  		ahb_rate = cpu_pll / (postdiv + 1);
  
@@ -194,7 +199,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	clk_add_alias("wdt", NULL, "ref", NULL);
  	clk_add_alias("uart", NULL, "ref", NULL);
-@@ -515,10 +519,10 @@ static void __init qca955x_clocks_init(v
+@@ -516,10 +520,10 @@ static void __init qca955x_clocks_init(v
  	else
  		ahb_rate = cpu_pll / (postdiv + 1);
  
@@ -209,7 +214,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	clk_add_alias("wdt", NULL, "ref", NULL);
  	clk_add_alias("uart", NULL, "ref", NULL);
-@@ -609,10 +613,10 @@ static void __init qca956x_clocks_init(v
+@@ -620,10 +624,10 @@ static void __init qca956x_clocks_init(v
  	else
  		ahb_rate = cpu_pll / (postdiv + 1);
  

@@ -1,7 +1,7 @@
-From 308c2ef9c4f1be2e1cee699042671eb973b51803 Mon Sep 17 00:00:00 2001
+From d3fa9694bc71338161ae2b9c7ee08b57b8140f93 Mon Sep 17 00:00:00 2001
 From: Mathias Kresin <dev@kresin.me>
 Date: Tue, 6 Mar 2018 08:37:43 +0100
-Subject: [PATCH 19/27] MIPS: ath79: get PCIe controller out of reset
+Subject: [PATCH 16/33] MIPS: ath79: get PCIe controller out of reset
 
 The ar724x pci driver expects the PCIe controller to be brought out of
 reset by the bootloader.
@@ -21,6 +21,7 @@ took up to 20ms till the link was up. Giving the link up to 100ms
 should work for all cases.
 
 Signed-off-by: Mathias Kresin <dev@kresin.me>
+Signed-off-by: John Crispin <john@phrozen.org>
 ---
  arch/mips/pci/pci-ar724x.c | 42 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 42 insertions(+)

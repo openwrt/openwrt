@@ -1,15 +1,19 @@
+From 6350b2c36c522fecbc91a80b63f49319dafd2a72 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
 Date: Tue, 6 Mar 2018 13:23:20 +0100
-Subject: [PATCH] MIPS: ath79: pass PLL base to clock init functions
+Subject: [PATCH 23/33] MIPS: ath79: pass PLL base to clock init functions
 
 Preparation for passing the mapped base via DT
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: John Crispin <john@phrozen.org>
 ---
+ arch/mips/ath79/clock.c | 60 ++++++++++++++++++++++++-------------------------
+ 1 file changed, 30 insertions(+), 30 deletions(-)
 
 --- a/arch/mips/ath79/clock.c
 +++ b/arch/mips/ath79/clock.c
-@@ -79,7 +79,7 @@ static struct clk * __init ath79_set_ff_
+@@ -80,7 +80,7 @@ static struct clk * __init ath79_set_ff_
  	return clk;
  }
  
@@ -18,7 +22,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	unsigned long ref_rate;
  	unsigned long cpu_rate;
-@@ -91,7 +91,7 @@ static void __init ar71xx_clocks_init(vo
+@@ -92,7 +92,7 @@ static void __init ar71xx_clocks_init(vo
  
  	ref_rate = AR71XX_BASE_FREQ;
  
@@ -27,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	div = ((pll >> AR71XX_PLL_FB_SHIFT) & AR71XX_PLL_FB_MASK) + 1;
  	freq = div * ref_rate;
-@@ -129,13 +129,13 @@ static void __init ar724x_clk_init(struc
+@@ -130,13 +130,13 @@ static void __init ar724x_clk_init(struc
  	ath79_set_ff_clk(ATH79_CLK_AHB, "ref", mult, div * ahb_div);
  }
  
@@ -43,7 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static void __init ar9330_clk_init(struct clk *ref_clk, void __iomem *pll_base)
-@@ -196,7 +196,7 @@ static void __init ar9330_clk_init(struc
+@@ -197,7 +197,7 @@ static void __init ar9330_clk_init(struc
  			 ref_div * out_div * ahb_div);
  }
  
@@ -52,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct clk *ref_clk;
  	unsigned long ref_rate;
-@@ -233,7 +233,7 @@ static u32 __init ar934x_get_pll_freq(u3
+@@ -234,7 +234,7 @@ static u32 __init ar934x_get_pll_freq(u3
  	return ret;
  }
  
@@ -61,7 +65,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	unsigned long ref_rate;
  	unsigned long cpu_rate;
-@@ -264,7 +264,7 @@ static void __init ar934x_clocks_init(vo
+@@ -265,7 +265,7 @@ static void __init ar934x_clocks_init(vo
  			  AR934X_SRIF_DPLL1_REFDIV_MASK;
  		frac = 1 << 18;
  	} else {
@@ -70,7 +74,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		out_div = (pll >> AR934X_PLL_CPU_CONFIG_OUTDIV_SHIFT) &
  			AR934X_PLL_CPU_CONFIG_OUTDIV_MASK;
  		ref_div = (pll >> AR934X_PLL_CPU_CONFIG_REFDIV_SHIFT) &
-@@ -291,7 +291,7 @@ static void __init ar934x_clocks_init(vo
+@@ -292,7 +292,7 @@ static void __init ar934x_clocks_init(vo
  			  AR934X_SRIF_DPLL1_REFDIV_MASK;
  		frac = 1 << 18;
  	} else {
@@ -79,7 +83,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		out_div = (pll >> AR934X_PLL_DDR_CONFIG_OUTDIV_SHIFT) &
  			  AR934X_PLL_DDR_CONFIG_OUTDIV_MASK;
  		ref_div = (pll >> AR934X_PLL_DDR_CONFIG_REFDIV_SHIFT) &
-@@ -306,7 +306,7 @@ static void __init ar934x_clocks_init(vo
+@@ -307,7 +307,7 @@ static void __init ar934x_clocks_init(vo
  	ddr_pll = ar934x_get_pll_freq(ref_rate, ref_div, nint,
  				      nfrac, frac, out_div);
  
@@ -88,7 +92,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	postdiv = (clk_ctrl >> AR934X_PLL_CPU_DDR_CLK_CTRL_CPU_POST_DIV_SHIFT) &
  		  AR934X_PLL_CPU_DDR_CLK_CTRL_CPU_POST_DIV_MASK;
-@@ -346,7 +346,7 @@ static void __init ar934x_clocks_init(vo
+@@ -347,7 +347,7 @@ static void __init ar934x_clocks_init(vo
  	iounmap(dpll_base);
  }
  
@@ -97,7 +101,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	unsigned long ref_rate;
  	unsigned long cpu_rate;
-@@ -362,7 +362,7 @@ static void __init qca953x_clocks_init(v
+@@ -363,7 +363,7 @@ static void __init qca953x_clocks_init(v
  	else
  		ref_rate = 25 * 1000 * 1000;
  
@@ -106,7 +110,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	out_div = (pll >> QCA953X_PLL_CPU_CONFIG_OUTDIV_SHIFT) &
  		  QCA953X_PLL_CPU_CONFIG_OUTDIV_MASK;
  	ref_div = (pll >> QCA953X_PLL_CPU_CONFIG_REFDIV_SHIFT) &
-@@ -376,7 +376,7 @@ static void __init qca953x_clocks_init(v
+@@ -377,7 +377,7 @@ static void __init qca953x_clocks_init(v
  	cpu_pll += frac * (ref_rate >> 6) / ref_div;
  	cpu_pll /= (1 << out_div);
  
@@ -115,7 +119,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	out_div = (pll >> QCA953X_PLL_DDR_CONFIG_OUTDIV_SHIFT) &
  		  QCA953X_PLL_DDR_CONFIG_OUTDIV_MASK;
  	ref_div = (pll >> QCA953X_PLL_DDR_CONFIG_REFDIV_SHIFT) &
-@@ -390,7 +390,7 @@ static void __init qca953x_clocks_init(v
+@@ -391,7 +391,7 @@ static void __init qca953x_clocks_init(v
  	ddr_pll += frac * (ref_rate >> 6) / (ref_div << 4);
  	ddr_pll /= (1 << out_div);
  
@@ -124,7 +128,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	postdiv = (clk_ctrl >> QCA953X_PLL_CLK_CTRL_CPU_POST_DIV_SHIFT) &
  		  QCA953X_PLL_CLK_CTRL_CPU_POST_DIV_MASK;
-@@ -428,7 +428,7 @@ static void __init qca953x_clocks_init(v
+@@ -429,7 +429,7 @@ static void __init qca953x_clocks_init(v
  	ath79_set_clk(ATH79_CLK_AHB, ahb_rate);
  }
  
@@ -133,7 +137,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	unsigned long ref_rate;
  	unsigned long cpu_rate;
-@@ -444,7 +444,7 @@ static void __init qca955x_clocks_init(v
+@@ -445,7 +445,7 @@ static void __init qca955x_clocks_init(v
  	else
  		ref_rate = 25 * 1000 * 1000;
  
@@ -142,7 +146,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	out_div = (pll >> QCA955X_PLL_CPU_CONFIG_OUTDIV_SHIFT) &
  		  QCA955X_PLL_CPU_CONFIG_OUTDIV_MASK;
  	ref_div = (pll >> QCA955X_PLL_CPU_CONFIG_REFDIV_SHIFT) &
-@@ -458,7 +458,7 @@ static void __init qca955x_clocks_init(v
+@@ -459,7 +459,7 @@ static void __init qca955x_clocks_init(v
  	cpu_pll += frac * ref_rate / (ref_div * (1 << 6));
  	cpu_pll /= (1 << out_div);
  
@@ -151,7 +155,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	out_div = (pll >> QCA955X_PLL_DDR_CONFIG_OUTDIV_SHIFT) &
  		  QCA955X_PLL_DDR_CONFIG_OUTDIV_MASK;
  	ref_div = (pll >> QCA955X_PLL_DDR_CONFIG_REFDIV_SHIFT) &
-@@ -472,7 +472,7 @@ static void __init qca955x_clocks_init(v
+@@ -473,7 +473,7 @@ static void __init qca955x_clocks_init(v
  	ddr_pll += frac * ref_rate / (ref_div * (1 << 10));
  	ddr_pll /= (1 << out_div);
  
@@ -160,7 +164,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	postdiv = (clk_ctrl >> QCA955X_PLL_CLK_CTRL_CPU_POST_DIV_SHIFT) &
  		  QCA955X_PLL_CLK_CTRL_CPU_POST_DIV_MASK;
-@@ -510,7 +510,7 @@ static void __init qca955x_clocks_init(v
+@@ -511,7 +511,7 @@ static void __init qca955x_clocks_init(v
  	ath79_set_clk(ATH79_CLK_AHB, ahb_rate);
  }
  
@@ -169,7 +173,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	unsigned long ref_rate;
  	unsigned long cpu_rate;
-@@ -526,13 +526,13 @@ static void __init qca956x_clocks_init(v
+@@ -537,13 +537,13 @@ static void __init qca956x_clocks_init(v
  	else
  		ref_rate = 25 * 1000 * 1000;
  
@@ -185,7 +189,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	nint = (pll >> QCA956X_PLL_CPU_CONFIG1_NINT_SHIFT) &
  	       QCA956X_PLL_CPU_CONFIG1_NINT_MASK;
  	hfrac = (pll >> QCA956X_PLL_CPU_CONFIG1_NFRAC_H_SHIFT) &
-@@ -545,12 +545,12 @@ static void __init qca956x_clocks_init(v
+@@ -556,12 +556,12 @@ static void __init qca956x_clocks_init(v
  	cpu_pll += (hfrac >> 13) * ref_rate / ref_div;
  	cpu_pll /= (1 << out_div);
  
@@ -200,7 +204,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	nint = (pll >> QCA956X_PLL_DDR_CONFIG1_NINT_SHIFT) &
  	       QCA956X_PLL_DDR_CONFIG1_NINT_MASK;
  	hfrac = (pll >> QCA956X_PLL_DDR_CONFIG1_NFRAC_H_SHIFT) &
-@@ -563,7 +563,7 @@ static void __init qca956x_clocks_init(v
+@@ -574,7 +574,7 @@ static void __init qca956x_clocks_init(v
  	ddr_pll += (hfrac >> 13) * ref_rate / ref_div;
  	ddr_pll /= (1 << out_div);
  
@@ -209,7 +213,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	postdiv = (clk_ctrl >> QCA956X_PLL_CLK_CTRL_CPU_POST_DIV_SHIFT) &
  		  QCA956X_PLL_CLK_CTRL_CPU_POST_DIV_MASK;
-@@ -607,19 +607,19 @@ void __init ath79_clocks_init(void)
+@@ -618,19 +618,19 @@ void __init ath79_clocks_init(void)
  	const char *uart;
  
  	if (soc_is_ar71xx())

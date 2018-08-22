@@ -1,16 +1,18 @@
-From 08b9cad7da5d981d595fe6d76e9675f85e23e688 Mon Sep 17 00:00:00 2001
+From 3765b1f79593a0a9098ed15e48074c95403a53ee Mon Sep 17 00:00:00 2001
 From: John Crispin <john@phrozen.org>
-Date: Tue, 6 Mar 2018 09:57:15 +0100
-Subject: [PATCH 25/27] MIPS: ath79: drop irq.c
+Date: Sat, 23 Jun 2018 15:05:08 +0200
+Subject: [PATCH 27/33] MIPS: ath79: drop legacy IRQ code
 
-all IRQ init code will flow via OF based irq chips.
+With the target now being fully OF based, we can drop the legacy IRQ code.
+All IRQs are now handled via the new irqchip drivers.
 
 Signed-off-by: John Crispin <john@phrozen.org>
 ---
- arch/mips/ath79/Makefile |   2 +-
- arch/mips/ath79/irq.c    | 285 -----------------------------------------------
- arch/mips/ath79/setup.c  |   6 +
- 3 files changed, 7 insertions(+), 286 deletions(-)
+ arch/mips/ath79/Makefile                 |   2 +-
+ arch/mips/ath79/irq.c                    | 169 -------------------------------
+ arch/mips/ath79/setup.c                  |   6 ++
+ arch/mips/include/asm/mach-ath79/ath79.h |   4 -
+ 4 files changed, 7 insertions(+), 174 deletions(-)
  delete mode 100644 arch/mips/ath79/irq.c
 
 --- a/arch/mips/ath79/Makefile
@@ -23,10 +25,10 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +obj-y	:= prom.o setup.o common.o clock.o
  
  obj-$(CONFIG_EARLY_PRINTK)		+= early_printk.o
- 
+ obj-$(CONFIG_PCI)			+= pci.o
 --- a/arch/mips/ath79/irq.c
 +++ /dev/null
-@@ -1,285 +0,0 @@
+@@ -1,169 +0,0 @@
 -/*
 - *  Atheros AR71xx/AR724x/AR913x specific interrupt handling
 - *
@@ -83,34 +85,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -					 handle_level_irq);
 -
 -	irq_set_chained_handler(ATH79_CPU_IRQ(2), ar934x_ip2_irq_dispatch);
--}
--
--static void qca953x_ip2_irq_dispatch(struct irq_desc *desc)
--{
--	u32 status;
--
--	status = ath79_reset_rr(QCA953X_RESET_REG_PCIE_WMAC_INT_STATUS);
--
--	if (status & QCA953X_PCIE_WMAC_INT_PCIE_ALL) {
--		ath79_ddr_wb_flush(3);
--		generic_handle_irq(ATH79_IP2_IRQ(0));
--	} else if (status & QCA953X_PCIE_WMAC_INT_WMAC_ALL) {
--		ath79_ddr_wb_flush(4);
--		generic_handle_irq(ATH79_IP2_IRQ(1));
--	} else {
--		spurious_interrupt();
--	}
--}
--
--static void qca953x_irq_init(void)
--{
--	int i;
--
--	for (i = ATH79_IP2_IRQ_BASE;
--	     i < ATH79_IP2_IRQ_BASE + ATH79_IP2_IRQ_COUNT; i++)
--		irq_set_chip_and_handler(i, &dummy_irq_chip, handle_level_irq);
--
--	irq_set_chained_handler(ATH79_CPU_IRQ(2), qca953x_ip2_irq_dispatch);
 -}
 -
 -static void qca955x_ip2_irq_dispatch(struct irq_desc *desc)
@@ -185,87 +159,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -	irq_set_chained_handler(ATH79_CPU_IRQ(3), qca955x_ip3_irq_dispatch);
 -}
 -
--static void qca956x_ip2_irq_dispatch(struct irq_desc *desc)
--{
--	u32 status;
--
--	status = ath79_reset_rr(QCA956X_RESET_REG_EXT_INT_STATUS);
--	status &= QCA956X_EXT_INT_PCIE_RC1_ALL | QCA956X_EXT_INT_WMAC_ALL;
--
--	if (status == 0) {
--		spurious_interrupt();
--		return;
--	}
--
--	if (status & QCA956X_EXT_INT_PCIE_RC1_ALL) {
--		/* TODO: flush DDR? */
--		generic_handle_irq(ATH79_IP2_IRQ(0));
--	}
--
--	if (status & QCA956X_EXT_INT_WMAC_ALL) {
--		/* TODO: flsuh DDR? */
--		generic_handle_irq(ATH79_IP2_IRQ(1));
--	}
--}
--
--static void qca956x_ip3_irq_dispatch(struct irq_desc *desc)
--{
--	u32 status;
--
--	status = ath79_reset_rr(QCA956X_RESET_REG_EXT_INT_STATUS);
--	status &= QCA956X_EXT_INT_PCIE_RC2_ALL |
--		  QCA956X_EXT_INT_USB1 | QCA956X_EXT_INT_USB2;
--
--	if (status == 0) {
--		spurious_interrupt();
--		return;
--	}
--
--	if (status & QCA956X_EXT_INT_USB1) {
--		/* TODO: flush DDR? */
--		generic_handle_irq(ATH79_IP3_IRQ(0));
--	}
--
--	if (status & QCA956X_EXT_INT_USB2) {
--		/* TODO: flush DDR? */
--		generic_handle_irq(ATH79_IP3_IRQ(1));
--	}
--
--	if (status & QCA956X_EXT_INT_PCIE_RC2_ALL) {
--		/* TODO: flush DDR? */
--		generic_handle_irq(ATH79_IP3_IRQ(2));
--	}
--}
--
--static void qca956x_enable_timer_cb(void) {
--	u32 misc;
--
--	misc = ath79_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
--	misc |= MISC_INT_MIPS_SI_TIMERINT_MASK;
--	ath79_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE, misc);
--}
--
--static void qca956x_irq_init(void)
--{
--	int i;
--
--	for (i = ATH79_IP2_IRQ_BASE;
--	     i < ATH79_IP2_IRQ_BASE + ATH79_IP2_IRQ_COUNT; i++)
--		irq_set_chip_and_handler(i, &dummy_irq_chip, handle_level_irq);
--
--	irq_set_chained_handler(ATH79_CPU_IRQ(2), qca956x_ip2_irq_dispatch);
--
--	for (i = ATH79_IP3_IRQ_BASE;
--	     i < ATH79_IP3_IRQ_BASE + ATH79_IP3_IRQ_COUNT; i++)
--		irq_set_chip_and_handler(i, &dummy_irq_chip, handle_level_irq);
--
--	irq_set_chained_handler(ATH79_CPU_IRQ(3), qca956x_ip3_irq_dispatch);
--
--	/* QCA956x timer init workaround has to be applied right before setting
--	 * up the clock. Else, there will be no jiffies */
--	late_time_init = &qca956x_enable_timer_cb;
--}
--
 -void __init arch_init_irq(void)
 -{
 -	unsigned irq_wb_chan2 = -1;
@@ -281,7 +174,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -	    soc_is_ar913x() || soc_is_ar933x()) {
 -		irq_wb_chan2 = 3;
 -		irq_wb_chan3 = 2;
--	} else if (soc_is_ar934x() || soc_is_qca953x()) {
+-	} else if (soc_is_ar934x()) {
 -		irq_wb_chan3 = 2;
 -	}
 -
@@ -292,10 +185,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -	else if (soc_is_ar724x() ||
 -		 soc_is_ar933x() ||
 -		 soc_is_ar934x() ||
--		 soc_is_qca953x() ||
--		 soc_is_qca955x() ||
--		 soc_is_qca956x() ||
--		 soc_is_tp9343())
+-		 soc_is_qca955x())
 -		misc_is_ar71xx = false;
 -	else
 -		BUG();
@@ -305,12 +195,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -
 -	if (soc_is_ar934x())
 -		ar934x_ip2_irq_init();
--	else if (soc_is_qca953x())
--		qca953x_irq_init();
 -	else if (soc_is_qca955x())
 -		qca955x_irq_init();
--	else if (soc_is_qca956x() || soc_is_tp9343())
--		qca956x_irq_init();
 -}
 --- a/arch/mips/ath79/setup.c
 +++ b/arch/mips/ath79/setup.c
@@ -322,7 +208,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  #include <asm/bootinfo.h>
  #include <asm/idle.h>
-@@ -310,6 +311,11 @@ void __init plat_time_init(void)
+@@ -311,6 +312,11 @@ void __init plat_time_init(void)
  	mips_hpt_frequency = cpu_clk_rate / 2;
  }
  
@@ -334,3 +220,14 @@ Signed-off-by: John Crispin <john@phrozen.org>
  static int __init ath79_setup(void)
  {
  	if  (mips_machtype == ATH79_MACH_GENERIC_OF)
+--- a/arch/mips/include/asm/mach-ath79/ath79.h
++++ b/arch/mips/include/asm/mach-ath79/ath79.h
+@@ -178,8 +178,4 @@ static inline u32 ath79_reset_rr(unsigne
+ void ath79_device_reset_set(u32 mask);
+ void ath79_device_reset_clear(u32 mask);
+ 
+-void ath79_cpu_irq_init(unsigned irq_wb_chan2, unsigned irq_wb_chan3);
+-void ath79_misc_irq_init(void __iomem *regs, int irq,
+-			int irq_base, bool is_ar71xx);
+-
+ #endif /* __ASM_MACH_ATH79_H */

@@ -1,13 +1,17 @@
-From cc5a306038b7956b5736a70696dddaaf3792df76 Mon Sep 17 00:00:00 2001
+From 1855ab6b1d27f5b38a648baf57ff6a534afec26d Mon Sep 17 00:00:00 2001
 From: John Crispin <john@phrozen.org>
-Date: Tue, 6 Mar 2018 09:22:49 +0100
-Subject: [PATCH 20/27] MIPS: ath79: turn pci-ar71xx driver into a pure OF
- driver
+Date: Sat, 23 Jun 2018 15:07:23 +0200
+Subject: [PATCH 18/33] MIPS: pci-ar71xx: convert to OF
+
+With the ath79 target getting converted to pure OF, we can drop all the
+platform data code and add the missing OF bits to the driver. We also add
+a irq domain for the PCI/e controllers cascade, thus making it usable from
+dts files.
 
 Signed-off-by: John Crispin <john@phrozen.org>
 ---
- arch/mips/pci/pci-ar71xx.c | 81 +++++++++++++++++++++++-----------------------
- 1 file changed, 40 insertions(+), 41 deletions(-)
+ arch/mips/pci/pci-ar71xx.c | 82 +++++++++++++++++++++++-----------------------
+ 1 file changed, 41 insertions(+), 41 deletions(-)
 
 --- a/arch/mips/pci/pci-ar71xx.c
 +++ b/arch/mips/pci/pci-ar71xx.c
@@ -94,11 +98,12 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  	t = __raw_readl(base + AR71XX_RESET_REG_PCI_INT_ENABLE);
  	__raw_writel(t & ~(1 << irq), base + AR71XX_RESET_REG_PCI_INT_ENABLE);
-@@ -294,24 +299,30 @@ static struct irq_chip ar71xx_pci_irq_ch
+@@ -294,24 +299,31 @@ static struct irq_chip ar71xx_pci_irq_ch
  	.irq_mask_ack	= ar71xx_pci_irq_mask,
  };
  
-+static int ar71xx_pci_irq_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
++static int ar71xx_pci_irq_map(struct irq_domain *d,
++			      unsigned int irq, irq_hw_number_t hw)
 +{
 +	struct ar71xx_pci_controller *apc = d->host_data;
 +
@@ -136,7 +141,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	irq_set_chained_handler_and_data(apc->irq, ar71xx_pci_irq_handler,
  					 apc);
  }
-@@ -328,6 +339,11 @@ static void ar71xx_pci_reset(void)
+@@ -328,6 +340,11 @@ static void ar71xx_pci_reset(void)
  	mdelay(100);
  }
  
@@ -148,7 +153,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  static int ar71xx_pci_probe(struct platform_device *pdev)
  {
  	struct ar71xx_pci_controller *apc;
-@@ -348,26 +364,6 @@ static int ar71xx_pci_probe(struct platf
+@@ -348,26 +365,6 @@ static int ar71xx_pci_probe(struct platf
  	if (apc->irq < 0)
  		return -EINVAL;
  
@@ -175,23 +180,19 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	ar71xx_pci_reset();
  
  	/* setup COMMAND register */
-@@ -378,11 +374,13 @@ static int ar71xx_pci_probe(struct platf
- 	/* clear bus errors */
- 	ar71xx_pci_check_error(apc, 1);
+@@ -380,9 +377,11 @@ static int ar71xx_pci_probe(struct platf
  
--	ar71xx_pci_irq_init(apc);
--
+ 	ar71xx_pci_irq_init(apc);
+ 
 +	apc->np = pdev->dev.of_node;
  	apc->pci_ctrl.pci_ops = &ar71xx_pci_ops;
  	apc->pci_ctrl.mem_resource = &apc->mem_res;
  	apc->pci_ctrl.io_resource = &apc->io_res;
 +	pci_load_of_ranges(&apc->pci_ctrl, pdev->dev.of_node);
-+
-+	ar71xx_pci_irq_init(apc);
  
  	register_pci_controller(&apc->pci_ctrl);
  
-@@ -393,6 +391,7 @@ static struct platform_driver ar71xx_pci
+@@ -393,6 +392,7 @@ static struct platform_driver ar71xx_pci
  	.probe = ar71xx_pci_probe,
  	.driver = {
  		.name = "ar71xx-pci",

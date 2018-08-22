@@ -1,25 +1,28 @@
-From f4128f3224df2309262ef8d1275d928717ebefd0 Mon Sep 17 00:00:00 2001
+From d0f1420702ed47a82572aaf39e7407055518d14e Mon Sep 17 00:00:00 2001
 From: John Crispin <john@phrozen.org>
-Date: Tue, 6 Mar 2018 09:21:46 +0100
-Subject: [PATCH 22/27] MIPS: ath79: drop pci.c
+Date: Sat, 23 Jun 2018 15:05:19 +0200
+Subject: [PATCH 29/33] MIPS: ath79: drop legacy pci code
 
-This patch drops pci.c fromt he ath79 folder and moves the the pcibios
-callbacks to a new fixup file.
+With the target now being fully OF based, we can drop the legacy pci
+platform code. The only bits that we need to keep is the fixup code
+which we move to its own code file.
 
 Signed-off-by: John Crispin <john@phrozen.org>
 ---
  arch/mips/ath79/Makefile    |   1 -
- arch/mips/ath79/pci.c       | 285 --------------------------------------------
+ arch/mips/ath79/pci.c       | 273 --------------------------------------------
+ arch/mips/ath79/pci.h       |  35 ------
  arch/mips/pci/Makefile      |   1 +
  arch/mips/pci/fixup-ath79.c |  21 ++++
- 4 files changed, 22 insertions(+), 286 deletions(-)
+ 5 files changed, 22 insertions(+), 309 deletions(-)
  delete mode 100644 arch/mips/ath79/pci.c
+ delete mode 100644 arch/mips/ath79/pci.h
  create mode 100644 arch/mips/pci/fixup-ath79.c
 
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
 @@ -11,7 +11,6 @@
- obj-y	:= prom.o setup.o irq.o common.o clock.o
+ obj-y	:= prom.o setup.o common.o clock.o
  
  obj-$(CONFIG_EARLY_PRINTK)		+= early_printk.o
 -obj-$(CONFIG_PCI)			+= pci.o
@@ -28,7 +31,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  # Devices
 --- a/arch/mips/ath79/pci.c
 +++ /dev/null
-@@ -1,285 +0,0 @@
+@@ -1,273 +0,0 @@
 -/*
 - *  Atheros AR71XX/AR724X specific PCI setup code
 - *
@@ -113,9 +116,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -		} else if (soc_is_qca955x()) {
 -			ath79_pci_irq_map = qca955x_pci_irq_map;
 -			ath79_pci_nr_irqs = ARRAY_SIZE(qca955x_pci_irq_map);
--		} else if (soc_is_qca956x()) {
--			ath79_pci_irq_map = qca956x_pci_irq_map;
--			ath79_pci_nr_irqs = ARRAY_SIZE(qca956x_pci_irq_map);
 -		} else {
 -			pr_crit("pci %s: invalid irq map\n",
 -				pci_name((struct pci_dev *) dev));
@@ -295,15 +295,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -						 QCA955X_PCI_MEM_SIZE,
 -						 1,
 -						 ATH79_IP3_IRQ(2));
--	} else if (soc_is_qca956x()) {
--		pdev = ath79_register_pci_ar724x(0,
--						 QCA956X_PCI_CFG_BASE1,
--						 QCA956X_PCI_CTRL_BASE1,
--						 QCA956X_PCI_CRP_BASE1,
--						 QCA956X_PCI_MEM_BASE1,
--						 QCA956X_PCI_MEM_SIZE,
--						 1,
--						 ATH79_IP3_IRQ(2));
 -	} else {
 -		/* No PCI support */
 -		return -ENODEV;
@@ -314,6 +305,44 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -
 -	return pdev ? 0 : -ENODEV;
 -}
+--- a/arch/mips/ath79/pci.h
++++ /dev/null
+@@ -1,35 +0,0 @@
+-/*
+- *  Atheros AR71XX/AR724X PCI support
+- *
+- *  Copyright (C) 2011 René Bolldorf <xsecute@googlemail.com>
+- *  Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
+- *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+- *
+- *  This program is free software; you can redistribute it and/or modify it
+- *  under the terms of the GNU General Public License version 2 as published
+- *  by the Free Software Foundation.
+- */
+-
+-#ifndef _ATH79_PCI_H
+-#define _ATH79_PCI_H
+-
+-struct ath79_pci_irq {
+-	int	bus;
+-	u8	slot;
+-	u8	pin;
+-	int	irq;
+-};
+-
+-#ifdef CONFIG_PCI
+-void ath79_pci_set_irq_map(unsigned nr_irqs, const struct ath79_pci_irq *map);
+-void ath79_pci_set_plat_dev_init(int (*func)(struct pci_dev *dev));
+-int ath79_register_pci(void);
+-#else
+-static inline void
+-ath79_pci_set_irq_map(unsigned nr_irqs, const struct ath79_pci_irq *map) {}
+-static inline void
+-ath79_pci_set_plat_dev_init(int (*func)(struct pci_dev *)) {}
+-static inline int ath79_register_pci(void) { return 0; }
+-#endif
+-
+-#endif /* _ATH79_PCI_H */
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
 @@ -29,6 +29,7 @@ obj-$(CONFIG_MIPS_PCI_VIRTIO)	+= pci-vir
