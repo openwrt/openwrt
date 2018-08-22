@@ -11,6 +11,7 @@
 
 #define pr_fmt(fmt) "rb2011: " fmt
 
+#include <linux/version.h>
 #include <linux/phy.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>

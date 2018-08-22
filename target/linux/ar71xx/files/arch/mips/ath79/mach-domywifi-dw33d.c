@@ -18,6 +18,7 @@
  *
  */
 
+#include <linux/version.h>
 #include <linux/platform_device.h>
 #include <linux/ar8216_platform.h>
 #include <linux/mtd/mtd.h>

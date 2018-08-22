@@ -12,6 +12,7 @@
 
 #define pr_fmt(fmt) "sxtlite: " fmt
 
+#include <linux/version.h>
 #include <linux/phy.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>

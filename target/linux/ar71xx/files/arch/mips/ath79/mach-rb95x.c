@@ -12,6 +12,7 @@
 
 #define pr_fmt(fmt) "rb95x: " fmt
 
+#include <linux/version.h>
 #include <linux/phy.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>

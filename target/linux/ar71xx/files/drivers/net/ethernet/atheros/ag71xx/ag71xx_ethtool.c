@@ -12,6 +12,7 @@
  */
 
 #include "ag71xx.h"
+#include <linux/version.h>
 
 static int ag71xx_ethtool_get_settings(struct net_device *dev,
 				       struct ethtool_cmd *cmd)

@@ -8,6 +8,7 @@
  *  by the Free Software Foundation.
  */
 
+#include <linux/version.h>
 #include <linux/phy.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>

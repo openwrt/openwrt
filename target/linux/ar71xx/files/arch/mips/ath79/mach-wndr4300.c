@@ -9,6 +9,7 @@
  *  by the Free Software Foundation.
  */
 
+#include <linux/version.h>
 #include <linux/pci.h>
 #include <linux/phy.h>
 #include <linux/gpio.h>
