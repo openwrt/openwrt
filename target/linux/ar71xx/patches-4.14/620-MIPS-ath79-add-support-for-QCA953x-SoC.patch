@@ -22,7 +22,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
 
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -104,6 +104,10 @@ config SOC_AR934X
+@@ -105,6 +105,10 @@ config SOC_AR934X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -33,7 +33,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  config SOC_QCA955X
  	select HW_HAS_PCI
  	select PCI_AR724X if PCI
-@@ -143,7 +147,7 @@ config ATH79_DEV_USB
+@@ -144,7 +148,7 @@ config ATH79_DEV_USB
  	def_bool n
  
  config ATH79_DEV_WMAC
@@ -44,7 +44,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  config ATH79_NVRAM
 --- a/arch/mips/ath79/clock.c
 +++ b/arch/mips/ath79/clock.c
-@@ -358,6 +358,87 @@ static void __init ar934x_clocks_init(vo
+@@ -357,6 +357,87 @@ static void __init ar934x_clocks_init(vo
  	iounmap(dpll_base);
  }
  
@@ -132,7 +132,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  static void __init qca955x_clocks_init(void)
  {
  	unsigned long ref_rate;
-@@ -453,6 +534,8 @@ void __init ath79_clocks_init(void)
+@@ -452,6 +533,8 @@ void __init ath79_clocks_init(void)
  		ar933x_clocks_init();
  	else if (soc_is_ar934x())
  		ar934x_clocks_init();

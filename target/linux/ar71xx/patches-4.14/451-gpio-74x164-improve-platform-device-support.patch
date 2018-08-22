@@ -1,6 +1,6 @@
 --- a/drivers/gpio/gpio-74x164.c
 +++ b/drivers/gpio/gpio-74x164.c
-@@ -12,6 +12,7 @@
+@@ -13,6 +13,7 @@
  #include <linux/init.h>
  #include <linux/mutex.h>
  #include <linux/spi/spi.h>
@@ -8,7 +8,7 @@
  #include <linux/gpio.h>
  #include <linux/of_gpio.h>
  #include <linux/slab.h>
-@@ -103,9 +104,16 @@ static int gen_74x164_direction_output(s
+@@ -105,9 +106,16 @@ static int gen_74x164_direction_output(s
  static int gen_74x164_probe(struct spi_device *spi)
  {
  	struct gen_74x164_chip *chip;
@@ -25,7 +25,7 @@
  	/*
  	 * bits_per_word cannot be configured in platform data
  	 */
-@@ -115,12 +123,15 @@ static int gen_74x164_probe(struct spi_d
+@@ -117,12 +125,15 @@ static int gen_74x164_probe(struct spi_d
  	if (ret < 0)
  		return ret;
  
@@ -47,7 +47,7 @@
  
  	chip = devm_kzalloc(&spi->dev, sizeof(*chip) + nregs, GFP_KERNEL);
  	if (!chip)
-@@ -133,7 +144,11 @@ static int gen_74x164_probe(struct spi_d
+@@ -142,7 +153,11 @@ static int gen_74x164_probe(struct spi_d
  	chip->gpio_chip.get = gen_74x164_get_value;
  	chip->gpio_chip.set = gen_74x164_set_value;
  	chip->gpio_chip.set_multiple = gen_74x164_set_multiple;
@@ -60,7 +60,7 @@
  
  	chip->registers = nregs;
  	chip->gpio_chip.ngpio = GEN_74X164_NUMBER_GPIOS * chip->registers;
-@@ -142,6 +157,9 @@ static int gen_74x164_probe(struct spi_d
+@@ -151,6 +166,9 @@ static int gen_74x164_probe(struct spi_d
  	chip->gpio_chip.parent = &spi->dev;
  	chip->gpio_chip.owner = THIS_MODULE;
  
@@ -70,7 +70,7 @@
  	mutex_init(&chip->lock);
  
  	ret = __gen_74x164_write_config(chip);
-@@ -170,17 +188,19 @@ static int gen_74x164_remove(struct spi_
+@@ -180,17 +198,19 @@ static int gen_74x164_remove(struct spi_
  	return 0;
  }
  
@@ -109,7 +109,7 @@
 +#endif
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -1154,7 +1154,6 @@ menu "SPI GPIO expanders"
+@@ -1250,7 +1250,6 @@ menu "SPI GPIO expanders"
  
  config GPIO_74X164
  	tristate "74x164 serial-in/parallel-out 8-bits shift register"

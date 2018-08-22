@@ -34,9 +34,9 @@ Signed-off-by: Gabor Juhos <juhosg@freemail.hu>
  		if (ret < 0)
 --- a/include/linux/leds.h
 +++ b/include/linux/leds.h
-@@ -380,6 +380,8 @@ struct gpio_led {
- 	unsigned	panic_indicator : 1;
+@@ -395,6 +395,8 @@ struct gpio_led {
  	unsigned	default_state : 2;
+ 	unsigned	retain_state_shutdown : 1;
  	/* default_state should be one of LEDS_GPIO_DEFSTATE_(ON|OFF|KEEP) */
 +	unsigned	open_drain : 1;
 +	unsigned	open_source : 1;

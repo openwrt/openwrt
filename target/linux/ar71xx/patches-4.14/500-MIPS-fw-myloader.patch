@@ -1,6 +1,6 @@
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -218,6 +218,7 @@ cflags-$(toolchain-virt)		+= -DTOOLCHAIN
+@@ -227,6 +227,7 @@ cflags-$(toolchain-virt)		+= -DTOOLCHAIN
  #
  libs-$(CONFIG_FW_ARC)		+= arch/mips/fw/arc/
  libs-$(CONFIG_FW_CFE)		+= arch/mips/fw/cfe/
@@ -10,7 +10,7 @@
  
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1150,6 +1150,9 @@ config MIPS_MSC
+@@ -1151,6 +1151,9 @@ config MIPS_MSC
  config MIPS_NILE4
  	bool
  

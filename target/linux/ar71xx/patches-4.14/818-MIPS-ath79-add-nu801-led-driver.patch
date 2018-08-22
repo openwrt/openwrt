@@ -1,6 +1,6 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -606,6 +606,13 @@ config LEDS_IS31FL32XX
+@@ -632,6 +632,13 @@ config LEDS_IS31FL32XX
  
  comment "LED driver for blink(1) USB RGB LED is under Special HID drivers (HID_THINGM)"
  
@@ -16,8 +16,8 @@
  	depends on LEDS_CLASS
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -56,6 +56,7 @@ obj-$(CONFIG_LEDS_ADP5520)		+= leds-adp5
- obj-$(CONFIG_LEDS_DELL_NETBOOKS)	+= dell-led.o
+@@ -58,6 +58,7 @@ obj-$(CONFIG_LEDS_LT3593)		+= leds-lt359
+ obj-$(CONFIG_LEDS_ADP5520)		+= leds-adp5520.o
  obj-$(CONFIG_LEDS_MC13783)		+= leds-mc13783.o
  obj-$(CONFIG_LEDS_RB750)		+= leds-rb750.o
 +obj-$(CONFIG_LEDS_NU801)		+= leds-nu801.o

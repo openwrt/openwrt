@@ -1,7 +1,5 @@
-Index: linux-4.14.61/arch/mips/ath79/mach-pb44.c
-===================================================================
---- linux-4.14.61.orig/arch/mips/ath79/mach-pb44.c
-+++ linux-4.14.61/arch/mips/ath79/mach-pb44.c
+--- a/arch/mips/ath79/mach-pb44.c
++++ b/arch/mips/ath79/mach-pb44.c
 @@ -8,23 +8,47 @@
   *  by the Free Software Foundation.
   */
@@ -134,10 +132,8 @@ Index: linux-4.14.61/arch/mips/ath79/mach-pb44.c
  }
  
  MIPS_MACHINE(ATH79_MACH_PB44, "PB44", "Atheros PB44 reference board",
-Index: linux-4.14.61/arch/mips/ath79/Kconfig
-===================================================================
---- linux-4.14.61.orig/arch/mips/ath79/Kconfig
-+++ linux-4.14.61/arch/mips/ath79/Kconfig
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
 @@ -58,6 +58,7 @@ config ATH79_MACH_DB120
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"

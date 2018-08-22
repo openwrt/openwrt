@@ -1,8 +1,8 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -659,6 +659,13 @@ config LEDS_MLXCPLD
- 	  This option enabled support for the LEDs on the Mellanox
- 	  boards. Say Y to enabled these.
+@@ -696,6 +696,13 @@ config LEDS_NIC78BX
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called leds-nic78bx.
  
 +config LEDS_WNDR3700_USB
 +	tristate "NETGEAR WNDR3700 USB LED driver"
@@ -16,7 +16,7 @@
  
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -48,6 +48,7 @@ obj-$(CONFIG_LEDS_DA9052)		+= leds-da905
+@@ -51,6 +51,7 @@ obj-$(CONFIG_LEDS_DA9052)		+= leds-da905
  obj-$(CONFIG_LEDS_WM831X_STATUS)	+= leds-wm831x-status.o
  obj-$(CONFIG_LEDS_WM8350)		+= leds-wm8350.o
  obj-$(CONFIG_LEDS_PWM)			+= leds-pwm.o

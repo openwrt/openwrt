@@ -1,6 +1,6 @@
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -247,6 +247,9 @@ config LZMA_COMPRESS
+@@ -265,6 +265,9 @@ config LZMA_COMPRESS
  config LZMA_DECOMPRESS
      tristate
  
@@ -12,7 +12,7 @@
  # ZLIB_INFLATE; DECOMPRESS_GZIP is just a wrapper.)
 --- a/lib/Makefile
 +++ b/lib/Makefile
-@@ -120,6 +120,7 @@ obj-$(CONFIG_XZ_DEC) += xz/
+@@ -134,6 +134,7 @@ obj-$(CONFIG_XZ_DEC) += xz/
  obj-$(CONFIG_RAID6_PQ) += raid6/
  obj-$(CONFIG_LZMA_COMPRESS) += lzma/
  obj-$(CONFIG_LZMA_DECOMPRESS) += lzma/

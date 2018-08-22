@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -196,7 +196,6 @@ config ATH79
+@@ -202,7 +202,6 @@ config ATH79
  	select SYS_SUPPORTS_BIG_ENDIAN
  	select SYS_SUPPORTS_MIPS16
  	select SYS_SUPPORTS_ZBOOT_UART_PROM
@@ -55,7 +55,7 @@
 +#endif
 --- a/arch/mips/ath79/clock.c
 +++ b/arch/mips/ath79/clock.c
-@@ -33,10 +33,12 @@
+@@ -32,10 +32,12 @@
  #define AR724X_BASE_FREQ	40000000
  
  static struct clk *clks[ATH79_CLK_END];

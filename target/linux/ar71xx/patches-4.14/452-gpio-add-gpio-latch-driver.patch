@@ -1,6 +1,6 @@
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -1220,4 +1220,9 @@ config GPIO_NXP_74HC153
+@@ -1305,4 +1305,9 @@ config GPIO_NXP_74HC153
  	  Platform driver for NXP 74HC153 Dual 4-input Multiplexer. This
  	  provides a GPIO interface supporting input mode only.
  
@@ -12,7 +12,7 @@
  endif
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -56,6 +56,7 @@ obj-$(CONFIG_GPIO_JANZ_TTL)	+= gpio-janz
+@@ -63,6 +63,7 @@ obj-$(CONFIG_GPIO_JANZ_TTL)	+= gpio-janz
  obj-$(CONFIG_GPIO_KEMPLD)	+= gpio-kempld.o
  obj-$(CONFIG_ARCH_KS8695)	+= gpio-ks8695.o
  obj-$(CONFIG_GPIO_INTEL_MID)	+= gpio-intel-mid.o
