@@ -1063,8 +1063,12 @@ define Device/NBG6616
   IMAGE_SIZE := 15323k
   MTDPARTS := spi0.0:192k(u-boot)ro,64k(env)ro,64k(RFdata)ro,384k(zyxel_rfsd),384k(romd),64k(header),2048k(kernel),13184k(rootfs),15232k@0x120000(firmware)
   CMDLINE += mem=128M
-  IMAGES := sysupgrade.bin
+  RAS_BOARD := NBG6616
+  RAS_ROOTFS_SIZE := 14464k
+  RAS_VERSION := "$(VERSION_DIST) $(REVISION)"
+  IMAGES := factory.bin sysupgrade.bin
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma | jffs2 boot/vmlinux.lzma.uImage
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | pad-to 64k | check-size $$$$(IMAGE_SIZE) | zyxel-ras-image
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
   # We cannot currently build a factory image. It is the sysupgrade image
   # prefixed with a header (which is actually written into the MTD device).

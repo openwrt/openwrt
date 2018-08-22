@@ -221,7 +221,7 @@ define Device/zyxel_nbg6617
 #	at least as large as the one of the initial firmware image (not the current
 #	one on the device). This only applies to the Web-UI, the bootlaoder ignores
 #	this minimum-size. However, the larger image can be flashed both ways.
-	IMAGE/factory.bin := append-rootfs | pad-rootfs | check-size $$$$(ROOTFS_SIZE) | make-ras
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 64k | check-size $$$$(ROOTFS_SIZE) | zyxel-ras-image separate-kernel
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | check-size $$$$(ROOTFS_SIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
 	DEVICE_PACKAGES := ipq-wifi-zyxel_nbg6617 uboot-envtools
 endef
