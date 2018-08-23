@@ -94,7 +94,7 @@
 			gpios = <&pca9555 6 GPIO_ACTIVE_HIGH>;
 		};
 	};
-	
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -249,5 +249,5 @@
 
 /* No SATA/AHCI on this board */
 &sata {
-       status = "disabled";
+	status = "disabled";
 };

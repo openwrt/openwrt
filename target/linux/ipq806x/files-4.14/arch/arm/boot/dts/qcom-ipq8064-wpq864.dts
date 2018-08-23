@@ -57,7 +57,7 @@
 	};
 
 	soc {
-		rpm@108000  {
+		rpm@108000 {
 			pinctrl-0 = <&rpm_pins>;
 			pinctrl-names = "default";
 		};
@@ -443,7 +443,7 @@
 
 	led_pins: led_pins {
 		mux {
-			pins = "gpio7", "gpio8", "gpio9",  "gpio22",
+			pins = "gpio7", "gpio8", "gpio9", "gpio22",
 			       "gpio23", "gpio24", "gpio25", "gpio53";
 			function = "gpio";
 			drive-strength = <2>;

@@ -57,8 +57,6 @@
 			label = "dwr-118-a2:green:usb";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
-
-
 	};
 
 	gpio_export {
@@ -69,8 +67,8 @@
 			gpio-export,name = "usb";
 			gpio-export,output = <1>;
 			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		};
 	};
-    };
 };
 
 &gpio1 {
