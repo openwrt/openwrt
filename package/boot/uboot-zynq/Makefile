@@ -38,10 +38,15 @@ define U-Boot/zybo
   NAME:=Digilent Zybo Dev Board
 endef
 
+define U-Boot/zybo_z7
+  NAME:=Digilent Zybo Z7 board
+endef
+
 UBOOT_TARGETS := \
 	zc702 \
 	zed \
-	zybo
+	zybo \
+	zybo_z7
 
 Build/Exports:=$(Host/Exports)
 
