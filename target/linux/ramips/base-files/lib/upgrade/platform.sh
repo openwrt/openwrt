@@ -302,7 +302,7 @@ platform_check_image() {
 	hc5962|\
 	mir3g|\
 	r6220|\
-	r6350|\
+	netgear,r6350|\
 	ubnt-erx|\
 	ubnt-erx-sfp)
 		nand_do_platform_check "$board" "$1"
@@ -360,7 +360,7 @@ platform_do_upgrade() {
 	hc5962|\
 	mir3g|\
 	r6220|\
-	r6350|\
+	netgear,r6350|\
 	ubnt-erx|\
 	ubnt-erx-sfp)
 		nand_do_upgrade "$ARGV"
