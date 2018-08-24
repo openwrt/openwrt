@@ -16,7 +16,8 @@
 #include <linux/mtd/nand.h>
 #else
 #include <linux/mtd/rawnand.h>
-#endif#include <linux/mtd/mtd.h>
+#endif
+#include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
