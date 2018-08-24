@@ -38,6 +38,7 @@ platform_do_upgrade() {
 	hc5962|\
 	mir3g|\
 	r6220|\
+	netgear,r6350|\
 	ubnt-erx|\
 	ubnt-erx-sfp)
 		nand_do_upgrade "$ARGV"

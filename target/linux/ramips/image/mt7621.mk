@@ -297,6 +297,23 @@ define Device/r6220
 endef
 TARGET_DEVICES += r6220
 
+define Device/netgear_r6350
+  DTS := R6350
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 40960k
+  UBINIZE_OPTS := -E 5
+  IMAGES += kernel.bin rootfs.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/kernel.bin := append-kernel
+  IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  DEVICE_TITLE := Netgear R6350
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+endef
+TARGET_DEVICES += netgear_r6350
+
 define Device/rb750gr3
   DTS := RB750Gr3
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

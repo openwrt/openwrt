@@ -266,7 +266,8 @@ px-4885-4M|\
 px-4885-8M)
 	set_wifi_led "px-4885:orange:wifi"
 	;;
-r6220)
+r6220|\
+netgear,r6350)
 	ucidef_set_led_netdev "wan" "wan" "$boardname:green:wan" eth0.2
 	set_wifi_led "$boardname:green:wifi"
 	;;
