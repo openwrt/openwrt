@@ -36,6 +36,13 @@ define Device/digilent_zynq-zybo
 endef
 TARGET_DEVICES += digilent_zynq-zybo
 
+define Device/digilent_zynq-zybo-z7
+	$(call Device/FitImageGzip)
+	DEVICE_TITLE := Digilent Zybo Z7 board
+	DEVICE_DTS := zynq-zybo-z7
+endef
+TARGET_DEVICES += digilent_zynq-zybo-z7
+
 define Device/xlnx_zynq-zc702
 	$(call Device/FitImageGzip)
 	DEVICE_TITLE := ZC702 Development Board
