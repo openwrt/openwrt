@@ -1,0 +1,22 @@
+Index: compat-wireless-2015-03-09/drivers/net/wireless/rt2x00/rt2x00queue.c
+===================================================================
+--- compat-wireless-2015-03-09.orig/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c	2015-03-10 03:37:16.000000000 +0000
++++ compat-wireless-2015-03-09/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c	2016-01-01 19:29:06.205823774 +0000
+@@ -450,11 +450,13 @@
+ 		__set_bit(ENTRY_TXD_BURST, &txdesc->flags);
+ 
+ 	/*
+-	 * Beacons and probe responses require the tsf timestamp
+-	 * to be inserted into the frame.
++	 * Beacons and probe responses require the tsf timestamp to be
++	 * inserted into the frame, except for a frame that has been injected
++	 * through a monitor interface.
+ 	 */
+-	if (ieee80211_is_beacon(hdr->frame_control) ||
+-	    ieee80211_is_probe_resp(hdr->frame_control))
++	if ((ieee80211_is_beacon(hdr->frame_control) ||
++	    ieee80211_is_probe_resp(hdr->frame_control)) &&
++	    (tx_info->flags & IEEE80211_TX_CTL_INJECTED) == 0)
+ 		__set_bit(ENTRY_TXD_REQ_TIMESTAMP, &txdesc->flags);
+ 
+ 	if ((tx_info->flags & IEEE80211_TX_CTL_FIRST_FRAGMENT) &&
