@@ -72,4 +72,11 @@ UBOOT_TARGETS := \
 
 UBOOT_MAKE_FLAGS += u-boot.imx
 
+define Build/InstallDev
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(foreach img,$(UBOOT_IMAGE), \
+		$(CP) $(PKG_BUILD_DIR)/$(img) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-$(img); \
+	)
+endef
+
 $(eval $(call BuildPackage/U-Boot))
