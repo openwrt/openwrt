@@ -121,7 +121,7 @@
  #endif
 --- /dev/null
 +++ b/man/man8/tc-cake.8
-@@ -0,0 +1,632 @@
+@@ -0,0 +1,710 @@
 +.TH CAKE 8 "19 July 2018" "iproute2" "Linux"
 +.SH NAME
 +CAKE \- Common Applications Kept Enhanced (CAKE)
@@ -194,6 +194,12 @@
 +.BR wash
 +|
 +.BR nowash*
++]
++.br
++[
++.BR split-gso*
++|
++.BR no-split-gso
 +]
 +.br
 +[
@@ -670,6 +676,78 @@
 +case for Comcast Cable, among others), it is best to use a single queue
 +"besteffort" mode with wash.
 +
++.PP
++.B split-gso
++
++.br
++	This option controls whether CAKE will split General Segmentation
++Offload (GSO) super-packets into their on-the-wire components and
++dequeue them individually.
++
++.br
++Super-packets are created by the networking stack to improve efficiency.
++However, because they are larger they take longer to dequeue, which
++translates to higher latency for competing flows, especially at lower
++bandwidths. CAKE defaults to splitting GSO packets to achieve the lowest
++possible latency. At link speeds higher than 10 Gbps, setting the
++no-split-gso parameter can increase the maximum achievable throughput by
++retaining the full GSO packets.
++
++.SH OVERRIDING CLASSIFICATION WITH TC FILTERS
++
++CAKE supports overriding of its internal classification of packets through the
++tc filter mechanism. Packets can be assigned to different priority tins by
++setting the
++.B priority
++field on the skb, and the flow hashing can be overridden by setting the
++.B classid
++parameter.
++
++.PP
++.B Tin override
++
++.br
++        To assign a priority tin, the major number of the priority field needs
++to match the qdisc handle of the cake instance; if it does, the minor number
++will be interpreted as the tin index. For example, to classify all ICMP packets
++as 'bulk', the following filter can be used:
++
++.br
++        # tc qdisc replace dev eth0 handle 1: root cake diffserv3
++        # tc filter add dev eth0 parent 1: protocol ip prio 1 \\
++          u32 match icmp type 0 0 action skbedit priority 1:1
++
++.PP
++.B Flow hash override
++
++.br
++        To override flow hashing, the classid can be set. CAKE will interpret
++the major number of the classid as the host hash used in host isolation mode,
++and the minor number as the flow hash used for flow-based queueing. One or both
++of those can be set, and will be used if the relevant flow isolation parameter
++is set (i.e., the major number will be ignored if CAKE is not configured in
++hosts mode, and the minor number will be ignored if CAKE is not configured in
++flows mode).
++
++.br
++This example will assign all ICMP packets to the first queue:
++
++.br
++        # tc qdisc replace dev eth0 handle 1: root cake
++        # tc filter add dev eth0 parent 1: protocol ip prio 1 \\
++          u32 match icmp type 0 0 classid 0:1
++
++.br
++If only one of the host and flow overrides is set, CAKE will compute the other
++hash from the packet as normal. Note, however, that the host isolation mode
++works by assigning a host ID to the flow queue; so if overriding both host and
++flow, the same flow cannot have more than one host assigned. In addition, it is
++not possible to assign different source and destination host IDs through the
++override mechanism; if a host ID is assigned, it will be used as both source and
++destination host.
++
++
++
 +.SH EXAMPLES
 +# tc qdisc delete root dev eth0
 +.br
@@ -879,6 +957,7 @@
 +	__u64 bandwidth = 0;
 +	int ack_filter = -1;
 +	struct rtattr *tail;
++	int split_gso = -1;
 +	int unlimited = 0;
 +	int flowmode = -1;
 +	int autorate = -1;
@@ -888,7 +967,6 @@
 +	int nat = -1;
 +	int atm = -1;
 +	int mpu = 0;
-+	int split_gso = -1;
 +
 +	while (argc > 0) {
 +		if (strcmp(*argv, "bandwidth") == 0) {
