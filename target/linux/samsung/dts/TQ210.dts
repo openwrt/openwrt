@@ -15,56 +15,55 @@
 #include "s5pv210.dtsi"
 
 / {
-    model = "Embedsky TQ210 based on S5PV210";
-    compatible = "embedsky,tq210", "samsung,s5pv210";
+	model = "Embedsky TQ210 based on S5PV210";
+	compatible = "embedsky,tq210", "samsung,s5pv210";
 
-    chosen {
-        bootargs = "console=ttySAC0,115200n8";
-    };
+	chosen {
+		bootargs = "console=ttySAC0,115200n8";
+	};
 
-    memory@20000000 {
-        device_type = "memory";
-        reg = <0x20000000 0x40000000>;
-    };
+	memory@20000000 {
+		device_type = "memory";
+		reg = <0x20000000 0x40000000>;
+	};
 
-    ethernet@88000000 {
-        compatible = "davicom,dm9000";
-        reg = <0x88000000 0x2 0x88000004 0x2>;
-        interrupt-parent = <&gph1>;
-        interrupts = <2 IRQ_TYPE_LEVEL_HIGH>;
-        local-mac-address = [00 00 de ad be ef];
-        davicom,no-eeprom;
-        clocks = <&clocks CLK_SROMC>;
-        clock-names = "sromc";
-    };
+	ethernet@88000000 {
+		compatible = "davicom,dm9000";
+		reg = <0x88000000 0x2 0x88000004 0x2>;
+		interrupt-parent = <&gph1>;
+		interrupts = <2 IRQ_TYPE_LEVEL_HIGH>;
+		local-mac-address = [00 00 de ad be ef];
+		davicom,no-eeprom;
+		clocks = <&clocks CLK_SROMC>;
+		clock-names = "sromc";
+	};
 };
 
 &xxti {
-    clock-frequency = <24000000>;
+	clock-frequency = <24000000>;
 };
 
 &uart0 {
-    status = "okay";
+	status = "okay";
 };
 
 &nand {
-    status = "okay";
-    nand-ecc-mode = "soft";
+	status = "okay";
+	nand-ecc-mode = "soft";
 
-    partition@0 {
-        label = "boot";
-        reg = <0x0 0x40000>;        /* 246KB */
-        read-only;
-    };
-    
-    partition@40000 {
-        label = "kernel";
-        reg = <0x40000 0x300000>;   /* 3MB */
-    };
+	partition@0 {
+		label = "boot";
+		reg = <0x0 0x40000>;		/* 246KB */
+		read-only;
+	};
 
-    partition@340000 {
-        label = "rootfs";
-        reg = <0x340000 0x3fcc0000>; /* 1020MB */
-    };
+	partition@40000 {
+		label = "kernel";
+		reg = <0x40000 0x300000>;	/* 3MB */
+	};
 
+	partition@340000 {
+		label = "rootfs";
+		reg = <0x340000 0x3fcc0000>;	/* 1020MB */
+	};
 };
