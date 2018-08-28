@@ -10,7 +10,10 @@
 	model = "Zbtlink ZBT-WR8305RT";
 
 	aliases {
-		led-status = &led_sys;
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
 	};
 
 	gpio-leds {

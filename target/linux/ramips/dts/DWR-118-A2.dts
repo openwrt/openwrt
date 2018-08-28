@@ -10,7 +10,10 @@
 	model = "D-Link DWR-118 A2";
 
 	aliases {
-		led-status = &led_internet;
+		led-boot = &led_internet;
+		led-failsafe = &led_internet;
+		led-running = &led_internet;
+		led-upgrade = &led_internet;
 	};
 
 	gpio-keys-polled {

@@ -9,7 +9,10 @@
 	model = "SamKnows Whitebox 8";
 
 	aliases {
-		led-status = &led_wps;
+		led-boot = &led_wps;
+		led-failsafe = &led_wps;
+		led-running = &led_wps;
+		led-upgrade = &led_wps;
 	};
 
 	memory@0 {
