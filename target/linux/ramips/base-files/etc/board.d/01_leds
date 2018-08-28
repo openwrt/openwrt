@@ -33,7 +33,6 @@ air3gii)
 	;;
 alfa-network,ac1200rm)
 	set_wifi_led "$boardname:green:wlan2g" "wlan1"
-	ucidef_set_led_default "wps" "wps" "$boardname:green:wps" "0"
 	;;
 alfa-network,awusfree1)
 	set_wifi_led "$boardname:blue:wlan"
@@ -78,9 +77,6 @@ cf-wr800n)
 	ucidef_set_led_netdev "lan" "lan" "$boardname:white:ethernet" eth0.1
 	set_wifi_led "$boardname:white:wifi"
 	;;
-cy-swr1100)
-	ucidef_set_led_default "wps" "WPS" "$boardname:blue:wps" "0"
-	;;
 d240)
 	set_wifi_led "$boardname:blue:wifi"
 	;;
@@ -117,12 +113,10 @@ dlink,dwr-118-a2)
 	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x0e"
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x01"
 	set_wifi_led "$boardname:green:wlan2g" "wlan1"
-	ucidef_set_led_default "internet" "internet" "$boardname:green:internet" "0"
 	;;
 dlink,dwr-921-c1)
 	set_wifi_led "$boardname:green:wifi"
 	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x0f"
-	ucidef_set_led_default "sigstrength" "Signal Strength" "$boardname:green:sigstrength" "0"
 	;;
 dir-860l-b1)
 	ucidef_set_led_netdev "wan" "wan" "$boardname:green:net" "eth0.2"
@@ -139,7 +133,6 @@ ex3700)
 	ucidef_set_led_netdev "wlan2g" "DEVICE (green)" "$boardname:green:device" "wlan1"
 	;;
 f5d8235-v1)
-	ucidef_set_led_default "lan" "lan" "$boardname:blue:wired" "0"
 	set_wifi_led "$boardname:blue:wireless"
 	;;
 fonera20n)
@@ -407,15 +400,11 @@ y1s)
 	;;
 youhua,wr1200js)
 	ucidef_set_led_switch "internet" "INTERNET" "$boardname:green:wan" "switch0" "0x01"
-	ucidef_set_led_default "wps" "wps" "$boardname:blue:wps" "0"
 	;;
 zbt-ape522ii)
 	ucidef_set_led_netdev "wlan2g4" "wlan1-link" "$boardname:green:wlan2g4" "wlan1"
 	ucidef_set_led_netdev "sys1" "wlan1" "$boardname:green:sys1" "wlan1" "tx rx"
 	ucidef_set_led_netdev "sys2" "wlan0" "$boardname:green:sys2" "wlan0" "tx rx"
-	;;
-zbt-cpe102)
-	ucidef_set_led_default "power" "power" "$boardname:green:4g-0" "0"
 	;;
 zbt-wa05)
 	set_wifi_led "$boardname:blue:air"
