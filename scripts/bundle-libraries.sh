@@ -156,17 +156,16 @@ for BIN in "$@"; do
 				dest="$DIR/lib/${token##*/}"
 				ddir="${dest%/*}"
 
+				case "$token" in
+					*/ld-*.so*) LDSO="${token##*/}" ;;
+				esac
+
 				[ -f "$token" -a ! -f "$dest" ] && {
 					_md "$ddir"
 					_cp "$token" "$dest"
 					case "$token" in
-						*ld-*.so*)
-							LDSO="${token##*/}"
-							_patch_ldso "$dest"
-						;;
-						libc.so.6|*/libc.so.6)
-							_patch_glibc "$dest"
-						;;
+						*/ld-*.so*) _patch_ldso "$dest" ;;
+						*/libc.so.6) _patch_glibc "$dest" ;;
 					esac
 				}
 			;; esac
