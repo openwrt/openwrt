@@ -1,0 +1,21 @@
+diff --git a/Makefile b/Makefile
+index c07c237..b49511a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,9 +1,3 @@
+-CFLAGS += -Wall -pedantic -std=gnu99 -O3
+-#CFLAGS += -DNDEBUG
+-LFLAGS = -lpthread
+-
+-CC ?= gcc
+-
+ ifneq ($(STATIC),)
+ 	CFLAGS += -static
+ endif
+@@ -15,6 +9,5 @@ all: picomdnsd
+ clean:
+ 	$(RM) picomdnsd
+ 
+-
+ picomdnsd: picomdnsd.c mdns.c mdnsd.c
+ 	$(CC) -o $@ $(CFLAGS) $^ $(LFLAGS)
