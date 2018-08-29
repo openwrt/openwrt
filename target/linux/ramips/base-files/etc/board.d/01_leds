@@ -221,10 +221,6 @@ mlw221|\
 mlwg2)
 	set_wifi_led "$boardname:blue:wifi"
 	;;
-mpr-a1|\
-mpr-a2)
-	set_wifi_led "$boardname:blue:system"
-	;;
 mr-102n)
 	set_wifi_led "$boardname:green:wlan"
 	;;
@@ -363,13 +359,6 @@ u7628-01-128M-16M)
 vocore-8M|\
 vocore-16M)
 	ucidef_set_led_netdev "eth" "ETH" "vocore:orange:eth" "eth0"
-	set_wifi_led "vocore:green:status"
-	;;
-vocore2)
-	set_wifi_led "$boardname:fuchsia:status"
-	;;
-vocore2lite)
-	set_wifi_led "$boardname:green:status"
 	;;
 w502u)
 	set_wifi_led "rt2800pci-phy0::radio"
@@ -427,9 +416,6 @@ zbt-wr8305rt)
 	;;
 zorlik,zl5900v2)
 	ucidef_set_led_netdev "lan" "lan" "$boardname:green:lan" eth0
-	;;
-zte-q7)
-	set_wifi_led "$boardname:blue:status"
 	;;
 zyxel,keenetic-extra-ii)
 	set_wifi_led "$boardname:green:wifi"
