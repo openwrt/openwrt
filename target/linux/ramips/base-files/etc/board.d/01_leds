@@ -393,10 +393,10 @@ rt-ac51u)
 	set_usb_led "$boardname:blue:usb" "1-1"
 	;;
 rt-n12p)
-	ucidef_set_led_default "power" "power" "$board:green:power" "1"
-	ucidef_set_led_netdev "lan" "lan" "$board:green:lan" eth0.1
-	ucidef_set_led_netdev "wan" "wan" "$board:green:wan" eth0.2
-	set_wifi_led "$board:green:air"
+	ucidef_set_led_default "power" "power" "$boardname:green:power" "1"
+	ucidef_set_led_netdev "lan" "lan" "$boardname:green:lan" eth0.1
+	ucidef_set_led_netdev "wan" "wan" "$boardname:green:wan" eth0.2
+	set_wifi_led "$boardname:green:air"
 	;;
 rt-n14u)
 	ucidef_set_led_default "power" "power" "$boardname:blue:power" "1"
