@@ -233,7 +233,7 @@ TARGET_DEVICES += tplink_c50-v3
 
 define Device/tplink_c50-v3_modded
   $(Device/tplink)
-  DTS := ArcherC50V3_Modded.dts
+  DTS := ArcherC50V3_Modded
   IMAGE_SIZE := 7808k
   DEVICE_TITLE := TP-Link ArcherC50 v3 Modded
   TPLINK_FLASHLAYOUT := 8Mmtk
