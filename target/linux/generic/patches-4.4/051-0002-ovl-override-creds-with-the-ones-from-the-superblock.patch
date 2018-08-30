@@ -241,7 +241,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  	bool is_lowest;
  	struct rb_root root;
  	struct list_head *list;
-@@ -205,17 +206,8 @@ static int ovl_check_whiteouts(struct de
+@@ -206,17 +207,8 @@ static int ovl_check_whiteouts(struct de
  	struct ovl_cache_entry *p;
  	struct dentry *dentry;
  	const struct cred *old_cred;
@@ -260,7 +260,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  
  	err = mutex_lock_killable(&dir->d_inode->i_mutex);
  	if (!err) {
-@@ -231,7 +223,6 @@ static int ovl_check_whiteouts(struct de
+@@ -232,7 +224,6 @@ static int ovl_check_whiteouts(struct de
  		mutex_unlock(&dir->d_inode->i_mutex);
  	}
  	revert_creds(old_cred);
@@ -268,7 +268,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  
  	return err;
  }
-@@ -287,6 +278,7 @@ static int ovl_dir_read_merged(struct de
+@@ -288,6 +279,7 @@ static int ovl_dir_read_merged(struct de
  	struct path realpath;
  	struct ovl_readdir_data rdd = {
  		.ctx.actor = ovl_fill_merge,
@@ -309,7 +309,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  	kfree(ufs);
  }
  
-@@ -1087,10 +1097,14 @@ static int ovl_fill_super(struct super_b
+@@ -1107,10 +1117,14 @@ static int ovl_fill_super(struct super_b
  	else
  		sb->s_d_op = &ovl_dentry_operations;
  
@@ -325,7 +325,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  
  	root_dentry = d_make_root(ovl_new_inode(sb, S_IFDIR, oe));
  	if (!root_dentry)
-@@ -1123,6 +1137,8 @@ static int ovl_fill_super(struct super_b
+@@ -1143,6 +1157,8 @@ static int ovl_fill_super(struct super_b
  
  out_free_oe:
  	kfree(oe);

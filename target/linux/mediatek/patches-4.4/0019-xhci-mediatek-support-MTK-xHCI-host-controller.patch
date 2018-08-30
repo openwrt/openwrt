@@ -1487,7 +1487,7 @@ Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
  	writel(temp, &xhci->ir_set->irq_control);
  
  	/* Set the HCD state before we enable the irqs */
-@@ -1725,6 +1730,9 @@ int xhci_drop_endpoint(struct usb_hcd *h
+@@ -1730,6 +1735,9 @@ int xhci_drop_endpoint(struct usb_hcd *h
  
  	xhci_endpoint_zero(xhci, xhci->devs[udev->slot_id], ep);
  
@@ -1497,7 +1497,7 @@ Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
  	xhci_dbg(xhci, "drop ep 0x%x, slot id %d, new drop flags = %#x, new add flags = %#x\n",
  			(unsigned int) ep->desc.bEndpointAddress,
  			udev->slot_id,
-@@ -1820,6 +1828,15 @@ int xhci_add_endpoint(struct usb_hcd *hc
+@@ -1825,6 +1833,15 @@ int xhci_add_endpoint(struct usb_hcd *hc
  		return -ENOMEM;
  	}
  

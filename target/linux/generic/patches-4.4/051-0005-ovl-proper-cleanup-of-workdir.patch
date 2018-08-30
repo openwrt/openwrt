@@ -33,10 +33,10 @@ Cc: <stable@vger.kernel.org>
 
 --- a/fs/overlayfs/overlayfs.h
 +++ b/fs/overlayfs/overlayfs.h
-@@ -164,6 +164,8 @@ extern const struct file_operations ovl_
- int ovl_check_empty_dir(struct dentry *dentry, struct list_head *list);
+@@ -165,6 +165,8 @@ int ovl_check_empty_dir(struct dentry *d
  void ovl_cleanup_whiteouts(struct dentry *upper, struct list_head *list);
  void ovl_cache_free(struct list_head *list);
+ int ovl_check_d_type_supported(struct path *realpath);
 +void ovl_workdir_cleanup(struct inode *dir, struct vfsmount *mnt,
 +			 struct dentry *dentry, int level);
  
@@ -44,7 +44,7 @@ Cc: <stable@vger.kernel.org>
  int ovl_setattr(struct dentry *dentry, struct iattr *attr);
 --- a/fs/overlayfs/readdir.c
 +++ b/fs/overlayfs/readdir.c
-@@ -247,7 +247,7 @@ static inline int ovl_dir_read(struct pa
+@@ -248,7 +248,7 @@ static inline int ovl_dir_read(struct pa
  			err = rdd->err;
  	} while (!err && rdd->count);
  
@@ -53,9 +53,9 @@ Cc: <stable@vger.kernel.org>
  		err = ovl_check_whiteouts(realpath->dentry, rdd);
  
  	fput(realfile);
-@@ -573,3 +573,64 @@ void ovl_cleanup_whiteouts(struct dentry
- 	}
- 	mutex_unlock(&upper->d_inode->i_mutex);
+@@ -610,3 +610,64 @@ int ovl_check_d_type_supported(struct pa
+ 
+ 	return rdd.d_type_supported;
  }
 +
 +static void ovl_workdir_cleanup_recurse(struct path *path, int level)

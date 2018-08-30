@@ -26,7 +26,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  	struct rb_root root;
  	struct list_head *list;
  	struct list_head middle;
-@@ -139,9 +139,9 @@ static int ovl_cache_entry_add_rb(struct
+@@ -140,9 +140,9 @@ static int ovl_cache_entry_add_rb(struct
  	return 0;
  }
  
@@ -39,7 +39,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  {
  	struct ovl_cache_entry *p;
  
-@@ -193,10 +193,10 @@ static int ovl_fill_merge(struct dir_con
+@@ -194,10 +194,10 @@ static int ovl_fill_merge(struct dir_con
  		container_of(ctx, struct ovl_readdir_data, ctx);
  
  	rdd->count++;
@@ -52,7 +52,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  }
  
  static int ovl_check_whiteouts(struct dentry *dir, struct ovl_readdir_data *rdd)
-@@ -289,7 +289,7 @@ static int ovl_dir_read_merged(struct de
+@@ -290,7 +290,7 @@ static int ovl_dir_read_merged(struct de
  		.ctx.actor = ovl_fill_merge,
  		.list = list,
  		.root = RB_ROOT,
@@ -61,7 +61,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  	};
  	int idx, next;
  
-@@ -306,7 +306,7 @@ static int ovl_dir_read_merged(struct de
+@@ -307,7 +307,7 @@ static int ovl_dir_read_merged(struct de
  			 * allows offsets to be reasonably constant
  			 */
  			list_add(&rdd.middle, rdd.list);
