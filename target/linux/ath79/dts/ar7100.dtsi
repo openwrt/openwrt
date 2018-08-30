@@ -182,7 +182,7 @@
 };
 
 &eth0 {
-	compatible = "qca,ar7100-eth";
+	compatible = "qca,ar7100-eth", "syscon";
 	reg = <0x19000000 0x200
 		0x18070000 0x4>;
 
@@ -201,7 +201,7 @@
 };
 
 &eth1 {
-	compatible = "qca,ar7100-eth";
+	compatible = "qca,ar7100-eth", "syscon";
 	reg = <0x1a000000 0x200
 		0x18070004 0x4>;
 
