@@ -2,6 +2,7 @@
 # MT7621 Profiles
 #
 
+KERNEL_DTB += -d21
 DEVICE_VARS += TPLINK_BOARD_ID TPLINK_HEADER_VERSION TPLINK_HWID TPLINK_HWREV
 
 define Build/elecom-gst-factory
