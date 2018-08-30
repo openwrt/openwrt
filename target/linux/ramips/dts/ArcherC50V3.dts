@@ -69,6 +69,28 @@
 		};
 	};
 };
+usbphy {
+		compatible = "ralink,mt7628an-usbphy", "ralink,mt7620a-usbphy";
+
+		resets = <&rstctrl 22>;
+		reset-names = "host";
+	};
+
+	ehci@101c0000 {
+		compatible = "ralink,rt3xxx-ehci";
+		reg = <0x101c0000 0x1000>;
+
+		interrupt-parent = <&intc>;
+		interrupts = <18>;
+	};
+
+	ohci@101c1000 {
+		compatible = "ralink,rt3xxx-ohci";
+		reg = <0x101c1000 0x1000>;
+
+		interrupt-parent = <&intc>;
+		interrupts = <18>;
+	};
 
 &pinctrl {
 	state_default: pinctrl0 {
