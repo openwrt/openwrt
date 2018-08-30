@@ -234,7 +234,6 @@ enum {
 #define MSDC_IOCON_SDR104CKS    (0x1  << 0)     /* RW */
 #define MSDC_IOCON_RSPL         (0x1  << 1)     /* RW */
 #define MSDC_IOCON_DSPL         (0x1  << 2)     /* RW */
-#define MSDC_IOCON_WDSPL        (0x1  << 8)     /* RW */
 #define MSDC_IOCON_DDLSEL       (0x1  << 3)     /* RW */
 #define MSDC_IOCON_DDR50CKD     (0x1  << 4)     /* RW */
 #define MSDC_IOCON_DSPLSEL      (0x1  << 5)     /* RW */

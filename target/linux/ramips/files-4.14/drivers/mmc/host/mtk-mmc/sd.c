@@ -1796,9 +1796,6 @@ static void msdc_ops_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 				      MSDC_SMPL_FALLING);
 			sdr_set_field(MSDC_IOCON, MSDC_IOCON_DSPL,
 				      MSDC_SMPL_FALLING);
-			/* sdxc: set sample crc by clock falling edge. Added by zhangzf */
-			if (ralink_soc == MT762X_SOC_MT7628AN)
-				sdr_set_field(MSDC_IOCON, MSDC_IOCON_WDSPL, MSDC_SMPL_FALLING);
 			//} /* for tuning debug */
 		} else { /* default value */
 			sdr_write32(MSDC_IOCON,      0x00000000);
@@ -2208,7 +2205,7 @@ static int msdc_drv_probe(struct platform_device *pdev)
 	struct msdc_host *host;
 	struct msdc_hw *hw;
 	int ret;
-	u32 reg, reg1;
+	u32 reg;
 
 	// Set the pins for sdxc to sdxc mode
 	//FIXME: this should be done by pinctl and not by the sd driver
@@ -2218,17 +2215,6 @@ static int msdc_drv_probe(struct platform_device *pdev)
 						  0x60)) & ~(0x3 << 18);
 		if (ralink_soc == MT762X_SOC_MT7620A)
 			reg |= 0x1 << 18;
-	}
-	else if (ralink_soc == MT762X_SOC_MT7628AN) {
-		/* Fixed MT7628 SDXC init by zhangzf */
-		reg &= ~((0x3 << 0)|(0x3 << 6)|(0x3 << 10)|(0x1 << 15)|(0x3 << 20)|(0x3 << 24));
-		reg |=  ((0x1 << 0)|(0x1 << 6)|(0x1 << 10)|(0x1 << 15)|(0x1 << 20)|(0x1 << 24));
-#if defined (CONFIG_MTK_MMC_EMMC_8BIT)
-		reg |= 0x3 << 26 | 0x3 << 28 | 0x3 << 30;
-#endif
-		reg1 = sdr_read32((void __iomem *)(RALINK_SYSCTL_BASE + 0x1340));
-		reg1 |= (0x1 << 11); //Normal mode(AP mode), SDXC CLK=PAD_GPIO0=GPIO11, driving = 8mA
-		sdr_write32((void __iomem *)(RALINK_SYSCTL_BASE + 0x1340), reg1);
 	} else {
 		reg = sdr_read32((void __iomem *)(RALINK_SYSCTL_BASE + 0x3c));
 		reg |= 0x1e << 16;
