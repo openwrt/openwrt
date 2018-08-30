@@ -417,6 +417,13 @@
 				ralink,function = "pa";
 			};
 		};
+
+		sdhci_pins: sdhci {
+			sdhci {
+				ralink,group = "nd_sd";
+				ralink,function = "sd";
+			};
+		};
 	};
 
 	rstctrl: rstctrl {
@@ -495,6 +502,9 @@
 
 		interrupt-parent = <&intc>;
 		interrupts = <14>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&sdhci_pins>;
 
 		status = "disabled";
 	};
