@@ -231,7 +231,7 @@ define Device/tplink_c50-v3
 endef
 TARGET_DEVICES += tplink_c50-v3
 
-define Device/tplink_c50-v3
+define Device/tplink_c50-vM3
   $(Device/tplink)
   DTS := ArcherC50V3_Modded
   IMAGE_SIZE := 7808k
@@ -242,7 +242,7 @@ define Device/tplink_c50-v3
   TPLINK_HWREVADD := 0x1
   TPLINK_HVERSION := 3
 endef
-TARGET_DEVICES += tplink_c50-v3
+TARGET_DEVICES += tplink_c50-vM3
 
 define Device/tplink_tl-mr3420-v5
   $(Device/tplink)
