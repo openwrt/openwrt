@@ -807,6 +807,11 @@ config KERNEL_DEVKMEM
 	  /dev/kmem device is rarely used, but can be used for certain
 	  kind of kernel debugging operations.
 
+config KERNEL_TUN
+	bool "/dev/tun virtual device support"
+	help
+	  Say Y here if you want to suppor the /dev/tun device.
+
 config KERNEL_SQUASHFS_FRAGMENT_CACHE_SIZE
 	int "Number of squashfs fragments cached"
 	default 2 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
