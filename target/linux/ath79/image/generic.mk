@@ -85,6 +85,32 @@ define Device/8dev_carambola2
 endef
 TARGET_DEVICES += 8dev_carambola2
 
+define Device/adtran_bsap1880
+  ATH_SOC := ar7161
+  DEVICE_VENDOR := Adtran/Bluesocket
+  DEVICE_PACKAGES += -swconfig -uboot-envtools fconfig
+  KERNEL := kernel-bin | append-dtb | lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGE_SIZE := 11200k
+  IMAGES += kernel.bin rootfs.bin
+  IMAGE/kernel.bin := append-kernel | pad-to $$$$(BLOCKSIZE)
+  IMAGE/rootfs.bin := append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+
+define Device/adtran_bsap1800-v2
+  $(Device/adtran_bsap1880)
+  DEVICE_MODEL := BSAP-1800
+  DEVICE_VARIANT := v2
+endef
+TARGET_DEVICES += adtran_bsap1800-v2
+
+define Device/adtran_bsap1840
+  $(Device/adtran_bsap1880)
+  DEVICE_MODEL := BSAP-1840
+endef
+TARGET_DEVICES += adtran_bsap1840
+
 define Device/aruba_ap-105
   ATH_SOC := ar7161
   DEVICE_VENDOR := Aruba

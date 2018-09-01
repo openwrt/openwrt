@@ -40,6 +40,10 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	adtran,bsap1800-v2|\
+	adtran,bsap1840)
+		redboot_fis_do_upgrade "$ARGV" vmlinux_2
+		;;
 	jjplus,ja76pf2)
 		redboot_fis_do_upgrade "$ARGV" linux
 		;;
