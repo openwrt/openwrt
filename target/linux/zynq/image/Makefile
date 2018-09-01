@@ -49,6 +49,13 @@ endef
 # Devices
 #################################################
 
+define Device/avnet_zynq-zed
+	$(call Device/FitImageGzip)
+	DEVICE_TITLE := Avnet ZedBoard board
+	DEVICE_DTS := zynq-zed
+endef
+TARGET_DEVICES += avnet_zynq-zed
+
 define Device/digilent_zynq-zybo
 	$(call Device/FitImageGzip)
 	DEVICE_TITLE := ZYBO Development Board
@@ -69,12 +76,5 @@ define Device/xlnx_zynq-zc702
 	DEVICE_DTS := zynq-zc702
 endef
 TARGET_DEVICES += xlnx_zynq-zc702
-
-define Device/xlnx_zynq-zed
-	$(call Device/FitImageGzip)
-	DEVICE_TITLE := Zed Development Board
-	DEVICE_DTS := zynq-zed
-endef
-TARGET_DEVICES += xlnx_zynq-zed
 
 $(eval $(call BuildImage))
