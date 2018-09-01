@@ -10,6 +10,21 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+adtran,bsap1800-v2|\
+adtran,bsap1840)
+	ucidef_add_gpio_switch "wifi1_ext_a" "5GHz External Antenna A" "489" "1"
+	ucidef_add_gpio_switch "wifi1_int_a" "5GHz Internal Antenna A" "493"
+	ucidef_add_gpio_switch "wifi1_ext_b" "5GHz External Antenna B" "494" "1"
+	ucidef_add_gpio_switch "wifi1_int_b" "5GHz Internal Antenna B" "495"
+	ucidef_add_gpio_switch "wifi1_ext_c" "5GHz External Antenna C" "496" "1"
+	ucidef_add_gpio_switch "wifi1_int_c" "5GHz Internal Antenna C" "497"
+	ucidef_add_gpio_switch "wifi0_ext_a" "2.4GHz External Antenna A" "505" "1"
+	ucidef_add_gpio_switch "wifi0_int_a" "2.4GHz Internal Antenna A" "506"
+	ucidef_add_gpio_switch "wifi0_ext_b" "2.4GHz External Antenna B" "507" "1"
+	ucidef_add_gpio_switch "wifi0_int_b" "2.4GHz Internal Antenna B" "508"
+	ucidef_add_gpio_switch "wifi0_ext_c" "2.4GHz External Antenna C" "509" "1"
+	ucidef_add_gpio_switch "wifi0_int_c" "2.4GHz Internal Antenna C" "510"
+	;;
 comfast,cf-e5)
 	ucidef_add_gpio_switch "lte_power" "LTE Power" "14" "1"
 	ucidef_add_gpio_switch "lte_wakeup" "LTE Wakeup" "11" "1"
