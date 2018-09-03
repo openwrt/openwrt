@@ -24,6 +24,20 @@ define Build/mkubntimage-split
 	rm $@.old1 $@.old2 )
 endef
 
+# similar to the UBNT XM devices the newer UBNT WA devices need a split image. But it expects
+# a higher firmware version or else it won't update
+define Build/mkubntimage-split-wa
+	-[ -f $@ ] && ( \
+	dd if=$@ of=$@.old1 bs=1024k count=1; \
+	dd if=$@ of=$@.old2 bs=1024k skip=1; \
+	$(STAGING_DIR_HOST)/bin/mkfwimage \
+		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v8.5.0-$(VERSION_DIST)-$(REVISION) \
+		-k $@.old1 \
+		-r $@.old2 \
+		-o $@; \
+	rm $@.old1 $@.old2 )
+endef
+
 define Build/mkubntimage2
 	-$(STAGING_DIR_HOST)/bin/mkfwimage2 -f 0x9f000000 \
 		-v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-$(VERSION_DIST)-$(REVISION) \
@@ -65,6 +79,13 @@ define Device/ubnt-bz
   $(Device/ubnt)
   UBNT_TYPE := BZ
   UBNT_CHIP := ar7240
+endef
+
+define Device/ubnt-wa
+  $(Device/ubnt)
+  UBNT_TYPE := WA
+  UBNT_CHIP := ar934x
+  UBNT_BOARD := WA
 endef
 
 define Device/rw2458n
@@ -142,6 +163,48 @@ define Device/ubnt-unifiac-pro
   BOARDNAME := UBNT-UF-AC-PRO
 endef
 TARGET_DEVICES += ubnt-unifiac-pro
+
+define Device/ubnt-lbe-5ac-16-120
+  $(Device/ubnt-wa)
+  DEVICE_TITLE := Ubiquiti LiteBeam ac AP
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PROFILE += UBNTLITEBEAMACAP
+  BOARDNAME := UBNT-LITEBEAMACAP
+  IMAGE_SIZE := 15744k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,15744k(firmware),256k(cfg)ro,64k(EEPROM)ro
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split-wa
+endef
+TARGET_DEVICES += ubnt-lbe-5ac-16-120
+
+define Device/ubnt-nanostationac
+  $(Device/ubnt-wa)
+  DEVICE_TITLE := Ubiquiti Nanostation AC
+  DEVICE_PACKAGES += kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PROFILE += UBNTNANOSTATIONAC
+  BOARDNAME := UBNT-NANOSTATION-AC
+  IMAGE_SIZE := 15744k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,15744k(firmware),256k(cfg)ro,64k(EEPROM)ro
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split-wa
+endef
+TARGET_DEVICES += ubnt-nanostationac
+
+define Device/ubnt-nanostationacl
+  $(Device/ubnt-wa)
+  DEVICE_TITLE := Ubiquiti Nanostation AC loco
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PROFILE += UBNTNANOSTATIONACLOCO
+  BOARDNAME := UBNT-NANOSTATION-ACL
+  IMAGE_SIZE := 15744k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,15744k(firmware),256k(cfg)ro,64k(EEPROM)ro
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split-wa
+endef
+TARGET_DEVICES += ubnt-nanostationacl
 
 define Device/ubnt-unifi-outdoor
   $(Device/ubnt-bz)
