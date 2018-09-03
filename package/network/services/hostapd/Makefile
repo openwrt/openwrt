@@ -302,6 +302,7 @@ define Package/wpa-supplicant-p2p
 $(call Package/wpa-supplicant/Default,$(1))
   TITLE+= (with Wi-Fi P2P support)
   DEPENDS+=@PACKAGE_kmod-cfg80211
+  VARIANT:=supplicant-p2p-internal
 endef
 
 define Package/wpa-supplicant-mesh/Default
