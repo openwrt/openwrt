@@ -277,10 +277,12 @@ platform_check_image() {
 	jwap230|\
 	lbe-m5|\
 	lima|\
+	lbe-5ac-16-120|\
 	loco-m-xw|\
 	mzk-w04nu|\
 	mzk-w300nh|\
 	n5q|\
+	nanostationacl|\
 	nanostation-m|\
 	nanostation-m-xw|\
 	nbg460n_550n_550nh|\
