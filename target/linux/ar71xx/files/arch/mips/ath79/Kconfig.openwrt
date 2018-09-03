@@ -2143,6 +2143,16 @@ config ATH79_MACH_UBNT_UNIFIAC
 	select ATH79_DEV_WMAC
 	select ATH79_DEV_USB
 
+config ATH79_MACH_UBNT_WA
+	bool "Ubiquiti WA board support"
+	select SOC_AR934X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_WEIO
 	bool "WeIO board"
 	select SOC_AR933X

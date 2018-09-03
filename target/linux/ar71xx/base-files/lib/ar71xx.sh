@@ -1380,6 +1380,18 @@ ar71xx_board_detect() {
 	*"Tube2H")
 		name="tube2h"
 		;;
+	*"Ubiquiti LiteBeam ac")
+		name="lbe-5ac-23"
+		;;
+	*"Ubiquiti LiteBeam ac AP")
+		name="lbe-5ac-16-120"
+		;;
+	*"Ubiquiti Nanostation AC")
+		name="nanostationac"
+		;;
+	*"Ubiquiti Nanostation AC loco")
+		name="nanostationacl"
+		;;
 	*"UniFi")
 		name="unifi"
 		;;
