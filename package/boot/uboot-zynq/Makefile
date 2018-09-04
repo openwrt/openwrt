@@ -49,6 +49,15 @@ UBOOT_TARGETS := \
 	zybo \
 	zybo_z7
 
+define Build/InstallDev
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(CP) $(PKG_BUILD_DIR)/spl/boot.bin $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot.bin
+	$(CP) $(PKG_BUILD_DIR)/u-boot.img $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-u-boot.img
+endef
+
+define Package/u-boot/install/default
+endef
+
 Build/Exports:=$(Host/Exports)
 
 $(eval $(call BuildPackage/U-Boot))
