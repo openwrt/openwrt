@@ -20,6 +20,7 @@ define U-Boot/Default
   BUILD_TARGET:=zynq
   UBOOT_IMAGE:=spl/boot.bin u-boot.img
   UBOOT_CONFIG:=zynq_$(1)
+  UENV:=default
   HIDDEN:=1
 endef
 
@@ -53,6 +54,7 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
 	$(CP) $(PKG_BUILD_DIR)/spl/boot.bin $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot.bin
 	$(CP) $(PKG_BUILD_DIR)/u-boot.img $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-u-boot.img
+	$(CP) ./files/uEnv-$(UENV).txt $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-uEnv.txt
 endef
 
 define Package/u-boot/install/default
