@@ -1,5 +1,22 @@
 include ./common-netgear.mk
 
+DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
+
+define Build/cybertan-trx
+	@echo -n '' > $@-empty.bin
+	-$(STAGING_DIR_HOST)/bin/trx -o $@.new \
+		-f $(IMAGE_KERNEL) -F $@-empty.bin \
+		-x 32 -a 0x10000 -x -32 -f $@
+	-mv "$@.new" "$@"
+	-rm $@-empty.bin
+endef
+
+define Build/addpattern
+	-$(STAGING_DIR_HOST)/bin/addpattern -B $(ADDPATTERN_ID) \
+		-v v$(ADDPATTERN_VERSION) -i $@ -o $@.new
+	-mv "$@.new" "$@"
+endef
+
 define Device/avm_fritz300e
   ATH_SOC := ar7242
   DEVICE_TITLE := AVM FRITZ!WLAN Repeater 300E
@@ -232,3 +249,16 @@ define Device/phicomm_k2t
   DEVICE_PACKAGES := kmod-leds-reset kmod-ath10k ath10k-firmware-qca9888
 endef
 TARGET_DEVICES += phicomm_k2t
+
+define Device/wd_mynet-wifi-rangeextender
+  ATH_SOC := ar9344
+  DEVICE_TITLE := Western Digital My Net Wi-Fi Range Extender
+  DEVICE_PACKAGES := rssileds nvram -swconfig
+  IMAGE_SIZE := 7808k
+  ADDPATTERN_ID := mynet-rext
+  ADDPATTERN_VERSION := 1.00.01
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | cybertan-trx | \
+	addpattern | append-metadata
+  SUPPORTED_DEVICES += mynet-rext
+endef
+TARGET_DEVICES += wd_mynet-wifi-rangeextender

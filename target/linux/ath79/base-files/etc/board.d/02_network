@@ -23,7 +23,8 @@ ath79_setup_interfaces()
 	ubnt,rocket-m|\
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-mesh|\
-	ubnt,unifi)
+	ubnt,unifi|\
+	wd,mynet-wifi-rangeextender)
 		ucidef_set_interface_lan "eth0"
 		;;
 	buffalo,wzr-hp-g450h)
@@ -206,6 +207,9 @@ ath79_setup_macs()
 	ubnt,routerstation-pro)
 		wan_mac=$(fconfig -s -r -d $(find_mtd_part "RedBoot config") -n ar7100_esa)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
+		;;
+	wd,mynet-wifi-rangeextender)
+		lan_mac=$(nvram get et0macaddr)
 		;;
 	esac
 
