@@ -26,10 +26,6 @@ define U-Boot/zc702
   NAME:=Xilinx ZC702 Dev Board
 endef
 
-define U-Boot/zc706
-  NAME:=Xilinx ZC706 Dev Board
-endef
-
 define U-Boot/zed
   NAME:=Avnet Digilent ZedBoard Dev Board
 endef
