@@ -5,13 +5,13 @@
 # See /LICENSE for more information.
 #
 
-define Profile/Generic
+define Profile/Default
   PRIORITY:=1
-  NAME:=Generic (default)
+  NAME:=Default Profile
 endef
 
-define Profile/Generic/Description
+define Profile/Default/Description
  Package set compatible with most Freescale i.MX 6 based boards.
 endef
 
-$(eval $(call Profile,Generic))
+$(eval $(call Profile,Default))
