@@ -168,7 +168,7 @@ define Device/cubox-i
   BOOT_SCRIPT = bootscript-cubox
   DEVICE_NAME := cubox
   DEVICE_TITLE := SolidRun CuBox-i
-  DEVICE_PACKAGES := u-boot-mx6cuboxi kmod-drm-imx kmod-drm-imx-hdmi kmod-usb-hid
+  DEVICE_PACKAGES := kmod-drm-imx kmod-drm-imx-hdmi kmod-usb-hid
   DEVICE_DTS := imx6q-cubox-i imx6dl-cubox-i imx6q-hummingboard imx6dl-hummingboard
   IMAGES := combined.bin
   FILESYSTEMS := squashfs

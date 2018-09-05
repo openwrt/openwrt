@@ -24,6 +24,8 @@ define U-Boot/mx6cuboxi
    NAME:=SolidRun Cubox-i boards
    UBOOT_IMAGE:=SPL u-boot.img
    UBOOT_MAKE_FLAGS:=SPL u-boot.img
+   BUILD_DEVICES:=cubox-i
+   HIDDEN:=1
 endef
 
 define U-Boot/mx6sabresd
