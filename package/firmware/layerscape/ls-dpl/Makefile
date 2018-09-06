@@ -17,6 +17,7 @@ PKG_SOURCE_VERSION:=de3c46f16732f5e050851277b91e82d63818ca58
 PKG_MIRROR_HASH:=b19bba34abbb83a204ac925a18425463e508c812c43a59eafc89347fc09d5f0a
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 define Package/layerscape-dpl-ls1088ardb
   SECTION:=firmware
@@ -37,6 +38,8 @@ define Package/layerscape-dpl-ls2088ardb
 endef
 
 MAKE_PATH:=config
+MAKE_VARS+= \
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH)
 
 define Package/layerscape-dpl-ls1088ardb/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
