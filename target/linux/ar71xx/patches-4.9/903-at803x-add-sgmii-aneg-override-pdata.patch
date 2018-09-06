@@ -1,8 +1,6 @@
-Index: linux-4.9.111/drivers/net/phy/at803x.c
-===================================================================
---- linux-4.9.111.orig/drivers/net/phy/at803x.c
-+++ linux-4.9.111/drivers/net/phy/at803x.c
-@@ -461,12 +461,15 @@ static void at803x_link_change_notify(st
+--- a/drivers/net/phy/at803x.c
++++ b/drivers/net/phy/at803x.c
+@@ -460,12 +460,15 @@ static void at803x_link_change_notify(st
  
  static int at803x_aneg_done(struct phy_device *phydev)
  {
@@ -18,7 +16,7 @@ Index: linux-4.9.111/drivers/net/phy/at803x.c
  	/*
  	 * in SGMII mode, if copper side autoneg is successful,
  	 * also check SGMII side autoneg result
-@@ -481,7 +484,8 @@ static int at803x_aneg_done(struct phy_d
+@@ -480,7 +483,8 @@ static int at803x_aneg_done(struct phy_d
  	/* check if the SGMII link is OK. */
  	if (!(phy_read(phydev, AT803X_PSSR) & AT803X_PSSR_MR_AN_COMPLETE)) {
  		pr_warn("803x_aneg_done: SGMII link is not ok\n");
@@ -28,10 +26,8 @@ Index: linux-4.9.111/drivers/net/phy/at803x.c
  	}
  	/* switch back to copper page */
  	phy_write(phydev, AT803X_REG_CHIP_CONFIG, ccr | AT803X_BT_BX_REG_SEL);
-Index: linux-4.9.111/include/linux/platform_data/phy-at803x.h
-===================================================================
---- linux-4.9.111.orig/include/linux/platform_data/phy-at803x.h
-+++ linux-4.9.111/include/linux/platform_data/phy-at803x.h
+--- a/include/linux/platform_data/phy-at803x.h
++++ b/include/linux/platform_data/phy-at803x.h
 @@ -7,6 +7,7 @@ struct at803x_platform_data {
  	int enable_rgmii_rx_delay:1;
  	int fixup_rgmii_tx_delay:1;
