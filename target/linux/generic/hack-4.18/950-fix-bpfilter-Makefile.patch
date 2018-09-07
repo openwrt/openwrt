@@ -1,0 +1,11 @@
+--- a/net/bpfilter/Makefile
++++ b/net/bpfilter/Makefile
+@@ -8,6 +8,8 @@
+ HOSTCFLAGS += -I. -Itools/include/ -Itools/include/uapi
+ HOSTCC := $(CC)
+ 
++HOSTCFLAGS_main.o += -I$(srctree)
++
+ ifeq ($(CONFIG_BPFILTER_UMH), y)
+ # builtin bpfilter_umh should be compiled with -static
+ # since rootfs isn't mounted at the time of __init
