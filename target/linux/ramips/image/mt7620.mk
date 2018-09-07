@@ -211,7 +211,7 @@ define Device/ex2700
   KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | append-uImage-fakehdr filesystem
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	netgear-dni
-  DEVICE_PACKAGES := -kmod-mt76
+  DEVICE_PACKAGES := -kmod-mt76 -kmod-mt7603 -kmod-mt76x2 -kmod-mt76-core
   DEVICE_TITLE := Netgear EX2700
 endef
 TARGET_DEVICES += ex2700
