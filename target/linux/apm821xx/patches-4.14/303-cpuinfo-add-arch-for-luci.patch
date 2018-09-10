@@ -1,0 +1,13 @@
+--- a/arch/powerpc/kernel/setup-common.c
++++ b/arch/powerpc/kernel/setup-common.c
+@@ -265,6 +265,10 @@
+
+ 	seq_printf(m, "\n");
+
++#ifdef CONFIG_APM821xx
++	seq_printf(m, "model name\t: apm821xx\n");
++#endif /* CONFIG_APM821xx */
++
+ #ifdef CONFIG_TAU
+ 	if (cur_cpu_spec->cpu_features & CPU_FTR_TAU) {
+ #ifdef CONFIG_TAU_AVERAGE
