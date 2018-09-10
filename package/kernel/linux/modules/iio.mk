@@ -157,6 +157,24 @@ endef
 $(eval $(call KernelPackage,iio-htu21))
 
 
+define KernelPackage/iio-si7020
+  SUBMENU:=$(IIO_MENU)
+  DEPENDS:=+kmod-i2c-core +kmod-iio-core
+  TITLE:=Silicon Labs Si7020 sensor
+  KCONFIG:= CONFIG_SI7020
+  FILES:=$(LINUX_DIR)/drivers/iio/humidity/si7020.ko
+  AUTOLOAD:=$(call AutoLoad,56,si7020)
+endef
+
+define KernelPackage/iio-si7020/description
+ Support for Silicon Labs Si7020 family of relative humidity and
+ temperature sensors connected via I2C. Following models are usable:
+ Si7013, Si7020, Si7021, Hoperf TH06.
+endef
+
+$(eval $(call KernelPackage,iio-si7020))
+
+
 define KernelPackage/iio-tsl4531
   SUBMENU:=$(IIO_MENU)
   DEPENDS:=+kmod-i2c-core +kmod-iio-core
