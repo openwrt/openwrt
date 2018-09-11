@@ -84,9 +84,13 @@ TARGET_DEVICES += buffalo_wzr-hp-ag300h
 
 define Device/buffalo_wzr-hp-g450h
   ATH_SOC := ar7242
-  DEVICE_TITLE := Buffalo WZR-HP-G450H
+  DEVICE_TITLE := Buffalo WZR-HP-G450H/WZR-450HP
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   IMAGE_SIZE := 32256k
+  IMAGES += factory.bin tftp.bin
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/default) | buffalo-enc WZR-HP-G450H 1.99 | buffalo-tag WZR-HP-G450H
+  IMAGE/tftp.bin := $$(IMAGE/default) | buffalo-tftp-header
   SUPPORTED_DEVICES += wzr-hp-g450h
 endef
 TARGET_DEVICES += buffalo_wzr-hp-g450h
