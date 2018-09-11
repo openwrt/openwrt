@@ -69,6 +69,19 @@ define Device/avm_fritz4020
 endef
 TARGET_DEVICES += avm_fritz4020
 
+define Device/buffalo_bhr-4grv
+  ATH_SOC := ar7242
+  DEVICE_TITLE := Buffalo BHR-4GRV
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  IMAGE_SIZE := 32256k
+  IMAGES += factory.bin tftp.bin
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/default) | buffalo-enc BHR-4GRV 1.99 | buffalo-tag BHR-4GRV
+  IMAGE/tftp.bin := $$(IMAGE/default) | buffalo-tftp-header
+  SUPPORTED_DEVICES += wzr-hp-g450h
+endef
+TARGET_DEVICES += buffalo_bhr-4grv
+
 define Device/buffalo_wzr-hp-ag300h
   ATH_SOC := ar7161
   DEVICE_TITLE := Buffalo WZR-HP-AG300H
