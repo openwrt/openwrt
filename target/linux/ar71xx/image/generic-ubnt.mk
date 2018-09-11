@@ -49,7 +49,7 @@ endef
 
 define Device/ubnt-xm
   $(Device/ubnt)
-  DEVICE_PACKAGES += kmod-usb-ohci
+  DEVICE_PACKAGES += kmod-usb-ohci rssileds
   UBNT_TYPE := XM
   UBNT_CHIP := ar7240
   KERNEL := kernel-bin | patch-cmdline | relocate-kernel | lzma | uImage lzma
