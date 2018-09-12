@@ -26,6 +26,11 @@ restart() {
 	start "$@"
 }
 
+status() {
+	echo "not implemented"
+	return 4
+}
+
 boot() {
 	start "$@"
 }
@@ -72,6 +77,7 @@ Available commands:
 	reload	Reload configuration files (or restart if service does not implement reload)
 	enable	Enable service autostart
 	disable	Disable service autostart
+	status  Service status
 $EXTRA_HELP
 EOF
 }
@@ -102,7 +108,7 @@ ${INIT_TRACE:+set -x}
 . "$initscript"
 
 [ -n "$USE_PROCD" ] && {
-	EXTRA_COMMANDS="${EXTRA_COMMANDS} running trace"
+	EXTRA_COMMANDS="${EXTRA_COMMANDS} running trace status"
 
 	. $IPKG_INSTROOT/lib/functions/procd.sh
 	basescript=$(readlink "$initscript")
@@ -143,6 +149,14 @@ ${INIT_TRACE:+set -x}
 
 	running() {
 		service_running "$@"
+	}
+
+	status() {
+		if eval "type status_service" 2>/dev/null >/dev/null; then
+			status_service "$@"
+		else
+			_procd_status "$(basename ${basescript:-$initscript})" "$1"
+		fi
 	}
 }
 

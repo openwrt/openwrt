@@ -408,6 +408,24 @@ _procd_kill() {
 	_procd_ubus_call delete
 }
 
+_procd_status() {
+	local service="$1"
+	local instance="$2"
+
+	json_init
+	[ -n "$service" ] && json_add_string name "$service"
+	local data=$(_procd_ubus_call list | jsonfilter -e '@["'"$service"'"]')
+	[ -z "$data" ] && { echo "inactive"; return 3; }
+	data=$(echo "$data" | jsonfilter -e '$.instances')
+	if [ -z "$data" ]; then
+		[ -z "$instance" ] && { echo "active with no instances"; return 0; }
+		data="[]"
+	fi
+	[ -n "$instance" ] && instance="\"$instance\"" || instance='*'
+	[ -z "$(echo "$data" | jsonfilter -e '$['"$instance"']')" ] && { echo "unknown instance $instance"; return 4; } ||
+	{ echo "running"; return 0; }
+}
+
 _procd_send_signal() {
 	local service="$1"
 	local instance="$2"
