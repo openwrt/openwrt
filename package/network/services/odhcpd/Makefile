@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=odhcpd
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_VERSION:=1.11
 
 PKG_SOURCE_PROTO:=git
