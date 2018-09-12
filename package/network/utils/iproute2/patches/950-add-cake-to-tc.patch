@@ -854,7 +854,7 @@
  TCMODULES += e_bpf.o
 --- /dev/null
 +++ b/tc/q_cake.c
-@@ -0,0 +1,799 @@
+@@ -0,0 +1,801 @@
 +// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 +
 +/*
@@ -1381,6 +1381,8 @@
 +
 +	if (split_gso)
 +		print_string(PRINT_FP, NULL, "split-gso ", NULL);
++	else
++		print_string(PRINT_FP, NULL, "no-split-gso ", NULL);
 +	print_bool(PRINT_JSON, "split_gso", NULL, split_gso);
 +
 +	if (interval)
