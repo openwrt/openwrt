@@ -9,6 +9,33 @@ ram_size()
 	while read line; do case "$line" in MemTotal:*) set $line; echo "$2"; break ;; esac; done </proc/meminfo
 }
 
+list_cpu_idx()
+{
+	# Offset by 1 if /dev/zram0 is in use by /tmp
+	if [ "$(mount | grep /dev/zram0)" ]; then
+		local line i=1
+		# Hot-add new ZRAM device (if necessary)
+		if [ ! -b /dev/zram1 ]; then
+			cat /sys/class/zram-control/hot_add
+		fi
+	else
+		local line i=0
+	fi
+
+	while read line; do {
+		case "$line" in
+			[Pp]rocessor*)
+				echo $i
+				# Hot-add new ZRAM device (if necessary)
+				if [ ! -b /dev/zram$i ]; then
+					cat /sys/class/zram-control/hot_add
+				fi
+				i=$(( $i + 1 ))
+			;;
+		esac
+	} done <"/proc/cpuinfo"
+}
+
 zram_size()	# in megabytes
 {
 	local zram_size="$( uci -q get system.@system[0].zram_size_mb )"
@@ -16,9 +43,9 @@ zram_size()	# in megabytes
 
 	if [ -z "$zram_size" ]; then
 		# e.g. 6mb for 16mb-routers or 61mb for 128mb-routers
-		echo $(( $ram_size / 2048 ))
+		echo $(( $ram_size / ( 2048 * $( list_cpu_idx | wc -l ) ) ))
 	else
-		echo "$zram_size"
+		echo $(( $zram_size / $( list_cpu_idx | wc -l ) ))
 	fi
 }
 
@@ -69,34 +96,8 @@ zram_reset()
 	echo "1" >"$proc_entry"
 }
 
-list_cpu_idx()
-{
-	# Offset by 1 if /dev/zram0 is in use by /tmp
-	if [ "$(mount | grep /dev/zram0)" ]; then
-		local line i=1
-		# Hot-add new ZRAM device (if necessary)
-		if [ ! -b /dev/zram1 ]; then 
-			cat /sys/class/zram-control/hot_add
-		fi
-	else
-		local line i=0
-	fi
-	
-	while read line; do {
-		case "$line" in
-			[Pp]rocessor*)
-				echo $i
-				i=$(( $i + 1 ))
-			;;
-		esac
-	} done <"/proc/cpuinfo"
-}
-
 start()
 {
-	# http://shmilyxbq-compcache.googlecode.com/hg/README
-	# if >1 cpu_core, reinit kmodule with e.g. num_devices=4
-
 	local zram_size="$( zram_size )"
 	local zram_dev core
 
