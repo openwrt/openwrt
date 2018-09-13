@@ -24,6 +24,7 @@
  *  hardware as the mAP L-2nD. It is unknown if they share the same board
  *  identifier.
  *
+ *  Copyright (C) 2018 Sergey Sergeev <adron@yapic.net>
  *  Copyright (C) 2017-2018 Thibaut VARENE <varenet@parisc-linux.org>
  *  Copyright (C) 2016 David Hutchison <dhutchison@bluemesh.net>
  *  Copyright (C) 2017 Ryan Mounce <ryan@mounce.com.au>
@@ -76,6 +77,7 @@
 #define RBSPI_HAS_POE		BIT(5)
 #define RBSPI_HAS_MDIO1		BIT(6)
 #define RBSPI_HAS_PCI		BIT(7)
+#define RBSPI_HAS_ATTINY_POE	BIT(8) /* has an ATtiny_461a PoE controller on SPI bus 0 */
 
 #define RB_ROUTERBOOT_OFFSET    0x0000
 #define RB_BIOS_SIZE            0x1000
@@ -220,6 +222,10 @@ static struct gpio_led rbhapl_leds[] __initdata = {
 #define RB952_GPIO_LED_LAN4	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN4)
 #define RB952_GPIO_LED_LAN5	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN5)
 #define RB952_GPIO_LED_WLAN	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_WLAN)
+
+/* RB 750-r2(HB) with POE v2 */
+#define RB750R2_ATTINY_CS		 12
+#define RB750R2_ATTINY_RESET 14 /* only needed for ATtiny firmware upgrade */
 
 static struct gpio_led rb952_leds[] __initdata = {
 	{
@@ -633,6 +639,7 @@ static struct gen_74x164_chip_platform_data rbspi_ssr_data = {
 static int rbspi_spi_cs_gpios[] = {
 	-ENOENT,	/* CS0 is always -ENOENT: natively handled */
 	-ENOENT,	/* CS1 can be updated by the code as necessary */
+	-ENOENT,	/* CS2 can be updated by the code as necessary */
 };
 
 static struct ath79_spi_platform_data rbspi_ath79_spi_data = {
@@ -657,6 +664,11 @@ static struct spi_board_info rbspi_spi_info[] = {
 		.max_speed_hz	= 25000000,
 		.modalias	= "74x164",
 		.platform_data	= &rbspi_ssr_data,
+	}, {
+		.bus_num = 0,
+		.chip_select = 2,
+		.max_speed_hz = 2000000,
+		.modalias = "spidev",
 	}
 };
 
@@ -715,12 +727,13 @@ static __init const struct rb_info *rbspi_platform_setup(void)
  */
 static void __init rbspi_peripherals_setup(u32 flags)
 {
-	unsigned spi_n;
+	unsigned spi_n = 1;
 
 	if (flags & RBSPI_HAS_SSR)
-		spi_n = ARRAY_SIZE(rbspi_spi_info);
-	else
-		spi_n = 1;     /* only one device on bus0 */
+		spi_n = 2;
+
+	if (flags & RBSPI_HAS_ATTINY_POE)
+		spi_n = 3;
 
 	rbspi_ath79_spi_data.num_chipselect = spi_n;
 	rbspi_ath79_spi_data.cs_gpios = rbspi_spi_cs_gpios;
@@ -849,6 +862,9 @@ static void __init rbspi_952_750r2_setup(u32 flags)
 	if (flags & RBSPI_HAS_SSR)
 		rbspi_spi_cs_gpios[1] = RB952_GPIO_SSR_CS;
 
+	if (flags & RBSPI_HAS_ATTINY_POE)
+		rbspi_spi_cs_gpios[2] = RB750R2_ATTINY_CS;
+
 	rbspi_peripherals_setup(flags);
 
 	/*
@@ -866,6 +882,11 @@ static void __init rbspi_952_750r2_setup(u32 flags)
 		gpio_request_one(RB952_GPIO_POE_POWER,
 				GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
 				"POE power");
+
+	if (flags & RBSPI_HAS_ATTINY_POE)
+			gpio_request_one(RB750R2_ATTINY_RESET,
+				GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+				"ATtiny POE reset");
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(rb952_leds), rb952_leds);
 
@@ -921,7 +942,7 @@ static void __init rb750upr2_setup(void)
 
 	/* differentiate the Powerbox from the hEX lite */
 	else if (strstr(mips_get_machine_name(), "750P r2"))
-		flags |= RBSPI_HAS_POE;
+		flags |= RBSPI_HAS_ATTINY_POE;
 
 	rbspi_952_750r2_setup(flags);
 }
