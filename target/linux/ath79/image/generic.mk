@@ -542,6 +542,29 @@ define Device/netgear_wndr3x00
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
 endef
 
+define Device/netgear_ex7300_ex6400
+  ATH_SOC := qca9558
+  IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | netgear-rootfs | pad-rootfs
+  $(Device/netgear_ath79)
+  NETGEAR_KERNEL_MAGIC := 0x27051956
+  NETGEAR_BOARD_ID := EX7300series
+  NETGEAR_HW_ID := 29765104+16+0+128
+  IMAGE_SIZE := 15552k
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca99x0-ct
+endef
+
+define Device/netgear_ex6400
+  $(Device/netgear_ex7300_ex6400)
+  DEVICE_TITLE := NETGEAR EX6400
+endef
+TARGET_DEVICES += netgear_ex6400
+
+define Device/netgear_ex7300
+  $(Device/netgear_ex7300_ex6400)
+  DEVICE_TITLE := NETGEAR EX7300
+endef
+TARGET_DEVICES += netgear_ex7300
+
 define Device/netgear_wndr3700
   $(Device/netgear_wndr3x00)
   DEVICE_TITLE := NETGEAR WNDR3700
