@@ -20,6 +20,9 @@ HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
+ifneq ($(shell $(HOSTCC) --version | grep clang),)
+  HOST_CFLAGS += -D__GNUC_PREREQ\(...\)=0
+endif
 HOST_CFLAGS += $(FPIC)
 
 HOST_CONFIGURE_ARGS += \
