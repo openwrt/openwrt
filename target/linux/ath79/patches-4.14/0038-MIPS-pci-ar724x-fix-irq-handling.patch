@@ -1,0 +1,74 @@
+From: Chuanhong Guo <gch981213@gmail.com>
+Date: Sun, 16 Sep 2018 15:15:42 +0800
+Subject: [PATCH] MIPS: pci-ar724x: fix irq handling in cascade driver
+
+Current code has two mistakes:
+1. According to function "of_irq_parse_raw" in driver/of/irq.c,
+   "interrupt-map" is ignored when property "interrupt-controller"
+   is set, and somehow the PCIE device always got assigned the
+   first IRQ of current interrupt-controller no matter what's
+   defined in interrupt-map.
+2. irq_linear_revmap is used to map hwirq to system irq number but
+   in mask/unmask we need to use hwirq to determine which bit to set
+   or clear. Currently the PCIE driver works because of a coincidence:
+   The original code calls irq_linear_revmap with wrong arguments and
+   irq_linear_revmap always returns 0. This return value will cause
+   mask/unmask function to disable/enable PCIE device interrupt.
+
+This patch did the following things:
+1. Use a separated subnode as interrupt-controller.
+2. Fix the incorrect usage of irq_linear_revmap. Since there is only
+   one interrupt here, I replaced "switch" with a single "if".
+
+Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
+
+--- a/arch/mips/pci/pci-ar724x.c
++++ b/arch/mips/pci/pci-ar724x.c
+@@ -54,6 +54,7 @@ struct ar724x_pci_controller {
+ 	u32  bar0_value;
+ 
+ 	struct device_node *np;
++	struct device_node *intc_np;
+ 	struct pci_controller pci_controller;
+ 	struct irq_domain *domain;
+ 	struct resource io_res;
+@@ -261,8 +262,7 @@ static void ar724x_pci_irq_unmask(struct
+ 	apc = irq_data_get_irq_chip_data(d);
+ 	base = apc->ctrl_base;
+ 
+-	switch (irq_linear_revmap(apc->domain, d->irq)) {
+-	case 0:
++	if (d->hwirq == 1) {
+ 		t = __raw_readl(base + AR724X_PCI_REG_INT_MASK);
+ 		__raw_writel(t | AR724X_PCI_INT_DEV0,
+ 			     base + AR724X_PCI_REG_INT_MASK);
+@@ -280,8 +280,7 @@ static void ar724x_pci_irq_mask(struct i
+ 	apc = irq_data_get_irq_chip_data(d);
+ 	base = apc->ctrl_base;
+ 
+-	switch (irq_linear_revmap(apc->domain, d->irq)) {
+-	case 0:
++	if (d->hwirq == 1) {
+ 		t = __raw_readl(base + AR724X_PCI_REG_INT_MASK);
+ 		__raw_writel(t & ~AR724X_PCI_INT_DEV0,
+ 			     base + AR724X_PCI_REG_INT_MASK);
+@@ -331,7 +330,7 @@ static void ar724x_pci_irq_init(struct a
+ 	__raw_writel(0, base + AR724X_PCI_REG_INT_MASK);
+ 	__raw_writel(0, base + AR724X_PCI_REG_INT_STATUS);
+ 
+-	apc->domain = irq_domain_add_linear(apc->np, 2,
++	apc->domain = irq_domain_add_linear(apc->intc_np, 2,
+ 					    &ar724x_pci_domain_ops, apc);
+ 	irq_set_chained_handler_and_data(apc->irq, ar724x_pci_irq_handler,
+ 					 apc);
+@@ -419,6 +418,10 @@ static int ar724x_pci_probe(struct platf
+ 	if (!apc->link_up)
+ 		dev_warn(&pdev->dev, "PCIe link is down\n");
+ 
++	apc->intc_np = of_get_child_by_name(apc->np, "interrupt-controller");
++	if(!apc->intc_np)
++		return -EINVAL;
++
+ 	ar724x_pci_irq_init(apc, id);
+ 
+ 	ar724x_pci_local_write(apc, PCI_COMMAND, 4, AR724X_PCI_CMD_INIT);
