@@ -2,10 +2,10 @@
 
 LINUX_RELEASE?=1
 
-LINUX_VERSION-4.9 = .125
+LINUX_VERSION-4.9 = .127
 LINUX_VERSION-4.14 = .68
 
-LINUX_KERNEL_HASH-4.9.125 = a764deef61bebfac1d07b2ed6890f93a12a9ab6d3fc3c53e3d850ed4681111cb
+LINUX_KERNEL_HASH-4.9.127 = 9477aeaded97589a40d7cbbfeebfa7a8f863130c0729a8dc5cdbcf48eb6fdd0f
 LINUX_KERNEL_HASH-4.14.68 = 791dbf1597033bf2b61e83307d78188ffc1ad4bdd1da3234876667edfdd28690
 
 remove_uri_prefix=$(subst git://,,$(subst http://,,$(subst https://,,$(1))))
