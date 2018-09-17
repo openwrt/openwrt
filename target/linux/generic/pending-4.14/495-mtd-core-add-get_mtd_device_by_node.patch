@@ -15,11 +15,9 @@ Reviewed-by: Miquel Raynal <miquel.raynal@bootlin.com>
  include/linux/mtd/mtd.h |  2 ++
  2 files changed, 40 insertions(+)
 
-diff --git a/drivers/mtd/mtdcore.c b/drivers/mtd/mtdcore.c
-index e7ea842ba3db..1134bb81d2e5 100644
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -936,6 +936,44 @@ struct mtd_info *get_mtd_device_nm(const char *name)
+@@ -922,6 +922,44 @@ out_unlock:
  }
  EXPORT_SYMBOL_GPL(get_mtd_device_nm);
  
@@ -64,11 +62,9 @@ index e7ea842ba3db..1134bb81d2e5 100644
  void put_mtd_device(struct mtd_info *mtd)
  {
  	mutex_lock(&mtd_table_mutex);
-diff --git a/include/linux/mtd/mtd.h b/include/linux/mtd/mtd.h
-index 6cd0f6b7658b..cf7c8030cd8e 100644
 --- a/include/linux/mtd/mtd.h
 +++ b/include/linux/mtd/mtd.h
-@@ -557,6 +557,8 @@ extern struct mtd_info *get_mtd_device(struct mtd_info *mtd, int num);
+@@ -579,6 +579,8 @@ extern struct mtd_info *get_mtd_device(s
  extern int __get_mtd_device(struct mtd_info *mtd);
  extern void __put_mtd_device(struct mtd_info *mtd);
  extern struct mtd_info *get_mtd_device_nm(const char *name);
@@ -77,6 +73,3 @@ index 6cd0f6b7658b..cf7c8030cd8e 100644
  extern void put_mtd_device(struct mtd_info *mtd);
  
  
--- 
-2.18.0
-

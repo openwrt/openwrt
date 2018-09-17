@@ -18,8 +18,6 @@ Signed-off-by: Alexandre Belloni <alexandre.belloni@bootlin.com>
  drivers/rtc/rtc-armada38x.c | 23 +++++++++++++++++++++++
  1 file changed, 23 insertions(+)
 
-diff --git a/drivers/rtc/rtc-armada38x.c b/drivers/rtc/rtc-armada38x.c
-index 1e4978c..bde53c8c 100644
 --- a/drivers/rtc/rtc-armada38x.c
 +++ b/drivers/rtc/rtc-armada38x.c
 @@ -30,6 +30,8 @@
@@ -39,7 +37,7 @@ index 1e4978c..bde53c8c 100644
  	struct value_to_freq *val_to_freq;
  	struct armada38x_rtc_data *data;
  };
-@@ -226,6 +229,23 @@ static int armada38x_rtc_read_time(struct device *dev, struct rtc_time *tm)
+@@ -226,6 +229,23 @@ static int armada38x_rtc_read_time(struc
  	return 0;
  }
  
@@ -63,7 +61,7 @@ index 1e4978c..bde53c8c 100644
  static int armada38x_rtc_set_time(struct device *dev, struct rtc_time *tm)
  {
  	struct armada38x_rtc *rtc = dev_get_drvdata(dev);
-@@ -237,6 +257,9 @@ static int armada38x_rtc_set_time(struct device *dev, struct rtc_time *tm)
+@@ -237,6 +257,9 @@ static int armada38x_rtc_set_time(struct
  	if (ret)
  		goto out;
  
@@ -73,6 +71,3 @@ index 1e4978c..bde53c8c 100644
  	spin_lock_irqsave(&rtc->lock, flags);
  	rtc_delayed_write(time, rtc, RTC_TIME);
  	spin_unlock_irqrestore(&rtc->lock, flags);
--- 
-2.7.4
-

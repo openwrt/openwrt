@@ -41,31 +41,24 @@ Signed-off-by: Bernhard Frauendienst <kernel@nospam.obeliks.de>
  create mode 100644 drivers/mtd/composite/Makefile
  create mode 100644 drivers/mtd/composite/virt_concat.c
 
-diff --git a/drivers/mtd/Kconfig b/drivers/mtd/Kconfig
-index 5a2d71729b9a..de18bc568e3e 100644
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -342,4 +342,6 @@ source "drivers/mtd/spi-nor/Kconfig"
+@@ -377,4 +377,6 @@ source "drivers/mtd/spi-nor/Kconfig"
  
  source "drivers/mtd/ubi/Kconfig"
  
 +source "drivers/mtd/composite/Kconfig"
 +
  endif # MTD
-diff --git a/drivers/mtd/Makefile b/drivers/mtd/Makefile
-index d6f8f625e1ff..a6c5f134c35d 100644
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -36,3 +36,6 @@ obj-y		+= chips/ lpddr/ maps/ devices/ nand/ onenand/ tests/
+@@ -39,3 +39,6 @@ obj-y		+= chips/ lpddr/ maps/ devices/ n
  
  obj-$(CONFIG_MTD_SPI_NOR)	+= spi-nor/
  obj-$(CONFIG_MTD_UBI)		+= ubi/
 +
 +# Composite drivers must be loaded last
 +obj-y		+= composite/
-diff --git a/drivers/mtd/composite/Kconfig b/drivers/mtd/composite/Kconfig
-new file mode 100644
-index 000000000000..0490fc0284bb
 --- /dev/null
 +++ b/drivers/mtd/composite/Kconfig
 @@ -0,0 +1,12 @@
@@ -81,9 +74,6 @@ index 000000000000..0490fc0284bb
 +	  used as one device with partitions spanning across device boundaries.
 +
 +endmenu
-diff --git a/drivers/mtd/composite/Makefile b/drivers/mtd/composite/Makefile
-new file mode 100644
-index 000000000000..8421a0a30606
 --- /dev/null
 +++ b/drivers/mtd/composite/Makefile
 @@ -0,0 +1,6 @@
@@ -93,9 +83,6 @@ index 000000000000..8421a0a30606
 +#
 +
 +obj-$(CONFIG_MTD_VIRT_CONCAT)   += virt_concat.o
-diff --git a/drivers/mtd/composite/virt_concat.c b/drivers/mtd/composite/virt_concat.c
-new file mode 100644
-index 000000000000..bfd432188c35
 --- /dev/null
 +++ b/drivers/mtd/composite/virt_concat.c
 @@ -0,0 +1,128 @@
@@ -227,6 +214,3 @@ index 000000000000..bfd432188c35
 +MODULE_LICENSE("GPL v2");
 +MODULE_AUTHOR("Bernhard Frauendienst <kernel@nospam.obeliks.de>");
 +MODULE_DESCRIPTION("Virtual concat MTD device driver");
--- 
-2.18.0
-

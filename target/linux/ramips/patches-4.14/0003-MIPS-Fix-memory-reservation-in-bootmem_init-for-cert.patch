@@ -14,8 +14,8 @@ This patch adds the originally intended prerequisite again.
 Signed-off-by: Tobias Wolf <dev-NTEO@vplace.de>
 ---
 
---- a/arch/mips/kernel/setup.c        2018-08-18 19:07:07.142066706 +0200
-+++ b/arch/mips/kernel/setup.c        2018-08-18 19:10:17.827918423 +0200
+--- a/arch/mips/kernel/setup.c
++++ b/arch/mips/kernel/setup.c
 @@ -369,6 +369,8 @@ static unsigned long __init bootmap_byte
  	return ALIGN(bytes, sizeof(long));
  }
