@@ -8,7 +8,7 @@ BOARDNAME:=MT7623
 CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=neon-vfpv4
 
-KERNELNAME:=Image dtbs zImage
+KERNELNAME:=Image dtbs zImage uImage
 
 define Target/Description
 	Build firmware images for MediaTek mt7623 ARM based boards.
