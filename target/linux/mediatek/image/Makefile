@@ -26,6 +26,8 @@ define Build/sysupgrade-emmc
 		$(IMAGE_ROOTFS)
 endef
 
+
+
 # default all platform image(fit) build 
 define Device/Default
   PROFILES = Default $$(DEVICE_NAME)
@@ -46,6 +48,9 @@ ifeq ($(SUBTARGET),mt7622)
 endif
 endef
 
+
+
+
 ifeq ($(SUBTARGET),mt7622)
 include mt7622.mk
 endif
@@ -54,11 +59,81 @@ ifeq ($(SUBTARGET),mt7623)
 include mt7623.mk
 endif
 
+##bpir2 start
+define Image/BuilduImage
+	$(CP) $(KDIR)/zImage$(2) $(KDIR)/zImage-$(1)$(2)
+	cat $(LINUX_DIR)/arch/arm/boot/dts/$1.dtb >> $(KDIR)/zImage-$(1)$(2)
+	mkimage -A arm -O linux -T kernel -C none -a 0x80008000 -e 0x80008000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)'  -d $(KDIR)/zImage-$(1)$(2) $(KDIR)/uImage-$(1)$(2)
+endef
+
+define Image/Build/SysupgradeCombined
+	$(call Image/BuilduImage,$1)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(call Image/BuilduImage,$1,-initramfs)
+	$(CP) $(KDIR)/uImage-$(1)-initramfs $(BIN_DIR)/$(IMG_PREFIX)-uImage-$(1)-initramfs
+endif
+	mkdir -p "$(KDIR_TMP)/sysupgrade-$(3)/"
+	echo "BOARD=$(3)" > "$(KDIR_TMP)/sysupgrade-$(3)/CONTROL"
+	$(CP) "$(KDIR)/root.$(2)" "$(KDIR_TMP)/sysupgrade-$(3)/root"
+	$(CP) "$(KDIR)/uImage-$(1)" "$(KDIR_TMP)/sysupgrade-$(3)/kernel"
+	(cd "$(KDIR_TMP)"; $(TAR) cvf \
+		"$(BIN_DIR)/$(IMG_PREFIX)-$(3)-sysupgrade.tar" sysupgrade-$(3) \
+			$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+	)
+endef
+
+COMPAT_BPI-R2:=bananapi,bpi-r2
+COMPAT_EMMC:=mediatek,mt7623-rfb-emmc
+COMPAT_NAND:=mediatek,mt7623-rfb-nand
+COMPAT_NAND_EPHY:=mediatek,mt7623-rfb-nand-ephy
+
+define Image/Build/squashfs
+	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+	$(CP) $(KDIR)/root.squashfs $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs
+
+	$(call Image/Build/SysupgradeCombined,mt7623n-bananapi-bpi-r2,squashfs,$$(COMPAT_BPI-R2))
+	$(call Image/Build/SysupgradeCombined,mt7623-eMMC,squashfs,$$(COMPAT_EMMC))
+
+	$(call Image/BuilduImage,mt7623-NAND)
+	$(call Image/BuilduImage,mt7623-NAND-ePHY)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(call Image/BuilduImage,mt7623-NAND,-initramfs)
+	$(call Image/BuilduImage,mt7623-NAND-ePHY,-initramfs)
+	$(CP) $(KDIR)/uImage-mt7623-NAND-initramfs $(BIN_DIR)/$(IMG_PREFIX)-uImage-NAND-initramfs
+	$(CP) $(KDIR)/uImage-mt7623-NAND-ePHY-initramfs $(BIN_DIR)/$(IMG_PREFIX)-uImage-NAND-ePHY-initramfs
+endif
+	$(call Image/Build/SysupgradeNAND,mt7623-NAND,$(1),$(KDIR)/uImage-mt7623-NAND,$$(COMPAT_NAND))
+	$(call Image/Build/SysupgradeNAND,mt7623-NAND-ePHY,$(1),$(KDIR)/uImage-mt7623-NAND-ePHY,$$(COMPAT_NAND_EPHY))
+endef
+
+define Image/Build/SDImage
+	./make_bundle_image.sh $(KDIR)/mtk-bpi-r2-SD.img \
+			       $(STAGING_DIR_IMAGE)/mtk-bpi-r2-preloader-sd.bin \
+			       $(STAGING_DIR_IMAGE)/mtk-bpi-r2-uboot.bin \
+			       $(KDIR)/uImage-mt7623n-bananapi-bpi-r2 \
+			       $(KDIR)/root.squashfs
+endef
+
+define Image/Build/EMMCImage
+	./make_bundle_image.sh $(KDIR)/mtk-bpi-r2-EMMC.img \
+			       $(STAGING_DIR_IMAGE)/mtk-bpi-r2-preloader-emmc.bin \
+			       $(STAGING_DIR_IMAGE)/mtk-bpi-r2-uboot.bin \
+			       $(KDIR)/uImage-mt7623n-bananapi-bpi-r2 \
+			       $(KDIR)/root.squashfs
+endef
+##bpir2 end
+
+
 define Image/Build
 	$(call Image/Build/$(1),$(1))
 	$(call Image/Build/SDImage,$(1))
 	$(call Image/Build/EMMCImage,$(1))
 endef
+
+ifeq ($(Device),7623n-bananapi-bpi-r2)
+include mt32.mk
+endif
+
 
 $(eval $(call BuildImage))
 
