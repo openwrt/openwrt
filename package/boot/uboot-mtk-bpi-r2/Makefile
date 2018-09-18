@@ -21,8 +21,8 @@ include $(INCLUDE_DIR)/package.mk
 define U-Boot/Default
   BUILD_TARGET:=mediatek
   UBOOT_IMAGE:=u-boot.bin 
+  DEFAULT:=y
   UENV:=default
-  HIDDEN:=1
 endef
 define U-Boot/bpi_r2
   NAME:=Mediatek Banana Pi R2 board
