@@ -48,9 +48,6 @@ ifeq ($(SUBTARGET),mt7622)
 endif
 endef
 
-
-
-
 ifeq ($(SUBTARGET),mt7622)
 include mt7622.mk
 endif
@@ -59,7 +56,34 @@ ifeq ($(SUBTARGET),mt7623)
 include mt7623.mk
 endif
 
-##bpir2 start
+COMPAT_BPI-R2:=bananapi,bpi-r2
+COMPAT_EMMC:=mediatek,mt7623-rfb-emmc
+COMPAT_NAND:=mediatek,mt7623-rfb-nand
+COMPAT_NAND_EPHY:=mediatek,mt7623-rfb-nand-ephy
+
+
+define Image/Build/BPIR2SDImage
+	./make_bundle_image.sh $(KDIR)/mtk-bpi-r2-SD.img \
+			       $(STAGING_DIR_IMAGE)/mtk-bpi-r2-preloader-sd.bin \
+			       $(STAGING_DIR_IMAGE)/mtk-bpi-r2-uboot.bin \
+			       $(KDIR)/uImage-mt7623n-bananapi-bpi-r2 \
+			       $(KDIR)/root.squashfs
+endef
+
+define Image/Build/BPIR2EMMCImage
+	./make_bundle_image.sh $(KDIR)/mtk-bpi-r2-EMMC.img \
+			       $(STAGING_DIR_IMAGE)/mtk-bpi-r2-preloader-emmc.bin \
+			       $(STAGING_DIR_IMAGE)/mtk-bpi-r2-uboot.bin \
+			       $(KDIR)/uImage-mt7623n-bananapi-bpi-r2 \
+			       $(KDIR)/root.squashfs
+endef
+define Image/Build
+	$(call Image/Build/$(1),$(1))
+	$(call Image/Build/SDImage,$(1))
+	$(call Image/Build/EMMCImage,$(1))
+	$(call Image/Build/BPIR2SDImage,$(1))
+	$(call Image/Build/BPIR2EMMCImage,$(1))
+endef
 define Image/BuilduImage
 	$(CP) $(KDIR)/zImage$(2) $(KDIR)/zImage-$(1)$(2)
 	cat $(LINUX_DIR)/arch/arm/boot/dts/$1.dtb >> $(KDIR)/zImage-$(1)$(2)
@@ -82,11 +106,6 @@ endif
 	)
 endef
 
-COMPAT_BPI-R2:=bananapi,bpi-r2
-COMPAT_EMMC:=mediatek,mt7623-rfb-emmc
-COMPAT_NAND:=mediatek,mt7623-rfb-nand
-COMPAT_NAND_EPHY:=mediatek,mt7623-rfb-nand-ephy
-
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	$(CP) $(KDIR)/root.squashfs $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs
@@ -106,33 +125,7 @@ endif
 	$(call Image/Build/SysupgradeNAND,mt7623-NAND-ePHY,$(1),$(KDIR)/uImage-mt7623-NAND-ePHY,$$(COMPAT_NAND_EPHY))
 endef
 
-define Image/Build/SDImage
-	./make_bundle_image.sh $(KDIR)/mtk-bpi-r2-SD.img \
-			       $(STAGING_DIR_IMAGE)/mtk-bpi-r2-preloader-sd.bin \
-			       $(STAGING_DIR_IMAGE)/mtk-bpi-r2-uboot.bin \
-			       $(KDIR)/uImage-mt7623n-bananapi-bpi-r2 \
-			       $(KDIR)/root.squashfs
-endef
 
-define Image/Build/EMMCImage
-	./make_bundle_image.sh $(KDIR)/mtk-bpi-r2-EMMC.img \
-			       $(STAGING_DIR_IMAGE)/mtk-bpi-r2-preloader-emmc.bin \
-			       $(STAGING_DIR_IMAGE)/mtk-bpi-r2-uboot.bin \
-			       $(KDIR)/uImage-mt7623n-bananapi-bpi-r2 \
-			       $(KDIR)/root.squashfs
-endef
-##bpir2 end
-
-
-define Image/Build
-	$(call Image/Build/$(1),$(1))
-	$(call Image/Build/SDImage,$(1))
-	$(call Image/Build/EMMCImage,$(1))
-endef
-
-ifeq ($(Device),7623n-bananapi-bpi-r2)
-include mt32.mk
-endif
 
 
 $(eval $(call BuildImage))
