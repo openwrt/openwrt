@@ -156,8 +156,12 @@ $(eval $(if $(NF_KMOD),$(call nf_add,NF_REJECT6,CONFIG_NF_REJECT_IPV6, $(P_V6)nf
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_IPT6,CONFIG_IP6_NF_IPTABLES, $(P_V6)ip6_tables),))
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,4.19.0)),1)
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK6,CONFIG_NF_DEFRAG_IPV6, $(P_V6)nf_defrag_ipv6),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK6,CONFIG_NF_CONNTRACK_IPV6, $(P_V6)nf_conntrack_ipv6),))
+else
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK,CONFIG_NF_DEFRAG_IPV6, $(P_V6)nf_defrag_ipv6),))
+endif
 
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_IPV6,CONFIG_IP6_NF_FILTER, $(P_V6)ip6table_filter),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_IPV6,CONFIG_IP6_NF_MANGLE, $(P_V6)ip6table_mangle),))
@@ -370,7 +374,9 @@ $(eval $(if $(NF_KMOD),$(call nf_add,NFT_NAT6,CONFIG_NFT_MASQ_IPV6, $(P_V6)nft_m
 IPT_BUILTIN += $(NF_IPT-y) $(NF_IPT-m)
 IPT_BUILTIN += $(IPT_CORE-y) $(IPT_CORE-m)
 IPT_BUILTIN += $(NF_CONNTRACK-y)
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,4.19.0)),1)
 IPT_BUILTIN += $(NF_CONNTRACK6-y)
+endif
 IPT_BUILTIN += $(IPT_CONNTRACK-y)
 IPT_BUILTIN += $(IPT_CONNTRACK_EXTRA-y)
 IPT_BUILTIN += $(IPT_EXTRA-y)
