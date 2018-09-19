@@ -83,6 +83,16 @@ define Device/ubnt_nano-m
 endef
 TARGET_DEVICES += ubnt_nano-m
 
+define Device/ubnt_liteap-ac
+  $(Device/ubnt-wa)
+  DEVICE_TITLE := Ubiquiti LiteAP ac
+  DEVICE_PACKAGES += kmod-ath10k ath10k-firmware-qca988x
+  IMAGE_SIZE := 15744k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
+endef
+TARGET_DEVICES += ubnt_liteap-ac
+
 define Device/ubnt_nanostation-ac-loco
   $(Device/ubnt-wa)
   DEVICE_TITLE := Ubiquiti Nanostation AC loco
