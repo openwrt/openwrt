@@ -83,10 +83,8 @@ v13:
  12 files changed, 314 insertions(+), 1 deletion(-)
  create mode 100644 drivers/net/wireless/ath/ath10k/leds.c
  create mode 100644 drivers/net/wireless/ath/ath10k/leds.h
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/Kconfig
-===================================================================
---- backports-2017-11-01.orig/drivers/net/wireless/ath/ath10k/Kconfig
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath10k/Kconfig
+--- a/drivers/net/wireless/ath/ath10k/Kconfig
++++ b/drivers/net/wireless/ath/ath10k/Kconfig
 @@ -56,6 +56,16 @@ config ATH10K_DEBUGFS
  
  	  If unsure, say Y to make it easier to debug problems.
@@ -104,10 +102,8 @@ Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/Kconfig
  config ATH10K_SPECTRAL
  	bool "Atheros ath10k spectral scan support"
  	depends on ATH10K_DEBUGFS
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/Makefile
-===================================================================
---- backports-2017-11-01.orig/drivers/net/wireless/ath/ath10k/Makefile
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath10k/Makefile
+--- a/drivers/net/wireless/ath/ath10k/Makefile
++++ b/drivers/net/wireless/ath/ath10k/Makefile
 @@ -18,6 +18,7 @@ ath10k_core-$(CPTCFG_ATH10K_SPECTRAL) +=
  ath10k_core-$(CPTCFG_NL80211_TESTMODE) += testmode.o
  ath10k_core-$(CPTCFG_ATH10K_TRACING) += trace.o
@@ -116,10 +112,8 @@ Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/Makefile
  ath10k_core-$(CPTCFG_MAC80211_DEBUGFS) += debugfs_sta.o
  ath10k_core-$(CONFIG_PM) += wow.o
  
-Index: backports-2017-11-01/local-symbols
-===================================================================
---- backports-2017-11-01.orig/local-symbols
-+++ backports-2017-11-01/local-symbols
+--- a/local-symbols
++++ b/local-symbols
 @@ -143,6 +143,7 @@ ATH10K_USB=
  ATH10K_DEBUG=
  ATH10K_DEBUGFS=
@@ -128,10 +122,8 @@ Index: backports-2017-11-01/local-symbols
  ATH10K_TRACING=
  ATH10K_DFS_CERTIFIED=
  WCN36XX=
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/core.c
-===================================================================
---- backports-2017-11-01.orig/drivers/net/wireless/ath/ath10k/core.c
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath10k/core.c
+--- a/drivers/net/wireless/ath/ath10k/core.c
++++ b/drivers/net/wireless/ath/ath10k/core.c
 @@ -32,6 +32,7 @@
  #include "htt.h"
  #include "testmode.h"
@@ -219,10 +211,8 @@ Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/core.c
  	ath10k_thermal_unregister(ar);
  	/* Stop spectral before unregistering from mac80211 to remove the
  	 * relayfs debugfs file cleanly. Otherwise the parent debugfs tree
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/core.h
-===================================================================
---- backports-2017-11-01.orig/drivers/net/wireless/ath/ath10k/core.h
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath10k/core.h
+--- a/drivers/net/wireless/ath/ath10k/core.h
++++ b/drivers/net/wireless/ath/ath10k/core.h
 @@ -24,6 +24,7 @@
  #include <linux/pci.h>
  #include <linux/uuid.h>
@@ -253,10 +243,8 @@ Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/core.h
  		/* protected by data_lock */
  		u32 fw_crash_counter;
  		u32 fw_warm_reset_counter;
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/hw.h
-===================================================================
---- backports-2017-11-01.orig/drivers/net/wireless/ath/ath10k/hw.h
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath10k/hw.h
+--- a/drivers/net/wireless/ath/ath10k/hw.h
++++ b/drivers/net/wireless/ath/ath10k/hw.h
 @@ -490,6 +490,7 @@ struct ath10k_hw_params {
  	const char *name;
  	u32 patch_load_addr;
@@ -265,10 +253,8 @@ Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/hw.h
  	u32 otp_exe_param;
  
  	/* Type of hw cycle counter wraparound logic, for more info
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/leds.c
-===================================================================
 --- /dev/null
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath10k/leds.c
++++ b/drivers/net/wireless/ath/ath10k/leds.c
 @@ -0,0 +1,103 @@
 +/*
 + * Copyright (c) 2005-2011 Atheros Communications Inc.
@@ -373,10 +359,8 @@ Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/leds.c
 +	led_classdev_unregister(&ar->leds.cdev);
 +}
 +
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/leds.h
-===================================================================
 --- /dev/null
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath10k/leds.h
++++ b/drivers/net/wireless/ath/ath10k/leds.h
 @@ -0,0 +1,41 @@
 +/*
 + * Copyright (c) 2018, The Linux Foundation. All rights reserved.
@@ -419,10 +403,8 @@ Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/leds.h
 +
 +#endif
 +#endif /* _LEDS_H_ */
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/mac.c
-===================================================================
---- backports-2017-11-01.orig/drivers/net/wireless/ath/ath10k/mac.c
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath10k/mac.c
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
 @@ -32,6 +32,7 @@
  #include "wmi-tlv.h"
  #include "wmi-ops.h"
@@ -431,10 +413,8 @@ Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/mac.c
  
  /*********/
  /* Rates */
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/wmi-ops.h
-===================================================================
---- backports-2017-11-01.orig/drivers/net/wireless/ath/ath10k/wmi-ops.h
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath10k/wmi-ops.h
+--- a/drivers/net/wireless/ath/ath10k/wmi-ops.h
++++ b/drivers/net/wireless/ath/ath10k/wmi-ops.h
 @@ -197,6 +197,10 @@ struct wmi_ops {
  					(struct ath10k *ar,
  					 enum wmi_bss_survey_req_type type);
@@ -482,10 +462,8 @@ Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/wmi-ops.h
  static inline int
  ath10k_wmi_dbglog_cfg(struct ath10k *ar, u64 module_enable, u32 log_level)
  {
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/wmi-tlv.c
-===================================================================
---- backports-2017-11-01.orig/drivers/net/wireless/ath/ath10k/wmi-tlv.c
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath10k/wmi-tlv.c
+--- a/drivers/net/wireless/ath/ath10k/wmi-tlv.c
++++ b/drivers/net/wireless/ath/ath10k/wmi-tlv.c
 @@ -3619,6 +3619,8 @@ static const struct wmi_ops wmi_tlv_ops
  	.gen_echo = ath10k_wmi_tlv_op_gen_echo,
  	.gen_vdev_spectral_conf = ath10k_wmi_tlv_op_gen_vdev_spectral_conf,
@@ -495,10 +473,8 @@ Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/wmi-tlv.c
  };
  
  static const struct wmi_peer_flags_map wmi_tlv_peer_flags_map = {
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/wmi.c
-===================================================================
---- backports-2017-11-01.orig/drivers/net/wireless/ath/ath10k/wmi.c
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath10k/wmi.c
+--- a/drivers/net/wireless/ath/ath10k/wmi.c
++++ b/drivers/net/wireless/ath/ath10k/wmi.c
 @@ -6580,6 +6580,49 @@ ath10k_wmi_op_gen_peer_set_param(struct
  	return skb;
  }
@@ -595,10 +571,8 @@ Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/wmi.c
  };
  
  int ath10k_wmi_attach(struct ath10k *ar)
-Index: backports-2017-11-01/drivers/net/wireless/ath/ath10k/wmi.h
-===================================================================
---- backports-2017-11-01.orig/drivers/net/wireless/ath/ath10k/wmi.h
-+++ backports-2017-11-01/drivers/net/wireless/ath/ath10k/wmi.h
+--- a/drivers/net/wireless/ath/ath10k/wmi.h
++++ b/drivers/net/wireless/ath/ath10k/wmi.h
 @@ -2899,6 +2899,41 @@ enum wmi_10_4_feature_mask {
  
  };
