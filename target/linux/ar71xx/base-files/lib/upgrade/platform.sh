@@ -461,6 +461,7 @@ platform_check_image() {
 	tl-wdr4300|\
 	tl-wdr4900-v2|\
 	tl-wdr6500-v2|\
+	tl-wdr6500-v5|\
 	tl-wpa8630|\
 	tl-wr1041n-v2|\
 	tl-wr1043nd|\
@@ -499,6 +500,9 @@ platform_check_image() {
 		case "$board" in
 		tl-wdr6500-v2)
 			magic_ver="0200"
+			;;
+		tl-wdr6500-v5)
+			magic_ver="0500"
 			;;
 		esac
 

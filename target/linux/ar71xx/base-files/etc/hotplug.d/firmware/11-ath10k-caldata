@@ -65,6 +65,13 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -2)
 		;;
+	tl-wdr6500-v5)
+		ath10kcal_extract "art" 8192 12064
+		mv /lib/firmware/ath10k/cal-pci-0000\:00\:00.0.bin \
+			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
+		ln -sf /lib/firmware/ath10k/QCA9888/hw2.0/board-2.bin \
+			/lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin
+		;;
 	archer-c7-v4|\
 	archer-c7-v5)
 		ath10kcal_extract "art" 20480 2116
