@@ -25,4 +25,17 @@ define Device/marvell_armada7040-db
 endef
 TARGET_DEVICES += marvell_armada7040-db
 
+define Device/solidrun-clearfog-gt-8k
+  KERNEL_NAME := Image
+  KERNEL := kernel-bin
+  DEVICE_TITLE := SolidRun ClearFog GT 8K
+  DEVICE_PACKAGES := e2fsprogs ethtool mkf2fs kmod-fs-vfat kmod-mmc
+  IMAGES := sdcard.img.gz
+  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
+  DEVICE_DTS := armada-8040-clearfog-gt-8k
+  DTS_DIR := $(DTS_DIR)/marvell
+  SUPPORTED_DEVICES := solidrun,clearfog-gt-8k
+endef
+TARGET_DEVICES += solidrun-clearfog-gt-8k
+
 endif

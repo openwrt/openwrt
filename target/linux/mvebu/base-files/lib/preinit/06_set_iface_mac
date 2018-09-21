@@ -40,6 +40,18 @@ preinit_set_mac_address() {
 			;;
 		esac
 		;;
+	solidrun,clearfog-gt-8k)
+		case "$(readlink /sys/class/net/eth0)" in
+			*f2000000*)
+				ip link set eth0 name sfp0
+			;;
+		esac
+		case "$(readlink /sys/class/net/eth1)" in
+			*f4000000*)
+				ip link set eth1 name eth0
+				ip link set eth2 name cpu
+			;;
+		esac
 	esac
 }
 
