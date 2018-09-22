@@ -1,0 +1,76 @@
+From 2c9d4c4bea5d92884ce6116b7e416eec305ec961 Mon Sep 17 00:00:00 2001
+From: Florian Westphal <fw@strlen.de>
+Date: Thu, 7 Dec 2017 16:28:25 +0100
+Subject: [PATCH 07/11] netfilter: don't allocate space for decnet hooks unless
+ needed
+
+no need to define hook points if the family isn't supported.
+
+Signed-off-by: Florian Westphal <fw@strlen.de>
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+---
+ include/linux/netfilter.h     | 2 ++
+ include/net/netns/netfilter.h | 2 ++
+ net/netfilter/core.c          | 4 ++++
+ 3 files changed, 8 insertions(+)
+
+diff --git a/include/linux/netfilter.h b/include/linux/netfilter.h
+index 44908cc09752..39e8c2fbb83d 100644
+--- a/include/linux/netfilter.h
++++ b/include/linux/netfilter.h
+@@ -220,9 +220,11 @@ static inline int nf_hook(u_int8_t pf, unsigned int hook, struct net *net,
+ 	case NFPROTO_BRIDGE:
+ 		hook_head = rcu_dereference(net->nf.hooks_bridge[hook]);
+ 		break;
++#if IS_ENABLED(CONFIG_DECNET)
+ 	case NFPROTO_DECNET:
+ 		hook_head = rcu_dereference(net->nf.hooks_decnet[hook]);
+ 		break;
++#endif
+ 	default:
+ 		WARN_ON_ONCE(1);
+ 		break;
+diff --git a/include/net/netns/netfilter.h b/include/net/netns/netfilter.h
+index 8f756a4b9205..432609fd9899 100644
+--- a/include/net/netns/netfilter.h
++++ b/include/net/netns/netfilter.h
+@@ -21,7 +21,9 @@ struct netns_nf {
+ 	struct nf_hook_entries __rcu *hooks_ipv6[NF_INET_NUMHOOKS];
+ 	struct nf_hook_entries __rcu *hooks_arp[NF_ARP_NUMHOOKS];
+ 	struct nf_hook_entries __rcu *hooks_bridge[NF_INET_NUMHOOKS];
++#if IS_ENABLED(CONFIG_DECNET)
+ 	struct nf_hook_entries __rcu *hooks_decnet[NF_DN_NUMHOOKS];
++#endif
+ #if IS_ENABLED(CONFIG_NF_DEFRAG_IPV4)
+ 	bool			defrag_ipv4;
+ #endif
+diff --git a/net/netfilter/core.c b/net/netfilter/core.c
+index 75497fad3482..e33c430f52c0 100644
+--- a/net/netfilter/core.c
++++ b/net/netfilter/core.c
+@@ -266,10 +266,12 @@ static struct nf_hook_entries __rcu **nf_hook_entry_head(struct net *net, const
+ 		if (WARN_ON_ONCE(ARRAY_SIZE(net->nf.hooks_ipv6) <= reg->hooknum))
+ 			return NULL;
+ 		return net->nf.hooks_ipv6 + reg->hooknum;
++#if IS_ENABLED(CONFIG_DECNET)
+ 	case NFPROTO_DECNET:
+ 		if (WARN_ON_ONCE(ARRAY_SIZE(net->nf.hooks_decnet) <= reg->hooknum))
+ 			return NULL;
+ 		return net->nf.hooks_decnet + reg->hooknum;
++#endif
+ 	default:
+ 		WARN_ON_ONCE(1);
+ 		return NULL;
+@@ -556,7 +558,9 @@ static int __net_init netfilter_net_init(struct net *net)
+ 	__netfilter_net_init(net->nf.hooks_ipv6, ARRAY_SIZE(net->nf.hooks_ipv6));
+ 	__netfilter_net_init(net->nf.hooks_arp, ARRAY_SIZE(net->nf.hooks_arp));
+ 	__netfilter_net_init(net->nf.hooks_bridge, ARRAY_SIZE(net->nf.hooks_bridge));
++#if IS_ENABLED(CONFIG_DECNET)
+ 	__netfilter_net_init(net->nf.hooks_decnet, ARRAY_SIZE(net->nf.hooks_decnet));
++#endif
+ 
+ #ifdef CONFIG_PROC_FS
+ 	net->nf.proc_netfilter = proc_net_mkdir(net, "netfilter",
+-- 
+2.11.0
+
