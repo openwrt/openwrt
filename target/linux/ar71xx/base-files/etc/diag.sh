@@ -60,6 +60,9 @@ get_status_led() {
 	ap147-010)
 		status_led="ap147:green:status"
 		;;
+	wy-wr101ac)
+		status_led="wr101ac:green:status"
+		;;		
 	ap135-020)
 		status_led="ap135:green:status"
 		;;

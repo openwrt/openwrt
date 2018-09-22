@@ -572,6 +572,15 @@ ar71xx_board_detect() {
 	*"CF-E530N")
 		name="cf-e530n"
 		;;
+	*"CF-WR630AC")
+		name="cf-wr630ac"
+		;;
+	*"CF-E351AC")
+		name="cf-e351ac"
+		;;
+	*"CF-WR635AC")
+		name="cf-wr635ac"
+		;;
 	*"CPE210/220")
 		name="cpe210"
 		tplink_pharos_board_detect "$(tplink_pharos_get_model_string | tr -d '\r')"
@@ -1497,6 +1506,9 @@ ar71xx_board_detect() {
 	*"WRTnode2Q"*)
 		name="wrtnode2q"
 		;;
+	*"wy-wr101ac")
+		name="wy-wr101ac"
+		;;		
 	*"WZR-450HP2")
 		name="wzr-450hp2"
 		;;

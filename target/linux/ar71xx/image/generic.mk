@@ -197,6 +197,30 @@ define Device/cf-e320n-v2
 endef
 TARGET_DEVICES += cf-e320n-v2
 
+define Device/cf-e351ac
+  $(Device/cf-e316n-v2)
+  DEVICE_TITLE := COMFAST CF-E351AC
+  DEVICE_PACKAGES += kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca9887
+  BOARDNAME := CF-E351AC
+endef
+TARGET_DEVICES += cf-e351ac
+
+define Device/cf-wr630ac
+  $(Device/cf-e316n-v2)
+  DEVICE_TITLE := COMFAST CF-WR630AC
+  DEVICE_PACKAGES += kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca9887
+  BOARDNAME := CF-WR630AC
+endef
+TARGET_DEVICES += cf-wr630ac
+
+define Device/cf-wr635ac
+  $(Device/cf-e316n-v2)
+  DEVICE_TITLE := COMFAST CF-WR635AC
+  DEVICE_PACKAGES += kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca9887
+  BOARDNAME := CF-WR635AC
+endef
+TARGET_DEVICES += cf-wr635ac
+
 define Device/cf-e355ac-v1
   DEVICE_TITLE := COMFAST CF-E355AC v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x \
@@ -1344,3 +1368,14 @@ define Device/fritz450e
   IMAGE_SIZE := 15232k
 endef
 TARGET_DEVICES += fritz450e
+
+define Device/wy-wr101ac
+  $(Device/tplink-16mlzma)
+  DEVICE_TITLE := Wayne wy-wr101ac model support 
+  DEVICE_PACKAGES := ath10k-firmware-qca9887 kmod-ath10k kmod-usb-core kmod-usb2
+  BOARDNAME := WY-WR101AC
+  DEVICE_PROFILE := WY-WR101AC 
+  TPLINK_HWID := 0x3C00010B
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += wy-wr101ac

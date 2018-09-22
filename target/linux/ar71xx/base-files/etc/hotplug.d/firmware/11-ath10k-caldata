@@ -70,6 +70,9 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -1)
 		;;
+	cf-e351ac|\
+	cf-wr630ac|\
+	cf-wr635ac|\
 	cf-e355ac-v1|\
 	cf-e380ac-v1|\
 	cf-e380ac-v2|\
@@ -79,7 +82,8 @@ case "$FIRMWARE" in
 	oolite-v5.2|\
 	oolite-v5.2-dev|\
 	sr3200|\
-	xd3200)
+	xd3200|\
+	wy-wr101ac)
 		ath10kcal_extract "art" 20480 2116
 		;;
 	dap-2695-a1)
@@ -166,6 +170,9 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-pci-0000:00:00.0.bin")
 	case $board in
+	cf-e351ac|\
+	cf-wr630ac|\
+	cf-wr635ac|\
 	archer-c58-v1|\
 	archer-c59-v1|\
 	archer-c59-v2|\

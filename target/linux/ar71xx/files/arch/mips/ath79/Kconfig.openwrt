@@ -378,6 +378,16 @@ config ATH79_MACH_WLR8100
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
+	
+config ATH79_MACH_WY_WR101AC
+	bool "Wayne WY-WR101AC model support"
+	select SOC_QCA953X
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+	select ATH79_DEV_AP9X_PCI if PCI	
 
 config ATH79_MACH_WZR_HP_AG300H
 	bool "Buffalo WZR-HP-AG300H board support"
@@ -2303,6 +2313,16 @@ config ATH79_MACH_CF_E320N_V2
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_CF_E351AC
+	bool "COMFAST CF-E351AC support"
+	select SOC_QCA953X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC		
+
 config ATH79_MACH_CF_E355AC
 	bool "COMFAST CF-E355AC v1/v2 support"
 	select SOC_QCA953X
@@ -2366,6 +2386,26 @@ config ATH79_MACH_CF_E530N
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
+	
+config ATH79_MACH_CF_WR630AC
+	bool "COMFAST CF-WR630AC v2 support"
+	select SOC_QCA953X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC	
+	
+config ATH79_MACH_CF_WR635AC
+	bool "COMFAST CF-WR635AC v2 support"
+	select SOC_QCA953X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC	
 
 config ATH79_MACH_BHU_BXU2000N2_A
 	bool "BHU BXU2000n-2 rev. A support"

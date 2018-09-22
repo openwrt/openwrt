@@ -228,7 +228,8 @@ ar71xx_setup_interfaces()
 	ap136-010|\
 	ap147-010|\
 	nbg6616|\
-	nbg6716)
+	nbg6716|\
+	wy-wr101ac)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth1.2"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6@eth1"

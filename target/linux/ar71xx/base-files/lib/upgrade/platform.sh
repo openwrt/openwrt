@@ -222,6 +222,7 @@ platform_check_image() {
 	carambola2|\
 	cf-e316n-v2|\
 	cf-e320n-v2|\
+	cf-e351ac|\
 	cf-e355ac-v1|\
 	cf-e355ac-v2|\
 	cf-e375ac|\
@@ -230,6 +231,8 @@ platform_check_image() {
 	cf-e385ac|\
 	cf-e520n|\
 	cf-e530n|\
+	cf-wr630ac|\
+	cf-wr635ac|\
 	cpe505n|\
 	cpe830|\
 	cpe870|\
@@ -355,6 +358,7 @@ platform_check_image() {
 	hornet-ub|\
 	mr12|\
 	mr16|\
+	wy-wr101ac|\
 	zbt-we1526|\
 	zcn-1523h-2|\
 	zcn-1523h-5)

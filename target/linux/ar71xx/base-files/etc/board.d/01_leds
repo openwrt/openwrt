@@ -60,6 +60,14 @@ ap147-010)
 	ucidef_set_led_switch "lan4" "LAN4" "ap147:green:lan4" "switch0" "0x02"
 	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "ap147:green:wlan-2g" "phy0tpt"
 	;;
+wy-wr101ac)
+	ucidef_set_led_netdev "wan" "WAN" "wr101ac:green:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "wr101ac:green:lan1" "switch0" "0x10"
+	ucidef_set_led_switch "lan2" "LAN2" "wr101ac:green:lan2" "switch0" "0x08"
+	ucidef_set_led_switch "lan3" "LAN3" "wr101ac:green:lan3" "switch0" "0x04"
+	ucidef_set_led_switch "lan4" "LAN4" "wr101ac:green:lan4" "switch0" "0x02"
+	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "wr101ac:green:wlan-2g" "phy0tpt"
+	;;	
 ap90q|\
 cpe505n|\
 cpe830|\
@@ -213,6 +221,25 @@ cf-e320n-v2)
 	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
 	ucidef_set_led_netdev "wan" "WAN" "$board:red:wan" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:blue:wlan" "phy0tpt"
+	;;
+cf-wr630ac|\
+cf-wr635ac)
+	ucidef_set_led_netdev "wan1" "WAN1" "comfast:green:wan1" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "comfast:green:lan1" "switch0" "0x02"
+	ucidef_set_led_switch "lan2" "LAN2" "comfast:green:lan2" "switch0" "0x04"
+	ucidef_set_led_switch "lan3" "LAN3" "comfast:green:lan3" "switch0" "0x08"
+	ucidef_set_led_switch "lan4" "LAN4" "comfast:green:lan4" "switch0" "0x10"
+	ucidef_set_led_wlan "wlan" "WLAN" "comfast:blue:24g" "phy1tpt"
+	ucidef_set_led_netdev "network" "NETWORK" "comfast:blue:network" "eth1"
+	;;
+
+cf-e351ac)
+	ucidef_set_led_netdev "wan" "WAN" "comfast:red:wan" "eth1"
+	ucidef_set_led_netdev "lan" "LAN" "comfast:green:lan" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "comfast:blue:wlan" "phy1tpt"
+	ucidef_set_led_netdev "wan1" "WAN1" "comfast:blue:ext_wan" "eth1"
+	ucidef_set_led_netdev "lan1" "LAN1" "comfast:blue:ext_lan" "eth0"
+	ucidef_set_led_wlan "wlan1" "WLAN1" "comfast:blue:ext_wlan" "phy1tpt"
 	;;
 cf-e355ac-v1|\
 cf-e355ac-v2|\
