@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/version.mk
 include $(INCLUDE_DIR)/feeds.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=195
+PKG_RELEASE:=196
 PKG_FLAGS:=nonshared
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
@@ -123,6 +123,9 @@ endif
 
 define Package/base-files/install
 	$(CP) ./files/* $(1)/
+ifeq ($(CONFIG_IPV6),)
+	$(SED) '/ip6/'d $(1)/etc/hosts
+endif
 	$(Package/base-files/install-key)
 	$(Package/base-files/nand-support)
 	if [ -d $(GENERIC_PLATFORM_DIR)/base-files/. ]; then \
