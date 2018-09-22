@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=odhcpd
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_VERSION:=1.11
 
 PKG_SOURCE_PROTO:=git
@@ -32,7 +32,7 @@ define Package/odhcpd/default
   SECTION:=net
   CATEGORY:=Network
   TITLE:=OpenWrt DHCPv6(-PD)/RA Server & Relay
-  DEPENDS:=+libubox +libuci +libubus +libnl-tiny
+  DEPENDS:=+libubox +libuci +libubus +libnl-tiny @IPV6
 endef
 
 define Package/odhcpd/default/description
