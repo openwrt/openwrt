@@ -1,6 +1,6 @@
 --- a/local-symbols
 +++ b/local-symbols
-@@ -299,6 +299,7 @@ RT2X00_LIB_FIRMWARE=
+@@ -305,6 +305,7 @@ RT2X00_LIB_FIRMWARE=
  RT2X00_LIB_CRYPTO=
  RT2X00_LIB_LEDS=
  RT2X00_LIB_DEBUGFS=
@@ -38,7 +38,7 @@
  	default y if (RT2X00_LIB=y && LEDS_CLASS=y) || (RT2X00_LIB=m && LEDS_CLASS!=n)
 --- a/drivers/net/wireless/ralink/rt2x00/Makefile
 +++ b/drivers/net/wireless/ralink/rt2x00/Makefile
-@@ -7,6 +7,7 @@ rt2x00lib-$(CPTCFG_RT2X00_LIB_DEBUGFS)	+
+@@ -8,6 +8,7 @@ rt2x00lib-$(CPTCFG_RT2X00_LIB_DEBUGFS)	+
  rt2x00lib-$(CPTCFG_RT2X00_LIB_CRYPTO)	+= rt2x00crypto.o
  rt2x00lib-$(CPTCFG_RT2X00_LIB_FIRMWARE)	+= rt2x00firmware.o
  rt2x00lib-$(CPTCFG_RT2X00_LIB_LEDS)	+= rt2x00leds.o

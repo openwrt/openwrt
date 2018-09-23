@@ -21,7 +21,7 @@ Forwarded: https://patchwork.kernel.org/patch/10549245/
 
 --- a/drivers/net/wireless/ath/ath10k/mac.c
 +++ b/drivers/net/wireless/ath/ath10k/mac.c
-@@ -17,6 +17,7 @@
+@@ -18,6 +18,7 @@
  
  #include "mac.h"
  
@@ -29,7 +29,7 @@ Forwarded: https://patchwork.kernel.org/patch/10549245/
  #include <net/mac80211.h>
  #include <linux/etherdevice.h>
  #include <linux/acpi.h>
-@@ -8230,6 +8231,7 @@ int ath10k_mac_register(struct ath10k *a
+@@ -8390,6 +8391,7 @@ int ath10k_mac_register(struct ath10k *a
  		ar->hw->wiphy->bands[NL80211_BAND_5GHZ] = band;
  	}
  

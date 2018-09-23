@@ -1,9 +1,9 @@
 --- a/drivers/net/wireless/ath/ath9k/ahb.c
 +++ b/drivers/net/wireless/ath/ath9k/ahb.c
-@@ -19,7 +19,15 @@
- #include <linux/nl80211.h>
+@@ -20,7 +20,15 @@
  #include <linux/platform_device.h>
  #include <linux/module.h>
+ #include <linux/mod_devicetable.h>
 +#include <linux/of_device.h>
  #include "ath9k.h"
 +#include <linux/ath9k_platform.h>
@@ -16,7 +16,7 @@
  
  static const struct platform_device_id ath9k_platform_id_table[] = {
  	{
-@@ -68,6 +76,235 @@ static const struct ath_bus_ops ath_ahb_
+@@ -69,6 +77,235 @@ static const struct ath_bus_ops ath_ahb_
  	.eeprom_read = ath_ahb_eeprom_read,
  };
  
@@ -252,7 +252,7 @@
  static int ath_ahb_probe(struct platform_device *pdev)
  {
  	void __iomem *mem;
-@@ -79,6 +316,17 @@ static int ath_ahb_probe(struct platform
+@@ -80,6 +317,17 @@ static int ath_ahb_probe(struct platform
  	int ret = 0;
  	struct ath_hw *ah;
  	char hw_name[64];
@@ -270,7 +270,7 @@
  
  	if (!dev_get_platdata(&pdev->dev)) {
  		dev_err(&pdev->dev, "no platform data specified\n");
-@@ -121,13 +369,16 @@ static int ath_ahb_probe(struct platform
+@@ -122,13 +370,16 @@ static int ath_ahb_probe(struct platform
  	sc->mem = mem;
  	sc->irq = irq;
  
@@ -288,7 +288,7 @@
  	if (ret) {
  		dev_err(&pdev->dev, "failed to initialize device\n");
  		goto err_irq;
-@@ -158,6 +409,9 @@ static int ath_ahb_remove(struct platfor
+@@ -159,6 +410,9 @@ static int ath_ahb_remove(struct platfor
  		free_irq(sc->irq, sc);
  		ieee80211_free_hw(sc->hw);
  	}
@@ -298,7 +298,7 @@
  
  	return 0;
  }
-@@ -167,6 +421,9 @@ static struct platform_driver ath_ahb_dr
+@@ -168,6 +422,9 @@ static struct platform_driver ath_ahb_dr
  	.remove     = ath_ahb_remove,
  	.driver		= {
  		.name	= "ath9k",

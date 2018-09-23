@@ -11,7 +11,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800.h
-@@ -2311,6 +2311,7 @@ struct mac_iveiv_entry {
+@@ -2312,6 +2312,7 @@ struct mac_iveiv_entry {
  /*
   * RFCSR 2:
   */
@@ -21,7 +21,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  #define RFCSR2_TX2_EN_MT7620		FIELD8(0x20)
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -7707,6 +7707,144 @@ static void rt2800_init_rfcsr_5350(struc
+@@ -7711,6 +7711,144 @@ static void rt2800_init_rfcsr_5350(struc
  	rt2800_rfcsr_write(rt2x00dev, 63, 0x00);
  }
  
@@ -166,7 +166,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  static void rt2800_init_rfcsr_5390(struct rt2x00_dev *rt2x00dev)
  {
  	rt2800_rf_init_calibration(rt2x00dev, 2);
-@@ -8549,6 +8687,9 @@ static void rt2800_init_rfcsr(struct rt2
+@@ -8553,6 +8691,9 @@ static void rt2800_init_rfcsr(struct rt2
  	case RT3390:
  		rt2800_init_rfcsr_3390(rt2x00dev);
  		break;

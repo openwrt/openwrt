@@ -1,13 +1,8 @@
-Index: backports-v4.18-rc7/compat/Makefile
-===================================================================
---- backports-v4.18-rc7.orig/compat/Makefile
-+++ backports-v4.18-rc7/compat/Makefile
-@@ -70,8 +70,6 @@ quiet_cmd_build_OID_registry = GEN     $
- 	cmd_build_OID_registry = perl $(src)/build_OID_registry $< $@
- compat-$(CPTCFG_BPAUTO_ASN1_DECODER) += lib-asn1_decoder.o
- compat-$(CPTCFG_BPAUTO_BUILD_SYSTEM_DATA_VERIFICATION) += lib-oid_registry.o
+--- a/compat/Makefile
++++ b/compat/Makefile
+@@ -79,5 +79,3 @@ obj-$(CPTCFG_BPAUTO_BUILD_CORDIC) += cor
+ compat-$(CPTCFG_BPAUTO_PUBLIC_KEY) += 
+ compat-$(CPTCFG_BPAUTO_BUCKET_LOCKS) += lib-bucket_locks.o
+ compat-$(CPTCFG_BPAUTO_PKCS7) += 
 -skcipher-objs += crypto-skcipher.o
 -obj-$(CPTCFG_BPAUTO_CRYPTO_SKCIPHER) += skcipher.o
- compat-$(CPTCFG_BPAUTO_BUILD_WANT_DEV_COREDUMP) += drivers-base-devcoredump.o
- compat-$(CPTCFG_BPAUTO_RHASHTABLE) += lib-rhashtable.o
- cordic-objs += lib-cordic.o

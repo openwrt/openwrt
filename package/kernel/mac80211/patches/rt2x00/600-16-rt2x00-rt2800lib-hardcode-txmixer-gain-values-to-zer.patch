@@ -11,7 +11,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -8965,7 +8965,8 @@ static u8 rt2800_get_txmixer_gain_24g(st
+@@ -8969,7 +8969,8 @@ static u8 rt2800_get_txmixer_gain_24g(st
  {
  	u16 word;
  
@@ -21,7 +21,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		return 0;
  
  	word = rt2800_eeprom_read(rt2x00dev, EEPROM_TXMIXER_GAIN_BG);
-@@ -8979,7 +8980,8 @@ static u8 rt2800_get_txmixer_gain_5g(str
+@@ -8983,7 +8984,8 @@ static u8 rt2800_get_txmixer_gain_5g(str
  {
  	u16 word;
  

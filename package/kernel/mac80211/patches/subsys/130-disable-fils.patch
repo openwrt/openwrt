@@ -21,7 +21,7 @@ Disable FILS support, since it pulls in crypto hash support
   * Copyright 2016, Qualcomm Atheros, Inc.
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -550,7 +550,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
+@@ -570,7 +570,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
  			   NL80211_FEATURE_MAC_ON_CREATE |
  			   NL80211_FEATURE_USERSPACE_MPM |
  			   NL80211_FEATURE_FULL_AP_CLIENT_STATE;
@@ -29,4 +29,4 @@ Disable FILS support, since it pulls in crypto hash support
 +#if 0 /* LINUX_VERSION_IS_GEQ(4,3,0) */
  	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_FILS_STA);
  #endif
- 
+ 	wiphy_ext_feature_set(wiphy,

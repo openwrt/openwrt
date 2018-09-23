@@ -9,10 +9,8 @@ Other devices will need to be added to the switch in  write_file_bwmode
 drivers/net/wireless/ath/ath5k/debug.c |   86 ++++++++++++++++++++++++++++++++
  1 files changed, 86 insertions(+), 0 deletions(-)
 
-Index: backports-v4.18-rc7/drivers/net/wireless/ath/ath5k/debug.c
-===================================================================
---- backports-v4.18-rc7.orig/drivers/net/wireless/ath/ath5k/debug.c
-+++ backports-v4.18-rc7/drivers/net/wireless/ath/ath5k/debug.c
+--- a/drivers/net/wireless/ath/ath5k/debug.c
++++ b/drivers/net/wireless/ath/ath5k/debug.c
 @@ -822,6 +822,97 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
@@ -120,10 +118,8 @@ Index: backports-v4.18-rc7/drivers/net/wireless/ath/ath5k/debug.c
  }
  
  /* functions used in other places */
-Index: backports-v4.18-rc7/drivers/net/wireless/ath/ath5k/ath5k.h
-===================================================================
---- backports-v4.18-rc7.orig/drivers/net/wireless/ath/ath5k/ath5k.h
-+++ backports-v4.18-rc7/drivers/net/wireless/ath/ath5k/ath5k.h
+--- a/drivers/net/wireless/ath/ath5k/ath5k.h
++++ b/drivers/net/wireless/ath/ath5k/ath5k.h
 @@ -1372,6 +1372,7 @@ struct ath5k_hw {
  	u8			ah_coverage_class;
  	bool			ah_ack_bitrate_high;
@@ -132,10 +128,8 @@ Index: backports-v4.18-rc7/drivers/net/wireless/ath/ath5k/ath5k.h
  	bool			ah_short_slot;
  
  	/* Antenna Control */
-Index: backports-v4.18-rc7/drivers/net/wireless/ath/ath5k/base.c
-===================================================================
---- backports-v4.18-rc7.orig/drivers/net/wireless/ath/ath5k/base.c
-+++ backports-v4.18-rc7/drivers/net/wireless/ath/ath5k/base.c
+--- a/drivers/net/wireless/ath/ath5k/base.c
++++ b/drivers/net/wireless/ath/ath5k/base.c
 @@ -466,6 +466,9 @@ ath5k_chan_set(struct ath5k_hw *ah, stru
  		return -EINVAL;
  	}

@@ -14,11 +14,9 @@ Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
  .../net/wireless/ralink/rt2x00/rt2800usb.c    | 143 +-----------------
  3 files changed, 145 insertions(+), 139 deletions(-)
 
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-index a567bc273ffc..9f2835729016 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -957,6 +957,47 @@ static void rt2800_rate_from_status(struct skb_frame_desc *skbdesc,
+@@ -960,6 +960,47 @@ static void rt2800_rate_from_status(stru
  	skbdesc->tx_rate_flags = flags;
  }
  
@@ -66,7 +64,7 @@ index a567bc273ffc..9f2835729016 100644
  void rt2800_txdone_entry(struct queue_entry *entry, u32 status, __le32 *txwi,
  			 bool match)
  {
-@@ -1059,6 +1100,103 @@ void rt2800_txdone_entry(struct queue_entry *entry, u32 status, __le32 *txwi,
+@@ -1062,6 +1103,103 @@ void rt2800_txdone_entry(struct queue_en
  }
  EXPORT_SYMBOL_GPL(rt2800_txdone_entry);
  
@@ -170,11 +168,9 @@ index a567bc273ffc..9f2835729016 100644
  static unsigned int rt2800_hw_beacon_base(struct rt2x00_dev *rt2x00dev,
  					  unsigned int index)
  {
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
-index 51d9c2a932cc..0dff2c7b3010 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
-@@ -195,6 +195,9 @@ void rt2800_process_rxwi(struct queue_entry *entry, struct rxdone_entry_desc *tx
+@@ -206,6 +206,9 @@ void rt2800_process_rxwi(struct queue_en
  
  void rt2800_txdone_entry(struct queue_entry *entry, u32 status, __le32 *txwi,
  			 bool match);
@@ -184,11 +180,9 @@ index 51d9c2a932cc..0dff2c7b3010 100644
  
  void rt2800_write_beacon(struct queue_entry *entry, struct txentry_desc *txdesc);
  void rt2800_clear_beacon(struct queue_entry *entry);
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800usb.c b/drivers/net/wireless/ralink/rt2x00/rt2800usb.c
-index 98a7313fea4a..19eabf16147b 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800usb.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800usb.c
-@@ -116,35 +116,6 @@ static bool rt2800usb_txstatus_pending(struct rt2x00_dev *rt2x00dev)
+@@ -116,35 +116,6 @@ static bool rt2800usb_txstatus_pending(s
  	return false;
  }
  
@@ -224,7 +218,7 @@ index 98a7313fea4a..19eabf16147b 100644
  #define TXSTATUS_READ_INTERVAL 1000000
  
  static bool rt2800usb_tx_sta_fifo_read_completed(struct rt2x00_dev *rt2x00dev,
-@@ -171,7 +142,7 @@ static bool rt2800usb_tx_sta_fifo_read_completed(struct rt2x00_dev *rt2x00dev,
+@@ -171,7 +142,7 @@ static bool rt2800usb_tx_sta_fifo_read_c
  	}
  
  	/* Check if there is any entry that timedout waiting on TX status */
@@ -233,7 +227,7 @@ index 98a7313fea4a..19eabf16147b 100644
  		queue_work(rt2x00dev->workqueue, &rt2x00dev->txdone_work);
  
  	if (rt2800usb_txstatus_pending(rt2x00dev)) {
-@@ -501,123 +472,17 @@ static int rt2800usb_get_tx_data_len(struct queue_entry *entry)
+@@ -501,123 +472,17 @@ static int rt2800usb_get_tx_data_len(str
  /*
   * TX control handlers
   */
@@ -360,6 +354,3 @@ index 98a7313fea4a..19eabf16147b 100644
  
  		/*
  		 * The hw may delay sending the packet after DMA complete
--- 
-2.18.0
-

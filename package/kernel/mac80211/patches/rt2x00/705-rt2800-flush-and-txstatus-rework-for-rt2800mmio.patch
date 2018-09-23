@@ -14,11 +14,9 @@ Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
  .../net/wireless/ralink/rt2x00/rt2800pci.c    |   2 +-
  4 files changed, 99 insertions(+), 38 deletions(-)
 
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-index 595cb9c90b81..9e7b8933d30c 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -1147,7 +1147,7 @@ static inline bool rt2800_entry_txstatus_timeout(struct rt2x00_dev *rt2x00dev,
+@@ -1150,7 +1150,7 @@ static inline bool rt2800_entry_txstatus
  		return false;
  
  	if (test_bit(DEVICE_STATE_FLUSHING, &rt2x00dev->flags))
@@ -27,7 +25,7 @@ index 595cb9c90b81..9e7b8933d30c 100644
  	else
  		tout = msecs_to_jiffies(2000);
  
-@@ -1163,15 +1163,13 @@ bool rt2800_txstatus_timeout(struct rt2x00_dev *rt2x00dev)
+@@ -1166,15 +1166,13 @@ bool rt2800_txstatus_timeout(struct rt2x
  {
  	struct data_queue *queue;
  	struct queue_entry *entry;
@@ -48,11 +46,9 @@ index 595cb9c90b81..9e7b8933d30c 100644
  
  	rt2x00dev->last_nostatus_check = jiffies;
  
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
-index d0426314c2df..7d83dabb913d 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
-@@ -191,21 +191,6 @@ static inline void rt2800mmio_enable_interrupt(struct rt2x00_dev *rt2x00dev,
+@@ -191,21 +191,6 @@ static inline void rt2800mmio_enable_int
  	spin_unlock_irq(&rt2x00dev->irqmask_lock);
  }
  
@@ -74,7 +70,7 @@ index d0426314c2df..7d83dabb913d 100644
  void rt2800mmio_pretbtt_tasklet(unsigned long data)
  {
  	struct rt2x00_dev *rt2x00dev = (struct rt2x00_dev *)data;
-@@ -270,12 +255,26 @@ void rt2800mmio_autowake_tasklet(unsigned long data)
+@@ -270,12 +255,26 @@ void rt2800mmio_autowake_tasklet(unsigne
  }
  EXPORT_SYMBOL_GPL(rt2800mmio_autowake_tasklet);
  
@@ -104,7 +100,7 @@ index d0426314c2df..7d83dabb913d 100644
  	 * The TX_FIFO_STATUS interrupt needs special care. We should
  	 * read TX_STA_FIFO but we should do it immediately as otherwise
  	 * the register can overflow and we would lose status reports.
-@@ -286,25 +285,37 @@ static void rt2800mmio_txstatus_interrupt(struct rt2x00_dev *rt2x00dev)
+@@ -286,25 +285,37 @@ static void rt2800mmio_txstatus_interrup
  	 * because we can schedule the tasklet multiple times (when the
  	 * interrupt fires again during tx status processing).
  	 *
@@ -151,7 +147,7 @@ index d0426314c2df..7d83dabb913d 100644
  irqreturn_t rt2800mmio_interrupt(int irq, void *dev_instance)
  {
  	struct rt2x00_dev *rt2x00dev = dev_instance;
-@@ -327,8 +338,10 @@ irqreturn_t rt2800mmio_interrupt(int irq, void *dev_instance)
+@@ -327,8 +338,10 @@ irqreturn_t rt2800mmio_interrupt(int irq
  	 */
  	mask = ~reg;
  
@@ -164,7 +160,7 @@ index d0426314c2df..7d83dabb913d 100644
  
  	if (rt2x00_get_field32(reg, INT_SOURCE_CSR_PRE_TBTT))
  		tasklet_hi_schedule(&rt2x00dev->pretbtt_tasklet);
-@@ -453,6 +466,55 @@ void rt2800mmio_kick_queue(struct data_queue *queue)
+@@ -453,6 +466,55 @@ void rt2800mmio_kick_queue(struct data_q
  }
  EXPORT_SYMBOL_GPL(rt2800mmio_kick_queue);
  
@@ -220,11 +216,9 @@ index d0426314c2df..7d83dabb913d 100644
  void rt2800mmio_stop_queue(struct data_queue *queue)
  {
  	struct rt2x00_dev *rt2x00dev = queue->rt2x00dev;
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.h b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.h
-index b63312ce3f27..3a513273f414 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.h
-@@ -148,6 +148,7 @@ void rt2800mmio_toggle_irq(struct rt2x00_dev *rt2x00dev,
+@@ -148,6 +148,7 @@ void rt2800mmio_toggle_irq(struct rt2x00
  /* Queue handlers */
  void rt2800mmio_start_queue(struct data_queue *queue);
  void rt2800mmio_kick_queue(struct data_queue *queue);
@@ -232,11 +226,9 @@ index b63312ce3f27..3a513273f414 100644
  void rt2800mmio_stop_queue(struct data_queue *queue);
  void rt2800mmio_queue_init(struct data_queue *queue);
  
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800pci.c b/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
-index 71b1affc3885..0291441ac548 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
-@@ -364,7 +364,7 @@ static const struct rt2x00lib_ops rt2800pci_rt2x00_ops = {
+@@ -364,7 +364,7 @@ static const struct rt2x00lib_ops rt2800
  	.start_queue		= rt2800mmio_start_queue,
  	.kick_queue		= rt2800mmio_kick_queue,
  	.stop_queue		= rt2800mmio_stop_queue,
@@ -245,6 +237,3 @@ index 71b1affc3885..0291441ac548 100644
  	.write_tx_desc		= rt2800mmio_write_tx_desc,
  	.write_tx_data		= rt2800_write_tx_data,
  	.write_beacon		= rt2800_write_beacon,
--- 
-2.18.0
-

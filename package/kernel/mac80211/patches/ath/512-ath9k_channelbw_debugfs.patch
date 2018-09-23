@@ -64,7 +64,7 @@
  	debugfs_create_devm_seqfile(sc->dev, "interrupt", sc->debug.debugfs_phy,
 --- a/drivers/net/wireless/ath/ath.h
 +++ b/drivers/net/wireless/ath/ath.h
-@@ -151,6 +151,7 @@ struct ath_common {
+@@ -149,6 +149,7 @@ struct ath_common {
  	int debug_mask;
  	enum ath_device_state state;
  	unsigned long op_flags;

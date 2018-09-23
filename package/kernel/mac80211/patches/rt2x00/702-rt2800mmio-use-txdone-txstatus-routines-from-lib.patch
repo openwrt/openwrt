@@ -19,11 +19,9 @@ Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
  .../net/wireless/ralink/rt2x00/rt2x00queue.c  |   1 +
  2 files changed, 9 insertions(+), 172 deletions(-)
 
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
-index e1a7ed7e4892..aa8449a5e8fe 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
-@@ -175,161 +175,6 @@ static void rt2800mmio_wakeup(struct rt2x00_dev *rt2x00dev)
+@@ -175,161 +175,6 @@ static void rt2800mmio_wakeup(struct rt2
  	rt2800_config(rt2x00dev, &libconf, IEEE80211_CONF_CHANGE_PS);
  }
  
@@ -185,7 +183,7 @@ index e1a7ed7e4892..aa8449a5e8fe 100644
  static inline void rt2800mmio_enable_interrupt(struct rt2x00_dev *rt2x00dev,
  					       struct rt2x00_field32 irq_field)
  {
-@@ -349,14 +194,14 @@ static inline void rt2800mmio_enable_interrupt(struct rt2x00_dev *rt2x00dev,
+@@ -349,14 +194,14 @@ static inline void rt2800mmio_enable_int
  void rt2800mmio_txstatus_tasklet(unsigned long data)
  {
  	struct rt2x00_dev *rt2x00dev = (struct rt2x00_dev *)data;
@@ -207,7 +205,7 @@ index e1a7ed7e4892..aa8449a5e8fe 100644
  }
  EXPORT_SYMBOL_GPL(rt2800mmio_txstatus_tasklet);
  
-@@ -440,10 +285,6 @@ static void rt2800mmio_txstatus_interrupt(struct rt2x00_dev *rt2x00dev)
+@@ -440,10 +285,6 @@ static void rt2800mmio_txstatus_interrup
  	 * because we can schedule the tasklet multiple times (when the
  	 * interrupt fires again during tx status processing).
  	 *
@@ -218,7 +216,7 @@ index e1a7ed7e4892..aa8449a5e8fe 100644
  	 * Since we have only one producer and one consumer we don't
  	 * need to lock the kfifo.
  	 */
-@@ -485,13 +326,8 @@ irqreturn_t rt2800mmio_interrupt(int irq, void *dev_instance)
+@@ -485,13 +326,8 @@ irqreturn_t rt2800mmio_interrupt(int irq
  	 */
  	mask = ~reg;
  
@@ -233,11 +231,9 @@ index e1a7ed7e4892..aa8449a5e8fe 100644
  
  	if (rt2x00_get_field32(reg, INT_SOURCE_CSR_PRE_TBTT))
  		tasklet_hi_schedule(&rt2x00dev->pretbtt_tasklet);
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c b/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
-index 710e9641552e..6e8beb7ea350 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
-@@ -113,6 +113,7 @@ int rt2x00queue_map_txskb(struct queue_entry *entry)
+@@ -113,6 +113,7 @@ int rt2x00queue_map_txskb(struct queue_e
  		return -ENOMEM;
  
  	skbdesc->flags |= SKBDESC_DMA_MAPPED_TX;
@@ -245,6 +241,3 @@ index 710e9641552e..6e8beb7ea350 100644
  	return 0;
  }
  EXPORT_SYMBOL_GPL(rt2x00queue_map_txskb);
--- 
-2.18.0
-

@@ -1,7 +1,5 @@
-Index: backports-v4.18-rc7/drivers/net/wireless/ath/ath10k/Kconfig
-===================================================================
---- backports-v4.18-rc7.orig/drivers/net/wireless/ath/ath10k/Kconfig
-+++ backports-v4.18-rc7/drivers/net/wireless/ath/ath10k/Kconfig
+--- a/drivers/net/wireless/ath/ath10k/Kconfig
++++ b/drivers/net/wireless/ath/ath10k/Kconfig
 @@ -85,6 +85,12 @@ config ATH10K_TRACING
  	---help---
  	  Select this to ath10k use tracing infrastructure.
@@ -15,10 +13,8 @@ Index: backports-v4.18-rc7/drivers/net/wireless/ath/ath10k/Kconfig
  config ATH10K_DFS_CERTIFIED
  	bool "Atheros DFS support for certified platforms"
  	depends on ATH10K && CFG80211_CERTIFICATION_ONUS
-Index: backports-v4.18-rc7/drivers/net/wireless/ath/ath10k/Makefile
-===================================================================
---- backports-v4.18-rc7.orig/drivers/net/wireless/ath/ath10k/Makefile
-+++ backports-v4.18-rc7/drivers/net/wireless/ath/ath10k/Makefile
+--- a/drivers/net/wireless/ath/ath10k/Makefile
++++ b/drivers/net/wireless/ath/ath10k/Makefile
 @@ -18,7 +18,7 @@ ath10k_core-y += mac.o \
  ath10k_core-$(CPTCFG_ATH10K_SPECTRAL) += spectral.o
  ath10k_core-$(CPTCFG_NL80211_TESTMODE) += testmode.o
@@ -28,10 +24,8 @@ Index: backports-v4.18-rc7/drivers/net/wireless/ath/ath10k/Makefile
  ath10k_core-$(CPTCFG_MAC80211_DEBUGFS) += debugfs_sta.o
  ath10k_core-$(CONFIG_PM) += wow.o
  ath10k_core-$(CONFIG_DEV_COREDUMP) += coredump.o
-Index: backports-v4.18-rc7/drivers/net/wireless/ath/ath10k/thermal.h
-===================================================================
---- backports-v4.18-rc7.orig/drivers/net/wireless/ath/ath10k/thermal.h
-+++ backports-v4.18-rc7/drivers/net/wireless/ath/ath10k/thermal.h
+--- a/drivers/net/wireless/ath/ath10k/thermal.h
++++ b/drivers/net/wireless/ath/ath10k/thermal.h
 @@ -36,7 +36,7 @@ struct ath10k_thermal {
  	int temperature;
  };
@@ -41,11 +35,9 @@ Index: backports-v4.18-rc7/drivers/net/wireless/ath/ath10k/thermal.h
  int ath10k_thermal_register(struct ath10k *ar);
  void ath10k_thermal_unregister(struct ath10k *ar);
  void ath10k_thermal_event_temperature(struct ath10k *ar, int temperature);
-Index: backports-v4.18-rc7/local-symbols
-===================================================================
---- backports-v4.18-rc7.orig/local-symbols
-+++ backports-v4.18-rc7/local-symbols
-@@ -144,6 +144,7 @@ ATH10K_SNOC=
+--- a/local-symbols
++++ b/local-symbols
+@@ -140,6 +140,7 @@ ATH10K_SNOC=
  ATH10K_DEBUG=
  ATH10K_DEBUGFS=
  ATH10K_SPECTRAL=

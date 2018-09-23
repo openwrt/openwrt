@@ -1,6 +1,6 @@
 --- a/net/mac80211/Makefile
 +++ b/net/mac80211/Makefile
-@@ -6,7 +6,6 @@ mac80211-y := \
+@@ -7,7 +7,6 @@ mac80211-y := \
  	driver-ops.o \
  	sta_info.o \
  	wep.o \
@@ -8,7 +8,7 @@
  	wpa.o \
  	scan.o offchannel.o \
  	ht.o agg-tx.o agg-rx.o \
-@@ -16,8 +15,8 @@ mac80211-y := \
+@@ -18,8 +17,8 @@ mac80211-y := \
  	rate.o \
  	michael.o \
  	tkip.o \
@@ -385,7 +385,7 @@
  #endif /* AES_GCM_H */
 --- a/net/mac80211/wpa.c
 +++ b/net/mac80211/wpa.c
-@@ -306,7 +306,8 @@ ieee80211_crypto_tkip_decrypt(struct iee
+@@ -314,7 +314,8 @@ ieee80211_crypto_tkip_decrypt(struct iee
  }
  
  
@@ -395,7 +395,7 @@
  {
  	__le16 mask_fc;
  	int a4_included, mgmt;
-@@ -336,14 +337,8 @@ static void ccmp_special_blocks(struct s
+@@ -344,14 +345,8 @@ static void ccmp_special_blocks(struct s
  	else
  		qos_tid = 0;
  
@@ -412,7 +412,7 @@
  
  	/* Nonce: Nonce Flags | A2 | PN
  	 * Nonce Flags: Priority (b0..b3) | Management (b4) | Reserved (b5..b7)
-@@ -351,6 +346,8 @@ static void ccmp_special_blocks(struct s
+@@ -359,6 +354,8 @@ static void ccmp_special_blocks(struct s
  	b_0[1] = qos_tid | (mgmt << 4);
  	memcpy(&b_0[2], hdr->addr2, ETH_ALEN);
  	memcpy(&b_0[8], pn, IEEE80211_CCMP_PN_LEN);
@@ -421,7 +421,7 @@
  
  	/* AAD (extra authenticate-only data) / masked 802.11 header
  	 * FC | A1 | A2 | A3 | SC | [A4] | [QC] */
-@@ -407,7 +404,7 @@ static int ccmp_encrypt_skb(struct ieee8
+@@ -415,7 +412,7 @@ static int ccmp_encrypt_skb(struct ieee8
  	u8 *pos;
  	u8 pn[6];
  	u64 pn64;
@@ -430,7 +430,7 @@
  	u8 b_0[AES_BLOCK_SIZE];
  
  	if (info->control.hw_key &&
-@@ -462,9 +459,11 @@ static int ccmp_encrypt_skb(struct ieee8
+@@ -470,9 +467,11 @@ static int ccmp_encrypt_skb(struct ieee8
  		return 0;
  
  	pos += IEEE80211_CCMP_HDR_LEN;
@@ -445,7 +445,7 @@
  }
  
  
-@@ -537,13 +536,13 @@ ieee80211_crypto_ccmp_decrypt(struct iee
+@@ -545,13 +544,13 @@ ieee80211_crypto_ccmp_decrypt(struct iee
  			u8 aad[2 * AES_BLOCK_SIZE];
  			u8 b_0[AES_BLOCK_SIZE];
  			/* hardware didn't decrypt/verify MIC */
@@ -461,7 +461,7 @@
  				return RX_DROP_UNUSABLE;
  		}
  
-@@ -639,7 +638,7 @@ static int gcmp_encrypt_skb(struct ieee8
+@@ -646,7 +645,7 @@ static int gcmp_encrypt_skb(struct ieee8
  	u8 *pos;
  	u8 pn[6];
  	u64 pn64;
@@ -470,7 +470,7 @@
  	u8 j_0[AES_BLOCK_SIZE];
  
  	if (info->control.hw_key &&
-@@ -696,8 +695,10 @@ static int gcmp_encrypt_skb(struct ieee8
+@@ -703,8 +702,10 @@ static int gcmp_encrypt_skb(struct ieee8
  
  	pos += IEEE80211_GCMP_HDR_LEN;
  	gcmp_special_blocks(skb, pn, j_0, aad);
@@ -483,7 +483,7 @@
  }
  
  ieee80211_tx_result
-@@ -1121,9 +1122,9 @@ ieee80211_crypto_aes_gmac_encrypt(struct
+@@ -1127,9 +1128,9 @@ ieee80211_crypto_aes_gmac_encrypt(struct
  	struct ieee80211_key *key = tx->key;
  	struct ieee80211_mmie_16 *mmie;
  	struct ieee80211_hdr *hdr;
@@ -495,7 +495,7 @@
  
  	if (WARN_ON(skb_queue_len(&tx->skbs) != 1))
  		return TX_DROP;
-@@ -1169,7 +1170,7 @@ ieee80211_crypto_aes_gmac_decrypt(struct
+@@ -1175,7 +1176,7 @@ ieee80211_crypto_aes_gmac_decrypt(struct
  	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
  	struct ieee80211_key *key = rx->key;
  	struct ieee80211_mmie_16 *mmie;

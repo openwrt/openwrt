@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/broadcom/b43/Makefile
 +++ b/drivers/net/wireless/broadcom/b43/Makefile
-@@ -17,7 +17,7 @@ b43-$(CPTCFG_B43_PHY_AC)	+= phy_ac.o
+@@ -18,7 +18,7 @@ b43-$(CPTCFG_B43_PHY_AC)	+= phy_ac.o
  b43-y				+= sysfs.o
  b43-y				+= xmit.o
  b43-y				+= dma.o
@@ -26,7 +26,7 @@
  	}
 --- a/drivers/net/wireless/broadcom/b43/pio.h
 +++ b/drivers/net/wireless/broadcom/b43/pio.h
-@@ -150,7 +150,7 @@ static inline void b43_piorx_write32(str
+@@ -151,7 +151,7 @@ static inline void b43_piorx_write32(str
  	b43_write32(q->dev, q->mmio_base + offset, value);
  }
  
@@ -35,7 +35,7 @@
  int b43_pio_init(struct b43_wldev *dev);
  void b43_pio_free(struct b43_wldev *dev);
  
-@@ -161,5 +161,37 @@ void b43_pio_rx(struct b43_pio_rxqueue *
+@@ -162,5 +162,37 @@ void b43_pio_rx(struct b43_pio_rxqueue *
  
  void b43_pio_tx_suspend(struct b43_wldev *dev);
  void b43_pio_tx_resume(struct b43_wldev *dev);
@@ -82,5 +82,5 @@
 -	bool
 +	bool "Broadcom 43xx PIO support"
  	depends on B43 && B43_SSB
- 	select SSB_BLOCKIO
+ 	depends on SSB_BLOCKIO
  	default y

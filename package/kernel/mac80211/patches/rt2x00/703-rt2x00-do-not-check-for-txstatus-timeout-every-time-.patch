@@ -15,11 +15,9 @@ Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
  drivers/net/wireless/ralink/rt2x00/rt2x00queue.c | 1 +
  4 files changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-index 9f2835729016..0c56c7dca55f 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -1158,11 +1158,18 @@ bool rt2800_txstatus_timeout(struct rt2x00_dev *rt2x00dev)
+@@ -1161,11 +1161,18 @@ bool rt2800_txstatus_timeout(struct rt2x
  	struct data_queue *queue;
  	struct queue_entry *entry;
  
@@ -38,11 +36,9 @@ index 9f2835729016..0c56c7dca55f 100644
  	return false;
  }
  EXPORT_SYMBOL_GPL(rt2800_txstatus_timeout);
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
-index aa8449a5e8fe..d0426314c2df 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
-@@ -197,7 +197,8 @@ void rt2800mmio_txstatus_tasklet(unsigned long data)
+@@ -197,7 +197,8 @@ void rt2800mmio_txstatus_tasklet(unsigne
  
  	rt2800_txdone(rt2x00dev);
  
@@ -52,11 +48,9 @@ index aa8449a5e8fe..d0426314c2df 100644
  
  	if (test_bit(DEVICE_STATE_ENABLED_RADIO, &rt2x00dev->flags))
  		rt2800mmio_enable_interrupt(rt2x00dev,
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00.h b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
-index a279a4363bc1..af062cda4a23 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
-@@ -980,6 +980,8 @@ struct rt2x00_dev {
+@@ -988,6 +988,8 @@ struct rt2x00_dev {
  	 */
  	DECLARE_KFIFO_PTR(txstatus_fifo, u32);
  
@@ -65,11 +59,9 @@ index a279a4363bc1..af062cda4a23 100644
  	/*
  	 * Timer to ensure tx status reports are read (rt2800usb).
  	 */
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c b/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
-index 6e8beb7ea350..92ddc19e7bf7 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
-@@ -1039,6 +1039,7 @@ void rt2x00queue_start_queues(struct rt2x00_dev *rt2x00dev)
+@@ -1039,6 +1039,7 @@ void rt2x00queue_start_queues(struct rt2
  	 */
  	tx_queue_for_each(rt2x00dev, queue)
  		rt2x00queue_start_queue(queue);
@@ -77,6 +69,3 @@ index 6e8beb7ea350..92ddc19e7bf7 100644
  
  	rt2x00queue_start_queue(rt2x00dev->rx);
  }
--- 
-2.18.0
-

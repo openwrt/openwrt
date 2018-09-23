@@ -10,10 +10,8 @@ lines of code to make it optional.
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
-Index: backports-v4.18-rc7/net/mac80211/Kconfig
-===================================================================
---- backports-v4.18-rc7.orig/net/mac80211/Kconfig
-+++ backports-v4.18-rc7/net/mac80211/Kconfig
+--- a/net/mac80211/Kconfig
++++ b/net/mac80211/Kconfig
 @@ -25,20 +25,6 @@ config MAC80211_RC_MINSTREL
  	---help---
  	  This option enables the 'minstrel' TX rate control algorithm
@@ -45,11 +43,9 @@ Index: backports-v4.18-rc7/net/mac80211/Kconfig
  	default ""
  
  endif
-Index: backports-v4.18-rc7/net/mac80211/Makefile
-===================================================================
---- backports-v4.18-rc7.orig/net/mac80211/Makefile
-+++ backports-v4.18-rc7/net/mac80211/Makefile
-@@ -51,13 +51,14 @@ mac80211-$(CONFIG_PM) += pm.o
+--- a/net/mac80211/Makefile
++++ b/net/mac80211/Makefile
+@@ -52,13 +52,14 @@ mac80211-$(CONFIG_PM) += pm.o
  
  CFLAGS_trace.o := -I$(src)
  
@@ -69,11 +65,9 @@ Index: backports-v4.18-rc7/net/mac80211/Makefile
 -mac80211-$(CPTCFG_MAC80211_RC_MINSTREL_HT) += $(rc80211_minstrel_ht-y)
  
  ccflags-y += -DDEBUG
-Index: backports-v4.18-rc7/net/mac80211/main.c
-===================================================================
---- backports-v4.18-rc7.orig/net/mac80211/main.c
-+++ backports-v4.18-rc7/net/mac80211/main.c
-@@ -1264,18 +1264,12 @@ static int __init ieee80211_init(void)
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -1306,18 +1306,12 @@ static int __init ieee80211_init(void)
  	if (ret)
  		return ret;
  
@@ -92,7 +86,7 @@ Index: backports-v4.18-rc7/net/mac80211/main.c
  	rc80211_minstrel_exit();
  
  	return ret;
-@@ -1283,7 +1277,6 @@ static int __init ieee80211_init(void)
+@@ -1325,7 +1319,6 @@ static int __init ieee80211_init(void)
  
  static void __exit ieee80211_exit(void)
  {
@@ -100,10 +94,8 @@ Index: backports-v4.18-rc7/net/mac80211/main.c
  	rc80211_minstrel_exit();
  
  	ieee80211s_stop();
-Index: backports-v4.18-rc7/net/mac80211/rate.h
-===================================================================
---- backports-v4.18-rc7.orig/net/mac80211/rate.h
-+++ backports-v4.18-rc7/net/mac80211/rate.h
+--- a/net/mac80211/rate.h
++++ b/net/mac80211/rate.h
 @@ -95,18 +95,5 @@ static inline void rc80211_minstrel_exit
  }
  #endif
@@ -123,10 +115,8 @@ Index: backports-v4.18-rc7/net/mac80211/rate.h
 -
  
  #endif /* IEEE80211_RATE_H */
-Index: backports-v4.18-rc7/net/mac80211/rc80211_minstrel.c
-===================================================================
---- backports-v4.18-rc7.orig/net/mac80211/rc80211_minstrel.c
-+++ backports-v4.18-rc7/net/mac80211/rc80211_minstrel.c
+--- a/net/mac80211/rc80211_minstrel.c
++++ b/net/mac80211/rc80211_minstrel.c
 @@ -572,138 +572,6 @@ minstrel_rate_init(void *priv, struct ie
  	minstrel_update_rates(mp, mi);
  }
@@ -266,7 +256,7 @@ Index: backports-v4.18-rc7/net/mac80211/rc80211_minstrel.c
  static u32 minstrel_get_expected_throughput(void *priv_sta)
  {
  	struct minstrel_sta_info *mi = priv_sta;
-@@ -722,29 +590,8 @@ static u32 minstrel_get_expected_through
+@@ -722,28 +590,8 @@ static u32 minstrel_get_expected_through
  }
  
  const struct rate_control_ops mac80211_minstrel = {
@@ -295,11 +285,8 @@ Index: backports-v4.18-rc7/net/mac80211/rc80211_minstrel.c
 -{
 -	ieee80211_rate_control_unregister(&mac80211_minstrel);
 -}
--
-Index: backports-v4.18-rc7/net/mac80211/rc80211_minstrel.h
-===================================================================
---- backports-v4.18-rc7.orig/net/mac80211/rc80211_minstrel.h
-+++ backports-v4.18-rc7/net/mac80211/rc80211_minstrel.h
+--- a/net/mac80211/rc80211_minstrel.h
++++ b/net/mac80211/rc80211_minstrel.h
 @@ -158,7 +158,5 @@ int minstrel_get_tp_avg(struct minstrel_
  /* debugfs */
  int minstrel_stats_open(struct inode *inode, struct file *file);
@@ -308,10 +295,8 @@ Index: backports-v4.18-rc7/net/mac80211/rc80211_minstrel.h
 -int minstrel_stats_release(struct inode *inode, struct file *file);
  
  #endif
-Index: backports-v4.18-rc7/net/mac80211/rc80211_minstrel_debugfs.c
-===================================================================
---- backports-v4.18-rc7.orig/net/mac80211/rc80211_minstrel_debugfs.c
-+++ backports-v4.18-rc7/net/mac80211/rc80211_minstrel_debugfs.c
+--- a/net/mac80211/rc80211_minstrel_debugfs.c
++++ b/net/mac80211/rc80211_minstrel_debugfs.c
 @@ -54,22 +54,6 @@
  #include <net/mac80211.h>
  #include "rc80211_minstrel.h"
@@ -372,10 +357,8 @@ Index: backports-v4.18-rc7/net/mac80211/rc80211_minstrel_debugfs.c
 -	debugfs_create_file("rc_stats_csv", S_IRUGO, dir, mi,
 -			    &minstrel_stat_csv_fops);
 -}
-Index: backports-v4.18-rc7/net/mac80211/rc80211_minstrel_ht.c
-===================================================================
---- backports-v4.18-rc7.orig/net/mac80211/rc80211_minstrel_ht.c
-+++ backports-v4.18-rc7/net/mac80211/rc80211_minstrel_ht.c
+--- a/net/mac80211/rc80211_minstrel_ht.c
++++ b/net/mac80211/rc80211_minstrel_ht.c
 @@ -137,12 +137,10 @@
  		}					\
  	}
@@ -539,10 +522,8 @@ Index: backports-v4.18-rc7/net/mac80211/rc80211_minstrel_ht.c
  {
  	ieee80211_rate_control_unregister(&mac80211_minstrel_ht);
  }
-Index: backports-v4.18-rc7/net/mac80211/rc80211_minstrel_ht.h
-===================================================================
---- backports-v4.18-rc7.orig/net/mac80211/rc80211_minstrel_ht.h
-+++ backports-v4.18-rc7/net/mac80211/rc80211_minstrel_ht.h
+--- a/net/mac80211/rc80211_minstrel_ht.h
++++ b/net/mac80211/rc80211_minstrel_ht.h
 @@ -15,11 +15,7 @@
   */
  #define MINSTREL_MAX_STREAMS		3
@@ -567,10 +548,8 @@ Index: backports-v4.18-rc7/net/mac80211/rc80211_minstrel_ht.h
  
  struct mcs_group {
  	u32 flags;
-Index: backports-v4.18-rc7/net/mac80211/rc80211_minstrel_ht_debugfs.c
-===================================================================
---- backports-v4.18-rc7.orig/net/mac80211/rc80211_minstrel_ht_debugfs.c
-+++ backports-v4.18-rc7/net/mac80211/rc80211_minstrel_ht_debugfs.c
+--- a/net/mac80211/rc80211_minstrel_ht_debugfs.c
++++ b/net/mac80211/rc80211_minstrel_ht_debugfs.c
 @@ -15,6 +15,22 @@
  #include "rc80211_minstrel.h"
  #include "rc80211_minstrel_ht.h"

@@ -10,7 +10,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -2040,7 +2040,8 @@ static void rt2800_config_lna_gain(struc
+@@ -2043,7 +2043,8 @@ static void rt2800_config_lna_gain(struc
  		eeprom = rt2800_eeprom_read(rt2x00dev, EEPROM_LNA);
  		lna_gain = rt2x00_get_field16(eeprom, EEPROM_LNA_A0);
  	} else if (libconf->rf.channel <= 128) {
@@ -20,7 +20,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  			eeprom = rt2800_eeprom_read(rt2x00dev, EEPROM_EXT_LNA2);
  			lna_gain = rt2x00_get_field16(eeprom,
  						      EEPROM_EXT_LNA2_A1);
-@@ -2050,7 +2051,8 @@ static void rt2800_config_lna_gain(struc
+@@ -2053,7 +2054,8 @@ static void rt2800_config_lna_gain(struc
  						      EEPROM_RSSI_BG2_LNA_A1);
  		}
  	} else {
