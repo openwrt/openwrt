@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
 PKG_VERSION:=2.32.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.32
@@ -180,6 +180,18 @@ endef
 
 define Package/dmesg/description
  dmesg  is used to examine or control the kernel ring buffer
+endef
+
+define Package/eject
+$(call Package/util-linux/Default)
+  TITLE:=eject removable media
+  DEPENDS:= +libblkid +libmount +libuuid
+  SUBMENU=Disc
+endef
+
+define Package/eject/description
+  eject allows removable media (typically a CD-ROM, floppy disk, tape, or JAZ
+  or ZIP disk) to be ejected under software control.
 endef
 
 define Package/fdisk
@@ -595,6 +607,11 @@ define Package/dmesg/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/dmesg $(1)/usr/bin/
 endef
 
+define Package/eject/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/eject $(1)/usr/bin/
+endef
+
 define Package/fdisk/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/fdisk $(1)/usr/sbin/
@@ -753,6 +770,7 @@ $(eval $(call BuildPackage,blockdev))
 $(eval $(call BuildPackage,cal))
 $(eval $(call BuildPackage,cfdisk))
 $(eval $(call BuildPackage,dmesg))
+$(eval $(call BuildPackage,eject))
 $(eval $(call BuildPackage,fdisk))
 $(eval $(call BuildPackage,findfs))
 $(eval $(call BuildPackage,flock))
