@@ -475,7 +475,6 @@ TARGET_DEVICES += tiny-ac
 define Device/tplink_c20-v1
   $(Device/Archer)
   DTS := ArcherC20v1
-  SUPPORTED_DEVICES := c20v1
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc2000001
   TPLINK_HWREV := 0x44
