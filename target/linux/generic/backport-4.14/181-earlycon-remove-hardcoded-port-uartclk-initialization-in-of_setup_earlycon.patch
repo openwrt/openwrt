@@ -1,0 +1,40 @@
+From 182ead3e418a20328b73152b8e81fc8b4cac3b0b Mon Sep 17 00:00:00 2001
+From: Michal Simek <michal.simek@xilinx.com>
+Date: Wed, 25 Apr 2018 15:48:42 +0200
+Subject: earlycon: Remove hardcoded port->uartclk initialization in of_setup_earlycon
+
+From: Michal Simek <michal.simek@xilinx.com>
+
+commit 182ead3e418a20328b73152b8e81fc8b4cac3b0b upstream.
+
+There is no reason to initialize uartclk to BASE_BAUD * 16 for DT based
+systems.
+
+[-stable comment: commit 31cb9a8575ca ("earlycon: initialise baud field
+ of earlycon device structure") has changed 8250_early.c behavior which
+ now tries to setup UART speed.
+ Already-backported upstream commit 0ff3ab701963 ("serial:  8250_early:
+ Only set divisor if valid clk & baud") handles properly uartclk not
+ being set but it still requires backporting fix for wrong uartclk val.
+ This fixes malformed early console output on arch-es with BASE_BAUD.]
+
+Fixes: 31cb9a8575ca ("earlycon: initialise baud field of earlycon device structure")
+Signed-off-by: Michal Simek <michal.simek@xilinx.com>
+Tested-by: Matt Redfearn <matt.redfearn@mips.com>
+[rmilecki: add -stable comment and Fixes tag]
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/tty/serial/earlycon.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/tty/serial/earlycon.c
++++ b/drivers/tty/serial/earlycon.c
+@@ -254,7 +254,6 @@ int __init of_setup_earlycon(const struc
+ 		return -ENXIO;
+ 	}
+ 	port->mapbase = addr;
+-	port->uartclk = BASE_BAUD * 16;
+ 
+ 	val = of_get_flat_dt_prop(node, "reg-offset", NULL);
+ 	if (val)
