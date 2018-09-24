@@ -87,6 +87,10 @@ define Package/lldpd/conffiles
 /etc/config/lldpd
 endef
 
+CONFIGURE_VARS += \
+	$(if $(CONFIG_USE_GLIBC),,libbsd_CFLAGS=-ldo-not-link-bsd) \
+	$(if $(CONFIG_USE_GLIBC),,libbsd_LDFLAGS=-ldo-not-link-bsd)
+
 CONFIGURE_ARGS += \
 	$(if $(CONFIG_LLDPD_WITH_PRIVSEP), \
 	--with-privsep-user=lldp \
