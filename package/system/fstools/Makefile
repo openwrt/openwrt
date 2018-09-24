@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fstools
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=$(PROJECT_GIT)/project/fstools.git
@@ -79,7 +79,17 @@ define Package/block-mount
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=Block device mounting and checking
-  DEPENDS:=+ubox +libubox +libuci
+  DEPENDS:=+ubox +libubox +libuci +FSTOOLS_BLOCK_MOUNT_WITH_SCSI:lsblk \
+  +FSTOOLS_BLOCK_MOUNT_WITH_SCSI:eject
+endef
+
+define Package/block-mount/config
+	config FSTOOLS_BLOCK_MOUNT_WITH_SCSI
+		depends on PACKAGE_block-mount
+		bool "Support scsi devices list and safely eject"
+		default n
+		help
+			This option makes it possible to list and eject scsi devices safely
 endef
 
 define Package/blockd
