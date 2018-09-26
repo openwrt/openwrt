@@ -26,7 +26,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 
 --- a/drivers/mtd/mtdchar.c
 +++ b/drivers/mtd/mtdchar.c
-@@ -451,7 +451,7 @@ static int mtdchar_readoob(struct file *
+@@ -455,7 +455,7 @@ static int mtdchar_readoob(struct file *
  	 * data. For our userspace tools it is important to dump areas
  	 * with ECC errors!
  	 * For kernel internal usage it also might return -EUCLEAN
