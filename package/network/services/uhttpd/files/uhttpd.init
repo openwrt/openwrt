@@ -153,6 +153,7 @@ start_instance()
 
 	config_get http "$cfg" listen_http
 	for listen in $http; do
+		 [ "${listen%:*}" = "[::]" -a ! -e /proc/sys/net/ipv6 ] && continue
 		 procd_append_param command -p "$listen"
 	done
 
@@ -180,6 +181,7 @@ start_instance()
 			append_arg "$cfg" key  "-K"
 
 			for listen in $https; do
+				[ "${listen%:*}" = "[::]" -a ! -e /proc/sys/net/ipv6 ] && continue
 				procd_append_param command -s "$listen"
 			done
 		}
