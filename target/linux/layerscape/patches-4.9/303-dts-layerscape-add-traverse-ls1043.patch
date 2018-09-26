@@ -25,7 +25,7 @@ Signed-off-by: Mathew McBride <matt@traverse.com.au>
  clean-files	:= *.dtb
 --- a/arch/arm64/boot/dts/freescale/traverse-ls1043s.dts
 +++ b/arch/arm64/boot/dts/freescale/traverse-ls1043s.dts
-@@ -330,3 +330,29 @@
+@@ -330,3 +330,32 @@
  &sata {
  	status = "disabled";
  };
@@ -33,6 +33,9 @@ Signed-off-by: Mathew McBride <matt@traverse.com.au>
 +/* Additions for Layerscape SDK (4.4/4.9) Kernel only
 + * These kernels need additional setup for FMan/QMan DMA shared memory
 + */
++
++#include "qoriq-qman-portals-sdk.dtsi"
++#include "qoriq-bman-portals-sdk.dtsi"
 +
 +&bman_fbpr {
 +	compatible = "fsl,bman-fbpr";
@@ -57,7 +60,7 @@ Signed-off-by: Mathew McBride <matt@traverse.com.au>
 +};
 --- a/arch/arm64/boot/dts/freescale/traverse-ls1043v.dts
 +++ b/arch/arm64/boot/dts/freescale/traverse-ls1043v.dts
-@@ -251,3 +251,29 @@
+@@ -251,3 +251,32 @@
  &sata {
  	status = "disabled";
  };
@@ -65,6 +68,9 @@ Signed-off-by: Mathew McBride <matt@traverse.com.au>
 +/* Additions for Layerscape SDK (4.4/4.9) Kernel only
 + * These kernels need additional setup for FMan/QMan DMA shared memory
 + */
++
++#include "qoriq-qman-portals-sdk.dtsi"
++#include "qoriq-bman-portals-sdk.dtsi"
 +
 +&bman_fbpr {
 +	compatible = "fsl,bman-fbpr";
