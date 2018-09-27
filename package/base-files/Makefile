@@ -123,6 +123,9 @@ endif
 
 define Package/base-files/install
 	$(CP) ./files/* $(1)/
+ifeq ($(CONFIG_IPV6),)
+	$(SED) '/ip6/'d $(1)/etc/hosts
+endif
 	$(Package/base-files/install-key)
 	$(Package/base-files/nand-support)
 	if [ -d $(GENERIC_PLATFORM_DIR)/base-files/. ]; then \
