@@ -144,7 +144,8 @@ archer-c60-v2)
 		;;
 	esac
 	;;
-archer-c7-v4)
+archer-c7-v4|\
+archer-c7-v5)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:green:wlan5g" "phy0tpt"
 	ucidef_set_led_switch "wan" "WAN" "$board:green:wan" "switch0" "0x02"
@@ -152,8 +153,19 @@ archer-c7-v4)
 	ucidef_set_led_switch "lan2" "LAN2" "$board:green:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan3" "LAN3" "$board:green:lan2" "switch0" "0x10"
 	ucidef_set_led_switch "lan4" "LAN4" "$board:green:lan1" "switch0" "0x20"
-	ucidef_set_led_usbdev "usb1" "USB1" "$board:green:usb1" "1-1"
-	ucidef_set_led_usbdev "usb2" "USB2" "$board:green:usb2" "2-1"
+
+	case "$board" in
+	archer-c7-v4)
+		ucidef_set_led_usbdev "usb1" "USB1" "$board:green:usb1" "1-1"
+		ucidef_set_led_usbdev "usb2" "USB2" "$board:green:usb2" "2-1"
+		;;
+	esac
+
+	case "$board" in
+	archer-c7-v5)
+		ucidef_set_led_usbdev "usb" "USB" "$board:green:usb" "1-1"
+		;;
+	esac
 	;;
 arduino-yun)
 	ucidef_set_led_wlan "wlan" "WLAN" "arduino:blue:wlan" "phy0tpt"
