@@ -144,12 +144,12 @@ define LegacyDevice/GL-AR750S
 endef
 LEGACY_DEVICES += GL-AR750S
 
-define LegacyDevice/GL-X750-4G
-	DEVICE_TITLE := GL-X750-4G with nand flash
+define LegacyDevice/GL-X750
+	DEVICE_TITLE := GL-X750 with nand flash
 	DEVICE_PACKAGES :=  kmod-ath10k ath10k-firmware-qca9887 kmod-usb-core \
 	      kmod-usb2 kmod-usb-storage
 endef
-LEGACY_DEVICES += GL-X750-4G
+LEGACY_DEVICES += GL-X750
 
 define LegacyDevice/GL-AR300M
 	DEVICE_TITLE := GL-AR300M with nand flash
