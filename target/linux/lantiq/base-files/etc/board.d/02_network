@@ -225,7 +225,7 @@ buffalo,wbmr-300hpd)
 	ucidef_add_switch "switch0" \
 		"5:lan:2" "2:lan:3" "3:lan:4" "4:wan:1" "6t@eth0"
 	;;
-	
+
 arcadyan,vgv953)
 	lan_mac=$(mtd_get_mac_ascii uboot-env ethaddr)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
