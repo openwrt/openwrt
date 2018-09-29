@@ -37,10 +37,6 @@ PKG_DRIVERS = \
 	mwl8k mwifiex-pcie mwifiex-sdio \
 	p54-common p54-pci p54-spi p54-usb \
 	rsi91x rsi91x-usb rsi91x-sdio\
-	rt2x00-lib rt2x00-pci rt2x00-usb rt2x00-mmio \
-	rt2400-pci rt2500-pci rt2500-usb \
-	rt2800-lib rt2800-mmio rt2800-pci rt2800-soc rt2800-usb \
-	rt61-pci rt73-usb \
 	rtl8180 rtl8187 \
 	rtlwifi rtlwifi-pci rtlwifi-btcoexist rtlwifi-usb rtl8192c-common \
 	rtl8192ce rtl8192se rtl8192de rtl8192cu rtl8821ae \
@@ -50,7 +46,6 @@ PKG_DRIVERS = \
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_kmod-mac80211 \
-	$(patsubst %,CONFIG_PACKAGE_kmod-%,$(PKG_DRIVERS)) \
 	CONFIG_PACKAGE_MAC80211_DEBUGFS \
 	CONFIG_PACKAGE_MAC80211_MESH \
 	CONFIG_PACKAGE_MAC80211_TRACING \
@@ -70,8 +65,6 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_BRCM80211_DEBUG \
 	CONFIG_PACKAGE_IWLWIFI_DEBUG \
 	CONFIG_PACKAGE_IWLWIFI_DEBUGFS \
-	CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS \
-	CONFIG_PACKAGE_RT2X00_DEBUG \
 	CONFIG_PACKAGE_RTLWIFI_DEBUG \
 	CONFIG_ATH9K_SUPPORT_PCOEM \
 	CONFIG_ATH9K_TX99 \
@@ -88,6 +81,43 @@ define KernelPackage/mac80211/Default
   URL:=https://wireless.wiki.kernel.org/
   MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 endef
+
+config_package=$(if $(CONFIG_PACKAGE_kmod-$(1)),m)
+
+config-y:= \
+	WLAN \
+	NL80211_TESTMODE \
+	CFG80211_WEXT \
+	CFG80211_CERTIFICATION_ONUS \
+	MAC80211_RC_MINSTREL \
+	MAC80211_RC_MINSTREL_HT \
+	MAC80211_RC_MINSTREL_VHT \
+	MAC80211_RC_DEFAULT_MINSTREL \
+	WLAN_VENDOR_ADMTEK \
+	WLAN_VENDOR_ATH \
+	WLAN_VENDOR_ATMEL \
+	WLAN_VENDOR_BROADCOM \
+	WLAN_VENDOR_CISCO \
+	WLAN_VENDOR_INTEL \
+	WLAN_VENDOR_INTERSIL \
+	WLAN_VENDOR_MARVELL \
+	WLAN_VENDOR_MEDIATEK \
+	WLAN_VENDOR_RALINK \
+	WLAN_VENDOR_REALTEK \
+	WLAN_VENDOR_RSI \
+	WLAN_VENDOR_ST \
+	WLAN_VENDOR_TI \
+	WLAN_VENDOR_ZYDAS \
+
+config-$(call config_package,cfg80211) += CFG80211
+
+config-$(call config_package,mac80211) += MAC80211
+config-$(CONFIG_PACKAGE_MAC80211_MESH) += MAC80211_MESH
+
+include ralink.mk
+
+PKG_CONFIG_DEPENDS += \
+	$(patsubst %,CONFIG_PACKAGE_kmod-%,$(PKG_DRIVERS))
 
 define KernelPackage/cfg80211
   $(call KernelPackage/mac80211/Default)
@@ -1230,149 +1260,6 @@ define KernelPackage/rsi91x-sdio
 endef
 
 
-
-define KernelPackage/rt2x00/Default
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Ralink Drivers for RT2x00 cards
-endef
-
-define KernelPackage/rt2x00-lib
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-mac80211 +kmod-lib-crc-itu-t
-  TITLE+= (LIB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2x00lib.ko
-  MENU:=1
-endef
-
-define KernelPackage/rt2x00-lib/config
-  if PACKAGE_kmod-rt2x00-lib
-
-	config PACKAGE_RT2X00_LIB_DEBUGFS
-		bool "Enable rt2x00 debugfs support"
-		depends on PACKAGE_MAC80211_DEBUGFS
-		help
-		  Enable creation of debugfs files for the rt2x00 drivers.
-		  These debugfs files support both reading and writing of the
-		  most important register types of the rt2x00 hardware.
-
-	config PACKAGE_RT2X00_DEBUG
-		bool "Enable rt2x00 debug output"
-		help
-		  Enable debugging output for all rt2x00 modules
-
-  endif
-endef
-
-define KernelPackage/rt2x00-mmio
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @(PCI_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +kmod-eeprom-93cx6
-  HIDDEN:=1
-  TITLE+= (MMIO)
-  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2x00mmio.ko
-endef
-
-define KernelPackage/rt2x00-pci
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-mmio +kmod-rt2x00-lib
-  HIDDEN:=1
-  TITLE+= (PCI)
-  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2x00pci.ko
-  AUTOLOAD:=$(call AutoProbe,rt2x00pci)
-endef
-
-define KernelPackage/rt2x00-usb
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-lib +kmod-usb-core
-  HIDDEN:=1
-  TITLE+= (USB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2x00usb.ko
-  AUTOLOAD:=$(call AutoProbe,rt2x00usb)
-endef
-
-define KernelPackage/rt2800-lib
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +kmod-lib-crc-ccitt +@DRIVER_11N_SUPPORT
-  HIDDEN:=1
-  TITLE+= (rt2800 LIB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2800lib.ko
-endef
-
-define KernelPackage/rt2400-pci
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci
-  TITLE+= (RT2400 PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2400pci.ko
-  AUTOLOAD:=$(call AutoProbe,rt2400pci)
-endef
-
-define KernelPackage/rt2500-pci
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci
-  TITLE+= (RT2500 PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2500pci.ko
-  AUTOLOAD:=$(call AutoProbe,rt2500pci)
-endef
-
-define KernelPackage/rt2500-usb
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb
-  TITLE+= (RT2500 USB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2500usb.ko
-  AUTOLOAD:=$(call AutoProbe,rt2500usb)
-endef
-
-define KernelPackage/rt2800-mmio
-$(call KernelPackage/rt2x00/Default)
-  TITLE += (RT28xx/RT3xxx MMIO)
-  DEPENDS += +kmod-rt2800-lib +kmod-rt2x00-mmio
-  HIDDEN:=1
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2800mmio.ko
-endef
-
-define KernelPackage/rt2800-soc
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS += @(TARGET_ramips_rt288x||TARGET_ramips_rt305x||TARGET_ramips_rt3883||TARGET_ramips_mt7620) +kmod-rt2800-mmio +kmod-rt2800-lib
-  TITLE += (RT28xx/RT3xxx SoC)
-  FILES := \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2x00soc.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2800soc.ko
-  AUTOLOAD:=$(call AutoProbe,rt2800soc)
-endef
-
-define KernelPackage/rt2800-pci
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci +kmod-rt2800-lib +kmod-rt2800-mmio +rt2800-pci-firmware
-  TITLE+= (RT2860 PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2800pci.ko
-  AUTOLOAD:=$(call AutoProbe,rt2800pci)
-endef
-
-define KernelPackage/rt2800-usb
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb +kmod-rt2800-lib +kmod-lib-crc-ccitt +rt2800-usb-firmware
-  TITLE+= (RT2870 USB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2800usb.ko
-  AUTOLOAD:=$(call AutoProbe,rt2800usb)
-endef
-
-
-define KernelPackage/rt61-pci
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci +rt61-pci-firmware
-  TITLE+= (RT2x61 PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt61pci.ko
-  AUTOLOAD:=$(call AutoProbe,rt61pci)
-endef
-
-define KernelPackage/rt73-usb
-  $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb +rt73-usb-firmware
-  TITLE+= (RT73 USB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt73usb.ko
-  AUTOLOAD:=$(call AutoProbe,rt73usb)
-endef
-
-
 define KernelPackage/rtl818x/Default
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek Drivers for RTL818x devices
@@ -1581,37 +1468,6 @@ endef
 
 
 
-config_package=$(if $(CONFIG_PACKAGE_kmod-$(1)),m)
-
-config-y:= \
-	WLAN \
-	NL80211_TESTMODE \
-	CFG80211_WEXT \
-	CFG80211_CERTIFICATION_ONUS \
-	MAC80211_RC_MINSTREL \
-	MAC80211_RC_MINSTREL_HT \
-	MAC80211_RC_MINSTREL_VHT \
-	MAC80211_RC_DEFAULT_MINSTREL \
-	WLAN_VENDOR_ADMTEK \
-	WLAN_VENDOR_ATH \
-	WLAN_VENDOR_ATMEL \
-	WLAN_VENDOR_BROADCOM \
-	WLAN_VENDOR_CISCO \
-	WLAN_VENDOR_INTEL \
-	WLAN_VENDOR_INTERSIL \
-	WLAN_VENDOR_MARVELL \
-	WLAN_VENDOR_MEDIATEK \
-	WLAN_VENDOR_RALINK \
-	WLAN_VENDOR_REALTEK \
-	WLAN_VENDOR_RSI \
-	WLAN_VENDOR_ST \
-	WLAN_VENDOR_TI \
-	WLAN_VENDOR_ZYDAS \
-
-config-$(call config_package,cfg80211) += CFG80211
-
-config-$(call config_package,mac80211) += MAC80211
-config-$(CONFIG_PACKAGE_MAC80211_MESH) += MAC80211_MESH
 ifdef CONFIG_PACKAGE_MAC80211_DEBUGFS
   config-y += \
 	CFG80211_DEBUGFS \
@@ -1697,28 +1553,6 @@ config-$(CONFIG_PACKAGE_BRCM80211_DEBUG) += BRCMDBG
 config-$(call config_package,mac80211-hwsim) += MAC80211_HWSIM
 config-$(call config_package,mt7601u) += MT7601U
 config-y += WL_MEDIATEK
-
-config-$(call config_package,rt2x00-lib) += RT2X00 RT2X00_LIB
-config-$(call config_package,rt2x00-pci) += RT2X00_LIB_PCI
-config-$(call config_package,rt2x00-mmio) += RT2X00_LIB_MMIO
-config-$(call config_package,rt2x00-usb) += RT2X00_LIB_USB
-config-$(CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS) += RT2X00_LIB_DEBUGFS
-config-$(CONFIG_PACKAGE_RT2X00_DEBUG) += RT2X00_DEBUG
-
-config-$(call config_package,rt2400-pci) += RT2400PCI
-config-$(call config_package,rt2500-pci) += RT2500PCI
-config-$(call config_package,rt2500-usb) += RT2500USB
-config-$(call config_package,rt61-pci) += RT61PCI
-config-$(call config_package,rt73-usb) += RT73USB
-
-config-$(call config_package,rt2800-lib) += RT2800_LIB
-
-config-$(call config_package,rt2800-soc) += RT2800SOC
-config-$(call config_package,rt2800-pci) += RT2800PCI
-config-y += RT2800PCI_RT33XX RT2800PCI_RT35XX RT2800PCI_RT53XX RT2800PCI_RT3290
-
-config-$(call config_package,rt2800-usb) += RT2800USB
-config-y += RT2800USB_RT33XX RT2800USB_RT35XX RT2800USB_RT3573 RT2800USB_RT53XX RT2800USB_RT55XX RT2800USB_UNKNOWN
 
 config-$(call config_package,iwl-legacy) += IWLEGACY
 config-$(call config_package,iwl3945) += IWL3945
