@@ -15,7 +15,8 @@ platform_do_upgrade() {
 	bt,homehub-v3a|\
 	bt,homehub-v5a|\
 	zyxel,p-2812hnu-f1|\
-	zyxel,p-2812hnu-f3)
+	zyxel,p-2812hnu-f3|\
+	arcadyan,vgv953)
 		nand_do_upgrade $1
 		;;
 	*)

@@ -727,6 +727,16 @@ define Device/arcadyan_vgv7519-brn
 endef
 TARGET_DEVICES += arcadyan_vgv7519-brn
 
+define Device/arcadyan_vgv953
+  $(Device/NAND)
+  BOARD_NAME := VGV953
+  DEVICE_DTS := VGV953
+  DEVICE_TITLE := Telekom SPEEDPORT W921V
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += VGV953
+endef
+TARGET_DEVICES += arcadyan_vgv953
+
 endif
 
 
