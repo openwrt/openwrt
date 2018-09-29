@@ -7,9 +7,9 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2017.03
+PKG_VERSION:=2018.07
 
-PKG_HASH:=f54baf3f9325bf444c7905f3a5b6f83680edb1e6e1a4d5f8a5ad80abe885113f
+PKG_HASH:=9f10df88bc91b35642e461217f73256bbaeeca9ae2db8db56197ba5e89e1f6d4
 
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/u-boot.mk
@@ -20,28 +20,45 @@ define U-Boot/Default
   BUILD_TARGET:=zynq
   UBOOT_IMAGE:=spl/boot.bin u-boot.img
   UBOOT_CONFIG:=zynq_$(1)
+  UENV:=default
+  HIDDEN:=1
 endef
 
 define U-Boot/zc702
   NAME:=Xilinx ZC702 Dev Board
-endef
-
-define U-Boot/zc706
-  NAME:=Xilinx ZC706 Dev Board
+  BUILD_DEVICES:=xlnx_zynq-zc702
 endef
 
 define U-Boot/zed
   NAME:=Avnet Digilent ZedBoard Dev Board
+  BUILD_DEVICES:=avnet_zynq-zed
 endef
 
 define U-Boot/zybo
   NAME:=Digilent Zybo Dev Board
+  BUILD_DEVICES:=digilent_zynq-zybo
+endef
+
+define U-Boot/zybo_z7
+  NAME:=Digilent Zybo Z7 board
+  BUILD_DEVICES:=digilent_zynq-zybo-z7
 endef
 
 UBOOT_TARGETS := \
 	zc702 \
 	zed \
-	zybo
+	zybo \
+	zybo_z7
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(CP) $(PKG_BUILD_DIR)/spl/boot.bin $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot.bin
+	$(CP) $(PKG_BUILD_DIR)/u-boot.img $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-u-boot.img
+	$(CP) ./files/uEnv-$(UENV).txt $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-uEnv.txt
+endef
+
+define Package/u-boot/install/default
+endef
 
 Build/Exports:=$(Host/Exports)
 

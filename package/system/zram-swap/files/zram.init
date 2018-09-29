@@ -16,7 +16,7 @@ zram_size()	# in megabytes
 
 	if [ -z "$zram_size" ]; then
 		# e.g. 6mb for 16mb-routers or 61mb for 128mb-routers
-		echo $(( $ram_size / 2048 ))
+		echo $(( ram_size / 2048 ))
 	else
 		echo "$zram_size"
 	fi
@@ -72,21 +72,21 @@ zram_reset()
 list_cpu_idx()
 {
 	# Offset by 1 if /dev/zram0 is in use by /tmp
-	if [ "$(mount | grep /dev/zram0)" ]; then
+	if mount | grep -q /dev/zram0; then
 		local line i=1
 		# Hot-add new ZRAM device (if necessary)
-		if [ ! -b /dev/zram1 ]; then 
+		if [ ! -b /dev/zram1 ]; then
 			cat /sys/class/zram-control/hot_add
 		fi
 	else
 		local line i=0
 	fi
-	
+
 	while read line; do {
 		case "$line" in
 			[Pp]rocessor*)
 				echo $i
-				i=$(( $i + 1 ))
+				i=$(( i + 1 ))
 			;;
 		esac
 	} done <"/proc/cpuinfo"
@@ -107,7 +107,7 @@ start()
 		logger -s -t zram_start -p daemon.debug "activating '$zram_dev' for swapping ($zram_size MegaBytes)"
 
 		zram_reset "$zram_dev" "enforcing defaults"
-		echo $(( $zram_size * 1024 * 1024 )) >"/sys/block/$( basename $zram_dev )/disksize"
+		echo $(( zram_size * 1024 * 1024 )) >"/sys/block/$( basename "$zram_dev" )/disksize"
 		mkswap "$zram_dev"
 		swapon "$zram_dev"
 	} done

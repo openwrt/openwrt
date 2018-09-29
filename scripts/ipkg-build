@@ -60,8 +60,10 @@ pkg_appears_sane() {
 		done
 
 		rm $CONTROL/conffiles
-		mv $CONTROL/conffiles.resolved $CONTROL/conffiles
-		chmod 0644 $CONTROL/conffiles
+		if [ -f $CONTROL/conffiles.resolved ]; then
+			mv $CONTROL/conffiles.resolved $CONTROL/conffiles
+			chmod 0644 $CONTROL/conffiles
+		fi
 	fi
 
 	cd $owd

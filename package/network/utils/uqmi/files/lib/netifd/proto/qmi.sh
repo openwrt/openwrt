@@ -29,9 +29,10 @@ proto_qmi_setup() {
 	local interface="$1"
 	local dataformat connstat
 	local device apn auth username password pincode delay modes pdptype profile dhcpv6 autoconnect plmn $PROTO_DEFAULT_OPTIONS
+	local ip4table ip6table
 	local cid_4 pdh_4 cid_6 pdh_6
 	local ip_6 ip_prefix_length gateway_6 dns1_6 dns2_6
-	json_get_vars device apn auth username password pincode delay modes pdptype profile dhcpv6 autoconnect plmn $PROTO_DEFAULT_OPTIONS
+	json_get_vars device apn auth username password pincode delay modes pdptype profile dhcpv6 autoconnect plmn ip4table ip6table $PROTO_DEFAULT_OPTIONS
 
 	[ "$metric" = "" ] && metric="0"
 
@@ -43,6 +44,8 @@ proto_qmi_setup() {
 		proto_set_available "$interface" 0
 		return 1
 	}
+
+	[ -n "$delay" ] && sleep "$delay"
 
 	device="$(readlink -f $device)"
 	[ -c "$device" ] || {
@@ -61,8 +64,6 @@ proto_qmi_setup() {
 		proto_set_available "$interface" 0
 		return 1
 	}
-
-	[ -n "$delay" ] && sleep "$delay"
 
 	while uqmi -s -d "$device" --get-pin-status | grep '"UIM uninitialized"' > /dev/null; do
 		[ -e "$device" ] || return 1
@@ -252,6 +253,7 @@ proto_qmi_setup() {
 			json_add_string name "${interface}_6"
 			json_add_string ifname "@$interface"
 			json_add_string proto "dhcpv6"
+			[ -n "$ip6table" ] && json_add_string ip6table "$ip6table"
 			proto_add_dynamic_defaults
 			# RFC 7278: Extend an IPv6 /64 Prefix to LAN
 			json_add_string extendprefix 1
@@ -265,6 +267,7 @@ proto_qmi_setup() {
 		json_add_string name "${interface}_4"
 		json_add_string ifname "@$interface"
 		json_add_string proto "dhcp"
+		[ -n "$ip4table" ] && json_add_string ip4table "$ip4table"
 		proto_add_dynamic_defaults
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"

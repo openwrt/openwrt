@@ -19,11 +19,13 @@
 		status {
 			label = "dir-615-h1:amber:status";
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
 		};
 
 		led_status_green: status2 {
 			label = "dir-615-h1:green:status";
 			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
 		};
 
 		wan {

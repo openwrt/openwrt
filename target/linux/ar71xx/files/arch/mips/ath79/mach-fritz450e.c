@@ -129,7 +129,7 @@ static struct at803x_platform_data fritz450E_at803x_data = {
 static struct mdio_board_info fritz450E_mdio_info[] = {
 	{
 		.bus_id = "ag71xx-mdio.1",
-		.phy_addr = FRITZ450E_PHY_ADDRESS,
+		.mdio_addr = FRITZ450E_PHY_ADDRESS,
 		.platform_data = &fritz450E_at803x_data,
 	},
 };

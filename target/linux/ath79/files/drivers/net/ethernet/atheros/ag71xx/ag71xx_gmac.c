@@ -57,6 +57,14 @@ static void ag71xx_setup_gmac_934x(struct device_node *np, void __iomem *base)
 	ag71xx_of_bit(np, "switch-phy-swap", &val, AR934X_ETH_CFG_SW_PHY_SWAP);
 	ag71xx_of_bit(np, "switch-only-mode", &val,
 		AR934X_ETH_CFG_SW_ONLY_MODE);
+	ag71xx_of_set(np, "rxdv-delay", &val,
+		      AR934X_ETH_CFG_RDV_DELAY_SHIFT, 0x3);
+	ag71xx_of_set(np, "rxd-delay", &val,
+		      AR934X_ETH_CFG_RXD_DELAY_SHIFT, 0x3);
+	ag71xx_of_set(np, "txd-delay", &val,
+		      AR934X_ETH_CFG_TXD_DELAY_SHIFT, 0x3);
+	ag71xx_of_set(np, "txen-delay", &val,
+		      AR934X_ETH_CFG_TXE_DELAY_SHIFT, 0x3);
 
 	__raw_writel(val, base + AR934X_GMAC_REG_ETH_CFG);
 }
@@ -73,6 +81,17 @@ static void ag71xx_setup_gmac_955x(struct device_node *np, void __iomem *base)
 	ag71xx_of_set(np, "rxd-delay", &val, QCA955X_ETH_CFG_RXD_DELAY_SHIFT, 0x3);
 
 	__raw_writel(val, base + QCA955X_GMAC_REG_ETH_CFG);
+}
+
+static void ag71xx_setup_gmac_956x(struct device_node *np, void __iomem *base)
+{
+	u32 val = __raw_readl(base + QCA956X_GMAC_REG_ETH_CFG);
+
+	ag71xx_of_bit(np, "switch-phy-swap", &val, QCA956X_ETH_CFG_SW_PHY_SWAP);
+	ag71xx_of_bit(np, "switch-phy-addr-swap", &val,
+		QCA956X_ETH_CFG_SW_PHY_ADDR_SWAP);
+
+	__raw_writel(val, base + QCA956X_GMAC_REG_ETH_CFG);
 }
 
 int ag71xx_setup_gmac(struct device_node *np)
@@ -102,6 +121,8 @@ int ag71xx_setup_gmac(struct device_node *np)
 		ag71xx_setup_gmac_934x(np, base);
 	else if (of_device_is_compatible(np_dev, "qca,qca9550-gmac"))
 		ag71xx_setup_gmac_955x(np, base);
+	else if (of_device_is_compatible(np_dev, "qca,qca9560-gmac"))
+		ag71xx_setup_gmac_956x(np, base);
 
 	iounmap(base);
 

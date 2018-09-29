@@ -72,11 +72,13 @@
 		status {
 			label = "dir-615-d:amber:status";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			default-state = "off";
 		};
 
 		led_status_green: status2 {
 			label = "dir-615-d:green:status";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+			default-state = "on";
 		};
 
 		wan {

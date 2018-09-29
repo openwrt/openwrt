@@ -28,16 +28,19 @@
 		status-red {
 			label = "newifi-d1:red:status";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			default-state = "off";
 		};
 
 		status-green {
 			label = "newifi-d1:green:status";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			default-state = "off";
 		};
 
 		led_blue: status-blue {
 			label = "newifi-d1:blue:status";
 			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+			default-state = "on";
 		};
 	};
 
@@ -72,9 +75,6 @@
 
 &sdhci {
 	status = "okay";
-
-	pinctrl-names = "default";
-	pinctrl-0 = <&sdhci_pins>;
 };
 
 &spi0 {

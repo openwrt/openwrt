@@ -9,7 +9,10 @@
 / {
 	aliases {
 		serial0 = &uart;
-		led-status = &led_system;
+		led-boot = &system;
+		led-failsafe = &system;
+		led-running = &system;
+		led-upgrade = &system;
 	};
 
 	gpio-keys-polled {
@@ -27,7 +30,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		led_system: system {
+		system: system {
 			label = "tl-wr703n:blue:system";
 			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
 		};

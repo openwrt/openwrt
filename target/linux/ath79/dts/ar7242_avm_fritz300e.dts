@@ -11,7 +11,10 @@
 	model = "AVM FRITZ!WLAN Repeater 300E";
 
 	aliases {
-		led-status = &power;
+		led-boot = &power;
+		led-failsafe = &power;
+		led-running = &power;
+		led-upgrade = &power;
 	};
 
 	gpio-keys {

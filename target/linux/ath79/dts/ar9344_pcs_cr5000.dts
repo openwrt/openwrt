@@ -12,7 +12,10 @@
 
 	aliases {
 		serial0 = &uart;
-		led-status = &status;
+		led-boot = &status;
+		led-failsafe = &status;
+		led-running = &status;
+		led-upgrade = &status;
 	};
 
 	keys {
@@ -60,7 +63,6 @@
 			default-state = "off";
 		};
 	};
-
 };
 
 &ref {
@@ -215,7 +217,6 @@
 		swconfig,segment = "wan";
 		swconfig,portmap = <5 5>;
 	};
-
 };
 
 &wmac {

@@ -22,10 +22,6 @@
 		reg = <0x0 0x8000000>;
 	};
 
-	sdhci@10130000 {
-		status = "okay";
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -62,6 +58,10 @@
 			ralink,function = "gpio";
 		};
 	};
+};
+
+&sdhci {
+	status = "okay";
 };
 
 &spi0 {

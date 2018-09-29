@@ -65,15 +65,11 @@
 			label = "gb-pc2:green:lan3";
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		};
-
 	};
 };
 
 &sdhci {
 	status = "okay";
-
-	pinctrl-names = "default";
-	pinctrl-0 = <&sdhci_pins>;
 };
 
 &spi0 {

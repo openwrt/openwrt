@@ -12,7 +12,10 @@
 
 	aliases {
 		serial0 = &uart;
-		led-status = &led_system;
+		led-boot = &system;
+		led-failsafe = &system;
+		led-running = &system;
+		led-upgrade = &system;
 	};
 
 	gpio-keys-polled {
@@ -64,7 +67,7 @@
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 
-		led_system: system {
+		system: system {
 			label = "tp-link:green:system";
 			gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
 		};

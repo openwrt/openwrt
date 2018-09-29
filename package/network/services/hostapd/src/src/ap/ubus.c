@@ -382,16 +382,26 @@ hostapd_bss_update_beacon(struct ubus_context *ctx, struct ubus_object *obj,
 enum {
 	CSA_FREQ,
 	CSA_BCN_COUNT,
+	CSA_CENTER_FREQ1,
+	CSA_CENTER_FREQ2,
+	CSA_BANDWIDTH,
+	CSA_SEC_CHANNEL_OFFSET,
+	CSA_HT,
+	CSA_VHT,
+	CSA_BLOCK_TX,
 	__CSA_MAX
 };
 
 static const struct blobmsg_policy csa_policy[__CSA_MAX] = {
-	/*
-	 * for now, frequency and beacon count are enough, add more
-	 * parameters on demand
-	 */
 	[CSA_FREQ] = { "freq", BLOBMSG_TYPE_INT32 },
 	[CSA_BCN_COUNT] = { "bcn_count", BLOBMSG_TYPE_INT32 },
+	[CSA_CENTER_FREQ1] = { "center_freq1", BLOBMSG_TYPE_INT32 },
+	[CSA_CENTER_FREQ2] = { "center_freq2", BLOBMSG_TYPE_INT32 },
+	[CSA_BANDWIDTH] = { "bandwidth", BLOBMSG_TYPE_INT32 },
+	[CSA_SEC_CHANNEL_OFFSET] = { "sec_channel_offset", BLOBMSG_TYPE_INT32 },
+	[CSA_HT] = { "ht", BLOBMSG_TYPE_BOOL },
+	[CSA_VHT] = { "vht", BLOBMSG_TYPE_BOOL },
+	[CSA_BLOCK_TX] = { "block_tx", BLOBMSG_TYPE_BOOL },
 };
 
 #ifdef NEED_AP_MLME
@@ -411,12 +421,27 @@ hostapd_switch_chan(struct ubus_context *ctx, struct ubus_object *obj,
 
 	memset(&css, 0, sizeof(css));
 	css.freq_params.freq = blobmsg_get_u32(tb[CSA_FREQ]);
-	if (tb[CSA_BCN_COUNT])
-		css.cs_count = blobmsg_get_u32(tb[CSA_BCN_COUNT]);
+
+#define SET_CSA_SETTING(name, field, type) \
+	do { \
+		if (tb[name]) \
+			css.field = blobmsg_get_ ## type(tb[name]); \
+	} while(0)
+
+	SET_CSA_SETTING(CSA_BCN_COUNT, cs_count, u32);
+	SET_CSA_SETTING(CSA_CENTER_FREQ1, freq_params.center_freq1, u32);
+	SET_CSA_SETTING(CSA_CENTER_FREQ2, freq_params.center_freq2, u32);
+	SET_CSA_SETTING(CSA_BANDWIDTH, freq_params.bandwidth, u32);
+	SET_CSA_SETTING(CSA_SEC_CHANNEL_OFFSET, freq_params.sec_channel_offset, u32);
+	SET_CSA_SETTING(CSA_HT, freq_params.ht_enabled, bool);
+	SET_CSA_SETTING(CSA_VHT, freq_params.vht_enabled, bool);
+	SET_CSA_SETTING(CSA_BLOCK_TX, block_tx, bool);
+
 
 	if (hostapd_switch_channel(hapd, &css) != 0)
 		return UBUS_STATUS_NOT_SUPPORTED;
 	return UBUS_STATUS_OK;
+#undef SET_CSA_SETTING
 }
 #endif
 

@@ -11,7 +11,10 @@
 	model = "Buffalo BHR-4GRV2";
 
 	aliases {
-		led-status = &power;
+		led-boot = &power;
+		led-failsafe = &power;
+		led-running = &power;
+		led-upgrade = &power;
 	};
 
 	chosen {

@@ -20,6 +20,14 @@ define U-Boot/Default
   UBOOT_IMAGE:=u-boot.imx
 endef
 
+define U-Boot/mx6cuboxi
+   NAME:=SolidRun Cubox-i boards
+   UBOOT_IMAGE:=SPL u-boot.img
+   UBOOT_MAKE_FLAGS:=SPL u-boot.img
+   BUILD_DEVICES:=cubox-i
+   HIDDEN:=1
+endef
+
 define U-Boot/mx6sabresd
   NAME:=SABRE i.MX6Quad board
 endef
@@ -54,6 +62,7 @@ define U-Boot/wandboard
 endef
 
 UBOOT_TARGETS := \
+	mx6cuboxi \
 	mx6sabresd \
 	nitrogen6dl \
 	nitrogen6dl2g \
@@ -64,5 +73,12 @@ UBOOT_TARGETS := \
 	wandboard
 
 UBOOT_MAKE_FLAGS += u-boot.imx
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(foreach img,$(UBOOT_IMAGE), \
+		$(CP) $(PKG_BUILD_DIR)/$(img) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-$(img); \
+	)
+endef
 
 $(eval $(call BuildPackage/U-Boot))

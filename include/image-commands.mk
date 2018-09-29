@@ -49,17 +49,17 @@ define Build/eva-image
 	mv $@.new $@
 endef
 
-define Build/make-ras
+define Build/zyxel-ras-image
 	let \
 		newsize="$(subst k,* 1024,$(RAS_ROOTFS_SIZE))"; \
-		$(TOPDIR)/scripts/make-ras.sh \
-			--board $(RAS_BOARD) \
-			--version $(RAS_VERSION) \
-			--kernel $(call param_get_default,kernel,$(1),$(IMAGE_KERNEL)) \
-			--rootfs $@ \
-			--rootfssize $$newsize \
-			$@.new
-	@mv $@.new $@
+		$(STAGING_DIR_HOST)/bin/mkrasimage \
+			-b $(RAS_BOARD) \
+			-v $(RAS_VERSION) \
+			-r $@ \
+			-s $$newsize \
+			-o $@.new \
+			$(if $(findstring separate-kernel,$(word 1,$(1))),-k $(IMAGE_KERNEL)) \
+		&& mv $@.new $@
 endef
 
 define Build/mkbuffaloimg
@@ -122,6 +122,16 @@ define Build/tplink-safeloader
 		$(wordlist 2,$(words $(1)),$(1)) \
 		$(if $(findstring sysupgrade,$(word 1,$(1))),-S) && mv $@.new $@ || rm -f $@
 endef
+
+define Build/mksercommfw
+	-$(STAGING_DIR_HOST)/bin/mksercommfw \
+		$@ \
+		$(KERNEL_OFFSET) \
+		$(HWID) \
+		$(HWVER) \
+		$(SWVER)
+endef
+
 
 define Build/append-dtb
 	cat $(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb >> $@
@@ -262,6 +272,11 @@ define Build/openmesh-image
 		"$@-fwupgrade.cfg" "fwupgrade.cfg" \
 		"$(call param_get_default,kernel,$(1),$(IMAGE_KERNEL))" "kernel" \
 		"$(call param_get_default,rootfs,$(1),$@)" "rootfs"
+endef
+
+define Build/senao-header
+	$(STAGING_DIR_HOST)/bin/mksenaofw $(1) -e $@ -o $@.new
+	mv $@.new $@
 endef
 
 define Build/sysupgrade-tar

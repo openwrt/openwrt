@@ -11,11 +11,7 @@
 		bootargs = "console=ttyS0,115200n8";
 	};
 
-	aliases {
-		led-status = &system;
-	};
-
-	leds {
+	gpio_leds: leds {
 		compatible = "gpio-leds";
 
 		wifi {
@@ -25,7 +21,7 @@
 			linux,default-trigger = "phy0tpt";
 		};
 
-		system: wifi_qss {
+		qss_led: qss {
 			label = "tp-link:green:qss";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "off";

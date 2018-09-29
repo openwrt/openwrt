@@ -22,7 +22,7 @@ Signed-off-by: Antti Seppälä <a.seppala@gmail.com>
 
 --- a/drivers/usb/dwc2/hcd.c
 +++ b/drivers/usb/dwc2/hcd.c
-@@ -2631,6 +2631,7 @@ static void dwc2_hc_init_xfer(struct dwc
+@@ -2669,6 +2669,7 @@ static int dwc2_alloc_split_dma_aligned_
  static void dwc2_free_dma_aligned_buffer(struct urb *urb)
  {
  	void *stored_xfer_buffer;
@@ -30,7 +30,7 @@ Signed-off-by: Antti Seppälä <a.seppala@gmail.com>
  
  	if (!(urb->transfer_flags & URB_ALIGNED_TEMP_BUFFER))
  		return;
-@@ -2639,9 +2640,14 @@ static void dwc2_free_dma_aligned_buffer
+@@ -2677,9 +2678,14 @@ static void dwc2_free_dma_aligned_buffer
  	memcpy(&stored_xfer_buffer, urb->transfer_buffer +
  	       urb->transfer_buffer_length, sizeof(urb->transfer_buffer));
  

@@ -13,10 +13,15 @@
 		bootargs = "console=ttyS0,115200";
 	};
 
+
+	aliases {
+		led-status = &led_4g_0;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		4g-0 {
+		led_4g_0: 4g-0 {
 			label = "zbt-cpe102:green:4g-0";
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 		};

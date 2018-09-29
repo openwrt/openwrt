@@ -164,6 +164,20 @@ define Device/dlink_dwr-116-a1
 endef
 TARGET_DEVICES += dlink_dwr-116-a1
 
+define Device/dlink_dwr-118-a2
+  DTS := DWR-118-A2
+  DEVICE_TITLE := D-Link DWR-118 A2
+  DEVICE_PACKAGES := kmod-usb2 jboot-tools kmod-mt76
+  DLINK_ROM_ID := DLK6E3814001
+  DLINK_FAMILY_MEMBER := 0x6E38
+  DLINK_FIRMWARE_SIZE := 0xFE0000
+  KERNEL := $(KERNEL_DTB)
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
+  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
+endef
+TARGET_DEVICES += dlink_dwr-118-a2
+
 define Device/dlink_dwr-921-c1
   DTS := DWR-921-C1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
@@ -207,7 +221,7 @@ define Device/ex2700
   KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | append-uImage-fakehdr filesystem
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	netgear-dni
-  DEVICE_PACKAGES := -kmod-mt76
+  DEVICE_PACKAGES := -kmod-mt76 -kmod-mt7603 -kmod-mt76x2 -kmod-mt76-core
   DEVICE_TITLE := Netgear EX2700
 endef
 TARGET_DEVICES += ex2700
@@ -475,7 +489,7 @@ define Device/tiny-ac
 endef
 TARGET_DEVICES += tiny-ac
 
-define Device/br-6478ac-v2
+define Device/edimax_br-6478ac-v2
   DTS := BR-6478AC-V2
   DEVICE_TITLE := Edimax BR-6478AC V2
   BLOCKSIZE := 64k
@@ -483,9 +497,9 @@ define Device/br-6478ac-v2
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN68 -f 0x70000 -S 0x01100000 | pad-rootfs | \
 	append-metadata | check-size $$$$(IMAGE_SIZE)
-  DEVICE_PACKAGES := kmod-mt76
+  DEVICE_PACKAGES := kmod-mt76 kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 endef
-TARGET_DEVICES += br-6478ac-v2
+TARGET_DEVICES += edimax_br-6478ac-v2
 
 define Device/tplink_c2-v1
   $(Device/Archer)
@@ -502,7 +516,6 @@ TARGET_DEVICES += tplink_c2-v1
 define Device/tplink_c20-v1
   $(Device/Archer)
   DTS := ArcherC20v1
-  SUPPORTED_DEVICES := c20v1
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc2000001
   TPLINK_HWREV := 0x44

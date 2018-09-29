@@ -1,3 +1,5 @@
+include ./common-buffalo.mk
+
 DEVICE_VARS += ROOTFS_SIZE
 
 define Device/buffalo_bhr-4grv2
@@ -16,3 +18,15 @@ define Device/buffalo_bhr-4grv2
   SUPPORTED_DEVICES += bhr-4grv2
 endef
 TARGET_DEVICES += buffalo_bhr-4grv2
+
+define Device/buffalo_whr-g301n
+  ATH_SOC := ar7240
+  DEVICE_TITLE := Buffalo WHR-G301N
+  IMAGE_SIZE := 3712k
+  IMAGES += factory.bin tftp.bin
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/default) | buffalo-enc WHR-G301N 1.99 | buffalo-tag WHR-G301N
+  IMAGE/tftp.bin := $$(IMAGE/default) | buffalo-tftp-header
+  SUPPORTED_DEVICES += whr-g301n
+endef
+TARGET_DEVICES += buffalo_whr-g301n

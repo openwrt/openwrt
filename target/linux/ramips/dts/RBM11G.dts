@@ -86,6 +86,7 @@
 	w25q128@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
+		// XXX empiric value to obtain actual 10MHz SCK at the chip
 		spi-max-frequency = <3125000>;
 
 		partitions {
@@ -94,15 +95,41 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "routerboot";
-				reg = <0x000000 0x00F000>;
+				label = "RouterBoot";
+				reg = <0x0 0x40000>;
 				read-only;
-			};
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			factory: partition@f000 {
-				label = "factory";
-				reg = <0x00F000 0x031000>;
-				read-only;
+				partition@0 {
+					label = "bootloader1";
+					reg = <0x0 0xf000>;
+					read-only;
+				};
+
+				hard_config: partition@f000 {
+					label = "hard_config";
+					reg = <0xf000 0x1000>;
+					read-only;
+				};
+
+				partition@10000 {
+					label = "bootloader2";
+					reg = <0x10000 0xf000>;
+					read-only;
+				};
+
+				partition@20000 {
+					label = "soft_config";
+					reg = <0x20000 0x1000>;
+				};
+
+				partition@30000 {
+					label = "bios";
+					reg = <0x30000 0x1000>;
+					read-only;
+				};
 			};
 
 			partition@40000 {
@@ -114,7 +141,7 @@
 };
 
 &ethernet {
-	mtd-mac-address = <&factory 0x0010>;
+	mtd-mac-address = <&hard_config 0x0010>;
 	mtd-mac-address-increment = <1>;
 };
 

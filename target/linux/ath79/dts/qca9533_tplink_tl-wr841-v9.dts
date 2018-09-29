@@ -7,6 +7,13 @@
 #include "qca9533_tplink_tl-wr841.dtsi"
 
 / {
-	compatible = "tplink,tl-wr841n-v9", "qca,qca9533";
+	compatible = "tplink,tl-wr841-v9", "qca,qca9533";
 	model = "TP-Link TL-WR841N/ND Version 9";
+
+	aliases {
+		led-boot = &qss_led;
+		led-failsafe = &qss_led;
+		led-running = &qss_led;
+		led-upgrade = &qss_led;
+	};
 };

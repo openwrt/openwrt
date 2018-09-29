@@ -11,7 +11,10 @@
 	model = "TP-LINK TL-WR2543N/ND";
 
 	aliases {
-		led-status = &system;
+		led-boot = &system;
+		led-failsafe = &system;
+		led-running = &system;
+		led-upgrade = &system;
 	};
 
 	chosen {
@@ -77,7 +80,6 @@
 			default-state = "off";
 			linux,default-trigger = "phy0tpt";
 		};
-
 	};
 
 	rtl8367 {

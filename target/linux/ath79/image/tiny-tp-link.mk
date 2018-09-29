@@ -17,9 +17,19 @@ define Device/tplink_tl-mr3020-v1
   DEVICE_TITLE := TP-LINK TL-MR3020 v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x30200001
-  SUPPORTED_DEVICES += tl-mr3020-v1
+  SUPPORTED_DEVICES += tl-mr3020
 endef
 TARGET_DEVICES += tplink_tl-mr3020-v1
+
+define Device/tplink_tl-mr3040-v2
+  $(Device/tplink-4mlzma)
+  ATH_SOC := ar9331
+  DEVICE_TITLE := TP-LINK TL-MR3040 v2
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x30400002
+  SUPPORTED_DEVICES += tl-mr3040-v2
+endef
+TARGET_DEVICES += tplink_tl-mr3040-v2
 
 define Device/tplink_tl-mr3220-v1
   $(Device/tplink-4m)
@@ -123,9 +133,28 @@ define Device/tplink_tl-wr841-v9
   ATH_SOC := qca9533
   DEVICE_TITLE := TP-LINK TL-WR841N/ND v9
   TPLINK_HWID := 0x08410009
-  SUPPORTED_DEVICES += tl-wr841n-v9
 endef
 TARGET_DEVICES += tplink_tl-wr841-v9
+
+define Device/tplink_tl-wr841-v11
+  $(Device/tplink-4mlzma)
+  ATH_SOC := qca9533
+  DEVICE_TITLE := TP-LINK TL-WR841N/ND v11
+  TPLINK_HWID := 0x08410011
+  IMAGES += factory-us.bin factory-eu.bin
+  IMAGE/factory-us.bin := append-rootfs | mktplinkfw factory -C US
+  IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
+endef
+TARGET_DEVICES += tplink_tl-wr841-v11
+
+define Device/tplink_tl-wr941-v2
+  $(Device/tplink-4m)
+  ATH_SOC := ar9132
+  DEVICE_TITLE := TP-Link TL-WR941N/ND v2/v3
+  TPLINK_HWID := 0x09410002
+  TPLINK_HWREV := 2
+endef
+TARGET_DEVICES += tplink_tl-wr941-v2
 
 define Device/tplink_tl-wr941-v4
   $(Device/tplink-4m)

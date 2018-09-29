@@ -1,7 +1,7 @@
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
-	compatible = "ralink,mtk7620n-soc";
+	compatible = "ralink,mt7620n-soc";
 
 	cpus {
 		#address-cells = <1>;
@@ -264,8 +264,8 @@
 
 		spi_cs1: spi1 {
 			spi1 {
-				ralink,group = "spi_cs1";
-				ralink,function = "spi_cs1";
+				ralink,group = "spi refclk";
+				ralink,function = "spi refclk";
 			};
 		};
 

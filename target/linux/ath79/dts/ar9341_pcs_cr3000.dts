@@ -12,7 +12,10 @@
 
 	aliases {
 		serial0 = &uart;
-		led-status = &status;
+		led-boot = &status;
+		led-failsafe = &status;
+		led-running = &status;
+		led-upgrade = &status;
 	};
 
 	keys {
@@ -151,7 +154,6 @@
 	phy-handle = <&swphy0>;
 	mtd-mac-address = <&art 0x0>;
 	mtd-mac-address-increment = <1>;
-
 };
 
 &eth1 {
