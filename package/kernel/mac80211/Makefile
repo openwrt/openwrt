@@ -25,7 +25,7 @@ PKG_DRIVERS = \
 	adm8211 \
 	airo \
 	ath ath5k ath6kl ath6kl-sdio ath6kl-usb ath9k ath9k-common ath9k-htc ath10k \
-	b43 b43legacy \
+	b43 b43legacy brcmsmac brcmfmac brcmutil \
 	carl9170 \
 	hermes hermes-pci hermes-pcmcia hermes-plx\
 	iwl-legacy iwl3945 iwl4965 iwlwifi \
@@ -37,7 +37,7 @@ PKG_DRIVERS = \
 	mwl8k mwifiex-pcie mwifiex-sdio \
 	p54-common p54-pci p54-spi p54-usb \
 	rsi91x rsi91x-usb rsi91x-sdio\
-	rt2x00-lib rt2x00-pci rt2x00-usb \
+	rt2x00-lib rt2x00-pci rt2x00-usb rt2x00-mmio \
 	rt2400-pci rt2500-pci rt2500-usb \
 	rt2800-lib rt2800-mmio rt2800-pci rt2800-soc rt2800-usb \
 	rt61-pci rt73-usb \
@@ -1932,81 +1932,6 @@ define KernelPackage/zd1211rw/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(ZD1211FW_NAME)/zd1211* $(1)/lib/firmware/zd1211
 endef
 
-
-$(eval $(call KernelPackage,adm8211))
-$(eval $(call KernelPackage,airo))
-$(eval $(call KernelPackage,ath))
-$(eval $(call KernelPackage,ath10k))
-$(eval $(call KernelPackage,ath5k))
-$(eval $(call KernelPackage,ath6kl))
-$(eval $(call KernelPackage,ath6kl-sdio))
-$(eval $(call KernelPackage,ath6kl-usb))
-$(eval $(call KernelPackage,ath9k))
-$(eval $(call KernelPackage,ath9k-common))
-$(eval $(call KernelPackage,ath9k-htc))
-$(eval $(call KernelPackage,b43))
-$(eval $(call KernelPackage,b43legacy))
-$(eval $(call KernelPackage,brcmsmac))
-$(eval $(call KernelPackage,brcmfmac))
-$(eval $(call KernelPackage,brcmutil))
-$(eval $(call KernelPackage,carl9170))
+$(eval $(foreach drv,$(PKG_DRIVERS),$(call KernelPackage,$(drv))))
 $(eval $(call KernelPackage,cfg80211))
-$(eval $(call KernelPackage,hermes))
-$(eval $(call KernelPackage,hermes-pci))
-$(eval $(call KernelPackage,hermes-plx))
-$(eval $(call KernelPackage,hermes-pcmcia))
-$(eval $(call KernelPackage,iwlwifi))
-$(eval $(call KernelPackage,iwl-legacy))
-$(eval $(call KernelPackage,iwl4965))
-$(eval $(call KernelPackage,iwl3945))
-$(eval $(call KernelPackage,lib80211))
-$(eval $(call KernelPackage,libertas-usb))
-$(eval $(call KernelPackage,libertas-sdio))
-$(eval $(call KernelPackage,libertas-spi))
-$(eval $(call KernelPackage,libipw))
-$(eval $(call KernelPackage,ipw2100))
-$(eval $(call KernelPackage,ipw2200))
 $(eval $(call KernelPackage,mac80211))
-$(eval $(call KernelPackage,mac80211-hwsim))
-$(eval $(call KernelPackage,mt7601u))
-$(eval $(call KernelPackage,mwl8k))
-$(eval $(call KernelPackage,mwifiex-pcie))
-$(eval $(call KernelPackage,mwifiex-sdio))
-$(eval $(call KernelPackage,p54-common))
-$(eval $(call KernelPackage,p54-pci))
-$(eval $(call KernelPackage,p54-usb))
-$(eval $(call KernelPackage,p54-spi))
-$(eval $(call KernelPackage,rsi91x))
-$(eval $(call KernelPackage,rsi91x-usb))
-$(eval $(call KernelPackage,rsi91x-sdio))
-$(eval $(call KernelPackage,rt2x00-lib))
-$(eval $(call KernelPackage,rt2x00-mmio))
-$(eval $(call KernelPackage,rt2x00-pci))
-$(eval $(call KernelPackage,rt2x00-usb))
-$(eval $(call KernelPackage,rt2800-lib))
-$(eval $(call KernelPackage,rt2400-pci))
-$(eval $(call KernelPackage,rt2500-pci))
-$(eval $(call KernelPackage,rt2500-usb))
-$(eval $(call KernelPackage,rt2800-mmio))
-$(eval $(call KernelPackage,rt2800-soc))
-$(eval $(call KernelPackage,rt2800-pci))
-$(eval $(call KernelPackage,rt2800-usb))
-$(eval $(call KernelPackage,rt61-pci))
-$(eval $(call KernelPackage,rt73-usb))
-$(eval $(call KernelPackage,rtl8180))
-$(eval $(call KernelPackage,rtl8187))
-$(eval $(call KernelPackage,rtlwifi))
-$(eval $(call KernelPackage,rtlwifi-pci))
-$(eval $(call KernelPackage,rtlwifi-btcoexist))
-$(eval $(call KernelPackage,rtlwifi-usb))
-$(eval $(call KernelPackage,rtl8192c-common))
-$(eval $(call KernelPackage,rtl8192ce))
-$(eval $(call KernelPackage,rtl8192se))
-$(eval $(call KernelPackage,rtl8192de))
-$(eval $(call KernelPackage,rtl8192cu))
-$(eval $(call KernelPackage,rtl8821ae))
-$(eval $(call KernelPackage,rtl8xxxu))
-$(eval $(call KernelPackage,wlcore))
-$(eval $(call KernelPackage,wl12xx))
-$(eval $(call KernelPackage,wl18xx))
-$(eval $(call KernelPackage,zd1211rw))
