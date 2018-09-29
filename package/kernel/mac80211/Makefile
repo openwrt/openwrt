@@ -26,10 +26,8 @@ PKG_DRIVERS = \
 	airo \
 	hermes hermes-pci hermes-pcmcia hermes-plx\
 	lib80211 \
-	libertas-sdio libertas-usb libertas-spi \
 	mac80211-hwsim \
 	mt7601u \
-	mwl8k mwifiex-pcie mwifiex-sdio \
 	p54-common p54-pci p54-spi p54-usb \
 	rsi91x rsi91x-usb rsi91x-sdio\
 	wlcore wl12xx wl18xx \
@@ -89,6 +87,7 @@ config-$(CONFIG_PACKAGE_MAC80211_MESH) += MAC80211_MESH
 include ath.mk
 include broadcom.mk
 include intel.mk
+include marvell.mk
 include ralink.mk
 include realtek.mk
 
@@ -246,40 +245,6 @@ define KernelPackage/lib80211/description
 endef
 
 
-define KernelPackage/libertas-usb
-  $(call KernelPackage/mac80211/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-cfg80211 +kmod-usb-core +kmod-lib80211 +@DRIVER_WEXT_SUPPORT +libertas-usb-firmware @!LINUX_3_18
-  TITLE:=Marvell 88W8015 Wireless Driver
-  FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/libertas/libertas.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/libertas/usb8xxx.ko
-  AUTOLOAD:=$(call AutoProbe,libertas usb8xxx)
-endef
-
-define KernelPackage/libertas-sdio
-  $(call KernelPackage/mac80211/Default)
-  DEPENDS+= +kmod-cfg80211 +kmod-lib80211 +kmod-mmc +@DRIVER_WEXT_SUPPORT @!TARGET_uml +libertas-sdio-firmware @!LINUX_3_18
-  TITLE:=Marvell 88W8686 Wireless Driver
-  FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/libertas/libertas.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/libertas/libertas_sdio.ko
-  AUTOLOAD:=$(call AutoProbe,libertas libertas_sdio)
-endef
-
-define KernelPackage/libertas-spi
-  $(call KernelPackage/mac80211/Default)
-  SUBMENU:=Wireless Drivers
-  DEPENDS+= +kmod-cfg80211 +kmod-lib80211 +@DRIVER_WEXT_SUPPORT @!TARGET_uml +libertas-spi-firmware @!LINUX_3_18
-  KCONFIG := \
-	CONFIG_SPI=y \
-	CONFIG_SPI_MASTER=y
-  TITLE:=Marvell 88W8686 SPI Wireless Driver
-  FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/libertas/libertas.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/libertas/libertas_spi.ko
-  AUTOLOAD:=$(call AutoProbe,libertas libertas_spi)
-endef
-
 define KernelPackage/mac80211-hwsim
   $(call KernelPackage/mac80211/Default)
   TITLE:=mac80211 HW simulation device
@@ -295,51 +260,6 @@ define KernelPackage/mt7601u
   DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT @USB_SUPPORT +kmod-usb-core +mt7601u-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mediatek/mt7601u/mt7601u.ko
   AUTOLOAD:=$(call AutoProbe,mt7601u)
-endef
-
-
-define KernelPackage/mwl8k
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Driver for Marvell TOPDOG 802.11 Wireless cards
-  URL:=https://wireless.wiki.kernel.org/en/users/drivers/mwl8k
-  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 +@DRIVER_11N_SUPPORT +mwl8k-firmware
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mwl8k.ko
-  AUTOLOAD:=$(call AutoProbe,mwl8k)
-endef
-
-define KernelPackage/mwl8k/description
- Kernel modules for Marvell TOPDOG 802.11 Wireless cards
-endef
-
-
-define KernelPackage/mwifiex-pcie
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Driver for Marvell 802.11n/802.11ac PCIe Wireless cards
-  URL:=https://wireless.wiki.kernel.org/en/users/drivers/mwifiex
-  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 +@DRIVER_11N_SUPPORT +@DRIVER_11AC_SUPPORT +mwifiex-pcie-firmware
-  FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mwifiex/mwifiex.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mwifiex/mwifiex_pcie.ko
-  AUTOLOAD:=$(call AutoProbe,mwifiex_pcie)
-endef
-
-define KernelPackage/mwifiex-pcie/description
- Kernel modules for Marvell 802.11n/802.11ac PCIe Wireless cards
-endef
-
-define KernelPackage/mwifiex-sdio
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Driver for Marvell 802.11n/802.11ac SDIO Wireless cards
-  URL:=https://wireless.wiki.kernel.org/en/users/drivers/mwifiex
-  DEPENDS+= +kmod-mmc +kmod-mac80211 +@DRIVER_11N_SUPPORT +@DRIVER_11AC_SUPPORT +mwifiex-sdio-firmware
-  FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mwifiex/mwifiex.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mwifiex/mwifiex_sdio.ko
-  AUTOLOAD:=$(call AutoProbe,mwifiex_sdio)
-endef
-
-define KernelPackage/mwifiex-sdio/description
- Kernel modules for Marvell 802.11n/802.11ac SDIO Wireless cards
 endef
 
 define KernelPackage/p54/Default
@@ -495,12 +415,6 @@ config-$(call config_package,hermes-pcmcia) += PCMCIA_HERMES
 config-y += HERMES_PRISM
 
 config-$(call config_package,adm8211) += ADM8211
-config-$(call config_package,libertas-sdio) += LIBERTAS LIBERTAS_SDIO
-config-$(call config_package,libertas-usb) += LIBERTAS LIBERTAS_USB
-config-$(call config_package,libertas-spi) += LIBERTAS LIBERTAS_SPI
-config-$(call config_package,mwl8k) += MWL8K
-config-$(call config_package,mwifiex-pcie) += MWIFIEX MWIFIEX_PCIE
-config-$(call config_package,mwifiex-sdio) += MWIFIEX MWIFIEX_SDIO
 config-$(call config_package,wlcore) += WLCORE WLCORE_SDIO
 config-$(call config_package,wl12xx) += WL12XX
 config-$(call config_package,wl18xx) += WL18XX
