@@ -11,7 +11,7 @@ Applies to vanilla kernel 3.9.4.
 ===============================================================================
 --- a/arch/um/Kconfig.net
 +++ b/arch/um/Kconfig.net
-@@ -21,6 +21,19 @@ config UML_NET
+@@ -22,6 +22,19 @@ config UML_NET
          enable at least one of the following transport options to actually
          make use of UML networking.
  
@@ -48,7 +48,7 @@ Applies to vanilla kernel 3.9.4.
  #define DRIVER_NAME "uml-netdev"
  
  static DEFINE_SPINLOCK(opened_lock);
-@@ -295,11 +303,53 @@ static void uml_net_user_timer_expire(un
+@@ -288,11 +296,53 @@ static void uml_net_user_timer_expire(un
  #endif
  }
  
@@ -102,7 +102,7 @@ Applies to vanilla kernel 3.9.4.
  
  	if (str == NULL)
  		goto random;
-@@ -340,9 +390,26 @@ static void setup_etheraddr(struct net_d
+@@ -333,9 +383,26 @@ static void setup_etheraddr(struct net_d
  	return;
  
  random:
