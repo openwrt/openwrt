@@ -95,6 +95,11 @@ generate_network() {
 	case "$protocol" in
 		static)
 			local ipad
+			# Use preseted ip (except from 192.168.1.1) if it exist,
+			# The priority of ipaddr follows below list :
+			# /lib/preinit/00_preinit.conf -> /etc/config/network -> 192.168.1.1
+			. /lib/preinit/00_preinit.conf
+			[ -n "$pi_ip" -a ! "$pi_ip" = "192.168.1.1" ] && ipaddr=$pi_ip
 			case "$1" in
 				lan) ipad=${ipaddr:-"192.168.1.1"} ;;
 				*) ipad=${ipaddr:-"192.168.$((addr_offset++)).1"} ;;
