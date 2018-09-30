@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ubox
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/ubox.git
@@ -23,8 +23,15 @@ TARGET_LDFLAGS += $(if $(CONFIG_USE_GLIBC),-lrt)
 define Package/ubox
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+libubox +ubusd +ubus +libubus +libuci +USE_GLIBC:librt
+  DEPENDS:=+libubox +ubusd +ubus +libubus +libuci +USE_GLIBC:librt @PACKAGE_ubox-modutils||PACKAGE_kmod
   TITLE:=OpenWrt system helper toolbox
+endef
+
+define Package/ubox-modutils
+  SECTION:=base
+  CATEGORY:=Base system
+  DEPENDS:=+libubox +ubusd +ubus +libubus +libuci +USE_GLIBC:librt +ubox
+  TITLE:=OpenWrt system kernel modules helper
 endef
 
 define Package/logd
@@ -35,11 +42,17 @@ SECTION:=base
 endef
 
 define Package/ubox/install
-	$(INSTALL_DIR) $(1)/sbin $(1)/usr/sbin $(1)/lib $(1)/usr/bin
+	$(INSTALL_DIR) $(1)/sbin $(1)/lib $(1)/usr/bin
 
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{kmodloader,validate_data} $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/validate_data $(1)/sbin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/getrandom $(1)/usr/bin/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libvalidate.so $(1)/lib
+endef
+
+define Package/ubox-modutils/install
+	$(INSTALL_DIR) $(1)/sbin
+
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/kmodloader $(1)/sbin/
 
 	$(LN) kmodloader $(1)/sbin/rmmod
 	$(LN) kmodloader $(1)/sbin/insmod
@@ -56,4 +69,5 @@ define Package/logd/install
 endef
 
 $(eval $(call BuildPackage,ubox))
+$(eval $(call BuildPackage,ubox-modutils))
 $(eval $(call BuildPackage,logd))
