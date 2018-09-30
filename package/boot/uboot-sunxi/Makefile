@@ -150,6 +150,12 @@ define U-Boot/orangepi_r1
   BUILD_DEVICES:=sun8i-h2-plus-orangepi-r1
 endef
 
+define U-Boot/orangepi_zero
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Orange Pi Zero (H2+)
+  BUILD_DEVICES:=sun8i-h2-plus-orangepi-zero
+endef
+
 define U-Boot/orangepi_pc
   BUILD_SUBTARGET:=cortexa7
   NAME:=Orange Pi PC (H3)
@@ -246,6 +252,7 @@ UBOOT_TARGETS := \
 	nanopi_neo \
 	nanopi_neo_plus2 \
 	nanopi_neo2 \
+	orangepi_zero \
 	orangepi_r1 \
 	orangepi_pc \
 	orangepi_plus \
