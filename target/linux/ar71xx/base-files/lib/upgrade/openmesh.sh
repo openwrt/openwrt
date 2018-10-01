@@ -30,7 +30,7 @@ cfg_value_get()
 # create /var/lock for the lock "fw_setenv.lock" of fw_setenv
 platform_add_ramfs_ubootenv()
 {
-	[ -e /usr/sbin/fw_printenv ] && install_bin /usr/sbin/fw_printenv /usr/sbin/fw_setenv
+	[ -e /usr/sbin/fw_setenv ] && install_bin /usr/sbin/fw_setenv
 	[ -e /etc/fw_env.config ] && install_file /etc/fw_env.config
 	mkdir -p $RAM_ROOT/var/lock
 }
@@ -100,7 +100,7 @@ platform_check_image_openmesh()
 {
 	local img_magic=$1
 	local img_path=$2
-	local fw_printenv=/usr/sbin/fw_printenv
+	local fw_setenv=/usr/sbin/fw_setenv
 	local img_board_target= img_num_files= i=0
 	local cfg_name= kernel_name= rootfs_name=
 
@@ -144,7 +144,7 @@ platform_check_image_openmesh()
 		return 1
 	}
 
-	[ ! -x "$fw_printenv" ] && {
+	[ ! -x "$fw_setenv" ] && {
 		echo "Please install uboot-envtools!"
 		return 1
 	}
