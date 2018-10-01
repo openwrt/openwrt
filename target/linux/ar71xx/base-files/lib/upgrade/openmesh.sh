@@ -26,14 +26,6 @@ cfg_value_get()
 		done
 }
 
-# create /var/lock for the lock "fw_setenv.lock" of fw_setenv
-# the rest is copied using ar71xx's RAMFS_COPY_BIN and RAMFS_COPY_DATA
-platform_add_ramfs_ubootenv()
-{
-	mkdir -p $RAM_ROOT/var/lock
-}
-append sysupgrade_pre_upgrade platform_add_ramfs_ubootenv
-
 platform_check_image_target_openmesh()
 {
 	img_board_target="$1"
@@ -232,6 +224,7 @@ platform_do_upgrade_openmesh()
 	printf "rootfs_size %s\n" $rootfs_checksize >> $uboot_env_upgrade
 	printf "rootfs_checksum %s\n" $rootfs_md5 >> $uboot_env_upgrade
 
+	mkdir -p /var/lock
 	fw_setenv -s $uboot_env_upgrade || {
 		echo "failed to update U-Boot environment"
 		return 1
