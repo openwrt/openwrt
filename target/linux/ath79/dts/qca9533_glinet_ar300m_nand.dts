@@ -4,7 +4,8 @@
 
 &spi {
 	status = "okay";
-	num-cs = <1>;
+	num-cs = <2>;
+	cs-gpios = <0>, <0>;
 
 	flash@0 {
 		compatible = "winbond,w25q128", "jedec,spi-nor";
