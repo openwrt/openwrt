@@ -20,6 +20,7 @@ ath79_setup_interfaces()
 	tplink,tl-mr3040-v2|\
 	tplink,tl-wr703n|\
 	ubnt,bullet-m|\
+	ubnt,nanostation-ac-loco|\
 	ubnt,rocket-m|\
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-mesh|\
@@ -160,6 +161,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
+	ubnt,nanostation-ac|\
 	ubnt,unifiac-mesh-pro|\
 	ubnt,unifiac-pro)
 		ucidef_add_switch "switch0" \
