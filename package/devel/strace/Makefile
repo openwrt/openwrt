@@ -54,12 +54,18 @@ system calls a program makes while it is running.
 endef
 
 define Package/strace/config
+config PACKAGE_strace_libdw
+	bool "Enable stack tracing support using libdw"
+	default n
 config PACKAGE_strace_libunwind
 	bool "Enable stack tracing support using libunwind (experimental)"
 	default n
 endef
 
-CONFIGURE_ARGS += --with-libunwind=$(if $(CONFIG_PACKAGE_strace_libunwind),yes,no)
+CONFIGURE_ARGS += \
+	--with-libdw=$(if $(CONFIG_PACKAGE_strace_libdw),yes,no) \
+	--with-libunwind=$(if $(CONFIG_PACKAGE_strace_libunwind),yes,no)
+
 MAKE_FLAGS := \
 	CCOPT="$(TARGET_CFLAGS)"
 
