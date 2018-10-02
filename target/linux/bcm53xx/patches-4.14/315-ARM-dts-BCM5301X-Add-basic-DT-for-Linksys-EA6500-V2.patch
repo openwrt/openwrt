@@ -16,12 +16,12 @@
  	bcm4708-netgear-r6250.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm4708-linksys-ea6500-v2.dts
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,45 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/*
 + * Copyright (C) 2017 Rafał Miłecki <rafal@milecki.pl>
-+ * Copyright (C) 2017 Rene Kjellerup <rk.katana.steel@gmail.com>
++ * Copyright (C) 2018 Rene Kjellerup <rk.katana.steel@gmail.com>
 + *
-+ * Licensed under the ISC license.
 + */
 +
 +/dts-v1/;
@@ -59,3 +59,7 @@
 +		};
 +	};
 +};
++&usb3_phy {
++	status = "okay";
++};
+
