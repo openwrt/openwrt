@@ -7,8 +7,7 @@ platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
-	wd,mybooklive|\
-	wd,mybooklive-duo)
+	wd,mybooklive)
 		mbl_do_platform_check "$1"
 		return $?;
 		;;
@@ -22,8 +21,7 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-	wd,mybooklive|\
-	wd,mybooklive-duo)
+	wd,mybooklive)
 		mbl_do_upgrade "$ARGV"
 		;;
 	meraki,mr24|\
