@@ -31,6 +31,10 @@ static inline int has_feature(const char *feat)
 	if (!strcmp(feat, "sae"))
 		return 1;
 #endif
+#ifdef CONFIG_OWE
+	if (!strcmp(feat, "owe"))
+		return 1;
+#endif
 	return 0;
 }
 

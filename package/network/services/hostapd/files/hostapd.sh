@@ -56,6 +56,9 @@ hostapd_append_wpa_key_mgmt() {
 			append wpa_key_mgmt "SAE"
 			[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt "FT-SAE"
 		;;
+		owe)
+			append wpa_key_mgmt "OWE"
+		;;
 	esac
 }
 
@@ -226,6 +229,8 @@ hostapd_common_add_bss_config() {
 	config_add_array supported_rates
 	
 	config_add_boolean sae_require_mfp
+	
+	config_add_string 'owe_transition_bssid:macaddr' 'owe_transition_ssid:string'
 }
 
 hostapd_set_bss_options() {
@@ -302,7 +307,7 @@ hostapd_set_bss_options() {
 	}
 
 	case "$auth_type" in
-		sae)
+		sae|owe)
 			set_default ieee80211w 2
 			set_default sae_require_mfp 1
 		;;
@@ -316,7 +321,12 @@ hostapd_set_bss_options() {
 	local vlan_possible=""
 
 	case "$auth_type" in
-		none)
+		none|owe)
+			json_get_vars owe_transition_bssid owe_transition_ssid
+
+			[ -n "$owe_transition_ssid" ] && append bss_conf "owe_transition_ssid=\"$owe_transition_ssid\"" "$N"
+			[ -n "$owe_transition_bssid" ] && append bss_conf "owe_transition_bssid=$owe_transition_bssid" "$N"
+
 			wps_possible=1
 			# Here we make the assumption that if we're in open mode
 			# with WPS enabled, we got to be in unconfigured state.
@@ -733,6 +743,9 @@ wpa_supplicant_add_network() {
 
 	case "$auth_type" in
 		none) ;;
+		owe)
+			hostapd_append_wpa_key_mgmt
+		;;
 		wep)
 			local wep_keyidx=0
 			hostapd_append_wep_key network_data
