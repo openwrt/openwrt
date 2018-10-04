@@ -1,0 +1,134 @@
+From 97c1b677e5f04a559413a25644dc4c92e42d5347 Mon Sep 17 00:00:00 2001
+From: Chuanhong Guo <gch981213@gmail.com>
+Date: Thu, 4 Oct 2018 15:42:25 +0800
+Subject: [PATCH 1/2] irqchip: ath79-misc: split ath79_misc_irq_chip into two
+ structs
+
+The original code use one irq_chip for two different irq handling
+behaviors, meaning that we can't use both qca,ar7100-misc-intc and
+qca,ar7240-misc-intc on the same device. (The difference between
+them is whether it needs a write to clear the INT_STATUS register)
+This driver is also suitable for handling PCI interrupts and to use
+this for ar724x and later devices we need to use both behaviors at
+the same time. (misc_intc needs an ack but pcie_intc doesn't)
+
+This patch defines separated irq_chip and irq_domain_ops for two
+types of misc_intc to solve this problem.
+
+Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
+---
+ drivers/irqchip/irq-ath79-misc.c | 51 +++++++++++++++++++++-----------
+ 1 file changed, 33 insertions(+), 18 deletions(-)
+
+diff --git a/drivers/irqchip/irq-ath79-misc.c b/drivers/irqchip/irq-ath79-misc.c
+index aa729078..5ee471d2 100644
+--- a/drivers/irqchip/irq-ath79-misc.c
++++ b/drivers/irqchip/irq-ath79-misc.c
+@@ -90,22 +90,43 @@ static void ar724x_misc_irq_ack(struct irq_data *d)
+ 	__raw_readl(base + AR71XX_RESET_REG_MISC_INT_STATUS);
+ }
+ 
+-static struct irq_chip ath79_misc_irq_chip = {
+-	.name		= "MISC",
++static struct irq_chip ar71xx_misc_irq_chip = {
++	.name			= "AR7100_MISC",
++	.irq_unmask		= ar71xx_misc_irq_unmask,
++	.irq_mask		= ar71xx_misc_irq_mask,
++	.irq_mask_ack	= ar71xx_misc_irq_mask,
++};
++
++static int ar71xx_misc_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
++{
++	irq_set_chip_and_handler(irq, &ar71xx_misc_irq_chip, handle_level_irq);
++	irq_set_chip_data(irq, d->host_data);
++	return 0;
++}
++
++static const struct irq_domain_ops ar71xx_misc_irq_domain_ops = {
++	.xlate = irq_domain_xlate_onecell,
++	.map = ar71xx_misc_map,
++};
++
++
++static struct irq_chip ar724x_misc_irq_chip = {
++	.name		= "AR724X_MISC",
+ 	.irq_unmask	= ar71xx_misc_irq_unmask,
+ 	.irq_mask	= ar71xx_misc_irq_mask,
++	.irq_ack	= ar724x_misc_irq_ack,
+ };
+ 
+-static int misc_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
++static int ar724x_misc_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
+ {
+-	irq_set_chip_and_handler(irq, &ath79_misc_irq_chip, handle_level_irq);
++	irq_set_chip_and_handler(irq, &ar724x_misc_irq_chip, handle_level_irq);
+ 	irq_set_chip_data(irq, d->host_data);
+ 	return 0;
+ }
+ 
+-static const struct irq_domain_ops misc_irq_domain_ops = {
++static const struct irq_domain_ops ar724x_misc_irq_domain_ops = {
+ 	.xlate = irq_domain_xlate_onecell,
+-	.map = misc_map,
++	.map = ar724x_misc_map,
+ };
+ 
+ static void __init ath79_misc_intc_domain_init(
+@@ -121,7 +142,8 @@ static void __init ath79_misc_intc_domain_init(
+ }
+ 
+ static int __init ath79_misc_intc_of_init(
+-	struct device_node *node, struct device_node *parent)
++	struct device_node *node, struct device_node *parent,
++	const struct irq_domain_ops *misc_irq_domain_ops)
+ {
+ 	struct irq_domain *domain;
+ 	void __iomem *base;
+@@ -140,7 +162,7 @@ static int __init ath79_misc_intc_of_init(
+ 	}
+ 
+ 	domain = irq_domain_add_linear(node, ATH79_MISC_IRQ_COUNT,
+-				&misc_irq_domain_ops, base);
++				misc_irq_domain_ops, base);
+ 	if (!domain) {
+ 		pr_err("Failed to add MISC irqdomain\n");
+ 		return -EINVAL;
+@@ -153,8 +175,7 @@ static int __init ath79_misc_intc_of_init(
+ static int __init ar7100_misc_intc_of_init(
+ 	struct device_node *node, struct device_node *parent)
+ {
+-	ath79_misc_irq_chip.irq_mask_ack = ar71xx_misc_irq_mask;
+-	return ath79_misc_intc_of_init(node, parent);
++	return ath79_misc_intc_of_init(node, parent, &ar71xx_misc_irq_domain_ops);
+ }
+ 
+ IRQCHIP_DECLARE(ar7100_misc_intc, "qca,ar7100-misc-intc",
+@@ -163,8 +184,7 @@ IRQCHIP_DECLARE(ar7100_misc_intc, "qca,ar7100-misc-intc",
+ static int __init ar7240_misc_intc_of_init(
+ 	struct device_node *node, struct device_node *parent)
+ {
+-	ath79_misc_irq_chip.irq_ack = ar724x_misc_irq_ack;
+-	return ath79_misc_intc_of_init(node, parent);
++	return ath79_misc_intc_of_init(node, parent, &ar724x_misc_irq_domain_ops);
+ }
+ 
+ IRQCHIP_DECLARE(ar7240_misc_intc, "qca,ar7240-misc-intc",
+@@ -175,13 +195,9 @@ void __init ath79_misc_irq_init(void __iomem *regs, int irq,
+ {
+ 	struct irq_domain *domain;
+ 
+-	if (is_ar71xx)
+-		ath79_misc_irq_chip.irq_mask_ack = ar71xx_misc_irq_mask;
+-	else
+-		ath79_misc_irq_chip.irq_ack = ar724x_misc_irq_ack;
+-
+ 	domain = irq_domain_add_legacy(NULL, ATH79_MISC_IRQ_COUNT,
+-			irq_base, 0, &misc_irq_domain_ops, regs);
++			irq_base, 0, is_ar71xx ? &ar71xx_misc_irq_domain_ops
++			: &ar724x_misc_irq_domain_ops, regs);
+ 	if (!domain)
+ 		panic("Failed to create MISC irqdomain");
+ 
+-- 
+2.17.1
+
