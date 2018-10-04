@@ -146,6 +146,9 @@ case "$FIRMWARE" in
 	ubnt,rocket-m)
 		ath9k_eeprom_extract "art" 4096 4096
 		;;
+	pqi,air-pen)
+		ath9k_eeprom_extract "art" 4096 2002
+		;;
 	ubnt,unifi)
 		ath9k_eeprom_extract "art" 4096 2048
 		;;
