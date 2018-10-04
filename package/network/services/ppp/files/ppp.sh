@@ -89,8 +89,10 @@ ppp_generic_setup() {
 	local localip
 
 	json_get_vars ipv6 ip6table demand keepalive keepalive_adaptive username password pppd_options pppname unnumbered persist maxfail holdoff peerdns
-	if [ "$ipv6" = 0 ]; then
+	if [ "$ipv6" = 0 -o ! -e /proc/sys/net/ipv6 ]; then
 		ipv6=""
+		ip6table=""
+		autoipv6=""
 	elif [ -z "$ipv6" -o "$ipv6" = auto ]; then
 		ipv6=1
 		autoipv6=1
@@ -148,9 +150,9 @@ ppp_generic_setup() {
 		${connect:+connect "$connect"} \
 		${disconnect:+disconnect "$disconnect"} \
 		ip-up-script /lib/netifd/ppp-up \
-		ipv6-up-script /lib/netifd/ppp6-up \
+		${ipv6:+ipv6-up-script /lib/netifd/ppp6-up} \
 		ip-down-script /lib/netifd/ppp-down \
-		ipv6-down-script /lib/netifd/ppp-down \
+		${ipv6:+ipv6-down-script /lib/netifd/ppp-down} \
 		${mtu:+mtu $mtu mru $mtu} \
 		"$@" $pppd_options
 }
