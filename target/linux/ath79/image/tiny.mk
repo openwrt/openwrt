@@ -30,3 +30,13 @@ define Device/buffalo_whr-g301n
   SUPPORTED_DEVICES += whr-g301n
 endef
 TARGET_DEVICES += buffalo_whr-g301n
+
+define Device/pqi-air-pen
+  ATH_SOC := ar9330
+  DEVICE_TITLE := PQI Air-Pen
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  IMAGE_SIZE := 7680k
+  SUPPORTED_DEVICES += pqi-air-pen
+endef
+TARGET_DEVICES += pqi-air-pen
+
