@@ -114,6 +114,12 @@ ramips_setup_interfaces()
 		ucidef_add_switch_attr "switch0" "enable" "false"
 		ucidef_set_interface_lan "eth0"
 		;;
+	elecom,wrc-733ghbk|\
+	iodata,wn-ac1167gr|\
+	iodata,wn-ac733gr3)
+		ucidef_add_switch "switch1" \
+			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
+		;;
 	engenius,esr600)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan" "0@eth0"
@@ -133,11 +139,6 @@ ramips_setup_interfaces()
 	hiwifi,hc5861)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "5:wan" "6@eth0"
-		;;
-	iodata,wn-ac1167gr|\
-	iodata,wn-ac733gr3)
-		ucidef_add_switch "switch1" \
-			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
 		;;
 	iptime,a104ns)
 		ucidef_add_switch "switch0" \
@@ -282,6 +283,11 @@ ramips_setup_macs()
 		;;
 	edimax,br-6478ac-v2)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 2)
+		;;
+	elecom,wrc-733ghbk)
+		lan_mac=$(mtd_get_mac_ascii hwconfig HW.LAN.MAC.Address)
+		wan_mac=$(mtd_get_mac_ascii hwconfig HW.WAN.MAC.Address)
+		label_mac=$wan_mac
 		;;
 	engenius,esr600)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)

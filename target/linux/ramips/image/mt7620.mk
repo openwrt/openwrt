@@ -354,6 +354,18 @@ define Device/edimax_ew-7478apc
 endef
 TARGET_DEVICES += edimax_ew-7478apc
 
+define Device/elecom_wrc-733ghbk
+  SOC := mt7620a
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WRC-733GHBK
+  IMAGE_SIZE := 7680k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+    edimax-header -s CSYS -m RN62 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+    append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-switch-rtl8367b
+endef
+TARGET_DEVICES += elecom_wrc-733ghbk
+
 define Device/elecom_wrh-300cr
   SOC := mt7620n
   IMAGE_SIZE := 14272k
