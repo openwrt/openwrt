@@ -85,6 +85,10 @@ define Package/lldpd/conffiles
 /etc/config/lldpd
 endef
 
+CONFIGURE_VARS += \
+	$(if $(CONFIG_USE_GLIBC),,libbsd_CFLAGS=-ldo-not-link-bsd) \
+	$(if $(CONFIG_USE_GLIBC),,libbsd_LDFLAGS=-ldo-not-link-bsd)
+
 CONFIGURE_ARGS += \
 	$(if $(CONFIG_LLDPD_WITH_PRIVSEP), \
 	--with-privsep-user=lldp \
@@ -107,5 +111,8 @@ CONFIGURE_ARGS += \
 	$(if $(CONFIG_LLDPD_WITH_JSON),--with-json=json-c,--with-json=no) \
 	$(if $(CONFIG_LLDPD_WITH_SNMP),--with-snmp,)
 
+# there is no flag to disable libbsd
+CONFIGURE_VARS += \
+       $(if $(CONFIG_USE_GLIBC),,libbsd_LIBS="-lNONexistent")
 
 $(eval $(call BuildPackage,lldpd))

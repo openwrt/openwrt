@@ -120,6 +120,9 @@ case "$FIRMWARE" in
 	tplink,tl-wr941-v4)
 		ath9k_eeprom_extract "art" 4096 3768
 		;;
+	buffalo,wzr-hp-g450h)
+		ath9k_eeprom_extract "ART" 4096 1088
+		;;
 	ocedo,raccoon|\
 	tplink,tl-wdr3600|\
 	tplink,tl-wdr4300|\
