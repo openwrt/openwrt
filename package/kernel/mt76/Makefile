@@ -47,6 +47,7 @@ endef
 define KernelPackage/mt76-core
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT76xx wireless driver
+  HIDDEN:=1
   FILES:=\
 	$(PKG_BUILD_DIR)/mt76.ko
 endef
@@ -54,7 +55,7 @@ endef
 define KernelPackage/mt76-usb
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT76xx wireless driver USB support
-  DEPENDS += kmod-usb-core kmod-mt76-core
+  DEPENDS += +kmod-usb-core +kmod-mt76-core
   HIDDEN:=1
   FILES:=\
 	$(PKG_BUILD_DIR)/mt76-usb.ko
