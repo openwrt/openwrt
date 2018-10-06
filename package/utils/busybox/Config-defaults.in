@@ -2124,6 +2124,7 @@ config BUSYBOX_DEFAULT_WATCHDOG
 	default n
 config BUSYBOX_DEFAULT_FEATURE_IPV6
 	bool
+	depends on IPV6
 	default y
 config BUSYBOX_DEFAULT_FEATURE_UNIX_LOCAL
 	bool
