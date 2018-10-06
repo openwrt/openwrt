@@ -19,6 +19,7 @@ fi
 
 proto_wireguard_init_config() {
   proto_config_add_string "private_key"
+  proto_config_add_string "private_key_file"
   proto_config_add_int    "listen_port"
   proto_config_add_int    "mtu"
   proto_config_add_string "fwmark"
@@ -32,6 +33,7 @@ proto_wireguard_setup_peer() {
 
   local public_key
   local preshared_key
+  local preshared_key_file
   local allowed_ips
   local route_allowed_ips
   local endpoint_host
@@ -40,6 +42,7 @@ proto_wireguard_setup_peer() {
 
   config_get      public_key           "${peer_config}" "public_key"
   config_get      preshared_key        "${peer_config}" "preshared_key"
+  config_get      preshared_key_file   "${peer_config}" "preshared_key_file"
   config_get      allowed_ips          "${peer_config}" "allowed_ips"
   config_get_bool route_allowed_ips    "${peer_config}" "route_allowed_ips" 0
   config_get      endpoint_host        "${peer_config}" "endpoint_host"
@@ -49,7 +52,9 @@ proto_wireguard_setup_peer() {
   # peer configuration
   echo "[Peer]"                                         >> "${wg_cfg}"
   echo "PublicKey=${public_key}"                        >> "${wg_cfg}"
-  if [ "${preshared_key}" ]; then
+  if [ "${preshared_key_file}" ]; then
+    echo "PresharedKey=`cat /etc/wireguard/${preshared_key_file}`" >> "${wg_cfg}"
+  elif [ "${preshared_key}" ]; then
     echo "PresharedKey=${preshared_key}"                >> "${wg_cfg}"
   fi
   for allowed_ip in $allowed_ips; do
@@ -103,12 +108,14 @@ proto_wireguard_setup() {
   local wg_cfg="${wg_dir}/${config}"
 
   local private_key
+  local private_key_file
   local listen_port
   local mtu
 
   # load configuration
   config_load network
   config_get private_key   "${config}" "private_key"
+  config_get private_key_file   "${config}" "private_key_file"
   config_get listen_port   "${config}" "listen_port"
   config_get addresses     "${config}" "addresses"
   config_get mtu           "${config}" "mtu"
@@ -129,7 +136,13 @@ proto_wireguard_setup() {
   umask 077
   mkdir -p "${wg_dir}"
   echo "[Interface]"                     >  "${wg_cfg}"
-  echo "PrivateKey=${private_key}"       >> "${wg_cfg}"
+  
+  if [ "${private_key_file}" ]; then
+    echo "PrivateKey=`cat /etc/wireguard/${private_key_file}`" >> "${wg_cfg}"
+  else
+    echo "PrivateKey=${private_key}"            >> "${wg_cfg}"
+  fi
+
   if [ "${listen_port}" ]; then
     echo "ListenPort=${listen_port}"     >> "${wg_cfg}"
   fi
