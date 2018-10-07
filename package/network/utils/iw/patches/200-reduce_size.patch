@@ -274,7 +274,7 @@
 +ifdef IW_FULL
 +  CFLAGS += -DIW_FULL
 +else
-+  OBJS:=$(filter-out $(patsubst %,%.o,$(OBJS_DISABLED)),$(OBJS))
++  OBJS:=$(filter-out $(patsubst %,%.o,$(OBJS_FULL)),$(OBJS))
 +endif
  ALL = iw
  
