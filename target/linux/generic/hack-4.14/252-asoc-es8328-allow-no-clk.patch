@@ -1,0 +1,52 @@
+--- a/sound/soc/codecs/es8328.c	2018-09-20 05:43:49.000000000 +0900
++++ b/sound/soc/codecs/es8328.c	2018-09-29 15:35:05.967572228 +0900
+@@ -728,7 +728,8 @@ static int es8328_suspend(struct snd_soc
+ 
+ 	es8328 = snd_soc_codec_get_drvdata(codec);
+ 
+-	clk_disable_unprepare(es8328->clk);
++	if (es8328->clk)
++		clk_disable_unprepare(es8328->clk);
+ 
+ 	ret = regulator_bulk_disable(ARRAY_SIZE(es8328->supplies),
+ 			es8328->supplies);
+@@ -747,10 +748,12 @@ static int es8328_resume(struct snd_soc_
+ 
+ 	es8328 = snd_soc_codec_get_drvdata(codec);
+ 
+-	ret = clk_prepare_enable(es8328->clk);
+-	if (ret) {
+-		dev_err(codec->dev, "unable to enable clock\n");
+-		return ret;
++	if (es8328->clk) {
++		ret = clk_prepare_enable(es8328->clk);
++		if (ret) {
++			dev_err(codec->dev, "unable to enable clock\n");
++			return ret;
++		}
+ 	}
+ 
+ 	ret = regulator_bulk_enable(ARRAY_SIZE(es8328->supplies),
+@@ -787,15 +790,14 @@ static int es8328_codec_probe(struct snd
+ 	/* Setup clocks */
+ 	es8328->clk = devm_clk_get(codec->dev, NULL);
+ 	if (IS_ERR(es8328->clk)) {
++		es8328->clk = NULL;
+ 		dev_err(codec->dev, "codec clock missing or invalid\n");
+-		ret = PTR_ERR(es8328->clk);
+-		goto clk_fail;
+-	}
+-
+-	ret = clk_prepare_enable(es8328->clk);
+-	if (ret) {
+-		dev_err(codec->dev, "unable to prepare codec clk\n");
+-		goto clk_fail;
++	} else {
++		ret = clk_prepare_enable(es8328->clk);
++		if (ret) {
++			dev_err(codec->dev, "unable to prepare codec clk\n");
++			goto clk_fail;
++		}
+ 	}
+ 
+ 	return 0;
