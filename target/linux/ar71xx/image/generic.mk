@@ -197,6 +197,14 @@ define Device/cf-e320n-v2
 endef
 TARGET_DEVICES += cf-e320n-v2
 
+define Device/cf-e110n
+  $(Device/cf-e316n-v2)
+  DEVICE_TITLE := COMFAST CF-E110N
+  DEVICE_PACKAGES += rssileds
+  BOARDNAME := CF-E110N
+endef
+TARGET_DEVICES += cf-e110n
+
 define Device/cf-e355ac-v1
   DEVICE_TITLE := COMFAST CF-E355AC v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct \
