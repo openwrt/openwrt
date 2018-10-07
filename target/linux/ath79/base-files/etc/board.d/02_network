@@ -105,6 +105,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:lan:1" "5:lan:2" "4:wan"
 		;;
+	rosinson,wr818)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan" "2:lan" "3:wan"
+		;;
 	tplink,archer-c7-v1|\
 	tplink,archer-c7-v2|\
 	tplink,tl-wdr4900-v2)
@@ -223,6 +227,10 @@ ath79_setup_macs()
 	phicomm,k2t)
 		lan_mac=$(k2t_get_mac "lan_mac")
 		wan_mac=$(k2t_get_mac "wan_mac")
+		;;
+	rosinson,wr818)
+		wan_mac=$(mtd_get_mac_binary factory 0)
+		lan_mac=$(macaddr_setbit_la "$wan_mac")
 		;;
 	tplink,tl-wr1043nd-v4)
 		base_mac=$(mtd_get_mac_binary product-info 8)

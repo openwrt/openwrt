@@ -341,3 +341,12 @@ define Device/wd_mynet-wifi-rangeextender
   SUPPORTED_DEVICES += mynet-rext
 endef
 TARGET_DEVICES += wd_mynet-wifi-rangeextender
+
+define Device/rosinson_wr818
+  ATH_SOC := qca9563
+  DEVICE_TITLE := ROSINSON WR818
+  IMAGE_SIZE := 15936k
+  IMAGES := sysupgrade.bin
+  DEVICE_PACKAGES := kmod-usb2
+endef
+TARGET_DEVICES += rosinson_wr818
