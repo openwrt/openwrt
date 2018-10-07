@@ -364,6 +364,19 @@
 				ralink,function = "refclk";
 			};
 		};
+
+		gpio_pins: gpio {
+			gpio {
+				ralink,group = "gpio";
+				ralink,function = "gpio";
+			};
+		};
+		gpio_refclk_pins: gpio_refclk {
+			gpio {
+				ralink,group = "gpio";
+				ralink,function = "refclk";
+			};
+		};
 	};
 
 	rstctrl: rstctrl {

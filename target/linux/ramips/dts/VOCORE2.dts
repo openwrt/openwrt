@@ -20,6 +20,46 @@
 			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	i2c_gpio: i2c-gpio {
+		compatible = "i2c-gpio";
+
+		gpios = <&gpio0 5 0
+			 &gpio0 4 0>;
+		i2c-gpio,delay-us = <5>;
+
+		codec: es8388@10 {
+			compatible = "everest,es8388";
+			reg = <0x10>;
+
+			#sound-dai-cells = <0>;
+
+			status = "okay";
+		};
+	};
+
+	sound {
+		compatible = "simple-audio-card";
+		simple-audio-card,name = "audio_i2s";
+		simple-audio-card,format = "i2s";
+		simple-audio-card,bitclock-master = <&dailink_master>;
+		simple-audio-card,frame-master = <&dailink_master>;
+		simple-audio-card,widgets =
+			"Headphone", "Headphones",
+			"Microphone", "Mic";
+		simple-audio-card,routing =
+			"Headphones", "LOUT1",
+			"Headphones", "ROUT1",
+			"LINPUT1", "Mic";
+
+		dailink_master: simple-audio-card,cpu {
+			sound-dai = <&i2s>;
+		};
+
+		simple-audio-card,codec {
+			sound-dai = <&codec>;
+		};
+	};
 };
 
 &spi0 {
@@ -60,4 +100,22 @@
 			};
 		};
 	};
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "i2c";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&i2s {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2s_pins>, <&gpio_refclk_pins>;
+
+	#sound-dai-cells = <0>;
+
+	status = "okay";
 };

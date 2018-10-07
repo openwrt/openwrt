@@ -300,7 +300,9 @@ define Device/vocore2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := VoCore VoCore2
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
-    kmod-sdhci-mt7620
+    kmod-sdhci-mt7620 \
+    kmod-sound-core kmod-sound-ralink-i2s kmod-sound-soc-simple-card \
+    kmod-sound-codec-es8328-i2c kmod-i2c-gpio
 endef
 TARGET_DEVICES += vocore2
 
