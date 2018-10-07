@@ -6,7 +6,7 @@
 # make sure we got uboot-envtools and fw_env.config copied over to the ramfs
 # create /var/lock for the lock "fw_setenv.lock" of fw_setenv
 platform_add_ramfs_ubootenv() {
-	[ -e /usr/sbin/fw_printenv ] && install_bin /usr/sbin/fw_printenv /usr/sbin/fw_setenv
+	[ -e /usr/sbin/fw_setenv ] && install_bin /usr/sbin/fw_setenv
 	[ -e /etc/fw_env.config ] && install_file /etc/fw_env.config
 	mkdir -p $RAM_ROOT/var/lock
 }
@@ -71,8 +71,8 @@ platform_get_offset() {
 }
 
 platform_check_image_allnet() {
-	local fw_printenv=/usr/sbin/fw_printenv
-	[ ! -n "$fw_printenv" -o ! -x "$fw_printenv" ] && {
+	local fw_setenv=/usr/sbin/fw_setenv
+	[ ! -n "$fw_setenv" -o ! -x "$fw_setenv" ] && {
 		echo "Please install uboot-envtools!"
 		return 1
 	}
