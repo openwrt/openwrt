@@ -29,6 +29,11 @@ ath79_setup_interfaces()
 	wd,mynet-wifi-rangeextender)
 		ucidef_set_interface_lan "eth0"
 		;;
+	avm,fritz4020)
+		ucidef_set_interface_wan "eth0"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
+		;;
 	buffalo,bhr-4grv|\
 	buffalo,wzr-hp-g450h)
 		ucidef_add_switch "switch0" \
@@ -63,7 +68,6 @@ ath79_setup_interfaces()
 	etactica,eg200)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
-	avm,fritz4020|\
 	glinet,ar150|\
 	glinet,ar300m)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
