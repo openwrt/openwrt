@@ -89,7 +89,6 @@ define Device/ubnt_nanostation-ac
   DEVICE_TITLE := Ubiquiti Nanostation AC
   DEVICE_PACKAGES += kmod-ath10k ath10k-firmware-qca988x
   IMAGE_SIZE := 15744k
-  IMAGES += factory.bin
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
 TARGET_DEVICES += ubnt_nanostation-ac
@@ -99,7 +98,6 @@ define Device/ubnt_nanostation-ac-loco
   DEVICE_TITLE := Ubiquiti Nanostation AC loco
   DEVICE_PACKAGES += kmod-ath10k ath10k-firmware-qca988x
   IMAGE_SIZE := 15744k
-  IMAGES += factory.bin
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
 TARGET_DEVICES += ubnt_nanostation-ac-loco
