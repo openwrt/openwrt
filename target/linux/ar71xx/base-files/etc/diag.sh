@@ -98,7 +98,6 @@ get_status_led() {
 	tl-wr810n|\
 	tl-wr810n-v2|\
 	tl-wr940n-v4|\
-	tl-wr941n-v7|\
 	tl-wr941nd-v6)
 		status_led="tp-link:blue:system"
 		;;
@@ -480,6 +479,7 @@ get_status_led() {
 	tl-wr842n-v2|\
 	tl-wr842n-v3|\
 	tl-wr941nd|\
+	tl-wr941n-v7|\
 	tl-wr941nd-v5)
 		status_led="tp-link:green:system"
 		;;
