@@ -114,25 +114,73 @@ endef
 
 $(eval $(call KernelPackage,hsdma-mtk))
 
-define KernelPackage/sound-mt7620
-  TITLE:=MT7620 PCM/I2S Alsa Driver
+define KernelPackage/sound-ralink-i2s
+  TITLE:=Ralink SoC PCM/I2S Alsa Driver
   DEPENDS:=@TARGET_ramips +kmod-sound-soc-core +kmod-regmap +kmod-dma-ralink @!TARGET_ramips_rt288x
   KCONFIG:= \
-	CONFIG_SND_RALINK_SOC_I2S \
-	CONFIG_SND_SIMPLE_CARD \
-	CONFIG_SND_SIMPLE_CARD_UTILS \
-	CONFIG_SND_SOC_WM8960
+	CONFIG_SND_RALINK_SOC_I2S
   FILES:= \
-	$(LINUX_DIR)/sound/soc/ralink/snd-soc-ralink-i2s.ko \
-	$(LINUX_DIR)/sound/soc/generic/snd-soc-simple-card.ko \
-	$(LINUX_DIR)/sound/soc/generic/snd-soc-simple-card-utils.ko \
-	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8960.ko
-  AUTOLOAD:=$(call AutoLoad,90,snd-soc-wm8960 snd-soc-ralink-i2s snd-soc-simple-card)
+	$(LINUX_DIR)/sound/soc/ralink/snd-soc-ralink-i2s.ko
+  AUTOLOAD:=$(call AutoLoad,90,snd-soc-ralink-i2s)
   $(call AddDepends/sound)
 endef
 
-define KernelPackage/sound-mt7620/description
+define KernelPackage/sound-ralink-i2s/description
  Alsa modules for ralink i2s controller.
 endef
 
-$(eval $(call KernelPackage,sound-mt7620))
+$(eval $(call KernelPackage,sound-ralink-i2s))
+
+define KernelPackage/sound-soc-wm8960
+  TITLE:=ALSA driver for Wolfson Micro WM8960 I2S CODEC
+  DEPENDS:=+kmod-sound-soc-core +kmod-regmap
+  KCONFIG:= \
+	CONFIG_SND_SOC_WM8960
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8960.ko
+  AUTOLOAD:=$(call AutoLoad,90,snd-soc-wm8960)
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-wm8960/description
+  ALSA modules for Wolfson Micro WM8960 I2S CODEC
+endef
+
+$(eval $(call KernelPackage,sound-soc-wm8960))
+
+define KernelPackage/sound-soc-es8328-i2c
+  TITLE:=ALSA Driver for Everest ES8328/ES8388 I2S CODEC via I2C
+  DEPENDS:=+kmod-sound-soc-core +kmod-regmap
+  KCONFIG:= \
+	CONFIG_SND_SOC_ES8328_I2C
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-es8328.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-es8328-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,90,snd-soc-es8328 snd-soc-es8328-i2c)
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-es8328-i2c/description
+ Alsa modules for Everest ES8328/ES8388 I2S CODEC via I2C
+endef
+
+$(eval $(call KernelPackage,sound-soc-es8328-i2c))
+
+define KernelPackage/sound-soc-simple-card
+  TITLE:=ALSA Driver for simple card
+  DEPENDS:=+kmod-sound-soc-core
+  KCONFIG:= \
+	CONFIG_SND_SIMPLE_CARD \
+	CONFIG_SND_SIMPLE_CARD_UTILS
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/generic/snd-soc-simple-card.ko \
+	$(LINUX_DIR)/sound/soc/generic/snd-soc-simple-card-utils.ko
+  AUTOLOAD:=$(call AutoLoad,91,snd-soc-simple-card)
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-simple-card/description
+ ALSA modules for simple card
+endef
+
+$(eval $(call KernelPackage,sound-soc-simple-card))

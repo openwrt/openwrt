@@ -82,7 +82,7 @@ TARGET_DEVICES += ArcherMR200
 define Device/bocco
   DTS := BOCCO
   DEVICE_TITLE := YUKAI Engineering BOCCO
-  DEVICE_PACKAGES := kmod-sound-core kmod-sound-mt7620 kmod-i2c-ralink
+  DEVICE_PACKAGES := kmod-sound-core kmod-sound-ralink-i2s kmod-sound-soc-wm8960 kmod-sound-soc-simple-card kmod-i2c-ralink
 endef
 TARGET_DEVICES += bocco
 
@@ -104,7 +104,7 @@ define Device/cs-qr10
   DTS := CS-QR10
   DEVICE_TITLE := Planex CS-QR10
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci \
-	kmod-sound-core kmod-sound-mt7620 \
+	kmod-sound-core kmod-sound-ralink-i2s kmod-sound-soc-wm8960 kmod-sound-soc-simple-card \
 	kmod-i2c-ralink kmod-sdhci-mt7620
 endef
 TARGET_DEVICES += cs-qr10
@@ -139,7 +139,7 @@ define Device/dch-m225
 	seama-seal -m "signature=wapn22_dlink.2013gui_dap1320b" | \
 	check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := D-Link DCH-M225
-  DEVICE_PACKAGES := kmod-mt76 kmod-sound-core kmod-sound-mt7620 kmod-i2c-ralink
+  DEVICE_PACKAGES := kmod-mt76 kmod-sound-core kmod-sound-ralink-i2s kmod-sound-soc-wm8960 kmod-sound-soc-simple-card kmod-i2c-ralink
 endef
 TARGET_DEVICES += dch-m225
 
