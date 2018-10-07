@@ -2,6 +2,7 @@ define Device/glinet_ar300m_nand
   ATH_SOC := qca9533
   DEVICE_TITLE := GL-AR300M (NAND)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += glinet,ar300m
   KERNEL_SIZE := 2048k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
