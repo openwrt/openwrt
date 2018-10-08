@@ -16,6 +16,7 @@ BASEHOSTFILE="/tmp/hosts/dhcp"
 TRUSTANCHORSFILE="/usr/share/dnsmasq/trust-anchors.conf"
 TIMEVALIDFILE="/var/state/dnsmasqsec"
 BASEDHCPSTAMPFILE="/var/run/dnsmasq"
+DHCPBOGUSHOSTNAMEFILE="/usr/share/dnsmasq/dhcpbogushostname.conf"
 RFC6761FILE="/usr/share/dnsmasq/rfc6761.conf"
 DHCPSCRIPT="/usr/lib/dnsmasq/dhcp-script.sh"
 
@@ -956,6 +957,13 @@ dnsmasq_start()
 
 	config_foreach filter_dnsmasq host dhcp_host_add "$cfg"
 	echo >> $CONFIGFILE_TMP
+
+	config_get_bool dhcpbogushostname "$cfg" dhcpbogushostname 1
+	[ "$dhcpbogushostname" -gt 0 ] && {
+		xappend "--dhcp-ignore-names=tag:dhcp_bogus_hostname"
+		[ -r "$DHCPBOGUSHOSTNAMEFILE" ] && xappend "--conf-file=$DHCPBOGUSHOSTNAMEFILE"
+	}
+
 	config_foreach filter_dnsmasq boot dhcp_boot_add "$cfg"
 	config_foreach filter_dnsmasq mac dhcp_mac_add "$cfg"
 	config_foreach filter_dnsmasq tag dhcp_tag_add "$cfg"
