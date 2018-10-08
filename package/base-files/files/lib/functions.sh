@@ -92,7 +92,7 @@ config_unset() {
 # config_get <section> <option>
 config_get() {
 	case "$3" in
-		"") eval echo "\${CONFIG_${1}_${2}:-\${4}}";;
+		"") eval echo "\"\${CONFIG_${1}_${2}:-\${4}}\"";;
 		*)  eval export ${NO_EXPORT:+-n} -- "${1}=\${CONFIG_${2}_${3}:-\${4}}";;
 	esac
 }
