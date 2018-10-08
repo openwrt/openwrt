@@ -211,6 +211,19 @@ define Device/e1700
 endef
 TARGET_DEVICES += e1700
 
+define Device/elecom_wrc-733ghbk
+  DTS := WRC-733GHBK
+  DEVICE_TITLE := ELECOM WRC-733GHBK
+  IMAGE_SIZE := 7680k
+  FACTORY := $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
+  KERNEL_INITRAMFS := $$(KERNEL) | pad-to 2 | \
+    initramfs-factory-common 7864298 $$(FACTORY) | \
+    edimax-initramfs-factory RN62 0x70000 0x01100000 $$(FACTORY) | \
+    bin-cp $$(FACTORY)
+  DEVICE_PACKAGES := kmod-switch-rtl8366-smi kmod-switch-rtl8367b
+endef
+TARGET_DEVICES += elecom_wrc-733ghbk
+
 define Device/ex2700
   NETGEAR_HW_ID := 29764623+4+0+32+2x2+0
   NETGEAR_BOARD_ID := EX2700

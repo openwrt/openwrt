@@ -57,6 +57,7 @@ platform_check_image() {
 	elecom,wrc-1167ghbk2-s|\
 	elecom,wrc-2533gst|\
 	elecom,wrc-1900gst|\
+	elecom,wrc-733ghbk|\
 	esr-9753|\
 	ew1200|\
 	ex2700|\

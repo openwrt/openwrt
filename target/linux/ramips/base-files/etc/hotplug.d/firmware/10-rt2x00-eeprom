@@ -62,6 +62,11 @@ case "$FIRMWARE" in
 		jboot_eeprom_extract "config" 0xE000
 		rt2x00_eeprom_set_macaddr $wifi_mac
 		;;
+	elecom,wrc-733ghbk)
+		wifi_mac=$(mtd_get_mac_ascii hwconfig HW.LAN.2G.0.MAC.Address)
+		rt2x00_eeprom_extract "Factory" 0 512
+		rt2x00_eeprom_set_macaddr $wifi_mac
+		;;
 	tiny-ac)
 		wifi_mac=$(mtd_get_mac_ascii u-boot-env INIC_MAC_ADDR)
 		rt2x00_eeprom_extract "factory" 0 512

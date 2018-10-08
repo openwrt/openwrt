@@ -44,6 +44,21 @@ define Build/buffalo-dhp-image
 	mv $@.new $@
 endef
 
+define Build/edimax-initramfs-factory
+	$(eval edimax_model=$(word 1,$(1)))
+	$(eval flash=$(word 2,$(1)))
+	$(eval start=$(word 3,$(1)))
+	$(eval factory_bin=$(word 4,$(1)))
+	if [ -e $(factory_bin) ]; then \
+		$(STAGING_DIR_HOST)/bin/mkedimaximg \
+			$(if $(CONFIG_BIG_ENDIAN),-b,) \
+			-s CSYS -m $(edimax_model) \
+			-f $(flash) -S $(start) \
+			-i $(factory_bin) -o $(factory_bin).new; \
+		mv $(factory_bin).new $(factory_bin); \
+	fi
+endef
+
 define Build/eva-image
 	$(STAGING_DIR_HOST)/bin/lzma2eva $(KERNEL_LOADADDR) $(KERNEL_LOADADDR) $@ $@.new
 	mv $@.new $@

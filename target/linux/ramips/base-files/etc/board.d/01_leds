@@ -124,6 +124,9 @@ dir-860l-b1)
 edimax,br-6478ac-v2)
 	set_wifi_led "$boardname:blue:wlan"
 	;;
+elecom,wrc-733ghbk)
+	ucidef_set_led_netdev "wlan2g" "wlan2g" "$boardname:blue:wlan2g" "wlan0"
+	;;
 ex2700|\
 wn3000rpv3)
 	set_wifi_led "$boardname:green:router"
