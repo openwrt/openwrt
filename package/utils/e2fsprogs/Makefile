@@ -133,6 +133,8 @@ endef
 
 TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections
 
+TARGET_LDFLAGS += $(if $(CONFIG_USE_GLIBC),-lrt)
+
 CONFIGURE_ARGS += \
 	--disable-testio-debug \
 	--enable-elf-shlibs	\
