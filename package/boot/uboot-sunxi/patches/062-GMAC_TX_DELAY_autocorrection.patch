@@ -1,0 +1,118 @@
+diff --git a/configs/A20-OLinuXino-Lime2-eMMC_defconfig b/configs/A20-OLinuXino-Lime2-eMMC_defconfig
+index cd1fa64..f817b8c 100644
+--- a/configs/A20-OLinuXino-Lime2-eMMC_defconfig
++++ b/configs/A20-OLinuXino-Lime2-eMMC_defconfig
+@@ -8,6 +8,8 @@ CONFIG_MMC_SUNXI_SLOT_EXTRA=2
+ CONFIG_USB0_VBUS_PIN="PC17"
+ CONFIG_USB0_VBUS_DET="PH5"
+ CONFIG_I2C1_ENABLE=y
++CONFIG_PHY_MICREL=y
++CONFIG_PHY_MICREL_KSZ90X1=y
+ CONFIG_SATAPWR="PC3"
+ CONFIG_DEFAULT_DEVICE_TREE="sun7i-a20-olinuxino-lime2-emmc"
+ CONFIG_AHCI=y
+--- a/configs/A20-OLinuXino-Lime2_defconfig
++++ b/configs/A20-OLinuXino-Lime2_defconfig
+@@ -7,6 +7,8 @@ CONFIG_MMC_SUNXI_SLOT_EXTRA=2
+ CONFIG_USB0_VBUS_PIN="PC17"
+ CONFIG_USB0_VBUS_DET="PH5"
+ CONFIG_I2C1_ENABLE=y
++CONFIG_PHY_MICREL=y
++CONFIG_PHY_MICREL_KSZ90X1=y
+ CONFIG_SATAPWR="PC3"
+ CONFIG_DEFAULT_DEVICE_TREE="sun7i-a20-olinuxino-lime2"
+ CONFIG_AHCI=y
+diff --git a/drivers/net/phy/micrel_ksz90x1.c b/drivers/net/phy/micrel_ksz90x1.c
+index b350a61..701a3d1 100644
+--- a/drivers/net/phy/micrel_ksz90x1.c
++++ b/drivers/net/phy/micrel_ksz90x1.c
+@@ -15,6 +15,8 @@
+ #include <errno.h>
+ #include <micrel.h>
+ #include <phy.h>
++#include <asm/io.h>
++#include <asm/arch/clock.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -331,6 +333,10 @@ static int ksz9031_phy_extwrite(struct phy_device *phydev, int addr,
+ static int ksz9031_config(struct phy_device *phydev)
+ {
+ 	int ret;
++	struct sunxi_ccm_reg *const ccm =
++		(struct sunxi_ccm_reg *)SUNXI_CCM_BASE;
++
++	setbits_le32(&ccm->gmac_clk_cfg, CCM_GMAC_CTRL_TX_CLK_DELAY(4));
+ 
+ 	ret = ksz9031_of_config(phydev);
+ 	if (ret)
+diff --git a/drivers/net/phy/realtek.c b/drivers/net/phy/realtek.c
+index 6d917f8..87956c0 100644
+--- a/drivers/net/phy/realtek.c
++++ b/drivers/net/phy/realtek.c
+@@ -10,6 +10,8 @@
+ #include <common.h>
+ #include <linux/bitops.h>
+ #include <phy.h>
++#include <asm/io.h>
++#include <asm/arch/clock.h>
+ 
+ #define PHY_RTL8211x_FORCE_MASTER BIT(1)
+ 
+@@ -79,6 +81,9 @@ static int rtl8211b_probe(struct phy_device *phydev)
+ /* RealTek RTL8211x */
+ static int rtl8211x_config(struct phy_device *phydev)
+ {
++	struct sunxi_ccm_reg *const ccm =
++		(struct sunxi_ccm_reg *)SUNXI_CCM_BASE;
++
+ 	phy_write(phydev, MDIO_DEVAD_NONE, MII_BMCR, BMCR_RESET);
+ 
+ 	/* mask interrupt at init; if the interrupt is
+@@ -87,6 +92,16 @@ static int rtl8211x_config(struct phy_device *phydev)
+ 	phy_write(phydev, MDIO_DEVAD_NONE, MIIM_RTL8211x_PHY_INER,
+ 		  MIIM_RTL8211x_PHY_INTR_DIS);
+ 
++	if(phydev->drv->uid == 0x1cc912) {
++		/* With RTL8211C Force Master must be enabled */
++		phydev->flags |= PHY_RTL8211x_FORCE_MASTER;
++		/* RTL8211C has different GMAC_TX_DELAY requirements */
++		setbits_le32(&ccm->gmac_clk_cfg, CCM_GMAC_CTRL_TX_CLK_DELAY(3));
++	} else if(phydev->drv->uid == 0x1cc915) {
++		/* RTL8211E has different GMAC_TX_DELAY requirements */
++		setbits_le32(&ccm->gmac_clk_cfg, CCM_GMAC_CTRL_TX_CLK_DELAY(2));
++	}
++
+ 	if (phydev->flags & PHY_RTL8211x_FORCE_MASTER) {
+ 		unsigned int reg;
+ 
+diff --git a/drivers/net/phy/realtek.c b/drivers/net/phy/realtek.c
+index 259a87f..b5354a8 100644
+--- a/drivers/net/phy/realtek.c
++++ b/drivers/net/phy/realtek.c
+@@ -318,6 +318,17 @@  static struct phy_driver RTL8211B_driver = {
+ 	.shutdown = &genphy_shutdown,
+ };
+ 
++/* Support for RTL8211C PHY */
++static struct phy_driver RTL8211C_driver = {
++	.name = "RealTek RTL8211C",
++	.uid = 0x1cc912,
++	.mask = 0xffffff,
++	.features = PHY_GBIT_FEATURES,
++	.config = &rtl8211x_config,
++	.startup = &rtl8211x_startup,
++	.shutdown = &genphy_shutdown,
++};
++
+ /* Support for RTL8211E-VB-CG, RTL8211E-VL-CG and RTL8211EG-VB-CG PHYs */
+ static struct phy_driver RTL8211E_driver = {
+ 	.name = "RealTek RTL8211E",
+@@ -355,6 +366,7 @@  static struct phy_driver RTL8211F_driver = {
+ int phy_realtek_init(void)
+ {
+ 	phy_register(&RTL8211B_driver);
++	phy_register(&RTL8211C_driver);
+ 	phy_register(&RTL8211E_driver);
+ 	phy_register(&RTL8211F_driver);
+ 	phy_register(&RTL8211DN_driver);
