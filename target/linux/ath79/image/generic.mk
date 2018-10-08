@@ -18,29 +18,32 @@ define Build/addpattern
 	-mv "$@.new" "$@"
 endef
 
-define Build/elecom-header
-  $(eval fw_size=$(word 1,$(1)))
-  $(eval edimax_model=$(word 2,$(1)))
-  $(eval product=$(word 3,$(1)))
-  $(eval factory_bin=$(word 4,$(1)))
-  if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(fw_size)" ]; then \
-    $(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) $(factory_bin); \
-    $(STAGING_DIR_HOST)/bin/mkedimaximg \
-      -b -s CSYS -m $(edimax_model) \
-      -f 0x70000 -S 0x01100000 \
-      -i $(factory_bin) -o $(factory_bin).new; \
-    mv $(factory_bin).new $(factory_bin); \
-    ( \
-      echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync; \
-      echo -n "0.00" | dd bs=16 count=1 conv=sync; \
-      dd if=$(factory_bin); \
-    ) > $(factory_bin).new; \
-    mv $(factory_bin).new $(factory_bin); \
-    $(CP) $(factory_bin) $(BIN_DIR)/; \
-	else \
-		echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
+define Build/edimax-initramfs-factory
+	$(eval edimax_model=$(word 1,$(1)))
+	$(eval flash=$(word 2,$(1)))
+	$(eval start=$(word 3,$(1)))
+	$(eval factory_bin=$(word 4,$(1)))
+	if [ -e $(factory_bin) ]; then \
+		$(STAGING_DIR_HOST)/bin/mkedimaximg \
+			$(if $(CONFIG_BIG_ENDIAN),-b,) \
+			-s CSYS -m $(edimax_model) \
+			-f $(flash) -S $(start) \
+			-i $(factory_bin) -o $(factory_bin).new; \
+		mv $(factory_bin).new $(factory_bin); \
 	fi
+endef
 
+define Build/elecom-header
+	$(eval product=$(word 1,$(1)))
+	$(eval factory_bin=$(word 2,$(1)))
+	if [ -e $(factory_bin) ]; then \
+		( \
+			echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync; \
+			echo -n "0.00" | dd bs=16 count=1 conv=sync; \
+			dd if=$(factory_bin); \
+		) > $(factory_bin).new; \
+		mv $(factory_bin).new $(factory_bin); \
+	fi
 endef
 
 define Device/avm_fritz300e
@@ -135,9 +138,11 @@ define Device/elecom_wrc-300ghbk2-i
   ATH_SOC := qca9563
   DEVICE_TITLE := ELECOM WRC-300GHBK2-I
   IMAGE_SIZE := 7616k
+  FACTORY := $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
   KERNEL_INITRAMFS := $$(KERNEL) | pad-to 2 | \
-    elecom-header 7798706 RN51 WRC-300GHBK2-I \
-      $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
+    initramfs-factory-common 7798706 $$(FACTORY) | \
+    edimax-initramfs-factory RN51 0x70000 0x01100000 $$(FACTORY) | \
+    elecom-header WRC-300GHBK2-I $$(FACTORY) | bin-cp $$(FACTORY)
 endef
 TARGET_DEVICES += elecom_wrc-300ghbk2-i
 

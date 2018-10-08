@@ -221,6 +221,20 @@ define Build/append-uboot
 	dd if=$(UBOOT_PATH) >> $@
 endef
 
+define Build/bin-cp
+	$(CP) $(1) $(BIN_DIR)/ || true
+endef
+
+define Build/initramfs-factory-common
+	$(eval fw_size=$(word 1,$(1)))
+	$(eval factory_bin=$(word 2,$(1)))
+	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(fw_size)" ]; then \
+		$(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) $(factory_bin); \
+	else \
+		echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
+	fi
+endef
+
 define Build/pad-to
 	dd if=$@ of=$@.new bs=$(1) conv=sync
 	mv $@.new $@
