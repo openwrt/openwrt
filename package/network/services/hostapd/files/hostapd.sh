@@ -45,6 +45,15 @@ hostapd_append_wpa_key_mgmt() {
 			[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt "FT-${auth_type_l}"
 			[ "${ieee80211w:-0}" -gt 0 ] && append wpa_key_mgmt "WPA-${auth_type_l}-SHA256"
 		;;
+		eap192)
+			append wpa_key_mgmt "WPA-EAP-SUITE-B-192"
+		;;
+		eap-eap192)
+			append wpa_key_mgmt "WPA-EAP-SUITE-B-192"
+			append wpa_key_mgmt "WPA-EAP"
+			[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt "FT-EAP"
+			[ "${ieee80211w:-0}" -gt 0 ] && append wpa_key_mgmt "WPA-EAP-SHA256"
+		;;
 		sae)
 			append wpa_key_mgmt "SAE"
 			[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt "FT-SAE"
@@ -307,7 +316,7 @@ hostapd_set_bss_options() {
 	}
 
 	case "$auth_type" in
-		sae|owe)
+		sae|owe|eap192|eap-eap192)
 			set_default ieee80211w 2
 			set_default sae_require_mfp 1
 		;;
@@ -350,7 +359,7 @@ hostapd_set_bss_options() {
 
 			wps_possible=1
 		;;
-		eap)
+		eap|eap192|eap-eap192)
 			json_get_vars \
 				auth_server auth_secret auth_port \
 				dae_client dae_secret dae_port \
@@ -771,7 +780,7 @@ wpa_supplicant_add_network() {
 			fi
 			append network_data "$passphrase" "$N$T"
 		;;
-		eap)
+		eap|eap192|eap-eap192)
 			hostapd_append_wpa_key_mgmt
 			key_mgmt="$wpa_key_mgmt"
 
