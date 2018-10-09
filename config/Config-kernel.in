@@ -833,3 +833,201 @@ config KERNEL_CC_OPTIMIZE_FOR_SIZE
 	  your compiler resulting in a smaller kernel.
 
 endchoice
+
+menu "Kernel Governor"
+  
+  config KERNEL_CPU_FREQ_GOV_PERFORMANCE
+  	bool "Performance Governor Support"
+  	default y
+  	help
+  	  This adds Performance Governor to the supported kernel governor.
+  
+  config KERNEL_CPU_FREQ_GOV_POWERSAVE
+  	bool "Powersave Governor Support"
+  	default n
+  	help
+  	  This adds Powersave Governor to the supported kernel governor.
+  
+  config KERNEL_CPU_FREQ_GOV_SCHEDUTIL
+  	bool "Schedutil Governor Support"
+  	default n
+  	help
+  	  This adds Schedutil Governor to the supported kernel governor.
+  
+  config KERNEL_CPU_FREQ_GOV_CONSERVATIVE
+  	bool "Conservative Governor Support"
+  	default n
+  	help
+  	  This adds Conservative Governor to the supported kernel governor.
+  	  
+  config KERNEL_CPU_FREQ_GOV_USERSPACE
+  	bool "Userspace Governor Support"
+  	default n
+  	help
+  	  This adds Userspace Governor to the supported kernel governor.
+
+  config KERNEL_CPU_FREQ_GOV_ONDEMAND
+    depends on ( KERNEL_CPU_FREQ_GOV_PERFORMANCE \
+               ||KERNEL_CPU_FREQ_GOV_POWERSAVE \
+               ||KERNEL_CPU_FREQ_GOV_SCHEDUTIL \
+               ||KERNEL_CPU_FREQ_GOV_CONSERVATIVE \
+               ||KERNEL_CPU_FREQ_GOV_USERSPACE )
+  	bool "Ondemand Governor Support"
+  	default y
+  	help
+  	  This adds Ondemand Governor to the supported kernel governor.
+  
+  choice
+  	prompt "Default Kernel Governor"
+  	default KERNEL_CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND if KERNEL_CPU_FREQ_GOV_ONDEMAND
+  
+  config KERNEL_CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND
+  	depends on KERNEL_CPU_FREQ_GOV_ONDEMAND
+  	bool "Ondemand Governor"
+  	help
+  	  This sets Ondemand Governor as the default kernel governor.
+  
+  config KERNEL_CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE
+  	depends on KERNEL_CPU_FREQ_GOV_PERFORMANCE
+  	bool "Performance Governor"
+  	help
+  	  This sets Performance Governor as the default kernel governor.
+  
+  config KERNEL_CONFIG_CPU_FREQ_DEFAULT_GOV_POWERSAVE
+  	depends on KERNEL_CPU_FREQ_GOV_POWERSAVE
+  	bool "Powersave Governor"
+  	help
+  	  This sets Powersave Governor as the default kernel governor.
+  
+  config KERNEL_CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL
+  	depends on KERNEL_CPU_FREQ_GOV_SCHEDUTIL
+  	bool "Schedutil Governor"
+  	help
+  	  This sets Schedutil Governor as the default kernel governor.
+  	  
+  config KERNEL_CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE
+  	depends on KERNEL_CPU_FREQ_GOV_CONSERVATIVE
+  	bool "Conservative Governor"
+  	help
+  	  This sets Conservative Governor as the default kernel governor.
+  
+  config KERNEL_CONFIG_CPU_FREQ_DEFAULT_GOV_USERSPACE
+  	depends on KERNEL_CPU_FREQ_GOV_USERSPACE
+  	bool "Userspace Governor"
+  	help
+  	  This sets Userspace Governor as the default kernel governor.
+  
+  endchoice
+
+endmenu
+
+choice
+	prompt "Preemption Model Option"
+	default KERNEL_PREEMPT_NONE
+
+config KERNEL_PREEMPT_NONE
+	bool "No Forced Preemption (Server)"
+	help
+	  This is the traditional Linux preemption model, geared towards         
+	  throughput. It will still provide good latencies most of the           
+	  time, but there are no guarantees and occasional longer delays         
+	  are possible.                                                          
+
+	  Select this option if you are building a kernel for a server or        
+	  scientific/computation system, or if you want to maximize the  (Server)
+	  raw processing power of the kernel, irrespective of scheduling         
+	  latencies.
+
+config KERNEL_PREEMPT_VOLUNTARY
+	bool "Voluntary Kernel Preemption (Desktop)"
+	help
+	  This option reduces the latency of the kernel by adding more  
+	  "explicit preemption points" to the kernel code. These new      
+	  preemption points have been selected to reduce the maximum      
+	  latency of rescheduling, providing faster application reactions,
+	  at the cost of slightly lower throughput.                       
+	  
+	  This allows reaction to interactive events by allowing a        
+	  low priority process to voluntarily preempt itself even if it   
+	  is in kernel mode executing a system call. This allows          
+	  applications to run more 'smoothly' even when the system is     
+	  under load.
+
+config KERNEL_PREEMPT
+	bool "Preemptible Kernel (Low-Latency Desktop)"
+	help
+	  This option reduces the latency of the kernel by making          
+	  all kernel code (that is not executing in a critical section)    
+	  preemptible.  This allows reaction to interactive events by      
+	  permitting a low priority process to be preempted involuntarily  
+	  even if it is in kernel mode executing a system call and would   
+	  otherwise not be about to reach a natural preemption point.      
+	  This allows applications to run more 'smoothly' even when the er)
+	  system is under load, at the cost of slightly lower throughput   
+	  and a slight runtime overhead to kernel code.                    
+
+	  Select this if you are building a kernel for a desktop or        
+	  embedded system with latency requirements in the milliseconds    
+	  range.
+
+endchoice
+
+menu "IO Schedulers"
+
+config KERNEL_IOSCHED_NOOP
+	tristate "No-OP I/O scheduler"
+	default y
+	---help---
+	  The no-op I/O scheduler is a minimal scheduler that does basic merging
+	  and sorting. Its main uses include non-disk based block devices like
+	  memory devices, and specialised software or hardware environments
+	  that do their own scheduling and require only minimal assistance from
+	  the kernel.
+
+config KERNEL_IOSCHED_DEADLINE
+	tristate "Deadline I/O scheduler"
+	default y
+	---help---
+	  The deadline I/O scheduler is simple and compact. It will provide
+	  CSCAN service with FIFO expiration of requests, switching to
+	  a new point in the service tree and doing a batch of IO from there
+	  in case of expiry.
+
+config KERNEL_IOSCHED_CFQ
+	depends on (KERNEL_IOSCHED_DEADLINE || KERNEL_IOSCHED_NOOP)
+	tristate "CFQ I/O scheduler"
+	default y
+	---help---
+	  The CFQ I/O scheduler tries to distribute bandwidth equally
+	  among all processes in the system. It should provide a fair
+	  and low latency working environment, suitable for both desktop
+	  and server systems.
+
+	  This is the default I/O scheduler.
+
+choice
+
+	prompt "Default I/O scheduler"
+	default KERNEL_DEFAULT_CFQ
+	help
+	  Select the I/O scheduler which will be used by default for all
+	  block devices.
+
+	config KERNEL_DEFAULT_DEADLINE
+		bool "Deadline" if KERNEL_IOSCHED_DEADLINE=y
+
+	config KERNEL_DEFAULT_CFQ
+		bool "CFQ" if KERNEL_IOSCHED_CFQ=y
+
+	config KERNEL_DEFAULT_NOOP
+		bool "No-op" if KERNEL_IOSCHED_NOOP=y
+
+endchoice
+
+config KERNEL_DEFAULT_IOSCHED
+	string
+	default "deadline" if KERNEL_DEFAULT_DEADLINE
+	default "cfq" if KERNEL_DEFAULT_CFQ
+	default "noop" if KERNEL_DEFAULT_NOOP
+
+endmenu
