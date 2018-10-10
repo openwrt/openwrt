@@ -716,6 +716,53 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system",
 	},
 
+	/** Firmware layout for the A7 v5*/
+	{
+		.id = "ARCHER-A7-V5",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:Archer A7,product_ver:5.0.0,special_id:45550000}\n"
+			"{product_name:Archer A7,product_ver:5.0.0,special_id:55530000}\n"
+			"{product_name:Archer A7,product_ver:5.0.0,special_id:43410000}\n"
+			"{product_name:Archer A7,product_ver:5.0.0,special_id:4A500000}\n"
+			"{product_name:Archer A7,product_ver:5.0.0,special_id:54570000}\n",
+
+		.support_trail = '\x00',
+		.soft_ver = "soft_ver:1.0.0\n",
+
+		/**
+		  We use a bigger os-image partition than the stock images (and thus
+		  smaller file-system), as our kernel doesn't fit in the stock firmware's
+		  1MB os-image.
+		  */
+		.partitions = {
+			{"factory-boot",    0x00000,  0x20000},
+			{"fs-uboot",        0x20000,  0x20000},
+
+			{"os-image",        0x40000,  0x180000}, /* Stock: base 0x40000  size 0x120000 */
+			{"file-system",     0x1c0000, 0xd80000}, /* Stock: base 0x160000 size 0xde0000 */
+
+			{"default-mac",     0xf40000 , 0x00200},
+			{"pin",             0xf40200 , 0x00200},
+			{"device-id",       0xf40400 , 0x00100},
+			{"product-info",    0xf40500 , 0x0fb00},
+			{"soft-version",    0xf50000 , 0x01000},
+			{"extra-para",      0xf51000 , 0x01000},
+			{"support-list",    0xf52000 , 0x0a000},
+			{"profile",         0xf5c000 , 0x04000},
+			{"default-config",  0xf60000 , 0x10000},
+			{"user-config",     0xf70000 , 0x40000},
+			{"certificate",     0xfb0000 , 0x10000},
+			{"partition-table", 0xfc0000 , 0x10000},
+			{"log",             0xfd0000 , 0x20000},
+			{"radio",           0xff0000 , 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
 	/** Firmware layout for the C9 */
 	{
 		.id = "ARCHERC9",
@@ -1605,7 +1652,9 @@ static void build_image(const char *output,
 	    strcasecmp(info->id, "TLWR1043NV5") == 0) {
 		const char mdat[11] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
 		parts[5] = put_data("extra-para", mdat, 11);
-	} else if (strcasecmp(info->id, "ARCHER-C7-V4") == 0 || strcasecmp(info->id, "ARCHER-C7-V5") == 0) {
+	} else if (strcasecmp(info->id, "ARCHER-C7-V4") == 0 ||
+	    strcasecmp(info->id, "ARCHER-C7-V5") == 0 ||
+	    strcasecmp(info->id, "ARCHER-A7-V5") == 0) {
 		const char mdat[11] = {0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0xca, 0x00, 0x01, 0x00, 0x00};
 		parts[5] = put_data("extra-para", mdat, 11);
 	}

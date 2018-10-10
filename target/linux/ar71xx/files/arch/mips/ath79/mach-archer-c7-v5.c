@@ -161,11 +161,8 @@ static struct mdio_board_info archer_c7_v5_mdio0_info[] = {
 };
 
 
-static void __init archer_c7_v5_setup(void)
+static void archer_c7_v5_setup_common(u8 *art, u8 * mac)
 {
-	u8 *art = (u8 *) KSEG1ADDR(0x1f050000);
-	u8 *mac = (u8 *) KSEG1ADDR(0x1f060008);
-
 	ath79_register_m25p80(NULL);
 
 
@@ -203,5 +200,24 @@ static void __init archer_c7_v5_setup(void)
 	ath79_register_eth(0);
 }
 
+static void __init archer_c7_v5_setup(void)
+{
+	u8 *art = (u8 *) KSEG1ADDR(0x1f050000);
+	u8 *mac = (u8 *) KSEG1ADDR(0x1f060008);
+
+    archer_c7_v5_setup_common(art, mac);
+}
+
+static void __init archer_a7_v5_setup(void)
+{
+	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
+	u8 *mac = (u8 *) KSEG1ADDR(0x1ff40008);
+
+    archer_c7_v5_setup_common(art, mac);
+}
+
 MIPS_MACHINE(ATH79_MACH_ARCHER_C7_V5, "ARCHER-C7-V5", "TP-LINK Archer C7 v5",
 	     archer_c7_v5_setup);
+
+MIPS_MACHINE(ATH79_MACH_ARCHER_A7_V5, "ARCHER-A7-V5", "TP-LINK Archer A7 v5",
+	     archer_a7_v5_setup);
