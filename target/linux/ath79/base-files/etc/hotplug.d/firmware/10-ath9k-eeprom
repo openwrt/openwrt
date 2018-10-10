@@ -149,6 +149,9 @@ case "$FIRMWARE" in
 	ubnt,unifi)
 		ath9k_eeprom_extract "art" 4096 2048
 		;;
+	pqi,air-pen)
+		ath9k_eeprom_extract "art" 4096 2002
+		;;
 	wd,mynet-wifi-rangeextender)
 		ath9k_eeprom_extract "art" 4096 4096
 		ath9k_patch_fw_mac_crc $(nvram get wl0_hwaddr) "$mac" 2
