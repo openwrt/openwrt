@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mt76
-PKG_RELEASE=1
+PKG_RELEASE=2
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
@@ -33,7 +33,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/mt76-default
   SUBMENU:=Wireless Drivers
   DEPENDS:= \
-	+kmod-mac80211 @PCI_SUPPORT @!LINUX_3_18 \
+	+kmod-mac80211 @!LINUX_3_18 \
 	+@DRIVER_11AC_SUPPORT +@DRIVER_11N_SUPPORT +@DRIVER_11W_SUPPORT
 endef
 
@@ -114,7 +114,7 @@ endef
 define KernelPackage/mt76x2
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT76x2 wireless driver
-  DEPENDS+=+kmod-mt76x2-common
+  DEPENDS+=@PCI_SUPPORT +kmod-mt76x2-common
   FILES:=\
 	$(PKG_BUILD_DIR)/mt76x2/mt76x2e.ko
   AUTOLOAD:=$(call AutoProbe,mt76x2e)
@@ -123,7 +123,7 @@ endef
 define KernelPackage/mt7603
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7603 wireless driver
-  DEPENDS+=+kmod-mt76-core
+  DEPENDS+=@PCI_SUPPORT +kmod-mt76-core
   FILES:=\
 	$(PKG_BUILD_DIR)/mt7603/mt7603e.ko
   AUTOLOAD:=$(call AutoProbe,mt7603e)
