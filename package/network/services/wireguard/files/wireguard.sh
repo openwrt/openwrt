@@ -101,6 +101,7 @@ proto_wireguard_setup() {
   local config="$1"
   local wg_dir="/tmp/wireguard"
   local wg_cfg="${wg_dir}/${config}"
+  local link="wg-${config}"
 
   local private_key
   local listen_port
@@ -116,14 +117,14 @@ proto_wireguard_setup() {
   config_get ip6prefix     "${config}" "ip6prefix"
 
   # create interface
-  ip link del dev "${config}" 2>/dev/null
-  ip link add dev "${config}" type wireguard
+  ip link del dev "${link}" 2>/dev/null
+  ip link add dev "${link}" type wireguard
 
   if [ "${mtu}" ]; then
-    ip link set mtu "${mtu}" dev "${config}"
+    ip link set mtu "${mtu}" dev "${link}"
   fi
 
-  proto_init_update "${config}" 1
+  proto_init_update "${link}" 1
 
   # generate configuration file
   umask 077
@@ -139,7 +140,7 @@ proto_wireguard_setup() {
   config_foreach proto_wireguard_setup_peer "wireguard_${config}"
 
   # apply configuration file
-  ${WG} setconf ${config} "${wg_cfg}"
+  ${WG} setconf "${link}" "${wg_cfg}"
   WG_RETURN=$?
 
   # delete configuration file
@@ -148,7 +149,7 @@ proto_wireguard_setup() {
   # check status
   if [ ${WG_RETURN} -ne 0 ]; then
     sleep 5
-    proto_setup_failed "${config}"
+    proto_setup_failed "${link}"
     exit 1
   fi
 
@@ -183,13 +184,14 @@ proto_wireguard_setup() {
     proto_add_host_dependency "${config}" "${address}"
   done
 
-  proto_send_update "${config}"
+  proto_send_update "${link}"
 }
 
 
 proto_wireguard_teardown() {
   local config="$1"
-  ip link del dev "${config}" >/dev/null 2>&1
+  local link="wg-${config}"
+  ip link del dev "${link}" >/dev/null 2>&1
 }
 
 
