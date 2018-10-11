@@ -22,7 +22,7 @@ define Package/gre
   CATEGORY:=Network
   MAINTAINER:=Hans Dedecker <dedeckeh@gmail.com>
   TITLE:=Generic Routing Encapsulation config support
-  DEPENDS:=+kmod-gre +IPV6:kmod-gre6 +resolveip
+  DEPENDS:=+kmod-gre +IPV6:kmod-gre6 +resolveip +kmod-nf-nathelper-extra
   PROVIDES:=grev4 grev6
 endef
 
