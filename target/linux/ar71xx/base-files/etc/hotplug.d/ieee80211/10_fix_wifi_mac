@@ -19,6 +19,9 @@ case "$board" in
 	archer-c60-v2)
 		echo $(macaddr_add $(mtd_get_mac_binary mac 8)  $(($PHYNBR - 1)) ) > /sys${DEVPATH}/macaddress
 		;;
+	tew-823dru)
+                echo $(macaddr_add $(strings $(find_mtd_part mac) | head -n1 ) $(($PHYNBR + 1)) ) > /sys${DEVPATH}/macaddress
+		;;
 	*)
 		;;
 esac
