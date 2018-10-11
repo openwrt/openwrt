@@ -29,17 +29,6 @@ do_patch_ath10k_firmware() {
 		macaddr_2bin $mac | dd of=/tmp/ath10k-firmware.bin \
 			conv=notrunc bs=1 seek=$mac_offset count=$mac_length
 		;;
-	tew-823dru)
-		local mac
-		local part
-		part=$(find_mtd_part mac)
-
-		# second mac address is wan mac. Use this for wlan
-		mac=$(strings "$part" | head -n2 | tail -n1)
-		cp $firmware_file /tmp/ath10k-firmware.bin
-		macaddr_2bin $mac | dd of=/tmp/ath10k-firmware.bin \
-			conv=notrunc bs=1 seek=$mac_offset count=$mac_length
-		;;
 	esac
 
 	[ -f /tmp/ath10k-firmware.bin ] || return
@@ -50,8 +39,7 @@ do_patch_ath10k_firmware() {
 
 check_patch_ath10k_firmware() {
 	case $(board_name) in
-	dgl-5500-a1|\
-	tew-823dru)
+	dgl-5500-a1)
 		do_patch_ath10k_firmware
 		;;
 	esac
