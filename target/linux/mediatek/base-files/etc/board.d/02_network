@@ -15,7 +15,7 @@ mediatek_setup_interfaces()
 		;;
 	'bananapi,bpi-r2'|\
 	"unielec,u7623"*)
-		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3" "wan"
+		ucidef_set_interface_lan "lan"
 		;;
 	esac
 }
@@ -27,7 +27,7 @@ mediatek_setup_macs()
 	case $board in
 	"unielec,u7623"*)
 		mac=$(cat /sys/class/net/wan/address)
-		ucidef_set_interface_macaddr "wan" $mac
+		ucidef_set_interface_macaddr "lan" $mac
 		;;
 	esac
 }
@@ -37,5 +37,6 @@ board=$(board_name)
 mediatek_setup_interfaces $board
 mediatek_setup_macs $board
 board_config_flush
+
 
 exit 0
