@@ -52,6 +52,19 @@ endef
 
 $(eval $(call KernelPackage,iio-ad799x))
 
+define KernelPackage/iio-am2315
+  SUBMENU:=$(IIO_MENU)
+  DEPENDS:=+kmod-i2c-core +kmod-iio-core
+  TITLE:=Asong AM2315 humidity/temperature sensor
+  KCONFIG:= CONFIG_AM2315
+  FILES:=$(LINUX_DIR)/drivers/iio/humidity/am2315.ko
+  AUTOLOAD:=$(call AutoLoad,56,am2315)
+endef
+define KernelPackage/iio-am2315/description
+  Aosong AM2315 humidity/temperature sensor (I2C bus)
+endef
+$(eval $(call KernelPackage,iio-am2315))
+
 define KernelPackage/iio-mxs-lradc
   SUBMENU:=$(IIO_MENU)
   DEPENDS:=@TARGET_mxs +kmod-iio-core
