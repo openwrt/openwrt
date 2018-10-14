@@ -3,6 +3,20 @@
 . /lib/functions.sh
 . /lib/functions/system.sh
 
+# set trap for cleanup
+trap '
+	unmount "$FILE_OPKG_CONF" "$DIR_OPKG" "$FILE_OPKG_STATUS"
+ 	cleanup "$CONFFILES"
+ 	[ $UPGRADE_AUTO -eq 0 ] && cleanup "$DIR_WORK"
+' 0 1 2 3 15
+
+# basics
+cleanup(){ for i in $@;do [ -d "$i" ] && rm -rf "$i" || rm -f "$i";done;}
+unmount(){ for i in $@;do [ -n "$i" ] && mount|grep -q "$i" \
+	&& umount "$i";done;}
+set_logfile(){ while :;do c=$((c+1));log="/var/log/${0##*/}.$c.log"
+	[ -f "$log" ]||break;done;touch "$log";echo "$log";}
+
 # initialize defaults
 export MTD_CONFIG_ARGS=""
 export INTERACTIVE=0
@@ -18,6 +32,11 @@ export NEED_IMAGE=
 export HELP=0
 export FORCE=0
 export TEST=0
+export UPGRADE_URL=
+export UPGRADE_AVAILABLE=0
+export UPGRADE_AUTO=0
+export PACKAGE_LIST=0
+
 
 # parse options
 while [ -n "$1" ]; do
@@ -31,8 +50,12 @@ while [ -n "$1" ]; do
 		-b|--create-backup) export CONF_BACKUP="$2" NEED_IMAGE=1; shift;;
 		-r|--restore-backup) export CONF_RESTORE="$2" NEED_IMAGE=1; shift;;
 		-l|--list-backup) export CONF_BACKUP_LIST=1; break;;
+		-k|--list-packages) export PACKAGE_LIST=1; break;;
 		-f) export CONF_IMAGE="$2"; shift;;
 		-F|--force) export FORCE=1;;
+		-U) export UPGRADE_URL="${2:-TESTONLY}"; break;;
+		-w) export UPGRADE_AVAILABLE=1; break;;
+		-Zzz) export UPGRADE_AUTO=1; break;;
 		-T|--test) export TEST=1;;
 		-h|--help) export HELP=1; break;;
 		-*)
@@ -55,6 +78,7 @@ Usage: $0 [<upgrade-option>...] <image file or URL>
        $0 [-q] [-i] <backup-command> <file>
 
 upgrade-option:
+	-d <delay>   add a delay before rebooting
 	-f <config>  restore configuration from .tar.gz (file or url)
 	-i           interactive mode
 	-c           attempt to preserve all changed files in /etc/
@@ -64,9 +88,14 @@ upgrade-option:
 	             Verify image and config .tar.gz but do not actually flash.
 	-F | --force
 	             Flash image even if image checks fail, this is dangerous!
+	-U [<url>]   test 'url', or set 'auto upgrade url' to <url> *
+	-w           what is the latest stable version *
+	-Zzz         perform auto-upgrade, make sure the url is set *
 	-q           less verbose
 	-v           more verbose
 	-h | --help  display this help
+
+	             (*) requires network/internet access
 
 backup-command:
 	-b | --create-backup <file>
@@ -80,6 +109,8 @@ backup-command:
 	-l | --list-backup
 	             list the files that would be backed up when calling
 	             sysupgrade -b. Does not create a backup file.
+	-k | --list-packages
+	             list currently installed user request packages.
 
 EOF
 	exit 1
@@ -95,7 +126,6 @@ EOF
 
 # prevent messages from clobbering the tarball when using stdout
 [ "$CONF_BACKUP" = "-" ] && export VERBOSE=0
-
 
 list_conffiles() {
 	awk '
@@ -119,7 +149,7 @@ add_uci_conffiles() {
 	local file="$1"
 	( find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
 		/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
-		-type f -o -type l 2>/dev/null;
+ 		"$DIR_CACHE" -type f -o -type l 2>/dev/null;
 	  list_changed_conffiles ) | sort -u > "$file"
 	return 0
 }
@@ -134,6 +164,632 @@ add_overlayfiles() {
 	> "$file"
 	return 0
 }
+
+##########################################################################
+
+#[options]
+CSUM_TOOL="sha256sum"
+
+#[original files/folders]
+DIR_OPKG="/etc/opkg"
+DIR_OPKG_KEYS="/etc/opkg/keys"
+DIR_OPKG_LISTS="/var/opkg-lists"
+FILE_OPKG_CONF="/etc/opkg.conf"
+FILE_OPKG_DISTFEEDS="/etc/opkg/distfeeds.conf"
+FILE_OPKG_CUSTOMFEEDS="/etc/opkg/customfeeds.conf"
+FILE_OPKG_STATUS="/usr/lib/opkg/status"
+FILE_OSRELEASE="/etc/os-release"
+
+#[new files/folders]
+FILE_SYSUPG_AUTO="/etc/sysupgrade.auto"
+FILE_SYSUPG_KEEP="/lib/upgrade/keep.d/sysupgrade"
+DIR_GPG_KEYS="/etc/gpg/keys"
+
+#[temporary files/folders]
+DIR_WORK="`mktemp -d -t XXXXXX`" #provides easy deploy & cleanup
+FILE_SYSUPG_PRE_LOG="`set_logfile`"
+FILE_SYSUPG_INIT="/etc/init.d/sysupgrade"
+LINK_SYSUPG_RC="/etc/rc.d/S96sysupgrade"
+
+get_vars_temp(){
+	eval DIR_WORK_GPG="$DIR_WORK/gpg"
+	eval DIR_CACHE="$DIR_WORK/opkg"
+	eval DIR_CACHE_KEYS="$DIR_CACHE/keys"
+	eval DIR_CACHE_LISTS="$DIR_CACHE/lists"
+	eval DIR_CACHE_PKGS="$DIR_CACHE/packages"
+	eval FILE_CACHE_CONF="$DIR_CACHE/conf" #as opkg.conf it is read twice!
+	eval FILE_CACHE_DISTFEEDS="$DIR_CACHE/distfeeds.conf"
+	eval FILE_CACHE_CUSTOMFEEDS="$DIR_CACHE/customfeeds.conf"
+	eval FILE_CACHE_ID="$DIR_CACHE/cacheid"
+	eval FILE_CACHE_PKGLIST="$DIR_CACHE/userapp.list"
+	eval FILE_CACHE_DISKUSAGE="$DIR_CACHE/diskusage"
+}
+
+get_vars_temp
+
+insert_gpg_keys(){
+#	gpg public keys should be added to openwrt-keyring /etc/gpg/keys/*.asc
+#	new release->opkg update openwrt-keyring->new upgrade key->do upgrade
+	[ -d "$DIR_GPG_KEYS" ] || mkdir -p "$DIR_GPG_KEYS"
+	cat << EOF > "$DIR_GPG_KEYS/gpg_D52BBB6B.asc"
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Comment: LEDE 17.01 "Reboot" public key
+
+mQINBFh9DQ8BEACmjR9z4mEXjTWBTcqHI8U38III55qStU4zX4mtYEm8KjaNyBu0
+F8ghe22IAPQcHuvQh0lzr2AoTYi+ZAUlHrLb3s+YdJJD2KoSD1nXW8PgtoT92tai
+utJjSKsB2ZWJc4nskAYXTkDmhTuuHBEg9hvljhXkrPxmcEDN/v1f5fv82U8JLYwt
+g1mGJmW7SsdKtkJbAmEMCi/MFFA2fxLNV33qGhzm4UeAsUrLIGBjbCtU/BK8Im28
+eAF9VP08OUK/QX7te6K6qumvuEIIc/GG4yatdbxltS1SjWYMS0vpqXm4v50CoMaB
+/XCcdq1zlIyIxQW9UF6xJDLhsHv/3iOginR/vRDbdRWk/YPwlx/d9h9GK309YhXu
+GUK/lrBHIZwZ4VEowYjK76isXmRuU9ZeTK9SeKdIyLzYg5NIXW9cvGR+4NKIqfmE
+xxbVupm7Vc+3n4KUdS2t9SLXdkG+YYmyDabftyuACU2+xeHyKcUBn4yxbrcBp5Rs
+5RgOIn/2BtiEQNSc8AagU1ie57VGErrwrpdW/Cmxrs+KG7Io8Pwv+nG9M53DqPwb
+Zuun75iuni9wAR5IVUsUWdIoalb/I4ht58FDOt2iS/KdVwi8yyCHS8gH1J3MzZWP
+Yy9k0pgup54CTXGv/KzDOAsPZzkwNiziWIVE0N49bZFkO0CXgAufOAEtewARAQAB
+tFNMRURFIFJlbGVhc2UgQnVpbGRlciAoMTcuMDEgIlJlYm9vdCIgU2lnbmluZyBL
+ZXkpIDxsZWRlLWRldkBsaXN0cy5sZWRlLXByb2plY3Qub3JnPokCPgQTAQIAKAUC
+WH0NDwIbAwUJA8JnAAYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQgzxgENUr
+u2tMaA//aRvfrOoMTVtjw+Pru+hBC7IhkusJ70x8gUxSPmHZX0+KvIvILyAeVEho
+TW5lMwwo6b66GcBmP53qu/rech8HyunyyDUYFEvdE/ym3uO6NpE/3N/Z69TJiC+k
+1imElx5njTZkH/qZSClqN8j6ehspywnSKWNfSOM/9K1G7qtWgiqIaDYa+sdtRHjx
+oh4dtKiauUced0C1i7V1vT1ko8iZKWFiwj9GJSaoVxyUwI2fG3iV2qdcinPCL0nU
+BfVIhU5cXMZ6VtVg5Ly6NqUbrhZzVVl8DMnu5z4MOLZWseob4LhK5W0v+DUTezJS
+Cvei+woJ3SIy0CLXe6eDKwbCS5kCaoNbExeTnSz7/Mg14NjREhtWkq79rnHrH9MV
+QAXyjmd3q0D5sDLzk8nQ3fGaH1Zg+o+VECkwEwz4ypctXqRAcHyIkYHmv8rFYlQY
+dJlfs1NgZzk9EWfZ0/RLUdqNx6beKm27r2W1j+gcaM01sk5q9TPZeuNHh8psFlCD
+b5mq6XBstA9NwN9pg5zS+UkfjjMU5FiBIEVv4Lt/dblNkjID/+XUBkHpSAz13GDW
+k0ElkSBgBvz8TSm68EUGTfTVhK21x+1x15/8AUoV8V+4txncMhnJNmrEcKolnMeF
+96xgcoHpPszlHxjiwS6hrFPDyhfYwU9plDI7ojcIleqK98XjRHY=
+=aN5O
+-----END PGP PUBLIC KEY BLOCK-----
+EOF
+
+	cat << EOF > "$DIR_GPG_KEYS/gpg_17E1CE16.asc"
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Comment: OpenWrt 18.06 public key
+
+mQINBFr8KBIBEACua2CjanTmQN6z03u78RiNStHIMmBpykxZK7bbJDMIDwE7ewuW
+L2HYbDR4Ls+bfB/ER9CP2wxQQMUGibbCaJQ+wsxnuQfzjazaBcupXbFfZwu79gzo
+CtdBGFcbULjRBQKoF0gF8hYA8nJssMoXLPtxIUmQL4tP2dM5szpZ7F9M6ZgTnHCZ
+eyUVhRS+aX2e8usfu1mdLqQIwWXaDTT70anJMRtHmjCEE6hf0MFYqLooqjVUFTTU
+fZj65ZSF+PsHwj2uUPXG0lh0jx1jhSnIFOn9Doek/LGPPvKWl43xs/R/axR/Rejh
+Osh8HwBsVeo6xJeVDOSl6icch949cId1BKGcC2p4DyRJMYYymRBv5XTp1MfSecDI
+Wd8uN+ilBSSkTEnNfxZ/b/G88hXKsAh1UigeWyGg/PrYnkD3gWeejOOihmG2Ckre
+g9Stoidx+oDVVhH8Y5IiqZrfv4lB2UcEJ1G9+EUZC7uGUz3fcxHdWZjuaOxiWL3y
+ydQrBSGpPv+DDt2HtDhg3gjZi9XCvbIEeGeeqPWwWzBCK6Yum2KzdtmpaZr88LVn
+4SR9qtyQ1FrGsXoZJRRwa5hlw05I1m24kNIY+NUNX8fT1KdRbwW/ut4hpxMwPJ4+
+fJhYfM/WGC3ayIG3J5HsiiMk9C3CUBWnH/4iuSbyryqj2LUewtAu2L9KwwARAQAB
+tE1PcGVuV3J0IFJlbGVhc2UgQnVpbGRlciAoMTguMDYgU2lnbmluZyBLZXkpIDxv
+cGVud3J0LWRldmVsQGxpc3RzLm9wZW53cnQub3JnPokCPgQTAQIAKAUCWv5/ggIb
+AwUJA8JnAAYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQDyAldBfhzhY7rA//
+TzpD5MWUFOrfTUqgBkNf/858DKGhPSTekVTb8Fs84Me2zQ+PCf9W6DeJqLffal6x
+sipANezP3ZLyQ4eh0dsdUsRR/ODbVROhlqNZClQ/eM7GLMApRHur6BMckSVK7WsJ
+i8D3fUefff8PBT84JfIn0TzvqrjqlAdPv9oDGxlGkaKpZpimVn161tGctTttKKwZ
+zfS4Bxup//slh03uz3AEate3MFSYf1WsEignBPFv31PrdIfBt2A4SJYT1xz6f2bw
+FKCyjs3DNOVCt8XjmJClHrJgiLIgrFs/ESp9moBGd58scplj/slrpJdpvSwBw2u7
+AwpzGmIU8l8azml0M988mdoOFkDbahY6/LL33IT88o+dXbiBE3l8cYILAFroxCgF
+vkWcJv/Quj93Zr7p28efCrRHMYrp8D4dbqdTidC+/acmlp7my/QK6zpemi2VRU0T
+2gvf/gvurWpyJfgp6mdxGGgHCQjcqaW3f76MAR7T+kQKT8iy+gGIt5XpW96jlEdd
+tau7D/KGWWKsOUXKiAu2R5vpLDl+J9GGMbGB6j0KdqWHbFClCYZYjllm0LMA2Cox
+EyS0mIEG3eUDt4lR5+11drZXOsLfDqCdNSXJERYV6VzztVPPeSv6aUJBNmdnZPiP
+LF+0RrqWDVRJN9YjCkh2oQ77TzjmOHSMhkfSIU3AwLA=
+=wsoW
+-----END PGP PUBLIC KEY BLOCK-----
+EOF
+
+	cat << EOF > "$DIR_GPG_KEYS/gpg_626471F1.asc"
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Comment: LEDE GnuPG key for unattended build jobs
+
+mQINBFeXZ7wBEAC3QZ+jhWrdj2XW9AdZpZrgHETZCW7lXxI3pJ2kS4UXNq+40KR2
+GJOdsXDnLb7ZiHNn6yio6qKLXFD/bimxK+22HSJlc3LSF2kKzNrgKoFR2rIKbL3c
+Us7GpWY8VqGTrfwR6OQNcoWqa1n5/tK9xuqKhfpoA2Eci8K+w5YCzCmnOz2vzbgS
+ptuFshTKYI2Z/DLQZyP+OQkEYPfCdani2KsISn4DTx8xFjmW/sb/zf0isemTwWyK
+Oh76FTa0tYdjTtAv3JHqyr2XkddM/oUSc09baCOfhUdo7Ep5rUqKw7BQsjreBYoZ
+WcL/hmlIksUrFlqo/HRpoBgCZpSjsF/Z9otZpSugMHVVlRCnAKQiWxWAd+V+y2FG
+q79myPgiMkbkaIrCelrUhDFRQ5wTnfAppFolw+xtT9bwdkwxZDNBe6PCYuLqD8wg
+jtDtt3q5UaUOMGJrMDKZ0Wi6ycdl/sM59kLfyBV4ybmYkwOLTlMvOATiyUZeJJZO
+2bTKBvD+izsx3Ea4VLPWYSFmk6QwaOMtj6tcXwBgtljzqMJ0S9Gubmopy3WAkP/m
+/6ETJpuIupqEtvbRTX4O/+qnBgY40aQX7B4NgJi2SypP/WML5v2B2amLlhTcN+we
+ULWyH9KvfKny5mrtG5C9xq1eAgKtB2QEDEbRyz34DWVWGpqIY1mscaNv8wARAQAB
+tFtMRURFIEJ1aWxkIFN5c3RlbSAoTEVERSBHbnVQRyBrZXkgZm9yIHVuYXR0ZW5k
+ZWQgYnVpbGQgam9icykgPGxlZGUtYWRtQGxpc3RzLmluZnJhZGVhZC5vcmc+iQI4
+BBMBAgAiBQJXl2e8AhsDBgsJCAcDAgYVCAIJCgsEFgIDAQIeAQIXgAAKCRDNhLzt
+YmRx8aJ2D/9eRQWekaeX8eAcAgzguFS12ODlg23lJx00d0zLhZcA6LycYJRmFN+M
+0tsVDZ6y7bLy1/h0YFYvYlJk4ZE+6sb4I/GSkMyqeZAy8whELYfEphXVYx0/wgyn
+d57wE0lDo8/zmt3rK1eD0zJioN7cL3A/t3L++al4gwmqtTfUIl96AXc3YBe/rwXS
+i7ShENVKYjTaMugP5BJ9kUZuaIjmXZWvREbURgBMWR7uR56XKJBwDBQMtHq2AoZs
+2iNR3dG8r70Sb/cMSgAqhwDZfeV71r7+Pd+asvxYb0JeNNgZ2ss/BA5yapUKZLgu
+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
+GPeIoGmFL85qtFOzc4sqYQGhLj9iMRfmNw==
+=W2Tk
+-----END PGP PUBLIC KEY BLOCK-----
+EOF
+
+}
+
+count_words(){ local c=0;for i in $1;do c=$((c+1));done;echo $c;}
+
+#test_url(){	wget -q -s "$1";return $?;}
+test_url(){
+	local result=`wget -q -s "$1" >/dev/null 2>&1;echo $?`
+	[ $result -eq 0 ] && msg="OK" || msg="FAILED"
+	v "$2${2/*/ }url $msg: '$1'"
+	return $result
+}
+
+get_file_var(){ awk -F\" "/$1/{print \$2}" "$2";}
+
+build_feeds_conf(){
+#	 releases eg:	17.01.5
+#	snapshots eg:	4.14.71-1-1731824eb400113097e1d546844afc60
+#					4.4.140-1-835b67d49950065f6b4bfaeb2ded0315
+	local feeds="core base luci packages routing telephony"
+
+	case "$1" in
+		??.??.?)	local src=release;;
+		*.*.*-*-*)	local src=snapshot;feeds="${feeds/ / kmods }";;
+	esac
+
+	for f in $feeds;do
+		line="src/gz ${src}_${f} $URL_UPGRADE"
+		case $f in
+			core)   echo "$line/targets/$BOARD/packages";;
+			kmods)  echo "$line/targets/$BOARD/kmods/$1";;
+			*)      echo "$line/packages/$ARCH/$f";;
+		esac
+	done
+}
+
+get_upgrade_id(){
+#	stable versions only, no release candidates
+	wget -q -O - `cat "$FILE_SYSUPG_AUTO"|grep -o '^.*releases'` 2>/dev/null|\
+		awk -F"[><]" '/>[0-9][0-9].[0-9][0-9].[0-9]</{v=$7}END{print v}'
+}
+
+get_upgrade_csum(){
+	local sumfile="$URL_BOARD/${CSUM_TOOL}s"
+	local gpgfile="$sumfile.asc"
+	wget -q "$sumfile" -P "$DIR_WORK_GPG" 2>/dev/null || return 101
+	wget -q "$gpgfile" -P "$DIR_WORK_GPG" 2>/dev/null || return 102
+	echo "$DIR_WORK_GPG/${sumfile##*/}"
+	return 0
+}
+
+get_from_ipk(){ # packagename file_or_folder[wildcard*] destination
+	printf "lists_dir ext $DIR_WORK_GPG/lists\noption check_signature 1\n"\
+		> "$DIR_WORK_GPG/conf"
+	[ -d "$DIR_WORK_GPG/lists" ] || opkg -f "$DIR_WORK_GPG/conf" update
+	file=`opkg -f "$DIR_WORK_GPG/conf" download "$1"|\
+		awk 'BEGIN{FS="/"} {print $NF;exit}'`
+	tar zxf "$file" "./data.tar.gz" -O |\
+		tar zxf - -C "$DIR_WORK_GPG" || return 101
+	find "$DIR_WORK_GPG" -iname "$2" -prune -exec mv {} "$3" \; ||\
+		return 102
+}
+
+gpg_verify(){ # gpgdir sigfile datafile
+	[ $# -eq 3 ] || return 100
+	[ -d "$1" ] || return 101
+	[ -f "$2" ] || return 102
+	[ -f "$3" ] || return 103
+
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DIR_WORK_GPG
+	
+	local keyring="$DIR_WORK_GPG/keyring.gpg"
+	local base64="$DIR_WORK_GPG/base64"
+	local gpgv="$DIR_WORK_GPG/gpgv"
+	
+	get_from_ipk coreutils-base64 base64 "$base64" || return 104
+	get_from_ipk gpgv gpgv "$gpgv" || return 105
+
+	local zlib="$DIR_WORK_GPG/`grep libz.so $gpgv`"
+	get_from_ipk zlib libz.so.*.* "$zlib" || return 106
+
+	#converts from ASCII-armored to binary
+	for i in "$1"/*.asc;do
+		sed -ne '/^$/ { n; :r; p; n; s/^[=-]//; T r }' "$i"
+	done | "$base64" -d > "$keyring"
+	"$gpgv" --keyring "$keyring" "$2" "$3"
+}
+
+get_romtime(){
+	awk '/^Package: kernel$/,/^$/{if ($1=="Installed-Time:") print $2}'\
+		"$FILE_OPKG_STATUS"
+}
+
+get_user_apps(){
+	awk "BEGIN{ORS=\" \";RS=\"\"};/`get_romtime`.*/{next}
+		!/Auto-Installed/{print \$2}" "$FILE_OPKG_STATUS"
+}
+
+get_user_packages(){
+	awk "BEGIN{ORS=\" \";RS=\"\"};/`get_romtime`.*/{next}
+		{print \$2}" "$FILE_OPKG_STATUS"
+}
+
+get_dependencies(){
+	local packages="$1" i depends query romtime notrace
+
+#	disable tracing when set as it floods the log
+	[ "${-/x}" == "$-" ] || { set +x;notrace=set;}
+
+	while [ "$packages" != "" ];do
+		query=
+		for i in $packages;do
+			query="/^Package: ${i}$/,/^$/p;$query"
+		done
+		packages=`opkg info|sed -n "$query"|sed -n 's/,//g;s/^Depends: //p'`
+		packages=`echo $packages|sed 's/(.*)//g;s/[, ]/\n/g'|sort -u`
+		depends="$depends $packages"
+	done
+	romtime=`get_romtime`
+	depends=`echo $depends|sed 's/(.*)//g;s/[, ]/\n/g'|sort -u`
+	depends=`for i in $depends;do
+		sed -n "/^Package: ${i}$/,/^$/p" "$FILE_OPKG_STATUS" |\
+			grep -q "$romtime" || echo $i
+	done`
+	[ $notrace ] && set -x
+	echo $depends
+}
+
+build_cache_dir(){ #version_id or kernel_id
+	[ -n "$1" ] || return 101			#empty parameter
+	local user_apps=`get_user_apps`
+	[ -n "$user_apps" ] || return 0		#empty userapp list
+
+	mkdir -p "$DIR_CACHE_LISTS" "$DIR_CACHE_PKGS"
+	echo "$user_apps"|xargs|tr ' ' '\n'|sort -u > "$FILE_CACHE_PKGLIST"
+	echo "$1" > "$FILE_CACHE_ID"
+	df / > "$FILE_CACHE_DISKUSAGE"
+	sed "s,$DIR_OPKG_LISTS,$DIR_CACHE_LISTS,g" "$FILE_OPKG_CONF"\
+		> "$FILE_CACHE_CONF"
+	cp "$FILE_OPKG_CUSTOMFEEDS" "$FILE_CACHE_CUSTOMFEEDS"
+	sed -i "s/$VERSION_ID_CURRENT/$1/g" "$FILE_CACHE_CUSTOMFEEDS"
+	cp "$FILE_OPKG_DISTFEEDS" "$FILE_CACHE_DISTFEEDS"
+	cp -r "$DIR_OPKG_KEYS" "$DIR_CACHE"
+
+	mount -o bind "$FILE_CACHE_CONF" "$FILE_OPKG_CONF" || return 102
+	mount -o bind "$DIR_CACHE" "$DIR_OPKG" || return 103
+
+	[ "$VERSION_ID_CURRENT" != "$1" ] && {
+#		workaround: if different version, then get matching keys.
+		keyring=`wget -q -O - "$URL_PACKAGES_UPGRADE/base"|\
+			awk 'BEGIN{RS="\""};/-keyring_.*ipk$/{print}'|tail -1`
+		wget -q -O - "$URL_PACKAGES_UPGRADE/base/$keyring"|\
+			tar zxf - "./data.tar.gz" -O |tar zxf - ".$DIR_OPKG_KEYS" -C /
+		build_feeds_conf "$1"|tee "$FILE_CACHE_DISTFEEDS"
+
+#		workaround: check availability, get all or abort
+		local i query needed available
+		query=`echo 'BEGIN{RS="\""};/^'${user_apps// /_/;/^}'_/'`
+		for i in `wget -q "$URL_PACKAGES_UPGRADE/feeds.conf" -O -|\
+			awk '{print $2}'`;do
+				wget -q "$URL_PACKAGES_UPGRADE/$i" -O -
+		done|awk "$query" |sort > "$FILE_CACHE_PKGLIST.available"
+		needed=`count_words "$user_apps"`
+		available=`cat "$FILE_CACHE_PKGLIST.available"|wc -l`
+		[ $available -eq $needed ] || \
+			{ for i in $user_apps;do
+				grep -q $i "$FILE_CACHE_PKGLIST.available" || \
+					v "unable to download package: $i"
+				done
+				return 104;
+			}
+	}
+
+	opkg $OPKG_V update || return 105
+	local depends=`get_dependencies "$user_apps"`
+#	workaround: opkg copies files to cache instead of moving them.
+	cd "$DIR_CACHE_PKGS"
+#	workaround: opkg queries /usr/lib/opkg/status for candidates ?!
+	touch "$DIR_TEMP/status"
+	mount -o bind "$DIR_TEMP/status" "$FILE_OPKG_STATUS"
+#	workaround: package ip defaults to ip-full: ip-tiny is missing.
+	depends="$depends ip-tiny"
+	opkg $OPKG_V download $user_apps $depends || return 106
+
+	cd "$DIR_WORK"
+	echo "option cache $DIR_CACHE_PKGS" >> "$FILE_CACHE_CONF"
+
+#	workaround: remove all opkg keys from cache.
+	rm -rf "$DIR_CACHE_KEYS"
+	umount "$FILE_OPKG_CONF" "$DIR_OPKG" "$FILE_OPKG_STATUS"
+
+	return 0
+}
+
+insert_runonce(){
+	local kmsg=/dev/kmsg
+	eval FILE_SYSUPG_POST_LOG="`set_logfile`"
+	[ "${-/x}" == "$-" ] || local debug="set -x"
+#file:1
+	cat <<EOF > "$FILE_SYSUPG_INIT"
+#!/bin/sh /etc/rc.common
+
+START=`echo $LINK_SYSUPG_RC|grep -Eo '[0-9]*'` #greps number from filename
+boot() {
+  ( $debug
+	[ -d "$DIR_CACHE" ] || { echo "error: $DIR_CACHE not found." && exit 1;}
+	echo "continuing sysupgrade..." > $kmsg
+	df / |tee $kmsg
+	used=\`cat "$FILE_CACHE_DISKUSAGE"|awk '/overlayfs:/ {print \$3}'\`
+	available=\`df /|awk '/overlayfs:/ {print \$4}'\`
+	echo "needed: \$used , available: \$available" >$kmsg
+	[ \$used -lt \$available ] || {
+		echo "package restore aborted: not enough diskspace." > $kmsg
+		echo "package cache folder: $DIR_CACHE" >$kmsg
+		echo "DO NOT REBOOT or your package cache is lost!" >$kmsg
+		rm -f "$LINK_SYSUPG_RC"
+		return 1
+	}
+
+	rm -rf "$DIR_CACHE_KEYS" #delete old keys if any
+	cp -r "$DIR_OPKG_KEYS" "$DIR_CACHE_KEYS" #copy trusted image keys
+
+	mount -o bind "$FILE_CACHE_CONF" "$FILE_OPKG_CONF"
+	mount -o bind "$DIR_CACHE" "$DIR_OPKG"
+
+	opkg $OPKG_V install `cat "$FILE_CACHE_PKGLIST"|xargs`
+	result=\$?
+
+	umount "$FILE_OPKG_CONF" "$DIR_OPKG"
+
+	[ \$result -eq 0 ] && {
+		rm -rf "$DIR_CACHE"
+		rm -f "$FILE_SYSUPG_INIT" "$LINK_SYSUPG_RC"
+		df / |tee $kmsg
+		echo "sysupgrade completed!" > $kmsg
+	} || {
+		echo "package restore error, check systemlog" > $kmsg
+		rm -f "$LINK_SYSUPG_RC"
+	}
+  ) 2>&1 | tee $FILE_SYSUPG_POST_LOG
+}
+
+EOF
+	chmod +x "$FILE_SYSUPG_INIT"
+	ln -s "$FILE_SYSUPG_INIT" "$LINK_SYSUPG_RC"
+#file:2
+	cat<<EOF >> "$FILE_SYSUPG_KEEP"
+$FILE_SYSUPG_AUTO
+$FILE_SYSUPG_INIT
+$LINK_SYSUPG_RC
+$FILE_SYSUPG_PRE_LOG
+EOF
+}
+
+do_upgrade_available(){
+	v "Checking for updates..."
+	get_vars_current || return 101
+	get_vars_upgrade || return 102
+	v "installed: ${VERSION_ID_CURRENT}_${BUILD_ID_CURRENT}"
+	v "available: ${VERSION_ID_UPGRADE}_${BUILD_ID_UPGRADE}"
+	[ "$BUILD_ID_UPGRADE" == "$BUILD_ID_CURRENT" ] \
+		&& return 103 \
+		|| return 0		# upgrade available
+}
+
+do_upgrade_auto(){
+	v "Starting auto upgrade process..."
+	[ "$BUILD_ID_UPGRADE" == "$BUILD_ID_CURRENT" ] && return 101
+	case "$URL_SYSUPG_AUTO" in
+		*/releases/*)	local cache_conf="$VERSION_ID_UPGRADE";;
+		*/snapshots/*)	local cache_conf="$KERNEL_ID_UPGRADE";;
+	esac
+	get_app_stats
+	build_cache_dir "$cache_conf" || return 102
+	mkdir -p "$DIR_WORK_GPG";cd "$DIR_WORK_GPG"
+	local csumfile=`get_upgrade_csum`
+	insert_gpg_keys #remove when added to openwrt-keyring
+	gpg_verify "$DIR_GPG_KEYS" "$csumfile.asc" "$csumfile" || return 103
+	wget "$URL_UPGRADE_IMAGE" -P "$DIR_WORK_GPG";cd "$DIR_WORK_GPG"
+	datafile="${URL_UPGRADE_IMAGE##*/}"
+	grep "$datafile" "$csumfile"|"$CSUM_TOOL" -c || return 104
+	eval IMAGE="`readlink -vf $datafile`"
+	cd "$DIR_WORK"
+	[ $TEST -eq 0 ] || return 105
+	insert_runonce
+	return 0
+}
+
+get_app_stats(){
+	local user_packages=`get_user_packages|sort -u`
+	local upc=`count_words "$user_packages"`
+	local user_apps=`get_user_apps|sort -u`
+	local uac=`count_words "$user_apps"`
+	v "Found $uac user app(s) and $((upc-uac)) dependency package(s)";
+	echo "$user_apps"|sed 's/ /\n/g'|sort|xargs
+}
+
+get_vars_current(){
+#os-release & distfeeds.conf determine current path
+	eval VERSION_ID_CURRENT=`get_file_var VERSION_ID "$FILE_OSRELEASE"`
+	eval BUILD_ID_CURRENT=`get_file_var BUILD_ID "$FILE_OSRELEASE"`
+	eval URL_OPKG_DISTFEEDS="`head -1 $FILE_OPKG_DISTFEEDS|cut -d\  -f3`"
+	eval URL_OPKG_DOMAIN=`head -1 "$FILE_OPKG_DISTFEEDS"|\
+		grep -o "[^ ]*:/\+.[^/]*"`
+	test_url "$URL_OPKG_DOMAIN" "package"|| return 101
+	eval URL_VERSION=`awk '/targets.*packages$/{gsub("/targets.*$","");
+		print $3}' "$FILE_OPKG_DISTFEEDS"`
+	eval ARCH=`get_file_var _ARCH "$FILE_OSRELEASE"`;
+	eval URL_PACKAGES_CURRENT="$URL_VERSION/packages/$ARCH"
+	eval BOARD=`get_file_var _BOARD "$FILE_OSRELEASE"`;
+	eval URL_BOARD="$URL_OPKG_DOMAIN/$VERSION_ID_CURRENT/targets/$BOARD"
+	eval KERNEL_ID_CURRENT=`awk '/kmods/{gsub("^.*kmods/","");
+		print $3}' "$FILE_OPKG_DISTFEEDS"`
+}
+
+get_vars_upgrade(){
+#sysupgrade.auto determines upgrade path
+	test_url "`get_upgrade_url`" "upgrade" || return 101
+	eval URL_SYSUPG_AUTO=`cat "$FILE_SYSUPG_AUTO"`
+	eval URL_SYSUPG_DOMAIN=`grep -o "[^ ]*:/\+.[^/]*" "$FILE_SYSUPG_AUTO"`
+
+#	test_url "$URL_SYSUPG_DOMAIN" || return 102
+	case "$URL_SYSUPG_AUTO" in
+		*/releases/*)
+			eval VERSION_ID_UPGRADE=`get_upgrade_id`
+			version="releases/$VERSION_ID_UPGRADE"
+			eval URL_UPGRADE_IMAGE=`echo $URL_SYSUPG_AUTO|\
+				sed "s,/releases,&/$VERSION_ID_UPGRADE,;
+					s,openwrt-,&$VERSION_ID_UPGRADE-,"`
+			;;
+		*/snapshots/*)
+			eval VERSION_ID_UPGRADE="snapshot"
+			version="${VERSION_ID_UPGRADE}s"
+			eval URL_UPGRADE_IMAGE=$URL_SYSUPG_AUTO
+			;;
+	esac
+
+	eval URL_UPGRADE="$URL_SYSUPG_DOMAIN/$version"
+
+	eval ARCH=`get_file_var _ARCH "$FILE_OSRELEASE"`;
+	eval URL_PACKAGES_UPGRADE="$URL_UPGRADE/packages/$ARCH"
+
+	eval BOARD=`get_file_var _BOARD "$FILE_OSRELEASE"`;
+	eval URL_BOARD="$URL_UPGRADE/targets/$BOARD"
+
+	upgrade_manifest=`wget -q -O - "$URL_BOARD"|\
+		    sed -n 's/.*href="\([^"]*\).*/\1/;/manifest/p'`
+	eval URL_UPGRADE_MANIFEST="$URL_BOARD/$upgrade_manifest"
+	eval FILE_UPGRADE_MANIFEST="$DIR_WORK/upgrade.manifest"
+	wget -q -O "$FILE_UPGRADE_MANIFEST" "$URL_UPGRADE_MANIFEST"
+
+	eval BUILD_ID_UPGRADE=`awk \
+		'BEGIN{FS="-"};/base-files/{print $(NF-1)"-"$NF}'\
+		"$FILE_UPGRADE_MANIFEST"`
+	eval KERNEL_ID_UPGRADE=`awk 'BEGIN{FS=" "};/^kernel/{print $3}' \
+		"$FILE_UPGRADE_MANIFEST"`
+}
+
+set_upgrade_url(){ #https requires ustream SSL Library & ca-certificates
+	local url="$1"
+	case "$url" in
+		*/releases/*)
+			local ver=`echo "$url"|awk 'gsub("/\+"," "){print $4}'`
+			url=`echo "$url"|sed "s,$ver.,,g"`
+		;;
+		*/snapshots/*)
+		;;
+		*)
+			v "failed to set upgrade url, not a release or snapshot."
+			[ -r "$FILE_SYSUPG_AUTO" ] && rm -f "$FILE_SYSUPG_AUTO"
+			return 101
+		;;
+	esac
+	echo "$url" > "$FILE_SYSUPG_AUTO"
+}
+
+get_upgrade_url(){
+#	creating a current link on the openwrt server would be much better!
+#	eg: http://downloads.openwrt.org/current/targets/....
+	[ -r "$FILE_SYSUPG_AUTO" ] || return 101
+	local url="`cat $FILE_SYSUPG_AUTO`"
+	case "$url" in
+		*/releases/*)
+			v=`get_upgrade_id`
+			[ -n "$v" ] || return 102
+			url=`sed "s,/releases,&/$v,;s,openwrt-,&$v-," \
+				$FILE_SYSUPG_AUTO`
+		;;
+		*/snapshots/*)
+		;;
+		*)
+			return 103 #everything else
+		;;
+	esac
+	echo "$url"
+}
+
+do_restore_packages(){
+#	retrieve tmpdir from tarball and set as workdir for restore
+	local tmpdir=`tar ztf "$CONF_RESTORE"|\
+		awk -F"/" -v var=${FILE_CACHE_ID##*/} '$0~var{print "/"$1"/"$2}'`
+	[ -d "$tmpdir" ] || return 101 #no tmpdir in tarchive
+	rmdir "$DIR_WORK"
+	eval DIR_WORK="$tmpdir"
+
+#	get variables based on new workdir
+	get_vars_temp
+	get_vars_current
+
+	local restore_id conf appcount pkglist version_id
+
+	[ -s "$FILE_CACHE_ID" ]	&& restore_id=`cat "$FILE_CACHE_ID"`
+
+	[[ -s "$FILE_OPKG_CONF" && "$VERSION_ID_CURRENT" == "$restore_id" ]]\
+		&& conf="--conf $FILE_CACHE_CONF" #no quotes
+	[ -s "$FILE_CACHE_PKGLIST" ] && pkglist=`cat "$FILE_CACHE_PKGLIST"`
+	appcount=`count_words "$pkglist"`
+
+	v "Restoring $appcount user app(s) with dependencies."
+	[ $appcount -eq 0 ] && return 0
+	[ -n "$conf" ] || {
+		v "Skipping cached package restore:";v ""
+		v "expected version: ${restore_id:-'not found'}"
+		v " current version: $version_id";v ""
+		v "Trying feeds in $FILE_CACHE_DISTFEEDS:"
+		is_feed_up "$FILE_CACHE_DISTFEEDS" \
+			&& { v "Feeds are online, proceeding...";opkg update;}\
+		 	|| { v "Feeds are offline, skipping...";return 1;}
+	}
+	rm -rf "/tmp/luci-*cache" #remove luci cache
+	opkg $OPKG_V $conf install $pkglist
+	return $?
+}
+
+do_log(){
+	local file="$FILE_SYSUPG_PRE_LOG"
+	local pipe="$file.pipe"
+	mkfifo "$pipe"
+		tee < "$pipe" "$file" &
+		exec &> "$pipe"
+	rm "$pipe"
+}
+
+#log
+do_log
+
+##########################################################################
 
 # hooks
 sysupgrade_image_check="fwtool_check_signature fwtool_check_image platform_check_image"
@@ -174,6 +830,27 @@ do_save_conffiles() {
 	rm -f "$CONFFILES"
 }
 
+if [ -n "$UPGRADE_URL" ]; then
+	[ "$UPGRADE_URL" != "TESTONLY" ] \
+		&& set_upgrade_url "$UPGRADE_URL"
+	test_url "`get_upgrade_url`" "upgrade"
+	exit $?
+fi
+
+if [ $UPGRADE_AVAILABLE -eq 1 ]; then
+	do_upgrade_available ; exit $?
+fi
+
+if [ $UPGRADE_AUTO -eq 1 ]; then
+	do_upgrade_available ||	exit 1
+	do_upgrade_auto || exit 1
+fi
+
+if [ $PACKAGE_LIST -eq 1 ]; then
+	get_app_stats
+	exit 0
+fi
+
 if [ $CONF_BACKUP_LIST -eq 1 ]; then
 	run_hooks "$CONFFILES" $sysupgrade_init_conffiles
 	cat "$CONFFILES"
@@ -182,6 +859,7 @@ if [ $CONF_BACKUP_LIST -eq 1 ]; then
 fi
 
 if [ -n "$CONF_BACKUP" ]; then
+ 	get_vars_current && build_cache_dir "$VERSION_ID_CURRENT"
 	do_save_conffiles "$CONF_BACKUP"
 	exit $?
 fi
@@ -192,8 +870,10 @@ if [ -n "$CONF_RESTORE" ]; then
 		exit 1
 	fi
 
+	v "Restoring config files..."
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
-	tar -C / -x${TAR_V}zf "$CONF_RESTORE"
+	tar -C / -x${TAR_V}zf "$CONF_RESTORE" || exit $?
+	do_restore_packages
 	exit $?
 fi
 
