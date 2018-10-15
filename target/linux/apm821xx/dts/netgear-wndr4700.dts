@@ -390,6 +390,7 @@
 		hd-green {
 			label = "wndr4700:green:hd";
 			gpios = <&GPIO0 14 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "disk-activity";
 		};
 
 		hd-red {
