@@ -685,6 +685,17 @@ define Device/xzwifi_creativebox-v1
 endef
 TARGET_DEVICES += xzwifi_creativebox-v1
 
+define Device/ap-mtkh7-0006
+  DTS := AP-MTKH7-0006
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  SUPPORTED_DEVICES := sge,ap-mtkh7-0006
+  DEVICE_TITLE := SGE AP-MTKH7-0006
+  DEVICE_PACKAGES := \
+	kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
+	kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini
+endef
+TARGET_DEVICES += ap-mtkh7-0006
+
 define Device/youhua_wr1200js
   MTK_SOC := mt7621
   IMAGE_SIZE := 16064k
