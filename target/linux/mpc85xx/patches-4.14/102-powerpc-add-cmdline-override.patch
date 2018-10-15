@@ -1,9 +1,9 @@
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
 @@ -830,6 +830,14 @@ config CMDLINE_FORCE
-	  This is useful if you cannot or don't want to change the
-	  command-line options your boot loader passes to the kernel.
-
+ 	  This is useful if you cannot or don't want to change the
+ 	  command-line options your boot loader passes to the kernel.
+ 
 +config CMDLINE_OVERRIDE
 +    bool "Use alternative cmdline from device tree"
 +    help
@@ -13,14 +13,14 @@
 +      cmdline if it exists in the device tree.
 +
  config EXTRA_TARGETS
-	string "Additional default image types"
-	help
+ 	string "Additional default image types"
+ 	help
 --- a/drivers/of/fdt.c
 +++ b/drivers/of/fdt.c
 @@ -1131,6 +1131,17 @@ int __init early_init_dt_scan_chosen(uns
-	if (p != NULL && l > 0)
-		strlcpy(data, p, min((int)l, COMMAND_LINE_SIZE));
-
+ 	if (p != NULL && l > 0)
+ 		strlcpy(data, p, min((int)l, COMMAND_LINE_SIZE));
+ 
 +    /* CONFIG_CMDLINE_OVERRIDE is used to fallback to a different
 +     * device tree option of chosen/bootargs-override. This is
 +     * helpful on boards where u-boot sets bootargs, and is unable
@@ -32,6 +32,6 @@
 +		strlcpy(data, p, min((int)l, COMMAND_LINE_SIZE));
 +#endif
 +
-	/*
-	 * CONFIG_CMDLINE is meant to be a default in case nothing else
-	 * managed to set the command line, unless CONFIG_CMDLINE_FORCE
+ 	/*
+ 	 * CONFIG_CMDLINE is meant to be a default in case nothing else
+ 	 * managed to set the command line, unless CONFIG_CMDLINE_FORCE

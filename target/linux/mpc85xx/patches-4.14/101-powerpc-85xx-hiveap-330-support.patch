@@ -1,9 +1,9 @@
 --- a/arch/powerpc/platforms/85xx/Kconfig
 +++ b/arch/powerpc/platforms/85xx/Kconfig
 @@ -49,6 +49,17 @@ config BSC9132_QDS
-	  and dual StarCore SC3850 DSP cores.
-	  Manufacturer : Freescale Semiconductor, Inc
-
+ 	  and dual StarCore SC3850 DSP cores.
+ 	  Manufacturer : Freescale Semiconductor, Inc
+ 
 +config HIVEAP_330
 +    bool "Aerohive HiveAP-330"
 +    select DEFAULT_UIMAGE
@@ -16,8 +16,8 @@
 +      Freescale P1020 SoC.
 +
  config MPC8540_ADS
-	bool "Freescale MPC8540 ADS"
-	select DEFAULT_UIMAGE
+ 	bool "Freescale MPC8540 ADS"
+ 	select DEFAULT_UIMAGE
 --- a/arch/powerpc/platforms/85xx/Makefile
 +++ b/arch/powerpc/platforms/85xx/Makefile
 @@ -10,6 +10,7 @@ obj-y += common.o

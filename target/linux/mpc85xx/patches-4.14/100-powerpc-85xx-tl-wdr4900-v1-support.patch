@@ -22,7 +22,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) += pseries-head.S
  src-plat-$(CONFIG_MVME7100) += motload-head.S mvme7100.c
 +src-plat-$(CONFIG_TL_WDR4900_V1) += cuboot-tl-wdr4900-v1.c
-
+ 
  src-wlib := $(sort $(src-wlib-y))
  src-plat := $(sort $(src-plat-y))
 @@ -330,7 +331,7 @@ image-$(CONFIG_TQM8555)			+= cuImage.tqm
@@ -33,7 +33,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +image-$(CONFIG_TL_WDR4900_V1)		+= cuImage.tl-wdr4900-v1
  # Board ports in arch/powerpc/platform/86xx/Kconfig
  image-$(CONFIG_MVME7100)                += dtbImage.mvme7100
-
+ 
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
 @@ -277,6 +277,10 @@ cuboot*)
@@ -50,9 +50,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 --- a/arch/powerpc/platforms/85xx/Kconfig
 +++ b/arch/powerpc/platforms/85xx/Kconfig
 @@ -170,6 +170,17 @@ config STX_GP3
-	select CPM2
-	select DEFAULT_UIMAGE
-
+ 	select CPM2
+ 	select DEFAULT_UIMAGE
+ 
 +config TL_WDR4900_V1
 +    bool "TP-Link TL-WDR4900 v1"
 +    select DEFAULT_UIMAGE
@@ -65,8 +65,8 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +      Freescale P1014 SoC.
 +
  config TQM8540
-	bool "TQ Components TQM8540"
-	help
+ 	bool "TQ Components TQM8540"
+ 	help
 --- a/arch/powerpc/platforms/85xx/Makefile
 +++ b/arch/powerpc/platforms/85xx/Makefile
 @@ -26,6 +26,7 @@ obj-$(CONFIG_CORENET_GENERIC)   += coren
