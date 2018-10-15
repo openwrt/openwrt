@@ -306,24 +306,29 @@
 			};
 
 			UART0: serial@ef600300 {
-				device_type = "serial";
-				compatible = "ns16550";
+				/*
+				 * AMCC's BSP u-boot scans for the "ns16550"
+				 * compatible, without it, u-boot wouldn't
+				 * set the "clock-frequency" which is required.
+				 *
+				 * However, the hardware documentation lists:
+				 * "Register compatibility with 16750 register set"
+				 */
+				compatible = "ns16750", "ns16550";
 				reg = <0xef600300 0x00000008>;
 				virtual-reg = <0xef600300>;
 				clock-frequency = <0>; /* Filled in by U-Boot */
-				current-speed = <0>; /* Filled in by U-Boot */
 				interrupt-parent = <&UIC1>;
 				interrupts = <0x01 IRQ_TYPE_LEVEL_HIGH>;
 				status = "disabled";
 			};
 
 			UART1: serial@ef600400 {
-				device_type = "serial";
-				compatible = "ns16550";
+				/* same "ns16750" as with UART0 */
+				compatible = "ns16750", "ns16550";
 				reg = <0xef600400 0x00000008>;
 				virtual-reg = <0xef600400>;
 				clock-frequency = <0>; /* Filled in by U-Boot */
-				current-speed = <0>; /* Filled in by U-Boot */
 				interrupt-parent = <&UIC0>;
 				interrupts = <0x01 IRQ_TYPE_LEVEL_HIGH>;
 				status = "disabled";
