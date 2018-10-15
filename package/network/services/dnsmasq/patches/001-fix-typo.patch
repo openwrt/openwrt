@@ -1,0 +1,28 @@
+From 53792c934cf18f46c5da3ea28786100cb339ad4c Mon Sep 17 00:00:00 2001
+From: Martin Schiller <ms@dev.tdt.de>
+Date: Mon, 8 Oct 2018 14:55:19 +0200
+Subject: [PATCH] fix typo
+
+it was introduced by commit 08933475abd0580cff747e3d1e0db3865207a200
+
+Signed-off-by: Martin Schiller <ms@dev.tdt.de>
+---
+ src/dnsmasq.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/dnsmasq.c b/src/dnsmasq.c
+index aa29bbf..7fd33af 100644
+--- a/src/dnsmasq.c
++++ b/src/dnsmasq.c
+@@ -242,7 +242,7 @@ int main (int argc, char **argv)
+ 
+       /* Create a serial at startup if not configured. */
+ #ifdef HAVE_BROKEN_RTC
+-      if (daemon_>soa_sn == 0)
++      if (daemon->soa_sn == 0)
+ 	die(_("zone serial must be configured in --auth-soa"), NULL, EC_BADCONF);
+ #else
+       if (daemon->soa_sn == 0)
+-- 
+2.18.0
+
