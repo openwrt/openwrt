@@ -696,6 +696,16 @@ define Device/ap-mtkh7-0006
 endef
 TARGET_DEVICES += ap-mtkh7-0006
 
+define Device/wio-one
+  DTS := WIO-ONE
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  SUPPORTED_DEVICES := wio,wio-one
+  DEVICE_TITLE := WIO ONE
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 wpad-mini
+endef
+TARGET_DEVICES += wio-one
+
 define Device/youhua_wr1200js
   MTK_SOC := mt7621
   IMAGE_SIZE := 16064k

@@ -1,0 +1,130 @@
+/dts-v1/;
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "wio,wio-one", "mediatek,mt7621-soc";
+	model = "WIO ONE";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "wio-one:green:power";
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+		};
+
+		alarm {
+			label = "wio-one:red:alarm";
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		usb_power {
+			gpio-export,name = "usb";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	m25p80@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <104000000>;
+		m25p,fast-read;
+		m25p,chunked-io = <32>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				label = "firmware";
+				reg = <0x50000 0xfb0000>;
+				compatible = "denx,uimage";
+			};
+		};
+	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 4>;
+	mtd-mac-address-increment = <(-2)>;
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "i2c", "uart2", "uart3", "rgmii2", "sdhci", "jtag";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x8000>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		adant,sas-devid = <1>;
+		adant,sas-gpio = <45 46 47 48>;
+	};
+};
+
+&pcie1 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x0000>;
+		adant,sas-devid = <0>;
+		adant,sas-gpio = <41 42 43 44>;
+	};
+};
+
+&xhci {
+	status = "disabled";
+};
