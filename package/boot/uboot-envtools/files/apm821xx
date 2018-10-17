@@ -14,6 +14,9 @@ meraki,mr24)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x4000" "0x4000" "4"
 	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x4000" "0x4000" "4"
 	;;
+meraki,mx60)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000" "4"
+	;;
 esac
 
 config_load ubootenv
