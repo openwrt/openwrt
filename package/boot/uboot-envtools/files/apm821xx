@@ -1,0 +1,18 @@
+#!/bin/sh
+
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(board_name)
+
+case "$board" in
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config ubootenv
+
+exit 0
