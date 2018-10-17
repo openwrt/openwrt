@@ -152,6 +152,35 @@ define Build/MuImage-initramfs
 	rm -rf $@.fakerd
 endef
 
+define Device/netgear_wndap6x0
+  DEVICE_PACKAGES := kmod-eeprom-at24
+  SUBPAGESIZE := 256
+  PAGESIZE := 512
+  BLOCKSIZE := 16k
+  DTB_SIZE := 32768
+  IMAGE_SIZE := 27392k
+  IMAGES := sysupgrade.tar factory.img
+  KERNEL_SIZE := 4032k
+  KERNEL := dtb | kernel-bin | gzip | MuImage-initramfs gzip
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  UBINIZE_OPTS := -E 5
+endef
+
+define Device/netgear_wndap620
+  $(Device/netgear_wndap6x0)
+  DEVICE_TITLE := Netgear WNDAP620 - Premium Wireless-N
+  DEVICE_DTS := netgear-wndap620
+endef
+TARGET_DEVICES += netgear_wndap620
+
+define Device/netgear_wndap660
+  $(Device/netgear_wndap6x0)
+  DEVICE_TITLE := Netgear WNDAP660 - Dual Radio Dual Band Wireless-N
+  DEVICE_DTS := netgear-wndap660
+endef
+TARGET_DEVICES += netgear_wndap660
+
 define Device/netgear_wndr4700
   DEVICE_TITLE := Netgear Centria N900 WNDR4700/WNDR4720
   DEVICE_PACKAGES := badblocks block-mount e2fsprogs \
