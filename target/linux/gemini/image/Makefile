@@ -137,7 +137,7 @@ define Device/sq201
 	DEVICE_TITLE := ITian Square One SQ201
 	IMAGES += sq201-image
 	IMAGE/sq201-image := sq201-images
-	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) rt61-pci
+	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) rt61-pci usb2-pci
 endef
 TARGET_DEVICES += sq201
 
