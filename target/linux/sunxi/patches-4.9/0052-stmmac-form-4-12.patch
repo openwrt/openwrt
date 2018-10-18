@@ -5642,7 +5642,7 @@
  
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
-@@ -108,7 +108,7 @@ static struct stmmac_axi *stmmac_axi_set
+@@ -107,7 +107,7 @@ static struct stmmac_axi *stmmac_axi_set
  	if (!np)
  		return NULL;
  
@@ -5651,7 +5651,7 @@
  	if (!axi) {
  		of_node_put(np);
  		return ERR_PTR(-ENOMEM);
-@@ -132,6 +132,155 @@ static struct stmmac_axi *stmmac_axi_set
+@@ -131,6 +131,155 @@ static struct stmmac_axi *stmmac_axi_set
  }
  
  /**
@@ -5807,7 +5807,7 @@
   * stmmac_dt_phy - parse device-tree driver parameters to allocate PHY resources
   * @plat: driver data platform structure
   * @np: device tree node
-@@ -340,6 +489,8 @@ stmmac_probe_config_dt(struct platform_d
+@@ -339,6 +488,8 @@ stmmac_probe_config_dt(struct platform_d
  
  	plat->axi = stmmac_axi_setup(pdev);
  
@@ -5816,7 +5816,7 @@
  	/* clock setup */
  	plat->stmmac_clk = devm_clk_get(&pdev->dev,
  					STMMAC_RESOURCE_NAME);
-@@ -359,13 +510,12 @@ stmmac_probe_config_dt(struct platform_d
+@@ -358,13 +509,12 @@ stmmac_probe_config_dt(struct platform_d
  	clk_prepare_enable(plat->pclk);
  
  	/* Fall-back to main clock in case of no PTP ref is passed */

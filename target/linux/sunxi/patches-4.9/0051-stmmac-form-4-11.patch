@@ -2132,7 +2132,7 @@
    The full GNU General Public License is included in this distribution in
    the file called "COPYING".
  
-@@ -121,7 +117,6 @@ static struct stmmac_axi *stmmac_axi_set
+@@ -120,7 +116,6 @@ static struct stmmac_axi *stmmac_axi_set
  	axi->axi_lpi_en = of_property_read_bool(np, "snps,lpi_en");
  	axi->axi_xit_frm = of_property_read_bool(np, "snps,xit_frm");
  	axi->axi_kbbe = of_property_read_bool(np, "snps,axi_kbbe");
@@ -2140,7 +2140,7 @@
  	axi->axi_fb = of_property_read_bool(np, "snps,axi_fb");
  	axi->axi_mb = of_property_read_bool(np, "snps,axi_mb");
  	axi->axi_rb =  of_property_read_bool(np, "snps,axi_rb");
-@@ -181,10 +176,19 @@ static int stmmac_dt_phy(struct plat_stm
+@@ -180,10 +175,19 @@ static int stmmac_dt_phy(struct plat_stm
  		mdio = false;
  	}
  
@@ -2164,7 +2164,7 @@
  	}
  
  	if (plat->mdio_node) {
-@@ -249,6 +253,9 @@ stmmac_probe_config_dt(struct platform_d
+@@ -248,6 +252,9 @@ stmmac_probe_config_dt(struct platform_d
  	plat->force_sf_dma_mode =
  		of_property_read_bool(np, "snps,force_sf_dma_mode");
  
@@ -2174,7 +2174,7 @@
  	/* Set the maxmtu to a default of JUMBO_LEN in case the
  	 * parameter is not present in the device tree.
  	 */
-@@ -333,7 +340,54 @@ stmmac_probe_config_dt(struct platform_d
+@@ -332,7 +339,54 @@ stmmac_probe_config_dt(struct platform_d
  
  	plat->axi = stmmac_axi_setup(pdev);
  
@@ -2229,7 +2229,7 @@
  }
  
  /**
-@@ -357,7 +411,7 @@ void stmmac_remove_config_dt(struct plat
+@@ -356,7 +410,7 @@ void stmmac_remove_config_dt(struct plat
  struct plat_stmmacenet_data *
  stmmac_probe_config_dt(struct platform_device *pdev, const char **mac)
  {

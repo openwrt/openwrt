@@ -376,7 +376,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	unsigned short		min_header_len;
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -903,6 +903,7 @@ void kfree_skb(struct sk_buff *skb);
+@@ -908,6 +908,7 @@ void kfree_skb(struct sk_buff *skb);
  void kfree_skb_list(struct sk_buff *segs);
  void skb_tx_error(struct sk_buff *skb);
  void consume_skb(struct sk_buff *skb);
@@ -384,7 +384,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  void  __kfree_skb(struct sk_buff *skb);
  extern struct kmem_cache *skbuff_head_cache;
  
-@@ -3059,6 +3060,7 @@ static inline void skb_free_datagram_loc
+@@ -3081,6 +3082,7 @@ static inline void skb_free_datagram_loc
  }
  int skb_kill_datagram(struct sock *sk, struct sk_buff *skb, unsigned int flags);
  int skb_copy_bits(const struct sk_buff *skb, int offset, void *to, int len);
@@ -421,7 +421,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   *	These are the defined Ethernet Protocol ID's.
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -6630,9 +6630,18 @@ int dev_set_mtu(struct net_device *dev,
+@@ -6652,9 +6652,18 @@ int dev_set_mtu(struct net_device *dev,
  	if (new_mtu == dev->mtu)
  		return 0;
  

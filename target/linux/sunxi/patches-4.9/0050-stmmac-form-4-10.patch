@@ -3403,7 +3403,7 @@
  
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
-@@ -292,6 +292,7 @@ stmmac_probe_config_dt(struct platform_d
+@@ -291,6 +291,7 @@ stmmac_probe_config_dt(struct platform_d
  	if (of_device_is_compatible(np, "snps,dwmac-4.00") ||
  	    of_device_is_compatible(np, "snps,dwmac-4.10a")) {
  		plat->has_gmac4 = 1;
@@ -3411,7 +3411,7 @@
  		plat->pmt = 1;
  		plat->tso_en = of_property_read_bool(np, "snps,tso");
  	}
-@@ -303,21 +304,25 @@ stmmac_probe_config_dt(struct platform_d
+@@ -302,21 +303,25 @@ stmmac_probe_config_dt(struct platform_d
  		plat->force_sf_dma_mode = 1;
  	}
  
@@ -3452,7 +3452,7 @@
  	plat->force_thresh_dma_mode = of_property_read_bool(np, "snps,force_thresh_dma_mode");
  	if (plat->force_thresh_dma_mode) {
  		plat->force_sf_dma_mode = 0;
-@@ -445,9 +450,7 @@ static int stmmac_pltfr_suspend(struct d
+@@ -444,9 +449,7 @@ static int stmmac_pltfr_suspend(struct d
  	struct platform_device *pdev = to_platform_device(dev);
  
  	ret = stmmac_suspend(dev);
@@ -3463,7 +3463,7 @@
  		priv->plat->exit(pdev, priv->plat->bsp_priv);
  
  	return ret;
-@@ -466,9 +469,7 @@ static int stmmac_pltfr_resume(struct de
+@@ -465,9 +468,7 @@ static int stmmac_pltfr_resume(struct de
  	struct stmmac_priv *priv = netdev_priv(ndev);
  	struct platform_device *pdev = to_platform_device(dev);
  
