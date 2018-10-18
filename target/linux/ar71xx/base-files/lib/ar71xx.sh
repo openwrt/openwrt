@@ -1110,6 +1110,9 @@ ar71xx_board_detect() {
 	*"RouterBOARD mAP L-2nD")
 		name="rb-mapl-2nd"
 		;;
+	*"RouterBOARD SXT 2nD r3")
+		name="rb-sxt-2nd-r3"
+		;;
 	*"RouterBOARD SXT Lite2")
 		name="rb-sxt2n"
 		;;
