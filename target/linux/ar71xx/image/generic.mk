@@ -822,6 +822,15 @@ define Device/jwap230
 endef
 TARGET_DEVICES += jwap230
 
+define Device/koala
+  DEVICE_TITLE := OCEDO Koala
+  BOARDNAME := KOALA
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 7424k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),7424k(firmware),1536k(kernel2),5888k(rootfs2),1088k(data)ro,64k(id)ro,64k(art)ro
+endef
+TARGET_DEVICES += koala
+
 define Device/r36a
   DEVICE_TITLE := ALFA Network R36A
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport -swconfig
