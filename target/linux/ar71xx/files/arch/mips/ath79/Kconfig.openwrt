@@ -1176,11 +1176,12 @@ config ATH79_MACH_RBSPI
 	  MikroTik RouterBOARD Powerbox
 	  MikroTik RouterBOARD LHG 5
 	  MikroTik RouterBOARD cAP (EXPERIMENTAL)
+	  MikroTik RouterBOARD SXT Lite 2 r3
 	  MikroTik RouterBOARD wAP
 	  MikroTik RouterBOARD wAP R-2nD
 
 config ATH79_MACH_RBSXTLITE
-	bool "MikroTik RouterBOARD SXT Lite"
+	bool "MikroTik RouterBOARD SXT Lite (NAND flash versions)"
 	select SOC_AR934X
 	select ATH79_DEV_ETH
 	select ATH79_DEV_NFC
