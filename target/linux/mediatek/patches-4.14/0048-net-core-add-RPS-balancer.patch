@@ -10,7 +10,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3636,6 +3636,58 @@ set_rps_cpu(struct net_device *dev, stru
+@@ -3658,6 +3658,58 @@ set_rps_cpu(struct net_device *dev, stru
  	return rflow;
  }
  
@@ -69,7 +69,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  /*
   * get_rps_cpu is called from netif_receive_skb and returns the target
   * CPU from the RPS map of the receiving queue for a given skb.
-@@ -3725,7 +3777,7 @@ static int get_rps_cpu(struct net_device
+@@ -3747,7 +3799,7 @@ static int get_rps_cpu(struct net_device
  try_rps:
  
  	if (map) {
@@ -78,7 +78,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  		if (cpu_online(tcpu)) {
  			cpu = tcpu;
  			goto done;
-@@ -8810,6 +8862,9 @@ static int __init net_dev_init(void)
+@@ -8834,6 +8886,9 @@ static int __init net_dev_init(void)
  		sd->backlog.weight = weight_p;
  	}
  
