@@ -105,6 +105,20 @@ define Device/compex_wpj428
 endef
 TARGET_DEVICES += compex_wpj428
 
+define Device/engenius_eap1300
+	$(call Device/FitImage)
+	DEVICE_TITLE := EnGenius EAP1300
+	DEVICE_DTS_CONFIG := config@4
+	BOARD_NAME := eap1300
+	DEVICE_DTS := qcom-ipq4018-eap1300
+	KERNEL_SIZE := 5120k
+	IMAGE_SIZE := 25344k
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := ipq-wifi-engenius_eap1300
+endef
+TARGET_DEVICES += engenius_eap1300
+
 define Device/glinet_gl-b1300
 	$(call Device/FitImage)
 	DEVICE_TITLE := GL.iNet GL-B1300
