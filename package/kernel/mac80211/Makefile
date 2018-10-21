@@ -208,7 +208,7 @@ endef
 define KernelPackage/hermes-pcmcia
   $(call KernelPackage/mac80211/Default)
   TITLE:=Hermes based PCMCIA adaptors
-  DEPENDS:=@PCMCIA_SUPPORT +kmod-hermes
+  DEPENDS:=@PCMCIA_SUPPORT +kmod-hermes +kmod-pcmcia-core
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/intersil/orinoco/orinoco_cs.ko
   AUTOLOAD:=$(call AutoProbe,orinoco_cs)
 endef
