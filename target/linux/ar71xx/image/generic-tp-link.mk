@@ -254,6 +254,8 @@ define Device/re450-v1
   DEVICE_PROFILE := RE450
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header -O
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | tplink-v1-header
 endef
 TARGET_DEVICES += re450-v1
 
