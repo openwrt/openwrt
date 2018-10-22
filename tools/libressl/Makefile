@@ -24,4 +24,8 @@ include $(INCLUDE_DIR)/host-build.mk
 HOST_CONFIGURE_ARGS += --disable-shared
 HOST_CFLAGS += $(FPIC)
 
+ifeq ($(GNU_HOST_NAME),x86_64-linux-gnux32)
+HOST_CONFIGURE_ARGS += --disable-asm
+endif
+
 $(eval $(call HostBuild))
