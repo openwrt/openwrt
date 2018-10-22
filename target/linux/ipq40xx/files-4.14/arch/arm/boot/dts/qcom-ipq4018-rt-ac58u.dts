@@ -35,6 +35,10 @@
 		led-upgrade = &power;
 	};
 
+	chosen {
+		bootargs-append = " ubi.mtd=UBI_DEV";
+	};
+
 	soc {
 		mdio@90000 {
 			status = "okay";
