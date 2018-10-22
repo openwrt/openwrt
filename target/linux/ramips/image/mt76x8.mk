@@ -321,6 +321,14 @@ define Device/vocore2lite
 endef
 TARGET_DEVICES += vocore2lite
 
+define Device/wavlink_wl-wn570ha1
+  DTS := WL-WN570HA1
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Wavlink WL-WN570HA1
+  DEVICE_PACKAGES := kmod-mt76x0e
+endef
+TARGET_DEVICES += wavlink_wl-wn570ha1
+
 define Device/wcr-1166ds
   DTS := WCR-1166DS
   BUFFALO_TAG_PLATFORM := MTK

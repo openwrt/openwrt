@@ -178,6 +178,7 @@ platform_check_image() {
 	w306r-v20|\
 	w502u|\
 	ravpower,wd03|\
+	wavlink,wl-wn570ha1|\
 	wf-2881|\
 	whr-1166d|\
 	whr-300hp2|\
