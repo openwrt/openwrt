@@ -18,14 +18,21 @@ ath79_setup_interfaces()
 	tplink,tl-mr10u|\
 	tplink,tl-mr3020-v1|\
 	tplink,tl-mr3040-v2|\
+	tplink,tl-wa901nd-v2|\
 	tplink,tl-wr703n|\
 	ubnt,bullet-m|\
+	ubnt,nanostation-ac-loco|\
 	ubnt,rocket-m|\
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-mesh|\
 	ubnt,unifi|\
 	wd,mynet-wifi-rangeextender)
 		ucidef_set_interface_lan "eth0"
+		;;
+	avm,fritz4020)
+		ucidef_set_interface_wan "eth0"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
 		;;
 	buffalo,bhr-4grv|\
 	buffalo,wzr-hp-g450h)
@@ -40,6 +47,10 @@ ath79_setup_interfaces()
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
+		;;
+	buffalo,wzr-hp-g302h-a1a0)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:1" "3:lan:4" "4:lan:3" "5:lan:2" "2:wan"
 		;;
 	dlink,dir-825-b1)
 		ucidef_set_interface_wan "eth1"
@@ -57,7 +68,6 @@ ath79_setup_interfaces()
 	etactica,eg200)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
-	avm,fritz4020|\
 	glinet,ar150|\
 	glinet,ar300m)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
@@ -149,6 +159,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
+	tplink,tl-wr842n-v2)
+		ucidef_set_interface_wan "eth0"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan:4" "2:lan:1" "3:lan:2" "4:lan:3"
+		;;
 	tplink,tl-wr941-v2)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
@@ -160,6 +175,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
+	ubnt,nanostation-ac|\
 	ubnt,unifiac-mesh-pro|\
 	ubnt,unifiac-pro)
 		ucidef_add_switch "switch0" \

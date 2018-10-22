@@ -457,6 +457,27 @@ endef
 $(eval $(call KernelPackage,fou))
 
 
+define KernelPackage/fou6
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=FOU and GUE decapsulation over IPv6
+  DEPENDS:= @IPV6 \
+	+kmod-fou \
+	+kmod-ip6-tunnel
+  KCONFIG:= \
+	CONFIG_IPV6_FOU \
+	CONFIG_IPV6_FOU_TUNNEL
+  FILES:=$(LINUX_DIR)/net/ipv6/fou6.ko
+  AUTOLOAD:=$(call AutoProbe,fou6)
+endef
+
+define KernelPackage/fou6/description
+ Kernel module for FOU (Foo over UDP) and GUE (Generic UDP Encapsulation) tunnelling over IPv6.
+ Requires Kernel 3.18 or newer.
+endef
+
+$(eval $(call KernelPackage,fou6))
+
+
 define KernelPackage/ip6-tunnel
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IP-in-IPv6 tunnelling

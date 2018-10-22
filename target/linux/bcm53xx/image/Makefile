@@ -103,7 +103,7 @@ endef
 DEVICE_VARS += PRODUCTID SIGNATURE NETGEAR_BOARD_ID NETGEAR_REGION TPLINK_BOARD
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
 
-IEEE8021X := wpad-mini
+IEEE8021X := wpad-basic
 B43 := $(IEEE8021X) kmod-b43
 BRCMFMAC_43602A1 := $(IEEE8021X) kmod-brcmfmac brcmfmac-firmware-43602a1-pcie
 BRCMFMAC_4366B1 := $(IEEE8021X) kmod-brcmfmac brcmfmac-firmware-4366b1-pcie
@@ -224,12 +224,17 @@ endef
 TARGET_DEVICES += dlink-dir-885l
 
 # Linksys devices are disabled due to problem with 2 TRX partitions
-
 define Device/linksys-ea6300-v1
   DEVICE_TITLE := Linksys EA6300 V1
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
 endef
 # TARGET_DEVICES += linksys-ea6300-v1
+
+define Device/linksys-ea6500-v2
+  DEVICE_TITLE := Linksys EA6500 V2
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+endef
+TARGET_DEVICES += linksys-ea6500-v2
 
 define Device/linksys-ea9200
   DEVICE_TITLE := Linksys EA9200 V1

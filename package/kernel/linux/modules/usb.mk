@@ -318,6 +318,17 @@ define KernelPackage/usb-bcma
 endef
 $(eval $(call KernelPackage,usb-bcma))
 
+define KernelPackage/usb-fotg210
+  TITLE:=Support for FOTG210 USB host controllers
+  DEPENDS:=@USB_SUPPORT @TARGET_gemini
+  KCONFIG:=CONFIG_USB_FOTG210_HCD
+  FILES:= \
+	$(if $(CONFIG_USB_FOTG210_HCD),$(LINUX_DIR)/drivers/usb/host/fotg210-hcd.ko)
+  AUTOLOAD:=$(call AutoLoad,50,fotg210-hcd,1)
+  $(call AddDepends/usb)
+endef
+$(eval $(call KernelPackage,usb-fotg210))
+
 define KernelPackage/usb-ssb
   TITLE:=Support for SSB USB controllers
   DEPENDS:=@USB_SUPPORT @TARGET_brcm47xx

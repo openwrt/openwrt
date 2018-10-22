@@ -34,7 +34,7 @@ endef
 
 LINUX_TARGET_CONFIG:=$(CURDIR)/config/$(ARCH)
 
-DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim mkf2fs e2fsprogs
+DEFAULT_PACKAGES += wpad-basic kmod-mac80211-hwsim mkf2fs e2fsprogs
 
 endif
 

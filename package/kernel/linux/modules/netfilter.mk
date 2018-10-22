@@ -735,7 +735,7 @@ define KernelPackage/ipt-cluster
   KCONFIG:=$(KCONFIG_IPT_CLUSTER)
   FILES:=$(foreach mod,$(IPT_CLUSTER-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_CLUSTER-m)))
-  $(call AddDepends/ipt)
+  $(call AddDepends/ipt,+kmod-nf-conntrack)
 endef
 
 define KernelPackage/ipt-cluster/description

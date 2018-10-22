@@ -19,7 +19,7 @@ define Device/tplink_tdw8970
   TPLINK_HWREV := 1
   IMAGE_SIZE := 7680k
   DEVICE_TITLE := TP-LINK TD-W8970
-  DEVICE_PACKAGES:= kmod-ath9k wpad-mini kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES:= kmod-ath9k wpad-basic kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += TDW8970
 endef
 TARGET_DEVICES += tplink_tdw8970
@@ -32,7 +32,7 @@ define Device/tplink_tdw8980
   TPLINK_HWREV := 14
   IMAGE_SIZE := 7680k
   DEVICE_TITLE := TP-LINK TD-W8980
-  DEVICE_PACKAGES:= kmod-ath9k kmod-owl-loader wpad-mini kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES:= kmod-ath9k kmod-owl-loader wpad-basic kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += TDW8980
 endef
 TARGET_DEVICES += tplink_tdw8980
