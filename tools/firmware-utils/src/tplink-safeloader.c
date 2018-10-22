@@ -1103,15 +1103,10 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = NULL,
 
-		/**
-		   The flash partition table for RE450;
-		   it is almost the same as the one used by the stock images,
-		   576KB were moved from file-system to os-image.
-		*/
+		/** We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x460000},
+			{"firmware", 0x20000, 0x5e0000},
 			{"partition-table", 0x600000, 0x02000},
 			{"default-mac", 0x610000, 0x00020},
 			{"pin", 0x610100, 0x00020},
