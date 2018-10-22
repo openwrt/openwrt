@@ -190,6 +190,7 @@ platform_check_image() {
 	wl-330n3g|\
 	wl-341v3|\
 	wl-351|\
+	wl-wn570ha1|\
 	wl-wn575a3|\
 	wli-tx4-ag300n|\
 	wlr-6000|\
