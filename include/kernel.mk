@@ -60,9 +60,8 @@ else
   LINUX_KERNEL:=$(KERNEL_BUILD_DIR)/vmlinux
 
   LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.xz
-  TESTING:=$(if $(findstring -rc,$(LINUX_VERSION)),/testing,)
   ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE))$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
-      LINUX_SITE:=@KERNEL/linux/kernel/v$(word 1,$(subst ., ,$(KERNEL_BASE))).x$(TESTING)
+      LINUX_SITE:=@KERNEL/linux/kernel/v$(word 1,$(subst ., ,$(KERNEL_BASE))).x
   else
       LINUX_UNAME_VERSION:=$(strip $(shell cat $(LINUX_DIR)/include/config/kernel.release 2>/dev/null))
   endif
@@ -97,7 +96,7 @@ endif
 
 KERNEL_MAKE = $(MAKE) $(KERNEL_MAKEOPTS)
 
-KERNEL_MAKE_FLAGS := \
+KERNEL_MAKE_FLAGS = \
 	HOSTCFLAGS="$(HOST_CFLAGS) -Wall -Wmissing-prototypes -Wstrict-prototypes" \
 	CROSS_COMPILE="$(KERNEL_CROSS)" \
 	ARCH="$(LINUX_KARCH)" \
@@ -254,6 +253,7 @@ $(call KernelPackage/$(1)/config)
   $$(eval $$(call BuildPackage,kmod-$(1)))
 
   $$(IPKG_kmod-$(1)): $$(wildcard $$(FILES))
+
 endef
 
 version_filter=$(if $(findstring @,$(1)),$(shell $(SCRIPT_DIR)/package-metadata.pl version_filter $(KERNEL_PATCHVER) $(1)),$(1))

@@ -8,15 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=curl
-PKG_VERSION:=7.60.0
-PKG_RELEASE:=3
+PKG_VERSION:=7.61.1
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://dl.uxnr.de/mirror/curl/ \
-	http://curl.mirror.anstey.ca/ \
-	http://curl.askapache.com/download/ \
+	https://curl.mirror.anstey.ca/ \
+	https://curl.askapache.com/download/ \
 	https://curl.haxx.se/download/
-PKG_HASH:=8736ff8ded89ddf7e926eec7b16f82597d029fc1469f3a551f1fafaac164e6a0
+PKG_HASH:=3d5913d6a39bd22e68e34dff697fd6e4c3c81563f580c76fca2009315cd81891
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
@@ -113,6 +113,7 @@ CONFIGURE_ARGS += \
 	--without-librtmp \
 	--without-libidn \
 	--without-ca-path \
+	--without-libpsl \
 	--with-ca-bundle=/etc/ssl/certs/ca-certificates.crt \
 	\
 	$(call autoconf_bool,CONFIG_IPV6,ipv6) \

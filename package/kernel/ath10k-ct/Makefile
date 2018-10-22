@@ -1,21 +1,21 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ath10k-ct
-PKG_RELEASE=2
+PKG_RELEASE=3
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/greearb/ath10k-ct.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2018-05-30
-PKG_SOURCE_VERSION:=127f98189ee57260ed175a60d6654a43c32a8f4b
-PKG_MIRROR_HASH:=f8856c9d950d3b12ce0d8770e56e861df14878a1b3601592205c5d51edc794ac
+PKG_SOURCE_DATE:=2018-09-29
+PKG_SOURCE_VERSION:=b9989fbd5d6e3269b3e49ab3ec71b4174a02209e
+PKG_MIRROR_HASH:=67bb1c81518aea5880757d521023db25190d9cca21ba67bf1c7e577efd287430
 
 # Build the 4.13 ath10k-ct driver version.  Other options are "-4.9", or
 # leave un-defined for 4.7 kernel.  Probably this should match as closely as
 # possible to whatever mac80211 backports version is being used.
-CT_KVER="-4.13"
+CT_KVER="-4.16"
 
 PKG_MAINTAINER:=Ben Greear <greearb@candelatech.com>
 PKG_BUILD_PARALLEL:=1
@@ -35,6 +35,14 @@ define KernelPackage/ath10k-ct
 	$(PKG_BUILD_DIR)/ath10k$(CT_KVER)/ath10k_core.ko
   AUTOLOAD:=$(call AutoProbe,ath10k_pci)
   PROVIDES:=kmod-ath10k
+endef
+
+define KernelPackage/ath10k-ct/config
+
+       config ATH10K-CT_LEDS
+               bool "Enable LED support"
+               default y
+               depends on PACKAGE_kmod-ath10k-ct
 endef
 
 NOSTDINC_FLAGS = \
@@ -75,6 +83,11 @@ endif
 ifdef CONFIG_PACKAGE_ATH_SPECTRAL
   CT_MAKEDEFS += CONFIG_ATH10K_SPECTRAL=y
   NOSTDINC_FLAGS += -DCONFIG_ATH10K_SPECTRAL
+endif
+
+ifeq ($(CONFIG_ATH10K-CT_LEDS),y)
+  CT_MAKEDEFS += CONFIG_ATH10K_LEDS=y
+  NOSTDINC_FLAGS += -DCONFIG_ATH10K_LEDS
 endif
 
 define Build/Configure

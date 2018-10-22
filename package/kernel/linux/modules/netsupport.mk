@@ -457,6 +457,27 @@ endef
 $(eval $(call KernelPackage,fou))
 
 
+define KernelPackage/fou6
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=FOU and GUE decapsulation over IPv6
+  DEPENDS:= @IPV6 \
+	+kmod-fou \
+	+kmod-ip6-tunnel
+  KCONFIG:= \
+	CONFIG_IPV6_FOU \
+	CONFIG_IPV6_FOU_TUNNEL
+  FILES:=$(LINUX_DIR)/net/ipv6/fou6.ko
+  AUTOLOAD:=$(call AutoProbe,fou6)
+endef
+
+define KernelPackage/fou6/description
+ Kernel module for FOU (Foo over UDP) and GUE (Generic UDP Encapsulation) tunnelling over IPv6.
+ Requires Kernel 3.18 or newer.
+endef
+
+$(eval $(call KernelPackage,fou6))
+
+
 define KernelPackage/ip6-tunnel
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IP-in-IPv6 tunnelling
@@ -775,6 +796,37 @@ define KernelPackage/sched/description
 endef
 
 $(eval $(call KernelPackage,sched))
+
+
+define KernelPackage/tcp-bbr
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=BBR TCP congestion control
+  DEPENDS:=@!LINUX_3_18 @!LINUX_4_1 @!LINUX_4_4 +LINUX_4_9:kmod-sched
+  KCONFIG:= \
+	CONFIG_TCP_CONG_ADVANCED=y \
+	CONFIG_TCP_CONG_BBR
+  FILES:=$(LINUX_DIR)/net/ipv4/tcp_bbr.ko
+  AUTOLOAD:=$(call AutoLoad,74,tcp_bbr)
+endef
+
+define KernelPackage/tcp-bbr/description
+ Kernel module for BBR (Bottleneck Bandwidth and RTT) TCP congestion
+ control. It requires the fq ("Fair Queue") pacing packet scheduler.
+ For kernel 4.13+, TCP internal pacing is implemented as fallback.
+endef
+
+ifdef CONFIG_LINUX_4_9
+  TCP_BBR_SYSCTL_CONF:=sysctl-tcp-bbr-k4_9.conf
+else
+  TCP_BBR_SYSCTL_CONF:=sysctl-tcp-bbr.conf
+endif
+
+define KernelPackage/tcp-bbr/install
+	$(INSTALL_DIR) $(1)/etc/sysctl.d
+	$(INSTALL_DATA) ./files/$(TCP_BBR_SYSCTL_CONF) $(1)/etc/sysctl.d/12-tcp-bbr.conf
+endef
+
+$(eval $(call KernelPackage,tcp-bbr))
 
 
 define KernelPackage/ax25

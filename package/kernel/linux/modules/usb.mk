@@ -318,6 +318,17 @@ define KernelPackage/usb-bcma
 endef
 $(eval $(call KernelPackage,usb-bcma))
 
+define KernelPackage/usb-fotg210
+  TITLE:=Support for FOTG210 USB host controllers
+  DEPENDS:=@USB_SUPPORT @TARGET_gemini
+  KCONFIG:=CONFIG_USB_FOTG210_HCD
+  FILES:= \
+	$(if $(CONFIG_USB_FOTG210_HCD),$(LINUX_DIR)/drivers/usb/host/fotg210-hcd.ko)
+  AUTOLOAD:=$(call AutoLoad,50,fotg210-hcd,1)
+  $(call AddDepends/usb)
+endef
+$(eval $(call KernelPackage,usb-fotg210))
+
 define KernelPackage/usb-ssb
   TITLE:=Support for SSB USB controllers
   DEPENDS:=@USB_SUPPORT @TARGET_brcm47xx
@@ -1638,4 +1649,20 @@ define KernelPackage/usb-net2280/description
 endef
 
 $(eval $(call KernelPackage,usb-net2280))
+
+define KernelPackage/chaoskey
+  SUBMENU:=$(USB_MENU)
+  TITLE:=Chaoskey hardware RNG support
+  DEPENDS:=+kmod-random-core
+  KCONFIG:=CONFIG_USB_CHAOSKEY
+  FILES:=$(LINUX_DIR)/drivers/usb/misc/chaoskey.ko
+  AUTOLOAD:=$(call AutoProbe,chaoskey)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/chaoskey/description
+  Kernel module for chaoskey, USB attached true random number generator
+endef
+
+$(eval $(call KernelPackage,chaoskey))
 

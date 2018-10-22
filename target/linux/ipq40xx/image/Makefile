@@ -1,6 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
+
 define Device/Default
 	PROFILES := Default
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
@@ -122,7 +124,7 @@ define Device/meraki_mr33
 	PAGESIZE := 2048
 	DEVICE_TITLE := Cisco Meraki MR33
 	IMAGES = sysupgrade.bin
-	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887
+	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
 endef
 TARGET_DEVICES += meraki_mr33
 
@@ -174,7 +176,7 @@ define Device/openmesh_a62
 	IMAGES = factory.bin sysupgrade.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=A62
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca9888 uboot-envtools
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct uboot-envtools
 endef
 
 TARGET_DEVICES += openmesh_a62
@@ -204,5 +206,36 @@ define Device/qcom_ap-dk04.1-c1
 	DEVICE_TITLE := QCA AP-DK04.1-C1
 endef
 TARGET_DEVICES += qcom_ap-dk04.1-c1
+
+define Device/zyxel_nbg6617
+	$(call Device/FitImageLzma)
+	DEVICE_DTS := qcom-ipq4018-nbg6617
+	DEVICE_TITLE := ZyXEL NBG6617
+	ROOTFS_SIZE := 24960k
+	RAS_BOARD := NBG6617
+	RAS_ROOTFS_SIZE := 19840k
+	RAS_VERSION := "$(VERSION_DIST) $(REVISION)"
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	IMAGES := sysupgrade.bin factory.bin
+#	The ZyXEL firmware allows flashing thru the web-gui only when the rootfs is
+#	at least as large as the one of the initial firmware image (not the current
+#	one on the device). This only applies to the Web-UI, the bootlaoder ignores
+#	this minimum-size. However, the larger image can be flashed both ways.
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 64k | check-size $$$$(ROOTFS_SIZE) | zyxel-ras-image separate-kernel
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | check-size $$$$(ROOTFS_SIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
+	DEVICE_PACKAGES := ipq-wifi-zyxel_nbg6617 uboot-envtools
+endef
+TARGET_DEVICES += zyxel_nbg6617
+
+define Device/zyxel_wre6606
+	$(call Device/FitImage)
+	DEVICE_TITLE := ZyXEL WRE6606
+	DEVICE_DTS_CONFIG := config@4
+	DEVICE_DTS := qcom-ipq4018-wre6606
+	DEVICE_PACKAGES := ipq-wifi-zyxel_wre6606
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += zyxel_wre6606
 
 $(eval $(call BuildImage))

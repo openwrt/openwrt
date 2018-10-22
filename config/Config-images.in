@@ -149,6 +149,7 @@ menu "Target Images"
 			int "Block size (in KiB)"
 			depends on TARGET_ROOTFS_SQUASHFS
 			default 64 if LOW_MEMORY_FOOTPRINT
+			default 1024 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
 			default 256
 
 	menuconfig TARGET_ROOTFS_UBIFS
@@ -230,6 +231,14 @@ menu "Target Images"
 		help
 		  If you don't know, 5 seconds is a reasonable default.
 
+	config GRUB_TITLE
+		string "Title for the menu entry in GRUB"
+		depends on GRUB_IMAGES
+		default "OpenWrt"
+		help
+		  This is the title of the GRUB menu entry.
+		  If unspecified, it defaults to OpenWrt.
+
 	config VDI_IMAGES
 		bool "Build VirtualBox image files (VDI)"
 		depends on TARGET_x86 || TARGET_x86_64
@@ -259,12 +268,12 @@ menu "Target Images"
 
 	config TARGET_KERNEL_PARTSIZE
 		int "Kernel partition size (in MB)"
-		depends on GRUB_IMAGES
+		depends on GRUB_IMAGES || USES_BOOT_PART
 		default 16
 
 	config TARGET_ROOTFS_PARTSIZE
 		int "Root filesystem partition size (in MB)"
-		depends on GRUB_IMAGES || TARGET_ROOTFS_EXT4FS || TARGET_rb532 || TARGET_mvebu || TARGET_uml
+		depends on GRUB_IMAGES || USES_ROOTFS_PART || TARGET_ROOTFS_EXT4FS || TARGET_mvebu || TARGET_rb532 || TARGET_sunxi || TARGET_uml
 		default 256
 		help
 		  Select the root filesystem partition size.

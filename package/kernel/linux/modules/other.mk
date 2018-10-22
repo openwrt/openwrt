@@ -227,10 +227,14 @@ $(eval $(call KernelPackage,gpio-dev))
 define KernelPackage/gpio-mcp23s08
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Microchip MCP23xxx I/O expander
-  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core
-  KCONFIG:=CONFIG_GPIO_MCP23S08
-  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-mcp23s08.ko
-  AUTOLOAD:=$(call AutoLoad,40,gpio-mcp23s08)
+  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core +LINUX_4_14:kmod-regmap
+  KCONFIG:= \
+	CONFIG_GPIO_MCP23S08 \
+	CONFIG_PINCTRL_MCP23S08
+  FILES:= \
+	$(LINUX_DIR)/drivers/gpio/gpio-mcp23s08.ko@lt4.13 \
+	$(LINUX_DIR)/drivers/pinctrl/pinctrl-mcp23s08.ko@ge4.13
+  AUTOLOAD:=$(call AutoLoad,40,gpio-mcp23s08@lt4.13 pinctrl-mcp23s08@ge4.13)
 endef
 
 define KernelPackage/gpio-mcp23s08/description
@@ -927,6 +931,7 @@ define KernelPackage/thermal
 	CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE=y \
 	CONFIG_THERMAL_DEFAULT_GOV_FAIR_SHARE=n \
 	CONFIG_THERMAL_DEFAULT_GOV_USER_SPACE=n \
+	CONFIG_THERMAL_EMERGENCY_POWEROFF_DELAY_MS=0 \
 	CONFIG_THERMAL_GOV_FAIR_SHARE=n \
 	CONFIG_THERMAL_GOV_STEP_WISE=y \
 	CONFIG_THERMAL_GOV_USER_SPACE=n \

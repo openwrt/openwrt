@@ -1,6 +1,6 @@
 define LegacyDevice/A60
    DEVICE_TITLE := OpenMesh A40/A60
-   DEVICE_PACKAGES := om-watchdog kmod-ath10k ath10k-firmware-qca988x \
+   DEVICE_PACKAGES := om-watchdog kmod-ath10k-ct ath10k-firmware-qca988x-ct \
 	mod-usb-core kmod-usb2
 endef
 LEGACY_DEVICES += A60
@@ -143,13 +143,6 @@ define LegacyDevice/TUBE2H16M
 endef
 LEGACY_DEVICES += TUBE2H16M
 
-define LegacyDevice/F9K1115V2
-  DEVICE_TITLE := Belkin AC1750DB (F9K1115V2)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb3 kmod-usb-ledtrig-usbport \
-	kmod-ath10k ath10k-firmware-qca988x
-endef
-LEGACY_DEVICES += F9K1115V2
-
 define LegacyDevice/DIR505A1
   DEVICE_TITLE := D-Link DIR-505 rev. A1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
@@ -158,13 +151,13 @@ LEGACY_DEVICES += DIR505A1
 
 define LegacyDevice/DGL5500A1
   DEVICE_TITLE := D-Link DGL-5500 rev. A1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 LEGACY_DEVICES += DGL5500A1
 
 define LegacyDevice/TEW823DRU
   DEVICE_TITLE := TRENDNet TEW-823DRU
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 LEGACY_DEVICES += TEW823DRU
 
@@ -233,7 +226,7 @@ LEGACY_DEVICES += dLAN_pro_500_wp
 
 define LegacyDevice/dLAN_pro_1200_ac
   DEVICE_TITLE := devolo dLAN pro 1200+ WiFi ac
-  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 LEGACY_DEVICES += dLAN_pro_1200_ac
 
@@ -245,13 +238,13 @@ LEGACY_DEVICES += ESR900
 
 define LegacyDevice/ESR1750
   DEVICE_TITLE := EnGenius ESR1750
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 LEGACY_DEVICES += ESR1750
 
 define LegacyDevice/EPG5000
   DEVICE_TITLE := EnGenius EPG5000
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 LEGACY_DEVICES += EPG5000
 
@@ -299,7 +292,7 @@ LEGACY_DEVICES += OM5P
 
 define LegacyDevice/OM5PAC
   DEVICE_TITLE := OpenMesh OM5P-AC
-  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x om-watchdog
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct om-watchdog
 endef
 LEGACY_DEVICES += OM5PAC
 
@@ -317,7 +310,7 @@ LEGACY_DEVICES += MR900
 
 define LegacyDevice/MR1750
   DEVICE_TITLE := OpenMesh MR1750
-  DEVICE_PACKAGES := om-watchdog kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES := om-watchdog kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 LEGACY_DEVICES += MR1750
 
