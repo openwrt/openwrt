@@ -376,7 +376,7 @@ TARGET_DEVICES += u7621-06-256M-16M
 
 define Device/u7621-06-512M-64M
   DTS := U7621-06-512M-64M
-  IMAGE_SIZE := 16064k
+  IMAGE_SIZE := 6645304
   DEVICE_TITLE := UniElec U7621-06 (512M RAM/64M flash)
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
 endef
