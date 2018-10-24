@@ -1,6 +1,7 @@
+From 940ec770c295682993d1cccce3081fd7c74fece8 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Thu, 11 Oct 2018 09:07:31 +0200
-Subject: [PATCH FIX] spi: bcm-qspi: switch back to reading flash using smaller
+Date: Thu, 11 Oct 2018 09:42:17 +0200
+Subject: [PATCH] spi: bcm-qspi: switch back to reading flash using smaller
  chunks
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -24,7 +25,8 @@ Switching back to 256 B reads fixes that problem and regression.
 
 Fixes: 345309fa7c0c ("spi: bcm-qspi: Fix bcm_qspi_bspi_read() performance")
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
-Cc: stable@vger.kernel.org # 4.11+
+Signed-off-by: Mark Brown <broonie@kernel.org>
+Cc: stable@vger.kernel.org
 ---
  drivers/spi/spi-bcm-qspi.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
