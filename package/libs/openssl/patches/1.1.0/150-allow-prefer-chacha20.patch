@@ -1,0 +1,54 @@
+From ee0e6173c7dadd4e7b7def2ba3947f64d266e5d8 Mon Sep 17 00:00:00 2001
+From: Eneas U de Queiroz <cote2004-github@yahoo.com>
+Date: Thu, 27 Sep 2018 08:24:10 -0300
+Subject: Add OPENSSL_PREFER_CHACHA_OVER_GCM option
+
+This enables a compile-time option to prefer ChaCha20-Poly1305 over
+AES-GCM in the openssl default ciphersuite, which is useful in systems
+without AES specific CPU instructions.
+OPENSSL_PREFER_CHACHA_OVER_GCM must be defined to enable it.
+
+Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
+
+diff --git a/ssl/ssl_ciph.c b/ssl/ssl_ciph.c
+index b8da982105..824a47f053 100644
+--- a/ssl/ssl_ciph.c
++++ b/ssl/ssl_ciph.c
+@@ -1352,11 +1352,25 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(const SSL_METHOD *ssl_method, STACK
+     ssl_cipher_apply_rule(0, SSL_kECDHE, 0, 0, 0, 0, 0, CIPHER_DEL, -1, &head,
+                           &tail);
+ 
++    /*
++     * If OPENSSL_PREFER_CHACHA_OVER_GCM is defined, ChaCha20_Poly1305
++     * will be placed before AES-256.  Otherwise, the default behavior of
++     * preferring GCM over CHACHA is used.
++     * This is useful for systems that do not have AES-specific CPU
++     * instructions, where ChaCha20-Poly1305 is 3 times faster than AES
++     */
++#ifdef OPENSSL_PREFER_CHACHA_OVER_GCM
++    ssl_cipher_apply_rule(0, 0, 0, SSL_CHACHA20, 0, 0, 0, CIPHER_ADD, -1,
++                          &head, &tail);
++    ssl_cipher_apply_rule(0, 0, 0, SSL_AESGCM, 0, 0, 0, CIPHER_ADD, -1,
++                          &head, &tail);
++#else
+     /* Within each strength group, we prefer GCM over CHACHA... */
+     ssl_cipher_apply_rule(0, 0, 0, SSL_AESGCM, 0, 0, 0, CIPHER_ADD, -1,
+                           &head, &tail);
+     ssl_cipher_apply_rule(0, 0, 0, SSL_CHACHA20, 0, 0, 0, CIPHER_ADD, -1,
+                           &head, &tail);
++#endif
+ 
+     /*
+      * ...and generally, our preferred cipher is AES.
+@@ -1412,7 +1426,7 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(const SSL_METHOD *ssl_method, STACK
+      * Within each group, ciphers remain sorted by strength and previous
+      * preference, i.e.,
+      * 1) ECDHE > DHE
+-     * 2) GCM > CHACHA
++     * 2) GCM > CHACHA, reversed if OPENSSL_PREFER_CHACHA_OVER_GCM is defined
+      * 3) AES > rest
+      * 4) TLS 1.2 > legacy
+      *
+-- 
+2.16.4
+

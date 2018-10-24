@@ -31,7 +31,7 @@ comment "Build Options"
 
 config OPENSSL_OPTIMIZE_SPEED
 	bool
-	default n
+	default y if x86_64 || i386
 	prompt "Enable optimization for speed instead of size"
 	select OPENSSL_WITH_ASM
 	help
@@ -43,7 +43,7 @@ config OPENSSL_OPTIMIZE_SPEED
 
 config OPENSSL_WITH_ASM
 	bool
-	default y
+	default y if !SMALL_FLASH || !arm
 	prompt "Compile with optimized assembly code"
 	depends on !arc
 	help
@@ -95,7 +95,7 @@ config OPENSSL_NO_DEPRECATED
 
 config OPENSSL_WITH_ERROR_MESSAGES
 	bool
-	default n
+	default y if !SMALL_FLASH && !LOW_MEMORY_FOOTPRINT
 	prompt "Include error messages"
 	help
 		This option aids debugging, but increases package size and
@@ -182,6 +182,18 @@ config OPENSSL_WITH_CHACHA_POLY1305
 		combining ChaCha stream cipher with Poly1305 MAC.
 		It is 3x faster than AES, when not using a CPU with AES-specific
 		instructions, as is the case of most embedded devices.
+
+config OPENSSL_PREFER_CHACHA_OVER_GCM
+	bool
+	default y if !x86_64 && !aarch64
+	prompt "Prefer ChaCha20-Poly1305 over AES-GCM by default"
+	depends on OPENSSL_WITH_CHACHA_POLY1305
+	help
+		The default openssl preference is for AES-GCM before ChaCha, but
+		that takes into account AES-NI capable chips.  It is not the
+		case with most embedded chips, so it may be better to invert
+		that preference.  This is just for the default case. The
+		application can always override this.
 
 config OPENSSL_WITH_PSK
 	bool
