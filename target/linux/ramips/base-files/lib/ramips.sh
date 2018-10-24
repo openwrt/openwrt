@@ -505,6 +505,9 @@ ramips_board_detect() {
 	*"U7621-06 (256M RAM/16M flash)")
 		name="u7621-06-256M-16M"
 		;;
+	*"U7621-06 (512M RAM/64M flash)")
+		name="u7621-06-256M-64M"
+		;;
 	*"U7628-01 (128M RAM/16M flash)")
 		name="u7628-01-128M-16M"
 		;;
