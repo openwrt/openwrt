@@ -174,6 +174,20 @@ define Device/dlink_dwr-116-a1
 endef
 TARGET_DEVICES += dlink_dwr-116-a1
 
+define Device/dlink_dwr-118-a1
+  DTS := DWR-118-A1
+  DEVICE_TITLE := D-Link DWR-118 A1
+  DEVICE_PACKAGES := kmod-usb2 jboot-tools kmod-mt76x0e
+  DLINK_ROM_ID := DLK6E3811001
+  DLINK_FAMILY_MEMBER := 0x6E38
+  DLINK_FIRMWARE_SIZE := 0xFE0000
+  KERNEL := $(KERNEL_DTB)
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
+  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
+endef
+TARGET_DEVICES += dlink_dwr-118-a1
+
 define Device/dlink_dwr-118-a2
   DTS := DWR-118-A2
   DEVICE_TITLE := D-Link DWR-118 A2
