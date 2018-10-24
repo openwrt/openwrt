@@ -1,0 +1,28 @@
+From 00cbf6097dff46217a177c5598005c0ccbd39ba4 Mon Sep 17 00:00:00 2001
+From: Eneas U de Queiroz <cote2004-github@yahoo.com>
+Date: Thu, 27 Sep 2018 08:06:30 -0300
+Subject: Do not use host kernel version to disable AFALG
+
+This patch prevents the Configure script from using the host kernel
+version to disable building the AFALG engine on openwrt targets.
+
+Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
+
+diff --git a/Configure b/Configure
+index d85ff6aa4d..9080b4611c 100755
+--- a/Configure
++++ b/Configure
+@@ -1309,7 +1309,9 @@ else               { $no_user_defines=1;    }
+ 
+ unless ($disabled{afalgeng}) {
+     $config{afalgeng}="";
+-    if ($target =~ m/^linux/) {
++    if ($target =~ m/openwrt$/) {
++        push @{$config{engdirs}}, "afalg";
++    } elsif ($target =~ m/^linux/) {
+         my $minver = 4*10000 + 1*100 + 0;
+         if ($config{cross_compile_prefix} eq "") {
+             my $verstr = `uname -r`;
+-- 
+2.16.4
+
