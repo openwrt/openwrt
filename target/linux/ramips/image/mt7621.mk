@@ -395,6 +395,14 @@ define Device/unielec_u7621-06-256m-16m
 endef
 TARGET_DEVICES += unielec_u7621-06-256m-16m
 
+define Device/unielec_u7621-06-512m-64m
+  DTS := U7621-06-512M-64M
+  IMAGE_SIZE := 65216k
+  DEVICE_TITLE := UniElec U7621-06 (512M RAM/64M flash)
+  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
+endef
+TARGET_DEVICES += unielec_u7621-06-512m-64m
+
 define Device/vr500
   DTS := VR500
   IMAGE_SIZE := 66453504

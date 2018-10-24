@@ -163,6 +163,7 @@ platform_check_image() {
 	tiny-ac|\
 	u25awf-h1|\
 	unielec,u7621-06-256m-16m|\
+	unielec,u7621-06-512m-64m|\
 	u7628-01-128M-16M|\
 	ur-326n4g|\
 	ur-336un|\
