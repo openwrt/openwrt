@@ -311,8 +311,13 @@ config OPENSSL_ENGINE_CRYPTO
 		acceleration; otherwise it falls back to software.
 
 config OPENSSL_ENGINE_DIGEST
+# This option is marked as BROKEN
+# It is not working with openssl 1.0.2, and kind of works in 1.1.0, but it
+# saves the whole input in RAM before calculating the digest, which may
+# result in memory exhaustion if you digest a large file, for example.
+# 1.0.2 does this as well.  In 1.1.1, digests are always supported.
 	bool
-	depends on OPENSSL_ENGINE_CRYPTO && !OPENSSL_USE_VERSION_1_1_1
+	depends on OPENSSL_ENGINE_CRYPTO && BROKEN
 	prompt "/dev/crypto digest acceleration support"
 	help
 		Digests are computed fairly fast in software, and
