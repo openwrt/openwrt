@@ -1,0 +1,51 @@
+From c0b1100ddc4299448adcf2d8f58a1bd21eb33b80 Mon Sep 17 00:00:00 2001
+From: Chuanhong Guo <gch981213@gmail.com>
+Date: Wed, 24 Oct 2018 22:04:03 +0800
+Subject: [PATCH 1/2] spi: spi-ath79: add register definitions from
+ ar71xx_regs.h
+
+These registers are IP-specific, not SoC/architecture specific.
+Move them into spi-ath79.c and remove the inclusion of ar71xx_regs.h.
+
+Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
+---
+ drivers/spi/spi-ath79.c | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/spi/spi-ath79.c b/drivers/spi/spi-ath79.c
+index 6eb72555..295fa402 100644
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -25,10 +25,27 @@
+ #include <linux/clk.h>
+ #include <linux/err.h>
+ 
+-#include <asm/mach-ath79/ar71xx_regs.h>
+-
+ #define DRV_NAME	"ath79-spi"
+ 
++#define AR71XX_SPI_REG_FS	0x00	/* Function Select */
++#define AR71XX_SPI_REG_CTRL	0x04	/* SPI Control */
++#define AR71XX_SPI_REG_IOC	0x08	/* SPI I/O Control */
++#define AR71XX_SPI_REG_RDS	0x0c	/* Read Data Shift */
++
++#define AR71XX_SPI_FS_GPIO	BIT(0)	/* Enable GPIO mode */
++
++#define AR71XX_SPI_CTRL_RD	BIT(6)	/* Remap Disable */
++#define AR71XX_SPI_CTRL_DIV_MASK 0x3f
++
++#define AR71XX_SPI_IOC_DO	BIT(0)	/* Data Out pin */
++#define AR71XX_SPI_IOC_CLK	BIT(8)	/* CLK pin */
++#define AR71XX_SPI_IOC_CS(n)	BIT(16 + (n))
++#define AR71XX_SPI_IOC_CS0	AR71XX_SPI_IOC_CS(0)
++#define AR71XX_SPI_IOC_CS1	AR71XX_SPI_IOC_CS(1)
++#define AR71XX_SPI_IOC_CS2	AR71XX_SPI_IOC_CS(2)
++#define AR71XX_SPI_IOC_CS_ALL	(AR71XX_SPI_IOC_CS0 | AR71XX_SPI_IOC_CS1 | \
++				 AR71XX_SPI_IOC_CS2)
++
+ #define ATH79_SPI_RRW_DELAY_FACTOR	12000
+ #define MHZ				(1000 * 1000)
+ 
+-- 
+2.17.2
+
