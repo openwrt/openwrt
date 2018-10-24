@@ -419,8 +419,7 @@ static struct device_info boards[] = {
 			{"profile", 0x11700, 0x03900},
 			{"default-config", 0x15000, 0x04000},
 			{"user-config", 0x19000, 0x04000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x648000},
+			{"firmware", 0x20000, 0x7c8000},
 			{"certyficate", 0x7e8000, 0x08000},
 			{"radio", 0x7f0000, 0x10000},
 			{NULL, 0, 0}
@@ -533,8 +532,7 @@ static struct device_info boards[] = {
 			{"profile", 0x11700, 0x03900},
 			{"default-config", 0x15000, 0x04000},
 			{"user-config", 0x19000, 0x04000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x648000},
+			{"firmware", 0x20000, 0x7c8000},
 			{"certyficate", 0x7e8000, 0x08000},
 			{"radio", 0x7f0000, 0x10000},
 			{NULL, 0, 0}
@@ -563,8 +561,7 @@ static struct device_info boards[] = {
 			{"product-info", 0x1fe00, 0x00100},
 			{"device-id", 0x1ff00, 0x00100},
 			{"fs-uboot", 0x20000, 0x10000},
-			{"os-image", 0x30000, 0x180000},
-			{"file-system", 0x1b0000, 0x620000},
+			{"firmware", 0x30000, 0x7a0000},
 			{"soft-version", 0x7d9500, 0x00100},
 			{"support-list", 0x7d9600, 0x00100},
 			{"extra-para", 0x7d9700, 0x00100},
@@ -865,8 +862,7 @@ static struct device_info boards[] = {
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
 			{"fs-uboot", 0x20000, 0x20000},
-			{"os-image", 0x40000, 0x180000},
-			{"file-system", 0x1c0000, 0xd40000},
+			{"firmware", 0x40000, 0xec0000},
 			{"default-mac", 0xf00000, 0x00200},
 			{"pin", 0xf00200, 0x00200},
 			{"device-id", 0xf00400, 0x00100},
@@ -937,8 +933,7 @@ static struct device_info boards[] = {
 		*/
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x5b0000},
+			{"firmware", 0x20000, 0x730000},
 			{"default-mac", 0x750000, 0x00200},
 			{"pin", 0x750200, 0x00200},
 			{"product-info", 0x750400, 0x0fc00},
@@ -970,8 +965,7 @@ static struct device_info boards[] = {
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0xca0000},
+			{"firmware", 0x20000, 0xe20000},
 			{"default-mac", 0xe40000, 0x00200},
 			{"pin", 0xe40200, 0x00200},
 			{"product-info", 0xe40400, 0x0fc00},
