@@ -1,0 +1,89 @@
+From 6f5a193ae08b49f775d0b7c8fd8c262077035171 Mon Sep 17 00:00:00 2001
+From: Chuanhong Guo <gch981213@gmail.com>
+Date: Wed, 24 Oct 2018 22:10:56 +0800
+Subject: [PATCH 2/2] spi: spi-ath79: add shift register mode support for
+ ath79-spi
+
+Since ar933x Atheros added a new hardware data shifting mode which
+allows direct programming of the data and the number of bits to shift
+and let controller finish the rest job.
+This patch added support for this feature and introduced a new
+compatible string "qca,ar9330-spi" for this new IP.
+
+Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
+---
+ drivers/spi/spi-ath79.c | 30 +++++++++++++++++++++++++++++-
+ 1 file changed, 29 insertions(+), 1 deletion(-)
+
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -17,7 +17,9 @@
+ #include <linux/delay.h>
+ #include <linux/spinlock.h>
+ #include <linux/platform_device.h>
++#include <linux/of.h>
+ #include <linux/io.h>
++#include <linux/iopoll.h>
+ #include <linux/spi/spi.h>
+ #include <linux/spi/spi_bitbang.h>
+ #include <linux/bitops.h>
+@@ -46,6 +48,13 @@
+ #define AR71XX_SPI_IOC_CS_ALL	(AR71XX_SPI_IOC_CS0 | AR71XX_SPI_IOC_CS1 | \
+ 				 AR71XX_SPI_IOC_CS2)
+ 
++#define AR933X_SPI_REG_SDO	0x10	/* SPI Data to Shift Out */
++#define AR933X_SPI_REG_SCNT	0x14	/* SPI Data Shift Control */
++#define AR933X_SPI_REG_SDI	0x18	/* SPI Data to Shift In */
++
++#define AR933X_SPI_SHIFT_EN		BIT(31)			/* Enable Shifting */
++#define AR933X_SPI_SHIFT_CS(n)	BIT(28 + (n))	/* CS Enable */
++
+ #define ATH79_SPI_RRW_DELAY_FACTOR	12000
+ #define MHZ				(1000 * 1000)
+ 
+@@ -220,6 +229,25 @@ static u32 ath79_spi_txrx_mode0(struct s
+ 	return ath79_spi_rr(sp, AR71XX_SPI_REG_RDS);
+ }
+ 
++static u32 ath79_spi_txrx_shiftreg_mode0(struct spi_device *spi, unsigned nsecs,
++					u32 word, u8 bits)
++{
++	int reg;
++	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
++
++	/* fallback to bitbang mode for GPIO CS */
++	if (gpio_is_valid(spi->cs_gpio))
++		ath79_spi_txrx_mode0(spi, nsecs, word, bits);
++
++	ath79_spi_wr(sp, AR933X_SPI_REG_SDO, word);
++	ath79_spi_wr(sp, AR933X_SPI_REG_SCNT, AR933X_SPI_SHIFT_EN |
++					     AR933X_SPI_SHIFT_CS(spi->chip_select) | bits);
++	/* TODO: timeout handling? */
++	readl_poll_timeout(sp->base + AR933X_SPI_REG_SCNT, reg,
++					     !(reg & AR933X_SPI_SHIFT_EN), 100, 10000);
++	return ath79_spi_rr(sp, AR933X_SPI_REG_SDI);
++}
++
+ static int ath79_spi_probe(struct platform_device *pdev)
+ {
+ 	struct spi_master *master;
+@@ -244,7 +272,10 @@ static int ath79_spi_probe(struct platfo
+ 
+ 	sp->bitbang.master = master;
+ 	sp->bitbang.chipselect = ath79_spi_chipselect;
+-	sp->bitbang.txrx_word[SPI_MODE_0] = ath79_spi_txrx_mode0;
++	if (of_device_is_compatible(master->dev.of_node, "qca,ar9330-spi"))
++		sp->bitbang.txrx_word[SPI_MODE_0] = ath79_spi_txrx_shiftreg_mode0;
++	else
++		sp->bitbang.txrx_word[SPI_MODE_0] = ath79_spi_txrx_mode0;
+ 	sp->bitbang.setup_transfer = spi_bitbang_setup_transfer;
+ 	sp->bitbang.flags = SPI_CS_HIGH;
+ 
+@@ -311,6 +342,7 @@ static void ath79_spi_shutdown(struct pl
+ 
+ static const struct of_device_id ath79_spi_of_match[] = {
+ 	{ .compatible = "qca,ar7100-spi", },
++	{ .compatible = "qca,ar9330-spi", },
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, ath79_spi_of_match);

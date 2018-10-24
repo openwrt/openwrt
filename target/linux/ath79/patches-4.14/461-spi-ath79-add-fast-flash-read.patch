@@ -1,6 +1,6 @@
 --- a/drivers/spi/spi-ath79.c
 +++ b/drivers/spi/spi-ath79.c
-@@ -101,9 +101,6 @@ static void ath79_spi_enable(struct ath7
+@@ -126,9 +126,6 @@ static void ath79_spi_enable(struct ath7
  	/* save CTRL register */
  	sp->reg_ctrl = ath79_spi_rr(sp, AR71XX_SPI_REG_CTRL);
  	sp->ioc_base = ath79_spi_rr(sp, AR71XX_SPI_REG_IOC);
@@ -10,8 +10,8 @@
  }
  
  static void ath79_spi_disable(struct ath79_spi *sp)
-@@ -203,6 +200,38 @@ static u32 ath79_spi_txrx_mode0(struct s
- 	return ath79_spi_rr(sp, AR71XX_SPI_REG_RDS);
+@@ -244,6 +241,38 @@ static u32 ath79_spi_txrx_shiftreg_mode0
+ 	return ath79_spi_rr(sp, AR933X_SPI_REG_SDI);
  }
  
 +static bool ath79_spi_flash_read_supported(struct spi_device *spi)
@@ -49,7 +49,7 @@
  static int ath79_spi_probe(struct platform_device *pdev)
  {
  	struct spi_master *master;
-@@ -237,6 +266,8 @@ static int ath79_spi_probe(struct platfo
+@@ -281,6 +310,8 @@ static int ath79_spi_probe(struct platfo
  		ret = PTR_ERR(sp->base);
  		goto err_put_master;
  	}
