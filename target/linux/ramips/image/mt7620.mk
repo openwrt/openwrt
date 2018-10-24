@@ -154,8 +154,9 @@ TARGET_DEVICES += dch-m225
 
 define Device/dir-810l
   DTS := DIR-810L
-  IMAGE_SIZE := 6720k
+  DEVICE_PACKAGES := kmod-mt76x0e
   DEVICE_TITLE := D-Link DIR-810L
+  IMAGE_SIZE := 6720k
 endef
 TARGET_DEVICES += dir-810l
 
