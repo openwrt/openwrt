@@ -14,7 +14,7 @@ define Device/archer-c25-v1
   TPLINK_BOARD_ID := ARCHER-C25-V1
   DEVICE_PROFILE := ARCHERC25V1
   IMAGE_SIZE := 7808k
-  MTDPARTS := spi0.0:128k(factory-uboot)ro,64k(u-boot)ro,1536k(kernel),6272k(rootfs),128k(config)ro,64k(art)ro,7808k@0x30000(firmware)
+  MTDPARTS := spi0.0:128k(factory-uboot)ro,64k(u-boot)ro,7808k(firmware),128k(config)ro,64k(art)ro
   SUPPORTED_DEVICES := archer-c25-v1
 endef
 TARGET_DEVICES += archer-c25-v1
@@ -40,7 +40,7 @@ define Device/archer-c59-v1
   TPLINK_BOARD_ID := ARCHER-C59-V1
   DEVICE_PROFILE := ARCHERC59V1
   IMAGE_SIZE := 14528k
-  MTDPARTS := spi0.0:64k(u-boot)ro,64k(mac)ro,1536k(kernel),12992k(rootfs),1664k(tplink)ro,64k(art)ro,14528k@0x20000(firmware)
+  MTDPARTS := spi0.0:64k(u-boot)ro,64k(mac)ro,14528k(firmware),1664k(tplink)ro,64k(art)ro
   SUPPORTED_DEVICES := archer-c59-v1
 endef
 TARGET_DEVICES += archer-c59-v1
@@ -143,7 +143,7 @@ define Device/archer-c7-v4
   BOARDNAME := ARCHER-C7-V4
   TPLINK_BOARD_ID := ARCHER-C7-V4
   IMAGE_SIZE := 15104k
-  MTDPARTS := spi0.0:128k(factory-uboot)ro,128k(u-boot)ro,1536k(kernel),13568k(rootfs),960k(config)ro,64k(art)ro,15104k@0x40000(firmware)
+  MTDPARTS := spi0.0:128k(factory-uboot)ro,128k(u-boot)ro,15104k(firmware),960k(config)ro,64k(art)ro
   SUPPORTED_DEVICES := archer-c7-v4
 endef
 TARGET_DEVICES += archer-c7-v4
@@ -153,8 +153,8 @@ define Device/archer-c7-v5
   DEVICE_TITLE := TP-LINK Archer C7 v5
   BOARDNAME := ARCHER-C7-V5
   TPLINK_BOARD_ID := ARCHER-C7-V5
-  IMAGE_SIZE := 15104k
-  MTDPARTS := spi0.0:128k(factory-uboot)ro,128k(u-boot)ro,64k@0x50000(art)ro,1536k@0xc0000(kernel),13824k(rootfs),15360k@0xc0000(firmware)
+  IMAGE_SIZE := 15360k
+  MTDPARTS := spi0.0:128k(factory-uboot)ro,128k(u-boot)ro,64k@0x50000(art)ro,15360k@0xc0000(firmware)
   SUPPORTED_DEVICES := archer-c7-v5
 endef
 TARGET_DEVICES += archer-c7-v5
@@ -240,6 +240,8 @@ define Device/re355-v1
   DEVICE_PROFILE := RE355
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header -O
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | tplink-v1-header
 endef
 TARGET_DEVICES += re355-v1
 
