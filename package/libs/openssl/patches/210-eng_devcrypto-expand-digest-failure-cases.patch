@@ -1,0 +1,33 @@
+From c09863cedee100d2b9cff3b00c941c6a5f486f5e Mon Sep 17 00:00:00 2001
+From: Eneas U de Queiroz <cote2004-github@yahoo.com>
+Date: Wed, 14 Nov 2018 11:22:14 -0200
+Subject: [PATCH 2/5] eng_devcrypto: expand digest failure cases
+
+Return failure when the digest_ctx is null in digest_update and
+digest_final, and when md is null in digest_final.
+
+Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
+
+diff --git a/crypto/engine/eng_devcrypto.c b/crypto/engine/eng_devcrypto.c
+index ee26398b69..6f6bcb8dc6 100644
+--- a/crypto/engine/eng_devcrypto.c
++++ b/crypto/engine/eng_devcrypto.c
+@@ -438,6 +438,9 @@ static int digest_update(EVP_MD_CTX *ctx, const void *data, size_t count)
+     if (count == 0)
+         return 1;
+ 
++    if (digest_ctx == NULL)
++        return 0;
++
+     if (digest_op(digest_ctx, data, count, NULL, COP_FLAG_UPDATE) < 0) {
+         SYSerr(SYS_F_IOCTL, errno);
+         return 0;
+@@ -451,6 +454,8 @@ static int digest_final(EVP_MD_CTX *ctx, unsigned char *md)
+     struct digest_ctx *digest_ctx =
+         (struct digest_ctx *)EVP_MD_CTX_md_data(ctx);
+ 
++    if (md == NULL || digest_ctx == NULL)
++        return 0;
+     if (digest_op(digest_ctx, NULL, 0, md, COP_FLAG_FINAL) < 0) {
+         SYSerr(SYS_F_IOCTL, errno);
+         return 0;
