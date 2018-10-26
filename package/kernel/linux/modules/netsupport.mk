@@ -717,7 +717,7 @@ $(eval $(call KernelPackage,mppe))
 
 SCHED_MODULES = $(patsubst $(LINUX_DIR)/net/sched/%.ko,%,$(wildcard $(LINUX_DIR)/net/sched/*.ko))
 SCHED_MODULES_CORE = sch_ingress sch_fq_codel sch_hfsc sch_htb sch_tbf cls_basic cls_fw cls_route cls_flow cls_tcindex cls_u32 em_u32 act_mirred act_skbedit cls_matchall
-SCHED_MODULES_FILTER = $(SCHED_MODULES_CORE) act_connmark sch_netem em_ipset
+SCHED_MODULES_FILTER = $(SCHED_MODULES_CORE) act_connmark sch_netem em_ipset cls_bpf act_bpf
 SCHED_MODULES_EXTRA = $(filter-out $(SCHED_MODULES_FILTER),$(SCHED_MODULES))
 SCHED_FILES = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(filter $(SCHED_MODULES_CORE),$(SCHED_MODULES)))
 SCHED_FILES_EXTRA = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(SCHED_MODULES_EXTRA))
@@ -780,6 +780,22 @@ define KernelPackage/sched-ipset
 endef
 
 $(eval $(call KernelPackage,sched-ipset))
+
+
+define KernelPackage/sched-bpf
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic shaper support for Berkeley Packet Filter
+  DEPENDS:=@!LINUX_3_18
+  KCONFIG:= \
+	CONFIG_NET_CLS_BPF \
+	CONFIG_NET_ACT_BPF
+  FILES:= \
+	$(LINUX_DIR)/net/sched/cls_bpf.ko \
+	$(LINUX_DIR)/net/sched/act_bpf.ko
+  AUTOLOAD:=$(call AutoLoad,72,cls_bpf act_bpf)
+endef
+
+$(eval $(call KernelPackage,sched-bpf))
 
 
 define KernelPackage/sched
