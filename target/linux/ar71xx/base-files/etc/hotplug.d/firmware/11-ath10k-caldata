@@ -19,17 +19,14 @@ ath10kcal_extract() {
 	local offset=$2
 	local count=$3
 	local mtd cal_size
-
 	mtd=$(find_mtd_chardev $part)
 	[ -n "$mtd" ] || \
 		ath10kcal_die "no mtd device found for partition $part"
 
 	# Check that the calibration data size in header equals the desired size
 	cal_size=$(dd if=$mtd bs=2 count=1 skip=$(( $offset / 2 )) conv=swab 2>/dev/null | hexdump -ve '1/2 "%d"')
-
 	[ "$count" = "$cal_size" ] || \
 		ath10kcal_die "no calibration data found in $part"
-
 	dd if=$mtd of=/lib/firmware/$FIRMWARE bs=1 skip=$offset count=$count 2>/dev/null || \
 		ath10kcal_die "failed to extract calibration data from $mtd"
 }
@@ -176,6 +173,14 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 12064
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
+		;;
+	gl-x1200)
+		echo "aaaa" >/dev/console
+		ath10kcal_extract "art" 20480 12064
+		echo "bbbb" >/dev/console
+		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
+			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
+		#ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
 		;;
 	cf-e385ac)
 		ath10kcal_extract "art" 20480 12064

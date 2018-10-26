@@ -51,6 +51,7 @@ else
   endif
 endif
 
+#ifneq ($(filter 4.4,$(KERNEL_PATCHVER)),)
 ifneq ($(filter 4.9,$(KERNEL_PATCHVER)),)
   DEFAULT_PACKAGES.router:=$(filter-out kmod-ipt-offload,$(DEFAULT_PACKAGES.router))
 endif

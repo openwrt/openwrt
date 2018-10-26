@@ -230,7 +230,8 @@ define Device/cf-e375ac
 	-uboot-envtools
   BOARDNAME := CF-E375AC
   IMAGE_SIZE := 16000k
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(art)ro,16000k(firmware),64k(art-backup)ro
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
+  #MTDPARTS := spi0.0:256k(u-boot)ro,64k(art)ro,16000k(firmware),64k(art-backup)ro
 endef
 TARGET_DEVICES += cf-e375ac
 
@@ -259,7 +260,8 @@ define Device/cf-e385ac
 	-uboot-envtools
   BOARDNAME := CF-E385AC
   IMAGE_SIZE := 16000k
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(art)ro,16000k(firmware),64k(art-backup)ro
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
+  #MTDPARTS := spi0.0:256k(u-boot)ro,64k(art)ro,16000k(firmware),64k(art-backup)ro
 endef
 TARGET_DEVICES += cf-e385ac
 
@@ -543,6 +545,19 @@ define Device/gl-ar750s
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += gl-ar750s
+
+define Device/gl-x1200
+  DEVICE_TITLE := GL.iNet GL-X1200
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage \
+	  kmod-ath10k ath10k-firmware-qca9888 
+  BOARDNAME := GL-X1200
+  SUPPORTED_DEVICES := gl-x1200
+  IMAGE_SIZE := 16000k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	  append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += gl-x1200
 
 define Device/gl-domino
   DEVICE_TITLE := GL.iNet Domino Pi

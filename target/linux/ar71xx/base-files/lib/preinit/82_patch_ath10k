@@ -41,6 +41,7 @@ do_patch_ath10k_firmware() {
 check_patch_ath10k_firmware() {
 	case $(board_name) in
 	dgl-5500-a1|\
+	gl-x1200|\
 	tew-823dru)
 		do_patch_ath10k_firmware
 		;;

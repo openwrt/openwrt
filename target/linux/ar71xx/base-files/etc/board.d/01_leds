@@ -412,6 +412,10 @@ gl-ar750)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:white:wlan2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:white:wlan5g" "phy0tpt"
 	;;
+gl-x1200)
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:green:wlan2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:green:wlan5g" "phy0tpt"
+	;;
 gl-mifi)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
 	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth0"

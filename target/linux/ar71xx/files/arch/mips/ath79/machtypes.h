@@ -133,6 +133,7 @@ enum ath79_mach_type {
 	ATH79_MACH_GL_AR750,			/* GL.iNet GL-AR750 */
 	ATH79_MACH_GL_X750,			/* GL.iNet GL-X750 */
 	ATH79_MACH_GL_AR750S,			/* GL.iNet GL-AR750S */
+	ATH79_MACH_GL_X1200,			/* GL.iNet GL-X1200 */
 	ATH79_MACH_GL_DOMINO,			/* Domino */
 	ATH79_MACH_GL_INET,			/* GL-CONNECT GL-INET */
 	ATH79_MACH_GL_MIFI,			/* GL-MIFI support */
