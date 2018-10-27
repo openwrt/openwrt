@@ -1796,6 +1796,9 @@ static void msdc_ops_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 				      MSDC_SMPL_FALLING);
 			sdr_set_field(MSDC_IOCON, MSDC_IOCON_DSPL,
 				      MSDC_SMPL_FALLING);
+      if (ralink_soc != MT762X_SOC_MT7620A)
+		    sdr_set_field(MSDC_IOCON, MSDC_IOCON_WDSPL,
+				        MSDC_SMPL_FALLING);
 			//} /* for tuning debug */
 		} else { /* default value */
 			sdr_write32(MSDC_IOCON,      0x00000000);
@@ -2205,16 +2208,6 @@ static int msdc_drv_probe(struct platform_device *pdev)
 	struct msdc_host *host;
 	struct msdc_hw *hw;
 	int ret;
-	u32 reg;
-
-	//FIXME: this should be done by pinconf and not by the sd driver
-	if (ralink_soc == MT762X_SOC_MT7688 ||
-	    ralink_soc == MT762X_SOC_MT7628AN) {
-		/* set EPHY pads to digital mode */
-		reg = sdr_read32((void __iomem *)(RALINK_SYSCTL_BASE + 0x3c));
-		reg |= 0x1e << 16;
-		sdr_write32((void __iomem *)(RALINK_SYSCTL_BASE + 0x3c), reg);
-	}
 
 	hw = &msdc0_hw;
 
