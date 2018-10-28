@@ -12,6 +12,16 @@ define Device/tplink_archer-a7-v5
 endef
 TARGET_DEVICES += tplink_archer-a7-v5
 
+define Device/tplink_archer-c2-v3
+  $(Device/tplink-safeloader-uimage)
+  ATH_SOC := qca9563
+  IMAGE_SIZE := 7808k
+  DEVICE_TITLE := TP-LINK Archer C2 v3
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  TPLINK_BOARD_ID := ARCHER-C2-V3
+endef
+TARGET_DEVICES += tplink_archer-c2-v3
+
 define Device/tplink_archer-c58-v1
   $(Device/tplink-safeloader-uimage)
   ATH_SOC := qca9561
