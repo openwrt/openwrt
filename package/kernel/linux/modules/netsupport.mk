@@ -801,7 +801,7 @@ $(eval $(call KernelPackage,sched))
 define KernelPackage/tcp-bbr
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=BBR TCP congestion control
-  DEPENDS:=@!LINUX_3_18 @!LINUX_4_1 @!LINUX_4_4 +LINUX_4_9:kmod-sched
+  DEPENDS:=@!LINUX_3_18 +LINUX_4_9:kmod-sched
   KCONFIG:= \
 	CONFIG_TCP_CONG_ADVANCED=y \
 	CONFIG_TCP_CONG_BBR
@@ -1017,7 +1017,7 @@ $(eval $(call KernelPackage,rxrpc))
 define KernelPackage/mpls
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=MPLS support
-  DEPENDS:=@!(LINUX_3_18||LINUX_4_1)
+  DEPENDS:=@!LINUX_3_18
   KCONFIG:= \
 	CONFIG_MPLS=y \
 	CONFIG_LWTUNNEL=y \
@@ -1094,7 +1094,7 @@ $(eval $(call KernelPackage,mdio))
 define KernelPackage/macsec
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IEEE 802.1AE MAC-level encryption (MAC)
-  DEPENDS:=+kmod-crypto-gcm @!LINUX_3_18 @!LINUX_4_1 @!LINUX_4_4
+  DEPENDS:=+kmod-crypto-gcm @!LINUX_3_18
   KCONFIG:=CONFIG_MACSEC
   FILES:=$(LINUX_DIR)/drivers/net/macsec.ko
   AUTOLOAD:=$(call AutoLoad,13,macsec)
