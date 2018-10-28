@@ -1,5 +1,20 @@
 include ./common-tp-link.mk
 
+define Device/tplink_archer-c2-v3
+  $(Device/tplink)
+  ATH_SOC := qca9563
+  IMAGE_SIZE := 7808k
+  DEVICE_TITLE := TP-LINK Archer C2 v3
+  TPLINK_BOARD_ID := ARCHER-C2-V3
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  TPLINK_HWID := 0x00020003
+  KERNEL := kernel-bin | append-dtb | lzma | uImageArcher lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImageArcher lzma
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+endef
+TARGET_DEVICES += tplink_archer-c2-v3
+
 define Device/tplink_archer-c7-v1
   $(Device/tplink-8mlzma)
   ATH_SOC := qca9558
