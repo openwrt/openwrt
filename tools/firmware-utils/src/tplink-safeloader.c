@@ -410,16 +410,12 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = "soft_ver:3.0.1\n",
 
-		/**
-		    We use a bigger os-image partition than the stock images (and thus
-		    smaller file-system), as our kernel doesn't fit in the stock firmware's
-		    1MB os-image.
-		*/
+		/** We're using a dynamic kernel/rootfs split here */
+
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
 			{"fs-uboot", 0x20000, 0x10000},
-			{"os-image", 0x30000, 0x200000},	/* Stock: base 0x30000 size 0x100000 */
-			{"file-system", 0x230000, 0x5A0000},	/* Stock: base 0x130000 size 0x6a0000 */
+			{"firmware", 0x30000, 0x7a0000},
 			{"user-config", 0x7d0000, 0x04000},
 			{"default-mac", 0x7e0000, 0x00100},
 			{"device-id", 0x7e0100, 0x00100},
