@@ -368,16 +368,12 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = "soft_ver:1.0.0\n",
 
-		/**
-		    We use a bigger os-image partition than the stock images (and thus
-		    smaller file-system), as our kernel doesn't fit in the stock firmware's
-		    1MB os-image.
-		*/
+		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
 			{"fs-uboot", 0x20000, 0x10000},
-			{"os-image", 0x30000, 0x180000},	/* Stock: base 0x30000 size 0x100000 */
-			{"file-system", 0x1b0000, 0x620000},	/* Stock: base 0x130000 size 0x6a0000 */
+			{"firmware", 0x30000, 0x7a0000},	/* Stock: name os-image base 0x30000 size 0x100000 */
+								/* Stock: name file-system base 0x130000 size 0x6a0000 */
 			{"user-config", 0x7d0000, 0x04000},
 			{"default-mac", 0x7e0000, 0x00100},
 			{"device-id", 0x7e0100, 0x00100},
@@ -423,8 +419,7 @@ static struct device_info boards[] = {
 			{"profile", 0x11700, 0x03900},
 			{"default-config", 0x15000, 0x04000},
 			{"user-config", 0x19000, 0x04000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x648000},
+			{"firmware", 0x20000, 0x7c8000},
 			{"certyficate", 0x7e8000, 0x08000},
 			{"radio", 0x7f0000, 0x10000},
 			{NULL, 0, 0}
@@ -447,14 +442,14 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = "soft_ver:1.0.0\n",
 
+		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x10000},
 			{"default-mac", 0x10000, 0x00200},
 			{"pin", 0x10200, 0x00200},
 			{"device-id", 0x10400, 0x00100},
 			{"product-info", 0x10500, 0x0fb00},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0xcb0000},
+			{"firmware", 0x20000, 0xe30000},
 			{"partition-table", 0xe50000, 0x10000},
 			{"soft-version", 0xe60000, 0x10000},
 			{"support-list", 0xe70000, 0x10000},
@@ -537,8 +532,7 @@ static struct device_info boards[] = {
 			{"profile", 0x11700, 0x03900},
 			{"default-config", 0x15000, 0x04000},
 			{"user-config", 0x19000, 0x04000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x648000},
+			{"firmware", 0x20000, 0x7c8000},
 			{"certyficate", 0x7e8000, 0x08000},
 			{"radio", 0x7f0000, 0x10000},
 			{NULL, 0, 0}
@@ -567,8 +561,7 @@ static struct device_info boards[] = {
 			{"product-info", 0x1fe00, 0x00100},
 			{"device-id", 0x1ff00, 0x00100},
 			{"fs-uboot", 0x20000, 0x10000},
-			{"os-image", 0x30000, 0x180000},
-			{"file-system", 0x1b0000, 0x620000},
+			{"firmware", 0x30000, 0x7a0000},
 			{"soft-version", 0x7d9500, 0x00100},
 			{"support-list", 0x7d9600, 0x00100},
 			{"extra-para", 0x7d9700, 0x00100},
@@ -638,16 +631,12 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = "soft_ver:1.0.0\n",
 
-		/**
-		    We use a bigger os-image partition than the stock images (and thus
-		    smaller file-system), as our kernel doesn't fit in the stock firmware's
-		    1MB os-image.
-		*/
+		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
 			{"fs-uboot", 0x20000, 0x20000},
-			{"os-image", 0x40000, 0x180000},	/* Stock: base 0x40000 size 0x120000 */
-			{"file-system", 0x1c0000, 0xd40000},	/* Stock: base 0x160000 size 0xda0000 */
+			{"firmware", 0x40000, 0xEC0000},	/* Stock: name os-image base 0x40000 size 0x120000 */
+								/* Stock: name file-system base 0x160000 size 0xda0000 */
 			{"default-mac", 0xf00000, 0x00200},
 			{"pin", 0xf00200, 0x00200},
 			{"device-id", 0xf00400, 0x00100},
@@ -681,11 +670,7 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = "soft_ver:1.0.0\n",
 
-		/**
-		  We use a bigger os-image partition than the stock images (and thus
-		  smaller file-system), as our kernel doesn't fit in the stock firmware's
-		  1MB os-image.
-		  */
+		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"factory-boot",    0x00000,  0x20000},
 			{"fs-uboot",        0x20000,  0x20000},
@@ -702,8 +687,8 @@ static struct device_info boards[] = {
 			{"user-config",     0x80000,  0x40000},
 
 
-			{"os-image",        0xc0000,  0x180000}, /* Stock: base 0xc0000  size 0x120000 */
-			{"file-system",     0x240000, 0xd80000}, /* Stock: base 0x1e0000 size 0xde0000 */
+			{"firmware",        0xc0000,  0xf00000},	/* Stock: name os-image base 0xc0000  size 0x120000 */
+									/* Stock: name file-system base 0x1e0000 size 0xde0000 */
 
 			{"log",             0xfc0000, 0x20000},
 			{"certificate",     0xfe0000, 0x10000},
@@ -877,8 +862,7 @@ static struct device_info boards[] = {
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
 			{"fs-uboot", 0x20000, 0x20000},
-			{"os-image", 0x40000, 0x180000},
-			{"file-system", 0x1c0000, 0xd40000},
+			{"firmware", 0x40000, 0xec0000},
 			{"default-mac", 0xf00000, 0x00200},
 			{"pin", 0xf00200, 0x00200},
 			{"device-id", 0xf00400, 0x00100},
@@ -949,8 +933,7 @@ static struct device_info boards[] = {
 		*/
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x5b0000},
+			{"firmware", 0x20000, 0x730000},
 			{"default-mac", 0x750000, 0x00200},
 			{"pin", 0x750200, 0x00200},
 			{"product-info", 0x750400, 0x0fc00},
@@ -982,8 +965,7 @@ static struct device_info boards[] = {
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0xca0000},
+			{"firmware", 0x20000, 0xe20000},
 			{"default-mac", 0xe40000, 0x00200},
 			{"pin", 0xe40200, 0x00200},
 			{"product-info", 0xe40400, 0x0fc00},
@@ -1060,15 +1042,10 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = NULL,
 
-		/**
-		   The flash partition table for RE355;
-		   it is almost the same as the one used by the stock images,
-		   576KB were moved from file-system to os-image.
-		*/
+		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x460000},
+			{"firmware", 0x20000, 0x5e0000},
 			{"partition-table", 0x600000, 0x02000},
 			{"default-mac", 0x610000, 0x00020},
 			{"pin", 0x610100, 0x00020},
@@ -1103,15 +1080,10 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = NULL,
 
-		/**
-		   The flash partition table for RE450;
-		   it is almost the same as the one used by the stock images,
-		   576KB were moved from file-system to os-image.
-		*/
+		/** We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x460000},
+			{"firmware", 0x20000, 0x5e0000},
 			{"partition-table", 0x600000, 0x02000},
 			{"default-mac", 0x610000, 0x00020},
 			{"pin", 0x610100, 0x00020},
