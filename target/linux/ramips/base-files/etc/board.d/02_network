@@ -90,6 +90,12 @@ ramips_setup_interfaces()
 	hc5661a|\
 	hc5962|\
 	hlk-rm04|\
+	hlk-7688a)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "1 6t"
+		ucidef_add_switch_vlan "switch0" "2" "0 6t"
+		;;
 	k2p|\
 	kn|\
 	kn_rc|\
@@ -424,6 +430,7 @@ ramips_setup_macs()
 	esr-9753|\
 	freestation5|\
 	hlk-rm04|\
+	hlk-7688a|\
 	mpr-a1|\
 	psr-680w|\
 	sl-r7205|\

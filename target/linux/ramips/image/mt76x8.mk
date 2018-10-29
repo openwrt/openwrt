@@ -57,6 +57,15 @@ define Device/hc5661a
 endef
 TARGET_DEVICES += hc5661a
 
+define Device/hlk-7688a
+  DTS := HLK7688A
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  SUPPORTED_DEVICES := hlk-7688a
+  DEVICE_TITLE := Hi-Link HLK-7688A
+  DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools
+endef
+TARGET_DEVICES += hlk-7688a
+
 define Device/LinkIt7688
   DTS := LINKIT7688
   IMAGE_SIZE := $(ralink_default_fw_size_32M)

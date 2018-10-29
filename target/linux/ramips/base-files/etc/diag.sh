@@ -65,6 +65,9 @@ get_status_led() {
 	d105|\
 	dcs-930l-b1|\
 	hlk-rm04|\
+	hlk-7688a)
+		status_led="hlk-7688a:green:wifi"
+		;;
 	jhr-n825r|\
 	mpr-a1|\
 	mpr-a2|\
