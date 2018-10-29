@@ -13,7 +13,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://nixos.org/releases/patchelf/patchelf-$(PKG_VERSION)
 PKG_HASH:=a0f65c1ba148890e9f2f7823f4bedf7ecad5417772f64f994004f59a39014f83
 
-HOST_BUILD_PARALLEL:=1
 HOST_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/host-build.mk

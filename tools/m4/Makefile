@@ -15,8 +15,6 @@ PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
 PKG_HASH:=f2c1e86ca0a404ff281631bdc8377638992744b175afb806e25871a24a934e07
 PKG_CAT:=xzcat
 
-HOST_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CONFIGURE_VARS += gl_cv_func_strstr_linear=no

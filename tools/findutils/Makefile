@@ -14,8 +14,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
 PKG_HASH:=ded4c9f73731cd48fec3b6bdaccce896473b6d8e337e9612e16cf1431bb1169d
 
-HOST_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/host-build.mk
 
 $(eval $(call HostBuild))

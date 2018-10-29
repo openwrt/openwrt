@@ -15,8 +15,6 @@ PKG_HASH:=30b05a88604d71ef2a42a2ef26cd26df242b41f5b011ad03083143a31d9b01f7
 
 HOST_FIXUP := autoreconf
 
-HOST_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Install

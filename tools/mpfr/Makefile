@@ -15,7 +15,6 @@ PKG_SOURCE_URL:=http://www.mpfr.org/mpfr-$(PKG_VERSION) \
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_HASH:=67874a60826303ee2fb6affc6dc0ddd3e749e9bfcb4c8655e3953d0458a6e16e
 
-HOST_BUILD_PARALLEL:=1
 HOST_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/host-build.mk
