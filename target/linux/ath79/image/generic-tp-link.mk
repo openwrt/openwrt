@@ -21,6 +21,29 @@ define Device/tplink_archer-c7-v2
 endef
 TARGET_DEVICES += tplink_archer-c7-v2
 
+define Device/tplink_archer-d50-v1
+  ATH_SOC := qca9531
+  DEVICE_TITLE := TP-LINK Archer D50 v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  BOARDNAME := ARCHER-D50-V1
+  DEVICE_PROFILE := ARCHERD50
+  IMAGE_SIZE := 7808k
+  TPLINK_HWID := 0xC1200001
+  TPLINK_HWREV := 0x00000046
+  TPLINK_FLASHLAYOUT := 8Mltq
+  TPLINK_HWREVADD := 0x00000000
+  TPLINK_HVERSION := 3
+  KERNEL := kernel-bin | append-dtb | lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | \
+	tplink-v2-header -s -V "ver. 1.0"
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := tplink-v2-image -s -V "ver. 1.0" | \
+        append-metadata | check-size $$$$(IMAGE_SIZE)
+  SUPPORTED_DEVICES := tplink_archer-d50-v1
+endef
+TARGET_DEVICES += tplink_archer-d50-v1
+
+
 define Device/tplink_re450-v2
   $(Device/tplink)
   ATH_SOC := qca9563

@@ -49,6 +49,11 @@ pcs,cr3000)
 	ucidef_set_led_switch "lan3" "LAN3" "pcs:blue:lan3" "switch0" "0x10"
 	ucidef_set_led_switch "lan4" "LAN4" "pcs:blue:lan4" "switch0" "0x02"
 	;;
+tplink,archer-d50-v1)
+	ucidef_set_led_switch "lan" "LAN" "tp-link:white:lan" "switch0" "0x1E"
+	ucidef_set_led_netdev "wan_data" "WAN Data" "tp-link:white:internet" "eth1.2" "tx rx"
+	ucidef_set_led_netdev "wan_link" "WAN Link" "tp-link:white:wan" "eth1.2" "link"
+	;;
 tplink,re450-v2)
 	ucidef_set_led_netdev "lan_data" "LAN Data" "tp-link:green:lan_data" "eth0" "tx rx"
 	ucidef_set_led_netdev "lan_link" "LAN Link" "tp-link:green:lan_link" "eth0" "link"
