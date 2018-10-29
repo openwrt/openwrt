@@ -157,25 +157,27 @@
 
 &ethernet {
 	status = "okay";
+	mediatek,portmap = "wllll";
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
 
 	port@4 {
 		status = "okay";
-		phy-handle = <&phy4>;
+		phy-handle = <&phy0>;
 		phy-mode = "rgmii";
 	};
 
 	mdio-bus {
 		status = "okay";
 
-		phy4: ethernet-phy@4 {
-			reg = <4>;
-			phy-mode = "rgmii";
+		phy0: ethernet-phy@0 {
+			reg = <0>;
+			phy-mode = "rgmii-rxid";
 		};
 	};
 };
 
 &gsw {
 	mediatek,port4 = "gmac";
+	mediatek,ephy-base-address = /bits/ 16 < 2 >;
 };
