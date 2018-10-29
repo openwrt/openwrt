@@ -259,9 +259,9 @@ TARGET_DEVICES += ubnt-ls-sr71
 
 define Device/ubnt-uap-pro
   DEVICE_TITLE := Ubiquiti UAP Pro
-  KERNEL_SIZE := 1792k
+  KERNEL_SIZE := 2048k
   IMAGE_SIZE := 15744k
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1792k(kernel),13952k(rootfs),256k(cfg)ro,64k(EEPROM)ro,15744k@0x50000(firmware)
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2048k(kernel),13696k(rootfs),256k(cfg)ro,64k(EEPROM)ro,15744k@0x50000(firmware)
   UBNT_TYPE := BZ
   UBNT_CHIP := ar934x
   BOARDNAME := UAP-PRO
