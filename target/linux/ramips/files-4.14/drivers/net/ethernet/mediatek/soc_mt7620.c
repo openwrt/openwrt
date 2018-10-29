@@ -118,7 +118,7 @@ static void mt7620_set_mac(struct fe_priv *priv, unsigned char *mac)
 	spin_unlock_irqrestore(&priv->page_lock, flags);
 }
 
-static void mt7620_auto_poll(struct mt7620_gsw *gsw)
+static void mt7620_auto_poll(struct mt7620_gsw *gsw, int port)
 {
 	int phy;
 	int lsb = -1, msb = 0;
@@ -129,7 +129,9 @@ static void mt7620_auto_poll(struct mt7620_gsw *gsw)
 		msb = phy;
 	}
 
-	if (lsb == msb)
+	if (lsb == msb && port ==  4)
+		msb++;
+	else if (lsb == msb && port ==  5)
 		lsb--;
 
 	mtk_switch_w32(gsw, PHY_AN_EN | PHY_PRE_EN | PMY_MDC_CONF(5) |
@@ -242,8 +244,8 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 
 		mtk_switch_w32(gsw, val, GSW_REG_PORT_PMCR(id));
 		fe_connect_phy_node(priv, priv->phy->phy_node[id], id);
-		gsw->autopoll |= BIT(id);
-		mt7620_auto_poll(gsw);
+		gsw->autopoll |= BIT(be32_to_cpup(phy_addr));
+		mt7620_auto_poll(gsw,id);
 		return;
 	}
 }
