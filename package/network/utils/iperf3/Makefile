@@ -18,7 +18,6 @@ PKG_HASH:=de5d51e46dc460cc590fb4d44f95e7cad54b74fea1eba7d6ebd6f8887d75946e
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-3-Clause
 
-PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
 
 PKG_FIXUP:=autoreconf

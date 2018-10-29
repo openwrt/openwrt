@@ -18,7 +18,6 @@ PKG_MIRROR_HASH:=67bb1c81518aea5880757d521023db25190d9cca21ba67bf1c7e577efd28743
 CT_KVER="-4.16"
 
 PKG_MAINTAINER:=Ben Greear <greearb@candelatech.com>
-PKG_BUILD_PARALLEL:=1
 PKG_EXTMOD_SUBDIRS:=ath10k$(CT_KVER)
 
 STAMP_CONFIGURED_DEPENDS := $(STAGING_DIR)/usr/include/mac80211-backport/backport/autoconf.h

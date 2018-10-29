@@ -22,7 +22,6 @@ PKG_LICENSE:=GPL-2.0 Apache-2.0
 PKG_LICENSE_FILES:=COPYING
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/WireGuard-$(PKG_VERSION)
-PKG_BUILD_PARALLEL:=1
 PKG_USE_MIPS16:=0
 
 # WireGuard's makefile needs this to know where to build the kernel module

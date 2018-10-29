@@ -20,7 +20,6 @@ PKG_FIXUP:=patch-libtool
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 PKG_INSTALL:=1
-PKG_BUILD_PARALLEL:=1
 PKG_LICENSE:=BSD-3-Clause
 
 include $(INCLUDE_DIR)/package.mk

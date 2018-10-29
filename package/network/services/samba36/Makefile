@@ -20,8 +20,6 @@ PKG_LICENSE:=GPL-3.0
 PKG_LICENSE_FILES:=COPYING
 PKG_CPE_ID:=cpe:/a:samba:samba
 
-PKG_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/package.mk
 
 MAKE_PATH:=source3

@@ -25,8 +25,6 @@ PKG_LICENSE_FILES:=	COPYING					\
 			libuuid/COPYING				\
 			Documentation/licenses/COPYING.BSD-3
 
-PKG_BUILD_PARALLEL:=1
-
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 

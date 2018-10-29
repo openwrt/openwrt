@@ -20,8 +20,6 @@ PKG_CPE_ID:=cpe:/a:e2fsprogs_project:e2fsprogs
 PKG_BUILD_DEPENDS:=util-linux e2fsprogs/host
 PKG_INSTALL:=1
 
-PKG_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
 

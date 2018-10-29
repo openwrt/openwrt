@@ -16,7 +16,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-gpl.tgz
 PKG_SOURCE_URL:=https://tls.mbed.org/download/
 PKG_HASH:=a08ddf08aae55fc4f48fbc6281fcb08bc5c53ed53ffd15355ee0d75ec32b53ae
 
-PKG_BUILD_PARALLEL:=1
 PKG_LICENSE:=GPL-2.0+
 PKG_CPE_ID:=cpe:/a:arm:mbed_tls
 

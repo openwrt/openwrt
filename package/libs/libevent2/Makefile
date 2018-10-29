@@ -22,7 +22,6 @@ PKG_CPE_ID:=cpe:/a:libevent_project:libevent
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
-PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 

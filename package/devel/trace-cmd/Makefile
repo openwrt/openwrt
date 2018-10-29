@@ -11,8 +11,6 @@ PKG_INSTALL:=1
 PKG_USE_MIPS16:=0
 PKG_LICENSE:=GPL-2.0
 
-PKG_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/trace-cmd

@@ -18,8 +18,6 @@ PKG_HASH:=1d6ae7f24ced3a0fa7b5613b32f4a589bb4881e3946a5a2c3724056254ada3a9
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_CPE_ID:=cpe:/a:mdadm_project:mdadm
 
-PKG_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/mdadm

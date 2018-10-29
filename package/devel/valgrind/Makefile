@@ -21,7 +21,6 @@ PKG_CPE_ID:=cpe:/a:valgrind:valgrind
 
 PKG_FIXUP = autoreconf
 PKG_INSTALL := 1
-PKG_BUILD_PARALLEL := 1
 PKG_USE_MIPS16:=0
 PKG_SSP:=0
 

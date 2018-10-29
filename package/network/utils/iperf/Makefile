@@ -18,8 +18,6 @@ PKG_SOURCE_URL:=@SF/iperf2
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-3-Clause
 
-PKG_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/uclibc++.mk
 include $(INCLUDE_DIR)/package.mk
 

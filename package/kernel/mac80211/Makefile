@@ -17,7 +17,6 @@ PKG_HASH:=5b61e64ea79d22bbac9e8612d5d5485974f223de00d4ec250b0faf4b7baf9957
 
 PKG_SOURCE:=backports-$(PKG_VERSION).tar.xz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/backports-$(PKG_VERSION)
-PKG_BUILD_PARALLEL:=1
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 

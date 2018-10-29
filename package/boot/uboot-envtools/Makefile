@@ -27,8 +27,6 @@ PKG_LICENSE_FILES:=Licenses/README
 
 PKG_FLAGS:=nonshared
 
-PKG_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/uboot-envtools
