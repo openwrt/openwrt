@@ -1,5 +1,5 @@
 define Device/glinet_ar300m_nand
-  ATH_SOC := qca9533
+  ATH_SOC := qca9531
   DEVICE_TITLE := GL-AR300M (NAND)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-usb-ledtrig-usbport
   KERNEL_SIZE := 2048k
