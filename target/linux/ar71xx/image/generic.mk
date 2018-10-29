@@ -148,7 +148,6 @@ define Device/ap91-5g
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs |\
 	pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size $$$$(IMAGE_SIZE)
 endef
-TARGET_DEVICES += ap91-5g
 
 define Device/arduino-yun
   DEVICE_TITLE := Arduino Yun
