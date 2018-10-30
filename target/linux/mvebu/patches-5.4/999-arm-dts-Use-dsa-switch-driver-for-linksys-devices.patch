@@ -1,0 +1,76 @@
+From 6e8af3440cb8063d5801b7d9dec900fc10fb4803 Mon Sep 17 00:00:00 2001
+From: Brett Mastbergen <bmastbergen@untangle.com>
+Date: Mon, 29 Oct 2018 16:18:58 -0400
+Subject: [PATCH] arm: dts: Use dsa switch driver for linksys devices
+
+openwrt adds the 'mvsw61xx' node and marks the upstream dsa switch node,
+switch@0, as disabled.  We actually want to use the upstream dsa switch
+driver instead, so remove the 'mvsw61xx' node and re-enable switch@0.
+---
+ arch/arm/boot/dts/armada-385-linksys.dtsi     | 13 -------------
+ arch/arm/boot/dts/armada-xp-linksys-mamba.dts | 11 -----------
+ 2 files changed, 24 deletions(-)
+
+diff --git a/arch/arm/boot/dts/armada-385-linksys.dtsi b/arch/arm/boot/dts/armada-385-linksys.dtsi
+index 03147a075ecc..50fb7cb6a7af 100644
+--- a/arch/arm/boot/dts/armada-385-linksys.dtsi
++++ b/arch/arm/boot/dts/armada-385-linksys.dtsi
+@@ -113,18 +113,6 @@
+ 			linux,default-trigger = "disk-activity";
+ 		};
+ 	};
+-
+-	mvsw61xx {
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-		compatible = "marvell,88e6176";
+-		status = "okay";
+-		reg = <0x10>;
+-
+-		mii-bus = <&mdio>;
+-		cpu-port-0 = <5>;
+-		cpu-port-1 = <6>;
+-	};
+ };
+ 
+ &ahci0 {
+@@ -196,7 +184,6 @@
+ 	status = "okay";
+ 
+ 	switch@0 {
+-		status = "disabled";
+ 		compatible = "marvell,mv88e6085";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+diff --git a/arch/arm/boot/dts/armada-xp-linksys-mamba.dts b/arch/arm/boot/dts/armada-xp-linksys-mamba.dts
+index 2459e70489e8..d880bc43e00d 100644
+--- a/arch/arm/boot/dts/armada-xp-linksys-mamba.dts
++++ b/arch/arm/boot/dts/armada-xp-linksys-mamba.dts
+@@ -360,16 +360,6 @@
+ 			};
+ 		};
+ 	};
+-
+-	mvsw61xx {
+-		compatible = "marvell,88e6172";
+-		status = "okay";
+-		reg = <0x10>;
+-
+-		mii-bus = <&mdio>;
+-		cpu-port-0 = <5>;
+-		cpu-port-1 = <6>;
+-	};
+ };
+ 
+ &pciec {
+@@ -516,7 +506,6 @@
+ 	status = "okay";
+ 
+ 	switch@0 {
+-		status = "disabled";
+ 		compatible = "marvell,mv88e6085";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-- 
+2.11.0
+
