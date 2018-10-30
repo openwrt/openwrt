@@ -770,7 +770,7 @@ $(eval $(call KernelPackage,sched-connmark))
 define KernelPackage/sched
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Extra traffic schedulers
-  DEPENDS:=+kmod-sched-core +kmod-ipt-core
+  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-lib-crc32c
   KCONFIG:= \
 	CONFIG_NET_SCH_CODEL \
 	CONFIG_NET_SCH_DSMARK \
@@ -784,7 +784,11 @@ define KernelPackage/sched
 	CONFIG_NET_SCH_FQ \
 	CONFIG_NET_SCH_PIE \
 	CONFIG_NET_ACT_POLICE \
+	CONFIG_NET_ACT_GACT \
 	CONFIG_NET_ACT_IPT \
+	CONFIG_NET_ACT_PEDIT \
+	CONFIG_NET_ACT_SIMP \
+	CONFIG_NET_ACT_CSUM \
 	CONFIG_NET_EMATCH_CMP \
 	CONFIG_NET_EMATCH_NBYTE \
 	CONFIG_NET_EMATCH_META \
