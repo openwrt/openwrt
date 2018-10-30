@@ -738,6 +738,21 @@ endef
 $(eval $(call KernelPackage,usb-serial-mos7720))
 
 
+define KernelPackage/usb-serial-mos7840
+  TITLE:=Support for Moschip MOS7840 devices
+  KCONFIG:=CONFIG_USB_SERIAL_MOS7840
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/mos7840.ko
+  AUTOLOAD:=$(call AutoProbe,mos7840)
+  $(call AddDepends/usb-serial)
+endef
+
+define KernelPackage/usb-serial-mos7840/description
+ Kernel support for Moschip MOS7840 USB-to-Serial converters
+endef
+
+$(eval $(call KernelPackage,usb-serial-mos7840))
+
+
 define KernelPackage/usb-serial-pl2303
   TITLE:=Support for Prolific PL2303 devices
   KCONFIG:=CONFIG_USB_SERIAL_PL2303
