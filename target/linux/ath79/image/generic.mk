@@ -341,3 +341,11 @@ define Device/wd_mynet-wifi-rangeextender
   SUPPORTED_DEVICES += mynet-rext
 endef
 TARGET_DEVICES += wd_mynet-wifi-rangeextender
+
+define Device/winchannel_wb2000
+  ATH_SOC := ar9344
+  DEVICE_TITLE := Winchannel WB2000
+  IMAGE_SIZE := 15872k
+  DEVICE_PACKAGES := kmod-i2c-core kmod-i2c-gpio kmod-rtc-ds1307 kmod-usb2 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += winchannel_wb2000
