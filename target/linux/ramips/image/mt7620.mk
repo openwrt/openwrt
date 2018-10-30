@@ -73,6 +73,17 @@ define Device/amit_jboot
   DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-usb-ohci
 endef
 
+define Device/apexera_netbot
+  MTK_SOC := mt7620a
+  DEVICE_VENDOR := Apexera
+  DEVICE_MODEL := NetBot
+  IMAGE_SIZE := 16064k
+  DEVICE_PACKAGES := kmod-i2c-ralink kmod-rtc-pcf8563 kmod-sound-core \
+       kmod-sound-mt7620 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
+       kmod-usb-storage kmod-usb-storage-extras kmod-usb-storage-uas
+endef
+TARGET_DEVICES += apexera_netbot
+
 define Device/Archer
   MTK_SOC := mt7620a
   DEVICE_VENDOR := TP-Link
