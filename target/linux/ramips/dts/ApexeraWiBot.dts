@@ -1,0 +1,172 @@
+/dts-v1/;
+
+#include "mt7620a.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "apexera,wibot", "ralink,mt7620a-soc";
+	model = "Apexera WiBot";
+
+	chosen {
+		bootargs = "console=ttyS1,57600";
+	};
+
+	aliases {
+		led-boot = &led_boot;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		wan {
+			label = "wibot:blue:wan";
+			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		wifi {
+			label = "wibot:blue:wifi";
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_status: status {
+			label = "wibot:blue:status";
+			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_boot: boot {
+			label = "wibot:blue:boot";
+			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		reset {
+			label = "wibot:blue:reset";
+			gpios = <&gpio2 23 GPIO_ACTIVE_HIGH>;
+		};
+
+		ctrl3g {
+			label = "wibot:blue:ctrl3g";
+			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
+		};
+
+		usb0 {
+			label = "wibot:blue:usb0";
+			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
+			trigger-sources = <&ohci_port1>, <&ehci_port1>;
+			linux,default-trigger = "usbport";
+		};
+
+		usb1 {
+			label = "wibot:blue:usb1";
+			gpios = <&gpio2 22 GPIO_ACTIVE_HIGH>;
+			trigger-sources = <&ohci_port1>, <&ehci_port1>;
+			linux,default-trigger = "usbport";
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&uart {
+	status = "okay";
+};
+
+&i2c {
+	status = "okay";
+
+	pcf8563: rtc@51 {
+		status = "okay";
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0xfb0000>;
+			};
+		};
+	};
+};
+
+&sdhci {
+	status = "okay";
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0x10>;
+	ralink,port-map = "llllw";
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "rgmii1", "rgmii2";
+			ralink,function = "gpio";
+		};
+
+		uartf_gpio {
+			ralink,group = "uartf";
+			ralink,function = "gpio uartf";
+		};
+	};
+};

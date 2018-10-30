@@ -32,6 +32,29 @@ define Device/alfa-network_ac1200rm
 endef
 TARGET_DEVICES += alfa-network_ac1200rm
 
+define Device/apexera_netbot
+  DTS := ApexeraNetBot
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := Apexera NetBot
+  DEVICE_PACKAGES := kmod-i2c-ralink \
+	kmod-rtc-pcf8563 kmod-sound-core \
+	kmod-sound-mt7620 kmod-usb2 kmod-usb3 \
+	kmod-usb-ohci kmod-sdhci-mt7620
+endef
+TARGET_DEVICES += apexera_netbot
+
+define Device/apexera_wibot
+  DTS := ApexeraWiBot
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := Apexera WiBot
+  DEVICE_PACKAGES :=	kmod-i2c-ralink \
+	kmod-rtc-pcf8563 kmod-sound-core \
+	kmod-sound-mt7620 kmod-usb2 \
+	kmod-usb-ohci kmod-sdhci-mt7620 \
+	kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += apexera_wibot
+
 define Device/Archer
   TPLINK_HWREVADD := 0
   TPLINK_HVERSION := 3

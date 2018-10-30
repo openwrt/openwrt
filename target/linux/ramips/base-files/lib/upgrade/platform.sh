@@ -24,6 +24,8 @@ platform_check_image() {
 	all5002|\
 	all5003|\
 	mediatek,ap-mt7621a-v60|\
+	apexera,netbot|\
+	apexera,wibot|\
 	ar725w|\
 	asl26555-8M|\
 	asl26555-16M|\
