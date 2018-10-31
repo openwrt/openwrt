@@ -216,6 +216,9 @@ get_status_led() {
 	e600g-v2|\
 	oolite-v5.2-dev|\
 	ts-d084|\
+	wifi-pineapple-mk5)
+		status_led="mk5:green:system"
+		;;
 	wifi-pineapple-nano)
 		status_led="$board:blue:system"
 		;;

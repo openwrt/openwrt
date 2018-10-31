@@ -1235,6 +1235,18 @@ define Device/wam250
 endef
 TARGET_DEVICES += wam250
 
+define Device/wifi-pineapple-mk5
+  $(Device/tplink-16mlzma)
+  DEVICE_TITLE := Hak5 WiFi Pineapple MK5
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  BOARDNAME := WIFI-PINEAPPLE-MK5
+  DEVICE_PROFILE := WIFIPINEAPPLEMK5
+  TPLINK_HWID := 0x6d6b3531
+  CONSOLE := ttyATH0,115200
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += wifi-pineapple-mk5
+
 define Device/wifi-pineapple-nano
   $(Device/tplink-16mlzma)
   DEVICE_TITLE := Hak5 WiFi Pineapple NANO

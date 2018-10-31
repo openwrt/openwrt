@@ -333,6 +333,9 @@ tplink_board_detect() {
 	"640000"*)
 		model="TP-Link TL-MR6400"
 		;;
+	"6D6B35"*)
+		model="WiFi Pineapple MK5"
+		;;
 	"65000002")
 		model="TP-Link TL-WDR6500"
 		;;
@@ -1424,6 +1427,9 @@ ar71xx_board_detect() {
 		;;
 	*"WHR-HP-GN")
 		name="whr-hp-gn"
+		;;
+	*"WiFi Pineapple MK5")
+		name="wifi-pineapple-mk5"
 		;;
 	*"WiFi Pineapple NANO")
 		name="wifi-pineapple-nano"

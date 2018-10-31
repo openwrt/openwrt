@@ -1008,6 +1008,11 @@ whr-hp-gn)
 	ucidef_set_led_switch "lan3" "LAN3" "buffalo:green:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan4" "LAN4" "buffalo:green:lan4" "switch0" "0x10"
 	;;
+wifi-pineapple-mk5)
+	ucidef_set_led_default "sys" "SYS" "mk5:red:system" "1"
+	ucidef_set_led_netdev "lan" "LAN" "mk5:yellow:lan" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "mk5:blue:wifi" "phy0tpt"
+	;;
 wifi-pineapple-nano)
 	ucidef_set_led_wlan "wlan0" "WLAN0" "$board:blue:system" "phy0tpt"
 	;;
