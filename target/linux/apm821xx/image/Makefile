@@ -224,7 +224,7 @@ define Device/wd_mybooklive
   DEVICE_TITLE := Western Digital My Book Live Series (Single + Duo)
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-fs-vfat wpad-basic
   DEVICE_DTS := wd-mybooklive
-  SUPPORTED_DEVICES += mbl wd_mybooklive-duo
+  SUPPORTED_DEVICES += mbl wd,mybooklive-duo
   BLOCKSIZE := 1k
   DTB_SIZE := 16384
   KERNEL := kernel-bin | dtb | gzip | uImage gzip
