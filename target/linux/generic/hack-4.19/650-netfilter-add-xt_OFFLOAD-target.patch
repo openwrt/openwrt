@@ -8,7 +8,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -76,8 +76,6 @@ config NF_TABLES_ARP
+@@ -63,8 +63,6 @@ config NF_TABLES_ARP
  	help
  	  This option enables the ARP support for nf_tables.
  
@@ -17,7 +17,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  config NF_FLOW_TABLE_IPV4
  	tristate "Netfilter flow table IPv4 module"
  	depends on NF_FLOW_TABLE
-@@ -86,6 +84,8 @@ config NF_FLOW_TABLE_IPV4
+@@ -73,6 +71,8 @@ config NF_FLOW_TABLE_IPV4
  
  	  To compile it as a module, choose M here.
  
@@ -28,7 +28,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	depends on !NF_CONNTRACK || NF_CONNTRACK
 --- a/net/ipv6/netfilter/Kconfig
 +++ b/net/ipv6/netfilter/Kconfig
-@@ -97,7 +97,6 @@ config NFT_FIB_IPV6
+@@ -80,7 +80,6 @@ config NFT_FIB_IPV6
  	  multicast or blackhole.
  
  endif # NF_TABLES_IPV6
@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  config NF_FLOW_TABLE_IPV6
  	tristate "Netfilter flow table IPv6 module"
-@@ -107,6 +106,8 @@ config NF_FLOW_TABLE_IPV6
+@@ -90,6 +89,8 @@ config NF_FLOW_TABLE_IPV6
  
  	  To compile it as a module, choose M here.
  
@@ -47,7 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	depends on !NF_CONNTRACK || NF_CONNTRACK
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -671,8 +671,6 @@ config NFT_FIB_NETDEV
+@@ -693,8 +693,6 @@ config NFT_FIB_NETDEV
  
  endif # NF_TABLES_NETDEV
  
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  config NF_FLOW_TABLE_INET
  	tristate "Netfilter flow table mixed IPv4/IPv6 module"
  	depends on NF_FLOW_TABLE
-@@ -681,11 +679,12 @@ config NF_FLOW_TABLE_INET
+@@ -703,11 +701,12 @@ config NF_FLOW_TABLE_INET
  
  	  To compile it as a module, choose M here.
  
@@ -70,7 +70,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	help
  	  This option adds the flow table core infrastructure.
  
-@@ -974,6 +973,15 @@ config NETFILTER_XT_TARGET_NOTRACK
+@@ -996,6 +995,15 @@ config NETFILTER_XT_TARGET_NOTRACK
  	depends on NETFILTER_ADVANCED
  	select NETFILTER_XT_TARGET_CT
  
@@ -88,7 +88,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	depends on NETFILTER_ADVANCED
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -134,6 +134,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_CLASSIF
+@@ -144,6 +144,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_CLASSIF
  obj-$(CONFIG_NETFILTER_XT_TARGET_CONNSECMARK) += xt_CONNSECMARK.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_CT) += xt_CT.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_DSCP) += xt_DSCP.o

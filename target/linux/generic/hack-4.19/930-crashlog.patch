@@ -41,7 +41,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#endif
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1009,6 +1009,10 @@ config RELAY
+@@ -1041,6 +1041,10 @@ config RELAY
  
  	  If unsure, say N.
  
@@ -51,13 +51,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
  config BLK_DEV_INITRD
  	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
- 	depends on BROKEN || !FRV
+ 	help
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
-@@ -112,6 +112,7 @@ obj-$(CONFIG_CONTEXT_TRACKING) += contex
- obj-$(CONFIG_TORTURE_TEST) += torture.o
- 
- obj-$(CONFIG_HAS_IOMEM) += memremap.o
+@@ -116,6 +116,7 @@ obj-$(CONFIG_TORTURE_TEST) += torture.o
+ obj-$(CONFIG_HAS_IOMEM) += iomem.o
+ obj-$(CONFIG_ZONE_DEVICE) += memremap.o
+ obj-$(CONFIG_RSEQ) += rseq.o
 +obj-$(CONFIG_CRASHLOG) += crashlog.o
  
  $(obj)/configs.o: $(obj)/config_data.h
@@ -300,7 +300,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <linux/bug.h>
  #include <linux/io.h>
  #include <linux/bootmem.h>
-@@ -175,6 +176,7 @@ static unsigned long __init free_all_boo
+@@ -215,6 +216,7 @@ static unsigned long __init free_all_boo
  	if (!bdata->node_bootmem_map)
  		return 0;
  
@@ -310,15 +310,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	end = bdata->node_low_pfn;
 --- a/mm/memblock.c
 +++ b/mm/memblock.c
-@@ -19,6 +19,7 @@
- #include <linux/debugfs.h>
+@@ -21,6 +21,7 @@
  #include <linux/seq_file.h>
  #include <linux/memblock.h>
+ #include <linux/bootmem.h>
 +#include <linux/crashlog.h>
  
  #include <asm/sections.h>
  #include <linux/io.h>
-@@ -483,6 +484,8 @@ static void __init_memblock memblock_ins
+@@ -547,6 +548,8 @@ static void __init_memblock memblock_ins
  	memblock_set_region_node(rgn, nid);
  	type->cnt++;
  	type->total_size += size;
@@ -327,7 +327,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  /**
-@@ -522,6 +525,8 @@ int __init_memblock memblock_add_range(s
+@@ -586,6 +589,8 @@ int __init_memblock memblock_add_range(s
  		type->regions[0].flags = flags;
  		memblock_set_region_node(&type->regions[0], nid);
  		type->total_size = size;

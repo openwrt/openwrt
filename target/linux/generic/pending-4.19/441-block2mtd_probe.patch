@@ -8,7 +8,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/mtd/devices/block2mtd.c
 +++ b/drivers/mtd/devices/block2mtd.c
-@@ -392,7 +392,7 @@ static int block2mtd_setup2(const char *
+@@ -387,7 +387,7 @@ static int block2mtd_setup2(const char *
  	/* 80 for device, 12 for erase size, 80 for name, 8 for timeout */
  	char buf[80 + 12 + 80 + 8];
  	char *str = buf;
@@ -17,7 +17,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	char *name;
  	size_t erase_size = PAGE_SIZE;
  	unsigned long timeout = MTD_DEFAULT_TIMEOUT;
-@@ -406,7 +406,7 @@ static int block2mtd_setup2(const char *
+@@ -401,7 +401,7 @@ static int block2mtd_setup2(const char *
  	strcpy(str, val);
  	kill_final_newline(str);
  
@@ -26,7 +26,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		token[i] = strsep(&str, ",");
  
  	if (str) {
-@@ -435,6 +435,9 @@ static int block2mtd_setup2(const char *
+@@ -430,6 +430,9 @@ static int block2mtd_setup2(const char *
  	if (token[2] && (strlen(token[2]) + 1 > 80))
  		pr_err("mtd device name too long\n");
  
@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	add_device(name, erase_size, token[2], timeout);
  
  	return 0;
-@@ -469,7 +472,7 @@ static int block2mtd_setup(const char *v
+@@ -464,7 +467,7 @@ static int block2mtd_setup(const char *v
  
  
  module_param_call(block2mtd, block2mtd_setup, NULL, NULL, 0200);

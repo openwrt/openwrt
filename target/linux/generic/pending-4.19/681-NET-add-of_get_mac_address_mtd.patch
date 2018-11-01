@@ -15,7 +15,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
-@@ -10,6 +10,7 @@
+@@ -11,6 +11,7 @@
  #include <linux/of_net.h>
  #include <linux/phy.h>
  #include <linux/export.h>
@@ -23,7 +23,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /**
   * of_get_phy_mode - Get phy mode for given device_node
-@@ -38,7 +39,7 @@ int of_get_phy_mode(struct device_node *
+@@ -39,7 +40,7 @@ int of_get_phy_mode(struct device_node *
  }
  EXPORT_SYMBOL_GPL(of_get_phy_mode);
  
@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct property *pp = of_find_property(np, name, NULL);
  
-@@ -47,6 +48,79 @@ static const void *of_get_mac_addr(struc
+@@ -48,6 +49,79 @@ static const void *of_get_mac_addr(struc
  	return NULL;
  }
  
@@ -112,7 +112,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /**
   * Search the device tree for the best MAC address to use.  'mac-address' is
   * checked first, because that is supposed to contain to "most recent" MAC
-@@ -64,11 +138,18 @@ static const void *of_get_mac_addr(struc
+@@ -65,11 +139,18 @@ static const void *of_get_mac_addr(struc
   * addresses.  Some older U-Boots only initialized 'local-mac-address'.  In
   * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
   * but is all zeros.

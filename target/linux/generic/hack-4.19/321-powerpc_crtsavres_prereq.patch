@@ -16,7 +16,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 
 --- a/arch/powerpc/Makefile
 +++ b/arch/powerpc/Makefile
-@@ -59,19 +59,6 @@ machine-$(CONFIG_PPC64) += 64
+@@ -60,20 +60,6 @@ machine-$(CONFIG_PPC64) += 64
  machine-$(CONFIG_CPU_LITTLE_ENDIAN) += le
  UTS_MACHINE := $(subst $(space),,$(machine-y))
  
@@ -24,6 +24,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 -ifdef CONFIG_PPC32
 -KBUILD_LDFLAGS_MODULE += arch/powerpc/lib/crtsavres.o
 -else
+-KBUILD_LDFLAGS_MODULE += -T $(srctree)/arch/powerpc/kernel/module.lds
 -ifeq ($(call ld-ifversion, -ge, 225000000, y),y)
 -# Have the linker provide sfpr if possible.
 -# There is a corresponding test in arch/powerpc/lib/Makefile
@@ -33,6 +34,6 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 -endif
 -endif
 -
- ifeq ($(CONFIG_CPU_LITTLE_ENDIAN),y)
- override LD	+= -EL
- LDEMULATION	:= lppc
+ ifdef CONFIG_CPU_LITTLE_ENDIAN
+ KBUILD_CFLAGS	+= -mlittle-endian
+ KBUILD_LDFLAGS	+= -EL

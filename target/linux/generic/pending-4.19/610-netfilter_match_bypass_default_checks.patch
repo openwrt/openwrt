@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define IPT_INV_VIA_IN		0x01	/* Invert the sense of IN IFACE. */
 --- a/net/ipv4/netfilter/ip_tables.c
 +++ b/net/ipv4/netfilter/ip_tables.c
-@@ -52,6 +52,9 @@ ip_packet_match(const struct iphdr *ip,
+@@ -53,6 +53,9 @@ ip_packet_match(const struct iphdr *ip,
  {
  	unsigned long ret;
  
@@ -29,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (NF_INVF(ipinfo, IPT_INV_SRCIP,
  		    (ip->saddr & ipinfo->smsk.s_addr) != ipinfo->src.s_addr) ||
  	    NF_INVF(ipinfo, IPT_INV_DSTIP,
-@@ -82,6 +85,29 @@ ip_packet_match(const struct iphdr *ip,
+@@ -83,6 +86,29 @@ ip_packet_match(const struct iphdr *ip,
  	return true;
  }
  
@@ -59,7 +59,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static bool
  ip_checkentry(const struct ipt_ip *ip)
  {
-@@ -537,6 +563,8 @@ find_check_entry(struct ipt_entry *e, st
+@@ -527,6 +553,8 @@ find_check_entry(struct ipt_entry *e, st
  	struct xt_mtchk_param mtpar;
  	struct xt_entry_match *ematch;
  
@@ -68,7 +68,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!xt_percpu_counter_alloc(alloc_state, &e->counters))
  		return -ENOMEM;
  
-@@ -818,6 +846,7 @@ copy_entries_to_user(unsigned int total_
+@@ -821,6 +849,7 @@ copy_entries_to_user(unsigned int total_
  	const struct xt_table_info *private = table->private;
  	int ret = 0;
  	const void *loc_cpu_entry;
@@ -76,7 +76,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	counters = alloc_counters(table);
  	if (IS_ERR(counters))
-@@ -845,6 +874,14 @@ copy_entries_to_user(unsigned int total_
+@@ -848,6 +877,14 @@ copy_entries_to_user(unsigned int total_
  			goto free_counters;
  		}
  
@@ -91,7 +91,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		for (i = sizeof(struct ipt_entry);
  		     i < e->target_offset;
  		     i += m->u.match_size) {
-@@ -1227,12 +1264,15 @@ compat_copy_entry_to_user(struct ipt_ent
+@@ -1228,12 +1265,15 @@ compat_copy_entry_to_user(struct ipt_ent
  	compat_uint_t origsize;
  	const struct xt_entry_match *ematch;
  	int ret = 0;

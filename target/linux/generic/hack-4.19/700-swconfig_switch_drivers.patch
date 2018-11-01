@@ -12,8 +12,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -198,6 +198,89 @@ config LED_TRIGGER_PHY
- 		<Speed in megabits>Mbps or <Speed in gigabits>Gbps
+@@ -209,6 +209,89 @@ config LED_TRIGGER_PHY
+ 		for any speed known to the PHY.
  
  
 +comment "Switch configuration API + drivers"
@@ -128,7 +128,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_MDIO_BITBANG)	+= mdio-bitbang.o
 --- a/include/linux/platform_data/b53.h
 +++ b/include/linux/platform_data/b53.h
-@@ -25,6 +25,9 @@ struct b53_platform_data {
+@@ -29,6 +29,9 @@ struct b53_platform_data {
  	u32 chip_id;
  	u16 enabled_ports;
  

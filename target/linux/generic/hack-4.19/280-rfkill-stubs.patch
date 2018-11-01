@@ -22,7 +22,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -#if defined(CONFIG_RFKILL) || defined(CONFIG_RFKILL_MODULE)
 +#if defined(CONFIG_RFKILL_FULL) || defined(CONFIG_RFKILL_FULL_MODULE)
  /**
-  * rfkill_alloc - allocate rfkill structure
+  * rfkill_alloc - Allocate rfkill structure
   * @name: name of the struct -- the string is not copied internally
 --- a/net/Makefile
 +++ b/net/Makefile

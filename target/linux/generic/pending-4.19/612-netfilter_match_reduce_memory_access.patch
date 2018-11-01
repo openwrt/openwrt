@@ -8,7 +8,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/ipv4/netfilter/ip_tables.c
 +++ b/net/ipv4/netfilter/ip_tables.c
-@@ -55,9 +55,9 @@ ip_packet_match(const struct iphdr *ip,
+@@ -56,9 +56,9 @@ ip_packet_match(const struct iphdr *ip,
  	if (ipinfo->flags & IPT_F_NO_DEF_MATCH)
  		return true;
  

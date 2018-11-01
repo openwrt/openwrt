@@ -15,24 +15,12 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 
 --- a/drivers/w1/masters/w1-gpio.c
 +++ b/drivers/w1/masters/w1-gpio.c
-@@ -112,17 +112,16 @@ static int w1_gpio_probe_dt(struct platf
- static int w1_gpio_probe(struct platform_device *pdev)
- {
- 	struct w1_bus_master *master;
--	struct w1_gpio_platform_data *pdata;
-+	struct w1_gpio_platform_data *pdata = dev_get_platdata(&pdev->dev);
+@@ -79,7 +79,7 @@ static int w1_gpio_probe(struct platform
+ 	enum gpiod_flags gflags = GPIOD_OUT_LOW_OPEN_DRAIN;
  	int err;
  
 -	if (of_have_populated_dt()) {
-+	if (of_have_populated_dt() && !pdata) {
- 		err = w1_gpio_probe_dt(pdev);
- 		if (err < 0)
- 			return err;
-+		pdata = dev_get_platdata(&pdev->dev);
- 	}
- 
--	pdata = dev_get_platdata(&pdev->dev);
--
- 	if (!pdata) {
- 		dev_err(&pdev->dev, "No configuration data\n");
- 		return -ENXIO;
++	if (of_have_populated_dt() && !dev_get_platdata(&pdev->dev)) {
+ 		pdata = devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
+ 		if (!pdata)
+ 			return -ENOMEM;

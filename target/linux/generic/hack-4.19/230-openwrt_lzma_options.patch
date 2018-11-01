@@ -8,7 +8,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 ---
  lib/decompress.c              |  1 +
  scripts/Makefile.lib          |  2 +-
- scripts/gen_initramfs_list.sh | 10 +++++-----
+ usr/gen_initramfs_list.sh | 10 +++++-----
  3 files changed, 7 insertions(+), 6 deletions(-)
 
 --- a/lib/decompress.c
@@ -23,7 +23,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	{ {0x02, 0x21}, "lz4", unlz4 },
 --- a/scripts/Makefile.lib
 +++ b/scripts/Makefile.lib
-@@ -348,7 +348,7 @@ cmd_bzip2 = (cat $(filter-out FORCE,$^)
+@@ -324,7 +324,7 @@ cmd_bzip2 = (cat $(filter-out FORCE,$^)
  
  quiet_cmd_lzma = LZMA    $@
  cmd_lzma = (cat $(filter-out FORCE,$^) | \
@@ -32,8 +32,8 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	(rm -f $@ ; false)
  
  quiet_cmd_lzo = LZO     $@
---- a/scripts/gen_initramfs_list.sh
-+++ b/scripts/gen_initramfs_list.sh
+--- a/usr/gen_initramfs_list.sh
++++ b/usr/gen_initramfs_list.sh
 @@ -229,7 +229,7 @@ cpio_list=
  output="/dev/stdout"
  output_file=""

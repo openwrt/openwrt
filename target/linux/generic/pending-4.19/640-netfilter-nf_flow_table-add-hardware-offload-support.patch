@@ -23,9 +23,9 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -826,6 +826,13 @@ struct xfrmdev_ops {
+@@ -918,6 +918,13 @@ struct dev_ifalias {
+ 	char ifalias[];
  };
- #endif
  
 +struct flow_offload;
 +
@@ -37,7 +37,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  /*
   * This structure defines the management hooks for network devices.
   * The following hooks can be defined; unless noted otherwise, they are
-@@ -1057,6 +1064,10 @@ struct xfrmdev_ops {
+@@ -1150,6 +1157,10 @@ struct dev_ifalias {
   * int (*ndo_bridge_dellink)(struct net_device *dev, struct nlmsghdr *nlh,
   *			     u16 flags);
   *
@@ -48,7 +48,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
   * int (*ndo_change_carrier)(struct net_device *dev, bool new_carrier);
   *	Called to change device carrier. Soft-devices (like dummy, team, etc)
   *	which do not represent real hardware may define this to allow their
-@@ -1281,6 +1292,8 @@ struct net_device_ops {
+@@ -1377,6 +1388,8 @@ struct net_device_ops {
  	int			(*ndo_bridge_dellink)(struct net_device *dev,
  						      struct nlmsghdr *nlh,
  						      u16 flags);
@@ -110,7 +110,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
 --- a/include/uapi/linux/netfilter/nf_tables.h
 +++ b/include/uapi/linux/netfilter/nf_tables.h
-@@ -1341,6 +1341,7 @@ enum nft_object_attributes {
+@@ -1464,6 +1464,7 @@ enum nft_object_attributes {
   * @NFTA_FLOWTABLE_HOOK: netfilter hook configuration(NLA_U32)
   * @NFTA_FLOWTABLE_USE: number of references to this flow table (NLA_U32)
   * @NFTA_FLOWTABLE_HANDLE: object handle (NLA_U64)
@@ -118,7 +118,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
   */
  enum nft_flowtable_attributes {
  	NFTA_FLOWTABLE_UNSPEC,
-@@ -1350,6 +1351,7 @@ enum nft_flowtable_attributes {
+@@ -1473,6 +1474,7 @@ enum nft_flowtable_attributes {
  	NFTA_FLOWTABLE_USE,
  	NFTA_FLOWTABLE_HANDLE,
  	NFTA_FLOWTABLE_PAD,
@@ -128,7 +128,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #define NFTA_FLOWTABLE_MAX	(__NFTA_FLOWTABLE_MAX - 1)
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -692,6 +692,15 @@ config NF_FLOW_TABLE
+@@ -714,6 +714,15 @@ config NF_FLOW_TABLE
  
  	  To compile it as a module, choose M here.
  
@@ -146,7 +146,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	default m if NETFILTER_ADVANCED=n
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -116,6 +116,7 @@ obj-$(CONFIG_NF_FLOW_TABLE)	+= nf_flow_t
+@@ -126,6 +126,7 @@ obj-$(CONFIG_NF_FLOW_TABLE)	+= nf_flow_t
  nf_flow_table-objs := nf_flow_table_core.o nf_flow_table_ip.o
  
  obj-$(CONFIG_NF_FLOW_TABLE_INET) += nf_flow_table_inet.o
@@ -156,7 +156,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  obj-$(CONFIG_NETFILTER_XTABLES) += x_tables.o xt_tcpudp.o
 --- a/net/netfilter/nf_flow_table_core.c
 +++ b/net/netfilter/nf_flow_table_core.c
-@@ -218,10 +218,16 @@ int flow_offload_add(struct nf_flowtable
+@@ -215,10 +215,16 @@ int flow_offload_add(struct nf_flowtable
  }
  EXPORT_SYMBOL_GPL(flow_offload_add);
  
@@ -173,7 +173,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	rhashtable_remove_fast(&flow_table->rhashtable,
  			       &flow->tuplehash[FLOW_OFFLOAD_DIR_ORIGINAL].node,
-@@ -236,6 +242,9 @@ static void flow_offload_del(struct nf_f
+@@ -233,6 +239,9 @@ static void flow_offload_del(struct nf_f
  	if (!(flow->flags & FLOW_OFFLOAD_TEARDOWN))
  		flow_offload_fixup_ct_state(e->ct);
  
@@ -183,7 +183,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	flow_offload_free(flow);
  }
  
-@@ -349,6 +358,9 @@ static int nf_flow_offload_gc_step(struc
+@@ -346,6 +355,9 @@ static int nf_flow_offload_gc_step(struc
  		if (!teardown)
  			nf_ct_offload_timeout(flow);
  
@@ -193,7 +193,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		if (nf_flow_has_expired(flow) || teardown)
  			flow_offload_del(flow_table, flow);
  	}
-@@ -484,10 +496,43 @@ int nf_flow_dnat_port(const struct flow_
+@@ -481,10 +493,43 @@ int nf_flow_dnat_port(const struct flow_
  }
  EXPORT_SYMBOL_GPL(nf_flow_dnat_port);
  
@@ -237,7 +237,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	INIT_DEFERRABLE_WORK(&flowtable->gc_work, nf_flow_offload_work_gc);
  
  	err = rhashtable_init(&flowtable->rhashtable,
-@@ -525,6 +570,8 @@ static void nf_flow_table_iterate_cleanu
+@@ -522,6 +567,8 @@ static void nf_flow_table_iterate_cleanu
  {
  	nf_flow_table_iterate(flowtable, nf_flow_table_do_cleanup, dev);
  	flush_delayed_work(&flowtable->gc_work);
@@ -246,7 +246,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  }
  
  void nf_flow_table_cleanup(struct net *net, struct net_device *dev)
-@@ -538,6 +585,26 @@ void nf_flow_table_cleanup(struct net *n
+@@ -535,6 +582,26 @@ void nf_flow_table_cleanup(struct net *n
  }
  EXPORT_SYMBOL_GPL(nf_flow_table_cleanup);
  
@@ -273,7 +273,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  void nf_flow_table_free(struct nf_flowtable *flow_table)
  {
  	mutex_lock(&flowtable_lock);
-@@ -547,9 +614,58 @@ void nf_flow_table_free(struct nf_flowta
+@@ -544,9 +611,58 @@ void nf_flow_table_free(struct nf_flowta
  	nf_flow_table_iterate(flow_table, nf_flow_table_do_cleanup, NULL);
  	WARN_ON(!nf_flow_offload_gc_step(flow_table));
  	rhashtable_destroy(&flow_table->rhashtable);
@@ -506,22 +506,21 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +MODULE_ALIAS("nf-flow-table-hw");
 --- a/net/netfilter/nf_tables_api.c
 +++ b/net/netfilter/nf_tables_api.c
-@@ -4934,6 +4934,14 @@ static int nf_tables_flowtable_parse_hoo
+@@ -5396,6 +5396,13 @@ static int nf_tables_flowtable_parse_hoo
  	if (err < 0)
- 		goto err1;
+ 		return err;
  
 +	for (i = 0; i < n; i++) {
 +		if (flowtable->data.flags & NF_FLOWTABLE_F_HW &&
 +		    !dev_array[i]->netdev_ops->ndo_flow_offload) {
-+			err = -EOPNOTSUPP;
-+			goto err1;
++			return -EOPNOTSUPP;
 +		}
 +	}
 +
- 	ops = kzalloc(sizeof(struct nf_hook_ops) * n, GFP_KERNEL);
- 	if (!ops) {
- 		err = -ENOMEM;
-@@ -5064,10 +5072,19 @@ static int nf_tables_newflowtable(struct
+ 	ops = kcalloc(n, sizeof(struct nf_hook_ops), GFP_KERNEL);
+ 	if (!ops)
+ 		return -ENOMEM;
+@@ -5527,10 +5534,19 @@ static int nf_tables_newflowtable(struct
  	}
  
  	flowtable->data.type = type;
@@ -541,7 +540,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	err = nf_tables_flowtable_parse_hook(&ctx, nla[NFTA_FLOWTABLE_HOOK],
  					     flowtable);
  	if (err < 0)
-@@ -5165,7 +5182,8 @@ static int nf_tables_fill_flowtable_info
+@@ -5656,7 +5672,8 @@ static int nf_tables_fill_flowtable_info
  	    nla_put_string(skb, NFTA_FLOWTABLE_NAME, flowtable->name) ||
  	    nla_put_be32(skb, NFTA_FLOWTABLE_USE, htonl(flowtable->use)) ||
  	    nla_put_be64(skb, NFTA_FLOWTABLE_HANDLE, cpu_to_be64(flowtable->handle),

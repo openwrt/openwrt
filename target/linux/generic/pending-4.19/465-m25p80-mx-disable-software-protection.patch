@@ -8,11 +8,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -2714,6 +2714,7 @@ int spi_nor_scan(struct spi_nor *nor, co
- 
- 	if (JEDEC_MFR(info) == SNOR_MFR_ATMEL ||
- 	    JEDEC_MFR(info) == SNOR_MFR_INTEL ||
-+	    JEDEC_MFR(info) == SNOR_MFR_MACRONIX ||
- 	    JEDEC_MFR(info) == SNOR_MFR_SST ||
- 	    info->flags & SPI_NOR_HAS_LOCK) {
+@@ -2733,6 +2733,7 @@ static int spi_nor_init(struct spi_nor *
+ 	 */
+ 	if (JEDEC_MFR(nor->info) == SNOR_MFR_ATMEL ||
+ 	    JEDEC_MFR(nor->info) == SNOR_MFR_INTEL ||
++	    JEDEC_MFR(nor->info) == SNOR_MFR_MACRONIX ||
+ 	    JEDEC_MFR(nor->info) == SNOR_MFR_SST ||
+ 	    nor->info->flags & SPI_NOR_HAS_LOCK) {
  		write_enable(nor);

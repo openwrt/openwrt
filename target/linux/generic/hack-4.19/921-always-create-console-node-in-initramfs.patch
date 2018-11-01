@@ -5,11 +5,11 @@ Subject: initramfs: always create console node
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
- scripts/gen_initramfs_list.sh | 14 ++++++++++++++
+ usr/gen_initramfs_list.sh | 14 ++++++++++++++
  1 file changed, 14 insertions(+)
 
---- a/scripts/gen_initramfs_list.sh
-+++ b/scripts/gen_initramfs_list.sh
+--- a/usr/gen_initramfs_list.sh
++++ b/usr/gen_initramfs_list.sh
 @@ -59,6 +59,18 @@ default_initramfs() {
  	EOF
  }

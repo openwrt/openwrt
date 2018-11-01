@@ -63,17 +63,17 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
 --- a/drivers/bcma/Kconfig
 +++ b/drivers/bcma/Kconfig
-@@ -15,6 +15,7 @@ menuconfig BCMA
+@@ -16,6 +16,7 @@ if BCMA
+ # Support for Block-I/O. SELECT this from the driver that needs it.
  config BCMA_BLOCKIO
  	bool
- 	depends on BCMA
 +	default y
  
  config BCMA_HOST_PCI_POSSIBLE
  	bool
 --- a/drivers/ssb/Kconfig
 +++ b/drivers/ssb/Kconfig
-@@ -29,6 +29,7 @@ config SSB_SPROM
+@@ -28,6 +28,7 @@ config SSB_SPROM
  config SSB_BLOCKIO
  	bool
  	depends on SSB
@@ -81,7 +81,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  config SSB_PCIHOST_POSSIBLE
  	bool
-@@ -49,7 +50,7 @@ config SSB_PCIHOST
+@@ -48,7 +49,7 @@ config SSB_PCIHOST
  config SSB_B43_PCI_BRIDGE
  	bool
  	depends on SSB_PCIHOST
@@ -92,12 +92,12 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -358,16 +358,16 @@ config BCH_CONST_T
+@@ -377,16 +377,16 @@ config BCH_CONST_T
  # Textsearch support is select'ed if needed
  #
  config TEXTSEARCH
 -	bool
-+	boolean	"Textsearch support"
++	bool "Textsearch support"
  
  config TEXTSEARCH_KMP
 -	tristate
@@ -146,8 +146,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  config CFG80211
  	tristate "cfg80211 - wireless configuration API"
-@@ -188,7 +188,7 @@ config CFG80211_WEXT_EXPORT
- 	  wext compatibility symbols to be exported.
+@@ -202,7 +202,7 @@ config CFG80211_WEXT_EXPORT
+ endif # CFG80211
  
  config LIB80211
 -	tristate
@@ -155,7 +155,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	default n
  	help
  	  This options enables a library of common routines used
-@@ -197,13 +197,16 @@ config LIB80211
+@@ -211,13 +211,16 @@ config LIB80211
  	  Drivers should select this themselves if needed.
  
  config LIB80211_CRYPT_WEP

@@ -21,7 +21,7 @@ Signed-off-by: Christian Lamparter <chunkeey@googlemail.com>
 
 --- a/drivers/misc/Kconfig
 +++ b/drivers/misc/Kconfig
-@@ -151,6 +151,18 @@ config SGI_IOC4
+@@ -164,6 +164,18 @@ config SGI_IOC4
  	  If you have an SGI Altix with an IOC4-based card say Y.
  	  Otherwise say N.
  
@@ -42,10 +42,10 @@ Signed-off-by: Christian Lamparter <chunkeey@googlemail.com>
  	depends on PCI
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
-@@ -13,6 +13,7 @@ obj-$(CONFIG_ATMEL_TCLIB)	+= atmel_tclib
+@@ -14,6 +14,7 @@ obj-$(CONFIG_ATMEL_TCLIB)	+= atmel_tclib
  obj-$(CONFIG_DUMMY_IRQ)		+= dummy-irq.o
  obj-$(CONFIG_ICS932S401)	+= ics932s401.o
- obj-$(CONFIG_LKDTM)		+= lkdtm.o
+ obj-$(CONFIG_LKDTM)		+= lkdtm/
 +obj-$(CONFIG_OWL_LOADER)	+= owl-loader.o
  obj-$(CONFIG_TIFM_CORE)       	+= tifm_core.o
  obj-$(CONFIG_TIFM_7XX1)       	+= tifm_7xx1.o

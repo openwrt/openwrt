@@ -46,7 +46,7 @@ Link: https://bugzilla.kernel.org/show_bug.cgi?id=109581
  	}
 --- a/net/sched/sch_fq_codel.c
 +++ b/net/sched/sch_fq_codel.c
-@@ -316,6 +316,21 @@ begin:
+@@ -317,6 +317,21 @@ begin:
  	flow->dropped += q->cstats.drop_count - prev_drop_count;
  	flow->dropped += q->cstats.ecn_mark - prev_ecn_mark;
  
@@ -68,7 +68,7 @@ Link: https://bugzilla.kernel.org/show_bug.cgi?id=109581
  	if (!skb) {
  		/* force a pass through old_flows to prevent starvation */
  		if ((head == &q->new_flows) && !list_empty(&q->old_flows))
-@@ -326,15 +341,6 @@ begin:
+@@ -327,15 +342,6 @@ begin:
  	}
  	qdisc_bstats_update(sch, skb);
  	flow->deficit -= qdisc_pkt_len(skb);

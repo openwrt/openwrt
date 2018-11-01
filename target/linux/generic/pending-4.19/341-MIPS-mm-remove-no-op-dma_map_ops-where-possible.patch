@@ -1,140 +1,82 @@
-From: Felix Fietkau <nbd@nbd.name>
-Date: Tue, 5 Dec 2017 12:46:01 +0100
-Subject: [PATCH] MIPS: mm: remove no-op dma_map_ops where possible
+From 203f17906ff45705fbdaa0430dbbc71142c2640f Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 8 Dec 2018 21:45:53 +0100
+Subject: [PATCH 1/3] MIPS: Compile post DMA flush only when needed
 
-If no post-DMA flush is required, and the platform does not provide
-plat_unmap_dma_mem(), there is no need to include unmap or sync_for_cpu
-ops.
+dma_sync_phys() is only called for some CPUs when a mapping is removed.
+Add ARCH_HAS_SYNC_DMA_FOR_CPU only for the CPUs listed in
+cpu_needs_post_dma_flush() which need this extra call and do not compile
+this code in for other CPUs. We need this for R10000, R12000, BMIPS5000
+CPUs and CPUs supporting MAAR which was introduced in MIPS32r5.
 
-With this patch they are compiled out to improve icache footprint
-on devices that handle lots of DMA traffic (especially network routers).
+This will hopefully improve the performance of the not affected devices.
 
-Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
+ arch/mips/Kconfig              | 6 +++++-
+ arch/mips/mm/dma-noncoherent.c | 2 ++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -221,6 +221,7 @@ config BMIPS_GENERIC
- 	select BRCMSTB_L2_IRQ
- 	select IRQ_MIPS_CPU
- 	select DMA_NONCOHERENT
-+	select DMA_UNMAP_POST_FLUSH
- 	select SYS_SUPPORTS_32BIT_KERNEL
- 	select SYS_SUPPORTS_LITTLE_ENDIAN
- 	select SYS_SUPPORTS_BIG_ENDIAN
-@@ -346,6 +347,7 @@ config MACH_JAZZ
- 	select CSRC_R4K
- 	select DEFAULT_SGI_PARTITION if CPU_BIG_ENDIAN
- 	select GENERIC_ISA_DMA
-+	select DMA_UNMAP_POST_FLUSH
- 	select HAVE_PCSPKR_PLATFORM
- 	select IRQ_MIPS_CPU
- 	select I8253
-@@ -1128,6 +1130,9 @@ config DMA_NONCOHERENT
+@@ -1113,7 +1113,6 @@ config DMA_PERDEV_COHERENT
+ config DMA_NONCOHERENT
  	bool
+ 	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
+-	select ARCH_HAS_SYNC_DMA_FOR_CPU
  	select NEED_DMA_MAP_STATE
- 
-+config DMA_UNMAP_POST_FLUSH
-+	bool
-+
- config NEED_DMA_MAP_STATE
- 	bool
- 
-@@ -1652,6 +1657,7 @@ config CPU_R10000
- 	select CPU_SUPPORTS_64BIT_KERNEL
- 	select CPU_SUPPORTS_HIGHMEM
- 	select CPU_SUPPORTS_HUGEPAGES
-+	select DMA_UNMAP_POST_FLUSH
- 	help
- 	  MIPS Technologies R10000-series processors.
- 
-@@ -1900,9 +1906,11 @@ config SYS_HAS_CPU_MIPS32_R3_5
- 	bool
+ 	select DMA_NONCOHERENT_MMAP
+ 	select DMA_NONCOHERENT_CACHE_SYNC
+@@ -1894,9 +1893,11 @@ config SYS_HAS_CPU_MIPS32_R3_5
  
  config SYS_HAS_CPU_MIPS32_R5
-+	select DMA_UNMAP_POST_FLUSH
  	bool
++	select ARCH_HAS_SYNC_DMA_FOR_CPU
  
  config SYS_HAS_CPU_MIPS32_R6
-+	select DMA_UNMAP_POST_FLUSH
  	bool
++	select ARCH_HAS_SYNC_DMA_FOR_CPU
  
  config SYS_HAS_CPU_MIPS64_R1
-@@ -1912,6 +1920,7 @@ config SYS_HAS_CPU_MIPS64_R2
  	bool
+@@ -1906,6 +1907,7 @@ config SYS_HAS_CPU_MIPS64_R2
  
  config SYS_HAS_CPU_MIPS64_R6
-+	select DMA_UNMAP_POST_FLUSH
  	bool
++	select ARCH_HAS_SYNC_DMA_FOR_CPU
  
  config SYS_HAS_CPU_R3000
---- a/arch/mips/mm/dma-default.c
-+++ b/arch/mips/mm/dma-default.c
-@@ -267,8 +267,9 @@ static inline void __dma_sync(struct pag
- 	} while (left);
+ 	bool
+@@ -1942,6 +1944,7 @@ config SYS_HAS_CPU_R8000
+ 
+ config SYS_HAS_CPU_R10000
+ 	bool
++	select ARCH_HAS_SYNC_DMA_FOR_CPU
+ 
+ config SYS_HAS_CPU_RM7000
+ 	bool
+@@ -1970,6 +1973,7 @@ config SYS_HAS_CPU_BMIPS4380
+ config SYS_HAS_CPU_BMIPS5000
+ 	bool
+ 	select SYS_HAS_CPU_BMIPS
++	select ARCH_HAS_SYNC_DMA_FOR_CPU
+ 
+ config SYS_HAS_CPU_XLR
+ 	bool
+--- a/arch/mips/mm/dma-noncoherent.c
++++ b/arch/mips/mm/dma-noncoherent.c
+@@ -191,12 +191,14 @@ void arch_sync_dma_for_device(struct dev
+ 		dma_sync_phys(paddr, size, dir);
  }
  
--static void mips_dma_unmap_page(struct device *dev, dma_addr_t dma_addr,
--	size_t size, enum dma_data_direction direction, unsigned long attrs)
-+static void __maybe_unused
-+mips_dma_unmap_page(struct device *dev, dma_addr_t dma_addr, size_t size,
-+		    enum dma_data_direction direction, unsigned long attrs)
- {
- 	if (cpu_needs_post_dma_flush(dev) && !(attrs & DMA_ATTR_SKIP_CPU_SYNC))
- 		__dma_sync(dma_addr_to_page(dev, dma_addr),
-@@ -308,9 +309,10 @@ static dma_addr_t mips_dma_map_page(stru
- 	return plat_map_dma_mem_page(dev, page) + offset;
- }
- 
--static void mips_dma_unmap_sg(struct device *dev, struct scatterlist *sglist,
--	int nhwentries, enum dma_data_direction direction,
--	unsigned long attrs)
-+static void __maybe_unused
-+mips_dma_unmap_sg(struct device *dev, struct scatterlist *sglist,
-+		  int nhwentries, enum dma_data_direction direction,
-+		  unsigned long attrs)
- {
- 	int i;
- 	struct scatterlist *sg;
-@@ -325,8 +327,9 @@ static void mips_dma_unmap_sg(struct dev
- 	}
- }
- 
--static void mips_dma_sync_single_for_cpu(struct device *dev,
--	dma_addr_t dma_handle, size_t size, enum dma_data_direction direction)
-+static void __maybe_unused
-+mips_dma_sync_single_for_cpu(struct device *dev, dma_addr_t dma_handle,
-+			     size_t size, enum dma_data_direction direction)
++#ifdef CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU
+ void arch_sync_dma_for_cpu(struct device *dev, phys_addr_t paddr,
+ 		size_t size, enum dma_data_direction dir)
  {
  	if (cpu_needs_post_dma_flush(dev))
- 		__dma_sync(dma_addr_to_page(dev, dma_handle),
-@@ -342,9 +345,9 @@ static void mips_dma_sync_single_for_dev
- 			   dma_handle & ~PAGE_MASK, size, direction);
+ 		dma_sync_phys(paddr, size, dir);
  }
- 
--static void mips_dma_sync_sg_for_cpu(struct device *dev,
--	struct scatterlist *sglist, int nelems,
--	enum dma_data_direction direction)
-+static void __maybe_unused
-+mips_dma_sync_sg_for_cpu(struct device *dev, struct scatterlist *sglist,
-+			 int nelems, enum dma_data_direction direction)
- {
- 	int i;
- 	struct scatterlist *sg;
-@@ -394,12 +397,14 @@ static const struct dma_map_ops mips_def
- 	.free = mips_dma_free_coherent,
- 	.mmap = mips_dma_mmap,
- 	.map_page = mips_dma_map_page,
--	.unmap_page = mips_dma_unmap_page,
- 	.map_sg = mips_dma_map_sg,
-+#ifdef CONFIG_DMA_UNMAP_POST_FLUSH
-+	.unmap_page = mips_dma_unmap_page,
- 	.unmap_sg = mips_dma_unmap_sg,
- 	.sync_single_for_cpu = mips_dma_sync_single_for_cpu,
--	.sync_single_for_device = mips_dma_sync_single_for_device,
- 	.sync_sg_for_cpu = mips_dma_sync_sg_for_cpu,
 +#endif
-+	.sync_single_for_device = mips_dma_sync_single_for_device,
- 	.sync_sg_for_device = mips_dma_sync_sg_for_device,
- 	.dma_supported = mips_dma_supported
- };
+ 
+ void arch_dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ 		enum dma_data_direction direction)

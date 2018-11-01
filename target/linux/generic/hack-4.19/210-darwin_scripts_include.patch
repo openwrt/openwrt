@@ -13,18 +13,6 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  4 files changed, 3018 insertions(+)
  create mode 100644 scripts/mod/elf.h
 
---- a/scripts/kconfig/Makefile
-+++ b/scripts/kconfig/Makefile
-@@ -164,6 +164,9 @@ check-lxdialog  := $(srctree)/$(src)/lxd
- # we really need to do so. (Do not call gcc as part of make mrproper)
- HOST_EXTRACFLAGS += $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags) \
-                     -DLOCALE
-+ifeq ($(shell uname -s),Darwin)
-+HOST_LOADLIBES  += -lncurses
-+endif
- 
- # ===========================================================================
- # Shared Makefile for the various kconfig executables:
 --- /dev/null
 +++ b/scripts/mod/elf.h
 @@ -0,0 +1,3007 @@

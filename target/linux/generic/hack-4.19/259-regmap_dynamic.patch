@@ -25,7 +25,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  config REGCACHE_COMPRESSED
  	select LZO_COMPRESS
-@@ -17,23 +16,30 @@ config REGMAP_AC97
+@@ -17,7 +16,8 @@ config REGMAP_AC97
  	tristate
  
  config REGMAP_I2C
@@ -33,6 +33,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	tristate "Regmap I2C"
 +	select REGMAP
  	depends on I2C
+ 
+ config REGMAP_SLIMBUS
+@@ -25,21 +25,27 @@ config REGMAP_SLIMBUS
+ 	depends on SLIMBUS
  
  config REGMAP_SPI
 -	tristate
@@ -59,6 +63,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  config REGMAP_IRQ
 +	select REGMAP
  	bool
+ 
+ config REGMAP_SOUNDWIRE
 --- a/drivers/base/regmap/Makefile
 +++ b/drivers/base/regmap/Makefile
 @@ -2,10 +2,14 @@
@@ -79,7 +85,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +obj-$(CONFIG_REGMAP) += regmap-core.o
  obj-$(CONFIG_REGMAP_AC97) += regmap-ac97.o
  obj-$(CONFIG_REGMAP_I2C) += regmap-i2c.o
- obj-$(CONFIG_REGMAP_SPI) += regmap-spi.o
+ obj-$(CONFIG_REGMAP_SLIMBUS) += regmap-slimbus.o
 --- a/drivers/base/regmap/regmap.c
 +++ b/drivers/base/regmap/regmap.c
 @@ -13,6 +13,7 @@
@@ -90,7 +96,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <linux/mutex.h>
  #include <linux/err.h>
  #include <linux/of.h>
-@@ -2926,3 +2927,5 @@ static int __init regmap_initcall(void)
+@@ -3037,3 +3038,5 @@ static int __init regmap_initcall(void)
  	return 0;
  }
  postcore_initcall(regmap_initcall);
@@ -98,7 +104,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +MODULE_LICENSE("GPL");
 --- a/include/linux/regmap.h
 +++ b/include/linux/regmap.h
-@@ -139,7 +139,7 @@ struct reg_sequence {
+@@ -187,7 +187,7 @@ struct reg_sequence {
  	pollret ?: ((cond) ? 0 : -ETIMEDOUT); \
  })
  

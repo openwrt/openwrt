@@ -11,7 +11,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -1235,6 +1235,24 @@ int mtd_is_partition(const struct mtd_in
+@@ -1190,6 +1190,24 @@ int mtd_is_partition(const struct mtd_in
  }
  EXPORT_SYMBOL_GPL(mtd_is_partition);
  
@@ -38,8 +38,8 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  {
 --- a/include/linux/mtd/mtd.h
 +++ b/include/linux/mtd/mtd.h
-@@ -494,6 +494,24 @@ static inline uint32_t mtd_mod_by_eb(uin
- 	return do_div(sz, mtd->erasesize);
+@@ -507,6 +507,24 @@ static inline void mtd_align_erase_req(s
+ 		req->len += mtd->erasesize - mod;
  }
  
 +static inline uint64_t mtd_roundup_to_eb(uint64_t sz, struct mtd_info *mtd)

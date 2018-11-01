@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1763,6 +1763,8 @@ struct net_device {
+@@ -1876,6 +1876,8 @@ struct net_device {
  	struct netdev_hw_addr_list	mc;
  	struct netdev_hw_addr_list	dev_addrs;
  
@@ -22,9 +22,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -782,6 +782,7 @@ struct sk_buff {
- 	__u8			tc_redirected:1;
- 	__u8			tc_from_ingress:1;
+@@ -799,6 +799,7 @@ struct sk_buff {
+ #ifdef CONFIG_TLS_DEVICE
+ 	__u8			decrypted:1;
  #endif
 +	__u8			gro_skip:1;
  
@@ -32,8 +32,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	__u16			tc_index;	/* traffic control index */
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -4805,6 +4805,9 @@ static enum gro_result dev_gro_receive(s
- 	enum gro_result ret;
+@@ -5447,6 +5447,9 @@ static enum gro_result dev_gro_receive(s
+ 	int same_flow;
  	int grow;
  
 +	if (skb->gro_skip)
@@ -42,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (netif_elide_gro(skb->dev))
  		goto normal;
  
-@@ -6279,6 +6282,48 @@ static void __netdev_adjacent_dev_unlink
+@@ -6941,6 +6944,48 @@ static void __netdev_adjacent_dev_unlink
  					   &upper_dev->adj_list.lower);
  }
  
@@ -90,24 +90,24 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
  static int __netdev_upper_dev_link(struct net_device *dev,
  				   struct net_device *upper_dev, bool master,
- 				   void *upper_priv, void *upper_info)
-@@ -6317,6 +6362,7 @@ static int __netdev_upper_dev_link(struc
+ 				   void *upper_priv, void *upper_info,
+@@ -6988,6 +7033,7 @@ static int __netdev_upper_dev_link(struc
  	if (ret)
  		return ret;
  
 +	netdev_update_addr_mask(dev);
- 	ret = call_netdevice_notifiers_info(NETDEV_CHANGEUPPER, dev,
+ 	ret = call_netdevice_notifiers_info(NETDEV_CHANGEUPPER,
  					    &changeupper_info.info);
  	ret = notifier_to_errno(ret);
-@@ -6394,6 +6440,7 @@ void netdev_upper_dev_unlink(struct net_
+@@ -7074,6 +7120,7 @@ void netdev_upper_dev_unlink(struct net_
  
  	__netdev_adjacent_dev_unlink_neighbour(dev, upper_dev);
  
 +	netdev_update_addr_mask(dev);
- 	call_netdevice_notifiers_info(NETDEV_CHANGEUPPER, dev,
+ 	call_netdevice_notifiers_info(NETDEV_CHANGEUPPER,
  				      &changeupper_info.info);
  }
-@@ -6966,6 +7013,7 @@ int dev_set_mac_address(struct net_devic
+@@ -7697,6 +7744,7 @@ int dev_set_mac_address(struct net_devic
  	if (err)
  		return err;
  	dev->addr_assign_type = NET_ADDR_SET;

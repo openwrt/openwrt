@@ -17,15 +17,15 @@ Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -2716,6 +2716,7 @@ int spi_nor_scan(struct spi_nor *nor, co
- 	    JEDEC_MFR(info) == SNOR_MFR_INTEL ||
- 	    JEDEC_MFR(info) == SNOR_MFR_MACRONIX ||
- 	    JEDEC_MFR(info) == SNOR_MFR_SST ||
-+	    JEDEC_MFR(info) == SNOR_MFR_WINBOND ||
- 	    info->flags & SPI_NOR_HAS_LOCK) {
+@@ -2735,6 +2735,7 @@ static int spi_nor_init(struct spi_nor *
+ 	    JEDEC_MFR(nor->info) == SNOR_MFR_INTEL ||
+ 	    JEDEC_MFR(nor->info) == SNOR_MFR_MACRONIX ||
+ 	    JEDEC_MFR(nor->info) == SNOR_MFR_SST ||
++	    JEDEC_MFR(nor->info) == SNOR_MFR_WINBOND ||
+ 	    nor->info->flags & SPI_NOR_HAS_LOCK) {
  		write_enable(nor);
  		write_sr(nor, 0);
-@@ -2734,7 +2735,8 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -2871,7 +2872,8 @@ int spi_nor_scan(struct spi_nor *nor, co
  
  	/* NOR protection support for STmicro/Micron chips and similar */
  	if (JEDEC_MFR(info) == SNOR_MFR_MICRON ||

@@ -21,43 +21,43 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/Makefile
 +++ b/Makefile
-@@ -272,6 +272,11 @@ else
+@@ -294,6 +294,11 @@ else
  scripts/Kbuild.include: ;
  include scripts/Kbuild.include
  
 +ifdef CONFIG_LD_DEAD_CODE_DATA_ELIMINATION
-+KBUILD_CFLAGS_KERNEL	+= $(call cc-option,-ffunction-sections,)
-+KBUILD_CFLAGS_KERNEL	+= $(call cc-option,-fdata-sections,)
++KBUILD_CFLAGS_KERNEL += -ffunction-sections -fdata-sections
++LDFLAGS_vmlinux += --gc-sections
 +endif
 +
  # Read KERNELRELEASE from include/config/kernel.release (if it exists)
  KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
  KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))$(EXTRAVERSION)
-@@ -788,11 +793,6 @@ ifdef CONFIG_DEBUG_SECTION_MISMATCH
+@@ -785,11 +790,6 @@ ifdef CONFIG_DEBUG_SECTION_MISMATCH
  KBUILD_CFLAGS += $(call cc-option, -fno-inline-functions-called-once)
  endif
  
 -ifdef CONFIG_LD_DEAD_CODE_DATA_ELIMINATION
--KBUILD_CFLAGS	+= $(call cc-option,-ffunction-sections,)
--KBUILD_CFLAGS	+= $(call cc-option,-fdata-sections,)
+-KBUILD_CFLAGS_KERNEL += -ffunction-sections -fdata-sections
+-LDFLAGS_vmlinux += --gc-sections
 -endif
 -
  # arch Makefile may override CC so keep this after arch Makefile is included
  NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
- CHECKFLAGS     += $(NOSTDINC_FLAGS)
+ 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -91,6 +91,7 @@ config ARM
+@@ -98,6 +98,7 @@ config ARM
  	select HAVE_UID16
  	select HAVE_VIRT_CPU_ACCOUNTING_GEN
  	select IRQ_FORCED_THREADING
-+	select LD_DEAD_CODE_DATA_ELIMINATION
++	select HAVE_LD_DEAD_CODE_DATA_ELIMINATION
  	select MODULES_USE_ELF_REL
+ 	select NEED_DMA_MAP_STATE
  	select NO_BOOTMEM
- 	select OF_EARLY_FLATTREE if OF
 --- a/arch/arm/boot/compressed/Makefile
 +++ b/arch/arm/boot/compressed/Makefile
-@@ -103,6 +103,7 @@ ifeq ($(CONFIG_FUNCTION_TRACER),y)
+@@ -106,6 +106,7 @@ ifeq ($(CONFIG_FUNCTION_TRACER),y)
  ORIG_CFLAGS := $(KBUILD_CFLAGS)
  KBUILD_CFLAGS = $(subst -pg, , $(ORIG_CFLAGS))
  endif
@@ -67,80 +67,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  # but it is being used too early to link to meaningful stack_chk logic.
 --- a/arch/arm/kernel/vmlinux.lds.S
 +++ b/arch/arm/kernel/vmlinux.lds.S
-@@ -18,7 +18,7 @@
- #define PROC_INFO							\
- 	. = ALIGN(4);							\
- 	VMLINUX_SYMBOL(__proc_info_begin) = .;				\
--	*(.proc.info.init)						\
-+	KEEP(*(.proc.info.init))					\
- 	VMLINUX_SYMBOL(__proc_info_end) = .;
- 
- #define HYPERVISOR_TEXT							\
-@@ -29,11 +29,11 @@
- #define IDMAP_TEXT							\
- 	ALIGN_FUNCTION();						\
- 	VMLINUX_SYMBOL(__idmap_text_start) = .;				\
--	*(.idmap.text)							\
-+	KEEP(*(.idmap.text))						\
- 	VMLINUX_SYMBOL(__idmap_text_end) = .;				\
- 	. = ALIGN(PAGE_SIZE);						\
- 	VMLINUX_SYMBOL(__hyp_idmap_text_start) = .;			\
--	*(.hyp.idmap.text)						\
-+	KEEP(*(.hyp.idmap.text))					\
- 	VMLINUX_SYMBOL(__hyp_idmap_text_end) = .;
- 
- #ifdef CONFIG_HOTPLUG_CPU
-@@ -106,7 +106,7 @@ SECTIONS
- 		_stext = .;		/* Text and read-only data	*/
- 			IDMAP_TEXT
- 			__exception_text_start = .;
--			*(.exception.text)
-+			KEEP(*(.exception.text))
- 			__exception_text_end = .;
- 			IRQENTRY_TEXT
- 			SOFTIRQENTRY_TEXT
-@@ -135,7 +135,7 @@ SECTIONS
- 	__ex_table : AT(ADDR(__ex_table) - LOAD_OFFSET) {
- 		__start___ex_table = .;
- #ifdef CONFIG_MMU
--		*(__ex_table)
-+		KEEP(*(__ex_table))
- #endif
- 		__stop___ex_table = .;
- 	}
-@@ -147,12 +147,12 @@ SECTIONS
- 	. = ALIGN(8);
- 	.ARM.unwind_idx : {
- 		__start_unwind_idx = .;
--		*(.ARM.exidx*)
-+		KEEP(*(.ARM.exidx*))
- 		__stop_unwind_idx = .;
- 	}
- 	.ARM.unwind_tab : {
- 		__start_unwind_tab = .;
--		*(.ARM.extab*)
-+		KEEP(*(.ARM.extab*))
- 		__stop_unwind_tab = .;
- 	}
- #endif
-@@ -172,14 +172,14 @@ SECTIONS
- 	 */
- 	__vectors_start = .;
- 	.vectors 0xffff0000 : AT(__vectors_start) {
--		*(.vectors)
-+		KEEP(*(.vectors))
- 	}
- 	. = __vectors_start + SIZEOF(.vectors);
- 	__vectors_end = .;
- 
- 	__stubs_start = .;
- 	.stubs ADDR(.vectors) + 0x1000 : AT(__stubs_start) {
--		*(.stubs)
-+		KEEP(*(.stubs))
- 	}
- 	. = __stubs_start + SIZEOF(.stubs);
- 	__stubs_end = .;
-@@ -195,24 +195,24 @@ SECTIONS
+@@ -100,24 +100,24 @@ SECTIONS
  	}
  	.init.arch.info : {
  		__arch_info_begin = .;
@@ -168,14 +95,78 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +		KEEP(*(.pv_table))
  		__pv_table_end = .;
  	}
- 	.init.data : {
+ 
+--- a/arch/arm/kernel/vmlinux.lds.h
++++ b/arch/arm/kernel/vmlinux.lds.h
+@@ -22,13 +22,13 @@
+ #define ARM_MMU_DISCARD(x)
+ #else
+ #define ARM_MMU_KEEP(x)
+-#define ARM_MMU_DISCARD(x)	x
++#define ARM_MMU_DISCARD(x)	KEEP(x)
+ #endif
+ 
+ #define PROC_INFO							\
+ 		. = ALIGN(4);						\
+ 		__proc_info_begin = .;					\
+-		*(.proc.info.init)					\
++		KEEP(*(.proc.info.init))				\
+ 		__proc_info_end = .;
+ 
+ #define HYPERVISOR_TEXT							\
+@@ -39,11 +39,11 @@
+ #define IDMAP_TEXT							\
+ 		ALIGN_FUNCTION();					\
+ 		__idmap_text_start = .;					\
+-		*(.idmap.text)						\
++		KEEP(*(.idmap.text))					\
+ 		__idmap_text_end = .;					\
+ 		. = ALIGN(PAGE_SIZE);					\
+ 		__hyp_idmap_text_start = .;				\
+-		*(.hyp.idmap.text)					\
++		KEEP(*(.hyp.idmap.text))				\
+ 		__hyp_idmap_text_end = .;
+ 
+ #define ARM_DISCARD							\
+@@ -86,12 +86,12 @@
+ 	. = ALIGN(8);							\
+ 	.ARM.unwind_idx : {						\
+ 		__start_unwind_idx = .;					\
+-		*(.ARM.exidx*)						\
++		KEEP(*(.ARM.exidx*))					\
+ 		__stop_unwind_idx = .;					\
+ 	}								\
+ 	.ARM.unwind_tab : {						\
+ 		__start_unwind_tab = .;					\
+-		*(.ARM.extab*)						\
++		KEEP(*(.ARM.extab*))					\
+ 		__stop_unwind_tab = .;					\
+ 	}
+ 
+@@ -102,14 +102,14 @@
+ #define ARM_VECTORS							\
+ 	__vectors_start = .;						\
+ 	.vectors 0xffff0000 : AT(__vectors_start) {			\
+-		*(.vectors)						\
++		KEEP(*(.vectors))					\
+ 	}								\
+ 	. = __vectors_start + SIZEOF(.vectors);				\
+ 	__vectors_end = .;						\
+ 									\
+ 	__stubs_start = .;						\
+ 	.stubs ADDR(.vectors) + 0x1000 : AT(__stubs_start) {		\
+-		*(.stubs)						\
++		KEEP(*(.stubs))						\
+ 	}								\
+ 	. = __stubs_start + SIZEOF(.stubs);				\
+ 	__stubs_end = .;						\
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -40,6 +40,7 @@ config MIPS
+@@ -43,6 +43,7 @@ config MIPS
+ 	select HAVE_ARCH_TRANSPARENT_HUGEPAGE if CPU_SUPPORTS_HUGEPAGES && 64BIT
  	select HAVE_CBPF_JIT if (!64BIT && !CPU_MICROMIPS)
  	select HAVE_EBPF_JIT if (64BIT && !CPU_MICROMIPS)
- 	select HAVE_CC_STACKPROTECTOR
-+	select LD_DEAD_CODE_DATA_ELIMINATION
++	select HAVE_LD_DEAD_CODE_DATA_ELIMINATION
  	select HAVE_CONTEXT_TRACKING
  	select HAVE_COPY_THREAD_TLS
  	select HAVE_C_RECORDMCOUNT
@@ -197,62 +188,5 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 -		*(.mips.machines.init)
 +		KEEP(*(.mips.machines.init))
  		__mips_machines_end = .;
- 	}
- 
---- a/include/asm-generic/vmlinux.lds.h
-+++ b/include/asm-generic/vmlinux.lds.h
-@@ -105,7 +105,7 @@
- #ifdef CONFIG_FTRACE_MCOUNT_RECORD
- #define MCOUNT_REC()	. = ALIGN(8);				\
- 			VMLINUX_SYMBOL(__start_mcount_loc) = .; \
--			*(__mcount_loc)				\
-+			KEEP(*(__mcount_loc))			\
- 			VMLINUX_SYMBOL(__stop_mcount_loc) = .;
- #else
- #define MCOUNT_REC()
-@@ -113,7 +113,7 @@
- 
- #ifdef CONFIG_TRACE_BRANCH_PROFILING
- #define LIKELY_PROFILE()	VMLINUX_SYMBOL(__start_annotated_branch_profile) = .; \
--				*(_ftrace_annotated_branch)			      \
-+				KEEP(*(_ftrace_annotated_branch))		      \
- 				VMLINUX_SYMBOL(__stop_annotated_branch_profile) = .;
- #else
- #define LIKELY_PROFILE()
-@@ -121,7 +121,7 @@
- 
- #ifdef CONFIG_PROFILE_ALL_BRANCHES
- #define BRANCH_PROFILE()	VMLINUX_SYMBOL(__start_branch_profile) = .;   \
--				*(_ftrace_branch)			      \
-+				KEEP(*(_ftrace_branch))			      \
- 				VMLINUX_SYMBOL(__stop_branch_profile) = .;
- #else
- #define BRANCH_PROFILE()
-@@ -237,7 +237,8 @@
- 	LIKELY_PROFILE()		       				\
- 	BRANCH_PROFILE()						\
- 	TRACE_PRINTKS()							\
--	TRACEPOINT_STR()
-+	TRACEPOINT_STR()                                                \
-+	*(.data.[a-zA-Z_]*)
- 
- /*
-  * Data section helpers
-@@ -496,7 +497,7 @@
- #define ENTRY_TEXT							\
- 		ALIGN_FUNCTION();					\
- 		VMLINUX_SYMBOL(__entry_text_start) = .;			\
--		*(.entry.text)						\
-+		KEEP(*(.entry.text))					\
- 		VMLINUX_SYMBOL(__entry_text_end) = .;
- 
- #define IRQENTRY_TEXT							\
-@@ -603,7 +604,7 @@
- 	. = ALIGN(sbss_align);						\
- 	.sbss : AT(ADDR(.sbss) - LOAD_OFFSET) {				\
- 		*(.dynsbss)						\
--		*(.sbss)						\
-+		*(.sbss .sbss.*)					\
- 		*(.scommon)						\
  	}
  

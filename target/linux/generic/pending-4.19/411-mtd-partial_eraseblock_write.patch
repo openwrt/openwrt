@@ -19,95 +19,86 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* Our partition linked list */
  static LIST_HEAD(mtd_partitions);
  static DEFINE_MUTEX(mtd_partitions_mutex);
-@@ -255,13 +257,61 @@ static int part_erase(struct mtd_info *m
+@@ -221,6 +223,53 @@ static int part_erase(struct mtd_info *m
+ {
  	struct mtd_part *part = mtd_to_part(mtd);
  	int ret;
- 
++	size_t wrlen = 0;
++	u8 *erase_buf = NULL;
++	u32 erase_buf_ofs = 0;
++	bool partial_start = false;
 +
-+	instr->partial_start = false;
 +	if (mtd->flags & MTD_ERASE_PARTIAL) {
 +		size_t readlen = 0;
 +		u64 mtd_ofs;
 +
-+		instr->erase_buf = kmalloc(part->parent->erasesize, GFP_ATOMIC);
-+		if (!instr->erase_buf)
++		erase_buf = kmalloc(part->parent->erasesize, GFP_ATOMIC);
++		if (!erase_buf)
 +			return -ENOMEM;
 +
 +		mtd_ofs = part->offset + instr->addr;
-+		instr->erase_buf_ofs = do_div(mtd_ofs, part->parent->erasesize);
++		erase_buf_ofs = do_div(mtd_ofs, part->parent->erasesize);
 +
-+		if (instr->erase_buf_ofs > 0) {
-+			instr->addr -= instr->erase_buf_ofs;
++		if (erase_buf_ofs > 0) {
++			instr->addr -= erase_buf_ofs;
 +			ret = mtd_read(part->parent,
 +				instr->addr + part->offset,
 +				part->parent->erasesize,
-+				&readlen, instr->erase_buf);
++				&readlen, erase_buf);
 +
-+			instr->len += instr->erase_buf_ofs;
-+			instr->partial_start = true;
++			instr->len += erase_buf_ofs;
++			partial_start = true;
 +		} else {
 +			mtd_ofs = part->offset + part->mtd.size;
-+			instr->erase_buf_ofs = part->parent->erasesize -
++			erase_buf_ofs = part->parent->erasesize -
 +				do_div(mtd_ofs, part->parent->erasesize);
 +
-+			if (instr->erase_buf_ofs > 0) {
-+				instr->len += instr->erase_buf_ofs;
++			if (erase_buf_ofs > 0) {
++				instr->len += erase_buf_ofs;
 +				ret = mtd_read(part->parent,
 +					part->offset + instr->addr +
 +					instr->len - part->parent->erasesize,
 +					part->parent->erasesize, &readlen,
-+					instr->erase_buf);
++					erase_buf);
 +			} else {
 +				ret = 0;
 +			}
 +		}
 +		if (ret < 0) {
-+			kfree(instr->erase_buf);
++			kfree(erase_buf);
 +			return ret;
 +		}
 +
 +	}
-+
+ 
  	instr->addr += part->offset;
  	ret = part->parent->_erase(part->parent, instr);
- 	if (ret) {
- 		if (instr->fail_addr != MTD_FAIL_ADDR_UNKNOWN)
- 			instr->fail_addr -= part->offset;
- 		instr->addr -= part->offset;
-+		if (mtd->flags & MTD_ERASE_PARTIAL)
-+			kfree(instr->erase_buf);
- 	}
+@@ -228,6 +277,24 @@ static int part_erase(struct mtd_info *m
+ 		instr->fail_addr -= part->offset;
+ 	instr->addr -= part->offset;
+ 
++	if (mtd->flags & MTD_ERASE_PARTIAL) {
++		if (partial_start) {
++			part->parent->_write(part->parent,
++				instr->addr, erase_buf_ofs,
++				&wrlen, erase_buf);
++			instr->addr += erase_buf_ofs;
++		} else {
++			instr->len -= erase_buf_ofs;
++			part->parent->_write(part->parent,
++				instr->addr + instr->len,
++				erase_buf_ofs, &wrlen,
++				erase_buf +
++				part->parent->erasesize -
++				erase_buf_ofs);
++		}
++		kfree(erase_buf);
++	}
 +
  	return ret;
  }
  
-@@ -269,6 +319,25 @@ void mtd_erase_callback(struct erase_inf
- {
- 	if (instr->mtd->_erase == part_erase) {
- 		struct mtd_part *part = mtd_to_part(instr->mtd);
-+		size_t wrlen = 0;
-+
-+		if (instr->mtd->flags & MTD_ERASE_PARTIAL) {
-+			if (instr->partial_start) {
-+				part->parent->_write(part->parent,
-+					instr->addr, instr->erase_buf_ofs,
-+					&wrlen, instr->erase_buf);
-+				instr->addr += instr->erase_buf_ofs;
-+			} else {
-+				instr->len -= instr->erase_buf_ofs;
-+				part->parent->_write(part->parent,
-+					instr->addr + instr->len,
-+					instr->erase_buf_ofs, &wrlen,
-+					instr->erase_buf +
-+					part->parent->erasesize -
-+					instr->erase_buf_ofs);
-+			}
-+			kfree(instr->erase_buf);
-+		}
- 
- 		if (instr->fail_addr != MTD_FAIL_ADDR_UNKNOWN)
- 			instr->fail_addr -= part->offset;
-@@ -584,19 +653,22 @@ static struct mtd_part *allocate_partiti
+@@ -536,19 +603,22 @@ static struct mtd_part *allocate_partiti
  	remainder = do_div(tmp, wr_alignment);
  	if ((slave->mtd.flags & MTD_WRITEABLE) && remainder) {
  		/* Doesn't start on a boundary of major erase size */
@@ -139,16 +130,3 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	mtd_set_ooblayout(&slave->mtd, &part_ooblayout_ops);
---- a/include/linux/mtd/mtd.h
-+++ b/include/linux/mtd/mtd.h
-@@ -56,6 +56,10 @@ struct erase_info {
- 	u_long priv;
- 	u_char state;
- 	struct erase_info *next;
-+
-+	u8 *erase_buf;
-+	u32 erase_buf_ofs;
-+	bool partial_start;
- };
- 
- struct mtd_erase_region_info {

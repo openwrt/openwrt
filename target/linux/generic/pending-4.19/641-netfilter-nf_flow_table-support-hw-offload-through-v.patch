@@ -15,15 +15,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -827,6 +827,7 @@ struct xfrmdev_ops {
- #endif
+@@ -919,6 +919,7 @@ struct dev_ifalias {
+ };
  
  struct flow_offload;
 +struct flow_offload_hw_path;
  
  enum flow_offload_type {
  	FLOW_OFFLOAD_ADD	= 0,
-@@ -1064,8 +1065,15 @@ enum flow_offload_type {
+@@ -1157,8 +1158,15 @@ enum flow_offload_type {
   * int (*ndo_bridge_dellink)(struct net_device *dev, struct nlmsghdr *nlh,
   *			     u16 flags);
   *
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   *	Adds/deletes flow entry to/from net device flowtable.
   *
   * int (*ndo_change_carrier)(struct net_device *dev, bool new_carrier);
-@@ -1292,8 +1300,11 @@ struct net_device_ops {
+@@ -1388,8 +1396,11 @@ struct net_device_ops {
  	int			(*ndo_bridge_dellink)(struct net_device *dev,
  						      struct nlmsghdr *nlh,
  						      u16 flags);
