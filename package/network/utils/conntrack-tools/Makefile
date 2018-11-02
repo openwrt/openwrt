@@ -21,6 +21,7 @@ PKG_LICENSE:=GPL-2.0
 PKG_CPE_ID:=cpe:/a:conntrack-tools_project:conntrack-tools
 
 PKG_FIXUP:=autoreconf
+PKG_BUILD_PARALLEL:=0
 PKG_INSTALL:=1
 
 PKG_BUILD_DEPENDS:=librpc
