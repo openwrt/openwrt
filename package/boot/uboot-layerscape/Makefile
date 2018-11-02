@@ -92,6 +92,15 @@ define U-Boot/ls1021atwr-sdboot
   ENV_SIZE:=0x20000
 endef
 
+define U-Boot/ls1021aiot-sdboot
+  NAME:=NXP LS1021AIOT SD Card Boot
+  BUILD_SUBTARGET:=armv7
+  UBOOT_CONFIG:=ls1021aiot_sdcard
+  UBOOT_IMAGE:=u-boot-with-spl-pbl.bin
+  ENV_SIZE:=0x2000
+endef
+
+
 UBOOT_TARGETS := \
   ls1012ardb \
   ls1012afrwy \
@@ -103,7 +112,8 @@ UBOOT_TARGETS := \
   ls1088ardb-sdboot \
   ls2088ardb \
   ls1021atwr \
-  ls1021atwr-sdboot
+  ls1021atwr-sdboot \
+  ls1021aiot-sdboot
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
