@@ -570,11 +570,10 @@ $(eval $(call KernelPackage,crypto-pcompress))
 
 define KernelPackage/crypto-rsa
   TITLE:=RSA algorithm
-  DEPENDS:=@!LINUX_3_18 +kmod-crypto-manager
+  DEPENDS:=@!LINUX_3_18 +kmod-crypto-manager +kmod-asn1-decoder
   KCONFIG:= CONFIG_CRYPTO_RSA
   HIDDEN:=1
   FILES:= \
-	$(LINUX_DIR)/lib/asn1_decoder.ko \
 	$(LINUX_DIR)/lib/mpi/mpi.ko \
 	$(LINUX_DIR)/crypto/akcipher.ko \
 	$(LINUX_DIR)/crypto/rsa_generic.ko
