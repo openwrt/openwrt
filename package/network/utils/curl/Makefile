@@ -93,7 +93,6 @@ define Package/libcurl
   MENU:=1
 endef
 
-
 define Package/libcurl/config
   source "$(SOURCE)/Config.in"
 endef
