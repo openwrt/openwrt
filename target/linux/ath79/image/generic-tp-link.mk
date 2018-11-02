@@ -135,3 +135,12 @@ define Device/tplink_tl-wr2543-v1
   SUPPORTED_DEVICES += tl-wr2543-v1
 endef
 TARGET_DEVICES += tplink_tl-wr2543-v1
+
+define Device/tplink_tl-wdr7800-v1
+  $(Device/tplink-8mlzma)
+  ATH_SOC := qca9561
+  DEVICE_TITLE := TP-LINK TL-WDR7800 v1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  TPLINK_HWID := 0x78000001
+endef
+TARGET_DEVICES += tplink_tl-wdr7800-v1

@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "qca9561_tplink_tl-wdr7800.dtsi"
+
+/ {
+  compatible = "tplink,tl-wdr7800-v1", "qca,qca9561";
+  model = "TP-Link TL-WDR7800 Version 1";
+};
+
+&mtdparts {
+  uboot: u-boot@0 {
+    reg = <0x000000 0x010000>;
+    read-only;
+  };
+
+  firmware@10000 {
+    reg = <0x030000 0x7e0000>;
+  };
+
+  art: art@7f0000 {
+    reg = <0x7f0000 0x010000>;
+    read-only;
+  };
+};
+
+&gpio_leds {
+  system: system {
+    label = "tp-link:green:system";
+    gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+    linux,default-trigger = "heartbeat";
+  };
+
+  wan {
+    label = "tp-link:green:wan";
+    gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+    default-state = "off";
+  };
+
+  lan1 {
+    label = "tp-link:green:lan1";
+    gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+  };
+
+  lan2 {
+    label = "tp-link:green:lan2";
+    gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+  };
+
+  lan3 {
+    label = "tp-link:green:lan3";
+    gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+  };
+
+  lan4 {
+    label = "tp-link:green:lan4";
+    gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+  };
+};
+
+&gpio_keys {
+  reset {
+    label = "Reset button";
+    linux,code = <KEY_RESTART>;
+    gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+    debounce-interval = <60>;
+  };
+};

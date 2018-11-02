@@ -166,6 +166,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan:4" "2:lan:1" "3:lan:2" "4:lan:3"
 		;;
+  tplink,tl-wdr7800-v1)
+    ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
+    ucidef_add_switch "switch0" \
+      "0@eth1" "1:lan:1" "2:lan:2" "3:lan:3" "4:lan:4"
+		;;
 	tplink,tl-wr941-v2)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
