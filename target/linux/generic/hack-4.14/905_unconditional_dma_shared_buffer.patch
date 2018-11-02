@@ -1,0 +1,21 @@
+Build kmod-dma-buf properly if required.
+
+We must enable DMA_SHARED_BUFFER unconditionally if kmod-dma-buf
+enabled, instead of enable only if something depends on it in the
+main kernel config.
+
+One manifestation of this issue is `openwrt-dvb` feed, that sets
+dependency on kmod-dma-buf, failing to build unless something else
+enabled DMA_SHARED_BUFFER in the kernel.
+
+--- a/drivers/base/Kconfig.orig	2018-11-02 11:03:44.696798111 +0100
++++ b/drivers/base/Kconfig	2018-11-02 11:04:18.953371610 +0100
+@@ -246,7 +246,7 @@
+ 	select GLOB
+ 
+ config DMA_SHARED_BUFFER
+-	tristate
++	tristate "Enable buffer-sharing between multiple drivers"
+ 	default n
+ 	select ANON_INODES
+ 	select IRQ_WORK
