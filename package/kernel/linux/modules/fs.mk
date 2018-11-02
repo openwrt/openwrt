@@ -49,8 +49,12 @@ $(eval $(call KernelPackage,fs-afs))
 define KernelPackage/fs-autofs4
   SUBMENU:=$(FS_MENU)
   TITLE:=AUTOFS4 filesystem support
-  KCONFIG:=CONFIG_AUTOFS4_FS
-  FILES:=$(LINUX_DIR)/fs/autofs4/autofs4.ko
+  KCONFIG:= \
+	CONFIG_AUTOFS4_FS \
+	CONFIG_AUTOFS_FS
+  FILES:= \
+	$(LINUX_DIR)/fs/autofs4/autofs4.ko@lt4.18 \
+	$(LINUX_DIR)/fs/autofs/autofs4.ko@ge4.18
   AUTOLOAD:=$(call AutoLoad,30,autofs4)
 endef
 
