@@ -5,8 +5,6 @@ include ./common.mk
 HOST_STAMP_BUILT:=$(HOST_BUILD_DIR)/.built
 HOST_STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.musl_installed
 
-HOST_BUILD_PARALLEL:=1
-
 MUSL_MAKEOPTS = -C $(HOST_BUILD_DIR) \
 	DESTDIR="$(TOOLCHAIN_DIR)/" \
 	LIBCC="$(subst libgcc.a,libgcc_initial.a,$(shell $(TARGET_CC) -print-libgcc-file-name))"

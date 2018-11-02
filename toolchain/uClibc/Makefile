@@ -5,8 +5,6 @@ include ./common.mk
 HOST_STAMP_BUILT:=$(HOST_BUILD_DIR)/.built
 HOST_STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.uclibc_installed
 
-HOST_BUILD_PARALLEL:=1
-
 define Host/SetToolchainInfo
 	$(SED) 's,^\(LIBC_TYPE\)=.*,\1=$(PKG_NAME),' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,^\(LIBC_URL\)=.*,\1=http://www.uclibc.org/,' $(TOOLCHAIN_DIR)/info.mk

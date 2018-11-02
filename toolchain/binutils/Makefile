@@ -36,8 +36,6 @@ ifneq ($(CONFIG_BINUTILS_VERSION_2_29_ARC),)
   HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
 endif
 
-HOST_BUILD_PARALLEL:=1
-
 PATCH_DIR:=./patches/$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/toolchain-build.mk

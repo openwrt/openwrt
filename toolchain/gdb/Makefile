@@ -27,8 +27,6 @@ endif
 
 HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(GDB_DIR)
 
-HOST_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/toolchain-build.mk
 
 HOST_CONFIGURE_VARS += \
