@@ -146,6 +146,15 @@ define KernelPackage/dma-buf
 endef
 $(eval $(call KernelPackage,dma-buf))
 
+define KernelPackage/frame-vector
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Frame vector support
+  HIDDEN:=1
+  KCONFIG:=CONFIG_FRAME_VECTOR
+  FILES:=$(LINUX_DIR)/mm/frame_vector.ko
+  AUTOLOAD:=$(call AutoLoad,20,frame_vector)
+endef
+$(eval $(call KernelPackage,frame-vector))
 
 define KernelPackage/nvmem
   SUBMENU:=$(OTHER_MENU)
