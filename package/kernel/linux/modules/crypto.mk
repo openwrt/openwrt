@@ -500,10 +500,10 @@ ifndef CONFIG_TARGET_x86_64
 	$(LINUX_DIR)/arch/x86/crypto/twofish-i586.ko \
 	$(LINUX_DIR)/arch/x86/crypto/serpent-sse2-i586.ko \
 	$(LINUX_DIR)/arch/x86/crypto/glue_helper.ko \
-	$(LINUX_DIR)/crypto/ablk_helper.ko \
+	$(LINUX_DIR)/crypto/ablk_helper.ko@lt4.17 \
 	$(LINUX_DIR)/crypto/cryptd.ko \
 	$(LINUX_DIR)/crypto/lrw.ko
-    AUTOLOAD+= $(call AutoLoad,10,lrw cryptd ablk_helper glue_helper \
+    AUTOLOAD+= $(call AutoLoad,10,lrw cryptd glue_helper \
 	serpent-sse2-i586 twofish-i586 blowfish_generic)
   endef
 endif
@@ -522,8 +522,8 @@ define KernelPackage/crypto-misc/x86/64
 	$(LINUX_DIR)/arch/x86/crypto/serpent-avx-x86_64.ko \
 	$(LINUX_DIR)/arch/x86/crypto/camellia-aesni-avx2.ko \
 	$(LINUX_DIR)/arch/x86/crypto/serpent-avx2.ko \
-	$(LINUX_DIR)/crypto/ablk_helper.ko
-  AUTOLOAD+= $(call AutoLoad,10,ablk_helper camellia-x86_64 \
+	$(LINUX_DIR)/crypto/ablk_helper.ko@lt4.17
+  AUTOLOAD+= $(call AutoLoad,10,camellia-x86_64 \
 	camellia-aesni-avx-x86_64 camellia-aesni-avx2 cast5-avx-x86_64 \
 	cast6-avx-x86_64 twofish-x86_64 twofish-x86_64-3way \
 	twofish-avx-x86_64 blowfish-x86_64 serpent-avx-x86_64 serpent-avx2)
