@@ -10,8 +10,17 @@
 	model = "TP-LINK Archer VR200v";
 
 	chosen {
-		bootargs = "console=ttyLTQ0,115200";
-	};
+		bootargs = "console=ttyLTQ0,115200 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+       };
+
+       sram@1F000000 {
+               vmmc@107000 {
+                       status = "okay";
+                       gpios = <&gpio 30 GPIO_ACTIVE_HIGH  //fxs relay
+                                        &gpio 31 GPIO_ACTIVE_HIGH  //still unknown
+                                        &gpio 3  GPIO_ACTIVE_HIGH>; //reset_slic?
+               };
+        };
 
 	aliases {
 		led-boot = &power;
