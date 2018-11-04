@@ -105,6 +105,7 @@ ifdef CONFIG_PACKAGE_rdma
 endif
 
 define Build/Configure
+	$(SED) 's,$$$$CC\s\+-I,$$$$CC $$$$CFLAGS -I,' $(PKG_BUILD_DIR)/configure
 	$(SED) "s,-I/usr/include/db3,," $(PKG_BUILD_DIR)/Makefile
 	$(SED) "s,^KERNEL_INCLUDE.*,KERNEL_INCLUDE=$(LINUX_DIR)/include," \
 		$(PKG_BUILD_DIR)/Makefile
