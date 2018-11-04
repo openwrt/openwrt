@@ -239,6 +239,8 @@ else
   endif
 endif
 
+TARGET_CPPFLAGS+= $(filter -m%,$(TARGET_CFLAGS))
+
 export PATH:=$(TARGET_PATH)
 export STAGING_DIR STAGING_DIR_HOST STAGING_DIR_HOSTPKG
 export SH_FUNC:=. $(INCLUDE_DIR)/shell.sh;
