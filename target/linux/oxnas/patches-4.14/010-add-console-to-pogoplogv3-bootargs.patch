@@ -1,0 +1,11 @@
+--- a/arch/arm/boot/dts/ox820-cloudengines-pogoplug-series-3.dts	2018-08-14 18:03:56.542679083 +0200
++++ b/arch/arm/boot/dts/ox820-cloudengines-pogoplug-series-3.dts	2018-11-04 18:19:35.154886643 +0100
+@@ -15,7 +15,7 @@
+ 	compatible = "cloudengines,pogoplugv3", "oxsemi,ox820";
+ 
+ 	chosen {
+-		bootargs = "earlyprintk";
++		bootargs = "earlyprintk console=ttyS0,115200";
+ 		stdout-path = "serial0:115200n8";
+ 	};
+ 
