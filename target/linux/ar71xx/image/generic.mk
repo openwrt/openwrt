@@ -1394,7 +1394,7 @@ define Device/librerouter-v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := LIBREROUTERV1
   IMAGE_SIZE := 32384k
-  KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
+  KERNEL := kernel-bin | lzma | uImage lzma
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
