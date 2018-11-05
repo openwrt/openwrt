@@ -52,6 +52,19 @@ endef
 
 $(eval $(call KernelPackage,iio-ad799x))
 
+define KernelPackage/iio-bh1750
+  SUBMENU:=$(IIO_MENU)
+  DEPENDS:=+kmod-i2c-core +kmod-iio-core
+  TITLE:=ROHM BH1750 ambient light sensor
+  KCONFIG:= CONFIG_BH1750
+  FILES:=$(LINUX_DIR)/drivers/iio/light/bh1750.ko
+  AUTOLOAD:=$(call AutoLoad,56,bh1750)
+endef
+define KernelPackage/iio-bh1750/description
+  ROHM BH1750 ambient light sensor (i2c bus)
+endef
+$(eval $(call KernelPackage,iio-bh1750))
+
 define KernelPackage/iio-am2315
   SUBMENU:=$(IIO_MENU)
   DEPENDS:=+kmod-i2c-core +kmod-iio-core
