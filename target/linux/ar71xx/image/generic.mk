@@ -179,6 +179,14 @@ define Device/carambola2
 endef
 TARGET_DEVICES += carambola2
 
+define Device/cf-e110n
+  $(Device/cf-e316n-v2)
+  DEVICE_TITLE := COMFAST CF-E110N
+  DEVICE_PACKAGES += kmod-usb-core kmod-usb2 rssileds
+  BOARDNAME := CF-E110N
+endef
+TARGET_DEVICES += cf-e110n
+
 define Device/cf-e316n-v2
   DEVICE_TITLE := COMFAST CF-E316N v2
   DEVICE_PACKAGES := -swconfig -uboot-envtools
