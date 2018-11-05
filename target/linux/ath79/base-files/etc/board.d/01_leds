@@ -33,6 +33,9 @@ etactica,eg200)
 	ucidef_set_led_oneshot "modbus" "Modbus" "$boardname:red:modbus" "100" "33"
 	ucidef_set_led_default "etactica" "etactica" "$boardname:red:etactica" "ignore"
 	;;
+glinet,x750)
+	ucidef_set_led_netdev "wan" "WAN" "gl-x750:green:wan" "eth0"
+	;;
 netgear,wnr612-v2|\
 on,n150r)
 	ucidef_set_led_netdev "wan" "WAN" "netgear:green:wan" "eth0"

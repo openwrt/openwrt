@@ -1,4 +1,4 @@
-#!/bin/sh
+!/bin/sh
 
 . /lib/functions/system.sh
 . /lib/functions/uci-defaults.sh
@@ -72,7 +72,8 @@ ath79_setup_interfaces()
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
 	glinet,ar150|\
-	glinet,ar300m)
+	glinet,ar300m|\
+	glinet,x750)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
 	iodata,etg3-r|\
