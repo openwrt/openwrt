@@ -1,0 +1,953 @@
+Changes by this patch:
+
+scripts_platform/pad2align.sh
+* Fix shell syntax within a shell script tool
+
+include/configs/vr9.h
+* define MTDPARTS env var for eb904 standard partition layout
+
+common/cmd_upgrade.c
+* Allow a single image in fullimage.img for initramfs loading
+* Ignore dummy rootfs images (size < 64) in fullimage.img
+* Reduce repetitive savings of environment on upgrade
+
+common/main.c
+* Skip password question completely
+* Accepts an initramfs file as recovery image which is not flashed but started instead
+* Refactor stupid ethernet switch code, and the places where this is used
+* Reduce repetitive savings of environment on upgrade
+--- a/common/cmd_upgrade.c
++++ b/common/cmd_upgrade.c
+@@ -118,10 +118,10 @@ int verify_firmware(void) {
+ 
+ 	image_header_t *pimg_header = NULL;
+ 
+-	srcAddr = simple_strtoul((char *)getenv("loadaddr"),NULL,16);
++	srcAddr = simple_strtoul((char *)getenv("fileaddr"),NULL,16);
+ 	srcLen  = simple_strtoul((char *)getenv("filesize"),NULL,16);
+ 
+-	printf("verify firmware validation: loadaddr = 0x%x, filesize = %d\n", srcAddr, srcLen);
++	printf("verify firmware validation: addr = 0x%x, filesize = %d\n", srcAddr, srcLen);
+ 
+ 	if (srcAddr == 0 || srcLen ==0) return 1;
+ 
+@@ -155,7 +155,8 @@ int verify_firmware(void) {
+ 				curParSize = sizeof(image_header_t) + 8;
+ 				continue;
+ 			case IH_TYPE_FILESYSTEM:
+-				rootfs++;
++				if (pimg_header->ih_size > 64)	// Check for dummy rootfs image appended to initramfs
++					rootfs++;		// Not a dummy, so indicate as found and valid for flashing
+ 				break;
+ 			case IH_TYPE_KERNEL:
+ 				kernel++;
+@@ -169,14 +170,12 @@ int verify_firmware(void) {
+ 
+ 	} while(srcLen > (srcHeader - srcAddr) + curParSize);
+ 
+-	if (kernel != 1 || rootfs != 1) {
+-		printf("Wrong firmware, rootfs and kernel should be included together.\n");
+-		return 1;
+-	}
+-
+-	printf("firmware is ok !\n");
++	if (kernel != 1 || rootfs > 1)
++		printf("Wrong firmware; must contain rootfs+kernel for flashing, or initramfs-kernel.\n");
++	else
++		printf("firmware is ok !\n");
+ 
+-	return 0;
++	return  kernel+rootfs;		// 2: flash rootfs+kernel; 1: run initramfs; otherwise: error
+ }
+ 
+ 
+@@ -190,6 +189,7 @@ int do_upgrade( cmd_tbl_t *cmdtp, int fl
+ 	image_header_t *pimg_header = NULL;
+ 	char name[16], strimg_crc[32], buf[32];;
+ 	int arc_image  = 0;	// Arcadyan
++	int donecount = 0;
+ 
+ 	set_up_result(0);	// Arcadyan
+ 
+@@ -330,14 +330,19 @@ int do_upgrade( cmd_tbl_t *cmdtp, int fl
+ 			sprintf(strimg_crc, "f_%s_crc", name);
+ 			sprintf(buf, "%lX", ntohl(pimg_header->ih_dcrc));
+ 			setenv(strimg_crc, buf);
+-			saveenv();
+-#ifdef UBOOT_ENV_COPY
+-			saveenv_copy();
+-#endif
++			donecount++;
+ 		}
+ 		curParSize = curParSize + pad;
+ 	} while(srcLen > (srcHeader - srcAddr) + curParSize);
+ 
++	// Save environment max once if anything was successfully flashed
++	if (donecount != 0)  {
++		saveenv();
++#ifdef UBOOT_ENV_COPY
++		saveenv_copy();
++#endif
++	}
++
+ 	return 0;
+ }
+ 
+--- a/common/main.c
++++ b/common/main.c
+@@ -58,9 +58,9 @@ DECLARE_GLOBAL_DATA_PTR;
+ static int pass_mode = 0;
+ 
+ //#define LCD_IMAGE_RESCUE_OFFSET              81              // white background
+-#define LCD_IMAGE_RESCUE_OFFSET                86                      // red background
++#define LCD_IMAGE_RESCUE_OFFSET                86              // red background
+ #define LCD_IMAGE_BOOT_FAILURE         (LCD_IMAGE_RESCUE_OFFSET + 0)
+-#define LCD_IMAGE_RESCUE                       (LCD_IMAGE_RESCUE_OFFSET + 4)
++#define LCD_IMAGE_RESCUE               (LCD_IMAGE_RESCUE_OFFSET + 4)
+ #define LCD_IMAGE_RESCUE_UPGRADE       (LCD_IMAGE_RESCUE_OFFSET + 2)
+ #define LCD_IMAGE_RESCUE_DONE          (LCD_IMAGE_RESCUE_OFFSET + 3)
+ #define LCD_IMAGE_RESCUE_ERR           (LCD_IMAGE_RESCUE_OFFSET + 1)
+@@ -96,6 +96,9 @@ static char * delete_char (char *buffer,
+ static char erase_seq[] = "\b \b";		/* erase sequence	*/
+ static char   tab_seq[] = "        ";		/* used to expand TABs	*/
+ 
++static void   SwitchReset(void);
++static void   SwitchInit(void);
++
+ #ifdef CONFIG_BOOT_RETRY_TIME
+ static uint64_t endtime = 0;  /* must be set, default is instant timeout */
+ static int      retry_time = -1; /* -1 so can call readline before main_loop */
+@@ -285,7 +288,7 @@ static __inline__ int abortboot(int boot
+ 			  #if 0 //defined(CONFIG_DRIVER_VR9) /* ctc for RTL8367RB */
+ 				rtl_reset_elapsed_msec = rtl_elapsed_sec * 1000 + i * 10;
+ 			  #endif
+-				
++
+ 				break;
+ 			}
+ 			udelay(10000);
+@@ -329,7 +332,7 @@ void main_loop (void)
+ 	int bootid, bootnum;
+ 	char *s1;
+ 	char buf[16];
+-	
++
+ 	#ifndef CONFIG_SYS_HUSH_PARSER
+ 	static char lastcommand[CONFIG_SYS_CBSIZE] = { 0, };
+ 	int len;
+@@ -353,16 +356,11 @@ void main_loop (void)
+ 	char bcs_set[16];
+ 	#endif /* CONFIG_BOOTCOUNT_LIMIT */
+ 
+-	#if 1 /* ctc, save bootloader version */
++ #if 1 /* ctc, save bootloader version */
+ 	char* val;
+ 	extern const char version_string[];
+-	extern int do_sleep_msec( u32 delay );
+-  #endif
++ #endif
+ 
+-	#ifdef CONFIG_DRIVER_VR9
+-	unsigned int data, retVal, phyNo, timespent=0;
+-	#endif
+-	
+ 	#if defined(CONFIG_VFD) && defined(VFD_TEST_LOGO)
+ 	ulong bmp = 0;		/* default bitmap */
+ 	extern int trab_vfd (ulong bitmap);
+@@ -477,67 +475,11 @@ void main_loop (void)
+ #endif
+ 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
+ 
+-  #ifdef CONFIG_DRIVER_VR9 /* ctc, power down PHY */
+-	#if 0 //defined(UDEBUG)
+-	printf("[%s:%d]vr9_mdio_read( 0x00, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x00, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x01, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x01, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x11, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x11, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x12, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x12, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x13, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x13, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x14, 0x0 )=0x%x\n\n",__func__,__LINE__,vr9_mdio_read( 0x14, 0x0 ));
+-	#endif
+-	vr9_mdio_write( 0x00, 0x0, vr9_mdio_read( 0x00, 0x0 ) | 0x0800 );
+-	vr9_mdio_write( 0x01, 0x0, vr9_mdio_read( 0x01, 0x0 ) | 0x0800 );
+-	vr9_mdio_write( 0x11, 0x0, vr9_mdio_read( 0x11, 0x0 ) | 0x0800 );
+-	vr9_mdio_write( 0x12, 0x0, vr9_mdio_read( 0x12, 0x0 ) | 0x0800 );
+-	vr9_mdio_write( 0x13, 0x0, vr9_mdio_read( 0x13, 0x0 ) | 0x0800 );
+-	vr9_mdio_write( 0x14, 0x0, vr9_mdio_read( 0x14, 0x0 ) | 0x0800 );
+-	#if 0 //defined(UDEBUG)
+-	printf("[%s:%d]vr9_mdio_read( 0x00, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x00, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x01, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x01, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x11, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x11, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x12, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x12, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x13, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x13, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x14, 0x0 )=0x%x\n\n",__func__,__LINE__,vr9_mdio_read( 0x14, 0x0 ));
+-	#endif
+-	//printf("rtl8367rb reset waiting 1.5 sec ....\n");	
+-	rtl_sw_reset(100);
+-	for(phyNo=0;phyNo<4;phyNo++)
+-	{
+-			if(0 != (retVal = smi_read(0x2000+(phyNo<<5),&data)))
+-			{
+-					printf("[%s:%d] read PCS reg[0x%x] failed!!!, errno=%x\n",__func__,__LINE__,0x2000+(phyNo<<5),retVal);
+-			}
+-			else
+-			{
+-					if(0 != (retVal = rtl8367b_setAsicPHYReg(phyNo,0x2000+(phyNo<<5),(data|0x0800))))
+-					{
+-							printf("[%s:%d] set PCS reg[0x%x] failed!!!, errno=%x\n",__func__,__LINE__,0x2000+(phyNo<<5),retVal);
+-					}
+-			}
+-	}
+-
+-	do_sleep_msec(1000);
+-	/* Check reset successful */
+-	do{
+-			if(0 != (retVal = smi_read(0x1202,&data)))
+-			{
+-					printf("[%s:%d] read reg[0x%x]=0x%x, Warrning : rtl8367rb reset failed!!!\n",__func__,__LINE__,0x1202,data);
+-					break;
+-			}
+-
+-			do_sleep_msec(100);
+-			timespent+=100;
+-			if(timespent == 500)
+-			{
+-					printf("Warrning : rtl8367rb reset failed!!!\n");
+-			}
+-			
+-	}while(0x88A8 != data);
+- 	//printf("rtl8367rb bootcode 2012.10.03 .....\n");
+-  #endif
++#ifdef CONFIG_DRIVER_VR9 /* ctc, power down PHY */
++	SwitchReset();
++#endif
+ 
+-  #if 1 /* ctc, save bootloader version */
++  #if 0 /* ctc, save bootloader version */
+ 	val = getenv ("bl_version");
+ 	if ( val == NULL || strcmp(val,version_string) != 0 ) {
+ 		setenv ("bl_version", (char*)version_string);
+@@ -569,88 +511,58 @@ void main_loop (void)
+ 		printf("reset button pressed --> %d\n", count);
+ 		udelay(1000000);
+ 	}
+-	
++
+ 	if (count > 0) {
+-		int ret;
++		int retval;
+ 
+ 		printf("enter rescue process ...\n");
+ 
+-		// power on phys
+-		vr9_mdio_write( 0x00, 0x0, vr9_mdio_read( 0x00, 0x0 ) & ~0x0800 );
+-		vr9_mdio_write( 0x01, 0x0, vr9_mdio_read( 0x01, 0x0 ) & ~0x0800 );
+-		vr9_mdio_write( 0x11, 0x0, vr9_mdio_read( 0x11, 0x0 ) & ~0x0800 );
+-		vr9_mdio_write( 0x12, 0x0, vr9_mdio_read( 0x12, 0x0 ) & ~0x0800 );
+-		vr9_mdio_write( 0x13, 0x0, vr9_mdio_read( 0x13, 0x0 ) & ~0x0800 );
+-		vr9_mdio_write( 0x14, 0x0, vr9_mdio_read( 0x14, 0x0 ) & ~0x0800 );
+-		#if 0 //defined(UDEBUG)
+-		printf("[%s:%d]vr9_mdio_read( 0x00, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x00, 0x0 ));
+-		printf("[%s:%d]vr9_mdio_read( 0x01, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x01, 0x0 ));
+-		printf("[%s:%d]vr9_mdio_read( 0x11, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x11, 0x0 ));
+-		printf("[%s:%d]vr9_mdio_read( 0x12, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x12, 0x0 ));
+-		printf("[%s:%d]vr9_mdio_read( 0x13, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x13, 0x0 ));
+-		printf("[%s:%d]vr9_mdio_read( 0x14, 0x0 )=0x%x\n\n",__func__,__LINE__,vr9_mdio_read( 0x14, 0x0 ));
+-		#endif
+-
+-	  #ifdef CONFIG_DRIVER_VR9 
+-		if(0 != rtl_sw_init())
+-		{
+-				printf("[%s:%d] rtl8367rb init failed!!! ....\n",__func__,__LINE__);	
+-		}
+-		
+-		for(phyNo=0;phyNo<4;phyNo++)
+-		{
+-				if(0 != (retVal = smi_read(0x2000+(phyNo<<5),&data)))
+-				{
+-						printf("[%s:%d] read PCS reg[0x%x] failed!!!\n",__func__,__LINE__,0x2000+(phyNo<<5));
+-				}
+-				else
+-				{
+-						if(0 != (retVal = rtl8367b_setAsicPHYReg(phyNo,0x2000+(phyNo<<5),(data & (~0x0800)))))
+-						{
+-								printf("[%s:%d] set PCS reg[0x%x] failed!!!\n",__func__,__LINE__,0x2000+(phyNo<<5));
+-						}
+-				}
+-		}
+-		#endif
++		SwitchInit();
+ 
+ 		lcd_DisplayPage(LCD_IMAGE_RESCUE);
+ 
+-		udelay(5000000);                                                        // wait 5 seconds
++		udelay(5000000);							// wait 5 seconds
+ 
+-		run_command ("tftpboot $(loadaddr) $(tftppath)$(fullimage)", 0);                // tftp full image
++	//	run_command ("tftpboot $(loadaddr) $(tftppath)$(fullimage)", 0);	// tftp full image
++		run_command ("tftpboot $(0x86000000) $(tftppath)$(fullimage)", 0);	// RAM image might expand vastly, so keep lot of low mem free
+ 
+-		if (verify_firmware() != 0) {
+-up_error:
+-			// display error message
+-			lcd_DisplayPage(LCD_IMAGE_RESCUE_ERR);
++		retval = verify_firmware();
+ 
+-			while(1);
+-		}
++		if (retval == 1)  {
++			lcd_DisplayPage(LCD_IMAGE_RESCUE_DONE);				// Assume initramfs is booting correctly
++			run_command ("bootm $(fileaddr)", 0);				// Start the initramf kernel
++			lcd_DisplayPage(LCD_IMAGE_BOOT_FAILURE);			// We end up here if error is detected in bootm
++			while(1);							// Wait for reboot
++			}
+ 
+-		lcd_DisplayPage(LCD_IMAGE_RESCUE_UPGRADE);
++		else if (retval == 2)  {
++			lcd_DisplayPage(LCD_IMAGE_RESCUE_UPGRADE);
+ 
+-		//udelay(5000000);                                                      // wait 5 seconds
++			run_command ("nand erase $(f_sysconfig_addr) $(f_sysconfig_size)", 0);	// erase sysconfig
++			run_command ("nand erase $(f_rootfs2_addr) $(f_rootfs2_size)", 0);	// erase rootfs 2
++			run_command ("nand erase $(f_kernel2_addr) $(f_kernel2_size)", 0);	// erase kernel 2
++			run_command ("unset bootnum", 0);					// reset "bootnum"
++			run_command ("unset bootid", 0);					// reset "bootid" environment variable
++	//		run_command ("save", 0);						// Skip, as env saving is done in "upgrade" cmd
++	 		run_command ("upgrade $(fileaddr) $(filesize)", 0);			// upgrade fullimage
+ 
+-		run_command ("nand erase $(f_sysconfig_addr) $(f_sysconfig_size)", 0);  // erase sysconfig
+-		run_command ("nand erase $(f_rootfs2_addr) $(f_rootfs2_size)", 0);              // erase rootfs 2
+-		run_command ("nand erase $(f_kernel2_addr) $(f_kernel2_size)", 0);              // erase kernel 2
+-		run_command ("unset bootnum", 0);										// reset "bootnum"
+-		run_command ("unset bootid; save", 0);                                                                  // reset "bootid" environment variable
+-		run_command ("upgrade $(loadaddr) $(filesize)", 0);                                             // upgrade fullimage
++			//printf("get_up_result = %d\n", get_up_result());
+ 
+-		//printf("get_up_result = %d\n", get_up_result());
++			if (get_up_result() == 0)  {
++				lcd_DisplayPage(LCD_IMAGE_RESCUE_DONE);
++				while(1);						// Wait for reboot
++			}
+ 
+-		if (get_up_result() != 0) {
+-			goto up_error;
++			// Fall through to error display
+ 		}
+ 
+-		lcd_DisplayPage(LCD_IMAGE_RESCUE_DONE);
+-
+-		while(1);               // wait here for rebooting
++		// Any other retval is an error
++		lcd_DisplayPage(LCD_IMAGE_RESCUE_ERR);
++		while(1);								// Wait for reboot
+ 	}
+ 	// Arcadyan End
+ 
+-	if (bootdelay >= 0 && s && !abortboot (bootdelay)) 
++	if (bootdelay >= 0 && s && !abortboot (bootdelay))
+ 	{
+ 	  #ifdef CONFIG_DRIVER_VR9 /* ctc, power up PHY */
+ 		int lcd_boot_Init(void);
+@@ -710,57 +622,10 @@ up_error:
+ 		disable_ctrlc(prev);	/* restore Control C checking */
+ # endif
+ 
+-  #ifdef CONFIG_DRIVER_VR9 /* ctc, power up PHY */
+-	#if 1 //defined(UDEBUG)
+-	printf("-------------- Current state before activating switch ------\n");
+-	printf("[%s:%d]vr9_mdio_read( 0x00, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x00, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x01, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x01, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x11, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x11, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x12, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x12, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x13, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x13, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x14, 0x0 )=0x%x\n\n",__func__,__LINE__,vr9_mdio_read( 0x14, 0x0 ));
+-	printf("------------------------------------------------------------\n");
+-	#endif
+-	do_sleep_msec( 100/*1000*/ );
+-	vr9_mdio_write( 0x00, 0x0, vr9_mdio_read( 0x00, 0x0 ) & ~0x0800 );
+-	vr9_mdio_write( 0x01, 0x0, vr9_mdio_read( 0x01, 0x0 ) & ~0x0800 );
+-	vr9_mdio_write( 0x11, 0x0, vr9_mdio_read( 0x11, 0x0 ) & ~0x0800 );
+-	vr9_mdio_write( 0x12, 0x0, vr9_mdio_read( 0x12, 0x0 ) & ~0x0800 );
+-	vr9_mdio_write( 0x13, 0x0, vr9_mdio_read( 0x13, 0x0 ) & ~0x0800 );
+-	vr9_mdio_write( 0x14, 0x0, vr9_mdio_read( 0x14, 0x0 ) & ~0x0800 );
+-	#if 1 //defined(UDEBUG)
+-	printf("-------------- Current state after activating switch -------\n");
+-	printf("[%s:%d]vr9_mdio_read( 0x00, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x00, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x01, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x01, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x11, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x11, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x12, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x12, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x13, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x13, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x14, 0x0 )=0x%x\n\n",__func__,__LINE__,vr9_mdio_read( 0x14, 0x0 ));
+-	printf("------------------------------------------------------------\n");
+-	#endif
+-	
+-	if(0 != rtl_sw_init())
+-	{
+-			printf("[%s:%d] rtl8367rb init failed!!! ....\n",__func__,__LINE__);	
+-	}
+-	
+-	for(phyNo=0;phyNo<4;phyNo++)
+-	{
+-			if(0 != (retVal = smi_read(0x2000+(phyNo<<5),&data)))
+-			{
+-					printf("[%s:%d] read PCS reg[0x%x] failed!!!\n",__func__,__LINE__,0x2000+(phyNo<<5));
+-			}
+-			else
+-			{
+-					if(0 != (retVal = rtl8367b_setAsicPHYReg(phyNo,0x2000+(phyNo<<5),(data & (~0x0800)))))
+-					{
+-							printf("[%s:%d] set PCS reg[0x%x] failed!!!\n",__func__,__LINE__,0x2000+(phyNo<<5));
+-					}
+-			}
+-	}
+-	
+-	printf("rtl8367rb init successful ....\n");	
+-  #endif
++#ifdef CONFIG_DRIVER_VR9 /* ctc, power up PHY */
++		SwitchInit();
++#endif
++
+ 		// Arcadyan Begin
+ 		// if you come to here, the kernel in current partition is wrong.
+ 		if (bootnum < BOOT_RETRY_MAX) {
+@@ -803,75 +668,29 @@ boot_fail:
+ 
+ ctrlc_lcd_Init:
+ 	// Arcadyan Begin , check password
++#if 0	// Weg mit dem Mist, no questions to ask
+ 	pass_mode = 1;
+ 	len = readline("\n\nplease input password : ");
+ 	if (verify_password(console_buffer) != 0) {
+ 		int i = 5;
+ 		printf("\n\nwrong password, rebooting ...  ");
+-		
++
+ 		while (i >= 0) {
+ 			printf("\b%d", i--);
+ 			udelay(1000000);
+ 		}
+-		
++
+ 		run_command("reset", 0);
+-		
++
+ 		while(1);
+ 	}
+ 	pass_mode = 0;
++#endif
+   // Arcadyan End
+ 
+-  #ifdef CONFIG_DRIVER_VR9 /* ctc, power up PHY */
+-	#if 1 //defined(UDEBUG)
+-	printf("-------------- Current state before activating switch ------\n");
+-	printf("[%s:%d]vr9_mdio_read( 0x00, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x00, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x01, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x01, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x11, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x11, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x12, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x12, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x13, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x13, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x14, 0x0 )=0x%x\n\n",__func__,__LINE__,vr9_mdio_read( 0x14, 0x0 ));
+-	printf("------------------------------------------------------------\n");
+-	#endif
+-	do_sleep_msec( 100/*1000*/ );
+-	vr9_mdio_write( 0x00, 0x0, vr9_mdio_read( 0x00, 0x0 ) & ~0x0800 );
+-	vr9_mdio_write( 0x01, 0x0, vr9_mdio_read( 0x01, 0x0 ) & ~0x0800 );
+-	vr9_mdio_write( 0x11, 0x0, vr9_mdio_read( 0x11, 0x0 ) & ~0x0800 );
+-	vr9_mdio_write( 0x12, 0x0, vr9_mdio_read( 0x12, 0x0 ) & ~0x0800 );
+-	vr9_mdio_write( 0x13, 0x0, vr9_mdio_read( 0x13, 0x0 ) & ~0x0800 );
+-	vr9_mdio_write( 0x14, 0x0, vr9_mdio_read( 0x14, 0x0 ) & ~0x0800 );
+-	#if 1 //defined(UDEBUG)
+-	printf("-------------- Current state after activating switch -------\n");
+-	printf("[%s:%d]vr9_mdio_read( 0x00, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x00, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x01, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x01, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x11, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x11, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x12, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x12, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x13, 0x0 )=0x%x\n",__func__,__LINE__,vr9_mdio_read( 0x13, 0x0 ));
+-	printf("[%s:%d]vr9_mdio_read( 0x14, 0x0 )=0x%x\n\n",__func__,__LINE__,vr9_mdio_read( 0x14, 0x0 ));
+-	printf("------------------------------------------------------------\n");
+-	#endif
+-	
+-	if(0 != rtl_sw_init())
+-	{
+-			printf("[%s:%d] rtl8367rb init failed!!! ....\n",__func__,__LINE__);	
+-	}
+-	
+-	for(phyNo=0;phyNo<4;phyNo++)
+-	{
+-			if(0 != (retVal = smi_read(0x2000+(phyNo<<5),&data)))
+-			{
+-					printf("[%s:%d] read PCS reg[0x%x] failed!!!\n",__func__,__LINE__,0x2000+(phyNo<<5));
+-			}
+-			else
+-			{
+-					if(0 != (retVal = rtl8367b_setAsicPHYReg(phyNo,0x2000+(phyNo<<5),(data & (~0x0800)))))
+-					{
+-							printf("[%s:%d] set PCS reg[0x%x] failed!!!\n",__func__,__LINE__,0x2000+(phyNo<<5));
+-					}
+-			}
+-	}
+-	
+-	printf("rtl8367rb init successful ....\n");	
+-  #endif
++#ifdef CONFIG_DRIVER_VR9 /* ctc, power up PHY */
++	SwitchInit();
++#endif
+ 
+ 
+ # ifdef CONFIG_MENUKEY
+@@ -1529,7 +1348,7 @@ int readline_into_buffer (const char *co
+ 				} else {
+ 					++col;		/* echo input		*/
+ 					if (pass_mode == 0) {		// Arcadyan
+-						putc (c);	
++						putc (c);
+ 					}
+ 					else {
+ 						putc ('*');
+@@ -2210,10 +2029,10 @@ void ili9325_RegisterInit( void )
+ 	lcd_WriteRegister( 0x12, 0x0000);     // Power Control 3 (R12h)
+ 	lcd_WriteRegister( 0x13, 0x0000);     // Power Control 4 (R13h)
+ 	lcd_DelayMs( 100 );
+-//	lcd_WriteRegister( 0x10, 0x14B0);     // Power Control 1 (R10h)  
+-	lcd_WriteRegister( 0x10, 0x1490);     // Power Control 1 (R10h)  
++//	lcd_WriteRegister( 0x10, 0x14B0);     // Power Control 1 (R10h)
++	lcd_WriteRegister( 0x10, 0x1490);     // Power Control 1 (R10h)
+ 	lcd_DelayMs( 100 );
+-	lcd_WriteRegister( 0x11, 0x0007);     // Power Control 2 (R11h)  
++	lcd_WriteRegister( 0x11, 0x0007);     // Power Control 2 (R11h)
+ 	lcd_DelayMs( 100 );
+ 	lcd_WriteRegister( 0x12, 0x008E);     // Power Control 3 (R12h)
+ 	lcd_WriteRegister( 0x13, (unsigned short)lcd_GetContrast()<<8 ); // Power Control 4 (R13h)
+@@ -2390,10 +2209,10 @@ void hx8347_RegisterInit( void )
+ 	lcd_WriteRegister( 0x17, 0x0055 ); //default 0x66 262k ,0x55 65k color
+ 
+ 	//SET PANEL
+-	lcd_WriteRegister( 0x36, 0x0009 ); //SS_P, 
++	lcd_WriteRegister( 0x36, 0x0009 ); //SS_P,
+ 
+ 	//Display ON Setting
+-//	lcd_WriteRegister( 0x28, 0x0038 ); //GON=1, DTE=1, 
++//	lcd_WriteRegister( 0x28, 0x0038 ); //GON=1, DTE=1,
+ //	lcd_DelayMs( 40 );
+ //	lcd_WriteRegister( 0x28, 0x003C ); //GON=1, DTE=1, D=1100
+ 
+@@ -2427,7 +2246,7 @@ void hx8347_Init( void )
+ 	lcd_WriteRegister( 0x90, 0X0010 ); // Panel Interface Control 1 (R90h)
+ 
+ 	// Display On
+-	lcd_WriteRegister( 0x28, 0x0038 ); //GON=1, DTE=1, 
++	lcd_WriteRegister( 0x28, 0x0038 ); //GON=1, DTE=1,
+ 	lcd_DelayMs( 40 );
+ 	lcd_WriteRegister( 0x28, 0x003C ); //GON=1, DTE=1, D=1100
+ 
+@@ -2454,10 +2273,10 @@ void ili9341_SetWindow( coord_t x1, coor
+ {
+ 	lcd_WriteCommand( 0x2A);
+ 	lcd_WriteData( x1 );
+-	lcd_WriteData( x2 );				
++	lcd_WriteData( x2 );
+ 	lcd_WriteCommand( 0x2B);
+ 	lcd_WriteData( y1 );
+-	lcd_WriteData( y2 );			
++	lcd_WriteData( y2 );
+ }
+ 
+ color_t ili9341_GetPixel( void )
+@@ -2472,21 +2291,21 @@ color_t ili9341_GetPixel( void )
+ void ili9341_SetOrientation( lcdOrientation_t orientation )
+ {
+ 	unsigned short	entryMode;
+-	
++
+ 	if ( orientation == LCD_ORIENTATION_LANDSCAPE)
+ 		entryMode = 0x4800;
+ 	else
+ 		entryMode = 0x3800;
+ 	lcd_WriteRegister( 0x36, entryMode );
+-	
+-	lcd_WriteData( entryMode );				
++
++	lcd_WriteData( entryMode );
+ }
+ 
+ unsigned short ili9341_GetControllerID( void )
+ {
+ 	unsigned short	iParameter1;
+-	unsigned short	iParameter2;	
+-	
++	unsigned short	iParameter2;
++
+ 	lcd_WriteCommand( 0xD3);
+ 
+ 	iParameter1 = lcd_ReadData();
+@@ -2503,94 +2322,94 @@ int ili9341_Probe( void )
+ void ili9341_RegisterInit( void )
+ {
+ 
+-// VCI=2.8V 
++// VCI=2.8V
++
++//************* Start Initial Sequence **********//
++
++	lcd_WriteCommand(0xCB);
++	lcd_WriteData(0x392C);
++	lcd_WriteData(0x0034);
++	lcd_WriteData(0x0200);
++
++	lcd_WriteCommand(0xCF);
++	lcd_WriteData(0x00C1);
++	lcd_WriteData(0X3000);
++
++	lcd_WriteCommand(0xE8);
++	lcd_WriteData(0x8510);
++	lcd_WriteData(0x7900);
++
++
++	lcd_WriteCommand(0xEA);
++	lcd_WriteData(0x0000);
+ 
+-//************* Start Initial Sequence **********// 
+- 
+-	lcd_WriteCommand(0xCB);  
+-	lcd_WriteData(0x392C); 
+-	lcd_WriteData(0x0034); 
+-	lcd_WriteData(0x0200); 
+- 
+-	lcd_WriteCommand(0xCF);  
+-	lcd_WriteData(0x00C1); 
+-	lcd_WriteData(0X3000); 
+- 
+-	lcd_WriteCommand(0xE8);  
+-	lcd_WriteData(0x8510);  
+-	lcd_WriteData(0x7900); 
+-
+-
+-	lcd_WriteCommand(0xEA);  
+-	lcd_WriteData(0x0000);  
+-
+-	lcd_WriteCommand(0xED);  
+-	lcd_WriteData(0x6403);  
+-	lcd_WriteData(0X1281); 
+- 
+-	lcd_WriteCommand(0xF7);  
+-	lcd_WriteData(0x2000); 
+- 
+-	lcd_WriteCommand(0xC0);    //Power control 
+-	lcd_WriteData(0x2100);   //VRH[5:0] 
+- 
+-	lcd_WriteCommand(0xC1);    //Power control 
+-	lcd_WriteData(0x1200);   //SAP[2:0];BT[3:0] 
+- 
+-	lcd_WriteCommand(0xC5);    //VCM control 
+-	lcd_WriteData(0x243F);  
+- 
+-	lcd_WriteCommand(0xC7);    //VCM control2 
+-	lcd_WriteData(0xC200); 
+-
+-	lcd_WriteCommand(0xb1); 
+-	lcd_WriteData(0x0016);  
+- 
+-	lcd_WriteCommand(0x36);    // Memory Access Control 
++	lcd_WriteCommand(0xED);
++	lcd_WriteData(0x6403);
++	lcd_WriteData(0X1281);
++
++	lcd_WriteCommand(0xF7);
++	lcd_WriteData(0x2000);
++
++	lcd_WriteCommand(0xC0);    //Power control
++	lcd_WriteData(0x2100);   //VRH[5:0]
++
++	lcd_WriteCommand(0xC1);    //Power control
++	lcd_WriteData(0x1200);   //SAP[2:0];BT[3:0]
++
++	lcd_WriteCommand(0xC5);    //VCM control
++	lcd_WriteData(0x243F);
++
++	lcd_WriteCommand(0xC7);    //VCM control2
++	lcd_WriteData(0xC200);
++
++	lcd_WriteCommand(0xb1);
++	lcd_WriteData(0x0016);
++
++	lcd_WriteCommand(0x36);    // Memory Access Control
+ 	if ( lcd_GetOrientation() == LCD_ORIENTATION_LANDSCAPE)
+-	  lcd_WriteData(0x4800);//08 48	
+-	else	
++	  lcd_WriteData(0x4800);//08 48
++	else
+ 	  lcd_WriteData(0x3800);
+ 
+-	lcd_WriteCommand(0x3A);    
+-	lcd_WriteData(0x5500);  
+- 
+-	lcd_WriteCommand(0xF2);    // 3Gamma Function Disable 
+-	lcd_WriteData(0x0000); 
+- 
+-	lcd_WriteCommand(0x26);    //Gamma curve selected 
+-	lcd_WriteData(0x0100); 
+- 
+-	lcd_WriteCommand(0xE0);    //Set Gamma 
+-	lcd_WriteData(0x0F1B);  
+-	lcd_WriteData(0x170C);  
+-	lcd_WriteData(0x0D08);  
+-	lcd_WriteData(0x40A9);  
+-	lcd_WriteData(0x2806);  
+-	lcd_WriteData(0x0D03);  
+-	lcd_WriteData(0x1003);  
+-	lcd_WriteData(0x0000); 
+- 
+-	lcd_WriteCommand(0XE1);    //Set Gamma 
+-	lcd_WriteData(0x0024); 
+-	lcd_WriteData(0x2803);  
+-	lcd_WriteData(0x1207);  
+-	lcd_WriteData(0x3F56);  
+-	lcd_WriteData(0x5709); 
+-	lcd_WriteData(0x120C);  
+-	lcd_WriteData(0x2F3C);  
+-	lcd_WriteData(0x0F00); 
+- 
+-	lcd_WriteCommand(0x11);    //Exit Sleep 
+-	lcd_DelayMs(120); 
++	lcd_WriteCommand(0x3A);
++	lcd_WriteData(0x5500);
++
++	lcd_WriteCommand(0xF2);    // 3Gamma Function Disable
++	lcd_WriteData(0x0000);
++
++	lcd_WriteCommand(0x26);    //Gamma curve selected
++	lcd_WriteData(0x0100);
++
++	lcd_WriteCommand(0xE0);    //Set Gamma
++	lcd_WriteData(0x0F1B);
++	lcd_WriteData(0x170C);
++	lcd_WriteData(0x0D08);
++	lcd_WriteData(0x40A9);
++	lcd_WriteData(0x2806);
++	lcd_WriteData(0x0D03);
++	lcd_WriteData(0x1003);
++	lcd_WriteData(0x0000);
++
++	lcd_WriteCommand(0XE1);    //Set Gamma
++	lcd_WriteData(0x0024);
++	lcd_WriteData(0x2803);
++	lcd_WriteData(0x1207);
++	lcd_WriteData(0x3F56);
++	lcd_WriteData(0x5709);
++	lcd_WriteData(0x120C);
++	lcd_WriteData(0x2F3C);
++	lcd_WriteData(0x0F00);
++
++	lcd_WriteCommand(0x11);    //Exit Sleep
++	lcd_DelayMs(120);
+ 	lcd_WriteCommand(0x29);    //Display on
+ }
+ 
+ void ili9341_Init( void )
+ {
+ 	ili9341_RegisterInit();
+-	ili9341_Home();	
+-	
++	ili9341_Home();
++
+ }
+ 
+ void ili9341_Shutdown( void )
+@@ -2643,7 +2462,7 @@ void lcd_FuncTblPrepare( void )
+ 	lcd_ChipTbl[2].registerInit		= ili9341_RegisterInit;
+ 	lcd_ChipTbl[2].init				= ili9341_Init;
+ 	lcd_ChipTbl[2].shutdown			= ili9341_Shutdown;
+-	lcd_ChipTbl[2].bFixedDirection	= 1;	
++	lcd_ChipTbl[2].bFixedDirection	= 1;
+ 
+ }
+ 
+@@ -2652,7 +2471,7 @@ void lcd_FuncTblPrepare( void )
+ 
+ coord_t lcd_GetWidth(void)
+ {
+-	if ( lcd_GetOrientation() == LCD_ORIENTATION_LANDSCAPE ) 
++	if ( lcd_GetOrientation() == LCD_ORIENTATION_LANDSCAPE )
+ 		return lcd_Properties.height;
+ 	else // LCD_ORIENTATION_PORTRAIT
+ 		return lcd_Properties.width;
+@@ -2660,7 +2479,7 @@ coord_t lcd_GetWidth(void)
+ 
+ coord_t lcd_GetHeight(void)
+ {
+-	if ( lcd_GetOrientation() == LCD_ORIENTATION_LANDSCAPE ) 
++	if ( lcd_GetOrientation() == LCD_ORIENTATION_LANDSCAPE )
+ 		return lcd_Properties.width;
+ 	else // LCD_ORIENTATION_PORTRAIT
+ 		return lcd_Properties.height;
+@@ -3078,14 +2897,13 @@ int lcd_DisplayPage( int page )
+ 	char                    sCmd[64];
+ 	SizeT                   lLzmaSize;
+ 	SizeT                   lAllImageSize;
+-	unsigned long   lFileCnt;
++	unsigned long	lFileCnt;
+ 	char*                   pFiles;
+-	unsigned long   lCnt;
+ 	unsigned char*  pImagePtr;
+-	ulong                   start;
++//?	ulong                   start;
+ 	ulong                   interval;
+ 	unsigned long   lPixel;
+-	int                             bFirstImage = 1;
++//?	int                             bFirstImage = 1;
+ 
+ 	static int              init = 0;
+ 
+@@ -3464,6 +3282,116 @@ U_BOOT_CMD( lcd, CONFIG_SYS_MAXARGS, 1,
+ 	"lcd nsleep   <nsec>       - sleep nsec, nano-seconds\n"
+ );
+ 
+-
+ #endif // CONFIG_DRIVER_VR9 ctc LCD
+ 
++
++
++#if defined(UDEBUG)
++static void  SwitchDebugInfo(const char *title)
++{
++	printf("----------- %s ----\n", title);
++	printf("vr9_mdio_read(0x00,0x0) = 0x%04X\n", vr9_mdio_read(0x00,0x0));
++	printf("vr9_mdio_read(0x01,0x0) = 0x%04X\n", vr9_mdio_read(0x01,0x0));
++	printf("vr9_mdio_read(0x11,0x0) = 0x%04X\n", vr9_mdio_read(0x11,0x0));
++	printf("vr9_mdio_read(0x12,0x0) = 0x%04X\n", vr9_mdio_read(0x12,0x0));
++	printf("vr9_mdio_read(0x13,0x0) = 0x%04X\n", vr9_mdio_read(0x13,0x0));
++	printf("vr9_mdio_read(0x14,0x0) = 0x%04X\n", vr9_mdio_read(0x14,0x0));
++	printf("------------------------------------------------------------\n");
++}
++#else
++#define SwitchDebugInfo(x)
++#endif
++
++
++
++static void  SwitchReset(void)
++{
++	extern int	do_sleep_msec(u32 delay);
++	unsigned int	retval, phyno, addr, data, timespent;
++
++	SwitchDebugInfo("Current state before deactivating switch");
++
++	vr9_mdio_write( 0x00, 0x0, vr9_mdio_read(0x00,0x0) | 0x0800 );
++	vr9_mdio_write( 0x01, 0x0, vr9_mdio_read(0x01,0x0) | 0x0800 );
++	vr9_mdio_write( 0x11, 0x0, vr9_mdio_read(0x11,0x0) | 0x0800 );
++	vr9_mdio_write( 0x12, 0x0, vr9_mdio_read(0x12,0x0) | 0x0800 );
++	vr9_mdio_write( 0x13, 0x0, vr9_mdio_read(0x13,0x0) | 0x0800 );
++	vr9_mdio_write( 0x14, 0x0, vr9_mdio_read(0x14,0x0) | 0x0800 );
++
++	SwitchDebugInfo("Current state after deactivating switch");
++
++	//printf("rtl8367rb reset waiting 1.5 sec ....\n");
++	rtl_sw_reset(100);
++
++	for(phyno=0; phyno<4; phyno++)  {
++		addr = 0x2000 + (phyno<<5);
++
++		retval = smi_read(addr, &data);
++		if (retval != 0)  {
++			printf("[%s:%d] read PCS reg[0x%x] failed!!!, errno=%x\n", __func__, __LINE__, addr, retval);
++			continue;
++		}
++
++		retval = rtl8367b_setAsicPHYReg(phyno, addr, data|0x0800);
++		if(retval != 0)
++			printf("[%s:%d] set PCS reg[0x%x] failed!!!, errno=%x\n", __func__, __LINE__, addr, retval);
++	}
++
++	do_sleep_msec(1000);
++
++	// Check if reset was successful
++	timespent = 0;
++	do  {
++		retval = smi_read(0x1202, &data);
++		if(retval != 0)  {
++			printf("[%s:%d] read reg[0x%x]=0x%x, Warrning : rtl8367rb reset failed!!!\n", __func__, __LINE__, 0x1202, data);
++			break;
++		}
++
++		do_sleep_msec(100);
++		timespent += 100;
++		if (timespent == 500)
++			printf("Warrning : rtl8367rb reset failed!!!\n");
++
++	}  while (0x88A8 != data);
++}
++
++
++
++static void  SwitchInit(void)
++{
++	unsigned int  retval, phyno, addr, data;
++
++	// Power on phys
++	SwitchDebugInfo("Current state before activating switch");
++
++	vr9_mdio_write( 0x00, 0x0, vr9_mdio_read(0x00,0x0) & ~0x0800 );
++	vr9_mdio_write( 0x01, 0x0, vr9_mdio_read(0x01,0x0) & ~0x0800 );
++	vr9_mdio_write( 0x11, 0x0, vr9_mdio_read(0x11,0x0) & ~0x0800 );
++	vr9_mdio_write( 0x12, 0x0, vr9_mdio_read(0x12,0x0) & ~0x0800 );
++	vr9_mdio_write( 0x13, 0x0, vr9_mdio_read(0x13,0x0) & ~0x0800 );
++	vr9_mdio_write( 0x14, 0x0, vr9_mdio_read(0x14,0x0) & ~0x0800 );
++
++	SwitchDebugInfo("Current state before activating switch");
++
++
++	retval = rtl_sw_init();
++	if (retval != 0)
++		printf("[%s:%d] rtl8367rb init failed!!! ....\n", __func__, __LINE__);
++
++	for (phyno=0; phyno<4; phyno++)  {
++		addr = 0x2000 + (phyno<<5);
++
++		retval = smi_read(addr, &data);
++		if (retval != 0)  {
++			printf("[%s:%d] read PCS reg[0x%x] failed!!!\n", __func__, __LINE__, addr);
++			continue;
++		}
++
++		retval = rtl8367b_setAsicPHYReg(phyno, addr, data & ~0x0800);
++		if (retval != 0)
++			printf("[%s:%d] set PCS reg[0x%x] failed!!!\n", __func__, __LINE__, addr);
++	}
++
++	printf("rtl8367rb init done ....\n");
++}
+--- a/include/configs/vr9.h
++++ b/include/configs/vr9.h
+@@ -313,7 +313,22 @@
+ 
+ 
+ #define MTDIDS_DEFAULT      "nand0=ifx_nand"
+-#define MTDPARTS_DEFAULT    "mtdparts=ifx_nand:256k(uboot),10m(rootfs),-(res)"
+ 
++#define MTDPARTS_DEFAULT    "mtdparts=ifx_nand:0x40000(uboot)"		\
++					     ",0x3c00000(rootfs)"	\
++					     ",0x500000(kernel)"	\
++					     ",0x100000(tmp1)"		\
++					     ",0x200000(tmp2)"		\
++					     ",0x100000(sysconfig)"	\
++					     ",0x100000(ubootconfig)"	\
++					     ",0xc0000(fwdiag)"		\
++					     ",0x300000(lcdimage)"	\
++					     ",0x100000(mfgconfig)"	\
++					     ",0x100000(sipdata)"	\
++					     ",0x4000000(voice)"	\
++					     ",0x13200000(misc)"	\
++					     ",0x3c00000(rootfs2)"	\
++					     ",0x500000(kernel2)"	\
++					     ",0x100000(mystery)"
+ 
+ #endif	/* __CONFIG_H */
+--- a/scripts_platform/pad2align.sh
++++ b/scripts_platform/pad2align.sh
+@@ -36,7 +36,7 @@ parse_args() {
+ 
+ parse_args $@
+ 
+-if [ "$ALIGNFILE" == "" ]; then
++if [ "$ALIGNFILE" = "" ]; then
+       echo "no file specified!"
+ 	  exit 1;
+ fi
