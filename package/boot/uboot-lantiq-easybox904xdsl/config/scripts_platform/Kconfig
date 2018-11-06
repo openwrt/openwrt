@@ -28,6 +28,7 @@ menu "Build Options"
 
 choice
     prompt 'Boot From'
+    default UBOOT_CONFIG_BOOT_FROM_NAND
 
 config UBOOT_CONFIG_BOOT_FROM_NOR
     bool "NOR Flash"
@@ -97,13 +98,13 @@ config UBOOT_CONFIG_RAM_TEXT_BASE
 config UBOOT_CONFIG_BOOTSTRAP_TEXT_BASE
     hex "BOOTSTRAP TEXT_BASE"
 	default "0xB0000000" if ( UBOOT_CONFIG_BOOT_FROM_NOR )
-	default "0xa0100000" if ( !UBOOT_CONFIG_BOOT_FROM_NOR )
+	default "0xA0100000" if ( !UBOOT_CONFIG_BOOT_FROM_NOR )
 
 config UBOOT_CONFIG_NAND_PRELOAD_TEXT_BASE
 	hex "NAND_PRELOAD_TEXT_BASE"
-	default "0xbe1a0000" if LANTIQ_UBOOT_ar9
-	default "0xbe220000" if LANTIQ_UBOOT_vr9
-	default "0xbe1a0000" if LANTIQ_UBOOT_ar10
+	default "0xBE1A0000" if LANTIQ_UBOOT_ar9
+	default "0xBE220000" if LANTIQ_UBOOT_vr9
+	default "0xBE1A0000" if LANTIQ_UBOOT_ar10
 
 config UBOOT_CONFIG_NAND_SPL_TEXT_BASE
     hex "NAND_SPL_TEXT_BASE"
@@ -114,8 +115,8 @@ config UBOOT_CONFIG_NAND_SPL_TEXT_BASE
 
 config UBOOT_CONFIG_SFDDR_TEXT_BASE
 	hex "UBOOT_CONFIG_SFDDR_TEXT_BASE"
-	default "0xbe1a0000" if LANTIQ_UBOOT_ar9
-	default "0xbe220500" if LANTIQ_UBOOT_vr9
+	default "0xBE1A0000" if LANTIQ_UBOOT_ar9
+	default "0xBE220500" if LANTIQ_UBOOT_vr9
 	depends on UBOOT_CONFIG_BOOT_FROM_SPI
 
 choice
@@ -154,7 +155,7 @@ config UBOOT_CONFIG_SW_VERSION
 
 config UBOOT_CONFIG_DEBUG
     bool "VERBOSE"
-	default n
+	default y
 
 endmenu
 
@@ -162,7 +163,7 @@ menu "Board Settings"
 
 config UBOOT_CONFIG_IFX_MEMORY_SIZE
         int "RAM Size(M)"
-        default 64
+        default 128
 
 config UBOOT_CONFIG_ASC_BAUDRATE
   string "ASC BAUDRATE"
@@ -171,7 +172,7 @@ config UBOOT_CONFIG_ASC_BAUDRATE
 
 config UBOOT_CONFIG_NOR_FLASH
         bool "NOR FLASH SUPPORT"
-        default y
+        default n
         select UBOOT_CONFIG_CMD_FLASH
 		depends on !UBOOT_CONFIG_LANTIQ_UBOOT_ar10
 
@@ -358,6 +359,7 @@ config UBOOT_CONFIG_NAND_ECC_HW
 config UBOOT_CONFIG_NAND_BBT_SCAN
         bool "BAD NAND BLOCK SCAN"
         depends on UBOOT_CONFIG_NAND_FLASH
+	default y
 
 config UBOOT_CONFIG_NAND_LANTIQ
        bool
@@ -375,7 +377,7 @@ choice
 #	 depends on UBOOT_CONFIG_BOOT_FROM_NAND
 	 depends on UBOOT_CONFIG_NAND_FLASH
 	###########
-	 default UBOOT_CONFIG_NAND_FLASH_8M
+	 default UBOOT_CONFIG_NAND_FLASH_512M
 
 config UBOOT_CONFIG_NAND_FLASH_4096M
 	 bool "4096M" 
@@ -425,7 +427,7 @@ config UBOOT_CONFIG_NAND_FLASH_SIZE
 
 config UBOOT_CONFIG_NAND_PAGE_SIZE
      hex "NAND flash page size(bytes)"
-     default "0x200"
+     default "0x800"
 	### ctc ###
 #     depends on ( UBOOT_CONFIG_TUNE_DDR && UBOOT_CONFIG_BOOT_FROM_NAND)
      depends on UBOOT_CONFIG_NAND_FLASH
@@ -442,23 +444,23 @@ config UBOOT_CONFIG_OVERLAY
 	 depends on UBOOT_CONFIG_DRIVER_VR9 || UBOOT_CONFIG_DRIVER_AR9 || UBOOT_CONFIG_DRIVER_DANUBE
 
 if LANTIQ_UBOOT_ar9
-   source package/boot/uboot-lantiq-easybox904xdsl/config/board/ar9/Kconfig
+   source ../board/ar9/Kconfig
 endif
 
 if LANTIQ_UBOOT_danube
-   source package/boot/uboot-lantiq-easybox904xdsl/config/board/danube/Kconfig
+   source ../board/danube/Kconfig
 endif
 
 if LANTIQ_UBOOT_amazon_se
-   source package/boot/uboot-lantiq-easybox904xdsl/config/board/amazon_se/Kconfig
+   source ../board/amazon_se/Kconfig
 endif
 
 if LANTIQ_UBOOT_vr9
-   source package/boot/uboot-lantiq-easybox904xdsl/config/board/vr9/Kconfig
+   source ../board/vr9/Kconfig
 endif
 
 if LANTIQ_UBOOT_ar10
-   source package/boot/uboot-lantiq-easybox904xdsl/config/board/ar10/Kconfig
+   source ../board/ar10/Kconfig
 endif
    
 
@@ -500,32 +502,32 @@ config UBOOT_CONFIG_TFTP_LOAD_ADDRESS
     
 config UBOOT_CONFIG_MEM
     string "mem"
-    default "62M"
+    default "116M"
 
 config UBOOT_CONFIG_PHYM
     string "phym"
-    default "64M"
+    default "128M"
 
 config UBOOT_CONFIG_BOOTDELAY
     int "BOOTDELAY(seconds)"
-	default 3
+    default 3
 
 config UBOOT_CONFIG_ROOT_PATH
     string "rootpath"
-    default "/mnt/full_fs"
+    default ""
 
 
 config UBOOT_CONFIG_CONSOLE
-    string "console"
-	default "ttyS1"   
+	string "console"
+	default "ttyS0"
 
 config UBOOT_CONFIG_TFTPPATH
-    string "tftppath"
+	string ""
 	default ""
 
 config UBOOT_CONFIG_ROOTFSMTD
     string "rootfsmtd"
-	default "/dev/mtdblock2" if ( UBOOT_CONFIG_BOOT_FROM_NAND && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS )
+	default "/dev/mtdblock1" if ( UBOOT_CONFIG_BOOT_FROM_NAND && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS )
 	default "/dev/mtdblock3" if ( UBOOT_CONFIG_BOOT_FROM_NAND && !UBOOT_CONFIG_FIRMWARE_IN_ROOTFS )
 	default "/dev/mtdblock1" if ( UBOOT_CONFIG_FIRMWARE_IN_ROOTFS )
 	default "/dev/mtdblock2" if ( UBOOT_CONFIG_BOOT_FROM_NOR && !UBOOT_CONFIG_FIRMWARE_IN_ROOTFS )
@@ -533,23 +535,22 @@ config UBOOT_CONFIG_ROOTFSMTD
 
 config UBOOT_CONFIG_NFSARGS
     string "nfsargs"
-    default "setenv bootargs root=/dev/nfs rw nfsroot=$(serverip):$(rootpath)"
+    default ""
 
 config UBOOT_CONFIG_RAMARGS
     string "ramargs"
-    default "setenv bootargs root=/dev/ram rw"
+    default ""
 
 config UBOOT_CONFIG_FLASHARGS
     string "flashargs"
-    default "setenv bootargs root=$(rootfsmtd) rw rootfstype=squashfs,jffs2 init=/etc/preinit"
-
+    default "setenv bootargs root=$(rootfsmtd) rw rootfstype=squashfs,jffs2"
 config UBOOT_CONFIG_ADDIP
     string "addip"
     default "setenv bootargs $(bootargs) ip=$(ipaddr):$(serverip):$(gatewayip):$(netmask):$(hostname):$(netdev):on"
 
 config UBOOT_CONFIG_ADDMISC
     string "addmisc"
-	default "setenv bootargs $(bootargs) console=$(console),$(baudrate) ethaddr=$(ethaddr) phym=$(phym) mem=$(mem) panic=1 mtdparts=$(mtdparts)" 
+	default "setenv bootargs $(bootargs) console=$(console),$(baudrate) ethaddr=$(ethaddr) phym=$(phym) mem=$(mem) panic=1 mtdparts=$(mtdparts) init=/etc/preinit vpe1_load_addr=0x87e00000 vpe1_mem=2M"
 
 config UBOOT_CONFIG_BOOTFILE
     string "bootfile"
@@ -565,11 +566,11 @@ config UBOOT_CONFIG_SYSCONFIG
 
 config UBOOT_CONFIG_ROOTFS
     string "rootfs"
-    default "rootfs.img"
+    default "root.squash"
 
 config UBOOT_CONFIG_FIRMWARE
     string "firmware"
-    default "firmware.img"
+    default ""
 
 config UBOOT_CONFIG_FULLIMAGE
     string "fullimage"
@@ -577,7 +578,7 @@ config UBOOT_CONFIG_FULLIMAGE
 
 config UBOOT_CONFIG_TOTALIMAGE
     string "totalimage"
-	default "totalimage.img"
+	default ""
 
 config UBOOT_CONFIG_USE_DEFAULT_MTDPARTS
     bool "use default MTDPARTS"
@@ -639,23 +640,27 @@ endif
 if LANTIQ_UBOOT_vr9
 config UBOOT_CONFIG_MTDPARTS
     string "mtdparts"
-	default "ifx_nor0:128k(uboot),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && !UBOOT_CONFIG_NOR_FLASH_32M && !UBOOT_CONFIG_NOR_FLASH_16M  )
-	default "ifx_nor0:128k(uboot),512k(firmware),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && !UBOOT_CONFIG_FIRMWARE_IN_ROOTFS )
-	default "ifx_nor0:128k(uboot),13184k(rootfs),2m(kernel),768k(sysconfig),128k(ubootconfig),128k(fwdiag)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && !UBOOT_CONFIG_NAND_FLASH && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NOR_FLASH_16M && !UBOOT_CONFIG_IN_SUPERTASK )
-	default "ifx_nor0:256k(uboot),13056k(rootfs),2m(kernel),768k(sysconfig),128k(ubootconfig),128k(fwdiag)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_NAND_FLASH && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NOR_FLASH_16M && !UBOOT_CONFIG_IN_SUPERTASK )
-	default "ifx_nor0:128k(uboot),8448k(supertask1),128k(uboot-bin),7296k(rootfs),128k(linux-cfg),256k(supertask2)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NOR_FLASH_16M && UBOOT_CONFIG_IN_SUPERTASK )
-	default "ifx_nor0:128k(uboot),29568k(rootfs),2m(kernel),768k(sysconfig),128k(ubootconfig),128k(fwdiag)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && !UBOOT_CONFIG_NAND_FLASH && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NOR_FLASH_32M && !UBOOT_CONFIG_IN_SUPERTASK )
-	default "ifx_nor0:256k(uboot),29448k(rootfs),2m(kernel),768k(sysconfig),128k(ubootconfig),128k(fwdiag)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_NAND_FLASH && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NOR_FLASH_32M && !UBOOT_CONFIG_IN_SUPERTASK )
-	default "ifx_nor0:128k(uboot),8448k(supertask1),128k(uboot-bin),7296k(rootfs),128k(linux-cfg),16640k(supertask2)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NOR_FLASH_32M && UBOOT_CONFIG_IN_SUPERTASK )
-	default "ifx_sflash:192k(uboot),512k(firmware),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_SPI && !UBOOT_CONFIG_FIRMWARE_IN_ROOTFS )
-	default "ifx_sflash:192k(uboot),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_SPI && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS )
-    default "ifx_nand:256k(uboot),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_NAND && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && ( ( !UBOOT_CONFIG_NAND_FLASH_32M && !UBOOT_CONFIG_NAND_FLASH_512M ) || !UBOOT_CONFIG_JFFS2_PART ) )
-    default "ifx_nand:256k(uboot),29440k(rootfs),2m(kernel),864k(sysconfig),48k(ubootconfig),48k(fwdiag),-(BBT)" if ( UBOOT_CONFIG_BOOT_FROM_NAND && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NAND_FLASH_32M && UBOOT_CONFIG_JFFS2_PART )
-    default "ifx_nand:256k(uboot),517888k(rootfs),3m(kernel),1536k(sysconfig),256k(ubootconfig),256k(fwdiag),-(BBT)" if ( UBOOT_CONFIG_BOOT_FROM_NAND && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NAND_FLASH_512M && UBOOT_CONFIG_JFFS2_PART )
-	default "ifx_nand:256k(uboot),512k(firmware),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_NAND && !UBOOT_CONFIG_FIRMWARE_IN_ROOTFS )
-    default "ifx_nand:9232k(uboot),3600k(rootfs),1600k(kernel),640k(sysconfig),224k(ubootconfig)" if ( UBOOT_CONFIG_BOOT_FROM_NAND && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NAND_FLASH_32M && UBOOT_CONFIG_IN_SUPERTASK )
-	default "ifx_nor0:128k(uboot),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_UART )
+
+#	default "ifx_nor0:128k(uboot),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && !UBOOT_CONFIG_NOR_FLASH_32M && !UBOOT_CONFIG_NOR_FLASH_16M  )
+#	default "ifx_nor0:128k(uboot),512k(firmware),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && !UBOOT_CONFIG_FIRMWARE_IN_ROOTFS )
+#	default "ifx_nor0:128k(uboot),13184k(rootfs),2m(kernel),768k(sysconfig),128k(ubootconfig),128k(fwdiag)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && !UBOOT_CONFIG_NAND_FLASH && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NOR_FLASH_16M && !UBOOT_CONFIG_IN_SUPERTASK )
+#	default "ifx_nor0:256k(uboot),13056k(rootfs),2m(kernel),768k(sysconfig),128k(ubootconfig),128k(fwdiag)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_NAND_FLASH && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NOR_FLASH_16M && !UBOOT_CONFIG_IN_SUPERTASK )
+#	default "ifx_nor0:128k(uboot),8448k(supertask1),128k(uboot-bin),7296k(rootfs),128k(linux-cfg),256k(supertask2)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NOR_FLASH_16M && UBOOT_CONFIG_IN_SUPERTASK )
+#	default "ifx_nor0:128k(uboot),29568k(rootfs),2m(kernel),768k(sysconfig),128k(ubootconfig),128k(fwdiag)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && !UBOOT_CONFIG_NAND_FLASH && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NOR_FLASH_32M && !UBOOT_CONFIG_IN_SUPERTASK )
+#	default "ifx_nor0:256k(uboot),29448k(rootfs),2m(kernel),768k(sysconfig),128k(ubootconfig),128k(fwdiag)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_NAND_FLASH && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NOR_FLASH_32M && !UBOOT_CONFIG_IN_SUPERTASK )
+#	default "ifx_nor0:128k(uboot),8448k(supertask1),128k(uboot-bin),7296k(rootfs),128k(linux-cfg),16640k(supertask2)" if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NOR_FLASH_32M && UBOOT_CONFIG_IN_SUPERTASK )
+#	default "ifx_sflash:192k(uboot),512k(firmware),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_SPI && !UBOOT_CONFIG_FIRMWARE_IN_ROOTFS )
+#	default "ifx_sflash:192k(uboot),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_SPI && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS )
+#    default "ifx_nand:256k(uboot),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_NAND && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && ( ( !UBOOT_CONFIG_NAND_FLASH_32M && !UBOOT_CONFIG_NAND_FLASH_512M ) || !UBOOT_CONFIG_JFFS2_PART ) )
+#    default "ifx_nand:256k(uboot),29440k(rootfs),2m(kernel),864k(sysconfig),48k(ubootconfig),48k(fwdiag),-(BBT)" if ( UBOOT_CONFIG_BOOT_FROM_NAND && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NAND_FLASH_32M && UBOOT_CONFIG_JFFS2_PART )
+#    default "ifx_nand:256k(uboot),517888k(rootfs),3m(kernel),1536k(sysconfig),256k(ubootconfig),256k(fwdiag),-(BBT)" if ( UBOOT_CONFIG_BOOT_FROM_NAND && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NAND_FLASH_512M && UBOOT_CONFIG_JFFS2_PART )
+#	default "ifx_nand:256k(uboot),512k(firmware),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_NAND && !UBOOT_CONFIG_FIRMWARE_IN_ROOTFS )
+#    default "ifx_nand:9232k(uboot),3600k(rootfs),1600k(kernel),640k(sysconfig),224k(ubootconfig)" if ( UBOOT_CONFIG_BOOT_FROM_NAND && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NAND_FLASH_32M && UBOOT_CONFIG_IN_SUPERTASK )
+#	default "ifx_nor0:128k(uboot),-(rootfs)" if ( UBOOT_CONFIG_BOOT_FROM_UART )
+
+        default "mtdparts=ifx_nand:256k(uboot),60m(rootfs),5m(kernel),1m(tmp1),2m(tmp2),1m(sysconfig),1m(ubootconfig),768k(fwdiag),3m(lcdimage),1m(mfgconfig),1m(sipdata),64m(voice),306m(misc),60m(rootfs2),5m(kernel2),1m(mystery)"
 	depends on UBOOT_CONFIG_USE_DEFAULT_MTDPARTS
+
 endif
 
 
@@ -675,19 +680,19 @@ config UBOOT_CONFIG_MTDPARTS
 
 config UBOOT_CONFIG_NET_RAM
     string "net_ram"
-    default "tftp $(loadaddr) $(tftppath)$(bootfile); run ramargs addip addmisc; bootm"
+    default ""
 
 config UBOOT_CONFIG_NET_FLASH
     string "net_flash"
-    default "tftp $(loadaddr) $(tftppath)$(bootfile); run flashargs addip addmisc; bootm"
+    default ""
 
 config UBOOT_CONFIG_FLASH_NFS
     string "flash_nfs"
-    default "run nfsargs addip addmisc; bootm $(f_kernel_addr)"
+    default ""
 
 config UBOOT_CONFIG_NET_NFS
     string "net_nfs"
-    default "tftp $(loadaddr) $(tftppath)$(bootfile);run nfsargs addip addmisc;bootm"
+    default ""
 
 config UBOOT_CONFIG_FLASH_FLASH
 	string "flash_flash"
@@ -697,7 +702,7 @@ config UBOOT_CONFIG_FLASH_FLASH
 
 config UBOOT_CONFIG_UPDATE_NANDBOOT
     string "update_nandboot"
-	default "tftp $(loadaddr) $(tftppath)u-boot-nand.bin; nand erase clean 0 0x08000000; nand write $(loadaddr) 0 $(filesize)"
+	default ""
 	depends on UBOOT_CONFIG_BOOT_FROM_NAND
 
 
@@ -758,13 +763,13 @@ config UBOOT_CONFIG_JFFS2IMAGE
     string "jffs2image"
 	default "root.jffs2-128k.nor" if ( UBOOT_CONFIG_BOOT_FROM_NOR &&  ( UBOOT_CONFIG_NOR_FLASH_16M || UBOOT_CONFIG_NOR_FLASH_32M ) )
 	default "root.jffs2-64k.nor"  if ( UBOOT_CONFIG_BOOT_FROM_NOR && !( UBOOT_CONFIG_NOR_FLASH_16M || UBOOT_CONFIG_NOR_FLASH_32M ) )
-	default "root.jffs2-16k.nand" if ( UBOOT_CONFIG_BOOT_FROM_NAND )
+	default "root.jffs2-128k.nand" if ( UBOOT_CONFIG_BOOT_FROM_NAND )
 
 config UBOOT_CONFIG_UPDATE_UBOOT
     string "update_uboot"
     default "tftpboot $(loadaddr) $(tftppath)$(u-boot); erase b0000000 +20000;cp.b $(loadaddr) b0000000 $(filesize); reset" if ( !UBOOT_CONFIG_NAND_FLASH )
     default "tftpboot $(loadaddr) $(tftppath)$(u-boot); erase b0000000 +30000;cp.b $(loadaddr) b0000000 $(filesize); reset" if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_NAND_FLASH )
-    default "tftpboot $(loadaddr) $(tftppath)$(u-boot); nand erase $(f_uboot_addr) $(f_uboot_size); nand write.partial $(loadaddr) $(f_uboot_addr) $(filesize); reset" if ( UBOOT_CONFIG_BOOT_FROM_NAND )
+    default "tftpboot $(loadaddr) $(tftppath)$(u-boot); nand erase $(f_uboot_addr) $(f_uboot_size); nand write $(loadaddr) $(f_uboot_addr) $(filesize)" if ( UBOOT_CONFIG_BOOT_FROM_NAND )
 
 config UBOOT_CONFIG_UPDATE_UBOOT_BIN
     string "update_uboot_bin"
@@ -775,13 +780,13 @@ config UBOOT_CONFIG_UPDATE_KERNEL
 	string "update_kernel"
 	default "tftpboot $(loadaddr) $(tftppath)$(bootfile); upgrade $(loadaddr) $(filesize)" if ( !UBOOT_CONFIG_BOOT_FROM_NAND )
 	default "tftpboot $(loadaddr) $(tftppath)$(bootfile); nand erase $(part2_begin) 190000; nand write.fw $(loadaddr) $(part2_begin) $(filesize)" if ( UBOOT_CONFIG_BOOT_FROM_NAND && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NAND_FLASH_32M && UBOOT_CONFIG_IN_SUPERTASK )
-	default "tftpboot $(loadaddr) $(tftppath)$(bootfile); nand erase $(f_kernel_addr) $(f_kernel_size); nand write.e $(loadaddr) $(f_kernel_addr) $(filesize); crc32 $(loadaddr) $(filesize) f_kernel_crc; savee" if ( UBOOT_CONFIG_BOOT_FROM_NAND )
+	default "tftpboot $(loadaddr) $(tftppath)$(bootfile); nand erase $(f_kernel_addr) $(f_kernel_size); nand write.e $(loadaddr) $(f_kernel_addr) $(filesize)" if ( UBOOT_CONFIG_BOOT_FROM_NAND )
 
 config UBOOT_CONFIG_UPDATE_ROOTFS
 	string "update_rootfs"
 	default "tftpboot $(loadaddr) $(tftppath)$(rootfs); upgrade $(loadaddr) $(filesize)" if ( !UBOOT_CONFIG_BOOT_FROM_NAND )
 	default "tftpboot 80800000 $(tftppath)$(rootfs); nand erase $(f_rootfs_addr) 384000; nand write.fw 80800040 $(f_rootfs_addr) $(filesize)" if ( UBOOT_CONFIG_BOOT_FROM_NAND && UBOOT_CONFIG_FIRMWARE_IN_ROOTFS && UBOOT_CONFIG_NAND_FLASH_32M && UBOOT_CONFIG_IN_SUPERTASK )
-	default "tftpboot $(loadaddr) $(tftppath)$(rootfs); nand erase $(f_rootfs_addr) $(f_rootfs_size); nand write.jffs2 $(loadaddr) $(f_rootfs_addr) $(filesize)" if ( UBOOT_CONFIG_BOOT_FROM_NAND )
+	default "tftpboot $(loadaddr) $(tftppath)$(rootfs); nand erase $(f_rootfs_addr) $(f_rootfs_size); cal $(loadaddr) 40 loadaddr; cal $(filesize) -40 filesize; nand write.e $(loadaddr) $(f_rootfs_addr) $(filesize); cal $(loadaddr) -40 loadaddr" if ( UBOOT_CONFIG_BOOT_FROM_NAND )
 
 config UBOOT_CONFIG_UPDATE_ALL
 	string "update_all"
@@ -789,22 +794,22 @@ config UBOOT_CONFIG_UPDATE_ALL
 
 config UBOOT_CONFIG_UPDATE_FIRMWARE
     string "update_firmware"
-    default "tftpboot $(loadaddr) $(tftppath)$(firmware); upgrade $(loadaddr) $(filesize)"
+    default ""
 
 config UBOOT_CONFIG_UPDATE_FULLIMAGE
     string "update_fullimage"
-	default "tftpboot $(loadaddr) $(tftppath)$(fullimage); upgrade $(loadaddr) $(filesize)"
+	default ""
 
 config UBOOT_CONFIG_UPDATE_TOTALIMAGE
     string "update_totalimage"
-	default "tftpboot $(loadaddr) $(tftppath)$(totalimage); upgrade $(loadaddr) $(filesize)"
+	default ""
 
 config UBOOT_CONFIG_UPDATE_JFFS2IMAGE
     string "update_jffs2image"
 	default "tftpboot $(loadaddr) $(tftppath)$(jffs2image); erase $(f_rootfs_addr) $(f_rootfs_size); upgrade $(loadaddr) $(filesize)"  if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_NOR_FLASH_8M  )
 	default "tftpboot $(loadaddr) $(tftppath)$(jffs2image); erase $(f_rootfs_addr) +$(f_rootfs_size); upgrade $(loadaddr) $(filesize)"  if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_NOR_FLASH_16M )
 	default "tftpboot $(loadaddr) $(tftppath)$(jffs2image); erase $(f_rootfs_addr) +$(f_rootfs_size); upgrade $(loadaddr) $(filesize)"  if ( UBOOT_CONFIG_BOOT_FROM_NOR && UBOOT_CONFIG_NOR_FLASH_32M )
-	default "mw.l 80800000 0xffffffff 800000; tftpboot 80800000 $(tftppath)$(jffs2image); nand erase $(f_rootfs_addr) $(f_rootfs_size); nand write.e 80800040 $(f_rootfs_addr) $(filesize)"  if ( UBOOT_CONFIG_BOOT_FROM_NAND )
+	default "tftpboot $(loadaddr) $(tftppath)$(jffs2image); nand erase $(f_rootfs_addr) $(f_rootfs_size); cal $(loadaddr) 40 loadaddr; cal $(filesize) -40 filesize; nand write.e $(loadaddr) $(f_rootfs_addr) $(filesize); cal $(loadaddr) -40 loadaddr"  if ( UBOOT_CONFIG_BOOT_FROM_NAND )
 
 config UBOOT_CONFIG_UPDATE_FLASH
     string "update_flash"
@@ -813,21 +818,24 @@ config UBOOT_CONFIG_UPDATE_FLASH
 	default "tftp $(loadaddr) flash.img; protect off b0000000 +$(filesize); erase b0000000 +$(filesize); cp.b $(loadaddr) b0000000 $(filesize)"  if ( UBOOT_CONFIG_BOOT_FROM_NOR && !UBOOT_CONFIG_NOR_FLASH_16M && !UBOOT_CONFIG_NOR_FLASH_32M )
 
 config UBOOT_CONFIG_UPDATE_SYSCONFIG
-    string "update_sysconfig"
+	string "update_sysconfig"
 	depends on UBOOT_CONFIG_NAND_FLASH_32M || UBOOT_CONFIG_NAND_FLASH_512M
-    default "tftpboot $(loadaddr) $(tftppath)$(sysconfig); nand erase $(f_sysconfig_addr) $(f_sysconfig_size); nand write.partial $(loadaddr) $(f_sysconfig_addr) $(filesize)"
+	default "tftpboot $(loadaddr) $(tftppath)$(sysconfig); nand erase $(f_sysconfig_addr) $(f_sysconfig_size); nand write.partial $(loadaddr) $(f_sysconfig_addr) $(filesize)"
 
 config UBOOT_CONFIG_UPDATE_KERNEL2
 	string "update_kernel2"
 	depends on UBOOT_CONFIG_DUAL_IMAGE
+	default  "tftpboot $(loadaddr) $(tftppath)$(bootfile); nand erase $(f_kernel2_addr) $(f_kernel2_size); nand write.e $(loadaddr) $(f_kernel2_addr) $(filesize)"
 
 config UBOOT_CONFIG_UPDATE_ROOTFS2
-	string "update_rootfs2"
+	string  "update_rootfs2"
 	depends on UBOOT_CONFIG_DUAL_IMAGE
+	default	"tftpboot $(loadaddr) $(tftppath)$(rootfs); nand erase $(f_rootfs2_addr) $(f_rootfs2_size); cal $(loadaddr) 40 loadaddr; cal $(filesize) -40 filesize; nand write.e $(loadaddr) $(f_rootfs2_addr) $(filesize); cal $(loadaddr) -40 loadaddr"
 
 config UBOOT_CONFIG_UPDATE_JFFS2IMAGE2
-	string "update_jffs2image2"
+	string
 	depends on UBOOT_CONFIG_DUAL_IMAGE
+	default "tftpboot $(loadaddr) $(tftppath)$(jffs2image); nand erase $(f_rootfs2_addr) $(f_rootfs2_size); cal $(loadaddr) 40 loadaddr; cal $(filesize) -40 filesize; nand write.e $(loadaddr) $(f_rootfs2_addr) $(filesize); cal $(loadaddr) -40 loadaddr"
 
 config UBOOT_CONFIG_UPDATE_ALL2
 	string "upadte_all2"
@@ -835,7 +843,7 @@ config UBOOT_CONFIG_UPDATE_ALL2
 	default "run update_kernel2; run update_rootfs2"
 
 config UBOOT_CONFIG_UPDATE_DUAL
-	string "upadte_dual"
+	string "update_dual"
 	depends on UBOOT_CONFIG_DUAL_IMAGE
 	default "run update_kernel; run update_rootfs; run update_kernel2; run update_rootfs2"
 endif
@@ -879,7 +887,7 @@ endif
 
 config UBOOT_CONFIG_BOOTCOMMAND
     string "bootcmd"
-	default "run flash_flash"
+	default "run flash_flash$(bootid)"
 
 config UBOOT_CONFIG_RESET_UBOOT_CONFIG
 	string "reset_uboot_config"
@@ -888,7 +896,7 @@ config UBOOT_CONFIG_RESET_UBOOT_CONFIG
 	default "sf probe 0; sf write 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)"  if ( UBOOT_CONFIG_BOOT_FROM_SPI && UBOOT_CONFIG_LANTIQ_UBOOT_amazon_se )
 	default "sf probe 3; sf write 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)"  if ( UBOOT_CONFIG_BOOT_FROM_SPI && UBOOT_CONFIG_LANTIQ_UBOOT_vr9 )
 	default "sf probe 3; sf write 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)"  if ( UBOOT_CONFIG_BOOT_FROM_SPI && UBOOT_CONFIG_LANTIQ_UBOOT_ar10 )
-	default "nand write.partial 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)" if ( UBOOT_CONFIG_BOOT_FROM_NAND )
+	default "nand write.e 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)" if ( UBOOT_CONFIG_BOOT_FROM_NAND )
 
 config UBOOT_CONFIG_RESET_DDR_CONFIG
     string "reset_ddr_config"
@@ -901,7 +909,7 @@ config UBOOT_CONFIG_RESET_DDR_CONFIG
 
 config UBOOT_CONFIG_SW_VERSION
     string "sw_version"
-	default "01-01-100"
+	default "AT904X-03.10-arny1"
 
 config UBOOT_CONFIG_HW_VERSION
     string "hw_version"
@@ -915,7 +923,7 @@ if UBOOT_CONFIG_DUAL_IMAGE
 
 config UBOOT_CONFIG_ROOTFSMTD2
     string "rootmtd2"
-	default "/dev/mtdblock3"
+	default "/dev/mtdblock13"
 
 config UBOOT_CONFIG_FLASHARGS2
     string "flashargs2"
@@ -930,5 +938,5 @@ endif
 
 endmenu
 
-source package/boot/uboot-lantiq-easybox904xdsl/config/lib/Kconfig
-source package/boot/uboot-lantiq-easybox904xdsl/config/common/Kconfig
+source ../lib/Kconfig
+source ../common/Kconfig

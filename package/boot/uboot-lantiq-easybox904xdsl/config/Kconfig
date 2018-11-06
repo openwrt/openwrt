@@ -17,7 +17,7 @@ config LANTIQ_UBOOT_ar9
 config LANTIQ_UBOOT_vr9
     bool
 	default y
-	depends on ( TARGET_ltqcpe_platform_vr9 || TARGET_ifxcpe_platform_vr9 || TARGET_lantiq_xrx200_DEVICE_VGV952CJW33-E-IR )
+	depends on ( TARGET_ltqcpe_platform_vr9 || TARGET_ifxcpe_platform_vr9 || TARGET_lantiq_xrx200_DEVICE_lantiq_vgv952cjw33-e-ir )
 			
 config LANTIQ_UBOOT_ar10
     bool
@@ -25,4 +25,4 @@ config LANTIQ_UBOOT_ar10
 	depends on ( TARGET_ltqcpe_platform_ar10 || TARGET_ifxcpe_platform_ar10 )
 
 
-source package/boot/uboot-lantiq-easybox904xdsl/config/scripts_platform/Kconfig
+source scripts_platform/Kconfig

@@ -1,3 +1,4 @@
+
 menu "Supported commands"
 
 config UBOOT_CONFIG_CMD_AUTOSCRIPT
@@ -61,6 +62,7 @@ config UBOOT_CONFIG_CMD_LIBFDT
 
 config UBOOT_CONFIG_CMD_LOADB
      bool "loadb"
+     default y
 
 config UBOOT_CONFIG_CMD_LOADS
 	 bool "loads"
@@ -102,7 +104,7 @@ config UBOOT_CONFIG_CMD_MEMORY
 
 config UBOOT_CONFIG_MII
      bool "miibase"
-     default y
+     default n
 
 config UBOOT_CONFIG_CMD_MII
      bool "mii"
@@ -128,6 +130,7 @@ config UBOOT_CONFIG_PHY_GIGE
 
 config UBOOT_CONFIG_CMD_MISC
      bool "misc"
+     default y
 
 config UBOOT_CONFIG_CMD_MMC
      bool "mmc"
@@ -148,6 +151,7 @@ config UBOOT_CONFIG_CMD_PCMCIA
 
 config UBOOT_CONFIG_CMD_PING
      bool "ping"
+     default y
 
 config UBOOT_CONFIG_CMD_PORTIO
      bool "portio"
@@ -178,10 +182,16 @@ config UBOOT_CONFIG_CMD_SPI
      bool "spi"
 
 config UBOOT_CONFIG_CMD_UBI
-	 bool "ubi"
+	bool "ubi"
+	select UBOOT_CONFIG_CMD_MTDPARTS
+	select UBOOT_CONFIG_RBTREE
 
 config UBOOT_CONFIG_CMD_UBIFS
-     bool "ubifs"
+	bool "ubifs"
+	select UBOOT_CONFIG_CMD_UBI
+	select UBOOT_CONFIG_GZIP
+	select UBOOT_CONFIG_LZO
+	select UBOOT_CONFIG_ZLIB
 
 config UBOOT_CONFIG_CMD_UNIVERSE
      bool "universe"
