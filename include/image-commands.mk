@@ -62,14 +62,6 @@ define Build/zyxel-ras-image
 		&& mv $@.new $@
 endef
 
-define Build/mkbuffaloimg
-	$(STAGING_DIR_HOST)/bin/mkbuffaloimg -B $(BOARDNAME) \
-		-R $$(($(subst k, * 1024,$(ROOTFS_SIZE)))) \
-		-K $$(($(subst k, * 1024,$(KERNEL_SIZE)))) \
-		-i $@ -o $@.new
-	mv $@.new $@
-endef
-
 define Build/netgear-chk
 	$(STAGING_DIR_HOST)/bin/mkchkimg \
 		-o $@.new \

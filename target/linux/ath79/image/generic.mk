@@ -82,6 +82,13 @@ define Device/buffalo_bhr-4grv
 endef
 TARGET_DEVICES += buffalo_bhr-4grv
 
+define Device/buffalo_bhr-4grv2
+  ATH_SOC := qca9557
+  DEVICE_TITLE := Buffalo BHR-4GRV2
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += buffalo_bhr-4grv2
+
 define Device/buffalo_wzr-hp-ag300h
   ATH_SOC := ar7161
   DEVICE_TITLE := Buffalo WZR-HP-AG300H
