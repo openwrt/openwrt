@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
 #endif
 	/* now that we got the rootfs, repeat the whole thing again(sorta):
 	 * 1. zip the rootfs */
-	char *zipper = malloc(5 + 2*strlen(rootfs.file_name) + 4);
+	char *zipper = malloc(5 + 2*strlen(rootfs.file_name) + 6);
 	sprintf(zipper, "%s %s %s", "zip ", zipfsname, rootfs.file_name);
 	int ret = system(zipper);
 
