@@ -1,1 +1,4 @@
+if test -e /etc/init.d/auto_usb_mount; then
+	[ "x$ACTION" = "xadd" ] && exit 0
+fi
 [ "$ACTION" = "add" -o "$ACTION" = "remove" ] && /sbin/block hotplug
