@@ -23,7 +23,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  }
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
-@@ -441,6 +441,7 @@ struct brcmf_fw {
+@@ -442,6 +442,7 @@ struct brcmf_fw {
  	struct brcmf_fw_request *req;
  	u32 curpos;
  	void (*done)(struct device *dev, int err, struct brcmf_fw_request *req);
@@ -31,7 +31,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  };
  
  static void brcmf_fw_request_done(const struct firmware *fw, void *ctx);
-@@ -555,6 +556,8 @@ static void brcmf_fw_request_done(const
+@@ -649,6 +650,8 @@ static void brcmf_fw_request_done(const
  		fwctx->req = NULL;
  	}
  	fwctx->done(fwctx->dev, ret, fwctx->req);
@@ -40,7 +40,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	kfree(fwctx);
  }
  
-@@ -579,6 +582,7 @@ int brcmf_fw_get_firmwares(struct device
+@@ -673,6 +676,7 @@ int brcmf_fw_get_firmwares(struct device
  {
  	struct brcmf_fw_item *first = &req->items[0];
  	struct brcmf_fw *fwctx;
@@ -48,7 +48,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	int ret;
  
  	brcmf_dbg(TRACE, "enter: dev=%s\n", dev_name(dev));
-@@ -595,6 +599,9 @@ int brcmf_fw_get_firmwares(struct device
+@@ -689,6 +693,9 @@ int brcmf_fw_get_firmwares(struct device
  	fwctx->dev = dev;
  	fwctx->req = req;
  	fwctx->done = fw_cb;
@@ -58,7 +58,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  	ret = request_firmware_nowait(THIS_MODULE, true, first->path,
  				      fwctx->dev, GFP_KERNEL, fwctx,
-@@ -602,6 +609,9 @@ int brcmf_fw_get_firmwares(struct device
+@@ -696,6 +703,9 @@ int brcmf_fw_get_firmwares(struct device
  	if (ret < 0)
  		brcmf_fw_request_done(NULL, fwctx);
  
