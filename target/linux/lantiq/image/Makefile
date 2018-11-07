@@ -12,7 +12,6 @@ KERNEL_LOADADDR = 0x80002000
 KERNEL_ENTRY = 0x80002000
 
 include $(TOPDIR)/rules.mk
-include eb904.mk
 include $(INCLUDE_DIR)/image.mk
 
 ifeq ($(SUBTARGET),xway)
@@ -20,6 +19,21 @@ ifeq ($(SUBTARGET),xway)
 else
   UBIFS_OPTS := -m 2048 -e 126KiB -c 4096
 endif
+
+define Build/append-uImage-rootfs
+	mkimage -A mips -O linux -C none -T filesystem  \
+		-n 'OpenWRT RootFS' \
+		-d $(IMAGE_ROOTFS) $@.mkimage
+	cat $@.mkimage >> $@
+endef
+
+define Build/append-uImage-dummyrootfs
+	echo -n "dummy" > $@.dummyrootfs
+	mkimage -A mips -O linux -C none -T filesystem  \
+		-n 'OpenWRT dummy RootFS' \
+	-d $@.dummyrootfs $@.mkimage
+	cat $@.mkimage >> $@
+endef
 
 define Build/append-avm-fakeroot
 	cat ./eva.dummy.squashfs >> $@
@@ -595,6 +609,22 @@ define Device/bt_homehub-v5a
   SUPPORTED_DEVICES += BTHOMEHUBV5A
 endef
 TARGET_DEVICES += bt_homehub-v5a
+
+define Device/lantiq_vgv952cjw33-e-ir
+  $(Device/NAND)
+  BOARD_NAME := VGV952CJW33-E-IR
+  DEVICE_DTS := VGV952CJW33-E-IR
+  DEVICE_TITLE := Easybox 904 / Arcadyan VGV952CJW33-E-IR
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ltq-tapi kmod-ltq-vmmc wpad-basic
+  SUPPORTED_DEVICES += VGV952CJW33-E-IR
+  IMAGES := sysupgrade.bin fullimage.img
+  IMAGE/fullimage.img := append-uImage-rootfs | pad-offset 16 0 | append-kernel
+  # There is no typical use case for this, so commented out. Only here for documentary reason:
+  # Adjust initramfs build so it is flashable to a kernel partition even by the original U-Boot of the eb904
+  # with the reset-button-during-power-on recovery procedure. After boot it won't use flash any longer.
+  # KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma | pad-offset 16 0 | append-uImage-dummyrootfs | check-size 0x500000
+endef
+TARGET_DEVICES += lantiq_vgv952cjw33-e-ir
 
 define Device/netgear_dm200
   DEVICE_DTS := DM200
