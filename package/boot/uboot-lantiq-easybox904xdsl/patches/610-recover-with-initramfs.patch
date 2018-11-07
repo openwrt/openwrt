@@ -284,7 +284,7 @@ common/main.c
  
 -		run_command ("tftpboot $(loadaddr) $(tftppath)$(fullimage)", 0);                // tftp full image
 +	//	run_command ("tftpboot $(loadaddr) $(tftppath)$(fullimage)", 0);	// tftp full image
-+		run_command ("tftpboot $(0x86000000) $(tftppath)$(fullimage)", 0);	// RAM image might expand vastly, so keep lot of low mem free
++		run_command ("tftpboot 0x86000000 $(tftppath)$(fullimage)", 0);		// RAM image might expand vastly, so keep lot of low mem free
  
 -		if (verify_firmware() != 0) {
 -up_error:
