@@ -1,0 +1,240 @@
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -36,6 +36,7 @@ COMMONOBJS=dbutil.o buffer.o dbhelpers.o
+ 		queue.o \
+ 		atomicio.o compat.o fake-rfc2553.o \
+ 		ltc_prng.o ecc.o ecdsa.o crypto_desc.o \
++		dbmalloc.o \
+ 		gensignkey.o gendss.o genrsa.o
+ 
+ SVROBJS=svr-kex.o svr-auth.o sshpty.o \
+--- a/common-kex.c
++++ b/common-kex.c
+@@ -391,6 +391,14 @@ int is_compress_recv() {
+ 			&& ses.keys->recv.algo_comp == DROPBEAR_COMP_ZLIB_DELAY);
+ }
+ 
++static void* dropbear_zalloc(void* UNUSED(opaque), uInt items, uInt size) {
++	return m_calloc(items, size);
++}
++
++static void dropbear_zfree(void* UNUSED(opaque), void* ptr) {
++	m_free(ptr);
++}
++
+ /* Set up new zlib compression streams, close the old ones. Only
+  * called from gen_new_keys() */
+ static void gen_new_zstream_recv() {
+@@ -399,11 +407,10 @@ static void gen_new_zstream_recv() {
+ 	if (ses.newkeys->recv.algo_comp == DROPBEAR_COMP_ZLIB
+ 			|| ses.newkeys->recv.algo_comp == DROPBEAR_COMP_ZLIB_DELAY) {
+ 		ses.newkeys->recv.zstream = (z_streamp)m_malloc(sizeof(z_stream));
+-		ses.newkeys->recv.zstream->zalloc = Z_NULL;
+-		ses.newkeys->recv.zstream->zfree = Z_NULL;
++		ses.newkeys->recv.zstream->zalloc = dropbear_zalloc;
++		ses.newkeys->recv.zstream->zfree = dropbear_zfree;
+ 		
+ 		if (inflateInit(ses.newkeys->recv.zstream) != Z_OK) {
+-			m_free(ses.newkeys->recv.zstream);
+ 			dropbear_exit("zlib error");
+ 		}
+ 	} else {
+@@ -424,8 +431,8 @@ static void gen_new_zstream_trans() {
+ 	if (ses.newkeys->trans.algo_comp == DROPBEAR_COMP_ZLIB
+ 			|| ses.newkeys->trans.algo_comp == DROPBEAR_COMP_ZLIB_DELAY) {
+ 		ses.newkeys->trans.zstream = (z_streamp)m_malloc(sizeof(z_stream));
+-		ses.newkeys->trans.zstream->zalloc = Z_NULL;
+-		ses.newkeys->trans.zstream->zfree = Z_NULL;
++		ses.newkeys->trans.zstream->zalloc = dropbear_zalloc;
++		ses.newkeys->trans.zstream->zfree = dropbear_zfree;
+ 	
+ 		if (deflateInit2(ses.newkeys->trans.zstream, Z_DEFAULT_COMPRESSION,
+ 					Z_DEFLATED, DROPBEAR_ZLIB_WINDOW_BITS, 
+--- /dev/null
++++ b/dbmalloc.c
+@@ -0,0 +1,45 @@
++#include "dbmalloc.h"
++#include "dbutil.h"
++
++void * m_calloc(size_t nmemb, size_t size) {
++    if (SIZE_T_MAX / nmemb < size) {
++        dropbear_exit("m_calloc failed");
++    }
++    return m_malloc(nmemb*size);
++}
++
++void * m_strdup(const char * str) {
++    char* ret;
++    unsigned int len;
++    len = strlen(str);
++    ret = m_malloc(len+1);
++    if (ret == NULL) {
++        dropbear_exit("m_strdup failed");
++    }
++    memcpy(ret, str, len+1);
++    return ret;
++}
++
++void * m_malloc(size_t size) {
++	void* ret;
++	if (size == 0) {
++		dropbear_exit("m_malloc failed");
++	}
++	ret = calloc(1, size);
++	if (ret == NULL) {
++		dropbear_exit("m_malloc failed");
++	}
++	return ret;
++}
++
++void * m_realloc(void* ptr, size_t size) {
++	void *ret;
++	if (size == 0) {
++		dropbear_exit("m_realloc failed");
++	}
++	ret = realloc(ptr, size);
++	if (ret == NULL) {
++		dropbear_exit("m_realloc failed");
++	}
++	return ret;
++}
+--- /dev/null
++++ b/dbmalloc.h
+@@ -0,0 +1,17 @@
++#ifndef DBMALLOC_H_
++#define DBMALLOC_H_
++
++#include "stdint.h"
++#include "stdlib.h"
++#include "options.h"
++
++void * m_malloc(size_t size);
++void * m_calloc(size_t nmemb, size_t size);
++void * m_strdup(const char * str);
++void * m_realloc(void* ptr, size_t size);
++
++#define m_free_direct free
++
++#define m_free(X) do {m_free_direct(X); (X) = NULL;} while (0)
++
++#endif /* DBMALLOC_H_ */
+--- a/dbutil.c
++++ b/dbutil.c
+@@ -520,45 +520,6 @@ void m_close(int fd) {
+ 	}
+ }
+ 	
+-void * m_malloc(size_t size) {
+-
+-	void* ret;
+-
+-	if (size == 0) {
+-		dropbear_exit("m_malloc failed");
+-	}
+-	ret = calloc(1, size);
+-	if (ret == NULL) {
+-		dropbear_exit("m_malloc failed");
+-	}
+-	return ret;
+-
+-}
+-
+-void * m_strdup(const char * str) {
+-	char* ret;
+-
+-	ret = strdup(str);
+-	if (ret == NULL) {
+-		dropbear_exit("m_strdup failed");
+-	}
+-	return ret;
+-}
+-
+-void * m_realloc(void* ptr, size_t size) {
+-
+-	void *ret;
+-
+-	if (size == 0) {
+-		dropbear_exit("m_realloc failed");
+-	}
+-	ret = realloc(ptr, size);
+-	if (ret == NULL) {
+-		dropbear_exit("m_realloc failed");
+-	}
+-	return ret;
+-}
+-
+ void setnonblocking(int fd) {
+ 
+ 	TRACE(("setnonblocking: %d", fd))
+@@ -700,6 +661,6 @@ void fsync_parent_dir(const char* fn) {
+ 		TRACE(("error opening directory %s for fsync: %s", dir, strerror(errno)))
+ 	}
+ 
+-	free(fn_dir);
++	m_free(fn_dir);
+ #endif
+ }
+--- a/dbutil.h
++++ b/dbutil.h
+@@ -30,6 +30,7 @@
+ #include "buffer.h"
+ #include "queue.h"
+ #include "dbhelpers.h"
++#include "dbmalloc.h"
+ 
+ #ifndef DISABLE_SYSLOG
+ void startsyslog(const char *ident);
+@@ -66,10 +67,6 @@ int buf_readfile(buffer* buf, const char
+ int buf_getline(buffer * line, FILE * authfile);
+ 
+ void m_close(int fd);
+-void * m_malloc(size_t size);
+-void * m_strdup(const char * str);
+-void * m_realloc(void* ptr, size_t size);
+-#define m_free(X) do {free(X); (X) = NULL;} while (0)
+ void setnonblocking(int fd);
+ void disallow_core(void);
+ int m_str_to_uint(const char* str, unsigned int *val);
+--- a/includes.h
++++ b/includes.h
+@@ -155,6 +155,10 @@ typedef unsigned int u_int32_t;
+ typedef u_int32_t uint32_t;
+ #endif /* HAVE_UINT32_T */
+ 
++#ifndef SIZE_T_MAX
++#define SIZE_T_MAX ULONG_MAX
++#endif /* SIZE_T_MAX */
++
+ #ifdef HAVE_LINUX_PKT_SCHED_H
+ #include <linux/types.h>
+ #include <linux/pkt_sched.h>
+--- a/libtomcrypt/src/headers/tomcrypt_custom.h
++++ b/libtomcrypt/src/headers/tomcrypt_custom.h
+@@ -12,6 +12,12 @@
+ 
+ #include "tomcrypt_dropbear.h"
+ 
++#include "dbmalloc.h"
++#define XMALLOC m_malloc
++#define XFREE m_free_direct
++#define XREALLOC m_realloc
++#define XCALLOC m_calloc
++
+ /* macros for various libc functions you can change for embedded targets */
+ #ifndef XMALLOC
+ #define XMALLOC  malloc
+--- a/libtommath/tommath_class.h
++++ b/libtommath/tommath_class.h
+@@ -1062,6 +1062,12 @@
+ #undef BN_MP_TOOM_MUL_C
+ #undef BN_MP_TOOM_SQR_C
+ 
++#include "dbmalloc.h"
++#define XMALLOC m_malloc
++#define XFREE m_free_direct
++#define XREALLOC m_realloc
++#define XCALLOC m_calloc
++
+ /* $Source$ */
+ /* $Revision$ */
+ /* $Date$ */
