@@ -1,0 +1,95 @@
+--- a/common-session.c
++++ b/common-session.c
+@@ -337,7 +337,7 @@ void session_cleanup() {
+ void send_session_identification() {
+ 	buffer *writebuf = buf_new(strlen(LOCAL_IDENT "\r\n") + 1);
+ 	buf_putbytes(writebuf, (const unsigned char *) LOCAL_IDENT "\r\n", strlen(LOCAL_IDENT "\r\n"));
+-	writebuf_enqueue(writebuf, 0);
++	writebuf_enqueue(writebuf);
+ }
+ 
+ static void read_session_identification() {
+--- a/netio.c
++++ b/netio.c
+@@ -305,10 +305,8 @@ void packet_queue_to_iovec(const struct
+ 	for (l = queue->head, i = 0; i < *iov_count; l = l->link, i++)
+ 	{
+ 		writebuf = (buffer*)l->item;
+-		len = writebuf->len - 1 - writebuf->pos;
++		len = writebuf->len - writebuf->pos;
+ 		dropbear_assert(len > 0);
+-		TRACE2(("write_packet writev #%d  type %d len %d/%d", i, writebuf->data[writebuf->len-1],
+-				len, writebuf->len-1))
+ 		iov[i].iov_base = buf_getptr(writebuf, len);
+ 		iov[i].iov_len = len;
+ 	}
+@@ -319,7 +317,7 @@ void packet_queue_consume(struct Queue *
+ 	int len;
+ 	while (written > 0) {
+ 		writebuf = (buffer*)examine(queue);
+-		len = writebuf->len - 1 - writebuf->pos;
++		len = writebuf->len - writebuf->pos;
+ 		if (len > written) {
+ 			/* partial buffer write */
+ 			buf_incrpos(writebuf, written);
+--- a/packet.c
++++ b/packet.c
+@@ -64,7 +64,6 @@ void write_packet() {
+ #else
+ 	int len;
+ 	buffer* writebuf;
+-	int packet_type;
+ #endif
+ 	
+ 	TRACE2(("enter write_packet"))
+@@ -97,12 +96,7 @@ void write_packet() {
+ 	/* Get the next buffer in the queue of encrypted packets to write*/
+ 	writebuf = (buffer*)examine(&ses.writequeue);
+ 
+-	/* The last byte of the buffer is not to be transmitted, but is 
+-	 * a cleartext packet_type indicator */
+-	packet_type = writebuf->data[writebuf->len-1];
+-	len = writebuf->len - 1 - writebuf->pos;
+-	TRACE2(("write_packet type %d len %d/%d", packet_type,
+-			len, writebuf->len-1))
++	len = writebuf->len - writebuf->pos;
+ 	dropbear_assert(len > 0);
+ 	/* Try to write as much as possible */
+ 	written = write(ses.sock_out, buf_getptr(writebuf, len), len);
+@@ -578,7 +572,7 @@ void encrypt_packet() {
+ 	/* Update counts */
+ 	ses.kexstate.datatrans += writebuf->len;
+ 
+-	writebuf_enqueue(writebuf, packet_type);
++	writebuf_enqueue(writebuf);
+ 
+ 	/* Update counts */
+ 	ses.transseq++;
+@@ -598,14 +592,11 @@ void encrypt_packet() {
+ 	TRACE2(("leave encrypt_packet()"))
+ }
+ 
+-void writebuf_enqueue(buffer * writebuf, unsigned char packet_type) {
+-	/* The last byte of the buffer stores the cleartext packet_type. It is not
+-	 * transmitted but is used for transmit timeout purposes */
+-	buf_putbyte(writebuf, packet_type);
++void writebuf_enqueue(buffer * writebuf) {
+ 	/* enqueue the packet for sending. It will get freed after transmission. */
+ 	buf_setpos(writebuf, 0);
+ 	enqueue(&ses.writequeue, (void*)writebuf);
+-	ses.writequeue_len += writebuf->len-1;
++	ses.writequeue_len += writebuf->len;
+ }
+ 
+ 
+--- a/packet.h
++++ b/packet.h
+@@ -35,7 +35,7 @@ void read_packet(void);
+ void decrypt_packet(void);
+ void encrypt_packet(void);
+ 
+-void writebuf_enqueue(buffer * writebuf, unsigned char packet_type);
++void writebuf_enqueue(buffer * writebuf);
+ 
+ void process_packet(void);
+ 
