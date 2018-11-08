@@ -1,0 +1,19 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -9,6 +9,7 @@ AC_PREREQ(2.59)
+ AC_INIT
+ AC_CONFIG_SRCDIR(buffer.c)
+ 
++ORIGCFLAGS="$CFLAGS"
+ # Checks for programs.
+ AC_PROG_CC
+ 
+@@ -29,7 +30,7 @@ AC_DEFUN(DB_TRYADDCFLAGS,
+ }])
+ 
+ # set compile flags prior to other tests
+-if test -z "$OLDCFLAGS" && test "$GCC" = "yes"; then
++if test -z "$ORIGCFLAGS" && test "$GCC" = "yes"; then
+ 	AC_MSG_NOTICE(No \$CFLAGS set... using "-Os -W -Wall" for GCC)
+ 	CFLAGS="-Os -W -Wall"
+ fi
