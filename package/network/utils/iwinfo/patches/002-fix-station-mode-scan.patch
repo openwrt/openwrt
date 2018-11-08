@@ -1,0 +1,27 @@
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -2535,10 +2535,10 @@ static int nl80211_get_scanlist(const ch
+ 	}
+ 
+ 	/* WPA supplicant */
+-	if (!nl80211_get_scanlist_wpactl(ifname, buf, len))
++	/*if (!nl80211_get_scanlist_wpactl(ifname, buf, len))
+ 	{
+ 		return 0;
+-	}
++	}*/
+ 
+ 	/* station / ad-hoc / monitor scan */
+ 	else if (!nl80211_get_mode(ifname, &mode) &&
+--- a/iwinfo_cli.c
++++ b/iwinfo_cli.c
+@@ -621,6 +621,9 @@ static void print_scanlist(const struct
+ 					printf("%s ", IWINFO_HTMODE_NAMES[h]);
+ 			printf("\n");
+ 		}
++		else{
++			printf("          HT Capabilities: UNKNOW \n");
++		}
+ 		printf("\n");
+ 	}
+ }

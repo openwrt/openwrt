@@ -1,0 +1,203 @@
+From patchwork Mon Jul 16 07:48:54 2018
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: [OpenWrt-Devel,1/2] add htmodelist for scan results
+X-Patchwork-Submitter: Yury Shvedov <yshvedov@wimarksystems.com>
+X-Patchwork-Id: 944171
+X-Patchwork-Delegate: jow@openwrt.org
+Message-Id: <20180716074854.11321-1-yshvedov@wimarksystems.com>
+To: Jo-Philipp Wich <jo@mein.io>
+Cc: openwrt-devel@lists.openwrt.org
+Date: Mon, 16 Jul 2018 10:48:54 +0300
+From: Yury Shvedov <yshvedov@wimarksystems.com>
+List-Id: <openwrt-devel.lists.openwrt.org>
+
+The knowledge about HT and VHT modes could be useful for user experience.
+So grab it via nl80211 and make it available in both C and LUA APIs,
+and show htmodelist on CLI scan results.
+
+Signed-off-by: Yury Shvedov <yshvedov@wimarksystems.com>
+---
+ include/iwinfo.h |  1 +
+ iwinfo_cli.c     | 13 ++++++--
+ iwinfo_lua.c     | 14 ++++++++-
+ iwinfo_nl80211.c | 77 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 102 insertions(+), 3 deletions(-)
+
+diff --git a/include/iwinfo.h b/include/iwinfo.h
+index 929f697..b3f5470 100644
+--- a/include/iwinfo.h
++++ b/include/iwinfo.h
+@@ -154,6 +154,7 @@ struct iwinfo_scanlist_entry {
+ 	uint8_t signal;
+ 	uint8_t quality;
+ 	uint8_t quality_max;
++    uint16_t htmodelist;
+ 	struct iwinfo_crypto_entry crypto;
+ };
+ 
+diff --git a/iwinfo_cli.c b/iwinfo_cli.c
+index 49c9035..0429fbc 100644
+--- a/iwinfo_cli.c
++++ b/iwinfo_cli.c
+@@ -572,7 +572,7 @@ static void print_info(const struct iwinfo_ops *iw, const char *ifname)
+ 
+ static void print_scanlist(const struct iwinfo_ops *iw, const char *ifname)
+ {
+-	int i, x, len;
++	int i, h, x, len;
+ 	char buf[IWINFO_BUFSIZE];
+ 	struct iwinfo_scanlist_entry *e;
+ 
+@@ -603,8 +603,17 @@ static void print_scanlist(const struct iwinfo_ops *iw, const char *ifname)
+ 			format_signal(e->signal - 0x100),
+ 			format_quality(e->quality),
+ 			format_quality_max(e->quality_max));
+-		printf("          Encryption: %s\n\n",
++		printf("          Encryption: %s\n",
+ 			format_encryption(&e->crypto));
++		if (e->htmodelist)
++		{
++			printf("          HT Capabilities: ");
++			for (h = 0; h < ARRAY_SIZE(IWINFO_HTMODE_NAMES); h++)
++				if (e->htmodelist & (1 << h))
++					printf("%s ", IWINFO_HTMODE_NAMES[h]);
++			printf("\n");
++		}
++		printf("\n");
+ 	}
+ }
+ 
+diff --git a/iwinfo_lua.c b/iwinfo_lua.c
+index eebab8e..303fd08 100644
+--- a/iwinfo_lua.c
++++ b/iwinfo_lua.c
+@@ -378,7 +378,7 @@ static int iwinfo_L_txpwrlist(lua_State *L, int (*func)(const char *, char *, in
+ /* Wrapper for scan list */
+ static int iwinfo_L_scanlist(lua_State *L, int (*func)(const char *, char *, int *))
+ {
+-	int i, x, len = 0;
++	int i, x, h, len = 0;
+ 	char rv[IWINFO_BUFSIZE];
+ 	char macstr[18];
+ 	const char *ifname = luaL_checkstring(L, 1);
+@@ -432,6 +432,18 @@ static int iwinfo_L_scanlist(lua_State *L, int (*func)(const char *, char *, int
+ 			iwinfo_L_cryptotable(L, &e->crypto);
+ 			lua_setfield(L, -2, "encryption");
+ 
++			/* HT Modes */
++			if (e->htmodelist)
++			{
++				lua_newtable(L);
++				for (h = 0; h < ARRAY_SIZE(IWINFO_HTMODE_NAMES); h++)
++				{
++					lua_pushboolean(L, e->htmodelist & (1 << h));
++					lua_setfield(L, -2, IWINFO_HTMODE_NAMES[h]);
++				}
++                lua_setfield(L, -2, "htmodelist");
++			}
++
+ 			lua_rawseti(L, -2, x);
+ 		}
+ 	}
+diff --git a/iwinfo_nl80211.c b/iwinfo_nl80211.c
+index ecd2d6a..542ac7d 100644
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -1980,6 +1980,71 @@ struct nl80211_scanlist {
+ 	int len;
+ };
+ 
++static void nl80211_parse_ht_capa(struct iwinfo_scanlist_entry *e,
++								  unsigned char *ie,
++								  int len)
++{
++	int capa;
++	if (len < 2)
++		return;
++	e->htmodelist |= IWINFO_HTMODE_HT20;
++	capa = ie[0] | (ie[8] << 8);
++	if (capa & (1 << 1))
++	{
++		e->htmodelist |= IWINFO_HTMODE_HT40;
++		if (e->htmodelist & IWINFO_HTMODE_VHT20)
++			e->htmodelist |= IWINFO_HTMODE_VHT40;
++	}
++}
++static void nl80211_parse_vht_capa(struct iwinfo_scanlist_entry *e,
++								   unsigned char *ie,
++								   int len)
++{
++	int capa;
++	if (len < 4)
++		return;
++	capa = ie[0] | (ie[1] << 8) | (ie[2] << 16) | (ie[3] << 24);
++
++	e->htmodelist |= IWINFO_HTMODE_VHT20;
++	if (e->htmodelist & IWINFO_HTMODE_HT40)
++		e->htmodelist |= IWINFO_HTMODE_VHT40;
++
++	switch ((capa >> 2) & 3) {
++	/*case 0: neither 160 nor 80+80 */
++	case 1:
++		e->htmodelist |= IWINFO_HTMODE_VHT160;
++		break;
++	case 2:
++		e->htmodelist |= IWINFO_HTMODE_VHT80_80;
++		break;
++	}
++}
++static void nl80211_parse_vht_oper(struct iwinfo_scanlist_entry *e,
++								   unsigned char *ie,
++								   int len)
++{
++	int chanwidth;
++	if (len < 1)
++		return;
++	chanwidth = ie[0];
++
++	e->htmodelist |= IWINFO_HTMODE_VHT20;
++	if (e->htmodelist & IWINFO_HTMODE_HT40)
++		e->htmodelist |= IWINFO_HTMODE_VHT40;
++
++	switch (chanwidth) {
++	/*case 0: 20 or 40 MHz */
++	case 1:
++		e->htmodelist |= IWINFO_HTMODE_VHT80;
++		break;
++	case 2:
++		e->htmodelist |= IWINFO_HTMODE_VHT160;
++		break;
++	case 3:
++		e->htmodelist |= IWINFO_HTMODE_VHT80_80;
++		break;
++	}
++}
+ 
+ static void nl80211_get_scanlist_ie(struct nlattr **bss,
+                                     struct iwinfo_scanlist_entry *e)
+@@ -1999,11 +2064,23 @@ static void nl80211_get_scanlist_ie(struct nlattr **bss,
+ 			e->ssid[len] = 0;
+ 			break;
+ 
++		case 45: /* HT Capabilities */
++			nl80211_parse_ht_capa(e, ie + 2, ie[1]);
++			break;
++
+ 		case 48: /* RSN */
+ 			iwinfo_parse_rsn(&e->crypto, ie + 2, ie[1],
+ 			                 IWINFO_CIPHER_CCMP, IWINFO_KMGMT_8021x);
+ 			break;
+ 
++		case 191: /* VHT Capabilities */
++			nl80211_parse_vht_capa(e, ie + 2, ie[1]);
++			break;
++
++		case 192: /* VHT Operation */
++			nl80211_parse_vht_oper(e, ie + 2, ie[1]);
++			break;
++
+ 		case 221: /* Vendor */
+ 			if (ie[1] >= 4 && !memcmp(ie + 2, ms_oui, 3) && ie[5] == 1)
+ 				iwinfo_parse_rsn(&e->crypto, ie + 6, ie[1] - 4,
