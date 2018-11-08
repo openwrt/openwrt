@@ -1,0 +1,170 @@
+--- a/auth.h
++++ b/auth.h
+@@ -113,6 +113,7 @@ struct AuthState {
+ 							   logged. */
+ 	unsigned int checkusername_failed;  /* Server only, set if checkusername
+ 	                                has already failed */
++	struct timespec auth_starttime;
+ 
+ 	/* These are only used for the server */
+ 	uid_t pw_uid;
+--- a/configure.ac
++++ b/configure.ac
+@@ -474,6 +474,8 @@ AC_CHECK_FUNCS(endutxent getutxent getut
+ AC_CHECK_FUNCS(setutxent utmpxname)
+ AC_CHECK_FUNCS(logout updwtmp logwtmp)
+ 
++AC_CHECK_FUNCS(clock_gettime)
++
+ # OS X monotonic time
+ AC_CHECK_HEADERS([mach/mach_time.h])
+ AC_CHECK_FUNCS(mach_absolute_time)
+--- a/dbutil.c
++++ b/dbutil.c
+@@ -589,61 +589,48 @@ int constant_time_memcmp(const void* a,
+ 	return c;
+ }
+ 
+-#if defined(__linux__) && defined(SYS_clock_gettime)
+-/* CLOCK_MONOTONIC_COARSE was added in Linux 2.6.32 but took a while to
+-reach userspace include headers */
+-#ifndef CLOCK_MONOTONIC_COARSE
+-#define CLOCK_MONOTONIC_COARSE 6
+-#endif
+-/* Some old toolchains know SYS_clock_gettime but not CLOCK_MONOTONIC */
+-#ifndef CLOCK_MONOTONIC
+-#define CLOCK_MONOTONIC 1
+-#endif
+-static clockid_t get_linux_clock_source() {
+-	struct timespec ts;
+-	if (syscall(SYS_clock_gettime, CLOCK_MONOTONIC_COARSE, &ts) == 0) {
+-		return CLOCK_MONOTONIC_COARSE;
+-	}
++void gettime_wrapper(struct timespec *now) {
++	struct timeval tv;
+ 
+-	if (syscall(SYS_clock_gettime, CLOCK_MONOTONIC, &ts) == 0) {
+-		return CLOCK_MONOTONIC;
++#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
++	if (clock_gettime(CLOCK_MONOTONIC, now) == 0) {
++		return;
+ 	}
+-	return -1;
+-}
+-#endif 
++#endif
+ 
+-time_t monotonic_now() {
+ #if defined(__linux__) && defined(SYS_clock_gettime)
+-	static clockid_t clock_source = -2;
+-
+-	if (clock_source == -2) {
+-		/* First run, find out which one works. 
+-		-1 will fall back to time() */
+-		clock_source = get_linux_clock_source();
+-	}
+-
+-	if (clock_source >= 0) {
+-		struct timespec ts;
+-		if (syscall(SYS_clock_gettime, clock_source, &ts) != 0) {
+-			/* Intermittent clock failures should not happen */
+-			dropbear_exit("Clock broke");
++	static int linux_monotonic_failed = 0;
++	if (!linux_monotonic_failed) {
++		int clock_source_monotonic = 1;
++		if (syscall(SYS_clock_gettime, clock_source_monotonic, now) == 0) {
++			return;
++		} else {
++			linux_monotonic_failed = 1;
+ 		}
+-		return ts.tv_sec;
+ 	}
+-#endif /* linux clock_gettime */
++#endif /* linux fallback clock_gettime */
+ 
+ #if defined(HAVE_MACH_ABSOLUTE_TIME)
+-	/* OS X, see https://developer.apple.com/library/mac/qa/qa1398/_index.html */
+ 	static mach_timebase_info_data_t timebase_info;
++	uint64_t scaled_time;
+ 	if (timebase_info.denom == 0) {
+ 		mach_timebase_info(&timebase_info);
+ 	}
+-	return mach_absolute_time() * timebase_info.numer / timebase_info.denom
+-		/ 1e9;
++	scaled_time = mach_absolute_time() * timebase_info.numer / timebase_info.denom;
++	now->tv_sec = scaled_time / 1000000000;
++	now->tv_nsec = scaled_time % 1000000000;
+ #endif /* osx mach_absolute_time */
+ 
+ 	/* Fallback for everything else - this will sometimes go backwards */
+-	return time(NULL);
++	gettimeofday(&tv, NULL);
++	now->tv_sec = tv.tv_sec;
++	now->tv_nsec = 1000*tv.tv_usec;
++}
++
++time_t monotonic_now() {
++	struct timespec ts;
++	gettime_wrapper(&ts);
++	return ts.tv_sec;
+ }
+ 
+ void fsync_parent_dir(const char* fn) {
+--- a/dbutil.h
++++ b/dbutil.h
+@@ -83,6 +83,7 @@ int constant_time_memcmp(const void* a,
+ /* Returns a time in seconds that doesn't go backwards - does not correspond to
+ a real-world clock */
+ time_t monotonic_now(void);
++void gettime_wrapper(struct timespec *now);
+ 
+ char * expand_homedir_path(const char *inpath);
+ 
+--- a/svr-auth.c
++++ b/svr-auth.c
+@@ -79,6 +79,8 @@ void recv_msg_userauth_request() {
+ 
+ 	TRACE(("enter recv_msg_userauth_request"))
+ 
++	gettime_wrapper(&ses.authstate.auth_starttime);
++
+ 	/* ignore packets if auth is already done */
+ 	if (ses.authstate.authdone == 1) {
+ 		TRACE(("leave recv_msg_userauth_request: authdone already"))
+@@ -382,11 +384,31 @@ void send_msg_userauth_failure(int parti
+ 	encrypt_packet();
+ 
+ 	if (incrfail) {
+-		unsigned int delay;
+-		genrandom((unsigned char*)&delay, sizeof(delay));
+-		/* We delay for 300ms +- 50ms */
+-		delay = 250000 + (delay % 100000);
+-		usleep(delay);
++		const unsigned int mindelay = 250000000;
++		const unsigned int vardelay = 100000000;
++		unsigned int rand_delay;
++		struct timespec delay;
++
++		gettime_wrapper(&delay);
++		delay.tv_sec -= ses.authstate.auth_starttime.tv_sec;
++		delay.tv_nsec -= ses.authstate.auth_starttime.tv_nsec;
++
++		if (delay.tv_nsec < 0) {
++			delay.tv_nsec += 1000000000;
++			delay.tv_sec -= 1;
++		}
++
++		genrandom((unsigned char*)&rand_delay, sizeof(rand_delay));
++		rand_delay = mindelay + (rand_delay % vardelay);
++
++		if (delay.tv_sec == 0 && delay.tv_nsec <= mindelay) {
++			delay.tv_nsec = rand_delay - delay.tv_nsec;
++		} else {
++			delay.tv_sec = 0;
++			delay.tv_nsec = rand_delay;
++		}
++
++		while (nanosleep(&delay, &delay) == -1 && errno == EINTR) { /* Go back to sleep */ }
+ 		ses.authstate.failcount++;
+ 	}
+ 
