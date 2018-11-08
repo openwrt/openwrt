@@ -1,6 +1,6 @@
 --- a/svr-authpubkey.c
 +++ b/svr-authpubkey.c
-@@ -324,14 +324,20 @@ static int checkpubkey(const char* algo,
+@@ -327,14 +327,20 @@ static int checkpubkey(const char* algo,
  		goto out;
  	}
  
@@ -29,7 +29,7 @@
  
  	/* open the file as the authenticating user. */
  	origuid = getuid();
-@@ -408,26 +414,35 @@ static int checkpubkeyperms() {
+@@ -411,26 +417,35 @@ static int checkpubkeyperms() {
  		goto out;
  	}
  
