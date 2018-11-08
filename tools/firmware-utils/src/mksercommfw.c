@@ -3,7 +3,26 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <asm/byteorder.h>
+#include <byteswap.h>
+#include <endian.h>
+
+#if !defined(__BYTE_ORDER)
+#error "Unknown byte order"
+#endif
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define cpu_to_be32(x)  (x)
+#define be32_to_cpu(x)  (x)
+#define cpu_to_be16(x)  (x)
+#define be16_to_cpu(x)  (x)
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+#define cpu_to_be32(x)  bswap_32(x)
+#define be32_to_cpu(x)  bswap_32(x)
+#define cpu_to_be16(x)  bswap_16(x)
+#define be16_to_cpu(x)  bswap_16(x)
+#else
+#error "Unsupported endianness"
+#endif
 
 /* #define DEBUG 1 */
 
@@ -212,7 +231,7 @@ int main(int argc, char* argv[]) {
 	image.file_name = argv[1];
 	kernel_offset = (u_int32_t) strtol(argv[2], NULL, 0);
 	swVer = (u_int32_t) strtol(argv[5], NULL, 0);
-	swVer = __cpu_to_be32(swVer);
+	swVer = cpu_to_be32(swVer);
 
 	/* Check if files actually exist */
 	if (access(sysupgrade.file_name, (F_OK | R_OK))) {
