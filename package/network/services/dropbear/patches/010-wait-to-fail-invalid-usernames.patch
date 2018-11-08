@@ -1,0 +1,191 @@
+--- a/auth.h
++++ b/auth.h
+@@ -37,9 +37,9 @@ void recv_msg_userauth_request(void);
+ void send_msg_userauth_failure(int partial, int incrfail);
+ void send_msg_userauth_success(void);
+ void send_msg_userauth_banner(const buffer *msg);
+-void svr_auth_password(void);
+-void svr_auth_pubkey(void);
+-void svr_auth_pam(void);
++void svr_auth_password(int valid_user);
++void svr_auth_pubkey(int valid_user);
++void svr_auth_pam(int valid_user);
+ 
+ #if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
+ int svr_pubkey_allows_agentfwd(void);
+--- a/svr-auth.c
++++ b/svr-auth.c
+@@ -149,10 +149,8 @@ void recv_msg_userauth_request() {
+ 		if (methodlen == AUTH_METHOD_PASSWORD_LEN &&
+ 				strncmp(methodname, AUTH_METHOD_PASSWORD,
+ 					AUTH_METHOD_PASSWORD_LEN) == 0) {
+-			if (valid_user) {
+-				svr_auth_password();
+-				goto out;
+-			}
++			svr_auth_password(valid_user);
++			goto out;
+ 		}
+ 	}
+ #endif
+@@ -164,10 +162,8 @@ void recv_msg_userauth_request() {
+ 		if (methodlen == AUTH_METHOD_PASSWORD_LEN &&
+ 				strncmp(methodname, AUTH_METHOD_PASSWORD,
+ 					AUTH_METHOD_PASSWORD_LEN) == 0) {
+-			if (valid_user) {
+-				svr_auth_pam();
+-				goto out;
+-			}
++			svr_auth_pam(valid_user);
++			goto out;
+ 		}
+ 	}
+ #endif
+@@ -177,12 +173,7 @@ void recv_msg_userauth_request() {
+ 	if (methodlen == AUTH_METHOD_PUBKEY_LEN &&
+ 			strncmp(methodname, AUTH_METHOD_PUBKEY,
+ 				AUTH_METHOD_PUBKEY_LEN) == 0) {
+-		if (valid_user) {
+-			svr_auth_pubkey();
+-		} else {
+-			/* pubkey has no failure delay */
+-			send_msg_userauth_failure(0, 0);
+-		}
++		svr_auth_pubkey(valid_user);
+ 		goto out;
+ 	}
+ #endif
+--- a/svr-authpam.c
++++ b/svr-authpam.c
+@@ -178,13 +178,14 @@ pamConvFunc(int num_msg,
+  * Keyboard interactive would be a lot nicer, but since PAM is synchronous, it
+  * gets very messy trying to send the interactive challenges, and read the
+  * interactive responses, over the network. */
+-void svr_auth_pam() {
++void svr_auth_pam(int valid_user) {
+ 
+ 	struct UserDataS userData = {NULL, NULL};
+ 	struct pam_conv pamConv = {
+ 		pamConvFunc,
+ 		&userData /* submitted to pamvConvFunc as appdata_ptr */ 
+ 	};
++	const char* printable_user = NULL;
+ 
+ 	pam_handle_t* pamHandlep = NULL;
+ 
+@@ -207,9 +208,15 @@ void svr_auth_pam() {
+ 	/* used to pass data to the PAM conversation function - don't bother with
+ 	 * strdup() etc since these are touched only by our own conversation
+ 	 * function (above) which takes care of it */
+-	userData.user = ses.authstate.pw_name;
++	userData.user = ses.authstate.username;
+ 	userData.passwd = password;
+ 
++	if (ses.authstate.pw_name) {
++		printable_user = ses.authstate.pw_name;
++	} else {
++		printable_user = "<invalid username>";
++	}
++
+ 	/* Init pam */
+ 	if ((rc = pam_start("sshd", NULL, &pamConv, &pamHandlep)) != PAM_SUCCESS) {
+ 		dropbear_log(LOG_WARNING, "pam_start() failed, rc=%d, %s", 
+@@ -242,7 +249,7 @@ void svr_auth_pam() {
+ 				rc, pam_strerror(pamHandlep, rc));
+ 		dropbear_log(LOG_WARNING,
+ 				"Bad PAM password attempt for '%s' from %s",
+-				ses.authstate.pw_name,
++				printable_user,
+ 				svr_ses.addrstring);
+ 		send_msg_userauth_failure(0, 1);
+ 		goto cleanup;
+@@ -253,12 +260,16 @@ void svr_auth_pam() {
+ 				rc, pam_strerror(pamHandlep, rc));
+ 		dropbear_log(LOG_WARNING,
+ 				"Bad PAM password attempt for '%s' from %s",
+-				ses.authstate.pw_name,
++				printable_user,
+ 				svr_ses.addrstring);
+ 		send_msg_userauth_failure(0, 1);
+ 		goto cleanup;
+ 	}
+ 
++	if (!valid_user) {
++		send_msg_userauth_failure(0, 1);
++	}
++
+ 	/* successful authentication */
+ 	dropbear_log(LOG_NOTICE, "PAM password auth succeeded for '%s' from %s",
+ 			ses.authstate.pw_name,
+--- a/svr-authpasswd.c
++++ b/svr-authpasswd.c
+@@ -48,22 +48,14 @@ static int constant_time_strcmp(const ch
+ 
+ /* Process a password auth request, sending success or failure messages as
+  * appropriate */
+-void svr_auth_password() {
++void svr_auth_password(int valid_user) {
+ 	
+ 	char * passwdcrypt = NULL; /* the crypt from /etc/passwd or /etc/shadow */
+ 	char * testcrypt = NULL; /* crypt generated from the user's password sent */
+-	char * password;
++	char * password = NULL;
+ 	unsigned int passwordlen;
+-
+ 	unsigned int changepw;
+ 
+-	passwdcrypt = ses.authstate.pw_passwd;
+-
+-#ifdef DEBUG_HACKCRYPT
+-	/* debugging crypt for non-root testing with shadows */
+-	passwdcrypt = DEBUG_HACKCRYPT;
+-#endif
+-
+ 	/* check if client wants to change password */
+ 	changepw = buf_getbool(ses.payload);
+ 	if (changepw) {
+@@ -73,12 +65,18 @@ void svr_auth_password() {
+ 	}
+ 
+ 	password = buf_getstring(ses.payload, &passwordlen);
+-
+-	/* the first bytes of passwdcrypt are the salt */
+-	testcrypt = crypt(password, passwdcrypt);
++	if (valid_user) {
++		passwdcrypt = ses.authstate.pw_passwd;
++		testcrypt = crypt(password, passwdcrypt);
++	}
+ 	m_burn(password, passwordlen);
+ 	m_free(password);
+ 
++	if (!valid_user) {
++		send_msg_userauth_failure(0, 1);
++		return;
++	}
++
+ 	if (testcrypt == NULL) {
+ 		/* crypt() with an invalid salt like "!!" */
+ 		dropbear_log(LOG_WARNING, "User account '%s' is locked",
+--- a/svr-authpubkey.c
++++ b/svr-authpubkey.c
+@@ -79,7 +79,7 @@ static int checkfileperm(char * filename
+ 
+ /* process a pubkey auth request, sending success or failure message as
+  * appropriate */
+-void svr_auth_pubkey() {
++void svr_auth_pubkey(int valid_user) {
+ 
+ 	unsigned char testkey; /* whether we're just checking if a key is usable */
+ 	char* algo = NULL; /* pubkey algo */
+@@ -102,6 +102,11 @@ void svr_auth_pubkey() {
+ 	keybloblen = buf_getint(ses.payload);
+ 	keyblob = buf_getptr(ses.payload, keybloblen);
+ 
++	if (!valid_user) {
++		send_msg_userauth_failure(0, 0);
++		goto out;
++	}
++
+ 	/* check if the key is valid */
+ 	if (checkpubkey(algo, algolen, keyblob, keybloblen) == DROPBEAR_FAILURE) {
+ 		send_msg_userauth_failure(0, 0);
