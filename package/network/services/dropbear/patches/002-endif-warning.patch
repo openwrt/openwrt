@@ -1,0 +1,11 @@
+--- a/svr-auth.c
++++ b/svr-auth.c
+@@ -312,7 +312,7 @@ static int checkusername(const char *use
+ 			return DROPBEAR_FAILURE;
+ 		}
+ 	}
+-#endif HAVE_GETGROUPLIST
++#endif /* HAVE_GETGROUPLIST */
+ 
+ 	TRACE(("shell is %s", ses.authstate.pw_shell))
+ 
