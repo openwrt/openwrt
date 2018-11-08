@@ -1,6 +1,6 @@
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -163,17 +163,17 @@ dropbearkey: $(dropbearkeyobjs)
+@@ -174,17 +174,17 @@ dropbearkey: $(dropbearkeyobjs)
  dropbearconvert: $(dropbearconvertobjs)
  
  dropbear: $(HEADERS) $(LIBTOM_DEPS) Makefile
@@ -22,7 +22,7 @@
  
  
  # multi-binary compilation.
-@@ -184,7 +184,7 @@ ifeq ($(MULTI),1)
+@@ -195,7 +195,7 @@ ifeq ($(MULTI),1)
  endif
  
  dropbearmulti$(EXEEXT): $(HEADERS) $(MULTIOBJS) $(LIBTOM_DEPS) Makefile

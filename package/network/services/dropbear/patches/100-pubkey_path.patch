@@ -1,6 +1,6 @@
 --- a/svr-authpubkey.c
 +++ b/svr-authpubkey.c
-@@ -229,14 +229,20 @@ static int checkpubkey(char* algo, unsig
+@@ -320,14 +320,20 @@ static int checkpubkey(const char* algo,
  		goto out;
  	}
  
@@ -29,7 +29,7 @@
  
  	/* open the file as the authenticating user. */
  	origuid = getuid();
-@@ -405,26 +411,35 @@ static int checkpubkeyperms() {
+@@ -404,26 +410,35 @@ static int checkpubkeyperms() {
  		goto out;
  	}
  
@@ -42,17 +42,6 @@
 -	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
 -		goto out;
 -	}
--
--	/* check ~/.ssh */
--	strncat(filename, "/.ssh", 5); /* strlen("/.ssh") == 5 */
--	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
--		goto out;
--	}
--
--	/* now check ~/.ssh/authorized_keys */
--	strncat(filename, "/authorized_keys", 16);
--	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
--		goto out;
 +	if (ses.authstate.pw_uid == 0) {
 +		if (checkfileperm("/etc/dropbear") != DROPBEAR_SUCCESS) {
 +			goto out;
@@ -70,13 +59,22 @@
 +		if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
 +			goto out;
 +		}
-+
+ 
+-	/* check ~/.ssh */
+-	strncat(filename, "/.ssh", 5); /* strlen("/.ssh") == 5 */
+-	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
+-		goto out;
+-	}
 +		/* check ~/.ssh */
 +		strncat(filename, "/.ssh", 5); /* strlen("/.ssh") == 5 */
 +		if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
 +			goto out;
 +		}
-+
+ 
+-	/* now check ~/.ssh/authorized_keys */
+-	strncat(filename, "/authorized_keys", 16);
+-	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
+-		goto out;
 +		/* now check ~/.ssh/authorized_keys */
 +		strncat(filename, "/authorized_keys", 16);
 +		if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
