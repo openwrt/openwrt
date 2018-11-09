@@ -203,7 +203,8 @@ type platform_check_image >/dev/null 2>/dev/null || {
 }
 
 case "$IMAGE" in
-	http://*)
+	http://*|\
+	https://*)
 		wget -O/tmp/sysupgrade.img "$IMAGE"
 		IMAGE=/tmp/sysupgrade.img
 		;;
