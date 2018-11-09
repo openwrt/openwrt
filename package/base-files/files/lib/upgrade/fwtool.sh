@@ -28,7 +28,7 @@ fwtool_check_image() {
 
 	. /usr/share/libubox/jshn.sh
 
-	if ! fwtool -q -i /tmp/sysupgrade.meta "$1"; then
+	if ! fwtool -q -t -i /tmp/sysupgrade.meta "$1"; then
 		echo "Image metadata not found"
 		[ "$REQUIRE_IMAGE_METADATA" = 1 -a "$FORCE" != 1 ] && {
 			echo "Use sysupgrade -F to override this check when downgrading or flashing to vendor firmware"
