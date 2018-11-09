@@ -278,6 +278,24 @@ endef
 $(eval $(call KernelPackage,gpio-pcf857x))
 
 
+define KernelPackage/gpio-apu
+  SUBMENU:=$(OTHER_MENU)
+  DEPENDS:=@GPIO_SUPPORT @TARGET_x86
+  TITLE:=PC Engines APU2/APU3 GPIO support
+  KCONFIG:=CONFIG_GPIO_APU
+  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-apu.ko
+  AUTOLOAD:=$(call AutoLoad,25,gpio-apu,1)
+endef
+
+define KernelPackage/gpio-apu/description
+ Kernel module for the GPIOs on APU2/APU3 devices
+ - APU2/APU3 gpio reset button support
+ - APU3 SIM switch support
+endef
+
+$(eval $(call KernelPackage,gpio-apu))
+
+
 define KernelPackage/ppdev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Parallel port support
