@@ -1,0 +1,19 @@
+--- a/backport-include/linux/firmware.h
++++ b/backport-include/linux/firmware.h
+@@ -5,5 +5,16 @@
+ #if LINUX_VERSION_IS_LESS(3,14,0)
+ #define request_firmware_direct(fw, name, device) request_firmware(fw, name, device)
+ #endif
++#if LINUX_VERSION_IS_LESS(4,18,0)
++#define firmware_request_nowarn(fw, name, device) request_firmware(fw, name, device)
++#endif
++
++#if LINUX_VERSION_IS_LESS(4,17,0)
++#define firmware_request_cache LINUX_BACKPORT(firmware_request_cache)
++static inline int firmware_request_cache(struct device *device, const char *name)
++{
++	return 0;
++}
++#endif
+ 
+ #endif /* __BACKPORT_LINUX_FIRMWARE_H */
