@@ -13,10 +13,14 @@
 		// Bootargs when no vpe is used
 		// bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77 root=/dev/ubiblock0_0 rootdelay=7";
 
+		// No vpe, no partition declared as UBI partition
+		bootargs = "console=ttyLTQ0,115200";
+
 		// Bootargs when vpe is used
-			// Bootargs to boot from mtd12 ubifs
+		// Bootargs to boot from mtd12 ubifs
 			// bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77  root=/dev/ubiblock0_0 rootdelay=7 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
-			bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77 root=/dev/ubiblock0_0 rootdelay=7 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+			//bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77 root=/dev/ubiblock0_0 rootdelay=7 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+			//bootargs = "console=ttyLTQ0,115200 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
 
 			// Bootargs to boot from sda1
 			// bootargs = "console=ttyLTQ0,115200 panic=1 DTS-TEST-SEQNO=77 root=/dev/sda1 rootdelay=7 rootfstype=f2fs mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
@@ -192,8 +196,8 @@
                 };
 
                 partition@40000 {
-                    label = "rootfs";		// Called "rootfs" in u-boot env. Contains orig. squashfs rootfs
-                    reg = <0x40000 0x3C00000>;
+                    label = "rootfs";		// Called "rootfs" in u-boot env
+                    reg = <0x40000 0x3C00000>;	// Auto mounted as rootfs if no UBI volume named "rootfs" exists
                 };
 
                 partition@3C40000 {
@@ -246,9 +250,9 @@
                     reg = <0x4C00000 0x4000000>;
                 };
 
-                partition@8C00000 {			// Used for our real open OpenWrt system for ubi-squashfs (rootfs) and ubifs (rootfs_data)
-                    label = "ubi";			// Rename to "firmware" for special squashfs-rootfs/jffs2-rootfs_data treatment by OpenWrt
-                    reg = <0x8C00000 0x13200000>;
+                partition@8C00000 {			// Rename to "ubi" for auto ubi attachment and usage of rootfs, rootfs_data, kernel volumes
+                    label = "misc";			// Rename to "firmware" for special squashfs-rootfs/jffs2-rootfs_data treatment
+                    reg = <0x8C00000 0x13200000>;	
                 };
 
                 partition@1BE00000 {
