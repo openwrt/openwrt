@@ -18,7 +18,30 @@ common/main.c
 * Reduce repetitive savings of environment on upgrade
 --- a/common/cmd_upgrade.c
 +++ b/common/cmd_upgrade.c
-@@ -118,10 +118,10 @@ int verify_firmware(void) {
+@@ -105,25 +105,29 @@ int get_up_result(void) {
+ 
+ #define HASH_LENGTH		(6144)
+ 
++static const char  magic[4]  = {0x27, 0x05, 0x19, 0x56};
++
+ int verify_firmware(void) {
+ 	unsigned int srcAddr;
+ 	int   srcLen;
+-	ulong curParSize = 0;
+-	ulong srcHeader  = 0;
+-	int   kernel 	 = 0;
+-	int   rootfs	 = 0;
+-	int   arc_image  = 0;
++	ulong curParSize  = 0;
++	ulong srcHeader   = 0;
++	int   kernel 	  = 0;
++	int   rootfs	  = 0;
++	int   dummyrootfs = 0;
++	int   arc_image   = 0;
+ 	int   pad;
+-	char  magic[4]   = {0x27, 0x05, 0x19, 0x56};
++	ulong kerneladdr;
++	ulong kernelsize;
  
  	image_header_t *pimg_header = NULL;
  
@@ -27,21 +50,40 @@ common/main.c
  	srcLen  = simple_strtoul((char *)getenv("filesize"),NULL,16);
  
 -	printf("verify firmware validation: loadaddr = 0x%x, filesize = %d\n", srcAddr, srcLen);
-+	printf("verify firmware validation: addr = 0x%x, filesize = %d\n", srcAddr, srcLen);
++	printf("verify firmware validation: fileaddr = 0x%X, filesize = %d\n", srcAddr, srcLen);
  
- 	if (srcAddr == 0 || srcLen ==0) return 1;
+-	if (srcAddr == 0 || srcLen ==0) return 1;
++	if (srcAddr == 0 || srcLen ==0) return 0;
  
-@@ -155,7 +155,8 @@ int verify_firmware(void) {
- 				curParSize = sizeof(image_header_t) + 8;
+ 	// check image tail to see if there is a tag.
+ 	if (strncmp((char *)(srcAddr + srcLen - 8), "ARCADYAN", 8) == 0) {
+@@ -139,7 +143,7 @@ int verify_firmware(void) {
+ 
+ 		if (memcmp(srcHeader, magic, 4) != 0) {
+ 			printf("0x%x magic number not found\n", srcHeader);
+-			return 1;
++			return 0;
+ 		}
+ 
+ 		pimg_header = (image_header_t *)srcHeader;
+@@ -156,27 +160,40 @@ int verify_firmware(void) {
  				continue;
  			case IH_TYPE_FILESYSTEM:
--				rootfs++;
-+				if (pimg_header->ih_size > 64)	// Check for dummy rootfs image appended to initramfs
-+					rootfs++;		// Not a dummy, so indicate as found and valid for flashing
+ 				rootfs++;
++				dummyrootfs = pimg_header->ih_size < 64;
  				break;
  			case IH_TYPE_KERNEL:
  				kernel++;
-@@ -169,14 +170,12 @@ int verify_firmware(void) {
++				kerneladdr = srcHeader;
++				kernelsize = curParSize;
+ 				break;
+ 			default:
+ 				printf("Unknown image type!! Only kernel and rootfs are allowed\n");
+-				return 1;
++				return 0;
+ 		}
+ 
+ 		curParSize = curParSize + pad;
  
  	} while(srcLen > (srcHeader - srcAddr) + curParSize);
  
@@ -49,19 +91,30 @@ common/main.c
 -		printf("Wrong firmware, rootfs and kernel should be included together.\n");
 -		return 1;
 -	}
--
--	printf("firmware is ok !\n");
-+	if (kernel != 1 || rootfs > 1)
++	if (kernel!=1 || rootfs>1)  {
 +		printf("Wrong firmware; must contain rootfs+kernel for flashing, or initramfs-kernel.\n");
-+	else
-+		printf("firmware is ok !\n");
++		return  0;
++		}
+ 
+-	printf("firmware is ok !\n");
++	if (rootfs==0 || dummyrootfs)  {
++		char  fileaddr[12];
++		char  filesize[12];
++		sprintf(fileaddr, "0x%08lX", kerneladdr);
++		sprintf(filesize, "0x%lX", kernelsize);
++		setenv("fileaddr", fileaddr);
++		setenv("filesize", filesize);
++		printf("Kernel found, assumed to be an initramfs. Set fileaddr = %s, filesize = %s\n", fileaddr, filesize);
++		return  1;
++	}
  
 -	return 0;
-+	return  kernel+rootfs;		// 2: flash rootfs+kernel; 1: run initramfs; otherwise: error
++	printf("Firmware for flashing is ok !\n");
++	return  2;			// 2: flash rootfs+kernel; 1: run initramfs; otherwise: error
  }
  
  
-@@ -190,6 +189,7 @@ int do_upgrade( cmd_tbl_t *cmdtp, int fl
+@@ -190,6 +207,7 @@ int do_upgrade( cmd_tbl_t *cmdtp, int fl
  	image_header_t *pimg_header = NULL;
  	char name[16], strimg_crc[32], buf[32];;
  	int arc_image  = 0;	// Arcadyan
@@ -69,7 +122,7 @@ common/main.c
  
  	set_up_result(0);	// Arcadyan
  
-@@ -330,14 +330,19 @@ int do_upgrade( cmd_tbl_t *cmdtp, int fl
+@@ -330,14 +348,19 @@ int do_upgrade( cmd_tbl_t *cmdtp, int fl
  			sprintf(strimg_crc, "f_%s_crc", name);
  			sprintf(buf, "%lX", ntohl(pimg_header->ih_dcrc));
  			setenv(strimg_crc, buf);
@@ -226,7 +279,7 @@ common/main.c
  	val = getenv ("bl_version");
  	if ( val == NULL || strcmp(val,version_string) != 0 ) {
  		setenv ("bl_version", (char*)version_string);
-@@ -569,88 +511,58 @@ void main_loop (void)
+@@ -569,88 +511,57 @@ void main_loop (void)
  		printf("reset button pressed --> %d\n", count);
  		udelay(1000000);
  	}
@@ -294,6 +347,8 @@ common/main.c
  
 -			while(1);
 -		}
+-
+-		lcd_DisplayPage(LCD_IMAGE_RESCUE_UPGRADE);
 +		if (retval == 1)  {
 +			lcd_DisplayPage(LCD_IMAGE_RESCUE_DONE);				// Assume initramfs is booting correctly
 +			run_command ("bootm $(fileaddr)", 0);				// Start the initramf kernel
@@ -301,11 +356,9 @@ common/main.c
 +			while(1);							// Wait for reboot
 +			}
  
--		lcd_DisplayPage(LCD_IMAGE_RESCUE_UPGRADE);
+-		//udelay(5000000);                                                      // wait 5 seconds
 +		else if (retval == 2)  {
 +			lcd_DisplayPage(LCD_IMAGE_RESCUE_UPGRADE);
- 
--		//udelay(5000000);                                                      // wait 5 seconds
 +			run_command ("nand erase $(f_sysconfig_addr) $(f_sysconfig_size)", 0);	// erase sysconfig
 +			run_command ("nand erase $(f_rootfs2_addr) $(f_rootfs2_size)", 0);	// erase rootfs 2
 +			run_command ("nand erase $(f_kernel2_addr) $(f_kernel2_size)", 0);	// erase kernel 2
@@ -347,7 +400,7 @@ common/main.c
  	{
  	  #ifdef CONFIG_DRIVER_VR9 /* ctc, power up PHY */
  		int lcd_boot_Init(void);
-@@ -710,57 +622,10 @@ up_error:
+@@ -710,57 +621,10 @@ up_error:
  		disable_ctrlc(prev);	/* restore Control C checking */
  # endif
  
@@ -409,7 +462,7 @@ common/main.c
  		// Arcadyan Begin
  		// if you come to here, the kernel in current partition is wrong.
  		if (bootnum < BOOT_RETRY_MAX) {
-@@ -803,75 +668,29 @@ boot_fail:
+@@ -803,75 +667,29 @@ boot_fail:
  
  ctrlc_lcd_Init:
  	// Arcadyan Begin , check password
@@ -493,7 +546,7 @@ common/main.c
  
  
  # ifdef CONFIG_MENUKEY
-@@ -1529,7 +1348,7 @@ int readline_into_buffer (const char *co
+@@ -1529,7 +1347,7 @@ int readline_into_buffer (const char *co
  				} else {
  					++col;		/* echo input		*/
  					if (pass_mode == 0) {		// Arcadyan
@@ -502,7 +555,7 @@ common/main.c
  					}
  					else {
  						putc ('*');
-@@ -2210,10 +2029,10 @@ void ili9325_RegisterInit( void )
+@@ -2210,10 +2028,10 @@ void ili9325_RegisterInit( void )
  	lcd_WriteRegister( 0x12, 0x0000);     // Power Control 3 (R12h)
  	lcd_WriteRegister( 0x13, 0x0000);     // Power Control 4 (R13h)
  	lcd_DelayMs( 100 );
@@ -516,7 +569,7 @@ common/main.c
  	lcd_DelayMs( 100 );
  	lcd_WriteRegister( 0x12, 0x008E);     // Power Control 3 (R12h)
  	lcd_WriteRegister( 0x13, (unsigned short)lcd_GetContrast()<<8 ); // Power Control 4 (R13h)
-@@ -2390,10 +2209,10 @@ void hx8347_RegisterInit( void )
+@@ -2390,10 +2208,10 @@ void hx8347_RegisterInit( void )
  	lcd_WriteRegister( 0x17, 0x0055 ); //default 0x66 262k ,0x55 65k color
  
  	//SET PANEL
@@ -529,7 +582,7 @@ common/main.c
  //	lcd_DelayMs( 40 );
  //	lcd_WriteRegister( 0x28, 0x003C ); //GON=1, DTE=1, D=1100
  
-@@ -2427,7 +2246,7 @@ void hx8347_Init( void )
+@@ -2427,7 +2245,7 @@ void hx8347_Init( void )
  	lcd_WriteRegister( 0x90, 0X0010 ); // Panel Interface Control 1 (R90h)
  
  	// Display On
@@ -538,7 +591,7 @@ common/main.c
  	lcd_DelayMs( 40 );
  	lcd_WriteRegister( 0x28, 0x003C ); //GON=1, DTE=1, D=1100
  
-@@ -2454,10 +2273,10 @@ void ili9341_SetWindow( coord_t x1, coor
+@@ -2454,10 +2272,10 @@ void ili9341_SetWindow( coord_t x1, coor
  {
  	lcd_WriteCommand( 0x2A);
  	lcd_WriteData( x1 );
@@ -551,7 +604,7 @@ common/main.c
  }
  
  color_t ili9341_GetPixel( void )
-@@ -2472,21 +2291,21 @@ color_t ili9341_GetPixel( void )
+@@ -2472,21 +2290,21 @@ color_t ili9341_GetPixel( void )
  void ili9341_SetOrientation( lcdOrientation_t orientation )
  {
  	unsigned short	entryMode;
@@ -578,7 +631,7 @@ common/main.c
  	lcd_WriteCommand( 0xD3);
  
  	iParameter1 = lcd_ReadData();
-@@ -2503,94 +2322,94 @@ int ili9341_Probe( void )
+@@ -2503,94 +2321,94 @@ int ili9341_Probe( void )
  void ili9341_RegisterInit( void )
  {
  
@@ -751,7 +804,7 @@ common/main.c
  }
  
  void ili9341_Shutdown( void )
-@@ -2643,7 +2462,7 @@ void lcd_FuncTblPrepare( void )
+@@ -2643,7 +2461,7 @@ void lcd_FuncTblPrepare( void )
  	lcd_ChipTbl[2].registerInit		= ili9341_RegisterInit;
  	lcd_ChipTbl[2].init				= ili9341_Init;
  	lcd_ChipTbl[2].shutdown			= ili9341_Shutdown;
@@ -760,7 +813,7 @@ common/main.c
  
  }
  
-@@ -2652,7 +2471,7 @@ void lcd_FuncTblPrepare( void )
+@@ -2652,7 +2470,7 @@ void lcd_FuncTblPrepare( void )
  
  coord_t lcd_GetWidth(void)
  {
@@ -769,7 +822,7 @@ common/main.c
  		return lcd_Properties.height;
  	else // LCD_ORIENTATION_PORTRAIT
  		return lcd_Properties.width;
-@@ -2660,7 +2479,7 @@ coord_t lcd_GetWidth(void)
+@@ -2660,7 +2478,7 @@ coord_t lcd_GetWidth(void)
  
  coord_t lcd_GetHeight(void)
  {
@@ -778,7 +831,7 @@ common/main.c
  		return lcd_Properties.width;
  	else // LCD_ORIENTATION_PORTRAIT
  		return lcd_Properties.height;
-@@ -3078,14 +2897,13 @@ int lcd_DisplayPage( int page )
+@@ -3078,14 +2896,13 @@ int lcd_DisplayPage( int page )
  	char                    sCmd[64];
  	SizeT                   lLzmaSize;
  	SizeT                   lAllImageSize;
@@ -796,7 +849,7 @@ common/main.c
  
  	static int              init = 0;
  
-@@ -3464,6 +3282,116 @@ U_BOOT_CMD( lcd, CONFIG_SYS_MAXARGS, 1,
+@@ -3464,6 +3281,116 @@ U_BOOT_CMD( lcd, CONFIG_SYS_MAXARGS, 1,
  	"lcd nsleep   <nsec>       - sleep nsec, nano-seconds\n"
  );
  
@@ -842,7 +895,7 @@ common/main.c
 +	//printf("rtl8367rb reset waiting 1.5 sec ....\n");
 +	rtl_sw_reset(100);
 +
-+	for(phyno=0; phyno<4; phyno++)  {
++	for (phyno=0; phyno<4; phyno++)  {
 +		addr = 0x2000 + (phyno<<5);
 +
 +		retval = smi_read(addr, &data);
@@ -863,14 +916,14 @@ common/main.c
 +	do  {
 +		retval = smi_read(0x1202, &data);
 +		if(retval != 0)  {
-+			printf("[%s:%d] read reg[0x%x]=0x%x, Warrning : rtl8367rb reset failed!!!\n", __func__, __LINE__, 0x1202, data);
++			printf("[%s:%d] read reg[0x%x]=0x%x, Warning : rtl8367rb reset failed!!!\n", __func__, __LINE__, 0x1202, data);
 +			break;
 +		}
 +
 +		do_sleep_msec(100);
 +		timespent += 100;
 +		if (timespent == 500)
-+			printf("Warrning : rtl8367rb reset failed!!!\n");
++			printf("Warning : rtl8367rb reset failed!!!\n");
 +
 +	}  while (0x88A8 != data);
 +}
@@ -891,12 +944,12 @@ common/main.c
 +	vr9_mdio_write( 0x13, 0x0, vr9_mdio_read(0x13,0x0) & ~0x0800 );
 +	vr9_mdio_write( 0x14, 0x0, vr9_mdio_read(0x14,0x0) & ~0x0800 );
 +
-+	SwitchDebugInfo("Current state before activating switch");
++	SwitchDebugInfo("Current state after activating switch");
 +
 +
 +	retval = rtl_sw_init();
 +	if (retval != 0)
-+		printf("[%s:%d] rtl8367rb init failed!!! ....\n", __func__, __LINE__);
++		printf("[%s:%d] rtl8367rb init failed!!!\n", __func__, __LINE__);
 +
 +	for (phyno=0; phyno<4; phyno++)  {
 +		addr = 0x2000 + (phyno<<5);
