@@ -92,6 +92,72 @@
 		};
 	};
 
+	spi {
+		compatible = "spi-gpio";
+		address-cells = <1>;
+		size-cells = <0>;
+
+		gpio-sck = <&gpio 29 GPIO_ACTIVE_HIGH >;
+		gpio-mosi = <&gpio 30 GPIO_ACTIVE_HIGH >;
+		num-chipselects = <1>;
+		cs-gpios = <&gpio 39 GPIO_ACTIVE_HIGH >; 
+
+		hc595: gpio_spi@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			registers-number = <1>;
+			spi-max-frequency = <1000000>;
+			spi-cpol = <0>;
+			spi-cpha = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		out_0 { /*Unknown*/
+			gpio-export,name = "hc595_0";
+			gpio-export,output = <1>;
+			gpios = <&hc595 0 GPIO_ACTIVE_HIGH>;
+		};
+		out_1 {/*Unknown*/
+			gpio-export,name = "hc595_1";
+			gpio-export,output = <1>;
+			gpios = <&hc595 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		// out_2 is used to reset touch IC and owned by eb904_keypad
+
+		out_3 {/*Unknown*/
+			gpio-export,name = "hc595_3";
+			gpio-export,output = <1>;
+			gpios = <&hc595 3 GPIO_ACTIVE_HIGH>;
+		};
+		out_dsl_eth { /* Switches DSL line + 100MiB eth or 1GiB ethernet on DSL/WAN input*/
+			gpio-export,name = "dsl_en";
+			gpio-export,output = <1>;
+			gpios = <&hc595 4 GPIO_ACTIVE_HIGH>;
+		};
+		out_5 { /*Relay*/
+			gpio-export,name = "hc595_5";
+			gpio-export,output = <1>;
+			gpios = <&hc595 5 GPIO_ACTIVE_HIGH>;
+		};
+		out_6 { /*Relay*/
+			gpio-export,name = "hc595_6";
+			gpio-export,output = <1>;
+			gpios = <&hc595 6 GPIO_ACTIVE_HIGH>;
+		};
+		out_7 { /*Relay*/
+			gpio-export,name = "hc595_7";
+			gpio-export,output = <1>;
+			gpios = <&hc595 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
 	i2c {
 		compatible = "i2c-gpio";
 		#address-cells = <1>;
@@ -109,10 +175,8 @@
 			interrupt-parent = <&icu0>;
 			interrupts = <135>;
 			eb904,interrupt-gpio = <&gpio  0 GPIO_ACTIVE_HIGH /* EXIN */>;
-			eb904,ctrl-clk-gpios = <&gpio 29 GPIO_ACTIVE_HIGH /* clk */>;
-			eb904,ctrl-dat-gpios = <&gpio 30 GPIO_ACTIVE_HIGH /* dat */>;
-			eb904,ctrl-out-gpios = <&gpio 39 GPIO_ACTIVE_HIGH /* out */>;
-			eb904,alphas = /bits/ 8
+			eb904,ctrl-rst-gpio = <&hc595 2 GPIO_ACTIVE_LOW /* rst */>;
+            eb904,alphas = /bits/ 8
 				 <0x07 /* left */
 				  0x0a /* down */
 				  0x0a /* right */
@@ -287,20 +351,6 @@
 *  Following is the very experimental part which is broken and requires much more elaboration
 */
 
-&stp {
-	compatible = "lantiq,gpio-stp-xway";
-	reg = <0xE100BB0 0x40>;
-	#gpio-cells = <2>;
-	gpio-controller;
-
-	lantiq,shadow = <0xffff>;
-	lantiq,groups = <0x7>;
-	lantiq,dsl = <0x3>;
-	lantiq,phy1 = <0x7>;
-	lantiq,phy2 = <0x7>;
-};
-
-
 // From FRITZ3370.dts
 &gpio {
 	pinctrl-names = "default";
@@ -336,6 +386,10 @@
 			lantiq,pins = "io1"; /* exin1 */
 			lantiq,open-drain;
 			lantiq,pull = <0>;
+		};
+		conf_spi {
+			lantiq,pins = "io29", "io30", "io39"; /* gpiois for spi */
+			lantiq,pull = <2>; /*Pull Up*/
 		};
 	};
 };
