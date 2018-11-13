@@ -556,6 +556,9 @@ ramips_board_detect() {
 	*"W502U")
 		name="w502u"
 		;;
+	*"WAP2100-SK")
+		name="wap2100-sk"
+		;;
 	*"WCR-1166DS")
 		name="wcr-1166ds"
 		;;

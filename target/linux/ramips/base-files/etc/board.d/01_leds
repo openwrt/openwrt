@@ -367,6 +367,10 @@ vocore-16M)
 w502u)
 	set_wifi_led "rt2800pci-phy0::radio"
 	;;
+wap2100-sk)
+	set_usb_led "$boardname:green:usb"
+	set_wifi_led "$boardname:green:wlan2g"
+	;;
 we1026-5g-16m)
 	ucidef_set_led_netdev "lan" "LAN" "we1026-5g:green:lan" "eth0"
 	set_wifi_led "we1026-5g:green:wifi"
