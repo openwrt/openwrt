@@ -1,3 +1,13 @@
+check_image_md5() {
+	size=$(get_image "$@" | wc -c)
+	md5old=$(get_image "$@" | tail -c32)
+	md5new=$(get_image "$@" | head -c$(($size-32)) | md5sum | head -c32)
+	if [ "$md5old" = "$md5new" ]; then
+		return 0
+	fi
+	return 1
+}
+
 platform_check_image() {
 	local diskdev partdev diff
 
@@ -5,6 +15,11 @@ platform_check_image() {
 		echo "Unable to determine upgrade device"
 		return 1
 	}
+
+	if ! check_image_md5 "$1"; then
+		echo "Invalid image md5 checksum"
+		return 1
+	fi
 
 	get_partitions "/dev/$diskdev" bootdisk
 

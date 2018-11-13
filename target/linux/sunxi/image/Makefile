@@ -28,6 +28,7 @@ define Build/sunxi-sdcard
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
 		$(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot-with-spl.bin
 	rm -f $@.boot
+	md5sum "$@" | head -c32 >>"$@"
 endef
 
 # why \x00\x00\x00\x00 for zImage-initramfs
