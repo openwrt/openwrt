@@ -10,20 +10,30 @@
 	compatible = "lantiq,vgv952cjw33-e-ir", "lantiq,xway", "lantiq,vr9";
 
 	chosen {
-		// Bootargs when no vpe is used
-		// bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77 root=/dev/ubiblock0_0 rootdelay=7";
+	    // No vpe, both cores used for linux:
 
-		// No vpe, no partition declared as UBI partition
+		//Rootfs is in partition 'ubi' if present, volume 'rootfs' (1st search prio). Or in mtd partition called 'rootfs' (2nd prio).
 		bootargs = "console=ttyLTQ0,115200";
 
-		// Bootargs when vpe is used
-		// Bootargs to boot from mtd12 ubifs
-			// bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77  root=/dev/ubiblock0_0 rootdelay=7 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
-			//bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77 root=/dev/ubiblock0_0 rootdelay=7 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
-			//bootargs = "console=ttyLTQ0,115200 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+		// Obsolete:
+		// bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77 root=/dev/ubiblock0_0 rootdelay=7";
 
-			// Bootargs to boot from sda1
-			// bootargs = "console=ttyLTQ0,115200 panic=1 DTS-TEST-SEQNO=77 root=/dev/sda1 rootdelay=7 rootfstype=f2fs mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+
+	    // With vpe, one core dedicated to phone audio signal processing
+
+		// bootargs = "console=ttyLTQ0,115200 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+
+		// Bootargs to boot from sda1
+		// bootargs = "console=ttyLTQ0,115200 root=/dev/sda1 rootdelay=7 rootfstype=f2fs mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+
+		// Obsolete: 
+		// bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77  root=/dev/ubiblock0_0 rootdelay=7 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+		// Bootargs to boot from mtd12 ubifs
+		// bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77  root=/dev/ubiblock0_0 rootdelay=7 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+		// bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77 root=/dev/ubiblock0_0 rootdelay=7 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+		// bootargs = "console=ttyLTQ0,115200 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+		// Bootargs to boot from sda1
+		// bootargs = "console=ttyLTQ0,115200 panic=1 DTS-TEST-SEQNO=77 root=/dev/sda1 rootdelay=7 rootfstype=f2fs mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
 	};
 
 	memory@0 {
@@ -196,12 +206,12 @@
                 };
 
                 partition@40000 {
-                    label = "rootfs";		// Called "rootfs" in u-boot env
+                    label = "rootfs1";		// Called "rootfs" in original u-boot env.
                     reg = <0x40000 0x3C00000>;	// Auto mounted as rootfs if no UBI volume named "rootfs" exists
                 };
 
                 partition@3C40000 {
-                    label = "kernel";		// Called "kernel" in u-boot env. Contains orig. kernel
+                    label = "kernel";		// Called "kernel" in original u-boot env.
                     reg = <0x3C40000 0x500000>;
                 };
 
@@ -250,9 +260,9 @@
                     reg = <0x4C00000 0x4000000>;
                 };
 
-                partition@8C00000 {			// Rename to "ubi" for auto ubi attachment and usage of rootfs, rootfs_data, kernel volumes
-                    label = "misc";			// Rename to "firmware" for special squashfs-rootfs/jffs2-rootfs_data treatment
-                    reg = <0x8C00000 0x13200000>;	
+                partition@8C00000 {			// Called "misc" in original u-boot env.
+                    label = "ubi";			// Rename to "ubi" for auto ubi attachment and usage of rootfs, rootfs_data, kernel volumes
+                    reg = <0x8C00000 0x13200000>;	// Rename to "firmware" for special squashfs-rootfs/jffs2-rootfs_data treatment
                 };
 
                 partition@1BE00000 {

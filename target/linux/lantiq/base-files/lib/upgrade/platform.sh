@@ -34,8 +34,9 @@ platform_nand_pre_upgrade() {
 	case "$board" in
 	lantiq,vgv952cjw33-e-ir )
 		# This is a global defined in nand.sh, sets another VID header offset than default.
-		echo "Set header offset"
-		CU_UBI_VID_HEADER_OFFSET="2048"
+		# (now disabled, as it looks like eb904 can handle 512 byte subpages as reported by driver)
+		#echo "Set header offset"
+		#CU_UBI_VID_HEADER_OFFSET="2048"
 		;;
 	esac
 }
