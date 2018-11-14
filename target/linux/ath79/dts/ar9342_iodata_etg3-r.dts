@@ -46,6 +46,10 @@
 	};
 };
 
+&ref {
+	clock-frequency = <40000000>;
+};
+
 &spi {
 	num-cs = <1>;
 	status = "okay";
@@ -119,10 +123,18 @@
 &eth0 {
 	status = "okay";
 
-	pll-data = <0x06000000 0x00000101 0x00001616>;
+	pll-data = <0x0e000000 0x00000101 0x00001616>;
 
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
+
+	gmac-config {
+		device = <&gmac>;
+
+		rgmii-gmac0 = <1>;
+		rxd-delay = <3>;
+		rxdv-delay = <3>;
+	};
 };
 
 &uart {
