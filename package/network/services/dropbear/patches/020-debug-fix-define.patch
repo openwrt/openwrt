@@ -1,0 +1,12 @@
+--- a/debug.h
++++ b/debug.h
+@@ -39,7 +39,9 @@
+ /*#define CHECKCLEARTOWRITE() assert(ses.writepayload->len == 0 && \
+ 		ses.writepayload->pos == 0)*/
+ 
++#ifndef CHECKCLEARTOWRITE
+ #define CHECKCLEARTOWRITE()
++#endif
+ 
+ /* Define this, compile with -pg and set GMON_OUT_PREFIX=gmon to get gmon
+  * output when Dropbear forks. This will allow it gprof to be used.

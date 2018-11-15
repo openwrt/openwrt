@@ -1,0 +1,11 @@
+--- a/packet.c
++++ b/packet.c
+@@ -57,7 +57,7 @@ static void buf_compress(buffer * dest,
+ void write_packet() {
+ 
+ 	ssize_t written;
+-#ifdef HAVE_WRITEV
++#if defined(HAVE_WRITEV) && (defined(IOV_MAX) || defined(UIO_MAXIOV))
+ 	/* 50 is somewhat arbitrary */
+ 	unsigned int iov_count = 50;
+ 	struct iovec iov[50];

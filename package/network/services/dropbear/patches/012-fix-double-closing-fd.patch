@@ -1,0 +1,13 @@
+--- a/svr-session.c
++++ b/svr-session.c
+@@ -238,7 +238,9 @@ void svr_dropbear_log(int priority, cons
+ static void svr_remoteclosed() {
+ 
+ 	m_close(ses.sock_in);
+-	m_close(ses.sock_out);
++	if (ses.sock_in != ses.sock_out) {
++		m_close(ses.sock_out);
++	}
+ 	ses.sock_in = -1;
+ 	ses.sock_out = -1;
+ 	dropbear_close("Exited normally");

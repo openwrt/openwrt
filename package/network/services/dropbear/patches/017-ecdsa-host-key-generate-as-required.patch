@@ -1,0 +1,95 @@
+--- a/svr-runopts.c
++++ b/svr-runopts.c
+@@ -523,10 +523,13 @@ static void addhostkey(const char *keyfi
+ 	svr_opts.num_hostkey_files++;
+ }
+ 
++
+ void load_all_hostkeys() {
+ 	int i;
+-	int disable_unset_keys = 1;
+ 	int any_keys = 0;
++#ifdef DROPBEAR_ECDSA
++	int loaded_any_ecdsa = 0;
++#endif
+ 
+ 	svr_opts.hostkey = new_sign_key();
+ 
+@@ -551,14 +554,8 @@ void load_all_hostkeys() {
+ #endif
+ 	}
+ 
+-#if DROPBEAR_DELAY_HOSTKEY
+-	if (svr_opts.delay_hostkey) {
+-		disable_unset_keys = 0;
+-	}
+-#endif
+-
+ #if DROPBEAR_RSA
+-	if (disable_unset_keys && !svr_opts.hostkey->rsakey) {
++	if (!svr_opts.delay_hostkey && !svr_opts.hostkey->rsakey) {
+ 		disablekey(DROPBEAR_SIGNKEY_RSA);
+ 	} else {
+ 		any_keys = 1;
+@@ -566,39 +563,45 @@ void load_all_hostkeys() {
+ #endif
+ 
+ #if DROPBEAR_DSS
+-	if (disable_unset_keys && !svr_opts.hostkey->dsskey) {
++	if (!svr_opts.delay_hostkey && !svr_opts.hostkey->dsskey) {
+ 		disablekey(DROPBEAR_SIGNKEY_DSS);
+ 	} else {
+ 		any_keys = 1;
+ 	}
+ #endif
+ 
+-
+ #if DROPBEAR_ECDSA
++	loaded_any_ecdsa =
++		0
+ #if DROPBEAR_ECC_256
+-	if ((disable_unset_keys || ECDSA_DEFAULT_SIZE != 256)
+-		&& !svr_opts.hostkey->ecckey256) {
++		|| svr_opts.hostkey->ecckey256
++#endif
++#if DROPBEAR_ECC_384
++		|| svr_opts.hostkey->ecckey384
++#endif
++#if DROPBEAR_ECC_521
++		|| svr_opts.hostkey->ecckey521
++#endif
++		;
++	any_keys |= loaded_any_ecdsa;
++	any_keys |= svr_opts.delay_hostkey;
++
++#if DROPBEAR_ECC_256
++	if (!svr_opts.hostkey->ecckey256
++		&& (!svr_opts.delay_hostkey || loaded_any_ecdsa || ECDSA_DEFAULT_SIZE != 256 )) {
+ 		disablekey(DROPBEAR_SIGNKEY_ECDSA_NISTP256);
+-	} else {
+-		any_keys = 1;
+ 	}
+ #endif
+-
+ #if DROPBEAR_ECC_384
+-	if ((disable_unset_keys || ECDSA_DEFAULT_SIZE != 384)
+-		&& !svr_opts.hostkey->ecckey384) {
++	if (!svr_opts.hostkey->ecckey384
++		&& (!svr_opts.delay_hostkey || loaded_any_ecdsa || ECDSA_DEFAULT_SIZE != 384 )) {
+ 		disablekey(DROPBEAR_SIGNKEY_ECDSA_NISTP384);
+-	} else {
+-		any_keys = 1;
+ 	}
+ #endif
+-
+ #if DROPBEAR_ECC_521
+-	if ((disable_unset_keys || ECDSA_DEFAULT_SIZE != 521)
+-		&& !svr_opts.hostkey->ecckey521) {
++	if (!svr_opts.hostkey->ecckey521
++		&& (!svr_opts.delay_hostkey || loaded_any_ecdsa || ECDSA_DEFAULT_SIZE != 521 )) {
+ 		disablekey(DROPBEAR_SIGNKEY_ECDSA_NISTP521);
+-	} else {
+-		any_keys = 1;
+ 	}
+ #endif
+ #endif /* DROPBEAR_ECDSA */

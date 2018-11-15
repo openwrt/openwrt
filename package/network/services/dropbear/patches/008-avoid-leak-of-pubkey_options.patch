@@ -1,0 +1,22 @@
+--- a/svr-authpubkey.c
++++ b/svr-authpubkey.c
+@@ -167,6 +167,9 @@ out:
+ 		sign_key_free(key);
+ 		key = NULL;
+ 	}
++	if (!ses.authstate.authdone) {
++		svr_pubkey_options_cleanup();
++	}
+ 	TRACE(("leave pubkeyauth"))
+ }
+ 
+--- a/svr-authpubkeyoptions.c
++++ b/svr-authpubkeyoptions.c
+@@ -113,7 +113,6 @@ void svr_pubkey_options_cleanup() {
+ 			m_free(ses.authstate.pubkey_options->forced_command);
+ 		}
+ 		m_free(ses.authstate.pubkey_options);
+-		ses.authstate.pubkey_options = NULL;
+ 	}
+ }
+ 

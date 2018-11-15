@@ -1,0 +1,81 @@
+
+--- a/cli-tcpfwd.c
++++ b/cli-tcpfwd.c
+@@ -135,7 +135,7 @@ static int cli_localtcp(const char* list
+ 	tcpinfo->chantype = &cli_chan_tcplocal;
+ 	tcpinfo->tcp_type = direct;
+ 
+-	ret = listen_tcpfwd(tcpinfo);
++	ret = listen_tcpfwd(tcpinfo, NULL);
+ 
+ 	if (ret == DROPBEAR_FAILURE) {
+ 		m_free(tcpinfo);
+--- a/svr-tcpfwd.c
++++ b/svr-tcpfwd.c
+@@ -168,6 +168,7 @@ static int svr_remotetcpreq(int *allocat
+ 	unsigned int addrlen;
+ 	struct TCPListener *tcpinfo = NULL;
+ 	unsigned int port;
++	struct Listener *listener = NULL;
+ 
+ 	TRACE(("enter remotetcpreq"))
+ 
+@@ -208,9 +209,9 @@ static int svr_remotetcpreq(int *allocat
+ 		tcpinfo->listenaddr = m_strdup(request_addr);
+ 	}
+ 
+-	ret = listen_tcpfwd(tcpinfo);
++	ret = listen_tcpfwd(tcpinfo, &listener);
+ 	if (DROPBEAR_SUCCESS == ret) {
+-		tcpinfo->listenport = get_sock_port(ses.listeners[0]->socks[0]);
++		tcpinfo->listenport = get_sock_port(listener->socks[0]);
+ 		*allocated_listen_port = tcpinfo->listenport;
+ 	}
+ 
+--- a/tcp-accept.c
++++ b/tcp-accept.c
+@@ -110,12 +110,12 @@ static void tcp_acceptor(const struct Li
+ 	}
+ }
+ 
+-int listen_tcpfwd(struct TCPListener* tcpinfo) {
++int listen_tcpfwd(struct TCPListener* tcpinfo, struct Listener **ret_listener) {
+ 
+ 	char portstring[NI_MAXSERV];
+ 	int socks[DROPBEAR_MAX_SOCKS];
+-	struct Listener *listener = NULL;
+ 	int nsocks;
++	struct Listener *listener;
+ 	char* errstring = NULL;
+ 
+ 	TRACE(("enter listen_tcpfwd"))
+@@ -142,6 +142,10 @@ int listen_tcpfwd(struct TCPListener* tc
+ 		return DROPBEAR_FAILURE;
+ 	}
+ 
++	if (ret_listener) {
++		*ret_listener = listener;
++	}
++
+ 	TRACE(("leave listen_tcpfwd: success"))
+ 	return DROPBEAR_SUCCESS;
+ }
+--- a/tcpfwd.h
++++ b/tcpfwd.h
+@@ -26,6 +26,7 @@
+ 
+ #include "channel.h"
+ #include "list.h"
++#include "listener.h"
+ 
+ struct TCPListener {
+ 
+@@ -69,7 +70,7 @@ void cli_recv_msg_request_success(void);
+ void cli_recv_msg_request_failure(void);
+ 
+ /* Common */
+-int listen_tcpfwd(struct TCPListener* tcpinfo);
++int listen_tcpfwd(struct TCPListener* tcpinfo, struct Listener **ret_listener);
+ int tcp_prio_inithandler(struct Channel* chan);
+ 
+ /* A random identifier */

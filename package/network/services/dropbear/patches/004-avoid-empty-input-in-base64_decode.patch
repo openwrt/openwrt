@@ -1,0 +1,12 @@
+--- a/signkey.c
++++ b/signkey.c
+@@ -580,6 +580,9 @@ int cmp_base64_key(const unsigned char*
+ 
+ 	/* now we have the actual data */
+ 	len = line->len - line->pos;
++	if (len == 0) {
++		return DROPBEAR_FAILURE;
++	}
+ 	decodekeylen = len * 2; /* big to be safe */
+ 	decodekey = buf_new(decodekeylen);
+ 

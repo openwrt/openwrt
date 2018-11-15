@@ -1,0 +1,14 @@
+--- a/svr-authpubkeyoptions.c
++++ b/svr-authpubkeyoptions.c
+@@ -168,6 +168,11 @@ int svr_add_pubkey_options(buffer *optio
+ 		if (match_option(options_buf, "command=\"") == DROPBEAR_SUCCESS) {
+ 			int escaped = 0;
+ 			const unsigned char* command_start = buf_getptr(options_buf, 0);
++
++			if (ses.authstate.pubkey_options->forced_command) {
++				goto bad_option;
++			}
++
+ 			while (options_buf->pos < options_buf->len) {
+ 				const char c = buf_getbyte(options_buf);
+ 				if (!escaped && c == '"') {

@@ -1,0 +1,29 @@
+--- a/common-kex.c
++++ b/common-kex.c
+@@ -403,6 +403,7 @@ static void gen_new_zstream_recv() {
+ 		ses.newkeys->recv.zstream->zfree = Z_NULL;
+ 		
+ 		if (inflateInit(ses.newkeys->recv.zstream) != Z_OK) {
++			m_free(ses.newkeys->recv.zstream);
+ 			dropbear_exit("zlib error");
+ 		}
+ 	} else {
+--- a/common-session.c
++++ b/common-session.c
+@@ -298,6 +298,16 @@ void session_cleanup() {
+ 		buf_free(dequeue(&ses.writequeue));
+ 	}
+ 
++	m_free(ses.newkeys);
++#ifndef DISABLE_ZLIB
++	if (ses.keys->recv.zstream != NULL) {
++		if (inflateEnd(ses.keys->recv.zstream) == Z_STREAM_ERROR) {
++			dropbear_exit("Crypto error");
++		}
++		m_free(ses.keys->recv.zstream);
++	}
++#endif
++
+ 	m_free(ses.remoteident);
+ 	m_free(ses.authstate.pw_dir);
+ 	m_free(ses.authstate.pw_name);
