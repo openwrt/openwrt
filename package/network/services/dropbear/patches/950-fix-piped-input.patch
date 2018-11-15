@@ -1,0 +1,297 @@
+See https://lists.ucc.gu.uwa.edu.au/pipermail/dropbear/2018q4/002119.html
+
+--- a/channel.h	Wed Nov 14 22:52:04 2018 +0800
++++ b/channel.h	Wed Nov 14 22:57:56 2018 +0800
+@@ -69,10 +69,6 @@
+ 	int sent_close, recv_close;
+ 	int recv_eof, sent_eof;
+ 
+-	/* Set after running the ChanType-specific close hander
+-	 * to ensure we don't run it twice (nor type->checkclose()). */
+-	int close_handler_done;
+-
+ 	struct dropbear_progress_connection *conn_pending;
+ 	int initconn; /* used for TCP forwarding, whether the channel has been
+ 					 fully initialised */
+@@ -95,10 +91,17 @@
+ 
+ 	int sepfds; /* Whether this channel has separate pipes for in/out or not */
+ 	const char *name;
++	/* Sets up the channel */
+ 	int (*inithandler)(struct Channel*);
++	/* Called to check whether a channel should close, separately from the FD being closed.
++	Used for noticing process exiting */
+ 	int (*check_close)(const struct Channel*);
++	/* Handler for ssh_msg_channel_request */
+ 	void (*reqhandler)(struct Channel*);
++	/* Called prior to sending ssh_msg_channel_close, used for sending exit status */
+ 	void (*closehandler)(const struct Channel*);
++	/* Frees resources, called just prior to channel being removed */
++	void (*cleanup)(const struct Channel*);
+ };
+ 
+ /* Callback for connect_remote */
+--- a/cli-agentfwd.c	Wed Nov 14 22:52:04 2018 +0800
++++ b/cli-agentfwd.c	Wed Nov 14 22:57:56 2018 +0800
+@@ -52,6 +52,7 @@
+ 	new_agent_chan,
+ 	NULL,
+ 	NULL,
++	NULL,
+ 	NULL
+ };
+ 
+--- a/cli-chansession.c	Wed Nov 14 22:52:04 2018 +0800
++++ b/cli-chansession.c	Wed Nov 14 22:57:56 2018 +0800
+@@ -35,7 +35,7 @@
+ #include "chansession.h"
+ #include "agentfwd.h"
+ 
+-static void cli_closechansess(const struct Channel *channel);
++static void cli_cleanupchansess(const struct Channel *channel);
+ static int cli_initchansess(struct Channel *channel);
+ static void cli_chansessreq(struct Channel *channel);
+ static void send_chansess_pty_req(const struct Channel *channel);
+@@ -51,7 +51,8 @@
+ 	cli_initchansess, /* inithandler */
+ 	NULL, /* checkclosehandler */
+ 	cli_chansessreq, /* reqhandler */
+-	cli_closechansess, /* closehandler */
++	NULL, /* closehandler */
++	cli_cleanupchansess, /* cleanup */
+ };
+ 
+ static void cli_chansessreq(struct Channel *channel) {
+@@ -83,7 +84,7 @@
+ 	
+ 
+ /* If the main session goes, we close it up */
+-static void cli_closechansess(const struct Channel *UNUSED(channel)) {
++static void cli_cleanupchansess(const struct Channel *UNUSED(channel)) {
+ 	cli_tty_cleanup(); /* Restore tty modes etc */
+ 
+ 	/* This channel hasn't gone yet, so we have > 1 */
+@@ -387,7 +388,8 @@
+ 	cli_init_netcat, /* inithandler */
+ 	NULL,
+ 	NULL,
+-	cli_closechansess
++	NULL,
++	cli_cleanupchansess
+ };
+ 
+ void cli_send_netcat_request() {
+--- a/cli-session.c	Wed Nov 14 22:52:04 2018 +0800
++++ b/cli-session.c	Wed Nov 14 22:57:56 2018 +0800
+@@ -356,6 +356,7 @@
+ }
+ 
+ static void cli_finished() {
++	TRACE(("cli_finised()"))
+ 
+ 	session_cleanup();
+ 	fprintf(stderr, "Connection to %s@%s:%s closed.\n", cli_opts.username,
+--- a/cli-tcpfwd.c	Wed Nov 14 22:52:04 2018 +0800
++++ b/cli-tcpfwd.c	Wed Nov 14 22:57:56 2018 +0800
+@@ -40,6 +40,7 @@
+ 	newtcpforwarded,
+ 	NULL,
+ 	NULL,
++	NULL,
+ 	NULL
+ };
+ #endif
+@@ -55,6 +56,7 @@
+ 	tcp_prio_inithandler,
+ 	NULL,
+ 	NULL,
++	NULL,
+ 	NULL
+ };
+ #endif
+--- a/common-channel.c	Wed Nov 14 22:52:04 2018 +0800
++++ b/common-channel.c	Wed Nov 14 22:57:56 2018 +0800
+@@ -144,7 +144,6 @@
+ 	newchan->index = i;
+ 	newchan->sent_close = newchan->recv_close = 0;
+ 	newchan->sent_eof = newchan->recv_eof = 0;
+-	newchan->close_handler_done = 0;
+ 
+ 	newchan->remotechan = remotechan;
+ 	newchan->transwindow = transwindow;
+@@ -286,7 +285,7 @@
+ 				channel->extrabuf ? cbuf_getused(channel->extrabuf) : 0))
+ 
+ 	if (!channel->flushing 
+-		&& !channel->close_handler_done
++		&& !channel->sent_close
+ 		&& channel->type->check_close
+ 		&& channel->type->check_close(channel))
+ 	{
+@@ -298,7 +297,7 @@
+ 	   channel, to ensure that the shell has exited (and the exit status 
+ 	   retrieved) before we close things up. */
+ 	if (!channel->type->check_close	
+-		|| channel->close_handler_done
++		|| channel->sent_close
+ 		|| channel->type->check_close(channel)) {
+ 		close_allowed = 1;
+ 	}
+@@ -385,10 +384,8 @@
+ static void send_msg_channel_close(struct Channel *channel) {
+ 
+ 	TRACE(("enter send_msg_channel_close %p", (void*)channel))
+-	if (channel->type->closehandler 
+-			&& !channel->close_handler_done) {
++	if (channel->type->closehandler) {
+ 		channel->type->closehandler(channel);
+-		channel->close_handler_done = 1;
+ 	}
+ 	
+ 	CHECKCLEARTOWRITE();
+@@ -661,10 +658,8 @@
+ 		m_close(channel->errfd);
+ 	}
+ 
+-	if (!channel->close_handler_done
+-		&& channel->type->closehandler) {
+-		channel->type->closehandler(channel);
+-		channel->close_handler_done = 1;
++	if (channel->type->cleanup) {
++		channel->type->cleanup(channel);
+ 	}
+ 
+ 	if (channel->conn_pending) {
+@@ -690,13 +685,7 @@
+ 
+ 	TRACE(("enter recv_msg_channel_request %p", (void*)channel))
+ 
+-	if (channel->sent_close) {
+-		TRACE(("leave recv_msg_channel_request: already closed channel"))
+-		return;
+-	}
+-
+-	if (channel->type->reqhandler 
+-			&& !channel->close_handler_done) {
++	if (channel->type->reqhandler) {
+ 		channel->type->reqhandler(channel);
+ 	} else {
+ 		int wantreply;
+@@ -1011,6 +1000,11 @@
+ void send_msg_channel_failure(const struct Channel *channel) {
+ 
+ 	TRACE(("enter send_msg_channel_failure"))
++
++	if (channel->sent_close) {
++		TRACE(("Skipping sending msg_channel_failure for closed channel"))
++		return;
++	}
+ 	CHECKCLEARTOWRITE();
+ 
+ 	buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_FAILURE);
+@@ -1024,6 +1018,10 @@
+ void send_msg_channel_success(const struct Channel *channel) {
+ 
+ 	TRACE(("enter send_msg_channel_success"))
++	if (channel->sent_close) {
++		TRACE(("Skipping sending msg_channel_success for closed channel"))
++		return;
++	}
+ 	CHECKCLEARTOWRITE();
+ 
+ 	buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_SUCCESS);
+--- a/svr-agentfwd.c	Wed Nov 14 22:52:04 2018 +0800
++++ b/svr-agentfwd.c	Wed Nov 14 22:57:56 2018 +0800
+@@ -187,6 +187,7 @@
+ 	NULL,
+ 	NULL,
+ 	NULL,
++	NULL,
+ 	NULL
+ };
+ 
+--- a/svr-chansession.c	Wed Nov 14 22:52:04 2018 +0800
++++ b/svr-chansession.c	Wed Nov 14 22:57:56 2018 +0800
+@@ -51,6 +51,7 @@
+ static void addchildpid(struct ChanSess *chansess, pid_t pid);
+ static void sesssigchild_handler(int val);
+ static void closechansess(const struct Channel *channel);
++static void cleanupchansess(const struct Channel *channel);
+ static int newchansess(struct Channel *channel);
+ static void chansessionrequest(struct Channel *channel);
+ static int sesscheckclose(const struct Channel *channel);
+@@ -69,6 +70,7 @@
+ 	sesscheckclose, /* checkclosehandler */
+ 	chansessionrequest, /* reqhandler */
+ 	closechansess, /* closehandler */
++	cleanupchansess /* cleanup */
+ };
+ 
+ /* required to clear environment */
+@@ -91,7 +93,7 @@
+ 	while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+ 		unsigned int i;
+ 		struct exitinfo *ex = NULL;
+-		TRACE(("sigchld handler: pid %d", pid))
++		TRACE(("svr_chansess_checksignal : pid %d", pid))
+ 
+ 		ex = NULL;
+ 		/* find the corresponding chansess */
+@@ -285,8 +287,25 @@
+ 	return li;
+ }
+ 
++/* send exit status message before the channel is closed */
++static void closechansess(const struct Channel *channel) {
++	struct ChanSess *chansess;
++
++	TRACE(("enter closechansess"))
++
++	chansess = (struct ChanSess*)channel->typedata;
++
++	if (chansess == NULL) {
++		TRACE(("leave closechansess: chansess == NULL"))
++		return;
++	}
++
++	send_exitsignalstatus(channel);
++	TRACE(("leave closechansess"))
++}
++
+ /* clean a session channel */
+-static void closechansess(const struct Channel *channel) {
++static void cleanupchansess(const struct Channel *channel) {
+ 
+ 	struct ChanSess *chansess;
+ 	unsigned int i;
+@@ -301,8 +320,6 @@
+ 		return;
+ 	}
+ 
+-	send_exitsignalstatus(channel);
+-
+ 	m_free(chansess->cmd);
+ 	m_free(chansess->term);
+ 
+--- a/svr-tcpfwd.c	Wed Nov 14 22:52:04 2018 +0800
++++ b/svr-tcpfwd.c	Wed Nov 14 22:57:56 2018 +0800
+@@ -238,7 +238,8 @@
+ 	newtcpdirect, /* init */
+ 	NULL, /* checkclose */
+ 	NULL, /* reqhandler */
+-	NULL /* closehandler */
++	NULL, /* closehandler */
++	NULL /* cleanup */
+ };
+ 
+ /* Called upon creating a new direct tcp channel (ie we connect out to an
+--- a/svr-x11fwd.c	Wed Nov 14 22:52:04 2018 +0800
++++ b/svr-x11fwd.c	Wed Nov 14 22:57:56 2018 +0800
+@@ -216,7 +216,8 @@
+ 	x11_inithandler, /* inithandler */
+ 	NULL, /* checkclose */
+ 	NULL, /* reqhandler */
+-	NULL /* closehandler */
++	NULL, /* closehandler */
++	NULL /* cleanup */
+ };
