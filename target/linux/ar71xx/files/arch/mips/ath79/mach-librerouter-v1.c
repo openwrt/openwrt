@@ -81,6 +81,26 @@ static struct ath79_spi_platform_data librerouter_spi_data = {
 	.num_chipselect		= 1,
 };
 
+static struct resource librerouter_uart1_resources[] = {
+	{
+		.start	= QCA955X_UART1_BASE,
+		.end	= QCA955X_UART1_BASE + QCA955X_UART1_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+	{
+		.start	= ATH79_MISC_IRQ(6),
+		.end	= ATH79_MISC_IRQ(6),
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device librerouter_uart1_device = {
+	.name		= "ar933x-uart",
+	.id		= -1,
+	.resource	= librerouter_uart1_resources,
+	.num_resources	= ARRAY_SIZE(librerouter_uart1_resources),
+};
+
 static const struct ar8327_led_info librerouter_leds_qca8337[] = {
 	AR8327_LED_INFO(PHY0_0, HW, "librerouter:green:link0"),
 	AR8327_LED_INFO(PHY1_0, HW, "librerouter:green:link1"),
@@ -204,6 +224,8 @@ static void __init librerouter_v1_setup(void)
 	ath79_register_pci();
 	ath79_register_usb();
 	ath79_register_nfc();
+
+	platform_device_register(&librerouter_uart1_device);
 }
 
 MIPS_MACHINE(ATH79_MACH_LIBREROUTERV1, "LIBREROUTERV1", "LibreRouter v1", librerouter_v1_setup);
