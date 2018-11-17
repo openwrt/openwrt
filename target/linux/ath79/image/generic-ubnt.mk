@@ -63,12 +63,28 @@ define Device/ubnt-wa
   ATH_SOC := ar9342
 endef
 
+define Device/ubnt-xw
+  $(Device/ubnt)
+  UBNT_TYPE := XW
+  UBNT_CHIP := ar934x
+  UBNT_BOARD := XM
+  UBNT_VERSION := 6.0.4
+  ATH_SOC := ar9342
+endef
+
 define Device/ubnt_bullet-m
   $(Device/ubnt-xm)
   DEVICE_TITLE := Ubiquiti Bullet-M
   SUPPORTED_DEVICES += bullet-m
 endef
 TARGET_DEVICES += ubnt_bullet-m
+
+define Device/ubnt_bullet-m-xw
+  $(Device/ubnt-xw)
+  DEVICE_TITLE := Ubiquiti Bullet-M (XW)
+  SUPPORTED_DEVICES += bullet-m-xw
+endef
+TARGET_DEVICES += ubnt_bullet-m-xw
 
 define Device/ubnt_rocket-m
   $(Device/ubnt-xm)
