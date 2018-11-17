@@ -352,6 +352,21 @@ define Device/microwrt
 endef
 TARGET_DEVICES += microwrt
 
+define Device/lava_lr-25g001
+  DTS := LR-25G001
+  DEVICE_TITLE := LAVA LR-25G001
+  DLINK_ROM_ID := LVA6E3804001
+  DLINK_FAMILY_MEMBER := 0x6E38
+  DLINK_FIRMWARE_SIZE := 0xFE0000
+  KERNEL := $(KERNEL_DTB)
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
+  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
+  DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-mt76 kmod-mt76x0-common \
+					kmod-mt76x0e
+endef
+TARGET_DEVICES += lava_lr-25g001
+
 define Device/miwifi-mini
   DTS := MIWIFI-MINI
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
