@@ -2104,7 +2104,8 @@ ar8xxx_phy_read_status(struct phy_device *phydev)
 
 	phydev->state = PHY_RUNNING;
 	netif_carrier_on(phydev->attached_dev);
-	phydev->adjust_link(phydev->attached_dev);
+	if (phydev->adjust_link)
+		phydev->adjust_link(phydev->attached_dev);
 
 	return 0;
 }
