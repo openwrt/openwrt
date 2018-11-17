@@ -188,6 +188,13 @@ define Device/ubnt-loco-m-xw
 endef
 TARGET_DEVICES += ubnt-loco-m-xw
 
+define Device/ubnt-bullet-m-xw
+  $(Device/ubnt-xw)
+  DEVICE_TITLE := Ubiquiti Bullet-M XW
+  BOARDNAME := UBNT-BM-XW
+endef
+TARGET_DEVICES += ubnt-bullet-m-xw
+
 define Device/ubnt-rocket-m-xw
   $(Device/ubnt-xw)
   DEVICE_TITLE := Ubiquiti Rocket M XW

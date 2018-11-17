@@ -129,6 +129,7 @@ get_status_led() {
 		status_led="$board:red:sys"
 		;;
 	bullet-m|\
+	bullet-m-xw|\
 	loco-m-xw|\
 	nano-m|\
 	nanostation-m|\
