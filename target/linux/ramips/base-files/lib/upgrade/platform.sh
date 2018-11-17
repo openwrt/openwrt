@@ -293,7 +293,8 @@ platform_check_image() {
 	dlink,dwr-116-a1|\
 	dlink,dwr-118-a2|\
 	dlink,dwr-921-c1|\
-	dwr-512-b)
+	dwr-512-b|\
+	lava,lr-25g001)
 		[ "$magic" != "0404242b" ] && {
 			echo "Invalid image type."
 			return 1
