@@ -1,4 +1,5 @@
 #include <dt-bindings/interrupt-controller/mips-gic.h>
+#include <dt-bindings/clock/mt7621-clk.h>
 
 / {
 	#address-cells = <1>;
@@ -31,6 +32,13 @@
 
 	aliases {
 		serial0 = &uartlite;
+	};
+
+	pll: pll {
+		compatible = "mediatek,mt7621-pll", "syscon";
+
+		#clock-cells = <1>;
+		clock-output-names = "cpu", "bus";
 	};
 
 	cpuclock: cpuclock {
