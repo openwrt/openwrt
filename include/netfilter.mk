@@ -156,7 +156,8 @@ $(eval $(if $(NF_KMOD),$(call nf_add,NF_REJECT6,CONFIG_NF_REJECT_IPV6, $(P_V6)nf
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_IPT6,CONFIG_IP6_NF_IPTABLES, $(P_V6)ip6_tables),))
 
-$(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK6,CONFIG_NF_DEFRAG_IPV6, $(P_V6)nf_defrag_ipv6),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK,CONFIG_NF_DEFRAG_IPV6, $(P_V6)nf_defrag_ipv6, ge 4.19),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK6,CONFIG_NF_DEFRAG_IPV6, $(P_V6)nf_defrag_ipv6, lt 4.19),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK6,CONFIG_NF_CONNTRACK_IPV6, $(P_V6)nf_conntrack_ipv6),))
 
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_IPV6,CONFIG_IP6_NF_FILTER, $(P_V6)ip6table_filter),))
