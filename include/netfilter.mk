@@ -259,7 +259,11 @@ $(eval $(call nf_add,IPT_DEBUG,CONFIG_NETFILTER_XT_TARGET_TRACE, $(P_XT)xt_TRACE
 # tproxy
 
 $(eval $(call nf_add,IPT_TPROXY,CONFIG_NETFILTER_XT_MATCH_SOCKET, $(P_XT)xt_socket))
+$(eval $(call nf_add,IPT_TPROXY,CONFIG_NF_SOCKET_IPV4, $(P_V4)nf_socket_ipv4, ge 4.10))
+$(eval $(call nf_add,IPT_TPROXY,CONFIG_NF_SOCKET_IPV6, $(P_V6)nf_socket_ipv6, ge 4.10))
 $(eval $(call nf_add,IPT_TPROXY,CONFIG_NETFILTER_XT_TARGET_TPROXY, $(P_XT)xt_TPROXY))
+$(eval $(call nf_add,IPT_TPROXY,CONFIG_NF_TPROXY_IPV4, $(P_V4)nf_tproxy_ipv4, ge 4.18))
+$(eval $(call nf_add,IPT_TPROXY,CONFIG_NF_TPROXY_IPV6, $(P_V6)nf_tproxy_ipv6, ge 4.18))
 
 # led
 $(eval $(call nf_add,IPT_LED,CONFIG_NETFILTER_XT_TARGET_LED, $(P_XT)xt_LED))
