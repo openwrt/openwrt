@@ -1,4 +1,9 @@
-DEVICE_VARS += UBNT_BOARD UBNT_CHIP UBNT_TYPE UBNT_VERSION
+DEVICE_VARS += UBNT_BOARD UBNT_CHIP UBNT_TYPE UBNT_VERSION UBNT_REVISION
+
+# On M (XW) devices the U-Boot as of version 1.1.4-s1039 doesn't like
+# VERSION_DIST being on the place of major(?) version number, so we need to
+# use some number.
+UBNT_REVISION := $(VERSION_DIST)-$(REVISION)
 
 # mkubntimage is using the kernel image direct
 # routerboard creates partitions out of the ubnt header
@@ -17,7 +22,7 @@ define Build/mkubntimage-split
 	dd if=$@ of=$@.old1 bs=1024k count=1; \
 	dd if=$@ of=$@.old2 bs=1024k skip=1; \
 	$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v$(UBNT_VERSION)-$(VERSION_DIST)-$(REVISION) \
+		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v$(UBNT_VERSION)-$(UBNT_REVISION) \
 		-k $@.old1 \
 		-r $@.old2 \
 		-o $@; \
@@ -69,6 +74,7 @@ define Device/ubnt-xw
   UBNT_CHIP := ar934x
   UBNT_BOARD := XM
   UBNT_VERSION := 6.0.4
+  UBNT_REVISION := 42.$(UBNT_REVISION)
   ATH_SOC := ar9342
 endef
 
