@@ -798,6 +798,17 @@ endef
 $(eval $(call KernelPackage,sched-bpf))
 
 
+define KernelPackage/bpf-test
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Test Berkeley Packet Filter functionality
+  DEPENDS:=@!LINUX_3_18
+  KCONFIG:=CONFIG_TEST_BPF
+  FILES:=$(LINUX_DIR)/lib/test_bpf.ko
+endef
+
+$(eval $(call KernelPackage,bpf-test))
+
+
 define KernelPackage/sched
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Extra traffic schedulers
