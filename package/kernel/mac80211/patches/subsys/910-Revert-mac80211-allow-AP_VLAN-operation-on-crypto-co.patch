@@ -1,0 +1,100 @@
+From 7f75b875cfce456f553ac0fd3f1d82e4ebeecf68 Mon Sep 17 00:00:00 2001
+From: Stefan Lippers-Hollmann <s.l-h@gmx.de>
+Date: Mon, 19 Nov 2018 03:07:40 +0100
+Subject: [PATCH] Revert "mac80211: allow AP_VLAN operation on crypto
+ controlled devices"
+
+WDS/ 4addr is broken on QCA9984 (ipq8065) using the 4.18 and 4.19 based
+"mac80211" backports, instead of the expected
+
+	<3>WDS-STA-INTERFACE-ADDED ifname=wlan1.sta1 sta_addr=14:cc:20:XX:XX:XX
+	<3>AP-STA-CONNECTED 14:cc:20:XX:XX:XX
+
+only
+
+	<3>AP-STA-CONNECTED 14:cc:20:XX:XX:XX
+
+succeeds to execute.
+
+https://patchwork.kernel.org/patch/10380037/ suggests that this might
+be a results of db3bdcb9c3ff ("mac80211: allow AP_VLAN operation on
+crypto controlled devices") breaking GTK rekeying for 4addr mode.
+Reverting this patch seems to work for me.
+
+working (QCA9984 as WDS-AP, AR9344 as WDS-client):
+
+* wt-2017-11-01-0-gfe248fc2c180/ v4.14-rc2-1-31-g86cf0e5d
+  - ath10k
+  - ath10-ct 4.13
+
+broken (QCA9984 as WDS-AP, AR9344 as WDS-client):
+
+* v4.19-rc5-0-g6bf4ca7fbc85/ v4.19-rc5-1-0-g05571dcd
+  - ath10k
+  - ath10k-ct 4.13
+  - ath10k-ct 4.16
+
+working (QCA9984 as WDS-AP, AR9344 as WDS-client):
+* v4.19-rc5-0-g6bf4ca7fbc85/ v4.19-rc5-1-0-g05571dcd with this patch
+  applied
+
+  - ath10k
+
+This reverts commit db3bdcb9c3ffc628c5284d7ed03a704295ba1214.
+
+Signed-off-by: Stefan Lippers-Hollmann <s.l-h@gmx.de>
+
+---
+ net/mac80211/key.c  | 8 +++-----
+ net/mac80211/main.c | 8 ++------
+ 2 files changed, 5 insertions(+), 11 deletions(-)
+
+--- a/net/mac80211/key.c
++++ b/net/mac80211/key.c
+@@ -126,7 +126,7 @@ static void decrease_tailroom_need_count
+ 
+ static int ieee80211_key_enable_hw_accel(struct ieee80211_key *key)
+ {
+-	struct ieee80211_sub_if_data *sdata = key->sdata;
++	struct ieee80211_sub_if_data *sdata;
+ 	struct sta_info *sta;
+ 	int ret = -EOPNOTSUPP;
+ 
+@@ -162,6 +162,7 @@ static int ieee80211_key_enable_hw_accel
+ 	if (sta && !sta->uploaded)
+ 		goto out_unsupported;
+ 
++	sdata = key->sdata;
+ 	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
+ 		/*
+ 		 * The driver doesn't know anything about VLAN interfaces.
+@@ -213,11 +214,8 @@ static int ieee80211_key_enable_hw_accel
+ 		/* all of these we can do in software - if driver can */
+ 		if (ret == 1)
+ 			return 0;
+-		if (ieee80211_hw_check(&key->local->hw, SW_CRYPTO_CONTROL)) {
+-			if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
+-				return 0;
++		if (ieee80211_hw_check(&key->local->hw, SW_CRYPTO_CONTROL))
+ 			return -EINVAL;
+-		}
+ 		return 0;
+ 	default:
+ 		return -EINVAL;
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -974,12 +974,8 @@ int ieee80211_register_hw(struct ieee802
+ 			             IEEE80211_HT_CAP_SM_PS_SHIFT;
+ 	}
+ 
+-	/* if low-level driver supports AP, we also support VLAN.
+-	 * drivers advertising SW_CRYPTO_CONTROL should enable AP_VLAN
+-	 * based on their support to transmit SW encrypted packets.
+-	 */
+-	if (local->hw.wiphy->interface_modes & BIT(NL80211_IFTYPE_AP) &&
+-	    !ieee80211_hw_check(&local->hw, SW_CRYPTO_CONTROL)) {
++	/* if low-level driver supports AP, we also support VLAN */
++	if (local->hw.wiphy->interface_modes & BIT(NL80211_IFTYPE_AP)) {
+ 		hw->wiphy->interface_modes |= BIT(NL80211_IFTYPE_AP_VLAN);
+ 		hw->wiphy->software_iftypes |= BIT(NL80211_IFTYPE_AP_VLAN);
+ 	}
