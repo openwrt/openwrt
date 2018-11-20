@@ -4,6 +4,8 @@ define Package/amd64-microcode/install
 	$(CP) \
 		$(PKG_BUILD_DIR)/amd-ucode/*.bin \
 		$(1)/lib/firmware/amd-ucode
+	$(INSTALL_DIR) $(1)/boot
+	cat $(PKG_BUILD_DIR)/amd-ucode/microcode_amd*.bin > $(1)/boot/amd-ucode.img
 endef
 
 $(eval $(call BuildPackage,amd64-microcode))
