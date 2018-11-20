@@ -9,7 +9,18 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -1115,6 +1115,62 @@ void mtd_part_parser_cleanup(struct mtd_
+@@ -56,6 +56,10 @@ struct mtd_part {
+ };
+ 
+ static void mtd_partition_split(struct mtd_info *master, struct mtd_part *part);
++static int parse_mtd_partitions_by_type(struct mtd_info *master,
++					enum mtd_parser_type type,
++					const struct mtd_partition **pparts,
++					struct mtd_part_parser_data *data);
+ 
+ /*
+  * Given a pointer to the MTD object in the mtd_part structure, we can retrieve
+@@ -1115,6 +1119,61 @@ void mtd_part_parser_cleanup(struct mtd_
  	}
  }
  
@@ -37,10 +48,10 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +	return ret;
 +}
 +
-+int parse_mtd_partitions_by_type(struct mtd_info *master,
-+				 enum mtd_parser_type type,
-+				 const struct mtd_partition **pparts,
-+				 struct mtd_part_parser_data *data)
++static int parse_mtd_partitions_by_type(struct mtd_info *master,
++					enum mtd_parser_type type,
++					const struct mtd_partition **pparts,
++					struct mtd_part_parser_data *data)
 +{
 +	struct mtd_part_parser *prev = NULL;
 +	int ret = 0;
@@ -67,19 +78,13 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +
 +	return ret;
 +}
-+EXPORT_SYMBOL_GPL(parse_mtd_partitions_by_type);
 +
  int mtd_is_partition(const struct mtd_info *mtd)
  {
  	struct mtd_part *part;
 --- a/include/linux/mtd/partitions.h
 +++ b/include/linux/mtd/partitions.h
-@@ -68,11 +68,14 @@ struct mtd_part_parser_data {
- 	unsigned long origin;
- };
- 
--
- /*
+@@ -73,6 +73,10 @@ struct mtd_part_parser_data {
   * Functions dealing with the various ways of partitioning the space
   */
  
@@ -90,7 +95,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  struct mtd_part_parser {
  	struct list_head list;
  	struct module *owner;
-@@ -81,6 +84,7 @@ struct mtd_part_parser {
+@@ -81,6 +85,7 @@ struct mtd_part_parser {
  	int (*parse_fn)(struct mtd_info *, const struct mtd_partition **,
  			struct mtd_part_parser_data *);
  	void (*cleanup)(const struct mtd_partition *pparts, int nr_parts);
@@ -98,13 +103,3 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  };
  
  /* Container for passing around a set of parsed partitions */
-@@ -113,4 +117,9 @@ uint64_t mtd_get_device_size(const struc
- extern void __weak arch_split_mtd_part(struct mtd_info *master,
- 				       const char *name, int offset, int size);
- 
-+int parse_mtd_partitions_by_type(struct mtd_info *master,
-+				 enum mtd_parser_type type,
-+				 const struct mtd_partition **pparts,
-+				 struct mtd_part_parser_data *data);
-+
- #endif
