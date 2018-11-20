@@ -17,8 +17,8 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +	run_parsers_by_type(part, MTD_PARSER_TYPE_FIRMWARE);
  }
  
- void __weak arch_split_mtd_part(struct mtd_info *master, const char *name,
-@@ -797,6 +798,12 @@ static void mtd_partition_split(struct m
+ static void mtd_partition_split(struct mtd_info *master, struct mtd_part *part)
+@@ -792,6 +793,12 @@ static void mtd_partition_split(struct m
  	if (rootfs_found)
  		return;
  
