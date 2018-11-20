@@ -61,13 +61,10 @@ int mtd_resetbc(const char *mtd)
 		fprintf(stderr, "failed to get mtd info!\n");
 		return -1;
 	}
-
-	num_bc = mtd_info.size / mtd_info.writesize;
-
+	num_bc = mtd_info.size / 16;
 	for (i = 0; i < num_bc; i++) {
-		pread(fd, curr, sizeof(*curr), i * mtd_info.writesize);
-
-		if (curr->magic != BOOTCOUNT_MAGIC && curr->magic != 0xffffffff) {
+		pread(fd, curr, sizeof(*curr), i * 16);
+		if (curr->magic != (BOOTCOUNT_MAGIC) && curr->magic != 0xffffffff) {
 			fprintf(stderr, "unexpected magic %08x, bailing out\n", curr->magic);
 			goto out;
 		}
@@ -98,13 +95,13 @@ int mtd_resetbc(const char *mtd)
 		i = 0;
 	}
 
-	memset(curr, 0xff, mtd_info.writesize);
+	memset(curr, 0xff, 16);
 
 	curr->magic = BOOTCOUNT_MAGIC;
 	curr->count = 0;
 	curr->checksum = BOOTCOUNT_MAGIC;
 
-	ret = pwrite(fd, curr, mtd_info.writesize, i * mtd_info.writesize);
+	ret = pwrite(fd, curr, 16, i * 16);
 	if (ret < 0)
 		fprintf(stderr, "failed to write: %i\n", ret);
 	sync();

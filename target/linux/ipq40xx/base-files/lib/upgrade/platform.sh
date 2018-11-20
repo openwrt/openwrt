@@ -49,6 +49,9 @@ platform_do_upgrade() {
 	8dev,jalapeno)
 		nand_do_upgrade "$ARGV"
 		;;
+	linksys,ea6350v3)
+		platform_do_upgrade_linksys "$ARGV"
+		;;
 	asus,rt-ac58u)
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"

@@ -45,7 +45,6 @@ define Device/DniImage
 endef
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 
-
 define Device/8dev_jalapeno
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -193,6 +192,23 @@ define Device/qcom_ap-dk01.1-c1
 	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
 endef
 TARGET_DEVICES += qcom_ap-dk01.1-c1
+
+define Device/linksys_ea6350v3
+	$(call Device/FitImage)
+	DEVICE_TITLE := Linksys EA6350v3
+	DEVICE_DTS := qcom-ipq4018-ea6350v3
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_SIZE := 3145728
+	IMAGE_SIZE := 26738432
+	UBINIZE_OPTS := -E 5
+	KERNEL_SUFFIX := -fit-uImage.itb
+	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb | append-uImage-fakehdr filesystem
+	IMAGES := factory.bin sysupgrade.bin
+	IMAGE/factory.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-ubi | linksys-image type=EA6350v3
+	DEVICE_PACKAGES := ipq-wifi-linksys_ea6350v3 uboot-envtools
+endef
+TARGET_DEVICES += linksys_ea6350v3
 
 define Device/qcom_ap-dk04.1-c1
 	$(call Device/FitImage)

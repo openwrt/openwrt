@@ -25,6 +25,14 @@ asus,rt-ac58u)
 	ucidef_set_interface_macaddr "lan" "$lan_mac_addr"
 	ucidef_set_interface_macaddr "wan" "$wan_mac_addr"
 	;;
+linksys,ea6350v3 )
+	hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+        ucidef_add_switch "switch0" \
+                "0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
+	ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
+	ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
+	;;
 avm,fritzbox-4040)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	ucidef_add_switch "switch0" \

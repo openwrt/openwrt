@@ -17,7 +17,7 @@ endef
 # Please send a mail with your device-specific board files upstream.
 # You can find instructions and examples on the linux-wireless wiki:
 # <https://wireless.wiki.kernel.org/en/users/drivers/ath10k/boardfiles>
-ALLWIFIBOARDS:=
+ALLWIFIBOARDS:=Linksys_EA6350v3
 ALLWIFIPACKAGES:=$(foreach BOARD,$(ALLWIFIBOARDS),ipq-wifi-$(BOARD))
 
 define Package/ipq-wifi-default
@@ -51,6 +51,7 @@ Don't install it for any other device!
   PREV_BOARD+=ipq-wifi-$(1)
 endef
 
+$(eval $(call generate-ipq-wifi-package,Linksys_EA6350v3,board-linksys_ea6350v3.bin,Linksys EA6350v3))
 #$(eval $(call generate-ipq-wifi-package,<devicename>,<filename>,<displayname>))
 
 $(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))
