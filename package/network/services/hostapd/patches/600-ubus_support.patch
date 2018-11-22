@@ -341,3 +341,85 @@
  }
  
  
+--- a/wpa_supplicant/Makefile
++++ b/wpa_supplicant/Makefile
+@@ -189,6 +189,12 @@ ifdef CONFIG_EAPOL_TEST
+ CFLAGS += -Werror -DEAPOL_TEST
+ endif
+ 
++ifdef CONFIG_UBUS
++CFLAGS += -DUBUS_SUPPORT
++OBJS += ubus.o
++LIBS += -lubox -lubus
++endif
++
+ ifdef CONFIG_CODE_COVERAGE
+ CFLAGS += -O0 -fprofile-arcs -ftest-coverage
+ LIBS += -lgcov
+@@ -915,6 +921,9 @@ endif
+ ifdef CONFIG_IEEE80211AX
+ OBJS += ../src/ap/ieee802_11_he.o
+ endif
++ifdef CONFIG_UBUS
++OBJS += ../src/ap/ubus.o
++endif
+ endif
+ ifdef CONFIG_WNM_AP
+ CFLAGS += -DCONFIG_WNM_AP
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -5998,6 +5998,8 @@ struct wpa_supplicant * wpa_supplicant_a
+ 	}
+ #endif /* CONFIG_P2P */
+ 
++	wpas_ubus_add_bss(wpa_s);
++
+ 	return wpa_s;
+ }
+ 
+@@ -6024,6 +6026,8 @@ int wpa_supplicant_remove_iface(struct w
+ 	struct wpa_supplicant *parent = wpa_s->parent;
+ #endif /* CONFIG_MESH */
+ 
++	wpas_ubus_free_bss(wpa_s);
++
+ 	/* Remove interface from the global list of interfaces */
+ 	prev = global->ifaces;
+ 	if (prev == wpa_s) {
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -17,6 +17,7 @@
+ #include "wps/wps_defs.h"
+ #include "config_ssid.h"
+ #include "wmm_ac.h"
++#include "ubus.h"
+ 
+ extern const char *const wpa_supplicant_version;
+ extern const char *const wpa_supplicant_license;
+@@ -500,6 +501,7 @@ struct wpa_supplicant {
+ 	unsigned char own_addr[ETH_ALEN];
+ 	unsigned char perm_addr[ETH_ALEN];
+ 	char ifname[100];
++	struct wpas_ubus_bss ubus;
+ #ifdef CONFIG_MATCH_IFACE
+ 	int matched;
+ #endif /* CONFIG_MATCH_IFACE */
+--- a/wpa_supplicant/wps_supplicant.c
++++ b/wpa_supplicant/wps_supplicant.c
+@@ -33,6 +33,7 @@
+ #include "p2p/p2p.h"
+ #include "p2p_supplicant.h"
+ #include "wps_supplicant.h"
++#include "ubus.h"
+ 
+ 
+ #ifndef WPS_PIN_SCAN_IGNORE_SEL_REG
+@@ -388,6 +389,8 @@ static int wpa_supplicant_wps_cred(void
+ 	wpa_hexdump_key(MSG_DEBUG, "WPS: Received Credential attribute",
+ 			cred->cred_attr, cred->cred_attr_len);
+ 
++	wpas_ubus_notify(wpa_s, cred);
++
+ 	if (wpa_s->conf->wps_cred_processing == 1)
+ 		return 0;
+ 

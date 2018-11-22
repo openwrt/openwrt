@@ -762,6 +762,9 @@ wpa_supplicant_add_network() {
 			hostapd_append_wep_key network_data
 			append network_data "wep_tx_keyidx=$wep_keyidx" "$N$T"
 		;;
+		wps)
+			key_mgmt='WPS'
+		;;
 		psk|sae|psk-sae)
 			local passphrase
 
@@ -869,7 +872,10 @@ wpa_supplicant_add_network() {
 		append network_data "mcast_rate=$mc_rate" "$N$T"
 	}
 
-	cat >> "$_config" <<EOF
+	if [ "$key_mgnt" = "WPS" ]; then
+		echo "wps_cred_processing=1" >> "$_config"
+	else
+		cat >> "$_config" <<EOF
 network={
 	$scan_ssid
 	ssid="$ssid"
@@ -877,6 +883,7 @@ network={
 	$network_data
 }
 EOF
+	fi
 	return 0
 }
 
