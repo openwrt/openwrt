@@ -228,7 +228,7 @@ define Device/wd_mybooklive
   BLOCKSIZE := 1k
   DTB_SIZE := 16384
   KERNEL := kernel-bin | dtb | gzip | uImage gzip
-  KERNEL_INITRAMFS := kernel-bin | dtb | gzip | uImage gzip
+  KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
   BOOT_SIZE := 8
   IMAGES := factory.img.gz kernel.dtb sysupgrade.img.gz
   DEVICE_DTB := apollo3g.dtb
