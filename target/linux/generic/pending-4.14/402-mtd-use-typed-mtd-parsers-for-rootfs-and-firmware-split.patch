@@ -28,9 +28,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +		rootfs_found = 1;
 +	}
 +
- 	if (!strcmp(part->mtd.name, SPLIT_FIRMWARE_NAME) &&
- 	    IS_ENABLED(CONFIG_MTD_SPLIT_FIRMWARE))
- 		split_firmware(master, part);
+ 	if (IS_ENABLED(CONFIG_MTD_SPLIT_FIRMWARE) &&
+ 	    !strcmp(part->mtd.name, SPLIT_FIRMWARE_NAME) &&
+ 	    !of_find_property(mtd_get_of_node(&part->mtd), "compatible", NULL))
 --- a/include/linux/mtd/partitions.h
 +++ b/include/linux/mtd/partitions.h
 @@ -75,6 +75,8 @@ struct mtd_part_parser_data {
