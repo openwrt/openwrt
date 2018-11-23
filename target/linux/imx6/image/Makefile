@@ -58,6 +58,12 @@ define Build/boot-scr
 	$(BIN_DIR)/boot.scr
 endef
 
+define Build/recovery-scr
+	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
+	-n '$(DEVICE_ID) OpenWrt recovery bootscript' \
+	-d ./recovery-$(DEVICE_NAME) $@
+endef
+
 define Build/imx6-combined-image-prepare
 	rm -rf $@.boot
 	mkdir -p $@.boot
@@ -101,6 +107,10 @@ define Build/imx6-sdcard
 	$(Build/imx6-combined-image-clean)
 endef
 
+define Build/apalis-emmc
+	$(Build/imx6-combined-image-prepare)
+	$(Build/imx6-combined-image)
+	$(Build/imx6-combined-image-clean)
 endef
 
 #################################################
@@ -189,5 +199,30 @@ define Device/cubox-i
   IMAGE/combined.bin := append-rootfs | pad-extra 128k | imx6-sdcard
 endef
 TARGET_DEVICES += cubox-i
+
+define Device/apalis
+  DEVICE_TITLE := Toradex Apalis family
+  SUPPORTED_DEVICES := apalis,ixora apalis,eval
+  DEVICE_DTS := \
+	  imx6q-apalis-eval \
+	  imx6q-apalis-ixora \
+	  imx6q-apalis-ixora-v1.1
+  DEVICE_PACKAGES := \
+	kmod-can kmod-can-flexcan kmod-can-raw \
+	kmod-leds-gpio kmod-gpio-button-hotplug \
+	kmod-pps-gpio kmod-rtc-ds1307
+  BOOT_SCRIPT := bootscript-apalis
+  UBOOT := apalis_imx6
+  FILESYSTEMS := squashfs
+  IMAGES := combined.bin sysupgrade.bin
+  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
+  IMAGE/combined.bin := append-rootfs | pad-extra 128k | apalis-emmc
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  UBOOT_PATH := $$(STAGING_DIR_IMAGE)/$$(UBOOT)-u-boot-with-spl.imx
+  ARTIFACTS := u-boot-with-spl.imx recovery.scr
+  ARTIFACT/u-boot-with-spl.imx := append-uboot
+  ARTIFACT/recovery.scr := recovery-scr
+endef
+TARGET_DEVICES += apalis
 
 $(eval $(call BuildImage))
