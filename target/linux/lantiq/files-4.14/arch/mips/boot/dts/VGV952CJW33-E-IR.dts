@@ -344,7 +344,16 @@
     status = "okay";
 };
 
+&usb_phy1 {
+    status = "okay";
+};
+
 &usb0 {
+    status = "okay";
+    vbus-supply = <&usb_vbus>;
+};
+
+&usb1 {
     status = "okay";
     vbus-supply = <&usb_vbus>;
 };
