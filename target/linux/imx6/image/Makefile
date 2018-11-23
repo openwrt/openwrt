@@ -58,11 +58,16 @@ define Build/boot-scr
 	$(BIN_DIR)/boot.scr
 endef
 
-define Build/imx6-sdcard
+define Build/imx6-combined-image-prepare
 	rm -rf $@.boot
 	mkdir -p $@.boot
+endef
 
-	$(CP) $(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.img $@.boot/u-boot.img
+define Build/imx6-combined-image-clean
+	rm -rf $@.boot $@.fs
+endef
+
+define Build/imx6-combined-image
 	$(CP) $(IMAGE_KERNEL) $@.boot/uImage
 
 	$(foreach dts,$(DEVICE_DTS), \
@@ -84,10 +89,18 @@ define Build/imx6-sdcard
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
 		$@.fs \
 		1024
+endef
 
+define Build/imx6-sdcard
+	$(Build/imx6-combined-image-prepare)
+
+	$(CP) $(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.img $@.boot/u-boot.img
+	$(Build/imx6-combined-image)
 	dd if=$(STAGING_DIR_IMAGE)/$(UBOOT)-SPL of=$@ bs=1024 seek=1 conv=notrunc
 
-	rm -rf $@.boot $@.fs
+	$(Build/imx6-combined-image-clean)
+endef
+
 endef
 
 #################################################
