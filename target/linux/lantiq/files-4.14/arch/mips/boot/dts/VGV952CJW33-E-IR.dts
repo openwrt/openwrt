@@ -136,25 +136,25 @@
 			gpio-export,output = <1>;
 			gpios = <&hc595 3 GPIO_ACTIVE_HIGH>;
 		};
-		out_dsl_eth { /* Switches DSL line + 100MiB eth or 1GiB ethernet on DSL/WAN input*/
+		out_dsl_eth { /* Switches DSL line + 100MiB eth or 1GiB ethernet on DSL/WAN input. Relay 1.*/
 			gpio-export,name = "dsl_en";
 			gpio-export,output = <1>;
-			gpios = <&hc595 4 GPIO_ACTIVE_HIGH>;
+			gpios = <&hc595 4 GPIO_ACTIVE_LOW>;
 		};
-		out_5 { /*Relay*/
-			gpio-export,name = "hc595_5";
+		out_5 { /* Switches filter for DSL line On/Off. Relays 2 and 3 simultaneously.*/
+			gpio-export,name = "annexj";
 			gpio-export,output = <1>;
 			gpios = <&hc595 5 GPIO_ACTIVE_HIGH>;
 		};
-		out_6 { /*Relay*/
-			gpio-export,name = "hc595_6";
+		out_6 { /* Switch DSL line betwean ISDN modem and Si3050. Relay 5.*/
+			gpio-export,name = "annexb";
 			gpio-export,output = <1>;
 			gpios = <&hc595 6 GPIO_ACTIVE_HIGH>;
 		};
-		out_7 { /*Relay*/
-			gpio-export,name = "hc595_7";
+		out_7 { /* Switch phone outputs N and F betwean analog DSL line and XS1 output from Lantiq SLIC. Relay 4.*/
+			gpio-export,name = "annexa";
 			gpio-export,output = <1>;
-			gpios = <&hc595 7 GPIO_ACTIVE_HIGH>;
+			gpios = <&hc595 7 GPIO_ACTIVE_LOW>;
 		};
 	};
 

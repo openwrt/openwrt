@@ -219,7 +219,29 @@ start_service() {
 	esac
 
 	local annexgpio="/sys/class/gpio/annex"
-	if [ -d "${annexgpio}a" ] && [ -d "${annexgpio}b" ]; then
+	local dsl_en_gpio="/sys/class/gpio/dsl_en"
+	if [ -d "${dsl_en_gpio}" ]; then
+		echo 1 > "${dsl_en_gpio}/value"
+	fi
+	if  [ -d "${annexgpio}a" ] && [ -d "${annexgpio}b" ] && [-d "${annexgpio}j" ]; then
+		case "${annex}" in
+			a*|l*|m*)
+				echo 1 > "${annexgpio}a/value"
+				echo 0 > "${annexgpio}b/value"
+				echo 0 > "${annexgpio}j/value"
+				;;
+			b*)
+				echo 0 > "${annexgpio}a/value"
+				echo 1 > "${annexgpio}b/value"
+				echo 0 > "${annexgpio}j/value"
+				;;
+			i*|j*)
+				echo 0 > "${annexgpio}a/value"
+				echo 0 > "${annexgpio}b/value"
+				echo 1 > "${annexgpio}j/value"
+				;;
+		esac
+	elif [ -d "${annexgpio}a" ] && [ -d "${annexgpio}b" ]; then
 		case "${annex}" in
 			a*|l*|m*)
 				echo 1 > "${annexgpio}a/value"
@@ -313,4 +335,7 @@ stop_service() {
 	DSL_NOTIFICATION_TYPE="DSL_INTERFACE_STATUS" \
 	DSL_INTERFACE_STATUS="DOWN" \
 		/sbin/dsl_notify.sh
+	if [ -d "${dsl_en_gpio}" ]; then
+		echo 0 > "${dsl_en_gpio}/value"
+	fi
 }
