@@ -54,7 +54,7 @@ endef
 define Package/tc
 $(call Package/iproute2/Default)
   TITLE:=Traffic control utility
-  DEPENDS:=+kmod-sched-core +(PACKAGE_devlink||PACKAGE_rdma):libmnl +libelf
+  DEPENDS:=+kmod-sched-core +libxtables +libelf +(PACKAGE_devlink||PACKAGE_rdma):libmnl
 endef
 
 define Package/genl
@@ -106,25 +106,21 @@ ifdef CONFIG_PACKAGE_rdma
 endif
 
 define Build/Configure
-	$(SED) "s,-I/usr/include/db3,," $(PKG_BUILD_DIR)/Makefile
-	$(SED) "s,^KERNEL_INCLUDE.*,KERNEL_INCLUDE=$(LINUX_DIR)/include," \
-		$(PKG_BUILD_DIR)/Makefile
-	$(SED) "s,^LIBC_INCLUDE.*,LIBC_INCLUDE=$(STAGING_DIR)/include," \
-		$(PKG_BUILD_DIR)/Makefile
 	echo "static const char SNAPSHOT[] = \"$(PKG_VERSION)-$(PKG_RELEASE)-openwrt\";" \
 		> $(PKG_BUILD_DIR)/include/SNAPSHOT.h
 endef
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
+TARGET_LDFLAGS += -Wl,--gc-sections
+TARGET_CPPFLAGS += -I$(STAGING_DIR)/usr/include/libnl-tiny
 
 MAKE_FLAGS += \
-	EXTRA_CCOPTS="-I$(STAGING_DIR)/usr/include/libnl-tiny" \
-	KERNEL_INCLUDE="$(LINUX_DIR)/include" \
+	KERNEL_INCLUDE="$(LINUX_DIR)/user_headers/include" \
 	SHARED_LIBS="" \
-	LDFLAGS="$(TARGET_LDFLAGS) -Wl,--gc-sections" \
 	IP_CONFIG_TINY=$(IP_CONFIG_TINY) \
 	HAVE_MNL=$(HAVE_MNL) \
 	IPT_LIB_DIR=/usr/lib/iptables \
+	XT_LIB_DIR=/usr/lib/iptables \
 	FPIC="$(FPIC)"
 
 define Build/Compile
