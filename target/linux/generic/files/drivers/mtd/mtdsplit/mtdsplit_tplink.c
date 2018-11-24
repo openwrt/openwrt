@@ -14,6 +14,7 @@
 #include <linux/slab.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include <linux/version.h>
 #include <linux/byteorder/generic.h>
 
 #include "mtdsplit.h"
