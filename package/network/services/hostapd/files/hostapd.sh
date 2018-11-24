@@ -360,6 +360,29 @@ hostapd_set_bss_options() {
 			[ "$eapol_version" -ge "1" -a "$eapol_version" -le "2" ] && append bss_conf "eapol_version=$eapol_version" "$N"
 
 			wps_possible=1
+
+			json_get_vars \
+				auth_server auth_secret auth_port \
+				ownip radius_client_addr
+
+			[ -n "$auth_server" ] && {
+				# radius can provide VLAN ID for clients
+				vlan_possible=1
+
+				# legacy compatibility
+				[ -n "$auth_server" ] || json_get_var auth_server server
+				[ -n "$auth_port" ] || json_get_var auth_port port
+				[ -n "$auth_secret" ] || json_get_var auth_secret key
+
+				set_default auth_port 1812
+
+				append bss_conf "auth_server_addr=$auth_server" "$N"
+				append bss_conf "auth_server_port=$auth_port" "$N"
+				append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+
+				[ -n "$ownip" ] && append bss_conf "own_ip_addr=$ownip" "$N"
+				[ -n "$radius_client_addr" ] && append bss_conf "radius_client_addr=$radius_client_addr" "$N"
+			}
 		;;
 		eap|eap192|eap-eap192)
 			json_get_vars \
@@ -551,6 +574,11 @@ hostapd_set_bss_options() {
 		deny)
 			append bss_conf "macaddr_acl=0" "$N"
 			append bss_conf "deny_mac_file=$_macfile" "$N"
+		;;
+		radius)
+			append_bss_conf "macaddr_acl=2" "$N"
+			# radius server can be used to assign dynamic VLAN based on MAC
+			vlan_possible=1
 		;;
 		*)
 			_macfile=""
