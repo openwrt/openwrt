@@ -34,8 +34,9 @@
 
 #define GL_X750_GPIO_BTN_RESET		3
 
-#define GL_X750_GPIO_I2C_SCL		16
-#define GL_X750_GPIO_I2C_SDA		1
+//#define GL_X750_GPIO_I2C_SCL		16
+//#define GL_X750_GPIO_I2C_SDA		1
+#define GL_X750_GPIO_BLE_RST		1
 
 #define GL_X750_GPIO_USB_POWER		2
 #define GL_X750_GPIO_PCI_POWER		0
@@ -162,6 +163,10 @@ static void __init gl_x750_setup(void)
         gpio_request_one(GL_X750_GPIO_PCI_POWER,
                          GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,
                          "PCI power");
+
+        gpio_request_one(GL_X750_GPIO_BLE_RST,
+                         GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,
+                         "BLE RST");
 
 //	platform_device_register(&gl_x750_i2c_gpio);
 
