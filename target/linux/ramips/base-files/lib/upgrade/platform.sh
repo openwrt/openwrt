@@ -151,6 +151,7 @@ platform_check_image() {
 	rut5xx|\
 	sap-g3200u3|\
 	sk-wb8|\
+	skw92a|\
 	sl-r7205|\
 	tama,w06|\
 	tew-638apb-v2|\

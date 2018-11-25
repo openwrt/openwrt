@@ -283,6 +283,9 @@ rt-n14u)
 	ucidef_set_led_netdev "wan" "wan" "$boardname:blue:wan" eth0.2
 	set_wifi_led "$boardname:blue:air"
 	;;
+skw92a)
+	set_wifi_led "$boardname:green:wlan"
+	;;
 tama,w06)
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "$boardname:green:wlan" "phy0tpt"
