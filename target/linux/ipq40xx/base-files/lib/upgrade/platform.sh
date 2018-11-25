@@ -111,7 +111,8 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	openmesh,a42 |\
-	openmesh,a62)
+	openmesh,a62 |\
+	plasmacloud,pa1200)
 		PART_NAME="inactive"
 		platform_do_upgrade_dualboot_datachk "$1"
 		;;
