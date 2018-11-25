@@ -23,7 +23,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/usb/dwc2/params.c
 +++ b/drivers/usb/dwc2/params.c
-@@ -83,7 +83,14 @@ static void dwc2_set_rk_params(struct dw
+@@ -90,7 +90,14 @@ static void dwc2_set_rk_params(struct dw
  		GAHBCFG_HBSTLEN_SHIFT;
  }
  
@@ -39,7 +39,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  {
  	struct dwc2_core_params *p = &hsotg->params;
  
-@@ -91,12 +98,20 @@ static void dwc2_set_ltq_params(struct d
+@@ -98,12 +105,20 @@ static void dwc2_set_ltq_params(struct d
  	p->host_rx_fifo_size = 288;
  	p->host_nperio_tx_fifo_size = 128;
  	p->host_perio_tx_fifo_size = 96;
@@ -62,7 +62,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static void dwc2_set_amlogic_params(struct dwc2_hsotg *hsotg)
  {
  	struct dwc2_core_params *p = &hsotg->params;
-@@ -140,8 +155,11 @@ const struct of_device_id dwc2_of_match_
+@@ -155,8 +170,11 @@ const struct of_device_id dwc2_of_match_
  	{ .compatible = "brcm,bcm2835-usb", .data = dwc2_set_bcm_params },
  	{ .compatible = "hisilicon,hi6220-usb", .data = dwc2_set_his_params  },
  	{ .compatible = "rockchip,rk3066-usb", .data = dwc2_set_rk_params },
@@ -74,5 +74,5 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	{ .compatible = "lantiq,xrx200-usb", .data = &dwc2_set_ltq_xrx200_params },
 +	{ .compatible = "lantiq,xrx300-usb", .data = &dwc2_set_ltq_xrx200_params },
  	{ .compatible = "snps,dwc2" },
- 	{ .compatible = "samsung,s3c6400-hsotg" },
- 	{ .compatible = "amlogic,meson8-usb",
+ 	{ .compatible = "samsung,s3c6400-hsotg",
+ 	  .data = dwc2_set_s3c6400_params },

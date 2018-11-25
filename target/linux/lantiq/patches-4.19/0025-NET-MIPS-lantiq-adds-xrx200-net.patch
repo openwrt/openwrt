@@ -16,7 +16,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
-@@ -107,7 +107,13 @@ config LANTIQ_ETOP
+@@ -106,7 +106,13 @@ config LANTIQ_ETOP
  	tristate "Lantiq SoC ETOP driver"
  	depends on SOC_TYPE_XWAY
  	---help---
@@ -33,7 +33,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
  source "drivers/net/ethernet/mediatek/Kconfig"
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
-@@ -50,6 +50,7 @@ obj-$(CONFIG_NET_VENDOR_XSCALE) += xscal
+@@ -49,6 +49,7 @@ obj-$(CONFIG_NET_VENDOR_XSCALE) += xscal
  obj-$(CONFIG_JME) += jme.o
  obj-$(CONFIG_KORINA) += korina.o
  obj-$(CONFIG_LANTIQ_ETOP) += lantiq_etop.o
@@ -209,7 +209,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +};
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1887 @@
+@@ -0,0 +1,1889 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -1133,7 +1133,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +		goto skip;
 +
 +	skb_reserve(ch->skb[ch->dma.desc], NET_SKB_PAD);
-+	ch->dma.desc_base[ch->dma.desc].addr = dma_map_single(NULL,
++	ch->dma.desc_base[ch->dma.desc].addr = dma_map_single(ch->dma.dev,
 +		ch->skb[ch->dma.desc]->data, XRX200_DMA_DATA_LEN,
 +			DMA_FROM_DEVICE);
 +	ch->dma.desc_base[ch->dma.desc].addr =
@@ -1328,7 +1328,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +
 +	netif_trans_update(dev);
 +
-+	desc->addr = ((unsigned int) dma_map_single(NULL, skb->data, len,
++	desc->addr = ((unsigned int) dma_map_single(ch->dma.dev, skb->data, len,
 +						DMA_TO_DEVICE)) - byte_offset;
 +	wmb();
 +	desc->ctl = LTQ_DMA_OWN | LTQ_DMA_SOP | LTQ_DMA_EOP |
@@ -1365,7 +1365,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	return IRQ_HANDLED;
 +}
 +
-+static int xrx200_dma_init(struct xrx200_hw *hw)
++static int xrx200_dma_init(struct device *dev, struct xrx200_hw *hw)
 +{
 +	int i, err = 0;
 +
@@ -1378,6 +1378,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +		spin_lock_init(&ch->lock);
 +
 +		ch->idx = ch->dma.nr = i;
++		ch->dma.dev = dev;
 +
 +		if (i == XRX200_DMA_TX) {
 +			ltq_dma_alloc_tx(&ch->dma);
@@ -1540,11 +1541,12 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +{
 +	struct net_device *netdev = phydev->attached_dev;
 +
-+	if (do_carrier)
++	if (do_carrier) {
 +		if (up)
 +			netif_carrier_on(netdev);
 +		else if (!xrx200_phy_has_link(netdev))
 +			netif_carrier_off(netdev);
++	}
 +
 +	phydev->adjust_link(netdev);
 +}
@@ -2002,7 +2004,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	}
 +
 +	/* bring up the dma engine and IP core */
-+	xrx200_dma_init(&xrx200_hw);
++	xrx200_dma_init(&pdev->dev, &xrx200_hw);
 +	xrx200_hw_init(&xrx200_hw);
 +	tasklet_init(&xrx200_hw.chan[XRX200_DMA_TX].tasklet, xrx200_tx_housekeeping, (u32) &xrx200_hw.chan[XRX200_DMA_TX]);
 +	tasklet_init(&xrx200_hw.chan[XRX200_DMA_TX_2].tasklet, xrx200_tx_housekeeping, (u32) &xrx200_hw.chan[XRX200_DMA_TX_2]);

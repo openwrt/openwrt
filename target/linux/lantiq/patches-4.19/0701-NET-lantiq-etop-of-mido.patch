@@ -8,7 +8,7 @@
  
  #include <asm/checksum.h>
  
-@@ -567,7 +568,8 @@ static int
+@@ -569,7 +570,8 @@ static int
  ltq_etop_mdio_init(struct net_device *dev)
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
@@ -18,7 +18,7 @@
  
  	priv->mii_bus = mdiobus_alloc();
  	if (!priv->mii_bus) {
-@@ -587,7 +589,15 @@ ltq_etop_mdio_init(struct net_device *de
+@@ -589,7 +591,15 @@ ltq_etop_mdio_init(struct net_device *de
  	priv->mii_bus->name = "ltq_mii";
  	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%s-%x",
  		priv->pdev->name, priv->pdev->id);

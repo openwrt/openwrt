@@ -22,7 +22,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
-@@ -245,6 +246,10 @@ static int m25p_probe(struct spi_device
+@@ -180,6 +181,10 @@ static int m25p_probe(struct spi_mem *sp
  	};
  	char *flash_name;
  	int ret;
@@ -31,14 +31,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	of_property_read_string(spi->dev.of_node,
 +		"linux,mtd-name", &of_mtd_name);
  
- 	data = dev_get_platdata(&spi->dev);
+ 	data = dev_get_platdata(&spimem->spi->dev);
  
-@@ -283,6 +288,8 @@ static int m25p_probe(struct spi_device
+@@ -218,6 +223,8 @@ static int m25p_probe(struct spi_mem *sp
  
  	if (data && data->name)
  		nor->mtd.name = data->name;
 +	else if (of_mtd_name)
 +		nor->mtd.name = of_mtd_name;
  
- 	/* For some (historical?) reason many platforms provide two different
- 	 * names in flash_platform_data: "name" and "type". Quite often name is
+ 	if (!nor->mtd.name)
+ 		nor->mtd.name = spi_mem_get_name(spimem);

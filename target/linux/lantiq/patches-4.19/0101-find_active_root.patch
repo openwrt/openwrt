@@ -52,9 +52,9 @@
 @@ -72,7 +105,9 @@ static int parse_fixed_partitions(struct
  		return 0;
  
- 	parts = kzalloc(nr_parts * sizeof(*parts), GFP_KERNEL);
+ 	parts = kcalloc(nr_parts, sizeof(*parts), GFP_KERNEL);
 -	if (!parts)
-+	part_nodes = kzalloc(nr_parts * sizeof(*part_nodes), GFP_KERNEL);
++	part_nodes = kcalloc(nr_parts, sizeof(*part_nodes), GFP_KERNEL);
 +
 +	if (!parts || !part_nodes)
  		return -ENOMEM;
