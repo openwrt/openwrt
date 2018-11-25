@@ -1,0 +1,45 @@
+From a31f96acd9c4ea12362f67193141ff32587015e7 Mon Sep 17 00:00:00 2001
+From: Boris Brezillon <boris.brezillon@bootlin.com>
+Date: Fri, 1 Jun 2018 12:03:25 +0200
+Subject: [PATCH 412/422] mtd: m25p80: Use SPI_MEM_OP_NO_DUMMY instead of
+ SPI_MEM_OP_DUMMY(0, x)
+
+SPI_MEM_OP_DUMMY(0, x) means there's 0 dummy bytes to send, which is
+similar to SPI_MEM_OP_NO_DUMMY except it's less clear. Use
+SPI_MEM_OP_NO_DUMMY instead of SPI_MEM_OP_DUMMY(0, x) in
+m25p80_write().
+Also stop updating op.dummy.buswidth since this value is only
+meaningful if you have dummy bytes.
+
+Reported-by: Cyrille Pitchen <cyrille.pitchen@microchip.com>
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
+Acked-by: Marek Vasut <marek.vasut@gmail.com>
+(cherry picked from commit 9882b5375df532acb2c2399a90d882461112e612)
+---
+ drivers/mtd/devices/m25p80.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
+index 884b27265d47..c0c073abdb3b 100644
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -68,7 +68,7 @@ static ssize_t m25p80_write(struct spi_nor *nor, loff_t to, size_t len,
+ 	struct spi_mem_op op =
+ 			SPI_MEM_OP(SPI_MEM_OP_CMD(nor->program_opcode, 1),
+ 				   SPI_MEM_OP_ADDR(nor->addr_width, to, 1),
+-				   SPI_MEM_OP_DUMMY(0, 1),
++				   SPI_MEM_OP_NO_DUMMY,
+ 				   SPI_MEM_OP_DATA_OUT(len, buf, 1));
+ 	size_t remaining = len;
+ 	int ret;
+@@ -76,7 +76,6 @@ static ssize_t m25p80_write(struct spi_nor *nor, loff_t to, size_t len,
+ 	/* get transfer protocols. */
+ 	op.cmd.buswidth = spi_nor_get_protocol_inst_nbits(nor->write_proto);
+ 	op.addr.buswidth = spi_nor_get_protocol_addr_nbits(nor->write_proto);
+-	op.dummy.buswidth = op.addr.buswidth;
+ 	op.data.buswidth = spi_nor_get_protocol_data_nbits(nor->write_proto);
+ 
+ 	if (nor->program_opcode == SPINOR_OP_AAI_WP && nor->sst_write_second)
+-- 
+2.19.1
+

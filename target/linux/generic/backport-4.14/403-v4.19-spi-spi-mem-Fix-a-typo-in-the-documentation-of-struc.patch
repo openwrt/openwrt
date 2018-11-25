@@ -1,0 +1,32 @@
+From 8d6aeb0be5d68eacf3a809b06a6c4ed2541d1648 Mon Sep 17 00:00:00 2001
+From: Frieder Schrempf <frieder.schrempf@exceet.de>
+Date: Thu, 2 Aug 2018 14:53:52 +0200
+Subject: [PATCH 403/422] spi: spi-mem: Fix a typo in the documentation of
+ struct spi_mem
+
+Fix a typo in the @drvpriv description.
+
+Signed-off-by: Frieder Schrempf <frieder.schrempf@exceet.de>
+Acked-by: Boris Brezillon <boris.brezillon@bootlin.com>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+(cherry picked from commit 06bcb5168d7d49aa3ed449ff13a6d13c30afc3f0)
+---
+ include/linux/spi/spi-mem.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/linux/spi/spi-mem.h b/include/linux/spi/spi-mem.h
+index bb4bd15ae1f6..951a2e949d5f 100644
+--- a/include/linux/spi/spi-mem.h
++++ b/include/linux/spi/spi-mem.h
+@@ -122,7 +122,7 @@ struct spi_mem_op {
+ /**
+  * struct spi_mem - describes a SPI memory device
+  * @spi: the underlying SPI device
+- * @drvpriv: spi_mem_drviver private data
++ * @drvpriv: spi_mem_driver private data
+  *
+  * Extra information that describe the SPI memory device and may be needed by
+  * the controller to properly handle this device should be placed here.
+-- 
+2.19.1
+

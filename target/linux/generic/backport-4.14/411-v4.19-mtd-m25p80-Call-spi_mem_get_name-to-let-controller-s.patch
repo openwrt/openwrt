@@ -1,0 +1,37 @@
+From 3eab5f529909c1c4c44ad02722834339b1d39129 Mon Sep 17 00:00:00 2001
+From: Frieder Schrempf <frieder.schrempf@exceet.de>
+Date: Thu, 2 Aug 2018 14:53:54 +0200
+Subject: [PATCH 411/422] mtd: m25p80: Call spi_mem_get_name() to let
+ controller set a custom name
+
+By calling spi_mem_get_name(), the driver of the (Q)SPI controller can
+set a custom name for the memory device if necessary.
+This is useful to keep mtdparts compatible when controller drivers are
+ported from the MTD to the SPI layer.
+
+Suggested-by: Boris Brezillon <boris.brezillon@bootlin.com>
+Signed-off-by: Frieder Schrempf <frieder.schrempf@exceet.de>
+Acked-by: Boris Brezillon <boris.brezillon@bootlin.com>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+(cherry picked from commit b02b17f55b2e789b9747cf4dd2eaaa110439a4cc)
+---
+ drivers/mtd/devices/m25p80.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
+index f31146b0eb7f..884b27265d47 100644
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -200,6 +200,9 @@ static int m25p_probe(struct spi_mem *spimem)
+ 	if (data && data->name)
+ 		nor->mtd.name = data->name;
+ 
++	if (!nor->mtd.name)
++		nor->mtd.name = spi_mem_get_name(spimem);
++
+ 	/* For some (historical?) reason many platforms provide two different
+ 	 * names in flash_platform_data: "name" and "type". Quite often name is
+ 	 * set to "m25p80" and then "type" provides a real chip name.
+-- 
+2.19.1
+

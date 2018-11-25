@@ -1,0 +1,35 @@
+From 9b8ac0148eff6da82114f505f40adb1428da800f Mon Sep 17 00:00:00 2001
+From: Boris Brezillon <boris.brezillon@bootlin.com>
+Date: Fri, 3 Aug 2018 11:50:39 +0200
+Subject: [PATCH 405/422] spi: spi-mem: Constify spi_mem->name
+
+There is no reason to make spi_mem->name modifiable. Moreover,
+spi_mem_ops->get_name() returns a const char *, which generates a gcc
+warning when assigning the value returned by spi_mem_ops->get_name()
+to spi_mem->name.
+
+Fixes: 5d27a9c8ea9e ("spi: spi-mem: Extend the SPI mem interface to set a custom memory name")
+Reported-by: Stephen Rothwell <sfr@canb.auug.org.au>
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+(cherry picked from commit 401c0d7712eb3189023efc9c0708a2ac984ed62e)
+---
+ include/linux/spi/spi-mem.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/linux/spi/spi-mem.h b/include/linux/spi/spi-mem.h
+index 0d64ccc4e584..62722fb7472d 100644
+--- a/include/linux/spi/spi-mem.h
++++ b/include/linux/spi/spi-mem.h
+@@ -134,7 +134,7 @@ struct spi_mem_op {
+ struct spi_mem {
+ 	struct spi_device *spi;
+ 	void *drvpriv;
+-	char *name;
++	const char *name;
+ };
+ 
+ /**
+-- 
+2.19.1
+

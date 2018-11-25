@@ -1,0 +1,33 @@
+From 1a8da9cfda66220a1ace3d4b01907e5c11bbaf3b Mon Sep 17 00:00:00 2001
+From: Boris Brezillon <boris.brezillon@bootlin.com>
+Date: Fri, 1 Jun 2018 12:03:24 +0200
+Subject: [PATCH 410/422] mtd: m25p80: Remove unneeded m25p->command field
+
+The ->command field is no longer used, remove it.
+
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
+Acked-by: Marek Vasut <marek.vasut@gmail.com>
+(cherry picked from commit 00a5762b45250ebde8920d3cf68ca3974a0253b2)
+---
+ drivers/mtd/devices/m25p80.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
+index dd38a6114c15..f31146b0eb7f 100644
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -28,11 +28,9 @@
+ #include <linux/spi/flash.h>
+ #include <linux/mtd/spi-nor.h>
+ 
+-#define	MAX_CMD_SIZE		6
+ struct m25p {
+ 	struct spi_mem		*spimem;
+ 	struct spi_nor		spi_nor;
+-	u8			command[MAX_CMD_SIZE];
+ };
+ 
+ static int m25p80_read_reg(struct spi_nor *nor, u8 code, u8 *val, int len)
+-- 
+2.19.1
+
