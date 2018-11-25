@@ -49,6 +49,7 @@ define Device/ArcherC20i
   TPLINK_HWID := 0xc2000001
   TPLINK_HWREV := 58
   IMAGES += factory.bin
+  DEVICE_PACKAGES := kmod-mt76x0e
   DEVICE_TITLE := TP-Link ArcherC20i
 endef
 TARGET_DEVICES += ArcherC20i
