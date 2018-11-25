@@ -18,7 +18,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -696,6 +696,16 @@ config I2C_MESON
+@@ -690,6 +690,16 @@ config I2C_MESON
  	  If you say yes to this option, support will be included for the
  	  I2C interface on the Amlogic Meson family of SoCs.
  
@@ -37,7 +37,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on PPC
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -68,6 +68,7 @@ obj-$(CONFIG_I2C_IMX_LPI2C)	+= i2c-imx-l
+@@ -67,6 +67,7 @@ obj-$(CONFIG_I2C_IMX_LPI2C)	+= i2c-imx-l
  obj-$(CONFIG_I2C_IOP3XX)	+= i2c-iop3xx.o
  obj-$(CONFIG_I2C_JZ4780)	+= i2c-jz4780.o
  obj-$(CONFIG_I2C_KEMPLD)	+= i2c-kempld.o

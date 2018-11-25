@@ -448,7 +448,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +EXPORT_SYMBOL(_dma_cache_wback);
 +EXPORT_SYMBOL(_dma_cache_inv);
  
- #endif /* CONFIG_DMA_NONCOHERENT || CONFIG_DMA_MAYBE_COHERENT */
+ #endif /* CONFIG_DMA_NONCOHERENT */
  
 --- a/include/uapi/linux/atm.h
 +++ b/include/uapi/linux/atm.h
@@ -469,7 +469,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	int		max_pcr;	/* maximum PCR in cells per second */
 --- a/net/atm/proc.c
 +++ b/net/atm/proc.c
-@@ -155,7 +155,7 @@ static void *vcc_seq_next(struct seq_fil
+@@ -141,7 +141,7 @@ static void *vcc_seq_next(struct seq_fil
  static void pvc_info(struct seq_file *seq, struct atm_vcc *vcc)
  {
  	static const char *const class_name[] = {

@@ -5,11 +5,11 @@ Subject: [PATCH 18/36] MTD: nand: lots of xrx200 fixes
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
- drivers/mtd/nand/xway_nand.c |   63 ++++++++++++++++++++++++++++++++++++++++++
+ drivers/mtd/nand/raw/xway_nand.c |   63 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 63 insertions(+)
 
---- a/drivers/mtd/nand/xway_nand.c
-+++ b/drivers/mtd/nand/xway_nand.c
+--- a/drivers/mtd/nand/raw/xway_nand.c
++++ b/drivers/mtd/nand/raw/xway_nand.c
 @@ -63,6 +63,24 @@
  #define NAND_CON_CSMUX		(1 << 1)
  #define NAND_CON_NANDM		1
