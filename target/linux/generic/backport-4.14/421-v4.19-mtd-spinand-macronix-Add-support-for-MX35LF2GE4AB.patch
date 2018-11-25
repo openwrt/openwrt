@@ -1,0 +1,37 @@
+From 0a7027663bf9e52003725e31e05c750a8a6910ef Mon Sep 17 00:00:00 2001
+From: Miquel Raynal <miquel.raynal@bootlin.com>
+Date: Fri, 22 Jun 2018 14:28:28 +0200
+Subject: [PATCH 421/422] mtd: spinand: macronix: Add support for MX35LF2GE4AB
+
+MX35LF2GE4AB is almost identical to MX35LF1GE4AB except it has 2 times
+more eraseblocks per LUN and exposes 2 planes instead of 1.
+
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
+(cherry picked from commit 3dfa025f890c4568adc9ba06ecc0da35718f4799)
+---
+ drivers/mtd/nand/spi/macronix.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/mtd/nand/spi/macronix.c b/drivers/mtd/nand/spi/macronix.c
+index 8ba3489d332a..98f6b9c4b684 100644
+--- a/drivers/mtd/nand/spi/macronix.c
++++ b/drivers/mtd/nand/spi/macronix.c
+@@ -102,6 +102,14 @@ static const struct spinand_info macronix_spinand_table[] = {
+ 		     SPINAND_HAS_QE_BIT,
+ 		     SPINAND_ECCINFO(&mx35lfxge4ab_ooblayout,
+ 				     mx35lf1ge4ab_ecc_get_status)),
++	SPINAND_INFO("MX35LF2GE4AB", 0x22,
++		     NAND_MEMORG(1, 2048, 64, 64, 2048, 2, 1, 1),
++		     NAND_ECCREQ(4, 512),
++		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
++					      &write_cache_variants,
++					      &update_cache_variants),
++		     SPINAND_HAS_QE_BIT,
++		     SPINAND_ECCINFO(&mx35lfxge4ab_ooblayout, NULL)),
+ };
+ 
+ static int macronix_spinand_detect(struct spinand_device *spinand)
+-- 
+2.19.1
+

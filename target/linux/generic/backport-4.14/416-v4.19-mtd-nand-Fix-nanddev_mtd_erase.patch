@@ -1,0 +1,45 @@
+From 5cc4ba20eb1515c7dabdc287b6e65550a47a2458 Mon Sep 17 00:00:00 2001
+From: Boris Brezillon <boris.brezillon@bootlin.com>
+Date: Tue, 10 Apr 2018 17:15:13 +0200
+Subject: [PATCH 416/422] mtd: nand: Fix nanddev_mtd_erase()
+
+Commit e7bfb3fdbde3 ("mtd: Stop updating erase_info->state and calling
+mtd_erase_callback()") removed the einfo->state field and the
+MTD_ERASE_XXX macros. At the same time, the generic NAND layer was added
+and made sure to update the erase info state.
+
+It did not result in a build failure after merging the nand/for-4.17
+branch in mtd/next because the generic NAND layer is not selected yet.
+Let's fix that before a config option starts selecting MTD_NAND_CORE.
+
+Fixes: e7bfb3fdbde3 ("mtd: Stop updating erase_info->state and calling mtd_erase_callback()")
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
+(cherry picked from commit 23566c3798f315058862564ab3d01882316054eb)
+---
+ drivers/mtd/nand/core.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/drivers/mtd/nand/core.c b/drivers/mtd/nand/core.c
+index d0cd6f8635d7..9c9f8936b63b 100644
+--- a/drivers/mtd/nand/core.c
++++ b/drivers/mtd/nand/core.c
+@@ -162,7 +162,6 @@ int nanddev_mtd_erase(struct mtd_info *mtd, struct erase_info *einfo)
+ 		ret = nanddev_erase(nand, &pos);
+ 		if (ret) {
+ 			einfo->fail_addr = nanddev_pos_to_offs(nand, &pos);
+-			einfo->state = MTD_ERASE_FAILED;
+ 
+ 			return ret;
+ 		}
+@@ -170,8 +169,6 @@ int nanddev_mtd_erase(struct mtd_info *mtd, struct erase_info *einfo)
+ 		nanddev_pos_next_eraseblock(nand, &pos);
+ 	}
+ 
+-	einfo->state = MTD_ERASE_DONE;
+-
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(nanddev_mtd_erase);
+-- 
+2.19.1
+
