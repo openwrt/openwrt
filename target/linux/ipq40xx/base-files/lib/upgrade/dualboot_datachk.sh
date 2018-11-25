@@ -44,6 +44,7 @@ platform_do_upgrade_dualboot_datachk() {
 	# boot anymore to Linux until it was reflashed with ap51-flash.
 	local next_boot_part="1"
 	case "$(board_name)" in
+	plasmacloud,pa1200|\
 	openmesh,a42)
 		primary_kernel_mtd=8
 		;;
