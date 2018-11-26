@@ -472,9 +472,6 @@ ramips_board_detect() {
 	*"SAP-G3200U3")
 		name="sap-g3200u3"
 		;;
-	*"SKW92A")
-		name="skw92a"
-		;;
 	*"SL-R7205"*)
 		name="sl-r7205"
 		;;

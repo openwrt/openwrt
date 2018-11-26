@@ -17,6 +17,7 @@ case $board in
 	set_wifi_led "$boardname:amber:wlan"
 	;;
 3g-6200nl|\
+skylab,skw92a|\
 wnce2001)
 	set_wifi_led "$boardname:green:wlan"
 	;;
@@ -286,9 +287,6 @@ rt-n14u)
 	ucidef_set_led_netdev "lan" "lan" "$boardname:blue:lan" eth0.1
 	ucidef_set_led_netdev "wan" "wan" "$boardname:blue:wan" eth0.2
 	set_wifi_led "$boardname:blue:air"
-	;;
-skw92a)
-	set_wifi_led "$boardname:green:wlan"
 	;;
 tama,w06)
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth0"

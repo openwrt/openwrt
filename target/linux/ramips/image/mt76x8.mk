@@ -150,13 +150,13 @@ define Device/pbr-d1
 endef
 TARGET_DEVICES += pbr-d1
 
-define Device/skw92a
+define Device/skylab_skw92a
   DTS := SKW92A
   IMAGE_SIZE := 16064k
   DEVICE_TITLE := Skylab SKW92A
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
-TARGET_DEVICES += skw92a
+TARGET_DEVICES += skylab_skw92a
 
 define Device/tplink_tl-wa801nd-v5
   $(Device/tplink)

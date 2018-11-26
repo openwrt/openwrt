@@ -219,6 +219,7 @@ ramips_setup_interfaces()
 	tl-wr840n-v4|\
 	tl-wr840n-v5|\
 	tl-wr841n-v13|\
+	skylab,skw92a|\
 	u7628-01-128M-16M|\
 	ubnt-erx|\
 	ubnt-erx-sfp|\
@@ -344,10 +345,6 @@ ramips_setup_interfaces()
 	rt-n56u)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "8@eth0"
-		;;
-	skw92a)
-		ucidef_add_switch "switch0" \
-			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
 	tew-638apb-v2)
 		ucidef_add_switch "switch0" \
@@ -561,7 +558,7 @@ ramips_setup_macs()
 		lan_mac=$(macaddr_setbit_la "$lan_mac")
 		wan_mac=$(mtd_get_mac_binary factory 32772)
 		;;
-	skw92a)
+	skylab,skw92a)
 		lan_mac=$(mtd_get_mac_binary factory 40)
 		wan_mac=$(mtd_get_mac_binary factory 46)
 		;;
