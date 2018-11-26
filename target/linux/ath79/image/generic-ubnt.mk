@@ -78,6 +78,13 @@ define Device/ubnt-xw
   ATH_SOC := ar9342
 endef
 
+define Device/ubnt_airrouter
+  $(Device/ubnt-xm)
+  DEVICE_TITLE := Ubiquiti AirRouter
+  SUPPORTED_DEVICES += airrouter
+endef
+TARGET_DEVICES += ubnt_airrouter
+
 define Device/ubnt_bullet-m
   $(Device/ubnt-xm)
   DEVICE_TITLE := Ubiquiti Bullet-M

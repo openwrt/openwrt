@@ -124,7 +124,8 @@ ath79_setup_interfaces()
 	buffalo,whr-g301n|\
 	tplink,tl-mr3220-v1|\
 	tplink,tl-mr3420-v1|\
-	tplink,tl-wr841-v7)
+	tplink,tl-wr841-v7|\
+	ubnt,airrouter)
 		ucidef_set_interface_wan "eth0"
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
