@@ -112,6 +112,7 @@
 
 #define AR8216_REG_ATU_FUNC2		0x0058
 #define   AR8216_ATU_PORTS		BITS(0, 6)
+#define   AR8216_ATU_PORTS_S		0
 #define   AR8216_ATU_PORT0		BIT(0)
 #define   AR8216_ATU_PORT1		BIT(1)
 #define   AR8216_ATU_PORT2		BIT(2)
@@ -367,7 +368,7 @@ enum arl_op {
 };
 
 struct arl_entry {
-	u8 port;
+	u16 portmap;
 	u8 mac[6];
 };
 

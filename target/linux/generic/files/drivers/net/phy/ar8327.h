@@ -199,6 +199,7 @@
 #define   AR8327_ATU_ADDR5			BITS(8, 8)
 #define   AR8327_ATU_ADDR5_S			8
 #define   AR8327_ATU_PORTS			BITS(16, 7)
+#define   AR8327_ATU_PORTS_S			16
 #define   AR8327_ATU_PORT0			BIT(16)
 #define   AR8327_ATU_PORT1			BIT(17)
 #define   AR8327_ATU_PORT2			BIT(18)

@@ -749,7 +749,6 @@ static void ar8216_get_arl_entry(struct ar8xxx_priv *priv,
 	u16 r2, page;
 	u16 r1_func0, r1_func1, r1_func2;
 	u32 t, val0, val1, val2;
-	int i;
 
 	split_addr(AR8216_REG_ATU_FUNC0, &r1_func0, &r2, &page);
 	r2 |= 0x10;
@@ -785,12 +784,7 @@ static void ar8216_get_arl_entry(struct ar8xxx_priv *priv,
 		if (!*status)
 			break;
 
-		i = 0;
-		t = AR8216_ATU_PORT0;
-		while (!(val2 & t) && ++i < priv->dev.ports)
-			t <<= 1;
-
-		a->port = i;
+		a->portmap = (val2 & AR8216_ATU_PORTS) >> AR8216_ATU_PORTS_S;
 		a->mac[0] = (val0 & AR8216_ATU_ADDR5) >> AR8216_ATU_ADDR5_S;
 		a->mac[1] = (val0 & AR8216_ATU_ADDR4) >> AR8216_ATU_ADDR4_S;
 		a->mac[2] = (val1 & AR8216_ATU_ADDR3) >> AR8216_ATU_ADDR3_S;
@@ -1516,8 +1510,12 @@ ar8xxx_sw_get_arl_table(struct switch_dev *dev,
 		 */
 		for (j = 0; j < i; ++j) {
 			a1 = &priv->arl_table[j];
-			if (a->port == a1->port && !memcmp(a->mac, a1->mac, sizeof(a->mac)))
-				goto duplicate;
+			if (!memcmp(a->mac, a1->mac, sizeof(a->mac))) {
+				/* ignore ports already seen in former entry */
+				a->portmap &= ~a1->portmap;
+				if (!a->portmap)
+					goto duplicate;
+			}
 		}
 	}
 
@@ -1534,7 +1532,7 @@ ar8xxx_sw_get_arl_table(struct switch_dev *dev,
 	for (j = 0; j < priv->dev.ports; ++j) {
 		for (k = 0; k < i; ++k) {
 			a = &priv->arl_table[k];
-			if (a->port != j)
+			if (!(a->portmap & BIT(j)))
 				continue;
 			len += snprintf(buf + len, sizeof(priv->arl_buf) - len,
 					"Port %d: MAC %02x:%02x:%02x:%02x:%02x:%02x\n",
