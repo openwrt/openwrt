@@ -1,0 +1,159 @@
+From 14eb6c8b92d6104f38882efed54de63ddba7cd71 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Sat, 1 Dec 2018 12:46:37 +0100
+Subject: [PATCH] imx6: apalis: Make the boot process more generic
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+I'm preparing support for Apalis imx6 boards in OpenWrt and I've ended
+up with quite huge patchset against upstream U-Boot 2018.03, so I'm
+trying to propose more generic way of boot process handling.
+
+In OpenWrt we usually have kernel, dtbs and U-Boot boot script in boot
+partition with ext4fs, so for some use cases it would be handy to be
+able to replace some of the files
+
+I've added TDX_APALIS_IMX6_BOOT_PART and TDX_APALIS_IMX6_ROOT_PART
+config variables so this could be distro specific and overridden.
+
+I've added `set_blkcnt` environment variable which is needed for every
+`mmc write` command as we need to always specify size in block count.
+This is copy&pasted from official Toradex's flashing scripts, so all the
+credits for this work belongs to them.
+
+Currently the rootfs location is passed via mmcblk number and the
+problem with this approach is that the mmcblk number for the boot device
+changes depending on the kernel version and imx6 SoC type.  In order to
+avoid such issues, use the UUID method to specify the rootfs location.
+
+I've added new boot sequence, where we first try to load and run boot
+script defined in the new `script` variable, so the boot process could
+be more generic and overridden by the distro. When the boot script isn't
+loaded, it will use the previous boot sequence so it should be backward
+compatible.
+
+For the recovery purposes and better end user experience I've added boot
+from SDP as the last boot command if every other boot option fails. I
+plan to use SDP as official flashing/recovery procedure in OpenWrt for
+Apalis imx6 boards.
+
+I've copy&pasted almost everything from the `f086812a mx6sxsabresd: Use
+PARTUUID to specify the rootfs location` commit, so credits for the rest
+of this patch belongs to Fabio.
+
+Cc: Stefan Agner <stefan.agner@toradex.com>
+Cc: Max Krummenacher <max.krummenacher@toradex.com>
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ board/toradex/apalis_imx6/Kconfig | 15 +++++++++++++++
+ configs/apalis_imx6_defconfig     |  2 ++
+ include/configs/apalis_imx6.h     | 29 ++++++++++++++++++++++++-----
+ 3 files changed, 41 insertions(+), 5 deletions(-)
+
+diff --git a/board/toradex/apalis_imx6/Kconfig b/board/toradex/apalis_imx6/Kconfig
+index 14f8c10..584bc9f 100644
+--- a/board/toradex/apalis_imx6/Kconfig
++++ b/board/toradex/apalis_imx6/Kconfig
+@@ -50,6 +50,21 @@ config TDX_APALIS_IMX6_V1_0
+ 	    otherwise the UARTs are configuered in DTE mode.
+ 	default n
+ 
++config TDX_APALIS_IMX6_BOOT_PART
++	int "Partition number to use for boot filesystem"
++	default 1
++	help
++	  The partition number to use for boot filesystem this is the
++	  partition that typically contains boot.scr, DTBs, uImage etc.
++
++config TDX_APALIS_IMX6_ROOT_PART
++	int "Partition number to use for root filesystem"
++	default 2
++	help
++	  The partition number to use for root filesystem this is the
++	  partition that is typically specified with root=/dev/sdaX or
++	  which gets converted into a root=PARTUUID=some_uuid.
++
+ source "board/toradex/common/Kconfig"
+ 
+ endif
+diff --git a/configs/apalis_imx6_defconfig b/configs/apalis_imx6_defconfig
+index 133fc1a..279d39f 100644
+--- a/configs/apalis_imx6_defconfig
++++ b/configs/apalis_imx6_defconfig
+@@ -39,6 +39,7 @@ CONFIG_CMD_DFU=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_I2C=y
+ CONFIG_CMD_MMC=y
++CONFIG_CMD_PART=y
+ CONFIG_CMD_USB=y
+ CONFIG_CMD_USB_SDP=y
+ CONFIG_CMD_USB_MASS_STORAGE=y
+@@ -48,6 +49,7 @@ CONFIG_CMD_PING=y
+ CONFIG_CMD_BMP=y
+ CONFIG_CMD_CACHE=y
+ CONFIG_CMD_EXT4=y
++CONFIG_CMD_EXT4_WRITE=y
+ CONFIG_CMD_FAT=y
+ CONFIG_CMD_FS_GENERIC=y
+ CONFIG_ENV_IS_IN_MMC=y
+diff --git a/include/configs/apalis_imx6.h b/include/configs/apalis_imx6.h
+index 135b3c9..9af5b29 100644
+--- a/include/configs/apalis_imx6.h
++++ b/include/configs/apalis_imx6.h
+@@ -142,9 +142,9 @@
+ 	"imx6q-colibri-cam-eval-v3.dtb fat 0 1"
+ 
+ #define EMMC_BOOTCMD \
+-	"emmcargs=ip=off root=/dev/mmcblk0p2 rw,noatime rootfstype=ext3 " \
++	"emmcargs=ip=off root=PARTUUID=${uuid} rw,noatime rootfstype=ext3 " \
+ 		"rootwait\0" \
+-	"emmcboot=run setup; " \
++	"emmcboot=run setup; run finduuid;" \
+ 		"setenv bootargs ${defargs} ${emmcargs} ${setupargs} " \
+ 		"${vidargs}; echo Booting from internal eMMC chip...; "	\
+ 		"run emmcdtbload; load mmc 0:1 ${kernel_addr_r} " \
+@@ -201,10 +201,20 @@
+ #define FDT_FILE "imx6q-apalis_v1_0-eval.dtb"
+ #endif
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+-	"bootcmd=run emmcboot ; echo ; echo emmcboot failed ; " \
++	"script=boot.scr\0" \
++	"mmcbootdev=" __stringify(CONFIG_SYS_MMC_ENV_DEV) "\0" \
++	"bootpart=" __stringify(CONFIG_TDX_APALIS_IMX6_BOOT_PART) "\0" \
++	"rootpart=" __stringify(CONFIG_TDX_APALIS_IMX6_ROOT_PART) "\0" \
++	"finduuid=part uuid mmc ${mmcbootdev}:${rootpart} uuid\0" \
++	"loadbootscript=" \
++		"load mmc ${mmcbootdev}:${bootpart} ${loadaddr} ${script};\0" \
++	"bootscript=echo Running bootscript from mmc ...; " \
++		"source\0" \
++	"bootcmd_default=run emmcboot ; echo ; echo emmcboot failed ; " \
+ 		"run nfsboot ; echo ; echo nfsboot failed ; " \
+ 		"usb start ;" \
+-		"setenv stdout serial,vga ; setenv stdin serial,usbkbd\0" \
++		"setenv stdout serial,vga ; setenv stdin serial,usbkbd;" \
++		"sdp 0\0" \
+ 	"boot_file=uImage\0" \
+ 	"console=ttymxc0\0" \
+ 	"defargs=enable_wait_mode=off vmalloc=400M\0" \
+@@ -232,7 +242,16 @@
+ 	"vidargs=mxc_hdmi.only_cea=1 " \
+ 		"video=mxcfb0:dev=hdmi,1920x1080M@60,if=RGB24 " \
+ 		"video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off " \
+-		"fbmem=32M\0 "
++		"fbmem=32M\0 " \
++	"set_blkcnt=setexpr blkcnt ${filesize} + 0x1ff && setexpr blkcnt ${blkcnt} / 0x200\0"
++
++#define CONFIG_BOOTCOMMAND \
++	   "mmc dev ${mmcbootdev};" \
++	   "if run loadbootscript; then " \
++		   "run bootscript; " \
++	   "else " \
++		   "run bootcmd_default; " \
++	   "fi; "
+ 
+ /* Miscellaneous configurable options */
+ #undef CONFIG_SYS_CBSIZE
+-- 
+1.9.1
+
