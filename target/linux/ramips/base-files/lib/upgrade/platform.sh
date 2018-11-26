@@ -31,6 +31,7 @@ platform_check_image() {
 	awm002-evb-4M|\
 	awm002-evb-8M|\
 	bc2|\
+	bdcom,wap2100-sk|\
 	bocco|\
 	broadway|\
 	c108|\
@@ -186,7 +187,6 @@ platform_check_image() {
 	widora,neo-32m|\
 	mqmaker,witi-256m|\
 	mqmaker,witi-512m|\
-	wap2100-sk|\
 	we1026-5g-16m|\
 	wizfi630a|\
 	wl-330n|\

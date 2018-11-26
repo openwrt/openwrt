@@ -56,6 +56,10 @@ asl26555-16M)
 	ucidef_set_led_netdev "eth" "ETH" "asl26555:green:eth" "eth0"
 	set_wifi_led "asl26555:green:wlan"
 	;;
+bdcom,wap2100-sk|\
+hiwifi,hc5861b)
+	set_wifi_led "$boardname:green:wlan2g"
+	;;
 broadway)
 	set_wifi_led "$boardname:red:wps_active"
 	;;
@@ -171,9 +175,6 @@ hc5861)
 hg255d)
 	set_wifi_led "$boardname:green:wlan"
 	ucidef_set_led_netdev "internet" "internet" "$boardname:green:internet" "eth0.2"
-	;;
-hiwifi,hc5861b)
-	set_wifi_led "$boardname:green:wlan2g"
 	;;
 hpm)
 	ucidef_set_led_netdev "eth" "ETH" "$boardname:green:eth" "eth0"
@@ -368,10 +369,6 @@ vocore-16M)
 	;;
 w502u)
 	set_wifi_led "rt2800pci-phy0::radio"
-	;;
-wap2100-sk)
-	set_usb_led "$boardname:green:usb"
-	set_wifi_led "$boardname:green:wlan2g"
 	;;
 we1026-5g-16m)
 	ucidef_set_led_netdev "lan" "LAN" "we1026-5g:green:lan" "eth0"

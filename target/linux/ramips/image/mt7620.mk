@@ -80,14 +80,13 @@ define Device/ArcherMR200
 endef
 TARGET_DEVICES += ArcherMR200
 
-define Device/BDCOM-WAP2100-SK
+define Device/bdcom_wap2100-sk
   DTS := BDCOM-WAP2100-SK
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  SUPPORTED_DEVICES += wap2100-sk
+  IMAGE_SIZE := 15808k
   DEVICE_TITLE := BDCOM WAP2100-SK (ZTE ZXECS EBG3130)
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76 kmod-sdhci-mt7620
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76 kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
 endef
-TARGET_DEVICES += BDCOM-WAP2100-SK
+TARGET_DEVICES += bdcom_wap2100-sk
 
 define Device/bocco
   DTS := BOCCO

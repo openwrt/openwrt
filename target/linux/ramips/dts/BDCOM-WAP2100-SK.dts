@@ -6,8 +6,13 @@
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "bdcom,bdcom-wap2100-sk", "ralink,mt7620a-soc";
+	compatible = "bdcom,wap2100-sk", "ralink,mt7620a-soc";
 	model = "BDCOM WAP2100-SK";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+	};
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
@@ -19,9 +24,11 @@
 		usb {
 			label = "wap2100-sk:green:usb";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&ohci_port1>, <&ehci_port1>;
+			linux,default-trigger = "usbport";
 		};
 
-		wps {
+		led_power: wps {
 			label = "wap2100-sk:green:wps";
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
@@ -34,8 +41,6 @@
 
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <20>;
 
 		wps {
@@ -55,34 +60,37 @@
 &spi0 {
 	status = "okay";
 
-	en25q128@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
+	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <10000000>;
 
-		partition@0 {
-			label = "u-boot";
-			reg = <0x0 0x30000>;
-			read-only;
-		};
+		partitions {
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		partition@30000 {
-			label = "u-boot-env";
-			reg = <0x30000 0x10000>;
-			read-only;
-		};
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
 
-		factory: partition@40000 {
-			label = "factory";
-			reg = <0x40000 0x10000>;
-			read-only;
-		};
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
 
-		firmware: partition@50000 {
-			label = "firmware";
-			reg = <0x50000 0xf70000>;
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				label = "firmware";
+				reg = <0x50000 0xf70000>;
+			};
 		};
 	};
 };
@@ -123,7 +131,7 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		default {
-			ralink,group = "wdt", "mdio", "spi refclk", "uartf", "wled";
+			ralink,group = "spi refclk", "uartf", "wled";
 			ralink,function = "gpio";
 		};
 	};
