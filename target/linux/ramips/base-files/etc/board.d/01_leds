@@ -114,6 +114,9 @@ dlink,dwr-116-a1|\
 mzk-ex300np)
 	set_wifi_led "$boardname:green:wifi"
 	;;
+dlink,dir-506l)
+	ucidef_set_led_gpio "lo_bat" "Low battery" "$boardname:red:status" "10" "0"
+	;;
 dlink,dwr-118-a1)
 	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x1f"
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x20"

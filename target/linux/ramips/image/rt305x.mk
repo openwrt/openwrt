@@ -1,6 +1,9 @@
 #
 # RT305X Profiles
 #
+
+DEVICE_VARS += DLINK_ROM_ID DLINK_FAMILY_MEMBER DLINK_FIRMWARE_SIZE DLINK_IMAGE_OFFSET
+
 define Build/buffalo-tftp-header
   ( \
     echo -n -e "# Airstation FirmWare\nrun u_fw\nreset\n\n" | \
@@ -249,6 +252,21 @@ define Device/dir-320-b1
   DEVICE_TITLE := D-Link DIR-320 B1
 endef
 TARGET_DEVICES += dir-320-b1
+
+define Device/dlink_dir-506l
+  DTS := DIR-506L
+  DEVICE_TITLE := D-Link DIR-506L
+  DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-usb-core \
+		kmod-ledtrig-gpio kmod-ledtrig-netdev kmod-ledtrig-timer
+  DLINK_ROM_ID := DLK6E2114001
+  DLINK_FAMILY_MEMBER := 0x6E21
+  DLINK_FIRMWARE_SIZE := 0x7E0000
+  KERNEL := $(KERNEL_DTB)
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
+  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
+endef
+TARGET_DEVICES += dlink_dir-506l
 
 define Device/dir-600-b1
   DTS := DIR-600-B1
