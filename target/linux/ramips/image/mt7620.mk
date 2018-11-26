@@ -4,8 +4,6 @@
 
 include ./common-tp-link.mk
 
-DEVICE_VARS += DLINK_ROM_ID DLINK_FAMILY_MEMBER DLINK_FIRMWARE_SIZE DLINK_IMAGE_OFFSET
-
 define Build/elecom-header
 	cp $@ $(KDIR)/v_0.0.0.bin
 	( \

@@ -389,6 +389,23 @@ define Device/dlink_dir-320-b1
 endef
 TARGET_DEVICES += dlink_dir-320-b1
 
+define Device/dlink_dir-506l
+  SOC := rt5350
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-506L
+  DEVICE_PACKAGES := jboot-tools kmod-usb2 \
+	kmod-ledtrig-gpio kmod-ledtrig-netdev kmod-ledtrig-timer
+  DLINK_ROM_ID := DLK6E2114001
+  DLINK_FAMILY_MEMBER := 0x6E21
+  DLINK_FIRMWARE_SIZE := 0x7E0000
+  KERNEL := $(KERNEL_DTB)
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
+  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
+endef
+TARGET_DEVICES += dlink_dir-506l
+
 define Device/dlink_dir-600-b1
   SOC := rt3050
   IMAGE_SIZE := 3776k

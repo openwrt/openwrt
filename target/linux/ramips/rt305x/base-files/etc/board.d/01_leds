@@ -61,6 +61,10 @@ dlink,dir-615-d)
 	ucidef_set_led_netdev "wan" "WAN (green)" "green:wan" "eth0.2"
 	ucidef_set_led_netdev "wifi_led" "wifi" "rt2800soc-phy0::radio" "wlan0"
 	;;
+dlink,dir-506l)
+	ucidef_set_led_gpio "lo_bat" "Low battery" "${boardname}:red:status" "10" "0"
+	ucidef_set_led_netdev "wifi" "WiFi" "rt2800soc-phy0::radio" "wlan0" "tx rx"
+	;;
 dlink,dir-620-d1|\
 trendnet,tew-714tru)
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:wifi" "wlan0"
