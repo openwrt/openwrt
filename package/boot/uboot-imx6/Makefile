@@ -20,6 +20,12 @@ define U-Boot/Default
   UBOOT_IMAGE:=u-boot.imx
 endef
 
+define U-Boot/apalis_imx6
+  NAME:=Toradex Apalis
+  UBOOT_IMAGE:=SPL u-boot.img u-boot-with-spl.imx
+  UBOOT_MAKE_FLAGS:=SPL u-boot.img u-boot-with-spl.imx
+endef
+
 define U-Boot/mx6cuboxi
    NAME:=SolidRun Cubox-i boards
    UBOOT_IMAGE:=SPL u-boot.img
@@ -62,6 +68,7 @@ define U-Boot/wandboard
 endef
 
 UBOOT_TARGETS := \
+	apalis_imx6 \
 	mx6cuboxi \
 	mx6sabresd \
 	nitrogen6dl \
