@@ -335,6 +335,10 @@ tl-wr841n-v13)
 	ucidef_set_led_switch "lan4" "lan4" "$boardname:green:lan4" "switch0" "0x10"
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x01"
 	;;
+tplink,tl-wr841n-v14)
+	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x1e"
+	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x01"
+	;;
 tplink,c2-v1)
 	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch1" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch1" "0x01"
