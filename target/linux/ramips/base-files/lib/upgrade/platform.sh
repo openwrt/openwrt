@@ -162,7 +162,7 @@ platform_check_image() {
 	timecloud|\
 	tiny-ac|\
 	u25awf-h1|\
-	u7621-06-256M-16M|\
+	unielec,u7621-06-256m-16m|\
 	u7628-01-128M-16M|\
 	ur-326n4g|\
 	ur-336un|\
