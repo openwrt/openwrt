@@ -335,6 +335,7 @@ stop_service() {
 	DSL_NOTIFICATION_TYPE="DSL_INTERFACE_STATUS" \
 	DSL_INTERFACE_STATUS="DOWN" \
 		/sbin/dsl_notify.sh
+	local dsl_en_gpio="/sys/class/gpio/dsl_en"
 	if [ -d "${dsl_en_gpio}" ]; then
 		echo 0 > "${dsl_en_gpio}/value"
 	fi
