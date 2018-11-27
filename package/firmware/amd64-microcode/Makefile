@@ -35,17 +35,11 @@ define Build/Prepare
 endef
 
 define Build/Compile
-	mkdir -p $(PKG_BUILD_DIR)/kernel/x86/microcode/
-	cat $(PKG_BUILD_DIR)/microcode_amd*.bin \
-		> $(PKG_BUILD_DIR)/kernel/x86/microcode/AuthenticAMD.bin
-	(cd $(PKG_BUILD_DIR); \
-	echo "kernel/x86/microcode/AuthenticAMD.bin" \
-		| cpio -o -H newc --reproducible > amd-ucode.cpio)
 endef
 
 define Package/amd64-microcode/install
-	$(INSTALL_DIR) $(1)/boot
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/amd-ucode.cpio $(1)/boot/amd-ucode.img
+	$(INSTALL_DIR) $(1)/lib/firmware/amd-ucode
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/*.bin $(1)/lib/firmware/amd-ucode
 endef
 
 $(eval $(call BuildPackage,amd64-microcode))
