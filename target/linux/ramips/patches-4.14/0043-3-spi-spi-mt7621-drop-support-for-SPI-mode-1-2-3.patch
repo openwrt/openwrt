@@ -1,0 +1,75 @@
+From 354ea2ee6d2bc08d2f73b67096e67760089887cb Mon Sep 17 00:00:00 2001
+From: Chuanhong Guo <gch981213@gmail.com>
+Date: Thu, 6 Dec 2018 21:15:09 +0800
+Subject: [PATCH] staging: mt7621-spi: drop support for SPI mode 1/2/3
+
+As explained in previous patch, this SPI controller seems to be
+tested on SPI flash only before mass production and some bits are
+swizzled under other SPI modes probably due to incorrect wiring
+inside the silicon. Drop implementation of SPI mode 1/2/3 since
+they are broken.
+
+Also drop RT2880_SPI_MODE_BITS macro because we now have only
+SPI_LSB_FIRST implemented and the mode_bits is so short that we
+don't need a macro there.
+
+Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
+Reviewed-by: NeilBrown <neil@brown.name>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/staging/mt7621-spi/spi-mt7621.c | 24 +++++++-----------------
+ 1 file changed, 7 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/staging/mt7621-spi/spi-mt7621.c b/drivers/staging/mt7621-spi/spi-mt7621.c
+index a69293d43281..513b6e79b985 100644
+--- a/drivers/spi/spi-mt7621.c
++++ b/drivers/spi/spi-mt7621.c
+@@ -55,9 +55,6 @@
+ #define MT7621_CPOL		BIT(4)
+ #define MT7621_LSB_FIRST	BIT(3)
+ 
+-#define RT2880_SPI_MODE_BITS	(SPI_CPOL | SPI_CPHA |		\
+-				 SPI_LSB_FIRST | SPI_CS_HIGH)
+-
+ struct mt7621_spi;
+ 
+ struct mt7621_spi {
+@@ -136,20 +133,13 @@ static int mt7621_spi_prepare(struct spi_device *spi, unsigned int speed)
+ 	if (spi->mode & SPI_LSB_FIRST)
+ 		reg |= MT7621_LSB_FIRST;
+ 
++	/* This SPI controller seems to be tested on SPI flash only
++	 * and some bits are swizzled under other SPI modes probably
++	 * due to incorrect wiring inside the silicon. Only mode 0
++	 * works correctly.
++	 */
+ 	reg &= ~(MT7621_CPHA | MT7621_CPOL);
+-	switch (spi->mode & (SPI_CPOL | SPI_CPHA)) {
+-	case SPI_MODE_0:
+-		break;
+-	case SPI_MODE_1:
+-		reg |= MT7621_CPHA;
+-		break;
+-	case SPI_MODE_2:
+-		reg |= MT7621_CPOL;
+-		break;
+-	case SPI_MODE_3:
+-		reg |= MT7621_CPOL | MT7621_CPHA;
+-		break;
+-	}
++
+ 	mt7621_spi_write(rs, MT7621_SPI_MASTER, reg);
+ 
+ 	return 0;
+@@ -368,7 +358,7 @@ static int mt7621_spi_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	}
+ 
+-	master->mode_bits = RT2880_SPI_MODE_BITS;
++	master->mode_bits = SPI_LSB_FIRST;
+ 
+ 	master->setup = mt7621_spi_setup;
+ 	master->transfer_one_message = mt7621_spi_transfer_one_message;
+-- 
+2.19.2
+
