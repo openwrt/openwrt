@@ -589,6 +589,9 @@ omy-x1)
 	ucidef_set_led_default "power" "POWER" "omy:green:power" "1"
 	ucidef_set_led_default "wan" "WAN" "omy:green:wan" "eth0"
 	;;
+owl)
+	ucidef_set_led_netdev "wlan0" "WLAN" "$board:red:system" "wlan0"
+	;;
 pqi-air-pen)
 	ucidef_set_led_wlan "wlan" "WLAN" "pqi-air-pen:blue:wlan" "phy0tpt"
 	ucidef_set_led_default "wps" "WPS" "pqi-air-pen:blue:wps" "0"

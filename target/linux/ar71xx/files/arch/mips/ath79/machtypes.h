@@ -186,6 +186,7 @@ enum ath79_mach_type {
 	ATH79_MACH_OMY_G1,			/* OMYlink OMY-G1 */
 	ATH79_MACH_OMY_X1,			/* OMYlink OMY-X1 */
 	ATH79_MACH_ONION_OMEGA,			/* ONION OMEGA */
+	ATH79_MACH_OWL,	              		/* Hak5 Owl */
 	ATH79_MACH_PACKET_SQUIRREL,		/* Hak5 Packet Squirrel */
 	ATH79_MACH_PB42,			/* Atheros PB42 */
 	ATH79_MACH_PB44,			/* Atheros PB44 reference board */

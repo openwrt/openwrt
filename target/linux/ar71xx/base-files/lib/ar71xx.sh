@@ -947,6 +947,9 @@ ar71xx_board_detect() {
 	*"Oolite V1.0")
 		name="oolite-v1"
 		;;
+	*"Owl")
+		name="owl"
+		;;
 	*"Packet Squirrel")
 		name="packet-squirrel"
 		;;

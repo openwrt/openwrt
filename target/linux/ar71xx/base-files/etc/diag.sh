@@ -207,7 +207,8 @@ get_status_led() {
 		status_led="$board:green:sig4"
 		;;
 	dragino2|\
-	oolite-v1)
+	oolite-v1|\
+	owl)
 		status_led="$board:red:system"
 		;;
 	dw33d|\

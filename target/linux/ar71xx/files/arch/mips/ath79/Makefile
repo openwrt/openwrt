@@ -175,6 +175,7 @@ obj-$(CONFIG_ATH79_MACH_OM5P_ACv2)		+= mach-om5pacv2.o
 obj-$(CONFIG_ATH79_MACH_OMY_G1)			+= mach-omy-g1.o
 obj-$(CONFIG_ATH79_MACH_OMY_X1)			+= mach-omy-x1.o
 obj-$(CONFIG_ATH79_MACH_ONION_OMEGA)		+= mach-onion-omega.o
+obj-$(CONFIG_ATH79_MACH_OWL)			+= mach-owl.o
 obj-$(CONFIG_ATH79_MACH_PB42)			+= mach-pb42.o
 obj-$(CONFIG_ATH79_MACH_PB44)			+= mach-pb44.o
 obj-$(CONFIG_ATH79_MACH_PQI_AIR_PEN)		+= mach-pqi-air-pen.o
