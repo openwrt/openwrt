@@ -84,7 +84,7 @@ define Device/bdcom_wap2100-sk
   DTS := BDCOM-WAP2100-SK
   IMAGE_SIZE := 15808k
   DEVICE_TITLE := BDCOM WAP2100-SK (ZTE ZXECS EBG3130)
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76 kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76 kmod-mt76x0e kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += bdcom_wap2100-sk
 
