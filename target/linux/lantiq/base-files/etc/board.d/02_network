@@ -158,6 +158,14 @@ avm,fritz7360sl)
 		"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "6t@eth0"
 	;;
 
+avm,fritz7360v2)
+        annex="b"
+        wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 2705)" 1)
+        ucidef_add_switch "switch0" \
+                "0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "6t@eth0"
+        ;;
+
+
 siemens,gigaset-sx76x)
 	annex="b"
 	ucidef_add_switch "switch0" \

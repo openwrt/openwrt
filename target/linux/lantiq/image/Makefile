@@ -664,6 +664,17 @@ define Device/avm_fritz7360sl
 endef
 TARGET_DEVICES += avm_fritz7360sl
 
+define Device/avm_fritz7360v2
+  $(Device/AVM)
+  IMAGE_SIZE := 32128k
+  DEVICE_DTS := FRITZ7360V2
+  DEVICE_TITLE := AVM Fritzbox 7360v2 - FRITZ7360V2
+  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic kmod-usb-dwc2
+  SUPPORTED_DEVICES += FRITZ7360V2
+endef
+TARGET_DEVICES += avm_fritz7360v2
+
+
 define Device/arcadyan_vg3503j
   IMAGE_SIZE := 8000k
   DEVICE_DTS := VG3503J
