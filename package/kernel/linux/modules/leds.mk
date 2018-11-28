@@ -145,3 +145,19 @@ define KernelPackage/leds-pca963x/description
 endef
 
 $(eval $(call KernelPackage,leds-pca963x))
+
+
+define KernelPackage/leds-omnia
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=Turris Omnia LED support
+  DEPENDS:=@TARGET_mvebu_cortexa9 +kmod-i2c-core +kmod-i2c-mux +kmod-i2c-mux-pca954x
+  KCONFIG:=CONFIG_LEDS_OMNIA
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-omnia.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-omnia,1)
+endef
+
+define KernelPackage/leds-omnia/description
+ Driver for the Turris Omnia LED controller.
+endef
+
+$(eval $(call KernelPackage,leds-omnia))

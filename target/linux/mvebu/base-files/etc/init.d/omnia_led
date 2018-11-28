@@ -1,0 +1,90 @@
+#!/bin/sh /etc/rc.common
+
+START=96
+
+. /lib/functions/leds.sh
+
+config=omnia_led
+
+omnia_set() {
+	local type
+	local sect
+
+	type=$1
+	sect=$2
+	uci set $config.$sect=$type
+	shift
+	shift
+	while [ -n "$1" ]; do
+		uci set $config.$sect.$1="$2"
+		shift
+		shift
+	done
+}
+
+omnia_generate_config() {
+	echo "Generating /etc/config/$config"
+	touch /etc/config/$config
+	omnia_set controller main global_brightness 100
+	omnia_set led all sysfs omnia-led:all color "255 255 255"
+	omnia_set led power sysfs omnia-led:power autonomous 0
+	omnia_set led lan0 sysfs omnia-led:lan0 autonomous 1
+	omnia_set led lan1 sysfs omnia-led:lan1 autonomous 1
+	omnia_set led lan2 sysfs omnia-led:lan2 autonomous 1
+	omnia_set led lan3 sysfs omnia-led:lan3 autonomous 1
+	omnia_set led lan4 sysfs omnia-led:lan4 autonomous 1
+	omnia_set led wan sysfs omnia-led:wan autonomous 0
+	omnia_set led pci1 sysfs omnia-led:pci1 autonomous 1
+	omnia_set led pci2 sysfs omnia-led:pci2 autonomous 1
+	omnia_set led pci3 sysfs omnia-led:pci3 autonomous 1
+	omnia_set led user1 sysfs omnia-led:user1 autonomous 0
+	omnia_set led user2 sysfs omnia-led:user2 autonomous 0
+	uci commit $config
+}
+
+omnia_load_global_brightness() {
+	local path
+	local global_brightness
+
+	path=/sys/bus/i2c/devices/1-002b
+	config_get global_brightness main global_brightness 100
+
+	[ -d $path ] && {
+		echo "Setting up led controller"
+		echo "$global_brightness" >$path/global_brightness 2>/dev/null ||
+		echo "   Failed to set global_brightness to '$global_brightness'"
+	} || echo "Could not find led controller at $path"
+}
+
+omnia_load_led() {
+	local sysfs
+	local color
+	local autonomous
+
+	config_get sysfs $1 sysfs
+	config_get color $1 color
+	config_get autonomous $1 autonomous
+
+	[ -n "$sysfs" ] && {
+		[ -d "/sys/class/leds/$sysfs" ] && {
+			echo "Setting up $sysfs"
+			[ -n "$color" ] && {
+				led_set_attr "$sysfs" color "$color" 2>/dev/null ||
+				echo "   Failed to set color to '$color'"
+			} || true
+			[ -n "$autonomous" ] && {
+				led_set_attr "$sysfs" autonomous "$autonomous" 2>/dev/null ||
+				echo "   Failed to set autonomous to '$autonomous'"
+			} || true
+		} || echo "Could not find $sysfs in /sys/class/leds"
+	} || echo "Could not find sysfs option in led section '$1'"
+}
+
+start() {
+	[ $(board_name) = armada-385-turris-omnia -a -d /sys/bus/i2c/drivers/leds-omnia ] && {
+		[ ! -s /etc/config/$config ] && omnia_generate_config
+		config_load $config
+		omnia_load_global_brightness
+		config_foreach omnia_load_led led
+	}
+}

@@ -1,0 +1,12 @@
+#!/bin/sh
+
+do_initialize_leds() {
+	case $(board_name) in
+		armada-385-turris-omnia)
+			led_set_attr omnia-led:all autonomous 0
+			;;
+	esac
+}
+
+boot_hook_add preinit_main do_initialize_leds
+

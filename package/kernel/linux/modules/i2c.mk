@@ -176,7 +176,7 @@ I2C_MUX_PCA954x_MODULES:= \
   CONFIG_I2C_MUX_PCA954x:drivers/i2c/muxes/i2c-mux-pca954x
 
 define KernelPackage/i2c-mux-pca954x
-  $(call i2c_defaults,$(I2C_MUX_PCA954x_MODULES),51)
+  $(call i2c_defaults,$(I2C_MUX_PCA954x_MODULES),51,1)
   TITLE:=Philips PCA954x I2C mux/switches
   DEPENDS:=kmod-i2c-mux
 endef
