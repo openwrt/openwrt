@@ -18,7 +18,6 @@ platform_check_image() {
 	air3gii|\
 	alfa-network,ac1200rm|\
 	alfa-network,awusfree1|\
-	all0239-3g|\
 	all0256n-4M|\
 	all0256n-8M|\
 	all5002|\
@@ -194,7 +193,6 @@ platform_check_image() {
 	wizfi630a|\
 	wl-330n|\
 	wl-330n3g|\
-	wl-341v3|\
 	wl-351|\
 	wl-wn575a3|\
 	wli-tx4-ag300n|\
