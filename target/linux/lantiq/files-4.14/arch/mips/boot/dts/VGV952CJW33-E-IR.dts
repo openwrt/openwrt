@@ -26,7 +26,7 @@
 		// Bootargs to boot from sda1
 		// bootargs = "console=ttyLTQ0,115200 root=/dev/sda1 rootdelay=7 rootfstype=f2fs mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
 
-		// Obsolete: 
+		// Obsolete:
 		// bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77  root=/dev/ubiblock0_0 rootdelay=7 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
 		// Bootargs to boot from mtd12 ubifs
 		// bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77  root=/dev/ubiblock0_0 rootdelay=7 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
@@ -50,7 +50,7 @@
 		bgr;
 		buswidth = <8>;
 		reset-gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
-		led-gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+		led-gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
 		debug = <1>;
 	};
 
@@ -84,11 +84,12 @@
 	};
 
 	gpio-leds {
-			compatible = "gpio-leds";
-			power_green: power {
-			label = "VGV952CJW33:red:power";
-			gpios = <&gpio 31 GPIO_ACTIVE_LOW>;
-			default-state = "keep";
+		compatible = "gpio-leds";
+
+		power_green: power {
+		label = "VGV952CJW33:red:power";
+		gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
+		default-state = "keep";
 		};
 	};
 
@@ -100,7 +101,7 @@
 		gpio-sck = <&gpio 29 GPIO_ACTIVE_HIGH >;
 		gpio-mosi = <&gpio 30 GPIO_ACTIVE_HIGH >;
 		num-chipselects = <1>;
-		cs-gpios = <&gpio 39 GPIO_ACTIVE_HIGH >; 
+		cs-gpios = <&gpio 39 GPIO_ACTIVE_HIGH >;
 
 		hc595: gpio_spi@0 {
 			compatible = "fairchild,74hc595";
@@ -196,39 +197,39 @@
 	};
 
 	mdio: mdio {
-			compatible = "lantiq,xrx200-mdio";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			phy0: ethernet-phy@0 {
-				reg = <0x0>;
-				compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-			};
-			phy1: ethernet-phy@1 {
-				reg = <0x1>;
-				compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-			};
-			/*
-			phy5: ethernet-phy@5 {
-				reg = <0x5>;
-			};
-			*/
-			phy11: ethernet-phy@11 {
-				reg = <0x11>;
-				compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-			};
-			phy12: ethernet-phy@12 {
-				reg = <0x12>;
-				compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-			};
-			phy13: ethernet-phy@13 {
-				reg = <0x13>;
-				compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-			};				
-			phy14: ethernet-phy@14 {
-				reg = <0x14>;
-				compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-			};
+		compatible = "lantiq,xrx200-mdio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		phy0: ethernet-phy@0 {
+			reg = <0x0>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
+		phy1: ethernet-phy@1 {
+			reg = <0x1>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		/*
+		phy5: ethernet-phy@5 {
+			reg = <0x5>;
+		};
+		*/
+		phy11: ethernet-phy@11 {
+			reg = <0x11>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy12: ethernet-phy@12 {
+			reg = <0x12>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy13: ethernet-phy@13 {
+			reg = <0x13>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy14: ethernet-phy@14 {
+			reg = <0x14>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+	};
 
 	rtl8367b {
 		compatible = "realtek,rtl8367b";
@@ -417,7 +418,7 @@
 		compatible = "lantiq,xrx200-pdi";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0>;                                
+		reg = <0>;
 		mac-address = [ 00 11 22 33 44 55 ];
 		lantiq,switch;
 		ethernet@2 {
