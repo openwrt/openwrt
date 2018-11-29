@@ -47,6 +47,19 @@ define Build/iodata-factory
 	fi
 endef
 
+# The OEM webinterface expects an kernel with initramfs which has the uImage
+# header field ih_name.
+# We don't wan't to set the header name field for the kernel include in the
+# sysupgrade image as well, as this image shouldn't be accepted by the OEM
+# webinterface. It will soft-brick the board.
+define Build/wr1201-factory-header
+	mkimage -A $(LINUX_KARCH) \
+		-O linux -T kernel \
+		-C lzma -a $(KERNEL_LOADADDR) -e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
+		-n 'WR1201_8_128' -d $@ $@.new
+	mv $@.new $@
+endef
+
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:6' > $(1).compat; \
@@ -316,6 +329,16 @@ define Device/mikrotik_rbm11g
   DEVICE_TITLE := MikroTik RouterBOARD M11G
 endef
 TARGET_DEVICES += mikrotik_rbm11g
+
+define Device/mtc_wr1201
+	DTS := WR1201
+	IMAGE_SIZE := 16000k
+	DEVICE_TITLE := MTC Wireless Router WR1201
+	KERNEL_INITRAMFS := $(KERNEL_DTB) | wr1201-factory-header
+	DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 \
+		kmod-usb-ledtrig-usbport wpad-basic
+endef
+TARGET_DEVICES += mtc_wr1201
 
 define Device/re350-v1
   DTS := RE350
