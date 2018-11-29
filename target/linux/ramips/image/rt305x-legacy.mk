@@ -1,23 +1,6 @@
 #
 # RT305X Profiles
 #
-define BuildFirmware/DCS930/squashfs
-	$(call BuildFirmware/Default4M/squashfs,squashfs,$(2),$(3))
-	dd if=$(KDIR)/vmlinux-$(2).bin.lzma of=$(KDIR)/image.$(2).combined bs=1048512 count=1 conv=sync
-	cat $(KDIR)/root.squashfs >> $(KDIR)/image.$(2).combined
-	$(call MkImage,lzma,$(KDIR)/image.$(2).combined,$(KDIR)/image.$(2))
-	$(call prepare_generic_squashfs,$(KDIR)/image.$(2))
-	if [ `stat -c%s "$(KDIR)/image.$(2)"` -gt $(ralink_default_fw_size_4M) ]; then \
-		echo "Warning: $(KDIR)/image.$(2)  is too big" >&2; \
-	else \
-		dd if=$(KDIR)/image.$(2) of=$(KDIR)/dcs.tmp bs=64K count=5 conv=sync ;\
-		cat $(KDIR)/image.$(2) >> $(KDIR)/dcs.tmp ; \
-		dd if=$(KDIR)/dcs.tmp of=$(call imgname,$(1),$(2))-factory.bin bs=4096k count=1 conv=sync ;\
-		$(STAGING_DIR_HOST)/bin/mkdcs932 $(call imgname,$(1),$(2))-factory.bin ; \
-	fi
-endef
-BuildFirmware/DCS930/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
-
 kernel_size_wl341v3=917504
 rootfs_size_wl341v3=2949120
 define BuildFirmware/WL-341V3/squashfs
@@ -46,8 +29,6 @@ define Image/Build/Profile/ALL02393G
 	$(call Image/Build/Template/$(image_type)/$(1),UIMAGE_8M,all0239-3g,ALL0239-3G,ttyS1,57600,phys)
 endef
 
-Image/Build/Profile/DCS930=$(call BuildFirmware/DCS930/$(1),$(1),dcs-930,DCS-930)
-Image/Build/Profile/DCS930LB1=$(call BuildFirmware/DCS930/$(1),$(1),dcs-930l-b1,DCS-930L-B1)
 Image/Build/Profile/WL-341V3=$(call BuildFirmware/WL-341V3/$(1),$(1))
 
 define LegacyDevice/ALL02393G
@@ -55,20 +36,6 @@ define LegacyDevice/ALL02393G
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += ALL02393G
-
-
-define LegacyDevice/DCS930
-  DEVICE_TITLE := D-Link DCS-930
-  DEVICE_PACKAGES := kmod-video-core kmod-video-uvc kmod-sound-core kmod-usb-audio kmod-usb-core kmod-usb-dwc2
-endef
-LEGACY_DEVICES += DCS930
-
-
-define LegacyDevice/DCS930LB1
-  DEVICE_TITLE := D-Link DCS-930L B1
-  DEVICE_PACKAGES := kmod-video-core kmod-video-uvc kmod-sound-core kmod-usb-audio kmod-usb-core kmod-usb-ohci kmod-usb2
-endef
-LEGACY_DEVICES += DCS930LB1
 
 define LegacyDevice/WL-341V3
   DEVICE_TITLE := Sitecom WL-341 v3
