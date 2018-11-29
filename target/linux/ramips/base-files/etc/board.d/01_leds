@@ -236,6 +236,9 @@ mr200)
 	ucidef_set_led_netdev "wan" "wan" "$boardname:white:wan" "usb0"
 	set_wifi_led "$boardname:white:wlan"
 	;;
+mtc,wr1201)
+	ucidef_set_led_switch "eth_link" "LAN link" "$boardname:green:eth_link" "switch0" "0x0f"
+	;;
 mzk-ex750np)
 	set_wifi_led "$boardname:red:wifi"
 	;;

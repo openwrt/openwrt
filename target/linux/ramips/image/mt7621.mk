@@ -319,6 +319,16 @@ define Device/mikrotik_rbm11g
 endef
 TARGET_DEVICES += mikrotik_rbm11g
 
+define Device/mtc_wr1201
+	DTS := WR1201
+	IMAGE_SIZE := 16000k
+	DEVICE_TITLE := MTC Wireless Router WR1201
+	KERNEL_INITRAMFS := $(KERNEL_DTB) | mtc-factory-header
+	DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 \
+		kmod-usb-ledtrig-usbport wpad-basic
+endef
+TARGET_DEVICES += mtc_wr1201
+
 define Device/re350-v1
   DTS := RE350
   DEVICE_TITLE := TP-LINK RE350 v1
