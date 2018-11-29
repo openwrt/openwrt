@@ -219,10 +219,10 @@ define Device/mir3g
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 32768k
   UBINIZE_OPTS := -E 5
-  IMAGES := sysupgrade.tar kernel1.bin rootfs0.bin
+  IMAGES += kernel1.bin rootfs0.bin
   IMAGE/kernel1.bin := append-kernel
   IMAGE/rootfs0.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
-  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_TITLE := Xiaomi Mi Router 3G
   SUPPORTED_DEVICES += R3G
   DEVICE_PACKAGES := \
@@ -274,8 +274,8 @@ define Device/r6220
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 28672k
   UBINIZE_OPTS := -E 5
-  IMAGES := sysupgrade.tar kernel.bin rootfs.bin
-  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGES += kernel.bin rootfs.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := Netgear R6220
@@ -327,7 +327,7 @@ define Device/re350-v1
   TPLINK_HEADER_VERSION := 1
   IMAGE_SIZE := 6016k
   KERNEL := $(KERNEL_DTB) | tplink-v1-header -e -O
-  IMAGES := sysupgrade.bin factory.bin
+  IMAGES += factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
@@ -368,9 +368,8 @@ define Device/ubnt-erx
   DTS := UBNT-ERX
   FILESYSTEMS := squashfs
   KERNEL_SIZE := 3145728
-  IMAGES := sysupgrade.tar
   KERNEL_INITRAMFS := $$(KERNEL) | ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
-  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_TITLE := Ubiquiti EdgeRouter X
 endef
 TARGET_DEVICES += ubnt-erx
