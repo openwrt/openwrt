@@ -217,7 +217,6 @@ define Device/mir3g
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
-  KERNEL := $(KERNEL_DTB) | uImage lzma
   IMAGE_SIZE := 32768k
   UBINIZE_OPTS := -E 5
   IMAGES := sysupgrade.tar kernel1.bin rootfs0.bin
@@ -273,7 +272,6 @@ define Device/r6220
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
-  KERNEL := $(KERNEL_DTB) | uImage lzma
   IMAGE_SIZE := 28672k
   UBINIZE_OPTS := -E 5
   IMAGES := sysupgrade.tar kernel.bin rootfs.bin
@@ -300,7 +298,7 @@ define Device/MikroTik
   DEVICE_PACKAGES := kmod-usb3
   LOADER_TYPE := elf
   PLATFORM := mt7621
-  KERNEL := kernel-bin | patch-dtb | lzma | loader-kernel
+  KERNEL := $(KERNEL_DTB) | loader-kernel
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
@@ -370,7 +368,6 @@ define Device/ubnt-erx
   DTS := UBNT-ERX
   FILESYSTEMS := squashfs
   KERNEL_SIZE := 3145728
-  KERNEL := $(KERNEL_DTB) | uImage lzma
   IMAGES := sysupgrade.tar
   KERNEL_INITRAMFS := $$(KERNEL) | ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
   IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
