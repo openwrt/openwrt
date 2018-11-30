@@ -1,5 +1,5 @@
 /*
- * This code is lifted from http://permalink.gmane.org/gmane.linux.gentoo.embedded/3218
+ * This code is lifted from https://marc.info/?l=gentoo-embedded&m=127569630913022
  */
 
 #ifndef _LIBINTL_H
