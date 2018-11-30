@@ -73,6 +73,7 @@ define Device/hiwifi_hc5861b
   DTS := HC5861B
   IMAGE_SIZE := 15808k
   DEVICE_TITLE := HiWiFi HC5861B
+  DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += hiwifi_hc5861b
 
@@ -89,6 +90,7 @@ define Device/mac1200r-v2
   DTS := MAC1200RV2
   DEVICE_TITLE := Mercury MAC1200R v2.0
   SUPPORTED_DEVICES := mac1200rv2
+  DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += mac1200r-v2
 
@@ -114,7 +116,7 @@ define Device/netgear_r6120
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := Netgear AC1200 R6120
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
   SERCOMM_KERNEL_OFFSET := 0x90000
   SERCOMM_HWID := CGQ
   SERCOMM_HWVER := A001
@@ -223,6 +225,7 @@ define Device/tplink_c20-v4
   TPLINK_HWREV := 0x1
   TPLINK_HWREVADD := 0x4
   TPLINK_HVERSION := 3
+  DEVICE_PACKAGES := kmod-mt76x0e
 endef
 TARGET_DEVICES += tplink_c20-v4
 
@@ -236,6 +239,7 @@ define Device/tplink_c50-v3
   TPLINK_HWREV := 0x79
   TPLINK_HWREVADD := 0x1
   TPLINK_HVERSION := 3
+  DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += tplink_c50-v3
 
@@ -342,6 +346,7 @@ define Device/wcr-1166ds
 	buffalo-tag-dhp WCR-1166DS JP JP | buffalo-enc-tag -l | \
 	buffalo-dhp-image
   DEVICE_TITLE := Buffalo WCR-1166DS
+  DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += wcr-1166ds
 
@@ -397,7 +402,7 @@ define Device/zyxel_keenetic-extra-ii
   IMAGE_SIZE := 14912k
   BLOCKSIZE := 64k
   DEVICE_TITLE := ZyXEL Keenetic Extra II
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
 	check-size $$$$(IMAGE_SIZE) | zyimage -d 6162 -v "ZyXEL Keenetic Extra II"
