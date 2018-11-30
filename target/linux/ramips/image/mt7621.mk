@@ -558,12 +558,3 @@ define Device/zbt-wg3526-32M
 	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += zbt-wg3526-32M
-
-# FIXME: is this still needed?
-define Image/Prepare
-#define Build/Compile
-	rm -rf $(KDIR)/relocate
-	$(CP) ../../generic/image/relocate $(KDIR)
-	$(MAKE) -C $(KDIR)/relocate KERNEL_ADDR=$(KERNEL_LOADADDR) CROSS_COMPILE=$(TARGET_CROSS)
-	$(CP) $(KDIR)/relocate/loader.bin $(KDIR)/loader.bin
-endef

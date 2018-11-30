@@ -74,12 +74,16 @@ define Build/loader-kernel
 endef
 
 define Build/relocate-kernel
+	rm -rf $@.relocate
+	$(CP) ../../generic/image/relocate $@.relocate
+	$(MAKE) -C $@.relocate KERNEL_ADDR=$(KERNEL_LOADADDR) CROSS_COMPILE=$(TARGET_CROSS)
 	( \
-		dd if=$(KDIR)/loader.bin bs=32 conv=sync && \
+		dd if=$@.relocate/loader.bin bs=32 conv=sync && \
 		perl -e '@s = stat("$@"); print pack("V", @s[7])' && \
 		cat $@ \
 	) > $@.new
 	mv $@.new $@
+	rm -rf $@.relocate
 endef
 
 define MkCombineduImage
