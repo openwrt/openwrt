@@ -222,6 +222,18 @@ define Device/iodata_wn-ac1600dgr2
 endef
 TARGET_DEVICES += iodata_wn-ac1600dgr2
 
+define Device/iodata_wn-ag300dgr
+  ATH_SOC := ar1022
+  DEVICE_TITLE := I-O DATA WN-AG300DGR
+  IMAGE_SIZE := 15424k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+    append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | \
+    senao-header -r 0x30a -p 0x47 -t 2
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+endef
+TARGET_DEVICES += iodata_wn-ag300dgr
+
 define Device/ocedo_koala
   ATH_SOC := qca9558
   DEVICE_TITLE := OCEDO Koala

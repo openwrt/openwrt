@@ -101,7 +101,8 @@ case "$FIRMWARE" in
 		ath9k_eeprom_extract_reverse "urlader" 5441 1088
 		;;
 	iodata,wn-ac1167dgr|\
-	iodata,wn-ac1600dgr2)
+	iodata,wn-ac1600dgr2|\
+	iodata,wn-ag300dgr)
 		ath9k_eeprom_extract "art" 4096 1088
 		ath9k_patch_fw_mac $(mtd_get_mac_ascii u-boot-env ethaddr) 2
 		;;
