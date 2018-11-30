@@ -148,7 +148,7 @@ define Device/dch-m225
 	seama-seal -m "signature=wapn22_dlink.2013gui_dap1320b" | \
 	check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := D-Link DCH-M225
-  DEVICE_PACKAGES := kmod-mt76 kmod-sound-core kmod-sound-mt7620 kmod-i2c-ralink
+  DEVICE_PACKAGES := kmod-sound-core kmod-sound-mt7620 kmod-i2c-ralink
 endef
 TARGET_DEVICES += dch-m225
 
@@ -253,7 +253,7 @@ define Device/gl-mt300a
   DTS := GL-MT300A
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := GL-Inet GL-MT300A
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += gl-mt300a
 
@@ -268,7 +268,7 @@ define Device/gl-mt300n
   DTS := GL-MT300N
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := GL-Inet GL-MT300N
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += gl-mt300n
 
@@ -563,7 +563,7 @@ define Device/ravpower_wd03
   DTS := WD03
   IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Ravpower WD03
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76 kmod-usb-ehci
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ehci
 endef
 TARGET_DEVICES += ravpower_wd03
 
