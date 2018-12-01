@@ -56,6 +56,18 @@ define Build/cameo-factory
 	mv $@.new $@
 endef
 
+# blow up binary to given size and put a given string at its end:
+# cameo-factory <size[k]> <string>
+define Build/cameo-factory
+	factory_stamp=$(word 2,$(1)); \
+	((reduced_size=$(subst k,*1024,$(word 1,$(1)))-$${#factory_stamp})); \
+	( \
+		dd if=$@ bs=$$reduced_size conv=sync; \
+		echo -n $$factory_stamp; \
+	) > $@.new && \
+	mv $@.new $@
+endef
+
 define Build/eva-image
 	$(STAGING_DIR_HOST)/bin/lzma2eva $(KERNEL_LOADADDR) $(KERNEL_LOADADDR) $@ $@.new
 	mv $@.new $@
