@@ -138,6 +138,32 @@ define Device/dlink_dir-825-b1
 endef
 TARGET_DEVICES += dlink_dir-825-b1
 
+define Device/dlink_dir-825-c1
+  ATH_SOC := ar9344
+  DEVICE_TITLE := D-LINK DIR-825 C1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
+  SUPPORTED_DEVICES += dir-825-c1
+  IMAGE_SIZE := 15936k
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs
+  IMAGE/factory.bin := $$(IMAGE/default) | cameo-factory $$$$(IMAGE_SIZE) 00DB120AR9344-RT-101214-00 | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += dlink_dir-825-c1
+
+define Device/dlink_dir-835-a1
+  ATH_SOC := ar9344
+  DEVICE_TITLE := D-LINK DIR-835 A1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-leds-reset kmod-owl-loader
+  SUPPORTED_DEVICES += dir-835-a1
+  IMAGE_SIZE := 15936k
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs
+  IMAGE/factory.bin := $$(IMAGE/default) | cameo-factory $$$$(IMAGE_SIZE) 00DB120AR9344-RT-101214-00 | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += dlink_dir-835-a1
+
 define Device/elecom_wrc-300ghbk2-i
   ATH_SOC := qca9563
   DEVICE_TITLE := ELECOM WRC-300GHBK2-I

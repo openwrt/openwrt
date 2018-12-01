@@ -78,6 +78,8 @@ ath79_setup_interfaces()
 	glinet,gl-x750)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+	dlink,dir-825-c1|\
+	dlink,dir-835-a1|\
 	iodata,etg3-r|\
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr2|\
@@ -212,6 +214,11 @@ ath79_setup_macs()
 	dlink,dir-825-b1)
 		lan_mac=$(mtd_get_mac_text "caldata" 65440)
 		wan_mac=$(mtd_get_mac_text "caldata" 65460)
+		;;
+	dlink,dir-825-c1|\
+	dlink,dir-835-a1)
+		lan_mac=$(mtd_get_mac_text "mac" 4)
+		wan_mac=$(mtd_get_mac_text "mac" 24)
 		;;
 	elecom,wrc-300ghbk2-i)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary ART 4098)" -2)
