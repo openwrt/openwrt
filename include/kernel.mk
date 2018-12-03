@@ -59,8 +59,15 @@ else
 
   LINUX_KERNEL:=$(KERNEL_BUILD_DIR)/vmlinux
 
-  LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.xz
-  ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE))$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
+  ifneq (,$(findstring -rc,$(LINUX_VERSION)))
+      LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.gz
+  else
+      LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.xz
+  endif
+
+  ifneq (,$(findstring -rc,$(LINUX_VERSION)))
+      LINUX_SITE:=https://git.kernel.org/torvalds/t
+  else ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE))$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
       LINUX_SITE:=@KERNEL/linux/kernel/v$(word 1,$(subst ., ,$(KERNEL_BASE))).x
   else
       LINUX_UNAME_VERSION:=$(strip $(shell cat $(LINUX_DIR)/include/config/kernel.release 2>/dev/null))
