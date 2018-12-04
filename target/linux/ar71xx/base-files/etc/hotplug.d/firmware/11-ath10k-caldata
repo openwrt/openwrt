@@ -97,7 +97,10 @@ case "$FIRMWARE" in
 		ath10kcal_extract "caldata" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
 		;;
-	gl-x750|\
+	gl-x750)
+	        ath10kcal_extract "art" 20480 2116
+                ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +3)
+                ;;
 	gl-ar750s|\
 	gl-ar750|\
 	tl-wpa8630)
