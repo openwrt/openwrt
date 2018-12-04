@@ -527,7 +527,7 @@ define Device/gl-x750
   BOARDNAME := GL-X750
   SUPPORTED_DEVICES := gl-x750
   IMAGE_SIZE := 16000k
-  CONSOLE := ttyATH1,115200
+  CONSOLE := null,115200
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
