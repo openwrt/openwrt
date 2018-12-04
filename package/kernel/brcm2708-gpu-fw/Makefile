@@ -53,6 +53,14 @@ define Download/fixup_cd_dat
 endef
 $(eval $(call Download,fixup_cd_dat))
 
+define Download/fixup_x_dat
+  FILE:=$(RPI_FIRMWARE_FILE)-fixup_x.dat
+  URL:=$(RPI_FIRMWARE_URL)
+  HASH:=ec99af78227d9ffa2e46ab80a96aa762187467fe33876e4d8085377e7d0f76c2
+  URL_FILE:=fixup_x.dat
+endef
+$(eval $(call Download,fixup_x_dat))
+
 define Download/start_elf
   FILE:=$(RPI_FIRMWARE_FILE)-start.elf
   URL:=$(RPI_FIRMWARE_URL)
@@ -68,6 +76,14 @@ define Download/start_cd_elf
   HASH:=08aee2119a19c3556099ff875181d8e5440ebd1cecf1a5936b9340fe41da4428
 endef
 $(eval $(call Download,start_cd_elf))
+
+define Download/start_x_elf
+  FILE:=$(RPI_FIRMWARE_FILE)-start_x.elf
+  URL:=$(RPI_FIRMWARE_URL)
+  HASH:=4fa98ee8eca7427aa013c1ad4a70d7b4cd01dcc08264307d1cb62f7c9ddfeed9
+  URL_FILE:=start_x.elf
+endef
+$(eval $(call Download,start_x_elf))
 
 define Package/brcm2708-gpu-fw
   SECTION:=boot
@@ -88,8 +104,10 @@ define Build/Prepare
 	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-bootcode.bin $(PKG_BUILD_DIR)/bootcode.bin
 	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup.dat $(PKG_BUILD_DIR)/fixup.dat
 	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup_cd.dat $(PKG_BUILD_DIR)/fixup_cd.dat
+	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup_x.dat $(PKG_BUILD_DIR)/fixup_x.dat
 	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start.elf $(PKG_BUILD_DIR)/start.elf
 	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start_cd.elf $(PKG_BUILD_DIR)/start_cd.elf
+	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start_x.elf $(PKG_BUILD_DIR)/start_x.elf
 endef
 
 define Build/Compile
@@ -105,8 +123,10 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/LICENCE.broadcom $(KERNEL_BUILD_DIR)
 	$(CP) $(PKG_BUILD_DIR)/start.elf $(KERNEL_BUILD_DIR)
 	$(CP) $(PKG_BUILD_DIR)/start_cd.elf $(KERNEL_BUILD_DIR)
+	$(CP) $(PKG_BUILD_DIR)/start_x.elf $(KERNEL_BUILD_DIR)
 	$(CP) $(PKG_BUILD_DIR)/fixup.dat $(KERNEL_BUILD_DIR)
 	$(CP) $(PKG_BUILD_DIR)/fixup_cd.dat $(KERNEL_BUILD_DIR)
+	$(CP) $(PKG_BUILD_DIR)/fixup_x.dat $(KERNEL_BUILD_DIR)
 endef
 
 $(eval $(call BuildPackage,brcm2708-gpu-fw))
