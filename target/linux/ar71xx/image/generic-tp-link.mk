@@ -139,7 +139,7 @@ TARGET_DEVICES += tl-wdr7500-v3
 define Device/archer-c7-v4
   $(Device/archer-cxx)
   DEVICE_TITLE := TP-LINK Archer C7 v4
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
   BOARDNAME := ARCHER-C7-V4
   TPLINK_BOARD_ID := ARCHER-C7-V4
   IMAGE_SIZE := 15104k
