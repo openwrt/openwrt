@@ -1,0 +1,55 @@
+From e81d56d247a8c93d24e03be378d1748f3e044e6b Mon Sep 17 00:00:00 2001
+From: Ladislav Michl <ladis@linux-mips.org>
+Date: Tue, 9 Jan 2018 14:19:11 +0100
+Subject: [PATCH] VGV952CJW33-E-IR: mtd: nand: samsung: Disable subpage writes on 21nm NAND.
+
+Some Samsung SLC NAND are manufactured using the 21nm process.
+They does not supports partial page programming, so disable subpage writes
+for it. Manufacturing process is stored in lowest two bits of 5th ID
+byte.
+
+This patch is derived and adapted from the upstream patch which
+handles a different samsung NAND flash devie (K9F1G08U0E) and is named
+mtd: nand: samsung: Disable subpage writes on E-die NAND
+and available since kernel release v4.16.
+---
+ drivers/mtd/nand/nand_samsung.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+Index: linux-4.14.78/drivers/mtd/nand/nand_samsung.c
+===================================================================
+--- linux-4.14.78.orig/drivers/mtd/nand/nand_samsung.c
++++ linux-4.14.78/drivers/mtd/nand/nand_samsung.c
+@@ -20,6 +20,9 @@
+ static void samsung_nand_decode_id(struct nand_chip *chip)
+ {
+ 	struct mtd_info *mtd = nand_to_mtd(chip);
++	u8 *d  = chip->id.data;
++	pr_debug("samsung_nand_decode_id: ID is len=%d, %02X %02X %02X %02X %02X %02X %02X %02X\n",
++		chip->id.len, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+ 
+ 	/* New Samsung (6 byte ID): Samsung K9GAG08U0F (p.44) */
+ 	if (chip->id.len == 6 && !nand_is_slc(chip) &&
+@@ -91,6 +94,22 @@ static void samsung_nand_decode_id(struc
+ 		}
+ 	} else {
+ 		nand_decode_ext_id(chip);
++		if (nand_is_slc(chip)) {
++			switch (chip->id.data[1]) {
++				/*K9F4G08U0D / K9K8G08U0D / K9K8G08U1D / K9WAG08U1D */
++				case 0xDC:
++					if (chip->id.len > 4 &&
++					    (chip->id.data[4] & GENMASK(1, 0)) == 0x1) {
++						chip->options |= NAND_NO_SUBPAGE_WRITE;
++						pr_debug("samsung_nand_decode_id: id.data[1] is 0x%02X, disabling subpage writes\n", d[1]);
++					} else {
++						pr_debug("samsung_nand_decode_id: id.data[1] is 0x%02X, allowing subpage writes\n", d[1]);
++					}
++				break;
++				default:
++					break;
++			}
++		}
+ 	}
+ }
+ 
