@@ -218,9 +218,7 @@ define Device/apalis
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
   IMAGE/combined.bin := append-rootfs | pad-extra 128k | apalis-emmc
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  UBOOT_PATH := $$(STAGING_DIR_IMAGE)/$$(UBOOT)-u-boot-with-spl.imx
-  ARTIFACTS := u-boot-with-spl.imx recovery.scr
-  ARTIFACT/u-boot-with-spl.imx := append-uboot
+  ARTIFACTS := recovery.scr
   ARTIFACT/recovery.scr := recovery-scr
 endef
 TARGET_DEVICES += apalis
