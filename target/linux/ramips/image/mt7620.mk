@@ -258,7 +258,7 @@ define Device/ex3700-ex3800
   IMAGE_SIZE := 7744k
   IMAGES += factory.chk
   IMAGE/factory.chk := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | netgear-chk
-  DEVICE_PACKAGES := mod-mt76x2
+  DEVICE_PACKAGES := kmod-mt76x2
   DEVICE_TITLE := Netgear EX3700/EX3800
   SUPPORTED_DEVICES := ex3700
 endef
