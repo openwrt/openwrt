@@ -44,6 +44,8 @@
 #include <linux/etherdevice.h>
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
+#include <linux/platform_device.h>
+#include <linux/of_device.h>
 #include <asm/io.h>
 
 /*
@@ -1448,6 +1450,19 @@ static int ptm_showtime_exit(void)
 }
 
 
+static const struct of_device_id ltq_ptm_match[] = {
+#ifdef CONFIG_DANUBE
+       { .compatible = "lantiq,ppe-danube", .data = NULL },
+#elif defined CONFIG_AMAZON_SE
+       { .compatible = "lantiq,ppe-ase", .data = NULL },
+#elif defined CONFIG_AR9
+       { .compatible = "lantiq,ppe-arx100", .data = NULL },
+#elif defined CONFIG_VR9
+       { .compatible = "lantiq,ppe-xrx200", .data = NULL },
+#endif
+       {},
+};
+MODULE_DEVICE_TABLE(of, ltq_ptm_match);
 
 /*
  * ####################################
@@ -1465,7 +1480,7 @@ static int ptm_showtime_exit(void)
  *    0    --- successful
  *    else --- failure, usually it is negative value of error code
  */
-static int ifx_ptm_init(void)
+static int ltq_ptm_probe(struct platform_device *pdev)
 {
     int ret;
     struct port_cell_info port_cell = {0};
@@ -1481,7 +1496,7 @@ static int ifx_ptm_init(void)
         goto INIT_PRIV_DATA_FAIL;
     }
 
-    ifx_ptm_init_chip();
+    ifx_ptm_init_chip(pdev);
     init_tables();
 
     for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ ) {
@@ -1570,7 +1585,7 @@ INIT_PRIV_DATA_FAIL:
  *  Output:
  *   none
  */
-static void __exit ifx_ptm_exit(void)
+static int ltq_ptm_remove(struct platform_device *pdev)
 {
     int i;
 
@@ -1595,7 +1610,20 @@ static void __exit ifx_ptm_exit(void)
     ifx_ptm_uninit_chip();
 
     clear_priv_data();
+
+    return 0;
 }
 
-module_init(ifx_ptm_init);
-module_exit(ifx_ptm_exit);
+static struct platform_driver ltq_ptm_driver = {
+       .probe = ltq_ptm_probe,
+       .remove = ltq_ptm_remove,
+       .driver = {
+               .name = "ptm",
+               .owner = THIS_MODULE,
+               .of_match_table = ltq_ptm_match,
+       },
+};
+
+module_platform_driver(ltq_ptm_driver);
+
+MODULE_LICENSE("GPL");
