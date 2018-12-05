@@ -223,6 +223,7 @@ define Device/tplink_c20-v4
   TPLINK_HWREV := 0x1
   TPLINK_HWREVADD := 0x4
   TPLINK_HVERSION := 3
+  DEVICE_PACKAGES := kmod-mt76x0e
 endef
 TARGET_DEVICES += tplink_c20-v4
 
