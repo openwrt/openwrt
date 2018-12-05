@@ -220,6 +220,9 @@
 
 			phy4: ethernet-phy@4 {
 				reg = <4>;
+				qca,phy-rgmii-en;
+				qca,txclk-delay-en;
+				qca,rxclk-delay-en;
 			};
 
 			phy3: ethernet-phy@3 {
