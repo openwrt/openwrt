@@ -295,6 +295,17 @@ ar8xxx_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
 
 	return ret;
 }
+void
+ar8xxx_phy_dbg_read(struct ar8xxx_priv *priv, int phy_addr,
+           u16 dbg_addr, u16 *dbg_data)
+{
+       struct mii_bus *bus = priv->mii_bus;
+
+       mutex_lock(&bus->mdio_lock);
+       bus->write(bus, phy_addr, MII_ATH_DBG_ADDR, dbg_addr);
+       *dbg_data = bus->read(bus, phy_addr, MII_ATH_DBG_DATA);
+       mutex_unlock(&bus->mdio_lock);
+}
 
 void
 ar8xxx_phy_dbg_write(struct ar8xxx_priv *priv, int phy_addr,
@@ -2166,7 +2177,7 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 	int ret;
 
 	/* skip PHYs at unused adresses */
-	if (phydev->mdio.addr != 0 && phydev->mdio.addr != 4)
+	if (phydev->mdio.addr != 0 && phydev->mdio.addr != 3 && phydev->mdio.addr != 4)
 		return -ENODEV;
 
 	if (!ar8xxx_is_possible(phydev->mdio.bus))
@@ -2225,6 +2236,8 @@ found:
 			phydev->supported |= SUPPORTED_1000baseT_Full;
 			phydev->advertising |= ADVERTISED_1000baseT_Full;
 		}
+		if (priv->chip->phy_rgmii_set)
+			priv->chip->phy_rgmii_set(priv, phydev);
 	}
 
 	phydev->priv = priv;

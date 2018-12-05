@@ -128,6 +128,49 @@ ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
 }
 
 static void
+ar8327_phy_rgmii_set(struct ar8xxx_priv *priv, struct phy_device *phydev)
+{
+	u16 phy_val = 0;
+	int phyaddr = phydev->mdio.addr;
+	struct device_node *np = phydev->mdio.dev.of_node;
+
+	if (!np)
+		return;
+
+	if (!of_property_read_bool(np, "qca,phy-rgmii-en")) {
+		pr_err("ar8327: qca,phy-rgmii-en is not specified\n");
+		return -EINVAL;
+	}
+	ar8xxx_phy_dbg_read(priv, phyaddr,
+				AR8327_PHY_MODE_SEL, &phy_val);
+	phy_val |= AR8327_PHY_MODE_SEL_RGMII;
+	ar8xxx_phy_dbg_write(priv, phyaddr,
+				AR8327_PHY_MODE_SEL, phy_val);
+
+	/* set rgmii tx clock delay if needed */
+	if (!of_property_read_bool(np, "qca,txclk-delay-en")) {
+		pr_err("ar8327: qca,txclk-delay-en is not specified\n");
+		return -EINVAL;
+	}
+	ar8xxx_phy_dbg_read(priv, phyaddr,
+				AR8327_PHY_SYS_CTRL, &phy_val);
+	phy_val |= AR8327_PHY_SYS_CTRL_RGMII_TX_DELAY;
+	ar8xxx_phy_dbg_write(priv, phyaddr,
+				AR8327_PHY_SYS_CTRL, phy_val);
+
+	/* set rgmii rx clock delay if needed */
+	if (!of_property_read_bool(np, "qca,rxclk-delay-en")) {
+		pr_err("ar8327: qca,rxclk-delay-en is not specified\n");
+		return -EINVAL;
+	}
+	ar8xxx_phy_dbg_read(priv, phyaddr,
+				AR8327_PHY_TEST_CTRL, &phy_val);
+	phy_val |= AR8327_PHY_TEST_CTRL_RGMII_RX_DELAY;
+	ar8xxx_phy_dbg_write(priv, phyaddr,
+				AR8327_PHY_TEST_CTRL, phy_val);
+}
+
+static void
 ar8327_phy_fixup(struct ar8xxx_priv *priv, int phy)
 {
 	switch (priv->chip_rev) {
@@ -1490,6 +1533,7 @@ const struct ar8xxx_chip ar8337_chip = {
 	.set_mirror_regs = ar8327_set_mirror_regs,
 	.get_arl_entry = ar8327_get_arl_entry,
 	.sw_hw_apply = ar8327_sw_hw_apply,
+	.phy_rgmii_set = ar8327_phy_rgmii_set,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
