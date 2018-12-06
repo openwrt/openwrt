@@ -382,6 +382,30 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-fe-pi))
 
+
+define KernelPackage/sound-soc-googlevoicehat
+  TITLE:=Support for Google VoiceHAT Sound Card
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_GOOGLEVOICEHAT_SOUNDCARD \
+	CONFIG_SND_SOC_VOICEHAT
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-googlevoicehat-codec.ko \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-googlevoicehat-soundcard.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-googlevoicehat-codec \
+	snd-soc-googlevoicehat-soundcard)
+  DEPENDS:= \
+	@LINUX_4_14 \
+	kmod-sound-soc-bcm2835-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-googlevoicehat/description
+  This package contains support for Google VoiceHAT Sound Card
+endef
+
+$(eval $(call KernelPackage,sound-soc-googlevoicehat))
+
+
 define KernelPackage/sound-soc-hifiberry-dac
   TITLE:=Support for HifiBerry DAC
   KCONFIG:= \
