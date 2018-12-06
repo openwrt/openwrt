@@ -629,9 +629,11 @@ $(eval $(call KernelPackage,i2c-bcm2835))
 define KernelPackage/video-bcm2835
   TITLE:=Broadcom BCM2835 camera interface driver
   KCONFIG:= \
-	CONFIG_VIDEO_BCM2835=y \
+	CONFIG_VIDEO_BCM2835$(if $(CONFIG_LINUX_4_9),=y) \
 	CONFIG_VIDEO_BCM2835_MMAL
-  FILES:= $(LINUX_DIR)/drivers/media/platform/bcm2835/bcm2835-v4l2.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/media/platform/bcm2835/bcm2835-v4l2.ko@lt4.12 \
+	$(LINUX_DIR)/drivers/staging/vc04_services/bcm2835-camera/bcm2835-v4l2.ko@ge4.12
   AUTOLOAD:=$(call AutoLoad,65,bcm2835-v4l2)
   $(call AddDepends/video,@TARGET_brcm2708 +kmod-video-videobuf2)
 endef
