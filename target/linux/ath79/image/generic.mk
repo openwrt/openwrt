@@ -253,7 +253,6 @@ define Device/pcs_cap324
   ATH_SOC := ar9344
   DEVICE_TITLE := PowerCloud Systems CAP324
   IMAGE_SIZE := 16000k
-  IMAGES := sysupgrade.bin
   SUPPORTED_DEVICES += cap324
 endef
 TARGET_DEVICES += pcs_cap324
@@ -262,7 +261,6 @@ define Device/pcs_cr3000
   ATH_SOC := ar9341
   DEVICE_TITLE := PowerCloud Systems CR3000
   IMAGE_SIZE := 7808k
-  IMAGES := sysupgrade.bin
   SUPPORTED_DEVICES += cr3000
 endef
 TARGET_DEVICES += pcs_cr3000
@@ -272,7 +270,6 @@ define Device/pcs_cr5000
   DEVICE_TITLE := PowerCloud Systems CR5000
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-core
   IMAGE_SIZE := 7808k
-  IMAGES := sysupgrade.bin
   SUPPORTED_DEVICES += cr5000
 endef
 TARGET_DEVICES += pcs_cr5000
@@ -280,7 +277,7 @@ TARGET_DEVICES += pcs_cr5000
 define Device/netgear_wndr3x00
   ATH_SOC := ar7161
   KERNEL := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
-  IMAGES := sysupgrade.bin factory.img
+  IMAGES += factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size $$$$(IMAGE_SIZE)
@@ -316,7 +313,6 @@ define Device/pisen_wmm003n
   DEVICE_TITLE := Pisen WMM003N (Cloud Easy Power)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-chipidea2
   TPLINK_HWID := 0x07030101
-  IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += pisen_wmm003n
 
@@ -334,12 +330,8 @@ TARGET_DEVICES += netgear_wndr3800
 define Device/phicomm_k2t
   ATH_SOC := qca9563
   DEVICE_TITLE := Phicomm K2T
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
   IMAGE_SIZE := 15744k
-  IMAGES := sysupgrade.bin
-  IMAGE/default := append-kernel | append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
   DEVICE_PACKAGES := kmod-leds-reset kmod-ath10k-ct ath10k-firmware-qca9888-ct
 endef
 TARGET_DEVICES += phicomm_k2t

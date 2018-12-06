@@ -37,7 +37,7 @@ define Device/tplink_archer-c7-v2
   DEVICE_TITLE := TP-LINK Archer C7 v2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
   TPLINK_HWID := 0xc7000002
-  IMAGES := sysupgrade.bin factory.bin factory-us.bin factory-eu.bin
+  IMAGES += factory-us.bin factory-eu.bin
   IMAGE/factory-us.bin := append-rootfs | mktplinkfw factory -C US
   IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
 endef
