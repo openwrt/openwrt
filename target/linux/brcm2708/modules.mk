@@ -136,6 +136,32 @@ endef
 $(eval $(call KernelPackage,sound-soc-allo-boss-dac))
 
 
+define KernelPackage/sound-soc-allo-digione
+  TITLE:=Support for Allo Piano DigiOne
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_ALLO_DIGIONE \
+	CONFIG_SND_SOC_PCM512x \
+	CONFIG_SND_SOC_PCM512x_I2C
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-allo-digione.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x-i2c snd-soc-pcm512x \
+	snd-soc-allo-digione)
+  DEPENDS:= \
+	@LINUX_4_14 \
+	+kmod-i2c-bcm2708 \
+	kmod-sound-soc-bcm2835-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-allo-digione/description
+  This package contains support for Allo DigiOne
+endef
+
+$(eval $(call KernelPackage,sound-soc-allo-digione))
+
+
 define KernelPackage/sound-soc-allo-piano-dac
   TITLE:=Support for Allo Piano DAC
   KCONFIG:= \
