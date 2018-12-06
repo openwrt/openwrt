@@ -30,7 +30,8 @@ define KernelPackage/sound-arm-bcm2835
 	CONFIG_SND_BCM2835 \
 	CONFIG_SND_ARMAACI=n
   FILES:= \
-	$(LINUX_DIR)/sound/arm/snd-bcm2835.ko
+	$(LINUX_DIR)/drivers/staging/vc04_services/bcm2835-audio/snd-bcm2835.ko@ge4.12 \
+	$(LINUX_DIR)/sound/arm/snd-bcm2835.ko@lt4.12
   AUTOLOAD:=$(call AutoLoad,68,snd-bcm2835)
   DEPENDS:=@TARGET_brcm2708
   $(call AddDepends/sound)
