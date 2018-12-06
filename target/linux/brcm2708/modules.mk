@@ -85,6 +85,24 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-bcm2835-i2s))
 
+
+define KernelPackage/sound-soc-3dlab-nano-player
+  TITLE:=Support for 3Dlab Nano Player
+  KCONFIG:= CONFIG_SND_BCM2708_SOC_3DLAB_NANO_PLAYER
+  FILES:=$(LINUX_DIR)/sound/soc/bcm/snd-soc-3dlab-nano-player.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-3dlab-nano-player)
+  DEPENDS:= \
+	@LINUX_4_14 \
+	kmod-sound-soc-bcm2835-i2s
+endef
+
+define KernelPackage/sound-soc-3dlab-nano-player/description
+  This package contains support for 3Dlab Nano Player
+endef
+
+$(eval $(call KernelPackage,sound-soc-3dlab-nano-player))
+
+
 define KernelPackage/sound-soc-adau1977-adc
   TITLE:=Support for ADAU1977 ADC
   KCONFIG:= \
