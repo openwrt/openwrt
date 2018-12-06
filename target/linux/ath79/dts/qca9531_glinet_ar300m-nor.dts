@@ -5,6 +5,11 @@
 
 #include "qca9531_glinet_ar300m.dtsi"
 
+/ {
+	compatible = "glinet,ar300m-nor", "qca,qca9531";
+	model = "GL.iNet GL-AR300M (NOR)";
+};
+
 &spi {
 	status = "okay";
 	num-cs = <0>;
