@@ -21,11 +21,9 @@ Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
  .../net/wireless/broadcom/brcm80211/brcmfmac/core.c   |  2 +-
  3 files changed, 11 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-index 7f0a5bade70a..c0e3ae7bf2ae 100644
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -5196,10 +5196,17 @@ static struct cfg80211_ops brcmf_cfg80211_ops = {
+@@ -5188,10 +5188,17 @@ static struct cfg80211_ops brcmf_cfg8021
  	.del_pmk = brcmf_cfg80211_del_pmk,
  };
  
@@ -45,11 +43,9 @@ index 7f0a5bade70a..c0e3ae7bf2ae 100644
  }
  
  struct brcmf_cfg80211_vif *brcmf_alloc_vif(struct brcmf_cfg80211_info *cfg,
-diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h
-index a4aec0004e4f..9a6287f084a9 100644
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h
-@@ -404,7 +404,7 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
+@@ -404,7 +404,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
  void brcmf_cfg80211_detach(struct brcmf_cfg80211_info *cfg);
  s32 brcmf_cfg80211_up(struct net_device *ndev);
  s32 brcmf_cfg80211_down(struct net_device *ndev);
@@ -58,11 +54,9 @@ index a4aec0004e4f..9a6287f084a9 100644
  enum nl80211_iftype brcmf_cfg80211_get_iftype(struct brcmf_if *ifp);
  
  struct brcmf_cfg80211_vif *brcmf_alloc_vif(struct brcmf_cfg80211_info *cfg,
-diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-index b1f702faff4f..860a4372cb56 100644
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -1130,7 +1130,7 @@ int brcmf_attach(struct device *dev, struct brcmf_mp_device *settings)
+@@ -1151,7 +1151,7 @@ int brcmf_attach(struct device *dev, str
  
  	brcmf_dbg(TRACE, "Enter\n");
  
@@ -71,6 +65,3 @@ index b1f702faff4f..860a4372cb56 100644
  	if (!ops)
  		return -ENOMEM;
  
--- 
-2.18.1
-
