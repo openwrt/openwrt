@@ -109,6 +109,33 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-adau1977-adc))
 
+
+define KernelPackage/sound-soc-allo-boss-dac
+  TITLE:=Support for Allo Boss DAC
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_ALLO_BOSS_DAC \
+	CONFIG_SND_SOC_PCM512x \
+	CONFIG_SND_SOC_PCM512x_I2C
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-allo-boss-dac.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x-i2c snd-soc-pcm512x \
+	snd-soc-allo-boss-dac)
+  DEPENDS:= \
+	@LINUX_4_14 \
+	+kmod-i2c-bcm2708 \
+	kmod-sound-soc-bcm2835-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-allo-boss-dac/description
+  This package contains support for Allo Boss DAC
+endef
+
+$(eval $(call KernelPackage,sound-soc-allo-boss-dac))
+
+
 define KernelPackage/sound-soc-allo-piano-dac
   TITLE:=Support for Allo Piano DAC
   KCONFIG:= \
