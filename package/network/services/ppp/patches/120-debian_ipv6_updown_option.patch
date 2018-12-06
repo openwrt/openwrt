@@ -12,7 +12,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/pppd/main.c
 +++ b/pppd/main.c
-@@ -318,6 +318,8 @@ main(argc, argv)
+@@ -310,6 +310,8 @@ main(argc, argv)
  
      strlcpy(path_ipup, _PATH_IPUP, sizeof(path_ipup));
      strlcpy(path_ipdown, _PATH_IPDOWN, sizeof(path_ipdown));
@@ -23,8 +23,8 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      new_phase(PHASE_INITIALIZE);
 --- a/pppd/options.c
 +++ b/pppd/options.c
-@@ -116,6 +116,8 @@ int	connect_delay = 1000;	/* wait this m
- int	req_unit = -1;		/* requested interface unit */
+@@ -120,6 +120,8 @@ int	req_unit = -1;		/* requested interfa
+ char	req_ifname[MAXIFNAMELEN];	/* requested interface name */
  char	path_ipup[MAXPATHLEN];	/* pathname of ip-up script */
  char	path_ipdown[MAXPATHLEN];/* pathname of ip-down script */
 +char	path_ipv6up[MAXPATHLEN];	/* pathname of ipv6-up script */
@@ -32,7 +32,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  bool	multilink = 0;		/* Enable multilink operation */
  char	*bundle_name = NULL;	/* bundle name for multilink */
  bool	dump_options;		/* print out option values */
-@@ -308,6 +310,13 @@ option_t general_options[] = {
+@@ -326,6 +328,13 @@ option_t general_options[] = {
        "Set pathname of ip-down script",
        OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
  
@@ -84,8 +84,8 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      }
 --- a/pppd/pppd.h
 +++ b/pppd/pppd.h
-@@ -320,6 +320,8 @@ extern int	max_data_rate;	/* max bytes/s
- extern int	req_unit;	/* interface unit number to use */
+@@ -334,6 +334,8 @@ extern int	req_unit;	/* interface unit n
+ extern char	req_ifname[MAXIFNAMELEN]; /* interface name to use */
  extern char	path_ipup[MAXPATHLEN]; /* pathname of ip-up script */
  extern char	path_ipdown[MAXPATHLEN]; /* pathname of ip-down script */
 +extern char	path_ipv6up[MAXPATHLEN]; /* pathname of ipv6-up script */
