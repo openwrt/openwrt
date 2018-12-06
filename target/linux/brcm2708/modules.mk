@@ -213,6 +213,35 @@ endef
 $(eval $(call KernelPackage,sound-soc-allo-piano-dac-plus))
 
 
+define KernelPackage/sound-soc-allo-katana-codec
+  TITLE:=Support for Allo Katana DAC
+  KCONFIG:= \
+	CONFIG_SND_AUDIO_GRAPH_CARD \
+	CONFIG_SND_BCM2708_SOC_ALLO_KATANA_DAC \
+	CONFIG_SND_SOC_PCM512x \
+	CONFIG_SND_SOC_PCM512x_I2C \
+	CONFIG_SND_SIMPLE_CARD_UTILS
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-allo-katana-codec.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x-i2c snd-soc-pcm512x \
+	snd-soc-allo-katana-codec)
+  DEPENDS:= \
+	@LINUX_4_14 \
+	+kmod-i2c-bcm2708 \
+	+kmod-regmap \
+	kmod-sound-soc-bcm2835-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-allo-katana-codec/description
+  This package contains support for Allo Katana DAC
+endef
+
+$(eval $(call KernelPackage,sound-soc-allo-katana-codec))
+
+
 define KernelPackage/sound-soc-audioinjector-pi-soundcard
   TITLE:=Support for AudioInjector Pi soundcard
   KCONFIG:= \
