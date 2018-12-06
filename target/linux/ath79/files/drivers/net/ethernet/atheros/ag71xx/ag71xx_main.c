@@ -399,14 +399,18 @@ static void ag71xx_hw_setup(struct ag71xx *ag)
 {
 	struct device_node *np = ag->pdev->dev.of_node;
 	u32 init = MAC_CFG1_INIT;
+	u32 cfg2;
 
 	/* setup MAC configuration registers */
 	if (of_property_read_bool(np, "flow-control"))
 		init |= MAC_CFG1_TFC | MAC_CFG1_RFC;
 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, init);
 
-	ag71xx_sb(ag, AG71XX_REG_MAC_CFG2,
-		  MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK);
+	/* ensure that CRC is disabled and not appended to frames */
+	cfg2 = ag71xx_rr(ag, AG71XX_REG_MAC_CFG2);
+	cfg2 &= ~(MAC_CFG2_CRC_EN);
+	cfg2 |= MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK;
+	ag71xx_wr(ag, AG71XX_REG_MAC_CFG2, cfg2);
 
 	/* setup max frame length to zero */
 	ag71xx_wr(ag, AG71XX_REG_MAC_MFL, 0);
