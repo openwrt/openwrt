@@ -278,7 +278,7 @@ endef
 TARGET_DEVICES += pcs_cr3000
 
 define Device/pcs_cr5000
-  ATH_SOC := ar9344
+  ATH_SOC := ar9342
   DEVICE_TITLE := PowerCloud Systems CR5000
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-core
   IMAGE_SIZE := 7808k

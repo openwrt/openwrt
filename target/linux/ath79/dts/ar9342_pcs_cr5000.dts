@@ -8,7 +8,7 @@
 
 / {
 	model = "PowerCloud Systems CR5000";
-	compatible = "pcs,cr5000", "qca,ar9344";
+	compatible = "pcs,cr5000", "qca,ar9342";
 
 	aliases {
 		serial0 = &uart;
@@ -18,7 +18,7 @@
 		led-upgrade = &status;
 	};
 
-	keys {
+	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
@@ -40,7 +40,7 @@
 		};
 	};
 
-	leds {
+	gpio-leds {
 		compatible = "gpio-leds";
 
 		status: power {
@@ -124,7 +124,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	hub_port1: port@1 {
+	hub_port: port@1 {
 		reg = <1>;
 		#trigger-source-cells = <0>;
 	};
@@ -138,11 +138,7 @@
 	status = "okay";
 
 	ath9k: wifi@0,0 {
-		compatible = "pci168c,0030";
-		reg = <0x0000 0 0 0 0>;
 		mtd-mac-address = <&art 0x5002>;
-		#gpio-cells = <2>;
-		gpio-controller;
 	};
 };
 
