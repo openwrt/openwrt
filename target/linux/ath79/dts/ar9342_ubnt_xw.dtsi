@@ -9,6 +9,13 @@
 	compatible = "ubnt,xw", "qca,ar9342";
 	model = "Ubiquiti Networks XW board";
 
+	aliases {
+		led-boot = &system;
+		led-running = &system;
+		led-upgrade = &system;
+		led-failsafe = &system;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -27,7 +34,7 @@
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		link4 {
+		system: link4 {
 			label = "ubnt:green:link4";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
