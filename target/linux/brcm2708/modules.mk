@@ -242,6 +242,32 @@ endef
 $(eval $(call KernelPackage,sound-soc-allo-katana-codec))
 
 
+define KernelPackage/sound-soc-audioinjector-octo-soundcard
+  TITLE:=Support for AudioInjector Octo soundcard
+  KCONFIG:= \
+	CONFIG_SND_AUDIOINJECTOR_OCTO_SOUNDCARD \
+	CONFIG_SND_SOC_CS42XX8 \
+	CONFIG_SND_SOC_CS42XX8_I2C
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-audioinjector-octo-soundcard.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-cs42xx8.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-cs42xx8-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc- \
+	snd-soc-audioinjector-octo-soundcard)
+  DEPENDS:= \
+	@LINUX_4_14 \
+	+kmod-i2c-bcm2708 \
+	kmod-sound-soc-bcm2835-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-audioinjector-octo-soundcard/description
+  This package contains support for AudioInjector Octo soundcard
+endef
+
+$(eval $(call KernelPackage,sound-soc-audioinjector-octo-soundcard))
+
+
 define KernelPackage/sound-soc-audioinjector-pi-soundcard
   TITLE:=Support for AudioInjector Pi soundcard
   KCONFIG:= \
