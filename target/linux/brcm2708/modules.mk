@@ -28,6 +28,23 @@ endef
 
 $(eval $(call KernelPackage,drm-vc4))
 
+
+define KernelPackage/hwmon-rpi-poe-fan
+  SUBMENU:=$(HWMON_MENU)
+  TITLE:=Raspberry Pi PoE HAT fan
+  DEPENDS:=@TARGET_brcm2708 @LINUX_4_14 +kmod-hwmon-core
+  KCONFIG:=CONFIG_SENSORS_RPI_POE_FAN
+  FILES:=$(LINUX_DIR)/drivers/hwmon/rpi-poe-fan.ko
+  AUTOLOAD:=$(call AutoProbe,rpi-poe-fan)
+endef
+
+define KernelPackage/hwmon-rpi-poe-fan/description
+  Raspberry Pi PoE HAT fan driver
+endef
+
+$(eval $(call KernelPackage,hwmon-rpi-poe-fan))
+
+
 define KernelPackage/sound-arm-bcm2835
   TITLE:=BCM2835 ALSA driver
   KCONFIG:= \
