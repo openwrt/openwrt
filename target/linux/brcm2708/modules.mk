@@ -8,8 +8,13 @@
 define KernelPackage/drm-vc4
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Broadcom VC4 Graphics
-  DEPENDS:=@TARGET_brcm2708 +kmod-drm
-  KCONFIG:=CONFIG_DRM_VC4
+  DEPENDS:= \
+	@TARGET_brcm2708 +kmod-drm \
+	+LINUX_4_14:kmod-sound-core \
+	+LINUX_4_14:kmod-sound-soc-core
+  KCONFIG:= \
+	CONFIG_DRM_VC4 \
+	CONFIG_DRM_VC4_HDMI_CEC=n
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/vc4/vc4.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/drm_kms_helper.ko
