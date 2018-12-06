@@ -629,6 +629,48 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-raspidac3))
 
+
+define KernelPackage/sound-soc-rpi-cirrus
+  TITLE:=Support for Cirrus Logic Audio Card
+  KCONFIG:= \
+	CONFIG_GPIO_ARIZONA \
+	CONFIG_INPUT_ARIZONA_HAPTICS=n \
+	CONFIG_MFD_ARIZONA=y \
+	CONFIG_MFD_ARIZONA_I2C \
+	CONFIG_MFD_CS47L24=n \
+	CONFIG_MFD_WM5102=n \
+	CONFIG_MFD_WM5110=n \
+	CONFIG_MFD_WM8997=n \
+	CONFIG_MFD_WM8998=n \
+	CONFIG_REGULATOR_ARIZONA \
+	CONFIG_REGULATOR_ARIZONA_LDO1 \
+	CONFIG_REGULATOR_ARIZONA_MICSUPP \
+	CONFIG_SND_BCM2708_SOC_RPI_CIRRUS \
+	CONFIG_SND_SOC_ARIZONA \
+	CONFIG_SND_SOC_WM5102 \
+	CONFIG_SND_SOC_WM8804 \
+	CONFIG_SND_SOC_WM_ADSP
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-rpi-cirrus.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-arizona.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm-adsp.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm5102.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm1794a snd-soc-rpi-cirrus)
+  DEPENDS:= \
+	@LINUX_4_14 \
+	+kmod-i2c-bcm2708 \
+	kmod-sound-soc-bcm2835-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-rpi-cirrus/description
+  This package contains support for RPi-Cirrus
+endef
+
+$(eval $(call KernelPackage,sound-soc-rpi-cirrus))
+
+
 define KernelPackage/sound-soc-rpi-dac
   TITLE:=Support for RPi-DAC
   KCONFIG:= \
