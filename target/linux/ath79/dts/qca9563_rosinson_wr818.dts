@@ -83,16 +83,16 @@
 				read-only;
 			};
 
-			partition@50000 {
-				compatible = "denx,uimage";
-				label = "firmware";
-				reg = <0x050000 0xf80000>;
+			info: partition@50000 {
+				label = "factory";
+				reg = <0x050000 0x010000>;
+				read-only;
 			};
 
-			info: partition@fd0000 {
-				label = "factory";
-				reg = <0xfd0000 0x010000>;
-				read-only;
+			partition@60000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x060000 0xf80000>;
 			};
 
 			art: partition@ff0000 {
