@@ -436,6 +436,7 @@ define KernelPackage/sound-soc-raspidac3
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-pcm512x-i2c \
 	snd-soc-tpa6130a2 snd-soc-raspidac3)
   DEPENDS:= \
+	@LINUX_4_9 \
 	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
   $(call AddDepends/sound)
