@@ -51,7 +51,7 @@ define Device/ArcherC20i
   IMAGES += factory.bin
   DEVICE_PACKAGES := kmod-mt76x0e
   DEVICE_TITLE := TP-Link ArcherC20i
-  DEVICE_PACKAGES := kmod-mt76x0e
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += ArcherC20i
 
@@ -66,7 +66,7 @@ define Device/ArcherC50v1
   IMAGE/factory-us.bin := tplink-v2-image -e -w 0
   IMAGE/factory-eu.bin := tplink-v2-image -e -w 2
   DEVICE_TITLE := TP-Link ArcherC50v1
-  DEVICE_PACKAGES := kmod-mt76x2
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += ArcherC50v1
 
@@ -276,6 +276,7 @@ define Device/u25awf-h1
   DTS := U25AWF-H1
   IMAGE_SIZE := 16064k
   DEVICE_TITLE := Kimax U25AWF-H1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += u25awf-h1
 
@@ -323,6 +324,7 @@ define Device/kimax_u35wf
   DTS := U35WF
   IMAGE_SIZE := 16064k
   DEVICE_TITLE := Kimax U35WF
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += kimax_u35wf
 
@@ -364,6 +366,7 @@ define Device/microwrt
   DTS := MicroWRT
   IMAGE_SIZE := 16128k
   DEVICE_TITLE := Microduino MicroWRT
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += microwrt
 
@@ -393,6 +396,7 @@ define Device/mlw221
   DTS := MLW221
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := Kingston MLW221
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += mlw221
 
@@ -400,6 +404,7 @@ define Device/mlwg2
   DTS := MLWG2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := Kingston MLWG2
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += mlwg2
 
@@ -454,6 +459,7 @@ define Device/na930
   DTS := NA930
   IMAGE_SIZE := 20m
   DEVICE_TITLE := Sercomm NA930
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += na930
 
@@ -461,6 +467,7 @@ define Device/oy-0001
   DTS := OY-0001
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := Oh Yeah OY-0001
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += oy-0001
 
@@ -510,6 +517,7 @@ TARGET_DEVICES += rt-n12p
 define Device/rt-n14u
   DTS := RT-N14U
   DEVICE_TITLE := Asus RT-N14u
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += rt-n14u
 
@@ -637,6 +645,7 @@ define Device/wrtnode
   DTS := WRTNODE
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := WRTNode
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += wrtnode
 
@@ -667,7 +676,7 @@ define Device/y1
   DTS := Y1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := Lenovo Y1
-  DEVICE_PACKAGES := kmod-mt76x2
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += y1
 
@@ -675,7 +684,7 @@ define Device/y1s
   DTS := Y1S
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := Lenovo Y1S
-  DEVICE_PACKAGES := kmod-mt76x2
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += y1s
 
@@ -713,6 +722,7 @@ TARGET_DEVICES += zbt-cpe102
 define Device/zbt-wa05
   DTS := ZBT-WA05
   DEVICE_TITLE := Zbtlink ZBT-WA05
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += zbt-wa05
 
@@ -742,11 +752,13 @@ TARGET_DEVICES += zbt-we826-32M
 define Device/zbt-wr8305rt
   DTS := ZBT-WR8305RT
   DEVICE_TITLE := Zbtlink ZBT-WR8305RT
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += zbt-wr8305rt
 
 define Device/zte-q7
   DTS := ZTE-Q7
   DEVICE_TITLE := ZTE Q7
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += zte-q7
