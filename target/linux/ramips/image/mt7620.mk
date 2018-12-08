@@ -165,7 +165,7 @@ TARGET_DEVICES += dir-810l
 define Device/dlink_dwr-116-a1
   DTS := DWR-116-A1
   DEVICE_TITLE := D-Link DWR-116 A1/A2
-  DEVICE_PACKAGES := kmod-usb2 jboot-tools
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci jboot-tools
   DLINK_ROM_ID := DLK6E3803001
   DLINK_FAMILY_MEMBER := 0x6E38
   DLINK_FIRMWARE_SIZE := 0x7E0000
@@ -179,7 +179,7 @@ TARGET_DEVICES += dlink_dwr-116-a1
 define Device/dlink_dwr-118-a1
   DTS := DWR-118-A1
   DEVICE_TITLE := D-Link DWR-118 A1
-  DEVICE_PACKAGES := kmod-usb2 jboot-tools kmod-mt76x0e
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci jboot-tools kmod-mt76x0e
   DLINK_ROM_ID := DLK6E3811001
   DLINK_FAMILY_MEMBER := 0x6E38
   DLINK_FIRMWARE_SIZE := 0xFE0000
@@ -193,7 +193,7 @@ TARGET_DEVICES += dlink_dwr-118-a1
 define Device/dlink_dwr-118-a2
   DTS := DWR-118-A2
   DEVICE_TITLE := D-Link DWR-118 A2
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 jboot-tools
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci jboot-tools
   DLINK_ROM_ID := DLK6E3814001
   DLINK_FAMILY_MEMBER := 0x6E38
   DLINK_FIRMWARE_SIZE := 0xFE0000
@@ -377,7 +377,7 @@ define Device/lava_lr-25g001
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
   IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
-  DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-mt76x0e
+  DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-usb-ohci kmod-mt76x0e
 endef
 TARGET_DEVICES += lava_lr-25g001
 
@@ -517,7 +517,7 @@ define Device/rt-ac51u
   DTS := RT-AC51U
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := Asus RT-AC51U
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb-core kmod-usb2 kmod-usb-ehci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-ehci kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += rt-ac51u
 
@@ -561,7 +561,7 @@ define Device/tplink_c20-v1
   TPLINK_HWREVADD := 0x1
   IMAGES += factory.bin
   DEVICE_TITLE := TP-Link ArcherC20 v1
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += tplink_c20-v1
 
