@@ -118,6 +118,9 @@ endif
 
 ifdef USE_GIT_TREE
   define Build/Prepare/Default
+    $(if $(wildcard $(BUILD_DIR)/$(PKG_NAME)*), \
+		rm -r $(BUILD_DIR)/$(PKG_NAME)*, \
+	)
 	mkdir -p $(PKG_BUILD_DIR)
 	ln -s $(CURDIR)/git-src $(PKG_BUILD_DIR)/.git
 	( cd $(PKG_BUILD_DIR); \

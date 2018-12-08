@@ -314,6 +314,9 @@ define Download
 
   $(DL_DIR)/$(FILE):
 	mkdir -p $(DL_DIR)
+	$(if $(wildcard $(DL_DIR)/$(PKG_NAME)*), \
+		rm $(DL_DIR)/$(PKG_NAME)*, \
+	)
 	$(call locked, \
 		$(if $(DownloadMethod/$(call dl_method,$(URL),$(PROTO))), \
 			$(call DownloadMethod/$(call dl_method,$(URL),$(PROTO)),check,$(if $(filter default,$(1)),PKG_,Download/$(1):)), \
