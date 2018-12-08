@@ -397,6 +397,9 @@ wrh-300cr)
 	set_wifi_led "$boardname:green:wlan"
 	ucidef_set_led_netdev "lan" "lan" "$boardname:green:ethernet" "eth0"
 	;;
+xzwifi,creativebox-v1)
+	ucidef_set_led_switch "internet" "internet" "$boardname:blue:internet" "switch0" "0x10"
+	;;
 y1)
 	ucidef_set_led_netdev "wifi" "WIFI" "$boardname:blue:wifi" "wlan1"
 	ucidef_set_led_netdev "wifi5g" "WIFI5G" "$boardname:blue:wifi5g" "wlan0"

@@ -121,6 +121,16 @@ define Device/mediatek_ap-mt7621a-v60
 endef
 TARGET_DEVICES += mediatek_ap-mt7621a-v60
 
+define Device/xzwifi_creativebox-v1
+  DTS := CreativeBox-v1
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  DEVICE_TITLE := CreativeBox v1
+  DEVICE_PACKAGES := \
+	kmod-ata-core kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
+	kmod-usb3
+endef
+TARGET_DEVICES += xzwifi_creativebox-v1
+
 define Device/elecom_wrc-1167ghbk2-s
   DTS := WRC-1167GHBK2-S
   IMAGE_SIZE := 15488k
