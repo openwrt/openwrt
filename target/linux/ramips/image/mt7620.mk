@@ -517,7 +517,7 @@ define Device/rt-ac51u
   DTS := RT-AC51U
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := Asus RT-AC51U
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-ehci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += rt-ac51u
 
@@ -561,7 +561,7 @@ define Device/tplink_c20-v1
   TPLINK_HWREVADD := 0x1
   IMAGES += factory.bin
   DEVICE_TITLE := TP-Link ArcherC20 v1
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += tplink_c20-v1
 
@@ -577,7 +577,7 @@ define Device/ravpower_wd03
   DTS := WD03
   IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Ravpower WD03
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ehci
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += ravpower_wd03
 
