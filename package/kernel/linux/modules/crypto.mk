@@ -502,8 +502,9 @@ ifndef CONFIG_TARGET_x86_64
 	$(LINUX_DIR)/arch/x86/crypto/glue_helper.ko \
 	$(LINUX_DIR)/crypto/ablk_helper.ko@lt4.17 \
 	$(LINUX_DIR)/crypto/cryptd.ko \
-	$(LINUX_DIR)/crypto/lrw.ko
-    AUTOLOAD+= $(call AutoLoad,10,lrw cryptd glue_helper \
+	$(LINUX_DIR)/crypto/lrw.ko@lt4.17 \
+	$(LINUX_DIR)/crypto/crypto_simd.ko@ge4.17
+    AUTOLOAD+= $(call AutoLoad,10,cryptd glue_helper \
 	serpent-sse2-i586 twofish-i586 blowfish_generic)
   endef
 endif
