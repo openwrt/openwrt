@@ -1,0 +1,70 @@
+/dts-v1/;
+
+#include "CreativeBox-v1.dtsi"
+
+/ {
+	compatible = "xzwifi,creativebox-v1-nor", "mediatek,mt7621-soc";
+	model = "CreativeBox v1 (NOR)";
+};
+
+&spi0 {
+	status = "okay";
+
+	m25p80@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0x1fb0000>;
+			};
+		};
+	};
+
+	spi-nand@1 {
+		compatible = "spi-nand";
+		reg = <1>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "snand-kernel";
+				reg = <0x0 0x300000>;
+			};
+
+			partition@300000 {
+				label = "snand-ubi";
+				reg = <0x300000 0xfd00000>;
+			};
+		};
+	};
+};

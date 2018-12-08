@@ -100,6 +100,12 @@ ramips_board_detect() {
 	*"CF-WR800N")
 		name="cf-wr800n"
 		;;
+	*"CreativeBox v1 (NOR)")
+		name="creativebox-v1-nor"
+		;;
+	*"CreativeBox v1 (NAND)")
+		name="creativebox-v1-nand"
+		;;
 	*"CS-QR10")
 		name="cs-qr10"
 		;;

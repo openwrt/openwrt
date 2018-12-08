@@ -121,6 +121,32 @@ define Device/mediatek_ap-mt7621a-v60
 endef
 TARGET_DEVICES += mediatek_ap-mt7621a-v60
 
+define Device/creativebox-v1-nor
+  DTS := CreativeBox-v1-nor
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  DEVICE_TITLE := CreativeBox v1 (NOR)
+  DEVICE_PACKAGES := \
+	kmod-ata-core kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
+	kmod-usb3 wpad-basic
+endef
+TARGET_DEVICES += creativebox-v1-nor
+
+define Device/creativebox-v1-nand
+  DTS := CreativeBox-v1-nand
+  DEVICE_TITLE := CreativeBox v1 (NAND)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 3072k
+  UBINIZE_OPTS := -E 5
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := \
+	kmod-ata-core kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
+	kmod-usb3 wpad-basic
+endef
+TARGET_DEVICES += creativebox-v1-nand
+
 define Device/elecom_wrc-1167ghbk2-s
   DTS := WRC-1167GHBK2-S
   IMAGE_SIZE := 15488k

@@ -37,6 +37,7 @@ platform_check_image() {
 	c108|\
 	carambola|\
 	cf-wr800n|\
+	creativebox-v1-nor|\
 	cs-qr10|\
 	d105|\
 	d240|\
@@ -307,6 +308,7 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	creativebox-v1-nand|\
 	hc5962|\
 	mir3g|\
 	r6220|\
@@ -364,6 +366,7 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	creativebox-v1-nand|\
 	hc5962|\
 	mir3g|\
 	r6220|\
