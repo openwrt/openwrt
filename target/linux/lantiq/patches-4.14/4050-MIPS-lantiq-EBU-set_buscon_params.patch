@@ -11,14 +11,22 @@
  /* WDT */
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
-@@ -514,6 +514,10 @@ void __init ltq_soc_init(void)
+@@ -147,7 +147,9 @@
  
- 	/* make sure to unprotect the memory region where flash is located */
+ static void __iomem *pmu_membase;
+ void __iomem *ltq_cgu_membase;
++
+ void __iomem *ltq_ebu_membase;
++EXPORT_SYMBOL(ltq_ebu_membase);
+ 
+ static u32 ifccr = CGU_IFCCR;
+ static u32 pcicr = CGU_PCICR;
+@@ -474,7 +476,7 @@
+ 	if (!pmu_membase || !ltq_cgu_membase || !ltq_ebu_membase)
+ 		panic("Failed to remap core resources");
+ 
+-	/* make sure to unprotect the memory region where flash is located */
++	/* make sure to unprotect the memory region where NOR flash is located */
  	ltq_ebu_w32(ltq_ebu_r32(LTQ_EBU_BUSCON0) & ~EBU_WRDIS, LTQ_EBU_BUSCON0);
-+	printk("%s:%s:%d LTQ_EBU_BUSCON2: 0x%08x\n",__FILE__,__FUNCTION__,__LINE__, ltq_ebu_r32(LTQ_EBU_BUSCON2));
-+	//ltq_ebu_w32(0x0001d7ff, LTQ_EBU_BUSCON2); // U-Boot setting
-+	ltq_ebu_w32(0x0001d3dd, LTQ_EBU_BUSCON2);   // init script setting
-+	printk("%s:%s:%d LTQ_EBU_BUSCON2: 0x%08x\n",__FILE__,__FUNCTION__,__LINE__, ltq_ebu_r32(LTQ_EBU_BUSCON2));
  
  	/* add our generic xway clocks */
- 	clkdev_add_pmu("10000000.fpi", NULL, 0, 0, PMU_FPI);
