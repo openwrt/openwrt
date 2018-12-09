@@ -177,7 +177,7 @@
 			interrupts = <135>;
 			eb904,interrupt-gpio = <&gpio  0 GPIO_ACTIVE_HIGH /* EXIN */>;
 			eb904,ctrl-rst-gpio = <&hc595 2 GPIO_ACTIVE_LOW /* rst */>;
-            eb904,alphas = /bits/ 8
+			eb904,alphas = /bits/ 8
 				 <0x07 /* left */
 				  0x0a /* down */
 				  0x0a /* right */
@@ -248,104 +248,112 @@
 };
 
 &localbus {
-    ranges = <0 0 0x4000000 0x3ffffff>; // Default in vr9.dtsi is crashing the machine.
-    nand@0 {
-            compatible = "lantiq,nand-xway";
-            bank-width = <2>;
-            reg = <0 0x0 0x2000000>;
-            #address-cells = <1>;
-            #size-cells = <1>;
-            lantiq,cs = <1>;			// Seems to be needed (EASY80920NAND.dts)
+    //	#address-cells = <2>;					// Just for info. From vr9.dtsi
+    //	#size-cells = <1>;
+    //	ranges = <0 0 0x0       0x3ffffff			// addrsel0	0x3ffffff and 0x4000010 in vr9.dtsi seem to be wrong, because these are size
+    //    	  1 0 0x4000000 0x4000010>;			// addrsel1	parameters. Not really a problem; the drivers we have use their own hardcoded values
 
-            nand-on-flash-bbt;
-            nand-ecc-strength = <3>;
-            nand-ecc-step-size = <256>;
+	ranges = <0 0 0x0       0x2000000			// addrsel0	Was set up this way by arcadian eb904 U-Boot for nand. Not used by eb904 linux
+		  1 0 0x2000000 0x1000000			// addrsel1	Size 0x1000000 hardcoded in xway_nand.c. Excessive, as first 0x80 is used only
+		  2 0 0x3000000 0x0000800>;			// addrsel2	Size 0x800 hardcoded in display driver. This is the min size supported by ebu
 
-            partitions {
-                compatible = "fixed-partitions";
-                #address-cells = <1>;
-                #size-cells = <1>;
-                partition@0 {
-                    label = "uboot";
-                    reg = <0x0 0x40000>;
-                };
+	nand@1 {						// @1 because using ebu BUSCON1/ADDSEL1
+		compatible = "lantiq,nand-xway";
+		reg = <1 0x0 0x80>;				// Only adresses 0x0..0x7F needed (but driver ignores size 0x80 and tells ebu to map 0x1000000)
 
-                partition@40000 {
-                    label = "rootfs1";		// Called "rootfs" in original u-boot env.
-                    reg = <0x40000 0x3C00000>;	// Auto mounted as rootfs if no UBI volume named "rootfs" exists
-                };
+	    //	bank-width = <2>;				// Not used by any driver code
+		#address-cells = <1>;
+		#size-cells = <1>;
+		lantiq,cs = <1>;				// Seems to be needed (EASY80920NAND.dts)
 
-                partition@3C40000 {
-                    label = "kernel";		// Called "kernel" in original u-boot env.
-                    reg = <0x3C40000 0x500000>;
-                };
+		nand-on-flash-bbt;
 
-                partition@4140000 {
-                    label = "tmp1";
-                    reg = <0x4140000 0x100000>;
-                };
+		partitions {
+		compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-                partition@4240000 {
-                    label = "tmp2";
-                    reg = <0x4240000 0x200000>;
-                };
+			partition@0 {
+				label = "uboot";
+				reg = <0x0 0x40000>;
+			};
 
-                partition@4440000 {
-                    label = "sysconfig";
-                    reg = <0x4440000 0x100000>;
-                };
+			partition@40000 {
+				label = "rootfs1";		// Called "rootfs" in original u-boot env.
+				reg = <0x40000 0x3C00000>;	// Auto mounted as rootfs if no UBI volume named "rootfs" exists
+			};
 
-                partition@4540000 {
-                    label = "ubootconfig";
-                    reg = <0x4540000 0x100000>;
-                };
+			partition@3C40000 {
+				label = "kernel";		// Called "kernel" in original u-boot env.
+				reg = <0x3C40000 0x500000>;
+			};
 
-                partition@4640000 {
-                    label = "fwdiag";
-                    reg = <0x4640000 0xC0000>;
-                };
+			partition@4140000 {
+				label = "tmp1";
+				reg = <0x4140000 0x100000>;
+			};
 
-                partition@4700000 {
-                    label = "lcdimage";
-                    reg = <0x4700000 0x300000>;
-                };
+			partition@4240000 {
+				label = "tmp2";
+				reg = <0x4240000 0x200000>;
+			};
 
-                partition@4A00000 {
-                    label = "mfgconfig";
-                    reg = <0x4A00000 0x100000>;
-                };
+			partition@4440000 {
+				label = "sysconfig";
+				reg = <0x4440000 0x100000>;
+			};
 
-                partition@4B00000 {
-                    label = "sipdata";
-                    reg = <0x4B00000 0x100000>;
-                };
+			partition@4540000 {
+				label = "ubootconfig";
+				reg = <0x4540000 0x100000>;
+			};
 
-                partition@4C00000 {
-                    label = "voice";
-                    reg = <0x4C00000 0x4000000>;
-                };
+			partition@4640000 {
+				label = "fwdiag";
+				reg = <0x4640000 0xC0000>;
+			};
 
-                partition@8C00000 {			// Called "misc" in original u-boot env.
-                    label = "ubi";			// Rename to "ubi" for auto ubi attachment and usage of rootfs, rootfs_data, kernel volumes
-                    reg = <0x8C00000 0x13200000>;	// Rename to "firmware" for special squashfs-rootfs/jffs2-rootfs_data treatment
-                };
+			partition@4700000 {
+				label = "lcdimage";
+				reg = <0x4700000 0x300000>;
+			};
 
-                partition@1BE00000 {
-                    label = "rootfs2";
-                    reg = <0x1BE00000 0x3c00000>;
-                };
+			partition@4A00000 {
+				label = "mfgconfig";
+				reg = <0x4A00000 0x100000>;
+			};
 
-                partition@1FA00000 {
-                    label = "kernel2";
-                    reg = <0x1FA00000 0x500000>;
-                };
+			partition@4B00000 {
+				label = "sipdata";
+				reg = <0x4B00000 0x100000>;
+			};
 
-                partition@1FF00000 {
-                    label = "mystery";		// Missing in original u-boot environment, seems to be empty (erased)
-                    reg = <0x1FF00000 0x100000>;
-                };
-            };
-    };
+			partition@4C00000 {
+				label = "voice";
+				reg = <0x4C00000 0x4000000>;
+			};
+
+			partition@8C00000 {			// Called "misc" in original u-boot env.
+				label = "ubi";			// Rename to "ubi" for auto ubi attachment and usage of rootfs, rootfs_data, kernel volumes
+				reg = <0x8C00000 0x13200000>;	// Rename to "firmware" for special squashfs-rootfs/jffs2-rootfs_data treatment
+			};
+
+			partition@1BE00000 {
+				label = "rootfs2";
+				reg = <0x1BE00000 0x3c00000>;
+			};
+
+			partition@1FA00000 {
+				label = "kernel2";
+				reg = <0x1FA00000 0x500000>;
+			};
+
+			partition@1FF00000 {
+				label = "mystery";		// Missing in original u-boot environment, seems to be empty (erased)
+				reg = <0x1FF00000 0x100000>;
+			};
+		};
+	};
 };
 
 /*
@@ -373,7 +381,7 @@
 
 		pcie-rst {
 			lantiq,pins = "io38";				// FRITZ3370.dts, TDW8970.dts, EASY80920.dtsi, P2812HNUFX.dtsi
-		   //  	lantiq,pins = "io21";				// ARV7519RW22.dts
+		   //	lantiq,pins = "io21";				// ARV7519RW22.dts
 			lantiq,pull = <0>;
 			lantiq,output = <1>;
 		};
@@ -396,21 +404,21 @@
 };
 
 &usb_phy0 {
-    status = "okay";
+	status = "okay";
 };
 
 &usb_phy1 {
-    status = "okay";
+	status = "okay";
 };
 
 &usb0 {
-    status = "okay";
-    vbus-supply = <&usb_vbus>;
+	status = "okay";
+	vbus-supply = <&usb_vbus>;
 };
 
 &usb1 {
-    status = "okay";
-    vbus-supply = <&usb_vbus>;
+	status = "okay";
+	vbus-supply = <&usb_vbus>;
 };
 
 &eth0 {
