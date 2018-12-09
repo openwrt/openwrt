@@ -85,12 +85,12 @@
 		linux@20000 {
 			label = "linux";
 			reg = <0x020000 0x770000>;
+			compatible = "brcm,bcm963xx-imagetag";
 		};
 
 		board_data@790000 {
 			label = "board_data";
 			reg = <0x790000 0x030000>;
-			compatible = "brcm,bcm963xx-imagetag";
 		};
 
 		cal_data@7c0000 {
