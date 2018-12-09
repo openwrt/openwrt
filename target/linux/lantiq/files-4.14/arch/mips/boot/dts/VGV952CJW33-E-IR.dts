@@ -40,20 +40,6 @@
 		reg = <0x0 0x8000000>;
 	};
 
-	easybox904-display{
-		compatible = "ilitek,ili9341_eb904";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "okay";
-		rotate = <270>;
-		fps = <30>;
-		bgr;
-		buswidth = <8>;
-		reset-gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
-		led-gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
-		debug = <1>;
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -353,6 +339,19 @@
 				reg = <0x1FF00000 0x100000>;
 			};
 		};
+	};
+
+	display@2 {						// @2 because using ebu BUSCON2/ADDSEL2. Name not 'easybox904-display',
+		compatible = "ilitek,ili9341_eb904";		// see 'Node Names' at https://elinux.org/Device_Tree_Usage
+		reg = <2 0x0 0x4>;				// Size 0x4 contains 2 byte data and 2 byte command registers
+		status = "okay";
+		rotate = <270>;
+		fps = <30>;
+		bgr;
+		buswidth = <8>;
+		reset-gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		led-gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
+		debug = <1>;
 	};
 };
 
