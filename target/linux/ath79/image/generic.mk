@@ -156,6 +156,14 @@ define Device/buffalo_wzr-hp-g450h
 endef
 TARGET_DEVICES += buffalo_wzr-hp-g450h
 
+define Device/comfast_cf-e110n-v2
+  ATH_SOC := qca9533
+  DEVICE_TITLE := COMFAST CF-E110N v2
+  DEVICE_PACKAGES := rssileds kmod-leds-gpio -swconfig -uboot-envtools
+  IMAGE_SIZE := 16192k
+endef
+TARGET_DEVICES += comfast_cf-e110n-v2
+
 define Device/devolo_dvl1200e
   ATH_SOC := qca9558
   DEVICE_TITLE := devolo WiFi pro 1200e
