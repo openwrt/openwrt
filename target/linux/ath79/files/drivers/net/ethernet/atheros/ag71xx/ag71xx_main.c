@@ -1516,9 +1516,9 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	ag71xx_dump_regs(ag);
 
-	if(!of_device_is_compatible(np, "simple-mfd")) {
+	if (!of_device_is_compatible(np, "simple-mfd")) {
 		mdio_node = of_get_child_by_name(np, "mdio-bus");
-		if(!IS_ERR(mdio_node))
+		if (!IS_ERR(mdio_node))
 			of_platform_device_create(mdio_node, NULL, NULL);
 	}
 
