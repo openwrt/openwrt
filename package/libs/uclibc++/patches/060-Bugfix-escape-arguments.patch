@@ -1,0 +1,18 @@
+--- a/bin/Makefile	2018-12-10 13:14:47.824789823 -0700
++++ b/bin/Makefile	2018-12-10 13:16:25.602465991 -0700
+@@ -24,7 +24,7 @@
+ 	echo 'WRAPPER_INCLIB="Y"' >> $@
+ 	echo 'while [ -n "$$1" ]' >> $@
+ 	echo 'do' >> $@
+-	echo '	WRAPPER_OPTIONS="$$WRAPPER_OPTIONS $$1"' >> $@
++	echo '	WRAPPER_OPTIONS="$$WRAPPER_OPTIONS '"'"'$$1'"'"'"' >> $@
+ 	echo '	if [ "$$1" = "-c" -o "$$1" = "-E" -o "$$1" = "-S" -o "$$1" = "-MF" ]' >> $@
+ 	echo '	then' >> $@
+ 	echo '		WRAPPER_INCLIB="N"' >> $@
+@@ -45,5 +45,5 @@
+ ifeq ($(DODEBUG),y)
+ 	echo 'echo $(CXX) $(GEN_CFLAGS) $(GEN_CXXFLAGS) $(EH_CXXFLAGS) $$WRAPPER_INCLUDEDIR $$WRAPPER_OPTIONS' >> $@
+ endif
+-	echo 'exec $(CXX) $(GEN_CFLAGS) $(GEN_CXXFLAGS) $(EH_CXXFLAGS) $$WRAPPER_INCLUDEDIR $$WRAPPER_OPTIONS' >> $@
++	echo 'eval $(CXX) $(GEN_CFLAGS) $(GEN_CXXFLAGS) $(EH_CXXFLAGS) "$$WRAPPER_INCLUDEDIR" "$$WRAPPER_OPTIONS"' >> $@
+ 	chmod 755 $@
