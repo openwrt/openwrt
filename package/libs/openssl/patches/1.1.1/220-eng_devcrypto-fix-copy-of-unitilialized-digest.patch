@@ -1,12 +1,18 @@
-From b16e2cc0c74272bdec194414e14b9421fd4ad1b0 Mon Sep 17 00:00:00 2001
+From 68b02a8ab798b7e916c8141a36ab69d7493fc707 Mon Sep 17 00:00:00 2001
 From: Eneas U de Queiroz <cote2004-github@yahoo.com>
 Date: Wed, 14 Nov 2018 13:58:06 -0200
-Subject: [PATCH 3/5] eng_devcrypto: fix copy of unitilialized digest
+Subject: [PATCH 3/7] eng_devcrypto: fix copy of unitilialized digest
 
 If the source ctx has not been initialized, don't initialize the copy
 either.
 
 Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
+
+Reviewed-by: Matthias St. Pierre <Matthias.St.Pierre@ncp-e.com>
+Reviewed-by: Richard Levitte <levitte@openssl.org>
+(Merged from https://github.com/openssl/openssl/pull/7585)
+
+(cherry picked from commit ae8183690fa53b978d4647563f5a521c4cafe94c)
 
 diff --git a/crypto/engine/eng_devcrypto.c b/crypto/engine/eng_devcrypto.c
 index 6f6bcb8dc6..a9ddc9c86b 100644

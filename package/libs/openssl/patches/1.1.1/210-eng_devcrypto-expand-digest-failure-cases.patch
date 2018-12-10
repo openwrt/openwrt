@@ -1,12 +1,18 @@
-From c09863cedee100d2b9cff3b00c941c6a5f486f5e Mon Sep 17 00:00:00 2001
+From add2ab1f289c24a1563c5b895d5cd133fe874f12 Mon Sep 17 00:00:00 2001
 From: Eneas U de Queiroz <cote2004-github@yahoo.com>
 Date: Wed, 14 Nov 2018 11:22:14 -0200
-Subject: [PATCH 2/5] eng_devcrypto: expand digest failure cases
+Subject: [PATCH 2/7] eng_devcrypto: expand digest failure cases
 
 Return failure when the digest_ctx is null in digest_update and
 digest_final, and when md is null in digest_final.
 
 Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
+
+Reviewed-by: Matthias St. Pierre <Matthias.St.Pierre@ncp-e.com>
+Reviewed-by: Richard Levitte <levitte@openssl.org>
+(Merged from https://github.com/openssl/openssl/pull/7585)
+
+(cherry picked from commit 4d9f99654441e36fdcb49540a1dbc9d4c70ccb68)
 
 diff --git a/crypto/engine/eng_devcrypto.c b/crypto/engine/eng_devcrypto.c
 index ee26398b69..6f6bcb8dc6 100644
