@@ -121,6 +121,7 @@ enum ath79_mach_type {
 	ATH79_MACH_EPG5000,			/* EnGenius EPG5000 */
 	ATH79_MACH_ESR1750,			/* EnGenius ESR1750 */
 	ATH79_MACH_ESR900,			/* EnGenius ESR900 */
+	ATH79_MACH_EWS511AP,			/* EnGenius EWS511AP */
 	ATH79_MACH_EW_BALIN,			/* embedded wireless Balin Platform */
 	ATH79_MACH_EW_DORIN,			/* embedded wireless Dorin Platform */
 	ATH79_MACH_EW_DORIN_ROUTER,		/* embedded wireless Dorin Router Platform */

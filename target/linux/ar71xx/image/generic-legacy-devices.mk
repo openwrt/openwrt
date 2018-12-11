@@ -248,6 +248,12 @@ define LegacyDevice/EPG5000
 endef
 LEGACY_DEVICES += EPG5000
 
+define LegacyDevice/EWS511AP
+  DEVICE_TITLE := EnGenius EWS511AP
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+endef
+LEGACY_DEVICES += EWS511AP
+
 define LegacyDevice/WP543_8M
   DEVICE_TITLE := Compex WP543/WPJ543 (8MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2

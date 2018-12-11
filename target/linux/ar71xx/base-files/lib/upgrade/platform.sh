@@ -261,6 +261,7 @@ platform_check_image() {
 	epg5000|\
 	esr1750|\
 	esr900|\
+	ews511ap|\
 	ew-balin|\
 	ew-dorin|\
 	ew-dorin-router|\

@@ -224,7 +224,8 @@ get_status_led() {
 		status_led="engenius:blue:power"
 		;;
 	ens202ext|\
-	esr900)
+	esr900|\
+	ews511ap)
 		status_led="engenius:amber:power"
 		;;
 	eap7660d)
