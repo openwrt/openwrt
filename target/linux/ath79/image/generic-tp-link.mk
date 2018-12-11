@@ -99,6 +99,15 @@ define Device/tplink_tl-wr1043nd-v1
 endef
 TARGET_DEVICES += tplink_tl-wr1043nd-v1
 
+define Device/tplink_tl-wr842n-v1
+  $(Device/tplink-8m)
+  ATH_SOC := ar7241
+  DEVICE_TITLE := TP-LINK TL-WR842N/ND v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x8420001
+endef
+TARGET_DEVICES += tplink_tl-wr842n-v1
+
 define Device/tplink_tl-wr842n-v2
   $(Device/tplink-8mlzma)
   ATH_SOC := ar9341
