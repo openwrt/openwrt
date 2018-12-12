@@ -117,3 +117,7 @@
 	mtd-cal-data = <&eeprom 0x1000>;
 	mtd-mac-address = <&eeprom 0x1002>;
 };
+
+&eth0 {
+	mtd-mac-address = <&eeprom 0x0>;
+};
