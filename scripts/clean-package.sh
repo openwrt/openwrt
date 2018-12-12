@@ -14,7 +14,7 @@ cat "$1" | (
 		[ -f "$entry" ] && rm -f $entry
 	done
 )
-cat "$1" | (
+sort -r "$1" | (
 	cd "$2"
 	while read entry; do
 		[ -n "$entry" ] || break
