@@ -210,7 +210,37 @@ static struct device_info boards[] = {
 			"CPE510(TP-LINK|EU|N300-5):1.1\r\n"
 			"CPE520(TP-LINK|UN|N300-5):1.1\r\n"
 			"CPE520(TP-LINK|US|N300-5):1.1\r\n"
-			"CPE520(TP-LINK|EU|N300-5):1.1\r\n"
+			"CPE520(TP-LINK|EU|N300-5):1.1\r\n",
+		.support_trail = '\xff',
+		.soft_ver = NULL,
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"partition-table", 0x20000, 0x02000},
+			{"default-mac", 0x30000, 0x00020},
+			{"product-info", 0x31100, 0x00100},
+			{"signature", 0x32000, 0x00400},
+			{"os-image", 0x40000, 0x1c0000},
+			{"file-system", 0x200000, 0x5b0000},
+			{"soft-version", 0x7b0000, 0x00100},
+			{"support-list", 0x7b1000, 0x00400},
+			{"user-config", 0x7c0000, 0x10000},
+			{"default-config", 0x7d0000, 0x10000},
+			{"log", 0x7e0000, 0x10000},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "support-list",
+	},
+
+	/** Firmware layout for the CPE510 V2 */
+	{
+		.id	= "CPE510V2",
+		.vendor	= "CPE510(TP-LINK|EU|N300-5|00000000):2.0\r\n",
+		.support_list =
+			"SupportList:\r\n"
 			"CPE510(TP-LINK|EU|N300-5|00000000):2.0\r\n"
 			"CPE510(TP-LINK|EU|N300-5|45550000):2.0\r\n"
 			"CPE510(TP-LINK|EU|N300-5|55530000):2.0\r\n"
@@ -218,6 +248,7 @@ static struct device_info boards[] = {
 			"CPE510(TP-LINK|UN|N300-5|45550000):2.0\r\n"
 			"CPE510(TP-LINK|UN|N300-5|55530000):2.0\r\n"
 			"CPE510(TP-LINK|US|N300-5|55530000):2.0\r\n"
+			"CPE510(TP-LINK|CA|N300-5|43410000):2.0\r\n"
 			"CPE510(TP-LINK|UN|N300-5):2.0\r\n"
 			"CPE510(TP-LINK|EU|N300-5):2.0\r\n"
 			"CPE510(TP-LINK|US|N300-5):2.0\r\n",

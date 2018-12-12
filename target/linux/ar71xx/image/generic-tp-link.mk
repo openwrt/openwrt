@@ -177,6 +177,14 @@ define Device/cpe510-520-v1
 endef
 TARGET_DEVICES += cpe510-520-v1
 
+define Device/cpe510-v2
+  $(Device/cpe510-520-v1)
+  DEVICE_TITLE := TP-LINK CPE510 v2
+  BOARDNAME := CPE510V2
+  TPLINK_BOARD_ID := CPE510V2
+endef
+TARGET_DEVICES += cpe510-v2
+
 define Device/cpe210-220-v1
   $(Device/cpe510-520-v1)
   DEVICE_TITLE := TP-LINK CPE210/220 v1
