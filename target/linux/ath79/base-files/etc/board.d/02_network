@@ -212,6 +212,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
+	ubnt,nanostation-m-xw)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "5:lan" "1:wan"
+		;;
 	ubnt,nanostation-ac|\
 	ubnt,unifiac-mesh-pro|\
 	ubnt,unifiac-pro)
