@@ -113,6 +113,12 @@ define Device/ubnt_nano-m
 endef
 TARGET_DEVICES += ubnt_nano-m
 
+define Device/ubnt_nanostation-m-xw
+  $(Device/ubnt-xw)
+  DEVICE_TITLE := Ubiquiti Nanostation M (XW)
+endef
+TARGET_DEVICES += ubnt_nanostation-m-xw
+
 define Device/ubnt_lap-120
   $(Device/ubnt-wa)
   DEVICE_TITLE := Ubiquiti LiteAP ac (LAP-120)
