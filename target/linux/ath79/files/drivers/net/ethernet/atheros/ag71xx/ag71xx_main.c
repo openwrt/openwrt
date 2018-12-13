@@ -162,7 +162,7 @@ static void ag71xx_ring_rx_clean(struct ag71xx *ag)
 
 	for (i = 0; i < ring_size; i++)
 		if (ring->buf[i].rx_buf) {
-			dma_unmap_single(&ag->dev->dev, ring->buf[i].dma_addr,
+			dma_unmap_single(&ag->pdev->dev, ring->buf[i].dma_addr,
 					 ag->rx_buf_size, DMA_FROM_DEVICE);
 			skb_free_frag(ring->buf[i].rx_buf);
 		}
@@ -187,7 +187,7 @@ static bool ag71xx_fill_rx_buf(struct ag71xx *ag, struct ag71xx_buf *buf,
 		return false;
 
 	buf->rx_buf = data;
-	buf->dma_addr = dma_map_single(&ag->dev->dev, data, ag->rx_buf_size,
+	buf->dma_addr = dma_map_single(&ag->pdev->dev, data, ag->rx_buf_size,
 				       DMA_FROM_DEVICE);
 	desc->data = (u32) buf->dma_addr + offset;
 	return true;
@@ -276,7 +276,7 @@ static int ag71xx_rings_init(struct ag71xx *ag)
 	if (!tx->buf)
 		return -ENOMEM;
 
-	tx->descs_cpu = dma_alloc_coherent(NULL, ring_size * AG71XX_DESC_SIZE,
+	tx->descs_cpu = dma_alloc_coherent(&ag->pdev->dev, ring_size * AG71XX_DESC_SIZE,
 					   &tx->descs_dma, GFP_ATOMIC);
 	if (!tx->descs_cpu) {
 		kfree(tx->buf);
@@ -299,7 +299,7 @@ static void ag71xx_rings_free(struct ag71xx *ag)
 	int ring_size = BIT(tx->order) + BIT(rx->order);
 
 	if (tx->descs_cpu)
-		dma_free_coherent(NULL, ring_size * AG71XX_DESC_SIZE,
+		dma_free_coherent(&ag->pdev->dev, ring_size * AG71XX_DESC_SIZE,
 				  tx->descs_cpu, tx->descs_dma);
 
 	kfree(tx->buf);
@@ -879,7 +879,7 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 		goto err_drop;
 	}
 
-	dma_addr = dma_map_single(&dev->dev, skb->data, skb->len,
+	dma_addr = dma_map_single(&ag->pdev->dev, skb->data, skb->len,
 				  DMA_TO_DEVICE);
 
 	i = ring->curr & ring_mask;
@@ -921,7 +921,7 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 	return NETDEV_TX_OK;
 
 err_drop_unmap:
-	dma_unmap_single(&dev->dev, dma_addr, skb->len, DMA_TO_DEVICE);
+	dma_unmap_single(&ag->pdev->dev, dma_addr, skb->len, DMA_TO_DEVICE);
 
 err_drop:
 	dev->stats.tx_dropped++;
@@ -1134,7 +1134,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		pktlen = desc->ctrl & pktlen_mask;
 		pktlen -= ETH_FCS_LEN;
 
-		dma_unmap_single(&dev->dev, ring->buf[i].dma_addr,
+		dma_unmap_single(&ag->pdev->dev, ring->buf[i].dma_addr,
 				 ag->rx_buf_size, DMA_FROM_DEVICE);
 
 		dev->stats.rx_packets++;
