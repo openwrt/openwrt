@@ -106,6 +106,7 @@ endif
 
 ifeq ($(BUILD_VARIANT),tc)
   HAVE_ELF:=y
+  SHARED_LIBS:=y
 endif
 
 ifdef CONFIG_PACKAGE_devlink
@@ -127,7 +128,7 @@ TARGET_CPPFLAGS += -I$(STAGING_DIR)/usr/include/libnl-tiny
 
 MAKE_FLAGS += \
 	KERNEL_INCLUDE="$(LINUX_DIR)/user_headers/include" \
-	SHARED_LIBS="" \
+	SHARED_LIBS=$(SHARED_LIBS) \
 	IP_CONFIG_TINY=$(IP_CONFIG_TINY) \
 	HAVE_ELF=$(HAVE_ELF) \
 	HAVE_MNL=$(HAVE_MNL) \
@@ -164,6 +165,10 @@ define Package/tc/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tc/tc $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_BIN) ./files/15-teql $(1)/etc/hotplug.d/iface/
+ifeq ($(SHARED_LIBS),y)
+	$(INSTALL_DIR) $(1)/usr/lib/tc
+	$(CP) $(PKG_BUILD_DIR)/tc/*.so $(1)/usr/lib/tc
+endif
 endef
 
 # ensure other packages are only saved during 'tiny' builds.
