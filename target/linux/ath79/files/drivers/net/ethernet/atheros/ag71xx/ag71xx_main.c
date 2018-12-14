@@ -1318,26 +1318,6 @@ static const struct net_device_ops ag71xx_netdev_ops = {
 #endif
 };
 
-static const char *ag71xx_get_phy_if_mode_name(phy_interface_t mode)
-{
-	switch (mode) {
-	case PHY_INTERFACE_MODE_MII:
-		return "MII";
-	case PHY_INTERFACE_MODE_GMII:
-		return "GMII";
-	case PHY_INTERFACE_MODE_RMII:
-		return "RMII";
-	case PHY_INTERFACE_MODE_RGMII:
-		return "RGMII";
-	case PHY_INTERFACE_MODE_SGMII:
-		return "SGMII";
-	default:
-		break;
-	}
-
-	return "unknown";
-}
-
 static int ag71xx_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
@@ -1549,9 +1529,9 @@ static int ag71xx_probe(struct platform_device *pdev)
 		goto err_phy_disconnect;
 	}
 
-	pr_info("%s: Atheros AG71xx at 0x%08lx, irq %d, mode:%s\n",
+	pr_info("%s: Atheros AG71xx at 0x%08lx, irq %d, mode: %s\n",
 		dev->name, (unsigned long) ag->mac_base, dev->irq,
-		ag71xx_get_phy_if_mode_name(ag->phy_if_mode));
+		phy_modes(ag->phy_if_mode));
 
 	return 0;
 
