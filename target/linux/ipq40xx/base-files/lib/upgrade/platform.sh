@@ -112,7 +112,8 @@ platform_do_upgrade() {
 		;;
 	openmesh,a42 |\
 	openmesh,a62 |\
-	plasmacloud,pa1200)
+	plasmacloud,pa1200 |\
+	plasmacloud,pa2200)
 		PART_NAME="inactive"
 		platform_do_upgrade_dualboot_datachk "$1"
 		;;

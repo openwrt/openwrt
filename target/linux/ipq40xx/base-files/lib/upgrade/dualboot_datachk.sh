@@ -48,6 +48,7 @@ platform_do_upgrade_dualboot_datachk() {
 	openmesh,a42)
 		primary_kernel_mtd=8
 		;;
+	plasmacloud,pa2200|\
 	openmesh,a62)
 		primary_kernel_mtd=10
 		;;
