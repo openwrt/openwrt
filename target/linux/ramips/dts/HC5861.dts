@@ -60,6 +60,14 @@
 	};
 };
 
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};
+
 &ethernet {
 	status = "okay";
 	mtd-mac-address = <&factory 0x4>;
@@ -96,6 +104,10 @@
 
 &gsw {
 	mediatek,port4 = "gmac";
+};
+
+&pcie {
+	status = "okay";
 };
 
 &pcie0 {
