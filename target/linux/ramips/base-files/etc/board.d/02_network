@@ -304,7 +304,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
-	hc5*61|\
+	hc5661|\
+	hc5861|\
 	y1s)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:lan" "0:wan" "6@eth0"
@@ -326,6 +327,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "6t@eth0"
 		ucidef_set_interface_wan "usb0"
+		;;
+	hc5761)
+		ucidef_add_switch "switch0" \
+			"1:lan" "4:lan" "0:wan" "6@eth0"
 		;;
 	mzk-dp150n|\
 	vocore-8M|\
