@@ -1323,7 +1323,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 	if (!np)
 		return -ENODEV;
 
-	dev = alloc_etherdev(sizeof(*ag));
+	dev = devm_alloc_etherdev(&pdev->dev, sizeof(*ag));
 	if (!dev)
 		return -ENOMEM;
 
@@ -1347,8 +1347,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 	ag->mac_reset = devm_reset_control_get(&pdev->dev, "mac");
 	if (IS_ERR(ag->mac_reset)) {
 		dev_err(&pdev->dev, "missing mac reset\n");
-		err = PTR_ERR(ag->mac_reset);
-		goto err_free;
+		return PTR_ERR(ag->mac_reset);
 	}
 
 	if (of_property_read_u32_array(np, "fifo-data", ag->fifodata, 3)) {
@@ -1381,18 +1380,15 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	ag->mac_base = devm_ioremap_nocache(&pdev->dev, res->start,
 					    res->end - res->start + 1);
-	if (!ag->mac_base) {
-		err = -ENOMEM;
-		goto err_free;
-	}
+	if (!ag->mac_base)
+		return -ENOMEM;
+
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
 	if (res) {
 		ag->mii_base = devm_ioremap_nocache(&pdev->dev, res->start,
 					    res->end - res->start + 1);
-		if (!ag->mii_base) {
-			err = -ENOMEM;
-			goto err_free;
-		}
+		if (!ag->mii_base)
+			return -ENOMEM;
 	}
 
 	dev->irq = platform_get_irq(pdev, 0);
@@ -1400,7 +1396,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 			       0x0, dev_name(&pdev->dev), dev);
 	if (err) {
 		dev_err(&pdev->dev, "unable to request IRQ %d\n", dev->irq);
-		goto err_free;
+		return err;
 	}
 
 	dev->netdev_ops = &ag71xx_netdev_ops;
@@ -1451,7 +1447,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 					    sizeof(struct ag71xx_desc),
 					    &ag->stop_desc_dma, GFP_KERNEL);
 	if (!ag->stop_desc)
-		goto err_free;
+		return -ENOMEM;
 
 	ag->stop_desc->data = 0;
 	ag->stop_desc->ctrl = 0;
@@ -1468,8 +1464,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 	ag->phy_if_mode = of_get_phy_mode(np);
 	if (ag->phy_if_mode < 0) {
 		dev_err(&pdev->dev, "missing phy-mode property in DT\n");
-		err = ag->phy_if_mode;
-		goto err_free;
+		return ag->phy_if_mode;
 	}
 
 	if (of_property_read_u32(np, "qca,mac-idx", &ag->mac_idx))
@@ -1504,7 +1499,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	err = ag71xx_phy_connect(ag);
 	if (err)
-		goto err_free;
+		return err;
 
 	err = ag71xx_debugfs_init(ag);
 	if (err)
@@ -1528,8 +1523,6 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 err_phy_disconnect:
 	ag71xx_phy_disconnect(ag);
-err_free:
-	free_netdev(dev);
 	return err;
 }
 
@@ -1545,11 +1538,7 @@ static int ag71xx_remove(struct platform_device *pdev)
 	ag71xx_debugfs_exit(ag);
 	ag71xx_phy_disconnect(ag);
 	unregister_netdev(dev);
-	free_irq(dev->irq, dev);
-	iounmap(ag->mac_base);
-	kfree(dev);
 	platform_set_drvdata(pdev, NULL);
-
 	return 0;
 }
 
