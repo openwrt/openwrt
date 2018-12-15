@@ -53,14 +53,6 @@ ath10kcal_ubi_extract() {
 		ath10kcal_die "failed to extract from $ubi"
 }
 
-ath10kcal_patch_mac() {
-	local mac=$1
-
-	[ -z "$mac" ] && return
-
-	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=6 count=6
-}
-
 ath10kcal_patch_mac_crc() {
 	local mac=$1
 	local mac_offset=6
@@ -69,19 +61,21 @@ ath10kcal_patch_mac_crc() {
 	local xor_fw_mac
 	local xor_fw_chksum
 
+	[ -z "$mac" ] && return
+
 	xor_fw_mac=$(hexdump -v -n 6 -s $mac_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
 	xor_fw_mac="${xor_fw_mac:0:4} ${xor_fw_mac:4:4} ${xor_fw_mac:8:4}"
 
-	ath10kcal_patch_mac "$mac" && {
-		xor_mac=${mac//:/}
-		xor_mac="${xor_mac:0:4} ${xor_mac:4:4} ${xor_mac:8:4}"
+	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=6 count=6
 
-		xor_fw_chksum=$(hexdump -v -n 2 -s $chksum_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
-		xor_fw_chksum=$(xor $xor_fw_chksum $xor_fw_mac $xor_mac)
+	xor_mac=${mac//:/}
+	xor_mac="${xor_mac:0:4} ${xor_mac:4:4} ${xor_mac:8:4}"
 
-		printf "%b" "\x${xor_fw_chksum:0:2}\x${xor_fw_chksum:2:2}" | \
-			dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=$chksum_offset count=2
-	}
+	xor_fw_chksum=$(hexdump -v -n 2 -s $chksum_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
+	xor_fw_chksum=$(xor $xor_fw_chksum $xor_fw_mac $xor_mac)
+
+	printf "%b" "\x${xor_fw_chksum:0:2}\x${xor_fw_chksum:2:2}" | \
+		dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=$chksum_offset count=2
 }
 
 ath10kcal_is_caldata_valid() {
@@ -106,7 +100,7 @@ case "$FIRMWARE" in
 	meraki,mr33)
 		ath10kcal_ubi_extract "ART" 36864 2116
 		ath10kcal_is_caldata_valid "4408" || ath10kcal_extract "ART" 36864 2116
-		ath10kcal_patch_mac $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 102) +1)
+		ath10kcal_patch_mac_crc $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 102) +1)
 		;;
 	esac
 	;;
