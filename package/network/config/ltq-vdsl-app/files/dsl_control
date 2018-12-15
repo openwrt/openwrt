@@ -223,7 +223,7 @@ start_service() {
 	if [ -d "${dsl_en_gpio}" ]; then
 		echo 1 > "${dsl_en_gpio}/value"
 	fi
-	if  [ -d "${annexgpio}a" ] && [ -d "${annexgpio}b" ] && [-d "${annexgpio}j" ]; then
+	if  [ -d "${annexgpio}a" ] && [ -d "${annexgpio}b" ] && [ -d "${annexgpio}j" ]; then
 		case "${annex}" in
 			a*|l*|m*)
 				echo 1 > "${annexgpio}a/value"
