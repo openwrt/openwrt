@@ -1,4 +1,4 @@
-From 14eb6c8b92d6104f38882efed54de63ddba7cd71 Mon Sep 17 00:00:00 2001
+From 42cc2cffb6d550fbb21dad033d2564d4da571015 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
 Date: Sat, 1 Dec 2018 12:46:37 +0100
 Subject: [PATCH] imx6: apalis: Make the boot process more generic
@@ -12,10 +12,8 @@ trying to propose more generic way of boot process handling.
 
 In OpenWrt we usually have kernel, dtbs and U-Boot boot script in boot
 partition with ext4fs, so for some use cases it would be handy to be
-able to replace some of the files
-
-I've added TDX_APALIS_IMX6_BOOT_PART and TDX_APALIS_IMX6_ROOT_PART
-config variables so this could be distro specific and overridden.
+able to replace some of the files in the boot partion, that's why I've
+added write support to the ext4.
 
 I've added `set_blkcnt` environment variable which is needed for every
 `mmc write` command as we need to always specify size in block count.
@@ -46,37 +44,10 @@ Cc: Stefan Agner <stefan.agner@toradex.com>
 Cc: Max Krummenacher <max.krummenacher@toradex.com>
 Signed-off-by: Petr Štetiar <ynezz@true.cz>
 ---
- board/toradex/apalis_imx6/Kconfig | 15 +++++++++++++++
- configs/apalis_imx6_defconfig     |  2 ++
- include/configs/apalis_imx6.h     | 29 ++++++++++++++++++++++++-----
- 3 files changed, 41 insertions(+), 5 deletions(-)
+ configs/apalis_imx6_defconfig |  2 ++
+ include/configs/apalis_imx6.h | 26 +++++++++++++++++++++-----
+ 2 files changed, 23 insertions(+), 5 deletions(-)
 
-diff --git a/board/toradex/apalis_imx6/Kconfig b/board/toradex/apalis_imx6/Kconfig
-index 14f8c10..584bc9f 100644
---- a/board/toradex/apalis_imx6/Kconfig
-+++ b/board/toradex/apalis_imx6/Kconfig
-@@ -50,6 +50,21 @@ config TDX_APALIS_IMX6_V1_0
- 	    otherwise the UARTs are configuered in DTE mode.
- 	default n
- 
-+config TDX_APALIS_IMX6_BOOT_PART
-+	int "Partition number to use for boot filesystem"
-+	default 1
-+	help
-+	  The partition number to use for boot filesystem this is the
-+	  partition that typically contains boot.scr, DTBs, uImage etc.
-+
-+config TDX_APALIS_IMX6_ROOT_PART
-+	int "Partition number to use for root filesystem"
-+	default 2
-+	help
-+	  The partition number to use for root filesystem this is the
-+	  partition that is typically specified with root=/dev/sdaX or
-+	  which gets converted into a root=PARTUUID=some_uuid.
-+
- source "board/toradex/common/Kconfig"
- 
- endif
 diff --git a/configs/apalis_imx6_defconfig b/configs/apalis_imx6_defconfig
 index 133fc1a..279d39f 100644
 --- a/configs/apalis_imx6_defconfig
@@ -98,7 +69,7 @@ index 133fc1a..279d39f 100644
  CONFIG_CMD_FS_GENERIC=y
  CONFIG_ENV_IS_IN_MMC=y
 diff --git a/include/configs/apalis_imx6.h b/include/configs/apalis_imx6.h
-index 135b3c9..9af5b29 100644
+index 135b3c9..3601891 100644
 --- a/include/configs/apalis_imx6.h
 +++ b/include/configs/apalis_imx6.h
 @@ -142,9 +142,9 @@
@@ -113,18 +84,15 @@ index 135b3c9..9af5b29 100644
  		"setenv bootargs ${defargs} ${emmcargs} ${setupargs} " \
  		"${vidargs}; echo Booting from internal eMMC chip...; "	\
  		"run emmcdtbload; load mmc 0:1 ${kernel_addr_r} " \
-@@ -201,10 +201,20 @@
+@@ -201,10 +201,17 @@
  #define FDT_FILE "imx6q-apalis_v1_0-eval.dtb"
  #endif
  #define CONFIG_EXTRA_ENV_SETTINGS \
 -	"bootcmd=run emmcboot ; echo ; echo emmcboot failed ; " \
 +	"script=boot.scr\0" \
-+	"mmcbootdev=" __stringify(CONFIG_SYS_MMC_ENV_DEV) "\0" \
-+	"bootpart=" __stringify(CONFIG_TDX_APALIS_IMX6_BOOT_PART) "\0" \
-+	"rootpart=" __stringify(CONFIG_TDX_APALIS_IMX6_ROOT_PART) "\0" \
-+	"finduuid=part uuid mmc ${mmcbootdev}:${rootpart} uuid\0" \
++	"finduuid=part uuid mmc 0:2 uuid\0" \
 +	"loadbootscript=" \
-+		"load mmc ${mmcbootdev}:${bootpart} ${loadaddr} ${script};\0" \
++		"load mmc 0:1 ${loadaddr} ${script};\0" \
 +	"bootscript=echo Running bootscript from mmc ...; " \
 +		"source\0" \
 +	"bootcmd_default=run emmcboot ; echo ; echo emmcboot failed ; " \
@@ -136,7 +104,7 @@ index 135b3c9..9af5b29 100644
  	"boot_file=uImage\0" \
  	"console=ttymxc0\0" \
  	"defargs=enable_wait_mode=off vmalloc=400M\0" \
-@@ -232,7 +242,16 @@
+@@ -232,7 +239,16 @@
  	"vidargs=mxc_hdmi.only_cea=1 " \
  		"video=mxcfb0:dev=hdmi,1920x1080M@60,if=RGB24 " \
  		"video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off " \
@@ -145,7 +113,7 @@ index 135b3c9..9af5b29 100644
 +	"set_blkcnt=setexpr blkcnt ${filesize} + 0x1ff && setexpr blkcnt ${blkcnt} / 0x200\0"
 +
 +#define CONFIG_BOOTCOMMAND \
-+	   "mmc dev ${mmcbootdev};" \
++	   "mmc dev 0;" \
 +	   "if run loadbootscript; then " \
 +		   "run bootscript; " \
 +	   "else " \
