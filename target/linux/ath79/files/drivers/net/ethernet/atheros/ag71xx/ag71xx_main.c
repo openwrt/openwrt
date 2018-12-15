@@ -453,8 +453,12 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	udelay(20);
 
 	reset_control_assert(ag->mac_reset);
+	if (ag->mdio_reset)
+		reset_control_assert(ag->mdio_reset);
 	msleep(100);
 	reset_control_deassert(ag->mac_reset);
+	if (ag->mdio_reset)
+		reset_control_deassert(ag->mdio_reset);
 	msleep(200);
 
 	ag71xx_hw_setup(ag);
@@ -1343,11 +1347,13 @@ static int ag71xx_probe(struct platform_device *pdev)
 					AG71XX_DEFAULT_MSG_ENABLE);
 	spin_lock_init(&ag->lock);
 
-	ag->mac_reset = devm_reset_control_get(&pdev->dev, "mac");
+	ag->mac_reset = devm_reset_control_get_exclusive(&pdev->dev, "mac");
 	if (IS_ERR(ag->mac_reset)) {
 		dev_err(&pdev->dev, "missing mac reset\n");
 		return PTR_ERR(ag->mac_reset);
 	}
+
+	ag->mdio_reset = devm_reset_control_get_optional_exclusive(&pdev->dev, "mdio");
 
 	if (of_property_read_u32_array(np, "fifo-data", ag->fifodata, 3)) {
 		if (of_device_is_compatible(np, "qca,ar9130-eth") ||
