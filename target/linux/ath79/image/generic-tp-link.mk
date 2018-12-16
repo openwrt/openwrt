@@ -198,6 +198,16 @@ define Device/tplink_tl-wr810n-v2
 endef
 TARGET_DEVICES += tplink_tl-wr810n-v2
 
+define Device/tplink_tl-wr710n-v1
+  $(Device/tplink-8mlzma)
+  ATH_SOC := ar9331
+  DEVICE_TITLE := TP-Link TL-WR710N v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x07100001
+  SUPPORTED_DEVICES += tl-wr710n
+endef
+TARGET_DEVICES += tplink_tl-wr710n-v1
+
 define Device/tplink_tl-wr842n-v1
   $(Device/tplink-8m)
   ATH_SOC := ar7241
