@@ -393,7 +393,7 @@ define Package/eapol-test
   SECTION:=net
   CATEGORY:=Network
   VARIANT:=supplicant-full-internal
-  DEPENDS:=$(DRV_DEPENDS)
+  DEPENDS:=$(DRV_DEPENDS) +libubus
 endef
 
 define Package/eapol-test-openssl
@@ -402,7 +402,7 @@ define Package/eapol-test-openssl
   CATEGORY:=Network
   VARIANT:=supplicant-full-openssl
   CONFLICTS:=$(filter-out eapol-test-openssl ,$(EAPOL_TEST_PROVIDERS))
-  DEPENDS:=$(DRV_DEPENDS) +libopenssl
+  DEPENDS:=$(DRV_DEPENDS) +libubus +libopenssl
   PROVIDES:=eapol-test
 endef
 
@@ -412,7 +412,7 @@ define Package/eapol-test-wolfssl
   CATEGORY:=Network
   VARIANT:=supplicant-full-wolfssl
   CONFLICTS:=$(filter-out eapol-test-openssl ,$(filter-out eapol-test-wolfssl ,$(EAPOL_TEST_PROVIDERS)))
-  DEPENDS:=$(DRV_DEPENDS) +libwolfssl
+  DEPENDS:=$(DRV_DEPENDS) +libubus +libwolfssl
   PROVIDES:=eapol-test
 endef
 
