@@ -62,12 +62,6 @@
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
 
-		serial@78af000 {
-			pinctrl-0 = <&serial_pins>;
-			pinctrl-names = "default";
-			status = "okay";
-		};
-
 		crypto@8e3a000 {
 			status = "okay";
 		};
@@ -157,6 +151,10 @@
 	};
 };
 
+&blsp_dma {
+	status = "okay";
+};
+
 &blsp1_spi1 {
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
@@ -242,7 +240,9 @@
 	};
 };
 
-&blsp_dma {
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_pins>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

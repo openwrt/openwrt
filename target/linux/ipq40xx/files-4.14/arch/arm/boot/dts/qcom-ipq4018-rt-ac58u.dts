@@ -1,18 +1,4 @@
-/* Copyright (c) 2015, The Linux Foundation. All rights reserved.
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- */
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include "qcom-ipq4019.dtsi"
 #include <dt-bindings/gpio/gpio.h>
@@ -73,12 +59,6 @@
 		};
 
 		usb2@60f8800 {
-			status = "okay";
-		};
-
-		serial@78af000 {
-			pinctrl-0 = <&serial_pins>;
-			pinctrl-names = "default";
 			status = "okay";
 		};
 
@@ -206,7 +186,7 @@
 	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>,
 		   <&tlmm 59 GPIO_ACTIVE_HIGH>;
 
-	m25p80@0 {
+	flash@0 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		/*
@@ -268,24 +248,36 @@
 		};
 	};
 
-	mt29f@1 {
+	flash@1 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "spinand,mt29f";
 		reg = <1>;
 		spi-max-frequency = <24000000>;
 
+		/*
+		 * U-boot looks for "spinand,mt29f" node,
+		 * if we don't have it, it will spit out the following warning:
+		 * "ipq: fdt fixup unable to find compatible node".
+		 */
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition0@0 {
+			partition@0 {
 				label = "ubi";
 				reg = <0x00000000 0x08000000>;
 			};
 		};
 	};
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_pins>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &usb3_ss_phy {
