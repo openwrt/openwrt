@@ -39,7 +39,6 @@
 		status: power_amber {
 			label = "pcs:amber:power";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 
 		running: power_green {
@@ -51,27 +50,23 @@
 		wlan_amber {
 			label = "pcs:amber:wlan";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 			linux,default-trigger = "phy1tpt";
 		};
 
 		wlan_green {
 			label = "pcs:green:wlan";
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 			linux,default-trigger = "phy0tpt";
 		};
 
 		lan_amber {
 			label = "pcs:lan:amber";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 
 		lan_green {
 			label = "pcs:lan:green";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 	};
 };

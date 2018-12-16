@@ -41,14 +41,12 @@
 		wlan2g {
 			label = "wb2000:green:2g";
 			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
-			default-state = "off";
 			linux,default-trigger = "phy0tpt";
 		};
 
 		usb {
 			label = "wb2000:green:usb";
 			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
-			default-state = "off";
 			trigger-sources = <&hub_port1>, <&hub_port2>;
 			linux,default-trigger = "usbport";
 		};
@@ -77,7 +75,6 @@
 		wlan {
 			label = "wb2000:green:5g";
 			gpios = <&ath9k 6 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 			linux,default-trigger = "phy1tpt";
 		};
 	};

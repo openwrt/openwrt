@@ -29,32 +29,27 @@
 		children {
 			label = "wn-ag300dgr:green:children";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 
 		eco {
 			label = "wn-ag300dgr:green:eco";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 
 		notification {
 			label = "wn-ag300dgr:amber:notification";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 
 		wlan2g {
 			label = "wn-ag300dgr:green:wlan2g";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan5g {
 			label = "wn-ag300dgr:green:wlan5g";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 			linux,default-trigger = "phy1tpt";
 		};
 	};
