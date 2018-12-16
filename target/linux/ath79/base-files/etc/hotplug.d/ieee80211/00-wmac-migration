@@ -14,6 +14,10 @@ migrate_wmac_path() {
 			path="platform/ahb/ahb:apb/18100000.wmac"
 			WMAC_PATH_CHANGED=1
 		;;
+		"platform/ar933x_wmac")
+			path="platform/ahb/18100000.wmac"
+			WMAC_PATH_CHANGED=1
+		;;
 		*)
 			return 0
 		;;
