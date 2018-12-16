@@ -37,6 +37,7 @@ define Package/ip-tiny
 $(call Package/iproute2/Default)
  TITLE:=Routing control utility (Minimal)
  VARIANT:=tiny
+ DEFAULT_VARIANT:=1
  PROVIDES:=ip
  ALTERNATIVES:=200:/sbin/ip:/usr/libexec/ip-tiny
  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl
@@ -54,6 +55,8 @@ endef
 define Package/tc
 $(call Package/iproute2/Default)
   TITLE:=Traffic control utility
+  VARIANT:=tc
+  PROVIDES:=tc
   DEPENDS:=+kmod-sched-core +libxtables +libelf +(PACKAGE_devlink||PACKAGE_rdma):libmnl
 endef
 
@@ -127,12 +130,15 @@ define Build/Compile
 	+$(MAKE_VARS) $(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) $(MAKE_FLAGS)
 endef
 
+# use minimal functionality for dev libraries
+ifeq ($(BUILD_VARIANT),tiny)
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_BUILD_DIR)/include/{libgenl,libnetlink}.h $(1)/usr/include/
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/lib/libnetlink.a $(1)/usr/lib/
 endef
+endif
 
 define Package/ip-tiny/install
 	$(INSTALL_DIR) $(1)/usr/libexec
@@ -151,6 +157,8 @@ define Package/tc/install
 	$(INSTALL_BIN) ./files/15-teql $(1)/etc/hotplug.d/iface/
 endef
 
+# ensure other packages are only saved during 'tiny' builds.
+ifeq ($(BUILD_VARIANT),tiny)
 define Package/genl/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/genl/genl $(1)/usr/sbin/
@@ -180,6 +188,7 @@ define Package/rdma/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/rdma/rdma $(1)/usr/sbin/
 endef
+endif
 
 $(eval $(call BuildPackage,ip-tiny))
 $(eval $(call BuildPackage,ip-full))
