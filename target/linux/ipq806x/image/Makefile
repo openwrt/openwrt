@@ -67,11 +67,9 @@ define Device/ZyXELImage
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none | pad-to $${KERNEL_SIZE}
 	KERNEL_NAME := zImage
-	IMAGES := factory.bin sysupgrade.bin mmcblk0p5-rootfs.bin mmcblk0p4-kernel.bin
+	IMAGES := factory.bin sysupgrade.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to $$$$(BLOCKSIZE) | zyxel-ras-image separate-kernel
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to $$$${BLOCKSIZE} | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	IMAGE/mmcblk0p5-rootfs.bin := append-rootfs | pad-rootfs | pad-to $$$${BLOCKSIZE}
-	IMAGE/mmcblk0p4-kernel.bin := append-kernel
 endef
 
 define Device/compex_wpq864
