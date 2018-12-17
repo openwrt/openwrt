@@ -27,14 +27,12 @@
 		led_wlan2g: wlan2g {
 			label = "tp-link:green:wlan2g";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 			linux,default-trigger = "phy1tpt";
 		};
 
 		usb {
 			label = "tp-link:green:usb";
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 			trigger-sources = <&hub_port0>;
 			linux,default-trigger = "usbport";
 		};
@@ -100,50 +98,42 @@
 	wlan5g {
 		label = "tp-link:green:wlan5g";
 		gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
-		default-state = "off";
 		linux,default-trigger = "phy0tpt";
 	};
 
 	wan {
 		label = "tp-link:green:wan";
 		gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
-		default-state = "off";
 	};
 
 	wan_fail {
 		label = "tp-link:orange:wan";
 		gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
-		default-state = "off";
 	};
 
 	lan1 {
 		label = "tp-link:green:lan1";
 		gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
-		default-state = "off";
 	};
 
 	lan2 {
 		label = "tp-link:green:lan2";
 		gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
-		default-state = "off";
 	};
 
 	lan3 {
 		label = "tp-link:green:lan3";
 		gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
-		default-state = "off";
 	};
 
 	lan4 {
 		label = "tp-link:green:lan4";
 		gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
-		default-state = "off";
 	};
 
 	wps {
 		label = "tp-link:green:wps";
 		gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
-		default-state = "off";
 	};
 };
 
