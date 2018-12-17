@@ -1,0 +1,32 @@
+From 07e25da5bf26d46aad4f1d2eb19b260789182004 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Sun, 16 Dec 2018 18:21:58 +0000
+Subject: [PATCH 13/30] Treat DS and DNSKEY queries being forwarded the same as
+ those locally originated.
+
+The queries will not be forwarded to a server for a domain, unless
+there's a trust anchor provided for that domain. This allows, especially,
+suitable proof of non-existance for DS records to come from
+the parent domain for domains which are not signed.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/rfc1035.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/src/rfc1035.c
++++ b/src/rfc1035.c
+@@ -916,6 +916,13 @@ unsigned int extract_request(struct dns_
+       if (qtype == T_ANY)
+ 	return  F_IPV4 | F_IPV6;
+     }
++
++  /* F_DNSSECOK as agument to search_servers() inhibits forwarding
++     to servers for domains without a trust anchor. This make the
++     behaviour for DS and DNSKEY queries we forward the same
++     as for DS and DNSKEY queries we originate. */
++  if (qtype == T_DS || qtype == T_DNSKEY)
++    return F_DNSSECOK;
+   
+   return F_QUERY;
+ }

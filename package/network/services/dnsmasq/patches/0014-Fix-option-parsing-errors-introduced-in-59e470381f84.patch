@@ -1,17 +1,19 @@
-From 668b45c29c38d440c8fce4bc994c56910adc3919 Mon Sep 17 00:00:00 2001
+From 137e9f878fafb38369eab7d9dfe84e4228ff5f89 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Petr=20Men=C5=A1=C3=ADk?= <pemensik@redhat.com>
-Date: Fri, 14 Dec 2018 17:03:08 +0100
-Subject: [PATCH] Fix required tags in few places
+Date: Sun, 16 Dec 2018 21:25:29 +0000
+Subject: [PATCH 14/30] Fix option parsing errors introduced in
+ 59e470381f84f2fdf0640c7bc67827f3f0c64784
 
-Some locations were incorrectly changed to require always tags, else
-dnsmasq will not start. Fix dhcp-boot, dhcp-reply-delay and pxe-prompt.
+Thanks to Kevin Darbyshire-Bryant for spotting this.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 ---
  src/option.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 --- a/src/option.c
 +++ b/src/option.c
-@@ -3434,7 +3434,7 @@ static int one_opt(int option, char *arg
+@@ -3432,7 +3432,7 @@ static int one_opt(int option, char *arg
        {
  	struct dhcp_netid *id = dhcp_tags(&arg);
  	
@@ -20,7 +22,7 @@ dnsmasq will not start. Fix dhcp-boot, dhcp-reply-delay and pxe-prompt.
  	  {
  	    ret_err(gen_err);
  	  }
-@@ -3485,7 +3485,7 @@ static int one_opt(int option, char *arg
+@@ -3483,7 +3483,7 @@ static int one_opt(int option, char *arg
        {
  	struct dhcp_netid *id = dhcp_tags(&arg);
  	
@@ -29,7 +31,7 @@ dnsmasq will not start. Fix dhcp-boot, dhcp-reply-delay and pxe-prompt.
  	  {
  	    ret_err(gen_err);
  	  }
-@@ -3515,7 +3515,7 @@ static int one_opt(int option, char *arg
+@@ -3513,7 +3513,7 @@ static int one_opt(int option, char *arg
  	 new->opt = 10; /* PXE_MENU_PROMPT */
  	 new->netid = dhcp_tags(&arg);
  	 

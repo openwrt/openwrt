@@ -1,0 +1,95 @@
+From 9c0d445ef4abffa2b9342ad65e85ef425c1f83bb Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Wed, 9 Jan 2019 17:57:56 +0000
+Subject: [PATCH 27/30] Fix e7bfd556c079c8b5e7425aed44abc35925b24043 to
+ actually work.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/dhcp.c  | 54 +++++++++++++++++++++++++----------------------------
+ src/dhcp6.c |  2 +-
+ 2 files changed, 26 insertions(+), 30 deletions(-)
+
+--- a/src/dhcp.c
++++ b/src/dhcp.c
+@@ -754,19 +754,6 @@ int address_allocate(struct dhcp_context
+ 	      if (addr.s_addr == d->router.s_addr)
+ 		break;
+ 
+-	    /* in consec-ip mode, skip addresses equal to
+-	       the number of addresses rejected by clients. This
+-	       should avoid the same client being offered the same
+-	       address after it has rjected it. */
+-	    if (option_bool(OPT_CONSEC_ADDR))
+-	      {
+-		if (c->addr_epoch)
+-		  {
+-		    c->addr_epoch--;
+-		    d = context; /* d non-NULL skips the address. */
+-		  }
+-	      }
+-	    
+ 	    /* Addresses which end in .255 and .0 are broken in Windows even when using 
+ 	       supernetting. ie dhcp-range=192.168.0.1,192.168.1.254,255,255,254.0
+ 	       then 192.168.0.255 is a valid IP address, but not for Windows as it's
+@@ -778,24 +765,33 @@ int address_allocate(struct dhcp_context
+ 		(!IN_CLASSC(ntohl(addr.s_addr)) || 
+ 		 ((ntohl(addr.s_addr) & 0xff) != 0xff && ((ntohl(addr.s_addr) & 0xff) != 0x0))))
+ 	      {
+-		struct ping_result *r;
+-		
+-		if ((r = do_icmp_ping(now, addr, j, loopback)))
+- 		  {
+-		    /* consec-ip mode: we offered this address for another client
+-		       (different hash) recently, don't offer it to this one. */
+-		    if (!option_bool(OPT_CONSEC_ADDR) || r->hash == j)
+-		      {
+-			*addrp = addr;
+-			return 1;
+-		      }
+-		  }
++		/* in consec-ip mode, skip addresses equal to
++		   the number of addresses rejected by clients. This
++		   should avoid the same client being offered the same
++		   address after it has rjected it. */
++		if (option_bool(OPT_CONSEC_ADDR) && c->addr_epoch)
++		  c->addr_epoch--;
+ 		else
+ 		  {
+-		    /* address in use: perturb address selection so that we are
+-		       less likely to try this address again. */
+-		    if (!option_bool(OPT_CONSEC_ADDR))
+-		      c->addr_epoch++;
++		    struct ping_result *r;
++		    
++		    if ((r = do_icmp_ping(now, addr, j, loopback)))
++		      {
++			/* consec-ip mode: we offered this address for another client
++			   (different hash) recently, don't offer it to this one. */
++			if (!option_bool(OPT_CONSEC_ADDR) || r->hash == j)
++			  {
++			    *addrp = addr;
++			    return 1;
++			  }
++		      }
++		    else
++		      {
++			/* address in use: perturb address selection so that we are
++			   less likely to try this address again. */
++			if (!option_bool(OPT_CONSEC_ADDR))
++			  c->addr_epoch++;
++		      }
+ 		  }
+ 	      }
+ 	    
+--- a/src/dhcp6.c
++++ b/src/dhcp6.c
+@@ -436,7 +436,7 @@ struct dhcp_context *address6_allocate(s
+ 		 skip addresses equal to the number of addresses rejected
+ 		 by clients. This should avoid the same client being offered the same
+ 		 address after it has rjected it. */
+-	      start = lease_find_max_addr6(c) + serial + c->addr_epoch;
++	      start = lease_find_max_addr6(c) + 1 + serial + c->addr_epoch;
+ 	      if (c->addr_epoch)
+ 		c->addr_epoch--;
+ 	    }

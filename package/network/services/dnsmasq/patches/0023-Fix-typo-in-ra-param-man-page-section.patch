@@ -1,0 +1,33 @@
+From 2daca52b80afdc92e7c976629a2bf8182335a626 Mon Sep 17 00:00:00 2001
+From: Christian Weiske <cweiske@cweiske.de>
+Date: Thu, 3 Jan 2019 20:10:14 +0000
+Subject: [PATCH 23/30] Fix typo in ra-param man page section.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ man/dnsmasq.8    | 2 +-
+ man/fr/dnsmasq.8 | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/man/dnsmasq.8
++++ b/man/dnsmasq.8
+@@ -1829,7 +1829,7 @@ The interval between router advertisemen
+ .B --ra-param=eth0,60.
+ The lifetime of the route may be changed or set to zero, which allows
+ a router to advertise prefixes but not a route via itself. 
+-.B --ra-parm=eth0,0,0
++.B --ra-param=eth0,0,0
+ (A value of zero for the interval means the default value.) All four parameters may be set at once.
+ .B --ra-param=eth0,mtu:1280,low,60,1200
+ 
+--- a/man/fr/dnsmasq.8
++++ b/man/fr/dnsmasq.8
+@@ -1774,7 +1774,7 @@ Un intervalle (en secondes) entre les an
+ .B --ra-param=eth0,60.
+ La durée de vie de la route peut être changée ou mise à zéro, auquel cas
+ le routeur peut annoncer les préfixes mais pas de route :
+-.B --ra-parm=eth0,0,0
++.B --ra-param=eth0,0,0
+ (une valeur de zéro pour l'intervalle signifie qu'il garde la valeur par défaut).
+ Ces quatre paramètres peuvent être configurés en une fois :
+ .B --ra-param=eth0,mtu:1280,low,60,1200

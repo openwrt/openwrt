@@ -1,0 +1,523 @@
+From 5b99eae59d59a8e34a7e512059b98bbd803312f2 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Sun, 6 Jan 2019 23:09:50 +0000
+Subject: [PATCH 24/30] Cache SRV records.
+
+Inpsired by a patch from Jeremy Allison, but completely re-rolled
+by srk. All bugs are mine.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/auth.c      |   2 +-
+ src/blockdata.c |  12 ++---
+ src/cache.c     |  64 ++++++++++++++--------
+ src/dnsmasq.c   |   2 -
+ src/dnsmasq.h   |  11 ++--
+ src/rfc1035.c   | 141 ++++++++++++++++++++++++++++++++++++++----------
+ 6 files changed, 166 insertions(+), 66 deletions(-)
+
+--- a/src/auth.c
++++ b/src/auth.c
+@@ -129,7 +129,7 @@ size_t answer_auth(struct dns_header *he
+ 
+   for (q = ntohs(header->qdcount); q != 0; q--)
+     {
+-      unsigned short flag = 0;
++      unsigned int flag = 0;
+       int found = 0;
+       int cname_wildcard = 0;
+   
+--- a/src/blockdata.c
++++ b/src/blockdata.c
+@@ -16,8 +16,6 @@
+ 
+ #include "dnsmasq.h"
+ 
+-#ifdef HAVE_DNSSEC
+-
+ static struct blockdata *keyblock_free;
+ static unsigned int blockdata_count, blockdata_hwm, blockdata_alloced;
+ 
+@@ -54,11 +52,10 @@ void blockdata_init(void)
+ 
+ void blockdata_report(void)
+ {
+-  if (option_bool(OPT_DNSSEC_VALID))
+-    my_syslog(LOG_INFO, _("DNSSEC memory in use %u, max %u, allocated %u"), 
+-	      blockdata_count * sizeof(struct blockdata),  
+-	      blockdata_hwm * sizeof(struct blockdata),  
+-	      blockdata_alloced * sizeof(struct blockdata));
++  my_syslog(LOG_INFO, _("pool memory in use %u, max %u, allocated %u"), 
++	    blockdata_count * sizeof(struct blockdata),  
++	    blockdata_hwm * sizeof(struct blockdata),  
++	    blockdata_alloced * sizeof(struct blockdata));
+ } 
+ 
+ static struct blockdata *blockdata_alloc_real(int fd, char *data, size_t len)
+@@ -178,4 +175,3 @@ struct blockdata *blockdata_read(int fd,
+   return blockdata_alloc_real(fd, NULL, len);
+ }
+ 
+-#endif
+--- a/src/cache.c
++++ b/src/cache.c
+@@ -27,7 +27,7 @@ static int bignames_left, hash_size;
+ 
+ static void make_non_terminals(struct crec *source);
+ static struct crec *really_insert(char *name, union all_addr *addr, unsigned short class,
+-				  time_t now,  unsigned long ttl, unsigned short flags);
++				  time_t now,  unsigned long ttl, unsigned int flags);
+ 
+ /* type->string mapping: this is also used by the name-hash function as a mixing table. */
+ static const struct {
+@@ -198,15 +198,17 @@ static void cache_hash(struct crec *crec
+   *up = crecp;
+ }
+ 
+-#ifdef HAVE_DNSSEC
+ static void cache_blockdata_free(struct crec *crecp)
+ {
+-  if (crecp->flags & F_DNSKEY)
++  if (crecp->flags & F_SRV)
++    blockdata_free(crecp->addr.srv.target);
++#ifdef HAVE_DNSSEC
++  else if (crecp->flags & F_DNSKEY)
+     blockdata_free(crecp->addr.key.keydata);
+   else if ((crecp->flags & F_DS) && !(crecp->flags & F_NEG))
+     blockdata_free(crecp->addr.ds.keydata);
+-}
+ #endif
++}
+ 
+ static void cache_free(struct crec *crecp)
+ {
+@@ -230,9 +232,7 @@ static void cache_free(struct crec *crec
+       crecp->flags &= ~F_BIGNAME;
+     }
+ 
+-#ifdef HAVE_DNSSEC
+   cache_blockdata_free(crecp);
+-#endif
+ }    
+ 
+ /* insert a new cache entry at the head of the list (youngest entry) */
+@@ -331,7 +331,7 @@ static int is_expired(time_t now, struct
+ }
+ 
+ static struct crec *cache_scan_free(char *name, union all_addr *addr, unsigned short class, time_t now,
+-				    unsigned short flags, struct crec **target_crec, unsigned int *target_uid)
++				    unsigned int flags, struct crec **target_crec, unsigned int *target_uid)
+ {
+   /* Scan and remove old entries.
+      If (flags & F_FORWARD) then remove any forward entries for name and any expired
+@@ -360,7 +360,7 @@ static struct crec *cache_scan_free(char
+ 	  if ((crecp->flags & F_FORWARD) && hostname_isequal(cache_get_name(crecp), name))
+ 	    {
+ 	      /* Don't delete DNSSEC in favour of a CNAME, they can co-exist */
+-	      if ((flags & crecp->flags & (F_IPV4 | F_IPV6)) || 
++	      if ((flags & crecp->flags & (F_IPV4 | F_IPV6 | F_SRV)) || 
+ 		  (((crecp->flags | flags) & F_CNAME) && !(crecp->flags & (F_DNSKEY | F_DS))))
+ 		{
+ 		  if (crecp->flags & (F_HOSTS | F_DHCP | F_CONFIG))
+@@ -467,10 +467,10 @@ void cache_start_insert(void)
+ }
+ 
+ struct crec *cache_insert(char *name, union all_addr *addr, unsigned short class,
+-			  time_t now,  unsigned long ttl, unsigned short flags)
++			  time_t now,  unsigned long ttl, unsigned int flags)
+ {
+   /* Don't log DNSSEC records here, done elsewhere */
+-  if (flags & (F_IPV4 | F_IPV6 | F_CNAME))
++  if (flags & (F_IPV4 | F_IPV6 | F_CNAME | F_SRV))
+     {
+       log_query(flags | F_UPSTREAM, name, addr, NULL);
+       /* Don't mess with TTL for DNSSEC records. */
+@@ -485,7 +485,7 @@ struct crec *cache_insert(char *name, un
+ 
+ 
+ static struct crec *really_insert(char *name, union all_addr *addr, unsigned short class,
+-				  time_t now,  unsigned long ttl, unsigned short flags)
++				  time_t now,  unsigned long ttl, unsigned int flags)
+ {
+   struct crec *new, *target_crec = NULL;
+   union bigname *big_name = NULL;
+@@ -649,7 +649,7 @@ void cache_end_insert(void)
+ 	    {
+ 	      char *name = cache_get_name(new_chain);
+ 	      ssize_t m = strlen(name);
+-	      unsigned short flags = new_chain->flags;
++	      unsigned int flags = new_chain->flags;
+ #ifdef HAVE_DNSSEC
+ 	      u16 class = new_chain->uid;
+ #endif
+@@ -659,8 +659,10 @@ void cache_end_insert(void)
+ 	      read_write(daemon->pipe_to_parent, (unsigned char *)&new_chain->ttd, sizeof(new_chain->ttd), 0);
+ 	      read_write(daemon->pipe_to_parent, (unsigned  char *)&flags, sizeof(flags), 0);
+ 
+-	      if (flags & (F_IPV4 | F_IPV6 | F_DNSKEY | F_DS))
++	      if (flags & (F_IPV4 | F_IPV6 | F_DNSKEY | F_DS | F_SRV))
+ 		read_write(daemon->pipe_to_parent, (unsigned char *)&new_chain->addr, sizeof(new_chain->addr), 0);
++	      if (flags & F_SRV)
++		 blockdata_write(new_chain->addr.srv.target, new_chain->addr.srv.targetlen, daemon->pipe_to_parent);
+ #ifdef HAVE_DNSSEC
+ 	      if (flags & F_DNSKEY)
+ 		{
+@@ -699,7 +701,7 @@ int cache_recv_insert(time_t now, int fd
+   union all_addr addr;
+   unsigned long ttl;
+   time_t ttd;
+-  unsigned short flags;
++  unsigned int flags;
+   struct crec *crecp = NULL;
+   
+   cache_start_insert();
+@@ -725,13 +727,16 @@ int cache_recv_insert(time_t now, int fd
+ 
+       ttl = difftime(ttd, now);
+       
+-      if (flags & (F_IPV4 | F_IPV6 | F_DNSKEY | F_DS))
++      if (flags & (F_IPV4 | F_IPV6 | F_DNSKEY | F_DS | F_SRV))
+ 	{
+ 	  unsigned short class = C_IN;
+ 
+ 	  if (!read_write(fd, (unsigned char *)&addr, sizeof(addr), 1))
+ 	    return 0;
+-	  
++
++	  if (flags & F_SRV && !(addr.srv.target = blockdata_read(fd, addr.srv.targetlen)))
++	    return 0;
++	
+ #ifdef HAVE_DNSSEC
+ 	   if (flags & F_DNSKEY)
+ 	     {
+@@ -802,7 +807,7 @@ struct crec *cache_find_by_name(struct c
+       /* first search, look for relevant entries and push to top of list
+ 	 also free anything which has expired */
+       struct crec *next, **up, **insert = NULL, **chainp = &ans;
+-      unsigned short ins_flags = 0;
++      unsigned int ins_flags = 0;
+       
+       for (up = hash_bucket(name), crecp = *up; crecp; crecp = next)
+ 	{
+@@ -1086,7 +1091,7 @@ int read_hostsfile(char *filename, unsig
+   FILE *f = fopen(filename, "r");
+   char *token = daemon->namebuff, *domain_suffix = NULL;
+   int addr_count = 0, name_count = cache_size, lineno = 0;
+-  unsigned short flags = 0;
++  unsigned int flags = 0;
+   union all_addr addr;
+   int atnl, addrlen = 0;
+ 
+@@ -1201,9 +1206,8 @@ void cache_reload(void)
+   for (i=0; i<hash_size; i++)
+     for (cache = hash_table[i], up = &hash_table[i]; cache; cache = tmp)
+       {
+-#ifdef HAVE_DNSSEC
+ 	cache_blockdata_free(cache);
+-#endif
++
+ 	tmp = cache->hash_next;
+ 	if (cache->flags & (F_HOSTS | F_CONFIG))
+ 	  {
+@@ -1381,7 +1385,7 @@ void cache_add_dhcp_entry(char *host_nam
+ 			  union all_addr *host_address, time_t ttd) 
+ {
+   struct crec *crec = NULL, *fail_crec = NULL;
+-  unsigned short flags = F_IPV4;
++  unsigned int flags = F_IPV4;
+   int in_hosts = 0;
+   size_t addrlen = sizeof(struct in_addr);
+ 
+@@ -1682,9 +1686,8 @@ void dump_cache(time_t now)
+ #ifdef HAVE_AUTH
+   my_syslog(LOG_INFO, _("queries for authoritative zones %u"), daemon->metrics[METRIC_DNS_AUTH_ANSWERED]);
+ #endif
+-#ifdef HAVE_DNSSEC
++
+   blockdata_report();
+-#endif
+ 
+   /* sum counts from different records for same server */
+   for (serv = daemon->servers; serv; serv = serv->next)
+@@ -1726,6 +1729,17 @@ void dump_cache(time_t now)
+ 	    p += sprintf(p, "%-30.30s ", sanitise(n));
+ 	    if ((cache->flags & F_CNAME) && !is_outdated_cname_pointer(cache))
+ 	      a = sanitise(cache_get_cname_target(cache));
++	    else if ((cache->flags & F_SRV) && !(cache->flags & F_NEG))
++	      {
++		int targetlen = cache->addr.srv.targetlen;
++		ssize_t len = sprintf(a, "%u %u %u ", cache->addr.srv.priority,
++				      cache->addr.srv.weight, cache->addr.srv.srvport);
++
++		if (targetlen > (40 - len))
++		  targetlen = 40 - len;
++		blockdata_retrieve(cache->addr.srv.target, targetlen, a + len);
++		a[len + targetlen] = 0;		
++	      }
+ #ifdef HAVE_DNSSEC
+ 	    else if (cache->flags & F_DS)
+ 	      {
+@@ -1752,6 +1766,8 @@ void dump_cache(time_t now)
+ 	      t = "6";
+ 	    else if (cache->flags & F_CNAME)
+ 	      t = "C";
++	    else if (cache->flags & F_SRV)
++	      t = "V";
+ #ifdef HAVE_DNSSEC
+ 	    else if (cache->flags & F_DS)
+ 	      t = "S";
+@@ -1913,6 +1929,8 @@ void log_query(unsigned int flags, char
+     }
+   else if (flags & F_CNAME)
+     dest = "<CNAME>";
++  else if (flags & F_SRV)
++    dest = "<SRV>";
+   else if (flags & F_RRNAME)
+     dest = arg;
+     
+--- a/src/dnsmasq.c
++++ b/src/dnsmasq.c
+@@ -366,9 +366,7 @@ int main (int argc, char **argv)
+     {
+       cache_init();
+ 
+-#ifdef HAVE_DNSSEC
+       blockdata_init();
+-#endif
+     }
+ 
+ #ifdef HAVE_INOTIFY
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -299,6 +299,10 @@ union all_addr {
+     unsigned char algo;
+     unsigned char digest; 
+   } ds;
++  struct {
++    struct blockdata *target;
++    unsigned short targetlen, srvport, priority, weight;
++  } srv;
+   /* for log_query */
+   struct {
+     unsigned short keytag, algo, digest, rcode;
+@@ -426,7 +430,7 @@ struct crec {
+   time_t ttd; /* time to die */
+   /* used as class if DNSKEY/DS, index to source for F_HOSTS */
+   unsigned int uid; 
+-  unsigned short flags;
++  unsigned int flags;
+   union {
+     char sname[SMALLDNAME];
+     union bigname *bname;
+@@ -470,6 +474,7 @@ struct crec {
+ #define F_NOEXTRA   (1u<<27)
+ #define F_SERVFAIL  (1u<<28)
+ #define F_RCODE     (1u<<29)
++#define F_SRV       (1u<<30)
+ 
+ #define UID_NONE      0
+ /* Values of uid in crecs with F_CONFIG bit set. */
+@@ -1142,7 +1147,7 @@ void cache_end_insert(void);
+ void cache_start_insert(void);
+ int cache_recv_insert(time_t now, int fd);
+ struct crec *cache_insert(char *name, union all_addr *addr, unsigned short class, 
+-			  time_t now, unsigned long ttl, unsigned short flags);
++			  time_t now, unsigned long ttl, unsigned int flags);
+ void cache_reload(void);
+ void cache_add_dhcp_entry(char *host_name, int prot, union all_addr *host_address, time_t ttd);
+ struct in_addr a_record_from_hosts(char *name, time_t now);
+@@ -1158,7 +1163,6 @@ int read_hostsfile(char *filename, unsig
+ 		   struct crec **rhash, int hashsz);
+ 
+ /* blockdata.c */
+-#ifdef HAVE_DNSSEC
+ void blockdata_init(void);
+ void blockdata_report(void);
+ struct blockdata *blockdata_alloc(char *data, size_t len);
+@@ -1166,7 +1170,6 @@ void *blockdata_retrieve(struct blockdat
+ struct blockdata *blockdata_read(int fd, size_t len);
+ void blockdata_write(struct blockdata *block, size_t len, int fd);
+ void blockdata_free(struct blockdata *blocks);
+-#endif
+ 
+ /* domain.c */
+ char *get_domain(struct in_addr addr);
+--- a/src/rfc1035.c
++++ b/src/rfc1035.c
+@@ -726,7 +726,7 @@ int extract_addresses(struct dns_header
+ 	{
+ 	  /* everything other than PTR */
+ 	  struct crec *newc;
+-	  int addrlen;
++	  int addrlen = 0;
+ 
+ 	  if (qtype == T_A)
+ 	    {
+@@ -738,7 +738,9 @@ int extract_addresses(struct dns_header
+ 	      addrlen = IN6ADDRSZ;
+ 	      flags |= F_IPV6;
+ 	    }
+-	  else 
++	  else if (qtype == T_SRV)
++	    flags |= F_SRV;
++	  else
+ 	    continue;
+ 	    
+ 	cname_loop1:
+@@ -799,39 +801,61 @@ int extract_addresses(struct dns_header
+ 		    {
+ 		      found = 1;
+ 		      
+-		      /* copy address into aligned storage */
+-		      if (!CHECK_LEN(header, p1, qlen, addrlen))
+-			return 0; /* bad packet */
+-		      memcpy(&addr, p1, addrlen);
+-		      
+-		      /* check for returned address in private space */
+-		      if (check_rebind)
++		      if (flags & F_SRV)
+ 			{
+-			  if ((flags & F_IPV4) &&
+-			      private_net(addr.addr4, !option_bool(OPT_LOCAL_REBIND)))
+-			    return 1;
+-			  
+-			  if ((flags & F_IPV6) &&
+-			      IN6_IS_ADDR_V4MAPPED(&addr.addr6))
++			   unsigned char *tmp = namep;
++
++			   if (!CHECK_LEN(header, p1, qlen, 6))
++			     return 0; /* bad packet */
++			   GETSHORT(addr.srv.priority, p1);
++			   GETSHORT(addr.srv.weight, p1);
++			   GETSHORT(addr.srv.srvport, p1);
++			   if (!extract_name(header, qlen, &p1, name, 1, 0))
++			     return 0;
++			   addr.srv.targetlen = strlen(name) + 1; /* include terminating zero */
++			   if (!(addr.srv.target = blockdata_alloc(name, addr.srv.targetlen)))
++			     return 0;
++			   
++			   /* we overwrote the original name, so get it back here. */
++			   if (!extract_name(header, qlen, &tmp, name, 1, 0))
++			     return 0;
++			}
++		      else
++			{
++			  /* copy address into aligned storage */
++			  if (!CHECK_LEN(header, p1, qlen, addrlen))
++			    return 0; /* bad packet */
++			  memcpy(&addr, p1, addrlen);
++		      
++			  /* check for returned address in private space */
++			  if (check_rebind)
+ 			    {
+-			      struct in_addr v4;
+-			      v4.s_addr = ((const uint32_t *) (&addr.addr6))[3];
+-			      if (private_net(v4, !option_bool(OPT_LOCAL_REBIND)))
++			      if ((flags & F_IPV4) &&
++				  private_net(addr.addr4, !option_bool(OPT_LOCAL_REBIND)))
+ 				return 1;
++			      
++			      if ((flags & F_IPV6) &&
++				  IN6_IS_ADDR_V4MAPPED(&addr.addr6))
++				{
++				  struct in_addr v4;
++				  v4.s_addr = ((const uint32_t *) (&addr.addr6))[3];
++				  if (private_net(v4, !option_bool(OPT_LOCAL_REBIND)))
++				    return 1;
++				}
+ 			    }
+-			}
+-		      
++			  
+ #ifdef HAVE_IPSET
+-		      if (ipsets && (flags & (F_IPV4 | F_IPV6)))
+-			{
+-			  ipsets_cur = ipsets;
+-			  while (*ipsets_cur)
++			  if (ipsets && (flags & (F_IPV4 | F_IPV6)))
+ 			    {
+-			      log_query((flags & (F_IPV4 | F_IPV6)) | F_IPSET, name, &addr, *ipsets_cur);
+-			      add_to_ipset(*ipsets_cur++, &addr, flags, 0);
++			      ipsets_cur = ipsets;
++			      while (*ipsets_cur)
++				{
++				  log_query((flags & (F_IPV4 | F_IPV6)) | F_IPSET, name, &addr, *ipsets_cur);
++				  add_to_ipset(*ipsets_cur++, &addr, flags, 0);
++				}
+ 			    }
+-			}
+ #endif
++			}
+ 		      
+ 		      newc = cache_insert(name, &addr, C_IN, now, attl, flags | F_FORWARD | secflag);
+ 		      if (newc && cpp)
+@@ -1844,7 +1868,68 @@ size_t answer_request(struct dns_header
+ 		  *up = move;
+ 		  move->next = NULL;
+ 		}
+-	      
++
++	      if (!found)
++		{
++		cname_srv_restart:
++		  if ((crecp = cache_find_by_name(NULL, name, now, F_CNAME | F_SRV | (dryrun ? F_NO_RR : 0))) &&
++		      (!do_bit || (option_bool(OPT_DNSSEC_VALID) && !(crecp->flags & F_DNSSECOK))))
++		    {
++		      if (!(crecp->flags & F_DNSSECOK))
++			sec_data = 0;
++		      
++		      auth = 0;
++		      found = ans = 1;
++		      
++		      do {
++			if (crecp->flags & F_CNAME)
++			  {
++			    char *cname_target = cache_get_cname_target(crecp);
++			    
++			    if (!dryrun)
++			      {
++				log_query(crecp->flags, name, NULL, record_source(crecp->uid));
++				if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, 
++							crec_ttl(crecp, now), &nameoffset,
++							T_CNAME, C_IN, "d", cname_target))
++				  anscount++;
++			      }
++			    
++			    strcpy(name, cname_target);
++			    goto cname_srv_restart;
++			  }
++			else if (crecp->flags & F_NEG)
++			  {
++			    if (crecp->flags & F_NXDOMAIN)
++			      nxdomain = 1;
++			    if (!dryrun)
++			      log_query(crecp->flags, name, NULL, NULL);
++			  }
++			else 
++			  {
++			    unsigned char *p1 = ((unsigned char *)header) + nameoffset;
++			    
++			    if (!dryrun)
++			      {
++				log_query(crecp->flags, name, NULL, 0);
++				
++				blockdata_retrieve(crecp->addr.srv.target, crecp->addr.srv.targetlen, name); 
++				if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, 
++							crec_ttl(crecp, now), NULL, T_SRV, C_IN, "sssd",
++							crecp->addr.srv.priority, crecp->addr.srv.weight, crecp->addr.srv.srvport,
++							name))
++				  anscount++;
++				
++				
++				/* restore name we overwrote */
++				if (!extract_name(header, qlen, &p1, name, 1, 0))
++				  return 0; /* bad packet */
++			      }
++			  }
++		      } while ((crecp = cache_find_by_name(crecp, name, now, F_SRV | F_CNAME)));
++		    }
++		}
++
+ 	      if (!found && option_bool(OPT_FILTER) && (qtype == T_SRV || (qtype == T_ANY && strchr(name, '_'))))
+ 		{
+ 		  ans = 1;
