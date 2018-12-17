@@ -212,7 +212,7 @@ TARGET_DEVICES += glinet_ar300m-nor
 define Device/glinet_gl-x750
   ATH_SOC := qca9531
   DEVICE_TITLE := GL.iNet GL-X750
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2  kmod-ath10k ath10k-firmware-qca9887
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += glinet_gl-x750

@@ -898,7 +898,7 @@ TARGET_DEVICES += minibox-v1
 define Device/minibox-v3.2
   $(Device/tplink-16mlzma)
   DEVICE_TITLE := Gainstrong MiniBox V3.2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca9887 -swconfig
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca9887-ct -swconfig
   BOARDNAME := MINIBOX-V3.2
   DEVICE_PROFILE := MINIBOXV32
   TPLINK_HWID := 0x3C00010C
