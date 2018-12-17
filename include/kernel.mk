@@ -259,7 +259,7 @@ $(call KernelPackage/$(1)/config)
   endif
   $$(eval $$(call BuildPackage,kmod-$(1)))
 
-  $$(IPKG_kmod-$(1)): $$(wildcard $$(FILES))
+  $$(IPKG_kmod-$(1)): $$(wildcard $$(call version_filter,$$(FILES)))
 
 endef
 
