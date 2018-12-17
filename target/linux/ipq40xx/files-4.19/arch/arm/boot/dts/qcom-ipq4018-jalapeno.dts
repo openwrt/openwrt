@@ -199,11 +199,11 @@
 		};
 	};
 
-	mt29f@1 {
+	spi-nand@1 {
 		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		compatible = "spinand,mt29f", "w25n01gv";
+		compatible = "spi-nand";
 		reg = <1>;
 		spi-max-frequency = <24000000>;
 		partitions {
