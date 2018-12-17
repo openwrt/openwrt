@@ -12,10 +12,6 @@ define Build/append-md5sum-bin
 		xargs echo -ne >> $@
 endef
 
-define Build/append-string
-	echo -n $(1) >> $@
-endef
-
 define Build/mkwrggimg
 	$(STAGING_DIR_HOST)/bin/mkwrggimg -b \
 		-i $@ -o $@.imghdr -d /dev/mtdblock/1 \
