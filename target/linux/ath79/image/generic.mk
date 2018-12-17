@@ -146,7 +146,8 @@ define Device/dlink_dir-825-c1
   IMAGE_SIZE := 15936k
   IMAGES := factory.bin sysupgrade.bin
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs
-  IMAGE/factory.bin := $$(IMAGE/default) | cameo-factory $$$$(IMAGE_SIZE) 00DB120AR9344-RT-101214-00 | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/default) | pad-offset $$$$(IMAGE_SIZE) 26 | \
+	append-string 00DB120AR9344-RT-101214-00 | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += dlink_dir-825-c1
@@ -159,7 +160,8 @@ define Device/dlink_dir-835-a1
   IMAGE_SIZE := 15936k
   IMAGES := factory.bin sysupgrade.bin
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs
-  IMAGE/factory.bin := $$(IMAGE/default) | cameo-factory $$$$(IMAGE_SIZE) 00DB120AR9344-RT-101214-00 | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/default) | pad-offset $$$$(IMAGE_SIZE) 26 | \
+	append-string 00DB120AR9344-RT-101214-00 | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += dlink_dir-835-a1
