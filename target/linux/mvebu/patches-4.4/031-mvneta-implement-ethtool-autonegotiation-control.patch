@@ -118,7 +118,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	mvneta_set_ucast_table(pp, -1);
  	mvneta_set_special_mcast_table(pp, -1);
  	mvneta_set_other_mcast_table(pp, -1);
-@@ -2959,10 +2965,43 @@ int mvneta_ethtool_get_settings(struct n
+@@ -2958,10 +2964,43 @@ int mvneta_ethtool_get_settings(struct n
  int mvneta_ethtool_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
  {
  	struct mvneta_port *pp = netdev_priv(dev);

@@ -68,7 +68,7 @@ Reviewed-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  	spifi->nor.write = nxp_spifi_write;
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -1120,7 +1120,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1126,7 +1126,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  	const struct flash_info *info = NULL;
  	struct device *dev = nor->dev;
  	struct mtd_info *mtd = &nor->mtd;

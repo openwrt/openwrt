@@ -172,7 +172,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
  			if (err)
  				break;
  		}
-@@ -1432,7 +1458,8 @@ br_multicast_leave_group(struct net_brid
+@@ -1439,7 +1465,8 @@ br_multicast_leave_group(struct net_brid
  			 struct net_bridge_port *port,
  			 struct br_ip *group,
  			 struct bridge_mcast_other_query *other_query,
@@ -182,7 +182,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
  {
  	struct net_bridge_mdb_htable *mdb;
  	struct net_bridge_mdb_entry *mp;
-@@ -1456,7 +1483,7 @@ br_multicast_leave_group(struct net_brid
+@@ -1463,7 +1490,7 @@ br_multicast_leave_group(struct net_brid
  		for (pp = &mp->ports;
  		     (p = mlock_dereference(*pp, br)) != NULL;
  		     pp = &p->next) {
@@ -191,7 +191,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
  				continue;
  
  			rcu_assign_pointer(*pp, p->next);
-@@ -1519,7 +1546,7 @@ br_multicast_leave_group(struct net_brid
+@@ -1526,7 +1553,7 @@ br_multicast_leave_group(struct net_brid
  	for (p = mlock_dereference(mp->ports, br);
  	     p != NULL;
  	     p = mlock_dereference(p->next, br)) {
@@ -200,7 +200,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
  			continue;
  
  		if (!hlist_unhashed(&p->mglist) &&
-@@ -1537,8 +1564,8 @@ out:
+@@ -1544,8 +1571,8 @@ out:
  
  static void br_ip4_multicast_leave_group(struct net_bridge *br,
  					 struct net_bridge_port *port,
@@ -211,7 +211,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
  {
  	struct br_ip br_group;
  	struct bridge_mcast_own_query *own_query;
-@@ -1553,14 +1580,14 @@ static void br_ip4_multicast_leave_group
+@@ -1560,14 +1587,14 @@ static void br_ip4_multicast_leave_group
  	br_group.vid = vid;
  
  	br_multicast_leave_group(br, port, &br_group, &br->ip4_other_query,
@@ -228,7 +228,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
  {
  	struct br_ip br_group;
  	struct bridge_mcast_own_query *own_query;
-@@ -1575,7 +1602,7 @@ static void br_ip6_multicast_leave_group
+@@ -1582,7 +1609,7 @@ static void br_ip6_multicast_leave_group
  	br_group.vid = vid;
  
  	br_multicast_leave_group(br, port, &br_group, &br->ip6_other_query,
@@ -237,7 +237,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
  }
  #endif
  
-@@ -1584,6 +1611,7 @@ static int br_multicast_ipv4_rcv(struct
+@@ -1591,6 +1618,7 @@ static int br_multicast_ipv4_rcv(struct
  				 struct sk_buff *skb,
  				 u16 vid)
  {
@@ -245,7 +245,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
  	struct sk_buff *skb_trimmed = NULL;
  	struct igmphdr *ih;
  	int err;
-@@ -1600,12 +1628,13 @@ static int br_multicast_ipv4_rcv(struct
+@@ -1607,12 +1635,13 @@ static int br_multicast_ipv4_rcv(struct
  
  	BR_INPUT_SKB_CB(skb)->igmp = 1;
  	ih = igmp_hdr(skb);
@@ -260,7 +260,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
  		break;
  	case IGMPV3_HOST_MEMBERSHIP_REPORT:
  		err = br_ip4_multicast_igmp3_report(br, port, skb_trimmed, vid);
-@@ -1614,7 +1643,7 @@ static int br_multicast_ipv4_rcv(struct
+@@ -1621,7 +1650,7 @@ static int br_multicast_ipv4_rcv(struct
  		err = br_ip4_multicast_query(br, port, skb_trimmed, vid);
  		break;
  	case IGMP_HOST_LEAVE_MESSAGE:
@@ -269,7 +269,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
  		break;
  	}
  
-@@ -1630,6 +1659,7 @@ static int br_multicast_ipv6_rcv(struct
+@@ -1637,6 +1666,7 @@ static int br_multicast_ipv6_rcv(struct
  				 struct sk_buff *skb,
  				 u16 vid)
  {
@@ -277,7 +277,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
  	struct sk_buff *skb_trimmed = NULL;
  	struct mld_msg *mld;
  	int err;
-@@ -1649,8 +1679,9 @@ static int br_multicast_ipv6_rcv(struct
+@@ -1656,8 +1686,9 @@ static int br_multicast_ipv6_rcv(struct
  
  	switch (mld->mld_type) {
  	case ICMPV6_MGM_REPORT:
@@ -288,7 +288,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
  		break;
  	case ICMPV6_MLD2_REPORT:
  		err = br_ip6_multicast_mld2_report(br, port, skb_trimmed, vid);
-@@ -1659,7 +1690,8 @@ static int br_multicast_ipv6_rcv(struct
+@@ -1666,7 +1697,8 @@ static int br_multicast_ipv6_rcv(struct
  		err = br_ip6_multicast_query(br, port, skb_trimmed, vid);
  		break;
  	case ICMPV6_MGM_REDUCTION:

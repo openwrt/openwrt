@@ -296,15 +296,15 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  
  		__skb_tunnel_rx(skb, t->dev, t->net);
  
-@@ -1148,6 +1285,7 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
+@@ -1153,6 +1290,7 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
  	__u32 mtu;
  	u8 tproto;
  	int err;
 +	struct __ip6_tnl_fmr *fmr;
  
- 	tproto = ACCESS_ONCE(t->parms.proto);
- 	if ((tproto != IPPROTO_IPV6 && tproto != 0) ||
-@@ -1178,6 +1316,18 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
+ 	if (unlikely(!pskb_may_pull(skb, sizeof(*ipv6h))))
+ 		return -1;
+@@ -1187,6 +1325,18 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_FWMARK)
  		fl6.flowi6_mark = skb->mark;
  
@@ -323,7 +323,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	err = ip6_tnl_xmit2(skb, dev, dsfield, &fl6, encap_limit, &mtu);
  	if (err != 0) {
  		if (err == -EMSGSIZE)
-@@ -1292,6 +1442,14 @@ ip6_tnl_change(struct ip6_tnl *t, const
+@@ -1301,6 +1451,14 @@ ip6_tnl_change(struct ip6_tnl *t, const
  	t->parms.flowinfo = p->flowinfo;
  	t->parms.link = p->link;
  	t->parms.proto = p->proto;
@@ -338,7 +338,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	dst_cache_reset(&t->dst_cache);
  	ip6_tnl_link_config(t);
  	return 0;
-@@ -1330,6 +1488,7 @@ ip6_tnl_parm_from_user(struct __ip6_tnl_
+@@ -1339,6 +1497,7 @@ ip6_tnl_parm_from_user(struct __ip6_tnl_
  	p->flowinfo = u->flowinfo;
  	p->link = u->link;
  	p->proto = u->proto;
@@ -346,7 +346,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	memcpy(p->name, u->name, sizeof(u->name));
  }
  
-@@ -1625,6 +1784,15 @@ static int ip6_tnl_validate(struct nlatt
+@@ -1634,6 +1793,15 @@ static int ip6_tnl_validate(struct nlatt
  	return 0;
  }
  
@@ -362,7 +362,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  static void ip6_tnl_netlink_parms(struct nlattr *data[],
  				  struct __ip6_tnl_parm *parms)
  {
-@@ -1656,6 +1824,46 @@ static void ip6_tnl_netlink_parms(struct
+@@ -1665,6 +1833,46 @@ static void ip6_tnl_netlink_parms(struct
  
  	if (data[IFLA_IPTUN_PROTO])
  		parms->proto = nla_get_u8(data[IFLA_IPTUN_PROTO]);
@@ -409,7 +409,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  }
  
  static int ip6_tnl_newlink(struct net *src_net, struct net_device *dev,
-@@ -1708,6 +1916,12 @@ static void ip6_tnl_dellink(struct net_d
+@@ -1717,6 +1925,12 @@ static void ip6_tnl_dellink(struct net_d
  
  static size_t ip6_tnl_get_size(const struct net_device *dev)
  {
@@ -422,7 +422,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	return
  		/* IFLA_IPTUN_LINK */
  		nla_total_size(4) +
-@@ -1725,6 +1939,24 @@ static size_t ip6_tnl_get_size(const str
+@@ -1734,6 +1948,24 @@ static size_t ip6_tnl_get_size(const str
  		nla_total_size(4) +
  		/* IFLA_IPTUN_PROTO */
  		nla_total_size(1) +
@@ -447,7 +447,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  		0;
  }
  
-@@ -1732,6 +1964,9 @@ static int ip6_tnl_fill_info(struct sk_b
+@@ -1741,6 +1973,9 @@ static int ip6_tnl_fill_info(struct sk_b
  {
  	struct ip6_tnl *tunnel = netdev_priv(dev);
  	struct __ip6_tnl_parm *parm = &tunnel->parms;
@@ -457,7 +457,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  
  	if (nla_put_u32(skb, IFLA_IPTUN_LINK, parm->link) ||
  	    nla_put_in6_addr(skb, IFLA_IPTUN_LOCAL, &parm->laddr) ||
-@@ -1740,8 +1975,27 @@ static int ip6_tnl_fill_info(struct sk_b
+@@ -1749,8 +1984,27 @@ static int ip6_tnl_fill_info(struct sk_b
  	    nla_put_u8(skb, IFLA_IPTUN_ENCAP_LIMIT, parm->encap_limit) ||
  	    nla_put_be32(skb, IFLA_IPTUN_FLOWINFO, parm->flowinfo) ||
  	    nla_put_u32(skb, IFLA_IPTUN_FLAGS, parm->flags) ||
@@ -486,7 +486,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	return 0;
  
  nla_put_failure:
-@@ -1765,6 +2019,7 @@ static const struct nla_policy ip6_tnl_p
+@@ -1774,6 +2028,7 @@ static const struct nla_policy ip6_tnl_p
  	[IFLA_IPTUN_FLOWINFO]		= { .type = NLA_U32 },
  	[IFLA_IPTUN_FLAGS]		= { .type = NLA_U32 },
  	[IFLA_IPTUN_PROTO]		= { .type = NLA_U8 },

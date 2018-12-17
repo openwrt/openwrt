@@ -14,7 +14,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -3590,6 +3590,13 @@ int mvneta_ethtool_set_settings(struct n
+@@ -3589,6 +3589,13 @@ int mvneta_ethtool_set_settings(struct n
  	return phylink_ethtool_set_settings(pp->phylink, cmd);
  }
  
@@ -28,7 +28,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  /* Set interrupt coalescing for ethtools */
  static int mvneta_ethtool_set_coalesce(struct net_device *dev,
  				       struct ethtool_coalesce *c)
-@@ -3854,6 +3861,7 @@ const struct ethtool_ops mvneta_eth_tool
+@@ -3853,6 +3860,7 @@ const struct ethtool_ops mvneta_eth_tool
  	.get_link       = ethtool_op_get_link,
  	.get_settings   = mvneta_ethtool_get_settings,
  	.set_settings   = mvneta_ethtool_set_settings,

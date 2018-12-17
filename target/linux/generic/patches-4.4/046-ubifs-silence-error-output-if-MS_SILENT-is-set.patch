@@ -18,7 +18,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
 
 --- a/fs/ubifs/super.c
 +++ b/fs/ubifs/super.c
-@@ -2113,8 +2113,9 @@ static struct dentry *ubifs_mount(struct
+@@ -2116,8 +2116,9 @@ static struct dentry *ubifs_mount(struct
  	 */
  	ubi = open_ubi(name, UBI_READONLY);
  	if (IS_ERR(ubi)) {

@@ -180,7 +180,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
 +#endif /* _PCI_LAYERSCAPE_H */
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
-@@ -3589,8 +3589,9 @@ int pci_dev_specific_reset(struct pci_de
+@@ -3593,8 +3593,9 @@ int pci_dev_specific_reset(struct pci_de
  static void quirk_dma_func0_alias(struct pci_dev *dev)
  {
  	if (PCI_FUNC(dev->devfn) != 0) {
@@ -192,7 +192,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  	}
  }
  
-@@ -3605,8 +3606,9 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_R
+@@ -3609,8 +3610,9 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_R
  static void quirk_dma_func1_alias(struct pci_dev *dev)
  {
  	if (PCI_FUNC(dev->devfn) != 1) {
@@ -204,7 +204,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  	}
  }
  
-@@ -3677,11 +3679,12 @@ static void quirk_fixed_dma_alias(struct
+@@ -3681,11 +3683,12 @@ static void quirk_fixed_dma_alias(struct
  
  	id = pci_match_id(fixed_dma_alias_tbl, dev);
  	if (id) {

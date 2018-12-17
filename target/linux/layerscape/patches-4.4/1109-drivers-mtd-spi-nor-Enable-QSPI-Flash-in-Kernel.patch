@@ -14,7 +14,7 @@ Signed-off-by: Prabhakar Kushwaha <prabhakar.kushwaha@nxp.com>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -798,6 +798,7 @@ static const struct flash_info spi_nor_i
+@@ -804,6 +804,7 @@ static const struct flash_info spi_nor_i
  	{ "s25sl032p",  INFO(0x010215, 0x4d00,  64 * 1024,  64, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
  	{ "s25sl064p",  INFO(0x010216, 0x4d00,  64 * 1024, 128, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
  	{ "s25fs256s1", INFO6(0x010219, 0x4d0181, 64 * 1024, 512, 0)},
@@ -22,7 +22,7 @@ Signed-off-by: Prabhakar Kushwaha <prabhakar.kushwaha@nxp.com>
  	{ "s25fl256s0", INFO(0x010219, 0x4d00, 256 * 1024, 128, 0) },
  	{ "s25fl256s1", INFO(0x010219, 0x4d01,  64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
  	{ "s25fl512s",  INFO(0x010220, 0x4d00, 256 * 1024, 256, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
-@@ -964,9 +965,11 @@ static int spansion_s25fs_disable_4kb_er
+@@ -970,9 +971,11 @@ static int spansion_s25fs_disable_4kb_er
  	ret = nor->read_reg(nor, SPINOR_OP_SPANSION_RDAR, &cr3v, 1);
  	if (ret)
  		return ret;

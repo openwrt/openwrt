@@ -68,7 +68,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	u64 ethtool_stats[ARRAY_SIZE(mvneta_statistics)];
  
  	u32 indir[MVNETA_RSS_LU_TABLE_SIZE];
-@@ -3277,6 +3294,18 @@ static void mvneta_mac_config(struct net
+@@ -3276,6 +3293,18 @@ static void mvneta_mac_config(struct net
  		mvreg_write(pp, MVNETA_GMAC_AUTONEG_CONFIG, new_an);
  }
  
@@ -87,7 +87,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  static void mvneta_mac_link_down(struct net_device *ndev, unsigned int mode)
  {
  	struct mvneta_port *pp = netdev_priv(ndev);
-@@ -3290,6 +3319,9 @@ static void mvneta_mac_link_down(struct
+@@ -3289,6 +3318,9 @@ static void mvneta_mac_link_down(struct
  		val |= MVNETA_GMAC_FORCE_LINK_DOWN;
  		mvreg_write(pp, MVNETA_GMAC_AUTONEG_CONFIG, val);
  	}
@@ -97,7 +97,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  }
  
  static void mvneta_mac_link_up(struct net_device *ndev, unsigned int mode,
-@@ -3306,6 +3338,11 @@ static void mvneta_mac_link_up(struct ne
+@@ -3305,6 +3337,11 @@ static void mvneta_mac_link_up(struct ne
  	}
  
  	mvneta_port_up(pp);
@@ -109,7 +109,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  }
  
  static const struct phylink_mac_ops mvneta_phylink_ops = {
-@@ -3745,6 +3782,13 @@ static void mvneta_ethtool_update_stats(
+@@ -3744,6 +3781,13 @@ static void mvneta_ethtool_update_stats(
  			val64 = (u64)high << 32 | low;
  			pp->ethtool_stats[i] += val64;
  			break;
@@ -123,7 +123,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  		}
  	}
  }
-@@ -3868,6 +3912,47 @@ static int mvneta_ethtool_get_rxfh(struc
+@@ -3867,6 +3911,47 @@ static int mvneta_ethtool_get_rxfh(struc
  	return 0;
  }
  
@@ -171,7 +171,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  static const struct net_device_ops mvneta_netdev_ops = {
  	.ndo_open            = mvneta_open,
  	.ndo_stop            = mvneta_stop,
-@@ -3899,6 +3984,8 @@ const struct ethtool_ops mvneta_eth_tool
+@@ -3898,6 +3983,8 @@ const struct ethtool_ops mvneta_eth_tool
  	.get_rxnfc	= mvneta_ethtool_get_rxnfc,
  	.get_rxfh	= mvneta_ethtool_get_rxfh,
  	.set_rxfh	= mvneta_ethtool_set_rxfh,

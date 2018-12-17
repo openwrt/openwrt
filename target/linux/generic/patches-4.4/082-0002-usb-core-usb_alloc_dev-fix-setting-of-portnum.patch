@@ -84,7 +84,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/usb/core/usb.c
 +++ b/drivers/usb/core/usb.c
-@@ -423,6 +423,7 @@ struct usb_device *usb_alloc_dev(struct
+@@ -425,6 +425,7 @@ struct usb_device *usb_alloc_dev(struct
  	struct usb_device *dev;
  	struct usb_hcd *usb_hcd = bus_to_hcd(bus);
  	unsigned root_hub = 0;
@@ -92,7 +92,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
  	if (!dev)
-@@ -497,11 +498,11 @@ struct usb_device *usb_alloc_dev(struct
+@@ -499,11 +500,11 @@ struct usb_device *usb_alloc_dev(struct
  
  		if (!parent->parent) {
  			/* device under root hub's port */

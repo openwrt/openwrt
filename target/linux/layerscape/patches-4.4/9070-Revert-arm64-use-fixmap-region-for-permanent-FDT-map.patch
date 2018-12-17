@@ -224,7 +224,7 @@ Signed-off-by: Yutang Jiang <yutang.jiang@nxp.com>
  	/*
 --- a/arch/arm64/mm/init.c
 +++ b/arch/arm64/mm/init.c
-@@ -171,6 +171,7 @@ void __init arm64_memblock_init(void)
+@@ -175,6 +175,7 @@ void __init arm64_memblock_init(void)
  		memblock_reserve(__virt_to_phys(initrd_start), initrd_end - initrd_start);
  #endif
  

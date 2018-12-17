@@ -256,7 +256,7 @@ Cc: linux-mips@linux-mips.org
  	instruction_hazard();
  }
  
-@@ -823,7 +901,12 @@ static void local_r4k_flush_cache_sigtra
+@@ -825,7 +903,12 @@ static void local_r4k_flush_cache_sigtra
  
  static void r4k_flush_cache_sigtramp(unsigned long addr)
  {
@@ -270,7 +270,7 @@ Cc: linux-mips@linux-mips.org
  }
  
  static void r4k_flush_icache_all(void)
-@@ -837,6 +920,15 @@ struct flush_kernel_vmap_range_args {
+@@ -839,6 +922,15 @@ struct flush_kernel_vmap_range_args {
  	int		size;
  };
  
@@ -286,7 +286,7 @@ Cc: linux-mips@linux-mips.org
  static inline void local_r4k_flush_kernel_vmap_range(void *args)
  {
  	struct flush_kernel_vmap_range_args *vmra = args;
-@@ -847,12 +939,8 @@ static inline void local_r4k_flush_kerne
+@@ -849,12 +941,8 @@ static inline void local_r4k_flush_kerne
  	 * Aliases only affect the primary caches so don't bother with
  	 * S-caches or T-caches.
  	 */
@@ -301,7 +301,7 @@ Cc: linux-mips@linux-mips.org
  }
  
  static void r4k_flush_kernel_vmap_range(unsigned long vaddr, int size)
-@@ -862,7 +950,12 @@ static void r4k_flush_kernel_vmap_range(
+@@ -864,7 +952,12 @@ static void r4k_flush_kernel_vmap_range(
  	args.vaddr = (unsigned long) vaddr;
  	args.size = size;
  

@@ -131,7 +131,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  #include <asm/io.h>
  #include <linux/scatterlist.h>
-@@ -469,6 +470,7 @@ struct usb_device *usb_alloc_dev(struct
+@@ -471,6 +472,7 @@ struct usb_device *usb_alloc_dev(struct
  		dev->route = 0;
  
  		dev->dev.parent = bus->controller;
@@ -139,7 +139,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  		dev_set_name(&dev->dev, "usb%d", bus->busnum);
  		root_hub = 1;
  	} else {
-@@ -493,6 +495,14 @@ struct usb_device *usb_alloc_dev(struct
+@@ -495,6 +497,14 @@ struct usb_device *usb_alloc_dev(struct
  		dev->dev.parent = &parent->dev;
  		dev_set_name(&dev->dev, "%d-%s", bus->busnum, dev->devpath);
  

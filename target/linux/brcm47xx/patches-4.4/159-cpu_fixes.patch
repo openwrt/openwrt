@@ -355,7 +355,7 @@
  	if (dc_lsize == 0)
  		r4k_blast_dcache = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -880,6 +892,8 @@ static void local_r4k_flush_cache_sigtra
+@@ -882,6 +894,8 @@ static void local_r4k_flush_cache_sigtra
  	unsigned long addr = (unsigned long) arg;
  
  	R4600_HIT_CACHEOP_WAR_IMPL;
@@ -364,7 +364,7 @@
  	if (dc_lsize)
  		protected_writeback_dcache_line(addr & ~(dc_lsize - 1));
  	if (!cpu_icache_snoops_remote_store && scache_size)
-@@ -1704,6 +1718,17 @@ static void coherency_setup(void)
+@@ -1706,6 +1720,17 @@ static void coherency_setup(void)
  	 * silly idea of putting something else there ...
  	 */
  	switch (current_cpu_type()) {
@@ -382,7 +382,7 @@
  	case CPU_R4000PC:
  	case CPU_R4000SC:
  	case CPU_R4000MC:
-@@ -1750,6 +1775,15 @@ void r4k_cache_init(void)
+@@ -1752,6 +1777,15 @@ void r4k_cache_init(void)
  	extern void build_copy_page(void);
  	struct cpuinfo_mips *c = &current_cpu_data;
  
@@ -398,7 +398,7 @@
  	probe_pcache();
  	setup_scache();
  
-@@ -1819,7 +1853,15 @@ void r4k_cache_init(void)
+@@ -1821,7 +1855,15 @@ void r4k_cache_init(void)
  	 */
  	local_r4k___flush_cache_all(NULL);
  

@@ -86,21 +86,21 @@ v2: incorporated changes suggested by Jonas Gorski
  extern int fpu_emulator_cop1Handler(struct pt_regs *xcp,
  				    struct mips_fpu_struct *ctx, int has_fpu,
  				    void *__user *fault_addr);
-+#else	/* no CONFIG_MIPS_FPU_EMULATOR */
++#else  /* no CONFIG_MIPS_FPU_EMULATOR */
 +static inline int do_dsemulret(struct pt_regs *xcp)
 +{
-+	return 0;	/* 0 means error, should never get here anyway */
++	return 0;       /* 0 means error, should never get here anyway */
 +}
 +
 +static inline int fpu_emulator_cop1Handler(struct pt_regs *xcp,
-+				struct mips_fpu_struct *ctx, int has_fpu,
-+				void *__user *fault_addr)
++					   struct mips_fpu_struct *ctx, int has_fpu,
++					   void *__user *fault_addr)
 +{
 +	*fault_addr = NULL;
-+	return SIGILL;	/* we don't speak MIPS FPU */
++	return SIGILL;  /* we don't speak MIPS FPU */
 +}
-+#endif	/* CONFIG_MIPS_FPU_EMULATOR */
++#endif /* CONFIG_MIPS_FPU_EMULATOR */
 +
+ void force_fcr31_sig(unsigned long fcr31, void __user *fault_addr,
+ 		     struct task_struct *tsk);
  int process_fpemu_return(int sig, void __user *fault_addr,
- 			 unsigned long fcr31);
- int mm_isBranchInstr(struct pt_regs *regs, struct mm_decoded_insn dec_insn,

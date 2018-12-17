@@ -18,7 +18,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/usb/smsc95xx.c
 +++ b/drivers/net/usb/smsc95xx.c
-@@ -1835,13 +1835,13 @@ static struct sk_buff *smsc95xx_tx_fixup
+@@ -1838,13 +1838,13 @@ static struct sk_buff *smsc95xx_tx_fixup
  	/* We do not advertise SG, so skbs should be already linearized */
  	BUG_ON(skb_shinfo(skb)->nr_frags);
  

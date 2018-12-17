@@ -47,7 +47,7 @@ Integrated-by: Jiang Yutang <yutang.jiang@nxp.com>
  
  	/* Cannot unlock; would unlock larger region than requested */
  	if (stm_is_locked_sr(nor, ofs - mtd->erasesize, mtd->erasesize,
-@@ -1038,6 +1042,8 @@ static int macronix_quad_enable(struct s
+@@ -1044,6 +1048,8 @@ static int macronix_quad_enable(struct s
  	int ret, val;
  
  	val = read_sr(nor);

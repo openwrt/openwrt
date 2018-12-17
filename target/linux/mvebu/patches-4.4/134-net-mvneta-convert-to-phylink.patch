@@ -208,7 +208,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  
  	for_each_online_cpu(cpu) {
  		struct mvneta_pcpu_port *port = per_cpu_ptr(pp->ports, cpu);
-@@ -3166,99 +3109,219 @@ static int mvneta_set_mac_addr(struct ne
+@@ -3165,99 +3108,219 @@ static int mvneta_set_mac_addr(struct ne
  	return 0;
  }
  
@@ -449,6 +449,13 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 -	struct phy_device *phy_dev;
 +	struct mvneta_port *pp = netdev_priv(ndev);
 +	u32 val;
++
++	if (mode == MLO_AN_PHY || mode == MLO_AN_FIXED) {
++		val = mvreg_read(pp, MVNETA_GMAC_AUTONEG_CONFIG);
++		val &= ~MVNETA_GMAC_FORCE_LINK_DOWN;
++		val |= MVNETA_GMAC_FORCE_LINK_PASS;
++		mvreg_write(pp, MVNETA_GMAC_AUTONEG_CONFIG, val);
++	}
  
 -	phy_dev = of_phy_connect(pp->dev, pp->phy_node, mvneta_adjust_link, 0,
 -				 pp->phy_interface);
@@ -464,17 +471,10 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 -	pp->link    = 0;
 -	pp->duplex  = 0;
 -	pp->speed   = 0;
-+	if (mode == MLO_AN_PHY || mode == MLO_AN_FIXED) {
-+		val = mvreg_read(pp, MVNETA_GMAC_AUTONEG_CONFIG);
-+		val &= ~MVNETA_GMAC_FORCE_LINK_DOWN;
-+		val |= MVNETA_GMAC_FORCE_LINK_PASS;
-+		mvreg_write(pp, MVNETA_GMAC_AUTONEG_CONFIG, val);
-+	}
- 
--	return 0;
 +	mvneta_port_up(pp);
 +}
-+
+ 
+-	return 0;
 +static const struct phylink_mac_ops mvneta_phylink_ops = {
 +	.mac_get_support = mvneta_mac_support,
 +	.mac_link_state = mvneta_mac_link_state,
@@ -501,7 +501,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  }
  
  /* Electing a CPU must be done in an atomic way: it should be done
-@@ -3506,10 +3569,7 @@ static int mvneta_ioctl(struct net_devic
+@@ -3505,10 +3568,7 @@ static int mvneta_ioctl(struct net_devic
  {
  	struct mvneta_port *pp = netdev_priv(dev);
  
@@ -513,7 +513,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  }
  
  /* Ethtool methods */
-@@ -3519,54 +3579,15 @@ int mvneta_ethtool_get_settings(struct n
+@@ -3518,54 +3578,15 @@ int mvneta_ethtool_get_settings(struct n
  {
  	struct mvneta_port *pp = netdev_priv(dev);
  
@@ -570,7 +570,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  }
  
  /* Set interrupt coalescing for ethtools */
-@@ -3674,7 +3695,8 @@ static void mvneta_ethtool_update_stats(
+@@ -3673,7 +3694,8 @@ static void mvneta_ethtool_update_stats(
  {
  	const struct mvneta_statistic *s;
  	void __iomem *base = pp->base;
@@ -580,7 +580,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	u64 val64;
  	int i;
  
-@@ -3969,14 +3991,13 @@ static int mvneta_probe(struct platform_
+@@ -3968,14 +3990,13 @@ static int mvneta_probe(struct platform_
  	const struct mbus_dram_target_info *dram_target_info;
  	struct resource *res;
  	struct device_node *dn = pdev->dev.of_node;
@@ -596,7 +596,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	int tx_csum_limit;
  	int phy_mode;
  	int err;
-@@ -3992,31 +4013,11 @@ static int mvneta_probe(struct platform_
+@@ -3991,31 +4012,11 @@ static int mvneta_probe(struct platform_
  		goto err_free_netdev;
  	}
  
@@ -629,7 +629,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	}
  
  	dev->tx_queue_len = MVNETA_MAX_TXD;
-@@ -4027,12 +4028,7 @@ static int mvneta_probe(struct platform_
+@@ -4026,12 +4027,7 @@ static int mvneta_probe(struct platform_
  
  	pp = netdev_priv(dev);
  	spin_lock_init(&pp->lock);
@@ -643,7 +643,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	pp->cpu_notifier.notifier_call = mvneta_percpu_notifier;
  
  	pp->rxq_def = rxq_def;
-@@ -4042,7 +4038,7 @@ static int mvneta_probe(struct platform_
+@@ -4041,7 +4037,7 @@ static int mvneta_probe(struct platform_
  	pp->clk = devm_clk_get(&pdev->dev, NULL);
  	if (IS_ERR(pp->clk)) {
  		err = PTR_ERR(pp->clk);
@@ -652,7 +652,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	}
  
  	clk_prepare_enable(pp->clk);
-@@ -4145,6 +4141,14 @@ static int mvneta_probe(struct platform_
+@@ -4144,6 +4140,14 @@ static int mvneta_probe(struct platform_
  	dev->priv_flags |= IFF_UNICAST_FLT | IFF_LIVE_ADDR_CHANGE;
  	dev->gso_max_segs = MVNETA_MAX_TSO_SEGS;
  
@@ -667,7 +667,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	err = register_netdev(dev);
  	if (err < 0) {
  		dev_err(&pdev->dev, "failed to register\n");
-@@ -4156,13 +4160,6 @@ static int mvneta_probe(struct platform_
+@@ -4155,13 +4159,6 @@ static int mvneta_probe(struct platform_
  
  	platform_set_drvdata(pdev, pp->dev);
  
@@ -681,7 +681,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  
  	return 0;
  
-@@ -4174,13 +4171,13 @@ err_netdev:
+@@ -4173,13 +4170,13 @@ err_netdev:
  				       1 << pp->id);
  	}
  err_free_stats:
@@ -697,7 +697,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  err_free_irq:
  	irq_dispose_mapping(dev->irq);
  err_free_netdev:
-@@ -4199,7 +4196,7 @@ static int mvneta_remove(struct platform
+@@ -4198,7 +4195,7 @@ static int mvneta_remove(struct platform
  	free_percpu(pp->ports);
  	free_percpu(pp->stats);
  	irq_dispose_mapping(dev->irq);

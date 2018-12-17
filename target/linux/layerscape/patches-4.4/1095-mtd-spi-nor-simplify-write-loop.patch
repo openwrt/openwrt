@@ -18,7 +18,7 @@ Signed-off-by: Hou Zhiqiang <Zhiqiang.Hou@freescale.com>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -1019,8 +1019,8 @@ static int spi_nor_write(struct mtd_info
+@@ -1025,8 +1025,8 @@ static int spi_nor_write(struct mtd_info
  	size_t *retlen, const u_char *buf)
  {
  	struct spi_nor *nor = mtd_to_spi_nor(mtd);
@@ -29,7 +29,7 @@ Signed-off-by: Hou Zhiqiang <Zhiqiang.Hou@freescale.com>
  
  	dev_dbg(nor->dev, "to 0x%08x, len %zd\n", (u32)to, len);
  
-@@ -1028,45 +1028,37 @@ static int spi_nor_write(struct mtd_info
+@@ -1034,45 +1034,37 @@ static int spi_nor_write(struct mtd_info
  	if (ret)
  		return ret;
  

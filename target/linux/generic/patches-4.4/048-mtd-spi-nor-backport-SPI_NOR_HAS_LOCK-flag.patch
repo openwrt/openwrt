@@ -25,7 +25,7 @@ Tested-by: Ezequiel Garcia <ezequiel@vanguardiasur.com.ar>
  };
  
  #define JEDEC_MFR(info)	((info)->id[0])
-@@ -1163,7 +1164,8 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1169,7 +1170,8 @@ int spi_nor_scan(struct spi_nor *nor, co
  
  	if (JEDEC_MFR(info) == SNOR_MFR_ATMEL ||
  	    JEDEC_MFR(info) == SNOR_MFR_INTEL ||
@@ -35,7 +35,7 @@ Tested-by: Ezequiel Garcia <ezequiel@vanguardiasur.com.ar>
  		write_enable(nor);
  		write_sr(nor, 0);
  	}
-@@ -1179,7 +1181,8 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1185,7 +1187,8 @@ int spi_nor_scan(struct spi_nor *nor, co
  	mtd->_read = spi_nor_read;
  
  	/* NOR protection support for STmicro/Micron chips and similar */

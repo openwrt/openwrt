@@ -310,7 +310,7 @@
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_FWMARK)
 --- a/net/ipv6/ip6_tunnel.c
 +++ b/net/ipv6/ip6_tunnel.c
-@@ -1310,7 +1310,7 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
+@@ -1319,7 +1319,7 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
  
  	dsfield = ipv6_get_dsfield(ipv6h);
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_TCLASS)
@@ -346,7 +346,7 @@
  #endif /* _LINUX_TYPES_H */
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1321,8 +1321,8 @@ static struct sk_buff **inet_gro_receive
+@@ -1322,8 +1322,8 @@ static struct sk_buff **inet_gro_receive
  	if (unlikely(ip_fast_csum((u8 *)iph, 5)))
  		goto out_unlock;
  
@@ -610,7 +610,7 @@
  			goto next_ht;
 --- a/net/ipv6/ip6_offload.c
 +++ b/net/ipv6/ip6_offload.c
-@@ -225,7 +225,7 @@ static struct sk_buff **ipv6_gro_receive
+@@ -226,7 +226,7 @@ static struct sk_buff **ipv6_gro_receive
  			continue;
  
  		iph2 = (struct ipv6hdr *)(p->data + off);
@@ -642,9 +642,9 @@
 -	*(__be32 *)iph = to;
 +	net_hdr_word(iph) = to;
  	if (skb->ip_summed == CHECKSUM_COMPLETE)
- 		skb->csum = csum_add(csum_sub(skb->csum, from), to);
- 	return 1;
-@@ -134,7 +134,7 @@ static inline int IP6_ECN_set_ce(struct
+ 		skb->csum = csum_add(csum_sub(skb->csum, (__force __wsum)from),
+ 				     (__force __wsum)to);
+@@ -135,7 +135,7 @@ static inline int IP6_ECN_set_ce(struct
  
  static inline void IP6_ECN_clear(struct ipv6hdr *iph)
  {

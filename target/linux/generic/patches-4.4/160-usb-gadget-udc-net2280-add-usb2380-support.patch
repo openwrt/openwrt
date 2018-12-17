@@ -112,7 +112,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  				!list_empty(&ep->queue) && ep->td_dma)
  					restart_dma(ep);
  			ep->wedged = 0;
-@@ -2394,7 +2394,7 @@ static int net2280_start(struct usb_gadg
+@@ -2397,7 +2397,7 @@ static int net2280_start(struct usb_gadg
  	 */
  	net2280_led_active(dev, 1);
  
@@ -121,7 +121,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  		defect7374_enable_data_eps_zero(dev);
  
  	ep0_start(dev);
-@@ -3060,7 +3060,7 @@ static void handle_stat0_irqs(struct net
+@@ -3066,7 +3066,7 @@ static void handle_stat0_irqs(struct net
  		}
  		ep->stopped = 0;
  		dev->protocol_stall = 0;
@@ -130,7 +130,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  			if (ep->dev->quirks & PLX_2280)
  				tmp = BIT(FIFO_OVERFLOW) |
  				    BIT(FIFO_UNDERFLOW);
-@@ -3087,7 +3087,7 @@ static void handle_stat0_irqs(struct net
+@@ -3093,7 +3093,7 @@ static void handle_stat0_irqs(struct net
  		cpu_to_le32s(&u.raw[0]);
  		cpu_to_le32s(&u.raw[1]);
  
@@ -139,7 +139,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  			defect7374_workaround(dev, u.r);
  
  		tmp = 0;
-@@ -3170,7 +3170,7 @@ static void handle_stat0_irqs(struct net
+@@ -3176,7 +3176,7 @@ static void handle_stat0_irqs(struct net
  			} else {
  				ep_vdbg(dev, "%s clear halt\n", e->ep.name);
  				clear_halt(e);
@@ -148,7 +148,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  					!list_empty(&e->queue) && e->td_dma)
  						restart_dma(e);
  			}
-@@ -3192,7 +3192,7 @@ static void handle_stat0_irqs(struct net
+@@ -3198,7 +3198,7 @@ static void handle_stat0_irqs(struct net
  			if (e->ep.name == ep0name)
  				goto do_stall;
  			set_halt(e);
@@ -157,7 +157,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  				abort_dma(e);
  			allow_status(ep);
  			ep_vdbg(dev, "%s set halt\n", ep->ep.name);
-@@ -3231,7 +3231,7 @@ do_stall:
+@@ -3237,7 +3237,7 @@ do_stall:
  #undef	w_length
  
  next_endpoints:
@@ -166,7 +166,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  		u32 mask = (BIT(ENDPOINT_0_INTERRUPT) |
  			USB3380_IRQSTAT0_EP_INTR_MASK_IN |
  			USB3380_IRQSTAT0_EP_INTR_MASK_OUT);
-@@ -3392,7 +3392,7 @@ static void handle_stat1_irqs(struct net
+@@ -3404,7 +3404,7 @@ __acquires(dev->lock)
  		writel(tmp, &dma->dmastat);
  
  		/* dma sync*/
@@ -175,7 +175,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  			u32 r_dmacount = readl(&dma->dmacount);
  			if (!ep->is_in &&  (r_dmacount & 0x00FFFFFF) &&
  			    (tmp & BIT(DMA_TRANSACTION_DONE_INTERRUPT)))
-@@ -3461,7 +3461,7 @@ static irqreturn_t net2280_irq(int irq,
+@@ -3473,7 +3473,7 @@ static irqreturn_t net2280_irq(int irq,
  	/* control requests and PIO */
  	handle_stat0_irqs(dev, readl(&dev->regs->irqstat0));
  
@@ -184,7 +184,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  		/* re-enable interrupt to trigger any possible new interrupt */
  		u32 pciirqenb1 = readl(&dev->regs->pciirqenb1);
  		writel(pciirqenb1 & 0x7FFFFFFF, &dev->regs->pciirqenb1);
-@@ -3506,7 +3506,7 @@ static void net2280_remove(struct pci_de
+@@ -3518,7 +3518,7 @@ static void net2280_remove(struct pci_de
  	}
  	if (dev->got_irq)
  		free_irq(pdev->irq, dev);
@@ -193,7 +193,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  		pci_disable_msi(pdev);
  	if (dev->regs)
  		iounmap(dev->regs);
-@@ -3586,7 +3586,7 @@ static int net2280_probe(struct pci_dev
+@@ -3598,7 +3598,7 @@ static int net2280_probe(struct pci_dev
  	dev->dep = (struct net2280_dep_regs __iomem *) (base + 0x0200);
  	dev->epregs = (struct net2280_ep_regs __iomem *) (base + 0x0300);
  
@@ -202,7 +202,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  		u32 fsmvalue;
  		u32 usbstat;
  		dev->usb_ext = (struct usb338x_usb_ext_regs __iomem *)
-@@ -3630,7 +3630,7 @@ static int net2280_probe(struct pci_dev
+@@ -3642,7 +3642,7 @@ static int net2280_probe(struct pci_dev
  		goto done;
  	}
  
@@ -211,7 +211,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  		if (pci_enable_msi(pdev))
  			ep_err(dev, "Failed to enable MSI mode\n");
  
-@@ -3748,10 +3748,19 @@ static const struct pci_device_id pci_id
+@@ -3760,10 +3760,19 @@ static const struct pci_device_id pci_id
  	.class =	((PCI_CLASS_SERIAL_USB << 8) | 0xfe),
  	.class_mask =	~0,
  	.vendor =	PCI_VENDOR_ID_PLX,
@@ -232,7 +232,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  	 },
  	{
  	.class =	((PCI_CLASS_SERIAL_USB << 8) | 0xfe),
-@@ -3760,7 +3769,7 @@ static const struct pci_device_id pci_id
+@@ -3772,7 +3781,7 @@ static const struct pci_device_id pci_id
  	.device =	0x3382,
  	.subvendor =	PCI_ANY_ID,
  	.subdevice =	PCI_ANY_ID,

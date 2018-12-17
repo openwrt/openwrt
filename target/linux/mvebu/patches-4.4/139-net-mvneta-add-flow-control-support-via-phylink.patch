@@ -14,7 +14,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -3209,6 +3209,8 @@ static void mvneta_mac_config(struct net
+@@ -3208,6 +3208,8 @@ static void mvneta_mac_config(struct net
  
  	if (state->advertising & ADVERTISED_Pause)
  		new_an |= MVNETA_GMAC_ADVERT_SYM_FLOW_CTRL;
@@ -23,7 +23,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  
  	switch (mode) {
  	case MLO_AN_SGMII:
-@@ -3233,7 +3235,7 @@ static void mvneta_mac_config(struct net
+@@ -3232,7 +3234,7 @@ static void mvneta_mac_config(struct net
  			 /* The MAC only supports FD mode */
  			 MVNETA_GMAC_CONFIG_FULL_DUPLEX;
  
@@ -32,7 +32,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  			new_an |= MVNETA_GMAC_AN_FLOW_CTRL_EN;
  		break;
  
-@@ -3686,6 +3688,22 @@ static int mvneta_ethtool_set_ringparam(
+@@ -3685,6 +3687,22 @@ static int mvneta_ethtool_set_ringparam(
  	return 0;
  }
  
@@ -55,7 +55,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  static void mvneta_ethtool_get_strings(struct net_device *netdev, u32 sset,
  				       u8 *data)
  {
-@@ -3867,6 +3885,8 @@ const struct ethtool_ops mvneta_eth_tool
+@@ -3866,6 +3884,8 @@ const struct ethtool_ops mvneta_eth_tool
  	.get_drvinfo    = mvneta_ethtool_get_drvinfo,
  	.get_ringparam  = mvneta_ethtool_get_ringparam,
  	.set_ringparam	= mvneta_ethtool_set_ringparam,

@@ -4,7 +4,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -1166,6 +1166,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1172,6 +1172,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  
  	if (JEDEC_MFR(info) == SNOR_MFR_ATMEL ||
  	    JEDEC_MFR(info) == SNOR_MFR_INTEL ||

@@ -14,7 +14,7 @@ Signed-off-by: Hou Zhiqiang <Zhiqiang.Hou@freescale.com>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -924,7 +924,10 @@ static int spi_nor_read(struct mtd_info
+@@ -930,7 +930,10 @@ static int spi_nor_read(struct mtd_info
  	ret = nor->read(nor, from, len, retlen, buf);
  
  	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_READ);
@@ -26,7 +26,7 @@ Signed-off-by: Hou Zhiqiang <Zhiqiang.Hou@freescale.com>
  }
  
  static int sst_write(struct mtd_info *mtd, loff_t to, size_t len,
-@@ -950,10 +953,14 @@ static int sst_write(struct mtd_info *mt
+@@ -956,10 +959,14 @@ static int sst_write(struct mtd_info *mt
  		nor->program_opcode = SPINOR_OP_BP;
  
  		/* write one byte. */
@@ -43,7 +43,7 @@ Signed-off-by: Hou Zhiqiang <Zhiqiang.Hou@freescale.com>
  	}
  	to += actual;
  
-@@ -962,10 +969,14 @@ static int sst_write(struct mtd_info *mt
+@@ -968,10 +975,14 @@ static int sst_write(struct mtd_info *mt
  		nor->program_opcode = SPINOR_OP_AAI_WP;
  
  		/* write two bytes. */
@@ -60,7 +60,7 @@ Signed-off-by: Hou Zhiqiang <Zhiqiang.Hou@freescale.com>
  		to += 2;
  		nor->sst_write_second = true;
  	}
-@@ -974,21 +985,24 @@ static int sst_write(struct mtd_info *mt
+@@ -980,21 +991,24 @@ static int sst_write(struct mtd_info *mt
  	write_disable(nor);
  	ret = spi_nor_wait_till_ready(nor);
  	if (ret)
@@ -90,7 +90,7 @@ Signed-off-by: Hou Zhiqiang <Zhiqiang.Hou@freescale.com>
  	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_WRITE);
  	return ret;
  }
-@@ -1017,14 +1031,18 @@ static int spi_nor_write(struct mtd_info
+@@ -1023,14 +1037,18 @@ static int spi_nor_write(struct mtd_info
  
  	/* do all the bytes fit onto one page? */
  	if (page_offset + len <= nor->page_size) {
@@ -112,7 +112,7 @@ Signed-off-by: Hou Zhiqiang <Zhiqiang.Hou@freescale.com>
  			page_size = len - i;
  			if (page_size > nor->page_size)
  				page_size = nor->page_size;
-@@ -1035,7 +1053,11 @@ static int spi_nor_write(struct mtd_info
+@@ -1041,7 +1059,11 @@ static int spi_nor_write(struct mtd_info
  
  			write_enable(nor);
  

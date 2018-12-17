@@ -50,9 +50,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 +	on_each_cpu(mvneta_percpu_enable, pp, true);
  	mvneta_start_dev(pp);
- 	mvneta_port_up(pp);
  
-@@ -3245,20 +3261,6 @@ static void mvneta_mdio_remove(struct mv
+ 	netdev_update_features(dev);
+@@ -3244,20 +3260,6 @@ static void mvneta_mdio_remove(struct mv
  	pp->phy_dev = NULL;
  }
  

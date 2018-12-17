@@ -29,7 +29,7 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  static int __must_check __smsc95xx_read_reg(struct usbnet *dev, u32 index,
  					    u32 *data, int in_pm)
  {
-@@ -763,8 +768,59 @@ static int smsc95xx_ioctl(struct net_dev
+@@ -766,8 +771,59 @@ static int smsc95xx_ioctl(struct net_dev
  	return generic_mii_ioctl(&dev->mii, if_mii(rq), cmd, NULL);
  }
  

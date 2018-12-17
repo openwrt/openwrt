@@ -93,7 +93,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	return 0;
  }
  
-@@ -2841,13 +2865,23 @@ static void mvneta_percpu_elect(struct m
+@@ -2840,13 +2864,23 @@ static void mvneta_percpu_elect(struct m
  			if ((rxq % max_cpu) == cpu)
  				rxq_map |= MVNETA_CPU_RXQ_ACCESS(rxq);
  

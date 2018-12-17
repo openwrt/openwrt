@@ -102,7 +102,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		mvneta_cleanup_rxqs(pp);
  		return err;
  	}
-@@ -2639,7 +2640,7 @@ static int mvneta_set_mac_addr(struct ne
+@@ -2638,7 +2639,7 @@ static int mvneta_set_mac_addr(struct ne
  	mvneta_mac_addr_set(pp, dev->dev_addr, -1);
  
  	/* Set new addr in hw */
@@ -111,7 +111,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	eth_commit_mac_addr_change(dev, addr);
  	return 0;
-@@ -2758,7 +2759,7 @@ static void mvneta_percpu_elect(struct m
+@@ -2757,7 +2758,7 @@ static void mvneta_percpu_elect(struct m
  {
  	int online_cpu_idx, cpu, i = 0;
  
@@ -120,7 +120,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	for_each_online_cpu(cpu) {
  		if (i == online_cpu_idx)
-@@ -3366,6 +3367,8 @@ static int mvneta_probe(struct platform_
+@@ -3365,6 +3366,8 @@ static int mvneta_probe(struct platform_
  				 strcmp(managed, "in-band-status") == 0);
  	pp->cpu_notifier.notifier_call = mvneta_percpu_notifier;
  

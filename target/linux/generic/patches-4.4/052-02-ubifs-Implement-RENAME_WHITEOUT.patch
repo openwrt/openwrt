@@ -244,7 +244,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  	.setxattr    = ubifs_setxattr,
 --- a/fs/ubifs/journal.c
 +++ b/fs/ubifs/journal.c
-@@ -917,14 +917,15 @@ int ubifs_jnl_delete_inode(struct ubifs_
+@@ -922,14 +922,15 @@ int ubifs_jnl_delete_inode(struct ubifs_
   * @sync: non-zero if the write-buffer has to be synchronized
   *
   * This function implements the re-name operation which may involve writing up
@@ -262,7 +262,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  {
  	void *p;
  	union ubifs_key key;
-@@ -980,13 +981,19 @@ int ubifs_jnl_rename(struct ubifs_info *
+@@ -985,13 +986,19 @@ int ubifs_jnl_rename(struct ubifs_info *
  	zero_dent_node_unused(dent);
  	ubifs_prep_grp_node(c, dent, dlen1, 0);
  
@@ -285,7 +285,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  	dent2->nlen = cpu_to_le16(old_dentry->d_name.len);
  	memcpy(dent2->name, old_dentry->d_name.name, old_dentry->d_name.len);
  	dent2->name[old_dentry->d_name.len] = '\0';
-@@ -1035,16 +1042,26 @@ int ubifs_jnl_rename(struct ubifs_info *
+@@ -1040,16 +1047,26 @@ int ubifs_jnl_rename(struct ubifs_info *
  	if (err)
  		goto out_ro;
  

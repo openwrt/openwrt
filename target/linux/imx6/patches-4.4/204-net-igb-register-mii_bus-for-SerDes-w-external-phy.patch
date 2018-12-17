@@ -23,7 +23,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
 
 --- a/drivers/net/ethernet/intel/igb/e1000_82575.c
 +++ b/drivers/net/ethernet/intel/igb/e1000_82575.c
-@@ -624,13 +624,25 @@ static s32 igb_get_invariants_82575(stru
+@@ -613,13 +613,25 @@ static s32 igb_get_invariants_82575(stru
  	switch (link_mode) {
  	case E1000_CTRL_EXT_LINK_MODE_1000BASE_KX:
  		hw->phy.media_type = e1000_media_type_internal_serdes;
@@ -49,7 +49,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  		}
  		/* fall through for I2C based SGMII */
  	case E1000_CTRL_EXT_LINK_MODE_PCIE_SERDES:
-@@ -647,8 +659,11 @@ static s32 igb_get_invariants_82575(stru
+@@ -636,8 +648,11 @@ static s32 igb_get_invariants_82575(stru
  				hw->phy.media_type = e1000_media_type_copper;
  				dev_spec->sgmii_active = true;
  			}

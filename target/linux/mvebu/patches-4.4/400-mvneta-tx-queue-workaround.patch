@@ -9,7 +9,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -3985,6 +3985,16 @@ static int mvneta_ethtool_set_eee(struct
+@@ -3984,6 +3984,16 @@ static int mvneta_ethtool_set_eee(struct
  	return phylink_ethtool_set_eee(pp->phylink, eee);
  }
  
@@ -26,7 +26,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static const struct net_device_ops mvneta_netdev_ops = {
  	.ndo_open            = mvneta_open,
  	.ndo_stop            = mvneta_stop,
-@@ -3995,6 +4005,7 @@ static const struct net_device_ops mvnet
+@@ -3994,6 +4004,7 @@ static const struct net_device_ops mvnet
  	.ndo_fix_features    = mvneta_fix_features,
  	.ndo_get_stats64     = mvneta_get_stats64,
  	.ndo_do_ioctl        = mvneta_ioctl,

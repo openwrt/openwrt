@@ -16,7 +16,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
 
 --- a/drivers/net/ethernet/intel/igb/e1000_82575.c
 +++ b/drivers/net/ethernet/intel/igb/e1000_82575.c
-@@ -2165,7 +2165,7 @@ static s32 igb_read_phy_reg_82580(struct
+@@ -2154,7 +2154,7 @@ static s32 igb_read_phy_reg_82580(struct
  	if (ret_val)
  		goto out;
  
@@ -25,7 +25,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  
  	hw->phy.ops.release(hw);
  
-@@ -2190,7 +2190,7 @@ static s32 igb_write_phy_reg_82580(struc
+@@ -2179,7 +2179,7 @@ static s32 igb_write_phy_reg_82580(struc
  	if (ret_val)
  		goto out;
  

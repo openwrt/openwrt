@@ -16,7 +16,7 @@ Cc: Cyrille Pitchen <cyrille.pitchen@atmel.com>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -862,7 +862,7 @@ static const struct flash_info *spi_nor_
+@@ -868,7 +868,7 @@ static const struct flash_info *spi_nor_
  
  	tmp = nor->read_reg(nor, SPINOR_OP_RDID, id, SPI_NOR_MAX_ID_LEN);
  	if (tmp < 0) {

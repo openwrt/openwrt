@@ -181,7 +181,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	mvreg_write(pp, MVNETA_INTR_MISC_MASK,
  		    MVNETA_CAUSE_PHY_STATUS_CHANGE |
  		    MVNETA_CAUSE_LINK_CHANGE |
-@@ -2757,22 +2809,35 @@ static void mvneta_percpu_disable(void *
+@@ -2756,22 +2808,35 @@ static void mvneta_percpu_disable(void *
  
  static void mvneta_percpu_elect(struct mvneta_port *pp)
  {
@@ -227,7 +227,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  };
  
-@@ -2807,12 +2872,22 @@ static int mvneta_percpu_notifier(struct
+@@ -2806,12 +2871,22 @@ static int mvneta_percpu_notifier(struct
  		mvreg_write(pp, MVNETA_INTR_MISC_MASK, 0);
  		napi_enable(&port->napi);
  
@@ -251,7 +251,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		mvreg_write(pp, MVNETA_INTR_NEW_MASK,
  			MVNETA_RX_INTR_MASK(rxq_number) |
  			MVNETA_TX_INTR_MASK(txq_number) |
-@@ -2863,7 +2938,7 @@ static int mvneta_percpu_notifier(struct
+@@ -2862,7 +2937,7 @@ static int mvneta_percpu_notifier(struct
  static int mvneta_open(struct net_device *dev)
  {
  	struct mvneta_port *pp = netdev_priv(dev);
@@ -260,7 +260,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	pp->pkt_size = MVNETA_RX_PKT_SIZE(pp->dev->mtu);
  	pp->frag_size = SKB_DATA_ALIGN(MVNETA_RX_BUF_SIZE(pp->pkt_size)) +
-@@ -2893,8 +2968,13 @@ static int mvneta_open(struct net_device
+@@ -2892,8 +2967,13 @@ static int mvneta_open(struct net_device
  	 */
  	mvneta_percpu_disable(pp);
  

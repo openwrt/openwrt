@@ -10,7 +10,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -3912,6 +3912,22 @@ static int mvneta_ethtool_get_rxfh(struc
+@@ -3911,6 +3911,22 @@ static int mvneta_ethtool_get_rxfh(struc
  	return 0;
  }
  
@@ -33,7 +33,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  static int mvneta_ethtool_get_eee(struct net_device *dev,
  				  struct ethtool_eee *eee)
  {
-@@ -3984,6 +4000,8 @@ const struct ethtool_ops mvneta_eth_tool
+@@ -3983,6 +3999,8 @@ const struct ethtool_ops mvneta_eth_tool
  	.get_rxnfc	= mvneta_ethtool_get_rxnfc,
  	.get_rxfh	= mvneta_ethtool_get_rxfh,
  	.set_rxfh	= mvneta_ethtool_set_rxfh,

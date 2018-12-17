@@ -69,7 +69,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  
  			addr += mtd->erasesize;
  			len -= mtd->erasesize;
-@@ -1107,7 +1130,7 @@ static int set_quad_mode(struct spi_nor
+@@ -1113,7 +1136,7 @@ static int set_quad_mode(struct spi_nor
  static int spi_nor_check(struct spi_nor *nor)
  {
  	if (!nor->dev || !nor->read || !nor->write ||
@@ -78,7 +78,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  		pr_err("spi-nor: please fill all the necessary fields!\n");
  		return -EINVAL;
  	}
-@@ -1310,6 +1333,12 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1316,6 +1339,12 @@ int spi_nor_scan(struct spi_nor *nor, co
  		nor->addr_width = 3;
  	}
  

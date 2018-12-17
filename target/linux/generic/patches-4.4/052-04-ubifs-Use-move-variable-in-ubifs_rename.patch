@@ -10,7 +10,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
 
 --- a/fs/ubifs/journal.c
 +++ b/fs/ubifs/journal.c
-@@ -1100,7 +1100,7 @@ int ubifs_jnl_rename(struct ubifs_info *
+@@ -1105,7 +1105,7 @@ int ubifs_jnl_rename(struct ubifs_info *
  	aligned_dlen1 = ALIGN(dlen1, 8);
  	aligned_dlen2 = ALIGN(dlen2, 8);
  	len = aligned_dlen1 + aligned_dlen2 + ALIGN(ilen, 8) + ALIGN(plen, 8);
@@ -19,7 +19,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  		len += plen;
  	dent = kmalloc(len, GFP_NOFS);
  	if (!dent)
-@@ -1216,7 +1216,7 @@ int ubifs_jnl_rename(struct ubifs_info *
+@@ -1221,7 +1221,7 @@ int ubifs_jnl_rename(struct ubifs_info *
  	if (err)
  		goto out_ro;
  

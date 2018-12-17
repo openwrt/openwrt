@@ -13,7 +13,7 @@ meaning they don't end up with the same MAC address as the built-in RPi adaptor.
 
 --- a/drivers/net/usb/smsc95xx.c
 +++ b/drivers/net/usb/smsc95xx.c
-@@ -817,10 +817,6 @@ static int smsc95xx_is_macaddr_param(str
+@@ -820,10 +820,6 @@ static int smsc95xx_is_macaddr_param(str
  
  static void smsc95xx_init_mac_address(struct usbnet *dev)
  {
@@ -24,7 +24,7 @@ meaning they don't end up with the same MAC address as the built-in RPi adaptor.
  	/* try reading mac address from EEPROM */
  	if (smsc95xx_read_eeprom(dev, EEPROM_MAC_OFFSET, ETH_ALEN,
  			dev->net->dev_addr) == 0) {
-@@ -831,7 +827,11 @@ static void smsc95xx_init_mac_address(st
+@@ -834,7 +830,11 @@ static void smsc95xx_init_mac_address(st
  		}
  	}
  
