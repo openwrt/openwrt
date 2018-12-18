@@ -86,6 +86,9 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:wan" "2:lan:3" "3:lan:2"
 		;;
+	engenius,ews511ap)
+		ucidef_set_interface_lan "eth0 eth1" "dhcp"
+		;;
 	etactica,eg200)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
@@ -251,6 +254,12 @@ ath79_setup_macs()
 	elecom,wrc-1750ghbk2-i|\
 	elecom,wrc-300ghbk2-i)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary ART 4098)" -2)
+		;;
+	engenius,ews511ap)
+		lan_mac=$(mtd_get_mac_text "u-boot-env" 233)
+		eth1_mac=$(macaddr_add "$lan_mac" 1)
+		ucidef_set_interface "eth0" ifname "eth0" protocol "none" macaddr "$lan_mac"
+		ucidef_set_interface "eth1" ifname "eth1" protocol "none" macaddr "$eth1_mac"
 		;;
 	iodata,etg3-r)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
