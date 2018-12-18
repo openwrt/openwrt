@@ -193,6 +193,14 @@ define Device/etactica_eg200
 endef
 TARGET_DEVICES += etactica_eg200
 
+define Device/engenius_ews511ap
+  ATH_SOC := qca9531
+  DEVICE_TITLE := EnGenius EWS511AP
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += engenius_ews511ap
+
 define Device/glinet_ar150
   ATH_SOC := ar9330
   DEVICE_TITLE := GL.iNet GL-AR150
