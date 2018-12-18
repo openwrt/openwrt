@@ -145,8 +145,6 @@
 	status = "okay";
 
 	m25p80@0 {
-		#address-cells = <1>;
-		#size-cells = <0>;
 		reg = <0>;
 		compatible = "jedec,spi-nor";
 		spi-max-frequency = <24000000>;
@@ -201,8 +199,6 @@
 
 	spi-nand@1 {
 		status = "okay";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		compatible = "spi-nand";
 		reg = <1>;
 		spi-max-frequency = <24000000>;
