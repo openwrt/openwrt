@@ -169,9 +169,6 @@ ramips_board_detect() {
 	*"DWR-512 B")
 		name="dwr-512-b"
 		;;
-	*"DWR-922 E2")
-		name="dwr-922-e2"
-		;;
 	*"E1700")
 		name="e1700"
 		;;
