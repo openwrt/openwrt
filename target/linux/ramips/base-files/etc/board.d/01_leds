@@ -124,7 +124,8 @@ dlink,dwr-118-a2)
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x01"
 	set_wifi_led "$boardname:green:wlan2g" "wlan1"
 	;;
-dlink,dwr-921-c1)
+dlink,dwr-921-c1|\
+dlink,dwr-922-e2)
 	set_wifi_led "$boardname:green:wifi"
 	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x0f"
 	;;

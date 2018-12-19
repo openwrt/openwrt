@@ -89,6 +89,7 @@ ramips_setup_interfaces()
 	dir-810l|\
 	dlink,dwr-116-a1|\
 	dlink,dwr-921-c1|\
+	dlink,dwr-922-e2|\
 	ew1200|\
 	firewrt|\
 	hc5661a|\
@@ -487,6 +488,7 @@ ramips_setup_macs()
 	dlink,dwr-118-a1|\
 	dlink,dwr-118-a2|\
 	dlink,dwr-921-c1|\
+	dlink,dwr-922-e2|\
 	lava,lr-25g001)
 		wan_mac=$(jboot_config_read -m -i $(find_mtd_part "config") -o 0xE000)
 		lan_mac=$(macaddr_add "$wan_mac" 1)

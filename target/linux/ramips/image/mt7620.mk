@@ -228,6 +228,22 @@ define Device/dlink_dwr-921-c3
 endef
 TARGET_DEVICES += dlink_dwr-921-c3
 
+define Device/dlink_dwr-922-e2
+  DTS := DWR-922-E2
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := D-Link DWR-922 E2
+  DLINK_ROM_ID := DLK6E2414005
+  DLINK_FAMILY_MEMBER := 0x6E24
+  DLINK_FIRMWARE_SIZE := 0xFE0000
+  KERNEL := $(KERNEL_DTB)
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
+  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
+  DEVICE_PACKAGES := jboot-tools \
+	kmod-usb2 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += dlink_dwr-922-e2
+
 define Device/e1700
   DTS := E1700
   IMAGES += factory.bin
