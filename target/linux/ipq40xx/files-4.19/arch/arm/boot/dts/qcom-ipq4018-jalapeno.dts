@@ -25,6 +25,10 @@
 	compatible = "8dev,jalapeno", "qcom,ipq4019";
 
 	soc {
+		rng@22000 {
+			status = "okay";
+		};
+
 		mdio@90000 {
 			status = "okay";
 			pinctrl-0 = <&mdio_pins>;
