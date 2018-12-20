@@ -16,8 +16,7 @@
 	};
 
 	keys {
-		compatible = "keys";
-		led-boot = &sstrengthg;
+		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
 		wps {
@@ -34,7 +33,8 @@
 	};
 
 	leds {
-		compatible = "leds";
+		compatible = "gpio-leds";
+		led-boot = &sstrengthg;
 
 		sms {
 			label = "dwr-922-e2:green:sms";
