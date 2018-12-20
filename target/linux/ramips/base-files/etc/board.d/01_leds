@@ -124,9 +124,12 @@ dlink,dwr-118-a2)
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x01"
 	set_wifi_led "$boardname:green:wlan2g" "wlan1"
 	;;
-dlink,dwr-921-c1)
+dlink,dwr-921-c1|\
+dlink,dwr-922-e2)
 	set_wifi_led "$boardname:green:wifi"
 	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x0f"
+	ucidef_set_led_netdev "signalstrength" "signalstrength" "$boardname:green:sigstrength" "wwan0" "link"
+	ucidef_set_led_netdev "4g" "4g" "$boardname:green:4g" "wwan0" "tx rx"
 	;;
 dir-860l-b1)
 	ucidef_set_led_netdev "wan" "wan" "$boardname:green:net" "eth0.2"
