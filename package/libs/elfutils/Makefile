@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elfutils
 PKG_VERSION:=0.174
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://sourceware.org/$(PKG_NAME)/ftp/$(PKG_VERSION)
@@ -54,12 +54,13 @@ define Package/libelf1
 endef
 
 ifeq ($(CONFIG_BUILD_NLS),y)
-TARGET_LDFLAGS += "-lintl"
+TARGET_LDFLAGS += -lintl
+else
+CONFIGURE_ARGS += --disable-nls
 endif
 
 CONFIGURE_ARGS += \
 	--program-prefix=eu- \
-	--disable-nls \
 	--without-lzma
 
 TARGET_CFLAGS += -D_GNU_SOURCE -Wno-unused-result -Wno-format-nonliteral
