@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+=======
+>>>>>>> 853cb90b58f86a23512f86d6f2ba79c20c4e5fcd
 /dts-v1/;
 
 #include "mt7620n.dtsi"
@@ -11,12 +14,21 @@
 	model = "D-Link DWR-922 E2";
 
 	aliases {
+<<<<<<< HEAD
 		led-boot = &sstrengthg;
 		led-failsafe = &sstrengthg;
 	};
 
 	keys {
 		compatible = "keys";
+=======
+		led-boot = &led_sstrenghg;
+		led-failsafe = &led_sstrenghg;
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+>>>>>>> 853cb90b58f86a23512f86d6f2ba79c20c4e5fcd
 		poll-interval = <20>;
 
 		wps {
@@ -32,8 +44,13 @@
 		};
 	};
 
+<<<<<<< HEAD
 	leds {
 		compatible = "leds";
+=======
+	gpio-leds {
+		compatible = "gpio-leds";
+>>>>>>> 853cb90b58f86a23512f86d6f2ba79c20c4e5fcd
 
 		sms {
 			label = "dwr-922-e2:green:sms";
@@ -45,13 +62,22 @@
 			gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
 		};
 
+<<<<<<< HEAD
 		sstrengthg {
 			label = "dwr-922-e2:green:rssi-high";
+=======
+		led_sstrenghg: sstrengthg {
+			label = "dwr-922-e2:green:sigstrength";
+>>>>>>> 853cb90b58f86a23512f86d6f2ba79c20c4e5fcd
 			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		};
 
 		sstrengthr {
+<<<<<<< HEAD
 			label = "dwr-922-e2:red:rssi-low";
+=======
+			label = "dwr-922-e2:red:sigstrength";
+>>>>>>> 853cb90b58f86a23512f86d6f2ba79c20c4e5fcd
 			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
 		};
 
