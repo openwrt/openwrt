@@ -40,8 +40,8 @@ define Device/DniImage
 	NETGEAR_BOARD_ID :=
 	NETGEAR_HW_ID :=
 	IMAGES := factory.img sysupgrade.bin
-	IMAGE/factory.img := append-kernel | pad-offset 64k 64 | append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | netgear-dni
-	IMAGE/sysupgrade.bin := append-kernel | pad-offset 64k 64 | append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | append-metadata
+	IMAGE/factory.img := append-kernel | pad-offset 64k 64 | append-uImage-fakehdr filesystem | append-rootfs | pad-rootfs | netgear-dni
+	IMAGE/sysupgrade.bin := append-kernel | pad-offset 64k 64 | append-uImage-fakehdr filesystem | append-rootfs | pad-rootfs | append-metadata
 endef
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 
@@ -144,7 +144,6 @@ TARGET_DEVICES += meraki_mr33
 
 define Device/netgear_ex61x0v2
 	$(call Device/DniImage)
-	KERNEL_SIZE := 3080192
 	DEVICE_DTS_CONFIG := config@4
 	NETGEAR_BOARD_ID := EX6150v2series
 	NETGEAR_HW_ID := 29765285+16+0+128+2x2
