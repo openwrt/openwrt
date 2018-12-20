@@ -237,6 +237,22 @@ endef
 
 $(eval $(call KernelPackage,usb-gadget-mass-storage))
 
+define KernelPackage/usb-gadget-cdc-composite
+  TITLE:= USB CDC Composite (Ethernet + ACM)
+  KCONFIG:=CONFIG_USB_CDC_COMPOSITE
+  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite \
+	+kmod-usb-gadget-eth +kmod-usb-gadget-serial
+  FILES:= $(LINUX_DIR)/drivers/usb/gadget/legacy/g_cdc.ko
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-gadget-cdc-composite/description
+  Kernel support for the USB CDC Composite gadget.
+  This appears as an ethernet + ACM serial gadget.
+endef
+
+$(eval $(call KernelPackage,usb-gadget-cdc-composite))
+
 
 define KernelPackage/usb-uhci
   TITLE:=Support for UHCI controllers
