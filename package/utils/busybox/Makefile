@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
 PKG_VERSION:=1.29.3
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -69,6 +69,12 @@ endef
 define Package/busybox/config
 	source "$(SOURCE)/Config.in"
 endef
+
+ifdef CONFIG_BUSYBOX_CONFIG_FEATURE_SYSLOG
+define Package/busybox/conffiles
+/etc/syslog.conf
+endef
+endif
 
 # don't create a version string containing the actual timestamp
 export KCONFIG_NOTIMESTAMP=1
