@@ -350,7 +350,6 @@ platform_check_image() {
 	bxu2000n-2-a1|\
 	db120|\
 	dr344|\
-	dw33d|\
 	f9k1115v2|\
 	hornet-ub|\
 	mr12|\
@@ -713,6 +712,7 @@ platform_check_image() {
 		return 0;
 		;;
 	# these boards use metadata images
+	dw33d|\
 	fritz300e|\
 	fritz4020|\
 	fritz450e|\
@@ -853,6 +853,7 @@ platform_do_upgrade() {
 		platform_do_upgrade_openmesh "$ARGV"
 		;;
 	c-60|\
+	dw33d|\
 	hiveap-121|\
 	nbg6716|\
 	r6100|\

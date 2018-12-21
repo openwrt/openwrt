@@ -33,9 +33,16 @@ define Device/domywifi-dw33d
   DEVICE_TITLE := DomyWifi DW33D
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
   BOARDNAME := DW33D
-  IMAGE_SIZE := 16000k
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,14528k(rootfs),1472k(kernel),64k(art)ro,16000k@0x50000(firmware);ar934x-nfc:96m(rootfs_data),32m(backup)ro
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 14528k | append-kernel | check-size $$$$(IMAGE_SIZE)
+  SUPPORTED_DEVICES := dw33d
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 2048k
+  UBINIZE_OPTS := -E 5
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),14528k(rf),1472k(kl),64k(art)ro,15936k@0x50000(fw);ar934x-nfc:2048k(kernel),94m(ubi),32m(backup)ro
+  KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
+  IMAGES := sysupgrade.tar factory.bin
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
 endef
 TARGET_DEVICES += domywifi-dw33d
 
