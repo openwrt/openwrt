@@ -10,7 +10,7 @@ PROG=/usr/sbin/omcproxy
 PROXIES=""
 
 omcproxy_add_proxy() {
-	local proxy scope uplink downlinks device up
+	local proxy scope uplink downlinks device
 
 	config_get scope $1 scope
 	config_get uplink $1 uplink
@@ -18,14 +18,7 @@ omcproxy_add_proxy() {
 
 	[ -n "$uplink" ] || return
 
-	local status="$(ubus -S call "network.interface.$uplink" status)"
-	[ -n "$status" ] || return
-
-	json_load "$status"
-	json_get_var device l3_device
-	json_get_var up up
-
-	[ -n "$device" -a "$up" = "1" ] || {
+	network_get_device device "$uplink" || {
 		procd_append_param error "$uplink is not up"
 		return;
 	}
@@ -33,14 +26,7 @@ omcproxy_add_proxy() {
 	proxy="$device"
 
 	for downlink in $downlinks; do
-		local status="$(ubus -S call "network.interface.$downlink" status)"
-		[ -n "$status" ] || return
-
-		json_load "$status"
-		json_get_var device l3_device
-		json_get_var up up
-
-		[ -n "$device" -a "$up" = "1" ] || {
+		network_get_device device "$downlink" || {
 			procd_append_param error "$downlink is not up"
 			continue;
 		}
@@ -64,9 +50,8 @@ omcproxy_add_network_triggers() {
 	config_get uplink $1 uplink
 	config_get downlinks $1 downlink
 
-	procd_add_interface_trigger "interface.*" $uplink /etc/init.d/omcproxy reload
-	for downlink in $downlinks; do
-		procd_add_interface_trigger "interface.*" $downlink /etc/init.d/omcproxy reload
+	for link in $uplink $downlinks; do
+		procd_add_interface_trigger "interface.*" $link /etc/init.d/omcproxy reload
 	done
 }
 
@@ -134,6 +119,8 @@ service_triggers() {
 }
 
 start_service() {
+	. /lib/functions/network.sh
+
 	config_load omcproxy
 
 	config_foreach omcproxy_add_proxy proxy
