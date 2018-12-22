@@ -43,10 +43,6 @@
 			status = "okay";
 			pinctrl-0 = <&mdio_pins>;
 			pinctrl-names = "default";
-			/delete-node/ ethernet-phy@0;
-			/delete-node/ ethernet-phy@2;
-			/delete-node/ ethernet-phy@3;
-			/delete-node/ ethernet-phy@4;
 		};
 
 		/* It is a 56-bit counter that supplies the count to the ARM arch
@@ -148,7 +144,7 @@
 	vlan_tag = <0 0x20>;
 };
 
-&blsp1_i2c3{
+&blsp1_i2c3 {
 	pinctrl-0 = <&i2c_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -160,7 +156,7 @@
 	};
 };
 
-&blsp1_i2c4{
+&blsp1_i2c4 {
 	pinctrl-0 = <&i2c_1_pins>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -211,62 +207,68 @@
 
 			partition@0 {
 				label = "sbl1";
-				reg = <0x000000000000 0x000000100000>;
+				reg = <0x00000000 0x00100000>;
 				read-only;
 			};
-			partition@1 {
+			partition@100000 {
 				label = "mibib";
-				reg = <0x000000100000 0x000000100000>;
+				reg = <0x00100000 0x00100000>;
 				read-only;
 			};
-			partition@2 {
+			partition@200000 {
 				label = "bootconfig";
-				reg = <0x000000200000 0x000000100000>;
+				reg = <0x00200000 0x00100000>;
 				read-only;
 			};
-			partition@3 {
+			partition@300000 {
 				label = "qsee";
-				reg = <0x000000300000 0x000000100000>;
+				reg = <0x00300000 0x00100000>;
 				read-only;
 			};
-			partition@4 {
+			partition@400000 {
 				label = "qsee_alt";
-				reg = <0x000000400000 0x000000100000>;
+				reg = <0x00400000 0x00100000>;
 				read-only;
 			};
-			partition@5 {
+			partition@500000 {
 				label = "cdt";
-				reg = <0x000000500000 0x000000080000>;
+				reg = <0x00500000 0x00080000>;
 				read-only;
 			};
-			partition@6 {
+			partition@580000 {
 				label = "cdt_alt";
-				reg = <0x000000580000 0x000000080000>;
+				reg = <0x00580000 0x00080000>;
 				read-only;
 			};
-			partition@7 {
+			partition@600000 {
 				label = "ddrparams";
-				reg = <0x000000600000 0x000000080000>;
+				reg = <0x00600000 0x00080000>;
 				read-only;
 			};
-			partition@8 {
+			partition@700000 {
 				label = "u-boot";
-				reg = <0x000000700000 0x000000200000>;
+				reg = <0x00700000 0x00200000>;
 				read-only;
 			};
-			partition@9 {
+			partition@900000 {
 				label = "u-boot-backup";
-				reg = <0x000000900000 0x000000200000>;
+				reg = <0x00900000 0x00200000>;
 				read-only;
 			};
-			partition@10 {
+			partition@b00000 {
 				label = "ART";
-				reg = <0x000000b00000 0x000000080000>;
+				reg = <0x00b00000 0x00080000>;
 				read-only;
 			};
-			partition@11 {
+			partition@c00000 {
 				label = "ubi";
-				reg = <0x000000c00000 0x000007000000>;
+				reg = <0x00c00000 0x07000000>;
+				/*
+				 * Do not try to allocate the remaining
+				 * 4 MiB to this ubi partition. It will
+				 * confuse the u-boot and it might not
+				 * find the kernel partition anymore.
+				 */
 			};
 		};
 	};
