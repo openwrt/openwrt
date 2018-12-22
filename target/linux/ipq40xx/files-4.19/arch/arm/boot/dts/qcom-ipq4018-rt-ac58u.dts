@@ -7,7 +7,7 @@
 
 / {
 	model = "ASUS RT-AC58U";
-	compatible = "asus,rt-ac58u", "qcom,ipq4019";
+	compatible = "asus,rt-ac58u";
 
 	memory {
 		device_type = "memory";
@@ -74,16 +74,6 @@
 			status = "okay";
 		};
 
-		wifi@a000000 {
-			status = "okay";
-			qcom,ath10k-calibration-variant = "RT-AC58U";
-		};
-
-		wifi@a800000 {
-			status = "okay";
-			qcom,ath10k-calibration-variant = "RT-AC58U";
-		};
-
 		watchdog@b017000 {
 			status = "okay";
 		};
@@ -97,7 +87,7 @@
 		};
 	};
 
-	gpio-keys {
+	keys {
 		compatible = "gpio-keys";
 
 		reset {
@@ -113,7 +103,7 @@
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		power: status {
@@ -206,42 +196,42 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition0@0 {
+			partition@0 {
 				label = "SBL1";
 				reg = <0x00000000 0x00040000>;
 				read-only;
 			};
-			partition1@40000 {
+			partition@40000 {
 				label = "MIBIB";
 				reg = <0x00040000 0x00020000>;
 				read-only;
 			};
-			partition2@60000 {
+			partition@60000 {
 				label = "QSEE";
 				reg = <0x00060000 0x00060000>;
 				read-only;
 			};
-			partition3@c0000 {
+			partition@c0000 {
 				label = "CDT";
 				reg = <0x000c0000 0x00010000>;
 				read-only;
 			};
-			partition4@d0000 {
+			partition@d0000 {
 				label = "DDRPARAMS";
 				reg = <0x000d0000 0x00010000>;
 				read-only;
 			};
-			partition5@e0000 {
+			partition@e0000 {
 				label = "APPSBLENV"; /* uboot env*/
 				reg = <0x000e0000 0x00010000>;
 				read-only;
 			};
-			partition5@f0000 {
+			partition@f0000 {
 				label = "APPSBL"; /* uboot */
 				reg = <0x000f0000 0x00080000>;
 				read-only;
 			};
-			partition5@170000 {
+			partition@170000 {
 				label = "ART";
 				reg = <0x00170000 0x00010000>;
 				read-only;
@@ -267,7 +257,12 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "ubi";
+				/*
+				 * TODO: change to label = "ubi" once we drop 4.14.
+				 *       also drop the bootargs-append and all the
+				 *	 userspace CI_UBIPART="UBI_DEV" remains.
+				 */
+				label = "UBI_DEV";
 				reg = <0x00000000 0x08000000>;
 			};
 		};
@@ -290,4 +285,14 @@
 
 &usb2_hs_phy {
 	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "RT-AC58U";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "RT-AC58U";
 };
