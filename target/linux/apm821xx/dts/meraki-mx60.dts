@@ -53,9 +53,6 @@
 	ndfc@1,0 {
 		status = "okay";
 		nand {
-			#address-cells = <1>;
-			#size-cells = <1>;
-
 			partition@0 {
 				label = "u-boot";
 				reg = <0x00000000 0x00100000>;
@@ -161,8 +158,6 @@
 
 	keys {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <60>;	/* 3 * 20 = 60ms */
 		autorepeat;
 

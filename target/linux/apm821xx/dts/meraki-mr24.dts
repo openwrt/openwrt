@@ -50,9 +50,6 @@
 		status = "okay";
 		/* 32 MiB NAND Flash */
 		nand {
-			#address-cells = <1>;
-			#size-cells = <1>;
-
 			partition@0 {
 				label = "u-boot";
 				reg = <0x00000000 0x00150000>;

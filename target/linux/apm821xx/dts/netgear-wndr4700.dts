@@ -157,9 +157,6 @@
 		status = "okay";
 		/* 128 MiB Nand Flash */
 		nand {
-			#address-cells = <1>;
-			#size-cells = <1>;
-
 			partition0,0@0 {
 				label = "NAND 128MiB 3,3V 8-bit";
 				reg = <0x00000000 0x08000000>;
@@ -310,8 +307,6 @@
 &POB0 {
 	keys {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		#interrupt-cells = <2>;
 		autorepeat;
 		poll-interval = <60>;   /* 3 * 20 = 60ms */
