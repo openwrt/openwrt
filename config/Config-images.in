@@ -274,7 +274,8 @@ menu "Target Images"
 	config TARGET_ROOTFS_PARTSIZE
 		int "Root filesystem partition size (in MB)"
 		depends on GRUB_IMAGES || USES_ROOTFS_PART || TARGET_ROOTFS_EXT4FS || TARGET_mvebu || TARGET_rb532 || TARGET_sunxi || TARGET_uml
-		default 256
+		default 2048 if TARGET_x86
+		default 256 if ! TARGET_x86
 		help
 		  Select the root filesystem partition size.
 
