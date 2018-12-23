@@ -8,6 +8,7 @@ CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=neon-vfpv4
 MAINTAINER:=John Crispin <john@phrozen.org>
 
+# TODO: drop kmod-usb-dwc3-of-simple when migrating to 4.19
 KERNEL_PATCHVER:=4.14
 
 KERNELNAME:=zImage Image dtbs
