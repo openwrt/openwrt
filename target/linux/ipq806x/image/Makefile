@@ -3,6 +3,13 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+define Build/buffalo-rootfs-cksum
+	( \
+		echo -ne "\x$$(od -A n -t u1 $@ | tr -s ' ' '\n' | \
+			$(STAGING_DIR_HOST)/bin/awk '{s+=$$0}END{printf "%x", 255-s%256}')"; \
+	) >> $@
+endef
+
 define Device/Default
 	PROFILES := Default
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
@@ -71,6 +78,21 @@ define Device/ZyXELImage
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to $$$$(BLOCKSIZE) | zyxel-ras-image separate-kernel
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to $$$${BLOCKSIZE} | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
+
+define Device/buffalo_wxr-2533dhp
+	$(call Device/LegacyImage)
+	DEVICE_DTS := qcom-ipq8064-wxr-2533dhp
+	DEVICE_TITLE := Buffalo WXR-2533DHP
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 65536k
+	KERNEL_IN_UBI := 1
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-rootfs | buffalo-rootfs-cksum | \
+		sysupgrade-tar rootfs=$$$$@ | append-metadata
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
+endef
+TARGET_DEVICES += buffalo_wxr-2533dhp
 
 define Device/compex_wpq864
 	$(call Device/FitImage)
