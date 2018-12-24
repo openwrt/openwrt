@@ -10,6 +10,11 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	buffalo,wxr-2533dhp)
+		buffalo_upgrade_prepare_ubi
+		CI_ROOTPART="ubi_rootfs"
+		nand_do_upgrade "$ARGV"
+		;;
 	compex,wpq864|\
 	netgear,d7800 |\
 	netgear,r7500 |\
