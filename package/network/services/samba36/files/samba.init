@@ -84,6 +84,8 @@ smb_add_share() {
 
 init_config() {
 	config_load samba
+	CONFIG_APPEND=1 UCI_CONFIG_DIR=/var/run/config config_load samba
+
 	config_foreach smb_header samba
 	config_foreach smb_add_share sambashare
 }
