@@ -1,6 +1,6 @@
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -290,6 +290,7 @@ dtb-$(CONFIG_MACH_SUN6I) += \
+@@ -306,6 +306,7 @@ dtb-$(CONFIG_MACH_SUN6I) += \
  	sun6i-a31-m9.dtb \
  	sun6i-a31-mele-a1000g-quad.dtb \
  	sun6i-a31-mixtile-loftq.dtb \
@@ -10,23 +10,21 @@
  	sun6i-a31s-inet-q972.dtb \
 --- a/arch/arm/dts/sun6i-a31.dtsi
 +++ b/arch/arm/dts/sun6i-a31.dtsi
-@@ -679,6 +679,13 @@
- 				allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
- 			};
+@@ -630,6 +630,11 @@
+				function = "i2c2";
+			};
  
 +			i2c3_pins_a: i2c3@0 {
-+				allwinner,pins = "PB5", "PB6";
-+				allwinner,function = "i2c3";
-+				allwinner,drive = <SUN4I_PINCTRL_10_MA>;
-+				allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
++				pins = "PB5", "PB6";
++				function = "i2c3";
 +			};
 +
- 			mmc0_pins_a: mmc0@0 {
- 				allwinner,pins = "PF0", "PF1", "PF2",
- 						 "PF3", "PF4", "PF5";
+			lcd0_rgb888_pins: lcd0_rgb888 {
+				pins = "PD0", "PD1", "PD2", "PD3",
+						 "PD4", "PD5", "PD6", "PD7",
 --- /dev/null
 +++ b/arch/arm/dts/sun6i-a31-pangolin.dts
-@@ -0,0 +1,292 @@
+@@ -0,0 +1,290 @@
 +/*
 + * Copyright 2015, Theobroma Systems Design und Consulting GmbH
 + *
@@ -197,7 +195,7 @@
 +
 +&mmc0_pins_a {
 +	/* external pull-ups missing for some pins */
-+	allwinner,pull = <SUN4I_PINCTRL_PULL_UP>;
++	bias-pull-up;
 +};
 +
 +&mmc2 {
@@ -211,25 +209,23 @@
 +
 +&pio {
 +	mmc0_cd_pin_pangolin: mmc0_cd_pin@0 {
-+		allwinner,pins = "PC19";
-+		allwinner,function = "gpio_in";
-+		allwinner,drive = <SUN4I_PINCTRL_10_MA>;
-+		allwinner,pull = <SUN4I_PINCTRL_PULL_UP>;
++		pins = "PC19";
++		function = "gpio_in";
++		drive-strength = <10>;
++		bias-pull-up;
 +	};
 +
 +	leds_pins_pangolin: led_pins@0 {
-+		allwinner,pins = "PH7", "PC16";
-+		allwinner,function = "gpio_out";
-+		allwinner,drive = <SUN4I_PINCTRL_20_MA>;
-+		allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
++		pins = "PH7", "PC16";
++		function = "gpio_out";
++		drive-strength = <20>;
 +	};
 +
 +	mmc2_pins_a: mmc2@0 {
-+		allwinner,pins = "PC6","PC7","PC8","PC9","PC10","PC11",
++		pins = "PC6","PC7","PC8","PC9","PC10","PC11",
 +				"PC12","PC13","PC14","PC15";
-+		allwinner,function = "mmc2";
-+		allwinner,drive = <SUN4I_PINCTRL_30_MA>;
-+		allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
++		function = "mmc2";
++		drive-strength = <30>;
 +	};
 +};
 +
@@ -307,7 +303,7 @@
 +};
 +
 +&usb1_vbus_pin_a {
-+	allwinner,pins = "PD23";
++	pins = "PD23";
 +};
 +
 +&reg_usb1_vbus {
@@ -360,7 +356,7 @@
 +CONFIG_SUNXI_SPI=y
 --- a/arch/arm/mach-sunxi/Kconfig
 +++ b/arch/arm/mach-sunxi/Kconfig
-@@ -836,6 +836,14 @@ config VIDEO_LCD_PANEL_I2C_SCL
+@@ -872,6 +872,14 @@ config VIDEO_LCD_PANEL_I2C_SCL
  	Set the SCL pin for the LCD i2c interface. This takes a string in the
  	format understood by sunxi_name_to_gpio, e.g. PH1 for pin 1 of port H.
  
