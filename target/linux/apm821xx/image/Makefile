@@ -125,12 +125,12 @@ define Device/meraki_mr24
   BOARD_NAME := mr24
   DEVICE_DTS := meraki-mr24
   BLOCKSIZE := 63k
-  IMAGES := sysupgrade.tar
+  IMAGES := sysupgrade.bin
   DTB_SIZE := 64512
   IMAGE_SIZE := 8191k
   KERNEL := kernel-bin | lzma | uImage lzma | MerakiAdd-dtb | MerakiNAND
   KERNEL_INITRAMFS := kernel-bin | lzma | dtb | MuImage-initramfs lzma
-  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
   SUPPORTED_DEVICES += mr24
 endef
@@ -143,13 +143,13 @@ define Device/meraki_mx60
   BOARD_NAME := mx60
   DEVICE_DTS := meraki-mx60
   BLOCKSIZE := 63k
-  IMAGES := sysupgrade.tar
+  IMAGES := sysupgrade.bin
   DTB_SIZE := 64512
   IMAGE_SIZE := 1021m
   KERNEL_SIZE := 4031k
   KERNEL := kernel-bin | gzip | uImage gzip | MerakiAdd-dtb | MerakiNAND
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
-  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
   SUPPORTED_DEVICES += mx60
 endef
@@ -162,10 +162,10 @@ define Device/netgear_wndap6x0
   BLOCKSIZE := 16k
   DTB_SIZE := 32768
   IMAGE_SIZE := 27392k
-  IMAGES := sysupgrade.tar factory.img
+  IMAGES := sysupgrade.bin factory.img
   KERNEL_SIZE := 4032k
   KERNEL := dtb | kernel-bin | gzip | MuImage-initramfs gzip
-  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   UBINIZE_OPTS := -E 5
 endef
@@ -198,7 +198,7 @@ define Device/netgear_wndr4700
   BLOCKSIZE := 128k
   DTB_SIZE := 131008
   IMAGE_SIZE := 24960k
-  IMAGES := factory.img sysupgrade.tar
+  IMAGES := factory.img sysupgrade.bin
   ARTIFACTS := device-tree.dtb
   KERNEL_SIZE := 3584k
   # append a fake/empty rootfs to fool netgear's uboot
@@ -208,7 +208,7 @@ define Device/netgear_wndr4700
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 		       netgear-dni | check-size $$$$(IMAGE_SIZE)
-  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   ARTIFACT/device-tree.dtb := export-dtb | uImage none
   NETGEAR_BOARD_ID := WNDR4700
   NETGEAR_HW_ID := 29763875+128+256
