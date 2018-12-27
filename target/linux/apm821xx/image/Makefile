@@ -15,7 +15,9 @@ define Build/boot-img
 	$(CP) $(IMAGE_KERNEL).dtb $@.bootdir/boot/$(DEVICE_DTB)
 	$(CP) $(IMAGE_KERNEL) $@.bootdir/boot/uImage
 
-	genext2fs --block-size $(BLOCKSIZE:%k=%Ki) --size-in-blocks $$((1024 * $(BOOT_SIZE))) --root $@.bootdir $@.boot
+	genext2fs --block-size $(BLOCKSIZE:%k=%Ki) \
+		--size-in-blocks $$((1024 * $(CONFIG_TARGET_KERNEL_PARTSIZE))) \
+		--root $@.bootdir $@.boot
 
 	# convert it to revision 1 - needed for u-boot ext2load
 	$(STAGING_DIR_HOST)/bin/tune2fs -O filetype $@.boot
@@ -49,7 +51,7 @@ define Build/export-dtb
 endef
 
 define Build/hdd-img
-	./mbl_gen_hdd_img.sh $@ $@.boot $(IMAGE_ROOTFS) $(BOOT_SIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
+	./mbl_gen_hdd_img.sh $@ $@.boot $(IMAGE_ROOTFS) $(CONFIG_TARGET_KERNEL_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
 endef
 
 define Build/MerakiAdd-dtb
@@ -230,7 +232,6 @@ define Device/wd_mybooklive
   DTB_SIZE := 16384
   KERNEL := kernel-bin | dtb | gzip | uImage gzip
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
-  BOOT_SIZE := 8
   IMAGES := factory.img.gz kernel.dtb sysupgrade.img.gz
   ARTIFACTS := kernel.dtb
   DEVICE_DTB := apollo3g.dtb
