@@ -198,7 +198,8 @@ define Device/netgear_wndr4700
   BLOCKSIZE := 128k
   DTB_SIZE := 131008
   IMAGE_SIZE := 24960k
-  IMAGES := factory.img sysupgrade.tar kernel.dtb
+  IMAGES := factory.img sysupgrade.tar
+  ARTIFACTS := device-tree.dtb
   KERNEL_SIZE := 3584k
   # append a fake/empty rootfs to fool netgear's uboot
   # CHECK_DNI_FIRMWARE_ROOTFS_INTEGRITY in do_chk_dniimg()
@@ -208,7 +209,7 @@ define Device/netgear_wndr4700
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 		       netgear-dni | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
-  IMAGE/kernel.dtb := export-dtb | uImage none
+  ARTIFACT/device-tree.dtb := export-dtb | uImage none
   NETGEAR_BOARD_ID := WNDR4700
   NETGEAR_HW_ID := 29763875+128+256
   UBINIZE_OPTS := -E 5
@@ -231,11 +232,12 @@ define Device/wd_mybooklive
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
   BOOT_SIZE := 8
   IMAGES := factory.img.gz kernel.dtb sysupgrade.img.gz
+  ARTIFACTS := kernel.dtb
   DEVICE_DTB := apollo3g.dtb
   FILESYSTEMS := ext4 squashfs
   IMAGE/factory.img.gz := boot-script | boot-img | hdd-img | gzip
-  IMAGE/kernel.dtb := export-dtb
   IMAGE/sysupgrade.img.gz := boot-script | boot-img | hdd-img | gzip | append-metadata
+  ARTIFACT/apollo3g.dtb := export-dtb
 endef
 
 TARGET_DEVICES += wd_mybooklive
