@@ -8,6 +8,7 @@ CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=neon-vfpv4
 MAINTAINER:=John Crispin <john@phrozen.org>
 
+# TODO: drop kmod-usb-dwc3-of-simple when migrating to 4.19
 KERNEL_PATCHVER:=4.14
 
 KERNELNAME:=zImage Image dtbs
@@ -17,6 +18,6 @@ DEFAULT_PACKAGES += \
 	kmod-leds-gpio kmod-gpio-button-hotplug swconfig \
 	kmod-ath10k-ct wpad-basic \
 	kmod-usb3 kmod-usb-dwc3-of-simple kmod-usb-phy-qcom-dwc3 \
-	ath10k-firmware-qca4019-ct
+	kmod-usb-dwc3-qcom ath10k-firmware-qca4019-ct
 
 $(eval $(call BuildTarget))

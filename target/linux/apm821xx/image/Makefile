@@ -61,21 +61,6 @@ define Build/MerakiAdd-dtb
 	@mv $@.new $@
 endef
 
-define Build/MerakiAdd-initramfs
-	$(call Image/cpiogz)
-
-	-$(STAGING_DIR_HOST)/bin/mkimage -A $(LINUX_KARCH) -O linux -T ramdisk \
-		-C gzip -n "$(PROFILE) rootfs" \
-		-d $(KDIR_TMP)/$(IMG_PREFIX)-rootfs.cpio.gz \
-		$(KDIR_TMP)/$(IMG_PREFIX)-uramdisk.image.gz
-
-	( \
-		dd if=$@ bs=1k conv=sync; \
-		dd if=$(KDIR_TMP)/$(IMG_PREFIX)-uramdisk.image.gz bs=$(BLOCKSIZE) conv=sync; \
-	) > $@.new
-	@mv $@.new $@
-endef
-
 define Build/MerakiNAND
 	-$(STAGING_DIR_HOST)/bin/mkmerakifw \
 		-B $(BOARD_NAME) -s \
@@ -154,23 +139,16 @@ TARGET_DEVICES += meraki_mr24
 define Device/meraki_mx60
   DEVICE_TITLE := Cisco Meraki MX60/MX60W
   DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-ledtrig-usbport kmod-usb-dwc2 \
-  kmod-usb-storage block-mount
+		     kmod-usb-storage block-mount
   BOARD_NAME := mx60
   DEVICE_DTS := meraki-mx60
   BLOCKSIZE := 63k
   IMAGES := sysupgrade.tar
   DTB_SIZE := 64512
-  # The kernel size will need to match the offset defined in mkmerakifw.c,
-  # otherwise the final image will fail to boot. This is set within the
-  # MX60 kernel header definition which is found at
-  # ./tools/firmware-utils/src/mkmerakifw.c, line 103~
-  KERNEL_SIZE := 2984k
   IMAGE_SIZE := 1021m
+  KERNEL_SIZE := 4031k
   KERNEL := kernel-bin | gzip | uImage gzip | MerakiAdd-dtb | MerakiNAND
-  KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux | gzip | uImage gzip | \
-		      check-size $$(KERNEL_SIZE) | \
-		      MerakiAdd-dtb | pad-to 2047k | MerakiAdd-initramfs | \
-		      MerakiNAND
+  KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
   IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
   SUPPORTED_DEVICES += mx60
@@ -250,7 +228,7 @@ define Device/wd_mybooklive
   BLOCKSIZE := 1k
   DTB_SIZE := 16384
   KERNEL := kernel-bin | dtb | gzip | uImage gzip
-  KERNEL_INITRAMFS := kernel-bin | dtb | gzip | uImage gzip
+  KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
   BOOT_SIZE := 8
   IMAGES := factory.img.gz kernel.dtb sysupgrade.img.gz
   DEVICE_DTB := apollo3g.dtb

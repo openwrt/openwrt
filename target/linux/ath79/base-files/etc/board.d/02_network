@@ -10,6 +10,7 @@ ath79_setup_interfaces()
 
 	case "$board" in
 	avm,fritz300e|\
+	devolo,dvl1750c|\
 	ocedo,koala|\
 	ocedo,raccoon|\
 	pcs,cap324|\
@@ -58,6 +59,9 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "3:lan:4" "4:lan:3" "5:lan:2" "2:wan"
 		;;
+	devolo,dvl1200e)
+		ucidef_set_interface_lan "eth0 eth1"
+		;;
 	dlink,dir-825-b1)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
@@ -91,6 +95,10 @@ ath79_setup_interfaces()
 	glinet,ar300m|\
 	glinet,gl-x750)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		;;
+	nec,wg800hp)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan" "3:lan" "4:lan" "1:wan"
 		;;
 	netgear,wndr3700|\
 	netgear,wndr3700v2|\
@@ -138,6 +146,7 @@ ath79_setup_interfaces()
 			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
 	tplink,archer-a7-v5|\
+	tplink,archer-c7-v5|\
 	tplink,tl-wdr3600|\
 	tplink,tl-wdr4300)
 		ucidef_add_switch "switch0" \
@@ -246,6 +255,10 @@ ath79_setup_macs()
 	iodata,wn-ag300dgr)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
+		;;
+	nec,wg800hp)
+		lan_mac=$(mtd_get_mac_text board_data 640)
+		wan_mac=$(mtd_get_mac_text board_data 1152)
 		;;
 	netgear,wndr3700|\
 	netgear,wndr3700v2|\

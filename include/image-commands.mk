@@ -242,6 +242,11 @@ define Build/pad-offset
 	mv $@.new $@
 endef
 
+define Build/xor-image
+	$(STAGING_DIR_HOST)/bin/xorimage -i $@ -o $@.xor $(1)
+	mv $@.xor $@
+endef
+
 define Build/check-size
 	@[ $$(($(subst k,* 1024,$(subst m, * 1024k,$(1))))) -ge "$$(stat -c%s $@)" ] || { \
 		echo "WARNING: Image file $@ is too big" >&2; \
