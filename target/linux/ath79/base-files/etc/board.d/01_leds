@@ -65,6 +65,12 @@ tplink,archer-c59-v1)
 	ucidef_set_led_switch "lan" "LAN" "tp-link:green:lan" "switch0" "0x1E"
 	ucidef_set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth0"
 	;;
+tplink,archer-c6-v2)
+	ucidef_set_led_switch "lan" "LAN" "tp-link:green:lan" "switch0" "0x3C"
+	ucidef_set_led_switch "wan" "WAN" "tp-link:green:wan" "switch0" "0x02"
+	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:green:wlan2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "tp-link:green:wlan5g" "phy0tpt"
+	;;
 tplink,re450-v2)
 	ucidef_set_led_netdev "lan_data" "LAN Data" "tp-link:green:lan_data" "eth0" "tx rx"
 	ucidef_set_led_netdev "lan_link" "LAN Link" "tp-link:green:lan_link" "eth0" "link"
