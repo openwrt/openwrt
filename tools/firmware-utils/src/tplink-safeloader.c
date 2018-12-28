@@ -548,6 +548,42 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system",
 	},
 
+	/** Firmware layout for the C6v2 */
+	{
+		.id	= "ARCHER-C6-V2",
+		.vendor	= "",
+		.support_list =
+			"SupportList:\r\n"
+			"{product_name:Archer C6,product_ver:2.0.0,special_id:45550000}\r\n"
+			"{product_name:Archer C6,product_ver:2.0.0,special_id:52550000}\r\n"
+			"{product_name:Archer C6,product_ver:2.0.0,special_id:4A500000}\r\n",
+		.support_trail = '\x00',
+		.soft_ver = "soft_ver:1.0.0\n",
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"default-mac", 0x20000, 0x00200},
+			{"pin", 0x20200, 0x00100},
+			{"product-info", 0x20300, 0x00200},
+			{"device-id", 0x20500, 0x0fb00},
+			{"firmware", 0x30000, 0x7a9400},
+			{"soft-version", 0x7d9400, 0x00100},
+			{"extra-para", 0x7d9500, 0x00100},
+			{"support-list", 0x7d9600, 0x00200},
+			{"profile", 0x7d9800, 0x03000},
+			{"default-config", 0x7dc800, 0x03000},
+			{"partition-table", 0x7df800, 0x00800},
+			{"user-config", 0x7e0000, 0x0c000},
+			{"certificate", 0x7ec000, 0x04000},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
+
 	/** Firmware layout for the C60v1 */
 	{
 		.id	= "ARCHER-C60-V1",
@@ -1623,6 +1659,9 @@ static void build_image(const char *output,
 		parts[5] = put_data("extra-para", mdat, 11);
 	} else if (strcasecmp(info->id, "ARCHER-A7-V5") == 0 || strcasecmp(info->id, "ARCHER-C7-V4") == 0 || strcasecmp(info->id, "ARCHER-C7-V5") == 0) {
 		const char mdat[11] = {0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0xca, 0x00, 0x01, 0x00, 0x00};
+		parts[5] = put_data("extra-para", mdat, 11);
+	} else if (strcasecmp(info->id, "ARCHER-C6-V2") == 0) {
+		const char mdat[11] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00};
 		parts[5] = put_data("extra-para", mdat, 11);
 	}
 
