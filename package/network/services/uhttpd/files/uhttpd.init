@@ -191,6 +191,13 @@ start_instance()
 		[ -s "$file" ] && procd_append_param command -H "$file"
 	done
 
+	config_get home_dir "$cfg" home
+	config_get share_dir "$cfg" share
+	[ -n "$home_dir" -a -n "$share_dir" ] && {
+		rm -f $home_dir/share
+		ln -s $share_dir $home_dir/share
+	}
+
 	procd_close_instance
 }
 
