@@ -9,6 +9,7 @@ include $(INCLUDE_DIR)/image.mk
 
 DEVICE_VARS += DTS IMAGE_SIZE NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
+DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 
 loadaddr-y := 0x80000000
 loadaddr-$(CONFIG_TARGET_ramips_rt288x) := 0x88000000
@@ -27,6 +28,21 @@ define Device/Default
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   sysupgrade_bin := append-kernel | append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+
+define Device/seama
+  SEAMA_MTDBLOCK := 2
+  IMAGES += factory.bin
+
+  # 64 bytes offset:
+  # - 28 bytes seama_header
+  # - 36 bytes of META data (4-bytes aligned)
+  IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs
+  IMAGE/sysupgrade.bin := \
+	$$(IMAGE/default) | seama | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := \
+	$$(IMAGE/default) | pad-rootfs -x 64 | seama | seama-seal | check-size $$$$(IMAGE_SIZE)
+  SEAMA_SIGNATURE :=
 endef
 
 define Build/patch-dtb
@@ -86,12 +102,15 @@ define Build/poray-header
 endef
 
 define Build/seama
-	$(STAGING_DIR_HOST)/bin/seama -i $@ $(1)
+	$(STAGING_DIR_HOST)/bin/seama -i $@ \
+		-m "dev=/dev/mtdblock/$(SEAMA_MTDBLOCK)" -m "type=firmware"
 	mv $@.seama $@
 endef
 
 define Build/seama-seal
-	$(call Build/seama,-s $@.seama $(1))
+	$(STAGING_DIR_HOST)/bin/seama -i $@ -s $@.seama \
+		-m "signature=$(SEAMA_SIGNATURE)"
+	mv $@.seama $@
 endef
 
 define Build/wrg-header

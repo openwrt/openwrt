@@ -135,20 +135,11 @@ endef
 TARGET_DEVICES += db-wrt01
 
 define Device/dch-m225
+  $(Device/seama)
   DTS := DCH-M225
   BLOCKSIZE := 4k
-  IMAGES += factory.bin
+  SEAMA_SIGNATURE := wapn22_dlink.2013gui_dap1320b
   IMAGE_SIZE := 6848k
-  IMAGE/sysupgrade.bin := \
-	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs | \
-	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin := \
-	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
-	append-rootfs | pad-rootfs -x 64 | \
-	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	seama-seal -m "signature=wapn22_dlink.2013gui_dap1320b" | \
-	check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := D-Link DCH-M225
   DEVICE_PACKAGES := kmod-sound-core kmod-sound-mt7620 kmod-i2c-ralink
 endef

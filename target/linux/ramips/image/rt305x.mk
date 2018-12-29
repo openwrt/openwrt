@@ -262,21 +262,12 @@ endef
 TARGET_DEVICES += dir-600-b1
 
 define Device/dir-610-a1
+  $(Device/seama)
   DTS := DIR-610-A1
   BLOCKSIZE := 4k
-  IMAGES += factory.bin
+  SEAMA_SIGNATURE := wrgn59_dlob.hans_dir610
   KERNEL := $(KERNEL_DTB)
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
-  IMAGE/sysupgrade.bin := \
-	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs | \
-	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin := \
-	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
-	append-rootfs | pad-rootfs -x 64 | \
-	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	seama-seal -m "signature=wrgn59_dlob.hans_dir610" | \
-	check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := D-Link DIR-610 A1 
   DEVICE_PACKAGES := kmod-ledtrig-netdev kmod-ledtrig-timer
 endef
