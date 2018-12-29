@@ -1,7 +1,7 @@
 include ./common-buffalo.mk
 include ./common-netgear.mk
 
-DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
+DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION SEAMA_SIGNATURE
 
 define Build/cybertan-trx
 	@echo -n '' > $@-empty.bin
@@ -51,6 +51,31 @@ define Build/nec-fw
     dd if=$@; \
   ) > $@.new
   mv $@.new $@
+endef
+
+define Build/seama
+	$(STAGING_DIR_HOST)/bin/seama -i $@ $(if $(1),$(1),-m "dev=/dev/mtdblock/1" -m "type=firmware")
+	mv $@.seama $@
+endef
+
+define Build/seama-seal
+	$(call Build/seama,-s $@.seama $(if $(1),$(1),-m "signature=$(SEAMA_SIGNATURE)"))
+endef
+
+define Device/seama
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
+  KERNEL_INITRAMFS := $$(KERNEL) | seama
+  IMAGES += factory.bin
+
+  # 64 bytes offset:
+  # - 28 bytes seama_header
+  # - 36 bytes of META data (4-bytes aligned)
+  IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs
+  IMAGE/sysupgrade.bin := \
+	$$(IMAGE/default) | seama | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := \
+	$$(IMAGE/default) | seama | pad-rootfs | seama-seal | check-size $$$$(IMAGE_SIZE)
+  SEAMA_SIGNATURE :=
 endef
 
 define Device/avm_fritz300e
