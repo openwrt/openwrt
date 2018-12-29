@@ -67,17 +67,6 @@ define Build/relocate-kernel
 	rm -rf $@.relocate
 endef
 
-define Build/seama
-	$(STAGING_DIR_HOST)/bin/seama -i $@ \
-		-m "dev=/dev/mtdblock/$(SEAMA_MTDBLOCK)" -m "type=firmware"
-	mv $@.seama $@
-endef
-
-define Build/seama-seal
-	$(STAGING_DIR_HOST)/bin/seama -i $@ -s $@.seama \
-		-m "signature=$(SEAMA_SIGNATURE)"
-endef
-
 define Build/teltonika-fw-fake-checksum
 	# Teltonika U-Boot web based firmware upgrade/recovery routine compares
 	# 16 bytes from md5sum1[16] field in TP-Link v1 header (offset: 76 bytes

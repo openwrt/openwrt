@@ -101,18 +101,6 @@ define Build/poray-header
 	mv $@.new $@
 endef
 
-define Build/seama
-	$(STAGING_DIR_HOST)/bin/seama -i $@ \
-		-m "dev=/dev/mtdblock/$(SEAMA_MTDBLOCK)" -m "type=firmware"
-	mv $@.seama $@
-endef
-
-define Build/seama-seal
-	$(STAGING_DIR_HOST)/bin/seama -i $@ -s $@.seama \
-		-m "signature=$(SEAMA_SIGNATURE)"
-	mv $@.seama $@
-endef
-
 define Build/wrg-header
 	mkwrgimg -i $@ -d "/dev/mtdblock/2" -s $(1) -o $@.new
 	mv $@.new $@
