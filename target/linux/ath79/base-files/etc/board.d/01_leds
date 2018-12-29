@@ -28,6 +28,9 @@ buffalo,whr-g301n)
 	ucidef_set_led_switch "lan3" "LAN3" "$boardname:green:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan4" "LAN4" "$boardname:green:lan4" "switch0" "0x10"
 	;;
+dlink,dir-859-a1)
+	ucidef_set_led_switch "internet" "WAN" "$boardname:green:internet" "switch0" "0x20"
+	;;
 etactica,eg200)
 	ucidef_set_led_netdev "lan" "LAN" "$boardname:red:eth0" "eth0"
 	ucidef_set_led_oneshot "modbus" "Modbus" "$boardname:red:modbus" "100" "33"

@@ -158,6 +158,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan" "6@eth0"
 		;;
+	dlink,dir-859-a1|\
 	tplink,tl-wr1043nd-v4)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
@@ -233,6 +234,10 @@ ath79_setup_macs()
 	dlink,dir-835-a1)
 		lan_mac=$(mtd_get_mac_text "mac" 4)
 		wan_mac=$(mtd_get_mac_text "mac" 24)
+		;;
+	dlink,dir-859-a1)
+		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
+		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
 		;;
 	elecom,wrc-300ghbk2-i)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary ART 4098)" -2)

@@ -217,6 +217,19 @@ define Device/dlink_dir-835-a1
 endef
 TARGET_DEVICES += dlink_dir-835-a1
 
+define Device/dlink_dir-859-a1
+  $(Device/seama)
+  ATH_SOC := qca9563
+  DEVICE_TITLE := D-LINK DIR-859 A1
+  IMAGE_SIZE := 15872k
+  DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  SEAMA_SIGNATURE := wrgac37_dlink.2013gui_dir859
+  IMAGE/factory.bin := \
+	$$(IMAGE/default) | pad-rootfs -x 64 | seama | seama-seal | check-size $$$$(IMAGE_SIZE)
+  SUPPORTED_DEVICES += dir-859-a1
+endef
+TARGET_DEVICES += dlink_dir-859-a1
+
 define Device/elecom_wrc-300ghbk2-i
   ATH_SOC := qca9563
   DEVICE_TITLE := ELECOM WRC-300GHBK2-I
