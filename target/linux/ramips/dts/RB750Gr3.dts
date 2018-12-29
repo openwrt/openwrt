@@ -22,7 +22,7 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyS0,57600";
+		bootargs = "console=ttyS0,115200";
 	};
 
 	gpio-leds {
@@ -89,34 +89,54 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "u-boot";
-				reg = <0x0 0x30000>;
+				label = "RouterBoot";
+				reg = <0x0 0x40000>;
 				read-only;
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "bootloader1";
+					reg = <0x0 0xf000>;
+					read-only;
+				};
+
+				hard_config: partition@f000 {
+					label = "hard_config";
+					reg = <0xf000 0x1000>;
+					read-only;
+				};
+
+				partition@10000 {
+					label = "bootloader2";
+					reg = <0x10000 0xf000>;
+					read-only;
+				};
+
+				partition@20000 {
+					label = "soft_config";
+					reg = <0x20000 0x1000>;
+				};
+
+				partition@30000 {
+					label = "bios";
+					reg = <0x30000 0x1000>;
+					read-only;
+				};
 			};
 
-			partition@30000 {
-				label = "u-boot-env";
-				reg = <0x30000 0x10000>;
-				read-only;
-			};
-
-			factory: partition@40000 {
-				label = "factory";
-				reg = <0x40000 0x10000>;
-				read-only;
-			};
-
-			partition@50000 {
-				compatible = "denx,uimage";
+			partition@40000 {
+				compatible = "mikrotik,minor";
 				label = "firmware";
-				reg = <0x50000 0xfb0000>;
+				reg = <0x040000 0xfc0000>;
 			};
 		};
 	};
 };
 
 &ethernet {
-	mtd-mac-address = <&factory 0xe000>;
+	mtd-mac-address = <&hard_config 0x0010>;
 	mtd-mac-address-increment = <1>;
 };
 
