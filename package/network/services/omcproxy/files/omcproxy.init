@@ -51,7 +51,16 @@ omcproxy_add_network_triggers() {
 	config_get downlinks $1 downlink
 
 	for link in $uplink $downlinks; do
-		procd_add_interface_trigger "interface.*" $link /etc/init.d/omcproxy restart
+		local duplicate=0
+
+		for l in $LINKS; do
+			[ "$l" = "$link" ] && duplicate=1
+		done
+
+		[ "$duplicate" = 0 ] && {
+			LINKS="$LINKS $link"
+			procd_add_interface_trigger "interface.*" $link /etc/init.d/omcproxy restart
+		}
 	done
 }
 
@@ -114,6 +123,8 @@ omcproxy_add_firewall_rules() {
 }
 
 service_triggers() {
+	LINKS=""
+
 	procd_add_reload_trigger "omcproxy"
 	config_foreach omcproxy_add_network_triggers proxy
 }
