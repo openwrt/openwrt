@@ -221,6 +221,17 @@ define Device/dlink_dir-859-a1
 endef
 TARGET_DEVICES += dlink_dir-859-a1
 
+define Device/elecom_wrc-1750ghbk2-i
+  ATH_SOC := qca9563
+  DEVICE_TITLE := ELECOM WRC-1750GHBK2-I/C
+  IMAGE_SIZE := 15808k
+  KERNEL_INITRAMFS := $$(KERNEL) | pad-to 2 | \
+    elecom-header 16187314 RN68 WRC-1750GHBK2 \
+      $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += elecom_wrc-1750ghbk2-i
+
 define Device/elecom_wrc-300ghbk2-i
   ATH_SOC := qca9563
   DEVICE_TITLE := ELECOM WRC-300GHBK2-I

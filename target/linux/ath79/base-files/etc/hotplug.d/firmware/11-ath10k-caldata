@@ -96,6 +96,9 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(mtd_get_mac_ascii devdata "wlan5mac")
 		;;
+	elecom,wrc-1750ghbk2-i)
+		ath10kcal_extract "ART" 20480 2116
+		;;
 	glinet,ar750s|\
 	tplink,re450-v2)
 		ath10kcal_extract "art" 20480 2116
