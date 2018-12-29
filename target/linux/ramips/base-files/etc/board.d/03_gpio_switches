@@ -7,6 +7,9 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+mikrotik,rb750gr3)
+	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "17"
+	;;
 ubnt-erx)
 	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "0"
 	;;

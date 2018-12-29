@@ -324,14 +324,6 @@ define Device/netgear_r6350
 endef
 TARGET_DEVICES += netgear_r6350
 
-define Device/rb750gr3
-  DTS := RB750Gr3
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := MikroTik RB750Gr3
-  DEVICE_PACKAGES := kmod-usb3 uboot-envtools
-endef
-TARGET_DEVICES += rb750gr3
-
 define Device/MikroTik
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16128k
@@ -342,6 +334,13 @@ define Device/MikroTik
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
+
+define Device/mikrotik_rb750gr3
+  $(Device/MikroTik)
+  DTS := RB750Gr3
+  DEVICE_TITLE := MikroTik RouterBOARD RB750Gr3
+endef
+TARGET_DEVICES += mikrotik_rb750gr3
 
 define Device/mikrotik_rbm33g
   $(Device/MikroTik)
