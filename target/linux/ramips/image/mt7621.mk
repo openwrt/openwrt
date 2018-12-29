@@ -339,6 +339,7 @@ define Device/mikrotik_rb750gr3
   $(Device/MikroTik)
   DTS := RB750Gr3
   DEVICE_TITLE := MikroTik RouterBOARD RB750Gr3
+  DEVICE_PACKAGES += kmod-gpio-beeper
 endef
 TARGET_DEVICES += mikrotik_rb750gr3
 
