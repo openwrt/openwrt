@@ -93,6 +93,10 @@ ath79_setup_interfaces()
 	glinet,gl-x750)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+	glinet,ar750s)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan:2" "3:lan:1" "1:wan"
+		;;
 	nec,wg800hp)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:lan" "4:lan" "1:wan"

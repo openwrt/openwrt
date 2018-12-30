@@ -96,6 +96,11 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(mtd_get_mac_ascii devdata "wlan5mac")
 		;;
+	glinet,ar750s|\
+	tplink,re450-v2)
+		ath10kcal_extract "art" 20480 2116
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
+		;;
 	glinet,gl-x750)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
@@ -125,10 +130,6 @@ case "$FIRMWARE" in
 	tplink,archer-c7-v5)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -1)
-		;;
-	tplink,re450-v2)
-		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
 		;;
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-mesh|\
