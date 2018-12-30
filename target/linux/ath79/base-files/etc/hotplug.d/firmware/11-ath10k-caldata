@@ -153,6 +153,7 @@ case "$FIRMWARE" in
 	tplink,archer-c58-v1|\
 	tplink,archer-c59-v1)
 		ath10kcal_extract "art" 20480 12064
+		ath10kcal_patch_mac_crc $(macaddr_add $(mtd_get_mac_binary mac 8) -1)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
