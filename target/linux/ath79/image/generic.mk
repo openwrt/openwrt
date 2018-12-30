@@ -219,14 +219,14 @@ define Device/etactica_eg200
 endef
 TARGET_DEVICES += etactica_eg200
 
-define Device/glinet_ar150
+define Device/glinet_gl-ar150
   ATH_SOC := ar9330
   DEVICE_TITLE := GL.iNet GL-AR150
   DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += gl-ar150
 endef
-TARGET_DEVICES += glinet_ar150
+TARGET_DEVICES += glinet_gl-ar150
 
 define Device/glinet_ar300m-nor
   ATH_SOC := qca9531
