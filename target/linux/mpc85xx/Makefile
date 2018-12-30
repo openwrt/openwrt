@@ -12,7 +12,7 @@ BOARDNAME:=Freescale MPC85xx
 CPU_TYPE:=8540
 FEATURES:=squashfs
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
-SUBTARGETS:=generic p1020
+SUBTARGETS:=generic p1020 p2020
 
 KERNEL_PATCHVER:=4.14
 
