@@ -11,14 +11,11 @@ include $(INCLUDE_DIR)/image.mk
 FAT32_BLOCK_SIZE=1024
 FAT32_BLOCKS=$(shell echo $$(($(CONFIG_SUNXI_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
-KERNEL_LOADADDR:=0x40008000
-
 define Build/sunxi-sdcard
 	rm -f $@.boot
 	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
 
 	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-boot.scr ::boot.scr
-	mcopy -i $@.boot $(DTS_DIR)/$(SUNXI_DTS).dtb ::dtb
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::uImage
 	./gen_sunxi_sdcard_img.sh $@ \
 		$@.boot \
@@ -33,10 +30,20 @@ endef
 define Device/Default
   PROFILES := Default
   DEVICE_VARS := SUNXI_DTS SUNXI_UBOOT
-  KERNEL_NAME := zImage
-  KERNEL := kernel-bin | uImage none
+  KERNEL_NAME := Image
+  SUNXI_DTS := $(1)
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+endef
+
+define Device/FitImageLzma
+  KERNEL_LOADADDR:=0x42000000
+  KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(SUNXI_DTS).dtb
+endef
+
+define Device/FitImageLzma64
+  KERNEL_LOADADDR:=0x40080000
+  KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/allwinner/$$(SUNXI_DTS).dtb
 endef
 
 include cortex-a7.mk

@@ -10,4 +10,3 @@ include $(TOPDIR)/rules.mk
 ARCH:=aarch64
 BOARDNAME:=Allwinner A64
 CPU_TYPE:=cortex-a53
-KERNELNAME:=Image dtbs
