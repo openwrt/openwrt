@@ -26,10 +26,10 @@
 			debounce-interval = <60>;
 		};
 
-		wps {
-			label = "wps";
+		wlan {
+			label = "wlan";
 			gpios = <&pinctrl 35 1>;
-			linux,code = <KEY_WPS_BUTTON>;
+			linux,code = <KEY_WLAN>;
 			debounce-interval = <60>;
 		};
 	};
@@ -56,11 +56,11 @@
 		power_blue {
 			label = "VH4032N:blue:power";
 			gpios = <&pinctrl 22 0>;
+			default-state = "on";
 		};
 		power_red {
 			label = "VH4032N:red:power";
 			gpios = <&pinctrl 24 0>;
-			default-state = "on";
 		};
 		voice_blue {
 			label = "VH4032N:blue:voice";
