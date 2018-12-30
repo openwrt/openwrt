@@ -18,7 +18,7 @@
 		reg = <0x0 0x4000000>;  // 64M at 0x0
 	};
 
-	gpio-keys {
+	keys {
 		compatible = "gpio-keys";
 		reset {
 			label = "reset";
@@ -34,10 +34,10 @@
 		};
 	};
 
-	easy98020-leds {
+	leds {
 		compatible = "gpio-leds";
 		pinctrl-names = "default";
-		pinctrl-0 = <&bootled_pins>;
+		pinctrl-0 = <&bootled_pins>, <&led_pins>;
 
 		GPON {
 			label = "easy98020:green:gpon";
@@ -64,12 +64,6 @@
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
-	};
-
-	easy98020-phy-leds {
-		compatible = "gpio-leds";
-		pinctrl-names = "default";
-		pinctrl-0 = <&led_pins>;
 
 		GE0_ACT {
 			label = "easy98020:ge0_act";

@@ -28,7 +28,7 @@
 		reg = <0x0 0x4000000>;
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
 
@@ -45,7 +45,7 @@
 		/* key DECT is missing */
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		power_green: power-green {
@@ -125,7 +125,7 @@
 };
 
 &localbus {
-	nor@0 {
+	flash@0 {
 		compatible = "lantiq,nor";
 		bank-width = <2>;
 		reg = <0 0x0 0x800000>;

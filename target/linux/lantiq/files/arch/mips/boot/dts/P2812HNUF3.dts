@@ -16,7 +16,7 @@
 };
 
 &localbus {
-	nor@0 {
+	flash@0 {
 		compatible = "lantiq,nor";
 		bank-width = <2>;
 		reg = <0 0x0 0x800000>;
@@ -42,7 +42,7 @@
 		};
 	};
 
-	nand@1 {
+	flash@1 {
 		compatible = "lantiq,nand-xway";
 		lantiq,cs = <1>;
 		bank-width = <2>;

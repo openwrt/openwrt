@@ -17,7 +17,7 @@
 		reg = <0x0 0x4000000>;  // 64M at 0x0
 	};
 
-	gpio-keys {
+	keys {
 		compatible = "gpio-keys";
 		reset {
 			label = "reset";
@@ -34,7 +34,7 @@
 		};
 	};
 
-	easy88388-leds {
+	leds {
 		compatible = "gpio-leds";
 		pinctrl-names = "default";
 		pinctrl-0 = <&led_pins &bootled_pins>;

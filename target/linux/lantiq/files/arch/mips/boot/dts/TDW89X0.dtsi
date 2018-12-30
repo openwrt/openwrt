@@ -27,7 +27,7 @@
 		reg = <0x0 0x4000000>;
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
 		reset {
@@ -239,7 +239,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pins_spi_default>;
 
-	m25p80@4 {
+	flash@4 {
 		compatible = "jedec,spi-nor";
 		reg = <4>;
 		spi-max-frequency = <33250000>;

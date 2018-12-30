@@ -27,7 +27,7 @@
 		reg = <0x0 0x4000000>;
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
 
@@ -48,7 +48,7 @@
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		upgrading-orange {
@@ -164,7 +164,7 @@
 };
 
 &localbus {
-	nor@0 {				/* NOR Flash: Spansion S29AL004D 512KB */
+	flash@0 {				/* NOR Flash: Spansion S29AL004D 512KB */
 		compatible = "lantiq,nor";	/* "AMD AM29LV400BB" compatible on 3.3.8 */
 		lantiq,cs = <0>;
 		bank-width = <2>;
@@ -202,7 +202,7 @@
 		};
 	};
 
-	nand@1 {		  /* NAND Flash: Samsung K9F5608U0D-JIB0 32MB */
+	flash@1 {		  /* NAND Flash: Samsung K9F5608U0D-JIB0 32MB */
 		compatible = "lantiq,nand-xway";
 		lantiq,cs = <1>;
 		bank-width = <2>;

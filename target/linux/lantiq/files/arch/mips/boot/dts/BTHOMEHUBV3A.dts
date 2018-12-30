@@ -27,7 +27,7 @@
 		reg = <0x0 0x4000000>;
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
 		reset {
@@ -47,7 +47,7 @@
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		wireless-red {
@@ -151,7 +151,7 @@
 };
 
 &localbus {
-	nand@1 {		  /* NAND Flash: Samsung K9F5608U0D-JIB0 32MB */
+	flash@1 {		  /* NAND Flash: Samsung K9F5608U0D-JIB0 32MB */
 		compatible = "lantiq,nand-xway";
 		lantiq,cs = <1>;
 		bank-width = <2>;
@@ -197,7 +197,7 @@
 	status = "okay";
 	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 
-	ath9k@7000 {
+	wifi@7000 {
 		reg = <0x7000 0 0 0 0>;
 		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
 	};
