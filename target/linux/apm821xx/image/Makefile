@@ -101,13 +101,10 @@ define Device/mx60
   # otherwise the final image will fail to boot. This is set within the
   # MX60 kernel header definition which is found at
   # ./tools/firmware-utils/src/mkmerakifw.c, line 103~
-  KERNEL_SIZE := 2984k
+  KERNEL_SIZE := 4031k
   IMAGE_SIZE := 1021m
   KERNEL := kernel-bin | gzip | uImage gzip | MerakiAdd-dtb | MerakiNAND
-  KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux | gzip | uImage gzip | \
-		      check-size $$(KERNEL_SIZE) | \
-		      MerakiAdd-dtb | pad-to 2047k | MerakiAdd-initramfs | \
-		      MerakiNAND
+  KERNEL_INITRAMFS := kernel-bin | gzip | dtb | wndr4700-specialImage gzip
   IMAGE/sysupgrade.tar := sysupgrade-tar
   UBINIZE_OPTS := -E 5
 endef
