@@ -857,6 +857,20 @@ define Device/livebox
 endef
 TARGET_DEVICES += livebox
 
+### Netcomm ###
+define Device/NB604N
+  $(Device/bcm63xx)
+  IMAGES += sysupgrade.bin
+  DEVICE_VENDOR := Netcomm
+  DEVICE_MODEL := NB604N
+  DEVICE_DTS := nb604n
+  CFE_BOARD_ID := 96328ang
+  CFE_CHIP_ID := 6328
+  FLASH_MB := 8
+  DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
+endef
+TARGET_DEVICES += NB604N
+
 ### Netgear ###
 define Device/CVG834G
   $(Device/bcm33xx)

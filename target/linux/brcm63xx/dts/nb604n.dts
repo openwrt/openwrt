@@ -1,0 +1,130 @@
+/dts-v1/;
+
+#include "bcm6328.dtsi"
+
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "Netcomm NB604N";
+	compatible = "brcm,nb604n", "brcm,bcm6328";
+
+	chosen {
+		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&pinctrl 15 1>;
+			linux,code = <KEY_WLAN>;
+			debounce-interval = <60>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&pinctrl 23 1>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&pinctrl 24 1>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		usb {
+			label = "NB604N:blue:usb";
+			gpios = <&pinctrl 1 1>;
+		};
+
+		internet_red {
+			label = "NB604N:red:internet";
+			gpios = <&pinctrl 2 1>;
+		};
+
+		dsl {
+			label = "NB604N:blue:dsl";
+			gpios = <&pinctrl 3 1>;
+		};
+
+		power_blue {
+			label = "NB604N:blue:power";
+			gpios = <&pinctrl 4 1>;
+			default-state = "on";
+		};
+
+		power_red {
+			label = "NB604N:red:power";
+			gpios = <&pinctrl 5 1>;
+		};
+
+		wps {
+			label = "NB604N:blue:wps";
+			gpios = <&pinctrl 10 1>;
+		};
+
+		internet_blue {
+			label = "NB604N:blue:internet";
+			gpios = <&pinctrl 11 1>;
+		};
+	};
+};
+
+&hsspi {
+	status = "ok";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <20000000>;
+		spi-tx-bus-width = <2>;
+		spi-rx-bus-width = <2>;
+		reg = <0>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			cfe@0 {
+				reg = <0x000000 0x010000>;
+				label = "cfe";
+				read-only;
+			};
+
+			linux@10000 {
+				reg = <0x010000 0x7e0000>;
+				label = "linux";
+				compatible = "brcm,bcm963xx-imagetag";
+			};
+
+			nvram@7f0000 {
+				reg = <0x7f0000 0x010000>;
+				label = "nvram";
+			};
+		};
+	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usb_port1_device>;
+};
+
+&uart0 {
+	status = "ok";
+};

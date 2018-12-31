@@ -180,6 +180,9 @@ brcm63xx_dt_detect() {
 	"Inventel Livebox 1")
 		board_name="livebox1"
 		;;
+	"Netcomm NB604N")
+		board_name="nb604n"
+		;;
 	"Netgear CVG834G")
 		board_name="cvg834g"
 		;;
