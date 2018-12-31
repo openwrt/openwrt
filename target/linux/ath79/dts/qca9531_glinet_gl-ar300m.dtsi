@@ -6,6 +6,13 @@
 #include "qca953x.dtsi"
 
 / {
+	aliases {
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
@@ -52,7 +59,7 @@
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		status {
+		led_status: status {
 			label = "gl-ar300m:green:status";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
