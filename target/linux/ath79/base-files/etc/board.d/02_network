@@ -89,7 +89,7 @@ ath79_setup_interfaces()
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
 	glinet,ar150|\
-	glinet,ar300m|\
+	glinet,gl-ar300m*|\
 	glinet,gl-x750)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
