@@ -16,6 +16,8 @@
 
 	leds {
 		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&switch_led_pins>;
 
 		wlan {
 			label = "dragino2:red:wlan";
