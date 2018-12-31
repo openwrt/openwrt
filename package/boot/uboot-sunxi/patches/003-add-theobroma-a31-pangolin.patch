@@ -10,15 +10,13 @@
  	sun6i-a31s-inet-q972.dtb \
 --- a/arch/arm/dts/sun6i-a31.dtsi
 +++ b/arch/arm/dts/sun6i-a31.dtsi
-@@ -641,6 +641,13 @@
+@@ -641,6 +641,11 @@
  				function = "lcd0";
  			};
  
 +			i2c3_pins_a: i2c3@0 {
 +				allwinner,pins = "PB5", "PB6";
 +				allwinner,function = "i2c3";
-+				allwinner,drive = <SUN4I_PINCTRL_10_MA>;
-+				allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
 +			};
 +
  			mmc0_pins_a: mmc0@0 {
