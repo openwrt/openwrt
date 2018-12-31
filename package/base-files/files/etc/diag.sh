@@ -37,10 +37,13 @@ set_led_state() {
 		;;
 	done)
 		status_led_off
-		[ -n "$running" ] && {
+		if [ -n "$running" ]; then
 			status_led="$running"
 			status_led_on
-		}
+		else
+			trigger="$(get_dt_default_trigger boot)"
+			[ -n "$trigger" ] && led_set_attr "$status_led" "trigger" "$trigger"
+		fi
 		;;
 	esac
 }

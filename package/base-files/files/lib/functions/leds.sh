@@ -15,6 +15,19 @@ get_dt_led() {
 	echo "$label"
 }
 
+get_dt_default_trigger() {
+	local trigger
+	local ledpath
+	local basepath="/proc/device-tree"
+	local nodepath="$basepath/aliases/led-$1"
+
+	[ -f "$nodepath" ] && ledpath=$(cat "$nodepath")
+	[ -n "$ledpath" ] && \
+		trigger=$(cat "$basepath$ledpath/linux,default-trigger" 2>/dev/null)
+
+	echo "$trigger"
+}
+
 led_set_attr() {
 	[ -f "/sys/class/leds/$1/$2" ] && echo "$3" > "/sys/class/leds/$1/$2"
 }
