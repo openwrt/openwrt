@@ -3,6 +3,7 @@ include ./common-netgear.mk
 
 DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
+DEVICE_VARS += KERNEL_INITRAMFS_PREFIX
 
 define Build/cybertan-trx
 	@echo -n '' > $@-empty.bin
@@ -19,29 +20,26 @@ define Build/addpattern
 	-mv "$@.new" "$@"
 endef
 
-define Build/elecom-header
-  $(eval fw_size=$(word 1,$(1)))
-  $(eval edimax_model=$(word 2,$(1)))
-  $(eval product=$(word 3,$(1)))
-  $(eval factory_bin=$(word 4,$(1)))
-  if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(fw_size)" ]; then \
-    $(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) $(factory_bin); \
-    $(STAGING_DIR_HOST)/bin/mkedimaximg \
-      -b -s CSYS -m $(edimax_model) \
-      -f 0x70000 -S 0x01100000 \
-      -i $(factory_bin) -o $(factory_bin).new; \
-    mv $(factory_bin).new $(factory_bin); \
-    ( \
-      echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync; \
-      echo -n "0.00" | dd bs=16 count=1 conv=sync; \
-      dd if=$(factory_bin); \
-    ) > $(factory_bin).new; \
-    mv $(factory_bin).new $(factory_bin); \
-    $(CP) $(factory_bin) $(BIN_DIR)/; \
-	else \
-		echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
-	fi
+define Build/add-elecom-factory-initramfs
+  $(eval edimax_model=$(word 1,$(1)))
+  $(eval product=$(word 2,$(1)))
 
+  $(STAGING_DIR_HOST)/bin/mkedimaximg \
+	-b -s CSYS -m $(edimax_model) \
+	-f 0x70000 -S 0x01100000 \
+	-i $@ -o $@.factory
+
+  ( \
+	echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync; \
+	echo -n "0.00" | dd bs=16 count=1 conv=sync; \
+	dd if=$@.factory; \
+  ) > $@.factory.new
+
+  if [ "$$(stat -c%s $@.factory.new)" -le $$(($(subst k,* 1024,$(subst m, * 1024k,$(IMAGE_SIZE))))) ]; then \
+	mv $@.factory.new $(BIN_DIR)/$(KERNEL_INITRAMFS_PREFIX)-factory.bin; \
+  else \
+	echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
+  fi
 endef
 
 define Build/nec-fw
@@ -234,8 +232,7 @@ define Device/elecom_wrc-1750ghbk2-i
   DEVICE_TITLE := ELECOM WRC-1750GHBK2-I/C
   IMAGE_SIZE := 15808k
   KERNEL_INITRAMFS := $$(KERNEL) | pad-to 2 | \
-    elecom-header 16187314 RN68 WRC-1750GHBK2 \
-      $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
+	add-elecom-factory-initramfs RN68 WRC-1750GHBK2
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 TARGET_DEVICES += elecom_wrc-1750ghbk2-i
@@ -245,8 +242,7 @@ define Device/elecom_wrc-300ghbk2-i
   DEVICE_TITLE := ELECOM WRC-300GHBK2-I
   IMAGE_SIZE := 7616k
   KERNEL_INITRAMFS := $$(KERNEL) | pad-to 2 | \
-    elecom-header 7798706 RN51 WRC-300GHBK2-I \
-      $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
+	add-elecom-factory-initramfs RN51 WRC-300GHBK2-I
 endef
 TARGET_DEVICES += elecom_wrc-300ghbk2-i
 
