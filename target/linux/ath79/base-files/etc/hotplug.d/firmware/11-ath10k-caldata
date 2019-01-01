@@ -99,13 +99,10 @@ case "$FIRMWARE" in
 	elecom,wrc-1750ghbk2-i)
 		ath10kcal_extract "ART" 20480 2116
 		;;
-	glinet,ar750s|\
-	tplink,re450-v2)
-		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
-		;;
 	engenius,ews511ap|\
-	glinet,gl-x750)
+	glinet,gl-ar750s|\
+	glinet,gl-x750|\
+	tplink,re450-v2)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
 		;;
