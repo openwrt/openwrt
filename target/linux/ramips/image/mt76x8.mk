@@ -127,6 +127,23 @@ define Device/netgear_r6120
 endef
 TARGET_DEVICES += netgear_r6120
 
+define Device/netgear_r6020
+  DTS := R6020
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Netgear AC750 R6020
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+  SERCOMM_KERNEL_OFFSET := 0x90000
+  SERCOMM_HWID := CFR
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0040
+  IMAGES += factory.img
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE)| append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.img := $$(IMAGE/default) | mksercommfw
+endef
+TARGET_DEVICES += netgear_r6020
+
 define Device/omega2
   DTS := OMEGA2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
