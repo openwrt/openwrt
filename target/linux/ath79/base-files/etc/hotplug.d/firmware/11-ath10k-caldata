@@ -88,7 +88,8 @@ case "$FIRMWARE" in
 "ath10k/cal-pci-0000:00:00.0.bin")
 	case $board in
 	devolo,dvl1200e|\
-	devolo,dvl1750c)
+	devolo,dvl1750c|\
+	devolo,dvl1750i)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac_crc $(macaddr_add $(mtd_get_mac_binary art 0) -1)
 		;;

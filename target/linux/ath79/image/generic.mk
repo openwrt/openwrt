@@ -178,6 +178,14 @@ define Device/devolo_dvl1750c
 endef
 TARGET_DEVICES += devolo_dvl1750c
 
+define Device/devolo_dvl1750i
+  ATH_SOC := qca9558
+  DEVICE_TITLE := devolo WiFi pro 1750i
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += devolo_dvl1750i
+
 define Device/dlink_dir-825-b1
   ATH_SOC := ar7161
   DEVICE_TITLE := D-LINK DIR-825 B1
