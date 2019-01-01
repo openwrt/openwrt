@@ -94,6 +94,22 @@ define Device/tplink_re450-v2
 endef
 TARGET_DEVICES += tplink_re450-v2
 
+define Device/tplink_cpe510-v1
+  $(Device/tplink-safeloader)
+  ATH_SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_TITLE := TP-Link CPE510 v1
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := CPE510
+  LOADER_TYPE := elf
+  LOADER_FLASH_OFFS := 0x43000
+  COMPILE := loader-$(1).elf
+  COMPILE/loader-$(1).elf := loader-okli-compile
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 12288
+  SUPPORTED_DEVICES += cpe510-v1
+endef
+TARGET_DEVICES += tplink_cpe510-v1
+
 define Device/tplink_tl-wdr3600
   $(Device/tplink-8mlzma)
   ATH_SOC := ar9344
