@@ -56,14 +56,14 @@ define Package/bzip2/description
 endef
 
 TARGET_CFLAGS += \
-	$(FPIC) \
-	$(TARGET_LDFLAGS)
+	$(FPIC)
 
 CONFIGURE_ARGS += --prefix=/usr
 
 MAKE_FLAGS += \
 	-f Makefile-libbz2_so \
 	CFLAGS="$(TARGET_CFLAGS)" \
+	LDFLAGS="$(TARGET_LDFLAGS)" \
 	all
 
 define Build/InstallDev
@@ -89,11 +89,11 @@ define Package/bzip2/install
 endef
 
 HOST_CFLAGS += \
-	$(FPIC) \
-	$(HOST_LDFLAGS)
+	$(FPIC)
 
 HOST_MAKE_FLAGS+= \
 	CFLAGS="$(HOST_CFLAGS)" \
+	LDFLAGS="$(HOST_LDFLAGS)" \
 	all
 
 HOST_CONFIGURE_ARGS+= \
