@@ -852,7 +852,7 @@ $(eval $(call KernelPackage,ptp))
 define KernelPackage/ptp-gianfar
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Freescale Gianfar PTP support
-  DEPENDS:=@TARGET_mpc85xx +kmod-ptp
+  DEPENDS:=@TARGET_mpc85xx +kmod-ptp @!LINUX_4_19
   KCONFIG:=CONFIG_PTP_1588_CLOCK_GIANFAR
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/freescale/gianfar_ptp.ko
   AUTOLOAD:=$(call AutoProbe,gianfar_ptp)
@@ -865,6 +865,22 @@ endef
 
 $(eval $(call KernelPackage,ptp-gianfar))
 
+define KernelPackage/ptp-qoriq
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Freescale QorIQ PTP support
+  DEPENDS:=@TARGET_mpc85xx +kmod-ptp @LINUX_4_19
+  KCONFIG:=CONFIG_PTP_1588_CLOCK_QORIQ
+  FILES:=$(LINUX_DIR)/drivers/ptp/ptp_qoriq.o
+  AUTOLOAD:=$(call AutoProbe,ptp_qoriq)
+endef
+
+
+define KernelPackage/ptp-qoriq/description
+ Kernel module for IEEE 1588 support for Freescale
+ QorIQ Ethernet drivers
+endef
+
+$(eval $(call KernelPackage,ptp-qoriq))
 
 define KernelPackage/random-core
   SUBMENU:=$(OTHER_MENU)
