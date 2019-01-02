@@ -166,18 +166,35 @@
 
 	mtd-cal-data = <&art 0x1000>;
 	mtd-mac-address = <&productinfo 0x08>;
-/*	mtd-mac-address-increment = <0>;*/
+};
+
+&eth0 {
+	status = "okay";
+
+	mtd-mac-address = <&productinfo 0x08>;
+
+	phy-mode = "mii";
+	phy-handle = <&swphy4>;
+};
+
+&builtin_switch {
+	mdio-bus {
+		swphy3: ethernet-phy@3 {
+			reg = <3>;
+			phy-mode = "mii";
+		};
+	};
 };
 
 &eth1 {
 	status = "okay";
 
-/*	phy-handle = <&swphy0>;*/
+	phy-handle = <&swphy3>;
 	mtd-mac-address = <&productinfo 0x08>;
-	phy-mode = "gmii";
 
 	gmac-config {
 		device = <&gmac>;
-		switch-phy-swap = <1>;
 	};
+
+	/delete-node/ fixed-link;
 };
