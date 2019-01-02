@@ -46,6 +46,7 @@ define Package/busybox
   DEPENDS:=+BUSYBOX_USE_LIBRPC:librpc +BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter
   MENU:=1
   ALTERNATIVES:=\
+    $(call BUSYBOX_IF_ENABLED,FIND,	100:/usr/bin/find:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,FLOCK,	100:/usr/bin/flock:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,FREE,	100:/usr/bin/free:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,IP,	100:/sbin/ip:/bin/busybox) \
@@ -58,6 +59,7 @@ define Package/busybox
     $(call BUSYBOX_IF_ENABLED,TOP,	100:/usr/bin/top:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,UPTIME,	100:/usr/bin/uptime:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,WATCH,	100:/bin/watch:/bin/busybox) \
+    $(call BUSYBOX_IF_ENABLED,XARGS,	100:/usr/bin/xargs:/bin/busybox) \
 
 endef
 
