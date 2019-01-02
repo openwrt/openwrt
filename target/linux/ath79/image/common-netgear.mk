@@ -22,3 +22,10 @@ endef
 define Build/netgear-uImage
 	$(call Build/uImage,$(1) -M $(NETGEAR_KERNEL_MAGIC))
 endef
+
+define Device/netgear_ath79
+  KERNEL := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
+  IMAGES += factory.img
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size $$$$(IMAGE_SIZE)
+endef

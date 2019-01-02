@@ -546,12 +546,9 @@ TARGET_DEVICES += pcs_cr5000
 
 define Device/netgear_wndr3x00
   ATH_SOC := ar7161
-  KERNEL := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
-  IMAGES += factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size $$$$(IMAGE_SIZE)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
+  $(Device/netgear_ath79)
 endef
 
 define Device/netgear_wndr3700
