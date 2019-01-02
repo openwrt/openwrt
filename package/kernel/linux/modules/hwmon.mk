@@ -287,6 +287,36 @@ endef
 $(eval $(call KernelPackage,hwmon-pc87360))
 
 
+define KernelPackage/pmbus-core
+  TITLE:=PMBus support
+  KCONFIG:= CONFIG_PMBUS
+  FILES:=$(LINUX_DIR)/drivers/hwmon/pmbus/pmbus_core.ko
+  $(call AddDepends/hwmon)
+endef
+
+define KernelPackage/pmbus-core/description
+ Kernel modules for Power Management Bus
+endef
+
+$(eval $(call KernelPackage,pmbus-core))
+
+
+define KernelPackage/pmbus-zl6100
+  TITLE:=Intersil / Zilker Labs ZL6100 hardware monitoring
+  KCONFIG:=CONFIG_SENSORS_ZL6100
+  FILES:=$(LINUX_DIR)/drivers/hwmon/pmbus/zl6100.ko
+  AUTOLOAD:=$(call AutoProbe,zl6100)
+  $(call AddDepends/hwmon, +kmod-pmbus-core)
+endef
+
+define KernelPackage/hwmon-sht21/description
+ Kernel module for Intersil / Zilker Labs ZL6100 and
+compatible digital DC-DC controllers
+endef
+
+$(eval $(call KernelPackage,pmbus-zl6100))
+
+
 define KernelPackage/hwmon-pwmfan
   TITLE:=Generic PWM FAN support
   KCONFIG:=CONFIG_SENSORS_PWM_FAN
