@@ -233,7 +233,7 @@ define Device/wd_mybooklive
   KERNEL := kernel-bin | dtb | gzip | uImage gzip
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
   IMAGES := factory.img.gz kernel.dtb sysupgrade.img.gz
-  ARTIFACTS := kernel.dtb
+  ARTIFACTS := apollo3g.dtb
   DEVICE_DTB := apollo3g.dtb
   FILESYSTEMS := ext4 squashfs
   IMAGE/factory.img.gz := boot-script | boot-img | hdd-img | gzip
