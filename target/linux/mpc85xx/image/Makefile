@@ -7,6 +7,30 @@ include $(INCLUDE_DIR)/image.mk
 
 DEVICE_VARS += TPLINK_HWID TPLINK_HWREV TPLINK_FLASHLAYOUT
 
+define rootfs_align
+$(patsubst %-256k,0x40000,$(patsubst %-128k,0x20000,$(patsubst %-64k,0x10000,$(patsubst squashfs%,0x4,$(patsubst root.%,%,$(1))))))
+endef
+
+# combine kernel and rootfs into one image
+# mktplinkfw <type> <optional extra arguments to mktplinkfw binary>
+# <type> is "sysupgrade" or "factory"
+#
+# -a align the rootfs start on an <align> bytes boundary
+# -j add jffs2 end-of-filesystem markers
+# -s strip padding from end of the image
+# -X reserve <size> bytes in the firmware image (hexval prefixed with 0x)
+define Build/mktplinkfw
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) \
+		-k $(IMAGE_KERNEL) \
+		-r $@ \
+		-o $@.new \
+		-j -X 0x40000 \
+		-a $(call rootfs_align,$(FILESYSTEM)) \
+		$(wordlist 2,$(words $(1)),$(1)) \
+		$(if $(findstring sysupgrade,$(word 1,$(1))),-s) && mv $@.new $@ || rm -f $@
+endef
+
 define Device/Default
   PROFILES := Default
   DEVICE_DTS := $(1)
@@ -14,17 +38,6 @@ define Device/Default
   KERNEL_ENTRY := 0x00000000
   KERNEL_LOADADDR := 0x00000000
   KERNEL := kernel-bin
-endef
-
-define Build/tplink-v1-image
-	$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) \
-		-N "$(VERSION_DIST)" -V $(REVISION) \
-		-k $(IMAGE_KERNEL) \
-		-r $(IMAGE_ROOTFS) \
-		-j \
-		$(1) \
-		-o $@
 endef
 
 ifeq ($(SUBTARGET),generic)
@@ -39,8 +52,8 @@ define Device/tl-wdr4900-v1
   SUPPORTED_DEVICES:=tl-wdr4900-v1 tplink,tl-wdr4900-v1
   IMAGES := fdt.bin factory.bin sysupgrade.bin
   IMAGE/fdt.bin := append-dtb
-  IMAGE/factory.bin := tplink-v1-image
-  IMAGE/sysupgrade.bin := tplink-v1-image -s | append-metadata
+  IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade | append-metadata
+  IMAGE/factory.bin := append-rootfs | mktplinkfw factory
 endef
 TARGET_DEVICES += tl-wdr4900-v1
 
