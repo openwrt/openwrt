@@ -576,7 +576,7 @@ hostapd_set_bss_options() {
 			append bss_conf "deny_mac_file=$_macfile" "$N"
 		;;
 		radius)
-			append_bss_conf "macaddr_acl=2" "$N"
+			append bss_conf "macaddr_acl=2" "$N"
 			# radius server can be used to assign dynamic VLAN based on MAC
 			vlan_possible=1
 		;;
