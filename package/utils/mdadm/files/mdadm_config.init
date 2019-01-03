@@ -1,0 +1,151 @@
+#!/bin/sh /etc/rc.common
+
+# check block info for active linux_raid_members & dynamically update uci mdadm config prior to starting mdadm @ S13
+
+# 20190102, joseph.tingiris@gmail.com, created; work-around?
+# 20190103, joseph.tingiris@gmail.com, reviewed, formatted, logic tweaks, more testing, corrected service_triggers
+
+START=12
+
+USE_PROCD=1
+NAME=config_mdadm
+
+config_mdadm_logger()
+{
+    logger -t config_mdadm_logger "$@"
+
+}
+
+config_mdadm()
+{
+    logger -t config_mdadm "$@"
+
+    config_load mdadm
+    config_foreach config_mdadm_clean array
+
+    local block_info dev_md md mdadm_config uuid
+
+    md=0
+    for uuid in $(block info 2> /dev/null | grep linux_raid_member | awk '{print $2}' | awk -F\" '{print $(NF-1)}');do
+        mdadm_config=$(uci show mdadm 2> /dev/null | grep "${uuid}")
+        if [ -z "${mdadm_config}" ]; then
+            # this uuid doesn't exist in the mdadm config ...
+            dev_md=""
+            while [ -z "${dev_md}" ]; do
+                if [ ${md} -gt 25 ]; then
+                    # don't get caught in this loop forever ...
+                    logger -t config_mdadm "$@ reach max limit of 25, aborted"
+                    return 1
+                fi
+                dev_md=$(uci show mdadm 2> /dev/null | grep "device=/dev/md${md}")
+                if [ -z "${dev_md}" ]; then
+                    # this dev md isn't used, so use it
+                    dev_md="/dev/md${md}"
+                fi
+                # else this md is already in use in mdadm config; increment the counter and try again
+                let md=${md}+1
+            done
+
+            #echo "dev_md=${dev_md}, uuid=${uuid}"
+
+            # add the active uuid with an used dev md to mdadm config & commit
+            uci add mdadm array
+            uci set mdadm.@array[-1].device="${dev_md}"
+            uci set mdadm.@array[-1].uuid="${uuid}"
+            uci commit
+        fi
+        # else do nothing, this uuid already exists in mdadm config
+    done
+
+    #uci show mdadm
+
+}
+
+config_mdadm_clean()
+{
+    local cfg="$1"
+
+    logger -t config_mdadm_clean "$@ ${cfg}"
+
+    if [ -z ${cfg} ]; then
+        # no cfg; do nothing
+        return
+    fi
+
+    local block_info device name uuid
+
+    config_get uuid "${cfg}" uuid
+    config_get name "${cfg}" name
+    config_get device "${cfg}" device
+
+    #echo "device=${device}, uuid=${uuid}, block_info=${block_info}"
+
+    if [ -z "${device}" ] || [ -z "${uuid}" ]; then
+        # apparently valid cfg section argument, but the device & uuid are empty; attempt to remove this config section
+        uci delete mdadm.${cfg} 2> /dev/null
+        if [ $? -eq 0 ]; then
+            # uci delete succeeded, it was a valid albeit empty config section; commit the delete
+            uci commit
+            logger -t config_mdadm_clean "$@ ${cfg} deleted invalid section cfg=${cfg}, device=${device}, uuid=${uuid}"
+        else
+            # log that uci delete failed
+            logger -t config_mdadm_clean "$@ ${cfg} failed to delete invalid section cfg=${cfg}, device=${device}, uuid=${uuid}"
+            return 1
+        fi
+    fi
+
+    block_info=$(block info 2> /dev/null | grep linux_raid_member | grep "${uuid}")
+    if [ -z "${block_info}" ]; then
+        # valid cfg section argument & valid uuid, however the uuid doesn't show up in block info; remove this config section
+        uci delete mdadm.${cfg}
+        if [ $? -eq 0 ]; then
+            # uci delete succeeded, it was a valid albeit empty config section; commit the delete
+            uci commit
+            logger -t config_mdadm "$@ ${cfg} deleted unused section cfg=${cfg}, device=${device}, uuid=${uuid}"
+        else
+            # log that uci delete failed
+            logger -t config_mdadm_clean "$@ ${cfg} failed to delete unused section cfg=${cfg}, device=${device}, uuid=${uuid}"
+            return 1
+        fi
+    fi
+
+    return
+}
+
+boot()
+{
+    config_mdadm boot
+}
+
+reload_service()
+{
+    config_mdadm reload_service
+}
+
+restart_service()
+{
+    stop_service
+    start_service
+}
+
+service_running()
+{
+    config_mdadm_logger "service_running $@"
+}
+
+service_triggers()
+{
+    config_mdadm_logger "service_triggers $@"
+
+    procd_add_reload_trigger mdadm mdadm_config
+}
+
+start_service()
+{
+    config_mdadm start_service
+}
+
+stop_service()
+{
+    config_mdadm stop_service
+}
