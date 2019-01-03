@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mbedtls
 PKG_VERSION:=2.14.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-gpl.tgz
@@ -19,6 +19,8 @@ PKG_HASH:=baa1121952786f5b2c66c52226a8ca0e05126de920d1756266551df677915b7e
 PKG_BUILD_PARALLEL:=1
 PKG_LICENSE:=GPL-2.0+
 PKG_CPE_ID:=cpe:/a:arm:mbed_tls
+
+PKG_CONFIG_DEPENDS:=CONFIG_LIBMBEDTLS_DEBUG_C
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -40,6 +42,20 @@ $(call Package/mbedtls/Default)
   SUBMENU:=SSL
   TITLE+= (library)
   ABI_VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
+endef
+
+define Package/libmbedtls/config
+config LIBMBEDTLS_DEBUG_C
+	depends on PACKAGE_libmbedtls
+	bool "Enable debug functions"
+	default n
+	help
+	 This option enables mbedtls library's debug functions.
+	
+	 It increases the uncompressed libmbedtls binary size
+	 by around 60 KiB (for an ARMv5 platform).
+	
+	 Usually, you don't need this, so don't select this if you're unsure.
 endef
 
 define Package/mbedtls-util
@@ -70,6 +86,17 @@ CMAKE_OPTIONS += \
 	-DUSE_SHARED_MBEDTLS_LIBRARY:Bool=ON \
 	-DENABLE_TESTING:Bool=OFF \
 	-DENABLE_PROGRAMS:Bool=ON
+
+define Build/Configure
+	$(Build/Configure/Default)
+
+	awk 'BEGIN { rc = 1 } \
+	     /#define MBEDTLS_DEBUG_C/ { $$$$0 = "$(if $(CONFIG_LIBMBEDTLS_DEBUG_C),,// )#define MBEDTLS_DEBUG_C"; rc = 0 } \
+	     { print } \
+	     END { exit(rc) }' $(PKG_BUILD_DIR)/include/mbedtls/config.h \
+	     >$(PKG_BUILD_DIR)/include/mbedtls/config.h.new && \
+	mv $(PKG_BUILD_DIR)/include/mbedtls/config.h.new $(PKG_BUILD_DIR)/include/mbedtls/config.h
+endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
