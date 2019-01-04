@@ -1436,7 +1436,14 @@ static int ag71xx_probe(struct platform_device *pdev)
 	dev->min_mtu = 68;
 	dev->max_mtu = max_frame_len - ag71xx_max_frame_len(0);
 
-	if (of_device_is_compatible(np, "qca,ar7240-eth"))
+	if (of_device_is_compatible(np, "qca,ar7240-eth") ||
+	    of_device_is_compatible(np, "qca,ar7241-eth") ||
+	    of_device_is_compatible(np, "qca,ar7242-eth") ||
+	    of_device_is_compatible(np, "qca,ar9330-eth") ||
+	    of_device_is_compatible(np, "qca,ar9340-eth") ||
+	    of_device_is_compatible(np, "qca,qca9530-eth") ||
+	    of_device_is_compatible(np, "qca,qca9550-eth") ||
+	    of_device_is_compatible(np, "qca,qca9560-eth"))
 		ag->tx_hang_workaround = 1;
 
 	ag->rx_buf_offset = NET_SKB_PAD;
