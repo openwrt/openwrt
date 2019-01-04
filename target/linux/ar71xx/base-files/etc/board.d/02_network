@@ -41,7 +41,6 @@ ar71xx_setup_interfaces()
 	tew-712br|\
 	tew-732br|\
 	tl-mr3220|\
-	tl-mr3220-v2|\
 	tl-mr3420|\
 	tl-wdr3320-v2|\
 	tl-wdr3500|\
@@ -520,6 +519,7 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "9@eth0"
 		;;
+	tl-mr3220-v2|\
 	tl-wr741nd-v4)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth1"
 		ucidef_add_switch "switch0" \
