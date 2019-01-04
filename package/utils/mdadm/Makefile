@@ -63,8 +63,6 @@ define Package/mdadm/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mdadm $(1)/sbin
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/mdadm.init $(1)/etc/init.d/mdadm
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/mdadm_config.init $(1)/etc/init.d/mdadm_config
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/mdadm.config $(1)/etc/config/mdadm
 endef
