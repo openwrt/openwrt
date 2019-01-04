@@ -21,11 +21,12 @@ include $(INCLUDE_DIR)/package.mk
 
 define U-Boot/Default
   BUILD_TARGET:=ipq40xx
-  UBOOT_IMAGE:=uboot-fritz4040.bin
 endef
 
 define U-Boot/fritz4040
   NAME:=FritzBox 4040
+  UBOOT_IMAGE:=uboot-fritz4040.bin
+  BUILD_DEVICES:=avm_fritzbox-4040
 endef
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
@@ -42,6 +43,11 @@ endef
 define Build/Compile
 	$(Build/Compile/U-Boot)
 	(cd $(PKG_BUILD_DIR); ./fritz/fritzcreator.sh;)
+endef
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(CP) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(UBOOT_IMAGE)
 endef
 
 define Package/u-boot/install
