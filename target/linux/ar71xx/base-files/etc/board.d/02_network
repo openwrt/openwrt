@@ -46,7 +46,6 @@ ar71xx_setup_interfaces()
 	tl-wdr3320-v2|\
 	tl-wdr3500|\
 	tl-wr740n-v6|\
-	tl-wr741nd-v4|\
 	tl-wr840n-v2|\
 	tl-wr840n-v3|\
 	tl-wr841n-v11|\
@@ -520,6 +519,11 @@ ar71xx_setup_interfaces()
 	tl-wr2543n)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "9@eth0"
+		;;
+	tl-wr741nd-v4)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:4" "2:lan:1" "3:lan:2" "4:lan:3"
 		;;
 	tl-wr841n-v1|\
 	tl-wr941nd)
