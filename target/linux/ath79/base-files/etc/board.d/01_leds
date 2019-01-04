@@ -52,7 +52,7 @@ etactica,eg200)
 	;;
 glinet,gl-ar150)
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth0"
-	ucidef_set_led_netdev "lan" "LAN" "$boardname:green:lan" "eth1"
+	ucidef_set_led_switch "lan" "LAN" "$boardname:green:lan" "switch0" "0x02"
 	;;
 glinet,gl-x750)
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth0"
