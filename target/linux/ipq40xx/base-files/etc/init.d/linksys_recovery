@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2015 OpenWrt.org
+
+START=97
+boot() {
+. /lib/functions.sh
+
+case $(board_name) in
+	linksys,ea6350v3)
+		# make sure auto_recovery in uboot is always on
+		IS_AUTO_RECOVERY="`fw_printenv -n auto_recovery`"
+		if [ "$IS_AUTO_RECOVERY" != "yes" ] ; then
+			fw_setenv auto_recovery yes
+			echo "Linksys EA6350v3: fw_setenv: auto_recovery has been set to yes"
+		fi
+		# reset the boot counter
+		mtd resetbc s_env
+		echo "Linksys EA6350v3: mtd: boot counter has been reset"
+		;;
+esac
+}

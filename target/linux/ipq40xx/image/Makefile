@@ -131,6 +131,22 @@ define Device/glinet_gl-b1300
 endef
 TARGET_DEVICES += glinet_gl-b1300
 
+define Device/linksys_ea6350v3
+	$(call Device/FitImage)
+	DEVICE_TITLE := Linksys EA6350v3
+	DEVICE_DTS := qcom-ipq4018-ea6350v3
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_SIZE := 3145728
+	IMAGE_SIZE := 38797312
+	UBINIZE_OPTS := -E 5
+	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb | append-uImage-fakehdr filesystem
+	IMAGES := factory.bin sysupgrade.bin
+	IMAGE/factory.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-ubi | linksys-image type=EA6350v3
+	DEVICE_PACKAGES := ipq-wifi-linksys_ea6350v3 uboot-envtools
+endef
+TARGET_DEVICES += linksys_ea6350v3
+
 define Device/meraki_mr33
 	$(call Device/FitImage)
 	DEVICE_DTS := qcom-ipq4029-mr33
