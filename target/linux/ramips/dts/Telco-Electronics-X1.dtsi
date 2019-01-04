@@ -1,0 +1,148 @@
+/*
+ *  BSD LICENSE
+ *
+ *  Copyright 2019 Nicholas Smith <mips171@icloud.com>
+ *  Licensed to the public under the GNU GPL v2.0.
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *    * Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *    * Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in
+ *      the documentation and/or other materials provided with the
+ *      distribution.
+ *    * Neither the name of Broadcom Corporation nor the names of its
+ *      contributors may be used to endorse or promote products derived
+ *      from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "telcoelectronics,x1", "mediatek,mt7621-soc";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		modem_reset {
+			gpio-export,name = "modem_reset";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+		};
+
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		
+		system {
+			label = "green:system";
+			gpio-export,direction_may_change = <1>;
+			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+		};
+		
+		lteStatus1 {
+			label = "red:lteStatus";
+			gpio-export,direction_may_change = <1>;
+			gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+		};
+		
+		lteStatus2 {
+			label = "blue:lteStatus";
+			gpio-export,direction_may_change = <1>;
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+		};
+		
+		lteStatus3 {
+			label = "green:lteStatus";
+			gpio-export,direction_may_change = <1>;			
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		};
+		
+		sigStr1 {
+			label = "green:sigStrHighest";
+			gpio-export,direction_may_change = <1>;
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+		};
+
+                sigStr2 {
+			label = "green:sigStrHigh";
+			//gpio-export,name = "signalStrHigh";
+			gpio-export,direction_may_change = <1>;
+			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+		};
+		
+		sigStr3 {
+			label = "green:sigStrMed";
+			gpio-export,direction_may_change = <1>;
+			gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
+		};
+		
+		sigStr4 {
+			label = "green:sigStrLow";
+			gpio-export,direction_may_change = <1>;
+			gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+		};
+		
+		sigstr5 {
+			label = "green:sigStrLowest";
+			gpio-export,direction_may_change = <1>;
+			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+		};
+
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "jtag", "uart2", "wdt", "rgmii2";
+			ralink,function = "gpio";
+		};
+	};
+};

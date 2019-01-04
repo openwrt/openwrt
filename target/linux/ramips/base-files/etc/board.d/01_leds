@@ -404,6 +404,11 @@ wrh-300cr)
 xzwifi,creativebox-v1)
 	ucidef_set_led_switch "internet" "internet" "$boardname:blue:internet" "switch0" "0x10"
 	;;
+x1)
+	ucidef_set_led_default "system" "system" "green:system" "0"
+	ucidef_set_led_netdev  "wwan_up" "MobileDataUp" "blue:lteStatus" "wwan0" "link tx rx"
+	ucidef_set_led_netdev  "wwan_down" "MobileDataDown" "red:lteStatus" "wwan0" "link"
+	;;
 y1)
 	ucidef_set_led_netdev "wifi" "WIFI" "$boardname:blue:wifi" "wlan1"
 	ucidef_set_led_netdev "wifi5g" "WIFI5G" "$boardname:blue:wifi5g" "wlan0"

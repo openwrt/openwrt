@@ -652,6 +652,9 @@ ramips_board_detect() {
 	*"WZR-AGL300NH")
 		name="wzr-agl300nh"
 		;;
+	*"Telco Electronics X1")
+		name="x1"
+		;;
 	*"X5")
 		name="x5"
 		;;

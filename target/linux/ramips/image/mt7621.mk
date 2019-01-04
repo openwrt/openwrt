@@ -509,6 +509,14 @@ define Device/wndr3700v5
 endef
 TARGET_DEVICES += wndr3700v5
 
+define Device/x1
+  DTS := Telco-Electronics-X1
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := Telco Electronics X1
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7603 kmod-mt76x2 kmod-ledtrig-netdev wpad-basic
+endef
+TARGET_DEVICES += x1
+
 define Device/youhua_wr1200js
   DTS := WR1200JS
   IMAGE_SIZE := 16064k
