@@ -40,8 +40,8 @@ mdadm_autoconfig() {
 
 		echo "mdadm: autoconfig is on (autoconfig=$autoconfig)"
 
-			md=0
-			for uuid in $(block info 2> /dev/null | grep linux_raid_member | awk '{print $2}' | awk -F\" '{print $(NF-1)}');do
+		md=0
+		for uuid in $(block info 2> /dev/null | grep linux_raid_member | awk '{print $2}' | awk -F\" '{print $(NF-1)}'); do
 			dev_md=""
 			while [ -z "$dev_md" ]; do
 				if [ ! -e "/dev/md$md" ]; then
