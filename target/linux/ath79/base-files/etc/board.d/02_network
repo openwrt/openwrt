@@ -122,10 +122,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch_port_attr "switch0" 5 led 2
 		;;
 	netgear,wnr612-v2|\
-	on,n150r)
+	on,n150r|\
+	tplink,tl-wr841-v7)
 		ucidef_set_interface_wan "eth0"
 		ucidef_add_switch "switch0" \
-		"0@eth1" "1:lan" "2:lan" "3:lan:3" "4:lan:4"
+		"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan"
 		;;
 	phicomm,k2t)
 		ucidef_add_switch "switch0" \
@@ -144,7 +145,6 @@ ath79_setup_interfaces()
 	buffalo,whr-g301n|\
 	tplink,tl-mr3220-v1|\
 	tplink,tl-mr3420-v1|\
-	tplink,tl-wr841-v7|\
 	tplink,tl-wr841-v9|\
 	tplink,tl-wr841-v11|\
 	ubnt,airrouter)
