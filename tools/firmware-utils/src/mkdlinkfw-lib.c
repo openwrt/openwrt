@@ -97,6 +97,7 @@ int read_to_buf(const struct file_info *fdata, char *buf)
 {
 	FILE *f;
 	int ret = EXIT_FAILURE;
+	size_t read;
 
 	f = fopen(fdata->file_name, "r");
 	if (f == NULL) {
@@ -104,9 +105,8 @@ int read_to_buf(const struct file_info *fdata, char *buf)
 		goto out;
 	}
 
-	errno = 0;
-	fread(buf, fdata->file_size, 1, f);
-	if (errno != 0) {
+	read = fread(buf, fdata->file_size, 1, f);
+	if (ferror(f) || read != 1) {
 		ERRS("unable to read from file \"%s\"", fdata->file_name);
 		goto out_close;
 	}
