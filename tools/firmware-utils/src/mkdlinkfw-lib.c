@@ -34,9 +34,24 @@ extern char *progname;
 
 uint32_t jboot_timestamp(void)
 {
-	time_t rawtime;
-	time(&rawtime);
-	return (((uint32_t) rawtime) - TIMESTAMP_MAGIC) >> 2;
+	char *env = getenv("SOURCE_DATE_EPOCH");
+	char *endptr = env;
+	time_t fixed_timestamp = -1;
+	errno = 0;
+
+	if (env && *env) {
+		fixed_timestamp = strtoull(env, &endptr, 10);
+
+		if (errno || (endptr && *endptr != '\0')) {
+			fprintf(stderr, "Invalid SOURCE_DATE_EPOCH");
+			fixed_timestamp = -1;
+		}
+	}
+
+	if (fixed_timestamp == -1)
+		time(&fixed_timestamp);
+
+	return (((uint32_t) fixed_timestamp) - TIMESTAMP_MAGIC) >> 2;
 }
 
 uint16_t jboot_checksum(uint16_t start_val, uint16_t *data, int size)
