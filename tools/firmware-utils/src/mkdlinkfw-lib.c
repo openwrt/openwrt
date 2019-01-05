@@ -32,8 +32,6 @@
 
 extern char *progname;
 
-static unsigned char jffs2_eof_mark[4] = { 0xde, 0xad, 0xc0, 0xde };
-
 uint32_t jboot_timestamp(void)
 {
 	time_t rawtime;
@@ -104,40 +102,6 @@ int read_to_buf(const struct file_info *fdata, char *buf)
 	fclose(f);
  out:
 	return ret;
-}
-
-int pad_jffs2(char *buf, int currlen, int maxlen)
-{
-	int len;
-	uint32_t pad_mask;
-
-	len = currlen;
-	pad_mask = (4 * 1024) | (64 * 1024);	/* EOF at 4KB and at 64KB */
-	while ((len < maxlen) && (pad_mask != 0)) {
-		uint32_t mask;
-		int i;
-
-		for (i = 10; i < 32; i++) {
-			mask = 1 << i;
-			if (pad_mask & mask)
-				break;
-		}
-
-		len = ALIGN(len, mask);
-
-		for (i = 10; i < 32; i++) {
-			mask = 1 << i;
-			if ((len & (mask - 1)) == 0)
-				pad_mask &= ~mask;
-		}
-
-		for (i = 0; i < sizeof(jffs2_eof_mark); i++)
-			buf[len + i] = jffs2_eof_mark[i];
-
-		len += sizeof(jffs2_eof_mark);
-	}
-
-	return len;
 }
 
 int write_fw(const char *ofname, const char *data, int len)
