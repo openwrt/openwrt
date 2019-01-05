@@ -519,6 +519,23 @@ if KERNEL_CGROUPS
 		  CONFIG_CFQ_GROUP_IOSCHED=y; for enabling throttling policy, set
 		  CONFIG_BLK_DEV_THROTTLING=y.
 
+	if KERNEL_BLK_CGROUP
+
+		config KERNEL_CFQ_GROUP_IOSCHED
+			bool "Proportional weight of disk bandwidth in CFQ"
+			default n if KERNEL_BLK_DEV_THROTTLING
+			default y
+
+		config KERNEL_BLK_DEV_THROTTLING
+			bool "Enable throttling policy"
+			default y if TARGET_brcm2708
+			default n
+
+		config KERNEL_BLK_DEV_THROTTLING_LOW
+			bool "Block throttling .low limit interface support (EXPERIMENTAL)"
+			default n
+	endif
+
 	config KERNEL_DEBUG_BLK_CGROUP
 		bool "Enable Block IO controller debugging"
 		default n
