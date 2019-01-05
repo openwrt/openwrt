@@ -137,6 +137,7 @@ enum ath79_mach_type {
 	ATH79_MACH_GL_DOMINO,			/* Domino */
 	ATH79_MACH_GL_INET,			/* GL-CONNECT GL-INET */
 	ATH79_MACH_GL_MIFI,			/* GL-MIFI support */
+	ATH79_MACH_GL_MIFI_V3,			/* GL-MIFI-V3 support */
 	ATH79_MACH_GL_USB150,			/* GL.iNet GL-USB150 */
 	ATH79_MACH_GS_MINIBOX_V1,		/* GainStrong MiniBox V1.0 */
 	ATH79_MACH_GS_OOLITE_V1,		/* GainStrong Oolite V1.0 */
