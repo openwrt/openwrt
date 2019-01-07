@@ -88,9 +88,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  				       GFP_KERNEL, fwctx,
  				       brcmf_fw_request_code_done);
 +	if (!err)
-+		wait_for_completion_timeout(fwctx->completion,
++		wait_for_completion_timeout(&completion,
 +					    msecs_to_jiffies(5000));
-+	fwctx->completion = NULL;
++
 +	return err;
  }
  
