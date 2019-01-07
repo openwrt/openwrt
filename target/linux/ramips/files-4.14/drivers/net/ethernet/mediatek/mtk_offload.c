@@ -121,8 +121,9 @@ mtk_foe_set_mac(struct mtk_foe_entry *entry, u8 *smac, u8 *dmac)
 static int
 mtk_check_hashcollision(struct mtk_eth *eth, u32 hash)
 {
-        struct mtk_foe_entry entry = ((struct mtk_foe_entry *)eth->foe_table)[hash];
-        return (entry.bfib1.state != BIND)? 0:1;
+	struct mtk_foe_entry entry = ((struct mtk_foe_entry *)eth->foe_table)[hash];
+
+	return (entry.bfib1.state != BIND)? 0:1;
 }
 
 static void
@@ -180,10 +181,11 @@ int mtk_flow_offload(struct mtk_eth *eth,
 		goto write;
 	}
 
-        if(mtk_check_hashcollision(eth, ohash))       // Two-way hash: when hash collision occurs, the hash value will be shifted to the next position.
-                ohash += 1;
-        if(mtk_check_hashcollision(eth, rhash))
-                rhash += 1;
+	/* Two-way hash: when hash collision occurs, the hash value will be shifted to the next position. */
+	if(mtk_check_hashcollision(eth, ohash))
+		ohash += 1;
+	if(mtk_check_hashcollision(eth, rhash))
+		rhash += 1;
 	mtk_foe_set_mac(&orig, dest->eth_src, dest->eth_dest);
 	mtk_foe_set_mac(&reply, src->eth_src, src->eth_dest);
 
