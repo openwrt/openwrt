@@ -9,6 +9,9 @@ get_status_led() {
 	aerohive,hiveap-330)
 		status_led="hiveap-330:green:tricolor0"
 		;;
+	sophos,red-15w-rev1)
+		status_led="red-15w-rev1:green:system"
+		;;
 	tplink,tl-wdr4900-v1)
 		status_led="tp-link:blue:system"
 		;;

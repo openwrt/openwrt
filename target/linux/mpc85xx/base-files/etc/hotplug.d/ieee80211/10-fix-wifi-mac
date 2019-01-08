@@ -1,0 +1,20 @@
+#!/bin/ash
+
+[ "$ACTION" == "add" ] || exit 0
+
+PHYNBR=${DEVPATH##*/phy}
+
+[ -n $PHYNBR ] || exit 0
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+board=$(board_name)
+
+case "$board" in
+sophos,red-15w-rev1)
+	echo $(mtd_get_mac_ascii u-boot-env ethaddr) > /sys${DEVPATH}/macaddress
+	;;
+*)
+	;;
+esac
