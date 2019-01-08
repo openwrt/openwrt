@@ -188,6 +188,10 @@ ht-tm02)
 	ucidef_set_led_netdev "eth" "Ethernet" "$boardname:green:lan" "eth0"
 	set_wifi_led "$boardname:blue:wlan"
 	;;
+iodata,wn-ac1167gr)
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$boardname:green:wlan5g" "phy0radio"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$boardname:green:wlan2g" "phy1radio"
+	;;
 kimax,u35wf)
 	set_wifi_led "$boardname:blue:wifi"
 	ucidef_set_led_netdev "eth" "ETH" "$boardname:green:eth" "eth0"

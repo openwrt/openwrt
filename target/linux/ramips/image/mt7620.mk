@@ -16,6 +16,25 @@ define Build/elecom-header
 		-f $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 
+define Build/elx-header
+  $(eval hw_id=$(word 1,$(1)))
+  $(eval xor_pattern=$(word 2,$(1)))
+  ( \
+    echo -ne "\x00\x00\x00\x00\x00\x00\x00\x03" | \
+      dd bs=42 count=1 conv=sync; \
+    hw_id="$(hw_id)"; \
+    echo -ne "\x$${hw_id:0:2}\x$${hw_id:2:2}\x$${hw_id:4:2}\x$${hw_id:6:2}" | \
+      dd bs=20 count=1 conv=sync; \
+    echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
+      dd bs=8 count=1 conv=sync; \
+    echo -ne "$$($(STAGING_DIR_HOST)/bin/mkhash md5 $@ | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
+      dd bs=58 count=1 conv=sync; \
+  ) > $(KDIR)/tmp/$(DEVICE_NAME).header
+  $(call Build/xor-image,-p $(xor_pattern) -x)
+  cat $(KDIR)/tmp/$(DEVICE_NAME).header $@ > $@.new
+  mv $@.new $@
+endef
+
 define Device/ai-br100
   DTS := AI-BR100
   IMAGE_SIZE := 7936k
@@ -326,6 +345,18 @@ define Device/hc5861
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += hc5861
+
+define Device/iodata_wn-ac1167gr
+  DTS := WN-AC1167GR
+  DEVICE_TITLE := I-O DATA WN-AC1167GR
+  IMAGE_SIZE := 6864k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+    $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+    elx-header 01040016 8844A2D168B45A2D
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += iodata_wn-ac1167gr
 
 define Device/kimax_u35wf
   DTS := U35WF
