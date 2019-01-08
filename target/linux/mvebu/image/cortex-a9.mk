@@ -155,6 +155,22 @@ define Device/globalscale-mirabox
 endef
 TARGET_DEVICES += globalscale-mirabox
 
+define Device/mikrotik
+	DEVICE_TITLE := Mikrotik $(1)
+	DEVICE_PACKAGES := swconfig
+endef
+
+define Device/armada-370-mikrotik
+	KERNEL_SIZE := 6144k
+endef
+
+define Device/mikrotik-crs305
+	$(call Device/mikrotik,CRS305)
+	KERNEL := kernel-bin | append-dtb
+  DEVICE_DTS := armada-xp-98dx3236-mikrotik-crs305
+endef
+TARGET_DEVICES += mikrotik-crs305
+
 define Device/turris-omnia
   KERNEL_INSTALL := 1
   KERNEL := kernel-bin

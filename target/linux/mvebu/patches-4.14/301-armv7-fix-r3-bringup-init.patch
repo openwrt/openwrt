@@ -1,0 +1,11 @@
+--- a/arch/arm/kernel/head.S
++++ b/arch/arm/kernel/head.S
+@@ -91,6 +91,8 @@ ENTRY(stext)
+ 	@ ensure svc mode and all interrupts masked
+ 	safe_svcmode_maskall r9
+ 
++	mov r3, #0 @ Initialize r3 (some ARMv7 devices break without this!)
++
+ 	mrc	p15, 0, r9, c0, c0		@ get processor id
+ 	bl	__lookup_processor_type		@ r5=procinfo r9=cpuid
+ 	movs	r10, r5				@ invalid processor (r5=0)?
