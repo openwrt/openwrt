@@ -122,6 +122,15 @@ define Device/ubnt_lap-120
 endef
 TARGET_DEVICES += ubnt_lap-120
 
+define Device/ubnt_nanobeam-ac
+  $(Device/ubnt-wa)
+  DEVICE_TITLE := Ubiquiti NanoBeam AC
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15744k
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
+endef
+TARGET_DEVICES += ubnt_nanobeam-ac
+
 define Device/ubnt_nanostation-ac
   $(Device/ubnt-wa)
   DEVICE_TITLE := Ubiquiti Nanostation AC
