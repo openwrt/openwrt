@@ -1312,7 +1312,6 @@ static const struct net_device_ops ag71xx_netdev_ops = {
 static int ag71xx_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
-	struct device_node *mdio_node;
 	struct net_device *dev;
 	struct resource *res;
 	struct ag71xx *ag;
@@ -1491,10 +1490,18 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	ag71xx_dump_regs(ag);
 
-	if (!of_device_is_compatible(np, "simple-mfd")) {
-		mdio_node = of_get_child_by_name(np, "mdio-bus");
-		if (!IS_ERR(mdio_node))
-			of_platform_device_create(mdio_node, NULL, NULL);
+	/*
+	 * populate current node to register mdio-bus as a subdevice.
+	 * the mdio bus works independently on ar7241 and later chips
+	 * and we need to load mdio1 before gmac0, which can be done
+	 * by adding a "simple-mfd" compatible to gmac node. The
+	 * following code checks OF_POPULATED_BUS flag before populating
+	 * to avoid duplicated population.
+	 */
+	if (!of_node_check_flag(np, OF_POPULATED_BUS)) {
+		err = of_platform_populate(np, NULL, NULL, &pdev->dev);
+		if (err)
+			return err;
 	}
 
 	err = ag71xx_phy_connect(ag);
