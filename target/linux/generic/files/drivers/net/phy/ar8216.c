@@ -28,7 +28,6 @@
 #include <linux/switch.h>
 #include <linux/delay.h>
 #include <linux/phy.h>
-#include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/lockdep.h>
 #include <linux/ar8216_platform.h>
