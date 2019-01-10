@@ -433,6 +433,8 @@ struct ar8xxx_chip {
 			      u32 *status, enum arl_op op);
 	int (*sw_hw_apply)(struct switch_dev *dev);
 	void (*phy_rgmii_set)(struct ar8xxx_priv *priv, struct phy_device *phydev);
+	int (*phy_read)(struct ar8xxx_priv *priv, int addr, int regnum);
+	int (*phy_write)(struct ar8xxx_priv *priv, int addr, int regnum, u16 val);
 
 	const struct ar8xxx_mib_desc *mib_decs;
 	unsigned num_mibs;
@@ -442,6 +444,7 @@ struct ar8xxx_chip {
 struct ar8xxx_priv {
 	struct switch_dev dev;
 	struct mii_bus *mii_bus;
+	struct mii_bus *sw_mii_bus;
 	struct phy_device *phy;
 	struct device *pdev;
 

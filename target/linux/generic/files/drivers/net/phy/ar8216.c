@@ -190,7 +190,7 @@ ar8xxx_phy_init(struct ar8xxx_priv *priv)
 	int i;
 	struct mii_bus *bus;
 
-	bus = priv->mii_bus;
+	bus = priv->sw_mii_bus ?: priv->mii_bus;
 	for (i = 0; i < AR8XXX_NUM_PHYS; i++) {
 		if (priv->chip->phy_fixup)
 			priv->chip->phy_fixup(priv, i);
@@ -1683,6 +1683,21 @@ ar8xxx_sw_set_flush_port_arl_table(struct switch_dev *dev,
 	return ret;
 }
 
+static int
+ar8xxx_phy_read(struct mii_bus *bus, int phy_addr, int reg_addr)
+{
+	struct ar8xxx_priv *priv = bus->priv;
+	return priv->chip->phy_read(priv, phy_addr, reg_addr);
+}
+
+static int
+ar8xxx_phy_write(struct mii_bus *bus, int phy_addr, int reg_addr,
+		 u16 reg_val)
+{
+	struct ar8xxx_priv *priv = bus->priv;
+	return priv->chip->phy_write(priv, phy_addr, reg_addr, reg_val);
+}
+
 static const struct switch_attr ar8xxx_sw_attr_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -2471,6 +2486,7 @@ ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
 	const struct of_device_id *match;
 	struct ar8xxx_priv *priv;
 	struct switch_dev *swdev;
+	struct device_node *mdio_node;
 	int ret;
 
 	match = of_match_device(ar8xxx_mdiodev_of_match, &mdiodev->dev);
@@ -2492,6 +2508,21 @@ ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
 	ret = ar8xxx_probe_switch(priv);
 	if (ret)
 		goto free_priv;
+
+	if (priv->chip->phy_read && priv->chip->phy_write) {
+		priv->sw_mii_bus = devm_mdiobus_alloc(&mdiodev->dev);
+		priv->sw_mii_bus->name = "ar8xxx-mdio";
+		priv->sw_mii_bus->read = ar8xxx_phy_read;
+		priv->sw_mii_bus->write = ar8xxx_phy_write;
+		priv->sw_mii_bus->priv = priv;
+		priv->sw_mii_bus->parent = &mdiodev->dev;
+		snprintf(priv->sw_mii_bus->id, MII_BUS_ID_SIZE, "%s",
+			 dev_name(&mdiodev->dev));
+		mdio_node = of_get_child_by_name(priv->pdev->of_node, "mdio-bus");
+		ret = of_mdiobus_register(priv->sw_mii_bus, mdio_node);
+		if (ret)
+			goto free_priv;
+	}
 
 	swdev = &priv->dev;
 	swdev->alias = dev_name(&mdiodev->dev);
@@ -2548,6 +2579,8 @@ ar8xxx_mdiodev_remove(struct mdio_device *mdiodev)
 
 	unregister_switch(&priv->dev);
 	ar8xxx_mib_stop(priv);
+	if(priv->sw_mii_bus)
+		mdiobus_unregister(priv->sw_mii_bus);
 	ar8xxx_free(priv);
 }
 
