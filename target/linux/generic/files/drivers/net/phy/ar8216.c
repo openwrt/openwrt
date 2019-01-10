@@ -2574,6 +2574,12 @@ ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
 
 	swdev = &priv->dev;
 	swdev->alias = dev_name(&mdiodev->dev);
+
+	if (of_property_read_bool(priv->pdev->of_node, "qca,phy4-mii-enable")) {
+		priv->port4_phy = true;
+		swdev->ports--;
+	}
+
 	ret = register_switch(swdev, NULL);
 	if (ret)
 		goto free_priv;
