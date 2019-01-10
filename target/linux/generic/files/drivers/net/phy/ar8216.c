@@ -1813,7 +1813,7 @@ static const struct ar8xxx_chip ar8316_chip = {
 };
 
 static int
-ar8xxx_id_chip(struct ar8xxx_priv *priv)
+ar8xxx_read_id(struct ar8xxx_priv *priv)
 {
 	u32 val;
 	u16 id;
@@ -1838,6 +1838,17 @@ ar8xxx_id_chip(struct ar8xxx_priv *priv)
 
 	priv->chip_ver = (id & AR8216_CTRL_VERSION) >> AR8216_CTRL_VERSION_S;
 	priv->chip_rev = (id & AR8216_CTRL_REVISION);
+	return 0;
+}
+
+static int
+ar8xxx_id_chip(struct ar8xxx_priv *priv)
+{
+	int ret;
+
+	ret = ar8xxx_read_id(priv);
+	if(ret)
+		return ret;
 
 	switch (priv->chip_ver) {
 	case AR8XXX_VER_AR8216:
