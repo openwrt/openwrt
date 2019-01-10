@@ -1975,10 +1975,6 @@ ar8xxx_probe_switch(struct ar8xxx_priv *priv)
 	struct switch_dev *swdev;
 	int ret;
 
-	ret = ar8xxx_id_chip(priv);
-	if (ret)
-		return ret;
-
 	chip = priv->chip;
 
 	swdev = &priv->dev;
@@ -2207,6 +2203,10 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 
 	priv->mii_bus = phydev->mdio.bus;
 	priv->pdev = &phydev->mdio.dev;
+
+	ret = ar8xxx_id_chip(priv);
+	if (ret)
+		goto free_priv;
 
 	ret = ar8xxx_probe_switch(priv);
 	if (ret)
