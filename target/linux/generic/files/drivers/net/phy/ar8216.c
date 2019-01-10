@@ -23,6 +23,7 @@
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
 #include <linux/netlink.h>
+#include <linux/of_device.h>
 #include <linux/bitops.h>
 #include <net/genetlink.h>
 #include <linux/switch.h>
@@ -2205,6 +2206,7 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 	}
 
 	priv->mii_bus = phydev->mdio.bus;
+	priv->pdev = &phydev->mdio.dev;
 
 	ret = ar8xxx_probe_switch(priv);
 	if (ret)

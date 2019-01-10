@@ -424,6 +424,7 @@ struct ar8xxx_priv {
 	struct switch_dev dev;
 	struct mii_bus *mii_bus;
 	struct phy_device *phy;
+	struct device *pdev;
 
 	int (*get_port_link)(unsigned port);
 
