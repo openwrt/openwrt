@@ -25,6 +25,7 @@
 #include <linux/netlink.h>
 #include <linux/of_device.h>
 #include <linux/of_mdio.h>
+#include <linux/of_net.h>
 #include <linux/bitops.h>
 #include <net/genetlink.h>
 #include <linux/switch.h>
@@ -715,7 +716,8 @@ ar8216_init_globals(struct ar8xxx_priv *priv)
 }
 
 static void
-ar8216_init_port(struct ar8xxx_priv *priv, int port)
+__ar8216_init_port(struct ar8xxx_priv *priv, int port,
+		   bool cpu_ge, bool flow_en)
 {
 	/* Enable port learning and tx */
 	ar8xxx_write(priv, AR8216_REG_PORT_CTRL(port),
@@ -727,17 +729,23 @@ ar8216_init_port(struct ar8xxx_priv *priv, int port)
 	if (port == AR8216_PORT_CPU) {
 		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port),
 			AR8216_PORT_STATUS_LINK_UP |
-			(ar8xxx_has_gige(priv) ?
-                                AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
+			(cpu_ge ? AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
 			AR8216_PORT_STATUS_TXMAC |
 			AR8216_PORT_STATUS_RXMAC |
-			(chip_is_ar8316(priv) ? AR8216_PORT_STATUS_RXFLOW : 0) |
-			(chip_is_ar8316(priv) ? AR8216_PORT_STATUS_TXFLOW : 0) |
+			(flow_en ? AR8216_PORT_STATUS_RXFLOW : 0) |
+			(flow_en ? AR8216_PORT_STATUS_TXFLOW : 0) |
 			AR8216_PORT_STATUS_DUPLEX);
 	} else {
 		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port),
 			AR8216_PORT_STATUS_LINK_AUTO);
 	}
+}
+
+static void
+ar8216_init_port(struct ar8xxx_priv *priv, int port)
+{
+	__ar8216_init_port(priv, port, ar8xxx_has_gige(priv),
+			   chip_is_ar8316(priv));
 }
 
 static void
@@ -805,6 +813,85 @@ static void ar8216_get_arl_entry(struct ar8xxx_priv *priv,
 		a->mac[5] = (val1 & AR8216_ATU_ADDR0) >> AR8216_ATU_ADDR0_S;
 		break;
 	}
+}
+
+static int
+ar8229_hw_init(struct ar8xxx_priv *priv)
+{
+	int phy_if_mode;
+
+	if (priv->initialized)
+		return 0;
+
+	ar8xxx_write(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET);
+	ar8xxx_reg_wait(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET, 0, 1000);
+
+	phy_if_mode = of_get_phy_mode(priv->pdev->of_node);
+
+	if (phy_if_mode == PHY_INTERFACE_MODE_GMII) {
+		ar8xxx_write(priv, AR8229_REG_OPER_MODE0,
+				 AR8229_OPER_MODE0_MAC_GMII_EN);
+	} else if (phy_if_mode == PHY_INTERFACE_MODE_MII) {
+		ar8xxx_write(priv, AR8229_REG_OPER_MODE0,
+				 AR8229_OPER_MODE0_PHY_MII_EN);
+	} else {
+		pr_err("ar8229: unsupported mii mode\n");
+		return -EINVAL;
+	}
+
+	if (priv->port4_phy)
+		ar8xxx_write(priv, AR8229_REG_OPER_MODE1,
+			     AR8229_REG_OPER_MODE1_PHY4_MII_EN);
+
+	ar8xxx_phy_init(priv);
+
+	priv->initialized = true;
+	return 0;
+}
+
+static void
+ar8229_init_globals(struct ar8xxx_priv *priv)
+{
+
+	/* Enable CPU port, and disable mirror port */
+	ar8xxx_write(priv, AR8216_REG_GLOBAL_CPUPORT,
+		     AR8216_GLOBAL_CPUPORT_EN |
+		     (15 << AR8216_GLOBAL_CPUPORT_MIRROR_PORT_S));
+
+	/* Setup TAG priority mapping */
+	ar8xxx_write(priv, AR8216_REG_TAG_PRIORITY, 0xfa50);
+
+	/* Enable aging, MAC replacing */
+	ar8xxx_write(priv, AR8216_REG_ATU_CTRL,
+		     0x2b /* 5 min age time */ |
+		     AR8216_ATU_CTRL_AGE_EN |
+		     AR8216_ATU_CTRL_LEARN_CHANGE);
+
+	/* Enable ARP frame acknowledge */
+	ar8xxx_reg_set(priv, AR8229_REG_QM_CTRL,
+		       AR8229_QM_CTRL_ARP_EN);
+
+	/* Enable Broadcast/Multicast frames transmitted to the CPU */
+	ar8xxx_reg_set(priv, AR8216_REG_FLOOD_MASK,
+		       AR8229_FLOOD_MASK_BC_DP(0) |
+		       AR8229_FLOOD_MASK_MC_DP(0));
+
+	/* setup MTU */
+	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		   AR8236_GCTRL_MTU, AR8236_GCTRL_MTU);
+
+	/* Enable MIB counters */
+	ar8xxx_reg_set(priv, AR8216_REG_MIB_FUNC,
+		       AR8236_MIB_EN);
+
+	/* setup Service TAG */
+	ar8xxx_rmw(priv, AR8216_REG_SERVICE_TAG, AR8216_SERVICE_TAG_M, 0);
+}
+
+static void
+ar8229_init_port(struct ar8xxx_priv *priv, int port)
+{
+	__ar8216_init_port(priv, port, true, true);
 }
 
 static void
@@ -1753,6 +1840,36 @@ static const struct ar8xxx_chip ar8216_chip = {
 	.mib_func = AR8216_REG_MIB_FUNC
 };
 
+static const struct ar8xxx_chip ar8229_chip = {
+	.caps = AR8XXX_CAP_MIB_COUNTERS,
+
+	.reg_port_stats_start = 0x20000,
+	.reg_port_stats_length = 0x100,
+	.reg_arl_ctrl = AR8216_REG_ATU_CTRL,
+
+	.name = "Atheros AR8229",
+	.ports = AR8216_NUM_PORTS,
+	.vlans = AR8216_NUM_VLANS,
+	.swops = &ar8xxx_sw_ops,
+
+	.hw_init = ar8229_hw_init,
+	.init_globals = ar8229_init_globals,
+	.init_port = ar8229_init_port,
+	.setup_port = ar8236_setup_port,
+	.read_port_status = ar8216_read_port_status,
+	.atu_flush = ar8216_atu_flush,
+	.atu_flush_port = ar8216_atu_flush_port,
+	.vtu_flush = ar8216_vtu_flush,
+	.vtu_load_vlan = ar8216_vtu_load_vlan,
+	.set_mirror_regs = ar8216_set_mirror_regs,
+	.get_arl_entry = ar8216_get_arl_entry,
+	.sw_hw_apply = ar8xxx_sw_hw_apply,
+
+	.num_mibs = ARRAY_SIZE(ar8236_mibs),
+	.mib_decs = ar8236_mibs,
+	.mib_func = AR8216_REG_MIB_FUNC
+};
+
 static const struct ar8xxx_chip ar8236_chip = {
 	.caps = AR8XXX_CAP_MIB_COUNTERS,
 
@@ -2336,6 +2453,9 @@ static struct phy_driver ar8xxx_phy_driver[] = {
 
 static const struct of_device_id ar8xxx_mdiodev_of_match[] = {
 	{
+		.compatible = "qca,ar8229",
+		.data = &ar8229_chip,
+	}, {
 		.compatible = "qca,ar8236",
 		.data = &ar8236_chip,
 	}, {
