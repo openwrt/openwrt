@@ -816,6 +816,52 @@ static void ar8216_get_arl_entry(struct ar8xxx_priv *priv,
 }
 
 static int
+ar8216_phy_read(struct ar8xxx_priv *priv, int addr, int regnum)
+{
+	u32 t, val = 0xffff;
+	int err;
+
+	if (addr >= AR8216_NUM_PORTS)
+		return 0xffff;
+	t = (regnum << AR8216_MDIO_CTRL_REG_ADDR_S) |
+	    (addr << AR8216_MDIO_CTRL_PHY_ADDR_S) |
+	    AR8216_MDIO_CTRL_MASTER_EN |
+	    AR8216_MDIO_CTRL_BUSY |
+	    AR8216_MDIO_CTRL_CMD_READ;
+
+	ar8xxx_write(priv, AR8216_REG_MDIO_CTRL, t);
+	err = ar8xxx_reg_wait(priv, AR8216_REG_MDIO_CTRL,
+			      AR8216_MDIO_CTRL_BUSY, 0, 5);
+	if (!err)
+		val = ar8xxx_read(priv, AR8216_REG_MDIO_CTRL);
+
+	return val & AR8216_MDIO_CTRL_DATA_M;
+}
+
+static int
+ar8216_phy_write(struct ar8xxx_priv *priv, int addr, int regnum, u16 val)
+{
+	u32 t;
+	int ret;
+
+	if (addr >= AR8216_NUM_PORTS)
+		return -EINVAL;
+
+	t = (addr << AR8216_MDIO_CTRL_PHY_ADDR_S) |
+	    (regnum << AR8216_MDIO_CTRL_REG_ADDR_S) |
+	    AR8216_MDIO_CTRL_MASTER_EN |
+	    AR8216_MDIO_CTRL_BUSY |
+	    AR8216_MDIO_CTRL_CMD_WRITE |
+	    val;
+
+	ar8xxx_write(priv, AR8216_REG_MDIO_CTRL, t);
+	ret = ar8xxx_reg_wait(priv, AR8216_REG_MDIO_CTRL,
+			      AR8216_MDIO_CTRL_BUSY, 0, 5);
+
+	return ret;
+}
+
+static int
 ar8229_hw_init(struct ar8xxx_priv *priv)
 {
 	int phy_if_mode;
@@ -1870,6 +1916,8 @@ static const struct ar8xxx_chip ar8229_chip = {
 	.hw_init = ar8229_hw_init,
 	.init_globals = ar8229_init_globals,
 	.init_port = ar8229_init_port,
+	.phy_read = ar8216_phy_read,
+	.phy_write = ar8216_phy_write,
 	.setup_port = ar8236_setup_port,
 	.read_port_status = ar8216_read_port_status,
 	.atu_flush = ar8216_atu_flush,
