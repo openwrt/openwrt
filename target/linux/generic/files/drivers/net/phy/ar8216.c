@@ -653,7 +653,8 @@ ar8216_read_port_status(struct ar8xxx_priv *priv, int port)
 }
 
 static void
-ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
+__ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 members,
+		    bool ath_hdr_en)
 {
 	u32 header;
 	u32 egress, ingress;
@@ -672,10 +673,7 @@ ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 		ingress = AR8216_IN_PORT_ONLY;
 	}
 
-	if (chip_is_ar8216(priv) && priv->vlan && port == AR8216_PORT_CPU)
-		header = AR8216_PORT_CTRL_HEADER;
-	else
-		header = 0;
+	header = ath_hdr_en ? AR8216_PORT_CTRL_HEADER : 0;
 
 	ar8xxx_rmw(priv, AR8216_REG_PORT_CTRL(port),
 		   AR8216_PORT_CTRL_LEARN | AR8216_PORT_CTRL_VLAN_MODE |
@@ -691,6 +689,14 @@ ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 		   (members << AR8216_PORT_VLAN_DEST_PORTS_S) |
 		   (ingress << AR8216_PORT_VLAN_MODE_S) |
 		   (pvid << AR8216_PORT_VLAN_DEFAULT_ID_S));
+}
+
+static void
+ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
+{
+	return __ar8216_setup_port(priv, port, members,
+				   chip_is_ar8216(priv) && priv->vlan &&
+				   port == AR8216_PORT_CPU);
 }
 
 static int
@@ -885,9 +891,12 @@ ar8229_hw_init(struct ar8xxx_priv *priv)
 		return -EINVAL;
 	}
 
-	if (priv->port4_phy)
+	if (priv->port4_phy) {
 		ar8xxx_write(priv, AR8229_REG_OPER_MODE1,
 			     AR8229_REG_OPER_MODE1_PHY4_MII_EN);
+		/* disable port5 to prevent mii conflict */
+		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(5), 0);
+	}
 
 	ar8xxx_phy_init(priv);
 
@@ -938,6 +947,65 @@ static void
 ar8229_init_port(struct ar8xxx_priv *priv, int port)
 {
 	__ar8216_init_port(priv, port, true, true);
+}
+
+
+static int
+ar7240sw_hw_init(struct ar8xxx_priv *priv)
+{
+	if (priv->initialized)
+		return 0;
+
+	ar8xxx_write(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET);
+	ar8xxx_reg_wait(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET, 0, 1000);
+
+	priv->port4_phy = 1;
+	/* disable port5 to prevent mii conflict */
+	ar8xxx_write(priv, AR8216_REG_PORT_STATUS(5), 0);
+
+	ar8xxx_phy_init(priv);
+
+	priv->initialized = true;
+	return 0;
+}
+
+static void
+ar7240sw_init_globals(struct ar8xxx_priv *priv)
+{
+
+	/* Enable CPU port, and disable mirror port */
+	ar8xxx_write(priv, AR8216_REG_GLOBAL_CPUPORT,
+		     AR8216_GLOBAL_CPUPORT_EN |
+		     (15 << AR8216_GLOBAL_CPUPORT_MIRROR_PORT_S));
+
+	/* Setup TAG priority mapping */
+	ar8xxx_write(priv, AR8216_REG_TAG_PRIORITY, 0xfa50);
+
+	/* Enable ARP frame acknowledge, aging, MAC replacing */
+	ar8xxx_write(priv, AR8216_REG_ATU_CTRL,
+		AR8216_ATU_CTRL_RESERVED |
+		0x2b /* 5 min age time */ |
+		AR8216_ATU_CTRL_AGE_EN |
+		AR8216_ATU_CTRL_ARP_EN |
+		AR8216_ATU_CTRL_LEARN_CHANGE);
+
+	/* Enable Broadcast frames transmitted to the CPU */
+	ar8xxx_reg_set(priv, AR8216_REG_FLOOD_MASK,
+		       AR8236_FM_CPU_BROADCAST_EN);
+
+	/* setup MTU */
+	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		   AR8216_GCTRL_MTU,
+		   AR8216_GCTRL_MTU);
+
+	/* setup Service TAG */
+	ar8xxx_rmw(priv, AR8216_REG_SERVICE_TAG, AR8216_SERVICE_TAG_M, 0);
+}
+
+static void
+ar7240sw_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
+{
+	return __ar8216_setup_port(priv, port, members, false);
 }
 
 static void
@@ -1871,6 +1939,38 @@ static const struct switch_dev_ops ar8xxx_sw_ops = {
 #endif
 };
 
+static const struct ar8xxx_chip ar7240sw_chip = {
+	.caps = AR8XXX_CAP_MIB_COUNTERS,
+
+	.reg_port_stats_start = 0x20000,
+	.reg_port_stats_length = 0x100,
+	.reg_arl_ctrl = AR8216_REG_ATU_CTRL,
+
+	.name = "Atheros AR724X/AR933X built-in",
+	.ports = AR7240SW_NUM_PORTS,
+	.vlans = AR8216_NUM_VLANS,
+	.swops = &ar8xxx_sw_ops,
+
+	.hw_init = ar7240sw_hw_init,
+	.init_globals = ar7240sw_init_globals,
+	.init_port = ar8229_init_port,
+	.phy_read = ar8216_phy_read,
+	.phy_write = ar8216_phy_write,
+	.setup_port = ar7240sw_setup_port,
+	.read_port_status = ar8216_read_port_status,
+	.atu_flush = ar8216_atu_flush,
+	.atu_flush_port = ar8216_atu_flush_port,
+	.vtu_flush = ar8216_vtu_flush,
+	.vtu_load_vlan = ar8216_vtu_load_vlan,
+	.set_mirror_regs = ar8216_set_mirror_regs,
+	.get_arl_entry = ar8216_get_arl_entry,
+	.sw_hw_apply = ar8xxx_sw_hw_apply,
+
+	.num_mibs = ARRAY_SIZE(ar8236_mibs),
+	.mib_decs = ar8236_mibs,
+	.mib_func = AR8216_REG_MIB_FUNC
+};
+
 static const struct ar8xxx_chip ar8216_chip = {
 	.caps = AR8XXX_CAP_MIB_COUNTERS,
 
@@ -2516,6 +2616,9 @@ static struct phy_driver ar8xxx_phy_driver[] = {
 
 static const struct of_device_id ar8xxx_mdiodev_of_match[] = {
 	{
+		.compatible = "qca,ar7240sw",
+		.data = &ar7240sw_chip,
+	}, {
 		.compatible = "qca,ar8229",
 		.data = &ar8229_chip,
 	}, {
