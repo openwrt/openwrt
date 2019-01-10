@@ -24,6 +24,7 @@
 #include <linux/netdevice.h>
 #include <linux/netlink.h>
 #include <linux/of_device.h>
+#include <linux/of_mdio.h>
 #include <linux/bitops.h>
 #include <net/genetlink.h>
 #include <linux/switch.h>
@@ -2333,5 +2334,137 @@ static struct phy_driver ar8xxx_phy_driver[] = {
 	}
 };
 
-module_phy_driver(ar8xxx_phy_driver);
+static const struct of_device_id ar8xxx_mdiodev_of_match[] = {
+	{
+		.compatible = "qca,ar8236",
+		.data = &ar8236_chip,
+	}, {
+		.compatible = "qca,ar8327",
+		.data = &ar8327_chip,
+	},
+	{ /* sentinel */ },
+};
+
+static int
+ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
+{
+	const struct of_device_id *match;
+	struct ar8xxx_priv *priv;
+	struct switch_dev *swdev;
+	int ret;
+
+	match = of_match_device(ar8xxx_mdiodev_of_match, &mdiodev->dev);
+	if (!match)
+		return -EINVAL;
+
+	priv = ar8xxx_create();
+	if (priv == NULL)
+		return -ENOMEM;
+
+	priv->mii_bus = mdiodev->bus;
+	priv->pdev = &mdiodev->dev;
+	priv->chip = (const struct ar8xxx_chip *) match->data;
+
+	ret = ar8xxx_read_id(priv);
+	if (ret)
+		goto free_priv;
+
+	ret = ar8xxx_probe_switch(priv);
+	if (ret)
+		goto free_priv;
+
+	swdev = &priv->dev;
+	swdev->alias = dev_name(&mdiodev->dev);
+	ret = register_switch(swdev, NULL);
+	if (ret)
+		goto free_priv;
+
+	pr_info("%s: %s rev. %u switch registered on %s\n",
+		swdev->devname, swdev->name, priv->chip_rev,
+		dev_name(&priv->mii_bus->dev));
+
+	mutex_lock(&ar8xxx_dev_list_lock);
+	list_add(&priv->list, &ar8xxx_dev_list);
+	mutex_unlock(&ar8xxx_dev_list_lock);
+
+	priv->use_count++;
+
+	ret = ar8xxx_start(priv);
+	if (ret)
+		goto err_unregister_switch;
+
+	dev_set_drvdata(&mdiodev->dev, priv);
+
+	return 0;
+
+err_unregister_switch:
+	if (--priv->use_count)
+		return ret;
+
+	unregister_switch(&priv->dev);
+
+free_priv:
+	ar8xxx_free(priv);
+	return ret;
+}
+
+static void
+ar8xxx_mdiodev_remove(struct mdio_device *mdiodev)
+{
+	struct ar8xxx_priv *priv = dev_get_drvdata(&mdiodev->dev);
+
+	if (WARN_ON(!priv))
+		return;
+
+	mutex_lock(&ar8xxx_dev_list_lock);
+
+	if (--priv->use_count > 0) {
+		mutex_unlock(&ar8xxx_dev_list_lock);
+		return;
+	}
+
+	list_del(&priv->list);
+	mutex_unlock(&ar8xxx_dev_list_lock);
+
+	unregister_switch(&priv->dev);
+	ar8xxx_mib_stop(priv);
+	ar8xxx_free(priv);
+}
+
+static struct mdio_driver ar8xxx_mdio_driver = {
+	.probe  = ar8xxx_mdiodev_probe,
+	.remove = ar8xxx_mdiodev_remove,
+	.mdiodrv.driver = {
+		.name = "ar8xxx-switch",
+		.of_match_table = ar8xxx_mdiodev_of_match,
+	},
+};
+
+static int __init ar8216_init(void)
+{
+	int ret;
+
+	ret = phy_drivers_register(ar8xxx_phy_driver,
+				   ARRAY_SIZE(ar8xxx_phy_driver),
+				   THIS_MODULE);
+	if (ret)
+		return ret;
+
+	ret = mdio_driver_register(&ar8xxx_mdio_driver);
+	if (ret)
+		phy_drivers_unregister(ar8xxx_phy_driver,
+				       ARRAY_SIZE(ar8xxx_phy_driver));
+
+	return ret;
+}
+module_init(ar8216_init);
+
+static void __exit ar8216_exit(void)
+{
+	mdio_driver_unregister(&ar8xxx_mdio_driver);
+	phy_drivers_unregister(ar8xxx_phy_driver,
+			        ARRAY_SIZE(ar8xxx_phy_driver));
+}
+module_exit(ar8216_exit);
+
 MODULE_LICENSE("GPL");
