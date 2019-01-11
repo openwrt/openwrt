@@ -1,0 +1,66 @@
+From 2bffa65da43e399079dad5947c6aa9ab3cfa4ad4 Mon Sep 17 00:00:00 2001
+From: Boris Brezillon <boris.brezillon@bootlin.com>
+Date: Thu, 6 Dec 2018 11:37:36 +0100
+Subject: [PATCH 3/3] mtd: spi-nor: Add a post BFPT fixup for MX25L25635E
+
+MX25L25635F and MX25L25635E share the same JEDEC-ID, but the F variant
+supports 4-byte opcodes while the E variant doesn't. We need a way to
+differentiate those 2 chips and set the SNOR_F_4B_OPCODES flag only for
+the F variant.
+
+Luckily, 4-byte opcode support is not the only difference: Fast Read
+4-4-4 is only supported by the F variant, and this feature is
+advertised in the BFPT table. Use this to decide when to set the
+SNOR_F_4B_OPCODES flag.
+
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
+Reviewed-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/mtd/spi-nor/spi-nor.c | 29 ++++++++++++++++++++++++++++-
+ 1 file changed, 28 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -1153,6 +1153,31 @@ static int macronix_quad_enable(struct s
+ 		.addr_width = 3,					\
+ 		.flags = SPI_NOR_NO_FR | SPI_S3AN,
+ 
++static int
++mx25l25635_post_bfpt_fixups(struct spi_nor *nor,
++			    const struct sfdp_parameter_header *bfpt_header,
++			    const struct sfdp_bfpt *bfpt,
++			    struct spi_nor_flash_parameter *params)
++{
++	/*
++	 * MX25L25635F supports 4B opcodes but MX25L25635E does not.
++	 * Unfortunately, Macronix has re-used the same JEDEC ID for both
++	 * variants which prevents us from defining a new entry in the parts
++	 * table.
++	 * We need a way to differentiate MX25L25635E and MX25L25635F, and it
++	 * seems that the F version advertises support for Fast Read 4-4-4 in
++	 * its BFPT table.
++	 */
++	if (bfpt->dwords[BFPT_DWORD(5)] & BFPT_DWORD5_FAST_READ_4_4_4)
++		nor->flags |= SNOR_F_4B_OPCODES;
++
++	return 0;
++}
++
++static struct spi_nor_fixups mx25l25635_fixups = {
++	.post_bfpt = mx25l25635_post_bfpt_fixups,
++};
++
+ /* NOTE: double check command sets and memory organization when you add
+  * more nor chips.  This current list focusses on newer chips, which
+  * have been converging on command sets which including JEDEC ID.
+@@ -1281,7 +1306,9 @@ static const struct flash_info spi_nor_i
+ 	{ "mx25u6435f",  INFO(0xc22537, 0, 64 * 1024, 128, SECT_4K) },
+ 	{ "mx25l12805d", INFO(0xc22018, 0, 64 * 1024, 256, 0) },
+ 	{ "mx25l12855e", INFO(0xc22618, 0, 64 * 1024, 256, 0) },
+-	{ "mx25l25635e", INFO(0xc22019, 0, 64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
++ 	{ "mx25l25635e", INFO(0xc22019, 0, 64 * 1024, 512,
++			 SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ)
++			 .fixups = &mx25l25635_fixups },
+ 	{ "mx25u25635f", INFO(0xc22539, 0, 64 * 1024, 512, SECT_4K | SPI_NOR_4B_OPCODES) },
+ 	{ "mx25l25655e", INFO(0xc22619, 0, 64 * 1024, 512, 0) },
+ 	{ "mx66l51235l", INFO(0xc2201a, 0, 64 * 1024, 1024, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },

@@ -1,0 +1,40 @@
+This is a modified version of the patch:
+
+|From b296379fef7ce9f96129798825ab04683414313b Mon Sep 17 00:00:00 2001
+|From: Boris Brezillon <boris.brezillon@bootlin.com>
+|Date: Thu, 6 Dec 2018 11:41:18 +0100
+|Subject: [PATCH] mtd: spi-nor: Stop passing flash_info around
+|
+|Some functions called from spi_nor_scan() need a flash_info object.
+|Let's assign nor->info early on to avoid passing info as an extra
+|argument to each of these sub-functions.
+|
+|We also stop passing a flash_info object to set_4byte() and use
+|nor->info directly.
+|
+|Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
+|Reviewed-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+
+That only assign nor->info early in order to avoid a crash in
+the fixup function.
+
+---
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -2904,6 +2904,8 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 		}
+ 	}
+ 
++	nor->info = info;
++
+ 	mutex_init(&nor->lock);
+ 
+ 	/*
+@@ -3026,7 +3028,6 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 	}
+ 
+ 	/* Send all the required SPI flash commands to initialize device */
+-	nor->info = info;
+ 	ret = spi_nor_init(nor);
+ 	if (ret)
+ 		return ret;
