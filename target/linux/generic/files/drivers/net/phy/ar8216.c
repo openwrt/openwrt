@@ -1797,6 +1797,33 @@ ar8xxx_sw_set_flush_port_arl_table(struct switch_dev *dev,
 	return ret;
 }
 
+int
+ar8xxx_sw_get_port_stats(struct switch_dev *dev, int port,
+			struct switch_port_stats *stats)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	u64 *mib_stats;
+
+	if (!ar8xxx_has_mib_counters(priv))
+		return -EOPNOTSUPP;
+
+	if (!(priv->chip->mib_rxb_id || priv->chip->mib_txb_id))
+		return -EOPNOTSUPP;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	mutex_lock(&priv->mib_lock);
+
+	mib_stats = &priv->mib_stats[port * priv->chip->num_mibs];
+
+	stats->tx_bytes = mib_stats[priv->chip->mib_txb_id];
+	stats->rx_bytes = mib_stats[priv->chip->mib_rxb_id];
+
+	mutex_unlock(&priv->mib_lock);
+	return 0;
+}
+
 static int
 ar8xxx_phy_read(struct mii_bus *bus, int phy_addr, int reg_addr)
 {
@@ -1927,16 +1954,7 @@ static const struct switch_dev_ops ar8xxx_sw_ops = {
 	.apply_config = ar8xxx_sw_hw_apply,
 	.reset_switch = ar8xxx_sw_reset_switch,
 	.get_port_link = ar8xxx_sw_get_port_link,
-/* The following op is disabled as it hogs the CPU and degrades performance.
-   An implementation has been attempted in 4d8a66d but reading MIB data is slow
-   on ar8xxx switches.
-
-   The high CPU load has been traced down to the ar8xxx_reg_wait() call in
-   ar8xxx_mib_op(), which has to usleep_range() till the MIB busy flag set by
-   the request to update the MIB counter is cleared. */
-#if 0
 	.get_port_stats = ar8xxx_sw_get_port_stats,
-#endif
 };
 
 static const struct ar8xxx_chip ar7240sw_chip = {
@@ -1968,7 +1986,9 @@ static const struct ar8xxx_chip ar7240sw_chip = {
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
-	.mib_func = AR8216_REG_MIB_FUNC
+	.mib_func = AR8216_REG_MIB_FUNC,
+	.mib_rxb_id = AR8236_MIB_RXB_ID,
+	.mib_txb_id = AR8236_MIB_TXB_ID,
 };
 
 static const struct ar8xxx_chip ar8216_chip = {
@@ -1998,7 +2018,9 @@ static const struct ar8xxx_chip ar8216_chip = {
 
 	.num_mibs = ARRAY_SIZE(ar8216_mibs),
 	.mib_decs = ar8216_mibs,
-	.mib_func = AR8216_REG_MIB_FUNC
+	.mib_func = AR8216_REG_MIB_FUNC,
+	.mib_rxb_id = AR8216_MIB_RXB_ID,
+	.mib_txb_id = AR8216_MIB_TXB_ID,
 };
 
 static const struct ar8xxx_chip ar8229_chip = {
@@ -2030,7 +2052,9 @@ static const struct ar8xxx_chip ar8229_chip = {
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
-	.mib_func = AR8216_REG_MIB_FUNC
+	.mib_func = AR8216_REG_MIB_FUNC,
+	.mib_rxb_id = AR8236_MIB_RXB_ID,
+	.mib_txb_id = AR8236_MIB_TXB_ID,
 };
 
 static const struct ar8xxx_chip ar8236_chip = {
@@ -2060,7 +2084,9 @@ static const struct ar8xxx_chip ar8236_chip = {
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
-	.mib_func = AR8216_REG_MIB_FUNC
+	.mib_func = AR8216_REG_MIB_FUNC,
+	.mib_rxb_id = AR8236_MIB_RXB_ID,
+	.mib_txb_id = AR8236_MIB_TXB_ID,
 };
 
 static const struct ar8xxx_chip ar8316_chip = {
@@ -2090,7 +2116,9 @@ static const struct ar8xxx_chip ar8316_chip = {
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
-	.mib_func = AR8216_REG_MIB_FUNC
+	.mib_func = AR8216_REG_MIB_FUNC,
+	.mib_rxb_id = AR8236_MIB_RXB_ID,
+	.mib_txb_id = AR8236_MIB_TXB_ID,
 };
 
 static int
