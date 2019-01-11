@@ -488,7 +488,6 @@ struct ar8xxx_priv {
 
 	struct mutex mib_lock;
 	struct delayed_work mib_work;
-	int mib_next_port;
 	u64 *mib_stats;
 
 	struct list_head list;

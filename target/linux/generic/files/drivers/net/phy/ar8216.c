@@ -2189,7 +2189,7 @@ static void
 ar8xxx_mib_work_func(struct work_struct *work)
 {
 	struct ar8xxx_priv *priv;
-	int err;
+	int err, i;
 
 	priv = container_of(work, struct ar8xxx_priv, mib_work.work);
 
@@ -2197,15 +2197,12 @@ ar8xxx_mib_work_func(struct work_struct *work)
 
 	err = ar8xxx_mib_capture(priv);
 	if (err)
-		goto next_port;
+		goto next_attempt;
 
-	ar8xxx_mib_fetch_port_stat(priv, priv->mib_next_port, false);
+	for (i = 0; i < priv->dev.ports; i++)
+		ar8xxx_mib_fetch_port_stat(priv, i, false);
 
-next_port:
-	priv->mib_next_port++;
-	if (priv->mib_next_port >= priv->dev.ports)
-		priv->mib_next_port = 0;
-
+next_attempt:
 	mutex_unlock(&priv->mib_lock);
 	schedule_delayed_work(&priv->mib_work,
 			      msecs_to_jiffies(AR8XXX_MIB_WORK_DELAY));
