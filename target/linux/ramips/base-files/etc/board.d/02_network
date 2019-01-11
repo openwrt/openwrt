@@ -416,6 +416,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:wan" "6@eth0"
 		;;
+	wiznet,wizfi630s)
+		ucidef_add_switch "switch0" \
+			"0:wan" "3:lan" "4:lan" "6@eth0"
+		;;
 	wt3020-4M|\
 	wt3020-8M)
 		ucidef_add_switch "switch0" \

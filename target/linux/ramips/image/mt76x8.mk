@@ -374,6 +374,13 @@ define Device/widora_neo-32m
 endef
 TARGET_DEVICES += widora_neo-32m
 
+define Device/wizfi630s
+  DTS := WIZFI630S
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  DEVICE_TITLE := WIZnet WizFi630S
+endef
+TARGET_DEVICES += wizfi630s
+
 define Device/wrtnode2p
   DTS := WRTNODE2P
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
