@@ -258,6 +258,9 @@
 #define AR8216_STATS_TXDEFER		0x98
 #define AR8216_STATS_TXLATECOL		0x9c
 
+#define AR8216_MIB_RXB_ID		14	/* RxGoodByte */
+#define AR8216_MIB_TXB_ID		29	/* TxByte */
+
 #define AR8229_REG_OPER_MODE0		0x04
 #define   AR8229_OPER_MODE0_MAC_GMII_EN	BIT(6)
 #define   AR8229_OPER_MODE0_PHY_MII_EN	BIT(10)
@@ -320,6 +323,9 @@
 #define AR8236_STATS_TXEXCDEFER		0x9c
 #define AR8236_STATS_TXDEFER		0xa0
 #define AR8236_STATS_TXLATECOL		0xa4
+
+#define AR8236_MIB_RXB_ID		15	/* RxGoodByte */
+#define AR8236_MIB_TXB_ID		31	/* TxByte */
 
 #define AR8316_REG_POSTRIP			0x0008
 #define   AR8316_POSTRIP_MAC0_GMII_EN		BIT(0)
@@ -451,6 +457,8 @@ struct ar8xxx_chip {
 	const struct ar8xxx_mib_desc *mib_decs;
 	unsigned num_mibs;
 	unsigned mib_func;
+	int mib_rxb_id;
+	int mib_txb_id;
 };
 
 struct ar8xxx_priv {
@@ -606,6 +614,9 @@ int
 ar8xxx_sw_set_flush_port_arl_table(struct switch_dev *dev,
 				   const struct switch_attr *attr,
 				   struct switch_val *val);
+int
+ar8xxx_sw_get_port_stats(struct switch_dev *dev, int port,
+			struct switch_port_stats *stats);
 int
 ar8216_wait_bit(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val);
 
