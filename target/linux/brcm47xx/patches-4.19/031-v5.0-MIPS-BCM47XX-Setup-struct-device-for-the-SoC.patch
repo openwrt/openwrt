@@ -126,13 +126,3 @@ Cc: stable@vger.kernel.org # v4.19+
  		bcma_bus_register(&bcm47xx_bus.bcma.bus);
  		break;
  #endif
---- a/include/linux/bcma/bcma_soc.h
-+++ b/include/linux/bcma/bcma_soc.h
-@@ -6,6 +6,7 @@
- 
- struct bcma_soc {
- 	struct bcma_bus bus;
-+	struct device *dev;
- };
- 
- int __init bcma_host_soc_register(struct bcma_soc *soc);
