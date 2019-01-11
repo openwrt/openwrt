@@ -671,7 +671,7 @@ define Device/avm_fritz7412
   DEVICE_DTS := FRITZ7412
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
-  DEVICE_TITLE := 1&1 DSL-Modem / WLAN-Router - FRITZ7412
+  DEVICE_TITLE := AVM FRITZ!Box 7412
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-mini kmod-ltq-tapi kmod-ltq-vmmc fritz-tffs-nand fritz-caldata
 endef
 TARGET_DEVICES += avm_fritz7412
