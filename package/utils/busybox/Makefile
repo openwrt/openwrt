@@ -60,6 +60,7 @@ define Package/busybox
     $(call BUSYBOX_IF_ENABLED,UPTIME,	100:/usr/bin/uptime:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,WATCH,	100:/bin/watch:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,XARGS,	100:/usr/bin/xargs:/bin/busybox) \
+    $(call BUSYBOX_IF_ENABLED,WGET,	100:/usr/bin/wget:/bin/busybox) \
 
 endef
 
