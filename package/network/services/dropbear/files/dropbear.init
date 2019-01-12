@@ -29,7 +29,7 @@ append_ports()
 
 validate_section_dropbear()
 {
-	uci_validate_section dropbear dropbear "${1}" \
+	uci_load_validate dropbear dropbear "$1" "$2" \
 		'PasswordAuth:bool:1' \
 		'enable:bool:1' \
 		'Interface:string' \
@@ -48,12 +48,9 @@ validate_section_dropbear()
 
 dropbear_instance()
 {
-	local PasswordAuth enable Interface GatewayPorts \
-		RootPasswordAuth RootLogin rsakeyfile \
-		BannerFile Port SSHKeepAlive IdleTimeout \
-		MaxAuthTries RecvWindowSize mdns ipaddrs
+	local ipaddrs
 
-	validate_section_dropbear "${1}" || {
+	[ "$2" = 0 ] || {
 		echo "validation failed"
 		return 1
 	}
@@ -135,7 +132,7 @@ start_service()
 	. /lib/functions/network.sh
 
 	config_load "${NAME}"
-	config_foreach dropbear_instance dropbear
+	config_foreach validate_section_dropbear dropbear dropbear_instance
 }
 
 service_triggers()
