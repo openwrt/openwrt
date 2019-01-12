@@ -168,6 +168,16 @@ define Build/gzip
 	@mv $@.new $@
 endef
 
+define Build/zip
+	mkdir $@.tmp
+	mv $@ $@.tmp/$(1)
+
+	zip -j -X \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="$(SOURCE_DATE_EPOCH)") \
+		$@ $@.tmp/$(if $(1),$(1),$@)
+	rm -rf $@.tmp
+endef
+
 define Build/jffs2
 	rm -rf $(KDIR_TMP)/$(DEVICE_NAME)/jffs2 && \
 		mkdir -p $(KDIR_TMP)/$(DEVICE_NAME)/jffs2/$$(dirname $(1)) && \

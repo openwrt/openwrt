@@ -2,16 +2,21 @@
 # MT76x8 Profiles
 #
 
-DEVICE_VARS += SERCOMM_KERNEL_OFFSET SERCOMM_HWID SERCOMM_HWVER SERCOMM_SWVER
+DEVICE_VARS += SERCOMM_HWID SERCOMM_HWVER SERCOMM_SWVER
 
-define Build/mksercommfw
+define Build/sercom-seal
 	$(STAGING_DIR_HOST)/bin/mksercommfw \
-		$@ \
-		$(SERCOMM_KERNEL_OFFSET) \
-		$(SERCOMM_HWID) \
-		$(SERCOMM_HWVER) \
-		$(SERCOMM_SWVER)
+		-i $@ \
+		-b $(SERCOMM_HWID) \
+		-r $(SERCOMM_HWVER) \
+		-v $(SERCOMM_SWVER) \
+		$(1)
 endef
+
+define Build/sercom-footer
+	$(call Build/sercom-seal,-f)
+endef
+
 
 define Device/tplink
   TPLINK_FLASHLAYOUT :=
@@ -116,14 +121,14 @@ define Device/netgear_r6120
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := Netgear AC1200 R6120
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
-  SERCOMM_KERNEL_OFFSET := 0x90000
   SERCOMM_HWID := CGQ
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x0040
   IMAGES += factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE)| append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.img := $$(IMAGE/default) | mksercommfw
+  IMAGE/factory.img := pad-extra 576k | $$(IMAGE/default) | \
+	sercom-footer | pad-to 128 | zip R6120.bin | sercom-seal
 endef
 TARGET_DEVICES += netgear_r6120
 

@@ -84,7 +84,7 @@ define Host/Compile
 	$(call cc,mkdhpimg buffalo-lib, -Wall)
 	$(call cc,mkdlinkfw mkdlinkfw-lib, -lz -Wall --std=c99)
 	$(call cc,dns313-header, -Wall)
-	$(call cc,mksercommfw, -Wall --std=gnu99)
+	$(call cc,mksercommfw, -Wall)
 endef
 
 define Host/Install
