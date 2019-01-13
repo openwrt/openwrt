@@ -14,16 +14,13 @@ Tested-by: Gregory CLEMENT <gregory.clement@bootlin.com>
 Signed-off-by: Ellie Reeves <ellierevves@gmail.com>
 Signed-off-by: Uwe Kleine-König <u.kleine-koenig@pengutronix.de>
 Signed-off-by: Gregory CLEMENT <gregory.clement@bootlin.com>
-
-[drop partitions, not every U-Boot has same layout]
-Signed-off-by: Tomasz Maciej Nowak <tomek_n@o2.pl>
 ---
- .../dts/marvell/armada-3720-espressobin.dts   | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ .../dts/marvell/armada-3720-espressobin.dts   | 27 +++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
 --- a/arch/arm64/boot/dts/marvell/armada-3720-espressobin.dts
 +++ b/arch/arm64/boot/dts/marvell/armada-3720-espressobin.dts
-@@ -96,6 +96,19 @@
+@@ -96,6 +96,33 @@
  	status = "okay";
  };
  
@@ -31,12 +28,26 @@ Signed-off-by: Tomasz Maciej Nowak <tomek_n@o2.pl>
 +	status = "okay";
 +
 +	flash@0 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
 +		reg = <0>;
 +		compatible = "winbond,w25q32dw", "jedec,spi-flash";
 +		spi-max-frequency = <104000000>;
 +		m25p,fast-read;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "uboot";
++				reg = <0 0x180000>;
++			};
++
++			partition@180000 {
++				label = "ubootenv";
++				reg = <0x180000 0x10000>;
++			};
++		};
 +	};
 +};
 +
