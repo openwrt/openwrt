@@ -82,7 +82,7 @@ define Host/Compile
 	$(call cc,mkbuffaloimg, -Wall)
 	$(call cc,zyimage, -Wall)
 	$(call cc,mkdhpimg buffalo-lib, -Wall)
-	$(call cc,mkdlinkfw mkdlinkfw-lib, -lz -Wall)
+	$(call cc,mkdlinkfw mkdlinkfw-lib, -lz -Wall --std=c99)
 	$(call cc,dns313-header, -Wall)
 	$(call cc,mksercommfw, -Wall --std=gnu99)
 endef
