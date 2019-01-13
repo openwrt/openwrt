@@ -1,0 +1,50 @@
+From 8311e84b18627d836b4f90df268bb6890c2576eb Mon Sep 17 00:00:00 2001
+From: Olliver Schinagl <oliver@schinagl.nl>
+Date: Wed, 21 Nov 2018 20:05:32 +0200
+Subject: [PATCH] arm: sunxi: Reduce inrush current on Olimex
+ OLinuXino-A20-Lime2
+
+The lime2 features a too large capacitor on the LDO3 output, which
+causes the PMIC to shutdown when enabling power. To be able to still
+boot up however, we must gradually enable power on LDO3 for this board.
+
+We do this by enabling both the inrush quirk and the maximum slope the
+AXP209 supports.
+
+Signed-off-by: Olliver Schinagl <oliver@schinagl.nl>
+Signed-off-by: Priit Laes <plaes@plaes.org>
+Acked-by: Maxime Ripard <maxime.ripard@bootlin.com>
+---
+ configs/A20-OLinuXino-Lime2_defconfig | 2 ++
+ configs/A20-OLinuXino-Lime2-eMMC_defconfig | 2 ++
+ 2 file changed, 2 insertions(+)
+
+diff --git a/configs/A20-OLinuXino-Lime2_defconfig b/configs/A20-OLinuXino-Lime2_defconfig
+index fa58a6d..0c04ae6 100644
+--- a/configs/A20-OLinuXino-Lime2_defconfig
++++ b/configs/A20-OLinuXino-Lime2_defconfig
+@@ -24,7 +24,9 @@ CONFIG_DFU_RAM=y
+ CONFIG_ETH_DESIGNWARE=y
+ CONFIG_RGMII=y
+ CONFIG_SUN7I_GMAC=y
++CONFIG_AXP_ALDO3_INRUSH_QUIRK=y
+ CONFIG_AXP_ALDO3_VOLT=2800
++CONFIG_AXP_ALDO3_VOLT_SLOPE_08=y
+ CONFIG_AXP_ALDO4_VOLT=2800
+ CONFIG_SCSI=y
+ CONFIG_USB_EHCI_HCD=y
+--- a/configs/A20-OLinuXino-Lime2-eMMC_defconfig
++++ b/configs/A20-OLinuXino-Lime2-eMMC_defconfig
+@@ -25,7 +25,9 @@ CONFIG_DFU_RAM=y
+ CONFIG_ETH_DESIGNWARE=y
+ CONFIG_RGMII=y
+ CONFIG_SUN7I_GMAC=y
++CONFIG_AXP_ALDO3_INRUSH_QUIRK=y
+ CONFIG_AXP_ALDO3_VOLT=2800
++CONFIG_AXP_ALDO3_VOLT_SLOPE_08=y
+ CONFIG_AXP_ALDO4_VOLT=2800
+ CONFIG_SCSI=y
+ CONFIG_USB_EHCI_HCD=y
+-- 
+2.7.4
+
