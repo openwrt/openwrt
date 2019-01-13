@@ -291,7 +291,7 @@ define KernelPackage/pmbus-core
   TITLE:=PMBus support
   KCONFIG:= CONFIG_PMBUS
   FILES:=$(LINUX_DIR)/drivers/hwmon/pmbus/pmbus_core.ko
-  $(call AddDepends/hwmon)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
 define KernelPackage/pmbus-core/description
