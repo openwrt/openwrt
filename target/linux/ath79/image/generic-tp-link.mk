@@ -146,6 +146,17 @@ define Device/tplink_cpe210-v3
 endef
 TARGET_DEVICES += tplink_cpe210-v3
 
+define Device/tplink_cpe610-v1
+  $(Device/tplink-safeloader)
+  ATH_SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_TITLE := TP-Link CPE610 v1
+  TPLINK_BOARD_ID := CPE610V1
+  LOADER_TYPE := elf
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel
+endef
+TARGET_DEVICES += tplink_cpe610-v1
+
 define Device/tplink_archer-d50-v1
   ATH_SOC := qca9531
   DEVICE_TITLE := TP-Link Archer D50 v1
