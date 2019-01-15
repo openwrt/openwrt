@@ -1695,7 +1695,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  EXPORT_SYMBOL(phy_ethtool_get_wol);
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1046,7 +1046,7 @@ int phy_suspend(struct phy_device *phyde
+@@ -1043,7 +1043,7 @@ int phy_suspend(struct phy_device *phyde
  	if (wol.wolopts)
  		return -EBUSY;
  
@@ -1704,7 +1704,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		ret = phydrv->suspend(phydev);
  
  	if (ret)
-@@ -1063,7 +1063,7 @@ int phy_resume(struct phy_device *phydev
+@@ -1060,7 +1060,7 @@ int phy_resume(struct phy_device *phydev
  	struct phy_driver *phydrv = to_phy_driver(phydev->mdio.dev.driver);
  	int ret = 0;
  
@@ -1713,7 +1713,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		ret = phydrv->resume(phydev);
  
  	if (ret)
-@@ -1720,7 +1720,7 @@ static int phy_remove(struct device *dev
+@@ -1717,7 +1717,7 @@ static int phy_remove(struct device *dev
  	phydev->state = PHY_DOWN;
  	mutex_unlock(&phydev->lock);
  
