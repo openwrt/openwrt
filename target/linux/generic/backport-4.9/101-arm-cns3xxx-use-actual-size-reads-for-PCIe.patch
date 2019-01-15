@@ -33,11 +33,9 @@ CC: stable@vger.kernel.org # v4.0+
  arch/arm/mach-cns3xxx/pcie.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-cns3xxx/pcie.c b/arch/arm/mach-cns3xxx/pcie.c
-index 5e11ad3164e0..95a11d5b3587 100644
 --- a/arch/arm/mach-cns3xxx/pcie.c
 +++ b/arch/arm/mach-cns3xxx/pcie.c
-@@ -93,7 +93,7 @@ static int cns3xxx_pci_read_config(struct pci_bus *bus, unsigned int devfn,
+@@ -93,7 +93,7 @@ static int cns3xxx_pci_read_config(struc
  	u32 mask = (0x1ull << (size * 8)) - 1;
  	int shift = (where % 4) * 8;
  
@@ -46,6 +44,3 @@ index 5e11ad3164e0..95a11d5b3587 100644
  
  	if (ret == PCIBIOS_SUCCESSFUL && !bus->number && !devfn &&
  	    (where & 0xffc) == PCI_CLASS_REVISION)
--- 
-2.17.1
-
