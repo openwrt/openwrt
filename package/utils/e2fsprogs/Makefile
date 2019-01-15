@@ -8,13 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-PKG_VERSION:=1.44.3
-PKG_HASH:=5d899f7d30f481cc0c6a049ebe26ebe145f1b524182ea1ecde4086162d4e4bb6
-PKG_RELEASE:=2
+PKG_VERSION:=1.44.5
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/tytso/e2fsprogs/v$(PKG_VERSION)/
+PKG_HASH:=ba5eb3069d69160d96818bb9700de9ab5a8458d9add1fd85d427c0000d34c5b9
+
 PKG_LICENSE:=GPL-2.0
+PKG_LICENSE_FILES:=NOTICE
 PKG_CPE_ID:=cpe:/a:e2fsprogs_project:e2fsprogs
 
 PKG_BUILD_DEPENDS:=util-linux e2fsprogs/host
@@ -107,6 +109,12 @@ endef
 define Package/e2freefrag
 $(call Package/e2fsprogs)
   TITLE:=Ext2 Filesystem free space fragmentation information utility
+  DEPENDS:= +e2fsprogs
+endef
+
+define Package/e4crypt
+$(call Package/e2fsprogs)
+  TITLE:=Ext4 Filesystem encryption utility
   DEPENDS:= +e2fsprogs
 endef
 
@@ -281,6 +289,11 @@ define Package/e2freefrag/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/e2freefrag $(1)/usr/sbin/
 endef
 
+define Package/e4crypt/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/e4crypt $(1)/usr/sbin/
+endef
+
 define Package/filefrag/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/filefrag $(1)/usr/sbin/
@@ -311,6 +324,7 @@ $(eval $(call BuildPackage,resize2fs))
 $(eval $(call BuildPackage,badblocks))
 $(eval $(call BuildPackage,dumpe2fs))
 $(eval $(call BuildPackage,e2freefrag))
+$(eval $(call BuildPackage,e4crypt))
 $(eval $(call BuildPackage,filefrag))
 $(eval $(call BuildPackage,debugfs))
 $(eval $(call BuildPackage,chattr))
