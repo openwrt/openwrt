@@ -71,6 +71,7 @@ endef
 
 # All DTB files are prefixed with "gemini-"
 define Device/Default
+	PROFILES := Default
 	DEVICE_DTS := $(patsubst %.dtb,%,$(notdir $(wildcard $(if $(IB),$(KDIR),$(DTS_DIR))/*-$(1).dtb)))
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
 	KERNEL_NAME := zImage
