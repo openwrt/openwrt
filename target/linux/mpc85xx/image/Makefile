@@ -90,6 +90,20 @@ define Device/hiveap-330
 endef
 TARGET_DEVICES += hiveap-330
 
+define Device/panda
+  DEVICE_TITLE := OCEDO Panda
+  DEVICE_PACKAGES := kmod-rtc-ds1307 kmod-usb2 uboot-envtools
+  KERNEL = kernel-bin | gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  BLOCKSIZE := 128k
+  SUPPORTED_DEVICES := ocedo,panda
+  IMAGES := fdt.bin sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/fdt.bin := append-dtb
+endef
+TARGET_DEVICES += panda
+
 endif
 
 ifeq ($(SUBTARGET),p2020)
