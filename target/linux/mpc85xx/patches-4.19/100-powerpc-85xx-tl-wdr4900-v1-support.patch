@@ -17,7 +17,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -159,6 +159,7 @@ src-plat-$(CONFIG_PPC_PSERIES) += pserie
+@@ -164,6 +164,7 @@ src-plat-$(CONFIG_PPC_PSERIES) += pserie
  src-plat-$(CONFIG_PPC_POWERNV) += pseries-head.S
  src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) += pseries-head.S
  src-plat-$(CONFIG_MVME7100) += motload-head.S mvme7100.c
@@ -25,7 +25,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
  src-wlib := $(sort $(src-wlib-y))
  src-plat := $(sort $(src-plat-y))
-@@ -338,7 +338,7 @@ image-$(CONFIG_TQM8555)			+= cuImage.tqm
+@@ -343,7 +344,7 @@ image-$(CONFIG_TQM8555)			+= cuImage.tqm
  image-$(CONFIG_TQM8560)			+= cuImage.tqm8560
  image-$(CONFIG_SBC8548)			+= cuImage.sbc8548
  image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
@@ -49,10 +49,10 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
          ;;
 --- a/arch/powerpc/platforms/85xx/Kconfig
 +++ b/arch/powerpc/platforms/85xx/Kconfig
-@@ -170,6 +181,18 @@ config STX_GP3
-        select CPM2
-        select DEFAULT_UIMAGE
-
+@@ -170,6 +170,18 @@ config STX_GP3
+ 	select CPM2
+ 	select DEFAULT_UIMAGE
+ 
 +config TL_WDR4900_V1
 +    bool "TP-Link TL-WDR4900 v1"
 +    select DEFAULT_UIMAGE
@@ -66,8 +66,8 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +      Freescale P1014 SoC.
 +
  config TQM8540
-        bool "TQ Components TQM8540"
-        help
+ 	bool "TQ Components TQM8540"
+ 	help
 --- a/arch/powerpc/platforms/85xx/Makefile
 +++ b/arch/powerpc/platforms/85xx/Makefile
 @@ -26,6 +26,7 @@ obj-$(CONFIG_CORENET_GENERIC)   += coren

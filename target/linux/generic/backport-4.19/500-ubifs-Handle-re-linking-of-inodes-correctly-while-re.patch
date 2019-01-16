@@ -36,7 +36,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
 
 --- a/fs/ubifs/replay.c
 +++ b/fs/ubifs/replay.c
-@@ -210,6 +210,38 @@ static int trun_remove_range(struct ubif
+@@ -242,6 +242,38 @@ static bool inode_still_linked(struct ub
  }
  
  /**
@@ -75,15 +75,15 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
   * apply_replay_entry - apply a replay entry to the TNC.
   * @c: UBIFS file-system description object
   * @r: replay entry to apply
-@@ -236,6 +268,11 @@ static int apply_replay_entry(struct ubi
- 			{
- 				ino_t inum = key_inum(c, &r->key);
+@@ -270,6 +302,11 @@ static int apply_replay_entry(struct ubi
  
-+				if (inode_still_linked(c, r)) {
-+					err = 0;
+ 				if (inode_still_linked(c, r)) {
+ 					err = 0;
 +					break;
 +				}
 +
- 				err = ubifs_tnc_remove_ino(c, inum);
- 				break;
- 			}
++				if (inode_still_linked(c, r)) {
++					err = 0;
+ 					break;
+ 				}
+ 
