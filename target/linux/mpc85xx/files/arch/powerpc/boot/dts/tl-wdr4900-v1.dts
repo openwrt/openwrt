@@ -24,6 +24,10 @@
 
 	aliases {
 		spi0 = &spi0;
+		led-boot = &system_green;
+		led-failsafe = &system_green;
+		led-running = &system_green;
+		led-upgrade = &system_green;
 	};
 
 	memory {
@@ -192,7 +196,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		system {
+		system_green: system {
 			gpios = <&gpio0 2 1>; /* active low */
 			label = "tp-link:blue:system";
 		};

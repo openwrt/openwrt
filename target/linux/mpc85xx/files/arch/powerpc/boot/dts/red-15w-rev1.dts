@@ -6,6 +6,13 @@
 	model = "Sophos RED 15w Rev.1";
 	compatible = "sophos,red-15w-rev1";
 
+	aliases {
+		led-boot = &system_green;
+		led-failsafe = &system_red;
+		led-running = &system_green;
+		led-upgrade = &system_red;
+	};
+
 	memory {
 		device_type = "memory";
 	};
@@ -13,12 +20,12 @@
 	leds {
 		compatible = "gpio-leds";
 
-		system_green {
+		system_green: system_green {
 			gpios = <&gpio0 7 0>;
 			label = "red-15w-rev1:green:system";
 		};
 
-		system_red {
+		system_red: system_red {
 			gpios = <&gpio0 3 0>;
 			label = "red-15w-rev1:red:system";
 		};
