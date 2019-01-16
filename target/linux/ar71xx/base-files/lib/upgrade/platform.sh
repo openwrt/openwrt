@@ -359,6 +359,7 @@ platform_check_image() {
 	hornet-ub|\
 	mr12|\
 	mr16|\
+	x-ap1200|\
 	zbt-we1526|\
 	zcn-1523h-2|\
 	zcn-1523h-5)

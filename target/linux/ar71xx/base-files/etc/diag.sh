@@ -51,6 +51,7 @@ get_status_led() {
 	tew-632brp|\
 	tl-wr942n-v1|\
 	wpj344|\
+	x-ap1200|\
 	zbt-we1526)
 		status_led="$board:green:status"
 		;;

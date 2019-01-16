@@ -289,6 +289,7 @@ obj-$(CONFIG_ATH79_MACH_WZR_HP_G300NH)		+= mach-wzr-hp-g300nh.o
 obj-$(CONFIG_ATH79_MACH_WZR_HP_G300NH2)		+= mach-wzr-hp-g300nh2.o
 obj-$(CONFIG_ATH79_MACH_WZR_HP_G450H)		+= mach-wzr-hp-g450h.o
 obj-$(CONFIG_ATH79_MACH_XD3200)			+= mach-sr3200.o
+obj-$(CONFIG_ATH79_MACH_X_AP1200)			+= mach-x-ap1200.o
 obj-$(CONFIG_ATH79_MACH_Z1)			+= mach-z1.o
 obj-$(CONFIG_ATH79_MACH_ZBT_WE1526)		+= mach-zbt-we1526.o
 obj-$(CONFIG_ATH79_MACH_ZCN_1523H)		+= mach-zcn-1523h.o

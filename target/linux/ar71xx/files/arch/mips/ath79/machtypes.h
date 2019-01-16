@@ -383,6 +383,7 @@ enum ath79_mach_type {
 	ATH79_MACH_WZR_HP_G300NH2,		/* Buffalo WZR-HP-G300NH2 */
 	ATH79_MACH_WZR_HP_G450H,		/* Buffalo WZR-HP-G450H */
 	ATH79_MACH_XD3200,			/* YunCore XD3200 */
+	ATH79_MACH_X_AP1200,			/* X AP1200 board */
 	ATH79_MACH_Z1,				/* Cisco Meraki Z1 */
 	ATH79_MACH_ZBT_WE1526,			/* Zbtlink ZBT-WE1526 */
 	ATH79_MACH_ZCN_1523H_2,			/* Zcomax ZCN-1523H-2-xx */

@@ -1141,6 +1141,12 @@ wzr-hp-g450h)
 xd3200)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:blue:wlan2g" "phy1tpt"
 	;;
+x-ap1200)
+	ucidef_set_led_switch "wan" "WAN" "$board:green:wan" "switch0" "0x02"
+	ucidef_set_led_switch "lan1" "LAN1" "$board:green:lan1" "switch0" "0x04"
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:blue:wlan" "phy1tpt"
+	ucidef_set_led_default "sys" "SYS" "$board:green:status" "0"
+	;;
 z1)
 	ucidef_set_led_netdev "wlan1" "WLAN1" "$board:blue:tricolor0" "wlan1"
 	;;

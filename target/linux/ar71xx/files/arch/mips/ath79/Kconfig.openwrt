@@ -530,6 +530,15 @@ config ATH79_MACH_XD3200
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_X_AP1200
+	bool "X AP1200 board"
+	select SOC_QCA953X
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+	select ATH79_DEV_AP9X_PCI if PCI
+
 config ATH79_MACH_DGL_5500_A1
 	bool "D-Link DGL-5500 A1 support"
 	select SOC_QCA955X

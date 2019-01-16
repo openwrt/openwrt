@@ -1362,3 +1362,15 @@ define Device/fritz450e
   IMAGE_SIZE := 15232k
 endef
 TARGET_DEVICES += fritz450e
+
+define Device/x-ap1200
+  DEVICE_TITLE := X AP1200 board
+  BOARDNAME := X-AP1200
+  DEVICE_PACKAGES += kmod-ath10k ath10k-firmware-qca9888
+  KERNEL_SIZE := 1472k
+  ROOTFS_SIZE := 14528k
+  IMAGE_SIZE := 16000k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,14528k(rootfs),1472k(kernel),64k(art)ro,16000k@0x50000(firmware)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += x-ap1200
