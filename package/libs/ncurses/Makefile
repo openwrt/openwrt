@@ -41,7 +41,7 @@ define Package/libncurses
   URL:=http://www.gnu.org/software/ncurses/
   PROVIDES:=libncursesw
   DEPENDS:= +terminfo
-  ABI_VERSION:=$(PKG_VERSION)
+  ABI_VERSION:=6
 endef
 
 define Package/libncurses-dev

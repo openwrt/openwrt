@@ -27,7 +27,7 @@ define Package/libubox
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Basic utility library
-  ABI_VERSION:=$(PKG_VERSION)
+  ABI_VERSION:=20170601
   DEPENDS:=
 endef
 

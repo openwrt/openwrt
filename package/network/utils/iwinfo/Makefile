@@ -33,7 +33,7 @@ define Package/libiwinfo
   CATEGORY:=Libraries
   TITLE:=Generalized Wireless Information Library (iwinfo)
   DEPENDS:=+PACKAGE_kmod-cfg80211:libnl-tiny +libuci +libubus
-  ABI_VERSION:=$(PKG_RELEASE)
+  ABI_VERSION:=20181126
 endef
 
 define Package/libiwinfo/description

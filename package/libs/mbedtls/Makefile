@@ -39,7 +39,7 @@ $(call Package/mbedtls/Default)
   CATEGORY:=Libraries
   SUBMENU:=SSL
   TITLE+= (library)
-  ABI_VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
+  ABI_VERSION:=12
 endef
 
 define Package/mbedtls-util
