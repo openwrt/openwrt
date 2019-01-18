@@ -6,7 +6,7 @@
 # See /LICENSE for more information.
 #
 
--include $(TMP_DIR)/.packagesubdirs
+-include $(TMP_DIR)/.packageauxvars
 
 FEEDS_INSTALLED:=$(notdir $(wildcard $(TOPDIR)/package/feeds/*))
 FEEDS_AVAILABLE:=$(sort $(FEEDS_INSTALLED) $(shell $(SCRIPT_DIR)/feeds list -n))

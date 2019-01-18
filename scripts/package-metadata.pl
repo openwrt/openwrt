@@ -509,7 +509,7 @@ sub gen_package_source() {
 	}
 }
 
-sub gen_package_subdirs() {
+sub gen_package_auxiliary() {
 	parse_package_metadata($ARGV[0]) or exit 1;
 	foreach my $name (sort {uc($a) cmp uc($b)} keys %package) {
 		my $pkg = $package{$name};
@@ -565,7 +565,7 @@ sub parse_command() {
 		/^config$/ and return gen_package_config();
 		/^kconfig/ and return gen_kconfig_overrides();
 		/^source$/ and return gen_package_source();
-		/^subdirs$/ and return gen_package_subdirs();
+		/^pkgaux$/ and return gen_package_auxiliary();
 		/^license$/ and return gen_package_license(0);
 		/^licensefull$/ and return gen_package_license(1);
 		/^usergroup$/ and return gen_usergroup_list();
@@ -577,7 +577,7 @@ Available Commands:
 	$0 config [file] 			Package metadata in Kconfig format
 	$0 kconfig [file] [config] [patchver]	Kernel config overrides
 	$0 source [file] 			Package source file information
-	$0 subdirs [file]			Package subdir information in makefile format
+	$0 pkgaux [file]			Package auxiliary variables in makefile format
 	$0 license [file] 			Package license information
 	$0 licensefull [file] 			Package license information (full list)
 	$0 usergroup [file]			Package usergroup allocation list
