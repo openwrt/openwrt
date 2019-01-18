@@ -745,7 +745,8 @@ static struct device_info boards[] = {
 			"{product_name:Archer C7,product_ver:5.0.0,special_id:55530000}\n"
 			"{product_name:Archer C7,product_ver:5.0.0,special_id:43410000}\n"
 			"{product_name:Archer C7,product_ver:5.0.0,special_id:4A500000}\n"
-			"{product_name:Archer C7,product_ver:5.0.0,special_id:54570000}\n",
+			"{product_name:Archer C7,product_ver:5.0.0,special_id:54570000}\n"
+			"{product_name:Archer C7,product_ver:5.0.0,special_id:52550000}\n",
 
 		.support_trail = '\x00',
 		.soft_ver = "soft_ver:1.0.0\n",
