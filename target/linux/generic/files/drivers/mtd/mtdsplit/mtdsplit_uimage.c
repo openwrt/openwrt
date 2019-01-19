@@ -359,9 +359,19 @@ mtdsplit_uimage_parse_edimax(struct mtd_info *master,
 				       uimage_find_edimax);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+static const struct of_device_id mtdsplit_uimage_edimax_of_match_table[] = {
+	{ .compatible = "edimax,uimage" },
+	{},
+};
+#endif
+
 static struct mtd_part_parser uimage_edimax_parser = {
 	.owner = THIS_MODULE,
 	.name = "edimax-fw",
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+	.of_match_table = mtdsplit_uimage_edimax_of_match_table,
+#endif
 	.parse_fn = mtdsplit_uimage_parse_edimax,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
