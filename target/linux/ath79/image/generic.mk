@@ -186,6 +186,14 @@ define Device/devolo_dvl1750c
 endef
 TARGET_DEVICES += devolo_dvl1750c
 
+define Device/devolo_dvl1750e
+  ATH_SOC := qca9558
+  DEVICE_TITLE := devolo WiFi pro 1750e
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += devolo_dvl1750e
+
 define Device/devolo_dvl1750i
   ATH_SOC := qca9558
   DEVICE_TITLE := devolo WiFi pro 1750i
