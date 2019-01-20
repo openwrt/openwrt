@@ -705,6 +705,9 @@ ar8216_hw_init(struct ar8xxx_priv *priv)
 	if (priv->initialized)
 		return 0;
 
+	ar8xxx_write(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET);
+	ar8xxx_reg_wait(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET, 0, 1000);
+
 	ar8xxx_phy_init(priv);
 
 	priv->initialized = true;
