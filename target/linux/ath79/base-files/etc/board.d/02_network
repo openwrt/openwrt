@@ -72,13 +72,10 @@ ath79_setup_interfaces()
 		;;
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1|\
-	iodata,etg3-r|\
-	iodata,wn-ac1167dgr|\
-	iodata,wn-ac1600dgr2|\
-	iodata,wn-ag300dgr|\
-	pcs,cr5000)
+	dlink,dir-859-a1|\
+	tplink,tl-wr1043nd-v4)
 		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
+			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
 		;;
 	elecom,wrc-1750ghbk2-i|\
 	elecom,wrc-300ghbk2-i)
@@ -108,6 +105,14 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:2" "3:lan:1" "1:wan"
 		;;
+	iodata,etg3-r|\
+	iodata,wn-ac1167dgr|\
+	iodata,wn-ac1600dgr2|\
+	iodata,wn-ag300dgr|\
+	pcs,cr5000)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
+	;;
 	nec,wg800hp)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:lan" "4:lan" "1:wan"
@@ -171,11 +176,6 @@ ath79_setup_interfaces()
 	tplink,tl-wr1043nd-v3)
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan" "6@eth0"
-		;;
-	dlink,dir-859-a1|\
-	tplink,tl-wr1043nd-v4)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
 		;;
 	tplink,tl-wr2543-v1)
 		ucidef_add_switch "switch0" \
