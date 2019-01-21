@@ -285,6 +285,31 @@ define Device/qcom_ap-dk04.1-c1
 endef
 TARGET_DEVICES += qcom_ap-dk04.1-c1
 
+define Device/qxwlan_e2600ac-c1
+	$(call Device/FitImage)
+	DEVICE_TITLE :=  Qxwlan E2600AC-C1 (nor flash)
+	BOARD_NAME := e2600ac-c1
+	DEVICE_DTS := qcom-ipq4019-qxwlan-e2600ac-c1
+	KERNEL_SIZE := 4096k
+	IMAGE_SIZE := 31232k
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac
+endef
+TARGET_DEVICES += qxwlan_e2600ac-c1
+
+define Device/qxwlan_e2600ac-c2
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_DTS := qcom-ipq4019-qxwlan-e2600ac-c2
+	KERNEL_INSTALL := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_TITLE := Qxwlan E2600AC-C2 (nornand flash)
+	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac
+endef
+TARGET_DEVICES += qxwlan_e2600ac-c2
+
 define Device/zyxel_nbg6617
 	$(call Device/FitImageLzma)
 	DEVICE_DTS := qcom-ipq4018-nbg6617
