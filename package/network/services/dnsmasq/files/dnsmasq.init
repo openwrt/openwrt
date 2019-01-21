@@ -880,7 +880,6 @@ dnsmasq_start()
 	[ -n "$leasefile" -a \! -e "$leasefile" ] && touch "$leasefile"
 	config_get_bool cachelocal "$cfg" cachelocal 1
 
-	config_get_bool noresolv "$cfg" noresolv 0
 	if [ "$noresolv" != "1" ]; then
 		config_get resolvfile "$cfg" resolvfile "/tmp/resolv.conf.auto"
 		# So jail doesn't complain if file missing
