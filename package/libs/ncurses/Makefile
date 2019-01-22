@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ncurses
 PKG_VERSION:=6.1
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -75,6 +75,8 @@ CONFIGURE_ARGS += \
 	--with-pkg-config-libdir=/usr/lib/pkgconfig \
 	--enable-widec \
 	--with-build-cppflags=-D_GNU_SOURCE
+
+HOST_CFLAGS += $(HOST_FPIC)
 
 HOST_CONFIGURE_ARGS += \
 	--without-cxx \
