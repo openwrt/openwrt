@@ -29,6 +29,7 @@ include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/hardening.mk
 
 TARGET_CFLAGS:= $(filter-out -O%,$(TARGET_CFLAGS))
+TARGET_CFLAGS+= $(if $(CONFIG_MUSL_DISABLE_CRYPT_SIZE_HACK),,-DCRYPT_SIZE_HACK)
 
 MUSL_CONFIGURE:= \
 	$(TARGET_CONFIGURE_OPTS) \
