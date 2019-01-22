@@ -91,7 +91,7 @@ define Device/Default
 	KERNEL_NAME := zImage
 	KERNEL := kernel-bin | append-dtb
 	FILESYSTEMS := squashfs
-	IMAGE_NAME := $$(IMAGE_PREFIX)-$$(1).$$(2)
+	IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 endef
