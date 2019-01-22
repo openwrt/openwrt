@@ -489,7 +489,7 @@ define Device/avm_fritz7312
   $(Device/AVM)
   DEVICE_DTS := FRITZ7312
   IMAGE_SIZE := 15744k
-  DEVICE_TITLE := 1&1 WLAN-MODEM - FRITZ7312
+  DEVICE_TITLE := AVM FRITZ!Box 7312
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-mini \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
@@ -502,7 +502,7 @@ define Device/avm_fritz7320
   $(Device/AVM)
   DEVICE_DTS := FRITZ7320
   IMAGE_SIZE := 15744k
-  DEVICE_TITLE := 1&1 HomeServer - FRITZ7320
+  DEVICE_TITLE := AVM FRITZ!Box 7320
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
@@ -631,7 +631,7 @@ define Device/avm_fritz3370
   $(Device/AVM)
   $(Device/NAND)
   DEVICE_DTS := FRITZ3370
-  DEVICE_TITLE := AVM Fritz!Box WLan 3370 Rev. 2
+  DEVICE_TITLE := AVM FRITZ!Box 3370 Rev. 2
   KERNEL_SIZE := 4096k
   UBINIZE_OPTS := -E 5
   IMAGES += eva-kernel.bin eva-filesystem.bin
@@ -643,14 +643,14 @@ endef
 define Device/avm_fritz3370-rev2-hynix
   $(Device/avm_fritz3370)
   DEVICE_DTS := FRITZ3370-REV2-HYNIX
-  DEVICE_TITLE := AVM Fritz!Box WLan 3370 Rev. 2 (Hynix NAND)
+  DEVICE_TITLE := AVM FRITZ!Box 3370 Rev. 2 (Hynix NAND)
 endef
 TARGET_DEVICES += avm_fritz3370-rev2-hynix
 
 define Device/avm_fritz3370-rev2-micron
   $(Device/avm_fritz3370)
   DEVICE_DTS := FRITZ3370-REV2-MICRON
-  DEVICE_TITLE := AVM Fritz!Box WLan 3370 Rev. 2 (Micron NAND)
+  DEVICE_TITLE := AVM FRITZ!Box 3370 Rev. 2 (Micron NAND)
 endef
 TARGET_DEVICES += avm_fritz3370-rev2-micron
 
@@ -658,7 +658,7 @@ define Device/avm_fritz7360sl
   $(Device/AVM)
   IMAGE_SIZE := 15744k
   DEVICE_DTS := FRITZ7360SL
-  DEVICE_TITLE := 1&1 HomeServer - FRITZ7360SL
+  DEVICE_TITLE := AVM FRITZ!Box 7360 SL
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic kmod-usb-dwc2
   SUPPORTED_DEVICES += FRITZ7360SL
 endef
