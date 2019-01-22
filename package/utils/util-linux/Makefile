@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
 PKG_VERSION:=2.33
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.33
@@ -47,6 +47,7 @@ $(call Package/util-linux/Default)
   TITLE:=block device id library
   SECTION:=libs
   CATEGORY:=Libraries
+  ABI_VERSION:=1
 endef
 
 define Package/libblkid/description
@@ -62,6 +63,7 @@ $(call Package/util-linux/Default)
   TITLE:=partition manipulating library
   SECTION:=libs
   CATEGORY:=Libraries
+  ABI_VERSION:=1
 endef
 
 define Package/libfdisk/description
@@ -74,6 +76,7 @@ $(call Package/util-linux/Default)
   TITLE:=mount library
   SECTION:=libs
   CATEGORY:=Libraries
+  ABI_VERSION:=1
 endef
 
 define Package/libmount/description
@@ -86,6 +89,7 @@ $(call Package/util-linux/Default)
   TITLE:=DCE compatible Universally Unique Identifier library
   SECTION:=libs
   CATEGORY:=Libraries
+  ABI_VERSION:=1
 endef
 
 define Package/libuuid/description
@@ -100,6 +104,7 @@ $(call Package/util-linux/Default)
   TITLE:=table or tree library
   SECTION:=libs
   CATEGORY:=Libraries
+  ABI_VERSION:=1
 endef
 
 define Package/libsmartcols/description
@@ -544,32 +549,27 @@ endef
 
 define Package/libfdisk/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/lib/libfdisk.so* $(1)/usr/lib/
-	$(LN) libfdisk.so.1 $(1)/usr/lib/libfdisk.so
+	$(CP) $(PKG_INSTALL_DIR)/lib/libfdisk.so.* $(1)/usr/lib/
 endef
 
 define Package/libblkid/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/lib/libblkid.so* $(1)/usr/lib/
-	$(LN) libblkid.so.1 $(1)/usr/lib/libblkid.so
+	$(CP) $(PKG_INSTALL_DIR)/lib/libblkid.so.* $(1)/usr/lib/
 endef
 
 define Package/libmount/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/lib/libmount.so* $(1)/usr/lib/
-	$(LN) libmount.so.1 $(1)/usr/lib/libmount.so
+	$(CP) $(PKG_INSTALL_DIR)/lib/libmount.so.* $(1)/usr/lib/
 endef
 
 define Package/libsmartcols/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/lib/libsmartcols.so* $(1)/usr/lib/
-	$(LN) libsmartcols.so.1 $(1)/usr/lib/libsmartcols.so
+	$(CP) $(PKG_INSTALL_DIR)/lib/libsmartcols.so.* $(1)/usr/lib/
 endef
 
 define Package/libuuid/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/lib/libuuid.so* $(1)/usr/lib/
-	$(LN) libuuid.so.1 $(1)/usr/lib/libuuid.so
+	$(CP) $(PKG_INSTALL_DIR)/lib/libuuid.so.* $(1)/usr/lib/
 endef
 
 define Package/agetty/install

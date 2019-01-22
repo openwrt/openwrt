@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libbsd
 PKG_VERSION:=0.8.7
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_HASH:=f548f10e5af5a08b1e22889ce84315b1ebe41505b015c9596bad03fd13a12b31
@@ -19,6 +19,7 @@ define Package/libbsd
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=common BSD library
+  ABI_VERSION:=0
 endef
 
 define Package/libbsd/description
@@ -36,7 +37,7 @@ endef
 
 define Package/libbsd/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libbsd.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libbsd.so.* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libbsd))

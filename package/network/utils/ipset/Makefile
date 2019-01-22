@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ipset
 PKG_VERSION:=7.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://ipset.netfilter.org
@@ -39,6 +39,7 @@ endef
 
 define Package/libipset
 $(call Package/ipset/Default)
+  ABI_VERSION:=13
 endef
 
 CONFIGURE_ARGS += \
@@ -62,7 +63,7 @@ endef
 
 define Package/libipset/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipset*.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipset*.so.* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,ipset))

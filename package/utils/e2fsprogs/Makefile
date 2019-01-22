@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=e2fsprogs
 PKG_VERSION:=1.44.3
 PKG_HASH:=5d899f7d30f481cc0c6a049ebe26ebe145f1b524182ea1ecde4086162d4e4bb6
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/tytso/e2fsprogs/v$(PKG_VERSION)/
@@ -45,6 +45,7 @@ define Package/libext2fs
   TITLE:=ext2/3/4 filesystem library
   URL:=http://e2fsprogs.sourceforge.net/
   DEPENDS:=+libuuid +libblkid +libss +libcomerr
+  ABI_VERSION:=2
 endef
 
 define Package/libext2fs/description
@@ -57,6 +58,7 @@ define Package/libss
   TITLE:=command-line interface parsing library
   URL:=http://e2fsprogs.sourceforge.net/
   DEPENDS:=+libcomerr
+  ABI_VERSION:=2
 endef
 
 define Package/libss/description
@@ -70,6 +72,7 @@ define Package/libcomerr
   TITLE:=common error description library
   URL:=http://e2fsprogs.sourceforge.net/
   DEPENDS:=+libuuid
+  ABI_VERSION:=0
 endef
 
 define Package/libcomerr/description
@@ -234,12 +237,12 @@ endef
 
 define Package/libcomerr/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcom_err.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcom_err.so.* $(1)/usr/lib/
 endef
 
 define Package/libss/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libss.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libss.so.* $(1)/usr/lib/
 endef
 
 define Package/libext2fs/install

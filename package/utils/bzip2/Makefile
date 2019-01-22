@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bzip2
 PKG_VERSION:=1.0.6
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://distfiles.gentoo.org/distfiles/ \
@@ -35,6 +35,7 @@ $(call Package/bzip2/Default)
   CATEGORY:=Libraries
   DEPENDS:=
   TITLE:=bzip2 library.
+  ABI_VERSION:=1.0
 endef
 
 define Package/libbz2/description
