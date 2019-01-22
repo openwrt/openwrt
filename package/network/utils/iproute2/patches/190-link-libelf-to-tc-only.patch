@@ -1,6 +1,6 @@
 --- a/configure
 +++ b/configure
-@@ -257,8 +257,9 @@ check_elf()
+@@ -231,8 +231,9 @@ check_elf()
  	echo "HAVE_ELF:=y" >>$CONFIG
  	echo "yes"
  
@@ -47,7 +47,7 @@
 +	rm -f $(NLOBJ) $(UTILOBJ) $(ELFOBJ) $(ADDLIB) libnetlink.a libutil.a libutil-elf.a
 --- a/tc/Makefile
 +++ b/tc/Makefile
-@@ -132,8 +132,8 @@ MODDESTDIR := $(DESTDIR)$(LIBDIR)/tc
+@@ -133,8 +133,8 @@ MODDESTDIR := $(DESTDIR)$(LIBDIR)/tc
  
  all: tc $(TCSO)
  
