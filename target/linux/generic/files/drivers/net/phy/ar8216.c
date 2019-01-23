@@ -2208,7 +2208,7 @@ ar8xxx_mib_work_func(struct work_struct *work)
 next_attempt:
 	mutex_unlock(&priv->mib_lock);
 	schedule_delayed_work(&priv->mib_work,
-			      msecs_to_jiffies(AR8XXX_MIB_WORK_DELAY));
+			      msecs_to_jiffies(priv->mib_poll_interval));
 }
 
 static int
@@ -2238,7 +2238,7 @@ ar8xxx_mib_start(struct ar8xxx_priv *priv)
 		return;
 
 	schedule_delayed_work(&priv->mib_work,
-			      msecs_to_jiffies(AR8XXX_MIB_WORK_DELAY));
+			      msecs_to_jiffies(priv->mib_poll_interval));
 }
 
 static void
@@ -2513,6 +2513,11 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 	priv->mii_bus = phydev->mdio.bus;
 	priv->pdev = &phydev->mdio.dev;
 
+	ret = of_property_read_u32(priv->pdev->of_node, "qca,mib-poll-interval",
+				   &priv->mib_poll_interval);
+	if (ret)
+		priv->mib_poll_interval = AR8XXX_MIB_WORK_DELAY;
+
 	ret = ar8xxx_id_chip(priv);
 	if (ret)
 		goto free_priv;
@@ -2679,6 +2684,11 @@ ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
 	priv->mii_bus = mdiodev->bus;
 	priv->pdev = &mdiodev->dev;
 	priv->chip = (const struct ar8xxx_chip *) match->data;
+
+	ret = of_property_read_u32(priv->pdev->of_node, "qca,mib-poll-interval",
+				   &priv->mib_poll_interval);
+	if (ret)
+		priv->mib_poll_interval = AR8XXX_MIB_WORK_DELAY;
 
 	ret = ar8xxx_read_id(priv);
 	if (ret)
