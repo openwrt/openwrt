@@ -489,6 +489,7 @@ struct ar8xxx_priv {
 	struct mutex mib_lock;
 	struct delayed_work mib_work;
 	u64 *mib_stats;
+	u32 mib_poll_interval;
 
 	struct list_head list;
 	unsigned int use_count;
