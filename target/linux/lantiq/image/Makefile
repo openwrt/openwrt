@@ -665,6 +665,18 @@ define Device/avm_fritz7360sl
 endef
 TARGET_DEVICES += avm_fritz7360sl
 
+define Device/avm_fritz7412
+  $(Device/AVM)
+  $(Device/NAND)
+  BOARD_NAME := FRITZ7412
+  DEVICE_DTS := FRITZ7412
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_TITLE := AVM FRITZ!Box 7412
+  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-mini kmod-ltq-tapi kmod-ltq-vmmc fritz-tffs-nand fritz-caldata
+endef
+TARGET_DEVICES += avm_fritz7412
+
 define Device/arcadyan_vg3503j
   IMAGE_SIZE := 8000k
   DEVICE_DTS := VG3503J
