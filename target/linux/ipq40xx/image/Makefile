@@ -26,6 +26,12 @@ define Device/FitImageLzma
 	KERNEL_NAME := Image
 endef
 
+define Device/FitzImage
+	KERNEL_SUFFIX := -fit-zImage.itb
+	KERNEL = kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+	KERNEL_NAME := zImage
+endef
+
 define Device/UbiFit
 	KERNEL_IN_UBI := 1
 	IMAGES := nand-factory.ubi nand-sysupgrade.bin
@@ -130,6 +136,41 @@ define Device/glinet_gl-b1300
 	IMAGE/sysupgrade.bin := append-kernel |append-rootfs | pad-rootfs | append-metadata
 endef
 TARGET_DEVICES += glinet_gl-b1300
+
+define Device/linksys_ea6350v3
+	# The Linksys EA6350v3 has a uboot bootloader that does not
+	# support either booting lzma kernel images nor booting UBI
+	# partitions. This uboot, however, supports raw kernel images and
+	# gzipped images.
+	#
+	# As for the time of writing this, the device will boot the kernel
+	# from a fixed address with a fixed length of 3MiB. Also, the
+	# device has a hard-coded kernel command line that requieres the
+	# rootfs and alt_rootfs to be in mtd11 and mtd13 respectively.
+	# Oh... and the kernel partition overlaps with the rootfs
+	# partition (the same for alt_kernel and alt_rootfs).
+	#
+	# If you are planing re-partitioning the device, you may want to
+	# keep those details in mind:
+	# 1. The kernel adresses you should honor are 0x00000000 and
+	#    0x02800000 respectively.
+	# 2. The kernel size (plus the dtb) cannot exceed 3.00MiB in size.
+	# 3. You can use 'zImage', but not a raw 'Image' packed with lzma.
+	# 4. The kernel command line from uboot is harcoded to boot with
+	#    rootfs either in mtd11 or mtd13.
+	$(call Device/FitzImage)
+	DEVICE_TITLE := Linksys EA6350v3
+	DEVICE_DTS := qcom-ipq4018-ea6350v3
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_SIZE := 3145728
+	IMAGE_SIZE := 38797312
+	UBINIZE_OPTS := -E 5
+	IMAGES := factory.bin sysupgrade.bin
+	IMAGE/factory.bin := append-kernel | append-uImage-fakehdr filesystem | pad-to $$$${KERNEL_SIZE} | append-ubi | linksys-image type=EA6350v3
+	DEVICE_PACKAGES := ipq-wifi-linksys_ea6350v3 uboot-envtools
+endef
+TARGET_DEVICES += linksys_ea6350v3
 
 define Device/meraki_mr33
 	$(call Device/FitImage)
