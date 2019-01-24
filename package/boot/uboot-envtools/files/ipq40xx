@@ -31,6 +31,9 @@ ubootenv_mtdinfo () {
 }
 
 case "$board" in
+linksys,ea6350v3)
+	ubootenv_add_uci_config "/dev/mtd7" "0x0" "0x20000" "0x20000"
+	;;
 glinet,gl-b1300 |\
 openmesh,a42 |\
 openmesh,a62)
