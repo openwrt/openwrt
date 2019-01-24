@@ -39,19 +39,20 @@ endef
 define Package/libasm
   $(call Package/elfutils/Default)
   TITLE+= (libasm)
-  DEPENDS:=libelf1 +libdw
+  DEPENDS:=libelf +libdw
 endef
 
 define Package/libdw
   $(call Package/elfutils/Default)
-  DEPENDS:=libelf1 +libbz2
+  DEPENDS:=libelf +libbz2
   TITLE+= (libdw)
 endef
 
-define Package/libelf1
+define Package/libelf
   $(call Package/elfutils/Default)
   DEPENDS:=$(INTL_DEPENDS) +zlib
   TITLE+= (libelf)
+  PROVIDES:=libelf1
 endef
 
 ifeq ($(CONFIG_BUILD_NLS),y)
@@ -88,11 +89,11 @@ define Package/libdw/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libdw*.so.* $(1)/usr/lib/
 endef
 
-define Package/libelf1/install
+define Package/libelf/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libelf*.so.* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libasm))
 $(eval $(call BuildPackage,libdw))
-$(eval $(call BuildPackage,libelf1))
+$(eval $(call BuildPackage,libelf))
