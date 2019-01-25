@@ -84,10 +84,7 @@ define Device/Default
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
 	KERNEL_NAME := zImage
 	KERNEL := kernel-bin | append-dtb
-	FILESYSTEMS := squashfs
-	IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
 	BLOCKSIZE := 128k
-	PAGESIZE := 2048
 endef
 
 # A reasonable set of default packages handling the NAS type
