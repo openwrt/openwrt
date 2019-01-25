@@ -113,7 +113,7 @@ define Device/dlink_dir-685
 	DEVICE_DTS := gemini-dlink-dir-685
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) \
 			kmod-switch-rtl8366rb swconfig \
-			rt2800-pci
+			kmod-rt2800-pci
 	IMAGES := factory.bin
 	IMAGE/factory.bin := dir685-images
 endef
