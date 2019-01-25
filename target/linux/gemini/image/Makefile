@@ -55,7 +55,7 @@ endef
 define Build/nas4220b-sq201-images
 	rm -rf $@-tmp
 	mkdir -p $@-tmp
-	dd if=$(IMAGE_ROOTFS) of=$@-tmp/rd.gz bs=6144k conv=sync
+	mv $@ $@-tmp/rd.gz
 	dd if=/dev/zero of=$@-tmp/hddapp.tgz bs=6144k count=1
 	cp $(IMAGE_KERNEL) $@-tmp/zImage
 	cp ./ImageInfo-$(1) $@-tmp/ImageInfo
@@ -120,7 +120,7 @@ define Device/nas4220b-sq201
 	ARTIFACT/zImage := append-kernel
 	IMAGES += rd.gz sysupgrade.tar.gz
 	IMAGE/rd.gz := append-rootfs | pad-to 6144k
-	IMAGE/sysupgrade.tar.gz := nas4220b-sq201-images $(1)
+	IMAGE/sysupgrade.tar.gz := append-rootfs | pad-to 6144k | nas4220b-sq201-images $(1)
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
 
