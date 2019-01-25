@@ -104,25 +104,25 @@ define Device/dlink-dir-685
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) \
 			kmod-switch-rtl8366rb swconfig \
 			rt2800-pci
-	IMAGES := fwupdate.bin
-	IMAGE/fwupdate.bin := dir685-images
+	IMAGES := factory.bin
+	IMAGE/factory.bin := dir685-images
 endef
 TARGET_DEVICES += dlink-dir-685
 
 define Device/dlink-dns-313
 	DEVICE_TITLE := D-Link DNS-313 1-Bay Network Storage Enclosure
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
-	IMAGES := dns313-bootpart.tar.gz
-	IMAGE/dns313-bootpart.tar.gz := dns313-images
+	IMAGES := factory.bin
+	IMAGE/factory.bin := dns313-images
 endef
 TARGET_DEVICES += dlink-dns-313
 
 define Device/nas4220b-sq201
 	ARTIFACTS := zImage
 	ARTIFACT/zImage := append-kernel
-	IMAGES += rd.gz sysupgrade.tar.gz
+	IMAGES += rd.gz factory.bin
 	IMAGE/rd.gz := append-rootfs | pad-to 6144k
-	IMAGE/sysupgrade.tar.gz := append-rootfs | pad-to 6144k | nas4220b-sq201-images $(1)
+	IMAGE/factory.bin := append-rootfs | pad-to 6144k | nas4220b-sq201-images $(1)
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
 
