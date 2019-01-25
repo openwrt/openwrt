@@ -115,14 +115,22 @@ define Device/dlink_dns-313
 endef
 TARGET_DEVICES += dlink_dns-313
 
-define Device/nas4220b-sq201
+define Device/itian-raidsonic
 	IMAGES := factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-to 6144k | nas4220b-sq201-images $(1)
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
 
+define Device/itian_sq201
+	$(Device/itian-raidsonic)
+	DEVICE_TITLE := ITian Square One SQ201
+	DEVICE_DTS := gemini-sq201
+	DEVICE_PACKAGES += rt61-pci usb2-pci
+endef
+TARGET_DEVICES += itian_sq201
+
 define Device/raidsonic_ib-4220-b
-	$(Device/nas4220b-sq201)
+	$(Device/itian-raidsonic)
 	DEVICE_TITLE := Raidsonic NAS IB-4220-B
 	DEVICE_DTS := gemini-nas4220b
 endef
@@ -134,14 +142,6 @@ define Device/teltonika_rut1xx
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
 TARGET_DEVICES += teltonika_rut1xx
-
-define Device/itian_sq201
-	$(Device/nas4220b-sq201)
-	DEVICE_TITLE := ITian Square One SQ201
-	DEVICE_DTS := gemini-sq201
-	DEVICE_PACKAGES += rt61-pci usb2-pci
-endef
-TARGET_DEVICES += itian_sq201
 
 define Device/wiliboard_wbd111
 	DEVICE_TITLE := Wiliboard WBD-111
