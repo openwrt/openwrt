@@ -118,10 +118,7 @@ endef
 TARGET_DEVICES += dlink-dns-313
 
 define Device/nas4220b-sq201
-	ARTIFACTS := zImage
-	ARTIFACT/zImage := append-kernel
-	IMAGES += rd.gz factory.bin
-	IMAGE/rd.gz := append-rootfs | pad-to 6144k
+	IMAGES := factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-to 6144k | nas4220b-sq201-images $(1)
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
