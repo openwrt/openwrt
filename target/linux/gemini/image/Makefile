@@ -53,15 +53,17 @@ endef
 # there when using OpenWRT. We just use that to create the
 # "sysupgrade" firmware image.
 define Build/nas4220b-sq201-images
-	rm -rf $@-tmp
-	mkdir -p $@-tmp
-	mv $@ $@-tmp/rd.gz
-	dd if=/dev/zero of=$@-tmp/hddapp.tgz bs=6144k count=1
-	cp $(IMAGE_KERNEL) $@-tmp/zImage
-	cp ./ImageInfo-$(1) $@-tmp/ImageInfo
-	(cd $@-tmp; tar --sort=name --owner=0 --group=0 --numeric-owner -czf $@ * \
+	mkdir -p $@.tmp
+
+	mv $@ $@.tmp/rd.gz
+	dd if=/dev/zero of=$@.tmp/hddapp.tgz bs=6144k count=1
+	cp $(IMAGE_KERNEL) $@.tmp/zImage
+	cp ./ImageInfo-$(1) $@.tmp/ImageInfo
+
+	(cd $@.tmp; tar --sort=name --owner=0 --group=0 --numeric-owner -czf $@ * \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)"))
-	rm -rf $@-tmp
+
+	rm -rf $@.tmp
 endef
 
 # WBD-111 and WBD-222:
