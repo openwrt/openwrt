@@ -80,7 +80,6 @@ endef
 # All DTB files are prefixed with "gemini-"
 define Device/Default
 	PROFILES := Default
-	DEVICE_DTS := $(patsubst %.dtb,%,$(notdir $(wildcard $(if $(IB),$(KDIR),$(DTS_DIR))/*-$(1).dtb)))
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
 	KERNEL_NAME := zImage
 	KERNEL := kernel-bin | append-dtb
@@ -96,23 +95,25 @@ GEMINI_NAS_PACKAGES:=kmod-md-mod kmod-md-linear kmod-md-multipath \
 		kmod-nls-utf8 kmod-usb-storage-extras \
 		samba36-server mdadm cfdisk fdisk e2fsprogs badblocks
 
-define Device/dlink-dir-685
+define Device/dlink_dir-685
 	DEVICE_TITLE := D-Link DIR-685 Xtreme N Storage Router
+	DEVICE_DTS := gemini-dlink-dir-685
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) \
 			kmod-switch-rtl8366rb swconfig \
 			rt2800-pci
 	IMAGES := factory.bin
 	IMAGE/factory.bin := dir685-images
 endef
-TARGET_DEVICES += dlink-dir-685
+TARGET_DEVICES += dlink_dir-685
 
-define Device/dlink-dns-313
+define Device/dlink_dns-313
 	DEVICE_TITLE := D-Link DNS-313 1-Bay Network Storage Enclosure
+	DEVICE_DTS := gemini-dlink-dns-313
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 	IMAGES := factory.bin
 	IMAGE/factory.bin := dns313-images
 endef
-TARGET_DEVICES += dlink-dns-313
+TARGET_DEVICES += dlink_dns-313
 
 define Device/nas4220b-sq201
 	IMAGES := factory.bin
@@ -120,35 +121,40 @@ define Device/nas4220b-sq201
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
 
-define Device/nas4220b
+define Device/raidsonic_ib-4220-b
 	$(Device/nas4220b-sq201)
 	DEVICE_TITLE := Raidsonic NAS IB-4220-B
+	DEVICE_DTS := gemini-nas4220b
 endef
-TARGET_DEVICES += nas4220b
+TARGET_DEVICES += raidsonic_ib-4220-b
 
-define Device/rut1xx
+define Device/teltonika_rut1xx
 	DEVICE_TITLE := Teltonika RUT1xx
+	DEVICE_DTS := gemini-rut1xx
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
-TARGET_DEVICES += rut1xx
+TARGET_DEVICES += teltonika_rut1xx
 
-define Device/sq201
+define Device/itian_sq201
 	$(Device/nas4220b-sq201)
 	DEVICE_TITLE := ITian Square One SQ201
+	DEVICE_DTS := gemini-sq201
 	DEVICE_PACKAGES += rt61-pci usb2-pci
 endef
-TARGET_DEVICES += sq201
+TARGET_DEVICES += itian_sq201
 
-define Device/wbd111
+define Device/wiliboard_wbd111
 	DEVICE_TITLE := Wiliboard WBD-111
+	DEVICE_DTS := gemini-wbd111
 	KERNEL := kernel-bin | append-dtb | wbd-nops
 endef
-TARGET_DEVICES += wbd111
+TARGET_DEVICES += wiliboard_wbd111
 
-define Device/wbd222
+define Device/wiliboard_wbd222
 	DEVICE_TITLE := Wiliboard WBD-222
+	DEVICE_DTS := gemini-wbd222
 	KERNEL := kernel-bin | append-dtb | wbd-nops
 endef
-TARGET_DEVICES += wbd222
+TARGET_DEVICES += wiliboard_wbd222
 
 $(eval $(call BuildImage))
