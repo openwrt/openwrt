@@ -27,18 +27,20 @@ endef
 # to satisfy the boot loader on the device. The zImage is
 # the only real content.
 define Build/dns313-images
-	if [ -d $(BIN_DIR)/.boot ] ; then rm -rf $(BIN_DIR)/.boot ; fi
-	mkdir -p $(BIN_DIR)/.boot
-	echo "dummy" > $(BIN_DIR)/.boot/dummyfile
-	dns313-header $(BIN_DIR)/.boot/dummyfile \
-		$(BIN_DIR)/.boot/rootfs.tgz
-	dns313-header $(BIN_DIR)/.boot/dummyfile \
-		$(BIN_DIR)/.boot/rd.gz
+	mkdir -p $@.tmp/.boot
+
+	echo "dummy" > $@.tmp/dummyfile
+
+	dns313-header $@.tmp/dummyfile \
+		$@.tmp/.boot/rootfs.tgz
+	dns313-header $@.tmp/dummyfile \
+		$@.tmp/.boot/rd.gz
 	dns313-header $(IMAGE_KERNEL) \
-		$(BIN_DIR)/.boot/zImage
-	rm -f $(BIN_DIR)/.boot/dummyfile
-	(cd $(BIN_DIR); tar -czf $@ .boot)
-	if [ -d $(BIN_DIR)/.boot ] ; then rm -rf $(BIN_DIR)/.boot ; fi
+		$@.tmp/.boot/zImage
+
+	tar -czf $@ -C @.tmp .boot
+
+	rm -rf $@.tmp
 endef
 
 # Create the special NAS4220B and Itian Square One SQ201 image
