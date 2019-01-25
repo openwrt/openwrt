@@ -12,12 +12,14 @@ include $(INCLUDE_DIR)/image.mk
 # D-Link devices.
 define Build/dir685-images
 	mkwrggimg -i $(IMAGE_KERNEL) \
-	-o $(BIN_DIR)/$(IMG_PREFIX)-dir685-fwupdate.bin \
+	-o $@.new \
 	-d /dev/mtdblock/1 \
 	-s wrgns01_dlwbr_dir685RBWW \
 	-v 'N/A' \
 	-m dir685 \
 	-B 96bb
+
+	mv $@.new $@
 endef
 
 # Build D-Link DNS-313 images using the special header tool.
@@ -35,7 +37,7 @@ define Build/dns313-images
 	dns313-header $(IMAGE_KERNEL) \
 		$(BIN_DIR)/.boot/zImage
 	rm -f $(BIN_DIR)/.boot/dummyfile
-	(cd $(BIN_DIR); tar -czf $(IMG_PREFIX)-dns313-bootpart.tar.gz .boot)
+	(cd $(BIN_DIR); tar -czf $@ .boot)
 	if [ -d $(BIN_DIR)/.boot ] ; then rm -rf $(BIN_DIR)/.boot ; fi
 endef
 
@@ -96,16 +98,16 @@ define Device/dlink-dir-685
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) \
 			kmod-switch-rtl8366rb swconfig \
 			rt2800-pci
-	IMAGES += dir685-image
-	IMAGE/dir685-image := dir685-images
+	IMAGES := fwupdate.bin
+	IMAGE/fwupdate.bin := dir685-images
 endef
 TARGET_DEVICES += dlink-dir-685
 
 define Device/dlink-dns-313
 	DEVICE_TITLE := D-Link DNS-313 1-Bay Network Storage Enclosure
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
-	IMAGES += dns313-image
-	IMAGE/dns313-image := dns313-images
+	IMAGES := dns313-bootpart.tar.gz
+	IMAGE/dns313-bootpart.tar.gz := dns313-images
 endef
 TARGET_DEVICES += dlink-dns-313
 
