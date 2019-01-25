@@ -38,7 +38,9 @@ define Build/dns313-images
 	dns313-header $(IMAGE_KERNEL) \
 		$@.tmp/.boot/zImage
 
-	tar -czf $@ -C @.tmp .boot
+	tar --sort=name --owner=0 --group=0 --numeric-owner -czf $@ \
+		-C $@.tmp .boot \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)")
 
 	rm -rf $@.tmp
 endef
@@ -57,8 +59,8 @@ define Build/nas4220b-sq201-images
 	dd if=/dev/zero of=$@-tmp/hddapp.tgz bs=6144k count=1
 	cp $(IMAGE_KERNEL) $@-tmp/zImage
 	cp ./ImageInfo-$(1) $@-tmp/ImageInfo
-	(cd $@-tmp; tar --owner=0 --group=0 --numeric-owner --mtime=@$(SOURCE_DATE_EPOCH) \
-			-czf $@ ImageInfo zImage rd.gz hddapp.tgz)
+	(cd $@-tmp; tar --sort=name --owner=0 --group=0 --numeric-owner -czf $@ * \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)"))
 	rm -rf $@-tmp
 endef
 
