@@ -45,6 +45,17 @@ define Build/dns313-images
 	rm -rf $@.tmp
 endef
 
+define Build/wiligear-image
+	$(STAGING_DIR_HOST)/bin/mkfwimage2 \
+		-m GEOS -f 0x30000000 -z \
+		-v $(1).v5.00.SL3512.OpenWrt.00000.000000.000000 \
+		-p Kernel:0x020000:0x100000:0:0:$(IMAGE_KERNEL) \
+		-p Ramdisk:0x120000:0x500000:0:0:$@ \
+		-o $@.new
+
+	mv $@.new $@
+endef
+
 # Create the special NAS4220B and Itian Square One SQ201 image
 # format with the squashfs and overlay inside the "rd.gz" file.
 # We pad it out to 6144K which is the size of the initramfs partition.
@@ -143,18 +154,28 @@ define Device/teltonika_rut1xx
 endef
 TARGET_DEVICES += teltonika_rut1xx
 
+# The wiliboard images need some changes to be functional and buildable.
+#
+# The dts would need to use the ecoscentric,redboot-fis-partitions partition
+# parser to get the correct partition offsets and size.
+#
+# The mkfwimage2 call need to be adjusted to reflect the real size of kernel
+# and rootfs. It is expected that the OEM firmware adjusts the on flash
+# partition table with the values defined in the image header.
 define Device/wiliboard_wbd111
 	DEVICE_TITLE := Wiliboard WBD-111
 	DEVICE_DTS := gemini-wbd111
 	KERNEL := kernel-bin | append-dtb | wbd-nops
+	IMAGES := factory.bin
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | wiligear-image "WILI-S.WILIBOARD"
 endef
-TARGET_DEVICES += wiliboard_wbd111
 
 define Device/wiliboard_wbd222
 	DEVICE_TITLE := Wiliboard WBD-222
 	DEVICE_DTS := gemini-wbd222
 	KERNEL := kernel-bin | append-dtb | wbd-nops
+	IMAGES := factory.bin
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | wiligear-image "WILI-S.WBD222"
 endef
-TARGET_DEVICES += wiliboard_wbd222
 
 $(eval $(call BuildImage))
