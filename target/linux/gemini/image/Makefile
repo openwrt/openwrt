@@ -71,6 +71,8 @@ define Build/nas4220b-sq201-images
 	cp $(IMAGE_KERNEL) $@.tmp/zImage
 	cp ./ImageInfo-$(1) $@.tmp/ImageInfo
 
+	sed -i -e "s/DATESTR/`date +%Y%m%d $(if $(SOURCE_DATE_EPOCH),--date "@$(SOURCE_DATE_EPOCH)")`/g" $@.tmp/ImageInfo
+
 	(cd $@.tmp; tar --sort=name --owner=0 --group=0 --numeric-owner -czf $@ * \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)"))
 
