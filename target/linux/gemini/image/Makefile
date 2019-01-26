@@ -130,7 +130,8 @@ TARGET_DEVICES += dlink_dns-313
 
 define Device/itian-raidsonic
 	IMAGES := factory.bin
-	IMAGE/factory.bin := append-rootfs | pad-to 6144k | nas4220b-sq201-images $(1)
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
+		nas4220b-sq201-images $(1)
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
 
