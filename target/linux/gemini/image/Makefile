@@ -147,13 +147,6 @@ define Device/raidsonic_ib-4220-b
 endef
 TARGET_DEVICES += raidsonic_ib-4220-b
 
-define Device/teltonika_rut1xx
-	DEVICE_TITLE := Teltonika RUT1xx
-	DEVICE_DTS := gemini-rut1xx
-	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
-endef
-TARGET_DEVICES += teltonika_rut1xx
-
 # The wiliboard images need some changes to be functional and buildable.
 #
 # The dts would need to use the ecoscentric,redboot-fis-partitions partition
