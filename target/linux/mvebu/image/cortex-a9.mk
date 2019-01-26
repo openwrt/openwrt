@@ -167,7 +167,8 @@ endef
 define Device/mikrotik-crs305
 	$(call Device/mikrotik,CRS305)
 	KERNEL := kernel-bin | append-dtb
-  DEVICE_DTS := armada-xp-98dx3236-mikrotik-crs305
+	KERNEL_INITRAMFS := kernel-bin | append-dtb | elf-wrapper
+	DEVICE_DTS := armada-xp-98dx3236-mikrotik-crs305
 endef
 TARGET_DEVICES += mikrotik-crs305
 

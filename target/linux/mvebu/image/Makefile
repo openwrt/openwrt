@@ -13,6 +13,8 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR := 0x00008000
 
+WRAPPER_LOADADDR := 0x80001000
+
 SIGNATURE:=$(shell printf "%.8s" $(SOURCE_DATE_EPOCH))
 
 define Build/dtb
@@ -78,6 +80,17 @@ define Build/omnia-medkit-initramfs
 	$(TAR) -rp --numeric-owner --owner=0 --group=0 --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 		--file=$@ -C $(dir $(IMAGE_KERNEL))boot/ .
+endef
+
+define Build/elf-wrapper
+	rm -rf $@.src
+	$(MAKE) -C elf-wrapper \
+		PKG_BUILD_DIR="$@.src" \
+                WRAPPER_LOADADDR=$(WRAPPER_LOADADDR) \
+		WRAPPER_FILE="$(@)" \
+                compile
+        mv "$@.src/wrapper.elf" "$@"
+	rm -rf $@.src	
 endef
 
 define Device/Default
