@@ -138,7 +138,7 @@ define Device/itian_sq201
 	$(Device/itian-raidsonic)
 	DEVICE_TITLE := ITian Square One SQ201
 	DEVICE_DTS := gemini-sq201
-	DEVICE_PACKAGES += rt61-pci usb2-pci
+	DEVICE_PACKAGES += kmod-rt61-pci kmod-usb2-pci
 endef
 TARGET_DEVICES += itian_sq201
 
