@@ -23,8 +23,16 @@
 		};
 	};
 
-	cputemp@0 {
+	cputemp {
 		compatible = "lantiq,cputemp";
+	};
+
+	reboot {
+		compatible = "syscon-reboot";
+
+		regmap = <&rcu0>;
+		offset = <0x10>;
+		mask = <0xe0000000>;
 	};
 
 	biu@1f800000 {
@@ -146,15 +154,6 @@
 				resets = <&reset1 5 5>, <&reset0 4 4>;
 				reset-names = "phy", "ctrl";
 				#phy-cells = <0>;
-			};
-
-			reboot@10 {
-				compatible = "syscon-reboot";
-				reg = <0x10 4>;
-
-				regmap = <&rcu0>;
-				offset = <0x10>;
-				mask = <0xe0000000>;
 			};
 		};
 	};

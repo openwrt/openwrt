@@ -149,11 +149,10 @@
 		};
 	};
 
-	mdio@0 {
+	mdio {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "lantiq,xrx200-mdio";
-		reg = <0>;
 
 		phy1: ethernet-phy@1 {
 			reg = <0x1>;

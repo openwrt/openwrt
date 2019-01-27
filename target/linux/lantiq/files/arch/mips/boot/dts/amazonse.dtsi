@@ -23,6 +23,14 @@
 		};
 	};
 
+	reboot {
+		compatible = "syscon-reboot";
+
+		regmap = <&rcu0>;
+		offset = <0x10>;
+		mask = <0x40000000>;
+	};
+
 	biu@1f800000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -95,15 +103,6 @@
 				resets = <&reset 4 4>;
 				reset-names = "ctrl";
 				#phy-cells = <0>;
-			};
-
-			reboot@10 {
-				compatible = "syscon-reboot";
-				reg = <0x10 4>;
-
-				regmap = <&rcu0>;
-				offset = <0x10>;
-				mask = <0x40000000>;
 			};
 		};
 	};
