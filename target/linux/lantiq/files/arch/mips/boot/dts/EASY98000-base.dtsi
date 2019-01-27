@@ -49,7 +49,7 @@
 };
 
 &ebu_cs1 {
-	eth0: ethernet@0000000 {
+	eth0: ethernet@3 {
 		compatible = "davicom,dm9000";
 		device_type = "network";
 		reg = <0x0000003 0x1>, <0x0000001 0x1>;
@@ -79,7 +79,7 @@
 &spi {
 	status = "okay";
 
-	eeprom@1 {
+	eeprom@2 {
 		compatible = "atmel,at25", "atmel,at25160n";
 		reg = <2>;
 		spi-max-frequency = <1000000>;
