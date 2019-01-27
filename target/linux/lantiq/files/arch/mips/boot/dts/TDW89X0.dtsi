@@ -29,8 +29,6 @@
 
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <100>;
 		reset {
 			label = "reset";
@@ -242,8 +240,6 @@
 	pinctrl-0 = <&pins_spi_default>;
 
 	m25p80@4 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <4>;
 		spi-max-frequency = <33250000>;

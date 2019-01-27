@@ -29,8 +29,6 @@
 
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <100>;
 		reset {
 			label = "reset";
@@ -158,8 +156,6 @@
 		lantiq,cs = <1>;
 		bank-width = <2>;
 		reg = <1 0x0 0x2000000 >;
-		#address-cells = <1>;
-		#size-cells = <1>;
 		req-mask = <0x1>;  /* PCI request lines to mask during NAND access */
 
 		partitions {

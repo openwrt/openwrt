@@ -48,13 +48,12 @@
 		compatible = "lantiq,nor";
 		bank-width = <2>;
 		reg = <0 0x0 0x1000000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
 
 		partitions {
-			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			compatible = "fixed-partitions";
+
 			urlader: partition@0 {
 				label = "urlader";
 				reg = <0x00000 0x20000>;
