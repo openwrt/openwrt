@@ -14,8 +14,12 @@
 	};
 
 	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		cpu@0 {
 			compatible = "mips,mips4Kc";
+			reg = <0>;
 		};
 	};
 
@@ -154,6 +158,7 @@
 
 		mei@e116000 {
 			compatible = "lantiq,mei-xway";
+			reg = <0xe116000 0x400>;
 			interrupt-parent = <&icu0>;
 			interrupts = <81>;
 		};
@@ -182,6 +187,7 @@
 
 		ppe@e234000 {
 			compatible = "lantiq,ppe-ase";
+			reg = <0xe234000 0x40000>;
 			interrupt-parent = <&icu0>;
 			interrupts = <85>;
 		};

@@ -14,8 +14,12 @@
 	};
 
 	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		cpu@0 {
 			compatible = "mips,mips34Kc";
+			reg = <0>;
 		};
 	};
 
@@ -291,6 +295,7 @@
 
 		ppe@e234000 {
 			compatible = "lantiq,ppe-xrx200";
+			reg = <0xe234000 0x3ffd>;
 			interrupt-parent = <&icu0>;
 			interrupts = <96>;
 			resets = <&reset0 3 3>, <&reset0 11 11>, <&reset0 23 23>;
@@ -303,6 +308,8 @@
 			#interrupt-cells = <1>;
 			#size-cells = <2>;
 			#address-cells = <3>;
+
+			reg = <0xd900000 0x1000>;
 
 			interrupt-parent = <&icu0>;
 			interrupts = <161 144>;

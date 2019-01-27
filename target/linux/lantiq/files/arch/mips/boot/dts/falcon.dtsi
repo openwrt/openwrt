@@ -4,8 +4,12 @@
 	compatible = "lantiq,falcon";
 
 	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		cpu@0 {
 			compatible = "mips,mips34kc";
+			reg = <0>;
 		};
 	};
 
