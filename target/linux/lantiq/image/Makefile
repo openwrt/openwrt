@@ -106,6 +106,21 @@ define Device/AVM
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 
+define Device/netgear_dm200_common
+  DEVICE_DTS := DM200
+  IMAGES := sysupgrade.bin factory.img
+  IMAGE/sysupgrade.bin := append-kernel | \
+	pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
+	pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.img := $$(IMAGE/sysupgrade.bin) | netgear-dni
+  IMAGE_SIZE := 7872k
+  DEVICE_TITLE := Netgear DM200
+  NETGEAR_BOARD_ID := DM200
+  NETGEAR_HW_ID := 29765233+8+0+64+0+0
+endef
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
+
 ifeq ($(SUBTARGET),ase)
 
 define Device/allnet_all0333cj
@@ -594,20 +609,7 @@ define Device/bt_homehub-v5a
 endef
 TARGET_DEVICES += bt_homehub-v5a
 
-define Device/netgear_dm200
-  DEVICE_DTS := DM200
-  IMAGES := sysupgrade.bin factory.img
-  IMAGE/sysupgrade.bin := append-kernel | \
-	pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
-	pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.img := $$(IMAGE/sysupgrade.bin) | netgear-dni
-  IMAGE_SIZE := 7872k
-  DEVICE_TITLE := Netgear DM200
-  NETGEAR_BOARD_ID := DM200
-  NETGEAR_HW_ID := 29765233+8+0+64+0+0
-endef
-DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
+Device/netgear_dm200 = $(Device/netgear_dm200_common)
 TARGET_DEVICES += netgear_dm200
 
 define Device/lantiq_easy80920-nand
@@ -726,6 +728,16 @@ define Device/arcadyan_vgv7519-brn
   SUPPORTED_DEVICES += VGV7519BRN
 endef
 TARGET_DEVICES += arcadyan_vgv7519-brn
+
+endif
+
+ifeq ($(SUBTARGET),xrx200_tiny)
+
+define Device/netgear_dm200
+  $(Device/netgear_dm200_common)
+  KERNEL_SIZE := 2048k
+endef
+TARGET_DEVICES += netgear_dm200
 
 endif
 

@@ -29,7 +29,7 @@ endef
 
 KernelPackage/ltq-deu-danube=$(call KernelPackage/ltq-deu-template,danube,xway)
 KernelPackage/ltq-deu-ar9=$(call KernelPackage/ltq-deu-template,ar9,xway)
-KernelPackage/ltq-deu-vr9=$(call KernelPackage/ltq-deu-template,vr9,xrx200)
+KernelPackage/ltq-deu-vr9=$(call KernelPackage/ltq-deu-template,vr9,xrx200_all)
 
 define Build/Configure
 endef

@@ -19,7 +19,7 @@ define Package/ltq-vdsl-vr9-vectoring-fw-installer
   TITLE:=VDSL2 Vectoring Firmware installer
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=@TARGET_lantiq_xrx200 +kmod-ltq-vdsl-vr9
+  DEPENDS:=@TARGET_lantiq_xrx200_all +kmod-ltq-vdsl-vr9
 endef
 
 define Build/Prepare

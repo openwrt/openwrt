@@ -29,7 +29,7 @@ endef
 KernelPackage/ltq-atm-danube=$(call KernelPackage/ltq-atm-template,danube,(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy) +kmod-ltq-adsl-danube-mei)
 KernelPackage/ltq-atm-ar9=$(call KernelPackage/ltq-atm-template,ar9,TARGET_lantiq_xway +kmod-ltq-adsl-ar9-mei)
 KernelPackage/ltq-atm-ase=$(call KernelPackage/ltq-atm-template,ase,TARGET_lantiq_ase +kmod-ltq-adsl-ase-mei)
-KernelPackage/ltq-atm-vr9=$(call KernelPackage/ltq-atm-template,vr9,TARGET_lantiq_xrx200 +kmod-ltq-vdsl-vr9-mei)
+KernelPackage/ltq-atm-vr9=$(call KernelPackage/ltq-atm-template,vr9,TARGET_lantiq_xrx200_all +kmod-ltq-vdsl-vr9-mei)
 
 define Build/Configure
 endef

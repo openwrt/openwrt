@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 BOARD:=lantiq
 BOARDNAME:=Lantiq
 FEATURES:=squashfs
-SUBTARGETS:=xrx200 xway xway_legacy falcon ase
+SUBTARGETS:=xrx200 xrx200_tiny xway xway_legacy falcon ase
 MAINTAINER:=John Crispin <john@phrozen.org>
 
 KERNEL_PATCHVER:=4.14

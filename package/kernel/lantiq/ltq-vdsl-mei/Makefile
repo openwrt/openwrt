@@ -30,7 +30,7 @@ define KernelPackage/ltq-vdsl-vr9-mei
   TITLE:=mei driver for vdsl
   SECTION:=sys
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_lantiq_xrx200 +kmod-ltq-ifxos
+  DEPENDS:=@TARGET_lantiq_xrx200_all +kmod-ltq-ifxos
   FILES:=$(PKG_BUILD_DIR)/src/drv_mei_cpe.ko
   AUTOLOAD:=$(call AutoLoad,50,drv_mei_cpe)
 endef
@@ -45,7 +45,7 @@ define Package/ltq-vdsl-mei_test
   CATEGORY:=Network
   TITLE:=Lantiq mei driver test tool
   URL:=http://www.lantiq.com/
-  DEPENDS:=@TARGET_lantiq_xrx200
+  DEPENDS:=@TARGET_lantiq_xrx200_all
 endef
 
 define Package/ltq-vdsl-mei_test/description
