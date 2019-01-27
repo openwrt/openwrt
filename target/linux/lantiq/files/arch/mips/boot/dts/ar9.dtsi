@@ -85,6 +85,8 @@
 		};
 
 		rcu0: rcu@203000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
 			compatible = "lantiq,xrx100-rcu", "simple-mfd", "syscon";
 			reg = <0x203000 0x1000>;
 			ranges = <0x0 0x203000 0x100>;
