@@ -93,7 +93,8 @@ define KernelPackage/sound-soc-3dlab-nano-player
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-3dlab-nano-player)
   DEPENDS:= \
 	@LINUX_4_14 \
-	kmod-sound-soc-bcm2835-i2s
+	kmod-sound-soc-bcm2835-i2s \
+	+kmod-regmap-i2c
 endef
 
 define KernelPackage/sound-soc-3dlab-nano-player/description
