@@ -95,6 +95,7 @@ define KernelPackage/sound-soc-3dlab-nano-player
 	@LINUX_4_14 \
 	kmod-sound-soc-bcm2835-i2s \
 	+kmod-regmap-i2c
+  $(call AddDepends/sound)
 endef
 
 define KernelPackage/sound-soc-3dlab-nano-player/description
