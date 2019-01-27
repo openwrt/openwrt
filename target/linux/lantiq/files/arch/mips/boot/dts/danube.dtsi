@@ -130,16 +130,6 @@
 			ranges = <0 0 0x0 0x3ffffff /* addrsel0 */
 				1 0 0x4000000 0x4000010>; /* addsel1 */
 			compatible = "lantiq,localbus", "simple-bus";
-
-			gpiomm: gpiomm@1 {
-				compatible = "lantiq,gpio-mm";
-				reg = <1 0x0 0x10 >;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				#gpio-cells = <2>;
-				gpio-controller;
-				status = "disabled";
-			};
 		};
 
 		gptu@e100a00 {

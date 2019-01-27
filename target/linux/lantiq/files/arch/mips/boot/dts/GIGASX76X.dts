@@ -64,12 +64,6 @@
 	};
 };
 
-
-&gpiomm {
-	status = "okay";
-	lantiq,shadow = <0x3>;
-};
-
 &gpios {
 	status = "okay";
 };
@@ -104,6 +98,16 @@
 				reg = <0x40000 0x7c0000>;
 			};
 		};
+	};
+
+	gpiomm: gpiomm@1 {
+		compatible = "lantiq,gpio-mm";
+		reg = <1 0x0 0x10 >;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		lantiq,shadow = <0x3>;
 	};
 };
 

@@ -132,11 +132,6 @@
 	};
 };
 
-&gpiomm {
-	status = "okay";
-	lantiq,shadow = <0x400>;
-};
-
 &gsw {
 	phy-mode = "mii";
 	mtd-mac-address = <&boardconfig 0x16>;
@@ -175,6 +170,16 @@
 				read-only;
 			};
 		};
+	};
+
+	gpiomm: gpiomm@1 {
+		compatible = "lantiq,gpio-mm";
+		reg = <1 0x0 0x10 >;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		lantiq,shadow = <0x400>;
 	};
 };
 
