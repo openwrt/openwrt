@@ -15,8 +15,6 @@ Signed-off-by: Maxime Ripard <maxime.ripard@bootlin.com>
  arch/arm64/boot/dts/allwinner/sun50i-a64.dtsi            | 7 +++++++
  2 files changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/watchdog/sunxi-wdt.txt b/Documentation/devicetree/bindings/watchdog/sunxi-wdt.txt
-index 62dd5baad70e..04fc368d828f 100644
 --- a/Documentation/devicetree/bindings/watchdog/sunxi-wdt.txt
 +++ b/Documentation/devicetree/bindings/watchdog/sunxi-wdt.txt
 @@ -2,8 +2,10 @@ Allwinner SoCs Watchdog timer
@@ -32,11 +30,9 @@ index 62dd5baad70e..04fc368d828f 100644
  - reg : Specifies base physical address and size of the registers.
  
  Example:
-diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64.dtsi b/arch/arm64/boot/dts/allwinner/sun50i-a64.dtsi
-index 64e452a758fa..8401e7f887ff 100644
 --- a/arch/arm64/boot/dts/allwinner/sun50i-a64.dtsi
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64.dtsi
-@@ -665,5 +665,12 @@
+@@ -537,5 +537,12 @@
  			#address-cells = <1>;
  			#size-cells = <0>;
  		};
@@ -49,6 +45,3 @@ index 64e452a758fa..8401e7f887ff 100644
 +		};
  	};
  };
--- 
-2.17.1
-
