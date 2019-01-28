@@ -17,15 +17,17 @@
  	writel(reload, cns3xxx_tmr1 + TIMER1_AUTO_RELOAD_OFFSET);
  	ctrl |= (1 << 0) | (1 << 2) | (1 << 9);
  	writel(ctrl, cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
-@@ -175,7 +176,7 @@ static struct clock_event_device cns3xxx
+@@ -175,8 +176,8 @@ static struct clock_event_device cns3xxx
  	.set_state_oneshot	= cns3xxx_set_oneshot,
  	.tick_resume		= cns3xxx_shutdown,
  	.set_next_event		= cns3xxx_timer_set_next_event,
 -	.rating			= 350,
+-	.cpumask		= cpu_all_mask,
 +	.rating			= 300,
- 	.cpumask		= cpu_all_mask,
++	.cpumask		= cpu_possible_mask,
  };
  
+ static void __init cns3xxx_clockevents_init(unsigned int timer_irq)
 @@ -220,6 +221,32 @@ static void __init cns3xxx_init_twd(void
  	twd_local_timer_register(&cns3xx_twd_local_timer);
  }
