@@ -282,10 +282,6 @@
 		};
 	};
 
-	sbs1@1f700000 {
-
-	};
-
 	biu@1f800000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -339,8 +335,8 @@
 				lantiq,function = "asc";
 			};
 		};
-		i2c_pins: i2c {
-			i2c {
+		i2c_pins: i2c_pins {
+			i2c_pins {
 				lantiq,groups = "i2c";
 				lantiq,function = "i2c";
 			};
