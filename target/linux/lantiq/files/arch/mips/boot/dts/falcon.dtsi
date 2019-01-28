@@ -27,31 +27,6 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	clocks {
-		compatible = "simple-bus";
-
-		cpu_clk: cpu {
-			compatible = "fixed-clock";
-			#clock-cells = <0>;
-			clock-frequency = <400000000>;
-			clock-output-names = "cpu";
-		};
-
-		io_clk: io {
-			compatible = "fixed-clock";
-			#clock-cells = <0>;
-			clock-frequency = <200000000>;
-			clock-output-names = "io";
-		};
-
-		fpi_clk: fpi {
-			compatible = "fixed-clock";
-			#clock-cells = <0>;
-			clock-frequency = <100000000>;
-			clock-output-names = "fpi";
-		};
-	};
-
 	ebu_cs0: localbus@10000000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -303,7 +278,6 @@
 		watchdog@803f0 {
 			compatible = "lantiq,wdt";
 			reg = <0x803f0 0x10>;
-			clocks = <&io_clk>; /* currently no effect */
 		};
 	};
 
