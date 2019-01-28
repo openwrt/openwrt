@@ -64,6 +64,9 @@ set_state() {
 	dsl-274xb-f)
 		status_led="dsl-274xb:green:power"
 		;;
+	dsl-2750u-c1)
+		status_led="dsl-2750u-c1:green:power"
+		;;
 	dsl-275xb-d)
 		status_led="dsl-275xb:green:power"
 		;;

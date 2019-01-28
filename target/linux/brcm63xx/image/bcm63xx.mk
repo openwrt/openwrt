@@ -549,6 +549,19 @@ define Device/DSL274XB-F1
 endef
 TARGET_DEVICES += DSL274XB-F1
 
+define Device/DSL2750U-C1
+  $(Device/bcm63xx)
+  IMAGES += sysupgrade.bin
+  DEVICE_TITLE := D-Link DSL-2750U rev C1
+  DEVICE_DTS := dsl-2750u-c1
+  CFE_BOARD_ID := 963281TAVNG
+  CFE_CHIP_ID := 6328
+  FLASH_MB := 8
+  DEVICE_PACKAGES := \
+    $(USB2_PACKAGES) $(B43_PACKAGES)
+endef
+TARGET_DEVICES += DSL2750U-C1
+
 define Device/DSL275XB-D1
   $(Device/bcm63xx)
   DEVICE_TITLE := D-Link DSL-2750B/DSL-2751 rev D1
