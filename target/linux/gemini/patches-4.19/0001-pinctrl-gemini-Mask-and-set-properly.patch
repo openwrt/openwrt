@@ -17,11 +17,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-gemini.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/pinctrl-gemini.c b/drivers/pinctrl/pinctrl-gemini.c
-index fa7d998e1d5a..1e484a36ff07 100644
 --- a/drivers/pinctrl/pinctrl-gemini.c
 +++ b/drivers/pinctrl/pinctrl-gemini.c
-@@ -2184,7 +2184,8 @@ static int gemini_pmx_set_mux(struct pinctrl_dev *pctldev,
+@@ -2184,7 +2184,8 @@ static int gemini_pmx_set_mux(struct pin
  		 func->name, grp->name);
  
  	regmap_read(pmx->map, GLOBAL_MISC_CTRL, &before);
@@ -31,6 +29,3 @@ index fa7d998e1d5a..1e484a36ff07 100644
  			   grp->value);
  	regmap_read(pmx->map, GLOBAL_MISC_CTRL, &after);
  
--- 
-2.19.2
-

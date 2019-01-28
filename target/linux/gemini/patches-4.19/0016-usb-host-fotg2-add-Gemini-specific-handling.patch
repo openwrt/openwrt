@@ -20,8 +20,6 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/usb/host/fotg210-hcd.c | 76 ++++++++++++++++++++++++++++++++++
  2 files changed, 77 insertions(+)
 
-diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
-index 1a4ea98cac2a..308d514c9a2a 100644
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
 @@ -372,6 +372,7 @@ config USB_ISP1362_HCD
@@ -32,8 +30,6 @@ index 1a4ea98cac2a..308d514c9a2a 100644
  	---help---
  	  Faraday FOTG210 is an OTG controller which can be configured as
  	  an USB2.0 host. It is designed to meet USB2.0 EHCI specification
-diff --git a/drivers/usb/host/fotg210-hcd.c b/drivers/usb/host/fotg210-hcd.c
-index 6e4b40cd5916..5abb07f4136f 100644
 --- a/drivers/usb/host/fotg210-hcd.c
 +++ b/drivers/usb/host/fotg210-hcd.c
 @@ -33,6 +33,10 @@
@@ -47,7 +43,7 @@ index 6e4b40cd5916..5abb07f4136f 100644
  
  #include <asm/byteorder.h>
  #include <asm/irq.h>
-@@ -5554,6 +5558,72 @@ static void fotg210_init(struct fotg210_hcd *fotg210)
+@@ -5554,6 +5558,72 @@ static void fotg210_init(struct fotg210_
  	iowrite32(value, &fotg210->regs->otgcsr);
  }
  
@@ -120,7 +116,7 @@ index 6e4b40cd5916..5abb07f4136f 100644
  /**
   * fotg210_hcd_probe - initialize faraday FOTG210 HCDs
   *
-@@ -5631,6 +5701,12 @@ static int fotg210_hcd_probe(struct platform_device *pdev)
+@@ -5631,6 +5701,12 @@ static int fotg210_hcd_probe(struct plat
  
  	fotg210_init(fotg210);
  
@@ -133,6 +129,3 @@ index 6e4b40cd5916..5abb07f4136f 100644
  	retval = usb_add_hcd(hcd, irq, IRQF_SHARED);
  	if (retval) {
  		dev_err(dev, "failed to add hcd with err %d\n", retval);
--- 
-2.19.2
-

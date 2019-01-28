@@ -11,11 +11,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-gemini.c | 32 ++++++++++++++++----------------
  1 file changed, 16 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-gemini.c b/drivers/pinctrl/pinctrl-gemini.c
-index 3535f9841861..f75bf6f16a2e 100644
 --- a/drivers/pinctrl/pinctrl-gemini.c
 +++ b/drivers/pinctrl/pinctrl-gemini.c
-@@ -2207,9 +2207,9 @@ static int gemini_pmx_set_mux(struct pinctrl_dev *pctldev,
+@@ -2207,9 +2207,9 @@ static int gemini_pmx_set_mux(struct pin
  		return -ENODEV;
  	}
  
@@ -28,7 +26,7 @@ index 3535f9841861..f75bf6f16a2e 100644
  
  	regmap_read(pmx->map, GLOBAL_MISC_CTRL, &before);
  	regmap_update_bits(pmx->map, GLOBAL_MISC_CTRL,
-@@ -2240,10 +2240,10 @@ static int gemini_pmx_set_mux(struct pinctrl_dev *pctldev,
+@@ -2240,10 +2240,10 @@ static int gemini_pmx_set_mux(struct pin
  				"GLOBAL MISC CTRL before: %08x, after %08x, expected %08x\n",
  				before, after, expected);
  		} else {
@@ -43,7 +41,7 @@ index 3535f9841861..f75bf6f16a2e 100644
  		}
  	}
  
-@@ -2262,10 +2262,10 @@ static int gemini_pmx_set_mux(struct pinctrl_dev *pctldev,
+@@ -2262,10 +2262,10 @@ static int gemini_pmx_set_mux(struct pin
  				"GLOBAL MISC CTRL before: %08x, after %08x, expected %08x\n",
  				before, after, expected);
  		} else {
@@ -58,7 +56,7 @@ index 3535f9841861..f75bf6f16a2e 100644
  		}
  	}
  
-@@ -2492,9 +2492,9 @@ static int gemini_pinconf_group_set(struct pinctrl_dev *pctldev,
+@@ -2492,9 +2492,9 @@ static int gemini_pinconf_group_set(stru
  			regmap_update_bits(pmx->map, GLOBAL_IODRIVE,
  					   grp->driving_mask,
  					   val);
@@ -71,7 +69,7 @@ index 3535f9841861..f75bf6f16a2e 100644
  			break;
  		default:
  			dev_err(pmx->dev, "invalid config param %04x\n", param);
-@@ -2585,8 +2585,8 @@ static int gemini_pmx_probe(struct platform_device *pdev)
+@@ -2585,8 +2585,8 @@ static int gemini_pmx_probe(struct platf
  	/* Print initial state */
  	tmp = val;
  	for_each_set_bit(i, &tmp, PADS_MAXBIT) {
@@ -82,6 +80,3 @@ index 3535f9841861..f75bf6f16a2e 100644
  	}
  
  	/* Check if flash pin is set */
--- 
-2.19.2
-

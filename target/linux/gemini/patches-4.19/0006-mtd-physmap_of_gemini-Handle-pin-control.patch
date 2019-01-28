@@ -37,8 +37,6 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/mtd/maps/physmap_of_gemini.c | 105 ++++++++++++++++++++++++++-
  2 files changed, 105 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/maps/Kconfig b/drivers/mtd/maps/Kconfig
-index afb36bff13a7..00efbf246849 100644
 --- a/drivers/mtd/maps/Kconfig
 +++ b/drivers/mtd/maps/Kconfig
 @@ -89,6 +89,7 @@ config MTD_PHYSMAP_OF_GEMINI
@@ -49,8 +47,6 @@ index afb36bff13a7..00efbf246849 100644
  	help
  	  This provides some extra DT physmap parsing for the Gemini
  	  platforms, some detection and setting up parallel mode on the
-diff --git a/drivers/mtd/maps/physmap_of_gemini.c b/drivers/mtd/maps/physmap_of_gemini.c
-index 830b1b7e702b..7c2b67460192 100644
 --- a/drivers/mtd/maps/physmap_of_gemini.c
 +++ b/drivers/mtd/maps/physmap_of_gemini.c
 @@ -10,9 +10,11 @@
@@ -65,7 +61,7 @@ index 830b1b7e702b..7c2b67460192 100644
  #include "physmap_of_gemini.h"
  
  /*
-@@ -49,6 +51,77 @@ static const struct of_device_id syscon_match[] = {
+@@ -49,6 +51,77 @@ static const struct of_device_id syscon_
  	{ },
  };
  
@@ -143,7 +139,7 @@ index 830b1b7e702b..7c2b67460192 100644
  int of_flash_probe_gemini(struct platform_device *pdev,
  			  struct device_node *np,
  			  struct map_info *map)
-@@ -62,6 +135,11 @@ int of_flash_probe_gemini(struct platform_device *pdev,
+@@ -62,6 +135,11 @@ int of_flash_probe_gemini(struct platfor
  	if (!of_device_is_compatible(np, "cortina,gemini-flash"))
  		return 0;
  
@@ -155,7 +151,7 @@ index 830b1b7e702b..7c2b67460192 100644
  	rmap = syscon_regmap_lookup_by_phandle(np, "syscon");
  	if (IS_ERR(rmap)) {
  		dev_err(dev, "no syscon\n");
-@@ -96,7 +174,32 @@ int of_flash_probe_gemini(struct platform_device *pdev,
+@@ -96,7 +174,32 @@ int of_flash_probe_gemini(struct platfor
  				 map->bankwidth * 8);
  	}
  
@@ -189,6 +185,3 @@ index 830b1b7e702b..7c2b67460192 100644
  
  	return 0;
  }
--- 
-2.19.2
-
