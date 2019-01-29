@@ -647,6 +647,8 @@ define KernelPackage/ipt-tproxy
   TITLE:=Transparent proxying support
   DEPENDS+=+kmod-ipt-conntrack +IPV6:kmod-nf-conntrack6 +IPV6:kmod-ip6tables
   KCONFIG:= \
+  	CONFIG_NF_SOCKET_IPV4 \
+  	CONFIG_NF_SOCKET_IPV6 \
   	CONFIG_NETFILTER_XT_MATCH_SOCKET \
   	CONFIG_NETFILTER_XT_TARGET_TPROXY
   FILES:= \
