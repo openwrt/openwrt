@@ -62,6 +62,21 @@ define Device/8dev_jalapeno
 endef
 TARGET_DEVICES += 8dev_jalapeno
 
+define Device/alfa-network_ap120c-ac
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_TITLE := ALFA Network AP120C-AC
+	DEVICE_DTS := qcom-ipq4018-ap120c-ac
+	DEVICE_PACKAGES := ipq-wifi-alfa-network_ap120c-ac kmod-usb-acm \
+		kmod-tpm-i2c-atmel uboot-envtools
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 65536k
+	IMAGES := nand-factory.bin nand-sysupgrade.bin
+	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
+endef
+TARGET_DEVICES += alfa-network_ap120c-ac
+
 define Device/asus_map-ac2200
 	$(call Device/FitImageLzma)
 	DEVICE_DTS := qcom-ipq4019-map-ac2200
