@@ -236,6 +236,36 @@
 
 /include/ "fsl/p1010si-post.dtsi"
 
+/ {
+	cpus {
+		PowerPC,P1010@0 {
+			bus-frequency = < 0x17d783fc >;
+			timebase-frequency = < 0x2faf07f >;
+			clock-frequency = < 0x2faf07f8 >;
+		};
+	};
+
+	memory {
+		reg = < 0x00 0x00 0x00 0x8000000 >;
+	};
+
+	soc@ffe00000 {
+		bus-frequency = < 0x17d783fc >;
+
+		serial@4600 {
+			clock-frequency = < 0x17d783fc >;
+		};
+
+		serial@4500 {
+			clock-frequency = < 0x17d783fc >;
+		};
+
+		pic@40000 {
+			clock-frequency = < 0x17d783fc >;
+		};
+	};
+};
+
 /*
  * The TL-WDR4900 v1 uses the NXP (Freescale) P1014 SoC which is closely
  * related to the P1010.
