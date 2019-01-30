@@ -104,12 +104,8 @@ define Package/openssl-util
   $(call Package/openssl/Default)
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+libopenssl
+  DEPENDS:=+libopenssl +libopenssl-conf
   TITLE+= (utility)
-endef
-
-define Package/openssl-util/conffiles
-/etc/ssl/openssl.cnf
 endef
 
 define Package/openssl-util/description
@@ -117,11 +113,28 @@ $(call Package/openssl/Default/description)
 This package contains the OpenSSL command-line utility.
 endef
 
+define Package/libopenssl-conf
+  $(call Package/openssl/Default)
+  SUBMENU:=SSL
+  TITLE:=/etc/ssl/openssl.cnf config file
+  DEPENDS:=libopenssl
+endef
+
+define Package/libopenssl-conf/conffiles
+/etc/ssl/openssl.cnf
+endef
+
+define Package/libopenssl-conf/description
+$(call Package/openssl/Default/description)
+This package installs the OpenSSL configuration file /etc/ssl/openssl.cnf.
+endef
+
 define Package/libopenssl-afalg
   $(call Package/openssl/Default)
   SUBMENU:=SSL
   TITLE:=AFALG hardware acceleration engine
-  DEPENDS:=libopenssl @OPENSSL_ENGINE @KERNEL_AIO @!LINUX_3_18 +kmod-crypto-user
+  DEPENDS:=libopenssl @OPENSSL_ENGINE @KERNEL_AIO @!LINUX_3_18 +kmod-crypto-user \
+	   +libopenssl-conf
 endef
 
 define Package/libopenssl-afalg/description
@@ -136,7 +149,8 @@ define Package/libopenssl-padlock
   $(call Package/openssl/Default)
   SUBMENU:=SSL
   TITLE:=VIA Padlock hardware acceleration engine
-  DEPENDS:=libopenssl @OPENSSL_ENGINE @TARGET_x86 +kmod-crypto-hw-padlock
+  DEPENDS:=libopenssl @OPENSSL_ENGINE @TARGET_x86 +kmod-crypto-hw-padlock \
+	   +libopenssl-conf
 endef
 
 define Package/libopenssl-padlock/description
@@ -335,9 +349,12 @@ define Package/libopenssl/install
 	$(if $(CONFIG_OPENSSL_ENGINE),$(INSTALL_DIR) $(1)/usr/lib/$(ENGINES_DIR))
 endef
 
-define Package/openssl-util/install
+define Package/libopenssl-conf/install
 	$(INSTALL_DIR) $(1)/etc/ssl
 	$(CP) $(PKG_INSTALL_DIR)/etc/ssl/openssl.cnf $(1)/etc/ssl/
+endef
+
+define Package/openssl-util/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/openssl $(1)/usr/bin/
 endef
@@ -353,6 +370,7 @@ define Package/libopenssl-padlock/install
 endef
 
 $(eval $(call BuildPackage,libopenssl))
+$(eval $(call BuildPackage,libopenssl-conf))
 $(eval $(call BuildPackage,libopenssl-afalg))
 $(eval $(call BuildPackage,libopenssl-padlock))
 $(eval $(call BuildPackage,openssl-util))

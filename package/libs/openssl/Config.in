@@ -250,11 +250,14 @@ config OPENSSL_ENGINE
 		This enables alternative cryptography implementations,
 		most commonly for interfacing with external crypto devices,
 		or supporting new/alternative ciphers and digests.
+		Note that you need to enable KERNEL_AIO to be able to build the
+		afalg engine package.
 
 config OPENSSL_ENGINE_CRYPTO
 	bool
 	select OPENSSL_ENGINE
 	select PACKAGE_kmod-cryptodev
+	select PACKAGE_libopenssl-conf
 	prompt "Acceleration support through /dev/crypto"
 	help
 		This enables use of hardware acceleration through OpenBSD
@@ -284,4 +287,3 @@ config OPENSSL_WITH_GOST
 		https://github.com/gost-engine/engine
 
 endif
-
