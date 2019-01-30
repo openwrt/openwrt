@@ -1,32 +1,5 @@
 if PACKAGE_libopenssl
 
-choice
-	prompt "OpenSSL Version"
-	default OPENSSL_USE_VERSION_1_1_1
-	help
-		Select the version of OpenSSL you wish to use.
-
-	config OPENSSL_USE_VERSION_1_0_2
-		bool "OpenSSL v. 1.0.2 (old LTS) series"
-		help
-		   1.0.2 is a Long Term Support (LTS) series, supported by
-		   upstream until 31st December 2019.
-
-	config OPENSSL_USE_VERSION_1_1_0
-		bool "OpenSSL v. 1.1.0 series (EOL at openwrt)"
-		help
-		   1.1.0 is the previous stable series, supported by upstream
-		   (security fixes only) until 11th September 2019.
-		   This version is not currently supported by openwrt, and
-		   could be dropped before its upstream EOL.
-
-	config OPENSSL_USE_VERSION_1_1_1
-		bool "OpenSSL v. 1.1.1 (new LTS) series"
-		help
-		   1.1.1 is the latest Long Term Support (LTS) series,
-		   supported until 11th September 2023.
-endchoice
-
 comment "Build Options"
 
 config OPENSSL_OPTIMIZE_SPEED
@@ -107,7 +80,6 @@ config OPENSSL_WITH_TLS13
 	bool
 	default y
 	prompt "Enable support for TLS 1.3"
-	depends on OPENSSL_USE_VERSION_1_1_1
 	select OPENSSL_WITH_EC
 	help
 		TLS 1.3 is the newest version of the TLS specification.
@@ -176,7 +148,6 @@ config OPENSSL_WITH_CHACHA_POLY1305
 	bool
 	default y
 	prompt "Enable ChaCha20-Poly1305 ciphersuite support"
-	depends on !OPENSSL_USE_VERSION_1_0_2
 	help
 		ChaCha20-Poly1305 is an AEAD ciphersuite with 256-bit keys,
 		combining ChaCha stream cipher with Poly1305 MAC.
@@ -208,7 +179,6 @@ config OPENSSL_WITH_ARIA
 	bool
 	default n
 	prompt "Enable ARIA support"
-	depends on OPENSSL_USE_VERSION_1_1_1
 	help
 		ARIA is a block cipher developed in South Korea, based on AES.
 
@@ -239,7 +209,6 @@ config OPENSSL_WITH_SM234
 	bool
 	default n
 	prompt "Enable SM2/3/4 algorithms support"
-	depends on OPENSSL_USE_VERSION_1_1_1
 	help
 		These algorithms are a set of "Commercial Cryptography"
 		algorithms approved for use in China.
@@ -251,7 +220,6 @@ config OPENSSL_WITH_BLAKE2
 	bool
 	default n
 	prompt "Enable BLAKE2 digest support"
-	depends on !OPENSSL_USE_VERSION_1_0_2
 	help
 		BLAKE2 is a cryptographic hash function based on the ChaCha
 		stream cipher.
@@ -313,21 +281,6 @@ config OPENSSL_ENGINE_CRYPTO
 		API modules) for /dev/crypto to show up and use hardware
 		acceleration; otherwise it falls back to software.
 
-config OPENSSL_ENGINE_DIGEST
-# This option is marked as BROKEN
-# It is not working with openssl 1.0.2, and kind of works in 1.1.0, but it
-# saves the whole input in RAM before calculating the digest, which may
-# result in memory exhaustion if you digest a large file, for example.
-# 1.0.2 does this as well.  In 1.1.1, digests are always supported.
-	bool
-	depends on OPENSSL_ENGINE_CRYPTO && BROKEN
-	prompt "/dev/crypto digest acceleration support"
-	help
-		Digests are computed fairly fast in software, and
-		the many context switches needed to use /dev/crypto
-		may actually slow it down.  So enable this if you have
-		a fast hardware crypto, and a slow or loaded CPU.
-
 config OPENSSL_WITH_ASYNC
 	bool
 	default n
@@ -346,8 +299,7 @@ config OPENSSL_WITH_GOST
 	help
 		This option prepares the library to accept engine support
 		for Russian GOST crypto algorithms.
-		The engine is shipped with OpenSSL 1.0.2, but not with 1.1.x.
-		The 1.1.x gost engine is not included in standard openwrt feeds.
+		The gost engine is not included in standard openwrt feeds.
 		To build such engine yourself, see:
 		https://github.com/gost-engine/engine
 
