@@ -125,12 +125,8 @@ define Package/openssl-util
   $(call Package/openssl/Default)
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+libopenssl
+  DEPENDS:=+libopenssl +libopenssl-conf
   TITLE+= (utility)
-endef
-
-define Package/libopenssl/conffiles
-/etc/ssl/openssl.cnf
 endef
 
 define Package/openssl-util/description
@@ -138,11 +134,27 @@ $(call Package/openssl/Default/description)
 This package contains the OpenSSL command-line utility.
 endef
 
+define Package/libopenssl-conf
+  $(call Package/openssl/Default)
+  SUBMENU:=SSL
+  TITLE:=/etc/ssl/openssl.cnf config file
+  DEPENDS:=libopenssl
+endef
+
+define Package/libopenssl-conf/conffiles
+/etc/ssl/openssl.cnf
+endef
+
+define Package/libopenssl-conf/description
+$(call Package/openssl/Default/description)
+This package installs the OpenSSL configuration file /etc/ssl/openssl.cnf.
+
 define Package/libopenssl-gost
   $(call Package/openssl/Default)
   SUBMENU:=SSL
   TITLE:=Russian GOST algorithms engine
-  DEPENDS:=libopenssl @OPENSSL_ENGINE @OPENSSL_USE_VERSION_1_0_2 +@OPENSSL_WITH_GOST
+  DEPENDS:=libopenssl @OPENSSL_ENGINE @OPENSSL_USE_VERSION_1_0_2 +@OPENSSL_WITH_GOST \
+	   +libopenssl-conf
 endef
 
 define Package/libopenssl-gost/description
@@ -156,8 +168,8 @@ define Package/libopenssl-afalg
   $(call Package/openssl/Default)
   SUBMENU:=SSL
   TITLE:=AFALG hardware acceleration engine
-  DEPENDS:=libopenssl @OPENSSL_ENGINE @!OPENSSL_USE_VERSION_1_0_2 +@KERNEL_AIO \
-	   @!LINUX_3_18 +kmod-crypto-user
+  DEPENDS:=libopenssl @OPENSSL_ENGINE @!OPENSSL_USE_VERSION_1_0_2 @KERNEL_AIO \
+	   @!LINUX_3_18 +kmod-crypto-user +libopenssl-conf
 endef
 
 define Package/libopenssl-afalg/description
@@ -172,7 +184,8 @@ define Package/libopenssl-padlock
   $(call Package/openssl/Default)
   SUBMENU:=SSL
   TITLE:=VIA Padlock hardware acceleration engine
-  DEPENDS:=libopenssl @OPENSSL_ENGINE @TARGET_x86 +kmod-crypto-hw-padlock
+  DEPENDS:=libopenssl @OPENSSL_ENGINE @TARGET_x86 +kmod-crypto-hw-padlock \
+	   +libopenssl-conf
 endef
 
 define Package/libopenssl-padlock/description
@@ -221,11 +234,7 @@ ifndef CONFIG_OPENSSL_WITH_ERROR_MESSAGES
 endif
 
 ifdef CONFIG_OPENSSL_USE_VERSION_1_1_1
-# For reproducible builds, set a fixed date to show. It could be
-# `date -r $(PKG_BUILD_DIR)/README %s`, but 1970-01-01 00:00:01 will get
-# the message through. This may not be needed with the final release.
-# Note that 0 won't work!
-  OPENSSL_MAKEFLAGS += SOURCE_DATE_EPOCH=1
+  OPENSSL_MAKEFLAGS += SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH)
 
   ifndef CONFIG_OPENSSL_WITH_TLS13
     OPENSSL_OPTIONS += no-tls1_3
