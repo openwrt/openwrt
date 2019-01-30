@@ -22,6 +22,8 @@ proto_wireguard_init_config() {
   proto_config_add_int    "listen_port"
   proto_config_add_int    "mtu"
   proto_config_add_string "fwmark"
+  proto_config_add_array  "addresses:list(string)"
+  proto_config_add_string "ip6prefix"
   available=1
   no_proto_task=1
 }
