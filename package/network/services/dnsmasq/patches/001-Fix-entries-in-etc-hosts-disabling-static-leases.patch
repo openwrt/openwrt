@@ -20,9 +20,11 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 
 --- a/src/dhcp-common.c
 +++ b/src/dhcp-common.c
-@@ -372,7 +372,11 @@ void dhcp_update_configs(struct dhcp_con
+@@ -371,8 +371,14 @@ void dhcp_update_configs(struct dhcp_con
+   int prot = AF_INET;
  
    for (config = configs; config; config = config->next)
++  {
      if (config->flags & CONFIG_ADDR_HOSTS)
 -      config->flags &= ~(CONFIG_ADDR | CONFIG_ADDR6 | CONFIG_ADDR_HOSTS);
 +      config->flags &= ~(CONFIG_ADDR | CONFIG_ADDR_HOSTS);
@@ -30,10 +32,11 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 +    if (config->flags & CONFIG_ADDR6_HOSTS)
 +      config->flags &= ~(CONFIG_ADDR6 | CONFIG_ADDR6_HOSTS);
 +#endif
++  }
  
  #ifdef HAVE_DHCP6 
   again:  
-@@ -421,7 +425,7 @@ void dhcp_update_configs(struct dhcp_con
+@@ -421,7 +427,7 @@ void dhcp_update_configs(struct dhcp_con
  		(!(conf_tmp = config_find_by_address6(configs, &crec->addr.addr.addr.addr6, 128, 0)) || conf_tmp == config))
  	      {
  		memcpy(&config->addr6, &crec->addr.addr.addr.addr6, IN6ADDRSZ);
