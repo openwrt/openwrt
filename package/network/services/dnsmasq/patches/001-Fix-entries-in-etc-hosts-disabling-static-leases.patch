@@ -1,0 +1,54 @@
+From 18eac67c0a15b673c8d27002c248651b308093e4 Mon Sep 17 00:00:00 2001
+From: Steven Siloti <ssiloti@gmail.com>
+Date: Sun, 13 Jan 2019 22:56:36 +0000
+Subject: [PATCH 30/30] Fix entries in /etc/hosts disabling static leases.
+
+It is possible for a config entry to have one address family specified by a
+dhcp-host directive and the other added from /etc/hosts. This is especially
+common on OpenWrt because it uses odhcpd for DHCPv6 and IPv6 leases are
+imported into dnsmasq via a hosts file.
+
+To handle this case there need to be separate *_HOSTS flags for IPv4 and IPv6.
+Otherwise when the hosts file is reloaded it will clear the CONFIG_ADDR(6) flag
+which was set by the dhcp-host directive.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/dhcp-common.c | 8 ++++++--
+ src/dnsmasq.h     | 1 +
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+--- a/src/dhcp-common.c
++++ b/src/dhcp-common.c
+@@ -372,7 +372,11 @@ void dhcp_update_configs(struct dhcp_con
+ 
+   for (config = configs; config; config = config->next)
+     if (config->flags & CONFIG_ADDR_HOSTS)
+-      config->flags &= ~(CONFIG_ADDR | CONFIG_ADDR6 | CONFIG_ADDR_HOSTS);
++      config->flags &= ~(CONFIG_ADDR | CONFIG_ADDR_HOSTS);
++#ifdef HAVE_DHCP6
++    if (config->flags & CONFIG_ADDR6_HOSTS)
++      config->flags &= ~(CONFIG_ADDR6 | CONFIG_ADDR6_HOSTS);
++#endif
+ 
+ #ifdef HAVE_DHCP6 
+  again:  
+@@ -421,7 +425,7 @@ void dhcp_update_configs(struct dhcp_con
+ 		(!(conf_tmp = config_find_by_address6(configs, &crec->addr.addr.addr.addr6, 128, 0)) || conf_tmp == config))
+ 	      {
+ 		memcpy(&config->addr6, &crec->addr.addr.addr.addr6, IN6ADDRSZ);
+-		config->flags |= CONFIG_ADDR6 | CONFIG_ADDR_HOSTS;
++		config->flags |= CONFIG_ADDR6 | CONFIG_ADDR6_HOSTS;
+ 		continue;
+ 	      }
+ #endif
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -796,6 +796,7 @@ struct dhcp_config {
+ #define CONFIG_BANK           2048    /* from dhcp hosts file */
+ #define CONFIG_ADDR6          4096
+ #define CONFIG_WILDCARD       8192
++#define CONFIG_ADDR6_HOSTS   16384    /* address added by from /etc/hosts */
+ 
+ struct dhcp_opt {
+   int opt, len, flags;
