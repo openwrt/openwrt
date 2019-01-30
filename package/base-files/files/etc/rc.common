@@ -131,6 +131,9 @@ ${INIT_TRACE:+set -x}
 		procd_lock
 		stop_service "$@"
 		procd_kill "$(basename ${basescript:-$initscript})" "$1"
+		if type service_stopped >/dev/null 2>&1; then
+			service_stopped
+		fi
 	}
 
 	reload() {
