@@ -1,0 +1,15 @@
+--- a/configure	2015-01-06 22:55:35.000000000 +0100
++++ b/configure	2019-01-31 14:44:28.679272504 +0100
+@@ -3285,11 +3285,9 @@
+     ;;
+     *linux* )
+ 	# XXX: not sure if /usr/local is necessary.
+-	# XXX: linux libwrap needs -lnsl. configure should check for
+-	#      existence of libnsl instead of hard-coding
+ 	CPPFLAGS="$CFLAGS -I/usr/local/include"; export CPPFLAGS
+ 	LDFLAGS="$LDFLAGS -L/usr/local/lib -L/lib"; export LDFLAGS
+-	LIBS="-lnsl -lcrypt $LIBS"; export LIBS
++	LIBS="-lcrypt $LIBS"; export LIBS
+ 	$as_echo "#define LINUX 1" >>confdefs.h
+ 
+ 

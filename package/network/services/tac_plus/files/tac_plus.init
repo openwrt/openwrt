@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2019 OpenWrt.org
+
+START=50
+
+start() {
+	service_start /usr/sbin/tac_plus -C /etc/tac_plus.conf
+}
+
+stop() {
+	service_stop /usr/sbin/tac_plus
+}
