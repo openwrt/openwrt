@@ -16,6 +16,11 @@ ipq40xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
 	asus,rt-ac58u|\
+	zyxel,nbg6617)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
+		;;
 	avm,fritzbox-4040|\
 	linksys,ea6350v3)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
@@ -40,11 +45,6 @@ ipq40xx_setup_interfaces()
 	openmesh,a42|\
 	openmesh,a62)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
-		;;
-	zyxel,nbg6617)
-		ucidef_set_interfaces_lan_wan "eth0" "eth1"
-		ucidef_add_switch "switch0" \
-			"0u@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
