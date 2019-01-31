@@ -25,7 +25,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +obj-$(CONFIG_QUICC_ENGINE)		+= irq-qeic.o
 --- a/drivers/irqchip/irq-gic-v3-its.c
 +++ b/drivers/irqchip/irq-gic-v3-its.c
-@@ -1658,6 +1658,7 @@ static int its_init_domain(struct fwnode
+@@ -1659,6 +1659,7 @@ static int its_init_domain(struct fwnode
  
  	inner_domain->parent = its_parent;
  	inner_domain->bus_token = DOMAIN_BUS_NEXUS;
