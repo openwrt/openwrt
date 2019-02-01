@@ -1,32 +1,29 @@
-From 8ab0ea8e9275c03f253f84dc83ee86cdbeb1fcf4 Mon Sep 17 00:00:00 2001
+From 40a17923367118e32e5e413a952736dd83635b32 Mon Sep 17 00:00:00 2001
 From: Hao Dong <halbertdong@gmail.com>
-Date: Sat, 19 Jan 2019 17:25:29 +0000
+Date: Sun, 20 Jan 2019 23:33:27 +0100
 Subject: [PATCH] ARM: dts: BCM5301X: Add basic DT for Phicomm K3
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-This router has BCM4709C0, 128MB NAND flash (MX30LF1G18AC-TI),
-and 512MB memory, with 3 x LAN and 1 x WAN. WL chips are
-BCM4366C0 x 2. The router has a small LCD and 3 capactive keys
-driven by a PIC microcontroller, which is in turn wired to
-UART1 of main board.
-
-Everything except the LCD works. Hamster has activated LCD through
-UART1, but further programming, i.e., a independent package, is
-required to make sure its working properly.
-
-Since the firmware of Broadcom 4366c0 has been provided by
-openwrt.org, now its wireless is functional but limited. The
-"official" firmware cannot work properly in some 5G Hz channel.
+This router has BCM4709C0 SoC, 128 MiB NAND flash (MX30LF1G18AC-TI),
+512 MiB memory and 3 x LAN and 1 x WAN ports. WiFi chips are
+BCM4366C0 x 2. The router has a small LCD and 3 capactive keys driven by
+a PIC microcontroller, which is in turn wired to UART1 of main board.
 
 Signed-off-by: Hao Dong <halbertdong@gmail.com>
+[rmilecki: drop chosen { }, fix whitespaces, update commit message]
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
  arch/arm/boot/dts/Makefile                |  1 +
- arch/arm/boot/dts/bcm47094-phicomm-k3.dts | 75 +++++++++++++++++++++++
- 2 files changed, 76 insertions(+)
+ arch/arm/boot/dts/bcm47094-phicomm-k3.dts | 71 +++++++++++++++++++++++
+ 2 files changed, 72 insertions(+)
  create mode 100644 arch/arm/boot/dts/bcm47094-phicomm-k3.dts
 
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -115,6 +115,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
+@@ -114,6 +114,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
  	bcm47094-luxul-xwr-3100.dtb \
  	bcm47094-luxul-xwr-3150-v1.dtb \
  	bcm47094-netgear-r8500.dtb \
@@ -36,12 +33,12 @@ Signed-off-by: Hao Dong <halbertdong@gmail.com>
  	bcm953012er.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm47094-phicomm-k3.dts
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,71 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/*
-+* Copyright (C) 2017 Hamster Tian <haotia@gmail.com>
-+* Copyright (C) 2019 Hao Dong <halbertdong@gmail.com>
-+*/
++ * Copyright (C) 2017 Hamster Tian <haotia@gmail.com>
++ * Copyright (C) 2019 Hao Dong <halbertdong@gmail.com>
++ */
 +
 +/dts-v1/;
 +
@@ -52,13 +49,9 @@ Signed-off-by: Hao Dong <halbertdong@gmail.com>
 +	compatible = "phicomm,k3", "brcm,bcm47094", "brcm,bcm4708";
 +	model = "Phicomm K3";
 +
-+	chosen {
-+		bootargs = "console=ttyS0,115200";
-+	};
-+
 +	memory {
 +		reg = <0x00000000 0x08000000
-+               0x88000000 0x18000000>;
++		       0x88000000 0x18000000>;
 +	};
 +
 +	gpio-keys {
@@ -110,5 +103,5 @@ Signed-off-by: Hao Dong <halbertdong@gmail.com>
 +			reg = <0x0400000 0x7C00000>;
 +			compatible = "brcm,trx";
 +		};
-+    };
++	};
 +};
