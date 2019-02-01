@@ -108,7 +108,6 @@ ramips_setup_interfaces()
 	mtc,wr1201|\
 	mzk-750dhp|\
 	mzk-w300nh2|\
-	netgear,r6120|\
 	nixcore-x1-8M|\
 	nixcore-x1-16M|\
 	oy-0001|\
@@ -340,6 +339,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "6t@eth0"
 		ucidef_set_interface_wan "usb0"
+		;;
+	netgear,r6120)
+		ucidef_add_switch "switch0" \
+			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
 	hc5761)
 		ucidef_add_switch "switch0" \
