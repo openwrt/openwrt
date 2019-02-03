@@ -1056,9 +1056,8 @@ add_interface_trigger()
 	local interface ignore
 
 	config_get interface "$1" interface
-	config_get_bool ignore "$1" ignore 0
 
-	[ -n "$interface" -a $ignore -eq 0 ] && procd_add_interface_trigger "interface.*" "$interface" /etc/init.d/dnsmasq reload
+	[ -n "$interface" ] && procd_add_interface_trigger "interface.*" "$interface" /etc/init.d/dnsmasq reload
 }
 
 service_triggers()
