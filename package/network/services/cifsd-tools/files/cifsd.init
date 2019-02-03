@@ -1,0 +1,151 @@
+#!/bin/sh /etc/rc.common
+
+START=98
+USE_PROCD=1
+
+CIFSD_IFACE=""
+
+smb_header()
+{
+	config_get CIFSD_IFACE $1 interface "lan loopback"
+
+	# resolve interfaces
+	local interfaces=$(
+		. /lib/functions/network.sh
+
+		local net
+		for net in $CIFSD_IFACE; do
+			local device
+			network_is_up $net || continue
+			network_get_device device "$net"
+			echo -n "${device:-$net},"
+		done
+	)
+
+	local workgroup description
+	local hostname="$(cat /proc/sys/kernel/hostname)"
+
+	config_get workgroup		$1 workgroup	"WORKGROUP"
+	config_get description		$1 description	"Cifsd on OpenWrt"
+
+	sed -e "s#|NAME|#$hostname#g" \
+	    -e "s#|WORKGROUP|#$workgroup#g" \
+	    -e "s#|DESCRIPTION|#$description#g" \
+	    -e "s#|INTERFACES|#$interfaces#g" \
+	    /etc/cifs/smb.conf.template > /var/etc/cifs/smb.conf
+
+	[ -e /etc/cifs/smb.conf ] || ln -nsf /var/etc/cifs/smb.conf /etc/cifs/smb.conf
+	
+	if [ ! -L /etc/cifs/smb.conf ]; then
+		logger -t 'cifsd' "Local custom /etc/cifs/smb.conf file detected, all UCI/Luci config settings are ignored!"
+	fi
+}
+
+smb_add_share()
+{
+	local name
+	local path
+	local comment
+	local users
+	local create_mask
+	local dir_mask
+	local browseable
+	local read_only
+	local guest_ok
+	local force_root
+	local write_list
+	local read_list
+	local hide_dot_files
+	local veto_files
+
+	config_get name $1 name
+	config_get path $1 path
+	config_get comment $1 comment
+	config_get users $1 users
+	config_get create_mask $1 create_mask
+	config_get dir_mask $1 dir_mask
+	config_get browseable $1 browseable
+	config_get read_only $1 read_only
+	config_get guest_ok $1 guest_ok
+	config_get_bool force_root	$1 force_root	0
+	config_get write_list $1 write_list
+	config_get read_list $1 read_list
+	config_get_bool hide_dot_files	$1 hide_dot_files	0
+	config_get veto_files $1 veto_files
+
+	[ -z "$name" -o -z "$path" ] && return
+
+	echo -e "\n[$name]\n\tpath = $path" >> /var/etc/cifs/smb.conf
+	[ -n "$comment" ] && echo -e "\tcomment = $comment" >> /var/etc/cifs/smb.conf
+	
+	if [ "$force_root" -eq 1 ]; then
+		echo -e "\tforce user = root" >> /var/etc/cifs/smb.conf
+		echo -e "\tforce group = root" >> /var/etc/cifs/smb.conf
+	else
+		[ -n "$users" ] && echo -e "\tvalid users = $users" >> /var/etc/cifs/smb.conf
+	fi
+
+	[ -n "$create_mask" ] && echo -e "\tcreate mask = $create_mask" >> /var/etc/cifs/smb.conf
+	[ -n "$dir_mask" ] && echo -e "\tdirectory mask = $dir_mask" >> /var/etc/cifs/smb.conf
+
+	[ -n "$browseable" ] && echo -e "\tbrowseable = $browseable" >> /var/etc/cifs/smb.conf
+	[ -n "$read_only" ] && echo -e "\tread only = $read_only" >> /var/etc/cifs/smb.conf
+	[ -n "$guest_ok" ] && echo -e "\tguest ok = $guest_ok" >> /var/etc/cifs/smb.conf
+
+	[ -n "$write_list" ] && echo -e "\twrite list = $write_list" >> /var/etc/cifs/smb.conf
+	[ -n "$read_list" ] && echo -e "\tread list = $read_list" >> /var/etc/cifs/smb.conf
+
+	[ "$hide_dot_files" -eq 1 ] && echo -e "\thide dot files = yes" >> /var/etc/cifs/smb.conf
+	[ -n "$veto_files" ] && echo -e "\tveto files = $veto_files" >> /var/etc/cifs/smb.conf
+}
+
+init_config()
+{
+	mkdir -p /var/etc/cifs
+
+	config_load cifsd
+	# allow copy&paste from samba UCI configs (we dont have a cifsd wiki yet)
+	config_foreach smb_header globals
+	config_foreach smb_header samba
+	config_foreach smb_add_share share
+	config_foreach smb_add_share sambashare
+}
+
+service_triggers()
+{
+	PROCD_RELOAD_DELAY=2000
+	
+	procd_add_reload_trigger "dhcp" "system" "cifsd"
+	
+	local i
+	for i in $CIFSD_IFACE; do
+		procd_add_reload_interface_trigger $i
+	done
+}
+
+start_service()
+{
+	init_config
+	
+	if [ ! -e /etc/cifs/smb.conf ]; then
+		logger -t 'cifsd' "missing config /etc/cifs/smb.conf, needs to-be created manually!"
+		exit 1
+	fi
+
+	[ -f /tmp/cifsd.lock ] && rm /tmp/cifsd.lock
+	
+	# try remove again before start
+	if (lsmod | grep cifsd &>/dev/null); then
+		rmmod cifsd &>/dev/null
+	fi
+	modprobe cifsd 2>/dev/null
+	if ! (lsmod | grep cifsd &>/dev/null); then
+		logger -t 'cifsd' "modprobe of cifsd module failed, cant start cifsd!"
+		exit 1
+	fi
+
+	logger -t 'cifsd' "Starting CIFS/SMB userspace service."
+	procd_open_instance
+	procd_set_param command /usr/sbin/cifsd --n
+	procd_close_instance
+}
