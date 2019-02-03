@@ -60,6 +60,10 @@ bdcom,wap2100-sk|\
 hiwifi,hc5861b)
 	set_wifi_led "$boardname:green:wlan2g"
 	;;
+belkin,f9k1109)
+	set_usb_led "$boardname:green:usb1"
+	ucidef_set_led_netdev "lan" "lan" "$boardname:blue:wps" "eth0"
+	;;
 broadway)
 	set_wifi_led "$boardname:red:wps_active"
 	;;
