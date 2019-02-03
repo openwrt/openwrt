@@ -262,6 +262,20 @@ endef
 
 $(eval $(call KernelPackage,drm-imx-ldb))
 
+define KernelPackage/drm-radeon
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Radeon DRM support
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm +kmod-i2c-algo-bit +radeon-firmware
+  KCONFIG:=CONFIG_DRM_RADEON
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/radeon/radeon.ko
+  AUTOLOAD:=$(call AutoProbe,radeon)
+endef
+
+define KernelPackage/drm-radeon/description
+  Direct Rendering Manager (DRM) support for Radeon Cards
+endef
+
+$(eval $(call KernelPackage,drm-radeon))
 
 #
 # Video Capture
