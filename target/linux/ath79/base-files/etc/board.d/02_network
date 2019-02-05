@@ -109,6 +109,7 @@ ath79_setup_interfaces()
 		;;
 	iodata,etg3-r|\
 	iodata,wn-ac1167dgr|\
+	iodata,wn-ac1600dgr|\
 	iodata,wn-ac1600dgr2|\
 	iodata,wn-ag300dgr|\
 	pcs,cr5000)
@@ -267,6 +268,7 @@ ath79_setup_macs()
 		wan_mac=$(macaddr_add "$lan_mac" -1)
 		;;
 	iodata,wn-ac1167dgr|\
+	iodata,wn-ac1600dgr|\
 	iodata,wn-ac1600dgr2|\
 	iodata,wn-ag300dgr)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
