@@ -200,6 +200,23 @@ endef
 $(eval $(call KernelPackage,iio-htu21))
 
 
+define KernelPackage/iio-ccs811
+  SUBMENU:=$(IIO_MENU)
+  DEPENDS:=+kmod-i2c-core +kmod-iio-core
+  TITLE:=AMS CCS811 VOC sensor
+  KCONFIG:= \
+	CONFIG_CCS811
+  FILES:= $(LINUX_DIR)/drivers/iio/chemical/ccs811.ko
+  AUTOLOAD:=$(call AutoLoad,56,ccs811)
+endef
+
+define KernelPackage/iio-ccs811/description
+  Support for the AMS CCS811 VOC (Volatile Organic Compounds) sensor
+endef
+
+$(eval $(call KernelPackage,iio-ccs811))
+
+
 define KernelPackage/iio-si7020
   SUBMENU:=$(IIO_MENU)
   DEPENDS:=+kmod-i2c-core +kmod-iio-core
