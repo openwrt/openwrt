@@ -178,6 +178,28 @@ endef
 
 $(eval $(call KernelPackage,drm))
 
+define KernelPackage/drm-amdgpu
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=AMDGPU DRM support
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm +kmod-i2c-algo-bit +amdgpu-firmware
+  KCONFIG:=CONFIG_DRM_AMDGPU \
+	CONFIG_DRM_AMDGPU_SI=y \
+	CONFIG_DRM_AMDGPU_CIK=y \
+	CONFIG_DRM_AMD_DC=y \
+	CONFIG_DEBUG_KERNEL_DC=n
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/amd/amdgpu/amdgpu.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/scheduler/gpu-sched.ko@ge4.15 \
+	$(LINUX_DIR)/drivers/gpu/drm/amd/lib/chash.ko@ge4.15
+  AUTOLOAD:=$(call AutoProbe,amdgpu)
+endef
+
+define KernelPackage/drm-amdgpu/description
+  Direct Rendering Manager (DRM) support for AMDGPU Cards
+endef
+
+$(eval $(call KernelPackage,drm-amdgpu))
+
+
 define KernelPackage/drm-imx
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX DRM support
