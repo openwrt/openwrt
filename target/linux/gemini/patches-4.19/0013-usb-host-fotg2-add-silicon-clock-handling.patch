@@ -26,8 +26,6 @@ ChangeLog v1->v2:
  drivers/usb/host/fotg210.h     |  3 +++
  2 files changed, 32 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/usb/host/fotg210-hcd.c b/drivers/usb/host/fotg210-hcd.c
-index e64eb47770c8..058ff82ea789 100644
 --- a/drivers/usb/host/fotg210-hcd.c
 +++ b/drivers/usb/host/fotg210-hcd.c
 @@ -31,6 +31,7 @@
@@ -38,7 +36,7 @@ index e64eb47770c8..058ff82ea789 100644
  
  #include <asm/byteorder.h>
  #include <asm/irq.h>
-@@ -5596,7 +5597,7 @@ static int fotg210_hcd_probe(struct platform_device *pdev)
+@@ -5596,7 +5597,7 @@ static int fotg210_hcd_probe(struct plat
  	hcd->regs = devm_ioremap_resource(&pdev->dev, res);
  	if (IS_ERR(hcd->regs)) {
  		retval = PTR_ERR(hcd->regs);
@@ -47,7 +45,7 @@ index e64eb47770c8..058ff82ea789 100644
  	}
  
  	hcd->rsrc_start = res->start;
-@@ -5606,22 +5607,42 @@ static int fotg210_hcd_probe(struct platform_device *pdev)
+@@ -5606,22 +5607,42 @@ static int fotg210_hcd_probe(struct plat
  
  	fotg210->caps = hcd->regs;
  
@@ -93,7 +91,7 @@ index e64eb47770c8..058ff82ea789 100644
  	usb_put_hcd(hcd);
  fail_create_hcd:
  	dev_err(dev, "init %s fail, %d\n", dev_name(dev), retval);
-@@ -5637,6 +5658,10 @@ static int fotg210_hcd_remove(struct platform_device *pdev)
+@@ -5637,6 +5658,10 @@ static int fotg210_hcd_remove(struct pla
  {
  	struct device *dev = &pdev->dev;
  	struct usb_hcd *hcd = dev_get_drvdata(dev);
@@ -104,11 +102,9 @@ index e64eb47770c8..058ff82ea789 100644
  
  	if (!hcd)
  		return 0;
-diff --git a/drivers/usb/host/fotg210.h b/drivers/usb/host/fotg210.h
-index 7fcd785c7bc8..28f6467c0cbf 100644
 --- a/drivers/usb/host/fotg210.h
 +++ b/drivers/usb/host/fotg210.h
-@@ -182,6 +182,9 @@ struct fotg210_hcd {			/* one per controller */
+@@ -182,6 +182,9 @@ struct fotg210_hcd {			/* one per contro
  #	define COUNT(x)
  #endif
  
@@ -118,6 +114,3 @@ index 7fcd785c7bc8..28f6467c0cbf 100644
  	/* debug files */
  	struct dentry		*debug_dir;
  };
--- 
-2.19.2
-

@@ -73,6 +73,12 @@ define Package/busybox/config
 	source "$(SOURCE)/Config.in"
 endef
 
+ifdef CONFIG_BUSYBOX_CONFIG_FEATURE_SYSLOG
+define Package/busybox/conffiles
+/etc/syslog.conf
+endef
+endif
+
 # don't create a version string containing the actual timestamp
 export KCONFIG_NOTIMESTAMP=1
 

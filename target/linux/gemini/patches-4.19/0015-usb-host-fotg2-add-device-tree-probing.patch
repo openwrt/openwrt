@@ -12,8 +12,6 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/usb/host/fotg210-hcd.c | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/drivers/usb/host/fotg210-hcd.c b/drivers/usb/host/fotg210-hcd.c
-index 058ff82ea789..6e4b40cd5916 100644
 --- a/drivers/usb/host/fotg210-hcd.c
 +++ b/drivers/usb/host/fotg210-hcd.c
 @@ -10,6 +10,7 @@
@@ -24,7 +22,7 @@ index 058ff82ea789..6e4b40cd5916 100644
  #include <linux/device.h>
  #include <linux/dmapool.h>
  #include <linux/kernel.h>
-@@ -5672,9 +5673,18 @@ static int fotg210_hcd_remove(struct platform_device *pdev)
+@@ -5672,9 +5673,18 @@ static int fotg210_hcd_remove(struct pla
  	return 0;
  }
  
@@ -43,6 +41,3 @@ index 058ff82ea789..6e4b40cd5916 100644
  	},
  	.probe  = fotg210_hcd_probe,
  	.remove = fotg210_hcd_remove,
--- 
-2.19.2
-

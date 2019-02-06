@@ -18,11 +18,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-gemini.c | 44 ++++++++++++++++++++++++++------
  1 file changed, 36 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-gemini.c b/drivers/pinctrl/pinctrl-gemini.c
-index 1e484a36ff07..3535f9841861 100644
 --- a/drivers/pinctrl/pinctrl-gemini.c
 +++ b/drivers/pinctrl/pinctrl-gemini.c
-@@ -591,13 +591,16 @@ static const unsigned int tvc_3512_pins[] = {
+@@ -591,13 +591,16 @@ static const unsigned int tvc_3512_pins[
  	319, /* TVC_DATA[1] */
  	301, /* TVC_DATA[2] */
  	283, /* TVC_DATA[3] */
@@ -40,7 +38,7 @@ index 1e484a36ff07..3535f9841861 100644
  /* NAND flash pins */
  static const unsigned int nflash_3512_pins[] = {
  	199, 200, 201, 202, 216, 217, 218, 219, 220, 234, 235, 236, 237, 252,
-@@ -629,7 +632,7 @@ static const unsigned int pflash_3512_pins_extended[] = {
+@@ -629,7 +632,7 @@ static const unsigned int pflash_3512_pi
  /* Serial flash pins CE0, CE1, DI, DO, CK */
  static const unsigned int sflash_3512_pins[] = { 230, 231, 232, 233, 211 };
  
@@ -49,7 +47,7 @@ index 1e484a36ff07..3535f9841861 100644
  static const unsigned int gpio0a_3512_pins[] = { 265 };
  
  /* The GPIO0B (1-4) pins overlap with TVC and ICE */
-@@ -823,7 +826,13 @@ static const struct gemini_pin_group gemini_3512_pin_groups[] = {
+@@ -823,7 +826,13 @@ static const struct gemini_pin_group gem
  		.num_pins = ARRAY_SIZE(tvc_3512_pins),
  		/* Conflict with character LCD and ICE */
  		.mask = LCD_PADS_ENABLE,
@@ -64,7 +62,7 @@ index 1e484a36ff07..3535f9841861 100644
  	},
  	/*
  	 * The construction is done such that it is possible to use a serial
-@@ -860,8 +869,8 @@ static const struct gemini_pin_group gemini_3512_pin_groups[] = {
+@@ -860,8 +869,8 @@ static const struct gemini_pin_group gem
  		.name = "gpio0agrp",
  		.pins = gpio0a_3512_pins,
  		.num_pins = ARRAY_SIZE(gpio0a_3512_pins),
@@ -75,7 +73,7 @@ index 1e484a36ff07..3535f9841861 100644
  	},
  	{
  		.name = "gpio0bgrp",
-@@ -1531,13 +1540,16 @@ static const unsigned int tvc_3516_pins[] = {
+@@ -1531,13 +1540,16 @@ static const unsigned int tvc_3516_pins[
  	311, /* TVC_DATA[1] */
  	394, /* TVC_DATA[2] */
  	374, /* TVC_DATA[3] */
@@ -93,7 +91,7 @@ index 1e484a36ff07..3535f9841861 100644
  /* NAND flash pins */
  static const unsigned int nflash_3516_pins[] = {
  	243, 260, 261, 224, 280, 262, 281, 264, 300, 263, 282, 301, 320, 283,
-@@ -1570,7 +1582,7 @@ static const unsigned int pflash_3516_pins_extended[] = {
+@@ -1570,7 +1582,7 @@ static const unsigned int pflash_3516_pi
  static const unsigned int sflash_3516_pins[] = { 296, 338, 295, 359, 339 };
  
  /* The GPIO0A (0-4) pins overlap with TVC and extended parallel flash */
@@ -102,7 +100,7 @@ index 1e484a36ff07..3535f9841861 100644
  
  /* The GPIO0B (5-7) pins overlap with ICE */
  static const unsigned int gpio0b_3516_pins[] = { 375, 396, 376 };
-@@ -1602,6 +1614,9 @@ static const unsigned int gpio0j_3516_pins[] = { 359, 339 };
+@@ -1602,6 +1614,9 @@ static const unsigned int gpio0j_3516_pi
  /* The GPIO0K (30,31) pins overlap with NAND flash */
  static const unsigned int gpio0k_3516_pins[] = { 275, 298 };
  
@@ -112,7 +110,7 @@ index 1e484a36ff07..3535f9841861 100644
  /* The GPIO1A (0-4) pins that overlap with IDE and parallel flash */
  static const unsigned int gpio1a_3516_pins[] = { 221, 200, 222, 201, 220 };
  
-@@ -1761,7 +1776,13 @@ static const struct gemini_pin_group gemini_3516_pin_groups[] = {
+@@ -1761,7 +1776,13 @@ static const struct gemini_pin_group gem
  		.num_pins = ARRAY_SIZE(tvc_3516_pins),
  		/* Conflict with character LCD */
  		.mask = LCD_PADS_ENABLE,
@@ -127,20 +125,17 @@ index 1e484a36ff07..3535f9841861 100644
  	},
  	/*
  	 * The construction is done such that it is possible to use a serial
-@@ -1872,6 +1893,13 @@ static const struct gemini_pin_group gemini_3516_pin_groups[] = {
- 		/* Conflict with parallel and NAND flash */
+@@ -1873,6 +1894,13 @@ static const struct gemini_pin_group gem
  		.value = PFLASH_PADS_DISABLE | NAND_PADS_DISABLE,
  	},
-+	{
+ 	{
 +		.name = "gpio0lgrp",
 +		.pins = gpio0l_3516_pins,
 +		.num_pins = ARRAY_SIZE(gpio0l_3516_pins),
 +		/* Conflict with TVE CLK */
 +		.mask = TVC_CLK_PAD_ENABLE,
 +	},
- 	{
++	{
  		.name = "gpio1agrp",
  		.pins = gpio1a_3516_pins,
--- 
-2.19.2
-
+ 		.num_pins = ARRAY_SIZE(gpio1a_3516_pins),

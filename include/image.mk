@@ -527,6 +527,7 @@ endef
 
 define Device/Build/artifact
   $$(_TARGET): $(BIN_DIR)/$(IMAGE_PREFIX)-$(1)
+  $(eval $(call Device/Export,$(KDIR)/tmp/$(IMAGE_PREFIX)-$(1)))
   $(KDIR)/tmp/$(IMAGE_PREFIX)-$(1): $$(KDIR_KERNEL_IMAGE)
 	@rm -f $$@
 	$$(call concat_cmd,$(ARTIFACT/$(1)))

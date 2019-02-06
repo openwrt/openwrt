@@ -166,7 +166,9 @@ define KernelPackage/drm
   HIDDEN:=1
   DEPENDS:=+kmod-dma-buf +kmod-i2c-core
   KCONFIG:=CONFIG_DRM
-  FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/gpu/drm/drm.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/drm_panel_orientation_quirks.ko@ge4.15
   AUTOLOAD:=$(call AutoLoad,05,drm)
 endef
 

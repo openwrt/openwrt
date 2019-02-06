@@ -11,8 +11,6 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/mtd/redboot.c | 29 ++++++++++++++++++++++++++++-
  1 file changed, 28 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/redboot.c b/drivers/mtd/redboot.c
-index fe3df7437483..e9c21579ba35 100644
 --- a/drivers/mtd/redboot.c
 +++ b/drivers/mtd/redboot.c
 @@ -25,7 +25,7 @@
@@ -24,7 +22,7 @@ index fe3df7437483..e9c21579ba35 100644
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
  #include <linux/module.h>
-@@ -56,6 +56,31 @@ static inline int redboot_checksum(struct fis_image_desc *img)
+@@ -56,6 +56,31 @@ static inline int redboot_checksum(struc
  	return 1;
  }
  
@@ -56,7 +54,7 @@ index fe3df7437483..e9c21579ba35 100644
  static int parse_redboot_partitions(struct mtd_info *master,
  				    const struct mtd_partition **pparts,
  				    struct mtd_part_parser_data *data)
-@@ -75,6 +100,7 @@ static int parse_redboot_partitions(struct mtd_info *master,
+@@ -75,6 +100,7 @@ static int parse_redboot_partitions(stru
  #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
  	static char nullstring[] = "unallocated";
  #endif
@@ -64,7 +62,7 @@ index fe3df7437483..e9c21579ba35 100644
  
  	if ( directory < 0 ) {
  		offset = master->size + directory * master->erasesize;
-@@ -298,6 +324,7 @@ static int parse_redboot_partitions(struct mtd_info *master,
+@@ -298,6 +324,7 @@ static int parse_redboot_partitions(stru
  
  static const struct of_device_id redboot_parser_of_match_table[] = {
  	{ .compatible = "ecoscentric,redboot-fis-partitions" },
@@ -72,6 +70,3 @@ index fe3df7437483..e9c21579ba35 100644
  	{},
  };
  MODULE_DEVICE_TABLE(of, redboot_parser_of_match_table);
--- 
-2.19.2
-
