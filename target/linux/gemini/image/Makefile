@@ -123,8 +123,8 @@ define Device/dlink_dns-313
 	DEVICE_TITLE := D-Link DNS-313 1-Bay Network Storage Enclosure
 	DEVICE_DTS := gemini-dlink-dns-313
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
-	IMAGES := factory.bin
-	IMAGE/factory.bin := dns313-images
+	IMAGES := bootpart.tar.gz
+	IMAGE/bootpart.tar.gz := dns313-images
 endef
 TARGET_DEVICES += dlink_dns-313
 
