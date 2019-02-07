@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 /dts-v1/;
 
 #include "vr9.dtsi"
@@ -26,16 +27,16 @@
 		reg = <0x0 0x8000000>;
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <100>;
+		
 		wps {
 			label = "wps";
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
+		
 		dect {
 			label = "dect";
 			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
@@ -43,7 +44,7 @@
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		power_green: power_green {
@@ -51,22 +52,27 @@
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
+		
 		power_red: power_red {
 			label = "fritz7412:red:power";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
+		
 		fon {
 			label = "fritz7412:green:fon";
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 		};
+		
 		dect {
 			label = "fritz7412:green:dect";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
+		
 		wifi: wifi {
 			label = "fritz7412:green:wifi";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
+		
 		info: info {
 			label = "fritz7412:green:info";
 			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
@@ -75,10 +81,10 @@
 };
 
 &localbus {
-	nand-parts@0 {
+	nand@0 {
 		compatible = "lantiq,nand-xway";
 		bank-width = <2>;
-		reg = <1 0x0 0x2000000>;
+		reg = <0 0x0 0x2000000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		lantiq,cs = <1>;
@@ -180,25 +186,6 @@
 			lantiq,pins = "io13", "io24", "io49";
 			lantiq,pull = <1>;
 		};
-
-		/*
-		other gpios:
-
-		dect reset: 33 output open drain
-		dect rd: 8 active low push pull
-
-		tdm fsc: 9 input + pull-up
-		tdm/spi do: 16 output
-		tdm/spi di: 17 input + pull-up
-		tdm dcl/spi clk: 18 output active low
-		tdm clk enable: 7 output active high
-		tdm/spi cs: 10 output active low/high
-		spi wp: 12 output active low
-
-		boot sel2: 23 active high
-		boot sel3: 38 active high
-		boot sel4: 49 active high (also nand rd)
-		*/
 	};
 };
 
@@ -228,7 +215,9 @@
 	mdio@0 {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		reg = <0>;
 		compatible = "lantiq,xrx200-mdio";
+		
 		phy11: ethernet-phy@11 {
 			reg = <0x11>;
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";

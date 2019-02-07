@@ -11,7 +11,7 @@
  * and the TFFS 3.0 kernel driver from AVM:
  *     Copyright (C) 2004-2014 AVM GmbH <fritzbox_info@avm.de>
  * and the OpenWrt TFFS kernel driver:
- *     Copyright (c) 2013 John Crispin <blogic@openwrt.org>
+ *     Copyright (c) 2013 John Crispin <john@phrozen.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -79,11 +79,13 @@ struct tffs_sectors {
 	uint8_t sectors[0];
 };
 
-static inline void sector_mark_bad(int num) {
+static inline void sector_mark_bad(int num) 
+{
 	sectors->sectors[num / 8] &= ~(0x80 >> (num % 8));
 };
 
-static inline uint8_t sector_get_good(int num) {
+static inline uint8_t sector_get_good(int num) 
+{
 	return sectors->sectors[num / 8] & 0x80 >> (num % 8);
 };
 
@@ -107,11 +109,13 @@ struct tffs_key_name_table {
 	struct tffs_name_table_entry *entries;
 };
 
-static inline uint8_t read_uint8(void *buf, ptrdiff_t off) {
+static inline uint8_t read_uint8(void *buf, ptrdiff_t off) 
+{
 	return *(uint8_t *)(buf + off);
 }
 
-static inline uint32_t read_uint32(void *buf, ptrdiff_t off) {
+static inline uint32_t read_uint32(void *buf, ptrdiff_t off) 
+{
 	uint32_t tmp = *(uint32_t *)(buf + off);
 	if (swap_bytes) {
 		tmp = be32toh(tmp);
@@ -119,7 +123,8 @@ static inline uint32_t read_uint32(void *buf, ptrdiff_t off) {
 	return tmp;
 }
 
-static inline uint64_t read_uint64(void *buf, ptrdiff_t off) {
+static inline uint64_t read_uint64(void *buf, ptrdiff_t off) 
+{
 	uint64_t tmp = *(uint64_t *)(buf + off);
 	if (swap_bytes) {
 		tmp = be64toh(tmp);
@@ -127,7 +132,8 @@ static inline uint64_t read_uint64(void *buf, ptrdiff_t off) {
 	return tmp;
 }
 
-static int read_sector(off_t pos) {
+static int read_sector(off_t pos) 
+{
 	if (pread(mtdfd, readbuf, TFFS_SECTOR_SIZE, pos) != TFFS_SECTOR_SIZE) {
 		return -1;
 	}
@@ -135,14 +141,16 @@ static int read_sector(off_t pos) {
 	return 0;
 }
 
-static int read_sectoroob(off_t pos) {
+static int read_sectoroob(off_t pos) 
+{
 	struct mtd_oob_buf oob = {
 		.start = pos,
 		.length = TFFS_SECTOR_OOB_SIZE,
 		.ptr = oobbuf
 	};
 
-	if (ioctl(mtdfd, MEMREADOOB, &oob) < 0) {
+	if (ioctl(mtdfd, MEMREADOOB, &oob) < 0) 
+    {
 		return -1;
 	}
 
@@ -167,11 +175,11 @@ static int find_entry(uint32_t id, struct tffs_entry *entry)
 	struct tffs_entry_segment *segments = NULL;
 
 	off_t pos = 0;
-	uint8_t block_ended = 0;
+	uint8_t block_end = 0;
 	for (uint32_t sector = 0; sector < sectors->num_sectors; sector++, pos += TFFS_SECTOR_SIZE) {
-		if (block_ended) {
+		if (block_end) {
 			if (pos % blocksize == 0) {
-				block_ended = 0;
+				block_end = 0;
 			}
 		} else if (sector_get_good(sector)) {
 			if (read_sectoroob(pos) || read_sector(pos)) {
@@ -189,8 +197,8 @@ static int find_entry(uint32_t id, struct tffs_entry *entry)
 				continue;
 			}
 			if (read_id == TFFS_ID_END) {
-				// no more entries in this block
-				block_ended = 1;
+				/* no more entries in this block */
+				block_end = 1;
 				continue;
 			}
 			if (read_len > TFFS_MAXIMUM_SEGMENT_SIZE) {
@@ -199,11 +207,11 @@ static int find_entry(uint32_t id, struct tffs_entry *entry)
 			}
 			if (read_id == id) {
 				if (read_rev < rev) {
-					// obsolete revision => ignore this
+					/* obsolete revision => ignore this */
 					continue;
 				}
 				if (read_rev > rev) {
-					// newer revision => clear old data
+					/* newer revision => clear old data */
 					for (uint32_t i = 0; i < num_segments; i++) {
 						free(segments[i].val);
 					}
@@ -214,7 +222,7 @@ static int find_entry(uint32_t id, struct tffs_entry *entry)
 				}
 
 				uint32_t seg = read_uint32(readbuf, 0x10);
-
+                
 				if (seg == TFFS_SEGMENT_CLEARED) {
 					continue;
 				}
@@ -244,7 +252,7 @@ static int find_entry(uint32_t id, struct tffs_entry *entry)
 	uint32_t len = 0;
 	for (uint32_t i = 0; i < num_segments; i++) {
 		if (segments[i].val == NULL) {
-			// missing segment
+			/* missing segment */
 			return 0;
 		}
 
@@ -263,7 +271,7 @@ static int find_entry(uint32_t id, struct tffs_entry *entry)
 }
 
 static void parse_key_names(struct tffs_entry *names_entry,
-			    struct tffs_key_name_table *key_names)
+			     struct tffs_key_name_table *key_names)
 {
 	uint32_t pos = 0, i = 0;
 	struct tffs_name_table_entry *name_item;
@@ -272,7 +280,7 @@ static void parse_key_names(struct tffs_entry *names_entry,
 
 	do {
 		key_names->entries = realloc(key_names->entries,
-						sizeof(struct tffs_name_table_entry) * (i + 1));
+                         sizeof(struct tffs_name_table_entry) * (i + 1));
 		if (key_names->entries == NULL) {
 			fprintf(stderr, "ERROR: memory allocation failed!\n");
 			exit(EXIT_FAILURE);
@@ -357,11 +365,11 @@ static int check_sector(off_t pos)
 		return 0;
 	}
 	if (read_uint8(oobbuf, 0x00) != 0xff) {
-		// block is bad
+		/* block is bad */
 		return 0;
 	}
 	if (read_uint8(oobbuf, 0x01) != 0xff) {
-		// sector is bad
+		/* sector is bad */
 		return 0;
 	}
 	return 1;
@@ -416,8 +424,8 @@ static int scan_mtd()
 	for (off_t pos = 0; pos < info.size; sector++, pos += TFFS_SECTOR_SIZE) {
 		if (pos % info.erasesize == 0) {
 			block_ok = check_block(pos, sector);
-			// first sector of the block contains metadata
-			// => handle it like a bad sector
+			/* first sector of the block contains metadata
+			   => handle it like a bad sector */
 			sector_mark_bad(sector);
 			if (block_ok) {
 				valid_blocks++;
