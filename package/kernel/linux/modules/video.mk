@@ -205,6 +205,22 @@ endef
 $(eval $(call KernelPackage,fb-tft))
 
 
+define KernelPackage/fb-tft-ili9486
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=FB driver for the ILI9486 LCD Controller
+  DEPENDS:=+kmod-fb-tft
+  KCONFIG:=CONFIG_FB_TFT_ILI9486
+  FILES:=$(LINUX_DIR)/drivers/staging/fbtft/fb_ili9486.ko
+  AUTOLOAD:=$(call AutoLoad,09,fb_ili9486)
+endef
+
+define KernelPackage/fb-tft-ili9486/description
+  FB driver for the ILI9486 LCD Controller
+endef
+
+$(eval $(call KernelPackage,fb-tft-ili9486))
+
+
 define KernelPackage/drm
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Direct Rendering Manager (DRM) support
