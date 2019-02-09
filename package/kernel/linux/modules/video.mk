@@ -160,6 +160,29 @@ endef
 
 $(eval $(call KernelPackage,fb-sys-fops))
 
+
+define KernelPackage/fb-sys-ram
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Framebuffer in system RAM support
+  DEPENDS:=+kmod-fb
+  KCONFIG:= \
+	CONFIG_FB_SYS_COPYAREA \
+	CONFIG_FB_SYS_FILLRECT \
+	CONFIG_FB_SYS_IMAGEBLIT
+  FILES:= \
+	$(LINUX_DIR)/drivers/video/fbdev/core/syscopyarea.ko \
+	$(LINUX_DIR)/drivers/video/fbdev/core/sysfillrect.ko \
+	$(LINUX_DIR)/drivers/video/fbdev/core/sysimgblt.ko
+  AUTOLOAD:=$(call AutoLoad,07,syscopyarea sysfillrect sysimgblt)
+endef
+
+define KernelPackage/fb-sys-fops/description
+ Kernel support for framebuffers in system RAM
+endef
+
+$(eval $(call KernelPackage,fb-sys-ram))
+
+
 define KernelPackage/drm
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Direct Rendering Manager (DRM) support
@@ -203,7 +226,7 @@ $(eval $(call KernelPackage,drm-amdgpu))
 define KernelPackage/drm-imx
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX DRM support
-  DEPENDS:=@TARGET_imx6 +kmod-drm +kmod-fb +kmod-fb-cfb-copyarea +kmod-fb-cfb-imgblt +kmod-fb-cfb-fillrect +kmod-fb-sys-fops
+  DEPENDS:=@TARGET_imx6 +kmod-drm +kmod-fb +kmod-fb-cfb-copyarea +kmod-fb-cfb-imgblt +kmod-fb-cfb-fillrect +kmod-fb-sys-fops +kmod-fb-sys-ram
   KCONFIG:=CONFIG_DRM_IMX \
 	CONFIG_DRM_FBDEV_EMULATION=y \
 	CONFIG_DRM_FBDEV_OVERALLOC=100 \
@@ -212,9 +235,6 @@ define KernelPackage/drm-imx
 	CONFIG_DRM_IMX_IPUV3 \
 	CONFIG_IMX_IPUV3 \
 	CONFIG_DRM_KMS_HELPER \
-	CONFIG_FB_SYS_FILLRECT \
-	CONFIG_FB_SYS_COPYAREA \
-	CONFIG_FB_SYS_IMAGEBLIT \
 	CONFIG_DRM_KMS_FB_HELPER=y \
 	CONFIG_DRM_GEM_CMA_HELPER=y \
 	CONFIG_DRM_KMS_CMA_HELPER=y \
@@ -226,11 +246,8 @@ define KernelPackage/drm-imx
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/imx/imxdrm.ko \
 	$(LINUX_DIR)/drivers/gpu/ipu-v3/imx-ipu-v3.ko \
-	$(LINUX_DIR)/drivers/video/fbdev/core/syscopyarea.ko \
-	$(LINUX_DIR)/drivers/video/fbdev/core/sysfillrect.ko \
-	$(LINUX_DIR)/drivers/video/fbdev/core/sysimgblt.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/drm_kms_helper.ko
-  AUTOLOAD:=$(call AutoLoad,05,imxdrm imx-ipu-v3 imx-ipuv3-crtc)
+  AUTOLOAD:=$(call AutoLoad,08,imxdrm imx-ipu-v3 imx-ipuv3-crtc)
 endef
 
 define KernelPackage/drm-imx/description
@@ -250,7 +267,7 @@ define KernelPackage/drm-imx-hdmi
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-ahb-audio.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/imx/dw_hdmi-imx.ko
-  AUTOLOAD:=$(call AutoLoad,05,dw-hdmi dw-hdmi-ahb-audio.ko dw_hdmi-imx)
+  AUTOLOAD:=$(call AutoLoad,08,dw-hdmi dw-hdmi-ahb-audio.ko dw_hdmi-imx)
 endef
 
 define KernelPackage/drm-imx-hdmi/description
@@ -275,7 +292,7 @@ define KernelPackage/drm-imx-ldb
 	CONFIG_DRM_PANEL_SITRONIX_ST7789V=n
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/imx/imx-ldb.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/panel/panel-simple.ko
-  AUTOLOAD:=$(call AutoLoad,05,imx-ldb)
+  AUTOLOAD:=$(call AutoLoad,08,imx-ldb)
 endef
 
 define KernelPackage/drm-imx-ldb/description
