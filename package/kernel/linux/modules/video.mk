@@ -183,6 +183,28 @@ endef
 $(eval $(call KernelPackage,fb-sys-ram))
 
 
+define KernelPackage/fb-tft
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Support for small TFT LCD display modules
+  DEPENDS:= \
+	  @GPIO_SUPPORT @!LINUX_3_18 @!LINUX_4_9 +kmod-backlight \
+	  +kmod-fb +kmod-fb-sys-fops +kmod-fb-sys-ram +kmod-spi-bitbang
+  KCONFIG:= \
+       CONFIG_FB_BACKLIGHT=y \
+       CONFIG_FB_DEFERRED_IO=y \
+       CONFIG_FB_TFT
+  FILES:= \
+       $(LINUX_DIR)/drivers/staging/fbtft/fbtft.ko
+  AUTOLOAD:=$(call AutoLoad,08,fbtft)
+endef
+
+define KernelPackage/fb-tft/description
+  Support for small TFT LCD display modules
+endef
+
+$(eval $(call KernelPackage,fb-tft))
+
+
 define KernelPackage/drm
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Direct Rendering Manager (DRM) support
