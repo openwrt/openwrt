@@ -22,6 +22,11 @@ choice
 		bool "Binutils 2.31.1"
 		select BINUTILS_VERSION_2_31_1
 
+	config BINUTILS_USE_VERSION_2_32
+		depends on !arc
+		bool "Binutils 2.32"
+		select BINUTILS_VERSION_2_32
+
 endchoice
 
 config EXTRA_BINUTILS_CONFIG_OPTIONS
