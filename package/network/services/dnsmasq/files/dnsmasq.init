@@ -99,6 +99,12 @@ has_handler() {
 	return 1
 }
 
+has_feature() {
+	local feature="$1"
+
+	$PROG --version | grep -osqE "^Compile time options:.* ${feature}( |\$)"
+}
+
 append_bool() {
 	local section="$1"
 	local option="$2"
@@ -767,8 +773,8 @@ dnsmasq_start()
 		xappend "--conf-file=${dnsmasqconffile}"
 	}
 
-	$PROG --version | grep -osqE "^Compile time options:.* DHCPv6( |$)" && DHCPv6CAPABLE=1 || DHCPv6CAPABLE=0
-
+	has_feature DHCPv6 && DHCPv6CAPABLE=1 || DHCPv6CAPABLE=0
+	has_feature DNSSEC && DNSSECCAPABLE=1 || DNSSECCAPABLE=0
 
 	if [ -x /usr/sbin/odhcpd -a -x /etc/init.d/odhcpd ] ; then
 		local odhcpd_is_main odhcpd_is_enabled
@@ -921,17 +927,32 @@ dnsmasq_start()
 		config_list_foreach "$cfg" rebind_domain append_rebind_domain
 	}
 
+	# The "dnssec" option used to be a pure boolean and when enabled
+	# without having the "dnsmasq-full" package installed dnsmasq wouldn't
+	# start. Setting the option to the value "2" emits a warning, but
+	# enables DNSSEC validation if and only if it's available in the
+	# daemon.
+	#
+	# Discussion: https://github.com/openwrt/openwrt/pull/1812
 	config_get_bool dnssec "$cfg" dnssec 0
-	[ "$dnssec" -gt 0 ] && {
-		xappend "--conf-file=$TRUSTANCHORSFILE"
-		xappend "--dnssec"
-		[ -x /etc/init.d/sysntpd ] && {
-			/etc/init.d/sysntpd enabled
-			[ "$?" -ne 0 -o "$(uci_get system.ntp.enabled)" = "1" ] && {
-				[ -f "$TIMEVALIDFILE" ] || xappend "--dnssec-no-timecheck"
+	config_get dnssec_raw "$cfg" dnssec 0
+	[ "$dnssec" -gt 0 -o "$dnssec_raw" -eq 2 ] && {
+		if [ "$DNSSECCAPABLE" -eq 0 -a "$dnssec_raw" -eq 2 ]; then
+			logger -t dnsmasq -p warn \
+				'DNSSEC validation is not available in the'\
+				'dnsmasq binary and thus DISABLED. Install'\
+				'the "dnsmasq-full" package!'
+		else
+			xappend "--conf-file=$TRUSTANCHORSFILE"
+			xappend "--dnssec"
+			[ -x /etc/init.d/sysntpd ] && {
+				/etc/init.d/sysntpd enabled
+				[ "$?" -ne 0 -o "$(uci_get system.ntp.enabled)" = "1" ] && {
+					[ -f "$TIMEVALIDFILE" ] || xappend "--dnssec-no-timecheck"
+				}
 			}
-		}
-		append_bool "$cfg" dnsseccheckunsigned "--dnssec-check-unsigned"
+			append_bool "$cfg" dnsseccheckunsigned "--dnssec-check-unsigned"
+		fi
 	}
 
 	config_get addmac "$cfg" addmac 0
