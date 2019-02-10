@@ -23,8 +23,11 @@ PKG_CPE_ID:=cpe:/a:paul_kranenburg:strace
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 PKG_FIXUP:=autoreconf
-PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_strace_libunwind
 PKG_INSTALL:=1
+
+PKG_CONFIG_DEPENDS := \
+	CONFIG_STRACE_LIBDW \
+	CONFIG_STRACE_LIBUNWIND
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -44,7 +47,7 @@ define Package/strace
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=System call tracer
-  DEPENDS:=+PACKAGE_strace_libunwind:libunwind
+  DEPENDS:=+STRACE_LIBDW:libdw +STRACE_LIBUNWIND:libunwind
   URL:=http://strace.sourceforge.net/
 endef
 
@@ -54,17 +57,22 @@ system calls a program makes while it is running.
 endef
 
 define Package/strace/config
-config PACKAGE_strace_libdw
+menu "Select strace configuration options"
+	depends on PACKAGE_strace
+
+config STRACE_LIBDW
 	bool "Enable stack tracing support using libdw"
 	default n
-config PACKAGE_strace_libunwind
+config STRACE_LIBUNWIND
 	bool "Enable stack tracing support using libunwind (experimental)"
 	default n
+
+endmenu
 endef
 
 CONFIGURE_ARGS += \
-	--with-libdw=$(if $(CONFIG_PACKAGE_strace_libdw),yes,no) \
-	--with-libunwind=$(if $(CONFIG_PACKAGE_strace_libunwind),yes,no)
+	--with-libdw=$(if $(CONFIG_STRACE_LIBDW),yes,no) \
+	--with-libunwind=$(if $(CONFIG_STRACE_LIBUNWIND),yes,no)
 
 MAKE_FLAGS := \
 	CCOPT="$(TARGET_CFLAGS)"
