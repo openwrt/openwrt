@@ -39,12 +39,12 @@ endef
 define Package/libasm
   $(call Package/elfutils/Default)
   TITLE+= (libasm)
-  DEPENDS:=libelf +libdw
+  DEPENDS:=+libelf +libdw
 endef
 
 define Package/libdw
   $(call Package/elfutils/Default)
-  DEPENDS:=libelf +libbz2
+  DEPENDS:=+libelf +libbz2
   TITLE+= (libdw)
 endef
 
