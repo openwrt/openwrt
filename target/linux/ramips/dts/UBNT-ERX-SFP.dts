@@ -21,4 +21,39 @@
 			reg = <0x25>;
 		};
 	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		poe_eth0 {
+			gpio-export,name = "poe_eth0";
+			gpio-export,output = <0>;
+			gpios = <&gpio0 496 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_eth1 {
+			gpio-export,name = "poe_eth1";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 497 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_eth2 {
+			gpio-export,name = "poe_eth2";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 498 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_eth3 {
+			gpio-export,name = "poe_eth3";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 499 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_eth4 {
+			gpio-export,name = "poe_eth4";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 500 GPIO_ACTIVE_HIGH>;
+		};
+	};
 };
