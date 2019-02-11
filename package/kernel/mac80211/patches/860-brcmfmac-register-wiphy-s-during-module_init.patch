@@ -67,16 +67,17 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	kfree(fwctx);
  }
  
-@@ -528,6 +537,8 @@ int brcmf_fw_get_firmwares_pcie(struct d
+@@ -528,6 +537,9 @@ int brcmf_fw_get_firmwares_pcie(struct d
  				u16 domain_nr, u16 bus_nr)
  {
  	struct brcmf_fw *fwctx;
 +	struct completion completion;
++	unsigned long time_left;
 +	int err;
  
  	brcmf_dbg(TRACE, "enter: dev=%s\n", dev_name(dev));
  	if (!fw_cb || !code)
-@@ -548,9 +559,17 @@ int brcmf_fw_get_firmwares_pcie(struct d
+@@ -548,9 +560,20 @@ int brcmf_fw_get_firmwares_pcie(struct d
  	fwctx->domain_nr = domain_nr;
  	fwctx->bus_nr = bus_nr;
  
@@ -87,9 +88,12 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +	err = request_firmware_nowait(THIS_MODULE, true, code, dev,
  				       GFP_KERNEL, fwctx,
  				       brcmf_fw_request_code_done);
-+	if (!err)
-+		wait_for_completion_timeout(&completion,
-+					    msecs_to_jiffies(5000));
++	if (!err) {
++		time_left = wait_for_completion_timeout(&completion,
++							msecs_to_jiffies(5000));
++		if (!time_left && fwctx)
++			fwctx->completion = NULL;
++	}
 +
 +	return err;
  }
