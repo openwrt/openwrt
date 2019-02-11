@@ -40,15 +40,16 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	kfree(fwctx);
  }
  
-@@ -598,6 +601,7 @@ int brcmf_fw_get_firmwares(struct device
+@@ -598,6 +601,8 @@ int brcmf_fw_get_firmwares(struct device
  {
  	struct brcmf_fw_item *first = &req->items[0];
  	struct brcmf_fw *fwctx;
 +	struct completion completion;
++	unsigned long time_left;
  	int ret;
  
  	brcmf_dbg(TRACE, "enter: dev=%s\n", dev_name(dev));
-@@ -615,12 +619,17 @@ int brcmf_fw_get_firmwares(struct device
+@@ -615,12 +620,20 @@ int brcmf_fw_get_firmwares(struct device
  	fwctx->req = req;
  	fwctx->done = fw_cb;
  
@@ -61,7 +62,10 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	if (ret < 0)
  		brcmf_fw_request_done(NULL, fwctx);
  
-+	wait_for_completion_timeout(&completion, msecs_to_jiffies(5000));
++	time_left = wait_for_completion_timeout(&completion,
++						msecs_to_jiffies(5000));
++	if (!time_left && fwctx)
++		fwctx->completion = NULL;
 +
  	return 0;
  }
