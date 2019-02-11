@@ -581,7 +581,7 @@ define BuildImage
 		$(call Image/Prepare)
 
     legacy-images-prepare-make: image_prepare
-		$(MAKE) legacy-images-prepare
+		$(MAKE) legacy-images-prepare BIN_DIR="$(BIN_DIR)"
 
   else
     image_prepare:
@@ -605,7 +605,7 @@ define BuildImage
 
   legacy-images-make: install-images
 	$(call Image/mkfs/ubifs/legacy)
-	$(MAKE) legacy-images
+	$(MAKE) legacy-images BIN_DIR="$(BIN_DIR)"
 
   install: install-images
 	$(call Image/Manifest)
