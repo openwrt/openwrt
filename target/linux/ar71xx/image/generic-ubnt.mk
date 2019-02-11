@@ -57,6 +57,7 @@ endef
 
 define Device/ubnt-xw
   $(Device/ubnt)
+  DEVICE_PACKAGES += rssileds
   UBNT_TYPE := XW
   UBNT_CHIP := ar934x
 endef
