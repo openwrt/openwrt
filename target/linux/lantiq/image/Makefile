@@ -677,6 +677,17 @@ define Device/avm_fritz7412
 endef
 TARGET_DEVICES += avm_fritz7412
 
+define Device/avm_fritz7362sl
+  $(Device/AVM)
+  $(Device/NAND)
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_DTS := FRITZ7362SL
+  DEVICE_TITLE := AVM FRITZ!Box 7362 SL
+  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic kmod-usb-dwc2 fritz-tffs
+endef
+TARGET_DEVICES += avm_fritz7362sl
+
 define Device/arcadyan_vg3503j
   IMAGE_SIZE := 8000k
   DEVICE_DTS := VG3503J
