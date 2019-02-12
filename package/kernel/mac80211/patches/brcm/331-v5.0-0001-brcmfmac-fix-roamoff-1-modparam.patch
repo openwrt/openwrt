@@ -1,7 +1,7 @@
-From 22d319f2665dd3458d59c934fa0c8cf1b1d7227f Mon Sep 17 00:00:00 2001
+From 8c892df41500469729e0d662816300196e4f463d Mon Sep 17 00:00:00 2001
 From: Stijn Tintel <stijn@linux-ipv6.be>
-Date: Sat, 10 Nov 2018 13:25:20 +0200
-Subject: [PATCH wireless-drivers] brcmfmac: fix roamoff=1 modparam
+Date: Tue, 4 Dec 2018 20:29:05 +0200
+Subject: [PATCH] brcmfmac: fix roamoff=1 modparam
 
 When the update_connect_param callback is set, nl80211 expects the flag
 WIPHY_FLAG_SUPPORTS_FW_ROAM to be set as well. However, this flag is
@@ -15,6 +15,7 @@ Fixes: 7f9a3e150ec7 ("nl80211: Update ERP info using NL80211_CMD_UPDATE_CONNECT_
 Cc: Stable <stable@vger.kernel.org> # 4.19+
 Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 ---
  .../wireless/broadcom/brcm80211/brcmfmac/cfg80211.c   | 11 +++++++++--
  .../wireless/broadcom/brcm80211/brcmfmac/cfg80211.h   |  2 +-
