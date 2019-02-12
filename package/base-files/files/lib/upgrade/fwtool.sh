@@ -18,7 +18,8 @@ fwtool_check_signature() {
 		return 0
 	fi
 
-	ucert -V -m "$1" -c "/tmp/sysupgrade.ucert" -P /etc/opkg/keys
+	fwtool -q -T -s /dev/null "$1" | \
+		ucert -V -m - -c "/tmp/sysupgrade.ucert" -P /etc/opkg/keys
 
 	return $?
 }
