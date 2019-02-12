@@ -860,6 +860,8 @@
 			compatible = "qcom,ipq806x-ahci", "generic-ahci";
 			reg = <0x29000000 0x180>;
 
+			ports-implemented = <0x1>;
+
 			interrupts = <0 209 0x0>;
 
 			clocks = <&gcc SFAB_SATA_S_H_CLK>,
