@@ -200,7 +200,7 @@ Signed-off-by: Biwen Li <biwen.li@nxp.com>
  	int			(*ndo_del_slave)(struct net_device *dev,
  						 struct net_device *slave_dev);
  	netdev_features_t	(*ndo_fix_features)(struct net_device *dev,
-@@ -2341,7 +2342,8 @@ int register_netdevice_notifier(struct n
+@@ -2344,7 +2345,8 @@ int register_netdevice_notifier(struct n
  int unregister_netdevice_notifier(struct notifier_block *nb);
  
  struct netdev_notifier_info {
@@ -210,7 +210,7 @@ Signed-off-by: Biwen Li <biwen.li@nxp.com>
  };
  
  struct netdev_notifier_info_ext {
-@@ -2373,6 +2375,7 @@ static inline void netdev_notifier_info_
+@@ -2376,6 +2378,7 @@ static inline void netdev_notifier_info_
  					     struct net_device *dev)
  {
  	info->dev = dev;
@@ -218,7 +218,7 @@ Signed-off-by: Biwen Li <biwen.li@nxp.com>
  }
  
  static inline struct net_device *
-@@ -2381,6 +2384,12 @@ netdev_notifier_info_to_dev(const struct
+@@ -2384,6 +2387,12 @@ netdev_notifier_info_to_dev(const struct
  	return info->dev;
  }
  
