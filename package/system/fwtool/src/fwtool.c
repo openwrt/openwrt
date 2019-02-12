@@ -347,8 +347,10 @@ extract_data(const char *name)
 			ret = 0;
 			break;
 		} else if (tr.type == FWIMAGE_INFO) {
-			if (!metadata_file)
+			if (!metadata_file) {
+				dbuf.file_len += data_len + sizeof(tr);
 				break;
+			}
 
 			hdr = buf;
 			data_len -= sizeof(*hdr);
