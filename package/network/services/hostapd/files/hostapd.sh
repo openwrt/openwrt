@@ -892,7 +892,7 @@ wpa_supplicant_run() {
 
 	_wpa_supplicant_common "$ifname"
 
-	/usr/sbin/wpa_supplicant -B \
+	/usr/sbin/wpa_supplicant -B -s \
 		${network_bridge:+-b $network_bridge} \
 		-P "/var/run/wpa_supplicant-${ifname}.pid" \
 		-D ${_w_driver:-wext} \
