@@ -49,6 +49,10 @@ platform_do_upgrade() {
 	8dev,jalapeno)
 		nand_do_upgrade "$ARGV"
 		;;
+	asus,map-ac2200)
+		CI_KERNPART="linux"
+		nand_do_upgrade "$1"
+		;;
 	asus,rt-ac58u)
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"

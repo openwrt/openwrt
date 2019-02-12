@@ -62,6 +62,15 @@ define Device/8dev_jalapeno
 endef
 TARGET_DEVICES += 8dev_jalapeno
 
+define Device/asus_map-ac2200
+	$(call Device/FitImageLzma)
+	DEVICE_DTS := qcom-ipq4019-map-ac2200
+	DEVICE_TITLE := ASUS Lyra MAP-AC2200
+	IMAGES := sysupgrade.bin
+	DEVICE_PACKAGES := ipq-wifi-asus_map-ac2200 ath10k-firmware-qca9888-ct kmod-ath3k
+endef
+TARGET_DEVICES += asus_map-ac2200
+
 define Device/asus_rt-ac58u
 	$(call Device/FitImageLzma)
 	DEVICE_DTS := qcom-ipq4018-rt-ac58u
