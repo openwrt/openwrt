@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016 OpenWrt.org
+# Copyright (C) 2013-2019 OpenWrt.org
 # Copyright (C) 2016 Yousong Zhou
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -127,6 +127,16 @@ endef
 
 TARGET_DEVICES += sun8i-h2-plus-orangepi-r1
 
+define Device/sun8i-h3-bananapi-m2-plus
+  DEVICE_TITLE:=Sinovoip Banana Pi M2 Plus
+  DEVICE_PACKAGES:=kmod-rtc-sunxi \
+	kmod-leds-gpio kmod-ledtrig-heartbeat \
+	kmod-brcmfmac brcmfmac-firmware-43430a0-sdio wpad-basic
+  SUPPORTED_DEVICES:=sinovoip,bananapi-m2-plus
+  SUNXI_DTS:=sun8i-h3-bananapi-m2-plus
+endef
+
+TARGET_DEVICES += sun8i-h3-bananapi-m2-plus
 
 define Device/sun8i-h3-nanopi-m1-plus
   DEVICE_TITLE:=FriendlyArm NanoPi M1 Plus
