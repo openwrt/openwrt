@@ -77,6 +77,19 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 -	entry->transit_count--;
 -	if (entry->suppressed && entry->suppr_transit_count)
 -		entry->suppr_transit_count--;
+-
+-	brcmf_dbg(DATA, "%s flags %d htod %X seq %X\n", entry->name, flags,
+-		  skcb->htod, seq);
+-
+-	/* pick up the implicit credit from this packet */
+-	fifo = brcmf_skb_htod_tag_get_field(skb, FIFO);
+-	if ((fws->fcmode == BRCMF_FWS_FCMODE_IMPLIED_CREDIT) ||
+-	    (brcmf_skb_if_flags_get_field(skb, REQ_CREDIT)) ||
+-	    (flags == BRCMF_FWS_TXSTATUS_HOST_TOSSED)) {
+-		brcmf_fws_return_credits(fws, fifo, 1);
+-		brcmf_fws_schedule_deq(fws);
+-	}
+-	brcmf_fws_macdesc_return_req_credit(skb);
 +		skcb = brcmf_skbcb(skb);
 +		entry = skcb->mac;
 +		if (WARN_ON(!entry)) {
@@ -87,20 +100,13 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 +		if (entry->suppressed && entry->suppr_transit_count)
 +			entry->suppr_transit_count--;
  
--	brcmf_dbg(DATA, "%s flags %d htod %X seq %X\n", entry->name, flags,
--		  skcb->htod, seq);
+-	ret = brcmf_proto_hdrpull(fws->drvr, false, skb, &ifp);
+-	if (ret) {
+-		brcmu_pkt_buf_free_skb(skb);
+-		return -EINVAL;
 +		brcmf_dbg(DATA, "%s flags %d htod %X seq %X\n", entry->name,
 +			  flags, skcb->htod, seq);
- 
--	/* pick up the implicit credit from this packet */
--	fifo = brcmf_skb_htod_tag_get_field(skb, FIFO);
--	if ((fws->fcmode == BRCMF_FWS_FCMODE_IMPLIED_CREDIT) ||
--	    (brcmf_skb_if_flags_get_field(skb, REQ_CREDIT)) ||
--	    (flags == BRCMF_FWS_TXSTATUS_HOST_TOSSED)) {
--		brcmf_fws_return_credits(fws, fifo, 1);
--		brcmf_fws_schedule_deq(fws);
--	}
--	brcmf_fws_macdesc_return_req_credit(skb);
++
 +		/* pick up the implicit credit from this packet */
 +		fifo = brcmf_skb_htod_tag_get_field(skb, FIFO);
 +		if (fws->fcmode == BRCMF_FWS_FCMODE_IMPLIED_CREDIT ||
@@ -110,11 +116,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 +			brcmf_fws_schedule_deq(fws);
 +		}
 +		brcmf_fws_macdesc_return_req_credit(skb);
- 
--	ret = brcmf_proto_hdrpull(fws->drvr, false, skb, &ifp);
--	if (ret) {
--		brcmu_pkt_buf_free_skb(skb);
--		return -EINVAL;
++
 +		ret = brcmf_proto_hdrpull(fws->drvr, false, skb, &ifp);
 +		if (ret) {
 +			brcmu_pkt_buf_free_skb(skb);
