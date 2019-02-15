@@ -28,6 +28,7 @@ endef
 # the only real content.
 define Build/dns313-images
 	mkdir -p $@.tmp/.boot
+	chmod 755 $@.tmp/.boot
 
 	echo "dummy" > $@.tmp/dummyfile
 
@@ -38,9 +39,20 @@ define Build/dns313-images
 	dns313-header $(IMAGE_KERNEL) \
 		$@.tmp/.boot/zImage
 
-	tar --sort=name --owner=0 --group=0 --numeric-owner -czf $@ \
-		-C $@.tmp .boot \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)")
+	rm $@.tmp/dummyfile
+
+	genext2fs --block-size $(BLOCKSIZE:%k=%Ki) \
+		--size-in-blocks $$((1024 * $(CONFIG_TARGET_KERNEL_PARTSIZE))) \
+		--squash-uids \
+		--root $@.tmp $@.tmp-boot
+
+	# The device firmware needs revision 1 of EXT2
+	tune2fs -O filetype $@.tmp-boot
+	e2fsck -pDf $@.tmp-boot > /dev/null
+
+	./dns313_gen_hdd_img.sh $@ $@.tmp-boot $(IMAGE_ROOTFS) \
+		$(CONFIG_TARGET_KERNEL_PARTSIZE) \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
 
 	rm -rf $@.tmp
 endef
@@ -106,7 +118,8 @@ GEMINI_NAS_PACKAGES:=kmod-md-mod kmod-md-linear kmod-md-multipath \
 		kmod-fs-btrfs kmod-fs-cifs kmod-fs-nfs \
 		kmod-fs-nfsd kmod-fs-ntfs kmod-fs-reiserfs kmod-fs-vfat \
 		kmod-nls-utf8 kmod-usb-storage-extras \
-		samba36-server mdadm cfdisk fdisk e2fsprogs badblocks
+		samba36-server mdadm cfdisk fdisk e2fsprogs badblocks \
+		partx-utils
 
 define Device/dlink_dir-685
 	DEVICE_TITLE := D-Link DIR-685 Xtreme N Storage Router
@@ -123,8 +136,10 @@ define Device/dlink_dns-313
 	DEVICE_TITLE := D-Link DNS-313 1-Bay Network Storage Enclosure
 	DEVICE_DTS := gemini-dlink-dns-313
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
-	IMAGES := bootpart.tar.gz
-	IMAGE/bootpart.tar.gz := dns313-images
+	BLOCKSIZE := 1k
+	FILESYSTEMS := ext4
+	IMAGES := factory.bin.gz
+	IMAGE/factory.bin.gz := dns313-images | gzip
 endef
 TARGET_DEVICES += dlink_dns-313
 
