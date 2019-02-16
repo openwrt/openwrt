@@ -57,17 +57,19 @@ system calls a program makes while it is running.
 endef
 
 define Package/strace/config
-menu "Select strace configuration options"
-	depends on PACKAGE_strace
+choice
+	prompt "stack tracing support"
+	default STRACE_NONE
 
-config STRACE_LIBDW
-	bool "Enable stack tracing support using libdw"
-	default n
-config STRACE_LIBUNWIND
-	bool "Enable stack tracing support using libunwind (experimental)"
-	default n
+	config STRACE_NONE
+		bool "None"
 
-endmenu
+	config STRACE_LIBDW
+		bool "libdw"
+
+	config STRACE_LIBUNWIND
+		bool "libunwind (experimental)"
+endchoice
 endef
 
 CONFIGURE_ARGS += \
