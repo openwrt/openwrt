@@ -25,7 +25,7 @@ ifeq ($(IS_TTY),1)
     endef
   else
     define progress
-	:;
+	printf "\r$(1)" >&2;
     endef
   endif
 else
