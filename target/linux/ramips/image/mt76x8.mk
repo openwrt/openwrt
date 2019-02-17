@@ -352,6 +352,15 @@ define Device/wavlink_wl-wn570ha1
 endef
 TARGET_DEVICES += wavlink_wl-wn570ha1
 
+define Device/wavlink_wl-wn575a3
+  DTS := WL-WN575A3
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Wavlink WL-WN575A3
+  DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += wl-wn575a3
+endef
+TARGET_DEVICES += wavlink_wl-wn575a3
+
 define Device/wcr-1166ds
   DTS := WCR-1166DS
   BUFFALO_TAG_PLATFORM := MTK
@@ -368,14 +377,6 @@ define Device/wcr-1166ds
   DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += wcr-1166ds
-
-define Device/wl-wn575a3
-  DTS := WL-WN575A3
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
-  DEVICE_TITLE := Wavlink WL-WN575A3
-  DEVICE_PACKAGES := kmod-mt76x2
-endef
-TARGET_DEVICES += wl-wn575a3
 
 define Device/widora_neo-16m
   DTS := WIDORA-NEO-16M
