@@ -26,6 +26,7 @@
 #include "dev-ap9x-pci.h"
 #include "dev-eth.h"
 #include "dev-leds-gpio.h"
+#include "dev-gpio-buttons.h"
 #include "dev-m25p80.h"
 #include "dev-nfc.h"
 #include "dev-spi.h"
@@ -37,6 +38,23 @@
 #define LIBREROUTERV1_MAC0_OFFSET		0x0
 #define LIBREROUTERV1_MAC1_OFFSET		0x6
 #define LIBREROUTERV1_WMAC_CALDATA_OFFSET	0x1000
+
+#define LIBREROUTERV1_GPIO_BTN_RESET	17
+
+#define LIBREROUTERV1_KEYS_POLL_INTERVAL		20
+#define LIBREROUTERV1_KEYS_DEBOUNCE_INTERVAL	(3 * LIBREROUTERV1_KEYS_POLL_INTERVAL)
+
+
+static struct gpio_keys_button librerouter_gpio_keys[] __initdata = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = LIBREROUTERV1_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= LIBREROUTERV1_GPIO_BTN_RESET,
+		.active_low	= 1,
+	}
+};
 
 static struct mtd_partition librerouter_spi_partitions[] = {
 	{
@@ -218,6 +236,10 @@ static void __init librerouter_v1_setup(void)
 	ath79_init_mac(ath79_eth1_data.mac_addr, art + LIBREROUTERV1_MAC1_OFFSET, 0);
 
 	ath79_register_eth(1);
+
+	ath79_register_gpio_keys_polled(-1, LIBREROUTERV1_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(librerouter_gpio_keys),
+					librerouter_gpio_keys);
 
 	ath79_register_wmac(art + LIBREROUTERV1_WMAC_CALDATA_OFFSET, NULL);
 
