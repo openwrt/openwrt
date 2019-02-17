@@ -3,6 +3,7 @@ include $(INCLUDE_DIR)/version.mk
 
 PKG_NAME:=ipq-wifi
 PKG_RELEASE:=1
+PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
 
