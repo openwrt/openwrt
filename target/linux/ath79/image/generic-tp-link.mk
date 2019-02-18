@@ -239,3 +239,21 @@ define Device/tplink_tl-wr2543-v1
   SUPPORTED_DEVICES += tl-wr2543-v1
 endef
 TARGET_DEVICES += tplink_tl-wr2543-v1
+
+define Device/tl-cpe210-v3
+  ATH_SOC := qca9533
+  DEVICE_TITLE := TP-LINK CPE210 v3
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := CPE210V3
+  TPLINK_HWID := 0x0
+  TPLINK_HWREV := 0
+  LOADER_TYPE := elf
+  IMAGE_SIZE := 7680k
+  TPLINK_HEADER_VERSION := 1
+  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+  SUPPORTED_DEVICES := tplink,tl-cpe-210-v3 tl-cpe-210-v3
+endef
+TARGET_DEVICES += tl-cpe210-v3
