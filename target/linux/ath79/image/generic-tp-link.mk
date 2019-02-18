@@ -240,7 +240,7 @@ define Device/tplink_tl-wr2543-v1
 endef
 TARGET_DEVICES += tplink_tl-wr2543-v1
 
-define Device/tl-cpe210-v3
+define Device/tplink_tl-cpe210-v3
   ATH_SOC := qca9533
   DEVICE_TITLE := TP-LINK CPE210 v3
   DEVICE_PACKAGES := rssileds
@@ -256,4 +256,4 @@ define Device/tl-cpe210-v3
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
   SUPPORTED_DEVICES := tplink,tl-cpe-210-v3 tl-cpe-210-v3
 endef
-TARGET_DEVICES += tl-cpe210-v3
+TARGET_DEVICES += tplink_tl-cpe210-v3
