@@ -731,7 +731,9 @@ dhcp_relay_add() {
 
 dnsmasq_start()
 {
-	local cfg="$1" disabled resolvfile user_dhcpscript
+	local cfg="$1"
+	local disabled user_dhcpscript
+	local resolvfile localuse
 
 	config_get_bool disabled "$cfg" disabled 0
 	[ "$disabled" -gt 0 ] && return 0
@@ -882,13 +884,13 @@ dnsmasq_start()
 	config_get_bool cachelocal "$cfg" cachelocal 1
 
 	config_get_bool noresolv "$cfg" noresolv 0
+	config_get_bool localuse "$cfg" localuse 0
 	if [ "$noresolv" != "1" ]; then
-		config_get resolvfile "$cfg" resolvfile "/tmp/resolv.conf.auto"
-		# So jail doesn't complain if file missing
-		[ -n "$resolvfile" -a \! -e "$resolvfile" ] && touch "$resolvfile"
+		config_get resolvfile "$cfg" resolvfile /tmp/resolv.conf.auto
+		[ -n "$resolvfile" -a ! -e "$resolvfile" ] && touch "$resolvfile"
+		xappend "--resolv-file=$resolvfile"
+		[ "$resolvfile" = "/tmp/resolv.conf.auto" ] && localuse=1
 	fi
-
-	[ -n "$resolvfile" ] && xappend "--resolv-file=$resolvfile"
 
 	config_get hostsfile "$cfg" dhcphostsfile
 	[ -e "$hostsfile" ] && xappend "--dhcp-hostsfile=$hostsfile"
@@ -1011,7 +1013,7 @@ dnsmasq_start()
 	mv -f $CONFIGFILE_TMP $CONFIGFILE
 	mv -f $HOSTFILE_TMP $HOSTFILE
 
-	[ "$resolvfile" = "/tmp/resolv.conf.auto" ] && {
+	[ "$localuse" -gt 0 ] && {
 		rm -f /tmp/resolv.conf
 		[ $ADD_LOCAL_DOMAIN -eq 1 ] && [ -n "$DOMAIN" ] && {
 			echo "search $DOMAIN" >> /tmp/resolv.conf
@@ -1037,17 +1039,15 @@ dnsmasq_start()
 
 dnsmasq_stop()
 {
-	local cfg="$1" resolvfile
+	local cfg="$1"
+	local noresolv resolvfile localuse
 
+	config_get_bool noresolv "$cfg" noresolv 0
+	config_get_bool localuse "$cfg" localuse 0
 	config_get resolvfile "$cfg" "resolvfile"
 
-	#relink /tmp/resolve.conf only for main instance
-	[ "$resolvfile" = "/tmp/resolv.conf.auto" ] && {
-		[ -f /tmp/resolv.conf ] && {
-			rm -f /tmp/resolv.conf
-			ln -s "$resolvfile" /tmp/resolv.conf
-		}
-	}
+	[ "$noresolv" = 0 -a "$resolvfile" = "/tmp/resolv.conf.auto" ] && localuse=1
+	[ "$localuse" -gt 0 ] && ln -sf "/tmp/resolv.conf.auto" /tmp/resolv.conf
 
 	rm -f ${BASEDHCPSTAMPFILE}.${cfg}.*.dhcp
 }
