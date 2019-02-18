@@ -1,14 +1,14 @@
 Overview  
 ======== 
 
-This repo is maintained by GL.iNet team, which is used to release stuck firmware.  
+This repo is maintained by GL.iNet team, which is used to release stock firmware.  
 
 Feature  
 =======  
 
 - Support latest device of GL.iNet 
 - Support kernel driver which isn't support by kernel-tree  
-- Keep updating with stuck firmware  
+- Keep updating with stock firmware  
 
 Prerequisites  
 =============  
