@@ -1,0 +1,166 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+#include "qca9533.dtsi"
+
+/ {
+	compatible = "tplink,tl-cpe-210-v2", "qca,qca9533";
+	model = "TP-LINK CPE210 v2";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x4000000>;
+	};
+
+	extosc: ref {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-output-names = "ref";
+		clock-frequency = <25000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		lan {
+			label = "tp-link:green:lan";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		link1 {
+			label = "tp-link:green:link1";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		link2 {
+			label = "tp-link:green:link2";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		link3 {
+			label = "tp-link:green:link3";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		link4 {
+			label = "tp-link:green:link4";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		button0 {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&pll {
+	clocks = <&extosc>;
+};
+
+&uart {
+	status = "okay";
+};
+
+&spi {
+	status = "okay";
+	num-cs = <1>;
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			uboot: partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x020000>;
+				read-only;
+			};
+
+			partition@20000 {
+				label = "pation-table";
+				reg = <0x020000 0x10000>;
+				read-only;
+			};
+
+			info: partition@30000 {
+				label = "product-info";
+				reg = <0x030000 0x10000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "firmware";
+				reg = <0x040000 0x780000>;
+			};
+
+			partition@7c0000 {
+				label = "config";
+				reg = <0x7c0000 0x30000>;
+				read-only;
+			};
+
+			ART: partition@7f0000 {
+				label = "ART";
+				reg = <0x7f0000 0x10000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy-mask = <4>;
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	mtd-mac-address = <&info 0x8>;
+	phy-handle = <&phy4>;
+	phy-mode = "mii";
+
+	fixed-link {
+		speed = <100>;
+		full-duplex;
+	};
+};
+
+&wmac {
+	status = "okay";
+	mtd-cal-data = <&ART 0x1000>;
+	mtd-mac-address = <&info 0x8>;
+};
+
