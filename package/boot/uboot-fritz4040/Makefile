@@ -10,9 +10,9 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_SOURCE_URL:=https://github.com/chunkeey/FritzBox-4040-UBOOT
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=a768e513b07b5999a8e7d7740ac8d9da04ee7e51
-PKG_SOURCE_DATE:=2019-01-25
-PKG_MIRROR_HASH:=eb552c946bcad53763557b19703b10210f7acabf0d135759beddb7b11fa4ef25
+PKG_SOURCE_VERSION:=d306cce36f98a0a67becc42f20df4b22f1d1465f
+PKG_SOURCE_DATE:=2019-02-08
+PKG_MIRROR_HASH:=715380605dd0cd6ffd65a18b34127bd57dfe9fb0a0164bf8aca703ee018d8070
 
 PKG_RELEASE:=1
 
@@ -21,11 +21,12 @@ include $(INCLUDE_DIR)/package.mk
 
 define U-Boot/Default
   BUILD_TARGET:=ipq40xx
+  UBOOT_BOARD:=$(1)
+  UBOOT_IMAGE:=uboot-$(1).bin
 endef
 
 define U-Boot/fritz4040
   NAME:=FritzBox 4040
-  UBOOT_IMAGE:=uboot-fritz4040.bin
   BUILD_DEVICES:=avm_fritzbox-4040
 endef
 
@@ -42,7 +43,7 @@ endef
 
 define Build/Compile
 	$(Build/Compile/U-Boot)
-	(cd $(PKG_BUILD_DIR); ./fritz/fritzcreator.sh;)
+	(cd $(PKG_BUILD_DIR); ./fritz/fritzcreator.sh $(UBOOT_BOARD);)
 endef
 
 define Build/InstallDev
