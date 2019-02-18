@@ -33,6 +33,10 @@ ipq40xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
 		;;
+	avm,fritzbox-7530)
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
+		;;
 	compex,wpj428)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;

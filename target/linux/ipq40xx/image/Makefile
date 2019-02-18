@@ -121,6 +121,15 @@ define Device/avm_fritzbox-4040
 endef
 TARGET_DEVICES += avm_fritzbox-4040
 
+define Device/avm_fritzbox-7530
+	$(call Device/FitImageLzma)
+	DEVICE_DTS := qcom-ipq4019-fritzbox-7530
+	DEVICE_TITLE := AVM Fritz!Box 7530
+	DEVICE_PACKAGES := fritz-caldata ipq-wifi-avm_fritzbox-7530
+	IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += avm_fritzbox-7530
+
 define Device/compex_wpj428
 	$(call Device/FitImage)
 	DEVICE_DTS := qcom-ipq4028-wpj428

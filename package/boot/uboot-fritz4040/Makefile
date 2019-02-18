@@ -30,6 +30,11 @@ define U-Boot/fritz4040
   BUILD_DEVICES:=avm_fritzbox-4040
 endef
 
+define U-Boot/fritz7530
+  NAME:=FritzBox 7530
+  BUILD_DEVICES:=avm_fritzbox-7530
+endef
+
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 UBOOT_MAKE_FLAGS = USE_PRIVATE_LIBGCC=yes
 export DTC
@@ -56,6 +61,6 @@ define Package/u-boot/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/upload-to-f4040.sh $(1)/
 endef
 
-UBOOT_TARGETS := fritz4040
+UBOOT_TARGETS := fritz4040 fritz7530
 
 $(eval $(call BuildPackage/U-Boot))
