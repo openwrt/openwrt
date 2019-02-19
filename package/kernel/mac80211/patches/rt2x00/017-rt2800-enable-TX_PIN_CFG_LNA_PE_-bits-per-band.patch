@@ -1,4 +1,4 @@
-From 9c9bf1af644ad16fca1fd601cfc3a2a2c6bbc58b Mon Sep 17 00:00:00 2001
+From 9ad3b55654455258a9463384edb40077439d879f Mon Sep 17 00:00:00 2001
 From: Stanislaw Gruszka <sgruszka@redhat.com>
 Date: Wed, 13 Feb 2019 11:09:14 +0100
 Subject: [PATCH 17/28] rt2800: enable TX_PIN_CFG_LNA_PE_ bits per band
@@ -7,6 +7,7 @@ Do not enable TX_PIN_CFG_LNA_PE_A* bits for 2.4GHz band and
 vice versa TX_PIN_CFG_LNA_PE_G* bits for 5GHz.
 
 Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 ---
  drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 18 ++++++++++++------
  1 file changed, 12 insertions(+), 6 deletions(-)

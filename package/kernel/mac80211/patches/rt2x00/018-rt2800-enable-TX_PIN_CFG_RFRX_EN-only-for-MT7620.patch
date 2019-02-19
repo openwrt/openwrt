@@ -1,4 +1,4 @@
-From 4c0475ad8b73072b5b638163c2eb8309310406ed Mon Sep 17 00:00:00 2001
+From 7aca14885edeab536a8cbe1e7cfeadd4c3310b9b Mon Sep 17 00:00:00 2001
 From: Stanislaw Gruszka <sgruszka@redhat.com>
 Date: Wed, 13 Feb 2019 11:09:15 +0100
 Subject: [PATCH 18/28] rt2800: enable TX_PIN_CFG_RFRX_EN only for MT7620
@@ -9,6 +9,7 @@ correct for older devices.
 
 Fixes: 41977e86c984 ("rt2x00: add support for MT7620")
 Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 ---
  drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 7 ++++---
  1 file changed, 4 insertions(+), 3 deletions(-)
