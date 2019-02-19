@@ -181,7 +181,7 @@ $(eval $(call KernelPackage,drm))
 define KernelPackage/drm-amdgpu
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=AMDGPU DRM support
-  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm +kmod-i2c-algo-bit +amdgpu-firmware
+  DEPENDS:=@TARGET_x86 @DISPLAY_SUPPORT +kmod-drm +kmod-i2c-algo-bit +amdgpu-firmware
   KCONFIG:=CONFIG_DRM_AMDGPU \
 	CONFIG_DRM_AMDGPU_SI=y \
 	CONFIG_DRM_AMDGPU_CIK=y \
@@ -287,7 +287,7 @@ $(eval $(call KernelPackage,drm-imx-ldb))
 define KernelPackage/drm-radeon
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Radeon DRM support
-  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm +kmod-i2c-algo-bit +radeon-firmware
+  DEPENDS:=@TARGET_x86 @DISPLAY_SUPPORT +kmod-drm +kmod-i2c-algo-bit +radeon-firmware
   KCONFIG:=CONFIG_DRM_RADEON
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/radeon/radeon.ko
   AUTOLOAD:=$(call AutoProbe,radeon)
