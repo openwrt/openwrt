@@ -57,7 +57,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  #define memset(p,v,n)							\
 --- a/arch/arm/include/asm/uaccess.h
 +++ b/arch/arm/include/asm/uaccess.h
-@@ -489,6 +489,9 @@ do {									\
+@@ -526,6 +526,9 @@ do {									\
  extern unsigned long __must_check
  arm_copy_from_user(void *to, const void __user *from, unsigned long n);
  
@@ -272,7 +272,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  #ifdef CONFIG_CPU_SPECTRE
  	get_thread_info r3
  	ldr	r3, [r3, #TI_ADDR_LIMIT]
-@@ -102,7 +103,7 @@ ENTRY(arm_copy_from_user)
+@@ -98,7 +99,7 @@ ENTRY(arm_copy_from_user)
  
  #include "copy_template.S"
  
@@ -1502,7 +1502,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  		unsigned long ua_flags = uaccess_save_and_enable();
  		n = __copy_to_user_std(to, from, n);
  		uaccess_restore(ua_flags);
-@@ -156,6 +252,26 @@ arm_copy_to_user(void __user *to, const
+@@ -157,6 +253,26 @@ arm_copy_to_user(void __user *to, const
  	}
  	return n;
  }
