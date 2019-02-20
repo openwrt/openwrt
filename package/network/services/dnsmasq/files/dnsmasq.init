@@ -733,7 +733,7 @@ dnsmasq_start()
 {
 	local cfg="$1"
 	local disabled user_dhcpscript
-	local resolvfile localuse
+	local resolvfile localuse=0
 
 	config_get_bool disabled "$cfg" disabled 0
 	[ "$disabled" -gt 0 ] && return 0
@@ -884,13 +884,13 @@ dnsmasq_start()
 	config_get_bool cachelocal "$cfg" cachelocal 1
 
 	config_get_bool noresolv "$cfg" noresolv 0
-	config_get_bool localuse "$cfg" localuse 0
 	if [ "$noresolv" != "1" ]; then
 		config_get resolvfile "$cfg" resolvfile /tmp/resolv.conf.auto
 		[ -n "$resolvfile" -a ! -e "$resolvfile" ] && touch "$resolvfile"
 		xappend "--resolv-file=$resolvfile"
 		[ "$resolvfile" = "/tmp/resolv.conf.auto" ] && localuse=1
 	fi
+	config_get_bool localuse "$cfg" localuse "$localuse"
 
 	config_get hostsfile "$cfg" dhcphostsfile
 	[ -e "$hostsfile" ] && xappend "--dhcp-hostsfile=$hostsfile"
@@ -1040,13 +1040,13 @@ dnsmasq_start()
 dnsmasq_stop()
 {
 	local cfg="$1"
-	local noresolv resolvfile localuse
+	local noresolv resolvfile localuse=0
 
 	config_get_bool noresolv "$cfg" noresolv 0
-	config_get_bool localuse "$cfg" localuse 0
 	config_get resolvfile "$cfg" "resolvfile"
 
 	[ "$noresolv" = 0 -a "$resolvfile" = "/tmp/resolv.conf.auto" ] && localuse=1
+	config_get_bool localuse "$cfg" localuse "$localuse"
 	[ "$localuse" -gt 0 ] && ln -sf "/tmp/resolv.conf.auto" /tmp/resolv.conf
 
 	rm -f ${BASEDHCPSTAMPFILE}.${cfg}.*.dhcp
