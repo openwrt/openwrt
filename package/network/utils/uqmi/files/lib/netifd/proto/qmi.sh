@@ -83,7 +83,7 @@ proto_qmi_setup() {
 		fi
 	done
 
-	if uqmi -s -d "$device" --get-pin-status | grep '"Not supported"' > /dev/null; then
+	if uqmi -s -d "$device" --get-pin-status | grep '"Not supported"\|"Invalid QMI command"' > /dev/null; then
 		[ -n "$pincode" ] && {
 			uqmi -s -d "$device" --verify-pin1 "$pincode" > /dev/null || uqmi -s -d "$device" --uim-verify-pin1 "$pincode" > /dev/null || {
 				echo "Unable to verify PIN"
