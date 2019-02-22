@@ -122,7 +122,7 @@ define Device/tplink_tl-wdr3600
   DEVICE_TITLE := TP-Link TL-WDR3600
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x36000001
-  SUPPORTED_DEVICES += tl-wdr3600
+  SUPPORTED_DEVICES += tl-wdr4300
 endef
 TARGET_DEVICES += tplink_tl-wdr3600
 
