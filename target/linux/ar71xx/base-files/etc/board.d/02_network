@@ -191,7 +191,6 @@ ar71xx_setup_interfaces()
 	all0315n|\
 	dlan-hotspot|\
 	dlan-pro-500-wp|\
-	ens202ext|\
 	ja76pf2|\
 	rocket-m-ti|\
 	ubnt-unifi-outdoor)
@@ -580,6 +579,11 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "2:lan:2" "3:lan:3" "4:lan:4" "5:wan"
 		;;
+	ens202ext)
+                ucidef_set_interfaces_lan_wan "eth1.1" "eth1.2"
+                ucidef_add_switch "switch0" \
+                        "0@eth1" "2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "1:wan"
+                ;;
 	*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
