@@ -8,30 +8,27 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libevent2
-PKG_VERSION:=2.1.8
-PKG_RELEASE:=3
+PKG_VERSION:=2.1.9-beta
+PKG_RELEASE:=1
 
-PKG_SOURCE:=libevent-$(PKG_VERSION)-stable.tar.gz
-PKG_SOURCE_URL:=https://github.com/libevent/libevent/releases/download/release-$(PKG_VERSION)-stable
-PKG_HASH:=965cc5a8bb46ce4199a47e9b2c9e1cae3b137e8356ffdad6d94d3b9069b71dc2
-PKG_BUILD_DIR:=$(BUILD_DIR)/libevent-$(PKG_VERSION)-stable
+PKG_SOURCE:=libevent-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://github.com/libevent/libevent/releases/download/release-$(PKG_VERSION)
+PKG_HASH:=eeb4c6eb2c4021e22d6278cdcd02815470243ed81077be0cbd0f233fa6fc07e8
+PKG_BUILD_DIR:=$(BUILD_DIR)/libevent-$(PKG_VERSION)
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=BSD-3-Clause
 PKG_CPE_ID:=cpe:/a:libevent_project:libevent
 
-PKG_FIXUP:=autoreconf
-PKG_INSTALL:=1
-PKG_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/cmake.mk
 
 define Package/libevent2/Default
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Event notification
   URL:=http://libevent.org
-  ABI_VERSION:=6
+  ABI_VERSION:=7
 endef
 
 define Package/libevent2/Default/description
@@ -73,6 +70,7 @@ endef
 define Package/libevent2-extra
   $(call Package/libevent2/Default)
   TITLE+= extra library (version 2.1)
+  DEPENDS+=+libevent2-core
 endef
 
 define Package/libevent2-extra/description
@@ -85,7 +83,7 @@ endef
 define Package/libevent2-openssl
   $(call Package/libevent2/Default)
   TITLE+= OpenSSL library (version 2.1)
-  DEPENDS+=+libopenssl
+  DEPENDS+=+libopenssl +libevent2-core
 endef
 
 define Package/libevent2-openssl/description
@@ -98,7 +96,7 @@ endef
 define Package/libevent2-pthreads
   $(call Package/libevent2/Default)
   TITLE+= Pthreads library (version 2.1)
-  DEPENDS+=+libpthread
+  DEPENDS+=+libpthread +libevent2-core
 endef
 
 define Package/libevent2-pthreads/description
@@ -108,49 +106,50 @@ define Package/libevent2-pthreads/description
 	threading & locking.
 endef
 
-TARGET_CFLAGS += $(FPIC)
+TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections -flto
+TARGET_LDFLAGS += -Wl,--gc-sections,--as-needed -flto
 
-CONFIGURE_ARGS += \
-	--enable-shared \
-	--enable-static \
-	--disable-debug-mode
-
-MAKE_FLAGS += \
-	CFLAGS="$(TARGET_CFLAGS)"
+CMAKE_OPTIONS += \
+	-DEVENT__DISABLE_BENCHMARK:BOOL=ON \
+	-DEVENT__DISABLE_DEBUG_MODE:BOOL=ON \
+	-DEVENT__DISABLE_REGRESS:BOOL=ON \
+	-DEVENT__DISABLE_SAMPLES:BOOL=ON \
+	$(if $(CONFIG_PACKAGE_libevent2-openssl),-DEVENT__DISABLE_OPENSSL:BOOL=OFF,-DEVENT__DISABLE_OPENSSL:BOOL=ON) \
+	$(if $(CONFIG_PACKAGE_libevent2-pthreads),-DEVENT__DISABLE_THREAD_SUPPORT:BOOL=OFF,-DEVENT__DISABLE_THREAD_SUPPORT:BOOL=ON) \
+	-DEVENT__DISABLE_TESTS:BOOL=ON
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include/
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent*.{la,a,so} $(1)/usr/lib/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent*-2.1.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent*.{a,so}* $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libevent*.pc $(1)/usr/lib/pkgconfig/
 endef
 
 define Package/libevent2/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent-2.1.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent.so.2.1.* $(1)/usr/lib/
 endef
 
 define Package/libevent2-core/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent_core-2.1.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent_core.so.2.1.* $(1)/usr/lib/
 endef
 
 define Package/libevent2-extra/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent_extra-2.1.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent_extra.so.2.1.* $(1)/usr/lib/
 endef
 
 define Package/libevent2-openssl/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent_openssl-2.1.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent_openssl.so.2.1.* $(1)/usr/lib/
 endef
 
 define Package/libevent2-pthreads/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent_pthreads-2.1.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent_pthreads.so.2.1.* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libevent2))
