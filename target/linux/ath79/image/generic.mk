@@ -92,6 +92,7 @@ define Device/avm_fritz4020
       append-squashfs-fakeroot-be | pad-to 256 | \
       append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
   DEVICE_PACKAGES := fritz-tffs
+  SUPPORTED_DEVICES += fritz4020
 endef
 TARGET_DEVICES += avm_fritz4020
 
