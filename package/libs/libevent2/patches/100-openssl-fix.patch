@@ -1,0 +1,23 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 98082cd..96c6c86 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -800,7 +800,7 @@ if (NOT EVENT__DISABLE_OPENSSL)
+ 
+     list(APPEND SRC_OPENSSL bufferevent_openssl.c)
+     list(APPEND HDR_PUBLIC include/event2/bufferevent_ssl.h)
+-    list(APPEND LIB_APPS ${OPENSSL_LIBRARIES})
++#    list(APPEND LIB_APPS ${OPENSSL_LIBRARIES})
+ endif()
+ 
+ if (NOT EVENT__DISABLE_THREAD_SUPPORT)
+@@ -902,7 +902,8 @@ add_event_library(event_extra
+ 
+ if (NOT EVENT__DISABLE_OPENSSL)
+     add_event_library(event_openssl
+-        LIBRARIES event_core_shared ${OPENSSL_LIBRARIES}
++#        LIBRARIES event_core_shared ${OPENSSL_LIBRARIES}
++	LIBRARIES event_core_shared
+         SOURCES ${SRC_OPENSSL})
+ endif()
+ 
