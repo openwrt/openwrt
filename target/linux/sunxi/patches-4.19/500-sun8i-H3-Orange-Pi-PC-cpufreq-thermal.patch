@@ -1,0 +1,767 @@
+--- a/drivers/rtc/Kconfig
++++ b/drivers/rtc/Kconfig
+@@ -257,6 +257,15 @@
+ 	  reading the date will return a date in the next century.
+ 	  To solve that, you could boot a kernel without this option set, set
+ 	  the RTC date and then boot a kernel with this option set.
++
++config RTC_DRV_DS1307_HWMON
++	bool "HWMON support for rtc-ds1307"
++	depends on RTC_DRV_DS1307 && HWMON
++	depends on !(RTC_DRV_DS1307=y && HWMON=m)
++	default y
++	help
++	  Say Y here if you want to expose temperature sensor data on
++	  rtc-ds1307 (only DS3231)
+ 
+ config RTC_DRV_DS1374
+ 	tristate "Dallas/Maxim DS1374"
+
+
+--- a/arch/arm/boot/dts/sun8i-h3.dtsi
++++ b/arch/arm/boot/dts/sun8i-h3.dtsi
+@@ -47,19 +47,19 @@
+ 		compatible = "operating-points-v2";
+ 		opp-shared;
+ 
+-		opp@648000000 {
++		opp-648000000 {
+ 			opp-hz = /bits/ 64 <648000000>;
+ 			opp-microvolt = <1040000 1040000 1300000>;
+ 			clock-latency-ns = <244144>; /* 8 32k periods */
+ 		};
+ 
+-		opp@816000000 {
++		opp-816000000 {
+ 			opp-hz = /bits/ 64 <816000000>;
+ 			opp-microvolt = <1100000 1100000 1300000>;
+ 			clock-latency-ns = <244144>; /* 8 32k periods */
+ 		};
+ 
+-		opp@1008000000 {
++		opp-1008000000 {
+ 			opp-hz = /bits/ 64 <1008000000>;
+ 			opp-microvolt = <1200000 1200000 1300000>;
+ 			clock-latency-ns = <244144>; /* 8 32k periods */
+@@ -77,36 +77,40 @@
+ 			clocks = <&ccu CLK_CPUX>;
+ 			clock-names = "cpu";
+ 			operating-points-v2 = <&cpu0_opp_table>;
+-			#cooling-cells = <2>;
+-		};
+-
+-		cpu@1 {
++			clock-frequency = <1008000000>;
++			#cooling-cells = <2>;
++		};
++
++		cpu1: cpu@1 {
+ 			compatible = "arm,cortex-a7";
+ 			device_type = "cpu";
+ 			reg = <1>;
+ 			clocks = <&ccu CLK_CPUX>;
+ 			clock-names = "cpu";
+ 			operating-points-v2 = <&cpu0_opp_table>;
+-			#cooling-cells = <2>;
+-		};
+-
+-		cpu@2 {
++			clock-frequency = <1008000000>;
++			#cooling-cells = <2>;
++		};
++
++		cpu2: cpu@2 {
+ 			compatible = "arm,cortex-a7";
+ 			device_type = "cpu";
+ 			reg = <2>;
+ 			clocks = <&ccu CLK_CPUX>;
+ 			clock-names = "cpu";
+ 			operating-points-v2 = <&cpu0_opp_table>;
+-			#cooling-cells = <2>;
+-		};
+-
+-		cpu@3 {
++			clock-frequency = <1008000000>;
++			#cooling-cells = <2>;
++		};
++
++		cpu3: cpu@3 {
+ 			compatible = "arm,cortex-a7";
+ 			device_type = "cpu";
+ 			reg = <3>;
+ 			clocks = <&ccu CLK_CPUX>;
+ 			clock-names = "cpu";
+ 			operating-points-v2 = <&cpu0_opp_table>;
++			clock-frequency = <1008000000>;
+ 			#cooling-cells = <2>;
+ 		};
+ 	};
+@@ -118,6 +122,20 @@
+ 			     <GIC_PPI 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+ 			     <GIC_PPI 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+ 	};
++
++	iio-hwmon {
++		compatible = "iio-hwmon";
++		io-channels = <&ths>;
++	};
++
++	thermal-zones {
++		cpu_thermal: cpu-thermal {
++			/* milliseconds */
++			polling-delay-passive = <250>;
++			polling-delay = <1000>;
++			thermal-sensors = <&ths 0>;
++		};
++	};
+ 
+ 	soc {
+ 		system-control@1c00000 {
+@@ -166,6 +183,47 @@
+ 			assigned-clocks = <&ccu CLK_GPU>;
+ 			assigned-clock-rates = <384000000>;
+ 		};
++
++		r_i2c: i2c@1f02400 {
++			compatible = "allwinner,sun6i-a31-i2c";
++			reg = <0x01f02400 0x400>;
++			interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&r_i2c_pins>;
++			clocks = <&r_ccu CLK_APB0_I2C>;
++			clock-frequency = <100000>;
++			resets = <&r_ccu RST_APB0_I2C>;
++			status = "disabled";
++			#address-cells = <1>;
++			#size-cells = <0>;
++		};
++
++		sid: eeprom@1c14000 {
++			#address-cells = <1>;
++			#size-cells = <1>;
++			compatible = "allwinner,sun8i-h3-sid";
++			reg = <0x01c14000 0x400>;
++
++			ths_calibration: calib@234 {
++				reg = <0x234 0x8>;
++			};
++		};
++
++		ths: thermal_sensor@1c25000 {
++			compatible = "allwinner,sun8i-h3-ths";
++			reg = <0x01c25000 0x100 0x01c14234 0x8>;
++			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_THS>, <&ccu CLK_THS>;
++			clock-names = "ahb", "ths";
++			resets = <&ccu RST_BUS_THS>;
++			reset-names = "ahb";
++			#thermal-sensor-cells = <0>;
++			#io-channel-cells = <0>;
++			status = "disabled";
++
++			nvmem-cells = <&ths_calibration>;
++			nvmem-cell-names = "calibration";
++		};
+ 	};
+ };
+ 
+
+--- a/arch/arm/boot/dts/sun8i-h3-orangepi-pc.dts
++++ b/arch/arm/boot/dts/sun8i-h3-orangepi-pc.dts
+@@ -42,10 +42,10 @@
+ 
+ /dts-v1/;
+ #include "sun8i-h3.dtsi"
+-#include "sunxi-common-regulators.dtsi"
+ 
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/input/input.h>
++#include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+ 	model = "Xunlong Orange Pi PC";
+@@ -54,6 +54,7 @@
+ 	aliases {
+ 		ethernet0 = &emac;
+ 		serial0 = &uart0;
++		spi0 = &spi0;
+ 	};
+ 
+ 	chosen {
+@@ -88,6 +89,14 @@
+ 		};
+ 	};
+ 
++	onewire {
++		compatible = "w1-gpio";
++		gpios = <&pio 0 9 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>; /* PA9 */
++		pinctrl-names = "default";
++		pinctrl-0 = <&w1_pin>;
++		status = "okay";
++	};
++
+ 	r_gpio_keys {
+ 		compatible = "gpio-keys";
+ 		pinctrl-names = "default";
+@@ -95,10 +104,107 @@
+ 
+ 		sw4 {
+ 			label = "sw4";
+-			linux,code = <BTN_0>;
++			linux,code = <KEY_POWER>;
+ 			gpios = <&r_pio 0 3 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	reg_vcc3v3: vcc3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++	};
++
++	reg_usb0_vbus: usb0-vbus {
++		compatible = "regulator-fixed";
++		regulator-name = "usb0-vbus";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		enable-active-high;
++		gpio = <&r_pio 0 2 GPIO_ACTIVE_HIGH>; /* PL2 */
++		status = "okay";
++	};
++};
++
++&cpu0_opp_table {
++		opp-1344000000 {
++			opp-hz = /bits/ 64 <1344000000>;
++			opp-microvolt = <1340000 1340000 1400000>;
++			clock-latency-ns = <244144>; /* 8 32k periods */
++		};
++
++		opp-1440000000 {
++			opp-hz = /bits/ 64 <1440000000>;
++			opp-microvolt = <1400000 1400000 1400000>;
++			clock-latency-ns = <244144>; /* 8 32k periods */
++		};
++
++		opp-1536000000 {
++			opp-hz = /bits/ 64 <1536000000>;
++			opp-microvolt = <1400000 1400000 1400000>;
++			clock-latency-ns = <244144>; /* 8 32k periods */
++		};
++};
++
++&cpu0 {
++	cooling-min-level = <0>;
++	cooling-max-level = <15>;
++	cpu-supply = <&reg_vdd_cpux>;
++};
++
++&cpu_thermal {
++	trips {
++		cpu_warm: cpu_warm {
++			temperature = <65000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++
++		cpu_hot: cpu_hot {
++			temperature = <75000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++
++		cpu_very_hot: cpu_very_hot {
++			temperature = <90000>;
++			hysteresis = <2000>;
++			type = "passive";
++		};
++
++		cpu_crit: cpu_crit {
++			temperature = <105000>;
++			hysteresis = <2000>;
++			type = "critical";
++		};
++	};
++
++	cooling-maps {
++		map0 {
++			trip = <&cpu_warm>;
++			cooling-device = <&cpu0 THERMAL_NO_LIMIT 10>,
++					 <&cpu1 THERMAL_NO_LIMIT 10>,
++					 <&cpu2 THERMAL_NO_LIMIT 10>,
++					 <&cpu3 THERMAL_NO_LIMIT 10>;
++		};
++
++		map1 {
++			trip = <&cpu_hot>;
++			cooling-device = <&cpu0 12 12>,
++					 <&cpu1 12 12>,
++					 <&cpu2 12 12>,
++					 <&cpu3 12 12>;
++		};
++
++		map2 {
++			trip = <&cpu_very_hot>;
++			cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++					 <&cpu1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++					 <&cpu2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++					 <&cpu3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++ 		};
++ 	};
+ };
+ 
+ &codec {
+@@ -150,9 +256,26 @@
+ 	};
+ };
+ 
++&i2c0 {
++	status = "disabled";
++
++	eeprom_a: atmel,24c32@0x57 {		/* RTC module ZS-042 with eeprom */
++		compatible = "atmel,24c32";
++		reg = <0x00000057>;
++		pagesize = <32>;		/* appended from boardinfo */
++	}; //end atmel,24c32@0x57 (eeprom)
++
++	rtc_a: dallas,ds3231@0x68 {		/* RTC module ZS-042 with eeprom */
++		compatible = "dallas,ds3231";
++		reg = <0x00000068>;
++	}; //end dallas,ds3231@0x68 (rtc)
++};
++
+ &ir {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&ir_pins_a>;
++	reg = <0x01f02000 0x400>;
++	clock-frequency = <3000000>;
+ 	status = "okay";
+ };
+ 
+@@ -184,6 +307,11 @@
+ 		pins = "PA15";
+ 		function = "gpio_out";
+ 	};
++
++	w1_pin: w1_pin {
++		pins = "PA9";
++		function = "gpio_in";
++ 	};
+ };
+ 
+ &r_i2c {
+@@ -204,7 +332,7 @@
+ 		 * Use 1.0V as the minimum voltage instead.
+ 		 */
+ 		regulator-min-microvolt = <1000000>;
+-		regulator-max-microvolt = <1300000>;
++		regulator-max-microvolt = <1400000>;
+ 		regulator-boot-on;
+ 		regulator-always-on;
+ 	};
+@@ -227,6 +355,20 @@
+ 	status = "okay";
+ };
+ 
++&spi0  {
++	status = "okay";
++
++	spidev@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <40000000>;
++	};
++};
++
++&ths {
++	status = "okay";
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_pins_a>;
+@@ -252,13 +394,13 @@
+ };
+ 
+ &usb_otg {
+-	dr_mode = "otg";
++	dr_mode = "host";
+ 	status = "okay";
+ };
+ 
+ &usbphy {
+-	usb0_id_det-gpios = <&pio 6 12 GPIO_ACTIVE_HIGH>; /* PG12 */
+-	usb0_vbus-supply = <&reg_usb0_vbus>;
++	usb0_id_det = <&pio 6 12 GPIO_ACTIVE_HIGH>; /* PG12 */
++	usb0_vbus_det = <&reg_usb0_vbus>;
+ 	/* VBUS on USB host ports are always on */
+ 	status = "okay";
+ };
+
+--- a/drivers/thermal/Kconfig
++++ b/drivers/thermal/Kconfig
+@@ -415,6 +415,16 @@
+ 	  Enable this option if you want to have support for thermal management
+ 	  controller present in Mediatek SoCs
+ 
++config SUN8I_THS
++	tristate "Thermal sensor driver for Allwinner H3"
++	depends on MACH_SUN8I || COMPILE_TEST
++	depends on HAS_IOMEM
++	depends on NVMEM_SUNXI_SID
++	depends on OF
++	depends on RESET_CONTROLLER
++	help
++	  Enable this options for support thermal reporting on some Allwinner SoCs.
++
+ menu "Broadcom thermal drivers"
+ depends on ARCH_BCM || ARCH_BRCMSTB || ARCH_BCM2835 || COMPILE_TEST
+ source "drivers/thermal/broadcom/Kconfig"
+
+--- a/drivers/thermal/Makefile
++++ b/drivers/thermal/Makefile
+@@ -58,6 +58,7 @@
+ obj-y				+= tegra/
+ obj-$(CONFIG_HISI_THERMAL)     += hisi_thermal.o
+ obj-$(CONFIG_MTK_THERMAL)	+= mtk_thermal.o
++obj-$(CONFIG_SUN8I_THS)	+= sun8i_ths.o
+ obj-$(CONFIG_GENERIC_ADC_THERMAL)	+= thermal-generic-adc.o
+ obj-$(CONFIG_ZX2967_THERMAL)	+= zx2967_thermal.o
+ obj-$(CONFIG_UNIPHIER_THERMAL)	+= uniphier_thermal.o
+
+--- /dev/null
++++ b/drivers/thermal/sun8i_ths.c
+@@ -0,0 +1,332 @@ 
++/*
++ * Thermal sensor driver for Allwinner new SoCs
++ *
++ * Copyright (C) 2016 Ondřej Jirman
++ * Based on the work of Josef Gajdusek <atx@atx.name>
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <linux/clk.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/nvmem-consumer.h>
++#include <linux/of_device.h>
++#include <linux/platform_device.h>
++#include <linux/reset.h>
++#include <linux/slab.h>
++#include <linux/thermal.h>
++#include <linux/printk.h>
++
++#define THS_H3_MAX_SENSOR_NUM	4
++
++#define THS_H3_CTRL0		0x00
++#define THS_H3_CTRL2		0x40
++#define THS_H3_INT_CTRL		0x44
++#define THS_H3_STAT		0x48
++#define THS_H3_FILTER		0x70
++#define THS_H3_CDATA0		0x74
++#define THS_H3_CDATA1		0x74
++#define THS_H3_DATA(n)		(0x80 + 4 * (n))
++
++#define THS_H3_CTRL0_SENSOR_ACQ0(x)	(x)
++#define THS_H3_CTRL2_SENSE_EN(n)	BIT(0 + (n))
++#define THS_H3_CTRL2_SENSOR_ACQ1(x)	((x) << 16)
++#define THS_H3_INT_CTRL_DATA_IRQ_EN(n)	BIT(8 + (n))
++#define THS_H3_INT_CTRL_THERMAL_PER(x)	((x) << 12)
++#define THS_H3_STAT_DATA_IRQ_STS(n)	BIT(8 + (n))
++#define THS_H3_FILTER_TYPE(x)		((x) << 0)
++#define THS_H3_FILTER_EN		BIT(2)
++
++#define THS_H3_CLK_IN		40000000 /* Hz */
++#define THS_H3_DATA_PERIOD	330 /* ms */
++
++#define THS_H3_FILTER_TYPE_VALUE	2 /* average over 2^(n+1) samples */
++#define THS_H3_FILTER_DIV		(1 << (THS_H3_FILTER_TYPE_VALUE + 1))
++#define THS_H3_INT_CTRL_THERMAL_PER_VALUE \
++	(THS_H3_DATA_PERIOD * (THS_H3_CLK_IN / 1000) / THS_H3_FILTER_DIV / 4096 - 1)
++#define THS_H3_CTRL0_SENSOR_ACQ0_VALUE	0x3f /* 16us */
++#define THS_H3_CTRL2_SENSOR_ACQ1_VALUE	0x3f
++
++struct sun8i_ths_data;
++
++struct sun8i_ths_sensor {
++	struct sun8i_ths_data *data;
++	int id;
++	struct thermal_zone_device *tzd;
++	u32 val;
++};
++
++struct sun8i_ths_cfg {
++	int sensor_num;
++	int (*calc_temp)(u32 val);
++};
++
++struct sun8i_ths_data {
++	struct reset_control *reset;
++	struct clk *clk;
++	struct clk *busclk;
++	void __iomem *regs;
++	struct nvmem_cell *calcell;
++	const struct sun8i_ths_cfg *cfg;
++	struct sun8i_ths_sensor sensors[THS_H3_MAX_SENSOR_NUM];
++};
++
++static int sun8i_ths_calc_temp_h3(u32 val)
++{
++	return (217000 - (int)((val * 1000000) / 8253));
++}
++
++static int sun8i_ths_get_temp(void *_data, int *out)
++{
++	struct sun8i_ths_sensor *sensor = _data;
++
++	if (sensor->val == 0)
++		return -EBUSY;
++
++	/* Formula and parameters from the Allwinner 3.4 kernel */
++	*out = sensor->data->cfg->calc_temp(sensor->val);
++	return 0;
++}
++
++static irqreturn_t sun8i_ths_irq_thread(int irq, void *_data)
++{
++	struct sun8i_ths_data *data = _data;
++	int i;
++
++	for (i = 0; i < data->cfg->sensor_num; i++) {
++		if (!(readl(data->regs + THS_H3_STAT) &
++		      THS_H3_STAT_DATA_IRQ_STS(i)))
++			continue;
++
++		writel(THS_H3_STAT_DATA_IRQ_STS(i), data->regs + THS_H3_STAT);
++
++		data->sensors[i].val = readl(data->regs + THS_H3_DATA(i));
++		if (data->sensors[i].val)
++			thermal_zone_device_update(data->sensors[i].tzd,
++						   THERMAL_EVENT_TEMP_SAMPLE);
++	}
++
++	return IRQ_HANDLED;
++}
++
++static void sun8i_ths_init(struct sun8i_ths_data *data)
++{
++	u32 val;
++	int i;
++
++	writel(THS_H3_CTRL0_SENSOR_ACQ0(THS_H3_CTRL0_SENSOR_ACQ0_VALUE),
++		data->regs + THS_H3_CTRL0);
++	writel(THS_H3_FILTER_EN | THS_H3_FILTER_TYPE(THS_H3_FILTER_TYPE_VALUE),
++		data->regs + THS_H3_FILTER);
++
++	val = THS_H3_CTRL2_SENSOR_ACQ1(THS_H3_CTRL2_SENSOR_ACQ1_VALUE);
++	for (i = 0; i < data->cfg->sensor_num; i++)
++		val |= THS_H3_CTRL2_SENSE_EN(i);
++	writel(val, data->regs + THS_H3_CTRL2);
++
++	val = THS_H3_INT_CTRL_THERMAL_PER(THS_H3_INT_CTRL_THERMAL_PER_VALUE);
++	for (i = 0; i < data->cfg->sensor_num; i++)
++		val |= THS_H3_INT_CTRL_DATA_IRQ_EN(i);
++	writel(val, data->regs + THS_H3_INT_CTRL);
++}
++
++static int sun8i_ths_calibrate(struct sun8i_ths_data *data)
++{
++	u32 *caldata;
++	size_t callen;
++
++	caldata = nvmem_cell_read(data->calcell, &callen);
++	if (IS_ERR(caldata))
++		return PTR_ERR(caldata);
++
++	writel(be32_to_cpu(caldata[0]), data->regs + THS_H3_CDATA0);
++	if (callen > 4)
++		writel(be32_to_cpu(caldata[1]), data->regs + THS_H3_CDATA1);
++
++	kfree(caldata);
++	return 0;
++}
++
++static const struct thermal_zone_of_device_ops sun8i_ths_thermal_ops = {
++	.get_temp = sun8i_ths_get_temp,
++};
++
++static int sun8i_ths_probe(struct platform_device *pdev)
++{
++	struct sun8i_ths_data *data;
++	struct resource *res;
++	int ret, irq, i;
++
++	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
++	if (!data)
++		return -ENOMEM;
++
++	data->cfg = of_device_get_match_data(&pdev->dev);
++	if (!data->cfg)
++		return -EINVAL;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&pdev->dev, "no memory resources defined\n");
++		return -EINVAL;
++	}
++
++	data->regs = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(data->regs)) {
++		ret = PTR_ERR(data->regs);
++		dev_err(&pdev->dev, "failed to ioremap THS registers: %d\n", ret);
++		return ret;
++	}
++
++	irq = platform_get_irq(pdev, 0);
++	if (irq < 0) {
++		dev_err(&pdev->dev, "failed to get IRQ: %d\n", irq);
++		return irq;
++	}
++
++	ret = devm_request_threaded_irq(&pdev->dev, irq, NULL,
++					sun8i_ths_irq_thread, IRQF_ONESHOT,
++					dev_name(&pdev->dev), data);
++	if (ret)
++		return ret;
++
++	data->busclk = devm_clk_get(&pdev->dev, "ahb");
++	if (IS_ERR(data->busclk)) {
++		ret = PTR_ERR(data->busclk);
++		dev_err(&pdev->dev, "failed to get ahb clk: %d\n", ret);
++		return ret;
++	}
++
++	data->clk = devm_clk_get(&pdev->dev, "ths");
++	if (IS_ERR(data->clk)) {
++		ret = PTR_ERR(data->clk);
++		dev_err(&pdev->dev, "failed to get ths clk: %d\n", ret);
++		return ret;
++	}
++
++	data->reset = devm_reset_control_get(&pdev->dev, "ahb");
++	if (IS_ERR(data->reset)) {
++		ret = PTR_ERR(data->reset);
++		dev_err(&pdev->dev, "failed to get reset: %d\n", ret);
++		return ret;
++	}
++
++	ret = reset_control_deassert(data->reset);
++	if (ret) {
++		dev_err(&pdev->dev, "reset deassert failed: %d\n", ret);
++		return ret;
++	}
++
++	ret = clk_prepare_enable(data->busclk);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to enable bus clk: %d\n", ret);
++		goto err_assert_reset;
++	}
++
++	ret = clk_prepare_enable(data->clk);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to enable ths clk: %d\n", ret);
++		goto err_disable_bus;
++	}
++
++	ret = clk_set_rate(data->clk, THS_H3_CLK_IN);
++	if (ret)
++		goto err_disable_ths;
++
++	data->calcell = devm_nvmem_cell_get(&pdev->dev, "cal");
++	if (IS_ERR(data->calcell)) {
++		if (PTR_ERR(data->calcell) == -EPROBE_DEFER) {
++			ret = PTR_ERR(data->calcell);
++			goto err_disable_ths;
++		}
++		/*
++		 * Even if the external calibration data stored in eFUSE is
++		 * not accessible, the THS hardware can still work, although
++		 * the data won't be so accurate.
++		 * The default value of calibration register is 0x800 for
++		 * every sensor, and the calibration value is usually 0x7xx
++		 * or 0x8xx, so they won't be away from the default value
++		 * for a lot.
++		 * So here we do not return if the calibartion data is not
++		 * available, except the probe needs deferring.
++		 */
++	} else {
++		ret = sun8i_ths_calibrate(data);
++		if (ret)
++			goto err_disable_ths;
++	}
++
++	for (i = 0; i < data->cfg->sensor_num; i++) {
++		data->sensors[i].data = data;
++		data->sensors[i].id = i;
++		data->sensors[i].tzd =
++			devm_thermal_zone_of_sensor_register(&pdev->dev,
++				i, &data->sensors[i], &sun8i_ths_thermal_ops);
++		if (IS_ERR(data->sensors[i].tzd)) {
++			ret = PTR_ERR(data->sensors[i].tzd);
++			dev_err(&pdev->dev,
++				"failed to register thermal zone %d: %d\n",
++				i, ret);
++			goto err_disable_ths;
++		}
++	}
++
++	sun8i_ths_init(data);
++
++	platform_set_drvdata(pdev, data);
++	return 0;
++
++err_disable_ths:
++	clk_disable_unprepare(data->clk);
++err_disable_bus:
++	clk_disable_unprepare(data->busclk);
++err_assert_reset:
++	reset_control_assert(data->reset);
++	return ret;
++}
++
++static int sun8i_ths_remove(struct platform_device *pdev)
++{
++	struct sun8i_ths_data *data = platform_get_drvdata(pdev);
++
++	reset_control_assert(data->reset);
++	clk_disable_unprepare(data->clk);
++	clk_disable_unprepare(data->busclk);
++	return 0;
++}
++
++static const struct sun8i_ths_cfg sun8i_h3_ths_cfg = {
++	.sensor_num = 1,
++	.calc_temp = sun8i_ths_calc_temp_h3,
++};
++
++static const struct of_device_id sun8i_ths_id_table[] = {
++	{ .compatible = "allwinner,sun8i-h3-ths", .data = &sun8i_h3_ths_cfg },
++	{ /* sentinel */ },
++};
++MODULE_DEVICE_TABLE(of, sun8i_ths_id_table);
++
++static struct platform_driver sun8i_ths_driver = {
++	.probe = sun8i_ths_probe,
++	.remove = sun8i_ths_remove,
++	.driver = {
++		.name = "sun8i_ths",
++		.of_match_table = sun8i_ths_id_table,
++	},
++};
++
++module_platform_driver(sun8i_ths_driver);
++
++MODULE_AUTHOR("Ondřej Jirman <megous@megous.com>");
++MODULE_DESCRIPTION("Thermal sensor driver for new Allwinner SoCs");
++MODULE_LICENSE("GPL v2");
