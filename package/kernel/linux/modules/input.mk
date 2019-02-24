@@ -176,7 +176,7 @@ $(eval $(call KernelPackage,input-matrixkmap))
 define KernelPackage/input-touchscreen-ads7846
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=ADS7846/TSC2046/AD7873 and AD(S)7843 based touchscreens
-  DEPENDS:=+kmod-hwmon-core +kmod-spi-bitbang
+  DEPENDS:=+kmod-hwmon-core +kmod-input-core +kmod-spi-bitbang
   KCONFIG:= \
 	CONFIG_INPUT_TOUCHSCREEN=y \
 	CONFIG_TOUCHSCREEN_PROPERTIES=y \
