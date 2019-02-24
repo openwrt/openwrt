@@ -152,7 +152,7 @@
  
 --- /dev/null
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00eeprom.c
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,106 @@
 +/*
 +	Copyright (C) 2004 - 2009 Ivo van Doorn <IvDoorn@gmail.com>
 +	Copyright (C) 2004 - 2009 Gertjan van Wingerde <gwingerde@gmail.com>
@@ -255,7 +255,8 @@
 +
 +void rt2x00lib_free_eeprom_file(struct rt2x00_dev *rt2x00dev)
 +{
-+	release_firmware(rt2x00dev->eeprom_file);
++	if (rt2x00dev->eeprom_file && rt2x00dev->eeprom_file->size)
++		release_firmware(rt2x00dev->eeprom_file);
 +	rt2x00dev->eeprom_file = NULL;
 +}
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00lib.h
