@@ -37,12 +37,7 @@ define Package/libpopt
   ABI_VERSION:=0
 endef
 
-define Build/Configure
-	$(call Build/Configure/Default, \
-		--enable-shared \
-		--enable-static \
-	)
-endef
+CONFIGURE_ARGS += --enable-shared --enable-static
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
