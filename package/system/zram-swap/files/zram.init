@@ -2,17 +2,21 @@
 
 START=15
 
-ram_size()
+EXTRA_COMMANDS="compact status"
+EXTRA_HELP="        compact trigger compaction for all Z-RAM swap dev's
+        status  print out status information & statistics about Z-RAM swap devices"
+
+ram_getsize()
 {
 	local line
 
 	while read line; do case "$line" in MemTotal:*) set $line; echo "$2"; break ;; esac; done </proc/meminfo
 }
 
-zram_size()	# in megabytes
+zram_getsize()	# in megabytes
 {
 	local zram_size="$( uci -q get system.@system[0].zram_size_mb )"
-	local ram_size="$( ram_size )"
+	local ram_size="$( ram_getsize )"
 
 	if [ -z "$zram_size" ]; then
 		# e.g. 6mb for 16mb-routers or 61mb for 128mb-routers
@@ -106,9 +110,9 @@ zram_comp_streams()
 	fi
 }
 
+#print various stats info about zram swap device
 zram_stats()
 {
-	#print various stats info about zram swap device
 	local zdev="/sys/block/$( basename "$1" )"
 
 	printf "\nGathering stats info for zram device \"$( basename "$1" )\"\n\n"
@@ -124,7 +128,7 @@ zram_stats()
 		print "\nDATA\n----" }
 		{ printf fmt, "Original data size", $1/1024/1024, "Mb"
 		printf fmt, "Compressed data size", $2/1024/1024, "Mb"
-		printf fmt, "Compress ratio", $1/$2
+		printf fmt, "Compress ratio", $1/$2, ""
 		print "\nMEMORY\n------"
 		printf fmt, "Memory used, total", $3/1024/1024, "Mb"
 		printf fmt, "Allocator overhead", ($3-$2)/1024/1024, "Mb"
@@ -143,12 +147,16 @@ zram_compact()
 	# compact zram device (reduce memory allocation overhead)
 	local zdev="/sys/block/$( basename "$1" )"
 
-	old_mem_used=`awk '{print $3}' <$zdev/mm_stat`
-	old_overhead=`awk '{print $3-$2}' <$zdev/mm_stat`
+	local old_mem_used=`awk '{print $3}' <$zdev/mm_stat`
+	local old_overhead=`awk '{print $3-$2}' <$zdev/mm_stat`
+
+	echo 1 > $zdev/compact
+
+	# If not running interactively, than just return
+	[ -z "$PS1" ] && return 0
 
 	echo ""
-	echo "Compacting zram device..."
-	echo 1 > $zdev/compact
+	echo "Compacting zram device $zdev"
 	awk -v old_mem="$old_mem_used" -v ovr="$old_overhead" 'BEGIN { fmt = "%-25s - %.1f %s\n" }
 		{ printf fmt, "Memory usage reduced by ", (old_mem-$3)/1024/1024, "Mb"
 		printf fmt, "Overhead reduced by", (ovr-($3-$2))/ovr*100, "%" }' <$zdev/mm_stat
@@ -156,23 +164,13 @@ zram_compact()
 
 start()
 {
-	local zram_size="$( zram_size )"
-	local zram_dev
-
 	if [ $( grep -cs zram /proc/swaps ) -ne 0 ]; then
 		logger -s -t zram_start -p daemon.notice "[OK] zram swap is already mounted"
-		# If not running interactively, than just quit
-		[ -z "$PS1" ] && return 1
-
-		# show memory stats and compact all zram swaps
-		for zram_dev in $( grep zram /proc/swaps |awk '{print $1}' ); do {
-			zram_compact "$zram_dev"
-			zram_stats "$zram_dev"
-		} done
-		return
+		return 1
 	fi
 
-	zram_dev="$( zram_getdev )"
+	local zram_size="$( zram_getsize )"
+	local zram_dev="$( zram_getdev )"
 	zram_applicable "$zram_dev" || return 1
 
 	logger -s -t zram_start -p daemon.debug "activating '$zram_dev' for swapping ($zram_size MegaBytes)"
@@ -200,3 +198,18 @@ stop()
 	} done
 }
 
+# show memory stats for all zram swaps
+status()
+{
+	for zram_dev in $( grep zram /proc/swaps |awk '{print $1}' ); do {
+		zram_stats "$zram_dev"
+	} done
+}
+
+# trigger compaction for all zram swaps
+compact()
+{
+	for zram_dev in $( grep zram /proc/swaps |awk '{print $1}' ); do {
+		zram_compact "$zram_dev"
+	} done
+}
