@@ -124,10 +124,31 @@ netgear_checksum_fini (struct ngr_checksum * c)
 	return checksum;
 }
 
+static int
+parse_version(const char* str, uint8_t* version)
+{
+	unsigned t[7];
+	memset(t, 0, sizeof(t));
+
+	int r = sscanf(str, "%u.%u.%u.%u_%u.%u.%u",
+			t, t + 1, t + 2, t + 3, t + 4, t + 5, t + 7);
+
+	if (r == 3 || r == 4 || r == 7) {
+		for (int i = 0; i < 7; ++i) {
+			version[i] = t[i] & 0xff;
+		}
+
+		return 1;
+	}
+
+	return 0;
+}
+
 static void
 print_help (void)
 {
-	fprintf (stderr, "Usage: mkchkimg -o output -k kernel [-f filesys] [-b board_id] [-r region]\n");
+	fprintf (stderr, "Usage: mkchkimg -o output -k kernel [-f filesys] [-b board_id]"
+			" [-r region] [-v version]\n");
 }
 
 int
@@ -144,6 +165,11 @@ main (int argc, char * argv[])
 	FILE * out_fp, * kern_fp, * fs_fp;
 	char * board_id;
 	unsigned long region;
+	uint8_t version[7] = {
+			1,		/* Major */
+			1,		/* Minor */
+			99,		/* Build */
+	};
 
 	/* Default values */
 	board_id = "U12H072T00_NETGEAR";
@@ -153,7 +179,7 @@ main (int argc, char * argv[])
 	fs_file = NULL;
 	fs_fp = NULL;
 
-	while ((opt = getopt (argc, argv, ":b:r:k:f:o:h")) != -1) {
+	while ((opt = getopt (argc, argv, ":b:r:v:k:f:o:h")) != -1) {
 		switch (opt) {
 		    case 'b':
 		    	/* Board Identity */
@@ -173,6 +199,13 @@ main (int argc, char * argv[])
 			}
 			if (region > 0xff) {
 				fatal_error (0, "Region cannot exceed 0xff");
+			}
+			break;
+
+		    case 'v':
+		    	/* Version */
+			if (!parse_version(optarg, version)) {
+				fatal_error (0, "Cannot parse version. Must be A.B.C, A.B.C.D, or A.B.C.D_E.F.G");
 			}
 			break;
 
@@ -259,14 +292,11 @@ main (int argc, char * argv[])
 	hdr->magic = htonl (0x2a23245e);
 	hdr->header_len = htonl(header_len);
 	hdr->reserved[0] = (unsigned char)(region & 0xff);
-	hdr->reserved[1] = 1;		/* Major */
-	hdr->reserved[2] = 1;		/* Minor */
-	hdr->reserved[3] = 99;		/* Build */
-	hdr->reserved[4] = 0;
-	hdr->reserved[5] = 0;
-	hdr->reserved[6] = 0;
-	hdr->reserved[7] = 0;
+	memcpy(&hdr->reserved[1], version, 7);
+
 	message ("       Board Id: %s", board_id);
+	message ("        Version: %u.%u.%u.%u_%u.%u.%u", version[0], version[1],
+			version[2], version[3], version[4], version[5], version[6]);
 	message ("         Region: %s", region == 1 ? "World Wide (WW)" 
 			: (region == 2 ? "North America (NA)" : "Unknown"));
 
