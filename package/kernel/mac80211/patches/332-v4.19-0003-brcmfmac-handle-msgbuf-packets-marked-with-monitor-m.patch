@@ -75,7 +75,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  {
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
-@@ -121,6 +121,7 @@ struct brcmf_pub {
+@@ -122,6 +122,7 @@ struct brcmf_pub {
  
  	struct brcmf_if *iflist[BRCMF_MAX_IFS];
  	s32 if2bss[BRCMF_MAX_IFS];
@@ -83,7 +83,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  	struct mutex proto_block;
  	unsigned char proto_buf[BRCMF_DCMD_MAXLEN];
-@@ -215,6 +216,7 @@ void brcmf_txflowblock_if(struct brcmf_i
+@@ -219,6 +220,7 @@ void brcmf_txflowblock_if(struct brcmf_i
  			  enum brcmf_netif_stop_reason reason, bool state);
  void brcmf_txfinalize(struct brcmf_if *ifp, struct sk_buff *txp, bool success);
  void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb);

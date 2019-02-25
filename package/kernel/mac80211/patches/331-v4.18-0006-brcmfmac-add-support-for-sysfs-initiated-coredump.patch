@@ -45,7 +45,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  void brcmf_txcomplete(struct device *dev, struct sk_buff *txp, bool success);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -1159,6 +1159,14 @@ void brcmf_dev_reset(struct device *dev)
+@@ -1175,6 +1175,14 @@ void brcmf_dev_reset(struct device *dev)
  		brcmf_fil_cmd_int_set(drvr->iflist[0], BRCMF_C_TERMINATED, 1);
  }
  
