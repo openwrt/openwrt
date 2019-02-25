@@ -338,7 +338,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* register save area for suspend/resume */
 --- a/include/linux/netdev_features.h
 +++ b/include/linux/netdev_features.h
-@@ -74,6 +74,7 @@ enum {
+@@ -76,6 +76,7 @@ enum {
  	NETIF_F_BUSY_POLL_BIT,		/* Busy poll */
  
  	NETIF_F_HW_TC_BIT,		/* Offload TC infrastructure */
@@ -346,14 +346,14 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/*
  	 * Add your fresh new feature above and remember to update
-@@ -136,6 +137,7 @@ enum {
+@@ -138,6 +139,7 @@ enum {
  #define NETIF_F_HW_L2FW_DOFFLOAD	__NETIF_F(HW_L2FW_DOFFLOAD)
  #define NETIF_F_BUSY_POLL	__NETIF_F(BUSY_POLL)
  #define NETIF_F_HW_TC		__NETIF_F(HW_TC)
 +#define NETIF_F_HW_ACCEL_MQ	__NETIF_F(HW_ACCEL_MQ)
  
- #define for_each_netdev_feature(mask_addr, bit)	\
- 	for_each_set_bit(bit, (unsigned long *)mask_addr, NETDEV_FEATURE_COUNT)
+ /* Finds the next feature with the highest number of the range of start till 0.
+  */
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -1512,6 +1512,8 @@ enum netdev_priv_flags {
@@ -444,7 +444,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return -ENODEV;
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -842,6 +842,32 @@ void napi_consume_skb(struct sk_buff *sk
+@@ -846,6 +846,32 @@ void napi_consume_skb(struct sk_buff *sk
  }
  EXPORT_SYMBOL(napi_consume_skb);
  
@@ -477,7 +477,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  /* Make sure a field is enclosed inside headers_start/headers_end section */
  #define CHECK_SKB_FIELD(field) \
  	BUILD_BUG_ON(offsetof(struct sk_buff, field) <		\
-@@ -1075,7 +1101,7 @@ static void skb_headers_offset_update(st
+@@ -1079,7 +1105,7 @@ static void skb_headers_offset_update(st
  	skb->inner_mac_header += off;
  }
  
@@ -486,7 +486,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  {
  	__copy_skb_header(new, old);
  
-@@ -1083,6 +1109,7 @@ static void copy_skb_header(struct sk_bu
+@@ -1087,6 +1113,7 @@ static void copy_skb_header(struct sk_bu
  	skb_shinfo(new)->gso_segs = skb_shinfo(old)->gso_segs;
  	skb_shinfo(new)->gso_type = skb_shinfo(old)->gso_type;
  }
