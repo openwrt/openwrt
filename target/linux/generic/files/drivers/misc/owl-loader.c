@@ -40,9 +40,9 @@ static int ath9k_pci_fixup(struct pci_dev *pdev, const u16 *cal_data,
 	void __iomem *mem;
 	const void *cal_end = (void *)cal_data + cal_len;
 	const struct {
-		__be16 reg;
-		__be16 low_val;
-		__be16 high_val;
+		u16 reg;
+		u16 low_val;
+		u16 high_val;
 	} __packed *data;
 	u16 cmd;
 	u32 bar0;
@@ -75,14 +75,14 @@ static int ath9k_pci_fixup(struct pci_dev *pdev, const u16 *cal_data,
 
 	/* set pointer to first reg address */
 	for (data = (const void *) (cal_data + 3);
-	     (const void *) data <= cal_end && data->reg != cpu_to_be16(~0);
+	     (const void *) data <= cal_end && data->reg != ~0;
 	     data++) {
 		u32 val;
 		u16 reg;
 
 		reg = data->reg;
 		val = data->low_val;
-		val |= data->high_val << 16;
+		val |= ((u32)data->high_val) << 16;
 
 		if (swap_needed) {
 			reg = swab16(reg);
