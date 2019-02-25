@@ -409,6 +409,7 @@ fritz450e)
 	;;
 gl-ar300m)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:red:wlan" "phy0tpt"
+	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth1"
 	;;
 gl-ar750)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:white:wlan2g" "phy1tpt"
