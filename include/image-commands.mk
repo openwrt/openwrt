@@ -360,6 +360,7 @@ metadata_json = \
 			"dist": "$(call json_quote,$(VERSION_DIST))", \
 			"version": "$(call json_quote,$(VERSION_NUMBER))", \
 			"revision": "$(call json_quote,$(REVISION))", \
+			"target": "$(call json_quote,$(TARGETID))", \
 			"board": "$(call json_quote,$(BOARD))" \
 		} \
 	}'
