@@ -231,18 +231,18 @@ define Device/ls2088ardb
 endef
 TARGET_DEVICES += ls2088ardb
 
-define Device/traverse-five64
+define Device/traverse-ls1043
   KERNEL_NAME := Image
   KERNEL_SUFFIX := -kernel.itb
   KERNEL_INSTALL := 1
   FDT_LOADADDR = 0x90000000
   FILESYSTEMS := ubifs
-  DEVICE_TITLE := Traverse LS1043 Boards (Five64, LS1043S)
+  DEVICE_TITLE := Traverse LS1043 Boards
   DEVICE_PACKAGES += \
     layerscape-fman-ls1043ardb \
-    uboot-envtools uboot-traverse-ls1043v uboot-traverse-ls1043v-sdcard \
+    uboot-envtools \
     kmod-i2c-core kmod-i2c-mux-pca954x \
-    kmod-hwmon-core kmod-hwmon-ltc2990 kmod-hwmon-pac1934 kmod-hwmon-emc17xx\
+    kmod-hwmon-core \
     kmod-gpio-pca953x kmod-input-gpio-keys-polled \
     kmod-rtc-isl1208
   DEVICE_DESCRIPTION = \
@@ -253,9 +253,9 @@ define Device/traverse-five64
   DEVICE_DTS_CONFIG = ls1043s
   KERNEL := kernel-bin | gzip | traverse-fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb $$(FDT_LOADADDR)
   KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb $$(FDT_LOADADDR)
-  IMAGES = root sysupgrade.tar
+  IMAGES = root sysupgrade.bin
   IMAGE/root = append-rootfs
-  IMAGE/sysupgrade.tar = sysupgrade-tar
+  IMAGE/sysupgrade.bin = sysupgrade-tar | append-metadata
   MKUBIFS_OPTS := -m 2048 -e 124KiB -c 4096
 endef
-TARGET_DEVICES += traverse-five64
+TARGET_DEVICES += traverse-ls1043
