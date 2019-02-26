@@ -12,7 +12,8 @@ ipq40xx_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
-	8dev,jalapeno)
+	8dev,jalapeno|\
+	alfa-network,ap120c-ac)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
 	asus,map-ac2200|\
