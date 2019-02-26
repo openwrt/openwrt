@@ -156,6 +156,13 @@ define Device/pbr-d1
 endef
 TARGET_DEVICES += pbr-d1
 
+define Device/rakwireless_rak633
+  DTS := RAK633
+  DEVICE_TITLE := Rakwireless RAK633
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-i2c-core kmod-i2c-mt7628
+endef
+TARGET_DEVICES += rakwireless_rak633
+
 define Device/skylab_skw92a
   DTS := SKW92A
   IMAGE_SIZE := 16064k

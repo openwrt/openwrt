@@ -115,6 +115,10 @@ ramips_setup_interfaces()
 	psg1208|\
 	psg1218a|\
 	r6220|\
+	rakwireless,rak633)
+		ucidef_add_switch "switch0" \
+			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
+		;;
 	netgear,r6350|\
 	rt-n12p|\
 	sap-g3200u3|\
