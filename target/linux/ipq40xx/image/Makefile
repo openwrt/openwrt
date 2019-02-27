@@ -167,6 +167,22 @@ define Device/engenius_eap1300
 endef
 TARGET_DEVICES += engenius_eap1300
 
+define Device/engenius_ens620ext
+        $(call Device/FitImage)
+        DEVICE_DTS := qcom-ipq4018-ens620ext
+        DEVICE_DTS_CONFIG := config@4
+        BLOCKSIZE := 64k
+        PAGESIZE := 256
+        DEVICE_TITLE := EnGenius ENS620EXT
+        IMAGE_SIZE := 21823488
+        KERNEL_SIZE := 5120k
+        FILESYSTEMS := squashfs
+        IMAGES := sysupgrade.bin
+        IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
+	DEVICE_PACKAGES := ipq-wifi-engenius_ens620ext
+endef
+TARGET_DEVICES += engenius_ens620ext
+
 define Device/glinet_gl-b1300
 	$(call Device/FitImage)
 	DEVICE_TITLE := GL.iNet GL-B1300

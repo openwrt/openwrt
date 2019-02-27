@@ -152,6 +152,10 @@ case "$FIRMWARE" in
 	qxwlan,e2600ac-c2)
 		ath10kcal_extract "0:ART" 4096 12064
 		;;
+	engenius,ens620ext)
+		ath10kcal_extract "ART" 4096 12064
+		ath10kcal_patch_mac_crc $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +2)
+		;;
 	meraki,mr33)
 		ath10kcal_ubi_extract "ART" 4096 12064
 		ath10kcal_is_caldata_valid "202f" || ath10kcal_extract "ART" 4096 12064
@@ -200,6 +204,10 @@ case "$FIRMWARE" in
 	qxwlan,e2600ac-c1 |\
 	qxwlan,e2600ac-c2)
 		ath10kcal_extract "0:ART" 20480 12064
+		;;
+	engenius,ens620ext)
+		ath10kcal_extract "ART" 20480 12064
+		ath10kcal_patch_mac_crc $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +3)
 		;;
 	meraki,mr33)
 		ath10kcal_ubi_extract "ART" 20480 12064
