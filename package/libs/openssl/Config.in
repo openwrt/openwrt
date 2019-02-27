@@ -253,18 +253,41 @@ config OPENSSL_ENGINE
 		Note that you need to enable KERNEL_AIO to be able to build the
 		afalg engine package.
 
-config OPENSSL_ENGINE_CRYPTO
+config OPENSSL_ENGINE_BUILTIN
+	bool "Build chosen engines into libcrypto"
+	depends on OPENSSL_ENGINE
+	help
+		This builds all chosen engines into libcrypto.so, instead of building
+		them as dynamic engines in separate packages.
+		The benefit of building the engines into libcrypto is that they won't
+		require any configuration to be used by default.
+
+config OPENSSL_ENGINE_BUILTIN_AFALG
 	bool
-	select OPENSSL_ENGINE
-	select PACKAGE_kmod-cryptodev
+	prompt "Acceleration support through AF_ALG sockets engine"
+	depends on OPENSSL_ENGINE_BUILTIN && KERNEL_AIO && !LINUX_3_18
 	select PACKAGE_libopenssl-conf
+	help
+		This enables use of hardware acceleration through the
+		AF_ALG kenrel interface.
+
+config OPENSSL_ENGINE_BUILTIN_DEVCRYPTO
+	bool
 	prompt "Acceleration support through /dev/crypto"
+	depends on OPENSSL_ENGINE_BUILTIN
+	select PACKAGE_libopenssl-conf
 	help
 		This enables use of hardware acceleration through OpenBSD
 		Cryptodev API (/dev/crypto) interface.
-		You must install kmod-cryptodev (under Kernel modules, Cryptographic
-		API modules) for /dev/crypto to show up and use hardware
-		acceleration; otherwise it falls back to software.
+
+config OPENSSL_ENGINE_BUILTIN_PADLOCK
+	bool
+	prompt "VIA Padlock Acceleration support engine"
+	depends on OPENSSL_ENGINE_BUILTIN && TARGET_x86
+	select PACKAGE_libopenssl-conf
+	help
+		This enables use of hardware acceleration through the
+		VIA Padlock module.
 
 config OPENSSL_WITH_ASYNC
 	bool
