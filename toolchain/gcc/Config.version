@@ -1,7 +1,3 @@
-config GCC_VERSION_7_1_ARC
-	default y if (!TOOLCHAINOPTS && arc)
-	bool
-
 config GCC_VERSION_5
 	default y if GCC_USE_VERSION_5
 	bool
@@ -19,6 +15,5 @@ config GCC_USE_EMBEDDED_PATH_REMAP
 config GCC_VERSION
 	string
 	default "5.5.0"		if GCC_VERSION_5
-	default "arc-2017.09-release"   if GCC_VERSION_7_1_ARC
 	default "8.3.0"		if GCC_VERSION_8
 	default "7.4.0"
