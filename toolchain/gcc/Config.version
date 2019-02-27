@@ -8,6 +8,7 @@ config GCC_VERSION_5
 
 config GCC_VERSION_8
 	default y if GCC_USE_VERSION_8
+	default y if arc
 	bool
 
 config GCC_USE_EMBEDDED_PATH_REMAP
