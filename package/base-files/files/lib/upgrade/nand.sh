@@ -259,6 +259,7 @@ nand_upgrade_tar() {
 
 	[ "$kernel_length" != 0 -a -n "$kernel_mtd" ] && {
 		tar xf $tar_file ${board_dir}/kernel -O | mtd write - $CI_KERNPART
+		has_kernel=0
 	}
 	[ "$kernel_length" = 0 -o ! -z "$kernel_mtd" ] && has_kernel=0
 
