@@ -35,6 +35,12 @@ engenius,eap1300)
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "${boardname}:yellow:wlan5g" "phy1tpt"
 	ucidef_set_led_default "mesh" "MESH" "${boardname}:blue:mesh" "0"
 	;;
+engenius,ens620ext)
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "${boardname}:green:wlan2G" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "${boardname}:green:wlan5G" "phy1tpt"
+	ucidef_set_led_netdev "lan1" "LAN1" "${boardname}:green:lan1" "eth0"
+	ucidef_set_led_netdev "lan2" "LAN2" "${boardname}:green:lan2" "eth1"
+	;;
 netgear,ex6100v2 |\
 netgear,ex6150v2)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "ex61x0v2:green:router" "phy0tpt"
