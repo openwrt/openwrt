@@ -1,7 +1,7 @@
 # DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
-# see scripts/kbuild/config-language.txt.
+# see docs/Kconfig-language.txt.
 #
 
 menu "Linux Module Utilities"
@@ -35,7 +35,7 @@ config BUSYBOX_CONFIG_MODPROBE_SMALL
 	/etc/modules/$module_name files.
 
 config BUSYBOX_CONFIG_DEPMOD
-	bool "depmod"
+	bool "depmod (27 kb)"
 	default BUSYBOX_DEFAULT_DEPMOD
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
@@ -43,13 +43,13 @@ config BUSYBOX_CONFIG_DEPMOD
 	and modules.symbols) that contain dependency information
 	for modprobe.
 config BUSYBOX_CONFIG_INSMOD
-	bool "insmod"
+	bool "insmod (22 kb)"
 	default BUSYBOX_DEFAULT_INSMOD
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	insmod is used to load specified modules in the running kernel.
 config BUSYBOX_CONFIG_LSMOD
-	bool "lsmod"
+	bool "lsmod (1.9 kb)"
 	default BUSYBOX_DEFAULT_LSMOD
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
@@ -64,13 +64,13 @@ config BUSYBOX_CONFIG_FEATURE_LSMOD_PRETTY_2_6_OUTPUT
 	the format of module-init-tools for Linux kernel 2.6.
 	Increases size somewhat.
 config BUSYBOX_CONFIG_MODINFO
-	bool "modinfo"
+	bool "modinfo (24 kb)"
 	default BUSYBOX_DEFAULT_MODINFO
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	Show information about a Linux Kernel module
 config BUSYBOX_CONFIG_MODPROBE
-	bool "modprobe"
+	bool "modprobe (28 kb)"
 	default BUSYBOX_DEFAULT_MODPROBE
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
@@ -88,7 +88,7 @@ config BUSYBOX_CONFIG_FEATURE_MODPROBE_BLACKLIST
 	hardware autodetection scripts to load modules like evdev, frame
 	buffer drivers etc.
 config BUSYBOX_CONFIG_RMMOD
-	bool "rmmod"
+	bool "rmmod (3.3 kb)"
 	default BUSYBOX_DEFAULT_RMMOD
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
@@ -202,12 +202,12 @@ config BUSYBOX_CONFIG_FEATURE_MODUTILS_ALIAS
 	help
 	Generate and parse modules.alias containing aliases for bus
 	identifiers:
-	    alias pcmcia:m*c*f03fn*pfn*pa*pb*pc*pd* parport_cs
+		alias pcmcia:m*c*f03fn*pfn*pa*pb*pc*pd* parport_cs
 
 	and aliases for logical modules names e.g.:
-	    alias padlock_aes aes
-	    alias aes_i586 aes
-	    alias aes_generic aes
+		alias padlock_aes aes
+		alias aes_i586 aes
+		alias aes_generic aes
 
 	Say Y if unsure.
 
@@ -218,7 +218,7 @@ config BUSYBOX_CONFIG_FEATURE_MODUTILS_SYMBOLS
 	help
 	Generate and parse modules.symbols containing aliases for
 	symbol_request() kernel calls, such as:
-	    alias symbol:usb_sg_init usbcore
+		alias symbol:usb_sg_init usbcore
 
 	Say Y if unsure.
 

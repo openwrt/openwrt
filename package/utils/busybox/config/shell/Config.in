@@ -1,7 +1,7 @@
 # DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
-# see scripts/kbuild/config-language.txt.
+# see docs/Kconfig-language.txt.
 #
 
 menu "Shells"
@@ -79,12 +79,11 @@ endchoice
 
 
 config BUSYBOX_CONFIG_ASH
-	bool "ash"
+	bool "ash (78 kb)"
 	default BUSYBOX_DEFAULT_ASH
 	depends on !BUSYBOX_CONFIG_NOMMU
 	help
-	Tha 'ash' shell adds about 60k in the default configuration and is
-	the most complete and most pedantically correct shell included with
+	The most complete and most pedantically correct shell included with
 	busybox. This shell is actually a derivative of the Debian 'dash'
 	shell (by Herbert Xu), which was created by porting the 'ash' shell
 	(written by Kenneth Almquist) from NetBSD.
@@ -114,6 +113,22 @@ config BUSYBOX_CONFIG_ASH_BASH_COMPAT
 	bool "bash-compatible extensions"
 	default BUSYBOX_DEFAULT_ASH_BASH_COMPAT
 	depends on BUSYBOX_CONFIG_ASH || BUSYBOX_CONFIG_SH_IS_ASH || BUSYBOX_CONFIG_BASH_IS_ASH
+
+config BUSYBOX_CONFIG_ASH_BASH_SOURCE_CURDIR
+	bool "'source' and '.' builtins search current directory after $PATH"
+	default BUSYBOX_DEFAULT_ASH_BASH_SOURCE_CURDIR   # do not encourage non-standard behavior
+	depends on BUSYBOX_CONFIG_ASH_BASH_COMPAT
+	help
+	This is not compliant with standards. Avoid if possible.
+
+config BUSYBOX_CONFIG_ASH_BASH_NOT_FOUND_HOOK
+	bool "command_not_found_handle hook support"
+	default BUSYBOX_DEFAULT_ASH_BASH_NOT_FOUND_HOOK
+	depends on BUSYBOX_CONFIG_ASH_BASH_COMPAT
+	help
+	Enable support for the 'command_not_found_handle' hook function,
+	from GNU bash, which allows for alternative command not found
+	handling.
 
 config BUSYBOX_CONFIG_ASH_JOB_CONTROL
 	bool "Job control"
@@ -198,7 +213,7 @@ config BUSYBOX_CONFIG_ASH_CMDCMD
 
 endif # ash options
 config BUSYBOX_CONFIG_CTTYHACK
-	bool "cttyhack"
+	bool "cttyhack (2.4 kb)"
 	default BUSYBOX_DEFAULT_CTTYHACK
 	help
 	One common problem reported on the mailing list is the "can't
@@ -241,10 +256,10 @@ config BUSYBOX_CONFIG_CTTYHACK
 
 	# getty 115200 $(cttyhack)
 config BUSYBOX_CONFIG_HUSH
-	bool "hush"
+	bool "hush (68 kb)"
 	default BUSYBOX_DEFAULT_HUSH
 	help
-	hush is a small shell (25k). It handles the normal flow control
+	hush is a small shell. It handles the normal flow control
 	constructs such as if/then/elif/else/fi, for/in/do/done, while loops,
 	case/esac. Redirections, here documents, $((arithmetic))
 	and functions are supported.
@@ -265,6 +280,18 @@ config BUSYBOX_CONFIG_HUSH_BRACE_EXPANSION
 	depends on BUSYBOX_CONFIG_HUSH_BASH_COMPAT
 	help
 	Enable {abc,def} extension.
+
+config BUSYBOX_CONFIG_HUSH_LINENO_VAR
+	bool "$LINENO variable"
+	default BUSYBOX_DEFAULT_HUSH_LINENO_VAR
+	depends on BUSYBOX_CONFIG_HUSH_BASH_COMPAT
+
+config BUSYBOX_CONFIG_HUSH_BASH_SOURCE_CURDIR
+	bool "'source' and '.' builtins search current directory after $PATH"
+	default BUSYBOX_DEFAULT_HUSH_BASH_SOURCE_CURDIR   # do not encourage non-standard behavior
+	depends on BUSYBOX_CONFIG_HUSH_BASH_COMPAT
+	help
+	This is not compliant with standards. Avoid if possible.
 
 config BUSYBOX_CONFIG_HUSH_INTERACTIVE
 	bool "Interactive mode"
@@ -293,7 +320,7 @@ config BUSYBOX_CONFIG_HUSH_JOB
 	but no separate process group is formed.
 
 config BUSYBOX_CONFIG_HUSH_TICK
-	bool "Support process substitution"
+	bool "Support command substitution"
 	default BUSYBOX_DEFAULT_HUSH_TICK
 	depends on BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_SH_IS_HUSH || BUSYBOX_CONFIG_BASH_IS_HUSH
 	help
@@ -378,6 +405,13 @@ config BUSYBOX_CONFIG_HUSH_EXPORT_N
 	help
 	export -n unexports variables. It is a bash extension.
 
+config BUSYBOX_CONFIG_HUSH_READONLY
+	bool "readonly builtin"
+	default BUSYBOX_DEFAULT_HUSH_READONLY
+	depends on BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_SH_IS_HUSH || BUSYBOX_CONFIG_BASH_IS_HUSH
+	help
+	Enable support for read-only variables.
+
 config BUSYBOX_CONFIG_HUSH_KILL
 	bool "kill builtin (supports kill %jobspec)"
 	default BUSYBOX_DEFAULT_HUSH_KILL
@@ -388,6 +422,11 @@ config BUSYBOX_CONFIG_HUSH_WAIT
 	default BUSYBOX_DEFAULT_HUSH_WAIT
 	depends on BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_SH_IS_HUSH || BUSYBOX_CONFIG_BASH_IS_HUSH
 
+config BUSYBOX_CONFIG_HUSH_COMMAND
+	bool "command builtin"
+	default BUSYBOX_DEFAULT_HUSH_COMMAND
+	depends on BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_SH_IS_HUSH || BUSYBOX_CONFIG_BASH_IS_HUSH
+
 config BUSYBOX_CONFIG_HUSH_TRAP
 	bool "trap builtin"
 	default BUSYBOX_DEFAULT_HUSH_TRAP
@@ -396,6 +435,11 @@ config BUSYBOX_CONFIG_HUSH_TRAP
 config BUSYBOX_CONFIG_HUSH_TYPE
 	bool "type builtin"
 	default BUSYBOX_DEFAULT_HUSH_TYPE
+	depends on BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_SH_IS_HUSH || BUSYBOX_CONFIG_BASH_IS_HUSH
+
+config BUSYBOX_CONFIG_HUSH_TIMES
+	bool "times builtin"
+	default BUSYBOX_DEFAULT_HUSH_TIMES
 	depends on BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_SH_IS_HUSH || BUSYBOX_CONFIG_BASH_IS_HUSH
 
 config BUSYBOX_CONFIG_HUSH_READ
@@ -423,17 +467,15 @@ config BUSYBOX_CONFIG_HUSH_UMASK
 	default BUSYBOX_DEFAULT_HUSH_UMASK
 	depends on BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_SH_IS_HUSH || BUSYBOX_CONFIG_BASH_IS_HUSH
 
+config BUSYBOX_CONFIG_HUSH_GETOPTS
+	bool "getopts builtin"
+	default BUSYBOX_DEFAULT_HUSH_GETOPTS
+	depends on BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_SH_IS_HUSH || BUSYBOX_CONFIG_BASH_IS_HUSH
+
 config BUSYBOX_CONFIG_HUSH_MEMLEAK
 	bool "memleak builtin (debugging)"
 	default BUSYBOX_DEFAULT_HUSH_MEMLEAK
 	depends on BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_SH_IS_HUSH || BUSYBOX_CONFIG_BASH_IS_HUSH
-
-config BUSYBOX_CONFIG_MSH
-	bool "msh (deprecated: aliased to hush)"
-	default BUSYBOX_DEFAULT_MSH
-	select BUSYBOX_CONFIG_HUSH
-	help
-	msh is deprecated and will be removed, please migrate to hush.
 
 
 comment "Options common to all shells"
@@ -501,6 +543,13 @@ config BUSYBOX_CONFIG_FEATURE_SH_NOFORK
 	This feature is relatively new. Use with care. Report bugs
 	to project mailing list.
 
+config BUSYBOX_CONFIG_FEATURE_SH_READ_FRAC
+	bool "read -t N.NNN support (+110 bytes)"
+	default BUSYBOX_DEFAULT_FEATURE_SH_READ_FRAC
+	depends on BUSYBOX_CONFIG_ASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_SH_IS_ASH || BUSYBOX_CONFIG_BASH_IS_ASH || BUSYBOX_CONFIG_SH_IS_HUSH || BUSYBOX_CONFIG_BASH_IS_HUSH
+	help
+	Enable support for fractional second timeout in read builtin.
+
 config BUSYBOX_CONFIG_FEATURE_SH_HISTFILESIZE
 	bool "Use $HISTFILESIZE"
 	default BUSYBOX_DEFAULT_FEATURE_SH_HISTFILESIZE
@@ -509,6 +558,20 @@ config BUSYBOX_CONFIG_FEATURE_SH_HISTFILESIZE
 	This option makes busybox shells to use $HISTFILESIZE variable
 	to set shell history size. Note that its max value is capped
 	by "History size" setting in library tuning section.
+
+config BUSYBOX_CONFIG_FEATURE_SH_EMBEDDED_SCRIPTS
+	bool "Embed scripts in the binary"
+	default BUSYBOX_DEFAULT_FEATURE_SH_EMBEDDED_SCRIPTS
+	depends on BUSYBOX_CONFIG_ASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_SH_IS_ASH || BUSYBOX_CONFIG_BASH_IS_ASH || BUSYBOX_CONFIG_SH_IS_HUSH || BUSYBOX_CONFIG_BASH_IS_HUSH
+	help
+	Allow scripts to be compressed and embedded in the busybox
+	binary. The scripts should be placed in the 'embed' directory
+	at build time. Like applets, scripts can be run as
+	'busybox SCRIPT ...' or by linking their name to the binary.
+
+	This also allows applets to be implemented as scripts: place
+	the script in 'applets_sh' and a stub C file containing
+	configuration in the appropriate subsystem directory.
 
 endif # Options common to all shells
 

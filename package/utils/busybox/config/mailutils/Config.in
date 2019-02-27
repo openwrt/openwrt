@@ -2,12 +2,12 @@
 menu "Mail Utilities"
 
 config BUSYBOX_CONFIG_MAKEMIME
-	bool "makemime"
+	bool "makemime (5.4 kb)"
 	default BUSYBOX_DEFAULT_MAKEMIME
 	help
 	Create MIME-formatted messages.
 config BUSYBOX_CONFIG_POPMAILDIR
-	bool "popmaildir"
+	bool "popmaildir (10 kb)"
 	default BUSYBOX_DEFAULT_POPMAILDIR
 	help
 	Simple yet powerful POP3 mail popper. Delivers content
@@ -23,7 +23,7 @@ config BUSYBOX_CONFIG_FEATURE_POPMAILDIR_DELIVERY
 	Allow to use a custom program for message actual delivery
 	(-M "prog [args...]").
 config BUSYBOX_CONFIG_REFORMIME
-	bool "reformime"
+	bool "reformime (7.5 kb)"
 	default BUSYBOX_DEFAULT_REFORMIME
 	help
 	Parse MIME-formatted messages.
@@ -36,7 +36,7 @@ config BUSYBOX_CONFIG_FEATURE_REFORMIME_COMPAT
 	Accept (for compatibility only) and ignore options
 	other than -x and -X.
 config BUSYBOX_CONFIG_SENDMAIL
-	bool "sendmail"
+	bool "sendmail (14 kb)"
 	default BUSYBOX_DEFAULT_SENDMAIL
 	help
 	Barebones sendmail.

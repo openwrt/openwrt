@@ -1,13 +1,13 @@
 # DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
-# see scripts/kbuild/config-language.txt.
+# see docs/Kconfig-language.txt.
 #
 
 menu "System Logging Utilities"
 
 config BUSYBOX_CONFIG_KLOGD
-	bool "klogd"
+	bool "klogd (5.7 kb)"
 	default BUSYBOX_DEFAULT_KLOGD
 	help
 	klogd is a utility which intercepts and logs all
@@ -36,16 +36,16 @@ config BUSYBOX_CONFIG_FEATURE_KLOGD_KLOGCTL
 
 	If in doubt, say 'Y'.
 config BUSYBOX_CONFIG_LOGGER
-	bool "logger"
+	bool "logger (6.3 kb)"
 	default BUSYBOX_DEFAULT_LOGGER
 	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
-	    The logger utility allows you to send arbitrary text
-	    messages to the system log (i.e. the 'syslogd' utility) so
-	    they can be logged. This is generally used to help locate
-	    problems that occur within programs and scripts.
+	The logger utility allows you to send arbitrary text
+	messages to the system log (i.e. the 'syslogd' utility) so
+	they can be logged. This is generally used to help locate
+	problems that occur within programs and scripts.
 config BUSYBOX_CONFIG_LOGREAD
-	bool "logread"
+	bool "logread (4.8 kb)"
 	default BUSYBOX_DEFAULT_LOGREAD
 	help
 	If you enabled Circular Buffer support, you almost
@@ -65,7 +65,7 @@ config BUSYBOX_CONFIG_FEATURE_LOGREAD_REDUCED_LOCKING
 	contention at some minor memory expense.
 
 config BUSYBOX_CONFIG_SYSLOGD
-	bool "syslogd"
+	bool "syslogd (13 kb)"
 	default BUSYBOX_DEFAULT_SYSLOGD
 	help
 	The syslogd utility is used to record logs of all the

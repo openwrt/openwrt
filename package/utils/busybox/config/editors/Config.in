@@ -1,17 +1,16 @@
 # DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
-# see scripts/kbuild/config-language.txt.
+# see docs/Kconfig-language.txt.
 #
 
 menu "Editors"
 
 config BUSYBOX_CONFIG_AWK
-	bool "awk"
+	bool "awk (23 kb)"
 	default BUSYBOX_DEFAULT_AWK
 	help
-	Awk is used as a pattern scanning and processing language. This is
-	the BusyBox implementation of that programming language.
+	Awk is used as a pattern scanning and processing language.
 
 config BUSYBOX_CONFIG_FEATURE_AWK_LIBM
 	bool "Enable math functions (requires libm)"
@@ -19,7 +18,7 @@ config BUSYBOX_CONFIG_FEATURE_AWK_LIBM
 	depends on BUSYBOX_CONFIG_AWK
 	help
 	Enable math functions of the Awk programming language.
-	NOTE: This will require libm to be present for linking.
+	NOTE: This requires libm to be present for linking.
 
 config BUSYBOX_CONFIG_FEATURE_AWK_GNU_EXTENSIONS
 	bool "Enable a few GNU extensions"
@@ -29,16 +28,16 @@ config BUSYBOX_CONFIG_FEATURE_AWK_GNU_EXTENSIONS
 	Enable a few features from gawk:
 	* command line option -e AWK_PROGRAM
 	* simultaneous use of -f and -e on the command line.
-	    This enables the use of awk library files.
-	    Ex: awk -f mylib.awk -e '{print myfunction($1);}' ...
+	This enables the use of awk library files.
+	Example: awk -f mylib.awk -e '{print myfunction($1);}' ...
 config BUSYBOX_CONFIG_CMP
-	bool "cmp"
+	bool "cmp (4.9 kb)"
 	default BUSYBOX_DEFAULT_CMP
 	help
 	cmp is used to compare two files and returns the result
 	to standard output.
 config BUSYBOX_CONFIG_DIFF
-	bool "diff"
+	bool "diff (13 kb)"
 	default BUSYBOX_DEFAULT_DIFF
 	help
 	diff compares two files or directories and outputs the
@@ -58,25 +57,25 @@ config BUSYBOX_CONFIG_FEATURE_DIFF_DIR
 	This option enables support for directory and subdirectory
 	comparison.
 config BUSYBOX_CONFIG_ED
-	bool "ed"
+	bool "ed (21 kb)"
 	default BUSYBOX_DEFAULT_ED
 	help
 	The original 1970's Unix text editor, from the days of teletypes.
 	Small, simple, evil. Part of SUSv3. If you're not already using
 	this, you don't need it.
 config BUSYBOX_CONFIG_PATCH
-	bool "patch"
+	bool "patch (9.4 kb)"
 	default BUSYBOX_DEFAULT_PATCH
 	help
 	Apply a unified diff formatted patch.
 config BUSYBOX_CONFIG_SED
-	bool "sed"
+	bool "sed (12 kb)"
 	default BUSYBOX_DEFAULT_SED
 	help
 	sed is used to perform text transformations on a file
 	or input from a pipeline.
 config BUSYBOX_CONFIG_VI
-	bool "vi"
+	bool "vi (23 kb)"
 	default BUSYBOX_DEFAULT_VI
 	help
 	'vi' is a text editor. More specifically, it is the One True
@@ -116,7 +115,7 @@ config BUSYBOX_CONFIG_FEATURE_VI_YANKMARK
 	default BUSYBOX_DEFAULT_FEATURE_VI_YANKMARK
 	depends on BUSYBOX_CONFIG_VI
 	help
-	This will enable you to use yank and put, as well as mark.
+	This enables you to use yank and put, as well as mark.
 
 config BUSYBOX_CONFIG_FEATURE_VI_SEARCH
 	bool "Enable search and replace cmds"

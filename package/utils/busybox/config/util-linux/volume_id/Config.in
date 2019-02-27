@@ -1,7 +1,7 @@
 # DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
-# see scripts/kbuild/config-language.txt.
+# see docs/Kconfig-language.txt.
 #
 
 config BUSYBOX_CONFIG_VOLUMEID
@@ -60,6 +60,16 @@ config BUSYBOX_CONFIG_FEATURE_VOLUMEID_JFS
 	bool "jfs filesystem"
 	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_JFS
 	depends on BUSYBOX_CONFIG_VOLUMEID
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LFS
+	bool "LittleFS filesystem"
+	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_LFS
+	depends on BUSYBOX_CONFIG_VOLUMEID && BUSYBOX_CONFIG_FEATURE_BLKID_TYPE
+	help
+	LittleFS is a small fail-safe filesystem designed for embedded
+	systems. It has strong copy-on-write guarantees and storage on disk
+	is always kept in a valid state. It also provides a form of dynamic
+	wear levelling for systems that can not fit a full flash translation
+	layer.
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXRAID
 	bool "linuxraid"
 	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_LINUXRAID
@@ -71,6 +81,10 @@ config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXSWAP
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LUKS
 	bool "luks filesystem"
 	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_LUKS
+	depends on BUSYBOX_CONFIG_VOLUMEID
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_MINIX
+	bool "minix filesystem"
+	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_MINIX
 	depends on BUSYBOX_CONFIG_VOLUMEID
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_NILFS
 	bool "nilfs filesystem"
@@ -149,10 +163,6 @@ config BUSYBOX_CONFIG_FEATURE_VOLUMEID_UDF
 ###	depends on VOLUMEID
 ### config FEATURE_VOLUMEID_MAC
 ###	bool "mac filesystem"
-###	default y
-###	depends on VOLUMEID
-### config FEATURE_VOLUMEID_MINIX
-###	bool "minix filesystem"
 ###	default y
 ###	depends on VOLUMEID
 ### config FEATURE_VOLUMEID_MSDOS

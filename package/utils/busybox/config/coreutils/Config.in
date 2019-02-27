@@ -1,24 +1,31 @@
 # DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
-# see scripts/kbuild/config-language.txt.
+# see docs/Kconfig-language.txt.
 #
 
 menu "Coreutils"
 
 config BUSYBOX_CONFIG_BASENAME
-	bool "basename"
+	bool "basename (438 bytes)"
 	default BUSYBOX_DEFAULT_BASENAME
 	help
 	basename is used to strip the directory and suffix from filenames,
 	leaving just the filename itself. Enable this option if you wish
 	to enable the 'basename' utility.
 config BUSYBOX_CONFIG_CAT
-	bool "cat"
+	bool "cat (5.6 kb)"
 	default BUSYBOX_DEFAULT_CAT
 	help
 	cat is used to concatenate files and print them to the standard
 	output. Enable this option if you wish to enable the 'cat' utility.
+
+config BUSYBOX_CONFIG_FEATURE_CATN
+	bool "Enable -n and -b options"
+	default BUSYBOX_DEFAULT_FEATURE_CATN
+	depends on BUSYBOX_CONFIG_CAT
+	help
+	-n numbers all output lines while -b numbers nonempty output lines.
 
 config BUSYBOX_CONFIG_FEATURE_CATV
 	bool "cat -v[etA]"
@@ -27,17 +34,17 @@ config BUSYBOX_CONFIG_FEATURE_CATV
 	help
 	Display nonprinting characters as escape sequences
 config BUSYBOX_CONFIG_CHGRP
-	bool "chgrp"
+	bool "chgrp (7.6 kb)"
 	default BUSYBOX_DEFAULT_CHGRP
 	help
 	chgrp is used to change the group ownership of files.
 config BUSYBOX_CONFIG_CHMOD
-	bool "chmod"
+	bool "chmod (5.5 kb)"
 	default BUSYBOX_DEFAULT_CHMOD
 	help
 	chmod is used to change the access permission of files.
 config BUSYBOX_CONFIG_CHOWN
-	bool "chown"
+	bool "chown (7.6 kb)"
 	default BUSYBOX_DEFAULT_CHOWN
 	help
 	chown is used to change the user and/or group ownership
@@ -48,24 +55,24 @@ config BUSYBOX_CONFIG_FEATURE_CHOWN_LONG_OPTIONS
 	default BUSYBOX_DEFAULT_FEATURE_CHOWN_LONG_OPTIONS
 	depends on BUSYBOX_CONFIG_CHOWN && BUSYBOX_CONFIG_LONG_OPTS
 config BUSYBOX_CONFIG_CHROOT
-	bool "chroot"
+	bool "chroot (3.7 kb)"
 	default BUSYBOX_DEFAULT_CHROOT
 	help
 	chroot is used to change the root directory and run a command.
-	The default command is `/bin/sh'.
+	The default command is '/bin/sh'.
 config BUSYBOX_CONFIG_CKSUM
-	bool "cksum"
+	bool "cksum (4.1 kb)"
 	default BUSYBOX_DEFAULT_CKSUM
 	help
 	cksum is used to calculate the CRC32 checksum of a file.
 config BUSYBOX_CONFIG_COMM
-	bool "comm"
+	bool "comm (4.2 kb)"
 	default BUSYBOX_DEFAULT_COMM
 	help
 	comm is used to compare two files line by line and return
 	a three-column output.
 config BUSYBOX_CONFIG_CP
-	bool "cp"
+	bool "cp (10 kb)"
 	default BUSYBOX_DEFAULT_CP
 	help
 	cp is used to copy files and directories.
@@ -77,14 +84,19 @@ config BUSYBOX_CONFIG_FEATURE_CP_LONG_OPTIONS
 	help
 	Enable long options.
 	Also add support for --parents option.
+
+config BUSYBOX_CONFIG_FEATURE_CP_REFLINK
+	bool "Enable --reflink[=auto]"
+	default BUSYBOX_DEFAULT_FEATURE_CP_REFLINK
+	depends on BUSYBOX_CONFIG_FEATURE_CP_LONG_OPTIONS
 config BUSYBOX_CONFIG_CUT
-	bool "cut"
+	bool "cut (5.8 kb)"
 	default BUSYBOX_DEFAULT_CUT
 	help
 	cut is used to print selected parts of lines from
 	each file to stdout.
 config BUSYBOX_CONFIG_DATE
-	bool "date"
+	bool "date (7 kb)"
 	default BUSYBOX_DEFAULT_DATE
 	help
 	date is used to set the system date or display the
@@ -101,8 +113,8 @@ config BUSYBOX_CONFIG_FEATURE_DATE_ISOFMT
 # defaults to "no": stat's nanosecond field is a bit non-portable
 config BUSYBOX_CONFIG_FEATURE_DATE_NANO
 	bool "Support %[num]N nanosecond format specifier"
-	default BUSYBOX_DEFAULT_FEATURE_DATE_NANO
-	depends on BUSYBOX_CONFIG_DATE  # syscall(__NR_clock_gettime)
+	default BUSYBOX_DEFAULT_FEATURE_DATE_NANO  # syscall(__NR_clock_gettime)
+	depends on BUSYBOX_CONFIG_DATE
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	Support %[num]N format specifier. Adds ~250 bytes of code.
@@ -123,7 +135,7 @@ config BUSYBOX_CONFIG_FEATURE_DATE_COMPAT
 	the same format. With it on, 'date DATE' additionally supports
 	MMDDhhmm[[YY]YY][.ss] format.
 config BUSYBOX_CONFIG_DD
-	bool "dd"
+	bool "dd (7.5 kb)"
 	default BUSYBOX_DEFAULT_DD
 	help
 	dd copies a file (from standard input to standard output,
@@ -135,7 +147,7 @@ config BUSYBOX_CONFIG_FEATURE_DD_SIGNAL_HANDLING
 	default BUSYBOX_DEFAULT_FEATURE_DD_SIGNAL_HANDLING
 	depends on BUSYBOX_CONFIG_DD
 	help
-	Sending a SIGUSR1 signal to a running `dd' process makes it
+	Sending a SIGUSR1 signal to a running 'dd' process makes it
 	print to standard error the number of records read and written
 	so far, then to resume copying.
 
@@ -153,7 +165,7 @@ config BUSYBOX_CONFIG_FEATURE_DD_THIRD_STATUS_LINE
 	elapsed time and speed.
 
 config BUSYBOX_CONFIG_FEATURE_DD_IBS_OBS
-	bool "Enable ibs, obs and conv options"
+	bool "Enable ibs, obs, iflag, oflag and conv options"
 	default BUSYBOX_DEFAULT_FEATURE_DD_IBS_OBS
 	depends on BUSYBOX_CONFIG_DD
 	help
@@ -167,7 +179,7 @@ config BUSYBOX_CONFIG_FEATURE_DD_STATUS
 	help
 	Enable support for status=noxfer/none option.
 config BUSYBOX_CONFIG_DF
-	bool "df"
+	bool "df (6.8 kb)"
 	default BUSYBOX_DEFAULT_DF
 	help
 	df reports the amount of disk space used and available
@@ -182,42 +194,40 @@ config BUSYBOX_CONFIG_FEATURE_DF_FANCY
 	-i Inodes
 	-B <SIZE> Blocksize
 config BUSYBOX_CONFIG_DIRNAME
-	bool "dirname"
+	bool "dirname (329 bytes)"
 	default BUSYBOX_DEFAULT_DIRNAME
 	help
 	dirname is used to strip a non-directory suffix from
 	a file name.
 config BUSYBOX_CONFIG_DOS2UNIX
-	bool "dos2unix"
+	bool "dos2unix (5.2 kb)"
 	default BUSYBOX_DEFAULT_DOS2UNIX
 	help
 	dos2unix is used to convert a text file from DOS format to
 	UNIX format, and vice versa.
 
 config BUSYBOX_CONFIG_UNIX2DOS
-	bool "unix2dos"
+	bool "unix2dos (5.2 kb)"
 	default BUSYBOX_DEFAULT_UNIX2DOS
 	help
 	unix2dos is used to convert a text file from UNIX format to
 	DOS format, and vice versa.
 config BUSYBOX_CONFIG_DU
-	bool "du (default blocksize of 512 bytes)"
+	bool "du (6.3 kb)"
 	default BUSYBOX_DEFAULT_DU
 	help
 	du is used to report the amount of disk space used
 	for specified files.
 
 config BUSYBOX_CONFIG_FEATURE_DU_DEFAULT_BLOCKSIZE_1K
-	bool "Use a default blocksize of 1024 bytes (1K)"
+	bool "Use default blocksize of 1024 bytes (else it's 512 bytes)"
 	default BUSYBOX_DEFAULT_FEATURE_DU_DEFAULT_BLOCKSIZE_1K
 	depends on BUSYBOX_CONFIG_DU
-	help
-	Use a blocksize of (1K) instead of the default 512b.
 config BUSYBOX_CONFIG_ECHO
-	bool "echo (basic SuSv3 version taking no options)"
+	bool "echo (1.8 kb)"
 	default BUSYBOX_DEFAULT_ECHO
 	help
-	echo is used to print a specified string to stdout.
+	echo prints a specified string to stdout.
 
 # this entry also appears in shell/Config.in, next to the echo builtin
 config BUSYBOX_CONFIG_FEATURE_FANCY_ECHO
@@ -225,40 +235,25 @@ config BUSYBOX_CONFIG_FEATURE_FANCY_ECHO
 	default BUSYBOX_DEFAULT_FEATURE_FANCY_ECHO
 	depends on BUSYBOX_CONFIG_ECHO || BUSYBOX_CONFIG_ASH_ECHO || BUSYBOX_CONFIG_HUSH_ECHO
 config BUSYBOX_CONFIG_ENV
-	bool "env"
+	bool "env (4 kb)"
 	default BUSYBOX_DEFAULT_ENV
 	help
 	env is used to set an environment variable and run
 	a command; without options it displays the current
 	environment.
-
-config BUSYBOX_CONFIG_FEATURE_ENV_LONG_OPTIONS
-	bool "Enable long options"
-	default BUSYBOX_DEFAULT_FEATURE_ENV_LONG_OPTIONS
-	depends on BUSYBOX_CONFIG_ENV && BUSYBOX_CONFIG_LONG_OPTS
 config BUSYBOX_CONFIG_EXPAND
-	bool "expand"
+	bool "expand (5.1 kb)"
 	default BUSYBOX_DEFAULT_EXPAND
 	help
 	By default, convert all tabs to spaces.
 
-config BUSYBOX_CONFIG_FEATURE_EXPAND_LONG_OPTIONS
-	bool "Enable long options"
-	default BUSYBOX_DEFAULT_FEATURE_EXPAND_LONG_OPTIONS
-	depends on BUSYBOX_CONFIG_EXPAND && BUSYBOX_CONFIG_LONG_OPTS
-
 config BUSYBOX_CONFIG_UNEXPAND
-	bool "unexpand"
+	bool "unexpand (5.3 kb)"
 	default BUSYBOX_DEFAULT_UNEXPAND
 	help
 	By default, convert only leading sequences of blanks to tabs.
-
-config BUSYBOX_CONFIG_FEATURE_UNEXPAND_LONG_OPTIONS
-	bool "Enable long options"
-	default BUSYBOX_DEFAULT_FEATURE_UNEXPAND_LONG_OPTIONS
-	depends on BUSYBOX_CONFIG_UNEXPAND && BUSYBOX_CONFIG_LONG_OPTS
 config BUSYBOX_CONFIG_EXPR
-	bool "expr"
+	bool "expr (6.6 kb)"
 	default BUSYBOX_DEFAULT_EXPR
 	help
 	expr is used to calculate numbers and print the result
@@ -273,27 +268,27 @@ config BUSYBOX_CONFIG_EXPR_MATH_SUPPORT_64
 	the applet slightly larger, but will allow computation with very
 	large numbers.
 config BUSYBOX_CONFIG_FACTOR
-	bool "factor"
+	bool "factor (2.7 kb)"
 	default BUSYBOX_DEFAULT_FACTOR
 	help
 	factor factorizes integers
 config BUSYBOX_CONFIG_FALSE
-	bool "false"
+	bool "false (tiny)"
 	default BUSYBOX_DEFAULT_FALSE
 	help
 	false returns an exit code of FALSE (1).
 config BUSYBOX_CONFIG_FOLD
-	bool "fold"
+	bool "fold (4.6 kb)"
 	default BUSYBOX_DEFAULT_FOLD
 	help
 	Wrap text to fit a specific width.
 config BUSYBOX_CONFIG_FSYNC
-	bool "fsync"
+	bool "fsync (3.6 kb)"
 	default BUSYBOX_DEFAULT_FSYNC
 	help
 	fsync is used to flush file-related cached blocks to disk.
 config BUSYBOX_CONFIG_HEAD
-	bool "head"
+	bool "head (3.8 kb)"
 	default BUSYBOX_DEFAULT_HEAD
 	help
 	head is used to print the first specified number of lines
@@ -304,24 +299,24 @@ config BUSYBOX_CONFIG_FEATURE_FANCY_HEAD
 	default BUSYBOX_DEFAULT_FEATURE_FANCY_HEAD
 	depends on BUSYBOX_CONFIG_HEAD
 config BUSYBOX_CONFIG_HOSTID
-	bool "hostid"
+	bool "hostid (286 bytes)"
 	default BUSYBOX_DEFAULT_HOSTID
 	help
 	hostid prints the numeric identifier (in hexadecimal) for
 	the current host.
 config BUSYBOX_CONFIG_ID
-	bool "id"
+	bool "id (7 kb)"
 	default BUSYBOX_DEFAULT_ID
 	help
 	id displays the current user and group ID names.
 
 config BUSYBOX_CONFIG_GROUPS
-	bool "groups"
+	bool "groups (6.7 kb)"
 	default BUSYBOX_DEFAULT_GROUPS
 	help
 	Print the group names associated with current user id.
 config BUSYBOX_CONFIG_INSTALL
-	bool "install"
+	bool "install (12 kb)"
 	default BUSYBOX_DEFAULT_INSTALL
 	help
 	Copy files and set attributes.
@@ -331,22 +326,22 @@ config BUSYBOX_CONFIG_FEATURE_INSTALL_LONG_OPTIONS
 	default BUSYBOX_DEFAULT_FEATURE_INSTALL_LONG_OPTIONS
 	depends on BUSYBOX_CONFIG_INSTALL && BUSYBOX_CONFIG_LONG_OPTS
 config BUSYBOX_CONFIG_LINK
-	bool "link"
+	bool "link (3.2 kb)"
 	default BUSYBOX_DEFAULT_LINK
 	help
 	link creates hard links between files.
 config BUSYBOX_CONFIG_LN
-	bool "ln"
+	bool "ln (4.9 kb)"
 	default BUSYBOX_DEFAULT_LN
 	help
 	ln is used to create hard or soft links between files.
 config BUSYBOX_CONFIG_LOGNAME
-	bool "logname"
+	bool "logname (1.1 kb)"
 	default BUSYBOX_DEFAULT_LOGNAME
 	help
 	logname is used to print the current user's login name.
 config BUSYBOX_CONFIG_LS
-	bool "ls"
+	bool "ls (14 kb)"
 	default BUSYBOX_DEFAULT_LS
 	help
 	ls is used to list the contents of directories.
@@ -410,31 +405,31 @@ config BUSYBOX_CONFIG_FEATURE_LS_COLOR_IS_DEFAULT
 	configurable, and the output may not be legible on
 	many output screens.
 config BUSYBOX_CONFIG_MD5SUM
-	bool "md5sum"
+	bool "md5sum (6.5 kb)"
 	default BUSYBOX_DEFAULT_MD5SUM
 	help
-	md5sum is used to print or check MD5 checksums.
+	Compute and check MD5 message digest
 
 config BUSYBOX_CONFIG_SHA1SUM
-	bool "sha1sum"
+	bool "sha1sum (5.9 kb)"
 	default BUSYBOX_DEFAULT_SHA1SUM
 	help
 	Compute and check SHA1 message digest
 
 config BUSYBOX_CONFIG_SHA256SUM
-	bool "sha256sum"
+	bool "sha256sum (7 kb)"
 	default BUSYBOX_DEFAULT_SHA256SUM
 	help
 	Compute and check SHA256 message digest
 
 config BUSYBOX_CONFIG_SHA512SUM
-	bool "sha512sum"
+	bool "sha512sum (7.4 kb)"
 	default BUSYBOX_DEFAULT_SHA512SUM
 	help
 	Compute and check SHA512 message digest
 
 config BUSYBOX_CONFIG_SHA3SUM
-	bool "sha3sum"
+	bool "sha3sum (6.1 kb)"
 	default BUSYBOX_DEFAULT_SHA3SUM
 	help
 	Compute and check SHA3 message digest
@@ -451,91 +446,81 @@ config BUSYBOX_CONFIG_FEATURE_MD5_SHA1_SUM_CHECK
 	against pre-calculated hash values.
 	-s and -w are useful options when verifying checksums.
 config BUSYBOX_CONFIG_MKDIR
-	bool "mkdir"
+	bool "mkdir (4.5 kb)"
 	default BUSYBOX_DEFAULT_MKDIR
 	help
 	mkdir is used to create directories with the specified names.
-
-config BUSYBOX_CONFIG_FEATURE_MKDIR_LONG_OPTIONS
-	bool "Enable long options"
-	default BUSYBOX_DEFAULT_FEATURE_MKDIR_LONG_OPTIONS
-	depends on BUSYBOX_CONFIG_MKDIR && BUSYBOX_CONFIG_LONG_OPTS
 config BUSYBOX_CONFIG_MKFIFO
-	bool "mkfifo"
+	bool "mkfifo (3.8 kb)"
 	default BUSYBOX_DEFAULT_MKFIFO
 	help
 	mkfifo is used to create FIFOs (named pipes).
 	The 'mknod' program can also create FIFOs.
 config BUSYBOX_CONFIG_MKNOD
-	bool "mknod"
+	bool "mknod (4.5 kb)"
 	default BUSYBOX_DEFAULT_MKNOD
 	help
 	mknod is used to create FIFOs or block/character special
 	files with the specified names.
 config BUSYBOX_CONFIG_MKTEMP
-	bool "mktemp"
+	bool "mktemp (4.2 kb)"
 	default BUSYBOX_DEFAULT_MKTEMP
 	help
 	mktemp is used to create unique temporary files
 config BUSYBOX_CONFIG_MV
-	bool "mv"
+	bool "mv (10 kb)"
 	default BUSYBOX_DEFAULT_MV
 	help
 	mv is used to move or rename files or directories.
-
-config BUSYBOX_CONFIG_FEATURE_MV_LONG_OPTIONS
-	bool "Enable long options"
-	default BUSYBOX_DEFAULT_FEATURE_MV_LONG_OPTIONS
-	depends on BUSYBOX_CONFIG_MV && BUSYBOX_CONFIG_LONG_OPTS
 config BUSYBOX_CONFIG_NICE
-	bool "nice"
+	bool "nice (2.1 kb)"
 	default BUSYBOX_DEFAULT_NICE
 	help
 	nice runs a program with modified scheduling priority.
 config BUSYBOX_CONFIG_NL
-	bool "nl"
+	bool "nl (4.6 kb)"
 	default BUSYBOX_DEFAULT_NL
 	help
 	nl is used to number lines of files.
 config BUSYBOX_CONFIG_NOHUP
-	bool "nohup"
+	bool "nohup (2 kb)"
 	default BUSYBOX_DEFAULT_NOHUP
 	help
 	run a command immune to hangups, with output to a non-tty.
 config BUSYBOX_CONFIG_NPROC
-	bool "nproc"
+	bool "nproc (3.7 kb)"
 	default BUSYBOX_DEFAULT_NPROC
 	help
 	Print number of CPUs
 config BUSYBOX_CONFIG_OD
-	bool "od"
+	bool "od (11 kb)"
 	default BUSYBOX_DEFAULT_OD
 	help
 	od is used to dump binary files in octal and other formats.
 config BUSYBOX_CONFIG_PASTE
-	bool "paste"
+	bool "paste (4.9 kb)"
 	default BUSYBOX_DEFAULT_PASTE
 	help
 	paste is used to paste lines of different files together
 	and write the result to stdout
 config BUSYBOX_CONFIG_PRINTENV
-	bool "printenv"
+	bool "printenv (1.3 kb)"
 	default BUSYBOX_DEFAULT_PRINTENV
 	help
 	printenv is used to print all or part of environment.
 config BUSYBOX_CONFIG_PRINTF
-	bool "printf"
+	bool "printf (3.8 kb)"
 	default BUSYBOX_DEFAULT_PRINTF
 	help
 	printf is used to format and print specified strings.
-	It's similar to `echo' except it has more options.
+	It's similar to 'echo' except it has more options.
 config BUSYBOX_CONFIG_PWD
-	bool "pwd"
+	bool "pwd (3.7 kb)"
 	default BUSYBOX_DEFAULT_PWD
 	help
 	pwd is used to print the current directory.
 config BUSYBOX_CONFIG_READLINK
-	bool "readlink"
+	bool "readlink (4 kb)"
 	default BUSYBOX_DEFAULT_READLINK
 	help
 	This program reads a symbolic link and returns the name
@@ -548,55 +533,47 @@ config BUSYBOX_CONFIG_FEATURE_READLINK_FOLLOW
 	help
 	Enable the readlink option (-f).
 config BUSYBOX_CONFIG_REALPATH
-	bool "realpath"
+	bool "realpath (1.6 kb)"
 	default BUSYBOX_DEFAULT_REALPATH
 	help
 	Return the canonicalized absolute pathname.
 	This isn't provided by GNU shellutils, but where else does it belong.
 config BUSYBOX_CONFIG_RM
-	bool "rm"
+	bool "rm (5.4 kb)"
 	default BUSYBOX_DEFAULT_RM
 	help
 	rm is used to remove files or directories.
 config BUSYBOX_CONFIG_RMDIR
-	bool "rmdir"
+	bool "rmdir (3.5 kb)"
 	default BUSYBOX_DEFAULT_RMDIR
 	help
 	rmdir is used to remove empty directories.
-
-config BUSYBOX_CONFIG_FEATURE_RMDIR_LONG_OPTIONS
-	bool "Enable long options"
-	default BUSYBOX_DEFAULT_FEATURE_RMDIR_LONG_OPTIONS
-	depends on BUSYBOX_CONFIG_RMDIR && BUSYBOX_CONFIG_LONG_OPTS
-	help
-	Support long options for the rmdir applet, including
-	--ignore-fail-on-non-empty for compatibility with GNU rmdir.
 config BUSYBOX_CONFIG_SEQ
-	bool "seq"
+	bool "seq (3.8 kb)"
 	default BUSYBOX_DEFAULT_SEQ
 	help
 	print a sequence of numbers
 config BUSYBOX_CONFIG_SHRED
-	bool "shred"
+	bool "shred (4.9 kb)"
 	default BUSYBOX_DEFAULT_SHRED
 	help
 	Overwrite a file to hide its contents, and optionally delete it
 config BUSYBOX_CONFIG_SHUF
-	bool "shuf"
+	bool "shuf (5.4 kb)"
 	default BUSYBOX_DEFAULT_SHUF
 	help
 	Generate random permutations
 config BUSYBOX_CONFIG_SLEEP
-	bool "sleep"
+	bool "sleep (2 kb)"
 	default BUSYBOX_DEFAULT_SLEEP
 	help
 	sleep is used to pause for a specified number of seconds.
 	It comes in 3 versions:
 	- small: takes one integer parameter
 	- fancy: takes multiple integer arguments with suffixes:
-	    sleep 1d 2h 3m 15s
+		sleep 1d 2h 3m 15s
 	- fancy with fractional numbers:
-	    sleep 2.3s 4.5h sleeps for 16202.3 seconds
+		sleep 2.3s 4.5h sleeps for 16202.3 seconds
 	Last one is "the most compatible" with coreutils sleep,
 	but it adds around 1k of code.
 
@@ -606,32 +583,33 @@ config BUSYBOX_CONFIG_FEATURE_FANCY_SLEEP
 	depends on BUSYBOX_CONFIG_SLEEP
 	help
 	Allow sleep to pause for specified minutes, hours, and days.
-
-config BUSYBOX_CONFIG_FEATURE_FLOAT_SLEEP
-	bool "Enable fractional arguments"
-	default BUSYBOX_DEFAULT_FEATURE_FLOAT_SLEEP
-	depends on BUSYBOX_CONFIG_FEATURE_FANCY_SLEEP
-	help
-	Allow for fractional numeric parameters.
 config BUSYBOX_CONFIG_SORT
-	bool "sort"
+	bool "sort (7.7 kb)"
 	default BUSYBOX_DEFAULT_SORT
 	help
 	sort is used to sort lines of text in specified files.
 
 config BUSYBOX_CONFIG_FEATURE_SORT_BIG
-	bool "Full SuSv3 compliant sort (support -ktcsbdfiozgM)"
+	bool "Full SuSv3 compliant sort (support -ktcbdfiogM)"
 	default BUSYBOX_DEFAULT_FEATURE_SORT_BIG
 	depends on BUSYBOX_CONFIG_SORT
 	help
-	Without this, sort only supports -r, -u, and an integer version
+	Without this, sort only supports -rusz, and an integer version
 	of -n. Selecting this adds sort keys, floating point support, and
 	more. This adds a little over 3k to a nonstatic build on x86.
 
 	The SuSv3 sort standard is available at:
 	http://www.opengroup.org/onlinepubs/007904975/utilities/sort.html
+
+config BUSYBOX_CONFIG_FEATURE_SORT_OPTIMIZE_MEMORY
+	bool "Use less memory (but might be slower)"
+	default BUSYBOX_DEFAULT_FEATURE_SORT_OPTIMIZE_MEMORY   # defaults to N since we are size-paranoid tribe
+	depends on BUSYBOX_CONFIG_SORT
+	help
+	Attempt to use less memory (by storing only one copy
+	of duplicated lines, and such). Useful if you work on huge files.
 config BUSYBOX_CONFIG_SPLIT
-	bool "split"
+	bool "split (5 kb)"
 	default BUSYBOX_DEFAULT_SPLIT
 	help
 	Split a file into pieces.
@@ -645,7 +623,7 @@ config BUSYBOX_CONFIG_FEATURE_SPLIT_FANCY
 	Supports additional suffixes 'b' for 512 bytes,
 	'g' for 1GiB for the -b option.
 config BUSYBOX_CONFIG_STAT
-	bool "stat"
+	bool "stat (11 kb)"
 	default BUSYBOX_DEFAULT_STAT
 	help
 	display file or filesystem status.
@@ -668,17 +646,17 @@ config BUSYBOX_CONFIG_FEATURE_STAT_FILESYSTEM
 	Without this, stat will not support the '-f' option to display
 	information about filesystem status.
 config BUSYBOX_CONFIG_STTY
-	bool "stty"
+	bool "stty (8.9 kb)"
 	default BUSYBOX_DEFAULT_STTY
 	help
 	stty is used to change and print terminal line settings.
 config BUSYBOX_CONFIG_SUM
-	bool "sum"
+	bool "sum (4 kb)"
 	default BUSYBOX_DEFAULT_SUM
 	help
 	checksum and count the blocks in a file
 config BUSYBOX_CONFIG_SYNC
-	bool "sync"
+	bool "sync (3.8 kb)"
 	default BUSYBOX_DEFAULT_SYNC
 	help
 	sync is used to flush filesystem buffers.
@@ -690,12 +668,12 @@ config BUSYBOX_CONFIG_FEATURE_SYNC_FANCY
 	sync -d FILE... executes fdatasync() on each FILE.
 	sync -f FILE... executes syncfs() on each FILE.
 config BUSYBOX_CONFIG_TAC
-	bool "tac"
+	bool "tac (3.9 kb)"
 	default BUSYBOX_DEFAULT_TAC
 	help
 	tac is used to concatenate and print files in reverse.
 config BUSYBOX_CONFIG_TAIL
-	bool "tail"
+	bool "tail (6.8 kb)"
 	default BUSYBOX_DEFAULT_TAIL
 	help
 	tail is used to print the last specified number of lines
@@ -707,13 +685,13 @@ config BUSYBOX_CONFIG_FEATURE_FANCY_TAIL
 	depends on BUSYBOX_CONFIG_TAIL
 	help
 	These options are provided by GNU tail, but
-	are not specific in the SUSv3 standard:
-	    -q      Never output headers giving file names
-	    -s SEC  Wait SEC seconds between reads with -f
-	    -v      Always output headers giving file names
-	    -F      Same as -f, but keep retrying
+	are not specified in the SUSv3 standard:
+		-q      Never output headers giving file names
+		-s SEC  Wait SEC seconds between reads with -f
+		-v      Always output headers giving file names
+		-F      Same as -f, but keep retrying
 config BUSYBOX_CONFIG_TEE
-	bool "tee"
+	bool "tee (4.2 kb)"
 	default BUSYBOX_DEFAULT_TEE
 	help
 	tee is used to read from standard input and write
@@ -726,7 +704,7 @@ config BUSYBOX_CONFIG_FEATURE_TEE_USE_BLOCK_IO
 	help
 	Enable this option for a faster tee, at expense of size.
 config BUSYBOX_CONFIG_TEST
-	bool "test"
+	bool "test (4.1 kb)"
 	default BUSYBOX_DEFAULT_TEST
 	help
 	test is used to check file types and compare values,
@@ -752,13 +730,13 @@ config BUSYBOX_CONFIG_FEATURE_TEST_64
 	help
 	Enable 64-bit support in test.
 config BUSYBOX_CONFIG_TIMEOUT
-	bool "timeout"
+	bool "timeout (6 kb)"
 	default BUSYBOX_DEFAULT_TIMEOUT
 	help
 	Runs a program and watches it. If it does not terminate in
 	specified number of seconds, it is sent a signal.
 config BUSYBOX_CONFIG_TOUCH
-	bool "touch"
+	bool "touch (5.9 kb)"
 	default BUSYBOX_DEFAULT_TOUCH
 	help
 	touch is used to create or change the access and/or
@@ -779,7 +757,7 @@ config BUSYBOX_CONFIG_FEATURE_TOUCH_SUSV3
 	help
 	Enable touch to use a reference file or a given date/time argument.
 config BUSYBOX_CONFIG_TR
-	bool "tr"
+	bool "tr (5.1 kb)"
 	default BUSYBOX_DEFAULT_TR
 	help
 	tr is used to squeeze, and/or delete characters from standard
@@ -804,24 +782,24 @@ config BUSYBOX_CONFIG_FEATURE_TR_EQUIV
 	useful for cases when no other way of expressing a character
 	is possible.
 config BUSYBOX_CONFIG_TRUE
-	bool "true"
+	bool "true (tiny)"
 	default BUSYBOX_DEFAULT_TRUE
 	help
 	true returns an exit code of TRUE (0).
 config BUSYBOX_CONFIG_TRUNCATE
-	bool "truncate"
+	bool "truncate (4.2 kb)"
 	default BUSYBOX_DEFAULT_TRUNCATE
 	help
 	truncate truncates files to a given size. If a file does
 	not exist, it is created unless told otherwise.
 config BUSYBOX_CONFIG_TTY
-	bool "tty"
+	bool "tty (3.6 kb)"
 	default BUSYBOX_DEFAULT_TTY
 	help
 	tty is used to print the name of the current terminal to
 	standard output.
 config BUSYBOX_CONFIG_UNAME
-	bool "uname"
+	bool "uname (3.9 kb)"
 	default BUSYBOX_DEFAULT_UNAME
 	help
 	uname is used to print system information.
@@ -833,38 +811,44 @@ config BUSYBOX_CONFIG_UNAME_OSNAME
 	help
 	Sets the operating system name reported by uname -o.  The
 	default BUSYBOX_DEFAULT_UNAME_OSNAME "GNU/Linux".
+
+config BUSYBOX_CONFIG_BB_ARCH
+	bool "arch (1.1 kb)"
+	default BUSYBOX_DEFAULT_BB_ARCH
+	help
+	Same as uname -m.
 config BUSYBOX_CONFIG_UNIQ
-	bool "uniq"
+	bool "uniq (4.9 kb)"
 	default BUSYBOX_DEFAULT_UNIQ
 	help
 	uniq is used to remove duplicate lines from a sorted file.
 config BUSYBOX_CONFIG_UNLINK
-	bool "unlink"
+	bool "unlink (3.2 kb)"
 	default BUSYBOX_DEFAULT_UNLINK
 	help
 	unlink deletes a file by calling unlink()
 config BUSYBOX_CONFIG_USLEEP
-	bool "usleep"
+	bool "usleep (1.3 kb)"
 	default BUSYBOX_DEFAULT_USLEEP
 	help
 	usleep is used to pause for a specified number of microseconds.
 config BUSYBOX_CONFIG_UUDECODE
-	bool "uudecode"
+	bool "uudecode (5.8 kb)"
 	default BUSYBOX_DEFAULT_UUDECODE
 	help
 	uudecode is used to decode a uuencoded file.
 config BUSYBOX_CONFIG_BASE64
-	bool "base64"
+	bool "base64 (4.9 kb)"
 	default BUSYBOX_DEFAULT_BASE64
 	help
 	Base64 encode and decode
 config BUSYBOX_CONFIG_UUENCODE
-	bool "uuencode"
+	bool "uuencode (4.4 kb)"
 	default BUSYBOX_DEFAULT_UUENCODE
 	help
 	uuencode is used to uuencode a file.
 config BUSYBOX_CONFIG_WC
-	bool "wc"
+	bool "wc (4.5 kb)"
 	default BUSYBOX_DEFAULT_WC
 	help
 	wc is used to print the number of bytes, words, and lines,
@@ -877,37 +861,37 @@ config BUSYBOX_CONFIG_FEATURE_WC_LARGE
 	help
 	Use "unsigned long long" for counter variables.
 config BUSYBOX_CONFIG_WHO
-      bool "who"
-      default BUSYBOX_DEFAULT_WHO
-      depends on BUSYBOX_CONFIG_FEATURE_UTMP
-      help
-        who is used to show who is logged on.
+	bool "who (3.9 kb)"
+	default BUSYBOX_DEFAULT_WHO
+	depends on BUSYBOX_CONFIG_FEATURE_UTMP
+	help
+	Print users currently logged on.
 
 config BUSYBOX_CONFIG_W
-      bool "w"
-      default BUSYBOX_DEFAULT_W
-      depends on BUSYBOX_CONFIG_FEATURE_UTMP
-      help
-        w is used to show who is logged on.
+	bool "w (3.8 kb)"
+	default BUSYBOX_DEFAULT_W
+	depends on BUSYBOX_CONFIG_FEATURE_UTMP
+	help
+	Print users currently logged on.
 
 config BUSYBOX_CONFIG_USERS
-      bool "users"
-      default BUSYBOX_DEFAULT_USERS
-      depends on BUSYBOX_CONFIG_FEATURE_UTMP
-      help
-        Print users currently logged on.
+	bool "users (3.4 kb)"
+	default BUSYBOX_DEFAULT_USERS
+	depends on BUSYBOX_CONFIG_FEATURE_UTMP
+	help
+	Print users currently logged on.
 config BUSYBOX_CONFIG_WHOAMI
-	bool "whoami"
+	bool "whoami (3.2 kb)"
 	default BUSYBOX_DEFAULT_WHOAMI
 	help
 	whoami is used to print the username of the current
 	user id (same as id -un).
 config BUSYBOX_CONFIG_YES
-	bool "yes"
+	bool "yes (1.2 kb)"
 	default BUSYBOX_DEFAULT_YES
 	help
 	yes is used to repeatedly output a specific string, or
-	the default string `y'.
+	the default string 'y'.
 
 comment "Common options"
 
