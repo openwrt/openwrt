@@ -157,6 +157,22 @@ config BUSYBOX_CONFIG_FEATURE_CROND_CALL_SENDMAIL
 	help
 	  Command output will be sent to corresponding user via email.
 
+config BUSYBOX_CONFIG_FEATURE_CROND_SPECIAL_TIMES
+	bool "Support special times (@reboot, @daily, etc) in crontabs"
+	default BUSYBOX_DEFAULT_FEATURE_CROND_SPECIAL_TIMES
+	depends on BUSYBOX_CONFIG_CROND
+	help
+	string        meaning
+	------        -------
+	@reboot       Run once, at startup
+	@yearly       Run once a year:  "0 0 1 1 *"
+	@annually     Same as @yearly:  "0 0 1 1 *"
+	@monthly      Run once a month: "0 0 1 * *"
+	@weekly       Run once a week:  "0 0 * * 0"
+	@daily        Run once a day:   "0 0 * * *"
+	@midnight     Same as @daily:   "0 0 * * *"
+	@hourly       Run once an hour: "0 * * * *"
+
 config BUSYBOX_CONFIG_FEATURE_CROND_DIR
 	string "crond spool directory"
 	default BUSYBOX_DEFAULT_FEATURE_CROND_DIR
