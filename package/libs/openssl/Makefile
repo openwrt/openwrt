@@ -9,9 +9,9 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
 PKG_BASE:=1.1.1
-PKG_BUGFIX:=a
+PKG_BUGFIX:=b
 PKG_VERSION:=$(PKG_BASE)$(PKG_BUGFIX)
-PKG_RELEASE:=2
+PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
 ENGINES_DIR=engines-1.1
 
@@ -25,7 +25,7 @@ PKG_SOURCE_URL:= \
 	ftp://ftp.pca.dfn.de/pub/tools/net/openssl/source/ \
 	http://www.openssl.org/source/ \
 	http://www.openssl.org/source/old/$(PKG_BASE)/
-PKG_HASH:=fc20130f8b7cbd2fb918b2f14e2f429e109c31ddd0fb38fc5d71d9ffed3f9f41
+PKG_HASH:=5c557b023230413dfb0756f3137a13e6d726838ccd1430888ad15bfb2b43ea4b
 
 PKG_LICENSE:=OpenSSL
 PKG_LICENSE_FILES:=LICENSE
@@ -295,10 +295,6 @@ OPENSSL_TARGET:=linux-$(call qstrip,$(CONFIG_ARCH))-openwrt
 STAMP_CONFIGURED := $(STAMP_CONFIGURED)_$(shell echo $(OPENSSL_OPTIONS) | mkhash md5)
 
 define Build/Configure
-	[ -f $(STAMP_CONFIGURED) ] || { \
-		rm -f $(PKG_BUILD_DIR)/*.so.* $(PKG_BUILD_DIR)/*.a; \
-		find $(PKG_BUILD_DIR) -name \*.o | xargs rm -f; \
-	}
 	(cd $(PKG_BUILD_DIR); \
 		./Configure $(OPENSSL_TARGET) \
 			--prefix=/usr \
@@ -306,7 +302,8 @@ define Build/Configure
 			--openssldir=/etc/ssl \
 			$(TARGET_CPPFLAGS) \
 			$(TARGET_LDFLAGS) \
-			$(OPENSSL_OPTIONS) \
+			$(OPENSSL_OPTIONS) && \
+		{ [ -f $(STAMP_CONFIGURED) ] || make clean; } \
 	)
 endef
 
