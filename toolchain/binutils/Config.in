@@ -3,7 +3,7 @@
 choice
 	prompt "Binutils Version" if TOOLCHAINOPTS
 	default BINUTILS_USE_VERSION_2_31_1 if !arc
-	default BINUTILS_USE_VERSION_2_29_ARC if arc
+	default BINUTILS_USE_VERSION_2_32 if arc
 	help
 	  Select the version of binutils you wish to use.
 
@@ -23,7 +23,6 @@ choice
 		select BINUTILS_VERSION_2_31_1
 
 	config BINUTILS_USE_VERSION_2_32
-		depends on !arc
 		bool "Binutils 2.32"
 		select BINUTILS_VERSION_2_32
 
