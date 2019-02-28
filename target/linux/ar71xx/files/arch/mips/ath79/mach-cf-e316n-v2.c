@@ -1,5 +1,6 @@
 /*
  *  Support for COMFAST boards:
+ *  - CF-E314N v2 (QCA9531)
  *  - CF-E316N v2 (AR9341)
  *  - CF-E320N v2 (QCA9531)
  *  - CF-E355AC v1 (QCA9531 + QCA9882)
@@ -40,6 +41,63 @@
 
 #define CF_EXXXN_KEYS_POLL_INTERVAL	20
 #define CF_EXXXN_KEYS_DEBOUNCE_INTERVAL	(3 * CF_EXXXN_KEYS_POLL_INTERVAL)
+
+/* CF-E314N */
+#define CF_E314N_V2_GPIO_LED_WLAN	0
+#define CF_E314N_V2_GPIO_LED_WAN	2
+#define CF_E314N_V2_GPIO_LED_LAN	3
+
+#define CF_E314N_V2_GPIO_LED_SIGNAL1	11
+#define CF_E314N_V2_GPIO_LED_SIGNAL2	12
+#define CF_E314N_V2_GPIO_LED_SIGNAL3	14
+#define CF_E314N_V2_GPIO_LED_SIGNAL4	16
+
+#define CF_E314N_V2_GPIO_EXT_WDT	13
+
+#define CF_E314N_V2_GPIO_BTN_RESET	17
+
+static struct gpio_led cf_e314n_v2_leds_gpio[] __initdata = {
+	{
+		.name		= "cf-e314n-v2:white:lan",
+		.gpio		= CF_E314N_V2_GPIO_LED_LAN,
+		.active_low	= 1,
+	}, {
+		.name		= "cf-e314n-v2:white:wan",
+		.gpio		= CF_E314N_V2_GPIO_LED_WAN,
+		.active_low	= 1,
+	}, {
+		.name		= "cf-e314n-v2:white:wlan",
+		.gpio		= CF_E314N_V2_GPIO_LED_WLAN,
+		.active_low	= 1,
+	}, {
+		.name		= "cf-e314n-v2:white:signal1",
+		.gpio		= CF_E314N_V2_GPIO_LED_SIGNAL1,
+		.active_low	= 1,
+    }, {
+		.name		= "cf-e314n-v2:white:signal2",
+		.gpio		= CF_E314N_V2_GPIO_LED_SIGNAL2,
+		.active_low	= 1,
+    }, {
+		.name		= "cf-e314n-v2:white:signal3",
+		.gpio		= CF_E314N_V2_GPIO_LED_SIGNAL3,
+		.active_low	= 1,
+    }, {
+		.name		= "cf-e314n-v2:white:signal4",
+		.gpio		= CF_E314N_V2_GPIO_LED_SIGNAL4,
+		.active_low	= 1,
+	},
+};
+
+static struct gpio_keys_button cf_e314n_v2_gpio_keys[] __initdata = {
+	{
+		.desc		= "Reset button",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = CF_EXXXN_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= CF_E314N_V2_GPIO_BTN_RESET,
+		.active_low	= 1,
+	},
+};
 
 /* CF-E316N v2 */
 #define CF_E316N_V2_GPIO_LED_DIAG_B	0
@@ -387,6 +445,70 @@ static void __init cf_exxxn_common_setup(unsigned long art_ofs, int gpio_wdt)
 	ath79_register_usb();
 }
 
+
+static void __init cf_exxxn_qca953x_eth_setup(void)
+{
+	u8 *mac = (u8 *) KSEG1ADDR(0x1f010000);
+
+	ath79_setup_ar933x_phy4_switch(false, false);
+
+	ath79_register_mdio(0, 0x0);
+
+	ath79_switch_data.phy4_mii_en = 1;
+	ath79_switch_data.phy_poll_mask |= BIT(4);
+
+	/* LAN */
+	ath79_eth1_data.duplex = DUPLEX_FULL;
+	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ath79_eth1_data.speed = SPEED_1000;
+	ath79_init_mac(ath79_eth1_data.mac_addr, mac, 2);
+	ath79_register_eth(1);
+
+	/* WAN */
+	ath79_eth0_data.duplex = DUPLEX_FULL;
+	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ath79_eth0_data.speed = SPEED_100;
+	ath79_eth0_data.phy_mask = BIT(4);
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);
+	ath79_register_eth(0);
+}
+
+static void __init cf_e314n_v2_setup(void)
+{
+	cf_exxxn_common_setup(0x10000, CF_E314N_V2_GPIO_EXT_WDT);
+
+	cf_exxxn_qca953x_eth_setup();
+
+	/* Disable JTAG (enables GPIO0-3) */
+	ath79_gpio_function_enable(AR934X_GPIO_FUNC_JTAG_DISABLE);
+
+	ath79_gpio_direction_select(CF_E314N_V2_GPIO_LED_LAN, true);
+	ath79_gpio_direction_select(CF_E314N_V2_GPIO_LED_WAN, true);
+	ath79_gpio_direction_select(CF_E314N_V2_GPIO_LED_WLAN, true);
+	ath79_gpio_direction_select(CF_E314N_V2_GPIO_LED_SIGNAL1, true);
+	ath79_gpio_direction_select(CF_E314N_V2_GPIO_LED_SIGNAL2, true);
+	ath79_gpio_direction_select(CF_E314N_V2_GPIO_LED_SIGNAL3, true);
+	ath79_gpio_direction_select(CF_E314N_V2_GPIO_LED_SIGNAL4, true);
+
+	ath79_gpio_output_select(CF_E314N_V2_GPIO_LED_LAN, 0);
+	ath79_gpio_output_select(CF_E314N_V2_GPIO_LED_WAN, 0);
+	ath79_gpio_output_select(CF_E314N_V2_GPIO_LED_WLAN, 0);
+	ath79_gpio_output_select(CF_E314N_V2_GPIO_LED_SIGNAL1, 0);
+	ath79_gpio_output_select(CF_E314N_V2_GPIO_LED_SIGNAL2, 0);
+	ath79_gpio_output_select(CF_E314N_V2_GPIO_LED_SIGNAL3, 0);
+	ath79_gpio_output_select(CF_E314N_V2_GPIO_LED_SIGNAL4, 0);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(cf_e314n_v2_leds_gpio),
+				 cf_e314n_v2_leds_gpio);
+
+	ath79_register_gpio_keys_polled(-1, CF_EXXXN_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(cf_e314n_v2_gpio_keys),
+					cf_e314n_v2_gpio_keys);
+}
+
+MIPS_MACHINE(ATH79_MACH_CF_E314N_V2, "CF-E314N-V2", "COMFAST CF-E314N v2",
+	     cf_e314n_v2_setup);
+
 static void __init cf_e316n_v2_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f010000);
@@ -427,33 +549,6 @@ static void __init cf_e316n_v2_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_CF_E316N_V2, "CF-E316N-V2", "COMFAST CF-E316N v2",
 	     cf_e316n_v2_setup);
-
-static void __init cf_exxxn_qca953x_eth_setup(void)
-{
-	u8 *mac = (u8 *) KSEG1ADDR(0x1f010000);
-
-	ath79_setup_ar933x_phy4_switch(false, false);
-
-	ath79_register_mdio(0, 0x0);
-
-	ath79_switch_data.phy4_mii_en = 1;
-	ath79_switch_data.phy_poll_mask |= BIT(4);
-
-	/* LAN */
-	ath79_eth1_data.duplex = DUPLEX_FULL;
-	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
-	ath79_eth1_data.speed = SPEED_1000;
-	ath79_init_mac(ath79_eth1_data.mac_addr, mac, 2);
-	ath79_register_eth(1);
-
-	/* WAN */
-	ath79_eth0_data.duplex = DUPLEX_FULL;
-	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
-	ath79_eth0_data.speed = SPEED_100;
-	ath79_eth0_data.phy_mask = BIT(4);
-	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);
-	ath79_register_eth(0);
-}
 
 static void __init cf_e320n_v2_setup(void)
 {
