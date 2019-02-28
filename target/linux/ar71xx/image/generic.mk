@@ -167,6 +167,15 @@ define Device/carambola2
 endef
 TARGET_DEVICES += carambola2
 
+define Device/cf-e314n-v2
+  DEVICE_TITLE := COMFAST CF-E314N v2
+  BOARDNAME = CF-E314N-V2
+  IMAGE_SIZE = 16192k
+  CONSOLE = ttyS0,115200
+  MTDPARTS = spi0.0:64k(u-boot)ro,64k(art)ro,16192k(firmware),64k(art-backup)ro
+endef
+TARGET_DEVICES += cf-e314n-v2
+
 define Device/cf-e316n-v2
   DEVICE_TITLE := COMFAST CF-E316N v2
   DEVICE_PACKAGES := -swconfig -uboot-envtools
