@@ -220,6 +220,7 @@ platform_check_image() {
 	bullet-m|\
 	c-55|\
 	carambola2|\
+	cf-e314n-v2|\
 	cf-e316n-v2|\
 	cf-e320n-v2|\
 	cf-e355ac-v1|\
