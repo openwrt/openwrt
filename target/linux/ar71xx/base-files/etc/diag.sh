@@ -150,6 +150,7 @@ get_status_led() {
 	cap4200ag)
 		status_led="senao:green:pwr"
 		;;
+	cf-e314n-v2|\
 	cf-e316n-v2|\
 	cf-e520n|\
 	cf-e530n)
