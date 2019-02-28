@@ -217,6 +217,11 @@ carambola2)
 	ucidef_set_led_netdev "wan" "WAN" "$board:orange:eth1" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
 	;;
+cf-e314n-v2)
+	ucidef_set_led_netdev "wan" "WAN" "$board:white:wan" "eth0"
+	ucidef_set_led_netdev "lan" "lAN" "$board:white:lan" "eth1"
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:white:wlan" "phy0tpt"
+    	;;
 cf-e316n-v2)
 	ucidef_set_led_netdev "lan" "LAN" "$board:blue:lan" "eth0"
 	ucidef_set_led_netdev "wan" "WAN" "$board:blue:wan" "eth1"
