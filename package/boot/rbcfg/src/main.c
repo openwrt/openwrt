@@ -3,6 +3,7 @@
  *
  *  Copyright (C) 2010 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2017 Thibaut VARENE <varenet@parisc-linux.org>
+ *  Copyright (C) 2019 Sergey Sergeev <adron@mstnt.com>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -19,6 +20,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <linux/limits.h>
+#include <endian.h>
 
 #include "rbcfg.h"
 #include "cyg_crc.h"
@@ -219,32 +221,35 @@ static struct rbcfg_env rbcfg_envs[] = {
 	}
 };
 
-static inline uint16_t
-get_u16(const void *buf)
-{
-	const uint8_t *p = buf;
-
-	return ((uint16_t) p[1] + ((uint16_t) p[0] << 8));
-}
-
 static inline uint32_t
 get_u32(const void *buf)
 {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	return *(uint32_t *)buf;
+#elif __BYTE_ORDER == __BIG_ENDIAN
 	const uint8_t *p = buf;
-
 	return ((uint32_t) p[3] + ((uint32_t) p[2] << 8) +
 	       ((uint32_t) p[1] << 16) + ((uint32_t) p[0] << 24));
+#else
+#error "Unknown byte order!"
+#endif
 }
 
 static inline void
 put_u32(void *buf, uint32_t val)
 {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	*(uint32_t *)buf = val;
+#elif __BYTE_ORDER == __BIG_ENDIAN
 	uint8_t *p = buf;
 
 	p[3] = val & 0xff;
 	p[2] = (val >> 8) & 0xff;
 	p[1] = (val >> 16) & 0xff;
 	p[0] = (val >> 24) & 0xff;
+#else
+#error "Unknown byte order!"
+#endif
 }
 
 static int
@@ -261,17 +266,12 @@ rbcfg_find_tag(struct rbcfg_ctx *ctx, uint16_t tag_id, uint16_t *tag_len,
 	buf += 8;
 	buflen -= 8;
 
-	while (buflen > 2) {
-		len = get_u16(buf);
-		buf += 2;
-		buflen -= 2;
-
-		if (buflen < 2)
-			break;
-
-		id = get_u16(buf);
-		buf += 2;
-		buflen -= 2;
+	while (buflen > 4){
+		uint32_t id_and_len = get_u32(buf);
+		buf += 4;
+		buflen -= 4;
+		id = id_and_len & 0xFFFF;
+		len = id_and_len >> 16;
 
 		if (id == RB_ID_TERMINATOR) {
 			ret = RB_ERR_NOTWANTED;
@@ -431,7 +431,7 @@ rbcfg_load(struct rbcfg_ctx *ctx)
 	put_u32(ctx->buf + 4, 0);
 	crc = cyg_ether_crc32((unsigned char *) ctx->buf, ctx->buflen);
 	if (crc != crc_orig) {
-		fprintf(stderr, "configuration has CRC error\n");
+		fprintf(stderr, "configuration has CRC error: 0x%x vs 0x%x\n", crc, crc_orig);
 		err = RB_ERR_INVALID;
 		goto err_close;
 	}
