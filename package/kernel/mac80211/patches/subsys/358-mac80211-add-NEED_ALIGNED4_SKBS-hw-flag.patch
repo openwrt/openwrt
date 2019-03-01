@@ -23,7 +23,7 @@ Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -2127,6 +2127,9 @@ struct ieee80211_txq {
+@@ -2131,6 +2131,9 @@ struct ieee80211_txq {
   * @IEEE80211_HW_DOESNT_SUPPORT_QOS_NDP: The driver (or firmware) doesn't
   *	support QoS NDP for AP probing - that's most likely a driver bug.
   *
@@ -33,7 +33,7 @@ Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
   * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
   */
  enum ieee80211_hw_flags {
-@@ -2172,6 +2175,7 @@ enum ieee80211_hw_flags {
+@@ -2176,6 +2179,7 @@ enum ieee80211_hw_flags {
  	IEEE80211_HW_SUPPORTS_TDLS_BUFFER_STA,
  	IEEE80211_HW_DEAUTH_NEED_MGD_TX_PREP,
  	IEEE80211_HW_DOESNT_SUPPORT_QOS_NDP,
@@ -53,7 +53,7 @@ Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
  
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1557,6 +1557,29 @@ ieee80211_vif_get_num_mcast_if(struct ie
+@@ -1559,6 +1559,29 @@ ieee80211_vif_get_num_mcast_if(struct ie
  	return -1;
  }
  
@@ -203,7 +203,7 @@ Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
  	/* We store the key here so there's no point in using rcu_dereference()
  	 * but that's fine because the code that changes the pointers will call
  	 * this function after doing so. For a single CPU that would be enough,
-@@ -3534,7 +3543,7 @@ begin:
+@@ -3540,7 +3549,7 @@ begin:
  
  		if (tx.key &&
  		    (tx.key->conf.flags & IEEE80211_KEY_FLAG_GENERATE_IV))
@@ -214,7 +214,7 @@ Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
  					   tx.key, skb);
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -1288,6 +1288,7 @@ void ieee80211_send_auth(struct ieee8021
+@@ -1388,6 +1388,7 @@ void ieee80211_send_auth(struct ieee8021
  			 u32 tx_flags)
  {
  	struct ieee80211_local *local = sdata->local;
@@ -222,7 +222,7 @@ Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
  	struct sk_buff *skb;
  	struct ieee80211_mgmt *mgmt;
  	unsigned int hdrlen;
-@@ -1314,7 +1315,7 @@ void ieee80211_send_auth(struct ieee8021
+@@ -1414,7 +1415,7 @@ void ieee80211_send_auth(struct ieee8021
  		skb_put_data(skb, extra, extra_len);
  
  	if (auth_alg == WLAN_AUTH_SHARED_KEY && transaction == 3) {
