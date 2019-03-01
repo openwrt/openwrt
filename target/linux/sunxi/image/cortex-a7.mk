@@ -179,6 +179,16 @@ endef
 TARGET_DEVICES += sun8i-h3-orangepi-pc
 
 
+define Device/sun8i-h3-orangepi-pc-plus
+  DEVICE_TITLE:=Xunlong Orange Pi PC Plus
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-gpio-button-hotplug
+  SUPPORTED_DEVICES:=xunlong,orangepi-pc-plus
+  SUNXI_DTS:=sun8i-h3-orangepi-pc-plus
+endef
+
+TARGET_DEVICES += sun8i-h3-orangepi-pc-plus
+
+
 define Device/sun8i-h3-orangepi-plus
   DEVICE_TITLE:=Xunlong Orange Pi Plus
   DEVICE_PACKAGES:=kmod-rtc-sunxi
