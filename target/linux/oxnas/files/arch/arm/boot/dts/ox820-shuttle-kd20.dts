@@ -144,9 +144,14 @@
 		};
 
 		partition@40000 {
-			label = "u-boot";
-			reg = <0x00040000 0x00200000>;
+			label = "uboot";
+			reg = <0x00040000 0x001e0000>;
 			read-only;
+		};
+
+		partition@220000 {
+			label = "uboot_env";
+			reg = <0x00220000 0x00020000>;
 		};
 
 		partition@240000 {
