@@ -1,6 +1,9 @@
 From 1a8a8989b779e51e4652a30e9f22c36a1b6ffc4b Mon Sep 17 00:00:00 2001
 From: Stanislaw Gruszka <sgruszka@redhat.com>
 Date: Thu, 20 Dec 2018 16:16:11 +0100
+X-Patchwork-Submitter: Stanislaw Gruszka <sgruszka@redhat.com>
+X-Patchwork-Id: 10739037
+X-Patchwork-Delegate: kvalo@adurom.com
 Subject: [PATCH 20/28] rt2x00: do not print error when queue is full
 
 For unknown reasons printk() on some context can cause CPU hung on
