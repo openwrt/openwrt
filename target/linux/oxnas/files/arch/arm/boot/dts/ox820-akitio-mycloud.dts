@@ -23,6 +23,10 @@
 		serial0 = &uart0;
 		gpio0 = &gpio0;
 		gpio1 = &gpio1;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
 	};
 
 	i2c-gpio {
@@ -62,7 +66,7 @@
 		compatible = "gpio-leds";
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_leds>;
-		status {
+		led_status: status {
 			label = "akitio:red:status";
 			gpios = <&gpio0 29 0>;
 		};

@@ -23,6 +23,10 @@
 		serial0 = &uart0;
 		gpio0 = &gpio0;
 		gpio1 = &gpio1;
+		led-boot = &led_status;
+		led-failsafe = &led_warn;
+		led-running = &led_status;
+		led-upgrade = &led_warn;
 	};
 
 	i2c-gpio {
@@ -67,11 +71,11 @@
 
 	leds {
 		compatible = "gpio-leds";
-		status {
+		led_status: status {
 			label = "kd20:blue:status";
 			gpios = <&gpio1 16 0>;
 		};
-		status2 {
+		led_warn: status2 {
 			label = "kd20:red:status";
 			gpios = <&gpio1 17 0>;
 		};
