@@ -274,7 +274,7 @@
 +					vga_idx = vga_idx + 3;
 +				else if (bbpval1 <= 2511)
 +					vga_idx = vga_idx + 2;
-+				else 
++				else
 +					vga_idx = vga_idx + 1;
 +			}
 +
@@ -285,7 +285,7 @@
 +		rt2x00_dbg(rt2x00dev, "Sigma_i=%d, Sigma_q=%d, R_iq=%d", sigma_i, sigma_q, r_iq);
 +
 +		if (((sigma_i <= 1400 ) && (sigma_i >= 1000))
-+			&& ((sigma_i - sigma_q) <= 112)			
++			&& ((sigma_i - sigma_q) <= 112)
 +			&& ((sigma_i - sigma_q) >= -112)
 +			&& ((mi <= 32) && (mi >= -32))
 +			&& ((mq <= 32) && (mq >= -32))) {
