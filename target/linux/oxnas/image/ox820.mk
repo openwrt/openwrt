@@ -40,7 +40,7 @@ define Device/akitio-mycloud
   DEVICE_DTS := ox820-akitio-mycloud
   DEVICE_TITLE := Akition myCloud (mini) / SilverStone DC01
   SUPPORTED_DEVICES := akitio,mycloud akitio
-  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-ata-oxnas-sata kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-ata-oxnas-sata kmod-usb-ledtrig-usbport \
                      kmod-i2c-gpio kmod-rtc-ds1307
 endef
 TARGET_DEVICES += akitio-mycloud
@@ -49,7 +49,7 @@ define Device/cloudengines-pogoplug-pro
   DEVICE_DTS := ox820-cloudengines-pogoplug-pro
   DEVICE_TITLE := Cloud Engines PogoPlug Pro (with mPCIe)
   SUPPORTED_DEVICES := cloudengines,pogoplugpro pogoplug-pro
-  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += cloudengines-pogoplug-pro
 
@@ -57,7 +57,7 @@ define Device/cloudengines-pogoplug-series-3
   DEVICE_DTS := ox820-cloudengines-pogoplug-series-3
   DEVICE_TITLE := Cloud Engines PogoPlug Series V3 (without mPCIe)
   SUPPORTED_DEVICES := cloudengines,pogoplugv3 pogoplug-v3
-  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += cloudengines-pogoplug-series-3
 
@@ -69,7 +69,7 @@ define Device/shuttle-kd20
   KERNEL_INITRAMFS_PREFIX = $$(IMAGE_PREFIX)-factory
   KERNEL_INITRAMFS_SUFFIX := .tar.gz
   KERNEL_INITRAMFS = kernel-bin | append-dtb | uImage none | omninas-factory | encrypt-3des sohmuntitnlaes
-  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-ata-oxnas-sata kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-ata-oxnas-sata kmod-usb-ledtrig-usbport \
                      kmod-usb3 kmod-i2c-gpio kmod-rtc-pcf8563 kmod-gpio-beeper \
                      kmod-hwmon-core kmod-hwmon-gpiofan \
                      kmod-md-mod kmod-md-raid0 kmod-md-raid1 kmod-fs-ext4 kmod-fs-xfs
@@ -81,6 +81,7 @@ define Device/mitrastar-stg212
   DEVICE_TITLE := MitraStar STG-212
   SUPPORTED_DEVICES := mitrastar,stg-212 stg212
   KERNEL := kernel-bin | append-dtb | uImage none
-  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-ata-oxnas-sata kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-ata-oxnas-sata kmod-fs-ext4 kmod-fs-xfs \
+                     kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += mitrastar-stg212

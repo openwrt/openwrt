@@ -26,7 +26,7 @@
  obj-$(CONFIG_USB_ISP116X_HCD)	+= isp116x-hcd.o
 --- a/arch/arm/boot/dts/ox820.dtsi
 +++ b/arch/arm/boot/dts/ox820.dtsi
-@@ -105,6 +105,22 @@
+@@ -105,6 +105,31 @@
  			status = "disabled";
  		};
  
@@ -44,6 +44,15 @@
 +			/* FIXME: how to make this dependency explicit ? */
 +			oxsemi,ehci_use_pllb;
 +			status = "disabled";
++
++			ehci_port1: port@1 {
++				reg = <1>;
++				#trigger-source-cells = <0>;
++			};
++			ehci_port2: port@2 {
++				reg = <2>;
++				#trigger-source-cells = <0>;
++			};
 +		};
 +
  		apb-bridge@44000000 {

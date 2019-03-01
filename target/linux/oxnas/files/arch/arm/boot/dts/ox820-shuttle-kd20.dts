@@ -96,6 +96,8 @@
 		usb {
 			label = "kd20:blue:usb";
 			gpios = <&gpio1 8 0>;
+			trigger-sources = <&ehci_port1>, <&ehci_port2>;
+			linux,default-trigger = "usbport";
 		};
 	};
 
