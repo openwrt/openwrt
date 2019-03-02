@@ -1,0 +1,364 @@
+From f0365bb8d137ba6536d6256ddb18b2d05ceafae8 Mon Sep 17 00:00:00 2001
+From: Esteban Benito <estebanjbs@gmail.com>
+Date: Tue, 15 Apr 2014 21:45:08 +0000
+Subject: [PATCH] MIPS: add board support for Arcadyan ARV7519RW22-LT-A
+
+Signed-off-by: Esteban Benito <estebanjbs@gmail.com>
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+---
+ board/arcadyan/arv7519rw22/Makefile       |   7 ++
+ board/arcadyan/arv7519rw22/arv7519rw22.c    | 118 ++++++++++++++++++++++++
+ board/arcadyan/arv7519rw22/config.mk      |   7 ++
+ board/arcadyan/arv7519rw22/ddr_settings.h |  69 ++++++++++++++
+ boards.cfg                              |   2 +
+ include/configs/arv7519rw22.h             |  74 +++++++++++++++
+ 6 files changed, 277 insertions(+)
+ create mode 100644 board/arcadyan/arv7519rw22/Makefile
+ create mode 100644 board/arcadyan/arv7519rw22/arv7519rw22.c
+ create mode 100644 board/arcadyan/arv7519rw22/config.mk
+ create mode 100644 board/arcadyan/arv7519rw22/ddr_settings.h
+ create mode 100644 include/configs/arv7519rw22.h
+
+diff --git a/board/arcadyan/arv7519rw22/Makefile b/board/arcadyan/arv7519rw22/Makefile
+new file mode 100644
+index 0000000000..6c7a1c4ac1
+--- /dev/null
++++ b/board/arcadyan/arv7519rw22/Makefile
+@@ -0,0 +1,27 @@
++#
++# Copyright (C) 2000-2011 Wolfgang Denk, DENX Software Engineering, wd@denx.de
++#
++# SPDX-License-Identifier:	GPL-2.0+
++#
++
++include $(TOPDIR)/config.mk
++
++LIB	= $(obj)lib$(BOARD).o
++
++COBJS	= $(BOARD).o
++
++SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
++OBJS	:= $(addprefix $(obj),$(COBJS))
++SOBJS	:= $(addprefix $(obj),$(SOBJS))
++
++$(LIB):	$(obj).depend $(OBJS) $(SOBJS)
++	$(call cmd_link_o_target, $(OBJS) $(SOBJS))
++
++#########################################################################
++
++# defines $(obj).depend target
++include $(SRCTREE)/rules.mk
++
++sinclude $(obj).depend
++
++#########################################################################
+
+diff --git a/board/arcadyan/arv7519rw22/arv7519rw22.c b/board/arcadyan/arv7519rw22/arv7519rw22.c
+new file mode 100644
+index 0000000000..5c892080a6
+--- /dev/null
++++ b/board/arcadyan/arv7519rw22/arv7519rw22.c
+@@ -0,0 +1,118 @@
++/*
++ * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <common.h>
++#include <asm/gpio.h>
++#include <asm/lantiq/eth.h>
++#include <asm/lantiq/chipid.h>
++#include <asm/lantiq/cpu.h>
++#include <asm/arch/gphy.h>
++
++#if defined(CONFIG_SPL_BUILD)
++#define do_gpio_init	1
++#define do_pll_init	1
++#define do_dcdc_init	0
++#elif defined(CONFIG_SYS_BOOT_RAM)
++#define do_gpio_init	1
++#define do_pll_init	0
++#define do_dcdc_init	1
++#elif defined(CONFIG_SYS_BOOT_NOR)
++#define do_gpio_init	1
++#define do_pll_init	1
++#define do_dcdc_init	1
++#else
++#define do_gpio_init	0
++#define do_pll_init	0
++#define do_dcdc_init	1
++#endif
++
++static void gpio_init(void)
++{
++	/* Turn on power and alarm LEDs */
++	
++	gpio_direction_output(14, 1);
++	gpio_direction_output(15, 1);
++	
++	gpio_set_value(14, 0);
++	gpio_set_value(15, 0);
++	
++/* EBU.FL_A23 as output for NOR flash */
++
++	gpio_set_altfunc(24, GPIO_ALTSEL_SET, GPIO_ALTSEL_CLR, GPIO_DIR_OUT);
++
++/* EBU.FL_A24 as output for NOR flash */
++	gpio_set_altfunc(13, GPIO_ALTSEL_SET, GPIO_ALTSEL_CLR, GPIO_DIR_OUT);
++
++/* EBU.FL_A25 as output for NOR flash */
++	gpio_set_altfunc(31, GPIO_ALTSEL_SET, GPIO_ALTSEL_CLR, GPIO_DIR_OUT);
++
++}
++
++int board_early_init_f(void)
++{
++	if (do_gpio_init)
++		gpio_init();
++
++	if (do_pll_init)
++		ltq_pll_init();
++
++	if (do_dcdc_init)
++		ltq_dcdc_init(0x7F);
++
++	return 0;
++}
++
++int checkboard(void)
++{
++	puts("Board: " CONFIG_BOARD_NAME "\n");
++	ltq_chip_print_info();
++
++	return 0;
++}
++
++static const struct ltq_eth_port_config eth_port_config[] = {
++	/* GMAC0: external Lantiq PEF7071 v1.5 10/100/1000 PHY for LAN port 0 */
++	{ 0, 0x0,  LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_RGMII },
++	/* GMAC1: internal GPHY1 with 10/100/1000 firmware for LAN port 1 */
++	{ 2, 0x11, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_MII },
++	/* GMAC3: internal GPHY1 with 10/100/1000 firmware for LAN port 2 */
++	{ 3, 0x12, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_MII },
++	/* GMAC4: internal GPHY1 with 10/100/1000 firmware for LAN port 3 */
++	{ 4, 0x13, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_MII },
++	/* GMAC5: internal GPHY1 with 10/100/1000 firmware for LAN port 4 */
++	{ 5, 0x14, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_MII },
++};
++
++static const struct ltq_eth_board_config eth_board_config = {
++	.ports = eth_port_config,
++	.num_ports = ARRAY_SIZE(eth_port_config),
++};
++
++int board_eth_init(bd_t * bis)
++{
++	const enum ltq_gphy_clk clk = LTQ_GPHY_CLK_25MHZ_PLL0;
++	const ulong fw_addr = 0x80FE0000;
++
++	switch ( ltq_chip_version_get() ) {
++		
++		case 1:
++				ltq_gphy_phy22f_a1x_load(fw_addr);
++				break;
++				
++		case 2:
++				ltq_gphy_phy22f_a2x_load(fw_addr);
++				break;
++			
++		}
++
++	ltq_cgu_gphy_clk_src(clk);
++
++	ltq_rcu_gphy_boot(0, fw_addr);
++	ltq_rcu_gphy_boot(1, fw_addr);
++
++	return ltq_eth_initialize(&eth_board_config);
++}
++
+diff --git a/board/arcadyan/arv7519rw22/config.mk b/board/arcadyan/arv7519rw22/config.mk
+new file mode 100644
+index 0000000000..ce01f18185
+--- /dev/null
++++ b/board/arcadyan/arv7519rw22/config.mk
+@@ -0,0 +1,7 @@
++#
++# Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
++#
++# SPDX-License-Identifier:	GPL-2.0+
++#
++
++PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
+diff --git a/board/arcadyan/arv7519rw/ddr_settings.h b/board/arcadyan/arv7519rw/ddr_settings.h
+new file mode 100644
+index 0000000000..7294a64a65
+--- /dev/null
++++ b/board/arcadyan/arv7519rw22/ddr_settings.h
+@@ -0,0 +1,70 @@
++/*
++ * Copyright (C) 2007-2010 Lantiq Deutschland GmbH
++ * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#define	MC_CCR00_VALUE	0x101
++#define	MC_CCR01_VALUE	0x1000100
++#define	MC_CCR02_VALUE	0x1010000
++#define	MC_CCR03_VALUE	0x101
++#define	MC_CCR04_VALUE	0x1000000
++#define	MC_CCR05_VALUE	0x1000101
++#define	MC_CCR06_VALUE	0x1000100
++#define	MC_CCR07_VALUE	0x1010000
++#define	MC_CCR08_VALUE	0x1000101
++#define	MC_CCR09_VALUE	0x0
++#define	MC_CCR10_VALUE	0x2000100
++#define	MC_CCR11_VALUE	0x2000401
++#define	MC_CCR12_VALUE	0x30000
++#define	MC_CCR13_VALUE	0x202
++#define	MC_CCR14_VALUE	0x7080A0F
++#define	MC_CCR15_VALUE	0x2040F
++#define	MC_CCR16_VALUE	0x40000
++#define	MC_CCR17_VALUE	0x70102
++#define	MC_CCR18_VALUE	0x4020002
++#define	MC_CCR19_VALUE	0x30302
++#define	MC_CCR20_VALUE	0x8000700
++#define	MC_CCR21_VALUE	0x40F020A
++#define	MC_CCR22_VALUE	0x0
++#define	MC_CCR23_VALUE	0xC020000
++#define	MC_CCR24_VALUE	0x4401B04
++#define	MC_CCR25_VALUE	0x0
++#define	MC_CCR26_VALUE	0x0
++#define	MC_CCR27_VALUE	0x6420000
++#define	MC_CCR28_VALUE	0x0
++#define	MC_CCR29_VALUE	0x0
++#define	MC_CCR30_VALUE	0x798
++#define	MC_CCR31_VALUE	0x0
++#define	MC_CCR32_VALUE	0x0
++#define	MC_CCR33_VALUE	0x650000
++#define	MC_CCR34_VALUE	0x200C8
++#define	MC_CCR35_VALUE	0x1D445D
++#define	MC_CCR36_VALUE	0xC8
++#define	MC_CCR37_VALUE	0xC351
++#define	MC_CCR38_VALUE	0x0
++#define	MC_CCR39_VALUE	0x141F04
++#define	MC_CCR40_VALUE	0x142704
++#define	MC_CCR41_VALUE	0x141B42
++#define	MC_CCR42_VALUE	0x141B42
++#define	MC_CCR43_VALUE	0x566504
++#define	MC_CCR44_VALUE	0x566504
++#define	MC_CCR45_VALUE	0x565F17
++#define	MC_CCR46_VALUE	0x565F17
++#define	MC_CCR47_VALUE	0x0
++#define	MC_CCR48_VALUE	0x0
++#define	MC_CCR49_VALUE	0x0
++#define	MC_CCR50_VALUE	0x0
++#define	MC_CCR51_VALUE	0x0
++#define	MC_CCR52_VALUE	0x133
++#define	MC_CCR53_VALUE	0xF3014B27
++#define	MC_CCR54_VALUE	0xF3014B27
++#define	MC_CCR55_VALUE	0xF3014B27
++#define	MC_CCR56_VALUE	0xF3014B27
++#define	MC_CCR57_VALUE	0x7800301
++#define	MC_CCR58_VALUE	0x7800301
++#define	MC_CCR59_VALUE	0x7800301
++#define	MC_CCR60_VALUE	0x7800301
++#define	MC_CCR61_VALUE	0x4
++
+diff --git a/boards.cfg b/boards.cfg
+index 0581df8e7e..7f5c830340 100644
+--- a/boards.cfg
++++ b/boards.cfg
+@@ -533,6 +533,8 @@
+ Active  mips        mips32         danube      lantiq          easy50712           easy50712_nor                        easy50712:SYS_BOOT_NOR                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+ Active  mips        mips32         danube      lantiq          easy50712           easy50712_norspl                     easy50712:SYS_BOOT_NORSPL                                                                                                         Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+ Active  mips        mips32         danube      lantiq          easy50712           easy50712_ram                        easy50712:SYS_BOOT_RAM                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
++Active  mips        mips32         vrx200      arcadyan        arv7519rw22           arv7519rw22_nor                        arv7519rw22:SYS_BOOT_NOR                                                                                                            Esteban Benito <estebanjbs@gmail.com>
++Active  mips        mips32         vrx200      arcadyan        arv7519rw22           arv7519rw22_ram                        arv7519rw22:SYS_BOOT_RAM                                                                                                            Esteban Benito <estebanjbs@gmail.com>
+ Active  mips        mips32         incaip      -               incaip              incaip                               -                                                                                                                                 Wolfgang Denk <wd@denx.de>
+ Active  mips        mips32         incaip      -               incaip              incaip_100MHz                        incaip:CPU_CLOCK_RATE=100000000                                                                                                   Wolfgang Denk <wd@denx.de>
+ Active  mips        mips32         incaip      -               incaip              incaip_133MHz                        incaip:CPU_CLOCK_RATE=133000000                                                                                                   Wolfgang Denk <wd@denx.de>
+diff --git a/include/configs/arv7519rw22.h b/include/configs/arv7519rw22.h
+new file mode 100644
+index 0000000000..d0d0e36114
+--- /dev/null
++++ b/include/configs/arv7519rw22.h
+@@ -0,0 +1,77 @@
++/*
++ * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef __CONFIG_H
++#define __CONFIG_H
++
++#define CONFIG_MACH_TYPE	"arv7519rw22"
++#define CONFIG_IDENT_STRING	" "CONFIG_MACH_TYPE
++#define CONFIG_BOARD_NAME	"Arcadyan ARV7519RW22-A-LT"
++
++/* Configure SoC */
++#define CONFIG_LTQ_SUPPORT_UART		/* Enable ASC and UART */
++
++#define CONFIG_LTQ_SUPPORT_ETHERNET	/* Enable ethernet */
++
++#define CONFIG_LTQ_SUPPORT_NOR_FLASH	/* Have a parallel NOR flash */
++
++#define CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH	/* Build NOR flash SPL */
++
++#define CONFIG_LTQ_SPL_COMP_LZO
++#define CONFIG_LTQ_SPL_CONSOLE
++
++/*#define CONFIG_SYS_DRAM_PROBE*/
++
++/* Environment */
++
++#if defined(CONFIG_SYS_BOOT_NOR)
++#define CONFIG_ENV_IS_IN_FLASH
++#define CONFIG_ENV_OVERWRITE
++#define CONFIG_ENV_OFFSET		(384 * 1024)
++#define CONFIG_ENV_SECT_SIZE		(128 * 1024)
++#elif defined(CONFIG_SYS_BOOT_NORSPL)
++#define CONFIG_ENV_IS_IN_FLASH
++#define CONFIG_ENV_OVERWRITE
++#define CONFIG_ENV_OFFSET		(384 * 1024)
++#define CONFIG_ENV_SECT_SIZE		(128 * 1024)
++#else
++#define CONFIG_ENV_IS_NOWHERE
++#endif
++
++#define CONFIG_ENV_SIZE			(8 * 1024)
++
++#define CONFIG_LOADADDR			CONFIG_SYS_LOAD_ADDR
++
++#define CONFIG_SYS_BOOTM_LEN		0x1000000	/* 16 MB */
++
++/* Console */
++#define CONFIG_LTQ_ADVANCED_CONSOLE
++#define CONFIG_BAUDRATE			115200
++#define CONFIG_CONSOLE_ASC		1
++#define CONFIG_CONSOLE_DEV		"ttyLTQ1"
++
++/* Pull in default board configs for Lantiq XWAY VRX200 */
++#include <asm/lantiq/config.h>
++#include <asm/arch/config.h>
++
++/* Pull in default OpenWrt configs for Lantiq SoC */
++#include "openwrt-lantiq-common.h"
++
++#define CONFIG_ENV_UPDATE_UBOOT_NOR					\
++	"update-uboot-nor=run load-uboot-norspl-lzo write-uboot-nor\0"
++
++#define CONFIG_ENV_UPDATE_UBOOT_SF					\
++	"update-uboot-sf=run load-uboot-sfspl-lzo write-uboot-sf\0"
++
++#define CONFIG_ENV_UPDATE_UBOOT_NAND					\
++	"update-uboot-nand=run load-uboot-nandspl-lzo write-uboot-nand\0"
++
++#define CONFIG_EXTRA_ENV_SETTINGS	\
++	CONFIG_ENV_LANTIQ_DEFAULTS	\
++	CONFIG_ENV_UPDATE_UBOOT_NOR	\
++	"kernel_addr=0xB0080000\0"
++
++#endif /* __CONFIG_H */
