@@ -471,6 +471,7 @@ define Device/mt7620a_v22sg
   DTS := MT7620a_V22SG
   DEVICE_TITLE := MediaTek MT7620a V22SG
   SUPPORTED_DEVICES := mt7620a_v22sg
+  IMAGE_SIZE = 16192k
 endef
 TARGET_DEVICES += mt7620a_v22sg
 
