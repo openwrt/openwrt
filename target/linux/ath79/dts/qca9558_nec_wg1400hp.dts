@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9558_nec_aterm.dtsi"
+
+/ {
+	compatible = "nec,wg1400hp", "qca,qca9558";
+	model = "NEC Aterm WG1400HP";
+};
+
+&eth0 {
+	pll-data = <0x5a000000 0x00000101 0x00001616>;
+};
