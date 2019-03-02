@@ -11,6 +11,10 @@ define rootfs_align
 $(patsubst %-256k,0x40000,$(patsubst %-128k,0x20000,$(patsubst %-64k,0x10000,$(patsubst squashfs%,0x4,$(patsubst root.%,%,$(1))))))
 endef
 
+define Build/copy-file
+	cat "$(1)" > "$@"
+endef
+
 # combine kernel and rootfs into one image
 # mktplinkfw <type> <optional extra arguments to mktplinkfw binary>
 # <type> is "sysupgrade" or "factory"
@@ -80,6 +84,7 @@ define Device/hiveap-330
   BLOCKSIZE := 128k
   KERNEL_NAME := zImage
   KERNEL_SIZE := 8m
+  KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux-initramfs | uImage none
   SUPPORTED_DEVICES := aerohive,hiveap-330
   IMAGES := fdt.bin sysupgrade.bin
   IMAGE/fdt.bin := append-dtb
