@@ -7,8 +7,8 @@
 #include "qca953x.dtsi"
 
 / {
-	compatible = "comfast,cf-e110n-v2", "qca,qca9533";
-	model = "COMFAST CF-E110N v2";
+	compatible = "comfast,cf-e314n-v2", "qca,qca9531";
+	model = "COMFAST CF-E314N v2";
 
 	aliases {
 		serial0 = &uart;
@@ -24,33 +24,33 @@
 		pinctrl-0 = <&jtag_disable_pins &led_rssilow_pin &led_rssimediumhigh_pin &led_rssihigh_pin>;
 
 		wan: wan {
-			label = "cf-e110n-v2:green:wan";
-			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
-		};
-
-		lan {
-			label = "cf-e110n-v2:green:lan";
+			label = "cf-e314n-v2:white:wan";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
+		lan {
+			label = "cf-e314n-v2:white:lan";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
 		rssilow {
-			label = "cf-e110n-v2:red:rssilow";
+			label = "cf-e314n-v2:white:signal1";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
 		rssimediumlow {
-			label = "cf-e110n-v2:red:rssimediumlow";
+			label = "cf-e314n-v2:white:signal2";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
 		rssimediumhigh {
-			label = "cf-e110n-v2:green:rssimediumhigh";
-			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			label = "cf-e314n-v2:white:signal3";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		rssihigh {
-			label = "cf-e110n-v2:green:rssihigh";
-			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			label = "cf-e314n-v2:white:signal1";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -58,7 +58,7 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "cf-e110n-v2:green:wlan";
+			label = "cf-e314n-v2:white:wlan";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
@@ -77,19 +77,6 @@
 	};
 };
 
-&pinmux {
-	led_rssilow_pin: pinmux_rssilow_pin {
-		pinctrl-single,bits = <0x8 0x0 0xff000000>;
-	};
-
-	led_rssimediumhigh_pin: pinmux_rssimediumhigh_pin {
-		pinctrl-single,bits = <0xc 0x0 0x00ff0000>;
-	};
-
-	led_rssihigh_pin: pinmux_rssihigh_pin {
-		pinctrl-single,bits = <0x10 0x0 0x000000ff>;
-	};
-};
 
 &spi {
 	status = "okay";
@@ -124,7 +111,7 @@
 			};
 
 			partition@ff0000 {
-				label = "nvram";
+				label = "art-backup";
 				reg = <0xff0000 0x010000>;
 				read-only;
 			};
