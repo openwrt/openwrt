@@ -553,6 +553,7 @@ define Device/zyxel_p-2812hnu-f1
   DEVICE_DTS := P2812HNUF1
   DEVICE_TITLE := ZyXEL P-2812HNU-F1
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-basic kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  KERNEL_SIZE := 3072k
   SUPPORTED_DEVICES += P2812HNUF1
 endef
 TARGET_DEVICES += zyxel_p-2812hnu-f1
