@@ -44,7 +44,7 @@ $(curdir)/bison/compile := $(curdir)/flex/compile
 $(curdir)/flex/compile := $(curdir)/libtool/compile
 $(curdir)/libtool/compile := $(curdir)/m4/compile $(curdir)/autoconf/compile $(curdir)/automake/compile $(curdir)/missing-macros/compile
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/compile
-$(curdir)/squashfskit4/compile := $(curdir)/coreutils/compile $(curdir)/xz/compile $(curdir)/zlib/compile
+$(curdir)/squashfskit4/compile := $(curdir)/xz/compile $(curdir)/zlib/compile
 $(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compile
 $(curdir)/autoconf/compile := $(curdir)/m4/compile
 $(curdir)/automake/compile := $(curdir)/m4/compile $(curdir)/autoconf/compile $(curdir)/pkg-config/compile $(curdir)/xz/compile
@@ -78,6 +78,7 @@ $(curdir)/lzma-old/compile := $(curdir)/zlib/compile
 $(curdir)/make-ext4fs/compile := $(curdir)/zlib/compile
 
 ifneq ($(HOST_OS),Linux)
+  $(curdir)/squashfskit4/compile += $(curdir)/coreutils/compile
   tools-y += coreutils
 endif
 
