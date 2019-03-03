@@ -19,40 +19,7 @@
 #include <linux/platform_device.h>
 #include <linux/reboot.h>
 #include <linux/regmap.h>
-
-/* bit numbers of reset control register */
-#define SYS_CTRL_RST_SCU                0
-#define SYS_CTRL_RST_COPRO              1
-#define SYS_CTRL_RST_ARM0               2
-#define SYS_CTRL_RST_ARM1               3
-#define SYS_CTRL_RST_USBHS              4
-#define SYS_CTRL_RST_USBHSPHYA          5
-#define SYS_CTRL_RST_MACA               6
-#define SYS_CTRL_RST_MAC                SYS_CTRL_RST_MACA
-#define SYS_CTRL_RST_PCIEA              7
-#define SYS_CTRL_RST_SGDMA              8
-#define SYS_CTRL_RST_CIPHER             9
-#define SYS_CTRL_RST_DDR                10
-#define SYS_CTRL_RST_SATA               11
-#define SYS_CTRL_RST_SATA_LINK          12
-#define SYS_CTRL_RST_SATA_PHY           13
-#define SYS_CTRL_RST_PCIEPHY            14
-#define SYS_CTRL_RST_STATIC             15
-#define SYS_CTRL_RST_GPIO               16
-#define SYS_CTRL_RST_UART1              17
-#define SYS_CTRL_RST_UART2              18
-#define SYS_CTRL_RST_MISC               19
-#define SYS_CTRL_RST_I2S                20
-#define SYS_CTRL_RST_SD                 21
-#define SYS_CTRL_RST_MACB               22
-#define SYS_CTRL_RST_PCIEB              23
-#define SYS_CTRL_RST_VIDEO              24
-#define SYS_CTRL_RST_DDR_PHY            25
-#define SYS_CTRL_RST_USBHSPHYB          26
-#define SYS_CTRL_RST_USBDEV             27
-#define SYS_CTRL_RST_ARMDBG             29
-#define SYS_CTRL_RST_PLLA               30
-#define SYS_CTRL_RST_PLLB               31
+#include <dt-bindings/reset/oxsemi,ox820.h>
 
 /* bit numbers of clock control register */
 #define SYS_CTRL_CLK_COPRO              0
@@ -110,33 +77,33 @@ static int oxnas_restart_handle(struct notifier_block *this,
 	 * Don't touch the DDR interface as things will come to an impromptu stop
 	 * NB Possibly should be asserting reset for PLLB, but there are timing
 	 *    concerns here according to the docs */
-	value = BIT(SYS_CTRL_RST_COPRO)		|
-		BIT(SYS_CTRL_RST_USBHS)		|
-		BIT(SYS_CTRL_RST_USBHSPHYA)	|
-		BIT(SYS_CTRL_RST_MACA)		|
-		BIT(SYS_CTRL_RST_PCIEA)		|
-		BIT(SYS_CTRL_RST_SGDMA)		|
-		BIT(SYS_CTRL_RST_CIPHER)	|
-		BIT(SYS_CTRL_RST_SATA)		|
-		BIT(SYS_CTRL_RST_SATA_LINK)	|
-		BIT(SYS_CTRL_RST_SATA_PHY)	|
-		BIT(SYS_CTRL_RST_PCIEPHY)	|
-		BIT(SYS_CTRL_RST_STATIC)	|
-		BIT(SYS_CTRL_RST_UART1)		|
-		BIT(SYS_CTRL_RST_UART2)		|
-		BIT(SYS_CTRL_RST_MISC)		|
-		BIT(SYS_CTRL_RST_I2S)		|
-		BIT(SYS_CTRL_RST_SD)		|
-		BIT(SYS_CTRL_RST_MACB)		|
-		BIT(SYS_CTRL_RST_PCIEB)		|
-		BIT(SYS_CTRL_RST_VIDEO)		|
-		BIT(SYS_CTRL_RST_USBHSPHYB)	|
-		BIT(SYS_CTRL_RST_USBDEV);
+	value = BIT(RESET_LEON)		|
+		BIT(RESET_USBHS)	|
+		BIT(RESET_USBPHYA)	|
+		BIT(RESET_MAC)		|
+		BIT(RESET_PCIEA)	|
+		BIT(RESET_SGDMA)	|
+		BIT(RESET_CIPHER)	|
+		BIT(RESET_SATA)		|
+		BIT(RESET_SATA_LINK)	|
+		BIT(RESET_SATA_PHY)	|
+		BIT(RESET_PCIEPHY)	|
+		BIT(RESET_NAND)		|
+		BIT(RESET_UART1)	|
+		BIT(RESET_UART2)	|
+		BIT(RESET_MISC)		|
+		BIT(RESET_I2S)		|
+		BIT(RESET_SD)		|
+		BIT(RESET_MAC_2)	|
+		BIT(RESET_PCIEB)	|
+		BIT(RESET_VIDEO)	|
+		BIT(RESET_USBPHYB)	|
+		BIT(RESET_USBDEV);
 
 	regmap_write(ctx->sys_ctrl, RST_SET_REGOFFSET, value);
 
 	/* Release reset to cores as per power on defaults */
-	regmap_write(ctx->sys_ctrl, RST_CLR_REGOFFSET, BIT(SYS_CTRL_RST_GPIO));
+	regmap_write(ctx->sys_ctrl, RST_CLR_REGOFFSET, BIT(RESET_GPIO));
 
 	/* Disable clocks to cores as per power-on defaults - must leave DDR
 	 * related clocks enabled otherwise we'll stop rather abruptly. */
@@ -179,9 +146,9 @@ static int oxnas_restart_handle(struct notifier_block *this,
 	 * reset is due to power cycling or programatic action, just hit the
 	 * (self-clearing) CPU reset bit of the block reset register */
 	value =
-		BIT(SYS_CTRL_RST_SCU) |
-		BIT(SYS_CTRL_RST_ARM0) |
-		BIT(SYS_CTRL_RST_ARM1);
+		BIT(RESET_SCU) |
+		BIT(RESET_ARM0) |
+		BIT(RESET_ARM1);
 
 	regmap_write(ctx->sys_ctrl, RST_SET_REGOFFSET, value);
 
