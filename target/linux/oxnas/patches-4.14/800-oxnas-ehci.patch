@@ -49,3 +49,16 @@
  		apb-bridge@44000000 {
  			#address-cells = <1>;
  			#size-cells = <1>;
+--- a/arch/arm/boot/dts/ox820-cloudengines-pogoplug-series-3.dts
++++ b/arch/arm/boot/dts/ox820-cloudengines-pogoplug-series-3.dts
+@@ -106,6 +106,10 @@
+ 	};
+ };
+ 
++&ehci {
++	status = "okay";
++};
++
+ &etha {
+ 	status = "okay";
+ 

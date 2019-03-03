@@ -37,7 +37,7 @@
 		};
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -65,7 +65,7 @@
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 		status {
 			label = "kd20:blue:status";
@@ -145,8 +145,13 @@
 
 		partition@40000 {
 			label = "u-boot";
-			reg = <0x00040000 0x00200000>;
+			reg = <0x00040000 0x001e0000>;
 			read-only;
+		};
+
+		partition@220000 {
+			label = "u-boot-env";
+			reg = <0x00220000 0x00020000>;
 		};
 
 		partition@240000 {
