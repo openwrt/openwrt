@@ -73,6 +73,19 @@
 	};
 };
 
+&pinmux {
+	led_rssilow_pin: pinmux_rssilow_pin {
+		pinctrl-single,bits = <0x8 0x0 0xff000000>;
+	};
+
+	led_rssimediumhigh_pin: pinmux_rssimediumhigh_pin {
+		pinctrl-single,bits = <0xc 0x0 0x00ff0000>;
+	};
+
+	led_rssihigh_pin: pinmux_rssihigh_pin {
+		pinctrl-single,bits = <0x10 0x0 0x000000ff>;
+	};
+};
 
 &spi {
 	status = "okay";
