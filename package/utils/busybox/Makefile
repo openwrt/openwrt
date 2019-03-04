@@ -61,6 +61,8 @@ define Package/busybox
     $(call BUSYBOX_IF_ENABLED,WATCH,	100:/bin/watch:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,WGET,	100:/usr/bin/wget:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,XARGS,	100:/usr/bin/xargs:/bin/busybox) \
+    $(call BUSYBOX_IF_ENABLED,CROND,	100:/usr/sbin/crond:/bin/busybox) \
+    $(call BUSYBOX_IF_ENABLED,NTPD,	100:/usr/sbin/ntpd:/sbin/ntpd) \
 
 endef
 
