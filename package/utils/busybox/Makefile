@@ -63,6 +63,7 @@ define Package/busybox
     $(call BUSYBOX_IF_ENABLED,XARGS,	100:/usr/bin/xargs:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,CROND,	100:/usr/sbin/crond:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,NTPD,	100:/usr/sbin/ntpd:/sbin/ntpd) \
+    $(call BUSYBOX_IF_ENABLED,CRONTAB,	100:/usr/bin/crontab:/bin/busybox) \
 
 endef
 
