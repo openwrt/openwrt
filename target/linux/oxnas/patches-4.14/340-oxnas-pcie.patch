@@ -22,7 +22,7 @@
  
 --- a/arch/arm/boot/dts/ox820.dtsi
 +++ b/arch/arm/boot/dts/ox820.dtsi
-@@ -307,6 +307,83 @@
+@@ -316,6 +316,89 @@
  				reg = <0x1000 0x1000>,
  				      <0x100 0x500>;
  			};
@@ -41,8 +41,11 @@
 +
 +				bus-range = <0x00 0x7f>;
 +
-+				/*	cfg			inbound translator	phy*/
-+				reg =	<0x47C00000 0x1000>,	<0x47D00000 0x100>,	 <0x44A00000 0x10>;
++				/*	cfg		inbound translator	*/
++				reg =	<0x0 0x1000>,	<0x100000 0x100>;
++
++				phys = <&pcie_phy>;
++				phy-names = "pcie-phy";
 +
 +				#interrupt-cells = <1>;
 +				/* wild card mask, match all bus address & interrupt specifier */
@@ -56,8 +59,8 @@
 +				gpios = <&gpio1 12 0>;
 +				clocks = <&stdclk CLK_820_PCIEA>, <&pllb>;
 +				clock-names = "pcie", "busclk";
-+				resets = <&reset RESET_PCIEA>, <&reset RESET_PCIEPHY>;
-+				reset-names = "pcie", "phy";
++				resets = <&reset RESET_PCIEA>;
++				reset-names = "pcie";
 +
 +				plxtech,pcie-hcsl-bit = <2>;
 +				plxtech,pcie-ctrl-offset = <0x120>;
@@ -79,8 +82,11 @@
 +
 +				bus-range = <0x80 0xff>;
 +
-+				/*	cfg			inbound translator	phy*/
-+				reg =	<0x47E00000 0x1000>,	<0x47F00000 0x100>,	<0x44A00000 0x10>;
++				/*	cfg		inbound translator	*/
++				reg =	<0x0 0x1000>,	<0x100000 0x100>;
++
++				phys = <&pcie_phy>;
++				phy-names = "pcie-phy";
 +
 +				#interrupt-cells = <1>;
 +				/* wild card mask, match all bus address & interrupt specifier */
@@ -94,8 +100,8 @@
 +				/* gpios = <&gpio1 12 0>; */
 +				clocks = <&stdclk CLK_820_PCIEB>, <&pllb>;
 +				clock-names = "pcie", "busclk";
-+				resets = <&reset RESET_PCIEB>, <&reset RESET_PCIEPHY>;
-+				reset-names = "pcie", "phy";
++				resets = <&reset RESET_PCIEB>;
++				reset-names = "pcie";
 +
 +				plxtech,pcie-hcsl-bit = <3>;
 +				plxtech,pcie-ctrl-offset = <0x124>;
