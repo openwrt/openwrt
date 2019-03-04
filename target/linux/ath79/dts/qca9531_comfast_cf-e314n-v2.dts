@@ -52,12 +52,12 @@
 			label = "cf-e314n-v2:white:signal1";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
-	};
 
-	wlan {
-		label = "cf-e314n-v2:white:wlan";
-		gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
-		linux,default-trigger = "phy0tpt";
+		wlan {
+			label = "cf-e314n-v2:white:wlan";
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
 	};
 
 	keys {
