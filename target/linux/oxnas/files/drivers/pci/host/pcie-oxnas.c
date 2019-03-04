@@ -25,6 +25,8 @@
 #include <linux/gpio.h>
 #include <linux/delay.h>
 #include <linux/clk.h>
+#include <linux/phy.h>
+#include <linux/phy/phy.h>
 #include <linux/regmap.h>
 #include <linux/reset.h>
 #include <linux/io.h>
@@ -75,23 +77,6 @@ enum {
 	PCIE_OBTRANS = BIT(12),
 };
 
-enum {
-	HCSL_BIAS_ON = BIT(0),
-	HCSL_PCIE_EN = BIT(1),
-	HCSL_PCIEA_EN = BIT(2),
-	HCSL_PCIEB_EN = BIT(3),
-};
-
-enum {
-	/* pcie phy reg offset */
-	PHY_ADDR = 0,
-	PHY_DATA = 4,
-	/* phy data reg bits */
-	READ_EN = BIT(16),
-	WRITE_EN = BIT(17),
-	CAP_DATA = BIT(18),
-};
-
 /* core config registers */
 enum {
 	PCI_CONFIG_VERSION_DEVICEID = 0,
@@ -127,9 +112,6 @@ enum {
 	PCIE_SLAVE_BE_SHIFT	= 22,
 };
 
-#define ADDR_VAL(val)	((val) & 0xFFFF)
-#define DATA_VAL(val)	((val) & 0xFFFF)
-
 #define PCIE_SLAVE_BE(val)	((val) << PCIE_SLAVE_BE_SHIFT)
 #define PCIE_SLAVE_BE_MASK	PCIE_SLAVE_BE(0xF)
 
@@ -146,7 +128,7 @@ struct oxnas_pcie {
 	struct regmap *sys_ctrl;
 	unsigned int outbound_offset;
 	unsigned int pcie_ctrl_offset;
-
+	struct phy *phy;
 	int haslink;
 	struct platform_device *pdev;
 	struct resource io;
@@ -406,52 +388,11 @@ static void oxnas_pcie_enable(struct device *dev, struct oxnas_pcie *pcie)
 	pci_common_init_dev(dev, &hw);
 }
 
-void oxnas_pcie_init_shared_hw(struct platform_device *pdev,
-			       void __iomem *phybase,
-			       struct regmap *sys_ctrl)
-{
-	struct reset_control *rstc;
-	int ret;
-
-	/* generate clocks from HCSL buffers, shared parts */
-	regmap_write(sys_ctrl, SYS_CTRL_HCSL_CTRL_REGOFFSET, HCSL_BIAS_ON|HCSL_PCIE_EN);
-
-	/* Ensure PCIe PHY is properly reset */
-	rstc = reset_control_get(&pdev->dev, "phy");
-	if (IS_ERR(rstc)) {
-		ret = PTR_ERR(rstc);
-	} else {
-		ret = reset_control_reset(rstc);
-		reset_control_put(rstc);
-	}
-
-	if (ret) {
-		dev_err(&pdev->dev, "phy reset failed %d\n", ret);
-		return;
-	}
-
-	/* Enable PCIe Pre-Emphasis: What these value means? */
-	writel(ADDR_VAL(0x0014), phybase + PHY_ADDR);
-	writel(DATA_VAL(0xce10) | CAP_DATA, phybase + PHY_DATA);
-	writel(DATA_VAL(0xce10) | WRITE_EN, phybase + PHY_DATA);
-
-	writel(ADDR_VAL(0x2004), phybase + PHY_ADDR);
-	writel(DATA_VAL(0x82c7) | CAP_DATA, phybase + PHY_DATA);
-	writel(DATA_VAL(0x82c7) | WRITE_EN, phybase + PHY_DATA);
-}
-
-static int oxnas_pcie_shared_init(struct platform_device *pdev, struct regmap *sys_ctrl)
+static int oxnas_pcie_shared_init(struct platform_device *pdev, struct oxnas_pcie *pcie)
 {
 	if (++pcie_shared.refcount == 1) {
-		/* we are the first */
-		struct device_node *np = pdev->dev.of_node;
-		void __iomem *phy = of_iomap(np, 2);
-		if (!phy) {
-			--pcie_shared.refcount;
-			return -ENOMEM;
-		}
-		oxnas_pcie_init_shared_hw(pdev, phy, sys_ctrl);
-		iounmap(phy);
+		phy_init(pcie->phy);
+		phy_power_on(pcie->phy);
 		return 0;
 	} else {
 		return 0;
@@ -478,7 +419,6 @@ oxnas_pcie_map_registers(struct platform_device *pdev,
 	u32 outbound_ctrl_offset;
 	u32 pcie_ctrl_offset;
 
-	/* 2 is reserved for shared phy */
 	ret = of_address_to_resource(np, 0, &regs);
 	if (ret)
 		return -EINVAL;
@@ -493,6 +433,12 @@ oxnas_pcie_map_registers(struct platform_device *pdev,
 	if (!pcie->inbound)
 		return -ENOMEM;
 
+	pcie->phy = devm_of_phy_get(&pdev->dev, np, NULL);
+	if (IS_ERR(pcie->phy)) {
+		if (PTR_ERR(pcie->phy) == -EPROBE_DEFER)
+			return PTR_ERR(pcie->phy);
+		pcie->phy = NULL;
+	}
 
 	if (of_property_read_u32(np, "plxtech,pcie-outbound-offset",
 				 &outbound_ctrl_offset))
@@ -589,6 +535,7 @@ static void oxnas_pcie_init_hw(struct platform_device *pdev,
 		mdelay(100);
 	}
 
+	/* ToDo: use phy power-on port... */
 	regmap_update_bits(pcie->sys_ctrl, SYS_CTRL_HCSL_CTRL_REGOFFSET,
 	                   BIT(pcie->hcsl_en), BIT(pcie->hcsl_en));
 
@@ -664,7 +611,7 @@ static int oxnas_pcie_probe(struct platform_device *pdev)
 		goto err_free_gpio;
 	}
 
-	ret = oxnas_pcie_shared_init(pdev, pcie->sys_ctrl);
+	ret = oxnas_pcie_shared_init(pdev, pcie);
 	if (ret)
 		goto err_free_gpio;
 
