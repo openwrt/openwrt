@@ -1,6 +1,8 @@
 /*
  * PCIe driver for PLX NAS782X SoCs
  *
+ * Author: Ma Haijun <mahaijuns@gmail.com>
+ *
  * This file is licensed under the terms of the GNU General Public
  * License version 2.  This program is licensed "as is" without any
  * warranty of any kind, whether express or implied.
@@ -192,7 +194,7 @@ static int oxnas_pcie_link_up(struct oxnas_pcie *pcie)
 	return 0;
 }
 
-static void __init oxnas_pcie_setup_hw(struct oxnas_pcie *pcie)
+static void oxnas_pcie_setup_hw(struct oxnas_pcie *pcie)
 {
 	/* We won't have any inbound address translation. This allows PCI
 	 * devices to access anywhere in the AHB address map. Might be regarded
@@ -362,7 +364,7 @@ static struct pci_ops oxnas_pcie_ops = {
 	.write = oxnas_pcie_wr_conf,
 };
 
-static int __init oxnas_pcie_setup(int nr, struct pci_sys_data *sys)
+static int oxnas_pcie_setup(int nr, struct pci_sys_data *sys)
 {
 	struct oxnas_pcie *pcie = sys_to_pcie(sys);
 
@@ -384,7 +386,7 @@ static int __init oxnas_pcie_setup(int nr, struct pci_sys_data *sys)
 	return 1;
 }
 
-static void __init oxnas_pcie_enable(struct device *dev, struct oxnas_pcie *pcie)
+static void oxnas_pcie_enable(struct device *dev, struct oxnas_pcie *pcie)
 {
 	struct hw_pci hw;
 	int i;
@@ -466,7 +468,7 @@ static void oxnas_pcie_shared_deinit(struct platform_device *pdev)
 }
 #endif
 
-static int __init
+static int
 oxnas_pcie_map_registers(struct platform_device *pdev,
 			 struct device_node *np,
 			 struct oxnas_pcie *pcie)
@@ -505,7 +507,7 @@ oxnas_pcie_map_registers(struct platform_device *pdev,
 	return 0;
 }
 
-static int __init oxnas_pcie_init_res(struct platform_device *pdev,
+static int oxnas_pcie_init_res(struct platform_device *pdev,
 				      struct oxnas_pcie *pcie,
 				      struct device_node *np)
 {
@@ -624,7 +626,7 @@ static void oxnas_pcie_init_hw(struct platform_device *pdev,
 	wmb();
 }
 
-static int __init oxnas_pcie_probe(struct platform_device *pdev)
+static int oxnas_pcie_probe(struct platform_device *pdev)
 {
 	struct oxnas_pcie *pcie;
 	struct device_node *np = pdev->dev.of_node;
@@ -693,25 +695,14 @@ static const struct of_device_id oxnas_pcie_of_match_table[] = {
 	{ .compatible = "plxtech,nas782x-pcie", },
 	{},
 };
-MODULE_DEVICE_TABLE(of, oxnas_pcie_of_match_table);
 
 static struct platform_driver oxnas_pcie_driver = {
 	.driver = {
-		.owner = THIS_MODULE,
 		.name = "oxnas-pcie",
-		.of_match_table =
-		   of_match_ptr(oxnas_pcie_of_match_table),
+		.suppress_bind_attrs = true,
+		.of_match_table = oxnas_pcie_of_match_table,
 	},
+	.probe = oxnas_pcie_probe,
 };
 
-static int __init oxnas_pcie_init(void)
-{
-	return platform_driver_probe(&oxnas_pcie_driver,
-				     oxnas_pcie_probe);
-}
-
-subsys_initcall(oxnas_pcie_init);
-
-MODULE_AUTHOR("Ma Haijun <mahaijuns@gmail.com>");
-MODULE_DESCRIPTION("NAS782x PCIe driver");
-MODULE_LICENSE("GPLv2");
+builtin_platform_driver(oxnas_pcie_driver);
