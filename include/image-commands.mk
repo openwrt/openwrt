@@ -355,6 +355,7 @@ json_quote=$(subst ','\'',$(subst ",\",$(1)))
 metadata_devices=$(if $(1),$(subst "$(space)","$(comma)",$(strip $(foreach v,$(1),"$(call json_quote,$(v))"))))
 metadata_json = \
 	'{ $(if $(IMAGE_METADATA),$(IMAGE_METADATA)$(comma)) \
+		"metadata_version": "1.0", \
 		"supported_devices":[$(call metadata_devices,$(1))], \
 		"version": { \
 			"dist": "$(call json_quote,$(VERSION_DIST))", \
