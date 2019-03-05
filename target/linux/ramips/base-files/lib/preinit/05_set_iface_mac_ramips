@@ -1,0 +1,27 @@
+#
+# Copyright (C) 2009 OpenWrt.org
+#
+
+preinit_set_mac_address() {
+	. /lib/functions.sh
+	. /lib/functions/system.sh
+
+	case $(board_name) in
+		hiwifi,hc5*61|\
+		hiwifi,hc5661a|\
+		hiwifi,hc5962|\
+		hiwifi,hc5861b)
+			lan_mac=`mtd_get_mac_ascii bdinfo "Vfac_mac "`
+			[ -n "$lan_mac" ] && {
+				ifconfig eth0 hw ether "$lan_mac"
+				for iface in lan0 lan1 lan2 lan3 lan4 wan; do
+					ifconfig $iface hw ether "$lan_mac" >/dev/null 2>&1
+				done
+			}
+			;;
+		*)
+			;;
+	esac
+}
+
+boot_hook_add preinit_main preinit_set_mac_address
