@@ -1,0 +1,26 @@
+#!/bin/ash
+
+[ "$ACTION" == "add" ] || exit 0
+
+PHYNBR=${DEVPATH##*/phy}
+
+[ -n $PHYNBR ] || exit 0
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+board=$(board_name)
+
+case "$board" in
+	hc5*61|\
+	hc5661a|\
+	hc5962|\
+	hiwifi,hc5861b)
+		lan_mac=`mtd_get_mac_ascii bdinfo "Vfac_mac "`
+		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
+		echo $(macaddr_add $lan_mac  $(($PHYNBR + 2))) > /sys${DEVPATH}/macaddress
+		;;
+	*)
+		;;
+esac
+

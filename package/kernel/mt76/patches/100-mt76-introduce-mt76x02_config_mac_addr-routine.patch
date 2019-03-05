@@ -1,0 +1,105 @@
+From 163784cdad10f5840d0862e85bdc40e4f16a5bbf Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Tue, 5 Mar 2019 14:11:11 +0800
+Subject: [PATCH] mt76: introduce mt76x02_config_mac_addr routine
+
+This change mt76x02_config_mac_addr_list routine to mt76x02_config_mac_addr
+just set the wiphy->perm_addr instead of mac address list
+
+In order to support the mac-setup by hotplug script like those
+in ath79 and other platform, so that we can set a custom mac by:
+  echo XX:XX:XX:XX:XX:XX >/sys/devices/platform/.../ieee80211/phy0/macaddress
+
+Signed-off-by: Chen Minqiang <ptpt52@gmail.com>
+---
+ mt76x0/init.c     |  2 +-
+ mt76x02.h         |  4 +---
+ mt76x02_util.c    | 19 +++----------------
+ mt76x2/pci_init.c |  2 +-
+ 4 files changed, 6 insertions(+), 21 deletions(-)
+
+diff --git a/mt76x0/init.c b/mt76x0/init.c
+index bcb72e0..fc3f000 100644
+--- a/mt76x0/init.c
++++ b/mt76x0/init.c
+@@ -289,7 +289,7 @@ int mt76x0_register_device(struct mt76x02_dev *dev)
+ 	int ret;
+ 
+ 	mt76x02_init_device(dev);
+-	mt76x02_config_mac_addr_list(dev);
++	mt76x02_config_mac_addr(dev);
+ 
+ 	ret = mt76_register_device(&dev->mt76, true, mt76x02_rates,
+ 				   ARRAY_SIZE(mt76x02_rates));
+diff --git a/mt76x02.h b/mt76x02.h
+index 5ed75d6..de6de77 100644
+--- a/mt76x02.h
++++ b/mt76x02.h
+@@ -71,8 +71,6 @@ struct mt76x02_calibration {
+ struct mt76x02_dev {
+ 	struct mt76_dev mt76; /* must be first */
+ 
+-	struct mac_address macaddr_list[8];
+-
+ 	struct mutex phy_mutex;
+ 
+ 	u16 vif_mask;
+@@ -136,7 +134,7 @@ int mt76x02_sta_add(struct mt76_dev *mdev, struct ieee80211_vif *vif,
+ void mt76x02_sta_remove(struct mt76_dev *mdev, struct ieee80211_vif *vif,
+ 			struct ieee80211_sta *sta);
+ 
+-void mt76x02_config_mac_addr_list(struct mt76x02_dev *dev);
++void mt76x02_config_mac_addr(struct mt76x02_dev *dev);
+ 
+ int mt76x02_add_interface(struct ieee80211_hw *hw,
+ 			 struct ieee80211_vif *vif);
+diff --git a/mt76x02_util.c b/mt76x02_util.c
+index cd072ac..666c05b 100644
+--- a/mt76x02_util.c
++++ b/mt76x02_util.c
+@@ -738,26 +738,13 @@ void mt76x02_bss_info_changed(struct ieee80211_hw *hw,
+ }
+ EXPORT_SYMBOL_GPL(mt76x02_bss_info_changed);
+ 
+-void mt76x02_config_mac_addr_list(struct mt76x02_dev *dev)
++void mt76x02_config_mac_addr(struct mt76x02_dev *dev)
+ {
+ 	struct ieee80211_hw *hw = mt76_hw(dev);
+ 	struct wiphy *wiphy = hw->wiphy;
+-	int i;
+-
+-	for (i = 0; i < ARRAY_SIZE(dev->macaddr_list); i++) {
+-		u8 *addr = dev->macaddr_list[i].addr;
+-
+-		memcpy(addr, dev->mt76.macaddr, ETH_ALEN);
+ 
+-		if (!i)
+-			continue;
+-
+-		addr[0] |= BIT(1);
+-		addr[0] ^= ((i - 1) << 2);
+-	}
+-	wiphy->addresses = dev->macaddr_list;
+-	wiphy->n_addresses = ARRAY_SIZE(dev->macaddr_list);
++	memcpy(wiphy->perm_addr, dev->mt76.macaddr, ETH_ALEN);
+ }
+-EXPORT_SYMBOL_GPL(mt76x02_config_mac_addr_list);
++EXPORT_SYMBOL_GPL(mt76x02_config_mac_addr);
+ 
+ MODULE_LICENSE("Dual BSD/GPL");
+diff --git a/mt76x2/pci_init.c b/mt76x2/pci_init.c
+index d3927a1..e604ea0 100644
+--- a/mt76x2/pci_init.c
++++ b/mt76x2/pci_init.c
+@@ -318,7 +318,7 @@ int mt76x2_register_device(struct mt76x02_dev *dev)
+ 	if (ret)
+ 		return ret;
+ 
+-	mt76x02_config_mac_addr_list(dev);
++	mt76x02_config_mac_addr(dev);
+ 
+ 	ret = mt76_register_device(&dev->mt76, true, mt76x02_rates,
+ 				   ARRAY_SIZE(mt76x02_rates));
+-- 
+2.17.1
+
