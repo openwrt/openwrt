@@ -1,6 +1,6 @@
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -90,8 +90,13 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlin
+@@ -90,8 +90,18 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlin
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe -mno-branch-likely
  cflags-y			+= -msoft-float
  LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib --gc-sections
@@ -8,8 +8,13 @@
  KBUILD_AFLAGS_MODULE		+= -mlong-calls
  KBUILD_CFLAGS_MODULE		+= -mlong-calls
 +else
-+KBUILD_AFLAGS_MODULE		+= -mno-long-calls
-+KBUILD_CFLAGS_MODULE		+= -mno-long-calls
++  ifdef CONFIG_DYNAMIC_FTRACE
++    KBUILD_AFLAGS_MODULE	+= -mlong-calls
++    KBUILD_CFLAGS_MODULE	+= -mlong-calls
++  else
++    KBUILD_AFLAGS_MODULE	+= -mno-long-calls
++    KBUILD_CFLAGS_MODULE	+= -mno-long-calls
++  endif
 +endif
  
  ifndef CONFIG_FUNCTION_TRACER
