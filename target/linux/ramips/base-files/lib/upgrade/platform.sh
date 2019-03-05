@@ -41,7 +41,8 @@ platform_do_upgrade() {
 	r6220|\
 	netgear,r6350|\
 	ubnt-erx|\
-	ubnt-erx-sfp)
+	ubnt-erx-sfp|\
+	xiaomi,mir3p)
 		nand_do_upgrade "$ARGV"
 		;;
 	tplink,c50-v4)
