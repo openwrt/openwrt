@@ -5,9 +5,10 @@
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
-routerstation_do_upgrade() {
+redboot_fis_do_upgrade() {
 	local append
 	local sysup_file="$1"
+	local kern_part="$2"
 	local magic=$(get_magic_word "$sysup_file")
 
 	if [ "$magic" = "4349" ]; then
@@ -15,7 +16,7 @@ routerstation_do_upgrade() {
 
 		[ -f "$CONF_TAR" -a "$SAVE_CONFIG" -eq 1 ] && append="-j $CONF_TAR"
 		dd if="$sysup_file" bs=64k skip=1 2>/dev/null | \
-			mtd -r $append -Fkernel:$kern_length:0x80060000,rootfs write - kernel:rootfs
+			mtd -r $append -F$kern_part:$kern_length:0x80060000,rootfs write - $kern_part:rootfs
 
 	elif [ "$magic" = "7379" ]; then
 		local board_dir=$(tar tf $sysup_file | grep -m 1 '^sysupgrade-.*/$')
@@ -23,7 +24,7 @@ routerstation_do_upgrade() {
 
 		[ -f "$CONF_TAR" -a "$SAVE_CONFIG" -eq 1 ] && append="-j $CONF_TAR"
 		tar xf $sysup_file ${board_dir}kernel ${board_dir}root -O | \
-			mtd -r $append -Fkernel:$kern_length:0x80060000,rootfs write - kernel:rootfs
+			mtd -r $append -F$kern_part:$kern_length:0x80060000,rootfs write - $kern_part:rootfs
 
 	else
 		echo "Unknown image, aborting!"
@@ -39,9 +40,12 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	jjplus,ja76pf2)
+		redboot_fis_do_upgrade "$ARGV" linux
+		;;
 	ubnt,routerstation|\
 	ubnt,routerstation-pro)
-		routerstation_do_upgrade "$ARGV"
+		redboot_fis_do_upgrade "$ARGV" kernel
 		;;
 	*)
 		default_do_upgrade "$ARGV"

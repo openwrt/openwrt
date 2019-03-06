@@ -288,6 +288,10 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(macaddr_add "$lan_mac" -1)
 		;;
+	jjplus,ja76pf2)
+		wan_mac=$(fconfig -s -r -d $(find_mtd_part "RedBoot config") -n alias/ethaddr)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
+		;;
 	nec,wg800hp)
 		lan_mac=$(mtd_get_mac_text board_data 640)
 		wan_mac=$(mtd_get_mac_text board_data 1152)

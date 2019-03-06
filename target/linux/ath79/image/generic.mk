@@ -417,6 +417,18 @@ define Device/iodata_wn-ag300dgr
 endef
 TARGET_DEVICES += iodata_wn-ag300dgr
 
+define Device/jjplus_ja76pf2
+  ATH_SOC := ar7161
+  DEVICE_TITLE := jjPlus JA76PF2
+  DEVICE_PACKAGES += -kmod-ath9k -swconfig -wpad-mini -uboot-envtools fconfig
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | check-size $$$$(IMAGE_SIZE)
+#  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
+  KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += jjplus_ja76pf2
+
 define Device/librerouter_librerouter-v1
   ATH_SOC := qca9558
   DEVICE_TITLE := LibreRouter v1
