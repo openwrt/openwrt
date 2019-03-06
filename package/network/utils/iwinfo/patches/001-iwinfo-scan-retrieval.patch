@@ -1,0 +1,57 @@
+diff --git a/iwinfo_nl80211.c b/iwinfo_nl80211.c
+index 5154230..ff992db 100644
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -2368,7 +2368,7 @@ static int wpasupp_ssid_decode(const char *in, char *out, int outlen)
+ 
+ static int nl80211_get_scanlist_wpactl(const char *ifname, char *buf, int *len)
+ {
+-	int sock, qmax, rssi, tries, count = -1, ready = 0;
++	int sock, qmax, rssi, tries, count = -1, ready = 0, data_parsed = 0;
+ 	char *pos, *line, *bssid, *freq, *signal, *flags, *ssid, reply[4096];
+ 	struct sockaddr_un local = { 0 };
+ 	struct iwinfo_scanlist_entry *e = (struct iwinfo_scanlist_entry *)buf;
+@@ -2415,8 +2415,13 @@ static int nl80211_get_scanlist_wpactl(const char *ifname, char *buf, int *len)
+ 		}
+ 	}
+ 
++	tries = 0;
+ 	/* receive and parse scan results if the wait above didn't time out */
+-	while (ready && nl80211_wpactl_recv(sock, reply, sizeof(reply)) > 0)
++
++	/* wpa_supplicant may send other events before sending scan result .
++	 * So checking the scan result in loop
++	 */
++	while (ready && nl80211_wpactl_recv(sock, reply, sizeof(reply)) > 0 && !data_parsed)
+ 	{
+ 		/* received an event notification, receive again */
+ 		if (reply[0] == '<')
+@@ -2424,6 +2429,13 @@ static int nl80211_get_scanlist_wpactl(const char *ifname, char *buf, int *len)
+ 
+ 		nl80211_get_quality_max(ifname, &qmax);
+ 
++		/* Waiting for scan results for 20 attempts */
++		if (tries > 20)
++			break;
++
++		tries++;
++
++
+ 		for (line = strtok_r(reply, "\n", &pos);
+ 		     line != NULL;
+ 		     line = strtok_r(NULL, "\n", &pos))
+@@ -2496,11 +2508,12 @@ static int nl80211_get_scanlist_wpactl(const char *ifname, char *buf, int *len)
+ 
+ 			count++;
+ 			e++;
++			data_parsed = 1;
+ 		}
++	}
+ 
++	if (data_parsed)
+ 		*len = count * sizeof(struct iwinfo_scanlist_entry);
+-		break;
+-	}
+ 
+ 	close(sock);
+ 	unlink(local.sun_path);
