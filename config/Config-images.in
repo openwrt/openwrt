@@ -259,6 +259,11 @@ menu "Target Images"
 		depends on TARGET_IMAGES_PAD || TARGET_ROOTFS_EXT4FS || TARGET_x86
 		default y
 
+	config TARGET_IMAGES_ZSYNC
+		bool "zsync on ImageBuilder and SDK"
+		depends on CONFIG_SDK || CONFIG_IB
+		default BUILDBOT
+
 	comment "Image Options"
 
 	source "target/linux/*/image/Config.in"

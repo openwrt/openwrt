@@ -88,6 +88,9 @@ prereq: $(target/stamp-prereq) tmp/.prereq_packages
 
 checksum: FORCE
 	$(call sha256sums,$(BIN_DIR),$(CONFIG_BUILDBOT))
+ifdef CONFIG_TARGET_IMAGES_ZSYNC
+	$(call zsyncmake,$(BIN_DIR)))
+endif
 
 diffconfig: FORCE
 	mkdir -p $(BIN_DIR)

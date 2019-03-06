@@ -400,6 +400,10 @@ define sha256sums
 		xargs -r $(STAGING_DIR_HOST)/bin/mkhash -n sha256 | sed -ne 's!^\(.*\) \(.*\)$$!\1 *\2!p' > sha256sums)
 endef
 
+define zsyncmake
+	(cd $(1); find . -maxdepth 1 -type f -name '*.tar.xz' -printf "%P\n" | xargs -r zsyncmake -Z)
+endef
+
 # file extension
 ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))
 
