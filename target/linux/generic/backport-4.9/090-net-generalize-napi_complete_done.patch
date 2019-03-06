@@ -701,7 +701,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 --- a/drivers/net/ethernet/ibm/ibmveth.c
 +++ b/drivers/net/ethernet/ibm/ibmveth.c
-@@ -1324,7 +1324,7 @@ restart_poll:
+@@ -1323,7 +1323,7 @@ static int ibmveth_poll(struct napi_stru
  	ibmveth_replenish_task(adapter);
  
  	if (frames_processed < budget) {
