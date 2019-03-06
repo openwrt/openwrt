@@ -75,7 +75,7 @@ static int ath9k_pci_fixup(struct pci_dev *pdev, const u16 *cal_data,
 
 	/* set pointer to first reg address */
 	for (data = (const void *) (cal_data + 3);
-	     (const void *) data <= cal_end && data->reg != ~0;
+	     (const void *) data <= cal_end && data->reg != (u16)~0;
 	     data++) {
 		u32 val;
 		u16 reg;
