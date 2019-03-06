@@ -106,16 +106,17 @@ define Device/ubnt_rocket-m
 endef
 TARGET_DEVICES += ubnt_rocket-m
 
-define Device/ubnt_nano-m
+define Device/ubnt_nanostation-m
   $(Device/ubnt-xm)
-  DEVICE_TITLE := Ubiquiti Nano-M
+  DEVICE_TITLE := Ubiquiti Nanostation M
   SUPPORTED_DEVICES += nano-m
 endef
-TARGET_DEVICES += ubnt_nano-m
+TARGET_DEVICES += ubnt_nanostation-m
 
 define Device/ubnt_nanostation-m-xw
   $(Device/ubnt-xw)
   DEVICE_TITLE := Ubiquiti Nanostation M (XW)
+  SUPPORTED_DEVICES += nano-m-xw
 endef
 TARGET_DEVICES += ubnt_nanostation-m-xw
 
