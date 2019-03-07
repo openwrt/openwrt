@@ -16,7 +16,7 @@ ar71xx_get_mtd_offset_size_format() {
 	dev=$(find_mtd_part $mtd)
 	[ -z "$dev" ] && return
 
-	dd if=$dev bs=1 skip=$offset count=$size 2>/dev/null | hexdump -v -e "1/1 \"$format\""
+	dd if=$dev iflag=skip_bytes bs=$size skip=$offset count=1 2>/dev/null | hexdump -v -e "1/1 \"$format\""
 }
 
 ar71xx_get_mtd_part_magic() {
@@ -390,7 +390,7 @@ tplink_pharos_v2_get_model_string() {
 	part=$(find_mtd_part 'product-info')
 	[ -z "$part" ] && return 1
 
-	dd if=$part bs=1 skip=4360 count=64 2>/dev/null | tr -d '\r\0' | head -n 1
+	dd if=$part iflag=skip_bytes bs=64 skip=4360 count=1 2>/dev/null | tr -d '\r\0' | head -n 1
 }
 
 ar71xx_board_detect() {
