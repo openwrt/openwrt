@@ -622,6 +622,9 @@ ar71xx_setup_macs()
 	wpj558)
 		wan_mac=$(mtd_get_mac_binary u-boot 0x2e018)
 		;;
+	gl-ar300m)
+		lan_mac=$(mtd_get_mac_binary art 0)
+		;;
 	esac
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
