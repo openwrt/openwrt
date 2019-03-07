@@ -10,7 +10,7 @@ ath10kcal_from_file() {
 	local offset=$2
 	local count=$3
 
-	dd if=$source of=/lib/firmware/$FIRMWARE bs=1 skip=$offset count=$count 2>/dev/null || \
+	dd if=$source of=/lib/firmware/$FIRMWARE iflag=skip_bytes bs=$count skip=$offset count=1 2>/dev/null || \
 		ath10kcal_die "failed to extract calibration data from $source"
 }
 
@@ -30,7 +30,7 @@ ath10kcal_extract() {
 	[ "$count" = "$cal_size" ] || \
 		ath10kcal_die "no calibration data found in $part"
 
-	dd if=$mtd of=/lib/firmware/$FIRMWARE bs=1 skip=$offset count=$count 2>/dev/null || \
+	dd if=$mtd of=/lib/firmware/$FIRMWARE iflag=skip_bytes bs=$count skip=$offset count=1 2>/dev/null || \
 		ath10kcal_die "failed to extract calibration data from $mtd"
 }
 
@@ -39,7 +39,7 @@ ath10kcal_patch_mac() {
 
 	[ -z "$mac" ] && return
 
-	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=6 count=6
+	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc oflag=seek_bytes bs=6 seek=6 count=1
 }
 
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
