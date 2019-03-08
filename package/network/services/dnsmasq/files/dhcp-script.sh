@@ -1,6 +1,8 @@
 #!/bin/sh
 
-[ -f "$USER_DHCPSCRIPT" ] && . "$USER_DHCPSCRIPT" "$@"
+if [ -f "$USER_DHCPSCRIPT" ]; then
+	[ -x "$USER_DHCPSCRIPT" ] && "$USER_DHCPSCRIPT" "$@" || . "$USER_DHCPSCRIPT" "$@"
+fi
 
 case "$1" in
 	add)
