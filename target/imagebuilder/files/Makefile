@@ -95,6 +95,7 @@ staging_dir/host/.prereq-build: include/prereq-build.mk
 
 _call_info: FORCE
 	echo 'Current Target: "$(TARGETID)"'
+	echo 'Current Revision: "$(REVISION)"'
 	echo 'Default Packages: $(DEFAULT_PACKAGES)'
 	echo 'Available Profiles:'
 	echo; $(PROFILE_LIST)
