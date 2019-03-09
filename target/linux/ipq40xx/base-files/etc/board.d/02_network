@@ -80,8 +80,8 @@ ipq40xx_setup_macs()
 		;;
 	esac
 
-        [ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
-        [ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
 }
 
 board_config_update
