@@ -1,0 +1,21 @@
+From 8bd28a87a241cbdfafd56d1c952656bde53dfa7b Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 1 Mar 2019 15:00:12 +0000
+Subject: [PATCH 37/57] Small error-message tweak, for clarity.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/network.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/network.c
++++ b/src/network.c
+@@ -1535,7 +1535,7 @@ void check_servers(void)
+ 		{
+ 		  count--;
+ 		  if (++locals <= LOCALS_LOGGED)
+-			my_syslog(LOG_INFO, _("using local addresses only for %s %s"), s1, s2);
++			my_syslog(LOG_INFO, _("using only locally-known addresses for %s %s"), s1, s2);
+ 	        }
+ 	      else if (serv->flags & SERV_USE_RESOLV)
+ 		my_syslog(LOG_INFO, _("using standard nameservers for %s %s"), s1, s2);

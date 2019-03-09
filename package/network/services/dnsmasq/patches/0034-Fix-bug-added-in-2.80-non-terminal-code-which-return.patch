@@ -1,0 +1,42 @@
+From 162e5e0062ce923c494cc64282f293f0ed64fc10 Mon Sep 17 00:00:00 2001
+From: Sven Mueller <smu@google.com>
+Date: Wed, 27 Feb 2019 21:17:37 +0000
+Subject: [PATCH 34/57] Fix bug added in 2.80 non-terminal code which returns
+ NODATA instead of NXDOMAIN.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Thanks to Sven Muleller and Maciej Żenczykowski for work on this.
+
+https://bugzilla.redhat.com/show_bug.cgi?id=1674067 refers.
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ CHANGELOG   | 5 +++++
+ src/cache.c | 1 +
+ 2 files changed, 6 insertions(+)
+
+--- a/CHANGELOG
++++ b/CHANGELOG
+@@ -21,6 +21,11 @@ version 2.81
+ 	correct error messages. Thanks to Christian Rosentreter
+ 	for reporting this.
+ 
++	Fix bug in DNS non-terminal code, added in 2.80, which could
++	sometimes cause a NODATA rather than an NXDOMAIN reply.
++	Thanks to Sven Mueller and Maciej Żenczykowski for spotting
++	and diagnosing the bug and providing patches.
++
+ 
+ version 2.80
+ 	Add support for RFC 4039 DHCP rapid commit. Thanks to Ashram Method
+--- a/src/cache.c
++++ b/src/cache.c
+@@ -790,6 +790,7 @@ int cache_find_non_terminal(char *name,
+     if (!is_outdated_cname_pointer(crecp) &&
+ 	!is_expired(now, crecp) &&
+ 	(crecp->flags & F_FORWARD) &&
++	!(crecp->flags & F_NXDOMAIN) && 
+ 	hostname_isequal(name, cache_get_name(crecp)))
+       return 1;
+ 

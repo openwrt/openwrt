@@ -1,7 +1,7 @@
 From 24b87607c1353e94689e8a2190571ab3f3b36f31 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Petr=20Men=C5=A1=C3=ADk?= <pemensik@redhat.com>
 Date: Wed, 24 Oct 2018 22:30:18 +0100
-Subject: [PATCH 07/32] Do not rely on dead code elimination, use array
+Subject: [PATCH 07/57] Do not rely on dead code elimination, use array
  instead. Make options bits derived from size and count. Use size of option
  bits and last supported bit in computation. No new change would be required
  when new options are added. Just change OPT_LAST constant.
