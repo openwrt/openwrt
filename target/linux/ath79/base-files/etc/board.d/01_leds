@@ -175,6 +175,10 @@ wd,mynet-wifi-rangeextender)
 	ucidef_set_led_rssi "rssimedium" "RSSIMED" "$boardname:blue:rssi-med" "wlan0" "33" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIMAX" "$boardname:blue:rssi-max" "wlan0" "66" "100"
 	;;
+yuncore,a770)
+	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth0"
+	ucidef_set_led_switch "lan" "LAN" "$boardname:green:lan" "switch0" "0x10"
+	;;
 esac
 
 board_config_flush
