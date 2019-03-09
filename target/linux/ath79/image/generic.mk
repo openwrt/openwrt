@@ -556,3 +556,11 @@ define Device/xiaomi_mi-router-4q
   IMAGE_SIZE := 14336k
 endef
 TARGET_DEVICES += xiaomi_mi-router-4q
+
+define Device/yuncore_a770
+  ATH_SOC := qca9531
+  DEVICE_TITLE := YunCore A770
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += yuncore_a770
