@@ -402,6 +402,14 @@ define Device/iodata_wn-ag300dgr
 endef
 TARGET_DEVICES += iodata_wn-ag300dgr
 
+define Device/librerouter_librerouter-v1
+  ATH_SOC := qca9558
+  DEVICE_TITLE := LibreRouter v1
+  IMAGE_SIZE := 7936k
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+endef
+TARGET_DEVICES += librerouter_librerouter-v1
+
 define Device/nec_wg800hp
   ATH_SOC := qca9563
   DEVICE_TITLE := NEC Aterm WG800HP
