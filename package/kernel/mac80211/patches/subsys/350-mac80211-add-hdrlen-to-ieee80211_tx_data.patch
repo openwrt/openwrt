@@ -2,11 +2,11 @@ From: Janusz Dziedzic <janusz.dziedzic@tieto.com>
 Date: Fri, 19 Feb 2016 11:01:49 +0100
 Subject: [PATCH] mac80211: add hdrlen to ieee80211_tx_data
 
-Add hdrlen to ieee80211_tx_data and use this
-when wep/ccmd/tkip. This is preparation for
-aligned4 code.
+This is preparation for adding support for inserting padding between the
+802.11 header and LLC data
 
 Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/net/mac80211/ieee80211_i.h
@@ -48,19 +48,28 @@ Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
  	if (likely(sta)) {
  		if (!IS_ERR(sta))
  			tx->sta = sta;
-@@ -3513,6 +3513,7 @@ begin:
+@@ -3518,6 +3518,7 @@ begin:
  	tx.local = local;
  	tx.skb = skb;
  	tx.sdata = vif_to_sdata(info->control.vif);
-+	tx.hdrlen = ieee80211_padded_hdrlen(hw, hdr->frame_control);
++	tx.hdrlen = ieee80211_hdrlen(hdr->frame_control);
  
  	if (txq->sta)
  		tx.sta = container_of(txq->sta, struct sta_info, sta);
-@@ -3850,6 +3851,7 @@ ieee80211_build_data_template(struct iee
+@@ -3544,7 +3545,7 @@ begin:
+ 
+ 		if (tx.key &&
+ 		    (tx.key->conf.flags & IEEE80211_KEY_FLAG_GENERATE_IV))
+-			pn_offs = ieee80211_hdrlen(hdr->frame_control);
++			pn_offs = tx.hdrlen;
+ 
+ 		ieee80211_xmit_fast_finish(sta->sdata, sta, pn_offs,
+ 					   tx.key, skb);
+@@ -3855,6 +3856,7 @@ ieee80211_build_data_template(struct iee
  	hdr = (void *)skb->data;
  	tx.sta = sta_info_get(sdata, hdr->addr1);
  	tx.skb = skb;
-+	tx.hdrlen = ieee80211_padded_hdrlen(&tx.local->hw, hdr->frame_control);
++	tx.hdrlen = ieee80211_hdrlen(hdr->frame_control);
  
  	if (ieee80211_tx_h_select_key(&tx) != TX_CONTINUE) {
  		rcu_read_unlock();
