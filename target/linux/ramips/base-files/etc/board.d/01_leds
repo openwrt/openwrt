@@ -38,6 +38,10 @@ alfa-network,ac1200rm)
 alfa-network,awusfree1)
 	set_wifi_led "$boardname:blue:wlan"
 	;;
+alfa-network,tube-e4g)
+	ucidef_set_led_netdev "4g" "4g" "$boardname:green:4g" "wwan0"
+	ucidef_set_led_netdev "lan" "lan" "$boardname:blue:lan" "eth0"
+	;;
 all0256n-4M|\
 all0256n-8M)
 	ucidef_set_rssimon "wlan0" "200000" "1"

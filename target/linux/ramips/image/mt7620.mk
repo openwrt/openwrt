@@ -51,6 +51,15 @@ define Device/alfa-network_ac1200rm
 endef
 TARGET_DEVICES += alfa-network_ac1200rm
 
+define Device/alfa-network_tube-e4g
+  DTS := TUBE-E4G
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := ALFA Network Tube-E4G
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci uboot-envtools uqmi \
+	-iwinfo -kmod-rt2800-pci -kmod-rt2800-soc -wpad-basic
+endef
+TARGET_DEVICES += alfa-network_tube-e4g
+
 define Device/Archer
   TPLINK_HWREVADD := 0
   TPLINK_HVERSION := 3
