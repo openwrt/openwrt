@@ -420,34 +420,51 @@ oxnas_pcie_map_registers(struct platform_device *pdev,
 	u32 pcie_ctrl_offset;
 
 	ret = of_address_to_resource(np, 0, &regs);
-	if (ret)
+	if (ret) {
+		dev_err(&pdev->dev, "failed to parse base register space\n");
 		return -EINVAL;
+	}
+
 	pcie->base = devm_ioremap_resource(&pdev->dev, &regs);
-	if (!pcie->base)
+	if (!pcie->base) {
+		dev_err(&pdev->dev, "failed to map base register space\n");
 		return -ENOMEM;
+	}
 
 	ret = of_address_to_resource(np, 1, &regs);
-	if (ret)
+	if (ret) {
+		dev_err(&pdev->dev, "failed to parse inbound register space\n");
 		return -EINVAL;
+	}
+
 	pcie->inbound = devm_ioremap_resource(&pdev->dev, &regs);
-	if (!pcie->inbound)
+	if (!pcie->inbound) {
+		dev_err(&pdev->dev, "failed to map inbound register space\n");
 		return -ENOMEM;
+	}
 
 	pcie->phy = devm_of_phy_get(&pdev->dev, np, NULL);
 	if (IS_ERR(pcie->phy)) {
-		if (PTR_ERR(pcie->phy) == -EPROBE_DEFER)
+		if (PTR_ERR(pcie->phy) == -EPROBE_DEFER) {
+			dev_err(&pdev->dev, "failed to probe phy\n");
 			return PTR_ERR(pcie->phy);
+		}
+		dev_warn(&pdev->dev, "phy not attached\n");
 		pcie->phy = NULL;
 	}
 
 	if (of_property_read_u32(np, "plxtech,pcie-outbound-offset",
-				 &outbound_ctrl_offset))
+				 &outbound_ctrl_offset)) {
+		dev_err(&pdev->dev, "failed to parse outbound register offset\n");
 		return -EINVAL;
+	}
 	pcie->outbound_offset = outbound_ctrl_offset;
 
 	if (of_property_read_u32(np, "plxtech,pcie-ctrl-offset",
-				 &pcie_ctrl_offset))
+				 &pcie_ctrl_offset)) {
+		dev_err(&pdev->dev, "failed to parse pcie-ctrl register offset\n");
 		return -EINVAL;
+	}
 	pcie->pcie_ctrl_offset = pcie_ctrl_offset;
 
 	return 0;
