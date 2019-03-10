@@ -42,7 +42,7 @@
 +				bus-range = <0x00 0x7f>;
 +
 +				/*	cfg		inbound translator	*/
-+				reg =	<0x0 0x1000>,	<0x100000 0x100>;
++				reg =	<0xc00000 0x1000>,	<0xd00000 0x100>;
 +
 +				phys = <&pcie_phy>;
 +				phy-names = "pcie-phy";
@@ -83,7 +83,7 @@
 +				bus-range = <0x80 0xff>;
 +
 +				/*	cfg		inbound translator	*/
-+				reg =	<0x0 0x1000>,	<0x100000 0x100>;
++				reg =	<0xe00000 0x1000>,	<0xf00000 0x100>;
 +
 +				phys = <&pcie_phy>;
 +				phy-names = "pcie-phy";
