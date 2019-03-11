@@ -1144,6 +1144,38 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the RE350K v1 */
+	{
+		.id = "RE350K-V1",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:RE350K,product_ver:1.0.0,special_id:00000000,product_region:US}\n",
+		.support_trail = '\x00',
+		.soft_ver = NULL,
+
+		/** We're using a dynamic kernel/rootfs split here */
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"firmware", 0x20000, 0xd70000},
+			{"partition-table", 0xd90000, 0x02000},
+			{"default-mac", 0xda0000, 0x00020},
+			{"pin", 0xda0100, 0x00020},
+			{"product-info", 0xda1100, 0x01000},
+			{"soft-version", 0xdb0000, 0x01000},
+			{"support-list", 0xdb1000, 0x01000},
+			{"profile", 0xdb2000, 0x08000},
+			{"user-config", 0xdc0000, 0x10000},
+			{"default-config", 0xdd0000, 0x10000},
+			{"device-id", 0xde0000, 0x00108},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
 	/** Firmware layout for the RE355 */
 	{
 		.id = "RE355",
