@@ -67,6 +67,7 @@ static char *mtddev;
 static char *name_filter = NULL;
 static bool show_all = false;
 static bool print_all_key_names = false;
+static bool read_oob_sector_health = false;
 static bool swap_bytes = false;
 static uint8_t readbuf[TFFS_SECTOR_SIZE];
 static uint8_t oobbuf[TFFS_SECTOR_OOB_SIZE];
@@ -191,7 +192,7 @@ static int find_entry(uint32_t id, struct tffs_entry *entry)
 			uint32_t read_id = read_uint32(readbuf, 0x00);
 			uint32_t read_len = read_uint32(readbuf, 0x04);
 			uint32_t read_rev = read_uint32(readbuf, 0x0c);
-			if (oob_id != read_id || oob_len != read_len || oob_rev != read_rev) {
+			if (read_oob_sector_health && (oob_id != read_id || oob_len != read_len || oob_rev != read_rev)) {
 				fprintf(stderr, "Warning: sector has inconsistent metadata\n");
 				continue;
 			}
@@ -360,6 +361,9 @@ static int show_matching_key_value(struct tffs_key_name_table *key_names)
 
 static int check_sector(off_t pos)
 {
+	if (!read_oob_sector_health) {
+		return 1;
+	}
 	if (read_sectoroob(pos)) {
 		return 0;
 	}
@@ -450,6 +454,7 @@ static void usage(int status)
 	"  -h              show this screen\n"
 	"  -l              list all supported keys\n"
 	"  -n <key name>   display the value of the given key\n"
+	"  -o              read OOB information about sector health\n"
 	);
 
 	exit(status);
@@ -460,7 +465,7 @@ static void parse_options(int argc, char *argv[])
 	while (1) {
 		int c;
 
-		c = getopt(argc, argv, "abd:hln:");
+		c = getopt(argc, argv, "abd:hln:o");
 		if (c == -1)
 			break;
 
@@ -488,6 +493,9 @@ static void parse_options(int argc, char *argv[])
 			name_filter = optarg;
 			show_all = false;
 			print_all_key_names = false;
+			break;
+		case 'o':
+			read_oob_sector_health = true;
 			break;
 		default:
 			usage(EXIT_FAILURE);
