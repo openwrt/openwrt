@@ -109,6 +109,22 @@ define Device/tplink_archer-c7-v5
 endef
 TARGET_DEVICES += tplink_archer-c7-v5
 
+define Device/tplink_re350k-v1
+  $(Device/tplink)
+  ATH_SOC := qca9558
+  IMAGE_SIZE := 13760k
+  DEVICE_TITLE := TP-Link RE350K v1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  TPLINK_BOARD_ID := RE350K-V1
+  TPLINK_HWID := 0x0
+  TPLINK_HWREV := 0
+  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
+    check-size $$$$(IMAGE_SIZE) | append-metadata
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+endef
+TARGET_DEVICES += tplink_re350k-v1
+
 define Device/tplink_re450-v2
   $(Device/tplink)
   ATH_SOC := qca9563
