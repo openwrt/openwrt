@@ -518,6 +518,15 @@ define Device/youhua_wr1200js
 endef
 TARGET_DEVICES += youhua_wr1200js
 
+define Device/youku_yk-l2
+  DTS := YOUKU-YK2
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Youku YK-L2
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+endef
+TARGET_DEVICES += youku_yk-l2
+
 define Device/wsr-1166
   DTS := WSR-1166
   IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
