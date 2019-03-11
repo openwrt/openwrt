@@ -111,6 +111,10 @@ case "$FIRMWARE" in
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
+	avm,fritzrepeater-3000)
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
+		;;
 	openmesh,a62)
 		ath10kcal_extract "0:ART" 36864 12064
 		;;
@@ -135,7 +139,8 @@ case "$FIRMWARE" in
 	avm,fritzbox-4040)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x400 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader_config")
 		;;
-	avm,fritzbox-7530)
+	avm,fritzbox-7530 |\
+	avm,fritzrepeater-3000)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
 		;;
@@ -183,7 +188,8 @@ case "$FIRMWARE" in
 	avm,fritzbox-4040)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x400 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader_config")
 		;;
-	avm,fritzbox-7530)
+	avm,fritzbox-7530 |\
+	avm,fritzrepeater-3000)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
 		;;
