@@ -10,8 +10,8 @@ include $(INCLUDE_DIR)/image.mk
 # Cook a "WRGG" image, this board is apparently one in the D-Link
 # WRGG family and uses the exact same firmware format as other
 # D-Link devices.
-define Build/dir685-images
-	mkwrggimg -i $(IMAGE_KERNEL) \
+define Build/dir685-image
+	mkwrggimg -i $@ \
 	-o $@.new \
 	-d /dev/mtdblock/1 \
 	-s wrgns01_dlwbr_dir685RBWW \
@@ -20,6 +20,12 @@ define Build/dir685-images
 	-B 96bb
 
 	mv $@.new $@
+endef
+
+# Padding added after the rootfs to an even 128k boundary
+# as this is 128k eraseblocks flash.
+define Build/dir685-pad-rootfs
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 128 >>$@
 endef
 
 # Build D-Link DNS-313 images using the special header tool.
@@ -121,6 +127,16 @@ GEMINI_NAS_PACKAGES:=kmod-md-mod kmod-md-linear kmod-md-multipath \
 		samba36-server mdadm cfdisk fdisk e2fsprogs badblocks \
 		partx-utils
 
+# The DIR-685 flash layout is kernel in WRGG format, padded and followed
+# by the appended rootfs followed by some reasonable JFFS padding, the
+# remainder will be used by JFFS2 through overlayfs.
+#
+# - For the factory image, the WRGG image includes the rootfs so that the
+#   default firmware will flash it properly as all it knows is WRGG format.
+# - For the sysupgrade, we do not include the rootfs in the kernel image
+#   so it is not needelessly tossed into the RAM by the boot loader.
+#   This will be flashed from OpenWrt userland anyways so we only need
+#   the minimum to make the boot loader happy.
 define Device/dlink_dir-685
 	DEVICE_TITLE := D-Link DIR-685 Xtreme N Storage Router
 	DEVICE_DTS := gemini-dlink-dir-685
@@ -128,7 +144,8 @@ define Device/dlink_dir-685
 			kmod-switch-rtl8366rb swconfig \
 			kmod-rt2800-pci
 	IMAGES := factory.bin
-	IMAGE/factory.bin := dir685-images
+	# Pad to 128k erase blocks with 160 bytes WRGG header
+	IMAGE/factory.bin := append-kernel | pad-offset 128k 160 | append-rootfs | dir685-pad-rootfs | dir685-image
 endef
 TARGET_DEVICES += dlink_dir-685
 
