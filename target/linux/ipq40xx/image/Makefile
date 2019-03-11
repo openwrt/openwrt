@@ -130,6 +130,15 @@ define Device/avm_fritzbox-7530
 endef
 TARGET_DEVICES += avm_fritzbox-7530
 
+define Device/avm_fritzrepeater-3000
+	$(call Device/FitImageLzma)
+	DEVICE_DTS := qcom-ipq4019-fritzrepeater-3000
+	DEVICE_TITLE := AVM Fritz!Repeater 3000
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct fritz-caldata fritz-tffs-nand ipq-wifi-avm_fritzrepeater-3000
+	IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += avm_fritzrepeater-3000
+
 define Device/compex_wpj428
 	$(call Device/FitImage)
 	DEVICE_DTS := qcom-ipq4028-wpj428

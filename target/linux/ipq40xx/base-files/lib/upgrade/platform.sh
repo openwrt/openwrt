@@ -49,6 +49,7 @@ platform_do_upgrade() {
 	8dev,jalapeno |\
 	alfa-network,ap120c-ac |\
 	avm,fritzbox-7530 |\
+	avm,fritzrepeater-3000|\
 	qxwlan,e2600ac-c2)
 		nand_do_upgrade "$ARGV"
 		;;
