@@ -11,7 +11,7 @@ PKG_NAME:=openssl
 PKG_BASE:=1.1.1
 PKG_BUGFIX:=b
 PKG_VERSION:=$(PKG_BASE)$(PKG_BUGFIX)
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_USE_MIPS16:=0
 ENGINES_DIR=engines-1.1
 
@@ -147,6 +147,7 @@ This package adds an engine that enables hardware acceleration
 through the AF_ALG kernel interface.
 To use it, you need to configure the engine in /etc/ssl/openssl.cnf
 See https://www.openssl.org/docs/man1.1.1/man5/config.html#Engine-Configuration-Module
+and https://openwrt.org/docs/techref/hardware/cryptographic.hardware.accelerators
 The engine_id is "afalg"
 endef
 
@@ -163,6 +164,7 @@ This package adds an engine that enables hardware acceleration
 through the /dev/crypto kernel interface.
 To use it, you need to configure the engine in /etc/ssl/openssl.cnf
 See https://www.openssl.org/docs/man1.1.1/man5/config.html#Engine-Configuration-Module
+and https://openwrt.org/docs/techref/hardware/cryptographic.hardware.accelerators
 The engine_id is "devcrypto"
 endef
 
@@ -178,6 +180,7 @@ define Package/libopenssl-padlock/description
 This package adds an engine that enables VIA Padlock hardware acceleration.
 To use it, you need to configure it in /etc/ssl/openssl.cnf.
 See https://www.openssl.org/docs/man1.1.1/man5/config.html#Engine-Configuration-Module
+and https://openwrt.org/docs/techref/hardware/cryptographic.hardware.accelerators
 The engine_id is "padlock"
 endef
 

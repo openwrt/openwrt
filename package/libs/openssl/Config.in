@@ -269,7 +269,13 @@ config OPENSSL_ENGINE_BUILTIN_AFALG
 	select PACKAGE_libopenssl-conf
 	help
 		This enables use of hardware acceleration through the
-		AF_ALG kenrel interface.
+		AF_ALG kernel interface.
+
+config OPENSSL_ENGINE_CRYPTO
+	# This symbol is deprecated.  Currently it is used by the openssh package.
+	# Once openwrt/packages#8272 is merged, this can be safely removed.
+	bool
+	default OPENSSL_ENGINE_BUILTIN_DEVCRYPTO || PACKAGE_libopenssl-devcrypto
 
 config OPENSSL_ENGINE_BUILTIN_DEVCRYPTO
 	bool
@@ -279,6 +285,9 @@ config OPENSSL_ENGINE_BUILTIN_DEVCRYPTO
 	help
 		This enables use of hardware acceleration through OpenBSD
 		Cryptodev API (/dev/crypto) interface.
+		Even though configuration is not strictly needed, it is worth seeing
+		https://openwrt.org/docs/techref/hardware/cryptographic.hardware.accelerators
+		for information on how to configure the engine.
 
 config OPENSSL_ENGINE_BUILTIN_PADLOCK
 	bool
