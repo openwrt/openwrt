@@ -9,9 +9,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2018.11
+PKG_VERSION:=2019.01
 
-PKG_HASH:=737c93f2ea03fec669e840dbee32bcf6238e6924ff5f20e4f1c472ee24e5d37e
+PKG_HASH:=50bd7e5a466ab828914d080d5f6a432345b500e8fba1ad3b7b61e95e60d51c22
 
 PKG_MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
