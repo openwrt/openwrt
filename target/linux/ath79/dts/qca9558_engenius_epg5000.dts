@@ -30,11 +30,6 @@
 			default-state = "on";
 		};
 
-		wan {
-			label = "epg5000:blue:wan";
-			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
-		};
-
 		wlan2g {
 			label = "epg5000:blue:wlan2g";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
@@ -47,7 +42,12 @@
 			linux,default-trigger = "phy0tpt";
 		};
 
-		wps {
+		wps_amber {
+			label = "epg5000:amber:wps";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+		};
+
+		wps_blue {
 			label = "epg5000:blue:wps";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
