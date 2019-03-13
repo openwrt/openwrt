@@ -26,7 +26,7 @@
  obj-$(CONFIG_MDIO_OCTEON)	+= mdio-octeon.o
 --- /dev/null
 +++ b/drivers/net/phy/mdio-ipq40xx.c
-@@ -0,0 +1,201 @@
+@@ -0,0 +1,196 @@
 +/*
 + * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
 + *
@@ -69,7 +69,6 @@
 +struct ipq40xx_mdio_data {
 +	struct mii_bus	*mii_bus;
 +	void __iomem	*membase;
-+	int		phy_irq[PHY_MAX_ADDR];
 +	struct device	*dev;
 +};
 +
@@ -186,10 +185,6 @@
 +	am->mii_bus->parent = &pdev->dev;
 +	snprintf(am->mii_bus->id, MII_BUS_ID_SIZE, "%s", dev_name(&pdev->dev));
 +
-+	for (i = 0; i < PHY_MAX_ADDR; i++)
-+		am->phy_irq[i] = PHY_POLL;
-+
-+	memcpy(am->mii_bus->irq, am->phy_irq, sizeof(am->phy_irq));
 +	am->dev = &pdev->dev;
 +	platform_set_drvdata(pdev, am);
 +
