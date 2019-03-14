@@ -367,6 +367,18 @@ define Device/iodata_wn-ac1167gr
 endef
 TARGET_DEVICES += iodata_wn-ac1167gr
 
+define Device/iodata_wn-ac733gr3
+  DTS := WN-AC733GR3
+  DEVICE_TITLE := I-O DATA WN-AC733GR3
+  IMAGE_SIZE := 6992k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+    $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+    elx-header 01040006 8844A2D168B45A2D
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-switch-rtl8367b
+endef
+TARGET_DEVICES += iodata_wn-ac733gr3
+
 define Device/kimax_u35wf
   DTS := U35WF
   IMAGE_SIZE := 16064k
