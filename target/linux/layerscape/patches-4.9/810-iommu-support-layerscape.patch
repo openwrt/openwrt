@@ -34,7 +34,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	return entry->group;
  }
-@@ -3173,9 +3175,10 @@ static bool amd_iommu_capable(enum iommu
+@@ -3180,9 +3182,10 @@ static bool amd_iommu_capable(enum iommu
  	return false;
  }
  
@@ -47,7 +47,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	struct unity_map_entry *entry;
  	int devid;
  
-@@ -3184,41 +3187,56 @@ static void amd_iommu_get_dm_regions(str
+@@ -3191,41 +3194,56 @@ static void amd_iommu_get_dm_regions(str
  		return;
  
  	list_for_each_entry(entry, &amd_iommu_unity_map, list) {
@@ -118,7 +118,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  {
  	struct dma_ops_domain *dma_dom = to_dma_ops_domain(to_pdomain(domain));
  	unsigned long start, end;
-@@ -3242,9 +3260,9 @@ static const struct iommu_ops amd_iommu_
+@@ -3249,9 +3267,9 @@ static const struct iommu_ops amd_iommu_
  	.add_device = amd_iommu_add_device,
  	.remove_device = amd_iommu_remove_device,
  	.device_group = amd_iommu_device_group,
