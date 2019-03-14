@@ -16,7 +16,7 @@
 		led-upgrade = &led_power;
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		3g {
@@ -35,7 +35,7 @@
 		};
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
@@ -85,6 +85,7 @@
 			};
 
 			partition@50000 {
+				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x50000 0x3b0000>;
 			};

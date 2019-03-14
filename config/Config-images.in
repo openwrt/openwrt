@@ -197,14 +197,12 @@ menu "Target Images"
 	config GRUB_CONSOLE
 		bool "Use Console Terminal (in addition to Serial)"
 		depends on GRUB_IMAGES
-		default n if (TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501 || TARGET_x86_geos || TARGET_x86_alix2)
 		default y
 
 	config GRUB_SERIAL
 		string "Serial port device"
 		depends on GRUB_IMAGES
-		default "hvc0" if TARGET_x86_xen_domu
-		default "ttyS0" if ! TARGET_x86_xen_domu
+		default "ttyS0"
 
 	config GRUB_BAUDRATE
 		int "Serial port baud rate"
@@ -220,7 +218,6 @@ menu "Target Images"
 	config GRUB_BOOTOPTS
 		string "Extra kernel boot options"
 		depends on GRUB_IMAGES
-		default "xencons=hvc" if TARGET_x86_xen_domu
 		help
 		  If you don't know, just leave it blank.
 
@@ -241,14 +238,14 @@ menu "Target Images"
 
 	config VDI_IMAGES
 		bool "Build VirtualBox image files (VDI)"
-		depends on TARGET_x86 || TARGET_x86_64
+		depends on TARGET_x86
 		select GRUB_IMAGES
 		select TARGET_IMAGES_PAD
 		select PACKAGE_kmod-e1000
 
 	config VMDK_IMAGES
 		bool "Build VMware image files (VMDK)"
-		depends on TARGET_x86 || TARGET_x86_64
+		depends on TARGET_x86
 		select GRUB_IMAGES
 		select TARGET_IMAGES_PAD
 		select PACKAGE_kmod-e1000
@@ -269,11 +266,13 @@ menu "Target Images"
 	config TARGET_KERNEL_PARTSIZE
 		int "Kernel partition size (in MB)"
 		depends on GRUB_IMAGES || USES_BOOT_PART
+		default 8 if TARGET_apm821xx_sata
+		default 20 if TARGET_brcm2708
 		default 16
 
 	config TARGET_ROOTFS_PARTSIZE
 		int "Root filesystem partition size (in MB)"
-		depends on GRUB_IMAGES || USES_ROOTFS_PART || TARGET_ROOTFS_EXT4FS || TARGET_mvebu || TARGET_rb532 || TARGET_sunxi || TARGET_uml
+		depends on GRUB_IMAGES || USES_ROOTFS_PART || TARGET_ROOTFS_EXT4FS || TARGET_mvebu || TARGET_omap || TARGET_rb532 || TARGET_sunxi || TARGET_uml
 		default 256
 		help
 		  Select the root filesystem partition size.

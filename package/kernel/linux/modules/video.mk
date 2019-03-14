@@ -160,13 +160,76 @@ endef
 
 $(eval $(call KernelPackage,fb-sys-fops))
 
+
+define KernelPackage/fb-sys-ram
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Framebuffer in system RAM support
+  DEPENDS:=+kmod-fb
+  KCONFIG:= \
+	CONFIG_FB_SYS_COPYAREA \
+	CONFIG_FB_SYS_FILLRECT \
+	CONFIG_FB_SYS_IMAGEBLIT
+  FILES:= \
+	$(LINUX_DIR)/drivers/video/fbdev/core/syscopyarea.ko \
+	$(LINUX_DIR)/drivers/video/fbdev/core/sysfillrect.ko \
+	$(LINUX_DIR)/drivers/video/fbdev/core/sysimgblt.ko
+  AUTOLOAD:=$(call AutoLoad,07,syscopyarea sysfillrect sysimgblt)
+endef
+
+define KernelPackage/fb-sys-fops/description
+ Kernel support for framebuffers in system RAM
+endef
+
+$(eval $(call KernelPackage,fb-sys-ram))
+
+
+define KernelPackage/fb-tft
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Support for small TFT LCD display modules
+  DEPENDS:= \
+	  @GPIO_SUPPORT @!LINUX_3_18 @!LINUX_4_9 +kmod-backlight \
+	  +kmod-fb +kmod-fb-sys-fops +kmod-fb-sys-ram +kmod-spi-bitbang
+  KCONFIG:= \
+       CONFIG_FB_BACKLIGHT=y \
+       CONFIG_FB_DEFERRED_IO=y \
+       CONFIG_FB_TFT
+  FILES:= \
+       $(LINUX_DIR)/drivers/staging/fbtft/fbtft.ko
+  AUTOLOAD:=$(call AutoLoad,08,fbtft)
+endef
+
+define KernelPackage/fb-tft/description
+  Support for small TFT LCD display modules
+endef
+
+$(eval $(call KernelPackage,fb-tft))
+
+
+define KernelPackage/fb-tft-ili9486
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=FB driver for the ILI9486 LCD Controller
+  DEPENDS:=+kmod-fb-tft
+  KCONFIG:=CONFIG_FB_TFT_ILI9486
+  FILES:=$(LINUX_DIR)/drivers/staging/fbtft/fb_ili9486.ko
+  AUTOLOAD:=$(call AutoLoad,09,fb_ili9486)
+endef
+
+define KernelPackage/fb-tft-ili9486/description
+  FB driver for the ILI9486 LCD Controller
+endef
+
+$(eval $(call KernelPackage,fb-tft-ili9486))
+
+
 define KernelPackage/drm
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Direct Rendering Manager (DRM) support
   HIDDEN:=1
   DEPENDS:=+kmod-dma-buf +kmod-i2c-core
   KCONFIG:=CONFIG_DRM
-  FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/gpu/drm/drm.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/drm_panel_orientation_quirks.ko@ge4.15
   AUTOLOAD:=$(call AutoLoad,05,drm)
 endef
 
@@ -176,10 +239,32 @@ endef
 
 $(eval $(call KernelPackage,drm))
 
+define KernelPackage/drm-amdgpu
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=AMDGPU DRM support
+  DEPENDS:=@TARGET_x86 @DISPLAY_SUPPORT +kmod-drm +kmod-i2c-algo-bit +amdgpu-firmware
+  KCONFIG:=CONFIG_DRM_AMDGPU \
+	CONFIG_DRM_AMDGPU_SI=y \
+	CONFIG_DRM_AMDGPU_CIK=y \
+	CONFIG_DRM_AMD_DC=y \
+	CONFIG_DEBUG_KERNEL_DC=n
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/amd/amdgpu/amdgpu.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/scheduler/gpu-sched.ko@ge4.15 \
+	$(LINUX_DIR)/drivers/gpu/drm/amd/lib/chash.ko@ge4.15
+  AUTOLOAD:=$(call AutoProbe,amdgpu)
+endef
+
+define KernelPackage/drm-amdgpu/description
+  Direct Rendering Manager (DRM) support for AMDGPU Cards
+endef
+
+$(eval $(call KernelPackage,drm-amdgpu))
+
+
 define KernelPackage/drm-imx
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX DRM support
-  DEPENDS:=@TARGET_imx6 +kmod-drm +kmod-fb +kmod-fb-cfb-copyarea +kmod-fb-cfb-imgblt +kmod-fb-cfb-fillrect +kmod-fb-sys-fops
+  DEPENDS:=@TARGET_imx6 +kmod-drm +kmod-fb +kmod-fb-cfb-copyarea +kmod-fb-cfb-imgblt +kmod-fb-cfb-fillrect +kmod-fb-sys-fops +kmod-fb-sys-ram
   KCONFIG:=CONFIG_DRM_IMX \
 	CONFIG_DRM_FBDEV_EMULATION=y \
 	CONFIG_DRM_FBDEV_OVERALLOC=100 \
@@ -188,9 +273,6 @@ define KernelPackage/drm-imx
 	CONFIG_DRM_IMX_IPUV3 \
 	CONFIG_IMX_IPUV3 \
 	CONFIG_DRM_KMS_HELPER \
-	CONFIG_FB_SYS_FILLRECT \
-	CONFIG_FB_SYS_COPYAREA \
-	CONFIG_FB_SYS_IMAGEBLIT \
 	CONFIG_DRM_KMS_FB_HELPER=y \
 	CONFIG_DRM_GEM_CMA_HELPER=y \
 	CONFIG_DRM_KMS_CMA_HELPER=y \
@@ -202,11 +284,8 @@ define KernelPackage/drm-imx
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/imx/imxdrm.ko \
 	$(LINUX_DIR)/drivers/gpu/ipu-v3/imx-ipu-v3.ko \
-	$(LINUX_DIR)/drivers/video/fbdev/core/syscopyarea.ko \
-	$(LINUX_DIR)/drivers/video/fbdev/core/sysfillrect.ko \
-	$(LINUX_DIR)/drivers/video/fbdev/core/sysimgblt.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/drm_kms_helper.ko
-  AUTOLOAD:=$(call AutoLoad,05,imxdrm imx-ipu-v3 imx-ipuv3-crtc)
+  AUTOLOAD:=$(call AutoLoad,08,imxdrm imx-ipu-v3 imx-ipuv3-crtc)
 endef
 
 define KernelPackage/drm-imx/description
@@ -226,7 +305,7 @@ define KernelPackage/drm-imx-hdmi
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-ahb-audio.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/imx/dw_hdmi-imx.ko
-  AUTOLOAD:=$(call AutoLoad,05,dw-hdmi dw-hdmi-ahb-audio.ko dw_hdmi-imx)
+  AUTOLOAD:=$(call AutoLoad,08,dw-hdmi dw-hdmi-ahb-audio.ko dw_hdmi-imx)
 endef
 
 define KernelPackage/drm-imx-hdmi/description
@@ -251,7 +330,7 @@ define KernelPackage/drm-imx-ldb
 	CONFIG_DRM_PANEL_SITRONIX_ST7789V=n
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/imx/imx-ldb.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/panel/panel-simple.ko
-  AUTOLOAD:=$(call AutoLoad,05,imx-ldb)
+  AUTOLOAD:=$(call AutoLoad,08,imx-ldb)
 endef
 
 define KernelPackage/drm-imx-ldb/description
@@ -260,6 +339,20 @@ endef
 
 $(eval $(call KernelPackage,drm-imx-ldb))
 
+define KernelPackage/drm-radeon
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Radeon DRM support
+  DEPENDS:=@TARGET_x86 @DISPLAY_SUPPORT +kmod-drm +kmod-i2c-algo-bit +radeon-firmware
+  KCONFIG:=CONFIG_DRM_RADEON
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/radeon/radeon.ko
+  AUTOLOAD:=$(call AutoProbe,radeon)
+endef
+
+define KernelPackage/drm-radeon/description
+  Direct Rendering Manager (DRM) support for Radeon Cards
+endef
+
+$(eval $(call KernelPackage,drm-radeon))
 
 #
 # Video Capture
@@ -307,16 +400,20 @@ endef
 
 define KernelPackage/video-videobuf2
   TITLE:=videobuf2 lib
-  DEPENDS:=+kmod-dma-buf
+  DEPENDS:=+kmod-dma-buf @!LINUX_3_18
   KCONFIG:= \
 	CONFIG_VIDEOBUF2_CORE \
 	CONFIG_VIDEOBUF2_MEMOPS \
 	CONFIG_VIDEOBUF2_VMALLOC
   FILES:= \
-	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videobuf2-core.ko \
-	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videobuf2-v4l2.ko@ge4.4 \
-	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videobuf2-memops.ko \
-	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videobuf2-vmalloc.ko
+	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videobuf2-core.ko@lt4.16 \
+	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videobuf2-v4l2.ko@lt4.16 \
+	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videobuf2-memops.ko@lt4.16 \
+	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videobuf2-vmalloc.ko@lt4.16 \
+	$(LINUX_DIR)/drivers/media/common/videobuf2/videobuf2-common.ko@ge4.16 \
+	$(LINUX_DIR)/drivers/media/common/videobuf2/videobuf2-v4l2.ko@ge4.16 \
+	$(LINUX_DIR)/drivers/media/common/videobuf2/videobuf2-memops.ko@ge4.16 \
+	$(LINUX_DIR)/drivers/media/common/videobuf2/videobuf2-vmalloc.ko@ge4.16
   AUTOLOAD:=$(call AutoLoad,65,videobuf2-core videobuf-v4l2@ge4.4 videobuf2-memops videobuf2-vmalloc)
   $(call AddDepends/video)
 endef
@@ -381,7 +478,7 @@ $(eval $(call KernelPackage,video-uvc))
 define KernelPackage/video-gspca-core
   MENU:=1
   TITLE:=GSPCA webcam core support framework
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-input-core
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-input-core +LINUX_4_19:kmod-video-videobuf2
   KCONFIG:=CONFIG_USB_GSPCA
   FILES:=$(LINUX_DIR)/drivers/media/$(V4L2_USB_DIR)/gspca/gspca_main.ko
   AUTOLOAD:=$(call AutoProbe,gspca_main)

@@ -20,7 +20,7 @@
 		bootargs = "console=ttyS0,115200";
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		lan {
@@ -74,7 +74,7 @@
 		};
 	};
 
-	gpio-keys {
+	keys {
 		compatible = "gpio-keys";
 
 		reset {
@@ -134,6 +134,7 @@
 			};
 
 			partition@20000 {
+				compatible = "tplink,firmware";
 				label = "firmware";
 				reg = <0x20000 0x7b0000>;
 			};

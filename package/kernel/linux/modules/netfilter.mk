@@ -152,7 +152,7 @@ define KernelPackage/nf-flow
 	CONFIG_NETFILTER_INGRESS=y \
 	CONFIG_NF_FLOW_TABLE \
 	CONFIG_NF_FLOW_TABLE_HW
-  DEPENDS:=+kmod-nf-conntrack @!LINUX_3_18 @!LINUX_4_4 @!LINUX_4_9
+  DEPENDS:=+kmod-nf-conntrack @!LINUX_3_18 @!LINUX_4_9
   FILES:= \
 	$(LINUX_DIR)/net/netfilter/nf_flow_table.ko \
 	$(LINUX_DIR)/net/netfilter/nf_flow_table_hw.ko
@@ -330,6 +330,7 @@ define KernelPackage/ipt-ipset
 	CONFIG_IP_SET_BITMAP_IPMAC \
 	CONFIG_IP_SET_BITMAP_PORT \
 	CONFIG_IP_SET_HASH_IP \
+	CONFIG_IP_SET_HASH_IPMAC \
 	CONFIG_IP_SET_HASH_IPMARK \
 	CONFIG_IP_SET_HASH_IPPORT \
 	CONFIG_IP_SET_HASH_IPPORTIP \
@@ -539,7 +540,7 @@ define KernelPackage/nf-nathelper-extra
   KCONFIG:=$(KCONFIG_NF_NATHELPER_EXTRA)
   FILES:=$(foreach mod,$(NF_NATHELPER_EXTRA-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_NATHELPER_EXTRA-m)))
-  DEPENDS:=+kmod-nf-nat +kmod-lib-textsearch
+  DEPENDS:=+kmod-nf-nat +kmod-lib-textsearch +kmod-ipt-raw +LINUX_4_19:kmod-asn1-decoder
 endef
 
 define KernelPackage/nf-nathelper-extra/description
@@ -646,6 +647,8 @@ define KernelPackage/ipt-tproxy
   TITLE:=Transparent proxying support
   DEPENDS+=+kmod-ipt-conntrack +IPV6:kmod-nf-conntrack6 +IPV6:kmod-ip6tables
   KCONFIG:= \
+  	CONFIG_NF_SOCKET_IPV4 \
+  	CONFIG_NF_SOCKET_IPV6 \
   	CONFIG_NETFILTER_XT_MATCH_SOCKET \
   	CONFIG_NETFILTER_XT_TARGET_TPROXY
   FILES:= \
@@ -1156,7 +1159,7 @@ define KernelPackage/nft-netdev
 	CONFIG_NFT_DUP_NETDEV \
 	CONFIG_NFT_FWD_NETDEV
   FILES:= \
-	$(LINUX_DIR)/net/netfilter/nf_tables_netdev.ko \
+	$(LINUX_DIR)/net/netfilter/nf_tables_netdev.ko@lt4.17 \
 	$(LINUX_DIR)/net/netfilter/nf_dup_netdev.ko \
 	$(LINUX_DIR)/net/netfilter/nft_dup_netdev.ko \
 	$(LINUX_DIR)/net/netfilter/nft_fwd_netdev.ko
@@ -1164,3 +1167,15 @@ define KernelPackage/nft-netdev
 endef
 
 $(eval $(call KernelPackage,nft-netdev))
+
+
+define KernelPackage/nft-fib
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter nf_tables fib support
+  DEPENDS:=+kmod-nft-core
+  FILES:=$(foreach mod,$(NFT_FIB-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_FIB-m)))
+  KCONFIG:=$(KCONFIG_NFT_FIB)
+endef
+
+$(eval $(call KernelPackage,nft-fib))

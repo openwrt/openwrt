@@ -16,7 +16,7 @@
 		led-upgrade = &led_status_orange;
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		status {
@@ -40,7 +40,7 @@
 		};
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
@@ -96,6 +96,7 @@
 			};
 
 			partition@50000 {
+				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x50000 0x770000>;
 			};

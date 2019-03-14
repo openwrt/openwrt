@@ -14,7 +14,7 @@
 		led-failsafe = &led_internet;
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
@@ -31,7 +31,7 @@
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		wan {
@@ -106,6 +106,7 @@
 			};
 
 			partition@10000 {
+				compatible = "amit,jimage";
 				label = "firmware";
 				reg = <0x10000 0xfe0000>;
 			};

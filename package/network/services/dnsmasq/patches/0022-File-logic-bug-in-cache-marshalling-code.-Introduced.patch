@@ -1,0 +1,23 @@
+From 2c594732eb7391e7cfa817598e33e61cab71131f Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Thu, 3 Jan 2019 13:42:03 +0000
+Subject: [PATCH 22/32] File logic bug in cache-marshalling code. Introduced a
+ couple of commits back.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/cache.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/src/cache.c
++++ b/src/cache.c
+@@ -742,8 +742,7 @@ int cache_recv_insert(time_t now, int fd
+ 	   else  if (flags & F_DS)
+ 	     {
+ 	        if (!read_write(fd, (unsigned char *)&class, sizeof(class), 1) ||
+-		   (flags & F_NEG) ||
+-		    !(addr.key.keydata = blockdata_read(fd, addr.key.keylen)))
++		    (!(flags & F_NEG) && !(addr.key.keydata = blockdata_read(fd, addr.key.keylen))))
+ 		  return 0;
+ 	     }
+ #endif

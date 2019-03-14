@@ -81,9 +81,10 @@ STAGING_FILES_LIST:=$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),).lis
 define CleanStaging
 	rm -f $(STAMP_INSTALLED)
 	@-(\
-		cd "$(STAGING_DIR)"; \
-		if [ -f packages/$(STAGING_FILES_LIST) ]; then \
-			cat packages/$(STAGING_FILES_LIST) | xargs -r rm -f 2>/dev/null; \
+		if [ -f $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) ]; then \
+			$(SCRIPT_DIR)/clean-package.sh \
+				"$(STAGING_DIR)/packages/$(STAGING_FILES_LIST)" \
+				"$(STAGING_DIR)"; \
 		fi; \
 	)
 endef

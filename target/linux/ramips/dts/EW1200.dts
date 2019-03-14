@@ -31,7 +31,7 @@
 		};
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
@@ -42,7 +42,7 @@
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		led_run: run {
@@ -70,7 +70,6 @@
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <10000000>;
-		m25p,chunked-io = <32>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -96,6 +95,7 @@
 			};
 
 			partition@50000 {
+				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x50000 0xfb0000>;
 			};

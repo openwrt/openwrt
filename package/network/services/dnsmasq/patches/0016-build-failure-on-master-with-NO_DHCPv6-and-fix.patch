@@ -1,0 +1,50 @@
+From b683cf37f9f3dd3dc5d95d621ee75850d559b2e4 Mon Sep 17 00:00:00 2001
+From: Kevin Darbyshire-Bryant <kevin@darbyshire-bryant.me.uk>
+Date: Mon, 10 Dec 2018 10:34:35 +0000
+Subject: [PATCH 16/32] build failure on master with NO_DHCPv6 and fix....
+
+Hi Simon,
+
+master has a build error when building without HAVE_DHCPv6
+
+option.c: In function 'dhcp_context_free':
+option.c:1042:15: error: 'struct dhcp_context' has no member named 'template_interface'
+       free(ctx->template_interface);
+
+Sadly, need to put in a little conditional compilation ifdef'erey
+
+Simplest patch in the world attached
+
+Cheers,
+
+Kevin D-B
+
+012C ACB2 28C6 C53E 9775  9123 B3A2 389B 9DE2 334A
+
+From 061eb8599636bb360e0b7fa5986935b86db39497 Mon Sep 17 00:00:00 2001
+From: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+Date: Mon, 10 Dec 2018 10:07:33 +0000
+Subject: [PATCH] option: fix non DHCPv6 build error
+
+option.c: In function 'dhcp_context_free':
+option.c:1042:15: error: 'struct dhcp_context' has no member named 'template_interface'
+       free(ctx->template_interface);
+		^~
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/option.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/src/option.c
++++ b/src/option.c
+@@ -1039,7 +1039,9 @@ static void dhcp_context_free(struct dhc
+     {
+       dhcp_netid_free(ctx->filter);
+       free(ctx->netid.net);
++#ifdef HAVE_DHCP6
+       free(ctx->template_interface);
++#endif
+       free(ctx);
+     }
+ }

@@ -56,13 +56,14 @@
 			};
 
 			partition@b0000 {
+				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0xb0000 0x750000>;
 			};
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		led_power_blue: power {
@@ -81,7 +82,7 @@
 		};
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 

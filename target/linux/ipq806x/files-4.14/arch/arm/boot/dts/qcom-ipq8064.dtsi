@@ -860,6 +860,8 @@
 			compatible = "qcom,ipq806x-ahci", "generic-ahci";
 			reg = <0x29000000 0x180>;
 
+			ports-implemented = <0x1>;
+
 			interrupts = <0 209 0x0>;
 
 			clocks = <&gcc SFAB_SATA_S_H_CLK>,
@@ -972,7 +974,7 @@
 
 			status = "disabled";
 
-			dwc3@11000000 {
+			dwc3_0: dwc3@11000000 {
 				compatible = "snps,dwc3";
 				reg = <0x11000000 0xcd00>;
 				interrupts = <0 110 0x4>;
@@ -997,7 +999,7 @@
 
 			status = "disabled";
 
-			dwc3@10000000 {
+			dwc3_1: dwc3@10000000 {
 				compatible = "snps,dwc3";
 				reg = <0x10000000 0xcd00>;
 				interrupts = <0 205 0x4>;

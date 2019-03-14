@@ -509,12 +509,27 @@ sub gen_package_source() {
 	}
 }
 
-sub gen_package_subdirs() {
+sub gen_package_auxiliary() {
 	parse_package_metadata($ARGV[0]) or exit 1;
 	foreach my $name (sort {uc($a) cmp uc($b)} keys %package) {
 		my $pkg = $package{$name};
 		if ($pkg->{name} && $pkg->{repository}) {
 			print "Package/$name/subdir = $pkg->{repository}\n";
+		}
+		if ($pkg->{name} && defined($pkg->{abiversion}) && length($pkg->{abiversion})) {
+			my $abiv;
+
+			if ($pkg->{abiversion} =~ m!^(\d{4})-(\d{2})-(\d{2})-[0-9a-f]{7,40}$!) {
+				print STDERR "WARNING: Reducing ABI version '$pkg->{abiversion}' of package '$name' to '$1$2$3'\n";
+				$abiv = "$1$2$3";
+			}
+			else {
+				$abiv = $pkg->{abiversion};
+			}
+
+			foreach my $n (@{$pkg->{provides}}) {
+				print "Package/$n/abiversion = $abiv\n";
+			}
 		}
 	}
 }
@@ -565,7 +580,7 @@ sub parse_command() {
 		/^config$/ and return gen_package_config();
 		/^kconfig/ and return gen_kconfig_overrides();
 		/^source$/ and return gen_package_source();
-		/^subdirs$/ and return gen_package_subdirs();
+		/^pkgaux$/ and return gen_package_auxiliary();
 		/^license$/ and return gen_package_license(0);
 		/^licensefull$/ and return gen_package_license(1);
 		/^usergroup$/ and return gen_usergroup_list();
@@ -577,7 +592,7 @@ Available Commands:
 	$0 config [file] 			Package metadata in Kconfig format
 	$0 kconfig [file] [config] [patchver]	Kernel config overrides
 	$0 source [file] 			Package source file information
-	$0 subdirs [file]			Package subdir information in makefile format
+	$0 pkgaux [file]			Package auxiliary variables in makefile format
 	$0 license [file] 			Package license information
 	$0 licensefull [file] 			Package license information (full list)
 	$0 usergroup [file]			Package usergroup allocation list

@@ -1,6 +1,6 @@
 /dts-v1/;
 
-#include "mt7620a.dtsi"
+#include "mt7620n.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -13,7 +13,7 @@
 		bootargs = "console=ttyS0,115200";
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		green-wifi {
@@ -28,7 +28,7 @@
 		};
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
@@ -84,6 +84,7 @@
 			};
 
 			partition@50000 {
+				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x50000 0x7b0000>;
 			};

@@ -297,6 +297,8 @@
 			compatible = "lantiq,ppe-xrx200";
 			interrupt-parent = <&icu0>;
 			interrupts = <96>;
+			resets = <&reset0 3 3>, <&reset0 11 11>, <&reset0 23 23>;
+			reset-names = "dsp", "dfe", "tc";
 		};
 
 		pcie0: pcie@d900000 {

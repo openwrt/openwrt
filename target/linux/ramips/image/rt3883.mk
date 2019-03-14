@@ -18,20 +18,11 @@ endef
 TARGET_DEVICES += br-6475nd
 
 define Device/cy-swr1100
+  $(Device/seama)
   DTS := CY-SWR1100
   BLOCKSIZE := 64k
   KERNEL := $(KERNEL_DTB)
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := \
-	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs | \
-	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin := \
-	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
-	append-rootfs | pad-rootfs -x 64 | \
-	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	seama-seal -m "signature=wrgnd10_samsung_ss815" | \
-	check-size $$$$(IMAGE_SIZE)
+  SEAMA_SIGNATURE := wrgnd10_samsung_ss815
   DEVICE_TITLE := Samsung CY-SWR1100
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
 endef
@@ -39,25 +30,28 @@ TARGET_DEVICES += cy-swr1100
 
 
 define Device/dir-645
+  $(Device/seama)
   DTS := DIR-645
   BLOCKSIZE := 4k
   KERNEL := $(KERNEL_DTB)
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := \
-	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs | \
-	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin := \
-	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
-	append-rootfs | pad-rootfs -x 64 | \
-	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	seama-seal -m "signature=wrgn39_dlob.hans_dir645" | \
-	check-size $$$$(IMAGE_SIZE)
+  SEAMA_SIGNATURE := wrgn39_dlob.hans_dir645
   DEVICE_TITLE := D-Link DIR-645
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
 endef
 TARGET_DEVICES += dir-645
 
+
+define Device/belkin_f9k1109v1
+  DTS := F9K1109V1
+  BLOCKSIZE := 64k
+  DEVICE_TITLE := Belkin F9K1109 Version 1.0
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+  IMAGE_SIZE := 7224k
+  KERNEL := kernel-bin | patch-dtb | lzma -d16 | uImage lzma
+  # Stock firmware checks for this uImage image name during upload.
+  UIMAGE_NAME := N750F9K1103VB
+endef
+TARGET_DEVICES += belkin_f9k1109v1
 
 define Device/hpm
   DTS := HPM

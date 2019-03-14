@@ -85,6 +85,7 @@ static char *buf = NULL;
 static char *imagefile = NULL;
 static enum mtd_image_format imageformat = MTD_IMAGE_FORMAT_UNKNOWN;
 static char *jffs2file = NULL, *jffs2dir = JFFS2_DEFAULT_DIR;
+static char *tpl_uboot_args_part;
 static int buflen = 0;
 int quiet;
 int no_erase;
@@ -554,6 +555,17 @@ resume:
 		lseek(fd, part_offset, SEEK_SET);
 	}
 
+	/* Write TP-Link recovery flag */
+	if (tpl_uboot_args_part && mtd_tpl_recoverflag_write) {
+		if (quiet < 2)
+			fprintf(stderr, "Writing recovery flag to %s\n", tpl_uboot_args_part);
+		result = mtd_tpl_recoverflag_write(tpl_uboot_args_part, true);
+		if (result < 0) {
+			fprintf(stderr, "Could not write TP-Link recovery flag to %s: %i", mtd, result);
+			exit(1);
+		}
+	}
+
 	indicate_writing(mtd);
 
 	w = e = 0;
@@ -716,6 +728,18 @@ resume:
 #endif
 
 	close(fd);
+
+	/* Clear TP-Link recovery flag */
+	if (tpl_uboot_args_part && mtd_tpl_recoverflag_write) {
+		if (quiet < 2)
+			fprintf(stderr, "Removing recovery flag from %s\n", tpl_uboot_args_part);
+		result = mtd_tpl_recoverflag_write(tpl_uboot_args_part, false);
+		if (result < 0) {
+			fprintf(stderr, "Could not clear TP-Link recovery flag to %s: %i", mtd, result);
+			exit(1);
+		}
+	}
+
 	return 0;
 }
 
@@ -770,6 +794,10 @@ static void usage(void)
 	if (mtd_fixtrx || mtd_fixseama || mtd_fixwrg || mtd_fixwrgg) {
 		fprintf(stderr,
 	"        -c datasize             amount of data to be used for checksum calculation (for fixtrx / fixseama / fixwrg / fixwrgg)\n");
+	}
+	if (mtd_tpl_recoverflag_write) {
+		fprintf(stderr,
+	"        -t <partition>          write TP-Link recovery-flag to <partition> (for write)\n");
 	}
 	fprintf(stderr,
 #ifdef FIS_SUPPORT
@@ -828,7 +856,7 @@ int main (int argc, char **argv)
 #ifdef FIS_SUPPORT
 			"F:"
 #endif
-			"frnqe:d:s:j:p:o:c:l:")) != -1)
+			"frnqe:d:s:j:p:o:c:t:l:")) != -1)
 		switch (ch) {
 			case 'f':
 				force = 1;
@@ -895,6 +923,9 @@ int main (int argc, char **argv)
 					fprintf(stderr, "-c: illegal numeric string\n");
 					usage();
 				}
+				break;
+			case 't':
+				tpl_uboot_args_part = optarg;
 				break;
 #ifdef FIS_SUPPORT
 			case 'F':

@@ -33,6 +33,8 @@
 #include <linux/etherdevice.h>
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
+#include <linux/platform_device.h>
+#include <linux/of_device.h>
 
 #include "ifxmips_ptm_vdsl.h"
 #include <lantiq_soc.h>
@@ -971,9 +973,21 @@ static int ptm_showtime_exit(void)
 	return 0;
 }
 
+static const struct of_device_id ltq_ptm_match[] = {
+#ifdef CONFIG_DANUBE
+	{ .compatible = "lantiq,ppe-danube", .data = NULL },
+#elif defined CONFIG_AMAZON_SE
+	{ .compatible = "lantiq,ppe-ase", .data = NULL },
+#elif defined CONFIG_AR9
+	{ .compatible = "lantiq,ppe-arx100", .data = NULL },
+#elif defined CONFIG_VR9
+	{ .compatible = "lantiq,ppe-xrx200", .data = NULL },
+#endif
+	{},
+};
+MODULE_DEVICE_TABLE(of, ltq_ptm_match);
 
-
-static int ifx_ptm_init(void)
+static int ltq_ptm_probe(struct platform_device *pdev)
 {
     int ret;
     int i;
@@ -986,7 +1000,7 @@ static int ifx_ptm_init(void)
         goto INIT_PRIV_DATA_FAIL;
     }
 
-    ifx_ptm_init_chip();
+    ifx_ptm_init_chip(pdev);
     ret = init_tables();
     if ( ret != 0 ) {
         err("INIT_TABLES_FAIL");
@@ -1068,7 +1082,7 @@ INIT_PRIV_DATA_FAIL:
     return ret;
 }
 
-static void __exit ifx_ptm_exit(void)
+static int ltq_ptm_remove(struct platform_device *pdev)
 {
     int i;
 	ifx_mei_atm_showtime_enter = NULL;
@@ -1092,6 +1106,8 @@ static void __exit ifx_ptm_exit(void)
     ifx_ptm_uninit_chip();
 
     clear_priv_data();
+
+    return 0;
 }
 
 #ifndef MODULE
@@ -1120,8 +1136,17 @@ static int __init queue_gamma_map_setup(char *line)
     return 0;
 }
 #endif
-module_init(ifx_ptm_init);
-module_exit(ifx_ptm_exit);
+static struct platform_driver ltq_ptm_driver = {
+	.probe = ltq_ptm_probe,
+	.remove = ltq_ptm_remove,
+	.driver = {
+		.name = "ptm",
+		.owner = THIS_MODULE,
+		.of_match_table = ltq_ptm_match,
+	},
+};
+
+module_platform_driver(ltq_ptm_driver);
 #ifndef MODULE
   __setup("wanqos_en=", wanqos_en_setup);
   __setup("queue_gamma_map=", queue_gamma_map_setup);

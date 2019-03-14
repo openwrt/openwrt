@@ -1,4 +1,5 @@
-DEVICE_VARS += DAP_SIGNATURE NETGEAR_BOARD_ID NETGEAR_HW_ID NETGEAR_KERNEL_MAGIC ROOTFS_SIZE SEAMA_SIGNATURE
+DEVICE_VARS += DAP_SIGNATURE NETGEAR_BOARD_ID NETGEAR_HW_ID NETGEAR_KERNEL_MAGIC ROOTFS_SIZE
+DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 
 define Build/alfa-network-rootfs-header
 	mkimage \
@@ -10,10 +11,6 @@ endef
 define Build/append-md5sum-bin
 	$(STAGING_DIR_HOST)/bin/mkhash md5 $@ | sed 's/../\\\\x&/g' |\
 		xargs echo -ne >> $@
-endef
-
-define Build/append-string
-	echo -n $(1) >> $@
 endef
 
 define Build/mkwrggimg
@@ -68,15 +65,6 @@ define Build/relocate-kernel
 	) > "$@.new"
 	mv "$@.new" "$@"
 	rm -rf $@.relocate
-endef
-
-define Build/seama
-	$(STAGING_DIR_HOST)/bin/seama -i $@ $(if $(1),$(1),-m "dev=/dev/mtdblock/1" -m "type=firmware")
-	mv $@.seama $@
-endef
-
-define Build/seama-seal
-	$(call Build/seama,-s $@.seama $(1))
 endef
 
 define Build/teltonika-fw-fake-checksum
@@ -148,7 +136,6 @@ define Device/ap91-5g
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs |\
 	pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size $$$$(IMAGE_SIZE)
 endef
-TARGET_DEVICES += ap91-5g
 
 define Device/arduino-yun
   DEVICE_TITLE := Arduino Yun
@@ -822,6 +809,15 @@ define Device/jwap230
 endef
 TARGET_DEVICES += jwap230
 
+define Device/koala
+  DEVICE_TITLE := OCEDO Koala
+  BOARDNAME := KOALA
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 7424k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),7424k(firmware),1536k(kernel2),5888k(rootfs2),1088k(data)ro,64k(id)ro,64k(art)ro
+endef
+TARGET_DEVICES += koala
+
 define Device/r36a
   DEVICE_TITLE := ALFA Network R36A
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport -swconfig
@@ -886,6 +882,16 @@ define Device/minibox-v1
   IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += minibox-v1
+
+define Device/minibox-v3.2
+  $(Device/tplink-16mlzma)
+  DEVICE_TITLE := Gainstrong MiniBox V3.2
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca9887-ct -swconfig
+  BOARDNAME := MINIBOX-V3.2
+  DEVICE_PROFILE := MINIBOXV32
+  TPLINK_HWID := 0x3C00010C
+endef
+TARGET_DEVICES += minibox-v3.2
 
 define Device/oolite-v1
   $(Device/minibox-v1)
@@ -1124,6 +1130,7 @@ define Device/seama
   KERNEL := kernel-bin | patch-cmdline | relocate-kernel | lzma
   KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | seama
   KERNEL_INITRAMFS_SUFFIX = $$(KERNEL_SUFFIX).seama
+  SEAMA_MTDBLOCK := 1
   IMAGES := sysupgrade.bin factory.bin
 
   # 64 bytes offset:
@@ -1135,8 +1142,7 @@ define Device/seama
 	check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := \
 	$$(IMAGE/default) | seama | pad-rootfs | \
-	seama-seal -m "signature=$$$$(SEAMA_SIGNATURE)" | \
-	check-size $$$$(IMAGE_SIZE)
+	seama-seal | check-size $$$$(IMAGE_SIZE)
   SEAMA_SIGNATURE :=
 endef
 

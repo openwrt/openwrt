@@ -101,9 +101,7 @@ char *progname;
 uint32_t firmware_size;
 uint16_t family_member;
 char *rom_id[12] = { 0 };
-
 char image_type;
-int add_jffs2_eof;
 
 static void usage(int status)
 {

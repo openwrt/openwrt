@@ -59,8 +59,15 @@ else
 
   LINUX_KERNEL:=$(KERNEL_BUILD_DIR)/vmlinux
 
-  LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.xz
-  ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE))$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
+  ifneq (,$(findstring -rc,$(LINUX_VERSION)))
+      LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.gz
+  else
+      LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.xz
+  endif
+
+  ifneq (,$(findstring -rc,$(LINUX_VERSION)))
+      LINUX_SITE:=https://git.kernel.org/torvalds/t
+  else ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE))$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
       LINUX_SITE:=@KERNEL/linux/kernel/v$(word 1,$(subst ., ,$(KERNEL_BASE))).x
   else
       LINUX_UNAME_VERSION:=$(strip $(shell cat $(LINUX_DIR)/include/config/kernel.release 2>/dev/null))
@@ -236,7 +243,7 @@ $(call KernelPackage/$(1)/config)
 				exit 1; \
 			fi; \
 		  done;
-		  $(call ModuleAutoLoad,$(1),$$(1),$(filter-out 0-,$(word 1,$(AUTOLOAD))-),$(filter-out 0,$(word 2,$(AUTOLOAD))),$(wordlist 3,99,$(AUTOLOAD)))
+		  $(call ModuleAutoLoad,$(1),$$(1),$(filter-out 0-,$(word 1,$(AUTOLOAD))-),$(filter-out 0,$(word 2,$(AUTOLOAD))),$(sort $(wordlist 3,99,$(AUTOLOAD))))
 		  $(call KernelPackage/$(1)/install,$$(1))
     endef
   $(if $(CONFIG_PACKAGE_kmod-$(1)),
@@ -252,7 +259,7 @@ $(call KernelPackage/$(1)/config)
   endif
   $$(eval $$(call BuildPackage,kmod-$(1)))
 
-  $$(IPKG_kmod-$(1)): $$(wildcard $$(FILES))
+  $$(IPKG_kmod-$(1)): $$(wildcard $$(call version_filter,$$(FILES)))
 
 endef
 

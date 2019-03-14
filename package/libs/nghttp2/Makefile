@@ -1,12 +1,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nghttp2
-PKG_VERSION:=1.34.0
-PKG_RELEASE:=1
+PKG_VERSION:=1.37.0
+PKG_RELEASE:=2
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 
 PKG_SOURCE_URL:=https://github.com/nghttp2/nghttp2/releases/download/v$(PKG_VERSION)
-PKG_HASH:=ecb0c013141495e24bd6deca022b5a92097a7848a0c17c4e5af1243a97fa622e
+PKG_HASH:=aa090b164b17f4b91fe32310a1c0edf3e97e02cd9d1524eef42d60dd1e8d47b7
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
@@ -20,6 +20,7 @@ define Package/libnghttp2
   CATEGORY:=Libraries
   TITLE:=Library implementing the framing layer of HTTP/2
   MAINTAINER:=Hans Dedecker <dedeckeh@gmail.com>
+  ABI_VERSION:=14
 endef
 
 define Package/libnghttp2/description
@@ -39,7 +40,7 @@ endef
 
 define Package/libnghttp2/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libnghttp2.so* $(1)/usr/lib
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libnghttp2.so.* $(1)/usr/lib
 endef
 
 $(eval $(call BuildPackage,libnghttp2))

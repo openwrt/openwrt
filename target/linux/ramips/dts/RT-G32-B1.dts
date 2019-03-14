@@ -9,7 +9,7 @@
 	compatible = "asus,rt-g32-b1", "ralink,rt3050-soc";
 	model = "Asus RT-G32 B1";
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
@@ -59,6 +59,7 @@
 			};
 
 			partition@50000 {
+				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x50000 0x3b0000>;
 			};

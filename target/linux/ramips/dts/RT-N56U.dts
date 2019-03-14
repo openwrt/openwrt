@@ -45,6 +45,7 @@
 			};
 
 			partition@50000 {
+				compatible = "denx,uimage";
 				reg = <0x00050000 0x007b0000>;
 				label = "firmware";
 			};
@@ -58,7 +59,7 @@
 		realtek,extif1 = <1 0 1 1 1 1 1 1 2>;
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
 
@@ -75,7 +76,7 @@
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		led_power: power {

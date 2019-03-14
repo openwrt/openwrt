@@ -139,6 +139,8 @@ sub parse_target_metadata($) {
 			$profile = {
 				id => $1,
 				name => $1,
+				has_image_metadata => 0,
+				supported_devices => [],
 				priority => 999,
 				packages => []
 			};
@@ -146,6 +148,8 @@ sub parse_target_metadata($) {
 			push @{$target->{profiles}}, $profile;
 		};
 		/^Target-Profile-Name:\s*(.+)\s*$/ and $profile->{name} = $1;
+		/^Target-Profile-hasImageMetadata:\s*(\d+)\s*$/ and $profile->{has_image_metadata} = $1;
+		/^Target-Profile-SupportedDevices:\s*(.+)\s*$/ and $profile->{supported_devices} = [ split(/\s+/, $1) ];
 		/^Target-Profile-Priority:\s*(\d+)\s*$/ and do {
 			$profile->{priority} = $1;
 			$target->{sort} = 1;
@@ -238,6 +242,7 @@ sub parse_package_metadata($) {
 		/^Build-Types:\s*(.+)\s*$/ and $src->{buildtypes} = [ split /\s+/, $1 ];
 		next unless $pkg;
 		/^Version: \s*(.+)\s*$/ and $pkg->{version} = $1;
+		/^ABIVersion: \s*(.+)\s*$/ and $pkg->{abiversion} = $1;
 		/^Title: \s*(.+)\s*$/ and $pkg->{title} = $1;
 		/^Menu: \s*(.+)\s*$/ and $pkg->{menu} = $1;
 		/^Submenu: \s*(.+)\s*$/ and $pkg->{submenu} = $1;

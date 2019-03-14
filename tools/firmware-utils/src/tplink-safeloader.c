@@ -357,6 +357,84 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the A7-V5 */
+	{
+		.id = "ARCHER-A7-V5",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:Archer A7,product_ver:5.0.0,special_id:45550000}\n"
+			"{product_name:Archer A7,product_ver:5.0.0,special_id:55530000}\n"
+			"{product_name:Archer A7,product_ver:5.0.0,special_id:43410000}\n"
+			"{product_name:Archer A7,product_ver:5.0.0,special_id:4A500000}\n"
+			"{product_name:Archer A7,product_ver:5.0.0,special_id:54570000}\n",
+		.support_trail = '\x00',
+		.soft_ver = "soft_ver:1.0.0\n",
+
+		/* We're using a dynamic kernel/rootfs split here */
+		.partitions = {
+			{"factory-boot", 0x00000, 0x20000},
+			{"fs-uboot", 0x20000, 0x20000},
+			{"firmware", 0x40000, 0xec0000},	/* Stock: name os-image base 0x40000 size 0x120000 */
+								/* Stock: name file-system base 0x160000 size 0xda0000 */
+			{"default-mac", 0xf40000, 0x00200},
+			{"pin", 0xf40200, 0x00200},
+			{"device-id", 0xf40400, 0x00100},
+			{"product-info", 0xf40500, 0x0fb00},
+			{"soft-version", 0xf50000, 0x00100},
+			{"extra-para", 0xf51000, 0x01000},
+			{"support-list", 0xf52000, 0x0a000},
+			{"profile", 0xf5c000, 0x04000},
+			{"default-config", 0xf60000, 0x10000},
+			{"user-config", 0xf70000, 0x40000},
+			{"certificate", 0xfb0000, 0x10000},
+			{"partition-table", 0xfc0000, 0x10000},
+			{"log", 0xfd0000, 0x20000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
+	/** Firmware layout for the C2v3 */
+	{
+		.id = "ARCHER-C2-V3",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:ArcherC2,product_ver:3.0.0,special_id:00000000}\n"
+			"{product_name:ArcherC2,product_ver:3.0.0,special_id:55530000}\n"
+			"{product_name:ArcherC2,product_ver:3.0.0,special_id:45550000}\n",
+		.support_trail = '\x00',
+		.soft_ver = "soft_ver:3.0.1\n",
+
+		/** We're using a dynamic kernel/rootfs split here */
+
+		.partitions = {
+			{"factory-boot", 0x00000, 0x20000},
+			{"fs-uboot", 0x20000, 0x10000},
+			{"firmware", 0x30000, 0x7a0000},
+			{"user-config", 0x7d0000, 0x04000},
+			{"default-mac", 0x7e0000, 0x00100},
+			{"device-id", 0x7e0100, 0x00100},
+			{"extra-para", 0x7e0200, 0x00100},
+			{"pin", 0x7e0300, 0x00100},
+			{"support-list", 0x7e0400, 0x00400},
+			{"soft-version", 0x7e0800, 0x00400},
+			{"product-info", 0x7e0c00, 0x01400},
+			{"partition-table", 0x7e2000, 0x01000},
+			{"profile", 0x7e3000, 0x01000},
+			{"default-config", 0x7e4000, 0x04000},
+			{"merge-config", 0x7ec000, 0x02000},
+			{"qos-db", 0x7ee000, 0x02000},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
 	/** Firmware layout for the C25v1 */
 	{
 		.id = "ARCHER-C25-V1",
@@ -368,16 +446,12 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = "soft_ver:1.0.0\n",
 
-		/**
-		    We use a bigger os-image partition than the stock images (and thus
-		    smaller file-system), as our kernel doesn't fit in the stock firmware's
-		    1MB os-image.
-		*/
+		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
 			{"fs-uboot", 0x20000, 0x10000},
-			{"os-image", 0x30000, 0x180000},	/* Stock: base 0x30000 size 0x100000 */
-			{"file-system", 0x1b0000, 0x620000},	/* Stock: base 0x130000 size 0x6a0000 */
+			{"firmware", 0x30000, 0x7a0000},	/* Stock: name os-image base 0x30000 size 0x100000 */
+								/* Stock: name file-system base 0x130000 size 0x6a0000 */
 			{"user-config", 0x7d0000, 0x04000},
 			{"default-mac", 0x7e0000, 0x00100},
 			{"device-id", 0x7e0100, 0x00100},
@@ -423,8 +497,7 @@ static struct device_info boards[] = {
 			{"profile", 0x11700, 0x03900},
 			{"default-config", 0x15000, 0x04000},
 			{"user-config", 0x19000, 0x04000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x648000},
+			{"firmware", 0x20000, 0x7c8000},
 			{"certyficate", 0x7e8000, 0x08000},
 			{"radio", 0x7f0000, 0x10000},
 			{NULL, 0, 0}
@@ -447,14 +520,14 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = "soft_ver:1.0.0\n",
 
+		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x10000},
 			{"default-mac", 0x10000, 0x00200},
 			{"pin", 0x10200, 0x00200},
 			{"device-id", 0x10400, 0x00100},
 			{"product-info", 0x10500, 0x0fb00},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0xcb0000},
+			{"firmware", 0x20000, 0xe30000},
 			{"partition-table", 0xe50000, 0x10000},
 			{"soft-version", 0xe60000, 0x10000},
 			{"support-list", 0xe70000, 0x10000},
@@ -513,6 +586,42 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system",
 	},
 
+	/** Firmware layout for the C6v2 */
+	{
+		.id	= "ARCHER-C6-V2",
+		.vendor	= "",
+		.support_list =
+			"SupportList:\r\n"
+			"{product_name:Archer C6,product_ver:2.0.0,special_id:45550000}\r\n"
+			"{product_name:Archer C6,product_ver:2.0.0,special_id:52550000}\r\n"
+			"{product_name:Archer C6,product_ver:2.0.0,special_id:4A500000}\r\n",
+		.support_trail = '\x00',
+		.soft_ver = "soft_ver:1.0.0\n",
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"default-mac", 0x20000, 0x00200},
+			{"pin", 0x20200, 0x00100},
+			{"product-info", 0x20300, 0x00200},
+			{"device-id", 0x20500, 0x0fb00},
+			{"firmware", 0x30000, 0x7a9400},
+			{"soft-version", 0x7d9400, 0x00100},
+			{"extra-para", 0x7d9500, 0x00100},
+			{"support-list", 0x7d9600, 0x00200},
+			{"profile", 0x7d9800, 0x03000},
+			{"default-config", 0x7dc800, 0x03000},
+			{"partition-table", 0x7df800, 0x00800},
+			{"user-config", 0x7e0000, 0x0c000},
+			{"certificate", 0x7ec000, 0x04000},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
+
 	/** Firmware layout for the C60v1 */
 	{
 		.id	= "ARCHER-C60-V1",
@@ -537,8 +646,7 @@ static struct device_info boards[] = {
 			{"profile", 0x11700, 0x03900},
 			{"default-config", 0x15000, 0x04000},
 			{"user-config", 0x19000, 0x04000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x648000},
+			{"firmware", 0x20000, 0x7c8000},
 			{"certyficate", 0x7e8000, 0x08000},
 			{"radio", 0x7f0000, 0x10000},
 			{NULL, 0, 0}
@@ -567,8 +675,7 @@ static struct device_info boards[] = {
 			{"product-info", 0x1fe00, 0x00100},
 			{"device-id", 0x1ff00, 0x00100},
 			{"fs-uboot", 0x20000, 0x10000},
-			{"os-image", 0x30000, 0x180000},
-			{"file-system", 0x1b0000, 0x620000},
+			{"firmware", 0x30000, 0x7a0000},
 			{"soft-version", 0x7d9500, 0x00100},
 			{"support-list", 0x7d9600, 0x00100},
 			{"extra-para", 0x7d9700, 0x00100},
@@ -638,16 +745,12 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = "soft_ver:1.0.0\n",
 
-		/**
-		    We use a bigger os-image partition than the stock images (and thus
-		    smaller file-system), as our kernel doesn't fit in the stock firmware's
-		    1MB os-image.
-		*/
+		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
 			{"fs-uboot", 0x20000, 0x20000},
-			{"os-image", 0x40000, 0x180000},	/* Stock: base 0x40000 size 0x120000 */
-			{"file-system", 0x1c0000, 0xd40000},	/* Stock: base 0x160000 size 0xda0000 */
+			{"firmware", 0x40000, 0xEC0000},	/* Stock: name os-image base 0x40000 size 0x120000 */
+								/* Stock: name file-system base 0x160000 size 0xda0000 */
 			{"default-mac", 0xf00000, 0x00200},
 			{"pin", 0xf00200, 0x00200},
 			{"device-id", 0xf00400, 0x00100},
@@ -676,16 +779,17 @@ static struct device_info boards[] = {
 		.support_list =
 			"SupportList:\n"
 			"{product_name:Archer C7,product_ver:5.0.0,special_id:00000000}\n"
-			"{product_name:Archer C7,product_ver:5.0.0,special_id:55530000}\n",
+			"{product_name:Archer C7,product_ver:5.0.0,special_id:45550000}\n"
+			"{product_name:Archer C7,product_ver:5.0.0,special_id:55530000}\n"
+			"{product_name:Archer C7,product_ver:5.0.0,special_id:43410000}\n"
+			"{product_name:Archer C7,product_ver:5.0.0,special_id:4A500000}\n"
+			"{product_name:Archer C7,product_ver:5.0.0,special_id:54570000}\n"
+			"{product_name:Archer C7,product_ver:5.0.0,special_id:52550000}\n",
 
 		.support_trail = '\x00',
 		.soft_ver = "soft_ver:1.0.0\n",
 
-		/**
-		  We use a bigger os-image partition than the stock images (and thus
-		  smaller file-system), as our kernel doesn't fit in the stock firmware's
-		  1MB os-image.
-		  */
+		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"factory-boot",    0x00000,  0x20000},
 			{"fs-uboot",        0x20000,  0x20000},
@@ -702,8 +806,8 @@ static struct device_info boards[] = {
 			{"user-config",     0x80000,  0x40000},
 
 
-			{"os-image",        0xc0000,  0x180000}, /* Stock: base 0xc0000  size 0x120000 */
-			{"file-system",     0x240000, 0xd80000}, /* Stock: base 0x1e0000 size 0xde0000 */
+			{"firmware",        0xc0000,  0xf00000},	/* Stock: name os-image base 0xc0000  size 0x120000 */
+									/* Stock: name file-system base 0x1e0000 size 0xde0000 */
 
 			{"log",             0xfc0000, 0x20000},
 			{"certificate",     0xfe0000, 0x10000},
@@ -877,8 +981,7 @@ static struct device_info boards[] = {
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
 			{"fs-uboot", 0x20000, 0x20000},
-			{"os-image", 0x40000, 0x180000},
-			{"file-system", 0x1c0000, 0xd40000},
+			{"firmware", 0x40000, 0xec0000},
 			{"default-mac", 0xf00000, 0x00200},
 			{"pin", 0xf00200, 0x00200},
 			{"device-id", 0xf00400, 0x00100},
@@ -949,8 +1052,7 @@ static struct device_info boards[] = {
 		*/
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x5b0000},
+			{"firmware", 0x20000, 0x730000},
 			{"default-mac", 0x750000, 0x00200},
 			{"pin", 0x750200, 0x00200},
 			{"product-info", 0x750400, 0x0fc00},
@@ -982,8 +1084,7 @@ static struct device_info boards[] = {
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0xca0000},
+			{"firmware", 0x20000, 0xe20000},
 			{"default-mac", 0xe40000, 0x00200},
 			{"pin", 0xe40200, 0x00200},
 			{"product-info", 0xe40400, 0x0fc00},
@@ -1043,6 +1144,38 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the RE350K v1 */
+	{
+		.id = "RE350K-V1",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:RE350K,product_ver:1.0.0,special_id:00000000,product_region:US}\n",
+		.support_trail = '\x00',
+		.soft_ver = NULL,
+
+		/** We're using a dynamic kernel/rootfs split here */
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"firmware", 0x20000, 0xd70000},
+			{"partition-table", 0xd90000, 0x02000},
+			{"default-mac", 0xda0000, 0x00020},
+			{"pin", 0xda0100, 0x00020},
+			{"product-info", 0xda1100, 0x01000},
+			{"soft-version", 0xdb0000, 0x01000},
+			{"support-list", 0xdb1000, 0x01000},
+			{"profile", 0xdb2000, 0x08000},
+			{"user-config", 0xdc0000, 0x10000},
+			{"default-config", 0xdd0000, 0x10000},
+			{"device-id", 0xde0000, 0x00108},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
 	/** Firmware layout for the RE355 */
 	{
 		.id = "RE355",
@@ -1060,15 +1193,10 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = NULL,
 
-		/**
-		   The flash partition table for RE355;
-		   it is almost the same as the one used by the stock images,
-		   576KB were moved from file-system to os-image.
-		*/
+		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x460000},
+			{"firmware", 0x20000, 0x5e0000},
 			{"partition-table", 0x600000, 0x02000},
 			{"default-mac", 0x610000, 0x00020},
 			{"pin", 0x610100, 0x00020},
@@ -1103,15 +1231,10 @@ static struct device_info boards[] = {
 		.support_trail = '\x00',
 		.soft_ver = NULL,
 
-		/**
-		   The flash partition table for RE450;
-		   it is almost the same as the one used by the stock images,
-		   576KB were moved from file-system to os-image.
-		*/
+		/** We're using a dynamic kernel/rootfs split here */
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0x460000},
+			{"firmware", 0x20000, 0x5e0000},
 			{"partition-table", 0x600000, 0x02000},
 			{"default-mac", 0x610000, 0x00020},
 			{"pin", 0x610100, 0x00020},
@@ -1599,14 +1722,18 @@ static void build_image(const char *output,
 	parts[4] = read_file("file-system", rootfs_image, add_jffs2_eof, file_system_partition);
 
 	/* Some devices need the extra-para partition to accept the firmware */
-	if (strcasecmp(info->id, "ARCHER-C25-V1") == 0 ||
+	if (strcasecmp(info->id, "ARCHER-C2-V3") == 0 ||
+	    strcasecmp(info->id, "ARCHER-C25-V1") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C59-V2") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C60-V2") == 0 ||
 	    strcasecmp(info->id, "TLWR1043NV5") == 0) {
 		const char mdat[11] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
 		parts[5] = put_data("extra-para", mdat, 11);
-	} else if (strcasecmp(info->id, "ARCHER-C7-V4") == 0 || strcasecmp(info->id, "ARCHER-C7-V5") == 0) {
+	} else if (strcasecmp(info->id, "ARCHER-A7-V5") == 0 || strcasecmp(info->id, "ARCHER-C7-V4") == 0 || strcasecmp(info->id, "ARCHER-C7-V5") == 0) {
 		const char mdat[11] = {0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0xca, 0x00, 0x01, 0x00, 0x00};
+		parts[5] = put_data("extra-para", mdat, 11);
+	} else if (strcasecmp(info->id, "ARCHER-C6-V2") == 0) {
+		const char mdat[11] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00};
 		parts[5] = put_data("extra-para", mdat, 11);
 	}
 

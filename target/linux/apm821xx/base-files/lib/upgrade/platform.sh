@@ -26,6 +26,8 @@ platform_do_upgrade() {
 		;;
 	meraki,mr24|\
 	meraki,mx60|\
+	netgear,wndap620|\
+	netgear,wndap660|\
 	netgear,wndr4700)
 		nand_do_upgrade "$1"
 		;;

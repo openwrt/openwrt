@@ -20,7 +20,7 @@
 		bootargs = "console=ttyS0,115200";
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		led_blue: blue {
@@ -32,17 +32,15 @@
 		yellow {
 			label = "miwifi-mini:yellow:status";
 			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 
 		red {
 			label = "miwifi-mini:red:status";
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
@@ -97,6 +95,7 @@
 			};
 
 			partition@50000 {
+				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x50000 0xf80000>;
 			};

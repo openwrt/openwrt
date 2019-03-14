@@ -8,10 +8,10 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2017.11
+PKG_VERSION:=2019.01
 PKG_RELEASE:=1
 
-PKG_HASH:=6a018fd3caf58f3dcfa23ee989a82bd35df03af71872b9dca8c6d758a0d26c05
+PKG_HASH:=50bd7e5a466ab828914d080d5f6a432345b500e8fba1ad3b7b61e95e60d51c22
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk

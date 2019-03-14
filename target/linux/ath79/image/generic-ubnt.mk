@@ -1,4 +1,9 @@
-DEVICE_VARS += UBNT_BOARD UBNT_CHIP UBNT_TYPE UBNT_VERSION
+DEVICE_VARS += UBNT_BOARD UBNT_CHIP UBNT_TYPE UBNT_VERSION UBNT_REVISION
+
+# On M (XW) devices the U-Boot as of version 1.1.4-s1039 doesn't like
+# VERSION_DIST being on the place of major(?) version number, so we need to
+# use some number.
+UBNT_REVISION := $(VERSION_DIST)-$(REVISION)
 
 # mkubntimage is using the kernel image direct
 # routerboard creates partitions out of the ubnt header
@@ -17,7 +22,7 @@ define Build/mkubntimage-split
 	dd if=$@ of=$@.old1 bs=1024k count=1; \
 	dd if=$@ of=$@.old2 bs=1024k skip=1; \
 	$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v$(UBNT_VERSION)-$(VERSION_DIST)-$(REVISION) \
+		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v$(UBNT_VERSION)-$(UBNT_REVISION) \
 		-k $@.old1 \
 		-r $@.old2 \
 		-o $@; \
@@ -63,12 +68,36 @@ define Device/ubnt-wa
   ATH_SOC := ar9342
 endef
 
+define Device/ubnt-xw
+  $(Device/ubnt)
+  UBNT_TYPE := XW
+  UBNT_CHIP := ar934x
+  UBNT_BOARD := XM
+  UBNT_VERSION := 6.0.4
+  UBNT_REVISION := 42.$(UBNT_REVISION)
+  ATH_SOC := ar9342
+endef
+
+define Device/ubnt_airrouter
+  $(Device/ubnt-xm)
+  DEVICE_TITLE := Ubiquiti AirRouter
+  SUPPORTED_DEVICES += airrouter
+endef
+TARGET_DEVICES += ubnt_airrouter
+
 define Device/ubnt_bullet-m
   $(Device/ubnt-xm)
   DEVICE_TITLE := Ubiquiti Bullet-M
   SUPPORTED_DEVICES += bullet-m
 endef
 TARGET_DEVICES += ubnt_bullet-m
+
+define Device/ubnt_bullet-m-xw
+  $(Device/ubnt-xw)
+  DEVICE_TITLE := Ubiquiti Bullet-M (XW)
+  SUPPORTED_DEVICES += bullet-m-xw
+endef
+TARGET_DEVICES += ubnt_bullet-m-xw
 
 define Device/ubnt_rocket-m
   $(Device/ubnt-xm)
@@ -84,10 +113,25 @@ define Device/ubnt_nano-m
 endef
 TARGET_DEVICES += ubnt_nano-m
 
+define Device/ubnt_nanostation-m-xw
+  $(Device/ubnt-xw)
+  DEVICE_TITLE := Ubiquiti Nanostation M (XW)
+endef
+TARGET_DEVICES += ubnt_nanostation-m-xw
+
+define Device/ubnt_lap-120
+  $(Device/ubnt-wa)
+  DEVICE_TITLE := Ubiquiti LiteAP ac (LAP-120)
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15744k
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
+endef
+TARGET_DEVICES += ubnt_lap-120
+
 define Device/ubnt_nanostation-ac
   $(Device/ubnt-wa)
   DEVICE_TITLE := Ubiquiti Nanostation AC
-  DEVICE_PACKAGES += kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15744k
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
@@ -96,7 +140,7 @@ TARGET_DEVICES += ubnt_nanostation-ac
 define Device/ubnt_nanostation-ac-loco
   $(Device/ubnt-wa)
   DEVICE_TITLE := Ubiquiti Nanostation AC loco
-  DEVICE_PACKAGES += kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15744k
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
@@ -112,8 +156,6 @@ TARGET_DEVICES += ubnt_unifi
 define Device/ubnt_unifiac
   ATH_SOC := qca9563
   IMAGE_SIZE := 7744k
-  IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 
@@ -151,7 +193,7 @@ define Device/ubnt_routerstation_common
   DEVICE_PACKAGES := -kmod-ath9k -wpad-mini -uboot-envtools kmod-usb-ohci kmod-usb2 fconfig
   ATH_SOC := ar7161
   IMAGE_SIZE := 16128k
-  IMAGES := sysupgrade.bin factory.bin
+  IMAGES += factory.bin
   IMAGE/factory.bin := append-rootfs | pad-rootfs | mkubntimage | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | check-size $$$$(IMAGE_SIZE) | append-metadata
   KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)

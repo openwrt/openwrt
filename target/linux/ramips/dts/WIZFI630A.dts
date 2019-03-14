@@ -20,7 +20,7 @@
 		bootargs = "console=ttyS1,115200";
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		led_run: run {
@@ -44,7 +44,7 @@
 		};
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
@@ -113,6 +113,7 @@
 			};
 
 			partition@50000 {
+				compatible = "denx,uimage";
 				#size-cells = <1>;
 				label = "firmware";
 				reg = <0x50000 0xfb0000>;

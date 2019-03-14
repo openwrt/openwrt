@@ -164,7 +164,7 @@ export_partdevice() {
 }
 
 hex_le32_to_cpu() {
-	[ "$(echo 01 | hexdump -v -n 2 -e '/2 "%x"')" == "3031" ] && {
+	[ "$(echo 01 | hexdump -v -n 2 -e '/2 "%x"')" = "3031" ] && {
 		echo "${1:0:2}${1:8:2}${1:6:2}${1:4:2}${1:2:2}"
 		return
 	}
@@ -223,9 +223,9 @@ indicate_upgrade() {
 default_do_upgrade() {
 	sync
 	if [ "$SAVE_CONFIG" -eq 1 ]; then
-		get_image "$1" "$2" | mtd $MTD_CONFIG_ARGS -j "$CONF_TAR" write - "${PART_NAME:-image}"
+		get_image "$1" "$2" | mtd $MTD_ARGS $MTD_CONFIG_ARGS -j "$CONF_TAR" write - "${PART_NAME:-image}"
 	else
-		get_image "$1" "$2" | mtd write - "${PART_NAME:-image}"
+		get_image "$1" "$2" | mtd $MTD_ARGS write - "${PART_NAME:-image}"
 	fi
 	[ $? -ne 0 ] && exit 1
 }

@@ -152,6 +152,32 @@ ifdef CONFIG_TARGET_IMAGES_GZIP
   endef
 endif
 
+
+# Disable noisy checks by default as in upstream
+ifeq ($(strip $(call kernel_patchver_ge,4.6.0)),1)
+  DTC_FLAGS += -Wno-unit_address_vs_reg
+endif
+ifeq ($(strip $(call kernel_patchver_ge,4.11.0)),1)
+  DTC_FLAGS += \
+	-Wno-unit_address_vs_reg \
+	-Wno-simple_bus_reg \
+	-Wno-unit_address_format \
+	-Wno-pci_bridge \
+	-Wno-pci_device_bus_num \
+	-Wno-pci_device_reg
+endif
+ifeq ($(strip $(call kernel_patchver_ge,4.16.0)),1)
+  DTC_FLAGS += \
+	-Wno-avoid_unnecessary_addr_size \
+	-Wno-alias_paths
+endif
+ifeq ($(strip $(call kernel_patchver_ge,4.17.0)),1)
+  DTC_FLAGS += \
+	-Wno-graph_child_address \
+	-Wno-graph_port \
+	-Wno-unique_unit_address
+endif
+
 # $(1) source dts file
 # $(2) target dtb file
 # $(3) extra CPP flags
@@ -164,7 +190,7 @@ define Image/BuildDTB
 		-undef -D__DTS__ $(3) \
 		-o $(2).tmp $(1)
 	$(LINUX_DIR)/scripts/dtc/dtc -O dtb \
-		-i$(dir $(1)) $(4) \
+		-i$(dir $(1)) $(DTC_FLAGS) $(4) \
 		-o $(2) $(2).tmp
 	$(RM) $(2).tmp
 endef
@@ -203,8 +229,7 @@ define Image/mkfs/squashfs
 	$(STAGING_DIR_HOST)/bin/mksquashfs4 $(call mkfs_target_dir,$(1)) $@ \
 		-nopad -noappend -root-owned \
 		-comp $(SQUASHFSCOMP) $(SQUASHFSOPT) \
-		-processors 1 \
-		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
+		-processors 1
 endef
 
 # $(1): board name
@@ -279,8 +304,8 @@ ifdef CONFIG_TARGET_ROOTFS_CPIOGZ
 endif
 
 mkfs_packages = $(filter-out @%,$(PACKAGES_$(call param_get,pkg,pkg=$(target_params))))
-mkfs_packages_add = $(filter-out -%,$(mkfs_packages))
-mkfs_packages_remove = $(patsubst -%,%,$(filter -%,$(mkfs_packages)))
+mkfs_packages_add = $(foreach pkg,$(filter-out -%,$(mkfs_packages)),$(pkg)$(call GetABISuffix,$(pkg)))
+mkfs_packages_remove = $(foreach pkg,$(patsubst -%,%,$(filter -%,$(mkfs_packages))),$(pkg)$(call GetABISuffix,$(pkg)))
 mkfs_cur_target_dir = $(call mkfs_target_dir,pkg=$(target_params))
 
 opkg_target = \
@@ -321,6 +346,7 @@ define Device/Init
   CMDLINE:=
 
   IMAGES :=
+  ARTIFACTS :=
   IMAGE_PREFIX := $(IMG_PREFIX)-$(1)
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1)-$$(2)
   KERNEL_PREFIX = $$(IMAGE_PREFIX)
@@ -360,12 +386,11 @@ define Device/Init
 endef
 
 DEFAULT_DEVICE_VARS := \
-  DEVICE_NAME KERNEL KERNEL_INITRAMFS KERNEL_SIZE KERNEL_INITRAMFS_IMAGE \
-  KERNEL_LOADADDR DEVICE_DTS DEVICE_DTS_CONFIG DEVICE_DTS_DIR BOARD_NAME \
-  CMDLINE UBOOTENV_IN_UBI KERNEL_IN_UBI \
-  BLOCKSIZE PAGESIZE SUBPAGESIZE VID_HDR_OFFSET \
-  UBINIZE_OPTS UIMAGE_NAME UBINIZE_PARTS \
-  SUPPORTED_DEVICES IMAGE_METADATA
+  DEVICE_NAME KERNEL KERNEL_INITRAMFS KERNEL_INITRAMFS_IMAGE KERNEL_SIZE \
+  CMDLINE UBOOTENV_IN_UBI KERNEL_IN_UBI BLOCKSIZE PAGESIZE SUBPAGESIZE \
+  VID_HDR_OFFSET UBINIZE_OPTS UBINIZE_PARTS MKUBIFS_OPTS DEVICE_DTS \
+  DEVICE_DTS_CONFIG DEVICE_DTS_DIR BOARD_NAME UIMAGE_NAME SUPPORTED_DEVICES \
+  IMAGE_METADATA KERNEL_ENTRY KERNEL_LOADADDR
 
 define Device/ExportVar
   $(1) : $(2):=$$($(2))
@@ -498,6 +523,20 @@ define Device/Build/image
 
 endef
 
+define Device/Build/artifact
+  $$(_TARGET): $(BIN_DIR)/$(IMAGE_PREFIX)-$(1)
+  $(eval $(call Device/Export,$(KDIR)/tmp/$(IMAGE_PREFIX)-$(1)))
+  $(KDIR)/tmp/$(IMAGE_PREFIX)-$(1): $$(KDIR_KERNEL_IMAGE)
+	@rm -f $$@
+	$$(call concat_cmd,$(ARTIFACT/$(1)))
+
+  .IGNORE: $(BIN_DIR)/$(IMAGE_PREFIX)-$(1)
+
+  $(BIN_DIR)/$(IMAGE_PREFIX)-$(1): $(KDIR)/tmp/$(IMAGE_PREFIX)-$(1)
+	cp $$^ $$@
+
+endef
+
 define Device/Build
   $(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Device/Build/initramfs,$(1)))
   $(call Device/Build/kernel,$(1))
@@ -508,12 +547,18 @@ define Device/Build
   $$(eval $$(foreach image,$$(IMAGES), \
     $$(foreach fs,$$(filter $(TARGET_FILESYSTEMS),$$(FILESYSTEMS)), \
       $$(call Device/Build/image,$$(fs),$$(image),$(1)))))
+
+  $$(eval $$(foreach artifact,$$(ARTIFACTS), \
+    $$(call Device/Build/artifact,$$(artifact))))
+
 endef
 
 define Device/DumpInfo
 Target-Profile: DEVICE_$(1)
 Target-Profile-Name: $(DEVICE_TITLE)
 Target-Profile-Packages: $(DEVICE_PACKAGES)
+Target-Profile-hasImageMetadata: $(if $(foreach image,$(IMAGES),$(findstring append-metadata,$(IMAGE/$(image)))),1,0)
+Target-Profile-SupportedDevices: $(SUPPORTED_DEVICES)
 Target-Profile-Description:
 $(DEVICE_DESCRIPTION)
 @@
@@ -563,7 +608,7 @@ define BuildImage
 		$(call Image/Prepare)
 
     legacy-images-prepare-make: image_prepare
-		$(MAKE) legacy-images-prepare
+		$(MAKE) legacy-images-prepare BIN_DIR="$(BIN_DIR)"
 
   else
     image_prepare:
@@ -587,7 +632,7 @@ define BuildImage
 
   legacy-images-make: install-images
 	$(call Image/mkfs/ubifs/legacy)
-	$(MAKE) legacy-images
+	$(MAKE) legacy-images BIN_DIR="$(BIN_DIR)"
 
   install: install-images
 	$(call Image/Manifest)

@@ -8,16 +8,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
-PKG_VERSION:=1.29.3
-PKG_RELEASE:=3
+PKG_VERSION:=1.30.1
+PKG_RELEASE:=2
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://www.busybox.net/downloads \
 		http://sources.buildroot.net
-PKG_HASH:=97648636e579462296478e0218e65e4bc1e9cd69089a3b1aeb810bff7621efb7
+PKG_HASH:=3d1d04a4dbd34048f4794815a5c48ebb9eb53c5277e09ffffc060323b95dfbdc
 
-PKG_BUILD_DEPENDS:=BUSYBOX_USE_LIBRPC:librpc BUSYBOX_CONFIG_PAM:libpam
+PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_PAM:libpam
 PKG_BUILD_PARALLEL:=1
 PKG_CHECK_FORMAT_SECURITY:=0
 
@@ -43,9 +43,10 @@ define Package/busybox
   MAINTAINER:=Felix Fietkau <nbd@nbd.name>
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
-  DEPENDS:=+BUSYBOX_USE_LIBRPC:librpc +BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter
+  DEPENDS:=+BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter
   MENU:=1
   ALTERNATIVES:=\
+    $(call BUSYBOX_IF_ENABLED,FIND,	100:/usr/bin/find:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,FLOCK,	100:/usr/bin/flock:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,FREE,	100:/usr/bin/free:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,IP,	100:/sbin/ip:/bin/busybox) \
@@ -58,6 +59,8 @@ define Package/busybox
     $(call BUSYBOX_IF_ENABLED,TOP,	100:/usr/bin/top:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,UPTIME,	100:/usr/bin/uptime:/bin/busybox) \
     $(call BUSYBOX_IF_ENABLED,WATCH,	100:/bin/watch:/bin/busybox) \
+    $(call BUSYBOX_IF_ENABLED,WGET,	100:/usr/bin/wget:/bin/busybox) \
+    $(call BUSYBOX_IF_ENABLED,XARGS,	100:/usr/bin/xargs:/bin/busybox) \
 
 endef
 
@@ -70,6 +73,12 @@ define Package/busybox/config
 	source "$(SOURCE)/Config.in"
 endef
 
+ifdef CONFIG_BUSYBOX_CONFIG_FEATURE_SYSLOG
+define Package/busybox/conffiles
+/etc/syslog.conf
+endef
+endif
+
 # don't create a version string containing the actual timestamp
 export KCONFIG_NOTIMESTAMP=1
 
@@ -79,9 +88,6 @@ LDLIBS:=m crypt
 endif
 
 LDLIBS += $(call BUSYBOX_IF_ENABLED,PAM,pam pam_misc pthread)
-ifdef CONFIG_BUSYBOX_USE_LIBRPC
-  LDLIBS += rpc
-endif
 ifeq ($(CONFIG_USE_GLIBC),y)
   LDLIBS += $(call BUSYBOX_IF_ENABLED,NSLOOKUP_OPENWRT,resolv)
 endif
@@ -114,6 +120,7 @@ endef
 
 define Package/busybox/install
 	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
 ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_CROND),)
 	$(INSTALL_BIN) ./files/cron $(1)/etc/init.d/cron

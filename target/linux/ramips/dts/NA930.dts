@@ -47,13 +47,14 @@
 			};
 
 			partition@640000 {
+				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x640000 0x1400000>;
 			};
 		};
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
@@ -76,7 +77,7 @@
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		zwave {

@@ -16,7 +16,7 @@
 		led-upgrade = &led_power;
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		led_power: power {
@@ -25,7 +25,7 @@
 		};
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
@@ -73,6 +73,7 @@
 			};
 
 			partition@50000 {
+				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x50000 0x7b0000>;
 			};
@@ -102,8 +103,4 @@
 
 &wmac {
 	ralink,mtd-eeprom = <&factory 0>;
-};
-
-&pcie {
-	status = "okay";
 };

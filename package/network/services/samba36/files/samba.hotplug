@@ -1,11 +1,56 @@
-. /lib/samba/samba.sh
+#!/bin/sh
 
-samba_dev_filter $DEVNAME
-[ "$FLAG_DEV_TYPE" = "not-mtd" ]  || exit
+. /usr/share/libubox/jshn.sh
 
-config_load samba
-case $ACTION in
-	add) samba_add_section $DEVNAME;;
-	remove) samba_delete_section $DEVNAME;;
-esac
-uci commit samba
+device_get_vars() {
+	json_init
+	json_load "$(ubus call block info)"
+
+	json_select devices
+
+	json_get_keys keys
+	for key in $keys
+	do
+		json_select $key
+
+		json_get_var device device
+		[ "$device" = "$1" ] && {
+			shift
+			json_get_vars $@
+			json_select ..
+			break
+		}
+
+		json_select ..
+	done
+
+	json_select ..
+}
+
+[ -f /var/run/config/samba ] || {
+	mkdir -p /var/run/config && touch /var/run/config/samba
+}
+
+[ "$ACTION" = "add" ] && {
+	device_get_vars $DEVICE label mount
+	[ -n "$mount" ] && {
+		uci -c /var/run/config batch <<-EOF
+			set samba.$DEVICE="sambashare"
+			set samba.$DEVICE.name="$label"
+			set samba.$DEVICE.path="$mount"
+			set samba.$DEVICE.browseable="yes"
+			set samba.$DEVICE.read_only="yes"
+			set samba.$DEVICE.guest_ok="yes"
+			commit samba
+		EOF
+		/etc/init.d/samba reload
+	}
+}
+
+[ "$ACTION" = "remove" ] && {
+	uci -c /var/run/config batch <<-EOF
+		delete samba.$DEVICE
+		commit samba
+	EOF
+	/etc/init.d/samba reload
+}

@@ -1,0 +1,23 @@
+From 42eacece82b6375a9f4bab3903a1a39f7d1dd579 Mon Sep 17 00:00:00 2001
+From: John Safranek <john@wolfssl.com>
+Date: Tue, 5 Mar 2019 09:26:30 -0800
+Subject: [PATCH] AR flags configure update In at least one environment the
+ check for particular AR options was failing due to a bash script bug. Deleted
+ an extra pair of parenthesis triggering an arithmetic statement when
+ redundant grouping was desired.
+
+---
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -15,7 +15,7 @@ AC_CONFIG_AUX_DIR([build-aux])
+ : ${CFLAGS=""}
+ 
+ # Test ar for the "U" option. Should be checked before the libtool macros.
+-xxx_ar_flags=$((ar --help) 2>&1)
++xxx_ar_flags=$(ar --help 2>&1)
+ AS_CASE([$xxx_ar_flags],[*'use actual timestamps and uids/gids'*],[: ${AR_FLAGS="Ucru"}])
+ 
+ AC_PROG_CC

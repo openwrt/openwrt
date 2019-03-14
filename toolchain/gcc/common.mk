@@ -32,12 +32,12 @@ ifeq ($(PKG_VERSION),5.5.0)
   PKG_HASH:=530cea139d82fe542b358961130c69cfde8b3d14556370b65823d2f91f0ced87
 endif
 
-ifeq ($(PKG_VERSION),7.3.0)
-  PKG_HASH:=832ca6ae04636adbb430e865a1451adf6979ab44ca1c8374f61fba65645ce15c
+ifeq ($(PKG_VERSION),7.4.0)
+  PKG_HASH:=eddde28d04f334aec1604456e536416549e9b1aa137fc69204e65eb0c009fe51
 endif
 
-ifeq ($(PKG_VERSION),8.2.0)
-  PKG_HASH:=196c3c04ba2613f893283977e6011b2345d1cd1af9abeac58e916b1aab3e0080
+ifeq ($(PKG_VERSION),8.3.0)
+  PKG_HASH:=64baadfe6cc0f4947a84cb12d7f0dfaf45bb58b7e92461639596c21e02d97d2c
 endif
 
 ifneq ($(CONFIG_GCC_VERSION_7_1_ARC),)
@@ -123,13 +123,10 @@ GCC_CONFIGURE:= \
 		--with-gmp=$(TOPDIR)/staging_dir/host \
 		--with-mpfr=$(TOPDIR)/staging_dir/host \
 		--with-mpc=$(TOPDIR)/staging_dir/host \
-		--disable-decimal-float
+		--disable-decimal-float \
+		--with-diagnostics-color=auto-if-env
 ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
   GCC_CONFIGURE += --with-mips-plt
-endif
-
-ifndef GCC_VERSION_4_8
-  GCC_CONFIGURE += --with-diagnostics-color=auto-if-env
 endif
 
 ifneq ($(CONFIG_GCC_DEFAULT_PIE),)

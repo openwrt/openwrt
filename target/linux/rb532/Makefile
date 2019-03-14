@@ -12,7 +12,7 @@ BOARDNAME:=Mikrotik RouterBoard 532
 FEATURES:=pci targz squashfs minor nand
 MAINTAINER:=Roman Yeryomin <roman@advem.lv>
 
-KERNEL_PATCHVER:=4.9
+KERNEL_PATCHVER:=4.14
 
 include $(INCLUDE_DIR)/target.mk
 

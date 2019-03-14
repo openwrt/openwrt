@@ -21,6 +21,7 @@
  *
  */
 
+#include <dt-bindings/dma/dw-dmac.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/gpio/gpio.h>
@@ -252,8 +253,6 @@
 					reg = <00000003 00000000 00002000>;
 					ccr = <0x00001000>;
 					bank-settings = <0x80002222>;
-					#address-cells = <1>;
-					#size-cells = <1>;
 					status = "disabled";
 
 					nand {
@@ -339,7 +338,6 @@
 				max-frame-size = <9000>;
 				rx-fifo-size = <16384>;
 				tx-fifo-size = <2048>;
-				fifo-entry-size = <10>;
 				phy-mode = "rgmii";
 				phy-map = <0x00000000>;
 				rgmii-device = <&RGMII0>;
@@ -385,7 +383,20 @@
 			interrupt-parent = <&UIC0>;
 			interrupts = <0x19 IRQ_TYPE_LEVEL_HIGH>;
 			#dma-cells = <3>;
-			/* use autoconfiguration for the dma setup */
+
+			dma-channels = <2>;
+			dma-masters = <3>;
+			block_size = <4095>;
+			data-width = <4>, <4>, <4>;
+			multi-block = <1>, <1>;
+
+			chan_allocation_order = <1>;
+			chan_priority = <1>;
+
+			snps,dma-protection-control =
+				<(DW_DMAC_HPROT1_PRIVILEGED_MODE |
+				  DW_DMAC_HPROT2_BUFFERABLE)>;
+			is_memcpy;
 		};
 
 		SATA0: sata@bffd1000 {

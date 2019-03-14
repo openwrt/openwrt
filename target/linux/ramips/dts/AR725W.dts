@@ -44,13 +44,14 @@
 			};
 
 			partition@50000 {
+				compatible = "denx,uimage";
 				reg = <0x50000 0x3B0000>;
 				label = "firmware";
 			};
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		led_power: power {
@@ -69,7 +70,7 @@
 		};
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
 

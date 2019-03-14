@@ -1,9 +1,9 @@
 #!/bin/sh
-FW="/tmp/firmware-speedport-w921v-1.44.000.bin"
-URL="https://www.telekom.de/hilfe/downloads/firmware-speedport-w921v-1.44.000.bin"
+FW="/tmp/firmware-speedport-w921v-1.45.000.bin"
+URL="https://www.telekom.de/hilfe/downloads/firmware-speedport-w921v-1.45.000.bin"
 FW_TAPI="vr9_tapi_fw.bin"
 FW_DSL="vr9_dsl_fw_annex_b.bin"
-MD5_FW="cefbeb7073e02e0fa4ddb6b31ecb3d1e"
+MD5_FW="405048eb1efc9373d2c1862494041cf2"
 MD5_TAPI="57f2d07f59e11250ce1219bad99c1eda"
 MD5_DSL="655442e31deaa42c9c68944869361ec0"
 

@@ -49,7 +49,7 @@ endef
 
 define Device/ubnt-xm
   $(Device/ubnt)
-  DEVICE_PACKAGES += kmod-usb-ohci
+  DEVICE_PACKAGES += kmod-usb-ohci rssileds
   UBNT_TYPE := XM
   UBNT_CHIP := ar7240
   KERNEL := kernel-bin | patch-cmdline | relocate-kernel | lzma | uImage lzma
@@ -57,6 +57,7 @@ endef
 
 define Device/ubnt-xw
   $(Device/ubnt)
+  DEVICE_PACKAGES += rssileds
   UBNT_TYPE := XW
   UBNT_CHIP := ar934x
 endef
@@ -142,6 +143,12 @@ define Device/ubnt-unifiac-pro
   BOARDNAME := UBNT-UF-AC-PRO
 endef
 TARGET_DEVICES += ubnt-unifiac-pro
+
+define Device/ubnt-unifiac-mesh-pro
+  $(Device/ubnt-unifiac-pro)
+  DEVICE_TITLE := Ubiquiti UniFi AC-Mesh-Pro
+endef
+TARGET_DEVICES += ubnt-unifiac-mesh-pro
 
 define Device/ubnt-unifi-outdoor
   $(Device/ubnt-bz)
@@ -259,9 +266,9 @@ TARGET_DEVICES += ubnt-ls-sr71
 
 define Device/ubnt-uap-pro
   DEVICE_TITLE := Ubiquiti UAP Pro
-  KERNEL_SIZE := 1792k
+  KERNEL_SIZE := 2048k
   IMAGE_SIZE := 15744k
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1792k(kernel),13952k(rootfs),256k(cfg)ro,64k(EEPROM)ro,15744k@0x50000(firmware)
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2048k(kernel),13696k(rootfs),256k(cfg)ro,64k(EEPROM)ro,15744k@0x50000(firmware)
   UBNT_TYPE := BZ
   UBNT_CHIP := ar934x
   BOARDNAME := UAP-PRO

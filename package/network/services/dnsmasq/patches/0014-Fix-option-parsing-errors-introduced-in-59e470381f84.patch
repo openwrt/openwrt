@@ -1,0 +1,42 @@
+From 137e9f878fafb38369eab7d9dfe84e4228ff5f89 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20Men=C5=A1=C3=ADk?= <pemensik@redhat.com>
+Date: Sun, 16 Dec 2018 21:25:29 +0000
+Subject: [PATCH 14/32] Fix option parsing errors introduced in
+ 59e470381f84f2fdf0640c7bc67827f3f0c64784
+
+Thanks to Kevin Darbyshire-Bryant for spotting this.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/option.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/src/option.c
++++ b/src/option.c
+@@ -3432,7 +3432,7 @@ static int one_opt(int option, char *arg
+       {
+ 	struct dhcp_netid *id = dhcp_tags(&arg);
+ 	
+-	if (!id)
++	if (!arg)
+ 	  {
+ 	    ret_err(gen_err);
+ 	  }
+@@ -3483,7 +3483,7 @@ static int one_opt(int option, char *arg
+       {
+ 	struct dhcp_netid *id = dhcp_tags(&arg);
+ 	
+-	if (!id)
++	if (!arg)
+ 	  {
+ 	    ret_err(gen_err);
+ 	  }
+@@ -3513,7 +3513,7 @@ static int one_opt(int option, char *arg
+ 	 new->opt = 10; /* PXE_MENU_PROMPT */
+ 	 new->netid = dhcp_tags(&arg);
+ 	 
+-	 if (!new->netid)
++	 if (!arg)
+ 	   {
+ 	     dhcp_opt_free(new);
+ 	     ret_err(gen_err);
