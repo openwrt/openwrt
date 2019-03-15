@@ -105,9 +105,9 @@ $(eval $(call SetupHostCommand,cp,Please install GNU fileutils, \
 	gcp --help 2>&1 | grep 'Copy SOURCE', \
 	cp --help 2>&1 | grep 'Copy SOURCE'))
 
-$(eval $(call SetupHostCommand,seq,, \
+$(eval $(call SetupHostCommand,seq,Please install seq, \
 	gseq --version, \
-	seq --version))
+	seq --version 2>&1 | grep seq))
 
 $(eval $(call SetupHostCommand,awk,Please install GNU 'awk', \
 	gawk --version 2>&1 | grep GNU, \
