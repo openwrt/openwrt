@@ -42,6 +42,12 @@ define Build/add-elecom-factory-initramfs
   fi
 endef
 
+define Build/nec-enc
+  $(STAGING_DIR_HOST)/bin/nec-enc \
+    -i $@ -o $@.new -k $(1)
+  mv $@.new $@
+endef
+
 define Build/nec-fw
   ( stat -c%s $@ | tr -d "\n" | dd bs=16 count=1 conv=sync; ) >> $@
   ( \
@@ -445,6 +451,24 @@ define Device/librerouter_librerouter-v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
 endef
 TARGET_DEVICES += librerouter_librerouter-v1
+
+define Device/nec_wg1200cr
+  ATH_SOC := qca9563
+  DEVICE_TITLE := NEC Aterm WG1200CR
+  IMAGE_SIZE := 7616k
+  SEAMA_MTDBLOCK := 6
+  SEAMA_SIGNATURE := wrgac72_necpf.2016gui_wg1200cr
+  IMAGES += factory.bin
+  IMAGE/default := \
+    append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs
+  IMAGE/sysupgrade.bin := \
+    $$(IMAGE/default) | seama | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := \
+    $$(IMAGE/default) | pad-rootfs -x 64 | seama | seama-seal | nec-enc 9gsiy9nzep452pad | \
+    check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+endef
+TARGET_DEVICES += nec_wg1200cr
 
 define Device/nec_wg800hp
   ATH_SOC := qca9563

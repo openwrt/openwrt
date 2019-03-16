@@ -128,6 +128,13 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "5:wan" "6@eth1" "4:lan"
 	;;
+	nec,wg1200cr|\
+	ubnt,nanostation-ac|\
+	ubnt,unifiac-mesh-pro|\
+	ubnt,unifiac-pro)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan" "3:wan"
+		;;
 	nec,wg800hp)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:lan" "4:lan" "1:wan"
@@ -234,12 +241,6 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "5:lan" "1:wan"
 		;;
-	ubnt,nanostation-ac|\
-	ubnt,unifiac-mesh-pro|\
-	ubnt,unifiac-pro)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "2:lan" "3:wan"
-		;;
 	xiaomi,mi-router-4q)
 		ucidef_set_interface_wan "eth0"
 		ucidef_add_switch "switch0" \
@@ -272,7 +273,8 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_text "mac" 4)
 		wan_mac=$(mtd_get_mac_text "mac" 24)
 		;;
-	dlink,dir-859-a1)
+	dlink,dir-859-a1|\
+	nec,wg1200cr)
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
 		;;
