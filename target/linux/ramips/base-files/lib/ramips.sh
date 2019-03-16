@@ -424,6 +424,9 @@ ramips_board_detect() {
 	*"RN502J")
 		name="xdxrn502j"
 		;;
+	*"RP-AC56")
+		name="rp-ac56"
+		;;
 	*"RP-N53")
 		name="rp-n53"
 		;;

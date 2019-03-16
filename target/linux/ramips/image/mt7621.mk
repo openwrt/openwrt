@@ -84,6 +84,10 @@ define Build/ubnt-erx-factory-image
 	fi
 endef
 
+define Build/mkrtn56uimg
+        $(STAGING_DIR_HOST)/bin/mkrtn56uimg $(1) $(2) $@
+endef
+
 define Device/11acnas
   DTS := 11ACNAS
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
@@ -405,6 +409,17 @@ define Device/re6500
   DEVICE_PACKAGES := kmod-mt76x2 wpad-basic
 endef
 TARGET_DEVICES += re6500
+
+define Device/rp-ac56
+  DTS := RP-AC56
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Asus RP-AC56
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 wpad kmod-sound-mt7620
+  IMAGES += factory.trx
+  IMAGE/factory.trx := append-kernel | append-rootfs | pad-rootfs | append-metadata | mkrtn56uimg -p RP-AC56 -f | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += rp-ac56
 
 define Device/sap-g3200u3
   DTS := SAP-G3200U3
