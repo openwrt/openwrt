@@ -109,12 +109,13 @@ usage(const char *progname, int status)
 			"Options:\n"
 			"  -f <file>		generate a factory flash image <file>\n"
 			"  -s <file>		generate a sysupgrade flash image <file>\n"
+			"  -p <product id>	set product id\n"
 			"  -h			show this screen\n");
 	exit(status);
 }
 
 int
-process_image(char *progname, char *filename, op_mode_t opmode)
+process_image(const char *progname, const char *filename, const op_mode_t opmode, const char *productid)
 {
 	int 		fd, len;
 	void 		*data, *ptr;
@@ -170,7 +171,7 @@ process_image(char *progname, char *filename, op_mode_t opmode)
 		hdr->tail.asus.kernel.minor = 0;
 		hdr->tail.asus.fs.major = 0;
 		hdr->tail.asus.fs.minor = 0;
-		strncpy((char *)&hdr->tail.asus.productid, "RT-N56U", IH_PRODLEN);
+		strncpy((char *)&hdr->tail.asus.productid, productid, IH_PRODLEN);
 	}
 
 	if (hdr->tail.asus.ih_ksz == 0)
@@ -252,12 +253,12 @@ int
 main(int argc, char **argv)
 {
 	int 		opt;
-	char 		*filename, *progname;
+	char 		*filename, *progname, *productid = "RT-N56U";
 	op_mode_t	opmode = NONE;
 
 	progname = argv[0];
 
-	while ((opt = getopt(argc, argv,":s:f:h?")) != -1) {
+	while ((opt = getopt(argc, argv,":s:f:p:h?")) != -1) {
 		switch (opt) {
 		case 's':
 			opmode = SYSUPGRADE;
@@ -266,6 +267,9 @@ main(int argc, char **argv)
 		case 'f':
 			opmode = FACTORY;
 			filename = optarg;
+			break;
+		case 'p':
+			productid = optarg;
 			break;
 		case 'h':
 			opmode = NONE;
@@ -284,7 +288,7 @@ main(int argc, char **argv)
 		break;
 	case FACTORY:
 	case SYSUPGRADE:
-		return process_image(progname, filename, opmode);
+		return process_image(progname, filename, opmode, productid);
 		break;
 	}
 
