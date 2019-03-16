@@ -1,0 +1,18 @@
+--- a/zones.c
++++ b/zones.c
+@@ -746,6 +746,15 @@ print_zone_rule(struct fw3_ipt_handle *h
+ 					                    handle->family, false)) || first_dest;
+ 				     first_dest = false)
+ 				{
++					/* make UDP MASQUERADE random port */
++					struct fw3_protocol udp = { .protocol = 17 };
++					r = fw3_ipt_rule_new(handle);
++					fw3_ipt_rule_proto(r, &udp);
++					fw3_ipt_rule_src_dest(r, msrc, mdest);
++					fw3_ipt_rule_target(r, "MASQUERADE");
++					fw3_ipt_rule_addarg(r, false, "--random-fully", NULL);
++					fw3_ipt_rule_append(r, "zone_%s_postrouting", zone->name);
++
+ 					r = fw3_ipt_rule_new(handle);
+ 					fw3_ipt_rule_src_dest(r, msrc, mdest);
+ 					fw3_ipt_rule_target(r, "MASQUERADE");
