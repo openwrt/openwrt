@@ -61,12 +61,10 @@ static struct mtd_partition librerouter_spi_partitions[] = {
 		.name		= "uboot",
 		.offset		= 0,
 		.size		= 0x0040000,
-		.mask_flags	= MTD_WRITEABLE,
 	}, {
 		.name		= "uboot-env",
 		.offset		= 0x0040000,
 		.size		= 0x0010000,
-		.mask_flags	= MTD_WRITEABLE,
 	}, {
 		.name		= "firmware",
 		.offset		= 0x0050000,
@@ -75,7 +73,6 @@ static struct mtd_partition librerouter_spi_partitions[] = {
 		.name		= "art",
 		.offset		= 0x0ff0000,
 		.size		= 0x0010000,
-		.mask_flags	= MTD_WRITEABLE,
 	}
 };
 
