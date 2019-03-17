@@ -1,0 +1,555 @@
+diff --git a/arch/mips/include/asm/mach-ralink/pinmux.h b/arch/mips/include/asm/mach-ralink/pinmux.h
+index ba8ac331a..e2974a04f 100644
+--- a/arch/mips/include/asm/mach-ralink/pinmux.h
++++ b/arch/mips/include/asm/mach-ralink/pinmux.h
+@@ -32,8 +32,7 @@ struct rt2880_pmx_func {
+ 	int pin_count;
+ 	int *pins;
+ 
+-	int *groups;
+-	int group_count;
++	int group_idx;
+ 
+ 	int enabled;
+ };
+diff --git a/drivers/pinctrl/pinctrl-rt2880.c b/drivers/pinctrl/pinctrl-rt2880.c
+index 4c3968bef..b6e38f389 100644
+--- a/drivers/pinctrl/pinctrl-rt2880.c
++++ b/drivers/pinctrl/pinctrl-rt2880.c
+@@ -1,10 +1,5 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+- *  linux/drivers/pinctrl/pinctrl-rt2880.c
+- *
+- *  This program is free software; you can redistribute it and/or modify
+- *  it under the terms of the GNU General Public License version 2 as
+- *  publishhed by the Free Software Foundation.
+- *
+  *  Copyright (C) 2013 John Crispin <blogic@openwrt.org>
+  */
+ 
+@@ -25,10 +20,17 @@
+ #include <asm/mach-ralink/mt7620.h>
+ 
+ #include "core.h"
++#include "pinctrl-utils.h"
+ 
+ #define SYSC_REG_GPIO_MODE	0x60
+ #define SYSC_REG_GPIO_MODE2	0x64
+ 
++struct rt2880_func_group_map {
++	const char *func_name;
++	const char **group_names;
++	int num_groups;
++};
++
+ struct rt2880_priv {
+ 	struct device *dev;
+ 
+@@ -42,7 +44,11 @@ struct rt2880_priv {
+ 	const char **group_names;
+ 	int group_count;
+ 
+-	uint8_t *gpio;
++	struct rt2880_func_group_map *func_to_group_map;
++	s16 *group_to_func_map;
++	int func_to_group_count;
++
++	u8 *gpio;
+ 	int max_pins;
+ };
+ 
+@@ -54,20 +60,17 @@ static int rt2880_get_group_count(struct pinctrl_dev *pctrldev)
+ }
+ 
+ static const char *rt2880_get_group_name(struct pinctrl_dev *pctrldev,
+-					 unsigned group)
++					 unsigned int group)
+ {
+ 	struct rt2880_priv *p = pinctrl_dev_get_drvdata(pctrldev);
+ 
+-	if (group >= p->group_count)
+-		return NULL;
+-
+-	return p->group_names[group];
++	return (group >= p->group_count) ? NULL : p->group_names[group];
+ }
+ 
+ static int rt2880_get_group_pins(struct pinctrl_dev *pctrldev,
+-				 unsigned group,
+-				 const unsigned **pins,
+-				 unsigned *num_pins)
++				 unsigned int group,
++				 const unsigned int **pins,
++				 unsigned int *num_pins)
+ {
+ 	struct rt2880_priv *p = pinctrl_dev_get_drvdata(pctrldev);
+ 
+@@ -80,78 +83,56 @@ static int rt2880_get_group_pins(struct pinctrl_dev *pctrldev,
+ 	return 0;
+ }
+ 
+-static void rt2880_pinctrl_dt_free_map(struct pinctrl_dev *pctrldev,
+-				    struct pinctrl_map *map, unsigned num_maps)
+-{
+-	int i;
+-
+-	for (i = 0; i < num_maps; i++)
+-		if (map[i].type == PIN_MAP_TYPE_CONFIGS_PIN ||
+-		    map[i].type == PIN_MAP_TYPE_CONFIGS_GROUP)
+-			kfree(map[i].data.configs.configs);
+-	kfree(map);
+-}
+-
+-static void rt2880_pinctrl_pin_dbg_show(struct pinctrl_dev *pctrldev,
+-					struct seq_file *s,
+-					unsigned offset)
+-{
+-	seq_printf(s, "ralink pio");
+-}
+-
+-static void rt2880_pinctrl_dt_subnode_to_map(struct pinctrl_dev *pctrldev,
+-				struct device_node *np,
+-				struct pinctrl_map **map)
+-{
+-        const char *function;
+-	int func = of_property_read_string(np, "ralink,function", &function);
+-	int grps = of_property_count_strings(np, "ralink,group");
+-	int i;
+-
+-	if (func || !grps)
+-		return;
+-
+-	for (i = 0; i < grps; i++) {
+-	        const char *group;
+-
+-		of_property_read_string_index(np, "ralink,group", i, &group);
+-
+-		(*map)->type = PIN_MAP_TYPE_MUX_GROUP;
+-		(*map)->name = function;
+-		(*map)->data.mux.group = group;
+-		(*map)->data.mux.function = function;
+-		(*map)++;
+-	}
+-}
+-
+ static int rt2880_pinctrl_dt_node_to_map(struct pinctrl_dev *pctrldev,
+-				struct device_node *np_config,
+-				struct pinctrl_map **map,
+-				unsigned *num_maps)
++					 struct device_node *np_config,
++					 struct pinctrl_map **map,
++					 unsigned int *num_maps)
+ {
+-	int max_maps = 0;
+-	struct pinctrl_map *tmp;
++	struct rt2880_priv *p = pinctrl_dev_get_drvdata(pctrldev);
+ 	struct device_node *np;
++	const char *function_name, *group_name;
++	int ret;
++	int n;
++	int i;
++	int ngroups = 0;
++	unsigned int reserved_maps = 0;
+ 
+-	for_each_child_of_node(np_config, np) {
+-		int ret = of_property_count_strings(np, "ralink,group");
+-
+-		if (ret >= 0)
+-			max_maps += ret;
++	for_each_child_of_node(np_config, np)
++		ngroups += of_property_count_strings(np, "ralink,group");
++
++	*map = NULL;
++	*num_maps = 0;
++	ret = pinctrl_utils_reserve_map(pctrldev, map, &reserved_maps,
++					num_maps, ngroups);
++	if (ret) {
++		dev_err(p->dev, "can't reserve map: %d\n", ret);
++		return ret;
+ 	}
+ 
+-	if (!max_maps)
+-		return -EINVAL;
+-
+-	*map = kzalloc(max_maps * sizeof(struct pinctrl_map), GFP_KERNEL);
+-	if (!*map)
+-		return -ENOMEM;
++	for_each_child_of_node(np_config, np) {
++		ret = of_property_read_string(np, "ralink,function",
++						 &function_name);
++		if (ret)
++			return ret;
+ 
+-	tmp = *map;
++		n = of_property_count_strings(np, "ralink,group");
++		if (n <= 0)
++			return -EINVAL;
+ 
+-	for_each_child_of_node(np_config, np)
+-		rt2880_pinctrl_dt_subnode_to_map(pctrldev, np, &tmp);
+-	*num_maps = max_maps;
++		for (i = 0; i < n; i++) {
++			of_property_read_string_index(np, "ralink,group",
++							i, &group_name);
++
++			ret = pinctrl_utils_add_map_mux(pctrldev,
++							map, &reserved_maps,
++							num_maps, group_name,
++							function_name);
++			if (ret) {
++				dev_err(p->dev, "can't add map: %d\n", ret);
++				return ret;
++			}
++		}
++	}
+ 
+ 	return 0;
+ }
+@@ -160,61 +141,62 @@ static const struct pinctrl_ops rt2880_pctrl_ops = {
+ 	.get_groups_count	= rt2880_get_group_count,
+ 	.get_group_name		= rt2880_get_group_name,
+ 	.get_group_pins		= rt2880_get_group_pins,
+-	.pin_dbg_show		= rt2880_pinctrl_pin_dbg_show,
+ 	.dt_node_to_map		= rt2880_pinctrl_dt_node_to_map,
+-	.dt_free_map		= rt2880_pinctrl_dt_free_map,
++	.dt_free_map		= pinctrl_utils_free_map,
+ };
+ 
+ static int rt2880_pmx_func_count(struct pinctrl_dev *pctrldev)
+ {
+ 	struct rt2880_priv *p = pinctrl_dev_get_drvdata(pctrldev);
+ 
+-	return p->func_count;
++	return p->func_to_group_count;
+ }
+ 
+ static const char *rt2880_pmx_func_name(struct pinctrl_dev *pctrldev,
+-					 unsigned func)
++					unsigned int func)
+ {
+ 	struct rt2880_priv *p = pinctrl_dev_get_drvdata(pctrldev);
+ 
+-	return p->func[func]->name;
++	return p->func_to_group_map[func].func_name;
+ }
+ 
+ static int rt2880_pmx_group_get_groups(struct pinctrl_dev *pctrldev,
+-				unsigned func,
+-				const char * const **groups,
+-				unsigned * const num_groups)
++				       unsigned int func,
++				       const char * const **groups,
++				       unsigned int * const num_groups)
+ {
+ 	struct rt2880_priv *p = pinctrl_dev_get_drvdata(pctrldev);
+ 
+-	if (p->func[func]->group_count == 1)
+-		*groups = &p->group_names[p->func[func]->groups[0]];
+-	else
+-		*groups = p->group_names;
+-
+-	*num_groups = p->func[func]->group_count;
++	*groups = p->func_to_group_map[func].group_names;
++	*num_groups = p->func_to_group_map[func].num_groups;
+ 
+ 	return 0;
+ }
+ 
+ static int rt2880_pmx_group_enable(struct pinctrl_dev *pctrldev,
+-				unsigned func,
+-				unsigned group)
++				   unsigned int func, unsigned int group)
+ {
+ 	struct rt2880_priv *p = pinctrl_dev_get_drvdata(pctrldev);
+-        u32 mode = 0;
++	u32 mode = 0;
+ 	u32 reg = SYSC_REG_GPIO_MODE;
+ 	int i;
+ 	int shift;
++	int func_in_grp;
+ 
+ 	/* dont allow double use */
+ 	if (p->groups[group].enabled) {
+-		dev_err(p->dev, "%s is already enabled\n", p->groups[group].name);
++		dev_err(p->dev, "%s is already enabled\n",
++			p->groups[group].name);
+ 		return -EBUSY;
+ 	}
+ 
++	func_in_grp =
++		p->group_to_func_map[(group * p->func_to_group_count) + func];
++	if (func_in_grp < 0)
++		return -EINVAL;
++
+ 	p->groups[group].enabled = 1;
+-	p->func[func]->enabled = 1;
++	p->func[func_in_grp]->enabled = 1;
+ 
+ 	shift = p->groups[group].shift;
+ 	if (shift >= 32) {
+@@ -232,9 +214,9 @@ static int rt2880_pmx_group_enable(struct pinctrl_dev *pctrldev,
+ 	if (func == 0) {
+ 		mode |= p->groups[group].gpio << shift;
+ 	} else {
+-		for (i = 0; i < p->func[func]->pin_count; i++)
+-			p->gpio[p->func[func]->pins[i]] = 0;
+-		mode |= p->func[func]->value << shift;
++		for (i = 0; i < p->func[func_in_grp]->pin_count; i++)
++			p->gpio[p->func[func_in_grp]->pins[i]] = 0;
++		mode |= p->func[func_in_grp]->value << shift;
+ 	}
+ 	rt_sysc_w32(mode, reg);
+ 
+@@ -243,7 +225,7 @@ static int rt2880_pmx_group_enable(struct pinctrl_dev *pctrldev,
+ 
+ static int rt2880_pmx_group_gpio_request_enable(struct pinctrl_dev *pctrldev,
+ 				struct pinctrl_gpio_range *range,
+-				unsigned pin)
++				unsigned int pin)
+ {
+ 	struct rt2880_priv *p = pinctrl_dev_get_drvdata(pctrldev);
+ 
+@@ -274,6 +256,111 @@ static struct rt2880_pmx_func gpio_func = {
+ 	.name = "gpio",
+ };
+ 
++static int rt2880_build_internal_map(struct rt2880_priv *p)
++{
++	int i, j;
++	struct rt2880_func_group_map *f_g;
++	struct rt2880_func_group_map *f_g_tmp;
++	int16_t *g_f;
++	int c = 0;
++	int ret = 0;
++
++	/* func_to_group_map[0] is used for gpio */
++	f_g = devm_kzalloc(p->dev, sizeof(f_g[0]) * 1, GFP_KERNEL);
++	if (!f_g) {
++		ret = -ENOMEM;
++		goto l_exit;
++	}
++	f_g[0].func_name = p->func[0]->name;
++	f_g[0].group_names = p->group_names;
++	f_g[0].num_groups = p->group_count;
++	c = 1;
++
++	/* parse function list which has entries with same function name */
++	/* (skip the "gpio" function entry) */
++	for (i = 1; i < p->func_count; i++) {
++		if (!strcmp(p->func[i]->name, "gpio"))
++			continue;
++
++		for (j = 1; j < c; j++)
++			if (!strcmp(f_g[j].func_name, p->func[i]->name))
++				break;
++		if (j < c) {
++			int n;
++			const char **names_tmp;
++
++			n = f_g[j].num_groups;
++			names_tmp = devm_kzalloc(p->dev,
++					sizeof(char *) * (n + 1), GFP_KERNEL);
++			if (!names_tmp) {
++				ret = -ENOMEM;
++				goto l_exit;
++			}
++			memcpy(names_tmp,
++				f_g[j].group_names, sizeof(char *) * n);
++			devm_kfree(p->dev, f_g[j].group_names);
++			f_g[j].group_names = names_tmp;
++
++			f_g[j].group_names[n] =
++				p->group_names[p->func[i]->group_idx];
++			f_g[j].num_groups++;
++		} else{
++			/* add a new entry */
++			f_g_tmp = f_g;
++			f_g = devm_kzalloc(p->dev,
++					sizeof(f_g[0]) * (c + 1), GFP_KERNEL);
++			if (!f_g) {
++				ret = -ENOMEM;
++				goto l_exit;
++			}
++			memcpy(f_g, f_g_tmp, sizeof(f_g[0]) * c);
++			devm_kfree(p->dev, f_g_tmp);
++
++			f_g[c].group_names = devm_kzalloc(p->dev,
++					sizeof(char *) * 1, GFP_KERNEL);
++			if (!f_g[c].group_names) {
++				ret = -ENOMEM;
++				goto l_exit;
++			}
++
++			f_g[c].func_name = p->func[i]->name;
++			f_g[c].group_names[0] =
++					p->group_names[p->func[i]->group_idx];
++			f_g[c].num_groups = 1;
++
++			c++;
++		}
++	}
++
++	g_f = devm_kzalloc(p->dev,
++			sizeof(int16_t) * p->group_count * c, GFP_KERNEL);
++	if (!g_f) {
++		ret = -ENOMEM;
++		goto l_exit;
++	}
++	for (i = 0; i < p->group_count; i++) {
++		g_f[(i * c) + 0] = 0;	/* always map as "gpio" */
++
++		for (j = 1; j < c; j++)
++			g_f[(i * c) + j] = -1;
++	}
++
++	for (i = 1 ; i < p->func_count; i++) {
++		for (j = 1; j < c; j++)
++			if (!strcmp(f_g[j].func_name, p->func[i]->name))
++				break;
++		if (j < c)
++			g_f[(p->func[i]->group_idx * c) + j] = i;
++	}
++
++	p->group_to_func_map = g_f;
++	p->func_to_group_map = f_g;
++	p->func_to_group_count = c;
++
++l_exit:
++	return ret;
++}
++
+ static int rt2880_pinmux_index(struct rt2880_priv *p)
+ {
+ 	struct rt2880_pmx_func **f;
+@@ -287,7 +374,8 @@ static int rt2880_pinmux_index(struct rt2880_priv *p)
+ 	}
+ 
+ 	/* allocate the group names array needed by the gpio function */
+-	p->group_names = devm_kzalloc(p->dev, sizeof(char *) * p->group_count, GFP_KERNEL);
++	p->group_names = devm_kcalloc(p->dev, p->group_count,
++				      sizeof(char *), GFP_KERNEL);
+ 	if (!p->group_names)
+ 		return -1;
+ 
+@@ -300,16 +388,11 @@ static int rt2880_pinmux_index(struct rt2880_priv *p)
+ 	p->func_count++;
+ 
+ 	/* allocate our function and group mapping index buffers */
+-	f = p->func = devm_kzalloc(p->dev, sizeof(struct rt2880_pmx_func) * p->func_count, GFP_KERNEL);
+-	gpio_func.groups = devm_kzalloc(p->dev, sizeof(int) * p->group_count, GFP_KERNEL);
+-	if (!f || !gpio_func.groups)
++	f = p->func = devm_kcalloc(p->dev, p->func_count, sizeof(*f),
++			GFP_KERNEL);
++	if (!f)
+ 		return -1;
+ 
+-	/* add a backpointer to the function so it knows its group */
+-	gpio_func.group_count = p->group_count;
+-	for (i = 0; i < gpio_func.group_count; i++)
+-		gpio_func.groups[i] = i;
+-
+ 	f[c] = &gpio_func;
+ 	c++;
+ 
+@@ -317,27 +400,32 @@ static int rt2880_pinmux_index(struct rt2880_priv *p)
+ 	for (i = 0; i < p->group_count; i++) {
+ 		for (j = 0; j < p->groups[i].func_count; j++) {
+ 			f[c] = &p->groups[i].func[j];
+-			f[c]->groups = devm_kzalloc(p->dev, sizeof(int), GFP_KERNEL);
+-			f[c]->groups[0] = i;
+-			f[c]->group_count = 1;
++			f[c]->group_idx = i;
+ 			c++;
+ 		}
+ 	}
+-	return 0;
++
++	return rt2880_build_internal_map(p);
+ }
+ 
+ static int rt2880_pinmux_pins(struct rt2880_priv *p)
+ {
+ 	int i, j;
+ 
+-	/* loop over the functions and initialize the pins array. also work out the highest pin used */
++	/*
++	 * loop over the functions and initialize the pins array.
++	 * also work out the highest pin used.
++	 */
+ 	for (i = 0; i < p->func_count; i++) {
+ 		int pin;
+ 
+ 		if (!p->func[i]->pin_count)
+ 			continue;
+ 
+-		p->func[i]->pins = devm_kzalloc(p->dev, sizeof(int) * p->func[i]->pin_count, GFP_KERNEL);
++		p->func[i]->pins = devm_kcalloc(p->dev,
++						p->func[i]->pin_count,
++						sizeof(int),
++						GFP_KERNEL);
+ 		for (j = 0; j < p->func[i]->pin_count; j++)
+ 			p->func[i]->pins[j] = p->func[i]->pin_first + j;
+ 
+@@ -347,18 +435,16 @@ static int rt2880_pinmux_pins(struct rt2880_priv *p)
+ 	}
+ 
+ 	/* the buffer that tells us which pins are gpio */
+-	p->gpio = devm_kzalloc(p->dev,sizeof(uint8_t) * p->max_pins,
+-		GFP_KERNEL);
++	p->gpio = devm_kcalloc(p->dev, p->max_pins, sizeof(u8), GFP_KERNEL);
+ 	/* the pads needed to tell pinctrl about our pins */
+-	p->pads = devm_kzalloc(p->dev,
+-		sizeof(struct pinctrl_pin_desc) * p->max_pins,
+-		GFP_KERNEL);
+-	if (!p->pads || !p->gpio ) {
++	p->pads = devm_kcalloc(p->dev, p->max_pins,
++			       sizeof(struct pinctrl_pin_desc), GFP_KERNEL);
++	if (!p->pads || !p->gpio) {
+ 		dev_err(p->dev, "Failed to allocate gpio data\n");
+ 		return -ENOMEM;
+ 	}
+ 
+-	memset(p->gpio, 1, sizeof(uint8_t) * p->max_pins);
++	memset(p->gpio, 1, sizeof(u8) * p->max_pins);
+ 	for (i = 0; i < p->func_count; i++) {
+ 		if (!p->func[i]->pin_count)
+ 			continue;
+@@ -375,10 +461,8 @@ static int rt2880_pinmux_pins(struct rt2880_priv *p)
+ 		/* strlen("ioXY") + 1 = 5 */
+ 		char *name = devm_kzalloc(p->dev, 5, GFP_KERNEL);
+ 
+-		if (!name) {
+-			dev_err(p->dev, "Failed to allocate pad name\n");
++		if (!name)
+ 			return -ENOMEM;
+-		}
+ 		snprintf(name, 5, "io%d", i);
+ 		p->pads[i].number = i;
+ 		p->pads[i].name = name;
+@@ -396,7 +480,7 @@ static int rt2880_pinmux_probe(struct platform_device *pdev)
+ 	struct device_node *np;
+ 
+ 	if (!rt2880_pinmux_data)
+-		return -ENOSYS;
++		return -ENOTSUPP;
+ 
+ 	/* setup the private data */
+ 	p = devm_kzalloc(&pdev->dev, sizeof(struct rt2880_priv), GFP_KERNEL);
+@@ -437,7 +521,7 @@ static int rt2880_pinmux_probe(struct platform_device *pdev)
+ 			return -EINVAL;
+ 		}
+ 
+-		range = devm_kzalloc(p->dev, sizeof(struct pinctrl_gpio_range) + 4, GFP_KERNEL);
++		range = devm_kzalloc(p->dev, sizeof(*range) + 4, GFP_KERNEL);
+ 		range->name = name = (char *) &range[1];
+ 		sprintf(name, "pio");
+ 		range->npins = __be32_to_cpu(*ngpio);
+@@ -459,7 +543,6 @@ static struct platform_driver rt2880_pinmux_driver = {
+ 	.probe = rt2880_pinmux_probe,
+ 	.driver = {
+ 		.name = "rt2880-pinmux",
+-		.owner = THIS_MODULE,
+ 		.of_match_table = rt2880_pinmux_match,
+ 	},
+ };
