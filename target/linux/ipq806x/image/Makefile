@@ -244,6 +244,18 @@ define Device/qcom_ipq8064-db149
 endef
 TARGET_DEVICES += qcom_ipq8064-db149
 
+define Device/qxwlan_e5200
+	$(call Device/LegacyImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Qxwlan
+	DEVICE_MODEL := E5200
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := qcom-ipq8064
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
+endef
+TARGET_DEVICES += qxwlan_e5200
+
 define Device/tplink_c2600
 	$(call Device/TpSafeImage)
 	DEVICE_DTS := qcom-ipq8064-c2600

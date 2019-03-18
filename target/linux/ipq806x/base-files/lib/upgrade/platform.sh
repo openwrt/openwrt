@@ -22,6 +22,7 @@ platform_do_upgrade() {
 	netgear,r7800 |\
 	qcom,ipq8064-ap148 |\
 	qcom,ipq8064-ap161 |\
+	qxwlan,e5200 |\
 	zyxel,nbg6817)
 		nand_do_upgrade "$ARGV"
 		;;
