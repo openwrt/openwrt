@@ -19,7 +19,7 @@ define Package/wireless-regdb
 endef
 
 define Build/Compile
-	python $(PKG_BUILD_DIR)/db2fw.py $(PKG_BUILD_DIR)/regulatory.db $(PKG_BUILD_DIR)/db.txt
+	$(PYTHON) $(PKG_BUILD_DIR)/db2fw.py $(PKG_BUILD_DIR)/regulatory.db $(PKG_BUILD_DIR)/db.txt
 endef
 
 define Package/wireless-regdb/install
