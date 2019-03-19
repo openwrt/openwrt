@@ -21,10 +21,13 @@ define Host/Configure
 endef
 
 define Host/Compile
+	cd $(HOST_BUILD_DIR) && $(PYTHON) bootstrap.py build/scons
 endef
 
 define Host/Install
-	./files/pywrap.sh $(HOST_BUILD_DIR)/setup.py install --prefix=$(STAGING_DIR_HOST)
+	cp ./files/pywrap.sh $(HOST_BUILD_DIR)/build/scons/
+	cd $(HOST_BUILD_DIR)/build/scons && \
+	    ./pywrap.sh setup.py install --prefix=$(STAGING_DIR_HOST)
 	rm -f $(STAGING_DIR_HOST)/bin/scons*.py
 	for bin in $(STAGING_DIR_HOST)/bin/scons*; do \
 		mv "$$$$bin" "$$$$bin.py";                \
