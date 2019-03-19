@@ -180,6 +180,8 @@ proto_qmi_setup() {
 	fi
 
 	uqmi -s -d "$device" --sync > /dev/null 2>&1
+	# Wait for connection context release
+	sleep 5
 
 	echo "Waiting for network registration"
 	local registration_timeout=0
