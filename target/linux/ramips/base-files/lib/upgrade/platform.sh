@@ -37,11 +37,11 @@ platform_do_upgrade() {
 
 	case "$board" in
 	hc5962|\
-	mir3g|\
 	r6220|\
 	netgear,r6350|\
 	ubnt-erx|\
 	ubnt-erx-sfp|\
+	xiaomi,mir3g|\
 	xiaomi,mir3p)
 		nand_do_upgrade "$ARGV"
 		;;
