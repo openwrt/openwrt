@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # b43 firmware file squasher
 # Removes unnecessary firmware files
@@ -12,7 +12,7 @@ import sys
 import os
 
 def usage():
-	print("Usage: %s PHYTYPES COREREVS /path/to/extracted/firmware" % sys.argv[0])
+	print(("Usage: %s PHYTYPES COREREVS /path/to/extracted/firmware" % sys.argv[0]))
 	print("")
 	print("PHYTYPES is a comma separated list of:")
 	print("A         => A-PHY")
@@ -37,17 +37,17 @@ fwpath = sys.argv[3]
 
 phytypes = phytypes.split(',')
 try:
-	corerevs = map(lambda r: int(r), corerevs.split(','))
+	corerevs = [int(r) for r in corerevs.split(',')]
 except ValueError:
-	print("ERROR: \"%s\" is not a valid COREREVS string\n" % corerevs)
+	print(("ERROR: \"%s\" is not a valid COREREVS string\n" % corerevs))
 	usage()
 	sys.exit(1)
 
 
 fwfiles = os.listdir(fwpath)
-fwfiles = filter(lambda str: str.endswith(".fw"), fwfiles)
+fwfiles = [str for str in fwfiles if str.endswith(".fw")]
 if not fwfiles:
-	print("ERROR: No firmware files found in %s" % fwpath)
+	print(("ERROR: No firmware files found in %s" % fwpath))
 	sys.exit(1)
 
 required_fwfiles = []
@@ -140,10 +140,10 @@ for f in fwfiles:
 		   phytypes_match(phytypes, initvalmapping[f][1]):
 			required_fwfiles += [f]
 		continue
-	print("WARNING: Firmware file %s not found in the mapping lists" % f)
+	print(("WARNING: Firmware file %s not found in the mapping lists" % f))
 
 for f in fwfiles:
 	if f not in required_fwfiles:
-		print("Deleting %s" % f)
+		print(("Deleting %s" % f))
 		os.unlink(fwpath + '/' + f)
 
