@@ -176,12 +176,14 @@ proto_wireguard_setup() {
   done
 
   # endpoint dependency
-  wg show "${config}" endpoints | \
-    sed -E 's/\[?([0-9.:a-f]+)\]?:([0-9]+)/\1 \2/' | \
-    while IFS=$'\t ' read -r key address port; do
-    [ -n "${port}" ] || continue
-    proto_add_host_dependency "${config}" "${address}"
-  done
+  if [ ! "${fwmark}" ]; then
+    wg show "${config}" endpoints | \
+      sed -E 's/\[?([0-9.:a-f]+)\]?:([0-9]+)/\1 \2/' | \
+      while IFS=$'\t ' read -r key address port; do
+      [ -n "${port}" ] || continue
+      proto_add_host_dependency "${config}" "${address}"
+    done
+  fi
 
   proto_send_update "${config}"
 }
