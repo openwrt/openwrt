@@ -888,7 +888,7 @@
  		*sum = csum_fold(csum_partial(diff, sizeof(diff),
 --- a/drivers/net/vxlan.c
 +++ b/drivers/net/vxlan.c
-@@ -1789,15 +1789,15 @@ static int vxlan_build_skb(struct sk_buf
+@@ -1800,15 +1800,15 @@ static int vxlan_build_skb(struct sk_buf
  		goto out_free;
  
  	vxh = (struct vxlanhdr *) __skb_push(skb, sizeof(*vxh));
