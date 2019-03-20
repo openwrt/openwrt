@@ -452,6 +452,9 @@ zbt-we826-16M|\
 zbt-we826-32M)
 	set_wifi_led "zbt-we826:green:wifi"
 	;;
+zbt-we826-e)
+	set_wifi_led "zbt-we826-e:red:wifi"
+	;;
 zbtlink,zbt-we1226)
 	set_wifi_led "$boardname:green:wlan"
 	ucidef_set_led_switch "lan1" "LAN1" "$boardname:green:lan1" "switch0" "0x01"
