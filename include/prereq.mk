@@ -66,6 +66,17 @@ define RequireHeader
   $$(eval $$(call Require,$(1),$(2)))
 endef
 
+define CleanupPython2
+  define Require/python2-cleanup
+	[ -f "$(STAGING_DIR_HOST)/bin/python" ] && \
+		$(STAGING_DIR_HOST)/bin/python -V 2>&1 | \
+		grep -E 'Python 3\.[5-9]\.?' > /dev/null 2>&1 || \
+		rm $(STAGING_DIR_HOST)/bin/python
+  endef
+
+  $$(eval $$(call Require,python2-cleanup))
+endef
+
 define QuoteHostCommand
 '$(subst ','"'"',$(strip $(1)))'
 endef

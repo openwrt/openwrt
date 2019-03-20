@@ -141,6 +141,8 @@ $(eval $(call SetupHostCommand,wget,Please install GNU 'wget', \
 $(eval $(call SetupHostCommand,perl,Please install Perl 5.x, \
 	perl --version | grep "perl.*v5"))
 
+$(eval $(call CleanupPython2))
+
 $(eval $(call SetupHostCommand,python,Please install Python >= 3.5, \
 	python3.7 -V 2>&1 | grep -E 'Python 3\.[5-9]\.?', \
 	python3.6 -V 2>&1 | grep -E 'Python 3\.[5-9]\.?', \
