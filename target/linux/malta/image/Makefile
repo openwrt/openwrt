@@ -43,9 +43,23 @@ define Image/Build/Initramfs
 	cp $(KDIR)/vmlinux-initramfs $(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs.bin
 endef
 
+define Image/Build/gzip
+	gzip -f9n $(BIN_DIR)/$(IMG_PREFIX)-root.$(1)
+endef
+
+ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
+  define Image/Build/gzip/ext4
+	$(call Image/Build/gzip,ext4)
+  endef
+  define Image/Build/gzip/squashfs
+	$(call Image/Build/gzip,squashfs)
+  endef
+endif
+
 define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
+	$(call Image/Build/gzip/$(1))
 endef
 
 $(eval $(call BuildImage))

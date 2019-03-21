@@ -12,7 +12,7 @@ CPU_TYPE:=24kc
 SUBTARGETS:=le be le64 be64
 INITRAMFS_EXTRA_FILES:=
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
-FEATURES:=ramdisk
+FEATURES:=cpiogz ext4 ramdisk squashfs targz
 
 KERNEL_PATCHVER:=4.14
 
