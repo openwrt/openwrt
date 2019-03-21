@@ -501,6 +501,15 @@ define Device/ocedo_raccoon
 endef
 TARGET_DEVICES += ocedo_raccoon
 
+define Device/ocedo_ursus
+  ATH_SOC := qca9558
+  DEVICE_TITLE := OCEDO Ursus
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 7424k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += ocedo_ursus
+
 define Device/openmesh_om5p-ac-v2
   ATH_SOC := qca9558
   DEVICE_TITLE := OpenMesh OM5P-AC v2

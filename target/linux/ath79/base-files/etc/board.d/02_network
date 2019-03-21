@@ -79,7 +79,8 @@ ath79_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
 	devolo,dvl1200e|\
-	devolo,dvl1750e)
+	devolo,dvl1750e|\
+	ocedo,ursus)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
 	dlink,dir-825-b1)

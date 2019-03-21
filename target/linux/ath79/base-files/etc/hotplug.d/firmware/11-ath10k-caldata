@@ -119,7 +119,8 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac_crc $(mtd_get_mac_text board_data 2176)
 		;;
-	ocedo,koala)
+	ocedo,koala|\
+	ocedo,ursus)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(mtd_get_mac_binary art 12)
 		;;
