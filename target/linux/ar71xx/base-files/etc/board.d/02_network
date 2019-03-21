@@ -189,7 +189,7 @@ ar71xx_setup_interfaces()
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
 		;;
 	gl-mifi-v3)
-		ucidef_set_interfaces_lan_wan " " "eth0"
+		ucidef_set_interface_lan "eth0"
 		;;
 	rb-750-r2|\
 	rb-750p-pbr2|\

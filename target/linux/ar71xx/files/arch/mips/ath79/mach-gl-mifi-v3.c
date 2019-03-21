@@ -9,6 +9,7 @@
  */
 
 #include <linux/gpio.h>
+#include <linux/sysfs.h>
 #include <linux/i2c.h>
 #include <linux/i2c-gpio.h>
 #include <linux/platform_device.h>
@@ -27,6 +28,8 @@
 #include "machtypes.h"
 
 #define GL_MIFI_V3_GPIO_BTN_RESET		3
+#define GL_MIFI_V3_GPIO_BTN_SWITCH		1
+#define GL_MIFI_V3_GPIO_4G_POWER		0
 
 #define GL_MIFI_V3_KEYS_POLL_INTERVAL	20
 #define GL_MIFI_V3_KEYS_DEBOUNCE_INTERVAL	(3 * GL_MIFI_V3_KEYS_POLL_INTERVAL)
@@ -42,6 +45,14 @@ static struct gpio_keys_button gl_mifi_v3_gpio_keys[] __initdata = {
 		.code			= KEY_RESTART,
 		.debounce_interval	= GL_MIFI_V3_KEYS_DEBOUNCE_INTERVAL,
 		.gpio			= GL_MIFI_V3_GPIO_BTN_RESET,
+		.active_low		= 1,
+	},
+	{
+		.desc			= "right",
+		.type			= EV_KEY,
+		.code			= BTN_0,
+		.debounce_interval	= GL_MIFI_V3_KEYS_DEBOUNCE_INTERVAL,
+		.gpio			= GL_MIFI_V3_GPIO_BTN_SWITCH,
 		.active_low		= 1,
 	},
 };
@@ -94,9 +105,20 @@ static void __init gl_mifi_v3_setup(void)
 					ARRAY_SIZE(gl_mifi_v3_gpio_keys),
 					gl_mifi_v3_gpio_keys);
 
+	gpio_request_one(GL_MIFI_V3_GPIO_4G_POWER, GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,"4G POWER");
+	/* Export all the GPIO */
+	/*gpio_request_one(2,GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_CHANGEABLE ,"GPIO2");
+	gpio_request_one(4,GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_CHANGEABLE ,"GPIO4");
+	gpio_request_one(12,GPIOF_OUT_INIT_LOW ,"GPIO12");
+	gpio_request_one(13,GPIOF_OUT_INIT_LOW ,"GPIO13");
+	gpio_request_one(14,GPIOF_OUT_INIT_LOW ,"GPIO14");
+	gpio_request_one(15,GPIOF_OUT_INIT_LOW ,"GPIO15");
+	gpio_request_one(16,GPIOF_OUT_INIT_LOW ,"GPIO16");
+	gpio_request_one(17,GPIOF_OUT_INIT_LOW ,"GPIO17");*/
+
 	ath79_register_usb();
 
-	ath79_register_wmac(art + GL_MIFI_V3_WMAC2G_CALDATA_OFFSET, NULL);
+	ath79_register_wmac(art + GL_MIFI_V3_WMAC2G_CALDATA_OFFSET, art + GL_MIFI_V3_WMAC2G_CALDATA_OFFSET + 2);
 
 	ap91_pci_init(art + GL_MIFI_V3_WMAC5G_CALDATA_OFFSET, NULL);
 }
