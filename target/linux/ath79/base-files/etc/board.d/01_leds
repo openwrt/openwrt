@@ -47,6 +47,14 @@ comfast,cf-e120a-v3)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "$boardname:green:rssimediumhigh" "wlan0" "51" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "$boardname:green:rssihigh" "wlan0" "76" "100"
 	;;
+comfast,cf-e5)
+	ucidef_set_led_switch "lan" "LAN" "$boardname:blue:lan" "switch0" "0x02"
+	ucidef_set_led_netdev "wan" "WAN" "$boardname:blue:wan" "eth0"
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "$boardname:blue:rssi0" "wlan0" "1" "100"
+	ucidef_set_led_rssi "rssimedium" "RSSIMEDIUM" "$boardname:blue:rssi1" "wlan0" "33" "100"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "$boardname:blue:rssi2" "wlan0" "66" "100"
+	;;
 dlink,dir-859-a1)
 	ucidef_set_led_switch "internet" "WAN" "$boardname:green:internet" "switch0" "0x20"
 	;;
