@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.8.2
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://git.netfilter.org/iptables
@@ -492,7 +492,7 @@ define Package/libiptc
 $(call Package/iptables/Default)
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+libip4tc +libip6tc +libxtables
+  DEPENDS:=+libip4tc +IPV6:libip6tc +libxtables
   ABI_VERSION:=0
   TITLE:=IPv4/IPv6 firewall - shared libiptc library (nf compatibility stub)
 endef
@@ -512,7 +512,7 @@ $(call Package/iptables/Default)
   CATEGORY:=Libraries
   TITLE:=IPv6 firewall - shared libiptc library
   ABI_VERSION:=0
-  DEPENDS:=+libxtables
+  DEPENDS:=@IPV6 +libxtables
 endef
 
 define Package/libxtables
