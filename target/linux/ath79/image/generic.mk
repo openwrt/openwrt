@@ -179,6 +179,15 @@ define Device/comfast_cf-e314n-v2
 endef
 TARGET_DEVICES += comfast_cf-e314n-v2
 
+define Device/comfast_cf-e5
+  ATH_SOC := qca9531
+  DEVICE_TITLE := COMFAST CF-E5/E7
+  DEVICE_PACKAGES := rssileds kmod-leds-gpio kmod-usb-core kmod-usb2 kmod-usb-net \
+	kmod-usb-net-qmi-wwan -swconfig -uboot-envtools
+  IMAGE_SIZE := 16192k
+endef
+TARGET_DEVICES += comfast_cf-e5
+
 define Device/devolo_dvl1200e
   ATH_SOC := qca9558
   DEVICE_TITLE := devolo WiFi pro 1200e
