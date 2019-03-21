@@ -4,7 +4,7 @@ define Device/armada-macchiatobin
   KERNEL_NAME := Image
   KERNEL := kernel-bin
   DEVICE_TITLE := MACCHIATObin (SolidRun Armada 8040 Community Board)
-  DEVICE_PACKAGES := e2fsprogs ethtool mkf2fs kmod-fs-vfat kmod-mmc
+  DEVICE_PACKAGES := e2fsprogs ethtool mkf2fs kmod-fs-vfat kmod-mmc kmod-i2c-core kmod-i2c-mux kmod-i2c-mux-pca954x
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   DEVICE_DTS := armada-8040-mcbin
