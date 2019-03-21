@@ -105,7 +105,6 @@ CONFIGURE_ARGS += \
 	--disable-valgrindtk \
 	--without-included-gettext \
 	--with-pagesize=4 \
-	--enable-lto
 
 define Package/valgrind/install	
 	$(INSTALL_DIR) $(1)/usr/bin
