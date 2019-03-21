@@ -773,6 +773,22 @@ endef
 $(eval $(call KernelPackage,sched-flower))
 
 
+define KernelPackage/sched-act-vlan
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic VLAN manipulation
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_ACT_VLAN
+  FILES:=$(LINUX_DIR)/net/sched/act_vlan.ko
+  AUTOLOAD:=$(call AutoProbe, act_vlan)
+endef
+
+define KernelPackage/sched-act-vlan/description
+ Allows to configure rules to push or pop vlan headers.
+endef
+
+$(eval $(call KernelPackage,sched-act-vlan))
+
+
 define KernelPackage/sched-mqprio
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Multi-queue priority scheduler (MQPRIO)
