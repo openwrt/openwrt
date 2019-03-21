@@ -757,6 +757,22 @@ endef
 $(eval $(call KernelPackage,sched-core))
 
 
+define KernelPackage/sched-flower
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Flower traffic classifier
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_CLS_FLOWER
+  FILES:=$(LINUX_DIR)/net/sched/cls_flower.ko
+  AUTOLOAD:=$(call AutoProbe, cls_flower)
+endef
+
+define KernelPackage/sched-flower/description
+ Allows to classify packets based on a configurable combination of packet keys and masks.
+endef
+
+$(eval $(call KernelPackage,sched-flower))
+
+
 define KernelPackage/sched-mqprio
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Multi-queue priority scheduler (MQPRIO)
