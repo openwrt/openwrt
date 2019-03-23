@@ -196,6 +196,15 @@ define Device/buffalo_wsr-1166dhp
 endef
 TARGET_DEVICES += buffalo_wsr-1166dhp
 
+define Device/buffalo_wsr-2533dhpl
+  IMAGE_SIZE := 7936k
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := WSR-2533DHPL
+  IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
+  DEVICE_PACKAGES := kmod-mt7615e wpad-basic
+endef
+TARGET_DEVICES += buffalo_wsr-2533dhpl
+
 define Device/buffalo_wsr-600dhp
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Buffalo
