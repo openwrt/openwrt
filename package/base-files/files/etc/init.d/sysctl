@@ -7,15 +7,19 @@ apply_defaults() {
 	local mem="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
 	local min_free frag_low_thresh frag_high_thresh
 
-	if [ "$mem" -gt 65536 ]; then # 128M
-		min_free=16384
-	elif [ "$mem" -gt 32768 ]; then # 64M
-		min_free=8192
-	else
-		min_free=1024
-		frag_low_thresh=393216
-		frag_high_thresh=524288
-	fi
+        if [ "$mem" -gt 65536 ]; then # 128M
+                min_free=16384
+        elif [ "$mem" -gt 32768 ]; then # 64M
+                min_free=8192
+        elif [ "$mem" -gt 28672 ]; then # 32M
+                min_free=4096
+        elif [ "$mem" -gt 12288 ]; then # 16M
+                min_free=2048
+        else # 8M
+                min_free=1024
+                frag_low_thresh=393216 # Depreciated after Linux 4.17
+                frag_high_thresh=524288
+        fi
 
 	sysctl -qw vm.min_free_kbytes="$min_free"
 
