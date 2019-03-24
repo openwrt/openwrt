@@ -1,0 +1,61 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 23 Mar 2019 18:26:10 +0100
+Subject: [PATCH] net: use bulk free in kfree_skb_list
+
+Since we're freeing multiple skbs, we might as well use bulk free to save a
+few cycles. Use the same conditions for bulk free as in napi_consume_skb.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -666,12 +666,44 @@ EXPORT_SYMBOL(kfree_skb);
+ 
+ void kfree_skb_list(struct sk_buff *segs)
+ {
+-	while (segs) {
+-		struct sk_buff *next = segs->next;
++	struct sk_buff *next = segs;
++	void *skbs[16];
++	int n_skbs = 0;
+ 
+-		kfree_skb(segs);
+-		segs = next;
++	while ((segs = next) != NULL) {
++		next = segs->next;
++
++		if (segs->fclone != SKB_FCLONE_UNAVAILABLE) {
++			kfree_skb(segs);
++			continue;
++		}
++
++		if (!skb_unref(segs))
++			continue;
++
++		trace_kfree_skb(segs, __builtin_return_address(0));
++
++		/* drop skb->head and call any destructors for packet */
++		skb_release_all(segs);
++
++#ifdef CONFIG_SLUB
++		/* SLUB writes into objects when freeing */
++		prefetchw(segs);
++#endif
++
++		skbs[n_skbs++] = segs;
++
++		if (n_skbs < ARRAY_SIZE(skbs))
++			continue;
++
++		kmem_cache_free_bulk(skbuff_head_cache, n_skbs, skbs);
++		n_skbs = 0;
+ 	}
++
++	if (!n_skbs)
++		return;
++
++	kmem_cache_free_bulk(skbuff_head_cache, n_skbs, skbs);
+ }
+ EXPORT_SYMBOL(kfree_skb_list);
+ 
