@@ -243,6 +243,16 @@ define Device/tplink_tl-wr842n-v2
 endef
 TARGET_DEVICES += tplink_tl-wr842n-v2
 
+define Device/tplink_tl-wr842n-v3
+  $(Device/tplink-16mlzma)
+  ATH_SOC := qca9533
+  DEVICE_TITLE := TP-Link TL-WR842N v3
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x8420003
+  SUPPORTED_DEVICES += tl-wr842n-v3
+endef
+TARGET_DEVICES += tplink_tl-wr842n-v3
+
 define Device/tplink_tl-wr1043nd-v2
   $(Device/tplink-8mlzma)
   ATH_SOC := qca9558
