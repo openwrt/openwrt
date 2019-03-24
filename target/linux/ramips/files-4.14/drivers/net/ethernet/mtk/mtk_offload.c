@@ -370,8 +370,8 @@ static int mtk_ppe_start(struct mtk_eth *eth)
 	mtk_w32(eth, 0x55555555, MTK_REG_PPE_DFT_CPORT);
 #endif
 
-	/* drop packets with TTL=0 */
-	mtk_m32(eth, 0, MTK_PPE_GLO_CFG_TTL0_DROP, MTK_REG_PPE_GLO_CFG);
+	/* allow packets with TTL=0 */
+	mtk_m32(eth, MTK_PPE_GLO_CFG_TTL0_DROP, 0, MTK_REG_PPE_GLO_CFG);
 
 	/* send all traffic from gmac to the ppe */
 	mtk_m32(eth, 0xffff, 0x4444, MTK_GDMA_FWD_CFG(0));
