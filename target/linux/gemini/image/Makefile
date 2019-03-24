@@ -152,6 +152,7 @@ TARGET_DEVICES += dlink_dir-685
 define Device/dlink_dns-313
 	DEVICE_TITLE := D-Link DNS-313 1-Bay Network Storage Enclosure
 	DEVICE_DTS := gemini-dlink-dns-313
+	DEVICE_TYPE := nas
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 	BLOCKSIZE := 1k
 	FILESYSTEMS := ext4
