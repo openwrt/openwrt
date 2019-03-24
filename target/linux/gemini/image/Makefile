@@ -180,6 +180,7 @@ define Device/raidsonic_ib-4220-b
 	$(Device/itian-raidsonic)
 	DEVICE_TITLE := Raidsonic NAS IB-4220-B
 	DEVICE_DTS := gemini-nas4220b
+	DEVICE_TYPE := nas
 endef
 TARGET_DEVICES += raidsonic_ib-4220-b
 
