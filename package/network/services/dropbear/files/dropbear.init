@@ -12,6 +12,54 @@ PIDCOUNT=0
 EXTRA_COMMANDS="killclients"
 EXTRA_HELP="	killclients Kill ${NAME} processes except servers and yourself"
 
+_dropbearkey()
+{
+	/usr/bin/dropbearkey "$@" 0<&- 1>&- 2>&-
+}
+
+# $1 - host key file name
+hk_verify()
+{
+	[ -f "$1" ] || return 1
+	[ -s "$1" ] || return 2
+	_dropbearkey -y -f "$1" || return 3
+	return 0
+}
+
+# $1 - hk_verify() return code
+hk_errmsg()
+{
+	case "$1" in
+	0) ;;
+	1) echo "file does not exist" ;;
+	2) echo "file has zero length" ;;
+	3) echo "file is not valid host key or not supported" ;;
+	*) echo "unknown error" ;;
+	esac
+}
+
+# $1 - config option
+# $2 - host key file name
+hk_config()
+{
+	local x m
+	hk_verify "$2"; x=$?
+	case "$x" in
+	0)	procd_append_param command -r "$2"
+		;;
+	*)	m=$(hk_errmsg "$x")
+		logger -t "${NAME}" -p daemon.warn \
+		  "option '$1', value '$2': $m, skipping"
+		;;
+	esac
+}
+
+# $1 - host key file name
+hk_config__keyfile()
+{
+	hk_config 'keyfile' "$1"
+}
+
 append_ports()
 {
 	local ipaddrs="$1"
@@ -37,6 +85,7 @@ validate_section_dropbear()
 		'RootPasswordAuth:bool:1' \
 		'RootLogin:bool:1' \
 		'rsakeyfile:file' \
+		'keyfile:list(file)' \
 		'BannerFile:file' \
 		'Port:list(port):22' \
 		'SSHKeepAlive:uinteger:300' \
@@ -74,7 +123,13 @@ dropbear_instance()
 	[ "${GatewayPorts}" -eq 1 ] && procd_append_param command -a
 	[ "${RootPasswordAuth}" -eq 0 ] && procd_append_param command -g
 	[ "${RootLogin}" -eq 0 ] && procd_append_param command -w
-	[ -n "${rsakeyfile}" ] && procd_append_param command -r "${rsakeyfile}"
+	if [ -n "${rsakeyfile}" ]; then
+		logger -t ${NAME} -p daemon.warn \
+			"option 'rsakeyfile' is considered to be deprecated and" \
+			"will be removed in future releases, use 'keyfile' instead"
+		hk_config 'rsakeyfile' "${rsakeyfile}"
+	fi
+	config_list_foreach "$1" "keyfile" hk_config__keyfile
 	[ -n "${BannerFile}" ] && procd_append_param command -b "${BannerFile}"
 	append_ports "${ipaddrs}" "${Port}"
 	[ "${IdleTimeout}" -ne 0 ] && procd_append_param command -I "${IdleTimeout}"
