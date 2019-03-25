@@ -952,21 +952,6 @@ endef
 
 $(eval $(call KernelPackage,random-core))
 
-define KernelPackage/random-omap
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Hardware Random Number Generator OMAP support
-  KCONFIG:=CONFIG_HW_RANDOM_OMAP
-  FILES:=$(LINUX_DIR)/drivers/char/hw_random/omap-rng.ko
-  DEPENDS:=@TARGET_omap24xx +kmod-random-core
-  AUTOLOAD:=$(call AutoProbe,random-omap)
-endef
-
-define KernelPackage/random-omap/description
- Kernel module for the OMAP Random Number Generator
- found on OMAP16xx, OMAP2/3/4/5 and AM33xx/AM43xx multimedia processors.
-endef
-
-$(eval $(call KernelPackage,random-omap))
 
 define KernelPackage/random-tpm
   SUBMENU:=$(OTHER_MENU)
