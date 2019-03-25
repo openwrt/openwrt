@@ -26,7 +26,7 @@ PKG_USE_MIPS16:=0
 PKG_FIXUP:=autoreconf
 
 PKG_CONFIG_DEPENDS:= \
-	CONFIG_TARGET_INIT_PATH CONFIG_DROPBEAR_ECC \
+	CONFIG_TARGET_INIT_PATH CONFIG_DROPBEAR_ECC CONFIG_DROPBEAR_ECC_FULL \
 	CONFIG_DROPBEAR_CURVE25519 CONFIG_DROPBEAR_ZLIB \
 	CONFIG_DROPBEAR_UTMP CONFIG_DROPBEAR_PUTUTLINE
 
@@ -117,6 +117,12 @@ define Build/Configure
 	DROPBEAR_SHA1_96_HMAC DROPBEAR_USE_PASSWORD_ENV; do \
 		echo "#define $$$$OPTION 0" >> \
 			$(PKG_BUILD_DIR)/localoptions.h; \
+	done
+
+	# enable nistp384 and nistp521 only if full ECC support was requested
+	for OPTION in DROPBEAR_ECC_384 DROPBEAR_ECC_521; do \
+		$(ESED) 's,^(#define '$$$$OPTION') .*$$$$,\1 $(if $(CONFIG_DROPBEAR_ECC_FULL),1,0),g' \
+		$(PKG_BUILD_DIR)/sysoptions.h; \
 	done
 
 	# Enforce rebuild of svr-chansession.c
