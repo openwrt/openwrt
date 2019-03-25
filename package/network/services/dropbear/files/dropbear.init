@@ -60,6 +60,43 @@ hk_config__keyfile()
 	hk_config 'keyfile' "$1"
 }
 
+hk_generate_as_needed()
+{
+	local kdir kgen ktype tdir kcount tfile
+	kdir='/etc/dropbear'
+
+	kgen=''
+	for ktype in ecdsa rsa; do
+		hk_verify "${kdir}/dropbear_${ktype}_host_key" && continue
+
+		kgen="${kgen} ${ktype}"
+	done
+
+	[ -z "${kgen}" ] && return
+
+	tdir=$(mktemp -d); chmod 0700 "${tdir}"
+
+	kcount=0
+	for ktype in ${kgen}; do
+		tfile="${tdir}/dropbear_${ktype}_host_key"
+
+		if ! _dropbearkey -t ${ktype} -f "${tfile}"; then
+			# unsupported key type
+			rm -f "${tfile}"
+			continue
+		fi
+
+		kcount=$((kcount+1))
+	done
+
+	if [ ${kcount} -ne 0 ]; then
+		mkdir -p "${kdir}"; chmod 0700 "${kdir}"; chown root "${kdir}"
+		mv -f "${tdir}/"* "${kdir}/"
+	fi
+
+	rm -rf "${tdir}"
+}
+
 append_ports()
 {
 	local ipaddrs="$1"
@@ -142,29 +179,6 @@ dropbear_instance()
 	procd_close_instance
 }
 
-keygen()
-{
-	for keytype in rsa; do
-		# check for keys
-		key=dropbear/dropbear_${keytype}_host_key
-		[ -f /tmp/$key -o -s /etc/$key ] || {
-			# generate missing keys
-			mkdir -p /tmp/dropbear
-			[ -x /usr/bin/dropbearkey ] && {
-				/usr/bin/dropbearkey -t $keytype -f /tmp/$key 2>&- >&- && exec /etc/rc.common "$initscript" start
-			} &
-		exit 0
-		}
-	done
-
-	lock /tmp/.switch2jffs
-	mkdir -p /etc/dropbear
-	mv /tmp/dropbear/dropbear_* /etc/dropbear/
-	lock -u /tmp/.switch2jffs
-	chown root /etc/dropbear
-	chmod 0700 /etc/dropbear
-}
-
 load_interfaces()
 {
 	config_get interface "$1" Interface
@@ -181,7 +195,7 @@ boot()
 
 start_service()
 {
-	[ -s /etc/dropbear/dropbear_rsa_host_key ] || keygen
+	hk_generate_as_needed
 
 	. /lib/functions.sh
 	. /lib/functions/network.sh
