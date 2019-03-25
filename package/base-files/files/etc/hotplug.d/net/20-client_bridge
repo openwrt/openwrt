@@ -1,0 +1,42 @@
+######################################################################
+# Client bridge hotplug script (/etc/hotplug.d/net/20-client_bridge)
+# Copyright Eric Bishop, 2009,2010 eric@gargoyle-router.com
+# Created for Gargoyle, www.gargoyle-router.com
+#
+#This is free software licensed under the terms of the GNU GPL v2.0
+#
+# You must have the arpnat ebtables module for this to work
+######################################################################
+insmod ebt_arpnat || true
+is_ath=$(echo $INTERFACE | grep wlan)
+if [ -n "$is_ath" ] ; then
+        if [ "$ACTION" = "add" -o "$ACTION" = "register" ] ; then
+                sleep 2
+                managed=$(iw $INTERFACE info 2>/dev/null | grep "managed")
+                if [ -n "$managed" ] ; then
+                        sta_section=$(uci show wireless | grep "mode='sta'$" | sed "s/\.mode='sta'//g")
+                        if [ -n "$sta_section" ] ; then
+                                client_bridge=$(uci get "$sta_section.client_bridge")
+                                if [ "$client_bridge" = "1" ] ; then
+                                        ebtables -t nat -F PREROUTING
+                                        ebtables -t nat -F POSTROUTING
+                                        ebtables -t broute -F BROUTING
+
+                                        ebtables -t nat -A PREROUTING  --in-interface  $INTERFACE -j arpnat --arpnat-target ACCEPT
+                                        ebtables -t nat -A POSTROUTING --out-interface $INTERFACE -j arpnat --arpnat-target ACCEPT
+                                        ebtables -t broute -A BROUTING --in-interface  $INTERFACE --protocol 0x888e -j DROP
+
+                                        mkdir -p /tmp/client_bridge
+                                        touch "/tmp/client_bridge/$INTERFACE"
+                                fi
+                        fi
+                fi
+        fi
+        if [ "$ACTION" = "remove" -o "$ACTION" = "register" ] ; then
+                if [ -e "/tmp/client_bridge/$INTERFACE" ] ; then
+                        ebtables -t nat -F PREROUTING
+                        ebtables -t nat -F POSTROUTING
+                        ebtables -t broute -F BROUTING
+                fi
+        fi
+fi

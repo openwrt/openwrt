@@ -671,13 +671,13 @@ wpa_supplicant_prepare_interface() {
 				fail=1
 			;;
 			sta)
-				[ "$wds" = 1 -o "$multi_ap" = 1 ] || fail=1
+				#[ "$wds" = 1 -o "$multi_ap" = 1 ] || fail=1
 			;;
 		esac
 
 		[ -n "$fail" ] && {
-			wireless_setup_vif_failed BRIDGE_NOT_ALLOWED
-			return 1
+			wireless_setup_vif_failed BRIDGE_NOT_ALLOWED_IGNORED
+			#return 1
 		}
 	}
 
