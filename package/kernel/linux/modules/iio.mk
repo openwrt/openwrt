@@ -132,7 +132,7 @@ $(eval $(call KernelPackage,iio-dht11))
 define KernelPackage/iio-bmp280
   SUBMENU:=$(IIO_MENU)
   TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor
-  DEPENDS:=@!LINUX_3_18 +kmod-iio-core +kmod-regmap-core
+  DEPENDS:=+kmod-iio-core +kmod-regmap-core
   KCONFIG:=CONFIG_BMP280
   FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280.ko
 endef

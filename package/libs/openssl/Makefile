@@ -139,7 +139,7 @@ define Package/libopenssl-afalg
   $(call Package/openssl/Default)
   SUBMENU:=SSL
   TITLE:=AFALG hardware acceleration engine
-  DEPENDS:=libopenssl @OPENSSL_ENGINE @KERNEL_AIO @!LINUX_3_18 \
+  DEPENDS:=libopenssl @OPENSSL_ENGINE @KERNEL_AIO \
 	   +PACKAGE_libopenssl-afalg:kmod-crypto-user +libopenssl-conf @!OPENSSL_ENGINE_BUILTIN
 endef
 

@@ -39,7 +39,6 @@ endef
 define KernelPackage/usb-ledtrig-usbport
   TITLE:=LED trigger for USB ports
   KCONFIG:=CONFIG_USB_LEDS_TRIGGER_USBPORT
-  DEPENDS:=@!LINUX_3_18
   FILES:=$(LINUX_DIR)/drivers/usb/core/ledtrig-usbport.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-usbport)
   $(call AddDepends/usb)
