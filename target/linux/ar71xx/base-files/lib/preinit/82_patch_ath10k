@@ -21,8 +21,7 @@ do_patch_ath10k_firmware() {
 	# we have to patch the default mac in the firmware because we cannot change
 	# the otp.
 	case $(board_name) in
-	dgl-5500-a1|\
-	tew-823dru)
+	dgl-5500-a1)
 		local mac
 		mac=$(mtd_get_mac_ascii nvram wlan1_mac)
 
@@ -40,8 +39,7 @@ do_patch_ath10k_firmware() {
 
 check_patch_ath10k_firmware() {
 	case $(board_name) in
-	dgl-5500-a1|\
-	tew-823dru)
+	dgl-5500-a1)
 		do_patch_ath10k_firmware
 		;;
 	esac
