@@ -23,7 +23,7 @@ mvebu_board_detect() {
 	*"Marvell Armada 3720 Development Board DB-88F3720-DDR3")
 		name="marvell,armada-3720-db"
 		;;
-	*"Marvell 8040 MACHIATOBin")
+	*"Marvell 8040 MACCHIATOBin")
 		name="marvell,armada8040-mcbin"
 		;;
 	*"Marvell Armada 8040 DB board")

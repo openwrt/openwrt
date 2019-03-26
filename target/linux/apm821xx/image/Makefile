@@ -226,6 +226,7 @@ ifeq ($(SUBTARGET),sata)
 define Device/wd_mybooklive
   DEVICE_TITLE := Western Digital My Book Live Series (Single + Duo)
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-fs-vfat wpad-basic
+  DEVICE_TYPE := nas
   DEVICE_DTS := wd-mybooklive
   SUPPORTED_DEVICES += mbl wd,mybooklive-duo
   BLOCKSIZE := 1k
