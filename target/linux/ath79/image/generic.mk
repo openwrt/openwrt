@@ -302,6 +302,18 @@ define Device/embeddedwireless_dorin
 endef
 TARGET_DEVICES += embeddedwireless_dorin
 
+define Device/engenius_ecb1750
+  ATH_SOC := qca9558
+  DEVICE_TITLE := EnGenius ECB1750
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15680k
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+    append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | \
+    senao-header -r 0x101 -p 0x6d -t 2
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += engenius_ecb1750
+
 define Device/engenius_epg5000
   ATH_SOC := qca9558
   DEVICE_TITLE := EnGenius EPG5000
