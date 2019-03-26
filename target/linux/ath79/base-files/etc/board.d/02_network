@@ -13,6 +13,7 @@ ath79_setup_interfaces()
 	devolo,dvl1200i|\
 	devolo,dvl1750c|\
 	devolo,dvl1750i|\
+	engenius,ecb1750|\
 	glinet,ar300m-lite|\
 	netgear,ex6400|\
 	netgear,ex7300|\
@@ -290,6 +291,9 @@ ath79_setup_macs()
 	elecom,wrc-1750ghbk2-i|\
 	elecom,wrc-300ghbk2-i)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary ART 4098)" -2)
+		;;
+	engenius,ecb1750)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		;;
 	engenius,epg5000|\
 	iodata,wn-ac1167dgr|\

@@ -109,6 +109,10 @@ case "$FIRMWARE" in
 		ath9k_eeprom_extract "art" 4096 1088
 		ath9k_patch_fw_mac $(mtd_get_mac_ascii devdata "wlan24mac") 2
 		;;
+	engenius,ecb1750)
+		ath9k_eeprom_extract "art" 4096 1088
+		ath9k_patch_fw_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env "athaddr") +1) 2
+		;;
 	engenius,epg5000|\
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr|\
