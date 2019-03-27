@@ -117,7 +117,6 @@ define Device/tplink_cpe210-v2
   TPLINK_BOARD_ID := CPE210V2
   DEVICE_PACKAGES := rssileds
   LOADER_TYPE := elf
-  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
   SUPPORTED_DEVICES += cpe210-v2
 endef
 TARGET_DEVICES += tplink_cpe210-v2
@@ -130,13 +129,12 @@ define Device/tplink_cpe210-v3
   DEVICE_PACKAGES := rssileds
   TPLINK_BOARD_ID := CPE210V3
   LOADER_TYPE := elf
-  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
   SUPPORTED_DEVICES += cpe210-v3
 endef
 TARGET_DEVICES += tplink_cpe210-v3
 
 define Device/tplink_re350k-v1
-  $(Device/tplink)
+  $(Device/tplink-safeloader)
   ATH_SOC := qca9558
   IMAGE_SIZE := 13760k
   DEVICE_TITLE := TP-Link RE350K v1
@@ -144,15 +142,11 @@ define Device/tplink_re350k-v1
   TPLINK_BOARD_ID := RE350K-V1
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
-  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
-    check-size $$$$(IMAGE_SIZE) | append-metadata
-  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
 TARGET_DEVICES += tplink_re350k-v1
 
 define Device/tplink_re450-v2
-  $(Device/tplink)
+  $(Device/tplink-safeloader)
   ATH_SOC := qca9563
   IMAGE_SIZE := 6016k
   DEVICE_TITLE := TP-Link RE450 v2
@@ -161,10 +155,6 @@ define Device/tplink_re450-v2
   TPLINK_HWREV := 0
   TPLINK_BOARD_ID := RE450-V2
   LOADER_TYPE := elf
-  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
-    append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
 TARGET_DEVICES += tplink_re450-v2
 
@@ -274,17 +264,13 @@ endef
 TARGET_DEVICES += tplink_tl-wr1043nd-v3
 
 define Device/tplink_tl-wr1043nd-v4
-  $(Device/tplink)
+  $(Device/tplink-safeloader)
   ATH_SOC := qca9563
   IMAGE_SIZE := 15552k
   DEVICE_TITLE := TP-Link TL-WR1043N/ND v4
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x10430004
   TPLINK_BOARD_ID := TLWR1043NDV4
-  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
-    append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
   SUPPORTED_DEVICES += tl-wr1043nd-v4
 endef
 TARGET_DEVICES += tplink_tl-wr1043nd-v4
