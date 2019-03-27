@@ -1,0 +1,14 @@
+diff --git a/net/mac80211/key.c b/net/mac80211/key.c
+index c054ac8..a1dff5c 100644
+--- a/net/mac80211/key.c
++++ b/net/mac80211/key.c
+@@ -679,7 +679,8 @@ int ieee80211_key_link(struct ieee80211_key *key,
+ 	 * Silently accept key re-installation without really installing the
+ 	 * new version of the key to avoid nonce reuse or replay issues.
+ 	 */
+-	if (ieee80211_key_identical(sdata, old_key, key)) {
++	if (old_key && key->conf.keylen == old_key->conf.keylen &&
++		!memcmp(key->conf.key, old_key->conf.key, key->conf.keylen)) {
+ 		ieee80211_key_free_unused(key);
+ 		ret = 0;
+ 		goto out;
