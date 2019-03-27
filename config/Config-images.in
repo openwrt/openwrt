@@ -241,23 +241,17 @@ menu "Target Images"
 		bool "Build VirtualBox image files (VDI)"
 		depends on TARGET_x86
 		select GRUB_IMAGES
-		select TARGET_IMAGES_PAD
 		select PACKAGE_kmod-e1000
 
 	config VMDK_IMAGES
 		bool "Build VMware image files (VMDK)"
 		depends on TARGET_x86
 		select GRUB_IMAGES
-		select TARGET_IMAGES_PAD
 		select PACKAGE_kmod-e1000
-
-	config TARGET_IMAGES_PAD
-		bool "Pad images to filesystem size (for JFFS2)"
-		depends on GRUB_IMAGES
 
 	config TARGET_IMAGES_GZIP
 		bool "GZip images"
-		depends on TARGET_IMAGES_PAD || TARGET_ROOTFS_EXT4FS || TARGET_x86
+		depends on TARGET_ROOTFS_EXT4FS || TARGET_x86
 		default y
 
 	comment "Image Options"
