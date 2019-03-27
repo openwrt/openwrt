@@ -597,6 +597,18 @@ endef
 $(eval $(call KernelPackage,crypto-rsa))
 
 
+define KernelPackage/crypto-rmd160
+  TITLE:=RIPEMD160 digest CryptoAPI module
+  DEPENDS:=+kmod-crypto-hash
+  KCONFIG:=CONFIG_CRYPTO_RMD160
+  FILES:=$(LINUX_DIR)/crypto/rmd160.ko
+  AUTOLOAD:=$(call AutoLoad,09,rmd160)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-rmd160))
+
+
 define KernelPackage/crypto-rng
   TITLE:=CryptoAPI random number generation
   DEPENDS:=+kmod-crypto-hash +kmod-crypto-hmac +kmod-crypto-sha256
