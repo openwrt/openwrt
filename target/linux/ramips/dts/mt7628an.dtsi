@@ -1,3 +1,5 @@
+#include <dt-bindings/clock/mt7620-clk.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -26,6 +28,13 @@
 		#interrupt-cells = <1>;
 		interrupt-controller;
 		compatible = "mti,cpu-interrupt-controller";
+	};
+
+	pll: pll {
+		compatible = "mediatek,mt7620-pll", "syscon";
+
+		#clock-cells = <1>;
+		clock-output-names = "cpu", "sys", "periph", "pcmi2s", "xtal";
 	};
 
 	palmbus: palmbus@10000000 {
@@ -117,6 +126,9 @@
 			compatible = "mediatek,mt7621-i2c";
 			reg = <0x900 0x100>;
 
+			clocks = <&clkctrl 16>;
+			clock-names = "i2c";
+
 			resets = <&rstctrl 16>;
 			reset-names = "i2c";
 
@@ -132,6 +144,9 @@
 		i2s: i2s@a00 {
 			compatible = "mediatek,mt7628-i2s";
 			reg = <0xa00 0x100>;
+
+			clocks = <&clkctrl 17>;
+			clock-names = "i2s";
 
 			resets = <&rstctrl 17>;
 			reset-names = "i2s";
@@ -153,6 +168,9 @@
 			compatible = "ralink,mt7621-spi";
 			reg = <0xb00 0x100>;
 
+			clocks = <&clkctrl 18>;
+			clock-names = "spi";
+
 			resets = <&rstctrl 18>;
 			reset-names = "spi";
 
@@ -173,7 +191,8 @@
 			reg-io-width = <4>;
 			no-loopback-test;
 
-			clock-frequency = <40000000>;
+			clocks = <&clkctrl 12>;
+			clock-names = "uartl";
 
 			resets = <&rstctrl 12>;
 			reset-names = "uartl";
@@ -193,7 +212,8 @@
 			reg-io-width = <4>;
 			no-loopback-test;
 
-			clock-frequency = <40000000>;
+			clocks = <&clkctrl 19>;
+			clock-names = "uart1";
 
 			resets = <&rstctrl 19>;
 			reset-names = "uart1";
@@ -215,7 +235,8 @@
 			reg-io-width = <4>;
 			no-loopback-test;
 
-			clock-frequency = <40000000>;
+			clocks = <&clkctrl 20>;
+			clock-names = "uart2";
 
 			resets = <&rstctrl 20>;
 			reset-names = "uart2";
@@ -373,8 +394,10 @@
 	};
 
 	clkctrl: clkctrl {
-		compatible = "ralink,rt2880-clock";
+		compatible = "mediatek,mt7628-clock", "ralink,rt2880-clock";
 		#clock-cells = <1>;
+
+		ralink,sysctl = <&sysc>;
 	};
 
 	usbphy: usbphy@10120000 {

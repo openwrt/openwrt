@@ -1,3 +1,5 @@
+#include <dt-bindings/clock/mt7620-clk.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -30,6 +32,13 @@
 		serial0 = &uartlite;
 	};
 
+	pll: pll {
+		compatible = "mediatek,mt7620-pll", "syscon";
+
+		#clock-cells = <1>;
+		clock-output-names = "cpu", "sys", "periph", "pcmi2s", "xtal";
+	};
+
 	palmbus: palmbus@10000000 {
 		compatible = "palmbus";
 		reg = <0x10000000 0x200000>;
@@ -47,6 +56,9 @@
 			compatible = "ralink,mt7620a-timer", "ralink,rt2880-timer";
 			reg = <0x100 0x20>;
 
+			clocks = <&pll MT7620_CLK_PERIPH>;
+			clock-names = "periph";
+
 			interrupt-parent = <&intc>;
 			interrupts = <1>;
 		};
@@ -54,6 +66,9 @@
 		watchdog: watchdog@120 {
 			compatible = "ralink,mt7620a-wdt", "ralink,rt2880-wdt";
 			reg = <0x120 0x10>;
+
+			clocks = <&pll MT7620_CLK_PERIPH>;
+			clock-names = "periph";
 
 			resets = <&rstctrl 8>;
 			reset-names = "wdt";
@@ -168,6 +183,9 @@
 			compatible = "ralink,rt2880-i2c";
 			reg = <0x900 0x100>;
 
+			clocks = <&clkctrl 16>;
+			clock-names = "i2c";
+
 			resets = <&rstctrl 16>;
 			reset-names = "i2c";
 
@@ -183,6 +201,9 @@
 		spi0: spi@b00 {
 			compatible = "ralink,mt7620a-spi", "ralink,rt2880-spi";
 			reg = <0xb00 0x40>;
+
+			clocks = <&clkctrl 18>;
+			clock-names = "spi";
 
 			resets = <&rstctrl 18>;
 			reset-names = "spi";
@@ -200,6 +221,9 @@
 			compatible = "ralink,rt2880-spi";
 			reg = <0xb40 0x60>;
 
+			clocks = <&clkctrl 18>;
+			clock-names = "spi";
+
 			resets = <&rstctrl 18>;
 			reset-names = "spi";
 
@@ -215,6 +239,9 @@
 		uartlite: uartlite@c00 {
 			compatible = "ralink,mt7620a-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
+
+			clocks = <&clkctrl 19>;
+			clock-names = "uartl";
 
 			resets = <&rstctrl 19>;
 			reset-names = "uartl";
@@ -290,8 +317,10 @@
 	};
 
 	clkctrl: clkctrl {
-		compatible = "ralink,rt2880-clock";
+		compatible = "mediatek,mt7620-clock", "ralink,rt2880-clock";
 		#clock-cells = <1>;
+
+		ralink,sysctl = <&sysc>;
 	};
 
 	usbphy: usbphy {
@@ -391,6 +420,9 @@
 	wmac: wmac@10180000 {
 		compatible = "ralink,rt7620-wmac", "ralink,rt2880-wmac";
 		reg = <0x10180000 0x40000>;
+
+		clocks = <&pll MT7620_CLK_XTAL>;
+		clock-names = "xtal";
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;

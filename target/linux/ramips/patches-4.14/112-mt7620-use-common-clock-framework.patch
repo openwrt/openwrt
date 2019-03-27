@@ -1,0 +1,241 @@
+f5e3d4df3c5ff2e0d512641bed464f067c0eab05 ramips: mt7620 use common clock framework
+diff --git a/arch/mips/ralink/clk.c b/arch/mips/ralink/clk.c
+index 1b7df115e..28d35427d 100644
+--- a/arch/mips/ralink/clk.c
++++ b/arch/mips/ralink/clk.c
+@@ -15,8 +15,15 @@
+ 
+ #include <asm/time.h>
+ 
++#ifdef CONFIG_COMMON_CLK
++#include <linux/clk-provider.h>
++#endif
++
+ #include "common.h"
+ 
++
++#ifndef CONFIG_COMMON_CLK
++
+ struct clk {
+ 	struct clk_lookup cl;
+ 	unsigned long rate;
+@@ -72,6 +79,8 @@ long clk_round_rate(struct clk *clk, unsigned long rate)
+ }
+ EXPORT_SYMBOL_GPL(clk_round_rate);
+ 
++#endif	/* CONFIG_COMMON_CLK */
++
+ void __init plat_time_init(void)
+ {
+ 	struct clk *clk;
+@@ -79,6 +88,9 @@ void __init plat_time_init(void)
+ 	ralink_of_remap();
+ 
+ 	ralink_clk_init();
++#ifdef CONFIG_COMMON_CLK
++	of_clk_init(NULL);
++#endif
+ 	clk = clk_get_sys("cpu", NULL);
+ 	if (IS_ERR(clk))
+ 		panic("unable to get CPU clock, err=%ld", PTR_ERR(clk));
+diff --git a/arch/mips/ralink/mt7620.c b/arch/mips/ralink/mt7620.c
+index c1ce6f436..633e4030f 100644
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
+@@ -12,7 +12,13 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/init.h>
++#include <linux/jiffies.h>
++#include <linux/clk.h>
++#include <linux/clkdev.h>
++#include <linux/clk-provider.h>
++#include <dt-bindings/clock/mt7620-clk.h>
+ #include <linux/bug.h>
++#include <linux/of.h>
+ 
+ #include <asm/mipsregs.h>
+ #include <asm/mach-ralink/ralink_regs.h>
+@@ -20,6 +26,7 @@
+ #include <asm/mach-ralink/pinmux.h>
+ 
+ #include "common.h"
++#include "rt2880-clk_internal.h"
+ 
+ /* analog */
+ #define PMU0_CFG		0x88
+@@ -504,6 +511,34 @@ mt7620_get_sys_rate(unsigned long cpu_rate)
+ 	return cpu_rate / div;
+ }
+ 
++static struct clk *clks[MT7620_CLK_MAX];
++
++static struct clk_onecell_data	clk_data = {
++	.clks	= clks,
++	.clk_num = ARRAY_SIZE(clks),
++};
++
++static struct clk * __init mt7620_add_sys_clkdev(
++	const char *id, unsigned long rate)
++{
++	struct clk *clk;
++	int err;
++
++	clk = clk_register_fixed_rate(NULL, id, NULL, 0, rate);
++	if (IS_ERR(clk))
++		panic("failed to allocate %s clock structure", id);
++
++	err = clk_register_clkdev(clk, NULL, id);
++	if (err)
++		panic("unable to register %s clock device", id);
++
++	return clk;
++}
++
++#define RFMT(label)	label ":%lu.%03luMHz "
++#define RINT(x)		((x) / 1000000)
++#define RFRAC(x)	(((x) / 1000) % 1000)
++
+ void __init ralink_clk_init(void)
+ {
+ 	unsigned long xtal_rate;
+@@ -517,10 +552,6 @@ void __init ralink_clk_init(void)
+ 
+ 	xtal_rate = mt7620_get_xtal_rate();
+ 
+-#define RFMT(label)	label ":%lu.%03luMHz "
+-#define RINT(x)		((x) / 1000000)
+-#define RFRAC(x)	(((x) / 1000) % 1000)
+-
+ 	if (is_mt76x8()) {
+ 		if (xtal_rate == MHZ(40))
+ 			cpu_rate = MHZ(580);
+@@ -529,9 +560,6 @@ void __init ralink_clk_init(void)
+ 		dram_rate = sys_rate = cpu_rate / 3;
+ 		periph_rate = MHZ(40);
+ 		pcmi2s_rate = MHZ(480);
+-
+-		ralink_clk_add("10000d00.uartlite", periph_rate);
+-		ralink_clk_add("10000e00.uartlite", periph_rate);
+ 	} else {
+ 		cpu_pll_rate = mt7620_get_cpu_pll_rate(xtal_rate);
+ 		pll_rate = mt7620_get_pll_rate(xtal_rate, cpu_pll_rate);
+@@ -547,7 +575,6 @@ void __init ralink_clk_init(void)
+ 			 RINT(cpu_pll_rate), RFRAC(cpu_pll_rate),
+ 			 RINT(pll_rate), RFRAC(pll_rate));
+ 
+-		ralink_clk_add("10000500.uart", periph_rate);
+ 	}
+ 
+ 	pr_debug(RFMT("CPU") RFMT("DRAM") RFMT("SYS") RFMT("PERIPH"),
+@@ -555,21 +582,19 @@ void __init ralink_clk_init(void)
+ 		 RINT(dram_rate), RFRAC(dram_rate),
+ 		 RINT(sys_rate), RFRAC(sys_rate),
+ 		 RINT(periph_rate), RFRAC(periph_rate));
+-#undef RFRAC
+-#undef RINT
+-#undef RFMT
+ 
+-	ralink_clk_add("cpu", cpu_rate);
+-	ralink_clk_add("10000100.timer", periph_rate);
+-	ralink_clk_add("10000120.watchdog", periph_rate);
+-	ralink_clk_add("10000900.i2c", periph_rate);
+-	ralink_clk_add("10000a00.i2s", pcmi2s_rate);
+-	ralink_clk_add("10000b00.spi", sys_rate);
+-	ralink_clk_add("10000b40.spi", sys_rate);
+-	ralink_clk_add("10000c00.uartlite", periph_rate);
+-	ralink_clk_add("10000d00.uart1", periph_rate);
+-	ralink_clk_add("10000e00.uart2", periph_rate);
+-	ralink_clk_add("10180000.wmac", xtal_rate);
++	/* system global */
++	clks[MT7620_CLK_CPU] = mt7620_add_sys_clkdev("cpu", cpu_rate);
++
++	/* parent reference clocks */
++	clks[MT7620_CLK_SYS] =
++		clk_register_fixed_rate(NULL, "sys", NULL, 0, sys_rate);
++	clks[MT7620_CLK_PERIPH] =
++		clk_register_fixed_rate(NULL, "periph", NULL, 0, periph_rate);
++	clks[MT7620_CLK_PCMI2S] =
++		clk_register_fixed_rate(NULL, "pcmi2s", NULL, 0, pcmi2s_rate);
++	clks[MT7620_CLK_XTAL] =
++		clk_register_fixed_rate(NULL, "xtal", NULL, 0, xtal_rate);
+ 
+ 	if (IS_ENABLED(CONFIG_USB) && !is_mt76x8()) {
+ 		/*
+@@ -586,6 +611,53 @@ void __init ralink_clk_init(void)
+ 	}
+ }
+ 
++#undef RFRAC
++#undef RINT
++#undef RFMT
++
++static void __init mt7620_clk_init_dt(struct device_node *np)
++{
++	of_clk_add_provider(np, of_clk_src_onecell_get, &clk_data);
++}
++CLK_OF_DECLARE(mt7620, "mediatek,mt7620-pll", mt7620_clk_init_dt);
++
++
++/*
++ * resources for rt2880-clock
++ */
++
++static const struct gate_clk_desc clk_mt7620[GATE_CLK_NUM] __initconst = {
++	[12] = { .name = "uart", .parent_name = "periph" },
++	[16] = { .name = "i2c", .parent_name = "periph" },
++	[17] = { .name = "i2s", .parent_name = "pcmi2s" },
++	[18] = { .name = "spi", .parent_name = "sys" },
++	[19] = { .name = "uartl", .parent_name = "periph" },
++};
++
++static const struct gate_clk_desc clk_mt76x8[GATE_CLK_NUM] __initconst = {
++	[12] = { .name = "uartl", .parent_name = "periph" },
++	[16] = { .name = "i2c", .parent_name = "periph" },
++	[17] = { .name = "i2s", .parent_name = "pcmi2s" },
++	[18] = { .name = "spi", .parent_name = "sys" },
++	[19] = { .name = "uart1", .parent_name = "periph" },
++	[20] = { .name = "uart2", .parent_name = "periph" },
++};
++
++const struct of_device_id of_match_rt2880_clk[] __initconst = {
++	{
++		.compatible = "mediatek,mt7620-clock",
++		.data = clk_mt7620,
++	},
++	{
++		.compatible = "mediatek,mt7628-clock",
++		.data = clk_mt76x8,
++	},
++	{
++		/* sentinel */
++	},
++};
++
++
+ void __init ralink_of_remap(void)
+ {
+ 	rt_sysc_membase = plat_of_remap_node("ralink,mt7620a-sysc");
+diff --git a/include/dt-bindings/clock/mt7620-clk.h b/include/dt-bindings/clock/mt7620-clk.h
+new file mode 100644
+index 000000000..2e70e7df2
+--- /dev/null
++++ b/include/dt-bindings/clock/mt7620-clk.h
+@@ -0,0 +1,17 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2019 NOGUCHI Hiroshi <drvlabo@gmail.com>
++ */
++
++#ifndef __DT_BINDINGS_MT7620_CLK_H
++#define __DT_BINDINGS_MT7620_CLK_H
++
++#define MT7620_CLK_CPU		0
++#define	MT7620_CLK_SYS		1
++#define	MT7620_CLK_PERIPH	2
++#define	MT7620_CLK_PCMI2S	3
++#define	MT7620_CLK_XTAL		4
++
++#define MT7620_CLK_MAX		5
++
++#endif /* __DT_BINDINGS_MT7620_CLK_H */

@@ -1,0 +1,239 @@
+b9fe897984705d02eddca30355c707f17463c47d ramips: introduce rt2880-clock driver
+diff --git a/Documentation/devicetree/bindings/clock/ralink,rt2880-clock.txt b/Documentation/devicetree/bindings/clock/ralink,rt2880-clock.txt
+new file mode 100644
+index 000000000..6f0757046
+--- /dev/null
++++ b/Documentation/devicetree/bindings/clock/ralink,rt2880-clock.txt
+@@ -0,0 +1,20 @@
++* Clock bindings for Ralink/Mediatek MIPS based SoCs
++
++Required properties:
++ - compatible: must be "ralink,rt2880-clock" and
++     one of the following, to identify SoC series
++        "mediatek,mt7620-clock"   for MT7620
++        "mediatek,mt7628-clock"   for MT7628/MT7688
++        "mediatek,mt7621-clock"   for MT7621
++ - #clock-cells: must be 1
++ - ralink,sysctl: a phandle to a ralink syscon register region
++
++
++Example:
++
++clkctrl: clkctrl {
++	compatible = "mediatek,mt7620-clock", "ralink,rt2880-clock";
++	#clock-cells = <1>;
++
++	ralink,sysctl = <&sysc>;
++};
+diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
+index 840a57126..e62c7d413 100644
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
+@@ -23,6 +23,10 @@ config IRQ_INTC
+ 	default y
+ 	depends on !SOC_MT7621
+ 
++config RT2880_CLK
++	bool
++	default n
++
+ choice
+ 	prompt "Ralink SoC selection"
+ 	default SOC_RT305X
+@@ -46,6 +50,8 @@ choice
+ 		bool "MT7620/8"
+ 		select CPU_MIPSR2_IRQ_VI
+ 		select HW_HAS_PCI
++		select COMMON_CLK
++		select RT2880_CLK
+ 
+ 	config SOC_MT7621
+ 		bool "MT7621"
+@@ -60,6 +66,7 @@ choice
+ 		select HW_HAS_PCI
+ 		select WEAK_REORDERING_BEYOND_LLSC
+ 		select GENERIC_CLOCKEVENTS_BROADCAST
++		select RT2880_CLK
+ endchoice
+ 
+ choice
+diff --git a/arch/mips/ralink/Makefile b/arch/mips/ralink/Makefile
+index fe3471533..af72c03ed 100644
+--- a/arch/mips/ralink/Makefile
++++ b/arch/mips/ralink/Makefile
+@@ -25,6 +25,8 @@ obj-$(CONFIG_SOC_RT3883) += rt3883.o
+ obj-$(CONFIG_SOC_MT7620) += mt7620.o
+ obj-$(CONFIG_SOC_MT7621) += mt7621.o
+ 
++obj-$(CONFIG_RT2880_CLK) += rt2880-clock.o
++
+ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+ 
+ obj-$(CONFIG_DEBUG_FS) += bootrom.o
+diff --git a/arch/mips/ralink/rt2880-clk_internal.h b/arch/mips/ralink/rt2880-clk_internal.h
+new file mode 100644
+index 000000000..9d5dded16
+--- /dev/null
++++ b/arch/mips/ralink/rt2880-clk_internal.h
+@@ -0,0 +1,21 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2019 NOGUCHI Hiroshi <drvlabo@gmail.com>
++ */
++
++#ifndef __RT2880_CLOCK_INTERNAL_H
++
++
++#define GATE_CLK_NUM	(32)
++
++struct gate_clk_desc {
++	const char *name;
++	const char *parent_name;
++};
++
++extern const struct of_device_id __initconst of_match_rt2880_clk[];
++
++
++#endif
++
++
+diff --git a/arch/mips/ralink/rt2880-clock.c b/arch/mips/ralink/rt2880-clock.c
+new file mode 100644
+index 000000000..46cc06722
+--- /dev/null
++++ b/arch/mips/ralink/rt2880-clock.c
+@@ -0,0 +1,134 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2019 NOGUCHI Hiroshi <drvlabo@gmail.com>
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/jiffies.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/clk.h>
++#include <linux/clkdev.h>
++#include <linux/clk-provider.h>
++#include <linux/mfd/syscon.h>
++#include <linux/regmap.h>
++#include <linux/bug.h>
++
++#include "rt2880-clk_internal.h"
++
++
++/* clock configuration 1 */
++#define	SYSC_REG_CLKCFG1	0x30
++
++struct rt2880_gate {
++	struct clk_hw	hw;
++	u8	shift;
++};
++
++#define	to_rt2880_gate(_hw)	container_of(_hw, struct rt2880_gate, hw)
++
++static struct clk_onecell_data	clk_data;
++static struct clk *clks[GATE_CLK_NUM];
++
++static struct regmap *syscon_regmap;
++
++static int rt2880_gate_enable(struct clk_hw *hw)
++{
++	struct rt2880_gate *clk_gate = to_rt2880_gate(hw);
++	u32 val = 0x01UL << clk_gate->shift;
++
++	regmap_update_bits(syscon_regmap, SYSC_REG_CLKCFG1, val, val);
++
++	return 0;
++}
++
++static void rt2880_gate_disable(struct clk_hw *hw)
++{
++	struct rt2880_gate *clk_gate = to_rt2880_gate(hw);
++	u32 val = 0x01UL << clk_gate->shift;
++
++	regmap_update_bits(syscon_regmap, SYSC_REG_CLKCFG1, val, 0);
++}
++
++static int rt2880_gate_is_enabled(struct clk_hw *hw)
++{
++	struct rt2880_gate *clk_gate = to_rt2880_gate(hw);
++	unsigned int rdval;
++
++	if (regmap_read(syscon_regmap, SYSC_REG_CLKCFG1, &rdval))
++		return 0;
++
++	return (!!(rdval & (0x01UL << clk_gate->shift)));
++}
++
++static const struct clk_ops rt2880_gate_ops = {
++	.enable = rt2880_gate_enable,
++	.disable = rt2880_gate_disable,
++	.is_enabled = rt2880_gate_is_enabled,
++};
++
++static struct clk * __init
++rt2880_register_gate(const char *name, const char *parent_name, u8 shift)
++{
++	struct rt2880_gate	*clk_gate;
++	struct clk		*clk;
++	struct clk_init_data	init;
++	const char *_parent_names[1] = { parent_name };
++
++	clk_gate = kzalloc(sizeof(*clk_gate), GFP_KERNEL);
++	if (!clk_gate)
++		return ERR_PTR(-ENOMEM);
++
++	init.name = name;
++	init.ops = &rt2880_gate_ops;
++	init.flags = 0;
++	init.parent_names = parent_name ? _parent_names : NULL;
++	init.num_parents = parent_name ? 1 : 0;
++
++	clk_gate->hw.init = &init;
++	clk_gate->shift = shift;
++
++	clk = clk_register(NULL, &clk_gate->hw);
++	if (IS_ERR(clk))
++		kfree(clk_gate);
++
++	return clk;
++}
++
++static void __init rt2880_clkctrl_init_dt(struct device_node *np)
++{
++	struct clk *clk;
++	int i;
++	const struct of_device_id *match;
++	struct gate_clk_desc *clk_tbl;
++
++	match = of_match_node(of_match_rt2880_clk, np);
++	if (!match) {
++		pr_info("rt2880-clock: could not get compatible node");
++		return;
++	}
++	clk_tbl = (struct gate_clk_desc *)match->data;
++
++	syscon_regmap = syscon_regmap_lookup_by_phandle(np, "ralink,sysctl");
++	if (IS_ERR(syscon_regmap)) {
++		pr_info("rt2880-clock: could not get syscon regmap");
++		return;
++	}
++
++	clk_data.clk_num = GATE_CLK_NUM;
++	clk_data.clks = clks;
++
++	for (i = 0; i < GATE_CLK_NUM; i++) {
++		if (clk_tbl[i].name) {
++			clk = rt2880_register_gate(
++				clk_tbl[i].name, clk_tbl[i].parent_name, i);
++			if (IS_ERR_OR_NULL(clk))
++				panic("rt2880-clock : could not register gate clock");
++			clk_data.clks[i] = clk;
++		}
++	}
++
++	of_clk_add_provider(np, of_clk_src_onecell_get, &clk_data);
++}
++CLK_OF_DECLARE(rt2880, "ralink,rt2880-clock", rt2880_clkctrl_init_dt);

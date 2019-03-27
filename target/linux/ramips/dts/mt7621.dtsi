@@ -38,18 +38,8 @@
 		compatible = "mediatek,mt7621-pll", "syscon";
 
 		#clock-cells = <1>;
-		clock-output-names = "cpu", "bus";
+		clock-output-names = "cpu", "bus", "sys";
 	};
-
-	sysclock: sysclock {
-		#clock-cells = <0>;
-		compatible = "fixed-clock";
-
-		/* FIXME: there should be way to detect this */
-		clock-frequency = <50000000>;
-	};
-
-
 
 	palmbus: palmbus@1E000000 {
 		compatible = "palmbus";
@@ -60,7 +50,7 @@
 		#size-cells = <1>;
 
 		sysc: sysc@0 {
-			compatible = "mtk,mt7621-sysc";
+			compatible = "mtk,mt7621-sysc", "syscon";
 			reg = <0x0 0x100>;
 		};
 
@@ -102,7 +92,8 @@
 			compatible = "mediatek,mt7621-i2c";
 			reg = <0x900 0x100>;
 
-			clocks = <&sysclock>;
+			clocks = <&clkctrl 16>;
+			clock-names = "i2c";
 
 			resets = <&rstctrl 16>;
 			reset-names = "i2c";
@@ -120,7 +111,8 @@
 			compatible = "mediatek,mt7621-i2s";
 			reg = <0xa00 0x100>;
 
-			clocks = <&sysclock>;
+			clocks = <&clkctrl 17>;
+			clock-names = "i2s";
 
 			resets = <&rstctrl 17>;
 			reset-names = "i2s";
@@ -168,7 +160,8 @@
 			compatible = "ns16550a";
 			reg = <0xc00 0x100>;
 
-			clock-frequency = <50000000>;
+			clocks = <&clkctrl 19>;
+			clock-names = "uartl";
 
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 26 IRQ_TYPE_LEVEL_HIGH>;
@@ -182,7 +175,8 @@
 			compatible = "ns16550a";
 			reg = <0xd00 0x100>;
 
-			clock-frequency = <50000000>;
+			clocks = <&clkctrl 20>;
+			clock-names = "uart2";
 
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 27 IRQ_TYPE_LEVEL_HIGH>;
@@ -200,7 +194,8 @@
 			compatible = "ns16550a";
 			reg = <0xe00 0x100>;
 
-			clock-frequency = <50000000>;
+			clocks = <&clkctrl 21>;
+			clock-names = "uart3";
 
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 28 IRQ_TYPE_LEVEL_HIGH>;
@@ -220,7 +215,8 @@
 			compatible = "ralink,mt7621-spi";
 			reg = <0xb00 0x100>;
 
-			clocks = <&pll MT7621_CLK_BUS>;
+			clocks = <&clkctrl 18>;
+			clock-names = "spi";
 
 			resets = <&rstctrl 18>;
 			reset-names = "spi";
@@ -364,8 +360,10 @@
 	};
 
 	clkctrl: clkctrl {
-		compatible = "ralink,rt2880-clock";
+		compatible = "mediatek,mt7621-clock", "ralink,rt2880-clock";
 		#clock-cells = <1>;
+
+		ralink,sysctl = <&sysc>;
 	};
 
 	sdhci: sdhci@1E130000 {
@@ -391,8 +389,8 @@
 		       0x1e1d0700 0x0100>;
 		reg-names = "mac", "ippc";
 
-		clocks = <&sysclock>;
-		clock-names = "sys_ck";
+		clocks = <&pll MT7621_CLK_SYS>;
+		clock-names = "sys";
 
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;
