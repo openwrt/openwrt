@@ -65,13 +65,26 @@
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	usb-regulator {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB-power";
+		gpio = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		enable-active-high;
+
+		regulator-always-on;
+	};
 };
 
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
 			ralink,group = "p0led_an", "p1led_an", "p2led_an",
-				       "p3led_an", "p4led_an", "wdt", "wled_an";
+				       "p3led_an", "p4led_an", "wdt",
+				       "wled_an", "uart1";
 			ralink,function = "gpio";
 		};
 	};
