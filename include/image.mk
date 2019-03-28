@@ -298,6 +298,23 @@ define Image/Manifest
 		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest
 endef
 
+define Image/gzip-ext4-padded-squashfs
+
+  define Image/Build/squashfs
+    $(call Image/pad-root-squashfs)
+  endef
+
+  ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
+    define Image/Build/gzip/ext4
+      $(call Image/Build/gzip,ext4)
+    endef
+    define Image/Build/gzip/squashfs
+      $(call Image/Build/gzip,squashfs)
+    endef
+  endif
+
+endef
+
 ifdef CONFIG_TARGET_ROOTFS_TARGZ
   define Image/Build/targz
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
