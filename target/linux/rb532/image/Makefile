@@ -84,7 +84,7 @@ define Image/Build
 	$(call Image/Build/$(1),$(1))
 	$(CP) $(KDIR)/vmlinux.elf $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel 'root=/dev/sda2 '
-	./gen_image.sh $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).bin \
+	./gen_image.sh $(BIN_DIR)/$(IMG_COMBINED)-$(1).bin \
 		6 $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1) \
 		128

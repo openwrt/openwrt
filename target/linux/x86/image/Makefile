@@ -71,7 +71,7 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
 		-c ./grub-early.cfg \
 		$(GRUB2_MODULES)
 	$(CP) $(STAGING_DIR_HOST)/lib/grub/i386-pc/*.img $(KDIR)/grub2/
-	echo '(hd0) $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img' > $(KDIR)/grub2/device.map
+	echo '(hd0) $(BIN_DIR)/$(IMG_COMBINED)-$(1).img' > $(KDIR)/grub2/device.map
 	sed \
 		-e 's#@SERIAL_CONFIG@#$(strip $(GRUB_SERIAL_CONFIG))#g' \
 		-e 's#@TERMINAL_CONFIG@#$(strip $(GRUB_TERMINAL_CONFIG))#g' \
@@ -81,7 +81,7 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
 		./grub.cfg > $(KDIR)/root.grub/boot/grub/grub.cfg
 	-$(CP) $(STAGING_DIR_ROOT)/boot/. $(KDIR)/root.grub/boot/
 	PADDING="1" SIGNATURE="$(SIGNATURE)" PATH="$(TARGET_PATH)" $(SCRIPT_DIR)/gen_image_generic.sh \
-		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
+		$(BIN_DIR)/$(IMG_COMBINED)-$(1).img \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $(KDIR)/root.grub \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1) \
 		256
@@ -89,7 +89,7 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
 		--device-map="$(KDIR)/grub2/device.map" \
 		-d "$(KDIR)/grub2" \
 		-r "hd0,msdos1" \
-		"$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img"
+		"$(BIN_DIR)/$(IMG_COMBINED)-$(1).img"
   endef
 endif
 
@@ -125,25 +125,25 @@ endef
 
 ifneq ($(CONFIG_VDI_IMAGES),)
   define Image/Build/vdi
-	rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi || true
+	rm $(BIN_DIR)/$(IMG_COMBINED)-$(1).vdi || true
 	qemu-img convert -f raw -O vdi \
-		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
-		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi
+		$(BIN_DIR)/$(IMG_COMBINED)-$(1).img \
+		$(BIN_DIR)/$(IMG_COMBINED)-$(1).vdi
   endef
 endif
 
 ifneq ($(CONFIG_VMDK_IMAGES),)
   define Image/Build/vmdk
-	rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk || true
+	rm $(BIN_DIR)/$(IMG_COMBINED)-$(1).vmdk || true
 	qemu-img convert -f raw -O vmdk \
-		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
-		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk
+		$(BIN_DIR)/$(IMG_COMBINED)-$(1).img \
+		$(BIN_DIR)/$(IMG_COMBINED)-$(1).vmdk
   endef
 endif
 
 define Image/Build/gzip
-	gzip -f9n $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img
-	gzip -f9n $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
+	gzip -f9n $(BIN_DIR)/$(IMG_COMBINED)-$(1).img
+	gzip -f9n $(BIN_DIR)/$(IMG_ROOTFS)-$(1).img
 endef
 
 ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
@@ -173,7 +173,7 @@ define Image/Build
 	$(call Image/Build/grub2,$(1))
 	$(call Image/Build/vdi,$(1))
 	$(call Image/Build/vmdk,$(1))
-	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_ROOTFS)-$(1).img
   else
 	$(CP) $(KDIR)/root.iso $(BIN_DIR)/$(IMG_PREFIX).iso
   endif
