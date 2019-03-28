@@ -19,9 +19,12 @@ platform_check_image_sdcard() {
 
 platform_do_upgrade_sdcard() {
 	local board=$(board_name)
+	local diskdev
 
 	sync
-	get_image "$1" | dd of=/dev/mmcblk0 bs=2M conv=fsync
+	if export_bootdevice && export_partdevice diskdev 0; then
+		get_image "$1" | dd of=/dev/$diskdev bs=2M conv=fsync
+	fi
 
 	case "$board" in
 	armada-385-turris-omnia)
@@ -36,9 +39,13 @@ platform_do_upgrade_sdcard() {
 }
 
 platform_copy_config_sdcard() {
-	mkdir -p /boot
-	[ -f /boot/kernel.img ] || mount -o rw,noatime /dev/mmcblk0p1 /boot
-	cp -af "$CONF_TAR" /boot/
-	sync
-	umount /boot
+	local partdev
+
+	if export_partdevice partdev 1; then
+		mkdir -p /boot
+		[ -f /boot/kernel.img ] || mount -o rw,noatime /dev/$partdev /boot
+		cp -af "$CONF_TAR" /boot/
+		sync
+		umount /boot
+	fi
 }

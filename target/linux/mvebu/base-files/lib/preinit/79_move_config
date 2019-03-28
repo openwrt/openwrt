@@ -1,12 +1,13 @@
 #!/bin/sh
 # Copyright (C) 2015 OpenWrt.org
 
-BOOTPART=/dev/mmcblk0p1
-
 . /lib/functions.sh
+. /lib/upgrade/common.sh
 
 move_config() {
-	if [ -b $BOOTPART ]; then
+	local partdev
+
+	if export_bootdevice && export_partdevice partdev 1; then
 		case $(board_name) in
 			turris-omnia)
 			insmod nls_cp437
@@ -16,7 +17,7 @@ move_config() {
 			;;
 		esac
 		mkdir -p /boot
-		mount -o rw,noatime $BOOTPART /boot
+		mount -o rw,noatime "/dev/$partdev" /boot
 		[ -f /boot/sysupgrade.tgz ] && mv -f /boot/sysupgrade.tgz /
 		umount /boot
 	fi
