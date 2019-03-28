@@ -162,7 +162,11 @@ LINUX_RECONF_DIFF = $(call __linux_confcmd,$(filter-out $(LINUX_RECONFIG_TARGET)
 ifeq ($(DUMP),1)
   BuildTarget=$(BuildTargets/DumpCurrent)
 
-  CPU_CFLAGS = -Os -pipe
+  ifneq ($(findstring cortex-a,$(CPU_TYPE)),)
+    CPU_CFLAGS = -O2 -pipe
+  else
+    CPU_CFLAGS = -Os -pipe
+  endif
   ifneq ($(findstring mips,$(ARCH)),)
     ifneq ($(findstring mips64,$(ARCH)),)
       CPU_TYPE ?= mips64
