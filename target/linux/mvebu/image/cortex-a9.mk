@@ -128,7 +128,7 @@ define Device/armada-388-clearfog-pro
   DEVICE_TITLE := SolidRun ClearFog Pro
   DEVICE_PACKAGES := mkf2fs e2fsprogs swconfig kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
   SUPPORTED_DEVICES := armada-388-clearfog-pro armada-388-clearfog
   UBOOT := clearfog-u-boot-spl.kwb
@@ -141,7 +141,7 @@ define Device/armada-388-clearfog-base
   DEVICE_TITLE := SolidRun ClearFog Base
   DEVICE_PACKAGES := mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
   UBOOT := clearfog-u-boot-spl.kwb
 endef
