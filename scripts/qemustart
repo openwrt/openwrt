@@ -74,6 +74,7 @@ check_setup_() {
 }
 
 check_setup() {
+	[ -z $o_nonetwork ] || return 0
 	check_setup_ || {
 		__errmsg "please check the script content to see the environment requirement"
 		return 1
@@ -122,6 +123,7 @@ parse_args() {
 	o_qemu_extra=()
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
+			--no-network|-n) o_nonetwork=1; shift ;;
 			--kernel) o_kernel="$2"; shift 2 ;;
 			--rootfs) o_rootfs="$2"; shift 2 ;;
 			--machine|-machine|-M) o_mach="$2"; shift 2 ;;
@@ -185,9 +187,16 @@ start_qemu_armvirt() {
 		)
 	}
 
+	[ -n $o_nonetwork ] || {
+		o_qemu_extra+=( \
+			"-netdev" "bridge,id=lan,br=$BR_LAN,helper=$HELPER" \
+			    "-device" "virtio-net-pci,id=devlan,netdev=lan,mac=$MAC_LAN" \
+			"-netdev" "bridge,id=wan,br=$BR_WAN,helper=$HELPER" "-device" \
+			    "virtio-net-pci,id=devwan,netdev=wan,mac=$MAC_WAN" \
+		)
+	}
+
 	"$qemu_exe" -machine "$mach" -cpu "$cpu" -nographic \
-		-netdev bridge,id=lan,br="$BR_LAN,helper=$HELPER" -device virtio-net-pci,id=devlan,netdev=lan,mac="$MAC_LAN" \
-		-netdev bridge,id=wan,br="$BR_WAN,helper=$HELPER" -device virtio-net-pci,id=devwan,netdev=wan,mac="$MAC_WAN" \
 		-kernel "$kernel" \
 		"${o_qemu_extra[@]}"
 }
@@ -209,9 +218,16 @@ start_qemu_malta() {
 	# NOTE: order of wan, lan -device arguments matters as it will affect which
 	# one will be actually used as the wan, lan network interface inside the
 	# guest machine
+	[ -n $o_nonetwork ] || {
+		o_qemu_extra+=( \
+			"-netdev" "bridge,id=wan,br=$BR_WAN,helper=$HELPER" "-device" \
+			    "virtio-net-pci,id=devwan,netdev=wan,mac=$MAC_WAN" \
+			"-netdev" "bridge,id=lan,br=$BR_LAN,helper=$HELPER" \
+			    "-device" "virtio-net-pci,id=devlan,netdev=lan,mac=$MAC_LAN" \
+		)
+	}
+
 	"$qemu_exe" -machine "$mach" -nographic \
-		-netdev bridge,id=wan,br="$BR_WAN,helper=$HELPER" -device pcnet,netdev=wan,mac="$MAC_WAN" \
-		-netdev bridge,id=lan,br="$BR_LAN,helper=$HELPER" -device pcnet,netdev=lan,mac="$MAC_LAN" \
 		-kernel "$kernel" \
 		"${o_qemu_extra[@]}"
 }
@@ -241,6 +257,15 @@ start_qemu_x86() {
 			;;
 	esac
 
+	[ -n $o_nonetwork ] || {
+		o_qemu_extra+=( \
+			"-netdev" "bridge,id=lan,br=$BR_LAN,helper=$HELPER" \
+			    "-device" "virtio-net-pci,id=devlan,netdev=lan,mac=$MAC_LAN" \
+			"-netdev" "bridge,id=wan,br=$BR_WAN,helper=$HELPER" "-device" \
+			    "virtio-net-pci,id=devwan,netdev=wan,mac=$MAC_WAN" \
+		)
+	}
+
 	case "${o_subtarget%-*}" in
 		legacy)
 			# use IDE (PATA) disk instead of AHCI (SATA).  Refer to link
@@ -254,16 +279,12 @@ start_qemu_x86() {
 			#
 			# [1] https://dev.openwrt.org/ticket/17947
 			"$qemu_exe" -machine "$mach" -nographic \
-				-netdev bridge,id=lan,br="$BR_LAN,helper=$HELPER" -device e1000,id=devlan,netdev=lan,mac="$MAC_LAN" \
-				-netdev bridge,id=wan,br="$BR_WAN,helper=$HELPER" -device e1000,id=devwan,netdev=wan,mac="$MAC_WAN" \
 				-device ide-drive,drive=drv0 \
 				-drive "file=$rootfs,format=raw,id=drv0,if=none" \
 				"${o_qemu_extra[@]}"
 			;;
 		generic|64)
 			"$qemu_exe" -machine "$mach" -nographic \
-				-netdev bridge,id=lan,br="$BR_LAN,helper=$HELPER" -device virtio-net-pci,id=devlan,netdev=lan,mac="$MAC_LAN" \
-				-netdev bridge,id=wan,br="$BR_WAN,helper=$HELPER" -device virtio-net-pci,id=devwan,netdev=wan,mac="$MAC_WAN" \
 				-drive "file=$rootfs,format=raw,if=virtio" \
 				"${o_qemu_extra[@]}"
 			;;
@@ -282,6 +303,6 @@ start_qemu() {
 	esac
 }
 
-check_setup \
-	&& parse_args "$@" \
+parse_args "$@" \
+	&& check_setup \
 	&& start_qemu
