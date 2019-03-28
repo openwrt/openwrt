@@ -205,6 +205,7 @@ start_qemu_malta() {
 	local is64
 	local isel
 	local qemu_exe
+	local rootfs="$o_rootfs"
 	local kernel="$o_kernel"
 	local mach="${o_mach:-malta}"
 
@@ -214,6 +215,16 @@ start_qemu_malta() {
 	qemu_exe="qemu-system-mips$is64$isel"
 
 	[ -n "$kernel" ] || kernel="$o_bindir/openwrt-malta-${o_subtarget%-*}-vmlinux-initramfs.elf"
+
+	[ -z "$rootfs" ] || {
+		if [ ! -f "$rootfs" -a -s "$rootfs.gz" ]; then
+			gunzip "$rootfs.gz"
+		fi
+		o_qemu_extra+=( \
+			"-drive" "file=$rootfs,format=raw" \
+			"-append" "root=/dev/sda rootwait" \
+		)
+	}
 
 	# NOTE: order of wan, lan -device arguments matters as it will affect which
 	# one will be actually used as the wan, lan network interface inside the
