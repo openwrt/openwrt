@@ -8,7 +8,14 @@ RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 REQUIRE_IMAGE_METADATA=1
 
 platform_check_image() {
-	return 0
+	case "$(board_name)" in
+	armada-385-turris-omnia|armada-388-clearfog-base|armada-388-clearfog-pro|globalscale,espressobin|marvell,armada8040-mcbin)
+		platform_check_image_sdcard "$ARGV"
+		;;
+	*)
+		return 0
+		;;
+	esac
 }
 
 platform_do_upgrade() {
