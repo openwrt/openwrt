@@ -178,6 +178,15 @@ ifeq ($(strip $(call kernel_patchver_ge,4.18.0)),1)
 	-Wno-unique_unit_address
 endif
 
+define Image/pad-to
+	dd if=$(1) of=$(1).new bs=$(2) conv=sync
+	mv $(1).new $(1)
+endef
+
+define Image/pad-root-squashfs
+	$(call Image/pad-to,$(KDIR)/root.squashfs,$(if $(1),$(1),$(CONFIG_TARGET_ROOTFS_PARTSIZE)M))
+endef
+
 # $(1) source dts file
 # $(2) target dtb file
 # $(3) extra CPP flags

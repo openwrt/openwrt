@@ -230,8 +230,7 @@ define Build/append-uboot
 endef
 
 define Build/pad-to
-	dd if=$@ of=$@.new bs=$(1) conv=sync
-	mv $@.new $@
+	$(call Image/pad-to,$@,$(1))
 endef
 
 define Build/pad-extra
