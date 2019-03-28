@@ -93,10 +93,6 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
   endef
 endif
 
-define Image/Build/squashfs
-	dd if=/dev/zero bs=128k count=1 >> $(KDIR)/root.squashfs
-endef
-
 define Image/Build/iso
 	$(INSTALL_DIR) $(KDIR)/root.grub/boot/grub $(KDIR)/grub2
 	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz
@@ -146,14 +142,7 @@ define Image/Build/gzip
 	gzip -f9n $(BIN_DIR)/$(IMG_ROOTFS)-$(1).img
 endef
 
-ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
-  define Image/Build/gzip/ext4
-	$(call Image/Build/gzip,ext4)
-  endef
-  define Image/Build/gzip/squashfs
-	$(call Image/Build/gzip,squashfs)
-  endef
-endif
+$(eval $(call Image/gzip-ext4-padded-squashfs))
 
 define Image/BuildKernel
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/$(IMG_PREFIX)-vmlinuz
