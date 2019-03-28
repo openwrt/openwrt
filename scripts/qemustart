@@ -233,9 +233,10 @@ start_qemu_malta() {
 }
 
 start_qemu_x86() {
+	local qemu_exe
+	local kernel="$o_kernel"
 	local rootfs="$o_rootfs"
 	local mach="${o_mach:-pc}"
-	local qemu_exe
 
 	[ -n "$rootfs" ] || {
 		rootfs="$o_bindir/openwrt-$o_target-${o_subtarget%-*}-combined-ext4.img"
@@ -256,6 +257,13 @@ start_qemu_x86() {
 			return 1
 			;;
 	esac
+
+	[ -n "$kernel" ] && {
+	    o_qemu_extra+=( \
+		"-kernel" "$kernel" \
+		"-append" "root=/dev/vda console=ttyS0 rootwait" \
+	    )
+	}
 
 	[ -n $o_nonetwork ] || {
 		o_qemu_extra+=( \
