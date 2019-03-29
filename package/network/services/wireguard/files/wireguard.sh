@@ -114,6 +114,7 @@ proto_wireguard_setup() {
   config_get mtu           "${config}" "mtu"
   config_get fwmark        "${config}" "fwmark"
   config_get ip6prefix     "${config}" "ip6prefix"
+  config_get nohostroute   "${config}" "nohostroute"
 
   # create interface
   ip link del dev "${config}" 2>/dev/null
@@ -176,12 +177,14 @@ proto_wireguard_setup() {
   done
 
   # endpoint dependency
-  wg show "${config}" endpoints | \
-    sed -E 's/\[?([0-9.:a-f]+)\]?:([0-9]+)/\1 \2/' | \
-    while IFS=$'\t ' read -r key address port; do
-    [ -n "${port}" ] || continue
-    proto_add_host_dependency "${config}" "${address}"
-  done
+  if [ "${nohostroute}" != "1" ]; then
+    wg show "${config}" endpoints | \
+      sed -E 's/\[?([0-9.:a-f]+)\]?:([0-9]+)/\1 \2/' | \
+      while IFS=$'\t ' read -r key address port; do
+      [ -n "${port}" ] || continue
+      proto_add_host_dependency "${config}" "${address}"
+    done
+  fi
 
   proto_send_update "${config}"
 }

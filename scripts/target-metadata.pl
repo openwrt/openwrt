@@ -423,7 +423,7 @@ sub gen_profile_mk() {
 		foreach my $profile (@{$cur->{profiles}}) {
 			print $profile->{id}.'_NAME:='.$profile->{name}."\n";
 			print $profile->{id}.'_HAS_IMAGE_METADATA:='.$profile->{has_image_metadata}."\n";
-			if (@{$profile->{supported_devices}} > 0) {
+			if (defined($profile->{supported_devices}) and @{$profile->{supported_devices}} > 0) {
 				print $profile->{id}.'_SUPPORTED_DEVICES:='.join(' ', @{$profile->{supported_devices}})."\n";
 			}
 			print $profile->{id}.'_PACKAGES:='.join(' ', @{$profile->{packages}})."\n";
