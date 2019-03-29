@@ -1,0 +1,52 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+#include "qca9558_comfast_cf-wr650ac.dtsi"
+
+/ {
+	compatible = "comfast,cf-wr650ac-v2", "qca,qca9557";
+	model = "Comfast CF-WR650AC v2";
+};
+
+&spi {
+	status = "okay";
+	num-cs = <1>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "art";
+				reg = <0x040000 0x010000>;
+				read-only;
+			};
+
+			partition@50000 {
+                                label = "firmware";
+                                reg = <0x050000 0xfa0000>;
+                        };
+
+			partition@ff0000 {
+				label = "art-backup";
+				reg = <0xff0000 0x010000>;
+				read-only;
+			};
+		};
+	};
+};

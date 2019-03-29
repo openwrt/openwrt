@@ -171,6 +171,24 @@ define Device/comfast_cf-e120a-v3
 endef
 TARGET_DEVICES += comfast_cf-e120a-v3
 
+define Device/comfast_cf-wr650ac-v1
+  ATH_SOC := qca9558
+  DEVICE_TITLE := COMFAST CF-WR650AC v1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 1536k | append-rootfs | pad-to 16128k | check-size $$$$(IMAGE_SIZE)
+  IMAGE_SIZE := 16128k
+endef
+TARGET_DEVICES += comfast_cf-wr650ac-v1
+
+define Device/comfast_cf-wr650ac-v2
+  ATH_SOC := qca9558
+  DEVICE_TITLE := COMFAST CF-WR650AC v2
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 1536k | append-rootfs | pad-to 16000k | check-size $$$$(IMAGE_SIZE)
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += comfast_cf-wr650ac-v2
+
 define Device/comfast_cf-e5
   ATH_SOC := qca9531
   DEVICE_TITLE := COMFAST CF-E5/E7

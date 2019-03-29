@@ -87,6 +87,10 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:00:00.0.bin")
 	case $board in
+	comfast,cf-wr650ac-v1|\
+	comfast,cf-wr650ac-v2)
+		ath10kcal_extract "art" 20480 2116
+                ;;
 	devolo,dvl1200e|\
 	devolo,dvl1200i|\
 	devolo,dvl1750c|\
