@@ -1,0 +1,222 @@
+diff --git a/net/wireless/core.c b/net/wireless/core.c
+index 8af160d..cde5843 100644
+--- a/net/wireless/core.c
++++ b/net/wireless/core.c
+@@ -346,6 +346,71 @@ static void cfg80211_sched_scan_stop_wk(struct work_struct *work)
+ 	rtnl_unlock();
+ }
+ 
++/**
++ * This timer will check for expired node and it will delete that node.
++ * Timer will run for every 10 seconds till list is empty.
++ **/
++void cfg80211_non_assoc_sta_timer_wk(struct work_struct *work)
++{
++	struct delayed_work *delayed_work = to_delayed_work(work);
++	struct cfg80211_non_assoc_stas_info *uk_stas_info;
++	struct cfg80211_non_assoc_single_sta_info *sta, *tsta;
++
++	uk_stas_info = container_of(delayed_work,
++			struct cfg80211_non_assoc_stas_info, sta_update_timer);
++
++	if (list_empty(&uk_stas_info->non_assoc_sta_list))
++		return;
++
++	spin_lock(&uk_stas_info->sta_lock);
++	list_for_each_entry_safe(sta, tsta,
++	 &uk_stas_info->non_assoc_sta_list, list) {
++	/* Clearing the node if we didn't receive any packet within 4 seconds */
++	    if (time_before(sta->last_rx_pkt +
++	     (CFG80211_NON_ASSOC_MIN_CACHE_UPDATE * HZ), jiffies)) {
++	        list_del(&sta->list);
++	        kfree(sta);
++	    }
++	}
++	spin_unlock(&uk_stas_info->sta_lock);
++
++	schedule_delayed_work(&uk_stas_info->sta_update_timer,
++	            CFG80211_NON_ASSOC_FILTER_TIMER_INT * HZ);
++}
++
++static void cfg80211_non_assoc_sta_info_dealloc(
++	                struct cfg80211_registered_device *rdev)
++{
++	struct cfg80211_non_assoc_single_sta_info *sta, *tsta;
++	struct cfg80211_non_assoc_stas_info *uk_stas_info =
++	                    rdev->non_assoc_stas_info;
++
++	cancel_delayed_work_sync(&uk_stas_info->sta_update_timer);
++	spin_lock(&uk_stas_info->sta_lock);
++	list_for_each_entry_safe(sta, tsta,
++	 &uk_stas_info->non_assoc_sta_list, list) {
++	    list_del(&sta->list);
++	    kfree(sta);
++	}
++	spin_unlock(&uk_stas_info->sta_lock);
++
++	kfree(rdev->non_assoc_stas_info);
++}
++
++static void cfg80211_non_assoc_sta_info_alloc(
++	                struct cfg80211_registered_device *rdev)
++{
++	rdev->non_assoc_stas_info = kzalloc(
++	    sizeof(struct cfg80211_non_assoc_stas_info), GFP_KERNEL);
++	if (!rdev->non_assoc_stas_info)
++		return;
++
++	INIT_LIST_HEAD(&rdev->non_assoc_stas_info->non_assoc_sta_list);
++	spin_lock_init(&rdev->non_assoc_stas_info->sta_lock);
++	INIT_DELAYED_WORK(&rdev->non_assoc_stas_info->sta_update_timer,
++	                cfg80211_non_assoc_sta_timer_wk);
++}
++
+ static void cfg80211_propagate_radar_detect_wk(struct work_struct *work)
+ {
+ 	struct cfg80211_registered_device *rdev;
+@@ -514,6 +579,7 @@ use_default_name:
+ 	INIT_WORK(&rdev->event_work, cfg80211_event_work);
+ 
+ 	init_waitqueue_head(&rdev->dev_wait);
++	cfg80211_non_assoc_sta_info_alloc(rdev);
+ 
+ 	/*
+ 	 * Initialize wiphy parameters to IEEE 802.11 MIB default values.
+@@ -979,6 +1045,7 @@ void wiphy_unregister(struct wiphy *wiphy)
+ 	flush_work(&rdev->destroy_work);
+ 	flush_work(&rdev->sched_scan_stop_wk);
+ 	flush_work(&rdev->mlme_unreg_wk);
++	cfg80211_non_assoc_sta_info_dealloc(rdev);
+ 	flush_work(&rdev->propagate_radar_detect_wk);
+ 	flush_work(&rdev->propagate_cac_done_wk);
+ 
+diff --git a/net/wireless/core.h b/net/wireless/core.h
+index 64724cd..62bc818 100644
+--- a/net/wireless/core.h
++++ b/net/wireless/core.h
+@@ -20,6 +20,22 @@
+ 
+ #define WIPHY_IDX_INVALID	-1
+ 
++/* Running  non-association filter timer for every 10 seconds */
++#define CFG80211_NON_ASSOC_FILTER_TIMER_INT    10
++#define CFG80211_NON_ASSOC_MIN_CACHE_UPDATE    4
++struct cfg80211_non_assoc_stas_info {
++	struct list_head non_assoc_sta_list;
++	spinlock_t sta_lock;
++	struct delayed_work sta_update_timer;
++};
++
++struct cfg80211_non_assoc_single_sta_info {
++	u8 address[ETH_ALEN];
++	u16 count;
++	unsigned long last_rx_pkt;
++	struct list_head list;
++};
++
+ struct cfg80211_registered_device {
+ 	const struct cfg80211_ops *ops;
+ 	struct list_head list;
+@@ -101,6 +117,7 @@ struct cfg80211_registered_device {
+ 	struct cfg80211_chan_def cac_done_chandef;
+ 	struct work_struct propagate_cac_done_wk;
+ 
++	struct cfg80211_non_assoc_stas_info *non_assoc_stas_info;
+ 	/* must be last because of the way we do wiphy_priv(),
+ 	 * and it should at least be aligned to NETDEV_ALIGN */
+ 	struct wiphy wiphy __aligned(NETDEV_ALIGN);
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index 66d0ffb..c2ef2ce 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -14984,11 +14984,31 @@ static bool __nl80211_unexpected_frame(struct net_device *dev, u8 cmd,
+ 	return true;
+ }
+ 
++struct cfg80211_non_assoc_single_sta_info * cfg80211_find_non_assoc_sta_entry(
++	struct cfg80211_non_assoc_stas_info *uk_stas_info, const u8 *addr)
++{
++	struct cfg80211_non_assoc_single_sta_info *sta, *find_sta = NULL;
++
++	spin_lock(&uk_stas_info->sta_lock);
++	list_for_each_entry(sta, &uk_stas_info->non_assoc_sta_list, list) {
++	    if (ether_addr_equal(addr, sta->address)) {
++	        find_sta = sta;
++	        break;
++	    }
++	}
++	spin_unlock(&uk_stas_info->sta_lock);
++
++	return find_sta;
++}
++
+ bool cfg80211_rx_spurious_frame(struct net_device *dev,
+ 				const u8 *addr, gfp_t gfp)
+ {
+ 	struct wireless_dev *wdev = dev->ieee80211_ptr;
+-	bool ret;
++	struct wiphy *wiphy = wdev->wiphy;
++	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
++	bool ret, run_timer = false, deauth = true;
++	struct cfg80211_non_assoc_single_sta_info *sta;
+ 
+ 	trace_cfg80211_rx_spurious_frame(dev, addr);
+ 
+@@ -14997,10 +15017,53 @@ bool cfg80211_rx_spurious_frame(struct net_device *dev,
+ 		trace_cfg80211_return_bool(false);
+ 		return false;
+ 	}
+-	ret = __nl80211_unexpected_frame(dev, NL80211_CMD_UNEXPECTED_FRAME,
+-					 addr, gfp);
+-	trace_cfg80211_return_bool(ret);
+-	return ret;
++
++	if (!rdev->non_assoc_stas_info)
++	    return true;
++
++	/* If list is empty, we should trigger the timer to clear the node */
++	if (list_empty(&rdev->non_assoc_stas_info->non_assoc_sta_list))
++	    run_timer = true;
++
++
++	/* If we didn't find the station, creating new node. Else, updating the time */
++	sta = cfg80211_find_non_assoc_sta_entry(
++	                rdev->non_assoc_stas_info, addr);
++	if (sta) {
++	/* Checking pkt is received within second. If we didn't update, sending deauth packet */
++	    if (time_after(sta->last_rx_pkt + HZ, jiffies))
++	        deauth = false;
++	    else
++	        sta->last_rx_pkt = jiffies;
++	} else {
++	    sta = kzalloc(sizeof
++	     (struct cfg80211_non_assoc_single_sta_info), GFP_ATOMIC);
++	    if (sta == NULL)
++	        return true;
++
++	    memcpy(sta->address, addr, ETH_ALEN);
++	    spin_lock(&rdev->non_assoc_stas_info->sta_lock);
++	    list_add(&sta->list,
++	        &rdev->non_assoc_stas_info->non_assoc_sta_list);
++	    spin_unlock(&rdev->non_assoc_stas_info->sta_lock);
++	    sta->last_rx_pkt = jiffies;
++	}
++
++	sta->count++;
++
++	if (run_timer)
++	    schedule_delayed_work(
++	        &rdev->non_assoc_stas_info->sta_update_timer,
++	        CFG80211_NON_ASSOC_FILTER_TIMER_INT * HZ);
++
++	if (deauth) {
++	    ret = __nl80211_unexpected_frame(dev,
++	            NL80211_CMD_UNEXPECTED_FRAME, addr, gfp);
++	    trace_cfg80211_return_bool(ret);
++	    return ret;
++	}
++
++	return true;
+ }
+ EXPORT_SYMBOL(cfg80211_rx_spurious_frame);
+ 
