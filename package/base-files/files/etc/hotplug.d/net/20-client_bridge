@@ -13,8 +13,9 @@ if [ -n "$is_ath" ] ; then
         if [ "$ACTION" = "add" -o "$ACTION" = "register" ] ; then
                 sleep 2
                 managed=$(iw $INTERFACE info 2>/dev/null | grep "managed")
+                wiphy=$(iw $INTERFACE info | grep wiphy | cut -f2 -d' ')
                 if [ -n "$managed" ] ; then
-                        sta_section=$(uci show wireless | grep "mode='sta'$" | sed "s/\.mode='sta'//g")
+                        sta_section=$(uci show wireless | grep radio$wiphy | grep "mode='sta'$" | sed "s/\.mode='sta'//g")
                         if [ -n "$sta_section" ] ; then
                                 client_bridge=$(uci get "$sta_section.client_bridge")
                                 if [ "$client_bridge" = "1" ] ; then
