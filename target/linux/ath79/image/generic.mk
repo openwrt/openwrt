@@ -256,6 +256,15 @@ define Device/comfast_cf-e120a-v3
 endef
 TARGET_DEVICES += comfast_cf-e120a-v3
 
+define Device/comfast_cf-e314n-v2
+  ATH_SOC := qca9531
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E314N
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := rssileds
+endef
+TARGET_DEVICES += comfast_cf-e314n-v2
+
 define Device/comfast_cf-e5
   ATH_SOC := qca9531
   DEVICE_VENDOR := COMFAST
