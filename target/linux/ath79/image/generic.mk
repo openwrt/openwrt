@@ -275,6 +275,24 @@ define Device/comfast_cf-e5
 endef
 TARGET_DEVICES += comfast_cf-e5
 
+define Device/comfast_cf-wr650ac-v1
+  ATH_SOC := qca9558
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-WR650AC
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += comfast_cf-wr650ac-v1
+
+define Device/comfast_cf-wr650ac-v2
+  ATH_SOC := qca9558
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-WR650AC
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += comfast_cf-wr650ac-v2
+
 define Device/devolo_dvl1200e
   ATH_SOC := qca9558
   DEVICE_VENDOR := devolo

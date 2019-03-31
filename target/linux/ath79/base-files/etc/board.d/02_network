@@ -111,6 +111,12 @@ ath79_setup_interfaces()
 	ubnt,routerstation)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+	comfast,cf-wr650ac-v1|\
+	comfast,cf-wr650ac-v2)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6@eth1"
+		;;
 	devolo,dvl1200e|\
 	devolo,dvl1750e|\
 	ocedo,ursus)
