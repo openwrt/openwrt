@@ -109,6 +109,19 @@ define Device/tplink_archer-c7-v5
 endef
 TARGET_DEVICES += tplink_archer-c7-v5
 
+define Device/tplink_cpe210-v3
+  $(Device/tplink-safeloader)
+  ATH_SOC := qca9533
+  IMAGE_SIZE := 7680k
+  DEVICE_TITLE := TP-Link CPE210 v3
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := CPE210V3
+  LOADER_TYPE := elf
+  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
+  SUPPORTED_DEVICES += cpe210-v3
+endef
+TARGET_DEVICES += tplink_cpe210-v3
+
 define Device/tplink_re350k-v1
   $(Device/tplink)
   ATH_SOC := qca9558
