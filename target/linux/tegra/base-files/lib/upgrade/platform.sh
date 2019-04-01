@@ -87,6 +87,8 @@ platform_do_upgrade() {
 		return 0
 	fi
 
+	#write uboot image
+	get_image "$@" | dd of="$diskdev" bs=512 skip=1 seek=1 count=4097 conv=fsync,notrunc
 	#iterate over each partition from the image and write it to the boot disk
 	while read part start size; do
 		if export_partdevice partdev $part; then

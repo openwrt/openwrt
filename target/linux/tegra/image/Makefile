@@ -32,9 +32,11 @@ define Build/tegra-sdcard
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS) \
 		2048
+
+	$(if $(UBOOT),dd if=$(STAGING_DIR_IMAGE)/$(UBOOT).img of=$@ bs=512 skip=1 seek=1 conv=notrunc)
 endef
 
-DEVICE_VARS += BOOT_SCRIPT
+DEVICE_VARS += BOOT_SCRIPT UBOOT
 define Device/Default
   BOOT_SCRIPT := generic-bootscript
   IMAGES := sdcard.img.gz
