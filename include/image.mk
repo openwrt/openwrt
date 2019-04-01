@@ -154,10 +154,10 @@ endif
 
 
 # Disable noisy checks by default as in upstream
-ifeq ($(strip $(call kernel_patchver_ge,4.6.0)),1)
+ifeq ($(strip $(call kernel_patchver_ge,4.7.0)),1)
   DTC_FLAGS += -Wno-unit_address_vs_reg
 endif
-ifeq ($(strip $(call kernel_patchver_ge,4.11.0)),1)
+ifeq ($(strip $(call kernel_patchver_ge,4.12.0)),1)
   DTC_FLAGS += \
 	-Wno-unit_address_vs_reg \
 	-Wno-simple_bus_reg \
@@ -166,12 +166,12 @@ ifeq ($(strip $(call kernel_patchver_ge,4.11.0)),1)
 	-Wno-pci_device_bus_num \
 	-Wno-pci_device_reg
 endif
-ifeq ($(strip $(call kernel_patchver_ge,4.16.0)),1)
+ifeq ($(strip $(call kernel_patchver_ge,4.17.0)),1)
   DTC_FLAGS += \
 	-Wno-avoid_unnecessary_addr_size \
 	-Wno-alias_paths
 endif
-ifeq ($(strip $(call kernel_patchver_ge,4.17.0)),1)
+ifeq ($(strip $(call kernel_patchver_ge,4.18.0)),1)
   DTC_FLAGS += \
 	-Wno-graph_child_address \
 	-Wno-graph_port \
