@@ -26,7 +26,6 @@ define KernelPackage/can
 	CONFIG_CAN_MSCAN=n \
 	CONFIG_CAN_SJA1000=n \
 	CONFIG_CAN_SOFTING=n \
-	CONFIG_CAN_XILINXCAN=n \
 	CONFIG_NET_EMATCH_CANID=n \
 	CONFIG_CAN_DEBUG_DEVICES=n
   FILES:=$(LINUX_DIR)/drivers/net/can/can-dev.ko \
@@ -277,4 +276,17 @@ endef
 
 $(eval $(call KernelPackage,can-vcan))
 
+define KernelPackage/can-xilinx-can
+  TITLE:=Xilinx CAN IP
+  KCONFIG:=CONFIG_CAN_XILINXCAN
+  FILES:=$(LINUX_DIR)/drivers/net/can/xilinx_can.ko
+  AUTOLOAD:=$(call AutoProbe,xilinx_can)
+  $(call AddDepends/can,@TARGET_zynq)
+endef
 
+define KernelPackage/can-xilinx-can/description
+ Xilinx CAN driver. This driver supports both
+ soft AXI CAN IP and Zynq CANPS IP.
+endef
+
+$(eval $(call KernelPackage,can-xilinx-can))
