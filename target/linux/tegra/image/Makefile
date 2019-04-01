@@ -46,4 +46,14 @@ define Device/Default
   PROFILES := Default
 endef
 
+define Device/trimslice
+  DEVICE_TITLE := CompuLab TrimSlice
+  DEVICE_DTS := tegra20-trimslice
+  DEVICE_PACKAGES := kmod-r8169 kmod-rt2800-usb kmod-rtc-em3027 \
+	kmod-usb-storage wpad-mini
+  SUPPORTED_DEVICES := compulab,trimslice
+  UBOOT := trimslice-mmc
+endef
+TARGET_DEVICES += trimslice
+
 $(eval $(call BuildImage))
