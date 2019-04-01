@@ -528,6 +528,24 @@ endef
 $(eval $(call KernelPackage,rtc-ds1672))
 
 
+define KernelPackage/rtc-em3027
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Microelectronic EM3027 RTC support
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core
+  KCONFIG:=CONFIG_RTC_DRV_EM3027 \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-em3027.ko
+  AUTOLOAD:=$(call AutoProbe,rtc-em3027)
+endef
+
+define KernelPackage/rtc-em3027/description
+ Kernel module for Microelectronic EM3027 RTC.
+endef
+
+$(eval $(call KernelPackage,rtc-em3027))
+
+
 define KernelPackage/rtc-isl1208
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Intersil ISL1208 RTC support
