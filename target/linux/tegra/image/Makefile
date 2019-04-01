@@ -1,0 +1,47 @@
+#
+# Copyright (C) 2017-2019 Tomasz Maciej Nowak <tomek_n@o2.pl>
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/image.mk
+
+SIGNATURE:=$(shell printf "%.8s" $(SOURCE_DATE_EPOCH))
+
+define Build/tegra-sdcard
+	rm -fR $@.boot
+	mkdir -p $@.boot
+	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot
+	$(if $(DEVICE_DTS),\
+		$(foreach dtb,$(DEVICE_DTS),$(CP) $(DTS_DIR)/$(dtb).dtb $@.boot), \
+		$(CP) $(DTS_DIR)/*.dtb $@.boot)
+	sed \
+		-e 's#@ROOT@#$(SIGNATURE)#g' \
+		-e 's#@KERNEL@#$(KERNEL_NAME)#g' \
+		$(BOOT_SCRIPT) > $@-boot.scr
+	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
+		-n '$(DEVICE_TITLE) OpenWrt bootscript' \
+		-d $@-boot.scr \
+		$@.boot/boot.scr
+
+	PADDING="$(CONFIG_TARGET_IMAGES_PAD)" \
+	SIGNATURE="$(SIGNATURE)" \
+	$(SCRIPT_DIR)/gen_image_generic.sh \
+		$@ \
+		$(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS) \
+		2048
+endef
+
+DEVICE_VARS += BOOT_SCRIPT
+define Device/Default
+  BOOT_SCRIPT := generic-bootscript
+  IMAGES := sdcard.img.gz
+  IMAGE/sdcard.img.gz := tegra-sdcard | gzip | append-metadata
+  KERNEL_NAME := zImage
+  KERNEL := kernel-bin
+  PROFILES := Default
+endef
+
+$(eval $(call BuildImage))
