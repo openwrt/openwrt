@@ -1,0 +1,160 @@
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
+index ecc4c93..d0b504b 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
+@@ -547,7 +547,7 @@ void rt2800mmio_queue_init(struct data_queue *queue)
+ 
+ 	switch (queue->qid) {
+ 	case QID_RX:
+-		queue->limit = 128;
++		queue->limit = 512;
+ 		queue->data_size = AGGREGATION_SIZE;
+ 		queue->desc_size = RXD_DESC_SIZE;
+ 		queue->winfo_size = rxwi_size;
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c b/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
+index d028ed0..e8eaa8f 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
+@@ -139,7 +139,8 @@ static void rt2x00lib_intf_scheduled_iter(void *data, u8 *mac,
+ 
+ 	if (test_and_clear_bit(DELAYED_UPDATE_BEACON, &intf->delayed_flags)) {
+ 		mutex_lock(&intf->beacon_skb_mutex);
+-		rt2x00queue_update_beacon(rt2x00dev, vif);
++		if (intf->enable_beacon)
++			rt2x00queue_update_beacon(rt2x00dev, vif);
+ 		mutex_unlock(&intf->beacon_skb_mutex);
+ 	}
+ }
+@@ -202,6 +203,7 @@ static void rt2x00lib_beaconupdate_iter(void *data, u8 *mac,
+ 					struct ieee80211_vif *vif)
+ {
+ 	struct rt2x00_dev *rt2x00dev = data;
++	struct rt2x00_intf *intf = vif_to_intf(vif);
+ 
+ 	if (vif->type != NL80211_IFTYPE_AP &&
+ 	    vif->type != NL80211_IFTYPE_ADHOC &&
+@@ -215,7 +217,8 @@ static void rt2x00lib_beaconupdate_iter(void *data, u8 *mac,
+ 	 * never be called for USB devices.
+ 	 */
+ 	WARN_ON(rt2x00_is_usb(rt2x00dev));
+-	rt2x00queue_update_beacon(rt2x00dev, vif);
++	if (intf->enable_beacon)
++		rt2x00queue_update_beacon(rt2x00dev, vif);
+ }
+ 
+ void rt2x00lib_beacondone(struct rt2x00_dev *rt2x00dev)
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c b/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c
+index fd5f5c6..aa09db4 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c
+@@ -115,6 +115,26 @@ void rt2x00mac_tx(struct ieee80211_hw *hw,
+ 	if (!test_bit(DEVICE_STATE_PRESENT, &rt2x00dev->flags))
+ 		goto exit_free_skb;
+ 
++	/* Dirty hack for queue overrun protection,
++	 * if AC_VO/AC_VI/AC_BE is full, use next queue.
++	 * if AC_BK is full use previous queue.
++	 */
++	if (qid < 4) {
++		queue = rt2x00queue_get_tx_queue(rt2x00dev,qid);
++		if (unlikely(rt2x00queue_full(queue))){
++			switch(qid){
++				case 0: /* QID_AC_VO */
++				case 1: /* QID_AC_VI */
++				case 2: /* QID_AC_BE */
++					qid++;
++					break;
++				case 3: /* QID_AC_BK */
++					qid--;
++					break;
++			}
++		}
++	}
++
+ 	/*
+ 	 * Use the ATIM queue if appropriate and present.
+ 	 */
+@@ -613,8 +633,7 @@ void rt2x00mac_bss_info_changed(struct ieee80211_hw *hw,
+ 			 * Upload beacon to the H/W. This is only required on
+ 			 * USB devices. PCI devices fetch beacons periodically.
+ 			 */
+-			if (rt2x00_is_usb(rt2x00dev))
+-				rt2x00queue_update_beacon(rt2x00dev, vif);
++			rt2x00queue_update_beacon(rt2x00dev, vif);
+ 
+ 			if (rt2x00dev->intf_beaconing == 1) {
+ 				/*
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c b/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
+index f62f7c0..d5a7e12 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
+@@ -992,23 +992,37 @@ EXPORT_SYMBOL_GPL(rt2x00queue_stop_queue);
+ 
+ void rt2x00queue_flush_queue(struct data_queue *queue, bool drop)
+ {
++	unsigned int i;
++	bool started;
+ 	bool tx_queue =
+ 		(queue->qid == QID_AC_VO) ||
+ 		(queue->qid == QID_AC_VI) ||
+ 		(queue->qid == QID_AC_BE) ||
+ 		(queue->qid == QID_AC_BK);
+ 
+-	if (rt2x00queue_empty(queue))
+-		return;
+-
++	mutex_lock(&queue->status_lock);
+ 	/*
+-	 * If we are not supposed to drop any pending
+-	 * frames, this means we must force a start (=kick)
+-	 * to the queue to make sure the hardware will
+-	 * start transmitting.
++	 * If the queue has been started, we must stop it temporarily
++	 * to prevent any new frames to be queued on the device. If
++	 * we are not dropping the pending frames, the queue must
++	 * only be stopped in the software and not the hardware,
++	 * otherwise the queue will never become empty on its own.
+ 	 */
+-	if (!drop && tx_queue)
+-		queue->rt2x00dev->ops->lib->kick_queue(queue);
++	started = test_bit(QUEUE_STARTED, &queue->flags);
++	if (started) {
++		//Pause the queue
++		rt2x00queue_pause_queue(queue);
++		/*
++		 * If we are not supposed to drop any pending
++		 * frames, this means we must force a start (=kick)
++		 * to the queue to make sure the hardware will
++		 * start transmitting.
++		 */
++		if (!drop && tx_queue)
++			queue->rt2x00dev->ops->lib->kick_queue(queue);
++	}
++	if (rt2x00queue_empty(queue))
++		return;
+ 
+ 	/*
+ 	 * Check if driver supports flushing, if that is the case we can
+@@ -1019,11 +1033,22 @@ void rt2x00queue_flush_queue(struct data_queue *queue, bool drop)
+ 		queue->rt2x00dev->ops->lib->flush_queue(queue, drop);
+ 
+ 	/*
++	 * When we don't want to drop any frames, or when
++	 * the driver doesn't fully flush the queue correcly,
++	 * we must wait for the queue to become empty.
++	 */
++	for (i = 0; !rt2x00queue_empty(queue) && i < 10; i++)
++		msleep(10);
++	/*
+ 	 * The queue flush has failed...
+ 	 */
+ 	if (unlikely(!rt2x00queue_empty(queue)))
+ 		rt2x00_warn(queue->rt2x00dev, "Queue %d failed to flush\n",
+ 			    queue->qid);
++	// Restore the queue to the previous status
++	if (started)
++		rt2x00queue_unpause_queue(queue);
++	mutex_unlock(&queue->status_lock);
+ }
+ EXPORT_SYMBOL_GPL(rt2x00queue_flush_queue);
+ 
