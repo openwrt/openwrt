@@ -1,0 +1,35 @@
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -593,6 +593,9 @@ static const struct usb_device_id option
+ 	{ USB_DEVICE(0x2C7C, 0x0435) }, /* Quectel AG35 */
+ #endif
+ 	{ USB_DEVICE(0x19d2, 0x0536) },/* MZ386 */
++	{ USB_DEVICE(0x19d2, 0x0117) },
++	{ USB_DEVICE(0x19d2, 0x0199) },
++	{ USB_DEVICE(0x19d2, 0x1476) },
+ 	{ USB_DEVICE(LONGCHEER_VENDOR_ID, LONGSUNG_PRODUCT_U9300C) },
+ 	{ USB_DEVICE(FORGE_VENDOR_ID, FORGE_PRODUCT_SLM750) },
+ 	{ USB_DEVICE(NODECOM_VENDOR_ID, NODECOM_PRODUCT_NL660) },
+@@ -2103,6 +2106,22 @@ static int option_probe(struct usb_seria
+ 		device_init_wakeup(&serial->dev->dev, 1); //usb remote wakeup
+ 	}
+ #endif
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x19d2) &&
++		serial->dev->descriptor.idProduct == cpu_to_le16(0x1476) &&
++		serial->interface->cur_altsetting->desc. bInterfaceNumber == 3)
++		return -ENODEV;
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x19d2) &&
++		serial->dev->descriptor.idProduct == cpu_to_le16(0x1476) &&
++		serial->interface->cur_altsetting->desc. bInterfaceNumber == 4)
++		return -ENODEV;
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x19d2) &&
++		serial->dev->descriptor.idProduct == cpu_to_le16(0x1509) &&
++		serial->interface->cur_altsetting->desc. bInterfaceNumber == 4)
++		return -ENODEV;
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x19d2) &&
++		serial->dev->descriptor.idProduct == cpu_to_le16(0x1509) &&
++		serial->interface->cur_altsetting->desc. bInterfaceNumber == 5)
++		return -ENODEV;
+ 
+ 	return 0;
+ }
