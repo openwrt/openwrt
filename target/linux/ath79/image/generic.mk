@@ -438,6 +438,15 @@ define Device/jjplus_ja76pf2
 endef
 TARGET_DEVICES += jjplus_ja76pf2
 
+define Device/kuwfi_830d
+  ATH_SOC := qca9533
+  DEVICE_TITLE := KuWfi 830D
+  DEVICE_PACKAGES := rssileds kmod-leds-gpio uboot-envtools kmod-ath9k kmod-fs-squashfs kmod-leds-gpio kmod-ledtrig-gpio kmod-ledtrig-netdev
+  IMAGE/sysupgrade.bin := append-rootfs | pad-to 14528k | append-kernel | pad-to 16000k | check-size $$$$(IMAGE_SIZE)
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += kuwfi_830d
+
 define Device/librerouter_librerouter-v1
   ATH_SOC := qca9558
   DEVICE_TITLE := LibreRouter v1
@@ -616,3 +625,12 @@ define Device/yuncore_a770
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += yuncore_a770
+
+define Device/yuncore_cpe830
+  ATH_SOC := qca9533
+  DEVICE_TITLE := YunCore CPE830
+  DEVICE_PACKAGES := rssileds kmod-leds-gpio uboot-envtools kmod-ath9k kmod-fs-squashfs kmod-leds-gpio kmod-ledtrig-gpio kmod-ledtrig-netdev
+  IMAGE/sysupgrade.bin := append-rootfs | pad-to 14528k | append-kernel | pad-to 16000k | check-size $$$$(IMAGE_SIZE)
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += yuncore_cpe830
