@@ -1,6 +1,7 @@
 include ./common-buffalo.mk
 include ./common-netgear.mk
 include ./common-tp-link.mk
+include ./common-yuncore.mk
 
 DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
@@ -974,6 +975,19 @@ define Device/yuncore_a770
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += yuncore_a770
+
+define Device/yuncore_cpe830
+  ATH_SOC := qca9531
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := CPE830(D)
+  DEVICE_ALT0_VENDOR = KuWfi
+  DEVICE_ALT0_MODEL = CPE830(D)
+  IMAGE_SIZE := 16000k
+  IMAGES += tftp.bin
+  IMAGE/tftp.bin := $$(IMAGE/sysupgrade.bin) | yuncore-tftp-header-qca953x
+  DEVICE_PACKAGES := rssileds
+endef
+TARGET_DEVICES += yuncore_cpe830
 
 define Device/zbtlink_zbt-wd323
   ATH_SOC := ar9344
