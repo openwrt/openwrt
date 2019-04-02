@@ -1,0 +1,14 @@
+diff --git a/tx.c b/tx.c
+index 638b839..df6d58b 100644
+--- a/tx.c
++++ b/tx.c
+@@ -435,8 +435,7 @@ mt76_txq_send_burst(struct mt76_dev *dev, struct mt76_sw_queue *sq,
+ 		if (probe)
+ 			break;
+ 
+-		if (test_bit(MT76_OFFCHANNEL, &dev->state) ||
+-		    test_bit(MT76_RESET, &dev->state))
++		if (test_bit(MT76_RESET, &dev->state))
+ 			return -EBUSY;
+ 
+ 		skb = mt76_txq_dequeue(dev, mtxq, false);
