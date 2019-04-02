@@ -59,7 +59,7 @@ ifeq ($(strip $(UNPACK_CMD)),)
     endif
   endif
   ifneq ($(strip $(CRLF_WORKAROUND)),)
-    CRLF_CMD := && find $(PKG_BUILD_DIR) -type f -print0 | xargs -0 perl -pi -e 's!\r$$$$!!g'
+    CRLF_CMD := && find $(1) -type f -print0 | xargs -0 perl -pi -e 's!\r$$$$!!g'
   else
     CRLF_CMD :=
   endif
