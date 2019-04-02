@@ -1,0 +1,13 @@
+diff --git a/mt76x02_mac.c b/mt76x02_mac.c
+index 52a5b31..789e87c 100644
+--- a/mt76x02_mac.c
++++ b/mt76x02_mac.c
+@@ -394,7 +394,7 @@ void mt76x02_mac_write_txwi(struct mt76x02_dev *dev, struct mt76x02_txwi *txwi,
+ 		txwi_flags |= MT_TXWI_FLAGS_MMPS;
+ 	if (!(info->flags & IEEE80211_TX_CTL_NO_ACK))
+ 		txwi->ack_ctl |= MT_TXWI_ACK_CTL_REQ;
+-	if (info->flags & IEEE80211_TX_CTL_ASSIGN_SEQ)
++	if (ieee80211_is_beacon(hdr->frame_control))
+ 		txwi->ack_ctl |= MT_TXWI_ACK_CTL_NSEQ;
+ 	if ((info->flags & IEEE80211_TX_CTL_AMPDU) && sta) {
+ 		u8 ba_size = IEEE80211_MIN_AMPDU_BUF;
