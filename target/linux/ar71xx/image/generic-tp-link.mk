@@ -154,7 +154,7 @@ define Device/archer-c7-v5
   BOARDNAME := ARCHER-C7-V5
   TPLINK_BOARD_ID := ARCHER-C7-V5
   IMAGE_SIZE := 15360k
-  MTDPARTS := spi0.0:128k(factory-uboot)ro,128k(u-boot)ro,64k@0x50000(art)ro,15360k@0xc0000(firmware)
+  MTDPARTS := spi0.0:128k(factory-uboot)ro,128k(u-boot)ro,64k@0x50000(art)ro,128k@0x60000(info)ro,15360k@0xc0000(firmware)
   SUPPORTED_DEVICES := archer-c7-v5
 endef
 TARGET_DEVICES += archer-c7-v5
