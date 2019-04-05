@@ -366,6 +366,7 @@ ramips_setup_interfaces()
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5:wan" "6@eth0"
 		;;
 	dlink,dir-510l|\
+	netgear,ex6150|\
 	re350-v1)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"
@@ -429,6 +430,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:wan" "6@eth0"
 		;;
+	wiznet,wizfi630s)
+		ucidef_add_switch "switch0" \
+			"0:wan" "3:lan" "4:lan" "6@eth0"
+		;;
 	wt3020-4M|\
 	wt3020-8M)
 		ucidef_add_switch "switch0" \
@@ -446,6 +451,10 @@ ramips_setup_interfaces()
 	y1)
 		ucidef_add_switch "switch0" \
 			"0:lan:2" "1:lan:1" "4:wan" "6@eth0"
+		;;
+	zyxel,keenetic-start)
+		ucidef_add_switch "switch0" \
+			"0:lan:3" "1:lan:2" "2:lan:1" "3:lan:0" "4:wan" "6@eth0"
 		;;
 	*)
 		RT3X5X=`cat /proc/cpuinfo | egrep "(RT3.5|RT5350)"`
@@ -654,6 +663,9 @@ ramips_setup_macs()
 	xiaomi,mir3g|\
 	xiaomi,mir3p)
 		lan_mac=$(mtd_get_mac_binary Factory 0xe006)
+		;;
+	zyxel,keenetic-start)
+		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
 	*)
 		lan_mac=$(cat /sys/class/net/eth0/address)

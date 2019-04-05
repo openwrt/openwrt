@@ -590,7 +590,8 @@ platform_check_image() {
 		tplink_pharos_check_image "$1" "7f454c46" "$(tplink_pharos_get_model_string)" '' && return 0
 		return 1
 		;;
-	cpe210-v2)
+	cpe210-v2|\
+	cpe210-v3)
 		tplink_pharos_check_image "$1" "01000000" "$(tplink_pharos_v2_get_model_string)" '\0\xff\r' && return 0
 		return 1
 		;;

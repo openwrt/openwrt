@@ -192,11 +192,28 @@ define Device/cpe210-v2
   TPLINK_BOARD_ID := CPE210V2
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
-  MTDPARTS := spi0.0:128k(u-boot)ro,64k(partition-table)ro,64k(product-info)ro,1792k(kernel),5888k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
+  MTDPARTS := spi0.0:128k(u-boot)ro,64k(partition-table)ro,64k(product-info)ro,7680k(firmware),192k(config)ro,64k(ART)ro
   IMAGE_SIZE := 7680k
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header -O
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | tplink-v1-header
   DEVICE_PACKAGES := rssileds
 endef
 TARGET_DEVICES += cpe210-v2
+
+define Device/cpe210-v3
+  $(Device/tplink-safeloader)
+  DEVICE_TITLE := TP-LINK CPE210 v3
+  BOARDNAME := CPE210V3
+  TPLINK_BOARD_ID := CPE210V3
+  TPLINK_HWID := 0x0
+  TPLINK_HWREV := 0
+  MTDPARTS := spi0.0:128k(u-boot)ro,64k(partition-table)ro,64k(product-info)ro,7680k(firmware),192k(config)ro,64k(ART)ro
+  IMAGE_SIZE := 7680k
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header -O
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | tplink-v1-header
+  DEVICE_PACKAGES := rssileds
+endef
+TARGET_DEVICES += cpe210-v3
 
 define Device/wbs210-v1
   $(Device/cpe510-520-v1)

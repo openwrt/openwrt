@@ -324,6 +324,17 @@ define Device/r6220
 endef
 TARGET_DEVICES += r6220
 
+define Device/netgear_ex6150
+  DTS := EX6150
+  DEVICE_TITLE := Netgear EX6150
+  DEVICE_PACKAGES := kmod-mt76x2 wpad-basic
+  NETGEAR_BOARD_ID := U12H318T00_NETGEAR
+  IMAGE_SIZE := 14848k
+  IMAGES += factory.chk
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | netgear-chk
+endef
+TARGET_DEVICES += netgear_ex6150
+
 define Device/netgear_r6350
   DTS := R6350
   BLOCKSIZE := 128k

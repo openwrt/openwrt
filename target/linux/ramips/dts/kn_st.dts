@@ -1,13 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 /dts-v1/;
 
-#include "mt7621.dtsi"
+#include "rt5350.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "gnubee,gb-pc1", "mediatek,mt7621-soc";
-	model = "GB-PC1";
+	compatible = "zyxel,keenetic-start", "ralink,rt5350-soc";
+	model = "ZyXEL Keenetic Start";
 
 	aliases {
 		led-boot = &led_status;
@@ -16,13 +17,18 @@
 		led-upgrade = &led_status;
 	};
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x1c000000>, <0x20000000 0x4000000>;
-	};
+	leds {
+		compatible = "gpio-leds";
 
-	chosen {
-		bootargs = "console=ttyS0,57600";
+		led_status: power {
+			label = "zyxel:green:power";
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		};
+
+		internet {
+			label = "zyxel:green:internet";
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		};
 	};
 
 	keys {
@@ -31,48 +37,25 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
-	};
 
-	leds {
-		compatible = "gpio-leds";
-
-		system {
-			label = "gb-pc1:green:system";
-			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
-		};
-
-		led_status: status {
-			label = "gb-pc1:green:status";
-			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
-		};
-
-		lan1 {
-			label = "gb-pc1:green:lan1";
-			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
-		};
-
-		lan2 {
-			label = "gb-pc1:green:lan2";
-			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		wps {
+			label = "wps";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
-};
-
-&sdhci {
-	status = "okay";
 };
 
 &spi0 {
 	status = "okay";
 
-	m25p80@0 {
+	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
-		m25p,fast-read;
+		spi-max-frequency = <10000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -100,25 +83,33 @@
 			partition@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x50000 0x1fb0000>;
+				reg = <0x50000 0x3b0000>;
 			};
 		};
 	};
 };
 
-&pcie {
-	status = "okay";
-};
-
-&ethernet {
-	mtd-mac-address = <&factory 0xe000>;
-};
-
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "jtag", "rgmii2", "uart3", "wdt";
+			ralink,group = "i2c", "jtag", "uartf";
 			ralink,function = "gpio";
 		};
 	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0x28>;
+};
+
+
+&esw {
+	mediatek,portmap = <0x2f>;
+	mediatek,led_polarity = <0x17>;
+};
+
+&wmac {
+	status = "okay";
+	ralink,led-polarity = <1>;
+	ralink,mtd-eeprom = <&factory 0>;
 };
