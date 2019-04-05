@@ -1439,7 +1439,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -1852,14 +1852,17 @@ static int finish_td(struct xhci_hcd *xh
+@@ -1855,14 +1855,17 @@ static int finish_td(struct xhci_hcd *xh
  	union xhci_trb *event_trb, struct xhci_transfer_event *event,
  	struct xhci_virt_ep *ep, int *status, bool skip)
  {
@@ -1457,7 +1457,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	u32 trb_comp_code;
  
  	slot_id = TRB_TO_SLOT_ID(le32_to_cpu(event->flags));
-@@ -1885,13 +1888,29 @@ static int finish_td(struct xhci_hcd *xh
+@@ -1888,13 +1891,29 @@ static int finish_td(struct xhci_hcd *xh
  	if (trb_comp_code == COMP_STALL ||
  		xhci_requires_manual_halt_cleanup(xhci, ep_ctx,
  						trb_comp_code)) {
@@ -1542,7 +1542,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	spin_unlock_irqrestore(&xhci->lock, flags);
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1625,7 +1625,7 @@ struct xhci_hcd {
+@@ -1626,7 +1626,7 @@ struct xhci_hcd {
  #define XHCI_STATE_REMOVING	(1 << 2)
  	/* Statistics */
  	int			error_bitmask;
@@ -1551,7 +1551,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  #define	XHCI_LINK_TRB_QUIRK	(1 << 0)
  #define XHCI_RESET_EP_QUIRK	(1 << 1)
  #define XHCI_NEC_HOST		(1 << 2)
-@@ -1661,6 +1661,9 @@ struct xhci_hcd {
+@@ -1662,6 +1662,9 @@ struct xhci_hcd {
  #define XHCI_SSIC_PORT_UNUSED	(1 << 22)
  #define XHCI_NO_64BIT_SUPPORT	(1 << 23)
  #define XHCI_MISSING_CAS	(1 << 24)
