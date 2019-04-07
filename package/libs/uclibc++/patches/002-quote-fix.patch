@@ -1,0 +1,13 @@
+--- a/bin/Makefile.in
++++ b/bin/Makefile.in
+@@ -44,8 +44,8 @@ define do_wrapper
+ 	$(Q)echo '	WRAPPER_OPTIONS="$$WRAPPER_OPTIONS -nodefaultlibs $$WRAPPER_LIBDIR -l$(LNAME) $$WRAPPER_LIBS"' >> $@.tmp
+ 	$(Q)echo 'fi' >> $@.tmp
+ 	$(Q)echo '' >> $@.tmp
+-	$(Q)echo '[ -n "$$V" ] && [ $$V -gt 1 ] && echo $(CXX) $(GEN_CFLAGS) $(GEN_CXXFLAGS) $(EH_CXXFLAGS) $$WRAPPER_INCLUDEDIR "$$@" $$WRAPPER_OPTIONS' >> $@.tmp
+-	$(Q)echo 'exec $(CXX) $(GEN_CFLAGS) $(GEN_CXXFLAGS) $(EH_CXXFLAGS) $$WRAPPER_INCLUDEDIR "$$@" $$WRAPPER_OPTIONS' >> $@.tmp
++	$(Q)echo '[ -n "$$V" ] && [ $$V -gt 1 ] && echo $(CXX) $(GEN_CFLAGS) $(GEN_CXXFLAGS) $(EH_CXXFLAGS) $$WRAPPER_INCLUDEDIR $$@ $$WRAPPER_OPTIONS' >> $@.tmp
++	$(Q)echo 'exec $(CXX) $(GEN_CFLAGS) $(GEN_CXXFLAGS) $(EH_CXXFLAGS) $$WRAPPER_INCLUDEDIR $$@ $$WRAPPER_OPTIONS' >> $@.tmp
+ 	$(Q)echo '' >> $@.tmp
+ 	$(Q)chmod 0755 $@.tmp
+ 	$(Q)mv $@.tmp $@
