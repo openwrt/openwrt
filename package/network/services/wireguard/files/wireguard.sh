@@ -111,6 +111,7 @@ proto_wireguard_setup() {
   config_get private_key   "${config}" "private_key"
   config_get listen_port   "${config}" "listen_port"
   config_get addresses     "${config}" "addresses"
+  config_get peeraddr      "${config}" "peeraddr"
   config_get mtu           "${config}" "mtu"
   config_get fwmark        "${config}" "fwmark"
   config_get ip6prefix     "${config}" "ip6prefix"
@@ -160,13 +161,13 @@ proto_wireguard_setup() {
         proto_add_ipv6_address "${address%%/*}" "${address##*/}"
       ;;
       *.*/*)
-        proto_add_ipv4_address "${address%%/*}" "${address##*/}"
+        proto_add_ipv4_address "${address%%/*}" "${address##*/}" "" "${peeraddr}"
       ;;
       *:*)
         proto_add_ipv6_address "${address%%/*}" "128"
       ;;
       *.*)
-        proto_add_ipv4_address "${address%%/*}" "32"
+        proto_add_ipv4_address "${address%%/*}" "32" "" "${peeraddr}"
       ;;
     esac
   done
