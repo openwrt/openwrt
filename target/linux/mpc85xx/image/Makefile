@@ -48,7 +48,6 @@ ifeq ($(SUBTARGET),generic)
 
 define Device/tl-wdr4900-v1
   DEVICE_TITLE := TP-Link TL-WDR4900
-  DEVICE_PACKAGES := kmod-ath9k wpad-basic
   TPLINK_HWID := 0x49000001
   TPLINK_HWREV := 1
   TPLINK_FLASHLAYOUT := 16Mppc
@@ -64,7 +63,6 @@ TARGET_DEVICES += tl-wdr4900-v1
 
 define Device/red-15w-rev1
   DEVICE_TITLE := Sophos RED 15w Rev.1
-  DEVICE_PACKAGES := kmod-usb2
   # Original firmware uses a dedicated DTB-partition.
   # The bootloader however supports FIT-images.
   KERNEL = kernel-bin | gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
@@ -80,7 +78,7 @@ ifeq ($(SUBTARGET),p1020)
 
 define Device/hiveap-330
   DEVICE_TITLE := Aerohive HiveAP-330
-  DEVICE_PACKAGES := kmod-ath9k wpad-basic kmod-tpm-i2c-atmel
+  DEVICE_PACKAGES := kmod-tpm-i2c-atmel
   BLOCKSIZE := 128k
   KERNEL_NAME := zImage
   KERNEL_SIZE := 8m
@@ -97,7 +95,7 @@ TARGET_DEVICES += hiveap-330
 
 define Device/panda
   DEVICE_TITLE := OCEDO Panda
-  DEVICE_PACKAGES := kmod-rtc-ds1307 kmod-usb2 uboot-envtools
+  DEVICE_PACKAGES := kmod-rtc-ds1307 uboot-envtools
   KERNEL = kernel-bin | gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
   PAGESIZE := 2048
   SUBPAGESIZE := 512
