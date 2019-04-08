@@ -1,0 +1,46 @@
+commit e1df3fa364a5f0d8b4c589c29c0f304d69a0121c
+Author: Matt Weber <matthew.weber@rockwellcollins.com>
+Date:   Thu Jul 26 22:37:53 2018 -0500
+
+    include/version.h: workaround sysroot inc order
+    
+    On some systems the host system or even the cross sysroot can
+    contain a version.h.  This leads to the wrong file being picked
+    up and a PLAIN_VERSION undefined error.
+    
+    This workaround symlinks the version.h into the tool folder to
+    allow reordering of search folders.
+    
+    Fixes
+    http://autobuild.buildroot.net/results/770/7702d5df36a6532aafdbe6e9e62709bbfa058b54/build-end.log
+    http://autobuild.buildroot.net/results/e34/e3401027d2fb3ce565ca9e2456a427afd3610a87/build-end.log
+    ... additional can be found with these queries ...
+    http://autobuild.buildroot.net/?reason=uboot-tools-2018.03
+    http://autobuild.buildroot.net/?reason=uboot-tools-2018.05
+    
+    Upstream: pending
+    
+    Signed-off-by: Matthew Weber <matthew.weber@rockwellcollins.com>
+
+diff --git a/tools/env/Makefile b/tools/env/Makefile
+index 4633e0e72b..b627796e94 100644
+--- a/tools/env/Makefile
++++ b/tools/env/Makefile
+@@ -9,7 +9,8 @@
+ override HOSTCC = $(CC)
+ 
+ # Compile for a hosted environment on the target
+-HOST_EXTRACFLAGS  = $(patsubst -I%,-idirafter%, $(filter -I%, $(UBOOTINCLUDE))) \
++HOST_EXTRACFLAGS  = -I$(srctree)/tools \
++		$(patsubst -I%,-idirafter%, $(filter -I%, $(UBOOTINCLUDE))) \
+ 		-idirafter $(srctree)/tools/env \
+ 		-DUSE_HOSTCC \
+ 		-DTEXT_BASE=$(TEXT_BASE)
+diff --git a/tools/version.h b/tools/version.h
+new file mode 120000
+index 0000000000..bb576071e8
+--- /dev/null
++++ b/tools/version.h
+@@ -0,0 +1 @@
++../include/version.h
+\ No newline at end of file
