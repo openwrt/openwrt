@@ -440,9 +440,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	irq = dwc3_gadget_get_irq(dwc);
  	if (irq < 0) {
-@@ -3286,6 +3287,12 @@ int dwc3_gadget_init(struct dwc3 *dwc)
- 		goto err4;
- 	}
+@@ -3288,6 +3289,12 @@ int dwc3_gadget_init(struct dwc3 *dwc)
+ 
+ 	dwc3_gadget_set_speed(&dwc->gadget, dwc->maximum_speed);
  
 +	if (dwc->disable_devinit_u1u2_quirk) {
 +		reg = dwc3_readl(dwc->regs, DWC3_DCTL);
