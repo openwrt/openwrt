@@ -171,7 +171,7 @@
  #define UDP_CORK	1	/* Never send partially complete segments */
 --- a/net/netfilter/nf_conntrack_core.c
 +++ b/net/netfilter/nf_conntrack_core.c
-@@ -262,8 +262,8 @@ static bool ipv4_pkt_to_tuple(const stru
+@@ -262,8 +262,8 @@ nf_ct_get_tuple(const struct sk_buff *sk
  
  	switch (l3num) {
  	case NFPROTO_IPV4:
@@ -241,7 +241,7 @@
   */
 --- a/net/ipv6/datagram.c
 +++ b/net/ipv6/datagram.c
-@@ -477,7 +477,7 @@ int ipv6_recv_error(struct sock *sk, str
+@@ -478,7 +478,7 @@ int ipv6_recv_error(struct sock *sk, str
  				ipv6_iface_scope_id(&sin->sin6_addr,
  						    IP6CB(skb)->iif);
  		} else {
@@ -250,7 +250,7 @@
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -829,12 +829,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -828,12 +828,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
@@ -303,7 +303,7 @@
  #endif /* _LINUX_TYPES_H */
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1422,8 +1422,8 @@ struct sk_buff **inet_gro_receive(struct
+@@ -1422,8 +1422,8 @@ struct sk_buff *inet_gro_receive(struct
  	if (unlikely(ip_fast_csum((u8 *)iph, 5)))
  		goto out_unlock;
  
@@ -556,7 +556,7 @@
  			goto next_ht;
 --- a/net/ipv6/ip6_offload.c
 +++ b/net/ipv6/ip6_offload.c
-@@ -223,7 +223,7 @@ static struct sk_buff **ipv6_gro_receive
+@@ -223,7 +223,7 @@ static struct sk_buff *ipv6_gro_receive(
  			continue;
  
  		iph2 = (struct ipv6hdr *)(p->data + off);
@@ -648,7 +648,7 @@
  		if (xb)
  			return i * 32 + 31 - __fls(ntohl(xb));
  	}
-@@ -876,17 +880,18 @@ static inline int ip6_default_np_autolab
+@@ -876,17 +880,18 @@ static inline int ip6_multipath_hash_pol
  static inline void ip6_flow_hdr(struct ipv6hdr *hdr, unsigned int tclass,
  				__be32 flowlabel)
  {
@@ -762,7 +762,7 @@
  
 --- a/net/ipv6/netfilter/nf_log_ipv6.c
 +++ b/net/ipv6/netfilter/nf_log_ipv6.c
-@@ -66,9 +66,9 @@ static void dump_ipv6_packet(struct nf_l
+@@ -66,9 +66,9 @@ static void dump_ipv6_packet(struct net
  	/* Max length: 44 "LEN=65535 TC=255 HOPLIMIT=255 FLOWLBL=FFFFF " */
  	nf_log_buf_add(m, "LEN=%zu TC=%u HOPLIMIT=%u FLOWLBL=%u ",
  	       ntohs(ih->payload_len) + sizeof(struct ipv6hdr),
@@ -849,7 +849,7 @@
  
 --- a/net/ipv4/tcp_offload.c
 +++ b/net/ipv4/tcp_offload.c
-@@ -226,7 +226,7 @@ struct sk_buff **tcp_gro_receive(struct
+@@ -226,7 +226,7 @@ struct sk_buff *tcp_gro_receive(struct l
  
  		th2 = tcp_hdr(p);
  

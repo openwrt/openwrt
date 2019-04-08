@@ -31,8 +31,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/tty/serial/ar933x_uart.c | 24 ++++++++----------------
  1 file changed, 8 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/tty/serial/ar933x_uart.c b/drivers/tty/serial/ar933x_uart.c
-index db5df3d..3bdd56a 100644
 --- a/drivers/tty/serial/ar933x_uart.c
 +++ b/drivers/tty/serial/ar933x_uart.c
 @@ -49,11 +49,6 @@ struct ar933x_uart_port {
@@ -47,7 +45,7 @@ index db5df3d..3bdd56a 100644
  static inline unsigned int ar933x_uart_read(struct ar933x_uart_port *up,
  					    int offset)
  {
-@@ -508,6 +503,7 @@ static int ar933x_uart_verify_port(struct uart_port *port,
+@@ -508,6 +503,7 @@ static const struct uart_ops ar933x_uart
  	.verify_port	= ar933x_uart_verify_port,
  };
  
@@ -55,7 +53,7 @@ index db5df3d..3bdd56a 100644
  static struct ar933x_uart_port *
  ar933x_console_ports[CONFIG_SERIAL_AR933X_NR_UARTS];
  
-@@ -604,14 +600,7 @@ static int ar933x_uart_console_setup(struct console *co, char *options)
+@@ -604,14 +600,7 @@ static struct console ar933x_uart_consol
  	.index		= -1,
  	.data		= &ar933x_uart_driver,
  };
@@ -71,7 +69,7 @@ index db5df3d..3bdd56a 100644
  
  static struct uart_driver ar933x_uart_driver = {
  	.owner		= THIS_MODULE,
-@@ -700,7 +689,9 @@ static int ar933x_uart_probe(struct platform_device *pdev)
+@@ -700,7 +689,9 @@ static int ar933x_uart_probe(struct plat
  	baud = ar933x_uart_get_baud(port->uartclk, 0, AR933X_UART_MAX_STEP);
  	up->max_baud = min_t(unsigned int, baud, AR933X_UART_MAX_BAUD);
  
@@ -94,6 +92,3 @@ index db5df3d..3bdd56a 100644
  
  	ret = uart_register_driver(&ar933x_uart_driver);
  	if (ret)
--- 
-1.9.1
-

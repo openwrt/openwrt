@@ -141,39 +141,9 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
  drivers/clocksource/arm_arch_timer.c   | 55 ++++++++++++++++++++++++++
  3 files changed, 67 insertions(+)
 
---- a/Documentation/arm64/silicon-errata.txt
-+++ b/Documentation/arm64/silicon-errata.txt
-@@ -44,6 +44,8 @@ stable kernels.
- 
- | Implementor    | Component       | Erratum ID      | Kconfig                     |
- +----------------+-----------------+-----------------+-----------------------------+
-+| Allwinner      | A64/R18         | UNKNOWN1        | SUN50I_ERRATUM_UNKNOWN1     |
-+|                |                 |                 |                             |
- | ARM            | Cortex-A53      | #826319         | ARM64_ERRATUM_826319        |
- | ARM            | Cortex-A53      | #827319         | ARM64_ERRATUM_827319        |
- | ARM            | Cortex-A53      | #824069         | ARM64_ERRATUM_824069        |
---- a/drivers/clocksource/Kconfig
-+++ b/drivers/clocksource/Kconfig
-@@ -365,6 +365,16 @@ config ARM64_ERRATUM_858921
- 	  The workaround will be dynamically enabled when an affected
- 	  core is detected.
- 
-+config SUN50I_ERRATUM_UNKNOWN1
-+	bool "Workaround for Allwinner A64 erratum UNKNOWN1"
-+	default y
-+	depends on ARM_ARCH_TIMER && ARM64 && ARCH_SUNXI
-+	select ARM_ARCH_TIMER_OOL_WORKAROUND
-+	help
-+	  This option enables a workaround for instability in the timer on
-+	  the Allwinner A64 SoC. The workaround will only be active if the
-+	  allwinner,erratum-unknown1 property is found in the timer node.
-+
- config ARM_GLOBAL_TIMER
- 	bool "Support for the ARM global timer" if COMPILE_TEST
- 	select TIMER_OF if OF
 --- a/drivers/clocksource/arm_arch_timer.c
 +++ b/drivers/clocksource/arm_arch_timer.c
-@@ -319,6 +319,48 @@ static u64 notrace arm64_858921_read_cnt
+@@ -361,6 +361,48 @@ static u32 notrace sun50i_a64_read_cntv_
  }
  #endif
  
@@ -222,11 +192,10 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
  #ifdef CONFIG_ARM_ARCH_TIMER_OOL_WORKAROUND
  DEFINE_PER_CPU(const struct arch_timer_erratum_workaround *, timer_unstable_counter_workaround);
  EXPORT_SYMBOL_GPL(timer_unstable_counter_workaround);
-@@ -408,6 +450,19 @@ static const struct arch_timer_erratum_w
- 		.read_cntvct_el0 = arm64_858921_read_cntvct_el0,
+@@ -451,6 +493,19 @@ static const struct arch_timer_erratum_w
  	},
  #endif
-+#ifdef CONFIG_SUN50I_ERRATUM_UNKNOWN1
+ #ifdef CONFIG_SUN50I_ERRATUM_UNKNOWN1
 +	{
 +		.match_type = ate_match_dt,
 +		.id = "allwinner,erratum-unknown1",
@@ -239,6 +208,7 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
 +		.set_next_event_virt = erratum_set_next_event_tval_virt,
 +	},
 +#endif
- };
- 
- typedef bool (*ate_match_fn_t)(const struct arch_timer_erratum_workaround *,
++#ifdef CONFIG_SUN50I_ERRATUM_UNKNOWN1
+ 	{
+ 		.match_type = ate_match_dt,
+ 		.id = "allwinner,erratum-unknown1",

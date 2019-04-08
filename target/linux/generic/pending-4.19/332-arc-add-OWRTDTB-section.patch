@@ -23,8 +23,8 @@ Signed-off-by: Evgeniy Didin <Evgeniy.Didin@synopsys.com>
 
 --- a/arch/arc/kernel/head.S
 +++ b/arch/arc/kernel/head.S
-@@ -49,6 +49,16 @@
- 1:
+@@ -59,6 +59,16 @@
+ #endif
  .endm
  
 +	; Here "patch-dtb" will embed external .dtb
@@ -42,24 +42,24 @@ Signed-off-by: Evgeniy Didin <Evgeniy.Didin@synopsys.com>
  ;----------------------------------------------------------------
 --- a/arch/arc/kernel/setup.c
 +++ b/arch/arc/kernel/setup.c
-@@ -456,6 +456,8 @@ static inline int is_kernel(unsigned lon
- 	return 0;
+@@ -520,7 +520,7 @@ ignore_uboot_args:
+ #endif
+ 
+ 	if (use_embedded_dtb) {
+-		machine_desc = setup_machine_fdt(__dtb_start);
++		machine_desc = setup_machine_fdt(&__image_dtb);
+ 		if (!machine_desc)
+ 			panic("Embedded DT invalid\n");
+ 	}
+@@ -536,6 +536,8 @@ ignore_uboot_args:
+ 	}
  }
  
 +extern struct boot_param_header __image_dtb;
 +
  void __init setup_arch(char **cmdline_p)
  {
- #ifdef CONFIG_ARC_UBOOT_SUPPORT
-@@ -469,7 +471,7 @@ void __init setup_arch(char **cmdline_p)
- #endif
- 	{
- 		/* No, so try the embedded one */
--		machine_desc = setup_machine_fdt(__dtb_start);
-+		machine_desc = setup_machine_fdt(&__image_dtb);
- 		if (!machine_desc)
- 			panic("Embedded DT invalid\n");
- 
+ 	handle_uboot_args();
 --- a/arch/arc/kernel/vmlinux.lds.S
 +++ b/arch/arc/kernel/vmlinux.lds.S
 @@ -30,6 +30,19 @@ SECTIONS
