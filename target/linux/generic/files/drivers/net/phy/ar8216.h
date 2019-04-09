@@ -544,6 +544,14 @@ ar8xxx_sw_set_reset_mibs(struct switch_dev *dev,
 			 const struct switch_attr *attr,
 			 struct switch_val *val);
 int
+ar8xxx_sw_set_mib_poll_interval(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val);
+int
+ar8xxx_sw_get_mib_poll_interval(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val);
+int
 ar8xxx_sw_set_mirror_rx_enable(struct switch_dev *dev,
 			       const struct switch_attr *attr,
 			       struct switch_val *val);

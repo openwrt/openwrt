@@ -42,8 +42,6 @@
 extern const struct ar8xxx_chip ar8327_chip;
 extern const struct ar8xxx_chip ar8337_chip;
 
-#define AR8XXX_MIB_WORK_DELAY	2000 /* msecs */
-
 #define MIB_DESC(_s , _o, _n)	\
 	{			\
 		.size = (_s),	\
@@ -135,6 +133,11 @@ const struct ar8xxx_mib_desc ar8236_mibs[39] = {
 
 static DEFINE_MUTEX(ar8xxx_dev_list_lock);
 static LIST_HEAD(ar8xxx_dev_list);
+
+static void
+ar8xxx_mib_start(struct ar8xxx_priv *priv);
+static void
+ar8xxx_mib_stop(struct ar8xxx_priv *priv);
 
 /* inspired by phy_poll_reset in drivers/net/phy/phy_device.c */
 static int
@@ -1445,6 +1448,36 @@ unlock:
 }
 
 int
+ar8xxx_sw_set_mib_poll_interval(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+
+	if (!ar8xxx_has_mib_counters(priv))
+		return -EOPNOTSUPP;
+
+	ar8xxx_mib_stop(priv);
+	priv->mib_poll_interval = val->value.i;
+	ar8xxx_mib_start(priv);
+
+	return 0;
+}
+
+int
+ar8xxx_sw_get_mib_poll_interval(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+
+	if (!ar8xxx_has_mib_counters(priv))
+		return -EOPNOTSUPP;
+	val->value.i = priv->mib_poll_interval;
+	return 0;
+}
+
+int
 ar8xxx_sw_set_mirror_rx_enable(struct switch_dev *dev,
 			       const struct switch_attr *attr,
 			       struct switch_val *val)
@@ -1615,7 +1648,7 @@ ar8xxx_sw_get_port_mib(struct switch_dev *dev,
 	int i, len = 0;
 	bool mib_stats_empty = true;
 
-	if (!ar8xxx_has_mib_counters(priv))
+	if (!ar8xxx_has_mib_counters(priv) || !priv->mib_poll_interval)
 		return -EOPNOTSUPP;
 
 	port = val->port_vlan;
@@ -1807,7 +1840,7 @@ ar8xxx_sw_get_port_stats(struct switch_dev *dev, int port,
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	u64 *mib_stats;
 
-	if (!ar8xxx_has_mib_counters(priv))
+	if (!ar8xxx_has_mib_counters(priv) || !priv->mib_poll_interval)
 		return -EOPNOTSUPP;
 
 	if (!(priv->chip->mib_rxb_id || priv->chip->mib_txb_id))
@@ -1856,6 +1889,13 @@ static const struct switch_attr ar8xxx_sw_attr_globals[] = {
 		.name = "reset_mibs",
 		.description = "Reset all MIB counters",
 		.set = ar8xxx_sw_set_reset_mibs,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "ar8xxx_mib_poll_interval",
+		.description = "MIB polling interval in msecs (0 to disable)",
+		.set = ar8xxx_sw_set_mib_poll_interval,
+		.get = ar8xxx_sw_get_mib_poll_interval
 	},
 	{
 		.type = SWITCH_TYPE_INT,
@@ -2234,7 +2274,7 @@ ar8xxx_mib_init(struct ar8xxx_priv *priv)
 static void
 ar8xxx_mib_start(struct ar8xxx_priv *priv)
 {
-	if (!ar8xxx_has_mib_counters(priv))
+	if (!ar8xxx_has_mib_counters(priv) || !priv->mib_poll_interval)
 		return;
 
 	schedule_delayed_work(&priv->mib_work,
@@ -2244,7 +2284,7 @@ ar8xxx_mib_start(struct ar8xxx_priv *priv)
 static void
 ar8xxx_mib_stop(struct ar8xxx_priv *priv)
 {
-	if (!ar8xxx_has_mib_counters(priv))
+	if (!ar8xxx_has_mib_counters(priv) || !priv->mib_poll_interval)
 		return;
 
 	cancel_delayed_work_sync(&priv->mib_work);
@@ -2516,7 +2556,7 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 	ret = of_property_read_u32(priv->pdev->of_node, "qca,mib-poll-interval",
 				   &priv->mib_poll_interval);
 	if (ret)
-		priv->mib_poll_interval = AR8XXX_MIB_WORK_DELAY;
+		priv->mib_poll_interval = 0;
 
 	ret = ar8xxx_id_chip(priv);
 	if (ret)
@@ -2688,7 +2728,7 @@ ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
 	ret = of_property_read_u32(priv->pdev->of_node, "qca,mib-poll-interval",
 				   &priv->mib_poll_interval);
 	if (ret)
-		priv->mib_poll_interval = AR8XXX_MIB_WORK_DELAY;
+		priv->mib_poll_interval = 0;
 
 	ret = ar8xxx_read_id(priv);
 	if (ret)
