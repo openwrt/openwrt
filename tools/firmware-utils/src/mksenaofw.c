@@ -31,7 +31,7 @@
 #define DEFAULT_VERSION         "123"
 #define DEFAULT_MAGIC           0x12345678
 
-typedef struct {
+struct img_header {
 	uint32_t head;
 	uint32_t vendor_id;
 	uint32_t product_id;
@@ -43,18 +43,19 @@ typedef struct {
 	uint8_t  pad[PAD_SIZE];
 	uint32_t chksum;
 	uint32_t magic;
-} img_header;
+};
 
-typedef struct {
+struct firmware_type {
 	uint8_t id;
 	char * name;
-} firmware_type;
+};
 
 typedef enum {
 	NONE, ENCODE, DECODE
 } op_mode;
 
-static firmware_type FIRMWARE_TYPES[] = {
+static struct firmware_type FIRMWARE_TYPES[] = {
+	{ 0x00, "combo" }, /* Used for new capwap-included style header */
 	{ 0x01, "bootloader" },
 	{ 0x02, "kernel" },
 	{ 0x03, "kernelapp" },
@@ -68,6 +69,22 @@ static firmware_type FIRMWARE_TYPES[] = {
 	{ 0x0a, "factoryapps (D-Link)" },
 	{ 0x0b, "odmapps (D-Link)" },
 	{ 0x0c, "langpack (D-Link)" }
+};
+
+#define MOD_DEFAULT 0x616C6C00
+#define SKU_DEFAULT 0x0
+#define DATECODE_NONE 0xFFFFFFFF
+#define FIRMWARE_TYPE_NONE 0xFF
+
+struct capwap_header {
+	uint32_t mod;
+	uint32_t sku;
+	uint32_t firmware_ver[3];
+	uint32_t datecode;
+	uint32_t capwap_ver[3];
+	uint32_t model_size;
+	uint8_t  model[];
+
 };
 
 static long get_file_size(const char *filename)
@@ -124,7 +141,8 @@ static int md5_file(const char *filename, uint8_t *dst)
 }
 
 static int encode_image(const char *input_file_name,
-		const char *output_file_name, img_header *header, int block_size)
+			const char *output_file_name, struct img_header *header,
+			struct capwap_header *cw_header, int block_size)
 {
 	char buf[BUF_SIZE];
 	size_t bytes_read;
@@ -136,6 +154,7 @@ static int encode_image(const char *input_file_name,
 
 	int i;
 	long magic;
+	int model_size;
 
 	fp_input = fopen(input_file_name, "r+b");
 	if (!fp_input) {
@@ -172,6 +191,12 @@ static int encode_image(const char *input_file_name,
 	}
 	header->zero = 0;
 	header->chksum = header_checksum(header, HDR_LEN);
+	if (cw_header)
+		header->chksum +=
+			header_checksum(cw_header,
+					sizeof(struct capwap_header) +
+					cw_header->model_size);
+
 	header->head = htonl(header->head);
 	header->vendor_id = htonl(header->vendor_id);
 	header->product_id = htonl(header->product_id);
@@ -182,6 +207,22 @@ static int encode_image(const char *input_file_name,
 	header->magic = htonl(header->magic);
 
 	fwrite(header, HDR_LEN, 1, fp_output);
+
+	if (cw_header) {
+		model_size = cw_header->model_size;
+		cw_header->mod = htonl(cw_header->mod);
+		cw_header->sku = htonl(cw_header->sku);
+		cw_header->firmware_ver[0] = htonl(cw_header->firmware_ver[0]);
+		cw_header->firmware_ver[1] = htonl(cw_header->firmware_ver[1]);
+		cw_header->firmware_ver[2] = htonl(cw_header->firmware_ver[2]);
+		cw_header->datecode = htonl(cw_header->datecode);
+		cw_header->capwap_ver[0] = htonl(cw_header->capwap_ver[0]);
+		cw_header->capwap_ver[1] = htonl(cw_header->capwap_ver[1]);
+		cw_header->capwap_ver[2] = htonl(cw_header->capwap_ver[2]);
+		cw_header->model_size = htonl(cw_header->model_size);
+		fwrite(cw_header, sizeof(struct capwap_header) + model_size,
+			1, fp_output);
+	}
 
 	while (!feof(fp_input) || pad_len > 0) {
 
@@ -212,8 +253,11 @@ static int encode_image(const char *input_file_name,
 
 int decode_image(const char *input_file_name, const char *output_file_name)
 {
-	img_header header;
+	struct img_header header;
 	char buf[BUF_SIZE];
+
+	struct capwap_header cw_header;
+	char *pmodel = NULL;
 
 	FILE *fp_input;
 	FILE *fp_output;
@@ -225,19 +269,18 @@ int decode_image(const char *input_file_name, const char *output_file_name)
 	fp_input = fopen(input_file_name, "r+b");
 	if (!fp_input) {
 		fprintf(stderr, "Cannot open %s !!\n", input_file_name);
-		fclose(fp_input);
 		return -1;
 	}
 
 	fp_output = fopen(output_file_name, "w+b");
 	if (!fp_output) {
 		fprintf(stderr, "Cannot open %s !!\n", output_file_name);
-		fclose(fp_output);
+		fclose(fp_input);
 		return -1;
 	}
 
 	if (fread(&header, 1, HDR_LEN, fp_input) != HDR_LEN) {
-		fprintf(stderr, "Incorrect header size!!");
+		fprintf(stderr, "Incorrect header size reading base header!!");
 		fclose(fp_input);
 		fclose(fp_output);
 		return -1;
@@ -250,6 +293,47 @@ int decode_image(const char *input_file_name, const char *output_file_name)
 	header.filesize = ntohl(header.filesize);
 	header.chksum = ntohl(header.chksum);
 	header.magic = ntohl(header.magic);
+
+	/* read capwap header if firmware_type is zero */
+	if (header.firmware_type == 0) {
+		if (fread(&cw_header, 1, sizeof(struct capwap_header),
+				fp_input) != sizeof(struct capwap_header)) {
+			fprintf(stderr,
+				"Incorrect header size reading capwap_header!!");
+			fclose(fp_input);
+			fclose(fp_output);
+			return -1;
+		}
+		cw_header.mod = ntohl(cw_header.mod);
+		cw_header.sku = ntohl(cw_header.sku);
+		cw_header.firmware_ver[0] = ntohl(cw_header.firmware_ver[0]);
+		cw_header.firmware_ver[1] = ntohl(cw_header.firmware_ver[1]);
+		cw_header.firmware_ver[2] = ntohl(cw_header.firmware_ver[2]);
+		cw_header.datecode = ntohl(cw_header.datecode);
+		cw_header.capwap_ver[0] = ntohl(cw_header.capwap_ver[0]);
+		cw_header.capwap_ver[1] = ntohl(cw_header.capwap_ver[1]);
+		cw_header.capwap_ver[2] = ntohl(cw_header.capwap_ver[2]);
+		cw_header.model_size = ntohl(cw_header.model_size);
+
+		pmodel = malloc(cw_header.model_size + 1);
+		if (pmodel) {
+			pmodel[cw_header.model_size] = '\0';
+			if (fread(pmodel, 1, cw_header.model_size, fp_input) !=
+					cw_header.model_size) {
+				fprintf(stderr,
+					"Incorrect header size reading model name!!");
+				fclose(fp_input);
+				fclose(fp_output);
+				return -1;
+			}
+		} else {
+			fprintf(stderr,
+				"Incorrect header size reading model name!!");
+			fclose(fp_input);
+			fclose(fp_output);
+			return -1;
+		}
+	}
 
 	bytes_written = 0;
 	while (!feof(fp_input)) {
@@ -291,9 +375,11 @@ static void usage(const char *progname, int status)
 			"  -o <file>		write output to the file <file>\n"
 			"  -t <type>		set image type to <type>\n"
 			"			valid image <type> values:\n");
-	for (i = 0; i < sizeof(FIRMWARE_TYPES) / sizeof(firmware_type); i++) {
+	for (i = 0;
+		i < sizeof(FIRMWARE_TYPES) / sizeof(struct firmware_type);
+		i++) {
 		fprintf(stream, "			%-5i= %s\n", FIRMWARE_TYPES[i].id,
-				FIRMWARE_TYPES[i].name);
+			FIRMWARE_TYPES[i].name);
 	}
 	fprintf(stream, "  -v <version>		set image version to <version>\n"
 			"  -r <vendor>		set image vendor id to <vendor>\n"
@@ -301,6 +387,10 @@ static void usage(const char *progname, int status)
 			"  -m <magic>		set encoding magic <magic>\n"
 			"  -z			enable image padding to <blocksize>\n"
 			"  -b <blocksize>	set image <blocksize>, defaults to %u\n"
+			"  -c <datecode>	add capwap header with <datecode> (e.g. 171101)\n"
+			"  -w <fw_ver>		firmware version for capwap header (e.g. 3.0.1)\n"
+			"  -x <cw_ver>		capwap firmware version for capwap header (e.g. 1.8.53)\n"
+			"  -n <name>		model name for capwap header (e.g. ENS620EXT)\n"
 			"  -h			show this screen\n", DEFAULT_BLOCK_SIZE);
 	exit(status);
 }
@@ -308,21 +398,34 @@ static void usage(const char *progname, int status)
 int main(int argc, char *argv[])
 {
 	int opt;
-	char *input_file, *output_file, *progname = NULL;
+	char *input_file = NULL;
+	char *output_file = NULL;
+	char *progname = NULL;
 	op_mode mode = NONE;
 	int tmp, i, pad = 0;
 	int block_size;
-	img_header header;
+	struct img_header header;
+	struct capwap_header cw_header;
+	struct capwap_header *pcw_header = NULL;
+	char *token;
+	const char period[2] = ".";
+	char *mod_name = NULL;
 
 	block_size = DEFAULT_BLOCK_SIZE;
 	progname = basename(argv[0]);
 
-	memset(&header, 0, sizeof( img_header ));
+	memset(&header, 0, sizeof(struct img_header));
 	header.magic = DEFAULT_MAGIC;
 	header.head = DEFAULT_HEAD_VALUE;
+	header.firmware_type = FIRMWARE_TYPE_NONE;
+	memset(&cw_header, 0, sizeof(struct capwap_header));
+	cw_header.mod = MOD_DEFAULT;
+	cw_header.sku = SKU_DEFAULT;
+	cw_header.datecode = DATECODE_NONE;
 	strncpy( (char*)&header.version, DEFAULT_VERSION, VERSION_SIZE - 1);
 
-	while ((opt = getopt(argc, argv, ":o:e:d:t:v:r:p:m:b:h?z")) != -1) {
+	while ((opt =
+		getopt(argc, argv, ":o:e:d:t:v:r:p:m:b:c:w:x:n:h?z")) != -1) {
 		switch (opt) {
 		case 'e':
 			input_file = optarg;
@@ -337,14 +440,16 @@ int main(int argc, char *argv[])
 			break;
 		case 't':
 			tmp = strtol(optarg, 0, 10);
-			for (i = 0; i < sizeof(FIRMWARE_TYPES) / sizeof(firmware_type);
-					i++) {
+			for (i = 0;
+				i < (sizeof(FIRMWARE_TYPES) /
+					sizeof(struct firmware_type));
+				i++) {
 				if (FIRMWARE_TYPES[i].id == tmp) {
 					header.firmware_type = FIRMWARE_TYPES[i].id;
 					break;
 				}
 			}
-			if (header.firmware_type == 0) {
+			if (header.firmware_type == FIRMWARE_TYPE_NONE) {
 				fprintf(stderr, "Invalid firmware type \"0\"!\n");
 				usage(progname, EXIT_FAILURE);
 			}
@@ -367,6 +472,31 @@ int main(int argc, char *argv[])
 			break;
 		case 'b':
 			block_size = strtol(optarg, 0, 10);
+			break;
+		case 'c':
+			cw_header.datecode = strtoul(optarg, 0, 10);
+			break;
+		case 'w':
+			token = strtok(optarg, period);
+			i = 0;
+			while (token && (i < 3)) {
+				cw_header.firmware_ver[i++] =
+					strtoul(token, 0, 10);
+				token = strtok(NULL, period);
+			}
+			break;
+		case 'x':
+			token = strtok(optarg, period);
+			i = 0;
+			while (token && (i < 3)) {
+				cw_header.capwap_ver[i++] =
+					strtoul(token, 0, 10);
+				token = strtok(NULL, period);
+			}
+			break;
+		case 'n':
+			mod_name = optarg;
+			cw_header.model_size = strlen(mod_name);
 			break;
 		case 'h':
 			usage(progname, EXIT_SUCCESS);
@@ -403,17 +533,51 @@ int main(int argc, char *argv[])
 		return EXIT_SUCCESS;
 	}
 
-	if (header.firmware_type == 0) {
-		fprintf(stderr, "Firmware type must be defined\n");
+	if ((header.firmware_type == 0) &&
+		(cw_header.datecode == DATECODE_NONE)) {
+		fprintf(stderr,
+			"Firmware type must be non-zero for non-capwap images\n");
 		usage(progname, EXIT_FAILURE);
 	}
 
 	if (header.vendor_id == 0 || header.product_id == 0) {
-		fprintf(stderr, "Vendor ID and Product ID must be defined and non-zero\n");
+		fprintf(stderr,
+			"Vendor ID and Product ID must be defined and non-zero\n");
 		usage(progname, EXIT_FAILURE);
 	}
 
-	if (encode_image(input_file, output_file, &header, pad ? block_size : 0) < 0)
+	/* Check capwap header specific arguments */
+	if (cw_header.datecode != DATECODE_NONE) {
+		if (mod_name == NULL) {
+			fprintf(stderr,
+				"Capwap header specified: model name must be specified\n");
+			usage(progname, EXIT_FAILURE);
+		}
+		if (!cw_header.firmware_ver[0] && !cw_header.firmware_ver[1] &&
+			!cw_header.firmware_ver[2]) {
+			fprintf(stderr,
+				"Capwap header specified, fw_ver must be non-zero\n");
+		}
+		if (!cw_header.capwap_ver[0] && !cw_header.capwap_ver[1] &&
+			!cw_header.capwap_ver[2]) {
+			fprintf(stderr,
+				"Capwap header specified, cw_ver must be non-zero\n");
+		}
+		pcw_header = malloc(sizeof(struct capwap_header) +
+					cw_header.model_size);
+		if (pcw_header) {
+			memcpy(pcw_header, &cw_header,
+				sizeof(struct capwap_header));
+			memcpy(&(pcw_header->model), mod_name,
+				cw_header.model_size);
+		} else {
+			fprintf(stderr, "Failed to allocate memory\n");
+			return EXIT_FAILURE;
+		}
+	}
+
+	if (encode_image(input_file, output_file, &header, pcw_header,
+				pad ? block_size : 0) < 0)
 		return EXIT_FAILURE;
 
 	return EXIT_SUCCESS;

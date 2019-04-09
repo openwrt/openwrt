@@ -51,6 +51,14 @@ define Device/DniImage
 endef
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 
+define Build/SenaoFW
+	-$(STAGING_DIR_HOST)/bin/mksenaofw \
+		-n $(BOARD_NAME) -r $(VENDOR_ID) -p $(1) \
+		-c $(DATECODE) -w $(2) -x $(CW_VER) -t 0 \
+		-e $@ \
+		-o $@.new
+	@cp $@.new $@
+endef
 
 define Device/8dev_jalapeno
 	$(call Device/FitImage)
@@ -168,17 +176,27 @@ endef
 TARGET_DEVICES += engenius_eap1300
 
 define Device/engenius_ens620ext
-        $(call Device/FitImage)
-        DEVICE_DTS := qcom-ipq4018-ens620ext
-        DEVICE_DTS_CONFIG := config@4
-        BLOCKSIZE := 64k
-        PAGESIZE := 256
-        DEVICE_TITLE := EnGenius ENS620EXT
-        IMAGE_SIZE := 21823488
-        KERNEL_SIZE := 5120k
-        FILESYSTEMS := squashfs
-        IMAGES := sysupgrade.bin
-        IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
+	$(call Device/FitImage)
+	DEVICE_DTS := qcom-ipq4018-ens620ext
+	DEVICE_DTS_CONFIG := config@4
+	BLOCKSIZE := 64k
+	PAGESIZE := 256
+	DEVICE_TITLE := EnGenius ENS620EXT
+	BOARD_NAME := ENS620EXT
+	VENDOR_ID := 0x0101
+	PRODUCT_ID := 0x79
+	PRODUCT_ID_NEW := 0xA4
+	DATECODE := 190507
+	FW_VER := 3.1.2
+	FW_VER_NEW := 3.5.6
+	CW_VER := 1.8.99
+	IMAGE_SIZE := 21823488
+	KERNEL_SIZE := 5120k
+	FILESYSTEMS := squashfs
+	IMAGES := sysupgrade.bin factory_30.bin factory_35.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
+	IMAGE/factory_30.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | SenaoFW $$$$(PRODUCT_ID) $$$$(FW_VER)
+	IMAGE/factory_35.bin := qsdk-ipq-factory-nor | check-size $$$$(IMAGE_SIZE) | SenaoFW $$$$(PRODUCT_ID_NEW) $$$$(FW_VER_NEW)
 	DEVICE_PACKAGES := ipq-wifi-engenius_ens620ext
 endef
 TARGET_DEVICES += engenius_ens620ext
