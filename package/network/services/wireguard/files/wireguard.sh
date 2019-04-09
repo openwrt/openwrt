@@ -42,7 +42,6 @@ proto_wireguard_setup_peer() {
 	config_get endpoint_port "${peer_config}" "endpoint_port"
 	config_get persistent_keepalive "${peer_config}" "persistent_keepalive"
 
-	# peer configuration
 	echo "[Peer]" >> "${wg_cfg}"
 	echo "PublicKey=${public_key}" >> "${wg_cfg}"
 	if [ "${preshared_key}" ]; then
@@ -71,7 +70,6 @@ proto_wireguard_setup_peer() {
 		echo "PersistentKeepalive=${persistent_keepalive}" >> "${wg_cfg}"
 	fi
 
-	# add routes for allowed ips
 	if [ ${route_allowed_ips} -ne 0 ]; then
 		for allowed_ip in ${allowed_ips}; do
 			case "${allowed_ip}" in
@@ -101,7 +99,6 @@ proto_wireguard_setup() {
 	local listen_port
 	local mtu
 
-	# load configuration
 	config_load network
 	config_get private_key "${config}" "private_key"
 	config_get listen_port "${config}" "listen_port"
@@ -111,7 +108,6 @@ proto_wireguard_setup() {
 	config_get ip6prefix "${config}" "ip6prefix"
 	config_get nohostroute "${config}" "nohostroute"
 
-	# create interface
 	ip link del dev "${config}" 2>/dev/null
 	ip link add dev "${config}" type wireguard
 
@@ -121,7 +117,6 @@ proto_wireguard_setup() {
 
 	proto_init_update "${config}" 1
 
-	# generate configuration file
 	umask 077
 	mkdir -p "${wg_dir}"
 	echo "[Interface]" > "${wg_cfg}"
@@ -138,17 +133,14 @@ proto_wireguard_setup() {
 	${WG} setconf ${config} "${wg_cfg}"
 	WG_RETURN=$?
 
-	# delete configuration file
 	rm -f "${wg_cfg}"
 
-	# check status
 	if [ ${WG_RETURN} -ne 0 ]; then
 		sleep 5
 		proto_setup_failed "${config}"
 		exit 1
 	fi
 
-	# add ip addresses
 	for address in ${addresses}; do
 		case "${address}" in
 			*:*/*)
@@ -166,7 +158,6 @@ proto_wireguard_setup() {
 		esac
 	done
 
-	# support ip6 prefixes
 	for prefix in ${ip6prefix}; do
 		proto_add_ipv6_prefix "$prefix"
 	done
