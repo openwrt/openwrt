@@ -23,7 +23,7 @@ define Host/Compile
 	$(call cc,otrx)
 	$(call cc,motorola-bin)
 	$(call cc,dgfirmware)
-	$(call cc,mksenaofw md5)
+	$(call cc,mksenaofw md5, -Wall --std=gnu99)
 	$(call cc,trx2usr)
 	$(call cc,ptgen)
 	$(call cc,srec2bin)
