@@ -65,6 +65,22 @@ define Build/iodata-factory
 	fi
 endef
 
+define Build/iodata-mstc-header
+  ( \
+    data_size_crc="$$(dd if=$@ ibs=64 skip=1 2>/dev/null | \
+      gzip -c | tail -c 8 | od -An -tx8 --endian little | tr -d ' \n')"; \
+    echo -ne "$$(echo $$data_size_crc | sed 's/../\\x&/g')" | \
+      dd of=$@ bs=8 count=1 seek=7 conv=notrunc 2>/dev/null; \
+  )
+  dd if=/dev/zero of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null
+  ( \
+    header_crc="$$(dd if=$@ bs=64 count=1 2>/dev/null | \
+      gzip -c | tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
+    echo -ne "$$(echo $$header_crc | sed 's/../\\x&/g')" | \
+      dd of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null; \
+  )
+endef
+
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:6' > $(1).compat; \
@@ -335,6 +351,22 @@ define Device/iodata_wn-ax1167gr
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 wpad-basic
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr
+
+define Device/iodata_wn-dx1167r
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  UIMAGE_MAGIC := 0x434f4d43
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 51200k
+  DEVICE_VENDOR := I-O DATA
+  DEVICE_MODEL := WN-DX1167R
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(XIK.1)b10 | \
+	iodata-mstc-header
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7615e wpad-basic
+endef
+TARGET_DEVICES += iodata_wn-dx1167r
 
 define Device/iodata_wn-gx300gr
   IMAGE_SIZE := 7616k
