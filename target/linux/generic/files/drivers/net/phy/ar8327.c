@@ -1323,6 +1323,13 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 	},
 	{
 		.type = SWITCH_TYPE_INT,
+		.name = "ar8xxx_mib_poll_interval",
+		.description = "MIB polling interval in msecs (0 to disable)",
+		.set = ar8xxx_sw_set_mib_poll_interval,
+		.get = ar8xxx_sw_get_mib_poll_interval
+	},
+	{
+		.type = SWITCH_TYPE_INT,
 		.name = "enable_mirror_rx",
 		.description = "Enable mirroring of RX packets",
 		.set = ar8xxx_sw_set_mirror_rx_enable,
