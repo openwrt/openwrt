@@ -15,13 +15,6 @@
 		gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		debounce-interval = <60>;
 	};
-
-	wps {
-		label = "WPS button";
-		linux,code = <KEY_WPS_BUTTON>;
-		gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
-		debounce-interval = <60>;
-	};
 };
 
 &mtdparts {
