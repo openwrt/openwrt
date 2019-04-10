@@ -192,6 +192,10 @@ config KERNEL_KPROBE_EVENT
 	bool
 	default y if KERNEL_KPROBES
 
+config KERNEL_KPROBE_EVENTS
+	bool
+	default y if KERNEL_KPROBES
+
 config KERNEL_AIO
 	bool "Compile the kernel with asynchronous IO support"
 	default n
