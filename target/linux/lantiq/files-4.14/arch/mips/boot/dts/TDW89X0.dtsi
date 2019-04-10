@@ -85,6 +85,7 @@
 		wifi: wifi {
 			label = "tdw89x0:green:wifi";
 			gpios = <&ath9k 0 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 	};
 
