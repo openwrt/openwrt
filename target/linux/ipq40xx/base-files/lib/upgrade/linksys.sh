@@ -1,26 +1,51 @@
 linksys_get_target_firmware() {
+
+	local cur_boot_part mtd_ubi0
+
 	cur_boot_part=$(/usr/sbin/fw_printenv -n boot_part)
-	target_firmware=""
-	if [ "$cur_boot_part" = "1" ]; then
-		# current primary boot - update alt boot
-		target_firmware="alt_kernel"
-		fw_setenv boot_part 2
-		# In the Linksys EA6350v3, it is enough to set the boot_part as the boot command line is
-		# bootcmd=if test $boot_part = 1; then run bootpart1; else run bootpart2; fi
-		# - You probably want to use that if your device's uboot does not eval bootcmd
-		#fw_setenv bootcmd "run altnandboot"
-	elif [ "$cur_boot_part" = "2" ]; then
-		# current alt boot - update primary boot
-		target_firmware="kernel"
-		fw_setenv boot_part 1
-		#fw_setenv bootcmd "run nandboot"
+	if [ -z "${cur_boot_part}" ] ; then
+		mtd_ubi0=$( cat /sys/devices/virtual/ubi/ubi0/mtd_num )
+		case $( egrep "^mtd${mtd_ubi0}:" /proc/mtd | cut -d '"' -f 2 ) in
+		kernel|rootfs)
+			cur_boot_part=1
+			;;
+		alt_kernel|alt_rootfs)
+			cur_boot_part=2
+			;;
+		esac
+		>&2 printf "Current boot_part='%s' selected from ubi0/mtd_num='%s'" \
+			"${cur_boot_part}" "${mtd_ubi0}"
 	fi
 
-	# re-enable recovery so we get back if the new firmware is broken
-	fw_setenv auto_recovery yes
-	# see /etc/init.d/zlinksys_recovery
+	# OEM U-Boot for EA6350v3 and EA8300; bootcmd=
+	#  if test $auto_recovery = no;
+	#      then bootipq;
+	#  elif test $boot_part = 1;
+	#      then run bootpart1;
+	#      else run bootpart2;
+	#  fi
 
-	echo "$target_firmware"
+	case $cur_boot_part in
+	1)
+		fw_setenv -s - <<-EOF
+			boot_part 2
+			auto_recovery yes
+		EOF
+		printf "alt_kernel"
+		return
+		;;
+	2)
+		fw_setenv -s - <<-EOF
+			boot_part 1
+			auto_recovery yes
+		EOF
+		printf "kernel"
+		return
+		;;
+	*)
+		return
+		;;
+	esac
 }
 
 linksys_get_root_magic() {

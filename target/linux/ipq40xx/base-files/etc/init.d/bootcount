@@ -10,5 +10,8 @@ start() {
 		[ -n "$(fw_printenv bootcount changed 2>/dev/null)" ] &&\
 			echo -e "bootcount\nchanged\n" | /usr/sbin/fw_setenv -s -
 		;;
+	linksys,ea6350v3)
+		mtd resetbc s_env || true
+		;;
 	esac
 }
