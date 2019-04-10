@@ -248,6 +248,21 @@ define Device/linksys_ea6350v3
 endef
 TARGET_DEVICES += linksys_ea6350v3
 
+define Device/linksys_ea8300
+	$(call Device/FitzImage)
+	DEVICE_TITLE := Linksys EA8300 (Dallas)
+	DEVICE_DTS := qcom-ipq4019-linksys_ea8300
+	KERNEL_SIZE := 3072k
+	IMAGE_SIZE := 87040k
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
+	IMAGES := sysupgrade.bin factory.bin
+	IMAGE/factory.bin  := append-kernel | pad-to $$$${KERNEL_SIZE} | append-ubi | linksys-image type=EA8300
+	DEVICE_PACKAGES := uboot-envtools ath10k-firmware-qca9888-ct ipq-wifi-linksys_ea8300 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += linksys_ea8300
+
 define Device/meraki_mr33
 	$(call Device/FitImage)
 	DEVICE_DTS := qcom-ipq4029-mr33
