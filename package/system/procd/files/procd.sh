@@ -18,7 +18,8 @@
 #     file: configuration files (array)
 #     netdev: bound network device (detects ifindex changes)
 #     limits: resource limits (passed to the process)
-#     user info: array with 1 values $username
+#     user: $username to run service as
+#     group: $groupname to run service as
 #     pidfile: file name to write pid into
 #     stdout: boolean whether to redirect commands stdout to syslog (default: 0)
 #     stderr: boolean whether to redirect commands stderr to syslog (default: 0)
@@ -252,7 +253,7 @@ _procd_set_param() {
 		reload_signal)
 			json_add_int "$type" $(kill -l "$1")
 		;;
-		pidfile|user|seccomp|capabilities|facility)
+		pidfile|user|group|seccomp|capabilities|facility)
 			json_add_string "$type" "$1"
 		;;
 		stdout|stderr|no_new_privs)
