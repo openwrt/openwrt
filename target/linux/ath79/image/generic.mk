@@ -2364,6 +2364,15 @@ define Device/xiaomi_mi-router-4q
 endef
 TARGET_DEVICES += xiaomi_mi-router-4q
 
+define Device/xwrt_mk-v0201
+  SOC := ar9344
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := MK-V0201
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-gpio rssileds
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += xwrt_mk-v0201
+
 define Device/yuncore_a770
   SOC := qca9531
   DEVICE_VENDOR := YunCore
