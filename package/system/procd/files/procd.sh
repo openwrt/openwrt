@@ -20,6 +20,9 @@
 #     limits: resource limits (passed to the process)
 #     user info: array with 1 values $username
 #     pidfile: file name to write pid into
+#     stdout: boolean whether to redirect commands stdout to syslog (default: 0)
+#     stderr: boolean whether to redirect commands stderr to syslog (default: 0)
+#     facility: syslog facility used when logging to syslog (default: daemon)
 #
 #   No space separation is done for arrays/tables - use one function argument per command line argument
 #
@@ -249,7 +252,7 @@ _procd_set_param() {
 		reload_signal)
 			json_add_int "$type" $(kill -l "$1")
 		;;
-		pidfile|user|seccomp|capabilities)
+		pidfile|user|seccomp|capabilities|facility)
 			json_add_string "$type" "$1"
 		;;
 		stdout|stderr|no_new_privs)
