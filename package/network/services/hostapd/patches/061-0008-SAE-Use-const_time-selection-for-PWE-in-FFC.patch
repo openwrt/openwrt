@@ -1,0 +1,100 @@
+From f8f20717f87eff1f025f48ed585c7684debacf72 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni@codeaurora.org>
+Date: Sat, 2 Mar 2019 12:45:33 +0200
+Subject: [PATCH 08/14] SAE: Use const_time selection for PWE in FFC
+
+This is an initial step towards making the FFC case use strictly
+constant time operations similarly to the ECC case.
+sae_test_pwd_seed_ffc() does not yet have constant time behavior,
+though.
+
+This is related to CVE-2019-9494.
+
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+---
+ src/common/sae.c | 53 +++++++++++++++++++++++++++++++++++------------------
+ 1 file changed, 35 insertions(+), 18 deletions(-)
+
+--- a/src/common/sae.c
++++ b/src/common/sae.c
+@@ -589,17 +589,28 @@ static int sae_derive_pwe_ffc(struct sae
+ 			      const u8 *addr2, const u8 *password,
+ 			      size_t password_len, const char *identifier)
+ {
+-	u8 counter, k;
++	u8 counter, k, sel_counter = 0;
+ 	u8 addrs[2 * ETH_ALEN];
+ 	const u8 *addr[3];
+ 	size_t len[3];
+ 	size_t num_elem;
+-	int found = 0;
+-	struct crypto_bignum *pwe = NULL;
++	u8 found = 0; /* 0 (false) or 0xff (true) to be used as const_time_*
++		       * mask */
++	u8 mask;
++	struct crypto_bignum *pwe;
++	size_t prime_len = sae->tmp->prime_len * 8;
++	u8 *pwe_buf;
+ 
+ 	crypto_bignum_deinit(sae->tmp->pwe_ffc, 1);
+ 	sae->tmp->pwe_ffc = NULL;
+ 
++	/* Allocate a buffer to maintain selected and candidate PWE for constant
++	 * time selection. */
++	pwe_buf = os_zalloc(prime_len * 2);
++	pwe = crypto_bignum_init();
++	if (!pwe_buf || !pwe)
++		goto fail;
++
+ 	wpa_hexdump_ascii_key(MSG_DEBUG, "SAE: password",
+ 			      password, password_len);
+ 
+@@ -638,27 +649,33 @@ static int sae_derive_pwe_ffc(struct sae
+ 		if (hmac_sha256_vector(addrs, sizeof(addrs), num_elem,
+ 				       addr, len, pwd_seed) < 0)
+ 			break;
+-		if (!pwe) {
+-			pwe = crypto_bignum_init();
+-			if (!pwe)
+-				break;
+-		}
+ 		res = sae_test_pwd_seed_ffc(sae, pwd_seed, pwe);
++		/* res is -1 for fatal failure, 0 if a valid PWE was not found,
++		 * or 1 if a valid PWE was found. */
+ 		if (res < 0)
+ 			break;
+-		if (res > 0) {
+-			found = 1;
+-			if (!sae->tmp->pwe_ffc) {
+-				wpa_printf(MSG_DEBUG, "SAE: Use this PWE");
+-				sae->tmp->pwe_ffc = pwe;
+-				pwe = NULL;
+-			}
+-		}
++		/* Store the candidate PWE into the second half of pwe_buf and
++		 * the selected PWE in the beginning of pwe_buf using constant
++		 * time selection. */
++		if (crypto_bignum_to_bin(pwe, pwe_buf + prime_len, prime_len,
++					 prime_len) < 0)
++			break;
++		const_time_select_bin(found, pwe_buf, pwe_buf + prime_len,
++				      prime_len, pwe_buf);
++		sel_counter = const_time_select_u8(found, sel_counter, counter);
++		mask = const_time_eq_u8(res, 1);
++		found = const_time_select_u8(found, found, mask);
+ 	}
+ 
+-	crypto_bignum_deinit(pwe, 1);
++	if (!found)
++		goto fail;
+ 
+-	return found ? 0 : -1;
++	wpa_printf(MSG_DEBUG, "SAE: Use PWE from counter = %02u", sel_counter);
++	sae->tmp->pwe_ffc = crypto_bignum_init_set(pwe_buf, prime_len);
++fail:
++	crypto_bignum_deinit(pwe, 1);
++	bin_clear_free(pwe_buf, prime_len * 2);
++	return sae->tmp->pwe_ffc ? 0 : -1;
+ }
+ 
+ 
