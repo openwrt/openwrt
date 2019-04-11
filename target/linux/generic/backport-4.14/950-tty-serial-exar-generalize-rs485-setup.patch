@@ -1,19 +1,18 @@
-From 24d5ba8ad40c3ac7903f688580c345aafa764dc7 Mon Sep 17 00:00:00 2001
+From 9d9398944488cd3a3e1e0912b26fbc4d5921e547 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Mon, 4 Jun 2018 14:51:29 +0200
-Subject: [PATCH] tty: serial: exar: generalize rs485 setup
-To: linux-serial@vger.kernel.org,
-    Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Linus Walleij <linus.walleij@linaro.org>,
-    Jan Kiszka <jan.kiszka@siemens.com>
+Date: Mon, 4 Jun 2018 23:33:07 +0200
+Subject: [PATCH] tty: serial: exar: generalize RS485 setup
 
-Move the non-board-specific part of the RS485 initialization
-from iot2040_rs485_config function to a new generic function
-used also for other boards.
-This allows using PCIe boards which are hard-wired to RS485
-or have jumpers for their configurations.
+Move the non-board-specific part of the RS485 initialization from
+iot2040_rs485_config function to a new generic function used also for
+other boards.
+This allows using TIOCGRS485 and TIOCSRS485 on boards (such as mPCIe
+serial IO modules) which are hard-wired to RS485 or have jumpers for
+their configurations.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  drivers/tty/serial/8250/8250_exar.c | 38 +++++++++++++++++++----------
  1 file changed, 25 insertions(+), 13 deletions(-)
