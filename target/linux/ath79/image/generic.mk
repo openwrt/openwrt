@@ -75,6 +75,15 @@ define Device/seama
   SEAMA_SIGNATURE :=
 endef
 
+define Device/8dev_carambola2
+  ATH_SOC := ar9331
+  DEVICE_TITLE := 8devices Carambola2
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-chipidea2
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += carambola2
+endef
+TARGET_DEVICES += 8dev_carambola2
+
 define Device/avm_fritz300e
   ATH_SOC := ar7242
   DEVICE_TITLE := AVM FRITZ!WLAN Repeater 300E

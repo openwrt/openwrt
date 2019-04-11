@@ -9,6 +9,18 @@ ath79_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+	8dev,carambola2|\
+	comfast,cf-e5|\
+	glinet,gl-ar150|\
+	glinet,gl-ar300m-nand|\
+	glinet,gl-ar300m-nor|\
+	glinet,gl-x750|\
+	tplink,tl-wr810n-v1|\
+	tplink,tl-wr810n-v2|\
+	ubnt,routerstation|\
+	yuncore,a770)
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		;;
 	avm,fritz300e|\
 	devolo,dvl1200i|\
 	devolo,dvl1750c|\
@@ -68,17 +80,6 @@ ath79_setup_interfaces()
 	buffalo,wzr-hp-g302h-a1a0)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "3:lan:4" "4:lan:3" "5:lan:2" "2:wan"
-		;;
-	comfast,cf-e5|\
-	glinet,gl-ar150|\
-	glinet,gl-ar300m-nand|\
-	glinet,gl-ar300m-nor|\
-	glinet,gl-x750|\
-	tplink,tl-wr810n-v1|\
-	tplink,tl-wr810n-v2|\
-	ubnt,routerstation|\
-	yuncore,a770)
-		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
 	devolo,dvl1200e|\
 	devolo,dvl1750e|\
