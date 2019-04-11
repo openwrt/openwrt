@@ -42,93 +42,102 @@
 extern const struct ar8xxx_chip ar8327_chip;
 extern const struct ar8xxx_chip ar8337_chip;
 
-#define MIB_DESC(_s , _o, _n)	\
-	{			\
-		.size = (_s),	\
-		.offset = (_o),	\
-		.name = (_n),	\
+#define MIB_DESC_BASIC(_s , _o, _n)		\
+	{					\
+		.size = (_s),			\
+		.offset = (_o),			\
+		.name = (_n),			\
+		.type = AR8XXX_MIB_BASIC,	\
+	}
+
+#define MIB_DESC_EXT(_s , _o, _n)		\
+	{					\
+		.size = (_s),			\
+		.offset = (_o),			\
+		.name = (_n),			\
+		.type = AR8XXX_MIB_EXTENDED,	\
 	}
 
 static const struct ar8xxx_mib_desc ar8216_mibs[] = {
-	MIB_DESC(1, AR8216_STATS_RXBROAD, "RxBroad"),
-	MIB_DESC(1, AR8216_STATS_RXPAUSE, "RxPause"),
-	MIB_DESC(1, AR8216_STATS_RXMULTI, "RxMulti"),
-	MIB_DESC(1, AR8216_STATS_RXFCSERR, "RxFcsErr"),
-	MIB_DESC(1, AR8216_STATS_RXALIGNERR, "RxAlignErr"),
-	MIB_DESC(1, AR8216_STATS_RXRUNT, "RxRunt"),
-	MIB_DESC(1, AR8216_STATS_RXFRAGMENT, "RxFragment"),
-	MIB_DESC(1, AR8216_STATS_RX64BYTE, "Rx64Byte"),
-	MIB_DESC(1, AR8216_STATS_RX128BYTE, "Rx128Byte"),
-	MIB_DESC(1, AR8216_STATS_RX256BYTE, "Rx256Byte"),
-	MIB_DESC(1, AR8216_STATS_RX512BYTE, "Rx512Byte"),
-	MIB_DESC(1, AR8216_STATS_RX1024BYTE, "Rx1024Byte"),
-	MIB_DESC(1, AR8216_STATS_RXMAXBYTE, "RxMaxByte"),
-	MIB_DESC(1, AR8216_STATS_RXTOOLONG, "RxTooLong"),
-	MIB_DESC(2, AR8216_STATS_RXGOODBYTE, "RxGoodByte"),
-	MIB_DESC(2, AR8216_STATS_RXBADBYTE, "RxBadByte"),
-	MIB_DESC(1, AR8216_STATS_RXOVERFLOW, "RxOverFlow"),
-	MIB_DESC(1, AR8216_STATS_FILTERED, "Filtered"),
-	MIB_DESC(1, AR8216_STATS_TXBROAD, "TxBroad"),
-	MIB_DESC(1, AR8216_STATS_TXPAUSE, "TxPause"),
-	MIB_DESC(1, AR8216_STATS_TXMULTI, "TxMulti"),
-	MIB_DESC(1, AR8216_STATS_TXUNDERRUN, "TxUnderRun"),
-	MIB_DESC(1, AR8216_STATS_TX64BYTE, "Tx64Byte"),
-	MIB_DESC(1, AR8216_STATS_TX128BYTE, "Tx128Byte"),
-	MIB_DESC(1, AR8216_STATS_TX256BYTE, "Tx256Byte"),
-	MIB_DESC(1, AR8216_STATS_TX512BYTE, "Tx512Byte"),
-	MIB_DESC(1, AR8216_STATS_TX1024BYTE, "Tx1024Byte"),
-	MIB_DESC(1, AR8216_STATS_TXMAXBYTE, "TxMaxByte"),
-	MIB_DESC(1, AR8216_STATS_TXOVERSIZE, "TxOverSize"),
-	MIB_DESC(2, AR8216_STATS_TXBYTE, "TxByte"),
-	MIB_DESC(1, AR8216_STATS_TXCOLLISION, "TxCollision"),
-	MIB_DESC(1, AR8216_STATS_TXABORTCOL, "TxAbortCol"),
-	MIB_DESC(1, AR8216_STATS_TXMULTICOL, "TxMultiCol"),
-	MIB_DESC(1, AR8216_STATS_TXSINGLECOL, "TxSingleCol"),
-	MIB_DESC(1, AR8216_STATS_TXEXCDEFER, "TxExcDefer"),
-	MIB_DESC(1, AR8216_STATS_TXDEFER, "TxDefer"),
-	MIB_DESC(1, AR8216_STATS_TXLATECOL, "TxLateCol"),
+	MIB_DESC_EXT(1, AR8216_STATS_RXBROAD, "RxBroad"),
+	MIB_DESC_EXT(1, AR8216_STATS_RXPAUSE, "RxPause"),
+	MIB_DESC_EXT(1, AR8216_STATS_RXMULTI, "RxMulti"),
+	MIB_DESC_EXT(1, AR8216_STATS_RXFCSERR, "RxFcsErr"),
+	MIB_DESC_EXT(1, AR8216_STATS_RXALIGNERR, "RxAlignErr"),
+	MIB_DESC_EXT(1, AR8216_STATS_RXRUNT, "RxRunt"),
+	MIB_DESC_EXT(1, AR8216_STATS_RXFRAGMENT, "RxFragment"),
+	MIB_DESC_EXT(1, AR8216_STATS_RX64BYTE, "Rx64Byte"),
+	MIB_DESC_EXT(1, AR8216_STATS_RX128BYTE, "Rx128Byte"),
+	MIB_DESC_EXT(1, AR8216_STATS_RX256BYTE, "Rx256Byte"),
+	MIB_DESC_EXT(1, AR8216_STATS_RX512BYTE, "Rx512Byte"),
+	MIB_DESC_EXT(1, AR8216_STATS_RX1024BYTE, "Rx1024Byte"),
+	MIB_DESC_EXT(1, AR8216_STATS_RXMAXBYTE, "RxMaxByte"),
+	MIB_DESC_EXT(1, AR8216_STATS_RXTOOLONG, "RxTooLong"),
+	MIB_DESC_BASIC(2, AR8216_STATS_RXGOODBYTE, "RxGoodByte"),
+	MIB_DESC_EXT(2, AR8216_STATS_RXBADBYTE, "RxBadByte"),
+	MIB_DESC_EXT(1, AR8216_STATS_RXOVERFLOW, "RxOverFlow"),
+	MIB_DESC_EXT(1, AR8216_STATS_FILTERED, "Filtered"),
+	MIB_DESC_EXT(1, AR8216_STATS_TXBROAD, "TxBroad"),
+	MIB_DESC_EXT(1, AR8216_STATS_TXPAUSE, "TxPause"),
+	MIB_DESC_EXT(1, AR8216_STATS_TXMULTI, "TxMulti"),
+	MIB_DESC_EXT(1, AR8216_STATS_TXUNDERRUN, "TxUnderRun"),
+	MIB_DESC_EXT(1, AR8216_STATS_TX64BYTE, "Tx64Byte"),
+	MIB_DESC_EXT(1, AR8216_STATS_TX128BYTE, "Tx128Byte"),
+	MIB_DESC_EXT(1, AR8216_STATS_TX256BYTE, "Tx256Byte"),
+	MIB_DESC_EXT(1, AR8216_STATS_TX512BYTE, "Tx512Byte"),
+	MIB_DESC_EXT(1, AR8216_STATS_TX1024BYTE, "Tx1024Byte"),
+	MIB_DESC_EXT(1, AR8216_STATS_TXMAXBYTE, "TxMaxByte"),
+	MIB_DESC_EXT(1, AR8216_STATS_TXOVERSIZE, "TxOverSize"),
+	MIB_DESC_BASIC(2, AR8216_STATS_TXBYTE, "TxByte"),
+	MIB_DESC_EXT(1, AR8216_STATS_TXCOLLISION, "TxCollision"),
+	MIB_DESC_EXT(1, AR8216_STATS_TXABORTCOL, "TxAbortCol"),
+	MIB_DESC_EXT(1, AR8216_STATS_TXMULTICOL, "TxMultiCol"),
+	MIB_DESC_EXT(1, AR8216_STATS_TXSINGLECOL, "TxSingleCol"),
+	MIB_DESC_EXT(1, AR8216_STATS_TXEXCDEFER, "TxExcDefer"),
+	MIB_DESC_EXT(1, AR8216_STATS_TXDEFER, "TxDefer"),
+	MIB_DESC_EXT(1, AR8216_STATS_TXLATECOL, "TxLateCol"),
 };
 
 const struct ar8xxx_mib_desc ar8236_mibs[39] = {
-	MIB_DESC(1, AR8236_STATS_RXBROAD, "RxBroad"),
-	MIB_DESC(1, AR8236_STATS_RXPAUSE, "RxPause"),
-	MIB_DESC(1, AR8236_STATS_RXMULTI, "RxMulti"),
-	MIB_DESC(1, AR8236_STATS_RXFCSERR, "RxFcsErr"),
-	MIB_DESC(1, AR8236_STATS_RXALIGNERR, "RxAlignErr"),
-	MIB_DESC(1, AR8236_STATS_RXRUNT, "RxRunt"),
-	MIB_DESC(1, AR8236_STATS_RXFRAGMENT, "RxFragment"),
-	MIB_DESC(1, AR8236_STATS_RX64BYTE, "Rx64Byte"),
-	MIB_DESC(1, AR8236_STATS_RX128BYTE, "Rx128Byte"),
-	MIB_DESC(1, AR8236_STATS_RX256BYTE, "Rx256Byte"),
-	MIB_DESC(1, AR8236_STATS_RX512BYTE, "Rx512Byte"),
-	MIB_DESC(1, AR8236_STATS_RX1024BYTE, "Rx1024Byte"),
-	MIB_DESC(1, AR8236_STATS_RX1518BYTE, "Rx1518Byte"),
-	MIB_DESC(1, AR8236_STATS_RXMAXBYTE, "RxMaxByte"),
-	MIB_DESC(1, AR8236_STATS_RXTOOLONG, "RxTooLong"),
-	MIB_DESC(2, AR8236_STATS_RXGOODBYTE, "RxGoodByte"),
-	MIB_DESC(2, AR8236_STATS_RXBADBYTE, "RxBadByte"),
-	MIB_DESC(1, AR8236_STATS_RXOVERFLOW, "RxOverFlow"),
-	MIB_DESC(1, AR8236_STATS_FILTERED, "Filtered"),
-	MIB_DESC(1, AR8236_STATS_TXBROAD, "TxBroad"),
-	MIB_DESC(1, AR8236_STATS_TXPAUSE, "TxPause"),
-	MIB_DESC(1, AR8236_STATS_TXMULTI, "TxMulti"),
-	MIB_DESC(1, AR8236_STATS_TXUNDERRUN, "TxUnderRun"),
-	MIB_DESC(1, AR8236_STATS_TX64BYTE, "Tx64Byte"),
-	MIB_DESC(1, AR8236_STATS_TX128BYTE, "Tx128Byte"),
-	MIB_DESC(1, AR8236_STATS_TX256BYTE, "Tx256Byte"),
-	MIB_DESC(1, AR8236_STATS_TX512BYTE, "Tx512Byte"),
-	MIB_DESC(1, AR8236_STATS_TX1024BYTE, "Tx1024Byte"),
-	MIB_DESC(1, AR8236_STATS_TX1518BYTE, "Tx1518Byte"),
-	MIB_DESC(1, AR8236_STATS_TXMAXBYTE, "TxMaxByte"),
-	MIB_DESC(1, AR8236_STATS_TXOVERSIZE, "TxOverSize"),
-	MIB_DESC(2, AR8236_STATS_TXBYTE, "TxByte"),
-	MIB_DESC(1, AR8236_STATS_TXCOLLISION, "TxCollision"),
-	MIB_DESC(1, AR8236_STATS_TXABORTCOL, "TxAbortCol"),
-	MIB_DESC(1, AR8236_STATS_TXMULTICOL, "TxMultiCol"),
-	MIB_DESC(1, AR8236_STATS_TXSINGLECOL, "TxSingleCol"),
-	MIB_DESC(1, AR8236_STATS_TXEXCDEFER, "TxExcDefer"),
-	MIB_DESC(1, AR8236_STATS_TXDEFER, "TxDefer"),
-	MIB_DESC(1, AR8236_STATS_TXLATECOL, "TxLateCol"),
+	MIB_DESC_EXT(1, AR8236_STATS_RXBROAD, "RxBroad"),
+	MIB_DESC_EXT(1, AR8236_STATS_RXPAUSE, "RxPause"),
+	MIB_DESC_EXT(1, AR8236_STATS_RXMULTI, "RxMulti"),
+	MIB_DESC_EXT(1, AR8236_STATS_RXFCSERR, "RxFcsErr"),
+	MIB_DESC_EXT(1, AR8236_STATS_RXALIGNERR, "RxAlignErr"),
+	MIB_DESC_EXT(1, AR8236_STATS_RXRUNT, "RxRunt"),
+	MIB_DESC_EXT(1, AR8236_STATS_RXFRAGMENT, "RxFragment"),
+	MIB_DESC_EXT(1, AR8236_STATS_RX64BYTE, "Rx64Byte"),
+	MIB_DESC_EXT(1, AR8236_STATS_RX128BYTE, "Rx128Byte"),
+	MIB_DESC_EXT(1, AR8236_STATS_RX256BYTE, "Rx256Byte"),
+	MIB_DESC_EXT(1, AR8236_STATS_RX512BYTE, "Rx512Byte"),
+	MIB_DESC_EXT(1, AR8236_STATS_RX1024BYTE, "Rx1024Byte"),
+	MIB_DESC_EXT(1, AR8236_STATS_RX1518BYTE, "Rx1518Byte"),
+	MIB_DESC_EXT(1, AR8236_STATS_RXMAXBYTE, "RxMaxByte"),
+	MIB_DESC_EXT(1, AR8236_STATS_RXTOOLONG, "RxTooLong"),
+	MIB_DESC_BASIC(2, AR8236_STATS_RXGOODBYTE, "RxGoodByte"),
+	MIB_DESC_EXT(2, AR8236_STATS_RXBADBYTE, "RxBadByte"),
+	MIB_DESC_EXT(1, AR8236_STATS_RXOVERFLOW, "RxOverFlow"),
+	MIB_DESC_EXT(1, AR8236_STATS_FILTERED, "Filtered"),
+	MIB_DESC_EXT(1, AR8236_STATS_TXBROAD, "TxBroad"),
+	MIB_DESC_EXT(1, AR8236_STATS_TXPAUSE, "TxPause"),
+	MIB_DESC_EXT(1, AR8236_STATS_TXMULTI, "TxMulti"),
+	MIB_DESC_EXT(1, AR8236_STATS_TXUNDERRUN, "TxUnderRun"),
+	MIB_DESC_EXT(1, AR8236_STATS_TX64BYTE, "Tx64Byte"),
+	MIB_DESC_EXT(1, AR8236_STATS_TX128BYTE, "Tx128Byte"),
+	MIB_DESC_EXT(1, AR8236_STATS_TX256BYTE, "Tx256Byte"),
+	MIB_DESC_EXT(1, AR8236_STATS_TX512BYTE, "Tx512Byte"),
+	MIB_DESC_EXT(1, AR8236_STATS_TX1024BYTE, "Tx1024Byte"),
+	MIB_DESC_EXT(1, AR8236_STATS_TX1518BYTE, "Tx1518Byte"),
+	MIB_DESC_EXT(1, AR8236_STATS_TXMAXBYTE, "TxMaxByte"),
+	MIB_DESC_EXT(1, AR8236_STATS_TXOVERSIZE, "TxOverSize"),
+	MIB_DESC_BASIC(2, AR8236_STATS_TXBYTE, "TxByte"),
+	MIB_DESC_EXT(1, AR8236_STATS_TXCOLLISION, "TxCollision"),
+	MIB_DESC_EXT(1, AR8236_STATS_TXABORTCOL, "TxAbortCol"),
+	MIB_DESC_EXT(1, AR8236_STATS_TXMULTICOL, "TxMultiCol"),
+	MIB_DESC_EXT(1, AR8236_STATS_TXSINGLECOL, "TxSingleCol"),
+	MIB_DESC_EXT(1, AR8236_STATS_TXEXCDEFER, "TxExcDefer"),
+	MIB_DESC_EXT(1, AR8236_STATS_TXDEFER, "TxDefer"),
+	MIB_DESC_EXT(1, AR8236_STATS_TXLATECOL, "TxLateCol"),
 };
 
 static DEFINE_MUTEX(ar8xxx_dev_list_lock);
@@ -431,6 +440,8 @@ ar8xxx_mib_fetch_port_stat(struct ar8xxx_priv *priv, int port, bool flush)
 		u64 t;
 
 		mib = &priv->chip->mib_decs[i];
+		if (mib->type > priv->mib_type)
+			continue;
 		t = ar8xxx_read(priv, base + mib->offset);
 		if (mib->size == 2) {
 			u64 hi;
@@ -1478,6 +1489,32 @@ ar8xxx_sw_get_mib_poll_interval(struct switch_dev *dev,
 }
 
 int
+ar8xxx_sw_set_mib_type(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+
+	if (!ar8xxx_has_mib_counters(priv))
+		return -EOPNOTSUPP;
+	priv->mib_type = val->value.i;
+	return 0;
+}
+
+int
+ar8xxx_sw_get_mib_type(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+
+	if (!ar8xxx_has_mib_counters(priv))
+		return -EOPNOTSUPP;
+	val->value.i = priv->mib_type;
+	return 0;
+}
+
+int
 ar8xxx_sw_set_mirror_rx_enable(struct switch_dev *dev,
 			       const struct switch_attr *attr,
 			       struct switch_val *val)
@@ -1667,6 +1704,8 @@ ar8xxx_sw_get_port_mib(struct switch_dev *dev,
 
 	mib_stats = &priv->mib_stats[port * chip->num_mibs];
 	for (i = 0; i < chip->num_mibs; i++) {
+		if (chip->mib_decs[i].type > priv->mib_type)
+			continue;
 		mib_name = chip->mib_decs[i].name;
 		mib_data = mib_stats[i];
 		len += snprintf(buf + len, sizeof(priv->buf) - len,
@@ -1896,6 +1935,13 @@ static const struct switch_attr ar8xxx_sw_attr_globals[] = {
 		.description = "MIB polling interval in msecs (0 to disable)",
 		.set = ar8xxx_sw_set_mib_poll_interval,
 		.get = ar8xxx_sw_get_mib_poll_interval
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "ar8xxx_mib_type",
+		.description = "MIB type (0=basic 1=extended)",
+		.set = ar8xxx_sw_set_mib_type,
+		.get = ar8xxx_sw_get_mib_type
 	},
 	{
 		.type = SWITCH_TYPE_INT,

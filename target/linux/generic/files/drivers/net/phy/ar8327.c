@@ -1330,6 +1330,13 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 	},
 	{
 		.type = SWITCH_TYPE_INT,
+		.name = "ar8xxx_mib_type",
+		.description = "MIB type (0=basic 1=extended)",
+		.set = ar8xxx_sw_set_mib_type,
+		.get = ar8xxx_sw_get_mib_type
+	},
+	{
+		.type = SWITCH_TYPE_INT,
 		.name = "enable_mirror_rx",
 		.description = "Enable mirroring of RX packets",
 		.set = ar8xxx_sw_set_mirror_rx_enable,
