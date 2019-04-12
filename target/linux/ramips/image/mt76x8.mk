@@ -66,6 +66,14 @@ define Device/gl-mt300n-v2
 endef
 TARGET_DEVICES += gl-mt300n-v2
 
+define Device/glinet_vixmini
+  DTS := VIXMINI
+  IMAGE_SIZE := 7872k
+  DEVICE_TITLE := GL.iNet VIXMINI
+  SUPPORTED_DEVICES += vixmini
+endef
+TARGET_DEVICES += glinet_vixmini
+
 define Device/hc5661a
   DTS := HC5661A
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
