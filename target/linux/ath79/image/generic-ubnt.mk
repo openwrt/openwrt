@@ -127,6 +127,14 @@ define Device/ubnt_lap-120
 endef
 TARGET_DEVICES += ubnt_lap-120
 
+define Device/ubnt_litebeam-ac-gen2
+  $(Device/ubnt-wa)
+  DEVICE_MODEL := LiteBeam AC
+  DEVICE_VARIANT := Gen2
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += ubnt_litebeam-ac-gen2
+
 define Device/ubnt_nanobeam-ac
   $(Device/ubnt-wa)
   DEVICE_MODEL := NanoBeam AC
