@@ -335,12 +335,14 @@ ar71xx_setup_interfaces()
 	rb-2011uas|\
 	rb-2011uas-2hnd|\
 	rb-2011uias|\
-	rb-2011uias-2hnd)
+	rb-2011uias-2hnd|\
+	rb-2011uias-2hnd-r2)
 		case "$board" in
 		rb-2011ils|\
 		rb-2011uas*|\
 		rb-2011uias|\
-		rb-2011uias-2hnd)
+		rb-2011uias-2hnd|\
+		rb-2011uias-2hnd-r2)
 			ucidef_add_switch "switch0" \
 				"0@eth0" "2:lan" "3:lan" "4:lan" "5:lan" "1:wan" "6:sfp"
 		;;
