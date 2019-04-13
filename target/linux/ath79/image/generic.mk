@@ -381,6 +381,7 @@ define Device/iodata_etg3-r
   ATH_SOC := ar9342
   DEVICE_TITLE := I-O DATA ETG3-R
   IMAGE_SIZE := 7680k
+  DEVICE_PACKAGES := -iwinfo -kmod-ath9k -wpad-basic
 endef
 TARGET_DEVICES += iodata_etg3-r
 
