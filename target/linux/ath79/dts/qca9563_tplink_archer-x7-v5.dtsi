@@ -158,9 +158,12 @@
 		phy-mode = "sgmii";
 
 		qca,ar8327-initvals = <
-			0x04 0x00080080 /* PORT0 PAD MODE CTRL */
-			0x10 0x81000080 /* POWER_ON_STRIP */
+			0x04 0x80080080 /* PORT0 PAD MODE CTRL */
+			0x08 0x00000000 /* PORT5 PAD MODE CTRL */
+			0x0c 0x00000000 /* PORT6 PAD MODE CTRL */
+			0x10 0x00000080 /* POWER_ON_STRIP */
 			0x7c 0x0000007e /* PORT0_STATUS */
+			0x94 0x00000200 /* PORT6_STATUS */
 			>;
 	};
 };
