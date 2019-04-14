@@ -293,6 +293,8 @@
 		phy0: ethernet-phy@0 {
 			device_type = "ethernet-phy";
 			reg = <0>;
+			qca,mib-poll-interval = <500>;
+
 			qca,ar8327-initvals = <
 				0x0010 0x40000000
 				0x0624 0x007f7f7f
