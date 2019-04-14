@@ -60,7 +60,7 @@ define Device/tl-wdr4900-v1
   IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade | append-metadata
   IMAGE/factory.bin := append-rootfs | mktplinkfw factory
 endef
-TARGET_DEVICES += tl-wdr4900-v1
+#TARGET_DEVICES += tl-wdr4900-v1
 
 define Device/red-15w-rev1
   DEVICE_TITLE := Sophos RED 15w Rev.1
