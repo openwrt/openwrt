@@ -156,6 +156,7 @@
 	phy0: ethernet-phy@0 {
 		reg = <0>;
 		phy-mode = "sgmii";
+		qca,mib-poll-interval = <500>;
 
 		qca,ar8327-initvals = <
 			0x04 0x80080080 /* PORT0 PAD MODE CTRL */
