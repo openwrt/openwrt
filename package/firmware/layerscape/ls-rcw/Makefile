@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ls-rcw
-PKG_VERSION:=lsdk-1806
+PKG_VERSION:=lsdk-1903
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://source.codeaurora.org/external/qoriq/qoriq-components/rcw
-PKG_SOURCE_VERSION:=1f43bef4b4475d8e81c9b3b8c5bdd6c1ce8cfa6c
-PKG_MIRROR_HASH:=a3b455bcc1f070c8e51f520e32b62cec5b05d772d7ae4a876d88fd5f278a7b1c
+PKG_SOURCE_VERSION:=f1377876cc06a87ec8afa8a3412ca7c8455861f2
+PKG_MIRROR_HASH:=a9c97755809994a668ee5f0e535cef9f344fc5523c4299ac76f26c63976c80bc
 
 include $(INCLUDE_DIR)/package.mk
 
