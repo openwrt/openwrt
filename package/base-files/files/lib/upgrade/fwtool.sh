@@ -2,7 +2,8 @@ fwtool_check_signature() {
 	[ $# -gt 1 ] && return 1
 
 	[ ! -x /usr/bin/ucert ] && {
-		if [ "$REQUIRE_IMAGE_SIGNATURE" = 1 ]; then
+		if [ "$REQUIRE_IMAGE_SIGNATURE" = 1 -a "$FORCE" != 1 ]; then
+			echo "Can't validate signature due to missing ucert package. Use sysupgrade -F to override this check"
 			return 1
 		else
 			return 0
