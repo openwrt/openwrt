@@ -96,7 +96,6 @@ config OPENSSL_WITH_DTLS
 
 config OPENSSL_WITH_NPN
 	bool
-	default y
 	prompt "Enable NPN support"
 	help
 		NPN is a TLS extension, obsoleted and replaced with ALPN,
@@ -246,10 +245,15 @@ comment "Engine/Hardware Support"
 
 config OPENSSL_ENGINE
 	bool "Enable engine support"
+	default y
 	help
 		This enables alternative cryptography implementations,
 		most commonly for interfacing with external crypto devices,
 		or supporting new/alternative ciphers and digests.
+		If you compile the library with this option disabled, packages built
+		using an engine-enabled library (i.e. from the official repo) may
+		fail to run.  Compile and install the packages with engine support
+		disabled, and you should be fine.
 		Note that you need to enable KERNEL_AIO to be able to build the
 		afalg engine package.
 
@@ -270,12 +274,6 @@ config OPENSSL_ENGINE_BUILTIN_AFALG
 	help
 		This enables use of hardware acceleration through the
 		AF_ALG kernel interface.
-
-config OPENSSL_ENGINE_CRYPTO
-	# This symbol is deprecated.  Currently it is used by the openssh package.
-	# Once openwrt/packages#8272 is merged, this can be safely removed.
-	bool
-	default OPENSSL_ENGINE_BUILTIN_DEVCRYPTO || PACKAGE_libopenssl-devcrypto
 
 config OPENSSL_ENGINE_BUILTIN_DEVCRYPTO
 	bool
