@@ -1,13 +1,9 @@
+REQUIRE_IMAGE_SIGNATURE="${REQUIRE_IMAGE_SIGNATURE:-$(uci get system.@system[-1].require_image_signature)}"
+
 fwtool_check_signature() {
 	[ $# -gt 1 ] && return 1
 
-	[ ! -x /usr/bin/ucert ] && {
-		if [ "$REQUIRE_IMAGE_SIGNATURE" = 1 ]; then
-			return 1
-		else
-			return 0
-		fi
-	}
+	[ "$REQUIRE_IMAGE_SIGNATURE" = 1 ] || return 0
 
 	if ! fwtool -q -s /tmp/sysupgrade.ucert "$1"; then
 		echo "Image signature not found"
