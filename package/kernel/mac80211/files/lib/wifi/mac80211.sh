@@ -1,6 +1,8 @@
 #!/bin/sh
 append DRIVERS "mac80211"
 
+. /lib/functions/system.sh
+
 lookup_phy() {
 	[ -n "$phy" ] && {
 		[ -d /sys/class/ieee80211/$phy ] && return
@@ -106,6 +108,10 @@ detect_mac80211() {
 			dev_id="set wireless.radio${devidx}.macaddr=$(cat /sys/class/ieee80211/${dev}/macaddress)"
 		fi
 
+		local ssid=OpenWrt
+		local labelmac=$(get_mac_label)
+		[ -n "$labelmac" ] && ssid="${ssid}_$(macaddr_geteui $labelmac)"
+
 		uci -q batch <<-EOF
 			set wireless.radio${devidx}=wifi-device
 			set wireless.radio${devidx}.type=mac80211
@@ -119,7 +125,7 @@ detect_mac80211() {
 			set wireless.default_radio${devidx}.device=radio${devidx}
 			set wireless.default_radio${devidx}.network=lan
 			set wireless.default_radio${devidx}.mode=ap
-			set wireless.default_radio${devidx}.ssid=OpenWrt
+			set wireless.default_radio${devidx}.ssid=${ssid}
 			set wireless.default_radio${devidx}.encryption=none
 EOF
 		uci -q commit wireless
