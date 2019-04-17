@@ -347,7 +347,8 @@ tplink,archer-mr200)
 	ucidef_set_led_netdev "wan" "wan" "$boardname:white:wan" "usb0"
 	set_wifi_led "$boardname:white:wlan"
 	;;
-tplink,re350-v1)
+tplink,re350-v1|\
+tplink,re650-v1)
 	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "$boardname:blue:wifi2G" "wlan0"
 	ucidef_set_led_netdev "wifi5g" "Wifi 5G" "$boardname:blue:wifi5G" "wlan1"
 	ucidef_set_led_netdev "eth_act" "LAN act" "$boardname:green:eth_act" "eth0" "tx rx"
