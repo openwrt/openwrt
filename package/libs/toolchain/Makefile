@@ -510,6 +510,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Package/ldd/install
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(CP) $(TOOLCHAIN_DIR)/bin/ldd $(1)/usr/bin/
+	sed -i 's,^#!.*,#!/bin/sh,' $(1)/usr/bin/ldd
   endef
 
   define Package/ldconfig/install
