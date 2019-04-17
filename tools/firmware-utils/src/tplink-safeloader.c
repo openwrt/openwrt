@@ -1366,6 +1366,43 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the RE650 */
+	{
+		.id = "RE650-V1",
+		.vendor = "",
+		.support_list =
+			"SupportList:\r\n"
+			"{product_name:RE650,product_ver:1.0.0,special_id:00000000}\r\n"
+			"{product_name:RE650,product_ver:1.0.0,special_id:55530000}\r\n"
+			"{product_name:RE650,product_ver:1.0.0,special_id:45550000}\r\n"
+			"{product_name:RE650,product_ver:1.0.0,special_id:4A500000}\r\n"
+			"{product_name:RE650,product_ver:1.0.0,special_id:43410000}\r\n"
+			"{product_name:RE650,product_ver:1.0.0,special_id:41550000}\r\n"
+			"{product_name:RE650,product_ver:1.0.0,special_id:41530000}\r\n",
+		.support_trail = '\x00',
+		.soft_ver = NULL,
+
+		/* We're using a dynamic kernel/rootfs split here */
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"firmware", 0x20000, 0xde0000},
+			{"partition-table", 0xe00000, 0x02000},
+			{"default-mac", 0xe10000, 0x00020},
+			{"pin", 0xe10100, 0x00020},
+			{"product-info", 0xe11100, 0x01000},
+			{"soft-version", 0xe20000, 0x01000},
+			{"support-list", 0xe21000, 0x01000},
+			{"profile", 0xe22000, 0x08000},
+			{"user-config", 0xe30000, 0x10000},
+			{"default-config", 0xe40000, 0x10000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
 	{}
 };
 
