@@ -66,11 +66,9 @@ Changes since v1:
  drivers/irqchip/irq-ath79-misc.c | 11 +++++++++++
  2 files changed, 11 insertions(+), 6 deletions(-)
 
-diff --git a/arch/mips/ath79/setup.c b/arch/mips/ath79/setup.c
-index 4a70c5d..25a5789 100644
 --- a/arch/mips/ath79/setup.c
 +++ b/arch/mips/ath79/setup.c
-@@ -210,12 +210,6 @@ const char *get_system_type(void)
+@@ -183,12 +183,6 @@ const char *get_system_type(void)
  	return ath79_sys_type;
  }
  
@@ -83,8 +81,6 @@ index 4a70c5d..25a5789 100644
  unsigned int get_c0_compare_int(void)
  {
  	return CP0_LEGACY_COMPARE_IRQ;
-diff --git a/drivers/irqchip/irq-ath79-misc.c b/drivers/irqchip/irq-ath79-misc.c
-index aa72907..0390603 100644
 --- a/drivers/irqchip/irq-ath79-misc.c
 +++ b/drivers/irqchip/irq-ath79-misc.c
 @@ -22,6 +22,15 @@
@@ -103,7 +99,7 @@ index aa72907..0390603 100644
  
  static void ath79_misc_irq_handler(struct irq_desc *desc)
  {
-@@ -113,6 +122,8 @@ static void __init ath79_misc_intc_domain_init(
+@@ -113,6 +122,8 @@ static void __init ath79_misc_intc_domai
  {
  	void __iomem *base = domain->host_data;
  
@@ -112,6 +108,3 @@ index aa72907..0390603 100644
  	/* Disable and clear all interrupts */
  	__raw_writel(0, base + AR71XX_RESET_REG_MISC_INT_ENABLE);
  	__raw_writel(0, base + AR71XX_RESET_REG_MISC_INT_STATUS);
--- 
-1.9.1
-
