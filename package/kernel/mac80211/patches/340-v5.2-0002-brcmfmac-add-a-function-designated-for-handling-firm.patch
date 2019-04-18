@@ -1,0 +1,79 @@
+From a2ec87ddbf1637f854ffcfff9d12d392fa30758b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Tue, 26 Feb 2019 14:11:18 +0100
+Subject: [PATCH] brcmfmac: add a function designated for handling firmware
+ fails
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This improves handling PCIe firmware halts by printing a clear error
+message and replaces a similar code in the SDIO bus support.
+
+It will also allow further improvements like trying to recover from a
+firmware crash.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Reviewed-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h |  2 ++
+ .../net/wireless/broadcom/brcm80211/brcmfmac/core.c    | 10 ++++++++++
+ .../net/wireless/broadcom/brcm80211/brcmfmac/pcie.c    |  2 +-
+ .../net/wireless/broadcom/brcm80211/brcmfmac/sdio.c    |  4 ++--
+ 4 files changed, 15 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
+@@ -233,6 +233,8 @@ void brcmf_dev_reset(struct device *dev)
+ void brcmf_txflowblock(struct device *dev, bool state);
+ /* Request from bus module to initiate a coredump */
+ void brcmf_dev_coredump(struct device *dev);
++/* Indication that firmware has halted or crashed */
++void brcmf_fw_crashed(struct device *dev);
+ 
+ /* Notify the bus has transferred the tx packet to firmware */
+ void brcmf_txcomplete(struct device *dev, struct sk_buff *txp, bool success);
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -1274,6 +1274,16 @@ void brcmf_dev_coredump(struct device *d
+ 		brcmf_dbg(TRACE, "failed to create coredump\n");
+ }
+ 
++void brcmf_fw_crashed(struct device *dev)
++{
++	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
++	struct brcmf_pub *drvr = bus_if->drvr;
++
++	bphy_err(drvr, "Firmware has halted or crashed\n");
++
++	brcmf_dev_coredump(dev);
++}
++
+ void brcmf_detach(struct device *dev)
+ {
+ 	s32 i;
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
+@@ -728,7 +728,7 @@ static void brcmf_pcie_handle_mb_data(st
+ 	}
+ 	if (dtoh_mb_data & BRCMF_D2H_DEV_FWHALT) {
+ 		brcmf_dbg(PCIE, "D2H_MB_DATA: FW HALT\n");
+-		brcmf_dev_coredump(&devinfo->pdev->dev);
++		brcmf_fw_crashed(&devinfo->pdev->dev);
+ 	}
+ }
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -1097,8 +1097,8 @@ static u32 brcmf_sdio_hostmail(struct br
+ 
+ 	/* dongle indicates the firmware has halted/crashed */
+ 	if (hmb_data & HMB_DATA_FWHALT) {
+-		brcmf_err("mailbox indicates firmware halted\n");
+-		brcmf_dev_coredump(&sdiod->func[1]->dev);
++		brcmf_dbg(SDIO, "mailbox indicates firmware halted\n");
++		brcmf_fw_crashed(&sdiod->func[1]->dev);
+ 	}
+ 
+ 	/* Dongle recomposed rx frames, accept them again */
