@@ -73,4 +73,8 @@ config DROPBEAR_PUTUTLINE
 	help
 		Dropbear will use pututline() to write the utmp structure into the utmp file.
 
+config DROPBEAR_DBCLIENT
+	bool "Build dropbear with dbclient"
+	default y
+
 endmenu
