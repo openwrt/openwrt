@@ -74,6 +74,7 @@ define Device/xlnx_zynq-zc702
 	$(call Device/FitImageGzip)
 	DEVICE_TITLE := ZC702 Development Board
 	DEVICE_DTS := zynq-zc702
+	DEVICE_PACKAGES:=kmod-can kmod-can-xilinx-can
 endef
 TARGET_DEVICES += xlnx_zynq-zc702
 

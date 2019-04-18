@@ -83,7 +83,7 @@ proto_qmi_setup() {
 		fi
 	done
 
-	if uqmi -s -d "$device" --get-pin-status | grep '"Not supported"' > /dev/null; then
+	if uqmi -s -d "$device" --get-pin-status | grep '"Not supported"\|"Invalid QMI command"' > /dev/null; then
 		[ -n "$pincode" ] && {
 			uqmi -s -d "$device" --verify-pin1 "$pincode" > /dev/null || uqmi -s -d "$device" --uim-verify-pin1 "$pincode" > /dev/null || {
 				echo "Unable to verify PIN"
@@ -298,6 +298,9 @@ proto_qmi_setup() {
 	}
 	proto_close_data
 	proto_send_update "$interface"
+
+	local zone="$(fw3 -q network "$interface" 2>/dev/null)"
+
 	[ -n "$pdh_6" ] && {
 		if [ -z "$dhcpv6" -o "$dhcpv6" = 0 ]; then
 			json_load "$(uqmi -s -d $device --set-client-id wds,$cid_6 --get-current-settings)"
@@ -318,6 +321,11 @@ proto_qmi_setup() {
 				proto_add_dns_server "$dns1_6"
 				proto_add_dns_server "$dns2_6"
 			}
+			[ -n "$zone" ] && {
+		        	proto_add_data
+        			json_add_string zone "$zone"
+			        proto_close_data
+			}
 			proto_send_update "$interface"
 		else
 			json_init
@@ -328,6 +336,7 @@ proto_qmi_setup() {
 			proto_add_dynamic_defaults
 			# RFC 7278: Extend an IPv6 /64 Prefix to LAN
 			json_add_string extendprefix 1
+			[ -n "$zone" ] && json_add_string zone "$zone"
 			json_close_object
 			ubus call network add_dynamic "$(json_dump)"
 		fi
@@ -340,6 +349,7 @@ proto_qmi_setup() {
 		json_add_string proto "dhcp"
 		[ -n "$ip4table" ] && json_add_string ip4table "$ip4table"
 		proto_add_dynamic_defaults
+		[ -n "$zone" ] && json_add_string zone "$zone"
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
 	}

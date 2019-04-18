@@ -72,6 +72,16 @@ static int mtdsplit_parse_wrgg(struct mtd_info *master,
 	/* sanity checks */
 	if (le32_to_cpu(hdr.magic1) == WRGG03_MAGIC) {
 		kernel_ent_size = hdr_len + be32_to_cpu(hdr.size);
+		/*
+		 * If this becomes silly big it's probably because the
+		 * WRGG image is little-endian.
+		 */
+		if (kernel_ent_size > master->size)
+			kernel_ent_size = hdr_len + le32_to_cpu(hdr.size);
+
+		/* Now what ?! It's neither */
+		if (kernel_ent_size > master->size)
+			return -EINVAL;
 	} else if (le32_to_cpu(hdr.magic1) == WRG_MAGIC) {
 		kernel_ent_size = sizeof(struct wrg_header) + le32_to_cpu(
 		                  ((struct wrg_header*)&hdr)->size);

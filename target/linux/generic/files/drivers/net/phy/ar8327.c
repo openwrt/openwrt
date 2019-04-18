@@ -662,8 +662,8 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 	if (!priv->chip_data)
 		return -ENOMEM;
 
-	if (priv->phy->mdio.dev.of_node)
-		ret = ar8327_hw_config_of(priv, priv->phy->mdio.dev.of_node);
+	if (priv->pdev->of_node)
+		ret = ar8327_hw_config_of(priv, priv->pdev->of_node);
 	else
 		ret = ar8327_hw_config_pdata(priv,
 					     priv->phy->mdio.dev.platform_data);
@@ -1457,16 +1457,7 @@ static const struct switch_dev_ops ar8327_sw_ops = {
 	.apply_config = ar8327_sw_hw_apply,
 	.reset_switch = ar8xxx_sw_reset_switch,
 	.get_port_link = ar8xxx_sw_get_port_link,
-/* The following op is disabled as it hogs the CPU and degrades performance.
-   An implementation has been attempted in 4d8a66d but reading MIB data is slow
-   on ar8xxx switches.
-
-   The high CPU load has been traced down to the ar8xxx_reg_wait() call in
-   ar8xxx_mib_op(), which has to usleep_range() till the MIB busy flag set by
-   the request to update the MIB counter is cleared. */
-#if 0
 	.get_port_stats = ar8xxx_sw_get_port_stats,
-#endif
 };
 
 const struct ar8xxx_chip ar8327_chip = {
@@ -1501,7 +1492,9 @@ const struct ar8xxx_chip ar8327_chip = {
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
-	.mib_func = AR8327_REG_MIB_FUNC
+	.mib_func = AR8327_REG_MIB_FUNC,
+	.mib_rxb_id = AR8236_MIB_RXB_ID,
+	.mib_txb_id = AR8236_MIB_TXB_ID,
 };
 
 const struct ar8xxx_chip ar8337_chip = {
@@ -1537,5 +1530,7 @@ const struct ar8xxx_chip ar8337_chip = {
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
-	.mib_func = AR8327_REG_MIB_FUNC
+	.mib_func = AR8327_REG_MIB_FUNC,
+	.mib_rxb_id = AR8236_MIB_RXB_ID,
+	.mib_txb_id = AR8236_MIB_TXB_ID,
 };

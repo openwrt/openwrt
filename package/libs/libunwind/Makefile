@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libunwind
 PKG_VERSION:=1.2.1
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SAVANNAH/$(PKG_NAME)
@@ -33,6 +33,7 @@ define Package/libunwind
   TITLE:=The libunwind project
   URL:=http://www.nongnu.org/libunwind/
   DEPENDS:=@(mips||mipsel||powerpc||i386||x86_64||arm||aarch64)
+  ABI_VERSION:=8
 endef
 
 define Package/libunwind/description
@@ -46,7 +47,7 @@ CONFIGURE_ARGS += \
 
 define Package/libunwind/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libunwin*.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libunwin*.so.* $(1)/usr/lib/
 endef
 
 define Build/InstallDev

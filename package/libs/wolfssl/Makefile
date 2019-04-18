@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wolfssl
 PKG_VERSION:=3.15.3-stable
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).zip
 # PKG_SOURCE_URL:=https://www.wolfssl.com/
@@ -42,6 +42,7 @@ define Package/libwolfssl
   URL:=http://www.wolfssl.com/
   MENU:=1
   PROVIDES:=libcyassl
+  ABI_VERSION:=18
 endef
 
 define Package/libwolfssl/description
@@ -167,8 +168,7 @@ endef
 
 define Package/libwolfssl/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libwolfssl.so* $(1)/usr/lib/
-	ln -s libwolfssl.so $(1)/usr/lib/libcyassl.so
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libwolfssl.so.* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libwolfssl))

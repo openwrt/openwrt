@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
-PKG_VERSION:=1.30.0
-PKG_RELEASE:=4
+PKG_VERSION:=1.30.1
+PKG_RELEASE:=2
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://www.busybox.net/downloads \
 		http://sources.buildroot.net
-PKG_HASH:=9553da068c0a30b1b8b72479908c1ba58672e2be7b535363a88de5e0f7bc04ce
+PKG_HASH:=3d1d04a4dbd34048f4794815a5c48ebb9eb53c5277e09ffffc060323b95dfbdc
 
 PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_PAM:libpam
 PKG_BUILD_PARALLEL:=1
@@ -73,6 +73,12 @@ define Package/busybox/config
 	source "$(SOURCE)/Config.in"
 endef
 
+ifdef CONFIG_BUSYBOX_CONFIG_FEATURE_SYSLOG
+define Package/busybox/conffiles
+/etc/syslog.conf
+endef
+endif
+
 # don't create a version string containing the actual timestamp
 export KCONFIG_NOTIMESTAMP=1
 
@@ -114,6 +120,7 @@ endef
 
 define Package/busybox/install
 	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
 ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_CROND),)
 	$(INSTALL_BIN) ./files/cron $(1)/etc/init.d/cron

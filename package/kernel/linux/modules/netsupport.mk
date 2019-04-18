@@ -716,8 +716,8 @@ $(eval $(call KernelPackage,mppe))
 
 
 SCHED_MODULES = $(patsubst $(LINUX_DIR)/net/sched/%.ko,%,$(wildcard $(LINUX_DIR)/net/sched/*.ko))
-SCHED_MODULES_CORE = sch_ingress sch_fq_codel sch_hfsc sch_htb sch_tbf cls_fw cls_route cls_flow cls_tcindex cls_u32 em_u32 act_mirred act_skbedit
-SCHED_MODULES_FILTER = $(SCHED_MODULES_CORE) act_connmark sch_netem
+SCHED_MODULES_CORE = sch_ingress sch_fq_codel sch_hfsc sch_htb sch_tbf cls_basic cls_fw cls_route cls_flow cls_tcindex cls_u32 em_u32 act_mirred act_skbedit cls_matchall
+SCHED_MODULES_FILTER = $(SCHED_MODULES_CORE) act_connmark sch_netem em_ipset cls_bpf act_bpf
 SCHED_MODULES_EXTRA = $(filter-out $(SCHED_MODULES_FILTER),$(SCHED_MODULES))
 SCHED_FILES = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(filter $(SCHED_MODULES_CORE),$(SCHED_MODULES)))
 SCHED_FILES_EXTRA = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(SCHED_MODULES_EXTRA))
@@ -725,6 +725,7 @@ SCHED_FILES_EXTRA = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(SCHED_MODULES_EXT
 define KernelPackage/sched-core
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic schedulers
+  DEPENDS:=@!LINUX_3_18
   KCONFIG:= \
 	CONFIG_NET_SCHED=y \
 	CONFIG_NET_SCH_HFSC \
@@ -734,6 +735,7 @@ define KernelPackage/sched-core
 	CONFIG_NET_SCH_FQ_CODEL \
 	CONFIG_NET_CLS=y \
 	CONFIG_NET_CLS_ACT=y \
+	CONFIG_NET_CLS_BASIC \
 	CONFIG_NET_CLS_FLOW \
 	CONFIG_NET_CLS_FW \
 	CONFIG_NET_CLS_ROUTE4 \
@@ -741,6 +743,7 @@ define KernelPackage/sched-core
 	CONFIG_NET_CLS_U32 \
 	CONFIG_NET_ACT_MIRRED \
 	CONFIG_NET_ACT_SKBEDIT \
+	CONFIG_NET_CLS_MATCHALL \
 	CONFIG_NET_EMATCH=y \
 	CONFIG_NET_EMATCH_U32
   FILES:=$(SCHED_FILES)
@@ -754,6 +757,54 @@ endef
 $(eval $(call KernelPackage,sched-core))
 
 
+define KernelPackage/sched-flower
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Flower traffic classifier
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_CLS_FLOWER
+  FILES:=$(LINUX_DIR)/net/sched/cls_flower.ko
+  AUTOLOAD:=$(call AutoProbe, cls_flower)
+endef
+
+define KernelPackage/sched-flower/description
+ Allows to classify packets based on a configurable combination of packet keys and masks.
+endef
+
+$(eval $(call KernelPackage,sched-flower))
+
+
+define KernelPackage/sched-act-vlan
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic VLAN manipulation
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_ACT_VLAN
+  FILES:=$(LINUX_DIR)/net/sched/act_vlan.ko
+  AUTOLOAD:=$(call AutoProbe, act_vlan)
+endef
+
+define KernelPackage/sched-act-vlan/description
+ Allows to configure rules to push or pop vlan headers.
+endef
+
+$(eval $(call KernelPackage,sched-act-vlan))
+
+
+define KernelPackage/sched-mqprio
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Multi-queue priority scheduler (MQPRIO)
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_SCH_MQPRIO
+  FILES:=$(LINUX_DIR)/net/sched/sch_mqprio.ko
+  AUTOLOAD:=$(call AutoProbe, sch_mqprio)
+endef
+
+define KernelPackage/sched-mqprio/description
+  This scheduler allows QOS to be offloaded on NICs that have support for offloading QOS schedulers.
+endef
+
+$(eval $(call KernelPackage,sched-mqprio))
+
+
 define KernelPackage/sched-connmark
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic shaper conntrack mark support
@@ -764,10 +815,52 @@ define KernelPackage/sched-connmark
 endef
 $(eval $(call KernelPackage,sched-connmark))
 
+
+define KernelPackage/sched-ipset
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic shaper ipset support
+  DEPENDS:=+kmod-sched-core +kmod-ipt-ipset
+  KCONFIG:= \
+	CONFIG_NET_EMATCH_IPSET
+  FILES:= \
+	$(LINUX_DIR)/net/sched/em_ipset.ko
+  AUTOLOAD:=$(call AutoLoad,72,em_ipset)
+endef
+
+$(eval $(call KernelPackage,sched-ipset))
+
+
+define KernelPackage/sched-bpf
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic shaper support for Berkeley Packet Filter
+  DEPENDS:=@!LINUX_3_18
+  KCONFIG:= \
+	CONFIG_NET_CLS_BPF \
+	CONFIG_NET_ACT_BPF
+  FILES:= \
+	$(LINUX_DIR)/net/sched/cls_bpf.ko \
+	$(LINUX_DIR)/net/sched/act_bpf.ko
+  AUTOLOAD:=$(call AutoLoad,72,cls_bpf act_bpf)
+endef
+
+$(eval $(call KernelPackage,sched-bpf))
+
+
+define KernelPackage/bpf-test
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Test Berkeley Packet Filter functionality
+  DEPENDS:=@!LINUX_3_18
+  KCONFIG:=CONFIG_TEST_BPF
+  FILES:=$(LINUX_DIR)/lib/test_bpf.ko
+endef
+
+$(eval $(call KernelPackage,bpf-test))
+
+
 define KernelPackage/sched
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Extra traffic schedulers
-  DEPENDS:=+kmod-sched-core +kmod-ipt-core
+  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-lib-crc32c
   KCONFIG:= \
 	CONFIG_NET_SCH_CODEL \
 	CONFIG_NET_SCH_DSMARK \
@@ -780,9 +873,12 @@ define KernelPackage/sched
 	CONFIG_NET_SCH_TEQL \
 	CONFIG_NET_SCH_FQ \
 	CONFIG_NET_SCH_PIE \
-	CONFIG_NET_CLS_BASIC \
 	CONFIG_NET_ACT_POLICE \
+	CONFIG_NET_ACT_GACT \
 	CONFIG_NET_ACT_IPT \
+	CONFIG_NET_ACT_PEDIT \
+	CONFIG_NET_ACT_SIMP \
+	CONFIG_NET_ACT_CSUM \
 	CONFIG_NET_EMATCH_CMP \
 	CONFIG_NET_EMATCH_NBYTE \
 	CONFIG_NET_EMATCH_META \

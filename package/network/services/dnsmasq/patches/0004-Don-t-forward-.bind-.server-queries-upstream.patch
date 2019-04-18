@@ -1,7 +1,7 @@
 From cf5984367bc6a949e3803a576512c5a7bc48ebab Mon Sep 17 00:00:00 2001
 From: Vladislav Grishenko <themiron@mail.ru>
 Date: Thu, 18 Oct 2018 04:55:21 +0500
-Subject: [PATCH 04/30] Don't forward *.bind/*.server queries upstream
+Subject: [PATCH 04/32] Don't forward *.bind/*.server queries upstream
 
 Chaos .bind and .server (RFC4892) zones are local, therefore
 don't forward queries upstream to avoid mixing with supported

@@ -46,13 +46,24 @@ zyxel_do_upgrade() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
-	8dev,jalapeno)
+	8dev,jalapeno |\
+	alfa-network,ap120c-ac |\
+	avm,fritzbox-7530 |\
+	avm,fritzrepeater-3000|\
+	qxwlan,e2600ac-c2)
 		nand_do_upgrade "$ARGV"
+		;;
+	asus,map-ac2200)
+		CI_KERNPART="linux"
+		nand_do_upgrade "$1"
 		;;
 	asus,rt-ac58u)
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
+		;;
+	linksys,ea6350v3)
+		platform_do_upgrade_linksys "$ARGV"
 		;;
 	openmesh,a42 |\
 	openmesh,a62)
@@ -74,6 +85,16 @@ platform_do_upgrade() {
 
 platform_nand_pre_upgrade() {
 	case "$(board_name)" in
+	alfa-network,ap120c-ac)
+		part="$(awk -F 'ubi.mtd=' '{printf $2}' /proc/cmdline | sed -e 's/ .*$//')"
+		if [ "$part" = "rootfs1" ]; then
+			fw_setenv active 2 || exit 1
+			CI_UBIPART="rootfs2"
+		else
+			fw_setenv active 1 || exit 1
+			CI_UBIPART="rootfs1"
+		fi
+		;;
 	asus,rt-ac58u)
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"

@@ -37,12 +37,17 @@ platform_do_upgrade() {
 
 	case "$board" in
 	hc5962|\
-	mir3g|\
 	r6220|\
 	netgear,r6350|\
 	ubnt-erx|\
-	ubnt-erx-sfp)
+	ubnt-erx-sfp|\
+	xiaomi,mir3g|\
+	xiaomi,mir3p)
 		nand_do_upgrade "$ARGV"
+		;;
+	tplink,c50-v4)
+		MTD_ARGS="-t romfile"
+		default_do_upgrade "$ARGV"
 		;;
 	*)
 		default_do_upgrade "$ARGV"

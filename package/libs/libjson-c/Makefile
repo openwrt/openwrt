@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=json-c
 PKG_VERSION:=0.12.1
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-nodoc.tar.gz
 PKG_SOURCE_URL:=https://s3.amazonaws.com/json-c_releases/releases/
@@ -38,6 +38,7 @@ define Package/libjson-c
   CATEGORY:=Libraries
   TITLE:=javascript object notation
   URL:=https://json-c.github.io/json-c/
+  ABI_VERSION:=2
 endef
 
 define Package/libjson-c/description

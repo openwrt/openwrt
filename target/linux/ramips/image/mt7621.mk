@@ -88,7 +88,7 @@ define Device/11acnas
   DTS := 11ACNAS
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := WeVO 11AC NAS Router
-  DEVICE_PACKAGES := kmod-mt7603 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += 11acnas
 
@@ -235,7 +235,23 @@ define Device/k2p
 endef
 TARGET_DEVICES += k2p
 
-define Device/mir3g
+define Device/xiaomi_mir3p
+  DTS := MIR3P
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE:= 4096k
+  UBINIZE_OPTS := -E 5
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  DEVICE_TITLE := Xiaomi Mi Router 3 Pro
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := \
+	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic uboot-envtools
+endef
+TARGET_DEVICES += xiaomi_mir3p
+
+define Device/xiaomi_mir3g
   DTS := MIR3G
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -248,11 +264,12 @@ define Device/mir3g
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_TITLE := Xiaomi Mi Router 3G
   SUPPORTED_DEVICES += R3G
+  SUPPORTED_DEVICES += mir3g
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic \
 	uboot-envtools
 endef
-TARGET_DEVICES += mir3g
+TARGET_DEVICES += xiaomi_mir3g
 
 define Device/mt7621
   DTS := MT7621
@@ -306,6 +323,17 @@ define Device/r6220
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += r6220
+
+define Device/netgear_ex6150
+  DTS := EX6150
+  DEVICE_TITLE := Netgear EX6150
+  DEVICE_PACKAGES := kmod-mt76x2 wpad-basic
+  NETGEAR_BOARD_ID := U12H318T00_NETGEAR
+  IMAGE_SIZE := 14848k
+  IMAGES += factory.chk
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | netgear-chk
+endef
+TARGET_DEVICES += netgear_ex6150
 
 define Device/netgear_r6350
   DTS := R6350
@@ -517,6 +545,15 @@ define Device/youhua_wr1200js
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += youhua_wr1200js
+
+define Device/youku_yk-l2
+  DTS := YOUKU-YK2
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Youku YK-L2
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+endef
+TARGET_DEVICES += youku_yk-l2
 
 define Device/wsr-1166
   DTS := WSR-1166

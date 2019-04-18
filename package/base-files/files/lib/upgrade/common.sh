@@ -223,9 +223,9 @@ indicate_upgrade() {
 default_do_upgrade() {
 	sync
 	if [ "$SAVE_CONFIG" -eq 1 ]; then
-		get_image "$1" "$2" | mtd $MTD_CONFIG_ARGS -j "$CONF_TAR" write - "${PART_NAME:-image}"
+		get_image "$1" "$2" | mtd $MTD_ARGS $MTD_CONFIG_ARGS -j "$CONF_TAR" write - "${PART_NAME:-image}"
 	else
-		get_image "$1" "$2" | mtd write - "${PART_NAME:-image}"
+		get_image "$1" "$2" | mtd $MTD_ARGS write - "${PART_NAME:-image}"
 	fi
 	[ $? -ne 0 ] && exit 1
 }

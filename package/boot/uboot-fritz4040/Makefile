@@ -10,9 +10,9 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_SOURCE_URL:=https://github.com/chunkeey/FritzBox-4040-UBOOT
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=5da78cca60814ea31065a50376d9c905425b03a1
-PKG_SOURCE_DATE:=2018-12-09
-PKG_MIRROR_HASH:=ff7bc2498de1066dde24d7ef68e440c3847244a5b8bb35ce4275e3918f230aa3
+PKG_SOURCE_VERSION:=5f383305f4f0be631b51f89e3dc717318057bde9
+PKG_SOURCE_DATE:=2019-03-03
+PKG_MIRROR_HASH:=35f761659027366f5121d04db1ad263321b6a252f6573a98faae4938b861c247
 
 PKG_RELEASE:=1
 
@@ -21,12 +21,23 @@ include $(INCLUDE_DIR)/package.mk
 
 define U-Boot/Default
   BUILD_TARGET:=ipq40xx
+  UBOOT_BOARD:=$(1)
+  UBOOT_IMAGE:=uboot-$(1).bin
+endef
+
+define U-Boot/fritz3000
+  NAME:=FritzRepeater 3000
+  BUILD_DEVICES:=avm_fritzrepeater-3000
 endef
 
 define U-Boot/fritz4040
   NAME:=FritzBox 4040
-  UBOOT_IMAGE:=uboot-fritz4040.bin
   BUILD_DEVICES:=avm_fritzbox-4040
+endef
+
+define U-Boot/fritz7530
+  NAME:=FritzBox 7530
+  BUILD_DEVICES:=avm_fritzbox-7530
 endef
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
@@ -42,7 +53,7 @@ endef
 
 define Build/Compile
 	$(Build/Compile/U-Boot)
-	(cd $(PKG_BUILD_DIR); ./fritz/fritzcreator.sh;)
+	(cd $(PKG_BUILD_DIR); ./fritz/fritzcreator.sh $(UBOOT_BOARD);)
 endef
 
 define Build/InstallDev
@@ -55,6 +66,6 @@ define Package/u-boot/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/upload-to-f4040.sh $(1)/
 endef
 
-UBOOT_TARGETS := fritz4040
+UBOOT_TARGETS := fritz3000 fritz4040 fritz7530
 
 $(eval $(call BuildPackage/U-Boot))

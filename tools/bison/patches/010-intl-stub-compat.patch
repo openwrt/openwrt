@@ -1,15 +1,13 @@
 --- a/src/main.c
 +++ b/src/main.c
-@@ -60,9 +60,9 @@ main (int argc, char *argv[])
- {
-   set_program_name (argv[0]);
-   setlocale (LC_ALL, "");
--  (void) bindtextdomain (PACKAGE, LOCALEDIR);
--  (void) bindtextdomain ("bison-runtime", LOCALEDIR);
--  (void) textdomain (PACKAGE);
-+  bindtextdomain (PACKAGE, LOCALEDIR);
-+  bindtextdomain ("bison-runtime", LOCALEDIR);
-+  textdomain (PACKAGE);
- 
+@@ -66,8 +66,8 @@ main (int argc, char *argv[])
    {
-     char const *cp = getenv ("LC_CTYPE");
+     char *cp = NULL;
+     char const *localedir = relocate2 (LOCALEDIR, &cp);
+-    (void) bindtextdomain (PACKAGE, localedir);
+-    (void) bindtextdomain ("bison-runtime", localedir);
++    bindtextdomain (PACKAGE, localedir);
++    bindtextdomain ("bison-runtime", localedir);
+     free (cp);
+   }
+   (void) textdomain (PACKAGE);

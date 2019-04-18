@@ -95,7 +95,7 @@ TARGET_DEVICES += archer-c5-v1
 define Device/archer-c7-v1
   $(Device/tplink-8mlzma)
   DEVICE_TITLE := TP-LINK Archer C7 v1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := ARCHER-C7
   DEVICE_PROFILE := ARCHERC7
   TPLINK_HWID := 0x75000001
@@ -154,7 +154,7 @@ define Device/archer-c7-v5
   BOARDNAME := ARCHER-C7-V5
   TPLINK_BOARD_ID := ARCHER-C7-V5
   IMAGE_SIZE := 15360k
-  MTDPARTS := spi0.0:128k(factory-uboot)ro,128k(u-boot)ro,64k@0x50000(art)ro,15360k@0xc0000(firmware)
+  MTDPARTS := spi0.0:128k(factory-uboot)ro,128k(u-boot)ro,64k@0x50000(art)ro,128k@0x60000(info)ro,15360k@0xc0000(firmware)
   SUPPORTED_DEVICES := archer-c7-v5
 endef
 TARGET_DEVICES += archer-c7-v5
@@ -192,11 +192,28 @@ define Device/cpe210-v2
   TPLINK_BOARD_ID := CPE210V2
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
-  MTDPARTS := spi0.0:128k(u-boot)ro,64k(partition-table)ro,64k(product-info)ro,1792k(kernel),5888k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
+  MTDPARTS := spi0.0:128k(u-boot)ro,64k(partition-table)ro,64k(product-info)ro,7680k(firmware),192k(config)ro,64k(ART)ro
   IMAGE_SIZE := 7680k
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header -O
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | tplink-v1-header
   DEVICE_PACKAGES := rssileds
 endef
 TARGET_DEVICES += cpe210-v2
+
+define Device/cpe210-v3
+  $(Device/tplink-safeloader)
+  DEVICE_TITLE := TP-LINK CPE210 v3
+  BOARDNAME := CPE210V3
+  TPLINK_BOARD_ID := CPE210V3
+  TPLINK_HWID := 0x0
+  TPLINK_HWREV := 0
+  MTDPARTS := spi0.0:128k(u-boot)ro,64k(partition-table)ro,64k(product-info)ro,7680k(firmware),192k(config)ro,64k(ART)ro
+  IMAGE_SIZE := 7680k
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header -O
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | tplink-v1-header
+  DEVICE_PACKAGES := rssileds
+endef
+TARGET_DEVICES += cpe210-v3
 
 define Device/wbs210-v1
   $(Device/cpe510-520-v1)

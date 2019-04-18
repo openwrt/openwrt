@@ -274,6 +274,13 @@ define Build/combined-image
 	@mv $@.new $@
 endef
 
+define Build/linksys-image
+	$(TOPDIR)/scripts/linksys-image.sh \
+		"$(call param_get_default,type,$(1),$(DEVICE_NAME))" \
+		$@ $@.new
+		mv $@.new $@
+endef
+
 define Build/openmesh-image
 	$(TOPDIR)/scripts/om-fwupgradecfg-gen.sh \
 		"$(call param_get_default,ce_type,$(1),$(DEVICE_NAME))" \
@@ -285,6 +292,20 @@ define Build/openmesh-image
 		"$@-fwupgrade.cfg" "fwupgrade.cfg" \
 		"$(call param_get_default,kernel,$(1),$(IMAGE_KERNEL))" "kernel" \
 		"$(call param_get_default,rootfs,$(1),$@)" "rootfs"
+endef
+
+define Build/qsdk-ipq-factory-nand
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh \
+		$@.its ubi $@
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
+endef
+
+define Build/qsdk-ipq-factory-nor
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh \
+		$@.its hlos $(IMAGE_KERNEL) rootfs $(IMAGE_ROOTFS)
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
 endef
 
 define Build/senao-header
@@ -334,12 +355,14 @@ json_quote=$(subst ','\'',$(subst ",\",$(1)))
 metadata_devices=$(if $(1),$(subst "$(space)","$(comma)",$(strip $(foreach v,$(1),"$(call json_quote,$(v))"))))
 metadata_json = \
 	'{ $(if $(IMAGE_METADATA),$(IMAGE_METADATA)$(comma)) \
+		"metadata_version": "1.0", \
 		"supported_devices":[$(call metadata_devices,$(1))], \
 		"version": { \
 			"dist": "$(call json_quote,$(VERSION_DIST))", \
 			"version": "$(call json_quote,$(VERSION_NUMBER))", \
 			"revision": "$(call json_quote,$(REVISION))", \
-			"board": "$(call json_quote,$(BOARD))" \
+			"target": "$(call json_quote,$(TARGETID))", \
+			"board": "$(call json_quote,$(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)))" \
 		} \
 	}'
 

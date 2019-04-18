@@ -143,7 +143,7 @@
 				reg = <0x34 4>, <0x3c 4>;
 				status = "disabled";
 
-				resets = <&reset1 5 4>, <&reset0 4 4>;
+				resets = <&reset1 5 5>, <&reset0 4 4>;
 				reset-names = "phy", "ctrl";
 				#phy-cells = <0>;
 			};
@@ -297,6 +297,8 @@
 			compatible = "lantiq,ppe-xrx200";
 			interrupt-parent = <&icu0>;
 			interrupts = <96>;
+			resets = <&reset0 3 3>, <&reset0 11 11>, <&reset0 23 23>;
+			reset-names = "dsp", "dfe", "tc";
 		};
 
 		pcie0: pcie@d900000 {

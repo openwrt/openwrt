@@ -19,12 +19,6 @@ define Build/dtb
 	$(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,$@.dtb)
 endef
 
-# SD-Card Images:
-# these values are optimized for a 4GB labeled sdcard that actually holds 7744512 sectors of 512 byte
-# MBR:            2048 sectors
-# Partition 1:   32768 sectors
-# Partition 2:   98304 sectors (configurable)
-
 define Build/boot-scr
 	rm -f $@-boot.scr
 	sed -e 's#@ROOT@#$(SIGNATURE)#g' \
@@ -34,7 +28,7 @@ endef
 
 define Build/boot-img
 	rm -f $@.boot
-	mkfs.fat -C $@.boot 16384
+	mkfs.fat -C $@.boot $$(( $(CONFIG_TARGET_KERNEL_PARTSIZE) * 1024 ))
 	$(foreach dts,$(DEVICE_DTS), mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb ::$(dts).dtb;)
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::$(KERNEL_NAME)
 	-mcopy -i $@.boot $@-boot.scr ::boot.scr
@@ -46,26 +40,28 @@ define Build/boot-img-ext4
 	$(foreach dts,$(DEVICE_DTS), $(CP) $(DTS_DIR)/$(dts).dtb $@.boot;)
 	$(CP) $(IMAGE_KERNEL) $@.boot/$(KERNEL_NAME)
 	-$(CP) $@-boot.scr $@.boot/boot.scr
-	make_ext4fs -J -l 16384K $@.bootimg $@.boot
+	make_ext4fs -J -l $(CONFIG_TARGET_KERNEL_PARTSIZE)M $@.bootimg $@.boot
 endef
 
 define Build/sdcard-img
 	if [ -n "$(UBOOT)" ]; then UBOOT="$(STAGING_DIR_IMAGE)/$(UBOOT)"; fi; \
+	BOOTFS_SIZE=$$(( $(CONFIG_TARGET_KERNEL_PARTSIZE) * 1024 * 2 )); \
 	ROOTFS_SIZE=$$(( $(CONFIG_TARGET_ROOTFS_PARTSIZE) * 1024 * 2 )); \
 	SIGNATURE="$(SIGNATURE)" \
 	./gen_mvebu_sdcard_img.sh $@ \
 		$$UBOOT \
-		c 32768 $@.boot \
+		c $$BOOTFS_SIZE $@.boot \
 		83 $$ROOTFS_SIZE $(IMAGE_ROOTFS)
 endef
 
 define Build/sdcard-img-ext4
 	if [ -n "$(UBOOT)" ]; then UBOOT="$(STAGING_DIR_IMAGE)/$(UBOOT)"; fi; \
+	BOOTFS_SIZE=$$(( $(CONFIG_TARGET_KERNEL_PARTSIZE) * 1024 * 2 )); \
 	ROOTFS_SIZE=$$(( $(CONFIG_TARGET_ROOTFS_PARTSIZE) * 1024 * 2 )); \
 	SIGNATURE="$(SIGNATURE)" \
 	./gen_mvebu_sdcard_img.sh $@ \
 		$$UBOOT \
-		83 32768 $@.bootimg \
+		83 $$BOOTFS_SIZE $@.bootimg \
 		83 $$ROOTFS_SIZE $(IMAGE_ROOTFS)
 endef
 

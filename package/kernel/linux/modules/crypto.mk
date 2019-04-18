@@ -226,6 +226,18 @@ endef
 $(eval $(call KernelPackage,crypto-gcm))
 
 
+define KernelPackage/crypto-xcbc
+  TITLE:=XCBC CryptoAPI module
+  DEPENDS:=+kmod-crypto-hash +kmod-crypto-manager
+  KCONFIG:=CONFIG_CRYPTO_XCBC
+  FILES:=$(LINUX_DIR)/crypto/xcbc.ko
+  AUTOLOAD:=$(call AutoLoad,09,xcbc)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-xcbc))
+
+
 define KernelPackage/crypto-gf128
   TITLE:=GF(2^128) multiplication functions CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_GF128MUL
@@ -583,6 +595,18 @@ define KernelPackage/crypto-rsa
 endef
 
 $(eval $(call KernelPackage,crypto-rsa))
+
+
+define KernelPackage/crypto-rmd160
+  TITLE:=RIPEMD160 digest CryptoAPI module
+  DEPENDS:=+kmod-crypto-hash
+  KCONFIG:=CONFIG_CRYPTO_RMD160
+  FILES:=$(LINUX_DIR)/crypto/rmd160.ko
+  AUTOLOAD:=$(call AutoLoad,09,rmd160)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-rmd160))
 
 
 define KernelPackage/crypto-rng

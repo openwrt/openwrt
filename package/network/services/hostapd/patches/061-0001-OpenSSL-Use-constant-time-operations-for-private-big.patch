@@ -1,0 +1,88 @@
+From d42c477cc794163a3757956bbffca5cea000923c Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni@codeaurora.org>
+Date: Tue, 26 Feb 2019 11:43:03 +0200
+Subject: [PATCH 01/14] OpenSSL: Use constant time operations for private
+ bignums
+
+This helps in reducing measurable timing differences in operations
+involving private information. BoringSSL has removed BN_FLG_CONSTTIME
+and expects specific constant time functions to be called instead, so a
+bit different approach is needed depending on which library is used.
+
+The main operation that needs protection against side channel attacks is
+BN_mod_exp() that depends on private keys (the public key validation
+step in crypto_dh_derive_secret() is an exception that can use the
+faster version since it does not depend on private keys).
+
+crypto_bignum_div() is currently used only in SAE FFC case with not
+safe-prime groups and only with values that do not depend on private
+keys, so it is not critical to protect it.
+
+crypto_bignum_inverse() is currently used only in SAE FFC PWE
+derivation. The additional protection here is targeting only OpenSSL.
+BoringSSL may need conversion to using BN_mod_inverse_blinded().
+
+This is related to CVE-2019-9494 and CVE-2019-9495.
+
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+---
+ src/crypto/crypto_openssl.c | 20 +++++++++++++++-----
+ 1 file changed, 15 insertions(+), 5 deletions(-)
+
+--- a/src/crypto/crypto_openssl.c
++++ b/src/crypto/crypto_openssl.c
+@@ -549,7 +549,8 @@ int crypto_mod_exp(const u8 *base, size_
+ 	    bn_result == NULL)
+ 		goto error;
+ 
+-	if (BN_mod_exp(bn_result, bn_base, bn_exp, bn_modulus, ctx) != 1)
++	if (BN_mod_exp_mont_consttime(bn_result, bn_base, bn_exp, bn_modulus,
++				      ctx, NULL) != 1)
+ 		goto error;
+ 
+ 	*result_len = BN_bn2bin(bn_result, result);
+@@ -1295,8 +1296,9 @@ int crypto_bignum_exptmod(const struct c
+ 	bnctx = BN_CTX_new();
+ 	if (bnctx == NULL)
+ 		return -1;
+-	res = BN_mod_exp((BIGNUM *) d, (const BIGNUM *) a, (const BIGNUM *) b,
+-			 (const BIGNUM *) c, bnctx);
++	res = BN_mod_exp_mont_consttime((BIGNUM *) d, (const BIGNUM *) a,
++					(const BIGNUM *) b, (const BIGNUM *) c,
++					bnctx, NULL);
+ 	BN_CTX_free(bnctx);
+ 
+ 	return res ? 0 : -1;
+@@ -1315,6 +1317,11 @@ int crypto_bignum_inverse(const struct c
+ 	bnctx = BN_CTX_new();
+ 	if (bnctx == NULL)
+ 		return -1;
++#ifdef OPENSSL_IS_BORINGSSL
++	/* TODO: use BN_mod_inverse_blinded() ? */
++#else /* OPENSSL_IS_BORINGSSL */
++	BN_set_flags((BIGNUM *) a, BN_FLG_CONSTTIME);
++#endif /* OPENSSL_IS_BORINGSSL */
+ 	res = BN_mod_inverse((BIGNUM *) c, (const BIGNUM *) a,
+ 			     (const BIGNUM *) b, bnctx);
+ 	BN_CTX_free(bnctx);
+@@ -1348,6 +1355,9 @@ int crypto_bignum_div(const struct crypt
+ 	bnctx = BN_CTX_new();
+ 	if (bnctx == NULL)
+ 		return -1;
++#ifndef OPENSSL_IS_BORINGSSL
++	BN_set_flags((BIGNUM *) a, BN_FLG_CONSTTIME);
++#endif /* OPENSSL_IS_BORINGSSL */
+ 	res = BN_div((BIGNUM *) c, NULL, (const BIGNUM *) a,
+ 		     (const BIGNUM *) b, bnctx);
+ 	BN_CTX_free(bnctx);
+@@ -1439,8 +1449,8 @@ int crypto_bignum_legendre(const struct
+ 	    /* exp = (p-1) / 2 */
+ 	    !BN_sub(exp, (const BIGNUM *) p, BN_value_one()) ||
+ 	    !BN_rshift1(exp, exp) ||
+-	    !BN_mod_exp(tmp, (const BIGNUM *) a, exp, (const BIGNUM *) p,
+-			bnctx))
++	    !BN_mod_exp_mont_consttime(tmp, (const BIGNUM *) a, exp,
++				       (const BIGNUM *) p, bnctx, NULL))
+ 		goto fail;
+ 
+ 	if (BN_is_word(tmp, 1))

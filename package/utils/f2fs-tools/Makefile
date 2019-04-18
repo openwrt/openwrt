@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=f2fs-tools
 PKG_VERSION:=1.12.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_LICENSE:=GPLv2
 
@@ -54,6 +54,7 @@ define Package/libf2fs
   CATEGORY:=Libraries
   TITLE:=Library for Flash-Friendly File System (F2FS) tools
   DEPENDS:=+libuuid
+  ABI_VERSION:=6
 endef
 
 CONFIGURE_ARGS += \
@@ -66,7 +67,7 @@ CONFIGURE_VARS += \
 define Package/libf2fs/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) \
-		$(PKG_INSTALL_DIR)/usr/lib/libf2fs.so* $(1)/usr/lib/
+		$(PKG_INSTALL_DIR)/usr/lib/libf2fs.so.* $(1)/usr/lib/
 endef
 
 define Package/mkf2fs/install

@@ -237,6 +237,22 @@ endef
 
 $(eval $(call KernelPackage,usb-gadget-mass-storage))
 
+define KernelPackage/usb-gadget-cdc-composite
+  TITLE:= USB CDC Composite (Ethernet + ACM)
+  KCONFIG:=CONFIG_USB_CDC_COMPOSITE
+  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite \
+	+kmod-usb-gadget-eth +kmod-usb-gadget-serial
+  FILES:= $(LINUX_DIR)/drivers/usb/gadget/legacy/g_cdc.ko
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-gadget-cdc-composite/description
+  Kernel support for the USB CDC Composite gadget.
+  This appears as an ethernet + ACM serial gadget.
+endef
+
+$(eval $(call KernelPackage,usb-gadget-cdc-composite))
+
 
 define KernelPackage/usb-uhci
   TITLE:=Support for UHCI controllers
@@ -379,7 +395,13 @@ define KernelPackage/usb2
   ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ehci-atmel.ko),)
     FILES+=$(LINUX_DIR)/drivers/usb/host/ehci-atmel.ko
   endif
-  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd ehci-platform ehci-orion ehci-atmel,1)
+  ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ehci-fsl.ko),)
+    FILES+=$(LINUX_DIR)/drivers/usb/host/ehci-fsl.ko
+  endif
+  ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko),)
+    FILES+=$(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko
+  endif
+  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd ehci-platform ehci-orion ehci-atmel ehci-fsl fsl-mph-dr-of,1)
   $(call AddDepends/usb)
 endef
 
