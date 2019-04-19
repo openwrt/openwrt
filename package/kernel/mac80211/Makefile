@@ -388,11 +388,12 @@ define KernelPackage/zd1211rw
   AUTOLOAD:=$(call AutoProbe,zd1211rw)
 endef
 
-define Download/xradio
+define Download/xr819
   FILE:=xr819.tar.bz2
-  URL:=https://github.com/melsem/openwrt-lede_xradio-xr819_soc-audio/raw/master/firmware/xr819.tar.bz2
+  URL:=https://github.com/melsem/openwrt-lede_xradio-xr819_soc-audio/raw/master/firmware/
+  HASH:=add13a7045cb2dbf170d51e2be678e0af8e2c7bf29cfd0f33a3a216fc88696dc
 endef
-$(eval $(call Download,xradio))
+$(eval $(call Download,xr819))
 
 define KernelPackage/xradio
   $(call KernelPackage/mac80211/Default)
