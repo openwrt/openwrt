@@ -435,6 +435,14 @@ define Device/sk-wb8
 endef
 TARGET_DEVICES += sk-wb8
 
+define Device/telco-electronics_x1
+  DTS := Telco-Electronics-X1
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := Telco Electronics X1
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt76 wpad-basic
+endef
+TARGET_DEVICES += telco-electronics_x1
+
 define Device/timecloud
   DTS := Timecloud
   DEVICE_TITLE := Thunder Timecloud
