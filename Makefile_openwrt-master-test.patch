@@ -1,0 +1,60 @@
+--- a/package/kernel/mac80211/Makefile	2019-04-18 22:36:26.473418573 +0300
++++ b/package/kernel/mac80211/Makefile	2019-04-18 23:04:18.349708959 +0300
+@@ -31,6 +31,7 @@
+ 	p54-common p54-pci p54-spi p54-usb \
+ 	rsi91x rsi91x-usb rsi91x-sdio\
+ 	wlcore wl12xx wl18xx \
++	xradio \
+ 	zd1211rw
+ 
+ PKG_CONFIG_DEPENDS:= \
+@@ -77,6 +78,7 @@
+ 	WLAN_VENDOR_RSI \
+ 	WLAN_VENDOR_ST \
+ 	WLAN_VENDOR_TI \
++	WLAN_VENDOR_XRADIO \
+ 	WLAN_VENDOR_ZYDAS \
+ 
+ config-$(call config_package,cfg80211) += CFG80211
+@@ -386,6 +388,20 @@
+   AUTOLOAD:=$(call AutoProbe,zd1211rw)
+ endef
+ 
++define Download/xradio
++  FILE:=xr819.tar.bz2
++  URL:=https://github.com/melsem/openwrt-lede_xradio-xr819_soc-audio/raw/master/firmware/xr819.tar.bz2
++endef
++$(eval $(call Download,xradio))
++
++define KernelPackage/xradio
++  $(call KernelPackage/mac80211/Default)
++  TITLE:=Xradio xr819 test wifi-drivers support
++  DEPENDS+=+kmod-mac80211
++  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/xradio/xradio_wlan.ko
++  AUTOLOAD:=$(call AutoProbe,xradio_wlan)
++endef
++
+ ifdef CONFIG_PACKAGE_MAC80211_DEBUGFS
+   config-y += \
+ 	CFG80211_DEBUGFS \
+@@ -421,6 +431,7 @@
+ config-$(call config_package,wl12xx) += WL12XX
+ config-$(call config_package,wl18xx) += WL18XX
+ config-y += WL_TI WILINK_PLATFORM_DATA
++config-$(call config_package,xradio) += XRADIO
+ config-$(call config_package,zd1211rw) += ZD1211RW
+ config-$(call config_package,rsi91x) += RSI_91X
+ config-$(call config_package,rsi91x-usb) += RSI_USB
+@@ -565,6 +576,12 @@
+ 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(ZD1211FW_NAME)/zd1211* $(1)/lib/firmware/zd1211
+ endef
+ 
++define KernelPackage/xradio/install
++	$(INSTALL_DIR) $(1)/lib/firmware/xr819
++	$(CP) $(PKG_BUILD_DIR)/xr819/*_xr819.bin \
++		$(1)/lib/firmware/xr819/
++endef
++
+ $(eval $(foreach drv,$(PKG_DRIVERS),$(call KernelPackage,$(drv))))
+ $(eval $(call KernelPackage,cfg80211))
+ $(eval $(call KernelPackage,mac80211))
