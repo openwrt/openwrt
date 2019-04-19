@@ -91,7 +91,8 @@ endef
 define Package/libopenssl
 $(call Package/openssl/Default)
   SUBMENU:=SSL
-  DEPENDS:=+OPENSSL_WITH_COMPRESSION:zlib \
+  DEPENDS:=+libopenssl-conf \
+	   +OPENSSL_WITH_COMPRESSION:zlib \
 	   +OPENSSL_ENGINE_BUILTIN_AFALG:kmod-crypto-user \
 	   +OPENSSL_ENGINE_BUILTIN_DEVCRYPTO:kmod-cryptodev \
 	   +OPENSSL_ENGINE_BUILTIN_PADLOCK:kmod-crypto-hw-padlock
@@ -122,7 +123,6 @@ define Package/libopenssl-conf
   $(call Package/openssl/Default)
   SUBMENU:=SSL
   TITLE:=/etc/ssl/openssl.cnf config file
-  DEPENDS:=libopenssl
 endef
 
 define Package/libopenssl-conf/conffiles
