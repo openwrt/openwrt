@@ -79,6 +79,14 @@
 			reg = <0x103000 0x1000>;
 		};
 
+		ts: ts@103000 {
+			status = "disabled";
+			compatible = "lantiq,ts-xrx200";
+			interrupt-parent = <&icu0>;
+			interrupts = <17>;
+			lantiq,numofsensors = <0x1>;
+		};
+
 		dcdc@106a00 {
 			compatible = "lantiq,dcdc-xrx200";
 			reg = <0x106a00 0x200>;
