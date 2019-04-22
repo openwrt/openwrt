@@ -38,7 +38,7 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
  ;----------------------------------------------------------------
 --- a/arch/arc/kernel/setup.c
 +++ b/arch/arc/kernel/setup.c
-@@ -469,7 +469,7 @@ ignore_uboot_args:
+@@ -477,7 +477,7 @@ ignore_uboot_args:
  #endif
  
  	if (use_embedded_dtb) {
@@ -47,7 +47,7 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
  		if (!machine_desc)
  			panic("Embedded DT invalid\n");
  	}
-@@ -485,6 +485,8 @@ ignore_uboot_args:
+@@ -493,6 +493,8 @@ ignore_uboot_args:
  	}
  }
  
