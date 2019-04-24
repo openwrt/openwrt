@@ -46,6 +46,7 @@ PKG_DRIVERS = \
 	rtl8192ce rtl8192se rtl8192de rtl8192cu rtl8821ae \
 	rtl8xxxu \
 	wlcore wl12xx wl18xx \
+	xradio \
 	zd1211rw
 
 PKG_CONFIG_DEPENDS:= \
@@ -1563,6 +1564,20 @@ define KernelPackage/zd1211rw
   AUTOLOAD:=$(call AutoProbe,zd1211rw)
 endef
 
+define Download/xr819
+  FILE:=xr819.tar.bz2
+  URL:=https://github.com/melsem/openwrt-lede_xradio-xr819_soc-audio/raw/master/firmware/
+  HASH:=add13a7045cb2dbf170d51e2be678e0af8e2c7bf29cfd0f33a3a216fc88696dc
+endef
+$(eval $(call Download,xr819))
+
+define KernelPackage/xradio
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Xradio xr819 test wifi-drivers support
+  DEPENDS+=+kmod-mac80211
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/xradio/xradio_wlan.ko
+  AUTOLOAD:=$(call AutoProbe,xradio_wlan)
+endef
 
 
 config_package=$(if $(CONFIG_PACKAGE_kmod-$(1)),m)
@@ -1590,6 +1605,7 @@ config-y:= \
 	WLAN_VENDOR_RSI \
 	WLAN_VENDOR_ST \
 	WLAN_VENDOR_TI \
+	WLAN_VENDOR_XRADIO \
 	WLAN_VENDOR_ZYDAS \
 
 config-$(call config_package,cfg80211) += CFG80211
@@ -1736,6 +1752,7 @@ config-$(call config_package,wlcore) += WLCORE WLCORE_SDIO
 config-$(call config_package,wl12xx) += WL12XX
 config-$(call config_package,wl18xx) += WL18XX
 config-y += WL_TI WILINK_PLATFORM_DATA
+config-$(call config_package,xradio) += XRADIO
 config-$(call config_package,zd1211rw) += ZD1211RW
 config-$(call config_package,rsi91x) += RSI_91X
 config-$(call config_package,rsi91x-usb) += RSI_USB
@@ -1785,6 +1802,7 @@ define Build/Prepare
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IPW2100_NAME)-$(IPW2100_VERSION).tgz
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IPW2200_NAME)-$(IPW2200_VERSION).tgz
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
+	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/xr819.tar.bz2
 	rm -rf \
 		$(PKG_BUILD_DIR)/include/linux/ssb \
 		$(PKG_BUILD_DIR)/include/linux/bcma \
@@ -1893,6 +1911,12 @@ define KernelPackage/zd1211rw/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(ZD1211FW_NAME)/zd1211* $(1)/lib/firmware/zd1211
 endef
 
+define KernelPackage/xradio/install
+	$(INSTALL_DIR) $(1)/lib/firmware/xr819
+	$(CP) $(PKG_BUILD_DIR)/xr819/*_xr819.bin \
+		$(1)/lib/firmware/xr819/
+endef
+
 
 $(eval $(call KernelPackage,adm8211))
 $(eval $(call KernelPackage,airo))
@@ -1969,5 +1993,6 @@ $(eval $(call KernelPackage,rtl8821ae))
 $(eval $(call KernelPackage,rtl8xxxu))
 $(eval $(call KernelPackage,wlcore))
 $(eval $(call KernelPackage,wl12xx))
+$(eval $(call KernelPackage,xradio))
 $(eval $(call KernelPackage,wl18xx))
 $(eval $(call KernelPackage,zd1211rw))
