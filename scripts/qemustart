@@ -74,7 +74,7 @@ check_setup_() {
 }
 
 check_setup() {
-	[ -z $o_nonetwork ] || return 0
+	[ -z "$o_nonetwork" ] || return 0
 	check_setup_ || {
 		__errmsg "please check the script content to see the environment requirement"
 		return 1
@@ -187,7 +187,7 @@ start_qemu_armvirt() {
 		)
 	}
 
-	[ -n $o_nonetwork ] || {
+	[ -n "$o_nonetwork" ] || {
 		o_qemu_extra+=( \
 			"-netdev" "bridge,id=lan,br=$BR_LAN,helper=$HELPER" \
 			    "-device" "virtio-net-pci,id=devlan,netdev=lan,mac=$MAC_LAN" \
@@ -229,7 +229,7 @@ start_qemu_malta() {
 	# NOTE: order of wan, lan -device arguments matters as it will affect which
 	# one will be actually used as the wan, lan network interface inside the
 	# guest machine
-	[ -n $o_nonetwork ] || {
+	[ -n "$o_nonetwork" ] || {
 		o_qemu_extra+=( \
 			"-netdev" "bridge,id=wan,br=$BR_WAN,helper=$HELPER" "-device" \
 			    "virtio-net-pci,id=devwan,netdev=wan,mac=$MAC_WAN" \
@@ -276,7 +276,7 @@ start_qemu_x86() {
 	    )
 	}
 
-	[ -n $o_nonetwork ] || {
+	[ -n "$o_nonetwork" ] || {
 		o_qemu_extra+=( \
 			"-netdev" "bridge,id=lan,br=$BR_LAN,helper=$HELPER" \
 			    "-device" "virtio-net-pci,id=devlan,netdev=lan,mac=$MAC_LAN" \
