@@ -358,14 +358,30 @@ sub gen_package_config() {
 	print_package_overrides();
 }
 
+sub and_condition($) {
+	my $condition = shift;
+	my @spl_and = split('\&\&', $condition);
+	if (@spl_and == 1) {
+		return "\$(CONFIG_$spl_and[0])";
+	}
+	return "\$(and " . join (',', map("\$(CONFIG_$_)", @spl_and)) . ")";
+}
+
+sub gen_condition ($) {
+	my $condition = shift;
+	# remove '!()', just as include/package-ipkg.mk does
+	$condition =~ s/[()!]//g;
+	return join("", map(and_condition($_), split('\|\|', $condition)));
+}
+
 sub get_conditional_dep($$) {
 	my $condition = shift;
 	my $depstr = shift;
 	if ($condition) {
 		if ($condition =~ /^!(.+)/) {
-			return "\$(if \$(CONFIG_$1),,$depstr)";
+			return "\$(if " . gen_condition($1) . ",,$depstr)";
 		} else {
-			return "\$(if \$(CONFIG_$condition),$depstr)";
+			return "\$(if " . gen_condition($condition) . ",$depstr)";
 		}
 	} else {
 		return $depstr;
