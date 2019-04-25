@@ -139,8 +139,8 @@ define Package/libopenssl-afalg
   $(call Package/openssl/Default)
   SUBMENU:=SSL
   TITLE:=AFALG hardware acceleration engine
-  DEPENDS:=libopenssl @OPENSSL_ENGINE @KERNEL_AIO @!LINUX_3_18 +kmod-crypto-user \
-	   +libopenssl-conf @!OPENSSL_ENGINE_BUILTIN
+  DEPENDS:=libopenssl @OPENSSL_ENGINE @KERNEL_AIO @!LINUX_3_18 \
+	   +PACKAGE_libopenssl-afalg:kmod-crypto-user +libopenssl-conf @!OPENSSL_ENGINE_BUILTIN
 endef
 
 define Package/libopenssl-afalg/description
@@ -156,7 +156,7 @@ define Package/libopenssl-devcrypto
   $(call Package/openssl/Default)
   SUBMENU:=SSL
   TITLE:=/dev/crypto hardware acceleration engine
-  DEPENDS:=libopenssl @OPENSSL_ENGINE +kmod-cryptodev +libopenssl-conf \
+  DEPENDS:=libopenssl @OPENSSL_ENGINE +PACKAGE_libopenssl-devcrypto:kmod-cryptodev +libopenssl-conf \
 	   @!OPENSSL_ENGINE_BUILTIN
 endef
 
@@ -173,7 +173,7 @@ define Package/libopenssl-padlock
   $(call Package/openssl/Default)
   SUBMENU:=SSL
   TITLE:=VIA Padlock hardware acceleration engine
-  DEPENDS:=libopenssl @OPENSSL_ENGINE @TARGET_x86 +kmod-crypto-hw-padlock \
+  DEPENDS:=libopenssl @OPENSSL_ENGINE @TARGET_x86 +PACKAGE_libopenssl-padlock:kmod-crypto-hw-padlock \
 	   +libopenssl-conf @!OPENSSL_ENGINE_BUILTIN
 endef
 
