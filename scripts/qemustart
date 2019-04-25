@@ -232,11 +232,9 @@ start_qemu_malta() {
 	# one will be actually used as the wan, lan network interface inside the
 	# guest machine
 	[ -z "$o_network" ] || {
-		o_qemu_extra+=( \
-			"-netdev" "bridge,id=wan,br=$BR_WAN,helper=$HELPER" "-device" \
-			    "virtio-net-pci,id=devwan,netdev=wan,mac=$MAC_WAN" \
-			"-netdev" "bridge,id=lan,br=$BR_LAN,helper=$HELPER" \
-			    "-device" "virtio-net-pci,id=devlan,netdev=lan,mac=$MAC_LAN" \
+		o_qemu_extra+=(
+			-netdev bridge,id=wan,br="$BR_WAN,helper=$HELPER" -device pcnet,netdev=wan,mac="$MAC_WAN"
+			-netdev bridge,id=lan,br="$BR_LAN,helper=$HELPER" -device pcnet,netdev=lan,mac="$MAC_LAN"
 		)
 	}
 
@@ -279,12 +277,20 @@ start_qemu_x86() {
 	}
 
 	[ -z "$o_network" ] || {
-		o_qemu_extra+=( \
-			"-netdev" "bridge,id=lan,br=$BR_LAN,helper=$HELPER" \
-			    "-device" "virtio-net-pci,id=devlan,netdev=lan,mac=$MAC_LAN" \
-			"-netdev" "bridge,id=wan,br=$BR_WAN,helper=$HELPER" "-device" \
-			    "virtio-net-pci,id=devwan,netdev=wan,mac=$MAC_WAN" \
-		)
+		case "${o_subtarget%-*}" in
+			legacy)
+				o_qemu_extra+=(
+					-netdev "bridge,id=lan,br=$BR_LAN,helper=$HELPER" -device "e1000,id=devlan,netdev=lan,mac=$MAC_LAN"
+					-netdev "bridge,id=wan,br=$BR_WAN,helper=$HELPER" -device "e1000,id=devwan,netdev=wan,mac=$MAC_WAN"
+				)
+				;;
+			generic|64)
+				o_qemu_extra+=(
+					-netdev "bridge,id=lan,br=$BR_LAN,helper=$HELPER" -device "virtio-net-pci,id=devlan,netdev=lan,mac=$MAC_LAN"
+					-netdev "bridge,id=wan,br=$BR_WAN,helper=$HELPER" -device "virtio-net-pci,id=devwan,netdev=wan,mac=$MAC_WAN"
+				)
+				;;
+		esac
 	}
 
 	case "${o_subtarget%-*}" in
