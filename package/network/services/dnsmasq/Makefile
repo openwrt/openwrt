@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
 PKG_VERSION:=2.80
-PKG_RELEASE:=1.4
+PKG_RELEASE:=1.5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
@@ -54,6 +54,7 @@ $(call Package/dnsmasq/Default)
   DEPENDS+=@IPV6
   VARIANT:=dhcpv6
   PROVIDES:=dnsmasq
+  CONFLICTS:=odhcpd-ipv6only
 endef
 
 define Package/dnsmasq-full
@@ -64,6 +65,7 @@ $(call Package/dnsmasq/Default)
 	+PACKAGE_dnsmasq_full_conntrack:libnetfilter-conntrack
   VARIANT:=full
   PROVIDES:=dnsmasq
+  CONFLICTS:=odhcpd-ipv6only
 endef
 
 define Package/dnsmasq/description
