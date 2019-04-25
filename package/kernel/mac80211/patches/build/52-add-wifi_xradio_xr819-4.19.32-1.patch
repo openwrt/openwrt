@@ -1,3 +1,21 @@
+From: Semen Kreyda <aswerklon@gmail.com>
+Date: Thu, Apr 18 2019 21:01:56 
+Subject: [PATCH] xr819: xradio: add xradio driver to @KERNEL/linux/kernel/projects/backports/stable/v4.19.32/
+
+OpenWrt Branch master Apr 18 2019  !!
+add xradio driver 
+on device-sun8i-h2-plus-orangepi-zero.
+
+Signed: Semen Kreyda <aswerklon@gmail.com>
+---
+ defconfigs/wifi 		| 1 +
+ Kconfig.local 			| 3 +++
+ local-symbols			| 1 +
+ MAINTAINERS			| 4 ++++
+ drivers/net/wireless/Kconfig	| 1 +
+ drivers/net/wireless/Makefile	| 1 +
+ drivers/net/wireless/xradio/	| 1624 ++
+
 --- a/defconfigs/wifi	2017-11-05 22:03:11.000000000 +0200
 +++ b/defconfigs/wifi	2019-04-12 21:12:15.000000000 +0300
 @@ -132,5 +132,6 @@
