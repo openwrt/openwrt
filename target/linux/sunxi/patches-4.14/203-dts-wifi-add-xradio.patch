@@ -1,0 +1,45 @@
+--- a/arch/arm/boot/dts/sun8i-h2-plus-orangepi-zero.dts
++++ b/arch/arm/boot/dts/sun8i-h2-plus-orangepi-zero.dts
+@@ -49,6 +49,7 @@
+ 
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/input/input.h>
++#include <dt-bindings/pinctrl/sun4i-a10.h>
+ 
+ / {
+ 	model = "Xunlong Orange Pi Zero";
+@@ -88,6 +88,23 @@
+ 		enable-active-high;
+ 		gpio = <&pio 0 20 GPIO_ACTIVE_HIGH>;
+ 	};
++
++	reg_vdd_cpux: vdd-cpux-regulator {
++		compatible = "regulator-gpio";
++		regulator-name = "vdd-cpux";
++		regulator-type = "voltage";
++		regulator-boot-on;
++		regulator-always-on;
++		regulator-min-microvolt = <1100000>;
++		regulator-max-microvolt = <1300000>;
++		regulator-ramp-delay = <50>; /* 4ms */
++
++		gpios = <&r_pio 0 6 GPIO_ACTIVE_HIGH>; /* PL6 */
++		enable-active-high;
++		gpios-states = <1>;
++		states = <1100000 0
++			  1300000 1>;
++	};
+ 
+ 	wifi_pwrseq: wifi_pwrseq {
+ 		compatible = "mmc-pwrseq-simple";
+@@ -144,6 +144,10 @@
+ 	 */
+ 	xr819: sdio_wifi@1 {
+ 		reg = <1>;
++		compatible = "xradio,xr819";
++		interrupt-parent = <&pio>;
++		interrupts = <6 10 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "host-wake";
+ 	};
+ };
+ 

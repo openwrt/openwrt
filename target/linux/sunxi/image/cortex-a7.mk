@@ -110,7 +110,7 @@ TARGET_DEVICES += sun6i-a31-m9
 
 define Device/sun8i-h2-plus-orangepi-zero
   DEVICE_TITLE:=Xunlong Orange Pi Zero
-  DEVICE_PACKAGES:=kmod-rtc-sunxi
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-xradio
   SUPPORTED_DEVICES:=xunlong,orangepi-zero
   SUNXI_DTS:=sun8i-h2-plus-orangepi-zero
 endef
