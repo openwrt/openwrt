@@ -1,0 +1,46 @@
+config WLAN_VENDOR_XRADIO
+       tristate "XRADIO WLAN support"
+       depends on MAC80211
+       default m
+       help
+
+         This is an experimental driver for the XRADIO chip-set.
+         Enabling this option enables the generic driver without
+         any platform support.
+         Please select the appropriate platform below.
+
+if WLAN_VENDOR_XRADIO
+
+config XRADIO_NON_POWER_OF_TWO_BLOCKSIZES
+	bool "Platform supports non-power-of-two SDIO transfer"
+	depends on WLAN_VENDOR_XRADIO
+	default y
+	---help---
+	  Say N here only if you are running the driver on a platform
+	  which does not have support for non-power-of-two SDIO transfer.
+	  If unsure, say Y.
+
+config XRADIO_5GHZ_SUPPORT
+	bool "5GHz band support"
+	depends on WLAN_VENDOR_XRADIO
+	default n
+	---help---
+	  Say Y if your device supports 5GHz band. If unsure, say N.
+
+config XRADIO_WAPI_SUPPORT
+	bool "WAPI support"
+	depends on WLAN_VENDOR_XRADIO
+	default n
+	---help---
+	  Say Y if your compat-wireless support WAPI.
+	  If unsure, say N.
+
+config XRADIO_USE_EXTENSIONS
+	bool "Extensions for WFD and PS mode"
+	depends on WLAN_VENDOR_XRADIO
+	default y
+	---help---
+	  Say Y if you want to include XR extensions
+	  If unsure, say Y.
+
+endif
