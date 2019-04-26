@@ -124,6 +124,11 @@ parse_args() {
 	o_network=
 	o_qemu_extra=()
 	while [ "$#" -gt 0 ]; do
+		# Cmdline options for the script itself SHOULD try to be
+		# prefixed with two dashes to distinguish them from those for
+		# qemu executables.
+		#
+		# Also note that qemu accepts both --opt and -opt
 		case "$1" in
 			--kernel) o_kernel="$2"; shift 2 ;;
 			--rootfs) o_rootfs="$2"; shift 2 ;;
