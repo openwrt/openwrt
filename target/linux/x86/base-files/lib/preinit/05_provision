@@ -1,0 +1,18 @@
+#!/bin/sh
+# Copyright (C) 2019 Paul Spooren <mail@aparcar.org>
+
+provision() {
+    for virtio in /sys/bus/virtio/drivers/9pnet_virtio/virtio*; do
+        if [ "$(cat ${virtio}/mount_tag)" = "provision" ]; then
+            mkdir -p /provision
+            mount -t 9p -o trans=virtio,version=9p2000.L provision /provision
+            if [ -f /provision/sysupgrade.tgz ]; then
+                mv -f /provision/sysupgrade.tgz /
+            fi
+            umount /provision
+            rm -rf /provision
+        fi
+    done
+}
+
+boot_hook_add preinit_mount_root provision
