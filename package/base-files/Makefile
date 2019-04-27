@@ -63,6 +63,7 @@ define Package/base-files/conffiles
 /etc/services
 /etc/shadow
 /etc/shells
+/etc/shinit
 /etc/sysctl.conf
 /etc/sysupgrade.conf
 $(call $(TARGET)/conffiles)
