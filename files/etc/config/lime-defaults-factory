@@ -1,0 +1,63 @@
+# Beware this file is NOT supposed to be edited by the end user, modify /etc/config/lime instead
+# If the same option or list is defined both in /etc/config/lime and lime-defaults file, the former will prevail
+# Beware this file is not supposed to store interface specific configuration, like "config net eth0"
+
+# Read the documentation in /docs directory
+# and on http://libremesh.org
+
+config lime system
+	option hostname 'LiMe-%M4%M5%M6'
+	option domain 'lan'
+	option keep_on_upgrade 'libremesh base-files-essential /etc/sysupgrade.conf'
+
+config lime network
+	option primary_interface 'eth0'
+	option main_ipv4_address '10.%N1.0.0/16'
+	option anygw_dhcp_start '2'
+	option anygw_dhcp_limit '0'
+	option main_ipv6_address '2a00:1508:0a%N1:%N200::/64'
+	option bmx6_mtu '1500'
+	option bmx7_mtu '1500'
+	list protocols ieee80211s
+	list protocols lan
+	list protocols anygw
+	list protocols batadv:%N1
+	list protocols bmx6:13
+	list protocols olsr:14
+	list protocols olsr6:15
+	list protocols olsr2:16
+	list protocols babeld:17
+	list protocols bmx7:18
+	list resolvers 4.2.2.2   # b.resolvers.Level3.net
+	list resolvers 141.1.1.1 # cns1.cw.net
+	list resolvers 2001:470:20::2 # ordns.he.net
+	option bmx6_mtu '1500'
+	option bmx6_publish_ownip false
+	option bmx6_over_batman false
+	option bmx6_pref_gw none
+	option bmx6_wifi_rate_max 54000000
+	option bmx7_publish_ownip false
+	option bmx7_over_batman false
+	option bmx7_pref_gw none
+	option bmx7_wifi_rate_max 'auto'
+	option anygw_mac "aa:aa:aa:%N1:%N2:aa"
+	option use_odhcpd false
+
+config lime wifi
+	option channel_2ghz '11'
+	list channel_5ghz '157'
+	list channel_5ghz '48'
+	option htmode_5ghz 'HT40'
+	option distance_2ghz '100'
+	option distance_5ghz '1000'
+	list modes 'ap'
+	list modes 'apname'
+	list modes 'ieee80211s'
+	option ap_ssid 'LibreMesh.org'
+	option apname_ssid 'LibreMesh.org/%H'
+	option adhoc_ssid 'LiMe'
+	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
+	option adhoc_mcast_rate_2ghz '24000'
+	option adhoc_mcast_rate_5ghz '6000'
+	option ieee80211s_mesh_fwding '0'
+	option ieee80211s_mesh_id 'LiMe'
