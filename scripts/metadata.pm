@@ -131,6 +131,7 @@ sub parse_target_metadata($) {
 		/^Target-Optimization:\s*(.+)\s*$/ and $target->{cflags} = $1;
 		/^CPU-Type:\s*(.+)\s*$/ and $target->{cputype} = $1;
 		/^Linux-Version:\s*(.+)\s*$/ and $target->{version} = $1;
+		/^Linux-Testing-Version:\s*(.+)\s*$/ and $target->{testing_version} = $1;
 		/^Linux-Release:\s*(.+)\s*$/ and $target->{release} = $1;
 		/^Linux-Kernel-Arch:\s*(.+)\s*$/ and $target->{karch} = $1;
 		/^Default-Subtarget:\s*(.+)\s*$/ and $target->{def_subtarget} = $1;

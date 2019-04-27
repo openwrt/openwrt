@@ -15,6 +15,7 @@ SUBTARGETS:=cortexa8 cortexa7 cortexa53
 MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
 KERNEL_PATCHVER:=4.14
+KERNEL_TESTING_PATCHVER := 4.19
 KERNELNAME:=zImage dtbs
 
 # A10: Cortex-A8
