@@ -943,6 +943,13 @@ ar7240_hw_apply(struct switch_dev *dev)
 			portmask[i] = 1 << AR7240_PORT_CPU;
 			portmask[AR7240_PORT_CPU] |= (1 << i);
 		}
+		/* Overwrite isolate and allow port-to-port forward */
+		for (i = 0; i < as->swdev.ports; i++) {
+			if (i == AR7240_PORT_CPU)
+				continue;
+
+			portmask[i] |= (portmask[AR7240_PORT_CPU] & (~(1 << i)));
+		}
 	}
 
 	/* update the port destination mask registers and tag settings */
