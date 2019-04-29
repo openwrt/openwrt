@@ -1,0 +1,144 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+#include "qca953x.dtsi"
+
+/ {
+	compatible = "kuwfi,cpe206", "qca,qca9531";
+	model = "KuWfi CPE206";
+
+	aliases {
+		led-boot = &status;
+		led-failsafe = &status;
+		led-running = &status;
+		led-upgrade = &status;
+	};
+
+	keys {  
+		compatible = "gpio-keys";
+
+		reset { 
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {  
+		compatible = "gpio-leds";
+
+		lan {
+			label = "cpe206:green:lan";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		status: status {
+			label = "cpe206:green:status";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			default-state = "keep";
+		};
+
+		wlan {
+			label = "cpe206:green:wlan";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+	phy-handle = <&swphy4>;
+	mtd-mac-address = <&art 0x10a0>;
+};
+
+&eth1 {
+	compatible = "syscon", "simple-mfd";
+	status = "okay";
+
+	gmac-config {
+		device = <&gmac>;
+		switch-phy-swap = <0>;
+	};
+};
+
+&spi {
+	status = "okay";
+
+	num-cs = <1>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x01c000>;
+				read-only;
+			};
+
+			partition@0x01c000 {
+				label = "SBI";
+				reg = <0x01c000 0x4000>;
+				read-only;
+			};
+		
+			partition@0x020000 {
+				label = "firmware";
+				compatible = "denx,uimage";
+				reg = <0x020000 0x780000>;
+			};
+
+			partition@0x7a0000 {
+				label = "elog";
+				reg = <0x7a0000 0x10000>;
+				read-only;
+			};
+
+			partition@0x7b0000 {
+				label = "config";
+				reg = <0x7b0000 0x10000>;
+				read-only;
+			};
+
+			partition@0x7c0000 {
+				label = "config2";
+				reg = <0x7c0000 0x10000>;
+				read-only;
+			};
+
+			partition@0x7d0000 {
+				label = "custom";
+				reg = <0x7d0000 0x10000>;
+				read-only;
+			};
+
+			partition@0x7e0000 {
+				label = "DTB";
+				reg = <0x7e0000 0x10000>;
+				read-only;
+			};
+
+			art: partition@0x7f0000 {
+				label = "CAL";
+				reg = <0x7f0000 0x10000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&wmac { 
+	status = "okay";
+	mtd-cal-data = <&art 0x1000>;
+};
