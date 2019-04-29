@@ -664,6 +664,15 @@ define Device/jjplus_ja76pf2
 endef
 TARGET_DEVICES += jjplus_ja76pf2
 
+define Device/kuwfi_cpe206
+  ATH_SOC := qca9531
+  DEVICE_VENDOR := KuWfi
+  DEVICE_MODEL := CPE206
+  DEVICE_PACKAGES += -uboot-envtools
+  IMAGE_SIZE := 7680k
+endef
+TARGET_DEVICES += kuwfi_cpe206
+
 define Device/librerouter_librerouter-v1
   ATH_SOC := qca9558
   DEVICE_VENDOR := Librerouter
