@@ -194,6 +194,21 @@ define Device/netgear_r7800
 endef
 TARGET_DEVICES += netgear_r7800
 
+define Device/netgear_xr500
+        $(call Device/DniImage)
+        DEVICE_DTS := qcom-ipq8065-xr500
+        KERNEL_SIZE := 4096k
+        NETGEAR_BOARD_ID := XR500
+        NETGEAR_HW_ID := 29764958+0+256+512+4x4+4x4+cascade
+        BLOCKSIZE := 128k
+        PAGESIZE := 2048
+        BOARD_NAME := xr500
+        SUPPORTED_DEVICES += xr500
+        DEVICE_TITLE := Netgear XR500
+        DEVICE_PACKAGES := ath10k-firmware-qca9984
+endef
+TARGET_DEVICES += netgear_xr500
+
 define Device/qcom_ipq8064-ap148
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
