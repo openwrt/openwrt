@@ -152,7 +152,7 @@ define KernelPackage/iio-bmp280-i2c
   DEPENDS:=+kmod-iio-bmp280 +kmod-i2c-core +kmod-regmap-i2c
   KCONFIG:=CONFIG_BMP280_I2C
   FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280-i2c.ko
-  AUTOLOAD:=$(call AutoProbe,iio-bmp280-i2c)
+  AUTOLOAD:=$(call AutoProbe,bmp280-i2c)
 endef
 define KernelPackage/iio-bmp280-i2c/description
  This driver adds support for Bosch Sensortec's digital pressure and
@@ -168,7 +168,7 @@ define KernelPackage/iio-bmp280-spi
   DEPENDS:=+kmod-iio-bmp280 +kmod-spi-bitbang
   KCONFIG:=CONFIG_BMP280_SPI
   FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280-spi.ko
-  AUTOLOAD:=$(call AutoProbe,iio-bmp280-spi)
+  AUTOLOAD:=$(call AutoProbe,bmp280-spi)
 endef
 define KernelPackage/iio-bmp280-spi/description
  This driver adds support for Bosch Sensortec's digital pressure and
