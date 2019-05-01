@@ -30,6 +30,9 @@
 # procd_close_instance():
 #   Complete the instance being prepared
 #
+# procd_running(service, [instance]):
+#   Checks if service/instance is currently running
+#
 # procd_kill(service, [instance]):
 #   Kill a service instance (or all instances)
 #
@@ -400,6 +403,18 @@ _procd_add_instance() {
 	_procd_open_instance
 	_procd_set_param command "$@"
 	_procd_close_instance
+}
+
+procd_running() {
+	local service="$1"
+	local instance="${2:-instance1}"
+	local running
+
+	json_init
+	json_add_string name "$service"
+	running=$(_procd_ubus_call list | jsonfilter -e "@.$service.instances.${instance}.running")
+
+	[ "$running" = "true" ]
 }
 
 _procd_kill() {
