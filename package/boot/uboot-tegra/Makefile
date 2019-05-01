@@ -23,7 +23,7 @@ endef
 
 define U-Boot/trimslice
   NAME := CompuLab TrimSlice
-  BUILD_DEVICES := trimslice
+  BUILD_DEVICES := compulab_trimslice
   UBOOT_IMAGE := trimslice-mmc.img trimslice-spi.img
   SOC := tegra20
   VENDOR := compulab
