@@ -1,0 +1,28 @@
+From c65c4f9998587a0c705b3635215f25fa5680c0d3 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Fri, 3 May 2019 11:49:11 -0700
+Subject: gmputil: Add missing header for va_list
+
+Otherwise it errors with unknown type name when using uClibc.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+---
+ include/gmputil.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/gmputil.h b/include/gmputil.h
+index 73959c17..ad63d67b 100644
+--- a/include/gmputil.h
++++ b/include/gmputil.h
+@@ -7,6 +7,7 @@
+ #include <gmp.h>
+ #else
+ #include <mini-gmp.h>
++#include <stdarg.h>
+ #include <stdio.h>
+ /* mini-gmp doesn't come with gmp_vfprintf, so we use our own minimal variant */
+ extern int mpz_vfprintf(FILE *fp, const char *format, va_list args);
+-- 
+cgit v1.2.1
+
