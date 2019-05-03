@@ -21,7 +21,7 @@ Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
 
 --- a/src/crypto/crypto_openssl.c
 +++ b/src/crypto/crypto_openssl.c
-@@ -1227,7 +1227,13 @@ void crypto_bignum_deinit(struct crypto_
+@@ -1295,7 +1295,13 @@ void crypto_bignum_deinit(struct crypto_
  int crypto_bignum_to_bin(const struct crypto_bignum *a,
  			 u8 *buf, size_t buflen, size_t padlen)
  {
@@ -35,7 +35,7 @@ Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
  
  	if (TEST_FAIL())
  		return -1;
-@@ -1235,6 +1241,14 @@ int crypto_bignum_to_bin(const struct cr
+@@ -1303,6 +1309,14 @@ int crypto_bignum_to_bin(const struct cr
  	if (padlen > buflen)
  		return -1;
  
@@ -50,7 +50,7 @@ Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
  	num_bytes = BN_num_bytes((const BIGNUM *) a);
  	if ((size_t) num_bytes > buflen)
  		return -1;
-@@ -1247,6 +1261,8 @@ int crypto_bignum_to_bin(const struct cr
+@@ -1315,6 +1329,8 @@ int crypto_bignum_to_bin(const struct cr
  	BN_bn2bin((const BIGNUM *) a, buf + offset);
  
  	return num_bytes + offset;

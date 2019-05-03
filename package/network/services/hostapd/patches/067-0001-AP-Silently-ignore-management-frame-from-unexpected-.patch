@@ -23,7 +23,7 @@ Signed-off-by: Jouni Malinen <j@w1.fi>
 
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -129,6 +129,19 @@ int hostapd_notif_assoc(struct hostapd_d
+@@ -131,6 +131,19 @@ int hostapd_notif_assoc(struct hostapd_d
  			   "hostapd_notif_assoc: Skip event with no address");
  		return -1;
  	}
@@ -45,7 +45,7 @@ Signed-off-by: Jouni Malinen <j@w1.fi>
  	hostapd_logger(hapd, addr, HOSTAPD_MODULE_IEEE80211,
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -3978,6 +3978,18 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -4463,6 +4463,18 @@ int ieee802_11_mgmt(struct hostapd_data
  	fc = le_to_host16(mgmt->frame_control);
  	stype = WLAN_FC_GET_STYPE(fc);
  
