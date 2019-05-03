@@ -32,19 +32,19 @@ Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
 +	if (crypto_bignum_to_bin(prime, prime_bin, sizeof(prime_bin),
 +				 primebytelen) < 0)
 +		return -1;
- 	cofactor = crypto_bignum_init();
  	grp->pwe = crypto_ec_point_init(grp->group);
  	tmp1 = crypto_bignum_init();
-@@ -176,8 +182,6 @@ int compute_password_element(EAP_PWD_gro
- 			   "curve");
+ 	pm1 = crypto_bignum_init();
+@@ -170,8 +176,6 @@ int compute_password_element(EAP_PWD_gro
  		goto fail;
  	}
+ 
 -	primebitlen = crypto_ec_prime_len_bits(grp->group);
 -	primebytelen = crypto_ec_prime_len(grp->group);
  	if ((prfbuf = os_malloc(primebytelen)) == NULL) {
  		wpa_printf(MSG_INFO, "EAP-pwd: unable to malloc space for prf "
  			   "buffer");
-@@ -243,6 +247,8 @@ int compute_password_element(EAP_PWD_gro
+@@ -237,6 +241,8 @@ int compute_password_element(EAP_PWD_gro
  		if (primebitlen % 8)
  			buf_shift_right(prfbuf, primebytelen,
  					8 - primebitlen % 8);
@@ -53,7 +53,7 @@ Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
  
  		crypto_bignum_deinit(x_candidate, 1);
  		x_candidate = crypto_bignum_init_set(prfbuf, primebytelen);
-@@ -252,9 +258,6 @@ int compute_password_element(EAP_PWD_gro
+@@ -246,9 +252,6 @@ int compute_password_element(EAP_PWD_gro
  			goto fail;
  		}
  
