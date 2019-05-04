@@ -1,0 +1,7 @@
+# Put your custom commands here that should be executed once
+# the system init finished. By default this file does nothing.
+
+amixer -c 0 -q set "Line Out" 100%+ unmute &
+amixer -c 0 -q set "DAC" 100%+ unmute &
+
+exit 0

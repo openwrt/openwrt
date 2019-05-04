@@ -110,16 +110,27 @@ TARGET_DEVICES += sun6i-a31-m9
 
 define Device/sun8i-h2-plus-orangepi-zero
   DEVICE_TITLE:=Xunlong Orange Pi Zero
-  DEVICE_PACKAGES:=kmod-rtc-sunxi \
-		kmod-sound-core \
-		kmod-sound-soc-sun4i-codec \
-		kmod-sound-soc-sun8i-codec \
-		kmod-sound-soc-sun8i-codec-analog
+  DEVICE_PACKAGES:=kmod-rtc-sunxi
   SUPPORTED_DEVICES:=xunlong,orangepi-zero
   SUNXI_DTS:=sun8i-h2-plus-orangepi-zero
 endef
 
 TARGET_DEVICES += sun8i-h2-plus-orangepi-zero
+
+
+define Device/sun8i-h2-plus-orangepi-zero-wifi
+  DEVICE_TITLE:=Xunlong Orange Pi Zero Wifi (enabled wifi and soc-audio)
+  DEVICE_PACKAGES:=kmod-rtc-sunxi \
+		kmod-xradio \
+		kmod-sound-core \
+		kmod-sound-soc-sun4i-codec \
+		kmod-sound-soc-sun8i-codec \
+		kmod-sound-soc-sun8i-codec-analog
+  SUPPORTED_DEVICES:=xunlong,orangepi-zero-wifi
+  SUNXI_DTS:=sun8i-h2-plus-orangepi-zero-wifi
+endef
+
+TARGET_DEVICES += sun8i-h2-plus-orangepi-zero-wifi
 
 
 define Device/sun8i-h2-plus-orangepi-r1
