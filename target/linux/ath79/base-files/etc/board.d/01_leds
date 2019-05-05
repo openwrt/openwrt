@@ -136,6 +136,11 @@ tplink,cpe210-v3)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "tp-link:green:link3" "wlan0" "60" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "tp-link:green:link4" "wlan0" "80" "100"
 	;;
+tplink,archer-d50-v1)
+	ucidef_set_led_switch "lan" "LAN" "tp-link:white:lan" "switch0" "0x1E"
+	ucidef_set_led_netdev "wan_data" "WAN Data" "tp-link:white:internet" "eth1.2" "tx rx"
+	ucidef_set_led_netdev "wan_link" "WAN Link" "tp-link:white:wan" "eth1.2" "link"
+	;;
 tplink,re450-v2)
 	ucidef_set_led_netdev "lan_data" "LAN Data" "tp-link:green:lan_data" "eth0" "tx rx"
 	ucidef_set_led_netdev "lan_link" "LAN Link" "tp-link:green:lan_link" "eth0" "link"
