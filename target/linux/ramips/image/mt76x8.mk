@@ -81,6 +81,13 @@ define Device/hc5661a
 endef
 TARGET_DEVICES += hc5661a
 
+define Device/hilink_hlk-7628n
+  DTS := HLK-7628N
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  DEVICE_TITLE := HILINK HLK7628N
+endef
+TARGET_DEVICES += hilink_hlk-7628n
+
 define Device/hiwifi_hc5861b
   DTS := HC5861B
   IMAGE_SIZE := 15808k
