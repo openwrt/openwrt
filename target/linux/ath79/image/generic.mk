@@ -75,6 +75,14 @@ define Device/seama
   SEAMA_SIGNATURE :=
 endef
 
+define Device/aruba_ap-105
+  ATH_SOC := ar7161
+  DEVICE_TITLE := Aruba AP-105
+  IMAGE_SIZE := 16000k
+  DEVICE_PACKAGES := kmod-i2c-core kmod-i2c-gpio kmod-tpm-i2c-atmel
+endef
+TARGET_DEVICES += aruba_ap-105
+
 define Device/avm_fritz300e
   ATH_SOC := ar7242
   DEVICE_TITLE := AVM FRITZ!WLAN Repeater 300E
