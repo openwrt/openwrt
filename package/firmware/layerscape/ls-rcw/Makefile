@@ -30,12 +30,12 @@ endef
 
 define Package/layerscape-rcw/ls1012ardb
   TITLE:=NXP LS1012ARDB RCW binary
-  CONFIG:=ls1012ardb/R_SPNH_3508/rcw_1000_default.bin.swapped
+  CONFIG:=ls1012ardb/R_SPNH_3508/rcw_1000_default.bin
 endef
 
 define Package/layerscape-rcw/ls1012afrwy
   TITLE:=NXP LS1012AFRWY RCW binary
-  CONFIG:=ls1012afrwy/N_SSNP_3305/rcw_1000_default.bin.swapped
+  CONFIG:=ls1012afrwy/N_SSNP_3305/rcw_1000_default.bin
 endef
 
 define Package/layerscape-rcw/ls1043ardb
@@ -50,7 +50,7 @@ endef
 
 define Package/layerscape-rcw/ls1046ardb
   TITLE:=NXP LS1046ARDB RCW binary
-  CONFIG:=ls1046ardb/RR_FFSSPPPH_1133_5559/rcw_1800_qspiboot.bin.swapped
+  CONFIG:=ls1046ardb/RR_FFSSPPPH_1133_5559/rcw_1800_qspiboot.bin
 endef
 
 define Package/layerscape-rcw/ls1046ardb-sdboot

@@ -29,52 +29,52 @@ endef
 
 define U-Boot/ls1012ardb
   NAME:=NXP LS1012ARDB
-  UBOOT_CONFIG:=ls1012ardb_qspi
+  UBOOT_CONFIG:=ls1012ardb_tfa
   ENV_SIZE:=0x40000
 endef
 
 define U-Boot/ls1012afrwy
   NAME:=NXP LS1012AFRWY
-  UBOOT_CONFIG:=ls1012afrwy_qspi
+  UBOOT_CONFIG:=ls1012afrwy_tfa
   ENV_SIZE:=0x10000
 endef
 
 define U-Boot/ls1043ardb
   NAME:=NXP LS1043ARDB
-  ENV_SIZE:=0x20000
+  UBOOT_CONFIG:=ls1043ardb_tfa
 endef
 
 define U-Boot/ls1043ardb-sdboot
   NAME:=NXP LS1043ARDB SD Card Boot
-  UBOOT_CONFIG:=ls1043ardb_sdcard
-  UBOOT_IMAGE:=u-boot-with-spl-pbl.bin
+  UBOOT_CONFIG:=ls1043ardb_tfa
 endef
+
 
 define U-Boot/ls1046ardb
   NAME:=NXP LS1046ARDB
-  UBOOT_CONFIG:=ls1046ardb_qspi
+  UBOOT_CONFIG:=ls1046ardb_tfa
 endef
 
 define U-Boot/ls1046ardb-sdboot
   NAME:=NXP LS1046ARDB SD Card Boot
-  UBOOT_CONFIG:=ls1046ardb_sdcard
-  UBOOT_IMAGE:=u-boot-with-spl-pbl.bin
+  UBOOT_CONFIG:=ls1046ardb_tfa
 endef
+
 
 define U-Boot/ls1088ardb
   NAME:=NXP LS1088ARDB
-  UBOOT_CONFIG:=ls1088ardb_qspi
+  UBOOT_CONFIG:=ls1088ardb_tfa
 endef
+
 
 define U-Boot/ls1088ardb-sdboot
   NAME:=NXP LS1088ARDB SD Card Boot
-  UBOOT_CONFIG:=ls1088ardb_sdcard_qspi
-  UBOOT_IMAGE:=u-boot-with-spl.bin
+  UBOOT_CONFIG:=ls1088ardb_tfa
 endef
 
 define U-Boot/ls2088ardb
   NAME:=NXP LS2088ARDB
-  UBOOT_CONFIG:=ls2080ardb
+  UBOOT_CONFIG:=ls2088ardb_tfa
 endef
 
 define U-Boot/ls1021atwr
