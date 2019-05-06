@@ -1,0 +1,29 @@
+From 4d44bb1031a68d7d5b604d3b340c059f41ca62af Mon Sep 17 00:00:00 2001
+From: Pavel Kubelun <be.dissent@gmail.com>
+Date: Mon, 6 May 2019 20:55:16 +0300
+Subject: [PATCH] ipq40xx: fix sleep clock
+
+It seems like sleep_clk was copied from ipq806x.
+Fix ipq40xx sleep_clk to the value QSDK defines.
+
+Also rename the sleep clock node like the GCC driver names it.
+
+Signed-off-by: Pavel Kubelun <be.dissent@gmail.com>
+---
+ arch/arm/boot/dts/qcom-ipq4019.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
+@@ -145,9 +145,9 @@
+ 	};
+ 
+ 	clocks {
+-		sleep_clk: sleep_clk {
++		sleep_clk: gcc_sleep_clk_src {
+ 			compatible = "fixed-clock";
+-			clock-frequency = <32768>;
++			clock-frequency = <32000>;
+ 			#clock-cells = <0>;
+ 		};
+ 
