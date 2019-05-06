@@ -285,6 +285,16 @@ define Device/tplink_tl-wr1043nd-v4
 endef
 TARGET_DEVICES += tplink_tl-wr1043nd-v4
 
+define Device/tplink_tl-wr1043n-v5
+  $(Device/tplink-safeloader-uimage)
+  ATH_SOC := qca9563
+  IMAGE_SIZE := 15104k
+  DEVICE_TITLE := TP-Link TL-WR1043N v5
+  TPLINK_BOARD_ID := TLWR1043NV5
+  SUPPORTED_DEVICES += tl-wr1043n-v5
+endef
+TARGET_DEVICES += tplink_tl-wr1043n-v5
+
 define Device/tplink_tl-wr2543-v1
   $(Device/tplink-8mlzma)
   ATH_SOC := ar7242
