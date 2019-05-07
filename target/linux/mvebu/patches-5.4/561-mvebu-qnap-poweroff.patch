@@ -1,0 +1,233 @@
+diff --git a/drivers/power/reset/qnap-poweroff.c b/drivers/power/reset/qnap-poweroff.c
+index 52b7dc61d870..7aec1d640ef6 100644
+--- a/drivers/power/reset/qnap-poweroff.c
++++ b/drivers/power/reset/qnap-poweroff.c
+@@ -1,11 +1,14 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later
+ /*
+- * QNAP Turbo NAS Board power off. Can also be used on Synology devices.
++ * QNAP Turbo NAS Board power off. Can also be used on Synology
++ * and Western Digital My Cloud devices.
+  *
+- * Copyright (C) 2012 Andrew Lunn <andrew@lunn.ch>
++ * Copyright (C) 2020 Evgeny Kolesnikov <evgenyz@gmail.com>
+  *
+  * Based on the code from:
+  *
++ * Copyright (C) 2016  Martin Mueller <mm@sig21.net>
++ * Copyright (C) 2012  Andrew Lunn <andrew@lunn.ch>
+  * Copyright (C) 2009  Martin Michlmayr <tbm@cyrius.com>
+  * Copyright (C) 2008  Byron Bradley <byron.bbradley@gmail.com>
+  */
+@@ -18,46 +21,93 @@
+ #include <linux/of.h>
+ #include <linux/io.h>
+ #include <linux/clk.h>
++#include <linux/delay.h>
++#ifdef CONFIG_ARM
++#include <asm/system_misc.h>
++#endif
+ 
+ #define UART1_REG(x)	(base + ((UART_##x) << 2))
+ 
+-struct power_off_cfg {
++enum qnap_driver_type {
++	QNAP_DRIVER_NONE = 0,
++	QNAP_DRIVER_POWER_OFF = 1,
++	QNAP_DRIVER_RESTART = 2,
++};
++
++struct mcu_command {
++	u8 len;
++	char data[8];
++};
++
++struct mcu_device_cfg {
+ 	u32 baud;
+-	char cmd;
++	struct mcu_command power_off;
++	struct mcu_command restart;
++	enum qnap_driver_type override;
+ };
+ 
+-static const struct power_off_cfg qnap_power_off_cfg = {
++static const struct mcu_device_cfg qnap_device_cfg = {
+ 	.baud = 19200,
+-	.cmd = 'A',
++	.power_off = {
++		.len = 1,
++		.data = {'A'}
++	},
++	.restart = {0},
++	.override = QNAP_DRIVER_NONE
+ };
+ 
+-static const struct power_off_cfg synology_power_off_cfg = {
++static const struct mcu_device_cfg synology_device_cfg = {
+ 	.baud = 9600,
+-	.cmd = '1',
++	.power_off = {
++		.len = 1,
++		.data = {'1'}
++	},
++	.restart = {0},
++	.override = QNAP_DRIVER_NONE
++};
++
++static const struct mcu_device_cfg wd_device_cfg = {
++	.baud = 19200,
++	.power_off = {
++		.len = 7,
++		.data = {0xfa, 0x03, 0x03, 0x01, 0x00, 0x00, 0xfb}
++	},
++	.restart = {
++		.len = 7,
++		.data = {0xfa, 0x03, 0x03, 0x02, 0x00, 0x00, 0xfb}
++	},
++	.override = QNAP_DRIVER_RESTART
+ };
+ 
+ static const struct of_device_id qnap_power_off_of_match_table[] = {
+ 	{ .compatible = "qnap,power-off",
+-	  .data = &qnap_power_off_cfg,
++	  .data = &qnap_device_cfg,
+ 	},
+ 	{ .compatible = "synology,power-off",
+-	  .data = &synology_power_off_cfg,
++	  .data = &synology_device_cfg,
++	},
++	{ .compatible = "wd,power-off",
++	  .data = &wd_device_cfg,
+ 	},
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, qnap_power_off_of_match_table);
+ 
++
+ static void __iomem *base;
+ static unsigned long tclk;
+-static const struct power_off_cfg *cfg;
++static const struct mcu_device_cfg *cfg;
+ 
+-static void qnap_power_off(void)
++static void *pm_power_off_org = NULL;
++static void *arm_pm_restart_org = NULL;
++
++
++static void qnap_send_command(const struct mcu_command *cmd)
+ {
+ 	const unsigned divisor = ((tclk + (8 * cfg->baud)) / (16 * cfg->baud));
++	uint8_t i;
+ 
+-	pr_err("%s: triggering power-off...\n", __func__);
+-
+-	/* hijack UART1 and reset into sane state */
++	/* Hijack UART and reset into sane state */
+ 	writel(0x83, UART1_REG(LCR));
+ 	writel(divisor & 0xff, UART1_REG(DLL));
+ 	writel((divisor >> 8) & 0xff, UART1_REG(DLM));
+@@ -66,8 +116,32 @@ static void qnap_power_off(void)
+ 	writel(0x00, UART1_REG(FCR));
+ 	writel(0x00, UART1_REG(MCR));
+ 
+-	/* send the power-off command to PIC */
+-	writel(cfg->cmd, UART1_REG(TX));
++	/* Send the command to PIC */
++	for (i = 0; i < cmd->len; i++) {
++		writel(cmd->data[i], UART1_REG(TX));
++		mdelay(5);
++	}
++}
++
++static void qnap_power_off(void)
++{
++	pr_err("Triggering power-off...");
++	qnap_send_command(&cfg->power_off);
++}
++
++static void qnap_restart(enum reboot_mode reboot_mode, const char *cmd)
++{
++	pr_err("Triggering restart...");
++	qnap_send_command(&cfg->restart);
++}
++
++static int qnap_power_off_remove(struct platform_device *pdev)
++{
++	pm_power_off = pm_power_off_org;
++#ifdef CONFIG_ARM
++	arm_pm_restart = arm_pm_restart_org;
++#endif
++	return 0;
+ }
+ 
+ static int qnap_power_off_probe(struct platform_device *pdev)
+@@ -99,38 +173,52 @@ static int qnap_power_off_probe(struct platform_device *pdev)
+ 		dev_err(&pdev->dev, "Clk missing");
+ 		return PTR_ERR(clk);
+ 	}
+-
+ 	tclk = clk_get_rate(clk);
+ 
+-	/* Check that nothing else has already setup a handler */
+-	if (pm_power_off) {
+-		lookup_symbol_name((ulong)pm_power_off, symname);
+-		dev_err(&pdev->dev,
+-			"pm_power_off already claimed %p %s",
+-			pm_power_off, symname);
+-		return -EBUSY;
++	/* Install power_off handler */
++	if (cfg->power_off.len > 0) {
++		if (pm_power_off && !(cfg->override & QNAP_DRIVER_POWER_OFF)) {
++			lookup_symbol_name((ulong)pm_power_off, symname);
++			dev_err(&pdev->dev,
++				"The pm_power_off handler already claimed: %p %s",
++				pm_power_off, symname);
++			return -EBUSY;
++		}
++		dev_notice(&pdev->dev, "Installing pm_power_off handler");
++		pm_power_off_org = pm_power_off;
++		pm_power_off = qnap_power_off;
+ 	}
+-	pm_power_off = qnap_power_off;
+ 
++	/* Install restart handler */
++#ifdef CONFIG_ARM
++	if (cfg->restart.len > 0) {
++		if (arm_pm_restart && !(cfg->override & QNAP_DRIVER_RESTART)) {
++			lookup_symbol_name((ulong)arm_pm_restart, symname);
++			dev_err(&pdev->dev,
++				"The arm_pm_restart handler already claimed: %p %s",
++				arm_pm_restart, symname);
++			qnap_power_off_remove(pdev);
++			return -EBUSY;
++		}
++		dev_notice(&pdev->dev, "Installing arm_pm_restart handler");
++		arm_pm_restart_org = arm_pm_restart;
++		arm_pm_restart = qnap_restart;
++	}
++#endif
+ 	return 0;
+ }
+ 
+-static int qnap_power_off_remove(struct platform_device *pdev)
+-{
+-	pm_power_off = NULL;
+-	return 0;
+-}
+ 
+ static struct platform_driver qnap_power_off_driver = {
+ 	.probe	= qnap_power_off_probe,
+ 	.remove	= qnap_power_off_remove,
+ 	.driver	= {
+-		.name	= "qnap_power_off",
++		.name = "qnap_power_off",
+ 		.of_match_table = of_match_ptr(qnap_power_off_of_match_table),
+ 	},
+ };
+ module_platform_driver(qnap_power_off_driver);
+ 
+-MODULE_AUTHOR("Andrew Lunn <andrew@lunn.ch>");
+-MODULE_DESCRIPTION("QNAP Power off driver");
++MODULE_AUTHOR("Evgeny Kolesnikov <evgenyz@gmail.com>");
++MODULE_DESCRIPTION("QNAP Power off and Restart driver");
+ MODULE_LICENSE("GPL v2");

@@ -1,0 +1,11 @@
+--- a/arch/arm/mach-mvebu/Kconfig
++++ b/arch/arm/mach-mvebu/Kconfig
+@@ -1,6 +1,7 @@
+ menuconfig ARCH_MVEBU
+ 	bool "Marvell Engineering Business Unit (MVEBU) SoCs"
+ 	depends on ARCH_MULTI_V7 || ARCH_MULTI_V5
+ 	select ARCH_SUPPORTS_BIG_ENDIAN
++	select ARCH_WANT_LIBATA_LEDS
+ 	select CLKSRC_MMIO
+ 	select PINCTRL
+ 	select PLAT_ORION

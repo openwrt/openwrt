@@ -1,0 +1,31 @@
+#!/bin/sh /etc/rc.common
+
+START=10
+
+USE_PROCD=1
+NAME=wtmcud
+PROG=/sbin/wtmcud
+
+start_service() {
+	local lan=$(uci -q get network.lan.ifname)
+
+	local device=$(uci -q get wtmcu.common.device)
+	local delay=$(uci -q get wtmcu.daemon.delay)
+	local tmin=$(uci -q get wtmcu.daemon.t_min)
+	local tmax=$(uci -q get wtmcu.daemon.t_max)
+	local thyst=$(uci -q get wtmcu.daemon.t_hyst)
+	local logl=$(uci -q get wtmcu.daemon.log_level)
+	local wol=$(uci -q get wtmcu.daemon.wol)
+
+	procd_open_instance
+	procd_set_param command "$PROG" ${device:+-d "$device"} ${delay:+-u "$delay"} ${tmin:+-t "$tmin"} ${tmax:+-T "$tmax"} ${thyst:+-h "$thyst"} ${logl:+-l "$logl"} ${wol:+-w "$lan"}
+	procd_close_instance
+}
+
+stop() {
+	service_stop /sbin/wtmcud
+}
+
+reload() {
+	service_reload /sbin/wtmcud
+}

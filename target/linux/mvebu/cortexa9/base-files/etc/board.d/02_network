@@ -41,6 +41,9 @@ mvebu_setup_interfaces()
 		# eth2 is SFP
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6" "eth0 eth2"
 		;;
+	wd,my-cloud-ex2-ultra)
+		ucidef_set_interface_lan "eth0" "dhcp"
+		;;
 	*)
 		ucidef_set_interface_lan "eth0"
 		;;
@@ -70,6 +73,11 @@ mvebu_setup_macs()
 		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$label_mac
 		wan_mac=$label_mac
+		;;
+	wd,my-cloud-ex2-ultra)
+		[ -f /tmp/wd-config/mac_addr ] && {
+			lan_mac=$(cat /tmp/wd-config/mac_addr)
+		}
 		;;
 	esac
 

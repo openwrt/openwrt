@@ -1,0 +1,20 @@
+preinit_leds_init() {
+
+	. /lib/functions.sh
+	. /lib/functions/leds.sh
+
+	case $(board_name) in
+	wd,my-cloud-ex2-ultra)
+		[ -e /dev/sda ] && {
+			echo "HDD1 (sda) is online, LED trigger ata1" > /dev/kmsg
+			led_set_attr "my-cloud-ex2-ultra:blue:hdd1" "trigger" "ata1"
+		}
+		[ -e /dev/sdb ] && {
+			echo "HDD2 (sdb) is online, LED trigger ata2" > /dev/kmsg
+			led_set_attr "my-cloud-ex2-ultra:blue:hdd2" "trigger" "ata2"
+		}
+		;;
+	esac
+}
+
+boot_hook_add preinit_main preinit_leds_init

@@ -269,3 +269,20 @@ define Device/solidrun_clearfog-pro-a1
   SUPPORTED_DEVICES += armada-388-clearfog armada-388-clearfog-pro
 endef
 TARGET_DEVICES += solidrun_clearfog-pro-a1
+
+define Device/wd_my-cloud-ex2-ultra
+  $(Device/NAND-128K)
+  DEVICE_VENDOR := Western Digital
+  DEVICE_MODEL := My Cloud EX2 Ultra (BVBZ/Ranger Peak)
+  DEVICE_PACKAGES += wtmcu -uboot-envtools -dnsmasq -ppp -ppp-mod-pppoe \
+    block-mount e2fsprogs partx-utils mkf2fs f2fsck \
+    kmod-dm kmod-md-mod kmod-fs-vfat kmod-fs-ext4 kmod-fs-xfs \
+    kmod-usb-ledtrig-usbport kmod-usb2 kmod-usb3 kmod-usb-storage kmod-usb-xhci
+  DEVICE_DTS := armada-385-wd-my-cloud-ex2-ultra
+  KERNEL_SIZE := 5120k
+
+  IMAGES += image-cfs-factory.bin uImage-factory.bin
+  IMAGE/image-cfs-factory.bin := append-ubi
+  IMAGE/uImage-factory.bin := append-kernel
+endef
+TARGET_DEVICES += wd_my-cloud-ex2-ultra

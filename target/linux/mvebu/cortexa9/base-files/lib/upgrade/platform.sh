@@ -23,7 +23,8 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
-	buffalo,ls421de)
+	buffalo,ls421de|\
+	wd,my-cloud-ex2-ultra)
 		nand_do_upgrade "$1"
 		;;
 	cznic,turris-omnia|\
@@ -45,6 +46,7 @@ platform_do_upgrade() {
 		;;
 	esac
 }
+
 platform_copy_config() {
 	case "$(board_name)" in
 	cznic,turris-omnia|\

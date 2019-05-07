@@ -1,0 +1,302 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Device Tree file for Western Digital My Cloud EX2 Ultra
+ * (BVBZ/Ranger Peak)
+ *
+ * Copyright (C) 2019 Evgeny Kolesnikov <evgenyz@gmail.com>
+ *
+ * Based on the code from:
+ *
+ * Copyright (C) 2016 Martin Mueller <mm@sig21.net>
+ * Copyright (C) 2013 Gregory CLEMENT <gregory.clement@free-electrons.com>
+ * Copyright (C) 2013 Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+ */
+
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include "armada-385.dtsi"
+
+/ {
+	model = "WD My Cloud EX2 Ultra (BVBZ/Ranger Peak)";
+	compatible = "wd,my-cloud-ex2-ultra", "marvell,armada385", "marvell,armada38x",
+		     "marvell,armada380";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "console=ttyS0,115200";
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x00000000 0x40000000>;
+	};
+
+	soc {
+		ranges = <MBUS_ID(0xf0, 0x01) 0 0xf1000000 0x100000
+			  MBUS_ID(0x01, 0x1d) 0 0xfff00000 0x100000
+			  MBUS_ID(0x09, 0x19) 0 0xf1100000 0x010000
+			  MBUS_ID(0x09, 0x15) 0 0xf1110000 0x010000
+			  MBUS_ID(0x0c, 0x04) 0 0xf1200000 0x100000>;
+
+		internal-regs {
+			timer@c200 {
+				status = "disabled";
+			};
+
+			poweroff@12100 {
+				compatible = "wd,power-off";
+				reg = <0x12100 0x100>;
+				clocks = <&coreclk 0>;
+				status = "okay";
+			};
+
+			crypto@9d000 {
+				status = "okay";
+			};
+		};
+
+		bm-bppi {
+			status = "okay";
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&sata_leds>;
+
+		hdd1_red {
+			label = "my-cloud-ex2-ultra:red:hdd1";
+			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		hdd2_red {
+			label = "my-cloud-ex2-ultra:red:hdd2";
+			gpios = <&gpio1 20 GPIO_ACTIVE_HIGH>;
+		};
+
+		hdd1_blue {
+			label = "my-cloud-ex2-ultra:blue:hdd1";
+			gpios = <&gpio1 21 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "default-on";
+		};
+
+		hdd2_blue {
+			label = "my-cloud-ex2-ultra:blue:hdd2";
+			gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "default-on";
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-names = "default";
+		pinctrl-0 = <&btn_pins>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio1 18 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+	};
+
+	usb3_0_phy: usb3_0_phy {
+		compatible = "usb-nop-xceiv";
+		vcc-supply = <&reg_usb3_0_vbus>;
+	};
+
+	usb3_1_phy: usb3_1_phy {
+		compatible = "usb-nop-xceiv";
+		vcc-supply = <&reg_usb3_1_vbus>;
+	};
+
+	reg_usb3_0_vbus: usb3-vbus0 {
+		compatible = "regulator-fixed";
+		regulator-name = "usb3-vbus0";
+		pinctrl-names = "default";
+		pinctrl-0 = <&xhci0_vbus_pins>;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		enable-active-high;
+		regulator-always-on;
+		gpio = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+	};
+
+	reg_usb3_1_vbus: usb3-vbus1 {
+		compatible = "regulator-fixed";
+		regulator-name = "usb3-vbus1";
+		pinctrl-names = "default";
+		pinctrl-0 = <&xhci1_vbus_pins>;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		enable-active-high;
+		regulator-always-on;
+		gpio = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+/* Connected to Welltrend 6703F-OG240WT MCU
+	* which controls power, fan and other things
+	*/
+&uart1 {
+	status = "okay";
+};
+
+&pinctrl {
+	uart1_pins: uart-pins-1 {
+		marvell,pins = "mpp19";
+		marvell,function = "ua1";
+	};
+
+	xhci0_vbus_pins: xhci0-vbus-pins {
+		marvell,pins = "mpp26";
+		marvell,function = "gpio";
+	};
+
+	xhci1_vbus_pins: xhci1-vbus-pins {
+		marvell,pins = "mpp27";
+		marvell,function = "gpio";
+	};
+
+	sata0_pins: sata-pins-0 {
+		marvell,pins = "mpp55";
+		marvell,function = "sata0";
+	};
+
+	sata1_pins: sata-pins-1 {
+		marvell,pins = "mpp56";
+		marvell,function = "sata1";
+	};
+
+	sata_leds: sata-leds {
+		marvell,pins = "mpp43", "mpp52",
+					"mpp53", "mpp54";
+		marvell,function = "gpio";
+	};
+
+	btn_pins: btn-pins {
+		marvell,pins = "mpp50";
+		marvell,function = "gpio";
+	};
+};
+
+&eth2 {
+	phy = <&phy0>;
+	phy-mode = "sgmii";
+	buffer-manager = <&bm>;
+	bm,pool-long = <0>;
+	bm,pool-short = <1>;
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&mdio {
+	phy0: ethernet-phy@0 {
+		/* Init ETH LEDs */
+		marvell,reg-init = <3 16 0 0x101e>;
+		reg = <0>;
+	};
+};
+
+&rtc {
+	status = "okay";
+};
+
+&ahci0 {
+	status = "okay";
+};
+
+&bm {
+	status = "okay";
+};
+
+&nand_controller {
+	status = "okay";
+
+	nand: nand@0 {
+		reg = <0>;
+		label = "pxa3xx_nand-0";
+		marvell,nand-keep-config;
+		nand-rb = <0>;
+		nand-on-flash-bbt;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "U-Boot";
+				reg = <0x00000000 0x00500000>;
+				read-only;
+			};
+
+			partition@500000 {
+				label = "kernel";
+				reg = <0x00500000 0x00500000>;
+			};
+
+			partition@a00000 {
+				label = "uRamdisk";
+				reg = <0x00a00000 0x00500000>;
+				read-only;
+			};
+
+			partition@f00000 {
+				label = "ubi";
+				reg = <0x00f00000 0x0b900000>;
+			};
+
+			partition@c800000 {
+				label = "Recovery";
+				reg = <0x0c800000 0x00f00000>;
+				read-only;
+			};
+
+			partition@d700000 {
+				label = "config";
+				reg = <0x0d700000 0x01400000>;
+			};
+
+			partition@eb00000 {
+				label = "reserve1";
+				reg = <0x0eb00000 0x00a00000>;
+				read-only;
+			};
+
+			partition@f500000 {
+				label = "reserve2";
+				reg = <0x0f500000 0x00a00000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&sdhci {
+	status = "disabled";
+};
+
+&usb3_0 {
+	usb-phy = <&usb3_0_phy>;
+	status = "okay";
+};
+
+&usb3_1 {
+	usb-phy = <&usb3_1_phy>;
+	status = "okay";
+};

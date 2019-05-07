@@ -1,0 +1,21 @@
+preinit_mount_config() {
+
+	. /lib/functions.sh
+
+	case $(board_name) in
+	wd,my-cloud-ex2-ultra)
+		damaged=0
+		syscfg_part=$(grep config /proc/mtd |cut -c4)
+		ubiattach -m $syscfg_part -d 1 2>/dev/null || damaged=1
+		mkdir /tmp/wd-config
+		if [ $damaged -eq 1 ]
+		then
+			echo "Device's 'config' partition (UBIFS) is damaged, ignoring" > /dev/kmsg
+		else
+			mount -r -t ubifs ubi1:config /tmp/wd-config
+		fi
+		;;
+	esac
+}
+
+boot_hook_add preinit_main preinit_mount_config
