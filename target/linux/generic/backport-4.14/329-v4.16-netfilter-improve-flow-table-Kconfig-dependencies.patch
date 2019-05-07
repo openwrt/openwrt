@@ -85,7 +85,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -675,8 +675,9 @@ endif # NF_TABLES_NETDEV
+@@ -663,8 +663,9 @@ endif # NF_TABLES_NETDEV
  endif # NF_TABLES
  
  config NF_FLOW_TABLE_INET
@@ -96,7 +96,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	help
            This option adds the flow table mixed IPv4/IPv6 support.
  
-@@ -684,6 +685,7 @@ config NF_FLOW_TABLE_INET
+@@ -672,6 +673,7 @@ config NF_FLOW_TABLE_INET
  
  config NF_FLOW_TABLE
  	tristate "Netfilter flow table module"

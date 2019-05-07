@@ -126,7 +126,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #endif /* _FLOW_OFFLOAD_H */
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -667,6 +667,13 @@ endif # NF_TABLES_NETDEV
+@@ -655,6 +655,13 @@ endif # NF_TABLES_NETDEV
  
  endif # NF_TABLES
  
@@ -142,7 +142,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	default m if NETFILTER_ADVANCED=n
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -110,6 +110,9 @@ obj-$(CONFIG_NFT_FIB_NETDEV)	+= nft_fib_
+@@ -107,6 +107,9 @@ obj-$(CONFIG_NFT_FIB_NETDEV)	+= nft_fib_
  obj-$(CONFIG_NFT_DUP_NETDEV)	+= nft_dup_netdev.o
  obj-$(CONFIG_NFT_FWD_NETDEV)	+= nft_fwd_netdev.o
  

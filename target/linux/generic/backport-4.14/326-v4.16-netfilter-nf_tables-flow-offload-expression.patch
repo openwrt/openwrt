@@ -39,7 +39,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	NFT_LIMIT_PKT_BYTES
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -515,6 +515,13 @@ config NFT_CT
+@@ -503,6 +503,13 @@ config NFT_CT
  	  This option adds the "ct" expression that you can use to match
  	  connection tracking information such as the flow state.
  
@@ -55,7 +55,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	help
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -87,6 +87,7 @@ obj-$(CONFIG_NFT_META)		+= nft_meta.o
+@@ -84,6 +84,7 @@ obj-$(CONFIG_NFT_META)		+= nft_meta.o
  obj-$(CONFIG_NFT_RT)		+= nft_rt.o
  obj-$(CONFIG_NFT_NUMGEN)	+= nft_numgen.o
  obj-$(CONFIG_NFT_CT)		+= nft_ct.o
