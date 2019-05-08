@@ -6,7 +6,7 @@ move_config() {
 
 	. /lib/upgrade/common.sh
 
-	if export_bootdevice && export_partdevice partdev -1; then
+	if export_bootdevice && export_partdevice partdev 1; then
 		if mount -t vfat -o rw,noatime "/dev/$partdev" /mnt; then
 			if [ -f /mnt/sysupgrade.tgz ]; then
 				mv -f /mnt/sysupgrade.tgz /
