@@ -296,7 +296,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"4:lan" "6@eth0"
 		;;
-	cudy,wr1000)
+	cudy,wr1000|\
+	xiaomi,mir4a-gigabit)
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
@@ -720,6 +721,10 @@ ramips_setup_macs()
 	xiaomi,mir3p)
 		lan_mac=$(mtd_get_mac_binary factory 0xe006)
 		label_mac=$lan_mac
+		;;
+	xiaomi,mir4a-gigabit)
+		wan_mac=$(mtd_get_mac_binary factory 0xe006)
+		label_mac=$wan_mac
 		;;
 	xiaomi,miwifi-mini)
 		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
