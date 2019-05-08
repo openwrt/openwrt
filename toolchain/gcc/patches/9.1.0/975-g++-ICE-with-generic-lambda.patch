@@ -1,0 +1,43 @@
+From 7a1606168f60622f73a7dd90778e2a148a2c520c Mon Sep 17 00:00:00 2001
+From: mpolacek <mpolacek@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date: Mon, 6 May 2019 17:08:08 +0000
+Subject: [PATCH] 	PR c++/90265 - ICE with generic lambda. 	* pt.c
+ (tsubst_copy_and_build): Use a dedicated variable for the last 
+ element in the vector.
+
+	* g++.dg/cpp1y/lambda-generic-90265.C: New test.
+
+
+git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/branches/gcc-9-branch@270919 138bc75d-0d04-0410-961f-82ee72b054a4
+---
+ gcc/cp/ChangeLog                                  | 6 ++++++
+ gcc/cp/pt.c                                       | 3 ++-
+ gcc/testsuite/ChangeLog                           | 5 +++++
+ gcc/testsuite/g++.dg/cpp1y/lambda-generic-90265.C | 4 ++++
+ 4 files changed, 17 insertions(+), 1 deletion(-)
+ create mode 100644 gcc/testsuite/g++.dg/cpp1y/lambda-generic-90265.C
+
+--- a/gcc/cp/ChangeLog
++++ b/gcc/cp/ChangeLog
+@@ -1,3 +1,9 @@
++2019-05-06  Marek Polacek  <polacek@redhat.com>
++
++	PR c++/90265 - ICE with generic lambda.
++	* pt.c (tsubst_copy_and_build): Use a dedicated variable for the last
++	element in the vector.
++
+ 2019-05-03  Release Manager
+ 
+ 	* GCC 9.1.0 released.
+--- a/gcc/cp/pt.c
++++ b/gcc/cp/pt.c
+@@ -18881,7 +18881,8 @@ tsubst_copy_and_build (tree t,
+ 	    if (thisarg)
+ 	      {
+ 		/* Shift the other args over to make room.  */
+-		vec_safe_push (call_args, (*call_args)[nargs-1]);
++		tree last = (*call_args)[nargs - 1];
++		vec_safe_push (call_args, last);
+ 		for (int i = nargs-1; i > 0; --i)
+ 		  (*call_args)[i] = (*call_args)[i-1];
+ 		(*call_args)[0] = thisarg;
