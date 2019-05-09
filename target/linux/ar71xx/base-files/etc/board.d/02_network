@@ -160,7 +160,6 @@ ar71xx_setup_interfaces()
 	a60|\
 	alfa-ap96|\
 	alfa-nx|\
-	archer-c25-v1|\
 	dr344|\
 	gl-ar150|\
 	gl-ar300m|\
@@ -181,15 +180,6 @@ ar71xx_setup_interfaces()
 	wpe72|\
 	wrtnode2q)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
-		;;
-	rb-750-r2|\
-	rb-750p-pbr2|\
-	rb-750up-r2|\
-	rb-951ui-2nd|\
-	rb-952ui-5ac2nd)
-		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
-		ucidef_add_switch "switch0" \
-			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
 	all0258n|\
 	all0315n|\
@@ -247,6 +237,16 @@ ar71xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth1.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"0@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth0" "1:wan"
+		;;
+	archer-c25-v1|\
+	rb-750-r2|\
+	rb-750p-pbr2|\
+	rb-750up-r2|\
+	rb-951ui-2nd|\
+	rb-952ui-5ac2nd)
+		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
 	archer-c58-v1|\
 	archer-c59-v1|\
