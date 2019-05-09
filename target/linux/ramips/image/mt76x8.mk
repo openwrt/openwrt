@@ -135,7 +135,7 @@ define Device/netgear_r6120
   IMAGES += factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE)| append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.img := pad-extra 576k | $$(IMAGE/default) | \
+  IMAGE/factory.img := pad-extra 576k | $$(IMAGE/default) | pad-to $$$$(BLOCKSIZE) | \
 	sercom-footer | pad-to 128 | zip R6120.bin | sercom-seal
 endef
 TARGET_DEVICES += netgear_r6120
