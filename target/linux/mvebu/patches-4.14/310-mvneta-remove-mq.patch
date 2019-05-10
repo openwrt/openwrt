@@ -1,0 +1,11 @@
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -4159,7 +4159,7 @@ static int mvneta_probe(struct platform_
+ 	int err;
+ 	int cpu;
+ 
+-	dev = alloc_etherdev_mqs(sizeof(struct mvneta_port), txq_number, rxq_number);
++	dev = alloc_etherdev(sizeof(struct mvneta_port));
+ 	if (!dev)
+ 		return -ENOMEM;
+ 
