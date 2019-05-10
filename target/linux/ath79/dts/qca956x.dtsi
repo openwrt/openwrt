@@ -257,7 +257,7 @@
 };
 
 &eth0 {
-	compatible = "qca,qca9560-eth", "syscon", "simple-mfd";
+	compatible = "qca,qca9560-eth", "syscon";
 
 	pll-data = <0x03000000 0x00000101 0x00001919>;
 	pll-reg = <0 0x48 0>;
@@ -300,7 +300,7 @@
 };
 
 &eth1 {
-	compatible = "qca,qca9560-eth", "syscon", "simple-mfd";
+	compatible = "qca,qca9560-eth", "syscon";
 
 	phy-mode = "gmii";
 
