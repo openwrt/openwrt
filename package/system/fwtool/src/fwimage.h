@@ -15,7 +15,7 @@
 
 #include <stdint.h>
 
-#define FWIMAGE_MAGIC		0x46577830 /* FWx0 */
+#define FWIMAGE_MAGIC 0x46577830 /* FWx0 */
 
 struct fwimage_header {
 	uint32_t version;

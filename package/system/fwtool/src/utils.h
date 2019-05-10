@@ -28,7 +28,8 @@
 #endif
 
 #ifdef __GNUC__
-#define _GNUC_MIN_VER(maj, min) (((__GNUC__ << 8) + __GNUC_MINOR__) >= (((maj) << 8) + (min)))
+#define _GNUC_MIN_VER(maj, min)                                                \
+	(((__GNUC__ << 8) + __GNUC_MINOR__) >= (((maj) << 8) + (min)))
 #else
 #define _GNUC_MIN_VER(maj, min) 0
 #endif
@@ -79,11 +80,11 @@ static inline uint16_t __u_bswap16(uint16_t val)
 
 #define cpu_to_be64(x) __u_bswap64(x)
 #define cpu_to_be32(x) __u_bswap32(x)
-#define cpu_to_be16(x) __u_bswap16((uint16_t) (x))
+#define cpu_to_be16(x) __u_bswap16((uint16_t)(x))
 
 #define be64_to_cpu(x) __u_bswap64(x)
 #define be32_to_cpu(x) __u_bswap32(x)
-#define be16_to_cpu(x) __u_bswap16((uint16_t) (x))
+#define be16_to_cpu(x) __u_bswap16((uint16_t)(x))
 
 #define cpu_to_le64(x) (x)
 #define cpu_to_le32(x) (x)
@@ -97,11 +98,11 @@ static inline uint16_t __u_bswap16(uint16_t val)
 
 #define cpu_to_le64(x) __u_bswap64(x)
 #define cpu_to_le32(x) __u_bswap32(x)
-#define cpu_to_le16(x) __u_bswap16((uint16_t) (x))
+#define cpu_to_le16(x) __u_bswap16((uint16_t)(x))
 
 #define le64_to_cpu(x) __u_bswap64(x)
 #define le32_to_cpu(x) __u_bswap32(x)
-#define le16_to_cpu(x) __u_bswap16((uint16_t) (x))
+#define le16_to_cpu(x) __u_bswap16((uint16_t)(x))
 
 #define cpu_to_be64(x) (x)
 #define cpu_to_be32(x) (x)

@@ -22,15 +22,14 @@
 #include "utils.h"
 #include "crc32.h"
 
-#define METADATA_MAXLEN		30 * 1024
-#define SIGNATURE_MAXLEN	1 * 1024
+#define METADATA_MAXLEN 30 * 1024
+#define SIGNATURE_MAXLEN 1 * 1024
 
-#define BUFLEN			(METADATA_MAXLEN + SIGNATURE_MAXLEN + 1024)
+#define BUFLEN (METADATA_MAXLEN + SIGNATURE_MAXLEN + 1024)
 
-enum {
-	MODE_DEFAULT = -1,
-	MODE_EXTRACT = 0,
-	MODE_APPEND = 1,
+enum { MODE_DEFAULT = -1,
+       MODE_EXTRACT = 0,
+       MODE_APPEND = 1,
 };
 
 struct data_buf {
@@ -48,16 +47,16 @@ static bool quiet = false;
 
 static uint32_t crc_table[256];
 
-#define msg(...)					\
-	do {						\
-		if (!quiet)				\
-			fprintf(stderr, __VA_ARGS__);	\
+#define msg(...)                                                               \
+	do {                                                                   \
+		if (!quiet)                                                    \
+			fprintf(stderr, __VA_ARGS__);                          \
 	} while (0)
 
-static int
-usage(const char *progname)
+static int usage(const char *progname)
 {
-	fprintf(stderr, "Usage: %s <options> <firmware>\n"
+	fprintf(stderr,
+		"Usage: %s <options> <firmware>\n"
 		"\n"
 		"Options:\n"
 		"  -S <file>:		Append signature file to firmware image\n"
@@ -67,12 +66,12 @@ usage(const char *progname)
 		"  -t:			Remove extracted chunks from firmare image (using -s, -i)\n"
 		"  -T:			Output firmware image without extracted chunks to stdout (using -s, -i)\n"
 		"  -q:			Quiet (suppress error messages)\n"
-		"\n", progname);
+		"\n",
+		progname);
 	return 1;
 }
 
-static FILE *
-open_file(const char *name, bool write)
+static FILE *open_file(const char *name, bool write)
 {
 	FILE *ret;
 
@@ -86,8 +85,7 @@ open_file(const char *name, bool write)
 	return ret;
 }
 
-static int
-set_file(FILE **file, const char *name, int mode)
+static int set_file(FILE **file, const char *name, int mode)
 {
 	if (file_mode < 0)
 		file_mode = mode;
@@ -105,14 +103,14 @@ set_file(FILE **file, const char *name, int mode)
 	return !*file;
 }
 
-static void
-trailer_update_crc(struct fwimage_trailer *tr, void *buf, int len)
+static void trailer_update_crc(struct fwimage_trailer *tr, void *buf, int len)
 {
-	tr->crc32 = cpu_to_be32(crc32_block(be32_to_cpu(tr->crc32), buf, len, crc_table));
+	tr->crc32 = cpu_to_be32(
+		crc32_block(be32_to_cpu(tr->crc32), buf, len, crc_table));
 }
 
-static int
-append_data(FILE *in, FILE *out, struct fwimage_trailer *tr, int maxlen)
+static int append_data(FILE *in, FILE *out, struct fwimage_trailer *tr,
+		       int maxlen)
 {
 	while (1) {
 		char buf[512];
@@ -134,16 +132,14 @@ append_data(FILE *in, FILE *out, struct fwimage_trailer *tr, int maxlen)
 	return 0;
 }
 
-static void
-append_trailer(FILE *out, struct fwimage_trailer *tr)
+static void append_trailer(FILE *out, struct fwimage_trailer *tr)
 {
 	tr->size = cpu_to_be32(tr->size);
 	fwrite(tr, sizeof(*tr), 1, out);
 	trailer_update_crc(tr, tr, sizeof(*tr));
 }
 
-static int
-add_metadata(struct fwimage_trailer *tr)
+static int add_metadata(struct fwimage_trailer *tr)
 {
 	struct fwimage_header hdr = {};
 
@@ -161,8 +157,7 @@ add_metadata(struct fwimage_trailer *tr)
 	return 0;
 }
 
-static int
-add_signature(struct fwimage_trailer *tr)
+static int add_signature(struct fwimage_trailer *tr)
 {
 	if (!signature_file)
 		return 0;
@@ -178,8 +173,7 @@ add_signature(struct fwimage_trailer *tr)
 	return 0;
 }
 
-static int
-add_data(const char *name)
+static int add_data(const char *name)
 {
 	struct fwimage_trailer tr = {
 		.magic = cpu_to_be32(FWIMAGE_MAGIC),
@@ -219,8 +213,7 @@ add_data(const char *name)
 	return ret;
 }
 
-static void
-remove_tail(struct data_buf *dbuf, int len)
+static void remove_tail(struct data_buf *dbuf, int len)
 {
 	dbuf->cur_len -= len;
 	dbuf->file_len -= len;
@@ -234,8 +227,7 @@ remove_tail(struct data_buf *dbuf, int len)
 	dbuf->cur_len = BUFLEN;
 }
 
-static int
-extract_tail(struct data_buf *dbuf, void *dest, int len)
+static int extract_tail(struct data_buf *dbuf, void *dest, int len)
 {
 	int cur_len = dbuf->cur_len;
 
@@ -245,7 +237,8 @@ extract_tail(struct data_buf *dbuf, void *dest, int len)
 	if (cur_len >= len)
 		cur_len = len;
 
-	memcpy(dest + (len - cur_len), dbuf->cur + dbuf->cur_len - cur_len, cur_len);
+	memcpy(dest + (len - cur_len), dbuf->cur + dbuf->cur_len - cur_len,
+	       cur_len);
 	remove_tail(dbuf, cur_len);
 
 	cur_len = len - cur_len;
@@ -258,8 +251,7 @@ extract_tail(struct data_buf *dbuf, void *dest, int len)
 	return 0;
 }
 
-static uint32_t
-tail_crc32(struct data_buf *dbuf, uint32_t crc32)
+static uint32_t tail_crc32(struct data_buf *dbuf, uint32_t crc32)
 {
 	if (dbuf->prev)
 		crc32 = crc32_block(crc32, dbuf->prev, BUFLEN, crc_table);
@@ -267,16 +259,14 @@ tail_crc32(struct data_buf *dbuf, uint32_t crc32)
 	return crc32_block(crc32, dbuf->cur, dbuf->cur_len, crc_table);
 }
 
-static int
-validate_metadata(struct fwimage_header *hdr, int data_len)
+static int validate_metadata(struct fwimage_header *hdr, int data_len)
 {
-	 if (hdr->version != 0)
-		 return 1;
-	 return 0;
+	if (hdr->version != 0)
+		return 1;
+	return 0;
 }
 
-static int
-extract_data(const char *name)
+static int extract_data(const char *name)
 {
 	struct fwimage_header *hdr;
 	struct fwimage_trailer tr;
@@ -324,7 +314,6 @@ extract_data(const char *name)
 	} while (dbuf.cur_len == BUFLEN);
 
 	while (1) {
-
 		if (extract_tail(&dbuf, &tr, sizeof(tr)))
 			break;
 
@@ -412,7 +401,7 @@ int main(int argc, char **argv)
 
 	while ((ch = getopt(argc, argv, "i:I:qs:S:tT")) != -1) {
 		ret = 0;
-		switch(ch) {
+		switch (ch) {
 		case 'S':
 			ret = set_file(&signature_file, optarg, MODE_APPEND);
 			break;
