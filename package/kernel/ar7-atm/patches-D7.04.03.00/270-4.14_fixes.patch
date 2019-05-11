@@ -1,0 +1,51 @@
+--- a/tn7atm.c
++++ b/tn7atm.c
+@@ -1149,7 +1149,7 @@ void tn7atm_close (struct atm_vcc *vcc)
+   Tn7AtmPrivate *priv;
+   int dmachan;
+   spinlock_t closeLock;
+-  unsigned int closeFlag;
++  unsigned long closeFlag;
+   int rc;
+ 
+   priv = (Tn7AtmPrivate *) vcc->dev->dev_data;
+--- a/tn7dsl.c
++++ b/tn7dsl.c
+@@ -620,7 +620,7 @@ unsigned int shim_osClockTick(void)
+   return jiffies;
+ }
+ 
+-int flags;
++unsigned long flags;
+ spinlock_t shimLock;
+ 
+ void shim_osCriticalEnter(void)
+@@ -3433,7 +3433,7 @@ struct ctl_table dslmod_table[] = {
+ 		.extra2			= (void *)DEV_DSLMOD,
+ 	}
+   ,
+-  {0}
++  { }
+   };
+ 
+ /* Make sure that /proc/sys/dev is there */
+@@ -3447,7 +3447,7 @@ struct ctl_table dslmod_root_table[] = {
+ 	}
+   ,
+ #endif /* CONFIG_PROC_FS */
+-  {0}
++  { }
+   };
+ 
+ static struct ctl_table_header *dslmod_sysctl_header;
+--- a/tn7sar.c
++++ b/tn7sar.c
+@@ -1208,7 +1208,7 @@ int tn7sar_deactivate_vc(Tn7AtmPrivate *
+   HAL_FUNCTIONS *pHalFunc;
+   HAL_DEVICE    *pHalDev;
+   int rc;
+-  int flags;
++  unsigned long flags;
+ 
+   //dgprintf(4, "tn7sar_deactivate_vc\n");
+   //printk("tn7sar_deactivate_vc entered\n");

@@ -12,7 +12,7 @@ BOARDNAME:=TI AR7
 FEATURES:=squashfs atm low_mem
 SUBTARGETS:=generic ac49x
 
-KERNEL_PATCHVER:=4.9
+KERNEL_PATCHVER:=4.14
 
 define Target/Description
 	Build firmware images for TI AR7 based routers.
