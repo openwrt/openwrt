@@ -42,25 +42,19 @@ define Build/boot-img-ext4
 endef
 
 define Build/sdcard-img
-	if [ -n "$(UBOOT)" ]; then UBOOT="$(STAGING_DIR_IMAGE)/$(UBOOT)"; fi; \
-	BOOTFS_SIZE=$$(( $(CONFIG_TARGET_KERNEL_PARTSIZE) * 1024 * 2 )); \
-	ROOTFS_SIZE=$$(( $(CONFIG_TARGET_ROOTFS_PARTSIZE) * 1024 * 2 )); \
 	SIGNATURE="$(SIGNATURE)" \
 	./gen_mvebu_sdcard_img.sh $@ \
-		$$UBOOT \
-		c $$BOOTFS_SIZE $@.boot \
-		83 $$ROOTFS_SIZE $(IMAGE_ROOTFS)
+		$(if $(UBOOT),$(STAGING_DIR_IMAGE)/$(UBOOT)) \
+		c $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
+		83 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS)
 endef
 
 define Build/sdcard-img-ext4
-	if [ -n "$(UBOOT)" ]; then UBOOT="$(STAGING_DIR_IMAGE)/$(UBOOT)"; fi; \
-	BOOTFS_SIZE=$$(( $(CONFIG_TARGET_KERNEL_PARTSIZE) * 1024 * 2 )); \
-	ROOTFS_SIZE=$$(( $(CONFIG_TARGET_ROOTFS_PARTSIZE) * 1024 * 2 )); \
 	SIGNATURE="$(SIGNATURE)" \
 	./gen_mvebu_sdcard_img.sh $@ \
-		$$UBOOT \
-		83 $$BOOTFS_SIZE $@.bootimg \
-		83 $$ROOTFS_SIZE $(IMAGE_ROOTFS)
+		$(if $(UBOOT),$(STAGING_DIR_IMAGE)/$(UBOOT)) \
+		83 $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.bootimg \
+		83 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS)
 endef
 
 define Build/omnia-medkit-initramfs
