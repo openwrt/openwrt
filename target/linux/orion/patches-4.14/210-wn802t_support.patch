@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-orion5x/Kconfig
 +++ b/arch/arm/mach-orion5x/Kconfig
-@@ -156,10 +156,13 @@ config MACH_MSS2_DT
+@@ -150,10 +150,13 @@ config MACH_MSS2_DT
  	  Maxtor Shared Storage II platform.
  
  config MACH_WNR854T
@@ -18,8 +18,8 @@
  	bool "Marvell Orion-VoIP GE Reference Design"
 --- a/arch/arm/mach-orion5x/wnr854t-setup.c
 +++ b/arch/arm/mach-orion5x/wnr854t-setup.c
-@@ -115,6 +115,15 @@ static struct dsa_platform_data __initda
- 	.chip		= &wnr854t_switch_chip_data,
+@@ -110,6 +110,11 @@ static struct dsa_chip_data wnr854t_swit
+ 	.port_names[7] = "lan2",
  };
  
 +static struct dsa_chip_data wn802t_switch_chip_data = {
@@ -27,26 +27,22 @@
 +	.port_names[3] = "cpu",
 +};
 +
-+static struct dsa_platform_data wn802t_switch_plat_data = {
-+	.nr_chips	= 1,
-+	.chip		= &wn802t_switch_chip_data,
-+};
  static void __init wnr854t_init(void)
  {
  	/*
-@@ -128,7 +137,10 @@ static void __init wnr854t_init(void)
+@@ -123,7 +128,10 @@ static void __init wnr854t_init(void)
  	 * Configure peripherals.
  	 */
  	orion5x_eth_init(&wnr854t_eth_data);
--	orion5x_eth_switch_init(&wnr854t_switch_plat_data);
+-	orion5x_eth_switch_init(&wnr854t_switch_chip_data);
 +	if (machine_is_wn802t())
-+		orion5x_eth_switch_init(&wn802t_switch_plat_data);
++		orion5x_eth_switch_init(&wn802t_switch_chip_data);
 +	else
-+		orion5x_eth_switch_init(&wnr854t_switch_plat_data);
++		orion5x_eth_switch_init(&wnr854t_switch_chip_data);
  	orion5x_uart0_init();
  
  	mvebu_mbus_add_window_by_id(ORION_MBUS_DEVBUS_BOOT_TARGET,
-@@ -168,7 +180,7 @@ static struct hw_pci wnr854t_pci __initd
+@@ -163,7 +171,7 @@ static struct hw_pci wnr854t_pci __initd
  
  static int __init wnr854t_pci_init(void)
  {
@@ -55,7 +51,7 @@
  		pci_common_init(&wnr854t_pci);
  
  	return 0;
-@@ -182,6 +194,18 @@ MACHINE_START(WNR854T, "Netgear WNR854T"
+@@ -177,6 +185,18 @@ MACHINE_START(WNR854T, "Netgear WNR854T"
  	.init_machine	= wnr854t_init,
  	.map_io		= orion5x_map_io,
  	.init_early	= orion5x_init_early,
