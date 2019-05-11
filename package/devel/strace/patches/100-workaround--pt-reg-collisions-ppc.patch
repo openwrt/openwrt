@@ -1,17 +1,17 @@
 --- a/ptrace.h
 +++ b/ptrace.h
 @@ -30,7 +30,14 @@
- # define ptrace_peeksiginfo_args XXX_ptrace_peeksiginfo_args
- #endif
+ #  define ptrace_peeksiginfo_args XXX_ptrace_peeksiginfo_args
+ # endif
  
 +#if POWERPC
 +#include <linux/types.h>
 +#define __ASSEMBLY__
 +#endif
- #include <linux/ptrace.h>
+ # include <linux/ptrace.h>
 +#if POWERPC
 +#undef __ASSEMBLY__
 +#endif
  
- #ifdef HAVE_STRUCT_IA64_FPREG
- # undef ia64_fpreg
+ # ifdef HAVE_STRUCT_IA64_FPREG
+ #  undef ia64_fpreg
