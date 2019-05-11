@@ -17,8 +17,10 @@ SIGNATURE:=$(shell printf "%.8s" $(SOURCE_DATE_EPOCH))
 
 define Build/boot-scr
 	rm -f $@-boot.scr
-	sed -e 's#@ROOT@#$(SIGNATURE)#g' \
-		$(DEVICE_NAME).bootscript > $@-new.bootscript
+	sed \
+		-e 's#@ROOT@#$(SIGNATURE)#g' \
+		-e 's#@DTB@#$(firstword $(DEVICE_DTS))#g' \
+		$(BOOT_SCRIPT).bootscript > $@-new.bootscript
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -d $@-new.bootscript $@-boot.scr
 endef
 
@@ -80,10 +82,12 @@ define Device/Default
   KERNEL := kernel-bin | append-dtb | uImage none
   SUPPORTED_DEVICES = $$(DEVICE_DTS)
   UBOOT :=
+  BOOT_SCRIPT :=
 endef
-DEVICE_VARS += UBOOT
+DEVICE_VARS += BOOT_SCRIPT UBOOT
 
 define Device/Default-arm64
+  BOOT_SCRIPT := generic-arm64
   DTS_DIR := $(DTS_DIR)/marvell
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata

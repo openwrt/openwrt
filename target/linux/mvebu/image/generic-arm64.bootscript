@@ -4,7 +4,7 @@ if test -n "${console}"; then
 	setenv bootargs "${bootargs} ${console}"
 fi
 
-load mmc 0:1 ${fdt_addr} armada-3720-espressobin.dtb
+load mmc 0:1 ${fdt_addr} @DTB@.dtb
 load mmc 0:1 ${kernel_addr} Image
 
 booti ${kernel_addr} - ${fdt_addr}

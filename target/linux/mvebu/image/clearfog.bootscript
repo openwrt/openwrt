@@ -3,10 +3,6 @@
 # This script assumes that there is a boot partition,
 # and that the root partition is always the next one.
 
-# Override DeviceTree for Clearfog Base
-# removed once U-Boot is able to detect the board variant.
-setenv fdtfile armada-388-clearfog-base.dtb
-
 # rootfs is always on the next partition
 setexpr openwrt_rootpart ${distro_bootpart} + 1
 
@@ -22,6 +18,6 @@ if test -n "${console}"; then
 fi
 
 echo "Booting Linux with ${bootargs}"
-load ${devtype} ${devnum}:${distro_bootpart} ${fdt_addr_r} ${fdtfile}
+load ${devtype} ${devnum}:${distro_bootpart} ${fdt_addr_r} @DTB@.dtb
 load ${devtype} ${devnum}:${distro_bootpart} ${kernel_addr_r} zImage
 bootz ${kernel_addr_r} - ${fdt_addr_r}
