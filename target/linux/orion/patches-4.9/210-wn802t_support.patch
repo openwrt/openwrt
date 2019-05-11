@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-orion5x/Kconfig
 +++ b/arch/arm/mach-orion5x/Kconfig
-@@ -159,10 +159,13 @@ config MACH_MSS2_DT
+@@ -156,10 +156,13 @@ config MACH_MSS2_DT
  	  Maxtor Shared Storage II platform.
  
  config MACH_WNR854T
@@ -55,10 +55,15 @@
  		pci_common_init(&wnr854t_pci);
  
  	return 0;
-@@ -187,3 +199,15 @@ MACHINE_START(WNR854T, "Netgear WNR854T"
- 	.fixup		= tag_fixup_mem32,
- 	.restart	= orion5x_restart,
- MACHINE_END
+@@ -182,6 +194,18 @@ MACHINE_START(WNR854T, "Netgear WNR854T"
+ 	.init_machine	= wnr854t_init,
+ 	.map_io		= orion5x_map_io,
+ 	.init_early	= orion5x_init_early,
++	.init_irq	= orion5x_init_irq,
++	.init_time	= orion5x_timer_init,
++	.fixup		= tag_fixup_mem32,
++	.restart	= orion5x_restart,
++MACHINE_END
 +
 +MACHINE_START(WN802T, "Netgear WN802T")
 +	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
@@ -66,8 +71,6 @@
 +	.init_machine	= wnr854t_init,
 +	.map_io		= orion5x_map_io,
 +	.init_early	= orion5x_init_early,
-+	.init_irq	= orion5x_init_irq,
-+	.init_time	= orion5x_timer_init,
-+	.fixup		= tag_fixup_mem32,
-+	.restart	= orion5x_restart,
-+MACHINE_END
+ 	.init_irq	= orion5x_init_irq,
+ 	.init_time	= orion5x_timer_init,
+ 	.fixup		= tag_fixup_mem32,
