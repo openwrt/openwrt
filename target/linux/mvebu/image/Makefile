@@ -83,6 +83,14 @@ define Device/Default
 endef
 DEVICE_VARS += UBOOT
 
+define Device/Default-arm64
+  DTS_DIR := $(DTS_DIR)/marvell
+  IMAGES := sdcard.img.gz
+  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
+  KERNEL_NAME := Image
+  KERNEL := kernel-bin
+endef
+
 define Device/UBI
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
