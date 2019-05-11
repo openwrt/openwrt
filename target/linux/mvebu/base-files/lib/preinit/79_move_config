@@ -9,7 +9,7 @@ move_config() {
 
 	if export_bootdevice && export_partdevice partdev 1; then
 		case $(board_name) in
-			armada-385-turris-omnia)
+			cznic,turris-omnia)
 			insmod nls_cp437
 			insmod nls_iso8859-1
 			insmod fat

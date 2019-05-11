@@ -14,7 +14,6 @@ define Device/marvell_armada8040-db
   DEVICE_TITLE := Marvell Armada 8040 DB board
   DEVICE_DTS := armada-8040-db
   IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
-  SUPPORTED_DEVICES := marvell,armada8040-db
 endef
 TARGET_DEVICES += marvell_armada8040-db
 
@@ -23,7 +22,6 @@ define Device/marvell_armada7040-db
   DEVICE_TITLE := Marvell Armada 7040 DB board
   DEVICE_DTS := armada-7040-db
   IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
-  SUPPORTED_DEVICES := marvell,armada7040-db
 endef
 TARGET_DEVICES += marvell_armada7040-db
 
