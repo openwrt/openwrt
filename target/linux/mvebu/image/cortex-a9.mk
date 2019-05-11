@@ -16,102 +16,108 @@ define Device/linksys
   KERNEL_SIZE := 6144k
 endef
 
-define Device/linksys-wrt1200ac
+define Device/linksys_wrt1200ac
   $(call Device/linksys,WRT1200AC (Caiman))
   DEVICE_DTS := armada-385-linksys-caiman
   DEVICE_PACKAGES += mwlwifi-firmware-88w8864
 endef
-TARGET_DEVICES += linksys-wrt1200ac
+TARGET_DEVICES += linksys_wrt1200ac
 
-define Device/linksys-wrt1900acv2
+define Device/linksys_wrt1900acv2
   $(call Device/linksys,WRT1900ACv2 (Cobra))
   DEVICE_DTS := armada-385-linksys-cobra
   DEVICE_PACKAGES += mwlwifi-firmware-88w8864
 endef
-TARGET_DEVICES += linksys-wrt1900acv2
+TARGET_DEVICES += linksys_wrt1900acv2
 
-define Device/linksys-wrt3200acm
+define Device/linksys_wrt3200acm
   $(call Device/linksys,WRT3200ACM (Rango))
   DEVICE_DTS := armada-385-linksys-rango
   DEVICE_PACKAGES += kmod-btmrvl kmod-mwifiex-sdio mwlwifi-firmware-88w8964
 endef
-TARGET_DEVICES += linksys-wrt3200acm
+TARGET_DEVICES += linksys_wrt3200acm
 
-define Device/linksys-wrt1900acs
+define Device/linksys_wrt1900acs
   $(call Device/linksys,WRT1900ACS (Shelby))
   DEVICE_DTS := armada-385-linksys-shelby
   DEVICE_PACKAGES += mwlwifi-firmware-88w8864
 endef
-TARGET_DEVICES += linksys-wrt1900acs
+TARGET_DEVICES += linksys_wrt1900acs
 
-define Device/linksys-wrt32x
+define Device/linksys_wrt32x
   $(call Device/linksys,WRT32X (Venom))
   DEVICE_DTS := armada-385-linksys-venom
   DEVICE_PACKAGES += kmod-btmrvl kmod-mwifiex-sdio mwlwifi-firmware-88w8964
   KERNEL_SIZE := 3072k
   KERNEL := kernel-bin | append-dtb
 endef
-TARGET_DEVICES += linksys-wrt32x
+TARGET_DEVICES += linksys_wrt32x
 
-define Device/linksys-wrt1900ac
+define Device/linksys_wrt1900ac
   $(call Device/linksys,WRT1900AC (Mamba))
   DEVICE_DTS := armada-xp-linksys-mamba
   DEVICE_PACKAGES += mwlwifi-firmware-88w8864
   KERNEL_SIZE := 3072k
 endef
-TARGET_DEVICES += linksys-wrt1900ac
+TARGET_DEVICES += linksys_wrt1900ac
 
-define Device/openblocks-ax3-4
+define Device/plathome_openblocks-ax3-4
   DEVICE_DTS := armada-xp-openblocks-ax3-4
-  SUPPORTED_DEVICES := $(1)
+  SUPPORTED_DEVICES := openblocks-ax3-4
   BLOCKSIZE := 128k
   PAGESIZE := 1
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$(BLOCKSIZE) | append-ubi
   DEVICE_TITLE := Plat'Home OpenBlocks AX3
 endef
-TARGET_DEVICES += openblocks-ax3-4
+TARGET_DEVICES += plathome_openblocks-ax3-4
 
-define Device/armada-385-db-ap
+define Device/marvell_a385-db-ap
   $(Device/NAND-256K)
+  DEVICE_DTS := armada-385-db-ap
   IMAGES += factory.img
   KERNEL_SIZE := 8192k
   DEVICE_TITLE := Marvell Armada 385 DB AP (DB-88F6820-AP)
 endef
-TARGET_DEVICES += armada-385-db-ap
+TARGET_DEVICES += marvell_a385-db-ap
 
-define Device/armada-370-db
+define Device/marvell_a370-db
   $(Device/NAND-512K)
   DEVICE_TITLE := Marvell Armada 370 DB (DB-88F6710-BP-DDR3)
+  DEVICE_DTS := armada-370-db
 endef
-TARGET_DEVICES += armada-370-db
+TARGET_DEVICES += marvell_a370-db
 
-define Device/armada-370-rd
+define Device/marvell_a370-rd
   $(Device/NAND-512K)
   DEVICE_TITLE := Marvell Armada 370 RD (RD-88F6710-A1)
+  DEVICE_DTS := armada-370-rd
 endef
-TARGET_DEVICES += armada-370-rd
+TARGET_DEVICES += marvell_a370-rd
 
-define Device/armada-xp-db
+define Device/marvell_axp-db
   $(Device/NAND-512K)
   DEVICE_TITLE := Marvell Armada XP DB (DB-78460-BP)
+  DEVICE_DTS := armada-xp-db
 endef
-TARGET_DEVICES += armada-xp-db
+TARGET_DEVICES += marvell_axp-db
 
-define Device/armada-xp-gp
+define Device/marvell_axp-gp
   $(Device/NAND-512K)
   DEVICE_TITLE := Marvell Armada XP GP (DB-MV784MP-GP)
+  DEVICE_DTS := armada-xp-gp
 endef
-TARGET_DEVICES += armada-xp-gp
+TARGET_DEVICES += marvell_axp-gp
 
-define Device/armada-388-rd
+define Device/marvell_a388-rd
   DEVICE_TITLE := Marvell Armada 388 RD (RD-88F6820-AP)
+  DEVICE_DTS := armada-388-rd
   IMAGES := firmware.bin
   IMAGE/firmware.bin := append-kernel | pad-to 256k | append-rootfs | pad-rootfs
 endef
-TARGET_DEVICES += armada-388-rd
+TARGET_DEVICES += marvell_a388-rd
 
-define Device/armada-388-clearfog-pro
+define Device/solidrun_clearfog-pro-a1
   KERNEL_INSTALL := 1
   KERNEL := kernel-bin
   DEVICE_TITLE := SolidRun ClearFog Pro
@@ -123,9 +129,9 @@ define Device/armada-388-clearfog-pro
   UBOOT := clearfog-u-boot-spl.kwb
   BOOT_SCRIPT := clearfog
 endef
-TARGET_DEVICES += armada-388-clearfog-pro
+TARGET_DEVICES += solidrun_clearfog-pro-a1
 
-define Device/armada-388-clearfog-base
+define Device/solidrun_clearfog-base-a1
   KERNEL_INSTALL := 1
   KERNEL := kernel-bin
   DEVICE_TITLE := SolidRun ClearFog Base
@@ -136,17 +142,17 @@ define Device/armada-388-clearfog-base
   UBOOT := clearfog-u-boot-spl.kwb
   BOOT_SCRIPT := clearfog
 endef
-TARGET_DEVICES += armada-388-clearfog-base
+TARGET_DEVICES += solidrun_clearfog-base-a1
 
-define Device/globalscale-mirabox
+define Device/globalscale_mirabox
   $(Device/NAND-512K)
   DEVICE_DTS := armada-370-mirabox
   SUPPORTED_DEVICES := mirabox
   DEVICE_TITLE := Globalscale Mirabox
 endef
-TARGET_DEVICES += globalscale-mirabox
+TARGET_DEVICES += globalscale_mirabox
 
-define Device/turris-omnia
+define Device/cznic_turris-omnia
   KERNEL_INSTALL := 1
   KERNEL := kernel-bin
   KERNEL_INITRAMFS := kernel-bin
@@ -161,6 +167,6 @@ define Device/turris-omnia
   IMAGE_NAME = $$(2)
   DEVICE_DTS := armada-385-turris-omnia
 endef
-TARGET_DEVICES += turris-omnia
+TARGET_DEVICES += cznic_turris-omnia
 
 endif
