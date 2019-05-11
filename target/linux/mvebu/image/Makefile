@@ -80,7 +80,11 @@ define Device/Default
   BOARD_NAME = $$(DEVICE_DTS)
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | append-dtb | uImage none
-  SUPPORTED_DEVICES = $$(DEVICE_DTS)
+  IMAGES := sysupgrade.bin
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | pad-to $$$$(PAGESIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SUPPORTED_DEVICES = $$(firstword $$(DEVICE_DTS))
+  UBINIZE_OPTS := -E 5
   UBOOT :=
   BOOT_SCRIPT :=
 endef
@@ -95,20 +99,7 @@ define Device/Default-arm64
   KERNEL := kernel-bin
 endef
 
-define Device/UBI
-  IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-endef
-
-define Device/UBI-factory
-  $(Device/UBI)
-  UBINIZE_OPTS := -E 5
-  IMAGES += factory.img
-  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | pad-to $$$$(PAGESIZE)
-endef
-
 define Device/NAND-128K
-  $(Device/UBI)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   SUBPAGESIZE := 512
@@ -116,13 +107,11 @@ define Device/NAND-128K
 endef
 
 define Device/NAND-256K
-  $(Device/UBI)
   BLOCKSIZE := 256k
   PAGESIZE := 4096
 endef
 
 define Device/NAND-512K
-  $(Device/UBI)
   BLOCKSIZE := 512k
   PAGESIZE := 4096
 endef
