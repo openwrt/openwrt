@@ -1,0 +1,11 @@
+--- a/kmodloader.c
++++ b/kmodloader.c
+@@ -75,7 +75,7 @@ static int init_module_folders(void)
+ 	int n = 0;
+ 	struct stat st;
+ 	struct utsname ver;
+-	char *s, *e, *p, path[256], ldpath[256];
++	char *s, *e, *p, path[1024], ldpath[256];
+ 
+ 	e = ldpath;
+ 	s = getenv("LD_LIBRARY_PATH");
