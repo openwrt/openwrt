@@ -587,7 +587,7 @@ define Device/gl-mifi-v3
   BOARDNAME := GL-MIFI-V3
   SUPPORTED_DEVICES := gl-mifi-v3
   IMAGE_SIZE := 16000k
-  CONSOLE := ttyS0,115200
+  CONSOLE := null,115200
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
