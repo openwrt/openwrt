@@ -72,3 +72,16 @@ platform_copy_config() {
 		;;
 	esac
 }
+
+platform_pre_upgrade() {
+	local board=$(board_name)
+
+	case "$board" in
+	apalis*)
+		[ "$SAVE_CONFIG" -eq 0 ] && {
+			jffs2reset -y
+			umount /overlay
+		}
+		;;
+	esac
+}
