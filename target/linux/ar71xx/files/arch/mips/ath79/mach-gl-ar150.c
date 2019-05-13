@@ -113,7 +113,7 @@ static void __init gl_ar150_setup(void)
 	
 	/* register eth0 as WAN, eth1 as LAN */
 	ath79_init_mac(ath79_eth0_data.mac_addr, art+GL_AR150_MAC0_OFFSET, 0);
-	ath79_init_mac(ath79_eth1_data.mac_addr, art+GL_AR150_MAC0_OFFSET, 1);
+	ath79_init_mac(ath79_eth1_data.mac_addr, art+GL_AR150_MAC1_OFFSET, 0);
 	ath79_register_mdio(0, 0x0);
 	ath79_register_eth(0);
 	ath79_register_eth(1);

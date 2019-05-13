@@ -39,7 +39,7 @@
 #define GL_MIFI_MAC0_OFFSET	    0x0000
 #define GL_MIFI_MAC1_OFFSET	    0x0000
 #define GL_MIFI_CALDATA_OFFSET	0x1000
-#define GL_MIFI_WMAC_MAC_OFFSET	0x1002
+#define GL_MIFI_WMAC_MAC_OFFSET	0x0000
 
 static struct gpio_led gl_mifi_leds_gpio[] __initdata = {
 	{
@@ -108,7 +108,7 @@ static void __init gl_mifi_setup(void)
 
 	/* register eth0 as WAN, eth1 as LAN */
 	ath79_init_mac(ath79_eth0_data.mac_addr, art+GL_MIFI_MAC0_OFFSET, 0);
-	ath79_init_mac(ath79_eth1_data.mac_addr, art+GL_MIFI_MAC1_OFFSET, 1);
+	ath79_init_mac(ath79_eth1_data.mac_addr, art+GL_MIFI_MAC1_OFFSET, 0);
 	ath79_register_mdio(0, 0x0);
 	ath79_register_eth(0);
 	ath79_register_eth(1);
