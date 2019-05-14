@@ -73,7 +73,6 @@ define Device/a5-v11
   IMAGE/factory.bin := \
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B A5-V11 -F 4M
   DEVICE_TITLE := A5-V11
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
 endef
 TARGET_DEVICES += a5-v11
 
