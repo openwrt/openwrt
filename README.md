@@ -47,6 +47,73 @@ the package in order to be able to select the package with make menuconfig.
 When you want to create an image with your changes run `make`. If you need change
 the package selection run `make menuconfig` and then `make`.
 
+## Testing a LibreMesh branch
+
+==========================
+Testing a LibreMesh branch
+==========================
+
+
+Edit feeds.conf.default, for example to test the `add-fft-eval` branch:
+
+```
+diff --git a/feeds.conf.default b/feeds.conf.default
+index 5a681c88c4..ee2c5f1223 100644
+--- a/feeds.conf.default
++++ b/feeds.conf.default
+@@ -3,6 +3,6 @@ src-git luci https://git.openwrt.org/project/luci.git^f64b1523447547032d5280fb0b
+ src-git routing https://git.openwrt.org/feed/routing.git^1b9d1c419f0ecefda51922a7845ab2183d6acd76
+ src-git telephony https://git.openwrt.org/feed/telephony.git^b9d7b321d15a44c5abb9e5d43a4ec78abfd9031b
+
+-src-git libremesh https://github.com/libremesh/lime-packages.git;master
++src-git libremesh https://github.com/libremesh/lime-packages.git;add-fft-eval
+ src-git libremap https://github.com/libremap/libremap-agent-openwrt.git;master
+ src-git fbw https://github.com/libremesh/FirstBootWizard.git;master
+```
+
+```
+$ ./scripts/feeds update -a
+```
+
+update the feed as new packages may have beed added to a feed
+```
+$ ./scripts/feeds install  -a
+```
+
+## Changing package and options selection
+
+The config documentation is here `https://openwrt.org/docs/guide-developer/build-system/use-buildsystem`.
+Some tips:
+* The config is stored in .config
+* To change the config use `make manuconfig`
+* To know the difference between two configs, for example from the current config (.config) and
+the default configuration run `$ ./scripts/diffconfig.sh  | diff configs/default_config -`
+* To save the new config to a new file (for backup purposes, to add it to a git repo, etc) run
+`$ ./scripts/diffconfig.sh  > configs/your_config`
+* To change the default configuration, for example to perform a pull request to `git@github.com:LibreRouterOrg/openwrt.git` run
+`$ ./scripts/diffconfig.sh  > configs/your_config`
+
+
+## Upgrading the buildroot
+
+```
+$ git pull
+
+$ ./scripts/feeds update -a
+
+$ ./scripts/feeds install  -a
+```
+
+Copy the new config, be aware that this overwrites you local config!!
+```
+$ cp configs/default_config .config
+```
+
+```
+$ make defconfig
+$ make -j4
+...
+```
 
 ## Notes
 
