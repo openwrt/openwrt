@@ -49,11 +49,6 @@ the package selection run `make menuconfig` and then `make`.
 
 ## Testing a LibreMesh branch
 
-==========================
-Testing a LibreMesh branch
-==========================
-
-
 Edit feeds.conf.default, for example to test the `add-fft-eval` branch:
 
 ```
