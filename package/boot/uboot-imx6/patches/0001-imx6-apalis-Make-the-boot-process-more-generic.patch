@@ -48,11 +48,9 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  include/configs/apalis_imx6.h | 26 +++++++++++++++++++++-----
  2 files changed, 23 insertions(+), 5 deletions(-)
 
-diff --git a/configs/apalis_imx6_defconfig b/configs/apalis_imx6_defconfig
-index 133fc1a..279d39f 100644
 --- a/configs/apalis_imx6_defconfig
 +++ b/configs/apalis_imx6_defconfig
-@@ -39,6 +39,7 @@ CONFIG_CMD_DFU=y
+@@ -40,6 +40,7 @@ CONFIG_CMD_DFU=y
  CONFIG_CMD_GPIO=y
  CONFIG_CMD_I2C=y
  CONFIG_CMD_MMC=y
@@ -60,7 +58,7 @@ index 133fc1a..279d39f 100644
  CONFIG_CMD_USB=y
  CONFIG_CMD_USB_SDP=y
  CONFIG_CMD_USB_MASS_STORAGE=y
-@@ -48,6 +49,7 @@ CONFIG_CMD_PING=y
+@@ -49,6 +50,7 @@ CONFIG_CMD_PING=y
  CONFIG_CMD_BMP=y
  CONFIG_CMD_CACHE=y
  CONFIG_CMD_EXT4=y
@@ -68,11 +66,9 @@ index 133fc1a..279d39f 100644
  CONFIG_CMD_FAT=y
  CONFIG_CMD_FS_GENERIC=y
  CONFIG_ENV_IS_IN_MMC=y
-diff --git a/include/configs/apalis_imx6.h b/include/configs/apalis_imx6.h
-index 135b3c9..3601891 100644
 --- a/include/configs/apalis_imx6.h
 +++ b/include/configs/apalis_imx6.h
-@@ -142,9 +142,9 @@
+@@ -138,9 +138,9 @@
  	"imx6q-colibri-cam-eval-v3.dtb fat 0 1"
  
  #define EMMC_BOOTCMD \
@@ -84,7 +80,7 @@ index 135b3c9..3601891 100644
  		"setenv bootargs ${defargs} ${emmcargs} ${setupargs} " \
  		"${vidargs}; echo Booting from internal eMMC chip...; "	\
  		"run emmcdtbload; load mmc 0:1 ${kernel_addr_r} " \
-@@ -201,10 +201,17 @@
+@@ -197,10 +197,17 @@
  #define FDT_FILE "imx6q-apalis_v1_0-eval.dtb"
  #endif
  #define CONFIG_EXTRA_ENV_SETTINGS \
@@ -104,7 +100,7 @@ index 135b3c9..3601891 100644
  	"boot_file=uImage\0" \
  	"console=ttymxc0\0" \
  	"defargs=enable_wait_mode=off vmalloc=400M\0" \
-@@ -232,7 +239,16 @@
+@@ -228,7 +235,16 @@
  	"vidargs=mxc_hdmi.only_cea=1 " \
  		"video=mxcfb0:dev=hdmi,1920x1080M@60,if=RGB24 " \
  		"video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off " \
