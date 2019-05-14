@@ -92,6 +92,8 @@ endef
 
 TARGET_CFLAGS += -DLUA_USE_LINUX $(FPIC) -std=gnu99
 
+TARGET_CFLAGS += $(if $(CONFIG_ARCH_64BIT),-DLNUM_INT64)
+
 define Build/Compile
 	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CROSS)gcc" \
