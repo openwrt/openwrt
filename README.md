@@ -47,9 +47,13 @@ the package in order to be able to select the package with make menuconfig.
 When you want to create an image with your changes run `make`. If you need change
 the package selection run `make menuconfig` and then `make`.
 
-##
 
 ## Notes
 
 * You can speed up the build process using more CPUs, for example with `make -j3`
 the build uses 3 CPUs.
+* For aditional documentation see
+  * https://openwrt.org/docs/guide-developer/build-system/use-buildsystem
+  * https://openwrt.org/docs/guide-developer/feeds
+  * https://openwrt.org/docs/guide-developer/packages
+  * https://openwrt.org/docs/guide-developer/start
