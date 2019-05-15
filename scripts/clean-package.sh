@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+IFS=$'\n'
 [ -n "$1" -a -n "$2" ] || {
 	echo "Usage: $0 <file> <directory>"
 	exit 1
