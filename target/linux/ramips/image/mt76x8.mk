@@ -2,22 +2,6 @@
 # MT76x8 Profiles
 #
 
-DEVICE_VARS += SERCOMM_HWID SERCOMM_HWVER SERCOMM_SWVER
-
-define Build/sercom-seal
-	$(STAGING_DIR_HOST)/bin/mksercommfw \
-		-i $@ \
-		-b $(SERCOMM_HWID) \
-		-r $(SERCOMM_HWVER) \
-		-v $(SERCOMM_SWVER) \
-		$(1)
-endef
-
-define Build/sercom-footer
-	$(call Build/sercom-seal,-f)
-endef
-
-
 define Device/tplink
   TPLINK_FLASHLAYOUT :=
   TPLINK_HWID :=
