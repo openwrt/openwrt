@@ -32,6 +32,10 @@ ubnt-erx-sfp)
 	ucidef_add_gpio_switch "poe_power_port3" "PoE Power Port3" "499"
 	ucidef_add_gpio_switch "poe_power_port4" "PoE Power Port4" "500"
 	;;
+zbtlink,zbt-we826-e)
+	ucidef_add_gpio_switch "sim_switch" "SIM slot switch" "13"
+	ucidef_add_gpio_switch "power_mpcie" "mPCIe power" "14" "1"
+	;;
 esac
 
 board_config_flush

@@ -818,6 +818,15 @@ define Device/zbt-we826-32M
 endef
 TARGET_DEVICES += zbt-we826-32M
 
+define Device/zbtlink_zbt-we826-e
+  DTS := ZBT-WE826-E
+  IMAGE_SIZE := 32448k
+  DEVICE_TITLE := Zbtlink ZBT-WE826-E
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 uqmi \
+		     kmod-usb-serial kmod-usb-serial-option
+endef
+TARGET_DEVICES += zbtlink_zbt-we826-e
+
 define Device/zbt-wr8305rt
   DTS := ZBT-WR8305RT
   DEVICE_TITLE := Zbtlink ZBT-WR8305RT
