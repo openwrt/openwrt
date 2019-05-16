@@ -170,6 +170,14 @@ define Device/skylab_skw92a
 endef
 TARGET_DEVICES += skylab_skw92a
 
+define Device/totolink_lr1200
+  DTS := TOTOLINK-LR1200
+  IMAGE_SIZE := 7872k
+  DEVICE_TITLE := TOTOLINK LR1200
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 uqmi
+endef
+TARGET_DEVICES += totolink_lr1200
+
 define Device/tplink_tl-wa801nd-v5
   $(Device/tplink)
   DTS := TL-WA801NDV5
