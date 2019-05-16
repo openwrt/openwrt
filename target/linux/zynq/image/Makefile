@@ -51,28 +51,28 @@ endef
 
 define Device/avnet_zynq-zed
 	$(call Device/FitImageGzip)
-	DEVICE_TITLE := Avnet ZedBoard board
+	DEVICE_TITLE := Avnet ZedBoard
 	DEVICE_DTS := zynq-zed
 endef
 TARGET_DEVICES += avnet_zynq-zed
 
 define Device/digilent_zynq-zybo
 	$(call Device/FitImageGzip)
-	DEVICE_TITLE := ZYBO Development Board
+	DEVICE_TITLE := Digilent Zybo
 	DEVICE_DTS := zynq-zybo
 endef
 TARGET_DEVICES += digilent_zynq-zybo
 
 define Device/digilent_zynq-zybo-z7
 	$(call Device/FitImageGzip)
-	DEVICE_TITLE := Digilent Zybo Z7 board
+	DEVICE_TITLE := Digilent Zybo Z7
 	DEVICE_DTS := zynq-zybo-z7
 endef
 TARGET_DEVICES += digilent_zynq-zybo-z7
 
 define Device/xlnx_zynq-zc702
 	$(call Device/FitImageGzip)
-	DEVICE_TITLE := ZC702 Development Board
+	DEVICE_TITLE := Xilinx ZC702
 	DEVICE_DTS := zynq-zc702
 	DEVICE_PACKAGES:=kmod-can kmod-can-xilinx-can
 endef
