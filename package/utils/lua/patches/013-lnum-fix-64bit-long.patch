@@ -1,0 +1,36 @@
+diff --git a/src/lnum_config.h b/src/lnum_config.h
+index 19d7a42..1092eea 100644
+--- a/src/lnum_config.h
++++ b/src/lnum_config.h
+@@ -141,7 +141,12 @@
+ #endif
+ 
+ #ifndef lua_str2ul
+-# define lua_str2ul (unsigned LUA_INTEGER)strtoul
++# if LONG_MAX > LUA_INTEGER_MAX
++#   define LONG_OVERFLOW_LUA_INTEGER
++    unsigned LUA_INTEGER lua_str2ul( const char *str, char **endptr, int base );
++# else
++#  define lua_str2ul (unsigned LUA_INTEGER)strtoul
++# endif
+ #endif
+ #ifndef LUA_INTEGER_MIN
+ # define LUA_INTEGER_MIN (-LUA_INTEGER_MAX -1)  /* -2^16|32 */
+diff --git a/src/lnum.c b/src/lnum.c
+index 1456b6a..37e423b 100644
+--- a/src/lnum.c
++++ b/src/lnum.c
+@@ -310,3 +310,13 @@ int try_unmint( lua_Integer *r, lua_Integer ib ) {
+   return 0;
+ }
+ 
++#ifdef LONG_OVERFLOW_LUA_INTEGER
++unsigned LUA_INTEGER lua_str2ul( const char *str, char **endptr, int base ) {
++  unsigned long v= strtoul(str, endptr, base);
++  if ( v > LUA_INTEGER_MAX ) {
++    errno= ERANGE;
++    v= ULONG_MAX;
++  }
++  return (unsigned LUA_INTEGER)v;
++}
++#endif
