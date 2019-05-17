@@ -1,0 +1,66 @@
+--- /dev/null	2019-05-14 12:36:31.663493429 -0700
++++ busybox-1.28.4/coreutils/rngseed.c	2019-05-16 16:58:03.170495363 -0700
+@@ -0,0 +1,63 @@
++/* vi: set sw=4 ts=4: */
++/*
++ * rngseed implementation for busybox
++ *
++ * Copyright (C) 2019  Dustin Lundquist  <d.lundquist@temperednetworks.com>
++ *
++ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
++ */
++//config:config RNGSEED
++//config:	bool "rngseed (1.0 kb)"
++//config:	default y
++//config:	help
++//config:	rngseed is used to seed the kernel random number generator with
++//config:	the contents of the specified file.
++//config:
++
++//applet:IF_RNGSEED(APPLET(rngseed, BB_DIR_SBIN, BB_SUID_DROP))
++
++//kbuild:lib-$(CONFIG_RNGSEED) += rngseed.o
++
++#include "libbb.h"
++#include <linux/random.h>
++
++//usage:#define rngseed_trivial_usage
++//usage:       "[FILE]"
++//usage:#define rngseed_full_usage "\n\n"
++//usage:       "Seed kernel RNG with file contents"
++//usage:
++//usage:#define rngseed_example_usage
++//usage:       "$ rngseed /etc/urandom.seed"
++
++int rngseed_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
++int rngseed_main(int argc UNUSED_PARAM, char **argv)
++{
++    int retval = EXIT_FAILURE;
++    int rnd_fd = -1, input_fd = -1;
++
++    rnd_fd = open_or_warn("/dev/urandom", O_WRONLY);
++    if (argv[1])
++        input_fd = open_or_warn(argv[1], O_RDONLY);
++    else
++        bb_show_usage();
++
++    if (rnd_fd >= 0 && input_fd >= 0) {
++        struct rand_pool_info {
++            int    entropy_count;
++            int    buf_size;
++            __u32  buf[256];
++        } entropy;
++
++        while ((entropy.buf_size = read(input_fd, entropy.buf, sizeof(entropy.buf))) > 0) {
++            entropy.entropy_count = entropy.buf_size * 8;
++
++            if (ioctl(rnd_fd, RNDADDENTROPY, &entropy) >= 0)
++                retval = EXIT_SUCCESS;
++        }
++
++        close(input_fd);
++        close(rnd_fd);
++    }
++
++	fflush_stdout_and_exit(retval);
++}

@@ -8,8 +8,16 @@ _do_urandom_seed() {
     [ -f "$1" ] || { log_urandom_seed "Seed file not found ($1)"; return; }
     [ -O "$1" -a -G "$1" -a ! -x "$1" ] || { log_urandom_seed "Wrong owner / permissions for $1"; return; }
 
-    log_urandom_seed "Seeding with $1"
-    cat "$1" > /dev/urandom
+    ENTROPY=$(cat /proc/sys/kernel/random/entropy_avail)
+    log_urandom_seed "entropy_avail = $ENTROPY"
+
+    SIZE=$(wc -c < "$1")
+    log_urandom_seed "Seeding with $SIZE bytes from $1"
+
+    rngseed "$1"
+
+    ENTROPY=$(cat /proc/sys/kernel/random/entropy_avail)
+    log_urandom_seed "entropy_avail = $ENTROPY"
 }
 
 do_urandom_seed() {

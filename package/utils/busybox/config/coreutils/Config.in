@@ -548,6 +548,12 @@ config BUSYBOX_CONFIG_RMDIR
 	default BUSYBOX_DEFAULT_RMDIR
 	help
 	rmdir is used to remove empty directories.
+config BUSYBOX_CONFIG_RNGSEED
+	bool "rngseed"
+	default BUSYBOX_DEFAULT_RNGSEED
+	help
+	rngseed is used to seed the kernel random number generator with
+	the contents of the specified file.
 config BUSYBOX_CONFIG_SEQ
 	bool "seq (3.8 kb)"
 	default BUSYBOX_DEFAULT_SEQ
