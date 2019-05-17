@@ -1,0 +1,247 @@
+From 22ac3dfebf7b25a3aae02f9b4f69025bb4173137 Mon Sep 17 00:00:00 2001
+From: Dan Harkins <dharkins@lounge.org>
+Date: Fri, 25 May 2018 21:40:04 +0300
+Subject: [PATCH] EAP-pwd: Mask timing of PWE derivation
+
+Run through the hunting-and-pecking loop 40 times to mask the time
+necessary to find PWE. The odds of PWE not being found in 40 loops is
+roughly 1 in 1 trillion.
+
+Signed-off-by: Dan Harkins <dharkins@lounge.org>
+---
+ src/eap_common/eap_pwd_common.c | 171 ++++++++++++++++++++++++--------
+ 1 file changed, 130 insertions(+), 41 deletions(-)
+
+--- a/src/eap_common/eap_pwd_common.c
++++ b/src/eap_common/eap_pwd_common.c
+@@ -112,18 +112,25 @@ int compute_password_element(EAP_PWD_gro
+ 			     const u8 *id_peer, size_t id_peer_len,
+ 			     const u8 *token)
+ {
++	struct crypto_bignum *qr = NULL, *qnr = NULL, *one = NULL;
++	struct crypto_bignum *tmp1 = NULL, *tmp2 = NULL, *pm1 = NULL;
+ 	struct crypto_hash *hash;
+ 	unsigned char pwe_digest[SHA256_MAC_LEN], *prfbuf = NULL, ctr;
+-	int is_odd, ret = 0;
++	int is_odd, ret = 0, check, found = 0;
+ 	size_t primebytelen, primebitlen;
+ 	struct crypto_bignum *x_candidate = NULL, *rnd = NULL, *cofactor = NULL;
++	const struct crypto_bignum *prime;
+ 
+ 	if (grp->pwe)
+ 		return -1;
+ 
++	prime = crypto_ec_get_prime(grp->group);
+ 	cofactor = crypto_bignum_init();
+ 	grp->pwe = crypto_ec_point_init(grp->group);
+-	if (!cofactor || !grp->pwe) {
++	tmp1 = crypto_bignum_init();
++	pm1 = crypto_bignum_init();
++	one = crypto_bignum_init_set((const u8 *) "\x01", 1);
++	if (!cofactor || !grp->pwe || !tmp1 || !pm1 || !one) {
+ 		wpa_printf(MSG_INFO, "EAP-pwd: unable to create bignums");
+ 		goto fail;
+ 	}
+@@ -140,15 +147,36 @@ int compute_password_element(EAP_PWD_gro
+ 			   "buffer");
+ 		goto fail;
+ 	}
++	if (crypto_bignum_sub(prime, one, pm1) < 0)
++		goto fail;
++
++	/* get a random quadratic residue and nonresidue */
++	while (!qr || !qnr) {
++		int res;
++
++		if (crypto_bignum_rand(tmp1, prime) < 0)
++			goto fail;
++		res = crypto_bignum_legendre(tmp1, prime);
++		if (!qr && res == 1) {
++			qr = tmp1;
++			tmp1 = crypto_bignum_init();
++		} else if (!qnr && res == -1) {
++			qnr = tmp1;
++			tmp1 = crypto_bignum_init();
++		}
++		if (!tmp1)
++			goto fail;
++	}
++
+ 	os_memset(prfbuf, 0, primebytelen);
+ 	ctr = 0;
+-	while (1) {
+-		if (ctr > 30) {
+-			wpa_printf(MSG_INFO, "EAP-pwd: unable to find random "
+-				   "point on curve for group %d, something's "
+-				   "fishy", num);
+-			goto fail;
+-		}
++
++	/*
++	 * Run through the hunting-and-pecking loop 40 times to mask the time
++	 * necessary to find PWE. The odds of PWE not being found in 40 loops is
++	 * roughly 1 in 1 trillion.
++	 */
++	while (ctr < 40) {
+ 		ctr++;
+ 
+ 		/*
+@@ -199,58 +227,113 @@ int compute_password_element(EAP_PWD_gro
+ 					 x_candidate) < 0)
+ 			goto fail;
+ 
+-		if (crypto_bignum_cmp(x_candidate,
+-				      crypto_ec_get_prime(grp->group)) >= 0)
++		if (crypto_bignum_cmp(x_candidate, prime) >= 0)
+ 			continue;
+ 
+ 		wpa_hexdump(MSG_DEBUG, "EAP-pwd: x_candidate",
+ 			    prfbuf, primebytelen);
+ 
+ 		/*
+-		 * need to unambiguously identify the solution, if there is
+-		 * one...
++		 * compute y^2 using the equation of the curve
++		 *
++		 *      y^2 = x^3 + ax + b
+ 		 */
+-		is_odd = crypto_bignum_is_odd(rnd);
++		tmp2 = crypto_ec_point_compute_y_sqr(grp->group, x_candidate);
++		if (!tmp2)
++			goto fail;
+ 
+ 		/*
+-		 * solve the quadratic equation, if it's not solvable then we
+-		 * don't have a point
++		 * mask tmp2 so doing legendre won't leak timing info
++		 *
++		 * tmp1 is a random number between 1 and p-1
+ 		 */
+-		if (crypto_ec_point_solve_y_coord(grp->group, grp->pwe,
+-						  x_candidate, is_odd) != 0) {
+-			wpa_printf(MSG_INFO, "EAP-pwd: Could not solve for y");
+-			continue;
+-		}
++		if (crypto_bignum_rand(tmp1, pm1) < 0 ||
++		    crypto_bignum_mulmod(tmp2, tmp1, prime, tmp2) < 0 ||
++		    crypto_bignum_mulmod(tmp2, tmp1, prime, tmp2) < 0)
++			goto fail;
++
+ 		/*
+-		 * If there's a solution to the equation then the point must be
+-		 * on the curve so why check again explicitly? OpenSSL code
+-		 * says this is required by X9.62. We're not X9.62 but it can't
+-		 * hurt just to be sure.
++		 * Now tmp2 (y^2) is masked, all values between 1 and p-1
++		 * are equally probable. Multiplying by r^2 does not change
++		 * whether or not tmp2 is a quadratic residue, just masks it.
++		 *
++		 * Flip a coin, multiply by the random quadratic residue or the
++		 * random quadratic nonresidue and record heads or tails.
+ 		 */
+-		if (!crypto_ec_point_is_on_curve(grp->group, grp->pwe)) {
+-			wpa_printf(MSG_INFO, "EAP-pwd: point is not on curve");
+-			continue;
++		if (crypto_bignum_is_odd(tmp1)) {
++			crypto_bignum_mulmod(tmp2, qr, prime, tmp2);
++			check = 1;
++		} else {
++			crypto_bignum_mulmod(tmp2, qnr, prime, tmp2);
++			check = -1;
+ 		}
+ 
+-		if (!crypto_bignum_is_one(cofactor)) {
+-			/* make sure the point is not in a small sub-group */
+-			if (crypto_ec_point_mul(grp->group, grp->pwe,
+-						cofactor, grp->pwe) != 0) {
+-				wpa_printf(MSG_INFO, "EAP-pwd: cannot "
+-					   "multiply generator by order");
++		/*
++		 * Now it's safe to do legendre, if check is 1 then it's
++		 * a straightforward test (multiplying by qr does not
++		 * change result), if check is -1 then it's the opposite test
++		 * (multiplying a qr by qnr would make a qnr).
++		 */
++		if (crypto_bignum_legendre(tmp2, prime) == check) {
++			if (found == 1)
++				continue;
++
++			/* need to unambiguously identify the solution */
++			is_odd = crypto_bignum_is_odd(rnd);
++
++			/*
++			 * We know x_candidate is a quadratic residue so set
++			 * it here.
++			 */
++			if (crypto_ec_point_solve_y_coord(grp->group, grp->pwe,
++							  x_candidate,
++							  is_odd) != 0) {
++				wpa_printf(MSG_INFO,
++					   "EAP-pwd: Could not solve for y");
+ 				continue;
+ 			}
+-			if (crypto_ec_point_is_at_infinity(grp->group,
+-							   grp->pwe)) {
+-				wpa_printf(MSG_INFO, "EAP-pwd: point is at "
+-					   "infinity");
++
++			/*
++			 * If there's a solution to the equation then the point
++			 * must be on the curve so why check again explicitly?
++			 * OpenSSL code says this is required by X9.62. We're
++			 * not X9.62 but it can't hurt just to be sure.
++			 */
++			if (!crypto_ec_point_is_on_curve(grp->group,
++							 grp->pwe)) {
++				wpa_printf(MSG_INFO,
++					   "EAP-pwd: point is not on curve");
+ 				continue;
+ 			}
++
++			if (!crypto_bignum_is_one(cofactor)) {
++				/* make sure the point is not in a small
++				 * sub-group */
++				if (crypto_ec_point_mul(grp->group, grp->pwe,
++							cofactor,
++							grp->pwe) != 0) {
++					wpa_printf(MSG_INFO,
++						   "EAP-pwd: cannot multiply generator by order");
++					continue;
++				}
++				if (crypto_ec_point_is_at_infinity(grp->group,
++								   grp->pwe)) {
++					wpa_printf(MSG_INFO,
++						   "EAP-pwd: point is at infinity");
++					continue;
++				}
++			}
++			wpa_printf(MSG_DEBUG,
++				   "EAP-pwd: found a PWE in %d tries", ctr);
++			found = 1;
+ 		}
+-		/* if we got here then we have a new generator. */
+-		break;
+ 	}
+-	wpa_printf(MSG_DEBUG, "EAP-pwd: found a PWE in %d tries", ctr);
++	if (found == 0) {
++		wpa_printf(MSG_INFO,
++			   "EAP-pwd: unable to find random point on curve for group %d, something's fishy",
++			   num);
++		goto fail;
++	}
+ 	if (0) {
+  fail:
+ 		crypto_ec_point_deinit(grp->pwe, 1);
+@@ -261,6 +344,12 @@ int compute_password_element(EAP_PWD_gro
+ 	crypto_bignum_deinit(cofactor, 1);
+ 	crypto_bignum_deinit(x_candidate, 1);
+ 	crypto_bignum_deinit(rnd, 1);
++	crypto_bignum_deinit(pm1, 0);
++	crypto_bignum_deinit(tmp1, 1);
++	crypto_bignum_deinit(tmp2, 1);
++	crypto_bignum_deinit(qr, 1);
++	crypto_bignum_deinit(qnr, 1);
++	crypto_bignum_deinit(one, 0);
+ 	os_free(prfbuf);
+ 
+ 	return ret;
