@@ -1,19 +1,19 @@
 --- a/library/CMakeLists.txt
 +++ b/library/CMakeLists.txt
-@@ -159,7 +159,7 @@ endif(USE_STATIC_MBEDTLS_LIBRARY)
+@@ -165,7 +165,7 @@ endif(USE_STATIC_MBEDTLS_LIBRARY)
  
  if(USE_SHARED_MBEDTLS_LIBRARY)
      add_library(mbedcrypto SHARED ${src_crypto})
--    set_target_properties(mbedcrypto PROPERTIES VERSION 2.14.1 SOVERSION 3)
+-    set_target_properties(mbedcrypto PROPERTIES VERSION 2.16.1 SOVERSION 3)
 +    set_target_properties(mbedcrypto PROPERTIES VERSION 2.12.0 SOVERSION 1)
      target_link_libraries(mbedcrypto ${libs})
  
      add_library(mbedx509 SHARED ${src_x509})
-@@ -167,7 +167,7 @@ if(USE_SHARED_MBEDTLS_LIBRARY)
+@@ -173,7 +173,7 @@ if(USE_SHARED_MBEDTLS_LIBRARY)
      target_link_libraries(mbedx509 ${libs} mbedcrypto)
  
      add_library(mbedtls SHARED ${src_tls})
--    set_target_properties(mbedtls PROPERTIES VERSION 2.14.1 SOVERSION 12)
+-    set_target_properties(mbedtls PROPERTIES VERSION 2.16.1 SOVERSION 12)
 +    set_target_properties(mbedtls PROPERTIES VERSION 2.12.0 SOVERSION 10)
      target_link_libraries(mbedtls ${libs} mbedx509)
  
