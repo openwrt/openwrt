@@ -86,7 +86,7 @@ the default configuration run `$ ./scripts/diffconfig.sh  | diff configs/default
 * To save the new config to a new file (for backup purposes, to add it to a git repo, etc) run
 `$ ./scripts/diffconfig.sh  > configs/your_config`
 * To change the default configuration, for example to perform a pull request to `git@github.com:LibreRouterOrg/openwrt.git` run
-`$ ./scripts/diffconfig.sh  > configs/your_config`
+`$ ./scripts/diffconfig.sh  > configs/default_config`
 
 
 ## Upgrading the buildroot
