@@ -38,7 +38,16 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
  ;----------------------------------------------------------------
 --- a/arch/arc/kernel/setup.c
 +++ b/arch/arc/kernel/setup.c
-@@ -477,7 +477,7 @@ ignore_uboot_args:
+@@ -437,6 +437,8 @@ static inline bool uboot_arg_invalid(uns
+ /* We always pass 0 as magic from U-boot */
+ #define UBOOT_MAGIC_VALUE	0
+ 
++extern struct boot_param_header __image_dtb;
++
+ void __init handle_uboot_args(void)
+ {
+ 	bool use_embedded_dtb = true;
+@@ -477,7 +479,7 @@ ignore_uboot_args:
  #endif
  
  	if (use_embedded_dtb) {
@@ -47,15 +56,6 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
  		if (!machine_desc)
  			panic("Embedded DT invalid\n");
  	}
-@@ -493,6 +493,8 @@ ignore_uboot_args:
- 	}
- }
- 
-+extern struct boot_param_header __image_dtb;
-+
- void __init setup_arch(char **cmdline_p)
- {
- 	handle_uboot_args();
 --- a/arch/arc/kernel/vmlinux.lds.S
 +++ b/arch/arc/kernel/vmlinux.lds.S
 @@ -30,6 +30,19 @@ SECTIONS
