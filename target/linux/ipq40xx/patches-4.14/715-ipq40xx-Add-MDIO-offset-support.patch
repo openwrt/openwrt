@@ -1,0 +1,78 @@
+From 3fb390070a68a52e5fc1e192de56eebf903b75c0 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Thu, 14 Feb 2019 11:25:00 +0100
+Subject: [PATCH] ipq40xx: Add MDIO offset support
+
+This fixes networking on Mikrotik RB450Gx4, thanks to
+numerous hours of debugging by adron-s.
+In the end issue was that MDIOs were at completely different adress
+than standard.
+
+This introduces 2 DT bindings:
+qcom,mdio_offset to enter offset from default values
+qcom,mdio_offset_limit to limit offset
+
+Signed-off-by: Sergey Sergeev <adron@yapic.net>
+Tested-by: Robert Marko <robimarko@gmail.com>
+---
+ mdio-ipq40xx.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- a/drivers/net/phy/mdio-ipq40xx.c
++++ b/drivers/net/phy/mdio-ipq40xx.c
+@@ -20,6 +20,7 @@
+ #include <linux/io.h>
+ #include <linux/of_address.h>
+ #include <linux/of_mdio.h>
++#include <linux/of.h>
+ #include <linux/phy.h>
+ #include <linux/platform_device.h>
+ 
+@@ -42,6 +43,8 @@ struct ipq40xx_mdio_data {
+ 	void __iomem	*membase;
+ 	int		phy_irq[PHY_MAX_ADDR];
+ 	struct device	*dev;
++	u32 mdio_offset;
++	u32 mdio_offset_limit;
+ };
+ 
+ static int ipq40xx_mdio_wait_busy(struct ipq40xx_mdio_data *am)
+@@ -71,6 +74,9 @@ static int ipq40xx_mdio_read(struct mii_
+ 	int value = 0;
+ 	unsigned int cmd = 0;
+ 
++	if(mii_id < am->mdio_offset_limit)
++			mii_id += am->mdio_offset;
++
+ 	lockdep_assert_held(&bus->mdio_lock);
+ 
+ 	if (ipq40xx_mdio_wait_busy(am))
+@@ -100,6 +106,9 @@ static int ipq40xx_mdio_write(struct mii
+ 	struct ipq40xx_mdio_data *am = bus->priv;
+ 	unsigned int cmd = 0;
+ 
++	if(mii_id < am->mdio_offset_limit)
++			mii_id += am->mdio_offset;
++
+ 	lockdep_assert_held(&bus->mdio_lock);
+ 
+ 	if (ipq40xx_mdio_wait_busy(am))
+@@ -126,6 +135,7 @@ static int ipq40xx_mdio_probe(struct pla
+ {
+ 	struct ipq40xx_mdio_data *am;
+ 	struct resource *res;
++	struct device_node *mdio_node;
+ 	int i;
+ 
+ 	am = devm_kzalloc(&pdev->dev, sizeof(*am), GFP_KERNEL);
+@@ -138,6 +148,10 @@ static int ipq40xx_mdio_probe(struct pla
+ 		return -ENXIO;
+ 	}
+ 
++	mdio_node = of_node_get(pdev->dev.of_node);
++	of_property_read_u32(mdio_node, "qcom,mdio_offset", &am->mdio_offset);
++	of_property_read_u32(mdio_node, "qcom,mdio_offset_limit", &am->mdio_offset_limit);
++
+ 	am->membase = devm_ioremap_resource(&pdev->dev, res);
+ 	if (IS_ERR(am->membase)) {
+ 		dev_err(&pdev->dev, "unable to ioremap registers\n");
