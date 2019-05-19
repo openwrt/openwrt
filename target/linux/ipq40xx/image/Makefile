@@ -300,6 +300,7 @@ define Device/MikrotikNAND
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin/squashfs := append-kernel | ipq-aux-loader-kernel ubi | \
 			sysupgrade-tar kernel=$$$$@ | append-metadata
+	DEVICE_PACKAGES := rbcfg
 endef
 
 define Device/mikrotik_rb450gx4
