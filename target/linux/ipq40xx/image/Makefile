@@ -14,6 +14,24 @@ define Device/Default
 	IMAGE/sysupgrade.bin/squashfs :=
 endef
 
+define Build/ipq-aux-loader-common
+	rm -rf $@.src
+	$(MAKE) -C ipq-aux-loader \
+		PKG_BUILD_DIR="$@.src" \
+		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
+		TEXT_BASE2="0x00000000" \
+		BOARD="$(BOARDNAME)" PLATFORM="$(PLATFORM)" \
+		BLOCKSIZE="$(BLOCKSIZE)" PAGESIZE="$(PAGESIZE)" \
+		UART="$(AUX_LOADER_UART)"	\
+		$(1) LOADER_TYPE=$(2) compile loader.$(2)
+	mv "$@.$(2)" "$@"
+	rm -rf $@.src
+endef
+
+define Build/ipq-aux-loader-kernel
+	$(call Build/ipq-aux-loader-common,LOADER_DATA="$@",$(1))
+endef
+
 define Device/FitImage
 	KERNEL_SUFFIX := -fit-uImage.itb
 	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
@@ -273,6 +291,27 @@ define Device/meraki_mr33
 	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
 endef
 TARGET_DEVICES += meraki_mr33
+
+define Device/MikrotikNAND
+	$(call Device/FitImageLzma)
+	KERNEL_INITRAMFS_SUFFIX := -fit-uImage.elf
+	PLATFORM := mikrotik-ipq4xxx
+	KERNEL_INITRAMFS = $$(KERNEL) | ipq-aux-loader-kernel elf
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin/squashfs := append-kernel | ipq-aux-loader-kernel ubi | \
+			sysupgrade-tar kernel=$$$$@ | append-metadata
+endef
+
+define Device/mikrotik_rb450gx4
+	$(call Device/MikrotikNAND)
+	DEVICE_DTS := qcom-ipq4019-rb450gx4
+	BLOCKSIZE := 256k
+	PAGESIZE := 4096
+	AUX_LOADER_UART := 1
+	DEVICE_TITLE := MikroTik RouterBOARD RB450Gx4
+	DEVICE_PACKAGES += kmod-gpio-beeper -kmod-ath10k-ct -ath10k-firmware-qca4019-ct -wpad-basic
+endef
+TARGET_DEVICES += mikrotik_rb450gx4
 
 define Device/netgear_ex61x0v2
 	$(call Device/DniImage)
