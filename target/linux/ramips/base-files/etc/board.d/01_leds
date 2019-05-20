@@ -91,6 +91,11 @@ cf-wr800n)
 	ucidef_set_led_netdev "lan" "lan" "$boardname:white:ethernet" eth0.1
 	set_wifi_led "$boardname:white:wifi"
 	;;
+cudy,wr1000)
+	ucidef_set_led_switch "wan" "wan" "$boardname:blue:wan" "switch0" "0x10"
+	ucidef_set_led_switch "lan1" "lan1" "$boardname:blue:lan1" "switch0" "0x08"
+	ucidef_set_led_switch "lan2" "lan2" "$boardname:blue:lan2" "switch0" "0x04"
+	;;
 d240)
 	set_wifi_led "$boardname:blue:wifi"
 	;;

@@ -27,6 +27,19 @@ define Device/alfa-network_awusfree1
 endef
 TARGET_DEVICES += alfa-network_awusfree1
 
+define Device/cudy_wr1000
+  DTS := WR1000
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+        $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | jcg-header 92.122
+  JCG_MAXSIZE := 8060928
+  DEVICE_TITLE := Cudy WR1000
+  DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += wr1000
+endef
+TARGET_DEVICES += cudy_wr1000
+
 define Device/tama_w06
   DTS := W06
   IMAGE_SIZE := 15040k
