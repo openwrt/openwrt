@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/version.mk
 include $(INCLUDE_DIR)/feeds.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=197
+PKG_RELEASE:=198
 PKG_FLAGS:=nonshared
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
@@ -39,6 +39,15 @@ define Package/base-files
   CATEGORY:=Base system
   DEPENDS:=+netifd +libc +procd +jsonfilter +SIGNED_PACKAGES:usign +SIGNED_PACKAGES:openwrt-keyring +NAND_SUPPORT:ubi-utils +fstools +fwtool
   TITLE:=Base filesystem for OpenWrt
+  URL:=http://openwrt.org/
+  VERSION:=$(PKG_RELEASE)-$(REVISION)
+endef
+
+define Package/urandom-seed
+  SECTION:=base
+  CATEGORY:=Base system
+  DEPENDS:=+libc +ubox-getrandom
+  TITLE:=/etc/urandom.seed handling for OpenWrt
   URL:=http://openwrt.org/
   VERSION:=$(PKG_RELEASE)-$(REVISION)
 endef
