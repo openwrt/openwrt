@@ -2,6 +2,7 @@
  * jcgimage - Create a JCG firmware image
  *
  * Copyright (C) 2015 Reinhard Max <reinhard@m4x.de>
+ * Copyright (C) 2019 Davide Fioravanti <pantanastyle@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -44,6 +45,11 @@
  * image. If it is too large, it wraps around and overwrites U-Boot,
  * requiring JTAG to revive the board. To prevent such bricking from
  * happening, this tool refuses to build such overlong images.
+ *
+ * Using -m is possible to set the maximum size of the payload.
+ * Otherwise the default MAXSIZE will be used.
+ * For an 8Mb flash, the corresponding maxsize is:
+ * 8 * 1024 * 1024 - 5 * 64 * 1024 = 8388608 - 327680 = 8060928
  *
  * Two more conditions have to be met for a JCG image to be accepted
  * as a valid update by the web interface of the stock firware:
@@ -92,6 +98,7 @@
 #include <sys/mman.h>
 #include <arpa/inet.h>
 #include <assert.h>
+#include <inttypes.h>
 
 /*
  * JCG Firmware image header
@@ -292,8 +299,8 @@ craftcrc(uint32_t dcrc, uint8_t *buf, size_t len)
 void
 usage() {
 	fprintf(stderr, "Usage:\n"
-		"jcgimage -o outfile -u uImage [-v version]\n"
-		"jcgimage -o outfile -k kernel -f rootfs [-v version]\n");
+		"jcgimage -o outfile -u uImage [-m maxsize] [-v version]\n"
+		"jcgimage -o outfile -k kernel -f rootfs [-m maxsize] [-v version]\n");
 	exit(1);
 }
 
@@ -314,6 +321,8 @@ main(int argc, char **argv)
 	char *file1 = NULL;
 	char *file2 = NULL;
 	char *version = NULL;
+	size_t maxsize = MAXSIZE;
+	char *endptr;
 	int mode = MODE_UNKNOWN;
 	int fdo, fd1, fd2;
 	size_t size1, size2, sizeu, sizeo, off1, off2;
@@ -324,7 +333,7 @@ main(int argc, char **argv)
 	assert(sizeof(struct uimage_header) == 64);
 	set_source_date_epoch();
 
-	while ((c = getopt(argc, argv, "o:k:f:u:v:h")) != -1) {
+	while ((c = getopt(argc, argv, "o:k:f:u:v:m:h")) != -1) {
 		switch (c) {
 		case 'o':
 			imagefile = optarg;
@@ -349,6 +358,11 @@ main(int argc, char **argv)
 
 			mode = MODE_UIMAGE;
 			file1 = optarg;
+			break;
+		case 'm':
+			if (optarg != NULL)
+				maxsize = strtoimax(optarg, &endptr, 10);
+
 			break;
 		case 'v':
 			version = optarg;
@@ -385,8 +399,8 @@ main(int argc, char **argv)
 		sizeo = sizeof(*jh) + sizeu;
 	}
 
-	if (sizeo > MAXSIZE)
-		errx(1, "payload too large: %zd > %zd\n", sizeo, MAXSIZE);
+	if (sizeo > maxsize)
+		errx(1, "payload too large: %zd > %zd\n", sizeo, maxsize);
 
 
 	fdo = open(imagefile, O_RDWR | O_CREAT | O_TRUNC, 00644);
