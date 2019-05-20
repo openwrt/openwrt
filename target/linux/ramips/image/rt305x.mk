@@ -21,11 +21,6 @@ define Build/hilink-header
 	mv $@.new $@
 endef
 
-define Build/jcg-header
-	$(STAGING_DIR_HOST)/bin/jcgimage -v $(1) -u $@ -o $@.new
-	mv $@.new $@
-endef
-
 
 define Device/3g150b
   DTS := 3G150B
