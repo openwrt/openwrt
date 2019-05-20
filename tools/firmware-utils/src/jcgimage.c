@@ -148,12 +148,12 @@ opensize(char *name, size_t *size)
 {
 	struct stat s;
 	int fd = open(name, O_RDONLY);
-	if (fd < 0) {
+	if (fd < 0)
 		err(1, "cannot open \"%s\"", name);
-	}
-	if (fstat(fd, &s) == -1) {
+
+	if (fstat(fd, &s) == -1)
 		err(1, "cannot stat \"%s\"", name);
-	}
+
 	*size = s.st_size;
 	return fd;
 }
@@ -183,17 +183,15 @@ mkjcgheader(struct jcg_header *h, size_t psize, char *version)
 	void *payload = (void *)h + sizeof(*h);
 	time_t t;
 
-	if (source_date_epoch != -1) {
+	if (source_date_epoch != -1)
 		t = source_date_epoch;
-	} else if ((time(&t) == (time_t)(-1))) {
+	else if ((time(&t) == (time_t)(-1)))
 		err(1, "time call failed");
-	}
 
-	if (version != NULL) {
-		if (sscanf(version, "%hu.%hu", &major, &minor) != 2) {
+
+	if (version != NULL)
+		if (sscanf(version, "%hu.%hu", &major, &minor) != 2)
 			err(1, "cannot parse version \"%s\"", version);
-		}
-	}
 
 	memset(h, 0, sizeof(*h));
 	h->jh_magic = htonl(JH_MAGIC);
@@ -267,14 +265,14 @@ craftcrc(uint32_t dcrc, uint8_t *buf, size_t len)
 
 	a = ~dcrc;
 	for (i = 0; i < 32; i++) {
-		if (patch & 1) {
+		if (patch & 1)
 			patch = (patch >> 1) ^ 0xedb88320L;
-		} else {
+		else
 			patch >>= 1;
-		}
-		if (a & 1) {
+
+		if (a & 1)
 			patch ^= 0x5b358fd3L;
-		}
+
 		a >>= 1;
 	}
 	patch ^= ~crc32(crc, buf, len - 4);
@@ -285,10 +283,10 @@ craftcrc(uint32_t dcrc, uint8_t *buf, size_t len)
 	/* Verify that we actually get the desired result */
 	crc = crc32(0L, Z_NULL, 0);
 	crc = crc32(crc, buf, len);
-	if (crc != dcrc) {
+	if (crc != dcrc)
 		errx(1, "CRC patching is broken: wanted %08x, but got %08x.",
 		     dcrc, crc);
-	}
+
 }
 
 void
@@ -332,23 +330,23 @@ main(int argc, char **argv)
 			imagefile = optarg;
 			break;
 		case 'k':
-			if (mode == MODE_UIMAGE) {
+			if (mode == MODE_UIMAGE)
 				errx(1,"-k cannot be combined with -u");
-			}
+
 			mode = MODE_KR;
 			file1 = optarg;
 			break;
 		case 'f':
-			if (mode == MODE_UIMAGE) {
+			if (mode == MODE_UIMAGE)
 				errx(1,"-f cannot be combined with -u");
-			}
+
 			mode = MODE_KR;
 			file2 = optarg;
 			break;
 		case 'u':
-			if (mode == MODE_KR) {
+			if (mode == MODE_KR)
 				errx(1,"-u cannot be combined with -k and -r");
-			}
+
 			mode = MODE_UIMAGE;
 			file1 = optarg;
 			break;
@@ -360,19 +358,19 @@ main(int argc, char **argv)
 			usage();
 		}
 	}
-	if (optind != argc) {
+	if (optind != argc)
 		errx(1, "illegal arg \"%s\"", argv[optind]);
-	}
-	if (imagefile == NULL) {
+
+	if (imagefile == NULL)
 		errx(1, "no output file specified");
-	}
-	if (mode == MODE_UNKNOWN) {
+
+	if (mode == MODE_UNKNOWN)
 		errx(1, "specify either -u or -k and -r");
-	}
+
 	if (mode == MODE_KR) {
-		if (file1 == NULL || file2 == NULL) {
-			errx(1,"need -k and -r");
-		}
+		if (file1 == NULL || file2 == NULL)
+			errx(1, "need -k and -r");
+
 		fd2 = opensize(file2, &size2);
 	}
 	fd1 = opensize(file1, &size1);
@@ -387,37 +385,37 @@ main(int argc, char **argv)
 		sizeo = sizeof(*jh) + sizeu;
 	}
 
-	if (sizeo > MAXSIZE) {
-		errx(1,"payload too large: %zd > %zd\n", sizeo, MAXSIZE);
-	}
+	if (sizeo > MAXSIZE)
+		errx(1, "payload too large: %zd > %zd\n", sizeo, MAXSIZE);
+
 
 	fdo = open(imagefile, O_RDWR | O_CREAT | O_TRUNC, 00644);
-	if (fdo < 0) {
+	if (fdo < 0)
 		err(1, "cannot open \"%s\"", imagefile);
-	}
 
-	if (ftruncate(fdo, sizeo) == -1) {
+
+	if (ftruncate(fdo, sizeo) == -1)
 		err(1, "cannot grow \"%s\" to %zd bytes", imagefile, sizeo);
-	}
+
 	map = mmap(NULL, sizeo, PROT_READ|PROT_WRITE, MAP_SHARED, fdo, 0);
 	uh = map + sizeof(*jh);
-	if (map == MAP_FAILED) {
+	if (map == MAP_FAILED)
 		err(1, "cannot mmap \"%s\"", imagefile);
-	}
 
-	if (read(fd1, map + off1, size1) != size1) {
+
+	if (read(fd1, map + off1, size1) != size1)
 		err(1, "cannot copy %s", file1);
-	}
+
 
 	if (mode == MODE_KR) {
-		if (read(fd2, map+off2, size2) != size2) {
+		if (read(fd2, map+off2, size2) != size2)
 			err(1, "cannot copy %s", file2);
-		}
+
 		mkuheader(uh, size1, size2);
-	} else if (mode == MODE_UIMAGE) {
+	} else if (mode == MODE_UIMAGE)
 		craftcrc(ntohl(uh->ih_dcrc), (void*)uh + sizeof(*uh),
 			 sizeu - sizeof(*uh));
-	}
+
 	mkjcgheader(map, sizeu, version);
 	munmap(map, sizeo);
 	close(fdo);
