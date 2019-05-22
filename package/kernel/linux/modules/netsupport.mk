@@ -251,6 +251,8 @@ define KernelPackage/ipsec
   KCONFIG:= \
 	CONFIG_NET_KEY \
 	CONFIG_XFRM_USER \
+	CONFIG_XFRM_STATISTICS=y \
+	CONFIG_XFRM_MIGRATE=y \
 	CONFIG_INET_IPCOMP \
 	CONFIG_XFRM_IPCOMP
   FILES:=$(foreach mod,$(IPSEC-m),$(LINUX_DIR)/net/$(mod).ko)
