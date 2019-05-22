@@ -111,7 +111,7 @@
 +EXPORT_SYMBOL_GPL(nanddev_bbt_set_block_status);
 --- /dev/null
 +++ b/drivers/mtd/nand/spi_nand/core.c
-@@ -0,0 +1,902 @@
+@@ -0,0 +1,911 @@
 +/*
 + *
 + * Copyright (c) 2016-2017 Micron Technology, Inc.
@@ -455,7 +455,7 @@
 +	return (status & STATUS_OIP_MASK) == STATUS_READY ? 0 :	-ETIMEDOUT;
 +}
 +
-+static int spinand_read_id_op(struct spinand_device *spinand, u8 *buf)
++static int spinand_read_id_op(struct spinand_device *spinand, u8 *buf,char option)
 +{
 +	struct spinand_op op;
 +
@@ -463,6 +463,11 @@
 +	op.cmd = SPINAND_CMD_READ_ID;
 +	op.n_rx = SPINAND_MAX_ID_LEN;
 +	op.rx_buf = buf;
++
++	if(option){
++		op.n_addr =1;
++		op.addr[0] =0;
++	}
 +
 +	return spinand_exec_op(spinand, &op);
 +}
@@ -772,13 +777,17 @@
 +static int spinand_detect(struct spinand_device *spinand)
 +{
 +	struct nand_device *nand = &spinand->base;
-+	int ret;
++	int ret=-1;
++	char option=0;
 +
 +	spinand_reset_op(spinand);
-+	spinand_read_id_op(spinand, spinand->id.data);
 +	spinand->id.len = SPINAND_MAX_ID_LEN;
-+
-+	ret = spinand_manufacturer_detect(spinand);
++	for(option=0;option<2;option++){
++		spinand_read_id_op(spinand, spinand->id.data,option);
++		ret = spinand_manufacturer_detect(spinand);
++		if(ret==0)
++			break;
++	}
 +	if (ret) {
 +		pr_err("unknown raw ID %*phN\n",
 +		       SPINAND_MAX_ID_LEN, spinand->id.data);
@@ -2490,7 +2499,7 @@
 +MODULE_LICENSE("GPL v2");
 --- /dev/null
 +++ b/drivers/mtd/nand/spi_nand/gigadevice.c
-@@ -0,0 +1,142 @@
+@@ -0,0 +1,151 @@
 +/*
 + *
 + * Copyright (c) 2016-2017 Micron Technology, Inc.
@@ -2530,10 +2539,14 @@
 +	}
 +
 +static const struct giga_spinand_info giga_spinand_table[] = {
-+	GIGA_SPI_NAND_INFO("GIGAxxxx", 0xB1,
++	GIGA_SPI_NAND_INFO("GD5F1GQ4UF", 0xB1,
 +			     NAND_MEMORG(1, 2048, 128, 64, 1024, 1, 1, 1),
 +			     NAND_ECCREQ(8, 512),
 +			     SPINAND_RW_COMMON),
++	GIGA_SPI_NAND_INFO("GD5F1GQ4UE", 0xD1,
++                             NAND_MEMORG(1, 2048, 128, 64, 1024, 1, 1, 1),
++                             NAND_ECCREQ(8, 512),
++                             SPINAND_RW_COMMON),
 +};
 +
 +static int giga_spinand_get_dummy(struct spinand_device *spinand,
@@ -2618,8 +2631,13 @@
 +					   struct spinand_op *op)
 +{
 +	struct nand_device *nand = spinand_to_nand(spinand);
-+	unsigned int shift;
-+
++	//for GD5F1GQ4XE,the dummy byte position at byte3 when read from cache
++	if((spinand->id.data[1] == 0xd1) && (op->cmd == spinand->read_cache_op)){
++		op->n_addr= 2;
++        	op->addr[0] = op->addr[1];
++        	op->addr[1] = op->addr[2];
++    		op->addr[2] = 0;
++	}
 +	op->dummy_bytes = giga_spinand_get_dummy(spinand, op);
 +}
 +
