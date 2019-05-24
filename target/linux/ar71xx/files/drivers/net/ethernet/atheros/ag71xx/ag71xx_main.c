@@ -845,18 +845,8 @@ err_drop:
 static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
 	struct ag71xx *ag = netdev_priv(dev);
-	int ret;
 
 	switch (cmd) {
-	case SIOCETHTOOL:
-		if (ag->phy_dev == NULL)
-			break;
-
-		spin_lock_irq(&ag->lock);
-		ret = phy_ethtool_ioctl(ag->phy_dev, (void *) ifr->ifr_data);
-		spin_unlock_irq(&ag->lock);
-		return ret;
-
 	case SIOCSIFHWADDR:
 		if (copy_from_user
 			(dev->dev_addr, ifr->ifr_data, sizeof(dev->dev_addr)))
