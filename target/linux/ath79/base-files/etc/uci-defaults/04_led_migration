@@ -12,6 +12,9 @@ engenius,epg5000)
 tplink,archer-c7-v5)
 	migrate_leds "archer-c7-v5:=tp-link:"
 	;;
+wd,mynet-n750)
+	migrate_leds "wd:=mynet-n750:"
+	;;
 esac
 
 migrations_apply system

@@ -105,7 +105,9 @@ case "$FIRMWARE" in
 		ath9k_eeprom_extract "art" 4096 1088
 		ath9k_patch_fw_mac_crc $(mtd_get_mac_text "mac" 4) 2
 		;;
-	dlink,dir-859-a1)
+	dlink,dir-859-a1|\
+	nec,wg1200cr|\
+	wd,mynet-n750)
 		ath9k_eeprom_extract "art" 4096 1088
 		ath9k_patch_fw_mac $(mtd_get_mac_ascii devdata "wlan24mac") 2
 		;;
@@ -120,10 +122,6 @@ case "$FIRMWARE" in
 	iodata,wn-ag300dgr)
 		ath9k_eeprom_extract "art" 4096 1088
 		ath9k_patch_fw_mac $(mtd_get_mac_ascii u-boot-env ethaddr) 2
-		;;
-	nec,wg1200cr)
-		ath9k_eeprom_extract "art" 4096 1088
-		ath9k_patch_fw_mac $(mtd_get_mac_ascii devdata wlan24mac) 2
 		;;
 	nec,wg800hp)
 		ath9k_eeprom_extract "art" 4096 1088
@@ -183,6 +181,10 @@ case "$FIRMWARE" in
 		;;
 	ubnt,unifi)
 		ath9k_eeprom_extract "art" 4096 2048
+		;;
+	wd,mynet-n750)
+		ath9k_eeprom_extract "art" 20480 1088
+		ath9k_patch_fw_mac $(mtd_get_mac_ascii devdata "wlan5mac") 2
 		;;
 	wd,mynet-wifi-rangeextender)
 		ath9k_eeprom_extract "art" 4096 4096
