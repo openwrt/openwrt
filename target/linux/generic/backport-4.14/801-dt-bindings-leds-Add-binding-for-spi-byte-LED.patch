@@ -1,0 +1,69 @@
+From 206b705866c45bd7a2d10bc902dd6cf488663f42 Mon Sep 17 00:00:00 2001
+From: Christian Mauderer <oss@c-mauderer.de>
+Date: Mon, 13 May 2019 21:33:06 +0200
+Subject: [PATCH 1/2] dt-bindings: leds: Add binding for spi-byte LED.
+
+This patch adds the binding documentation for a simple SPI based LED
+controller which use only one byte for setting the brightness.
+
+Signed-off-by: Christian Mauderer <oss@c-mauderer.de>
+Reviewed-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Jacek Anaszewski <jacek.anaszewski@gmail.com>
+---
+ .../bindings/leds/leds-spi-byte.txt           | 44 +++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/leds/leds-spi-byte.txt
+
+diff --git a/Documentation/devicetree/bindings/leds/leds-spi-byte.txt b/Documentation/devicetree/bindings/leds/leds-spi-byte.txt
+new file mode 100644
+index 000000000000..28b6b2d9091e
+--- /dev/null
++++ b/Documentation/devicetree/bindings/leds/leds-spi-byte.txt
+@@ -0,0 +1,44 @@
++* Single Byte SPI LED Device Driver.
++
++The driver can be used for controllers with a very simple SPI protocol:
++- one LED is controlled by a single byte on MOSI
++- the value of the byte gives the brightness between two values (lowest to
++  highest)
++- no return value is necessary (no MISO signal)
++
++The value for lowest and highest brightness is dependent on the device and
++therefore on the compatible string.
++
++Depending on the compatible string some special functions (like hardware
++accelerated blinking) might can be supported too.
++
++The driver currently only supports one LED. The properties of the LED are
++configured in a sub-node in the device node.
++
++Required properties:
++- compatible: should be one of
++   * "ubnt,acb-spi-led"		microcontroller (SONiX 8F26E611LA) based device
++				used for example in Ubiquiti airCube ISP
++
++Property rules described in Documentation/devicetree/bindings/spi/spi-bus.txt
++apply.
++
++LED sub-node properties:
++- label:
++	see Documentation/devicetree/bindings/leds/common.txt
++- default-state:
++	see Documentation/devicetree/bindings/leds/common.txt
++	Only "on" and "off" are supported.
++
++Example:
++
++led-controller@0 {
++	compatible = "ubnt,acb-spi-led";
++	reg = <0>;
++	spi-max-frequency = <100000>;
++
++	led {
++		label = "white:status";
++		default-state = "on";
++	};
++};
+-- 
+2.21.0
+
