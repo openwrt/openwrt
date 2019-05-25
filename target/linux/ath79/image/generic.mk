@@ -655,6 +655,17 @@ define Device/rosinson_wr818
 endef
 TARGET_DEVICES += rosinson_wr818
 
+define Device/wd_mynet-n750
+  $(Device/seama)
+  ATH_SOC := ar9344
+  DEVICE_TITLE := Western Digital My Net N750
+  IMAGE_SIZE := 15872k
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  SEAMA_SIGNATURE := wrgnd13_wd_av
+  SUPPORTED_DEVICES += mynet-n750
+endef
+TARGET_DEVICES += wd_mynet-n750
+
 define Device/wd_mynet-wifi-rangeextender
   ATH_SOC := ar9344
   DEVICE_TITLE := Western Digital My Net Wi-Fi Range Extender
