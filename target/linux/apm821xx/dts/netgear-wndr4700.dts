@@ -307,23 +307,21 @@
 };
 
 &POB0 {
+
 	keys {
-		compatible = "gpio-keys-polled";
-		#interrupt-cells = <2>;
-		autorepeat;
-		poll-interval = <60>;   /* 3 * 20 = 60ms */
+		compatible = "gpio-keys";
 
 		reset {
 			label = "Reset button";
+			gpios = <&GPIO0 15 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
-			gpios = <&GPIO0 15 GPIO_ACTIVE_HIGH>;
 			interrupt-parent = <&UIC1>;
 			interrupts = <0x14 IRQ_TYPE_EDGE_FALLING>;
 		};
 
 		backup_hd {
 			label = "Backup HD button";
-			gpios = <&GPIO0 19 GPIO_ACTIVE_HIGH>;
+			gpios = <&GPIO0 19 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
 			interrupt-parent = <&UIC1>;
 			interrupts = <0x1e IRQ_TYPE_EDGE_FALLING>;
@@ -331,7 +329,7 @@
 
 		rfkill {
 			label = "RFKILL button";
-			gpios = <&GPIO0 20 GPIO_ACTIVE_HIGH>;
+			gpios = <&GPIO0 20 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
 			interrupt-parent = <&UIC1>;
 			interrupts = <0x1f IRQ_TYPE_EDGE_FALLING>;
@@ -339,16 +337,10 @@
 
 		wps {
 			label = "WPS button";
-			gpios = <&GPIO0 23 GPIO_ACTIVE_HIGH>;
+			gpios = <&GPIO0 23 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 			interrupt-parent = <&UIC2>;
 			interrupts = <0x19 IRQ_TYPE_EDGE_FALLING>;
-		};
-
-		sdcard {
-			label = "SDCard inserted";
-			gpios = <&GPIO0 7 GPIO_ACTIVE_LOW>;
-			linux,code = <BTN_1>;
 		};
 	};
 
