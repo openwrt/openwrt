@@ -162,6 +162,15 @@ define Device/rakwireless_rak633
 endef
 TARGET_DEVICES += rakwireless_rak633
 
+define Device/ravpower_wd009
+  DTS := WD009 
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  DEVICE_TITLE := RAVPower WD009
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += ravpower_wd009
+
 define Device/skylab_skw92a
   DTS := SKW92A
   IMAGE_SIZE := 16064k
