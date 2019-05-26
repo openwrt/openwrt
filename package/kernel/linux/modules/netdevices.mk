@@ -33,6 +33,18 @@ endef
 $(eval $(call KernelPackage,skge))
 
 
+define KernelPackage/alx
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Qualcomm Atheros AR816x/AR817x PCI-E Ethernet Network Driver
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio
+  KCONFIG:=CONFIG_ALX
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/alx/alx.ko
+  AUTOLOAD:=$(call AutoProbe,alx)
+endef
+
+$(eval $(call KernelPackage,alx))
+
+
 define KernelPackage/atl2
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Atheros L2 Fast Ethernet support
