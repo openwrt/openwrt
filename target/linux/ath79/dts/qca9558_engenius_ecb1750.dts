@@ -93,6 +93,7 @@
 			};
 
 			partition@50000 {
+				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x050000 0xf50000>;
 			};
@@ -100,6 +101,7 @@
 			partition@fa0000 {
 				label = "userconfig";
 				reg = <0xfa0000 0x050000>;
+				read-only;
 			};
 
 			art: partition@ff0000 {
