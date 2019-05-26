@@ -20,6 +20,28 @@
 			debounce-interval = <60>;
 		};
 	};
+
+	led_spi {
+		compatible = "spi-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gpio-sck = <&gpio 3 GPIO_ACTIVE_HIGH>;
+		gpio-mosi = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <1>;
+
+		led_ubnt@0 {
+			compatible = "ubnt,acb-spi-led";
+			reg = <0>;
+			spi-max-frequency = <100000>;
+
+			led {
+				label = "white:status";
+				default-state = "on";
+			};
+		};
+	};
 };
 
 &spi {

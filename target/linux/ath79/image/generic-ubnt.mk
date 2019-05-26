@@ -232,6 +232,7 @@ TARGET_DEVICES += ubnt_routerstation-pro
 
 define Device/ubnt_acb-isp
   $(Device/ubnt)
+  DEVICE_PACKAGES := kmod-leds-spi-byte
   ATH_SOC := qca9533
   IMAGE_SIZE := 15744k
   DEVICE_TITLE := Ubiquiti airCube ISP
