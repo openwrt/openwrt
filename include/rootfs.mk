@@ -61,9 +61,6 @@ ifdef CONFIG_CLEAN_IPKG
 endif
 
 define prepare_rootfs
-	$(if $(2),@if [ -d '$(2)' ]; then \
-		$(call file_copy,$(2)/.,$(1)); \
-	fi)
 	@mkdir -p $(1)/etc/rc.d
 	@mkdir -p $(1)/var/lock
 	@( \
@@ -75,7 +72,13 @@ define prepare_rootfs
 				echo "postinst script $$script has failed with exit code $$ret" >&2; \
 				exit 1; \
 			fi; \
-		done; \
+		done || true \
+	)
+	$(if $(2),@if [ -d '$(2)' ]; then \
+		$(call file_copy,$(2)/.,$(1)); \
+	fi)
+	@( \
+		cd $(1); \
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
 			IPKG_INSTROOT=$(1) $$(which bash) ./etc/rc.common $$script enable; \
