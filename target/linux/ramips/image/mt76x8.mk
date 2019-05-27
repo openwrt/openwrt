@@ -450,6 +450,14 @@ define Device/wrtnode2r
 endef
 TARGET_DEVICES += wrtnode2r
 
+define Device/xiaomi_mir4a-100m
+  DTS := XIAOMI-MIR4A-100M
+  IMAGE_SIZE := 14976k
+  DEVICE_TITLE := Xiaomi Mi Router 4A (100M Edition)
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += xiaomi_mir4a-100m
+
 define Device/zbtlink_zbt-we1226
   DTS := ZBT-WE1226
   IMAGE_SIZE := $(ralink_default_fw_size_8M)
