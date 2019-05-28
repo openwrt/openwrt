@@ -13,8 +13,8 @@ define Build/at91-install-zImage
     $(CP) $(KDIR)/zImage $@
 endef
 
-ifeq ($(SUBTARGET),legacy)
-include ./legacy.mk
+ifeq ($(SUBTARGET),sam9x)
+include ./sam9x.mk
 endif
 ifeq ($(SUBTARGET),sama5)
 include ./sama5.mk

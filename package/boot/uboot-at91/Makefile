@@ -26,13 +26,13 @@ endef
 
 define U-Boot/at91sam9m10g45ek_nandflash
   NAME:=AT91SAM9M10G45-EK board (NandFlash)
-  BUILD_SUBTARGET:=legacy
+  BUILD_SUBTARGET:=sam9x
   BUILD_DEVICES:=at91sam9m10g45ek
 endef
 
 define U-Boot/at91sam9x5ek_nandflash
   NAME:=AT91SAM9X5-EK board (NandFlash)
-  BUILD_SUBTARGET:=legacy
+  BUILD_SUBTARGET:=sam9x
   BUILD_DEVICES:=at91sam9g15ek at91sam9g25ek \
                  at91sam9g35ek at91sam9x25ek \
 				 at91sam9x35ek
