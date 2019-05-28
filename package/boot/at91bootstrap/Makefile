@@ -30,79 +30,79 @@ endef
 
 define AT91Bootstrap/sama5d2_xplaineddf_uboot
   TITLE:=AT91Bootstrap for SAMA5D2 Xplained board (SPI Flash)
-  BUILD_SUBTARGET:=sama5d2
+  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d2_xplained
 endef
 
 define AT91Bootstrap/sama5d2_xplaineddf_qspi_uboot
   TITLE:=AT91Bootstrap for SAMA5D2 Xplained board (QSPI Flash)
-  BUILD_SUBTARGET:=sama5d2
+  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d2_xplained
 endef
 
 define AT91Bootstrap/sama5d2_xplainedsd_uboot
   TITLE:=AT91Bootstrap for SAMA5D2 Xplained board (SDcard/EMMC)
-  BUILD_SUBTARGET:=sama5d2
+  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d2_xplained
 endef
 
 define AT91Bootstrap/sama5d3_xplainednf_uboot
   TITLE:=AT91Bootstrap for SAMA5D3 Xplained board (Nand Flash)
-  BUILD_SUBTARGET:=sama5d3
+  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d3_xplained
 endef
 
 define AT91Bootstrap/sama5d3_xplainedsd_uboot
   TITLE:=AT91Bootstrap for SAMA5D3 Xplained board (SDcard)
-  BUILD_SUBTARGET:=sama5d3
+  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d3_xplained
 endef
 
 define AT91Bootstrap/sama5d4_xplainednf_uboot_secure
   TITLE:=AT91Bootstrap for SAMA5D4 Xplained board (Nand Flash)
-  BUILD_SUBTARGET:=sama5d4
+  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d4_xplained
 endef
 
 define AT91Bootstrap/sama5d4_xplaineddf_uboot_secure
   TITLE:=AT91Bootstrap for SAMA5D4 Xplained board (SPI Flash)
-  BUILD_SUBTARGET:=sama5d4
+  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d4_xplained
 endef
 
 define AT91Bootstrap/sama5d4_xplainedsd_uboot_secure
   TITLE:=AT91Bootstrap for SAMA5D4 Xplained board (SDcard)
-  BUILD_SUBTARGET:=sama5d4
+  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d4_xplained
 endef
 
 define AT91Bootstrap/sama5d27_som1_eksd_uboot
   TITLE:=AT91Bootstrap for SAMA5D27 SOM1 Ek (SDcard0)
-  BUILD_SUBTARGET:=sama5d2
+  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d27_som1_ek
 endef
 
 define AT91Bootstrap/sama5d27_som1_eksd1_uboot
   TITLE:=AT91Bootstrap for SAMA5D27 SOM1 Ek (SDcard1)
-  BUILD_SUBTARGET:=sama5d2
+  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d27_som1_ek
 endef
 
 define AT91Bootstrap/sama5d27_som1_ekqspi_uboot
   TITLE:=AT91Bootstrap for SAMA5D27 SOM1 Ek (QSPI Flash)
-  BUILD_SUBTARGET:=sama5d2
+  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d27_som1_ek
 endef
 
 define AT91Bootstrap/sama5d2_ptc_eknf_uboot
   TITLE:=AT91Bootstrap for SAMA5D2 PTC EK (Nand Flash)
-  BUILD_SUBTARGET:=sama5d2
+  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d2_ptc_ek
 endef
 
 define AT91Bootstrap/sama5d2_ptc_eksd_uboot
   TITLE:=AT91Bootstrap for SAMA5D2 PTC EK (SDCard)
-  BUILD_SUBTARGET:=sama5d2
+  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d2_ptc_ek
 endef
 
