@@ -117,12 +117,12 @@
  
 +	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
 +		return 0;
- 	pe = proc_create("timer_list", 0444, NULL, &timer_list_fops);
+ 	pe = proc_create("timer_list", 0400, NULL, &timer_list_fops);
  	if (!pe)
  		return -ENOMEM;
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -2685,6 +2685,8 @@ static const struct file_operations proc
+@@ -2689,6 +2689,8 @@ static const struct file_operations proc
  
  static int __init proc_vmalloc_init(void)
  {
@@ -133,7 +133,7 @@
  }
 --- a/mm/vmstat.c
 +++ b/mm/vmstat.c
-@@ -1560,10 +1560,12 @@ static int __init setup_vmstat(void)
+@@ -1574,10 +1574,12 @@ static int __init setup_vmstat(void)
  	cpu_notifier_register_done();
  #endif
  #ifdef CONFIG_PROC_FS
@@ -173,7 +173,7 @@
  		goto err;
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -3044,6 +3044,8 @@ static __net_initdata struct pernet_oper
+@@ -3048,6 +3048,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {
@@ -184,7 +184,7 @@
  
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -2641,10 +2641,12 @@ static const struct file_operations fib_
+@@ -2651,10 +2651,12 @@ static const struct file_operations fib_
  
  int __net_init fib_proc_init(struct net *net)
  {
@@ -199,7 +199,7 @@
  			 &fib_triestat_fops))
  		goto out2;
  
-@@ -2654,17 +2656,21 @@ int __net_init fib_proc_init(struct net
+@@ -2664,17 +2666,21 @@ int __net_init fib_proc_init(struct net
  	return 0;
  
  out3:
@@ -227,7 +227,7 @@
  
 --- a/net/ipv4/proc.c
 +++ b/net/ipv4/proc.c
-@@ -539,6 +539,9 @@ static __net_initdata struct pernet_oper
+@@ -541,6 +541,9 @@ static __net_initdata struct pernet_oper
  
  int __init ip_misc_proc_init(void)
  {

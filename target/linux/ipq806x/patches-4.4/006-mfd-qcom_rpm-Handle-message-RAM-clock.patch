@@ -76,7 +76,7 @@ Signed-off-by: Lee Jones <lee.jones@linaro.org>
  	irq_ack = platform_get_irq_byname(pdev, "ack");
  	if (irq_ack < 0) {
  		dev_err(&pdev->dev, "required ack interrupt missing\n");
-@@ -621,7 +637,11 @@ static int qcom_rpm_probe(struct platfor
+@@ -625,7 +641,11 @@ static int qcom_rpm_probe(struct platfor
  
  static int qcom_rpm_remove(struct platform_device *pdev)
  {

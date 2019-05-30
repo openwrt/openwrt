@@ -77,9 +77,9 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  }
 --- a/scripts/mod/file2alias.c
 +++ b/scripts/mod/file2alias.c
-@@ -1271,6 +1271,18 @@ static int do_hda_entry(const char *file
+@@ -1186,6 +1186,18 @@ static int do_hda_entry(const char *file
+ 	return 1;
  }
- ADD_TO_DEVTABLE("hdaudio", hda_device_id, do_hda_entry);
  
 +/* Looks like: fsl-mc:vNdN */
 +static int do_fsl_mc_entry(const char *filename, void *symval,

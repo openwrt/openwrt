@@ -15054,7 +15054,7 @@ Integrated-by: Yutang Jiang <yutang.jiang@nxp.com>
 +#endif /* _PLATFORM_H_ */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -858,6 +858,17 @@ static inline struct sk_buff *alloc_skb_
+@@ -863,6 +863,17 @@ static inline struct sk_buff *alloc_skb_
  	return __alloc_skb(size, priority, SKB_ALLOC_FCLONE, NUMA_NO_NODE);
  }
  

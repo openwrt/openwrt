@@ -27,7 +27,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -2753,10 +2753,10 @@ choice
+@@ -2756,10 +2756,10 @@ choice
  		  the documented boot protocol using a device tree.
  
  	config MIPS_RAW_APPENDED_DTB
@@ -40,7 +40,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  		  (e.g. cat vmlinux.bin <filename>.dtb > vmlinux_w_dtb).
  
  		  This is meant as a backward compatibility convenience for those
-@@ -2768,24 +2768,6 @@ choice
+@@ -2771,24 +2771,6 @@ choice
  		  look like a DTB header after a reboot if no actual DTB is appended
  		  to vmlinux.bin.  Do not leave this option active in a production kernel
  		  if you don't intend to always append a DTB.

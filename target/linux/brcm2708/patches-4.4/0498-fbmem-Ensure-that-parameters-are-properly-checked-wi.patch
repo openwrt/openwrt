@@ -10,7 +10,7 @@ Subject: [PATCH] fbmem: Ensure that parameters are properly checked within
 
 --- a/drivers/video/fbdev/core/fbmem.c
 +++ b/drivers/video/fbdev/core/fbmem.c
-@@ -1090,7 +1090,13 @@ static int fb_copyarea_user(struct fb_in
+@@ -1097,7 +1097,13 @@ static int fb_copyarea_user(struct fb_in
  	int ret = 0;
  	if (!lock_fb_info(info))
  		return -ENODEV;

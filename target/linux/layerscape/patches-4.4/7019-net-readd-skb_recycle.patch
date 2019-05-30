@@ -14,7 +14,7 @@ Signed-off-by: Madalin Bucur <madalin.bucur@freescale.com>
 
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -799,6 +799,7 @@ void kfree_skb(struct sk_buff *skb);
+@@ -804,6 +804,7 @@ void kfree_skb(struct sk_buff *skb);
  void kfree_skb_list(struct sk_buff *segs);
  void skb_tx_error(struct sk_buff *skb);
  void consume_skb(struct sk_buff *skb);
@@ -24,7 +24,7 @@ Signed-off-by: Madalin Bucur <madalin.bucur@freescale.com>
  
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -766,6 +766,32 @@ void consume_skb(struct sk_buff *skb)
+@@ -770,6 +770,32 @@ void consume_skb(struct sk_buff *skb)
  }
  EXPORT_SYMBOL(consume_skb);
  

@@ -17,7 +17,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/mmc/card/block.c
 +++ b/drivers/mmc/card/block.c
-@@ -137,6 +137,13 @@ enum {
+@@ -134,6 +134,13 @@ enum {
  module_param(perdev_minors, int, 0444);
  MODULE_PARM_DESC(perdev_minors, "Minors numbers to allocate per device");
  
@@ -31,7 +31,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  static inline int mmc_blk_part_switch(struct mmc_card *card,
  				      struct mmc_blk_data *md);
  static int get_card_status(struct mmc_card *card, u32 *status, int retries);
-@@ -2571,6 +2578,7 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2565,6 +2572,7 @@ static int mmc_blk_probe(struct mmc_card
  {
  	struct mmc_blk_data *md, *part_md;
  	char cap_str[10];
@@ -39,7 +39,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
  	/*
  	 * Check that the card supports the command class(es) we need.
-@@ -2578,7 +2586,16 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2572,7 +2580,16 @@ static int mmc_blk_probe(struct mmc_card
  	if (!(card->csd.cmdclass & CCC_BLOCK_READ))
  		return -ENODEV;
  
@@ -57,7 +57,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
  	md = mmc_blk_alloc(card);
  	if (IS_ERR(md))
-@@ -2586,9 +2603,14 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2580,9 +2597,14 @@ static int mmc_blk_probe(struct mmc_card
  
  	string_get_size((u64)get_capacity(md->disk), 512, STRING_UNITS_2,
  			cap_str, sizeof(cap_str));

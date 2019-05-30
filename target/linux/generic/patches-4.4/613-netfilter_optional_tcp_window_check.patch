@@ -10,7 +10,7 @@
  /* "Be conservative in what you do,
      be liberal in what you accept from others."
      If it's non-zero, we mark only out of window RST segments as INVALID. */
-@@ -515,6 +518,9 @@ static bool tcp_in_window(const struct n
+@@ -519,6 +522,9 @@ static bool tcp_in_window(const struct n
  	s32 receiver_offset;
  	bool res, in_recv_win;
  
@@ -20,7 +20,7 @@
  	/*
  	 * Get the required data from the packet.
  	 */
-@@ -1481,6 +1487,13 @@ static struct ctl_table tcp_sysctl_table
+@@ -1485,6 +1491,13 @@ static struct ctl_table tcp_sysctl_table
  		.mode		= 0644,
  		.proc_handler	= proc_dointvec,
  	},

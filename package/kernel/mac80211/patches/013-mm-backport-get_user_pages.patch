@@ -1,0 +1,65 @@
+--- a/backport-include/linux/mm.h
++++ b/backport-include/linux/mm.h
+@@ -39,8 +39,20 @@ static inline
+ long backport_get_user_pages_locked(unsigned long start, unsigned long nr_pages,
+ 		    int write, int force, struct page **pages, int *locked)
+ {
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,4,168))
+ 	return get_user_pages_locked(current, current->mm, start, nr_pages,
+ 		    write, force, pages, locked);
++#else
++	int flags = 0;
++
++	if (write)
++		flags |= FOLL_WRITE;
++	if (force)
++		flags |= FOLL_FORCE;
++
++	return get_user_pages_locked(current, current->mm, start, nr_pages,
++		    flags, pages, locked);
++#endif
+ }
+ #define get_user_pages_locked LINUX_BACKPORT(get_user_pages_locked)
+ 
+@@ -48,8 +60,20 @@ static inline
+ long backport_get_user_pages_unlocked(unsigned long start, unsigned long nr_pages,
+ 				      int write, int force, struct page **pages)
+ {
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,4,168))
+ 	return get_user_pages_unlocked(current, current->mm, start,  nr_pages,
+ 		    write, force, pages);
++#else
++	int flags = 0;
++
++	if (write)
++		flags |= FOLL_WRITE;
++	if (force)
++		flags |= FOLL_FORCE;
++
++	return get_user_pages_unlocked(current, current->mm, start,  nr_pages,
++		    pages, flags);
++#endif
+ }
+ #define get_user_pages_unlocked LINUX_BACKPORT(get_user_pages_unlocked)
+ #endif
+@@ -60,8 +84,20 @@ long backport_get_user_pages(unsigned lo
+ 			    int write, int force, struct page **pages,
+ 			    struct vm_area_struct **vmas)
+ {
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,4,168))
+ 	return get_user_pages(current, current->mm, start,  nr_pages,
+ 		    write, force, pages, vmas);
++#else
++	int flags = 0;
++
++	if (write)
++		flags |= FOLL_WRITE;
++	if (force)
++		flags |= FOLL_FORCE;
++
++	return get_user_pages(current, current->mm, start,  nr_pages,
++		    flags, pages, vmas);
++#endif
+ }
+ #define get_user_pages LINUX_BACKPORT(get_user_pages)
+ #endif

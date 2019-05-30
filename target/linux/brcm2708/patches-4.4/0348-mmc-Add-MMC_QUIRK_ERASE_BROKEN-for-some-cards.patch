@@ -16,7 +16,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/mmc/card/block.c
 +++ b/drivers/mmc/card/block.c
-@@ -2553,6 +2553,13 @@ static const struct mmc_fixup blk_fixups
+@@ -2547,6 +2547,13 @@ static const struct mmc_fixup blk_fixups
  	MMC_FIXUP("V10016", CID_MANFID_KINGSTON, CID_OEMID_ANY, add_quirk_mmc,
  		  MMC_QUIRK_TRIM_BROKEN),
  
@@ -32,7 +32,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
 --- a/drivers/mmc/core/core.c
 +++ b/drivers/mmc/core/core.c
-@@ -2253,7 +2253,8 @@ EXPORT_SYMBOL(mmc_erase);
+@@ -2257,7 +2257,8 @@ EXPORT_SYMBOL(mmc_erase);
  int mmc_can_erase(struct mmc_card *card)
  {
  	if ((card->host->caps & MMC_CAP_ERASE) &&

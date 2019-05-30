@@ -24,7 +24,7 @@ produce a noisy warning.
  
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -388,10 +388,14 @@ static int xhci_try_enable_msi(struct us
+@@ -386,10 +386,14 @@ static int xhci_try_enable_msi(struct us
  		free_irq(hcd->irq, hcd);
  	hcd->irq = 0;
  
@@ -44,7 +44,7 @@ produce a noisy warning.
  		/* hcd->irq is 0, we have MSI */
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1656,6 +1656,7 @@ struct xhci_hcd {
+@@ -1657,6 +1657,7 @@ struct xhci_hcd {
  	/* support xHCI 0.96 spec USB2 software LPM */
  	unsigned		sw_lpm_support:1;
  	/* support xHCI 1.0 spec USB2 hardware LPM */

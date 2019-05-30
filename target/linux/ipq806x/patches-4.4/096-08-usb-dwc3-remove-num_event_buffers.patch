@@ -161,7 +161,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  
 --- a/drivers/usb/dwc3/gadget.c
 +++ b/drivers/usb/dwc3/gadget.c
-@@ -2571,14 +2571,14 @@ static void dwc3_process_event_entry(str
+@@ -2572,14 +2572,14 @@ static void dwc3_process_event_entry(str
  	}
  }
  
@@ -178,7 +178,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  	left = evt->count;
  
  	if (!(evt->flags & DWC3_EVENT_PENDING))
-@@ -2603,7 +2603,7 @@ static irqreturn_t dwc3_process_event_bu
+@@ -2604,7 +2604,7 @@ static irqreturn_t dwc3_process_event_bu
  		evt->lpos = (evt->lpos + 4) % DWC3_EVENT_BUFFERS_SIZE;
  		left -= 4;
  
@@ -187,7 +187,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  	}
  
  	evt->count = 0;
-@@ -2611,9 +2611,9 @@ static irqreturn_t dwc3_process_event_bu
+@@ -2612,9 +2612,9 @@ static irqreturn_t dwc3_process_event_bu
  	ret = IRQ_HANDLED;
  
  	/* Unmask interrupt */
@@ -199,7 +199,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  
  	return ret;
  }
-@@ -2623,27 +2623,23 @@ static irqreturn_t dwc3_thread_interrupt
+@@ -2624,27 +2624,23 @@ static irqreturn_t dwc3_thread_interrupt
  	struct dwc3 *dwc = _dwc;
  	unsigned long flags;
  	irqreturn_t ret = IRQ_NONE;
@@ -231,7 +231,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  	count &= DWC3_GEVNTCOUNT_MASK;
  	if (!count)
  		return IRQ_NONE;
-@@ -2652,9 +2648,9 @@ static irqreturn_t dwc3_check_event_buf(
+@@ -2653,9 +2649,9 @@ static irqreturn_t dwc3_check_event_buf(
  	evt->flags |= DWC3_EVENT_PENDING;
  
  	/* Mask interrupt */
@@ -243,7 +243,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  
  	return IRQ_WAKE_THREAD;
  }
-@@ -2662,18 +2658,8 @@ static irqreturn_t dwc3_check_event_buf(
+@@ -2663,18 +2659,8 @@ static irqreturn_t dwc3_check_event_buf(
  static irqreturn_t dwc3_interrupt(int irq, void *_dwc)
  {
  	struct dwc3			*dwc = _dwc;

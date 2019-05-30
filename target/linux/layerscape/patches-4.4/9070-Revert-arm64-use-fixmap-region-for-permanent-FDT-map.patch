@@ -96,7 +96,7 @@ Signed-off-by: Yutang Jiang <yutang.jiang@nxp.com>
  #endif
 --- a/arch/arm64/kernel/head.S
 +++ b/arch/arm64/kernel/head.S
-@@ -212,6 +212,8 @@ ENTRY(stext)
+@@ -213,6 +213,8 @@ ENTRY(stext)
  	bl	el2_setup			// Drop to EL1, w20=cpu_boot_mode
  	adrp	x24, __PHYS_OFFSET
  	bl	set_cpu_boot_mode_flag
@@ -105,7 +105,7 @@ Signed-off-by: Yutang Jiang <yutang.jiang@nxp.com>
  	bl	__create_page_tables		// x25=TTBR0, x26=TTBR1
  	/*
  	 * The following calls CPU setup code, see arch/arm64/mm/proc.S for
-@@ -243,6 +245,24 @@ preserve_boot_args:
+@@ -244,6 +246,24 @@ preserve_boot_args:
  ENDPROC(preserve_boot_args)
  
  /*
@@ -130,7 +130,7 @@ Signed-off-by: Yutang Jiang <yutang.jiang@nxp.com>
   * Macro to create a table entry to the next page.
   *
   *	tbl:	page table address
-@@ -306,7 +326,8 @@ ENDPROC(preserve_boot_args)
+@@ -307,7 +327,8 @@ ENDPROC(preserve_boot_args)
   * required to get the kernel running. The following sections are required:
   *   - identity mapping to enable the MMU (low address, TTBR0)
   *   - first few MB of the kernel linear mapping to jump to once the MMU has
@@ -140,7 +140,7 @@ Signed-off-by: Yutang Jiang <yutang.jiang@nxp.com>
   */
  __create_page_tables:
  	adrp	x25, idmap_pg_dir
-@@ -396,6 +417,22 @@ __create_page_tables:
+@@ -397,6 +418,22 @@ __create_page_tables:
  	create_block_map x0, x7, x3, x5, x6
  
  	/*
