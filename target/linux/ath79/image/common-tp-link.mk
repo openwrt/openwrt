@@ -99,8 +99,9 @@ endef
 
 define Device/tplink-safeloader
   $(Device/tplink)
-  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata
+  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
+    append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
 

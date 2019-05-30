@@ -1,0 +1,17 @@
+--- a/configure.ac	2019-04-30 17:04:53.542449926 +0300
++++ b/configure.ac	2019-04-30 17:06:26.974453867 +0300
+@@ -244,7 +244,13 @@
+ 
+ # Third-party libraries
+ lldp_CHECK_LIBEVENT
+-lldp_CHECK_LIBCAP
++
++#libcap is not a core package so disable this capability
++#lldp_CHECK_LIBCAP
++libcap_LIBS=
++libcap_CFLAGS=
++AC_SUBST([libcap_LIBS])
++AC_SUBST([libcap_CFLAGS])
+ 
+ # Compatibility with pkg.m4 < 0.27
+ m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],

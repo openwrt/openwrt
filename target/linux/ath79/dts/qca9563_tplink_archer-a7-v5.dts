@@ -8,6 +8,15 @@
 	model = "TP-Link Archer A7 v5";
 };
 
+&gpio_keys {
+	reset {
+		label = "Reset button";
+		linux,code = <KEY_RESTART>;
+		gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		debounce-interval = <60>;
+	};
+};
+
 &mtdparts {
 	factory-uboot@0 {
 		label = "factory-uboot";
@@ -30,16 +39,19 @@
 	info: info@f40000 {
 		label = "info";
 		reg = <0xf40000 0x020000>;
+		read-only;
 	};
 
 	config: config@f60000 {
 		label = "config";
 		reg = <0xf60000 0x050000>;
+		read-only;
 	};
 
 	partition@fc0000 {
 		label = "partition-table";
 		reg = <0xfc0000 0x010000>;
+		read-only;
 	};
 
 	art: art@ff0000 {

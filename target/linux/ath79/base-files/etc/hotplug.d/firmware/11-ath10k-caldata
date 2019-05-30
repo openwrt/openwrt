@@ -102,6 +102,10 @@ case "$FIRMWARE" in
 	elecom,wrc-1750ghbk2-i)
 		ath10kcal_extract "ART" 20480 2116
 		;;
+	engenius,ecb1750)
+		ath10kcal_extract "art" 20480 2116
+		ath10kcal_patch_mac $(mtd_get_mac_ascii u-boot-env athaddr)
+		;;
 	engenius,epg5000|\
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr2)
@@ -119,7 +123,8 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac_crc $(mtd_get_mac_text board_data 2176)
 		;;
-	ocedo,koala)
+	ocedo,koala|\
+	ocedo,ursus)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(mtd_get_mac_binary art 12)
 		;;
@@ -142,6 +147,10 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -1)
 		;;
+        tplink,archer-d50-v1)
+		ath10kcal_extract "art" 20480 2116
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) +2)
+                ;;
 	tplink,re350k-v1)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +2)
@@ -163,6 +172,17 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-pci-0000:00:00.0.bin")
 	case $board in
+	nec,wg1200cr)
+		ath10kcal_extract "art" 20480 12064
+		ath10kcal_patch_mac_crc $(mtd_get_mac_ascii devdata wlan5mac)
+		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
+			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
+		;;
+	netgear,ex6400|\
+	netgear,ex7300)
+		ath10kcal_extract "caldata" 20480 12064
+		ath10kcal_patch_mac $(mtd_get_mac_binary caldata 12)
+		;;
 	phicomm,k2t)
 		ath10kcal_extract "art" 20480 12064
 		ath10kcal_patch_mac_crc $(k2t_get_mac "5g_mac")

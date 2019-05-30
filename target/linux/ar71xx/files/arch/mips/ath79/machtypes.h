@@ -321,6 +321,7 @@ enum ath79_mach_type {
 	ATH79_MACH_UBNT_AIRGWP,			/* Ubiquiti AirGateway Pro */
 	ATH79_MACH_UBNT_AIRROUTER,		/* Ubiquiti AirRouter */
 	ATH79_MACH_UBNT_BULLET_M,		/* Ubiquiti Bullet M */
+	ATH79_MACH_UBNT_BULLET_M_XW,		/* Ubiquiti Bullet M XW */
 	ATH79_MACH_UBNT_LBE_M5,			/* Ubiquiti Litebeam M5 */
 	ATH79_MACH_UBNT_LOCO_M_XW,		/* Ubiquiti Loco M XW */
 	ATH79_MACH_UBNT_LSSR71,			/* Ubiquiti LS-SR71 */

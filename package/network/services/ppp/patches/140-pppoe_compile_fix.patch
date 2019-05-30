@@ -34,14 +34,3 @@
  
  
  /* Ethernet frame types according to RFC 2516 */
---- a/pppd/plugins/rp-pppoe/Makefile.linux
-+++ b/pppd/plugins/rp-pppoe/Makefile.linux
-@@ -33,7 +33,7 @@ pppoe-discovery: pppoe-discovery.o debug
- 	$(CC) $(LDFLAGS) -o pppoe-discovery pppoe-discovery.o debug.o
- 
- pppoe-discovery.o: pppoe-discovery.c
--	$(CC) $(CFLAGS) -c -o pppoe-discovery.o pppoe-discovery.c
-+	$(CC) $(CFLAGS) -I../../.. -c -o pppoe-discovery.o pppoe-discovery.c
- 
- debug.o: debug.c
- 	$(CC) $(CFLAGS) -c -o debug.o debug.c

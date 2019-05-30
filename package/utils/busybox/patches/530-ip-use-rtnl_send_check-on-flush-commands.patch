@@ -1,0 +1,214 @@
+From 028c5aa18b5273c029f0278232d922ee1a164de6 Mon Sep 17 00:00:00 2001
+From: Denys Vlasenko <vda.linux@googlemail.com>
+Date: Wed, 22 May 2019 13:54:46 +0200
+Subject: ip: use rtnl_send_check() on flush commands, closes 6962
+
+function                                             old     new   delta
+rtnl_send_check                                        -     160    +160
+xrtnl_wilddump_request                                64      66      +2
+ipneigh_list_or_flush                                714     706      -8
+rtnl_send                                             69       -     -69
+------------------------------------------------------------------------------
+(add/remove: 1/1 grow/shrink: 1/1 up/down: 162/-77)            Total: 85 bytes
+
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+ networking/libiproute/ipaddress.c  |  6 ++++--
+ networking/libiproute/ipneigh.c    |  9 ++++----
+ networking/libiproute/iproute.c    |  5 ++++-
+ networking/libiproute/libnetlink.c | 43 +++++++++++++++++++++++++++++++-------
+ networking/libiproute/libnetlink.h | 19 +++++++++++++++--
+ 5 files changed, 65 insertions(+), 17 deletions(-)
+
+--- a/networking/libiproute/ipaddress.c
++++ b/networking/libiproute/ipaddress.c
+@@ -23,6 +23,7 @@
+ 
+ struct filter_t {
+ 	char *label;
++	/* Flush cmd buf. If !NULL, print_addrinfo() constructs flush commands in it */
+ 	char *flushb;
+ 	struct rtnl_handle *rth;
+ 	int scope, scopemask;
+@@ -34,6 +35,8 @@ struct filter_t {
+ 	smallint showqueue;
+ 	smallint oneline;
+ 	smallint up;
++	/* Misnomer. Does not mean "flushed something" */
++	/* More like "flush commands were constructed by print_addrinfo()" */
+ 	smallint flushed;
+ 	inet_prefix pfx;
+ } FIX_ALIASING;
+@@ -201,7 +204,7 @@ static NOINLINE int print_linkinfo(const
+ 
+ static int flush_update(void)
+ {
+-	if (rtnl_send(G_filter.rth, G_filter.flushb, G_filter.flushp) < 0) {
++	if (rtnl_send_check(G_filter.rth, G_filter.flushb, G_filter.flushp) < 0) {
+ 		bb_perror_msg("can't send flush request");
+ 		return -1;
+ 	}
+@@ -507,7 +510,6 @@ int FAST_FUNC ipaddr_list_or_flush(char
+ 		xrtnl_dump_filter(&rth, store_nlmsg, &ainfo);
+ 	}
+ 
+-
+ 	if (G_filter.family && G_filter.family != AF_PACKET) {
+ 		struct nlmsg_list **lp;
+ 		lp = &linfo;
+--- a/networking/libiproute/ipneigh.c
++++ b/networking/libiproute/ipneigh.c
+@@ -32,7 +32,10 @@ struct filter_t {
+ 	int state;
+ 	int unused_only;
+ 	inet_prefix pfx;
++	/* Misnomer. Does not mean "flushed N something" */
++	/* More like "no_of_flush_commands_constructed_by_print_neigh()" */
+ 	int flushed;
++	/* Flush cmd buf. If !NULL, print_neigh() constructs flush commands in it */
+ 	char *flushb;
+ 	int flushp;
+ 	int flushe;
+@@ -45,7 +48,7 @@ typedef struct filter_t filter_t;
+ 
+ static int flush_update(void)
+ {
+-	if (rtnl_send(G_filter.rth, G_filter.flushb, G_filter.flushp) < 0) {
++	if (rtnl_send_check(G_filter.rth, G_filter.flushb, G_filter.flushp) < 0) {
+ 		bb_perror_msg("can't send flush request");
+ 		return -1;
+ 	}
+@@ -299,9 +302,7 @@ static int FAST_FUNC ipneigh_list_or_flu
+ 		G_filter.rth = &rth;
+ 
+ 		while (round < MAX_ROUNDS) {
+-			if (xrtnl_wilddump_request(&rth, G_filter.family, RTM_GETNEIGH) < 0) {
+-				bb_perror_msg_and_die("can't send dump request");
+-			}
++			xrtnl_wilddump_request(&rth, G_filter.family, RTM_GETNEIGH);
+ 			G_filter.flushed = 0;
+ 			if (xrtnl_dump_filter(&rth, print_neigh, NULL) < 0) {
+ 				bb_perror_msg_and_die("flush terminated");
+--- a/networking/libiproute/iproute.c
++++ b/networking/libiproute/iproute.c
+@@ -26,7 +26,10 @@
+ 
+ struct filter_t {
+ 	int tb;
++	/* Misnomer. Does not mean "flushed something" */
++	/* More like "flush commands were constructed by print_route()" */
+ 	smallint flushed;
++	/* Flush cmd buf. If !NULL, print_route() constructs flush commands in it */
+ 	char *flushb;
+ 	int flushp;
+ 	int flushe;
+@@ -53,7 +56,7 @@ typedef struct filter_t filter_t;
+ 
+ static int flush_update(void)
+ {
+-	if (rtnl_send(G_filter.rth, G_filter.flushb, G_filter.flushp) < 0) {
++	if (rtnl_send_check(G_filter.rth, G_filter.flushb, G_filter.flushp) < 0) {
+ 		bb_perror_msg("can't send flush request");
+ 		return -1;
+ 	}
+--- a/networking/libiproute/libnetlink.c
++++ b/networking/libiproute/libnetlink.c
+@@ -34,7 +34,7 @@ void FAST_FUNC xrtnl_open(struct rtnl_ha
+ 	rth->seq = time(NULL);
+ }
+ 
+-int FAST_FUNC xrtnl_wilddump_request(struct rtnl_handle *rth, int family, int type)
++void FAST_FUNC xrtnl_wilddump_request(struct rtnl_handle *rth, int family, int type)
+ {
+ 	struct {
+ 		struct nlmsghdr nlh;
+@@ -48,18 +48,45 @@ int FAST_FUNC xrtnl_wilddump_request(str
+ 	req.nlh.nlmsg_seq = rth->dump = ++rth->seq;
+ 	req.g.rtgen_family = family;
+ 
+-	return rtnl_send(rth, (void*)&req, sizeof(req));
++	rtnl_send(rth, (void*)&req, sizeof(req));
+ }
+ 
+-//TODO: pass rth->fd instead of full rth?
+-int FAST_FUNC rtnl_send(struct rtnl_handle *rth, char *buf, int len)
++/* A version which checks for e.g. EPERM errors.
++ * Try: setuidgid 1:1 ip addr flush dev eth0
++ */
++int FAST_FUNC rtnl_send_check(struct rtnl_handle *rth, const void *buf, int len)
+ {
+-	struct sockaddr_nl nladdr;
++	struct nlmsghdr *h;
++	int status;
++	char resp[1024];
++
++	status = write(rth->fd, buf, len);
++	if (status < 0)
++		return status;
++
++	/* Check for immediate errors */
++	status = recv(rth->fd, resp, sizeof(resp), MSG_DONTWAIT|MSG_PEEK);
++	if (status < 0) {
++		if (errno == EAGAIN) /* if no error, this happens */
++			return 0;
++		return -1;
++	}
++
++	for (h = (struct nlmsghdr *)resp;
++	    NLMSG_OK(h, status);
++	    h = NLMSG_NEXT(h, status)
++	) {
++		if (h->nlmsg_type == NLMSG_ERROR) {
++			struct nlmsgerr *err = (struct nlmsgerr*)NLMSG_DATA(h);
++			if (h->nlmsg_len < NLMSG_LENGTH(sizeof(struct nlmsgerr)))
++				bb_error_msg("ERROR truncated");
++			else
++				errno = -err->error;
++			return -1;
++		}
++	}
+ 
+-	memset(&nladdr, 0, sizeof(nladdr));
+-	nladdr.nl_family = AF_NETLINK;
+-
+-	return xsendto(rth->fd, buf, len, (struct sockaddr*)&nladdr, sizeof(nladdr));
++	return 0;
+ }
+ 
+ int FAST_FUNC rtnl_dump_request(struct rtnl_handle *rth, int type, void *req, int len)
+--- a/networking/libiproute/libnetlink.h
++++ b/networking/libiproute/libnetlink.h
+@@ -20,7 +20,7 @@ struct rtnl_handle {
+ 
+ extern void xrtnl_open(struct rtnl_handle *rth) FAST_FUNC;
+ #define rtnl_close(rth) (close((rth)->fd))
+-extern int xrtnl_wilddump_request(struct rtnl_handle *rth, int fam, int type) FAST_FUNC;
++extern void xrtnl_wilddump_request(struct rtnl_handle *rth, int fam, int type) FAST_FUNC;
+ extern int rtnl_dump_request(struct rtnl_handle *rth, int type, void *req, int len) FAST_FUNC;
+ extern int xrtnl_dump_filter(struct rtnl_handle *rth,
+ 		int (*filter)(const struct sockaddr_nl*, struct nlmsghdr *n, void*) FAST_FUNC,
+@@ -34,8 +34,23 @@ extern int rtnl_talk(struct rtnl_handle
+ 		int (*junk)(struct sockaddr_nl *,struct nlmsghdr *n, void *),
+ 		void *jarg) FAST_FUNC;
+ 
+-extern int rtnl_send(struct rtnl_handle *rth, char *buf, int) FAST_FUNC;
++int rtnl_send_check(struct rtnl_handle *rth, const void *buf, int len) FAST_FUNC;
++//TODO: pass rth->fd instead of full rth?
++static ALWAYS_INLINE void rtnl_send(struct rtnl_handle *rth, const void *buf, int len)
++{
++	// Used to be:
++	//struct sockaddr_nl nladdr;
++	//memset(&nladdr, 0, sizeof(nladdr));
++	//nladdr.nl_family = AF_NETLINK;
++	//return xsendto(rth->fd, buf, len, (struct sockaddr*)&nladdr, sizeof(nladdr));
+ 
++	// iproute2-4.2.0 simplified the above to:
++	//return send(rth->fd, buf, len, 0);
++
++	// We are using even shorter:
++	xwrite(rth->fd, buf, len);
++	// and convert to void, inline.
++}
+ 
+ extern int addattr32(struct nlmsghdr *n, int maxlen, int type, uint32_t data) FAST_FUNC;
+ extern int addattr_l(struct nlmsghdr *n, int maxlen, int type, void *data, int alen) FAST_FUNC;

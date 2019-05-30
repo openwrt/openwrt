@@ -182,6 +182,19 @@ _ucidef_finish_switch_roles() {
 	done
 }
 
+ucidef_set_ar8xxx_switch_mib() {
+	local name="$1"
+	local type="$2"
+	local interval="$3"
+
+	json_select_object switch
+		json_select_object "$name"
+			json_add_int ar8xxx_mib_type $type
+			json_add_int ar8xxx_mib_poll_interval $interval
+		json_select ..
+	json_select ..
+}
+
 ucidef_add_switch() {
 	local name="$1"; shift
 	local port num role device index need_tag prev_role

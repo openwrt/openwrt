@@ -7,10 +7,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2019.01
+PKG_VERSION:=2019.04
 PKG_RELEASE:=1
 
-PKG_HASH:=50bd7e5a466ab828914d080d5f6a432345b500e8fba1ad3b7b61e95e60d51c22
+PKG_HASH:=76b7772d156b3ddd7644c8a1736081e55b78828537ff714065d21dbade229bef
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -18,6 +18,12 @@ include $(INCLUDE_DIR)/package.mk
 define U-Boot/Default
   BUILD_TARGET:=imx6
   UBOOT_IMAGE:=u-boot.imx
+endef
+
+define U-Boot/apalis_imx6
+  NAME:=Toradex Apalis
+  UBOOT_IMAGE:=SPL u-boot.img u-boot-with-spl.imx
+  UBOOT_MAKE_FLAGS:=SPL u-boot.img u-boot-with-spl.imx
 endef
 
 define U-Boot/mx6cuboxi
@@ -62,6 +68,7 @@ define U-Boot/wandboard
 endef
 
 UBOOT_TARGETS := \
+	apalis_imx6 \
 	mx6cuboxi \
 	mx6sabresd \
 	nitrogen6dl \

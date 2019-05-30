@@ -15,6 +15,7 @@ CPU_SUBTYPE:=vfp
 MAINTAINER:=Felix Fietkau <nbd@nbd.name>, \
 	    Koen Vandeputte <koen.vandeputte@ncentric.com>
 KERNEL_PATCHVER:=4.14
+KERNEL_TESTING_PATCHVER := 4.19
 
 define Target/Description
 	Build images for Cavium Networks Econa CNS3xxx based boards,

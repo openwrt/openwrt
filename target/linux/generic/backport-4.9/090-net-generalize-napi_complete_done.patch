@@ -399,7 +399,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			/* bnx2x_has_rx_work() reads the status block,
 --- a/drivers/net/ethernet/broadcom/bnxt/bnxt.c
 +++ b/drivers/net/ethernet/broadcom/bnxt/bnxt.c
-@@ -1787,7 +1787,7 @@ static int bnxt_poll_nitroa0(struct napi
+@@ -1797,7 +1797,7 @@ static int bnxt_poll_nitroa0(struct napi
  	}
  
  	if (!bnxt_has_work(bp, cpr) && rx_pkts < budget) {
@@ -1095,7 +1095,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		dma_intr_ena = smsc9420_reg_read(pd, DMAC_INTR_ENA);
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -2702,7 +2702,7 @@ static int stmmac_poll(struct napi_struc
+@@ -2700,7 +2700,7 @@ static int stmmac_poll(struct napi_struc
  
  	work_done = stmmac_rx(priv, budget);
  	if (work_done < budget) {

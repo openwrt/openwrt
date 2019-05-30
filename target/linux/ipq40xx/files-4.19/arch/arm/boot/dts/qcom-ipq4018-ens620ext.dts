@@ -67,6 +67,15 @@
 		edma@c080000 {
 			status = "okay";
 		};
+
+		/*
+		 * Disable the broken restart as a workaround for the buggy
+		 * 3.0.0/3.0.1 U-boots that ship with the device.
+		 * Note: The watchdog is now used to restart this device.
+		 */
+		restart@4ab000 {
+			status = "disabled";
+		};
 	};
 
 	buttons {

@@ -42,6 +42,12 @@ define Build/add-elecom-factory-initramfs
   fi
 endef
 
+define Build/nec-enc
+  $(STAGING_DIR_HOST)/bin/nec-enc \
+    -i $@ -o $@.new -k $(1)
+  mv $@.new $@
+endef
+
 define Build/nec-fw
   ( stat -c%s $@ | tr -d "\n" | dd bs=16 count=1 conv=sync; ) >> $@
   ( \
@@ -68,6 +74,14 @@ define Device/seama
 	$$(IMAGE/default) | pad-rootfs -x 64 | seama | seama-seal | check-size $$$$(IMAGE_SIZE)
   SEAMA_SIGNATURE :=
 endef
+
+define Device/aruba_ap-105
+  ATH_SOC := ar7161
+  DEVICE_TITLE := Aruba AP-105
+  IMAGE_SIZE := 16000k
+  DEVICE_PACKAGES := kmod-i2c-core kmod-i2c-gpio kmod-tpm-i2c-atmel
+endef
+TARGET_DEVICES += aruba_ap-105
 
 define Device/avm_fritz300e
   ATH_SOC := ar7242
@@ -296,6 +310,18 @@ define Device/embeddedwireless_dorin
 endef
 TARGET_DEVICES += embeddedwireless_dorin
 
+define Device/engenius_ecb1750
+  ATH_SOC := qca9558
+  DEVICE_TITLE := EnGenius ECB1750
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15680k
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+    append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | \
+    senao-header -r 0x101 -p 0x6d -t 2
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += engenius_ecb1750
+
 define Device/engenius_epg5000
   ATH_SOC := qca9558
   DEVICE_TITLE := EnGenius EPG5000
@@ -357,7 +383,7 @@ TARGET_DEVICES += glinet_gl-ar300m-nor
 define Device/glinet_gl-ar750s
   ATH_SOC := qca9563
   DEVICE_TITLE := GL.iNet GL-AR750S
-  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct block-mount
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += gl-ar750s
 endef
@@ -375,6 +401,7 @@ define Device/iodata_etg3-r
   ATH_SOC := ar9342
   DEVICE_TITLE := I-O DATA ETG3-R
   IMAGE_SIZE := 7680k
+  DEVICE_PACKAGES := -iwinfo -kmod-ath9k -wpad-basic
 endef
 TARGET_DEVICES += iodata_etg3-r
 
@@ -446,6 +473,24 @@ define Device/librerouter_librerouter-v1
 endef
 TARGET_DEVICES += librerouter_librerouter-v1
 
+define Device/nec_wg1200cr
+  ATH_SOC := qca9563
+  DEVICE_TITLE := NEC Aterm WG1200CR
+  IMAGE_SIZE := 7616k
+  SEAMA_MTDBLOCK := 6
+  SEAMA_SIGNATURE := wrgac72_necpf.2016gui_wg1200cr
+  IMAGES += factory.bin
+  IMAGE/default := \
+    append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs
+  IMAGE/sysupgrade.bin := \
+    $$(IMAGE/default) | seama | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := \
+    $$(IMAGE/default) | pad-rootfs -x 64 | seama | seama-seal | nec-enc 9gsiy9nzep452pad | \
+    check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+endef
+TARGET_DEVICES += nec_wg1200cr
+
 define Device/nec_wg800hp
   ATH_SOC := qca9563
   DEVICE_TITLE := NEC Aterm WG800HP
@@ -476,6 +521,15 @@ define Device/ocedo_raccoon
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += ocedo_raccoon
+
+define Device/ocedo_ursus
+  ATH_SOC := qca9558
+  DEVICE_TITLE := OCEDO Ursus
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 7424k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += ocedo_ursus
 
 define Device/openmesh_om5p-ac-v2
   ATH_SOC := qca9558
@@ -513,13 +567,33 @@ TARGET_DEVICES += pcs_cr5000
 
 define Device/netgear_wndr3x00
   ATH_SOC := ar7161
-  KERNEL := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
-  IMAGES += factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size $$$$(IMAGE_SIZE)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
+  $(Device/netgear_ath79)
 endef
+
+define Device/netgear_ex7300_ex6400
+  ATH_SOC := qca9558
+  NETGEAR_KERNEL_MAGIC := 0x27051956
+  NETGEAR_BOARD_ID := EX7300series
+  NETGEAR_HW_ID := 29765104+16+0+128
+  IMAGE_SIZE := 15552k
+  IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | netgear-rootfs | pad-rootfs
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca99x0-ct
+  $(Device/netgear_ath79)
+endef
+
+define Device/netgear_ex6400
+  $(Device/netgear_ex7300_ex6400)
+  DEVICE_TITLE := NETGEAR EX6400
+endef
+TARGET_DEVICES += netgear_ex6400
+
+define Device/netgear_ex7300
+  $(Device/netgear_ex7300_ex6400)
+  DEVICE_TITLE := NETGEAR EX7300
+endef
+TARGET_DEVICES += netgear_ex7300
 
 define Device/netgear_wndr3700
   $(Device/netgear_wndr3x00)
@@ -580,6 +654,17 @@ define Device/rosinson_wr818
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += rosinson_wr818
+
+define Device/wd_mynet-n750
+  $(Device/seama)
+  ATH_SOC := ar9344
+  DEVICE_TITLE := Western Digital My Net N750
+  IMAGE_SIZE := 15872k
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  SEAMA_SIGNATURE := wrgnd13_wd_av
+  SUPPORTED_DEVICES += mynet-n750
+endef
+TARGET_DEVICES += wd_mynet-n750
 
 define Device/wd_mynet-wifi-rangeextender
   ATH_SOC := ar9344

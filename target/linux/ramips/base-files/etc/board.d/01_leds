@@ -17,6 +17,7 @@ case $board in
 	set_wifi_led "$boardname:amber:wlan"
 	;;
 3g-6200nl|\
+hilink,hlk-7628n|\
 skylab,skw92a|\
 wnce2001)
 	set_wifi_led "$boardname:green:wlan"
@@ -119,6 +120,7 @@ dir-615-h1)
 	;;
 dir-620-d1|\
 dlink,dwr-116-a1|\
+head-weblink,hdrm200|\
 mzk-ex300np)
 	set_wifi_led "$boardname:green:wifi"
 	;;
@@ -251,7 +253,8 @@ mr200)
 mtc,wr1201)
 	ucidef_set_led_switch "eth_link" "LAN link" "$boardname:green:eth_link" "switch0" "0x0f"
 	;;
-mzk-ex750np)
+mzk-ex750np|\
+zbtlink,zbt-we826-e)
 	set_wifi_led "$boardname:red:wifi"
 	;;
 netgear,r6120)
@@ -282,6 +285,9 @@ r6220|\
 netgear,r6350)
 	ucidef_set_led_netdev "wan" "wan" "$boardname:green:wan" eth0.2
 	set_wifi_led "$boardname:green:wifi"
+	;;
+rakwireless,rak633)
+	set_wifi_led "$boardname:blue:wifi"
 	;;
 re350-v1)
 	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "$boardname:blue:wifi2G" "wlan0"

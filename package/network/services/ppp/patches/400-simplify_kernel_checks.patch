@@ -80,7 +80,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  /*
   *  This is the PPP device. Validate the version of the driver at this
-@@ -2727,6 +2734,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+@@ -2730,6 +2737,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
      }
  #endif /* TIOCGPTN */
  
@@ -88,7 +88,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      if (sfd < 0) {
  	/* the old way - scan through the pty name space */
  	for (i = 0; i < 64; ++i) {
-@@ -2745,6 +2753,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+@@ -2748,6 +2756,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
  	    }
  	}
      }
@@ -125,7 +125,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  char *pppd_pppoe_service = NULL;
  static char *acName = NULL;
  static char *existingSession = NULL;
-@@ -372,10 +369,6 @@ PPPoEDevnameHook(char *cmd, char **argv,
+@@ -385,10 +382,6 @@ PPPoEDevnameHook(char *cmd, char **argv,
  void
  plugin_init(void)
  {
@@ -138,7 +138,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      info("RP-PPPoE plugin version %s compiled against pppd %s",
 --- a/pppd/plugins/pppol2tp/pppol2tp.c
 +++ b/pppd/plugins/pppol2tp/pppol2tp.c
-@@ -486,12 +486,7 @@ static void pppol2tp_cleanup(void)
+@@ -490,12 +490,7 @@ static void pppol2tp_cleanup(void)
  
  void plugin_init(void)
  {

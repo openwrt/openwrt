@@ -12,9 +12,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/procd.git
-PKG_SOURCE_DATE:=2019-03-11
-PKG_SOURCE_VERSION:=d876d1ca221112674a7e9a6ba0fee65b947fdfa7
-PKG_MIRROR_HASH:=5485e984ed6fc5ded0de8234bda08b9879193588f49dd46aa2a5f571dc3baa5d
+PKG_SOURCE_DATE:=2019-05-30
+PKG_SOURCE_VERSION:=ade00ca585a49c8478bf60eb24ce385676be37a4
+PKG_MIRROR_HASH:=1417727ae6fcda01017e1bec3ec66e3e78116f9343cfe0256e40af54c52f2acc
 CMAKE_INSTALL:=1
 
 PKG_LICENSE:=GPL-2.0
@@ -45,6 +45,7 @@ define Package/procd
   CATEGORY:=Base system
   DEPENDS:=+ubusd +ubus +libjson-script +ubox +USE_GLIBC:librt +libubox +libubus
   TITLE:=OpenWrt system process manager
+  USERID:=:dialout=20 :audio=29
 endef
 
 define Package/procd-ujail

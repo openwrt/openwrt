@@ -119,6 +119,7 @@ ramips_setup_interfaces()
 	rt-n12p|\
 	sap-g3200u3|\
 	sk-wb8|\
+	telco-electronics,x1|\
 	unielec,u7621-06-256m-16m|\
 	unielec,u7621-06-512m-64m|\
 	vr500|\
@@ -130,8 +131,10 @@ ramips_setup_interfaces()
 	mqmaker,witi-512m|\
 	wndr3700v5|\
 	youku-yk1|\
+	youku,yk-l2|\
 	zbt-ape522ii|\
 	zbt-we1326|\
+	zbtlink,zbt-we826-e|\
 	zbtlink,zbt-we3526|\
 	zbt-we826-16M|\
 	zbt-we826-32M|\
@@ -192,6 +195,7 @@ ramips_setup_interfaces()
 		;;
 	ar670w|\
 	ar725w|\
+	rakwireless,rak633|\
 	rt-ac51u)
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
@@ -217,6 +221,7 @@ ramips_setup_interfaces()
 	gl-mt300a|\
 	gl-mt300n|\
 	gl-mt750|\
+	hilink,hlk-7628n|\
 	hiwifi,hc5861b|\
 	jhr-n805r|\
 	jhr-n825r|\
@@ -312,6 +317,7 @@ ramips_setup_interfaces()
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
 	hc5661|\
+	head-weblink,hdrm200|\
 	y1s)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:lan" "0:wan" "6@eth0"
@@ -366,6 +372,7 @@ ramips_setup_interfaces()
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5:wan" "6@eth0"
 		;;
 	dlink,dir-510l|\
+	glinet,vixmini|\
 	netgear,ex6150|\
 	re350-v1)
 		ucidef_add_switch "switch0" \
@@ -493,6 +500,7 @@ ramips_setup_macs()
 	dir-620-a1|\
 	esr-9753|\
 	freestation5|\
+	hilink,hlk-7628n|\
 	hlk-rm04|\
 	mpr-a1|\
 	psr-680w|\

@@ -218,6 +218,7 @@ platform_check_image() {
 	archer-c7-v4|\
 	archer-c7-v5|\
 	bullet-m|\
+	bullet-m-xw|\
 	c-55|\
 	carambola2|\
 	cf-e316n-v2|\
@@ -567,6 +568,7 @@ platform_check_image() {
 	rb-2011uas-2hnd|\
 	rb-2011uias|\
 	rb-2011uias-2hnd|\
+	rb-2011uias-2hnd-r2|\
 	rb-sxt2n|\
 	rb-sxt5n)
 		nand_do_platform_check routerboard $1
@@ -890,6 +892,7 @@ platform_do_upgrade() {
 	rb-2011uas-2hnd|\
 	rb-2011uias|\
 	rb-2011uias-2hnd|\
+	rb-2011uias-2hnd-r2|\
 	rb-sxt2n|\
 	rb-sxt5n|\
 	wi2a-ac200i|\

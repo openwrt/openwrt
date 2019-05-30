@@ -530,6 +530,9 @@ ar71xx_board_detect() {
 		name="bullet-m"
 		ubnt_xm_board_detect
 		;;
+	*"Bullet M XW")
+		name="bullet-m-xw"
+		;;
 	*"BXU2000n-2 rev. A1")
 		name="bxu2000n-2-a1"
 		;;
@@ -1020,6 +1023,9 @@ ar71xx_board_detect() {
 		;;
 	*"RouterBOARD 2011UiAS-2HnD")
 		name="rb-2011uias-2hnd"
+		;;
+	*"RouterBOARD 2011UiAS-2HnD r2")
+		name="rb-2011uias-2hnd-r2"
 		;;
 	*"RouterBOARD 411/A/AH")
 		name="rb-411"

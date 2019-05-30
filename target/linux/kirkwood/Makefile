@@ -14,6 +14,7 @@ CPU_TYPE:=xscale
 MAINTAINER:=Luka Perkov <luka@openwrt.org>
 
 KERNEL_PATCHVER:=4.14
+KERNEL_TESTING_PATCHVER := 4.19
 
 include $(INCLUDE_DIR)/target.mk
 

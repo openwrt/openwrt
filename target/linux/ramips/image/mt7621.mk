@@ -435,6 +435,14 @@ define Device/sk-wb8
 endef
 TARGET_DEVICES += sk-wb8
 
+define Device/telco-electronics_x1
+  DTS := Telco-Electronics-X1
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := Telco Electronics X1
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt76 wpad-basic
+endef
+TARGET_DEVICES += telco-electronics_x1
+
 define Device/timecloud
   DTS := Timecloud
   DEVICE_TITLE := Thunder Timecloud
@@ -531,7 +539,16 @@ TARGET_DEVICES += mqmaker_witi-512m
 
 define Device/wndr3700v5
   DTS := WNDR3700V5
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 15232k
+  SERCOMM_HWID := AYB
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x1054
+  IMAGES += factory.img
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.img := pad-extra 320k | $$(IMAGE/default) | pad-to $$$$(BLOCKSIZE) | \
+	sercom-footer | pad-to 128 | zip WNDR3700v5.bin | sercom-seal
   DEVICE_TITLE := Netgear WNDR3700v5
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 wpad-basic
 endef
@@ -545,6 +562,15 @@ define Device/youhua_wr1200js
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += youhua_wr1200js
+
+define Device/youku_yk-l2
+  DTS := YOUKU-YK2
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Youku YK-L2
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+endef
+TARGET_DEVICES += youku_yk-l2
 
 define Device/wsr-1166
   DTS := WSR-1166

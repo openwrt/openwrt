@@ -112,7 +112,7 @@ define KernelPackage/hwmon-ina2xx
   KCONFIG:=CONFIG_SENSORS_INA2XX
   FILES:=$(LINUX_DIR)/drivers/hwmon/ina2xx.ko
   AUTOLOAD:=$(call AutoProbe,ina2xx)
-  $(call AddDepends/hwmon,+kmod-i2c-core +!LINUX_3_18:kmod-regmap-i2c)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-i2c)
 endef
 
 define KernelPackage/hwmon-ina2xx/description

@@ -39,7 +39,6 @@ endef
 define KernelPackage/usb-ledtrig-usbport
   TITLE:=LED trigger for USB ports
   KCONFIG:=CONFIG_USB_LEDS_TRIGGER_USBPORT
-  DEPENDS:=@!LINUX_3_18
   FILES:=$(LINUX_DIR)/drivers/usb/core/ledtrig-usbport.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-usbport)
   $(call AddDepends/usb)
@@ -395,7 +394,13 @@ define KernelPackage/usb2
   ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ehci-atmel.ko),)
     FILES+=$(LINUX_DIR)/drivers/usb/host/ehci-atmel.ko
   endif
-  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd ehci-platform ehci-orion ehci-atmel,1)
+  ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ehci-fsl.ko),)
+    FILES+=$(LINUX_DIR)/drivers/usb/host/ehci-fsl.ko
+  endif
+  ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko),)
+    FILES+=$(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko
+  endif
+  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd ehci-platform ehci-orion ehci-atmel ehci-fsl fsl-mph-dr-of,1)
   $(call AddDepends/usb)
 endef
 

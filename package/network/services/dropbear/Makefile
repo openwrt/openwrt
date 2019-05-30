@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
-PKG_VERSION:=2019.77
-PKG_RELEASE:=1
+PKG_VERSION:=2019.78
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://matt.ucc.asn.au/dropbear/releases/ \
 	https://dropbear.nl/mirror/releases/
-PKG_HASH:=d91f78ebe633be1d071fd1b7e5535b9693794048b019e9f4bea257e1992b458d
+PKG_HASH:=525965971272270995364a0eb01f35180d793182e63dd0b0c3eb0292291644a4
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE libtomcrypt/LICENSE libtommath/LICENSE
@@ -28,7 +28,8 @@ PKG_FIXUP:=autoreconf
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_TARGET_INIT_PATH CONFIG_DROPBEAR_ECC CONFIG_DROPBEAR_ECC_FULL \
 	CONFIG_DROPBEAR_CURVE25519 CONFIG_DROPBEAR_ZLIB \
-	CONFIG_DROPBEAR_UTMP CONFIG_DROPBEAR_PUTUTLINE
+	CONFIG_DROPBEAR_UTMP CONFIG_DROPBEAR_PUTUTLINE \
+	CONFIG_DROPBEAR_DBCLIENT
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -132,7 +133,7 @@ endef
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		PROGRAMS="dropbear dbclient dropbearkey scp" \
+		PROGRAMS="dropbear $(if $(CONFIG_DROPBEAR_DBCLIENT),dbclient,) dropbearkey scp" \
 		MULTI=1 SCPPROGRESS=1
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -143,7 +144,7 @@ define Package/dropbear/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dropbearmulti $(1)/usr/sbin/dropbear
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(LN) ../sbin/dropbear $(1)/usr/bin/dbclient
+	$(if $(CONFIG_DROPBEAR_DBCLIENT),$(LN) ../sbin/dropbear $(1)/usr/bin/dbclient,)
 	$(LN) ../sbin/dropbear $(1)/usr/bin/dropbearkey
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/dropbear.config $(1)/etc/config/dropbear

@@ -58,6 +58,9 @@ comfast,cf-e5)
 dlink,dir-859-a1)
 	ucidef_set_led_switch "internet" "WAN" "$boardname:green:internet" "switch0" "0x20"
 	;;
+engenius,ecb1750)
+	ucidef_set_led_netdev "lan" "LAN" "$boardname:blue:lan" "eth0"
+	;;
 engenius,ews511ap)
 	ucidef_set_led_netdev "lan1" "LAN1" "$boardname:blue:lan1" "eth0"
 	ucidef_set_led_netdev "lan2" "LAN2" "$boardname:blue:lan2" "eth1"
@@ -107,7 +110,8 @@ tplink,archer-c7-v5)
 	ucidef_set_led_switch "lan4" "LAN4" "tp-link:green:lan4" "switch0" "0x20"
 	;;
 tplink,archer-c2-v3|\
-tplink,tl-wr1043nd-v4)
+tplink,tl-wr1043nd-v4|\
+tplink,tl-wr1043n-v5)
 	ucidef_set_led_switch "wan" "WAN" "tp-link:green:wan" "switch0" "0x20"
 	ucidef_set_led_switch "lan1" "LAN1" "tp-link:green:lan1" "switch0" "0x10"
 	ucidef_set_led_switch "lan2" "LAN2" "tp-link:green:lan2" "switch0" "0x08"
@@ -131,6 +135,11 @@ tplink,cpe210-v3)
 	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "tp-link:green:link2" "wlan0" "30" "100"
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "tp-link:green:link3" "wlan0" "60" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "tp-link:green:link4" "wlan0" "80" "100"
+	;;
+tplink,archer-d50-v1)
+	ucidef_set_led_switch "lan" "LAN" "tp-link:white:lan" "switch0" "0x1E"
+	ucidef_set_led_netdev "wan_data" "WAN Data" "tp-link:white:internet" "eth1.2" "tx rx"
+	ucidef_set_led_netdev "wan_link" "WAN Link" "tp-link:white:wan" "eth1.2" "link"
 	;;
 tplink,re450-v2)
 	ucidef_set_led_netdev "lan_data" "LAN Data" "tp-link:green:lan_data" "eth0" "tx rx"
@@ -163,7 +172,8 @@ tplink,tl-wr842n-v2)
 	ucidef_set_led_switch "lan4" "LAN4" "tp-link:green:lan4" "switch0" "0x02"
 	;;
 tplink,tl-wr841-v9|\
-tplink,tl-wr841-v11)
+tplink,tl-wr841-v11|\
+tplink,tl-wr842n-v3)
 	ucidef_set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth0"
 	ucidef_set_led_switch "lan1" "LAN1" "tp-link:green:lan1" "switch0" "0x10"
 	ucidef_set_led_switch "lan2" "LAN2" "tp-link:green:lan2" "switch0" "0x08"

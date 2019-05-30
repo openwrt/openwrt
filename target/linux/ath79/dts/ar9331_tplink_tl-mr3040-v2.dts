@@ -17,6 +17,8 @@
 
 	leds {
 		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&switch_led_disable_pins>;
 
 		wlan {
 			label = "tp-link:green:wlan";

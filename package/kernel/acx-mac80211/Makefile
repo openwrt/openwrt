@@ -65,8 +65,7 @@ define KernelPackage/acx-mac80211/config
 	choice
 		prompt "ACX111 firmware version"
 		depends on ACX_ID_16
-		default ACX_DEFAULT if !TARGET_adm5120
-		default ACX_1_2_1_34 if TARGET_adm5120
+		default ACX_DEFAULT
 		help
 		  This option allows you to select the version of the acx firmware.
 

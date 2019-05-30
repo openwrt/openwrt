@@ -13,17 +13,11 @@ define Build/at91-install-zImage
     $(CP) $(KDIR)/zImage $@
 endef
 
-ifeq ($(SUBTARGET),legacy)
-include ./legacy.mk
+ifeq ($(SUBTARGET),sam9x)
+include ./sam9x.mk
 endif
-ifeq ($(SUBTARGET),sama5d2)
-include ./sama5d2.mk
-endif
-ifeq ($(SUBTARGET),sama5d3)
-include ./sama5d3.mk
-endif
-ifeq ($(SUBTARGET),sama5d4)
-include ./sama5d4.mk
+ifeq ($(SUBTARGET),sama5)
+include ./sama5.mk
 endif
 
 AT91_SD_BOOT_PARTSIZE:=64

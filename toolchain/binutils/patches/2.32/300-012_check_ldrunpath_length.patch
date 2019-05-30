@@ -9,7 +9,7 @@
  	      if (path
  		  && gld${EMULATION_NAME}_search_needed (path, &n, force))
  		break;
-@@ -1751,6 +1753,8 @@ gld${EMULATION_NAME}_before_allocation (
+@@ -1746,6 +1748,8 @@ gld${EMULATION_NAME}_before_allocation (
    rpath = command_line.rpath;
    if (rpath == NULL)
      rpath = (const char *) getenv ("LD_RUN_PATH");

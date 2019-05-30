@@ -8,12 +8,11 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=ccache
-PKG_VERSION:=3.6
+PKG_VERSION:=3.7
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=https://download.samba.org/pub/ccache/ \
-		https://samba.org/ftp/ccache/
-PKG_HASH:=a6b129576328fcefad00cb72035bc87bc98b6a76aec0f4b59bed76d67a399b1f
+PKG_SOURCE_URL:=https://github.com/ccache/ccache/releases/download/v$(PKG_VERSION)
+PKG_HASH:=409f38bec6161288749a499c82060c99a551c3aced406827e28d183e9c070575
 
 include $(INCLUDE_DIR)/host-build.mk
 
