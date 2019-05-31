@@ -701,3 +701,12 @@ define Device/yuncore_a770
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += yuncore_a770
+
+define Device/zbtlink_zbt-wd323
+  ATH_SOC := ar9344
+  DEVICE_TITLE := ZBT WD323
+  IMAGE_SIZE := 16000k
+  DEVICE_PACKAGES := kmod-usb2 kmod-i2c-core kmod-i2c-gpio kmod-rtc-pcf8563 \
+		     kmod-usb-serial kmod-usb-serial-cp210x uqmi
+endef
+TARGET_DEVICES += zbtlink_zbt-wd323

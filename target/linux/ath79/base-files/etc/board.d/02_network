@@ -244,6 +244,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "5:lan" "1:wan"
 		;;
+	zbtlink,zbt-wd323|\
 	xiaomi,mi-router-4q)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
