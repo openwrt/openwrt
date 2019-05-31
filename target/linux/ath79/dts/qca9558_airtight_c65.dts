@@ -1,0 +1,135 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+#include "qca9557.dtsi"
+
+/ {
+	model = "AirTight C-65";
+	compatible = "airtight,c-65", "qca,qca9558";
+
+	aliases {
+		mdio-gpio0 = &mdio2;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+	};
+
+	mdio2: mdio {
+		compatible = "virtual,mdio-gpio";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gpios = <&gpio 23 GPIO_ACTIVE_HIGH>,
+			<&gpio 18 GPIO_ACTIVE_HIGH>;
+
+		phy0: ethernet-phy@4 {
+			reg = <4>;
+
+			phy-mode = "rgmii-rxid";
+			at803x-disable-smarteee;
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	mtd-mac-address = <&rootfs 0x10008>;
+	pll-data = <0x9e000000 0x80000101 0x80001313>;
+	phy-handle = <&phy0>;
+
+	gmac-config {
+		device = <&gmac>;
+
+		rxdv-delay = <2>;
+		rxd-delay = <2>;
+		txen-delay = <0>;
+		txd-delay = <0>;
+		rgmii-enabled = <1>;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&spi {
+	status = "okay";
+
+	num-cs = <1>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000-0x040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "uboot-env";
+				reg = <0x040000 0x020000>;
+			};
+
+			partition@60000 {
+				label = "kernel";
+				reg = <0x060000 0x200000>;
+			};
+			partition@260000 {
+				label = "rootfs";
+				reg = <0x260000 0xd90000>;
+				read-only;
+			};
+
+			art: partition@ff0000 {
+				label = "art";
+				reg = <0xff0000 0x010000>;
+				read-only;
+			};
+		};
+	};
+	
+	num-cs = <2>;
+	
+  flash@1 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@1000000 {
+				label = "opt";
+				reg = <0x010000 0x020000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&uart {
+	status = "okay";
+};
+
+&wmac {
+	status = "okay";
+
+	mtd-cal-data = <&art 0x1000>;
+	mtd-mac-address = <&rootfs 0x10008>;
+};
