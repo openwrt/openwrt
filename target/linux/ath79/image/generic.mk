@@ -75,6 +75,13 @@ define Device/seama
   SEAMA_SIGNATURE :=
 endef
 
+define Device/airtight_c-65
+  ATH_SOC := qca9558
+  IMAGE_SIZE := 13760k
+  DEVICE_TITLE := Airtight C-65
+endef
+TARGET_DEVICES += airtight_c-65
+
 define Device/aruba_ap-105
   ATH_SOC := ar7161
   DEVICE_TITLE := Aruba AP-105
