@@ -1,0 +1,157 @@
+/dts-v1/;
+
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "tplink,re305-v1", "mediatek,mt7628an-soc";
+	model = "TP-LINK RE305 v1";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600";				   
+						   
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x4000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		
+		led_power: power {
+			label = "re305-v1:blue:power";
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi2g {
+			label = "re305-v1:blue:wifi2G";
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi5g {
+			label = "re305-v1:blue:wifi5G";
+			gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
+		};
+
+		signal-blue {
+			label = "re305-v1:blue:signal-blue";
+			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+		};
+
+		signal-red {
+			label = "re305-v1:red:signal-red";
+			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+		};
+	
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	m25p80@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x20000>;
+				read-only;
+			};
+
+			partition@20000 {
+				compatible = "tplink,firmware";
+				label = "firmware";
+				reg = <0x20000 0x5e0000>;
+			};
+
+			config: partition@600000 {
+				label = "config";
+				reg = <0x600000 0x50000>;
+				read-only;
+			};
+
+			factory: partition@7f0000 {
+				label = "radio";
+				reg = <0x7f0000 0x10000>;
+				read-only;
+			};
+		};
+	};
+};
+
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x8000>;
+		mtd-mac-address = <&config 0x10008>;
+		mtd-mac-address-increment = <2>;
+	};
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "refclk", "wdt", "p0led_an", "p1led_an", "p2led_an","p3led_an", "p4led_an";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
+};
+
+&wmac {
+	status = "okay";
+	mediatek,mtd-eeprom = <&factory 0>;
+	mtd-mac-address = <&config 0x10008>;
+	mtd-mac-address-increment = <1>;
+};
+
+&ethernet {
+	mtd-mac-address = <&config 0x10008>;
+};
