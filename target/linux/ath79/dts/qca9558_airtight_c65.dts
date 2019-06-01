@@ -61,7 +61,7 @@
 &spi {
 	status = "okay";
 
-	num-cs = <1>;
+	num-cs = <2>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -75,7 +75,7 @@
 
 			partition@0 {
 				label = "u-boot";
-				reg = <0x000000-0x040000>;
+				reg = <0x000000 0x040000>;
 				read-only;
 			};
 
@@ -102,11 +102,9 @@
 		};
 	};
 	
-	num-cs = <2>;
-	
-  flash@1 {
+	flash@1 {
 		compatible = "jedec,spi-nor";
-		reg = <0>;
+		reg = <1>;
 		spi-max-frequency = <25000000>;
 
 		partitions {
