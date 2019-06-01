@@ -350,6 +350,22 @@ define Device/tplink_tl-wr902ac-v3
 endef
 TARGET_DEVICES += tplink_tl-wr902ac-v3
 
+define Device/re305-v1
+  DTS := RE305
+  DEVICE_TITLE := TP-LINK RE305 v1
+  TPLINK_BOARD_ID := RE305-V1
+  TPLINK_HWID := 0x0
+  TPLINK_HWREV := 0
+  TPLINK_HEADER_VERSION := 1
+  IMAGE_SIZE := 6016k
+  DEVICE_PACKAGES := kmod-mt76x2
+  KERNEL := $(KERNEL_DTB) | tplink-v1-header -e -O
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+endef
+TARGET_DEVICES += re305-v1
+
 define Device/u7628-01-128M-16M
   DTS := U7628-01-128M-16M
   IMAGE_SIZE := 16064k

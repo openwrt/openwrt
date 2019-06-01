@@ -301,6 +301,12 @@ re350-v1)
 	ucidef_set_led_netdev "eth_act" "LAN act" "$boardname:green:eth_act" "eth0" "tx rx"
 	ucidef_set_led_switch "eth_link" "LAN link" "$boardname:green:eth_link" "switch0" "0x01"
 	;;
+re305-v1)
+	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "$boardname:blue:wifi2G" "wlan0"
+	ucidef_set_led_netdev "wifi5g" "Wifi 5G" "$boardname:blue:wifi5G" "wlan1"
+	ucidef_set_led_default "signal-red" "Signal Red" "$boardname:red:signal-red"
+	ucidef_set_led_default "signal-blue" "Signal Blue" "$boardname:blue:signal-blue"
+	;;
 rp-n53)
 	ucidef_set_led_netdev "eth" "Network" "$boardname:white:back" "eth0"
 	set_wifi_led "$boardname:blue:wifi"
