@@ -9,7 +9,9 @@ ath79_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
-	airtight,c-65|\
+	airtight,c-65)
+	ucidef_set_interface_lan "eth0"
+		;;
 	aruba,ap-105|\
 	avm,fritz300e|\
 	devolo,dvl1200i|\
