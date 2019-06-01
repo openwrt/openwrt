@@ -405,6 +405,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"4:lan" "6@eth0"
 		;;
+	tplink,c5-v4)
+		ucidef_add_switch "switch1" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0"
+		;;
 	vonets,var11n-300|\
 	wt1520-4M|\
 	wt1520-8M)
