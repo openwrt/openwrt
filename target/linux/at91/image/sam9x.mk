@@ -130,4 +130,3 @@ define Device/wb45n
   MKUBIFS_OPTS := -m $$(PAGESIZE) -e 124KiB -c 955
 endef
 TARGET_DEVICES += wb45n
-

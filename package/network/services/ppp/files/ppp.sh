@@ -210,6 +210,9 @@ proto_pppoe_init_config() {
 	proto_config_add_string "ac"
 	proto_config_add_string "service"
 	proto_config_add_string "host_uniq"
+	proto_config_add_int "padi_attempts"
+	proto_config_add_int "padi_timeout"
+
 	lasterror=1
 }
 
@@ -227,12 +230,16 @@ proto_pppoe_setup() {
 	json_get_var ac ac
 	json_get_var service service
 	json_get_var host_uniq host_uniq
+	json_get_var padi_attempts padi_attempts
+	json_get_var padi_timeout padi_timeout
 
 	ppp_generic_setup "$config" \
 		plugin rp-pppoe.so \
 		${ac:+rp_pppoe_ac "$ac"} \
 		${service:+rp_pppoe_service "$service"} \
 		${host_uniq:+host-uniq "$host_uniq"} \
+		${padi_attempts:+pppoe-padi-attempts $padi_attempts} \
+		${padi_timeout:+pppoe-padi-timeout $padi_timeout} \
 		"nic-$iface"
 }
 
