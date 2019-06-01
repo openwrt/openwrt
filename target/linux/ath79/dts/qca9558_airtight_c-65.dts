@@ -84,13 +84,14 @@
 			partition@40000 {
 				label = "uboot-env";
 				reg = <0x040000 0x020000>;
+				read-only;
 			};
 
 			partition@60000 {
 				label = "kernel";
 				reg = <0x060000 0x200000>;
 			};
-			partition@260000 {
+			rootfs: partition@260000 {
 				label = "rootfs";
 				reg = <0x260000 0xd90000>;
 				read-only;
