@@ -1,0 +1,10 @@
+--- dnsmasq-2.80/src/option.c	2019-05-27 18:39:53.036155520 +0530
++++ dnsmasq-2.80-new/src/option.c	2019-05-27 18:40:23.900545998 +0530
+@@ -3246,6 +3246,7 @@ static int one_opt(int option, char *arg
+ 		if ((configs->flags & CONFIG_ADDR) && configs->addr.s_addr == in.s_addr)
+ 		  {
+ 		    sprintf(errstr, _("duplicate dhcp-host IP address %s"),  inet_ntoa(in));
++                    dhcp_config_free(new);
+ 		    return 0;
+ 		  }	      
+ 	    }
