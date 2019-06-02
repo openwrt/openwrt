@@ -432,6 +432,7 @@ define Device/Check
   $(Device/Check/Common)
   KDIR_KERNEL_IMAGE := $(KDIR)/$(1)$$(KERNEL_SUFFIX)
   _TARGET := $$(if $$(_PROFILE_SET),install-images,install-disabled)
+  $$(if $$(_PROFILE_SET),$$(shell echo '{ "board": "$(1)", "description": "$(DEVICE_TITLE)", "techdata": "$(TECHDATA)", "images": { ' >> $(BIN_DIR)/$(1).json))
   ifndef IB
     _COMPILE_TARGET := $$(if $(CONFIG_IB)$$(_PROFILE_SET),compile,compile-disabled)
   endif
@@ -522,6 +523,7 @@ define Device/Build/image
 
   $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2))
 	cp $$^ $$@
+	echo '{ "type": "$2", "image": "$(call IMAGE_NAME,$(1),$(2))" }' >> $(KDIR)/tmp/$(DEVICE_NAME)_org.json
 
 endef
 
@@ -539,6 +541,7 @@ define Device/Build/artifact
 
 endef
 
+# $1 = DEVICE_NAME
 define Device/Build
   $(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Device/Build/initramfs,$(1)))
   $(call Device/Build/kernel,$(1))
