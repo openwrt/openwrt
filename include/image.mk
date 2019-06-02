@@ -428,11 +428,15 @@ define Device/Check/Common
   endif
 endef
 
+define Device/Json
+	$(shell echo '{ "board": "$(1)", "description": "$(DEVICE_TITLE)", "techdata": "$(TECHDATA)", "images": { ' >> $(BIN_DIR)/$(1).json)
+endef
+
 define Device/Check
   $(Device/Check/Common)
   KDIR_KERNEL_IMAGE := $(KDIR)/$(1)$$(KERNEL_SUFFIX)
   _TARGET := $$(if $$(_PROFILE_SET),install-images,install-disabled)
-  $$(if $$(_PROFILE_SET),$$(shell echo '{ "board": "$(1)", "description": "$(DEVICE_TITLE)", "techdata": "$(TECHDATA)", "images": { ' >> $(BIN_DIR)/$(1).json))
+  $$(if $$(_PROFILE_SET),$$(eval $$(call Device/Json,$(1))))
   ifndef IB
     _COMPILE_TARGET := $$(if $(CONFIG_IB)$$(_PROFILE_SET),compile,compile-disabled)
   endif
