@@ -9,39 +9,27 @@
 / {
 	model = "AirTight C-65";
 	compatible = "airtight,c-65", "qca,qca9558";
-
-	aliases {
-		mdio-gpio0 = &mdio2;
 	};
 
 	chosen {
 		bootargs = "console=ttyS0,115200n8";
 	};
+&mdio0 {
+	status = "okay";
 
-	mdio2: mdio {
-		compatible = "virtual,mdio-gpio";
-
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		gpios = <&gpio 23 GPIO_ACTIVE_HIGH>,
-			<&gpio 18 GPIO_ACTIVE_HIGH>;
-
-		phy0: ethernet-phy@5 {
-			reg = <5>;
-
-			phy-mode = "rgmii-rxid";
-			at803x-disable-smarteee;
-		};
-	};
+	phy5: ethernet-phy@5 {
+		reg = <5>;
+		phy-mode = "rgmii-rxid";
+		at803x-disable-smarteee;
 };
 
 &eth0 {
 	status = "okay";
 
-	mtd-mac-address = <&rootfs 0x10008>;
-	pll-data = <0x9e000000 0x80000101 0x80001313>;
-	phy-handle = <&phy0>;
+	pll-data = <0x82000101 0x80000101 0x80001313>;
+
+	phy-handle = <&phy5>;
+	phy-mode = "rgmii-id";
 
 	gmac-config {
 		device = <&gmac>;
@@ -62,8 +50,8 @@
 	status = "okay";
 
 	num-cs = <2>;
-	
-	cs-gpios = <0>, <0>;
+
+	cs-gpios = <0>, <2>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -90,9 +78,10 @@
 			partition@60000 {
 				label = "kernel";
 				reg = <0x060000 0x200000>;
+				read-only;
 			};
-			rootfs: partition@260000 {
-				label = "rootfs";
+			firmware: partition@260000 {
+				label = "firmware";
 				reg = <0x260000 0xd90000>;
 				read-only;
 			};
@@ -132,5 +121,5 @@
 	status = "okay";
 
 	mtd-cal-data = <&art 0x1000>;
-	mtd-mac-address = <&rootfs 0x10008>;
+	mtd-mac-address = <&firmware 0x10008>;
 };
