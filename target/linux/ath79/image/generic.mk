@@ -578,16 +578,6 @@ define Device/glinet_gl-ar750
 endef
 TARGET_DEVICES += glinet_gl-ar750
 
-define Device/glinet_gl-ar750s
-  ATH_SOC := qca9563
-  DEVICE_VENDOR := GL.iNet
-  DEVICE_MODEL := GL-AR750S
-  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct block-mount
-  IMAGE_SIZE := 16000k
-  SUPPORTED_DEVICES += gl-ar750s
-endef
-TARGET_DEVICES += glinet_gl-ar750s
-
 define Device/glinet_gl-x750
   ATH_SOC := qca9531
   DEVICE_VENDOR := GL.iNet

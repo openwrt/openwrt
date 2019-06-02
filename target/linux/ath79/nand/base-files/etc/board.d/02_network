@@ -11,6 +11,11 @@ ath79_setup_interfaces()
 	aerohive,hiveap-121)
 		ucidef_set_interface_lan "eth0"
 		;;
+	glinet,gl-ar750s-nor|\
+	glinet,gl-ar750s-nor-nand)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan:2" "3:lan:1" "1:wan"
+		;;
 	netgear,wndr4300)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
