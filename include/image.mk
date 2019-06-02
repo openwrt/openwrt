@@ -429,7 +429,7 @@ define Device/Check/Common
 endef
 
 define Device/Json
-	$(shell echo '{ "board": "$(1)", "description": "$(DEVICE_TITLE)", "techdata": "$(TECHDATA)", "images": { ' >> $(BIN_DIR)/$(1).json)
+	$(shell echo '{ "board": "$(1)", "description": "$(DEVICE_TITLE)", "techdata": "$(TECHDATA)", "images": { ' > $(BIN_DIR)/$(1).json)
 endef
 
 define Device/Check
@@ -527,8 +527,7 @@ define Device/Build/image
 
   $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2))
 	cp $$^ $$@
-	echo '{ "type": "$2", "image": "$(call IMAGE_NAME,$(1),$(2))" }' >> $(KDIR)/tmp/$(DEVICE_NAME)_org.json
-
+	echo '{ "type": "$2", "image": "$(call IMAGE_NAME,$(1),$(2))" },' >> $(BIN_DIR)/$(DEVICE_NAME).json
 endef
 
 define Device/Build/artifact
