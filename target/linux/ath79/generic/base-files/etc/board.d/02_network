@@ -144,10 +144,6 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan"
 		;;
-	glinet,gl-ar750s)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "2:lan:2" "3:lan:1" "1:wan"
-		;;
 	iodata,etg3-r|\
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr|\
