@@ -562,12 +562,6 @@ define Device/glinet_gl-ar300m-lite
 endef
 TARGET_DEVICES += glinet_gl-ar300m-lite
 
-define Device/glinet_gl-ar300m-nor
-  $(Device/glinet_gl-ar300m-common-nor)
-  DEVICE_MODEL := GL-AR300M
-endef
-TARGET_DEVICES += glinet_gl-ar300m-nor
-
 define Device/glinet_gl-ar750
   ATH_SOC := qca9531
   DEVICE_VENDOR := GL.iNet
