@@ -9,36 +9,9 @@
 / {
 	model = "AirTight C-65";
 	compatible = "airtight,c-65", "qca,qca9558";
-	};
 
 	chosen {
 		bootargs = "console=ttyS0,115200n8";
-	};
-&mdio0 {
-	status = "okay";
-
-	phy5: ethernet-phy@5 {
-		reg = <5>;
-		phy-mode = "rgmii-rxid";
-		at803x-disable-smarteee;
-};
-
-&eth0 {
-	status = "okay";
-
-	pll-data = <0x82000101 0x80000101 0x80001313>;
-
-	phy-handle = <&phy5>;
-	phy-mode = "rgmii-id";
-
-	gmac-config {
-		device = <&gmac>;
-
-		rxdv-delay = <2>;
-		rxd-delay = <2>;
-		txen-delay = <0>;
-		txd-delay = <0>;
-		rgmii-enabled = <1>;
 	};
 };
 
@@ -51,7 +24,7 @@
 
 	num-cs = <2>;
 
-	cs-gpios = <0>, <2>;
+	cs-gpios = <0>, <0>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -110,6 +83,35 @@
 				read-only;
 			};
 		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy5: ethernet-phy@5 {
+		reg = <5>;
+		phy-mode = "rgmii-id";
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	pll-data = <0x82000101 0x80000101 0x80001313>;
+
+	phy-handle = <&phy5>;
+	phy-mode = "rgmii-id";
+
+	gmac-config {
+		device = <&gmac>;
+
+		rxdv-delay = <2>;
+		rxd-delay = <2>;
+		txen-delay = <0>;
+		txd-delay = <0>;
+		rgmii-enabled = <1>;
+
 	};
 };
 
