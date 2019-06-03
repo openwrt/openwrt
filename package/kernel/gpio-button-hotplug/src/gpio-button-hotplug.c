@@ -253,6 +253,9 @@ static void button_hotplug_event(struct gpio_keys_button_data *data,
 	if (btn < 0)
 		return;
 
+	if (priv->seen == 0)
+		priv->seen = seen;
+
 	button_hotplug_create_event(button_map[btn].name, type,
 			(seen - priv->seen) / HZ, value);
 	priv->seen = seen;
