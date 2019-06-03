@@ -618,6 +618,30 @@ define Device/edimax_br-6478ac-v2
 endef
 TARGET_DEVICES += edimax_br-6478ac-v2
 
+define Device/edimax_ew-7476rpc
+  DTS := EW-7476RPC
+  DEVICE_TITLE := Edimax EW-7476RPC
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7744k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+        edimax-header -s CSYS -m RN79 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+        append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+endef
+TARGET_DEVICES += edimax_ew-7476rpc
+
+define Device/edimax_ew-7478ac
+  DTS := EW-7478AC
+  DEVICE_TITLE := Edimax EW-7478AC
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7744k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+        edimax-header -s CSYS -m RN70 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+        append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+endef
+TARGET_DEVICES += edimax_ew-7478ac
+
 define Device/tplink_c2-v1
   $(Device/Archer)
   DTS := ArcherC2-v1

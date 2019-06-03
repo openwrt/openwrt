@@ -38,6 +38,10 @@ alfa-network,awusfree1|\
 edimax,br-6478ac-v2)
 	set_wifi_led "$boardname:blue:wlan"
 	;;
+edimax,ew-7476rpc|\
+edimax,ew-7478ac)
+	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan"  "switch0" "0x20"
+	;;
 alfa-network,tube-e4g)
 	ucidef_set_led_netdev "4g" "4g" "$boardname:green:4g" "wwan0"
 	ucidef_set_led_netdev "lan" "lan" "$boardname:blue:lan" "eth0"
