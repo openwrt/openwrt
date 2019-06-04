@@ -340,16 +340,9 @@ static void gpio_keys_irq_work_func(struct work_struct *work)
 {
 	struct gpio_keys_button_data *bdata = container_of(work,
 		struct gpio_keys_button_data, work.work);
-	int state = gpio_button_get_value(bdata);
 
-	if (state != bdata->last_state) {
-		unsigned int type = bdata->b->type ?: EV_KEY;
-
-		if (bdata->last_state != -1 || type == EV_SW)
-			button_hotplug_event(bdata, type, state);
-
-		bdata->last_state = state;
-	}
+	button_hotplug_event(bdata, bdata->b->type ?: EV_KEY,
+			     gpio_button_get_value(bdata));
 }
 
 static irqreturn_t button_handle_irq(int irq, void *_bdata)
