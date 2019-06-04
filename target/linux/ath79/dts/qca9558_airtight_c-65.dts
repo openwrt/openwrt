@@ -56,10 +56,6 @@
 &pcie0 {
 	status = "okay";
 
-	wifi@0,0 {
-		compatible = "pci168c,003c";
-		reg = <0x0000 0 0 0 0>;
-	};
 };
 
 
@@ -80,7 +76,7 @@
 	cs-gpios = <0>, <0>;
 
 	flash@0 {
-		compatible = "jedec,spi-nor";
+		compatible = "macronix, mx25l12805d", "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <25000000>;
 
@@ -120,9 +116,9 @@
 		};
 	};
 	
-	flash@1000000 {
-		compatible = "jedec,spi-nor";
-		reg = <11000000>;
+	flash@1 {
+		compatible = "macronix, mx25l12805d", "jedec,spi-nor";
+		reg = <1>;
 		spi-max-frequency = <25000000>;
 
 		partitions {
@@ -130,10 +126,9 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@1000000 {
+			partition@0 {
 				label = "opt";
-				reg = <0x010000 0x020000>;
-				read-only;
+				reg = <0x000000 0x1000000>;
 			};
 		};
 	};
