@@ -41,34 +41,49 @@ my $feed_src = {};
 my $feed_target = {};
 my $feed_vpackage = {};
 
-sub parse_config() {
-	my $line = 0;
-	my %name;
+sub parse_file($$);
 
-	open FEEDS, "feeds.conf" or
-		open FEEDS, "feeds.conf.default" or
-		die "Unable to open feeds configuration";
-	while (<FEEDS>) {
+sub parse_file($$) {
+	my ($fname, $name) = @_;
+	my $line = 0;
+	my $fh;
+
+	open $fh, $fname or return undef;
+	while (<$fh>) {
 		chomp;
 		s/#.+$//;
+		$line++;
 		next unless /\S/;
 		my @line = split /\s+/, $_, 3;
 		my @src;
-		$line++;
 
 		my $valid = 1;
 		$line[0] =~ /^src-[\w-]+$/ or $valid = 0;
 		$line[1] =~ /^\w+$/ or $valid = 0;
 		@src = split /\s+/, ($line[2] or '');
 		@src = ('') if @src == 0;
-		$valid or die "Syntax error in feeds.conf, line: $line\n";
+		$valid or die "Syntax error in $fname, line: $line\n";
 
-		$name{$line[1]} and die "Duplicate feed name '$line[1]', line: $line\n";
-		$name{$line[1]} = 1;
+		$name->{$line[1]} and die "Duplicate feed name '$line[1]' in '$fname' line: $line\n";
+		$name->{$line[1]} = 1;
+
+		if ($line[0] eq "src-include") {
+			parse_file($line[2], $name) or
+			    die "Unable to open included file '$line[2]'";
+			next;
+		}
 
 		push @feeds, [$line[0], $line[1], \@src];
 	}
-	close FEEDS;
+	close $fh;
+	return 1;
+}
+
+sub parse_config() {
+	my %name;
+	parse_file("feeds.conf", \%name) or
+	    parse_file("feeds.conf.default", \%name)  or
+	    die "Unable to open feeds configuration";
 }
 
 sub update_location($$)
