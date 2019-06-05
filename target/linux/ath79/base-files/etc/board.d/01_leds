@@ -122,14 +122,19 @@ tplink,tl-wr1043n-v5)
 	ucidef_set_led_switch "lan3" "LAN3" "tp-link:green:lan3" "switch0" "0x04"
 	ucidef_set_led_switch "lan4" "LAN4" "tp-link:green:lan4" "switch0" "0x02"
 	;;
+tplink,archer-c6-v2)
+	ucidef_set_led_switch "lan" "LAN" "tp-link:green:lan" "switch0" "0x3C"
+	ucidef_set_led_switch "wan" "WAN" "tp-link:green:wan" "switch0" "0x02"
+	;;
 tplink,archer-c58-v1|\
 tplink,archer-c59-v1)
 	ucidef_set_led_switch "lan" "LAN" "tp-link:green:lan" "switch0" "0x1E"
 	ucidef_set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth1"
 	;;
-tplink,archer-c6-v2)
-	ucidef_set_led_switch "lan" "LAN" "tp-link:green:lan" "switch0" "0x3C"
-	ucidef_set_led_switch "wan" "WAN" "tp-link:green:wan" "switch0" "0x02"
+tplink,archer-d50-v1)
+	ucidef_set_led_switch "lan" "LAN" "tp-link:white:lan" "switch0" "0x1c"
+	ucidef_set_led_switch "wan_data" "WAN Data" "tp-link:white:internet" "switch0" "0x02" "" "tx rx"
+	ucidef_set_led_switch "wan_link" "WAN Link" "tp-link:white:wan" "switch0" "0x02" "" "link"
 	;;
 tplink,cpe210-v2|\
 tplink,cpe210-v3)
@@ -139,11 +144,6 @@ tplink,cpe210-v3)
 	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "tp-link:green:link2" "wlan0" "30" "100"
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "tp-link:green:link3" "wlan0" "60" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "tp-link:green:link4" "wlan0" "80" "100"
-	;;
-tplink,archer-d50-v1)
-	ucidef_set_led_switch "lan" "LAN" "tp-link:white:lan" "switch0" "0x1c"
-	ucidef_set_led_switch "wan_data" "WAN Data" "tp-link:white:internet" "switch0" "0x02" "" "tx rx"
-	ucidef_set_led_switch "wan_link" "WAN Link" "tp-link:white:wan" "switch0" "0x02" "" "link"
 	;;
 tplink,re450-v2)
 	ucidef_set_led_netdev "lan_data" "LAN Data" "tp-link:green:lan_data" "eth0" "tx rx"
