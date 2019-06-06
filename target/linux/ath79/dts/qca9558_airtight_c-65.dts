@@ -11,12 +11,13 @@
 	compatible = "airtight,c-65", "qca,qca9558";
 
 	chosen {
-		bootargs = "console=ttyS0,115200n8";
+		bootargs = "console=ttyS0,115200 root=31:02 rootfstype=jffs2 init=/sbin/init mtdparts=ath-nor0:256k(u-boot),128k(uboot-env),15936k(firmware),64k(ART);ath-nor1:16M(opt) mem=128M";
 	};
 	
 	aliases {
 		led-boot = &power_amber;
 		led-failsafe = &power_amber;
+		led-upgrade = &power_amber;
 	};
 	
 	leds {
@@ -25,13 +26,12 @@
 		power_amber: power_amber {
 			label = "c-65:amber:power";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
-			panic-indicator;
 		};
 
 		wifi_green {
 			label = "c-65:green:wlan2g";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
+			linux,default-trigger = "phy1tpt";
 		};
 
 		ethernet0 {
@@ -96,15 +96,9 @@
 				reg = <0x040000 0x020000>;
 			};
 
-			partition@60000 {
-				label = "kernel";
-				reg = <0x060000 0x200000>;
-				read-only;
-			};
-			
-			firmware: partition@260000 {
-				label = "rootfs";
-				reg = <0x260000 0xd90000>;
+			partition@60000  {
+				label = "firmware";
+				reg = <0x060000 0xf90000>;
 				
 			};
 
@@ -126,9 +120,27 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@0 {
-				label = "opt";
-				reg = <0x000000 0x1000000>;
+			uboot: partition@0 {
+				label = "u-boot2";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "uboot-env2";
+				reg = <0x040000 0x020000>;
+			};
+
+			partition@60000  {
+				label = "firmware2";
+				reg = <0x060000 0xf90000>;
+				
+			};
+
+			partition@ff0000 {
+				label = "art";
+				reg = <0xff0000 0x010000>;
+				read-only;
 			};
 		};
 	};
