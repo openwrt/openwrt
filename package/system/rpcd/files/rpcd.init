@@ -15,10 +15,7 @@ start_service() {
 	procd_close_instance
 }
 
-stop() {
-	service_stop /sbin/rpcd
+reload_service() {
+	procd_send_signal rpcd
 }
 
-reload() {
-	service_reload /sbin/rpcd
-}
