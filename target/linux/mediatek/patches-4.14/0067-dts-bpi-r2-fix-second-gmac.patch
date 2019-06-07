@@ -1,0 +1,20 @@
+--- a/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
++++ b/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
+@@ -141,7 +141,7 @@
+ 	gmac1: mac@1 {
+ 		compatible = "mediatek,eth-mac";
+ 		reg = <1>;
+-		phy-mode = "rgmii";
++		phy-mode = "trgmii";
+ 
+ 		fixed-link {
+ 			speed = <1000>;
+@@ -206,7 +206,7 @@
+ 					reg = <5>;
+ 					label = "cpu";
+ 					ethernet = <&gmac1>;
+-					phy-mode = "rgmii";
++					phy-mode = "trgmii";
+ 
+ 					fixed-link {
+ 						speed = <1000>;
