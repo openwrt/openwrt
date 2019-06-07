@@ -68,7 +68,7 @@ static struct mtd_partition librerouter_spi_partitions[] = {
 	}, {
 		.name		= "firmware",
 		.offset		= 0x0050000,
-		.size		= 0x0fa0000,
+		.size		= 0x07c0000,
 	}, {
 		.name		= "art",
 		.offset		= 0x0ff0000,
