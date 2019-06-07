@@ -1,0 +1,312 @@
+From 16448a9becefd10a64601a08bbcacea38075db70 Mon Sep 17 00:00:00 2001
+From: Simon Goldschmidt <simon.k.r.goldschmidt@gmail.com>
+Date: Mon, 14 Jan 2019 22:38:18 +0100
+Subject: lib: lmb: extend lmb for checks at load time
+
+This adds two new functions, lmb_alloc_addr and
+lmb_get_unreserved_size.
+
+lmb_alloc_addr behaves like lmb_alloc, but it tries to allocate a
+pre-specified address range. Unlike lmb_reserve, this address range
+must be inside one of the memory ranges that has been set up with
+lmb_add.
+
+lmb_get_unreserved_size returns the number of bytes that can be
+used up to the next reserved region or the end of valid ram. This
+can be 0 if the address passed is reserved.
+
+Added test for these new functions.
+
+Signed-off-by: Simon Goldschmidt <simon.k.r.goldschmidt@gmail.com>
+
+diff --git a/include/lmb.h b/include/lmb.h
+index f04d0580..7d7e2a78 100644
+--- a/include/lmb.h
++++ b/include/lmb.h
+@@ -38,6 +38,9 @@ extern phys_addr_t lmb_alloc_base(struct lmb *lmb, phys_size_t size, ulong align
+ 			    phys_addr_t max_addr);
+ extern phys_addr_t __lmb_alloc_base(struct lmb *lmb, phys_size_t size, ulong align,
+ 			      phys_addr_t max_addr);
++extern phys_addr_t lmb_alloc_addr(struct lmb *lmb, phys_addr_t base,
++				  phys_size_t size);
++extern phys_size_t lmb_get_unreserved_size(struct lmb *lmb, phys_addr_t addr);
+ extern int lmb_is_reserved(struct lmb *lmb, phys_addr_t addr);
+ extern long lmb_free(struct lmb *lmb, phys_addr_t base, phys_size_t size);
+ 
+diff --git a/lib/lmb.c b/lib/lmb.c
+index cd297f82..e380a0a7 100644
+--- a/lib/lmb.c
++++ b/lib/lmb.c
+@@ -313,6 +313,59 @@ phys_addr_t __lmb_alloc_base(struct lmb *lmb, phys_size_t size, ulong align, phy
+ 	return 0;
+ }
+ 
++/*
++ * Try to allocate a specific address range: must be in defined memory but not
++ * reserved
++ */
++phys_addr_t lmb_alloc_addr(struct lmb *lmb, phys_addr_t base, phys_size_t size)
++{
++	long j;
++
++	/* Check if the requested address is in one of the memory regions */
++	j = lmb_overlaps_region(&lmb->memory, base, size);
++	if (j >= 0) {
++		/*
++		 * Check if the requested end address is in the same memory
++		 * region we found.
++		 */
++		if (lmb_addrs_overlap(lmb->memory.region[j].base,
++				      lmb->memory.region[j].size, base + size -
++				      1, 1)) {
++			/* ok, reserve the memory */
++			if (lmb_reserve(lmb, base, size) >= 0)
++				return base;
++		}
++	}
++	return 0;
++}
++
++/* Return number of bytes from a given address that are free */
++phys_size_t lmb_get_unreserved_size(struct lmb *lmb, phys_addr_t addr)
++{
++	int i;
++	long j;
++
++	/* check if the requested address is in the memory regions */
++	j = lmb_overlaps_region(&lmb->memory, addr, 1);
++	if (j >= 0) {
++		for (i = 0; i < lmb->reserved.cnt; i++) {
++			if (addr < lmb->reserved.region[i].base) {
++				/* first reserved range > requested address */
++				return lmb->reserved.region[i].base - addr;
++			}
++			if (lmb->reserved.region[i].base +
++			    lmb->reserved.region[i].size > addr) {
++				/* requested addr is in this reserved range */
++				return 0;
++			}
++		}
++		/* if we come here: no reserved ranges above requested addr */
++		return lmb->memory.region[lmb->memory.cnt - 1].base +
++		       lmb->memory.region[lmb->memory.cnt - 1].size - addr;
++	}
++	return 0;
++}
++
+ int lmb_is_reserved(struct lmb *lmb, phys_addr_t addr)
+ {
+ 	int i;
+diff --git a/test/lib/lmb.c b/test/lib/lmb.c
+index e6acb70e..058d3c33 100644
+--- a/test/lib/lmb.c
++++ b/test/lib/lmb.c
+@@ -397,3 +397,205 @@ static int lib_test_lmb_overlapping_reserve(struct unit_test_state *uts)
+ 
+ DM_TEST(lib_test_lmb_overlapping_reserve,
+ 	DM_TESTF_SCAN_PDATA | DM_TESTF_SCAN_FDT);
++
++/*
++ * Simulate 512 MiB RAM, reserve 3 blocks, allocate addresses in between.
++ * Expect addresses outside the memory range to fail.
++ */
++static int test_alloc_addr(struct unit_test_state *uts, const phys_addr_t ram)
++{
++	const phys_size_t ram_size = 0x20000000;
++	const phys_addr_t ram_end = ram + ram_size;
++	const phys_size_t alloc_addr_a = ram + 0x8000000;
++	const phys_size_t alloc_addr_b = ram + 0x8000000 * 2;
++	const phys_size_t alloc_addr_c = ram + 0x8000000 * 3;
++	struct lmb lmb;
++	long ret;
++	phys_addr_t a, b, c, d, e;
++
++	/* check for overflow */
++	ut_assert(ram_end == 0 || ram_end > ram);
++
++	lmb_init(&lmb);
++
++	ret = lmb_add(&lmb, ram, ram_size);
++	ut_asserteq(ret, 0);
++
++	/*  reserve 3 blocks */
++	ret = lmb_reserve(&lmb, alloc_addr_a, 0x10000);
++	ut_asserteq(ret, 0);
++	ret = lmb_reserve(&lmb, alloc_addr_b, 0x10000);
++	ut_asserteq(ret, 0);
++	ret = lmb_reserve(&lmb, alloc_addr_c, 0x10000);
++	ut_asserteq(ret, 0);
++	ASSERT_LMB(&lmb, ram, ram_size, 3, alloc_addr_a, 0x10000,
++		   alloc_addr_b, 0x10000, alloc_addr_c, 0x10000);
++
++	/* allocate blocks */
++	a = lmb_alloc_addr(&lmb, ram, alloc_addr_a - ram);
++	ut_asserteq(a, ram);
++	ASSERT_LMB(&lmb, ram, ram_size, 3, ram, 0x8010000,
++		   alloc_addr_b, 0x10000, alloc_addr_c, 0x10000);
++	b = lmb_alloc_addr(&lmb, alloc_addr_a + 0x10000,
++			   alloc_addr_b - alloc_addr_a - 0x10000);
++	ut_asserteq(b, alloc_addr_a + 0x10000);
++	ASSERT_LMB(&lmb, ram, ram_size, 2, ram, 0x10010000,
++		   alloc_addr_c, 0x10000, 0, 0);
++	c = lmb_alloc_addr(&lmb, alloc_addr_b + 0x10000,
++			   alloc_addr_c - alloc_addr_b - 0x10000);
++	ut_asserteq(c, alloc_addr_b + 0x10000);
++	ASSERT_LMB(&lmb, ram, ram_size, 1, ram, 0x18010000,
++		   0, 0, 0, 0);
++	d = lmb_alloc_addr(&lmb, alloc_addr_c + 0x10000,
++			   ram_end - alloc_addr_c - 0x10000);
++	ut_asserteq(d, alloc_addr_c + 0x10000);
++	ASSERT_LMB(&lmb, ram, ram_size, 1, ram, ram_size,
++		   0, 0, 0, 0);
++
++	/* allocating anything else should fail */
++	e = lmb_alloc(&lmb, 1, 1);
++	ut_asserteq(e, 0);
++	ASSERT_LMB(&lmb, ram, ram_size, 1, ram, ram_size,
++		   0, 0, 0, 0);
++
++	ret = lmb_free(&lmb, d, ram_end - alloc_addr_c - 0x10000);
++	ut_asserteq(ret, 0);
++
++	/* allocate at 3 points in free range */
++
++	d = lmb_alloc_addr(&lmb, ram_end - 4, 4);
++	ut_asserteq(d, ram_end - 4);
++	ASSERT_LMB(&lmb, ram, ram_size, 2, ram, 0x18010000,
++		   d, 4, 0, 0);
++	ret = lmb_free(&lmb, d, 4);
++	ut_asserteq(ret, 0);
++	ASSERT_LMB(&lmb, ram, ram_size, 1, ram, 0x18010000,
++		   0, 0, 0, 0);
++
++	d = lmb_alloc_addr(&lmb, ram_end - 128, 4);
++	ut_asserteq(d, ram_end - 128);
++	ASSERT_LMB(&lmb, ram, ram_size, 2, ram, 0x18010000,
++		   d, 4, 0, 0);
++	ret = lmb_free(&lmb, d, 4);
++	ut_asserteq(ret, 0);
++	ASSERT_LMB(&lmb, ram, ram_size, 1, ram, 0x18010000,
++		   0, 0, 0, 0);
++
++	d = lmb_alloc_addr(&lmb, alloc_addr_c + 0x10000, 4);
++	ut_asserteq(d, alloc_addr_c + 0x10000);
++	ASSERT_LMB(&lmb, ram, ram_size, 1, ram, 0x18010004,
++		   0, 0, 0, 0);
++	ret = lmb_free(&lmb, d, 4);
++	ut_asserteq(ret, 0);
++	ASSERT_LMB(&lmb, ram, ram_size, 1, ram, 0x18010000,
++		   0, 0, 0, 0);
++
++	/* allocate at the bottom */
++	ret = lmb_free(&lmb, a, alloc_addr_a - ram);
++	ut_asserteq(ret, 0);
++	ASSERT_LMB(&lmb, ram, ram_size, 1, ram + 0x8000000, 0x10010000,
++		   0, 0, 0, 0);
++	d = lmb_alloc_addr(&lmb, ram, 4);
++	ut_asserteq(d, ram);
++	ASSERT_LMB(&lmb, ram, ram_size, 2, d, 4,
++		   ram + 0x8000000, 0x10010000, 0, 0);
++
++	/* check that allocating outside memory fails */
++	if (ram_end != 0) {
++		ret = lmb_alloc_addr(&lmb, ram_end, 1);
++		ut_asserteq(ret, 0);
++	}
++	if (ram != 0) {
++		ret = lmb_alloc_addr(&lmb, ram - 1, 1);
++		ut_asserteq(ret, 0);
++	}
++
++	return 0;
++}
++
++static int lib_test_lmb_alloc_addr(struct unit_test_state *uts)
++{
++	int ret;
++
++	/* simulate 512 MiB RAM beginning at 1GiB */
++	ret = test_alloc_addr(uts, 0x40000000);
++	if (ret)
++		return ret;
++
++	/* simulate 512 MiB RAM beginning at 1.5GiB */
++	return test_alloc_addr(uts, 0xE0000000);
++}
++
++DM_TEST(lib_test_lmb_alloc_addr, DM_TESTF_SCAN_PDATA | DM_TESTF_SCAN_FDT);
++
++/* Simulate 512 MiB RAM, reserve 3 blocks, check addresses in between */
++static int test_get_unreserved_size(struct unit_test_state *uts,
++				    const phys_addr_t ram)
++{
++	const phys_size_t ram_size = 0x20000000;
++	const phys_addr_t ram_end = ram + ram_size;
++	const phys_size_t alloc_addr_a = ram + 0x8000000;
++	const phys_size_t alloc_addr_b = ram + 0x8000000 * 2;
++	const phys_size_t alloc_addr_c = ram + 0x8000000 * 3;
++	struct lmb lmb;
++	long ret;
++	phys_size_t s;
++
++	/* check for overflow */
++	ut_assert(ram_end == 0 || ram_end > ram);
++
++	lmb_init(&lmb);
++
++	ret = lmb_add(&lmb, ram, ram_size);
++	ut_asserteq(ret, 0);
++
++	/*  reserve 3 blocks */
++	ret = lmb_reserve(&lmb, alloc_addr_a, 0x10000);
++	ut_asserteq(ret, 0);
++	ret = lmb_reserve(&lmb, alloc_addr_b, 0x10000);
++	ut_asserteq(ret, 0);
++	ret = lmb_reserve(&lmb, alloc_addr_c, 0x10000);
++	ut_asserteq(ret, 0);
++	ASSERT_LMB(&lmb, ram, ram_size, 3, alloc_addr_a, 0x10000,
++		   alloc_addr_b, 0x10000, alloc_addr_c, 0x10000);
++
++	/* check addresses in between blocks */
++	s = lmb_get_unreserved_size(&lmb, ram);
++	ut_asserteq(s, alloc_addr_a - ram);
++	s = lmb_get_unreserved_size(&lmb, ram + 0x10000);
++	ut_asserteq(s, alloc_addr_a - ram - 0x10000);
++	s = lmb_get_unreserved_size(&lmb, alloc_addr_a - 4);
++	ut_asserteq(s, 4);
++
++	s = lmb_get_unreserved_size(&lmb, alloc_addr_a + 0x10000);
++	ut_asserteq(s, alloc_addr_b - alloc_addr_a - 0x10000);
++	s = lmb_get_unreserved_size(&lmb, alloc_addr_a + 0x20000);
++	ut_asserteq(s, alloc_addr_b - alloc_addr_a - 0x20000);
++	s = lmb_get_unreserved_size(&lmb, alloc_addr_b - 4);
++	ut_asserteq(s, 4);
++
++	s = lmb_get_unreserved_size(&lmb, alloc_addr_c + 0x10000);
++	ut_asserteq(s, ram_end - alloc_addr_c - 0x10000);
++	s = lmb_get_unreserved_size(&lmb, alloc_addr_c + 0x20000);
++	ut_asserteq(s, ram_end - alloc_addr_c - 0x20000);
++	s = lmb_get_unreserved_size(&lmb, ram_end - 4);
++	ut_asserteq(s, 4);
++
++	return 0;
++}
++
++static int lib_test_lmb_get_unreserved_size(struct unit_test_state *uts)
++{
++	int ret;
++
++	/* simulate 512 MiB RAM beginning at 1GiB */
++	ret = test_get_unreserved_size(uts, 0x40000000);
++	if (ret)
++		return ret;
++
++	/* simulate 512 MiB RAM beginning at 1.5GiB */
++	return test_get_unreserved_size(uts, 0xE0000000);
++}
++
++DM_TEST(lib_test_lmb_get_unreserved_size,
++	DM_TESTF_SCAN_PDATA | DM_TESTF_SCAN_FDT);
+-- 
+1.8.3.1
+

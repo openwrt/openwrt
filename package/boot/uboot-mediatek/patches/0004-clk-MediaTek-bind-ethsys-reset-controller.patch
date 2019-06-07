@@ -1,0 +1,109 @@
+From ab7ad2d077ef18d6d853c8838bc116fbbd0ac154 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Thu, 20 Dec 2018 16:12:52 +0800
+Subject: clk: MediaTek: bind ethsys reset controller
+
+The ethsys contains not only the clock gating controller, but also the
+reset controller for the whole ethernet subsystem and its components.
+
+This patch adds binding of the reset controller so that the ethernet node
+can have references on it.
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+
+diff --git a/drivers/clk/mediatek/clk-mt7623.c b/drivers/clk/mediatek/clk-mt7623.c
+index c6b09d8e..87ad4f79 100644
+--- a/drivers/clk/mediatek/clk-mt7623.c
++++ b/drivers/clk/mediatek/clk-mt7623.c
+@@ -8,6 +8,7 @@
+ 
+ #include <common.h>
+ #include <dm.h>
++#include <asm/arch-mediatek/reset.h>
+ #include <asm/io.h>
+ #include <dt-bindings/clock/mt7623-clk.h>
+ 
+@@ -782,6 +783,19 @@ static int mt7623_ethsys_probe(struct udevice *dev)
+ 	return mtk_common_clk_gate_init(dev, &mt7623_clk_tree, eth_cgs);
+ }
+ 
++static int mt7623_ethsys_bind(struct udevice *dev)
++{
++	int ret = 0;
++
++#if CONFIG_IS_ENABLED(RESET_MEDIATEK)
++	ret = mediatek_reset_bind(dev, ETHSYS_RST_CTRL_OFS, 1);
++	if (ret)
++		debug("Warning: failed to bind ethsys reset controller\n");
++#endif
++
++	return ret;
++}
++
+ static const struct udevice_id mt7623_apmixed_compat[] = {
+ 	{ .compatible = "mediatek,mt7623-apmixedsys" },
+ 	{ }
+@@ -865,6 +879,7 @@ U_BOOT_DRIVER(mtk_clk_ethsys) = {
+ 	.id = UCLASS_CLK,
+ 	.of_match = mt7623_ethsys_compat,
+ 	.probe = mt7623_ethsys_probe,
++	.bind = mt7623_ethsys_bind,
+ 	.priv_auto_alloc_size = sizeof(struct mtk_cg_priv),
+ 	.ops = &mtk_clk_gate_ops,
+ };
+diff --git a/drivers/clk/mediatek/clk-mt7629.c b/drivers/clk/mediatek/clk-mt7629.c
+index 2601b6cf..6a9f6013 100644
+--- a/drivers/clk/mediatek/clk-mt7629.c
++++ b/drivers/clk/mediatek/clk-mt7629.c
+@@ -8,6 +8,7 @@
+ 
+ #include <common.h>
+ #include <dm.h>
++#include <asm/arch-mediatek/reset.h>
+ #include <asm/io.h>
+ #include <dt-bindings/clock/mt7629-clk.h>
+ 
+@@ -602,6 +603,19 @@ static int mt7629_ethsys_probe(struct udevice *dev)
+ 	return mtk_common_clk_gate_init(dev, &mt7629_clk_tree, eth_cgs);
+ }
+ 
++static int mt7629_ethsys_bind(struct udevice *dev)
++{
++	int ret = 0;
++
++#if CONFIG_IS_ENABLED(RESET_MEDIATEK)
++	ret = mediatek_reset_bind(dev, ETHSYS_RST_CTRL_OFS, 1);
++	if (ret)
++		debug("Warning: failed to bind ethsys reset controller\n");
++#endif
++
++	return ret;
++}
++
+ static int mt7629_sgmiisys_probe(struct udevice *dev)
+ {
+ 	return mtk_common_clk_gate_init(dev, &mt7629_clk_tree, sgmii_cgs);
+@@ -695,6 +709,7 @@ U_BOOT_DRIVER(mtk_clk_ethsys) = {
+ 	.id = UCLASS_CLK,
+ 	.of_match = mt7629_ethsys_compat,
+ 	.probe = mt7629_ethsys_probe,
++	.bind = mt7629_ethsys_bind,
+ 	.priv_auto_alloc_size = sizeof(struct mtk_cg_priv),
+ 	.ops = &mtk_clk_gate_ops,
+ };
+diff --git a/drivers/clk/mediatek/clk-mtk.h b/drivers/clk/mediatek/clk-mtk.h
+index 74152ed9..7847388b 100644
+--- a/drivers/clk/mediatek/clk-mtk.h
++++ b/drivers/clk/mediatek/clk-mtk.h
+@@ -23,6 +23,8 @@
+ #define CLK_PARENT_TOPCKGEN		BIT(5)
+ #define CLK_PARENT_MASK			GENMASK(5, 4)
+ 
++#define ETHSYS_RST_CTRL_OFS		0x34
++
+ /* struct mtk_pll_data - hardware-specific PLLs data */
+ struct mtk_pll_data {
+ 	const int id;
+-- 
+1.8.3.1
+

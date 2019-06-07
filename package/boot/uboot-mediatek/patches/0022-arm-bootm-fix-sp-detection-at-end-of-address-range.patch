@@ -1,0 +1,46 @@
+From 72bc6aa0bc7f034bd6966c872819f19af69f2b64 Mon Sep 17 00:00:00 2001
+From: Simon Goldschmidt <simon.k.r.goldschmidt@gmail.com>
+Date: Mon, 14 Jan 2019 22:38:23 +0100
+Subject: arm: bootm: fix sp detection at end of address range
+
+This fixes  'arch_lmb_reserve()' for ARM that tries to detect in which
+DRAM bank 'sp' is in.
+
+This code failed if a bank was at the end of physical address range
+(i.e. size + length overflowed to 0).
+
+To fix this, calculate 'bank_end' as 'size + length - 1' so that such
+banks end at 0xffffffff, not 0.
+
+Fixes: 15751403b6 ("ARM: bootm: don't assume sp is in DRAM bank 0")
+Reported-by: Frank Wunderlich <frank-w@public-files.de>
+Signed-off-by: Simon Goldschmidt <simon.k.r.goldschmidt@gmail.com>
+Reviewed-by: Stephen Warren <swarren@nvidia.com>
+
+diff --git a/arch/arm/lib/bootm.c b/arch/arm/lib/bootm.c
+index c3c1d2fd..329f20c2 100644
+--- a/arch/arm/lib/bootm.c
++++ b/arch/arm/lib/bootm.c
+@@ -64,13 +64,15 @@ void arch_lmb_reserve(struct lmb *lmb)
+ 	/* adjust sp by 4K to be safe */
+ 	sp -= 4096;
+ 	for (bank = 0; bank < CONFIG_NR_DRAM_BANKS; bank++) {
+-		if (sp < gd->bd->bi_dram[bank].start)
++		if (!gd->bd->bi_dram[bank].size ||
++		    sp < gd->bd->bi_dram[bank].start)
+ 			continue;
++		/* Watch out for RAM at end of address space! */
+ 		bank_end = gd->bd->bi_dram[bank].start +
+-			gd->bd->bi_dram[bank].size;
+-		if (sp >= bank_end)
++			gd->bd->bi_dram[bank].size - 1;
++		if (sp > bank_end)
+ 			continue;
+-		lmb_reserve(lmb, sp, bank_end - sp);
++		lmb_reserve(lmb, sp, bank_end - sp + 1);
+ 		break;
+ 	}
+ }
+-- 
+1.8.3.1
+

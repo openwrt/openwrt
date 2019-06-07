@@ -1,0 +1,76 @@
+From fbdf1c37235d4a5a50eaafff41cacff4fd3a6e9f Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Thu, 20 Dec 2018 16:12:54 +0800
+Subject: arm: dts: add ethernet related node for MT7623 SoC
+
+This patch adds ethernet gmac node for MT7623 with MT7530 gigabit switch.
+
+Signed-off-by: Mark Lee <Mark-MC.Lee@mediatek.com>
+
+diff --git a/arch/arm/dts/mt7623.dtsi b/arch/arm/dts/mt7623.dtsi
+index f50f4ef1..448d1d73 100644
+--- a/arch/arm/dts/mt7623.dtsi
++++ b/arch/arm/dts/mt7623.dtsi
+@@ -10,6 +10,7 @@
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/power/mt7623-power.h>
++#include <dt-bindings/reset/mtk-reset.h>
+ #include "skeleton.dtsi"
+ 
+ / {
+@@ -248,8 +249,26 @@
+ 	};
+ 
+ 	ethsys: syscon@1b000000 {
+-		compatible = "mediatek,mt7623-ethsys";
++		compatible = "mediatek,mt7623-ethsys", "syscon";
+ 		reg = <0x1b000000 0x1000>;
+ 		#clock-cells = <1>;
++		#reset-cells = <1>;
++	};
++
++	eth: ethernet@1b100000 {
++		compatible = "mediatek,mt7623-eth", "syscon";
++		reg = <0x1b100000 0x20000>;
++		clocks = <&topckgen CLK_TOP_ETHIF_SEL>,
++			 <&ethsys CLK_ETHSYS_ESW>,
++			 <&ethsys CLK_ETHSYS_GP1>,
++			 <&ethsys CLK_ETHSYS_GP2>,
++			 <&apmixedsys CLK_APMIXED_TRGPLL>;
++		clock-names = "ethif", "esw", "gp1", "gp2", "trgpll";
++		power-domains = <&scpsys MT7623_POWER_DOMAIN_ETH>;
++		resets = <&ethsys ETHSYS_FE_RST>,
++			 <&ethsys ETHSYS_MCM_RST>;
++		reset-names = "fe", "mcm";
++		mediatek,ethsys = <&ethsys>;
++		status = "disabled";
+ 	};
+ };
+diff --git a/arch/arm/dts/mt7623n-bananapi-bpi-r2.dts b/arch/arm/dts/mt7623n-bananapi-bpi-r2.dts
+index 84a77fde..51628bb6 100644
+--- a/arch/arm/dts/mt7623n-bananapi-bpi-r2.dts
++++ b/arch/arm/dts/mt7623n-bananapi-bpi-r2.dts
+@@ -67,6 +67,19 @@
+ 	};
+ };
+ 
++&eth {
++	status = "okay";
++	mediatek,gmac-id = <0>;
++	phy-mode = "rgmii";
++	mediatek,switch = "mt7530";
++	reset-gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
++
++	fixed-link {
++		speed = <1000>;
++		full-duplex;
++	};
++};
++
+ &mmc0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&mmc0_pins_default>;
+-- 
+1.8.3.1
+

@@ -1,0 +1,59 @@
+From 8da1e0fd083f4c6a71f6735c06698e71250bcc07 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Thu, 20 Dec 2018 16:12:56 +0800
+Subject: arm: MediaTek: add ethernet support for MT7623 boards
+
+Enable ethernet related configs to mt7623n_bpir2_defconfig.
+Add default IP addresses.
+Enable noncached memory region required by ethernet driver.
+
+Signed-off-by: Mark Lee <Mark-MC.Lee@mediatek.com>
+
+diff --git a/configs/mt7623n_bpir2_defconfig b/configs/mt7623n_bpir2_defconfig
+index 74252cd0..bb67f328 100644
+--- a/configs/mt7623n_bpir2_defconfig
++++ b/configs/mt7623n_bpir2_defconfig
+@@ -29,6 +29,7 @@ CONFIG_CMD_FAT=y
+ CONFIG_CMD_FS_GENERIC=y
+ CONFIG_OF_EMBED=y
+ CONFIG_DEFAULT_DEVICE_TREE="mt7623n-bananapi-bpi-r2"
++CONFIG_NET_RANDOM_ETHADDR=y
+ CONFIG_REGMAP=y
+ CONFIG_SYSCON=y
+ # CONFIG_BLOCK_CACHE is not set
+@@ -38,6 +39,11 @@ CONFIG_DM_MMC=y
+ # CONFIG_MMC_QUIRKS is not set
+ CONFIG_MMC_HS400_SUPPORT=y
+ CONFIG_MMC_MTK=y
++CONFIG_DM_RESET=y
++CONFIG_RESET_MEDIATEK=y
++CONFIG_PHY_FIXED=y
++CONFIG_DM_ETH=y
++CONFIG_MEDIATEK_ETH=y
+ CONFIG_PINCTRL=y
+ CONFIG_PINCONF=y
+ CONFIG_PINCTRL_MT7623=y
+diff --git a/include/configs/mt7623.h b/include/configs/mt7623.h
+index fb6ac073..7d26debb 100644
+--- a/include/configs/mt7623.h
++++ b/include/configs/mt7623.h
+@@ -24,6 +24,7 @@
+ 
+ /* Size of malloc() pool */
+ #define CONFIG_SYS_MALLOC_LEN		SZ_4M
++#define CONFIG_SYS_NONCACHED_MEMORY	SZ_1M
+ 
+ /* Environment */
+ #define CONFIG_ENV_SIZE			SZ_4K
+@@ -56,4 +57,8 @@
+ #define CONFIG_SYS_MMC_ENV_DEV	0
+ #define CONFIG_ENV_OFFSET	0x100000
+ 
++/* Ethernet */
++#define CONFIG_IPADDR		192.168.1.1
++#define CONFIG_SERVERIP		192.168.1.2
++
+ #endif
+-- 
+1.8.3.1
+

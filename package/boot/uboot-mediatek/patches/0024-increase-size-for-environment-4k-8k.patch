@@ -1,0 +1,22 @@
+From 0164e641d4a64dcff5d5394b168d612b174d83bd Mon Sep 17 00:00:00 2001
+From: Frank Wunderlich <frank-w@public-files.de>
+Date: Wed, 23 Jan 2019 16:30:39 +0100
+Subject: increase size for environment 4k => 8k
+
+
+diff --git a/include/configs/mt7623.h b/include/configs/mt7623.h
+index 7d26debb..aa0314db 100644
+--- a/include/configs/mt7623.h
++++ b/include/configs/mt7623.h
+@@ -27,7 +27,7 @@
+ #define CONFIG_SYS_NONCACHED_MEMORY	SZ_1M
+ 
+ /* Environment */
+-#define CONFIG_ENV_SIZE			SZ_4K
++#define CONFIG_ENV_SIZE			SZ_8K
+ /* Allow to overwrite serial and ethaddr */
+ #define CONFIG_ENV_OVERWRITE
+ 
+-- 
+1.8.3.1
+

@@ -1,0 +1,39 @@
+diff --git a/configs/mt7623n_bpir2_defconfig b/configs/mt7623n_bpir2_defconfig
+index ae4fb280..74252cd0 100644
+--- a/configs/mt7623n_bpir2_defconfig
++++ b/configs/mt7623n_bpir2_defconfig
+@@ -3,6 +3,7 @@ CONFIG_SYS_THUMB_BUILD=y
+ CONFIG_ARCH_MEDIATEK=y
+ CONFIG_SYS_TEXT_BASE=0x81e00000
+ CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_TARGET_MT7623=y
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_FIT=y
+ CONFIG_FIT_VERBOSE=y
+@@ -11,7 +12,7 @@ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_DEFAULT_FDT_FILE="mt7623n-bananapi-bpi-r2"
+ # CONFIG_DISPLAY_BOARDINFO is not set
+ CONFIG_HUSH_PARSER=y
+-CONFIG_SYS_PROMPT="U-Boot> "
++CONFIG_SYS_PROMPT="BPI-R2> "
+ CONFIG_CMD_BOOTMENU=y
+ # CONFIG_CMD_ELF is not set
+ # CONFIG_CMD_XIMG is not set
+@@ -51,3 +52,14 @@ CONFIG_MTK_TIMER=y
+ CONFIG_WDT_MTK=y
+ CONFIG_LZMA=y
+ # CONFIG_EFI_LOADER is not set
++
++CONFIG_CMD_BOOTZ=y
++CONFIG_OF_LIBFDT_OVERLAY=y
++
++CONFIG_USE_DEFAULT_ENV_FILE=y
++CONFIG_DEFAULT_ENV_FILE="uEnv.txt"
++
++#enables savenenv-command
++CONFIG_ENV_IS_IN_MMC=y
++
++CONFIG_CMD_ASKENV=y
+-- 
+1.8.3.1
+

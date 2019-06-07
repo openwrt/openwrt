@@ -1,0 +1,216 @@
+From 17843557032cc342117591939483d238e80bd169 Mon Sep 17 00:00:00 2001
+From: Frank Wunderlich <frank-w@public-files.de>
+Date: Fri, 28 Dec 2018 17:56:19 +0100
+Subject: [bootmenu] added key-input (1-9,a-f)
+
+
+diff --git a/cmd/bootmenu.c b/cmd/bootmenu.c
+index 7f88c1ed..0935fd40 100644
+--- a/cmd/bootmenu.c
++++ b/cmd/bootmenu.c
+@@ -39,7 +39,22 @@ struct bootmenu_data {
+ 
+ enum bootmenu_key {
+ 	KEY_NONE = 0,
+-	KEY_UP,
++	KEY_1,
++	KEY_2,
++	KEY_3,
++	KEY_4,
++	KEY_5,
++	KEY_6,
++	KEY_7,
++	KEY_8,
++	KEY_9,
++	KEY_a,
++	KEY_b,
++	KEY_c,
++	KEY_d,
++	KEY_e,
++	KEY_f,
++	KEY_UP = 20,
+ 	KEY_DOWN,
+ 	KEY_SELECT,
+ };
+@@ -77,6 +92,23 @@ static void bootmenu_print_entry(void *data)
+ 		puts(ANSI_COLOR_RESET);
+ }
+ 
++bool get_bootmenu_key(enum bootmenu_key *key, int c)
++{
++	/* ANSI '1~9' - was pressed */
++	if (c <= '9' && c >= '1' )
++	{
++		*key = c-48;
++		return true;
++	}else
++	/* ANSI 'a~f' -  was pressed */
++	if (c <= 'f' && c >= 'a' )
++	{
++		*key = c-87;
++		return true;
++	}
++	return false;
++}
++
+ static void bootmenu_autoboot_loop(struct bootmenu_data *menu,
+ 				enum bootmenu_key *key, int *esc)
+ {
+@@ -97,23 +129,23 @@ static void bootmenu_autoboot_loop(struct bootmenu_data *menu,
+ 
+ 			menu->delay = -1;
+ 			c = getc();
+-
+-			switch (c) {
+-			case '\e':
+-				*esc = 1;
+-				*key = KEY_NONE;
+-				break;
+-			case '\r':
+-				*key = KEY_SELECT;
+-				break;
+-			default:
+-				*key = KEY_NONE;
+-				break;
++			if (!get_bootmenu_key(key,c))
++			{
++				switch (c) {
++				case '\e':
++					*esc = 1;
++					*key = KEY_NONE;
++					break;
++				case '\r':
++					*key = KEY_SELECT;
++					break;
++				default:
++					*key = KEY_NONE;
++					break;
++				}
+ 			}
+-
+ 			break;
+ 		}
+-
+ 		if (menu->delay < 0)
+ 			break;
+ 
+@@ -140,47 +172,49 @@ static void bootmenu_loop(struct bootmenu_data *menu,
+ 
+ 	c = getc();
+ 
+-	switch (*esc) {
+-	case 0:
+-		/* First char of ANSI escape sequence '\e' */
+-		if (c == '\e') {
+-			*esc = 1;
+-			*key = KEY_NONE;
+-		}
+-		break;
+-	case 1:
+-		/* Second char of ANSI '[' */
+-		if (c == '[') {
+-			*esc = 2;
+-			*key = KEY_NONE;
+-		} else {
+-			*esc = 0;
+-		}
+-		break;
+-	case 2:
+-	case 3:
+-		/* Third char of ANSI (number '1') - optional */
+-		if (*esc == 2 && c == '1') {
+-			*esc = 3;
++	if (!get_bootmenu_key(key,c))
++	{
++		switch (*esc) {
++		case 0:
++			/* First char of ANSI escape sequence '\e' */
++			if (c == '\e') {
++				*esc = 1;
++				*key = KEY_NONE;
++			}
++			break;
++		case 1:
++			/* Second char of ANSI '[' */
++			if (c == '[') {
++				*esc = 2;
+ 			*key = KEY_NONE;
++			} else {
++				*esc = 0;
++			}
+ 			break;
+-		}
++		case 2:
++		case 3:
++			/* Third char of ANSI (number '1') - optional */
++			if (*esc == 2 && c == '1') {
++				*esc = 3;
++				*key = KEY_NONE;
++				break;
++			}
+ 
+-		*esc = 0;
++			*esc = 0;
+ 
+-		/* ANSI 'A' - key up was pressed */
+-		if (c == 'A')
+-			*key = KEY_UP;
+-		/* ANSI 'B' - key down was pressed */
+-		else if (c == 'B')
+-			*key = KEY_DOWN;
+-		/* other key was pressed */
+-		else
+-			*key = KEY_NONE;
++			/* ANSI 'A' - key up was pressed */
++			if (c == 'A')
++				*key = KEY_UP;
++			/* ANSI 'B' - key down was pressed */
++			else if (c == 'B')
++				*key = KEY_DOWN;
++			/* other key was pressed */
++			else
++				*key = KEY_NONE;
+ 
+-		break;
++			break;
++		}
+ 	}
+-
+ 	/* enter key was pressed */
+ 	if (c == '\r')
+ 		*key = KEY_SELECT;
+@@ -203,6 +237,14 @@ static char *bootmenu_choice_entry(void *data)
+ 			bootmenu_loop(menu, &key, &esc);
+ 		}
+ 
++		if (key < KEY_UP && key > KEY_NONE)
++		{
++			menu->active = key-1;
++			return NULL;
++		}
++		else
++		{
++
+ 		switch (key) {
+ 		case KEY_UP:
+ 			if (menu->active > 0)
+@@ -222,6 +264,7 @@ static char *bootmenu_choice_entry(void *data)
+ 		default:
+ 			break;
+ 		}
++		}
+ 	}
+ 
+ 	/* never happens */
+@@ -466,7 +509,7 @@ void menu_display_statusline(struct menu *m)
+ 	printf(ANSI_CURSOR_POSITION, menu->count + 5, 1);
+ 	puts(ANSI_CLEAR_LINE);
+ 	printf(ANSI_CURSOR_POSITION, menu->count + 6, 1);
+-	puts("  Press UP/DOWN to move, ENTER to select");
++	puts("  Press UP/DOWN to move or Press 1~9,a~f to choose, ENTER to select");
+ 	puts(ANSI_CLEAR_LINE_TO_END);
+ 	printf(ANSI_CURSOR_POSITION, menu->count + 7, 1);
+ 	puts(ANSI_CLEAR_LINE);
+-- 
+1.8.3.1
+

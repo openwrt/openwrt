@@ -1,0 +1,189 @@
+From e4033f535d7f6f86f354d36037565a319c02c324 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Thu, 20 Dec 2018 16:12:51 +0800
+Subject: reset: MedaiTek: add reset controller driver for MediaTek SoCs
+
+This patch adds reset controller driver for MediaTek SoCs.
+
+Signed-off-by: Ryder Lee <ryder.lee@mediatek.com>
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+
+diff --git a/arch/arm/include/asm/arch-mediatek/reset.h b/arch/arm/include/asm/arch-mediatek/reset.h
+new file mode 100644
+index 00000000..9704666d
+--- /dev/null
++++ b/arch/arm/include/asm/arch-mediatek/reset.h
+@@ -0,0 +1,13 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2018 MediaTek Inc.
++ */
++
++#ifndef __MEDIATEK_RESET_H
++#define __MEDIATEK_RESET_H
++
++#include <dm.h>
++
++int mediatek_reset_bind(struct udevice *pdev, u32 regofs, u32 num_regs);
++
++#endif	/* __MEDIATEK_RESET_H */
+diff --git a/drivers/reset/Kconfig b/drivers/reset/Kconfig
+index 9c5208b7..3a6d61f4 100644
+--- a/drivers/reset/Kconfig
++++ b/drivers/reset/Kconfig
+@@ -106,4 +106,11 @@ config RESET_SOCFPGA
+ 	help
+ 	  Support for reset controller on SoCFPGA platform.
+ 
++config RESET_MEDIATEK
++	bool "Reset controller driver for MediaTek SoCs"
++	depends on DM_RESET && ARCH_MEDIATEK && CLK
++	default y
++	help
++	  Support for reset controller on MediaTek SoCs.
++
+ endmenu
+diff --git a/drivers/reset/Makefile b/drivers/reset/Makefile
+index f4520878..8a4dcab8 100644
+--- a/drivers/reset/Makefile
++++ b/drivers/reset/Makefile
+@@ -17,3 +17,4 @@ obj-$(CONFIG_AST2500_RESET) += ast2500-reset.o
+ obj-$(CONFIG_RESET_ROCKCHIP) += reset-rockchip.o
+ obj-$(CONFIG_RESET_MESON) += reset-meson.o
+ obj-$(CONFIG_RESET_SOCFPGA) += reset-socfpga.o
++obj-$(CONFIG_RESET_MEDIATEK) += reset-mediatek.o
+diff --git a/drivers/reset/reset-mediatek.c b/drivers/reset/reset-mediatek.c
+new file mode 100644
+index 00000000..e3614e6e
+--- /dev/null
++++ b/drivers/reset/reset-mediatek.c
+@@ -0,0 +1,102 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2018 MediaTek Inc.
++ *
++ * Author: Ryder Lee <ryder.lee@mediatek.com>
++ *	   Weijie Gao <weijie.gao@mediatek.com>
++ */
++
++#include <common.h>
++#include <dm.h>
++#include <dm/lists.h>
++#include <regmap.h>
++#include <reset-uclass.h>
++#include <syscon.h>
++
++struct mediatek_reset_priv {
++	struct regmap *regmap;
++	u32 regofs;
++	u32 nr_resets;
++};
++
++static int mediatek_reset_request(struct reset_ctl *reset_ctl)
++{
++	return 0;
++}
++
++static int mediatek_reset_free(struct reset_ctl *reset_ctl)
++{
++	return 0;
++}
++
++static int mediatek_reset_assert(struct reset_ctl *reset_ctl)
++{
++	struct mediatek_reset_priv *priv = dev_get_priv(reset_ctl->dev);
++	int id = reset_ctl->id;
++
++	if (id >= priv->nr_resets)
++		return -EINVAL;
++
++	return regmap_update_bits(priv->regmap,
++		priv->regofs + ((id / 32) << 2), BIT(id % 32), BIT(id % 32));
++}
++
++static int mediatek_reset_deassert(struct reset_ctl *reset_ctl)
++{
++	struct mediatek_reset_priv *priv = dev_get_priv(reset_ctl->dev);
++	int id = reset_ctl->id;
++
++	if (id >= priv->nr_resets)
++		return -EINVAL;
++
++	return regmap_update_bits(priv->regmap,
++		priv->regofs + ((id / 32) << 2), BIT(id % 32), 0);
++}
++
++struct reset_ops mediatek_reset_ops = {
++	.request = mediatek_reset_request,
++	.free = mediatek_reset_free,
++	.rst_assert = mediatek_reset_assert,
++	.rst_deassert = mediatek_reset_deassert,
++};
++
++static int mediatek_reset_probe(struct udevice *dev)
++{
++	struct mediatek_reset_priv *priv = dev_get_priv(dev);
++
++	if (!priv->regofs && !priv->nr_resets)
++		return -EINVAL;
++
++	priv->regmap = syscon_node_to_regmap(dev_ofnode(dev));
++	if (IS_ERR(priv->regmap))
++		return PTR_ERR(priv->regmap);
++
++	return 0;
++}
++
++int mediatek_reset_bind(struct udevice *pdev, u32 regofs, u32 num_regs)
++{
++	struct udevice *rst_dev;
++	struct mediatek_reset_priv *priv;
++	int ret;
++
++	ret = device_bind_driver_to_node(pdev, "mediatek_reset", "reset",
++					 dev_ofnode(pdev), &rst_dev);
++	if (ret)
++		return ret;
++
++	priv = malloc(sizeof(struct mediatek_reset_priv));
++	priv->regofs = regofs;
++	priv->nr_resets = num_regs * 32;
++	rst_dev->priv = priv;
++
++	return 0;
++}
++
++U_BOOT_DRIVER(mediatek_reset) = {
++	.name = "mediatek_reset",
++	.id = UCLASS_RESET,
++	.probe = mediatek_reset_probe,
++	.ops = &mediatek_reset_ops,
++	.priv_auto_alloc_size = sizeof(struct mediatek_reset_priv),
++};
+diff --git a/include/dt-bindings/reset/mtk-reset.h b/include/dt-bindings/reset/mtk-reset.h
+new file mode 100644
+index 00000000..5f0a74f2
+--- /dev/null
++++ b/include/dt-bindings/reset/mtk-reset.h
+@@ -0,0 +1,18 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2018 MediaTek Inc.
++ */
++
++#ifndef _DT_BINDINGS_MTK_RESET_H_
++#define _DT_BINDINGS_MTK_RESET_H_
++
++/* ETHSYS */
++#define ETHSYS_PPE_RST			31
++#define ETHSYS_EPHY_RST			24
++#define ETHSYS_GMAC_RST			23
++#define ETHSYS_ESW_RST			16
++#define ETHSYS_FE_RST			6
++#define ETHSYS_MCM_RST			2
++#define ETHSYS_SYS_RST			0
++
++#endif /* _DT_BINDINGS_MTK_RESET_H_ */
+-- 
+1.8.3.1
+

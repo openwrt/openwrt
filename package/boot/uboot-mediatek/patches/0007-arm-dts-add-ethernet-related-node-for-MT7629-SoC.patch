@@ -1,0 +1,95 @@
+From 038e3dc3801007f5025a2e57bb4b715c48b9590d Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Thu, 20 Dec 2018 16:12:55 +0800
+Subject: arm: dts: add ethernet related node for MT7629 SoC
+
+This patch adds ethernet gmac node for MT7629 with internal gigabit phy.
+
+Signed-off-by: Mark Lee <Mark-MC.Lee@mediatek.com>
+
+diff --git a/arch/arm/dts/mt7629-rfb.dts b/arch/arm/dts/mt7629-rfb.dts
+index a6d28a06..95d10aa6 100644
+--- a/arch/arm/dts/mt7629-rfb.dts
++++ b/arch/arm/dts/mt7629-rfb.dts
+@@ -22,6 +22,17 @@
+ 	};
+ };
+ 
++&eth {
++	status = "okay";
++	mediatek,gmac-id = <1>;
++	phy-mode = "gmii";
++	phy-handle = <&phy0>;
++
++	phy0: ethernet-phy@0 {
++		reg = <0>;
++	};
++};
++
+ &pinctrl {
+ 	qspi_pins: qspi-pins {
+ 		mux {
+diff --git a/arch/arm/dts/mt7629.dtsi b/arch/arm/dts/mt7629.dtsi
+index e6052bbd..c87115e0 100644
+--- a/arch/arm/dts/mt7629.dtsi
++++ b/arch/arm/dts/mt7629.dtsi
+@@ -10,6 +10,7 @@
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/power/mt7629-power.h>
++#include <dt-bindings/reset/mtk-reset.h>
+ #include "skeleton.dtsi"
+ 
+ / {
+@@ -228,6 +229,48 @@
+ 		compatible = "mediatek,mt7629-ethsys", "syscon";
+ 		reg = <0x1b000000 0x1000>;
+ 		#clock-cells = <1>;
++		#reset-cells = <1>;
++	};
++
++	eth: ethernet@1b100000 {
++		compatible = "mediatek,mt7629-eth", "syscon";
++		reg = <0x1b100000 0x20000>;
++		clocks = <&topckgen CLK_TOP_ETH_SEL>,
++			<&topckgen CLK_TOP_F10M_REF_SEL>,
++			<&ethsys CLK_ETH_ESW_EN>,
++			<&ethsys CLK_ETH_GP0_EN>,
++			<&ethsys CLK_ETH_GP1_EN>,
++			<&ethsys CLK_ETH_GP2_EN>,
++			<&ethsys CLK_ETH_FE_EN>,
++			<&sgmiisys0 CLK_SGMII_TX_EN>,
++			<&sgmiisys0 CLK_SGMII_RX_EN>,
++			<&sgmiisys0 CLK_SGMII_CDR_REF>,
++			<&sgmiisys0 CLK_SGMII_CDR_FB>,
++			<&sgmiisys1 CLK_SGMII_TX_EN>,
++			<&sgmiisys1 CLK_SGMII_RX_EN>,
++			<&sgmiisys1 CLK_SGMII_CDR_REF>,
++			<&sgmiisys1 CLK_SGMII_CDR_FB>,
++			<&apmixedsys CLK_APMIXED_SGMIPLL>,
++			<&apmixedsys CLK_APMIXED_ETH2PLL>;
++		clock-names = "ethif", "sgmiitop", "esw", "gp0", "gp1", "gp2",
++				"fe", "sgmii_tx250m", "sgmii_rx250m",
++				"sgmii_cdr_ref", "sgmii_cdr_fb",
++				"sgmii2_tx250m", "sgmii2_rx250m",
++				"sgmii2_cdr_ref", "sgmii2_cdr_fb",
++				"sgmii_ck", "eth2pll";
++		assigned-clocks = <&topckgen CLK_TOP_ETH_SEL>,
++				  <&topckgen CLK_TOP_F10M_REF_SEL>;
++		assigned-clock-parents = <&topckgen CLK_TOP_UNIVPLL1_D2>,
++					 <&topckgen CLK_TOP_SGMIIPLL_D2>;
++		power-domains = <&scpsys MT7629_POWER_DOMAIN_ETHSYS>;
++		resets = <&ethsys ETHSYS_FE_RST>;
++		reset-names = "fe";
++		mediatek,ethsys = <&ethsys>;
++		mediatek,sgmiisys = <&sgmiisys0>;
++		mediatek,infracfg = <&infracfg>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
+ 	};
+ 
+ 	sgmiisys0: syscon@1b128000 {
+-- 
+1.8.3.1
+

@@ -1,0 +1,61 @@
+From 2a59134ba1d841cf1a7845017656b74b74412aaf Mon Sep 17 00:00:00 2001
+From: Frank Wunderlich <frank-w@public-files.de>
+Date: Mon, 3 Dec 2018 15:32:58 +0100
+Subject: adding saveenv-command for bananapi r2
+
+bananapi r2 can be booted from sd-card and emmc
+saving the environment have to choose the storage
+from which the device has booted
+
+also the offset is set to 1MB-50Kb to make sure env is written
+to block "user data area" between uboot and first partition
+
+https://www.fw-web.de/dokuwiki/lib/exe/fetch.php?cache=&media=bpi-r2:boot-structure.png
+
+v3: removed changes in defconfig (users choice)
+v2: fixed bracket-style in if-else statement
+
+Signed-off-by: Frank Wunderlich <frank-w@public-files.de>
+
+diff --git a/board/mediatek/mt7623/mt7623_rfb.c b/board/mediatek/mt7623/mt7623_rfb.c
+index 08468b50..4ec27649 100644
+--- a/board/mediatek/mt7623/mt7623_rfb.c
++++ b/board/mediatek/mt7623/mt7623_rfb.c
+@@ -14,3 +14,22 @@ int board_init(void)
+ 
+ 	return 0;
+ }
++
++int mmc_get_boot_dev(void)
++{
++	int g_mmc_devid = -1;
++	char *uflag = (char *)0x81DFFFF0;
++	if (strncmp(uflag,"eMMC",4)==0) {
++		g_mmc_devid = 0;
++		printf("Boot From Emmc(id:%d)\n\n", g_mmc_devid);
++	} else {
++		g_mmc_devid = 1;
++		printf("Boot From SD(id:%d)\n\n", g_mmc_devid);
++	}
++	return g_mmc_devid;
++}
++
++int mmc_get_env_dev(void)
++{
++	return mmc_get_boot_dev();
++}
+diff --git a/include/configs/mt7623.h b/include/configs/mt7623.h
+index ba763501..fb6ac073 100644
+--- a/include/configs/mt7623.h
++++ b/include/configs/mt7623.h
+@@ -53,4 +53,7 @@
+ #define CONFIG_EXTRA_ENV_SETTINGS	\
+ 	FDT_HIGH
+ 
++#define CONFIG_SYS_MMC_ENV_DEV	0
++#define CONFIG_ENV_OFFSET	0xF3800
++
+ #endif
+-- 
+1.8.3.1
+

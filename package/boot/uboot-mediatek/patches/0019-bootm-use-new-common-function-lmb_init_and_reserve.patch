@@ -1,0 +1,35 @@
+From 2e3bdfbc449a5558ebbb55e36feee31f69fe32f7 Mon Sep 17 00:00:00 2001
+From: Simon Goldschmidt <simon.k.r.goldschmidt@gmail.com>
+Date: Mon, 14 Jan 2019 22:38:20 +0100
+Subject: bootm: use new common function lmb_init_and_reserve
+
+This reduces duplicate code only.
+
+Signed-off-by: Simon Goldschmidt <simon.k.r.goldschmidt@gmail.com>
+Reviewed-by: Simon Glass <sjg@chromium.org>
+
+diff --git a/common/bootm.c b/common/bootm.c
+index 8bf84ebc..31e4f0f7 100644
+--- a/common/bootm.c
++++ b/common/bootm.c
+@@ -56,15 +56,11 @@ static void boot_start_lmb(bootm_headers_t *images)
+ 	ulong		mem_start;
+ 	phys_size_t	mem_size;
+ 
+-	lmb_init(&images->lmb);
+-
+ 	mem_start = env_get_bootm_low();
+ 	mem_size = env_get_bootm_size();
+ 
+-	lmb_add(&images->lmb, (phys_addr_t)mem_start, mem_size);
+-
+-	arch_lmb_reserve(&images->lmb);
+-	board_lmb_reserve(&images->lmb);
++	lmb_init_and_reserve(&images->lmb, (phys_addr_t)mem_start, mem_size,
++			     NULL);
+ }
+ #else
+ #define lmb_reserve(lmb, base, size)
+-- 
+1.8.3.1
+

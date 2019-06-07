@@ -1,0 +1,91 @@
+scriptaddr=0x83000000
+device=mmc
+bootenv=uEnv.txt
+kernel=uImage
+loadaddr=0x80200000
+#default bootargs will be overidden by buildargs
+bootargs=console=ttyS0,115200 root=/dev/mmcblk1p2 rw rootwait ip=dhcp
+
+console=earlyprintk console=ttyS0,115200 console=tty1 fbcon=map:0
+roottmpl=${rootdev} rootfstype=ext4 rootwait
+prepsetroot=setenv setroot setenv root ${roottmpl}
+bootopts=vmalloc=496M debug=7 initcall_debug=0
+graphic=video=1920x1080 drm.debug=0x7
+
+buildargs=setenv bootargs "console=${console} root=${root} ${bootopts} ${graphic}"
+
+checkenv=test -e ${device} ${partition} ${bootenv}
+importenv=env import -t ${scriptaddr} ${filesize}
+loadbootenv=if fatload ${device} ${partition} ${scriptaddr} ${bootenv};then run importenv;else echo "fatload (${bootenv}) failed";fi
+resetenv=env default -a;printenv;
+
+# Here we assume that SD card id mmcblk1 and eMMC is mmcblk0 in linux. Swap them if your DTS define them in reverse order.
+usesd=setenv partition 1:1; setenv rootdev /dev/mmcblk1p2; setenv bootdev SD; setenv swaproot 'run useemmc';
+useemmc=setenv partition 0:1; setenv rootdev /dev/mmcblk0p2; setenv bootdev eMMC; setenv swaproot 'run usesd';
+
+checkbootedfrom=if itest.l *81dffff0 == 434d4d65 ; then setenv bootedfrom eMMC; else setenv bootedfrom SD; fi;
+
+checkroot=fatinfo ${device} ${partition}
+checksd=fatinfo ${device} 1:1
+checkmmc=fatinfo ${device} 0:1
+
+reportbootedfrom=echo "Preloader/U-Boot loaded from ${bootedfrom}."; run validroot || echo "Both SD and eMMC pt#1 are not FAT, falling back to U-Boot shell."
+reportvalidroot=run validroot || echo "Both SD and eMMC pt#1 are not FAT, falling back to U-Boot shell."
+reportrootswapwarn=if test "${bootedfrom}" != "${bootdev}" ; then echo "Warning: Partition 1 on ${bootedfrom} is not FAT, failing back to ${bootdev}"; fi; true;
+reportbootdev=echo "Booting from ${bootdev}."
+reportboot=run reportbootedfrom reportvalidroot reportrootswapwarn reportbootdev
+
+detectroot=run useemmc; run checkbootedfrom; if test "${bootedfrom}" == "SD"; then run usesd; fi; run validateroot;
+validateroot=setenv validroot false; run checkroot || run swaproot; run checkroot && setenv validroot true || run swaproot;
+
+newboot=run prepsetroot; run setroot;run buildargs;printenv bootargs;fatload ${device} ${partition} ${loadaddr} ${kernel}; bootm
+
+reloadenv=run detectroot; if run validroot; then if run checkenv; then run loadbootenv; run detectroot; else echo uEnv.txt file not found on ${bootdev}; fi; fi;
+reloadmenu=run reloadenv; run reportboot; if run validroot; then if run checkenv; then run loadbootenv; else echo uEnv.txt file not found on ${bootdev}; fi; bootmenu; fi;
+
+lskernel=ls ${device} ${partition};
+lsdtb=ls ${device} ${partition} dtb
+askkernel=askenv kernelinput "enter uImage-name:";
+askdtb=askenv dtbinput "enter dtb-name:";
+
+#bootmenu
+boot0=run lskernel;run askkernel;if printenv kernelinput ;then setenv kernel ${kernelinput};run lsdtb;run askdtb;if printenv dtbinput ;then setenv fdt ${dtbinput};fi; run newboot2; fi;
+boot1=run newboot;
+
+bootmenu_default=2
+bootmenu_0=1. Enter kernel-name to boot from SD/EMMC.=run boot0
+bootmenu_1=2. Boot kernel from TFTP.=run bootnet
+bootmenu_2=3. Boot from SD/EMMC.=run boot1
+bootmenu_3=4. Boot from eMMC.=run useemmc; run boot1
+bootmenu_4=5. Boot from SD.=run usesd; run boot1
+
+#Netboot
+ipaddr=192.168.0.11
+netmask=255.255.255.0
+serverip=192.168.0.10
+
+bootfile=uImage
+netbootargs=console=ttyS0,115200 root=/dev/mmcblk1p2 rw rootwait
+#ip=dhcp sets ip on eth0 instead of wan
+
+lstftp=tftp ${loadaddr} ${serverip}:files.lst;setexpr listend ${loadaddr} + ${filesize};mw.b ${listend} 00 2;strings ${loadaddr};
+#md.b ${loadaddr} 60;
+
+bootnet=run lstftp;run askkernel;if printenv kernelinput ;then setenv bootfile "${kernelinput}"; fi;printenv; setenv bootargs ${netbootargs};tftp ${loadaddr} ${bootfile};bootm
+
+#separate fdt+dto
+dtaddr=0x83f00000
+fdt_high=0xffffffff
+
+loadfdt=fatload ${device} ${partition} ${dtaddr} dtb/${fdt}
+loadkernel=echo "loading kernel ${kernel}...";fatload ${device} ${partition} ${loadaddr} ${kernel}
+
+loaddto=echo "loaddto:${dto}";fdt addr ${dtaddr};fdt resize 8192; setexpr fdtovaddr ${dtaddr} + F000;fatload ${device} ${partition} ${fdtovaddr} dtb/${dto} && fdt apply ${fdtovaddr}
+loaddtolist=for dto in ${dtolist} ; do run loaddto ; done
+
+bootall=if printenv fdt; then run loadfdt; if printenv dtolist;then run loaddtolist;fi; bootm ${loadaddr} - ${dtaddr} ;else bootm; fi
+newboot2=run prepsetroot; run setroot;run buildargs; printenv bootargs; run loadkernel; run bootall;
+
+#automatic reload from sd/emmc
+bootdelay=0
+bootcmd=setenv bootdelay 3; run reloadmenu;

@@ -1,0 +1,26 @@
+From 8b554b62dcab25c0072c5b6880d0fcf079cc9d87 Mon Sep 17 00:00:00 2001
+From: Simon Goldschmidt <simon.k.r.goldschmidt@gmail.com>
+Date: Mon, 14 Jan 2019 22:38:21 +0100
+Subject: lmb: remove unused extern declaration
+
+lmb.h includes an extern declaration of "struct lmb lmb;" which
+is not used anywhere, so remove it.
+
+Signed-off-by: Simon Goldschmidt <simon.k.r.goldschmidt@gmail.com>
+
+diff --git a/include/lmb.h b/include/lmb.h
+index 62da85e7..1bb003e3 100644
+--- a/include/lmb.h
++++ b/include/lmb.h
+@@ -28,8 +28,6 @@ struct lmb {
+ 	struct lmb_region reserved;
+ };
+ 
+-extern struct lmb lmb;
+-
+ extern void lmb_init(struct lmb *lmb);
+ extern void lmb_init_and_reserve(struct lmb *lmb, phys_addr_t base,
+ 				 phys_size_t size, void *fdt_blob);
+-- 
+1.8.3.1
+

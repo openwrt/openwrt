@@ -1,0 +1,27 @@
+From 7b492a978a09fbc95340dbcdc1e14d604ac6ae76 Mon Sep 17 00:00:00 2001
+From: Frank Wunderlich <frank-w@public-files.de>
+Date: Wed, 23 Jan 2019 16:16:45 +0100
+Subject: [defconfig] added strings and setenv used for lstftp
+
+
+diff --git a/configs/mt7623n_bpir2_defconfig b/configs/mt7623n_bpir2_defconfig
+index a9f4506e..bac45d11 100644
+--- a/configs/mt7623n_bpir2_defconfig
++++ b/configs/mt7623n_bpir2_defconfig
+@@ -22,7 +22,6 @@ CONFIG_CMD_GPT=y
+ CONFIG_CMD_MMC=y
+ CONFIG_CMD_PART=y
+ CONFIG_CMD_READ=y
+-# CONFIG_CMD_SETEXPR is not set
+ # CONFIG_CMD_NFS is not set
+ CONFIG_CMD_PING=y
+ CONFIG_CMD_FAT=y
+@@ -69,3 +68,5 @@ CONFIG_DEFAULT_ENV_FILE="uEnv.txt"
+ CONFIG_ENV_IS_IN_MMC=y
+ 
+ CONFIG_CMD_ASKENV=y
++CONFIG_CMD_STRINGS=y
++CONFIG_CMD_SETEXPR=y
+-- 
+1.8.3.1
+

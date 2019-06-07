@@ -1,0 +1,40 @@
+From d4b93c443372d651bd6f8b78070c54338ee35b91 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Thu, 20 Dec 2018 16:12:59 +0800
+Subject: configs: MediaTek: use OF_SEPARATE instead of OF_EMBED
+
+This patch replace OF_EMBED with OF_SEPARATE of defconfig files of
+MediaTek boards because now OF_EMBED is only used for debugging purpose.
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+Reviewed-by: Simon Glass <sjg@chromium.org>
+
+diff --git a/configs/mt7623n_bpir2_defconfig b/configs/mt7623n_bpir2_defconfig
+index bb67f328..a9f4506e 100644
+--- a/configs/mt7623n_bpir2_defconfig
++++ b/configs/mt7623n_bpir2_defconfig
+@@ -27,7 +27,7 @@ CONFIG_CMD_READ=y
+ CONFIG_CMD_PING=y
+ CONFIG_CMD_FAT=y
+ CONFIG_CMD_FS_GENERIC=y
+-CONFIG_OF_EMBED=y
++CONFIG_OF_SEPARATE=y
+ CONFIG_DEFAULT_DEVICE_TREE="mt7623n-bananapi-bpi-r2"
+ CONFIG_NET_RANDOM_ETHADDR=y
+ CONFIG_REGMAP=y
+diff --git a/configs/mt7629_rfb_defconfig b/configs/mt7629_rfb_defconfig
+index fdd5f575..1da9932d 100644
+--- a/configs/mt7629_rfb_defconfig
++++ b/configs/mt7629_rfb_defconfig
+@@ -29,7 +29,7 @@ CONFIG_CMD_SF_TEST=y
+ # CONFIG_CMD_NFS is not set
+ CONFIG_CMD_PING=y
+ # CONFIG_PARTITIONS is not set
+-CONFIG_OF_EMBED=y
++CONFIG_OF_SEPARATE=y
+ CONFIG_DEFAULT_DEVICE_TREE="mt7629-rfb"
+ CONFIG_OF_SPL_REMOVE_PROPS="pinctrl-0 pinctrl-names clock-names interrupt-parent assigned-clocks assigned-clock-parents"
+ CONFIG_NET_RANDOM_ETHADDR=y
+-- 
+1.8.3.1
+
