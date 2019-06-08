@@ -383,6 +383,22 @@ endef
 $(eval $(call KernelPackage,ip6-vti))
 
 
+define KernelPackage/xfrm-interface
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=IPsec XFRM Interface
+  DEPENDS:=+kmod-ipsec4 +kmod-ipsec6 @!LINUX_4_14
+  KCONFIG:=CONFIG_XFRM_INTERFACE
+  FILES:=$(LINUX_DIR)/net/xfrm/xfrm_interface.ko
+  AUTOLOAD:=$(call AutoLoad,33,xfrm_interface)
+endef
+
+define KernelPackage/xfrm-interface/description
+ Kernel module for XFRM interface support
+endef
+
+$(eval $(call KernelPackage,xfrm-interface))
+
+
 define KernelPackage/iptunnel4
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPv4 tunneling
