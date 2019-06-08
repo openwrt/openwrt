@@ -1,15 +1,17 @@
 
 ## Build instructions
 
-You need gcc, binutils, bzip2, flex, python, perl, make, find, grep, diff,
-unzip, gawk, getopt, subversion, libz-dev and libc headers installed.
+Dependencies: You must have installed: gcc, binutils, bzip2, flex, python,
+perl, make, find, grep, diff, unzip, gawk, getopt, subversion, time,
+libz-dev (or zlib) and libc headers.
 
 1. Run `./scripts/feeds update -a` to obtain all the latest package definitions
 defined in feeds.conf.default
 2. Run `./scripts/feeds install -a` to install symlinks for all obtained
 packages into package/feeds/
 3. Run `cp configs/default_config .config`
-4. Run `make` to build your firmware.
+4. Run `make` to build your firmware. After choosing the options in the ncurses
+menu, choose Exit and then Yes when asked if you want to save.
 
 
 ## Development of LibreMesh packages
