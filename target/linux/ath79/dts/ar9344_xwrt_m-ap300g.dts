@@ -1,0 +1,213 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+#include "ar9344.dtsi"
+
+/ {
+	model = "XWRT M-AP300G";
+	compatible = "xwrt,m-ap300g", "qca,ar9344";
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+	};
+
+	aliases {
+		led-boot = &system;
+		led-failsafe = &system;
+		led-running = &system;
+		led-upgrade = &system;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&jtag_disable_pins &enable_gpio15 &enable_gpio19 &enable_gpio11>;
+
+		led485_1 {
+			label = "xwrt:green:led485_1";
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led485_2 {
+			label = "xwrt:green:led485_2";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+		};
+
+		lan1 {
+			label = "xwrt:green:lan1";
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+		};
+
+		lan2 {
+			label = "xwrt:green:lan2";
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+		};
+
+		status {
+			label = "xwrt:green:status";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		system: system {
+			label = "xwrt:green:system";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		sfp1 {
+			label = "xwrt:green:sfp1";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		sfp2 {
+			label = "xwrt:green:sfp2";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		sfp3 {
+			label = "xwrt:green:sfp3";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+
+		signal {
+			label = "xwrt:green:signal";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		ip1810_reset {
+			gpio-export,name = "ip1810_reset";
+			gpio-export,output = <1>;
+			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&gpio {
+	status = "okay";
+};
+
+&pinmux {
+	enable_gpio15: pinmux_enable_gpio15 {
+		pinctrl-single,bits = <0xc 0x0 0xff000000>;
+	};
+
+	enable_gpio19: pinmux_enable_gpio19 {
+		pinctrl-single,bits = <0x10 0x0 0xff000000>;
+	};
+
+	enable_gpio11: pinmux_enable_gpio11 {
+		pinctrl-single,bits = <0x8 0x0 0xff000000>;
+	};
+};
+
+&ref {
+	clock-frequency = <40000000>;
+};
+
+&uart {
+	status = "okay";
+};
+
+&spi {
+	num-cs = <1>;
+
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			uboot: partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x040000>;
+			};
+
+			partition@40000 {
+				label = "u-boot-env";
+				reg = <0x040000 0x010000>;
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x050000 0xfa0000>;
+			};
+
+			art: partition@ff0000 {
+				label = "art";
+				reg = <0xff0000 0x010000>;
+			};
+		};
+	};
+};
+
+&usb {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	port@1 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <1>;
+		#trigger-source-cells = <0>;
+
+		hub_port1: port@1 {
+			reg = <1>;
+			#trigger-source-cells = <0>;
+		};
+
+		hub_port2: port@2 {
+			reg = <2>;
+			#trigger-source-cells = <0>;
+		};
+	};
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&wmac {
+	status = "okay";
+	mtd-cal-data = <&art 0x1000>;
+	mtd-mac-address = <&art 0x0>;
+	mtd-mac-address-increment = <2>;
+};
+
+&eth1 {
+	status = "okay";
+	mtd-mac-address = <&art 0x0>;
+
+	pll-data = <0x06000000 0x00000101 0x00001313>;
+
+	gmac-config {
+		device = <&gmac>;
+		switch-phy-swap = <0>;
+	};
+};
