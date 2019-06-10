@@ -595,16 +595,16 @@ hostapd_set_bss_options() {
                         for mac in $maclist; do
                                 echo "$mac" | grep -v deny | sed -e 's/,/ /g'
                         done
-                        [ -n "$macfile" -a -f "$macfile" ] && cat "$macfile" | grep -v deny
+                        [ -n "$macfile" -a -f "$macfile" ] && cat "$macfile" | grep -v deny | sed -e 's/,/ /g'
                 ) > "$_macfile"
 
                 [ "$macfilter" = "vlan" ] && {
                         rm -f "$_macfile.deny"
                         (
                                 for mac in $maclist; do
-                                        echo "$mac" | grep deny
+                                        echo "$mac" | grep deny | cut -d "," -f1
                                 done
-                                [ -n "$macfile" -a -f "$macfile" ] && cat "$macfile" | grep deny
+                                [ -n "$macfile" -a -f "$macfile" ] && cat "$macfile" | grep deny | cut -d "," -f1
                         ) > "$_macfile.deny"
                 }
 	}
