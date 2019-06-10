@@ -574,6 +574,13 @@ hostapd_set_bss_options() {
 			append bss_conf "macaddr_acl=0" "$N"
 			append bss_conf "deny_mac_file=$_macfile" "$N"
 		;;
+                vlan)
+                        append bss_conf "macaddr_acl=2" "$N"
+                        append bss_conf "accept_mac_file=$_macfile" "$N"
+                        append bss_conf "deny_mac_file=$_macfile.deny" "$N"
+                        # accept_mac_file can be used to set MAC to VLAN ID mapping
+                        vlan_possible=1
+                ;;
 		*)
 			_macfile=""
 		;;
@@ -583,13 +590,23 @@ hostapd_set_bss_options() {
 		json_get_vars macfile
 		json_get_values maclist maclist
 
-		rm -f "$_macfile"
-		(
-			for mac in $maclist; do
-				echo "$mac"
-			done
-			[ -n "$macfile" -a -f "$macfile" ] && cat "$macfile"
-		) > "$_macfile"
+                rm -f "$_macfile"
+                (
+                        for mac in $maclist; do
+                                echo "$mac" | grep -v deny | sed -e 's/,/ /g'
+                        done
+                        [ -n "$macfile" -a -f "$macfile" ] && cat "$macfile" | grep -v deny
+                ) > "$_macfile"
+
+                [ "$macfilter" = "vlan" ] && {
+                        rm -f "$_macfile.deny"
+                        (
+                                for mac in $maclist; do
+                                        echo "$mac" | grep deny
+                                done
+                                [ -n "$macfile" -a -f "$macfile" ] && cat "$macfile" | grep deny
+                        ) > "$_macfile.deny"
+                }
 	}
 
 	[ -n "$vlan_possible" -a -n "$dynamic_vlan" ] && {
