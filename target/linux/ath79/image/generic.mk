@@ -2431,6 +2431,15 @@ define Device/xwrt_csac2
 endef
 TARGET_DEVICES += xwrt_csac2
 
+define Device/xwrt_m-ap300g
+  SOC := ar9344
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := M-AP300G
+  DEVICE_PACKAGES := kmod-leds-gpio kmod-usb-serial-pl2303 kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport base-settings-xwrt-m-ap300g
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += xwrt_m-ap300g
+
 define Device/yuncore_a770
   SOC := qca9531
   DEVICE_VENDOR := YunCore

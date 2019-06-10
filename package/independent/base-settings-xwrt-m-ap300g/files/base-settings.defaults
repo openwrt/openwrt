@@ -1,0 +1,31 @@
+
+test -f /etc/config/independent && exit 0
+
+local device=eth0
+uci -q batch <<-EOT
+	set network.wan=interface
+	set network.wan.device="$device"
+	set network.wan.proto='dhcp'
+	set network.wan.metric='31'
+	set network.wan6=interface
+	set network.wan6.proto='dhcpv6'
+	set network.wan6.device="$device"
+	set network.wan6.reqaddress='try'
+	set network.wan6.reqprefix='auto'
+	set network.lan.device='none'
+	set network.lan.ipaddr='192.168.0.1'
+	set network.lan.netmask='255.255.255.0'
+	add network device
+	set network.@device[-1].name='macvlan0'
+	set network.@device[-1].type='macvlan'
+	set network.@device[-1].ifname="$device"
+	set network.lan1=interface
+	set network.lan1.proto='static'
+	set network.lan1.device="macvlan0"
+	set network.lan1.ipaddr='192.168.15.1'
+	set network.lan1.netmask='255.255.255.0'
+	commit network
+	EOT
+
+touch /etc/config/independent
+exit 0
