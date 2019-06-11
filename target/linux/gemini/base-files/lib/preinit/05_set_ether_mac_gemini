@@ -23,6 +23,21 @@ set_ether_mac() {
 			fi
 		fi
 		;;
+	dlink,dir-685)
+		# The DIR-685 has a special field in its RedBoot
+		# binary that we need to check
+		part=$(find_mtd_part RedBoot)
+		if [ -n "$part" ] ; then
+			DEVID="$(dd if=$part bs=1 skip=81516 count=7 2>/dev/null)"
+			if [ "$DEVID" = "ILI9322" ] ; then
+				MAC1=$(mtd_get_mac_binary RedBoot 95040)
+				MAC2=$(mtd_get_mac_binary RedBoot 95046)
+				ip link set eth0 address "$MAC1" 2>/dev/null
+				ip link set eth1 address "$MAC2" 2>/dev/null
+				return 0
+			fi
+		fi
+		;;
 	esac
 
 	# Most devices have a standard "VCTL" partition
