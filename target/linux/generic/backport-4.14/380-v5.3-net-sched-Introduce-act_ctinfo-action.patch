@@ -55,9 +55,6 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  create mode 100644 include/uapi/linux/tc_act/tc_ctinfo.h
  create mode 100644 net/sched/act_ctinfo.c
 
-diff --git a/include/net/tc_act/tc_ctinfo.h b/include/net/tc_act/tc_ctinfo.h
-new file mode 100644
-index 000000000000..d6a688571672
 --- /dev/null
 +++ b/include/net/tc_act/tc_ctinfo.h
 @@ -0,0 +1,28 @@
@@ -89,8 +86,6 @@ index 000000000000..d6a688571672
 +#define to_ctinfo(a) ((struct tcf_ctinfo *)a)
 +
 +#endif /* __NET_TC_CTINFO_H */
-diff --git a/include/uapi/linux/pkt_cls.h b/include/uapi/linux/pkt_cls.h
-index 46c506615f4a..408b02fbb34a 100644
 --- a/include/uapi/linux/pkt_cls.h
 +++ b/include/uapi/linux/pkt_cls.h
 @@ -66,7 +66,8 @@ enum {
@@ -103,9 +98,6 @@ index 46c506615f4a..408b02fbb34a 100644
  };
  
  #define TCA_ID_MAX __TCA_ID_MAX
-diff --git a/include/uapi/linux/tc_act/tc_ctinfo.h b/include/uapi/linux/tc_act/tc_ctinfo.h
-new file mode 100644
-index 000000000000..da803e05a89b
 --- /dev/null
 +++ b/include/uapi/linux/tc_act/tc_ctinfo.h
 @@ -0,0 +1,34 @@
@@ -143,8 +135,6 @@ index 000000000000..da803e05a89b
 +};
 +
 +#endif
-diff --git a/net/sched/Kconfig b/net/sched/Kconfig
-index e70ed26485a2..962d90f72f54 100644
 --- a/net/sched/Kconfig
 +++ b/net/sched/Kconfig
 @@ -808,6 +808,19 @@ config NET_ACT_CONNMARK
@@ -167,8 +157,6 @@ index e70ed26485a2..962d90f72f54 100644
  config NET_ACT_SKBMOD
          tristate "skb data modification action"
          depends on NET_CLS_ACT
-diff --git a/net/sched/Makefile b/net/sched/Makefile
-index 9e43a4721ef8..44ee5b87b895 100644
 --- a/net/sched/Makefile
 +++ b/net/sched/Makefile
 @@ -21,6 +21,7 @@ obj-$(CONFIG_NET_ACT_CSUM)	+= act_csum.o
@@ -179,9 +167,6 @@ index 9e43a4721ef8..44ee5b87b895 100644
  obj-$(CONFIG_NET_ACT_SKBMOD)	+= act_skbmod.o
  obj-$(CONFIG_NET_ACT_IFE)	+= act_ife.o
  obj-$(CONFIG_NET_IFE_SKBMARK)	+= act_meta_mark.o
-diff --git a/net/sched/act_ctinfo.c b/net/sched/act_ctinfo.c
-new file mode 100644
-index 000000000000..e65344e32801
 --- /dev/null
 +++ b/net/sched/act_ctinfo.c
 @@ -0,0 +1,394 @@
@@ -579,6 +564,3 @@ index 000000000000..e65344e32801
 +MODULE_AUTHOR("Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>");
 +MODULE_DESCRIPTION("Conntrack mark to DSCP restoring");
 +MODULE_LICENSE("GPL");
--- 
-2.20.1 (Apple Git-117)
-
