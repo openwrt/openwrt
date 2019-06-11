@@ -17,11 +17,9 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  arch/powerpc/platforms/85xx/Makefile |  1 +
  4 files changed, 20 insertions(+), 1 deletion(-)
 
-diff --git a/arch/powerpc/boot/Makefile b/arch/powerpc/boot/Makefile
-index 25e3184f11f7..0826346fd97c 100644
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -164,6 +164,7 @@ src-plat-$(CONFIG_PPC_PSERIES) += pseries-head.S
+@@ -164,6 +164,7 @@ src-plat-$(CONFIG_PPC_PSERIES) += pserie
  src-plat-$(CONFIG_PPC_POWERNV) += pseries-head.S
  src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) += pseries-head.S
  src-plat-$(CONFIG_MVME7100) += motload-head.S mvme7100.c
@@ -29,7 +27,7 @@ index 25e3184f11f7..0826346fd97c 100644
  
  src-wlib := $(sort $(src-wlib-y))
  src-plat := $(sort $(src-plat-y))
-@@ -343,7 +344,7 @@ image-$(CONFIG_TQM8555)			+= cuImage.tqm8555
+@@ -343,7 +344,7 @@ image-$(CONFIG_TQM8555)			+= cuImage.tqm
  image-$(CONFIG_TQM8560)			+= cuImage.tqm8560
  image-$(CONFIG_SBC8548)			+= cuImage.sbc8548
  image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
@@ -38,8 +36,6 @@ index 25e3184f11f7..0826346fd97c 100644
  # Board ports in arch/powerpc/platform/86xx/Kconfig
  image-$(CONFIG_MVME7100)                += dtbImage.mvme7100
  
-diff --git a/arch/powerpc/boot/wrapper b/arch/powerpc/boot/wrapper
-index f9141eaec6ff..bd55094d9899 100755
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
 @@ -302,6 +302,11 @@ adder875-redboot)
@@ -54,8 +50,6 @@ index f9141eaec6ff..bd55094d9899 100755
  simpleboot-virtex405-*)
      platformo="$object/virtex405-head.o $object/simpleboot.o $object/virtex.o"
      binary=y
-diff --git a/arch/powerpc/platforms/85xx/Kconfig b/arch/powerpc/platforms/85xx/Kconfig
-index 68920d42b4bc..2bf6533ce023 100644
 --- a/arch/powerpc/platforms/85xx/Kconfig
 +++ b/arch/powerpc/platforms/85xx/Kconfig
 @@ -170,6 +170,18 @@ config STX_GP3
@@ -77,11 +71,9 @@ index 68920d42b4bc..2bf6533ce023 100644
  config TQM8540
  	bool "TQ Components TQM8540"
  	help
-diff --git a/arch/powerpc/platforms/85xx/Makefile b/arch/powerpc/platforms/85xx/Makefile
-index d1dd0dca5ebf..d0dab29a33eb 100644
 --- a/arch/powerpc/platforms/85xx/Makefile
 +++ b/arch/powerpc/platforms/85xx/Makefile
-@@ -26,6 +26,7 @@ obj-$(CONFIG_CORENET_GENERIC)   += corenet_generic.o
+@@ -26,6 +26,7 @@ obj-$(CONFIG_CORENET_GENERIC)   += coren
  obj-$(CONFIG_FB_FSL_DIU)	+= t1042rdb_diu.o
  obj-$(CONFIG_STX_GP3)	  += stx_gp3.o
  obj-$(CONFIG_TQM85xx)	  += tqm85xx.o
@@ -89,6 +81,3 @@ index d1dd0dca5ebf..d0dab29a33eb 100644
  obj-$(CONFIG_SBC8548)     += sbc8548.o
  obj-$(CONFIG_PPA8548)     += ppa8548.o
  obj-$(CONFIG_SOCRATES)    += socrates.o socrates_fpga_pic.o
--- 
-2.20.1
-
