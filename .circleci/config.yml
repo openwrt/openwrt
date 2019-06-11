@@ -1,0 +1,21 @@
+version: 2.0
+jobs:
+  checkpatch:
+    docker:
+      - image: docker.io/openwrtorg/packages-cci:v1.0.2
+    steps:
+      - checkout
+      - run:
+          name: Run checkpatch.pl
+          command: |
+            git format-patch origin/master --stdout > changes.patch
+            ./scripts/checkpatch.pl changes.patch
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - checkpatch:
+          filters:
+            branches:
+              ignore: master
