@@ -107,7 +107,7 @@ static void __init gl_mifi_v3_setup(void)
 
 	gpio_request_one(GL_MIFI_V3_GPIO_4G_POWER, GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,"4G POWER");
 	/* Export all the GPIO */
-	gpio_request_one(13,GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_CHANGEABLE ,"BLE RESET");
+	gpio_request_one(17,GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_CHANGEABLE ,"BLE RESET");
 	/*gpio_request_one(4,GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_CHANGEABLE ,"GPIO4");
 	gpio_request_one(12,GPIOF_OUT_INIT_LOW ,"GPIO12");
 	gpio_request_one(13,GPIOF_OUT_INIT_LOW ,"GPIO13");
