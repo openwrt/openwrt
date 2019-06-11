@@ -10,7 +10,6 @@ MAINTAINER:=John Crispin <john@phrozen.org>
 
 # TODO: drop kmod-usb-dwc3-of-simple when migrating to 4.19
 KERNEL_PATCHVER:=4.14
-KERNEL_TESTING_PATCHVER := 4.19
 
 KERNELNAME:=zImage Image dtbs
 

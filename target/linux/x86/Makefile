@@ -14,7 +14,6 @@ SUBTARGETS:=generic legacy geode 64
 MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 KERNEL_PATCHVER:=4.14
-KERNEL_TESTING_PATCHVER:=4.19
 
 KERNELNAME:=bzImage
 

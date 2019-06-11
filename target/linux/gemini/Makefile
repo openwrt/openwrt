@@ -14,7 +14,6 @@ CPU_TYPE:=fa526
 MAINTAINER:=Roman Yeryomin <roman@advem.lv>
 
 KERNEL_PATCHVER:=4.14
-KERNEL_TESTING_PATCHVER := 4.19
 
 define Target/Description
 	Build firmware images for the StorLink/Cortina Gemini CS351x ARM FA526 CPU
