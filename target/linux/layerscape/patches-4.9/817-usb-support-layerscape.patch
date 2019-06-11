@@ -1439,7 +1439,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -1855,14 +1855,17 @@ static int finish_td(struct xhci_hcd *xh
+@@ -1859,14 +1859,17 @@ static int finish_td(struct xhci_hcd *xh
  	union xhci_trb *event_trb, struct xhci_transfer_event *event,
  	struct xhci_virt_ep *ep, int *status, bool skip)
  {
@@ -1457,7 +1457,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	u32 trb_comp_code;
  
  	slot_id = TRB_TO_SLOT_ID(le32_to_cpu(event->flags));
-@@ -1888,13 +1891,29 @@ static int finish_td(struct xhci_hcd *xh
+@@ -1892,13 +1895,29 @@ static int finish_td(struct xhci_hcd *xh
  	if (trb_comp_code == COMP_STALL ||
  		xhci_requires_manual_halt_cleanup(xhci, ep_ctx,
  						trb_comp_code)) {
@@ -1494,7 +1494,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		while (ep_ring->dequeue != td->last_trb)
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -1609,14 +1609,38 @@ int xhci_urb_dequeue(struct usb_hcd *hcd
+@@ -1607,14 +1607,38 @@ int xhci_urb_dequeue(struct usb_hcd *hcd
  			ret = -ENOMEM;
  			goto done;
  		}
