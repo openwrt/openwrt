@@ -85,6 +85,14 @@ define Device/airtight_c-65
 endef
 TARGET_DEVICES += airtight_c-65
 
+define Device/8dev_carambola2
+  ATH_SOC := ar9331
+  DEVICE_TITLE := 8devices Carambola2
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-chipidea2
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += carambola2
+endef
+
 define Device/aruba_ap-105
   ATH_SOC := ar7161
   DEVICE_TITLE := Aruba AP-105
