@@ -43,4 +43,9 @@ define Package/netifd/install
 	$(CP) $(PKG_BUILD_DIR)/scripts/* $(1)/lib/netifd/
 endef
 
+define Package/netifd/postinst
+#!/bin/sh
+[ -z "$${IPKG_INSTROOT}" ] && /etc/init.d/network restart
+endef
+
 $(eval $(call BuildPackage,netifd))
