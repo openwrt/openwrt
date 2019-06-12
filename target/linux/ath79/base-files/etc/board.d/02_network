@@ -10,7 +10,7 @@ ath79_setup_interfaces()
 
 	case "$board" in
 	airtight,c-65)
-		ucidef_set_interface_lan "eth0"
+	ucidef_set_interface_lan "eth0"
 		;;
 	aruba,ap-105|\
 	avm,fritz300e|\
@@ -277,6 +277,10 @@ ath79_setup_macs()
 	local board="$1"
 
 	case "$board" in
+	airtight,c65)
+		netgear,wndr3800)
+		lan_mac=$(macaddr_setbit_la "$(mtd_get_mac_binary art 0)")
+		;;
 	avm,fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		;;
