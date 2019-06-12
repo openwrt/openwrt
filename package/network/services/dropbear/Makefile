@@ -161,5 +161,10 @@ define Package/dropbearconvert/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dropbearconvert $(1)/usr/bin/dropbearconvert
 endef
 
+define Package/dropbear/postinst
+#!/bin/sh
+[ -z "$${IPKG_INSTROOT}" ] && /etc/init.d/dropbear restart
+endef
+
 $(eval $(call BuildPackage,dropbear))
 $(eval $(call BuildPackage,dropbearconvert))
