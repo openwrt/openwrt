@@ -9,9 +9,9 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=f2fs-tools
 PKG_VERSION:=1.12.0
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
-PKG_LICENSE:=GPLv2
+PKG_LICENSE:=GPL-2.0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/snapshot/
