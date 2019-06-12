@@ -78,7 +78,7 @@ endef
 define Device/airtight_c-65
   ATH_SOC := qca9558
   DEVICE_TITLE := Airtight C-65
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct iwinfo kmod-ath9k wpad-basic uboot-envtools
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x iwinfo kmod-ath9k wpad-basic uboot-envtools
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
   IMAGE_SIZE := 15936k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
