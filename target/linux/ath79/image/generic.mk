@@ -92,6 +92,7 @@ define Device/8dev_carambola2
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += carambola2
 endef
+TARGET_DEVICES += 8dev_carambola2
 
 define Device/aruba_ap-105
   ATH_SOC := ar7161
