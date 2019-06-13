@@ -89,12 +89,18 @@ prereq: $(target/stamp-prereq) tmp/.prereq_packages
 checksum: FORCE
 	$(call sha256sums,$(BIN_DIR),$(CONFIG_BUILDBOT))
 
+buildversion: FORCE
+	$(SCRIPT_DIR)/getver.sh > $(BIN_DIR)/version.buildinfo
+
+feedsversion: FORCE
+	$(SCRIPT_DIR)/feeds list -fs > $(BIN_DIR)/feeds.buildinfo
+
 diffconfig: FORCE
 	mkdir -p $(BIN_DIR)
-	$(SCRIPT_DIR)/diffconfig.sh > $(BIN_DIR)/config.seed
+	$(SCRIPT_DIR)/diffconfig.sh > $(BIN_DIR)/config.buildinfo
 
 prepare: .config $(tools/stamp-compile) $(toolchain/stamp-compile)
-	$(_SINGLE)$(SUBMAKE) -r diffconfig
+	$(_SINGLE)$(SUBMAKE) -r diffconfig buildversion feedsversion
 
 world: prepare $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-install) $(target/stamp-install) FORCE
 	$(_SINGLE)$(SUBMAKE) -r package/index
