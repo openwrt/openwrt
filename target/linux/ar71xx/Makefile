@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=ar71xx
 BOARDNAME:=Atheros AR7xxx/AR9xxx
-FEATURES:=usbgadget
+FEATURES:=usbgadget source-only
 CPU_TYPE:=24kc
 SUBTARGETS:=generic tiny nand mikrotik
 
