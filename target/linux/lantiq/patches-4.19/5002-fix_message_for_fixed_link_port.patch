@@ -1,0 +1,18 @@
+--- a/drivers/net/ethernet/lantiq_xrx200.c
++++ b/drivers/net/ethernet/lantiq_xrx200.c
+@@ -1762,6 +1762,7 @@ static void xrx200_of_port(struct xrx200
+ 		return;
+ 
+ 	memset(p, 0, sizeof(struct xrx200_port));
++	p->num = *id;
+ 	p->phy_node = of_parse_phandle(port, "phy-handle", 0);
+ 
+ 	if (!p->phy_node && of_phy_is_fixed_link(port)) {
+@@ -1778,7 +1779,6 @@ static void xrx200_of_port(struct xrx200
+ 	if (!addr)
+ 		return;
+ 
+-	p->num = *id;
+ 	p->phy_addr = *addr;
+ 	p->phy_if = of_get_phy_mode(port);
+ 	if(p->phy_if == PHY_INTERFACE_MODE_RGMII) {

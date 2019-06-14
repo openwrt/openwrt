@@ -1,0 +1,107 @@
+Index: linux-4.19.57/drivers/net/ethernet/lantiq_xrx200.c
+===================================================================
+--- linux-4.19.57.orig/drivers/net/ethernet/lantiq_xrx200.c
++++ linux-4.19.57/drivers/net/ethernet/lantiq_xrx200.c
+@@ -133,6 +133,29 @@
+ #define MII_CFG_RATE_AUTO	0x40
+ #define MII_CFG_RATE_MASK	0x70
+ 
++/*PCDU*/
++#define MII_PCDU(p)		(MII_CFG(p) + 4)
++
++#define MII_PCDU_RXLOCK				0x8000
++#define MII_PCDU_TXLOCK				0x4000
++#define MII_PCDU_RXSEL_CLK_MASK		0x3000
++#define MII_PCDU_RXSEL_CLK_AUTO		0x0000
++#define MII_PCDU_RXSEL_CLK_RXCLK	0x1000
++#define MII_PCDU_RXSEL_CLK_CLKREF	0x2000
++#define MII_PCDU_RXINIT				0x0800
++#define MII_PCDU_RXPD				0x0400
++#define MII_PCDU_RXDLY_MASK			0x0380
++
++#define MII_PCDU_TXSEL_CLK_MASK		0x0060
++#define MII_PCDU_TXSEL_CLK_AUTO		0x0000
++#define MII_PCDU_TXSEL_CLK_TXCLK	0x0020
++#define MII_PCDU_TXSEL_CLK_CLKREF	0x0040
++#define MII_PCDU_TXINIT				0x0010
++#define MII_PCDU_TXPD				0x0008
++#define MII_PCDU_TXDLY_MASK			0x0007
++
++#define MII_PCDU_DLY_MAX			0x7
++#define MII_PCDU_RXDLY_SHIFT		0x7
+ /* cpu port mac */
+ #define PMAC_HD_CTL		0x0000
+ #define PMAC_RX_IPG		0x0024
+@@ -193,6 +216,8 @@ struct xrx200_port {
+ 	u8 phy_addr;
+ 	u16 flags;
+ 	phy_interface_t phy_if;
++	u8 tx_delay;
++	u8 rx_delay;
+ 
+ 	int link;
+ 	int gpio;
+@@ -1466,6 +1491,7 @@ static void xrx200_port_config(struct xr
+ 		const struct xrx200_port *port)
+ {
+ 	u16 miimode = 0;
++	bool init_delay = false;
+ 
+ 	switch (port->num) {
+ 	case 0: /* xMII0 */
+@@ -1490,6 +1516,7 @@ static void xrx200_port_config(struct xr
+ 		case PHY_INTERFACE_MODE_RGMII:
+ 			/* RGMII MAC mode, connected to external PHY */
+ 			miimode = MII_CFG_MODE_RGMII;
++			init_delay = true;
+ 			break;
+ 		default:
+ 			break;
+@@ -1517,6 +1544,7 @@ static void xrx200_port_config(struct xr
+ 		case PHY_INTERFACE_MODE_RGMII:
+ 			/* RGMII MAC mode, connected to external PHY */
+ 			miimode = MII_CFG_MODE_RGMII;
++			init_delay = true;
+ 			break;
+ 		default:
+ 			break;
+@@ -1528,6 +1556,11 @@ static void xrx200_port_config(struct xr
+ 
+ 	ltq_mii_w32_mask(MII_CFG_MODE_MASK, miimode | MII_CFG_EN,
+ 		MII_CFG(port->num));
++
++	if(init_delay)
++		ltq_mii_w32(MII_PCDU_RXLOCK | MII_PCDU_TXLOCK |
++			((port->rx_delay << MII_PCDU_RXDLY_SHIFT) & MII_PCDU_RXDLY_MASK) |
++			(port->tx_delay & MII_PCDU_TXDLY_MASK ), MII_PCDU(port->num));
+ }
+ 
+ static int xrx200_init(struct net_device *dev)
+@@ -1748,6 +1781,27 @@ static void xrx200_of_port(struct xrx200
+ 	p->num = *id;
+ 	p->phy_addr = *addr;
+ 	p->phy_if = of_get_phy_mode(port);
++	if(p->phy_if == PHY_INTERFACE_MODE_RGMII) {
++		if(!of_property_read_u8(port, "tx-delay", &p->tx_delay)){
++			if(MII_PCDU_DLY_MAX < p->tx_delay) {
++				pr_info("Invalid tx-delay value:%hhu!", p->tx_delay);
++				p->tx_delay = 1;
++			}
++		} else {
++			p->tx_delay = 1;
++		}
++		pr_info("Set tx-delay:%hhu", p->tx_delay);
++
++		if(!of_property_read_u8(port, "rx-delay", &p->rx_delay)) {
++			if( MII_PCDU_DLY_MAX < p->rx_delay){
++				pr_info("Invalid rx-delay value:%hhu!", p->rx_delay);
++				p->rx_delay = 0;
++			}
++		} else {
++			p->rx_delay = 0;
++		}
++		pr_info("Set rx-delay:%hhu", (u32)p->rx_delay);
++	}
+ 	if (p->phy_addr > 0x10)
+ 		p->flags = XRX200_PORT_TYPE_MAC;
+ 	else
