@@ -186,33 +186,8 @@
 		compatible = "lantiq,xrx200-mdio";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		phy0: ethernet-phy@0 {
-			reg = <0x0>;
-			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-		};
-		phy1: ethernet-phy@1 {
-			reg = <0x1>;
-			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-		};
-		/*
-		phy5: ethernet-phy@5 {
-			reg = <0x5>;
-		};
-		*/
-		phy11: ethernet-phy@11 {
-			reg = <0x11>;
-			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-		};
-		phy12: ethernet-phy@12 {
-			reg = <0x12>;
-			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-		};
 		phy13: ethernet-phy@13 {
 			reg = <0x13>;
-			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-		};
-		phy14: ethernet-phy@14 {
-			reg = <0x14>;
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
 	};
@@ -429,16 +404,36 @@
 		reg = <0>;
 		mac-address = [ 00 11 22 33 44 55 ];
 		lantiq,switch;
-		ethernet@2 {
+		/*rtl8367*/
+		ethernet@0 {
 			compatible = "lantiq,xrx200-pdi-port";
-			reg = <2>;
-			phy-mode = "gmii";
-			// phy-handle = <&phy11>;
+			reg = <0>;
+			phy-mode = "rgmii";
 			fixed-link {
 				speed = <1000>;
 				full-duplex;
 			};
 		};
+		/* rt3883 soc */
+		ethernet@5 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <5>;
+			phy-mode = "rgmii";
+			tx-delay = /bits/ 8 <3>;
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+
+	wan: interface@1 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <1>;
+		mac-address = [ 00 11 22 33 44 66 ];
+		lantiq,wan;
 		/* wan port */
 		ethernet@4 {
 			compatible = "lantiq,xrx200-pdi-port";
@@ -446,15 +441,6 @@
 			phy-mode = "gmii";
 			phy-handle = <&phy13>;
 		};
-		/* rt3883 soc */
-		/*
-		ethernet@5 {
-			compatible = "lantiq,xrx200-pdi-port";
-			reg = <5>;
-			phy-mode = "rgmii";
-			phy-handle = <&phy5>;
-		};
-		*/
 	};
 };
 
