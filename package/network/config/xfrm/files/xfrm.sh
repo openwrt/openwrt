@@ -14,24 +14,28 @@ proto_xfrm_setup() {
 	local tunlink ifid mtu zone
 	json_get_vars tunlink ifid mtu zone
 
-	proto_init_update "$cfg" 1
-
-	proto_add_tunnel
-	json_add_string mode "$mode"
-	json_add_int mtu "${mtu:-1280}"
-
 	[ -z "$tunlink" ] && {
 		proto_notify_error "$cfg" NO_TUNLINK
 		proto_block_restart "$cfg"
 		exit
 	}
-	json_add_string link "$tunlink"
 
 	[ -z "$ifid" ] && {
 		proto_notify_error "$cfg" NO_IFID
 		proto_block_restart "$cfg"
 		exit
 	}
+
+	( proto_add_host_dependency "$cfg" '' "$tunlink" )
+
+	proto_init_update "$cfg" 1
+
+	proto_add_tunnel
+	json_add_string mode "$mode"
+	json_add_int mtu "${mtu:-1280}"
+
+	json_add_string link "$tunlink"
+
 	json_add_object 'data'
 	[ -n "$ifid" ] && json_add_int ifid "$ifid"
 	json_close_object
