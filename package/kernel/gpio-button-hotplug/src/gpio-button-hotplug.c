@@ -28,6 +28,7 @@
 #include <linux/of_gpio.h>
 #include <linux/of_irq.h>
 #include <linux/gpio_keys.h>
+#include <linux/gpio/consumer.h>
 
 #define BH_SKB_SIZE	2048
 
