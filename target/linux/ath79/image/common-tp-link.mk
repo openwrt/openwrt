@@ -48,6 +48,7 @@ define Build/uImageArcher
 endef
 
 define Device/tplink
+  DEVICE_VENDOR := TP-Link
   TPLINK_HWREV := 0x1
   TPLINK_HEADER_VERSION := 1
   LOADER_TYPE := gz
