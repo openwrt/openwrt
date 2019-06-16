@@ -5,7 +5,7 @@
  	ret = write_entropy(u, buf, sizeof(buf), ENTROPYBYTES);
  	if (sizeof(buf) != ret) {
 -		ERROR("injected %lub of entropy, less then %db expected\n",
-+		ERROR("injected %zub of entropy, less then %db expected\n",
++		ERROR("injected %zub of entropy, less then %zub expected\n",
  		      ret, sizeof(buf));
  	} else {
  		ret = sizeof(buf);
