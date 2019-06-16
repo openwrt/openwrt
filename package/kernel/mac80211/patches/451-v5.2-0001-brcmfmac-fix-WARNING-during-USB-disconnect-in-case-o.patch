@@ -59,7 +59,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
-@@ -580,24 +580,6 @@ static bool brcmf_fws_ifidx_match(struct
+@@ -579,24 +579,6 @@ static bool brcmf_fws_ifidx_match(struct
  	return ifidx == *(int *)arg;
  }
  
@@ -84,7 +84,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  static void brcmf_fws_hanger_init(struct brcmf_fws_hanger *hanger)
  {
  	int i;
-@@ -669,6 +651,28 @@ static inline int brcmf_fws_hanger_poppk
+@@ -668,6 +650,28 @@ static inline int brcmf_fws_hanger_poppk
  	return 0;
  }
  
@@ -113,7 +113,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  static int brcmf_fws_hanger_mark_suppressed(struct brcmf_fws_hanger *h,
  					    u32 slot_id)
  {
-@@ -2200,6 +2204,8 @@ void brcmf_fws_del_interface(struct brcm
+@@ -2174,6 +2178,8 @@ void brcmf_fws_del_interface(struct brcm
  	brcmf_fws_lock(fws);
  	ifp->fws_desc = NULL;
  	brcmf_dbg(TRACE, "deleting %s\n", entry->name);

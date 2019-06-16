@@ -114,7 +114,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  #endif /* BRCMFMAC_BCDC_H */
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -1342,6 +1342,8 @@ void brcmf_detach(struct device *dev)
+@@ -1340,6 +1340,8 @@ void brcmf_detach(struct device *dev)
  
  	brcmf_bus_change_state(bus_if, BRCMF_BUS_DOWN);
  
@@ -123,7 +123,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	/* make sure primary interface removed last */
  	for (i = BRCMF_MAX_IFS-1; i > -1; i--)
  		brcmf_remove_interface(drvr->iflist[i], false);
-@@ -1351,7 +1353,7 @@ void brcmf_detach(struct device *dev)
+@@ -1349,7 +1351,7 @@ void brcmf_detach(struct device *dev)
  
  	brcmf_bus_stop(drvr->bus_if);
  
@@ -134,7 +134,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	wiphy_free(drvr->wiphy);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
-@@ -2443,17 +2443,25 @@ struct brcmf_fws_info *brcmf_fws_attach(
+@@ -2416,17 +2416,25 @@ struct brcmf_fws_info *brcmf_fws_attach(
  	return fws;
  
  fail:
