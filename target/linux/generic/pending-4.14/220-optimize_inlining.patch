@@ -1,13 +1,3 @@
---- a/arch/arm/include/asm/hardirq.h
-+++ b/arch/arm/include/asm/hardirq.h
-@@ -6,6 +6,7 @@
- #include <linux/threads.h>
- #include <asm/irq.h>
- 
-+/* number of IPIS _not_ including IPI_CPU_BACKTRACE */
- #define NR_IPI	7
- 
- typedef struct {
 --- a/arch/arm/kernel/atags.h
 +++ b/arch/arm/kernel/atags.h
 @@ -5,7 +5,7 @@ void convert_to_tag_list(struct tag *tag
@@ -19,28 +9,6 @@
  setup_machine_tags(phys_addr_t __atags_pointer, unsigned int machine_nr)
  {
  	early_print("no ATAGS support: can't continue\n");
---- a/arch/arm/kernel/smp.c
-+++ b/arch/arm/kernel/smp.c
-@@ -76,6 +76,10 @@ enum ipi_msg_type {
- 	IPI_CPU_STOP,
- 	IPI_IRQ_WORK,
- 	IPI_COMPLETION,
-+	/*
-+	 * CPU_BACKTRACE is special and not included in NR_IPI
-+	 * or tracable with trace_ipi_*
-+	 */
- 	IPI_CPU_BACKTRACE,
- 	/*
- 	 * SGI8-15 can be reserved by secure firmware, and thus may
-@@ -801,7 +805,7 @@ core_initcall(register_cpufreq_notifier)
- 
- static void raise_nmi(cpumask_t *mask)
- {
--	smp_cross_call(mask, IPI_CPU_BACKTRACE);
-+	__smp_cross_call(mask, IPI_CPU_BACKTRACE);
- }
- 
- void arch_trigger_cpumask_backtrace(const cpumask_t *mask, bool exclude_self)
 --- a/arch/arm64/include/asm/cpufeature.h
 +++ b/arch/arm64/include/asm/cpufeature.h
 @@ -125,7 +125,7 @@ static inline bool cpu_have_feature(unsi
