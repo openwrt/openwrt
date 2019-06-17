@@ -82,7 +82,12 @@ ubnt_xm_board_detect() {
 	"e0a")
 		model="Ubiquiti NanoStation loco M"
 		;;
+	"e1a")
+		model="Ubiquiti PowerBridge M"
+		;;
+	"e10"|\
 	"e1b"|\
+	"e1c"|\
 	"e1d")
 		model="Ubiquiti Rocket M"
 		;;
@@ -90,8 +95,19 @@ ubnt_xm_board_detect() {
 	"e2d")
 		model="Ubiquiti Bullet M"
 		;;
+	"e21")
+		model="Ubiquiti AirGrid M"
+		;;
+	"e23"|\
+	"e2b")
+		model="Ubiquiti NanoBridge M"
+		;;
 	"e30")
 		model="Ubiquiti PicoStation M"
+		;;
+	"e4a"|\
+	"e4b")
+		model="Ubiquiti AirRouter M"
 		;;
 	esac
 
