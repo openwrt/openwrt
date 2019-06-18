@@ -23,9 +23,8 @@ proto_mbim_init_config() {
 _proto_mbim_setup() {
 	local interface="$1"
 	local tid=2
-	local ret
 
-	local device apn pincode delay $PROTO_DEFAULT_OPTIONS
+	local device apn pincode delay auth username password $PROTO_DEFAULT_OPTIONS
 	json_get_vars device apn pincode delay auth username password $PROTO_DEFAULT_OPTIONS
 
 	[ -n "$ctl_device" ] && device=$ctl_device
@@ -91,7 +90,7 @@ _proto_mbim_setup() {
 	tid=$((tid + 1))
 
 	echo "mbim[$$]" "Checking subscriber"
- 	umbim $DBG -n -t $tid -d $device subscriber || {
+	umbim $DBG -n -t $tid -d $device subscriber || {
 		echo "mbim[$$]" "Subscriber init failed"
 		proto_notify_error "$interface" NO_SUBSCRIBER
 		return 1
@@ -99,7 +98,7 @@ _proto_mbim_setup() {
 	tid=$((tid + 1))
 
 	echo "mbim[$$]" "Register with network"
-  	umbim $DBG -n -t $tid -d $device registration || {
+	umbim $DBG -n -t $tid -d $device registration || {
 		echo "mbim[$$]" "Subscriber registration failed"
 		proto_notify_error "$interface" NO_REGISTRATION
 		return 1
@@ -107,13 +106,13 @@ _proto_mbim_setup() {
 	tid=$((tid + 1))
 
 	echo "mbim[$$]" "Attach to network"
-   	umbim $DBG -n -t $tid -d $device attach || {
+	umbim $DBG -n -t $tid -d $device attach || {
 		echo "mbim[$$]" "Failed to attach to network"
 		proto_notify_error "$interface" ATTACH_FAILED
 		return 1
 	}
 	tid=$((tid + 1))
- 
+
 	echo "mbim[$$]" "Connect to network"
 	while ! umbim $DBG -n -t $tid -d $device connect "$apn" "$auth" "$username" "$password"; do
 		tid=$((tid + 1))
@@ -151,7 +150,7 @@ _proto_mbim_setup() {
 proto_mbim_setup() {
 	local ret
 
-	_proto_mbim_setup $@
+	_proto_mbim_setup "$@"
 	ret=$?
 
 	[ "$ret" = 0 ] || {
@@ -159,7 +158,7 @@ proto_mbim_setup() {
 		sleep 15
 	}
 
-	return $rt
+	return $ret
 }
 
 proto_mbim_teardown() {
