@@ -642,6 +642,18 @@ define Device/edimax_ew-7478ac
 endef
 TARGET_DEVICES += edimax_ew-7478ac
 
+define Device/edimax_ew-7478apc
+  DTS := EW-7478APC
+  DEVICE_TITLE := Edimax EW-7478APC
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7744k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+        edimax-header -s CSYS -m RN75 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+        append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += edimax_ew-7478apc
+
 define Device/tplink_c2-v1
   $(Device/Archer)
   DTS := ArcherC2-v1
