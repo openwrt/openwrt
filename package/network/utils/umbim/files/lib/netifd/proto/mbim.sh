@@ -121,7 +121,11 @@ _proto_mbim_setup() {
 	done
 	tid=$((tid + 1))
 
-	uci_set_state network $interface tid "$tid"
+	proto_init_update "$ifname" 1
+	proto_add_data
+	json_add_int tid $tid
+	proto_close_data
+	proto_send_update "$interface"
 
 	echo "mbim[$$]" "Connected, starting DHCP"
 	proto_init_update "$ifname" 1
@@ -161,17 +165,13 @@ proto_mbim_setup() {
 proto_mbim_teardown() {
 	local interface="$1"
 
-	local device
-	json_get_vars device
-	local tid=$(uci_get_state network $interface tid)
+	local device tid
+	json_get_vars device tid
 
 	[ -n "$ctl_device" ] && device=$ctl_device
 
 	echo "mbim[$$]" "Stopping network"
-	[ -n "$tid" ] && {
-		umbim $DBG -t$tid -d "$device" disconnect
-		uci_revert_state network $interface tid
-	}
+	[ "$tid" ] && umbim $DBG -t$tid -d "$device" disconnect
 
 	proto_init_update "*" 0
 	proto_send_update "$interface"
