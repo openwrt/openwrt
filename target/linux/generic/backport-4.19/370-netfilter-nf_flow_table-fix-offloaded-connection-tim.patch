@@ -82,6 +82,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 @@ -203,6 +221,7 @@ int flow_offload_add(struct nf_flowtable
  		return err;
  	}
+ 
 +	nf_ct_offload_timeout(flow);
  	flow->timeout = (u32)jiffies;
  	return 0;
