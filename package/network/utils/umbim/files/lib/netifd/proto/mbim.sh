@@ -11,6 +11,7 @@ proto_mbim_init_config() {
 	available=1
 	no_device=1
 	proto_config_add_string "device:device"
+	proto_config_add_string pdptype
 	proto_config_add_string apn
 	proto_config_add_string pincode
 	proto_config_add_string delay
@@ -24,10 +25,14 @@ _proto_mbim_setup() {
 	local interface="$1"
 	local tid=2
 
-	local device apn pincode delay auth username password $PROTO_DEFAULT_OPTIONS
-	json_get_vars device apn pincode delay auth username password $PROTO_DEFAULT_OPTIONS
+	local device pdptype apn pincode delay auth username password $PROTO_DEFAULT_OPTIONS
+	json_get_vars device pdptype apn pincode delay auth username password $PROTO_DEFAULT_OPTIONS
 
 	[ -n "$ctl_device" ] && device=$ctl_device
+
+	pdptype=$(echo "$pdptype" | awk '{print tolower($0)}')
+	[ "$pdptype" = "ip" ] && pdptype="ipv4"
+	[ "$pdptype" = "ipv4" ] || [ "$pdptype" = "ipv6" ] || [ "$pdptype" = "ipv4v6" ] || pdptype="ipv4v6"
 
 	[ -n "$device" ] || {
 		echo "mbim[$$]" "No control device specified"
@@ -114,7 +119,7 @@ _proto_mbim_setup() {
 	tid=$((tid + 1))
 
 	echo "mbim[$$]" "Connect to network"
-	while ! umbim $DBG -n -t $tid -d $device connect "$apn" "$auth" "$username" "$password"; do
+	while ! umbim $DBG -n -t $tid -d $device connect "$pdptype:$apn" "$auth" "$username" "$password"; do
 		tid=$((tid + 1))
 		sleep 1;
 	done
