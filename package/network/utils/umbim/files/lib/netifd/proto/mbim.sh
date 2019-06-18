@@ -86,11 +86,17 @@ _proto_mbim_setup() {
 	tid=$((tid + 1))
 
 	echo "mbim[$$]" "Checking pin"
-	umbim $DBG -n -t $tid -d $device pinstate || {
-		echo "mbim[$$]" "PIN required"
-		proto_notify_error "$interface" PIN_FAILED
-		proto_block_restart "$interface"
-		return 1
+	local pinstate="/var/run/mbim.$$.pinstate"
+	umbim $DBG -n -t $tid -d $device pinstate > "$pinstate" 2>&1 || {
+		local pin
+		pin=$(awk '$2=="pin:" {print $5}' "$pinstate")
+		# we only need pin1 (the SIM pin) to connect
+		[ "$pin" = "pin1" ] && {
+			echo "mbim[$$]" "PIN required"
+			proto_notify_error "$interface" PIN_FAILED
+			proto_block_restart "$interface"
+			return 1
+		}
 	}
 	tid=$((tid + 1))
 
@@ -157,6 +163,8 @@ proto_mbim_setup() {
 
 	_proto_mbim_setup "$@"
 	ret=$?
+
+	rm -f "/var/run/mbim.$$."*
 
 	[ "$ret" = 0 ] || {
 		logger "mbim bringup failed, retry in 15s"
