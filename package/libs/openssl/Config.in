@@ -269,7 +269,7 @@ config OPENSSL_ENGINE_BUILTIN
 config OPENSSL_ENGINE_BUILTIN_AFALG
 	bool
 	prompt "Acceleration support through AF_ALG sockets engine"
-	depends on OPENSSL_ENGINE_BUILTIN && KERNEL_AIO && !LINUX_3_18
+	depends on OPENSSL_ENGINE_BUILTIN && KERNEL_AIO
 	select PACKAGE_libopenssl-conf
 	help
 		This enables use of hardware acceleration through the

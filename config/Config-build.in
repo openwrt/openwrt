@@ -36,6 +36,15 @@ menu "Global build settings"
 
 	comment "General build options"
 
+	config TESTING_KERNEL
+		bool "Use the testing kernel version"
+		depends on HAS_TESTING_KERNEL
+		default n
+		help
+		  If the target supports a newer kernel version than the default,
+		  you can use this config option to enable it
+
+
 	config DISPLAY_SUPPORT
 		bool "Show packages that require graphics support (local or remote)"
 		default n

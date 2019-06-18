@@ -8,6 +8,7 @@ obj.wrg = wrg.o md5.o
 obj.wrgg = wrgg.o md5.o
 obj.tpl = tpl_ramips_recoveryflag.o
 obj.ar71xx = trx.o $(obj.seama) $(obj.wrgg)
+obj.gemini = $(obj.wrgg)
 obj.brcm = trx.o
 obj.brcm47xx = $(obj.brcm)
 obj.bcm53xx = $(obj.brcm) $(obj.seama)
@@ -16,7 +17,7 @@ obj.ramips = $(obj.seama) $(obj.tpl) $(obj.wrg)
 obj.mvebu = linksys_bootcount.o
 obj.kirkwood = linksys_bootcount.o
 obj.ipq806x = linksys_bootcount.o
-obj.ipq40xx = linksys_bootcount_fix.o
+obj.ipq40xx = linksys_bootcount.o
 
 ifdef FIS_SUPPORT
   obj += fis.o

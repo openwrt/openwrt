@@ -78,7 +78,13 @@ define prepare_rootfs
 		done; \
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
-			IPKG_INSTROOT=$(1) $$(which bash) ./etc/rc.common $$script enable; \
+			if ! echo " $(3) " | grep -q " $$(basename $$script) "; then \
+				IPKG_INSTROOT=$(1) $$(which bash) ./etc/rc.common $$script enable; \
+				echo "Enabling" $$(basename $$script); \
+			else \
+				IPKG_INSTROOT=$(1) $$(which bash) ./etc/rc.common $$script disable; \
+				echo "Disabling" $$(basename $$script); \
+			fi; \
 		done || true \
 	)
 	$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status)

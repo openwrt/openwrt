@@ -27,7 +27,7 @@ proto_464xlat_setup() {
 	local ip6addr ip6prefix tunlink zone
 	json_get_vars ip6addr ip6prefix tunlink zone
 
-	[ -z "$zone" ] && zone="wan"
+	[ "$zone" = "-" ] && zone=""
 
 	( proto_add_host_dependency "$cfg" "::" "$tunlink" )
 
@@ -53,25 +53,29 @@ proto_464xlat_setup() {
 	proto_add_ipv6_route $ip6addr 128 "" "" "" "" 128
 
 	proto_add_data
-	[ "$zone" != "-" ] && json_add_string zone "$zone"
+	[ -n "$zone" ] && json_add_string zone "$zone"
 
 	json_add_array firewall
+		[ -z "$zone" ] && zone=$(fw3 -q network $iface 2>/dev/null)
+
 		json_add_object ""
 			json_add_string type nat
 			json_add_string target SNAT
 			json_add_string family inet
 			json_add_string snat_ip 192.0.0.1
 		json_close_object
-		json_add_object ""
-			json_add_string type rule
-			json_add_string family inet6
-			json_add_string proto all
-			json_add_string direction in
-			json_add_string dest "$zone"
-			json_add_string src "$zone"
-			json_add_string src_ip $ip6addr
-			json_add_string target ACCEPT
-		json_close_object
+		[ -n "$zone" ] && {
+			json_add_object ""
+				json_add_string type rule
+				json_add_string family inet6
+				json_add_string proto all
+				json_add_string direction in
+				json_add_string dest "$zone"
+				json_add_string src "$zone"
+				json_add_string src_ip $ip6addr
+				json_add_string target ACCEPT
+			json_close_object
+		}
 	json_close_array
 	proto_close_data
 

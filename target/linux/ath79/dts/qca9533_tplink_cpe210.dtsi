@@ -47,6 +47,16 @@
 		};
 	};
 
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset_button {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+	};
 };
 
 &uart {
@@ -82,7 +92,7 @@
 			};
 
 			info: partition@30000 {
-				label = "product-info";
+				label = "info";
 				reg = <0x030000 0x10000>;
 				read-only;
 			};
@@ -99,8 +109,8 @@
 				read-only;
 			};
 
-			ART: partition@7f0000 {
-				label = "ART";
+			art: partition@7f0000 {
+				label = "art";
 				reg = <0x7f0000 0x10000>;
 				read-only;
 			};
@@ -120,6 +130,6 @@
 
 &wmac {
 	status = "okay";
-	mtd-cal-data = <&ART 0x1000>;
+	mtd-cal-data = <&art 0x1000>;
 	mtd-mac-address = <&info 0x8>;
 };

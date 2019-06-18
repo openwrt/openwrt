@@ -30,7 +30,7 @@ $(eval $(call KernelPackage,6lowpan))
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +kmod-crypto-ecb +kmod-lib-crc16 +kmod-hid +!LINUX_3_18:kmod-crypto-cmac +!LINUX_3_18:kmod-regmap-core +!(LINUX_3_18||LINUX_4_9):kmod-crypto-ecdh
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +kmod-crypto-ecb +kmod-lib-crc16 +kmod-hid +kmod-crypto-cmac +kmod-regmap-core +!LINUX_4_9:kmod-crypto-ecdh
   KCONFIG:= \
 	CONFIG_BT \
 	CONFIG_BT_BREDR=y \
@@ -219,7 +219,7 @@ $(eval $(call KernelPackage,gpio-dev))
 define KernelPackage/gpio-mcp23s08
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Microchip MCP23xxx I/O expander
-  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core +!(LINUX_3_18||LINUX_4_9):kmod-regmap-i2c
+  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core +!LINUX_4_9:kmod-regmap-i2c
   KCONFIG:= \
 	CONFIG_GPIO_MCP23S08 \
 	CONFIG_PINCTRL_MCP23S08
@@ -476,7 +476,7 @@ define KernelPackage/rtc-ds1307
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1307 (and compatible) RTC support
   DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
-  DEPENDS:=+kmod-i2c-core +!(LINUX_3_18||LINUX_4_9):kmod-regmap-i2c +!(LINUX_3_18||LINUX_4_9):kmod-hwmon-core
+  DEPENDS:=+kmod-i2c-core +!LINUX_4_9:kmod-regmap-i2c +!LINUX_4_9:kmod-hwmon-core
   KCONFIG:=CONFIG_RTC_DRV_DS1307 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1307.ko
@@ -952,21 +952,6 @@ endef
 
 $(eval $(call KernelPackage,random-core))
 
-define KernelPackage/random-omap
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Hardware Random Number Generator OMAP support
-  KCONFIG:=CONFIG_HW_RANDOM_OMAP
-  FILES:=$(LINUX_DIR)/drivers/char/hw_random/omap-rng.ko
-  DEPENDS:=@TARGET_omap24xx +kmod-random-core
-  AUTOLOAD:=$(call AutoProbe,random-omap)
-endef
-
-define KernelPackage/random-omap/description
- Kernel module for the OMAP Random Number Generator
- found on OMAP16xx, OMAP2/3/4/5 and AM33xx/AM43xx multimedia processors.
-endef
-
-$(eval $(call KernelPackage,random-omap))
 
 define KernelPackage/random-tpm
   SUBMENU:=$(OTHER_MENU)
@@ -1053,7 +1038,7 @@ $(eval $(call KernelPackage,echo))
 define KernelPackage/bmp085
   SUBMENU:=$(OTHER_MENU)
   TITLE:=BMP085/BMP18x pressure sensor
-  DEPENDS:= +kmod-regmap-core @!LINUX_3_18
+  DEPENDS:= +kmod-regmap-core
   KCONFIG:= CONFIG_BMP085
   FILES:= $(LINUX_DIR)/drivers/misc/bmp085.ko
 endef

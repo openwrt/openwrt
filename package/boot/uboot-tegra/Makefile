@@ -6,10 +6,10 @@
 #
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION := 2019.01
+PKG_VERSION := 2019.04
 PKG_RELEASE := 1
 
-PKG_HASH := 50bd7e5a466ab828914d080d5f6a432345b500e8fba1ad3b7b61e95e60d51c22
+PKG_HASH := 76b7772d156b3ddd7644c8a1736081e55b78828537ff714065d21dbade229bef
 
 PKG_MAINTAINER := Tomasz Maciej Nowak <tomek_n@o2.pl>
 
@@ -23,7 +23,7 @@ endef
 
 define U-Boot/trimslice
   NAME := CompuLab TrimSlice
-  BUILD_DEVICES := trimslice
+  BUILD_DEVICES := compulab_trimslice
   UBOOT_IMAGE := trimslice-mmc.img trimslice-spi.img
   SOC := tegra20
   VENDOR := compulab

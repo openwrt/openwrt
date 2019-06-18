@@ -1,0 +1,30 @@
+From f60b6777cc2047f9845de2c88cf092b045c160c0 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Fri, 17 May 2019 01:44:56 +0000
+Subject: [PATCH] local-elf: Add ARC support
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ src/local-elf.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/local-elf.h b/src/local-elf.h
+index 83ca253..b90baf3 100644
+--- a/src/local-elf.h
++++ b/src/local-elf.h
+@@ -53,6 +53,12 @@
+ #endif
+ #define ELF_TARG_DATA	ELFDATA2LSB
+ 
++#elif defined (__arc__)
++
++#define ELF_TARG_MACH   EM_ARC
++#define ELF_TARG_CLASS  ELFCLASS32
++#define ELF_TARG_DATA   ELFDATA2LSB
++
+ #elif defined(__arm__)
+ 
+ #define ELF_TARG_MACH	EM_ARM
+-- 
+2.18.1
+

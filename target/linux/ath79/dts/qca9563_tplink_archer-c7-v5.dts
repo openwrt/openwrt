@@ -33,6 +33,7 @@
 	partition@40000 {
 		label = "partition-table";
 		reg = <0x040000 0x010000>;
+		read-only;
 	};
 
 	art: partition@50000 {
@@ -44,11 +45,13 @@
 	info: partition@60000 {
 		label = "info";
 		reg = <0x060000 0x020000>;
+		read-only;
 	};
 
 	partition@80000 {
 		label = "user-config";
 		reg = <0x080000 0x040000>;
+		read-only;
 	};
 
 	partition@c0000 {
@@ -60,5 +63,6 @@
 	partition@ff0000 {
 		label = "default-config";
 		reg = <0xff0000 0x010000>;
+		read-only;
 	};
 };

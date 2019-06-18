@@ -45,6 +45,7 @@ Building images:
 	make image FILES="<path>" # include extra files from <path>
 	make image BIN_DIR="<path>" # alternative output directory for the images
 	make image EXTRA_IMAGE_NAME="<string>" # Add this to the output image filename (sanitized)
+	make image DISABLED_SERVICES="<svc1> [<svc2> [<svc3> ..]]" # Which services in /etc/init.d/ should be disabled
 
 Print manifest:
 	List "all" packages which get installed into the image.
@@ -159,7 +160,7 @@ prepare_rootfs: FORCE
 	@echo Finalizing root filesystem...
 
 	$(CP) $(TARGET_DIR) $(TARGET_DIR_ORIG)
-	$(call prepare_rootfs,$(TARGET_DIR),$(USER_FILES))
+	$(call prepare_rootfs,$(TARGET_DIR),$(USER_FILES),$(DISABLED_SERVICES))
 
 build_image: FORCE
 	@echo
@@ -197,7 +198,8 @@ image:
 		$(if $(PROFILE),USER_PROFILE="$(PROFILE_FILTER)") \
 		$(if $(FILES),USER_FILES="$(FILES)") \
 		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)") \
-		$(if $(BIN_DIR),BIN_DIR="$(BIN_DIR)"))
+		$(if $(BIN_DIR),BIN_DIR="$(BIN_DIR)") \
+		$(if $(DISABLED_SERVICES),DISABLED_SERVICES="$(DISABLED_SERVICES)"))
 
 manifest: FORCE
 	$(MAKE) -s _check_profile

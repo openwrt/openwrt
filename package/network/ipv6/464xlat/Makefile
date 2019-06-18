@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=464xlat
-PKG_VERSION:=11
+PKG_VERSION:=12
 
 PKG_SOURCE_DATE:=2018-01-16
 PKG_MAINTAINER:=Hans Dedecker <dedeckeh@gmail.com>

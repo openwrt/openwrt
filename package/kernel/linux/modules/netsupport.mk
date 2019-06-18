@@ -383,6 +383,22 @@ endef
 $(eval $(call KernelPackage,ip6-vti))
 
 
+define KernelPackage/xfrm-interface
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=IPsec XFRM Interface
+  DEPENDS:=+kmod-ipsec4 +kmod-ipsec6 @!LINUX_4_14 @!LINUX_4_9
+  KCONFIG:=CONFIG_XFRM_INTERFACE
+  FILES:=$(LINUX_DIR)/net/xfrm/xfrm_interface.ko
+  AUTOLOAD:=$(call AutoProbe,xfrm_interface)
+endef
+
+define KernelPackage/xfrm-interface/description
+ Kernel module for XFRM interface support
+endef
+
+$(eval $(call KernelPackage,xfrm-interface))
+
+
 define KernelPackage/iptunnel4
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPv4 tunneling
@@ -717,7 +733,7 @@ $(eval $(call KernelPackage,mppe))
 
 SCHED_MODULES = $(patsubst $(LINUX_DIR)/net/sched/%.ko,%,$(wildcard $(LINUX_DIR)/net/sched/*.ko))
 SCHED_MODULES_CORE = sch_ingress sch_fq_codel sch_hfsc sch_htb sch_tbf cls_basic cls_fw cls_route cls_flow cls_tcindex cls_u32 em_u32 act_mirred act_skbedit cls_matchall
-SCHED_MODULES_FILTER = $(SCHED_MODULES_CORE) act_connmark sch_netem em_ipset cls_bpf act_bpf
+SCHED_MODULES_FILTER = $(SCHED_MODULES_CORE) act_connmark act_ctinfo sch_netem em_ipset cls_bpf act_bpf
 SCHED_MODULES_EXTRA = $(filter-out $(SCHED_MODULES_FILTER),$(SCHED_MODULES))
 SCHED_FILES = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(filter $(SCHED_MODULES_CORE),$(SCHED_MODULES)))
 SCHED_FILES_EXTRA = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(SCHED_MODULES_EXTRA))
@@ -725,7 +741,6 @@ SCHED_FILES_EXTRA = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(SCHED_MODULES_EXT
 define KernelPackage/sched-core
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic schedulers
-  DEPENDS:=@!LINUX_3_18
   KCONFIG:= \
 	CONFIG_NET_SCHED=y \
 	CONFIG_NET_SCH_HFSC \
@@ -804,7 +819,6 @@ endef
 
 $(eval $(call KernelPackage,sched-mqprio))
 
-
 define KernelPackage/sched-connmark
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic shaper conntrack mark support
@@ -815,6 +829,15 @@ define KernelPackage/sched-connmark
 endef
 $(eval $(call KernelPackage,sched-connmark))
 
+define KernelPackage/sched-ctinfo
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic shaper ctinfo support
+  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-ipt-conntrack-extra
+  KCONFIG:=CONFIG_NET_ACT_CTINFO
+  FILES:=$(LINUX_DIR)/net/sched/act_ctinfo.ko
+  AUTOLOAD:=$(call AutoLoad,71, act_ctinfo)
+endef
+$(eval $(call KernelPackage,sched-ctinfo))
 
 define KernelPackage/sched-ipset
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
@@ -833,7 +856,6 @@ $(eval $(call KernelPackage,sched-ipset))
 define KernelPackage/sched-bpf
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic shaper support for Berkeley Packet Filter
-  DEPENDS:=@!LINUX_3_18
   KCONFIG:= \
 	CONFIG_NET_CLS_BPF \
 	CONFIG_NET_ACT_BPF
@@ -849,7 +871,6 @@ $(eval $(call KernelPackage,sched-bpf))
 define KernelPackage/bpf-test
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Test Berkeley Packet Filter functionality
-  DEPENDS:=@!LINUX_3_18
   KCONFIG:=CONFIG_TEST_BPF
   FILES:=$(LINUX_DIR)/lib/test_bpf.ko
 endef
@@ -897,7 +918,7 @@ $(eval $(call KernelPackage,sched))
 define KernelPackage/tcp-bbr
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=BBR TCP congestion control
-  DEPENDS:=@!LINUX_3_18 +LINUX_4_9:kmod-sched
+  DEPENDS:=+LINUX_4_9:kmod-sched
   KCONFIG:= \
 	CONFIG_TCP_CONG_ADVANCED=y \
 	CONFIG_TCP_CONG_BBR
@@ -1113,7 +1134,7 @@ $(eval $(call KernelPackage,rxrpc))
 define KernelPackage/mpls
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=MPLS support
-  DEPENDS:=@!LINUX_3_18 +LINUX_4_19:kmod-iptunnel
+  DEPENDS:=+LINUX_4_19:kmod-iptunnel
   KCONFIG:= \
 	CONFIG_MPLS=y \
 	CONFIG_LWTUNNEL=y \
@@ -1190,7 +1211,7 @@ $(eval $(call KernelPackage,mdio))
 define KernelPackage/macsec
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IEEE 802.1AE MAC-level encryption (MAC)
-  DEPENDS:=+kmod-crypto-gcm @!LINUX_3_18
+  DEPENDS:=+kmod-crypto-gcm
   KCONFIG:=CONFIG_MACSEC
   FILES:=$(LINUX_DIR)/drivers/net/macsec.ko
   AUTOLOAD:=$(call AutoLoad,13,macsec)

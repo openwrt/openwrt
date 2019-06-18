@@ -14,6 +14,7 @@ MAINTAINER:=Chris Blake <chrisrblake93@gmail.com>, \
 SUBTARGETS:=nand sata
 
 KERNEL_PATCHVER:=4.14
+KERNEL_TESTING_PATCHVER := 4.19
 
 define Target/Description
 	Build images for AppliedMicro APM821xx based boards.

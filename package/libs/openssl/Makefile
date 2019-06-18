@@ -9,9 +9,9 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
 PKG_BASE:=1.1.1
-PKG_BUGFIX:=b
+PKG_BUGFIX:=c
 PKG_VERSION:=$(PKG_BASE)$(PKG_BUGFIX)
-PKG_RELEASE:=4
+PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
 ENGINES_DIR=engines-1.1
 
@@ -24,10 +24,11 @@ PKG_SOURCE_URL:= \
 	ftp://ftp.pca.dfn.de/pub/tools/net/openssl/source/ \
 	http://www.openssl.org/source/ \
 	http://www.openssl.org/source/old/$(PKG_BASE)/
-PKG_HASH:=5c557b023230413dfb0756f3137a13e6d726838ccd1430888ad15bfb2b43ea4b
+PKG_HASH:=f6fb3079ad15076154eda9413fed42877d668e7069d9b87396d0804fdb3f4c90
 
 PKG_LICENSE:=OpenSSL
 PKG_LICENSE_FILES:=LICENSE
+PKG_MAINTAINER:=Eneas U de Queiroz <cote2004-github@yahoo.com>
 PKG_CPE_ID:=cpe:/a:openssl:openssl
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_OPENSSL_ENGINE \
@@ -138,8 +139,8 @@ define Package/libopenssl-afalg
   $(call Package/openssl/Default)
   SUBMENU:=SSL
   TITLE:=AFALG hardware acceleration engine
-  DEPENDS:=libopenssl @OPENSSL_ENGINE @KERNEL_AIO @!LINUX_3_18 +kmod-crypto-user \
-	   +libopenssl-conf @!OPENSSL_ENGINE_BUILTIN
+  DEPENDS:=libopenssl @OPENSSL_ENGINE @KERNEL_AIO \
+	   +PACKAGE_libopenssl-afalg:kmod-crypto-user +libopenssl-conf @!OPENSSL_ENGINE_BUILTIN
 endef
 
 define Package/libopenssl-afalg/description
@@ -155,7 +156,7 @@ define Package/libopenssl-devcrypto
   $(call Package/openssl/Default)
   SUBMENU:=SSL
   TITLE:=/dev/crypto hardware acceleration engine
-  DEPENDS:=libopenssl @OPENSSL_ENGINE +kmod-cryptodev +libopenssl-conf \
+  DEPENDS:=libopenssl @OPENSSL_ENGINE +PACKAGE_libopenssl-devcrypto:kmod-cryptodev +libopenssl-conf \
 	   @!OPENSSL_ENGINE_BUILTIN
 endef
 
@@ -172,7 +173,7 @@ define Package/libopenssl-padlock
   $(call Package/openssl/Default)
   SUBMENU:=SSL
   TITLE:=VIA Padlock hardware acceleration engine
-  DEPENDS:=libopenssl @OPENSSL_ENGINE @TARGET_x86 +kmod-crypto-hw-padlock \
+  DEPENDS:=libopenssl @OPENSSL_ENGINE @TARGET_x86 +PACKAGE_libopenssl-padlock:kmod-crypto-hw-padlock \
 	   +libopenssl-conf @!OPENSSL_ENGINE_BUILTIN
 endef
 

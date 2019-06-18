@@ -104,7 +104,7 @@ config BUSYBOX_CONFIG_UDHCPC_DEFAULT_SCRIPT
 # udhcpc6 config is inserted here:
 config BUSYBOX_CONFIG_UDHCPC6
 	bool "udhcpc6 (21 kb)"
-	default BUSYBOX_DEFAULT_UDHCPC6  # not yet ready
+	default BUSYBOX_DEFAULT_UDHCPC6
 	depends on BUSYBOX_CONFIG_FEATURE_IPV6
 	help
 	udhcpc6 is a DHCPv6 client

@@ -93,7 +93,6 @@ ath10kcal_is_caldata_valid() {
 
 board=$(board_name)
 
-
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:01:00.0.bin")
 	case "$board" in
@@ -114,6 +113,11 @@ case "$FIRMWARE" in
 	avm,fritzrepeater-3000)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
+		;;
+	linksys,ea8300)
+		ath10kcal_extract "ART" 36864 12064
+		# OEM assigns 4 sequential MACs
+		ath10kcal_patch_mac_crc $(macaddr_setbit_la $(macaddr_add "$(cat /sys/class/net/eth0/address)" 4))
 		;;
 	openmesh,a62)
 		ath10kcal_extract "0:ART" 36864 12064
@@ -155,6 +159,10 @@ case "$FIRMWARE" in
 	engenius,ens620ext)
 		ath10kcal_extract "ART" 4096 12064
 		ath10kcal_patch_mac_crc $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +2)
+		;;
+	linksys,ea8300)
+		ath10kcal_extract "ART" 4096 12064
+		ath10kcal_patch_mac_crc $(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
 		;;
 	meraki,mr33)
 		ath10kcal_ubi_extract "ART" 4096 12064
@@ -208,6 +216,10 @@ case "$FIRMWARE" in
 	engenius,ens620ext)
 		ath10kcal_extract "ART" 20480 12064
 		ath10kcal_patch_mac_crc $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +3)
+		;;
+	linksys,ea8300)
+		ath10kcal_extract "ART" 20480 12064
+		ath10kcal_patch_mac_crc $(macaddr_add "$(cat /sys/class/net/eth0/address)" 3)
 		;;
 	meraki,mr33)
 		ath10kcal_ubi_extract "ART" 20480 12064

@@ -10,6 +10,8 @@ include $(INCLUDE_DIR)/image.mk
 DEVICE_VARS += DTS IMAGE_SIZE NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
+DEVICE_VARS += SERCOMM_HWID SERCOMM_HWVER SERCOMM_SWVER
+DEVICE_VARS += JCG_MAXSIZE
 
 loadaddr-y := 0x80000000
 loadaddr-$(CONFIG_TARGET_ramips_rt288x) := 0x88000000
@@ -43,6 +45,11 @@ define Device/seama
   IMAGE/factory.bin := \
 	$$(IMAGE/default) | pad-rootfs -x 64 | seama | seama-seal | check-size $$$$(IMAGE_SIZE)
   SEAMA_SIGNATURE :=
+endef
+
+define Build/jcg-header
+	$(STAGING_DIR_HOST)/bin/jcgimage -v $(1) $(if $(JCG_MAXSIZE), -m $(JCG_MAXSIZE),) -u $@ -o $@.new
+	mv $@.new $@
 endef
 
 define Build/patch-dtb
@@ -130,6 +137,19 @@ endef
 
 define Build/zyimage
 	$(STAGING_DIR_HOST)/bin/zyimage $(1) $@
+endef
+
+define Build/sercom-seal
+	$(STAGING_DIR_HOST)/bin/mksercommfw \
+		-i $@ \
+		-b $(SERCOMM_HWID) \
+		-r $(SERCOMM_HWVER) \
+		-v $(SERCOMM_SWVER) \
+		$(1)
+endef
+
+define Build/sercom-footer
+	$(call Build/sercom-seal,-f)
 endef
 
 ralink_default_fw_size_4M=3866624

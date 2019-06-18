@@ -28,7 +28,7 @@ PKG_DRIVERS = \
 	lib80211 \
 	mac80211-hwsim \
 	mt7601u \
-	p54-common p54-pci p54-spi p54-usb \
+	p54-common p54-pci p54-usb \
 	rsi91x rsi91x-usb rsi91x-sdio\
 	wlcore wl12xx wl18xx \
 	zd1211rw
@@ -275,7 +275,7 @@ endef
 
 define KernelPackage/p54-common
   $(call KernelPackage/p54/Default)
-  DEPENDS+= @PCI_SUPPORT||@USB_SUPPORT||@TARGET_omap24xx +kmod-mac80211 +kmod-lib-crc-ccitt +@DRIVER_11W_SUPPORT
+  DEPENDS+= @PCI_SUPPORT||@USB_SUPPORT +kmod-mac80211 +kmod-lib-crc-ccitt +@DRIVER_11W_SUPPORT
   TITLE+= (COMMON)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/intersil/p54/p54common.ko
 endef
@@ -294,14 +294,6 @@ define KernelPackage/p54-usb
   DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-p54-common +p54-usb-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/intersil/p54/p54usb.ko
   AUTOLOAD:=$(call AutoProbe,p54usb)
-endef
-
-define KernelPackage/p54-spi
-  $(call KernelPackage/p54/Default)
-  TITLE+= (SPI)
-  DEPENDS+= @TARGET_omap24xx +kmod-p54-common +p54-spi-firmware
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/intersil/p54/p54spi.ko
-  AUTOLOAD:=$(call AutoProbe,p54spi)
 endef
 
 define KernelPackage/rsi91x
@@ -408,7 +400,6 @@ config-y += WL_MEDIATEK
 config-$(call config_package,p54-common) += P54_COMMON
 config-$(call config_package,p54-pci) += P54_PCI
 config-$(call config_package,p54-usb) += P54_USB
-config-$(call config_package,p54-spi) += P54_SPI
 
 config-$(call config_package,hermes) += HERMES
 config-$(call config_package,hermes-pci) += PCI_HERMES
