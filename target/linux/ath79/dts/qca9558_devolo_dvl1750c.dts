@@ -38,6 +38,10 @@
 	};
 };
 
+&eth0 {
+	phy-mode = "rgmii-id";
+};
+
 &gmac_config {
 	rxdv-delay = <3>;
 	rxd-delay = <3>;
