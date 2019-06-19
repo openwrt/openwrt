@@ -1,4 +1,4 @@
-From b47fffb0f6dc285fe39613a5838e4e50f4f35202 Mon Sep 17 00:00:00 2001
+From dff8eadcab33209e040e77a5d56d5def04808144 Mon Sep 17 00:00:00 2001
 From: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 Date: Fri, 15 Mar 2019 09:35:37 +0000
 Subject: [PATCH] tc: add support for action act_ctinfo
@@ -64,11 +64,11 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 Reviewed-by: Toke Høiland-Jørgensen <toke@redhat.com>
 ---
  include/uapi/linux/pkt_cls.h          |   3 +-
- include/uapi/linux/tc_act/tc_ctinfo.h |  34 ++++
+ include/uapi/linux/tc_act/tc_ctinfo.h |  29 +++
  man/man8/tc-ctinfo.8                  | 170 ++++++++++++++++
  tc/Makefile                           |   1 +
  tc/m_ctinfo.c                         | 268 ++++++++++++++++++++++++++
- 5 files changed, 475 insertions(+), 1 deletion(-)
+ 5 files changed, 470 insertions(+), 1 deletion(-)
  create mode 100644 include/uapi/linux/tc_act/tc_ctinfo.h
  create mode 100644 man/man8/tc-ctinfo.8
  create mode 100644 tc/m_ctinfo.c
@@ -89,10 +89,10 @@ index 95d0db2a..a6e7e176 100644
  #define TCA_ID_MAX __TCA_ID_MAX
 diff --git a/include/uapi/linux/tc_act/tc_ctinfo.h b/include/uapi/linux/tc_act/tc_ctinfo.h
 new file mode 100644
-index 00000000..da803e05
+index 00000000..f5f26d95
 --- /dev/null
 +++ b/include/uapi/linux/tc_act/tc_ctinfo.h
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,29 @@
 +/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 +#ifndef __UAPI_TC_CTINFO_H
 +#define __UAPI_TC_CTINFO_H
@@ -120,11 +120,6 @@ index 00000000..da803e05
 +};
 +
 +#define TCA_CTINFO_MAX (__TCA_CTINFO_MAX - 1)
-+
-+enum {
-+	CTINFO_MODE_DSCP	= BIT(0),
-+	CTINFO_MODE_CPMARK	= BIT(1)
-+};
 +
 +#endif
 diff --git a/man/man8/tc-ctinfo.8 b/man/man8/tc-ctinfo.8
