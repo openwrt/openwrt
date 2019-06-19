@@ -38,10 +38,13 @@
 
 #define GL_X1200_GPIO_LED_WLAN2G        19
 #define GL_X1200_GPIO_LED_WLAN5G        20
-#define GL_X1200_GPIO_LED_POWER			8
+#define GL_X1200_GPIO_SYSTEM_LED		8
 #define GL_X1200_GPIO_USB_POWER			7
-
 #define GL_X1200_GPIO_BTN_RESET			2
+#define GL_X1200_GPIO_4G1_POWER			5
+#define GL_X1200_GPIO_4G2_POWER			15
+#define GL_X1200_GPIO_WATCHDOG			14
+#define GL_X1200_GPIO_SWITCH_WATCHDOG	16
 
 #define GL_X1200_MAC0_OFFSET             0x0000
 #define GL_X1200_WMAC_CALDATA_OFFSET     0x1000
@@ -71,14 +74,10 @@ static struct ath79_spi_platform_data gl_x1200_spi_data = {
 
 static struct gpio_led gl_x1200_leds_gpio[] __initdata = {
 	{
-		.name			= "gl-x1200:green:power",
-		.gpio			= GL_X1200_GPIO_LED_POWER,
+		.name			= "gl-x1200:red:system",
+		.gpio			= GL_X1200_GPIO_SYSTEM_LED,
 		.default_state	= LEDS_GPIO_DEFSTATE_KEEP,
 		.active_low		= 1,
-	},{
-		.name		= "gl-x1200:green:usbpower",
-		.gpio		= GL_X1200_GPIO_USB_POWER,
-		.active_low	= 1,
 	},{
 		.name		= "gl-x1200:green:wlan2g",
 		.gpio		= GL_X1200_GPIO_LED_WLAN2G,
@@ -92,7 +91,7 @@ static struct gpio_led gl_x1200_leds_gpio[] __initdata = {
 
 static struct gpio_keys_button gl_x1200_gpio_keys[] __initdata = {
 	{
-		.desc                   = "reset",
+		.desc                   = "gl-x1200:reset",
 		.type                   = EV_KEY,
 		.code                   = KEY_RESTART,
 		.debounce_interval      = GL_X1200_KEYS_DEBOUNCE_INTERVAL,
@@ -157,6 +156,12 @@ static void __init gl_x1200_setup(void)
 	ath79_register_gpio_keys_polled(-1, GL_X1200_KEYS_POLL_INTERVAL,
 			ARRAY_SIZE(gl_x1200_gpio_keys),
 			gl_x1200_gpio_keys);
+	gpio_request_one(GL_X1200_GPIO_4G1_POWER, GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,"gl-x1200:4g1:power");
+	gpio_request_one(GL_X1200_GPIO_4G2_POWER, GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,"gl-x1200:4g2:power");
+	gpio_request_one(GL_X1200_GPIO_WATCHDOG, GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,"gl-x1200:watchdog");
+	gpio_request_one(GL_X1200_GPIO_SWITCH_WATCHDOG, GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,"gl-x1200:watchdog:sw");
+	gpio_request_one(GL_X1200_GPIO_USB_POWER, GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,"gl-x1200:usb:power");
+
 }
 
 MIPS_MACHINE(ATH79_MACH_GL_X1200, "GL-X1200", "GL-X1200",
