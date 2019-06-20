@@ -24,10 +24,6 @@
 		cs-gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 		num-chipselects = <1>;
 
-		/* can be removed on 4.19 */
-		gpio-sck = <&gpio 15 GPIO_ACTIVE_HIGH>;
-		gpio-mosi = <&gpio 14 GPIO_ACTIVE_HIGH>;
-
 		led_gpio: led_gpio@0 {
 			compatible = "fairchild,74hc595";
 			reg = <0>;
