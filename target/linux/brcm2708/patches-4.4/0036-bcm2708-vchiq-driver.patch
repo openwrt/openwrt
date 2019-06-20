@@ -1848,7 +1848,7 @@ vchiq: hack: Add include depecated dma include file
 +#endif /* VCHIQ_2835_H */
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
-@@ -0,0 +1,586 @@
+@@ -0,0 +1,585 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
 + *
@@ -2274,8 +2274,7 @@ vchiq: hack: Add include depecated dma include file
 +		actual_pages = get_user_pages(task, task->mm,
 +				          (unsigned long)buf & ~(PAGE_SIZE - 1),
 +					  num_pages,
-+					  (type == PAGELIST_READ) /*Write */ ,
-+					  0 /*Force */ ,
++					  (type == PAGELIST_READ) ? FOLL_WRITE : 0 /*Flags */ ,
 +					  pages,
 +					  NULL /*vmas */);
 +		up_read(&task->mm->mmap_sem);
@@ -2437,7 +2436,7 @@ vchiq: hack: Add include depecated dma include file
 +}
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c
-@@ -0,0 +1,2903 @@
+@@ -0,0 +1,2902 @@
 +/**
 + * Copyright (c) 2014 Raspberry Pi (Trading) Ltd. All rights reserved.
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -3917,8 +3916,7 @@ vchiq: hack: Add include depecated dma include file
 +		current->mm,              /* mm */
 +		(unsigned long)virt_addr, /* start */
 +		num_pages,                /* len */
-+		0,                        /* write */
-+		0,                        /* force */
++		0,                        /* flags */
 +		pages,                    /* pages (array of page pointers) */
 +		NULL);                    /* vmas */
 +	up_read(&current->mm->mmap_sem);
