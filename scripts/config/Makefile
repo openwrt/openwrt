@@ -31,7 +31,7 @@ lxdialog-objs := \
 	lxdialog/checklist.o lxdialog/util.o lxdialog/inputbox.o \
 	lxdialog/textbox.o lxdialog/yesno.o lxdialog/menubox.o
 
-clean-files	:= zconf.tab.c lex.zconf.c zconf.hash.c
+clean-files	:= zconf.tab.c zconf.lex.c zconf.hash.c
 # Remove qconf junk files
 clean-files	+= $(qconf-cxxobjs) qconf.moc .tmp_qtcheck qconf
 
@@ -55,9 +55,9 @@ zconf.tab.o: zconf.lex.c zconf.hash.c confdata.c
 
 kconfig_load.o: lkc_defs.h
 
-zconf.tab.c: zconf.y
-zconf.lex.c: zconf.l
-zconf.hash.c: zconf.gperf
+zconf.tab.c: zconf.y $(wildcard zconf.tab.c_shipped)
+zconf.lex.c: zconf.l $(wildcard zconf.lex.c_shipped)
+zconf.hash.c: zconf.gperf $(wildcard zconf.hash.c_shipped)
 
 %.tab.c: %.y
 	cp $@_shipped $@ || bison -l -b $* -p $(notdir $*) $<
