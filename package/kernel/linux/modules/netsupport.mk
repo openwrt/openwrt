@@ -128,6 +128,23 @@ endef
 $(eval $(call KernelPackage,geneve))
 
 
+define KernelPackage/nsh
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Network Service Header (NSH) protocol
+  DEPENDS:=
+  KCONFIG:=CONFIG_NET_NSH
+  FILES:=$(LINUX_DIR)/net/nsh/nsh.ko@ge4.14
+  AUTOLOAD:=$(call AutoLoad,13,nsh)
+endef
+
+define KernelPackage/nsh/description
+  Network Service Header is an implementation of Service Function
+  Chaining (RFC 7665).  Requires kernel 4.14 or newer
+endef
+
+$(eval $(call KernelPackage,nsh))
+
+
 define KernelPackage/capi
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=CAPI (ISDN) Support
