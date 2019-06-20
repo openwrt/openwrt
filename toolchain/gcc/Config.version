@@ -4,7 +4,7 @@ config GCC_VERSION_5
 
 config GCC_VERSION_8
 	default y if GCC_USE_VERSION_8
-	default y if arc
+	default y if arc && !GCC_USE_VERSION_9
 	bool
 
 config GCC_VERSION_9
