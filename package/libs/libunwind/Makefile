@@ -31,7 +31,7 @@ define Package/libunwind
   CATEGORY:=Libraries
   TITLE:=The libunwind project
   URL:=http://www.nongnu.org/libunwind/
-  DEPENDS:=@(mips||mipsel||powerpc||i386||x86_64||arm)
+  DEPENDS:=@(mips||mipsel||powerpc||i386||x86_64||arm||aarch64)
 endef
 
 define Package/libunwind/description
