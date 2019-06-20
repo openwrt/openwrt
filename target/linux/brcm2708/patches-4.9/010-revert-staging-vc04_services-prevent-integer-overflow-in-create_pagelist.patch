@@ -1,0 +1,45 @@
+From 9a0c16060094eab93f6d928e72f7e8c1cd67a9f8 Mon Sep 17 00:00:00 2001
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Wed, 19 Jun 2019 19:15:29 +0200
+Subject: Revert "staging: vc04_services: prevent integer overflow in create_pagelist()"
+
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+This reverts commit cf07331c8827c9e9e0b4274c9b60204c18592241 which was
+commit ca641bae6da977d638458e78cd1487b6160a2718 upstream.
+
+Martin writes:
+	This commit breaks the kernel build because the vchiq_pagelist_info
+	struct is not defined in v4.9.182.
+
+	It was only added in v4.10, in commit
+	4807f2c0e684e907c501cb96049809d7a957dbc2.
+
+Reported-by: Martin Weinelt <martin@linuxlounge.net>
+Cc: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/staging/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c |    9 ---------
+ 1 file changed, 9 deletions(-)
+
+--- a/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
++++ b/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
+@@ -381,18 +381,9 @@ create_pagelist(char __user *buf, size_t
+ 	int run, addridx, actual_pages;
+         unsigned long *need_release;
+ 
+-	if (count >= INT_MAX - PAGE_SIZE)
+-		return NULL;
+-
+ 	offset = (unsigned int)buf & (PAGE_SIZE - 1);
+ 	num_pages = (count + offset + PAGE_SIZE - 1) / PAGE_SIZE;
+ 
+-	if (num_pages > (SIZE_MAX - sizeof(PAGELIST_T) -
+-			 sizeof(struct vchiq_pagelist_info)) /
+-			(sizeof(u32) + sizeof(pages[0]) +
+-			 sizeof(struct scatterlist)))
+-		return NULL;
+-
+ 	*ppagelist = NULL;
+ 
+ 	/* Allocate enough storage to hold the page pointers and the page
