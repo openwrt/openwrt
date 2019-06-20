@@ -1,0 +1,41 @@
+From bb41c1026a11667ab32359a5b0d0d41b0bc5eaec Mon Sep 17 00:00:00 2001
+From: HsiuWen Yen <y.hsiuwen@gmail.com>
+Date: Tue, 18 Jun 2019 15:21:33 +0800
+Subject: [PATCH] netfilter: fix HW NAT crash when KERNEL_NET_NS=y
+
+It is found that hardware offload encounters a kernel panic issue when
+KERNEL_NET_NS=y.
+
+Root cause: when the flow offloading framework intends to delete a flow
+from the hardware table, it is necessary to retrieve the namespace from
+nf_flowtable->ft_net. However, no one ever wrote the namespace into
+nf_flowtable->ft_net in advance. So the framework will mistakenly use a NULL
+namespace to execute dev_get_by_index_rcu(net, ifindex), making the kernel
+panic issue happens.
+
+Signed-off-by: HsiuWen Yen <y.hsiuwen@gmail.com>
+---
+ net/netfilter/xt_FLOWOFFLOAD.c            | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/net/netfilter/xt_FLOWOFFLOAD.c
++++ b/net/netfilter/xt_FLOWOFFLOAD.c
+@@ -246,6 +246,7 @@ flowoffload_tg(struct sk_buff *skb, const struct xt_action_param *par)
+ 	struct nf_flow_route route;
+ 	struct flow_offload *flow;
+ 	struct nf_conn *ct;
++	struct net *net;
+ 	const struct nf_conn_help *help;
+ 
+ 	if (xt_flowoffload_skip(skb))
+@@ -295,6 +296,10 @@ flowoffload_tg(struct sk_buff *skb, const struct xt_action_param *par)
+ 	xt_flowoffload_check_device(xt_in(par));
+ 	xt_flowoffload_check_device(xt_out(par));
+ 
++	net = read_pnet(&nf_flowtable.ft_net);
++	if (!net)
++		write_pnet(&nf_flowtable.ft_net, xt_net(par));
++
+ 	if (info->flags & XT_FLOWOFFLOAD_HW)
+ 		nf_flow_offload_hw_add(xt_net(par), flow, ct);
+ 
