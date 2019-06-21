@@ -24,6 +24,7 @@ define Package/gre
   TITLE:=Generic Routing Encapsulation config support
   DEPENDS:=+kmod-gre +IPV6:kmod-gre6 +resolveip
   PROVIDES:=grev4 grev6
+  PKGARCH:=all
 endef
 
 define Package/gre/description
