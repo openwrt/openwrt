@@ -1,13 +1,13 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -42,7 +42,7 @@
+@@ -42,7 +42,7 @@ PLATS= aix ansi bsd freebsd generic linu
  
  # What to install.
- TO_BIN= lua luac
+ TO_BIN= lua$V luac$V
 -TO_INC= lua.h luaconf.h lualib.h lauxlib.h ../etc/lua.hpp
 +TO_INC= lua.h luaconf.h lualib.h lauxlib.h lnum_config.h ../etc/lua.hpp
  TO_LIB= liblua.a
- TO_MAN= lua.1 luac.1
+ TO_MAN= lua$V.1 luac$V.1
  
 --- a/src/Makefile
 +++ b/src/Makefile
