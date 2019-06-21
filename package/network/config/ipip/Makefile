@@ -20,6 +20,7 @@ define Package/ipip
   MAINTAINER:=Hans Dedecker <dedeckeh@gmail.com>
   TITLE:=IP in IP Tunnel config support
   DEPENDS:= +kmod-ipip +resolveip
+  PKGARCH:=all
 endef
 
 define Package/ipip/description
