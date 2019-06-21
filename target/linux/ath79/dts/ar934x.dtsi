@@ -38,7 +38,7 @@
 		};
 	};
 
-	ahb {
+	ahb: ahb {
 		compatible = "simple-bus";
 		ranges;
 
@@ -133,18 +133,18 @@
 
 				#reset-cells = <1>;
 			};
+		};
 
-			gmac: gmac@18070000 {
-				compatible = "qca,ar9340-gmac";
-				reg = <0x18070000 0x14>;
-			};
+		gmac: gmac@18070000 {
+			compatible = "qca,ar9340-gmac";
+			reg = <0x18070000 0x14>;
+		};
 
-			wmac: wmac@18100000 {
-				compatible = "qca,ar9340-wmac";
-				reg = <0x18100000 0x20000>;
+		wmac: wmac@18100000 {
+			compatible = "qca,ar9340-wmac";
+			reg = <0x18100000 0x20000>;
 
-				status = "disabled";
-			};
+			status = "disabled";
 		};
 
 		usb: usb@1b000000 {
