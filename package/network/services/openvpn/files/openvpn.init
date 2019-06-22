@@ -53,13 +53,14 @@ append_list() {
 	local p; local v; local s="$1"; shift
 
 	list_cb_append() {
-		v="$1:${v}"
+		v="${v}:$1"
 	}
 
 	for p in $*; do
+		unset v
 		config_list_foreach "$s" "$p" list_cb_append
+		[ -n "$v" ] && append_param "$s" "$p" && echo " ${v:1}" >> "/var/etc/openvpn-$s.conf"
 	done
-	[ -n "$v" ] && append_param "$s" "$p" && echo " ${v%*:}" >> "/var/etc/openvpn-$s.conf"
 }
 
 section_enabled() {
