@@ -41,7 +41,7 @@
  
  static inline int pcie_ltssm_enable(int pcie_port)
  {
-@@ -1045,8 +1065,9 @@ pcie_rc_initialize(int pcie_port)
+@@ -1045,17 +1065,52 @@ pcie_rc_initialize(int pcie_port)
  	return 0;
  }
  
@@ -52,7 +52,32 @@
      void __iomem *io_map_base;
      int pcie_port;
      int startup_port;
-@@ -1055,7 +1076,17 @@ static int __init ifx_pcie_bios_init(voi
+ 
++    struct device_node *np;
++    struct pci_bus *bus;
++
++    /*
++     * In case a PCI device is physical present, the Lantiq PCI driver need
++     * to be loaded prior to the Lantiq PCIe driver. Otherwise none of them
++     * will work.
++     *
++     * In case the lantiq PCI driver is enabled in the device tree, check if
++     * a PCI bus (hopefully the one of the Lantiq PCI driver one) is already
++     * registered.
++     *
++     * It will fail if there is another PCI controller, this controller is
++     * registered before the Lantiq PCIe driver is probe and the lantiq PCI
++     */
++    np = of_find_compatible_node(NULL, NULL, "lantiq,pci-xway");
++
++    if (of_device_is_available(np)) {
++        bus = pci_find_next_bus(bus);
++
++        if (!bus)
++	     return -EPROBE_DEFER;
++    }
++
+     /* Enable AHB Master/ Slave */
      pcie_ahb_pmu_setup();
  
      startup_port = IFX_PCIE_PORT0;
@@ -71,7 +96,7 @@
      for (pcie_port = startup_port; pcie_port < IFX_PCIE_CORE_NR; pcie_port++){
  	if (pcie_rc_initialize(pcie_port) == 0) {
  	    IFX_PCIE_PRINT(PCIE_MSG_INIT, "%s: ifx_pcie_cfg_base 0x%p\n", 
-@@ -1067,6 +1098,7 @@ static int __init ifx_pcie_bios_init(voi
+@@ -1067,6 +1122,7 @@ static int __init ifx_pcie_bios_init(voi
                  return -ENOMEM;
              }
              ifx_pcie_controller[pcie_port].pcic.io_map_base = (unsigned long)io_map_base;
@@ -79,7 +104,7 @@
  
              register_pci_controller(&ifx_pcie_controller[pcie_port].pcic);
              /* XXX, clear error status */
-@@ -1083,6 +1115,30 @@ static int __init ifx_pcie_bios_init(voi
+@@ -1083,6 +1139,30 @@ static int __init ifx_pcie_bios_init(voi
  
      return 0;
  }
