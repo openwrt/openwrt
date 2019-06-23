@@ -3166,7 +3166,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	err = dpni_enable(priv->mc_io, 0, priv->mc_token);
  	if (err < 0) {
  		netdev_err(net_dev, "dpni_enable() failed\n");
-@@ -1047,51 +1355,20 @@ static int dpaa2_eth_open(struct net_dev
+@@ -1047,48 +1355,17 @@ static int dpaa2_eth_open(struct net_dev
  
  link_state_err:
  enable_err:
@@ -3181,8 +3181,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 - */
 -static u32 drain_channel(struct dpaa2_eth_priv *priv,
 -			 struct dpaa2_eth_channel *ch)
-+static int dpaa2_eth_stop(struct net_device *net_dev)
- {
+-{
 -	u32 drained = 0, total = 0;
 -
 -	do {
@@ -3193,11 +3192,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -
 -	return total;
 -}
-+	struct dpaa2_eth_priv *priv = netdev_priv(net_dev);
-+	int dpni_enabled = 0;
-+	int retries = 10, i;
-+	int err = 0;
- 
+-
 -static u32 drain_ingress_frames(struct dpaa2_eth_priv *priv)
 -{
 -	struct dpaa2_eth_channel *ch;
@@ -3212,20 +3207,18 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -	return drained;
 -}
 -
--static int dpaa2_eth_stop(struct net_device *net_dev)
--{
--	struct dpaa2_eth_priv *priv = netdev_priv(net_dev);
+ static int dpaa2_eth_stop(struct net_device *net_dev)
+ {
+ 	struct dpaa2_eth_priv *priv = netdev_priv(net_dev);
 -	int dpni_enabled;
 -	int retries = 10;
 -	u32 drained;
--
--	netif_tx_stop_all_queues(net_dev);
--	netif_carrier_off(net_dev);
-+	netif_tx_stop_all_queues(net_dev);
-+	netif_carrier_off(net_dev);
++	int dpni_enabled = 0;
++	int retries = 10, i;
++	int err = 0;
  
- 	/* Loop while dpni_disable() attempts to drain the egress FQs
- 	 * and confirm them back to us.
+ 	netif_tx_stop_all_queues(net_dev);
+ 	netif_carrier_off(net_dev);
 @@ -1105,56 +1382,24 @@ static int dpaa2_eth_stop(struct net_dev
  	} while (dpni_enabled && --retries);
  	if (!retries) {
@@ -4496,7 +4489,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  		if (cls_cfg.num_extracts >= DPKG_MAX_NUM_OF_EXTRACTS) {
  			dev_err(dev, "error adding key extraction rule, too many rules?\n");
-@@ -2020,49 +2966,107 @@ static int dpaa2_eth_set_hash(struct net
+@@ -2020,12 +2966,10 @@ static int dpaa2_eth_set_hash(struct net
  		}
  
  		key->type = DPKG_EXTRACT_FROM_HDR;
@@ -4506,27 +4499,37 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -		key->extract.from_hdr.field = hash_fields[i].cls_field;
 +		key->extract.from_hdr.field = dist_fields[i].cls_field;
  		cls_cfg.num_extracts++;
-+	}
-+
-+	dma_mem = kzalloc(DPAA2_CLASSIFIER_DMA_SIZE, GFP_KERNEL);
-+	if (!dma_mem)
-+		return -ENOMEM;
-+
-+	err = dpni_prepare_key_cfg(&cls_cfg, dma_mem);
-+	if (err) {
-+		dev_err(dev, "dpni_prepare_key_cfg error %d\n", err);
+-
+-		priv->rx_hash_fields |= hash_fields[i].rxnfc_field;
+ 	}
+ 
+ 	dma_mem = kzalloc(DPAA2_CLASSIFIER_DMA_SIZE, GFP_KERNEL);
+@@ -2035,36 +2979,96 @@ static int dpaa2_eth_set_hash(struct net
+ 	err = dpni_prepare_key_cfg(&cls_cfg, dma_mem);
+ 	if (err) {
+ 		dev_err(dev, "dpni_prepare_key_cfg error %d\n", err);
+-		goto err_prep_key;
 +		goto free_key;
-+	}
-+
-+	/* Prepare for setting the rx dist */
+ 	}
+ 
+-	memset(&dist_cfg, 0, sizeof(dist_cfg));
+-
+ 	/* Prepare for setting the rx dist */
+-	dist_cfg.key_cfg_iova = dma_map_single(dev, dma_mem,
+-					       DPAA2_CLASSIFIER_DMA_SIZE,
+-					       DMA_TO_DEVICE);
+-	if (dma_mapping_error(dev, dist_cfg.key_cfg_iova)) {
 +	key_iova = dma_map_single(dev, dma_mem, DPAA2_CLASSIFIER_DMA_SIZE,
 +				  DMA_TO_DEVICE);
 +	if (dma_mapping_error(dev, key_iova)) {
-+		dev_err(dev, "DMA mapping failed\n");
-+		err = -ENOMEM;
+ 		dev_err(dev, "DMA mapping failed\n");
+ 		err = -ENOMEM;
+-		goto err_dma_map;
 +		goto free_key;
-+	}
-+
+ 	}
+ 
+-	dist_cfg.dist_size = dpaa2_eth_queue_count(priv);
+-	dist_cfg.dist_mode = DPNI_DIST_MODE_HASH;
 +	if (type == DPAA2_ETH_RX_DIST_HASH) {
 +		if (dpaa2_eth_has_legacy_dist(priv))
 +			err = config_legacy_hash_key(priv, key_iova);
@@ -4535,17 +4538,24 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +	} else {
 +		err = config_cls_key(priv, key_iova);
 +	}
-+
+ 
+-	err = dpni_set_rx_tc_dist(priv->mc_io, 0, priv->mc_token, 0, &dist_cfg);
+-	dma_unmap_single(dev, dist_cfg.key_cfg_iova,
+-			 DPAA2_CLASSIFIER_DMA_SIZE, DMA_TO_DEVICE);
+-	if (err)
+-		dev_err(dev, "dpni_set_rx_tc_dist() error %d\n", err);
 +	dma_unmap_single(dev, key_iova, DPAA2_CLASSIFIER_DMA_SIZE,
 +			 DMA_TO_DEVICE);
 +	if (!err && type == DPAA2_ETH_RX_DIST_HASH)
 +		priv->rx_hash_fields = rx_hash_fields;
-+
+ 
+-err_dma_map:
+-err_prep_key:
 +free_key:
-+	kfree(dma_mem);
-+	return err;
-+}
-+
+ 	kfree(dma_mem);
+ 	return err;
+ }
+ 
 +int dpaa2_eth_set_hash(struct net_device *net_dev, u64 flags)
 +{
 +	struct dpaa2_eth_priv *priv = netdev_priv(net_dev);
@@ -4571,70 +4581,43 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +{
 +	struct device *dev = priv->net_dev->dev.parent;
 +	int err;
- 
--		priv->rx_hash_fields |= hash_fields[i].rxnfc_field;
++
 +	/* Check if we actually support Rx flow classification */
 +	if (dpaa2_eth_has_legacy_dist(priv)) {
 +		dev_dbg(dev, "Rx cls not supported by current MC version\n");
 +		return -EOPNOTSUPP;
- 	}
- 
--	dma_mem = kzalloc(DPAA2_CLASSIFIER_DMA_SIZE, GFP_KERNEL);
--	if (!dma_mem)
--		return -ENOMEM;
--
--	err = dpni_prepare_key_cfg(&cls_cfg, dma_mem);
--	if (err) {
--		dev_err(dev, "dpni_prepare_key_cfg error %d\n", err);
--		goto err_prep_key;
++	}
++
 +	if (!dpaa2_eth_fs_enabled(priv)) {
 +		dev_dbg(dev, "Rx cls disabled in DPNI options\n");
 +		return -EOPNOTSUPP;
- 	}
- 
--	memset(&dist_cfg, 0, sizeof(dist_cfg));
--
--	/* Prepare for setting the rx dist */
--	dist_cfg.key_cfg_iova = dma_map_single(dev, dma_mem,
--					       DPAA2_CLASSIFIER_DMA_SIZE,
--					       DMA_TO_DEVICE);
--	if (dma_mapping_error(dev, dist_cfg.key_cfg_iova)) {
--		dev_err(dev, "DMA mapping failed\n");
--		err = -ENOMEM;
--		goto err_dma_map;
++	}
++
 +	if (!dpaa2_eth_hash_enabled(priv)) {
 +		dev_dbg(dev, "Rx cls disabled for single queue DPNIs\n");
 +		return -EOPNOTSUPP;
- 	}
- 
--	dist_cfg.dist_size = dpaa2_eth_queue_count(priv);
--	dist_cfg.dist_mode = DPNI_DIST_MODE_HASH;
++	}
++
 +	/* If there is no support for masking in the classification table,
 +	 * we don't set a default key, as it will depend on the rules
 +	 * added by the user at runtime.
 +	 */
 +	if (!dpaa2_eth_fs_mask_enabled(priv))
 +		goto out;
- 
--	err = dpni_set_rx_tc_dist(priv->mc_io, 0, priv->mc_token, 0, &dist_cfg);
--	dma_unmap_single(dev, dist_cfg.key_cfg_iova,
--			 DPAA2_CLASSIFIER_DMA_SIZE, DMA_TO_DEVICE);
++
 +	err = dpaa2_eth_set_cls(priv->net_dev, DPAA2_ETH_DIST_ALL);
- 	if (err)
--		dev_err(dev, "dpni_set_rx_tc_dist() error %d\n", err);
++	if (err)
 +		return err;
- 
--err_dma_map:
--err_prep_key:
--	kfree(dma_mem);
--	return err;
++
 +out:
 +	priv->rx_cls_enabled = 1;
 +
 +	return 0;
- }
- 
++}
++
  /* Bind the DPNI to its needed objects and resources: buffer pool, DPIOs,
+  * frame queues and channels
+  */
 @@ -2080,6 +3084,7 @@ static int bind_dpni(struct dpaa2_eth_pr
  	pools_params.num_dpbp = 1;
  	pools_params.pools[0].dpbp_id = priv->dpbp_dev->obj_desc.id;

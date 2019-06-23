@@ -1,4 +1,4 @@
-From 21d81d05787908b13a4079f42a63a5b3254b7ab4 Mon Sep 17 00:00:00 2001
+From e3777dd42dc6f1b9cb099836707a3e7971dcf4df Mon Sep 17 00:00:00 2001
 From: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 Date: Wed, 13 Mar 2019 20:54:49 +0000
 Subject: [PATCH] net: sched: Introduce act_ctinfo action
@@ -44,9 +44,9 @@ ok | goto chain <CHAIN_INDEX>
 
 Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 ---
- include/net/tc_act/tc_ctinfo.h        |  28 ++
+ include/net/tc_act/tc_ctinfo.h        |  33 +++
  include/uapi/linux/pkt_cls.h          |   3 +-
- include/uapi/linux/tc_act/tc_ctinfo.h |  34 +++
+ include/uapi/linux/tc_act/tc_ctinfo.h |  29 ++
  net/sched/Kconfig                     |  13 +
  net/sched/Makefile                    |   1 +
  net/sched/act_ctinfo.c                | 394 ++++++++++++++++++++++++++
@@ -57,10 +57,10 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 
 diff --git a/include/net/tc_act/tc_ctinfo.h b/include/net/tc_act/tc_ctinfo.h
 new file mode 100644
-index 000000000000..d6a688571672
+index 000000000000..f071c1d70a25
 --- /dev/null
 +++ b/include/net/tc_act/tc_ctinfo.h
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,33 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef __NET_TC_CTINFO_H
 +#define __NET_TC_CTINFO_H
@@ -86,6 +86,11 @@ index 000000000000..d6a688571672
 +	u64 stats_cpmark_set;
 +};
 +
++enum {
++	CTINFO_MODE_DSCP	= BIT(0),
++	CTINFO_MODE_CPMARK	= BIT(1)
++};
++
 +#define to_ctinfo(a) ((struct tcf_ctinfo *)a)
 +
 +#endif /* __NET_TC_CTINFO_H */
@@ -105,10 +110,10 @@ index 46c506615f4a..408b02fbb34a 100644
  #define TCA_ID_MAX __TCA_ID_MAX
 diff --git a/include/uapi/linux/tc_act/tc_ctinfo.h b/include/uapi/linux/tc_act/tc_ctinfo.h
 new file mode 100644
-index 000000000000..da803e05a89b
+index 000000000000..f5f26d95d0e7
 --- /dev/null
 +++ b/include/uapi/linux/tc_act/tc_ctinfo.h
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,29 @@
 +/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 +#ifndef __UAPI_TC_CTINFO_H
 +#define __UAPI_TC_CTINFO_H
@@ -136,11 +141,6 @@ index 000000000000..da803e05a89b
 +};
 +
 +#define TCA_CTINFO_MAX (__TCA_CTINFO_MAX - 1)
-+
-+enum {
-+	CTINFO_MODE_DSCP	= BIT(0),
-+	CTINFO_MODE_CPMARK	= BIT(1)
-+};
 +
 +#endif
 diff --git a/net/sched/Kconfig b/net/sched/Kconfig

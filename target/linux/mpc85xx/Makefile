@@ -14,8 +14,7 @@ FEATURES:=squashfs ramdisk
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 SUBTARGETS:=generic p1020 p2020
 
-KERNEL_PATCHVER:=4.14
-KERNEL_TESTING_PATCHVER := 4.19
+KERNEL_PATCHVER:=4.19
 
 KERNELNAME:=zImage
 

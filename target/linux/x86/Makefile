@@ -13,8 +13,7 @@ FEATURES:=squashfs ext4 vdi vmdk pcmcia targz fpu
 SUBTARGETS:=generic legacy geode 64
 MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
-KERNEL_PATCHVER:=4.14
-KERNEL_TESTING_PATCHVER:=4.19
+KERNEL_PATCHVER:=4.19
 
 KERNELNAME:=bzImage
 

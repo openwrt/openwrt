@@ -1,0 +1,21 @@
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Sun, 16 Jun 2019 23:41:20 +0200
+Subject: [PATCH] ARM: dts: gemini Fix up DNS-313 compatible
+
+It's a simple typo in the DNS file, which was pretty serious.
+No scripts were working properly. Fix it up.
+
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+
+--- a/arch/arm/boot/dts/gemini-dlink-dns-313.dts
++++ b/arch/arm/boot/dts/gemini-dlink-dns-313.dts
+@@ -11,7 +11,7 @@
+ 
+ / {
+ 	model = "D-Link DNS-313 1-Bay Network Storage Enclosure";
+-	compatible = "dlink,dir-313", "cortina,gemini";
++	compatible = "dlink,dns-313", "cortina,gemini";
+ 	#address-cells = <1>;
+ 	#size-cells = <1>;
+ 

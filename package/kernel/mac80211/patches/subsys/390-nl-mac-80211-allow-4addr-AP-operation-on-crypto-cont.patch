@@ -1,12 +1,12 @@
-From 3ad31f4efe9674a8bda057c79995a9468281e77f Mon Sep 17 00:00:00 2001
+From 33d915d9e8ce811d8958915ccd18d71a66c7c495 Mon Sep 17 00:00:00 2001
 From: Manikanta Pubbisetty <mpubbise@codeaurora.org>
-Date: Wed, 21 Nov 2018 16:33:48 +0530
+Date: Wed, 8 May 2019 14:55:33 +0530
 Subject: [PATCH] {nl,mac}80211: allow 4addr AP operation on crypto controlled
  devices
 
-As per the current design, for sw crypto controlled devices, it is
-the device which has to advertise the support for AP/VLAN iftype
-based on it's capability to tranmsit packets encrypted in software
+As per the current design, in the case of sw crypto controlled devices,
+it is the device which advertises the support for AP/VLAN iftype based
+on it's ability to tranmsit packets encrypted in software
 (In VLAN functionality, group traffic generated for a specific
 VLAN group is always encrypted in software). Commit db3bdcb9c3ff
 ("mac80211: allow AP_VLAN operation on crypto controlled devices")
@@ -16,25 +16,25 @@ Since 4addr AP operation also uses AP/VLAN iftype, this conditional
 way of advertising AP/VLAN support has broken 4addr AP mode operation on
 crypto controlled devices which do not support VLAN functionality.
 
-For example:
 In the case of ath10k driver, not all firmwares have support for VLAN
 functionality but all can support 4addr AP operation. Because AP/VLAN
 support is not advertised for these devices, 4addr AP operations are
 also blocked.
 
-Fix this by allowing 4addr opertion on devices which do not advertise
-AP/VLAN iftype but which can support 4addr operation (the desicion is
-taken based on the wiphy flag WIPHY_FLAG_4ADDR_AP).
+Fix this by allowing 4addr operation on devices which do not support
+AP/VLAN iftype but can support 4addr AP operation (decision is based on
+the wiphy flag WIPHY_FLAG_4ADDR_AP).
 
-Fixes: Commit db3bdcb9c3ff ("mac80211: allow AP_VLAN operation on
-crypto controlled devices")
+Cc: stable@vger.kernel.org
+Fixes: db3bdcb9c3ff ("mac80211: allow AP_VLAN operation on crypto controlled devices")
 Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 ---
- include/net/cfg80211.h |  3 ++-
- net/mac80211/util.c    |  4 +++-
- net/wireless/core.c    |  9 +++++++--
- net/wireless/nl80211.c | 10 ++++++++--
- 4 files changed, 20 insertions(+), 6 deletions(-)
+ include/net/cfg80211.h | 3 ++-
+ net/mac80211/util.c    | 4 +++-
+ net/wireless/core.c    | 6 +++++-
+ net/wireless/nl80211.c | 8 ++++++--
+ 4 files changed, 16 insertions(+), 5 deletions(-)
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
@@ -63,18 +63,16 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  		return 0;
 --- a/net/wireless/core.c
 +++ b/net/wireless/core.c
-@@ -1351,8 +1351,13 @@ static int cfg80211_netdev_notifier_call
+@@ -1351,8 +1351,12 @@ static int cfg80211_netdev_notifier_call
  		}
  		break;
  	case NETDEV_PRE_UP:
 -		if (!(wdev->wiphy->interface_modes & BIT(wdev->iftype)))
--			return notifier_from_errno(-EOPNOTSUPP);
-+		if (!(wdev->wiphy->interface_modes & BIT(wdev->iftype))) {
-+			if (!(wdev->iftype == NL80211_IFTYPE_AP_VLAN &&
-+			      rdev->wiphy.flags & WIPHY_FLAG_4ADDR_AP &&
-+			      wdev->use_4addr))
-+				return notifier_from_errno(-EOPNOTSUPP);
-+		}
++		if (!(wdev->wiphy->interface_modes & BIT(wdev->iftype)) &&
++		    !(wdev->iftype == NL80211_IFTYPE_AP_VLAN &&
++		      rdev->wiphy.flags & WIPHY_FLAG_4ADDR_AP &&
++		      wdev->use_4addr))
+ 			return notifier_from_errno(-EOPNOTSUPP);
 +
  		if (rfkill_blocked(rdev->rfkill))
  			return notifier_from_errno(-ERFKILL);
@@ -91,16 +89,14 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  		return -EOPNOTSUPP;
  
  	if ((type == NL80211_IFTYPE_P2P_DEVICE || type == NL80211_IFTYPE_NAN ||
-@@ -3214,6 +3213,13 @@ static int nl80211_new_interface(struct
+@@ -3214,6 +3213,11 @@ static int nl80211_new_interface(struct
  			return err;
  	}
  
-+	if (!(rdev->wiphy.interface_modes & (1 << type))) {
-+		if (!(type == NL80211_IFTYPE_AP_VLAN &&
-+		      rdev->wiphy.flags & WIPHY_FLAG_4ADDR_AP &&
-+		      params.use_4addr))
-+			return -EOPNOTSUPP;
-+	}
++	if (!(rdev->wiphy.interface_modes & (1 << type)) &&
++	    !(type == NL80211_IFTYPE_AP_VLAN && params.use_4addr &&
++	      rdev->wiphy.flags & WIPHY_FLAG_4ADDR_AP))
++		return -EOPNOTSUPP;
 +
  	err = nl80211_parse_mon_options(rdev, type, info, &params);
  	if (err < 0)
