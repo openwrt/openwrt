@@ -18,7 +18,7 @@ $(eval $(call KernelPackage,ata-ahci-mtk))
 define KernelPackage/sdhci-mtk
   SUBMENU:=Other modules
   TITLE:=Mediatek SDHCI driver
-  DEPENDS:=@TARGET_mediatek_mt7622 +kmod-sdhci
+  DEPENDS:=@(TARGET_mediatek_mt7622||TARGET_ramips_mt7620||TARGET_ramips_mt7621) +kmod-sdhci
   KCONFIG:=CONFIG_MMC_MTK 
   FILES:= \
 	$(LINUX_DIR)/drivers/mmc/host/mtk-sd.ko

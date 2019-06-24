@@ -29,7 +29,7 @@ $(eval $(call KernelPackage,pwm-mediatek-ramips))
 define KernelPackage/sdhci-mt7620
   SUBMENU:=Other modules
   TITLE:=MT7620 SDCI
-  DEPENDS:=@(TARGET_ramips_mt7620||TARGET_ramips_mt76x8||TARGET_ramips_mt7621) +kmod-mmc
+  DEPENDS:=@TARGET_ramips_mt76x8 +kmod-mmc
   KCONFIG:= \
 	CONFIG_MTK_MMC \
 	CONFIG_MTK_AEE_KDUMP=n \
