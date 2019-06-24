@@ -3,6 +3,10 @@
 / {
 	compatible = "vocore,vocore2", "mediatek,mt7628an-soc";
 
+	aliases {
+		label-mac-device = &wmac;
+	};
+
 	chosen {
 		bootargs = "console=ttyS2,115200";
 	};

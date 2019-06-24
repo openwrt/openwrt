@@ -4,6 +4,10 @@
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
+
+	aliases {
+		label-mac-device = &ethernet;
+	};
 };
 
 &spi0 {
