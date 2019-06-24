@@ -9,6 +9,10 @@
 	compatible = "zbtlink,zbt-we1326", "mediatek,mt7621-soc";
 	model = "ZBT-WE1326";
 
+	aliases {
+		label-mac-device = &wifi1;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -83,7 +87,7 @@
 };
 
 &pcie0 {
-	mt76@0,0 {
+	wifi0: mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x8000>;
 		ieee80211-freq-limit = <5000000 6000000>;
@@ -91,7 +95,7 @@
 };
 
 &pcie1 {
-	mt76@0,0 {
+	wifi1: mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x0000>;
 		ieee80211-freq-limit = <2400000 2500000>;

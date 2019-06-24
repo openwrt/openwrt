@@ -14,6 +14,7 @@
 		led-failsafe = &led_power_green;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
+		label-mac-device = &wifi1;
 	};
 
 	chosen {
@@ -119,7 +120,7 @@
 };
 
 &pcie0 {
-	mt76@0,0 {
+	wifi0: mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&radio 0x2000>;
 		ieee80211-freq-limit = <5000000 6000000>;
@@ -127,7 +128,7 @@
 };
 
 &pcie1 {
-	mt76@0,0 {
+	wifi1: mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&radio 0>;
 		ieee80211-freq-limit = <2400000 2500000>;

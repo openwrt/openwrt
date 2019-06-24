@@ -6,6 +6,10 @@
 / {
 	compatible = "ubiquiti,edgerouterx", "mediatek,mt7621-soc";
 
+	aliases {
+		label-mac-device = &ethernet;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,57600";
 	};

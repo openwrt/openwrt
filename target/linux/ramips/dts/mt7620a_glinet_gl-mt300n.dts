@@ -9,6 +9,10 @@
 	compatible = "glinet,gl-mt300n", "ralink,mt7620a-soc";
 	model = "GL-MT300N";
 
+	aliases {
+		label-mac-device = &wmac;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
