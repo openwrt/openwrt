@@ -39,6 +39,9 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan:5" "6@eth0"
 		;;
+	asiarf,ap7621-001)
+		ucidef_add_switch "switch0" "0:lan" "4:wan" "6@eth0"
+		;;
 	3g150b|\
 	3g300m|\
 	a5-v11|\
