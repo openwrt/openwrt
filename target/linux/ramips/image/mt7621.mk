@@ -291,6 +291,7 @@ define Device/elecom_wrc-1900gst
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elecom-gst-factory WRC-1900GST 0.00
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
 endef
 TARGET_DEVICES += elecom_wrc-1900gst
 
@@ -302,6 +303,7 @@ define Device/elecom_wrc-2533gst
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elecom-gst-factory WRC-2533GST 0.00
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
 endef
 TARGET_DEVICES += elecom_wrc-2533gst
 
