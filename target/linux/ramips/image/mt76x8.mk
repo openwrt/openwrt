@@ -57,6 +57,13 @@ define Device/gl-mt300n-v3
 endef
 TARGET_DEVICES += gl-mt300n-v3
 
+define Device/gl-mt300n-v4
+  DTS := GL-MT300N-V4
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := GL-iNet GL-MT300N-V4
+endef
+TARGET_DEVICES += gl-mt300n-v4
+
 define Device/hc5661a
   DTS := HC5661A
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
