@@ -235,6 +235,15 @@ define Device/k2p
 endef
 TARGET_DEVICES += k2p
 
+define Device/totolink_a7000r
+  DTS := TOTOLINK-A7000R
+  IMAGE_SIZE := 16064k
+  UIMAGE_NAME := C8340R1C-9999
+  DEVICE_TITLE := TOTOLINK A7000R
+  DEVICE_PACKAGES := kmod-mt7615e wpad-basic
+endef
+TARGET_DEVICES += totolink_a7000r
+
 define Device/xiaomi_mir3p
   DTS := MIR3P
   BLOCKSIZE := 128k
