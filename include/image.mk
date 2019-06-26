@@ -185,8 +185,10 @@ define Image/pad-to
 	mv $(1).new $(1)
 endef
 
+ROOTFS_PARTSIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024*1024)))
+
 define Image/pad-root-squashfs
-	$(call Image/pad-to,$(KDIR)/root.squashfs,$(if $(1),$(1),$(CONFIG_TARGET_ROOTFS_PARTSIZE)M))
+	$(call Image/pad-to,$(KDIR)/root.squashfs,$(if $(1),$(1),$(ROOTFS_PARTSIZE)))
 endef
 
 # $(1) source dts file
@@ -284,11 +286,9 @@ define Image/mkfs/ubifs
 		-o $@ -d $(call mkfs_target_dir,$(1))
 endef
 
-E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024*1024)))
-
 define Image/mkfs/ext4
 	$(STAGING_DIR_HOST)/bin/make_ext4fs \
-		-l $(E2SIZE) -b $(CONFIG_TARGET_EXT4_BLOCKSIZE) \
+		-l $(ROOTFS_PARTSIZE) -b $(CONFIG_TARGET_EXT4_BLOCKSIZE) \
 		$(if $(CONFIG_TARGET_EXT4_RESERVED_PCT),-m $(CONFIG_TARGET_EXT4_RESERVED_PCT)) \
 		$(if $(CONFIG_TARGET_EXT4_JOURNAL),,-J) \
 		$(if $(SOURCE_DATE_EPOCH),-T $(SOURCE_DATE_EPOCH)) \
