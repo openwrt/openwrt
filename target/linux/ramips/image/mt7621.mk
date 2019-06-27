@@ -172,6 +172,7 @@ define Device/elecom_wrc-1167ghbk2-s
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) |\
     elecom-wrc-factory WRC-1167GHBK2-S 0.00
+  DEVICE_PACKAGES := kmod-mt7615e wpad-basic
 endef
 TARGET_DEVICES += elecom_wrc-1167ghbk2-s
 
