@@ -8,6 +8,10 @@ eval env -S \
 	CXXFLAGS=`printf '%q ' "$(make -s TOPDIR="${TOPDIR}" -f "${TOPDIR}/rules.mk" val.TARGET_CXXFLAGS)"` \
 	LDFLAGS=`printf '%q ' "$(make -s TOPDIR="${TOPDIR}" -f "${TOPDIR}/rules.mk" val.TARGET_LDFLAGS)"` \
 	STAGING_DIR=`printf '%q ' "$(make -s TOPDIR="${TOPDIR}" -f "${TOPDIR}/rules.mk" val.STAGING_DIR)"` \
-	`[ $# -gt 0 ] && printf '%q ' "${@}"`
+	DESTDIR=`printf '%q ' "$(make -s TOPDIR="${TOPDIR}" -f "${TOPDIR}/rules.mk" val.STAGING_DIR)"` \
+	CMAKE_PREFIX_PATH=`printf '%q ' "$(make -s TOPDIR="${TOPDIR}" -f "${TOPDIR}/rules.mk" val.STAGING_DIR)/usr"` \
+	host_alias=`printf '%q ' "$(make -s TOPDIR="${TOPDIR}" -f "${TOPDIR}/rules.mk" val.GNU_TARGET_NAME)"` \
+	PROMPT_COMMAND=\"echo -en \\\\\\e[1\\\;34m`printf '%q ' "$(make -s TOPDIR="${TOPDIR}" -f "${TOPDIR}/rules.mk" val.GNU_TARGET_NAME)"` \\\\\\e[0\\\;39m\" \
+	`printf '%q ' "${@-$SHELL}"`
 
 #
