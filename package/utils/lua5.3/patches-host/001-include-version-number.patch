@@ -34,6 +34,15 @@ diff --git a/Makefile b/Makefile
  
  # Lua version and release.
  V= 5.3
+@@ -52,7 +52,7 @@ R= $V.4
+ all:	$(PLAT)
+ 
+ $(PLATS) clean:
+-	cd src && $(MAKE) $@
++	cd src && $(MAKE) $@ V=$V
+ 
+ test:	dummy
+ 	src/lua -v
 diff --git a/doc/lua.1 b/doc/lua5.3.1
 rename from doc/lua.1
 rename to doc/lua5.3.1
