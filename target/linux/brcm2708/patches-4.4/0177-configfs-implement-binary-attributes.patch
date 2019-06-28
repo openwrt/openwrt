@@ -164,7 +164,7 @@ Signed-off-by: Christoph Hellwig <hch@lst.de>
  	struct config_item * item = NULL;
 --- a/fs/configfs/dir.c
 +++ b/fs/configfs/dir.c
-@@ -255,6 +255,12 @@ static void configfs_init_file(struct in
+@@ -253,6 +253,12 @@ static void configfs_init_file(struct in
  	inode->i_fop = &configfs_file_operations;
  }
  
@@ -177,7 +177,7 @@ Signed-off-by: Christoph Hellwig <hch@lst.de>
  static void init_symlink(struct inode * inode)
  {
  	inode->i_op = &configfs_symlink_inode_operations;
-@@ -423,7 +429,9 @@ static int configfs_attach_attr(struct c
+@@ -421,7 +427,9 @@ static int configfs_attach_attr(struct c
  	spin_unlock(&configfs_dirent_lock);
  
  	error = configfs_create(dentry, (attr->ca_mode & S_IALLUGO) | S_IFREG,
@@ -188,7 +188,7 @@ Signed-off-by: Christoph Hellwig <hch@lst.de>
  	if (error) {
  		configfs_put(sd);
  		return error;
-@@ -583,6 +591,7 @@ static int populate_attrs(struct config_
+@@ -581,6 +589,7 @@ static int populate_attrs(struct config_
  {
  	struct config_item_type *t = item->ci_type;
  	struct configfs_attribute *attr;
@@ -196,7 +196,7 @@ Signed-off-by: Christoph Hellwig <hch@lst.de>
  	int error = 0;
  	int i;
  
-@@ -594,6 +603,13 @@ static int populate_attrs(struct config_
+@@ -592,6 +601,13 @@ static int populate_attrs(struct config_
  				break;
  		}
  	}
