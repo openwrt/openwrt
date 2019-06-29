@@ -1,0 +1,196 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "xwrt,g4303k-v1", "mediatek,mt7628an-soc";
+	model = "XWRT G4303K v1";
+
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
+	aliases {
+		led-boot = &led_WPS;
+		led-failsafe = &led_WPS;
+		led-running = &led_WPS;
+		led-upgrade = &led_WPS;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_RJ45 {
+			label = "green:led_RJ45";
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>; //40
+		};
+
+		led_WIFI {
+			label = "green:led_WIFI";
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>; //44
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led_WPS: led_WPS {
+			label = "green:led_WPS";
+			gpios = <&gpio 41 GPIO_ACTIVE_LOW>; //41
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		4g_en {
+			gpio-export,name = "4g_en";
+			gpio-export,output = <1>;
+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		ec20_switch {
+			gpio-export,name = "ec20_switch";
+			gpio-export,output = <1>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		ec20_reset {
+			gpio-export,name = "ec20_reset";
+			gpio-export,output = <1>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		ec20_usb_boot {
+			gpio-export,name = "ec20_usb_boot";
+			gpio-export,output = <1>;
+			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		4g_vcc1 {
+			gpio-export,name = "4g_vcc1";
+			gpio-export,output = <1>;
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>; //37
+		};
+
+		4g_vcc2 {
+			gpio-export,name = "4g_vcc2";
+			gpio-export,output = <1>;
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>; //39
+		};
+
+		led_clk {
+			gpio-export,name = "led_clk";
+			gpio-export,output = <1>;
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>; //42
+		};
+
+		led_b {
+			gpio-export,name = "led_b";
+			gpio-export,output = <1>;
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>; //43
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0xfb0000>;
+			};
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};
+
+&state_default {
+	gpio {
+		groups = "gpio", "i2c", "i2s", "p0led_an", "p1led_an", "p2led_an", "p3led_an", "p4led_an", "refclk", "wled_an";
+		function = "gpio";
+	};
+};
+
+&ethernet {
+	mediatek,portmap = "llllw";
+	mtd-mac-address = <&factory 0x4>;
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+	mediatek,mtd-eeprom = <&factory 0x0>;
+};
+
+&wmac {
+	status = "okay";
+	mtd-mac-address = <&factory 0x28>;
+	nvmem-cells = <&macaddr_factory_28>;
+	nvmem-cell-names = "mac-address";
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_4: macaddr@4 {
+		reg = <0x4 0x6>;
+	};
+
+	macaddr_factory_28: macaddr@28 {
+		reg = <0x28 0x6>;
+	};
+};

@@ -1023,6 +1023,17 @@ define Device/xiaomi_mi-ra75
 endef
 TARGET_DEVICES += xiaomi_mi-ra75
 
+define Device/xwrt_g4303k-v1
+  SOC := mt7628an
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := G4303K
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport led-ctrl-xwrt-g4303k-v1
+  SUPPORTED_DEVICES += g4303k-v1
+endef
+TARGET_DEVICES += xwrt_g4303k-v1
+
 define Device/zbtlink_zbt-we1226
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Zbtlink

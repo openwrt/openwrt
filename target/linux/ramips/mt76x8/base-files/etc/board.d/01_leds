@@ -157,6 +157,10 @@ xiaomi,mi-router-4a-100m-intl)
 xiaomi,mi-router-4c)
 	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x02"
 	;;
+xwrt,g4303k-v1)
+	ucidef_set_led_switch "led_RJ45"  "led_RJ45"  "green:led_RJ45"  "switch0" "0x1e"
+	ucidef_set_led_wlan "led_WIFI" "led_WIFI" "green:led_WIFI" "phy0tpt"
+	;;
 zbtlink,zbt-we1226)
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:wlan" "wlan0"
 	ucidef_set_led_switch "lan1" "LAN1" "green:lan1" "switch0" "0x01"
