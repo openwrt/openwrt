@@ -43,7 +43,6 @@ endef
 define Package/lua5.3
 $(call Package/lua5.3/Default)
   TITLE+= (interpreter)
-  PROVIDES:=lua
 endef
 
 define Package/lua5.3/description
@@ -54,7 +53,6 @@ endef
 define Package/luac5.3
 $(call Package/lua5.3/Default)
   TITLE+= (compiler)
-  PROVIDES:=luac
 endef
 
 define Package/luac5.3/description
