@@ -51,15 +51,11 @@ config WPA_WOLFSSL
 	        PACKAGE_wpad-wolfssl ||\
 	        PACKAGE_wpad-mesh-wolfssl ||\
 	        PACKAGE_eapol-test-wolfssl
-	select PACKAGE_libwolfssl
 	select WOLFSSL_HAS_AES_CCM
 	select WOLFSSL_HAS_AES_GCM
 	select WOLFSSL_HAS_ARC4
-	select WOLFSSL_HAS_DES3
 	select WOLFSSL_HAS_DH
-	select WOLFSSL_HAS_ECC
 	select WOLFSSL_HAS_OCSP
-	select WOLFSSL_HAS_PSK
 	select WOLFSSL_HAS_SESSION_TICKET
 	select WOLFSSL_HAS_WPAS
 
