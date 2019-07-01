@@ -1,0 +1,12 @@
+diff -Nru a/configure b/configure
+--- a/configure	2019-07-01 10:35:39.142807973 +0200
++++ b/configure	2019-07-01 10:46:40.518832990 +0200
+@@ -307,7 +307,7 @@
+ 
+ check_cap()
+ {
+-	if ${PKG_CONFIG} libcap --exists; then
++	if [ "${HAVE_CAP}" = "y" ] && ${PKG_CONFIG} libcap --exists; then
+ 		echo "HAVE_CAP:=y" >>$CONFIG
+ 		echo "yes"
+ 
