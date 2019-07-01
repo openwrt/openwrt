@@ -73,8 +73,6 @@ Reviewed-by: Toke Høiland-Jørgensen <toke@redhat.com>
  create mode 100644 man/man8/tc-ctinfo.8
  create mode 100644 tc/m_ctinfo.c
 
-diff --git a/include/uapi/linux/pkt_cls.h b/include/uapi/linux/pkt_cls.h
-index 95d0db2a..a6e7e176 100644
 --- a/include/uapi/linux/pkt_cls.h
 +++ b/include/uapi/linux/pkt_cls.h
 @@ -105,6 +105,7 @@ enum tca_id {
@@ -85,9 +83,6 @@ index 95d0db2a..a6e7e176 100644
  	__TCA_ID_MAX = 255
  };
  
-diff --git a/include/uapi/linux/tc_act/tc_ctinfo.h b/include/uapi/linux/tc_act/tc_ctinfo.h
-new file mode 100644
-index 00000000..f5f26d95
 --- /dev/null
 +++ b/include/uapi/linux/tc_act/tc_ctinfo.h
 @@ -0,0 +1,29 @@
@@ -120,9 +115,6 @@ index 00000000..f5f26d95
 +#define TCA_CTINFO_MAX (__TCA_CTINFO_MAX - 1)
 +
 +#endif
-diff --git a/man/man8/tc-ctinfo.8 b/man/man8/tc-ctinfo.8
-new file mode 100644
-index 00000000..096590d1
 --- /dev/null
 +++ b/man/man8/tc-ctinfo.8
 @@ -0,0 +1,170 @@
@@ -296,8 +288,6 @@ index 00000000..096590d1
 +.BR tc-mirred (8)
 +.SH AUTHORS
 +ctinfo was written by Kevin Darbyshire-Bryant.
-diff --git a/tc/Makefile b/tc/Makefile
-index 2edaf2c8..ec93a9a1 100644
 --- a/tc/Makefile
 +++ b/tc/Makefile
 @@ -48,6 +48,7 @@ TCMODULES += m_csum.o
@@ -308,9 +298,6 @@ index 2edaf2c8..ec93a9a1 100644
  TCMODULES += m_bpf.o
  TCMODULES += m_tunnel_key.o
  TCMODULES += m_sample.o
-diff --git a/tc/m_ctinfo.c b/tc/m_ctinfo.c
-new file mode 100644
-index 00000000..5e451f87
 --- /dev/null
 +++ b/tc/m_ctinfo.c
 @@ -0,0 +1,268 @@
@@ -582,6 +569,3 @@ index 00000000..5e451f87
 +	.parse_aopt = parse_ctinfo,
 +	.print_aopt = print_ctinfo,
 +};
--- 
-2.20.1 (Apple Git-117)
-
