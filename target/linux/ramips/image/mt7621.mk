@@ -235,6 +235,14 @@ define Device/k2p
 endef
 TARGET_DEVICES += k2p
 
+define Device/phicomm_ke2p
+  DTS := KE2P
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Phicomm KE 2P
+  DEVICE_PACKAGES := iwinfo kmod-mt7615e wpad-basic
+endef
+TARGET_DEVICES += phicomm_ke2p
+
 define Device/totolink_a7000r
   DTS := TOTOLINK-A7000R
   IMAGE_SIZE := 16064k
