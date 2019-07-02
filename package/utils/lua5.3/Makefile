@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lua
 PKG_VERSION:=5.3.5
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
@@ -40,8 +40,23 @@ define Package/lua5.3/Default/description
   programming, data-driven programming, and data description.
 endef
 
+define Package/liblua5.3
+$(call Package/lua53/Default)
+  SUBMENU:=
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE+= (libraries)
+  ABI_VERSION:=5.3
+endef
+
+define Package/liblua5.3/description
+$(call Package/lua53/Default/description)
+ This package contains the Lua shared libraries, needed by other programs.
+endef
+
 define Package/lua5.3
 $(call Package/lua5.3/Default)
+  DEPENDS:=+liblua5.3
   TITLE+= (interpreter)
 endef
 
@@ -52,6 +67,7 @@ endef
 
 define Package/luac5.3
 $(call Package/lua5.3/Default)
+  DEPENDS:=+liblua5.3
   TITLE+= (compiler)
 endef
 
@@ -108,7 +124,14 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/lua5.3 $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/lua5.3/lua{,lib,conf}.h $(1)/usr/include/lua5.3/
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/lua5.3/lauxlib.h $(1)/usr/include/lua5.3/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblua5.3.a $(1)/usr/lib/
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblua5.3.{a,so*} $(1)/usr/lib/
+	$(LN) liblua5.3.so.0.0.0 $(1)/usr/lib/liblualib5.3.so
+endef
+
+define Package/liblua5.3/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblua5.3.so* $(1)/usr/lib/
 endef
 
 define Package/lua5.3/install
@@ -121,6 +144,7 @@ define Package/luac5.3/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/luac5.3 $(1)/usr/bin/
 endef
 
+$(eval $(call BuildPackage,liblua5.3))
 $(eval $(call BuildPackage,lua5.3))
 $(eval $(call BuildPackage,luac5.3))
 $(eval $(call HostBuild))
