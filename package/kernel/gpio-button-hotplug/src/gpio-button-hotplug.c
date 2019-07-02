@@ -35,10 +35,6 @@
 #define DRV_NAME	"gpio-keys"
 #define PFX	DRV_NAME ": "
 
-struct bh_priv {
-	unsigned long		seen;
-};
-
 struct bh_event {
 	const char		*name;
 	unsigned int		type;
@@ -56,7 +52,8 @@ struct bh_map {
 
 struct gpio_keys_button_data {
 	struct delayed_work work;
-	struct bh_priv bh;
+	unsigned long seen;
+	int map_entry;
 	int last_state;
 	int count;
 	int threshold;
@@ -238,39 +235,6 @@ static int button_get_index(unsigned int code)
 	return -1;
 }
 
-static void button_hotplug_event(struct gpio_keys_button_data *data,
-			   unsigned int type, int value)
-{
-	struct bh_priv *priv = &data->bh;
-	unsigned long seen = jiffies;
-	int btn;
-
-	pr_debug(PFX "event type=%u, code=%u, value=%d\n", type, data->b->code, value);
-
-	if ((type != EV_KEY) && (type != EV_SW))
-		return;
-
-	btn = button_get_index(data->b->code);
-	if (btn < 0)
-		return;
-
-	if (priv->seen == 0)
-		priv->seen = seen;
-
-	button_hotplug_create_event(button_map[btn].name, type,
-			(seen - priv->seen) / HZ, value);
-	priv->seen = seen;
-}
-
-struct gpio_keys_button_dev {
-	int polled;
-	struct delayed_work work;
-
-	struct device *dev;
-	struct gpio_keys_platform_data *pdata;
-	struct gpio_keys_button_data data[0];
-};
-
 static int gpio_button_get_value(struct gpio_keys_button_data *bdata)
 {
 	int val;
@@ -283,26 +247,60 @@ static int gpio_button_get_value(struct gpio_keys_button_data *bdata)
 	return val ^ bdata->b->active_low;
 }
 
-static void gpio_keys_polled_check_state(struct gpio_keys_button_data *bdata)
+static void gpio_keys_handle_button(struct gpio_keys_button_data *bdata)
 {
+	unsigned int type = bdata->b->type ?: EV_KEY;
 	int state = gpio_button_get_value(bdata);
+	unsigned long seen = jiffies;
 
-	if (state != bdata->last_state) {
-		unsigned int type = bdata->b->type ?: EV_KEY;
+	pr_debug(PFX "event type=%u, code=%u, pressed=%d\n",
+		 type, bdata->b->code, state);
 
-		if (bdata->count < bdata->threshold) {
-			bdata->count++;
-			return;
-		}
-
-		if (bdata->last_state != -1 || type == EV_SW)
-			button_hotplug_event(bdata, type, state);
-
-		bdata->last_state = state;
+	/* is this the initialization state? */
+	if (bdata->last_state == -1) {
+		/*
+		 * Don't advertise unpressed buttons on initialization.
+		 * Just save their state and continue otherwise this
+		 * can cause OpenWrt to enter failsafe.
+		 */
+		if (type == EV_KEY && state == 0)
+			goto set_state;
+		/*
+		 * But we are very interested in pressed buttons and
+		 * initial switch state. These will be reported to
+		 * userland.
+		 */
+	} else if (bdata->last_state == state) {
+		/* reset asserted counter (only relevant for polled keys) */
+		bdata->count = 0;
+		return;
 	}
 
+	if (bdata->count < bdata->threshold) {
+		bdata->count++;
+		return;
+	}
+
+	if (bdata->seen == 0)
+		bdata->seen = seen;
+
+	button_hotplug_create_event(button_map[bdata->map_entry].name, type,
+				    (seen - bdata->seen) / HZ, state);
+	bdata->seen = seen;
+
+set_state:
+	bdata->last_state = state;
 	bdata->count = 0;
 }
+
+struct gpio_keys_button_dev {
+	int polled;
+	struct delayed_work work;
+
+	struct device *dev;
+	struct gpio_keys_platform_data *pdata;
+	struct gpio_keys_button_data data[0];
+};
 
 static void gpio_keys_polled_queue_work(struct gpio_keys_button_dev *bdev)
 {
@@ -322,7 +320,9 @@ static void gpio_keys_polled_poll(struct work_struct *work)
 
 	for (i = 0; i < bdev->pdata->nbuttons; i++) {
 		struct gpio_keys_button_data *bdata = &bdev->data[i];
-		gpio_keys_polled_check_state(bdata);
+
+		if (bdata->gpiod)
+			gpio_keys_handle_button(bdata);
 	}
 	gpio_keys_polled_queue_work(bdev);
 }
@@ -342,8 +342,7 @@ static void gpio_keys_irq_work_func(struct work_struct *work)
 	struct gpio_keys_button_data *bdata = container_of(work,
 		struct gpio_keys_button_data, work.work);
 
-	button_hotplug_event(bdata, bdata->b->type ?: EV_KEY,
-			     gpio_button_get_value(bdata));
+	gpio_keys_handle_button(bdata);
 }
 
 static irqreturn_t button_handle_irq(int irq, void *_bdata)
@@ -351,8 +350,8 @@ static irqreturn_t button_handle_irq(int irq, void *_bdata)
 	struct gpio_keys_button_data *bdata =
 		(struct gpio_keys_button_data *) _bdata;
 
-	schedule_delayed_work(&bdata->work,
-			      msecs_to_jiffies(bdata->software_debounce));
+	mod_delayed_work(system_wq, &bdata->work,
+			 msecs_to_jiffies(bdata->software_debounce));
 
 	return IRQ_HANDLED;
 }
@@ -413,7 +412,7 @@ gpio_keys_get_devtree_pdata(struct device *dev)
 				return ERR_PTR(error);
 			}
 		} else {
-			button->active_low = flags & OF_GPIO_ACTIVE_LOW;
+			button->active_low = !!(flags & OF_GPIO_ACTIVE_LOW);
 		}
 
 		if (of_property_read_u32(pp, "linux,code", &button->code)) {
@@ -520,6 +519,19 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 			return -EINVAL;
 		}
 
+		bdata->map_entry = button_get_index(button->code);
+		if (bdata->map_entry < 0) {
+			dev_warn(dev, DRV_NAME "does not support key code:%u\n",
+				button->code);
+			continue;
+		}
+
+		if (!(button->type == 0 || button->type == EV_KEY ||
+		      button->type == EV_SW)) {
+			dev_warn(dev, DRV_NAME "only supports buttons or switches\n");
+			continue;
+		}
+
 		error = devm_gpio_request(dev, gpio,
 				     button->desc ? button->desc : DRV_NAME);
 		if (error) {
@@ -540,13 +552,13 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 		}
 
 		bdata->can_sleep = gpio_cansleep(gpio);
-		bdata->last_state = -1;
+		bdata->last_state = -1; /* Unknown state on boot */
 
 		if (bdev->polled) {
 			bdata->threshold = DIV_ROUND_UP(button->debounce_interval,
 							pdata->poll_interval);
 		} else {
-			bdata->threshold = 1;
+			/* bdata->threshold = 0; already initialized */
 
 			if (button->debounce_interval) {
 				error = gpiod_set_debounce(bdata->gpiod,
@@ -592,6 +604,11 @@ static int gpio_keys_probe(struct platform_device *pdev)
 		struct gpio_keys_button_data *bdata = &bdev->data[i];
 		unsigned long irqflags = IRQF_ONESHOT;
 
+		INIT_DELAYED_WORK(&bdata->work, gpio_keys_irq_work_func);
+
+		if (!bdata->gpiod)
+			continue;
+
 		if (!button->irq) {
 			bdata->irq = gpio_to_irq(button->gpio);
 
@@ -606,7 +623,8 @@ static int gpio_keys_probe(struct platform_device *pdev)
 			bdata->irq = button->irq;
 		}
 
-		INIT_DELAYED_WORK(&bdata->work, gpio_keys_irq_work_func);
+		schedule_delayed_work(&bdata->work,
+				      msecs_to_jiffies(bdata->software_debounce));
 
 		ret = devm_request_threaded_irq(&pdev->dev,
 			bdata->irq, NULL, button_handle_irq,
@@ -621,9 +639,6 @@ static int gpio_keys_probe(struct platform_device *pdev)
 			dev_dbg(&pdev->dev, "gpio:%d has irq:%d\n",
 				button->gpio, bdata->irq);
 		}
-
-		if (bdata->b->type == EV_SW)
-			button_hotplug_event(bdata, EV_SW, gpio_button_get_value(bdata));
 	}
 
 	return 0;
@@ -634,7 +649,6 @@ static int gpio_keys_polled_probe(struct platform_device *pdev)
 	struct gpio_keys_platform_data *pdata;
 	struct gpio_keys_button_dev *bdev;
 	int ret;
-	int i;
 
 	ret = gpio_keys_button_probe(pdev, &bdev, 1);
 
@@ -647,9 +661,6 @@ static int gpio_keys_polled_probe(struct platform_device *pdev)
 
 	if (pdata->enable)
 		pdata->enable(bdev->dev);
-
-	for (i = 0; i < pdata->nbuttons; i++)
-		gpio_keys_polled_check_state(&bdev->data[i]);
 
 	gpio_keys_polled_queue_work(bdev);
 
