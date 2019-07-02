@@ -280,15 +280,6 @@ nand_upgrade_tar() {
 
 # Recognize type of passed file and start the upgrade process
 nand_do_upgrade() {
-	if [ -n "$IS_PRE_UPGRADE" ]; then
-		# Previously, nand_do_upgrade was called from the platform_pre_upgrade
-		# hook; this piece of code handles scripts that haven't been
-		# updated. All scripts should gradually move to call nand_do_upgrade
-		# from platform_do_upgrade instead.
-		export do_upgrade="nand_do_upgrade '$1'"
-		return
-	fi
-
 	local file_type=$(identify $1)
 
 	if type 'platform_nand_pre_upgrade' >/dev/null 2>/dev/null; then
