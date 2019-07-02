@@ -1,5 +1,6 @@
 #!/bin/sh
 
+. /lib/functions/leds.sh
 . /lib/functions/uci-defaults.sh
 
 set_wifi_led() {
@@ -11,6 +12,9 @@ board=$(board_name)
 boardname="${board##*,}"
 
 board_config_update
+
+led_wlan="$(get_dt_led wlan)"
+[ -n "$led_wlan" ] && ucidef_set_led_wlan "wifi_led" "wifi" "$led_wlan" "phy0tpt"
 
 case $board in
 3g-6200n|\
