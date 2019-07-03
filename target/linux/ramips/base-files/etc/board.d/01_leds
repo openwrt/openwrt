@@ -18,7 +18,7 @@ led_wlan="$(get_dt_led wlan)"
 
 case $board in
 3g-6200n|\
-br-6475nd|\
+edimax,br-6475nd|\
 mzk-w300nh2)
 	set_wifi_led "$boardname:amber:wlan"
 	;;
@@ -59,8 +59,8 @@ all0256n-8M)
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "all0256n:green:rssihigh" "wlan0" "70" "100" "-69" "8"
 	set_wifi_led "rt2800pci-phy0::radio"
 	;;
-ar670w|\
-ar725w|\
+airlink101,ar670w|\
+airlink101,ar725w|\
 awapn2403)
 	set_wifi_led "rt2800soc-phy0::radio"
 	;;
@@ -127,7 +127,7 @@ hlk-rm04|\
 kn|\
 nbg-419n2|\
 sl-r7205|\
-v11st-fe|\
+ralink,v11st-fe|\
 w306r-v20|\
 w502u|\
 wt1520-4M|\
@@ -175,7 +175,7 @@ netgear,ex3700)
 	ucidef_set_led_netdev "wlan5g" "ROUTER (green)" "$boardname:green:router" "wlan0"
 	ucidef_set_led_netdev "wlan2g" "DEVICE (green)" "$boardname:green:device" "wlan1"
 	;;
-f5d8235-v1)
+belkin,f5d8235-v1)
 	set_wifi_led "$boardname:blue:wireless"
 	;;
 fonera20n|\
@@ -211,7 +211,7 @@ hg255d)
 	set_wifi_led "$boardname:green:wlan"
 	ucidef_set_led_netdev "internet" "internet" "$boardname:green:internet" "eth0.2"
 	;;
-hpm)
+omnima,hpm)
 	ucidef_set_led_netdev "eth" "ETH" "$boardname:green:eth" "eth0"
 	set_wifi_led "$boardname:green:wifi"
 	;;

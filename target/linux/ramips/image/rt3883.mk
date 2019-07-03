@@ -5,7 +5,7 @@ define Build/mkrtn56uimg
 	$(STAGING_DIR_HOST)/bin/mkrtn56uimg $(1) $@
 endef
 
-define Device/br-6475nd
+define Device/edimax_br-6475nd
   DTS := BR-6475ND
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7744k
@@ -15,10 +15,11 @@ define Device/br-6475nd
   DEVICE_VENDOR := Edimax
   DEVICE_MODEL := BR-6475nD
   DEVICE_PACKAGES := swconfig
+  SUPPORTED_DEVICES += br-6475nd
 endef
-TARGET_DEVICES += br-6475nd
+TARGET_DEVICES += edimax_br-6475nd
 
-define Device/cy-swr1100
+define Device/samsung_cy-swr1100
   $(Device/seama)
   DTS := CY-SWR1100
   BLOCKSIZE := 64k
@@ -27,11 +28,12 @@ define Device/cy-swr1100
   DEVICE_VENDOR := Samsung
   DEVICE_MODEL := CY-SWR1100
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+  SUPPORTED_DEVICES += cy-swr1100
 endef
-TARGET_DEVICES += cy-swr1100
+TARGET_DEVICES += samsung_cy-swr1100
 
 
-define Device/dir-645
+define Device/dlink_dir-645
   $(Device/seama)
   DTS := DIR-645
   BLOCKSIZE := 4k
@@ -40,8 +42,9 @@ define Device/dir-645
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-645
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+  SUPPORTED_DEVICES += dir-645
 endef
-TARGET_DEVICES += dir-645
+TARGET_DEVICES += dlink_dir-645
 
 
 define Device/belkin_f9k1109v1
@@ -58,29 +61,31 @@ define Device/belkin_f9k1109v1
 endef
 TARGET_DEVICES += belkin_f9k1109v1
 
-define Device/hpm
+define Device/omnima_hpm
   DTS := HPM
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Omnima
   DEVICE_MODEL := HPM
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
+  SUPPORTED_DEVICES += hpm
 endef
-TARGET_DEVICES += hpm
+TARGET_DEVICES += omnima_hpm
 
 
-define Device/rt-n56u
+define Device/asus_rt-n56u
   DTS := RT-N56U
   BLOCKSIZE := 64k
   IMAGE/sysupgrade.bin += | mkrtn56uimg -s
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-N56U
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+  SUPPORTED_DEVICES += rt-n56u
 endef
-TARGET_DEVICES += rt-n56u
+TARGET_DEVICES += asus_rt-n56u
 
 
-define Device/tew-691gr
+define Device/trendnet_tew-691gr
   DTS := TEW-691GR
   BLOCKSIZE := 64k
   IMAGES += factory.bin
@@ -89,11 +94,12 @@ define Device/tew-691gr
   DEVICE_VENDOR := TRENDnet
   DEVICE_MODEL := TEW-691GR
   DEVICE_PACKAGES := swconfig
+  SUPPORTED_DEVICES += tew-691gr
 endef
-TARGET_DEVICES += tew-691gr
+TARGET_DEVICES += trendnet_tew-691gr
 
 
-define Device/tew-692gr
+define Device/trendnet_tew-692gr
   DTS := TEW-692GR
   BLOCKSIZE := 64k
   IMAGES += factory.bin
@@ -102,11 +108,12 @@ define Device/tew-692gr
   DEVICE_VENDOR := TRENDnet
   DEVICE_MODEL := TEW-692GR
   DEVICE_PACKAGES := swconfig
+  SUPPORTED_DEVICES += tew-692gr
 endef
-TARGET_DEVICES += tew-692gr
+TARGET_DEVICES += trendnet_tew-692gr
 
 
-define Device/wlr-6000
+define Device/sitecom_wlr-6000
   DTS := WLR-6000
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7244k
@@ -116,14 +123,16 @@ define Device/wlr-6000
   DEVICE_VENDOR := Sitecom
   DEVICE_MODEL := WLR-6000
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+  SUPPORTED_DEVICES += wlr-6000
 endef
-TARGET_DEVICES += wlr-6000
+TARGET_DEVICES += sitecom_wlr-6000
 
 
-define Device/wmdr-143n
+define Device/loewe_wmdr-143n
   DTS := WMDR-143N
   BLOCKSIZE := 64k
   DEVICE_VENDOR := Loewe
   DEVICE_MODEL := WMDR-143N
+  SUPPORTED_DEVICES += wmdr-143n
 endef
-TARGET_DEVICES += wmdr-143n
+TARGET_DEVICES += loewe_wmdr-143n
