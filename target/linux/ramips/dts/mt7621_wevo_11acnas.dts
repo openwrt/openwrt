@@ -1,20 +1,21 @@
 /dts-v1/;
 
-#include "W2914NSV2.dtsi"
+#include "mt7621_wevo_w2914ns-v2.dtsi"
 
 / {
-	model = "WeVO W2914NS v2";
+	compatible = "wevo,11acnas", "wevo,w2914ns-v2", "mediatek,mt7621-soc";
+	model = "WeVO 11AC NAS Router";
 
 	memory@0 {
 		device_type = "memory";
-		reg = <0x0 0x8000000>;
+		reg = <0x0 0x10000000>;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
 		usb {
-			label = "w2914nsv2:green:usb";
+			label = "11acnas:green:usb";
 			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&xhci_ehci_port1>, <&ehci_port2>;
 			linux,default-trigger = "usbport";
