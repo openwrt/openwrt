@@ -40,12 +40,6 @@ ramips_board_detect() {
 	*"ALL5003")
 		name="all5003"
 		;;
-	*"AR670W")
-		name="ar670w"
-		;;
-	*"AR725W")
-		name="ar725w"
-		;;
 	*"ASL26555 (8M)")
 		name="asl26555-8M"
 		;;
@@ -67,17 +61,11 @@ ramips_board_detect() {
 	*"BC2")
 		name="bc2"
 		;;
-	*"BR-6475nD")
-		name="br-6475nd"
-		;;
 	*"Broadway")
 		name="broadway"
 		;;
 	*"Carambola")
 		name="carambola"
-		;;
-	*"CY-SWR1100")
-		name="cy-swr1100"
 		;;
 	*"D105")
 		name="d105"
@@ -118,17 +106,11 @@ ramips_board_detect() {
 	*"DIR-620 D1")
 		name="dir-620-d1"
 		;;
-	*"DIR-645")
-		name="dir-645"
-		;;
 	*"DWR-512 B")
 		name="dwr-512-b"
 		;;
 	*"ESR-9753")
 		name="esr-9753"
-		;;
-	*"F5D8235 v1")
-		name="f5d8235-v1"
 		;;
 	*"F5D8235 v2")
 		name="f5d8235-v2"
@@ -147,9 +129,6 @@ ramips_board_detect() {
 		;;
 	*"HLK-RM04")
 		name="hlk-rm04"
-		;;
-	*"HPM")
-		name="hpm"
 		;;
 	*"HT-TM02")
 		name="ht-tm02"
@@ -259,12 +238,6 @@ ramips_board_detect() {
 	*"RT-N13U")
 		name="rt-n13u"
 		;;
-	*"RT-N15")
-		name="rt-n15"
-		;;
-	*"RT-N56U")
-		name="rt-n56u"
-		;;
 	*"RUT5XX")
 		name="rut5xx"
 		;;
@@ -274,12 +247,6 @@ ramips_board_detect() {
 	*"TEW-638APB v2")
 		name="tew-638apb-v2"
 		;;
-	*"TEW-691GR")
-		name="tew-691gr"
-		;;
-	*"TEW-692GR")
-		name="tew-692gr"
-		;;
 	*"TEW-714TRU")
 		name="tew-714tru"
 		;;
@@ -288,9 +255,6 @@ ramips_board_detect() {
 		;;
 	*"UR-336UN")
 		name="ur-336un"
-		;;
-	*"V11ST-FE")
-		name="v11st-fe"
 		;;
 	*"V22RW-2X2")
 		name="v22rw-2x2"
@@ -331,15 +295,6 @@ ramips_board_detect() {
 	*"WL-351 v1 002")
 		name="wl-351"
 		;;
-	*"WLI-TX4-AG300N")
-		name="wli-tx4-ag300n"
-		;;
-	*"WLR-6000")
-		name="wlr-6000"
-		;;
-	*"WMDR-143N")
-		name="wmdr-143n"
-		;;
 	*"WNCE2001")
 		name="wnce2001"
 		;;
@@ -357,9 +312,6 @@ ramips_board_detect() {
 		;;
 	*"WT1520 (8M)")
 		name="wt1520-8M"
-		;;
-	*"WZR-AGL300NH")
-		name="wzr-agl300nh"
 		;;
 	*"X5")
 		name="x5"

@@ -164,7 +164,7 @@ ramips_setup_interfaces()
 	dlink,dch-m225|\
 	netgear,ex2700|\
 	netgear,ex3700|\
-	hpm|\
+	omnima,hpm|\
 	planex,mzk-ex300np|\
 	planex,mzk-ex750np|\
 	sercomm,na930|\
@@ -174,8 +174,8 @@ ramips_setup_interfaces()
 	tplink,tl-mr3020-v3|\
 	tplink,tl-wr802n-v4|\
 	kimax,u25awf-h1|\
-	wli-tx4-ag300n|\
-	wmdr-143n|\
+	buffalo,wli-tx4-ag300n|\
+	loewe,wmdr-143n|\
 	buffalo,wmr-300|\
 	netgear,wn3000rp-v3|\
 	elecom,wrh-300cr)
@@ -200,15 +200,15 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4:wan:5" "6@eth0"
 		;;
-	ar670w|\
-	ar725w|\
+	airlink101,ar670w|\
+	airlink101,ar725w|\
 	rakwireless,rak633|\
 	asus,rt-ac51u)
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
 		;;
 	belkin,f9k1109v1|\
-	rt-n15|\
+	asus,rt-n15|\
 	wl-351)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0"
@@ -224,7 +224,7 @@ ramips_setup_interfaces()
 	awm002-evb-8M|\
 	bdcom,wap2100-sk|\
 	tplink,archer-c20i|\
-	dir-645|\
+	dlink,dir-645|\
 	glinet,gl-mt300a|\
 	glinet,gl-mt300n|\
 	glinet,gl-mt750|\
@@ -297,7 +297,7 @@ ramips_setup_interfaces()
 	wr6202)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		;;
-	br-6475nd)
+	edimax,br-6475nd)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "9@eth0"
 		;;
@@ -310,7 +310,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
-	cy-swr1100)
+	samsung,cy-swr1100)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "9@eth0"
 		;;
@@ -394,7 +394,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "6@eth0"
 		;;
-	rt-n56u)
+	asus,rt-n56u)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "8@eth0"
 		;;
@@ -403,9 +403,9 @@ ramips_setup_interfaces()
 			"4:lan" "6@eth0"
 		;;
 	lava,lr-25g001|\
-	tew-691gr|\
-	tew-692gr|\
-	wlr-6000)
+	trendnet,tew-691gr|\
+	trendnet,tew-692gr|\
+	sitecom,wlr-6000)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
 		;;
@@ -424,11 +424,11 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "2:lan" "6t@eth0"
 		;;
-	f5d8235-v1|\
+	belkin,f5d8235-v1|\
 	f5d8235-v2|\
 	tew-714tru|\
-	v11st-fe|\
-	wzr-agl300nh)
+	ralink,v11st-fe|\
+	buffalo,wzr-agl300nh)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "5@eth0"
 		;;
@@ -499,7 +499,7 @@ ramips_setup_macs()
 	case $board in
 	a5-v11|\
 	ht-tm02|\
-	wmdr-143n)
+	loewe,wmdr-143n)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		;;
 	carambola|\
@@ -531,15 +531,15 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii uboot-env HW_WAN_MAC)
 		lan_mac=$(mtd_get_mac_ascii uboot-env HW_LAN_MAC)
 		;;
-	br-6475nd)
+	edimax,br-6475nd)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(mtd_get_mac_binary devdata 7)
 		;;
-	cy-swr1100|\
+	samsung,cy-swr1100|\
 	dlink,dch-m225)
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)
 		;;
-	dir-645)
+	dlink,dir-645)
 		lan_mac=$(mtd_get_mac_ascii nvram lanmac)
 		wan_mac=$(mtd_get_mac_ascii nvram wanmac)
 		;;
@@ -637,7 +637,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
-	rt-n56u)
+	asus,rt-n56u)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_setbit_la "$lan_mac")
 		wan_mac=$(mtd_get_mac_binary factory 32772)
@@ -646,10 +646,10 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_binary factory 40)
 		wan_mac=$(mtd_get_mac_binary factory 46)
 		;;
-	tew-691gr)
+	trendnet,tew-691gr)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 3)
 		;;
-	tew-692gr)
+	trendnet,tew-692gr)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 1)
 		;;
 	dovado,tiny-ac)
@@ -684,7 +684,7 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_binary factory 4)
 		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
-	wlr-6000)
+	sitecom,wlr-6000)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 32772)" 2)
 		;;
 	xiaomi,mir3g|\
