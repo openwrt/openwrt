@@ -10,9 +10,6 @@ ramips_board_detect() {
 	machine=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /machine/ {print $2}' /proc/cpuinfo)
 
 	case "$machine" in
-	*"11AC NAS Router")
-		name="11acnas"
-		;;
 	*"3G150B")
 		name="3g150b"
 		;;
@@ -124,9 +121,6 @@ ramips_board_detect() {
 	*"DIR-645")
 		name="dir-645"
 		;;
-	*"DIR-860L B1")
-		name="dir-860l-b1"
-		;;
 	*"DuZun DM06")
 		name="duzun-dm06"
 		;;
@@ -136,9 +130,6 @@ ramips_board_detect() {
 	*"ESR-9753")
 		name="esr-9753"
 		;;
-	*"EW1200")
-		name="ew1200"
-		;;
 	*"F5D8235 v1")
 		name="f5d8235-v1"
 		;;
@@ -147,9 +138,6 @@ ramips_board_detect() {
 		;;
 	*"F7C027")
 		name="f7c027"
-		;;
-	*"FireWRT")
-		name="firewrt"
 		;;
 	*"Fonera 2.0N")
 		name="fonera20n"
@@ -162,9 +150,6 @@ ramips_board_detect() {
 		;;
 	*"HC5661A")
 		name="hc5661a"
-		;;
-	*"HC5962")
-		name="hc5962"
 		;;
 	*"HG255D")
 		name="hg255d"
@@ -192,9 +177,6 @@ ramips_board_detect() {
 		;;
 	*"JHR-N926R")
 		name="jhr-n926r"
-		;;
-	*"K2P")
-		name="k2p"
 		;;
 	*"M3")
 		name="m3"
@@ -235,9 +217,6 @@ ramips_board_detect() {
 	*"MR-102N")
 		name="mr-102n"
 		;;
-	*"MT7621 evaluation"*)
-		name="mt7621"
-		;;
 	*"MT7628AN evaluation"*)
 		name="mt7628"
 		;;
@@ -258,9 +237,6 @@ ramips_board_detect() {
 		;;
 	*"NBG-419N v2")
 		name="nbg-419n2"
-		;;
-	*"Newifi-D1")
-		name="newifi-d1"
 		;;
 	*"NCS601W")
 		name="ncs601w"
@@ -283,9 +259,6 @@ ramips_board_detect() {
 	*"PBR-D1")
 		name="pbr-d1"
 		;;
-	*"PBR-M1")
-		name="pbr-m1"
-		;;
 	*"PSR-680W"*)
 		name="psr-680w"
 		;;
@@ -297,15 +270,6 @@ ramips_board_detect() {
 		;;
 	*"PX-4885 (8M)")
 		name="px-4885-8M"
-		;;
-	*"R6220")
-		name="r6220"
-		;;
-	*"RE350 v1")
-		name="re350-v1"
-		;;
-	*"RE6500")
-		name="re6500"
 		;;
 	*"RN502J")
 		name="xdxrn502j"
@@ -334,12 +298,6 @@ ramips_board_detect() {
 	*"RUT5XX")
 		name="rut5xx"
 		;;
-	*"SamKnows Whitebox 8")
-		name="sk-wb8"
-		;;
-	*"SAP-G3200U3")
-		name="sap-g3200u3"
-		;;
 	*"SL-R7205"*)
 		name="sl-r7205"
 		;;
@@ -355,9 +313,6 @@ ramips_board_detect() {
 	*"TEW-714TRU")
 		name="tew-714tru"
 		;;
-	*"Timecloud")
-		name="timecloud"
-		;;
 	*"TL-WR840N v4")
 		name="tl-wr840n-v4"
 		;;
@@ -369,12 +324,6 @@ ramips_board_detect() {
 		;;
 	*"U7628-01 (128M RAM/16M flash)")
 		name="u7628-01-128M-16M"
-		;;
-	*"UBNT-ERX")
-		name="ubnt-erx"
-		;;
-	*"UBNT-ERX-SFP")
-		name="ubnt-erx-sfp"
 		;;
 	*"UR-326N4G")
 		name="ur-326n4g"
@@ -400,14 +349,8 @@ ramips_board_detect() {
 	*"VoCore2-Lite")
 		name="vocore2lite"
 		;;
-	*"VR500")
-		name="vr500"
-		;;
 	*"W150M")
 		name="w150m"
-		;;
-	*"W2914NS v2")
-		name="w2914nsv2"
 		;;
 	*"W306R V2.0")
 		name="w306r-v20"
@@ -420,9 +363,6 @@ ramips_board_detect() {
 		;;
 	*"WCR-150GN")
 		name="wcr-150gn"
-		;;
-	*"WF-2881")
-		name="wf-2881"
 		;;
 	*"WHR-G300N")
 		name="whr-g300n"
@@ -454,9 +394,6 @@ ramips_board_detect() {
 	*"WNCE2001")
 		name="wnce2001"
 		;;
-	*"WNDR3700v5")
-		name="wndr3700v5"
-		;;
 	*"WR512-3GN (4M)")
 		name="wr512-3gn-4M"
 		;;
@@ -472,12 +409,6 @@ ramips_board_detect() {
 	*"WRTnode2P")
 		name="wrtnode2p"
 		;;
-	*"WSR-1166DHP")
-		name="wsr-1166"
-		;;
-	*"WSR-600DHP")
-		name="wsr-600"
-		;;
 	*"WT1520 (4M)")
 		name="wt1520-4M"
 		;;
@@ -492,18 +423,6 @@ ramips_board_detect() {
 		;;
 	*"X8")
 		name="x8"
-		;;
-	*"ZBT-WE1326")
-		name="zbt-we1326"
-		;;
-	*"ZBT-WG2626")
-		name="zbt-wg2626"
-		;;
-	*"ZBT-WG3526 (16M)")
-		name="zbt-wg3526-16M"
-		;;
-	*"ZBT-WG3526 (32M)")
-		name="zbt-wg3526-32M"
 		;;
 	*"ZyXEL Keenetic")
 		name="kn"
