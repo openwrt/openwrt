@@ -6,7 +6,7 @@ start() {
 	. /lib/functions.sh
 
 	local board=$(board_name)
-	if [ $board = "sk-wb8" ]; then
+	if [ $board = "samknows,whitebox-v8" ]; then
 		fw_setenv bootcount 0
 	fi
 }

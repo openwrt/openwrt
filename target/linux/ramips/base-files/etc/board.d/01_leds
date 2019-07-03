@@ -164,7 +164,7 @@ dlink,dwr-922-e2)
 	ucidef_set_led_netdev "signalstrength" "signalstrength" "$boardname:green:sigstrength" "wwan0" "link"
 	ucidef_set_led_netdev "4g" "4g" "$boardname:green:4g" "wwan0" "tx rx"
 	;;
-dir-860l-b1)
+dlink,dir-860l-b1)
 	ucidef_set_led_netdev "wan" "wan" "$boardname:green:net" "eth0.2"
 	;;
 netgear,ex2700|\
@@ -268,7 +268,7 @@ netgear,r6120)
 	ucidef_set_led_wlan "wlan2g" "WiFi 2.4GHz" "$boardname:green:wlan2g" "phy0tpt"
 	;;
 gehua,ghl-r-001|\
-pbr-m1)
+d-team,pbr-m1)
 	ucidef_set_led_netdev "internet" "internet" "$boardname:blue:internet" "eth0.2"
 	;;
 d-team,newifi-d2)
@@ -283,13 +283,13 @@ px-4885-4M|\
 px-4885-8M)
 	set_wifi_led "px-4885:orange:wifi"
 	;;
-r6220|\
+netgear,r6220|\
 netgear,r6350|\
-wndr3700v5)
+netgear,wndr3700-v5)
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x10"
 	set_wifi_led "$boardname:green:wifi"
 	;;
-re350-v1)
+tplink,re350-v1)
 	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "$boardname:blue:wifi2G" "wlan0"
 	ucidef_set_led_netdev "wifi5g" "Wifi 5G" "$boardname:blue:wifi5G" "wlan1"
 	ucidef_set_led_netdev "eth_act" "LAN act" "$boardname:green:eth_act" "eth0" "tx rx"

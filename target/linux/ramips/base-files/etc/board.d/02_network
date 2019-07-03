@@ -31,10 +31,10 @@ ramips_setup_interfaces()
 	local board="$1"
 
 	case $board in
-	11acnas|\
+	wevo,11acnas|\
 	d-team,newifi-d2|\
 	dir-615-h1|\
-	w2914nsv2|\
+	wevo,w2914ns-v2|\
 	zbtlink,zbt-we2026)
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan:5" "6@eth0"
@@ -65,7 +65,7 @@ ramips_setup_interfaces()
 	ncs601w|\
 	omega2 | \
 	omega2p | \
-	timecloud|\
+	thunder,timecloud|\
 	tplink,tl-wa801nd-v5|\
 	w150m|\
 	widora,neo-16m|\
@@ -97,18 +97,18 @@ ramips_setup_interfaces()
 	dlink,dwr-116-a1|\
 	dlink,dwr-921-c1|\
 	dlink,dwr-922-e2|\
-	ew1200|\
-	firewrt|\
+	afoundry,ew1200|\
+	firefly,firewrt|\
 	hc5661a|\
-	hc5962|\
+	hiwifi,hc5962|\
 	hlk-rm04|\
-	k2p|\
+	phicomm,k2p|\
 	kn|\
 	zyxel,keenetic-omni|\
 	mac1200rv2|\
 	xiaomi,miwifi-mini|\
 	miwifi-nano|\
-	mt7621|\
+	mediatek,mt7621-eval-board|\
 	mt7628|\
 	mtc,wr1201|\
 	planex,mzk-750dhp|\
@@ -116,38 +116,38 @@ ramips_setup_interfaces()
 	nixcore-x1-8M|\
 	nixcore-x1-16M|\
 	ohyeah,oy-0001|\
-	pbr-m1|\
+	d-team,pbr-m1|\
 	phicomm,psg1208|\
 	phicomm,psg1218a|\
-	r6220|\
+	netgear,r6220|\
 	netgear,r6350|\
 	asus,rt-n12p|\
-	sap-g3200u3|\
-	sk-wb8|\
+	storylink,sap-g3200u3|\
+	samknows,whitebox-v8|\
 	telco-electronics,x1|\
 	totolink,a7000r|\
 	totolink,lr1200|\
 	unielec,u7621-06-256m-16m|\
 	unielec,u7621-06-512m-64m|\
-	vr500|\
+	planex,vr500|\
 	wavlink,wl-wn570ha1|\
 	wavlink,wl-wn575a3|\
-	wf-2881|\
+	netis,wf-2881|\
 	whr-g300n|\
 	mqmaker,witi-256m|\
 	mqmaker,witi-512m|\
-	wndr3700v5|\
+	netgear,wndr3700-v5|\
 	youku,yk1|\
 	youku,yk-l2|\
 	zbtlink,zbt-ape522ii|\
-	zbt-we1326|\
+	zbtlink,zbt-we1326|\
 	zbtlink,zbt-we826-e|\
 	zbtlink,zbt-we3526|\
 	zbtlink,zbt-we826-16m|\
 	zbtlink,zbt-we826-32m|\
-	zbt-wg2626|\
-	zbt-wg3526-16M|\
-	zbt-wg3526-32M|\
+	zbtlink,zbt-wg2626|\
+	zbtlink,zbt-wg3526-16m|\
+	zbtlink,zbt-wg3526-32m|\
 	zbtlink,zbt-wr8305rt)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
@@ -195,8 +195,8 @@ ramips_setup_interfaces()
 		;;
 	buffalo,whr-300hp2|\
 	buffalo,whr-600d|\
-	wsr-1166|\
-	wsr-600)
+	buffalo,wsr-1166dhp|\
+	buffalo,wsr-600dhp)
 		ucidef_add_switch "switch0" \
 			"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4:wan:5" "6@eth0"
 		;;
@@ -248,8 +248,8 @@ ramips_setup_interfaces()
 	tl-wr841n-v13|\
 	tplink,tl-wr841n-v14|\
 	u7628-01-128M-16M|\
-	ubnt-erx|\
-	ubnt-erx-sfp|\
+	ubiquiti,edgerouterx|\
+	ubiquiti,edgerouterx-sfp|\
 	ur-326n4g|\
 	wrtnode,wrtnode|\
 	wrtnode2p | \
@@ -265,7 +265,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan:3" "2:lan:4" "3:lan:1" "4:lan:2" "0:wan" "6@eth0"
 		;;
-	dir-860l-b1|\
+	dlink,dir-860l-b1|\
 	elecom,wrc-1167ghbk2-s|\
 	elecom,wrc-2533gst|\
 	elecom,wrc-1900gst|\
@@ -375,7 +375,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:lan" "6t@eth0"
 		;;
-	newifi-d1)
+	lenovo,newifi-d1)
 		ucidef_add_switch "switch0" \
 		"1:lan:2" "2:lan:1" "4:wan" "6@eth0"
 		;;
@@ -386,11 +386,11 @@ ramips_setup_interfaces()
 	dlink,dir-510l|\
 	glinet,vixmini|\
 	netgear,ex6150|\
-	re350-v1)
+	tplink,re350-v1)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"
 		;;
-	re6500)
+	linksys,re6500)
 		ucidef_add_switch "switch0" \
 			"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "6@eth0"
 		;;
@@ -543,7 +543,7 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii nvram lanmac)
 		wan_mac=$(mtd_get_mac_ascii nvram wanmac)
 		;;
-	dir-860l-b1)
+	dlink,dir-860l-b1)
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)
 		wan_mac=$(mtd_get_mac_ascii factory wanmac)
 		;;
@@ -567,7 +567,7 @@ ramips_setup_macs()
 	elecom,wrc-1167ghbk2-s|\
 	elecom,wrc-2533gst|\
 	elecom,wrc-1900gst|\
-	sk-wb8)
+	samknows,whitebox-v8)
 		wan_mac=$(mtd_get_mac_binary factory 57350)
 		;;
 	gl-mt300n-v2|\
@@ -578,7 +578,7 @@ ramips_setup_macs()
 	hiwifi,hc5761|\
 	hiwifi,hc5861|\
 	hc5661a|\
-	hc5962|\
+	hiwifi,hc5962|\
 	hiwifi,hc5861b)
 		lan_mac=`mtd_get_mac_ascii bdinfo "Vfac_mac "`
 		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
@@ -617,7 +617,7 @@ ramips_setup_macs()
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_add "$lan_mac" -2)
 		;;
-	newifi-d1)
+	lenovo,newifi-d1)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_add "$lan_mac" 2)
 		;;
@@ -631,9 +631,9 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_binary factory 40)
 		wan_mac=$(mtd_get_mac_binary factory 46)
 		;;
-	r6220|\
+	netgear,r6220|\
 	netgear,r6350|\
-	wndr3700v5)
+	netgear,wndr3700-v5)
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
@@ -656,7 +656,7 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii u-boot-env LAN_MAC_ADDR)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env WAN_MAC_ADDR)
 		;;
-	vr500)
+	planex,vr500)
 		lan_mac=$(mtd_get_mac_binary factory 57344)
 		wan_mac=$(mtd_get_mac_binary factory 57350)
 		;;
@@ -665,7 +665,7 @@ ramips_setup_macs()
 		wan_mac=$(macaddr_add "$lan_mac" 5)
 		;;
 	wcr-1166ds|\
-	wsr-1166)
+	buffalo,wsr-1166dhp)
 		local index="$(find_mtd_index "board_data")"
 		wan_mac="$(grep -m1 mac= "/dev/mtd${index}" | cut -d= -f2)"
 		lan_mac=$wan_mac
@@ -676,7 +676,7 @@ ramips_setup_macs()
 	buffalo,whr-1166d|\
 	buffalo,whr-300hp2|\
 	buffalo,whr-600d|\
-	wsr-600)
+	buffalo,wsr-600dhp)
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$wan_mac
 		;;

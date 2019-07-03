@@ -84,16 +84,17 @@ define Build/ubnt-erx-factory-image
 	fi
 endef
 
-define Device/11acnas
+define Device/wevo_11acnas
   DTS := 11ACNAS
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := WeVO
   DEVICE_MODEL := 11AC NAS Router
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += 11acnas
 endef
-TARGET_DEVICES += 11acnas
+TARGET_DEVICES += wevo_11acnas
 
-define Device/dir-860l-b1
+define Device/dlink_dir-860l-b1
   $(Device/seama)
   DTS := DIR-860L-B1
   BLOCKSIZE := 64k
@@ -104,8 +105,9 @@ define Device/dir-860l-b1
   DEVICE_MODEL := DIR-860L
   DEVICE_VARIANT := B1
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += dir-860l-b1
 endef
-TARGET_DEVICES += dir-860l-b1
+TARGET_DEVICES += dlink_dir-860l-b1
 
 define Device/mediatek_ap-mt7621a-v60
   DTS := AP-MT7621A-V60
@@ -160,7 +162,7 @@ define Device/elecom_wrc-1900gst
 endef
 TARGET_DEVICES += elecom_wrc-1900gst
 
-define Device/ew1200
+define Device/afoundry_ew1200
   DTS := EW1200
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := AFOUNDRY
@@ -168,17 +170,19 @@ define Device/ew1200
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-mt76x2 kmod-mt7603 kmod-usb3 \
 	kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += ew1200
 endef
-TARGET_DEVICES += ew1200
+TARGET_DEVICES += afoundry_ew1200
 
-define Device/firewrt
+define Device/firefly_firewrt
   DTS := FIREWRT
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Firefly
   DEVICE_MODEL := FireWRT
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += firewrt
 endef
-TARGET_DEVICES += firewrt
+TARGET_DEVICES += firefly_firewrt
 
 define Device/gehua_ghl-r-001
   DTS := GHL-R-001
@@ -208,7 +212,7 @@ define Device/gnubee_gb-pc2
 endef
 TARGET_DEVICES += gnubee_gb-pc2
 
-define Device/hc5962
+define Device/hiwifi_hc5962
   DTS := HC5962
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -221,8 +225,9 @@ define Device/hc5962
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5962
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 wpad-basic
+  SUPPORTED_DEVICES += hc5962
 endef
-TARGET_DEVICES += hc5962
+TARGET_DEVICES += hiwifi_hc5962
 
 define Device/iodata_wn-ax1167gr
   DTS := WN-AX1167GR
@@ -244,13 +249,14 @@ define Device/iodata_wn-gx300gr
 endef
 TARGET_DEVICES += iodata_wn-gx300gr
 
-define Device/k2p
+define Device/phicomm_k2p
   DTS := K2P
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Phicomm
   DEVICE_MODEL := K2P
+  SUPPORTED_DEVICES += k2p
 endef
-TARGET_DEVICES += k2p
+TARGET_DEVICES += phicomm_k2p
 
 define Device/totolink_a7000r
   DTS := TOTOLINK-A7000R
@@ -300,24 +306,26 @@ define Device/xiaomi_mir3g
 endef
 TARGET_DEVICES += xiaomi_mir3g
 
-define Device/mt7621
+define Device/mediatek_mt7621-eval-board
   DTS := MT7621
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7621 EVB
+  SUPPORTED_DEVICES += mt7621
 endef
-TARGET_DEVICES += mt7621
+TARGET_DEVICES += mediatek_mt7621-eval-board
 
-define Device/newifi-d1
+define Device/lenovo_newifi-d1
   DTS := Newifi-D1
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_VENDOR := Newifi
   DEVICE_MODEL := D1
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += newifi-d1
 endef
-TARGET_DEVICES += newifi-d1
+TARGET_DEVICES += lenovo_newifi-d1
 
 define Device/d-team_newifi-d2
   DTS := Newifi-D2
@@ -329,7 +337,7 @@ define Device/d-team_newifi-d2
 endef
 TARGET_DEVICES += d-team_newifi-d2
 
-define Device/pbr-m1
+define Device/d-team_pbr-m1
   DTS := PBR-M1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := PandoraBox
@@ -337,10 +345,11 @@ define Device/pbr-m1
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
 	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += pbr-m1
 endef
-TARGET_DEVICES += pbr-m1
+TARGET_DEVICES += d-team_pbr-m1
 
-define Device/r6220
+define Device/netgear_r6220
   DTS := R6220
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -355,8 +364,9 @@ define Device/r6220
   DEVICE_MODEL := R6220
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += r6220
 endef
-TARGET_DEVICES += r6220
+TARGET_DEVICES += netgear_r6220
 
 define Device/netgear_ex6150
   DTS := EX6150
@@ -434,7 +444,7 @@ define Device/mtc_wr1201
 endef
 TARGET_DEVICES += mtc_wr1201
 
-define Device/re350-v1
+define Device/tplink_re350-v1
   DTS := RE350
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := RE350
@@ -449,26 +459,29 @@ define Device/re350-v1
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+  SUPPORTED_DEVICES += re350-v1
 endef
-TARGET_DEVICES += re350-v1
+TARGET_DEVICES += tplink_re350-v1
 
-define Device/re6500
+define Device/linksys_re6500
   DTS := RE6500
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := RE6500
   DEVICE_PACKAGES := kmod-mt76x2 wpad-basic
+  SUPPORTED_DEVICES += re6500
 endef
-TARGET_DEVICES += re6500
+TARGET_DEVICES += linksys_re6500
 
-define Device/sap-g3200u3
+define Device/storylink_sap-g3200u3
   DTS := SAP-G3200U3
   DEVICE_VENDOR := STORYLiNK
   DEVICE_MODEL := SAP-G3200U3
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += sap-g3200u3
 endef
-TARGET_DEVICES += sap-g3200u3
+TARGET_DEVICES += storylink_sap-g3200u3
 
-define Device/sk-wb8
+define Device/samknows_whitebox-v8
   DTS := SK-WB8
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := SamKnows
@@ -476,8 +489,9 @@ define Device/sk-wb8
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport \
 	uboot-envtools wpad-basic
+  SUPPORTED_DEVICES += sk-wb8
 endef
-TARGET_DEVICES += sk-wb8
+TARGET_DEVICES += samknows_whitebox-v8
 
 define Device/telco-electronics_x1
   DTS := Telco-Electronics-X1
@@ -488,15 +502,16 @@ define Device/telco-electronics_x1
 endef
 TARGET_DEVICES += telco-electronics_x1
 
-define Device/timecloud
+define Device/thunder_timecloud
   DTS := Timecloud
   DEVICE_VENDOR := Thunder
   DEVICE_MODEL := Timecloud
   DEVICE_PACKAGES := kmod-usb3
+  SUPPORTED_DEVICES += timecloud
 endef
-TARGET_DEVICES += timecloud
+TARGET_DEVICES += thunder_timecloud
 
-define Device/ubnt-erx
+define Device/ubiquiti_edgerouterx
   DTS := UBNT-ERX
   FILESYSTEMS := squashfs
   KERNEL_SIZE := 3145728
@@ -504,17 +519,19 @@ define Device/ubnt-erx
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := EdgeRouter X
+  SUPPORTED_DEVICES += ubnt-erx
 endef
-TARGET_DEVICES += ubnt-erx
+TARGET_DEVICES += ubiquiti_edgerouterx
 
-define Device/ubnt-erx-sfp
-  $(Device/ubnt-erx)
+define Device/ubiquiti_edgerouterx-sfp
+  $(Device/ubiquiti_edgerouterx)
   DTS := UBNT-ERX-SFP
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := EdgeRouter X-SFP
   DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x kmod-i2c-gpio-custom
+  SUPPORTED_DEVICES += ubnt-erx-sfp
 endef
-TARGET_DEVICES += ubnt-erx-sfp
+TARGET_DEVICES += ubiquiti_edgerouterx-sfp
 
 define Device/unielec_u7621-06-256m-16m
   DTS := U7621-06-256M-16M
@@ -537,16 +554,17 @@ define Device/unielec_u7621-06-512m-64m
 endef
 TARGET_DEVICES += unielec_u7621-06-512m-64m
 
-define Device/vr500
+define Device/planex_vr500
   DTS := VR500
   IMAGE_SIZE := 66453504
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := VR500
   DEVICE_PACKAGES := kmod-usb3
+  SUPPORTED_DEVICES += vr500
 endef
-TARGET_DEVICES += vr500
+TARGET_DEVICES += planex_vr500
 
-define Device/w2914nsv2
+define Device/wevo_w2914ns-v2
   DTS := W2914NSV2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := WeVO
@@ -554,10 +572,11 @@ define Device/w2914nsv2
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += w2914nsv2
 endef
-TARGET_DEVICES += w2914nsv2
+TARGET_DEVICES += wevo_w2914ns-v2
 
-define Device/wf-2881
+define Device/netis_wf-2881
   DTS := WF-2881
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -569,8 +588,9 @@ define Device/wf-2881
   DEVICE_VENDOR := NETIS
   DEVICE_MODEL := WF-2881
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += wf-2881
 endef
-TARGET_DEVICES += wf-2881
+TARGET_DEVICES += netis_wf-2881
 
 define Device/mqmaker_witi-256m
   DTS := WITI-256M
@@ -597,7 +617,7 @@ define Device/mqmaker_witi-512m
 endef
 TARGET_DEVICES += mqmaker_witi-512m
 
-define Device/wndr3700v5
+define Device/netgear_wndr3700-v5
   DTS := WNDR3700V5
   BLOCKSIZE := 64k
   IMAGE_SIZE := 15232k
@@ -614,8 +634,9 @@ define Device/wndr3700v5
   DEVICE_VARIANT := v5
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += wndr3700v5
 endef
-TARGET_DEVICES += wndr3700v5
+TARGET_DEVICES += netgear_wndr3700-v5
 
 define Device/youhua_wr1200js
   DTS := WR1200JS
@@ -637,34 +658,37 @@ define Device/youku_yk-l2
 endef
 TARGET_DEVICES += youku_yk-l2
 
-define Device/wsr-1166
+define Device/buffalo_wsr-1166dhp
   DTS := WSR-1166
   IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Buffalo
-  DEVICE_MODEL := WSR-1166
+  DEVICE_MODEL := WSR-1166DHP
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 wpad-basic
+  SUPPORTED_DEVICES += wsr-1166
 endef
-TARGET_DEVICES += wsr-1166
+TARGET_DEVICES += buffalo_wsr-1166dhp
 
-define Device/wsr-600
+define Device/buffalo_wsr-600dhp
   DTS := WSR-600
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Buffalo
-  DEVICE_MODEL := WSR-600
+  DEVICE_MODEL := WSR-600DHP
   DEVICE_PACKAGES := kmod-mt7603 kmod-rt2800-pci wpad-basic
+  SUPPORTED_DEVICES += wsr-600
 endef
-TARGET_DEVICES += wsr-600
+TARGET_DEVICES += buffalo_wsr-600dhp
 
-define Device/zbt-we1326
+define Device/zbtlink_zbt-we1326
   DTS := ZBT-WE1326
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := ZBT
   DEVICE_MODEL := ZBT-WE1326
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-sdhci-mt7620 wpad-basic
+  SUPPORTED_DEVICES += zbt-we1326
 endef
-TARGET_DEVICES += zbt-we1326
+TARGET_DEVICES += zbtlink_zbt-we1326
 
 define Device/zbtlink_zbt-we3526
   DTS := ZBT-WE3526
@@ -677,7 +701,7 @@ define Device/zbtlink_zbt-we3526
 endef
 TARGET_DEVICES += zbtlink_zbt-we3526
 
-define Device/zbt-wg2626
+define Device/zbtlink_zbt-wg2626
   DTS := ZBT-WG2626
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := ZBT
@@ -685,34 +709,35 @@ define Device/zbt-wg2626
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += zbt-wg2626
 endef
-TARGET_DEVICES += zbt-wg2626
+TARGET_DEVICES += zbtlink_zbt-wg2626
 
-define Device/zbt-wg3526-16M
+define Device/zbtlink_zbt-wg3526-16m
   DTS := ZBT-WG3526-16M
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  SUPPORTED_DEVICES += zbt-wg3526
   DEVICE_VENDOR := ZBT
   DEVICE_MODEL := ZBT-WG3526
   DEVICE_VARIANT := 16M
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
 	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += zbt-wg3526 zbt-wg3526-16M
 endef
-TARGET_DEVICES += zbt-wg3526-16M
+TARGET_DEVICES += zbtlink_zbt-wg3526-16m
 
-define Device/zbt-wg3526-32M
+define Device/zbtlink_zbt-wg3526-32m
   DTS := ZBT-WG3526-32M
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
-  SUPPORTED_DEVICES += ac1200pro
   DEVICE_VENDOR := ZBT
   DEVICE_MODEL := ZBT-WG3526
   DEVICE_VARIANT := 32M
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
 	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += ac1200pro zbt-wg3526-32M
 endef
-TARGET_DEVICES += zbt-wg3526-32M
+TARGET_DEVICES += zbtlink_zbt-wg3526-32m
 
 define Device/asiarf_ap7621-001
   DTS := AP7621-001
