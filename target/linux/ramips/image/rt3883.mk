@@ -6,7 +6,7 @@ define Build/mkrtn56uimg
 endef
 
 define Device/edimax_br-6475nd
-  DTS := BR-6475ND
+  MTK_SOC := rt3883
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
@@ -21,7 +21,7 @@ TARGET_DEVICES += edimax_br-6475nd
 
 define Device/samsung_cy-swr1100
   $(Device/seama)
-  DTS := CY-SWR1100
+  MTK_SOC := rt3883
   BLOCKSIZE := 64k
   KERNEL := $(KERNEL_DTB)
   SEAMA_SIGNATURE := wrgnd10_samsung_ss815
@@ -35,7 +35,7 @@ TARGET_DEVICES += samsung_cy-swr1100
 
 define Device/dlink_dir-645
   $(Device/seama)
-  DTS := DIR-645
+  MTK_SOC := rt3883
   BLOCKSIZE := 4k
   KERNEL := $(KERNEL_DTB)
   SEAMA_SIGNATURE := wrgn39_dlob.hans_dir645
@@ -48,7 +48,7 @@ TARGET_DEVICES += dlink_dir-645
 
 
 define Device/belkin_f9k1109v1
-  DTS := F9K1109V1
+  MTK_SOC := rt3883
   BLOCKSIZE := 64k
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := F9K1109
@@ -62,7 +62,7 @@ endef
 TARGET_DEVICES += belkin_f9k1109v1
 
 define Device/omnima_hpm
-  DTS := HPM
+  MTK_SOC := rt3883
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Omnima
@@ -74,7 +74,7 @@ TARGET_DEVICES += omnima_hpm
 
 
 define Device/asus_rt-n56u
-  DTS := RT-N56U
+  MTK_SOC := rt3883
   BLOCKSIZE := 64k
   IMAGE/sysupgrade.bin += | mkrtn56uimg -s
   DEVICE_VENDOR := Asus
@@ -86,7 +86,7 @@ TARGET_DEVICES += asus_rt-n56u
 
 
 define Device/trendnet_tew-691gr
-  DTS := TEW-691GR
+  MTK_SOC := rt3883
   BLOCKSIZE := 64k
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
@@ -100,7 +100,7 @@ TARGET_DEVICES += trendnet_tew-691gr
 
 
 define Device/trendnet_tew-692gr
-  DTS := TEW-692GR
+  MTK_SOC := rt3883
   BLOCKSIZE := 64k
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
@@ -114,7 +114,7 @@ TARGET_DEVICES += trendnet_tew-692gr
 
 
 define Device/sitecom_wlr-6000
-  DTS := WLR-6000
+  MTK_SOC := rt3883
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7244k
   IMAGES += factory.dlf
@@ -129,7 +129,7 @@ TARGET_DEVICES += sitecom_wlr-6000
 
 
 define Device/loewe_wmdr-143n
-  DTS := WMDR-143N
+  MTK_SOC := rt3883
   BLOCKSIZE := 64k
   DEVICE_VENDOR := Loewe
   DEVICE_MODEL := WMDR-143N
