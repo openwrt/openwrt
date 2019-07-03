@@ -225,25 +225,3 @@ default_do_upgrade() {
 	fi
 	[ $? -ne 0 ] && exit 1
 }
-
-do_upgrade_stage2() {
-	v "Performing system upgrade..."
-	if type 'platform_do_upgrade' >/dev/null 2>/dev/null; then
-		platform_do_upgrade "$IMAGE"
-	else
-		default_do_upgrade "$IMAGE"
-	fi
-
-	if [ "$SAVE_CONFIG" -eq 1 ] && type 'platform_copy_config' >/dev/null 2>/dev/null; then
-		platform_copy_config
-	fi
-
-	v "Upgrade completed"
-	sleep 1
-
-	v "Rebooting system..."
-	umount -a
-	reboot -f
-	sleep 5
-	echo b 2>/dev/null >/proc/sysrq-trigger
-}
