@@ -45,7 +45,7 @@ platform_do_upgrade() {
 	xiaomi,mir3p)
 		nand_do_upgrade "$ARGV"
 		;;
-	tplink,c50-v4)
+	tplink,archer-c50-v4)
 		MTD_ARGS="-t romfile"
 		default_do_upgrade "$ARGV"
 		;;

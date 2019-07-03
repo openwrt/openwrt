@@ -302,7 +302,7 @@ define Device/tplink_tl-wr841n-v14
 endef
 TARGET_DEVICES += tplink_tl-wr841n-v14
 
-define Device/tplink_c20-v4
+define Device/tplink_archer-c20-v4
   $(Device/tplink)
   DTS := ArcherC20v4
   IMAGE_SIZE := 7808k
@@ -314,10 +314,11 @@ define Device/tplink_c20-v4
   TPLINK_HWREVADD := 0x4
   TPLINK_HVERSION := 3
   DEVICE_PACKAGES := kmod-mt76x0e
+  SUPPORTED_DEVICES += tplink,c20-v4
 endef
-TARGET_DEVICES += tplink_c20-v4
+TARGET_DEVICES += tplink_archer-c20-v4
 
-define Device/tplink_c50-v3
+define Device/tplink_archer-c50-v3
   $(Device/tplink)
   DTS := ArcherC50V3
   IMAGE_SIZE := 7808k
@@ -329,10 +330,11 @@ define Device/tplink_c50-v3
   TPLINK_HWREVADD := 0x1
   TPLINK_HVERSION := 3
   DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += tplink,c50-v3
 endef
-TARGET_DEVICES += tplink_c50-v3
+TARGET_DEVICES += tplink_archer-c50-v3
 
-define Device/tplink_c50-v4
+define Device/tplink_archer-c50-v4
   $(Device/tplink)
   DTS := ArcherC50V4
   IMAGE_SIZE := 7616k
@@ -345,8 +347,9 @@ define Device/tplink_c50-v4
   TPLINK_HVERSION := 3
   DEVICE_PACKAGES := kmod-mt76x2
   IMAGES := sysupgrade.bin
+  SUPPORTED_DEVICES += tplink,c50-v4
 endef
-TARGET_DEVICES += tplink_c50-v4
+TARGET_DEVICES += tplink_archer-c50-v4
 
 define Device/tplink_tl-mr3020-v3
   $(Device/tplink)

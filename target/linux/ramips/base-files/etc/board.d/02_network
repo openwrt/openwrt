@@ -238,9 +238,9 @@ ramips_setup_interfaces()
 	mzk-wdpr|\
 	rt-n14u|\
 	skylab,skw92a|\
-	tplink,c20-v4|\
-	tplink,c50-v3|\
-	tplink,c50-v4|\
+	tplink,archer-c20-v4|\
+	tplink,archer-c50-v3|\
+	tplink,archer-c50-v4|\
 	tplink,tl-mr3420-v5|\
 	tplink,tl-wr842n-v5|\
 	tl-wr840n-v4|\
@@ -261,7 +261,7 @@ ramips_setup_interfaces()
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
 	c50|\
-	tplink,c20-v1)
+	tplink,archer-c20-v1)
 		ucidef_add_switch "switch0" \
 			"1:lan:3" "2:lan:4" "3:lan:1" "4:lan:2" "0:wan" "6@eth0"
 		;;
@@ -324,7 +324,7 @@ ramips_setup_interfaces()
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
 	edimax,br-6478ac-v2|\
-	tplink,c2-v1)
+	tplink,archer-c2-v1)
 		ucidef_add_switch "switch1" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
