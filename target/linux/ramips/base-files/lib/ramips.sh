@@ -28,9 +28,6 @@ ramips_board_detect() {
 	*"A5-V11")
 		name="a5-v11"
 		;;
-	*"Ai-BR100")
-		name="ai-br100"
-		;;
 	*"Air3GII")
 		name="air3gii"
 		;;
@@ -73,32 +70,14 @@ ramips_board_detect() {
 	*"BC2")
 		name="bc2"
 		;;
-	*"BOCCO")
-		name="bocco"
-		;;
 	*"BR-6475nD")
 		name="br-6475nd"
 		;;
 	*"Broadway")
 		name="broadway"
 		;;
-	*"C108")
-		name="c108"
-		;;
-	*"C20i")
-		name="c20i"
-		;;
-	*"C50")
-		name="c50"
-		;;
 	*"Carambola")
 		name="carambola"
-		;;
-	*"CF-WR800N")
-		name="cf-wr800n"
-		;;
-	*"CS-QR10")
-		name="cs-qr10"
 		;;
 	*"CY-SWR1100")
 		name="cy-swr1100"
@@ -106,17 +85,8 @@ ramips_board_detect() {
 	*"D105")
 		name="d105"
 		;;
-	*"D240")
-		name="d240"
-		;;
 	*"DAP-1350")
 		name="dap-1350"
-		;;
-	*"DB-WRT01")
-		name="db-wrt01"
-		;;
-	*"DCH-M225")
-		name="dch-m225"
 		;;
 	*"DCS-930")
 		name="dcs-930"
@@ -154,14 +124,8 @@ ramips_board_detect() {
 	*"DIR-645")
 		name="dir-645"
 		;;
-	*"DIR-810L")
-		name="dir-810l"
-		;;
 	*"DIR-860L B1")
 		name="dir-860l-b1"
-		;;
-	*"Dovado Tiny AC")
-		name="tiny-ac"
 		;;
 	*"DuZun DM06")
 		name="duzun-dm06"
@@ -169,20 +133,11 @@ ramips_board_detect() {
 	*"DWR-512 B")
 		name="dwr-512-b"
 		;;
-	*"E1700")
-		name="e1700"
-		;;
 	*"ESR-9753")
 		name="esr-9753"
 		;;
 	*"EW1200")
 		name="ew1200"
-		;;
-	*"EX2700")
-		name="ex2700";
-		;;
-	*"EX3700/EX3800")
-		name="ex3700"
 		;;
 	*"F5D8235 v1")
 		name="f5d8235-v1"
@@ -202,29 +157,11 @@ ramips_board_detect() {
 	*"FreeStation5")
 		name="freestation5"
 		;;
-	*"GL-MT300A")
-		name="gl-mt300a"
-		;;
-	*"GL-MT300N")
-		name="gl-mt300n"
-		;;
-	*"GL-MT750")
-		name="gl-mt750"
-		;;
 	*"GL-MT300N-V2")
 		name="gl-mt300n-v2"
 		;;
-	*"HC5661")
-		name="hc5661"
-		;;
 	*"HC5661A")
 		name="hc5661a"
-		;;
-	*"HC5761")
-		name="hc5761"
-		;;
-	*"HC5861")
-		name="hc5861"
 		;;
 	*"HC5962")
 		name="hc5962"
@@ -277,26 +214,14 @@ ramips_board_detect() {
 	*"Mercury MAC1200R v2")
 		name="mac1200rv2"
 		;;
-	*"MicroWRT")
-		name="microwrt"
-		;;
 	*"MiniEMBPlug")
 		name="miniembplug"
 		;;
 	*"MiniEMBWiFi")
 		name="miniembwifi"
 		;;
-	*"MiWiFi Mini")
-		name="miwifi-mini"
-		;;
 	*"MiWiFi Nano")
 		name="miwifi-nano"
-		;;
-	*"MLW221")
-		name="mlw221"
-		;;
-	*"MLWG2")
-		name="mlwg2"
 		;;
 	*"MOFI3500-3GN")
 		name="mofi3500-3gn"
@@ -310,15 +235,6 @@ ramips_board_detect() {
 	*"MR-102N")
 		name="mr-102n"
 		;;
-	*"MR200")
-		name="mr200"
-		;;
-	*"MT7620a + MT7530 evaluation"*)
-		name="mt7620a_mt7530"
-		;;
-	*"MT7620a V22SG"*)
-		name="mt7620a_v22sg"
-		;;
 	*"MT7621 evaluation"*)
 		name="mt7621"
 		;;
@@ -328,26 +244,14 @@ ramips_board_detect() {
 	*"MT7688 evaluation"*)
 		name="mt7688"
 		;;
-	*"MZK-750DHP")
-		name="mzk-750dhp"
-		;;
 	*"MZK-DP150N")
 		name="mzk-dp150n"
-		;;
-	*"MZK-EX300NP")
-		name="mzk-ex300np"
-		;;
-	*"MZK-EX750NP")
-		name="mzk-ex750np"
 		;;
 	*"MZK-W300NH2"*)
 		name="mzk-w300nh2"
 		;;
 	*"MZK-WDPR"*)
 		name="mzk-wdpr"
-		;;
-	*"NA930")
-		name="na930"
 		;;
 	*"NBG-419N")
 		name="nbg-419n"
@@ -376,23 +280,11 @@ ramips_board_detect() {
 	*"Onion Omega2+")
 		name="omega2p"
 		;;
-	*"OY-0001")
-		name="oy-0001"
-		;;
 	*"PBR-D1")
 		name="pbr-d1"
 		;;
 	*"PBR-M1")
 		name="pbr-m1"
-		;;
-	*"PSG1208")
-		name="psg1208"
-		;;
-	*"PSG1218 rev.A")
-		name="psg1218a"
-		;;
-	*"PSG1218 rev.B")
-		name="psg1218b"
 		;;
 	*"PSR-680W"*)
 		name="psr-680w"
@@ -406,9 +298,6 @@ ramips_board_detect() {
 	*"PX-4885 (8M)")
 		name="px-4885-8M"
 		;;
-	*"Q7")
-		name="zte-q7"
-		;;
 	*"R6220")
 		name="r6220"
 		;;
@@ -421,17 +310,11 @@ ramips_board_detect() {
 	*"RN502J")
 		name="xdxrn502j"
 		;;
-	*"RP-N53")
-		name="rp-n53"
-		;;
 	*"RT5350F-OLinuXino")
 		name="rt5350f-olinuxino"
 		;;
 	*"RT5350F-OLinuXino-EVB")
 		name="rt5350f-olinuxino-evb"
-		;;
-	*"RT-AC51U")
-		name="rt-ac51u"
 		;;
 	*"RT-G32 B1")
 		name="rt-g32-b1"
@@ -439,14 +322,8 @@ ramips_board_detect() {
 	*"RT-N10+")
 		name="rt-n10-plus"
 		;;
-	*"RT-N12+")
-		name="rt-n12p"
-		;;
 	*"RT-N13U")
 		name="rt-n13u"
-		;;
-	*"RT-N14U")
-		name="rt-n14u"
 		;;
 	*"RT-N15")
 		name="rt-n15"
@@ -489,9 +366,6 @@ ramips_board_detect() {
 		;;
 	*"TL-WR841N v13")
 		name="tl-wr841n-v13"
-		;;
-	*"U25AWF-H1")
-		name="u25awf-h1"
 		;;
 	*"U7628-01 (128M RAM/16M flash)")
 		name="u7628-01-128M-16M"
@@ -547,20 +421,8 @@ ramips_board_detect() {
 	*"WCR-150GN")
 		name="wcr-150gn"
 		;;
-	*"WE1026-5G (16M)")
-		name="we1026-5g-16m"
-		;;
 	*"WF-2881")
 		name="wf-2881"
-		;;
-	*"WHR-1166D")
-		name="whr-1166d"
-		;;
-	*"WHR-300HP2")
-		name="whr-300hp2"
-		;;
-	*"WHR-600D")
-		name="whr-600d"
 		;;
 	*"WHR-G300N")
 		name="whr-g300n"
@@ -589,12 +451,6 @@ ramips_board_detect() {
 	*"WMDR-143N")
 		name="wmdr-143n"
 		;;
-	*"WMR-300")
-		name="wmr-300"
-		;;
-	*"WN3000RPv3")
-		name="wn3000rpv3"
-		;;
 	*"WNCE2001")
 		name="wnce2001"
 		;;
@@ -609,12 +465,6 @@ ramips_board_detect() {
 		;;
 	*"WR6202")
 		name="wr6202"
-		;;
-	*"WRH-300CR")
-		name="wrh-300cr"
-		;;
-	*"WRTNODE")
-		name="wrtnode"
 		;;
 	*"WRTnode2R")
 		name="wrtnode2r"
@@ -634,12 +484,6 @@ ramips_board_detect() {
 	*"WT1520 (8M)")
 		name="wt1520-8M"
 		;;
-	*"WT3020 (4M)")
-		name="wt3020-4M"
-		;;
-	*"WT3020 (8M)")
-		name="wt3020-8M"
-		;;
 	*"WZR-AGL300NH")
 		name="wzr-agl300nh"
 		;;
@@ -649,32 +493,8 @@ ramips_board_detect() {
 	*"X8")
 		name="x8"
 		;;
-	*"Y1")
-		name="y1"
-		;;
-	*"Y1S")
-		name="y1s"
-		;;
-	*"ZBT-APE522II")
-		name="zbt-ape522ii"
-		;;
-	*"ZBT-CPE102")
-		name="zbt-cpe102"
-		;;
-	*"ZBT-WA05")
-		name="zbt-wa05"
-		;;
 	*"ZBT-WE1326")
 		name="zbt-we1326"
-		;;
-	*"ZBT-WE2026")
-		name="zbt-we2026"
-		;;
-	*"ZBT-WE826 (16M)")
-		name="zbt-we826-16M"
-		;;
-	*"ZBT-WE826 (32M)")
-		name="zbt-we826-32M"
 		;;
 	*"ZBT-WG2626")
 		name="zbt-wg2626"
@@ -685,23 +505,8 @@ ramips_board_detect() {
 	*"ZBT-WG3526 (32M)")
 		name="zbt-wg3526-32M"
 		;;
-	*"ZBT-WR8305RT")
-		name="zbt-wr8305rt"
-		;;
 	*"ZyXEL Keenetic")
 		name="kn"
-		;;
-	*"ZyXEL Keenetic Omni")
-		name="kn_rc"
-		;;
-	*"ZyXEL Keenetic Omni II")
-		name="kn_rf"
-		;;
-	*"ZyXEL Keenetic Viva")
-		name="kng_rc"
-		;;
-	*"YK1")
-		name="youku-yk1"
 		;;
 	esac
 
