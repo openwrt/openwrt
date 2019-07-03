@@ -729,9 +729,10 @@ define Device/edimax_ew-7478apc
 endef
 TARGET_DEVICES += edimax_ew-7478apc
 
-define Device/tplink_c2-v1
+define Device/tplink_archer-c2-v1
   $(Device/Archer)
   DTS := ArcherC2-v1
+  SUPPORTED_DEVICES += tplink,c2-v1
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc7500001
   TPLINK_HWREV := 50
@@ -740,11 +741,12 @@ define Device/tplink_c2-v1
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-switch-rtl8366-smi kmod-switch-rtl8367b
 endef
-TARGET_DEVICES += tplink_c2-v1
+TARGET_DEVICES += tplink_archer-c2-v1
 
-define Device/tplink_c20-v1
+define Device/tplink_archer-c20-v1
   $(Device/Archer)
   DTS := ArcherC20v1
+  SUPPORTED_DEVICES += tplink,c20-v1
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc2000001
   TPLINK_HWREV := 0x44
@@ -754,7 +756,7 @@ define Device/tplink_c20-v1
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 endef
-TARGET_DEVICES += tplink_c20-v1
+TARGET_DEVICES += tplink_archer-c20-v1
 
 define Device/vonets_var11n-300
   DTS := VAR11N-300
