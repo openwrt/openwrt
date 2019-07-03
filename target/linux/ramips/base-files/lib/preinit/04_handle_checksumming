@@ -11,7 +11,7 @@ do_checksumming_disable() {
 	local board=$(board_name)
 
 	case "$board" in
-	wnce2001)
+	netgear,wnce2001)
 		echo "Board is WNCE2001, updating checksum partition..."
 		local zeroes=/dev/zero
 		local tmpfile=/tmp/wnce2001_checksum

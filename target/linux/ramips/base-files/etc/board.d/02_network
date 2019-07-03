@@ -33,7 +33,7 @@ ramips_setup_interfaces()
 	case $board in
 	wevo,11acnas|\
 	d-team,newifi-d2|\
-	dir-615-h1|\
+	dlink,dir-615-h1|\
 	wevo,w2914ns-v2|\
 	zbtlink,zbt-we2026)
 		ucidef_add_switch "switch0" \
@@ -42,35 +42,35 @@ ramips_setup_interfaces()
 	asiarf,ap7621-001)
 		ucidef_add_switch "switch0" "0:lan" "4:wan" "6@eth0"
 		;;
-	3g150b|\
-	3g300m|\
-	a5-v11|\
-	all0256n-4M|\
-	all0256n-8M|\
-	all5002|\
-	all5003|\
+	tenda,3g150b|\
+	tenda,3g300m|\
+	unbranded,a5-v11|\
+	allnet,all0256n-4m|\
+	allnet,all0256n-8m|\
+	allnet,all5002|\
+	allnet,all5003|\
 	yukai,bocco|\
-	broadway|\
-	dcs-930|\
-	dcs-930l-b1|\
+	hauppauge,broadway|\
+	dlink,dcs-930|\
+	dlink,dcs-930l-b1|\
 	edimax,ew-7476rpc|\
 	edimax,ew-7478ac|\
-	ht-tm02|\
+	hootoo,ht-tm02|\
 	kimax,u35wf|\
 	mediatek,linkit-smart-7688|\
-	m2m|\
+	intenso,memory2move|\
 	microduino,microwrt|\
 	mikrotik,rbm11g|\
-	mpr-a2|\
-	ncs601w|\
+	hame,mpr-a2|\
+	wansview,ncs601w|\
 	onion,omega2|\
 	onion,omega2p|\
 	thunder,timecloud|\
 	tplink,tl-wa801nd-v5|\
-	w150m|\
+	tenda,w150m|\
 	widora,neo-16m|\
 	widora,neo-32m|\
-	wnce2001|\
+	netgear,wnce2001|\
 	zbtlink,zbt-cpe102|\
 	zorlik,zl5900v2|\
 	zte,q7)
@@ -79,20 +79,20 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "eth0"
 		;;
 	kingston,mlw221|\
-	mr-102n)
+	aximcom,mr-102n)
 		ucidef_set_interface_lan "eth0.2"
 		;;
-	3g-6200n|\
+	edimax,3g-6200n|\
 	aigale,ai-br100|\
 	alfa-network,ac1200rm|\
 	mediatek,ap-mt7621a-v60|\
 	xzwifi,creativebox-v1|\
 	sanlinking,d240|\
 	planex,db-wrt01|\
-	dir-300-b7|\
-	dir-320-b1|\
-	dir-610-a1|\
-	dir-615-h1|\
+	dlink,dir-300-b7|\
+	dlink,dir-320-b1|\
+	dlink,dir-610-a1|\
+	dlink,dir-615-h1|\
 	dlink,dir-810l|\
 	dlink,dwr-116-a1|\
 	dlink,dwr-921-c1|\
@@ -101,9 +101,9 @@ ramips_setup_interfaces()
 	firefly,firewrt|\
 	hiwifi,hc5661a|\
 	hiwifi,hc5962|\
-	hlk-rm04|\
+	hilink,hlk-rm04|\
 	phicomm,k2p|\
-	kn|\
+	zyxel,keenetic|\
 	zyxel,keenetic-omni|\
 	mercury,mac1200r-v2|\
 	xiaomi,miwifi-mini|\
@@ -112,9 +112,9 @@ ramips_setup_interfaces()
 	mediatek,mt7628an-eval-board|\
 	mtc,wr1201|\
 	planex,mzk-750dhp|\
-	mzk-w300nh2|\
-	nixcore-x1-8M|\
-	nixcore-x1-16M|\
+	planex,mzk-w300nh2|\
+	nixcore,x1-8m|\
+	nixcore,x1-16m|\
 	ohyeah,oy-0001|\
 	d-team,pbr-m1|\
 	phicomm,psg1208|\
@@ -133,7 +133,7 @@ ramips_setup_interfaces()
 	wavlink,wl-wn570ha1|\
 	wavlink,wl-wn575a3|\
 	netis,wf-2881|\
-	whr-g300n|\
+	buffalo,whr-g300n|\
 	mqmaker,witi-256m|\
 	mqmaker,witi-512m|\
 	netgear,wndr3700-v5|\
@@ -159,7 +159,7 @@ ramips_setup_interfaces()
 	alfa-network,awusfree1|\
 	alfa-network,tube-e4g|\
 	planex,cs-qr10|\
-	d105|\
+	huawei,d105|\
 	dlink,dap-1522-a1|\
 	dlink,dch-m225|\
 	netgear,ex2700|\
@@ -209,19 +209,19 @@ ramips_setup_interfaces()
 		;;
 	belkin,f9k1109v1|\
 	asus,rt-n15|\
-	wl-351)
+	sitecom,wl-351)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0"
 		;;
-	asl26555-8M|\
-	asl26555-16M|\
+	alphanetworks,asl26555-8m|\
+	alphanetworks,asl26555-16m|\
 	asus,rp-n53)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
 		;;
-	atp-52b|\
-	awm002-evb-4M|\
-	awm002-evb-8M|\
+	argus,atp-52b|\
+	asiarf,awm002-evb-4m|\
+	asiarf,awm002-evb-8m|\
 	bdcom,wap2100-sk|\
 	tplink,archer-c20i|\
 	dlink,dir-645|\
@@ -230,12 +230,12 @@ ramips_setup_interfaces()
 	glinet,gl-mt750|\
 	hilink,hlk-7628n|\
 	hiwifi,hc5861b|\
-	jhr-n805r|\
-	jhr-n825r|\
-	jhr-n926r|\
+	jcg,jhr-n805r|\
+	jcg,jhr-n825r|\
+	jcg,jhr-n926r|\
 	mikrotik,rb750gr3|\
 	mikrotik,rbm33g|\
-	mzk-wdpr|\
+	planex,mzk-wdpr|\
 	asus,rt-n14u|\
 	skylab,skw92a|\
 	tplink,archer-c20-v4|\
@@ -250,7 +250,7 @@ ramips_setup_interfaces()
 	unielec,u7628-01-128m-16m|\
 	ubiquiti,edgerouterx|\
 	ubiquiti,edgerouterx-sfp|\
-	ur-326n4g|\
+	upvel,ur-326n4g|\
 	wrtnode,wrtnode|\
 	wrtnode,wrtnode2p|\
 	wrtnode,wrtnode2r|\
@@ -269,7 +269,7 @@ ramips_setup_interfaces()
 	elecom,wrc-1167ghbk2-s|\
 	elecom,wrc-2533gst|\
 	elecom,wrc-1900gst|\
-	hg255d|\
+	huawei,hg255d|\
 	iodata,wn-ax1167gr|\
 	iodata,wn-gx300gr)
 		ucidef_add_switch "switch0" \
@@ -284,17 +284,17 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "0:wan" "6@eth0"
 		;;
-	awapn2403)
+	asiarf,awapn2403)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:wan" "6@eth0"
 		;;
 	b2c|\
-	nw718|\
-	psr-680w|\
-	sl-r7205|\
-	ur-336un|\
-	w502u|\
-	wr6202)
+	netcore,nw718|\
+	petatel,psr-680w|\
+	skyline,sl-r7205|\
+	upvel,ur-336un|\
+	alfa-network,w502u|\
+	accton,wr6202)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		;;
 	edimax,br-6475nd)
@@ -352,8 +352,8 @@ ramips_setup_interfaces()
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "7t@eth0"
 		;;
 	kingston,mlwg2|\
-	wizard8800|\
-	wl-330n)
+	easyacc,wizard-8800|\
+	asus,wl-330n)
 		ucidef_set_interface_lan "eth0.1"
 		;;
 	tplink,archer-mr200)
@@ -369,9 +369,9 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "4:lan" "0:wan" "6@eth0"
 		;;
-	mzk-dp150n|\
-	vocore-8M|\
-	vocore-16M)
+	planex,mzk-dp150n|\
+	vocore,vocore-8m|\
+	vocore,vocore-16m)
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:lan" "6t@eth0"
 		;;
@@ -398,7 +398,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "8@eth0"
 		;;
-	tew-638apb-v2)
+	trendnet,tew-638apb-v2)
 		ucidef_add_switch "switch0" \
 			"4:lan" "6@eth0"
 		;;
@@ -414,8 +414,8 @@ ramips_setup_interfaces()
 			"4:lan" "6@eth0"
 		;;
 	vonets,var11n-300|\
-	wt1520-4M|\
-	wt1520-8M)
+	nexx,wt1520-4m|\
+	nexx,wt1520-8m)
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:wan" "6@eth0"
 		;;
@@ -425,8 +425,8 @@ ramips_setup_interfaces()
 			"0:lan" "2:lan" "6t@eth0"
 		;;
 	belkin,f5d8235-v1|\
-	f5d8235-v2|\
-	tew-714tru|\
+	belkin,f5d8235-v2|\
+	trendnet,tew-714tru|\
 	ralink,v11st-fe|\
 	buffalo,wzr-agl300nh)
 		ucidef_add_switch "switch0" \
@@ -436,7 +436,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"3:lan" "4:wan" "6@eth0"
 		;;
-	wcr-150gn|\
+	sparklan,wcr-150gn|\
 	zbtlink,we1026-5g-16m)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6t@eth0"
@@ -445,7 +445,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "5:wan" "6@eth0"
 		;;
-	wizfi630a)
+	wiznet,wizfi630a)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:wan" "6@eth0"
 		;;
@@ -497,30 +497,30 @@ ramips_setup_macs()
 	local wan_mac=""
 
 	case $board in
-	a5-v11|\
-	ht-tm02|\
+	unbranded,a5-v11|\
+	hootoo,ht-tm02|\
 	loewe,wmdr-143n)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		;;
-	carambola|\
-	freestation5|\
-	w502u|\
-	wnce2001)
+	8devices,carambola|\
+	arcwireless,freestation5|\
+	alfa-network,w502u|\
+	netgear,wnce2001)
 		wan_mac=$(mtd_get_mac_binary factory 46)
 		;;
-	bc2|\
-	broadway|\
-	d105|\
-	dir-300-b7|\
-	dir-320-b1|\
-	dir-620-a1|\
-	esr-9753|\
-	freestation5|\
+	nexaira,bc2|\
+	hauppauge,broadway|\
+	huawei,d105|\
+	dlink,dir-300-b7|\
+	dlink,dir-320-b1|\
+	dlink,dir-620-a1|\
+	engenius,esr-9753|\
+	arcwireless,freestation5|\
 	hilink,hlk-7628n|\
-	hlk-rm04|\
-	mpr-a1|\
-	psr-680w|\
-	sl-r7205|\
+	hilink,hlk-rm04|\
+	hame,mpr-a1|\
+	petatel,psr-680w|\
+	skyline,sl-r7205|\
 	lenovo,newifi-y1|\
 	lenovo,newifi-y1s)
 		lan_mac=$(cat /sys/class/net/eth0/address)
@@ -571,7 +571,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 57350)
 		;;
 	glinet,gl-mt300n-v2|\
-	whr-g300n)
+	buffalo,whr-g300n)
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		;;
 	hiwifi,hc5661|\
@@ -609,11 +609,11 @@ ramips_setup_macs()
 		wan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_setbit_la "$wan_mac")
 		;;
-	m3|\
-	m4-4M|\
-	m4-8M|\
-	x5|\
-	x8)
+	poray,m3|\
+	poray,m4-4m|\
+	poray,m4-8m|\
+	poray,x5|\
+	poray,x8)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_add "$lan_mac" -2)
 		;;
@@ -660,7 +660,7 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_binary factory 57344)
 		wan_mac=$(mtd_get_mac_binary factory 57350)
 		;;
-	w306r-v20)
+	tenda,w306r-v2)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 5)
 		;;
@@ -670,7 +670,7 @@ ramips_setup_macs()
 		wan_mac="$(grep -m1 mac= "/dev/mtd${index}" | cut -d= -f2)"
 		lan_mac=$wan_mac
 		;;
-	wcr-150gn)
+	sparklan,wcr-150gn)
 		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
 	buffalo,whr-1166d|\
@@ -680,7 +680,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$wan_mac
 		;;
-	wizfi630a)
+	wiznet,wizfi630a)
 		lan_mac=$(mtd_get_mac_binary factory 4)
 		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
