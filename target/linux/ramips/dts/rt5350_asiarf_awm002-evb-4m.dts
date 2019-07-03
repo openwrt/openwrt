@@ -1,18 +1,18 @@
 /dts-v1/;
 
-#include "PX-4885.dtsi"
+#include "rt5350_asiarf_awm002-evb.dtsi"
 
 / {
-	compatible = "7links,px-4885-8m", "7links,px-4885", "ralink,rt5350-soc";
-	model = "7Links PX-4885 (8M)";
+	compatible = "asiarf,awm002-evb-4m", "ralink,rt5350-soc";
+	model = "AsiaRF AWM002 EVB (4M)";
 };
 
 &spi0 {
 	status = "okay";
 
-	m25p80@0 {
-		compatible = "jedec,spi-nor";
+	m25p80: m25p80@0 {
 		reg = <0>;
+		compatible = "jedec,spi-nor";
 		spi-max-frequency = <10000000>;
 
 		partitions {
@@ -22,18 +22,18 @@
 
 			partition@0 {
 				label = "u-boot";
-				reg = <0x0 0x20000>;
+				reg = <0x0 0x30000>;
 				read-only;
 			};
 
-			partition@20000 {
-				label = "devdata";
-				reg = <0x20000 0x20000>;
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
 				read-only;
 			};
 
 			factory: partition@40000 {
-				label = "devconf";
+				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
 			};
@@ -41,7 +41,7 @@
 			partition@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x50000 0x7b0000>;
+				reg = <0x50000 0x3b0000>;
 			};
 		};
 	};

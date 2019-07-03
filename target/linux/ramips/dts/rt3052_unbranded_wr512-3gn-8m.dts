@@ -1,19 +1,16 @@
 /dts-v1/;
 
-#include "AWM002-EVB.dtsi"
+#include "rt3052_unbranded_wr512-3gn.dtsi"
 
 / {
-	compatible = "asiarf,awm002-evb-8m", "ralink,rt5350-soc";
-	model = "AsiaRF AWM002 EVB (8M)";
-};
+	compatible = "unbranded,wr512-3gn-8m", "unbranded,wr512-3gn", "ralink,rt3052-soc";
+	model = "WR512-3GN (8M)";
 
-&spi0 {
-	status = "okay";
-
-	m25p80: m25p80@0 {
-		reg = <0>;
-		compatible = "jedec,spi-nor";
-		spi-max-frequency = <10000000>;
+	cfi@1f000000 {
+		compatible = "cfi-flash";
+		reg = <0x1f000000 0x800000>;
+		bank-width = <2>;
+		device-width = <2>;
 
 		partitions {
 			compatible = "fixed-partitions";

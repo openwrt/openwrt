@@ -1,10 +1,10 @@
 /dts-v1/;
 
-#include "WT1520.dtsi"
+#include "rt3050_allnet_all0256n.dtsi"
 
 / {
-	compatible = "nexx,wt1520-4m", "nexx,wt1520", "ralink,rt5350-soc";
-	model = "Nexx WT1520 (4M)";
+	compatible = "allnet,all0256n-4m", "allnet,all0256n", "ralink,rt3050-soc";
+	model = "Allnet ALL0256N (4M)";
 };
 
 &spi0 {
@@ -41,7 +41,7 @@
 			partition@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x50000 0x3b0000>;
+				reg = <0x50000 0x3c8000>;
 			};
 		};
 	};
