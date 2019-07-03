@@ -1,10 +1,10 @@
 /dts-v1/;
 
-#include "ZBT-WE826.dtsi"
+#include "mt7620a_zbtlink_zbt-we826.dtsi"
 
 / {
-	compatible = "zbtlink,zbt-we826-16m", "zbtlink,zbt-we826", "ralink,mt7620a-soc";
-	model = "ZBT-WE826 (16M)";
+	compatible = "zbtlink,zbt-we826-32m", "zbtlink,zbt-we826", "ralink,mt7620a-soc";
+	model = "ZBT-WE826 (32M)";
 };
 
 &spi0 {
@@ -41,7 +41,7 @@
 			firmware: partition@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x50000 0xfb0000>;
+				reg = <0x50000 0x1fb0000>;
 			};
 		};
 	};
