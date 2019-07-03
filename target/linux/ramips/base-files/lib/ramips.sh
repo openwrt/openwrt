@@ -121,9 +121,6 @@ ramips_board_detect() {
 	*"DIR-645")
 		name="dir-645"
 		;;
-	*"DuZun DM06")
-		name="duzun-dm06"
-		;;
 	*"DWR-512 B")
 		name="dwr-512-b"
 		;;
@@ -144,12 +141,6 @@ ramips_board_detect() {
 		;;
 	*"FreeStation5")
 		name="freestation5"
-		;;
-	*"GL-MT300N-V2")
-		name="gl-mt300n-v2"
-		;;
-	*"HC5661A")
-		name="hc5661a"
 		;;
 	*"HG255D")
 		name="hg255d"
@@ -187,23 +178,14 @@ ramips_board_detect() {
 	*"M4 (8M)")
 		name="m4-8M"
 		;;
-	*"MediaTek LinkIt Smart 7688")
-		name="linkits7688"
-		;;
 	*"Memory 2 Move")
 		name="m2m"
-		;;
-	*"Mercury MAC1200R v2")
-		name="mac1200rv2"
 		;;
 	*"MiniEMBPlug")
 		name="miniembplug"
 		;;
 	*"MiniEMBWiFi")
 		name="miniembwifi"
-		;;
-	*"MiWiFi Nano")
-		name="miwifi-nano"
 		;;
 	*"MOFI3500-3GN")
 		name="mofi3500-3gn"
@@ -216,9 +198,6 @@ ramips_board_detect() {
 		;;
 	*"MR-102N")
 		name="mr-102n"
-		;;
-	*"MT7628AN evaluation"*)
-		name="mt7628"
 		;;
 	*"MT7688 evaluation"*)
 		name="mt7688"
@@ -249,15 +228,6 @@ ramips_board_detect() {
 		;;
 	*"NW718")
 		name="nw718"
-		;;
-	*"Onion Omega2")
-		name="omega2"
-		;;
-	*"Onion Omega2+")
-		name="omega2p"
-		;;
-	*"PBR-D1")
-		name="pbr-d1"
 		;;
 	*"PSR-680W"*)
 		name="psr-680w"
@@ -313,18 +283,6 @@ ramips_board_detect() {
 	*"TEW-714TRU")
 		name="tew-714tru"
 		;;
-	*"TL-WR840N v4")
-		name="tl-wr840n-v4"
-		;;
-	*"TL-WR840N v5")
-		name="tl-wr840n-v5"
-		;;
-	*"TL-WR841N v13")
-		name="tl-wr841n-v13"
-		;;
-	*"U7628-01 (128M RAM/16M flash)")
-		name="u7628-01-128M-16M"
-		;;
 	*"UR-326N4G")
 		name="ur-326n4g"
 		;;
@@ -343,12 +301,6 @@ ramips_board_detect() {
 	*"VoCore (16M)")
 		name="vocore-16M"
 		;;
-	*"VoCore2")
-		name="vocore2"
-		;;
-	*"VoCore2-Lite")
-		name="vocore2lite"
-		;;
 	*"W150M")
 		name="w150m"
 		;;
@@ -357,9 +309,6 @@ ramips_board_detect() {
 		;;
 	*"W502U")
 		name="w502u"
-		;;
-	*"WCR-1166DS")
-		name="wcr-1166ds"
 		;;
 	*"WCR-150GN")
 		name="wcr-150gn"
@@ -402,12 +351,6 @@ ramips_board_detect() {
 		;;
 	*"WR6202")
 		name="wr6202"
-		;;
-	*"WRTnode2R")
-		name="wrtnode2r"
-		;;
-	*"WRTnode2P")
-		name="wrtnode2p"
 		;;
 	*"WT1520 (4M)")
 		name="wt1520-4M"
