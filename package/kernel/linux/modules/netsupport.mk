@@ -789,6 +789,22 @@ endef
 $(eval $(call KernelPackage,sched-core))
 
 
+define KernelPackage/sched-cake
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Cake fq_codel/blue derived shaper
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_SCH_CAKE
+  FILES:=$(LINUX_DIR)/net/sched/sch_cake.ko
+  AUTOLOAD:=$(call AutoProbe,sch_cake)
+  DEPENDS:=+kmod-ipt-conntrack
+endef
+
+define KernelPackage/sched-cake/description
+ Common Applications Kept Enhanced fq_codel/blue derived shaper
+endef
+
+$(eval $(call KernelPackage,sched-cake))
+
 define KernelPackage/sched-flower
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Flower traffic classifier
