@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lua
 PKG_VERSION:=5.3.5
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
@@ -105,9 +105,10 @@ define Host/Install
 endef
 
 define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/include
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/lua5.3/lua{,lib,conf}.h $(1)/usr/include/
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/lua5.3/lauxlib.h $(1)/usr/include/
+	$(INSTALL_DIR) $(1)/usr/include/lua5.3 $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/lua5.3/lua{,lib,conf}.h $(1)/usr/include/lua5.3/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/lua5.3/lauxlib.h $(1)/usr/include/lua5.3/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblua5.3.a $(1)/usr/lib/
 endef
 
 define Package/lua5.3/install
