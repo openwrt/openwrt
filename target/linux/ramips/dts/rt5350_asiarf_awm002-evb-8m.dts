@@ -1,18 +1,18 @@
 /dts-v1/;
 
-#include "NIXCORE.dtsi"
+#include "rt5350_asiarf_awm002-evb.dtsi"
 
 / {
-	compatible = "nixcore,x1-16m", "nixcore,x1", "ralink,rt5350-soc";
-	model = "NixcoreX1 (16M)";
+	compatible = "asiarf,awm002-evb-8m", "ralink,rt5350-soc";
+	model = "AsiaRF AWM002 EVB (8M)";
 };
 
 &spi0 {
 	status = "okay";
 
-	m25p80@0 {
-		compatible = "jedec,spi-nor";
+	m25p80: m25p80@0 {
 		reg = <0>;
+		compatible = "jedec,spi-nor";
 		spi-max-frequency = <10000000>;
 
 		partitions {
@@ -21,13 +21,13 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "uboot";
+				label = "u-boot";
 				reg = <0x0 0x30000>;
 				read-only;
 			};
 
 			partition@30000 {
-				label = "uboot-env";
+				label = "u-boot-env";
 				reg = <0x30000 0x10000>;
 				read-only;
 			};
@@ -41,7 +41,7 @@
 			partition@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x50000 0xfb0000>;
+				reg = <0x50000 0x7b0000>;
 			};
 		};
 	};

@@ -1,10 +1,10 @@
 /dts-v1/;
 
-#include "WR512-3GN.dtsi"
+#include "rt3052_unbranded_wr512-3gn.dtsi"
 
 / {
-	compatible = "unbranded,wr512-3gn-8m", "unbranded,wr512-3gn", "ralink,rt3052-soc";
-	model = "WR512-3GN (8M)";
+	compatible = "unbranded,wr512-3gn-4m", "unbranded,wr512-3gn", "ralink,rt3052-soc";
+	model = "WR512-3GN (4M)";
 
 	cfi@1f000000 {
 		compatible = "cfi-flash";
@@ -38,7 +38,7 @@
 			partition@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x50000 0x7b0000>;
+				reg = <0x50000 0x3c8000>;
 			};
 		};
 	};

@@ -23,7 +23,7 @@ endef
 
 
 define Device/tenda_3g150b
-  DTS := 3G150B
+  MTK_SOC := rt5350
   BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   UIMAGE_NAME:= Linux Kernel Image
@@ -35,7 +35,7 @@ endef
 TARGET_DEVICES += tenda_3g150b
 
 define Device/tenda_3g300m
-  DTS := 3G300M
+  MTK_SOC := rt3052
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   UIMAGE_NAME := 3G150M_SPI Kernel Image
   DEVICE_VENDOR := Tenda
@@ -46,7 +46,7 @@ endef
 TARGET_DEVICES += tenda_3g300m
 
 define Device/edimax_3g-6200n
-  DTS := 3G-6200N
+  MTK_SOC := rt3050
   IMAGE_SIZE := 3648k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m 3G62 -f 0x50000 -S 0x01100000 | pad-rootfs | \
@@ -58,7 +58,7 @@ endef
 TARGET_DEVICES += edimax_3g-6200n
 
 define Device/edimax_3g-6200nl
-  DTS := 3G-6200NL
+  MTK_SOC := rt3050
   IMAGE_SIZE := 3648k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m 3G62 -f 0x50000 -S 0x01100000 | pad-rootfs | \
@@ -70,7 +70,7 @@ endef
 TARGET_DEVICES += edimax_3g-6200nl
 
 define Device/unbranded_a5-v11
-  DTS := A5-V11
+  MTK_SOC := rt5350
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
@@ -83,7 +83,7 @@ endef
 TARGET_DEVICES += unbranded_a5-v11
 
 define Device/airlive_air3gii
-  DTS := AIR3GII
+  MTK_SOC := rt5350
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := AirLive
@@ -93,7 +93,7 @@ endef
 TARGET_DEVICES += airlive_air3gii
 
 define Device/allnet_all0256n-4m
-  DTS := ALL0256N-4M
+  MTK_SOC := rt3050
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Allnet
   DEVICE_MODEL := ALL0256N
@@ -104,7 +104,7 @@ endef
 TARGET_DEVICES += allnet_all0256n-4m
 
 define Device/allnet_all0256n-8m
-  DTS := ALL0256N-8M
+  MTK_SOC := rt3050
   DEVICE_VENDOR := Allnet
   DEVICE_MODEL := ALL0256N
   DEVICE_VARIANT := 8M
@@ -114,7 +114,7 @@ endef
 TARGET_DEVICES += allnet_all0256n-8m
 
 define Device/allnet_all5002
-  DTS := ALL5002
+  MTK_SOC := rt3352
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Allnet
   DEVICE_MODEL := ALL5002
@@ -125,7 +125,7 @@ endef
 TARGET_DEVICES += allnet_all5002
 
 define Device/allnet_all5003
-  DTS := ALL5003
+  MTK_SOC := rt5350
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Allnet
   DEVICE_MODEL := ALL5003
@@ -136,7 +136,7 @@ endef
 TARGET_DEVICES += allnet_all5003
 
 define Device/alphanetworks_asl26555-8m
-  DTS := ASL26555-8M
+  MTK_SOC := rt3050
   IMAGE_SIZE := 7744k
   DEVICE_VENDOR := Alpha
   DEVICE_MODEL := ASL26555
@@ -146,7 +146,7 @@ endef
 TARGET_DEVICES += alphanetworks_asl26555-8m
 
 define Device/alphanetworks_asl26555-16m
-  DTS := ASL26555-16M
+  MTK_SOC := rt3050
   IMAGE_SIZE := 15872k
   DEVICE_VENDOR := Alpha
   DEVICE_MODEL := ASL26555
@@ -157,7 +157,7 @@ endef
 TARGET_DEVICES += alphanetworks_asl26555-16m
 
 define Device/argus_atp-52b
-  DTS := ATP-52B
+  MTK_SOC := rt3052
   IMAGE_SIZE := 7808k
   DEVICE_VENDOR := Argus
   DEVICE_MODEL := ATP-52B
@@ -166,7 +166,7 @@ endef
 TARGET_DEVICES += argus_atp-52b
 
 define Device/asiarf_awm002-evb-4m
-  DTS := AWM002-EVB-4M
+  MTK_SOC := rt5350
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AWM002-EVB
@@ -178,7 +178,7 @@ endef
 TARGET_DEVICES += asiarf_awm002-evb-4m
 
 define Device/asiarf_awm002-evb-8m
-  DTS := AWM002-EVB-8M
+  MTK_SOC := rt5350
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AWM002-EVB/AWM003-EVB
   DEVICE_VARIANT := 8M
@@ -189,7 +189,7 @@ endef
 TARGET_DEVICES += asiarf_awm002-evb-8m
 
 define Device/asiarf_awapn2403
-  DTS := AWAPN2403
+  MTK_SOC := rt3052
   BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := AsiaRF
@@ -199,7 +199,7 @@ endef
 TARGET_DEVICES += asiarf_awapn2403
 
 define Device/nexaira_bc2
-  DTS := BC2
+  MTK_SOC := rt3052
   DEVICE_VENDOR := NexAira
   DEVICE_MODEL := BC2
   SUPPORTED_DEVICES += bc2
@@ -207,7 +207,7 @@ endef
 TARGET_DEVICES += nexaira_bc2
 
 define Device/hauppauge_broadway
-  DTS := BROADWAY
+  MTK_SOC := rt3052
   IMAGE_SIZE := 7744k
   UIMAGE_NAME:= Broadway Kernel Image
   DEVICE_VENDOR := Hauppauge
@@ -218,8 +218,8 @@ endef
 TARGET_DEVICES += hauppauge_broadway
 
 define Device/8devices_carambola
-  DTS := CARAMBOLA
-  DEVICE_VENDOR := 8devices 
+  MTK_SOC := rt3050
+  DEVICE_VENDOR := 8devices
   DEVICE_MODEL := Carambola
   DEVICE_PACKAGES :=
   SUPPORTED_DEVICES += carambola
@@ -227,7 +227,7 @@ endef
 TARGET_DEVICES += 8devices_carambola
 
 define Device/huawei_d105
-  DTS := D105
+  MTK_SOC := rt3050
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Huawei
@@ -237,7 +237,7 @@ endef
 TARGET_DEVICES += huawei_d105
 
 define Device/dlink_dap-1350
-  DTS := DAP-1350
+  MTK_SOC := rt3052
   IMAGES += factory.bin factory-NA.bin
   IMAGE_SIZE := 7488k
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
@@ -251,7 +251,7 @@ endef
 TARGET_DEVICES += dlink_dap-1350
 
 define Device/dlink_dcs-930
-  DTS := DCS-930
+  MTK_SOC := rt3050
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DCS-930
@@ -261,7 +261,7 @@ endef
 TARGET_DEVICES += dlink_dcs-930
 
 define Device/dlink_dcs-930l-b1
-  DTS := DCS-930L-B1
+  MTK_SOC := rt5350
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DCS-930L
@@ -272,7 +272,7 @@ endef
 TARGET_DEVICES += dlink_dcs-930l-b1
 
 define Device/dlink_dir-300-b1
-  DTS := DIR-300-B1
+  MTK_SOC := rt3050
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
@@ -285,7 +285,7 @@ endef
 TARGET_DEVICES += dlink_dir-300-b1
 
 define Device/dlink_dir-300-b7
-  DTS := DIR-300-B7
+  MTK_SOC := rt5350
   BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := D-Link
@@ -296,7 +296,7 @@ endef
 TARGET_DEVICES += dlink_dir-300-b7
 
 define Device/dlink_dir-320-b1
-  DTS := DIR-320-B1
+  MTK_SOC := rt5350
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-320
   DEVICE_VARIANT := B1
@@ -305,7 +305,7 @@ endef
 TARGET_DEVICES += dlink_dir-320-b1
 
 define Device/dlink_dir-600-b1
-  DTS := DIR-600-B1
+  MTK_SOC := rt3050
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
@@ -319,7 +319,7 @@ TARGET_DEVICES += dlink_dir-600-b1
 
 define Device/dlink_dir-610-a1
   $(Device/seama)
-  DTS := DIR-610-A1
+  MTK_SOC := rt5350
   BLOCKSIZE := 4k
   SEAMA_SIGNATURE := wrgn59_dlob.hans_dir610
   KERNEL := $(KERNEL_DTB)
@@ -333,7 +333,7 @@ endef
 TARGET_DEVICES += dlink_dir-610-a1
 
 define Device/dlink_dir-615-d
-  DTS := DIR-615-D
+  MTK_SOC := rt3050
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
@@ -347,7 +347,7 @@ TARGET_DEVICES += dlink_dir-615-d
 
 
 define Device/dlink_dir-615-h1
-  DTS := DIR-615-H1
+  MTK_SOC := rt3352
   BLOCKSIZE := 4k
   IMAGES += factory.bin
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
@@ -361,7 +361,7 @@ endef
 TARGET_DEVICES += dlink_dir-615-h1
 
 define Device/dlink_dir-620-a1
-  DTS := DIR-620-A1
+  MTK_SOC := rt3050
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-620
   DEVICE_VARIANT := A1
@@ -370,7 +370,7 @@ endef
 TARGET_DEVICES += dlink_dir-620-a1
 
 define Device/dlink_dir-620-d1
-  DTS := DIR-620-D1
+  MTK_SOC := rt3352
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-620
   DEVICE_VARIANT := D1
@@ -379,7 +379,7 @@ endef
 TARGET_DEVICES += dlink_dir-620-d1
 
 define Device/dlink_dwr-512-b
-  DTS := DWR-512-B
+  MTK_SOC := rt5350
   IMAGE_SIZE := 7800k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DWR-512
@@ -399,7 +399,7 @@ endef
 TARGET_DEVICES += dlink_dwr-512-b
 
 define Device/engenius_esr-9753
-  DTS := ESR-9753
+  MTK_SOC := rt3052
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := EnGenius
@@ -409,7 +409,7 @@ endef
 TARGET_DEVICES += engenius_esr-9753
 
 define Device/belkin_f5d8235-v2
-  DTS := F5D8235_V2
+  MTK_SOC := rt3052
   IMAGE_SIZE := 7744k
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := F5D8235
@@ -420,7 +420,7 @@ endef
 TARGET_DEVICES += belkin_f5d8235-v2
 
 define Device/belkin_f7c027
-  DTS := F7C027
+  MTK_SOC := rt5352
   IMAGE_SIZE := 7616k
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := F7C027
@@ -430,7 +430,7 @@ endef
 TARGET_DEVICES += belkin_f7c027
 
 define Device/fon_fonera-20n
-  DTS := FONERA20N
+  MTK_SOC := rt3052
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | \
 	edimax-header -s RSDK -m NL1T -f 0x50000 -S 0xc0000
@@ -442,7 +442,7 @@ endef
 TARGET_DEVICES += fon_fonera-20n
 
 define Device/arcwireless_freestation5
-  DTS := FREESTATION5
+  MTK_SOC := rt3050
   DEVICE_VENDOR := ARC Wireless
   DEVICE_MODEL := FreeStation
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-rt2500-usb kmod-rt2800-usb kmod-rt2x00-usb
@@ -451,7 +451,7 @@ endef
 TARGET_DEVICES += arcwireless_freestation5
 
 define Device/huawei_hg255d
-  DTS := HG255D
+  MTK_SOC := rt3052
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := HuaWei
   DEVICE_MODEL := HG255D
@@ -460,7 +460,7 @@ endef
 TARGET_DEVICES += huawei_hg255d
 
 define Device/hilink_hlk-rm04
-  DTS := HLKRM04
+  MTK_SOC := rt5350
   IMAGES += factory.bin
   IMAGE/factory.bin := \
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | hilink-header
@@ -471,7 +471,7 @@ endef
 TARGET_DEVICES += hilink_hlk-rm04
 
 define Device/hootoo_ht-tm02
-  DTS := HT-TM02
+  MTK_SOC := rt5350
   DEVICE_VENDOR := HooToo
   DEVICE_MODEL := HT-TM02
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
@@ -480,7 +480,7 @@ endef
 TARGET_DEVICES += hootoo_ht-tm02
 
 define Device/aztech_hw550-3g
-  DTS := HW550-3G
+  MTK_SOC := rt3052
   DEVICE_VENDOR := Aztech
   DEVICE_MODEL := HW550-3G
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
@@ -489,7 +489,7 @@ endef
 TARGET_DEVICES += aztech_hw550-3g
 
 define Device/poray_ip2202
-  DTS := IP2202
+  MTK_SOC := rt3052
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := IP2202
   SUPPORTED_DEVICES += ip2202
@@ -497,7 +497,7 @@ endef
 TARGET_DEVICES += poray_ip2202
 
 define Device/jcg_jhr-n805r
-  DTS := JHR-N805R
+  MTK_SOC := rt3050
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
@@ -509,7 +509,7 @@ endef
 TARGET_DEVICES += jcg_jhr-n805r
 
 define Device/jcg_jhr-n825r
-  DTS := JHR-N825R
+  MTK_SOC := rt3052
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
@@ -521,7 +521,7 @@ endef
 TARGET_DEVICES += jcg_jhr-n825r
 
 define Device/jcg_jhr-n926r
-  DTS := JHR-N926R
+  MTK_SOC := rt3052
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
@@ -533,7 +533,7 @@ endef
 TARGET_DEVICES += jcg_jhr-n926r
 
 define Device/intenso_memory2move
-  DTS := M2M
+  MTK_SOC := rt5350
   UIMAGE_NAME:= Linux Kernel Image
   DEVICE_VENDOR := Intenso
   DEVICE_MODEL := Memory 2 Move
@@ -545,7 +545,7 @@ endef
 TARGET_DEVICES += intenso_memory2move
 
 define Device/poray_m3
-  DTS := M3
+  MTK_SOC := rt5350
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
@@ -559,7 +559,7 @@ endef
 TARGET_DEVICES += poray_m3
 
 define Device/poray_m4-4m
-  DTS := M4-4M
+  MTK_SOC := rt5350
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
@@ -574,7 +574,7 @@ endef
 TARGET_DEVICES += poray_m4-4m
 
 define Device/poray_m4-8m
-  DTS := M4-8M
+  MTK_SOC := rt5350
   IMAGES += factory.bin
   IMAGE/factory.bin := \
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B M4 -F 8M
@@ -587,7 +587,7 @@ endef
 TARGET_DEVICES += poray_m4-8m
 
 define Device/omnima_miniembplug
-  DTS := MINIEMBPLUG
+  MTK_SOC := rt5350
   DEVICE_VENDOR := Omnima
   DEVICE_MODEL := MiniEMBPlug
   SUPPORTED_DEVICES += miniembplug
@@ -595,7 +595,7 @@ endef
 TARGET_DEVICES += omnima_miniembplug
 
 define Device/omnima_miniembwifi
-  DTS := MINIEMBWIFI
+  MTK_SOC := rt3052
   DEVICE_VENDOR := Omnima
   DEVICE_MODEL := MiniEMBWiFi
   SUPPORTED_DEVICES += miniembwifi
@@ -603,7 +603,7 @@ endef
 TARGET_DEVICES += omnima_miniembwifi
 
 define Device/mofinetwork_mofi3500-3gn
-  DTS := MOFI3500-3GN
+  MTK_SOC := rt3052
   DEVICE_VENDOR := MoFi Network
   DEVICE_MODEL := MOFI3500-3GN
   SUPPORTED_DEVICES += mofi3500-3gn
@@ -611,7 +611,7 @@ endef
 TARGET_DEVICES += mofinetwork_mofi3500-3gn
 
 define Device/hame_mpr-a1
-  DTS := MPRA1
+  MTK_SOC := rt5350
   BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   UIMAGE_NAME:= Linux Kernel Image
@@ -624,7 +624,7 @@ endef
 TARGET_DEVICES += hame_mpr-a1
 
 define Device/hame_mpr-a2
-  DTS := MPRA2
+  MTK_SOC := rt5350
   UIMAGE_NAME:= Linux Kernel Image
   DEVICE_VENDOR := HAME
   DEVICE_MODEL := MPR
@@ -635,7 +635,7 @@ endef
 TARGET_DEVICES += hame_mpr-a2
 
 define Device/aximcom_mr-102n
-  DTS := MR-102N
+  MTK_SOC := rt3052
   DEVICE_VENDOR := AXIMCom
   DEVICE_MODEL := MR-102N
   SUPPORTED_DEVICES += mr-102n
@@ -643,7 +643,7 @@ endef
 TARGET_DEVICES += aximcom_mr-102n
 
 define Device/planex_mzk-dp150n
-  DTS := MZK-DP150N
+  MTK_SOC := rt5350
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Planex
@@ -654,7 +654,7 @@ endef
 TARGET_DEVICES += planex_mzk-dp150n
 
 define Device/planex_mzk-w300nh2
-  DTS := MZK-W300NH2
+  MTK_SOC := rt3052
   IMAGE_SIZE := 3648k
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | \
@@ -666,7 +666,7 @@ endef
 TARGET_DEVICES += planex_mzk-w300nh2
 
 define Device/planex_mzk-wdpr
-  DTS := MZK-WDPR
+  MTK_SOC := rt3052
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := MZK-WDPR
   SUPPORTED_DEVICES += mzk-wdpr
@@ -674,7 +674,7 @@ endef
 TARGET_DEVICES += planex_mzk-wdpr
 
 define Device/zyxel_nbg-419n
-  DTS := NBG-419N
+  MTK_SOC := rt3052
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := ZyXEL
@@ -684,7 +684,7 @@ endef
 TARGET_DEVICES += zyxel_nbg-419n
 
 define Device/zyxel_nbg-419n-v2
-  DTS := NBG-419N2
+  MTK_SOC := rt3352
   IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NBG-419N
@@ -694,7 +694,7 @@ endef
 TARGET_DEVICES += zyxel_nbg-419n-v2
 
 define Device/wansview_ncs601w
-  DTS := NCS601W
+  MTK_SOC := rt5350
   DEVICE_VENDOR := Wansview
   DEVICE_MODEL := NCS601W
   DEVICE_PACKAGES := kmod-video-core kmod-video-uvc \
@@ -704,7 +704,7 @@ endef
 TARGET_DEVICES += wansview_ncs601w
 
 define Device/nixcore_x1-8m
-  DTS := NIXCORE-8M
+  MTK_SOC := rt5350
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Nixcore
   DEVICE_MODEL := X1
@@ -715,7 +715,7 @@ endef
 TARGET_DEVICES += nixcore_x1-8m
 
 define Device/nixcore_x1-16m
-  DTS := NIXCORE-16M
+  MTK_SOC := rt5350
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Nixcore
   DEVICE_MODEL := X1
@@ -726,7 +726,7 @@ endef
 TARGET_DEVICES += nixcore_x1-16m
 
 define Device/netcore_nw718
-  DTS := NW718
+  MTK_SOC := rt3050
   IMAGE_SIZE := 3712k
   UIMAGE_NAME:= ARA1B4NCRNW718;1
   DEVICE_VENDOR := Netcore
@@ -736,7 +736,7 @@ endef
 TARGET_DEVICES += netcore_nw718
 
 define Device/petatel_psr-680w
-  DTS := PSR-680W
+  MTK_SOC := rt3052
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Petatel
@@ -746,7 +746,7 @@ endef
 TARGET_DEVICES += petatel_psr-680w
 
 define Device/prolink_pwh2004
-  DTS := PWH2004
+  MTK_SOC := rt3052
   DEVICE_VENDOR := Prolink
   DEVICE_MODEL := PWH2004
   DEVICE_PACKAGES :=
@@ -755,7 +755,7 @@ endef
 TARGET_DEVICES += prolink_pwh2004
 
 define Device/7links_px-4885-4m
-  DTS := PX-4885-4M
+  MTK_SOC := rt5350
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := 7Links
   DEVICE_MODEL := PX-4885
@@ -767,7 +767,7 @@ endef
 TARGET_DEVICES += 7links_px-4885-4m
 
 define Device/7links_px-4885-8m
-  DTS := PX-4885-8M
+  MTK_SOC := rt5350
   DEVICE_VENDOR := 7Links
   DEVICE_MODEL := PX-4885
   DEVICE_VARIANT := 8M
@@ -778,7 +778,7 @@ endef
 TARGET_DEVICES += 7links_px-4885-8m
 
 define Device/olimex_rt5350f-olinuxino
-  DTS := RT5350F-OLINUXINO
+  MTK_SOC := rt5350
   DEVICE_VENDOR := OLIMEX
   DEVICE_MODEL := RT5350F-OLinuXino
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
@@ -789,7 +789,7 @@ endef
 TARGET_DEVICES += olimex_rt5350f-olinuxino
 
 define Device/olimex_rt5350f-olinuxino-evb
-  DTS := RT5350F-OLINUXINO-EVB
+  MTK_SOC := rt5350
   DEVICE_VENDOR := OLIMEX
   DEVICE_MODEL := RT5350F-OLinuXino-EVB
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
@@ -800,7 +800,7 @@ endef
 TARGET_DEVICES += olimex_rt5350f-olinuxino-evb
 
 define Device/asus_rt-g32-b1
-  DTS := RT-G32-B1
+  MTK_SOC := rt3050
   BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Asus
@@ -811,7 +811,7 @@ endef
 TARGET_DEVICES += asus_rt-g32-b1
 
 define Device/asus_rt-n10-plus
-  DTS := RT-N10-PLUS
+  MTK_SOC := rt3050
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Asus
@@ -821,7 +821,7 @@ endef
 TARGET_DEVICES += asus_rt-n10-plus
 
 define Device/asus_rt-n13u
-  DTS := RT-N13U
+  MTK_SOC := rt3052
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-N13U
   DEVICE_PACKAGES := kmod-leds-gpio kmod-rt2800-pci kmod-usb-dwc2
@@ -830,7 +830,7 @@ endef
 TARGET_DEVICES += asus_rt-n13u
 
 define Device/teltonika_rut5xx
-  DTS := RUT5XX
+  MTK_SOC := rt3050
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT5XX
   DEVICE_PACKAGES := om-watchdog
@@ -839,7 +839,7 @@ endef
 TARGET_DEVICES += teltonika_rut5xx
 
 define Device/skyline_sl-r7205
-  DTS := SL-R7205
+  MTK_SOC := rt3052
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Skyline
@@ -849,7 +849,7 @@ endef
 TARGET_DEVICES += skyline_sl-r7205
 
 define Device/trendnet_tew-638apb-v2
-  DTS := TEW-638APB-V2
+  MTK_SOC := rt3050
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGE/sysupgrade.bin := $$(sysupgrade_bin) | umedia-header 0x026382 | \
@@ -862,7 +862,7 @@ endef
 TARGET_DEVICES += trendnet_tew-638apb-v2
 
 define Device/trendnet_tew-714tru
-  DTS := TEW-714TRU
+  MTK_SOC := rt5350
   DEVICE_VENDOR := TRENDnet
   DEVICE_MODEL := TEW-714TRU
   SUPPORTED_DEVICES += tew-714tru
@@ -870,7 +870,7 @@ endef
 TARGET_DEVICES += trendnet_tew-714tru
 
 define Device/upvel_ur-326n4g
-  DTS := UR-326N4G
+  MTK_SOC := rt3052
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := UPVEL
@@ -881,7 +881,7 @@ endef
 TARGET_DEVICES += upvel_ur-326n4g
 
 define Device/upvel_ur-336un
-  DTS := UR-336UN
+  MTK_SOC := rt3052
   DEVICE_VENDOR := UPVEL
   DEVICE_MODEL := UR-336UN
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
@@ -890,7 +890,7 @@ endef
 TARGET_DEVICES += upvel_ur-336un
 
 define Device/ralink_v22rw-2x2
-  DTS := V22RW-2X2
+  MTK_SOC := rt3052
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Ralink
@@ -900,7 +900,7 @@ endef
 TARGET_DEVICES += ralink_v22rw-2x2
 
 define Device/vocore_vocore-8m
-  DTS := VOCORE-8M
+  MTK_SOC := rt5350
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore
@@ -913,7 +913,7 @@ endef
 TARGET_DEVICES += vocore_vocore-8m
 
 define Device/vocore_vocore-16m
-  DTS := VOCORE-16M
+  MTK_SOC := rt5350
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore
@@ -926,7 +926,7 @@ endef
 TARGET_DEVICES += vocore_vocore-16m
 
 define Device/tenda_w150m
-  DTS := W150M
+  MTK_SOC := rt3050
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   UIMAGE_NAME:= W150M Kernel Image
   DEVICE_VENDOR := Tenda
@@ -936,7 +936,7 @@ endef
 TARGET_DEVICES += tenda_w150m
 
 define Device/tenda_w306r-v2
-  DTS := W306R_V20
+  MTK_SOC := rt3052
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   UIMAGE_NAME:= linkn Kernel Image
   DEVICE_VENDOR := Tenda
@@ -947,7 +947,7 @@ endef
 TARGET_DEVICES += tenda_w306r-v2
 
 define Device/alfa-network_w502u
-  DTS := W502U
+  MTK_SOC := rt3052
   DEVICE_VENDOR := ALFA
   DEVICE_MODEL := Networks W502U
   SUPPORTED_DEVICES += w502u
@@ -955,7 +955,7 @@ endef
 TARGET_DEVICES += alfa-network_w502u
 
 define Device/sparklan_wcr-150gn
-  DTS := WCR150GN
+  MTK_SOC := rt3050
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Sparklan
@@ -965,7 +965,7 @@ endef
 TARGET_DEVICES += sparklan_wcr-150gn
 
 define Device/buffalo_whr-g300n
-  DTS := WHR-G300N
+  MTK_SOC := rt3052
   BLOCKSIZE := 64k
   IMAGE_SIZE := 3801088
   DEVICE_VENDOR := Buffalo
@@ -978,7 +978,7 @@ endef
 TARGET_DEVICES += buffalo_whr-g300n
 
 define Device/easyacc_wizard-8800
-  DTS := WIZARD8800
+  MTK_SOC := rt5350
   UIMAGE_NAME:= Linux Kernel Image
   DEVICE_VENDOR := EasyAcc
   DEVICE_MODEL := WIZARD 8800
@@ -987,7 +987,7 @@ endef
 TARGET_DEVICES += easyacc_wizard-8800
 
 define Device/wiznet_wizfi630a
-  DTS := WIZFI630A
+  MTK_SOC := rt5350
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := WIZnet
   DEVICE_MODEL := WizFi630A
@@ -996,7 +996,7 @@ endef
 TARGET_DEVICES += wiznet_wizfi630a
 
 define Device/asus_wl-330n
-  DTS := WL-330N
+  MTK_SOC := rt3050
   BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Asus
@@ -1006,7 +1006,7 @@ endef
 TARGET_DEVICES += asus_wl-330n
 
 define Device/asus_wl-330n3g
-  DTS := WL-330N3G
+  MTK_SOC := rt3050
   BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Asus
@@ -1017,7 +1017,7 @@ endef
 TARGET_DEVICES += asus_wl-330n3g
 
 define Device/sitecom_wl-351
-  DTS := WL-351
+  MTK_SOC := rt3052
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Sitecom
@@ -1028,7 +1028,7 @@ endef
 TARGET_DEVICES += sitecom_wl-351
 
 define Device/netgear_wnce2001
-  DTS := WNCE2001
+  MTK_SOC := rt3052
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin factory-NA.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
@@ -1042,7 +1042,7 @@ endef
 TARGET_DEVICES += netgear_wnce2001
 
 define Device/unbranded_wr512-3gn-4m
-  DTS := WR512-3GN-4M
+  MTK_SOC := rt3052
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Ralink
   DEVICE_MODEL := WR512-3GN
@@ -1052,7 +1052,7 @@ endef
 TARGET_DEVICES += unbranded_wr512-3gn-4m
 
 define Device/unbranded_wr512-3gn-8m
-  DTS := WR512-3GN-8M
+  MTK_SOC := rt3052
   DEVICE_VENDOR := Ralink
   DEVICE_MODEL := WR512-3GN
   DEVICE_VARIANT := 8M
@@ -1061,7 +1061,7 @@ endef
 TARGET_DEVICES += unbranded_wr512-3gn-8m
 
 define Device/accton_wr6202
-  DTS := WR6202
+  MTK_SOC := rt3052
   DEVICE_VENDOR := Accton
   DEVICE_MODEL := WR6202
   SUPPORTED_DEVICES += wr6202
@@ -1069,7 +1069,7 @@ endef
 TARGET_DEVICES += accton_wr6202
 
 define Device/nexx_wt1520-4m
-  DTS := WT1520-4M
+  MTK_SOC := rt5350
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
@@ -1082,7 +1082,7 @@ endef
 TARGET_DEVICES += nexx_wt1520-4m
 
 define Device/nexx_wt1520-8m
-  DTS := WT1520-8M
+  MTK_SOC := rt5350
   IMAGES += factory.bin
   IMAGE/factory.bin := \
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B WT1520 -F 8M
@@ -1094,7 +1094,7 @@ endef
 TARGET_DEVICES += nexx_wt1520-8m
 
 define Device/poray_x5
-  DTS := X5
+  MTK_SOC := rt5350
   IMAGES += factory.bin
   IMAGE/factory.bin := \
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B X5 -F 8M
@@ -1106,7 +1106,7 @@ endef
 TARGET_DEVICES += poray_x5
 
 define Device/poray_x8
-  DTS := X8
+  MTK_SOC := rt5350
   IMAGES += factory.bin
   IMAGE/factory.bin := \
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B X8 -F 8M
@@ -1118,7 +1118,7 @@ endef
 TARGET_DEVICES += poray_x8
 
 define Device/unbranded_xdx-rn502j
-  DTS := XDXRN502J
+  MTK_SOC := rt3052
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := XDX
@@ -1128,7 +1128,7 @@ endef
 TARGET_DEVICES += unbranded_xdx-rn502j
 
 define Device/zyxel_keenetic
-  DTS := kn
+  MTK_SOC := rt3052
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := ZyXEL
@@ -1139,7 +1139,7 @@ endef
 TARGET_DEVICES += zyxel_keenetic
 
 define Device/zyxel_keenetic-start
-  DTS := kn_st
+  MTK_SOC := rt5350
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic Start
@@ -1147,7 +1147,7 @@ endef
 TARGET_DEVICES += zyxel_keenetic-start
 
 define Device/zorlik_zl5900v2
-  DTS := ZL5900V2
+  MTK_SOC := rt5350
   DEVICE_VENDOR := Zorlik
   DEVICE_MODEL := ZL5900V2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev

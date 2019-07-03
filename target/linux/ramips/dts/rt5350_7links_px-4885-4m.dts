@@ -1,10 +1,10 @@
 /dts-v1/;
 
-#include "M4.dtsi"
+#include "rt5350_7links_px-4885.dtsi"
 
 / {
-	compatible = "poray,m4-4m", "poray,m4", "ralink,rt5350-soc";
-	model = "Poray M4 (4M)";
+	compatible = "7links,px-4885-4m", "7links,px-4885", "ralink,rt5350-soc";
+	model = "7Links PX-4885 (4M)";
 };
 
 &spi0 {
@@ -22,18 +22,18 @@
 
 			partition@0 {
 				label = "u-boot";
-				reg = <0x0 0x30000>;
+				reg = <0x0 0x20000>;
 				read-only;
 			};
 
-			partition@30000 {
-				label = "u-boot-env";
-				reg = <0x30000 0x10000>;
+			partition@20000 {
+				label = "devdata";
+				reg = <0x20000 0x20000>;
 				read-only;
 			};
 
 			factory: partition@40000 {
-				label = "factory";
+				label = "devconf";
 				reg = <0x40000 0x10000>;
 				read-only;
 			};

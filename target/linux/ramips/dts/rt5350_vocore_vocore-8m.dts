@@ -1,18 +1,18 @@
 /dts-v1/;
 
-#include "AWM002-EVB.dtsi"
+#include "rt5350_vocore_vocore.dtsi"
 
 / {
-	compatible = "asiarf,awm002-evb-4m", "ralink,rt5350-soc";
-	model = "AsiaRF AWM002 EVB (4M)";
+	compatible = "vocore,vocore-8m", "vocore,vocore", "ralink,rt5350-soc";
+	model = "VoCore (8M)";
 };
 
 &spi0 {
 	status = "okay";
 
-	m25p80: m25p80@0 {
-		reg = <0>;
+	m25p80@0 {
 		compatible = "jedec,spi-nor";
+		reg = <0>;
 		spi-max-frequency = <10000000>;
 
 		partitions {
@@ -21,13 +21,13 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "u-boot";
+				label = "uboot";
 				reg = <0x0 0x30000>;
 				read-only;
 			};
 
 			partition@30000 {
-				label = "u-boot-env";
+				label = "uboot-env";
 				reg = <0x30000 0x10000>;
 				read-only;
 			};
@@ -41,7 +41,7 @@
 			partition@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x50000 0x3b0000>;
+				reg = <0x50000 0x7b0000>;
 			};
 		};
 	};

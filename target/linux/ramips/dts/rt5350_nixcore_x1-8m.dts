@@ -1,10 +1,10 @@
 /dts-v1/;
 
-#include "PX-4885.dtsi"
+#include "rt5350_nixcore_x1.dtsi"
 
 / {
-	compatible = "7links,px-4885-4m", "7links,px-4885", "ralink,rt5350-soc";
-	model = "7Links PX-4885 (4M)";
+	compatible = "nixcore,x1-8m", "nixcore,x1", "ralink,rt5350-soc";
+	model = "NixcoreX1 (8M)";
 };
 
 &spi0 {
@@ -21,19 +21,19 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "u-boot";
-				reg = <0x0 0x20000>;
+				label = "uboot";
+				reg = <0x0 0x30000>;
 				read-only;
 			};
 
-			partition@20000 {
-				label = "devdata";
-				reg = <0x20000 0x20000>;
+			partition@30000 {
+				label = "uboot-env";
+				reg = <0x30000 0x10000>;
 				read-only;
 			};
 
 			factory: partition@40000 {
-				label = "devconf";
+				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
 			};
@@ -41,7 +41,7 @@
 			partition@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x50000 0x3b0000>;
+				reg = <0x50000 0x7b0000>;
 			};
 		};
 	};

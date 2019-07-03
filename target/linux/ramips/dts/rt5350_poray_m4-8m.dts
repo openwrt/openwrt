@@ -1,16 +1,19 @@
 /dts-v1/;
 
-#include "WR512-3GN.dtsi"
+#include "rt5350_poray_m4.dtsi"
 
 / {
-	compatible = "unbranded,wr512-3gn-4m", "unbranded,wr512-3gn", "ralink,rt3052-soc";
-	model = "WR512-3GN (4M)";
+	compatible = "poray,m4-8m", "poray,m4", "ralink,rt5350-soc";
+	model = "Poray M4 (8M)";
+};
 
-	cfi@1f000000 {
-		compatible = "cfi-flash";
-		reg = <0x1f000000 0x800000>;
-		bank-width = <2>;
-		device-width = <2>;
+&spi0 {
+	status = "okay";
+
+	m25p80@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -38,7 +41,7 @@
 			partition@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x50000 0x3c8000>;
+				reg = <0x50000 0x7b0000>;
 			};
 		};
 	};

@@ -1,10 +1,10 @@
 /dts-v1/;
 
-#include "ALL0256N.dtsi"
+#include "rt5350_vocore_vocore.dtsi"
 
 / {
-	compatible = "allnet,all0256n-8m", "allnet,all0256n", "ralink,rt3050-soc";
-	model = "Allnet ALL0256N (8M)";
+	compatible = "vocore,vocore-16m", "vocore,vocore", "ralink,rt5350-soc";
+	model = "VoCore (16M)";
 };
 
 &spi0 {
@@ -21,13 +21,13 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "u-boot";
+				label = "uboot";
 				reg = <0x0 0x30000>;
 				read-only;
 			};
 
 			partition@30000 {
-				label = "u-boot-env";
+				label = "uboot-env";
 				reg = <0x30000 0x10000>;
 				read-only;
 			};
@@ -41,7 +41,7 @@
 			partition@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x50000 0x7b0000>;
+				reg = <0x50000 0xfb0000>;
 			};
 		};
 	};
