@@ -35,14 +35,15 @@ define Build/elx-header
   mv $@.new $@
 endef
 
-define Device/ai-br100
+define Device/aigale_ai-br100
   DTS := AI-BR100
   IMAGE_SIZE := 7936k
   DEVICE_VENDOR := Aigale
   DEVICE_MODEL := Ai-BR100
   DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += ai-br100
 endef
-TARGET_DEVICES += ai-br100
+TARGET_DEVICES += aigale_ai-br100
 
 define Device/alfa-network_ac1200rm
   DTS := AC1200RM
@@ -82,10 +83,9 @@ define Device/Archer
   IMAGE/sysupgrade.bin := tplink-v2-image -s -e | append-metadata
 endef
 
-define Device/ArcherC20i
+define Device/tplink_archer-c20i
   $(Device/Archer)
   DTS := ArcherC20i
-  SUPPORTED_DEVICES := c20i
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc2000001
   TPLINK_HWREV := 58
@@ -93,13 +93,13 @@ define Device/ArcherC20i
   DEVICE_PACKAGES := kmod-mt76x0e
   DEVICE_MODEL := Archer C20i
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += c20i
 endef
-TARGET_DEVICES += ArcherC20i
+TARGET_DEVICES += tplink_archer-c20i
 
-define Device/ArcherC50v1
+define Device/tplink_archer-c50-v1
   $(Device/Archer)
   DTS := ArcherC50
-  SUPPORTED_DEVICES := c50
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc7500001
   TPLINK_HWREV := 69
@@ -109,20 +109,21 @@ define Device/ArcherC50v1
   DEVICE_MODEL := Archer C50
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += c50
 endef
-TARGET_DEVICES += ArcherC50v1
+TARGET_DEVICES += tplink_archer-c50-v1
 
-define Device/ArcherMR200
+define Device/tplink_archer-mr200
   $(Device/Archer)
   DTS := ArcherMR200
-  SUPPORTED_DEVICES := mr200
   TPLINK_FLASHLAYOUT := 8MLmtk
   TPLINK_HWID := 0xd7500001
   TPLINK_HWREV := 0x4a
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-net kmod-usb-net-rndis kmod-usb-serial kmod-usb-serial-option adb-enablemodem
   DEVICE_MODEL := Archer MR200
+  SUPPORTED_DEVICES += mr200
 endef
-TARGET_DEVICES += ArcherMR200
+TARGET_DEVICES += tplink_archer-mr200
 
 define Device/bdcom_wap2100-sk
   DTS := BDCOM-WAP2100-SK
@@ -133,57 +134,63 @@ define Device/bdcom_wap2100-sk
 endef
 TARGET_DEVICES += bdcom_wap2100-sk
 
-define Device/bocco
+define Device/yukai_bocco
   DTS := BOCCO
   DEVICE_VENDOR := YUKAI Engineering
   DEVICE_MODEL := BOCCO
   DEVICE_PACKAGES := kmod-sound-core kmod-sound-mt7620 kmod-i2c-ralink
+  SUPPORTED_DEVICES += bocco
 endef
-TARGET_DEVICES += bocco
+TARGET_DEVICES += yukai_bocco
 
-define Device/c108
+define Device/hnet_c108
   DTS := C108
   IMAGE_SIZE := 16777216
   DEVICE_VENDOR := HNET
   DEVICE_MODEL := C108
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
+  SUPPORTED_DEVICES += c108
 endef
-TARGET_DEVICES += c108
+TARGET_DEVICES += hnet_c108
 
-define Device/cf-wr800n
+define Device/comfast_cf-wr800n
   DTS := CF-WR800N
   DEVICE_VENDOR := Comfast
   DEVICE_MODEL := CF-WR800N
+  SUPPORTED_DEVICES += cf-wr800n
 endef
-TARGET_DEVICES += cf-wr800n
+TARGET_DEVICES += comfast_cf-wr800n
 
-define Device/cs-qr10
+define Device/planex_cs-qr10
   DTS := CS-QR10
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := CS-QR10
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci \
 	kmod-sound-core kmod-sound-mt7620 \
 	kmod-i2c-ralink kmod-sdhci-mt7620
+  SUPPORTED_DEVICES += cs-qr10
 endef
-TARGET_DEVICES += cs-qr10
+TARGET_DEVICES += planex_cs-qr10
 
-define Device/d240
+define Device/sanlinking_d240
   DTS := D240
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Sanlinking Technologies
   DEVICE_MODEL := D240
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
+  SUPPORTED_DEVICES += d240
 endef
-TARGET_DEVICES += d240
+TARGET_DEVICES += sanlinking_d240
 
-define Device/db-wrt01
+define Device/planex_db-wrt01
   DTS := DB-WRT01
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := DB-WRT01
+  SUPPORTED_DEVICES += db-wrt01
 endef
-TARGET_DEVICES += db-wrt01
+TARGET_DEVICES += planex_db-wrt01
 
-define Device/dch-m225
+define Device/dlink_dch-m225
   $(Device/seama)
   DTS := DCH-M225
   BLOCKSIZE := 4k
@@ -192,17 +199,19 @@ define Device/dch-m225
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DCH-M225
   DEVICE_PACKAGES := kmod-sound-core kmod-sound-mt7620 kmod-i2c-ralink
+  SUPPORTED_DEVICES += dch-m225
 endef
-TARGET_DEVICES += dch-m225
+TARGET_DEVICES += dlink_dch-m225
 
-define Device/dir-810l
+define Device/dlink_dir-810l
   DTS := DIR-810L
   DEVICE_PACKAGES := kmod-mt76x0e
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-810L
   IMAGE_SIZE := 6720k
+  SUPPORTED_DEVICES += dir-810l
 endef
-TARGET_DEVICES += dir-810l
+TARGET_DEVICES += dlink_dir-810l
 
 define Device/dlink_dir-510l
   $(Device/amit_jboot)
@@ -293,17 +302,18 @@ define Device/dlink_dwr-922-e2
 endef
 TARGET_DEVICES += dlink_dwr-922-e2
 
-define Device/e1700
+define Device/linksys_e1700
   DTS := E1700
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	umedia-header 0x013326
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := E1700
+  SUPPORTED_DEVICES += e1700
 endef
-TARGET_DEVICES += e1700
+TARGET_DEVICES += linksys_e1700
 
-define Device/ex2700
+define Device/netgear_ex2700
   NETGEAR_HW_ID := 29764623+4+0+32+2x2+0
   NETGEAR_BOARD_ID := EX2700
   DTS := EX2700
@@ -315,10 +325,11 @@ define Device/ex2700
 	netgear-dni
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX2700
+  SUPPORTED_DEVICES += ex2700
 endef
-TARGET_DEVICES += ex2700
+TARGET_DEVICES += netgear_ex2700
 
-define Device/ex3700-ex3800
+define Device/netgear_ex3700
   NETGEAR_BOARD_ID := U12H319T00_NETGEAR
   DTS := EX3700
   BLOCKSIZE := 4k
@@ -328,73 +339,80 @@ define Device/ex3700-ex3800
   DEVICE_PACKAGES := kmod-mt76x2
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX3700/EX3800
-  SUPPORTED_DEVICES := ex3700
+  SUPPORTED_DEVICES += ex3700
 endef
-TARGET_DEVICES += ex3700-ex3800
+TARGET_DEVICES += netgear_ex3700
 
-define Device/gl-mt300a
+define Device/glinet_gl-mt300a
   DTS := GL-MT300A
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MT300A
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += gl-mt300a
 endef
-TARGET_DEVICES += gl-mt300a
+TARGET_DEVICES += glinet_gl-mt300a
 
-define Device/u25awf-h1
+define Device/kimax_u25awf-h1
   DTS := U25AWF-H1
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Kimax
   DEVICE_MODEL := U25AWF
   DEVICE_VARIANT := H1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += u25awf-h1
 endef
-TARGET_DEVICES += u25awf-h1
+TARGET_DEVICES += kimax_u25awf-h1
 
-define Device/gl-mt300n
+define Device/glinet_gl-mt300n
   DTS := GL-MT300N
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MT300N
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += gl-mt300n
 endef
-TARGET_DEVICES += gl-mt300n
+TARGET_DEVICES += glinet_gl-mt300n
 
-define Device/gl-mt750
+define Device/glinet_gl-mt750
   DTS := GL-MT750
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MT750
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += gl-mt750
 endef
-TARGET_DEVICES += gl-mt750
+TARGET_DEVICES += glinet_gl-mt750
 
-define Device/hc5661
+define Device/hiwifi_hc5661
   DTS := HC5661
   IMAGE_SIZE := 15872k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5661
   DEVICE_PACKAGES := kmod-sdhci-mt7620
+  SUPPORTED_DEVICES += hc5661
 endef
-TARGET_DEVICES += hc5661
+TARGET_DEVICES += hiwifi_hc5661
 
-define Device/hc5761
+define Device/hiwifi_hc5761
   DTS := HC5761
   IMAGE_SIZE := 15872k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5761
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += hc5761
 endef
-TARGET_DEVICES += hc5761
+TARGET_DEVICES += hiwifi_hc5761
 
-define Device/hc5861
+define Device/hiwifi_hc5861
   DTS := HC5861
   IMAGE_SIZE := 15872k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5861
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += hc5861
 endef
-TARGET_DEVICES += hc5861
+TARGET_DEVICES += hiwifi_hc5861
 
 define Device/head-weblink_hdrm200
   DTS := HDRM200
@@ -441,7 +459,7 @@ define Device/kimax_u35wf
 endef
 TARGET_DEVICES += kimax_u35wf
 
-define Device/kng_rc
+define Device/zyxel_keenetic-viva
   DTS := kng_rc
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := ZyXEL
@@ -450,11 +468,11 @@ define Device/kng_rc
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | check-size $$$$(IMAGE_SIZE) | \
 	zyimage -d 8997 -v "ZyXEL Keenetic Viva"
-  SUPPORTED_DEVICES := kng_rc
+  SUPPORTED_DEVICES += kng_rc
 endef
-TARGET_DEVICES += kng_rc
+TARGET_DEVICES += zyxel_keenetic-viva
 
-define Device/kn_rc
+define Device/zyxel_keenetic-omni
   DTS := kn_rc
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic Omni
@@ -462,11 +480,11 @@ define Device/kn_rc
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | pad-to 64k | check-size $$$$(IMAGE_SIZE) | \
 	zyimage -d 4882 -v "ZyXEL Keenetic Omni"
-  SUPPORTED_DEVICES := kn_rc
+  SUPPORTED_DEVICES += kn_rc
 endef
-TARGET_DEVICES += kn_rc
+TARGET_DEVICES += zyxel_keenetic-omni
 
-define Device/kn_rf
+define Device/zyxel_keenetic-omni-ii
   DTS := kn_rf
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic Omni II
@@ -474,18 +492,19 @@ define Device/kn_rf
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | pad-to 64k | check-size $$$$(IMAGE_SIZE) | \
 	zyimage -d 2102034 -v "ZyXEL Keenetic Omni II"
-  SUPPORTED_DEVICES := kn_rf
+  SUPPORTED_DEVICES += kn_rf
 endef
-TARGET_DEVICES += kn_rf
+TARGET_DEVICES += zyxel_keenetic-omni-ii
 
-define Device/microwrt
+define Device/microduino_microwrt
   DTS := MicroWRT
   IMAGE_SIZE := 16128k
   DEVICE_VENDOR := Microduino
   DEVICE_MODEL := MicroWRT
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += microwrt
 endef
-TARGET_DEVICES += microwrt
+TARGET_DEVICES += microduino_microwrt
 
 define Device/lava_lr-25g001
   $(Device/amit_jboot)
@@ -499,133 +518,142 @@ define Device/lava_lr-25g001
 endef
 TARGET_DEVICES += lava_lr-25g001
 
-define Device/miwifi-mini
+define Device/xiaomi_miwifi-mini
   DTS := MIWIFI-MINI
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := MiWiFi Mini
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += miwifi-mini
 endef
-TARGET_DEVICES += miwifi-mini
+TARGET_DEVICES += xiaomi_miwifi-mini
 
-define Device/mlw221
+define Device/kingston_mlw221
   DTS := MLW221
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Kingston
   DEVICE_MODEL := MLW221
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += mlw221
 endef
-TARGET_DEVICES += mlw221
+TARGET_DEVICES += kingston_mlw221
 
-define Device/mlwg2
+define Device/kingston_mlwg2
   DTS := MLWG2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Kingston
   DEVICE_MODEL := MLWG2
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += mlwg2
 endef
-TARGET_DEVICES += mlwg2
+TARGET_DEVICES += kingston_mlwg2
 
-define Device/mt7620a
+define Device/ralink_mt7620a-evb
   DTS := MT7620a
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7620a EVB
 endef
-TARGET_DEVICES += mt7620a
+TARGET_DEVICES += ralink_mt7620a-evb
 
-define Device/mt7620a_mt7530
+define Device/ralink_mt7620a-mt7530-evb
   DTS := MT7620a_MT7530
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7620a + MT7530 EVB
-  SUPPORTED_DEVICES := mt7620a_mt7530
+  SUPPORTED_DEVICES += mt7620a_mt7530
 endef
-TARGET_DEVICES += mt7620a_mt7530
+TARGET_DEVICES += ralink_mt7620a-mt7530-evb
 
-define Device/mt7620a_mt7610e
+define Device/ralink_mt7620a-mt7610e-evb
   DTS := MT7620a_MT7610e
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7620a + MT7610e EVB
   DEVICE_PACKAGES := kmod-mt76x0e
-  SUPPORTED_DEVICES := mt7620a_mt7610e
+  SUPPORTED_DEVICES += mt7620a_mt7610e
 endef
-TARGET_DEVICES += mt7620a_mt7610e
+TARGET_DEVICES += ralink_mt7620a-mt7610e-evb
 
-define Device/mt7620a_v22sg
+define Device/ralink_mt7620a-v22sg-evb
   DTS := MT7620a_V22SG
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7620a V22SG
-  SUPPORTED_DEVICES := mt7620a_v22sg
+  SUPPORTED_DEVICES += mt7620a_v22sg
 endef
-TARGET_DEVICES += mt7620a_v22sg
+TARGET_DEVICES += ralink_mt7620a-v22sg-evb
 
-define Device/mzk-750dhp
+define Device/planex_mzk-750dhp
   DTS := MZK-750DHP
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := MZK-750DHP
   DEVICE_PACKAGES := kmod-mt76x0e
+  SUPPORTED_DEVICES += mzk-750dhp
 endef
-TARGET_DEVICES += mzk-750dhp
+TARGET_DEVICES += planex_mzk-750dhp
 
-define Device/mzk-ex300np
+define Device/planex_mzk-ex300np
   DTS := MZK-EX300NP
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := MZK-EX300NP
+  SUPPORTED_DEVICES += mzk-ex300np
 endef
-TARGET_DEVICES += mzk-ex300np
+TARGET_DEVICES += planex_mzk-ex300np
 
-define Device/mzk-ex750np
+define Device/planex_mzk-ex750np
   DTS := MZK-EX750NP
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := MZK-EX750NP
   DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += mzk-ex750np
 endef
-TARGET_DEVICES += mzk-ex750np
+TARGET_DEVICES += planex_mzk-ex750np
 
-define Device/na930
+define Device/sercomm_na930
   DTS := NA930
   IMAGE_SIZE := 20m
   DEVICE_VENDOR := Sercomm
   DEVICE_MODEL := NA930
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += na930
 endef
-TARGET_DEVICES += na930
+TARGET_DEVICES += sercomm_na930
 
-define Device/oy-0001
+define Device/ohyeah_oy-0001
   DTS := OY-0001
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Oh Yeah
   DEVICE_MODEL := OY-0001
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += oy-0001
 endef
-TARGET_DEVICES += oy-0001
+TARGET_DEVICES += ohyeah_oy-0001
 
-define Device/psg1208
+define Device/phicomm_psg1208
   DTS := PSG1208
   DEVICE_VENDOR := Phicomm
   DEVICE_MODEL := PSG1208
   DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += psg1208
 endef
-TARGET_DEVICES += psg1208
+TARGET_DEVICES += phicomm_psg1208
 
-define Device/psg1218a
+define Device/phicomm_psg1218a
   DTS := PSG1218A
   DEVICE_VENDOR := Phicomm
   DEVICE_MODEL := PSG1218
   DEVICE_VARIANT:= Ax
   DEVICE_PACKAGES := kmod-mt76x2
-  SUPPORTED_DEVICES += psg1218
+  SUPPORTED_DEVICES += psg1218 psg1218a
 endef
-TARGET_DEVICES += psg1218a
+TARGET_DEVICES += phicomm_psg1218a
 
-define Device/psg1218b
+define Device/phicomm_psg1218b
   DTS := PSG1218B
   DEVICE_VENDOR := Phicomm
   DEVICE_MODEL := PSG1218
   DEVICE_VARIANT := Bx
   DEVICE_PACKAGES := kmod-mt76x2
-  SUPPORTED_DEVICES += psg1218
+  SUPPORTED_DEVICES += psg1218 psg1218b
 endef
-TARGET_DEVICES += psg1218b
+TARGET_DEVICES += phicomm_psg1218b
 
 define Device/phicomm_k2g
   DTS := K2G
@@ -636,45 +664,50 @@ define Device/phicomm_k2g
 endef
 TARGET_DEVICES += phicomm_k2g
 
-define Device/rp-n53
+define Device/asus_rp-n53
   DTS := RP-N53
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RP-N53
   DEVICE_PACKAGES := kmod-rt2800-pci
+  SUPPORTED_DEVICES += rp-n53
 endef
-TARGET_DEVICES += rp-n53
+TARGET_DEVICES += asus_rp-n53
 
-define Device/rt-n12p
+define Device/asus_rt-n12p
   DTS := RT-N12-PLUS
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-N11P/RT-N12+/RT-N12Eb1
+  SUPPORTED_DEVICES += rt-n12p
 endef
-TARGET_DEVICES += rt-n12p
+TARGET_DEVICES += asus_rt-n12p
 
-define Device/rt-n14u
+define Device/asus_rt-n14u
   DTS := RT-N14U
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-N14u
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += rt-n14u
 endef
-TARGET_DEVICES += rt-n14u
+TARGET_DEVICES += asus_rt-n14u
 
-define Device/rt-ac51u
+define Device/asus_rt-ac51u
   DTS := RT-AC51U
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-AC51U
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += rt-ac51u
 endef
-TARGET_DEVICES += rt-ac51u
+TARGET_DEVICES += asus_rt-ac51u
 
-define Device/tiny-ac
+define Device/dovado_tiny-ac
   DTS := TINY-AC
   DEVICE_VENDOR := Dovado
   DEVICE_MODEL := Tiny AC
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += tiny-ac
 endef
-TARGET_DEVICES += tiny-ac
+TARGET_DEVICES += dovado_tiny-ac
 
 define Device/edimax_br-6478ac-v2
   DTS := BR-6478AC-V2
@@ -776,40 +809,44 @@ define Device/ravpower_wd03
 endef
 TARGET_DEVICES += ravpower_wd03
 
-define Device/whr-1166d
+define Device/buffalo_whr-1166d
   DTS := WHR-1166D
   IMAGE_SIZE := 15040k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WHR-1166D
   DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += whr-1166d
 endef
-TARGET_DEVICES += whr-1166d
+TARGET_DEVICES += buffalo_whr-1166d
 
-define Device/whr-300hp2
+define Device/buffalo_whr-300hp2
   DTS := WHR-300HP2
   IMAGE_SIZE := 6848k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WHR-300HP2
+  SUPPORTED_DEVICES += whr-300hp2
 endef
-TARGET_DEVICES += whr-300hp2
+TARGET_DEVICES += buffalo_whr-300hp2
 
-define Device/whr-600d
+define Device/buffalo_whr-600d
   DTS := WHR-600D
   IMAGE_SIZE := 6848k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WHR-600D
   DEVICE_PACKAGES := kmod-rt2800-pci
+  SUPPORTED_DEVICES += whr-600d
 endef
-TARGET_DEVICES += whr-600d
+TARGET_DEVICES += buffalo_whr-600d
 
-define Device/wmr-300
+define Device/buffalo_wmr-300
   DTS := WMR-300
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WMR-300
+  SUPPORTED_DEVICES += wmr-300
 endef
-TARGET_DEVICES += wmr-300
+TARGET_DEVICES += buffalo_wmr-300
 
-define Device/wn3000rpv3
+define Device/netgear_wn3000rp-v3
   NETGEAR_HW_ID := 29764836+8+0+32+2x2+0
   NETGEAR_BOARD_ID := WN3000RPv3
   DTS := WN3000RPV3
@@ -821,10 +858,11 @@ define Device/wn3000rpv3
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WN3000RP
   DEVICE_VARIANT := v3
+  SUPPORTED_DEVICES += wn3000rpv3
 endef
-TARGET_DEVICES += wn3000rpv3
+TARGET_DEVICES += netgear_wn3000rp-v3
 
-define Device/wrh-300cr
+define Device/elecom_wrh-300cr
   DTS := WRH-300CR
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   IMAGES += factory.bin
@@ -833,134 +871,144 @@ define Device/wrh-300cr
   DEVICE_VENDOR := Elecom
   DEVICE_MODEL := WRH-300CR
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += wrh-300cr
 endef
-TARGET_DEVICES += wrh-300cr
+TARGET_DEVICES += elecom_wrh-300cr
 
-define Device/wrtnode
+define Device/wrtnode_wrtnode
   DTS := WRTNODE
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := 
   DEVICE_MODEL := WRTNode
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += wrtnode
 endef
-TARGET_DEVICES += wrtnode
+TARGET_DEVICES += wrtnode_wrtnode
 
-define Device/wt3020-4M
+define Device/nexx_wt3020-4m
   DTS := WT3020-4M
   BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
-  SUPPORTED_DEVICES += wt3020
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	poray-header -B WT3020 -F 4M
   DEVICE_VENDOR := Nexx
   DEVICE_MODEL := WT3020
   DEVICE_VARIANT := 4M
+  SUPPORTED_DEVICES += wt3020 wt3020-4M
 endef
-TARGET_DEVICES += wt3020-4M
+TARGET_DEVICES += nexx_wt3020-4m
 
-define Device/wt3020-8M
+define Device/nexx_wt3020-8m
   DTS := WT3020-8M
   IMAGES += factory.bin
-  SUPPORTED_DEVICES += wt3020
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	poray-header -B WT3020 -F 8M
   DEVICE_VENDOR := Nexx
   DEVICE_MODEL := WT3020
   DEVICE_VARIANT := 8M
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += wt3020 wt3020-8M
 endef
-TARGET_DEVICES += wt3020-8M
+TARGET_DEVICES += nexx_wt3020-8m
 
-define Device/y1
+define Device/lenovo_newifi-y1
   DTS := Y1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Lenovo
   DEVICE_MODEL := Y1
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += y1
 endef
-TARGET_DEVICES += y1
+TARGET_DEVICES += lenovo_newifi-y1
 
-define Device/y1s
+define Device/lenovo_newifi-y1s
   DTS := Y1S
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Lenovo
   DEVICE_MODEL := Y1S
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += y1s
 endef
-TARGET_DEVICES += y1s
+TARGET_DEVICES += lenovo_newifi-y1s
 
-define Device/youku-yk1
+define Device/youku_yk1
   DTS := YOUKU-YK1
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_VENDOR := YOUKU
   DEVICE_MODEL := YK1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += youku-yk1
 endef
-TARGET_DEVICES += youku-yk1
+TARGET_DEVICES += youku_yk1
 
-define Device/we1026-5g-16m
+define Device/zbtlink_we1026-5g-16m
   DTS := WE1026-5G-16M
   IMAGE_SIZE := 16777216
-  SUPPORTED_DEVICES += we1026-5g-16m
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE1026-5G
   DEVICE_VARIANT := 16M
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
+  SUPPORTED_DEVICES += we1026-5g-16m
 endef
-TARGET_DEVICES += we1026-5g-16m
+TARGET_DEVICES += zbtlink_we1026-5g-16m
 
-define Device/zbt-ape522ii
+define Device/zbtlink_zbt-ape522ii
   DTS := ZBT-APE522II
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-APE522II
   DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += zbt-ape522ii
 endef
-TARGET_DEVICES += zbt-ape522ii
+TARGET_DEVICES += zbtlink_zbt-ape522ii
 
-define Device/zbt-cpe102
+define Device/zbtlink_zbt-cpe102
   DTS := ZBT-CPE102
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-CPE102
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += zbt-cpe102
 endef
-TARGET_DEVICES += zbt-cpe102
+TARGET_DEVICES += zbtlink_zbt-cpe102
 
-define Device/zbt-wa05
+define Device/zbtlink_zbt-wa05
   DTS := ZBT-WA05
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WA05
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += zbt-wa05
 endef
-TARGET_DEVICES += zbt-wa05
+TARGET_DEVICES += zbtlink_zbt-wa05
 
-define Device/zbt-we2026
+define Device/zbtlink_zbt-we2026
   DTS := ZBT-WE2026
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE2026
+  SUPPORTED_DEVICES += zbt-we2026
 endef
-TARGET_DEVICES += zbt-we2026
+TARGET_DEVICES += zbtlink_zbt-we2026
 
-define Device/zbt-we826-16M
+define Device/zbtlink_zbt-we826-16m
   DTS := ZBT-WE826-16M
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  SUPPORTED_DEVICES += zbt-we826
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE826
   DEVICE_VARIANT := 16M
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
+  SUPPORTED_DEVICES += zbt-we826 zbt-we826-16M
 endef
-TARGET_DEVICES += zbt-we826-16M
+TARGET_DEVICES += zbtlink_zbt-we826-16m
 
-define Device/zbt-we826-32M
+define Device/zbtlink_zbt-we826-32m
   DTS := ZBT-WE826-32M
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE826
   DEVICE_VARIANT := 32M
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
+  SUPPORTED_DEVICES += zbt-we826-32M
 endef
-TARGET_DEVICES += zbt-we826-32M
+TARGET_DEVICES += zbtlink_zbt-we826-32m
 
 define Device/zbtlink_zbt-we826-e
   DTS := ZBT-WE826-E
@@ -972,18 +1020,20 @@ define Device/zbtlink_zbt-we826-e
 endef
 TARGET_DEVICES += zbtlink_zbt-we826-e
 
-define Device/zbt-wr8305rt
+define Device/zbtlink_zbt-wr8305rt
   DTS := ZBT-WR8305RT
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WR8305RT
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += zbt-wr8305rt
 endef
-TARGET_DEVICES += zbt-wr8305rt
+TARGET_DEVICES += zbtlink_zbt-wr8305rt
 
-define Device/zte-q7
+define Device/zte_q7
   DTS := ZTE-Q7
   DEVICE_VENDOR := ZTE
   DEVICE_MODEL := Q7
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += zte-q7
 endef
-TARGET_DEVICES += zte-q7
+TARGET_DEVICES += zte_q7
