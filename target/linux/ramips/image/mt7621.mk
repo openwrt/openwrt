@@ -92,6 +92,14 @@ define Device/11acnas
 endef
 TARGET_DEVICES += 11acnas
 
+define Device/asus_rt-ac57u
+  DTS := RT-AC57U
+  DEVICE_TITLE := ASUS RT-AC57U
+  IMAGE_SIZE := 16064k
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+endef
+TARGET_DEVICES += asus_rt-ac57u
+
 define Device/dir-860l-b1
   $(Device/seama)
   DTS := DIR-860L-B1

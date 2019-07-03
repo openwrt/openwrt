@@ -213,6 +213,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
 		;;
+	asus,rt-ac57u|\
 	atp-52b|\
 	awm002-evb-4M|\
 	awm002-evb-8M|\
@@ -495,6 +496,11 @@ ramips_setup_macs()
 	wmdr-143n)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		;;
+	asus,rt-ac57u|\
+	vr500)
+		lan_mac=$(mtd_get_mac_binary factory 57344)
+		wan_mac=$(mtd_get_mac_binary factory 57350)
+		;;
 	carambola|\
 	freestation5|\
 	w502u|\
@@ -646,10 +652,6 @@ ramips_setup_macs()
 	tiny-ac)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env LAN_MAC_ADDR)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env WAN_MAC_ADDR)
-		;;
-	vr500)
-		lan_mac=$(mtd_get_mac_binary factory 57344)
-		wan_mac=$(mtd_get_mac_binary factory 57350)
 		;;
 	w306r-v20)
 		lan_mac=$(cat /sys/class/net/eth0/address)
