@@ -23,8 +23,9 @@ KERNEL_DTB = kernel-bin | append-dtb | lzma
 define Device/Default
   PROFILES = Default
   KERNEL := $(KERNEL_DTB) | uImage lzma
+  MTK_SOC :=
   DEVICE_DTS_DIR := ../dts
-  DEVICE_DTS = $$(DTS)
+  DEVICE_DTS = $$(MTK_SOC)_$(1)
   IMAGES := sysupgrade.bin
   IMAGE_SIZE := $(ralink_default_fw_size_8M)
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
