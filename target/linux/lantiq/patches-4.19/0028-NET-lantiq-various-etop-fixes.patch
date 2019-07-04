@@ -178,7 +178,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	struct clk *clk_ppe;
 +	struct clk *clk_switch;
 +	struct clk *clk_ephy;
-+	struct clk *clk_ephycgu
++	struct clk *clk_ephycgu;
  };
  
 +static int ltq_etop_mdio_wr(struct mii_bus *bus, int phy_addr,
@@ -683,11 +683,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		netif_tx_stop_queue(txq);
  
  	return NETDEV_TX_OK;
-@@ -518,8 +712,10 @@ ltq_etop_change_mtu(struct net_device *d
+@@ -515,11 +709,14 @@ ltq_etop_change_mtu(struct net_device *d
+ {
+ 	struct ltq_etop_priv *priv = netdev_priv(dev);
+ 	unsigned long flags;
++	int max;
  
  	dev->mtu = new_mtu;
  
-+	int max = ETH_HLEN + VLAN_HLEN + new_mtu + ETH_FCS_LEN;
++	max = ETH_HLEN + VLAN_HLEN + new_mtu + ETH_FCS_LEN;
 +
  	spin_lock_irqsave(&priv->lock, flags);
 -	ltq_etop_w32((ETOP_PLEN_UNDER << 16) | new_mtu, LTQ_ETOP_IGPLEN);
@@ -695,7 +699,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	spin_unlock_irqrestore(&priv->lock, flags);
  
  	return 0;
-@@ -579,6 +775,9 @@ ltq_etop_init(struct net_device *dev)
+@@ -579,6 +776,9 @@ ltq_etop_init(struct net_device *dev)
  	if (err)
  		goto err_hw;
  	ltq_etop_change_mtu(dev, 1500);
@@ -705,7 +709,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	memcpy(&mac, &priv->pldata->mac, sizeof(struct sockaddr));
  	if (!is_valid_ether_addr(mac.sa_data)) {
-@@ -596,9 +795,10 @@ ltq_etop_init(struct net_device *dev)
+@@ -596,9 +796,10 @@ ltq_etop_init(struct net_device *dev)
  		dev->addr_assign_type = NET_ADDR_RANDOM;
  
  	ltq_etop_set_multicast_list(dev);
@@ -719,7 +723,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	return 0;
  
  err_netdev:
-@@ -618,6 +818,9 @@ ltq_etop_tx_timeout(struct net_device *d
+@@ -618,6 +819,9 @@ ltq_etop_tx_timeout(struct net_device *d
  	err = ltq_etop_hw_init(dev);
  	if (err)
  		goto err_hw;
@@ -729,7 +733,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	netif_trans_update(dev);
  	netif_wake_queue(dev);
  	return;
-@@ -641,14 +844,19 @@ static const struct net_device_ops ltq_e
+@@ -641,14 +845,19 @@ static const struct net_device_ops ltq_e
  	.ndo_tx_timeout = ltq_etop_tx_timeout,
  };
  
@@ -753,7 +757,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	if (!res) {
-@@ -674,31 +882,62 @@ ltq_etop_probe(struct platform_device *p
+@@ -674,31 +883,62 @@ ltq_etop_probe(struct platform_device *p
  		goto err_out;
  	}
  
@@ -831,7 +835,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	err = register_netdev(dev);
  	if (err)
-@@ -727,31 +966,22 @@ ltq_etop_remove(struct platform_device *
+@@ -727,31 +967,22 @@ ltq_etop_remove(struct platform_device *
  	return 0;
  }
  

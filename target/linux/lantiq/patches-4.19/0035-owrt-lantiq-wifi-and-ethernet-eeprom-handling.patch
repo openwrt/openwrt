@@ -203,7 +203,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +early_param("ethaddr", setup_ethaddr);
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
-@@ -779,7 +779,11 @@ ltq_etop_init(struct net_device *dev)
+@@ -780,7 +780,11 @@ ltq_etop_init(struct net_device *dev)
  	if (err)
  		goto err_hw;
  
