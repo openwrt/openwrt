@@ -357,6 +357,7 @@ define Device/etactica_eg200
   DEVICE_TITLE := eTactica EG200
   DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-ledtrig-oneshot \
 	kmod-usb-serial kmod-usb-serial-ftdi kmod-usb-storage  kmod-fs-ext4
+  IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += rme-eg200
 endef
 TARGET_DEVICES += etactica_eg200
