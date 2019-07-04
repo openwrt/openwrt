@@ -85,7 +85,7 @@ define Device/hiveap-330
   DEVICE_TITLE := Aerohive HiveAP-330
   DEVICE_PACKAGES := kmod-tpm-i2c-atmel
   BLOCKSIZE := 128k
-  KERNEL := kernel-bin | uImage none
+  KERNEL := kernel-bin | gzip | uImage gzip
   KERNEL_SIZE := 8m
   KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux-initramfs | uImage none
   SUPPORTED_DEVICES := aerohive,hiveap-330
