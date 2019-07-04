@@ -11,7 +11,6 @@ endef
 
 define Device/netgear_wnr612-v2
   $(Device/netgear_ar7240)
-  DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WNR612
   DEVICE_VARIANT := v2
   DEVICE_DTS := ar7240_netgear_wnr612-v2

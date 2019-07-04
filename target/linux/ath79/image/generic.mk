@@ -652,21 +652,18 @@ endef
 
 define Device/netgear_ex6400
   $(Device/netgear_ex7300_ex6400)
-  DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX6400
 endef
 TARGET_DEVICES += netgear_ex6400
 
 define Device/netgear_ex7300
   $(Device/netgear_ex7300_ex6400)
-  DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX7300
 endef
 TARGET_DEVICES += netgear_ex7300
 
 define Device/netgear_wndr3700
   $(Device/netgear_wndr3x00)
-  DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WNDR3700
   NETGEAR_KERNEL_MAGIC := 0x33373030
   NETGEAR_BOARD_ID := WNDR3700
@@ -679,7 +676,6 @@ TARGET_DEVICES += netgear_wndr3700
 
 define Device/netgear_wndr3700v2
   $(Device/netgear_wndr3x00)
-  DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WNDR3700v2
   NETGEAR_KERNEL_MAGIC := 0x33373031
   NETGEAR_BOARD_ID := WNDR3700v2
@@ -701,7 +697,6 @@ TARGET_DEVICES += pisen_wmm003n
 
 define Device/netgear_wndr3800
   $(Device/netgear_wndr3x00)
-  DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WNDR3800
   NETGEAR_KERNEL_MAGIC := 0x33373031
   NETGEAR_BOARD_ID := WNDR3800
