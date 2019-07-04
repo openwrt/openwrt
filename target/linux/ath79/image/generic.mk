@@ -111,6 +111,16 @@ define Device/adtran_bsap1840
 endef
 TARGET_DEVICES += adtran_bsap1840
 
+define Device/alfa-network_ap121f
+  ATH_SOC := ar9331
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := AP121F
+  DEVICE_PACKAGES := -swconfig
+  IMAGE_SIZE := 16064k
+  SUPPORTED_DEVICES += ap121f
+endef
+TARGET_DEVICES += alfa-network_ap121f
+
 define Device/aruba_ap-105
   ATH_SOC := ar7161
   DEVICE_VENDOR := Aruba
