@@ -1,0 +1,232 @@
+/dts-v1/;
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "xwrt,t-cpe1200k-v01", "mediatek,mt7621-soc";
+	model = "T-CPE1200K V01";
+
+	aliases {
+		led-boot = &led_wps;
+		led-failsafe = &led_wps;
+		led-running = &led_wps;
+		led-upgrade = &led_wps;
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		rssi1 {
+			label = "blue:rssi1";
+			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
+		};
+
+		rssi2 {
+			label = "blue:rssi2";
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
+		};
+
+		rssi3 {
+			label = "blue:rssi3";
+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+		};
+
+		rssi4 {
+			label = "blue:rssi4";
+			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
+		};
+
+		rssi5 {
+			label = "blue:rssi5";
+			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wps: wps {
+			label = "blue:wps";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi {
+			label = "blue:wifi";
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+		};
+
+		eth {
+			label = "blue:eth";
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		lte_2g {
+			label = "blue:lte_2g";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+		};
+
+		lte_3g {
+			label = "blue:lte_3g";
+			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
+		};
+
+		lte_4g {
+			label = "blue:lte_4g";
+			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		pd8_switch_ec20 {
+			gpio-export,name = "pd8_switch_ec20";
+			gpio-export,output = <1>;
+			gpios = <&gpio 25 GPIO_ACTIVE_HIGH>;
+		};
+
+		pd9_reset_ec20 {
+			gpio-export,name = "pd9_reset_ec20";
+			gpio-export,output = <1>;
+			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
+		};
+
+		4v_en {
+			gpio-export,name = "4v_en";
+			gpio-export,output = <1>;
+			gpios = <&gpio 23 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&sdhci {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0xfa0000>;
+			};
+
+			partition@ff0000 {
+				label = "fota";
+				reg = <0xff0000 0x10000>;
+			};
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x0>;
+		ieee80211-freq-limit = <2400000 2500000>;
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x8000>;
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
+&ethernet {
+	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
+};
+
+&gmac0 {
+	mtd-mac-address = <&factory 0x28>;
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "wan";
+			mtd-mac-address = <&factory 0x28>;
+			mtd-mac-address-increment = <2>;
+		};
+
+		port@1 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan1";
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "wdt", "rgmii2", "uart2", "uart3";
+		function = "gpio";
+	};
+};
