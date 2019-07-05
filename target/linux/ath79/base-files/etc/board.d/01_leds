@@ -193,6 +193,9 @@ tplink,tl-wr842n-v2)
 	ucidef_set_led_switch "lan3" "LAN3" "tp-link:green:lan3" "switch0" "0x10"
 	ucidef_set_led_switch "lan4" "LAN4" "tp-link:green:lan4" "switch0" "0x02"
 	;;
+trendnet,tew-823dru)
+       ucidef_set_led_netdev "wan" "WAN" "trendnet:green:planet" "eth0"
+       ;;
 ubnt,bullet-m|\
 ubnt,bullet-m-xw|\
 ubnt,nanostation-m|\
