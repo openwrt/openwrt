@@ -664,6 +664,22 @@ define Device/rosinson_wr818
 endef
 TARGET_DEVICES += rosinson_wr818
 
+define Device/trendnet_tew-823dru
+  ATH_SOC := qca9558
+  DEVICE_VENDOR := Trendnet
+  DEVICE_MODEL := TEW-823DRU
+  DEVICE_VARIANT := v1.0R
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  SUPPORTED_DEVICES += tew-823dru
+  IMAGE_SIZE := 15296k
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs
+  IMAGE/factory.bin := $$(IMAGE/default) | pad-offset $$$$(IMAGE_SIZE) 26 | \
+	append-string 00AP135AR9558-RT-131129-00 | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += trendnet_tew-823dru
+
 define Device/wd_mynet-n750
   $(Device/seama)
   ATH_SOC := ar9344

@@ -58,7 +58,8 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:lan" "4:lan" "5:lan" "1:wan"
 		;;
-	buffalo,bhr-4grv2)
+	buffalo,bhr-4grv2|\
+	trendnet,tew-823dru)
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6@eth0"
 		;;
@@ -342,6 +343,10 @@ ath79_setup_macs()
 	tplink,tl-wr941n-v7-cn)
 		base_mac=$(mtd_get_mac_binary u-boot 130048)
 		wan_mac=$(macaddr_add "$base_mac" 1)
+		;;
+	trendnet,tew-823dru)
+		lan_mac=$(mtd_get_mac_text mac 4)
+		wan_mac=$(mtd_get_mac_text mac 24)
 		;;
 	ubnt,routerstation|\
 	ubnt,routerstation-pro)
