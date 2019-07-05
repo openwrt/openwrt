@@ -187,7 +187,7 @@ define Device/raidsonic_ib-4220-b
 endef
 TARGET_DEVICES += raidsonic_ib-4220-b
 
-define Device/storlink-sl93512r
+define Device/storlink_sl93512r
 	$(Device/storlink-reference)
 	DEVICE_TITLE := StorLink SL93512r
 	DEVICE_DTS := gemini-sl93512r
