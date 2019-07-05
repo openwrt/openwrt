@@ -205,6 +205,7 @@ TARGET_DEVICES += ubnt_unifiac-pro
 
 define Device/ubnt_routerstation_common
   DEVICE_PACKAGES := -kmod-ath9k -wpad-mini -uboot-envtools kmod-usb-ohci kmod-usb2 fconfig
+  DEVICE_VENDOR := Ubiquiti
   ATH_SOC := ar7161
   IMAGE_SIZE := 16128k
   IMAGES += factory.bin
