@@ -37,7 +37,7 @@
  const struct of_device_id dwc2_of_match_table[] = {
  	{ .compatible = "brcm,bcm2835-usb", .data = dwc2_set_bcm_params },
  	{ .compatible = "hisilicon,hi6220-usb", .data = dwc2_set_his_params  },
-@@ -806,17 +836,23 @@ int dwc2_get_hwparams(struct dwc2_hsotg
+@@ -819,17 +849,23 @@ int dwc2_get_hwparams(struct dwc2_hsotg
  
  int dwc2_init_params(struct dwc2_hsotg *hsotg)
  {
