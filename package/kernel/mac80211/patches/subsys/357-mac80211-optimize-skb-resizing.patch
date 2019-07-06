@@ -180,7 +180,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	if (encaps_data)
-@@ -3377,7 +3367,6 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3375,7 +3365,6 @@ static bool ieee80211_xmit_fast(struct i
  	struct ieee80211_local *local = sdata->local;
  	u16 ethertype = (skb->data[12] << 8) | skb->data[13];
  	int extra_head = fast_tx->hdr_len - (ETH_HLEN - 2);
@@ -188,7 +188,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ethhdr eth;
  	struct ieee80211_tx_info *info;
  	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
-@@ -3429,10 +3418,7 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3427,10 +3416,7 @@ static bool ieee80211_xmit_fast(struct i
  	 * as the may-encrypt argument for the resize to not account for
  	 * more room than we already have in 'extra_head'
  	 */
