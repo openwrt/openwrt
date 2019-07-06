@@ -1,0 +1,41 @@
+diff -aurN a/drivers/mtd/nand/raw/nand_samsung.c b/drivers/mtd/nand/raw/nand_samsung.c
+--- a/drivers/mtd/nand/raw/nand_samsung.c	2019-06-25 03:36:02.000000000 +0000
++++ b/drivers/mtd/nand/raw/nand_samsung.c	2019-07-06 09:23:02.721503390 +0000
+@@ -20,6 +20,9 @@
+ static void samsung_nand_decode_id(struct nand_chip *chip)
+ {
+ 	struct mtd_info *mtd = nand_to_mtd(chip);
++	u8 *d  = chip->id.data;
++	pr_debug("samsung_nand_decode_id: ID is len=%d, %02X %02X %02X %02X %02X %02X %02X %02X\n",
++		chip->id.len, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+ 
+ 	/* New Samsung (6 byte ID): Samsung K9GAG08U0F (p.44) */
+ 	if (chip->id.len == 6 && !nand_is_slc(chip) &&
+@@ -90,16 +93,25 @@
+ 			}
+ 		}
+ 	} else {
+-		nand_decode_ext_id(chip);
++		nand_decode_ext_id(chip);		
+ 
+ 		if (nand_is_slc(chip)) {
+ 			switch (chip->id.data[1]) {
+ 			/* K9F4G08U0D-S[I|C]B0(T00) */
++			/* before install 4056-MTD-nand_samsung_disable_subpage_writes_on_21nm_NAND.patch
+ 			case 0xDC:
+ 				chip->ecc_step_ds = 512;
+ 				chip->ecc_strength_ds = 1;
+ 				break;
+-
++			*/	
++			case 0xDC:
++				if (chip->id.len > 4 && (chip->id.data[4] & GENMASK(1, 0)) == 0x1) {
++					chip->options |= NAND_NO_SUBPAGE_WRITE;
++					pr_debug("samsung_nand_decode_id: id.data[1] is 0x%02X, disabling subpage writes\n", d[1]);
++				} else {
++					pr_debug("samsung_nand_decode_id: id.data[1] is 0x%02X, allowing subpage writes\n", d[1]);
++				}
++				break;
+ 			/* K9F1G08U0E 21nm chips do not support subpage write */
+ 			case 0xF1:
+ 				if (chip->id.len > 4 &&
