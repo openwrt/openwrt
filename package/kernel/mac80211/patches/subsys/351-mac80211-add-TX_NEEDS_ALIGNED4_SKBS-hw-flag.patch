@@ -20,9 +20,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -2140,6 +2140,9 @@ struct ieee80211_txq {
-  * @IEEE80211_HW_TX_STATUS_NO_AMPDU_LEN: Driver does not report accurate A-MPDU
-  *	length in tx status information
+@@ -2266,6 +2266,9 @@ struct ieee80211_txq {
+  * @IEEE80211_HW_EXT_KEY_ID_NATIVE: Driver and hardware are supporting Extended
+  *	Key ID and can handle two unicast keys per station for Rx and Tx.
   *
 + * @IEEE80211_HW_TX_NEEDS_ALIGNED4_SKBS: Driver need aligned skbs to four-byte.
 + *	Padding will be added after ieee80211_hdr, before IV/LLC.
@@ -30,15 +30,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
   */
  enum ieee80211_hw_flags {
-@@ -2186,6 +2189,7 @@ enum ieee80211_hw_flags {
- 	IEEE80211_HW_DEAUTH_NEED_MGD_TX_PREP,
- 	IEEE80211_HW_DOESNT_SUPPORT_QOS_NDP,
- 	IEEE80211_HW_TX_STATUS_NO_AMPDU_LEN,
+@@ -2318,6 +2321,7 @@ enum ieee80211_hw_flags {
+ 	IEEE80211_HW_SUPPORTS_MULTI_BSSID,
+ 	IEEE80211_HW_SUPPORTS_ONLY_HE_MULTI_BSSID,
+ 	IEEE80211_HW_EXT_KEY_ID_NATIVE,
 +	IEEE80211_HW_TX_NEEDS_ALIGNED4_SKBS,
  
  	/* keep last, obviously */
  	NUM_IEEE80211_HW_FLAGS
-@@ -2472,6 +2476,40 @@ ieee80211_get_alt_retry_rate(const struc
+@@ -2611,6 +2615,40 @@ ieee80211_get_alt_retry_rate(const struc
  void ieee80211_free_txskb(struct ieee80211_hw *hw, struct sk_buff *skb);
  
  /**
@@ -81,7 +81,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * mac80211 is capable of taking advantage of many hardware
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -1871,6 +1871,10 @@ int ieee80211_if_add(struct ieee80211_lo
+@@ -1877,6 +1877,10 @@ int ieee80211_if_add(struct ieee80211_lo
  					+ 8 /* rfc1042/bridge tunnel */
  					- ETH_HLEN /* ethernet hard_header_len */
  					+ IEEE80211_ENCRYPT_HEADROOM;
@@ -94,7 +94,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		ret = dev_alloc_name(ndev, ndev->name);
 --- a/net/mac80211/mesh_pathtbl.c
 +++ b/net/mac80211/mesh_pathtbl.c
-@@ -105,13 +105,15 @@ void mesh_path_assign_nexthop(struct mes
+@@ -102,13 +102,15 @@ void mesh_path_assign_nexthop(struct mes
  static void prepare_for_gate(struct sk_buff *skb, char *dst_addr,
  			     struct mesh_path *gate_mpath)
  {
@@ -113,7 +113,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!(mshdr->flags & MESH_FLAGS_AE)) {
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2597,7 +2597,7 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2673,7 +2673,7 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  	struct ieee80211_local *local = rx->local;
  	struct ieee80211_sub_if_data *sdata = rx->sdata;
  	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
@@ -122,7 +122,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int tailroom = 0;
  
  	hdr = (struct ieee80211_hdr *) skb->data;
-@@ -2690,7 +2690,9 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2766,7 +2766,9 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  	if (sdata->crypto_tx_tailroom_needed_cnt)
  		tailroom = IEEE80211_ENCRYPT_TAILROOM;
  
@@ -133,7 +133,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				       sdata->encrypt_headroom,
  				  tailroom, GFP_ATOMIC);
  	if (!fwd_skb)
-@@ -2722,6 +2724,12 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2798,6 +2800,12 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  		return RX_DROP_MONITOR;
  	}
  
@@ -148,7 +148,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   out:
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
-@@ -311,7 +311,7 @@ struct ieee80211_fast_tx {
+@@ -308,7 +308,7 @@ struct ieee80211_fast_tx {
  	u8 hdr_len;
  	u8 sa_offs, da_offs, pn_offs;
  	u8 band;
@@ -159,7 +159,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct rcu_head rcu_head;
 --- a/net/mac80211/status.c
 +++ b/net/mac80211/status.c
-@@ -515,6 +515,7 @@ static void ieee80211_report_used_skb(st
+@@ -512,6 +512,7 @@ static void ieee80211_report_used_skb(st
  {
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	struct ieee80211_hdr *hdr = (void *)skb->data;
@@ -167,7 +167,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool acked = info->flags & IEEE80211_TX_STAT_ACK;
  
  	if (dropped)
-@@ -531,7 +532,7 @@ static void ieee80211_report_used_skb(st
+@@ -528,7 +529,7 @@ static void ieee80211_report_used_skb(st
  			skb->dev = NULL;
  		} else {
  			unsigned int hdr_size =
@@ -176,7 +176,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  			/* Check to see if packet is a TDLS teardown packet */
  			if (ieee80211_is_data(hdr->frame_control) &&
-@@ -655,9 +656,22 @@ void ieee80211_tx_monitor(struct ieee802
+@@ -652,9 +653,22 @@ void ieee80211_tx_monitor(struct ieee802
  	struct sk_buff *skb2;
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	struct ieee80211_sub_if_data *sdata;
@@ -201,7 +201,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (WARN_ON_ONCE(skb_headroom(skb) < rtap_len)) {
 --- a/net/mac80211/tkip.c
 +++ b/net/mac80211/tkip.c
-@@ -201,10 +201,12 @@ void ieee80211_get_tkip_p2k(struct ieee8
+@@ -198,10 +198,12 @@ void ieee80211_get_tkip_p2k(struct ieee8
  {
  	struct ieee80211_key *key = (struct ieee80211_key *)
  			container_of(keyconf, struct ieee80211_key, conf);
@@ -217,7 +217,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1175,8 +1175,7 @@ ieee80211_tx_prepare(struct ieee80211_su
+@@ -1171,8 +1171,7 @@ ieee80211_tx_prepare(struct ieee80211_su
  	info->flags &= ~IEEE80211_TX_INTFL_NEED_TXPROCESSING;
  
  	hdr = (struct ieee80211_hdr *) skb->data;
@@ -227,7 +227,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (likely(sta)) {
  		if (!IS_ERR(sta))
-@@ -2222,7 +2221,7 @@ netdev_tx_t ieee80211_monitor_start_xmit
+@@ -2244,7 +2243,7 @@ netdev_tx_t ieee80211_monitor_start_xmit
  		goto fail;
  
  	hdr = (struct ieee80211_hdr *)(skb->data + len_rthdr);
@@ -236,7 +236,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (skb->len < len_rthdr + hdrlen)
  		goto fail;
-@@ -2440,7 +2439,7 @@ static struct sk_buff *ieee80211_build_h
+@@ -2463,7 +2462,7 @@ static struct sk_buff *ieee80211_build_h
  	struct ieee80211_chanctx_conf *chanctx_conf;
  	struct ieee80211_sub_if_data *ap_sdata;
  	enum nl80211_band band;
@@ -245,7 +245,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (IS_ERR(sta))
  		sta = NULL;
-@@ -2739,7 +2738,9 @@ static struct sk_buff *ieee80211_build_h
+@@ -2774,7 +2773,9 @@ static struct sk_buff *ieee80211_build_h
  	}
  
  	skb_pull(skb, skip_header_bytes);
@@ -255,7 +255,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/*
  	 * So we need to modify the skb header and hence need a copy of
-@@ -2772,6 +2773,9 @@ static struct sk_buff *ieee80211_build_h
+@@ -2807,6 +2808,9 @@ static struct sk_buff *ieee80211_build_h
  		memcpy(skb_push(skb, meshhdrlen), &mesh_hdr, meshhdrlen);
  #endif
  
@@ -265,7 +265,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (ieee80211_is_data_qos(fc)) {
  		__le16 *qos_control;
  
-@@ -2947,6 +2951,8 @@ void ieee80211_check_fast_xmit(struct st
+@@ -2983,6 +2987,8 @@ void ieee80211_check_fast_xmit(struct st
  		fc |= cpu_to_le16(IEEE80211_STYPE_QOS_DATA);
  	}
  
@@ -274,7 +274,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* We store the key here so there's no point in using rcu_dereference()
  	 * but that's fine because the code that changes the pointers will call
  	 * this function after doing so. For a single CPU that would be enough,
-@@ -3525,7 +3531,7 @@ begin:
+@@ -3577,7 +3583,7 @@ begin:
  	tx.local = local;
  	tx.skb = skb;
  	tx.sdata = vif_to_sdata(info->control.vif);
@@ -283,7 +283,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (txq->sta)
  		tx.sta = container_of(txq->sta, struct sta_info, sta);
-@@ -4009,7 +4015,7 @@ ieee80211_build_data_template(struct iee
+@@ -4059,7 +4065,7 @@ ieee80211_build_data_template(struct iee
  	hdr = (void *)skb->data;
  	tx.sta = sta_info_get(sdata, hdr->addr1);
  	tx.skb = skb;
@@ -294,10 +294,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		rcu_read_unlock();
 --- a/net/mac80211/debugfs.c
 +++ b/net/mac80211/debugfs.c
-@@ -215,6 +215,7 @@ static const char *hw_flag_names[] = {
- 	FLAG(DEAUTH_NEED_MGD_TX_PREP),
- 	FLAG(DOESNT_SUPPORT_QOS_NDP),
- 	FLAG(TX_STATUS_NO_AMPDU_LEN),
+@@ -272,6 +272,7 @@ static const char *hw_flag_names[] = {
+ 	FLAG(SUPPORTS_MULTI_BSSID),
+ 	FLAG(SUPPORTS_ONLY_HE_MULTI_BSSID),
+ 	FLAG(EXT_KEY_ID_NATIVE),
 +	FLAG(TX_NEEDS_ALIGNED4_SKBS),
  #undef FLAG
  };
