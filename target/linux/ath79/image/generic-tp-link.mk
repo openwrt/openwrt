@@ -173,6 +173,7 @@ TARGET_DEVICES += tplink_cpe610-v1
 
 define Device/tplink_archer-d50-v1
   ATH_SOC := qca9531
+  DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer D50
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
