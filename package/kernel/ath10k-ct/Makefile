@@ -15,7 +15,7 @@ PKG_MIRROR_HASH:=a6d418dfec02842529a53b3c48236e7a375a654a03e199fbc5178bdb269b7d6
 # Build the 5.2 ath10k-ct driver version.  Other option is "-4.19".
 # Probably this should match as closely as
 # possible to whatever mac80211 backports version is being used.
-CT_KVER="-5.2"
+CT_KVER="-4.19"
 
 PKG_MAINTAINER:=Ben Greear <greearb@candelatech.com>
 PKG_BUILD_PARALLEL:=1
