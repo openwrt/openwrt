@@ -2,25 +2,6 @@
 # MT76x8 Profiles
 #
 
-define Device/tplink
-  MTK_SOC := mt7628an
-  DEVICE_VENDOR := TP-Link
-  TPLINK_FLASHLAYOUT :=
-  TPLINK_HWID :=
-  TPLINK_HWREV :=
-  TPLINK_HWREVADD :=
-  TPLINK_HVERSION :=
-  KERNEL := $(KERNEL_DTB)
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-v2-header -e
-  IMAGES += tftp-recovery.bin
-  IMAGE/factory.bin := tplink-v2-image -e
-  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
-  IMAGE/sysupgrade.bin := tplink-v2-image -s -e | append-metadata | \
-	check-size $$$$(IMAGE_SIZE)
-endef
-DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD TPLINK_HVERSION
-
-
 define Device/alfa-network_awusfree1
   MTK_SOC := mt7628an
   IMAGE_SIZE := $(ralink_default_fw_size_8M)
@@ -29,6 +10,25 @@ define Device/alfa-network_awusfree1
   DEVICE_PACKAGES := uboot-envtools
 endef
 TARGET_DEVICES += alfa-network_awusfree1
+
+define Device/buffalo_wcr-1166ds
+  MTK_SOC := mt7628an
+  BUFFALO_TAG_PLATFORM := MTK
+  BUFFALO_TAG_VERSION := 9.99
+  BUFFALO_TAG_MINOR := 9.99
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
+  IMAGE/factory.bin := \
+	trx -M 0x746f435c | pad-rootfs | append-metadata | \
+	buffalo-enc WCR-1166DS $$(BUFFALO_TAG_VERSION) -l | \
+	buffalo-tag-dhp WCR-1166DS JP JP | buffalo-enc-tag -l | \
+	buffalo-dhp-image
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := WCR-1166DS
+  DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += wcr-1166ds
+endef
+TARGET_DEVICES += buffalo_wcr-1166ds
 
 define Device/cudy_wr1000
   MTK_SOC := mt7628an
@@ -44,14 +44,15 @@ define Device/cudy_wr1000
 endef
 TARGET_DEVICES += cudy_wr1000
 
-define Device/tama_w06
+define Device/d-team_pbr-d1
   MTK_SOC := mt7628an
-  IMAGE_SIZE := 15040k
-  DEVICE_VENDOR := Tama
-  DEVICE_MODEL := W06
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_VENDOR := PandoraBox
+  DEVICE_MODEL := PBR-D1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += pbr-d1
 endef
-TARGET_DEVICES += tama_w06
+TARGET_DEVICES += d-team_pbr-d1
 
 define Device/duzun_dm06
   MTK_SOC := mt7628an
@@ -82,6 +83,14 @@ define Device/glinet_vixmini
 endef
 TARGET_DEVICES += glinet_vixmini
 
+define Device/hilink_hlk-7628n
+  MTK_SOC := mt7628an
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  DEVICE_VENDOR := HILINK
+  DEVICE_MODEL := HLK-7628N
+endef
+TARGET_DEVICES += hilink_hlk-7628n
+
 define Device/hiwifi_hc5661a
   MTK_SOC := mt7628an
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
@@ -90,14 +99,6 @@ define Device/hiwifi_hc5661a
   SUPPORTED_DEVICES += hc5661a
 endef
 TARGET_DEVICES += hiwifi_hc5661a
-
-define Device/hilink_hlk-7628n
-  MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_32M)
-  DEVICE_VENDOR := HILINK
-  DEVICE_MODEL := HLK-7628N
-endef
-TARGET_DEVICES += hilink_hlk-7628n
 
 define Device/hiwifi_hc5861b
   MTK_SOC := mt7628an
@@ -118,27 +119,6 @@ define Device/mediatek_linkit-smart-7688
 endef
 TARGET_DEVICES += mediatek_linkit-smart-7688
 
-define Device/mercury_mac1200r-v2
-  MTK_SOC := mt7628an
-  DEVICE_VENDOR := Mercury
-  DEVICE_MODEL := MAC1200R
-  DEVICE_VARIANT := v2.0
-  SUPPORTED_DEVICES := mac1200rv2
-  DEVICE_PACKAGES := kmod-mt76x2
-  SUPPORTED_DEVICES += mac1200rv2
-endef
-TARGET_DEVICES += mercury_mac1200r-v2
-
-define Device/xiaomi_miwifi-nano
-  MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_VENDOR := Xiaomi
-  DEVICE_MODEL := MiWiFi Nano
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
-  SUPPORTED_DEVICES += miwifi-nano
-endef
-TARGET_DEVICES += xiaomi_miwifi-nano
-
 define Device/mediatek_mt7628an-eval-board
   MTK_SOC := mt7628an
   BLOCKSIZE := 64k
@@ -149,6 +129,17 @@ define Device/mediatek_mt7628an-eval-board
   SUPPORTED_DEVICES += mt7628
 endef
 TARGET_DEVICES += mediatek_mt7628an-eval-board
+
+define Device/mercury_mac1200r-v2
+  MTK_SOC := mt7628an
+  DEVICE_VENDOR := Mercury
+  DEVICE_MODEL := MAC1200R
+  DEVICE_VARIANT := v2.0
+  SUPPORTED_DEVICES := mac1200rv2
+  DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += mac1200rv2
+endef
+TARGET_DEVICES += mercury_mac1200r-v2
 
 define Device/netgear_r6120
   MTK_SOC := mt7628an
@@ -188,16 +179,6 @@ define Device/onion_omega2p
 endef
 TARGET_DEVICES += onion_omega2p
 
-define Device/d-team_pbr-d1
-  MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_VENDOR := PandoraBox
-  DEVICE_MODEL := PBR-D1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
-  SUPPORTED_DEVICES += pbr-d1
-endef
-TARGET_DEVICES += d-team_pbr-d1
-
 define Device/rakwireless_rak633
   MTK_SOC := mt7628an
   DEVICE_VENDOR := Rakwireless
@@ -215,6 +196,15 @@ define Device/skylab_skw92a
 endef
 TARGET_DEVICES += skylab_skw92a
 
+define Device/tama_w06
+  MTK_SOC := mt7628an
+  IMAGE_SIZE := 15040k
+  DEVICE_VENDOR := Tama
+  DEVICE_MODEL := W06
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += tama_w06
+
 define Device/totolink_lr1200
   MTK_SOC := mt7628an
   IMAGE_SIZE := 7872k
@@ -223,6 +213,98 @@ define Device/totolink_lr1200
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 uqmi
 endef
 TARGET_DEVICES += totolink_lr1200
+
+define Device/tplink
+  MTK_SOC := mt7628an
+  DEVICE_VENDOR := TP-Link
+  TPLINK_FLASHLAYOUT :=
+  TPLINK_HWID :=
+  TPLINK_HWREV :=
+  TPLINK_HWREVADD :=
+  TPLINK_HVERSION :=
+  KERNEL := $(KERNEL_DTB)
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-v2-header -e
+  IMAGES += tftp-recovery.bin
+  IMAGE/factory.bin := tplink-v2-image -e
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+  IMAGE/sysupgrade.bin := tplink-v2-image -s -e | append-metadata | \
+	check-size $$$$(IMAGE_SIZE)
+endef
+DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD TPLINK_HVERSION
+
+define Device/tplink_archer-c20-v4
+  $(Device/tplink)
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := Archer C20
+  DEVICE_VARIANT := v4
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0xc200004
+  TPLINK_HWREV := 0x1
+  TPLINK_HWREVADD := 0x4
+  TPLINK_HVERSION := 3
+  DEVICE_PACKAGES := kmod-mt76x0e
+  SUPPORTED_DEVICES += tplink,c20-v4
+endef
+TARGET_DEVICES += tplink_archer-c20-v4
+
+define Device/tplink_archer-c50-v3
+  $(Device/tplink)
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := Archer C50
+  DEVICE_VARIANT := v3
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x001D9BA4
+  TPLINK_HWREV := 0x79
+  TPLINK_HWREVADD := 0x1
+  TPLINK_HVERSION := 3
+  DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += tplink,c50-v3
+endef
+TARGET_DEVICES += tplink_archer-c50-v3
+
+define Device/tplink_archer-c50-v4
+  $(Device/tplink)
+  IMAGE_SIZE := 7616k
+  DEVICE_MODEL := Archer C50
+  DEVICE_VARIANT := v4
+  TPLINK_FLASHLAYOUT := 8MSUmtk
+  TPLINK_HWID := 0x001D589B
+  TPLINK_HWREV := 0x93
+  TPLINK_HWREVADD := 0x2
+  TPLINK_HVERSION := 3
+  DEVICE_PACKAGES := kmod-mt76x2
+  IMAGES := sysupgrade.bin
+  SUPPORTED_DEVICES += tplink,c50-v4
+endef
+TARGET_DEVICES += tplink_archer-c50-v4
+
+define Device/tplink_tl-mr3020-v3
+  $(Device/tplink)
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := TL-MR3020
+  DEVICE_VARIANT := v3
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x30200003
+  TPLINK_HWREV := 0x3
+  TPLINK_HWREVADD := 0x3
+  TPLINK_HVERSION := 3
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += tplink_tl-mr3020-v3
+
+define Device/tplink_tl-mr3420-v5
+  $(Device/tplink)
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := TL-MR3420
+  DEVICE_VARIANT := v5
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x34200005
+  TPLINK_HWREV := 0x5
+  TPLINK_HWREVADD := 0x5
+  TPLINK_HVERSION := 3
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += tplink_tl-mr3420-v5
 
 define Device/tplink_tl-wa801nd-v5
   $(Device/tplink)
@@ -310,80 +392,6 @@ define Device/tplink_tl-wr841n-v14
 endef
 TARGET_DEVICES += tplink_tl-wr841n-v14
 
-define Device/tplink_archer-c20-v4
-  $(Device/tplink)
-  IMAGE_SIZE := 7808k
-  DEVICE_MODEL := Archer C20
-  DEVICE_VARIANT := v4
-  TPLINK_FLASHLAYOUT := 8Mmtk
-  TPLINK_HWID := 0xc200004
-  TPLINK_HWREV := 0x1
-  TPLINK_HWREVADD := 0x4
-  TPLINK_HVERSION := 3
-  DEVICE_PACKAGES := kmod-mt76x0e
-  SUPPORTED_DEVICES += tplink,c20-v4
-endef
-TARGET_DEVICES += tplink_archer-c20-v4
-
-define Device/tplink_archer-c50-v3
-  $(Device/tplink)
-  IMAGE_SIZE := 7808k
-  DEVICE_MODEL := Archer C50
-  DEVICE_VARIANT := v3
-  TPLINK_FLASHLAYOUT := 8Mmtk
-  TPLINK_HWID := 0x001D9BA4
-  TPLINK_HWREV := 0x79
-  TPLINK_HWREVADD := 0x1
-  TPLINK_HVERSION := 3
-  DEVICE_PACKAGES := kmod-mt76x2
-  SUPPORTED_DEVICES += tplink,c50-v3
-endef
-TARGET_DEVICES += tplink_archer-c50-v3
-
-define Device/tplink_archer-c50-v4
-  $(Device/tplink)
-  IMAGE_SIZE := 7616k
-  DEVICE_MODEL := Archer C50
-  DEVICE_VARIANT := v4
-  TPLINK_FLASHLAYOUT := 8MSUmtk
-  TPLINK_HWID := 0x001D589B
-  TPLINK_HWREV := 0x93
-  TPLINK_HWREVADD := 0x2
-  TPLINK_HVERSION := 3
-  DEVICE_PACKAGES := kmod-mt76x2
-  IMAGES := sysupgrade.bin
-  SUPPORTED_DEVICES += tplink,c50-v4
-endef
-TARGET_DEVICES += tplink_archer-c50-v4
-
-define Device/tplink_tl-mr3020-v3
-  $(Device/tplink)
-  IMAGE_SIZE := 7808k
-  DEVICE_MODEL := TL-MR3020
-  DEVICE_VARIANT := v3
-  TPLINK_FLASHLAYOUT := 8Mmtk
-  TPLINK_HWID := 0x30200003
-  TPLINK_HWREV := 0x3
-  TPLINK_HWREVADD := 0x3
-  TPLINK_HVERSION := 3
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
-endef
-TARGET_DEVICES += tplink_tl-mr3020-v3
-
-define Device/tplink_tl-mr3420-v5
-  $(Device/tplink)
-  IMAGE_SIZE := 7808k
-  DEVICE_MODEL := TL-MR3420
-  DEVICE_VARIANT := v5
-  TPLINK_FLASHLAYOUT := 8Mmtk
-  TPLINK_HWID := 0x34200005
-  TPLINK_HWREV := 0x5
-  TPLINK_HWREVADD := 0x5
-  TPLINK_HVERSION := 3
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
-endef
-TARGET_DEVICES += tplink_tl-mr3420-v5
-
 define Device/tplink_tl-wr842n-v5
   $(Device/tplink)
   IMAGE_SIZE := 7808k
@@ -464,25 +472,6 @@ define Device/wavlink_wl-wn575a3
 endef
 TARGET_DEVICES += wavlink_wl-wn575a3
 
-define Device/buffalo_wcr-1166ds
-  MTK_SOC := mt7628an
-  BUFFALO_TAG_PLATFORM := MTK
-  BUFFALO_TAG_VERSION := 9.99
-  BUFFALO_TAG_MINOR := 9.99
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
-  IMAGE/factory.bin := \
-	trx -M 0x746f435c | pad-rootfs | append-metadata | \
-	buffalo-enc WCR-1166DS $$(BUFFALO_TAG_VERSION) -l | \
-	buffalo-tag-dhp WCR-1166DS JP JP | buffalo-enc-tag -l | \
-	buffalo-dhp-image
-  DEVICE_VENDOR := Buffalo
-  DEVICE_MODEL := WCR-1166DS
-  DEVICE_PACKAGES := kmod-mt76x2
-  SUPPORTED_DEVICES += wcr-1166ds
-endef
-TARGET_DEVICES += buffalo_wcr-1166ds
-
 define Device/widora_neo-16m
   MTK_SOC := mt7628an
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
@@ -541,6 +530,16 @@ define Device/xiaomi_mir4a-100m
   DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += xiaomi_mir4a-100m
+
+define Device/xiaomi_miwifi-nano
+  MTK_SOC := mt7628an
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := MiWiFi Nano
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += miwifi-nano
+endef
+TARGET_DEVICES += xiaomi_miwifi-nano
 
 define Device/zbtlink_zbt-we1226
   MTK_SOC := mt7628an
