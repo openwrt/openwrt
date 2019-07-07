@@ -34,23 +34,16 @@ define Device/airlink101_ar725w
 endef
 TARGET_DEVICES += airlink101_ar725w
 
-define Device/dlink_dap-1522-a1
+define Device/asus_rt-n15
   MTK_SOC := rt2880
   BLOCKSIZE := 64k
-  IMAGE_SIZE := 3801088
-  DEVICE_VENDOR := D-Link
-  DEVICE_MODEL := DAP-1522
-  DEVICE_VARIANT := A1
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  DEVICE_VENDOR := Asus
+  DEVICE_MODEL := RT-N15
   DEVICE_PACKAGES := kmod-switch-rtl8366s
-  KERNEL := $(KERNEL_DTB)
-  IMAGES += factory.bin
-  IMAGE/factory.bin := \
-	append-kernel | pad-offset $$$$(BLOCKSIZE) 96 | \
-	append-rootfs | pad-rootfs -x 96 | \
-	wrg-header wapnd01_dlink_dap1522 | \
-	check-size $$$$(IMAGE_SIZE)
+  SUPPORTED_DEVICES += rt-n15
 endef
-TARGET_DEVICES += dlink_dap-1522-a1
+TARGET_DEVICES += asus_rt-n15
 
 define Device/belkin_f5d8235-v1
   MTK_SOC := rt2880
@@ -63,27 +56,6 @@ define Device/belkin_f5d8235-v1
   SUPPORTED_DEVICES += f5d8235-v1
 endef
 TARGET_DEVICES += belkin_f5d8235-v1
-
-define Device/asus_rt-n15
-  MTK_SOC := rt2880
-  BLOCKSIZE := 64k
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
-  DEVICE_VENDOR := Asus
-  DEVICE_MODEL := RT-N15
-  DEVICE_PACKAGES := kmod-switch-rtl8366s
-  SUPPORTED_DEVICES += rt-n15
-endef
-TARGET_DEVICES += asus_rt-n15
-
-define Device/ralink_v11st-fe
-  MTK_SOC := rt2880
-  BLOCKSIZE := 64k
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
-  DEVICE_VENDOR := Ralink
-  DEVICE_MODEL := V11ST-FE
-  SUPPORTED_DEVICES += v11st-fe
-endef
-TARGET_DEVICES += ralink_v11st-fe
 
 define Device/buffalo_wli-tx4-ag300n
   MTK_SOC := rt2880
@@ -106,3 +78,31 @@ define Device/buffalo_wzr-agl300nh
   SUPPORTED_DEVICES += wzr-agl300nh
 endef
 TARGET_DEVICES += buffalo_wzr-agl300nh
+
+define Device/dlink_dap-1522-a1
+  MTK_SOC := rt2880
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 3801088
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-1522
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := kmod-switch-rtl8366s
+  KERNEL := $(KERNEL_DTB)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	append-kernel | pad-offset $$$$(BLOCKSIZE) 96 | \
+	append-rootfs | pad-rootfs -x 96 | \
+	wrg-header wapnd01_dlink_dap1522 | \
+	check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += dlink_dap-1522-a1
+
+define Device/ralink_v11st-fe
+  MTK_SOC := rt2880
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  DEVICE_VENDOR := Ralink
+  DEVICE_MODEL := V11ST-FE
+  SUPPORTED_DEVICES += v11st-fe
+endef
+TARGET_DEVICES += ralink_v11st-fe
