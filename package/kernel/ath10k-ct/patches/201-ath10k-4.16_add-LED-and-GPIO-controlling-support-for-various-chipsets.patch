@@ -161,7 +161,7 @@ v13:
  		.patch_load_addr = QCA9888_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_EACH,
-@@ -3098,6 +3104,10 @@ int ath10k_core_start(struct ath10k *ar,
+@@ -3104,6 +3110,10 @@ int ath10k_core_start(struct ath10k *ar,
  			ath10k_wmi_check_apply_board_power_ctl_table(ar);
  	}
  
@@ -172,7 +172,7 @@ v13:
  	return 0;
  
  err_hif_stop:
-@@ -3344,9 +3354,18 @@ static void ath10k_core_register_work(st
+@@ -3350,9 +3360,18 @@ static void ath10k_core_register_work(st
  		goto err_spectral_destroy;
  	}
  
@@ -191,7 +191,7 @@ v13:
  err_spectral_destroy:
  	ath10k_spectral_destroy(ar);
  err_debug_destroy:
-@@ -3404,6 +3423,8 @@ void ath10k_core_unregister(struct ath10
+@@ -3410,6 +3429,8 @@ void ath10k_core_unregister(struct ath10
  	if (!test_bit(ATH10K_FLAG_CORE_REGISTERED, &ar->dev_flags))
  		return;
  
@@ -210,7 +210,7 @@ v13:
  
  #include "htt.h"
  #include "htc.h"
-@@ -1273,6 +1274,13 @@ struct ath10k {
+@@ -1278,6 +1279,13 @@ struct ath10k {
  	} testmode;
  
  	struct {
@@ -674,7 +674,7 @@ v13:
  		.patch_load_addr = QCA9888_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_EACH,
-@@ -3161,6 +3167,10 @@ int ath10k_core_start(struct ath10k *ar,
+@@ -3167,6 +3173,10 @@ int ath10k_core_start(struct ath10k *ar,
  			ath10k_wmi_check_apply_board_power_ctl_table(ar);
  	}
  
@@ -685,7 +685,7 @@ v13:
  	return 0;
  
  err_hif_stop:
-@@ -3415,9 +3425,18 @@ static void ath10k_core_register_work(st
+@@ -3421,9 +3431,18 @@ static void ath10k_core_register_work(st
  		goto err_spectral_destroy;
  	}
  
@@ -704,7 +704,7 @@ v13:
  err_spectral_destroy:
  	ath10k_spectral_destroy(ar);
  err_debug_destroy:
-@@ -3475,6 +3494,8 @@ void ath10k_core_unregister(struct ath10
+@@ -3481,6 +3500,8 @@ void ath10k_core_unregister(struct ath10
  	if (!test_bit(ATH10K_FLAG_CORE_REGISTERED, &ar->dev_flags))
  		return;
  
@@ -723,7 +723,7 @@ v13:
  
  #include "htt.h"
  #include "htc.h"
-@@ -1132,7 +1133,6 @@ struct ath10k {
+@@ -1137,7 +1138,6 @@ struct ath10k {
  	u32 low_5ghz_chan;
  	u32 high_5ghz_chan;
  	bool ani_enabled;
@@ -731,7 +731,7 @@ v13:
  	bool p2p;
  	bool ct_all_pkts_htt; /* CT firmware only: native-wifi for all pkts */
  
-@@ -1383,6 +1383,13 @@ struct ath10k {
+@@ -1388,6 +1388,13 @@ struct ath10k {
  	} testmode;
  
  	struct {
