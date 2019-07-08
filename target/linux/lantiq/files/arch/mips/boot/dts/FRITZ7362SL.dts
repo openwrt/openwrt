@@ -36,12 +36,6 @@
 };
 
 &state_default {
-	nand {
-		lantiq,groups = "nand ale", "nand cle",
-				"nand cs1", "nand rd", "nand rdy";
-		lantiq,function = "ebu";
-	};
-
 	pcie-rst {
 		lantiq,pins = "io21";
 		lantiq,open-drain = <1>;
@@ -85,6 +79,10 @@
 		lantiq,cs1 = <1>;
 		bank-width = <1>;
 		reg = <1 0x0 0x2000000>;
+
+		pinctrl-0 = <&nand_pins>, <&nand_cs1_pins>;
+		pinctrl-names = "default";
+
 		nand-ecc-mode = "on-die";
 
 		partitions {

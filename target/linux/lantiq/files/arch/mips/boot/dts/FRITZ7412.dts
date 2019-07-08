@@ -89,6 +89,9 @@
 		reg = <0 0x0 0x2000000>;
 		lantiq,cs = <1>;
 
+		pinctrl-0 = <&nand_pins>, <&nand_cs1_pins>;
+		pinctrl-names = "default";
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -171,16 +174,6 @@
 			lantiq,pins = "io11";
 			lantiq,open-drain = <1>;
 			lantiq,output = <1>;
-		};
-		nand-mux {
-			lantiq,groups = "nand cle", "nand ale",
-			"nand rd", "nand cs1",
-			"nand rdy";
-			lantiq,function = "ebu";
-		};
-		nand-pins {
-			lantiq,pins = "io13", "io24", "io49";
-			lantiq,pull = <1>;
 		};
 	};
 };

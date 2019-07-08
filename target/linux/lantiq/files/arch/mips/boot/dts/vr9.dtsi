@@ -220,6 +220,32 @@
 				};
 			};
 
+			nand_pins: nand {
+				mux-0 {
+					lantiq,groups = "nand cle", "nand ale",
+							"nand rd";
+					lantiq,function = "ebu";
+					lantiq,output = <1>;
+					lantiq,open-drain = <0>;
+					lantiq,pull = <0>;
+				};
+				mux-1 {
+					lantiq,groups = "nand rdy";
+					lantiq,function = "ebu";
+					lantiq,output = <0>;
+					lantiq,pull = <2>;
+				};
+			};
+
+			nand_cs1_pins: nand-cs1 {
+				mux {
+					lantiq,groups = "nand cs1";
+					lantiq,function = "ebu";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <0>;
+				};
+			};
+
 			spi_pins: spi {
 				mux-0 {
 					lantiq,groups = "spi_di";

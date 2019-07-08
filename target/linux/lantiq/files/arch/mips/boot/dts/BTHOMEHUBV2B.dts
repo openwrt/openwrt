@@ -108,19 +108,6 @@
 	pinctrl-0 = <&state_default>;
 
 	state_default: pinmux {
-		nand_out {
-			lantiq,groups = "nand cle", "nand ale";
-			lantiq,function = "ebu";
-			lantiq,output = <1>;
-			lantiq,open-drain = <0>;
-			lantiq,pull = <0>;
-		};
-		nand_cs1 {
-			lantiq,groups = "nand cs1";
-			lantiq,function = "ebu";
-			lantiq,open-drain = <0>;
-			lantiq,pull = <0>;
-		};
 		exin {
 			lantiq,groups = "exin1";
 			lantiq,function = "exin";
@@ -208,6 +195,9 @@
 		bank-width = <2>;
 		reg = <1 0x0 0x2000000 >;
 		req-mask = <0x1>;  /* PCI request lines to mask during NAND access */
+
+		pinctrl-0 = <&nand_pins>, <&nand_cs1_pins>;
+		pinctrl-names = "default";
 
 		partitions {
 			compatible = "fixed-partitions";
