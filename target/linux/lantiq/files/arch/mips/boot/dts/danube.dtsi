@@ -144,6 +144,10 @@
 			compatible = "lantiq,gpio-stp-xway";
 			gpio-controller;
 			reg = <0xe100bb0 0x40>;
+
+			pinctrl-0 = <&stp_pins>;
+			pinctrl-names = "default";
+
 			lantiq,shadow = <0xfff>;
 			lantiq,groups = <0x3>;
 			status = "disabled";
@@ -187,6 +191,14 @@
 					lantiq,open-drain = <0>;
 					lantiq,pull = <0>;
 				};
+			};
+
+			stp_pins: stp {
+				lantiq,groups = "stp";
+				lantiq,function = "stp";
+				lantiq,pull = <0>;
+				lantiq,open-drain = <0>;
+				lantiq,output = <1>;
 			};
 		};
 
