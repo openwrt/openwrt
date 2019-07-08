@@ -38,6 +38,7 @@ endef
 define Device/nand
   CMDLINE := ubi.mtd=1 ubi.block=0,rootfs root=/dev/ubiblock0_1
   BOARD_NAME := rb532
+  DEVICE_TITLE := rb532 NAND
   SUPPORTED_DEVICES := rb532
   KERNEL_INITRAMFS := append-kernel | patch-cmdline | lzma | lzma-loader-elf
   KERNEL := $$(KERNEL_INITRAMFS) | kernel2minor -s 2048 -i 0 -c
