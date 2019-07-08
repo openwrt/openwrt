@@ -114,18 +114,6 @@
 			lantiq,output = <1>;
 		};
 	};
-	pins_spi_default: pins_spi_default {
-		spi_in {
-			lantiq,groups = "spi_di";
-			lantiq,function = "spi";
-		};
-		spi_out {
-			lantiq,groups = "spi_do", "spi_clk",
-				"spi_cs4";
-			lantiq,function = "spi";
-			lantiq,output = <1>;
-		};
-	};
 };
 
 &pci0 {
@@ -135,9 +123,6 @@
 
 &spi {
 	status = "okay";
-
-	pinctrl-names = "default";
-	pinctrl-0 = <&pins_spi_default>;
 
 	flash@4 {
 		compatible = "jedec,spi-nor";
