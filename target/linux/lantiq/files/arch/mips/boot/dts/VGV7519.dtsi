@@ -127,6 +127,9 @@
 };
 
 &eth0 {
+	pinctrl-0 = <&mdio_pins>, <&gphy0_led1_pins>, <&gphy1_led0_pins>;
+	pinctrl-names = "default";
+
 	lan: interface@0 {
 		compatible = "lantiq,xrx200-pdi";
 		#address-cells = <1>;
@@ -218,13 +221,6 @@
 		};
 		pci-rst {
 			lantiq,pins = "io21";
-			lantiq,open-drain = <0>;
-			lantiq,pull = <0>;
-			lantiq,output = <1>;
-		};
-		gphy-leds {
-			lantiq,groups = "gphy0 led1", "gphy1 led0";
-			lantiq,function = "gphy";
 			lantiq,open-drain = <0>;
 			lantiq,pull = <0>;
 			lantiq,output = <1>;
