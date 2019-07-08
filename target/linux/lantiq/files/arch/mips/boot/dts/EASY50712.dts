@@ -25,10 +25,6 @@
 			lantiq,groups = "exin1";
 			lantiq,function = "exin";
 		};
-		pci {
-			lantiq,groups = "gnt1";
-			lantiq,function = "pci";
-		};
 	};
 };
 
@@ -68,4 +64,9 @@
 			};
 		};
 	};
+};
+
+&pci0 {
+	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
+	pinctrl-names = "default";
 };

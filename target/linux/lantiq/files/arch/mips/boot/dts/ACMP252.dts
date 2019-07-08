@@ -37,10 +37,6 @@
 			lantiq,groups = "exin1";
 			lantiq,function = "exin";
 		};
-		pci {
-			lantiq,groups = "gnt1", "req1";
-			lantiq,function = "pci";
-		};
 	};
 };
 
@@ -96,6 +92,9 @@
 
 &pci0 {
 	status = "okay";
+
+	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
+	pinctrl-names = "default";
 };
 
 &usb_phy {

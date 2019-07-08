@@ -75,21 +75,6 @@
 	pinctrl-0 = <&state_default>;
 
 	state_default: pinmux {
-		pci {
-			lantiq,groups = "gnt1", "req1", "req2", "req4", "gnt2", "gnt3", "gnt4";
-			lantiq,function = "pci";
-		};
-		pci-in {
-			lantiq,groups = "req1", "req2", "req4";
-			lantiq,output = <0>;
-			lantiq,open-drain = <1>;
-			lantiq,pull = <2>;
-		};
-		pci-out {
-			lantiq,groups = "gnt1", "gnt2", "gnt3", "gnt4";
-			lantiq,output = <1>;
-			lantiq,pull = <0>;
-		};
 		ar8030-intr {
 			lantiq,groups = "exin3";
 			lantiq,function = "exin";
@@ -166,6 +151,13 @@
 
 &pci0 {
 	status = "okay";
+
+	pinctrl-0 = <&pci_gnt1_pins>, <&pci_gnt2_pins>,
+		    <&pci_gnt3_pins>, <&pci_gnt4_pins>,
+		    <&pci_req1_pins>, <&pci_req2_pins>,
+		    <&pci_req4_pins>;
+	pinctrl-names = "default";
+
 	req-mask = <0xf>;
 	gpio-reset = <&gpio 21 GPIO_ACTIVE_LOW>;
 

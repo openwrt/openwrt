@@ -115,21 +115,6 @@
 			lantiq,groups = "exin1";
 			lantiq,function = "exin";
 		};
-		pci {
-			lantiq,groups = "gnt1", "req1";
-			lantiq,function = "pci";
-		};
-		pci-in {
-			lantiq,groups = "req1";
-			lantiq,output = <0>;
-			lantiq,open-drain = <1>;
-			lantiq,pull = <2>;
-		};
-		pci-out {
-			lantiq,groups = "gnt1";
-			lantiq,output = <1>;
-			lantiq,pull = <0>;
-		};
 	};
 };
 
@@ -139,6 +124,10 @@
 
 &pci0 {
 	status = "okay";
+
+	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
+	pinctrl-names = "default";
+
 	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 
 	wifi@168c,0029 {
