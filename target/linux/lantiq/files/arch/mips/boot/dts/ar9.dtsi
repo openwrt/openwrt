@@ -168,6 +168,13 @@
 			#gpio-cells = <2>;
 			gpio-controller;
 			reg = <0xe100b10 0xa0>;
+
+			mdio_pins: mdio {
+				mux {
+					lantiq,groups = "mdio";
+					lantiq,function = "mdio";
+				};
+			};
 		};
 
 		stp: stp@e100bb0 {
@@ -238,6 +245,8 @@
 			interrupt-parent = <&icu0>;
 			interrupts = <73 72>;
 			mac-address = [ 00 11 22 33 44 55 ];
+			pinctrl-0 = <&mdio_pins>;
+			pinctrl-names = "default";
 		};
 
 		ppe@e234000 {

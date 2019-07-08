@@ -115,10 +115,6 @@
 	pinctrl-0 = <&state_default>;
 
 	state_default: pinmux {
-		mdio {
-			lantiq,groups = "mdio";
-			lantiq,function = "mdio";
-		};
 		gphy-leds {
 			lantiq,groups = "gphy0 led0", "gphy0 led1",
 					"gphy0 led2", "gphy1 led0",
