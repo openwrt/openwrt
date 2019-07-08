@@ -202,6 +202,8 @@
 					"spi_frm";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi_pins>, <&spi_cs4_pins>;
 			status = "disabled";
 		};
 
@@ -215,6 +217,26 @@
 				mux {
 					lantiq,groups = "mdio";
 					lantiq,function = "mdio";
+				};
+			};
+
+			spi_pins: spi {
+				mux-0 {
+					lantiq,groups = "spi_di";
+					lantiq,function = "spi";
+				};
+				mux-1 {
+					lantiq,groups = "spi_do", "spi_clk";
+					lantiq,function = "spi";
+					lantiq,output = <1>;
+				};
+			};
+
+			spi_cs4_pins: spi-cs4 {
+				mux {
+					lantiq,groups = "spi_cs4";
+					lantiq,function = "spi";
+					lantiq,output = <1>;
 				};
 			};
 		};
