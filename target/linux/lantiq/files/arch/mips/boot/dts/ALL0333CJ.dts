@@ -61,10 +61,6 @@
 	pinctrl-0 = <&state_default>;
 
 	state_default: pinmux {
-		asc {
-			lantiq,groups = "asc";
-			lantiq,function = "asc";
-		};
 		keys_in {
 			lantiq,pins = "io0",/* "io25", */"io29";
 			lantiq,pull = <2>;

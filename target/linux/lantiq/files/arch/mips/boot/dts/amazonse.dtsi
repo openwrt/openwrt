@@ -151,6 +151,13 @@
 			gpio-controller;
 			reg = <0xe100b10 0xa0>;
 
+			asc_pins: asc-pins {
+				mux {
+					lantiq,groups = "asc";
+					lantiq,function = "asc";
+				};
+			};
+
 			mdio_pins: mdio {
 				mux {
 					lantiq,groups = "mdio";
@@ -184,6 +191,8 @@
 			reg = <0xe100c00 0x400>;
 			interrupt-parent = <&icu0>;
 			interrupts = <72 74 75>;
+			pinctrl-0 = <&asc_pins>;
+			pinctrl-names = "default";
 		};
 
 		mei@e116000 {
