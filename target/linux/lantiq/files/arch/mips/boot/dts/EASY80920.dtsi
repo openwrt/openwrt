@@ -189,10 +189,6 @@
 			lantiq,groups = "exin3";
 			lantiq,function = "exin";
 		};
-		pci {
-			lantiq,groups = "gnt1", "req1";
-			lantiq,function = "pci";
-		};
 		conf_out {
 			lantiq,pins = "io21",
 					"io33";
@@ -255,6 +251,11 @@
 			};
 		};
 	};
+};
+
+&pci0 {
+	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
+	pinctrl-names = "default";
 };
 
 &stp {
