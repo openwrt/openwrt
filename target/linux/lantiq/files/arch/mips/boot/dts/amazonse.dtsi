@@ -148,6 +148,13 @@
 			#gpio-cells = <2>;
 			gpio-controller;
 			reg = <0xe100b10 0xa0>;
+
+			mdio_pins: mdio {
+				mux {
+					lantiq,groups = "mdio";
+					lantiq,function = "mdio";
+				};
+			};
 		};
 
 		asc1: serial@e100c00 {
@@ -198,6 +205,8 @@
 			reg = <0xe180000 0x40000>;
 			interrupt-parent = <&icu0>;
 			interrupts = <105 109>;
+			pinctrl-0 = <&mdio_pins>;
+			pinctrl-names = "default";
 		};
 	};
 
