@@ -119,18 +119,6 @@
 	lantiq,gphy-mode = <GPHY_MODE_FE>;
 };
 
-&gpio {
-	pinctrl-names = "default";
-	pinctrl-0 = <&state_default>;
-
-	state_default: pinmux {
-		mdio {
-			lantiq,groups = "mdio";
-			lantiq,function = "mdio";
-		};
-	};
-};
-
 &localbus {
 	flash@0 {
 		compatible = "lantiq,nor";

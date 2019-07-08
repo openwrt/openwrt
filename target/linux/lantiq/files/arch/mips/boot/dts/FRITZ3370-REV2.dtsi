@@ -193,11 +193,6 @@
 	pinctrl-0 = <&state_default>;
 
 	state_default: pinmux {
-		mdio {
-			lantiq,groups = "mdio";
-			lantiq,function = "mdio";
-		};
-
 		nand {
 			lantiq,groups = "nand cle", "nand ale",
 					"nand rd", "nand cs1", "nand rdy";

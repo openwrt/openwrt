@@ -156,11 +156,6 @@
 	pinctrl-0 = <&state_default>;
 
 	state_default: pinmux {
-		mdio {
-			lantiq,groups = "mdio";
-			lantiq,function = "mdio";
-		};
-
 		phy-rst {
 			lantiq,pins = "io37", "io44";
 			lantiq,pull = <0>;

@@ -210,6 +210,13 @@
 			#gpio-cells = <2>;
 			gpio-controller;
 			reg = <0xe100b10 0xa0>;
+
+			mdio_pins: mdio {
+				mux {
+					lantiq,groups = "mdio";
+					lantiq,function = "mdio";
+				};
+			};
 		};
 
 		stp: stp@e100bb0 {
@@ -285,6 +292,8 @@
 			resets = <&reset0 21 16>, <&reset0 8 8>;
 			reset-names = "switch", "ppe";
 			lantiq,phys = <&gphy0>, <&gphy1>;
+			pinctrl-0 = <&mdio_pins>;
+			pinctrl-names = "default";
 		};
 
 		mei@e116000 {
