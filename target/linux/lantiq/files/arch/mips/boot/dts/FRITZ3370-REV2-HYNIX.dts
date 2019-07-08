@@ -13,6 +13,9 @@
 		bank-width = <2>;
 		reg = <1 0x0 0x2000000>;
 
+		pinctrl-0 = <&nand_pins>, <&nand_cs1_pins>;
+		pinctrl-names = "default";
+
 		nand-ecc-mode = "soft";
 		nand-ecc-strength = <3>;
 		nand-ecc-step-size = <256>;

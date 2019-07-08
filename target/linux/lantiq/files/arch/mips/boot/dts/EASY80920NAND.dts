@@ -19,6 +19,9 @@
 		bank-width = <2>;
 		reg = <0 0x0 0x2000000>;
 
+		pinctrl-0 = <&nand_pins>;
+		pinctrl-names = "default";
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;

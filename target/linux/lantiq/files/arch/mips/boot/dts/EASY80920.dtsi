@@ -193,18 +193,12 @@
 			lantiq,groups = "stp";
 			lantiq,function = "stp";
 		};
-		nand {
-			lantiq,groups = "nand cle", "nand ale",
-					"nand rd", "nand rdy";
-			lantiq,function = "ebu";
-		};
 		pci {
 			lantiq,groups = "gnt1", "req1";
 			lantiq,function = "pci";
 		};
 		conf_out {
-			lantiq,pins = "io24", "io13", "io49", /* nand cle, ale and rd */
-					"io4", "io5", "io6", /* stp */
+			lantiq,pins = "io4", "io5", "io6", /* stp */
 					"io21",
 					"io33";
 			lantiq,open-drain;
@@ -217,8 +211,7 @@
 			lantiq,output = <1>;
 		};
 		conf_in {
-			lantiq,pins = "io39", /* exin3 */
-					"io48"; /* nand rdy */
+			lantiq,pins = "io39"; /* exin3 */
 			lantiq,pull = <2>;
 		};
 	};
