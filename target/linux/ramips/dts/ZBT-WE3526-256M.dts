@@ -1,0 +1,13 @@
+/dts-v1/;
+
+#include "ZBT-WE3526.dtsi"
+
+/ {
+	compatible = "zbtlink,zbt-we3526-256m", "zbtlink,zbt-we3526", "mediatek,mt7621-soc";
+	model = "ZBT-WE3526 (256M)";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x10000000>;
+	};
+};

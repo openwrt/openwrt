@@ -664,8 +664,17 @@ ramips_board_detect() {
 	*"ZBT-WA05")
 		name="zbt-wa05"
 		;;
-	*"ZBT-WE1326")
-		name="zbt-we1326"
+	*"ZBT-WE1326 (256M)")
+		name="zbt-we1326-256m"
+		;;
+	*"ZBT-WE1326 (512M)")
+		name="zbt-we1326-512m"
+		;;
+	*"ZBT-WE3526 (256M)")
+		name="zbt-we3526-256m"
+		;;
+	*"ZBT-WE3526 (512M)")
+		name="zbt-we3526-512m"
 		;;
 	*"ZBT-WE2026")
 		name="zbt-we2026"

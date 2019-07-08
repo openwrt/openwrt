@@ -656,26 +656,51 @@ define Device/wsr-600
 endef
 TARGET_DEVICES += wsr-600
 
-define Device/zbt-we1326
-  DTS := ZBT-WE1326
+define Device/zbt-we1326-256m
+  DTS := ZBT-WE1326-256M
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := ZBT
   DEVICE_MODEL := ZBT-WE1326
+  DEVICE_VARIANT := 256MB RAM
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-sdhci-mt7620 wpad-basic
 endef
-TARGET_DEVICES += zbt-we1326
+TARGET_DEVICES += zbt-we1326-256m
 
-define Device/zbtlink_zbt-we3526
-  DTS := ZBT-WE3526
+define Device/zbt-we1326-512m
+  DTS := ZBT-WE1326-512M
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_VENDOR := ZBT
+  DEVICE_MODEL := ZBT-WE1326
+  DEVICE_VARIANT := 512MB RAM
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-sdhci-mt7620 wpad-basic
+endef
+TARGET_DEVICES += zbt-we1326-512m
+
+define Device/zbtlink_zbt-we3526-256m
+  DTS := ZBT-WE3526-256M
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := ZBT
   DEVICE_MODEL := ZBT-WE3526
+  DEVICE_VARIANT := 256MB RAM
   DEVICE_PACKAGES := \
 	kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
 	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
-TARGET_DEVICES += zbtlink_zbt-we3526
+TARGET_DEVICES += zbtlink_zbt-we3526-256m
+
+define Device/zbtlink_zbt-we3526-512m
+  DTS := ZBT-WE3526-512M
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_VENDOR := ZBT
+  DEVICE_MODEL := ZBT-WE3526
+  DEVICE_VARIANT := 512MB RAM
+  DEVICE_PACKAGES := \
+	kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
+	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+endef
+TARGET_DEVICES += zbtlink_zbt-we3526-512m
 
 define Device/zbt-wg2626
   DTS := ZBT-WG2626

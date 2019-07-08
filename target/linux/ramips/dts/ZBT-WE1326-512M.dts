@@ -1,0 +1,13 @@
+/dts-v1/;
+
+#include "ZBT-WE1326.dtsi"
+
+/ {
+	compatible = "zbtlink,zbt-we1326-512m", "zbtlink,zbt-we1326", "mediatek,mt7621-soc";
+	model = "ZBT-WE1326 (512M)";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x1c000000>, <0x20000000 0x4000000>;
+	};
+};
