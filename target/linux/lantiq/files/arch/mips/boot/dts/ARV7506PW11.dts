@@ -91,11 +91,6 @@
 	pinctrl-0 = <&state_default>;
 
 	state_default: pinmux {
-		pci {
-			lantiq,groups = "gnt1";
-			lantiq,function = "pci";
-			lantiq,output = <1>;
-		};
 		pci_rst {
 			lantiq,pins = "io21";
 			lantiq,pull = <2>;
@@ -149,6 +144,10 @@
 
 &pci0 {
 	status = "okay";
+
+	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
+	pinctrl-names = "default";
+
 	lantiq,external-clock;
 	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 

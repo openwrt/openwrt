@@ -86,18 +86,6 @@
 			lantiq,pull = <2>;
 			lantiq,output = <0>;
 		};
-		pci_in {
-			lantiq,groups = "req1", "req2";
-			lantiq,function = "pci";
-			lantiq,open-drain = <1>;
-			lantiq,pull = <2>;
-			lantiq,output = <0>;
-		};
-		pci_out {
-			lantiq,groups = "gnt1";
-			lantiq,function = "pci";
-			lantiq,output = <1>;
-		};
 		pci_rst {
 			lantiq,pins = "io21";
 			lantiq,pull = <2>;
@@ -173,6 +161,10 @@
 
 &pci0 {
 	status = "okay";
+
+	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>, <&pci_req2_pins>;
+	pinctrl-names = "default";
+
 	lantiq,external-clock;
 	interrupt-map = <
 		0x7000 0 0 1 &icu0 30

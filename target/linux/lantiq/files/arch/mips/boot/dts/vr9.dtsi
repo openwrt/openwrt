@@ -294,6 +294,22 @@
 				};
 			};
 
+			pci_gnt1_pins: pci-gnt1 {
+				lantiq,groups = "gnt1";
+				lantiq,function = "pci";
+				lantiq,output = <1>;
+				lantiq,open-drain = <0>;
+				lantiq,pull = <0>;
+			};
+
+			pci_req1_pins: pci-req1 {
+				lantiq,groups = "req1";
+				lantiq,function = "pci";
+				lantiq,output = <0>;
+				lantiq,open-drain = <1>;
+				lantiq,pull = <2>;
+			};
+
 			spi_pins: spi {
 				mux-0 {
 					lantiq,groups = "spi_di";

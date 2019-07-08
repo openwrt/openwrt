@@ -193,6 +193,38 @@
 				};
 			};
 
+			pci_gnt1_pins: pci-gnt1 {
+				lantiq,groups = "gnt1";
+				lantiq,function = "pci";
+				lantiq,output = <1>;
+				lantiq,open-drain = <0>;
+				lantiq,pull = <0>;
+			};
+
+			pci_gnt2_pins: pci-gnt2 {
+				lantiq,groups = "gnt2";
+				lantiq,function = "pci";
+				lantiq,output = <1>;
+				lantiq,open-drain = <0>;
+				lantiq,pull = <0>;
+			};
+
+			pci_req1_pins: pci-req1 {
+				lantiq,groups = "req1";
+				lantiq,function = "pci";
+				lantiq,output = <0>;
+				lantiq,open-drain = <1>;
+				lantiq,pull = <2>;
+			};
+
+			pci_req2_pins: pci-req2 {
+				lantiq,groups = "req2";
+				lantiq,function = "pci";
+				lantiq,output = <0>;
+				lantiq,open-drain = <1>;
+				lantiq,pull = <2>;
+			};
+
 			stp_pins: stp {
 				lantiq,groups = "stp";
 				lantiq,function = "stp";
