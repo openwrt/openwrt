@@ -189,17 +189,12 @@
 			lantiq,groups = "exin3";
 			lantiq,function = "exin";
 		};
-		stp {
-			lantiq,groups = "stp";
-			lantiq,function = "stp";
-		};
 		pci {
 			lantiq,groups = "gnt1", "req1";
 			lantiq,function = "pci";
 		};
 		conf_out {
-			lantiq,pins = "io4", "io5", "io6", /* stp */
-					"io21",
+			lantiq,pins = "io21",
 					"io33";
 			lantiq,open-drain;
 			lantiq,pull = <0>;
