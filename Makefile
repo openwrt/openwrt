@@ -93,6 +93,10 @@ diffconfig: FORCE
 	mkdir -p $(BIN_DIR)
 	$(SCRIPT_DIR)/diffconfig.sh > $(BIN_DIR)/config.seed
 
+ci-formal-checks:
+	export BRANCH
+	$(SCRIPT_DIR)/ci-formal-checks.sh
+
 prepare: .config $(tools/stamp-compile) $(toolchain/stamp-compile)
 	$(_SINGLE)$(SUBMAKE) -r diffconfig
 
