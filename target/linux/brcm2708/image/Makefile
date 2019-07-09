@@ -58,7 +58,7 @@ endef
 
 define Device/rpi
   DEVICE_TITLE := Raspberry Pi B/B+/CM/Zero/ZeroW
-  DEVICE_DTS := bcm2708-rpi-b bcm2708-rpi-b-plus bcm2708-rpi-cm bcm2708-rpi-0-w
+  DEVICE_DTS := bcm2708-rpi-b bcm2708-rpi-b-plus bcm2708-rpi-cm bcm2708-rpi-zero bcm2708-rpi-zero-w
   SUPPORTED_DEVICES := \
 	rpi-b rpi-b-plus rpi-cm rpi-zero rpi-zero-w \
 	raspberrypi,model-b raspberrypi,model-b-plus raspberrypi,model-b-rev2 \
@@ -86,8 +86,8 @@ endif
 
 define Device/rpi-3
   KERNEL_IMG := kernel8.img
-  DEVICE_TITLE := Raspberry Pi 3B/3B+
-  DEVICE_DTS := broadcom/bcm2710-rpi-3-b broadcom/bcm2710-rpi-3-b-plus
+  DEVICE_TITLE := Raspberry Pi 3B/3B+/3CM
+  DEVICE_DTS := broadcom/bcm2710-rpi-3-b broadcom/bcm2710-rpi-3-b-plus broadcom/bcm2710-rpi-cm3
   SUPPORTED_DEVICES := \
 	rpi-3-b rpi-3-b-plus \
 	raspberrypi,3-model-b raspberrypi,3-model-b-plus \
