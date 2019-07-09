@@ -87,7 +87,8 @@ endef
 define Device/11acnas
   DTS := 11ACNAS
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := WeVO 11AC NAS Router
+  DEVICE_VENDOR := WeVO
+  DEVICE_MODEL := 11AC NAS Router
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += 11acnas
@@ -97,9 +98,11 @@ define Device/dir-860l-b1
   DTS := DIR-860L-B1
   BLOCKSIZE := 64k
   SEAMA_SIGNATURE := wrgac13_dlink.2013gui_dir860lb
-  KERNEL := kernel-bin | patch-dtb | relocate-kernel | lzma | uImage lzma
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | uImage lzma
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := D-Link DIR-860L B1
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-860L
+  DEVICE_VARIANT := B1
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += dir-860l-b1
@@ -107,7 +110,8 @@ TARGET_DEVICES += dir-860l-b1
 define Device/mediatek_ap-mt7621a-v60
   DTS := AP-MT7621A-V60
   IMAGE_SIZE := $(ralink_default_fw_size_8M)
-  DEVICE_TITLE := Mediatek AP-MT7621A-V60 EVB
+  DEVICE_VENDOR := Mediatek
+  DEVICE_MODEL := AP-MT7621A-V60 EVB
   DEVICE_PACKAGES := kmod-usb3 kmod-sdhci-mt7620 kmod-sound-mt7620
 endef
 TARGET_DEVICES += mediatek_ap-mt7621a-v60
@@ -115,7 +119,8 @@ TARGET_DEVICES += mediatek_ap-mt7621a-v60
 define Device/xzwifi_creativebox-v1
   DTS := CreativeBox-v1
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
-  DEVICE_TITLE := CreativeBox v1
+  DEVICE_VENDOR := CreativeBox
+  DEVICE_MODEL := v1
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
 	kmod-usb3
@@ -125,7 +130,8 @@ TARGET_DEVICES += xzwifi_creativebox-v1
 define Device/elecom_wrc-1167ghbk2-s
   DTS := WRC-1167GHBK2-S
   IMAGE_SIZE := 15488k
-  DEVICE_TITLE := ELECOM WRC-1167GHBK2-S
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WRC-1167GHBK2-S
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) |\
     elecom-wrc-factory WRC-1167GHBK2-S 0.00
@@ -135,7 +141,8 @@ TARGET_DEVICES += elecom_wrc-1167ghbk2-s
 define Device/elecom_wrc-2533gst
   DTS := WRC-2533GST
   IMAGE_SIZE := 11264k
-  DEVICE_TITLE := ELECOM WRC-2533GST
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WRC-2533GST
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) |\
     elecom-gst-factory WRC-2533GST 0.00
@@ -145,7 +152,8 @@ TARGET_DEVICES += elecom_wrc-2533gst
 define Device/elecom_wrc-1900gst
   DTS := WRC-1900GST
   IMAGE_SIZE := 11264k
-  DEVICE_TITLE := ELECOM WRC-1900GST
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WRC-1900GST
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) |\
     elecom-gst-factory WRC-1900GST 0.00
@@ -155,7 +163,8 @@ TARGET_DEVICES += elecom_wrc-1900gst
 define Device/ew1200
   DTS := EW1200
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := AFOUNDRY EW1200
+  DEVICE_VENDOR := AFOUNDRY
+  DEVICE_MODEL := EW1200
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-mt76x2 kmod-mt7603 kmod-usb3 \
 	kmod-usb-ledtrig-usbport wpad-basic
@@ -165,7 +174,8 @@ TARGET_DEVICES += ew1200
 define Device/firewrt
   DTS := FIREWRT
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := Firefly FireWRT
+  DEVICE_VENDOR := Firefly
+  DEVICE_MODEL := FireWRT
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += firewrt
@@ -173,7 +183,8 @@ TARGET_DEVICES += firewrt
 define Device/gehua_ghl-r-001
   DTS := GHL-R-001
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
-  DEVICE_TITLE := GeHua GHL-R-001
+  DEVICE_VENDOR := GeHua
+  DEVICE_MODEL := GHL-R-001
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
@@ -181,7 +192,8 @@ TARGET_DEVICES += gehua_ghl-r-001
 
 define Device/gnubee_gb-pc1
   DTS := GB-PC1
-  DEVICE_TITLE := GnuBee Personal Cloud One
+  DEVICE_VENDOR := GnuBee
+  DEVICE_MODEL := Personal Cloud One
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
 endef
@@ -189,7 +201,8 @@ TARGET_DEVICES += gnubee_gb-pc1
 
 define Device/gnubee_gb-pc2
   DTS := GB-PC2
-  DEVICE_TITLE := GnuBee Personal Cloud Two
+  DEVICE_VENDOR := GnuBee
+  DEVICE_MODEL := Personal Cloud Two
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
 endef
@@ -205,7 +218,8 @@ define Device/hc5962
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
-  DEVICE_TITLE := HiWiFi HC5962
+  DEVICE_VENDOR := HiWiFi
+  DEVICE_MODEL := HC5962
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 wpad-basic
 endef
 TARGET_DEVICES += hc5962
@@ -215,7 +229,8 @@ define Device/iodata_wn-ax1167gr
   IMAGE_SIZE := 15552k
   KERNEL_INITRAMFS := $$(KERNEL) | \
     iodata-factory 7864320 4 0x1055 $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
-  DEVICE_TITLE := I-O DATA WN-AX1167GR
+  DEVICE_VENDOR := I-O DATA
+  DEVICE_MODEL := WN-AX1167GR
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 wpad-basic
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr
@@ -223,7 +238,8 @@ TARGET_DEVICES += iodata_wn-ax1167gr
 define Device/iodata_wn-gx300gr
   DTS := WN-GX300GR
   IMAGE_SIZE := 7798784
-  DEVICE_TITLE := I-O DATA WN-GX300GR
+  DEVICE_VENDOR := I-O DATA
+  DEVICE_MODEL := WN-GX300GR
   DEVICE_PACKAGES := kmod-mt7603 wpad-basic
 endef
 TARGET_DEVICES += iodata_wn-gx300gr
@@ -231,9 +247,20 @@ TARGET_DEVICES += iodata_wn-gx300gr
 define Device/k2p
   DTS := K2P
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := Phicomm K2P
+  DEVICE_VENDOR := Phicomm
+  DEVICE_MODEL := K2P
 endef
 TARGET_DEVICES += k2p
+
+define Device/totolink_a7000r
+  DTS := TOTOLINK-A7000R
+  IMAGE_SIZE := 16064k
+  UIMAGE_NAME := C8340R1C-9999
+  DEVICE_VENDOR := TOTOLINK
+  DEVICE_MODEL := A7000R
+  DEVICE_PACKAGES := kmod-mt7615e wpad-basic
+endef
+TARGET_DEVICES += totolink_a7000r
 
 define Device/xiaomi_mir3p
   DTS := MIR3P
@@ -242,7 +269,8 @@ define Device/xiaomi_mir3p
   KERNEL_SIZE:= 4096k
   UBINIZE_OPTS := -E 5
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
-  DEVICE_TITLE := Xiaomi Mi Router 3 Pro
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 3 Pro
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
@@ -262,7 +290,8 @@ define Device/xiaomi_mir3g
   IMAGE/kernel1.bin := append-kernel
   IMAGE/rootfs0.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_TITLE := Xiaomi Mi Router 3G
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 3G
   SUPPORTED_DEVICES += R3G
   SUPPORTED_DEVICES += mir3g
   DEVICE_PACKAGES := \
@@ -275,14 +304,16 @@ define Device/mt7621
   DTS := MT7621
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
-  DEVICE_TITLE := MediaTek MT7621 EVB
+  DEVICE_VENDOR := MediaTek
+  DEVICE_MODEL := MT7621 EVB
 endef
 TARGET_DEVICES += mt7621
 
 define Device/newifi-d1
   DTS := Newifi-D1
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
-  DEVICE_TITLE := Newifi D1
+  DEVICE_VENDOR := Newifi
+  DEVICE_MODEL := D1
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
@@ -291,7 +322,8 @@ TARGET_DEVICES += newifi-d1
 define Device/d-team_newifi-d2
   DTS := Newifi-D2
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
-  DEVICE_TITLE := Newifi D2
+  DEVICE_VENDOR := Newifi
+  DEVICE_MODEL := D2
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
@@ -300,7 +332,8 @@ TARGET_DEVICES += d-team_newifi-d2
 define Device/pbr-m1
   DTS := PBR-M1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := PBR-M1
+  DEVICE_VENDOR := PandoraBox
+  DEVICE_MODEL := PBR-M1
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
 	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
@@ -318,7 +351,8 @@ define Device/r6220
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
-  DEVICE_TITLE := Netgear R6220
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := R6220
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
@@ -326,7 +360,8 @@ TARGET_DEVICES += r6220
 
 define Device/netgear_ex6150
   DTS := EX6150
-  DEVICE_TITLE := Netgear EX6150
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := EX6150
   DEVICE_PACKAGES := kmod-mt76x2 wpad-basic
   NETGEAR_BOARD_ID := U12H318T00_NETGEAR
   IMAGE_SIZE := 14848k
@@ -346,13 +381,15 @@ define Device/netgear_r6350
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
-  DEVICE_TITLE := Netgear R6350
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := R6350
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += netgear_r6350
 
 define Device/MikroTik
+  DEVICE_VENDOR := MikroTik
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16128k
   DEVICE_PACKAGES := kmod-usb3
@@ -366,7 +403,8 @@ endef
 define Device/mikrotik_rb750gr3
   $(Device/MikroTik)
   DTS := RB750Gr3
-  DEVICE_TITLE := MikroTik RouterBOARD RB750Gr3
+  DEVICE_MODEL := RouterBOARD RB750G
+  DEVICE_VARIANT := r3
   DEVICE_PACKAGES += kmod-gpio-beeper
 endef
 TARGET_DEVICES += mikrotik_rb750gr3
@@ -374,30 +412,33 @@ TARGET_DEVICES += mikrotik_rb750gr3
 define Device/mikrotik_rbm33g
   $(Device/MikroTik)
   DTS := RBM33G
-  DEVICE_TITLE := MikroTik RouterBOARD M33G
+  DEVICE_MODEL := RouterBOARD M33G
 endef
 TARGET_DEVICES += mikrotik_rbm33g
 
 define Device/mikrotik_rbm11g
   $(Device/MikroTik)
   DTS := RBM11G
-  DEVICE_TITLE := MikroTik RouterBOARD M11G
+  DEVICE_MODEL := RouterBOARD M11G
 endef
 TARGET_DEVICES += mikrotik_rbm11g
 
 define Device/mtc_wr1201
-	DTS := WR1201
-	IMAGE_SIZE := 16000k
-	DEVICE_TITLE := MTC Wireless Router WR1201
-	KERNEL_INITRAMFS := $(KERNEL_DTB) | wr1201-factory-header
-	DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 \
-		kmod-usb-ledtrig-usbport wpad-basic
+  DTS := WR1201
+  IMAGE_SIZE := 16000k
+  DEVICE_VENDOR := MTC
+  DEVICE_MODEL := Wireless Router WR1201
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | wr1201-factory-header
+  DEVICE_PACKAGES := \
+	kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += mtc_wr1201
 
 define Device/re350-v1
   DTS := RE350
-  DEVICE_TITLE := TP-LINK RE350 v1
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := RE350
+  DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 wpad-basic
   TPLINK_BOARD_ID := RE350-V1
   TPLINK_HWID := 0x0
@@ -413,14 +454,16 @@ TARGET_DEVICES += re350-v1
 
 define Device/re6500
   DTS := RE6500
-  DEVICE_TITLE := Linksys RE6500
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := RE6500
   DEVICE_PACKAGES := kmod-mt76x2 wpad-basic
 endef
 TARGET_DEVICES += re6500
 
 define Device/sap-g3200u3
   DTS := SAP-G3200U3
-  DEVICE_TITLE := STORYLiNK SAP-G3200U3
+  DEVICE_VENDOR := STORYLiNK
+  DEVICE_MODEL := SAP-G3200U3
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += sap-g3200u3
@@ -428,7 +471,8 @@ TARGET_DEVICES += sap-g3200u3
 define Device/sk-wb8
   DTS := SK-WB8
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := SamKnows Whitebox 8
+  DEVICE_VENDOR := SamKnows
+  DEVICE_MODEL := Whitebox 8
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport \
 	uboot-envtools wpad-basic
@@ -438,14 +482,16 @@ TARGET_DEVICES += sk-wb8
 define Device/telco-electronics_x1
   DTS := Telco-Electronics-X1
   IMAGE_SIZE := 16064k
-  DEVICE_TITLE := Telco Electronics X1
+  DEVICE_VENDOR := Telco Electronics
+  DEVICE_MODEL := X1
   DEVICE_PACKAGES := kmod-usb3 kmod-mt76 wpad-basic
 endef
 TARGET_DEVICES += telco-electronics_x1
 
 define Device/timecloud
   DTS := Timecloud
-  DEVICE_TITLE := Thunder Timecloud
+  DEVICE_VENDOR := Thunder
+  DEVICE_MODEL := Timecloud
   DEVICE_PACKAGES := kmod-usb3
 endef
 TARGET_DEVICES += timecloud
@@ -456,14 +502,16 @@ define Device/ubnt-erx
   KERNEL_SIZE := 3145728
   KERNEL_INITRAMFS := $$(KERNEL) | ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_TITLE := Ubiquiti EdgeRouter X
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := EdgeRouter X
 endef
 TARGET_DEVICES += ubnt-erx
 
 define Device/ubnt-erx-sfp
   $(Device/ubnt-erx)
   DTS := UBNT-ERX-SFP
-  DEVICE_TITLE := Ubiquiti EdgeRouter X-SFP
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := EdgeRouter X-SFP
   DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x kmod-i2c-gpio-custom
 endef
 TARGET_DEVICES += ubnt-erx-sfp
@@ -471,7 +519,9 @@ TARGET_DEVICES += ubnt-erx-sfp
 define Device/unielec_u7621-06-256m-16m
   DTS := U7621-06-256M-16M
   IMAGE_SIZE := 16064k
-  DEVICE_TITLE := UniElec U7621-06 (256M RAM/16M flash)
+  DEVICE_VENDOR := UniElec
+  DEVICE_MODEL := U7621-06
+  DEVICE_VARIANT := 256M RAM/16M flash
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
   SUPPORTED_DEVICES += u7621-06-256M-16M
 endef
@@ -480,7 +530,9 @@ TARGET_DEVICES += unielec_u7621-06-256m-16m
 define Device/unielec_u7621-06-512m-64m
   DTS := U7621-06-512M-64M
   IMAGE_SIZE := 65216k
-  DEVICE_TITLE := UniElec U7621-06 (512M RAM/64M flash)
+  DEVICE_VENDOR := UniElec
+  DEVICE_MODEL := U7621-06
+  DEVICE_VARIANT := 512M RAM/64M flash
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
 endef
 TARGET_DEVICES += unielec_u7621-06-512m-64m
@@ -488,7 +540,8 @@ TARGET_DEVICES += unielec_u7621-06-512m-64m
 define Device/vr500
   DTS := VR500
   IMAGE_SIZE := 66453504
-  DEVICE_TITLE := Planex VR500
+  DEVICE_VENDOR := Planex
+  DEVICE_MODEL := VR500
   DEVICE_PACKAGES := kmod-usb3
 endef
 TARGET_DEVICES += vr500
@@ -496,7 +549,9 @@ TARGET_DEVICES += vr500
 define Device/w2914nsv2
   DTS := W2914NSV2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := WeVO W2914NS v2
+  DEVICE_VENDOR := WeVO
+  DEVICE_MODEL := W2914NS
+  DEVICE_VARIANT := v2
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
@@ -511,7 +566,8 @@ define Device/wf-2881
   KERNEL := $(KERNEL_DTB) | pad-offset $$(BLOCKSIZE) 64 | uImage lzma
   UBINIZE_OPTS := -E 5
   IMAGE/sysupgrade.bin := append-kernel | append-ubi | append-metadata | check-size $$$$(IMAGE_SIZE)
-  DEVICE_TITLE := NETIS WF-2881
+  DEVICE_VENDOR := NETIS
+  DEVICE_MODEL := WF-2881
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += wf-2881
@@ -519,7 +575,9 @@ TARGET_DEVICES += wf-2881
 define Device/mqmaker_witi-256m
   DTS := WITI-256M
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := MQmaker WiTi (256MB RAM)
+  DEVICE_VENDOR := MQmaker
+  DEVICE_MODEL := WiTi
+  DEVICE_VARIANT := 256MB RAM
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-mt76x2 kmod-sdhci-mt7620 kmod-usb3 \
 	kmod-usb-ledtrig-usbport wpad-basic
@@ -530,7 +588,9 @@ TARGET_DEVICES += mqmaker_witi-256m
 define Device/mqmaker_witi-512m
   DTS := WITI-512M
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := MQmaker WiTi (512MB RAM)
+  DEVICE_VENDOR := MQmaker
+  DEVICE_MODEL := WiTi
+  DEVICE_VARIANT := 512MB RAM
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-mt76x2 kmod-sdhci-mt7620 kmod-usb3 \
 	kmod-usb-ledtrig-usbport wpad-basic
@@ -549,7 +609,9 @@ define Device/wndr3700v5
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.img := pad-extra 320k | $$(IMAGE/default) | pad-to $$$$(BLOCKSIZE) | \
 	sercom-footer | pad-to 128 | zip WNDR3700v5.bin | sercom-seal
-  DEVICE_TITLE := Netgear WNDR3700v5
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := WNDR3700
+  DEVICE_VARIANT := v5
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
@@ -558,7 +620,8 @@ TARGET_DEVICES += wndr3700v5
 define Device/youhua_wr1200js
   DTS := WR1200JS
   IMAGE_SIZE := 16064k
-  DEVICE_TITLE := YouHua WR1200JS
+  DEVICE_VENDOR := YouHua
+  DEVICE_MODEL := WR1200JS
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
@@ -567,7 +630,8 @@ TARGET_DEVICES += youhua_wr1200js
 define Device/youku_yk-l2
   DTS := YOUKU-YK2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := Youku YK-L2
+  DEVICE_VENDOR := Youku
+  DEVICE_MODEL := YK-L2
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
@@ -577,7 +641,8 @@ define Device/wsr-1166
   DTS := WSR-1166
   IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := Buffalo WSR-1166
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := WSR-1166
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 wpad-basic
 endef
 TARGET_DEVICES += wsr-1166
@@ -585,7 +650,8 @@ TARGET_DEVICES += wsr-1166
 define Device/wsr-600
   DTS := WSR-600
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := Buffalo WSR-600
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := WSR-600
   DEVICE_PACKAGES := kmod-mt7603 kmod-rt2800-pci wpad-basic
 endef
 TARGET_DEVICES += wsr-600
@@ -593,7 +659,8 @@ TARGET_DEVICES += wsr-600
 define Device/zbt-we1326
   DTS := ZBT-WE1326
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := ZBT WE1326
+  DEVICE_VENDOR := ZBT
+  DEVICE_MODEL := ZBT-WE1326
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-sdhci-mt7620 wpad-basic
 endef
@@ -602,7 +669,8 @@ TARGET_DEVICES += zbt-we1326
 define Device/zbtlink_zbt-we3526
   DTS := ZBT-WE3526
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := ZBT WE3526
+  DEVICE_VENDOR := ZBT
+  DEVICE_MODEL := ZBT-WE3526
   DEVICE_PACKAGES := \
 	kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
 	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
@@ -612,7 +680,8 @@ TARGET_DEVICES += zbtlink_zbt-we3526
 define Device/zbt-wg2626
   DTS := ZBT-WG2626
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := ZBT WG2626
+  DEVICE_VENDOR := ZBT
+  DEVICE_MODEL := ZBT-WG2626
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport wpad-basic
@@ -623,7 +692,9 @@ define Device/zbt-wg3526-16M
   DTS := ZBT-WG3526-16M
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   SUPPORTED_DEVICES += zbt-wg3526
-  DEVICE_TITLE := ZBT WG3526 (16MB flash)
+  DEVICE_VENDOR := ZBT
+  DEVICE_MODEL := ZBT-WG3526
+  DEVICE_VARIANT := 16M
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
 	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
@@ -634,9 +705,22 @@ define Device/zbt-wg3526-32M
   DTS := ZBT-WG3526-32M
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
   SUPPORTED_DEVICES += ac1200pro
-  DEVICE_TITLE := ZBT WG3526 (32MB flash)
+  DEVICE_VENDOR := ZBT
+  DEVICE_MODEL := ZBT-WG3526
+  DEVICE_VARIANT := 32M
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
 	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += zbt-wg3526-32M
+
+define Device/asiarf_ap7621-001
+  DTS := AP7621-001
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_VENDOR := AsiaRF
+  DEVICE_MODEL := AP7621-001
+  DEVICE_PACKAGES := \
+	kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3
+endef
+TARGET_DEVICES += asiarf_ap7621-001
+

@@ -34,6 +34,7 @@ endef
 # UBNT_CHIP e.g. one of (ar7240, ar933x, ar934x)
 # UBNT_VERSION e.g. one of (6.0.0, 8.5.0)
 define Device/ubnt
+  DEVICE_VENDOR := Ubiquiti
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   IMAGE_SIZE := 7552k
   UBNT_BOARD := XM
@@ -80,49 +81,52 @@ endef
 
 define Device/ubnt_airrouter
   $(Device/ubnt-xm)
-  DEVICE_TITLE := Ubiquiti AirRouter
+  DEVICE_MODEL := AirRouter
   SUPPORTED_DEVICES += airrouter
 endef
 TARGET_DEVICES += ubnt_airrouter
 
 define Device/ubnt_bullet-m
   $(Device/ubnt-xm)
-  DEVICE_TITLE := Ubiquiti Bullet-M
+  DEVICE_MODEL := Bullet-M
   SUPPORTED_DEVICES += bullet-m
 endef
 TARGET_DEVICES += ubnt_bullet-m
 
 define Device/ubnt_bullet-m-xw
   $(Device/ubnt-xw)
-  DEVICE_TITLE := Ubiquiti Bullet-M (XW)
+  DEVICE_MODEL := Bullet-M
+  DEVICE_VARIANT := XW
   SUPPORTED_DEVICES += bullet-m-xw
 endef
 TARGET_DEVICES += ubnt_bullet-m-xw
 
 define Device/ubnt_rocket-m
   $(Device/ubnt-xm)
-  DEVICE_TITLE := Ubiquiti Rocket-M
+  DEVICE_MODEL := Rocket-M
   SUPPORTED_DEVICES += rocket-m
 endef
 TARGET_DEVICES += ubnt_rocket-m
 
 define Device/ubnt_nanostation-m
   $(Device/ubnt-xm)
-  DEVICE_TITLE := Ubiquiti Nanostation M
+  DEVICE_MODEL := Nanostation M
   SUPPORTED_DEVICES += nano-m
 endef
 TARGET_DEVICES += ubnt_nanostation-m
 
 define Device/ubnt_nanostation-m-xw
   $(Device/ubnt-xw)
-  DEVICE_TITLE := Ubiquiti Nanostation M (XW)
+  DEVICE_MODEL := Nanostation M
+  DEVICE_VARIANT := XW
   SUPPORTED_DEVICES += nano-m-xw
 endef
 TARGET_DEVICES += ubnt_nanostation-m-xw
 
 define Device/ubnt_lap-120
   $(Device/ubnt-wa)
-  DEVICE_TITLE := Ubiquiti LiteAP ac (LAP-120)
+  DEVICE_MODEL := LiteAP ac
+  DEVICE_VARIANT := LAP-120
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15744k
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
@@ -131,7 +135,7 @@ TARGET_DEVICES += ubnt_lap-120
 
 define Device/ubnt_nanobeam-ac
   $(Device/ubnt-wa)
-  DEVICE_TITLE := Ubiquiti NanoBeam AC
+  DEVICE_MODEL := NanoBeam AC
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15744k
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
@@ -140,7 +144,7 @@ TARGET_DEVICES += ubnt_nanobeam-ac
 
 define Device/ubnt_nanostation-ac
   $(Device/ubnt-wa)
-  DEVICE_TITLE := Ubiquiti Nanostation AC
+  DEVICE_MODEL := Nanostation AC
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15744k
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
@@ -149,7 +153,7 @@ TARGET_DEVICES += ubnt_nanostation-ac
 
 define Device/ubnt_nanostation-ac-loco
   $(Device/ubnt-wa)
-  DEVICE_TITLE := Ubiquiti Nanostation AC loco
+  DEVICE_MODEL := Nanostation AC loco
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15744k
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
@@ -158,42 +162,42 @@ TARGET_DEVICES += ubnt_nanostation-ac-loco
 
 define Device/ubnt_unifi
   $(Device/ubnt-bz)
-  DEVICE_TITLE := Ubiquiti UniFi
+  DEVICE_MODEL := UniFi
   SUPPORTED_DEVICES += unifi
 endef
 TARGET_DEVICES += ubnt_unifi
 
 define Device/ubnt_unifiac
+  DEVICE_VENDOR := Ubiquiti
   ATH_SOC := qca9563
   IMAGE_SIZE := 7744k
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 
-
 define Device/ubnt_unifiac-lite
   $(Device/ubnt_unifiac)
-  DEVICE_TITLE := Ubiquiti UniFi AC-Lite
+  DEVICE_MODEL := UniFi AC-Lite
   SUPPORTED_DEVICES += ubnt-unifiac-lite
 endef
 TARGET_DEVICES += ubnt_unifiac-lite
 
 define Device/ubnt_unifiac-mesh
   $(Device/ubnt_unifiac)
-  DEVICE_TITLE := Ubiquiti UniFi AC-Mesh
+  DEVICE_MODEL := UniFi AC-Mesh
   SUPPORTED_DEVICES += ubnt-unifiac-mesh
 endef
 TARGET_DEVICES += ubnt_unifiac-mesh
 
 define Device/ubnt_unifiac-mesh-pro
   $(Device/ubnt_unifiac)
-  DEVICE_TITLE := Ubiquiti UniFi AC-Mesh Pro
+  DEVICE_MODEL := UniFi AC-Mesh Pro
   SUPPORTED_DEVICES += ubnt-unifiac-mesh-pro
 endef
 TARGET_DEVICES += ubnt_unifiac-mesh-pro
 
 define Device/ubnt_unifiac-pro
   $(Device/ubnt_unifiac)
-  DEVICE_TITLE := Ubiquiti UniFi AC-Pro
+  DEVICE_MODEL := UniFi AC-Pro
   DEVICE_PACKAGES += kmod-usb-core kmod-usb2
   SUPPORTED_DEVICES += ubnt-unifiac-pro
 endef
@@ -201,6 +205,7 @@ TARGET_DEVICES += ubnt_unifiac-pro
 
 define Device/ubnt_routerstation_common
   DEVICE_PACKAGES := -kmod-ath9k -wpad-mini -uboot-envtools kmod-usb-ohci kmod-usb2 fconfig
+  DEVICE_VENDOR := Ubiquiti
   ATH_SOC := ar7161
   IMAGE_SIZE := 16128k
   IMAGES += factory.bin
@@ -213,7 +218,7 @@ endef
 
 define Device/ubnt_routerstation
   $(Device/ubnt_routerstation_common)
-  DEVICE_TITLE := Ubiquiti RouterStation
+  DEVICE_MODEL := RouterStation
   UBNT_BOARD := RS
   UBNT_TYPE := RSx
   UBNT_CHIP := ar7100
@@ -223,7 +228,7 @@ TARGET_DEVICES += ubnt_routerstation
 
 define Device/ubnt_routerstation-pro
   $(Device/ubnt_routerstation_common)
-  DEVICE_TITLE := Ubiquiti RouterStation Pro
+  DEVICE_MODEL := RouterStation Pro
   UBNT_BOARD := RSPRO
   UBNT_TYPE := RSPRO
   UBNT_CHIP := ar7100pro
@@ -234,7 +239,7 @@ define Device/ubnt_acb-isp
   $(Device/ubnt)
   ATH_SOC := qca9533
   IMAGE_SIZE := 15744k
-  DEVICE_TITLE := Ubiquiti airCube ISP
+  DEVICE_MODEL := airCube ISP
   UBNT_BOARD := ACB-ISP
   UBNT_TYPE := ACB
   UBNT_CHIP := qca9533

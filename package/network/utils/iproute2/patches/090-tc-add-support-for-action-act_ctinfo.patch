@@ -77,16 +77,14 @@ diff --git a/include/uapi/linux/pkt_cls.h b/include/uapi/linux/pkt_cls.h
 index 95d0db2a..a6e7e176 100644
 --- a/include/uapi/linux/pkt_cls.h
 +++ b/include/uapi/linux/pkt_cls.h
-@@ -68,7 +68,8 @@ enum {
- 	TCA_ID_UNSPEC=0,
- 	TCA_ID_POLICE=1,
+@@ -105,6 +105,7 @@ enum tca_id {
+ 	TCA_ID_IFE = TCA_ACT_IFE,
+ 	TCA_ID_SAMPLE = TCA_ACT_SAMPLE,
  	/* other actions go here */
--	__TCA_ID_MAX=255
 +	TCA_ID_CTINFO=27,
-+	__TCA_ID_MAX = 255
+ 	__TCA_ID_MAX = 255
  };
  
- #define TCA_ID_MAX __TCA_ID_MAX
 diff --git a/include/uapi/linux/tc_act/tc_ctinfo.h b/include/uapi/linux/tc_act/tc_ctinfo.h
 new file mode 100644
 index 00000000..f5f26d95

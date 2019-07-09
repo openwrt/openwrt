@@ -1,4 +1,4 @@
-From 83fe1ecb8ac6e0544ae74bf5a63806dcac768201 Mon Sep 17 00:00:00 2001
+From c24cbb648c5bde8312dbd5498a4b8c12b2692205 Mon Sep 17 00:00:00 2001
 From: Biwen Li <biwen.li@nxp.com>
 Date: Wed, 17 Apr 2019 18:58:45 +0800
 Subject: [PATCH] mdio-phy: support layerscape
@@ -22,17 +22,17 @@ Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
 ---
  drivers/net/phy/Kconfig                    |   33 +
  drivers/net/phy/Makefile                   |    5 +
- drivers/net/phy/aquantia.c                 |  328 +++-
+ drivers/net/phy/aquantia.c                 |  286 ++++-
  drivers/net/phy/at803x.c                   |   21 +
- drivers/net/phy/fsl_backplane.c            | 1780 ++++++++++++++++++++
+ drivers/net/phy/fsl_backplane.c            | 1780 ++++++++++++++++++++++++++++
  drivers/net/phy/fsl_backplane.h            |   41 +
- drivers/net/phy/fsl_backplane_serdes_10g.c |  281 +++
- drivers/net/phy/fsl_backplane_serdes_28g.c |  336 ++++
- drivers/net/phy/inphi.c                    |  594 +++++++
+ drivers/net/phy/fsl_backplane_serdes_10g.c |  281 +++++
+ drivers/net/phy/fsl_backplane_serdes_28g.c |  336 ++++++
+ drivers/net/phy/inphi.c                    |  594 ++++++++++
  drivers/net/phy/mdio-mux-multiplexer.c     |  122 ++
  drivers/net/phy/swphy.c                    |    1 +
  include/linux/phy.h                        |    3 +
- 12 files changed, 3526 insertions(+), 19 deletions(-)
+ 12 files changed, 3484 insertions(+), 19 deletions(-)
  create mode 100644 drivers/net/phy/fsl_backplane.c
  create mode 100644 drivers/net/phy/fsl_backplane.h
  create mode 100644 drivers/net/phy/fsl_backplane_serdes_10g.c
@@ -131,14 +131,12 @@ Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
   *
   * This file is licensed under the terms of the GNU General Public License
   * version 2.  This program is licensed "as is" without any warranty of any
-@@ -27,15 +28,200 @@
+@@ -27,15 +28,174 @@
  
  #define PHY_AQUANTIA_FEATURES	(SUPPORTED_10000baseT_Full | \
  				 SUPPORTED_1000baseT_Full | \
 +				 SUPPORTED_2500baseX_Full | \
  				 SUPPORTED_100baseT_Full | \
-+				 SUPPORTED_Pause | \
-+				 SUPPORTED_Asym_Pause | \
  				 PHY_DEFAULT_FEATURES)
  
 +#define MDIO_PMA_CTRL1_AQ_SPEED10	0
@@ -150,11 +148,6 @@ Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
 +
 +#define MDIO_AN_VENDOR_PROV_CTRL       0xc400
 +#define MDIO_AN_RECV_LP_STATUS         0xe820
-+
-+#define MDIO_AN_LPA_PAUSE		0x20
-+#define MDIO_AN_LPA_ASYM_PAUSE		0x10
-+#define MDIO_AN_ADV_PAUSE		0x20
-+#define MDIO_AN_ADV_ASYM_PAUSE		0x10
 +
 +static int aquantia_write_reg(struct phy_device *phydev, int devad,
 +			      u32 regnum, u16 val)
@@ -291,25 +284,6 @@ Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
 +		changed = 1;
 +	}
 +
-+	/* advertise flow control */
-+	oldadv = aquantia_read_reg(phydev, MDIO_MMD_AN, MDIO_AN_ADVERTISE);
-+	if (oldadv < 0)
-+		return oldadv;
-+
-+	adv = oldadv & ~(MDIO_AN_ADV_PAUSE | MDIO_AN_ADV_ASYM_PAUSE);
-+	if (advertise & ADVERTISED_Pause)
-+		adv |= MDIO_AN_ADV_PAUSE;
-+	if (advertise & ADVERTISED_Asym_Pause)
-+		adv |= MDIO_AN_ADV_ASYM_PAUSE;
-+
-+	if (adv != oldadv) {
-+		err = aquantia_write_reg(phydev, MDIO_MMD_AN,
-+					 MDIO_AN_ADVERTISE, adv);
-+		if (err < 0)
-+			return err;
-+		changed = 1;
-+	}
-+
 +	return changed;
 +}
 +
@@ -334,7 +308,7 @@ Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
  }
  
  static int aquantia_aneg_done(struct phy_device *phydev)
-@@ -51,25 +237,26 @@ static int aquantia_config_intr(struct p
+@@ -51,25 +211,26 @@ static int aquantia_config_intr(struct p
  	int err;
  
  	if (phydev->interrupts == PHY_INTERRUPT_ENABLED) {
@@ -367,7 +341,7 @@ Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
  	}
  
  	return err;
-@@ -79,42 +266,145 @@ static int aquantia_ack_interrupt(struct
+@@ -79,42 +240,129 @@ static int aquantia_ack_interrupt(struct
  {
  	int reg;
  
@@ -403,18 +377,6 @@ Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
 +		phydev->advertising |= ADVERTISED_2500baseX_Full;
 +	else
 +		phydev->advertising &= ~ADVERTISED_2500baseX_Full;
-+
-+	/* flow control advertisement */
-+	adv = aquantia_read_reg(phydev, MDIO_MMD_AN, MDIO_AN_ADVERTISE);
-+	if (adv & MDIO_AN_ADV_PAUSE)
-+		phydev->advertising |= ADVERTISED_Pause;
-+	else
-+		phydev->advertising &= ~ADVERTISED_Pause;
-+	if (adv & MDIO_AN_ADV_ASYM_PAUSE)
-+		phydev->advertising |= ADVERTISED_Asym_Pause;
-+	else
-+		phydev->advertising &= ~ADVERTISED_Asym_Pause;
-+
 +	return 0;
 +}
 +
@@ -514,10 +476,6 @@ Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
 +
  	phydev->duplex = DUPLEX_FULL;
  
-+	reg = aquantia_read_reg(phydev, MDIO_MMD_AN, MDIO_AN_LPA);
-+	phydev->pause = reg & MDIO_AN_LPA_PAUSE ? 1 : 0;
-+	phydev->asym_pause = reg & MDIO_AN_LPA_ASYM_PAUSE ? 1 : 0;
-+
 +	aquantia_read_advert(phydev);
 +	aquantia_read_lp_advert(phydev);
 +

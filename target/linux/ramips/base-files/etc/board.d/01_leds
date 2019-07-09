@@ -1,5 +1,6 @@
 #!/bin/sh
 
+. /lib/functions/leds.sh
 . /lib/functions/uci-defaults.sh
 
 set_wifi_led() {
@@ -11,6 +12,9 @@ board=$(board_name)
 boardname="${board##*,}"
 
 board_config_update
+
+led_wlan="$(get_dt_led wlan)"
+[ -n "$led_wlan" ] && ucidef_set_led_wlan "wifi_led" "wifi" "$led_wlan" "phy0tpt"
 
 case $board in
 3g-6200n|\
@@ -320,6 +324,10 @@ tl-wr841n-v13)
 	ucidef_set_led_switch "lan2" "lan2" "$boardname:green:lan2" "switch0" "0x4"
 	ucidef_set_led_switch "lan3" "lan3" "$boardname:green:lan3" "switch0" "0x8"
 	ucidef_set_led_switch "lan4" "lan4" "$boardname:green:lan4" "switch0" "0x10"
+	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x01"
+	;;
+tplink,tl-wr841n-v14)
+	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x01"
 	;;
 tplink,c2-v1)

@@ -71,9 +71,6 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  create mode 100644 include/uapi/linux/tc_act/tc_ctinfo.h
  create mode 100644 net/sched/act_ctinfo.c
 
-diff --git a/include/net/tc_act/tc_ctinfo.h b/include/net/tc_act/tc_ctinfo.h
-new file mode 100644
-index 000000000000..f071c1d70a25
 --- /dev/null
 +++ b/include/net/tc_act/tc_ctinfo.h
 @@ -0,0 +1,33 @@
@@ -110,8 +107,6 @@ index 000000000000..f071c1d70a25
 +#define to_ctinfo(a) ((struct tcf_ctinfo *)a)
 +
 +#endif /* __NET_TC_CTINFO_H */
-diff --git a/include/uapi/linux/pkt_cls.h b/include/uapi/linux/pkt_cls.h
-index be382fb0592d..71e10c5a96a0 100644
 --- a/include/uapi/linux/pkt_cls.h
 +++ b/include/uapi/linux/pkt_cls.h
 @@ -68,7 +68,8 @@ enum {
@@ -124,9 +119,6 @@ index be382fb0592d..71e10c5a96a0 100644
  };
  
  #define TCA_ID_MAX __TCA_ID_MAX
-diff --git a/include/uapi/linux/tc_act/tc_ctinfo.h b/include/uapi/linux/tc_act/tc_ctinfo.h
-new file mode 100644
-index 000000000000..f5f26d95d0e7
 --- /dev/null
 +++ b/include/uapi/linux/tc_act/tc_ctinfo.h
 @@ -0,0 +1,29 @@
@@ -159,8 +151,6 @@ index 000000000000..f5f26d95d0e7
 +#define TCA_CTINFO_MAX (__TCA_CTINFO_MAX - 1)
 +
 +#endif
-diff --git a/net/sched/Kconfig b/net/sched/Kconfig
-index e95741388311..1d79d5dba6e4 100644
 --- a/net/sched/Kconfig
 +++ b/net/sched/Kconfig
 @@ -866,6 +866,23 @@ config NET_ACT_CONNMARK
@@ -187,8 +177,6 @@ index e95741388311..1d79d5dba6e4 100644
  config NET_ACT_SKBMOD
          tristate "skb data modification action"
          depends on NET_CLS_ACT
-diff --git a/net/sched/Makefile b/net/sched/Makefile
-index f0403f49edcb..bb3c2bc44af7 100644
 --- a/net/sched/Makefile
 +++ b/net/sched/Makefile
 @@ -21,6 +21,7 @@ obj-$(CONFIG_NET_ACT_CSUM)	+= act_csum.o
@@ -199,9 +187,6 @@ index f0403f49edcb..bb3c2bc44af7 100644
  obj-$(CONFIG_NET_ACT_SKBMOD)	+= act_skbmod.o
  obj-$(CONFIG_NET_ACT_IFE)	+= act_ife.o
  obj-$(CONFIG_NET_IFE_SKBMARK)	+= act_meta_mark.o
-diff --git a/net/sched/act_ctinfo.c b/net/sched/act_ctinfo.c
-new file mode 100644
-index 000000000000..8975cb4976aa
 --- /dev/null
 +++ b/net/sched/act_ctinfo.c
 @@ -0,0 +1,395 @@
@@ -600,8 +585,6 @@ index 000000000000..8975cb4976aa
 +MODULE_AUTHOR("Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>");
 +MODULE_DESCRIPTION("Connection tracking mark actions");
 +MODULE_LICENSE("GPL");
-diff --git a/tools/testing/selftests/tc-testing/config b/tools/testing/selftests/tc-testing/config
-index 203302065458..9d1fddcfb887 100644
 --- a/tools/testing/selftests/tc-testing/config
 +++ b/tools/testing/selftests/tc-testing/config
 @@ -37,6 +37,7 @@ CONFIG_NET_ACT_SKBEDIT=m
@@ -612,6 +595,3 @@ index 203302065458..9d1fddcfb887 100644
  CONFIG_NET_ACT_CONNMARK=m
  CONFIG_NET_ACT_SKBMOD=m
  CONFIG_NET_ACT_IFE=m
--- 
-2.20.1 (Apple Git-117)
-

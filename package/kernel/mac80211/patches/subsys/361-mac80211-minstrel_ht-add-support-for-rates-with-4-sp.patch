@@ -1,0 +1,78 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 25 Mar 2019 09:02:13 +0100
+Subject: [PATCH] mac80211: minstrel_ht: add support for rates with 4
+ spatial streams
+
+This is needed for the upcoming driver for MT7615 4x4 802.11ac chipsets
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/rc80211_minstrel_ht.c
++++ b/net/mac80211/rc80211_minstrel_ht.c
+@@ -157,44 +157,54 @@ const struct mcs_group minstrel_mcs_grou
+ 	MCS_GROUP(1, 0, BW_20, 5),
+ 	MCS_GROUP(2, 0, BW_20, 4),
+ 	MCS_GROUP(3, 0, BW_20, 4),
++	MCS_GROUP(4, 0, BW_20, 4),
+ 
+ 	MCS_GROUP(1, 1, BW_20, 5),
+ 	MCS_GROUP(2, 1, BW_20, 4),
+ 	MCS_GROUP(3, 1, BW_20, 4),
++	MCS_GROUP(4, 1, BW_20, 4),
+ 
+ 	MCS_GROUP(1, 0, BW_40, 4),
+ 	MCS_GROUP(2, 0, BW_40, 4),
+ 	MCS_GROUP(3, 0, BW_40, 4),
++	MCS_GROUP(4, 0, BW_40, 4),
+ 
+ 	MCS_GROUP(1, 1, BW_40, 4),
+ 	MCS_GROUP(2, 1, BW_40, 4),
+ 	MCS_GROUP(3, 1, BW_40, 4),
++	MCS_GROUP(4, 1, BW_40, 4),
+ 
+ 	CCK_GROUP(8),
+ 
+ 	VHT_GROUP(1, 0, BW_20, 5),
+ 	VHT_GROUP(2, 0, BW_20, 4),
+ 	VHT_GROUP(3, 0, BW_20, 4),
++	VHT_GROUP(4, 0, BW_20, 4),
+ 
+ 	VHT_GROUP(1, 1, BW_20, 5),
+ 	VHT_GROUP(2, 1, BW_20, 4),
+ 	VHT_GROUP(3, 1, BW_20, 4),
++	VHT_GROUP(4, 1, BW_20, 4),
+ 
+ 	VHT_GROUP(1, 0, BW_40, 4),
+ 	VHT_GROUP(2, 0, BW_40, 4),
+ 	VHT_GROUP(3, 0, BW_40, 4),
++	VHT_GROUP(4, 0, BW_40, 3),
+ 
+ 	VHT_GROUP(1, 1, BW_40, 4),
+ 	VHT_GROUP(2, 1, BW_40, 4),
+ 	VHT_GROUP(3, 1, BW_40, 4),
++	VHT_GROUP(4, 1, BW_40, 3),
+ 
+ 	VHT_GROUP(1, 0, BW_80, 4),
+ 	VHT_GROUP(2, 0, BW_80, 4),
+ 	VHT_GROUP(3, 0, BW_80, 4),
++	VHT_GROUP(4, 0, BW_80, 2),
+ 
+ 	VHT_GROUP(1, 1, BW_80, 4),
+ 	VHT_GROUP(2, 1, BW_80, 4),
+ 	VHT_GROUP(3, 1, BW_80, 4),
++	VHT_GROUP(4, 1, BW_80, 2),
+ };
+ 
+ static u8 sample_table[SAMPLE_COLUMNS][MCS_GROUP_RATES] __read_mostly;
+--- a/net/mac80211/rc80211_minstrel_ht.h
++++ b/net/mac80211/rc80211_minstrel_ht.h
+@@ -13,7 +13,7 @@
+  * The number of streams can be changed to 2 to reduce code
+  * size and memory footprint.
+  */
+-#define MINSTREL_MAX_STREAMS		3
++#define MINSTREL_MAX_STREAMS		4
+ #define MINSTREL_HT_STREAM_GROUPS	4 /* BW(=2) * SGI(=2) */
+ #define MINSTREL_VHT_STREAM_GROUPS	6 /* BW(=3) * SGI(=2) */
+ 

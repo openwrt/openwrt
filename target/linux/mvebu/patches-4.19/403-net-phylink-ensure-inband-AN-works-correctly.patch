@@ -16,7 +16,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -453,28 +453,21 @@ static void phylink_resolve(struct work_
+@@ -457,28 +457,21 @@ static void phylink_resolve(struct work_
  
  		case MLO_AN_INBAND:
  			phylink_get_mac_state(pl, &link_state);

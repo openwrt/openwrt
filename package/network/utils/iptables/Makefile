@@ -9,13 +9,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
-PKG_VERSION:=1.8.2
-PKG_RELEASE:=3
+PKG_VERSION:=1.8.3
+PKG_RELEASE:=1
 
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://git.netfilter.org/iptables
-PKG_SOURCE_VERSION:=bba6bc692b0e6137e13881a1f398c134822e9f83
-PKG_MIRROR_HASH:=23a61d2a23fc0d587029690ef2564625d78fba4b2d90117edaf5b9eaf55bb7f9
+PKG_SOURCE_URL:=https://netfilter.org/projects/iptables/files
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_HASH:=a23cac034181206b4545f4e7e730e76e08b5f3dd78771ba9645a6756de9cdd80
 
 PKG_FIXUP:=autoreconf
 PKG_FLAGS:=nonshared
@@ -37,7 +36,7 @@ define Package/iptables/Default
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=Firewall
-  URL:=http://netfilter.org/
+  URL:=https://netfilter.org/
 endef
 
 define Package/iptables/Module
@@ -502,7 +501,7 @@ $(call Package/iptables/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=IPv4 firewall - shared libiptc library
-  ABI_VERSION:=0
+  ABI_VERSION:=2
   DEPENDS:=+libxtables
 endef
 
@@ -511,7 +510,7 @@ $(call Package/iptables/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=IPv6 firewall - shared libiptc library
-  ABI_VERSION:=0
+  ABI_VERSION:=2
   DEPENDS:=+libxtables
 endef
 

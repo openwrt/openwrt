@@ -26,8 +26,8 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		gpio-sck = <&gpio 15 GPIO_ACTIVE_HIGH>;		// 74HC595 SRCLK (Serial Clock)
-		gpio-mosi = <&gpio 14 GPIO_ACTIVE_HIGH>;	// 74HC595 SER (Serial)
+		sck-gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;	// 74HC595 SRCLK (Serial Clock)
+		mosi-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;	// 74HC595 SER (Serial)
 		cs-gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;		// 74HC595 RCLK (Register Clock)
 		num-chipselects = <1>;
 

@@ -129,6 +129,10 @@ ifdef CONFIG_USE_SPARSE
   KERNEL_MAKEOPTS += C=1 CHECK=$(STAGING_DIR_HOST)/bin/sparse
 endif
 
+ifeq ($(HOST_OS),Darwin)
+  export SKIP_STACK_VALIDATION:=1
+endif
+
 PKG_EXTMOD_SUBDIRS ?= .
 
 define populate_module_symvers

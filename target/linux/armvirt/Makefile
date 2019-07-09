@@ -17,4 +17,6 @@ KERNEL_PATCHVER:=4.19
 
 include $(INCLUDE_DIR)/target.mk
 
+DEFAULT_PACKAGES += mkf2fs e2fsprogs
+
 $(eval $(call BuildTarget))
