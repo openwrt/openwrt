@@ -176,6 +176,8 @@ case "$FIRMWARE" in
 "ath10k/pre-cal-pci-0000:00:00.0.bin")
 	case $board in
 	asus,rp-ac51|\
+	xwrt,csac|\
+	xwrt,csac2|\
 	yuncore,a782|\
 	yuncore,xd4200)
 		caldata_extract "art" 0x5000 0x2f20
