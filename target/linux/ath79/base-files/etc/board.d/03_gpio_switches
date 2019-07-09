@@ -23,11 +23,21 @@ dlink,dir-835-a1)
 librerouter,librerouter-v1)
 	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "1" "0"
 	;;
+tplink,archer-c25-v1)
+	ucidef_add_gpio_switch "led_control" "LED control" "21" "0"
+	ucidef_add_gpio_switch "led_reset" "LED reset" "19" "1"
+	;;
 ubnt,nanostation-ac)
 	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "3"
 	;;
 ubnt,acb-isp)
 	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "11"
+	;;
+zbtlink,zbt-wd323)
+	ucidef_add_gpio_switch "io0" "IO#0" "0"
+	ucidef_add_gpio_switch "io1" "IO#1" "1"
+	ucidef_add_gpio_switch "io2" "IO#2" "2"
+	ucidef_add_gpio_switch "io14" "IO#14" "14"
 	;;
 esac
 

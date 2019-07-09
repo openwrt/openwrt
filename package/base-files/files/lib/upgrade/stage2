@@ -136,10 +136,7 @@ sleep 1
 
 
 if [ -n "$IMAGE" ] && type 'platform_pre_upgrade' >/dev/null 2>/dev/null; then
-	IS_PRE_UPGRADE=1 platform_pre_upgrade "$IMAGE"
-
-	# Needs to be unset again because of busybox weirdness ...
-	IS_PRE_UPGRADE=
+	platform_pre_upgrade "$IMAGE"
 fi
 
 if [ -n "$(rootfs_type)" ]; then

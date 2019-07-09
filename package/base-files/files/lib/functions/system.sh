@@ -4,7 +4,7 @@ get_mac_binary() {
 	local path="$1"
 	local offset="$2"
 
-	if [ -z "$path" ]; then
+	if [ -e "$path" ]; then
 		echo "get_mac_binary: file $path not found!" >&2
 		return
 	fi

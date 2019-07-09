@@ -11,7 +11,8 @@ endef
 
 define Device/netgear_wnr612-v2
   $(Device/netgear_ar7240)
-  DEVICE_TITLE := Netgear WNR612v2
+  DEVICE_MODEL := WNR612
+  DEVICE_VARIANT := v2
   DEVICE_DTS := ar7240_netgear_wnr612-v2
   NETGEAR_BOARD_ID := REALWNR612V2
   SUPPORTED_DEVICES += wnr612-v2
@@ -20,7 +21,8 @@ TARGET_DEVICES += netgear_wnr612-v2
 
 define Device/on_n150r
   $(Device/netgear_ar7240)
-  DEVICE_TITLE := ON Network N150R
+  DEVICE_VENDOR := On Networks
+  DEVICE_MODEL := N150R
   NETGEAR_BOARD_ID := N150R
   SUPPORTED_DEVICES += n150r
 endef

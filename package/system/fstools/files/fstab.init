@@ -11,6 +11,10 @@ start() {
 	echo "this file has been obsoleted. please call \"/sbin/block mount\" directly"
 }
 
+restart() {
+	start
+}
+
 stop() {
 	/sbin/block umount
 }

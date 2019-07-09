@@ -39,6 +39,9 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan:5" "6@eth0"
 		;;
+	asiarf,ap7621-001)
+		ucidef_add_switch "switch0" "0:lan" "4:wan" "6@eth0"
+		;;
 	3g150b|\
 	3g300m|\
 	a5-v11|\
@@ -50,6 +53,8 @@ ramips_setup_interfaces()
 	broadway|\
 	dcs-930|\
 	dcs-930l-b1|\
+	edimax,ew-7476rpc|\
+	edimax,ew-7478ac|\
 	ht-tm02|\
 	kimax,u35wf|\
 	linkits7688 | \
@@ -120,6 +125,8 @@ ramips_setup_interfaces()
 	sap-g3200u3|\
 	sk-wb8|\
 	telco-electronics,x1|\
+	totolink,a7000r|\
+	totolink,lr1200|\
 	unielec,u7621-06-256m-16m|\
 	unielec,u7621-06-512m-64m|\
 	vr500|\
@@ -239,6 +246,7 @@ ramips_setup_interfaces()
 	tl-wr840n-v4|\
 	tl-wr840n-v5|\
 	tl-wr841n-v13|\
+	tplink,tl-wr841n-v14|\
 	u7628-01-128M-16M|\
 	ubnt-erx|\
 	ubnt-erx-sfp|\
@@ -297,6 +305,10 @@ ramips_setup_interfaces()
 	cf-wr800n)
 		ucidef_add_switch "switch0" \
 			"4:lan" "6t@eth0"
+		;;
+	cudy,wr1000)
+		ucidef_add_switch "switch0" \
+			"2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
 	cy-swr1100)
 		ucidef_add_switch "switch0" \
@@ -453,6 +465,10 @@ ramips_setup_interfaces()
 	xiaomi,mir3p)
 		ucidef_add_switch "switch0" \
 			"1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
+		;;
+	xiaomi,mir4a-100m)
+		ucidef_add_switch "switch0" \
+			"4:lan:1" "2:lan:2" "0:wan" "6@eth0"
 		;;
 	zbtlink,zbt-we1226|\
 	y1)
@@ -614,7 +630,8 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 46)
 		;;
 	r6220|\
-	netgear,r6350)
+	netgear,r6350|\
+	wndr3700v5)
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;

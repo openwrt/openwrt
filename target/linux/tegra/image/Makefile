@@ -25,7 +25,6 @@ define Build/tegra-sdcard
 		-d $@-boot.scr \
 		$@.boot/boot.scr
 
-	PADDING="$(CONFIG_TARGET_IMAGES_PAD)" \
 	SIGNATURE="$(SIGNATURE)" \
 	$(SCRIPT_DIR)/gen_image_generic.sh \
 		$@ \

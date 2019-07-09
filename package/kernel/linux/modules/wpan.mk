@@ -68,6 +68,17 @@ endef
 
 $(eval $(call KernelPackage,fakelb))
 
+define KernelPackage/atusb
+  SUBMENU:=$(WPAN_MENU)
+  TITLE:=ATUSB transceiver driver
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-mac802154
+  KCONFIG:=CONFIG_IEEE802154_ATUSB
+  FILES:=$(LINUX_DIR)/drivers/net/ieee802154/atusb.ko
+  AUTOLOAD:=$(call AutoProbe,atusb)
+endef
+
+$(eval $(call KernelPackage,atusb))
+
 define KernelPackage/at86rf230
   SUBMENU:=$(WPAN_MENU)
   TITLE:=AT86RF230 transceiver driver

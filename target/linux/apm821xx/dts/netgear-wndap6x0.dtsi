@@ -123,17 +123,15 @@
 
 &POB0 {
 	keys {
-		compatible = "gpio-keys-polled";
-		#interrupt-cells = <2>;
-		poll-interval = <60>;   /* 3 * 20 = 60ms */
-		autorepeat;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "Reset Button";
-			gpios = <&GPIO0 16 GPIO_ACTIVE_HIGH>;
+			gpios = <&GPIO0 16 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 			interrupt-parent = <&UIC1>;
 			interrupts = <0x15 IRQ_TYPE_EDGE_FALLING>;
+			debounce-interval = <60>;
 		};
 	};
 

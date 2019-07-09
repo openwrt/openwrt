@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kexec-tools
 PKG_VERSION:=2.0.16
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/kernel/kexec
@@ -44,7 +44,7 @@ define Package/kexec
   $(call Package/kexec-tools/Default)
   TITLE:=Kernel boots kernel
   DEPENDS:=\
-	@armeb||@arm||@i386||@x86_64||@powerpc64||@mipsel||@mips \
+	@(armeb||arm||i386||x86_64||powerpc64||mipsel||mips) \
 	+KEXEC_ZLIB:zlib +KEXEC_LZMA:liblzma @KERNEL_KEXEC
 endef
 
@@ -55,7 +55,7 @@ endef
 define Package/kdump
   $(call Package/kexec-tools/Default)
   TITLE:=Kernel crash analysis
-  DEPENDS:=+kexec @i386||@x86_64||@arm @KERNEL_CRASH_DUMP
+  DEPENDS:=+kexec @(i386||x86_64||arm) @KERNEL_CRASH_DUMP
 endef
 
 define Package/kdump/description

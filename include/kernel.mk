@@ -129,6 +129,10 @@ ifdef CONFIG_USE_SPARSE
   KERNEL_MAKEOPTS += C=1 CHECK=$(STAGING_DIR_HOST)/bin/sparse
 endif
 
+ifeq ($(HOST_OS),Darwin)
+  export SKIP_STACK_VALIDATION:=1
+endif
+
 PKG_EXTMOD_SUBDIRS ?= .
 
 define populate_module_symvers
@@ -141,7 +145,10 @@ endef
 
 define collect_module_symvers
 	for subdir in $(PKG_EXTMOD_SUBDIRS); do \
-		grep -F $$$$(readlink -f $(PKG_BUILD_DIR)) $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
+		realdir=$$$$(readlink -f $(PKG_BUILD_DIR)); \
+		grep -F $(PKG_BUILD_DIR) $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
+		[ "$(PKG_BUILD_DIR)" = "$$$$realdir" ] || \
+			grep -F $$$$realdir $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
 	done; \
 	sort -u $(PKG_BUILD_DIR)/Module.symvers.tmp > $(PKG_BUILD_DIR)/Module.symvers; \
 	mv $(PKG_BUILD_DIR)/Module.symvers $(PKG_INFO_DIR)/$(PKG_NAME).symvers

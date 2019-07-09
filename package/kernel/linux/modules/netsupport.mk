@@ -128,6 +128,23 @@ endef
 $(eval $(call KernelPackage,geneve))
 
 
+define KernelPackage/nsh
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Network Service Header (NSH) protocol
+  DEPENDS:=
+  KCONFIG:=CONFIG_NET_NSH
+  FILES:=$(LINUX_DIR)/net/nsh/nsh.ko@ge4.14
+  AUTOLOAD:=$(call AutoLoad,13,nsh)
+endef
+
+define KernelPackage/nsh/description
+  Network Service Header is an implementation of Service Function
+  Chaining (RFC 7665).  Requires kernel 4.14 or newer
+endef
+
+$(eval $(call KernelPackage,nsh))
+
+
 define KernelPackage/capi
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=CAPI (ISDN) Support
@@ -381,6 +398,22 @@ define KernelPackage/ip6-vti/description
 endef
 
 $(eval $(call KernelPackage,ip6-vti))
+
+
+define KernelPackage/xfrm-interface
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=IPsec XFRM Interface
+  DEPENDS:=+kmod-ipsec4 +kmod-ipsec6 @!LINUX_4_14 @!LINUX_4_9
+  KCONFIG:=CONFIG_XFRM_INTERFACE
+  FILES:=$(LINUX_DIR)/net/xfrm/xfrm_interface.ko
+  AUTOLOAD:=$(call AutoProbe,xfrm_interface)
+endef
+
+define KernelPackage/xfrm-interface/description
+ Kernel module for XFRM interface support
+endef
+
+$(eval $(call KernelPackage,xfrm-interface))
 
 
 define KernelPackage/iptunnel4
@@ -717,7 +750,7 @@ $(eval $(call KernelPackage,mppe))
 
 SCHED_MODULES = $(patsubst $(LINUX_DIR)/net/sched/%.ko,%,$(wildcard $(LINUX_DIR)/net/sched/*.ko))
 SCHED_MODULES_CORE = sch_ingress sch_fq_codel sch_hfsc sch_htb sch_tbf cls_basic cls_fw cls_route cls_flow cls_tcindex cls_u32 em_u32 act_mirred act_skbedit cls_matchall
-SCHED_MODULES_FILTER = $(SCHED_MODULES_CORE) act_connmark sch_netem em_ipset cls_bpf act_bpf
+SCHED_MODULES_FILTER = $(SCHED_MODULES_CORE) act_connmark act_ctinfo sch_netem sch_mqprio em_ipset cls_bpf cls_flower act_bpf act_vlan
 SCHED_MODULES_EXTRA = $(filter-out $(SCHED_MODULES_FILTER),$(SCHED_MODULES))
 SCHED_FILES = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(filter $(SCHED_MODULES_CORE),$(SCHED_MODULES)))
 SCHED_FILES_EXTRA = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(SCHED_MODULES_EXTRA))
@@ -755,6 +788,22 @@ endef
 
 $(eval $(call KernelPackage,sched-core))
 
+
+define KernelPackage/sched-cake
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Cake fq_codel/blue derived shaper
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_SCH_CAKE
+  FILES:=$(LINUX_DIR)/net/sched/sch_cake.ko
+  AUTOLOAD:=$(call AutoProbe,sch_cake)
+  DEPENDS:=+kmod-ipt-conntrack
+endef
+
+define KernelPackage/sched-cake/description
+ Common Applications Kept Enhanced fq_codel/blue derived shaper
+endef
+
+$(eval $(call KernelPackage,sched-cake))
 
 define KernelPackage/sched-flower
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
@@ -803,7 +852,6 @@ endef
 
 $(eval $(call KernelPackage,sched-mqprio))
 
-
 define KernelPackage/sched-connmark
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic shaper conntrack mark support
@@ -814,6 +862,15 @@ define KernelPackage/sched-connmark
 endef
 $(eval $(call KernelPackage,sched-connmark))
 
+define KernelPackage/sched-ctinfo
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic shaper ctinfo support
+  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-ipt-conntrack-extra
+  KCONFIG:=CONFIG_NET_ACT_CTINFO
+  FILES:=$(LINUX_DIR)/net/sched/act_ctinfo.ko
+  AUTOLOAD:=$(call AutoLoad,71, act_ctinfo)
+endef
+$(eval $(call KernelPackage,sched-ctinfo))
 
 define KernelPackage/sched-ipset
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
