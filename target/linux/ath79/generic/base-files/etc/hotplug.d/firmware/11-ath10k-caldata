@@ -262,6 +262,8 @@ case "$FIRMWARE" in
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9984/hw1.0/board.bin
 		;;
+	xwrt,csac|\
+	xwrt,csac2|\
 	yuncore,a782|\
 	yuncore,xd4200)
 		caldata_extract "art" 0x5000 0x2f20
