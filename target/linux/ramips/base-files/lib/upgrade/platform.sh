@@ -25,8 +25,8 @@ platform_nand_pre_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-	ubnt-erx|\
-	ubnt-erx-sfp)
+	ubiquiti,edgerouterx|\
+	ubiquiti,edgerouterx-sfp)
 		platform_upgrade_ubnt_erx "$ARGV"
 		;;
 	esac
@@ -36,16 +36,16 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-	hc5962|\
-	r6220|\
+	hiwifi,hc5962|\
+	netgear,r6220|\
 	netgear,r6350|\
-	ubnt-erx|\
-	ubnt-erx-sfp|\
+	ubiquiti,edgerouterx|\
+	ubiquiti,edgerouterx-sfp|\
 	xiaomi,mir3g|\
 	xiaomi,mir3p)
 		nand_do_upgrade "$ARGV"
 		;;
-	tplink,c50-v4)
+	tplink,archer-c50-v4)
 		MTD_ARGS="-t romfile"
 		default_do_upgrade "$ARGV"
 		;;

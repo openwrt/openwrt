@@ -15,7 +15,10 @@ cznic,turris-omnia)
 	ucidef_set_interface_lan "lan0 lan1 lan2 lan3 lan4"
 	ucidef_set_interface_wan "eth2"
 	;;
-globalscale,espressobin)
+globalscale,espressobin|\
+globalscale,espressobin-emmc|\
+globalscale,espressobin-v7|\
+globalscale,espressobin-v7-emmc)
 	ucidef_set_interfaces_lan_wan "lan0 lan1" "wan"
 	;;
 linksys,caiman|\
@@ -45,6 +48,9 @@ marvell,armada-3720-db)
 	;;
 marvell,axp-gp)
 	ucidef_set_interface_lan "eth0 eth1 eth2 eth3"
+	;;
+methode,uDPU)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	;;
 solidrun,clearfog*a1)
 	# eth0 is standalone ethernet

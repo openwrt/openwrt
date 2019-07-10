@@ -476,6 +476,7 @@ _ucidef_set_led_timer() {
 
 	_ucidef_set_led_common "$1" "$2" "$3"
 
+	json_add_string type "$trigger_name"
 	json_add_string trigger "$trigger_name"
 	json_add_int delayon "$delayon"
 	json_add_int delayoff "$delayoff"

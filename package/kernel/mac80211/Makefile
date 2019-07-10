@@ -275,7 +275,7 @@ endef
 
 define KernelPackage/p54-common
   $(call KernelPackage/p54/Default)
-  DEPENDS+= @PCI_SUPPORT||@USB_SUPPORT +kmod-mac80211 +kmod-lib-crc-ccitt +@DRIVER_11W_SUPPORT
+  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-mac80211 +kmod-lib-crc-ccitt +@DRIVER_11W_SUPPORT
   TITLE+= (COMMON)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/intersil/p54/p54common.ko
 endef

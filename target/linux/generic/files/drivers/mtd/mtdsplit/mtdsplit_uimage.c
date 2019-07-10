@@ -18,6 +18,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/version.h>
 #include <linux/byteorder/generic.h>
+#include <linux/of.h>
 
 #include "mtdsplit.h"
 

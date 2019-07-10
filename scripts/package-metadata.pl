@@ -191,9 +191,9 @@ sub mconf_depends {
 				$depend = shift @vdeps;
 
 				if (@vdeps > 1) {
-					$condition = ($condition ? "$condition && " : '') . '!('.join("||", map { "PACKAGE_".$_ } @vdeps).')';
+					$condition = ($condition ? "$condition && " : '') . join("&&", map { "PACKAGE_$_<PACKAGE_$pkgname" } @vdeps);
 				} elsif (@vdeps > 0) {
-					$condition = ($condition ? "$condition && " : '') . '!PACKAGE_'.$vdeps[0];
+					$condition = ($condition ? "$condition && " : '') . "PACKAGE_${vdeps[0]}<PACKAGE_$pkgname";
 				}
 			}
 
@@ -545,6 +545,18 @@ sub gen_package_auxiliary() {
 
 			foreach my $n (@{$pkg->{provides}}) {
 				print "Package/$n/abiversion = $abiv\n";
+			}
+		}
+		my %depends;
+		foreach my $dep (@{$pkg->{depends} || []}) {
+			if ($dep =~ m!^\+?(?:[^:]+:)?([^@]+)$!) {
+				$depends{$1}++;
+			}
+		}
+		my @depends = sort keys %depends;
+		if (@depends > 0) {
+			foreach my $n (@{$pkg->{provides}}) {
+				print "Package/$n/depends = @depends\n";
 			}
 		}
 	}

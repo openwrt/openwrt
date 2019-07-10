@@ -28,22 +28,12 @@
 #include <linux/of_gpio.h>
 #include <linux/of_irq.h>
 #include <linux/gpio_keys.h>
-
-#define DRV_NAME	"gpio-keys"
+#include <linux/gpio/consumer.h>
 
 #define BH_SKB_SIZE	2048
 
+#define DRV_NAME	"gpio-keys"
 #define PFX	DRV_NAME ": "
-
-#undef BH_DEBUG
-
-#ifdef BH_DEBUG
-#define BH_DBG(fmt, args...) printk(KERN_DEBUG "%s: " fmt, DRV_NAME, ##args )
-#else
-#define BH_DBG(fmt, args...) do {} while (0)
-#endif
-
-#define BH_ERR(fmt, args...) printk(KERN_ERR "%s: " fmt, DRV_NAME, ##args )
 
 struct bh_priv {
 	unsigned long		seen;
@@ -138,7 +128,7 @@ int bh_event_add_var(struct bh_event *event, int argv, const char *format, ...)
 	s = skb_put(event->skb, len + 1);
 	strcpy(s, buf);
 
-	BH_DBG("added variable '%s'\n", s);
+	pr_debug(PFX "added variable '%s'\n", s);
 
 	return 0;
 }
@@ -205,7 +195,7 @@ static void button_hotplug_work(struct work_struct *work)
 
  out_free_skb:
 	if (ret) {
-		BH_ERR("work error %d\n", ret);
+		pr_err(PFX "work error %d\n", ret);
 		kfree_skb(event->skb);
 	}
  out_free_event:
@@ -217,8 +207,8 @@ static int button_hotplug_create_event(const char *name, unsigned int type,
 {
 	struct bh_event *event;
 
-	BH_DBG("create event, name=%s, seen=%lu, pressed=%d\n",
-		name, seen, pressed);
+	pr_debug(PFX "create event, name=%s, seen=%lu, pressed=%d\n",
+		 name, seen, pressed);
 
 	event = kzalloc(sizeof(*event), GFP_KERNEL);
 	if (!event)
@@ -255,7 +245,7 @@ static void button_hotplug_event(struct gpio_keys_button_data *data,
 	unsigned long seen = jiffies;
 	int btn;
 
-	BH_DBG("event type=%u, code=%u, value=%d\n", type, data->b->code, value);
+	pr_debug(PFX "event type=%u, code=%u, value=%d\n", type, data->b->code, value);
 
 	if ((type != EV_KEY) && (type != EV_SW))
 		return;
@@ -263,6 +253,9 @@ static void button_hotplug_event(struct gpio_keys_button_data *data,
 	btn = button_get_index(data->b->code);
 	if (btn < 0)
 		return;
+
+	if (priv->seen == 0)
+		priv->seen = seen;
 
 	button_hotplug_create_event(button_map[btn].name, type,
 			(seen - priv->seen) / HZ, value);
@@ -348,16 +341,9 @@ static void gpio_keys_irq_work_func(struct work_struct *work)
 {
 	struct gpio_keys_button_data *bdata = container_of(work,
 		struct gpio_keys_button_data, work.work);
-	int state = gpio_button_get_value(bdata);
 
-	if (state != bdata->last_state) {
-		unsigned int type = bdata->b->type ?: EV_KEY;
-
-		if (bdata->last_state != -1 || type == EV_SW)
-			button_hotplug_event(bdata, type, state);
-
-		bdata->last_state = state;
-	}
+	button_hotplug_event(bdata, bdata->b->type ?: EV_KEY,
+			     gpio_button_get_value(bdata));
 }
 
 static irqreturn_t button_handle_irq(int irq, void *_bdata)

@@ -17,8 +17,8 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		gpio-sck = <&gpio 18 GPIO_ACTIVE_HIGH>;
-		gpio-mosi = <&gpio 17 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio 18 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
 		cs-gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
 		num-chipselects = <1>;
 

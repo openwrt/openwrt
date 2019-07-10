@@ -470,6 +470,13 @@ config BUSYBOX_CONFIG_I2CDETECT
 	help
 	Detect I2C chips.
 
+config BUSYBOX_CONFIG_I2CTRANSFER
+	bool "i2ctransfer (4.0 kb)"
+	default BUSYBOX_DEFAULT_I2CTRANSFER
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	Send user-defined I2C messages in one transfer.
+
 config BUSYBOX_CONFIG_INOTIFYD
 	bool "inotifyd (3.6 kb)"
 	default BUSYBOX_DEFAULT_INOTIFYD  # doesn't build on Knoppix 5
@@ -728,6 +735,9 @@ config BUSYBOX_CONFIG_TIME
 	The time command runs the specified program with the given arguments.
 	When the command finishes, time writes a message to standard output
 	giving timing statistics about this program run.
+config BUSYBOX_CONFIG_TS
+	bool "ts (450 bytes)"
+	default BUSYBOX_DEFAULT_TS
 config BUSYBOX_CONFIG_TTYSIZE
 	bool "ttysize (432 bytes)"
 	default BUSYBOX_DEFAULT_TTYSIZE

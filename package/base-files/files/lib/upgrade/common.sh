@@ -207,16 +207,6 @@ get_partitions() { # <device> <filename>
 	fi
 }
 
-jffs2_copy_config() {
-	if grep rootfs_data /proc/mtd >/dev/null; then
-		# squashfs+jffs2
-		mtd -e rootfs_data jffs2write "$CONF_TAR" rootfs_data
-	else
-		# jffs2
-		mtd jffs2write "$CONF_TAR" rootfs
-	fi
-}
-
 indicate_upgrade() {
 	. /etc/diag.sh
 	set_state upgrade
@@ -238,9 +228,7 @@ default_do_upgrade() {
 
 do_upgrade_stage2() {
 	v "Performing system upgrade..."
-	if [ -n "$do_upgrade" ]; then
-		eval "$do_upgrade"
-	elif type 'platform_do_upgrade' >/dev/null 2>/dev/null; then
+	if type 'platform_do_upgrade' >/dev/null 2>/dev/null; then
 		platform_do_upgrade "$IMAGE"
 	else
 		default_do_upgrade "$IMAGE"

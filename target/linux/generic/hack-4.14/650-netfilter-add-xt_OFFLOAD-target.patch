@@ -98,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,403 @@
+@@ -0,0 +1,408 @@
 +/*
 + * Copyright (C) 2018 Felix Fietkau <nbd@nbd.name>
 + *
@@ -342,12 +342,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +flowoffload_tg(struct sk_buff *skb, const struct xt_action_param *par)
 +{
 +	const struct xt_flowoffload_target_info *info = par->targinfo;
++	const struct nf_conn_help *help;
 +	enum ip_conntrack_info ctinfo;
 +	enum ip_conntrack_dir dir;
 +	struct nf_flow_route route;
 +	struct flow_offload *flow;
 +	struct nf_conn *ct;
-+	const struct nf_conn_help *help;
++	struct net *net;
 +
 +	if (xt_flowoffload_skip(skb))
 +		return XT_CONTINUE;
@@ -395,6 +396,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	xt_flowoffload_check_device(xt_in(par));
 +	xt_flowoffload_check_device(xt_out(par));
++
++	net = read_pnet(&nf_flowtable.ft_net);
++	if (!net)
++		write_pnet(&nf_flowtable.ft_net, xt_net(par));
 +
 +	if (info->flags & XT_FLOWOFFLOAD_HW)
 +		nf_flow_offload_hw_add(xt_net(par), flow, ct);

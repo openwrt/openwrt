@@ -620,7 +620,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	int id;
  	char name[20];
  	enum pci_barno bar;
-@@ -476,11 +656,14 @@ static int pci_endpoint_test_probe(struc
+@@ -476,12 +656,15 @@ static int pci_endpoint_test_probe(struc
  	test->alignment = 0;
  	test->pdev = pdev;
  
@@ -630,13 +630,14 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	data = (struct pci_endpoint_test_data *)ent->driver_data;
  	if (data) {
  		test_reg_bar = data->test_reg_bar;
+ 		test->test_reg_bar = test_reg_bar;
  		test->alignment = data->alignment;
 -		no_msi = data->no_msi;
 +		irq_type = data->irq_type;
  	}
  
  	init_completion(&test->irq_raised);
-@@ -500,35 +683,21 @@ static int pci_endpoint_test_probe(struc
+@@ -501,35 +684,21 @@ static int pci_endpoint_test_probe(struc
  
  	pci_set_master(pdev);
  
@@ -683,7 +684,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  
  	test->base = test->bar[test_reg_bar];
-@@ -544,24 +713,31 @@ static int pci_endpoint_test_probe(struc
+@@ -545,24 +714,31 @@ static int pci_endpoint_test_probe(struc
  	id = ida_simple_get(&pci_endpoint_test_ida, 0, 0, GFP_KERNEL);
  	if (id < 0) {
  		err = id;
@@ -719,7 +720,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  err_ida_remove:
  	ida_simple_remove(&pci_endpoint_test_ida, id);
  
-@@ -570,9 +746,10 @@ err_iounmap:
+@@ -571,9 +747,10 @@ err_iounmap:
  		if (test->bar[bar])
  			pci_iounmap(pdev, test->bar[bar]);
  	}
@@ -732,7 +733,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	pci_release_regions(pdev);
  
  err_disable_pdev:
-@@ -594,12 +771,16 @@ static void pci_endpoint_test_remove(str
+@@ -595,12 +772,16 @@ static void pci_endpoint_test_remove(str
  		return;
  
  	misc_deregister(&test->miscdev);
@@ -750,7 +751,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	pci_release_regions(pdev);
  	pci_disable_device(pdev);
  }
-@@ -607,6 +788,7 @@ static void pci_endpoint_test_remove(str
+@@ -608,6 +789,7 @@ static void pci_endpoint_test_remove(str
  static const struct pci_device_id pci_endpoint_test_tbl[] = {
  	{ PCI_DEVICE(PCI_VENDOR_ID_TI, PCI_DEVICE_ID_TI_DRA74x) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_TI, PCI_DEVICE_ID_TI_DRA72x) },
@@ -3227,7 +3228,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	pcie->breg_base = devm_ioremap_resource(dev, res);
 --- a/drivers/pci/host/pcie-xilinx.c
 +++ b/drivers/pci/host/pcie-xilinx.c
-@@ -576,15 +576,8 @@ static int xilinx_pcie_parse_dt(struct x
+@@ -584,15 +584,8 @@ static int xilinx_pcie_parse_dt(struct x
  	struct device *dev = port->dev;
  	struct device_node *node = dev->of_node;
  	struct resource regs;

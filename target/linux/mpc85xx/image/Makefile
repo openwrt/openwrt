@@ -52,15 +52,19 @@ define Device/tl-wdr4900-v1
   TPLINK_HWREV := 1
   TPLINK_FLASHLAYOUT := 16Mppc
   KERNEL_SIZE := 2684k
-  KERNEL_NAME := cuImage.tl-wdr4900-v1
+  KERNEL_NAME := simpleImage.tl-wdr4900-v1
   KERNEL_INITRAMFS :=
+  KERNEL := kernel-bin | uImage none
+  KERNEL_ENTRY := 0x1000000
+  KERNEL_LOADADDR := 0x1000000
   SUPPORTED_DEVICES:=tl-wdr4900-v1 tplink,tl-wdr4900-v1
+  ARTIFACTS := fdt.bin
+  ARTIFACT/fdt.bin := append-dtb
   IMAGES := fdt.bin factory.bin sysupgrade.bin
-  IMAGE/fdt.bin := append-dtb
   IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade | append-metadata
   IMAGE/factory.bin := append-rootfs | mktplinkfw factory
 endef
-#TARGET_DEVICES += tl-wdr4900-v1
+TARGET_DEVICES += tl-wdr4900-v1
 
 define Device/red-15w-rev1
   DEVICE_TITLE := Sophos RED 15w Rev.1
@@ -81,7 +85,7 @@ define Device/hiveap-330
   DEVICE_TITLE := Aerohive HiveAP-330
   DEVICE_PACKAGES := kmod-tpm-i2c-atmel
   BLOCKSIZE := 128k
-  KERNEL_NAME := zImage
+  KERNEL := kernel-bin | gzip | uImage gzip
   KERNEL_SIZE := 8m
   KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux-initramfs | uImage none
   SUPPORTED_DEVICES := aerohive,hiveap-330

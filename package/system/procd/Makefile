@@ -43,7 +43,7 @@ TARGET_LDFLAGS += -flto
 define Package/procd
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+ubusd +ubus +libjson-script +ubox +USE_GLIBC:librt +libubox +libubus
+  DEPENDS:=+ubusd +ubus +libjson-script +ubox +USE_GLIBC:librt +libubox +libubus +libblobmsg-json +libjson-c
   TITLE:=OpenWrt system process manager
   USERID:=:dialout=20 :audio=29
 endef
@@ -58,7 +58,7 @@ endef
 define Package/procd-seccomp
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=@arm||@armeb||@mips||@mipsel||@i386||@powerpc||@x86_64 @!TARGET_uml @KERNEL_SECCOMP +libubox +libblobmsg-json
+  DEPENDS:=@(arm||armeb||mips||mipsel||i386||powerpc||x86_64) @!TARGET_uml @KERNEL_SECCOMP +libubox +libblobmsg-json
   TITLE:=OpenWrt process seccomp helper + utrace
 endef
 

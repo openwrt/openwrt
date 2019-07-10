@@ -161,7 +161,7 @@ v13:
  		.patch_load_addr = QCA9888_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_EACH,
-@@ -3084,6 +3090,10 @@ int ath10k_core_start(struct ath10k *ar,
+@@ -3098,6 +3104,10 @@ int ath10k_core_start(struct ath10k *ar,
  			ath10k_wmi_check_apply_board_power_ctl_table(ar);
  	}
  
@@ -172,7 +172,7 @@ v13:
  	return 0;
  
  err_hif_stop:
-@@ -3330,9 +3340,18 @@ static void ath10k_core_register_work(st
+@@ -3344,9 +3354,18 @@ static void ath10k_core_register_work(st
  		goto err_spectral_destroy;
  	}
  
@@ -191,7 +191,7 @@ v13:
  err_spectral_destroy:
  	ath10k_spectral_destroy(ar);
  err_debug_destroy:
-@@ -3390,6 +3409,8 @@ void ath10k_core_unregister(struct ath10
+@@ -3404,6 +3423,8 @@ void ath10k_core_unregister(struct ath10
  	if (!test_bit(ATH10K_FLAG_CORE_REGISTERED, &ar->dev_flags))
  		return;
  
@@ -553,7 +553,7 @@ v13:
  int ath10k_wmi_attach(struct ath10k *ar)
 --- a/ath10k-4.16/wmi.h
 +++ b/ath10k-4.16/wmi.h
-@@ -3013,6 +3013,41 @@ enum wmi_10_4_feature_mask {
+@@ -3016,6 +3016,41 @@ enum wmi_10_4_feature_mask {
  
  };
  
@@ -674,7 +674,7 @@ v13:
  		.patch_load_addr = QCA9888_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_EACH,
-@@ -3147,6 +3153,10 @@ int ath10k_core_start(struct ath10k *ar,
+@@ -3161,6 +3167,10 @@ int ath10k_core_start(struct ath10k *ar,
  			ath10k_wmi_check_apply_board_power_ctl_table(ar);
  	}
  
@@ -685,7 +685,7 @@ v13:
  	return 0;
  
  err_hif_stop:
-@@ -3401,9 +3411,18 @@ static void ath10k_core_register_work(st
+@@ -3415,9 +3425,18 @@ static void ath10k_core_register_work(st
  		goto err_spectral_destroy;
  	}
  
@@ -704,7 +704,7 @@ v13:
  err_spectral_destroy:
  	ath10k_spectral_destroy(ar);
  err_debug_destroy:
-@@ -3461,6 +3480,8 @@ void ath10k_core_unregister(struct ath10
+@@ -3475,6 +3494,8 @@ void ath10k_core_unregister(struct ath10
  	if (!test_bit(ATH10K_FLAG_CORE_REGISTERED, &ar->dev_flags))
  		return;
  
@@ -1075,7 +1075,7 @@ v13:
  int ath10k_wmi_attach(struct ath10k *ar)
 --- a/ath10k-4.19/wmi.h
 +++ b/ath10k-4.19/wmi.h
-@@ -3041,6 +3041,41 @@ enum wmi_10_4_feature_mask {
+@@ -3044,6 +3044,41 @@ enum wmi_10_4_feature_mask {
  
  };
  

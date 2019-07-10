@@ -175,6 +175,7 @@
 			interrupt-parent = <&UIC1>;
 			interrupts = <0x15 IRQ_TYPE_EDGE_FALLING>;
 			gpios = <&GPIO0 16 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
 		};
 	};
 };

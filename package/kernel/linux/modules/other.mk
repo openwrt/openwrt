@@ -1085,6 +1085,7 @@ $(eval $(call KernelPackage,bmp085-spi))
 define KernelPackage/tpm
   SUBMENU:=$(OTHER_MENU)
   TITLE:=TPM Hardware Support
+  DEPENDS:= +!LINUX_4_14:kmod-random-core
   KCONFIG:= CONFIG_TCG_TPM
   FILES:= $(LINUX_DIR)/drivers/char/tpm/tpm.ko
   AUTOLOAD:=$(call AutoLoad,10,tpm,1)

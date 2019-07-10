@@ -317,6 +317,7 @@
 			linux,code = <KEY_RESTART>;
 			interrupt-parent = <&UIC1>;
 			interrupts = <0x14 IRQ_TYPE_EDGE_FALLING>;
+			debounce-interval = <60>;
 		};
 
 		backup_hd {
@@ -325,6 +326,7 @@
 			linux,code = <BTN_0>;
 			interrupt-parent = <&UIC1>;
 			interrupts = <0x1e IRQ_TYPE_EDGE_FALLING>;
+			debounce-interval = <60>;
 		};
 
 		rfkill {
@@ -333,6 +335,7 @@
 			linux,code = <KEY_RFKILL>;
 			interrupt-parent = <&UIC1>;
 			interrupts = <0x1f IRQ_TYPE_EDGE_FALLING>;
+			debounce-interval = <60>;
 		};
 
 		wps {
@@ -341,6 +344,7 @@
 			linux,code = <KEY_WPS_BUTTON>;
 			interrupt-parent = <&UIC2>;
 			interrupts = <0x19 IRQ_TYPE_EDGE_FALLING>;
+			debounce-interval = <60>;
 		};
 	};
 

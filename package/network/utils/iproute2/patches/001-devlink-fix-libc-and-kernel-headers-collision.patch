@@ -1,0 +1,52 @@
+From d0272f5404773a60cbc17c2277affdbbf8d99c67 Mon Sep 17 00:00:00 2001
+From: Baruch Siach <baruch@tkos.co.il>
+Date: Thu, 27 Jun 2019 21:37:19 +0300
+Subject: devlink: fix libc and kernel headers collision
+
+Since commit 2f1242efe9d ("devlink: Add devlink health show command") we
+use the sys/sysinfo.h header for the sysinfo(2) system call. But since
+iproute2 carries a local version of the kernel struct sysinfo, this
+causes a collision with libc that do not rely on kernel defined sysinfo
+like musl libc:
+
+In file included from devlink.c:25:0:
+.../sysroot/usr/include/sys/sysinfo.h:10:8: error: redefinition of 'struct sysinfo'
+ struct sysinfo {
+        ^~~~~~~
+In file included from ../include/uapi/linux/kernel.h:5:0,
+                 from ../include/uapi/linux/netlink.h:5,
+                 from ../include/uapi/linux/genetlink.h:6,
+                 from devlink.c:21:
+../include/uapi/linux/sysinfo.h:8:8: note: originally defined here
+ struct sysinfo {
+        ^~~~~~~
+
+Move the sys/sysinfo.h userspace header before kernel headers, and
+suppress the indirect include of linux/sysinfo.h.
+
+Cc: Aya Levin <ayal@mellanox.com>
+Cc: Moshe Shemesh <moshe@mellanox.com>
+Signed-off-by: Baruch Siach <baruch@tkos.co.il>
+Signed-off-by: Stephen Hemminger <stephen@networkplumber.org>
+---
+ devlink/devlink.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/devlink/devlink.c b/devlink/devlink.c
+index 97b9373..5618ba2 100644
+--- a/devlink/devlink.c
++++ b/devlink/devlink.c
+@@ -18,11 +18,12 @@
+ #include <limits.h>
+ #include <errno.h>
+ #include <inttypes.h>
++#include <sys/sysinfo.h>
++#define _LINUX_SYSINFO_H /* avoid collision with musl header */
+ #include <linux/genetlink.h>
+ #include <linux/devlink.h>
+ #include <libmnl/libmnl.h>
+ #include <netinet/ether.h>
+-#include <sys/sysinfo.h>
+ #include <sys/queue.h>
+ 
+ #include "SNAPSHOT.h"
