@@ -2653,7 +2653,7 @@
 +};
 --- /dev/null
 +++ b/drivers/mtd/nand/spi_nand/paragon.c
-@@ -0,0 +1,147 @@
+@@ -0,0 +1,152 @@
 +/*
 + *
 + * Copyright (c) 2016-2017 Micron Technology, Inc.
@@ -2674,6 +2674,7 @@
 +#include <linux/mtd/spinand.h>
 +
 +#define SPINAND_MFR_PARAGON		0xA1
++#define SPINAND_MFR_XTX			0x0B
 +
 +struct paragon_spinand_info {
 +	char *name;
@@ -2694,6 +2695,10 @@
 +
 +static const struct paragon_spinand_info paragon_spinand_table[] = {
 +	PARAGON_SPI_NAND_INFO("PARAGONxxxx", 0xe1,
++			     NAND_MEMORG(1, 2048, 128, 64, 1024, 1, 1, 1),
++			     NAND_ECCREQ(8, 512),
++			     SPINAND_RW_COMMON),
++	PARAGON_SPI_NAND_INFO("XT26G01xxxx", 0xf1,
 +			     NAND_MEMORG(1, 2048, 128, 64, 1024, 1, 1, 1),
 +			     NAND_ECCREQ(8, 512),
 +			     SPINAND_RW_COMMON),
@@ -2764,7 +2769,7 @@
 +	 * Micron SPI NAND read ID need a dummy byte,
 +	 * so the first byte in raw_id is dummy.
 +	 */
-+	if (id[1] != SPINAND_MFR_PARAGON)
++	if ( (id[1] != SPINAND_MFR_PARAGON) && (id[1] != SPINAND_MFR_XTX) )
 +		return false;
 +
 +	return paragon_spinand_scan_id_table(spinand, id[2]);
@@ -2798,6 +2803,6 @@
 +
 +const struct spinand_manufacturer paragon_spinand_manufacturer = {
 +	.id = SPINAND_MFR_PARAGON,
-+	.name = "Paragon",
++	.name = "Paragon(XTX)",
 +	.ops = &paragon_spinand_manuf_ops,
 +};
