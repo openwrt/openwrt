@@ -837,7 +837,7 @@ TARGET_DEVICES += wrh-300cr
 define Device/wrtnode
   DTS := WRTNODE
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_VENDOR := 
+  DEVICE_VENDOR := WRTNode
   DEVICE_MODEL := WRTNode
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
