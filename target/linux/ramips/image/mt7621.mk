@@ -344,30 +344,17 @@ define Device/mikrotik_rbm33g
 endef
 TARGET_DEVICES += mikrotik_rbm33g
 
-define Device/mqmaker_witi-256m
+define Device/mqmaker_witi
   MTK_SOC := mt7621
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := MQmaker
   DEVICE_MODEL := WiTi
-  DEVICE_VARIANT := 256MB RAM
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-mt76x2 kmod-sdhci-mt7620 kmod-usb3 \
 	kmod-usb-ledtrig-usbport wpad-basic
-  SUPPORTED_DEVICES += witi
+  SUPPORTED_DEVICES += witi mqmaker,witi-256m mqmaker,witi-512m
 endef
-TARGET_DEVICES += mqmaker_witi-256m
-
-define Device/mqmaker_witi-512m
-  MTK_SOC := mt7621
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_VENDOR := MQmaker
-  DEVICE_MODEL := WiTi
-  DEVICE_VARIANT := 512MB RAM
-  DEVICE_PACKAGES := \
-	kmod-ata-core kmod-ata-ahci kmod-mt76x2 kmod-sdhci-mt7620 kmod-usb3 \
-	kmod-usb-ledtrig-usbport wpad-basic
-endef
-TARGET_DEVICES += mqmaker_witi-512m
+TARGET_DEVICES += mqmaker_witi
 
 define Device/mtc_wr1201
   MTK_SOC := mt7621
