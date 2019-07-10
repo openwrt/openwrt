@@ -43,11 +43,6 @@
 / {
 	compatible = "unielec,u7621-06-512m-64m", "unielec,u7621-06", "mediatek,mt7621-soc";
 	model = "UniElec U7621-06 (512M RAM/64M flash)";
-
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x1c000000>, <0x20000000 0x4000000>;
-	};
 };
 
 &spi0 {

@@ -6,11 +6,6 @@
 / {
 	compatible = "nexx,wt1520", "ralink,rt5350-soc";
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x2000000>;
-	};
-
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;

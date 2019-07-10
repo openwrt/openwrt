@@ -9,11 +9,6 @@
 	compatible = "hilink,hlk-rm04", "ralink,rt5350-soc";
 	model = "HILINK HLK-RM04";
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x1000000>;
-	};
-
 	chosen {
 		bootargs = "console=ttyS1,57600";
 	};
