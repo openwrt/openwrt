@@ -41,7 +41,7 @@
 		reg = <0x0 0x8000000>;
 	};
 
-	gpio-keys-polled {
+	keys {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -70,7 +70,7 @@
 		enable-active-high;
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		power_green: power {
@@ -244,7 +244,7 @@
 		  1 0 0x2000000 0x1000000			// addrsel1	Size 0x1000000 hardcoded in xway_nand.c. Excessive, as first 0x80 is used only
 		  2 0 0x3000000 0x0000800>;			// addrsel2	Size 0x800 hardcoded in display driver. This is the min size supported by ebu
 
-	nand@1 {						// @1 because using ebu BUSCON1/ADDSEL1
+	flash@1 {						// @1 because using ebu BUSCON1/ADDSEL1
 		compatible = "lantiq,nand-xway";
 		reg = <1 0x0 0x80>;				// Only adresses 0x0..0x7F needed (but driver ignores size 0x80 and tells ebu to map 0x1000000)
 
