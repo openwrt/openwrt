@@ -17,12 +17,6 @@
 		led-upgrade = &led_sys;
 	};
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x1C000000>,
-		      <0x20000000 0x4000000>;
-	};
-
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
