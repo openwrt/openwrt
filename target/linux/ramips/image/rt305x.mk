@@ -274,7 +274,7 @@ endef
 TARGET_DEVICES += belkin_f5d8235-v2
 
 define Device/belkin_f7c027
-  MTK_SOC := rt5352
+  MTK_SOC := rt5350
   IMAGE_SIZE := 7616k
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := F7C027
