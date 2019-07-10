@@ -1,6 +1,6 @@
 --- a/arch/mips/pci/pci-lantiq.c
 +++ b/arch/mips/pci/pci-lantiq.c
-@@ -61,6 +61,8 @@
+@@ -59,6 +59,8 @@
  #define ltq_pci_cfg_w32(x, y)	ltq_w32((x), ltq_pci_mapped_cfg + (y))
  #define ltq_pci_cfg_r32(x)	ltq_r32(ltq_pci_mapped_cfg + (x))
  
@@ -9,7 +9,7 @@
  __iomem void *ltq_pci_mapped_cfg;
  static __iomem void *ltq_pci_membase;
  
-@@ -86,8 +88,8 @@ static inline u32 ltq_calc_bar11mask(voi
+@@ -84,8 +86,8 @@ static inline u32 ltq_calc_bar11mask(voi
  	u32 mem, bar11mask;
  
  	/* BAR11MASK value depends on available memory on system. */

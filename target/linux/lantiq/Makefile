@@ -12,6 +12,7 @@ FEATURES:=squashfs
 SUBTARGETS:=xrx200 xway xway_legacy falcon ase
 
 KERNEL_PATCHVER:=4.19
+KERNEL_TESTING_PATCHVER:=5.4
 
 define Target/Description
 	Build firmware images for Lantiq SoC

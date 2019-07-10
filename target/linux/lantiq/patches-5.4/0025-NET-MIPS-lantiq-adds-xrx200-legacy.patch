@@ -1,43 +1,43 @@
 From fb0c9601f4414c39ff68e26b88681bef0bb04954 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Mon, 22 Oct 2012 12:22:23 +0200
-Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
+Subject: NET: MIPS: lantiq: adds xrx200 ethernet and switch driver
 
 ---
  drivers/net/ethernet/Kconfig            |    8 +-
  drivers/net/ethernet/Makefile           |    1 +
  drivers/net/ethernet/lantiq_pce.h       |  163 +++
- drivers/net/ethernet/lantiq_xrx200.c    | 1798 +++++++++++++++++++++++++++++++
- drivers/net/ethernet/lantiq_xrx200_sw.h | 1328 +++++++++++++++++++++++
+ drivers/net/ethernet/lantiq_xrx200_legacy.c    | 1798 +++++++++++++++++++++++++++++++
+ drivers/net/ethernet/lantiq_xrx200_legacy.h | 1328 +++++++++++++++++++++++
  5 files changed, 3297 insertions(+), 1 deletion(-)
  create mode 100644 drivers/net/ethernet/lantiq_pce.h
- create mode 100644 drivers/net/ethernet/lantiq_xrx200.c
- create mode 100644 drivers/net/ethernet/lantiq_xrx200_sw.h
+ create mode 100644 drivers/net/ethernet/lantiq_xrx200_legacy.c
+ create mode 100644 drivers/net/ethernet/lantiq_xrx200_legacy.h
 
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
-@@ -106,7 +106,13 @@ config LANTIQ_ETOP
+@@ -108,7 +108,13 @@ config LANTIQ_ETOP
  	tristate "Lantiq SoC ETOP driver"
  	depends on SOC_TYPE_XWAY
  	---help---
 -	  Support for the MII0 inside the Lantiq SoC
 +	  Support for the MII0 inside the Lantiq ADSL SoC
 +
-+config LANTIQ_XRX200
++config LANTIQ_XRX200_LEGACY
 +	tristate "Lantiq SoC XRX200 driver"
 +	depends on SOC_TYPE_XWAY
 +	---help---
 +	  Support for the MII0 inside the Lantiq VDSL SoC
  
- source "drivers/net/ethernet/marvell/Kconfig"
- source "drivers/net/ethernet/mediatek/Kconfig"
+ config LANTIQ_XRX200
+ 	tristate "Lantiq / Intel xRX200 PMAC network driver"
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
-@@ -49,6 +49,7 @@ obj-$(CONFIG_NET_VENDOR_XSCALE) += xscal
- obj-$(CONFIG_JME) += jme.o
+@@ -51,6 +51,7 @@ obj-$(CONFIG_JME) += jme.o
  obj-$(CONFIG_KORINA) += korina.o
  obj-$(CONFIG_LANTIQ_ETOP) += lantiq_etop.o
-+obj-$(CONFIG_LANTIQ_XRX200) += lantiq_xrx200.o
+ obj-$(CONFIG_LANTIQ_XRX200) += lantiq_xrx200.o
++obj-$(CONFIG_LANTIQ_XRX200_LEGACY) += lantiq_xrx200_legacy.o
  obj-$(CONFIG_NET_VENDOR_MARVELL) += marvell/
  obj-$(CONFIG_NET_VENDOR_MEDIATEK) += mediatek/
  obj-$(CONFIG_NET_VENDOR_MELLANOX) += mellanox/
@@ -208,8 +208,8 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	MC_ENTRY(0x0000, 0x0000, 39, OUT_NONE,   0, INSTR,   FLAG_END,   0),
 +};
 --- /dev/null
-+++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1924 @@
++++ b/drivers/net/ethernet/lantiq_xrx200_legacy.c
+@@ -0,0 +1,1927 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -246,7 +246,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +#include <lantiq_soc.h>
 +
 +#include "lantiq_pce.h"
-+#include "lantiq_xrx200_sw.h"
++#include "lantiq_xrx200_legacy.h"
 +
 +#define SW_POLLING
 +#define SW_ROUTING
@@ -1117,6 +1117,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +			if (XRX200_DMA_IS_RX(i))
 +				napi_enable(&priv->hw->chan[i].napi);
 +			ltq_dma_open(&priv->hw->chan[i].dma);
++			ltq_dma_enable_irq(&priv->hw->chan[i].dma);
 +		}
 +		priv->hw->chan[i].refcount++;
 +		spin_unlock_bh(&priv->hw->chan[i].lock);
@@ -1604,16 +1605,18 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +		return PTR_ERR(phydev);
 +	}
 +
-+	phydev->supported &= (SUPPORTED_10baseT_Half
-+			| SUPPORTED_10baseT_Full
-+			| SUPPORTED_100baseT_Half
-+			| SUPPORTED_100baseT_Full
-+			| SUPPORTED_1000baseT_Half
-+			| SUPPORTED_1000baseT_Full
-+			| SUPPORTED_Autoneg
-+			| SUPPORTED_MII
-+			| SUPPORTED_TP);
-+	phydev->advertising = phydev->supported;
++	linkmode_zero(phydev->supported);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_Autoneg_BIT, phydev->supported);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_TP_BIT, phydev->supported);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_MII_BIT, phydev->supported);
++	linkmode_set_bit_array(phy_10_100_features_array,
++			       ARRAY_SIZE(phy_10_100_features_array),
++			       phydev->supported);
++	linkmode_set_bit_array(phy_gbit_features_array,
++			       ARRAY_SIZE(phy_gbit_features_array),
++			       phydev->supported);
++	linkmode_copy(phydev->advertising, phydev->supported);
++
 +	port->phydev = phydev;
 +	phydev->phy_link_change = xrx200_phy_link_change;
 +
@@ -1970,7 +1973,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	priv->id = hw->num_devs;
 +
 +	mac = of_get_mac_address(iface);
-+	if (mac)
++	if (!IS_ERR(mac))
 +		memcpy(priv->mac, mac, ETH_ALEN);
 +
 +	/* is this the wan interface ? */
@@ -2135,7 +2138,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +MODULE_DESCRIPTION("Lantiq SoC XRX200 ethernet");
 +MODULE_LICENSE("GPL");
 --- /dev/null
-+++ b/drivers/net/ethernet/lantiq_xrx200_sw.h
++++ b/drivers/net/ethernet/lantiq_xrx200_legacy.h
 @@ -0,0 +1,1328 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it

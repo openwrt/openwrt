@@ -8,7 +8,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/include/asm/mach-lantiq/lantiq_atm.h |  196 +++++++++++++++++++++++
  arch/mips/include/asm/mach-lantiq/lantiq_ptm.h |  203 ++++++++++++++++++++++++
  arch/mips/lantiq/irq.c                         |    2 +
- arch/mips/mm/cache.c                           |    2 +
+ arch/mips/mm/cache.c                           |    4 +
  include/uapi/linux/atm.h                       |    6 +
  net/atm/common.c                               |    6 +
  net/atm/proc.c                                 |    2 +-
@@ -423,7 +423,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- a/arch/mips/lantiq/irq.c
 +++ b/arch/mips/lantiq/irq.c
-@@ -14,6 +14,7 @@
+@@ -12,6 +12,7 @@
  #include <linux/of_platform.h>
  #include <linux/of_address.h>
  #include <linux/of_irq.h>
@@ -431,25 +431,27 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include <asm/bootinfo.h>
  #include <asm/irq_cpu.h>
-@@ -96,6 +97,7 @@ void ltq_mask_and_ack_irq(struct irq_dat
- 	ltq_icu_w32(im, ltq_icu_r32(im, ier) & ~BIT(offset), ier);
- 	ltq_icu_w32(im, BIT(offset), isr);
+@@ -91,6 +92,7 @@ void ltq_disable_irq(struct irq_data *d)
+ 	}
+ 	raw_spin_unlock_irqrestore(&ltq_icu_lock, flags);
  }
 +EXPORT_SYMBOL(ltq_mask_and_ack_irq);
  
- static void ltq_ack_irq(struct irq_data *d)
+ void ltq_mask_and_ack_irq(struct irq_data *d)
  {
 --- a/arch/mips/mm/cache.c
 +++ b/arch/mips/mm/cache.c
-@@ -64,6 +64,8 @@ void (*_dma_cache_wback)(unsigned long s
+@@ -62,6 +62,10 @@ void (*_dma_cache_wback_inv)(unsigned lo
+ void (*_dma_cache_wback)(unsigned long start, unsigned long size);
  void (*_dma_cache_inv)(unsigned long start, unsigned long size);
  
- EXPORT_SYMBOL(_dma_cache_wback_inv);
++EXPORT_SYMBOL(_dma_cache_wback_inv);
 +EXPORT_SYMBOL(_dma_cache_wback);
 +EXPORT_SYMBOL(_dma_cache_inv);
- 
++
  #endif /* CONFIG_DMA_NONCOHERENT */
  
+ /*
 --- a/include/uapi/linux/atm.h
 +++ b/include/uapi/linux/atm.h
 @@ -131,8 +131,14 @@
@@ -469,7 +471,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	int		max_pcr;	/* maximum PCR in cells per second */
 --- a/net/atm/proc.c
 +++ b/net/atm/proc.c
-@@ -141,7 +141,7 @@ static void *vcc_seq_next(struct seq_fil
+@@ -142,7 +142,7 @@ static void *vcc_seq_next(struct seq_fil
  static void pvc_info(struct seq_file *seq, struct atm_vcc *vcc)
  {
  	static const char *const class_name[] = {

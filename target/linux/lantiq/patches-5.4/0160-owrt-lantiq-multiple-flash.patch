@@ -1,6 +1,6 @@
 --- a/drivers/mtd/maps/lantiq-flash.c
 +++ b/drivers/mtd/maps/lantiq-flash.c
-@@ -19,6 +19,7 @@
+@@ -17,6 +17,7 @@
  #include <linux/mtd/cfi.h>
  #include <linux/platform_device.h>
  #include <linux/mtd/physmap.h>
@@ -8,7 +8,7 @@
  #include <linux/of.h>
  
  #include <lantiq_soc.h>
-@@ -38,13 +39,16 @@ enum {
+@@ -36,13 +37,16 @@ enum {
  	LTQ_NOR_NORMAL
  };
  
@@ -28,7 +28,7 @@
  
  static map_word
  ltq_read16(struct map_info *map, unsigned long adr)
-@@ -108,11 +112,43 @@ ltq_copy_to(struct map_info *map, unsign
+@@ -106,11 +110,43 @@ ltq_copy_to(struct map_info *map, unsign
  }
  
  static int
@@ -73,7 +73,7 @@
  
  	ltq_mtd = devm_kzalloc(&pdev->dev, sizeof(struct ltq_mtd), GFP_KERNEL);
  	if (!ltq_mtd)
-@@ -120,75 +156,89 @@ ltq_mtd_probe(struct platform_device *pd
+@@ -118,75 +154,89 @@ ltq_mtd_probe(struct platform_device *pd
  
  	platform_set_drvdata(pdev, ltq_mtd);
  

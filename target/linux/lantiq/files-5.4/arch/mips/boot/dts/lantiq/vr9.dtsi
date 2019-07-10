@@ -1,4 +1,5 @@
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/phy/phy-lantiq-vrx200-pcie.h>
 
 / {
 	#address-cells = <1>;
@@ -46,11 +47,8 @@
 			#interrupt-cells = <1>;
 			interrupt-controller;
 			compatible = "lantiq,icu";
-			reg = <0x80200 0x28
-				0x80228 0x28
-				0x80250 0x28
-				0x80278 0x28
-				0x802a0 0x28>;
+			reg = <0x80200 0xc8	/* icu0 */
+			       0x80300 0xc8>;	/* icu1 */
 		};
 
 		watchdog@803f0 {
@@ -98,6 +96,18 @@
 			reg = <0x107000 0x300>;
 			interrupt-parent = <&icu0>;
 			interrupts = <150 151 152 153 154 155>;
+		};
+
+		pcie0_phy: phy@106800 {
+			compatible = "lantiq,vrx200-pcie-phy";
+			reg = <0x106800 0x100>;
+			lantiq,rcu = <&rcu0>;
+			lantiq,rcu-endian-offset = <0x4c>;
+			lantiq,rcu-big-endian-mask = <0x80>; /* bit 7 */
+			big-endian;
+			resets = <&reset0 12 24>, <&reset0 22 22>;
+			reset-names = "phy", "pcie";
+			#phy-cells = <1>;
 		};
 
 		rcu0: rcu@203000 {
@@ -464,6 +474,13 @@
 
 			interrupt-parent = <&icu0>;
 			interrupts = <161 144>;
+
+			phys = <&pcie0_phy LANTIQ_PCIE_PHY_MODE_36MHZ>;
+			phy-names = "pcie";
+
+			resets = <&reset0 22 22>;
+
+			lantiq,rcu = <&rcu0>;
 
 			device_type = "pci";
 

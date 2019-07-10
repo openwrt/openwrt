@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/gpio/gpiolib-of.c
 +++ b/drivers/gpio/gpiolib-of.c
-@@ -23,6 +23,8 @@
+@@ -19,6 +19,8 @@
  #include <linux/pinctrl/pinctrl.h>
  #include <linux/slab.h>
  #include <linux/gpio/machine.h>
@@ -21,9 +21,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/platform_device.h>
  
  #include "gpiolib.h"
- 
-@@ -660,3 +662,72 @@ void of_gpiochip_remove(struct gpio_chip
- 	gpiochip_remove_pin_ranges(chip);
+ #include "gpiolib-of.h"
+@@ -915,3 +917,72 @@ void of_gpiochip_remove(struct gpio_chip
+ {
  	of_node_put(chip->of_node);
  }
 +
@@ -112,7 +112,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
 --- a/include/linux/gpio/consumer.h
 +++ b/include/linux/gpio/consumer.h
-@@ -533,6 +533,7 @@ struct gpio_desc *devm_fwnode_get_gpiod_
+@@ -668,6 +668,7 @@ static inline void devm_acpi_dev_remove_
  
  #if IS_ENABLED(CONFIG_GPIOLIB) && IS_ENABLED(CONFIG_GPIO_SYSFS)
  
@@ -120,7 +120,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  int gpiod_export(struct gpio_desc *desc, bool direction_may_change);
  int gpiod_export_link(struct device *dev, const char *name,
  		      struct gpio_desc *desc);
-@@ -540,6 +541,13 @@ void gpiod_unexport(struct gpio_desc *de
+@@ -675,6 +676,13 @@ void gpiod_unexport(struct gpio_desc *de
  
  #else  /* CONFIG_GPIOLIB && CONFIG_GPIO_SYSFS */
  
@@ -136,7 +136,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
 --- a/drivers/gpio/gpiolib-sysfs.c
 +++ b/drivers/gpio/gpiolib-sysfs.c
-@@ -568,7 +568,7 @@ static struct class gpio_class = {
+@@ -563,7 +563,7 @@ static struct class gpio_class = {
   *
   * Returns zero on success, else an error.
   */
@@ -145,7 +145,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
  	struct gpio_chip	*chip;
  	struct gpio_device	*gdev;
-@@ -630,6 +630,8 @@ int gpiod_export(struct gpio_desc *desc,
+@@ -625,6 +625,8 @@ int gpiod_export(struct gpio_desc *desc,
  	offset = gpio_chip_hwgpio(desc);
  	if (chip->names && chip->names[offset])
  		ioname = chip->names[offset];
@@ -154,7 +154,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	dev = device_create_with_groups(&gpio_class, &gdev->dev,
  					MKDEV(0, 0), data, gpio_groups,
-@@ -651,6 +653,12 @@ err_unlock:
+@@ -646,6 +648,12 @@ err_unlock:
  	gpiod_dbg(desc, "%s: status %d\n", __func__, status);
  	return status;
  }
