@@ -186,6 +186,7 @@ ramips_setup_interfaces()
 	argus,atp-52b|\
 	asiarf,awm002-evb-4m|\
 	asiarf,awm002-evb-8m|\
+	asus,rt-ac57u|\
 	asus,rt-n14u|\
 	bdcom,wap2100-sk|\
 	dlink,dir-645|\
@@ -521,6 +522,11 @@ ramips_setup_macs()
 		lan_mac=$(macaddr_setbit_la "$lan_mac")
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
+	asus,rt-ac57u|\
+	planex,vr500)
+		lan_mac=$(mtd_get_mac_binary factory 57344)
+		wan_mac=$(mtd_get_mac_binary factory 57350)
+		;;
 	asus,rt-n56u)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_setbit_la "$lan_mac")
@@ -640,10 +646,6 @@ ramips_setup_macs()
 	onion,omega2p)
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$(mtd_get_mac_binary factory 46)
-		;;
-	planex,vr500)
-		lan_mac=$(mtd_get_mac_binary factory 57344)
-		wan_mac=$(mtd_get_mac_binary factory 57350)
 		;;
 	poray,m3|\
 	poray,m4-4m|\
