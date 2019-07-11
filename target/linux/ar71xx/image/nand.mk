@@ -16,7 +16,8 @@ endef
 
 
 define Device/c-60
-  DEVICE_TITLE := AirTight C-60
+  DEVICE_VENDOR := AirTight
+  DEVICE_MODEL := C-60
   DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-core kmod-usb2 kmod-ath9k
   BOARDNAME := C-60
   BLOCKSIZE := 64k
@@ -30,7 +31,8 @@ endef
 TARGET_DEVICES += c-60
 
 define Device/domywifi-dw33d
-  DEVICE_TITLE := DomyWifi DW33D
+  DEVICE_VENDOR := DomyWifi
+  DEVICE_MODEL := DW33D
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
   BOARDNAME := DW33D
   IMAGE_SIZE := 16000k
@@ -40,7 +42,8 @@ endef
 TARGET_DEVICES += domywifi-dw33d
 
 define Device/hiveap-121
-  DEVICE_TITLE := Aerohive HiveAP-121
+  DEVICE_VENDOR := Aerohive
+  DEVICE_MODEL := HiveAP-121
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-i2c-gpio-custom kmod-spi-gpio kmod-ath9k kmod-tpm-i2c-atmel
   BOARDNAME := HiveAP-121
   BLOCKSIZE := 128k
@@ -58,7 +61,8 @@ endef
 TARGET_DEVICES += hiveap-121
 
 define Device/mr18
-  DEVICE_TITLE := Meraki MR18
+  DEVICE_VENDOR := Meraki
+  DEVICE_MODEL := MR18
   DEVICE_PACKAGES := kmod-spi-gpio kmod-ath9k
   BOARDNAME := MR18
   BLOCKSIZE := 64k
@@ -71,7 +75,8 @@ endef
 TARGET_DEVICES += mr18
 
 define Device/rambutan
-  DEVICE_TITLE := 8devices Rambutan
+  DEVICE_VENDOR := 8devices
+  DEVICE_MODEL := Rambutan
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := RAMBUTAN
   BLOCKSIZE := 128KiB
@@ -86,7 +91,7 @@ TARGET_DEVICES += rambutan
 
 define Device/wi2a-ac200i
   SUPPORTED_DEVICES = $(1)
-  DEVICE_TITLE := Nokia WI2A-AC200i
+  DEVICE_MODEL := Nokia WI2A-AC200i
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct
   BOARDNAME := WI2A-AC200i
   BLOCKSIZE := 64k
@@ -100,7 +105,8 @@ endef
 TARGET_DEVICES += wi2a-ac200i
 
 define Device/z1
-  DEVICE_TITLE := Meraki Z1
+  DEVICE_VENDOR := Meraki
+  DEVICE_MODEL := Z1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-spi-gpio kmod-ath9k kmod-owl-loader
   BOARDNAME := Z1
   BLOCKSIZE := 64k
@@ -113,25 +119,29 @@ endef
 TARGET_DEVICES += z1
 
 define LegacyDevice/R6100
-  DEVICE_TITLE := NETGEAR R6100
+  DEVICE_VENDOR := Netgear
+  DEVICE_MODEL := R6100
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += R6100
 
 define LegacyDevice/WNDR3700V4
-  DEVICE_TITLE := NETGEAR WNDR3700v4
+  DEVICE_VENDOR := Netgear
+  DEVICE_MODEL := WNDR3700v4
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += WNDR3700V4
 
 define LegacyDevice/WNDR4300V1
-  DEVICE_TITLE := NETGEAR WNDR4300v1
+  DEVICE_VENDOR := Netgear
+  DEVICE_MODEL := WNDR4300v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += WNDR4300V1
 
 define LegacyDevice/NBG6716
-  DEVICE_TITLE := Zyxel NBG 6716
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := NBG 6716
   DEVICE_PACKAGES := kmod-rtc-pcf8563 kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 LEGACY_DEVICES += NBG6716

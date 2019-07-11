@@ -15,7 +15,8 @@ endef
 
 
 define Device/ens202ext
-  DEVICE_TITLE := EnGenius ENS202EXT
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := ENS202EXT
   BOARDNAME := ENS202EXT
   DEVICE_PACKAGES := rssileds
   KERNEL_SIZE := 1536k

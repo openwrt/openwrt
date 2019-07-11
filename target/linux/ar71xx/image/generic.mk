@@ -93,7 +93,8 @@ endef
 
 
 define Device/ap121f
-  DEVICE_TITLE := ALFA Network AP121F
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := AP121F
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage -swconfig
   BOARDNAME := AP121F
   IMAGE_SIZE := 16064k
@@ -106,7 +107,7 @@ endef
 TARGET_DEVICES += ap121f
 
 define Device/ap531b0
-  DEVICE_TITLE := Rockeetech AP531B0
+  DEVICE_MODEL := Rockeetech AP531B0
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := AP531B0
   IMAGE_SIZE := 16000k
@@ -115,7 +116,8 @@ endef
 TARGET_DEVICES += ap531b0
 
 define Device/ap90q
-  DEVICE_TITLE := YunCore AP80Q/AP90Q
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := AP80Q/AP90Q
   BOARDNAME := AP90Q
   IMAGE_SIZE := 16000k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
@@ -123,7 +125,8 @@ endef
 TARGET_DEVICES += ap90q
 
 define Device/ap91-5g
-  DEVICE_TITLE := ALFA Network AP91-5G
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := AP91-5G
   DEVICE_PACKAGES := rssileds -swconfig
   BOARDNAME := AP91-5G
   IMAGE_SIZE := 7744k
@@ -138,7 +141,8 @@ define Device/ap91-5g
 endef
 
 define Device/arduino-yun
-  DEVICE_TITLE := Arduino Yun
+  DEVICE_VENDOR := Arduino.cc
+  DEVICE_MODEL := Yun
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := Yun
   IMAGE_SIZE := 15936k
@@ -148,7 +152,7 @@ endef
 TARGET_DEVICES += arduino-yun
 
 define Device/bsb
-  DEVICE_TITLE := Smart Electronics Black Swift board
+  DEVICE_MODEL := Smart Electronics Black Swift board
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := BSB
   IMAGE_SIZE := 16000k
@@ -158,7 +162,8 @@ endef
 TARGET_DEVICES += bsb
 
 define Device/carambola2
-  DEVICE_TITLE := 8devices Carambola2
+  DEVICE_VENDOR := 8devices
+  DEVICE_MODEL := Carambola2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := CARAMBOLA2
   IMAGE_SIZE := 16000k
@@ -168,7 +173,9 @@ endef
 TARGET_DEVICES += carambola2
 
 define Device/cf-e316n-v2
-  DEVICE_TITLE := COMFAST CF-E316N v2
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E316N
+  DEVICE_VARIANT := v2
   DEVICE_PACKAGES := -swconfig -uboot-envtools
   BOARDNAME := CF-E316N-V2
   IMAGE_SIZE := 16192k
@@ -178,14 +185,18 @@ TARGET_DEVICES += cf-e316n-v2
 
 define Device/cf-e320n-v2
   $(Device/cf-e316n-v2)
-  DEVICE_TITLE := COMFAST CF-E320N v2
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E320N
+  DEVICE_VARIANT := v2
   DEVICE_PACKAGES += kmod-usb-core kmod-usb2
   BOARDNAME := CF-E320N-V2
 endef
 TARGET_DEVICES += cf-e320n-v2
 
 define Device/cf-e355ac-v1
-  DEVICE_TITLE := COMFAST CF-E355AC v1
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E355AC
+  DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct \
 	-swconfig -uboot-envtools
   BOARDNAME := CF-E355AC-V1
@@ -196,7 +207,9 @@ TARGET_DEVICES += cf-e355ac-v1
 
 define Device/cf-e355ac-v2
   $(Device/cf-e355ac-v1)
-  DEVICE_TITLE := COMFAST CF-E355AC v2
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E355AC
+  DEVICE_VARIANT := v2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct \
 	-swconfig -uboot-envtools
   BOARDNAME := CF-E355AC-V2
@@ -204,7 +217,8 @@ endef
 TARGET_DEVICES += cf-e355ac-v2
 
 define Device/cf-e375ac
-  DEVICE_TITLE := COMFAST CF-E375AC
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E375AC
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct \
 	-uboot-envtools
   BOARDNAME := CF-E375AC
@@ -214,7 +228,9 @@ endef
 TARGET_DEVICES += cf-e375ac
 
 define Device/cf-e380ac-v1
-  DEVICE_TITLE := COMFAST CF-E380AC v1
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E380AC
+  DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct \
 	-swconfig -uboot-envtools
   BOARDNAME := CF-E380AC-V1
@@ -225,7 +241,9 @@ TARGET_DEVICES += cf-e380ac-v1
 
 define Device/cf-e380ac-v2
   $(Device/cf-e380ac-v1)
-  DEVICE_TITLE := COMFAST CF-E380AC v2
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E380AC
+  DEVICE_VARIANT := v2
   BOARDNAME := CF-E380AC-V2
   IMAGE_SIZE := 16000k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(art)ro,16000k(firmware),64k(art-backup)ro
@@ -233,7 +251,8 @@ endef
 TARGET_DEVICES += cf-e380ac-v2
 
 define Device/cf-e385ac
-  DEVICE_TITLE := COMFAST CF-E385AC
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E385AC
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9984-ct \
 	-uboot-envtools
   BOARDNAME := CF-E385AC
@@ -243,7 +262,8 @@ endef
 TARGET_DEVICES += cf-e385ac
 
 define Device/cf-e520n
-  DEVICE_TITLE := COMFAST CF-E520N
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E520N
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig -uboot-envtools
   BOARDNAME := CF-E520N
   IMAGE_SIZE := 8000k
@@ -253,13 +273,15 @@ TARGET_DEVICES += cf-e520n
 
 define Device/cf-e530n
   $(Device/cf-e520n)
-  DEVICE_TITLE := COMFAST CF-E530N
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E530N
   BOARDNAME := CF-E530N
 endef
 TARGET_DEVICES += cf-e530n
 
 define Device/cpe505n
-  DEVICE_TITLE := P&W CPE505N
+  DEVICE_VENDOR := P&W
+  DEVICE_MODEL := CPE505N
   BOARDNAME := CPE505N
   IMAGE_SIZE := 16000k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
@@ -268,14 +290,16 @@ TARGET_DEVICES += cpe505n
 
 define Device/cpe830
   $(Device/ap90q)
-  DEVICE_TITLE := YunCore CPE830
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := CPE830
   DEVICE_PACKAGES := rssileds
   BOARDNAME := CPE830
 endef
 TARGET_DEVICES += cpe830
 
 define Device/cpe870
-  DEVICE_TITLE := YunCore CPE870
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := CPE870
   DEVICE_PACKAGES := rssileds
   BOARDNAME := CPE870
   IMAGE_SIZE := 7936k
@@ -287,14 +311,18 @@ define Device/dragino2
   BOARDNAME := DRAGINO2
   CONSOLE := ttyATH0,115200
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
-  DEVICE_TITLE := Dragino 2 (MS14)
+  DEVICE_VENDOR := Dragino
+  DEVICE_MODEL := 2
+  DEVICE_VARIANT := MS14
   IMAGE_SIZE := 16000k
   MTDPARTS := spi0.0:256k(u-boot)ro,16000k(firmware),64k(config)ro,64k(art)ro
 endef
 TARGET_DEVICES += dragino2
 
 define Device/e1700ac-v2-16M
-  DEVICE_TITLE := Qxwlan E1700AC v2 (16MB flash)
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E1700AC
+  DEVICE_VARIANT := v2 (16MB flash)
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb-core \
 	kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := E1700AC-V2
@@ -308,13 +336,17 @@ TARGET_DEVICES += e1700ac-v2-16M
 
 define Device/e1700ac-v2-8M
   $(Device/e1700ac-v2-16M)
-  DEVICE_TITLE := Qxwlan E1700AC v2 (8MB flash)
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E1700AC
+  DEVICE_VARIANT := v2 (8MB flash)
   IMAGE_SIZE := 7744k
 endef
 TARGET_DEVICES += e1700ac-v2-8M
 
 define Device/e558-v2-16M
-  DEVICE_TITLE := Qxwlan E558 v2 (16MB flash)
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E558
+  DEVICE_VARIANT := v2 (16MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
   BOARDNAME := E558-V2
   SUPPORTED_DEVICES := e558-v2
@@ -327,13 +359,17 @@ TARGET_DEVICES += e558-v2-16M
 
 define Device/e558-v2-8M
   $(Device/e558-v2-16M)
-  DEVICE_TITLE := Qxwlan E558 v2 (8MB flash)
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E558
+  DEVICE_VARIANT := v2 (8MB flash)
   IMAGE_SIZE := 7744k
 endef
 TARGET_DEVICES += e558-v2-8M
 
 define Device/e600g-v2-16M
-  DEVICE_TITLE := Qxwlan E600G v2 (16MB flash)
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E600G
+  DEVICE_VARIANT := v2 (16MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
   BOARDNAME := E600G-V2
   SUPPORTED_DEVICES := e600g-v2
@@ -346,13 +382,17 @@ TARGET_DEVICES += e600g-v2-16M
 
 define Device/e600g-v2-8M
   $(Device/e600g-v2-16M)
-  DEVICE_TITLE := Qxwlan E600G v2 (8MB flash)
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E600G
+  DEVICE_VARIANT := v2 (8MB flash)
   IMAGE_SIZE := 7744k
 endef
 TARGET_DEVICES += e600g-v2-8M
 
 define Device/e600gac-v2-16M
-  DEVICE_TITLE := Qxwlan E600GAC v2 (16MB flash)
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E600GAC
+  DEVICE_VARIANT := v2 (16MB flash)
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct kmod-usb-core \
 	kmod-usb2 -swconfig
   BOARDNAME := E600GAC-V2
@@ -366,13 +406,17 @@ TARGET_DEVICES += e600gac-v2-16M
 
 define Device/e600gac-v2-8M
   $(Device/e600gac-v2-16M)
-  DEVICE_TITLE := Qxwlan E600GAC v2 (8MB flash)
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E600GAC
+  DEVICE_VARIANT := v2 (8MB flash)
   IMAGE_SIZE := 7744k
 endef
 TARGET_DEVICES += e600gac-v2-8M
 
 define Device/e750a-v4-16M
-  DEVICE_TITLE := Qxwlan E750A v4 (16MB flash)
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E750A
+  DEVICE_VARIANT := v4 (16MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
   BOARDNAME := E750A-V4
   SUPPORTED_DEVICES := e750a-v4
@@ -385,13 +429,17 @@ TARGET_DEVICES += e750a-v4-16M
 
 define Device/e750a-v4-8M
   $(Device/e750a-v4-16M)
-  DEVICE_TITLE := Qxwlan E750A v4 (8MB flash)
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E750A
+  DEVICE_VARIANT := v4 (8MB flash)
   IMAGE_SIZE := 7744k
 endef
 TARGET_DEVICES += e750a-v4-8M
 
 define Device/e750g-v8-16M
-  DEVICE_TITLE := Qxwlan E750G v8 (16MB flash)
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E750G
+  DEVICE_VARIANT := v8 (16MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
   BOARDNAME := E750G-V8
   SUPPORTED_DEVICES := e750g-v8
@@ -404,13 +452,16 @@ TARGET_DEVICES += e750g-v8-16M
 
 define Device/e750g-v8-8M
   $(Device/e750g-v8-16M)
-  DEVICE_TITLE := Qxwlan E750G v8 (8MB flash)
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E750G
+  DEVICE_VARIANT := v8 (8MB flash)
   IMAGE_SIZE := 7744k
 endef
 TARGET_DEVICES += e750g-v8-8M
 
 define Device/ew-balin
-  DEVICE_TITLE := Embedded Wireless Balin Platform
+  DEVICE_VENDOR := Embedded Wireless
+  DEVICE_MODEL := Balin Platform
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea
   BOARDNAME := EW-BALIN
   IMAGE_SIZE := 16000k
@@ -420,7 +471,8 @@ TARGET_DEVICES += ew-balin
 
 define Device/ew-dorin
   $(Device/ew-balin)
-  DEVICE_TITLE := Embedded Wireless Dorin Platform
+  DEVICE_VENDOR := Embedded Wireless
+  DEVICE_MODEL := Dorin Platform
   BOARDNAME := EW-DORIN
   CONSOLE := ttyATH0,115200
 endef
@@ -428,13 +480,15 @@ TARGET_DEVICES += ew-dorin
 
 define Device/ew-dorin-router
   $(Device/ew-dorin)
-  DEVICE_TITLE := Embedded Wireless Dorin Router Platform
+  DEVICE_VENDOR := Embedded Wireless
+  DEVICE_MODEL := Dorin Router Platform
   BOARDNAME := EW-DORIN-ROUTER
 endef
 TARGET_DEVICES += ew-dorin-router
 
 define Device/rme-eg200
-  DEVICE_TITLE := eTactica EG-200
+  DEVICE_VENDOR := eTactica
+  DEVICE_MODEL := EG-200
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-oneshot \
 	kmod-usb-serial kmod-usb-serial-ftdi \
 	kmod-usb-storage \
@@ -447,7 +501,7 @@ endef
 TARGET_DEVICES += rme-eg200
 
 define Device/weio
-  DEVICE_TITLE := WeIO
+  DEVICE_MODEL := WeIO
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := WEIO
   IMAGE_SIZE := 16000k
@@ -457,7 +511,8 @@ endef
 TARGET_DEVICES += weio
 
 define Device/gl-ar150
-  DEVICE_TITLE := GL.iNet GL-AR150
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-AR150
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := GL-AR150
   IMAGE_SIZE := 16000k
@@ -467,7 +522,8 @@ endef
 TARGET_DEVICES += gl-ar150
 
 define Device/gl-ar300
-  DEVICE_TITLE := GL.iNet GL-AR300
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-AR300
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := GL-AR300
   IMAGE_SIZE := 16000k
@@ -476,7 +532,8 @@ endef
 TARGET_DEVICES += gl-ar300
 
 define Device/gl-ar300m
-  DEVICE_TITLE := GL.iNet GL-AR300M
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-AR300M
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := GL-AR300M
   IMAGE_SIZE := 16000k
@@ -485,7 +542,8 @@ endef
 TARGET_DEVICES += gl-ar300m
 
 define Device/gl-ar750
-  DEVICE_TITLE := GL.iNet GL-AR750
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-AR750
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct kmod-usb-core \
 	kmod-usb2 kmod-usb-storage
   BOARDNAME := GL-AR750
@@ -498,7 +556,8 @@ endef
 TARGET_DEVICES += gl-ar750
 
 define Device/gl-ar750s
-  DEVICE_TITLE := GL.iNet GL-AR750S
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-AR750S
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct kmod-usb-core \
 	kmod-usb2 kmod-usb-storage
   BOARDNAME := GL-AR750S
@@ -511,7 +570,8 @@ endef
 TARGET_DEVICES += gl-ar750s
 
 define Device/gl-domino
-  DEVICE_TITLE := GL.iNet Domino Pi
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := Domino Pi
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := DOMINO
   IMAGE_SIZE := 16000k
@@ -521,7 +581,8 @@ endef
 TARGET_DEVICES += gl-domino
 
 define Device/gl-mifi
-  DEVICE_TITLE := GL.iNet GL-MiFi
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-MiFi
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := GL-MIFI
   IMAGE_SIZE := 16000k
@@ -531,7 +592,8 @@ endef
 TARGET_DEVICES += gl-mifi
 
 define Device/gl-usb150
-  DEVICE_TITLE := GL.iNet GL-USB150
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-USB150
   DEVICE_PACKAGES := -swconfig
   BOARDNAME := GL-USB150
   IMAGE_SIZE := 16000k
@@ -545,7 +607,8 @@ TARGET_DEVICES += gl-usb150
 
 define Device/lan-turtle
   $(Device/tplink-16mlzma)
-  DEVICE_TITLE := Hak5 LAN Turtle
+  DEVICE_VENDOR := HAK5
+  DEVICE_MODEL := LAN Turtle
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage \
 	-kmod-ath9k -swconfig -uboot-envtools -wpad-basic
   BOARDNAME := LAN-TURTLE
@@ -557,7 +620,8 @@ endef
 TARGET_DEVICES += lan-turtle
 
 define Device/lima
-  DEVICE_TITLE := 8devices Lima
+  DEVICE_VENDOR := 8devices
+  DEVICE_MODEL := Lima
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := LIMA
   IMAGE_SIZE := 15616k
@@ -566,7 +630,8 @@ endef
 TARGET_DEVICES += lima
 
 define Device/mr12
-  DEVICE_TITLE := Meraki MR12
+  DEVICE_VENDOR := Meraki
+  DEVICE_MODEL := MR12
   DEVICE_PACKAGES := kmod-spi-gpio
   BOARDNAME := MR12
   ROOTFS_SIZE := 13440k
@@ -581,13 +646,15 @@ TARGET_DEVICES += mr12
 
 define Device/mr16
   $(Device/mr12)
-  DEVICE_TITLE := Meraki MR16
+  DEVICE_VENDOR := Meraki
+  DEVICE_MODEL := MR16
   BOARDNAME := MR16
 endef
 TARGET_DEVICES += mr16
 
 define Device/dr342
-  DEVICE_TITLE := Wallys DR342
+  DEVICE_VENDOR := Wallys
+  DEVICE_MODEL := DR342
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
   BOARDNAME := DR342
   IMAGE_SIZE := 16000k
@@ -596,7 +663,8 @@ endef
 TARGET_DEVICES += dr342
 
 define Device/dr344
-  DEVICE_TITLE := Wallys DR344
+  DEVICE_VENDOR := Wallys
+  DEVICE_MODEL := DR344
   BOARDNAME := DR344
   KERNEL_SIZE := 1408k
   ROOTFS_SIZE := 6336k
@@ -606,7 +674,8 @@ define Device/dr344
 endef
 
 define Device/dr531
-  DEVICE_TITLE := Wallys DR531
+  DEVICE_VENDOR := Wallys
+  DEVICE_MODEL := DR531
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := DR531
   IMAGE_SIZE := 7808k
@@ -615,7 +684,8 @@ endef
 TARGET_DEVICES += dr531
 
 define Device/wndr3700
-  DEVICE_TITLE := NETGEAR WNDR3700
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := WNDR3700
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-wndr3700-usb
   BOARDNAME := WNDR3700
   NETGEAR_KERNEL_MAGIC := 0x33373030
@@ -633,7 +703,9 @@ TARGET_DEVICES += wndr3700
 
 define Device/wndr3700v2
   $(Device/wndr3700)
-  DEVICE_TITLE := NETGEAR WNDR3700 v2
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := WNDR3700
+  DEVICE_VARIANT := v2
   NETGEAR_BOARD_ID := WNDR3700v2
   NETGEAR_KERNEL_MAGIC := 0x33373031
   NETGEAR_HW_ID := 29763654+16+64
@@ -645,7 +717,8 @@ TARGET_DEVICES += wndr3700v2
 
 define Device/wndr3800
   $(Device/wndr3700v2)
-  DEVICE_TITLE := NETGEAR WNDR3800
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := WNDR3800
   NETGEAR_BOARD_ID := WNDR3800
   NETGEAR_HW_ID := 29763654+16+128
 endef
@@ -653,27 +726,33 @@ TARGET_DEVICES += wndr3800
 
 define Device/wndr3800ch
   $(Device/wndr3800)
-  DEVICE_TITLE := NETGEAR WNDR3800 (Ch)
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := WNDR3800
+  DEVICE_VARIANT := Ch
   NETGEAR_BOARD_ID := WNDR3800CH
 endef
 TARGET_DEVICES += wndr3800ch
 
 define Device/wndrmac
   $(Device/wndr3700v2)
-  DEVICE_TITLE := NETGEAR WNDRMAC
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := WNDRMAC
   NETGEAR_BOARD_ID := WNDRMAC
 endef
 TARGET_DEVICES += wndrmac
 
 define Device/wndrmacv2
   $(Device/wndr3800)
-  DEVICE_TITLE := NETGEAR WNDRMAC v2
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := WNDRMAC
+  DEVICE_VARIANT := v2
   NETGEAR_BOARD_ID := WNDRMACv2
 endef
 TARGET_DEVICES += wndrmacv2
 
 define Device/cap324
-  DEVICE_TITLE := PowerCloud Systems CAP324
+  DEVICE_VENDOR := PowerCloud Systems
+  DEVICE_MODEL := CAP324
   BOARDNAME := CAP324
   DEVICE_PROFILE := CAP324
   IMAGE_SIZE := 16000k
@@ -682,7 +761,8 @@ endef
 TARGET_DEVICES += cap324
 
 define Device/cr3000
-  DEVICE_TITLE := PowerCloud Systems CR3000
+  DEVICE_VENDOR := PowerCloud Systems
+  DEVICE_MODEL := CR3000
   BOARDNAME := CR3000
   DEVICE_PROFILE := CR3000
   IMAGE_SIZE := 7808k
@@ -691,7 +771,8 @@ endef
 TARGET_DEVICES += cr3000
 
 define Device/cr5000
-  DEVICE_TITLE := PowerCloud Systems CR5000
+  DEVICE_VENDOR := PowerCloud Systems
+  DEVICE_MODEL := CR5000
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-core
   BOARDNAME := CR5000
   DEVICE_PROFILE := CR5000
@@ -702,7 +783,8 @@ TARGET_DEVICES += cr5000
 
 define Device/packet-squirrel
   $(Device/tplink-16mlzma)
-  DEVICE_TITLE := Hak5 Packet Squirrel
+  DEVICE_VENDOR := HAK5
+  DEVICE_MODEL := Packet Squirrel
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 \
 	-kmod-ath9k -swconfig -uboot-envtools -wpad-basic
   BOARDNAME := PACKET-SQUIRREL
@@ -714,7 +796,8 @@ endef
 TARGET_DEVICES += packet-squirrel
 
 define Device/pqi-air-pen
-  DEVICE_TITLE := PQI Air Pen
+  DEVICE_VENDOR := PQI
+  DEVICE_MODEL := Air Pen
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage
   BOARDNAME := PQI-AIR-PEN
   IMAGE_SIZE := 7744k
@@ -725,7 +808,7 @@ TARGET_DEVICES += pqi-air-pen
 
 define Device/antminer-s1
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := Antminer-S1
+  DEVICE_MODEL := Antminer-S1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-crypto-manager kmod-i2c-gpio-custom kmod-usb-hid
   BOARDNAME := ANTMINER-S1
   DEVICE_PROFILE := ANTMINERS1
@@ -736,7 +819,7 @@ TARGET_DEVICES += antminer-s1
 
 define Device/antminer-s3
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := Antminer-S3
+  DEVICE_MODEL := Antminer-S3
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-crypto-manager kmod-i2c-gpio-custom kmod-usb-hid
   BOARDNAME := ANTMINER-S3
   DEVICE_PROFILE := ANTMINERS3
@@ -747,7 +830,7 @@ TARGET_DEVICES += antminer-s3
 
 define Device/antrouter-r1
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := Antrouter-R1
+  DEVICE_MODEL := Antrouter-R1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := ANTROUTER-R1
   DEVICE_PROFILE := ANTROUTERR1
@@ -758,7 +841,8 @@ TARGET_DEVICES += antrouter-r1
 
 define Device/el-m150
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := EasyLink EL-M150
+  DEVICE_VENDOR := EasyLink
+  DEVICE_MODEL := EL-M150
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := EL-M150
   DEVICE_PROFILE := ELM150
@@ -769,7 +853,8 @@ TARGET_DEVICES += el-m150
 
 define Device/el-mini
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := EasyLink EL-MINI
+  DEVICE_VENDOR := EasyLink
+  DEVICE_MODEL := EL-MINI
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := EL-MINI
   DEVICE_PROFILE := ELMINI
@@ -780,7 +865,8 @@ TARGET_DEVICES += el-mini
 
 define Device/gl-inet-6408A-v1
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := GL.iNet 6408
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := 6408
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := GL-INET
   DEVICE_PROFILE := GLINET
@@ -791,7 +877,8 @@ TARGET_DEVICES += gl-inet-6408A-v1
 
 define Device/gl-inet-6416A-v1
   $(Device/tplink-16mlzma)
-  DEVICE_TITLE := GL.iNet 6416
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := 6416
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := GL-INET
   DEVICE_PROFILE := GLINET
@@ -801,7 +888,8 @@ endef
 TARGET_DEVICES += gl-inet-6416A-v1
 
 define Device/jwap230
-  DEVICE_TITLE := jjPlus JWAP230
+  DEVICE_VENDOR := jjPlus
+  DEVICE_MODEL := JWAP230
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := JWAP230
   IMAGE_SIZE := 16000k
@@ -810,7 +898,8 @@ endef
 TARGET_DEVICES += jwap230
 
 define Device/koala
-  DEVICE_TITLE := OCEDO Koala
+  DEVICE_VENDOR := Ocedo
+  DEVICE_MODEL := Koala
   BOARDNAME := KOALA
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 7424k
@@ -819,7 +908,8 @@ endef
 TARGET_DEVICES += koala
 
 define Device/r36a
-  DEVICE_TITLE := ALFA Network R36A
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := R36A
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport -swconfig
   BOARDNAME := R36A
   SUPPORTED_DEVICES := r36a
@@ -831,7 +921,8 @@ endef
 TARGET_DEVICES += r36a
 
 define Device/r602n
-  DEVICE_TITLE := P&W R602N
+  DEVICE_VENDOR := P&W
+  DEVICE_MODEL := R602N
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := R602N
   IMAGE_SIZE := 16000k
@@ -840,7 +931,8 @@ endef
 TARGET_DEVICES += r602n
 
 define Device/rut900
-  DEVICE_TITLE := Teltonika RUT900
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT900
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -uboot-envtools
   BOARDNAME := RUT900
   SUPPORTED_DEVICES := rut900
@@ -863,7 +955,8 @@ TARGET_DEVICES += rut900
 
 define Device/mc-mac1200r
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := Mercury MAC1200R
+  DEVICE_VENDOR := Mercury
+  DEVICE_MODEL := MAC1200R
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   BOARDNAME := MC-MAC1200R
   DEVICE_PROFILE := MAC1200R
@@ -873,7 +966,9 @@ TARGET_DEVICES += mc-mac1200r
 
 define Device/minibox-v1
   $(Device/tplink-16mlzma)
-  DEVICE_TITLE := GainStrong MiniBox V1.0
+  DEVICE_VENDOR := Gainstrong
+  DEVICE_MODEL := MiniBox
+  DEVICE_VARIANT := V1.0
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := MINIBOX-V1
   DEVICE_PROFILE := MINIBOXV1
@@ -885,7 +980,9 @@ TARGET_DEVICES += minibox-v1
 
 define Device/minibox-v3.2
   $(Device/tplink-16mlzma)
-  DEVICE_TITLE := Gainstrong MiniBox V3.2
+  DEVICE_VENDOR := Gainstrong
+  DEVICE_MODEL := MiniBox
+  DEVICE_VARIANT := V3.2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca9887-ct -swconfig
   BOARDNAME := MINIBOX-V3.2
   DEVICE_PROFILE := MINIBOXV32
@@ -895,7 +992,9 @@ TARGET_DEVICES += minibox-v3.2
 
 define Device/oolite-v1
   $(Device/minibox-v1)
-  DEVICE_TITLE := GainStrong Oolite V1.0
+  DEVICE_VENDOR := Gainstrong
+  DEVICE_MODEL := Oolite
+  DEVICE_VARIANT := V1.0
   BOARDNAME := OOLITE-V1
   DEVICE_PROFILE := OOLITEV1
   TPLINK_HWID := 0x3C000101
@@ -904,7 +1003,9 @@ TARGET_DEVICES += oolite-v1
 
 define Device/oolite-v5.2
   $(Device/tplink-16mlzma)
-  DEVICE_TITLE := GainStrong Oolite V5.2
+  DEVICE_VENDOR := Gainstrong
+  DEVICE_MODEL := Oolite
+  DEVICE_VARIANT := V5.2
   DEVICE_PACKAGES := ath10k-firmware-qca9887-ct kmod-ath10k-ct kmod-usb-core kmod-usb2
   BOARDNAME := OOLITE-V5-2
   DEVICE_PROFILE := OOLITEV52
@@ -915,7 +1016,9 @@ TARGET_DEVICES += oolite-v5.2
 
 define Device/oolite-v5.2-dev
   $(Device/oolite-v5.2)
-  DEVICE_TITLE := GainStrong Oolite V5.2-Dev (development board)
+  DEVICE_VENDOR := Gainstrong
+  DEVICE_MODEL := Oolite
+  DEVICE_VARIANT := V5.2-Dev (development board)
   BOARDNAME := OOLITE-V5-2-DEV
   DEVICE_PROFILE := OOLITEV52DEV
 endef
@@ -923,7 +1026,8 @@ TARGET_DEVICES += oolite-v5.2-dev
 
 define Device/omy-g1
   $(Device/tplink-16mlzma)
-  DEVICE_TITLE := OMYlink OMY-G1
+  DEVICE_VENDOR := OMYlink
+  DEVICE_MODEL := OMY-G1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := OMY-G1
   DEVICE_PROFILE := OMYG1
@@ -933,7 +1037,8 @@ TARGET_DEVICES += omy-g1
 
 define Device/omy-x1
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := OMYlink OMY-X1
+  DEVICE_VENDOR := OMYlink
+  DEVICE_MODEL := OMY-X1
   BOARDNAME := OMY-X1
   DEVICE_PROFILE := OMYX1
   TPLINK_HWID := 0x06660201
@@ -942,7 +1047,8 @@ TARGET_DEVICES += omy-x1
 
 define Device/onion-omega
   $(Device/tplink-16mlzma)
-  DEVICE_TITLE := Onion Omega
+  DEVICE_VENDOR := Onion
+  DEVICE_MODEL := Omega
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-i2c-core kmod-i2c-gpio-custom kmod-spi-bitbang kmod-spi-dev kmod-spi-gpio kmod-spi-gpio-custom kmod-usb-serial
   BOARDNAME := ONION-OMEGA
   DEVICE_PROFILE := OMEGA
@@ -952,7 +1058,8 @@ endef
 TARGET_DEVICES += onion-omega
 
 define Device/sc1750
-  DEVICE_TITLE := Abicom SC1750
+  DEVICE_VENDOR := Abicom
+  DEVICE_MODEL := SC1750
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := SC1750
   IMAGE_SIZE := 15744k
@@ -961,7 +1068,8 @@ endef
 TARGET_DEVICES += sc1750
 
 define Device/sc300m
-  DEVICE_TITLE := Abicom SC300M
+  DEVICE_VENDOR := Abicom
+  DEVICE_MODEL := SC300M
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := SC300M
   IMAGE_SIZE := 15744k
@@ -970,7 +1078,8 @@ endef
 TARGET_DEVICES += sc300m
 
 define Device/sc450
-  DEVICE_TITLE := Abicom SC450
+  DEVICE_VENDOR := Abicom
+  DEVICE_MODEL := SC450
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := SC450
   IMAGE_SIZE := 15744k
@@ -980,7 +1089,8 @@ TARGET_DEVICES += sc450
 
 define Device/smart-300
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := NC-LINK SMART-300
+  DEVICE_VENDOR := NC-Link
+  DEVICE_MODEL := SMART-300
   BOARDNAME := SMART-300
   DEVICE_PROFILE := SMART-300
   TPLINK_HWID := 0x93410001
@@ -989,7 +1099,8 @@ TARGET_DEVICES += smart-300
 
 define Device/som9331
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := OpenEmbed SOM9331
+  DEVICE_VENDOR := OpenEmbed
+  DEVICE_MODEL := SOM9331
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-i2c-core kmod-i2c-gpio-custom kmod-spi-bitbang kmod-spi-dev kmod-spi-gpio kmod-spi-gpio-custom kmod-usb-serial
   BOARDNAME := SOM9331
   DEVICE_PROFILE := SOM9331
@@ -999,7 +1110,8 @@ endef
 TARGET_DEVICES += som9331
 
 define Device/sr3200
-  DEVICE_TITLE := YunCore SR3200
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := SR3200
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
   BOARDNAME := SR3200
   IMAGE_SIZE := 16000k
@@ -1009,14 +1121,16 @@ TARGET_DEVICES += sr3200
 
 define Device/xd3200
   $(Device/sr3200)
-  DEVICE_TITLE := YunCore XD3200
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := XD3200
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   BOARDNAME := XD3200
 endef
 TARGET_DEVICES += xd3200
 
 define Device/t830
-  DEVICE_TITLE := YunCore T830
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := T830
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := T830
   IMAGE_SIZE := 16000k
@@ -1029,7 +1143,8 @@ TARGET_DEVICES += t830
 
 define Device/tellstick-znet-lite
   $(Device/tplink-16mlzma)
-  DEVICE_TITLE := TellStick ZNet Lite
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := ZNet Lite
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-acm kmod-usb-serial kmod-usb-serial-pl2303
   BOARDNAME := TELLSTICK-ZNET-LITE
   DEVICE_PROFILE := TELLSTICKZNETLITE
@@ -1040,7 +1155,8 @@ TARGET_DEVICES += tellstick-znet-lite
 
 define Device/ts-d084
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := PISEN TS-D084
+  DEVICE_VENDOR := PISEN
+  DEVICE_MODEL := TS-D084
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := TS-D084
   DEVICE_PROFILE := TSD084
@@ -1050,7 +1166,8 @@ endef
 TARGET_DEVICES += ts-d084
 
 define Device/n5q
-  DEVICE_TITLE := ALFA Network N5Q
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := N5Q
   DEVICE_PACKAGES := rssileds -swconfig
   BOARDNAME := N5Q
   SUPPORTED_DEVICES := n5q
@@ -1062,7 +1179,8 @@ endef
 TARGET_DEVICES += n5q
 
 define Device/NBG6616
-  DEVICE_TITLE := ZyXEL NBG6616
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := NBG6616
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-rtc-pcf8563 kmod-ath10k-ct ath10k-firmware-qca988x-ct
   BOARDNAME := NBG6616
   KERNEL_SIZE := 2048k
@@ -1101,7 +1219,8 @@ endef
 TARGET_DEVICES += NBG6616
 
 define Device/c-55
-  DEVICE_TITLE := AirTight Networks C-55
+  DEVICE_VENDOR := AirTight
+  DEVICE_MODEL := Networks C-55
   DEVICE_PACKAGES := kmod-ath9k
   BOARDNAME := C-55
   KERNEL_SIZE := 2048k
@@ -1112,7 +1231,8 @@ endef
 TARGET_DEVICES += c-55
 
 define Device/hiwifi-hc6361
-  DEVICE_TITLE := HiWiFi HC6361
+  DEVICE_VENDOR := HiWiFi/Gee
+  DEVICE_MODEL := HC6361
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage \
 	kmod-fs-ext4 kmod-nls-iso8859-1 e2fsprogs
   BOARDNAME := HiWiFi-HC6361
@@ -1148,7 +1268,9 @@ endef
 
 define Device/dir-869-a1
   $(Device/seama)
-  DEVICE_TITLE := D-Link DIR-869 rev. A1
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-869
+  DEVICE_VARIANT := rev. A1
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   BOARDNAME := DIR-869-A1
   IMAGE_SIZE := 15872k
@@ -1163,7 +1285,8 @@ TARGET_DEVICES += dir-869-a1
 
 define Device/mynet-n600
   $(Device/seama)
-  DEVICE_TITLE := Western Digital My Net N600
+  DEVICE_VENDOR := Western Digital
+  DEVICE_MODEL := My Net N600
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := MYNET-N600
   IMAGE_SIZE := 15808k
@@ -1174,7 +1297,8 @@ TARGET_DEVICES += mynet-n600
 
 define Device/mynet-n750
   $(Device/seama)
-  DEVICE_TITLE := Western Digital My Net N750
+  DEVICE_VENDOR := Western Digital
+  DEVICE_MODEL := My Net N750
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := MYNET-N750
   IMAGE_SIZE := 15808k
@@ -1185,7 +1309,8 @@ TARGET_DEVICES += mynet-n750
 
 define Device/qihoo-c301
   $(Device/seama)
-  DEVICE_TITLE := Qihoo C301
+  DEVICE_VENDOR := qihoo
+  DEVICE_MODEL := C301
   DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
   BOARDNAME := QIHOO-C301
   IMAGE_SIZE := 15744k
@@ -1195,7 +1320,9 @@ endef
 TARGET_DEVICES += qihoo-c301
 
 define Device/dap-1330-a1
-  DEVICE_TITLE := D-Link DAP-1330 rev. A1
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-1330
+  DEVICE_VARIANT := rev. A1
   DEVICE_PACKAGES := rssileds
   BOARDNAME := DAP-1330-A1
   IMAGES := factory.img sysupgrade.bin
@@ -1207,7 +1334,9 @@ endef
 TARGET_DEVICES += dap-1330-a1
 
 define Device/dap-2695-a1
-  DEVICE_TITLE := D-Link DAP-2695 rev. A1
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-2695
+  DEVICE_VARIANT := rev. A1
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
   BOARDNAME := DAP-2695-A1
   IMAGES := factory.img sysupgrade.bin
@@ -1222,7 +1351,8 @@ endef
 TARGET_DEVICES += dap-2695-a1
 
 define Device/wam250
-  DEVICE_TITLE := Samsung WAM250
+  DEVICE_VENDOR := Samsung
+  DEVICE_MODEL := WAM250
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
   BOARDNAME := WAM250
   IMAGE_SIZE := 15872k
@@ -1235,7 +1365,8 @@ TARGET_DEVICES += wam250
 
 define Device/wifi-pineapple-nano
   $(Device/tplink-16mlzma)
-  DEVICE_TITLE := Hak5 WiFi Pineapple NANO
+  DEVICE_VENDOR := HAK5
+  DEVICE_MODEL := WiFi Pineapple NANO
   DEVICE_PACKAGES := kmod-ath9k-htc kmod-usb-core kmod-usb2 kmod-usb-storage \
 	-swconfig -uboot-envtools
   BOARDNAME := WIFI-PINEAPPLE-NANO
@@ -1247,7 +1378,8 @@ endef
 TARGET_DEVICES += wifi-pineapple-nano
 
 define Device/wlr8100
-  DEVICE_TITLE := Sitecom WLR-8100
+  DEVICE_VENDOR := Sitecom
+  DEVICE_MODEL := WLR-8100
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb3 \
 	kmod-ath10k-ct ath10k-firmware-qca988x-ct
   BOARDNAME := WLR8100
@@ -1264,14 +1396,18 @@ endef
 
 define Device/wpj342
   $(Device/wpj-16m)
-  DEVICE_TITLE := Compex WPJ342 (16MB flash)
+  DEVICE_VENDOR := Compex
+  DEVICE_MODEL := WPJ342
+  DEVICE_VARIANT := 16MB flash
   BOARDNAME := WPJ342
 endef
 TARGET_DEVICES += wpj342
 
 define Device/wpj344
   $(Device/wpj-16m)
-  DEVICE_TITLE := Compex WPJ344 (16MB flash)
+  DEVICE_VENDOR := Compex
+  DEVICE_MODEL := WPJ344
+  DEVICE_VARIANT := 16MB flash
   BOARDNAME := WPJ344
   SUPPORTED_DEVICES := wpj344
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
@@ -1281,14 +1417,18 @@ TARGET_DEVICES += wpj344
 
 define Device/wpj531
   $(Device/wpj-16m)
-  DEVICE_TITLE := Compex WPJ531 (16MB flash)
+  DEVICE_VENDOR := Compex
+  DEVICE_MODEL := WPJ531
+  DEVICE_VARIANT := 16MB flash
   BOARDNAME := WPJ531
 endef
 TARGET_DEVICES += wpj531
 
 define Device/wpj558
   $(Device/wpj-16m)
-  DEVICE_TITLE := Compex WPJ558 (16MB flash)
+  DEVICE_VENDOR := Compex
+  DEVICE_MODEL := WPJ558
+  DEVICE_VARIANT := 16MB flash
   BOARDNAME := WPJ558
   SUPPORTED_DEVICES := wpj558
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
@@ -1298,13 +1438,15 @@ TARGET_DEVICES += wpj558
 
 define Device/wpj563
   $(Device/wpj-16m)
-  DEVICE_TITLE := Compex WPJ563 (16MB flash)
+  DEVICE_VENDOR := Compex
+  DEVICE_MODEL := WPJ563
+  DEVICE_VARIANT := 16MB flash
   BOARDNAME := WPJ563
 endef
 TARGET_DEVICES += wpj563
 
 define Device/wrtnode2q
-  DEVICE_TITLE := WRTnode2Q
+  DEVICE_MODEL := WRTnode2Q
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage
   BOARDNAME := WRTNODE2Q
   IMAGE_SIZE := 16064k
@@ -1323,7 +1465,8 @@ endef
 
 define Device/fritz300e
   $(call Device/AVM)
-  DEVICE_TITLE := AVM FRITZ!WLAN Repeater 300E
+  DEVICE_VENDOR := AVM
+  DEVICE_MODEL := FRITZ!WLAN Repeater 300E
   DEVICE_PACKAGES += rssileds -swconfig
   BOARDNAME := FRITZ300E
   SUPPORTED_DEVICES := fritz300e
@@ -1333,7 +1476,8 @@ TARGET_DEVICES += fritz300e
 
 define Device/fritz4020
   $(call Device/AVM)
-  DEVICE_TITLE := AVM FRITZ!Box 4020
+  DEVICE_VENDOR := AVM
+  DEVICE_MODEL := FRITZ!Box 4020
   DEVICE_PACKAGES += kmod-usb-core kmod-usb2 kmod-usb-storage
   BOARDNAME := FRITZ4020
   SUPPORTED_DEVICES := fritz4020
@@ -1343,7 +1487,8 @@ TARGET_DEVICES += fritz4020
 
 define Device/fritz450e
   $(call Device/AVM)
-  DEVICE_TITLE := AVM FRITZ!WLAN Repeater 450E
+  DEVICE_VENDOR := AVM
+  DEVICE_MODEL := FRITZ!WLAN Repeater 450E
   DEVICE_PACKAGES += -swconfig
   BOARDNAME := FRITZ450E
   SUPPORTED_DEVICES := fritz450e

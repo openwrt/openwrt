@@ -20,21 +20,27 @@ endef
 define Device/nand-64m
   $(Device/mikrotik-nand)
   MIKROTIK_CHUNKSIZE := 512
-  DEVICE_TITLE := MikroTik RouterBoard (64 MB NAND)
+  DEVICE_VENDOR := MikroTik
+  DEVICE_MODEL := RouterBoard
+  DEVICE_VARIANT := 64 MB NAND
 endef
 TARGET_DEVICES += nand-64m
 
 define Device/nand-large
   $(Device/mikrotik-nand)
   MIKROTIK_CHUNKSIZE := 2048
-  DEVICE_TITLE := MikroTik RouterBoard (>= 128 MB NAND)
+  DEVICE_VENDOR := MikroTik
+  DEVICE_MODEL := RouterBoard
+  DEVICE_VARIANT := >= 128 MB NAND
 endef
 TARGET_DEVICES += nand-large
 
 define Device/nand-large-ac
   $(Device/mikrotik-nand)
   MIKROTIK_CHUNKSIZE := 2048
-  DEVICE_TITLE := MikroTik RouterBoard (>= 128 MB NAND, 802.11ac)
+  DEVICE_VENDOR := MikroTik
+  DEVICE_MODEL := RouterBoard
+  DEVICE_VARIANT := >= 128 MB NAND, 802.11ac
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
   SUPPORTED_DEVICES := rb-921gs-5hpacd-r2 rb-922uags-5hpacd
 endef
@@ -42,7 +48,9 @@ TARGET_DEVICES += nand-large-ac
 
 define Device/rb-nor-flash-16M
   $(Device/mikrotik)
-  DEVICE_TITLE := MikroTik RouterBoard (16 MB SPI NOR)
+  DEVICE_VENDOR := MikroTik
+  DEVICE_MODEL := RouterBoard
+  DEVICE_VARIANT := 16 MB SPI NOR
   DEVICE_PACKAGES := rbcfg rssileds -nand-utils kmod-ledtrig-gpio
   IMAGE_SIZE := 16000k
   KERNEL_INSTALL := 1
@@ -54,7 +62,9 @@ TARGET_DEVICES += rb-nor-flash-16M
 
 define Device/rb-nor-flash-16M-ac
   $(Device/rb-nor-flash-16M)
-  DEVICE_TITLE := MikroTik RouterBoard (16 MB SPI NOR, 802.11ac)
+  DEVICE_VENDOR := MikroTik
+  DEVICE_MODEL := RouterBoard
+  DEVICE_VARIANT := 16 MB SPI NOR, 802.11ac
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct ath10k-firmware-qca9887-ct kmod-usb-ehci
   SUPPORTED_DEVICES += rb-wapg-5hact2hnd
 endef

@@ -8,7 +8,8 @@ endef
 
 
 define Device/bhr-4grv2
-  DEVICE_TITLE := Buffalo BHR-4GRV2
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := BHR-4GRV2
   BOARDNAME := BHR-4GRV2
   ROOTFS_SIZE := 14528k
   KERNEL_SIZE := 1472k
@@ -20,7 +21,8 @@ define Device/bhr-4grv2
 endef
 
 define Device/zbt-we1526
-  DEVICE_TITLE := Zbtlink ZBT-WE1526
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WE1526
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := ZBT-WE1526
   IMAGE_SIZE := 16000k
