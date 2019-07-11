@@ -266,10 +266,14 @@ config KERNEL_KEXEC
 config KERNEL_PROC_VMCORE
 	bool
 
+config KERNEL_PROC_KCORE
+	bool
+
 config KERNEL_CRASH_DUMP
 	depends on i386 || x86_64 || arm || armeb
 	select KERNEL_KEXEC
 	select KERNEL_PROC_VMCORE
+	select KERNEL_PROC_KCORE
 	bool "Enable support for kexec crashdump"
 	default y
 
