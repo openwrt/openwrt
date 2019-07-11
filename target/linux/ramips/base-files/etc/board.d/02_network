@@ -608,11 +608,12 @@ ramips_setup_macs()
 		;;
 	iodata,wn-ac1167gr|\
 	iodata,wn-ac733gr3)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary Factory 4)" -1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" -1)
 		;;
 	iodata,wn-ax1167gr|\
-	iodata,wn-gx300gr)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary Factory 4)" 1)
+	iodata,wn-gx300gr|\
+	trendnet,tew-692gr)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 1)
 		;;
 	lenovo,newifi-d1)
 		lan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
@@ -670,16 +671,13 @@ ramips_setup_macs()
 	trendnet,tew-691gr)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 3)
 		;;
-	trendnet,tew-692gr)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 1)
-		;;
 	wiznet,wizfi630a)
 		lan_mac=$(mtd_get_mac_binary factory 4)
 		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
 	xiaomi,mir3g|\
 	xiaomi,mir3p)
-		lan_mac=$(mtd_get_mac_binary Factory 0xe006)
+		lan_mac=$(mtd_get_mac_binary factory 0xe006)
 		;;
 	xiaomi,miwifi-mini)
 		wan_mac=$(cat /sys/class/net/eth0/address)
