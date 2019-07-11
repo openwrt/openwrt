@@ -322,6 +322,19 @@ define Device/iodata_wn-gx300gr
 endef
 TARGET_DEVICES += iodata_wn-gx300gr
 
+define Device/iodata_wnpr2600g
+  MTK_SOC := mt7621
+  DEVICE_VENDOR := I-O DATA
+  DEVICE_MODEL := WNPR2600G
+  IMAGE_SIZE := 13952k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+    $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+    elx-header 0104003a 8844A2D168B45A2D
+  DEVICE_PACKAGES := kmod-mt7615e wpad-basic
+endef
+TARGET_DEVICES += iodata_wnpr2600g
+
 define Device/lenovo_newifi-d1
   MTK_SOC := mt7621
   IMAGE_SIZE := 32448k
