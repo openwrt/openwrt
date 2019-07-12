@@ -9,18 +9,6 @@ platform_check_image() {
 	return 0
 }
 
-platform_pre_upgrade() {
-	local board=$(board_name)
-
-	case "$board" in
-	mikrotik,rb750gr3|\
-	mikrotik,rbm11g|\
-	mikrotik,rbm33g)
-		[ -z "$(rootfs_type)" ] && mtd erase firmware
-		;;
-	esac
-}
-
 platform_nand_pre_upgrade() {
 	local board=$(board_name)
 
@@ -34,6 +22,14 @@ platform_nand_pre_upgrade() {
 
 platform_do_upgrade() {
 	local board=$(board_name)
+
+	case "$board" in
+	mikrotik,rb750gr3|\
+	mikrotik,rbm11g|\
+	mikrotik,rbm33g)
+		[ -z "$(rootfs_type)" ] && mtd erase firmware
+		;;
+	esac
 
 	case "$board" in
 	hiwifi,hc5962|\
