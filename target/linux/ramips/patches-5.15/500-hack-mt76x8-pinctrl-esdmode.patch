@@ -1,0 +1,35 @@
+From cc453dc7b2b850ea132dcd0460bfc1dc7ba5983a Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Sun, 4 Dec 2022 18:59:01 +0800
+Subject: [PATCH] hack: mt76x8 pinctrl esdmode
+
+---
+ drivers/pinctrl/ralink/pinctrl-mt7620.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/pinctrl/ralink/pinctrl-mt7620.c
++++ b/drivers/pinctrl/ralink/pinctrl-mt7620.c
+@@ -151,6 +151,7 @@ static struct ralink_pmx_func refclk_grp
+ static struct ralink_pmx_func perst_grp_mt76x8[] = { FUNC("perst", 0, 36, 1) };
+ static struct ralink_pmx_func wdt_grp_mt76x8[] = { FUNC("wdt", 0, 38, 1) };
+ static struct ralink_pmx_func spi_grp_mt76x8[] = { FUNC("spi", 0, 7, 4) };
++static struct ralink_pmx_func esd_mode_grp_mt7628[] = { FUNC("sdxc", 1, 0, 0) };
+ 
+ static struct ralink_pmx_func sd_mode_grp_mt76x8[] = {
+ 	FUNC("jtag", 3, 22, 8),
+@@ -299,6 +300,7 @@ static struct ralink_pmx_func wled_an_gr
+ #define MT76X8_GPIO_MODE_I2C		20
+ #define MT76X8_GPIO_MODE_REFCLK		18
+ #define MT76X8_GPIO_MODE_PERST		16
++#define MT7628_GPIO_MODE_ESDMODE	15
+ #define MT76X8_GPIO_MODE_WDT		14
+ #define MT76X8_GPIO_MODE_SPI		12
+ #define MT76X8_GPIO_MODE_SDMODE		10
+@@ -321,6 +323,7 @@ static struct ralink_pmx_group mt76x8_pi
+ 				1, MT76X8_GPIO_MODE_I2C),
+ 	GRP("refclk", refclk_grp_mt76x8, 1, MT76X8_GPIO_MODE_REFCLK),
+ 	GRP("perst", perst_grp_mt76x8, 1, MT76X8_GPIO_MODE_PERST),
++	GRP_G("esdmode", esd_mode_grp_mt7628, 1, 0, MT7628_GPIO_MODE_ESDMODE),
+ 	GRP("wdt", wdt_grp_mt76x8, 1, MT76X8_GPIO_MODE_WDT),
+ 	GRP("spi", spi_grp_mt76x8, 1, MT76X8_GPIO_MODE_SPI),
+ 	GRP_G("sdmode", sd_mode_grp_mt76x8, MT76X8_GPIO_MODE_MASK,
