@@ -258,6 +258,7 @@ define Device/hiwifi_hc5661a
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5661A
   SUPPORTED_DEVICES += hc5661a
+  DEVICE_PACKAGES := kmod-sdhci-mt7620
 endef
 TARGET_DEVICES += hiwifi_hc5661a
 
