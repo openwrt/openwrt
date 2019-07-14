@@ -30,15 +30,17 @@ TARGET_DEVICES += generic
 
 ER_CMDLINE:=-mtdparts=phys_mapped_flash:640k(boot0)ro,640k(boot1)ro,64k(eeprom)ro root=/dev/mmcblk0p2 rootfstype=squashfs,ext4 rootwait
 define Device/er
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := EdgeRouter
   CMDLINE := $(ER_CMDLINE) 
-  DEVICE_TITLE := Ubiquiti EdgeRouter
 endef
 TARGET_DEVICES += er
 
 ERLITE_CMDLINE:=-mtdparts=phys_mapped_flash:512k(boot0)ro,512k(boot1)ro,64k(eeprom)ro root=/dev/sda2 rootfstype=squashfs,ext4 rootwait
 define Device/erlite
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := EdgeRouter Lite
   CMDLINE := $(ERLITE_CMDLINE) 
-  DEVICE_TITLE := Ubiquiti EdgeRouter Lite
 endef
 TARGET_DEVICES += erlite
 
