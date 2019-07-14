@@ -316,9 +316,6 @@ case "$IMAGE" in
 		;;
 esac
 
-export ARGV="$IMAGE"
-export ARGC=1
-
 for check in $sysupgrade_image_check; do
 	( $check "$IMAGE" ) || {
 		if [ $FORCE -eq 1 ]; then
