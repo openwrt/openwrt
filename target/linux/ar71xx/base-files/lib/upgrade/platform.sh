@@ -806,7 +806,7 @@ platform_do_upgrade() {
 
 	case "$board" in
 	all0258n)
-		platform_do_upgrade_allnet "0x9f050000" "$ARGV"
+		platform_do_upgrade_allnet "0x9f050000" "$1"
 		;;
 	all0305|\
 	eap7660d|\
@@ -818,19 +818,19 @@ platform_do_upgrade() {
 	pb44|\
 	routerstation|\
 	routerstation-pro)
-		platform_do_upgrade_combined "$ARGV"
+		platform_do_upgrade_combined "$1"
 		;;
 	all0315n)
-		platform_do_upgrade_allnet "0x9f080000" "$ARGV"
+		platform_do_upgrade_allnet "0x9f080000" "$1"
 		;;
 	cap4200ag|\
 	eap300v2|\
 	ens202ext)
-		platform_do_upgrade_allnet "0xbf0a0000" "$ARGV"
+		platform_do_upgrade_allnet "0xbf0a0000" "$1"
 		;;
 	dir-825-b1|\
 	tew-673gru)
-		platform_do_upgrade_dir825b "$ARGV"
+		platform_do_upgrade_dir825b "$1"
 		;;
 	a40|\
 	a60|\
@@ -852,7 +852,7 @@ platform_do_upgrade() {
 	om5p-ac|\
 	om5p-acv2|\
 	om5p-an)
-		platform_do_upgrade_openmesh "$ARGV"
+		platform_do_upgrade_openmesh "$1"
 		;;
 	c-60|\
 	hiveap-121|\
@@ -903,14 +903,14 @@ platform_do_upgrade() {
 	uap-pro|\
 	unifi-outdoor-plus)
 		MTD_CONFIG_ARGS="-s 0x180000"
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$1"
 		;;
 	wp543|\
 	wpe72)
-		platform_do_upgrade_compex "$ARGV"
+		platform_do_upgrade_compex "$1"
 		;;
 	*)
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$1"
 		;;
 	esac
 }

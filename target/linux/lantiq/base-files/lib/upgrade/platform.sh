@@ -21,7 +21,7 @@ platform_do_upgrade() {
 		nand_do_upgrade $1
 		;;
 	*)
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$1"
 		;;
 	esac
 }

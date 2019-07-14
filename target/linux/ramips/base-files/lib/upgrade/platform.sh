@@ -15,7 +15,7 @@ platform_nand_pre_upgrade() {
 	case "$board" in
 	ubiquiti,edgerouterx|\
 	ubiquiti,edgerouterx-sfp)
-		platform_upgrade_ubnt_erx "$ARGV"
+		platform_upgrade_ubnt_erx "$1"
 		;;
 	esac
 }
@@ -39,14 +39,14 @@ platform_do_upgrade() {
 	ubiquiti,edgerouterx-sfp|\
 	xiaomi,mir3g|\
 	xiaomi,mir3p)
-		nand_do_upgrade "$ARGV"
+		nand_do_upgrade "$1"
 		;;
 	tplink,archer-c50-v4)
 		MTD_ARGS="-t romfile"
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$1"
 		;;
 	*)
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$1"
 		;;
 	esac
 }

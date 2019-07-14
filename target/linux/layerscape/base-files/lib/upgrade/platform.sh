@@ -17,7 +17,7 @@ platform_do_upgrade_traverse_nandubi() {
 	CI_UBIPART="nandubi"
 	CI_KERNPART="kernel${newbootsys}"
 	CI_ROOTPART="rootfs${newbootsys}"
-	nand_do_upgrade "$ARGV" || (echo "Upgrade failed, setting bootsys ${bootsys}" && fw_setenv bootsys $bootsys)
+	nand_do_upgrade "$1" || (echo "Upgrade failed, setting bootsys ${bootsys}" && fw_setenv bootsys $bootsys)
 
 }
 platform_check_image() {
@@ -42,7 +42,7 @@ platform_do_upgrade() {
 	case "$board" in
 	traverse,ls1043v | \
 	traverse,ls1043s)
-		platform_do_upgrade_traverse_nandubi "$ARGV"
+		platform_do_upgrade_traverse_nandubi "$1"
 		;;
 	*)
 		echo "Sysupgrade is not currently supported on $board"
