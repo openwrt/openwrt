@@ -51,7 +51,7 @@ platform_do_upgrade() {
 	avm,fritzbox-7530 |\
 	avm,fritzrepeater-3000 |\
 	qxwlan,e2600ac-c2)
-		nand_do_upgrade "$ARGV"
+		nand_do_upgrade "$1"
 		;;
 	asus,map-ac2200)
 		CI_KERNPART="linux"
@@ -64,7 +64,7 @@ platform_do_upgrade() {
 		;;
 	linksys,ea6350v3 |\
 	linksys,ea8300)
-		platform_do_upgrade_linksys "$ARGV"
+		platform_do_upgrade_linksys "$1"
 		;;
 	meraki,mr33)
 		CI_KERNPART="part.safe"
@@ -73,13 +73,13 @@ platform_do_upgrade() {
 	openmesh,a42 |\
 	openmesh,a62)
 		PART_NAME="inactive"
-		platform_do_upgrade_openmesh "$ARGV"
+		platform_do_upgrade_openmesh "$1"
 		;;
 	zyxel,nbg6617)
 		zyxel_do_upgrade "$1"
 		;;
 	*)
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$1"
 		;;
 	esac
 }

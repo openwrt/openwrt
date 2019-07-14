@@ -41,14 +41,14 @@ platform_do_upgrade() {
 
 	case "$board" in
 	jjplus,ja76pf2)
-		redboot_fis_do_upgrade "$ARGV" linux
+		redboot_fis_do_upgrade "$1" linux
 		;;
 	ubnt,routerstation|\
 	ubnt,routerstation-pro)
-		redboot_fis_do_upgrade "$ARGV" kernel
+		redboot_fis_do_upgrade "$1" kernel
 		;;
 	*)
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$1"
 		;;
 	esac
 }
