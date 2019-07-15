@@ -13,6 +13,7 @@ TARGET_DEVICES += alfa-network_awusfree1
 
 define Device/buffalo_wcr-1166ds
   MTK_SOC := mt7628an
+  IMAGE_SIZE := 7936k
   BUFFALO_TAG_PLATFORM := MTK
   BUFFALO_TAG_VERSION := 9.99
   BUFFALO_TAG_MINOR := 9.99
@@ -93,7 +94,7 @@ TARGET_DEVICES += hilink_hlk-7628n
 
 define Device/hiwifi_hc5661a
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15808k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5661A
   SUPPORTED_DEVICES += hc5661a
@@ -122,7 +123,7 @@ TARGET_DEVICES += mediatek_linkit-smart-7688
 define Device/mediatek_mt7628an-eval-board
   MTK_SOC := mt7628an
   BLOCKSIZE := 64k
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7628 EVB
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
@@ -132,6 +133,7 @@ TARGET_DEVICES += mediatek_mt7628an-eval-board
 
 define Device/mercury_mac1200r-v2
   MTK_SOC := mt7628an
+  IMAGE_SIZE := 7936k
   DEVICE_VENDOR := Mercury
   DEVICE_MODEL := MAC1200R
   DEVICE_VARIANT := v2.0
@@ -444,7 +446,7 @@ TARGET_DEVICES += vocore_vocore2
 
 define Device/vocore_vocore2-lite
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore2-Lite
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
@@ -503,7 +505,7 @@ TARGET_DEVICES += wiznet_wizfi630s
 
 define Device/wrtnode_wrtnode2p
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_VENDOR := WRTnode
   DEVICE_MODEL := WRTnode 2P
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
@@ -513,7 +515,7 @@ TARGET_DEVICES += wrtnode_wrtnode2p
 
 define Device/wrtnode_wrtnode2r
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_VENDOR := WRTnode
   DEVICE_MODEL := WRTnode 2R
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
