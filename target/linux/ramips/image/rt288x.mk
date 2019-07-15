@@ -14,7 +14,7 @@ define Device/airlink101_ar670w
   BLOCKSIZE := 64k
   DEVICE_VENDOR := Airlink
   DEVICE_MODEL := AR670W
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := 3840k
   KERNEL := $(KERNEL_DTB) | pad-to $$(BLOCKSIZE)
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
@@ -25,6 +25,7 @@ TARGET_DEVICES += airlink101_ar670w
 
 define Device/airlink101_ar725w
   MTK_SOC := rt2880
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_VENDOR := Airlink
   DEVICE_MODEL := AR725W
   IMAGES += factory.bin
@@ -47,7 +48,7 @@ TARGET_DEVICES += asus_rt-n15
 
 define Device/belkin_f5d8235-v1
   MTK_SOC := rt2880
-  IMAGE_SIZE := 7744k
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := F5D8235
   DEVICE_VARIANT := V1
