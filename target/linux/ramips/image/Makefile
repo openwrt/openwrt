@@ -56,7 +56,7 @@ endef
 define Build/trx
 	$(STAGING_DIR_HOST)/bin/trx $(1) \
 		-o $@ \
-		-m $(IMAGE_SIZE) \
+		-m $$(($(subst k, * 1024,$(IMAGE_SIZE)))) \
 		-f $(IMAGE_KERNEL) \
 		-a 4 -f $(IMAGE_ROOTFS)
 endef
