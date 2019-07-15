@@ -27,7 +27,6 @@ define Device/Default
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS = $$(MTK_SOC)_$(1)
   IMAGES := sysupgrade.bin
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   sysupgrade_bin := append-kernel | append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)

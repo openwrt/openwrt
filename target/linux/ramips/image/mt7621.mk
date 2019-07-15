@@ -295,6 +295,7 @@ TARGET_DEVICES += lenovo_newifi-d1
 
 define Device/linksys_re6500
   MTK_SOC := mt7621
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := RE6500
   DEVICE_PACKAGES := kmod-mt76x2 wpad-basic
@@ -497,6 +498,7 @@ TARGET_DEVICES += samknows_whitebox-v8
 
 define Device/storylink_sap-g3200u3
   MTK_SOC := mt7621
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := STORYLiNK
   DEVICE_MODEL := SAP-G3200U3
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic

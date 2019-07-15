@@ -35,6 +35,7 @@ TARGET_DEVICES += 7links_px-4885-4m
 
 define Device/7links_px-4885-8m
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := 7Links
   DEVICE_MODEL := PX-4885
   DEVICE_VARIANT := 8M
@@ -46,6 +47,7 @@ TARGET_DEVICES += 7links_px-4885-8m
 
 define Device/8devices_carambola
   MTK_SOC := rt3050
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := 8devices
   DEVICE_MODEL := Carambola
   DEVICE_PACKAGES :=
@@ -55,6 +57,7 @@ TARGET_DEVICES += 8devices_carambola
 
 define Device/accton_wr6202
   MTK_SOC := rt3052
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Accton
   DEVICE_MODEL := WR6202
   SUPPORTED_DEVICES += wr6202
@@ -73,6 +76,7 @@ TARGET_DEVICES += airlive_air3gii
 
 define Device/alfa-network_w502u
   MTK_SOC := rt3052
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := ALFA
   DEVICE_MODEL := Networks W502U
   SUPPORTED_DEVICES += w502u
@@ -92,6 +96,7 @@ TARGET_DEVICES += allnet_all0256n-4m
 
 define Device/allnet_all0256n-8m
   MTK_SOC := rt3050
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Allnet
   DEVICE_MODEL := ALL0256N
   DEVICE_VARIANT := 8M
@@ -145,6 +150,7 @@ TARGET_DEVICES += alphanetworks_asl26555-8m
 
 define Device/arcwireless_freestation5
   MTK_SOC := rt3050
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := ARC Wireless
   DEVICE_MODEL := FreeStation
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-rt2500-usb kmod-rt2800-usb kmod-rt2x00-usb
@@ -185,6 +191,7 @@ TARGET_DEVICES += asiarf_awm002-evb-4m
 
 define Device/asiarf_awm002-evb-8m
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AWM002-EVB/AWM003-EVB
   DEVICE_VARIANT := 8M
@@ -217,6 +224,7 @@ TARGET_DEVICES += asus_rt-n10-plus
 
 define Device/asus_rt-n13u
   MTK_SOC := rt3052
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-N13U
   DEVICE_PACKAGES := kmod-leds-gpio kmod-rt2800-pci kmod-usb-dwc2
@@ -256,6 +264,7 @@ TARGET_DEVICES += aximcom_mr-102n
 
 define Device/aztech_hw550-3g
   MTK_SOC := rt3052
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Aztech
   DEVICE_MODEL := HW550-3G
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
@@ -358,6 +367,7 @@ TARGET_DEVICES += dlink_dir-300-b7
 
 define Device/dlink_dir-320-b1
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-320
   DEVICE_VARIANT := B1
@@ -422,6 +432,7 @@ TARGET_DEVICES += dlink_dir-615-h1
 
 define Device/dlink_dir-620-a1
   MTK_SOC := rt3050
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-620
   DEVICE_VARIANT := A1
@@ -431,6 +442,7 @@ TARGET_DEVICES += dlink_dir-620-a1
 
 define Device/dlink_dir-620-d1
   MTK_SOC := rt3352
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-620
   DEVICE_VARIANT := D1
@@ -460,6 +472,7 @@ TARGET_DEVICES += dlink_dwr-512-b
 
 define Device/easyacc_wizard-8800
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   UIMAGE_NAME:= Linux Kernel Image
   DEVICE_VENDOR := EasyAcc
   DEVICE_MODEL := WIZARD 8800
@@ -503,6 +516,7 @@ TARGET_DEVICES += engenius_esr-9753
 
 define Device/fon_fonera-20n
   MTK_SOC := rt3052
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | \
 	edimax-header -s RSDK -m NL1T -f 0x50000 -S 0xc0000
@@ -528,6 +542,7 @@ TARGET_DEVICES += hame_mpr-a1
 
 define Device/hame_mpr-a2
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   UIMAGE_NAME:= Linux Kernel Image
   DEVICE_VENDOR := HAME
   DEVICE_MODEL := MPR
@@ -562,6 +577,7 @@ TARGET_DEVICES += hilink_hlk-rm04
 
 define Device/hootoo_ht-tm02
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := HooToo
   DEVICE_MODEL := HT-TM02
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
@@ -590,6 +606,7 @@ TARGET_DEVICES += huawei_hg255d
 
 define Device/intenso_memory2move
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   UIMAGE_NAME:= Linux Kernel Image
   DEVICE_VENDOR := Intenso
   DEVICE_MODEL := Memory 2 Move
@@ -638,6 +655,7 @@ TARGET_DEVICES += jcg_jhr-n926r
 
 define Device/mofinetwork_mofi3500-3gn
   MTK_SOC := rt3052
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := MoFi Network
   DEVICE_MODEL := MOFI3500-3GN
   SUPPORTED_DEVICES += mofi3500-3gn
@@ -670,6 +688,7 @@ TARGET_DEVICES += netgear_wnce2001
 
 define Device/nexaira_bc2
   MTK_SOC := rt3052
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := NexAira
   DEVICE_MODEL := BC2
   SUPPORTED_DEVICES += bc2
@@ -691,6 +710,7 @@ TARGET_DEVICES += nexx_wt1520-4m
 
 define Device/nexx_wt1520-8m
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B WT1520 -F 8M
@@ -725,6 +745,7 @@ TARGET_DEVICES += nixcore_x1-8m
 
 define Device/olimex_rt5350f-olinuxino
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := OLIMEX
   DEVICE_MODEL := RT5350F-OLinuXino
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
@@ -736,6 +757,7 @@ TARGET_DEVICES += olimex_rt5350f-olinuxino
 
 define Device/olimex_rt5350f-olinuxino-evb
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := OLIMEX
   DEVICE_MODEL := RT5350F-OLinuXino-EVB
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
@@ -747,6 +769,7 @@ TARGET_DEVICES += olimex_rt5350f-olinuxino-evb
 
 define Device/omnima_miniembplug
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Omnima
   DEVICE_MODEL := MiniEMBPlug
   SUPPORTED_DEVICES += miniembplug
@@ -755,6 +778,7 @@ TARGET_DEVICES += omnima_miniembplug
 
 define Device/omnima_miniembwifi
   MTK_SOC := rt3052
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Omnima
   DEVICE_MODEL := MiniEMBWiFi
   SUPPORTED_DEVICES += miniembwifi
@@ -805,6 +829,7 @@ TARGET_DEVICES += planex_mzk-wdpr
 
 define Device/poray_ip2202
   MTK_SOC := rt3052
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := IP2202
   SUPPORTED_DEVICES += ip2202
@@ -842,6 +867,7 @@ TARGET_DEVICES += poray_m4-4m
 
 define Device/poray_m4-8m
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B M4 -F 8M
@@ -855,6 +881,7 @@ TARGET_DEVICES += poray_m4-8m
 
 define Device/poray_x5
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B X5 -F 8M
@@ -867,6 +894,7 @@ TARGET_DEVICES += poray_x5
 
 define Device/poray_x8
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B X8 -F 8M
@@ -879,6 +907,7 @@ TARGET_DEVICES += poray_x8
 
 define Device/prolink_pwh2004
   MTK_SOC := rt3052
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Prolink
   DEVICE_MODEL := PWH2004
   DEVICE_PACKAGES :=
@@ -996,6 +1025,7 @@ TARGET_DEVICES += trendnet_tew-638apb-v2
 
 define Device/trendnet_tew-714tru
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := TRENDnet
   DEVICE_MODEL := TEW-714TRU
   SUPPORTED_DEVICES += tew-714tru
@@ -1027,6 +1057,7 @@ TARGET_DEVICES += unbranded_wr512-3gn-4m
 
 define Device/unbranded_wr512-3gn-8m
   MTK_SOC := rt3052
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Ralink
   DEVICE_MODEL := WR512-3GN
   DEVICE_VARIANT := 8M
@@ -1057,6 +1088,7 @@ TARGET_DEVICES += upvel_ur-326n4g
 
 define Device/upvel_ur-336un
   MTK_SOC := rt3052
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := UPVEL
   DEVICE_MODEL := UR-336UN
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
@@ -1092,6 +1124,7 @@ TARGET_DEVICES += vocore_vocore-8m
 
 define Device/wansview_ncs601w
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Wansview
   DEVICE_MODEL := NCS601W
   DEVICE_PACKAGES := kmod-video-core kmod-video-uvc \
@@ -1111,6 +1144,7 @@ TARGET_DEVICES += wiznet_wizfi630a
 
 define Device/zorlik_zl5900v2
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Zorlik
   DEVICE_MODEL := ZL5900V2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev

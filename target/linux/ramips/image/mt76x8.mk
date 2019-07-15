@@ -57,6 +57,7 @@ TARGET_DEVICES += d-team_pbr-d1
 
 define Device/duzun_dm06
   MTK_SOC := mt7628an
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := DuZun
   DEVICE_MODEL := DM06
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
@@ -183,6 +184,7 @@ TARGET_DEVICES += onion_omega2p
 
 define Device/rakwireless_rak633
   MTK_SOC := mt7628an
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := Rakwireless
   DEVICE_MODEL := RAK633
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
