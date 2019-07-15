@@ -490,7 +490,7 @@ TARGET_DEVICES += kimax_u35wf
 
 define Device/kingston_mlw221
   MTK_SOC := mt7620n
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15744k
   DEVICE_VENDOR := Kingston
   DEVICE_MODEL := MLW221
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
@@ -500,7 +500,7 @@ TARGET_DEVICES += kingston_mlw221
 
 define Device/kingston_mlwg2
   MTK_SOC := mt7620n
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15744k
   DEVICE_VENDOR := Kingston
   DEVICE_MODEL := MLWG2
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci

@@ -465,7 +465,7 @@ TARGET_DEVICES += netis_wf-2881
 
 define Device/phicomm_k2p
   MTK_SOC := mt7621
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15744k
   DEVICE_VENDOR := Phicomm
   DEVICE_MODEL := K2P
   SUPPORTED_DEVICES += k2p

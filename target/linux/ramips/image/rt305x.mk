@@ -579,7 +579,7 @@ TARGET_DEVICES += huawei_d105
 
 define Device/huawei_hg255d
   MTK_SOC := rt3052
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15744k
   DEVICE_VENDOR := HuaWei
   DEVICE_MODEL := HG255D
   SUPPORTED_DEVICES += hg255d

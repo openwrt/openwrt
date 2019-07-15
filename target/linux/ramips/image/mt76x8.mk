@@ -144,7 +144,7 @@ TARGET_DEVICES += mercury_mac1200r-v2
 define Device/netgear_r6120
   MTK_SOC := mt7628an
   BLOCKSIZE := 64k
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15744k
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := R6120
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
