@@ -184,6 +184,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:lan:1" "5:lan:2" "4:wan"
 		;;
+	qihoo,c301)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan" "3:lan"
+		;;
 	rosinson,wr818)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:wan"
@@ -327,6 +332,10 @@ ath79_setup_macs()
 	phicomm,k2t)
 		lan_mac=$(k2t_get_mac "lan_mac")
 		wan_mac=$(k2t_get_mac "wan_mac")
+		;;
+	qihoo,c301)
+		lan_mac=$(mtd_get_mac_ascii devdata lanmac)
+		wan_mac=$(mtd_get_mac_ascii devdata wanmac)
 		;;
 	rosinson,wr818)
 		wan_mac=$(mtd_get_mac_binary factory 0)

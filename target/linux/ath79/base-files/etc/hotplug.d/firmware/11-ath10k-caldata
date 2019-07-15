@@ -138,6 +138,10 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
 		;;
+	qihoo,c301)
+		ath10kcal_extract "radiocfg" 20480 2116
+		ath10kcal_patch_mac_crc $(mtd_get_mac_ascii devdata wlan5mac)
+		;;
 	tplink,archer-a7-v5|\
 	tplink,archer-c2-v3|\
 	tplink,archer-c7-v4|\

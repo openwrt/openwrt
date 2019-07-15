@@ -127,6 +127,10 @@ case "$FIRMWARE" in
 		ath9k_eeprom_extract "art" 4096 1088
 		ath9k_patch_fw_mac $(mtd_get_mac_text board_data 1664) 2
 		;;
+	qihoo,c301)
+		ath9k_eeprom_extract "radiocfg" 4096 1088
+		ath9k_patch_fw_mac $(mtd_get_mac_ascii devdata "wlan24mac") 2
+		;;
 	*)
 		ath9k_eeprom_die "board $board is not supported yet"
 		;;

@@ -728,6 +728,18 @@ define Device/phicomm_k2t
 endef
 TARGET_DEVICES += phicomm_k2t
 
+define Device/qihoo_c301
+  $(Device/seama)
+  ATH_SOC := ar9344
+  DEVICE_VENDOR := Qihoo
+  DEVICE_MODEL := C301
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct uboot-envtools
+  IMAGE_SIZE := 15744k
+  SEAMA_SIGNATURE := wrgac26_qihoo360_360rg
+  SUPPORTED_DEVICES += qihoo-c301
+endef
+TARGET_DEVICES += qihoo_c301
+
 define Device/rosinson_wr818
   ATH_SOC := qca9563
   DEVICE_VENDOR := Rosinson

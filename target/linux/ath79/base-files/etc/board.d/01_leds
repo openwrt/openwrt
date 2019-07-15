@@ -104,6 +104,9 @@ pcs,cr3000)
 	ucidef_set_led_switch "lan3" "LAN3" "pcs:blue:lan3" "switch0" "0x10"
 	ucidef_set_led_switch "lan4" "LAN4" "pcs:blue:lan4" "switch0" "0x02"
 	;;
+qihoo,c301)
+	ucidef_set_led_wlan "wlan" "WLAN" "$boardname:green:wlan" "phy0tpt"
+	;;
 tplink,archer-a7-v5|\
 tplink,archer-c7-v4|\
 tplink,archer-c7-v5)
