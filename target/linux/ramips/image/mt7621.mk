@@ -275,7 +275,7 @@ TARGET_DEVICES += iodata_wn-ax1167gr
 
 define Device/iodata_wn-gx300gr
   MTK_SOC := mt7621
-  IMAGE_SIZE := 7798784
+  IMAGE_SIZE := 7616k
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-GX300GR
   DEVICE_PACKAGES := kmod-mt7603 wpad-basic

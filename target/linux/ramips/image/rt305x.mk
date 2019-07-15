@@ -296,7 +296,7 @@ TARGET_DEVICES += belkin_f7c027
 define Device/buffalo_whr-g300n
   MTK_SOC := rt3052
   BLOCKSIZE := 64k
-  IMAGE_SIZE := 3801088
+  IMAGE_SIZE := 3712k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WHR-G300N
   IMAGES += tftp.bin

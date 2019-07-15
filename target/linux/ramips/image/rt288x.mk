@@ -83,7 +83,7 @@ TARGET_DEVICES += buffalo_wzr-agl300nh
 define Device/dlink_dap-1522-a1
   MTK_SOC := rt2880
   BLOCKSIZE := 64k
-  IMAGE_SIZE := 3801088
+  IMAGE_SIZE := 3712k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DAP-1522
   DEVICE_VARIANT := A1

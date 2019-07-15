@@ -806,7 +806,7 @@ TARGET_DEVICES += sanlinking_d240
 
 define Device/sercomm_na930
   MTK_SOC := mt7620a
-  IMAGE_SIZE := 20m
+  IMAGE_SIZE := 20480k
   DEVICE_VENDOR := Sercomm
   DEVICE_MODEL := NA930
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
