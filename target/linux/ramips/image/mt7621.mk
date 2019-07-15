@@ -98,7 +98,7 @@ TARGET_DEVICES += afoundry_ew1200
 
 define Device/asiarf_ap7621-001
   MTK_SOC := mt7621
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16000k
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AP7621-001
   DEVICE_PACKAGES := \
@@ -118,7 +118,7 @@ TARGET_DEVICES += asus_rt-ac57u
 define Device/buffalo_wsr-1166dhp
   MTK_SOC := mt7621
   IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15936k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WSR-1166DHP
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 wpad-basic
@@ -251,7 +251,7 @@ define Device/hiwifi_hc5962
   PAGESIZE := 2048
   KERNEL_SIZE := 2097152
   UBINIZE_OPTS := -E 5
-  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  IMAGE_SIZE := 32768k
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
@@ -314,7 +314,7 @@ TARGET_DEVICES += mediatek_ap-mt7621a-v60
 define Device/mediatek_mt7621-eval-board
   MTK_SOC := mt7621
   BLOCKSIZE := 64k
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := 15104k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7621 EVB
   SUPPORTED_DEVICES += mt7621
@@ -475,7 +475,7 @@ TARGET_DEVICES += phicomm_k2p
 
 define Device/planex_vr500
   MTK_SOC := mt7621
-  IMAGE_SIZE := 66453504
+  IMAGE_SIZE := 65216k
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := VR500
   DEVICE_PACKAGES := kmod-usb3
@@ -515,6 +515,7 @@ TARGET_DEVICES += telco-electronics_x1
 
 define Device/thunder_timecloud
   MTK_SOC := mt7621
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Thunder
   DEVICE_MODEL := Timecloud
   DEVICE_PACKAGES := kmod-usb3
@@ -569,6 +570,7 @@ TARGET_DEVICES += tplink_re650-v1
 
 define Device/ubiquiti_edgerouterx
   MTK_SOC := mt7621
+  IMAGE_SIZE := 256768k
   FILESYSTEMS := squashfs
   KERNEL_SIZE := 3145728
   KERNEL_INITRAMFS := $$(KERNEL) | ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
@@ -636,7 +638,7 @@ define Device/xiaomi_mir3g
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
-  IMAGE_SIZE := 32768k
+  IMAGE_SIZE := 124416k
   UBINIZE_OPTS := -E 5
   IMAGES += kernel1.bin rootfs0.bin
   IMAGE/kernel1.bin := append-kernel
@@ -658,7 +660,7 @@ define Device/xiaomi_mir3p
   PAGESIZE := 2048
   KERNEL_SIZE:= 4096k
   UBINIZE_OPTS := -E 5
-  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  IMAGE_SIZE := 255488k
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 3 Pro
   IMAGES += factory.bin
