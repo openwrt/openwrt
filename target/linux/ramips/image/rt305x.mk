@@ -247,6 +247,7 @@ TARGET_DEVICES += asus_wl-330n3g
 
 define Device/aximcom_mr-102n
   MTK_SOC := rt3052
+  IMAGE_SIZE := 7744k
   DEVICE_VENDOR := AXIMCom
   DEVICE_MODEL := MR-102N
   SUPPORTED_DEVICES += mr-102n
@@ -347,7 +348,7 @@ TARGET_DEVICES += dlink_dir-300-b1
 define Device/dlink_dir-300-b7
   MTK_SOC := rt5350
   BLOCKSIZE := 4k
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-300
   DEVICE_VARIANT := B7
@@ -439,7 +440,7 @@ TARGET_DEVICES += dlink_dir-620-d1
 
 define Device/dlink_dwr-512-b
   MTK_SOC := rt5350
-  IMAGE_SIZE := 7800k
+  IMAGE_SIZE := 8064k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DWR-512
   DEVICE_VARIANT := B
@@ -549,6 +550,7 @@ TARGET_DEVICES += hauppauge_broadway
 
 define Device/hilink_hlk-rm04
   MTK_SOC := rt5350
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   IMAGE/factory.bin := \
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | hilink-header
@@ -654,7 +656,7 @@ TARGET_DEVICES += netcore_nw718
 
 define Device/netgear_wnce2001
   MTK_SOC := rt3052
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := 3392k
   IMAGES += factory.bin factory-NA.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	dap-header -s RT3052-AP-WNCE2001-3 -r WW -v 1.0.0.99
@@ -794,6 +796,7 @@ TARGET_DEVICES += planex_mzk-w300nh2
 
 define Device/planex_mzk-wdpr
   MTK_SOC := rt3052
+  IMAGE_SIZE := 6656k
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := MZK-WDPR
   SUPPORTED_DEVICES += mzk-wdpr
@@ -926,6 +929,7 @@ TARGET_DEVICES += sparklan_wcr-150gn
 
 define Device/teltonika_rut5xx
   MTK_SOC := rt3050
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT5XX
   DEVICE_PACKAGES := om-watchdog
