@@ -4,7 +4,7 @@
 
 . /lib/imx6.sh
 
-RAMFS_COPY_BIN='blkid'
+RAMFS_COPY_BIN='blkid jffs2reset'
 
 enable_image_metadata_check() {
 	case "$(board_name)" in
