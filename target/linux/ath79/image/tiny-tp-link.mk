@@ -13,6 +13,7 @@ TARGET_DEVICES += tplink_tl-mr10u
 
 define Device/tplink_tl-mr3020-v1
   $(Device/tplink-4mlzma)
+  IMAGE_SIZE := 3840k
   ATH_SOC := ar9331
   DEVICE_MODEL := TL-MR3020
   DEVICE_VARIANT := v1
