@@ -1003,6 +1003,15 @@ define Device/xiaoyu_xy-c5
 endef
 TARGET_DEVICES += xiaoyu_xy-c5
 
+define Device/xwrt_mac500f
+  SOC := mt7621
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := MAC500F
+  DEVICE_PACKAGES := uboot-envtools kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += xwrt_mac500f
+
 define Device/xwrt_nxc200p
   SOC := mt7621
   IMAGE_SIZE := 16064k
