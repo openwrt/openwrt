@@ -159,6 +159,11 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary config 0x10008) +2)
 		;;
+	tplink,re355-v1|\
+	tplink,re450-v1)
+		ath10kcal_extract "art" 20480 2116
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -2)
+		;;
 	tplink,re450-v2)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary info 8) +1)

@@ -158,6 +158,8 @@ tplink,cpe210-v3)
 tplink,cpe610-v1)
 	ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan" "eth0"
 	;;
+tplink,re355-v1|\
+tplink,re450-v1|\
 tplink,re450-v2)
 	ucidef_set_led_netdev "lan_data" "LAN Data" "tp-link:green:lan_data" "eth0" "tx rx"
 	ucidef_set_led_netdev "lan_link" "LAN Link" "tp-link:green:lan_link" "eth0" "link"
