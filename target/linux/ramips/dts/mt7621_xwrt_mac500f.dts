@@ -1,0 +1,197 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "xwrt,mac500f", "mediatek,mt7621-soc";
+	model = "MAC500F";
+
+	aliases {
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_sys: sys {
+			label = "green:sys";
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+		};
+		sfp {
+			label = "green:sfp";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	sfp1: sfp1 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c>;
+		maximum-power-milliwatt = <1000>;
+	};
+};
+
+&gdma {
+	status = "okay";
+};
+
+&hsdma {
+	status = "okay";
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_22>;
+	nvmem-cell-names = "mac-address";
+};
+
+&i2c {
+	status = "okay";
+};
+
+&mdio {
+	phy-reset-gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+	phy-reset-duration = <30>;
+
+	ephy7: ethernet-phy@7 {
+		reg = <7>;
+		sfp = <&sfp1>;
+		//interrupt-parent = <&gpio>;
+		//interrupts = <8 IRQ_TYPE_LEVEL_LOW>;
+		//reset-assert-us = <10000>;
+		//reset-deassert-us = <30000>;
+		//reset-gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+		mode-fiber; /* mode-copper or mode-fiber */
+	};
+};
+
+&gmac1 {
+	status = "okay";
+
+	label = "sfp";
+	phy-handle = <&ephy7>;
+	phy-mode = "rgmii-rxid";
+	nvmem-cells = <&macaddr_factory_22>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <5>;
+
+	/*
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+		pause;
+	};*/
+};
+
+&ethernet {
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "lan1";
+		};
+
+		port@1 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan4";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "wan";
+			nvmem-cells = <&macaddr_factory_22>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "uart2", "uart3", "wdt";
+		function = "gpio";
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0xfb0000>;
+			};
+		};
+	};
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_22: macaddr@22 {
+		reg = <0x22 0x6>;
+	};
+};
