@@ -13,6 +13,7 @@ proto_openvpn_init_config() {
 	available=1
 	no_device=1
 	proto_config_add_string "ifname"
+	proto_config_add_string "vpn"
 	proto_config_add_defaults
 }
 
@@ -30,22 +31,26 @@ proto_openvpn_setup() {
 	local cfg="$1"
 	local iface="$2"
 
-	local config dev_type opts
+	local config dev_type opts vpn
 
-	local ifname $PROTO_DEFAULT_OPTIONS
-	json_get_vars ifname $PROTO_DEFAULT_OPTIONS
+	config_load "network"
+	config_get vpn "$cfg" "vpn" "$cfg"
 
-	if ! /etc/init.d/openvpn prepare "$cfg" ; then
+
+	local ifname vpn $PROTO_DEFAULT_OPTIONS
+	json_get_vars ifname vpn $PROTO_DEFAULT_OPTIONS
+
+	if ! /etc/init.d/openvpn prepare "$vpn" ; then
 		echo "openvpn[$$]" "Failed to setup configuration"
 		proto_notify_error "$cfg" "SERVICE_ENABLED"
 		proto_block_restart "$cfg"
 		return 1
 	fi
 
-	if [ -f "/var/etc/openvpn-${cfg}.conf" ]; then
-		config="/var/etc/openvpn-${cfg}.conf"
+	if [ -f "/var/etc/openvpn-${vpn}.conf" ]; then
+		config="/var/etc/openvpn-${vpn}.conf"
 	else
-		config="/etc/openvpn/${cfg}.conf"
+		config="/etc/openvpn/${vpn}.conf"
 	fi
 
 	[ -n "$ifname" ] || get_config_param ifname "$config" dev
@@ -72,13 +77,13 @@ proto_openvpn_setup() {
 	[ "$defaultroute" = 1 ] && append opts "--setenv DEFAULTROUTE 1"
 
 	proto_run_command "$cfg" /usr/sbin/openvpn \
-		--syslog "openvpn($cfg)" \
-		--status "/var/run/openvpn.${cfg}.status" \
+		--syslog "openvpn($vpn)" \
+		--status "/var/run/openvpn.${vpn}.status" \
 		--cd /etc/openvpn \
 		--config "$config" \
 		--setenv INTERFACE "$cfg" \
+		--setenv VPN "$vpn" \
 		--resolv-retry infinite \
-		--route-noexec \
 		--script-security 3 \
 		--route-up /lib/netifd/openvpn-up \
 		--route-pre-down /lib/netifd/openvpn-down \

@@ -7,9 +7,13 @@
 	exit 1
 }
 
-[ -n "$DBG" ] && {
-	env > /tmp/openvpn-up-${INTERFACE}-env.log
-}
+if [ -n "$DBG" ]; then
+	exec 3>/tmp/openvpn-up-${INTERFACE}-env.log
+else
+	exec 3>/dev/null
+fi
+
+env >&3
 
 . /lib/netifd/netifd-proto.sh
 proto_init_update "$dev" 1 1
@@ -40,7 +44,7 @@ done
 	proto_add_ipv4_route "0.0.0.0" "0" "$gw" "0.0.0.0/0" "$METRIC"
 }
 
-# set ipv6 routen
+# set ipv6 routes
 c=1
 while true ; do
 	v=route_ipv6_network_$c
@@ -50,10 +54,24 @@ while true ; do
 	eval "gw=\$$v"
 
 	pref=${network%%/*}
-	preff=$pref/
-	preflen=${network#$preff}
+	preflen=${network#*/}
+
+	>&3 echo "proto_add_ipv6_route $pref $preflen $gw"
 
 	proto_add_ipv6_route "$pref" "$preflen" "$gw"
+	c=$(( $c+1 ))
+done
+
+# set ipv6 prefixes
+c=1
+while true ; do
+	v=delegate_ipv6_prefix_$c
+	eval "prefix=\$$v"
+	[ -n "$prefix" ] || break
+
+	>&3 echo "proto_add_ipv6_prefix $prefix"
+
+	proto_add_ipv6_prefix "$prefix"
 	c=$(( $c+1 ))
 done
 
