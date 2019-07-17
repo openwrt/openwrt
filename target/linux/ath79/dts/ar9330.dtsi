@@ -86,6 +86,16 @@
 				#clock-cells = <1>;
 			};
 
+			wdt: wdt@18060008 {
+				compatible = "qca,ar7130-wdt";
+				reg = <0x18060008 0x8>;
+
+				interrupts = <4>;
+
+				clocks = <&pll ATH79_CLK_AHB>;
+				clock-names = "wdt";
+			};
+
 			rst: reset-controller@1806001c {
 				compatible = "qca,ar7100-reset";
 				reg = <0x1806001c 0x4>;
