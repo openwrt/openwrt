@@ -7,6 +7,10 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+define Build/copy-kernel
+	$(MAKE) -C copy-kernel CROSS_COMPILE=$(TARGET_CROSS)
+endef
+
 # Cook a "WRGG" image, this board is apparently one in the D-Link
 # WRGG family and uses the exact same firmware format as other
 # D-Link devices.
@@ -76,18 +80,29 @@ endef
 
 # Create the default image format used by the StorLink reference design
 # SL93512r, Raidsonic NAS4220B and Itian Square One SQ201
-# with the squashfs and overlay inside the "rd.gz" file.
-# We pad it out to 6144K which is the size of the initramfs partition.
+# with the squashfs and overlay inside the "application" partition.
 #
-# The "application" partition is just blank. You can put anything
-# there when using OpenWRT. We just use that to create the
-# "sysupgrade" firmware image.
+# These devices have a hard-coded partition table that the boot loader
+# constantly reflashes back, so we need to work around it like this:
+#
+# 0x000000120000-0x000000320000 : "Kern" - small copy routine and first
+#                                 part of the kernel goes here
+# 0x000000320000-0x000000920000 : "Ramdisk" - second part of the kernel and
+#                                 some padding goes here
+# 0x000000920000-0x000000f20000 : "Application" - rootfs goes here
 define Build/storlink-default-images
 	mkdir -p $@.tmp
 
-	mv $@ $@.tmp/rd.gz
-	dd if=/dev/zero of=$@.tmp/hddapp.tgz bs=6144k count=1
-	cp $(IMAGE_KERNEL) $@.tmp/zImage
+	$(call Build/copy-kernel)
+	# "App" partition is the rootfs
+	mv $@ $@.tmp/hddapp.tgz
+	# 256 bytes copy routine
+	dd if=copy-kernel/copy-kernel.bin of=$@.tmp/zImage
+	$(call Image/pad-to,$@.tmp/zImage,512)
+	# Copy first part of the kernel into zImage
+	dd if=$(IMAGE_KERNEL) of=$@.tmp/zImage bs=1 seek=512 count=2096640
+	# Put the rest of the kernel into the "ramdisk"
+	dd if=$(IMAGE_KERNEL) of=$@.tmp/rd.gz bs=1 skip=2096640 count=6144k conv=sync
 	cp ./ImageInfo-$(1) $@.tmp/ImageInfo
 
 	sed -i -e "s/DATESTR/`date +%Y%m%d $(if $(SOURCE_DATE_EPOCH),--date "@$(SOURCE_DATE_EPOCH)")`/g" $@.tmp/ImageInfo
