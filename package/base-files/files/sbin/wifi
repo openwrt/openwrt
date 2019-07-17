@@ -117,7 +117,7 @@ _wifi_updown() {
 			eval "scan_$iftype '$device'"
 			eval "${1}_$iftype '$device'" || echo "$device($iftype): ${1} failed"
 		elif [ ! -f /lib/netifd/wireless/$iftype.sh ]; then
-			echo "$device($iftype): Interface type not supported"
+			echo "$device($iftype): Interface type not supported" >&2
 		fi
 	); done
 }

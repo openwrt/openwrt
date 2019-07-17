@@ -24,7 +24,7 @@ ramips_set_preinit_iface() {
 			;;
 		esac
 		swconfig dev $ralink_switchdev set reset 1
-		swconfig dev $ralink_switchdev set enable_vlan 0
+		swconfig dev $ralink_switchdev set enable_vlan 1
 		swconfig dev $ralink_switchdev set apply 1
 	fi
 

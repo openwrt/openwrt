@@ -50,12 +50,12 @@ define Device/gl-mt300n-v2
 endef
 TARGET_DEVICES += gl-mt300n-v2
 
-define Device/gl-mt300n-v3
-  DTS := GL-MT300N-V3
+define Device/vixmini
+  DTS := VIXMINI
   IMAGE_SIZE := $(ralink_default_fw_size_8M)
-  DEVICE_TITLE := GL-iNet GL-MT300N-V3
+  DEVICE_TITLE := GL-iNet VIXMINI
 endef
-TARGET_DEVICES += gl-mt300n-v3
+TARGET_DEVICES += vixmini
 
 define Device/gl-mt300n-v4
   DTS := GL-MT300N-V4
