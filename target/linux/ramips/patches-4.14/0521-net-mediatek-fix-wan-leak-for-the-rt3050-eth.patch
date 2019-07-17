@@ -1,0 +1,17 @@
+--- a/drivers/net/ethernet/mtk/esw_rt3050.c
++++ b/drivers/net/ethernet/mtk/esw_rt3050.c
+@@ -798,7 +798,13 @@ static int esw_reset_switch(struct switc
+ {
+ 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
+ 
+-	esw->global_vlan_enable = 0;
++	/* esw->global_vlan_enable = 0; */
++	/*
++	 * We should enable vlan when resetting ethernet, which
++	 * will partition WAN/LAN. Otherwise, the data for WAN
++	 * will leak to LAN.
++	 */
++	esw->global_vlan_enable = 1;
+ 	memset(esw->ports, 0, sizeof(esw->ports));
+ 	memset(esw->vlans, 0, sizeof(esw->vlans));
+ 	esw_hw_init(esw);
