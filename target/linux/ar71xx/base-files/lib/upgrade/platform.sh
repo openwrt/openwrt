@@ -746,36 +746,35 @@ platform_check_image() {
 	return 1
 }
 
-platform_nand_pre_upgrade() {
-	local board=$(board_name)
+platform_do_upgrade_mikrotik_rb() {
+	CI_KERNPART=none
+	local fw_mtd=$(find_mtd_part kernel)
+	fw_mtd="${fw_mtd/block/}"
+	[ -n "$fw_mtd" ] || return
+	mtd erase kernel
+	tar xf "$1" sysupgrade-routerboard/kernel -O | nandwrite -o "$fw_mtd" -
 
-	case "$board" in
-	rb*)
-		CI_KERNPART=none
-		local fw_mtd=$(find_mtd_part kernel)
-		fw_mtd="${fw_mtd/block/}"
-		[ -n "$fw_mtd" ] || return
-		mtd erase kernel
-		tar xf "$1" sysupgrade-routerboard/kernel -O | nandwrite -o "$fw_mtd" -
+	nand_do_upgrade "$1"
+}
+
+platform_do_upgrade_nokia() {
+	case "$(fw_printenv -n dualPartition)" in
+		imgA)
+			fw_setenv dualPartition imgB
+			fw_setenv ActImg NokiaImageB
 		;;
-	wi2a-ac200i)
-		case "$(fw_printenv -n dualPartition)" in
-			imgA)
-				fw_setenv dualPartition imgB
-				fw_setenv ActImg NokiaImageB
-			;;
-			imgB)
-				fw_setenv dualPartition imgA
-				fw_setenv ActImg NokiaImageA
-			;;
-		esac
-		ubiblock -r /dev/ubiblock0_0 2>/dev/null >/dev/null
-		rm -f /dev/ubiblock0_0
-		ubidetach -d 0 2>/dev/null >/dev/null
-		CI_UBIPART=ubi_alt
-		CI_KERNPART=kernel_alt
+		imgB)
+			fw_setenv dualPartition imgA
+			fw_setenv ActImg NokiaImageA
 		;;
 	esac
+	ubiblock -r /dev/ubiblock0_0 2>/dev/null >/dev/null
+	rm -f /dev/ubiblock0_0
+	ubidetach -d 0 2>/dev/null >/dev/null
+	CI_UBIPART=ubi_alt
+	CI_KERNPART=kernel_alt
+
+	nand_do_upgrade "$1"
 }
 
 platform_do_upgrade() {
@@ -859,6 +858,14 @@ platform_do_upgrade() {
 	nbg6716|\
 	r6100|\
 	rambutan|\
+	wndr3700v4|\
+	wndr4300)
+		nand_do_upgrade "$1"
+		;;
+	mr18|\
+	z1)
+		merakinand_do_upgrade "$1"
+		;;
 	rb-411|\
 	rb-411u|\
 	rb-433|\
@@ -890,20 +897,16 @@ platform_do_upgrade() {
 	rb-2011uias-2hnd|\
 	rb-2011uias-2hnd-r2|\
 	rb-sxt2n|\
-	rb-sxt5n|\
-	wi2a-ac200i|\
-	wndr3700v4|\
-	wndr4300)
-		nand_do_upgrade "$1"
-		;;
-	mr18|\
-	z1)
-		merakinand_do_upgrade "$1"
+	rb-sxt5n)
+		platform_do_upgrade_mikrotik_rb "$1"
 		;;
 	uap-pro|\
 	unifi-outdoor-plus)
 		MTD_CONFIG_ARGS="-s 0x180000"
 		default_do_upgrade "$1"
+		;;
+	wi2a-ac200i)
+		platform_do_upgrade_nokia "$1"
 		;;
 	wp543|\
 	wpe72)
