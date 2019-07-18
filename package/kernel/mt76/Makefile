@@ -1,16 +1,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mt76
-PKG_RELEASE=2
+PKG_RELEASE=1
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/openwrt/mt76
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2018-11-16.1
-PKG_SOURCE_VERSION:=96b3b3d60da10fc64ce56d06e431bf2e3f9a4514
-PKG_MIRROR_HASH:=2b2add0bb87186a280435f864d54a5e43290ba05999a6a088f1ea2cb54b2144f
+PKG_SOURCE_DATE:=2019-07-16
+PKG_SOURCE_VERSION:=3d7f7384bef0950ceea3a8c96ce79333d208e07d
+PKG_MIRROR_HASH:=17e6a96817a77165a24a05f4b8bfc4019d3c8767d0dc96d8a933a81bb9c44dd3
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_BUILD_PARALLEL:=1
@@ -33,7 +33,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/mt76-default
   SUBMENU:=Wireless Drivers
   DEPENDS:= \
-	+kmod-mac80211 @!LINUX_3_18 \
+	+kmod-mac80211 \
 	+@DRIVER_11AC_SUPPORT +@DRIVER_11N_SUPPORT +@DRIVER_11W_SUPPORT
 endef
 
@@ -80,7 +80,7 @@ endef
 define KernelPackage/mt76x0-common
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT76x0 wireless driver common code
-  DEPENDS+=+kmod-mt76x02-common +kmod-mt76x02-usb
+  DEPENDS+=+kmod-mt76x02-common
   HIDDEN:=1
   FILES:=$(PKG_BUILD_DIR)/mt76x0/mt76x0-common.ko
 endef
@@ -138,6 +138,15 @@ define KernelPackage/mt7603
   AUTOLOAD:=$(call AutoProbe,mt7603e)
 endef
 
+define KernelPackage/mt7615e
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7615 wireless driver
+  DEPENDS+=@PCI_SUPPORT +kmod-mt76-core
+  FILES:=\
+	$(PKG_BUILD_DIR)/mt7615/mt7615e.ko
+  AUTOLOAD:=$(call AutoProbe,mt7615e)
+endef
+
 NOSTDINC_FLAGS = \
 	-I$(PKG_BUILD_DIR) \
 	-I$(STAGING_DIR)/usr/include/mac80211-backport/uapi \
@@ -180,6 +189,9 @@ ifdef CONFIG_PACKAGE_kmod-mt76x2u
 endif
 ifdef CONFIG_PACKAGE_kmod-mt7603
   PKG_MAKE_FLAGS += CONFIG_MT7603E=m
+endif
+ifdef CONFIG_PACKAGE_kmod-mt7615e
+  PKG_MAKE_FLAGS += CONFIG_MT7615E=m
 endif
 
 define Build/Compile
@@ -233,6 +245,15 @@ define KernelPackage/mt7603/install
 		$(1)/lib/firmware
 endef
 
+define KernelPackage/mt7615e/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	cp \
+		$(PKG_BUILD_DIR)/firmware/mt7615_cr4.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7615_n9.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7615_rom_patch.bin \
+		$(1)/lib/firmware
+endef
+
 $(eval $(call KernelPackage,mt76-core))
 $(eval $(call KernelPackage,mt76-usb))
 $(eval $(call KernelPackage,mt76x02-usb))
@@ -244,4 +265,5 @@ $(eval $(call KernelPackage,mt76x2-common))
 $(eval $(call KernelPackage,mt76x2u))
 $(eval $(call KernelPackage,mt76x2))
 $(eval $(call KernelPackage,mt7603))
+$(eval $(call KernelPackage,mt7615e))
 $(eval $(call KernelPackage,mt76))

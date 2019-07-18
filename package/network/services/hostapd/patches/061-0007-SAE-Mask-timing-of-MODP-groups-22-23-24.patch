@@ -1,0 +1,113 @@
+From 90839597cc4016b33f00055b12d59174c62770a3 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni@codeaurora.org>
+Date: Sat, 2 Mar 2019 12:24:09 +0200
+Subject: [PATCH 07/14] SAE: Mask timing of MODP groups 22, 23, 24
+
+These groups have significant probability of coming up with pwd-value
+that is equal or greater than the prime and as such, need for going
+through the PWE derivation loop multiple times. This can result in
+sufficient timing different to allow an external observer to determine
+how many rounds are needed and that can leak information about the used
+password.
+
+Force at least 40 loop rounds for these MODP groups similarly to the ECC
+group design to mask timing. This behavior is not described in IEEE Std
+802.11-2016 for SAE, but it does not result in different values (i.e.,
+only different timing), so such implementation specific countermeasures
+can be done without breaking interoperability with other implementation.
+
+Note: These MODP groups 22, 23, and 24 are not considered sufficiently
+strong to be used with SAE (or more or less anything else). As such,
+they should never be enabled in runtime configuration for any production
+use cases. These changes to introduce additional protection to mask
+timing is only for completeness of implementation and not an indication
+that these groups should be used.
+
+This is related to CVE-2019-9494.
+
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+---
+ src/common/sae.c | 38 ++++++++++++++++++++++++++++----------
+ 1 file changed, 28 insertions(+), 10 deletions(-)
+
+--- a/src/common/sae.c
++++ b/src/common/sae.c
+@@ -578,22 +578,27 @@ fail:
+ }
+ 
+ 
++static int sae_modp_group_require_masking(int group)
++{
++	/* Groups for which pwd-value is likely to be >= p frequently */
++	return group == 22 || group == 23 || group == 24;
++}
++
++
+ static int sae_derive_pwe_ffc(struct sae_data *sae, const u8 *addr1,
+ 			      const u8 *addr2, const u8 *password,
+ 			      size_t password_len, const char *identifier)
+ {
+-	u8 counter;
++	u8 counter, k;
+ 	u8 addrs[2 * ETH_ALEN];
+ 	const u8 *addr[3];
+ 	size_t len[3];
+ 	size_t num_elem;
+ 	int found = 0;
++	struct crypto_bignum *pwe = NULL;
+ 
+-	if (sae->tmp->pwe_ffc == NULL) {
+-		sae->tmp->pwe_ffc = crypto_bignum_init();
+-		if (sae->tmp->pwe_ffc == NULL)
+-			return -1;
+-	}
++	crypto_bignum_deinit(sae->tmp->pwe_ffc, 1);
++	sae->tmp->pwe_ffc = NULL;
+ 
+ 	wpa_hexdump_ascii_key(MSG_DEBUG, "SAE: password",
+ 			      password, password_len);
+@@ -617,7 +622,9 @@ static int sae_derive_pwe_ffc(struct sae
+ 	len[num_elem] = sizeof(counter);
+ 	num_elem++;
+ 
+-	for (counter = 1; !found; counter++) {
++	k = sae_modp_group_require_masking(sae->group) ? 40 : 1;
++
++	for (counter = 1; counter <= k || !found; counter++) {
+ 		u8 pwd_seed[SHA256_MAC_LEN];
+ 		int res;
+ 
+@@ -627,19 +634,30 @@ static int sae_derive_pwe_ffc(struct sae
+ 			break;
+ 		}
+ 
+-		wpa_printf(MSG_DEBUG, "SAE: counter = %u", counter);
++		wpa_printf(MSG_DEBUG, "SAE: counter = %02u", counter);
+ 		if (hmac_sha256_vector(addrs, sizeof(addrs), num_elem,
+ 				       addr, len, pwd_seed) < 0)
+ 			break;
+-		res = sae_test_pwd_seed_ffc(sae, pwd_seed, sae->tmp->pwe_ffc);
++		if (!pwe) {
++			pwe = crypto_bignum_init();
++			if (!pwe)
++				break;
++		}
++		res = sae_test_pwd_seed_ffc(sae, pwd_seed, pwe);
+ 		if (res < 0)
+ 			break;
+ 		if (res > 0) {
+-			wpa_printf(MSG_DEBUG, "SAE: Use this PWE");
+ 			found = 1;
++			if (!sae->tmp->pwe_ffc) {
++				wpa_printf(MSG_DEBUG, "SAE: Use this PWE");
++				sae->tmp->pwe_ffc = pwe;
++				pwe = NULL;
++			}
+ 		}
+ 	}
+ 
++	crypto_bignum_deinit(pwe, 1);
++
+ 	return found ? 0 : -1;
+ }
+ 

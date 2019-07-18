@@ -8,13 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=linux-firmware
+PKG_VERSION:=20190618
 PKG_RELEASE:=1
 
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2018-10-18
-PKG_SOURCE_VERSION:=d87753369b82c5f362250c197d04a1e1ef5bf698
-PKG_MIRROR_HASH:=6f3b1d10544609d285a9a47b5bd578bdceb59d86e5d99347e8fa52cd6f3ed66c
-PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
+PKG_SOURCE_URL:=@KERNEL/linux/kernel/firmware
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
+PKG_HASH:=a2f53e47d932e63062188a7b75798e919e659b4e1fbc15272ba8b2c9133e14ac
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 

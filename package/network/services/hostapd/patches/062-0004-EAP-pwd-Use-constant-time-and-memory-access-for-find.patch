@@ -1,0 +1,319 @@
+From aaf65feac67c3993935634eefe5bc76b9fce03aa Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni@codeaurora.org>
+Date: Tue, 26 Feb 2019 11:59:45 +0200
+Subject: [PATCH 04/14] EAP-pwd: Use constant time and memory access for
+ finding the PWE
+
+This algorithm could leak information to external observers in form of
+timing differences or memory access patterns (cache use). While the
+previous implementation had protection against the most visible timing
+differences (looping 40 rounds and masking the legendre operation), it
+did not protect against memory access patterns between the two possible
+code paths in the masking operations. That might be sufficient to allow
+an unprivileged process running on the same device to be able to
+determine which path is being executed through a cache attack and based
+on that, determine information about the used password.
+
+Convert the PWE finding loop to use constant time functions and
+identical memory access path without different branches for the QR/QNR
+cases to minimize possible side-channel information similarly to the
+changes done for SAE authentication. (CVE-2019-9495)
+
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+---
+ src/eap_common/eap_pwd_common.c | 187 +++++++++++++++++++++-------------------
+ 1 file changed, 99 insertions(+), 88 deletions(-)
+
+--- a/src/eap_common/eap_pwd_common.c
++++ b/src/eap_common/eap_pwd_common.c
+@@ -8,11 +8,15 @@
+ 
+ #include "includes.h"
+ #include "common.h"
++#include "utils/const_time.h"
+ #include "crypto/sha256.h"
+ #include "crypto/crypto.h"
+ #include "eap_defs.h"
+ #include "eap_pwd_common.h"
+ 
++#define MAX_ECC_PRIME_LEN 66
++
++
+ /* The random function H(x) = HMAC-SHA256(0^32, x) */
+ struct crypto_hash * eap_pwd_h_init(void)
+ {
+@@ -102,6 +106,15 @@ EAP_PWD_group * get_eap_pwd_group(u16 nu
+ }
+ 
+ 
++static void buf_shift_right(u8 *buf, size_t len, size_t bits)
++{
++	size_t i;
++	for (i = len - 1; i > 0; i--)
++		buf[i] = (buf[i - 1] << (8 - bits)) | (buf[i] >> bits);
++	buf[0] >>= bits;
++}
++
++
+ /*
+  * compute a "random" secret point on an elliptic curve based
+  * on the password and identities.
+@@ -113,17 +126,27 @@ int compute_password_element(EAP_PWD_gro
+ 			     const u8 *token)
+ {
+ 	struct crypto_bignum *qr = NULL, *qnr = NULL, *one = NULL;
++	struct crypto_bignum *qr_or_qnr = NULL;
++	u8 qr_bin[MAX_ECC_PRIME_LEN];
++	u8 qnr_bin[MAX_ECC_PRIME_LEN];
++	u8 qr_or_qnr_bin[MAX_ECC_PRIME_LEN];
++	u8 x_bin[MAX_ECC_PRIME_LEN];
+ 	struct crypto_bignum *tmp1 = NULL, *tmp2 = NULL, *pm1 = NULL;
+ 	struct crypto_hash *hash;
+ 	unsigned char pwe_digest[SHA256_MAC_LEN], *prfbuf = NULL, ctr;
+-	int is_odd, ret = 0, check, found = 0;
+-	size_t primebytelen, primebitlen;
+-	struct crypto_bignum *x_candidate = NULL, *rnd = NULL, *cofactor = NULL;
++	int ret = 0, check, res;
++	u8 found = 0; /* 0 (false) or 0xff (true) to be used as const_time_*
++		       * mask */
++	size_t primebytelen = 0, primebitlen;
++	struct crypto_bignum *x_candidate = NULL, *cofactor = NULL;
+ 	const struct crypto_bignum *prime;
++	u8 mask, found_ctr = 0, is_odd = 0;
+ 
+ 	if (grp->pwe)
+ 		return -1;
+ 
++	os_memset(x_bin, 0, sizeof(x_bin));
++
+ 	prime = crypto_ec_get_prime(grp->group);
+ 	cofactor = crypto_bignum_init();
+ 	grp->pwe = crypto_ec_point_init(grp->group);
+@@ -152,8 +175,6 @@ int compute_password_element(EAP_PWD_gro
+ 
+ 	/* get a random quadratic residue and nonresidue */
+ 	while (!qr || !qnr) {
+-		int res;
+-
+ 		if (crypto_bignum_rand(tmp1, prime) < 0)
+ 			goto fail;
+ 		res = crypto_bignum_legendre(tmp1, prime);
+@@ -167,6 +188,11 @@ int compute_password_element(EAP_PWD_gro
+ 		if (!tmp1)
+ 			goto fail;
+ 	}
++	if (crypto_bignum_to_bin(qr, qr_bin, sizeof(qr_bin),
++				 primebytelen) < 0 ||
++	    crypto_bignum_to_bin(qnr, qnr_bin, sizeof(qnr_bin),
++				 primebytelen) < 0)
++		goto fail;
+ 
+ 	os_memset(prfbuf, 0, primebytelen);
+ 	ctr = 0;
+@@ -194,17 +220,16 @@ int compute_password_element(EAP_PWD_gro
+ 		eap_pwd_h_update(hash, &ctr, sizeof(ctr));
+ 		eap_pwd_h_final(hash, pwe_digest);
+ 
+-		crypto_bignum_deinit(rnd, 1);
+-		rnd = crypto_bignum_init_set(pwe_digest, SHA256_MAC_LEN);
+-		if (!rnd) {
+-			wpa_printf(MSG_INFO, "EAP-pwd: unable to create rnd");
+-			goto fail;
+-		}
++		is_odd = const_time_select_u8(
++			found, is_odd, pwe_digest[SHA256_MAC_LEN - 1] & 0x01);
+ 		if (eap_pwd_kdf(pwe_digest, SHA256_MAC_LEN,
+ 				(u8 *) "EAP-pwd Hunting And Pecking",
+ 				os_strlen("EAP-pwd Hunting And Pecking"),
+ 				prfbuf, primebitlen) < 0)
+ 			goto fail;
++		if (primebitlen % 8)
++			buf_shift_right(prfbuf, primebytelen,
++					8 - primebitlen % 8);
+ 
+ 		crypto_bignum_deinit(x_candidate, 1);
+ 		x_candidate = crypto_bignum_init_set(prfbuf, primebytelen);
+@@ -214,24 +239,13 @@ int compute_password_element(EAP_PWD_gro
+ 			goto fail;
+ 		}
+ 
+-		/*
+-		 * eap_pwd_kdf() returns a string of bits 0..primebitlen but
+-		 * BN_bin2bn will treat that string of bits as a big endian
+-		 * number. If the primebitlen is not an even multiple of 8
+-		 * then excessive bits-- those _after_ primebitlen-- so now
+-		 * we have to shift right the amount we masked off.
+-		 */
+-		if ((primebitlen % 8) &&
+-		    crypto_bignum_rshift(x_candidate,
+-					 (8 - (primebitlen % 8)),
+-					 x_candidate) < 0)
+-			goto fail;
+-
+ 		if (crypto_bignum_cmp(x_candidate, prime) >= 0)
+ 			continue;
+ 
+-		wpa_hexdump(MSG_DEBUG, "EAP-pwd: x_candidate",
+-			    prfbuf, primebytelen);
++		wpa_hexdump_key(MSG_DEBUG, "EAP-pwd: x_candidate",
++				prfbuf, primebytelen);
++		const_time_select_bin(found, x_bin, prfbuf, primebytelen,
++				      x_bin);
+ 
+ 		/*
+ 		 * compute y^2 using the equation of the curve
+@@ -260,13 +274,15 @@ int compute_password_element(EAP_PWD_gro
+ 		 * Flip a coin, multiply by the random quadratic residue or the
+ 		 * random quadratic nonresidue and record heads or tails.
+ 		 */
+-		if (crypto_bignum_is_odd(tmp1)) {
+-			crypto_bignum_mulmod(tmp2, qr, prime, tmp2);
+-			check = 1;
+-		} else {
+-			crypto_bignum_mulmod(tmp2, qnr, prime, tmp2);
+-			check = -1;
+-		}
++		mask = const_time_eq_u8(crypto_bignum_is_odd(tmp1), 1);
++		check = const_time_select_s8(mask, 1, -1);
++		const_time_select_bin(mask, qr_bin, qnr_bin, primebytelen,
++				      qr_or_qnr_bin);
++		crypto_bignum_deinit(qr_or_qnr, 1);
++		qr_or_qnr = crypto_bignum_init_set(qr_or_qnr_bin, primebytelen);
++		if (!qr_or_qnr ||
++		    crypto_bignum_mulmod(tmp2, qr_or_qnr, prime, tmp2) < 0)
++			goto fail;
+ 
+ 		/*
+ 		 * Now it's safe to do legendre, if check is 1 then it's
+@@ -274,59 +290,12 @@ int compute_password_element(EAP_PWD_gro
+ 		 * change result), if check is -1 then it's the opposite test
+ 		 * (multiplying a qr by qnr would make a qnr).
+ 		 */
+-		if (crypto_bignum_legendre(tmp2, prime) == check) {
+-			if (found == 1)
+-				continue;
+-
+-			/* need to unambiguously identify the solution */
+-			is_odd = crypto_bignum_is_odd(rnd);
+-
+-			/*
+-			 * We know x_candidate is a quadratic residue so set
+-			 * it here.
+-			 */
+-			if (crypto_ec_point_solve_y_coord(grp->group, grp->pwe,
+-							  x_candidate,
+-							  is_odd) != 0) {
+-				wpa_printf(MSG_INFO,
+-					   "EAP-pwd: Could not solve for y");
+-				continue;
+-			}
+-
+-			/*
+-			 * If there's a solution to the equation then the point
+-			 * must be on the curve so why check again explicitly?
+-			 * OpenSSL code says this is required by X9.62. We're
+-			 * not X9.62 but it can't hurt just to be sure.
+-			 */
+-			if (!crypto_ec_point_is_on_curve(grp->group,
+-							 grp->pwe)) {
+-				wpa_printf(MSG_INFO,
+-					   "EAP-pwd: point is not on curve");
+-				continue;
+-			}
+-
+-			if (!crypto_bignum_is_one(cofactor)) {
+-				/* make sure the point is not in a small
+-				 * sub-group */
+-				if (crypto_ec_point_mul(grp->group, grp->pwe,
+-							cofactor,
+-							grp->pwe) != 0) {
+-					wpa_printf(MSG_INFO,
+-						   "EAP-pwd: cannot multiply generator by order");
+-					continue;
+-				}
+-				if (crypto_ec_point_is_at_infinity(grp->group,
+-								   grp->pwe)) {
+-					wpa_printf(MSG_INFO,
+-						   "EAP-pwd: point is at infinity");
+-					continue;
+-				}
+-			}
+-			wpa_printf(MSG_DEBUG,
+-				   "EAP-pwd: found a PWE in %d tries", ctr);
+-			found = 1;
+-		}
++		res = crypto_bignum_legendre(tmp2, prime);
++		if (res == -2)
++			goto fail;
++		mask = const_time_eq(res, check);
++		found_ctr = const_time_select_u8(found, found_ctr, ctr);
++		found |= mask;
+ 	}
+ 	if (found == 0) {
+ 		wpa_printf(MSG_INFO,
+@@ -334,6 +303,44 @@ int compute_password_element(EAP_PWD_gro
+ 			   num);
+ 		goto fail;
+ 	}
++
++	/*
++	 * We know x_candidate is a quadratic residue so set it here.
++	 */
++	crypto_bignum_deinit(x_candidate, 1);
++	x_candidate = crypto_bignum_init_set(x_bin, primebytelen);
++	if (!x_candidate ||
++	    crypto_ec_point_solve_y_coord(grp->group, grp->pwe, x_candidate,
++					  is_odd) != 0) {
++		wpa_printf(MSG_INFO, "EAP-pwd: Could not solve for y");
++		goto fail;
++	}
++
++	/*
++	 * If there's a solution to the equation then the point must be on the
++	 * curve so why check again explicitly? OpenSSL code says this is
++	 * required by X9.62. We're not X9.62 but it can't hurt just to be sure.
++	 */
++	if (!crypto_ec_point_is_on_curve(grp->group, grp->pwe)) {
++		wpa_printf(MSG_INFO, "EAP-pwd: point is not on curve");
++		goto fail;
++	}
++
++	if (!crypto_bignum_is_one(cofactor)) {
++		/* make sure the point is not in a small sub-group */
++		if (crypto_ec_point_mul(grp->group, grp->pwe, cofactor,
++					grp->pwe) != 0) {
++			wpa_printf(MSG_INFO,
++				   "EAP-pwd: cannot multiply generator by order");
++			goto fail;
++		}
++		if (crypto_ec_point_is_at_infinity(grp->group, grp->pwe)) {
++			wpa_printf(MSG_INFO, "EAP-pwd: point is at infinity");
++			goto fail;
++		}
++	}
++	wpa_printf(MSG_DEBUG, "EAP-pwd: found a PWE in %02d tries", found_ctr);
++
+ 	if (0) {
+  fail:
+ 		crypto_ec_point_deinit(grp->pwe, 1);
+@@ -343,14 +350,18 @@ int compute_password_element(EAP_PWD_gro
+ 	/* cleanliness and order.... */
+ 	crypto_bignum_deinit(cofactor, 1);
+ 	crypto_bignum_deinit(x_candidate, 1);
+-	crypto_bignum_deinit(rnd, 1);
+ 	crypto_bignum_deinit(pm1, 0);
+ 	crypto_bignum_deinit(tmp1, 1);
+ 	crypto_bignum_deinit(tmp2, 1);
+ 	crypto_bignum_deinit(qr, 1);
+ 	crypto_bignum_deinit(qnr, 1);
++	crypto_bignum_deinit(qr_or_qnr, 1);
+ 	crypto_bignum_deinit(one, 0);
+-	os_free(prfbuf);
++	bin_clear_free(prfbuf, primebytelen);
++	os_memset(qr_bin, 0, sizeof(qr_bin));
++	os_memset(qnr_bin, 0, sizeof(qnr_bin));
++	os_memset(qr_or_qnr_bin, 0, sizeof(qr_or_qnr_bin));
++	os_memset(pwe_digest, 0, sizeof(pwe_digest));
+ 
+ 	return ret;
+ }

@@ -92,7 +92,7 @@ config_unset() {
 # config_get <section> <option>
 config_get() {
 	case "$3" in
-		"") eval echo "\${CONFIG_${1}_${2}:-\${4}}";;
+		"") eval echo "\"\${CONFIG_${1}_${2}:-\${4}}\"";;
 		*)  eval export ${NO_EXPORT:+-n} -- "${1}=\${CONFIG_${2}_${3}:-\${4}}";;
 	esac
 }
@@ -152,22 +152,27 @@ config_list_foreach() {
 
 default_prerm() {
 	local root="${IPKG_INSTROOT}"
-	local name
+	local pkgname="$(basename ${1%.*})"
+	local ret=0
 
-	name=$(basename ${1%.*})
-	[ -f "$root/usr/lib/opkg/info/${name}.prerm-pkg" ] && . "$root/usr/lib/opkg/info/${name}.prerm-pkg"
+	if [ -f "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" ]; then
+		( . "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" )
+		ret=$?
+	fi
 
 	local shell="$(which bash)"
-	for i in `cat "$root/usr/lib/opkg/info/${name}.list" | grep "^/etc/init.d/"`; do
+	for i in $(grep -s "^/etc/init.d/" "$root/usr/lib/opkg/info/${pkgname}.list"); do
 		if [ -n "$root" ]; then
 			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" disable
 		else
 			if [ "$PKG_UPGRADE" != "1" ]; then
 				"$i" disable
 			fi
-			"$i" stop || /bin/true
+			"$i" stop
 		fi
 	done
+
+	return $ret
 }
 
 add_group_and_user() {
@@ -208,6 +213,7 @@ add_group_and_user() {
 default_postinst() {
 	local root="${IPKG_INSTROOT}"
 	local pkgname="$(basename ${1%.*})"
+	local filelist="/usr/lib/opkg/info/${pkgname}.list"
 	local ret=0
 
 	add_group_and_user "${pkgname}"
@@ -222,23 +228,29 @@ default_postinst() {
 		rm -fR $root/rootfs-overlay/
 	fi
 
-	if [ -z "$root" ] && grep -q -s "^/etc/modules.d/" "/usr/lib/opkg/info/${pkgname}.list"; then
-		kmodloader
-	fi
+	if [ -z "$root" ]; then
+		if grep -m1 -q -s "^/etc/modules.d/" "$filelist"; then
+			kmodloader
+		fi
 
-	if [ -z "$root" ] && grep -q -s "^/etc/uci-defaults/" "/usr/lib/opkg/info/${pkgname}.list"; then
-		. /lib/functions/system.sh
-		[ -d /tmp/.uci ] || mkdir -p /tmp/.uci
-		for i in $(grep -s "^/etc/uci-defaults/" "/usr/lib/opkg/info/${pkgname}.list"); do
-			( [ -f "$i" ] && cd "$(dirname $i)" && . "$i" ) && rm -f "$i"
-		done
-		uci commit
-	fi
+		if grep -m1 -q -s "^/etc/sysctl.d/" "$filelist"; then
+			/etc/init.d/sysctl restart
+		fi
 
-	[ -n "$root" ] || rm -f /tmp/luci-indexcache 2>/dev/null
+		if grep -m1 -q -s "^/etc/uci-defaults/" "$filelist"; then
+			. /lib/functions/system.sh
+			[ -d /tmp/.uci ] || mkdir -p /tmp/.uci
+			for i in $(grep -s "^/etc/uci-defaults/" "$filelist"); do
+				( [ -f "$i" ] && cd "$(dirname $i)" && . "$i" ) && rm -f "$i"
+			done
+			uci commit
+		fi
+
+		rm -f /tmp/luci-indexcache
+	fi
 
 	local shell="$(which bash)"
-	for i in $(grep -s "^/etc/init.d/" "$root/usr/lib/opkg/info/${pkgname}.list"); do
+	for i in $(grep -s "^/etc/init.d/" "$root$filelist"); do
 		if [ -n "$root" ]; then
 			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" enable
 		else

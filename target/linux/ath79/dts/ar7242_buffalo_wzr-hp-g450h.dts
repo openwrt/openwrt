@@ -16,19 +16,16 @@
 		led_movie_engine {
 			label = "buffalo:blue:movie_engine";
 			gpios = <&ath9k 13 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 
 		router {
 			label = "buffalo:green:router";
 			gpios = <&ath9k 14 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 
 		wireless {
 			label = "buffalo:green:wireless";
 			gpios = <&ath9k 15 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 			linux,default-trigger = "phy0tpt";
 		};
 	};
@@ -60,7 +57,7 @@
 };
 
 &eth0 {
-	mtd-mac-address = <&ART 0x1002>;
+	mtd-mac-address = <&art 0x1002>;
 };
 
 &sec_vpn {
@@ -73,7 +70,7 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
-		mtd-mac-address = <&ART 0x1002>;
+		mtd-mac-address = <&art 0x1002>;
 		qca,no-eeprom;
 		#gpio-cells = <2>;
 		gpio-controller;

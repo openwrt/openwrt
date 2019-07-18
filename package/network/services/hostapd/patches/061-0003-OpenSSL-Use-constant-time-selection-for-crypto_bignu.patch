@@ -1,0 +1,55 @@
+From c93461c1d98f52681717a088776ab32fd97872b0 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni@codeaurora.org>
+Date: Fri, 8 Mar 2019 00:24:12 +0200
+Subject: [PATCH 03/14] OpenSSL: Use constant time selection for
+ crypto_bignum_legendre()
+
+Get rid of the branches that depend on the result of the Legendre
+operation. This is needed to avoid leaking information about different
+temporary results in blinding mechanisms.
+
+This is related to CVE-2019-9494 and CVE-2019-9495.
+
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+---
+ src/crypto/crypto_openssl.c | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
+
+--- a/src/crypto/crypto_openssl.c
++++ b/src/crypto/crypto_openssl.c
+@@ -24,6 +24,7 @@
+ #endif /* CONFIG_ECC */
+ 
+ #include "common.h"
++#include "utils/const_time.h"
+ #include "wpabuf.h"
+ #include "dh_group5.h"
+ #include "sha1.h"
+@@ -1435,6 +1436,7 @@ int crypto_bignum_legendre(const struct
+ 	BN_CTX *bnctx;
+ 	BIGNUM *exp = NULL, *tmp = NULL;
+ 	int res = -2;
++	unsigned int mask;
+ 
+ 	if (TEST_FAIL())
+ 		return -2;
+@@ -1453,12 +1455,13 @@ int crypto_bignum_legendre(const struct
+ 				       (const BIGNUM *) p, bnctx, NULL))
+ 		goto fail;
+ 
+-	if (BN_is_word(tmp, 1))
+-		res = 1;
+-	else if (BN_is_zero(tmp))
+-		res = 0;
+-	else
+-		res = -1;
++	/* Return 1 if tmp == 1, 0 if tmp == 0, or -1 otherwise. Need to use
++	 * constant time selection to avoid branches here. */
++	res = -1;
++	mask = const_time_eq(BN_is_word(tmp, 1), 1);
++	res = const_time_select_int(mask, 1, res);
++	mask = const_time_eq(BN_is_zero(tmp), 1);
++	res = const_time_select_int(mask, 0, res);
+ 
+ fail:
+ 	BN_clear_free(tmp);

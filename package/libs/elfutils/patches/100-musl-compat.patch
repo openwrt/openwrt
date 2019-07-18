@@ -2,7 +2,7 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
 
 --- a/lib/system.h
 +++ b/lib/system.h
-@@ -30,7 +30,16 @@
+@@ -30,7 +30,18 @@
  #define LIB_SYSTEM_H	1
  
  #include <errno.h>
@@ -12,15 +12,17 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
 +#else
 +#include "err.h"
 +#include <stdio.h>
-+#define error(status, errno, ...) \
-+	fflush(stdout); \
-+	warn(__VA_ARGS__); \
-+	if (status) exit(status)
++#define error(status, errno, ...) 		\
++	do {					\
++		fflush(stdout); 		\
++		warn(__VA_ARGS__);		\
++		if (status) exit(status);	\
++	 } while(0)
 +#endif
  #include <stddef.h>
  #include <stdint.h>
  #include <sys/param.h>
-@@ -38,6 +47,10 @@
+@@ -38,6 +49,10 @@
  #include <byteswap.h>
  #include <unistd.h>
  

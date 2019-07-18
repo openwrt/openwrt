@@ -83,7 +83,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 	mkdir -p $(SDK_BUILD_DIR)/dl $(SDK_BUILD_DIR)/package
 	$(CP) -L $(INCLUDE_DIR) $(SCRIPT_DIR) $(SDK_BUILD_DIR)/
 	$(TAR) -cf - -C $(TOPDIR) \
-		`cd $(TOPDIR); find $(KDIR_BASE) -name \*.ko` \
+		`cd $(TOPDIR); find $(KDIR_BASE)/ -name \*.ko` \
 		`cd $(TOPDIR); find $(KDIR_BASE)/firmware/ -newer $(KDIR_BASE)/firmware/Makefile \
 			-type f -name '*.bin' -or -name '*.cis' -or -name '*.csp' -or -name '*.dsp' -or -name '*.fw'` \
 		$(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") \
@@ -93,6 +93,14 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 	# Copy usbip sources, this is required for the usbip userspace packages to be buildable by the SDK.
 	$(TAR) -cf - -C $(TOPDIR) $(KDIR_BASE)/tools/usb/usbip/ | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
+
+	# Copy objtool executables.  They are required for building external
+	# modules if "Compile-time stack metadata validation" is enabled.
+	if grep -q '^CONFIG_STACK_VALIDATION=y' $(LINUX_DIR)/.config; then \
+		$(TAR) -cf - -C $(TOPDIR) \
+				`cd $(TOPDIR); find $(KDIR_BASE)/tools/objtool -type f -executable` | \
+			$(TAR) -xf - -C $(SDK_BUILD_DIR); \
+	fi
 
 	(cd $(SDK_BUILD_DIR); find $(STAGING_SUBDIR_HOST)/bin $(STAGING_SUBDIR_HOST)/usr/bin \
 		$(STAGING_SUBDIR_TOOLCHAIN)/bin $(STAGING_SUBDIR_TOOLCHAIN)/*/bin $(STAGING_SUBDIR_TOOLCHAIN)/libexec \

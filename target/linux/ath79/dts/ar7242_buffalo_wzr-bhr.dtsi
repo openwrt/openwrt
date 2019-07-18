@@ -43,19 +43,16 @@
 
 		sec_vpn: sec_vpn {
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 
 		diag: diag {
 			label = "buffalo:red:diag";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 
 		usb {
 			label = "buffalo:green:usb";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 			trigger-sources = <&hub_port>;
 			linux,default-trigger = "usbport";
 		};
@@ -92,13 +89,14 @@
 				label = "u-boot-env";
 			};
 
-			ART: partition@50000 {
+			art: partition@50000 {
 				reg = <0x50000 0x10000>;
-				label = "ART";
+				label = "art";
 				read-only;
 			};
 
 			partition@60000 {
+				compatible = "denx,uimage";
 				reg = <0x60000 0x1f80000>;
 				label = "firmware";
 			};

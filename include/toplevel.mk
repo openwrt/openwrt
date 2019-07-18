@@ -88,9 +88,9 @@ prepare-tmpinfo: FORCE
 		f=tmp/.$${type}info; t=tmp/.config-$${type}.in; \
 		[ "$$t" -nt "$$f" ] || ./scripts/$${type}-metadata.pl $(_ignore) config "$$f" > "$$t" || { rm -f "$$t"; echo "Failed to build $$t"; false; break; }; \
 	done
-	[ tmp/.config-feeds.in -nt tmp/.packagesubdirs ] || ./scripts/feeds feed_config > tmp/.config-feeds.in
+	[ tmp/.config-feeds.in -nt tmp/.packageauxvars ] || ./scripts/feeds feed_config > tmp/.config-feeds.in
 	./scripts/package-metadata.pl mk tmp/.packageinfo > tmp/.packagedeps || { rm -f tmp/.packagedeps; false; }
-	./scripts/package-metadata.pl subdirs tmp/.packageinfo > tmp/.packagesubdirs || { rm -f tmp/.packagesubdirs; false; }
+	./scripts/package-metadata.pl pkgaux tmp/.packageinfo > tmp/.packageauxvars || { rm -f tmp/.packageauxvars; false; }
 	touch $(TOPDIR)/tmp/.build
 
 .config: ./scripts/config/conf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo)
@@ -145,7 +145,7 @@ xconfig: scripts/config/qconf prepare-tmpinfo FORCE
 	fi
 	$< Config.in
 
-prepare_kernel_conf: .config FORCE
+prepare_kernel_conf: .config toolchain/install FORCE
 
 ifeq ($(wildcard staging_dir/host/bin/quilt),)
   prepare_kernel_conf:

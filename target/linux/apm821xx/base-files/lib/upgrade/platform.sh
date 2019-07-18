@@ -22,15 +22,17 @@ platform_do_upgrade() {
 
 	case "$board" in
 	wd,mybooklive)
-		mbl_do_upgrade "$ARGV"
+		mbl_do_upgrade "$1"
 		;;
 	meraki,mr24|\
 	meraki,mx60|\
+	netgear,wndap620|\
+	netgear,wndap660|\
 	netgear,wndr4700)
 		nand_do_upgrade "$1"
 		;;
 	*)
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$1"
 		;;
 	esac
 }

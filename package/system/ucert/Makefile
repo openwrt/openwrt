@@ -47,6 +47,7 @@ define Package/ucert
   CATEGORY:=Base system
   DEPENDS:=+usign +libubox
   TITLE:=OpenWrt certificate verification utility
+  PROVIDES:=ucert
   CONFLICTS:=ucert-full
   VARIANT:=tiny
 endef

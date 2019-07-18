@@ -5,4 +5,4 @@ fdtdir=/dtbs
 uenvcmd=run loadfdt; run loadimage; run uenvbootargs ; bootz ${loadaddr} - ${fdtaddr}
 loadfdt=load mmc ${bootpart} ${fdtaddr} ${fdtdir}/${fdtfile}
 devtype=mmc
-uenvbootargs=setenv bootargs console=${console} root=/dev/mmcblk0p2
+uenvbootargs=setenv bootargs console=${console} root=/dev/mmcblk0p2 rootwait

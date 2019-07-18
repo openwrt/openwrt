@@ -22,10 +22,45 @@ DHCPSCRIPT="/usr/lib/dnsmasq/dhcp-script.sh"
 
 DNSMASQ_DHCP_VER=4
 
-xappend() {
-	local value="$1"
+dnsmasq_ignore_opt() {
+	local opt="$1"
 
-	echo "${value#--}" >> $CONFIGFILE_TMP
+	if [ -z "$dnsmasq_features" ]; then
+		dnsmasq_features="$(dnsmasq --version | grep -m1 'Compile time options:' | cut -d: -f2) "
+		[ "${dnsmasq_features#* DHCP }" = "$dnsmasq_features" ] || dnsmasq_has_dhcp=1
+		[ "${dnsmasq_features#* DHCPv6 }" = "$dnsmasq_features" ] || dnsmasq_has_dhcp6=1
+		[ "${dnsmasq_features#* DNSSEC }" = "$dnsmasq_features" ] || dnsmasq_has_dnssec=1
+		[ "${dnsmasq_features#* TFTP }" = "$dnsmasq_features" ] || dnsmasq_has_tftp=1
+		[ "${dnsmasq_features#* ipset }" = "$dnsmasq_features" ] || dnsmasq_has_ipset=1
+	fi
+
+	case "$opt" in
+		dhcp-duid|\
+		ra-param)
+			[ -z "$dnsmasq_has_dhcp6" ] ;;
+		dhcp-*|\
+		bootp-*|\
+		pxe-*)
+			[ -z "$dnsmasq_has_dhcp" ] ;;
+		dnssec-*|\
+		trust-anchor)
+			[ -z "$dnsmasq_has_dnssec" ] ;;
+		tftp-*)
+			[ -z "$dnsmasq_has_tftp" ] ;;
+		ipset)
+			[ -z "$dnsmasq_has_ipset" ] ;;
+		*)
+			return 1
+	esac
+}
+
+xappend() {
+	local value="${1#--}"
+	local opt="${value%%=*}"
+
+	if ! dnsmasq_ignore_opt "$opt"; then
+		echo "$value" >>$CONFIGFILE_TMP
+	fi
 }
 
 hex_to_hostid() {
@@ -731,7 +766,9 @@ dhcp_relay_add() {
 
 dnsmasq_start()
 {
-	local cfg="$1" disabled resolvfile user_dhcpscript
+	local cfg="$1"
+	local disabled user_dhcpscript
+	local resolvfile localuse=0
 
 	config_get_bool disabled "$cfg" disabled 0
 	[ "$disabled" -gt 0 ] && return 0
@@ -828,6 +865,7 @@ dnsmasq_start()
 	append_bool "$cfg" sequential_ip "--dhcp-sequential-ip"
 	append_bool "$cfg" allservers "--all-servers"
 	append_bool "$cfg" noping "--no-ping"
+	append_bool "$cfg" rapidcommit "--dhcp-rapid-commit"
 
 	append_parm "$cfg" logfacility "--log-facility"
 
@@ -857,6 +895,9 @@ dnsmasq_start()
 	append_parm "$cfg" "tftp_root" "--tftp-root"
 	append_parm "$cfg" "dhcp_boot" "--dhcp-boot"
 	append_parm "$cfg" "local_ttl" "--local-ttl"
+	append_parm "$cfg" "max_ttl" "--max-ttl"
+	append_parm "$cfg" "min_cache_ttl" "--min-cache-ttl"
+	append_parm "$cfg" "max_cache_ttl" "--max-cache-ttl"
 	append_parm "$cfg" "pxe_prompt" "--pxe-prompt"
 	config_list_foreach "$cfg" "pxe_service" append_pxe_service
 	config_get DOMAIN "$cfg" domain
@@ -882,12 +923,12 @@ dnsmasq_start()
 
 	config_get_bool noresolv "$cfg" noresolv 0
 	if [ "$noresolv" != "1" ]; then
-		config_get resolvfile "$cfg" resolvfile "/tmp/resolv.conf.auto"
-		# So jail doesn't complain if file missing
-		[ -n "$resolvfile" -a \! -e "$resolvfile" ] && touch "$resolvfile"
+		config_get resolvfile "$cfg" resolvfile /tmp/resolv.conf.auto
+		[ -n "$resolvfile" -a ! -e "$resolvfile" ] && touch "$resolvfile"
+		xappend "--resolv-file=$resolvfile"
+		[ "$resolvfile" = "/tmp/resolv.conf.auto" ] && localuse=1
 	fi
-
-	[ -n "$resolvfile" ] && xappend "--resolv-file=$resolvfile"
+	config_get_bool localuse "$cfg" localuse "$localuse"
 
 	config_get hostsfile "$cfg" dhcphostsfile
 	[ -e "$hostsfile" ] && xappend "--dhcp-hostsfile=$hostsfile"
@@ -1010,7 +1051,7 @@ dnsmasq_start()
 	mv -f $CONFIGFILE_TMP $CONFIGFILE
 	mv -f $HOSTFILE_TMP $HOSTFILE
 
-	[ "$resolvfile" = "/tmp/resolv.conf.auto" ] && {
+	[ "$localuse" -gt 0 ] && {
 		rm -f /tmp/resolv.conf
 		[ $ADD_LOCAL_DOMAIN -eq 1 ] && [ -n "$DOMAIN" ] && {
 			echo "search $DOMAIN" >> /tmp/resolv.conf
@@ -1036,17 +1077,15 @@ dnsmasq_start()
 
 dnsmasq_stop()
 {
-	local cfg="$1" resolvfile
+	local cfg="$1"
+	local noresolv resolvfile localuse=0
 
+	config_get_bool noresolv "$cfg" noresolv 0
 	config_get resolvfile "$cfg" "resolvfile"
 
-	#relink /tmp/resolve.conf only for main instance
-	[ "$resolvfile" = "/tmp/resolv.conf.auto" ] && {
-		[ -f /tmp/resolv.conf ] && {
-			rm -f /tmp/resolv.conf
-			ln -s "$resolvfile" /tmp/resolv.conf
-		}
-	}
+	[ "$noresolv" = 0 -a "$resolvfile" = "/tmp/resolv.conf.auto" ] && localuse=1
+	config_get_bool localuse "$cfg" localuse "$localuse"
+	[ "$localuse" -gt 0 ] && ln -sf "/tmp/resolv.conf.auto" /tmp/resolv.conf
 
 	rm -f ${BASEDHCPSTAMPFILE}.${cfg}.*.dhcp
 }

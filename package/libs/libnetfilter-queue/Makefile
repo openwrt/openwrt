@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnetfilter_queue
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://git.netfilter.org/libnetfilter_queue
@@ -29,6 +29,7 @@ define Package/libnetfilter-queue
   DEPENDS:=+libmnl +libnfnetlink
   TITLE:=API to the in-kernel connection tracking queue infrastructure
   URL:=http://www.netfilter.org/projects/libnetfilter_queue/
+  ABI_VERSION:=1
 endef
 
 define Package/libnetfilter-queue/description

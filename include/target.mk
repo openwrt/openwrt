@@ -13,7 +13,7 @@ __target_inc=1
 DEVICE_TYPE?=router
 
 # Default packages - the really basic set
-DEFAULT_PACKAGES:=base-files libc libgcc busybox dropbear mtd uci opkg netifd fstools uclient-fetch logd
+DEFAULT_PACKAGES:=base-files libc libgcc busybox dropbear mtd uci opkg netifd fstools uclient-fetch logd urandom-seed urngd
 # For nas targets
 DEFAULT_PACKAGES.nas:=block-mount fdisk lsblk mdadm
 # For router targets
@@ -51,7 +51,7 @@ else
   endif
 endif
 
-ifneq ($(filter 3.18 4.9,$(KERNEL_PATCHVER)),)
+ifneq ($(filter 4.9,$(KERNEL_PATCHVER)),)
   DEFAULT_PACKAGES.router:=$(filter-out kmod-ipt-offload,$(DEFAULT_PACKAGES.router))
 endif
 
@@ -183,26 +183,6 @@ ifeq ($(DUMP),1)
   endif
   ifneq ($(findstring arm,$(ARCH)),)
     CPU_TYPE ?= xscale
-    CPU_CFLAGS_arm920t = -mcpu=arm920t
-    CPU_CFLAGS_arm926ej-s = -mcpu=arm926ej-s
-    CPU_CFLAGS_arm1136j-s = -mcpu=arm1136j-s
-    CPU_CFLAGS_arm1176jzf-s = -mcpu=arm1176jzf-s
-    CPU_CFLAGS_cortex-a5 = -mcpu=cortex-a5
-    CPU_CFLAGS_cortex-a7 = -mcpu=cortex-a7
-    CPU_CFLAGS_cortex-a8 = -mcpu=cortex-a8
-    CPU_CFLAGS_cortex-a9 = -mcpu=cortex-a9
-    CPU_CFLAGS_cortex-a15 = -mcpu=cortex-a15
-    CPU_CFLAGS_cortex-a53 = -mcpu=cortex-a53
-    CPU_CFLAGS_cortex-a72 = -mcpu=cortex-a72
-    CPU_CFLAGS_fa526 = -mcpu=fa526
-    CPU_CFLAGS_mpcore = -mcpu=mpcore
-    CPU_CFLAGS_xscale = -mcpu=xscale
-    ifeq ($(CONFIG_SOFT_FLOAT),)
-      CPU_CFLAGS_neon = -mfpu=neon
-      CPU_CFLAGS_vfp = -mfpu=vfp
-      CPU_CFLAGS_vfpv3 = -mfpu=vfpv3-d16
-      CPU_CFLAGS_neon-vfpv4 = -mfpu=neon-vfpv4
-    endif
   endif
   ifeq ($(ARCH),powerpc)
     CPU_CFLAGS_603e:=-mcpu=603e
@@ -245,6 +225,9 @@ ifeq ($(DUMP),1)
     .SILENT: $(TMP_CONFIG)
     .PRECIOUS: $(TMP_CONFIG)
 
+    ifdef KERNEL_TESTING_PATCHVER
+      FEATURES += testing-kernel
+    endif
     ifneq ($(CONFIG_OF),)
       FEATURES += dt
     endif
@@ -303,6 +286,7 @@ define BuildTargets/DumpCurrent
 	 echo 'Target-Optimization: $(if $(CFLAGS),$(CFLAGS),$(DEFAULT_CFLAGS))'; \
 	 echo 'CPU-Type: $(CPU_TYPE)$(if $(CPU_SUBTYPE),+$(CPU_SUBTYPE))'; \
 	 echo 'Linux-Version: $(LINUX_VERSION)'; \
+	$(if $(LINUX_TESTING_VERSION),echo 'Linux-Testing-Version: $(LINUX_TESTING_VERSION)';) \
 	 echo 'Linux-Release: $(LINUX_RELEASE)'; \
 	 echo 'Linux-Kernel-Arch: $(LINUX_KARCH)'; \
 	$(if $(SUBTARGET),,$(if $(DEFAULT_SUBTARGET), echo 'Default-Subtarget: $(DEFAULT_SUBTARGET)'; )) \

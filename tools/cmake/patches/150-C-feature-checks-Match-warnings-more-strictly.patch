@@ -1,0 +1,25 @@
+From 4ca5a815f2dfe9e1116cc2ccd5ddb56d0d00d12e Mon Sep 17 00:00:00 2001
+From: Brad King <brad.king@kitware.com>
+Date: Thu, 7 Mar 2019 14:55:54 -0500
+Subject: [PATCH] C++ feature checks: Match warnings more strictly
+
+Require the word "warning" to appear at the start of a line, after
+whitespace, or after a `:`.  This is the same that CTest launchers use
+to match warnings.  It avoids matching "warning" inside file paths.
+
+Fixes: #19019
+---
+ Source/Checks/cm_cxx_features.cmake | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/Source/Checks/cm_cxx_features.cmake
++++ b/Source/Checks/cm_cxx_features.cmake
+@@ -25,7 +25,7 @@ function(cm_check_cxx_feature name)
+     # Filter out xcodebuild warnings.
+     string(REGEX REPLACE "[^\n]* xcodebuild\\[[0-9]*:[0-9]*\\] warning: [^\n]*" "" check_output "${check_output}")
+     # If using the feature causes warnings, treat it as broken/unavailable.
+-    if(check_output MATCHES "[Ww]arning")
++    if(check_output MATCHES "(^|[ :])[Ww][Aa][Rr][Nn][Ii][Nn][Gg]")
+       set(CMake_HAVE_CXX_${FEATURE} OFF CACHE INTERNAL "TRY_COMPILE" FORCE)
+     endif()
+     if(CMake_HAVE_CXX_${FEATURE})

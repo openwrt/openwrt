@@ -132,11 +132,6 @@ define Build/spw303v-bin
 	mv $@.spw303v $@
 endef
 
-define Build/xor-image
-	$(STAGING_DIR_HOST)/bin/xorimage -i $@ -o $@.xor
-	mv $@.xor $@
-endef
-
 define Build/zyxel-bin
 	$(STAGING_DIR_HOST)/bin/zyxbcm -i $@ -o $@.zyxel
 	mv $@.zyxel $@

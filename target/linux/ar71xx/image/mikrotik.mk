@@ -36,7 +36,7 @@ define Device/nand-large-ac
   MIKROTIK_CHUNKSIZE := 2048
   DEVICE_TITLE := MikroTik RouterBoard (>= 128 MB NAND, 802.11ac)
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  SUPPORTED_DEVICES := rb-921gs-5hpacd-r2
+  SUPPORTED_DEVICES := rb-921gs-5hpacd-r2 rb-922uags-5hpacd
 endef
 TARGET_DEVICES += nand-large-ac
 
@@ -46,7 +46,7 @@ define Device/rb-nor-flash-16M
   DEVICE_PACKAGES := rbcfg rssileds -nand-utils kmod-ledtrig-gpio
   IMAGE_SIZE := 16000k
   KERNEL_INSTALL := 1
-  SUPPORTED_DEVICES := rb-750-r2 rb-750up-r2 rb-750p-pbr2 rb-911-2hn rb-911-5hn rb-931-2nd rb-941-2nd rb-951ui-2nd rb-952ui-5ac2nd rb-962uigs-5hact2hnt rb-lhg-5nd rb-map-2nd rb-mapl-2nd rb-wap-2nd rb-wapr-2nd
+  SUPPORTED_DEVICES := rb-750-r2 rb-750up-r2 rb-750p-pbr2 rb-911-2hn rb-911-5hn rb-931-2nd rb-941-2nd rb-951ui-2nd rb-952ui-5ac2nd rb-962uigs-5hact2hnt rb-lhg-5nd rb-map-2nd rb-mapl-2nd rb-wap-2nd rb-wapr-2nd rb-sxt-2nd-r3
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 -e | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef

@@ -1,0 +1,38 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Fri, 3 May 2019 17:59:55 +0000 (-0700)
+Subject: lib/color: Fix compilation with uClibc
+X-Git-Url: https://sourceware.org/git/?p=elfutils.git;a=commitdiff_plain;h=b5e8a481d4c9f9cdb26513784c09c57797fa2f46;hp=4628b0ea03a0d029cccbcda1cbfc450b4c5ad1bf
+
+lib/color: Fix compilation with uClibc
+
+elfutils passed -Werror and this call errors on uClibc with a mismatching
+pointer type. Cast to char * to fix.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+
+diff --git a/lib/ChangeLog b/lib/ChangeLog
+index 0914b2c..7381860 100644
+--- a/lib/ChangeLog
++++ b/lib/ChangeLog
+@@ -1,3 +1,7 @@
++2019-05-03  Rosen Penev  <rosenp@gmail.com>
++
++	* color.c (parse_opt): Cast program_invocation_short_name to char *.
++
+ 2018-11-04  Mark Wielaard  <mark@klomp.org>
+ 
+ 	* bpf.h: Add BPF_JLT, BPF_JLE, BPF_JSLT and BPF_JSLE.
+diff --git a/lib/color.c b/lib/color.c
+index 9ffbf55..20b9698 100644
+--- a/lib/color.c
++++ b/lib/color.c
+@@ -132,7 +132,7 @@ valid arguments are:\n\
+   - 'auto', 'tty', 'if-tty'\n"),
+ 		     program_invocation_short_name, arg);
+ 	      argp_help (&color_argp, stderr, ARGP_HELP_SEE,
+-			 program_invocation_short_name);
++			 (char *) program_invocation_short_name);
+ 	      exit (EXIT_FAILURE);
+ 	    }
+ 	}

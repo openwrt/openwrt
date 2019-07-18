@@ -12,12 +12,12 @@ CPU_TYPE:=24kc
 SUBTARGETS:=le be le64 be64
 INITRAMFS_EXTRA_FILES:=
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
-FEATURES:=ramdisk
+FEATURES:=cpiogz ext4 ramdisk squashfs targz
 
-KERNEL_PATCHVER:=4.14
+KERNEL_PATCHVER:=4.19
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += wpad-basic kmod-mac80211-hwsim kmod-pcnet32
+DEFAULT_PACKAGES += wpad-basic kmod-mac80211-hwsim kmod-pcnet32 mkf2fs e2fsprogs
 
 $(eval $(call BuildTarget))

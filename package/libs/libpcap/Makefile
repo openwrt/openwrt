@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libpcap
 PKG_VERSION:=1.9.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.us.tcpdump.org/release/ \
@@ -32,6 +32,7 @@ define Package/libpcap
   TITLE:=Low-level packet capture library
   URL:=http://www.tcpdump.org/
   MENU:=1
+  ABI_VERSION:=1
 endef
 
 define Package/libpcap/description
@@ -95,7 +96,7 @@ endef
 
 define Package/libpcap/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpcap.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpcap.so.* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libpcap))

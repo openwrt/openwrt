@@ -1,0 +1,53 @@
+From 8ad8585f91823ddcc3728155e288e0f9f872e31a Mon Sep 17 00:00:00 2001
+From: Mathy Vanhoef <mathy.vanhoef@nyu.edu>
+Date: Sun, 31 Mar 2019 17:43:44 +0200
+Subject: [PATCH 13/14] EAP-pwd client: Verify received scalar and element
+
+When processing an EAP-pwd Commit frame, the server's scalar and element
+(elliptic curve point) were not validated. This allowed an adversary to
+bypass authentication, and act as a rogue Access Point (AP) if the
+crypto implementation did not verify the validity of the EC point.
+
+Fix this vulnerability by assuring the received scalar lies within the
+valid range, and by checking that the received element is not the point
+at infinity and lies on the elliptic curve being used. (CVE-2019-9499)
+
+The vulnerability is only exploitable if OpenSSL version 1.0.2 or lower
+is used, or if LibreSSL or wolfssl is used. Newer versions of OpenSSL
+(and also BoringSSL) implicitly validate the elliptic curve point in
+EC_POINT_set_affine_coordinates_GFp(), preventing the attack.
+
+Signed-off-by: Mathy Vanhoef <mathy.vanhoef@nyu.edu>
+---
+ src/eap_peer/eap_pwd.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+--- a/src/eap_peer/eap_pwd.c
++++ b/src/eap_peer/eap_pwd.c
+@@ -594,6 +594,26 @@ eap_pwd_perform_commit_exchange(struct e
+ 		goto fin;
+ 	}
+ 
++	/* verify received scalar */
++	if (crypto_bignum_is_zero(data->server_scalar) ||
++	    crypto_bignum_is_one(data->server_scalar) ||
++	    crypto_bignum_cmp(data->server_scalar,
++			      crypto_ec_get_order(data->grp->group)) >= 0) {
++		wpa_printf(MSG_INFO,
++			   "EAP-PWD (peer): received scalar is invalid");
++		goto fin;
++	}
++
++	/* verify received element */
++	if (!crypto_ec_point_is_on_curve(data->grp->group,
++					 data->server_element) ||
++	    crypto_ec_point_is_at_infinity(data->grp->group,
++					   data->server_element)) {
++		wpa_printf(MSG_INFO,
++			   "EAP-PWD (peer): received element is invalid");
++		goto fin;
++	}
++
+ 	/* check to ensure server's element is not in a small sub-group */
+ 	if (!crypto_bignum_is_one(cofactor)) {
+ 		if (crypto_ec_point_mul(data->grp->group, data->server_element,

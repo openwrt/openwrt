@@ -6,6 +6,7 @@
 
 config KERNEL_BUILD_USER
 	string "Custom Kernel Build User Name"
+	default "builder" if BUILDBOT
 	default ""
 	help
 	  Sets the Kernel build user string, which for example will be returned
@@ -14,6 +15,7 @@ config KERNEL_BUILD_USER
 
 config KERNEL_BUILD_DOMAIN
 	string "Custom Kernel Build Domain Name"
+	default "buildhost" if BUILDBOT
 	default ""
 	help
 	  Sets the Kernel build domain string, which for example will be
@@ -192,17 +194,21 @@ config KERNEL_KPROBE_EVENT
 	bool
 	default y if KERNEL_KPROBES
 
+config KERNEL_KPROBE_EVENTS
+	bool
+	default y if KERNEL_KPROBES
+
 config KERNEL_AIO
 	bool "Compile the kernel with asynchronous IO support"
-	default n
+	default y if !SMALL_FLASH
 
 config KERNEL_FHANDLE
 	bool "Compile the kernel with support for fhandle syscalls"
-	default n
+	default y if !SMALL_FLASH
 
 config KERNEL_FANOTIFY
 	bool "Compile the kernel with modern file notification support"
-	default n
+	default y if !SMALL_FLASH
 
 config KERNEL_BLK_DEV_BSG
 	bool "Compile the kernel with SCSI generic v4 support for any block device"
@@ -316,7 +322,7 @@ config KERNEL_ENCRYPTED_KEYS
 
 config KERNEL_CGROUPS
 	bool "Enable kernel cgroups"
-	default n
+	default y if !SMALL_FLASH
 
 if KERNEL_CGROUPS
 
@@ -355,7 +361,7 @@ if KERNEL_CGROUPS
 
 	config KERNEL_CPUSETS
 		bool "Cpuset support"
-		default n
+		default y if !SMALL_FLASH
 		help
 		  This option will let you create and manage CPUSETs which
 		  allow dynamically partitioning a system into sets of CPUs and
@@ -369,14 +375,14 @@ if KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_CPUACCT
 		bool "Simple CPU accounting cgroup subsystem"
-		default n
+		default y if !SMALL_FLASH
 		help
 		  Provides a simple Resource Controller for monitoring the
 		  total CPU consumed by the tasks in a cgroup.
 
 	config KERNEL_RESOURCE_COUNTERS
 		bool "Resource counters"
-		default n
+		default y if !SMALL_FLASH
 		help
 		  This option enables controller independent resource accounting
 		  infrastructure that works with cgroups.
@@ -387,7 +393,7 @@ if KERNEL_CGROUPS
 
 	config KERNEL_MEMCG
 		bool "Memory Resource Controller for Control Groups"
-		default n
+		default y if !SMALL_FLASH
 		depends on KERNEL_RESOURCE_COUNTERS || !LINUX_3_18
 		help
 		  Provides a memory resource controller that manages both anonymous
@@ -445,7 +451,7 @@ if KERNEL_CGROUPS
 
 	config KERNEL_MEMCG_KMEM
 		bool "Memory Resource Controller Kernel Memory accounting (EXPERIMENTAL)"
-		default n
+		default y if !SMALL_FLASH
 		depends on KERNEL_MEMCG
 		help
 		  The Kernel Memory extension for Memory Resource Controller can limit
@@ -466,7 +472,7 @@ if KERNEL_CGROUPS
 
 	menuconfig KERNEL_CGROUP_SCHED
 		bool "Group CPU scheduler"
-		default n
+		default y if !SMALL_FLASH
 		help
 		  This feature lets CPU scheduler recognize task groups and control CPU
 		  bandwidth allocation to such task groups. It uses cgroups to group
@@ -476,7 +482,7 @@ if KERNEL_CGROUPS
 
 		config KERNEL_FAIR_GROUP_SCHED
 			bool "Group scheduling for SCHED_OTHER"
-			default n
+			default y if !SMALL_FLASH
 
 		config KERNEL_CFS_BANDWIDTH
 			bool "CPU bandwidth provisioning for FAIR_GROUP_SCHED"
@@ -491,7 +497,7 @@ if KERNEL_CGROUPS
 
 		config KERNEL_RT_GROUP_SCHED
 			bool "Group scheduling for SCHED_RR/FIFO"
-			default n
+			default y if !SMALL_FLASH
 			help
 			  This feature lets you explicitly allocate real CPU bandwidth
 			  to task groups. If enabled, it will also make it impossible to
@@ -519,6 +525,20 @@ if KERNEL_CGROUPS
 		  CONFIG_CFQ_GROUP_IOSCHED=y; for enabling throttling policy, set
 		  CONFIG_BLK_DEV_THROTTLING=y.
 
+	if KERNEL_BLK_CGROUP
+
+		config KERNEL_CFQ_GROUP_IOSCHED
+			bool "Proportional weight of disk bandwidth in CFQ"
+
+		config KERNEL_BLK_DEV_THROTTLING
+			bool "Enable throttling policy"
+			default y if TARGET_brcm2708
+
+		config KERNEL_BLK_DEV_THROTTLING_LOW
+			bool "Block throttling .low limit interface support (EXPERIMENTAL)"
+			depends on KERNEL_BLK_DEV_THROTTLING
+	endif
+
 	config KERNEL_DEBUG_BLK_CGROUP
 		bool "Enable Block IO controller debugging"
 		default n
@@ -543,7 +563,7 @@ endif
 
 config KERNEL_NAMESPACES
 	bool "Enable kernel namespaces"
-	default n
+	default y if !SMALL_FLASH
 
 if KERNEL_NAMESPACES
 
@@ -591,7 +611,7 @@ endif
 
 config KERNEL_LXC_MISC
 	bool "Enable miscellaneous LXC related options"
-	default n
+	default y if !SMALL_FLASH
 
 if KERNEL_LXC_MISC
 
@@ -623,13 +643,13 @@ endif
 
 config KERNEL_SECCOMP_FILTER
 	bool
-	default n
+	default y if !SMALL_FLASH
 
 config KERNEL_SECCOMP
 	bool "Enable seccomp support"
 		depends on !(TARGET_uml)
 		select KERNEL_SECCOMP_FILTER
-		default n
+		default y if !SMALL_FLASH
 		help
 		  Build kernel with support for seccomp.
 

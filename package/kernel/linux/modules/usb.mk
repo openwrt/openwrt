@@ -39,7 +39,6 @@ endef
 define KernelPackage/usb-ledtrig-usbport
   TITLE:=LED trigger for USB ports
   KCONFIG:=CONFIG_USB_LEDS_TRIGGER_USBPORT
-  DEPENDS:=@!LINUX_3_18
   FILES:=$(LINUX_DIR)/drivers/usb/core/ledtrig-usbport.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-usbport)
   $(call AddDepends/usb)
@@ -73,7 +72,7 @@ $(eval $(call KernelPackage,usb-phy-nop))
 
 define KernelPackage/usb-phy-qcom-dwc3
   TITLE:=DWC3 USB QCOM PHY driver
-  DEPENDS:=@TARGET_ipq40xx||@TARGET_ipq806x +kmod-usb-dwc3-of-simple
+  DEPENDS:=@(TARGET_ipq40xx||TARGET_ipq806x) +kmod-usb-dwc3-of-simple
   KCONFIG:= CONFIG_PHY_QCOM_DWC3
   FILES:= \
     $(LINUX_DIR)/drivers/phy/phy-qcom-dwc3.ko@lt4.13 \
@@ -237,6 +236,22 @@ endef
 
 $(eval $(call KernelPackage,usb-gadget-mass-storage))
 
+define KernelPackage/usb-gadget-cdc-composite
+  TITLE:= USB CDC Composite (Ethernet + ACM)
+  KCONFIG:=CONFIG_USB_CDC_COMPOSITE
+  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite \
+	+kmod-usb-gadget-eth +kmod-usb-gadget-serial
+  FILES:= $(LINUX_DIR)/drivers/usb/gadget/legacy/g_cdc.ko
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-gadget-cdc-composite/description
+  Kernel support for the USB CDC Composite gadget.
+  This appears as an ethernet + ACM serial gadget.
+endef
+
+$(eval $(call KernelPackage,usb-gadget-cdc-composite))
+
 
 define KernelPackage/usb-uhci
   TITLE:=Support for UHCI controllers
@@ -379,7 +394,13 @@ define KernelPackage/usb2
   ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ehci-atmel.ko),)
     FILES+=$(LINUX_DIR)/drivers/usb/host/ehci-atmel.ko
   endif
-  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd ehci-platform ehci-orion ehci-atmel,1)
+  ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ehci-fsl.ko),)
+    FILES+=$(LINUX_DIR)/drivers/usb/host/ehci-fsl.ko
+  endif
+  ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko),)
+    FILES+=$(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko
+  endif
+  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd ehci-platform ehci-orion ehci-atmel ehci-fsl fsl-mph-dr-of,1)
   $(call AddDepends/usb)
 endef
 
@@ -459,7 +480,7 @@ $(eval $(call KernelPackage,usb-dwc3))
 
 define KernelPackage/usb-dwc3-of-simple
   TITLE:=DWC3 USB simple OF driver
-  DEPENDS:=@TARGET_ipq40xx||@TARGET_ipq806x +kmod-usb-dwc3
+  DEPENDS:=@!LINUX_4_19 @(TARGET_ipq40xx||TARGET_ipq806x) +kmod-usb-dwc3
   KCONFIG:= CONFIG_USB_DWC3_OF_SIMPLE
   FILES:= $(LINUX_DIR)/drivers/usb/dwc3/dwc3-of-simple.ko
   AUTOLOAD:=$(call AutoLoad,53,dwc3-of-simple,1)
@@ -473,6 +494,26 @@ endef
 
 
 $(eval $(call KernelPackage,usb-dwc3-of-simple))
+
+
+define KernelPackage/usb-dwc3-qcom
+  TITLE:=DWC3 Qualcomm USB driver
+  DEPENDS:=@LINUX_4_19 @(TARGET_ipq40xx||TARGET_ipq806x) +kmod-usb-dwc3
+  KCONFIG:= CONFIG_USB_DWC3_QCOM
+  FILES:= $(LINUX_DIR)/drivers/usb/dwc3/dwc3-qcom.ko
+  AUTOLOAD:=$(call AutoLoad,53,dwc3-qcom,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-dwc3-qcom/description
+ Some Qualcomm SoCs use DesignWare Core IP for USB2/3 functionality.
+ This driver also handles Qscratch wrapper which is needed for
+ peripheral mode support.
+endef
+
+
+$(eval $(call KernelPackage,usb-dwc3-qcom))
+
 
 define KernelPackage/usb-acm
   TITLE:=Support for modems/isdn controllers
@@ -1565,7 +1606,8 @@ define KernelPackage/usb-chipidea
   FILES:= \
 	$(LINUX_DIR)/drivers/extcon/extcon.ko@lt4.9 \
 	$(LINUX_DIR)/drivers/extcon/extcon-core.ko@ge4.9 \
-	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko
+	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko \
+	$(LINUX_DIR)/drivers/usb/common/ulpi.ko@ge4.18
   AUTOLOAD:=$(call AutoLoad,39,ci_hdrc,1)
   $(call AddDepends/usb)
 endef
