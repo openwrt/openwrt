@@ -262,7 +262,8 @@ static void usage(const char* progname)
 
 static void print_image_info(const image_info_t* im)
 {
-	int i = 0;
+	unsigned int i = 0;
+
 	INFO("Firmware version: '%s'\n"
 	     "Output file: '%s'\n"
 	     "Part count: %u\n",
@@ -278,8 +279,6 @@ static void print_image_info(const image_info_t* im)
 		     d->partition_length - d->stats.st_size);
 	}
 }
-
-
 
 static u_int32_t filelength(const char* file)
 {
@@ -336,7 +335,7 @@ static int create_image_layout(const char* kernelfile, const char* rootfsfile, c
  */
 static int validate_image_layout(image_info_t* im)
 {
-	int i;
+	unsigned int i;
 
 	if (im->part_count == 0 || im->part_count > MAX_SECTIONS)
 	{
@@ -383,7 +382,7 @@ static int build_image(image_info_t* im)
 	char* ptr;
 	u_int32_t mem_size;
 	FILE* f;
-	int i;
+	unsigned int i;
 
 	// build in-memory buffer
 	mem_size = sizeof(header_t);
