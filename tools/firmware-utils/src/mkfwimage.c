@@ -19,6 +19,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <inttypes.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
@@ -274,7 +275,7 @@ static void print_image_info(const image_info_t* im)
 	for (i = 0; i < im->part_count; ++i)
 	{
 		const part_data_t* d = &im->parts[i];
-		INFO(" %10s: %8ld bytes (free: %8ld)\n",
+		INFO(" %10s: %8" PRId64 " bytes (free: %8" PRId64 ")\n",
 		     d->partition_name,
 		     d->stats.st_size,
 		     d->partition_length - d->stats.st_size);
@@ -373,7 +374,7 @@ static int validate_image_layout(image_info_t* im)
 			return -3;
 		}
 		if (d->stats.st_size > d->partition_length) {
-			ERROR("File '%s' too big (%d) - max size: 0x%08X (exceeds %lu bytes)\n",
+			ERROR("File '%s' too big (%d) - max size: 0x%08X (exceeds %" PRId64 " bytes)\n",
 				       	d->filename, i, d->partition_length,
 					d->stats.st_size - d->partition_length);
 			return -4;
