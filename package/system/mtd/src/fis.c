@@ -139,8 +139,6 @@ done:
 int
 fis_remap(struct fis_part *old, int n_old, struct fis_part *new, int n_new)
 {
-	struct fis_image_desc *fisdir = NULL;
-	struct fis_image_desc *redboot = NULL;
 	struct fis_image_desc *first = NULL;
 	struct fis_image_desc *last = NULL;
 	struct fis_image_desc *first_fb = NULL;
@@ -163,12 +161,6 @@ fis_remap(struct fis_part *old, int n_old, struct fis_part *new, int n_new)
 	while ((char *) desc < end) {
 		if (!desc->hdr.name[0] || (desc->hdr.name[0] == 0xff))
 			break;
-
-		if (!strcmp((char *) desc->hdr.name, "FIS directory"))
-			fisdir = desc;
-
-		if (!strcmp((char *) desc->hdr.name, "RedBoot"))
-			redboot = desc;
 
 		/* update max offset */
 		if (offset < desc->hdr.flash_base)
@@ -209,18 +201,6 @@ fis_remap(struct fis_part *old, int n_old, struct fis_part *new, int n_new)
 	desc--;
 
 	size = offset - first_fb->hdr.flash_base;
-
-#ifdef notyet
-	desc = first - 1;
-	if (redboot && (desc >= redboot)) {
-		if (first->hdr.flash_base - desc->hdr.size > desc->hdr.flash_base) {
-			int delta = first->hdr.flash_base - desc->hdr.size - desc->hdr.flash_base;
-
-			offset -= delta;
-			size += delta;
-		}
-	}
-#endif
 
 	last++;
 	desc = first + n_new;
