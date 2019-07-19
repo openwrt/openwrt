@@ -1,0 +1,19 @@
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+# To avoid editing too much in commits
+trim_trailing_whitespace = false
+
+# dts and dtsi use tabs
+[*.dts{,i}]
+indent_style = tab
+indent_size = 8
+tab_width = 8
+
+# Tab indentation (no size specified)
+[Makefile]
+indent_style = tab
+
