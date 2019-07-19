@@ -273,7 +273,7 @@ static void print_image_info(const image_info_t* im)
 	for (i = 0; i < im->part_count; ++i)
 	{
 		const part_data_t* d = &im->parts[i];
-		INFO(" %10s: %8ld bytes (free: %8ld)\n",
+		INFO(" %10s: %8lld bytes (free: %8lld)\n",
 		     d->partition_name,
 		     d->stats.st_size,
 		     d->partition_length - d->stats.st_size);
@@ -295,7 +295,7 @@ static u_int32_t filelength(const char* file)
 	return (ret);
 }
 
-static int create_image_layout(const char* kernelfile, const char* rootfsfile, char* board_name, image_info_t* im)
+static int create_image_layout(const char* kernelfile, const char* rootfsfile, image_info_t* im)
 {
 	uint32_t rootfs_len = 0;
 	part_data_t* kernel = &im->parts[0];
@@ -372,7 +372,7 @@ static int validate_image_layout(image_info_t* im)
 			return -3;
 		}
 		if (d->stats.st_size > d->partition_length) {
-			ERROR("File '%s' too big (%d) - max size: 0x%08X (exceeds %lu bytes)\n",
+			ERROR("File '%s' too big (%d) - max size: 0x%08X (exceeds %llu bytes)\n",
 				       	d->filename, i, d->partition_length,
 					d->stats.st_size - d->partition_length);
 			return -4;
@@ -526,7 +526,7 @@ int main(int argc, char* argv[])
 
 	im.fwinfo = fwinfo;
 
-	if ((rc = create_image_layout(kernelfile, rootfsfile, board_name, &im)) != 0)
+	if ((rc = create_image_layout(kernelfile, rootfsfile, &im)) != 0)
 	{
 		ERROR("Failed creating firmware layout description - error code: %d\n", rc);
 		return -3;
