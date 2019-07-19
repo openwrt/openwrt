@@ -297,6 +297,7 @@ static u_int32_t filelength(const char* file)
 
 static int create_image_layout(const char* kernelfile, const char* rootfsfile, char* board_name, image_info_t* im)
 {
+	uint32_t rootfs_len = 0;
 	part_data_t* kernel = &im->parts[0];
 	part_data_t* rootfs = &im->parts[1];
 
@@ -311,8 +312,13 @@ static int create_image_layout(const char* kernelfile, const char* rootfsfile, c
 	kernel->partition_entryaddr = p->kern_entry;
 	strncpy(kernel->filename, kernelfile, sizeof(kernel->filename));
 
-	if (filelength(rootfsfile) + kernel->partition_length > p->firmware_max_length)
+	rootfs_len = filelength(rootfsfile);
+	if (rootfs_len + kernel->partition_length > p->firmware_max_length) {
+		ERROR("File '%s' too big (0x%08X) - max size: 0x%08X (exceeds %u bytes)\n",
+		       rootfsfile, rootfs_len, p->firmware_max_length,
+		       (rootfs_len + kernel->partition_length) - p->firmware_max_length);
 		return (-2);
+	}
 
 	strcpy(rootfs->partition_name, "rootfs");
 	rootfs->partition_index = 2;
