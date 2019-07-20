@@ -8,6 +8,9 @@ board=$(board_name)
 boardname="${board##*,}"
 
 case "$board" in
+airtight,c-65)
+	ucidef_set_led_wlan "ath10k-phy0" "WiFi 5GHz" "ath10k-phy0" "phy0tpt"
+	;;
 8dev,carambola2)
 	ucidef_set_led_netdev "lan" "LAN" "$boardname:orange:eth0" "eth0"
 	ucidef_set_led_switch "wan" "WAN" "$boardname:orange:eth1" "switch0" "0x04"

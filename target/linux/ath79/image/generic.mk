@@ -75,6 +75,15 @@ define Device/seama
   SEAMA_SIGNATURE :=
 endef
 
+define Device/airtight_c-65
+  ATH_SOC := qca9558
+  DEVICE_VENDOR := Airtight
+  DEVICE_MODEL := C-65
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += airtight_c-65
+
 define Device/8dev_carambola2
   ATH_SOC := ar9331
   DEVICE_TITLE := 8devices Carambola2
