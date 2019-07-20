@@ -157,6 +157,18 @@ define Device/tplink_archer-c7-v5
 endef
 TARGET_DEVICES += tplink_archer-c7-v5
 
+define Device/tplink_cpe210-v1
+  $(Device/tplink-loader-okli)
+  ATH_SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := CPE210
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := CPE210
+  SUPPORTED_DEVICES += cpe210
+endef
+TARGET_DEVICES += tplink_cpe210-v1
+
 define Device/tplink_cpe210-v2
   $(Device/tplink-safeloader)
   ATH_SOC := qca9533
