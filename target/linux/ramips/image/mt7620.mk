@@ -287,7 +287,7 @@ define Device/ex2700
 	netgear-dni
   DEVICE_TITLE := Netgear EX2700
 endef
-TARGET_DEVICES += ex2700
+#TARGET_DEVICES += ex2700
 
 define Device/ex3700-ex3800
   NETGEAR_BOARD_ID := U12H319T00_NETGEAR
