@@ -105,6 +105,7 @@ case "$FIRMWARE" in
 		ath9k_eeprom_extract "art" 4096 1088
 		ath9k_patch_fw_mac_crc $(mtd_get_mac_text "mac" 4) 2
 		;;
+	dlink,dir-842-c2|\
 	dlink,dir-859-a1|\
 	nec,wg1200cr|\
 	wd,mynet-n750)

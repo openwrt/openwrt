@@ -355,6 +355,29 @@ define Device/dlink_dir-859-a1
 endef
 TARGET_DEVICES += dlink_dir-859-a1
 
+define Device/dlink_dir-842-c2
+  ATH_SOC := qca9563
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-842
+  DEVICE_VARIANT := C2
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
+  KERNEL_INITRAMFS := $$(KERNEL) | seama
+  IMAGES += factory.bin
+  SEAMA_MTDBLOCK := 5
+  # 64 bytes offset:
+  # - 28 bytes seama_header
+  # - 36 bytes of META data (4-bytes aligned)
+  IMAGE/default := append-kernel | uImage lzma | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs
+  IMAGE/sysupgrade.bin := \
+	$$(IMAGE/default) | seama | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := \
+	$$(IMAGE/default) | pad-rootfs -x 64 | seama | seama-seal | check-size $$$$(IMAGE_SIZE) 
+  IMAGE_SIZE := 15680k
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  SEAMA_SIGNATURE := wrgac65_dlink.2015_dir842
+endef
+TARGET_DEVICES += dlink_dir-842-c2
+
 define Device/elecom_wrc-1750ghbk2-i
   ATH_SOC := qca9563
   DEVICE_VENDOR := ELECOM
