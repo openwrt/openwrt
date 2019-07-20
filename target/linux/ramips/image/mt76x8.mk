@@ -109,6 +109,16 @@ define Device/hiwifi_hc5861b
 endef
 TARGET_DEVICES += hiwifi_hc5861b
 
+define Device/iptime_a604m
+  MTK_SOC := mt7628an
+  IMAGE_SIZE := 7936k
+  UIMAGE_NAME := a604m
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := A604M
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += iptime_a604m
+
 define Device/mediatek_linkit-smart-7688
   MTK_SOC := mt7628an
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
