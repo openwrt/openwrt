@@ -195,6 +195,18 @@ define Device/tplink_cpe210-v3
 endef
 TARGET_DEVICES += tplink_cpe210-v3
 
+define Device/tplink_cpe510-v1
+  $(Device/tplink-loader-okli)
+  ATH_SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := CPE510
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := CPE510
+  SUPPORTED_DEVICES += cpe510
+endef
+TARGET_DEVICES += tplink_cpe510-v1
+
 define Device/tplink_cpe510-v2
   $(Device/tplink-loader-okli)
   ATH_SOC := ar9344
