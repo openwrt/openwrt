@@ -305,7 +305,8 @@ ramips_setup_interfaces()
 	elecom,wrc-2533gst|\
 	huawei,hg255d|\
 	iodata,wn-ax1167gr|\
-	iodata,wn-gx300gr)
+	iodata,wn-gx300gr|\
+	iptime,a604m)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
 		;;
@@ -615,6 +616,9 @@ ramips_setup_macs()
 	iodata,wn-gx300gr|\
 	trendnet,tew-692gr)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
+		;;
+	iptime,a604m)
+		wan_mac=$(mtd_get_mac_binary u-boot 0x1fc40)
 		;;
 	lenovo,newifi-d1)
 		lan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
