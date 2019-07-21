@@ -579,12 +579,10 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env WAN_MAC_ADDR)
 		;;
 	edimax,br-6475nd)
-		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(mtd_get_mac_binary devdata 7)
 		;;
 	edimax,br-6478ac-v2)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(macaddr_add "$lan_mac" 2)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
 		;;
 	elecom,wrc-1167ghbk2-s|\
 	elecom,wrc-1900gst|\
@@ -605,7 +603,6 @@ ramips_setup_macs()
 	hootoo,ht-tm02|\
 	loewe,wmdr-143n|\
 	unbranded,a5-v11)
-		lan_mac=$(cat /sys/class/net/eth0/address)
 		;;
 	iodata,wn-ac1167gr|\
 	iodata,wn-ac733gr3)
@@ -662,8 +659,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
 	tenda,w306r-v2)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(macaddr_add "$lan_mac" 5)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 5)
 		;;
 	trendnet,tew-691gr)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 3)
@@ -677,12 +673,10 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_binary factory 0xe006)
 		;;
 	xiaomi,miwifi-mini)
-		wan_mac=$(cat /sys/class/net/eth0/address)
-		lan_mac=$(macaddr_setbit_la "$wan_mac")
+		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
 		;;
 	*)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
 	esac
 
