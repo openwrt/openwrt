@@ -125,6 +125,16 @@ define Device/asiarf_ap7621-001
 endef
 TARGET_DEVICES += asiarf_ap7621-001
 
+define Device/asiarf_ap7621-nv1
+  MTK_SOC := mt7621
+  IMAGE_SIZE := 16000k
+  DEVICE_VENDOR := AsiaRF
+  DEVICE_MODEL := AP7621-NV1
+  DEVICE_PACKAGES := \
+	kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3
+endef
+TARGET_DEVICES += asiarf_ap7621-nv1
+
 define Device/asus_rt-ac57u
   MTK_SOC := mt7621
   DEVICE_VENDOR := ASUS

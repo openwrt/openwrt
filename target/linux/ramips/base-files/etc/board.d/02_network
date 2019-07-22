@@ -226,6 +226,9 @@ ramips_setup_interfaces()
 	asiarf,ap7621-001)
 		ucidef_add_switch "switch0" "0:lan" "4:wan" "6@eth0"
 		;;
+	asiarf,ap7621-nv1)
+		ucidef_add_switch "switch0" "0:wan" "2:lan" "3:lan" "6@eth0"
+		;;
 	asiarf,awapn2403)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:wan" "6@eth0"
