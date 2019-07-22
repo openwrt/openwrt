@@ -34,18 +34,18 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
-@@ -231,6 +231,8 @@ void brcmf_detach(struct device *dev);
+@@ -229,6 +229,8 @@ int brcmf_attach(struct device *dev, str
+ void brcmf_detach(struct device *dev);
+ /* Indication from bus module that dongle should be reset */
  void brcmf_dev_reset(struct device *dev);
- /* Indication from bus module to change flow-control state */
- void brcmf_txflowblock(struct device *dev, bool state);
 +/* Request from bus module to initiate a coredump */
 +void brcmf_dev_coredump(struct device *dev);
  
- /* Notify the bus has transferred the tx packet to firmware */
- void brcmf_txcomplete(struct device *dev, struct sk_buff *txp, bool success);
+ /* Configure the "global" bus state used by upper layers */
+ void brcmf_bus_change_state(struct brcmf_bus *bus, enum brcmf_bus_state state);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -1175,6 +1175,14 @@ void brcmf_dev_reset(struct device *dev)
+@@ -1143,6 +1143,14 @@ void brcmf_dev_reset(struct device *dev)
  		brcmf_fil_cmd_int_set(drvr->iflist[0], BRCMF_C_TERMINATED, 1);
  }
  

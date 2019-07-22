@@ -1,0 +1,36 @@
+From 26ecfe01790381c4caa65ec9cce484c623f092c4 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Fri, 14 Apr 2017 22:27:37 +0100
+Subject: [PATCH] brcmfmac: only build fwsignal module for
+ CONFIG_BRCMFMAC_PROTO_BCDC
+
+The fwsignal module is only referenced by the bcdc module and part of the
+bcdc protocol. So only build it when CONFIG_BRCMFMAC_PROTO_BCDC is selected.
+
+Fixes: acf8ac41dd73 ("brcmfmac: remove reference to fwsignal data from struct brcmf_pub")
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/Makefile
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/Makefile
+@@ -25,7 +25,6 @@ brcmfmac-objs += \
+ 		chip.o \
+ 		fwil.o \
+ 		fweh.o \
+-		fwsignal.o \
+ 		p2p.o \
+ 		proto.o \
+ 		common.o \
+@@ -36,7 +35,8 @@ brcmfmac-objs += \
+ 		vendor.o \
+ 		pno.o
+ brcmfmac-$(CPTCFG_BRCMFMAC_PROTO_BCDC) += \
+-		bcdc.o
++		bcdc.o \
++		fwsignal.o
+ brcmfmac-$(CPTCFG_BRCMFMAC_PROTO_MSGBUF) += \
+ 		commonring.o \
+ 		flowring.o \

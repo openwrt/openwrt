@@ -77,7 +77,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	union {
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -192,6 +192,37 @@ static void brcmf_netdev_set_multicast_l
+@@ -191,6 +191,37 @@ static void brcmf_netdev_set_multicast_l
  	schedule_work(&ifp->multicast_work);
  }
  
@@ -115,7 +115,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  static netdev_tx_t brcmf_netdev_start_xmit(struct sk_buff *skb,
  					   struct net_device *ndev)
  {
-@@ -211,6 +242,23 @@ static netdev_tx_t brcmf_netdev_start_xm
+@@ -210,6 +241,23 @@ static netdev_tx_t brcmf_netdev_start_xm
  		goto done;
  	}
  
@@ -139,7 +139,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	/* Make sure there's enough writable headroom*/
  	ret = skb_cow_head(skb, drvr->hdrlen);
  	if (ret < 0) {
-@@ -288,6 +336,15 @@ void brcmf_txflowblock(struct device *de
+@@ -277,6 +325,15 @@ void brcmf_txflowblock_if(struct brcmf_i
  
  void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb)
  {

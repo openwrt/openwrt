@@ -29,7 +29,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
-@@ -3420,7 +3420,7 @@ static int brcmf_sdio_bus_preinit(struct
+@@ -3422,7 +3422,7 @@ static int brcmf_sdio_bus_preinit(struct
  		/* otherwise, set txglomalign */
  		value = sdiodev->settings->bus.sdio.sd_sgentry_align;
  		/* SDIO ADMA requires at least 32 bit alignment */

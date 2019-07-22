@@ -1,0 +1,37 @@
+From 78b9ccb81377ba908b2c18daf6e1a7beddc281e3 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Tue, 28 Mar 2017 11:43:28 +0100
+Subject: [PATCH] brcmfmac: no need for d11inf instance in
+ brcmf_pno_start_sched_scan()
+
+In brcmf_pno_start_sched_scan() a local variable is declared and
+assigned for struct brcmu_d11inf. However, there is no other reference
+to it so it is unnecessary.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.c
+@@ -182,7 +182,6 @@ int brcmf_pno_clean(struct brcmf_if *ifp
+ int brcmf_pno_start_sched_scan(struct brcmf_if *ifp,
+ 			       struct cfg80211_sched_scan_request *req)
+ {
+-	struct brcmu_d11inf *d11inf;
+ 	struct brcmf_pno_config_le pno_cfg;
+ 	struct cfg80211_ssid *ssid;
+ 	u16 chan;
+@@ -209,7 +208,6 @@ int brcmf_pno_start_sched_scan(struct br
+ 	}
+ 
+ 	/* configure channels to use */
+-	d11inf = &ifp->drvr->config->d11inf;
+ 	for (i = 0; i < req->n_channels; i++) {
+ 		chan = req->channels[i]->hw_value;
+ 		pno_cfg.channel_list[i] = cpu_to_le16(chan);

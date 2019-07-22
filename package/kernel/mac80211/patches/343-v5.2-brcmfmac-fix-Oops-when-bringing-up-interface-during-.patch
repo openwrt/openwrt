@@ -89,7 +89,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -838,17 +838,17 @@ static void brcmf_del_if(struct brcmf_pu
+@@ -810,17 +810,17 @@ static void brcmf_del_if(struct brcmf_pu
  			 bool rtnl_locked)
  {
  	struct brcmf_if *ifp;
@@ -110,7 +110,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	if (ifp->ndev) {
  		if (bsscfgidx == 0) {
  			if (ifp->ndev->netdev_ops == &brcmf_netdev_ops_pri) {
-@@ -876,6 +876,10 @@ static void brcmf_del_if(struct brcmf_pu
+@@ -848,6 +848,10 @@ static void brcmf_del_if(struct brcmf_pu
  		brcmf_p2p_ifp_removed(ifp, rtnl_locked);
  		kfree(ifp);
  	}

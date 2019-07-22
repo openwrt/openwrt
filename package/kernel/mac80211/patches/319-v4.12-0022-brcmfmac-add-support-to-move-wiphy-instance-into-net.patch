@@ -1,0 +1,88 @@
+From 0cc0236cf713a9ecfcf902e35bd098bc179265a8 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Tue, 28 Mar 2017 11:43:26 +0100
+Subject: [PATCH] brcmfmac: add support to move wiphy instance into network
+ namespace
+
+To support network namespace the driver must assure all created
+network interfaces are in the same namespace as the wiphy instance
+and flag the support using WIPHY_FLAG_NETNS_OK.
+
+Verified using two terminals:
+
+ Terminal 1			Terminal 2
+ --------------------------	---------------------------------
+ # ip netns add brcm-wifi	# iw dev
+				phy#0
+					Interface wlan3
+						ifindex 11
+						wdev 0x1
+ # ip netns exec brcm-wifi bash
+ # iw dev
+ # echo $$
+ 20337			# iw phy0 set netns 20337
+ # iw dev
+ phy#0
+	Interface wlan3
+		ifindex 11
+		wdev 0x2
+ # iw phy0 interface add wl3.ap type __ap
+ # iw dev
+ phy#0
+	Interface wl3.ap
+		ifindex 2
+		wdev 0x3
+	Interface wlan3
+		ifindex 11
+		wdev 0x2
+				# iw dev
+ # iw phy0 set netns 1
+ # iw dev
+				# iw dev
+				phy#0
+					Interface wl3.ap
+						ifindex 2
+						wdev 0x5
+					Interface wlan3
+						ifindex 11
+						wdev 0x4
+
+Note:
+	increasing wdev identifier above indicates issue in
+	cfg80211 which is addressed separately.
+
+Tested-by: Mark Asselstine <mark.asselstine@windriver.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 3 ++-
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c     | 3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -6453,7 +6453,8 @@ static int brcmf_setup_wiphy(struct wiph
+ 				    BIT(NL80211_BSS_SELECT_ATTR_BAND_PREF) |
+ 				    BIT(NL80211_BSS_SELECT_ATTR_RSSI_ADJUST);
+ 
+-	wiphy->flags |= WIPHY_FLAG_PS_ON_BY_DEFAULT |
++	wiphy->flags |= WIPHY_FLAG_NETNS_OK |
++			WIPHY_FLAG_PS_ON_BY_DEFAULT |
+ 			WIPHY_FLAG_OFFCHAN_TX |
+ 			WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
+ 	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_TDLS))
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -485,8 +485,9 @@ int brcmf_net_attach(struct brcmf_if *if
+ 	ndev->needed_headroom += drvr->hdrlen;
+ 	ndev->ethtool_ops = &brcmf_ethtool_ops;
+ 
+-	/* set the mac address */
++	/* set the mac address & netns */
+ 	memcpy(ndev->dev_addr, ifp->mac_addr, ETH_ALEN);
++	dev_net_set(ndev, wiphy_net(cfg_to_wiphy(drvr->config)));
+ 
+ 	INIT_WORK(&ifp->multicast_work, _brcmf_set_multicast_list);
+ 	INIT_WORK(&ifp->ndoffload_work, _brcmf_update_ndtable);

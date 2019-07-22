@@ -37,7 +37,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  /* Data struct for the MSGBUF_TYPE_RING_STATUS */
  struct msgbuf_ring_status {
  	struct msgbuf_common_hdr	msg;
-@@ -1194,6 +1202,18 @@ brcmf_msgbuf_process_rx_complete(struct
+@@ -1192,6 +1200,18 @@ brcmf_msgbuf_process_rx_complete(struct
  	brcmf_netif_rx(ifp, skb);
  }
  
@@ -56,7 +56,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  static void brcmf_msgbuf_process_ring_status(struct brcmf_msgbuf *msgbuf,
  					     void *buf)
  {
-@@ -1273,6 +1293,10 @@ static void brcmf_msgbuf_process_msgtype
+@@ -1271,6 +1291,10 @@ static void brcmf_msgbuf_process_msgtype
  
  	msg = (struct msgbuf_common_hdr *)buf;
  	switch (msg->msgtype) {

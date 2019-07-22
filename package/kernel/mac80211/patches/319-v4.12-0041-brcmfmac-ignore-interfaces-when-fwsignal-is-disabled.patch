@@ -1,0 +1,30 @@
+From fc0471e3e884a13d293afae53917ef8ff33b8ae5 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Thu, 6 Apr 2017 13:14:38 +0100
+Subject: [PATCH] brcmfmac: ignore interfaces when fwsignal is disabled
+
+When brcmf_fws_add_interface() is called the struct brcmf_if::fws_desc
+field is initialized regardless the state of the fwsignal functionality,
+ie. the fcmode. This is not needed when fcmode is NONE, which is the
+default mode.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
+@@ -2145,7 +2145,7 @@ void brcmf_fws_add_interface(struct brcm
+ 	struct brcmf_fws_info *fws = ifp->drvr->fws;
+ 	struct brcmf_fws_mac_descriptor *entry;
+ 
+-	if (!ifp->ndev)
++	if (!ifp->ndev || fws->fcmode == BRCMF_FWS_FCMODE_NONE)
+ 		return;
+ 
+ 	entry = &fws->desc.iface[ifp->ifidx];

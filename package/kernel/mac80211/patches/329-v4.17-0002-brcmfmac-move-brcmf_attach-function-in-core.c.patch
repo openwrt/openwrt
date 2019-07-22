@@ -16,7 +16,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -961,55 +961,6 @@ static int brcmf_inet6addr_changed(struc
+@@ -933,55 +933,6 @@ static int brcmf_inet6addr_changed(struc
  }
  #endif
  
@@ -72,7 +72,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  static int brcmf_revinfo_read(struct seq_file *s, void *data)
  {
  	struct brcmf_bus *bus_if = dev_get_drvdata(s->private);
-@@ -1141,6 +1092,55 @@ fail:
+@@ -1109,6 +1060,55 @@ fail:
  
  	return ret;
  }

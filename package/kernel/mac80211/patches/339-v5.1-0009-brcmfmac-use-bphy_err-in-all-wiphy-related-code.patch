@@ -29,7 +29,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcdc.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcdc.c
-@@ -169,8 +169,8 @@ brcmf_proto_bcdc_query_dcmd(struct brcmf
+@@ -177,8 +177,8 @@ brcmf_proto_bcdc_query_dcmd(struct brcmf
  
  	ret = brcmf_proto_bcdc_msg(drvr, ifidx, cmd, buf, len, false);
  	if (ret < 0) {
@@ -40,7 +40,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		goto done;
  	}
  
-@@ -186,9 +186,9 @@ retry:
+@@ -194,9 +194,9 @@ retry:
  	if ((id < bcdc->reqid) && (++retries < RETRIES))
  		goto retry;
  	if (id != bcdc->reqid) {
@@ -53,7 +53,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		ret = -EINVAL;
  		goto done;
  	}
-@@ -234,9 +234,9 @@ brcmf_proto_bcdc_set_dcmd(struct brcmf_p
+@@ -242,9 +242,9 @@ brcmf_proto_bcdc_set_dcmd(struct brcmf_p
  	id = (flags & BCDC_DCMD_ID_MASK) >> BCDC_DCMD_ID_SHIFT;
  
  	if (id != bcdc->reqid) {
@@ -66,7 +66,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		ret = -EINVAL;
  		goto done;
  	}
-@@ -299,8 +299,8 @@ brcmf_proto_bcdc_hdrpull(struct brcmf_pu
+@@ -307,8 +307,8 @@ brcmf_proto_bcdc_hdrpull(struct brcmf_pu
  	}
  	if (((h->flags & BCDC_FLAG_VER_MASK) >> BCDC_FLAG_VER_SHIFT) !=
  	    BCDC_PROTO_VER) {
@@ -77,7 +77,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return -EBADE;
  	}
  
-@@ -379,7 +379,7 @@ int brcmf_proto_bcdc_attach(struct brcmf
+@@ -450,7 +450,7 @@ int brcmf_proto_bcdc_attach(struct brcmf
  
  	/* ensure that the msg buf directly follows the cdc msg struct */
  	if ((unsigned long)(&bcdc->msg + 1) != (unsigned long)bcdc->buf) {
@@ -189,7 +189,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -90,7 +90,7 @@ struct brcmf_if *brcmf_get_ifp(struct br
+@@ -89,7 +89,7 @@ struct brcmf_if *brcmf_get_ifp(struct br
  	s32 bsscfgidx;
  
  	if (ifidx < 0 || ifidx >= BRCMF_MAX_IFS) {
@@ -198,7 +198,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return NULL;
  	}
  
-@@ -104,7 +104,9 @@ struct brcmf_if *brcmf_get_ifp(struct br
+@@ -103,7 +103,9 @@ struct brcmf_if *brcmf_get_ifp(struct br
  
  static void _brcmf_set_multicast_list(struct work_struct *work)
  {
@@ -209,7 +209,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	struct net_device *ndev;
  	struct netdev_hw_addr *ha;
  	u32 cmd_value, cnt;
-@@ -113,8 +115,6 @@ static void _brcmf_set_multicast_list(st
+@@ -112,8 +114,6 @@ static void _brcmf_set_multicast_list(st
  	u32 buflen;
  	s32 err;
  
@@ -218,7 +218,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	brcmf_dbg(TRACE, "Enter, bsscfgidx=%d\n", ifp->bsscfgidx);
  
  	ndev = ifp->ndev;
-@@ -144,7 +144,7 @@ static void _brcmf_set_multicast_list(st
+@@ -143,7 +143,7 @@ static void _brcmf_set_multicast_list(st
  
  	err = brcmf_fil_iovar_data_set(ifp, "mcast_list", buf, buflen);
  	if (err < 0) {
@@ -227,7 +227,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		cmd_value = cnt ? true : cmd_value;
  	}
  
-@@ -157,24 +157,24 @@ static void _brcmf_set_multicast_list(st
+@@ -156,24 +156,24 @@ static void _brcmf_set_multicast_list(st
  	 */
  	err = brcmf_fil_iovar_int_set(ifp, "allmulti", cmd_value);
  	if (err < 0)
@@ -258,7 +258,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	/* clear the table in firmware */
  	ret = brcmf_fil_iovar_data_set(ifp, "nd_hostip_clear", NULL, 0);
  	if (ret) {
-@@ -187,7 +187,7 @@ static void _brcmf_update_ndtable(struct
+@@ -186,7 +186,7 @@ static void _brcmf_update_ndtable(struct
  					       &ifp->ipv6_addr_tbl[i],
  					       sizeof(struct in6_addr));
  		if (ret)
@@ -267,7 +267,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	}
  }
  #else
-@@ -200,6 +200,7 @@ static int brcmf_netdev_set_mac_address(
+@@ -199,6 +199,7 @@ static int brcmf_netdev_set_mac_address(
  {
  	struct brcmf_if *ifp = netdev_priv(ndev);
  	struct sockaddr *sa = (struct sockaddr *)addr;
@@ -275,7 +275,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	int err;
  
  	brcmf_dbg(TRACE, "Enter, bsscfgidx=%d\n", ifp->bsscfgidx);
-@@ -207,7 +208,7 @@ static int brcmf_netdev_set_mac_address(
+@@ -206,7 +207,7 @@ static int brcmf_netdev_set_mac_address(
  	err = brcmf_fil_iovar_data_set(ifp, "cur_etheraddr", sa->sa_data,
  				       ETH_ALEN);
  	if (err < 0) {
@@ -284,7 +284,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	} else {
  		brcmf_dbg(TRACE, "updated to %pM\n", sa->sa_data);
  		memcpy(ifp->mac_addr, sa->sa_data, ETH_ALEN);
-@@ -266,7 +267,7 @@ static netdev_tx_t brcmf_netdev_start_xm
+@@ -265,7 +266,7 @@ static netdev_tx_t brcmf_netdev_start_xm
  
  	/* Can the device send data? */
  	if (drvr->bus_if->state != BRCMF_BUS_UP) {
@@ -293,7 +293,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		netif_stop_queue(ndev);
  		dev_kfree_skb(skb);
  		ret = -ENODEV;
-@@ -604,7 +605,7 @@ static int brcmf_netdev_open(struct net_
+@@ -575,7 +576,7 @@ static int brcmf_netdev_open(struct net_
  
  	/* If bus is not ready, can't continue */
  	if (bus_if->state != BRCMF_BUS_UP) {
@@ -302,7 +302,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return -EAGAIN;
  	}
  
-@@ -618,7 +619,7 @@ static int brcmf_netdev_open(struct net_
+@@ -589,7 +590,7 @@ static int brcmf_netdev_open(struct net_
  		ndev->features &= ~NETIF_F_IP_CSUM;
  
  	if (brcmf_cfg80211_up(ndev)) {
@@ -311,7 +311,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return -EIO;
  	}
  
-@@ -663,7 +664,7 @@ int brcmf_net_attach(struct brcmf_if *if
+@@ -635,7 +636,7 @@ int brcmf_net_attach(struct brcmf_if *if
  	else
  		err = register_netdev(ndev);
  	if (err != 0) {
@@ -320,7 +320,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		goto fail;
  	}
  
-@@ -739,6 +740,7 @@ static const struct net_device_ops brcmf
+@@ -711,6 +712,7 @@ static const struct net_device_ops brcmf
  
  static int brcmf_net_p2p_attach(struct brcmf_if *ifp)
  {
@@ -328,7 +328,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	struct net_device *ndev;
  
  	brcmf_dbg(TRACE, "Enter, bsscfgidx=%d mac=%pM\n", ifp->bsscfgidx,
-@@ -751,7 +753,7 @@ static int brcmf_net_p2p_attach(struct b
+@@ -723,7 +725,7 @@ static int brcmf_net_p2p_attach(struct b
  	memcpy(ndev->dev_addr, ifp->mac_addr, ETH_ALEN);
  
  	if (register_netdev(ndev) != 0) {
@@ -337,7 +337,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		goto fail;
  	}
  
-@@ -781,8 +783,8 @@ struct brcmf_if *brcmf_add_if(struct brc
+@@ -753,8 +755,8 @@ struct brcmf_if *brcmf_add_if(struct brc
  	 */
  	if (ifp) {
  		if (ifidx) {
@@ -348,7 +348,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  			netif_stop_queue(ifp->ndev);
  			brcmf_net_detach(ifp->ndev, false);
  			drvr->iflist[bsscfgidx] = NULL;
-@@ -840,7 +842,7 @@ static void brcmf_del_if(struct brcmf_pu
+@@ -812,7 +814,7 @@ static void brcmf_del_if(struct brcmf_pu
  	ifp = drvr->iflist[bsscfgidx];
  	drvr->iflist[bsscfgidx] = NULL;
  	if (!ifp) {
@@ -357,7 +357,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return;
  	}
  	brcmf_dbg(TRACE, "Enter, bsscfgidx=%d, ifidx=%d\n", bsscfgidx,
-@@ -890,16 +892,17 @@ static int brcmf_psm_watchdog_notify(str
+@@ -862,16 +864,17 @@ static int brcmf_psm_watchdog_notify(str
  				     const struct brcmf_event_msg *evtmsg,
  				     void *data)
  {
@@ -377,7 +377,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  	return err;
  }
-@@ -943,7 +946,7 @@ static int brcmf_inetaddr_changed(struct
+@@ -915,7 +918,7 @@ static int brcmf_inetaddr_changed(struct
  	ret = brcmf_fil_iovar_data_get(ifp, "arp_hostip", addr_table,
  				       sizeof(addr_table));
  	if (ret) {
@@ -386,7 +386,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return NOTIFY_OK;
  	}
  
-@@ -960,7 +963,7 @@ static int brcmf_inetaddr_changed(struct
+@@ -932,7 +935,7 @@ static int brcmf_inetaddr_changed(struct
  			ret = brcmf_fil_iovar_data_set(ifp, "arp_hostip",
  				&ifa->ifa_address, sizeof(ifa->ifa_address));
  			if (ret)
@@ -395,7 +395,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		}
  		break;
  	case NETDEV_DOWN:
-@@ -972,8 +975,8 @@ static int brcmf_inetaddr_changed(struct
+@@ -944,8 +947,8 @@ static int brcmf_inetaddr_changed(struct
  			ret = brcmf_fil_iovar_data_set(ifp, "arp_hostip_clear",
  						       NULL, 0);
  			if (ret) {
@@ -406,7 +406,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  				return NOTIFY_OK;
  			}
  			for (i = 0; i < ARPOL_MAX_ENTRIES; i++) {
-@@ -983,8 +986,8 @@ static int brcmf_inetaddr_changed(struct
+@@ -955,8 +958,8 @@ static int brcmf_inetaddr_changed(struct
  							       &addr_table[i],
  							       sizeof(addr_table[i]));
  				if (ret)
@@ -417,7 +417,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  			}
  		}
  		break;
-@@ -1161,7 +1164,7 @@ int brcmf_bus_started(struct device *dev
+@@ -1133,7 +1136,7 @@ int brcmf_bus_started(struct device *dev
  	return 0;
  
  fail:
@@ -426,7 +426,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	if (drvr->config) {
  		brcmf_cfg80211_detach(drvr->config);
  		drvr->config = NULL;
-@@ -1220,7 +1223,7 @@ int brcmf_attach(struct device *dev, str
+@@ -1188,7 +1191,7 @@ int brcmf_attach(struct device *dev, str
  	/* Attach and link in the protocol */
  	ret = brcmf_proto_attach(drvr);
  	if (ret != 0) {
@@ -435,7 +435,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		goto fail;
  	}
  
-@@ -1330,6 +1333,7 @@ static int brcmf_get_pend_8021x_cnt(stru
+@@ -1296,6 +1299,7 @@ static int brcmf_get_pend_8021x_cnt(stru
  
  int brcmf_netdev_wait_pend8021x(struct brcmf_if *ifp)
  {
@@ -443,7 +443,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	int err;
  
  	err = wait_event_timeout(ifp->pend_8021x_wait,
-@@ -1337,7 +1341,7 @@ int brcmf_netdev_wait_pend8021x(struct b
+@@ -1303,7 +1307,7 @@ int brcmf_netdev_wait_pend8021x(struct b
  				 MAX_WAIT_FOR_8021X_TX);
  
  	if (!err)
@@ -523,7 +523,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
 @@ -181,7 +182,8 @@ static void brcmf_fweh_handle_if_event(s
  	if (ifp && ifevent->action == BRCMF_E_IF_CHANGE)
- 		brcmf_fws_reset_interface(ifp);
+ 		brcmf_proto_reset_if(drvr, ifp);
  
 -	err = brcmf_fweh_call_event_handler(ifp, emsg->event_code, emsg, data);
 +	err = brcmf_fweh_call_event_handler(drvr, ifp, emsg->event_code, emsg,
@@ -622,7 +622,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		  ifp->bsscfgidx, name, len);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
-@@ -1250,6 +1250,7 @@ static int brcmf_fws_enq(struct brcmf_fw
+@@ -1251,6 +1251,7 @@ static int brcmf_fws_enq(struct brcmf_fw
  			 enum brcmf_fws_skb_state state, int fifo,
  			 struct sk_buff *p)
  {
@@ -630,7 +630,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	int prec = 2 * fifo;
  	u32 *qfull_stat = &fws->stats.delayq_full_error;
  	struct brcmf_fws_mac_descriptor *entry;
-@@ -1262,7 +1263,7 @@ static int brcmf_fws_enq(struct brcmf_fw
+@@ -1263,7 +1264,7 @@ static int brcmf_fws_enq(struct brcmf_fw
  
  	entry = brcmf_skbcb(p)->mac;
  	if (entry == NULL) {
@@ -639,7 +639,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return -ENOENT;
  	}
  
-@@ -1452,6 +1453,7 @@ static int
+@@ -1453,6 +1454,7 @@ static int
  brcmf_fws_txs_process(struct brcmf_fws_info *fws, u8 flags, u32 hslot,
  		      u32 genbit, u16 seq)
  {
@@ -647,7 +647,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	u32 fifo;
  	int ret;
  	bool remove_from_hanger = true;
-@@ -1475,12 +1477,12 @@ brcmf_fws_txs_process(struct brcmf_fws_i
+@@ -1476,12 +1478,12 @@ brcmf_fws_txs_process(struct brcmf_fws_i
  	else if (flags == BRCMF_FWS_TXSTATUS_HOST_TOSSED)
  		fws->stats.txs_host_tossed++;
  	else
@@ -662,13 +662,13 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return ret;
  	}
  
-@@ -1586,12 +1588,13 @@ static int brcmf_fws_notify_credit_map(s
+@@ -1587,12 +1589,13 @@ static int brcmf_fws_notify_credit_map(s
  				       const struct brcmf_event_msg *e,
  				       void *data)
  {
--	struct brcmf_fws_info *fws = ifp->drvr->fws;
+-	struct brcmf_fws_info *fws = drvr_to_fws(ifp->drvr);
 +	struct brcmf_pub *drvr = ifp->drvr;
-+	struct brcmf_fws_info *fws = drvr->fws;
++	struct brcmf_fws_info *fws = drvr_to_fws(drvr);
  	int i;
  	u8 *credits = data;
  
@@ -678,7 +678,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return -EINVAL;
  	}
  	if (fws->creditmap_received)
-@@ -1653,6 +1656,7 @@ static void brcmf_rxreorder_get_skb_list
+@@ -1654,6 +1657,7 @@ static void brcmf_rxreorder_get_skb_list
  
  void brcmf_fws_rxreorder(struct brcmf_if *ifp, struct sk_buff *pkt)
  {
@@ -686,7 +686,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	u8 *reorder_data;
  	u8 flow_id, max_idx, cur_idx, exp_idx, end_idx;
  	struct brcmf_ampdu_rx_reorder *rfi;
-@@ -1667,7 +1671,7 @@ void brcmf_fws_rxreorder(struct brcmf_if
+@@ -1668,7 +1672,7 @@ void brcmf_fws_rxreorder(struct brcmf_if
  
  	/* validate flags and flow id */
  	if (flags == 0xFF) {
@@ -695,7 +695,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		brcmf_netif_rx(ifp, pkt);
  		return;
  	}
-@@ -1704,7 +1708,7 @@ void brcmf_fws_rxreorder(struct brcmf_if
+@@ -1705,7 +1709,7 @@ void brcmf_fws_rxreorder(struct brcmf_if
  			  flow_id, max_idx);
  		rfi = kzalloc(buf_size, GFP_ATOMIC);
  		if (rfi == NULL) {
@@ -704,7 +704,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  			brcmf_netif_rx(ifp, pkt);
  			return;
  		}
-@@ -1969,6 +1973,7 @@ static u8 brcmf_fws_precommit_skb(struct
+@@ -1970,6 +1974,7 @@ static u8 brcmf_fws_precommit_skb(struct
  static void brcmf_fws_rollback_toq(struct brcmf_fws_info *fws,
  				   struct sk_buff *skb, int fifo)
  {
@@ -712,7 +712,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	struct brcmf_fws_mac_descriptor *entry;
  	struct sk_buff *pktout;
  	int qidx, hslot;
-@@ -1982,11 +1987,11 @@ static void brcmf_fws_rollback_toq(struc
+@@ -1983,11 +1988,11 @@ static void brcmf_fws_rollback_toq(struc
  
  		pktout = brcmu_pktq_penq_head(&entry->psq, qidx, skb);
  		if (pktout == NULL) {
@@ -726,7 +726,17 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		rc = -ENOENT;
  	}
  
-@@ -2120,7 +2125,7 @@ int brcmf_fws_process_skb(struct brcmf_i
+@@ -2092,7 +2097,8 @@ static int brcmf_fws_assign_htod(struct
+ 
+ int brcmf_fws_process_skb(struct brcmf_if *ifp, struct sk_buff *skb)
+ {
+-	struct brcmf_fws_info *fws = drvr_to_fws(ifp->drvr);
++	struct brcmf_pub *drvr = ifp->drvr;
++	struct brcmf_fws_info *fws = drvr_to_fws(drvr);
+ 	struct brcmf_skbuff_cb *skcb = brcmf_skbcb(skb);
+ 	struct ethhdr *eh = (struct ethhdr *)(skb->data);
+ 	int fifo = BRCMF_FWS_FIFO_BCMC;
+@@ -2120,7 +2126,7 @@ int brcmf_fws_process_skb(struct brcmf_i
  		brcmf_fws_enq(fws, BRCMF_FWS_SKBSTATE_DELAYED, fifo, skb);
  		brcmf_fws_schedule_deq(fws);
  	} else {
@@ -735,7 +745,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		brcmf_txfinalize(ifp, skb, false);
  		rc = -ENOMEM;
  	}
-@@ -2339,7 +2344,7 @@ int brcmf_fws_init(struct brcmf_pub *drv
+@@ -2338,7 +2344,7 @@ struct brcmf_fws_info *brcmf_fws_attach(
  
  	fws->fws_wq = create_singlethread_workqueue("brcmf_fws_wq");
  	if (fws->fws_wq == NULL) {
@@ -744,7 +754,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		rc = -EBADF;
  		goto fail;
  	}
-@@ -2355,13 +2360,13 @@ int brcmf_fws_init(struct brcmf_pub *drv
+@@ -2354,13 +2360,13 @@ struct brcmf_fws_info *brcmf_fws_attach(
  	rc = brcmf_fweh_register(drvr, BRCMF_E_FIFO_CREDIT_MAP,
  				 brcmf_fws_notify_credit_map);
  	if (rc < 0) {
@@ -760,7 +770,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		brcmf_fweh_unregister(drvr, BRCMF_E_FIFO_CREDIT_MAP);
  		goto fail;
  	}
-@@ -2373,7 +2378,7 @@ int brcmf_fws_init(struct brcmf_pub *drv
+@@ -2372,7 +2378,7 @@ struct brcmf_fws_info *brcmf_fws_attach(
  	fws->fw_signals = true;
  	ifp = brcmf_get_ifp(drvr, 0);
  	if (brcmf_fil_iovar_int_set(ifp, "tlv", tlv)) {
@@ -1549,10 +1559,10 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  			       struct cfg80211_sched_scan_request *req)
  {
 +	struct brcmf_pub *drvr = ifp->drvr;
- 	struct brcmu_d11inf *d11inf;
  	struct brcmf_pno_config_le pno_cfg;
  	struct cfg80211_ssid *ssid;
-@@ -191,7 +195,7 @@ int brcmf_pno_start_sched_scan(struct br
+ 	u16 chan;
+@@ -190,7 +194,7 @@ int brcmf_pno_start_sched_scan(struct br
  	/* clean up everything */
  	ret = brcmf_pno_clean(ifp);
  	if  (ret < 0) {

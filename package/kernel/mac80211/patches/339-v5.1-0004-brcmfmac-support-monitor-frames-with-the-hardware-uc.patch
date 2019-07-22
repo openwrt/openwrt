@@ -39,7 +39,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -43,6 +43,36 @@
+@@ -42,6 +42,36 @@
  
  #define BRCMF_BSSIDX_INVALID			-1
  
@@ -76,7 +76,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  char *brcmf_ifname(struct brcmf_if *ifp)
  {
  	if (!ifp)
-@@ -372,6 +402,35 @@ void brcmf_netif_mon_rx(struct brcmf_if
+@@ -361,6 +391,35 @@ void brcmf_netif_mon_rx(struct brcmf_if
  {
  	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MONITOR_FMT_RADIOTAP)) {
  		/* Do nothing */

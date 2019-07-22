@@ -25,18 +25,18 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
-@@ -233,6 +233,8 @@ void brcmf_dev_reset(struct device *dev)
- void brcmf_txflowblock(struct device *dev, bool state);
+@@ -231,6 +231,8 @@ void brcmf_detach(struct device *dev);
+ void brcmf_dev_reset(struct device *dev);
  /* Request from bus module to initiate a coredump */
  void brcmf_dev_coredump(struct device *dev);
 +/* Indication that firmware has halted or crashed */
 +void brcmf_fw_crashed(struct device *dev);
  
- /* Notify the bus has transferred the tx packet to firmware */
- void brcmf_txcomplete(struct device *dev, struct sk_buff *txp, bool success);
+ /* Configure the "global" bus state used by upper layers */
+ void brcmf_bus_change_state(struct brcmf_bus *bus, enum brcmf_bus_state state);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -1274,6 +1274,16 @@ void brcmf_dev_coredump(struct device *d
+@@ -1242,6 +1242,16 @@ void brcmf_dev_coredump(struct device *d
  		brcmf_dbg(TRACE, "failed to create coredump\n");
  }
  
@@ -66,7 +66,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
-@@ -1097,8 +1097,8 @@ static u32 brcmf_sdio_hostmail(struct br
+@@ -1098,8 +1098,8 @@ static u32 brcmf_sdio_hostmail(struct br
  
  	/* dongle indicates the firmware has halted/crashed */
  	if (hmb_data & HMB_DATA_FWHALT) {

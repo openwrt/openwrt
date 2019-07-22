@@ -1,0 +1,76 @@
+From 62c50a34883c6b821d816b6a661e5d47c09d42b2 Mon Sep 17 00:00:00 2001
+From: Franky Lin <franky.lin@broadcom.com>
+Date: Tue, 28 Mar 2017 11:43:24 +0100
+Subject: [PATCH] brcmfmac: wrap brcmf_fws_init into bcdc layer
+
+Create a new protocol layer interface brcmf_proto_init_cb for protocol
+layer to finish initialzation after core module components(fweh and
+etc.) are initialized.
+
+Signed-off-by: Franky Lin <franky.lin@broadcom.com>
+Reviewed-by: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcdc.c  | 7 +++++++
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c  | 2 +-
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/proto.h | 9 +++++++++
+ 3 files changed, 17 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcdc.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcdc.c
+@@ -417,6 +417,12 @@ brcmf_proto_bcdc_reset_if(struct brcmf_i
+ 	brcmf_fws_reset_interface(ifp);
+ }
+ 
++static int
++brcmf_proto_bcdc_init_done(struct brcmf_pub *drvr)
++{
++	return brcmf_fws_init(drvr);
++}
++
+ int brcmf_proto_bcdc_attach(struct brcmf_pub *drvr)
+ {
+ 	struct brcmf_bcdc *bcdc;
+@@ -443,6 +449,7 @@ int brcmf_proto_bcdc_attach(struct brcmf
+ 	drvr->proto->add_if = brcmf_proto_bcdc_add_if;
+ 	drvr->proto->del_if = brcmf_proto_bcdc_del_if;
+ 	drvr->proto->reset_if = brcmf_proto_bcdc_reset_if;
++	drvr->proto->init_done = brcmf_proto_bcdc_init_done;
+ 	drvr->proto->pd = bcdc;
+ 
+ 	drvr->hdrlen += BCDC_HEADER_LEN + BRCMF_PROT_FW_SIGNAL_MAX_TXBYTES;
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -996,7 +996,7 @@ int brcmf_bus_started(struct device *dev
+ 	}
+ 	brcmf_feat_attach(drvr);
+ 
+-	ret = brcmf_fws_init(drvr);
++	ret = brcmf_proto_init_done(drvr);
+ 	if (ret < 0)
+ 		goto fail;
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/proto.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/proto.h
+@@ -47,6 +47,7 @@ struct brcmf_proto {
+ 	void (*add_if)(struct brcmf_if *ifp);
+ 	void (*del_if)(struct brcmf_if *ifp);
+ 	void (*reset_if)(struct brcmf_if *ifp);
++	int (*init_done)(struct brcmf_pub *drvr);
+ 	void *pd;
+ };
+ 
+@@ -145,4 +146,12 @@ brcmf_proto_reset_if(struct brcmf_pub *d
+ 	drvr->proto->reset_if(ifp);
+ }
+ 
++static inline int
++brcmf_proto_init_done(struct brcmf_pub *drvr)
++{
++	if (!drvr->proto->init_done)
++		return 0;
++	return drvr->proto->init_done(drvr);
++}
++
+ #endif /* BRCMFMAC_PROTO_H */

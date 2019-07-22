@@ -23,7 +23,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
-@@ -259,10 +259,11 @@ struct rte_console {
+@@ -260,10 +260,11 @@ struct rte_console {
  #define I_HMB_HOST_INT	I_HMB_SW3	/* Miscellaneous Interrupt */
  
  /* tohostmailboxdata */
@@ -39,7 +39,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  #define HMB_DATA_FCDATA_MASK	0xff000000
  #define HMB_DATA_FCDATA_SHIFT	24
-@@ -1093,6 +1094,10 @@ static u32 brcmf_sdio_hostmail(struct br
+@@ -1094,6 +1095,10 @@ static u32 brcmf_sdio_hostmail(struct br
  			  offsetof(struct sdpcmd_regs, tosbmailbox));
  	bus->sdcnt.f1regdata += 2;
  
@@ -50,7 +50,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	/* Dongle recomposed rx frames, accept them again */
  	if (hmb_data & HMB_DATA_NAKHANDLED) {
  		brcmf_dbg(SDIO, "Dongle reports NAK handled, expect rtx of %d\n",
-@@ -1150,6 +1155,7 @@ static u32 brcmf_sdio_hostmail(struct br
+@@ -1151,6 +1156,7 @@ static u32 brcmf_sdio_hostmail(struct br
  			 HMB_DATA_NAKHANDLED |
  			 HMB_DATA_FC |
  			 HMB_DATA_FWREADY |

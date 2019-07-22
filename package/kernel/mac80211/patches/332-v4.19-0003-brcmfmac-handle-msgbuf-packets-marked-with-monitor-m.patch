@@ -38,7 +38,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  #include <net/ipv6.h>
  #include <brcmu_utils.h>
  #include <brcmu_wifi.h>
-@@ -367,6 +368,34 @@ void brcmf_netif_rx(struct brcmf_if *ifp
+@@ -356,6 +357,34 @@ void brcmf_netif_rx(struct brcmf_if *ifp
  		netif_rx_ni(skb);
  }
  
@@ -83,7 +83,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  	struct mutex proto_block;
  	unsigned char proto_buf[BRCMF_DCMD_MAXLEN];
-@@ -219,6 +220,7 @@ void brcmf_txflowblock_if(struct brcmf_i
+@@ -217,6 +218,7 @@ void brcmf_txflowblock_if(struct brcmf_i
  			  enum brcmf_netif_stop_reason reason, bool state);
  void brcmf_txfinalize(struct brcmf_if *ifp, struct sk_buff *txp, bool success);
  void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb);

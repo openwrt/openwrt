@@ -49,7 +49,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
   */
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -1080,6 +1080,14 @@ static int brcmf_revinfo_read(struct seq
+@@ -1052,6 +1052,14 @@ static int brcmf_revinfo_read(struct seq
  	return 0;
  }
  
@@ -64,7 +64,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  int brcmf_bus_started(struct device *dev)
  {
  	int ret = -1;
-@@ -1161,6 +1169,8 @@ int brcmf_bus_started(struct device *dev
+@@ -1133,6 +1141,8 @@ int brcmf_bus_started(struct device *dev
  #endif
  #endif /* CONFIG_INET */
  
@@ -73,7 +73,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	return 0;
  
  fail:
-@@ -1282,6 +1292,8 @@ void brcmf_fw_crashed(struct device *dev
+@@ -1250,6 +1260,8 @@ void brcmf_fw_crashed(struct device *dev
  	bphy_err(drvr, "Firmware has halted or crashed\n");
  
  	brcmf_dev_coredump(dev);
@@ -84,7 +84,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  void brcmf_detach(struct device *dev)
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
-@@ -146,6 +146,8 @@ struct brcmf_pub {
+@@ -144,6 +144,8 @@ struct brcmf_pub {
  	struct notifier_block inet6addr_notifier;
  	struct brcmf_mp_device *settings;
  

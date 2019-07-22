@@ -24,10 +24,10 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -6489,6 +6489,7 @@ static int brcmf_setup_wiphy(struct wiph
- 				    BIT(NL80211_BSS_SELECT_ATTR_RSSI_ADJUST);
+@@ -6490,6 +6490,7 @@ static int brcmf_setup_wiphy(struct wiph
  
- 	wiphy->flags |= WIPHY_FLAG_PS_ON_BY_DEFAULT |
+ 	wiphy->flags |= WIPHY_FLAG_NETNS_OK |
+ 			WIPHY_FLAG_PS_ON_BY_DEFAULT |
 +			WIPHY_FLAG_HAVE_AP_SME |
  			WIPHY_FLAG_OFFCHAN_TX |
  			WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
