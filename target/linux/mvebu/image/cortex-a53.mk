@@ -35,7 +35,7 @@ define Device/marvell_armada-3720-db
 endef
 TARGET_DEVICES += marvell_armada-3720-db
 
-define Device/methode_uDPU
+define Device/methode_udpu
   $(call Device/Default-arm64)
   DEVICE_TITLE := Methode micro-DPU (uDPU)
   DEVICE_DTS := armada-3720-uDPU
@@ -44,8 +44,12 @@ define Device/methode_uDPU
   KERNEL_INITRAMFS_SUFFIX := .itb
   DEVICE_PACKAGES := f2fs-tools e2fsprogs fdisk ethtool kmod-usb2 kmod-usb3 \
 			kmod-e100 kmod-e1000 kmod-e1000e kmod-igb kmod-ixgbevf \
-			kmod-mdio-gpio kmod-switch-mvsw61xx
+			kmod-mdio-gpio kmod-switch-mvsw61xx kmod-i2c-pxa
+  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(2)
+  IMAGES := firmware.tgz
+  IMAGE/firmware.tgz := boot-scr | boot-img-ext4 | uDPU-firmware | append-metadata
+  BOOT_SCRIPT := udpu
 endef
-TARGET_DEVICES += methode_uDPU
+TARGET_DEVICES += methode_udpu
 
 endif
