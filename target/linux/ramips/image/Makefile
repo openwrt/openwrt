@@ -147,11 +147,6 @@ define Build/sercom-footer
 	$(call Build/sercom-seal,-f)
 endef
 
-ralink_default_fw_size_4M=3866624
-ralink_default_fw_size_8M=8060928
-ralink_default_fw_size_16M=16449536
-ralink_default_fw_size_32M=33226752
-
 ifeq ($(SUBTARGET),rt288x)
 include rt288x.mk
 endif
