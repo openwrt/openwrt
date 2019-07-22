@@ -189,6 +189,18 @@ define Device/tplink_tl-wr841-v11
 endef
 TARGET_DEVICES += tplink_tl-wr841-v11
 
+define Device/tplink_tl-wr841-v12
+  $(Device/tplink-4mlzma)
+  ATH_SOC := qca9533
+  DEVICE_MODEL := TL-WR841N/ND
+  DEVICE_VARIANT := v12
+  TPLINK_HWID := 0x08410012
+  IMAGES += factory-us.bin factory-eu.bin
+  IMAGE/factory-us.bin := append-rootfs | mktplinkfw factory -C US
+  IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
+endef
+TARGET_DEVICES += tplink_tl-wr841-v12
+
 define Device/tplink_tl-wr941-v2
   $(Device/tplink-4m)
   ATH_SOC := ar9132
