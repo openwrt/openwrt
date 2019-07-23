@@ -746,7 +746,38 @@ platform_check_image() {
 	return 1
 }
 
-platform_pre_upgrade() {
+platform_do_upgrade_mikrotik_rb() {
+	CI_KERNPART=none
+	local fw_mtd=$(find_mtd_part kernel)
+	fw_mtd="${fw_mtd/block/}"
+	[ -n "$fw_mtd" ] || return
+	mtd erase kernel
+	tar xf "$1" sysupgrade-routerboard/kernel -O | nandwrite -o "$fw_mtd" -
+
+	nand_do_upgrade "$1"
+}
+
+platform_do_upgrade_nokia() {
+	case "$(fw_printenv -n dualPartition)" in
+		imgA)
+			fw_setenv dualPartition imgB
+			fw_setenv ActImg NokiaImageB
+		;;
+		imgB)
+			fw_setenv dualPartition imgA
+			fw_setenv ActImg NokiaImageA
+		;;
+	esac
+	ubiblock -r /dev/ubiblock0_0 2>/dev/null >/dev/null
+	rm -f /dev/ubiblock0_0
+	ubidetach -d 0 2>/dev/null >/dev/null
+	CI_UBIPART=ubi_alt
+	CI_KERNPART=kernel_alt
+
+	nand_do_upgrade "$1"
+}
+
+platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
@@ -771,46 +802,10 @@ platform_pre_upgrade() {
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
 		;;
 	esac
-}
-
-platform_nand_pre_upgrade() {
-	local board=$(board_name)
-
-	case "$board" in
-	rb*)
-		CI_KERNPART=none
-		local fw_mtd=$(find_mtd_part kernel)
-		fw_mtd="${fw_mtd/block/}"
-		[ -n "$fw_mtd" ] || return
-		mtd erase kernel
-		tar xf "$1" sysupgrade-routerboard/kernel -O | nandwrite -o "$fw_mtd" -
-		;;
-	wi2a-ac200i)
-		case "$(fw_printenv -n dualPartition)" in
-			imgA)
-				fw_setenv dualPartition imgB
-				fw_setenv ActImg NokiaImageB
-			;;
-			imgB)
-				fw_setenv dualPartition imgA
-				fw_setenv ActImg NokiaImageA
-			;;
-		esac
-		ubiblock -r /dev/ubiblock0_0 2>/dev/null >/dev/null
-		rm -f /dev/ubiblock0_0
-		ubidetach -d 0 2>/dev/null >/dev/null
-		CI_UBIPART=ubi_alt
-		CI_KERNPART=kernel_alt
-		;;
-	esac
-}
-
-platform_do_upgrade() {
-	local board=$(board_name)
 
 	case "$board" in
 	all0258n)
-		platform_do_upgrade_allnet "0x9f050000" "$ARGV"
+		platform_do_upgrade_allnet "0x9f050000" "$1"
 		;;
 	all0305|\
 	eap7660d|\
@@ -822,19 +817,19 @@ platform_do_upgrade() {
 	pb44|\
 	routerstation|\
 	routerstation-pro)
-		platform_do_upgrade_combined "$ARGV"
+		platform_do_upgrade_combined "$1"
 		;;
 	all0315n)
-		platform_do_upgrade_allnet "0x9f080000" "$ARGV"
+		platform_do_upgrade_allnet "0x9f080000" "$1"
 		;;
 	cap4200ag|\
 	eap300v2|\
 	ens202ext)
-		platform_do_upgrade_allnet "0xbf0a0000" "$ARGV"
+		platform_do_upgrade_allnet "0xbf0a0000" "$1"
 		;;
 	dir-825-b1|\
 	tew-673gru)
-		platform_do_upgrade_dir825b "$ARGV"
+		platform_do_upgrade_dir825b "$1"
 		;;
 	a40|\
 	a60|\
@@ -856,13 +851,21 @@ platform_do_upgrade() {
 	om5p-ac|\
 	om5p-acv2|\
 	om5p-an)
-		platform_do_upgrade_openmesh "$ARGV"
+		platform_do_upgrade_openmesh "$1"
 		;;
 	c-60|\
 	hiveap-121|\
 	nbg6716|\
 	r6100|\
 	rambutan|\
+	wndr3700v4|\
+	wndr4300)
+		nand_do_upgrade "$1"
+		;;
+	mr18|\
+	z1)
+		merakinand_do_upgrade "$1"
+		;;
 	rb-411|\
 	rb-411u|\
 	rb-433|\
@@ -894,27 +897,23 @@ platform_do_upgrade() {
 	rb-2011uias-2hnd|\
 	rb-2011uias-2hnd-r2|\
 	rb-sxt2n|\
-	rb-sxt5n|\
-	wi2a-ac200i|\
-	wndr3700v4|\
-	wndr4300)
-		nand_do_upgrade "$1"
-		;;
-	mr18|\
-	z1)
-		merakinand_do_upgrade "$1"
+	rb-sxt5n)
+		platform_do_upgrade_mikrotik_rb "$1"
 		;;
 	uap-pro|\
 	unifi-outdoor-plus)
 		MTD_CONFIG_ARGS="-s 0x180000"
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$1"
+		;;
+	wi2a-ac200i)
+		platform_do_upgrade_nokia "$1"
 		;;
 	wp543|\
 	wpe72)
-		platform_do_upgrade_compex "$ARGV"
+		platform_do_upgrade_compex "$1"
 		;;
 	*)
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$1"
 		;;
 	esac
 }

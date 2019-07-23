@@ -9,7 +9,7 @@ platform_check_image() {
 	return 0
 }
 
-platform_pre_upgrade() {
+platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
@@ -19,38 +19,25 @@ platform_pre_upgrade() {
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
 		;;
 	esac
-}
-
-platform_nand_pre_upgrade() {
-	local board=$(board_name)
 
 	case "$board" in
-	ubnt-erx|\
-	ubnt-erx-sfp)
-		platform_upgrade_ubnt_erx "$ARGV"
-		;;
-	esac
-}
-
-platform_do_upgrade() {
-	local board=$(board_name)
-
-	case "$board" in
-	hc5962|\
-	r6220|\
+	hiwifi,hc5962|\
+	netgear,r6220|\
 	netgear,r6350|\
-	ubnt-erx|\
-	ubnt-erx-sfp|\
 	xiaomi,mir3g|\
 	xiaomi,mir3p)
-		nand_do_upgrade "$ARGV"
+		nand_do_upgrade "$1"
 		;;
-	tplink,c50-v4)
+	tplink,archer-c50-v4)
 		MTD_ARGS="-t romfile"
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$1"
+		;;
+	ubiquiti,edgerouterx|\
+	ubiquiti,edgerouterx-sfp)
+		platform_upgrade_ubnt_erx "$1"
 		;;
 	*)
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$1"
 		;;
 	esac
 }

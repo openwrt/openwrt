@@ -22,7 +22,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/chip.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/chip.c
-@@ -707,8 +707,10 @@ static u32 brcmf_chip_tcm_rambase(struct
+@@ -696,8 +696,10 @@ static u32 brcmf_chip_tcm_rambase(struct
  	return 0;
  }
  
@@ -34,7 +34,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	struct brcmf_core_priv *mem_core;
  	struct brcmf_core *mem;
  
-@@ -990,7 +992,7 @@ static int brcmf_chip_recognition(struct
+@@ -979,7 +981,7 @@ static int brcmf_chip_recognition(struct
  		brcmf_chip_set_passive(&ci->pub);
  	}
  
@@ -45,7 +45,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  static void brcmf_chip_disable_arm(struct brcmf_chip_priv *chip, u16 id)
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/chip.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/chip.h
-@@ -80,6 +80,7 @@ struct brcmf_buscore_ops {
+@@ -69,6 +69,7 @@ struct brcmf_buscore_ops {
  	void (*activate)(void *ctx, struct brcmf_chip *chip, u32 rstvec);
  };
  
@@ -55,7 +55,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  void brcmf_chip_detach(struct brcmf_chip *chip);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
-@@ -1779,6 +1779,12 @@ static void brcmf_pcie_setup(struct devi
+@@ -1769,6 +1769,12 @@ static void brcmf_pcie_setup(struct devi
  	nvram_len = fwreq->items[BRCMF_PCIE_FW_NVRAM].nv_data.len;
  	kfree(fwreq);
  

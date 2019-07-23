@@ -60,6 +60,30 @@ define Device/tplink_archer-c59-v1
 endef
 TARGET_DEVICES += tplink_archer-c59-v1
 
+define Device/tplink_archer-c60-v1
+  $(Device/tplink-safeloader-uimage)
+  ATH_SOC := qca9561
+  IMAGE_SIZE := 7936k
+  DEVICE_MODEL := Archer C60
+  DEVICE_VARIANT := v1
+  TPLINK_BOARD_ID := ARCHER-C60-V1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  SUPPORTED_DEVICES += archer-c60-v1
+endef
+TARGET_DEVICES += tplink_archer-c60-v1
+
+define Device/tplink_archer-c60-v2
+  $(Device/tplink-safeloader-uimage)
+  ATH_SOC := qca9561
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := Archer C60
+  DEVICE_VARIANT := v2
+  TPLINK_BOARD_ID := ARCHER-C60-V2
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  SUPPORTED_DEVICES += archer-c60-v2
+endef
+TARGET_DEVICES += tplink_archer-c60-v2
+
 define Device/tplink_archer-c6-v2
   $(Device/tplink-safeloader-uimage)
   ATH_SOC := qca9563
@@ -159,6 +183,40 @@ define Device/tplink_cpe210-v3
 endef
 TARGET_DEVICES += tplink_cpe210-v3
 
+define Device/tplink_cpe510-v2
+  $(Device/tplink-safeloader)
+  ATH_SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := CPE510
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := CPE510V2
+  LOADER_TYPE := elf
+  LOADER_FLASH_OFFS := 0x43000 
+  COMPILE := loader-$(1).elf 
+  COMPILE/loader-$(1).elf := loader-okli-compile 
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 12288
+  SUPPORTED_DEVICES += cpe510-v2
+endef
+TARGET_DEVICES += tplink_cpe510-v2
+
+define Device/tplink_cpe510-v3
+  $(Device/tplink-safeloader)
+  ATH_SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := CPE510
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := CPE510V3
+  LOADER_TYPE := elf
+  LOADER_FLASH_OFFS := 0x43000 
+  COMPILE := loader-$(1).elf 
+  COMPILE/loader-$(1).elf := loader-okli-compile 
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 12288
+  SUPPORTED_DEVICES += cpe510-v3
+endef
+TARGET_DEVICES += tplink_cpe510-v3
+
 define Device/tplink_cpe610-v1
   $(Device/tplink-safeloader)
   ATH_SOC := ar9344
@@ -176,6 +234,7 @@ TARGET_DEVICES += tplink_cpe610-v1
 
 define Device/tplink_archer-d50-v1
   ATH_SOC := qca9531
+  DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer D50
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
@@ -208,6 +267,33 @@ define Device/tplink_re350k-v1
   TPLINK_HWREV := 0
 endef
 TARGET_DEVICES += tplink_re350k-v1
+
+define Device/tplink_rex5x-v1
+  $(Device/tplink-safeloader)
+  ATH_SOC := qca9558
+  IMAGE_SIZE := 6016k
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  TPLINK_HWID := 0x0
+  TPLINK_HWREV := 0
+endef
+
+define Device/tplink_re355-v1
+  $(Device/tplink_rex5x-v1)
+  DEVICE_MODEL := RE355
+  DEVICE_VARIANT := v1
+  TPLINK_BOARD_ID := RE355
+  SUPPORTED_DEVICES += re355
+endef
+TARGET_DEVICES += tplink_re355-v1
+
+define Device/tplink_re450-v1
+  $(Device/tplink_rex5x-v1)
+  DEVICE_MODEL := RE450
+  DEVICE_VARIANT := v1
+  TPLINK_BOARD_ID := RE450
+  SUPPORTED_DEVICES += re450
+endef
+TARGET_DEVICES += tplink_re450-v1
 
 define Device/tplink_re450-v2
   $(Device/tplink-safeloader)

@@ -36,10 +36,6 @@ define Package/perf/description
   perf is the Linux performance monitoring tool
 endef
 
-define Build/Prepare
-	$(CP) $(LINUX_DIR)/tools/perf/* $(PKG_BUILD_DIR)/
-endef
-
 MAKE_FLAGS = \
 	ARCH="$(LINUX_KARCH)" \
 	NO_LIBPERL=1 \
@@ -59,13 +55,13 @@ MAKE_FLAGS = \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
 	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
 	WERROR=0 \
+	O=$(PKG_BUILD_DIR) \
 	prefix=/usr
 
 define Build/Compile
 	+$(MAKE_FLAGS) $(MAKE) $(PKG_JOBS) \
-		-C $(PKG_BUILD_DIR) \
-		-f Makefile.perf \
-		--no-print-directory
+		--no-print-directory \
+		-C $(LINUX_DIR)/tools/perf
 endef
 
 define Package/perf/install

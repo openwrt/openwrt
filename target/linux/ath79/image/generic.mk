@@ -85,6 +85,32 @@ define Device/8dev_carambola2
 endef
 TARGET_DEVICES += 8dev_carambola2
 
+define Device/adtran_bsap1880
+  ATH_SOC := ar7161
+  DEVICE_VENDOR := Adtran/Bluesocket
+  DEVICE_PACKAGES += -swconfig -uboot-envtools fconfig
+  KERNEL := kernel-bin | append-dtb | lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGE_SIZE := 11200k
+  IMAGES += kernel.bin rootfs.bin
+  IMAGE/kernel.bin := append-kernel | pad-to $$$$(BLOCKSIZE)
+  IMAGE/rootfs.bin := append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+
+define Device/adtran_bsap1800-v2
+  $(Device/adtran_bsap1880)
+  DEVICE_MODEL := BSAP-1800
+  DEVICE_VARIANT := v2
+endef
+TARGET_DEVICES += adtran_bsap1800-v2
+
+define Device/adtran_bsap1840
+  $(Device/adtran_bsap1880)
+  DEVICE_MODEL := BSAP-1840
+endef
+TARGET_DEVICES += adtran_bsap1840
+
 define Device/aruba_ap-105
   ATH_SOC := ar7161
   DEVICE_VENDOR := Aruba
@@ -262,6 +288,15 @@ define Device/devolo_dvl1750i
   IMAGE_SIZE := 15936k
 endef
 TARGET_DEVICES += devolo_dvl1750i
+
+define Device/devolo_dvl1750x
+  ATH_SOC := qca9558
+  DEVICE_VENDOR := devolo
+  DEVICE_MODEL := WiFi pro 1750x
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += devolo_dvl1750x
 
 define Device/dlink_dir-825-b1
   ATH_SOC := ar7161
@@ -485,10 +520,11 @@ TARGET_DEVICES += iodata_wn-ac1600dgr
 define Device/iodata_wn-ac1600dgr2
   ATH_SOC := qca9557
   DEVICE_VENDOR := I-O DATA
-  DEVICE_MODEL := WN-AC1600DGR2
+  DEVICE_MODEL := WN-AC1600DGR2/DGR3
   IMAGE_SIZE := 14656k
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+  IMAGES += dgr2-dgr3-factory.bin
+  IMAGE/dgr2-dgr3-factory.bin := \
+    append-kernel | pad-to $$$$(BLOCKSIZE) | \
     append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | \
     senao-header -r 0x30a -p 0x60 -t 2 -v 200
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
@@ -719,6 +755,18 @@ define Device/phicomm_k2t
 endef
 TARGET_DEVICES += phicomm_k2t
 
+define Device/qihoo_c301
+  $(Device/seama)
+  ATH_SOC := ar9344
+  DEVICE_VENDOR := Qihoo
+  DEVICE_MODEL := C301
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct uboot-envtools
+  IMAGE_SIZE := 15744k
+  SEAMA_SIGNATURE := wrgac26_qihoo360_360rg
+  SUPPORTED_DEVICES += qihoo-c301
+endef
+TARGET_DEVICES += qihoo_c301
+
 define Device/rosinson_wr818
   ATH_SOC := qca9563
   DEVICE_VENDOR := Rosinson
@@ -727,6 +775,22 @@ define Device/rosinson_wr818
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += rosinson_wr818
+
+define Device/trendnet_tew-823dru
+  ATH_SOC := qca9558
+  DEVICE_VENDOR := Trendnet
+  DEVICE_MODEL := TEW-823DRU
+  DEVICE_VARIANT := v1.0R
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  SUPPORTED_DEVICES += tew-823dru
+  IMAGE_SIZE := 15296k
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs
+  IMAGE/factory.bin := $$(IMAGE/default) | pad-offset $$$$(IMAGE_SIZE) 26 | \
+	append-string 00AP135AR9558-RT-131129-00 | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += trendnet_tew-823dru
 
 define Device/wd_mynet-n750
   $(Device/seama)

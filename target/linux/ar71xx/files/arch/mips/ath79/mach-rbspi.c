@@ -512,6 +512,18 @@ static struct platform_device rbwapgsc_phy_device = {
 	},
 };
 
+static struct at803x_platform_data rbwapgsc_at803x_data = {
+	.override_sgmii_aneg = 1,
+};
+
+static struct mdio_board_info rbwapgsc_mdio_info[] = {
+	{
+		.bus_id = "gpio-1",
+		.mdio_addr = RBWAPGSC_MDIO_PHYADDR,
+		.platform_data = &rbwapgsc_at803x_data,
+	},
+};
+
 /* RB911L GPIOs */
 #define RB911L_GPIO_BTN_RESET	15
 #define RB911L_GPIO_LED_1	13
@@ -1106,10 +1118,14 @@ static void __init rbwapgsc_setup(void)
 
 	platform_device_register(&rbwapgsc_phy_device);
 
+	mdiobus_register_board_info(rbwapgsc_mdio_info,
+				    ARRAY_SIZE(rbwapgsc_mdio_info));
+
 	ath79_init_mac(ath79_eth1_data.mac_addr, ath79_mac_base, 0);
 	ath79_eth1_data.mii_bus_dev = &rbwapgsc_phy_device.dev;
 	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
 	ath79_eth1_data.phy_mask = BIT(RBWAPGSC_MDIO_PHYADDR);
+	ath79_eth1_data.enable_sgmii_fixup = 1;
 	ath79_eth1_pll_data.pll_1000 = 0x03000101;
 	ath79_eth1_pll_data.pll_100 = 0x80000101;
 	ath79_eth1_pll_data.pll_10 = 0x80001313;

@@ -9,11 +9,14 @@ ath79_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+	adtran,bsap1800-v2|\
+	adtran,bsap1840|\
 	aruba,ap-105|\
 	avm,fritz300e|\
 	devolo,dvl1200i|\
 	devolo,dvl1750c|\
 	devolo,dvl1750i|\
+	devolo,dvl1750x|\
 	engenius,ecb1750|\
 	glinet,ar300m-lite|\
 	netgear,ex6400|\
@@ -25,8 +28,12 @@ ath79_setup_interfaces()
 	pqi,air-pen|\
 	tplink,cpe210-v2|\
 	tplink,cpe210-v3|\
+	tplink,cpe510-v2|\
+	tplink,cpe510-v3|\
 	tplink,cpe610-v1|\
 	tplink,re350k-v1|\
+	tplink,re355-v1|\
+	tplink,re450-v1|\
 	tplink,re450-v2|\
 	tplink,tl-mr10u|\
 	tplink,tl-mr3020-v1|\
@@ -59,7 +66,8 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:lan" "4:lan" "5:lan" "1:wan"
 		;;
-	buffalo,bhr-4grv2)
+	buffalo,bhr-4grv2|\
+	trendnet,tew-823dru)
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6@eth0"
 		;;
@@ -183,6 +191,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:lan:1" "5:lan:2" "4:wan"
 		;;
+	qihoo,c301)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan" "3:lan"
+		;;
 	rosinson,wr818)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:wan"
@@ -203,6 +216,12 @@ ath79_setup_interfaces()
 	tplink,tl-wdr4900-v2)
 		ucidef_add_switch "switch0" \
 			"0@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth0" "1:wan"
+		;;
+	tplink,archer-c60-v1|\
+	tplink,archer-c60-v2)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
 		;;
 	tplink,archer-d50-v1)
 		ucidef_add_switch "switch0" \
@@ -263,6 +282,11 @@ ath79_setup_macs()
 	local board="$1"
 
 	case "$board" in
+	adtran,bsap1800-v2|\
+	adtran,bsap1840)
+		fconfig -s -w -d $(find_mtd_part "RedBoot config") -n boot_cntb -x 0
+		lan_mac=$(mtd_get_mac_binary "Board data" 2)
+		;;
 	avm,fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		;;
@@ -327,6 +351,10 @@ ath79_setup_macs()
 		lan_mac=$(k2t_get_mac "lan_mac")
 		wan_mac=$(k2t_get_mac "wan_mac")
 		;;
+	qihoo,c301)
+		lan_mac=$(mtd_get_mac_ascii devdata lanmac)
+		wan_mac=$(mtd_get_mac_ascii devdata wanmac)
+		;;
 	rosinson,wr818)
 		wan_mac=$(mtd_get_mac_binary factory 0)
 		lan_mac=$(macaddr_setbit_la "$wan_mac")
@@ -343,6 +371,10 @@ ath79_setup_macs()
 	tplink,tl-wr941n-v7-cn)
 		base_mac=$(mtd_get_mac_binary u-boot 130048)
 		wan_mac=$(macaddr_add "$base_mac" 1)
+		;;
+	trendnet,tew-823dru)
+		lan_mac=$(mtd_get_mac_text mac 4)
+		wan_mac=$(mtd_get_mac_text mac 24)
 		;;
 	ubnt,routerstation|\
 	ubnt,routerstation-pro)

@@ -9,8 +9,7 @@ YES=
 
 board=$(board_name)
 case $board in
-	mqmaker,witi-256m|\
-	mqmaker,witi-512m)
+	mqmaker,witi)
 		partname=factory
 		offset=$((0xe000))
 	;;

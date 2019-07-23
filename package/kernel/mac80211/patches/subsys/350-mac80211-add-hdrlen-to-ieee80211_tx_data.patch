@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -179,6 +179,7 @@ struct ieee80211_tx_data {
+@@ -176,6 +176,7 @@ struct ieee80211_tx_data {
  	struct ieee80211_tx_rate rate;
  
  	unsigned int flags;
@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -925,7 +925,7 @@ ieee80211_tx_h_fragment(struct ieee80211
+@@ -921,7 +921,7 @@ ieee80211_tx_h_fragment(struct ieee80211
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	struct ieee80211_hdr *hdr = (void *)skb->data;
  	int frag_threshold = tx->local->hw.wiphy->frag_threshold;
@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int fragnum;
  
  	/* no matter what happens, tx->skb moves to tx->skbs */
-@@ -946,8 +946,6 @@ ieee80211_tx_h_fragment(struct ieee80211
+@@ -942,8 +942,6 @@ ieee80211_tx_h_fragment(struct ieee80211
  	if (WARN_ON(info->flags & IEEE80211_TX_CTL_AMPDU))
  		return TX_DROP;
  
@@ -39,7 +39,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* internal error, why isn't DONTFRAG set? */
  	if (WARN_ON(skb->len + FCS_LEN <= frag_threshold))
  		return TX_DROP;
-@@ -1178,6 +1176,8 @@ ieee80211_tx_prepare(struct ieee80211_su
+@@ -1174,6 +1172,8 @@ ieee80211_tx_prepare(struct ieee80211_su
  
  	hdr = (struct ieee80211_hdr *) skb->data;
  
@@ -48,7 +48,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (likely(sta)) {
  		if (!IS_ERR(sta))
  			tx->sta = sta;
-@@ -3525,6 +3525,7 @@ begin:
+@@ -3577,6 +3577,7 @@ begin:
  	tx.local = local;
  	tx.skb = skb;
  	tx.sdata = vif_to_sdata(info->control.vif);
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (txq->sta)
  		tx.sta = container_of(txq->sta, struct sta_info, sta);
-@@ -3551,7 +3552,7 @@ begin:
+@@ -3603,7 +3604,7 @@ begin:
  
  		if (tx.key &&
  		    (tx.key->conf.flags & IEEE80211_KEY_FLAG_GENERATE_IV))
@@ -65,7 +65,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		ieee80211_xmit_fast_finish(sta->sdata, sta, pn_offs,
  					   tx.key, skb);
-@@ -4008,6 +4009,7 @@ ieee80211_build_data_template(struct iee
+@@ -4058,6 +4059,7 @@ ieee80211_build_data_template(struct iee
  	hdr = (void *)skb->data;
  	tx.sta = sta_info_get(sdata, hdr->addr1);
  	tx.skb = skb;
@@ -75,7 +75,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		rcu_read_unlock();
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -1390,6 +1390,7 @@ void ieee80211_send_auth(struct ieee8021
+@@ -1538,6 +1538,7 @@ void ieee80211_send_auth(struct ieee8021
  	struct ieee80211_local *local = sdata->local;
  	struct sk_buff *skb;
  	struct ieee80211_mgmt *mgmt;
@@ -83,7 +83,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int err;
  
  	/* 24 + 6 = header + auth_algo + auth_transaction + status_code */
-@@ -1413,8 +1414,10 @@ void ieee80211_send_auth(struct ieee8021
+@@ -1561,8 +1562,10 @@ void ieee80211_send_auth(struct ieee8021
  		skb_put_data(skb, extra, extra_len);
  
  	if (auth_alg == WLAN_AUTH_SHARED_KEY && transaction == 3) {
@@ -97,7 +97,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/wep.c
 +++ b/net/mac80211/wep.c
-@@ -89,11 +89,11 @@ static void ieee80211_wep_get_iv(struct
+@@ -86,11 +86,11 @@ static void ieee80211_wep_get_iv(struct
  
  static u8 *ieee80211_wep_add_iv(struct ieee80211_local *local,
  				struct sk_buff *skb,
@@ -110,7 +110,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u8 *newhdr;
  
  	hdr->frame_control |= cpu_to_le16(IEEE80211_FCTL_PROTECTED);
-@@ -101,7 +101,6 @@ static u8 *ieee80211_wep_add_iv(struct i
+@@ -98,7 +98,6 @@ static u8 *ieee80211_wep_add_iv(struct i
  	if (WARN_ON(skb_headroom(skb) < IEEE80211_WEP_IV_LEN))
  		return NULL;
  
@@ -118,7 +118,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	newhdr = skb_push(skb, IEEE80211_WEP_IV_LEN);
  	memmove(newhdr, newhdr + IEEE80211_WEP_IV_LEN, hdrlen);
  
-@@ -160,6 +159,7 @@ int ieee80211_wep_encrypt_data(struct cr
+@@ -157,6 +156,7 @@ int ieee80211_wep_encrypt_data(struct cr
   */
  int ieee80211_wep_encrypt(struct ieee80211_local *local,
  			  struct sk_buff *skb,
@@ -126,7 +126,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			  const u8 *key, int keylen, int keyidx)
  {
  	u8 *iv;
-@@ -169,7 +169,7 @@ int ieee80211_wep_encrypt(struct ieee802
+@@ -166,7 +166,7 @@ int ieee80211_wep_encrypt(struct ieee802
  	if (WARN_ON(skb_tailroom(skb) < IEEE80211_WEP_ICV_LEN))
  		return -1;
  
@@ -135,7 +135,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!iv)
  		return -1;
  
-@@ -307,13 +307,14 @@ static int wep_encrypt_skb(struct ieee80
+@@ -304,13 +304,14 @@ static int wep_encrypt_skb(struct ieee80
  	struct ieee80211_key_conf *hw_key = info->control.hw_key;
  
  	if (!hw_key) {
@@ -154,7 +154,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			return -1;
 --- a/net/mac80211/wep.h
 +++ b/net/mac80211/wep.h
-@@ -22,6 +22,7 @@ int ieee80211_wep_encrypt_data(struct cr
+@@ -19,6 +19,7 @@ int ieee80211_wep_encrypt_data(struct cr
  				size_t klen, u8 *data, size_t data_len);
  int ieee80211_wep_encrypt(struct ieee80211_local *local,
  			  struct sk_buff *skb,
@@ -164,7 +164,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			       size_t klen, u8 *data, size_t data_len);
 --- a/net/mac80211/wpa.c
 +++ b/net/mac80211/wpa.c
-@@ -44,7 +44,7 @@ ieee80211_tx_h_michael_mic_add(struct ie
+@@ -41,7 +41,7 @@ ieee80211_tx_h_michael_mic_add(struct ie
  	    skb->len < 24 || !ieee80211_is_data_present(hdr->frame_control))
  		return TX_CONTINUE;
  
@@ -173,7 +173,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (skb->len < hdrlen)
  		return TX_DROP;
  
-@@ -195,7 +195,6 @@ mic_fail_no_key:
+@@ -192,7 +192,6 @@ mic_fail_no_key:
  
  static int tkip_encrypt_skb(struct ieee80211_tx_data *tx, struct sk_buff *skb)
  {
@@ -181,7 +181,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211_key *key = tx->key;
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	unsigned int hdrlen;
-@@ -210,7 +209,7 @@ static int tkip_encrypt_skb(struct ieee8
+@@ -207,7 +206,7 @@ static int tkip_encrypt_skb(struct ieee8
  		return 0;
  	}
  
@@ -190,7 +190,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	len = skb->len - hdrlen;
  
  	if (info->control.hw_key)
-@@ -428,7 +427,7 @@ static int ccmp_encrypt_skb(struct ieee8
+@@ -425,7 +424,7 @@ static int ccmp_encrypt_skb(struct ieee8
  		return 0;
  	}
  
@@ -199,7 +199,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	len = skb->len - hdrlen;
  
  	if (info->control.hw_key)
-@@ -660,7 +659,7 @@ static int gcmp_encrypt_skb(struct ieee8
+@@ -657,7 +656,7 @@ static int gcmp_encrypt_skb(struct ieee8
  		return 0;
  	}
  
@@ -208,7 +208,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	len = skb->len - hdrlen;
  
  	if (info->control.hw_key)
-@@ -800,7 +799,6 @@ static ieee80211_tx_result
+@@ -797,7 +796,6 @@ static ieee80211_tx_result
  ieee80211_crypto_cs_encrypt(struct ieee80211_tx_data *tx,
  			    struct sk_buff *skb)
  {
@@ -216,7 +216,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211_key *key = tx->key;
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	int hdrlen;
-@@ -816,8 +814,7 @@ ieee80211_crypto_cs_encrypt(struct ieee8
+@@ -813,8 +811,7 @@ ieee80211_crypto_cs_encrypt(struct ieee8
  		     pskb_expand_head(skb, iv_len, 0, GFP_ATOMIC)))
  		return TX_DROP;
  

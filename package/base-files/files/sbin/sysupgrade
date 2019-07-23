@@ -316,9 +316,6 @@ case "$IMAGE" in
 		;;
 esac
 
-export ARGV="$IMAGE"
-export ARGC=1
-
 for check in $sysupgrade_image_check; do
 	( $check "$IMAGE" ) || {
 		if [ $FORCE -eq 1 ]; then
@@ -363,7 +360,7 @@ fi
 install_bin /sbin/upgraded
 v "Commencing upgrade. Closing all shell sessions."
 
-COMMAND='. /lib/functions.sh; include /lib/upgrade; do_upgrade_stage2'
+COMMAND='/lib/upgrade/do_stage2'
 
 if [ -n "$FAILSAFE" ]; then
 	printf '%s\x00%s\x00%s' "$RAM_ROOT" "$IMAGE" "$COMMAND" >/tmp/sysupgrade
