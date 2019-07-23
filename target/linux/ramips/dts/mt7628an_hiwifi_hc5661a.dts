@@ -22,6 +22,7 @@
 		wlan2g {
 			label = "hc5661a:blue:wlan2g";
 			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 	};
 };
@@ -29,8 +30,16 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "i2c", "refclk", "wled_an";
+			ralink,group = "i2c", "refclk", "wdt", "wled_an";
 			ralink,function = "gpio";
 		};
 	};
+};
+
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
 };

@@ -93,7 +93,7 @@ TARGET_DEVICES += hilink_hlk-7628n
 
 define Device/hiwifi_hc5661a
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15808k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5661A
   SUPPORTED_DEVICES += hc5661a
