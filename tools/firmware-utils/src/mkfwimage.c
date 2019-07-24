@@ -233,7 +233,7 @@ static int write_part(void* mem, part_data_t* d)
 
 	memset(p->name, 0, PART_NAME_LENGTH);
 	memcpy(p->magic, MAGIC_PART, MAGIC_LENGTH);
-	memcpy(p->name, d->partition_name, PART_NAME_LENGTH);
+	strncpy(p->name, d->partition_name, PART_NAME_LENGTH - 1);
 
 	p->index = htonl(d->partition_index);
 	p->data_size = htonl(d->stats.st_size);
