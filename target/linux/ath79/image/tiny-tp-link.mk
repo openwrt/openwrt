@@ -242,8 +242,10 @@ TARGET_DEVICES += tplink_tl-wr940n-v4
 define Device/tplink_tl-wr941-v2
   $(Device/tplink-4m)
   ATH_SOC := ar9132
-  DEVICE_MODEL := TL-WR941N/ND
+  DEVICE_MODEL := TL-WR941ND
   DEVICE_VARIANT := v2/v3
+  DEVICE_ALT0_MODEL := TL-WR941N
+  DEVICE_ALT0_VARIANT := v2/v3
   TPLINK_HWID := 0x09410002
   TPLINK_HWREV := 2
 endef
@@ -252,8 +254,10 @@ TARGET_DEVICES += tplink_tl-wr941-v2
 define Device/tplink_tl-wr941-v4
   $(Device/tplink-4m)
   ATH_SOC := ar7240
-  DEVICE_MODEL := TL-WR941N/ND
+  DEVICE_MODEL := TL-WR941ND
   DEVICE_VARIANT := v4
+  DEVICE_ALT0_MODEL := TL-WR941N
+  DEVICE_ALT0_VARIANT := v4
   TPLINK_HWID := 0x09410004
 endef
 TARGET_DEVICES += tplink_tl-wr941-v4
