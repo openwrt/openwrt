@@ -290,8 +290,8 @@ xtse() {
 		annex_s="$annex_s M,"
 	fi
 
-	annex_s=`echo ${annex_s:1}`
-	annex_s=`echo ${annex_s%?}`
+	annex_s=${annex_s:1}
+	annex_s=${annex_s%?}
 
 	# Evaluate Line Mode (according to G.997.1, 7.3.1.1.1)
 
@@ -346,8 +346,8 @@ xtse() {
 		line_mode_s="$line_mode_s G.993.1 (VDSL),"
 	fi
 
-	line_mode_s=`echo ${line_mode_s:1}`
-	line_mode_s=`echo ${line_mode_s%?}`
+	line_mode_s=${line_mode_s:1}
+	line_mode_s=${line_mode_s%?}
 
 	xtse_s="${xtse1}, ${xtse2}, ${xtse3}, ${xtse4}, ${xtse5}, ${xtse6}, ${xtse7}, ${xtse8}"
 
