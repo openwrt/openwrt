@@ -1,0 +1,13 @@
+--- a/net/netfilter/nf_flow_table_core.c
++++ b/net/netfilter/nf_flow_table_core.c
+@@ -51,8 +51,8 @@ flow_offload_fill_dir(struct flow_offloa
+ 	ft->src_port = ctt->src.u.tcp.port;
+ 	ft->dst_port = ctt->dst.u.tcp.port;
+ 
+-	ft->iifidx = other_dst->dev->ifindex;
+-	ft->oifidx = dst->dev->ifindex;
++	ft->oifidx = other_dst->dev->ifindex;
++	ft->iifidx = dst->dev->ifindex;
+ 	ft->dst_cache = dst;
+ }
+ 
