@@ -1013,6 +1013,16 @@ define Device/xiaoyu_xy-c5
 endef
 TARGET_DEVICES += xiaoyu_xy-c5
 
+define Device/xiaomi_mir3p-nor
+  SOC := mt7621
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 3 Pro NOR (16M)
+  DEVICE_PACKAGES := \
+	kmod-mt7615e kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += xiaomi_mir3p-nor
+
 define Device/xwrt_mac500f
   SOC := mt7621
   IMAGE_SIZE := 16064k
