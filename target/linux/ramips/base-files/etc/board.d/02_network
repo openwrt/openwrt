@@ -647,6 +647,10 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$(mtd_get_mac_binary factory 46)
 		;;
+	phicomm,k2p)
+		lan_mac=$(mtd_get_mac_binary factory 0xe000)
+		wan_mac=$(mtd_get_mac_binary factory 0xe006)
+		;;
 	poray,m3|\
 	poray,m4-4m|\
 	poray,m4-8m|\
