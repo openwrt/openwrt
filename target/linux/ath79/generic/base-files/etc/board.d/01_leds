@@ -118,6 +118,13 @@ enterasys,ws-ap3705i)
 devolo,magic-2-wifi)
 	ucidef_set_led_netdev "plcw" "dLAN" "devolo:white:dlan" "eth0.1" "rx"
 	;;
+compex,wpj531-16m)
+	ucidef_set_rssimon "wlan0" "1000000" "1"
+	ucidef_set_led_rssi "sig1" "SIG1" "$boardname:red:sig1" "wlan0" "85" "100"
+	ucidef_set_led_rssi "sig2" "SIG2" "$boardname:yellow:sig2" "wlan0" "75" "100"
+	ucidef_set_led_rssi "sig3" "SIG3" "$boardname:green:sig3" "wlan0" "65" "100"
+	ucidef_set_led_rssi "sig4" "SIG4" "$boardname:green:sig4" "wlan0" "50" "100"
+	;;
 dlink,dir-859-a1)
 	ucidef_set_led_switch "internet" "WAN" "$boardname:green:internet" "switch0" "0x20"
 	;;
