@@ -58,6 +58,29 @@ define Build/mkwrggimg
 	mv $@.imghdr $@
 endef
 
+define Build/mkmylofw_16m
+	$(eval device_id=$(word 1,$(1)))
+	$(eval revision=$(word 2,$(1)))
+
+	# On WPJ344, WPJ531, and WPJ563, the default boot command tries 0x9f680000
+	# first and fails if the remains of the stock image are sill there
+	# - resulting in an infinite boot loop.
+	# The size parameter is grown to have that block deleted if the firmware
+	# isn't big enough by itself.
+
+	let \
+		size="$$(stat -c%s $@)" \
+		pad="$(subst k,* 1024,$(BLOCKSIZE))" \
+		pad="(pad - (size % pad)) % pad" \
+		newsize='size + pad' ; \
+		[ $$newsize -lt $$((0x660000)) ] && newsize=0x660000 ; \
+		$(STAGING_DIR_HOST)/bin/mkmylofw \
+			-B WPE72 -i 0x11f6:$(device_id):0x11f6:$(device_id) -r $(revision) -s 0x1000000 \
+			-p0x30000:$$newsize:al:0x80060000:"OpenWRT":$@ \
+			$@.new
+		@mv $@.new $@
+endef
+
 define Build/nec-enc
   $(STAGING_DIR_HOST)/bin/nec-enc \
     -i $@ -o $@.new -k $(1)
@@ -426,6 +449,11 @@ define Device/compex_wpj531-16m
   DEVICE_MODEL := WPJ531
   DEVICE_VARIANT := 16M
   SUPPORTED_DEVICES += wpj531
+  IMAGES += cpximg-7a03.bin cpximg-7a04.bin cpximg-7a06.bin cpximg-7a07.bin
+  IMAGE/cpximg-7a03.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x68a 2
+  IMAGE/cpximg-7a04.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x693 3
+  IMAGE/cpximg-7a06.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x693 3
+  IMAGE/cpximg-7a07.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x693 3
 endef
 TARGET_DEVICES += compex_wpj531-16m
 
