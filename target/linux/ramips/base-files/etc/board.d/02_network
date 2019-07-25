@@ -600,10 +600,6 @@ ramips_setup_macs()
 		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
-	hootoo,ht-tm02|\
-	loewe,wmdr-143n|\
-	unbranded,a5-v11)
-		;;
 	iodata,wn-ac1167gr|\
 	iodata,wn-ac733gr3)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" -1)
