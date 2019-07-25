@@ -425,15 +425,6 @@
 				full-duplex;
 			};
 		};
-	};
-
-	wan: interface@1 {
-		compatible = "lantiq,xrx200-pdi";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <1>;
-		mac-address = [ 00 11 22 33 44 66 ];
-		lantiq,wan;
 		/* wan port */
 		ethernet@4 {
 			compatible = "lantiq,xrx200-pdi-port";
@@ -442,6 +433,7 @@
 			phy-handle = <&phy13>;
 		};
 	};
+
 };
 
 &pci0 {
