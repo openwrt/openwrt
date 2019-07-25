@@ -12,6 +12,7 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 include $(INCLUDE_DIR)/package.mk
 
 define Package/wireless-regdb
+	PKGARCH:=all
 	SECTION:=firmware
 	CATEGORY:=Firmware
 	URL:=https://git.kernel.org/pub/scm/linux/kernel/git/sforshee/wireless-regdb.git/
