@@ -147,6 +147,11 @@ define Build/sercom-footer
 	$(call Build/sercom-seal,-f)
 endef
 
+define Build/fonfxcimage
+	uimage_padhdr -i $@ -o $@.new
+	mv $@.new $@
+endef
+
 ifeq ($(SUBTARGET),rt288x)
 include rt288x.mk
 endif

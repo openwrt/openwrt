@@ -372,6 +372,19 @@ define Device/elecom_wrh-300cr
 endef
 TARGET_DEVICES += elecom_wrh-300cr
 
+define Device/fon_fon2601
+  MTK_SOC := mt7620a
+  IMAGE_SIZE := 15936k
+  DEVICE_VENDOR := Fon
+  DEVICE_MODEL := FON2601
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+  KERNEL_INITRAMFS := $$(KERNEL) | fonfxcimage
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs |\
+			fonfxcimage |\
+			pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += fon_fon2601
+
 define Device/glinet_gl-mt300a
   MTK_SOC := mt7620a
   IMAGE_SIZE := 15872k
