@@ -189,6 +189,7 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-pci-0000:00:00.0.bin")
 	case $board in
+	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
 	nec,wg1200cr)
 		ath10kcal_extract "art" 20480 12064
