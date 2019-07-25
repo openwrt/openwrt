@@ -57,12 +57,12 @@ define Device/vixmini
 endef
 TARGET_DEVICES += vixmini
 
-define Device/gl-mt300n-v4
-  DTS := GL-MT300N-V4
+define Device/n300
+  DTS := N300
   IMAGE_SIZE := 16064k
-  DEVICE_TITLE := GL-iNet GL-MT300N-V4
+  DEVICE_TITLE := GL-iNet N300
 endef
-TARGET_DEVICES += gl-mt300n-v4
+TARGET_DEVICES += n300
 
 define Device/hc5661a
   DTS := HC5661A

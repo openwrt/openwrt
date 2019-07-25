@@ -6,8 +6,8 @@
 #include <dt-bindings/input/input.h>
 
 /{
-	compatible = "glinet,gl-mt300n-v4", "mediatek,mt7628an-soc";
-	model = "GL-MT300N-V4";
+	compatible = "glinet,n300", "mediatek,mt7628an-soc";
+	model = "N300";
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
@@ -22,13 +22,13 @@
 		compatible = "gpio-leds";
 
 		power {
-			label = "gl-mt300n-v4:blue:power";
+			label = "n300:blue:power";
 			default-state = "on";
 			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "gl-mt300n-v4:white:wlan";
+			label = "n300:white:wlan";
 			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 		};
 	};

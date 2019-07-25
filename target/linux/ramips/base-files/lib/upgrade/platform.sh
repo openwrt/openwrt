@@ -70,7 +70,7 @@ platform_check_image() {
 	gl-mt750|\
 	gl-mt300n-v2|\
 	vixmini|\
-	gl-mt300n-v4|\
+	n300|\
 	hc5*61|\
 	hc5661a|\
 	hg255d|\
