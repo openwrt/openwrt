@@ -1,0 +1,158 @@
+From 608aa9fcfca2ffeba40d78c7c4e0dcb50e0d5704 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Sun, 10 Mar 2019 22:44:15 +0000
+Subject: [PATCH 44/57] Support TCP fastopen on incoming and outgoing
+ connections.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ CHANGELOG     |  5 ++++-
+ src/dnsmasq.h |  1 +
+ src/forward.c | 50 +++++++++++++++++++++++++++++++++++++++++---------
+ src/network.c |  5 +++++
+ 4 files changed, 51 insertions(+), 10 deletions(-)
+
+--- a/CHANGELOG
++++ b/CHANGELOG
+@@ -26,7 +26,10 @@ version 2.81
+ 	Thanks to Norman Rasmussen, Sven Mueller and Maciej Żenczykowski
+ 	for spotting and diagnosing the bug and providing patches.
+ 
+-
++	Support TCP-fastopen (RFC-7413) on both incoming and
++	outgoing TCP connections, if supported and enabled in the OS.
++	
++	
+ version 2.80
+ 	Add support for RFC 4039 DHCP rapid commit. Thanks to Ashram Method
+ 	for the initial patch and motivation.
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -128,6 +128,7 @@ typedef unsigned long long u64;
+ #include <netinet/ip.h>
+ #include <netinet/ip6.h>
+ #include <netinet/ip_icmp.h>
++#include <netinet/tcp.h>
+ #include <sys/uio.h>
+ #include <syslog.h>
+ #include <dirent.h>
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -1635,6 +1635,8 @@ static int tcp_key_recurse(time_t now, i
+ 	
+       while (1)
+ 	{
++	  int data_sent = 0;
++	  
+ 	  if (!firstsendto)
+ 	    firstsendto = server;
+ 	  else
+@@ -1667,8 +1669,22 @@ static int tcp_key_recurse(time_t now, i
+ 		setsockopt(server->tcpfd, SOL_SOCKET, SO_MARK, &mark, sizeof(unsigned int));
+ #endif	
+ 	      
+-	      if (!local_bind(server->tcpfd,  &server->source_addr, server->interface, 0, 1) ||
+-		  connect(server->tcpfd, &server->addr.sa, sa_len(&server->addr)) == -1)
++	      if (!local_bind(server->tcpfd,  &server->source_addr, server->interface, 0, 1))
++		{
++		  close(server->tcpfd);
++		  server->tcpfd = -1;
++		  continue; /* No good, next server */
++		}
++	      
++#ifdef MSG_FASTOPEN
++	      while(retry_send(sendto(server->tcpfd, packet, m + sizeof(u16),
++				      MSG_FASTOPEN, &server->addr.sa, sa_len(&server->addr))));
++	      
++	      if (errno == 0)
++		data_sent = 1;
++#endif
++	      
++	      if (!data_sent && connect(server->tcpfd, &server->addr.sa, sa_len(&server->addr)) == -1)
+ 		{
+ 		  close(server->tcpfd);
+ 		  server->tcpfd = -1;
+@@ -1678,7 +1694,7 @@ static int tcp_key_recurse(time_t now, i
+ 	      server->flags &= ~SERV_GOT_TCP;
+ 	    }
+ 	  
+-	  if (!read_write(server->tcpfd, packet, m + sizeof(u16), 0) ||
++	  if ((!data_sent && !read_write(server->tcpfd, packet, m + sizeof(u16), 0)) ||
+ 	      !read_write(server->tcpfd, &c1, 1, 1) ||
+ 	      !read_write(server->tcpfd, &c2, 1, 1) ||
+ 	      !read_write(server->tcpfd, payload, (c1 << 8) | c2, 1))
+@@ -1951,6 +1967,8 @@ unsigned char *tcp_request(int confd, ti
+ 		     which can go to the same server, do so. */
+ 		  while (1) 
+ 		    {
++		      int data_sent = 0;
++
+ 		      if (!firstsendto)
+ 			firstsendto = last_server;
+ 		      else
+@@ -1969,6 +1987,8 @@ unsigned char *tcp_request(int confd, ti
+ 			continue;
+ 
+ 		    retry:
++		      *length = htons(size);
++
+ 		      if (last_server->tcpfd == -1)
+ 			{
+ 			  if ((last_server->tcpfd = socket(last_server->addr.sa.sa_family, SOCK_STREAM, 0)) == -1)
+@@ -1978,10 +1998,24 @@ unsigned char *tcp_request(int confd, ti
+ 			  /* Copy connection mark of incoming query to outgoing connection. */
+ 			  if (have_mark)
+ 			    setsockopt(last_server->tcpfd, SOL_SOCKET, SO_MARK, &mark, sizeof(unsigned int));
+-#endif	
++#endif			  
+ 		      
+-			  if ((!local_bind(last_server->tcpfd,  &last_server->source_addr, last_server->interface, 0, 1) ||
+-			       connect(last_server->tcpfd, &last_server->addr.sa, sa_len(&last_server->addr)) == -1))
++			  if ((!local_bind(last_server->tcpfd,  &last_server->source_addr, last_server->interface, 0, 1)))
++			    {
++			      close(last_server->tcpfd);
++			      last_server->tcpfd = -1;
++			      continue;
++			    }
++			  
++#ifdef MSG_FASTOPEN
++			    while(retry_send(sendto(last_server->tcpfd, packet, size + sizeof(u16),
++						    MSG_FASTOPEN, &last_server->addr.sa, sa_len(&last_server->addr))));
++			    
++			    if (errno == 0)
++			      data_sent = 1;
++#endif
++			    
++			    if (!data_sent && connect(last_server->tcpfd, &last_server->addr.sa, sa_len(&last_server->addr)) == -1)
+ 			    {
+ 			      close(last_server->tcpfd);
+ 			      last_server->tcpfd = -1;
+@@ -1991,13 +2025,11 @@ unsigned char *tcp_request(int confd, ti
+ 			  last_server->flags &= ~SERV_GOT_TCP;
+ 			}
+ 		      
+-		      *length = htons(size);
+-
+ 		      /* get query name again for logging - may have been overwritten */
+ 		      if (!(gotname = extract_request(header, (unsigned int)size, daemon->namebuff, &qtype)))
+ 			strcpy(daemon->namebuff, "query");
+ 		      
+-		      if (!read_write(last_server->tcpfd, packet, size + sizeof(u16), 0) ||
++		      if ((!data_sent && !read_write(last_server->tcpfd, packet, size + sizeof(u16), 0)) ||
+ 			  !read_write(last_server->tcpfd, &c1, 1, 1) ||
+ 			  !read_write(last_server->tcpfd, &c2, 1, 1) ||
+ 			  !read_write(last_server->tcpfd, payload, (c1 << 8) | c2, 1))
+--- a/src/network.c
++++ b/src/network.c
+@@ -726,6 +726,11 @@ static int make_sock(union mysockaddr *a
+   
+   if (type == SOCK_STREAM)
+     {
++#ifdef TCP_FASTOPEN
++      int qlen = 5;                           
++      setsockopt(fd, SOL_TCP, TCP_FASTOPEN, &qlen, sizeof(qlen));
++#endif
++      
+       if (listen(fd, TCP_BACKLOG) == -1)
+ 	goto err;
+     }

@@ -1,0 +1,113 @@
+From 5fc639cf9a9aafd3a2b50570808a74a4ee5cd12a Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 29 Mar 2019 21:29:43 +0000
+Subject: [PATCH 50/57] Don't retry close() syscalls after an EINTR errors.
+
+http://lists.thekelleys.org.uk/pipermail/dnsmasq-discuss/2019q1/012953.html
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/dnsmasq.c | 23 +++++++++++------------
+ 1 file changed, 11 insertions(+), 12 deletions(-)
+
+--- a/src/dnsmasq.c
++++ b/src/dnsmasq.c
+@@ -552,7 +552,7 @@ int main (int argc, char **argv)
+ 	      char *msg;
+ 
+ 	      /* close our copy of write-end */
+-	      while (retry_send(close(err_pipe[1])));
++	      close(err_pipe[1]);
+ 	      
+ 	      /* check for errors after the fork */
+ 	      if (read_event(err_pipe[0], &ev, &msg))
+@@ -561,7 +561,7 @@ int main (int argc, char **argv)
+ 	      _exit(EC_GOOD);
+ 	    } 
+ 	  
+-	  while (retry_send(close(err_pipe[0])));
++	  close(err_pipe[0]);
+ 
+ 	  /* NO calls to die() from here on. */
+ 	  
+@@ -623,8 +623,7 @@ int main (int argc, char **argv)
+ 		err = 1;
+ 	      else
+ 		{
+-		  while (retry_send(close(fd)));
+-		  if (errno != 0)
++		  if (close(fd) == -1)
+ 		    err = 1;
+ 		}
+ 	    }
+@@ -957,7 +956,7 @@ int main (int argc, char **argv)
+ 
+   /* finished start-up - release original process */
+   if (err_pipe[1] != -1)
+-    while (retry_send(close(err_pipe[1])));
++    close(err_pipe[1]);
+   
+   if (daemon->port != 0)
+     check_servers();
+@@ -1483,7 +1482,7 @@ static void async_event(int pipe, time_t
+ 	    do {
+ 	      helper_write();
+ 	    } while (!helper_buf_empty() || do_script_run(now));
+-	    while (retry_send(close(daemon->helperfd)));
++	    close(daemon->helperfd);
+ 	  }
+ #endif
+ 	
+@@ -1728,7 +1727,7 @@ static void check_dns_listeners(time_t n
+ 	  
+ 	  if (getsockname(confd, (struct sockaddr *)&tcp_addr, &tcp_len) == -1)
+ 	    {
+-	      while (retry_send(close(confd)));
++	      close(confd);
+ 	      continue;
+ 	    }
+ 	  
+@@ -1793,7 +1792,7 @@ static void check_dns_listeners(time_t n
+ 	  if (!client_ok)
+ 	    {
+ 	      shutdown(confd, SHUT_RDWR);
+-	      while (retry_send(close(confd)));
++	      close(confd);
+ 	    }
+ 	  else if (!option_bool(OPT_DEBUG) && pipe(pipefd) == 0 && (p = fork()) != 0)
+ 	    {
+@@ -1812,7 +1811,7 @@ static void check_dns_listeners(time_t n
+ 			break;
+ 		      }
+ 		}
+-	      while (retry_send(close(confd)));
++	      close(confd);
+ 
+ 	      /* The child can use up to TCP_MAX_QUERIES ids, so skip that many. */
+ 	      daemon->log_id += TCP_MAX_QUERIES;
+@@ -1858,7 +1857,7 @@ static void check_dns_listeners(time_t n
+ 	      buff = tcp_request(confd, now, &tcp_addr, netmask, auth_dns);
+ 	       
+ 	      shutdown(confd, SHUT_RDWR);
+-	      while (retry_send(close(confd)));
++	      close(confd);
+ 	      
+ 	      if (buff)
+ 		free(buff);
+@@ -1867,7 +1866,7 @@ static void check_dns_listeners(time_t n
+ 		if (s->tcpfd != -1)
+ 		  {
+ 		    shutdown(s->tcpfd, SHUT_RDWR);
+-		    while (retry_send(close(s->tcpfd)));
++		    close(s->tcpfd);
+ 		  }
+ 	      if (!option_bool(OPT_DEBUG))
+ 		{
+@@ -1943,7 +1942,7 @@ int icmp_ping(struct in_addr addr)
+   gotreply = delay_dhcp(dnsmasq_time(), PING_WAIT, fd, addr.s_addr, id);
+ 
+ #if defined(HAVE_LINUX_NETWORK) || defined(HAVE_SOLARIS_NETWORK)
+-  while (retry_send(close(fd)));
++  close(fd);
+ #else
+   opt = 1;
+   setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt));

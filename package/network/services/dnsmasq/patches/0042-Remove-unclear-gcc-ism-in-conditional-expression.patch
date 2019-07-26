@@ -1,0 +1,21 @@
+From 5ed82ae5f2946367b62f17fa4c48e9703f189c72 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Tue, 5 Mar 2019 16:38:34 +0000
+Subject: [PATCH 42/57] Remove unclear gcc-ism in conditional expression.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/radv.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/radv.c
++++ b/src/radv.c
+@@ -412,7 +412,7 @@ static void send_ra_alias(time_t now, in
+   if (mtu == 0)
+     {
+       char *mtu_name = ra_param ? ra_param->mtu_name : NULL;
+-      sprintf(daemon->namebuff, "/proc/sys/net/ipv6/conf/%s/mtu", mtu_name ? : iface_name);
++      sprintf(daemon->namebuff, "/proc/sys/net/ipv6/conf/%s/mtu", mtu_name ? mtu_name : iface_name);
+       if ((f = fopen(daemon->namebuff, "r")))
+         {
+           if (fgets(daemon->namebuff, MAXDNAME, f))

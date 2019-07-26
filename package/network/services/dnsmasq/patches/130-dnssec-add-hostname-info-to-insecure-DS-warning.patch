@@ -1,0 +1,27 @@
+From a1030c159e28bbfa966799e7b9a86081398d6352 Mon Sep 17 00:00:00 2001
+From: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+Date: Sat, 11 May 2019 16:04:56 +0100
+Subject: [PATCH] dnssec: add hostname info to insecure DS warning
+
+Make the existing "insecure DS received" warning more informative by
+reporting the domain name reporting the issue.
+
+This may help identify a problem with a specific domain or server
+configuration.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/dnssec.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/dnssec.c
++++ b/src/dnssec.c
+@@ -873,7 +873,7 @@ int dnssec_validate_ds(time_t now, struc
+   
+   if (rc == STAT_INSECURE)
+     {
+-      my_syslog(LOG_WARNING, _("Insecure DS reply received, do upstream DNS servers support DNSSEC?"));
++      my_syslog(LOG_WARNING, _("Insecure DS reply received for %s, check domain configuration and upstream DNS server DNSSEC support"), name);
+       rc = STAT_BOGUS;
+     }
+   

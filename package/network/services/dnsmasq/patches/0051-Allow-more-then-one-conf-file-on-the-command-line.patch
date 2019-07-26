@@ -1,0 +1,45 @@
+From 5c464ef62e02dea96f830425cf43da7f6a272b4c Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 29 Mar 2019 23:11:05 +0000
+Subject: [PATCH 51/57] Allow more then one --conf-file on the command line.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ man/dnsmasq.8 |  5 +++--
+ src/option.c  | 11 ++++++++---
+ 2 files changed, 11 insertions(+), 5 deletions(-)
+
+--- a/man/dnsmasq.8
++++ b/man/dnsmasq.8
+@@ -1942,8 +1942,9 @@ cannot be lower than 1025 unless dnsmasq
+ of concurrent TFTP connections is limited by the size of the port range. 
+ .TP  
+ .B \-C, --conf-file=<file>
+-Specify a different configuration file. The \fB--conf-file\fP option is also allowed in
+-configuration files, to include multiple configuration files. A
++Specify a configuration file. The presence of this option stops dnsmasq from reading the default configuration
++file (normally /etc/dnsmasq.conf). Multiple files may be specified by repeating the option
++either on the command line or in configuration files. A
+ filename of "-" causes dnsmasq to read configuration from stdin.
+ .TP
+ .B \-7, --conf-dir=<directory>[,<file-extension>......],
+--- a/src/option.c
++++ b/src/option.c
+@@ -5012,9 +5012,14 @@ void read_opts(int argc, char **argv, ch
+         }
+       else if (option == 'C')
+ 	{
+-          if (conffile)
+-            free(conffile);
+-	  conffile = opt_string_alloc(arg);
++          if (!conffile)
++	    conffile = opt_string_alloc(arg);
++	  else
++	    {
++	      char *extra = opt_string_alloc(arg);
++	      one_file(extra, 0);
++	      free(extra);
++	    }
+ 	}
+       else
+ 	{

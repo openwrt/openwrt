@@ -14,7 +14,7 @@ define Device/airlink101_ar670w
   BLOCKSIZE := 64k
   DEVICE_VENDOR := Airlink
   DEVICE_MODEL := AR670W
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := 3840k
   KERNEL := $(KERNEL_DTB) | pad-to $$(BLOCKSIZE)
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
@@ -25,6 +25,7 @@ TARGET_DEVICES += airlink101_ar670w
 
 define Device/airlink101_ar725w
   MTK_SOC := rt2880
+  IMAGE_SIZE := 3776k
   DEVICE_VENDOR := Airlink
   DEVICE_MODEL := AR725W
   IMAGES += factory.bin
@@ -37,7 +38,7 @@ TARGET_DEVICES += airlink101_ar725w
 define Device/asus_rt-n15
   MTK_SOC := rt2880
   BLOCKSIZE := 64k
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := 3776k
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-N15
   DEVICE_PACKAGES := kmod-switch-rtl8366s
@@ -47,7 +48,7 @@ TARGET_DEVICES += asus_rt-n15
 
 define Device/belkin_f5d8235-v1
   MTK_SOC := rt2880
-  IMAGE_SIZE := 7744k
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := F5D8235
   DEVICE_VARIANT := V1
@@ -60,7 +61,7 @@ TARGET_DEVICES += belkin_f5d8235-v1
 define Device/buffalo_wli-tx4-ag300n
   MTK_SOC := rt2880
   BLOCKSIZE := 64k
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := 3776k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WLI-TX4-AG300N
   DEVICE_PACKAGES := kmod-switch-ip17xx
@@ -71,7 +72,7 @@ TARGET_DEVICES += buffalo_wli-tx4-ag300n
 define Device/buffalo_wzr-agl300nh
   MTK_SOC := rt2880
   BLOCKSIZE := 64k
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := 3776k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WZR-AGL300NH
   DEVICE_PACKAGES := kmod-switch-rtl8366s
@@ -82,7 +83,7 @@ TARGET_DEVICES += buffalo_wzr-agl300nh
 define Device/dlink_dap-1522-a1
   MTK_SOC := rt2880
   BLOCKSIZE := 64k
-  IMAGE_SIZE := 3801088
+  IMAGE_SIZE := 3712k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DAP-1522
   DEVICE_VARIANT := A1
@@ -100,7 +101,7 @@ TARGET_DEVICES += dlink_dap-1522-a1
 define Device/ralink_v11st-fe
   MTK_SOC := rt2880
   BLOCKSIZE := 64k
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := 3776k
   DEVICE_VENDOR := Ralink
   DEVICE_MODEL := V11ST-FE
   SUPPORTED_DEVICES += v11st-fe

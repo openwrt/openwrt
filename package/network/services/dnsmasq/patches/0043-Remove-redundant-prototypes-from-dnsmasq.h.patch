@@ -1,0 +1,44 @@
+From c61c7bb2257059fe1e14851289594415eb0659d7 Mon Sep 17 00:00:00 2001
+From: Dominik DL6ER <dl6er@dl6er.de>
+Date: Sun, 10 Mar 2019 19:37:57 +0100
+Subject: [PATCH 43/57] Remove redundant prototypes from dnsmasq.h
+
+Dear Simon,
+
+the attached patch removes three redundant prototypes from dnsmasq.h. There is no functional change.
+
+Best regards,
+Dominik
+
+From c0b2ccfd20c4eec9d09468fdfe9b4ca8a8f8591e Mon Sep 17 00:00:00 2001
+From: DL6ER <dl6er@dl6er.de>
+Date: Sun, 10 Mar 2019 19:34:07 +0100
+Subject: [PATCH] Remove redundant prototypes from dnsmasq.h
+
+Signed-off-by: DL6ER <dl6er@dl6er.de>
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/dnsmasq.h | 5 -----
+ 1 file changed, 5 deletions(-)
+
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -1205,9 +1205,6 @@ size_t resize_packet(struct dns_header *
+ int add_resource_record(struct dns_header *header, char *limit, int *truncp,
+ 			int nameoffset, unsigned char **pp, unsigned long ttl, 
+ 			int *offset, unsigned short type, unsigned short class, char *format, ...);
+-unsigned char *skip_questions(struct dns_header *header, size_t plen);
+-int extract_name(struct dns_header *header, size_t plen, unsigned char **pp, 
+-		 char *name, int isExtract, int extrabytes);
+ int in_arpa_name_2_addr(char *namein, union all_addr *addrp);
+ int private_net(struct in_addr addr, int ban_localhost);
+ 
+@@ -1545,8 +1542,6 @@ void dhcp_update_configs(struct dhcp_con
+ void display_opts(void);
+ int lookup_dhcp_opt(int prot, char *name);
+ int lookup_dhcp_len(int prot, int val);
+-char *option_string(int prot, unsigned int opt, unsigned char *val, 
+-		    int opt_len, char *buf, int buf_len);
+ struct dhcp_config *find_config(struct dhcp_config *configs,
+ 				struct dhcp_context *context,
+ 				unsigned char *clid, int clid_len,

@@ -1,0 +1,203 @@
+From 305ffb5ef0ba5ab1df32ef80f266a4c9e395ca13 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Sat, 16 Mar 2019 18:17:17 +0000
+Subject: [PATCH 45/57] Improve kernel-capability manipulation code under
+ Linux.
+
+Dnsmasq now fails early if a required capability is not available,
+and tries not to request capabilities not required by its
+configuration.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ CHANGELOG     |   7 ++-
+ src/dnsmasq.c | 119 +++++++++++++++++++++++++++++++++-----------------
+ 2 files changed, 84 insertions(+), 42 deletions(-)
+
+--- a/CHANGELOG
++++ b/CHANGELOG
+@@ -28,7 +28,12 @@ version 2.81
+ 
+ 	Support TCP-fastopen (RFC-7413) on both incoming and
+ 	outgoing TCP connections, if supported and enabled in the OS.
+-	
++
++	Improve kernel-capability manipulation code under Linux. Dnsmasq
++	now fails early if a required capability is not available, and
++	tries not to request capabilities not required by its
++	configuration.
++
+ 	
+ version 2.80
+ 	Add support for RFC 4039 DHCP rapid commit. Thanks to Ashram Method
+--- a/src/dnsmasq.c
++++ b/src/dnsmasq.c
+@@ -52,6 +52,9 @@ int main (int argc, char **argv)
+ #if defined(HAVE_LINUX_NETWORK)
+   cap_user_header_t hdr = NULL;
+   cap_user_data_t data = NULL;
++  int need_cap_net_admin = 0;
++  int need_cap_net_raw = 0;
++  int need_cap_net_bind_service = 0;
+   char *bound_device = NULL;
+   int did_bind = 0;
+ #endif 
+@@ -285,11 +288,24 @@ int main (int argc, char **argv)
+     }
+   
+   if (daemon->dhcp || daemon->relay4)
+-    dhcp_init();
++    {
++      dhcp_init();
++#   ifdef HAVE_LINUX_NETWORK
++      if (!option_bool(OPT_NO_PING))
++	need_cap_net_raw = 1;
++      need_cap_net_admin = 1;
++#   endif
++    }
+   
+ #  ifdef HAVE_DHCP6
+   if (daemon->doing_ra || daemon->doing_dhcp6 || daemon->relay6)
+-    ra_init(now);
++    {
++      ra_init(now);
++#   ifdef HAVE_LINUX_NETWORK
++      need_cap_net_raw = 1;
++      need_cap_net_admin = 1;
++#   endif
++    }
+   
+   if (daemon->doing_dhcp6 || daemon->relay6)
+     dhcp6_init();
+@@ -299,7 +315,12 @@ int main (int argc, char **argv)
+ 
+ #ifdef HAVE_IPSET
+   if (daemon->ipsets)
+-    ipset_init();
++    {
++      ipset_init();
++#  ifdef HAVE_LINUX_NETWORK
++      need_cap_net_admin = 1;
++#  endif
++    }
+ #endif
+ 
+ #if  defined(HAVE_LINUX_NETWORK)
+@@ -440,28 +461,58 @@ int main (int argc, char **argv)
+     }
+ 
+ #if defined(HAVE_LINUX_NETWORK)
++  /* We keep CAP_NETADMIN (for ARP-injection) and
++     CAP_NET_RAW (for icmp) if we're doing dhcp,
++     if we have yet to bind ports because of DAD, 
++     or we're doing it dynamically,
++     we need CAP_NET_BIND_SERVICE. */
++  if ((is_dad_listeners() || option_bool(OPT_CLEVERBIND)) &&
++      (option_bool(OPT_TFTP) || (daemon->port != 0 && daemon->port <= 1024)))
++    need_cap_net_bind_service = 1;
++
+   /* determine capability API version here, while we can still
+      call safe_malloc */
+-  if (ent_pw && ent_pw->pw_uid != 0)
++  int capsize = 1; /* for header version 1 */
++  char *fail = NULL;
++  
++  hdr = safe_malloc(sizeof(*hdr));
++  
++  /* find version supported by kernel */
++  memset(hdr, 0, sizeof(*hdr));
++  capget(hdr, NULL);
++  
++  if (hdr->version != LINUX_CAPABILITY_VERSION_1)
+     {
+-      int capsize = 1; /* for header version 1 */
+-      hdr = safe_malloc(sizeof(*hdr));
+-
+-      /* find version supported by kernel */
+-      memset(hdr, 0, sizeof(*hdr));
+-      capget(hdr, NULL);
+-      
+-      if (hdr->version != LINUX_CAPABILITY_VERSION_1)
+-	{
+-	  /* if unknown version, use largest supported version (3) */
+-	  if (hdr->version != LINUX_CAPABILITY_VERSION_2)
+-	    hdr->version = LINUX_CAPABILITY_VERSION_3;
+-	  capsize = 2;
+-	}
+-      
+-      data = safe_malloc(sizeof(*data) * capsize);
+-      memset(data, 0, sizeof(*data) * capsize);
++      /* if unknown version, use largest supported version (3) */
++      if (hdr->version != LINUX_CAPABILITY_VERSION_2)
++	hdr->version = LINUX_CAPABILITY_VERSION_3;
++      capsize = 2;
+     }
++  
++  data = safe_malloc(sizeof(*data) * capsize);
++  capget(hdr, data); /* Get current values, for verification */
++
++  if (need_cap_net_admin && !(data->permitted & (1 << CAP_NET_ADMIN)))
++    fail = "NET_ADMIN";
++  else if (need_cap_net_raw && !(data->permitted & (1 << CAP_NET_RAW)))
++    fail = "NET_RAW";
++  else if (need_cap_net_bind_service && !(data->permitted & (1 << CAP_NET_BIND_SERVICE)))
++    fail = "NET_BIND_SERVICE";
++  
++  if (fail)
++    die(_("process is missing required capability %s"), fail, EC_MISC);
++
++  /* Now set bitmaps to set caps after daemonising */
++  memset(data, 0, sizeof(*data) * capsize);
++  
++  if (need_cap_net_admin)
++    data->effective |= (1 << CAP_NET_ADMIN);
++  if (need_cap_net_raw)
++    data->effective |= (1 << CAP_NET_RAW);
++  if (need_cap_net_bind_service)
++    data->effective |= (1 << CAP_NET_BIND_SERVICE);
++  
++  data->permitted = data->effective;  
+ #endif
+ 
+   /* Use a pipe to carry signals and other events back to the event loop 
+@@ -626,18 +677,9 @@ int main (int argc, char **argv)
+       if (ent_pw && ent_pw->pw_uid != 0)
+ 	{     
+ #if defined(HAVE_LINUX_NETWORK)	  
+-	  /* On linux, we keep CAP_NETADMIN (for ARP-injection) and
+-	     CAP_NET_RAW (for icmp) if we're doing dhcp. If we have yet to bind 
+-	     ports because of DAD, or we're doing it dynamically,
+-	     we need CAP_NET_BIND_SERVICE too. */
+-	  if (is_dad_listeners() || option_bool(OPT_CLEVERBIND))
+-	    data->effective = data->permitted = data->inheritable =
+-	      (1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW) | 
+-	      (1 << CAP_SETUID) | (1 << CAP_NET_BIND_SERVICE);
+-	  else
+-	    data->effective = data->permitted = data->inheritable =
+-	      (1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW) | (1 << CAP_SETUID);
+-	  
++	  /* Need to be able to drop root. */
++	  data->effective |= (1 << CAP_SETUID);
++	  data->permitted |= (1 << CAP_SETUID);
+ 	  /* Tell kernel to not clear capabilities when dropping root */
+ 	  if (capset(hdr, data) == -1 || prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0) == -1)
+ 	    bad_capabilities = errno;
+@@ -678,15 +720,10 @@ int main (int argc, char **argv)
+ 	    }     
+ 
+ #ifdef HAVE_LINUX_NETWORK
+-	  if (is_dad_listeners() || option_bool(OPT_CLEVERBIND))
+-	   data->effective = data->permitted =
+-	     (1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW) | (1 << CAP_NET_BIND_SERVICE);
+-	 else
+-	   data->effective = data->permitted = 
+-	     (1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW);
+-	  data->inheritable = 0;
++	  data->effective &= ~(1 << CAP_SETUID);
++	  data->permitted &= ~(1 << CAP_SETUID);
+ 	  
+-	  /* lose the setuid and setgid capabilities */
++	  /* lose the setuid capability */
+ 	  if (capset(hdr, data) == -1)
+ 	    {
+ 	      send_event(err_pipe[1], EVENT_CAP_ERR, errno, NULL);

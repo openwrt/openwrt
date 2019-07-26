@@ -1,7 +1,7 @@
 From 28cfe36e1eee9d2c234e0256ad459956b415a3bb Mon Sep 17 00:00:00 2001
 From: Brian Haley <haleyb.dev@gmail.com>
 Date: Thu, 17 Jan 2019 23:21:23 +0000
-Subject: [PATCH 32/32] Change read_leases() to skip invalid entries.
+Subject: [PATCH 32/57] Change read_leases() to skip invalid entries.
 
 There's no reason to stop reading the existing lease file
 when dnsmasq is started and an invalid entry is found, it

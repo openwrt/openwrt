@@ -1,0 +1,31 @@
+From 05299fdd5a3b6ace43224c7d27d06a57b175639f Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Mon, 15 Jul 2019 22:04:20 +0100
+Subject: [PATCH 56/57] Fix wrong return code from explore_rrset() with some
+ errors.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/dnssec.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/src/dnssec.c
++++ b/src/dnssec.c
+@@ -374,7 +374,7 @@ static int explore_rrset(struct dns_head
+   int gotkey = 0;
+ 
+   if (!(p = skip_questions(header, plen)))
+-    return STAT_BOGUS;
++    return 0;
+ 
+    /* look for RRSIGs for this RRset and get pointers to each RR in the set. */
+   for (rrsetidx = 0, sigidx = 0, j = ntohs(header->ancount) + ntohs(header->nscount); 
+@@ -386,7 +386,7 @@ static int explore_rrset(struct dns_head
+       pstart = p;
+       
+       if (!(res = extract_name(header, plen, &p, name, 0, 10)))
+-	return STAT_BOGUS; /* bad packet */
++	return 0; /* bad packet */
+       
+       GETSHORT(stype, p);
+       GETSHORT(sclass, p);
