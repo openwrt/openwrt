@@ -50,6 +50,7 @@
 			clock-names = "cpu", "l2";
 			clock-latency = <100000>;
 			cpu-supply = <&smb208_s2b>;
+			voltage-tolerance = <5>;
 			cooling-min-state = <0>;
 			cooling-max-state = <10>;
 			#cooling-cells = <2>;
@@ -60,10 +61,10 @@
 			compatible = "cache";
 			cache-level = <2>;
 			qcom,saw = <&saw_l2>;
-		};
-
-		qcom,l2 {
-			qcom,l2-rates = <384000000 1000000000 1200000000>;
+			l2-rates = <384000000 1000000000 1200000000>;
+			l2-cpufreq = <384000000 600000000 1200000000>;
+			l2-volt = <1100000 1100000 1150000>;
+			l2-supply = <&smb208_s1a>;
 		};
 
 		idle-states {
@@ -470,6 +471,15 @@
 			clock-frequency = <32768>;
 			#clock-cells = <0>;
 		};
+	};
+
+	fab-scaling {
+		compatible = "qcom,fab-scaling";
+		clocks = <&rpmcc RPM_APPS_FABRIC_A_CLK>, <&rpmcc RPM_EBI1_A_CLK>;
+		clock-names = "apps-fab-clk", "ddr-fab-clk";
+		fab_freq_high = <533000000>;
+		fab_freq_nominal = <400000000>;
+		cpu_freq_threshold = <1000000000>;
 	};
 
 	firmware {
