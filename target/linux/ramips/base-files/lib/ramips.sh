@@ -220,8 +220,8 @@ ramips_board_detect() {
 	*"VIXMINI")
 		name="vixmini"
 		;;
-	*"N300")
-		name="n300"
+	*"microuter-N300")
+		name="microuter-n300"
 		;;
 	*"HC5661")
 		name="hc5661"
