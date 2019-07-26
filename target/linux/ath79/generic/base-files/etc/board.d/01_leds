@@ -115,6 +115,13 @@ engenius,ecb1750|\
 enterasys,ws-ap3705i)
 	ucidef_set_led_netdev "lan" "LAN" "$boardname:blue:lan" "eth0"
 	;;
+compex,wpj344-16m)
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "sig1" "SIG1" "wpj344:red:sig1" "wlan0" "85" "100"
+	ucidef_set_led_rssi "sig2" "SIG2" "wpj344:yellow:sig2" "wlan0" "75" "100"
+	ucidef_set_led_rssi "sig3" "SIG3" "wpj344:green:sig3" "wlan0" "65" "100"
+	ucidef_set_led_rssi "sig4" "SIG4" "wpj344:green:sig4" "wlan0" "50" "100"
+	;;
 compex,wpj531-16m)
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_led_rssi "sig1" "SIG1" "wpj531:red:sig1" "wlan0" "85" "100"

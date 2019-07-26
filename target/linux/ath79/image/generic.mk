@@ -441,6 +441,19 @@ define Device/comfast_cf-wr752ac-v1
 endef
 TARGET_DEVICES += comfast_cf-wr752ac-v1
 
+define Device/compex_wpj344-16m
+  SOC := ar9344
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 16128k
+  DEVICE_VENDOR := Compex
+  DEVICE_MODEL := WPJ344
+  DEVICE_VARIANT := 16M
+  SUPPORTED_DEVICES += wpj344
+  IMAGES += cpximg-6a08.bin
+  IMAGE/cpximg-6a08.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x690 3
+endef
+TARGET_DEVICES += compex_wpj344-16m
+
 define Device/compex_wpj531-16m
   SOC := qca9531
   DEVICE_PACKAGES := kmod-usb2

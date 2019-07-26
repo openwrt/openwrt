@@ -131,6 +131,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6@eth1"
 		;;
+	compex,wpj344-16m)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "3:lan" "2:wan"
+		;;
 	devolo,dvl1200e|\
 	devolo,dvl1750e|\
 	ocedo,ursus)
@@ -365,6 +369,9 @@ ath79_setup_macs()
 	avm,fritz4020)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(fritz_tffs -n macb -i $(find_mtd_part "tffs (1)"))
+		;;
+	compex,wpj344-16m)
+		wan_mac=$(mtd_get_mac_binary u-boot 0x2e018)
 		;;
 	devolo,magic-2-wifi)
 		label_mac=$(macaddr_add "$(mtd_get_mac_binary art 0x1002)" 3)
