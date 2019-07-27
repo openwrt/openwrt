@@ -45,7 +45,7 @@ TARGET_DEVICES += duzun-dm06
 define Device/gl-mt300n-v2
   DTS := GL-MT300N-V2
   IMAGE_SIZE := 16064k
-  DEVICE_TITLE := GL-iNet GL-MT300N-V2
+  DEVICE_TITLE := GL.iNet GL-MT300N-V2
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += gl-mt300n-v2
@@ -53,14 +53,14 @@ TARGET_DEVICES += gl-mt300n-v2
 define Device/vixmini
   DTS := VIXMINI
   IMAGE_SIZE := $(ralink_default_fw_size_8M)
-  DEVICE_TITLE := GL-iNet VIXMINI
+  DEVICE_TITLE := GL.iNet VIXMINI
 endef
 TARGET_DEVICES += vixmini
 
 define Device/microuter-n300
   DTS := microuter-N300
   IMAGE_SIZE := 16064k
-  DEVICE_TITLE := GL-iNet microuter N300
+  DEVICE_TITLE := GL.iNet microuter N300
 endef
 TARGET_DEVICES += microuter-n300
 
