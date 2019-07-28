@@ -328,6 +328,17 @@ define Device/tplink_re450-v2
 endef
 TARGET_DEVICES += tplink_re450-v2
 
+define Device/tplink_tl-wdr3500-v1
+  $(Device/tplink-8mlzma)
+  ATH_SOC := ar9344
+  DEVICE_MODEL := TL-WDR3500
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x35000001
+  SUPPORTED_DEVICES += tl-wdr3500
+endef
+TARGET_DEVICES += tplink_tl-wdr3500-v1
+
 define Device/tplink_tl-wdr3600-v1
   $(Device/tplink-8mlzma)
   ATH_SOC := ar9344
