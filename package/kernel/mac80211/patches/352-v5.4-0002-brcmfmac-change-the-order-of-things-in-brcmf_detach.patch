@@ -1,7 +1,7 @@
-From 701fb69f2c36cba83583990e67a3925f920fd96a Mon Sep 17 00:00:00 2001
+From 14fcfd1cc0c05ea58f47dd693fdd13f25dfe995e Mon Sep 17 00:00:00 2001
 From: Arend van Spriel <arend.vanspriel@broadcom.com>
 Date: Thu, 11 Jul 2019 11:05:07 +0200
-Subject: [PATCH 2/7] brcmfmac: change the order of things in brcmf_detach()
+Subject: [PATCH] brcmfmac: change the order of things in brcmf_detach()
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -18,6 +18,7 @@ Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
 Reviewed-by: Franky Lin <franky.lin@broadcom.com>
 Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
 Tested-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 ---
  .../broadcom/brcm80211/brcmfmac/core.c        | 27 ++++++++++---------
  1 file changed, 14 insertions(+), 13 deletions(-)
