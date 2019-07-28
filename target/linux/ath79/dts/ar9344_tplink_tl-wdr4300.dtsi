@@ -59,8 +59,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			linux,code = <KEY_RESTART>;
@@ -75,34 +74,6 @@
 			debounce-interval = <60>;
 		};
 	};
-
-	gpio-export {
-		compatible = "gpio-export";
-
-		gpio_usb1_power {
-			gpio-export,name = "tp-link:power:usb1";
-			gpio-export,output = <1>;
-			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
-		};
-
-		gpio_usb2_power {
-			gpio-export,name = "tp-link:power:usb2";
-			gpio-export,output = <1>;
-			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
-		};
-
-		gpio_ext_lna0 {
-			gpio-export,name = "tp-link:ext:lna0";
-			gpio-export,output = <1>;
-			gpios = <&gpio 18 GPIO_ACTIVE_HIGH>;
-		};
-
-		gpio_ext_lna1 {
-			gpio-export,name = "tp-link:ext:lna1";
-			gpio-export,output = <1>;
-			gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
-		};
-	};
 };
 
 &ref {
@@ -115,6 +86,34 @@
 
 &gpio {
 	status = "okay";
+
+	lna0 {
+		gpio-hog;
+		gpios = <18 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "tp-link:ext:lna0";
+	};
+
+	lna1 {
+		gpio-hog;
+		gpios = <19 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "tp-link:ext:lna1";
+	};
+
+	usb1_power {
+		gpio-hog;
+		gpios = <22 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "tp-link:power:usb1";
+	};
+
+	usb2_power {
+		gpio-hog;
+		gpios = <21 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "tp-link:power:usb2";
+	};
 };
 
 &spi {
