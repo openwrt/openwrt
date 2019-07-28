@@ -40,7 +40,7 @@ case "$board" in
 		        mtd_get_mac_text mac 4 > /sys${DEVPATH}/macaddress
 	        # set the 5G interface mac address to WAN MAC + 1
 	        [ "$PHYNBR" -eq 0 ] && \
-		        macaddr_add "$(mtd_get_mac_text mac 24)" 1 > /sys${DEVPATH}/macaddress
+		        macaddr_add "$(mtd_get_mac_text mac 0x18)" 1 > /sys${DEVPATH}/macaddress
                 ;;
 	*)
 		;;

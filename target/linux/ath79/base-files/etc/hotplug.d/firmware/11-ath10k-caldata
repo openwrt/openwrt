@@ -94,7 +94,7 @@ case "$FIRMWARE" in
 	devolo,dvl1750i|\
 	devolo,dvl1750x)
 		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac_crc $(macaddr_add $(mtd_get_mac_binary art 0) -1)
+		ath10kcal_patch_mac_crc $(macaddr_add $(mtd_get_mac_binary art 0x0) -1)
 		;;
 	dlink,dir-859-a1)
 		ath10kcal_extract "art" 20480 2116
@@ -119,20 +119,20 @@ case "$FIRMWARE" in
 		;;
 	glinet,gl-ar750s)
 		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0) +1)
+		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) +1)
 		;;
 	glinet,gl-x750)
 		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0) +2)
+		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) +2)
 		;;
 	nec,wg800hp)
 		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac_crc $(mtd_get_mac_text board_data 2176)
+		ath10kcal_patch_mac_crc $(mtd_get_mac_text board_data 0x880)
 		;;
 	ocedo,koala|\
 	ocedo,ursus)
 		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(mtd_get_mac_binary art 12)
+		ath10kcal_patch_mac $(mtd_get_mac_binary art 0xc)
 		;;
 	openmesh,om5p-ac-v2)
 		ath10kcal_extract "art" 20480 2116
@@ -148,7 +148,7 @@ case "$FIRMWARE" in
 	tplink,archer-c7-v5|\
 	tplink,archer-c25-v1)
 		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary info 8) -1)
+		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) -1)
 		;;
 	tplink,archer-c5-v1|\
 	tplink,archer-c7-v2)
@@ -170,7 +170,7 @@ case "$FIRMWARE" in
 		;;
 	tplink,re450-v2)
 		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary info 8) +1)
+		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) +1)
 		;;
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-mesh|\
@@ -199,7 +199,7 @@ case "$FIRMWARE" in
 	netgear,ex6400|\
 	netgear,ex7300)
 		ath10kcal_extract "caldata" 20480 12064
-		ath10kcal_patch_mac $(mtd_get_mac_binary caldata 12)
+		ath10kcal_patch_mac $(mtd_get_mac_binary caldata 0xc)
 		;;
 	phicomm,k2t)
 		ath10kcal_extract "art" 20480 12064
@@ -213,7 +213,7 @@ case "$FIRMWARE" in
 	tplink,archer-c60-v2|\
 	tplink,archer-c6-v2)
 		ath10kcal_extract "art" 20480 12064
-		ath10kcal_patch_mac_crc $(macaddr_add $(mtd_get_mac_binary mac 8) -1)
+		ath10kcal_patch_mac_crc $(macaddr_add $(mtd_get_mac_binary mac 0x8) -1)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;

@@ -59,7 +59,7 @@ case "$FIRMWARE" in
 			ath9k_ubi_eeprom_extract "caldata" 20480 4096
 		else
 			ath9k_eeprom_extract "wifi_data" 20480 4096
-			ath9k_patch_firmware_mac $(mtd_get_mac_binary wifi_data 12)
+			ath9k_patch_firmware_mac $(mtd_get_mac_binary wifi_data 0xc)
 		fi
 		;;
 	*)
@@ -77,7 +77,7 @@ case "$FIRMWARE" in
 			ath9k_ubi_eeprom_extract "caldata" 4096 4096
 		else
 			ath9k_eeprom_extract "wifi_data" 4096 4096
-			ath9k_patch_firmware_mac $(mtd_get_mac_binary wifi_data 0)
+			ath9k_patch_firmware_mac $(mtd_get_mac_binary wifi_data 0x0)
 		fi
 		;;
 	*)

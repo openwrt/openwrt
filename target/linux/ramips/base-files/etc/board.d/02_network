@@ -505,7 +505,7 @@ ramips_setup_macs()
 	alfa-network,w502u|\
 	arcwireless,freestation5|\
 	netgear,wnce2001)
-		wan_mac=$(mtd_get_mac_binary factory 46)
+		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		;;
 	arcwireless,freestation5|\
 	dlink,dir-300-b7|\
@@ -528,12 +528,12 @@ ramips_setup_macs()
 	asus,rt-ac57u|\
 	phicomm,k2p|\
 	planex,vr500)
-		lan_mac=$(mtd_get_mac_binary factory 57344)
-		wan_mac=$(mtd_get_mac_binary factory 57350)
+		lan_mac=$(mtd_get_mac_binary factory 0xe000)
+		wan_mac=$(mtd_get_mac_binary factory 0xe006)
 		;;
 	asus,rt-n56u)
 		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
-		wan_mac=$(mtd_get_mac_binary factory 32772)
+		wan_mac=$(mtd_get_mac_binary factory 0x8004)
 		;;
 	belkin,f9k1109v1)
 		wan_mac=$(mtd_get_mac_ascii uboot-env HW_WAN_MAC)
@@ -549,12 +549,12 @@ ramips_setup_macs()
 	buffalo,whr-300hp2|\
 	buffalo,whr-600d|\
 	buffalo,wsr-600dhp)
-		wan_mac=$(mtd_get_mac_binary factory 4)
+		wan_mac=$(mtd_get_mac_binary factory 0x4)
 		lan_mac=$wan_mac
 		;;
 	buffalo,whr-g300n|\
 	glinet,gl-mt300n-v2)
-		wan_mac=$(mtd_get_mac_binary factory 4)
+		wan_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	dlink,dch-m225|\
 	samsung,cy-swr1100)
@@ -583,7 +583,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env WAN_MAC_ADDR)
 		;;
 	edimax,br-6475nd)
-		wan_mac=$(mtd_get_mac_binary devdata 7)
+		wan_mac=$(mtd_get_mac_binary devdata 0x7)
 		;;
 	edimax,br-6478ac-v2)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
@@ -592,7 +592,7 @@ ramips_setup_macs()
 	elecom,wrc-1900gst|\
 	elecom,wrc-2533gst|\
 	samknows,whitebox-v8)
-		wan_mac=$(mtd_get_mac_binary factory 57350)
+		wan_mac=$(mtd_get_mac_binary factory 0xe006)
 		;;
 	hiwifi,hc5661|\
 	hiwifi,hc5661a|\
@@ -606,12 +606,12 @@ ramips_setup_macs()
 		;;
 	iodata,wn-ac1167gr|\
 	iodata,wn-ac733gr3)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" -1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" -1)
 		;;
 	iodata,wn-ax1167gr|\
 	iodata,wn-gx300gr|\
 	trendnet,tew-692gr)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
 		;;
 	lenovo,newifi-d1)
 		lan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
@@ -622,24 +622,24 @@ ramips_setup_macs()
 	mediatek,linkit-smart-7688|\
 	onion,omega2|\
 	onion,omega2p)
-		wan_mac=$(mtd_get_mac_binary factory 4)
-		lan_mac=$(mtd_get_mac_binary factory 46)
+		wan_mac=$(mtd_get_mac_binary factory 0x4)
+		lan_mac=$(mtd_get_mac_binary factory 0x2e)
 		;;
 	mercury,mac1200r-v2)
-		lan_mac=$(mtd_get_mac_binary factory_info 13)
+		lan_mac=$(mtd_get_mac_binary factory_info 0xd)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	netgear,r6220|\
 	netgear,r6350|\
 	netgear,wndr3700-v5)
-		wan_mac=$(mtd_get_mac_binary factory 4)
+		wan_mac=$(mtd_get_mac_binary factory 0x4)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
 	ohyeah,oy-0001|\
 	phicomm,k2g|\
 	skylab,skw92a)
-		lan_mac=$(mtd_get_mac_binary factory 40)
-		wan_mac=$(mtd_get_mac_binary factory 46)
+		lan_mac=$(mtd_get_mac_binary factory 0x28)
+		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		;;
 	poray,m3|\
 	poray,m4-4m|\
@@ -649,24 +649,24 @@ ramips_setup_macs()
 		lan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" -2)
 		;;
 	sitecom,wlr-6000)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 32772)" 2)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x8004)" 2)
 		;;
 	sparklan,wcr-150gn|\
 	zyxel,keenetic-omni|\
 	zyxel,keenetic-omni-ii|\
 	zyxel,keenetic-start|\
 	zyxel,keenetic-viva)
-		wan_mac=$(mtd_get_mac_binary factory 40)
+		wan_mac=$(mtd_get_mac_binary factory 0x28)
 		;;
 	tenda,w306r-v2)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 5)
 		;;
 	trendnet,tew-691gr)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 3)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 3)
 		;;
 	wiznet,wizfi630a)
-		lan_mac=$(mtd_get_mac_binary factory 4)
-		wan_mac=$(mtd_get_mac_binary factory 40)
+		lan_mac=$(mtd_get_mac_binary factory 0x4)
+		wan_mac=$(mtd_get_mac_binary factory 0x28)
 		;;
 	xiaomi,mir3g|\
 	xiaomi,mir3p)

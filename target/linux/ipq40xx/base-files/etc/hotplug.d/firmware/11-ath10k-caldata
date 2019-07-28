@@ -99,7 +99,7 @@ case "$FIRMWARE" in
 	meraki,mr33)
 		ath10kcal_ubi_extract "ART" 36864 2116
 		ath10kcal_is_caldata_valid "4408" || ath10kcal_extract "ART" 36864 2116
-		ath10kcal_patch_mac_crc $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 102) +1)
+		ath10kcal_patch_mac_crc $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) +1)
 		;;
 	esac
 	;;
@@ -167,12 +167,12 @@ case "$FIRMWARE" in
 	meraki,mr33)
 		ath10kcal_ubi_extract "ART" 4096 12064
 		ath10kcal_is_caldata_valid "202f" || ath10kcal_extract "ART" 4096 12064
-		ath10kcal_patch_mac_crc $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 102) +2)
+		ath10kcal_patch_mac_crc $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) +2)
 		;;
 	netgear,ex6100v2 |\
 	netgear,ex6150v2)
 		ath10kcal_extract "ART" 4096 12064
-		ath10kcal_patch_mac_crc $(mtd_get_mac_binary dnidata 0)
+		ath10kcal_patch_mac_crc $(mtd_get_mac_binary dnidata 0x0)
 		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)
@@ -224,12 +224,12 @@ case "$FIRMWARE" in
 	meraki,mr33)
 		ath10kcal_ubi_extract "ART" 20480 12064
 		ath10kcal_is_caldata_valid "202f" || ath10kcal_extract "ART" 20480 12064
-		ath10kcal_patch_mac_crc $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 102) +3)
+		ath10kcal_patch_mac_crc $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) +3)
 		;;
 	netgear,ex6100v2 |\
 	netgear,ex6150v2)
 		ath10kcal_extract "ART" 20480 12064
-		ath10kcal_patch_mac_crc $(mtd_get_mac_binary dnidata 12)
+		ath10kcal_patch_mac_crc $(mtd_get_mac_binary dnidata 0xc)
 		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)
