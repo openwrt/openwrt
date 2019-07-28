@@ -1,8 +1,7 @@
-From 3512f2144aa3bed33c4181958d6961266c2e3540 Mon Sep 17 00:00:00 2001
+From 011a56a3336a5de9c3152c169cd52ff79b8c3f89 Mon Sep 17 00:00:00 2001
 From: Arend van Spriel <arend.vanspriel@broadcom.com>
 Date: Thu, 11 Jul 2019 10:45:31 +0200
-Subject: [PATCH 2/3] brcmfmac: enable DFS_OFFLOAD extended feature if
- supported
+Subject: [PATCH] brcmfmac: enable DFS_OFFLOAD extended feature if supported
 
 If the firmware supports 802.11h and the device can operate in 5GHz
 band we can enable DFS_OFFLOAD extended feature.
@@ -11,6 +10,7 @@ Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
 Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
 Reviewed-by: Franky Lin <franky.lin@broadcom.com>
 Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 ---
  drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 5 +++++
  drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.c  | 1 +
