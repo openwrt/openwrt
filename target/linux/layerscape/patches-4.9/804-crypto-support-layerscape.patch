@@ -377,7 +377,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
 --- a/crypto/crypto_user.c
 +++ b/crypto/crypto_user.c
-@@ -112,6 +112,21 @@ nla_put_failure:
+@@ -115,6 +115,21 @@ nla_put_failure:
  	return -EMSGSIZE;
  }
  
@@ -399,7 +399,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static int crypto_report_akcipher(struct sk_buff *skb, struct crypto_alg *alg)
  {
  	struct crypto_report_akcipher rakcipher;
-@@ -186,7 +201,11 @@ static int crypto_report_one(struct cryp
+@@ -189,7 +204,11 @@ static int crypto_report_one(struct cryp
  			goto nla_put_failure;
  
  		break;

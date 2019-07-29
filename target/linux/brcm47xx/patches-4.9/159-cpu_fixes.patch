@@ -457,7 +457,7 @@
  	/*
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -968,6 +968,9 @@ build_get_pgde32(u32 **p, unsigned int t
+@@ -973,6 +973,9 @@ build_get_pgde32(u32 **p, unsigned int t
  		uasm_i_srl(p, ptr, ptr, SMP_CPUID_PTRSHIFT);
  		uasm_i_addu(p, ptr, tmp, ptr);
  #else
@@ -467,7 +467,7 @@
  		UASM_i_LA_mostly(p, ptr, pgdc);
  #endif
  		uasm_i_mfc0(p, tmp, C0_BADVADDR); /* get faulting address */
-@@ -1310,6 +1313,9 @@ static void build_r4000_tlb_refill_handl
+@@ -1316,6 +1319,9 @@ static void build_r4000_tlb_refill_handl
  #ifdef CONFIG_64BIT
  		build_get_pmde64(&p, &l, &r, K0, K1); /* get pmd in K1 */
  #else
@@ -477,7 +477,7 @@
  		build_get_pgde32(&p, K0, K1); /* get pgd in K1 */
  #endif
  
-@@ -1321,6 +1327,9 @@ static void build_r4000_tlb_refill_handl
+@@ -1327,6 +1333,9 @@ static void build_r4000_tlb_refill_handl
  		build_update_entries(&p, K0, K1);
  		build_tlb_write_entry(&p, &l, &r, tlb_random);
  		uasm_l_leave(&l, p);
@@ -487,7 +487,7 @@
  		uasm_i_eret(&p); /* return from trap */
  	}
  #ifdef CONFIG_MIPS_HUGE_TLB_SUPPORT
-@@ -2003,6 +2012,9 @@ build_r4000_tlbchange_handler_head(u32 *
+@@ -2014,6 +2023,9 @@ build_r4000_tlbchange_handler_head(u32 *
  #ifdef CONFIG_64BIT
  	build_get_pmde64(p, l, r, wr.r1, wr.r2); /* get pmd in ptr */
  #else
@@ -497,7 +497,7 @@
  	build_get_pgde32(p, wr.r1, wr.r2); /* get pgd in ptr */
  #endif
  
-@@ -2049,6 +2061,9 @@ build_r4000_tlbchange_handler_tail(u32 *
+@@ -2060,6 +2072,9 @@ build_r4000_tlbchange_handler_tail(u32 *
  	build_tlb_write_entry(p, l, r, tlb_indexed);
  	uasm_l_leave(l, *p);
  	build_restore_work_registers(p);
