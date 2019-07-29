@@ -49,8 +49,6 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  net/netfilter/xt_connmark.c                | 21 ++++++++++++++++++++-
  2 files changed, 22 insertions(+), 2 deletions(-)
 
-diff --git a/include/uapi/linux/netfilter/xt_connmark.h b/include/uapi/linux/netfilter/xt_connmark.h
-index 408a9654f05c..e63ad3c89b92 100644
 --- a/include/uapi/linux/netfilter/xt_connmark.h
 +++ b/include/uapi/linux/netfilter/xt_connmark.h
 @@ -16,7 +16,8 @@
@@ -63,11 +61,9 @@ index 408a9654f05c..e63ad3c89b92 100644
  };
  
  struct xt_connmark_tginfo1 {
-diff --git a/net/netfilter/xt_connmark.c b/net/netfilter/xt_connmark.c
-index ec377cc6a369..aa5bcea8f9ba 100644
 --- a/net/netfilter/xt_connmark.c
 +++ b/net/netfilter/xt_connmark.c
-@@ -42,6 +42,7 @@ connmark_tg(struct sk_buff *skb, const struct xt_action_param *par)
+@@ -42,6 +42,7 @@ connmark_tg(struct sk_buff *skb, const s
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct;
  	u_int32_t newmark;
@@ -75,7 +71,7 @@ index ec377cc6a369..aa5bcea8f9ba 100644
  
  	ct = nf_ct_get(skb, &ctinfo);
  	if (ct == NULL)
-@@ -57,7 +58,25 @@ connmark_tg(struct sk_buff *skb, const struct xt_action_param *par)
+@@ -57,7 +58,25 @@ connmark_tg(struct sk_buff *skb, const s
  		break;
  	case XT_CONNMARK_SAVE:
  		newmark = (ct->mark & ~info->ctmask) ^
@@ -102,6 +98,3 @@ index ec377cc6a369..aa5bcea8f9ba 100644
  		if (ct->mark != newmark) {
  			ct->mark = newmark;
  			nf_conntrack_event_cache(IPCT_MARK, ct);
--- 
-2.20.1 (Apple Git-117)
-
