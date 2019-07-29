@@ -5,8 +5,8 @@
 #include "mt7620a_netgear_ex3700_ex6130.dtsi"
 
 / {
-	compatible = "netgear,ex3700", "ralink,mt7620a-soc";
-	model = "Netgear EX3700/EX3800";
+	compatible = "netgear,ex6130", "ralink,mt7620a-soc";
+	model = "Netgear EX6130";
 
 	aliases {
 		led-boot = &led_power_green;
@@ -19,40 +19,39 @@
 		compatible = "gpio-leds";
 
 		led_power_green: power_g {
-			label = "ex3700:green:power";
+			label = "ex6130:green:power";
 			gpios = <&gpio2 23 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		power_a {
-			label = "ex3700:amber:power";
+			label = "ex6130:amber:power";
 			gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 		};
 
 		router_g {
-			label = "ex3700:green:router";
+			label = "ex6130:green:router";
 			gpios = <&gpio2 25 GPIO_ACTIVE_LOW>;
 		};
 
 		router_r {
-			label = "ex3700:red:router";
+			label = "ex6130:red:router";
 			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
 		};
 
 		device_g {
-			label = "ex3700:green:device";
+			label = "ex6130:green:device";
 			gpios = <&gpio2 20 GPIO_ACTIVE_LOW>;
 		};
 
 		device_r {
-			label = "ex3700:red:device";
+			label = "ex6130:red:device";
 			gpios = <&gpio2 21 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
-			label = "ex3700:green:wps";
+			label = "ex6130:green:wps";
 			gpios = <&gpio2 27 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
-
