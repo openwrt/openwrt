@@ -11,7 +11,15 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 
 --- a/extensions/libxt_CONNMARK.c
 +++ b/extensions/libxt_CONNMARK.c
-@@ -49,6 +49,7 @@ enum {
+@@ -22,6 +22,7 @@
+ #include <stdbool.h>
+ #include <stdint.h>
+ #include <stdio.h>
++#include <strings.h>
+ #include <xtables.h>
+ #include <linux/netfilter/xt_CONNMARK.h>
+ 
+@@ -49,6 +50,7 @@ enum {
  	O_CTMASK,
  	O_NFMASK,
  	O_MASK,
@@ -19,7 +27,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	F_SET_MARK         = 1 << O_SET_MARK,
  	F_SAVE_MARK        = 1 << O_SAVE_MARK,
  	F_RESTORE_MARK     = 1 << O_RESTORE_MARK,
-@@ -61,8 +62,10 @@ enum {
+@@ -61,8 +63,10 @@ enum {
  	F_CTMASK           = 1 << O_CTMASK,
  	F_NFMASK           = 1 << O_NFMASK,
  	F_MASK             = 1 << O_MASK,
@@ -31,7 +39,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  };
  
  static const char *const xt_connmark_shift_ops[] = {
-@@ -75,6 +78,7 @@ static void CONNMARK_help(void)
+@@ -75,6 +79,7 @@ static void CONNMARK_help(void)
  	printf(
  "CONNMARK target options:\n"
  "  --set-mark value[/mask]       Set conntrack mark value\n"
@@ -39,7 +47,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  "  --save-mark [--mask mask]     Save the packet nfmark in the connection\n"
  "  --restore-mark [--mask mask]  Restore saved nfmark value\n");
  }
-@@ -83,6 +87,8 @@ static void CONNMARK_help(void)
+@@ -83,6 +88,8 @@ static void CONNMARK_help(void)
  static const struct xt_option_entry CONNMARK_opts[] = {
  	{.name = "set-mark", .id = O_SET_MARK, .type = XTTYPE_MARKMASK32,
  	 .excl = F_OP_ANY},
@@ -48,7 +56,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	{.name = "save-mark", .id = O_SAVE_MARK, .type = XTTYPE_NONE,
  	 .excl = F_OP_ANY},
  	{.name = "restore-mark", .id = O_RESTORE_MARK, .type = XTTYPE_NONE,
-@@ -98,6 +104,8 @@ static const struct xt_option_entry conn
+@@ -98,6 +105,8 @@ static const struct xt_option_entry conn
  	 .excl = F_OP_ANY},
  	{.name = "set-mark", .id = O_SET_MARK, .type = XTTYPE_MARKMASK32,
  	 .excl = F_OP_ANY},
@@ -57,7 +65,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	{.name = "and-mark", .id = O_AND_MARK, .type = XTTYPE_UINT32,
  	 .excl = F_OP_ANY},
  	{.name = "or-mark", .id = O_OR_MARK, .type = XTTYPE_UINT32,
-@@ -124,6 +132,8 @@ static const struct xt_option_entry conn
+@@ -124,6 +133,8 @@ static const struct xt_option_entry conn
  	 .excl = F_OP_ANY},
  	{.name = "set-mark", .id = O_SET_MARK, .type = XTTYPE_MARKMASK32,
  	 .excl = F_OP_ANY},
@@ -66,7 +74,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	{.name = "and-mark", .id = O_AND_MARK, .type = XTTYPE_UINT32,
  	 .excl = F_OP_ANY},
  	{.name = "or-mark", .id = O_OR_MARK, .type = XTTYPE_UINT32,
-@@ -158,6 +168,7 @@ static void connmark_tg_help(void)
+@@ -158,6 +169,7 @@ static void connmark_tg_help(void)
  "  --restore-mark [--ctmask mask] [--nfmask mask]\n"
  "                                Copy nfmark to ctmark using masks\n"
  "  --set-mark value[/mask]       Set conntrack mark value\n"
@@ -74,7 +82,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  "  --save-mark [--mask mask]     Save the packet nfmark in the connection\n"
  "  --restore-mark [--mask mask]  Restore saved nfmark value\n"
  "  --and-mark value              Binary AND the ctmark with bits\n"
-@@ -210,6 +221,11 @@ static void CONNMARK_parse(struct xt_opt
+@@ -210,6 +222,11 @@ static void CONNMARK_parse(struct xt_opt
  		markinfo->mark = cb->val.mark;
  		markinfo->mask = cb->val.mask;
  		break;
@@ -86,7 +94,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	case O_SAVE_MARK:
  		markinfo->mode = XT_CONNMARK_SAVE;
  		break;
-@@ -238,6 +254,19 @@ static void connmark_tg_parse(struct xt_
+@@ -238,6 +255,19 @@ static void connmark_tg_parse(struct xt_
  		info->ctmark = cb->val.mark;
  		info->ctmask = cb->val.mark | cb->val.mask;
  		break;
@@ -106,7 +114,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	case O_AND_MARK:
  		info->mode   = XT_CONNMARK_SET;
  		info->ctmark = 0;
-@@ -283,6 +312,19 @@ static void connmark_tg_parse_v2(struct
+@@ -283,6 +313,19 @@ static void connmark_tg_parse_v2(struct
  		info->ctmark = cb->val.mark;
  		info->ctmask = cb->val.mark | cb->val.mask;
  		break;
@@ -126,7 +134,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	case O_AND_MARK:
  		info->mode   = XT_CONNMARK_SET;
  		info->ctmark = 0;
-@@ -351,6 +393,11 @@ static void CONNMARK_print(const void *i
+@@ -351,6 +394,11 @@ static void CONNMARK_print(const void *i
  	    print_mark(markinfo->mark);
  	    print_mask("/", markinfo->mask);
  	    break;
@@ -138,7 +146,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	case XT_CONNMARK_SAVE:
  	    printf(" CONNMARK save ");
  	    print_mask("mask ", markinfo->mask);
-@@ -386,6 +433,10 @@ connmark_tg_print(const void *ip, const
+@@ -386,6 +434,10 @@ connmark_tg_print(const void *ip, const
  			printf(" CONNMARK xset 0x%x/0x%x",
  			       info->ctmark, info->ctmask);
  		break;
@@ -149,7 +157,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	case XT_CONNMARK_SAVE:
  		if (info->nfmask == UINT32_MAX && info->ctmask == UINT32_MAX)
  			printf(" CONNMARK save");
-@@ -433,6 +484,10 @@ connmark_tg_print_v2(const void *ip, con
+@@ -433,6 +485,10 @@ connmark_tg_print_v2(const void *ip, con
  			printf(" CONNMARK xset 0x%x/0x%x",
  			       info->ctmark, info->ctmask);
  		break;
@@ -160,7 +168,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	case XT_CONNMARK_SAVE:
  		if (info->nfmask == UINT32_MAX && info->ctmask == UINT32_MAX)
  			printf(" CONNMARK save");
-@@ -474,6 +529,11 @@ static void CONNMARK_save(const void *ip
+@@ -474,6 +530,11 @@ static void CONNMARK_save(const void *ip
  	    print_mark(markinfo->mark);
  	    print_mask("/", markinfo->mask);
  	    break;
@@ -172,7 +180,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	case XT_CONNMARK_SAVE:
  	    printf(" --save-mark ");
  	    print_mask("--mask ", markinfo->mask);
-@@ -505,6 +565,9 @@ connmark_tg_save(const void *ip, const s
+@@ -505,6 +566,9 @@ connmark_tg_save(const void *ip, const s
  	case XT_CONNMARK_SET:
  		printf(" --set-xmark 0x%x/0x%x", info->ctmark, info->ctmask);
  		break;
@@ -182,7 +190,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	case XT_CONNMARK_SAVE:
  		printf(" --save-mark --nfmask 0x%x --ctmask 0x%x",
  		       info->nfmask, info->ctmask);
-@@ -529,6 +592,9 @@ connmark_tg_save_v2(const void *ip, cons
+@@ -529,6 +593,9 @@ connmark_tg_save_v2(const void *ip, cons
  	case XT_CONNMARK_SET:
  		printf(" --set-xmark 0x%x/0x%x", info->ctmark, info->ctmask);
  		break;
