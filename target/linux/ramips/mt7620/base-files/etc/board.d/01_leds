@@ -155,7 +155,8 @@ netgear,ex2700|\
 netgear,wn3000rp-v3)
 	set_wifi_led "$boardname:green:router"
 	;;
-netgear,ex3700)
+netgear,ex3700|\
+netgear,ex6130)
 	ucidef_set_led_netdev "wlan5g" "ROUTER (green)" "$boardname:green:router" "wlan0"
 	ucidef_set_led_netdev "wlan2g" "DEVICE (green)" "$boardname:green:device" "wlan1"
 	;;
