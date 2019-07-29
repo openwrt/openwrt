@@ -6,7 +6,7 @@ BOARDNAME:=Atheros ATH79 (DTS)
 CPU_TYPE:=24kc
 SUBTARGETS:=generic nand tiny
 
-FEATURES:=ramdisk
+FEATURES:=ramdisk source-only
 
 KERNEL_PATCHVER:=4.14
 
