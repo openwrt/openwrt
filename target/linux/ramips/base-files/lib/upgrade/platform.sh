@@ -5,6 +5,9 @@
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
+RAMFS_COPY_BIN='fw_printenv fw_setenv'
+RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
+
 platform_check_image() {
 	return 0
 }
@@ -27,6 +30,9 @@ platform_do_upgrade() {
 	xiaomi,mir3g|\
 	xiaomi,mir3p)
 		nand_do_upgrade "$1"
+		;;
+	linksys,ea8100)
+		platform_do_upgrade_linksys "$ARGV"
 		;;
 	tplink,archer-c50-v4)
 		MTD_ARGS="-t romfile"

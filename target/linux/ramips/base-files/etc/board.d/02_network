@@ -197,6 +197,7 @@ ramips_setup_interfaces()
 	jcg,jhr-n805r|\
 	jcg,jhr-n825r|\
 	jcg,jhr-n926r|\
+	linksys,ea8100|\
 	mikrotik,rb750gr3|\
 	mikrotik,rbm33g|\
 	planex,mzk-wdpr|\
@@ -618,6 +619,10 @@ ramips_setup_macs()
 		;;
 	linksys,e1700)
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
+		;;
+	linksys,ea8100)
+		wan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		lan_mac=$wan_mac
 		;;
 	mediatek,linkit-smart-7688|\
 	onion,omega2|\

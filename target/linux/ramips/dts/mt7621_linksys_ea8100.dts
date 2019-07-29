@@ -1,0 +1,166 @@
+/dts-v1/;
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "linksys,ea8100", "mediatek,mt7621-soc";
+	model = "Linksys EA8100";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8 root=/dev/ubiblock0_0";
+		append-rootblock = "ubi.mtd=";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "ea8100:white:power";
+			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+		};
+
+		wps {
+			label = "ea8100:green:wps";
+			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		wan {
+			label = "ea8100:green:wan";
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+		};
+
+		lan1 {
+			label = "ea8100:green:lan1";
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		};
+
+		lan2 {
+			label = "ea8100:green:lan2";
+			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		};
+
+		lan3 {
+			label = "ea8100:green:lan3";
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		};
+
+		lan4 {
+			label = "ea8100:green:lan4";
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		wps {
+			label = "wps";
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partition@0 {
+		label = "uboot";
+		reg = <0x00000 0x80000>;
+	};
+
+	partition@80000 {
+		label = "uboot_env";
+		reg = <0x80000 0x40000>;
+	};
+
+	factory: partition@c0000 {
+		label = "factory";
+		reg = <0xc0000 0x40000>;
+	};
+
+	partition@100000 {
+		label = "s_env";
+		reg = <0x100000 0x40000>;
+	};
+
+	partition@140000 {
+		label = "devinfo";
+		reg = <0x140000 0x40000>;
+	};
+
+	partition@180000 {
+		label = "kernel1";
+		reg = <0x180000 0x2800000>;
+	};
+
+	partition@580000 {
+		label = "rootfs1";
+		reg = <0x580000 0x2400000>;
+	};
+
+	partition@2980000 {
+		label = "kernel2";
+		reg = <0x2980000 0x2800000>;
+	};
+
+	partition@2d80000 {
+		label = "rootfs2";
+		reg = <0x2d80000 0x2400000>;
+	};
+
+	partition@5180000 {
+		label = "sysdiag";
+		reg = <0x5180000 0x100000>;
+		read-only;
+	};
+
+	partition@5280000 {
+		label = "syscfg";
+		reg = <0x5280000 0x2d00000>;
+		read-only;
+	};
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "i2c", "uart2", "uart3", "jtag", "wdt";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x0000>;
+	};
+};
+
+&pcie1 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x8000>;
+	};
+};

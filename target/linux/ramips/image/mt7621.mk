@@ -293,6 +293,22 @@ define Device/lenovo_newifi-d1
 endef
 TARGET_DEVICES += lenovo_newifi-d1
 
+define Device/linksys_ea8100
+  MTK_SOC := mt7621
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  FILESYSTEMS := squashfs
+  DEVICE_TITLE := Linksys EA8100
+  DEVICE_PACKAGES := kmod-mt7615e wpad-basic kmod-usb3 uboot-envtools kmod-usb-storage
+  IMAGE_SIZE := 40960k
+  KERNEL_SIZE := 4096k
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=EA8100
+endef
+TARGET_DEVICES += linksys_ea8100
+
 define Device/linksys_re6500
   MTK_SOC := mt7621
   IMAGE_SIZE := 7872k

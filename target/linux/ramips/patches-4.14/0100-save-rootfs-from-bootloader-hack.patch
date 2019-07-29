@@ -1,0 +1,73 @@
+ramips: add devicetree property to transform bootloader's root arg
+
+On dual-boot devices we need to use the bootloader's root= argument to know
+which is our rootfs.
+
+If chosen/append-rootblock exists, we parse the bootloader's cmdline for
+root=/dev/mtdblockXX and then append <append-rootblock>XX to the cmdline.
+
+Adapted from the ARM patch "generic: Mangle bootloader's kernel arguments".
+
+Signed-off-by: Tee Hao Wei <angelsl@in04.sg>
+---
+
+--- a/arch/mips/ralink/of.c
++++ b/arch/mips/ralink/of.c
+@@ -66,6 +66,18 @@ static int __init early_init_dt_find_mem
+ 	return 0;
+ }
+ 
++static void *append_rootblock_prefix;
++static int append_rootblock_prefix_len;
++
++static int __init early_init_dt_find_chosen(unsigned long node, const char *uname,
++				     int depth, void *data)
++{
++	if (depth == 1 && !strcmp(uname, "chosen"))
++		append_rootblock_prefix = of_get_flat_dt_prop(node, "append-rootblock", &append_rootblock_prefix_len);
++
++	return 0;
++}
++
+ void __init plat_mem_setup(void)
+ {
+ 	void *dtb = NULL;
+@@ -84,6 +96,38 @@ void __init plat_mem_setup(void)
+ 
+ 	__dt_setup_arch(dtb);
+ 
++	of_scan_flat_dt(early_init_dt_find_chosen, NULL);
++	if (append_rootblock_prefix && append_rootblock_prefix_len > 0) {
++		const char *const search_prefix = "root=/dev/mtdblock";
++		char *root_arg = strstr(arcs_cmdline, search_prefix);
++		if (root_arg) {
++			char *root_arg_end = NULL;
++			char *blockno = NULL;
++			size_t cmdline_len;
++
++			root_arg_end = strchr(root_arg, ' ');
++			blockno = root_arg + strlen(search_prefix);
++
++			if (root_arg_end) {
++				*root_arg_end = '\0';
++			}
++
++			strlcat(boot_command_line, " ", COMMAND_LINE_SIZE);
++
++			cmdline_len = strlen(boot_command_line);
++			if (cmdline_len + append_rootblock_prefix_len + 1 <= COMMAND_LINE_SIZE) {
++				memcpy(boot_command_line + cmdline_len, append_rootblock_prefix, append_rootblock_prefix_len);
++				*(boot_command_line + cmdline_len + append_rootblock_prefix_len) = '\0';
++			}
++
++			strlcat(boot_command_line, blockno, COMMAND_LINE_SIZE);
++
++			if (root_arg_end) {
++				*root_arg_end = ' ';
++			}
++		}
++	}
++
+ 	strlcpy(arcs_cmdline, boot_command_line, COMMAND_LINE_SIZE);
+ 
+ 	of_scan_flat_dt(early_init_dt_find_memory, NULL);

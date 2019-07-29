@@ -5,8 +5,13 @@ START=99
 start() {
 	. /lib/functions.sh
 
-	local board=$(board_name)
-	if [ $board = "samknows,whitebox-v8" ]; then
+	case $(board_name) in
+	linksys,ea8100)
+		mtd resetbc s_env || true
+		;;
+	samknows,whitebox-v8)
 		fw_setenv bootcount 0
-	fi
+		;;
+	esac
+
 }
