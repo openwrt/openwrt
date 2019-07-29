@@ -278,7 +278,8 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "9@eth0"
 		;;
-	tplink,tl-wr941-v2)
+	tplink,tl-wr941-v2|\
+	tplink,tl-wr941-v3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	ubnt,acb-isp)
@@ -418,6 +419,7 @@ ath79_setup_macs()
 		wan_mac=$(macaddr_add "$base_mac" 1)
 		;;
 	tplink,tl-wr941-v2|\
+	tplink,tl-wr941-v3|\
 	tplink,tl-wr941n-v7-cn)
 		base_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
 		wan_mac=$(macaddr_add "$base_mac" 1)
