@@ -34,7 +34,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  # However, on *other platforms* it fails when some of those flags
 --- /dev/null
 +++ b/networking/nslookup_lede.c
-@@ -0,0 +1,914 @@
+@@ -0,0 +1,934 @@
 +/*
 + * nslookup_lede - musl compatible replacement for busybox nslookup
 + *
@@ -128,6 +128,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 +	{ ns_t_cname, "CNAME" },
 +	{ ns_t_mx,    "MX"    },
 +	{ ns_t_txt,   "TXT"   },
++	{ ns_t_srv,   "SRV"   },
 +	{ ns_t_ptr,   "PTR"   },
 +	{ ns_t_any,   "ANY"   },
 +	{ }
@@ -257,6 +258,25 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 +				memcpy(dname, ns_rr_rdata(rr) + 1, n);
 +				printf("%s\ttext = \"%s\"\n", ns_rr_name(rr), dname);
 +			}
++			break;
++
++		case ns_t_srv:
++			if (rdlen < 6) {
++				//printf("SRV record too short\n");
++				return -1;
++			}
++
++			cp = ns_rr_rdata(rr);
++			n = ns_name_uncompress(ns_msg_base(handle), ns_msg_end(handle),
++			                       cp + 6, dname, sizeof(dname));
++
++			if (n < 0) {
++				//printf("Unable to uncompress domain: %s\n", strerror(errno));
++				return -1;
++			}
++
++			printf("%s\tservice = %hu %hu %hu %s\n", ns_rr_name(rr),
++				ns_get16(cp), ns_get16(cp + 2), ns_get16(cp + 4), dname);
 +			break;
 +
 +		case ns_t_soa:
