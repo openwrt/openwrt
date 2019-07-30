@@ -1,7 +1,7 @@
-From 0d91defd7bfc42c0ed053ba03b5ea2eff2e1d2f5 Mon Sep 17 00:00:00 2001
+From c33330ac06fe863289643e7a13ecdb6a2502dad7 Mon Sep 17 00:00:00 2001
 From: Arend van Spriel <arend.vanspriel@broadcom.com>
 Date: Thu, 11 Jul 2019 11:05:09 +0200
-Subject: [PATCH 4/7] brcmfmac: clear events in brcmf_fweh_detach() will always
+Subject: [PATCH] brcmfmac: clear events in brcmf_fweh_detach() will always
  fail
 
 Clearing firmware events in brcmf_fweh_detach() is always failing
@@ -12,6 +12,7 @@ Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
 Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
 Reviewed-by: Franky Lin <franky.lin@broadcom.com>
 Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 ---
  drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c | 9 ---------
  1 file changed, 9 deletions(-)

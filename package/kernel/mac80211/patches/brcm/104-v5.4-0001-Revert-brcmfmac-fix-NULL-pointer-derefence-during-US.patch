@@ -1,13 +1,14 @@
-From 7acf04a0ae2adf5d3e9de9adeec3129e74bf6ef2 Mon Sep 17 00:00:00 2001
+From a84a60ccdd65278485fb495f468a5ab91a75c649 Mon Sep 17 00:00:00 2001
 From: Arend van Spriel <arend.vanspriel@broadcom.com>
 Date: Thu, 11 Jul 2019 11:05:06 +0200
-Subject: [PATCH 1/7] Revert "brcmfmac: fix NULL pointer derefence during USB
+Subject: [PATCH] Revert "brcmfmac: fix NULL pointer derefence during USB
  disconnect"
 
 This reverts commit 5cdb0ef6144f47440850553579aa923c20a63f23. Subsequent
 changes make rework the driver code fixing the issue differently.
 
 Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 ---
  .../wireless/broadcom/brcm80211/brcmfmac/bcdc.c  | 11 ++---------
  .../wireless/broadcom/brcm80211/brcmfmac/bcdc.h  |  6 ++----

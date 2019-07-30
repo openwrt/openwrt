@@ -5,11 +5,11 @@ case "${0##*/}" in
 	*) arg1="$0.py" ;;
 esac
 
-for bin in python python2 python2.7 python2.6 python2.5 python2.4; do
+for bin in python python3; do
     case "$($bin -V 2>&1)" in
-        "Python 2"*) exec $bin $arg1 "$@" ;;
+        "Python 3"*) exec $bin $arg1 "$@" ;;
     esac
 done
 
-echo "Unable to find a Python 2.x interpreter for executing ${arg1:+$arg1 }$@ !" >&2
+echo "Unable to find a Python 3.x interpreter for executing ${arg1:+$arg1 }$@ !" >&2
 exit 1

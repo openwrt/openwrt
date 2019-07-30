@@ -1,8 +1,8 @@
-From 1be747d977014fea13dbac0de885c0c358eb393c Mon Sep 17 00:00:00 2001
+From c613085b74941024194e41b200601b9aa6ee388f Mon Sep 17 00:00:00 2001
 From: Arend van Spriel <arend.vanspriel@broadcom.com>
 Date: Thu, 11 Jul 2019 11:05:08 +0200
-Subject: [PATCH 3/7] brcmfmac: avoid firmware command in brcmf_netdev_open()
- when bus is down
+Subject: [PATCH] brcmfmac: avoid firmware command in brcmf_netdev_open() when
+ bus is down
 
 No point in sending a firmware command when bus is down so make it
 conditional checking the state.
@@ -11,6 +11,7 @@ Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
 Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
 Reviewed-by: Franky Lin <franky.lin@broadcom.com>
 Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 ---
  drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
