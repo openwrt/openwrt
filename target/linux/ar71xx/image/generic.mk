@@ -1391,7 +1391,7 @@ TARGET_DEVICES += fritz450e
 
 define Device/librerouter-v1
   DEVICE_TITLE := LibreRouter v1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage safe-upgrade
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage safe-upgrade om-watchdog
   BOARDNAME := LIBREROUTERV1
   IMAGE_SIZE := 32384k
   KERNEL := kernel-bin | lzma | uImage lzma
