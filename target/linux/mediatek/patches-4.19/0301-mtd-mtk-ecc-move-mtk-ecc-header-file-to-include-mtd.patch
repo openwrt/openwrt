@@ -1,0 +1,48 @@
+From a2479dc254ebe31c84fbcfda73f35e2321576494 Mon Sep 17 00:00:00 2001
+From: Xiangsheng Hou <xiangsheng.hou@mediatek.com>
+Date: Tue, 19 Mar 2019 13:57:38 +0800
+Subject: [PATCH 1/6] mtd: mtk ecc: move mtk ecc header file to include/mtd
+
+Change-Id: I8dc1d30e21b40d68ef5efd9587012f82970156a5
+Signed-off-by: Xiangsheng Hou <xiangsheng.hou@mediatek.com>
+---
+ drivers/mtd/nand/raw/mtk_ecc.c                        | 3 +--
+ drivers/mtd/nand/raw/mtk_nand.c                       | 2 +-
+ {drivers/mtd/nand/raw => include/linux/mtd}/mtk_ecc.h | 0
+ 3 files changed, 2 insertions(+), 3 deletions(-)
+ rename {drivers/mtd/nand/raw => include/linux/mtd}/mtk_ecc.h (100%)
+
+diff --git a/drivers/mtd/nand/raw/mtk_ecc.c b/drivers/mtd/nand/raw/mtk_ecc.c
+index 6432bd70c3b3..32e9784b0d4f 100644
+--- a/drivers/mtd/nand/raw/mtk_ecc.c
++++ b/drivers/mtd/nand/raw/mtk_ecc.c
+@@ -23,8 +23,7 @@
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
+ #include <linux/mutex.h>
+-
+-#include "mtk_ecc.h"
++#include <linux/mtd/mtk_ecc.h>
+ 
+ #define ECC_IDLE_MASK		BIT(0)
+ #define ECC_IRQ_EN		BIT(0)
+diff --git a/drivers/mtd/nand/raw/mtk_nand.c b/drivers/mtd/nand/raw/mtk_nand.c
+index 57b5ed1699e3..e201f1417fba 100644
+--- a/drivers/mtd/nand/raw/mtk_nand.c
++++ b/drivers/mtd/nand/raw/mtk_nand.c
+@@ -25,7 +25,7 @@
+ #include <linux/iopoll.h>
+ #include <linux/of.h>
+ #include <linux/of_device.h>
+-#include "mtk_ecc.h"
++#include <linux/mtd/mtk_ecc.h>
+ 
+ /* NAND controller register definition */
+ #define NFI_CNFG		(0x00)
+diff --git a/drivers/mtd/nand/raw/mtk_ecc.h b/include/linux/mtd/mtk_ecc.h
+similarity index 100%
+rename from drivers/mtd/nand/raw/mtk_ecc.h
+rename to include/linux/mtd/mtk_ecc.h
+-- 
+2.20.1
+

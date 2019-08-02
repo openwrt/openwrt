@@ -1,0 +1,19 @@
+[?25l[J[J[J[J[J[J[?2004h[?25h[?1049h[22;0;0t[?1h=[?2004h[1;76r[?12h[?12l[22;2t[22;1t[27m[23m[29m[m[H[2J[?25l[76;1H"mt7622-lynx-rfb1.dts" 605L, 11203C[1;1H/*
+ * Copyright (c) 2017 MediaTek Inc.
+ * Author: Ming Huang <ming.huang@mediatek.com>
+ *[9CSean Wang <sean.wang@mediatek.com>
+ *
+ * SPDX-License-Identifier: (GPL-2.0 OR MIT)
+ */
+
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "mt7622.dtsi"
+#include "mt6380.dtsi"
+
+/ {[17;9Hmodel = "MediaTek MT7622 RFB1 board";[18;9Hcompatible = "mediatek,mt7622-rfb1", "mediatek,mt7622";[20;9Haliases {[21;17Hserial0 = &uart0;[22;9H};[24;9Hchosen {[25;17Hstdout-path = "serial0:115200n8";[26;17Hbootargs = "earlycon=uart8250,mmio32,0x11002000 swiotlb=512";[27;9H};[29;9Hcpus {[30;17Hcpu@0 {[31;25Hproc-supply = <&mt6380_vcpu_reg>;[32;25Hsram-supply = <&mt6380_vm_reg>;[33;17H};[35;17Hcpu@1 {[36;25Hproc-supply = <&mt6380_vcpu_reg>;[37;25Hsram-supply = <&mt6380_vm_reg>;[38;17H};[39;9H};[41;9Hgpio-keys {[42;17Hcompatible = "gpio-keys";[43;17Hpoll-interval = <100>;[45;17Hfactory {[46;25Hlabel = "factory";[47;25Hlinux,code = <BTN_0>;[48;25Hgpios = <&pio 0 0>;[49;17H};[51;17Hwps {[52;25Hlabel = "wps";[53;25Hlinux,code = <KEY_WPS_BUTTON>;[54;25Hgpios = <&pio 102 0>;[55;17H};[56;9H};[58;9Hgsw: gsw@0 {[59;17Hcompatible = "mediatek,mt753x";[60;17Hmediatek,ethsys = <&ethsys>;[61;17H#address-cells = <1>;[62;17H#size-cells = <0>;[63;9H};[65;9Hmemory {[66;17Hreg = <0 0x40000000 0 0x3F000000>;[67;9H};[69;9Hreg_1p8v: regulator-1p8v {[70;17Hcompatible = "regulator-fixed";[71;17Hregulator-name = "fixed-1.8V";[72;17Hregulator-min-microvolt = <1800000>;[73;17Hregulator-max-microvolt = <1800000>;[74;17Hregulator-always-on;[75;9H};[1;1H[?25h
+ [?25l[76;1HType  :qa!  and press <Enter> to abandon all changes and exit Vim[2;2H[?25h[76;1H[?2004l[?1l>[?1049l[23;0;0tVim: Caught deadly signal TERM
+Vim: Finished.
+[76;1H[23;2t[23;1t[22;2t[22;1t[23;2t[23;1t
