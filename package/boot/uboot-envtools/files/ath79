@@ -13,9 +13,7 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
-buffalo,wzr-hp-ag300h)
-        ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000" "0x10000"
-        ;;
+alfa-network,ap121f|\
 buffalo,bhr-4grv2|\
 engenius,ecb1750|\
 glinet,gl-ar300m-nand|\
@@ -28,6 +26,9 @@ ocedo,raccoon|\
 openmesh,om5p-ac-v2|\
 yuncore,a770)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
+	;;
+buffalo,wzr-hp-ag300h)
+	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000" "0x10000"
 	;;
 qihoo,c301)
 	ubootenv_add_uci_config "/dev/mtd9" "0x0" "0x10000" "0x10000"

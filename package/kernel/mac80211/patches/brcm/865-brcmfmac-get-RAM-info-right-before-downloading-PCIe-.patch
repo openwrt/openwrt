@@ -55,7 +55,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  void brcmf_chip_detach(struct brcmf_chip *chip);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
-@@ -1769,6 +1769,12 @@ static void brcmf_pcie_setup(struct devi
+@@ -1770,6 +1770,12 @@ static void brcmf_pcie_setup(struct devi
  	nvram_len = fwreq->items[BRCMF_PCIE_FW_NVRAM].nv_data.len;
  	kfree(fwreq);
  

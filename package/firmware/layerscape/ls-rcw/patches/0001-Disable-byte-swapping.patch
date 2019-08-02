@@ -1,0 +1,44 @@
+From ef78dc0683a7f5ae80b27878a8a2f91d504e3290 Mon Sep 17 00:00:00 2001
+From: Yangbo Lu <yangbo.lu@nxp.com>
+Date: Wed, 19 Jun 2019 10:50:29 +0800
+Subject: [PATCH 1/2] Disable byte swapping
+
+Because TF-A had already handled rcw byte swapping, the
+byte swapping in rcw could be dropped.
+
+Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
+---
+ Makefile     | 4 ----
+ Makefile.inc | 1 -
+ 2 files changed, 5 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index f697241..837b69e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -14,10 +14,6 @@ TCLSH := $(shell command -v tclsh 2> /dev/null)
+ VER = $(shell git describe --tags)
+ 
+ all install clean:
+-ifndef TCLSH
+-	$(error "tclsh is not available. please  install it.")
+-	exit 1
+-endif
+ 	@for board in $(BOARDS); do \
+ 		$(MAKE) -C $$board $@ DESTDIR=$(DESTDIR)/$$board; \
+ 	done
+diff --git a/Makefile.inc b/Makefile.inc
+index 87639bc..7d9a3d3 100644
+--- a/Makefile.inc
++++ b/Makefile.inc
+@@ -17,7 +17,6 @@ targets = $(txt_sources:.txt=.bin) $(rcw_sources:.rcw=.bin) $(swap_sources)
+ 	$(RCW) -i $< -o $@
+ 
+ all: $(targets)
+-	$(QSPI_SWAP_SCRIPT) $(QSPI_SWAP_LIST)
+ 
+ install: $(targets)
+ 	$(INSTALL) -d $(DESTDIR)
+-- 
+2.7.4
+

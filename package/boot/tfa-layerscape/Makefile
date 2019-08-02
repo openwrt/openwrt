@@ -48,7 +48,9 @@ define Build/Compile
 		fip pbl PLAT=$(PLAT) BOOT_MODE=$(BOOT_MODE) \
 		RCW=$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-rcw.bin \
 		BL33=$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-uboot.bin \
-		FIPTOOL=$(STAGING_DIR_HOST)/bin/fiptool
+		FIPTOOL=$(STAGING_DIR_HOST)/bin/tfa-fiptool \
+		CREATE_PBL=$(STAGING_DIR_HOST)/bin/tfa-create-pbl \
+		BYTE_SWAP=$(STAGING_DIR_HOST)/bin/tfa-byte-swap
 endef
 
 HOST_CFLAGS += -Wall -Werror -pedantic -std=c99
@@ -57,10 +59,15 @@ define Host/Compile
 		$(HOST_BUILD_DIR)/tools/fiptool \
 		CFLAGS="$(HOST_CFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)"
+	$(MAKE) -C \
+		$(HOST_BUILD_DIR)/plat/nxp/tools \
+		CFLAGS="$(HOST_CFLAGS)"
 endef
 
 define Host/Install
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/tools/fiptool/fiptool $(STAGING_DIR_HOST)/bin/
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/tools/fiptool/fiptool $(STAGING_DIR_HOST)/bin/tfa-fiptool
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/plat/nxp/tools/create_pbl $(STAGING_DIR_HOST)/bin/tfa-create-pbl
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/plat/nxp/tools/byte_swap $(STAGING_DIR_HOST)/bin/tfa-byte-swap
 endef
 
 define Package/tfa-layerscape/ls1012ardb
