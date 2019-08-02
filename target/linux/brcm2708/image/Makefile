@@ -28,7 +28,7 @@ define Build/boot-common
 	mcopy -i $@.boot $(KDIR)/bootcode.bin ::
 	mcopy -i $@.boot $(KDIR)/LICENCE.broadcom ::
 	mcopy -i $@.boot cmdline.txt ::
-	mcopy -i $@.boot config.txt ::
+	mcopy -i $@.boot $(BOOT_CONFIG) ::config.txt
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::$(KERNEL_IMG)
 	$(foreach dts,$(shell echo $(DEVICE_DTS)),mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb ::;)
 	mmd -i $@.boot ::/overlays
@@ -45,13 +45,17 @@ define Build/boot-2708
 	mcopy -i $@.boot $(KDIR)/fixup_x.dat ::
 endef
 
- define Build/boot-2711
+define Build/boot-2711
 	mcopy -i $@.boot $(KDIR)/start4.elf ::
 	mcopy -i $@.boot $(KDIR)/start4cd.elf ::
 	mcopy -i $@.boot $(KDIR)/start4x.elf ::
 	mcopy -i $@.boot $(KDIR)/fixup4.dat ::
 	mcopy -i $@.boot $(KDIR)/fixup4cd.dat ::
 	mcopy -i $@.boot $(KDIR)/fixup4x.dat ::
+endef
+
+define Build/boot-armstub8
+	mcopy -i $@.boot $(KDIR)/armstub8-gic.bin ::
 endef
 
 define Build/sdcard-img
@@ -66,6 +70,7 @@ define Device/Default
   IMAGES := factory.img.gz sysupgrade.img.gz
   IMAGE/sysupgrade.img.gz := boot-common | boot-2708 | sdcard-img | gzip | append-metadata
   IMAGE/factory.img.gz := boot-common | boot-2708 | sdcard-img | gzip
+  BOOT_CONFIG := config.txt
 endef
 
 define Device/rpi
@@ -92,7 +97,8 @@ define Device/rpi-2
 	rpi-2-b rpi-3-b rpi-3-b-plus rpi-cm \
 	raspberrypi,2-model-b \
 	raspberrypi,3-model-b raspberrypi,3-model-b-plus \
-	raspberrypi,3-compute-module raspberrypi,compute-module-3
+	raspberrypi,3-compute-module raspberrypi,compute-module-3 \
+	raspberrypi,4-model-b
   DEVICE_PACKAGES := \
 	brcmfmac-firmware-43430-sdio \
 	brcmfmac-firmware-43430-sdio-rpi-3b \
@@ -123,6 +129,25 @@ define Device/rpi-3
 endef
 ifeq ($(SUBTARGET),bcm2710)
   TARGET_DEVICES += rpi-3
+endif
+
+define Device/rpi-4
+  KERNEL_IMG := kernel8.img
+  DEVICE_TITLE := Raspberry Pi 4B
+  DEVICE_DTS := broadcom/bcm2711-rpi-4-b
+  SUPPORTED_DEVICES := \
+	raspberrypi,4-model-b
+  DEVICE_PACKAGES := \
+	brcmfmac-firmware-43455-sdio brcmfmac-firmware-43455-clm_blob \
+	brcmfmac-firmware-43455-sdio-rpi-4b \
+	kmod-brcmfmac wpad-basic \
+	brcm27xx-armstub
+  IMAGE/sysupgrade.img.gz := boot-common | boot-2711 | boot-armstub8 | sdcard-img | gzip | append-metadata
+  IMAGE/factory.img.gz := boot-common | boot-2711 | boot-armstub8 | sdcard-img | gzip
+  BOOT_CONFIG := config-bcm2711-arm64.txt
+endef
+ifeq ($(SUBTARGET),bcm2711)
+  TARGET_DEVICES += rpi-4
 endif
 
 $(eval $(call BuildImage))
