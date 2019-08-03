@@ -97,7 +97,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/wep.c
 +++ b/net/mac80211/wep.c
-@@ -86,11 +86,11 @@ static void ieee80211_wep_get_iv(struct
+@@ -65,11 +65,11 @@ static void ieee80211_wep_get_iv(struct
  
  static u8 *ieee80211_wep_add_iv(struct ieee80211_local *local,
  				struct sk_buff *skb,
@@ -110,7 +110,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u8 *newhdr;
  
  	hdr->frame_control |= cpu_to_le16(IEEE80211_FCTL_PROTECTED);
-@@ -98,7 +98,6 @@ static u8 *ieee80211_wep_add_iv(struct i
+@@ -77,7 +77,6 @@ static u8 *ieee80211_wep_add_iv(struct i
  	if (WARN_ON(skb_headroom(skb) < IEEE80211_WEP_IV_LEN))
  		return NULL;
  
@@ -118,7 +118,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	newhdr = skb_push(skb, IEEE80211_WEP_IV_LEN);
  	memmove(newhdr, newhdr + IEEE80211_WEP_IV_LEN, hdrlen);
  
-@@ -157,6 +156,7 @@ int ieee80211_wep_encrypt_data(struct cr
+@@ -132,6 +131,7 @@ int ieee80211_wep_encrypt_data(struct ar
   */
  int ieee80211_wep_encrypt(struct ieee80211_local *local,
  			  struct sk_buff *skb,
@@ -126,7 +126,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			  const u8 *key, int keylen, int keyidx)
  {
  	u8 *iv;
-@@ -166,7 +166,7 @@ int ieee80211_wep_encrypt(struct ieee802
+@@ -141,7 +141,7 @@ int ieee80211_wep_encrypt(struct ieee802
  	if (WARN_ON(skb_tailroom(skb) < IEEE80211_WEP_ICV_LEN))
  		return -1;
  
@@ -135,7 +135,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!iv)
  		return -1;
  
-@@ -304,13 +304,14 @@ static int wep_encrypt_skb(struct ieee80
+@@ -275,13 +275,14 @@ static int wep_encrypt_skb(struct ieee80
  	struct ieee80211_key_conf *hw_key = info->control.hw_key;
  
  	if (!hw_key) {
@@ -154,13 +154,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			return -1;
 --- a/net/mac80211/wep.h
 +++ b/net/mac80211/wep.h
-@@ -19,6 +19,7 @@ int ieee80211_wep_encrypt_data(struct cr
+@@ -18,6 +18,7 @@ int ieee80211_wep_encrypt_data(struct ar
  				size_t klen, u8 *data, size_t data_len);
  int ieee80211_wep_encrypt(struct ieee80211_local *local,
  			  struct sk_buff *skb,
 +			  unsigned int hdrlen,
  			  const u8 *key, int keylen, int keyidx);
- int ieee80211_wep_decrypt_data(struct crypto_cipher *tfm, u8 *rc4key,
+ int ieee80211_wep_decrypt_data(struct arc4_ctx *ctx, u8 *rc4key,
  			       size_t klen, u8 *data, size_t data_len);
 --- a/net/mac80211/wpa.c
 +++ b/net/mac80211/wpa.c

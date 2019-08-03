@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -721,6 +721,7 @@ struct ath_spec_scan {
+@@ -722,6 +722,7 @@ struct ath_spec_scan {
   * @config_pci_powersave:
   * @calibrate: periodic calibration for NF, ANI, IQ, ADC gain, ADC-DC
   *
@@ -8,7 +8,7 @@
   * @spectral_scan_config: set parameters for spectral scan and enable/disable it
   * @spectral_scan_trigger: trigger a spectral scan run
   * @spectral_scan_wait: wait for a spectral scan run to finish
-@@ -743,6 +744,7 @@ struct ath_hw_ops {
+@@ -744,6 +745,7 @@ struct ath_hw_ops {
  			struct ath_hw_antcomb_conf *antconf);
  	void (*antdiv_comb_conf_set)(struct ath_hw *ah,
  			struct ath_hw_antcomb_conf *antconf);
@@ -18,7 +18,7 @@
  	void (*spectral_scan_trigger)(struct ath_hw *ah);
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-@@ -1945,6 +1945,26 @@ void ar9003_hw_init_rate_txpower(struct
+@@ -1927,6 +1927,26 @@ void ar9003_hw_init_rate_txpower(struct
  	}
  }
  
@@ -45,7 +45,7 @@
  void ar9003_hw_attach_phy_ops(struct ath_hw *ah)
  {
  	struct ath_hw_private_ops *priv_ops = ath9k_hw_private_ops(ah);
-@@ -1981,6 +2001,7 @@ void ar9003_hw_attach_phy_ops(struct ath
+@@ -1963,6 +1983,7 @@ void ar9003_hw_attach_phy_ops(struct ath
  	priv_ops->set_radar_params = ar9003_hw_set_radar_params;
  	priv_ops->fast_chan_change = ar9003_hw_fast_chan_change;
  

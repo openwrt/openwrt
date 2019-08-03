@@ -1,6 +1,6 @@
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -313,7 +313,7 @@ void ieee80211_restart_hw(struct ieee802
+@@ -314,7 +314,7 @@ void ieee80211_restart_hw(struct ieee802
  }
  EXPORT_SYMBOL(ieee80211_restart_hw);
  
@@ -9,7 +9,7 @@
  static int ieee80211_ifa_changed(struct notifier_block *nb,
  				 unsigned long data, void *arg)
  {
-@@ -372,7 +372,7 @@ static int ieee80211_ifa_changed(struct
+@@ -373,7 +373,7 @@ static int ieee80211_ifa_changed(struct
  }
  #endif
  
@@ -52,7 +52,7 @@
   fail_ifa:
  #endif
  	rtnl_lock();
-@@ -1320,10 +1320,10 @@ void ieee80211_unregister_hw(struct ieee
+@@ -1319,10 +1319,10 @@ void ieee80211_unregister_hw(struct ieee
  	tasklet_kill(&local->tx_pending_tasklet);
  	tasklet_kill(&local->tasklet);
  

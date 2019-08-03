@@ -1,6 +1,6 @@
 --- a/local-symbols
 +++ b/local-symbols
-@@ -410,43 +410,6 @@ USB_SIERRA_NET=
+@@ -412,43 +412,6 @@ USB_SIERRA_NET=
  USB_VL600=
  USB_NET_CH9200=
  USB_NET_AQC111=
@@ -90,7 +90,7 @@
  config B43_PHY_G
 --- a/drivers/net/wireless/broadcom/b43/main.c
 +++ b/drivers/net/wireless/broadcom/b43/main.c
-@@ -2856,7 +2856,7 @@ static struct ssb_device *b43_ssb_gpio_d
+@@ -2851,7 +2851,7 @@ static struct ssb_device *b43_ssb_gpio_d
  {
  	struct ssb_bus *bus = dev->dev->sdev->bus;
  
@@ -99,7 +99,7 @@
  	return (bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev);
  #else
  	return bus->chipco.dev;
-@@ -4873,7 +4873,7 @@ static int b43_wireless_core_init(struct
+@@ -4868,7 +4868,7 @@ static int b43_wireless_core_init(struct
  	}
  	if (sprom->boardflags_lo & B43_BFL_XTAL_NOSLOW)
  		hf |= B43_HF_DSCRQ; /* Disable slowclock requests from ucode. */
@@ -192,7 +192,7 @@
  	select BRCMUTIL
 --- a/Kconfig.local
 +++ b/Kconfig.local
-@@ -1234,117 +1234,6 @@ config BACKPORTED_USB_NET_CH9200
+@@ -1240,117 +1240,6 @@ config BACKPORTED_USB_NET_CH9200
  config BACKPORTED_USB_NET_AQC111
  	tristate
  	default USB_NET_AQC111
