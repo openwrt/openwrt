@@ -54,10 +54,6 @@ define Build/boot-2711
 	mcopy -i $@.boot $(KDIR)/fixup4x.dat ::
 endef
 
-define Build/boot-armstub8
-	mcopy -i $@.boot $(KDIR)/armstub8-gic.bin ::
-endef
-
 define Build/sdcard-img
 	./gen_rpi_sdcard_img.sh $@ $@.boot $(IMAGE_ROOTFS) \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
@@ -140,10 +136,9 @@ define Device/rpi-4
   DEVICE_PACKAGES := \
 	brcmfmac-firmware-43455-sdio brcmfmac-firmware-43455-clm_blob \
 	brcmfmac-firmware-43455-sdio-rpi-4b \
-	kmod-brcmfmac wpad-basic \
-	brcm27xx-armstub
-  IMAGE/sysupgrade.img.gz := boot-common | boot-2711 | boot-armstub8 | sdcard-img | gzip | append-metadata
-  IMAGE/factory.img.gz := boot-common | boot-2711 | boot-armstub8 | sdcard-img | gzip
+	kmod-brcmfmac wpad-basic
+  IMAGE/sysupgrade.img.gz := boot-common | boot-2711 | sdcard-img | gzip | append-metadata
+  IMAGE/factory.img.gz := boot-common | boot-2711 | sdcard-img | gzip
   BOOT_CONFIG := config-bcm2711-arm64.txt
 endef
 ifeq ($(SUBTARGET),bcm2711)
