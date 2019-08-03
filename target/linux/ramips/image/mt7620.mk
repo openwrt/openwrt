@@ -84,6 +84,18 @@ define Device/apexera_netbot
 endef
 TARGET_DEVICES += apexera_netbot
 
+define Device/apexera_wibot
+  MTK_SOC := mt7620a
+  DEVICE_VENDOR := Apexera
+  DEVICE_MODEL := WiBot
+  IMAGE_SIZE := 16064k
+  DEVICE_PACKAGES := kmod-i2c-ralink kmod-rtc-pcf8563 kmod-sdhci-mt7620 \
+       kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-usb-storage \
+       kmod-usb-storage-extras kmod-usb-storage-uas kmod-usb-net-qmi-wwan \
+       kmod-usb-serial-option
+endef
+TARGET_DEVICES += apexera_wibot
+
 define Device/Archer
   MTK_SOC := mt7620a
   DEVICE_VENDOR := TP-Link
