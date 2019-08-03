@@ -15,7 +15,6 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://source.codeaurora.org/external/qoriq/qoriq-components/atf
 PKG_SOURCE_VERSION:=7e34aebe658c7c3439d2d68b0ce6b9776e8e6996
 PKG_MIRROR_HASH:=9cf0bc32fa589a0ee7c48c87898679e645341f29da1253d0ba5d2e82c6ea074d
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_BUILD_DEPENDS:=uboot-layerscape tfa-layerscape/host
 
 include $(INCLUDE_DIR)/host-build.mk
