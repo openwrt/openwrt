@@ -17,7 +17,7 @@ endef
 TARGET_DEVICES += MTK-LYNX-RFB1
 
 define Device/BPI-R64
-  DEVICE_TITLE := Bannan Pi R64
+  DEVICE_TITLE := Banana Pi R64
   DEVICE_DTS := mt7622-bananapi-bpi-r64
   DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb3 \
