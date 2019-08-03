@@ -1,7 +1,7 @@
 From 2896e2485e44c04e73a0b7c9f7cbc9c8515d0800 Mon Sep 17 00:00:00 2001
 From: Simon Kelley <simon@thekelleys.org.uk>
 Date: Wed, 9 Jan 2019 15:12:34 +0000
-Subject: [PATCH 26/57] Check for not(DS or DNSKEY) in
+Subject: [PATCH 26/32] Check for not(DS or DNSKEY) in
  is_outdated_cname_pointer()
 
 Previous check was _for_ IPV4, IPv6 CNAME, and I missed adding SRV.

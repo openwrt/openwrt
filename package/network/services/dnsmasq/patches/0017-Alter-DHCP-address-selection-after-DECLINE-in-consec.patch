@@ -1,7 +1,7 @@
 From e7bfd556c079c8b5e7425aed44abc35925b24043 Mon Sep 17 00:00:00 2001
 From: Simon Kelley <simon@thekelleys.org.uk>
 Date: Mon, 31 Dec 2018 20:51:15 +0000
-Subject: [PATCH 17/57] Alter DHCP address selection after DECLINE in
+Subject: [PATCH 17/32] Alter DHCP address selection after DECLINE in
  consec-addr mode. Avoid offering the same address after a recieving a DECLINE
  message to stop an infinite protocol loop. This has long been done in default
  address allocation mode: this adds similar behaviour when allocaing addresses
