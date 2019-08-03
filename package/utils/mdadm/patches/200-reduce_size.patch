@@ -1,6 +1,6 @@
 --- a/Incremental.c
 +++ b/Incremental.c
-@@ -1619,6 +1619,10 @@ static int Incremental_container(struct supertype *st, char *devname,
+@@ -1620,6 +1620,10 @@ static int Incremental_container(struct
  	if (ra_all == ra_blocked)
  		return 0;
  
@@ -13,7 +13,7 @@
  	memcpy(suuid, uuid_zero, sizeof(int[4]));
 --- a/util.c
 +++ b/util.c
-@@ -1220,7 +1220,9 @@ void wait_for(char *dev, int fd)
+@@ -1221,7 +1221,9 @@ void wait_for(char *dev, int fd)
  struct superswitch *superlist[] =
  {
  	&super0, &super1,
