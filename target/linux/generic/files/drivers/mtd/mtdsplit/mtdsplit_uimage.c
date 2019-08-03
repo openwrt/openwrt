@@ -398,21 +398,34 @@ static ssize_t uimage_find_fonfxc(u_char *buf, size_t len, int *extralen)
 	return 0;
 }
 
-static int
-mtdsplit_uimage_parse_fonfxc(struct mtd_info *master,
-			      const struct mtd_partition **pparts,
-			      struct mtd_part_parser_data *data)
-{
-	return __mtdsplit_parse_uimage(master, pparts, data,
-				       uimage_find_fonfxc);
-}
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static const struct of_device_id mtdsplit_uimage_fonfxc_of_match_table[] = {
 	{ .compatible = "fonfxc,uimage" },
 	{},
 };
 #endif
+
+/*
+ * We cannot distinct between generic uimage and fonfxc uimage
+ * by only checking image header contents.
+ * Therefore, fonfxv parser is available when being called directly
+ * by device-tree's compatible match.
+ */
+static int
+mtdsplit_uimage_parse_fonfxc(struct mtd_info *master,
+			      const struct mtd_partition **pparts,
+			      struct mtd_part_parser_data *data)
+{
+	struct device_node *np_mtd;
+
+	np_mtd = mtd_get_of_node(master);
+	if (!np_mtd ||
+	    !of_match_node(mtdsplit_uimage_fonfxc_of_match_table, np_mtd))
+		return -ENODEV;
+
+	return __mtdsplit_parse_uimage(master, pparts, data,
+				       uimage_find_fonfxc);
+}
 
 static struct mtd_part_parser uimage_fonfxc_parser = {
 	.owner = THIS_MODULE,
