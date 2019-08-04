@@ -424,6 +424,63 @@ static struct mtd_part_parser uimage_fonfxc_parser = {
 };
 
 /**************************************************
+ * OKLI (OpenWrt Kernel Loader Image)
+ **************************************************/
+
+#define IH_MAGIC_OKLI	0x4f4b4c49
+
+static ssize_t uimage_verify_okli(u_char *buf, size_t len, int *extralen)
+{
+	struct uimage_header *header = (struct uimage_header *)buf;
+
+	/* default sanity checks */
+	if (be32_to_cpu(header->ih_magic) != IH_MAGIC_OKLI) {
+		pr_debug("invalid uImage magic: %08x\n",
+			 be32_to_cpu(header->ih_magic));
+		return -EINVAL;
+	}
+
+	if (header->ih_os != IH_OS_LINUX) {
+		pr_debug("invalid uImage OS: %08x\n",
+			 be32_to_cpu(header->ih_os));
+		return -EINVAL;
+	}
+
+	if (header->ih_type != IH_TYPE_KERNEL) {
+		pr_debug("invalid uImage type: %08x\n",
+			 be32_to_cpu(header->ih_type));
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int
+mtdsplit_uimage_parse_okli(struct mtd_info *master,
+			      const struct mtd_partition **pparts,
+			      struct mtd_part_parser_data *data)
+{
+	return __mtdsplit_parse_uimage(master, pparts, data,
+				      uimage_verify_okli);
+}
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+static const struct of_device_id mtdsplit_uimage_okli_of_match_table[] = {
+	{ .compatible = "openwrt,okli" },
+	{},
+};
+#endif
+
+static struct mtd_part_parser uimage_okli_parser = {
+	.owner = THIS_MODULE,
+	.name = "okli-fw",
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+	.of_match_table = mtdsplit_uimage_okli_of_match_table,
+#endif
+	.parse_fn = mtdsplit_uimage_parse_okli,
+};
+
+/**************************************************
  * Init
  **************************************************/
 
@@ -433,6 +490,7 @@ static int __init mtdsplit_uimage_init(void)
 	register_mtd_parser(&uimage_netgear_parser);
 	register_mtd_parser(&uimage_edimax_parser);
 	register_mtd_parser(&uimage_fonfxc_parser);
+	register_mtd_parser(&uimage_okli_parser);
 
 	return 0;
 }
