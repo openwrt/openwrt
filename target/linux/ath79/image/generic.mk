@@ -58,6 +58,18 @@ define Build/nec-fw
   mv $@.new $@
 endef
 
+define Build/pisen_wmb001n-factory
+  -[ -f "$@" ] && \
+  mkdir -p "$@.tmp" && \
+  cp "$(KDIR)/loader-$(word 1,$(1)).uImage" "$@.tmp/uImage" && \
+  mv "$@" "$@.tmp/rootfs" && \
+  cp "bin/pisen_wmb001n_factory-header.bin" "$@" && \
+  $(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
+    $(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+    -C "$@.tmp" . | gzip -9n >> "$@" && \
+  rm -rf "$@.tmp"
+endef
+
 define Device/seama
   KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
   KERNEL_INITRAMFS := $$(KERNEL) | seama
@@ -774,6 +786,23 @@ define Device/netgear_wndr3700v2
   SUPPORTED_DEVICES += wndr3700v2
 endef
 TARGET_DEVICES += netgear_wndr3700v2
+
+define Device/pisen_wmb001n
+  ATH_SOC := ar9341
+  DEVICE_VENDOR := PISEN
+  DEVICE_MODEL := WMB001N
+  IMAGE_SIZE := 14080k
+  DEVICE_PACKAGES := kmod-i2c-core kmod-i2c-gpio kmod-usb2
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x20000
+  COMPILE := loader-$(1).bin loader-$(1).uImage
+  COMPILE/loader-$(1).bin := loader-okli-compile
+  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | lzma | uImage lzma
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | pisen_wmb001n-factory $(1)
+endef
+TARGET_DEVICES += pisen_wmb001n
 
 define Device/pisen_wmm003n
   $(Device/tplink-8mlzma)
