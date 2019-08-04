@@ -530,7 +530,7 @@ define KernelPackage/sound-soc-hifiberry-dacplusadc-pro
     snd-soc-pcm512x snd-soc-pcm512x-i2c snd-soc-hifiberry-dacplusadcpro)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
-    +kmod-i2c-bcm2835 \
+    +kmod-i2c-bcm2835 \
     +kmod-regmap-i2c
   $(call AddDepends/sound)
 endef
