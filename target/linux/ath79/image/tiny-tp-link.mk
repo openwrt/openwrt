@@ -274,6 +274,20 @@ define Device/tplink_tl-wr940n-v4
 endef
 TARGET_DEVICES += tplink_tl-wr940n-v4
 
+define Device/tplink_tl-wr940n-v6
+  $(Device/tplink-4mlzma)
+  SOC := tp9343
+  DEVICE_MODEL := TL-WR940N
+  DEVICE_VARIANT := v6
+  TPLINK_HWID := 0x09400006
+  SUPPORTED_DEVICES += tl-wr940n-v6
+  IMAGES += factory-us.bin factory-eu.bin factory-br.bin
+  IMAGE/factory-us.bin := tplink-v1-image factory -C US
+  IMAGE/factory-eu.bin := tplink-v1-image factory -C EU
+  IMAGE/factory-br.bin := tplink-v1-image factory -C BR
+endef
+TARGET_DEVICES += tplink_tl-wr940n-v6
+
 define Device/tplink_tl-wr941-v2
   $(Device/tplink-4m)
   SOC := ar9132
