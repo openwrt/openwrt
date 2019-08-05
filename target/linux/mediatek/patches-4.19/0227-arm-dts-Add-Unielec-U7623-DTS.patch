@@ -11,10 +11,8 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
  create mode 100644 arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
  create mode 100644 arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi
 
-Index: linux-4.19.57/arch/arm/boot/dts/Makefile
-===================================================================
---- linux-4.19.57.orig/arch/arm/boot/dts/Makefile
-+++ linux-4.19.57/arch/arm/boot/dts/Makefile
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
 @@ -1193,6 +1193,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7623a-rfb-nand.dtb \
  	mt7623n-rfb-emmc.dtb \
@@ -23,10 +21,8 @@ Index: linux-4.19.57/arch/arm/boot/dts/Makefile
  	mt8127-moose.dtb \
  	mt8135-evbp1.dtb
  dtb-$(CONFIG_ARCH_ZX) += zx296702-ad1.dtb
-Index: linux-4.19.57/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
-===================================================================
 --- /dev/null
-+++ linux-4.19.57/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
++++ b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
 @@ -0,0 +1,18 @@
 +/*
 + * Copyright 2018 Kristian Evensen <kristian.evensen@gmail.com>
@@ -46,10 +42,8 @@ Index: linux-4.19.57/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512M.dts
 +		reg = <0 0x80000000 0 0x20000000>;
 +	};
 +};
-Index: linux-4.19.57/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi
-===================================================================
 --- /dev/null
-+++ linux-4.19.57/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi
++++ b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc.dtsi
 @@ -0,0 +1,366 @@
 +/*
 + * Copyright 2018 Kristian Evensen <kristian.evensen@gmail.com>

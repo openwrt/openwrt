@@ -1,7 +1,5 @@
-Index: linux-4.19.57/drivers/net/phy/Kconfig
-===================================================================
---- linux-4.19.57.orig/drivers/net/phy/Kconfig
-+++ linux-4.19.57/drivers/net/phy/Kconfig
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
 @@ -292,6 +292,8 @@ config RTL8367B_PHY
  
  endif # RTL8366_SMI
@@ -11,10 +9,8 @@ Index: linux-4.19.57/drivers/net/phy/Kconfig
  comment "MII PHY device drivers"
  
  config SFP
-Index: linux-4.19.57/drivers/net/phy/Makefile
-===================================================================
---- linux-4.19.57.orig/drivers/net/phy/Makefile
-+++ linux-4.19.57/drivers/net/phy/Makefile
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
 @@ -100,3 +100,5 @@ obj-$(CONFIG_STE10XP)		+= ste10Xp.o
  obj-$(CONFIG_TERANETICS_PHY)	+= teranetics.o
  obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o

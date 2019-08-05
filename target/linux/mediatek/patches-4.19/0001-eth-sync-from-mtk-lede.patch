@@ -1,7 +1,5 @@
-Index: linux-4.19.57/drivers/net/ethernet/mediatek/Kconfig
-===================================================================
---- linux-4.19.57.orig/drivers/net/ethernet/mediatek/Kconfig
-+++ linux-4.19.57/drivers/net/ethernet/mediatek/Kconfig
+--- a/drivers/net/ethernet/mediatek/Kconfig
++++ b/drivers/net/ethernet/mediatek/Kconfig
 @@ -1,6 +1,6 @@
  config NET_VENDOR_MEDIATEK
  	bool "MediaTek ethernet driver"
@@ -10,10 +8,8 @@ Index: linux-4.19.57/drivers/net/ethernet/mediatek/Kconfig
  	---help---
  	  If you have a Mediatek SoC with ethernet, say Y.
  
-Index: linux-4.19.57/drivers/net/ethernet/mediatek/Makefile
-===================================================================
---- linux-4.19.57.orig/drivers/net/ethernet/mediatek/Makefile
-+++ linux-4.19.57/drivers/net/ethernet/mediatek/Makefile
+--- a/drivers/net/ethernet/mediatek/Makefile
++++ b/drivers/net/ethernet/mediatek/Makefile
 @@ -2,4 +2,5 @@
  # Makefile for the Mediatek SoCs built-in ethernet macs
  #
@@ -21,10 +17,8 @@ Index: linux-4.19.57/drivers/net/ethernet/mediatek/Makefile
 -obj-$(CONFIG_NET_MEDIATEK_SOC)			+= mtk_eth_soc.o
 +obj-$(CONFIG_NET_MEDIATEK_SOC)			+= mtk_eth_soc.o mtk_sgmii.o \
 +						   mtk_eth_path.o
-Index: linux-4.19.57/drivers/net/ethernet/mediatek/mtk_eth_path.c
-===================================================================
 --- /dev/null
-+++ linux-4.19.57/drivers/net/ethernet/mediatek/mtk_eth_path.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_path.c
 @@ -0,0 +1,333 @@
 +/*
 + *   Copyright (C) 2018 MediaTek Inc.
@@ -359,10 +353,8 @@ Index: linux-4.19.57/drivers/net/ethernet/mediatek/mtk_eth_path.c
 +
 +	return 0;
 +}
-Index: linux-4.19.57/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-===================================================================
---- linux-4.19.57.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ linux-4.19.57/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -23,6 +23,7 @@
  #include <linux/reset.h>
  #include <linux/tcp.h>
@@ -1139,10 +1131,8 @@ Index: linux-4.19.57/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  	{},
  };
  MODULE_DEVICE_TABLE(of, of_mtk_match);
-Index: linux-4.19.57/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-===================================================================
---- linux-4.19.57.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-+++ linux-4.19.57/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -15,13 +15,17 @@
  #ifndef MTK_ETH_H
  #define MTK_ETH_H
@@ -1537,10 +1527,8 @@ Index: linux-4.19.57/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +int mtk_setup_hw_path(struct mtk_eth *eth, int mac_id, int phymode);
 +
  #endif /* MTK_ETH_H */
-Index: linux-4.19.57/drivers/net/ethernet/mediatek/mtk_sgmii.c
-===================================================================
 --- /dev/null
-+++ linux-4.19.57/drivers/net/ethernet/mediatek/mtk_sgmii.c
++++ b/drivers/net/ethernet/mediatek/mtk_sgmii.c
 @@ -0,0 +1,114 @@
 +/*
 + *   Copyright (C) 2018 MediaTek Inc.

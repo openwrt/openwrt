@@ -13,10 +13,8 @@ Signed-off-by: Xiangsheng Hou <xiangsheng.hou@mediatek.com>
  3 files changed, 1193 insertions(+)
  create mode 100644 drivers/spi/spi-mtk-snfi.c
 
-Index: linux-4.19.48/drivers/spi/spi-mtk-snfi.c
-===================================================================
 --- /dev/null
-+++ linux-4.19.48/drivers/spi/spi-mtk-snfi.c
++++ b/drivers/spi/spi-mtk-snfi.c
 @@ -0,0 +1,1183 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -1201,10 +1199,8 @@ Index: linux-4.19.48/drivers/spi/spi-mtk-snfi.c
 +MODULE_LICENSE("GPL v2");
 +MODULE_AUTHOR("Xiangsheng Hou <xiangsheng.hou@mediatek.com>");
 +MODULE_DESCRIPTION("Mediatek SPI Memory Interface Driver");
-Index: linux-4.19.48/drivers/spi/Kconfig
-===================================================================
---- linux-4.19.48.orig/drivers/spi/Kconfig
-+++ linux-4.19.48/drivers/spi/Kconfig
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
 @@ -389,6 +389,15 @@ config SPI_MT65XX
  	  say Y or M here.If you are not sure, say N.
  	  SPI drivers for Mediatek MT65XX and MT81XX series ARM SoCs.
@@ -1221,10 +1217,8 @@ Index: linux-4.19.48/drivers/spi/Kconfig
  config SPI_NUC900
  	tristate "Nuvoton NUC900 series SPI"
  	depends on ARCH_W90X900
-Index: linux-4.19.48/drivers/spi/Makefile
-===================================================================
---- linux-4.19.48.orig/drivers/spi/Makefile
-+++ linux-4.19.48/drivers/spi/Makefile
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
 @@ -57,6 +57,7 @@ obj-$(CONFIG_SPI_MPC512x_PSC)		+= spi-mp
  obj-$(CONFIG_SPI_MPC52xx_PSC)		+= spi-mpc52xx-psc.o
  obj-$(CONFIG_SPI_MPC52xx)		+= spi-mpc52xx.o
