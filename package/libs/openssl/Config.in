@@ -76,7 +76,6 @@ config OPENSSL_WITH_TLS13
 	bool
 	default y
 	prompt "Enable support for TLS 1.3"
-	select OPENSSL_WITH_EC
 	help
 		TLS 1.3 is the newest version of the TLS specification.
 		It aims:
@@ -120,19 +119,8 @@ config OPENSSL_WITH_CMS
 
 comment "Algorithm Selection"
 
-config OPENSSL_WITH_EC
-	bool
-	default y
-	prompt "Enable elliptic curve support"
-	help
-		Elliptic-curve cryptography (ECC) is an approach to public-key
-		cryptography based on the algebraic structure of elliptic curves
-		over finite fields. ECC requires smaller keys compared to non-ECC
-		cryptography to provide equivalent security.
-
 config OPENSSL_WITH_EC2M
 	bool
-	depends on OPENSSL_WITH_EC
 	prompt "Enable ec2m support"
 	help
 		This option enables the more efficient, yet less common, binary
