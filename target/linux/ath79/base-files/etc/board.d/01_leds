@@ -220,6 +220,9 @@ tplink,tl-wr941nd-v6)
 	ucidef_set_led_switch "lan3" "LAN3" "tp-link:blue:lan3" "switch0" "0x04"
 	ucidef_set_led_switch "lan4" "LAN4" "tp-link:blue:lan4" "switch0" "0x02"
 	;;
+tplink,tl-wr940n-v6)
+	ucidef_set_led_netdev "wan" "WAN" "tp-link:blue:wan" "eth1"
+	;;
 trendnet,tew-823dru)
 	ucidef_set_led_netdev "wan" "WAN" "trendnet:green:planet" "eth0"
 	;;
