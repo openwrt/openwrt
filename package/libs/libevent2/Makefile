@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libevent2
-PKG_VERSION:=2.1.8
-PKG_RELEASE:=3
+PKG_VERSION:=2.1.11
+PKG_RELEASE:=1
 
 PKG_SOURCE:=libevent-$(PKG_VERSION)-stable.tar.gz
 PKG_SOURCE_URL:=https://github.com/libevent/libevent/releases/download/release-$(PKG_VERSION)-stable
-PKG_HASH:=965cc5a8bb46ce4199a47e9b2c9e1cae3b137e8356ffdad6d94d3b9069b71dc2
+PKG_HASH:=a65bac6202ea8c5609fd5c7e480e6d25de467ea1917c08290c521752f147283d
 PKG_BUILD_DIR:=$(BUILD_DIR)/libevent-$(PKG_VERSION)-stable
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
@@ -108,7 +108,8 @@ define Package/libevent2-pthreads/description
 	threading & locking.
 endef
 
-TARGET_CFLAGS += $(FPIC)
+TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections
+TARGET_LDFLAGS += -Wl,--gc-sections,--as-needed
 
 CONFIGURE_ARGS += \
 	--enable-shared \
