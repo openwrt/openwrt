@@ -1,0 +1,98 @@
+From ba4d612892bf6e3aae9cca7edce2a6d6b43e3e22 Mon Sep 17 00:00:00 2001
+From: Sean Parkinson <sean@wolfssl.com>
+Date: Wed, 17 Jul 2019 08:26:02 +1000
+Subject: [PATCH] Improve nonce use in ECC mulmod
+
+(cherry picked from commit 483f6a5acd9808b405306661c121aa6407464dc2)
+
+--- a/wolfcrypt/src/ecc.c
++++ b/wolfcrypt/src/ecc.c
+@@ -2039,7 +2039,7 @@ int wc_ecc_mulmod_ex(mp_int* k, ecc_poin
+    #define M_POINTS 8
+    int           first = 1, bitbuf = 0, bitcpy = 0, j;
+ #else
+-   #define M_POINTS 3
++   #define M_POINTS 4
+ #endif
+ 
+    ecc_point     *tG, *M[M_POINTS];
+@@ -2253,7 +2253,9 @@ int wc_ecc_mulmod_ex(mp_int* k, ecc_poin
+    mode   = 0;
+    bitcnt = 1;
+    buf    = 0;
+-   digidx = get_digit_count(k) - 1;
++   digidx = get_digit_count(modulus) - 1;
++   /* The order MAY be 1 bit longer than the modulus. */
++   digidx += (modulus->dp[digidx] >> (DIGIT_BIT-1));
+ 
+    /* perform ops */
+    if (err == MP_OKAY) {
+@@ -2272,25 +2274,53 @@ int wc_ecc_mulmod_ex(mp_int* k, ecc_poin
+            i = (buf >> (DIGIT_BIT - 1)) & 1;
+            buf <<= 1;
+ 
+-           if (mode == 0 && i == 0) {
++           if (mode == 0) {
++               mode = i;
+                /* timing resistant - dummy operations */
+                if (err == MP_OKAY)
+-                   err = ecc_projective_add_point(M[0], M[1], M[2], a, modulus,
++                   err = ecc_projective_add_point(M[1], M[2], M[2], a, modulus,
+                                                   mp);
++#ifdef WC_NO_CACHE_RESISTANT
+                if (err == MP_OKAY)
+-                   err = ecc_projective_dbl_point(M[1], M[2], a, modulus, mp);
+-               if (err == MP_OKAY)
+-                   continue;
+-           }
+-
+-           if (mode == 0 && i == 1) {
+-               mode = 1;
+-               /* timing resistant - dummy operations */
+-               if (err == MP_OKAY)
+-                   err = ecc_projective_add_point(M[0], M[1], M[2], a, modulus,
+-                                                  mp);
+-               if (err == MP_OKAY)
+-                   err = ecc_projective_dbl_point(M[1], M[2], a, modulus, mp);
++                   err = ecc_projective_dbl_point(M[2], M[3], a, modulus, mp);
++#else
++               /* instead of using M[i] for double, which leaks key bit to cache
++                * monitor, use M[2] as temp, make sure address calc is constant,
++                * keep M[0] and M[1] in cache */
++              if (err == MP_OKAY)
++                  err = mp_copy((mp_int*)
++                             ( ((wolfssl_word)M[0]->x & wc_off_on_addr[i^1]) +
++                               ((wolfssl_word)M[1]->x & wc_off_on_addr[i])),
++                             M[2]->x);
++              if (err == MP_OKAY)
++                  err = mp_copy((mp_int*)
++                             ( ((wolfssl_word)M[0]->y & wc_off_on_addr[i^1]) +
++                               ((wolfssl_word)M[1]->y & wc_off_on_addr[i])),
++                             M[2]->y);
++              if (err == MP_OKAY)
++                  err = mp_copy((mp_int*)
++                             ( ((wolfssl_word)M[0]->z & wc_off_on_addr[i^1]) +
++                               ((wolfssl_word)M[1]->z & wc_off_on_addr[i])),
++                             M[2]->z);
++              if (err == MP_OKAY)
++                  err = ecc_projective_dbl_point(M[2], M[3], a, modulus, mp);
++              /* copy M[2] back to M[i] */
++              if (err == MP_OKAY)
++                  err = mp_copy(M[2]->x,
++                             (mp_int*)
++                             ( ((wolfssl_word)M[0]->x & wc_off_on_addr[i^1]) +
++                               ((wolfssl_word)M[1]->x & wc_off_on_addr[i])) );
++              if (err == MP_OKAY)
++                  err = mp_copy(M[2]->y,
++                             (mp_int*)
++                             ( ((wolfssl_word)M[0]->y & wc_off_on_addr[i^1]) +
++                               ((wolfssl_word)M[1]->y & wc_off_on_addr[i])) );
++              if (err == MP_OKAY)
++                  err = mp_copy(M[2]->z,
++                             (mp_int*)
++                             ( ((wolfssl_word)M[0]->z & wc_off_on_addr[i^1]) +
++                               ((wolfssl_word)M[1]->z & wc_off_on_addr[i])) );
++#endif
+                if (err == MP_OKAY)
+                    continue;
+            }

@@ -1,0 +1,562 @@
+From 278d54d95de9fa80b4ac9f6dd0f900841114ca8c Mon Sep 17 00:00:00 2001
+From: Sean Parkinson <sean@wolfssl.com>
+Date: Mon, 27 Aug 2018 10:16:40 +1000
+Subject: [PATCH] Make RsaUnPad constant time when Block Type 2 message
+
+(cherry picked from commit ab03f9291b040269ae21d33b9f01529ed8311728)
+[cherry-pick changes]
+Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
+
+--- a/src/internal.c
++++ b/src/internal.c
+@@ -24766,26 +24766,22 @@ static int DoSessionTicket(WOLFSSL* ssl,
+                          * indistinguishable from correctly formatted RSA blocks
+                          */
+ 
+-                        ret = args->lastErr;
+                         args->lastErr = 0; /* reset */
+ 
+                         /* build PreMasterSecret */
+                         ssl->arrays->preMasterSecret[0] = ssl->chVersion.major;
+                         ssl->arrays->preMasterSecret[1] = ssl->chVersion.minor;
+-                        if (ret == 0 && args->sigSz == SECRET_LEN &&
+-                                                         args->output != NULL) {
++                        if (args->output != NULL) {
+                             XMEMCPY(&ssl->arrays->preMasterSecret[VERSION_SZ],
+-                                &args->output[VERSION_SZ],
+-                                SECRET_LEN - VERSION_SZ);
++                                    &args->output[VERSION_SZ],
++                                    SECRET_LEN - VERSION_SZ);
+                         }
+-                        else {
+-                            /* preMasterSecret has RNG and version set */
+-                            /* return proper length and ignore error */
+-                            /* error will be caught as decryption error */
+-                            args->sigSz = SECRET_LEN;
+-                            ret = 0;
+-                        }
+-
++                        /* preMasterSecret has RNG and version set
++                         * return proper length and ignore error
++                         * error will be caught as decryption error
++                         */
++                        args->sigSz = SECRET_LEN;
++                        ret = 0;
+                         break;
+                     } /* rsa_kea */
+                 #endif /* !NO_RSA */
+--- a/src/tls.c
++++ b/src/tls.c
+@@ -1136,12 +1136,12 @@ static int Hmac_UpdateFinal_CT(Hmac* hma
+             else if (k < maxLen)
+                 b = in[k - WOLFSSL_TLS_HMAC_INNER_SZ];
+ 
+-            b = ctMaskSel(atEoc, b, 0x80);
++            b = ctMaskSel(atEoc, 0x80, b);
+             b &= ~pastEoc;
+             b &= ~isOutBlock | isEocBlock;
+ 
+             if (j >= blockSz - 8) {
+-                b = ctMaskSel(isOutBlock, b, lenBytes[j - (blockSz - 8)]);
++                b = ctMaskSel(isOutBlock, lenBytes[j - (blockSz - 8)], b);
+             }
+ 
+             hashBlock[j] = b;
+--- a/wolfcrypt/src/integer.c
++++ b/wolfcrypt/src/integer.c
+@@ -321,6 +321,17 @@ int mp_to_unsigned_bin (mp_int * a, unsi
+   return res;
+ }
+ 
++int mp_to_unsigned_bin_len(mp_int * a, unsigned char *b, int c)
++{
++    int i, len;
++
++    len = mp_unsigned_bin_size(a);
++
++    /* pad front w/ zeros to match length */
++    for (i = 0; i < c - len; i++)
++        b[i] = 0x00;
++    return mp_to_unsigned_bin(a, b + i);
++}
+ 
+ /* creates "a" then copies b into it */
+ int mp_init_copy (mp_int * a, mp_int * b)
+--- a/wolfcrypt/src/misc.c
++++ b/wolfcrypt/src/misc.c
+@@ -341,10 +341,22 @@ STATIC INLINE byte ctMaskEq(int a, int b
+     return 0 - (a == b);
+ }
+ 
+-/* Constant time - select b when mask is set and a otherwise. */
++/* Constant time - mask set when a != b. */
++STATIC INLINE byte ctMaskNotEq(int a, int b)
++{
++    return 0 - (a != b);
++}
++
++/* Constant time - select a when mask is set and b otherwise. */
+ STATIC INLINE byte ctMaskSel(byte m, byte a, byte b)
+ {
+-    return (a & ~m) | (b & m);
++    return (b & ~m) | (a & m);
++}
++
++/* Constant time - select integer a when mask is set and integer b otherwise. */
++STATIC INLINE int ctMaskSelInt(byte m, int a, int b)
++{
++    return (b & (~(int)(char)m)) | (a & ((int)(char)m));
+ }
+ 
+ /* Constant time - bit set when a <= b. */
+--- a/wolfcrypt/src/rsa.c
++++ b/wolfcrypt/src/rsa.c
+@@ -989,10 +989,8 @@ static int RsaUnPad_OAEP(byte *pkcsBlock
+     ret += pkcsBlock[idx++] ^ 0x01; /* separator value is 0x01 */
+     ret += pkcsBlock[0]     ^ 0x00; /* Y, the first value, should be 0 */
+ 
+-    if (ret != 0) {
+-        WOLFSSL_MSG("RsaUnPad_OAEP: Padding Error");
+-        return BAD_PADDING_E;
+-    }
++    /* Return 0 data length on error. */
++    idx = ctMaskSelInt(ctMaskEq(ret, 0), idx, pkcsBlockLen);
+ 
+     /* adjust pointer to correct location in array and return size of M */
+     *output = (byte*)(pkcsBlock + idx);
+@@ -1078,48 +1076,60 @@ static int RsaUnPad_PSS(byte *pkcsBlock,
+ /* UnPad plaintext, set start to *output, return length of plaintext,
+  * < 0 on error */
+ static int RsaUnPad(const byte *pkcsBlock, unsigned int pkcsBlockLen,
+-                                               byte **output, byte padValue)
++                    byte **output, byte padValue)
+ {
+-    word32 maxOutputLen = (pkcsBlockLen > 10) ? (pkcsBlockLen - 10) : 0;
+-    word32 invalid = 0;
+-    word32 i = 1;
+-    word32 outputLen;
++    int    ret;
++    word32 i;
++    byte   invalid = 0;
+ 
+     if (output == NULL || pkcsBlockLen == 0) {
+         return BAD_FUNC_ARG;
+     }
+ 
+-    if (pkcsBlock[0] != 0x0) { /* skip past zero */
+-        invalid = 1;
+-    }
+-    pkcsBlock++; pkcsBlockLen--;
++    if (padValue == RSA_BLOCK_TYPE_1) {
++        /* First byte must be 0x00 and Second byte, block type, 0x01 */
++        if (pkcsBlock[0] != 0 || pkcsBlock[1] != RSA_BLOCK_TYPE_1) {
++            WOLFSSL_MSG("RsaUnPad error, invalid formatting");
++            return RSA_PAD_E;
++        }
+ 
+-    /* Require block type padValue */
+-    invalid = (pkcsBlock[0] != padValue) || invalid;
++        /* check the padding until we find the separator */
++        for (i = 2; i < pkcsBlockLen && pkcsBlock[i++] == 0xFF; ) { }
+ 
+-    /* verify the padding until we find the separator */
+-    if (padValue == RSA_BLOCK_TYPE_1) {
+-        while (i<pkcsBlockLen && pkcsBlock[i++] == 0xFF) {/* Null body */}
+-    }
+-    else {
+-        while (i<pkcsBlockLen && pkcsBlock[i++]) {/* Null body */}
+-    }
++        /* Minimum of 11 bytes of pre-message data and must have separator. */
++        if (i < RSA_MIN_PAD_SZ || pkcsBlock[i-1] != 0) {
++            WOLFSSL_MSG("RsaUnPad error, bad formatting");
++            return RSA_PAD_E;
++        }
+ 
+-    if (!(i==pkcsBlockLen || pkcsBlock[i-1]==0)) {
+-        WOLFSSL_MSG("RsaUnPad error, bad formatting");
+-        return RSA_PAD_E;
++        *output = (byte *)(pkcsBlock + i);
++        ret = pkcsBlockLen - i;
+     }
++    else {
++        word32 j;
++        byte   pastSep = 0;
+ 
+-    outputLen = pkcsBlockLen - i;
+-    invalid = (outputLen > maxOutputLen) || invalid;
++        /* Decrypted with private key - unpad must be constant time. */
++        for (i = 0, j = 2; j < pkcsBlockLen; j++) {
++           /* Update i if not passed the separator and at separator. */
++           i |= (~pastSep) & ctMaskEq(pkcsBlock[j], 0x00) & (j + 1);
++           pastSep |= ctMaskEq(pkcsBlock[j], 0x00);
++        }
++
++        /* Minimum of 11 bytes of pre-message data - including leading 0x00. */
++        invalid |= ctMaskLT(i, RSA_MIN_PAD_SZ);
++        /* Must have seen separator. */
++        invalid |= ~pastSep;
++        /* First byte must be 0x00. */
++        invalid |= ctMaskNotEq(pkcsBlock[0], 0x00);
++        /* Check against expected block type: padValue */
++        invalid |= ctMaskNotEq(pkcsBlock[1], padValue);
+ 
+-    if (invalid) {
+-        WOLFSSL_MSG("RsaUnPad error, invalid formatting");
+-        return RSA_PAD_E;
++        *output = (byte *)(pkcsBlock + i);
++        ret = ((int)~invalid) & (pkcsBlockLen - i);
+     }
+ 
+-    *output = (byte *)(pkcsBlock + i);
+-    return outputLen;
++    return ret;
+ }
+ 
+ /* helper function to direct unpadding
+@@ -1249,7 +1259,7 @@ static int wc_RsaFunctionSync(const byte
+     mp_int rnd, rndi;
+ #endif
+     int    ret = 0;
+-    word32 keyLen, len;
++    word32 keyLen;
+ #endif
+ 
+ #ifdef WOLFSSL_HAVE_SP_RSA
+@@ -1308,6 +1318,7 @@ static int wc_RsaFunctionSync(const byte
+     }
+ #endif
+ 
++#ifndef TEST_UNPAD_CONSTANT_TIME
+     if (mp_read_unsigned_bin(&tmp, (byte*)in, inLen) != MP_OKAY)
+         ERROR_OUT(MP_READ_E);
+ 
+@@ -1418,21 +1429,18 @@ static int wc_RsaFunctionSync(const byte
+         ERROR_OUT(RSA_BUFFER_E);
+     }
+ 
+-    len = mp_unsigned_bin_size(&tmp);
+-
+-    /* pad front w/ zeros to match key length */
+-    while (len < keyLen) {
+-        *out++ = 0x00;
+-        len++;
+-    }
+-
+     *outLen = keyLen;
+-
+-    /* convert */
+-    if (mp_to_unsigned_bin(&tmp, out) != MP_OKAY)
++    if (mp_to_unsigned_bin_len(&tmp, out, keyLen) != MP_OKAY)
+         ERROR_OUT(MP_TO_E);
+ 
+ done:
++#else
++    (void)type;
++    (void)key;
++    (void)keyLen;
++    XMEMCPY(out, in, inLen);
++    *outLen = inLen;
++#endif
+     mp_clear(&tmp);
+ #ifdef WC_RSA_BLINDING
+     if (type == RSA_PRIVATE_DECRYPT || type == RSA_PRIVATE_ENCRYPT) {
+@@ -1633,6 +1641,7 @@ int wc_RsaFunction(const byte* in, word3
+     }
+ #endif
+ 
++#ifndef TEST_UNPAD_CONSTANT_TIME
+ #ifndef NO_RSA_BOUNDS_CHECK
+     if (type == RSA_PRIVATE_DECRYPT &&
+         key->state == RSA_STATE_DECRYPT_EXPTMOD) {
+@@ -1667,6 +1676,7 @@ int wc_RsaFunction(const byte* in, word3
+             return ret;
+     }
+ #endif /* NO_RSA_BOUNDS_CHECK */
++#endif
+ 
+ #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_RSA)
+     if (key->asyncDev.marker == WOLFSSL_ASYNC_MARKER_RSA &&
+@@ -1880,7 +1890,8 @@ static int RsaPrivateDecryptEx(byte* in,
+ 
+         /* if not doing this inline then allocate a buffer for it */
+         if (outPtr == NULL) {
+-            key->data = (byte*)XMALLOC(inLen, key->heap, DYNAMIC_TYPE_WOLF_BIGINT);
++            key->data = (byte*)XMALLOC(inLen, key->heap,
++                                                      DYNAMIC_TYPE_WOLF_BIGINT);
+             key->dataIsAlloc = 1;
+             if (key->data == NULL) {
+                 ret = MEMORY_E;
+@@ -1909,20 +1920,29 @@ static int RsaPrivateDecryptEx(byte* in,
+         ret = wc_RsaUnPad_ex(key->data, key->dataLen, &pad, pad_value, pad_type,
+                              hash, mgf, label, labelSz, saltLen,
+                              mp_count_bits(&key->n), key->heap);
+-        if (ret > 0 && ret <= (int)outLen && pad != NULL) {
++        if (rsa_type == RSA_PUBLIC_DECRYPT && ret > (int)outLen)
++            ret = RSA_BUFFER_E;
++        else if (ret >= 0 && pad != NULL) {
++            char c;
++
+             /* only copy output if not inline */
+             if (outPtr == NULL) {
+-                XMEMCPY(out, pad, ret);
++                word32 i, j;
++                int start = (int)((size_t)pad - (size_t)key->data);
++
++                for (i = 0, j = 0; j < key->dataLen; j++) {
++                    out[i] = key->data[j];
++                    c  = ctMaskGTE(j, start);
++                    c &= ctMaskLT(i, outLen);
++                    /* 0 - no add, -1 add */
++                    i += -c;
++                }
+             }
+-            else {
++            else
+                 *outPtr = pad;
+-            }
+-        }
+-        else if (ret >= 0) {
+-            ret = RSA_BUFFER_E;
+-        }
+-        if (ret < 0) {
+-            break;
++
++            ret = ctMaskSelInt(ctMaskLTE(ret, outLen), ret, RSA_BUFFER_E);
++            ret = ctMaskSelInt(ctMaskNotEq(ret, 0), ret, RSA_BUFFER_E);
+         }
+ 
+         key->state = RSA_STATE_DECRYPT_RES;
+@@ -1934,12 +1954,14 @@ static int RsaPrivateDecryptEx(byte* in,
+             defined(HAVE_CAVIUM)
+         if (key->asyncDev.marker == WOLFSSL_ASYNC_MARKER_RSA &&
+                                                    pad_type != WC_RSA_PSS_PAD) {
+-            /* convert result */
+-            byte* dataLen = (byte*)&key->dataLen;
+-            ret = (dataLen[0] << 8) | (dataLen[1]);
++            if (ret > 0) {
++                /* convert result */
++                byte* dataLen = (byte*)&key->dataLen;
++                ret = (dataLen[0] << 8) | (dataLen[1]);
+ 
+-            if (outPtr)
+-                *outPtr = in;
++                if (outPtr)
++                    *outPtr = in;
++            }
+         }
+     #endif
+         break;
+--- a/wolfcrypt/src/sp_int.c
++++ b/wolfcrypt/src/sp_int.c
+@@ -286,7 +286,8 @@ int sp_leading_bit(sp_int* a)
+  * The array must be large enough for encoded number - use mp_unsigned_bin_size
+  * to calculate the number of bytes required.
+  *
+- * a  SP integer.
++ * a    SP integer.
++ * out  Array to put encoding into.
+  * returns MP_OKAY always.
+  */
+ int sp_to_unsigned_bin(sp_int* a, byte* out)
+@@ -305,6 +306,31 @@ int sp_to_unsigned_bin(sp_int* a, byte*
+     return MP_OKAY;
+ }
+ 
++/* Convert the big number to an array of bytes in big-endian format.
++ * The array must be large enough for encoded number - use mp_unsigned_bin_size
++ * to calculate the number of bytes required.
++ * Front-pads the output array with zeros make number the size of the array.
++ *
++ * a      SP integer.
++ * out    Array to put encoding into.
++ * outSz  Size of the array.
++ * returns MP_OKAY always.
++ */
++int sp_to_unsigned_bin_len(sp_int* a, byte* out, int outSz)
++{
++    int i, j, b;
++
++    j = outSz - 1;
++    for (i=0; j>=0; i++) {
++        for (b = 0; b < SP_WORD_SIZE; b += 8) {
++            out[j--] = a->dp[i] >> b;
++            if (j < 0)
++                break;
++        }
++    }
++
++    return MP_OKAY;
++}
+ /* Ensure the data in the big number is zeroed.
+  *
+  * a  SP integer.
+--- a/wolfcrypt/src/tfm.c
++++ b/wolfcrypt/src/tfm.c
+@@ -1964,6 +1964,48 @@ void fp_to_unsigned_bin(fp_int *a, unsig
+   fp_reverse (b, x);
+ }
+ 
++int fp_to_unsigned_bin_len(fp_int *a, unsigned char *b, int c)
++{
++#if DIGIT_BIT == 64 || DIGIT_BIT == 32
++  int i, j, x;
++
++  for (x=c-1,j=0,i=0; x >= 0; x--) {
++     b[x] = (unsigned char)(a->dp[i] >> j);
++     j += 8;
++     i += j == DIGIT_BIT;
++     j &= DIGIT_BIT - 1;
++  }
++
++  return FP_OKAY;
++#else
++  int     x;
++#ifndef WOLFSSL_SMALL_STACK
++   fp_int t[1];
++#else
++   fp_int *t;
++#endif
++
++#ifdef WOLFSSL_SMALL_STACK
++   t = (fp_int*)XMALLOC(sizeof(fp_int), NULL, DYNAMIC_TYPE_TMP_BUFFER);
++   if (t == NULL)
++       return FP_MEM;
++#endif
++
++  fp_init_copy(t, a);
++
++  for (x = 0; x < c; x++) {
++      b[x] = (unsigned char) (t->dp[0] & 255);
++      fp_div_2d (t, 8, t, NULL);
++  }
++  fp_reverse (b, x);
++
++#ifdef WOLFSSL_SMALL_STACK
++  XFREE(t, NULL, DYNAMIC_TYPE_TMP_BUFFER);
++#endif
++  return FP_OKAY;
++#endif
++}
++
+ int fp_unsigned_bin_size(fp_int *a)
+ {
+   int     size = fp_count_bits (a);
+@@ -2435,6 +2477,10 @@ int mp_to_unsigned_bin (mp_int * a, unsi
+   return MP_OKAY;
+ }
+ 
++int mp_to_unsigned_bin_len(mp_int * a, unsigned char *b, int c)
++{
++  return fp_to_unsigned_bin_len(a, b, c);
++}
+ /* reads a unsigned char array, assumes the msb is stored first [big endian] */
+ int mp_read_unsigned_bin (mp_int * a, const unsigned char *b, int c)
+ {
+--- a/wolfssl/wolfcrypt/integer.h
++++ b/wolfssl/wolfcrypt/integer.h
+@@ -277,6 +277,7 @@ MP_API int  mp_unsigned_bin_size(mp_int
+ MP_API int  mp_read_unsigned_bin (mp_int * a, const unsigned char *b, int c);
+ MP_API int  mp_to_unsigned_bin_at_pos(int x, mp_int *t, unsigned char *b);
+ MP_API int  mp_to_unsigned_bin (mp_int * a, unsigned char *b);
++MP_API int  mp_to_unsigned_bin_len(mp_int * a, unsigned char *b, int c);
+ MP_API int  mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y);
+ /* end functions needed by Rsa */
+ 
+--- a/wolfssl/wolfcrypt/misc.h
++++ b/wolfssl/wolfcrypt/misc.h
+@@ -97,7 +97,9 @@ WOLFSSL_LOCAL byte ctMaskGTE(int a, int
+ WOLFSSL_LOCAL byte ctMaskLT(int a, int b);
+ WOLFSSL_LOCAL byte ctMaskLTE(int a, int b);
+ WOLFSSL_LOCAL byte ctMaskEq(int a, int b);
++WOLFSSL_LOCAL byte ctMaskNotEq(int a, int b);
+ WOLFSSL_LOCAL byte ctMaskSel(byte m, byte a, byte b);
++WOLFSSL_LOCAL int  ctMaskSelInt(byte m, int a, int b);
+ WOLFSSL_LOCAL byte ctSetLTE(int a, int b);
+ 
+ #endif /* NO_INLINE */
+--- a/wolfssl/wolfcrypt/sp_int.h
++++ b/wolfssl/wolfcrypt/sp_int.h
+@@ -119,7 +119,8 @@ MP_API int sp_read_radix(sp_int* a, cons
+ MP_API int sp_cmp(sp_int* a, sp_int* b);
+ MP_API int sp_count_bits(sp_int* a);
+ MP_API int sp_leading_bit(sp_int* a);
+-MP_API int sp_to_unsigned_bin(sp_int* a, byte* in);
++MP_API int sp_to_unsigned_bin(sp_int* a, byte* out);
++MP_API int sp_to_unsigned_bin_len(sp_int* a, byte* out, int outSz);
+ MP_API void sp_forcezero(sp_int* a);
+ MP_API int sp_copy(sp_int* a, sp_int* b);
+ MP_API int sp_set(sp_int* a, sp_int_digit d);
+@@ -156,30 +157,31 @@ typedef sp_digit mp_digit;
+ 
+ #define mp_free(a)
+ 
+-#define mp_init                 sp_init
+-#define mp_init_multi           sp_init_multi
+-#define mp_clear                sp_clear
+-#define mp_read_unsigned_bin    sp_read_unsigned_bin
+-#define mp_unsigned_bin_size    sp_unsigned_bin_size
+-#define mp_read_radix           sp_read_radix
+-#define mp_cmp                  sp_cmp
+-#define mp_count_bits           sp_count_bits
+-#define mp_leading_bit          sp_leading_bit
+-#define mp_to_unsigned_bin      sp_to_unsigned_bin
+-#define mp_forcezero            sp_forcezero
+-#define mp_copy                 sp_copy
+-#define mp_set                  sp_set
+-#define mp_iszero               sp_iszero
+-#define mp_clamp                sp_clamp
+-#define mp_grow                 sp_grow
+-#define mp_sub_d                sp_sub_d
+-#define mp_cmp_d                sp_cmp_d
+-#define mp_mod                  sp_mod
+-#define mp_zero                 sp_zero
+-#define mp_add_d                sp_add_d
+-#define mp_lshd                 sp_lshd
+-#define mp_add                  sp_add
+-#define mp_isodd                sp_isodd
++#define mp_init                     sp_init
++#define mp_init_multi               sp_init_multi
++#define mp_clear                    sp_clear
++#define mp_read_unsigned_bin        sp_read_unsigned_bin
++#define mp_unsigned_bin_size        sp_unsigned_bin_size
++#define mp_read_radix               sp_read_radix
++#define mp_cmp                      sp_cmp
++#define mp_count_bits               sp_count_bits
++#define mp_leading_bit              sp_leading_bit
++#define mp_to_unsigned_bin          sp_to_unsigned_bin
++#define mp_to_unsigned_bin_len      sp_to_unsigned_bin_len
++#define mp_forcezero                sp_forcezero
++#define mp_copy                     sp_copy
++#define mp_set                      sp_set
++#define mp_iszero                   sp_iszero
++#define mp_clamp                    sp_clamp
++#define mp_grow                     sp_grow
++#define mp_sub_d                    sp_sub_d
++#define mp_cmp_d                    sp_cmp_d
++#define mp_mod                      sp_mod
++#define mp_zero                     sp_zero
++#define mp_add_d                    sp_add_d
++#define mp_lshd                     sp_lshd
++#define mp_add                      sp_add
++#define mp_isodd                    sp_isodd
+ 
+ #define MP_INT_DEFINED
+ 
+--- a/wolfssl/wolfcrypt/tfm.h
++++ b/wolfssl/wolfcrypt/tfm.h
+@@ -563,6 +563,7 @@ int fp_leading_bit(fp_int *a);
+ int fp_unsigned_bin_size(fp_int *a);
+ void fp_read_unsigned_bin(fp_int *a, const unsigned char *b, int c);
+ void fp_to_unsigned_bin(fp_int *a, unsigned char *b);
++int fp_to_unsigned_bin_len(fp_int *a, unsigned char *b, int c);
+ int fp_to_unsigned_bin_at_pos(int x, fp_int *t, unsigned char *b);
+ 
+ /*int fp_signed_bin_size(fp_int *a);*/
+@@ -686,6 +687,7 @@ MP_API int  mp_unsigned_bin_size(mp_int
+ MP_API int  mp_read_unsigned_bin (mp_int * a, const unsigned char *b, int c);
+ MP_API int  mp_to_unsigned_bin_at_pos(int x, mp_int *t, unsigned char *b);
+ MP_API int  mp_to_unsigned_bin (mp_int * a, unsigned char *b);
++MP_API int  mp_to_unsigned_bin_len(mp_int * a, unsigned char *b, int c);
+ 
+ MP_API int  mp_sub_d(fp_int *a, fp_digit b, fp_int *c);
+ MP_API int  mp_copy(fp_int* a, fp_int* b);
