@@ -20,29 +20,29 @@
 		compatible = "gpio-leds";
 
 		wan {
-			label = "kng_rc:green:wan";
+			label = "keenetic-viva:green:wan";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "kng_rc:green:usb";
+			label = "keenetic-viva:green:usb";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
 		};
 
 		power_alert {
-			label = "kng_rc:red:power";
+			label = "keenetic-viva:red:power";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi {
-			label = "kng_rc:green:wifi";
+			label = "keenetic-viva:green:wifi";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_green: power {
-			label = "kng_rc:green:power";
+			label = "keenetic-viva:green:power";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 	};
