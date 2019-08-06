@@ -255,6 +255,7 @@ cpe210|\
 cpe210-v2|\
 cpe210-v3|\
 cpe510|\
+cpe510-v2|\
 wbs210|\
 wbs510)
 	ucidef_set_rssimon "wlan0" "200000" "1"
@@ -265,7 +266,8 @@ wbs510)
 
 	case "$board" in
 	cpe210-v2|\
-	cpe210-v3)
+	cpe210-v3|\
+	cpe510-v2)
 		ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan0" "eth0"
 		;;
 	*)
