@@ -271,7 +271,7 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "support-list",
 	},
 
-	/** Firmware layout for the CPE510/520 */
+	/** Firmware layout for the CPE510/520 V1 */
 	{
 		.id	= "CPE510",
 		.vendor	= "CPE510(TP-LINK|UN|N300-5):1.0\r\n",

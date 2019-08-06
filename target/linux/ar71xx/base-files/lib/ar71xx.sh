@@ -762,6 +762,10 @@ ar71xx_board_detect() {
 		name="cpe510"
 		tplink_pharos_board_detect "$(tplink_pharos_get_model_string | tr -d '\r')"
 		;;
+	*"CPE510 v2")
+		name="cpe510-v2"
+		tplink_pharos_board_detect "$(tplink_pharos_v2_get_model_string)"
+		;;
 	*"CPE830")
 		name="cpe830"
 		;;
