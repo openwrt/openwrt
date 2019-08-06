@@ -271,7 +271,7 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "support-list",
 	},
 
-	/** Firmware layout for the CPE510/520 */
+	/** Firmware layout for the CPE510/520 V1 */
 	{
 		.id	= "CPE510",
 		.vendor	= "CPE510(TP-LINK|UN|N300-5):1.0\r\n",
@@ -284,17 +284,7 @@ static struct device_info boards[] = {
 			"CPE510(TP-LINK|EU|N300-5):1.1\r\n"
 			"CPE520(TP-LINK|UN|N300-5):1.1\r\n"
 			"CPE520(TP-LINK|US|N300-5):1.1\r\n"
-			"CPE520(TP-LINK|EU|N300-5):1.1\r\n"
-			"CPE510(TP-LINK|EU|N300-5|00000000):2.0\r\n"
-			"CPE510(TP-LINK|EU|N300-5|45550000):2.0\r\n"
-			"CPE510(TP-LINK|EU|N300-5|55530000):2.0\r\n"
-			"CPE510(TP-LINK|UN|N300-5|00000000):2.0\r\n"
-			"CPE510(TP-LINK|UN|N300-5|45550000):2.0\r\n"
-			"CPE510(TP-LINK|UN|N300-5|55530000):2.0\r\n"
-			"CPE510(TP-LINK|US|N300-5|55530000):2.0\r\n"
-			"CPE510(TP-LINK|UN|N300-5):2.0\r\n"
-			"CPE510(TP-LINK|EU|N300-5):2.0\r\n"
-			"CPE510(TP-LINK|US|N300-5):2.0\r\n",
+			"CPE520(TP-LINK|EU|N300-5):1.1\r\n",
 		.support_trail = '\xff',
 		.soft_ver = NULL,
 
