@@ -421,7 +421,6 @@ static struct mtd_part_parser uimage_fonfxc_parser = {
 	.of_match_table = mtdsplit_uimage_fonfxc_of_match_table,
 #endif
 	.parse_fn = mtdsplit_uimage_parse_fonfxc,
-	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
 /**************************************************
