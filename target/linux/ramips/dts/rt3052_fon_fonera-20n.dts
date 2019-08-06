@@ -57,17 +57,17 @@
 		compatible = "gpio-leds";
 
 		wifi {
-			label = "fonera20n:orange:wifi";
+			label = "fonera-20n:orange:wifi";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power: power {
-			label = "fonera20n:green:power";
+			label = "fonera-20n:green:power";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "fonera20n:orange:usb";
+			label = "fonera-20n:orange:usb";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&otg_port1>;
 			linux,default-trigger = "usbport";

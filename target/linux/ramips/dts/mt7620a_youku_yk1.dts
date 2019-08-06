@@ -19,21 +19,21 @@
 	leds {
 		compatible = "gpio-leds";
 		wan {
-			label = "youku-yk1:blue:wan";
+			label = "yk1:blue:wan";
 			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
 		};
 		air {
-			label = "youku-yk1:blue:air";
+			label = "yk1:blue:air";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 		usb {
-			label = "youku-yk1:blue:usb";
+			label = "yk1:blue:usb";
 			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
 		};
 		led_power: power {
-			label = "youku-yk1:blue:power";
+			label = "yk1:blue:power";
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		};
 	};
