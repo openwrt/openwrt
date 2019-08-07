@@ -1,222 +1,29 @@
-From 1ee119c8026dff34a4d8c4269c05d3d4e0c25aa6 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sat, 3 Aug 2019 11:03:40 +0200
-Subject: [mdadm PATCH] Add missing include file sys/sysmacros.h
+From 452dc4d13a012cdcb05088c0dbc699959c4d6c73 Mon Sep 17 00:00:00 2001
+From: Baruch Siach <baruch@tkos.co.il>
+Date: Tue, 6 Aug 2019 16:05:23 +0300
+Subject: mdadm.h: include sysmacros.h unconditionally
 
-This include file is needed for makedev(), major() and minor() which are
-used in these functions. In musl 1.1.23 sys/sysmacros.h is not included
-indirectly any more and mdadm fails to compile.
+musl libc now also requires sys/sysmacros.h for the major/minor macros.
+All supported libc implementations carry sys/sysmacros.h, including
+diet-libc, klibc, and uclibc-ng.
 
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Cc: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Baruch Siach <baruch@tkos.co.il>
+Signed-off-by: Jes Sorensen <jsorensen@fb.com>
 ---
- Assemble.c       | 1 +
- Build.c          | 1 +
- Create.c         | 1 +
- Detail.c         | 1 +
- Grow.c           | 1 +
- Incremental.c    | 1 +
- Manage.c         | 1 +
- Monitor.c        | 1 +
- Query.c          | 1 +
- lib.c            | 1 +
- mapfile.c        | 1 +
- mdadm.c          | 1 +
- mdopen.c         | 1 +
- platform-intel.c | 1 +
- policy.c         | 1 +
- super-ddf.c      | 1 +
- super-intel.c    | 1 +
- sysfs.c          | 1 +
- util.c           | 1 +
- 19 files changed, 19 insertions(+)
+ mdadm.h | 2 --
+ 1 file changed, 2 deletions(-)
 
---- a/Assemble.c
-+++ b/Assemble.c
-@@ -24,6 +24,7 @@
- 
- #include	"mdadm.h"
- #include	<ctype.h>
-+#include	<sys/sysmacros.h>
- 
- static int name_matches(char *found, char *required, char *homehost, int require_homehost)
- {
---- a/Build.c
-+++ b/Build.c
-@@ -23,6 +23,7 @@
-  */
- 
- #include "mdadm.h"
-+#include <sys/sysmacros.h>
- 
- int Build(char *mddev, struct mddev_dev *devlist,
- 	  struct shape *s, struct context *c)
---- a/Create.c
-+++ b/Create.c
-@@ -26,6 +26,7 @@
- #include	"md_u.h"
- #include	"md_p.h"
- #include	<ctype.h>
-+#include	<sys/sysmacros.h>
- 
- static int default_layout(struct supertype *st, int level, int verbose)
- {
---- a/Detail.c
-+++ b/Detail.c
-@@ -27,6 +27,7 @@
- #include	"md_u.h"
- #include	<ctype.h>
- #include	<dirent.h>
-+#include	<sys/sysmacros.h>
- 
- static int cmpstringp(const void *p1, const void *p2)
- {
---- a/Grow.c
-+++ b/Grow.c
-@@ -27,6 +27,7 @@
- #include	<stddef.h>
- #include	<stdint.h>
- #include	<signal.h>
-+#include	<sys/sysmacros.h>
- #include	<sys/wait.h>
- 
- #if ! defined(__BIG_ENDIAN) && ! defined(__LITTLE_ENDIAN)
---- a/Incremental.c
-+++ b/Incremental.c
-@@ -29,6 +29,7 @@
-  */
- 
- #include	"mdadm.h"
-+#include	<sys/sysmacros.h>
- #include	<sys/wait.h>
- #include	<dirent.h>
- #include	<ctype.h>
---- a/Manage.c
-+++ b/Manage.c
-@@ -26,6 +26,7 @@
- #include "md_u.h"
- #include "md_p.h"
- #include <ctype.h>
-+#include <sys/sysmacros.h>
- 
- int Manage_ro(char *devname, int fd, int readonly)
- {
---- a/Monitor.c
-+++ b/Monitor.c
-@@ -25,6 +25,7 @@
- #include	"mdadm.h"
- #include	"md_p.h"
- #include	"md_u.h"
-+#include	<sys/sysmacros.h>
- #include	<sys/wait.h>
- #include	<signal.h>
- #include	<limits.h>
---- a/Query.c
-+++ b/Query.c
-@@ -25,6 +25,7 @@
- #include	"mdadm.h"
- #include	"md_p.h"
- #include	"md_u.h"
-+#include	<sys/sysmacros.h>
- 
- int Query(char *dev)
- {
---- a/lib.c
-+++ b/lib.c
-@@ -25,6 +25,7 @@
- #include	"mdadm.h"
- #include	"dlink.h"
- #include	<ctype.h>
-+#include	<sys/sysmacros.h>
- 
- /* This fill contains various 'library' style function.  They
-  * have no dependency on anything outside this file.
---- a/mapfile.c
-+++ b/mapfile.c
-@@ -44,6 +44,7 @@
-  */
- #include	"mdadm.h"
- #include	<sys/file.h>
-+#include	<sys/sysmacros.h>
- #include	<ctype.h>
- 
- #define MAP_READ 0
---- a/mdadm.c
-+++ b/mdadm.c
-@@ -28,6 +28,7 @@
- #include "mdadm.h"
- #include "md_p.h"
- #include <ctype.h>
-+#include <sys/sysmacros.h>
- 
- static int scan_assemble(struct supertype *ss,
- 			 struct context *c,
---- a/mdopen.c
-+++ b/mdopen.c
-@@ -25,6 +25,7 @@
- #include "mdadm.h"
- #include "md_p.h"
- #include <ctype.h>
-+#include <sys/sysmacros.h>
- 
- void make_parts(char *dev, int cnt)
- {
---- a/platform-intel.c
-+++ b/platform-intel.c
-@@ -28,6 +28,7 @@
- #include <sys/mman.h>
- #include <sys/types.h>
- #include <sys/stat.h>
-+#include <sys/sysmacros.h>
- #include <limits.h>
- 
- static int devpath_to_ll(const char *dev_path, const char *entry,
---- a/policy.c
-+++ b/policy.c
-@@ -26,6 +26,7 @@
- #include <dirent.h>
- #include <fnmatch.h>
- #include <ctype.h>
-+#include <sys/sysmacros.h>
- #include "dlink.h"
- /*
-  * Policy module for mdadm.
---- a/super-ddf.c
-+++ b/super-ddf.c
-@@ -31,6 +31,7 @@
- #include "sha1.h"
- #include <values.h>
- #include <stddef.h>
-+#include <sys/sysmacros.h>
- 
- /* a non-official T10 name for creation GUIDs */
- static char T10[] = "Linux-MD";
---- a/super-intel.c
-+++ b/super-intel.c
-@@ -24,6 +24,7 @@
- #include "platform-intel.h"
- #include <values.h>
- #include <scsi/sg.h>
-+#include <sys/sysmacros.h>
- #include <ctype.h>
- #include <dirent.h>
- 
---- a/sysfs.c
-+++ b/sysfs.c
-@@ -26,6 +26,7 @@
- #include	"mdadm.h"
- #include	<dirent.h>
- #include	<ctype.h>
-+#include	<sys/sysmacros.h>
- 
- #define MAX_SYSFS_PATH_LEN	120
- 
---- a/util.c
-+++ b/util.c
-@@ -29,6 +29,7 @@
- #include	<sys/wait.h>
- #include	<sys/un.h>
- #include	<sys/resource.h>
-+#include	<sys/sysmacros.h>
- #include	<sys/vfs.h>
- #include	<sys/mman.h>
- #include	<linux/magic.h>
+--- a/mdadm.h
++++ b/mdadm.h
+@@ -45,10 +45,8 @@ extern __off64_t lseek64 __P ((int __fd,
+ #include	<errno.h>
+ #include	<string.h>
+ #include	<syslog.h>
+-#ifdef __GLIBC__
+ /* Newer glibc requires sys/sysmacros.h directly for makedev() */
+ #include	<sys/sysmacros.h>
+-#endif
+ #ifdef __dietlibc__
+ #include	<strings.h>
+ /* dietlibc has deprecated random and srandom!! */
