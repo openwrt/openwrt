@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/arch/mips/lantiq/irq.c
 +++ b/arch/mips/lantiq/irq.c
-@@ -271,6 +271,11 @@ static void ltq_hw5_irqdispatch(void)
+@@ -272,6 +272,11 @@ static void ltq_hw5_irqdispatch(void)
  DEFINE_HWx_IRQDISPATCH(5)
  #endif
  
@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #ifdef CONFIG_MIPS_MT_SMP
  void __init arch_init_ipiirq(int irq, struct irqaction *action)
  {
-@@ -315,23 +320,19 @@ static struct irqaction irq_call = {
+@@ -316,23 +321,19 @@ static struct irqaction irq_call = {
  asmlinkage void plat_irq_dispatch(void)
  {
  	unsigned int pending = read_c0_status() & read_c0_cause() & ST0_IM;
@@ -64,7 +64,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static int icu_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
-@@ -356,11 +357,6 @@ static const struct irq_domain_ops irq_d
+@@ -357,11 +358,6 @@ static const struct irq_domain_ops irq_d
  	.map = icu_map,
  };
  
@@ -76,7 +76,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  int __init icu_of_init(struct device_node *node, struct device_node *parent)
  {
  	struct device_node *eiu_node;
-@@ -392,7 +388,7 @@ int __init icu_of_init(struct device_nod
+@@ -393,7 +389,7 @@ int __init icu_of_init(struct device_nod
  	mips_cpu_irq_init();
  
  	for (i = 0; i < MAX_IM; i++)
