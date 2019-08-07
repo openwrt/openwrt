@@ -191,6 +191,7 @@ case "$FIRMWARE" in
 	case $board in
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
+        dlink,dir-842-c3|\
 	nec,wg1200cr)
 		ath10kcal_extract "art" 20480 12064
 		ath10kcal_patch_mac_crc $(mtd_get_mac_ascii devdata wlan5mac)
