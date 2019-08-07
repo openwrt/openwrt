@@ -580,19 +580,19 @@ define Device/gl-mifi
 endef
 TARGET_DEVICES += gl-mifi
 
-define Device/gl-mifi-v3
-  DEVICE_TITLE := GL.iNet GL-MIFI-V3
+define Device/gl-e750
+  DEVICE_TITLE := GL.iNet GL-E750
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9887 kmod-usb-core \
 	kmod-usb2 kmod-usb-storage
-  BOARDNAME := GL-MIFI-V3
-  SUPPORTED_DEVICES := gl-mifi-v3
+  BOARDNAME := GL-E750
+  SUPPORTED_DEVICES := gl-e750
   IMAGE_SIZE := 16000k
   CONSOLE := null,115200
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
-TARGET_DEVICES += gl-mifi-v3
+TARGET_DEVICES += gl-e750
 
 define Device/gl-usb150
   DEVICE_TITLE := GL.iNet GL-USB150

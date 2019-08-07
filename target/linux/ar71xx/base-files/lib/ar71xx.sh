@@ -774,8 +774,8 @@ ar71xx_board_detect() {
 	*"GL-MIFI")
 		name="gl-mifi"
 		;;
-	*"GL-MIFI-V3")
-		name="gl-mifi-v3"
+	*"GL-E750")
+		name="gl-e750"
 		;;
 	*"GL-USB150")
 		name="gl-usb150"
