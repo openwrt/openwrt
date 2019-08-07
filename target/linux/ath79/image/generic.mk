@@ -399,6 +399,13 @@ define Device/dlink_dir-842-c2
 endef
 TARGET_DEVICES += dlink_dir-842-c2
 
+define Device/dlink_dir-842-c3
+	$(Device/dlink_dir-842-c)
+	DEVICE_VARIANT := C3
+	DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+endef
+TARGET_DEVICES += dlink_dir-842-c3
+
 define Device/elecom_wrc-1750ghbk2-i
   ATH_SOC := qca9563
   DEVICE_VENDOR := ELECOM
