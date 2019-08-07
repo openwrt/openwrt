@@ -1305,24 +1305,24 @@ static int ag71xx_probe(struct platform_device *pdev)
 	pdata = pdev->dev.platform_data;
 	if (!pdata) {
 		dev_err(&pdev->dev, "no platform data specified\n");
-		err = -ENXIO;
-		goto err_out;
+		return -ENXIO;
+
 	}
 
 	if (pdata->mii_bus_dev == NULL && pdata->phy_mask) {
 		dev_err(&pdev->dev, "no MII bus device specified\n");
-		err = -EINVAL;
-		goto err_out;
+		return -EINVAL;
 	}
 
-	dev = alloc_etherdev(sizeof(*ag));
-	if (!dev) {
-		dev_err(&pdev->dev, "alloc_etherdev failed\n");
-		err = -ENOMEM;
-		goto err_out;
-	}
+	dev = devm_alloc_etherdev(&pdev->dev, sizeof(*ag));
+	if (!dev)
+		return -ENOMEM;
 
 	if (!pdata->max_frame_len || !pdata->desc_pktlen_mask)
+		return -EINVAL;
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	if (!res)
 		return -EINVAL;
 
 	SET_NETDEV_DEV(dev, &pdev->dev);
@@ -1337,24 +1337,20 @@ static int ag71xx_probe(struct platform_device *pdev)
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mac_base");
 	if (!res) {
 		dev_err(&pdev->dev, "no mac_base resource found\n");
-		err = -ENXIO;
-		goto err_out;
+		return -ENXIO;
 	}
 
-	ag->mac_base = ioremap_nocache(res->start, res->end - res->start + 1);
-	if (!ag->mac_base) {
-		dev_err(&pdev->dev, "unable to ioremap mac_base\n");
-		err = -ENOMEM;
-		goto err_free_dev;
-	}
+	ag->mac_base = devm_ioremap_nocache(&pdev->dev, res->start,
+					    res->end - res->start + 1);
+	if (!ag->mac_base)
+		return -ENOMEM;
 
 	dev->irq = platform_get_irq(pdev, 0);
-	err = request_irq(dev->irq, ag71xx_interrupt,
-			  0x0,
-			  dev->name, dev);
+	err = devm_request_irq(&pdev->dev, dev->irq, ag71xx_interrupt,
+			       0x0, dev_name(&pdev->dev), dev);
 	if (err) {
 		dev_err(&pdev->dev, "unable to request IRQ %d\n", dev->irq);
-		goto err_unmap_base;
+		return err;
 	}
 
 	dev->base_addr = (unsigned long)ag->mac_base;
@@ -1379,11 +1375,12 @@ static int ag71xx_probe(struct platform_device *pdev)
 	}
 	ag->tx_ring.order = ag71xx_ring_size_order(tx_size);
 
-	ag->stop_desc = dma_alloc_coherent(NULL,
-		sizeof(struct ag71xx_desc), &ag->stop_desc_dma, GFP_KERNEL);
+	ag->stop_desc = dmam_alloc_coherent(&pdev->dev,
+					sizeof(struct ag71xx_desc),
+					&ag->stop_desc_dma, GFP_KERNEL);
 
 	if (!ag->stop_desc)
-		goto err_free_irq;
+		return -ENOMEM;
 
 	ag->stop_desc->data = 0;
 	ag->stop_desc->ctrl = 0;
@@ -1403,7 +1400,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	err = ag71xx_phy_connect(ag);
 	if (err)
-		goto err_free_desc;
+		return err;
 
 	err = ag71xx_debugfs_init(ag);
 	if (err)
@@ -1414,7 +1411,9 @@ static int ag71xx_probe(struct platform_device *pdev)
 	err = register_netdev(dev);
 	if (err) {
 		dev_err(&pdev->dev, "unable to register net device\n");
-		goto err_debugfs_exit;
+		platform_set_drvdata(pdev, NULL);
+		ag71xx_debugfs_exit(ag);
+		goto err_phy_disconnect;
 	}
 
 	pr_info("%s: Atheros AG71xx at 0x%08lx, irq %d, mode:%s\n",
@@ -1423,40 +1422,24 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	return 0;
 
-err_debugfs_exit:
-	ag71xx_debugfs_exit(ag);
 err_phy_disconnect:
 	ag71xx_phy_disconnect(ag);
-err_free_desc:
-	dma_free_coherent(NULL, sizeof(struct ag71xx_desc), ag->stop_desc,
-			  ag->stop_desc_dma);
-err_free_irq:
-	free_irq(dev->irq, dev);
-err_unmap_base:
-	iounmap(ag->mac_base);
-err_free_dev:
-	kfree(dev);
-err_out:
-	platform_set_drvdata(pdev, NULL);
 	return err;
 }
 
 static int ag71xx_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
+	struct ag71xx *ag;
 
-	if (dev) {
-		struct ag71xx *ag = netdev_priv(dev);
+	if (!dev)
+		return 0;
 
-		ag71xx_debugfs_exit(ag);
-		ag71xx_phy_disconnect(ag);
-		unregister_netdev(dev);
-		free_irq(dev->irq, dev);
-		iounmap(ag->mac_base);
-		kfree(dev);
-		platform_set_drvdata(pdev, NULL);
-	}
-
+	ag = netdev_priv(dev);
+	ag71xx_debugfs_exit(ag);
+	ag71xx_phy_disconnect(ag);
+	unregister_netdev(dev);
+	platform_set_drvdata(pdev, NULL);
 	return 0;
 }
 
