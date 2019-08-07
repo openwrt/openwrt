@@ -194,6 +194,7 @@ ramips_setup_interfaces()
 	glinet,gl-mt300n|\
 	glinet,gl-mt750|\
 	hilink,hlk-7628n|\
+	hiwifi,hc5661|\
 	hiwifi,hc5861b|\
 	jcg,jhr-n805r|\
 	jcg,jhr-n825r|\
@@ -348,9 +349,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:lan" "6@eth0"
 		;;
-	head-weblink,hdrm200|\
-	hiwifi,hc5661|\
-	lenovo,newifi-y1s)
+	head-weblink,hdrm200)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:lan" "0:wan" "6@eth0"
 		;;
@@ -382,6 +381,10 @@ ramips_setup_interfaces()
 	zbtlink,zbt-we1226)
 		ucidef_add_switch "switch0" \
 			"0:lan:2" "1:lan:1" "4:wan" "6@eth0"
+		;;
+	lenovo,newifi-y1s)
+		ucidef_add_switch "switch0" \
+			"1:lan:4" "2:lan:3" "4:lan:2" "5:lan:1" "0:wan" "6@eth0"
 		;;
 	linksys,e1700|\
 	ralink,mt7620a-mt7530-evb)
