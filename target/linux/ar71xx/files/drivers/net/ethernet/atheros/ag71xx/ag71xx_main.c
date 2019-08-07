@@ -1416,8 +1416,8 @@ static int ag71xx_probe(struct platform_device *pdev)
 		goto err_phy_disconnect;
 	}
 
-	pr_info("%s: Atheros AG71xx at 0x%08lx, irq %d, mode:%s\n",
-		dev->name, dev->base_addr, dev->irq,
+	pr_info("%s: Atheros AG71xx at 0x%08lx, irq %d, mode: %s\n",
+		dev->name, (unsigned long) ag->mac_base, dev->irq,
 		phy_modes(pdata->phy_if_mode));
 
 	return 0;
