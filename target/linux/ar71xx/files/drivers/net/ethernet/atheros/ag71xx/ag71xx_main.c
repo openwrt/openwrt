@@ -1274,6 +1274,9 @@ static int ag71xx_change_mtu(struct net_device *dev, int new_mtu)
 		return -EBUSY;
 
 	dev->mtu = new_mtu;
+	ag71xx_wr(ag, AG71XX_REG_MAC_MFL,
+		  ag71xx_max_frame_len(dev->mtu));
+
 	return 0;
 }
 
@@ -1412,6 +1415,8 @@ static int ag71xx_probe(struct platform_device *pdev)
 	netif_napi_add(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);
 
 	ag71xx_dump_regs(ag);
+
+	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, 0);
 
 	ag71xx_hw_init(ag);
 
