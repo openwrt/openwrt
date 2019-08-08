@@ -3,7 +3,7 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR = 0x80060000
 
-DEVICE_VARS += IMAGE_SIZE LOADER_FLASH_OFFS LOADER_TYPE ATH_SOC
+DEVICE_VARS += LOADER_FLASH_OFFS LOADER_TYPE ATH_SOC
 
 define Build/check-size-firmware
 	@[ $$(sh $(TOPDIR)/scripts/get-part-size-dtb.sh $(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb \
@@ -75,7 +75,7 @@ define Device/Default
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size-firmware
 endef
 
 ifeq ($(SUBTARGET),generic)

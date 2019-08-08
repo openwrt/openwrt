@@ -71,38 +71,33 @@ endef
 define Device/tplink-4m
   $(Device/tplink-nolzma)
   TPLINK_FLASHLAYOUT := 4M
-  IMAGE_SIZE := 3904k
 endef
 
 define Device/tplink-4mlzma
   $(Device/tplink)
   TPLINK_FLASHLAYOUT := 4Mlzma
-  IMAGE_SIZE := 3904k
 endef
 
 define Device/tplink-8m
   $(Device/tplink-nolzma)
   TPLINK_FLASHLAYOUT := 8M
-  IMAGE_SIZE := 7936k
 endef
 
 define Device/tplink-8mlzma
   $(Device/tplink)
   TPLINK_FLASHLAYOUT := 8Mlzma
-  IMAGE_SIZE := 7936k
 endef
 
 define Device/tplink-16mlzma
   $(Device/tplink)
   TPLINK_FLASHLAYOUT := 16Mlzma
-  IMAGE_SIZE := 15872k
 endef
 
 define Device/tplink-safeloader
   $(Device/tplink)
   KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
-    append-metadata | check-size $$$$(IMAGE_SIZE)
+    append-metadata | check-size-firmware
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
 
