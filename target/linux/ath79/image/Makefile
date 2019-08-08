@@ -5,6 +5,14 @@ KERNEL_LOADADDR = 0x80060000
 
 DEVICE_VARS += IMAGE_SIZE LOADER_FLASH_OFFS LOADER_TYPE ATH_SOC
 
+define Build/check-size-firmware
+	@[ $$(sh $(TOPDIR)/scripts/get-part-size-dtb.sh $(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb \
+		"firmware" "/ahb/spi/flash/partitions /spi/flash/partitions") -ge "$$(stat -c%s $@)" ] || { \
+		echo "WARNING: Image file $@ is too big" >&2; \
+		rm -f $@; \
+	}
+endef
+
 define Build/loader-common
 	rm -rf $@.src
 	$(MAKE) -C lzma-loader \
