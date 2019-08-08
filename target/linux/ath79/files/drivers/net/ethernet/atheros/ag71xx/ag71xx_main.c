@@ -130,7 +130,7 @@ static void ag71xx_ring_tx_init(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->tx_ring;
 	int ring_size = BIT(ring->order);
-	int ring_mask = ring_size - 1;
+	int ring_mask = BIT(ring->order) - 1;
 	int i;
 
 	for (i = 0; i < ring_size; i++) {
