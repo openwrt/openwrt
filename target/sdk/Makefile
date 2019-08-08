@@ -144,7 +144,8 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 	-rm -rf \
 		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/ccache \
 		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TARGET)/ccache \
-		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TOOLCHAIN)/ccache
+		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TOOLCHAIN)/ccache \
+		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/.prereq-build
 
 	-rm -f $(SDK_BUILD_DIR)/feeds.conf.default
 	$(if $(BASE_FEED),echo "$(BASE_FEED)" > $(SDK_BUILD_DIR)/feeds.conf.default)
