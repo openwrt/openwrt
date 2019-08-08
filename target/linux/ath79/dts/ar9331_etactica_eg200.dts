@@ -99,22 +99,26 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot@0 {
+			partition@0 {
+				label = "uboot";
 				reg = <0x0 0x40000>;
 				read-only;
 			};
 
-			uboot-env@40000 {
+			partition@40000 {
+				label = "uboot-env";
 				reg = <0x40000 0x10000>;
 				read-only;
 			};
 
-			firmware@50000 {
-				compatible = "denx,uimage";
+			partition@50000 {
+				label = "firmware";
 				reg = <0x50000 0xfa0000>;
+				compatible = "denx,uimage";
 			};
 
-			art: art@ff0000 {
+			art: partition@ff0000 {
+				label = "art";
 				reg = <0xff0000 0x10000>;
 				read-only;
 			};
