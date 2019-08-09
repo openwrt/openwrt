@@ -262,6 +262,7 @@ define Device/comfast_cf-e314n-v2
   DEVICE_MODEL := CF-E314N
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := rssileds
+  IMAGE_SIZE := 7936k
 endef
 TARGET_DEVICES += comfast_cf-e314n-v2
 
