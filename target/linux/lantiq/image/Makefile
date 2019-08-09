@@ -673,7 +673,7 @@ define Device/avm_fritz7412
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
   DEVICE_TITLE := AVM FRITZ!Box 7412
-  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic kmod-ltq-tapi kmod-ltq-vmmc fritz-tffs-nand fritz-caldata
+  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic fritz-tffs-nand fritz-caldata
 endef
 TARGET_DEVICES += avm_fritz7412
 
