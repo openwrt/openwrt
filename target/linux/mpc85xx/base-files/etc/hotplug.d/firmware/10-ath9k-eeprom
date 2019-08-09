@@ -9,8 +9,8 @@ ath9k_eeprom_die() {
 
 ath9k_eeprom_extract() {
 	local part=$1
-	local offset=$2
-	local count=$3
+	local offset=$(($2))
+	local count=$(($3))
 	local mtd
 
 	mtd=$(find_mtd_chardev $part)
@@ -43,7 +43,7 @@ case "$FIRMWARE" in
 "pci_wmac0.eeprom")
 	case $board in
 	tplink,tl-wdr4900-v1)
-		ath9k_eeprom_extract "caldata" 4096 2048
+		ath9k_eeprom_extract "caldata" 0x1000 0x800
 		tpl_set_wireless_mac 0
 		;;
 	*)
@@ -55,7 +55,7 @@ case "$FIRMWARE" in
 "pci_wmac1.eeprom")
 	case $board in
 	tplink,tl-wdr4900-v1)
-		ath9k_eeprom_extract "caldata" 20480 2048
+		ath9k_eeprom_extract "caldata" 0x5000 0x800
 		tpl_set_wireless_mac -1
 		;;
 	*)
