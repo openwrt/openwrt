@@ -425,23 +425,23 @@ define Device/dlink_dir-842-c
 endef
 
 define Device/dlink_dir-842-c1
-	$(Device/dlink_dir-842-c)
-	DEVICE_VARIANT := C1
-	DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  $(Device/dlink_dir-842-c)
+  DEVICE_VARIANT := C1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
 endef
 TARGET_DEVICES += dlink_dir-842-c1
 
 define Device/dlink_dir-842-c2
-	$(Device/dlink_dir-842-c)
-	DEVICE_VARIANT := C2
-	DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  $(Device/dlink_dir-842-c)
+  DEVICE_VARIANT := C2
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct
 endef
 TARGET_DEVICES += dlink_dir-842-c2
 
 define Device/dlink_dir-842-c3
-	$(Device/dlink_dir-842-c)
-	DEVICE_VARIANT := C3
-	DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  $(Device/dlink_dir-842-c)
+  DEVICE_VARIANT := C3
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
 endef
 TARGET_DEVICES += dlink_dir-842-c3
 
