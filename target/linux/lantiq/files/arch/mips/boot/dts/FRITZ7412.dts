@@ -34,13 +34,13 @@
 		
 		wps {
 			label = "wps";
-			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 		
 		dect {
 			label = "dect";
-			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_PHONE>;
 		};
 	};
