@@ -94,7 +94,7 @@ case "$FIRMWARE" in
 		;;
 	dw33d)
 		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(mtd_get_mac_binary art 18)
+		ath10kcal_patch_mac $(mtd_get_mac_binary art 0x12)
 		;;
 	epg5000|\
 	esr1750)
@@ -109,7 +109,7 @@ case "$FIRMWARE" in
 		;;
 	koala)
 		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary art 12) +0)
+		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0xc) +0)
 		;;
 	mc-mac1200r)
 		ath10kcal_extract "art" 20480 2116

@@ -103,7 +103,7 @@ case "$FIRMWARE" in
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
 		ath9k_eeprom_extract "art" 4096 1088
-		ath9k_patch_fw_mac_crc $(mtd_get_mac_text "mac" 4) 2
+		ath9k_patch_fw_mac_crc $(mtd_get_mac_text "mac" 0x4) 2
 		;;
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
@@ -128,7 +128,7 @@ case "$FIRMWARE" in
 		;;
 	nec,wg800hp)
 		ath9k_eeprom_extract "art" 4096 1088
-		ath9k_patch_fw_mac $(mtd_get_mac_text board_data 1664) 2
+		ath9k_patch_fw_mac $(mtd_get_mac_text board_data 0x680) 2
 		;;
 	qihoo,c301)
 		ath9k_eeprom_extract "radiocfg" 4096 1088
@@ -156,7 +156,7 @@ case "$FIRMWARE" in
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
 		ath9k_eeprom_extract "art" 20480 1088
-		ath9k_patch_fw_mac_crc $(macaddr_add $(mtd_get_mac_text "mac" 24) 1) 2
+		ath9k_patch_fw_mac_crc $(macaddr_add $(mtd_get_mac_text "mac" 0x18) 1) 2
 		;;
 	ocedo,raccoon|\
 	tplink,tl-wdr3600-v1|\
@@ -212,7 +212,7 @@ case "$FIRMWARE" in
 		;;
 	dlink,dir-825-b1)
 		ath9k_eeprom_extract "caldata" 4096 3768
-		ath9k_patch_fw_mac_crc $(mtd_get_mac_text "caldata" 65440) 524
+		ath9k_patch_fw_mac_crc $(mtd_get_mac_text "caldata" 0xffa0) 524
 		;;
 	*)
 		ath9k_eeprom_die "board $board is not supported yet"
@@ -229,7 +229,7 @@ case "$FIRMWARE" in
 		;;
 	dlink,dir-825-b1)
 		ath9k_eeprom_extract "caldata" 20480 3768
-		ath9k_patch_fw_mac_crc $(macaddr_add $(mtd_get_mac_text "caldata" 65460) 1) 524
+		ath9k_patch_fw_mac_crc $(macaddr_add $(mtd_get_mac_text "caldata" 0xffb4) 1) 524
 		;;
 	*)
 		ath9k_eeprom_die "board $board is not supported yet"

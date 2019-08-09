@@ -26,7 +26,7 @@ tpl_set_wireless_mac()
 	local offset=$1
 	local mac
 
-	mac=$(mtd_get_mac_binary u-boot 326656)
+	mac=$(mtd_get_mac_binary u-boot 0x4fc00)
 	mac=$(macaddr_add $mac $offset)
 
 	macaddr_2bin $mac | dd bs=1 count=6 seek=2 conv=notrunc of=$FW_FILE 2>/dev/null
