@@ -565,7 +565,7 @@ ucidef_add_gpio_switch() {
 	json_select_object gpioswitch
 		json_select_object "$cfg"
 			json_add_string name "$name"
-			json_add_int pin "$pin"
+			json_add_string pin "$pin"
 			json_add_int default "$default"
 		json_select ..
 	json_select ..
