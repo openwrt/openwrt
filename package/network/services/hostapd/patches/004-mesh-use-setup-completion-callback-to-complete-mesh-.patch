@@ -25,7 +25,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -414,6 +414,8 @@ static void hostapd_free_hapd_data(struc
+@@ -423,6 +423,8 @@ static void hostapd_free_hapd_data(struc
  #ifdef CONFIG_MESH
  	wpabuf_free(hapd->mesh_pending_auth);
  	hapd->mesh_pending_auth = NULL;
@@ -34,7 +34,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  #endif /* CONFIG_MESH */
  
  	hostapd_clean_rrm(hapd);
-@@ -1980,6 +1982,13 @@ dfs_offload:
+@@ -2049,6 +2051,13 @@ dfs_offload:
  	if (hapd->setup_complete_cb)
  		hapd->setup_complete_cb(hapd->setup_complete_cb_ctx);
  
@@ -48,7 +48,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  	wpa_printf(MSG_DEBUG, "%s: Setup of interface done.",
  		   iface->bss[0]->conf->iface);
  	if (iface->interfaces && iface->interfaces->terminate_on_error > 0)
-@@ -2123,7 +2132,7 @@ int hostapd_setup_interface(struct hosta
+@@ -2192,7 +2201,7 @@ int hostapd_setup_interface(struct hosta
  	ret = setup_interface(iface);
  	if (ret) {
  		wpa_printf(MSG_ERROR, "%s: Unable to setup interface.",
@@ -79,16 +79,16 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  	}
  
  	if (ifmsh->mconf->security != MESH_CONF_SEC_NONE &&
-@@ -208,7 +209,7 @@ static int wpas_mesh_complete(struct wpa
- 		wpa_printf(MSG_ERROR,
+@@ -209,7 +210,7 @@ static int wpas_mesh_complete(struct wpa
  			   "mesh: RSN initialization failed - deinit mesh");
  		wpa_supplicant_mesh_deinit(wpa_s);
+ 		wpa_drv_leave_mesh(wpa_s);
 -		return -1;
 +		return;
  	}
  
  	if (ssid->key_mgmt & WPA_KEY_MGMT_SAE) {
-@@ -234,8 +235,6 @@ static int wpas_mesh_complete(struct wpa
+@@ -235,8 +236,6 @@ static int wpas_mesh_complete(struct wpa
  
  	if (!ret)
  		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
@@ -97,7 +97,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  }
  
  
-@@ -262,6 +261,7 @@ static int wpa_supplicant_mesh_init(stru
+@@ -263,6 +262,7 @@ static int wpa_supplicant_mesh_init(stru
  	if (!ifmsh)
  		return -ENOMEM;
  
@@ -105,7 +105,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  	ifmsh->drv_flags = wpa_s->drv_flags;
  	ifmsh->num_bss = 1;
  	ifmsh->bss = os_calloc(wpa_s->ifmsh->num_bss,
-@@ -279,6 +279,8 @@ static int wpa_supplicant_mesh_init(stru
+@@ -280,6 +280,8 @@ static int wpa_supplicant_mesh_init(stru
  	bss->drv_priv = wpa_s->drv_priv;
  	bss->iface = ifmsh;
  	bss->mesh_sta_free_cb = mesh_mpm_free_sta;
@@ -114,7 +114,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  	frequency = ssid->frequency;
  	if (frequency != freq->freq &&
  	    frequency == freq->freq + freq->sec_channel_offset * 20) {
-@@ -517,7 +519,6 @@ int wpa_supplicant_join_mesh(struct wpa_
+@@ -521,7 +523,6 @@ int wpa_supplicant_join_mesh(struct wpa_
  		goto out;
  	}
  
