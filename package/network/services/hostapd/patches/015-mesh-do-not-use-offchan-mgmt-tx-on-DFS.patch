@@ -17,7 +17,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -7411,6 +7411,10 @@ static int wpa_driver_nl80211_send_actio
+@@ -7462,6 +7462,10 @@ static int wpa_driver_nl80211_send_actio
  	int ret = -1;
  	u8 *buf;
  	struct ieee80211_hdr *hdr;
@@ -28,7 +28,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  	wpa_printf(MSG_DEBUG, "nl80211: Send Action frame (ifindex=%d, "
  		   "freq=%u MHz wait=%d ms no_cck=%d)",
-@@ -7435,6 +7439,21 @@ static int wpa_driver_nl80211_send_actio
+@@ -7486,6 +7490,21 @@ static int wpa_driver_nl80211_send_actio
  		os_memset(bss->rand_addr, 0, ETH_ALEN);
  	}
  
@@ -50,7 +50,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  	if (is_ap_interface(drv->nlmode) &&
  	    (!(drv->capa.flags & WPA_DRIVER_FLAGS_OFFCHANNEL_TX) ||
  	     (int) freq == bss->freq || drv->device_ap_sme ||
-@@ -7446,7 +7465,7 @@ static int wpa_driver_nl80211_send_actio
+@@ -7497,7 +7516,7 @@ static int wpa_driver_nl80211_send_actio
  		ret = nl80211_send_frame_cmd(bss, freq, wait_time, buf,
  					     24 + data_len,
  					     &drv->send_action_cookie,

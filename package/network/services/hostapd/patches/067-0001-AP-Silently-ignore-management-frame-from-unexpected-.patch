@@ -45,7 +45,7 @@ Signed-off-by: Jouni Malinen <j@w1.fi>
  	hostapd_logger(hapd, addr, HOSTAPD_MODULE_IEEE80211,
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -4463,6 +4463,18 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -4626,6 +4626,18 @@ int ieee802_11_mgmt(struct hostapd_data
  	fc = le_to_host16(mgmt->frame_control);
  	stype = WLAN_FC_GET_STYPE(fc);
  

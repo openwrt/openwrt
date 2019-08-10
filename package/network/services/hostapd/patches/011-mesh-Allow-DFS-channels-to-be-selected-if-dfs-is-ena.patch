@@ -13,7 +13,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -2148,6 +2148,8 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2153,6 +2153,8 @@ void ibss_mesh_setup_freq(struct wpa_sup
  	struct hostapd_freq_params vht_freq;
  	int chwidth, seg0, seg1;
  	u32 vht_caps = 0;
@@ -22,7 +22,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  	freq->freq = ssid->frequency;
  
-@@ -2224,8 +2226,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2232,8 +2234,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
  		return;
  
  	/* Check primary channel flags */
@@ -35,7 +35,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  	freq->channel = pri_chan->chan;
  
-@@ -2256,8 +2261,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2264,8 +2269,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
  		return;
  
  	/* Check secondary channel flags */
@@ -48,7 +48,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  	if (ht40 == -1) {
  		if (!(pri_chan->flag & HOSTAPD_CHAN_HT40MINUS))
-@@ -2348,8 +2356,11 @@ skip_ht40:
+@@ -2356,8 +2364,11 @@ skip_ht40:
  			return;
  
  		/* Back to HT configuration if channel not usable */
@@ -60,8 +60,8 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 +				return;
  	}
  
- 	chwidth = VHT_CHANWIDTH_80MHZ;
-@@ -2369,10 +2380,11 @@ skip_ht40:
+ 	chwidth = CHANWIDTH_80MHZ;
+@@ -2377,10 +2388,11 @@ skip_ht40:
  				if (!chan)
  					continue;
  
@@ -75,4 +75,4 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 +						continue;
  
  				/* Found a suitable second segment for 80+80 */
- 				chwidth = VHT_CHANWIDTH_80P80MHZ;
+ 				chwidth = CHANWIDTH_80P80MHZ;

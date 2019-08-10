@@ -24,7 +24,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  #include "ap/sta_info.h"
  #include "ap/hostapd.h"
  #include "ap/ieee802_11.h"
-@@ -204,6 +205,30 @@ static void wpas_mesh_complete_cb(void *
+@@ -204,6 +205,32 @@ static void wpas_mesh_complete_cb(void *
  		return;
  	}
  
@@ -41,11 +41,13 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 +				ifmsh->conf->channel,
 +				ifmsh->conf->ieee80211n,
 +				ifmsh->conf->ieee80211ac,
++				ifmsh->conf->ieee80211ax,
 +				ifmsh->conf->secondary_channel,
-+				ifmsh->conf->vht_oper_chwidth,
-+				ifmsh->conf->vht_oper_centr_freq_seg0_idx,
-+				ifmsh->conf->vht_oper_centr_freq_seg1_idx,
-+				ifmsh->conf->vht_capab)) {
++				hostapd_get_oper_chwidth(ifmsh->conf),
++				hostapd_get_oper_centr_freq_seg0_idx(ifmsh->conf),
++				hostapd_get_oper_centr_freq_seg1_idx(ifmsh->conf),
++				ifmsh->current_mode->vht_capab,
++				&ifmsh->current_mode->he_capab[IEEE80211_MODE_AP])) {
 +			wpa_printf(MSG_ERROR, "Error updating mesh frequency params.");
 +			wpa_supplicant_mesh_deinit(wpa_s);
 +			return;
