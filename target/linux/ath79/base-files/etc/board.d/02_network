@@ -304,7 +304,6 @@ ath79_setup_macs()
 	case "$board" in
 	adtran,bsap1800-v2|\
 	adtran,bsap1840)
-		fconfig -s -w -d $(find_mtd_part "RedBoot config") -n boot_cntb -x 0
 		lan_mac=$(mtd_get_mac_binary "Board data" 2)
 		;;
 	avm,fritz300e)
