@@ -51,6 +51,16 @@ define Device/tplink_tl-mr3420-v1
 endef
 TARGET_DEVICES += tplink_tl-mr3420-v1
 
+define Device/tplink_tl-mr3420-v2
+  $(Device/tplink-4mlzma)
+  ATH_SOC := ar9341
+  DEVICE_TITLE := TP-Link TL-MR3420 v2
+  TPLINK_HWID := 0x34200002
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += tl-mr3420-v2
+endef
+TARGET_DEVICES += tplink_tl-mr3420-v2
+
 define Device/tplink_tl-wa850re-v1
   $(Device/tplink-4mlzma)
   ATH_SOC := ar9341
