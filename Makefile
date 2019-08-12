@@ -79,6 +79,12 @@ endif
 
 # check prerequisites before starting to build
 prereq: $(target/stamp-prereq) tmp/.prereq_packages
+	@if [ ! -f "$(INCLUDE_DIR)/site/$(ARCH)" ]; then \
+		echo 'ERROR: Missing site config for architecture "$(ARCH)" !'; \
+		echo '       The missing file will cause configure scripts to fail during compilation.'; \
+		echo '       Please provide a "$(INCLUDE_DIR)/site/$(ARCH)" file and restart the build.'; \
+		exit 1; \
+	fi
 
 checksum: FORCE
 	$(call sha256sums,$(BIN_DIR),$(CONFIG_BUILDBOT))
