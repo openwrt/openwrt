@@ -1,6 +1,7 @@
 include ./common-buffalo.mk
 include ./common-netgear.mk
 include ./common-tp-link.mk
+include ./common-yuncore.mk
 
 DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
@@ -1034,6 +1035,8 @@ define Device/yuncore_a770
   DEVICE_MODEL := A770
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
   IMAGE_SIZE := 16000k
+  IMAGES += tftp.bin
+  IMAGE/tftp.bin := $$(IMAGE/sysupgrade.bin) | yuncore-tftp-header-16m
 endef
 TARGET_DEVICES += yuncore_a770
 
