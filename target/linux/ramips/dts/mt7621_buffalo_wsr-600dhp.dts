@@ -181,6 +181,10 @@
 	};
 };
 
+&ethernet {
+	mtd-mac-address = <&factory 0x4>;
+};
+
 &xhci {
 	status = "disabled";
 };
