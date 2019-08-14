@@ -27,6 +27,15 @@ define Build/at91-sdcard
           $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd_uboot/at91bootstrap.bin \
           ::BOOT.bin)
 
+  $(CP) uboot-env.txt $@-uboot-env.txt
+  sed -i '2d;3d' $@-uboot-env.txt
+  sed -i '2i board='"$(DEVICE_NAME:at91-%=%)"'' $@-uboot-env.txt
+  sed -i '3i board_name='"$(DEVICE_NAME:at91-%=%)"'' $@-uboot-env.txt
+
+  mkenvimage -s 0x4000 -o $@-uboot.env $@-uboot-env.txt
+
+  mcopy -i $@.boot $@-uboot.env ::uboot.env
+
   ./gen_at91_sdcard_img.sh \
       $@.img \
       $@.boot \
@@ -36,7 +45,7 @@ define Build/at91-sdcard
 
   gzip -nc9 $@.img > $@
 
-  rm -f $@.img $@.boot )
+  rm -f $@.img $@.boot $@-uboot.env $@-uboot-env.txt)
 endef
 
 define Device/at91-sama5d2_xplained
