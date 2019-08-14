@@ -146,12 +146,18 @@ proto_ncm_setup() {
 	proto_close_data
 	proto_send_update "$interface"
 
+	local zone="$(fw3 -q network "$interface" 2>/dev/null)"
+
 	[ "$pdptype" = "IP" -o "$pdptype" = "IPV4V6" ] && {
 		json_init
 		json_add_string name "${interface}_4"
 		json_add_string ifname "@$interface"
 		json_add_string proto "dhcp"
 		proto_add_dynamic_defaults
+		[ -n "$zone" ] && {
+			json_add_string zone "$zone"
+		}
+		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
 	}
 
@@ -162,6 +168,10 @@ proto_ncm_setup() {
 		json_add_string proto "dhcpv6"
 		json_add_string extendprefix 1
 		proto_add_dynamic_defaults
+		[ -n "$zone" ] && {
+			json_add_string zone "$zone"
+		}
+		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
 	}
 

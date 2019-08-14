@@ -9,17 +9,19 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
-PKG_VERSION:=2.4.7
-PKG_RELEASE:=12
+PKG_RELEASE:=2
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://download.samba.org/pub/ppp/
-PKG_HASH:=02e0a3dd3e4799e33103f70ec7df75348c8540966ee7c948e4ed8a42bbccfb30
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://github.com/paulusmack/ppp
+PKG_SOURCE_DATE:=2019-05-25
+PKG_SOURCE_VERSION:=8e77984ac5d7acbe68b2b2f590abd17564c9730d
+PKG_MIRROR_HASH:=7e7e74f0261db2c45770d79c6114e768382e85bfeb3f5a83179f270d6c15006d
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-4-Clause
 PKG_CPE_ID:=cpe:/a:samba:ppp
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_RELEASE_VERSION:=2.4.7
+PKG_VERSION:=$(PKG_RELEASE_VERSION).git-$(PKG_SOURCE_DATE)
 
 PKG_BUILD_DEPENDS:=libpcap
 
@@ -189,8 +191,8 @@ $(call Build/Configure/Default,, \
 		$(PKG_BUILD_DIR)/pppd/plugins/pppoatm/linux/
 endef
 
-TARGET_CFLAGS += -ffunction-sections -fdata-sections
-TARGET_LDFLAGS += -Wl,--gc-sections
+TARGET_CFLAGS += -ffunction-sections -fdata-sections -flto
+TARGET_LDFLAGS += -Wl,--gc-sections -flto -fuse-linker-plugin
 
 MAKE_FLAGS += COPTS="$(TARGET_CFLAGS)" \
 		PRECOMPILED_FILTER=1 \
@@ -215,7 +217,7 @@ define Package/ppp/script_install
 endef
 
 define Package/ppp/install
-	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
+	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppd $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/ppp
@@ -232,21 +234,21 @@ endef
 Package/ppp-multilink/install=$(Package/ppp/install)
 
 define Package/ppp-mod-pppoa/install
-	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/pppoatm.so \
-		$(1)/usr/lib/pppd/$(PKG_VERSION)/
+	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_RELEASE_VERSION)/pppoatm.so \
+		$(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/
 endef
 
 define Package/ppp-mod-pppoe/install
-	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/rp-pppoe.so \
-		$(1)/usr/lib/pppd/$(PKG_VERSION)/
+	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_RELEASE_VERSION)/rp-pppoe.so \
+		$(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/
 endef
 
 define Package/ppp-mod-radius/install
-	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/radius.so \
-		$(1)/usr/lib/pppd/$(PKG_VERSION)/
+	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_RELEASE_VERSION)/radius.so \
+		$(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/
 	$(INSTALL_DIR) $(1)/etc/ppp
 	$(INSTALL_DATA) ./files/etc/ppp/radius.conf $(1)/etc/ppp/
 	$(INSTALL_DIR) $(1)/etc/ppp/radius
@@ -257,23 +259,23 @@ define Package/ppp-mod-radius/install
 endef
 
 define Package/ppp-mod-pppol2tp/install
-	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/pppol2tp.so \
-		$(1)/usr/lib/pppd/$(PKG_VERSION)/
+	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_RELEASE_VERSION)/pppol2tp.so \
+		$(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/
 endef
 
 define Package/ppp-mod-pptp/install
-	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/pptp.so \
-		$(1)/usr/lib/pppd/$(PKG_VERSION)/
+	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_RELEASE_VERSION)/pptp.so \
+		$(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/
 	$(INSTALL_DIR) $(1)/etc/ppp
 	$(INSTALL_DATA) ./files/etc/ppp/options.pptp $(1)/etc/ppp/
 endef
 
 define Package/ppp-mod-passwordfd/install
-	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/passwordfd.so \
-		$(1)/usr/lib/pppd/$(PKG_VERSION)/
+	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_RELEASE_VERSION)/passwordfd.so \
+		$(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/
 endef
 
 define Package/chat/install

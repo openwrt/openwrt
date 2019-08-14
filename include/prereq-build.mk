@@ -24,10 +24,10 @@ $(eval $(call TestHostCommand,case-sensitive-fs, \
 
 $(eval $(call TestHostCommand,proper-umask, \
 	Please build with umask 022 - other values produce broken packages, \
-	umask | grep -xE 00[012][012]))
+	umask | grep -xE 0?0[012][012]))
 
 $(eval $(call SetupHostCommand,gcc, \
-	Please install the GNU C Compiler (gcc) 4.8 or later \
+	Please install the GNU C Compiler (gcc) 4.8 or later, \
 	$(CC) -dumpversion | grep -E '^(4\.[8-9]|[5-9]\.?)', \
 	gcc -dumpversion | grep -E '^(4\.[8-9]|[5-9]\.?)', \
 	gcc48 --version | grep gcc, \
@@ -46,7 +46,7 @@ $(eval $(call TestHostCommand,working-gcc, \
 		gcc -x c -o $(TMP_DIR)/a.out -))
 
 $(eval $(call SetupHostCommand,g++, \
-	Please install the GNU C++ Compiler (g++) 4.8 or later \
+	Please install the GNU C++ Compiler (g++) 4.8 or later, \
 	$(CXX) -dumpversion | grep -E '^(4\.[8-9]|[5-9]\.?)', \
 	g++ -dumpversion | grep -E '^(4\.[8-9]|[5-9]\.?)', \
 	g++48 --version | grep g++, \
@@ -138,17 +138,22 @@ $(eval $(call SetupHostCommand,bzip2,Please install 'bzip2', \
 $(eval $(call SetupHostCommand,wget,Please install GNU 'wget', \
 	wget --version | grep GNU))
 
-$(eval $(call SetupHostCommand,gtime,Please install GNU 'time', \
-	gtime --version 2>&1 | grep GNU, \
-	time --version 2>&1 | grep GNU))
-
 $(eval $(call SetupHostCommand,perl,Please install Perl 5.x, \
 	perl --version | grep "perl.*v5"))
 
-$(eval $(call SetupHostCommand,python,Please install Python 2.x, \
-	python2.7 -V 2>&1 | grep Python, \
-	python2 -V 2>&1 | grep Python, \
-	python -V 2>&1 | grep Python))
+$(eval $(call CleanupPython2))
+
+$(eval $(call SetupHostCommand,python,Please install Python >= 3.5, \
+	python3.7 -V 2>&1 | grep -E 'Python 3\.[5-9]\.?', \
+	python3.6 -V 2>&1 | grep -E 'Python 3\.[5-9]\.?', \
+	python3.5 -V 2>&1 | grep -E 'Python 3\.[5-9]\.?', \
+	python3 -V 2>&1 | grep -E 'Python 3\.[5-9]\.?'))
+
+$(eval $(call SetupHostCommand,python3,Please install Python >= 3.5, \
+	python3.7 -V 2>&1 | grep -E 'Python 3\.[5-9]\.?', \
+	python3.6 -V 2>&1 | grep -E 'Python 3\.[5-9]\.?', \
+	python3.5 -V 2>&1 | grep -E 'Python 3\.[5-9]\.?', \
+	python3 -V 2>&1 | grep -E 'Python 3\.[5-9]\.?'))
 
 $(eval $(call SetupHostCommand,git,Please install Git (git-core) >= 1.7.12.2, \
 	git --exec-path | xargs -I % -- grep -q -- --recursive %/git-submodule))

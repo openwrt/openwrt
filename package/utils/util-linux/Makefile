@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.32
-PKG_RELEASE:=2
+PKG_VERSION:=2.34
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.32
-PKG_HASH:=6c7397abc764e32e8159c2e96042874a190303e77adceb4ac5bd502a272a4734
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.34
+PKG_HASH:=743f9d0c7252b6db246b659c1e1ce0bd45d8d4508b4dfa427bbb4a3e9b9f62b5
 PKG_CPE_ID:=cpe:/a:kernel:util-linux
 
 PKG_LICENSE:=GPL-2.0
@@ -47,6 +47,7 @@ $(call Package/util-linux/Default)
   TITLE:=block device id library
   SECTION:=libs
   CATEGORY:=Libraries
+  ABI_VERSION:=1
 endef
 
 define Package/libblkid/description
@@ -62,6 +63,7 @@ $(call Package/util-linux/Default)
   TITLE:=partition manipulating library
   SECTION:=libs
   CATEGORY:=Libraries
+  ABI_VERSION:=1
 endef
 
 define Package/libfdisk/description
@@ -74,6 +76,7 @@ $(call Package/util-linux/Default)
   TITLE:=mount library
   SECTION:=libs
   CATEGORY:=Libraries
+  ABI_VERSION:=1
 endef
 
 define Package/libmount/description
@@ -86,6 +89,7 @@ $(call Package/util-linux/Default)
   TITLE:=DCE compatible Universally Unique Identifier library
   SECTION:=libs
   CATEGORY:=Libraries
+  ABI_VERSION:=1
 endef
 
 define Package/libuuid/description
@@ -100,6 +104,7 @@ $(call Package/util-linux/Default)
   TITLE:=table or tree library
   SECTION:=libs
   CATEGORY:=Libraries
+  ABI_VERSION:=1
 endef
 
 define Package/libsmartcols/description
@@ -141,6 +146,16 @@ define Package/blkid/description
  library.
 endef
 
+define Package/blockdev
+$(call Package/util-linux/Default)
+  TITLE:=call block device ioctls from the command line
+  SUBMENU=Disc
+endef
+
+define Package/blockdev/description
+ The blockdev program is the command-line interface to call block device ioctls.
+endef
+
 define Package/cal
 $(call Package/util-linux/Default)
   TITLE:=display a calendar
@@ -170,6 +185,18 @@ endef
 
 define Package/dmesg/description
  dmesg  is used to examine or control the kernel ring buffer
+endef
+
+define Package/eject
+$(call Package/util-linux/Default)
+  TITLE:=eject removable media
+  DEPENDS:= +libblkid +libmount +libuuid
+  SUBMENU=Disc
+endef
+
+define Package/eject/description
+  eject allows removable media (typically a CD-ROM, floppy disk, tape, or JAZ
+  or ZIP disk) to be ejected under software control.
 endef
 
 define Package/fdisk
@@ -522,32 +549,27 @@ endef
 
 define Package/libfdisk/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/lib/libfdisk.so* $(1)/usr/lib/
-	$(LN) libfdisk.so.1 $(1)/usr/lib/libfdisk.so
+	$(CP) $(PKG_INSTALL_DIR)/lib/libfdisk.so.* $(1)/usr/lib/
 endef
 
 define Package/libblkid/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/lib/libblkid.so* $(1)/usr/lib/
-	$(LN) libblkid.so.1 $(1)/usr/lib/libblkid.so
+	$(CP) $(PKG_INSTALL_DIR)/lib/libblkid.so.* $(1)/usr/lib/
 endef
 
 define Package/libmount/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/lib/libmount.so* $(1)/usr/lib/
-	$(LN) libmount.so.1 $(1)/usr/lib/libmount.so
+	$(CP) $(PKG_INSTALL_DIR)/lib/libmount.so.* $(1)/usr/lib/
 endef
 
 define Package/libsmartcols/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/lib/libsmartcols.so* $(1)/usr/lib/
-	$(LN) libsmartcols.so.1 $(1)/usr/lib/libsmartcols.so
+	$(CP) $(PKG_INSTALL_DIR)/lib/libsmartcols.so.* $(1)/usr/lib/
 endef
 
 define Package/libuuid/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/lib/libuuid.so* $(1)/usr/lib/
-	$(LN) libuuid.so.1 $(1)/usr/lib/libuuid.so
+	$(CP) $(PKG_INSTALL_DIR)/lib/libuuid.so.* $(1)/usr/lib/
 endef
 
 define Package/agetty/install
@@ -565,6 +587,11 @@ define Package/blkid/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/blkid $(1)/usr/sbin/
 endef
 
+define Package/blockdev/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/blockdev $(1)/usr/sbin/
+endef
+
 define Package/cal/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/cal $(1)/usr/bin/
@@ -578,6 +605,11 @@ endef
 define Package/dmesg/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/dmesg $(1)/usr/bin/
+endef
+
+define Package/eject/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/eject $(1)/usr/bin/
 endef
 
 define Package/fdisk/install
@@ -734,9 +766,11 @@ $(eval $(call BuildPackage,libuuid))
 $(eval $(call BuildPackage,agetty))
 $(eval $(call BuildPackage,blkdiscard))
 $(eval $(call BuildPackage,blkid))
+$(eval $(call BuildPackage,blockdev))
 $(eval $(call BuildPackage,cal))
 $(eval $(call BuildPackage,cfdisk))
 $(eval $(call BuildPackage,dmesg))
+$(eval $(call BuildPackage,eject))
 $(eval $(call BuildPackage,fdisk))
 $(eval $(call BuildPackage,findfs))
 $(eval $(call BuildPackage,flock))

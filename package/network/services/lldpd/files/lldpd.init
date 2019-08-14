@@ -28,6 +28,9 @@ write_lldpd_conf()
 	config_load 'lldpd'
 	config_get lldp_description 'config' 'lldp_description' "$(find_release_info)"
 
+	local lldp_hostname
+	config_get lldp_hostname 'config' 'lldp_hostname' "$(cat /proc/sys/kernel/hostname)"
+
 	local ifaces
 	config_get ifaces 'config' 'interface'
 
@@ -43,6 +46,7 @@ write_lldpd_conf()
 	echo -n > "$LLDPD_CONF"
 	[ -n "$ifnames" ] && echo "configure system interface pattern" "$ifnames" >> "$LLDPD_CONF"
 	[ -n "$lldp_description" ] && echo "configure system description" "\"$lldp_description\"" >> "$LLDPD_CONF"
+	[ -n "$lldp_hostname" ] && echo "configure system hostname" "\"$lldp_hostname\"" >> "$LLDPD_CONF"
 
 	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
 	[ -e $LLDPD_CONFS_DIR ] || ln -s /etc/lldpd.d $LLDPD_CONFS_DIR

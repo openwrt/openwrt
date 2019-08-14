@@ -9,13 +9,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uci
-PKG_RELEASE:=1
+PKG_RELEASE:=3
 
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/uci.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE=2018-03-24
-PKG_SOURCE_VERSION:=5d2bf09ec594d97eb9284b8c721dbfe10b81a6f6
-PKG_MIRROR_HASH:=61f8cf52950edae851892ed0914dea8e1ab796bcefc095aa5dab28f672dc3301
+PKG_SOURCE_DATE=2019-05-17
+PKG_SOURCE_VERSION:=f199b961c2970b63cc83947ad49b327b3f48f05f
+PKG_MIRROR_HASH:=bd860a1a97a5c8f1cd77875afcadba9dafff0c4a0d6743ba0c915d76e1c624cd
 
 PKG_LICENSE:=LGPL-2.1
 PKG_LICENSE_FILES:=
@@ -35,6 +35,7 @@ define Package/libuci
   CATEGORY:=Libraries
   TITLE:=C library for the Unified Configuration Interface (UCI)
   DEPENDS:=+libubox
+  ABI_VERSION:=20130104
 endef
 
 define Package/uci

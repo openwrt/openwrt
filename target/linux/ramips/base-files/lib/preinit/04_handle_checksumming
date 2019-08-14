@@ -11,7 +11,7 @@ do_checksumming_disable() {
 	local board=$(board_name)
 
 	case "$board" in
-	wnce2001)
+	netgear,wnce2001)
 		echo "Board is WNCE2001, updating checksum partition..."
 		local zeroes=/dev/zero
 		local tmpfile=/tmp/wnce2001_checksum
@@ -35,7 +35,7 @@ do_checksumming_disable() {
 			echo "Checksum is already zero, nothing to do."
 		fi
 	;;
-	rt-n56u)
+	asus,rt-n56u)
 		echo "Board is ASUS RT-N56U, replacing uImage header..."
 		local firmware_mtd=$(find_mtd_part firmware)
 		local rootfs_mtd=$(find_mtd_part rootfs)

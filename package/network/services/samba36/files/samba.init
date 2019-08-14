@@ -84,6 +84,8 @@ smb_add_share() {
 
 init_config() {
 	config_load samba
+	CONFIG_APPEND=1 UCI_CONFIG_DIR=/var/run/config config_load samba
+
 	config_foreach smb_header samba
 	config_foreach smb_add_share sambashare
 }
@@ -101,6 +103,7 @@ start_service() {
 	init_config
 
 	procd_open_instance
+	procd_add_mdns "smb" "tcp" "445"
 	procd_set_param command /usr/sbin/smbd -F
 	procd_set_param respawn
 	procd_set_param file /var/etc/smb.conf

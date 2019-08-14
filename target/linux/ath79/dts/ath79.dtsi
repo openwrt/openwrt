@@ -52,6 +52,10 @@
 			mdio0: mdio-bus {
 				status = "disabled";
 
+				compatible = "qca,ath79-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
 				regmap = <&eth0>;
 
 				clocks = <&pll ATH79_CLK_MDIO>;
@@ -70,6 +74,10 @@
 
 			mdio1: mdio-bus {
 				status = "disabled";
+
+				compatible = "qca,ath79-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
 
 				regmap = <&eth1>;
 

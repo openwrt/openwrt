@@ -16,7 +16,6 @@ PKG_SOURCE_URL:=http://www.us.tcpdump.org/release/ \
 	http://www.tcpdump.org/release/
 PKG_HASH:=798b3536a29832ce0cbb07fafb1ce5097c95e308a6f592d14052e1ef1505fe79
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_BUILD_PARALLEL:=1
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
@@ -47,6 +46,7 @@ define Package/tcpdump-mini
 endef
 
 CONFIGURE_ARGS += \
+	--without-cap-ng \
 	--without-crypto
 
 ifeq ($(CONFIG_IPV6),y)

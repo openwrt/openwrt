@@ -1,6 +1,8 @@
 /*
  * PCIe driver for PLX NAS782X SoCs
  *
+ * Author: Ma Haijun <mahaijuns@gmail.com>
+ *
  * This file is licensed under the terms of the GNU General Public
  * License version 2.  This program is licensed "as is" without any
  * warranty of any kind, whether express or implied.
@@ -11,20 +13,53 @@
 #include <linux/clk.h>
 #include <linux/module.h>
 #include <linux/mbus.h>
+#include <linux/mfd/syscon.h>
 #include <linux/slab.h>
 #include <linux/platform_device.h>
 #include <linux/of_address.h>
-#include <linux/of_pci.h>
-#include <linux/of_irq.h>
-#include <linux/of_platform.h>
+#include <linux/of_device.h>
 #include <linux/of_gpio.h>
+#include <linux/of_irq.h>
+#include <linux/of_pci.h>
+#include <linux/of_platform.h>
 #include <linux/gpio.h>
 #include <linux/delay.h>
 #include <linux/clk.h>
+#include <linux/phy.h>
+#include <linux/phy/phy.h>
+#include <linux/regmap.h>
 #include <linux/reset.h>
-#include <mach/iomap.h>
-#include <mach/hardware.h>
-#include <mach/utils.h>
+#include <linux/io.h>
+#include <linux/sizes.h>
+
+#define SYS_CTRL_HCSL_CTRL_REGOFFSET	0x114
+
+static inline void oxnas_register_clear_mask(void __iomem *p, unsigned mask)
+{
+	u32 val = readl_relaxed(p);
+
+	val &= ~mask;
+	writel_relaxed(val, p);
+}
+
+static inline void oxnas_register_set_mask(void __iomem *p, unsigned mask)
+{
+	u32 val = readl_relaxed(p);
+
+	val |= mask;
+	writel_relaxed(val, p);
+}
+
+static inline void oxnas_register_value_mask(void __iomem *p,
+					     unsigned mask, unsigned new_value)
+{
+	/* TODO sanity check mask & new_value = new_value */
+	u32 val = readl_relaxed(p);
+
+	val &= ~mask;
+	val |= new_value;
+	writel_relaxed(val, p);
+}
 
 #define VERSION_ID_MAGIC		0x082510b5
 #define LINK_UP_TIMEOUT_SECONDS		1
@@ -40,23 +75,6 @@ enum {
 	PCIE_READY_ENTR_L23 = BIT(9),
 	PCIE_LINK_UP = BIT(11),
 	PCIE_OBTRANS = BIT(12),
-};
-
-enum {
-	HCSL_BIAS_ON = BIT(0),
-	HCSL_PCIE_EN = BIT(1),
-	HCSL_PCIEA_EN = BIT(2),
-	HCSL_PCIEB_EN = BIT(3),
-};
-
-enum {
-	/* pcie phy reg offset */
-	PHY_ADDR = 0,
-	PHY_DATA = 4,
-	/* phy data reg bits */
-	READ_EN = BIT(16),
-	WRITE_EN = BIT(17),
-	CAP_DATA = BIT(18),
 };
 
 /* core config registers */
@@ -94,9 +112,6 @@ enum {
 	PCIE_SLAVE_BE_SHIFT	= 22,
 };
 
-#define ADDR_VAL(val)	((val) & 0xFFFF)
-#define DATA_VAL(val)	((val) & 0xFFFF)
-
 #define PCIE_SLAVE_BE(val)	((val) << PCIE_SLAVE_BE_SHIFT)
 #define PCIE_SLAVE_BE_MASK	PCIE_SLAVE_BE(0xF)
 
@@ -110,9 +125,10 @@ struct oxnas_pcie {
 	void __iomem *cfgbase;
 	void __iomem *base;
 	void __iomem *inbound;
-	void __iomem *outbound;
-	void __iomem *pcie_ctrl;
-
+	struct regmap *sys_ctrl;
+	unsigned int outbound_offset;
+	unsigned int pcie_ctrl_offset;
+	struct phy *phy;
 	int haslink;
 	struct platform_device *pdev;
 	struct resource io;
@@ -140,7 +156,7 @@ static inline struct oxnas_pcie *sys_to_pcie(struct pci_sys_data *sys)
 
 static inline void set_out_lanes(struct oxnas_pcie *pcie, unsigned lanes)
 {
-	oxnas_register_value_mask(pcie->outbound + PCIE_AHB_SLAVE_CTRL,
+	regmap_update_bits(pcie->sys_ctrl, pcie->outbound_offset + PCIE_AHB_SLAVE_CTRL,
 				  PCIE_SLAVE_BE_MASK, PCIE_SLAVE_BE(lanes));
 	wmb();
 }
@@ -148,17 +164,19 @@ static inline void set_out_lanes(struct oxnas_pcie *pcie, unsigned lanes)
 static int oxnas_pcie_link_up(struct oxnas_pcie *pcie)
 {
 	unsigned long end;
+	unsigned int val;
 
 	/* Poll for PCIE link up */
 	end = jiffies + (LINK_UP_TIMEOUT_SECONDS * HZ);
 	while (!time_after(jiffies, end)) {
-		if (readl(pcie->pcie_ctrl) & PCIE_LINK_UP)
+		regmap_read(pcie->sys_ctrl, pcie->pcie_ctrl_offset, &val);
+		if (val & PCIE_LINK_UP)
 			return 1;
 	}
 	return 0;
 }
 
-static void __init oxnas_pcie_setup_hw(struct oxnas_pcie *pcie)
+static void oxnas_pcie_setup_hw(struct oxnas_pcie *pcie)
 {
 	/* We won't have any inbound address translation. This allows PCI
 	 * devices to access anywhere in the AHB address map. Might be regarded
@@ -194,26 +212,27 @@ static void __init oxnas_pcie_setup_hw(struct oxnas_pcie *pcie)
 	 */
 
 	/* Set PCIeA mem0 region to be 1st 16MB of the 64MB PCIeA window */
-	writel_relaxed(pcie->non_mem.start, pcie->outbound + PCIE_IN0_MEM_ADDR);
-	writel_relaxed(pcie->non_mem.end, pcie->outbound + PCIE_IN0_MEM_LIMIT);
-	writel_relaxed(pcie->non_mem.start, pcie->outbound + PCIE_POM0_MEM_ADDR);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN0_MEM_ADDR, pcie->non_mem.start);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN0_MEM_LIMIT, pcie->non_mem.end);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_POM0_MEM_ADDR, pcie->non_mem.start);
 
 	/* Set PCIeA mem1 region to be 2nd 16MB of the 64MB PCIeA window */
-	writel_relaxed(pcie->pre_mem.start, pcie->outbound + PCIE_IN1_MEM_ADDR);
-	writel_relaxed(pcie->pre_mem.end, pcie->outbound + PCIE_IN1_MEM_LIMIT);
-	writel_relaxed(pcie->pre_mem.start, pcie->outbound + PCIE_POM1_MEM_ADDR);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN1_MEM_ADDR, pcie->pre_mem.start);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN1_MEM_LIMIT, pcie->pre_mem.end);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_POM1_MEM_ADDR, pcie->pre_mem.start);
 
 	/* Set PCIeA io to be third 16M region of the 64MB PCIeA window*/
-	writel_relaxed(pcie->io.start,	pcie->outbound + PCIE_IN_IO_ADDR);
-	writel_relaxed(pcie->io.end,	pcie->outbound + PCIE_IN_IO_LIMIT);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN_IO_ADDR, pcie->io.start);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN_IO_LIMIT, pcie->io.end);
+
 
 	/* Set PCIeA cgf0 to be last 16M region of the 64MB PCIeA window*/
-	writel_relaxed(pcie->cfg.start,	pcie->outbound + PCIE_IN_CFG0_ADDR);
-	writel_relaxed(pcie->cfg.end, pcie->outbound + PCIE_IN_CFG0_LIMIT);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN_CFG0_ADDR, pcie->cfg.start);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN_CFG0_LIMIT, pcie->cfg.end);
 	wmb();
 
 	/* Enable outbound address translation */
-	oxnas_register_set_mask(pcie->pcie_ctrl, PCIE_OBTRANS);
+	regmap_write_bits(pcie->sys_ctrl, pcie->pcie_ctrl_offset, PCIE_OBTRANS, PCIE_OBTRANS);
 	wmb();
 
 	/*
@@ -327,7 +346,7 @@ static struct pci_ops oxnas_pcie_ops = {
 	.write = oxnas_pcie_wr_conf,
 };
 
-static int __init oxnas_pcie_setup(int nr, struct pci_sys_data *sys)
+static int oxnas_pcie_setup(int nr, struct pci_sys_data *sys)
 {
 	struct oxnas_pcie *pcie = sys_to_pcie(sys);
 
@@ -349,7 +368,7 @@ static int __init oxnas_pcie_setup(int nr, struct pci_sys_data *sys)
 	return 1;
 }
 
-static void __init oxnas_pcie_enable(struct device *dev, struct oxnas_pcie *pcie)
+static void oxnas_pcie_enable(struct device *dev, struct oxnas_pcie *pcie)
 {
 	struct hw_pci hw;
 	int i;
@@ -369,52 +388,11 @@ static void __init oxnas_pcie_enable(struct device *dev, struct oxnas_pcie *pcie
 	pci_common_init_dev(dev, &hw);
 }
 
-void oxnas_pcie_init_shared_hw(struct platform_device *pdev,
-			       void __iomem *phybase)
-{
-	struct reset_control *rstc;
-	int ret;
-
-	/* generate clocks from HCSL buffers, shared parts */
-	writel(HCSL_BIAS_ON|HCSL_PCIE_EN, SYS_CTRL_HCSL_CTRL);
-
-	/* Ensure PCIe PHY is properly reset */
-	rstc = reset_control_get(&pdev->dev, "phy");
-	if (IS_ERR(rstc)) {
-		ret = PTR_ERR(rstc);
-	} else {
-		ret = reset_control_reset(rstc);
-		reset_control_put(rstc);
-	}
-
-	if (ret) {
-		dev_err(&pdev->dev, "phy reset failed %d\n", ret);
-		return;
-	}
-
-	/* Enable PCIe Pre-Emphasis: What these value means? */
-
-	writel(ADDR_VAL(0x0014), phybase + PHY_ADDR);
-	writel(DATA_VAL(0xce10) | CAP_DATA, phybase + PHY_DATA);
-	writel(DATA_VAL(0xce10) | WRITE_EN, phybase + PHY_DATA);
-
-	writel(ADDR_VAL(0x2004), phybase + PHY_ADDR);
-	writel(DATA_VAL(0x82c7) | CAP_DATA, phybase + PHY_DATA);
-	writel(DATA_VAL(0x82c7) | WRITE_EN, phybase + PHY_DATA);
-}
-
-static int oxnas_pcie_shared_init(struct platform_device *pdev)
+static int oxnas_pcie_shared_init(struct platform_device *pdev, struct oxnas_pcie *pcie)
 {
 	if (++pcie_shared.refcount == 1) {
-		/* we are the first */
-		struct device_node *np = pdev->dev.of_node;
-		void __iomem *phy = of_iomap(np, 2);
-		if (!phy) {
-			--pcie_shared.refcount;
-			return -ENOMEM;
-		}
-		oxnas_pcie_init_shared_hw(pdev, phy);
-		iounmap(phy);
+		phy_init(pcie->phy);
+		phy_power_on(pcie->phy);
 		return 0;
 	} else {
 		return 0;
@@ -431,7 +409,7 @@ static void oxnas_pcie_shared_deinit(struct platform_device *pdev)
 }
 #endif
 
-static int __init
+static int
 oxnas_pcie_map_registers(struct platform_device *pdev,
 			 struct device_node *np,
 			 struct oxnas_pcie *pcie)
@@ -441,37 +419,58 @@ oxnas_pcie_map_registers(struct platform_device *pdev,
 	u32 outbound_ctrl_offset;
 	u32 pcie_ctrl_offset;
 
-	/* 2 is reserved for shared phy */
 	ret = of_address_to_resource(np, 0, &regs);
-	if (ret)
+	if (ret) {
+		dev_err(&pdev->dev, "failed to parse base register space\n");
 		return -EINVAL;
+	}
+
 	pcie->base = devm_ioremap_resource(&pdev->dev, &regs);
-	if (!pcie->base)
+	if (!pcie->base) {
+		dev_err(&pdev->dev, "failed to map base register space\n");
 		return -ENOMEM;
+	}
 
 	ret = of_address_to_resource(np, 1, &regs);
-	if (ret)
+	if (ret) {
+		dev_err(&pdev->dev, "failed to parse inbound register space\n");
 		return -EINVAL;
-	pcie->inbound = devm_ioremap_resource(&pdev->dev, &regs);
-	if (!pcie->inbound)
-		return -ENOMEM;
+	}
 
+	pcie->inbound = devm_ioremap_resource(&pdev->dev, &regs);
+	if (!pcie->inbound) {
+		dev_err(&pdev->dev, "failed to map inbound register space\n");
+		return -ENOMEM;
+	}
+
+	pcie->phy = devm_of_phy_get(&pdev->dev, np, NULL);
+	if (IS_ERR(pcie->phy)) {
+		if (PTR_ERR(pcie->phy) == -EPROBE_DEFER) {
+			dev_err(&pdev->dev, "failed to probe phy\n");
+			return PTR_ERR(pcie->phy);
+		}
+		dev_warn(&pdev->dev, "phy not attached\n");
+		pcie->phy = NULL;
+	}
 
 	if (of_property_read_u32(np, "plxtech,pcie-outbound-offset",
-				 &outbound_ctrl_offset))
+				 &outbound_ctrl_offset)) {
+		dev_err(&pdev->dev, "failed to parse outbound register offset\n");
 		return -EINVAL;
-	/* SYSCRTL is shared by too many drivers, so is mapped by board file */
-	pcie->outbound = IOMEM(OXNAS_SYSCRTL_BASE_VA + outbound_ctrl_offset);
+	}
+	pcie->outbound_offset = outbound_ctrl_offset;
 
 	if (of_property_read_u32(np, "plxtech,pcie-ctrl-offset",
-				 &pcie_ctrl_offset))
+				 &pcie_ctrl_offset)) {
+		dev_err(&pdev->dev, "failed to parse pcie-ctrl register offset\n");
 		return -EINVAL;
-	pcie->pcie_ctrl = IOMEM(OXNAS_SYSCRTL_BASE_VA + pcie_ctrl_offset);
+	}
+	pcie->pcie_ctrl_offset = pcie_ctrl_offset;
 
 	return 0;
 }
 
-static int __init oxnas_pcie_init_res(struct platform_device *pdev,
+static int oxnas_pcie_init_res(struct platform_device *pdev,
 				      struct oxnas_pcie *pcie,
 				      struct device_node *np)
 {
@@ -553,7 +552,9 @@ static void oxnas_pcie_init_hw(struct platform_device *pdev,
 		mdelay(100);
 	}
 
-	oxnas_register_set_mask(SYS_CTRL_HCSL_CTRL, BIT(pcie->hcsl_en));
+	/* ToDo: use phy power-on port... */
+	regmap_update_bits(pcie->sys_ctrl, SYS_CTRL_HCSL_CTRL_REGOFFSET,
+	                   BIT(pcie->hcsl_en), BIT(pcie->hcsl_en));
 
 	/* core */
 	ret = device_reset(&pdev->dev);
@@ -575,19 +576,21 @@ static void oxnas_pcie_init_hw(struct platform_device *pdev,
 	}
 
 	/* allow entry to L23 state */
-	oxnas_register_set_mask(pcie->pcie_ctrl, PCIE_READY_ENTR_L23);
+	regmap_write_bits(pcie->sys_ctrl, pcie->pcie_ctrl_offset,
+	                  PCIE_READY_ENTR_L23, PCIE_READY_ENTR_L23);
 
 	/* Set PCIe core into RootCore mode */
-	oxnas_register_value_mask(pcie->pcie_ctrl, PCIE_DEVICE_TYPE_MASK,
-				  PCIE_DEVICE_TYPE_ROOT);
+	regmap_write_bits(pcie->sys_ctrl, pcie->pcie_ctrl_offset,
+	                  PCIE_DEVICE_TYPE_MASK, PCIE_DEVICE_TYPE_ROOT);
 	wmb();
 
 	/* Bring up the PCI core */
-	oxnas_register_set_mask(pcie->pcie_ctrl, PCIE_LTSSM);
+	regmap_write_bits(pcie->sys_ctrl, pcie->pcie_ctrl_offset,
+	                  PCIE_LTSSM, PCIE_LTSSM);
 	wmb();
 }
 
-static int __init oxnas_pcie_probe(struct platform_device *pdev)
+static int oxnas_pcie_probe(struct platform_device *pdev)
 {
 	struct oxnas_pcie *pcie;
 	struct device_node *np = pdev->dev.of_node;
@@ -601,6 +604,10 @@ static int __init oxnas_pcie_probe(struct platform_device *pdev)
 	pcie->pdev = pdev;
 	pcie->haslink = 1;
 	spin_lock_init(&pcie->lock);
+
+	pcie->sys_ctrl = syscon_regmap_lookup_by_compatible("oxsemi,ox820-sys-ctrl");
+	if (IS_ERR(pcie->sys_ctrl))
+		return PTR_ERR(pcie->sys_ctrl);
 
 	ret = oxnas_pcie_init_res(pdev, pcie, np);
 	if (ret)
@@ -621,7 +628,7 @@ static int __init oxnas_pcie_probe(struct platform_device *pdev)
 		goto err_free_gpio;
 	}
 
-	ret = oxnas_pcie_shared_init(pdev);
+	ret = oxnas_pcie_shared_init(pdev, pcie);
 	if (ret)
 		goto err_free_gpio;
 
@@ -652,25 +659,14 @@ static const struct of_device_id oxnas_pcie_of_match_table[] = {
 	{ .compatible = "plxtech,nas782x-pcie", },
 	{},
 };
-MODULE_DEVICE_TABLE(of, oxnas_pcie_of_match_table);
 
 static struct platform_driver oxnas_pcie_driver = {
 	.driver = {
-		.owner = THIS_MODULE,
 		.name = "oxnas-pcie",
-		.of_match_table =
-		   of_match_ptr(oxnas_pcie_of_match_table),
+		.suppress_bind_attrs = true,
+		.of_match_table = oxnas_pcie_of_match_table,
 	},
+	.probe = oxnas_pcie_probe,
 };
 
-static int __init oxnas_pcie_init(void)
-{
-	return platform_driver_probe(&oxnas_pcie_driver,
-				     oxnas_pcie_probe);
-}
-
-subsys_initcall(oxnas_pcie_init);
-
-MODULE_AUTHOR("Ma Haijun <mahaijuns@gmail.com>");
-MODULE_DESCRIPTION("NAS782x PCIe driver");
-MODULE_LICENSE("GPLv2");
+builtin_platform_driver(oxnas_pcie_driver);

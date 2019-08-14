@@ -17,11 +17,11 @@ PKG_HASH:=7e3c2a763bf500a40c5c4591a7e22c591dafc1f214b1d514895c1096e85c883a
 GDB_DIR:=binutils-$(PKG_NAME)-$(PKG_VERSION)
 PATCH_DIR:=./patches-arc
 else
-PKG_VERSION:=8.0.1
+PKG_VERSION:=8.2.1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gdb
-PKG_HASH:=3dbd5f93e36ba2815ad0efab030dcd0c7b211d7b353a40a53f4c02d7d56295e3
+PKG_HASH:=0a6a432907a03c5c8eaad3c3cffd50c00a40c3a5e3c4039440624bae703f2202
 GDB_DIR:=$(PKG_NAME)-$(PKG_VERSION)
 endif
 
@@ -41,7 +41,7 @@ HOST_CONFIGURE_ARGS = \
 	--target=$(REAL_GNU_TARGET_NAME) \
 	--disable-werror \
 	--without-uiout \
-	--disable-tui --disable-gdbtk --without-x \
+	--enable-tui --disable-gdbtk --without-x \
 	--without-included-gettext \
 	--enable-threads \
 	--with-expat \

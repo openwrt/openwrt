@@ -29,10 +29,15 @@ define Build/loader-okli-compile
 	$(call Build/loader-common,FLASH_OFFS=$(LOADER_FLASH_OFFS) FLASH_MAX=0)
 endef
 
+# Arguments: <output name> <kernel offset>
 define Build/loader-okli
-	dd if=$(KDIR)/loader-$(1).gz bs=7680 conv=sync of="$@.new"
+	dd if=$(KDIR)/loader-$(word 1,$(1)).$(LOADER_TYPE) bs=$(word 2,$(1)) conv=sync of="$@.new"
 	cat "$@" >> "$@.new"
 	mv "$@.new" "$@"
+endef
+
+define Build/append-loader-okli
+	cat "$(KDIR)/loader-$(word 1,$(1)).$(LOADER_TYPE)" >> "$@"
 endef
 
 define Build/relocate-kernel
@@ -69,5 +74,13 @@ ifeq ($(SUBTARGET),generic)
 include ./generic.mk
 include ./generic-tp-link.mk
 include ./generic-ubnt.mk
+endif
+ifeq ($(SUBTARGET),nand)
+include ./nand.mk
+endif
+ifeq ($(SUBTARGET),tiny)
+include ./tiny.mk
+include ./tiny-netgear.mk
+include ./tiny-tp-link.mk
 endif
 $(eval $(call BuildImage))

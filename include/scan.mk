@@ -12,10 +12,22 @@ OVERRIDELIST:=$(TMP_DIR)/info/.overrides-$(SCAN_TARGET)-$(SCAN_COOKIE)
 
 export PATH:=$(TOPDIR)/staging_dir/host/bin:$(PATH)
 
+ifeq ($(SCAN_NAME),target)
+  SCAN_DEPS=image/Makefile profiles/*.mk $(TOPDIR)/include/kernel*.mk $(TOPDIR)/include/target.mk image/*.mk
+else
+  SCAN_DEPS=$(TOPDIR)/include/package*.mk
+endif
+
 ifeq ($(IS_TTY),1)
-  define progress
+  ifneq ($(strip $(NO_COLOR)),1)
+    define progress
 	printf "\033[M\r$(1)" >&2;
-  endef
+    endef
+  else
+    define progress
+	printf "\r$(1)" >&2;
+    endef
+  endif
 else
   define progress
 	:;

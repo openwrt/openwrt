@@ -10,7 +10,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
-@@ -196,7 +196,7 @@ static int driver_is_old       = 0;
+@@ -192,7 +192,7 @@ static int driver_is_old       = 0;
  static int restore_term        = 0;	/* 1 => we've munged the terminal */
  static struct termios inittermios;	/* Initial TTY termios */
  
@@ -19,7 +19,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  static char loop_name[20];
  static unsigned char inbuf[512]; /* buffer for chars read from loopback */
-@@ -214,8 +214,8 @@ static int	looped;			/* 1 if using loop
+@@ -210,8 +210,8 @@ static int	looped;			/* 1 if using loop
  static int	link_mtu;		/* mtu for the link (not bundle) */
  
  static struct utsname utsname;	/* for the kernel version */
@@ -29,7 +29,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  #define MAX_IFS		100
  
-@@ -1451,11 +1451,12 @@ int ccp_fatal_error (int unit)
+@@ -1439,11 +1439,12 @@ int ccp_fatal_error (int unit)
   *
   * path_to_procfs - find the path to the proc file system mount point
   */
@@ -44,7 +44,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      struct mntent *mntent;
      FILE *fp;
  
-@@ -1477,6 +1478,7 @@ static char *path_to_procfs(const char *
+@@ -1465,6 +1466,7 @@ static char *path_to_procfs(const char *
  	    fclose (fp);
  	}
      }
@@ -52,7 +52,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
      strlcpy(proc_path + proc_path_len, tail,
  	    sizeof(proc_path) - proc_path_len);
-@@ -2129,15 +2131,19 @@ int ppp_available(void)
+@@ -2126,15 +2128,19 @@ int ppp_available(void)
      int    my_version, my_modification, my_patch;
      int osmaj, osmin, ospatch;
  
@@ -72,7 +72,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  	/* XXX should get from driver */
  	driver_version = 2;
-@@ -2197,6 +2203,7 @@ int ppp_available(void)
+@@ -2194,6 +2200,7 @@ int ppp_available(void)
  
      if (ok && ((ifr.ifr_hwaddr.sa_family & ~0xFF) != ARPHRD_PPP))
  	ok = 0;
@@ -125,7 +125,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  char *pppd_pppoe_service = NULL;
  static char *acName = NULL;
  static char *existingSession = NULL;
-@@ -371,10 +368,6 @@ PPPoEDevnameHook(char *cmd, char **argv,
+@@ -385,10 +382,6 @@ PPPoEDevnameHook(char *cmd, char **argv,
  void
  plugin_init(void)
  {
@@ -138,7 +138,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      info("RP-PPPoE plugin version %s compiled against pppd %s",
 --- a/pppd/plugins/pppol2tp/pppol2tp.c
 +++ b/pppd/plugins/pppol2tp/pppol2tp.c
-@@ -486,12 +486,7 @@ static void pppol2tp_cleanup(void)
+@@ -490,12 +490,7 @@ static void pppol2tp_cleanup(void)
  
  void plugin_init(void)
  {

@@ -61,11 +61,39 @@
 				status = "disabled";
 			};
 
+			pinmux: pinmux@18040028 {
+				compatible = "pinctrl-single";
+				reg = <0x18040028 0x8>;
+
+				pinctrl-single,bit-per-mux;
+				pinctrl-single,register-width = <32>;
+				pinctrl-single,function-mask = <0x1>;
+				#pinctrl-cells = <2>;
+
+				jtag_disable_pins: pinmux_jtag_disable_pins {
+					pinctrl-single,bits = <0x0 0x1 0x1>;
+				};
+
+				switch_led_disable_pins: pinmux_switch_led_disable_pins {
+					pinctrl-single,bits = <0x0 0x0 0xf8>;
+				};
+			};
+
 			pll: pll-controller@18050000 {
 				compatible = "qca,ar9330-pll";
 				reg = <0x18050000 0x100>;
 
 				#clock-cells = <1>;
+			};
+
+			wdt: wdt@18060008 {
+				compatible = "qca,ar7130-wdt";
+				reg = <0x18060008 0x8>;
+
+				interrupts = <4>;
+
+				clocks = <&pll ATH79_CLK_AHB>;
+				clock-names = "wdt";
 			};
 
 			rst: reset-controller@1806001c {
@@ -76,7 +104,7 @@
 			};
 		};
 
-		usb: usb@1b000100 {
+		usb: usb@1b000000 {
 			compatible = "chipidea,usb2";
 			reg = <0x1b000000 0x200>;
 
@@ -107,6 +135,15 @@
 			compatible = "qca,ar9330-gmac";
 			reg = <0x18070000 0x4>;
 		};
+
+		wmac: wmac@18100000 {
+			compatible = "qca,ar9330-wmac";
+			reg = <0x18100000 0x20000>;
+
+			interrupts = <2>;
+
+			status = "disabled";
+		};
 	};
 
 	usb_phy: usb-phy {
@@ -133,20 +170,35 @@
 
 	resets = <&rst 9>;
 	reset-names = "mac";
-};
-
-&mdio0 {
-	regmap = <&eth1>;
-	builtin-switch;
-	resets = <&rst 23>;
-	reset-names = "mdio";
+	phy-mode = "mii";
+	phy-handle = <&swphy4>;
 };
 
 &mdio1 {
+	status = "okay";
+	compatible = "qca,ar9330-mdio";
+
 	resets = <&rst 23>;
 	reset-names = "mdio";
-
 	builtin-switch;
+
+	builtin_switch: switch0@1f {
+		compatible = "qca,ar7240sw";
+		reg = <0x1f>;
+		resets = <&rst 8>;
+		reset-names = "switch";
+		qca,mib-poll-interval = <500>;
+
+		mdio-bus {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			swphy4: ethernet-phy@4 {
+				reg = <4>;
+				phy-mode = "mii";
+			};
+		};
+	};
 };
 
 &eth1 {
@@ -157,4 +209,9 @@
 
 	resets = <&rst 13>;
 	reset-names = "mac";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };

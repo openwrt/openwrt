@@ -34,7 +34,20 @@ menu "Global build settings"
 		bool "Cryptographically signed package lists"
 		default y
 
+	config SIGNATURE_CHECK
+		bool "Enable signature checking in opkg"
+		default SIGNED_PACKAGES
+
 	comment "General build options"
+
+	config TESTING_KERNEL
+		bool "Use the testing kernel version"
+		depends on HAS_TESTING_KERNEL
+		default n
+		help
+		  If the target supports a newer kernel version than the default,
+		  you can use this config option to enable it
+
 
 	config DISPLAY_SUPPORT
 		bool "Show packages that require graphics support (local or remote)"
@@ -68,11 +81,19 @@ menu "Global build settings"
 		  This removes all ipkg/opkg status data files from the target directory
 		  before building the root filesystem.
 
+	config IPK_FILES_CHECKSUMS
+		bool
+		prompt "Record files checksums in package metadata"
+		default n
+		help
+		  This makes file checksums part of package metadata. It increases size
+		  but provides you with pkg_check command to check for flash coruptions.
+
 	config INCLUDE_CONFIG
 		bool "Include build configuration in firmware" if DEVEL
 		default n
 		help
-		  If enabled, config.seed will be stored in /etc/build.config of firmware.
+		  If enabled, config.buildinfo will be stored in /etc/build.config of firmware.
 
 	config COLLECT_KERNEL_DEBUG
 		bool
@@ -233,6 +254,14 @@ menu "Global build settings"
 			depends on !GCC_VERSION_4_8
 			bool "Strong"
 	endchoice
+
+	config  KERNEL_STACKPROTECTOR
+		bool
+		default KERNEL_CC_STACKPROTECTOR_REGULAR || KERNEL_CC_STACKPROTECTOR_STRONG
+
+	config  KERNEL_STACKPROTECTOR_STRONG
+		bool
+		default KERNEL_CC_STACKPROTECTOR_STRONG
 
 	choice
 		prompt "Enable buffer-overflows detection (FORTIFY_SOURCE)"

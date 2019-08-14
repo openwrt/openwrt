@@ -47,11 +47,13 @@ enum ath79_mach_type {
 	ATH79_MACH_ARCHER_C5,			/* TP-LINK Archer C5 board */
 	ATH79_MACH_ARCHER_C58_V1,		/* TP-LINK Archer C58 V1 board */
 	ATH79_MACH_ARCHER_C59_V1,		/* TP-LINK Archer C59 V1 board */
+	ATH79_MACH_ARCHER_C59_V2,		/* TP-LINK Archer C59 V2 board */
 	ATH79_MACH_ARCHER_C60_V1,		/* TP-LINK Archer C60 V1 board */
 	ATH79_MACH_ARCHER_C60_V2,		/* TP-LINK Archer C60 V2 board */
 	ATH79_MACH_ARCHER_C7,			/* TP-LINK Archer C7 board */
 	ATH79_MACH_ARCHER_C7_V2,		/* TP-LINK Archer C7 V2 board */
 	ATH79_MACH_ARCHER_C7_V4,		/* TP-LINK Archer C7 V4 board */
+	ATH79_MACH_ARCHER_C7_V5,		/* TP-LINK Archer C7 V5 board */
 	ATH79_MACH_ARDUINO_YUN,			/* Yun */
 	ATH79_MACH_AW_NR580,			/* AzureWave AW-NR580 */
 	ATH79_MACH_BHR_4GRV2,			/* Buffalo BHR-4GRV2 */
@@ -59,7 +61,7 @@ enum ath79_mach_type {
 	ATH79_MACH_BSB,				/* Smart Electronics Black Swift board */
 	ATH79_MACH_C55,				/* AirTight Networks C-55 */
 	ATH79_MACH_C60,				/* AirTight Networks C-60 */
-	ATH79_MACH_CAP324,			/* PowerCloud CAP324 */
+	ATH79_MACH_CAP324,			/* PowerCloud Systems CAP324 */
 	ATH79_MACH_CAP4200AG,			/* Senao CAP4200AG */
 	ATH79_MACH_CARAMBOLA2,			/* 8devices Carambola2 */
 	ATH79_MACH_CF_E316N_V2,			/* COMFAST CF-E316N v2 */
@@ -72,13 +74,15 @@ enum ath79_mach_type {
 	ATH79_MACH_CF_E385AC,			/* COMFAST CF-E385AC */
 	ATH79_MACH_CF_E520N,			/* COMFAST CF-E520N */
 	ATH79_MACH_CF_E530N,			/* COMFAST CF-E530N */
-	ATH79_MACH_CPE210,			/* TP-LINK CPE210 */
+	ATH79_MACH_CPE210,			/* TP-LINK CPE210 v1 */
+	ATH79_MACH_CPE210_V2,			/* TP-LINK CPE210 v2 */
+	ATH79_MACH_CPE210_V3,			/* TP-LINK CPE210 v3 */
 	ATH79_MACH_CPE505N,			/* P&W CPE505N */
 	ATH79_MACH_CPE510,			/* TP-LINK CPE510 */
 	ATH79_MACH_CPE830,			/* YunCore CPE830 */
 	ATH79_MACH_CPE870,			/* YunCore CPE870 */
-	ATH79_MACH_CR3000,			/* PowerCloud CR3000 */
-	ATH79_MACH_CR5000,			/* PowerCloud CR5000 */
+	ATH79_MACH_CR3000,			/* PowerCloud Systems CR3000 */
+	ATH79_MACH_CR5000,			/* PowerCloud Systems CR5000 */
 	ATH79_MACH_DAP_1330_A1,			/* D-Link DAP-1330 rev. A1 */
 	ATH79_MACH_DAP_2695_A1,			/* D-Link DAP-2695 rev. A1 */
 	ATH79_MACH_DB120,			/* Atheros DB120 reference board */
@@ -103,8 +107,11 @@ enum ath79_mach_type {
 	ATH79_MACH_DR531,			/* Wallys DR531 */
 	ATH79_MACH_DRAGINO2,			/* Dragino Version 2 */
 	ATH79_MACH_E1700AC_V2,			/* Qxwlan E1700AC v2 */
+	ATH79_MACH_E558_V2,			/* Qxwlan E558 v2 */
 	ATH79_MACH_E600G_V2,			/* Qxwlan E600G v2 */
 	ATH79_MACH_E600GAC_V2,			/* Qxwlan E600GAC v2 */
+	ATH79_MACH_E750A_V4,			/* Qxwlan E750A v4 */
+	ATH79_MACH_E750G_V8,			/* Qxwlan E750G v8 */
 	ATH79_MACH_EAP120,			/* TP-LINK EAP120 */
 	ATH79_MACH_EAP300V2,			/* EnGenius EAP300 v2 */
 	ATH79_MACH_EAP7660D,			/* Senao EAP7660D */
@@ -121,15 +128,18 @@ enum ath79_mach_type {
 	ATH79_MACH_F9K1115V2,			/* Belkin AC1750DB */
 	ATH79_MACH_FRITZ300E,			/* AVM FRITZ!WLAN Repeater 300E */
 	ATH79_MACH_FRITZ4020,			/* AVM FRITZ!Box 4020 */
+	ATH79_MACH_FRITZ450E,			/* AVM FRITZ!WLAN Repeater 450E */
 	ATH79_MACH_GL_AR150,			/* GL-AR150 support */
 	ATH79_MACH_GL_AR300,			/* GL-AR300 */
 	ATH79_MACH_GL_AR300M,			/* GL-AR300M */
 	ATH79_MACH_GL_AR750,			/* GL.iNet GL-AR750 */
+	ATH79_MACH_GL_AR750S,			/* GL.iNet GL-AR750S */
 	ATH79_MACH_GL_DOMINO,			/* Domino */
 	ATH79_MACH_GL_INET,			/* GL-CONNECT GL-INET */
 	ATH79_MACH_GL_MIFI,			/* GL-MIFI support */
 	ATH79_MACH_GL_USB150,			/* GL.iNet GL-USB150 */
 	ATH79_MACH_GS_MINIBOX_V1,		/* GainStrong MiniBox V1.0 */
+	ATH79_MACH_GS_MINIBOX_V32,		/* Gainstrong MiniBox V3.2 */
 	ATH79_MACH_GS_OOLITE_V1,		/* GainStrong Oolite V1.0 */
 	ATH79_MACH_GS_OOLITE_V5_2,		/* GainStrong Oolite V5.2 */
 	ATH79_MACH_GS_OOLITE_V5_2_DEV,		/* GainStrong Oolite V5.2-Dev */
@@ -140,6 +150,7 @@ enum ath79_mach_type {
 	ATH79_MACH_JA76PF2,			/* jjPlus JA76PF2 */
 	ATH79_MACH_JWAP003,			/* jjPlus JWAP003 */
 	ATH79_MACH_JWAP230,			/* jjPlus JWAP230 */
+	ATH79_MACH_KOALA,			/* OCEDO Koala */
 	ATH79_MACH_LAN_TURTLE,			/* Hak5 LAN Turtle */
 	ATH79_MACH_LIMA,			/* 8devices Lima */
 	ATH79_MACH_MC_MAC1200R,			/* MERCURY MAC1200R */
@@ -206,6 +217,7 @@ enum ath79_mach_type {
 	ATH79_MACH_RB_751G,			/* Mikrotik RouterBOARD 751G */
 	ATH79_MACH_RB_911L,			/* Mikrotik RouterBOARD 911-2Hn/911-5Hn boards */
 	ATH79_MACH_RB_922GS,			/* Mikrotik RouterBOARD 911/922GS boards */
+	ATH79_MACH_RB_931,			/* MikroTik RouterBOARD 931-2nD */
 	ATH79_MACH_RB_941,			/* MikroTik RouterBOARD 941-2nD */
 	ATH79_MACH_RB_951G,			/* Mikrotik RouterBOARD 951G */
 	ATH79_MACH_RB_951U,			/* Mikrotik RouterBOARD 951Ui-2HnD */
@@ -216,6 +228,7 @@ enum ath79_mach_type {
 	ATH79_MACH_RB_MAP,			/* Mikrotik RouterBOARD mAP2nD */
 	ATH79_MACH_RB_MAPL,			/* Mikrotik RouterBOARD mAP L-2nD */
 	ATH79_MACH_RB_WAP,			/* Mikrotik RouterBOARD wAP2nD */
+	ATH79_MACH_RB_WAPR,			/* Mikrotik RouterBOARD wAPR2nD */
 	ATH79_MACH_RB_WAPAC,			/* Mikrotik RouterBOARD wAPG-5HacT2HnD */
 	ATH79_MACH_RB_SXTLITE2ND,		/* Mikrotik RouterBOARD SXT Lite 2nD */
 	ATH79_MACH_RB_SXTLITE5ND,		/* Mikrotik RouterBOARD SXT Lite 5nD */
@@ -302,11 +315,13 @@ enum ath79_mach_type {
 	ATH79_MACH_TL_WR940N_V4,		/* TP-LINK TL-WR940N v4 */
 	ATH79_MACH_TL_WR940N_V6,		/* TP-LINK TL-WR940N v6 */
 	ATH79_MACH_TL_WR942N_V1,		/* TP-LINK TL-WR942N v1 */
+	ATH79_MACH_TS_D084,			/* PISEN TS-D084 */
 	ATH79_MACH_TUBE2H,			/* Alfa Network Tube2H */
 	ATH79_MACH_UBNT_AIRGW,			/* Ubiquiti AirGateway */
 	ATH79_MACH_UBNT_AIRGWP,			/* Ubiquiti AirGateway Pro */
 	ATH79_MACH_UBNT_AIRROUTER,		/* Ubiquiti AirRouter */
 	ATH79_MACH_UBNT_BULLET_M,		/* Ubiquiti Bullet M */
+	ATH79_MACH_UBNT_BULLET_M_XW,		/* Ubiquiti Bullet M XW */
 	ATH79_MACH_UBNT_LBE_M5,			/* Ubiquiti Litebeam M5 */
 	ATH79_MACH_UBNT_LOCO_M_XW,		/* Ubiquiti Loco M XW */
 	ATH79_MACH_UBNT_LSSR71,			/* Ubiquiti LS-SR71 */
@@ -321,7 +336,7 @@ enum ath79_mach_type {
 	ATH79_MACH_UBNT_UAP_PRO,		/* Ubiquiti UniFi AP Pro */
 	ATH79_MACH_UBNT_UNIFI,			/* Ubiquiti Unifi */
 	ATH79_MACH_UBNT_UNIFIAC_LITE,		/* Ubiquiti Unifi AC LITE/LR/MESH */
-	ATH79_MACH_UBNT_UNIFIAC_PRO,		/* Ubiquiti Unifi AC PRO */
+	ATH79_MACH_UBNT_UNIFIAC_PRO,		/* Ubiquiti Unifi AC PRO/MESH PRO */
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR,		/* Ubiquiti UnifiAP Outdoor */
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR_PLUS,	/* Ubiquiti UnifiAP Outdoor+ */
 	ATH79_MACH_UBNT_XM,			/* Ubiquiti Networks XM board rev 1.0 */

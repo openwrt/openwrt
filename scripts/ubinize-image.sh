@@ -9,7 +9,7 @@ outfile=""
 err=""
 
 get_magic_word() {
-	dd if=$1 bs=2 count=1 2>/dev/null | hexdump -v -n 2 -e '1/1 "%02x"'
+	dd if=$1 bs=2 count=1 2>/dev/null | od -A n -N 2 -t x1 | tr -d ' '
 }
 
 is_ubifs() {

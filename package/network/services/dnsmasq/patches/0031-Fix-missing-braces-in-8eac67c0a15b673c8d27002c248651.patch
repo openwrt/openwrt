@@ -1,0 +1,28 @@
+From d2d49907435433001ab00698a3e9ca2a7b5b3236 Mon Sep 17 00:00:00 2001
+From: Steven Siloti <ssiloti@gmail.com>
+Date: Thu, 17 Jan 2019 22:52:13 +0000
+Subject: [PATCH 31/32] Fix missing braces in
+ 8eac67c0a15b673c8d27002c248651b308093e4
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/dhcp-common.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/src/dhcp-common.c
++++ b/src/dhcp-common.c
+@@ -371,12 +371,14 @@ void dhcp_update_configs(struct dhcp_con
+   int prot = AF_INET;
+ 
+   for (config = configs; config; config = config->next)
++  {
+     if (config->flags & CONFIG_ADDR_HOSTS)
+       config->flags &= ~(CONFIG_ADDR | CONFIG_ADDR_HOSTS);
+ #ifdef HAVE_DHCP6
+     if (config->flags & CONFIG_ADDR6_HOSTS)
+       config->flags &= ~(CONFIG_ADDR6 | CONFIG_ADDR6_HOSTS);
+ #endif
++  }
+ 
+ #ifdef HAVE_DHCP6 
+  again:  

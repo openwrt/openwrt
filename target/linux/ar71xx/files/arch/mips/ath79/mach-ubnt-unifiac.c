@@ -131,7 +131,7 @@ static struct ar8327_platform_data ubnt_unifiac_pro_ar8327_data = {
 static struct mdio_board_info ubnt_unifiac_pro_mdio0_info[] = {
 	{
 		.bus_id = "ag71xx-mdio.0",
-		.phy_addr = 0,
+		.mdio_addr = 0,
 		.platform_data = &ubnt_unifiac_pro_ar8327_data,
 	},
 };
@@ -176,4 +176,4 @@ static void __init ubnt_unifiac_pro_setup(void)
 
 
 MIPS_MACHINE(ATH79_MACH_UBNT_UNIFIAC_PRO, "UBNT-UF-AC-PRO",
-	     "Ubiquiti UniFi-AC-PRO", ubnt_unifiac_pro_setup);
+	     "Ubiquiti UniFi-AC-PRO/MESH-PRO", ubnt_unifiac_pro_setup);

@@ -31,6 +31,7 @@ MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
 #define ETH_SWITCH_HEADER_LEN	2
 
 static int ag71xx_tx_packets(struct ag71xx *ag, bool flush);
+static void ag71xx_qca955x_sgmii_init(void);
 
 static inline unsigned int ag71xx_max_frame_len(unsigned int mtu)
 {
@@ -290,7 +291,7 @@ static int ag71xx_rings_init(struct ag71xx *ag)
 		return -ENOMEM;
 
 	tx->descs_cpu = dma_alloc_coherent(NULL, ring_size * AG71XX_DESC_SIZE,
-					   &tx->descs_dma, GFP_ATOMIC);
+					   &tx->descs_dma, GFP_KERNEL);
 	if (!tx->descs_cpu) {
 		kfree(tx->buf);
 		tx->buf = NULL;
@@ -610,6 +611,9 @@ __ag71xx_link_adjust(struct ag71xx *ag, bool update)
 	if (update && pdata->set_speed)
 		pdata->set_speed(ag->speed);
 
+	if (update && pdata->enable_sgmii_fixup)
+		ag71xx_qca955x_sgmii_init();
+
 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG2, cfg2);
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, fifo5);
 	ag71xx_wr(ag, AG71XX_REG_MAC_IFCTL, ifctl);
@@ -638,22 +642,7 @@ __ag71xx_link_adjust(struct ag71xx *ag, bool update)
 			ag71xx_speed_str(ag),
 			(DUPLEX_FULL == ag->duplex) ? "Full" : "Half");
 
-	DBG("%s: fifo_cfg0=%#x, fifo_cfg1=%#x, fifo_cfg2=%#x\n",
-		ag->dev->name,
-		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG0),
-		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG1),
-		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG2));
-
-	DBG("%s: fifo_cfg3=%#x, fifo_cfg4=%#x, fifo_cfg5=%#x\n",
-		ag->dev->name,
-		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG3),
-		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG4),
-		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG5));
-
-	DBG("%s: mac_cfg2=%#x, mac_ifctl=%#x\n",
-		ag->dev->name,
-		ag71xx_rr(ag, AG71XX_REG_MAC_CFG2),
-		ag71xx_rr(ag, AG71XX_REG_MAC_IFCTL));
+	ag71xx_dump_regs(ag);
 }
 
 void ag71xx_link_adjust(struct ag71xx *ag)
@@ -679,10 +668,6 @@ static int ag71xx_hw_enable(struct ag71xx *ag)
 
 static void ag71xx_hw_disable(struct ag71xx *ag)
 {
-	unsigned long flags;
-
-	spin_lock_irqsave(&ag->lock, flags);
-
 	netif_stop_queue(ag->dev);
 
 	ag71xx_hw_stop(ag);
@@ -690,8 +675,6 @@ static void ag71xx_hw_disable(struct ag71xx *ag)
 
 	napi_disable(&ag->napi);
 	del_timer_sync(&ag->oom_timer);
-
-	spin_unlock_irqrestore(&ag->lock, flags);
 
 	ag71xx_rings_cleanup(ag);
 }
@@ -856,18 +839,8 @@ err_drop:
 static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
 	struct ag71xx *ag = netdev_priv(dev);
-	int ret;
 
 	switch (cmd) {
-	case SIOCETHTOOL:
-		if (ag->phy_dev == NULL)
-			break;
-
-		spin_lock_irq(&ag->lock);
-		ret = phy_ethtool_ioctl(ag->phy_dev, (void *) ifr->ifr_data);
-		spin_unlock_irq(&ag->lock);
-		return ret;
-
 	case SIOCSIFHWADDR:
 		if (copy_from_user
 			(dev->dev_addr, ifr->ifr_data, sizeof(dev->dev_addr)))
@@ -911,6 +884,81 @@ static void ag71xx_tx_timeout(struct net_device *dev)
 		pr_info("%s: tx timeout\n", ag->dev->name);
 
 	schedule_delayed_work(&ag->restart_work, 1);
+}
+
+static void ag71xx_bit_set(void __iomem *reg, u32 bit)
+{
+	u32 val = __raw_readl(reg) | bit;
+	__raw_writel(val, reg);
+	__raw_readl(reg);
+}
+
+static void ag71xx_bit_clear(void __iomem *reg, u32 bit)
+{
+	u32 val = __raw_readl(reg) & ~bit;
+	__raw_writel(val, reg);
+	__raw_readl(reg);
+}
+
+static void ag71xx_qca955x_sgmii_init()
+{
+	void __iomem *gmac_base;
+	u32 mr_an_status, sgmii_status;
+	u8 tries = 0;
+
+	gmac_base = ioremap_nocache(QCA955X_GMAC_BASE, QCA955X_GMAC_SIZE);
+
+	if (!gmac_base)
+		goto sgmii_out;
+
+	mr_an_status = __raw_readl(gmac_base + QCA955X_GMAC_REG_MR_AN_STATUS);
+	if (!(mr_an_status & QCA955X_MR_AN_STATUS_AN_ABILITY))
+		goto sgmii_out;
+
+	__raw_writel(QCA955X_SGMII_RESET_RX_CLK_N_RESET ,
+		     gmac_base + QCA955X_GMAC_REG_SGMII_RESET);
+	__raw_readl(gmac_base + QCA955X_GMAC_REG_SGMII_RESET);
+	udelay(10);
+
+	/* Init sequence */
+	ag71xx_bit_set(gmac_base + QCA955X_GMAC_REG_SGMII_RESET,
+		       QCA955X_SGMII_RESET_HW_RX_125M_N);
+	udelay(10);
+
+	ag71xx_bit_set(gmac_base + QCA955X_GMAC_REG_SGMII_RESET,
+		       QCA955X_SGMII_RESET_RX_125M_N);
+	udelay(10);
+
+	ag71xx_bit_set(gmac_base + QCA955X_GMAC_REG_SGMII_RESET,
+		       QCA955X_SGMII_RESET_TX_125M_N);
+	udelay(10);
+
+	ag71xx_bit_set(gmac_base + QCA955X_GMAC_REG_SGMII_RESET,
+		       QCA955X_SGMII_RESET_RX_CLK_N);
+	udelay(10);
+
+	ag71xx_bit_set(gmac_base + QCA955X_GMAC_REG_SGMII_RESET,
+		       QCA955X_SGMII_RESET_TX_CLK_N);
+	udelay(10);
+
+	do {
+		ag71xx_bit_set(gmac_base + QCA955X_GMAC_REG_MR_AN_CONTROL,
+			       QCA955X_MR_AN_CONTROL_PHY_RESET |
+			       QCA955X_MR_AN_CONTROL_AN_ENABLE);
+		udelay(100);
+		ag71xx_bit_clear(gmac_base + QCA955X_GMAC_REG_MR_AN_CONTROL,
+				 QCA955X_MR_AN_CONTROL_PHY_RESET);
+		mdelay(10);
+		sgmii_status = __raw_readl(gmac_base + QCA955X_GMAC_REG_SGMII_DEBUG) & 0xF;
+
+		if (tries++ >= QCA955X_SGMII_LINK_WAR_MAX_TRY) {
+			pr_warn("ag71xx: max retries for SGMII fixup exceeded!\n");
+			break;
+		}
+	} while (!(sgmii_status == 0xf || sgmii_status == 0x10));
+
+sgmii_out:
+	iounmap(gmac_base);
 }
 
 static void ag71xx_restart_work_func(struct work_struct *work)

@@ -5,17 +5,15 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=mediatek
 BOARDNAME:=MediaTek Ralink ARM
-SUBTARGETS:=32
+SUBTARGETS:=mt7622 mt7623
 FEATURES:=squashfs nand ramdisk fpu
 MAINTAINER:=John Crispin <john@phrozen.org>
 
 KERNEL_PATCHVER:=4.14
 
-KERNELNAME:=Image dtbs zImage
-
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += \
 	kmod-mt76 kmod-leds-gpio kmod-gpio-button-hotplug \
-	wpad-mini
+	wpad-basic
 
 $(eval $(call BuildTarget))

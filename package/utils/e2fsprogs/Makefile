@@ -8,13 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-PKG_VERSION:=1.44.1
-PKG_HASH:=0ca164c1c87724df904c918b2d7051ef989b51de725db66c67514dbe6dd2b9ef
+PKG_VERSION:=1.44.5
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/tytso/e2fsprogs/v$(PKG_VERSION)/
+PKG_HASH:=ba5eb3069d69160d96818bb9700de9ab5a8458d9add1fd85d427c0000d34c5b9
+
 PKG_LICENSE:=GPL-2.0
+PKG_LICENSE_FILES:=NOTICE
 PKG_CPE_ID:=cpe:/a:e2fsprogs_project:e2fsprogs
 
 PKG_BUILD_DEPENDS:=util-linux e2fsprogs/host
@@ -45,6 +47,7 @@ define Package/libext2fs
   TITLE:=ext2/3/4 filesystem library
   URL:=http://e2fsprogs.sourceforge.net/
   DEPENDS:=+libuuid +libblkid +libss +libcomerr
+  ABI_VERSION:=2
 endef
 
 define Package/libext2fs/description
@@ -57,6 +60,7 @@ define Package/libss
   TITLE:=command-line interface parsing library
   URL:=http://e2fsprogs.sourceforge.net/
   DEPENDS:=+libcomerr
+  ABI_VERSION:=2
 endef
 
 define Package/libss/description
@@ -70,6 +74,7 @@ define Package/libcomerr
   TITLE:=common error description library
   URL:=http://e2fsprogs.sourceforge.net/
   DEPENDS:=+libuuid
+  ABI_VERSION:=0
 endef
 
 define Package/libcomerr/description
@@ -107,6 +112,12 @@ $(call Package/e2fsprogs)
   DEPENDS:= +e2fsprogs
 endef
 
+define Package/e4crypt
+$(call Package/e2fsprogs)
+  TITLE:=Ext4 Filesystem encryption utility
+  DEPENDS:= +e2fsprogs
+endef
+
 define Package/filefrag
 $(call Package/e2fsprogs)
   TITLE:=Ext2 Filesystem file fragmentation report utility
@@ -131,7 +142,10 @@ $(call Package/e2fsprogs)
   DEPENDS:= +e2fsprogs
 endef
 
-TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections
+TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections -flto
+
+TARGET_LDFLAGS += $(if $(CONFIG_USE_GLIBC),-lrt)
+TARGET_LDFLAGS += -flto
 
 CONFIGURE_ARGS += \
 	--disable-testio-debug \
@@ -142,7 +156,6 @@ CONFIGURE_ARGS += \
 	--disable-tls		\
 	--disable-nls		\
 	--disable-rpath		\
-	--disable-threads	\
 	--disable-fuse2fs
 
 define Build/Prepare
@@ -232,12 +245,12 @@ endef
 
 define Package/libcomerr/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcom_err.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcom_err.so.* $(1)/usr/lib/
 endef
 
 define Package/libss/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libss.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libss.so.* $(1)/usr/lib/
 endef
 
 define Package/libext2fs/install
@@ -276,6 +289,11 @@ define Package/e2freefrag/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/e2freefrag $(1)/usr/sbin/
 endef
 
+define Package/e4crypt/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/e4crypt $(1)/usr/sbin/
+endef
+
 define Package/filefrag/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/filefrag $(1)/usr/sbin/
@@ -306,6 +324,7 @@ $(eval $(call BuildPackage,resize2fs))
 $(eval $(call BuildPackage,badblocks))
 $(eval $(call BuildPackage,dumpe2fs))
 $(eval $(call BuildPackage,e2freefrag))
+$(eval $(call BuildPackage,e4crypt))
 $(eval $(call BuildPackage,filefrag))
 $(eval $(call BuildPackage,debugfs))
 $(eval $(call BuildPackage,chattr))

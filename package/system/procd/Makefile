@@ -12,9 +12,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/procd.git
-PKG_SOURCE_DATE:=2018-03-28
-PKG_SOURCE_VERSION:=dfb68f8556df63878add145ad9c656381bc20656
-PKG_MIRROR_HASH:=8d2c70fb0264a6548e39acc5ab1c44cec50fc550c4f931760b0796f8893c9b7f
+PKG_MIRROR_HASH:=b16497f6e2d58b35dc9ee59eac1d8cebfba06aac7a13a9bbb02d11109b5a8d95
+PKG_SOURCE_DATE:=2019-08-05
+PKG_SOURCE_VERSION:=832369078d818d19ab64051fdc8da9e06c90ad88
 CMAKE_INSTALL:=1
 
 PKG_LICENSE:=GPL-2.0
@@ -37,11 +37,15 @@ endif
 CMAKE_OPTIONS += -DEARLY_PATH="$(TARGET_INIT_PATH)"
 TARGET_LDFLAGS += $(if $(CONFIG_USE_GLIBC),-lrt)
 
+TARGET_CFLAGS += -flto
+TARGET_LDFLAGS += -flto
+
 define Package/procd
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+ubusd +ubus +libjson-script +ubox +USE_GLIBC:librt +libubox +libubus
+  DEPENDS:=+ubusd +ubus +libjson-script +ubox +USE_GLIBC:librt +libubox +libubus +libblobmsg-json +libjson-c
   TITLE:=OpenWrt system process manager
+  USERID:=:dialout=20 :audio=29
 endef
 
 define Package/procd-ujail
@@ -54,7 +58,7 @@ endef
 define Package/procd-seccomp
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=@arm||@armeb||@mips||@mipsel||@i386||@x86_64 @!TARGET_uml @KERNEL_SECCOMP +libubox +libblobmsg-json
+  DEPENDS:=@(arm||armeb||mips||mipsel||i386||powerpc||x86_64) @!TARGET_uml @KERNEL_SECCOMP +libubox +libblobmsg-json
   TITLE:=OpenWrt process seccomp helper + utrace
 endef
 
@@ -96,7 +100,7 @@ define Package/procd/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{init,procd,askfirst,udevtrigger,upgraded} $(1)/sbin/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libsetlbf.so $(1)/lib
 	$(INSTALL_BIN) ./files/reload_config $(1)/sbin/
-	$(INSTALL_DATA) ./files/hotplug*.json $(1)/etc/
+	$(INSTALL_CONF) ./files/hotplug*.json $(1)/etc/
 	$(INSTALL_DATA) ./files/procd.sh $(1)/lib/functions/
 endef
 

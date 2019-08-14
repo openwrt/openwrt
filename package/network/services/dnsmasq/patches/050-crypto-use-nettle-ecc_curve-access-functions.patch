@@ -1,0 +1,35 @@
+From 1f55b09dd88bc65b3ee6e3a665bc844a5a9a9e8d Mon Sep 17 00:00:00 2001
+From: Hans Dedecker <dedeckeh@gmail.com>
+Date: Fri, 9 Aug 2019 21:08:17 +0200
+Subject: [PATCH] crypto: use nettle ecc_curve access functions
+
+Nettle 3.5.1 has made ecc_curve definitions (nettle_secp_192r1,
+nettle_secp_224r1, nettle_secp_256r1, ...) private and forces
+users to make use of the accessor functions (nettle_get_secp_192r1,
+...) to retrieve the specific ecc_curve structs.
+
+Signed-off-by: Hans Dedecker <dedeckeh@gmail.com>
+---
+ src/crypto.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/src/crypto.c
++++ b/src/crypto.c
+@@ -294,7 +294,7 @@ static int dnsmasq_ecdsa_verify(struct b
+ 	  if (!(key_256 = whine_malloc(sizeof(struct ecc_point))))
+ 	    return 0;
+ 	  
+-	  nettle_ecc_point_init(key_256, &nettle_secp_256r1);
++	  nettle_ecc_point_init(key_256, nettle_get_secp_256r1());
+ 	}
+       
+       key = key_256;
+@@ -307,7 +307,7 @@ static int dnsmasq_ecdsa_verify(struct b
+ 	  if (!(key_384 = whine_malloc(sizeof(struct ecc_point))))
+ 	    return 0;
+ 	  
+-	  nettle_ecc_point_init(key_384, &nettle_secp_384r1);
++	  nettle_ecc_point_init(key_384, nettle_get_secp_384r1());
+ 	}
+       
+       key = key_384;
