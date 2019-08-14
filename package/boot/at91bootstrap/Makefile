@@ -128,9 +128,9 @@ AT91BOOTSTRAP_TARGETS := \
     sama5d4_xplainednf_uboot_secure \
     sama5d4_xplaineddf_uboot_secure \
     sama5d4_xplainedsd_uboot_secure \
-	sama5d27_som1_eksd_uboot \
-	sama5d27_som1_ekqspi_uboot \
-	sama5d2_ptc_eknf_uboot \
+    sama5d27_som1_eksd1_uboot \
+    sama5d27_som1_ekqspi_uboot \
+    sama5d2_ptc_eknf_uboot \
     sama5d2_ptc_eksd_uboot
 
 define Build/Compile

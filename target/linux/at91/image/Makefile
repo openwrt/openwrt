@@ -55,9 +55,13 @@ define Build/at91-sdcard
     $(BIN_DIR)/u-boot-$(DEVICE_NAME:at91-%=%)_mmc/u-boot.bin \
     ::u-boot.bin
 
-  mcopy -i $@.boot \
-    $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd*/at91bootstrap.bin \
-    ::BOOT.bin
+  $(if $(findstring at91-sama5d27_som1_ek,$@), \
+      mcopy -i $@.boot \
+          $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd1_uboot/at91bootstrap.bin \
+          ::BOOT.bin,
+      mcopy -i $@.boot \
+          $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd_uboot/at91bootstrap.bin \
+          ::BOOT.bin)
 
   ./gen_at91_sdcard_img.sh \
       $@.img \
