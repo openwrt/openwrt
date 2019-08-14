@@ -23,9 +23,13 @@ define Build/at91-sdcard
       mcopy -i $@.boot \
           $(BIN_DIR)/u-boot-$(DEVICE_NAME:at91-%=%)_mmc/u-boot.bin \
           ::u-boot.bin
-      mcopy -i $@.boot \
-          $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd_uboot/at91bootstrap.bin \
-          ::BOOT.bin)
+      $(if $(findstring sama5d4_xplained, $@), \
+          mcopy -i $@.boot \
+              $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd_uboot_secure/at91bootstrap.bin \
+              ::BOOT.bin,
+          mcopy -i $@.boot \
+              $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd_uboot/at91bootstrap.bin \
+              ::BOOT.bin))
 
   $(CP) uboot-env.txt $@-uboot-env.txt
   sed -i '2d;3d' $@-uboot-env.txt
