@@ -271,7 +271,6 @@ define Device/tplink_archer-d50-v1
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := tplink-v2-image -s -V "ver. 2.0" | \
         append-metadata | check-size $$$$(IMAGE_SIZE)
-  SUPPORTED_DEVICES += archer-d50-v1
 endef
 TARGET_DEVICES += tplink_archer-d50-v1
 
