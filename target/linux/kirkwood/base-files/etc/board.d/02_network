@@ -24,6 +24,9 @@ case "$board" in
 "seagate,goflexnet")
 	ucidef_set_interface_lan "eth0" "dhcp"
 	;;
+"qizhitong,501m_v2")
+        ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 aux" "eth1"
+	;;
 "linksys,audi"|\
 "linksys,viper")
 	ucidef_add_switch "switch0" \

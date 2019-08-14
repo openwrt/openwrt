@@ -111,6 +111,24 @@ define Device/linksys_viper
 endef
 TARGET_DEVICES += linksys_viper
 
+define Device/qizhitong_501m_v2
+  DEVICE_VENDOR := QiZhiTong
+  DEVICE_MODEL := 501M V2
+  DEVICE_DTS := kirkwood-qizhitong-501m_v2
+  DEVICE_PACKAGES := kmod-mwl8k
+  PAGESIZE := 512
+  SUBPAGESIZE := 256
+  BLOCKSIZE := 16KiB
+  KERNEL_SIZE := 4096k
+  UBI_OPTS := -m 512 -p 16384 -s 256
+  UBIFS_OPTS := -m 512 -e 15872
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  BOARD_NAME := 501m_v2
+  SUPPORTED_DEVICES += qizhitong,501m_v2
+endef
+TARGET_DEVICES += qizhitong_501m_v2
+
 define Device/raidsonic_ib-nas62x0
   DEVICE_VENDOR := RaidSonic
   DEVICE_MODEL := ICY BOX IB-NAS62x0
