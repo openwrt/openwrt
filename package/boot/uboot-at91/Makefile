@@ -131,7 +131,7 @@ UBOOT_TARGETS := \
 define Build/Compile
   +$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
      CROSS_COMPILE=$(TARGET_CROSS) \
-	 DTC=$(LINUX_DIR)/scripts/dtc/dtc \
+	 DTC=$(PKG_BUILD_DIR)/scripts/dtc/dtc \
      KCFLAGS="$(filter-out -fstack-protector \
       -mfloat-abi=hard, $(TARGET_CFLAGS)) -mfloat-abi=soft"
 endef
