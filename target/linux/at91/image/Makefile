@@ -40,41 +40,6 @@ define Device/dtb
   KERNEL := kernel-bin | lzma | uImage lzma
 endef
 
-define Build/at91-sdcard
-  $(if $(findstring ext4,$@), \
-  rm -f $@.boot
-  mkfs.fat -C $@.boot $(FAT32_BLOCKS)
-
-  mcopy -i $@.boot $(KDIR)/zImage ::zImage
-
-  $(foreach dts,$(DEVICE_DTS), \
-     mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb \
-        ::$(dts).dtb)
-
-  mcopy -i $@.boot \
-    $(BIN_DIR)/u-boot-$(DEVICE_NAME:at91-%=%)_mmc/u-boot.bin \
-    ::u-boot.bin
-
-  $(if $(findstring at91-sama5d27_som1_ek,$@), \
-      mcopy -i $@.boot \
-          $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd1_uboot/at91bootstrap.bin \
-          ::BOOT.bin,
-      mcopy -i $@.boot \
-          $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd_uboot/at91bootstrap.bin \
-          ::BOOT.bin)
-
-  ./gen_at91_sdcard_img.sh \
-      $@.img \
-      $@.boot \
-      $(KDIR)/root.ext4 \
-      $(AT91_SD_BOOT_PARTSIZE) \
-      $(CONFIG_TARGET_ROOTFS_PARTSIZE)
-
-  gzip -nc9 $@.img > $@
-
-  rm -f $@.img $@.boot )
-endef
-
 define Device/evaluation-sdimage
   IMAGES += sdcard.img.gz
   IMAGE/sdcard.img.gz := at91-sdcard
