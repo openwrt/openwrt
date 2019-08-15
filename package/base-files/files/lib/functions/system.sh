@@ -12,6 +12,16 @@ get_mac_binary() {
 	hexdump -v -n 6 -s $offset -e '5/1 "%02x:" 1/1 "%02x"' $path 2>/dev/null
 }
 
+get_mac_label() {
+	local basepath="/proc/device-tree"
+	local macdevice="$(cat "$basepath/aliases/label-mac-device" 2>/dev/null)"
+	local macaddr
+
+	[ -n "$macdevice" ] && macaddr=$(get_mac_binary "$basepath/$macdevice/mac-address" 0 2>/dev/null)
+	[ -n "$macaddr" ] || macaddr=$(get_mac_binary "$basepath/$macdevice/local-mac-address" 0 2>/dev/null)
+	echo $macaddr
+}
+
 find_mtd_chardev() {
 	local INDEX=$(find_mtd_index "$1")
 	local PREFIX=/dev/mtd
