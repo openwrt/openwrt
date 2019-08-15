@@ -19,6 +19,7 @@ get_mac_label() {
 
 	[ -n "$macdevice" ] && macaddr=$(get_mac_binary "$basepath/$macdevice/mac-address" 0 2>/dev/null)
 	[ -n "$macaddr" ] || macaddr=$(get_mac_binary "$basepath/$macdevice/local-mac-address" 0 2>/dev/null)
+	[ -n "$macaddr" ] || macaddr=$(uci -q get system.@system[0].label_macaddr)
 	echo $macaddr
 }
 
