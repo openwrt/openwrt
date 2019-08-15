@@ -2,6 +2,12 @@
 
 #include "ar9344_tplink_tl-wdrxxxx.dtsi"
 
+/ {
+	aliases {
+		label-mac-device = &ath9k;
+	};
+};
+
 &leds {
 	usb1 {
 		label = "tp-link:green:usb1";
