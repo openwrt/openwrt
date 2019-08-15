@@ -10,6 +10,10 @@
 	compatible = "tplink,archer-d50-v1", "qca,qca9531";
 	model = "TP-Link Archer D50 v1";
 
+	aliases {
+		label-mac-device = &wmac;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200n8";
 	};

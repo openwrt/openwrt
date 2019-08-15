@@ -15,6 +15,7 @@
 		led-failsafe = &dome_green;
 		led-running = &dome_green;
 		led-upgrade = &dome_green;
+		label-mac-device = &wifi;
 	};
 
 	extosc: ref {
@@ -110,7 +111,7 @@
 &pcie {
 	status = "okay";
 
-	wifi@0,0 {
+	wifi: wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
 	};
