@@ -1,0 +1,136 @@
+>From a57cd35acf26ba6202ed6534a57f496464f431a1 Mon Sep 17 00:00:00 2001
+From: Szabolcs Nagy <nsz@port70.net>
+Date: Sat, 10 Aug 2019 23:14:40 +0000
+Subject: [PATCH] make relocation time symbol lookup and dlsym consistent
+
+Using common code path for all symbol lookups fixes three dlsym issues:
+
+- st_shndx of STT_TLS symbols were not checked and thus an undefined
+  tls symbol reference could be incorrectly treated as a definition
+  (the sysv hash lookup returns undefined symbols, gnu does not, so should
+  be rare in practice).
+
+- symbol binding was not checked so a hidden symbol may be returned
+  (in principle STB_LOCAL symbols may appear in the dynamic symbol table
+  for hidden symbols, but linkers most likely don't produce it).
+
+- mips specific behaviour was not applied (ARCH_SYM_REJECT_UND) so
+  undefined symbols may be returned on mips.
+
+always_inline is used to avoid relocation performance regression, the
+code generation for find_sym should not be affected.
+---
+ ldso/dynlink.c | 84 +++++++++++++++++++-------------------------------
+ 1 file changed, 31 insertions(+), 53 deletions(-)
+
+--- a/ldso/dynlink.c
++++ b/ldso/dynlink.c
+@@ -283,12 +283,16 @@ static Sym *gnu_lookup_filtered(uint32_t
+ #define ARCH_SYM_REJECT_UND(s) 0
+ #endif
+ 
+-static struct symdef find_sym(struct dso *dso, const char *s, int need_def)
++#if defined(__GNUC__)
++__attribute__((always_inline))
++#endif
++static inline struct symdef find_sym2(struct dso *dso, const char *s, int need_def, int use_deps)
+ {
+ 	uint32_t h = 0, gh = gnu_hash(s), gho = gh / (8*sizeof(size_t)), *ght;
+ 	size_t ghm = 1ul << gh % (8*sizeof(size_t));
+ 	struct symdef def = {0};
+-	for (; dso; dso=dso->syms_next) {
++	struct dso **deps = use_deps ? dso->deps : 0;
++	for (; dso; dso=use_deps ? *deps++ : dso->syms_next) {
+ 		Sym *sym;
+ 		if ((ght = dso->ghashtab)) {
+ 			sym = gnu_lookup_filtered(gh, ght, dso, s, gho, ghm);
+@@ -313,6 +317,11 @@ static struct symdef find_sym(struct dso
+ 	return def;
+ }
+ 
++static struct symdef find_sym(struct dso *dso, const char *s, int need_def)
++{
++	return find_sym2(dso, s, need_def, 0);
++}
++
+ static void do_relocs(struct dso *dso, size_t *rel, size_t rel_size, size_t stride)
+ {
+ 	unsigned char *base = dso->base;
+@@ -2118,58 +2127,27 @@ static void *addr2dso(size_t a)
+ 
+ static void *do_dlsym(struct dso *p, const char *s, void *ra)
+ {
+-	size_t i;
+-	uint32_t h = 0, gh = 0, *ght;
+-	Sym *sym;
+-	if (p == head || p == RTLD_DEFAULT || p == RTLD_NEXT) {
+-		if (p == RTLD_DEFAULT) {
+-			p = head;
+-		} else if (p == RTLD_NEXT) {
+-			p = addr2dso((size_t)ra);
+-			if (!p) p=head;
+-			p = p->next;
+-		}
+-		struct symdef def = find_sym(p, s, 0);
+-		if (!def.sym) goto failed;
+-		if ((def.sym->st_info&0xf) == STT_TLS)
+-			return __tls_get_addr((tls_mod_off_t []){def.dso->tls_id, def.sym->st_value-DTP_OFFSET});
+-		if (DL_FDPIC && (def.sym->st_info&0xf) == STT_FUNC)
+-			return def.dso->funcdescs + (def.sym - def.dso->syms);
+-		return laddr(def.dso, def.sym->st_value);
+-	}
+-	if (__dl_invalid_handle(p))
++	int use_deps = 0;
++	if (p == head || p == RTLD_DEFAULT) {
++		p = head;
++	} else if (p == RTLD_NEXT) {
++		p = addr2dso((size_t)ra);
++		if (!p) p=head;
++		p = p->next;
++	} else if (__dl_invalid_handle(p)) {
++		return 0;
++	} else
++		use_deps = 1;
++	struct symdef def = find_sym2(p, s, 0, use_deps);
++	if (!def.sym) {
++		error("Symbol not found: %s", s);
+ 		return 0;
+-	if ((ght = p->ghashtab)) {
+-		gh = gnu_hash(s);
+-		sym = gnu_lookup(gh, ght, p, s);
+-	} else {
+-		h = sysv_hash(s);
+-		sym = sysv_lookup(s, h, p);
+-	}
+-	if (sym && (sym->st_info&0xf) == STT_TLS)
+-		return __tls_get_addr((tls_mod_off_t []){p->tls_id, sym->st_value-DTP_OFFSET});
+-	if (DL_FDPIC && sym && sym->st_shndx && (sym->st_info&0xf) == STT_FUNC)
+-		return p->funcdescs + (sym - p->syms);
+-	if (sym && sym->st_value && (1<<(sym->st_info&0xf) & OK_TYPES))
+-		return laddr(p, sym->st_value);
+-	for (i=0; p->deps[i]; i++) {
+-		if ((ght = p->deps[i]->ghashtab)) {
+-			if (!gh) gh = gnu_hash(s);
+-			sym = gnu_lookup(gh, ght, p->deps[i], s);
+-		} else {
+-			if (!h) h = sysv_hash(s);
+-			sym = sysv_lookup(s, h, p->deps[i]);
+-		}
+-		if (sym && (sym->st_info&0xf) == STT_TLS)
+-			return __tls_get_addr((tls_mod_off_t []){p->deps[i]->tls_id, sym->st_value-DTP_OFFSET});
+-		if (DL_FDPIC && sym && sym->st_shndx && (sym->st_info&0xf) == STT_FUNC)
+-			return p->deps[i]->funcdescs + (sym - p->deps[i]->syms);
+-		if (sym && sym->st_value && (1<<(sym->st_info&0xf) & OK_TYPES))
+-			return laddr(p->deps[i], sym->st_value);
+ 	}
+-failed:
+-	error("Symbol not found: %s", s);
+-	return 0;
++	if ((def.sym->st_info&0xf) == STT_TLS)
++		return __tls_get_addr((tls_mod_off_t []){def.dso->tls_id, def.sym->st_value-DTP_OFFSET});
++	if (DL_FDPIC && (def.sym->st_info&0xf) == STT_FUNC)
++		return def.dso->funcdescs + (def.sym - def.dso->syms);
++	return laddr(def.dso, def.sym->st_value);
+ }
+ 
+ int dladdr(const void *addr_arg, Dl_info *info)
