@@ -682,24 +682,25 @@ define Device/ubiquiti_edgerouterx-sfp
 endef
 TARGET_DEVICES += ubiquiti_edgerouterx-sfp
 
-define Device/unielec_u7621-06-256m-16m
+define Device/unielec_u7621-06-16m
   MTK_SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
-  DEVICE_VARIANT := 256M RAM/16M flash
+  DEVICE_VARIANT := 16M
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
-  SUPPORTED_DEVICES += u7621-06-256M-16M
+  SUPPORTED_DEVICES += u7621-06-256M-16M unielec,u7621-06-256m-16m
 endef
 TARGET_DEVICES += unielec_u7621-06-256m-16m
 
-define Device/unielec_u7621-06-512m-64m
+define Device/unielec_u7621-06-64m
   MTK_SOC := mt7621
   IMAGE_SIZE := 65216k
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
-  DEVICE_VARIANT := 512M RAM/64M flash
+  DEVICE_VARIANT := 64M
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
+  SUPPORTED_DEVICES += unielec,u7621-06-512m-64m
 endef
 TARGET_DEVICES += unielec_u7621-06-512m-64m
 
