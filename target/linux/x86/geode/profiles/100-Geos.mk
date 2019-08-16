@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
-define Profile/Geos
+define Profile/geos
   NAME:=Geos
   PACKAGES:= \
 		soloscli linux-atm br2684ctl ppp-mod-pppoa pppdump pppstats \
@@ -13,7 +13,7 @@ define Profile/Geos
 		kmod-usb-ohci-pci kmod-hwmon-lm90
 endef
 
-define Profile/Geos/Description
+define Profile/geos/Description
 	Traverse Technologies Geos ADSL router
 endef
-$(eval $(call Profile,Geos))
+$(eval $(call Profile,geos))

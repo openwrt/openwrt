@@ -5,14 +5,14 @@
 # See /LICENSE for more information.
 #
 
-define Profile/Broadcom-b44-none
+define Profile/broadcom-b44-none
   NAME:=Broadcom SoC, b44 Ethernet, No WiFi
   PACKAGES:=-wpad-basic kmod-b44
 endef
 
-define Profile/Broadcom-b44-none/Description
+define Profile/broadcom-b44-none/Description
 	Package set compatible with hardware older Broadcom BCM47xx or BCM535x
 	SoC without any Wifi cards and b44 Ethernet driver.
 endef
-$(eval $(call Profile,Broadcom-b44-none))
+$(eval $(call Profile,broadcom-b44-none))
 

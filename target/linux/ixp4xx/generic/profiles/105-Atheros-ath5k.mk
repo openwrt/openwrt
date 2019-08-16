@@ -5,13 +5,13 @@
 # See /LICENSE for more information.
 #
 
-define Profile/Atheros-ath5k
+define Profile/atheros-ath5k
   NAME:=Atheros WiFi (atk5k)
   PACKAGES:=kmod-ath5k
 endef
 
-define Profile/Atheros-ath5k/Description
+define Profile/atheros-ath5k/Description
 	Package set compatible with hardware using Atheros WiFi cards
 endef
-$(eval $(call Profile,Atheros-ath5k))
+$(eval $(call Profile,atheros-ath5k))
 

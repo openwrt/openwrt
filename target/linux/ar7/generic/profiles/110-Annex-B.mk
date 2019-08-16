@@ -5,14 +5,14 @@
 # See /LICENSE for more information.
 #
 
-define Profile/Annex-B
+define Profile/annex-b
   NAME:=Annex-B DSL firmware
   PACKAGES:=kmod-pppoa ppp-mod-pppoa linux-atm atm-tools br2684ctl \
 	    kmod-sangam-atm-annex-b
 endef
 
-define Profile/Annex-B/Description
+define Profile/annex-b/Description
 	Package set compatible with Annex-B DSL lines (Germany).
 endef
-$(eval $(call Profile,Annex-B))
+$(eval $(call Profile,annex-b))
 

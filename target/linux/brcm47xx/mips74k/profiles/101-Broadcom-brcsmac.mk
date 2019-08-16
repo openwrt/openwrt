@@ -5,15 +5,15 @@
 # See /LICENSE for more information.
 #
 
-define Profile/Broadcom-mips74k-brcmsmac
+define Profile/broadcom-mips74k-brcmsmac
   NAME:=Broadcom SoC, BCM43xx WiFi (brcmsmac)
   PACKAGES:=kmod-brcmsmac
 endef
 
-define Profile/Broadcom-mips74k-brcmsmac/Description
+define Profile/broadcom-mips74k-brcmsmac/Description
 	Package set for devices with BCM43xx WiFi including mac80211 and
 	brcmsmac driver.
 endef
 
-$(eval $(call Profile,Broadcom-mips74k-brcmsmac))
+$(eval $(call Profile,broadcom-mips74k-brcmsmac))
 

@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
-define Profile/NAS100d
+define Profile/nas100d
   NAME:=Iomega NAS 100d
   PACKAGES:=kmod-ath5k \
 	kmod-scsi-core \
@@ -14,8 +14,8 @@ define Profile/NAS100d
 	kmod-fs-ext4
 endef
 
-define Profile/NAS100d/Description
+define Profile/nas100d/Description
 	Package set optimized for the Iomega NAS 100d
 endef
-$(eval $(call Profile,NAS100d))
+$(eval $(call Profile,nas100d))
 

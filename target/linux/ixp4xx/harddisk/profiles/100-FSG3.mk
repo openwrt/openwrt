@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
-define Profile/FSG3
+define Profile/fsg3
   NAME:=Freecom FSG-3
   PACKAGES:= \
 	kmod-ath5k \
@@ -13,8 +13,8 @@ define Profile/FSG3
 	kmod-fs-ext4 kmod-fs-reiserfs
 endef
 
-define Profile/FSG3/Description
+define Profile/fsg3/Description
 	Package set optimized for the Freecom FSG-3
 endef
-$(eval $(call Profile,FSG3))
+$(eval $(call Profile,fsg3))
 

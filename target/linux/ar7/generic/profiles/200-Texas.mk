@@ -5,14 +5,14 @@
 # See /LICENSE for more information.
 #
 
-define Profile/Texas
+define Profile/texas
   NAME:=Texas Instruments WiFi (mac80211)
   PACKAGES:=kmod-acx-mac80211
 endef
 
-define Profile/Texas/Description
+define Profile/texas/Description
 	Package set compatible with hardware using Texas Instruments WiFi cards
 	using the mac80211 driver.
 endef
-$(eval $(call Profile,Texas))
+$(eval $(call Profile,texas))
 

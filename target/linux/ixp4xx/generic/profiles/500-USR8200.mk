@@ -5,15 +5,15 @@
 # See /LICENSE for more information.
 #
 
-define Profile/USR8200
+define Profile/usr8200
   NAME:=USRobotics USR8200
   PACKAGES:=-wpad-basic kmod-scsi-core \
 	kmod-usb-core kmod-usb-uhci kmod-usb2-pci kmod-usb-storage \
 	kmod-fs-ext4 kmod-firewire kmod-firewire-ohci kmod-firewire-sbp2
 endef
 
-define Profile/USR8200/Description
+define Profile/usr8200/Description
 	Package set optimized for the USRobotics USR8200
 endef
-$(eval $(call Profile,USR8200))
+$(eval $(call Profile,usr8200))
 

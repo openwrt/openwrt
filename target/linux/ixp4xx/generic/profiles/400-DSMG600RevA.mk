@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
-define Profile/DSMG600RevA
+define Profile/dsmg600reva
   NAME:=DSM-G600 Rev A
   PACKAGES:=kmod-via-velocity \
 	kmod-ath5k \
@@ -15,8 +15,8 @@ define Profile/DSMG600RevA
 	kmod-fs-ext4
 endef
 
-define Profile/DSMG600RevA/Description
+define Profile/dsmg600reva/Description
 	Package set optimized for the DSM-G600 Rev A
 endef
-$(eval $(call Profile,DSMG600RevA))
+$(eval $(call Profile,dsmg600reva))
 

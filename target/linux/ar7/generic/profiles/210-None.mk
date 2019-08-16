@@ -5,13 +5,13 @@
 # See /LICENSE for more information.
 #
 
-define Profile/None
+define Profile/none
   NAME:=No WiFi
   PACKAGES:=
 endef
 
-define Profile/None/Description
+define Profile/none/Description
 	Package set without WiFi support
 endef
-$(eval $(call Profile,None))
+$(eval $(call Profile,none))
 

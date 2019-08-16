@@ -5,15 +5,15 @@
 # See /LICENSE for more information.
 #
 
-define Profile/NSLU2
+define Profile/nslu2
   NAME:=Linksys NSLU2
   PACKAGES:=-wpad-basic -kmod-ath5k kmod-scsi-core \
 	kmod-usb-core kmod-usb-ohci-pci kmod-usb2-pci kmod-usb-storage \
 	kmod-fs-ext4
 endef
 
-define Profile/NSLU2/Description
+define Profile/nslu2/Description
 	Package set optimized for the Linksys NSLU2
 endef
-$(eval $(call Profile,NSLU2))
+$(eval $(call Profile,nslu2))
 
