@@ -37,7 +37,7 @@ Signed-off-by: Sven Eckelmann <sven@narfation.org>
  						hw_rate_code);
 --- a/ath10k-5.2/mac.c
 +++ b/ath10k-5.2/mac.c
-@@ -6728,6 +6728,7 @@ static void ath10k_bss_info_changed(stru
+@@ -6732,6 +6732,7 @@ static void ath10k_bss_info_changed(stru
  			   "mac vdev %d mcast_rate %x\n",
  			   arvif->vdev_id, rate);
  
@@ -45,7 +45,7 @@ Signed-off-by: Sven Eckelmann <sven@narfation.org>
  		vdev_param = ar->wmi.vdev_param->mcast_data_rate;
  		ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id,
  						vdev_param, rate);
-@@ -6736,6 +6737,7 @@ static void ath10k_bss_info_changed(stru
+@@ -6740,6 +6741,7 @@ static void ath10k_bss_info_changed(stru
  				    "failed to set mcast rate on vdev %i: %d\n",
  				    arvif->vdev_id,  ret);
  
@@ -53,7 +53,7 @@ Signed-off-by: Sven Eckelmann <sven@narfation.org>
  		vdev_param = ar->wmi.vdev_param->bcast_data_rate;
  		ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id,
  						vdev_param, rate);
-@@ -6762,6 +6764,7 @@ static void ath10k_bss_info_changed(stru
+@@ -6766,6 +6768,7 @@ static void ath10k_bss_info_changed(stru
  			return;
  		}
  
