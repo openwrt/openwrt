@@ -4,8 +4,8 @@
 #include "mt7628an_iptime.dtsi"
 
 / {
-	compatible = "iptime,a604m", "mediatek,mt7628an-soc";
-	model = "ipTIME A604M";
+	compatible = "iptime,a3", "mediatek,mt7628an-soc";
+	model = "ipTIME A3";
 
 	aliases {
 		led-boot = &led_cpu;
@@ -17,30 +17,20 @@
 	leds {
 		compatible = "gpio-leds";
 
-		wlan5g {
-			label = "a604m:blue:wlan5g";
-			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		led_cpu: cpu {
-			label = "a604m:blue:cpu";
+			label = "a3:blue:cpu";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
-		wlan2g {
-			label = "a604m:blue:wlan2g";
+		wlan {
+			label = "a3:blue:wlan";
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "i2c", "uart1", "wdt";
-			ralink,function = "gpio";
-		};
-	};
+&esw {
+	mediatek,portmap = <0x3e>;
+	mediatek,portdisable = <0x32>;
 };
