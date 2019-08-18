@@ -376,6 +376,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
 		;;
+	iptime,a3)
+		ucidef_add_switch "switch0" \
+			"2:lan:2" "3:lan:1" "0:wan" "6@eth0"
+		;;
 	lava,lr-25g001|\
 	sitecom,wlr-6000|\
 	trendnet,tew-691gr|\
@@ -666,6 +670,7 @@ ramips_setup_macs()
 	trendnet,tew-692gr)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
 		;;
+	iptime,a3|\
 	iptime,a604m)
 		wan_mac=$(mtd_get_mac_binary u-boot 0x1fc40)
 		;;
