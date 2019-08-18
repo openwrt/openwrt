@@ -40,7 +40,7 @@ Date:   Tue Jul 31 00:52:27 2007 +0000
      case OPT_fconstant_string_class_:
        constant_string_class_name = arg;
        break;
-@@ -1134,6 +1143,47 @@ c_common_init (void)
+@@ -1138,6 +1147,47 @@ c_common_init (void)
        return false;
      }
  
@@ -134,7 +134,7 @@ Date:   Tue Jul 31 00:52:27 2007 +0000
  @opindex Wno-stack-protector
 --- a/gcc/opts.c
 +++ b/gcc/opts.c
-@@ -2321,6 +2321,9 @@ common_handle_option (struct gcc_options
+@@ -2314,6 +2314,9 @@ common_handle_option (struct gcc_options
        /* Currently handled in a prescan.  */
        break;
  
