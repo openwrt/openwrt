@@ -6,7 +6,7 @@ define Device/tplink_archer-a7-v5
   IMAGE_SIZE := 15104k
   DEVICE_MODEL := Archer A7
   DEVICE_VARIANT := v5
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct-htt
   TPLINK_BOARD_ID := ARCHER-A7-V5
   BOARDNAME := ARCHER-A7-V5
   SUPPORTED_DEVICES += archer-a7-v5
@@ -19,7 +19,7 @@ define Device/tplink_archer-c2-v3
   IMAGE_SIZE := 7808k
   DEVICE_MODEL := Archer C2
   DEVICE_VARIANT := v3
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct-htt
   TPLINK_BOARD_ID := ARCHER-C2-V3
 endef
 TARGET_DEVICES += tplink_archer-c2-v3
@@ -31,7 +31,7 @@ define Device/tplink_archer-c25-v1
   DEVICE_MODEL := Archer C25
   DEVICE_VARIANT := v1
   TPLINK_BOARD_ID := ARCHER-C25-V1
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct-htt
   SUPPORTED_DEVICES += archer-c25-v1
 endef
 TARGET_DEVICES += tplink_archer-c25-v1
@@ -43,7 +43,7 @@ define Device/tplink_archer-c58-v1
   DEVICE_MODEL := Archer C58
   DEVICE_VARIANT := v1
   TPLINK_BOARD_ID := ARCHER-C58-V1
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct-htt
   SUPPORTED_DEVICES += archer-c58-v1
 endef
 TARGET_DEVICES += tplink_archer-c58-v1
@@ -55,7 +55,7 @@ define Device/tplink_archer-c59-v1
   DEVICE_MODEL := Archer C59
   DEVICE_VARIANT := v1
   TPLINK_BOARD_ID := ARCHER-C59-V1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca9888-ct-htt
   SUPPORTED_DEVICES += archer-c59-v1
 endef
 TARGET_DEVICES += tplink_archer-c59-v1
@@ -67,7 +67,7 @@ define Device/tplink_archer-c60-v1
   DEVICE_MODEL := Archer C60
   DEVICE_VARIANT := v1
   TPLINK_BOARD_ID := ARCHER-C60-V1
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct-htt
   SUPPORTED_DEVICES += archer-c60-v1
 endef
 TARGET_DEVICES += tplink_archer-c60-v1
@@ -79,7 +79,7 @@ define Device/tplink_archer-c60-v2
   DEVICE_MODEL := Archer C60
   DEVICE_VARIANT := v2
   TPLINK_BOARD_ID := ARCHER-C60-V2
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct-htt
   SUPPORTED_DEVICES += archer-c60-v2
 endef
 TARGET_DEVICES += tplink_archer-c60-v2
@@ -91,7 +91,7 @@ define Device/tplink_archer-c6-v2
   DEVICE_MODEL := Archer C6
   DEVICE_VARIANT := v2
   TPLINK_BOARD_ID := ARCHER-C6-V2
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct-htt
 endef
 TARGET_DEVICES += tplink_archer-c6-v2
 
@@ -100,7 +100,7 @@ define Device/tplink_archer-c5-v1
   ATH_SOC := qca9558
   DEVICE_MODEL := Archer C5
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct-htt
   TPLINK_HWID := 0xc5000001
   SUPPORTED_DEVICES += archer-c5
 endef
@@ -111,7 +111,7 @@ define Device/tplink_archer-c7-v1
   ATH_SOC := qca9558
   DEVICE_MODEL := Archer C7
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct-htt
   TPLINK_HWID := 0x75000001
   SUPPORTED_DEVICES += archer-c7
 endef
@@ -122,7 +122,7 @@ define Device/tplink_archer-c7-v2
   ATH_SOC := qca9558
   DEVICE_MODEL := Archer C7
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct-htt
   TPLINK_HWID := 0xc7000002
   SUPPORTED_DEVICES += archer-c7
   IMAGES += factory-us.bin factory-eu.bin
@@ -137,7 +137,7 @@ define Device/tplink_archer-c7-v4
   IMAGE_SIZE := 15104k
   DEVICE_MODEL := Archer C7
   DEVICE_VARIANT := v4
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct-htt
   TPLINK_BOARD_ID := ARCHER-C7-V4
   BOARDNAME := ARCHER-C7-V4
   SUPPORTED_DEVICES += archer-c7-v4
@@ -150,7 +150,7 @@ define Device/tplink_archer-c7-v5
   IMAGE_SIZE := 15360k
   DEVICE_MODEL := Archer C7
   DEVICE_VARIANT := v5
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct-htt
   TPLINK_BOARD_ID := ARCHER-C7-V5
   BOARDNAME := ARCHER-C7-V5
   SUPPORTED_DEVICES += archer-c7-v5
@@ -257,7 +257,7 @@ define Device/tplink_archer-d50-v1
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer D50
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct-htt
   BOARDNAME := ARCHER-D50-V1
   IMAGE_SIZE := 7808k
   TPLINK_HWID := 0xC1200001
@@ -280,7 +280,7 @@ define Device/tplink_re350k-v1
   IMAGE_SIZE := 13760k
   DEVICE_MODEL := RE350K
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct-htt
   TPLINK_BOARD_ID := RE350K-V1
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
@@ -291,7 +291,7 @@ define Device/tplink_rex5x-v1
   $(Device/tplink-safeloader)
   ATH_SOC := qca9558
   IMAGE_SIZE := 6016k
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct-htt
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
 endef
@@ -320,7 +320,7 @@ define Device/tplink_re450-v2
   IMAGE_SIZE := 6016k
   DEVICE_MODEL := RE450
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct-htt
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
   TPLINK_BOARD_ID := RE450-V2
