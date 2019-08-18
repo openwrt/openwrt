@@ -571,7 +571,32 @@ define Device/Build/image
 
   $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2))
 	cp $$^ $$@
-
+	$(if $(CONFIG_JSON_ADD_IMAGE_INFO), \
+		DEVICE_ID="$(DEVICE_NAME)" \
+		BIN_DIR="$(BIN_DIR)" \
+		IMAGE_NAME="$(IMAGE_NAME)" \
+		IMAGE_TYPE=$(word 1,$(subst ., ,$(2))) \
+		IMAGE_PREFIX="$(IMAGE_PREFIX)" \
+		DEVICE_VENDOR="$(DEVICE_VENDOR)" \
+		DEVICE_MODEL="$(DEVICE_MODEL)" \
+		DEVICE_VARIANT="$(DEVICE_VARIANT)" \
+		DEVICE_ALT0_VENDOR="$(DEVICE_ALT0_VENDOR)" \
+		DEVICE_ALT0_MODEL="$(DEVICE_ALT0_MODEL)" \
+		DEVICE_ALT0_VARIANT="$(DEVICE_ALT0_VARIANT)" \
+		DEVICE_ALT1_VENDOR="$(DEVICE_ALT1_VENDOR)" \
+		DEVICE_ALT1_MODEL="$(DEVICE_ALT1_MODEL)" \
+		DEVICE_ALT1_VARIANT="$(DEVICE_ALT1_VARIANT)" \
+		DEVICE_ALT2_VENDOR="$(DEVICE_ALT2_VENDOR)" \
+		DEVICE_ALT2_MODEL="$(DEVICE_ALT2_MODEL)" \
+		DEVICE_ALT2_VARIANT="$(DEVICE_ALT2_VARIANT)" \
+		DEVICE_TITLE="$(DEVICE_TITLE)" \
+		TARGET="$(BOARD)" \
+		SUBTARGET="$(SUBTARGET)" \
+		VERSION_NUMBER="$(VERSION_NUMBER)" \
+		VERSION_CODE="$(VERSION_CODE)" \
+		SUPPORTED_DEVICES="$(SUPPORTED_DEVICES)" \
+		$(TOPDIR)/scripts/json_add_image_info.py \
+	)
 endef
 
 define Device/Build/artifact
@@ -589,6 +614,8 @@ define Device/Build/artifact
 endef
 
 define Device/Build
+  $(shell rm -f $(BIN_DIR)/$(IMG_PREFIX)-$(1).json)
+
   $(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Device/Build/initramfs,$(1)))
   $(call Device/Build/kernel,$(1))
 
