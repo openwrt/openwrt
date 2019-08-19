@@ -658,7 +658,7 @@ ramips_setup_macs()
 		;;
 	iodata,wn-ac1167gr|\
 	iodata,wn-ac733gr3)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" -1)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		;;
 	iodata,wn-ax1167gr|\
 	iodata,wn-gx300gr|\
