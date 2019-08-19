@@ -203,7 +203,7 @@ class GitHubCommitTsCache(object):
             ts = ent[0]
             updated = ent[1]
             line = '{0} {1} {2}\n'.format(k, ts, updated)
-            fout.write(line)
+            fout.write(line.encode('utf-8'))
 
 
 class DownloadGitHubTarball(object):
@@ -345,6 +345,7 @@ class DownloadGitHubTarball(object):
         version_is_sha1sum = len(self.version) == 40
         if not version_is_sha1sum:
             apis.insert(0, apis.pop())
+        reasons = ''
         for api in apis:
             url = api['url']
             attr_path = api['attr_path']
@@ -357,9 +358,9 @@ class DownloadGitHubTarball(object):
                 self.commit_ts = ct
                 self.commit_ts_cache.set(url, ct)
                 return
-            except Exception:
-                pass
-        raise self._error('Cannot fetch commit ts: {}'.format(url))
+            except Exception as e:
+                reasons += '\n' + ("  {}: {}".format(url, e))
+        raise self._error('Cannot fetch commit ts:{}'.format(reasons))
 
     def _init_commit_ts_remote_get(self, url, attrpath):
         resp = self._make_request(url)
