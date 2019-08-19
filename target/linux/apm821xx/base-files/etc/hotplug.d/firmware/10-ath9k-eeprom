@@ -12,8 +12,8 @@ ath9k_eeprom_die() {
 
 ath9k_eeprom_extract() {
 	local part=$1
-	local offset=$2
-	local count=$3
+	local offset=$(($2))
+	local count=$(($3))
 	local mtd
 
 	mtd=$(find_mtd_chardev $part)
@@ -26,8 +26,8 @@ ath9k_eeprom_extract() {
 
 ath9k_ubi_eeprom_extract() {
 	local part=$1
-	local offset=$2
-	local count=$3
+	local offset=$(($2))
+	local count=$(($3))
 	local ubidev=$(nand_find_ubi $CI_UBIPART)
 	local ubi
 
@@ -40,11 +40,11 @@ ath9k_ubi_eeprom_extract() {
 }
 
 ath9k_patch_firmware_mac() {
-        local mac=$1
+	local mac=$1
 
-        [ -z "$mac" ] && return
+	[ -z "$mac" ] && return
 
-        macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=2 count=6
+	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=2 count=6
 }
 
 board=$(board_name)
@@ -56,10 +56,10 @@ case "$FIRMWARE" in
 		. /lib/upgrade/nand.sh
 
 		if [ -n "$(nand_find_volume ubi0 caldata)" ]; then
-			ath9k_ubi_eeprom_extract "caldata" 20480 4096
+			ath9k_ubi_eeprom_extract "caldata" 0x5000 0x1000
 		else
-			ath9k_eeprom_extract "wifi_data" 20480 4096
-			ath9k_patch_firmware_mac $(mtd_get_mac_binary wifi_data 12)
+			ath9k_eeprom_extract "wifi_data" 0x5000 0x1000
+			ath9k_patch_firmware_mac $(mtd_get_mac_binary wifi_data 0xc)
 		fi
 		;;
 	*)
@@ -74,10 +74,10 @@ case "$FIRMWARE" in
 		. /lib/upgrade/nand.sh
 
 		if [ -n "$(nand_find_volume ubi0 caldata)" ]; then
-			ath9k_ubi_eeprom_extract "caldata" 4096 4096
+			ath9k_ubi_eeprom_extract "caldata" 0x1000 0x1000
 		else
-			ath9k_eeprom_extract "wifi_data" 4096 4096
-			ath9k_patch_firmware_mac $(mtd_get_mac_binary wifi_data 0)
+			ath9k_eeprom_extract "wifi_data" 0x1000 0x1000
+			ath9k_patch_firmware_mac $(mtd_get_mac_binary wifi_data 0x0)
 		fi
 		;;
 	*)

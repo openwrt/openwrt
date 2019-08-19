@@ -114,7 +114,7 @@ v13:
  ath10k_core-$(CONFIG_DEV_COREDUMP) += coredump.o
 --- a/local-symbols
 +++ b/local-symbols
-@@ -142,6 +142,7 @@ ATH10K_DEBUG=
+@@ -144,6 +144,7 @@ ATH10K_DEBUG=
  ATH10K_DEBUGFS=
  ATH10K_SPECTRAL=
  ATH10K_THERMAL=
@@ -131,8 +131,8 @@ v13:
 +#include "leds.h"
  
  unsigned int ath10k_debug_mask;
- static unsigned int ath10k_cryptmode_param;
-@@ -55,6 +56,7 @@ static const struct ath10k_hw_params ath
+ EXPORT_SYMBOL(ath10k_debug_mask);
+@@ -60,6 +61,7 @@ static const struct ath10k_hw_params ath
  		.dev_id = QCA988X_2_0_DEVICE_ID,
  		.bus = ATH10K_BUS_PCI,
  		.name = "qca988x hw2.0",
@@ -140,7 +140,7 @@ v13:
  		.patch_load_addr = QCA988X_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_ALL,
-@@ -123,6 +125,7 @@ static const struct ath10k_hw_params ath
+@@ -130,6 +132,7 @@ static const struct ath10k_hw_params ath
  		.dev_id = QCA9887_1_0_DEVICE_ID,
  		.bus = ATH10K_BUS_PCI,
  		.name = "qca9887 hw1.0",
@@ -148,7 +148,7 @@ v13:
  		.patch_load_addr = QCA9887_HW_1_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_ALL,
-@@ -297,6 +300,7 @@ static const struct ath10k_hw_params ath
+@@ -337,6 +340,7 @@ static const struct ath10k_hw_params ath
  		.dev_id = QCA99X0_2_0_DEVICE_ID,
  		.bus = ATH10K_BUS_PCI,
  		.name = "qca99x0 hw2.0",
@@ -156,7 +156,7 @@ v13:
  		.patch_load_addr = QCA99X0_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
  		.otp_exe_param = 0x00000700,
-@@ -337,6 +341,7 @@ static const struct ath10k_hw_params ath
+@@ -378,6 +382,7 @@ static const struct ath10k_hw_params ath
  		.dev_id = QCA9984_1_0_DEVICE_ID,
  		.bus = ATH10K_BUS_PCI,
  		.name = "qca9984/qca9994 hw1.0",
@@ -164,7 +164,7 @@ v13:
  		.patch_load_addr = QCA9984_HW_1_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_EACH,
-@@ -384,6 +389,7 @@ static const struct ath10k_hw_params ath
+@@ -426,6 +431,7 @@ static const struct ath10k_hw_params ath
  		.dev_id = QCA9888_2_0_DEVICE_ID,
  		.bus = ATH10K_BUS_PCI,
  		.name = "qca9888 hw2.0",
@@ -172,9 +172,9 @@ v13:
  		.patch_load_addr = QCA9888_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_EACH,
-@@ -2720,6 +2726,10 @@ int ath10k_core_start(struct ath10k *ar,
- 	if (status)
+@@ -2788,6 +2794,10 @@ int ath10k_core_start(struct ath10k *ar,
  		goto err_hif_stop;
+ 	}
  
 +	status = ath10k_leds_start(ar);
 +	if (status)
@@ -183,7 +183,7 @@ v13:
  	return 0;
  
  err_hif_stop:
-@@ -2976,9 +2986,18 @@ static void ath10k_core_register_work(st
+@@ -3044,9 +3054,18 @@ static void ath10k_core_register_work(st
  		goto err_spectral_destroy;
  	}
  
@@ -202,7 +202,7 @@ v13:
  err_spectral_destroy:
  	ath10k_spectral_destroy(ar);
  err_debug_destroy:
-@@ -3024,6 +3043,8 @@ void ath10k_core_unregister(struct ath10
+@@ -3092,6 +3111,8 @@ void ath10k_core_unregister(struct ath10
  	if (!test_bit(ATH10K_FLAG_CORE_REGISTERED, &ar->dev_flags))
  		return;
  
@@ -221,7 +221,7 @@ v13:
  
  #include "htt.h"
  #include "htc.h"
-@@ -1150,6 +1151,13 @@ struct ath10k {
+@@ -1170,6 +1171,13 @@ struct ath10k {
  	} testmode;
  
  	struct {
@@ -237,7 +237,7 @@ v13:
  		u32 fw_warm_reset_counter;
 --- a/drivers/net/wireless/ath/ath10k/hw.h
 +++ b/drivers/net/wireless/ath/ath10k/hw.h
-@@ -511,6 +511,7 @@ struct ath10k_hw_params {
+@@ -514,6 +514,7 @@ struct ath10k_hw_params {
  	const char *name;
  	u32 patch_load_addr;
  	int uart_pin;
@@ -456,7 +456,7 @@ v13:
  {
 --- a/drivers/net/wireless/ath/ath10k/wmi-tlv.c
 +++ b/drivers/net/wireless/ath/ath10k/wmi-tlv.c
-@@ -4309,6 +4309,8 @@ static const struct wmi_ops wmi_tlv_ops
+@@ -4364,6 +4364,8 @@ static const struct wmi_ops wmi_tlv_ops
  	.gen_echo = ath10k_wmi_tlv_op_gen_echo,
  	.gen_vdev_spectral_conf = ath10k_wmi_tlv_op_gen_vdev_spectral_conf,
  	.gen_vdev_spectral_enable = ath10k_wmi_tlv_op_gen_vdev_spectral_enable,
@@ -517,7 +517,7 @@ v13:
  static struct sk_buff *
  ath10k_wmi_op_gen_set_psmode(struct ath10k *ar, u32 vdev_id,
  			     enum wmi_sta_ps_mode psmode)
-@@ -9004,6 +9047,9 @@ static const struct wmi_ops wmi_ops = {
+@@ -9029,6 +9072,9 @@ static const struct wmi_ops wmi_ops = {
  	.fw_stats_fill = ath10k_wmi_main_op_fw_stats_fill,
  	.get_vdev_subtype = ath10k_wmi_op_get_vdev_subtype,
  	.gen_echo = ath10k_wmi_op_gen_echo,
@@ -527,7 +527,7 @@ v13:
  	/* .gen_bcn_tmpl not implemented */
  	/* .gen_prb_tmpl not implemented */
  	/* .gen_p2p_go_bcn_ie not implemented */
-@@ -9074,6 +9120,8 @@ static const struct wmi_ops wmi_10_1_ops
+@@ -9099,6 +9145,8 @@ static const struct wmi_ops wmi_10_1_ops
  	.fw_stats_fill = ath10k_wmi_10x_op_fw_stats_fill,
  	.get_vdev_subtype = ath10k_wmi_op_get_vdev_subtype,
  	.gen_echo = ath10k_wmi_op_gen_echo,
@@ -536,7 +536,7 @@ v13:
  	/* .gen_bcn_tmpl not implemented */
  	/* .gen_prb_tmpl not implemented */
  	/* .gen_p2p_go_bcn_ie not implemented */
-@@ -9146,6 +9194,8 @@ static const struct wmi_ops wmi_10_2_ops
+@@ -9171,6 +9219,8 @@ static const struct wmi_ops wmi_10_2_ops
  	.gen_delba_send = ath10k_wmi_op_gen_delba_send,
  	.fw_stats_fill = ath10k_wmi_10x_op_fw_stats_fill,
  	.get_vdev_subtype = ath10k_wmi_op_get_vdev_subtype,
@@ -545,7 +545,7 @@ v13:
  	/* .gen_pdev_enable_adaptive_cca not implemented */
  };
  
-@@ -9217,6 +9267,8 @@ static const struct wmi_ops wmi_10_2_4_o
+@@ -9242,6 +9292,8 @@ static const struct wmi_ops wmi_10_2_4_o
  		ath10k_wmi_op_gen_pdev_enable_adaptive_cca,
  	.get_vdev_subtype = ath10k_wmi_10_2_4_op_get_vdev_subtype,
  	.gen_bb_timing = ath10k_wmi_10_2_4_op_gen_bb_timing,
@@ -554,7 +554,7 @@ v13:
  	/* .gen_bcn_tmpl not implemented */
  	/* .gen_prb_tmpl not implemented */
  	/* .gen_p2p_go_bcn_ie not implemented */
-@@ -9297,6 +9349,8 @@ static const struct wmi_ops wmi_10_4_ops
+@@ -9322,6 +9374,8 @@ static const struct wmi_ops wmi_10_4_ops
  	.gen_pdev_bss_chan_info_req = ath10k_wmi_10_2_op_gen_pdev_bss_chan_info,
  	.gen_echo = ath10k_wmi_op_gen_echo,
  	.gen_pdev_get_tpc_config = ath10k_wmi_10_2_4_op_gen_pdev_get_tpc_config,
@@ -565,7 +565,7 @@ v13:
  int ath10k_wmi_attach(struct ath10k *ar)
 --- a/drivers/net/wireless/ath/ath10k/wmi.h
 +++ b/drivers/net/wireless/ath/ath10k/wmi.h
-@@ -2998,6 +2998,41 @@ enum wmi_10_4_feature_mask {
+@@ -3005,6 +3005,41 @@ enum wmi_10_4_feature_mask {
  
  };
  

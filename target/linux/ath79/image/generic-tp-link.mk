@@ -157,6 +157,18 @@ define Device/tplink_archer-c7-v5
 endef
 TARGET_DEVICES += tplink_archer-c7-v5
 
+define Device/tplink_cpe210-v1
+  $(Device/tplink-loader-okli)
+  ATH_SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := CPE210
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := CPE210
+  SUPPORTED_DEVICES += cpe210
+endef
+TARGET_DEVICES += tplink_cpe210-v1
+
 define Device/tplink_cpe210-v2
   $(Device/tplink-safeloader)
   ATH_SOC := qca9533
@@ -183,52 +195,60 @@ define Device/tplink_cpe210-v3
 endef
 TARGET_DEVICES += tplink_cpe210-v3
 
+define Device/tplink_cpe220-v2
+  $(Device/tplink-loader-okli)
+  ATH_SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := CPE220
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := CPE220V2
+endef
+TARGET_DEVICES += tplink_cpe220-v2
+
+define Device/tplink_cpe510-v1
+  $(Device/tplink-loader-okli)
+  ATH_SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := CPE510
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := CPE510
+  SUPPORTED_DEVICES += cpe510
+endef
+TARGET_DEVICES += tplink_cpe510-v1
+
 define Device/tplink_cpe510-v2
-  $(Device/tplink-safeloader)
+  $(Device/tplink-loader-okli)
   ATH_SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE510
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := rssileds
   TPLINK_BOARD_ID := CPE510V2
-  LOADER_TYPE := elf
-  LOADER_FLASH_OFFS := 0x43000 
-  COMPILE := loader-$(1).elf 
-  COMPILE/loader-$(1).elf := loader-okli-compile 
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 12288
   SUPPORTED_DEVICES += cpe510-v2
 endef
 TARGET_DEVICES += tplink_cpe510-v2
 
 define Device/tplink_cpe510-v3
-  $(Device/tplink-safeloader)
+  $(Device/tplink-loader-okli)
   ATH_SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE510
   DEVICE_VARIANT := v3
   DEVICE_PACKAGES := rssileds
   TPLINK_BOARD_ID := CPE510V3
-  LOADER_TYPE := elf
-  LOADER_FLASH_OFFS := 0x43000 
-  COMPILE := loader-$(1).elf 
-  COMPILE/loader-$(1).elf := loader-okli-compile 
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 12288
   SUPPORTED_DEVICES += cpe510-v3
 endef
 TARGET_DEVICES += tplink_cpe510-v3
 
 define Device/tplink_cpe610-v1
-  $(Device/tplink-safeloader)
+  $(Device/tplink-loader-okli)
   ATH_SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE610
   DEVICE_VARIANT := v1
   TPLINK_BOARD_ID := CPE610V1
-  LOADER_TYPE := elf
-  LOADER_FLASH_OFFS := 0x43000
-  COMPILE := loader-$(1).elf
-  COMPILE/loader-$(1).elf := loader-okli-compile
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 12288
 endef
 TARGET_DEVICES += tplink_cpe610-v1
 
@@ -251,7 +271,6 @@ define Device/tplink_archer-d50-v1
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := tplink-v2-image -s -V "ver. 2.0" | \
         append-metadata | check-size $$$$(IMAGE_SIZE)
-  SUPPORTED_DEVICES += archer-d50-v1
 endef
 TARGET_DEVICES += tplink_archer-d50-v1
 

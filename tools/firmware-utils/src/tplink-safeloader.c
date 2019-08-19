@@ -118,7 +118,7 @@ static const uint8_t md5_salt[16] = {
 
 /** Firmware layout table */
 static struct device_info boards[] = {
-	/** Firmware layout for the CPE210/220 */
+	/** Firmware layout for the CPE210/220 V1 */
 	{
 		.id	= "CPE210",
 		.vendor	= "CPE510(TP-LINK|UN|N300-5):1.0\r\n",
@@ -140,8 +140,8 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x1c0000},
-			{"file-system", 0x200000, 0x5b0000},
+			{"os-image", 0x40000, 0x200000},
+			{"file-system", 0x240000, 0x570000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -231,6 +231,46 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "support-list",
 	},
 
+	/** Firmware layout for the CPE220 V2 */
+	{
+		.id	= "CPE220V2",
+		.vendor	= "CPE510(TP-LINK|UN|N300-5):1.0\r\n",
+		.support_list =
+			"SupportList:\r\n"
+			"CPE220(TP-LINK|EU|N300-2|00000000):2.0\r\n"
+			"CPE220(TP-LINK|EU|N300-2|45550000):2.0\r\n"
+			"CPE220(TP-LINK|EU|N300-2|55530000):2.0\r\n"
+			"CPE220(TP-LINK|UN|N300-2|00000000):2.0\r\n"
+			"CPE220(TP-LINK|UN|N300-2|45550000):2.0\r\n"
+			"CPE220(TP-LINK|UN|N300-2|55530000):2.0\r\n"
+			"CPE220(TP-LINK|US|N300-2|55530000):2.0\r\n"
+			"CPE220(TP-LINK|UN|N300-2):2.0\r\n"
+			"CPE220(TP-LINK|EU|N300-2):2.0\r\n"
+			"CPE220(TP-LINK|US|N300-2):2.0\r\n",
+		.support_trail = '\xff',
+		.soft_ver = NULL,
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"partition-table", 0x20000, 0x02000},
+			{"default-mac", 0x30000, 0x00020},
+			{"product-info", 0x31100, 0x00100},
+			{"signature", 0x32000, 0x00400},
+			{"os-image", 0x40000, 0x200000},
+			{"file-system", 0x240000, 0x570000},
+			{"soft-version", 0x7b0000, 0x00100},
+			{"support-list", 0x7b1000, 0x00400},
+			{"user-config", 0x7c0000, 0x10000},
+			{"default-config", 0x7d0000, 0x10000},
+			{"log", 0x7e0000, 0x10000},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "support-list",
+	},
+
 	/** Firmware layout for the CPE510/520 */
 	{
 		.id	= "CPE510",
@@ -264,8 +304,8 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x1c0000},
-			{"file-system", 0x200000, 0x5b0000},
+			{"os-image", 0x40000, 0x200000},
+			{"file-system", 0x240000, 0x570000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -420,8 +460,8 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x1c0000},
-			{"file-system", 0x200000, 0x5b0000},
+			{"os-image", 0x40000, 0x200000},
+			{"file-system", 0x240000, 0x570000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -452,8 +492,8 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x1c0000},
-			{"file-system", 0x200000, 0x5b0000},
+			{"os-image", 0x40000, 0x200000},
+			{"file-system", 0x240000, 0x570000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},

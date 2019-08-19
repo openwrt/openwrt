@@ -97,18 +97,6 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	if (stat(infname, &statbuf) < 0) {
-		fprintf(stderr,
-			"could not find input file. (errno = %d)\n", errno);
-		exit(1);
-	}
-
-	filebuf = malloc(statbuf.st_size + padsz);
-	if (!filebuf) {
-		fprintf(stderr, "buffer allocation failed\n");
-		exit(1);
-	}
-
 	ifd = open(infname, O_RDONLY);
 	if (ifd < 0) {
 		fprintf(stderr,
@@ -120,6 +108,18 @@ int main(int argc, char *argv[])
 	if (ofd < 0) {
 		fprintf(stderr,
 			"could not open output file. (errno = %d)\n", errno);
+		exit(1);
+	}
+
+	if (fstat(ifd, &statbuf) < 0) {
+		fprintf(stderr,
+			"could not fstat input file. (errno = %d)\n", errno);
+		exit(1);
+	}
+
+	filebuf = malloc(statbuf.st_size + padsz);
+	if (!filebuf) {
+		fprintf(stderr, "buffer allocation failed\n");
 		exit(1);
 	}
 

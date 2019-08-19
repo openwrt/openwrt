@@ -76,7 +76,8 @@ USER_PROFILE ?= $(firstword $(PROFILE_NAMES))
 PROFILE_LIST = $(foreach p,$(PROFILE_NAMES), \
 	echo '$(patsubst DEVICE_%,%,$(p)):'; $(if $($(p)_NAME),echo '    $(subst ','"'"',$($(p)_NAME))'; ) \
 	echo '    Packages: $($(p)_PACKAGES)'; echo '    hasImageMetadata: $($(p)_HAS_IMAGE_METADATA)'; \
-	[ "$($(p)_SUPPORTED_DEVICES)" ] && echo '    SupportedDevices: $($(p)_SUPPORTED_DEVICES)'; )
+	$(if $($(p)_SUPPORTED_DEVICES),echo '    SupportedDevices: $($(p)_SUPPORTED_DEVICES)';) )
+
 
 .profiles.mk: .targetinfo
 	@$(SCRIPT_DIR)/target-metadata.pl profile_mk $< '$(BOARD)$(if $(SUBTARGET),/$(SUBTARGET))' > $@

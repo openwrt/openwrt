@@ -122,7 +122,7 @@ endef
 ifneq ($(CONFIG_VDI_IMAGES),)
   define Image/Build/vdi
 	rm $(BIN_DIR)/$(IMG_COMBINED)-$(1).vdi || true
-	qemu-img convert -f raw -O vdi \
+	$(STAGING_DIR_HOST)/bin/qemu-img convert -f raw -O vdi \
 		$(BIN_DIR)/$(IMG_COMBINED)-$(1).img \
 		$(BIN_DIR)/$(IMG_COMBINED)-$(1).vdi
   endef
@@ -131,7 +131,7 @@ endif
 ifneq ($(CONFIG_VMDK_IMAGES),)
   define Image/Build/vmdk
 	rm $(BIN_DIR)/$(IMG_COMBINED)-$(1).vmdk || true
-	qemu-img convert -f raw -O vmdk \
+	$(STAGING_DIR_HOST)/bin/qemu-img convert -f raw -O vmdk \
 		$(BIN_DIR)/$(IMG_COMBINED)-$(1).img \
 		$(BIN_DIR)/$(IMG_COMBINED)-$(1).vmdk
   endef

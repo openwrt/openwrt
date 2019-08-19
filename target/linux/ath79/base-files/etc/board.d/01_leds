@@ -54,6 +54,15 @@ comfast,cf-e120a-v3)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "$boardname:green:rssimediumhigh" "wlan0" "51" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "$boardname:green:rssihigh" "wlan0" "76" "100"
 	;;
+comfast,cf-e314n-v2)
+	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth0"
+	ucidef_set_led_netdev "lan" "LAN" "$boardname:green:lan" "eth1"
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "$boardname:red:rssilow" "wlan0" "1" "100"
+	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "$boardname:red:rssimediumlow" "wlan0" "26" "100"
+	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "$boardname:green:rssimediumhigh" "wlan0" "51" "100"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "$boardname:green:rssihigh" "wlan0" "76" "100"
+	;;
 comfast,cf-e5)
 	ucidef_set_led_switch "lan" "LAN" "$boardname:blue:lan" "switch0" "0x02"
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:blue:wan" "eth1"
@@ -62,7 +71,9 @@ comfast,cf-e5)
 	ucidef_set_led_rssi "rssimedium" "RSSIMEDIUM" "$boardname:blue:rssi1" "wlan0" "33" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "$boardname:blue:rssi2" "wlan0" "66" "100"
 	;;
+dlink,dir-842-c1|\
 dlink,dir-842-c2|\
+dlink,dir-842-c3|\
 dlink,dir-859-a1)
 	ucidef_set_led_switch "internet" "WAN" "$boardname:green:internet" "switch0" "0x20"
 	;;
@@ -135,7 +146,9 @@ tplink,archer-c6-v2)
 	;;
 tplink,archer-c25-v1|\
 tplink,tl-wr841-v9|\
+tplink,tl-wr841-v10|\
 tplink,tl-wr841-v11|\
+tplink,tl-wr841-v12|\
 tplink,tl-wr842n-v3)
 	ucidef_set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth1"
 	ucidef_set_led_switch "lan1" "LAN1" "tp-link:green:lan1" "switch0" "0x10"
@@ -154,6 +167,17 @@ tplink,archer-d50-v1)
 	ucidef_set_led_switch "lan" "LAN" "tp-link:white:lan" "switch0" "0x1c"
 	ucidef_set_led_switch "wan_data" "WAN Data" "tp-link:white:internet" "switch0" "0x02" "" "tx rx"
 	ucidef_set_led_switch "wan_link" "WAN Link" "tp-link:white:wan" "switch0" "0x02" "" "link"
+	;;
+tplink,cpe210-v1|\
+tplink,cpe220-v2|\
+tplink,cpe510-v1)
+	ucidef_set_led_netdev "lan0" "LAN0" "tp-link:green:lan0" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "tp-link:green:lan1" "switch0" "0x10"
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "tp-link:green:link1" "wlan0" "1" "100"
+	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "tp-link:green:link2" "wlan0" "30" "100"
+	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "tp-link:green:link3" "wlan0" "60" "100"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "tp-link:green:link4" "wlan0" "80" "100"
 	;;
 tplink,cpe210-v2|\
 tplink,cpe210-v3)
@@ -186,6 +210,17 @@ tplink,tl-mr3020-v1|\
 tplink,tl-mr3040-v2)
 	ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan" "eth0"
 	;;
+tplink,tl-mr3420-v2|\
+tplink,tl-wr740n-v4|\
+tplink,tl-wr741nd-v4|\
+tplink,tl-wr841-v8|\
+tplink,tl-wr842n-v2)
+	ucidef_set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "tp-link:green:lan1" "switch0" "0x04"
+	ucidef_set_led_switch "lan2" "LAN2" "tp-link:green:lan2" "switch0" "0x08"
+	ucidef_set_led_switch "lan3" "LAN3" "tp-link:green:lan3" "switch0" "0x10"
+	ucidef_set_led_switch "lan4" "LAN4" "tp-link:green:lan4" "switch0" "0x02"
+	;;
 tplink,tl-wr740n-v1|\
 tplink,tl-wr740n-v3|\
 tplink,tl-wr741-v1|\
@@ -198,15 +233,14 @@ tplink,tl-wr941-v4)
 	ucidef_set_led_switch "lan3" "LAN3" "tp-link:green:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan4" "LAN4" "tp-link:green:lan4" "switch0" "0x10"
 	;;
-tplink,tl-wr740n-v4|\
-tplink,tl-wr741nd-v4|\
-tplink,tl-wr841-v8|\
-tplink,tl-wr842n-v2)
-	ucidef_set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth1"
-	ucidef_set_led_switch "lan1" "LAN1" "tp-link:green:lan1" "switch0" "0x04"
-	ucidef_set_led_switch "lan2" "LAN2" "tp-link:green:lan2" "switch0" "0x08"
-	ucidef_set_led_switch "lan3" "LAN3" "tp-link:green:lan3" "switch0" "0x10"
-	ucidef_set_led_switch "lan4" "LAN4" "tp-link:green:lan4" "switch0" "0x02"
+tplink,tl-wr940n-v3|\
+tplink,tl-wr940n-v4|\
+tplink,tl-wr941nd-v6)
+	ucidef_set_led_netdev "wan" "WAN" "tp-link:blue:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "tp-link:blue:lan1" "switch0" "0x10"
+	ucidef_set_led_switch "lan2" "LAN2" "tp-link:blue:lan2" "switch0" "0x08"
+	ucidef_set_led_switch "lan3" "LAN3" "tp-link:blue:lan3" "switch0" "0x04"
+	ucidef_set_led_switch "lan4" "LAN4" "tp-link:blue:lan4" "switch0" "0x02"
 	;;
 trendnet,tew-823dru)
 	ucidef_set_led_netdev "wan" "WAN" "trendnet:green:planet" "eth0"

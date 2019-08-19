@@ -11,13 +11,14 @@
 	model = "AVM FRITZ!Box 7412";
 
 	chosen {
-		bootargs = "console=ttyLTQ0,115200 mem=126M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+		bootargs = "console=ttyLTQ0,115200";
 	};
 
 	aliases {
 		led-boot = &power_green;
 		led-failsafe = &power_red;
 		led-running = &power_green;
+		led-upgrade = &power_red;
 
 		led-dsl = &info;
 		led-wifi = &wifi;
@@ -34,13 +35,13 @@
 		
 		wps {
 			label = "wps";
-			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 		
 		dect {
 			label = "dect";
-			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_PHONE>;
 		};
 	};

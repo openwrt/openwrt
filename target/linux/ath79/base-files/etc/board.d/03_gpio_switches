@@ -42,6 +42,11 @@ tplink,archer-c25-v1)
 	ucidef_add_gpio_switch "led_control" "LED control" "21" "0"
 	ucidef_add_gpio_switch "led_reset" "LED reset" "19" "1"
 	;;
+tplink,cpe210-v1|\
+tplink,cpe220-v2|\
+tplink,cpe510-v1)
+	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "20"
+	;;
 ubnt,nanostation-ac)
 	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "3"
 	;;

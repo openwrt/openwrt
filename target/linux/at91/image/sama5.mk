@@ -6,6 +6,52 @@ define Device/default-nand
   MKUBIFS_OPTS := -m $$(PAGESIZE) -e 124KiB -c 2048
 endef
 
+define Build/at91-sdcard
+  $(if $(findstring ext4,$@), \
+  rm -f $@.boot
+  mkfs.fat -C $@.boot $(FAT32_BLOCKS)
+
+  mcopy -i $@.boot $(KDIR)/zImage ::zImage
+
+  $(if $(findstring at91-sama5d27_som1_ek,$@), \
+      mcopy -i $@.boot \
+          $(BIN_DIR)/u-boot-$(DEVICE_NAME:at91-%=%)_mmc1/u-boot.bin \
+          ::u-boot.bin
+      mcopy -i $@.boot \
+          $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd1_uboot/at91bootstrap.bin \
+          ::BOOT.bin,
+      mcopy -i $@.boot \
+          $(BIN_DIR)/u-boot-$(DEVICE_NAME:at91-%=%)_mmc/u-boot.bin \
+          ::u-boot.bin
+      $(if $(findstring sama5d4_xplained, $@), \
+          mcopy -i $@.boot \
+              $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd_uboot_secure/at91bootstrap.bin \
+              ::BOOT.bin,
+          mcopy -i $@.boot \
+              $(BIN_DIR)/at91bootstrap-$(DEVICE_NAME:at91-%=%)sd_uboot/at91bootstrap.bin \
+              ::BOOT.bin))
+
+  $(CP) uboot-env.txt $@-uboot-env.txt
+  sed -i '2d;3d' $@-uboot-env.txt
+  sed -i '2i board='"$(DEVICE_NAME:at91-%=%)"'' $@-uboot-env.txt
+  sed -i '3i board_name='"$(DEVICE_NAME:at91-%=%)"'' $@-uboot-env.txt
+
+  mkenvimage -s 0x4000 -o $@-uboot.env $@-uboot-env.txt
+
+  mcopy -i $@.boot $@-uboot.env ::uboot.env
+
+  ./gen_at91_sdcard_img.sh \
+      $@.img \
+      $@.boot \
+      $(KDIR)/root.ext4 \
+      $(AT91_SD_BOOT_PARTSIZE) \
+      $(CONFIG_TARGET_ROOTFS_PARTSIZE)
+
+  gzip -nc9 $@.img > $@
+
+  rm -f $@.img $@.boot $@-uboot.env $@-uboot-env.txt)
+endef
+
 define Device/at91-sama5d2_xplained
   $(Device/evaluation-dtb)
   DEVICE_TITLE := Microchip(Atmel AT91) SAMA5D2 Xplained

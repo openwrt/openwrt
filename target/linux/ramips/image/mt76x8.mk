@@ -102,6 +102,15 @@ define Device/hiwifi_hc5661a
 endef
 TARGET_DEVICES += hiwifi_hc5661a
 
+define Device/hiwifi_hc5761a
+  MTK_SOC := mt7628an
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := HiWiFi
+  DEVICE_MODEL := HC5761A
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += hiwifi_hc5761a
+
 define Device/hiwifi_hc5861b
   MTK_SOC := mt7628an
   IMAGE_SIZE := 15808k
@@ -110,6 +119,16 @@ define Device/hiwifi_hc5861b
   DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += hiwifi_hc5861b
+
+define Device/iptime_a604m
+  MTK_SOC := mt7628an
+  IMAGE_SIZE := 7936k
+  UIMAGE_NAME := a604m
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := A604M
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += iptime_a604m
 
 define Device/mediatek_linkit-smart-7688
   MTK_SOC := mt7628an

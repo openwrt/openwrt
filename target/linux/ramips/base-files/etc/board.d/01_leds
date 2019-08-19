@@ -78,8 +78,7 @@ asus,rt-n14u)
 	ucidef_set_led_netdev "wan" "wan" "$boardname:blue:wan" eth0.2
 	set_wifi_led "$boardname:blue:air"
 	;;
-bdcom,wap2100-sk|\
-hiwifi,hc5861b)
+bdcom,wap2100-sk)
 	set_wifi_led "$boardname:green:wlan2g"
 	;;
 belkin,f9k1109v1)
@@ -204,14 +203,22 @@ gnubee,gb-pc2)
 hauppauge,broadway)
 	set_wifi_led "$boardname:red:wps_active"
 	;;
-hiwifi,hc5661|\
-hiwifi,hc5661a)
-	ucidef_set_led_netdev "internet" "internet" "$boardname:blue:internet" "eth0.2"
+hiwifi,hc5661)
+	ucidef_set_led_switch "internet" "internet" "$boardname:blue:internet" "switch0" "0x01"
 	set_wifi_led "$boardname:blue:wlan2g"
 	;;
-hiwifi,hc5761|\
+hiwifi,hc5661a|\
+hiwifi,hc5761a|\
+xzwifi,creativebox-v1)
+	ucidef_set_led_switch "internet" "internet" "$boardname:blue:internet" "switch0" "0x10"
+	;;
+hiwifi,hc5761)
+	ucidef_set_led_switch "internet" "internet" "$boardname:blue:internet" "switch0" "0x01"
+	ucidef_set_led_netdev "wifi5g" "wifi5g" "$boardname:blue:wlan5g" "wlan0"
+	ucidef_set_led_netdev "wifi2g" "wifi2g" "$boardname:blue:wlan2g" "wlan1"
+	;;
 hiwifi,hc5861)
-	ucidef_set_led_netdev "internet" "internet" "$boardname:blue:internet" "eth0.2"
+	ucidef_set_led_switch "internet" "internet" "$boardname:blue:internet" "switch0" "0x20"
 	ucidef_set_led_netdev "wifi5g" "wifi5g" "$boardname:blue:wlan5g" "wlan0"
 	ucidef_set_led_netdev "wifi2g" "wifi2g" "$boardname:blue:wlan2g" "wlan1"
 	;;
@@ -425,9 +432,6 @@ xiaomi,mir3p)
 	ucidef_set_led_switch "lan1-amber" "LAN1 (amber)" "$boardname:amber:lan1" "switch0" "0x02" "0x08"
 	ucidef_set_led_switch "lan2-amber" "LAN2 (amber)" "$boardname:amber:lan2" "switch0" "0x04" "0x08"
 	ucidef_set_led_switch "lan3-amber" "LAN3 (amber)" "$boardname:amber:lan3" "switch0" "0x08" "0x08"
-	;;
-xzwifi,creativebox-v1)
-	ucidef_set_led_switch "internet" "internet" "$boardname:blue:internet" "switch0" "0x10"
 	;;
 youhua,wr1200js)
 	ucidef_set_led_switch "internet" "INTERNET" "$boardname:green:wan" "switch0" "0x01"

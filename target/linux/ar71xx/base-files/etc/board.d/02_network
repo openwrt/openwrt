@@ -604,11 +604,11 @@ ar71xx_setup_macs()
 
 	case $board in
 	archer-c7-v4)
-		base_mac=$(mtd_get_mac_binary config 8)
+		base_mac=$(mtd_get_mac_binary config 0x8)
 		wan_mac=$(macaddr_add "$base_mac" 1)
 		;;
 	archer-c7-v5)
-		base_mac=$(mtd_get_mac_binary info 8)
+		base_mac=$(mtd_get_mac_binary info 0x8)
 		wan_mac=$(macaddr_add "$base_mac" 1)
 		;;
 	dgl-5500-a1|\
@@ -619,8 +619,8 @@ ar71xx_setup_macs()
 	dir-835-a1|\
 	wndr3700v4|\
 	wndr4300)
-		lan_mac=$(mtd_get_mac_binary caldata 0)
-		wan_mac=$(mtd_get_mac_binary caldata 6)
+		lan_mac=$(mtd_get_mac_binary caldata 0x0)
+		wan_mac=$(mtd_get_mac_binary caldata 0x6)
 		;;
 	dir-869-a1|\
 	mynet-n750)
@@ -634,7 +634,7 @@ ar71xx_setup_macs()
 		;;
 	tl-wr1043n-v5|\
 	tl-wr1043nd-v4)
-		lan_mac=$(mtd_get_mac_binary product-info 8)
+		lan_mac=$(mtd_get_mac_binary product-info 0x8)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	wlr8100)

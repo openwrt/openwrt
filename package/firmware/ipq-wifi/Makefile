@@ -24,13 +24,6 @@ endef
 #
 
 ALLWIFIBOARDS:= \
-	alfa-network_ap120c-ac \
-	asus_map-ac2200 \
-	avm_fritzbox-7530 \
-	avm_fritzrepeater-3000 \
-	engenius_eap1300 \
-	engenius_ens620ext \
-	linksys_ea6350v3 \
 	linksys_ea8300 \
 	qxwlan_e2600ac
 
@@ -95,13 +88,6 @@ endef
 # Place files in this directory as board-<devicename>.<qca4019|qca9888|qca9984>
 # Add $(eval $(call generate-ipq-wifi-package,<devicename>,<display name>))
 
-$(eval $(call generate-ipq-wifi-package,alfa-network_ap120c-ac,ALFA Network AP120C-AC))
-$(eval $(call generate-ipq-wifi-package,asus_map-ac2200,ASUS MAP-AC2200))
-$(eval $(call generate-ipq-wifi-package,avm_fritzbox-7530,AVM FRITZ!Box 7530))
-$(eval $(call generate-ipq-wifi-package,avm_fritzrepeater-3000,AVM FRITZ!Repeater 3000))
-$(eval $(call generate-ipq-wifi-package,engenius_eap1300,EnGenius EAP1300))
-$(eval $(call generate-ipq-wifi-package,engenius_ens620ext,EnGenius ENS620EXT))
-$(eval $(call generate-ipq-wifi-package,linksys_ea6350v3,Linksys EA6350v3))
 $(eval $(call generate-ipq-wifi-package,linksys_ea8300,Linksys EA8300))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac,Qxwlan E2600AC))
 

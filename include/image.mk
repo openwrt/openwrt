@@ -106,7 +106,7 @@ define add_jffs2_mark
 	echo -ne '\xde\xad\xc0\xde' >> $(1)
 endef
 
-PROFILE_SANITIZED := $(call sanitize,$(PROFILE))
+PROFILE_SANITIZED := $(call sanitize,$(subst DEVICE_,,$(PROFILE)))
 
 define split_args
 $(foreach data, \
@@ -416,6 +416,8 @@ define Device/Init
   FILESYSTEMS := $(TARGET_FILESYSTEMS)
 
   UBOOT_PATH :=  $(STAGING_DIR_IMAGE)/uboot-$(1)
+
+  DEFAULT :=
 endef
 
 DEFAULT_DEVICE_VARS := \
@@ -593,6 +595,7 @@ Target-Profile-Name: $(DEVICE_TITLE)
 Target-Profile-Packages: $(DEVICE_PACKAGES)
 Target-Profile-hasImageMetadata: $(if $(foreach image,$(IMAGES),$(findstring append-metadata,$(IMAGE/$(image)))),1,0)
 Target-Profile-SupportedDevices: $(SUPPORTED_DEVICES)
+$(if $(DEFAULT),Target-Profile-Default: $(DEFAULT))
 Target-Profile-Description:
 $(DEVICE_DESCRIPTION)
 @@
