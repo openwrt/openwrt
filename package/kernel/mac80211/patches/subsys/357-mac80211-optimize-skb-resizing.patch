@@ -24,7 +24,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1780,6 +1780,9 @@ int ieee80211_tx_control_port(struct wip
+@@ -1779,6 +1779,9 @@ int ieee80211_tx_control_port(struct wip
  			      const u8 *dest, __be16 proto, bool unencrypted);
  int ieee80211_probe_mesh_link(struct wiphy *wiphy, struct net_device *dev,
  			      const u8 *buf, size_t len);
@@ -36,9 +36,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  void ieee80211_apply_htcap_overrides(struct ieee80211_sub_if_data *sdata,
 --- a/net/mac80211/status.c
 +++ b/net/mac80211/status.c
-@@ -669,6 +669,11 @@ void ieee80211_tx_monitor(struct ieee802
- 		}
- 	}
+@@ -655,6 +655,11 @@ void ieee80211_tx_monitor(struct ieee802
+ 	struct net_device *prev_dev = NULL;
+ 	int rtap_len;
  
 +	if (ieee80211_skb_resize(local, NULL, skb, 0, 0)) {
 +		dev_kfree_skb(skb);
@@ -50,7 +50,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (WARN_ON_ONCE(skb_headroom(skb) < rtap_len)) {
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1935,37 +1935,53 @@ static bool ieee80211_tx(struct ieee8021
+@@ -1936,37 +1936,53 @@ static bool ieee80211_tx(struct ieee8021
  }
  
  /* device xmit handlers */
@@ -67,20 +67,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211_hdr *hdr;
 -	bool enc_tailroom;
 -	int tail_need = 0;
--
++	int head_need, head_max;
++	int tail_need, tail_max;
++	bool enc_tailroom = false;
+ 
 -	hdr = (struct ieee80211_hdr *) skb->data;
 -	enc_tailroom = may_encrypt &&
 -		       (sdata->crypto_tx_tailroom_needed_cnt ||
 -			ieee80211_is_mgmt(hdr->frame_control));
--
--	if (enc_tailroom) {
--		tail_need = IEEE80211_ENCRYPT_TAILROOM;
--		tail_need -= skb_tailroom(skb);
--		tail_need = max_t(int, tail_need, 0);
-+	int head_need, head_max;
-+	int tail_need, tail_max;
-+	bool enc_tailroom = false;
-+
 +	if (sdata && !hdr_len &&
 +	    !(info->flags & IEEE80211_TX_INTFL_DONT_ENCRYPT)) {
 +		hdr = (struct ieee80211_hdr *) skb->data;
@@ -88,7 +82,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +				ieee80211_is_mgmt(hdr->frame_control));
 +		hdr_len += sdata->encrypt_headroom;
 +	}
-+
+ 
+-	if (enc_tailroom) {
+-		tail_need = IEEE80211_ENCRYPT_TAILROOM;
+-		tail_need -= skb_tailroom(skb);
+-		tail_need = max_t(int, tail_need, 0);
 +	head_need = head_max = hdr_len;
 +	tail_need = tail_max = 0;
 +	if (!sdata) {
@@ -123,7 +121,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		wiphy_debug(local->hw.wiphy,
  			    "failed to reallocate TX buffer\n");
  		return -ENOMEM;
-@@ -1981,18 +1997,8 @@ void ieee80211_xmit(struct ieee80211_sub
+@@ -1982,18 +1998,8 @@ void ieee80211_xmit(struct ieee80211_sub
  	struct ieee80211_local *local = sdata->local;
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	struct ieee80211_hdr *hdr;
@@ -131,26 +129,24 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	bool may_encrypt;
 -
 -	may_encrypt = !(info->flags & IEEE80211_TX_INTFL_DONT_ENCRYPT);
- 
+-
 -	headroom = local->tx_headroom;
 -	if (may_encrypt)
 -		headroom += sdata->encrypt_headroom;
 -	headroom -= skb_headroom(skb);
 -	headroom = max_t(int, 0, headroom);
--
+ 
 -	if (ieee80211_skb_resize(sdata, skb, headroom, may_encrypt)) {
 +	if (ieee80211_skb_resize(local, sdata, skb, 0, 0)) {
  		ieee80211_free_txskb(&local->hw, skb);
  		return;
  	}
-@@ -2774,30 +2780,14 @@ static struct sk_buff *ieee80211_build_h
+@@ -2774,29 +2780,13 @@ static struct sk_buff *ieee80211_build_h
+ 	}
  
  	skb_pull(skb, skip_header_bytes);
- 	padsize = ieee80211_hdr_padsize(&local->hw, hdrlen);
 -	head_need = hdrlen + encaps_len + meshhdrlen - skb_headroom(skb);
-+	head_need = hdrlen + encaps_len + meshhdrlen;
- 	head_need += padsize;
- 
+-
 -	/*
 -	 * So we need to modify the skb header and hence need a copy of
 -	 * that. The head_need variable above doesn't, so far, include
@@ -162,7 +158,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	 * the ever needed space. Also, if we need to reallocate it anyway,
 -	 * make it big enough for everything we may ever need.
 -	 */
--
++	head_need = hdrlen + encaps_len + meshhdrlen;
+ 
 -	if (head_need > 0 || skb_cloned(skb)) {
 -		head_need += sdata->encrypt_headroom;
 -		head_need += local->tx_headroom;
@@ -180,7 +177,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	if (encaps_data)
-@@ -3417,7 +3407,6 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3411,7 +3401,6 @@ static bool ieee80211_xmit_fast(struct i
  	struct ieee80211_local *local = sdata->local;
  	u16 ethertype = (skb->data[12] << 8) | skb->data[13];
  	int extra_head = fast_tx->hdr_len - (ETH_HLEN - 2);
@@ -188,7 +185,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ethhdr eth;
  	struct ieee80211_tx_info *info;
  	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
-@@ -3469,10 +3458,7 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3463,10 +3452,7 @@ static bool ieee80211_xmit_fast(struct i
  	 * as the may-encrypt argument for the resize to not account for
  	 * more room than we already have in 'extra_head'
  	 */
