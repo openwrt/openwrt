@@ -11,8 +11,19 @@
  #include "ifxos_rt_if_check.h"
 --- a/src/linux/ifxos_linux_socket_drv.c
 +++ b/src/linux/ifxos_linux_socket_drv.c
+@@ -27,7 +27,7 @@
+ #include <linux/in.h>
+ #include <linux/net.h>
+ #include <linux/inet.h>
+-#include <asm/uaccess.h>
++#include <linux/uaccess.h>
+ 
+ #include "ifx_types.h"
+ #include "ifxos_rt_if_check.h"
+--- a/src/linux/ifxos_linux_socket_ipv6_drv.c
++++ b/src/linux/ifxos_linux_socket_ipv6_drv.c
 @@ -25,7 +25,7 @@
- #endif
+ #include <linux/version.h>
  #include <linux/in.h>
  #include <linux/net.h>
 -#include <asm/uaccess.h>
