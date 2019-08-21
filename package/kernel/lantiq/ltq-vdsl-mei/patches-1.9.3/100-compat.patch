@@ -1,0 +1,323 @@
+--- a/src/drv_mei_cpe_linux.c
++++ b/src/drv_mei_cpe_linux.c
+@@ -113,6 +113,10 @@
+ #include "drv_mei_cpe_dbg_streams.h"
+ #endif
+ 
++#if (MEI_SUPPORT_DEVICE_VR9 == 1)
++#include <lantiq_soc.h>
++#endif
++
+ /* ===================================
+    extern function declarations
+    =================================== */
+@@ -2436,9 +2440,11 @@ static int MEI_driver_init (int entity)
+    }
+ 
+ #ifdef PPA_SUPPORTS_CALLBACKS
++#if (MEI_SUPPORT_DEVICE_VR9 != 1)
+ #if (MEI_DRV_ATM_PTM_INTERFACE_ENABLE == 1)
+    ppa_callback_set(LTQ_MEI_SHOWTIME_CHECK, (void *)ltq_mei_showtime_check);
+ #endif /* #if (MEI_DRV_ATM_PTM_INTERFACE_ENABLE == 1) */
++#endif /* #if (MEI_SUPPORT_DEVICE_VR9 != 1) */
+ #endif /* PPA_SUPPORTS_CALLBACKS */
+ 
+    return 0;
+@@ -2612,9 +2618,11 @@ static void MEI_driver_exit (void)
+    }
+ 
+ #ifdef PPA_SUPPORTS_CALLBACKS
++#if (MEI_SUPPORT_DEVICE_VR9 != 1)
+ #if (MEI_DRV_ATM_PTM_INTERFACE_ENABLE == 1)
+    ppa_callback_set(LTQ_MEI_SHOWTIME_CHECK, (void *)NULL);
+ #endif /* #if (MEI_DRV_ATM_PTM_INTERFACE_ENABLE == 1) */
++#endif /* #if (MEI_SUPPORT_DEVICE_VR9 != 1) */
+ #endif /* PPA_SUPPORTS_CALLBACKS */
+ 
+ #if (MEI_SUPPORT_DEBUG_LOGGER == 1)
+@@ -2846,21 +2854,38 @@ static int MEI_InitModuleBasics(void)
+ }
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
++
++#if (MEI_SUPPORT_DEVICE_VR9 == 1)
++#define PMU_DFE         BIT(9)
++#endif
++
+ static int MEI_SysClkEnable(struct clk *clk)
+ {
++#if 0
+    if (IS_ERR(clk))
+       return -1;
+    clk_enable(clk);
++#else
++#if (MEI_SUPPORT_DEVICE_VR9 == 1)
++   ltq_pmu_enable(PMU_DFE);
++#endif
++#endif
+ 
+    return 0;
+ }
+ 
+ static int MEI_SysClkDisable(struct clk *clk)
+ {
++#if 0
+    if (IS_ERR(clk))
+       return -1;
+    clk_disable(clk);
+    clk_put(clk);
++#else
++#if (MEI_SUPPORT_DEVICE_VR9 == 1)
++   ltq_pmu_disable(PMU_DFE);
++#endif
++#endif
+ 
+    return 0;
+ }
+--- a/src/drv_mei_cpe_api_atm_ptm_intern.c
++++ b/src/drv_mei_cpe_api_atm_ptm_intern.c
+@@ -643,6 +643,53 @@ int ifx_mei_atm_led_blink(void)
+     return IFX_SUCCESS;
+ }
+ 
++#if (MEI_SUPPORT_DEVICE_VR9 == 1)
++#if MEI_MAX_SUPPORTED_DFE_CHAN_DEVICES > 1
++#error "Compat functions do not support MEI_MAX_SUPPORTED_DFE_CHAN_DEVICES > 1 yet"
++#else
++int (*ifx_mei_atm_showtime_enter)(struct port_cell_info *, void *) = NULL;
++int (*ifx_mei_atm_showtime_exit)(void) = NULL;
++
++int ltq_ifx_mei_atm_showtime_enter_compat(IFX_uint8_t dslLineNum,
++				      struct port_cell_info *cellInfo,
++				      void *xdata) {
++	if (ifx_mei_atm_showtime_enter)
++		return ifx_mei_atm_showtime_enter(cellInfo, xdata);
++
++	return -e_MEI_ERR_OP_FAILED;
++}
++
++int ltq_ifx_mei_atm_showtime_exit_compat(IFX_uint8_t dslLineNum) {
++	if (ifx_mei_atm_showtime_exit)
++		return ifx_mei_atm_showtime_exit();
++
++	return -e_MEI_ERR_OP_FAILED;
++}
++
++void* ppa_callback_get(e_ltq_mei_cb_type type) {
++	switch (type) {
++		case LTQ_MEI_SHOWTIME_ENTER:
++			return &ltq_ifx_mei_atm_showtime_enter_compat;
++		case LTQ_MEI_SHOWTIME_EXIT:
++			return &ltq_ifx_mei_atm_showtime_exit_compat;
++			break;
++	}
++
++	BUG();
++}
++
++int ifx_mei_atm_showtime_check(int *is_showtime,
++                              struct port_cell_info *port_cell,
++                              void **xdata_addr) {
++	return ltq_mei_showtime_check(0, is_showtime, port_cell, xdata_addr);
++}
++
++EXPORT_SYMBOL(ifx_mei_atm_showtime_enter);
++EXPORT_SYMBOL(ifx_mei_atm_showtime_exit);
++EXPORT_SYMBOL(ifx_mei_atm_showtime_check);
++#endif
++#endif /* #if (MEI_SUPPORT_DEVICE_VR9 == 1) */
++
+ EXPORT_SYMBOL (MEI_InternalXtmSwhowtimeEntrySignal);
+ EXPORT_SYMBOL (MEI_InternalXtmSwhowtimeExitSignal);
+ EXPORT_SYMBOL (MEI_InternalTcRequest);
+--- a/src/drv_mei_cpe_api_atm_ptm_intern.h
++++ b/src/drv_mei_cpe_api_atm_ptm_intern.h
+@@ -25,7 +25,7 @@
+ #ifdef PPA_SUPPORTS_CALLBACKS
+ #if (MEI_SUPPORT_DEVICE_VR11 == 1)
+ #include <net/dsl_tc.h>
+-#else
++#elif (MEI_SUPPORT_DEVICE_VR9 != 1)
+ #include <net/ppa_stack_al.h>
+ #endif
+ #endif /* #ifdef PPA_SUPPORTS_CALLBACKS */
+@@ -81,8 +81,21 @@ extern IFX_int32_t MEI_InternalLineTCMod
+                               IFX_boolean_t bKillMEIControlThread);
+ 
+ #ifdef PPA_SUPPORTS_CALLBACKS
++#if (MEI_SUPPORT_DEVICE_VR9 == 1)
++#include <lantiq_atm.h>
++typedef enum {
++	LTQ_MEI_SHOWTIME_ENTER,
++	LTQ_MEI_SHOWTIME_EXIT
++} e_ltq_mei_cb_type;
++
++typedef void (*ltq_mei_atm_showtime_enter_t)(IFX_uint8_t, struct port_cell_info *, void *);
++typedef void (*ltq_mei_atm_showtime_exit_t)(IFX_uint8_t);
++
++void* ppa_callback_get(e_ltq_mei_cb_type type);
++#else
+ extern int ppa_callback_set(e_ltq_mei_cb_type type, void *func);
+ extern void* ppa_callback_get(e_ltq_mei_cb_type type);
++#endif /* #if (MEI_SUPPORT_DEVICE_VR9 == 1) */
+ 
+ int ltq_mei_showtime_check(
+                               const unsigned char line_idx,
+--- a/src/drv_mei_cpe_device_vrx.c
++++ b/src/drv_mei_cpe_device_vrx.c
+@@ -29,20 +29,16 @@
+ #include "drv_mei_cpe_mei_vrx.h"
+ 
+ #if defined(LINUX)
+-#  if (LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0))
+-#    if (MEI_SUPPORT_DEVICE_VR10_320 == 1)
+-#       include "../drivers/net/ethernet/lantiq/lantiq_pcie.h"
+-#    else
++#  if (MEI_SUPPORT_DEVICE_VR10 == 1)
++#    if (LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0))
+ #       include "ifx_pcie.h"
+-#    endif
+-#  else
+-#    if (MEI_SUPPORT_DEVICE_VR11 == 1)
+-#       include "net/dc_ep.h"
+-#    elif (MEI_SUPPORT_DEVICE_VR10_320 == 1)
+-#       include "../drivers/net/ethernet/lantiq/lantiq_pcie.h"
+ #    else
+ #       include "lantiq_pcie.h"
+ #    endif
++#  elif (MEI_SUPPORT_DEVICE_VR10_320 == 1)
++#       include "../drivers/net/ethernet/lantiq/lantiq_pcie.h"
++#  elif (MEI_SUPPORT_DEVICE_VR11 == 1)
++#       include "net/dc_ep.h"
+ #  endif
+ #endif /* #if defined(LINUX)*/
+ 
+@@ -92,6 +88,7 @@ IFX_int32_t MEI_GetChipInfo(MEI_DEV_T *p
+ */
+ IFX_int32_t MEI_VR1x_PcieEntitiesCheck(IFX_uint8_t nEntityNum)
+ {
++#if (MEI_SUPPORT_DEVICE_VR10 == 1) || (MEI_SUPPORT_DEVICE_VR10_320 == 1) || (MEI_SUPPORT_DEVICE_VR11 == 1)
+    IFX_uint32_t pcie_entitiesNum;
+ 
+    /* get information from pcie driver */
+@@ -118,6 +115,9 @@ IFX_int32_t MEI_VR1x_PcieEntitiesCheck(I
+    }
+ 
+    return IFX_SUCCESS;
++#else
++   return IFX_ERROR;
++#endif
+ }
+ 
+ /**
+@@ -132,6 +132,7 @@ IFX_int32_t MEI_VR1x_PcieEntitiesCheck(I
+ */
+ IFX_int32_t MEI_VR1x_PcieEntityInit(MEI_MEI_DRV_CNTRL_T *pMeiDrvCntrl)
+ {
++#if (MEI_SUPPORT_DEVICE_VR10 == 1) || (MEI_SUPPORT_DEVICE_VR10_320 == 1) || (MEI_SUPPORT_DEVICE_VR11 == 1)
+    IFX_uint8_t entityNum;
+ #if (MEI_SUPPORT_DEVICE_VR11 == 1)
+    struct dc_ep_dev MEI_pcie_ep_dev;
+@@ -173,6 +174,9 @@ IFX_int32_t MEI_VR1x_PcieEntityInit(MEI_
+ #endif
+ 
+    return IFX_SUCCESS;
++#else
++   return IFX_ERROR;
++#endif
+ }
+ 
+ /**
+@@ -187,6 +191,7 @@ IFX_int32_t MEI_VR1x_PcieEntityInit(MEI_
+ */
+ IFX_int32_t MEI_VR1x_PcieEntityFree(IFX_uint8_t entityNum)
+ {
++#if (MEI_SUPPORT_DEVICE_VR10 == 1) || (MEI_SUPPORT_DEVICE_VR10_320 == 1) || (MEI_SUPPORT_DEVICE_VR11 == 1)
+ #if (MEI_SUPPORT_DEVICE_VR11 == 1)
+    if (dc_ep_dev_info_release(entityNum))
+ #elif (MEI_SUPPORT_DEVICE_VR10_320 == 1)
+@@ -202,6 +207,9 @@ IFX_int32_t MEI_VR1x_PcieEntityFree(IFX_
+    }
+ 
+    return IFX_SUCCESS;
++#else
++   return IFX_ERROR;
++#endif
+ }
+ 
+ /**
+@@ -216,6 +224,7 @@ IFX_int32_t MEI_VR1x_PcieEntityFree(IFX_
+ */
+ IFX_int32_t MEI_VR1x_InternalInitDevice(MEI_DYN_CNTRL_T *pMeiDynCntrl)
+ {
++#if (MEI_SUPPORT_DEVICE_VR10 == 1) || (MEI_SUPPORT_DEVICE_VR10_320 == 1) || (MEI_SUPPORT_DEVICE_VR11 == 1)
+    IFX_int32_t         retVal;
+    IOCTL_MEI_devInit_t InitDev;
+    MEI_DEV_T           *pMeiDev = pMeiDynCntrl->pMeiDev;
+@@ -247,6 +256,9 @@ IFX_int32_t MEI_VR1x_InternalInitDevice(
+ #endif
+ 
+    return IFX_SUCCESS;
++#else
++   return IFX_ERROR;
++#endif
+ }
+ 
+ IFX_int32_t MEI_PLL_ConfigInit(MEI_DEV_T *pMeiDev)
+--- a/src/drv_mei_cpe_dsm.c
++++ b/src/drv_mei_cpe_dsm.c
+@@ -151,7 +151,7 @@ IFX_void_t MEI_VRX_DSM_DataInit(MEI_DEV_
+    pMeiDev->meiFwDlCount = 0;
+ 
+ #if MEI_SUPPORT_DEVICE_VR11 != 1
+-   pMeiDev->meiERBbuf.pCallBackFunc = mei_dsm_cb_func_hook;
++   pMeiDev->meiERBbuf.pCallBackFunc = NULL;
+    PRN_DBG_USR_NL( MEI_DRV, MEI_DRV_PRN_LEVEL_NORMAL,
+             ("MEI_DRV: PP callback function addr = 0x%08X" MEI_DRV_CRLF,
+             (IFX_uint32_t)(pMeiDev->meiERBbuf.pCallBackFunc)));
+--- a/src/drv_mei_cpe_config.h
++++ b/src/drv_mei_cpe_config.h
+@@ -471,7 +471,13 @@
+ /** control device mask */
+ #define MEI_ENTITY_CNTRL_DEV_MASK             0x3F
+ 
+-
++#if (MEI_SUPPORT_DEVICE_VR9 == 1)
++#   define MEI_MAX_DFEX_ENTITIES                        1
++#   define MEI_MAX_SUPPORTED_DFEX_ENTITIES              1
++#   define MEI_MAX_DFE_INSTANCE_PER_ENTITY              1
++#   define MEI_MAX_SUPPORTED_DFE_INSTANCE_PER_ENTITY    1
++#   define MEI_MAX_SUPPORTED_DFE_CHAN_DEVICES           1
++#endif
+ 
+ /** maximum instances of MEIx chip devices handled by this driver */
+ #ifndef MEI_MAX_DFEX_ENTITIES
+@@ -503,7 +509,9 @@
+ 
+ 
+ /** maximum devices handled by this driver */
+-#define MEI_MAX_SUPPORTED_DFE_CHAN_DEVICES     2
++#ifndef MEI_MAX_SUPPORTED_DFE_CHAN_DEVICES
++#   define MEI_MAX_SUPPORTED_DFE_CHAN_DEVICES     2
++#endif
+ 
+ /** Decrement counter value to protect "empty" IRQ requests form the OS */
+ #define MEI_IRQ_PROTECT_COUNT                 1000
+--- a/src/drv_mei_cpe_download_vrx.c
++++ b/src/drv_mei_cpe_download_vrx.c
+@@ -2435,6 +2435,7 @@ static IFX_int32_t MEI_VRX_FinishFwDownl
+       }
+       return (-e_MEI_ERR_OP_FAILED);
+    }
++#if (MEI_SUPPORT_DEVICE_VR9 != 1)
+    if (MEI_DFE_INSTANCE_PER_ENTITY != MEI_MAX_SUPPORTED_MEI_IF_PER_DEVICE) 
+    /* Populate data to the SLAVE line*/
+    {
+@@ -2477,6 +2478,7 @@ static IFX_int32_t MEI_VRX_FinishFwDownl
+       /* Set SLAVE line state*/
+       MEI_DRV_STATE_SET(pMeiDevSlave, MEI_DRV_STATE_GET(pMeiDev));
+    }
++#endif
+ 
+    return ret;
+ }
