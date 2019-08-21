@@ -1,0 +1,47 @@
+--- a/src/include/drv_dsl_cpe_os_linux.h
++++ b/src/include/drv_dsl_cpe_os_linux.h
+@@ -36,6 +36,9 @@
+ #endif
+ 
+ #include <linux/sched.h>
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0))
++#include <linux/sched/signal.h>
++#endif
+ 
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
+    #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
+--- a/configure.in
++++ b/configure.in
+@@ -422,7 +422,7 @@ AC_ARG_ENABLE(debug-prints,
+             AC_SUBST([DSL_DBG_MAX_LEVEL_SET],[no])
+ 
+             AC_SUBST([DSL_DBG_MAX_LEVEL_PRE],[n/a])
+-            AC_SUBST([INCLUDE_DSL_CPE_DEBUG_LOGGER_SUPPORT],[no])
++            AC_SUBST([INCLUDE_DSL_CPE_DEBUG_LOGGER_SUPPORT],[yes])
+             ;;
+         no | none )
+             AC_DEFINE(DSL_DEBUG_DISABLE,,[Disabled debug prints])
+@@ -433,7 +433,7 @@ AC_ARG_ENABLE(debug-prints,
+             AC_SUBST([DSL_DBG_MAX_LEVEL_SET],[no])
+ 
+             AC_SUBST([DSL_DBG_MAX_LEVEL_PRE],[n/a])
+-            AC_SUBST([INCLUDE_DSL_CPE_DEBUG_LOGGER_SUPPORT],[yes])
++            AC_SUBST([INCLUDE_DSL_CPE_DEBUG_LOGGER_SUPPORT],[no])
+             ;;
+         prn | 0x1 )
+             AC_SUBST([DSL_DEBUG_DISABLE],[no])
+--- a/src/common/drv_dsl_cpe_api.c
++++ b/src/common/drv_dsl_cpe_api.c
+@@ -87,8 +87,12 @@ static DSL_uint32_t g_VRxPD_IOctlWhiteli
+    DSL_FIO_BAND_PLAN_STATUS_GET,
+    DSL_FIO_DBG_MODULE_LEVEL_GET,
+    DSL_FIO_DBG_MODULE_LEVEL_SET,
++#ifdef INCLUDE_DSL_CPE_DEBUG_LOGGER_SUPPORT
++#ifndef DSL_DEBUG_DISABLE
+    DSL_FIO_DBG_MODULE_DESTINATION_GET,
+    DSL_FIO_DBG_MODULE_DESTINATION_SET,
++#endif /* DSL_DEBUG_DISABLE*/
++#endif /* INCLUDE_DSL_CPE_DEBUG_LOGGER_SUPPORT */
+    /* Delimeter only. Keep it! */
+    0xFFFFFFFF
+ };
