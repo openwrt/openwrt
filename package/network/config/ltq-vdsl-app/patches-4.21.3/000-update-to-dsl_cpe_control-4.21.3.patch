@@ -1,0 +1,3861 @@
+--- a/build_win32/dsl_cpe_control_version.h
++++ b/build_win32/dsl_cpe_control_version.h
+@@ -5,7 +5,7 @@
+ #define PACKAGE "dsl_cpe_control"
+ 
+ /* Version number of package */
+-#define VERSION "4.21.1"
++#define VERSION "4.21.3"
+ 
+ /* Define to the version of this package. */
+ #define PACKAGE_VERSION VERSION
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,5 +1,18 @@
+ NEXT VERSION
+ 
++V4.21.3 - 2019-05-20
++- VRX (CURTSYS-499) SDL: configuration handling update (XTSE), status handling added
++- VRX (CURTSYS-491) IOctl and FIFO peek errors during congested DTI traffic
++- VRX (DSLCPE_SW-1182) Optimization and cleanup of handling within Ctrl/API
++- VRX (DSLCPE_SW-1180) Functionality of VRX518 shall be given also without using
++  safe-c library (V3)
++
++V4.21.2 - 2019-02-14
++common:
++- VRX (GFASTSW-698) SDL: allow only one DSL-control instance
++- VRX (DSLCPE_SW-1177) Adding missing parameters for Robust Overhead Channel (ROC)
++- VRX (GFASTSW-709) SDL: update to new safe-c library version in UGW
++
+ V4.21.1 - 2018-10-29
+ - VRX (DSLCPE_SW-1164) The configuration file for the DSL Subsystem
+   (dsl_web.cfg) is not written correctly
+--- /dev/null
++++ b/config.rpath
+@@ -0,0 +1,666 @@
++#! /bin/sh
++# Output a system dependent set of variables, describing how to set the
++# run time search path of shared libraries in an executable.
++#
++#   Copyright 1996-2007 Free Software Foundation, Inc.
++#   Taken from GNU libtool, 2001
++#   Originally by Gordon Matzigkeit <gord@gnu.ai.mit.edu>, 1996
++#
++#   This file is free software; the Free Software Foundation gives
++#   unlimited permission to copy and/or distribute it, with or without
++#   modifications, as long as this notice is preserved.
++#
++# The first argument passed to this file is the canonical host specification,
++#    CPU_TYPE-MANUFACTURER-OPERATING_SYSTEM
++# or
++#    CPU_TYPE-MANUFACTURER-KERNEL-OPERATING_SYSTEM
++# The environment variables CC, GCC, LDFLAGS, LD, with_gnu_ld
++# should be set by the caller.
++#
++# The set of defined variables is at the end of this script.
++
++# Known limitations:
++# - On IRIX 6.5 with CC="cc", the run time search patch must not be longer
++#   than 256 bytes, otherwise the compiler driver will dump core. The only
++#   known workaround is to choose shorter directory names for the build
++#   directory and/or the installation directory.
++
++# All known linkers require a `.a' archive for static linking (except MSVC,
++# which needs '.lib').
++libext=a
++shrext=.so
++
++host="$1"
++host_cpu=`echo "$host" | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\1/'`
++host_vendor=`echo "$host" | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
++host_os=`echo "$host" | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
++
++# Code taken from libtool.m4's _LT_CC_BASENAME.
++
++for cc_temp in $CC""; do
++  case $cc_temp in
++    compile | *[\\/]compile | ccache | *[\\/]ccache ) ;;
++    distcc | *[\\/]distcc | purify | *[\\/]purify ) ;;
++    \-*) ;;
++    *) break;;
++  esac
++done
++cc_basename=`echo "$cc_temp" | sed -e 's%^.*/%%'`
++
++# Code taken from libtool.m4's AC_LIBTOOL_PROG_COMPILER_PIC.
++
++wl=
++if test "$GCC" = yes; then
++  wl='-Wl,'
++else
++  case "$host_os" in
++    aix*)
++      wl='-Wl,'
++      ;;
++    darwin*)
++      case $cc_basename in
++        xlc*)
++          wl='-Wl,'
++          ;;
++      esac
++      ;;
++    mingw* | cygwin* | pw32* | os2*)
++      ;;
++    hpux9* | hpux10* | hpux11*)
++      wl='-Wl,'
++      ;;
++    irix5* | irix6* | nonstopux*)
++      wl='-Wl,'
++      ;;
++    newsos6)
++      ;;
++    linux* | k*bsd*-gnu)
++      case $cc_basename in
++        icc* | ecc*)
++          wl='-Wl,'
++          ;;
++        pgcc | pgf77 | pgf90)
++          wl='-Wl,'
++          ;;
++        ccc*)
++          wl='-Wl,'
++          ;;
++        como)
++          wl='-lopt='
++          ;;
++        *)
++          case `$CC -V 2>&1 | sed 5q` in
++            *Sun\ C*)
++              wl='-Wl,'
++              ;;
++          esac
++          ;;
++      esac
++      ;;
++    osf3* | osf4* | osf5*)
++      wl='-Wl,'
++      ;;
++    rdos*)
++      ;;
++    solaris*)
++      wl='-Wl,'
++      ;;
++    sunos4*)
++      wl='-Qoption ld '
++      ;;
++    sysv4 | sysv4.2uw2* | sysv4.3*)
++      wl='-Wl,'
++      ;;
++    sysv4*MP*)
++      ;;
++    sysv5* | unixware* | sco3.2v5* | sco5v6* | OpenUNIX*)
++      wl='-Wl,'
++      ;;
++    unicos*)
++      wl='-Wl,'
++      ;;
++    uts4*)
++      ;;
++  esac
++fi
++
++# Code taken from libtool.m4's AC_LIBTOOL_PROG_LD_SHLIBS.
++
++hardcode_libdir_flag_spec=
++hardcode_libdir_separator=
++hardcode_direct=no
++hardcode_minus_L=no
++
++case "$host_os" in
++  cygwin* | mingw* | pw32*)
++    # FIXME: the MSVC++ port hasn't been tested in a loooong time
++    # When not using gcc, we currently assume that we are using
++    # Microsoft Visual C++.
++    if test "$GCC" != yes; then
++      with_gnu_ld=no
++    fi
++    ;;
++  interix*)
++    # we just hope/assume this is gcc and not c89 (= MSVC++)
++    with_gnu_ld=yes
++    ;;
++  openbsd*)
++    with_gnu_ld=no
++    ;;
++esac
++
++ld_shlibs=yes
++if test "$with_gnu_ld" = yes; then
++  # Set some defaults for GNU ld with shared library support. These
++  # are reset later if shared libraries are not supported. Putting them
++  # here allows them to be overridden if necessary.
++  # Unlike libtool, we use -rpath here, not --rpath, since the documented
++  # option of GNU ld is called -rpath, not --rpath.
++  hardcode_libdir_flag_spec='${wl}-rpath ${wl}$libdir'
++  case "$host_os" in
++    aix3* | aix4* | aix5*)
++      # On AIX/PPC, the GNU linker is very broken
++      if test "$host_cpu" != ia64; then
++        ld_shlibs=no
++      fi
++      ;;
++    amigaos*)
++      hardcode_libdir_flag_spec='-L$libdir'
++      hardcode_minus_L=yes
++      # Samuel A. Falvo II <kc5tja@dolphin.openprojects.net> reports
++      # that the semantics of dynamic libraries on AmigaOS, at least up
++      # to version 4, is to share data among multiple programs linked
++      # with the same dynamic library.  Since this doesn't match the
++      # behavior of shared libraries on other platforms, we cannot use
++      # them.
++      ld_shlibs=no
++      ;;
++    beos*)
++      if $LD --help 2>&1 | grep ': supported targets:.* elf' > /dev/null; then
++        :
++      else
++        ld_shlibs=no
++      fi
++      ;;
++    cygwin* | mingw* | pw32*)
++      # hardcode_libdir_flag_spec is actually meaningless, as there is
++      # no search path for DLLs.
++      hardcode_libdir_flag_spec='-L$libdir'
++      if $LD --help 2>&1 | grep 'auto-import' > /dev/null; then
++        :
++      else
++        ld_shlibs=no
++      fi
++      ;;
++    interix[3-9]*)
++      hardcode_direct=no
++      hardcode_libdir_flag_spec='${wl}-rpath,$libdir'
++      ;;
++    gnu* | linux* | k*bsd*-gnu)
++      if $LD --help 2>&1 | grep ': supported targets:.* elf' > /dev/null; then
++        :
++      else
++        ld_shlibs=no
++      fi
++      ;;
++    netbsd*)
++      ;;
++    solaris*)
++      if $LD -v 2>&1 | grep 'BFD 2\.8' > /dev/null; then
++        ld_shlibs=no
++      elif $LD --help 2>&1 | grep ': supported targets:.* elf' > /dev/null; then
++        :
++      else
++        ld_shlibs=no
++      fi
++      ;;
++    sysv5* | sco3.2v5* | sco5v6* | unixware* | OpenUNIX*)
++      case `$LD -v 2>&1` in
++        *\ [01].* | *\ 2.[0-9].* | *\ 2.1[0-5].*)
++          ld_shlibs=no
++          ;;
++        *)
++          if $LD --help 2>&1 | grep ': supported targets:.* elf' > /dev/null; then
++            hardcode_libdir_flag_spec='`test -z "$SCOABSPATH" && echo ${wl}-rpath,$libdir`'
++          else
++            ld_shlibs=no
++          fi
++          ;;
++      esac
++      ;;
++    sunos4*)
++      hardcode_direct=yes
++      ;;
++    *)
++      if $LD --help 2>&1 | grep ': supported targets:.* elf' > /dev/null; then
++        :
++      else
++        ld_shlibs=no
++      fi
++      ;;
++  esac
++  if test "$ld_shlibs" = no; then
++    hardcode_libdir_flag_spec=
++  fi
++else
++  case "$host_os" in
++    aix3*)
++      # Note: this linker hardcodes the directories in LIBPATH if there
++      # are no directories specified by -L.
++      hardcode_minus_L=yes
++      if test "$GCC" = yes; then
++        # Neither direct hardcoding nor static linking is supported with a
++        # broken collect2.
++        hardcode_direct=unsupported
++      fi
++      ;;
++    aix4* | aix5*)
++      if test "$host_cpu" = ia64; then
++        # On IA64, the linker does run time linking by default, so we don't
++        # have to do anything special.
++        aix_use_runtimelinking=no
++      else
++        aix_use_runtimelinking=no
++        # Test if we are trying to use run time linking or normal
++        # AIX style linking. If -brtl is somewhere in LDFLAGS, we
++        # need to do runtime linking.
++        case $host_os in aix4.[23]|aix4.[23].*|aix5*)
++          for ld_flag in $LDFLAGS; do
++            if (test $ld_flag = "-brtl" || test $ld_flag = "-Wl,-brtl"); then
++              aix_use_runtimelinking=yes
++              break
++            fi
++          done
++          ;;
++        esac
++      fi
++      hardcode_direct=yes
++      hardcode_libdir_separator=':'
++      if test "$GCC" = yes; then
++        case $host_os in aix4.[012]|aix4.[012].*)
++          collect2name=`${CC} -print-prog-name=collect2`
++          if test -f "$collect2name" && \
++            strings "$collect2name" | grep resolve_lib_name >/dev/null
++          then
++            # We have reworked collect2
++            :
++          else
++            # We have old collect2
++            hardcode_direct=unsupported
++            hardcode_minus_L=yes
++            hardcode_libdir_flag_spec='-L$libdir'
++            hardcode_libdir_separator=
++          fi
++          ;;
++        esac
++      fi
++      # Begin _LT_AC_SYS_LIBPATH_AIX.
++      echo 'int main () { return 0; }' > conftest.c
++      ${CC} ${LDFLAGS} conftest.c -o conftest
++      aix_libpath=`dump -H conftest 2>/dev/null | sed -n -e '/Import File Strings/,/^$/ { /^0/ { s/^0  *\(.*\)$/\1/; p; }
++}'`
++      if test -z "$aix_libpath"; then
++        aix_libpath=`dump -HX64 conftest 2>/dev/null | sed -n -e '/Import File Strings/,/^$/ { /^0/ { s/^0  *\(.*\)$/\1/; p; }
++}'`
++      fi
++      if test -z "$aix_libpath"; then
++        aix_libpath="/usr/lib:/lib"
++      fi
++      rm -f conftest.c conftest
++      # End _LT_AC_SYS_LIBPATH_AIX.
++      if test "$aix_use_runtimelinking" = yes; then
++        hardcode_libdir_flag_spec='${wl}-blibpath:$libdir:'"$aix_libpath"
++      else
++        if test "$host_cpu" = ia64; then
++          hardcode_libdir_flag_spec='${wl}-R $libdir:/usr/lib:/lib'
++        else
++          hardcode_libdir_flag_spec='${wl}-blibpath:$libdir:'"$aix_libpath"
++        fi
++      fi
++      ;;
++    amigaos*)
++      hardcode_libdir_flag_spec='-L$libdir'
++      hardcode_minus_L=yes
++      # see comment about different semantics on the GNU ld section
++      ld_shlibs=no
++      ;;
++    bsdi[45]*)
++      ;;
++    cygwin* | mingw* | pw32*)
++      # When not using gcc, we currently assume that we are using
++      # Microsoft Visual C++.
++      # hardcode_libdir_flag_spec is actually meaningless, as there is
++      # no search path for DLLs.
++      hardcode_libdir_flag_spec=' '
++      libext=lib
++      ;;
++    darwin* | rhapsody*)
++      hardcode_direct=no
++      if test "$GCC" = yes ; then
++        :
++      else
++        case $cc_basename in
++          xlc*)
++            ;;
++          *)
++            ld_shlibs=no
++            ;;
++        esac
++      fi
++      ;;
++    dgux*)
++      hardcode_libdir_flag_spec='-L$libdir'
++      ;;
++    freebsd1*)
++      ld_shlibs=no
++      ;;
++    freebsd2.2*)
++      hardcode_libdir_flag_spec='-R$libdir'
++      hardcode_direct=yes
++      ;;
++    freebsd2*)
++      hardcode_direct=yes
++      hardcode_minus_L=yes
++      ;;
++    freebsd* | dragonfly*)
++      hardcode_libdir_flag_spec='-R$libdir'
++      hardcode_direct=yes
++      ;;
++    hpux9*)
++      hardcode_libdir_flag_spec='${wl}+b ${wl}$libdir'
++      hardcode_libdir_separator=:
++      hardcode_direct=yes
++      # hardcode_minus_L: Not really in the search PATH,
++      # but as the default location of the library.
++      hardcode_minus_L=yes
++      ;;
++    hpux10*)
++      if test "$with_gnu_ld" = no; then
++        hardcode_libdir_flag_spec='${wl}+b ${wl}$libdir'
++        hardcode_libdir_separator=:
++        hardcode_direct=yes
++        # hardcode_minus_L: Not really in the search PATH,
++        # but as the default location of the library.
++        hardcode_minus_L=yes
++      fi
++      ;;
++    hpux11*)
++      if test "$with_gnu_ld" = no; then
++        hardcode_libdir_flag_spec='${wl}+b ${wl}$libdir'
++        hardcode_libdir_separator=:
++        case $host_cpu in
++          hppa*64*|ia64*)
++            hardcode_direct=no
++            ;;
++          *)
++            hardcode_direct=yes
++            # hardcode_minus_L: Not really in the search PATH,
++            # but as the default location of the library.
++            hardcode_minus_L=yes
++            ;;
++        esac
++      fi
++      ;;
++    irix5* | irix6* | nonstopux*)
++      hardcode_libdir_flag_spec='${wl}-rpath ${wl}$libdir'
++      hardcode_libdir_separator=:
++      ;;
++    netbsd*)
++      hardcode_libdir_flag_spec='-R$libdir'
++      hardcode_direct=yes
++      ;;
++    newsos6)
++      hardcode_direct=yes
++      hardcode_libdir_flag_spec='${wl}-rpath ${wl}$libdir'
++      hardcode_libdir_separator=:
++      ;;
++    openbsd*)
++      if test -f /usr/libexec/ld.so; then
++        hardcode_direct=yes
++        if test -z "`echo __ELF__ | $CC -E - | grep __ELF__`" || test "$host_os-$host_cpu" = "openbsd2.8-powerpc"; then
++          hardcode_libdir_flag_spec='${wl}-rpath,$libdir'
++        else
++          case "$host_os" in
++            openbsd[01].* | openbsd2.[0-7] | openbsd2.[0-7].*)
++              hardcode_libdir_flag_spec='-R$libdir'
++              ;;
++            *)
++              hardcode_libdir_flag_spec='${wl}-rpath,$libdir'
++              ;;
++          esac
++        fi
++      else
++        ld_shlibs=no
++      fi
++      ;;
++    os2*)
++      hardcode_libdir_flag_spec='-L$libdir'
++      hardcode_minus_L=yes
++      ;;
++    osf3*)
++      hardcode_libdir_flag_spec='${wl}-rpath ${wl}$libdir'
++      hardcode_libdir_separator=:
++      ;;
++    osf4* | osf5*)
++      if test "$GCC" = yes; then
++        hardcode_libdir_flag_spec='${wl}-rpath ${wl}$libdir'
++      else
++        # Both cc and cxx compiler support -rpath directly
++        hardcode_libdir_flag_spec='-rpath $libdir'
++      fi
++      hardcode_libdir_separator=:
++      ;;
++    solaris*)
++      hardcode_libdir_flag_spec='-R$libdir'
++      ;;
++    sunos4*)
++      hardcode_libdir_flag_spec='-L$libdir'
++      hardcode_direct=yes
++      hardcode_minus_L=yes
++      ;;
++    sysv4)
++      case $host_vendor in
++        sni)
++          hardcode_direct=yes # is this really true???
++          ;;
++        siemens)
++          hardcode_direct=no
++          ;;
++        motorola)
++          hardcode_direct=no #Motorola manual says yes, but my tests say they lie
++          ;;
++      esac
++      ;;
++    sysv4.3*)
++      ;;
++    sysv4*MP*)
++      if test -d /usr/nec; then
++        ld_shlibs=yes
++      fi
++      ;;
++    sysv4*uw2* | sysv5OpenUNIX* | sysv5UnixWare7.[01].[10]* | unixware7* | sco3.2v5.0.[024]*)
++      ;;
++    sysv5* | sco3.2v5* | sco5v6*)
++      hardcode_libdir_flag_spec='`test -z "$SCOABSPATH" && echo ${wl}-R,$libdir`'
++      hardcode_libdir_separator=':'
++      ;;
++    uts4*)
++      hardcode_libdir_flag_spec='-L$libdir'
++      ;;
++    *)
++      ld_shlibs=no
++      ;;
++  esac
++fi
++
++# Check dynamic linker characteristics
++# Code taken from libtool.m4's AC_LIBTOOL_SYS_DYNAMIC_LINKER.
++# Unlike libtool.m4, here we don't care about _all_ names of the library, but
++# only about the one the linker finds when passed -lNAME. This is the last
++# element of library_names_spec in libtool.m4, or possibly two of them if the
++# linker has special search rules.
++library_names_spec=      # the last element of library_names_spec in libtool.m4
++libname_spec='lib$name'
++case "$host_os" in
++  aix3*)
++    library_names_spec='$libname.a'
++    ;;
++  aix4* | aix5*)
++    library_names_spec='$libname$shrext'
++    ;;
++  amigaos*)
++    library_names_spec='$libname.a'
++    ;;
++  beos*)
++    library_names_spec='$libname$shrext'
++    ;;
++  bsdi[45]*)
++    library_names_spec='$libname$shrext'
++    ;;
++  cygwin* | mingw* | pw32*)
++    shrext=.dll
++    library_names_spec='$libname.dll.a $libname.lib'
++    ;;
++  darwin* | rhapsody*)
++    shrext=.dylib
++    library_names_spec='$libname$shrext'
++    ;;
++  dgux*)
++    library_names_spec='$libname$shrext'
++    ;;
++  freebsd1*)
++    ;;
++  freebsd* | dragonfly*)
++    case "$host_os" in
++      freebsd[123]*)
++        library_names_spec='$libname$shrext$versuffix' ;;
++      *)
++        library_names_spec='$libname$shrext' ;;
++    esac
++    ;;
++  gnu*)
++    library_names_spec='$libname$shrext'
++    ;;
++  hpux9* | hpux10* | hpux11*)
++    case $host_cpu in
++      ia64*)
++        shrext=.so
++        ;;
++      hppa*64*)
++        shrext=.sl
++        ;;
++      *)
++        shrext=.sl
++        ;;
++    esac
++    library_names_spec='$libname$shrext'
++    ;;
++  interix[3-9]*)
++    library_names_spec='$libname$shrext'
++    ;;
++  irix5* | irix6* | nonstopux*)
++    library_names_spec='$libname$shrext'
++    case "$host_os" in
++      irix5* | nonstopux*)
++        libsuff= shlibsuff=
++        ;;
++      *)
++        case $LD in
++          *-32|*"-32 "|*-melf32bsmip|*"-melf32bsmip ") libsuff= shlibsuff= ;;
++          *-n32|*"-n32 "|*-melf32bmipn32|*"-melf32bmipn32 ") libsuff=32 shlibsuff=N32 ;;
++          *-64|*"-64 "|*-melf64bmip|*"-melf64bmip ") libsuff=64 shlibsuff=64 ;;
++          *) libsuff= shlibsuff= ;;
++        esac
++        ;;
++    esac
++    ;;
++  linux*oldld* | linux*aout* | linux*coff*)
++    ;;
++  linux* | k*bsd*-gnu)
++    library_names_spec='$libname$shrext'
++    ;;
++  knetbsd*-gnu)
++    library_names_spec='$libname$shrext'
++    ;;
++  netbsd*)
++    library_names_spec='$libname$shrext'
++    ;;
++  newsos6)
++    library_names_spec='$libname$shrext'
++    ;;
++  nto-qnx*)
++    library_names_spec='$libname$shrext'
++    ;;
++  openbsd*)
++    library_names_spec='$libname$shrext$versuffix'
++    ;;
++  os2*)
++    libname_spec='$name'
++    shrext=.dll
++    library_names_spec='$libname.a'
++    ;;
++  osf3* | osf4* | osf5*)
++    library_names_spec='$libname$shrext'
++    ;;
++  rdos*)
++    ;;
++  solaris*)
++    library_names_spec='$libname$shrext'
++    ;;
++  sunos4*)
++    library_names_spec='$libname$shrext$versuffix'
++    ;;
++  sysv4 | sysv4.3*)
++    library_names_spec='$libname$shrext'
++    ;;
++  sysv4*MP*)
++    library_names_spec='$libname$shrext'
++    ;;
++  sysv5* | sco3.2v5* | sco5v6* | unixware* | OpenUNIX* | sysv4*uw2*)
++    library_names_spec='$libname$shrext'
++    ;;
++  uts4*)
++    library_names_spec='$libname$shrext'
++    ;;
++esac
++
++sed_quote_subst='s/\(["`$\\]\)/\\\1/g'
++escaped_wl=`echo "X$wl" | sed -e 's/^X//' -e "$sed_quote_subst"`
++shlibext=`echo "$shrext" | sed -e 's,^\.,,'`
++escaped_libname_spec=`echo "X$libname_spec" | sed -e 's/^X//' -e "$sed_quote_subst"`
++escaped_library_names_spec=`echo "X$library_names_spec" | sed -e 's/^X//' -e "$sed_quote_subst"`
++escaped_hardcode_libdir_flag_spec=`echo "X$hardcode_libdir_flag_spec" | sed -e 's/^X//' -e "$sed_quote_subst"`
++
++LC_ALL=C sed -e 's/^\([a-zA-Z0-9_]*\)=/acl_cv_\1=/' <<EOF
++
++# How to pass a linker flag through the compiler.
++wl="$escaped_wl"
++
++# Static library suffix (normally "a").
++libext="$libext"
++
++# Shared library suffix (normally "so").
++shlibext="$shlibext"
++
++# Format of library name prefix.
++libname_spec="$escaped_libname_spec"
++
++# Library names that the linker finds when passed -lNAME.
++library_names_spec="$escaped_library_names_spec"
++
++# Flag to hardcode \$libdir into a binary during linking.
++# This must work even if \$libdir does not exist.
++hardcode_libdir_flag_spec="$escaped_hardcode_libdir_flag_spec"
++
++# Whether we need a single -rpath flag with a separated argument.
++hardcode_libdir_separator="$hardcode_libdir_separator"
++
++# Set to yes if using DIR/libNAME.so during linking hardcodes DIR into the
++# resulting binary.
++hardcode_direct="$hardcode_direct"
++
++# Set to yes if using the -LDIR flag during linking hardcodes DIR into the
++# resulting binary.
++hardcode_minus_L="$hardcode_minus_L"
++
++EOF
+--- a/configure
++++ b/configure
+@@ -1,7 +1,7 @@
+ #! /bin/sh
+ # From configure.in Revision: 1.173 .
+ # Guess values for system-dependent variables and create Makefiles.
+-# Generated by GNU Autoconf 2.69 for DSL CPE Control application 4.21.1.
++# Generated by GNU Autoconf 2.69 for DSL CPE Control application 4.21.3.
+ #
+ #
+ # Copyright (C) 1992-1996, 1998-2012 Free Software Foundation, Inc.
+@@ -578,8 +578,8 @@ MAKEFLAGS=
+ # Identity of this package.
+ PACKAGE_NAME='DSL CPE Control application'
+ PACKAGE_TARNAME='dsl_cpe_control'
+-PACKAGE_VERSION='4.21.1'
+-PACKAGE_STRING='DSL CPE Control application 4.21.1'
++PACKAGE_VERSION='4.21.3'
++PACKAGE_STRING='DSL CPE Control application 4.21.3'
+ PACKAGE_BUGREPORT=''
+ PACKAGE_URL=''
+ 
+@@ -627,7 +627,6 @@ LIBOBJS
+ DISTCHECK_CONFIGURE_PARAMS
+ SAFEC_LIB_PATH
+ SAFEC_INCL_PATH
+-SAFEC_LIB_FUNC
+ SAFEC_LIB_NAME
+ SAFEC_SUPPORT
+ SAFEC_SUPPORT_FALSE
+@@ -778,6 +777,7 @@ INCLUDE_DEPRECATED_TRUE
+ INCLUDE_FW_REQUEST_SUPPORT
+ INCLUDE_FW_REQUEST_SUPPORT_FALSE
+ INCLUDE_FW_REQUEST_SUPPORT_TRUE
++INCLUDE_DSL_JSON_PARSING
+ INCLUDE_DSL_CPE_DEBUG_LOGGER_SUPPORT
+ DSL_CCA_DBG_MAX_LEVEL_PRE
+ DSL_CCA_DBG_MAX_LEVEL_SET
+@@ -785,6 +785,8 @@ DSL_CPE_DEBUG_DISABLE
+ DSL_CCA_DBG_MAX_LEVEL_SET_FALSE
+ DSL_CCA_DBG_MAX_LEVEL_SET_TRUE
+ IFXOS_INCLUDE_PATH
++LIBJSON_C_LIBRARY_PATH
++LIBJSON_C_INCL_PATH
+ IFXOS_LIBRARY_PATH
+ INCLUDE_DSL_CPE_IFXOS_SUPPORT
+ INCLUDE_DSL_CPE_IFXOS_SUPPORT_FALSE
+@@ -806,6 +808,8 @@ EXTRA_APP_CFLAGS
+ DSL_CONFIG_MODEL_TYPE
+ DSL_VRX_DEVICE_NAME
+ DSL_DEVICE_NAME
++INCLUDE_DSL_JSON_PARSING_FALSE
++INCLUDE_DSL_JSON_PARSING_TRUE
+ DEVICE_VRX_LAYER_FALSE
+ DEVICE_VRX_LAYER_TRUE
+ DEVICE_VRX_FALSE
+@@ -916,8 +920,11 @@ enable_driver_include
+ enable_device_driver_include
+ enable_ifxos
+ enable_ifxos_library
++enable_libjson_c_include
++enable_libjson_c_library
+ enable_ifxos_include
+ enable_debug_prints
++enable_libjson_c_support
+ enable_dsl_fw_request
+ enable_deprecated
+ enable_device_exception_codes
+@@ -1522,7 +1529,7 @@ if test "$ac_init_help" = "long"; then
+   # Omit some internal or obsolete options to make the list less imposing.
+   # This message is too long to be a string in the A/UX 3.1 sh.
+   cat <<_ACEOF
+-\`configure' configures DSL CPE Control application 4.21.1 to adapt to many kinds of systems.
++\`configure' configures DSL CPE Control application 4.21.3 to adapt to many kinds of systems.
+ 
+ Usage: $0 [OPTION]... [VAR=VALUE]...
+ 
+@@ -1588,7 +1595,7 @@ fi
+ 
+ if test -n "$ac_init_help"; then
+   case $ac_init_help in
+-     short | recursive ) echo "Configuration of DSL CPE Control application 4.21.1:";;
++     short | recursive ) echo "Configuration of DSL CPE Control application 4.21.3:";;
+    esac
+   cat <<\_ACEOF
+ 
+@@ -1626,11 +1633,17 @@ Optional Features:
+   --enable-ifxos-library=-L/path/to/your/lib_ifxos/src
+                           Set the lib_ifxos library path. In this location the
+                           libifxos.a should be found
++  --enable-libjson-c-include= -I/path/to/your/libjson-c/include
++                          Set the JSON C include path
++  --enable-libjson-c-library= -L/path/to/your/libjson-c/library
++                          Set the JSON C library path
+   --enable-ifxos-include=-I/path/to/your/lib_ifxos/src/include
+                           Set the lib_ifxos include path.
+   --enable-debug-prints=level
+                           Enable debug printouts (default:
+                           yes/err|none/no|prn|err|wrn|msg|local)
++  --enable-libjson-c-support
++                          Enable JSON parsing support.
+   --enable-dsl-fw-request Include FW request support
+   --enable-deprecated     Include deprecated functions
+   --enable-device-exception-codes
+@@ -1806,7 +1819,7 @@ fi
+ test -n "$ac_init_help" && exit $ac_status
+ if $ac_init_version; then
+   cat <<\_ACEOF
+-DSL CPE Control application configure 4.21.1
++DSL CPE Control application configure 4.21.3
+ generated by GNU Autoconf 2.69
+ 
+ Copyright (C) 2012 Free Software Foundation, Inc.
+@@ -2158,7 +2171,7 @@ cat >config.log <<_ACEOF
+ This file contains any messages produced by compilers while
+ running configure, to aid debugging if configure makes a mistake.
+ 
+-It was created by DSL CPE Control application $as_me 4.21.1, which was
++It was created by DSL CPE Control application $as_me 4.21.3, which was
+ generated by GNU Autoconf 2.69.  Invocation command line was
+ 
+   $ $0 $@
+@@ -2991,8 +3004,7 @@ fi
+ fi
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_make_support_nested_variables" >&5
+ $as_echo "$am_cv_make_support_nested_variables" >&6; }
+-#if test $am_cv_make_support_nested_variables = yes; then
+-if false; then
++if test $am_cv_make_support_nested_variables = yes; then
+     AM_V='$(V)'
+   AM_DEFAULT_V='$(AM_DEFAULT_VERBOSITY)'
+ else
+@@ -3023,7 +3035,7 @@ fi
+ 
+ # Define the identity of the package.
+  PACKAGE='dsl_cpe_control'
+- VERSION='4.21.1'
++ VERSION='4.21.3'
+ 
+ 
+ cat >>confdefs.h <<_ACEOF
+@@ -4993,6 +5005,14 @@ else
+   DEVICE_VRX_LAYER_FALSE=
+ fi
+ 
++ if false; then
++  INCLUDE_DSL_JSON_PARSING_TRUE=
++  INCLUDE_DSL_JSON_PARSING_FALSE='#'
++else
++  INCLUDE_DSL_JSON_PARSING_TRUE='#'
++  INCLUDE_DSL_JSON_PARSING_FALSE=
++fi
++
+ 
+ PREDEFINED_CONF_EXTRA_APP_CFLAGS="-Os"
+ 
+@@ -5564,6 +5584,54 @@ else
+ fi
+ 
+ 
++DEFAULT_LIBJSON_C_INCL_PATH=''
++# Check whether --enable-libjson-c-include was given.
++if test "${enable_libjson_c_include+set}" = set; then :
++  enableval=$enable_libjson_c_include;
++        if test -n "$enableval"; then
++            echo Set the JSON C include path to $enableval
++            LIBJSON_C_INCL_PATH=$enableval
++
++        else
++            echo Set the JSON C include path to $DEFAULT_LIBJSON_C_INCL_PATH
++            LIBJSON_C_INCL_PATH=$DEFAULT_LIBJSON_C_INCL_PATH
++
++        fi
++
++else
++
++        echo Set the JSON C include path to $DEFAULT_LIBJSON_C_INCL_PATH
++        LIBJSON_C_INCL_PATH=$DEFAULT_LIBJSON_C_INCL_PATH
++
++
++
++fi
++
++
++DEFAULT_LIBJSON_C_LIBRARY_PATH=''
++# Check whether --enable-libjson-c-library was given.
++if test "${enable_libjson_c_library+set}" = set; then :
++  enableval=$enable_libjson_c_library;
++        if test -n "$enableval"; then
++            echo Set the JSON C library path to $enableval
++            LIBJSON_C_LIBRARY_PATH=$enableval
++
++        else
++            echo Set the JSON C library path to $DEFAULT_LIBJSON_C_LIBRARY_PATH
++            LIBJSON_C_LIBRARY_PATH=$DEFAULT_LIBJSON_C_LIBRARY_PATH
++
++        fi
++
++else
++
++        echo Set the JSON C library path to $DEFAULT_LIBJSON_C_LIBRARY_PATH
++        LIBJSON_C_LIBRARY_PATH=$DEFAULT_LIBJSON_C_LIBRARY_PATH
++
++
++
++fi
++
++
+ DEFAULT_IFXOS_INCLUDE_PATH='-I./lib_ifxos/src/include'
+ # Check whether --enable-ifxos-include was given.
+ if test "${enable_ifxos_include+set}" = set; then :
+@@ -6042,6 +6110,100 @@ fi
+ fi
+ 
+ 
++# Check whether --enable-libjson-c-support was given.
++if test "${enable_libjson_c_support+set}" = set; then :
++  enableval=$enable_libjson_c_support;
++    if test "$enableval" = yes; then
++        for ac_header in json-c/json.h
++do :
++  ac_fn_c_check_header_mongrel "$LINENO" "json-c/json.h" "ac_cv_header_json_c_json_h" "$ac_includes_default"
++if test "x$ac_cv_header_json_c_json_h" = xyes; then :
++  cat >>confdefs.h <<_ACEOF
++#define HAVE_JSON_C_JSON_H 1
++_ACEOF
++ libjson_c_path=yes
++else
++  { $as_echo "$as_me:${as_lineno-$LINENO}: JSON C library not available" >&5
++$as_echo "$as_me: JSON C library not available" >&6;}
++fi
++
++done
++
++
++        if test "x$libjson_c_path" = "xyes"; then :
++
++            { $as_echo "$as_me:${as_lineno-$LINENO}: JSON C library detected" >&5
++$as_echo "$as_me: JSON C library detected" >&6;}
++
++$as_echo "#define INCLUDE_DSL_JSON_PARSING 1" >>confdefs.h
++
++             if true; then
++  INCLUDE_DSL_JSON_PARSING_TRUE=
++  INCLUDE_DSL_JSON_PARSING_FALSE='#'
++else
++  INCLUDE_DSL_JSON_PARSING_TRUE='#'
++  INCLUDE_DSL_JSON_PARSING_FALSE=
++fi
++
++            INCLUDE_DSL_JSON_PARSING=$enableval
++
++fi
++    fi
++        echo Enable JSON parsing support = $enableval
++        INCLUDE_DSL_JSON_PARSING=$enableval
++
++        case $enableval in
++        0|no)
++             if false; then
++  INCLUDE_DSL_JSON_PARSING_TRUE=
++  INCLUDE_DSL_JSON_PARSING_FALSE='#'
++else
++  INCLUDE_DSL_JSON_PARSING_TRUE='#'
++  INCLUDE_DSL_JSON_PARSING_FALSE=
++fi
++
++            ;;
++        1|yes)
++            if test "x$libjson_c_path" = "xyes"; then :
++
++                { $as_echo "$as_me:${as_lineno-$LINENO}: JSON C library detected" >&5
++$as_echo "$as_me: JSON C library detected" >&6;}
++
++$as_echo "#define INCLUDE_DSL_JSON_PARSING 1" >>confdefs.h
++
++                 if true; then
++  INCLUDE_DSL_JSON_PARSING_TRUE=
++  INCLUDE_DSL_JSON_PARSING_FALSE='#'
++else
++  INCLUDE_DSL_JSON_PARSING_TRUE='#'
++  INCLUDE_DSL_JSON_PARSING_FALSE=
++fi
++
++fi
++            ;;
++        *) as_fn_error $? " Enable JSON parsing support, use enable or disable " "$LINENO" 5;
++            ;;
++        esac
++
++else
++
++    { $as_echo "$as_me:${as_lineno-$LINENO}: JSON C library not found" >&5
++$as_echo "$as_me: JSON C library not found" >&6;}
++         if false; then
++  INCLUDE_DSL_JSON_PARSING_TRUE=
++  INCLUDE_DSL_JSON_PARSING_FALSE='#'
++else
++  INCLUDE_DSL_JSON_PARSING_TRUE='#'
++  INCLUDE_DSL_JSON_PARSING_FALSE=
++fi
++
++        INCLUDE_DSL_JSON_PARSING=$enableval
++
++
++
++fi
++
++
+  if false; then
+   INCLUDE_FW_REQUEST_SUPPORT_TRUE=
+   INCLUDE_FW_REQUEST_SUPPORT_FALSE='#'
+@@ -9042,18 +9204,15 @@ fi
+ 
+ done
+ 
+-            SAFEC_LIB_NAME=safec-1.0
+-
+-            SAFEC_LIB_FUNC=strcat_s
+ 
+-            as_ac_Lib=`$as_echo "ac_cv_lib_$SAFEC_LIB_NAME''_$SAFEC_LIB_FUNC" | $as_tr_sh`
+-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $SAFEC_LIB_FUNC in -l$SAFEC_LIB_NAME" >&5
+-$as_echo_n "checking for $SAFEC_LIB_FUNC in -l$SAFEC_LIB_NAME... " >&6; }
+-if eval \${$as_ac_Lib+:} false; then :
++            if test "x$safec_header_support" = "xyes"; then
++                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for _strcat_s_chk in -lsafec-3.3" >&5
++$as_echo_n "checking for _strcat_s_chk in -lsafec-3.3... " >&6; }
++if ${ac_cv_lib_safec_3_3__strcat_s_chk+:} false; then :
+   $as_echo_n "(cached) " >&6
+ else
+   ac_check_lib_save_LIBS=$LIBS
+-LIBS="-l$SAFEC_LIB_NAME  $LIBS"
++LIBS="-lsafec-3.3  $LIBS"
+ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+ 
+@@ -9063,36 +9222,34 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_
+ #ifdef __cplusplus
+ extern "C"
+ #endif
+-char $SAFEC_LIB_FUNC ();
++char _strcat_s_chk ();
+ int
+ main ()
+ {
+-return $SAFEC_LIB_FUNC ();
++return _strcat_s_chk ();
+   ;
+   return 0;
+ }
+ _ACEOF
+ if ac_fn_c_try_link "$LINENO"; then :
+-  eval "$as_ac_Lib=yes"
++  ac_cv_lib_safec_3_3__strcat_s_chk=yes
+ else
+-  eval "$as_ac_Lib=no"
++  ac_cv_lib_safec_3_3__strcat_s_chk=no
+ fi
+ rm -f core conftest.err conftest.$ac_objext \
+     conftest$ac_exeext conftest.$ac_ext
+ LIBS=$ac_check_lib_save_LIBS
+ fi
+-eval ac_res=\$$as_ac_Lib
+-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+-$as_echo "$ac_res" >&6; }
+-if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+-  safec_lib_support=yes; break;
++{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_safec_3_3__strcat_s_chk" >&5
++$as_echo "$ac_cv_lib_safec_3_3__strcat_s_chk" >&6; }
++if test "x$ac_cv_lib_safec_3_3__strcat_s_chk" = xyes; then :
++  safec_lib_ver=3; break;
+ fi
+ 
+ 
+-            if test "x$safec_header_support" = "xyes"; then
+-                if test "x$safec_lib_support" = "xyes"; then
++                if test "x$safec_lib_ver" = "x3"; then
+ 
+-$as_echo "#define SAFEC_SUPPORT 1" >>confdefs.h
++$as_echo "#define SAFEC_SUPPORT 3" >>confdefs.h
+ 
+                      if true; then
+   SAFEC_SUPPORT_TRUE=
+@@ -9104,6 +9261,8 @@ fi
+ 
+                     SAFEC_SUPPORT=yes
+ 
++                    SAFEC_LIB_NAME=safec-3.3
++
+                 fi
+             fi
+         fi
+@@ -9311,6 +9470,10 @@ if test -z "${DEVICE_VRX_LAYER_TRUE}" &&
+   as_fn_error $? "conditional \"DEVICE_VRX_LAYER\" was never defined.
+ Usually this means the macro was only invoked conditionally." "$LINENO" 5
+ fi
++if test -z "${INCLUDE_DSL_JSON_PARSING_TRUE}" && test -z "${INCLUDE_DSL_JSON_PARSING_FALSE}"; then
++  as_fn_error $? "conditional \"INCLUDE_DSL_JSON_PARSING\" was never defined.
++Usually this means the macro was only invoked conditionally." "$LINENO" 5
++fi
+ if test -z "${DEVICE_DANUBE_TRUE}" && test -z "${DEVICE_DANUBE_FALSE}"; then
+   as_fn_error $? "conditional \"DEVICE_DANUBE\" was never defined.
+ Usually this means the macro was only invoked conditionally." "$LINENO" 5
+@@ -9439,6 +9602,22 @@ if test -z "${DSL_CCA_DBG_MAX_LEVEL_SET_
+   as_fn_error $? "conditional \"DSL_CCA_DBG_MAX_LEVEL_SET\" was never defined.
+ Usually this means the macro was only invoked conditionally." "$LINENO" 5
+ fi
++if test -z "${INCLUDE_DSL_JSON_PARSING_TRUE}" && test -z "${INCLUDE_DSL_JSON_PARSING_FALSE}"; then
++  as_fn_error $? "conditional \"INCLUDE_DSL_JSON_PARSING\" was never defined.
++Usually this means the macro was only invoked conditionally." "$LINENO" 5
++fi
++if test -z "${INCLUDE_DSL_JSON_PARSING_TRUE}" && test -z "${INCLUDE_DSL_JSON_PARSING_FALSE}"; then
++  as_fn_error $? "conditional \"INCLUDE_DSL_JSON_PARSING\" was never defined.
++Usually this means the macro was only invoked conditionally." "$LINENO" 5
++fi
++if test -z "${INCLUDE_DSL_JSON_PARSING_TRUE}" && test -z "${INCLUDE_DSL_JSON_PARSING_FALSE}"; then
++  as_fn_error $? "conditional \"INCLUDE_DSL_JSON_PARSING\" was never defined.
++Usually this means the macro was only invoked conditionally." "$LINENO" 5
++fi
++if test -z "${INCLUDE_DSL_JSON_PARSING_TRUE}" && test -z "${INCLUDE_DSL_JSON_PARSING_FALSE}"; then
++  as_fn_error $? "conditional \"INCLUDE_DSL_JSON_PARSING\" was never defined.
++Usually this means the macro was only invoked conditionally." "$LINENO" 5
++fi
+ if test -z "${INCLUDE_FW_REQUEST_SUPPORT_TRUE}" && test -z "${INCLUDE_FW_REQUEST_SUPPORT_FALSE}"; then
+   as_fn_error $? "conditional \"INCLUDE_FW_REQUEST_SUPPORT\" was never defined.
+ Usually this means the macro was only invoked conditionally." "$LINENO" 5
+@@ -10234,6 +10413,9 @@ echo -e "  Safe-C support:
+ echo -e "  Safe-C include path:              $SAFEC_INCL_PATH"
+ echo -e "  Safe-C library path:              $SAFEC_LIB_PATH"
+ echo -e "  Safe-C library:                   $SAFEC_LIB_NAME"
++echo -e "  Include JSON parser:              $INCLUDE_DSL_JSON_PARSING"
++echo -e "  JSON C include path:              $LIBJSON_C_INCL_PATH"
++echo -e "  JSON C library path:              $LIBJSON_C_LIBRARY_PATH"
+ echo -e "----------------------- deprectated ! ----------------------------------"
+ echo -e "  currently no such functions"
+ echo -e "------------------------------------------------------------------------"
+@@ -10638,7 +10820,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_wri
+ # report actual input values of CONFIG_FILES etc. instead of their
+ # values after options handling.
+ ac_log="
+-This file was extended by DSL CPE Control application $as_me 4.21.1, which was
++This file was extended by DSL CPE Control application $as_me 4.21.3, which was
+ generated by GNU Autoconf 2.69.  Invocation command line was
+ 
+   CONFIG_FILES    = $CONFIG_FILES
+@@ -10704,7 +10886,7 @@ _ACEOF
+ cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
+ ac_cs_config="`$as_echo "$ac_configure_args" | sed 's/^ //; s/[\\""\`\$]/\\\\&/g'`"
+ ac_cs_version="\\
+-DSL CPE Control application config.status 4.21.1
++DSL CPE Control application config.status 4.21.3
+ configured by $0, generated by GNU Autoconf 2.69,
+   with options \\"\$ac_cs_config\\"
+ 
+--- a/configure.in
++++ b/configure.in
+@@ -1,6 +1,6 @@
+ AC_REVISION($Revision: 1.173 $)
+ 
+-AC_INIT([DSL CPE Control application],[4.21.1],[],[dsl_cpe_control])
++AC_INIT([DSL CPE Control application],[4.21.3],[],[dsl_cpe_control])
+ AC_CONFIG_SRCDIR(src/Makefile.am)
+ AM_INIT_AUTOMAKE([tar-pax])
+ 
+@@ -46,6 +46,7 @@ AC_SUBST(CONFIGURE_OPTIONS)
+ AM_CONDITIONAL(DEVICE_DANUBE, false)
+ AM_CONDITIONAL(DEVICE_VRX, false)
+ AM_CONDITIONAL(DEVICE_VRX_LAYER, false)
++AM_CONDITIONAL(INCLUDE_DSL_JSON_PARSING, false)
+ 
+ PREDEFINED_CONF_EXTRA_APP_CFLAGS="-Os"
+ 
+@@ -468,6 +469,44 @@ AC_ARG_ENABLE(ifxos-library,
+     ]
+ )
+ 
++dnl set system JSON C include path
++DEFAULT_LIBJSON_C_INCL_PATH=''
++AC_ARG_ENABLE(libjson-c-include,
++    AS_HELP_STRING([--enable-libjson-c-include= -I/path/to/your/libjson-c/include],[Set the JSON C include path]),
++    [
++        if test -n "$enableval"; then
++            echo Set the JSON C include path to $enableval
++            AC_SUBST([LIBJSON_C_INCL_PATH],[$enableval])
++        else
++            echo Set the JSON C include path to $DEFAULT_LIBJSON_C_INCL_PATH
++            AC_SUBST([LIBJSON_C_INCL_PATH],[$DEFAULT_LIBJSON_C_INCL_PATH])
++        fi
++    ],
++    [
++        echo Set the JSON C include path to $DEFAULT_LIBJSON_C_INCL_PATH
++        AC_SUBST([LIBJSON_C_INCL_PATH],[$DEFAULT_LIBJSON_C_INCL_PATH])
++    ]
++)
++
++dnl set system JSON C library path
++DEFAULT_LIBJSON_C_LIBRARY_PATH=''
++AC_ARG_ENABLE(libjson-c-library,
++    AS_HELP_STRING([--enable-libjson-c-library= -L/path/to/your/libjson-c/library],[Set the JSON C library path]),
++    [
++        if test -n "$enableval"; then
++            echo Set the JSON C library path to $enableval
++            AC_SUBST([LIBJSON_C_LIBRARY_PATH],[$enableval])
++        else
++            echo Set the JSON C library path to $DEFAULT_LIBJSON_C_LIBRARY_PATH
++            AC_SUBST([LIBJSON_C_LIBRARY_PATH],[$DEFAULT_LIBJSON_C_LIBRARY_PATH])
++        fi
++    ],
++    [
++        echo Set the JSON C library path to $DEFAULT_LIBJSON_C_LIBRARY_PATH
++        AC_SUBST([LIBJSON_C_LIBRARY_PATH],[$DEFAULT_LIBJSON_C_LIBRARY_PATH])
++    ]
++)
++
+ dnl set lib_ifxos include path
+ DEFAULT_IFXOS_INCLUDE_PATH='-I./lib_ifxos/src/include'
+ AC_ARG_ENABLE(ifxos-include,
+@@ -675,6 +714,48 @@ AC_ARG_ENABLE(debug-prints,
+     ]
+ )
+ 
++dnl Enable JSON parsing support
++AC_ARG_ENABLE(libjson-c-support,
++    AS_HELP_STRING(
++        [--enable-libjson-c-support],[Enable JSON parsing support.]
++    ),
++    [
++    if test "$enableval" = yes; then
++        AC_CHECK_HEADERS(
++            [json-c/json.h],
++            [libjson_c_path=yes],
++            [AC_MSG_NOTICE([JSON C library not available])],
++            [])
++
++        AS_IF([test "x$libjson_c_path" = "xyes"], [
++            AC_MSG_NOTICE([JSON C library detected])
++            AC_DEFINE([INCLUDE_DSL_JSON_PARSING],[1], [Include JSON parsing])
++            AM_CONDITIONAL([INCLUDE_DSL_JSON_PARSING], true)
++            AC_SUBST([INCLUDE_DSL_JSON_PARSING],[$enableval])])
++    fi
++        echo Enable JSON parsing support = $enableval
++        AC_SUBST([INCLUDE_DSL_JSON_PARSING],[$enableval])
++        case $enableval in
++        0|no)
++            AM_CONDITIONAL(INCLUDE_DSL_JSON_PARSING, false)
++            ;;
++        1|yes)
++            AS_IF([test "x$libjson_c_path" = "xyes"], [
++                AC_MSG_NOTICE([JSON C library detected])
++                AC_DEFINE([INCLUDE_DSL_JSON_PARSING],[1], [Include JSON parsing])
++                AM_CONDITIONAL([INCLUDE_DSL_JSON_PARSING], true)])
++            ;;
++        *) AC_MSG_ERROR([ Enable JSON parsing support, use enable or disable ]);
++            ;;
++        esac
++    ],
++    [
++    AC_MSG_NOTICE([JSON C library not found])
++        AM_CONDITIONAL(INCLUDE_DSL_JSON_PARSING, false)
++        AC_SUBST([INCLUDE_DSL_JSON_PARSING],[$enableval])
++    ]
++)
++
+ dnl enable FW request support
+ AM_CONDITIONAL(INCLUDE_FW_REQUEST_SUPPORT, false)
+ AC_ARG_ENABLE(dsl_fw_request,
+@@ -2017,15 +2098,15 @@ AC_ARG_ENABLE(safec-support,
+     [
+         if test "$enableval" = yes; then
+             AC_CHECK_HEADERS([safe_lib.h],[safec_header_support=yes; break;],,)
+-            AC_SUBST([SAFEC_LIB_NAME],[safec-1.0])
+-            AC_SUBST([SAFEC_LIB_FUNC],[strcat_s])
+-            AC_CHECK_LIB($SAFEC_LIB_NAME, $SAFEC_LIB_FUNC,[safec_lib_support=yes; break;],,,)
+ 
+             if test "x$safec_header_support" = "xyes"; then
+-                if test "x$safec_lib_support" = "xyes"; then
+-                    AC_DEFINE([SAFEC_SUPPORT], [1], [Safe-C supported])
++                AC_CHECK_LIB([safec-3.3], [_strcat_s_chk], [safec_lib_ver=3; break;],,,)
++
++                if test "x$safec_lib_ver" = "x3"; then
++                    AC_DEFINE([SAFEC_SUPPORT], [3], [Safe-C lib ver3.3 support])
+                     AM_CONDITIONAL(SAFEC_SUPPORT, true)
+-                    AC_SUBST([SAFEC_SUPPORT],[yes])
++                    AC_SUBST([SAFEC_SUPPORT], [yes])
++                    AC_SUBST([SAFEC_LIB_NAME], [safec-3.3])
+                 fi
+             fi
+         fi
+@@ -2157,6 +2238,9 @@ echo -e "  Safe-C support:
+ echo -e "  Safe-C include path:              $SAFEC_INCL_PATH"
+ echo -e "  Safe-C library path:              $SAFEC_LIB_PATH"
+ echo -e "  Safe-C library:                   $SAFEC_LIB_NAME"
++echo -e "  Include JSON parser:              $INCLUDE_DSL_JSON_PARSING"
++echo -e "  JSON C include path:              $LIBJSON_C_INCL_PATH"
++echo -e "  JSON C library path:              $LIBJSON_C_LIBRARY_PATH"
+ echo -e "----------------------- deprectated ! ----------------------------------"
+ echo -e "  currently no such functions"
+ echo -e "------------------------------------------------------------------------"
+--- a/LICENSE
++++ b/LICENSE
+@@ -3,7 +3,8 @@ Please choose the appropriate license fo
+ 
+ 1. BSD license (2-clause BSD license)
+ 
+-Copyright 2017, Intel Corporation
++Copyright (c) 2009-2015, LANTIQ BETEILIGUNGS-GMBH & CO. KG
++All rights reserved.
+ 
+ Redistribution and use in source and binary forms, with or without modification,
+ are permitted provided that the following conditions are met:
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -1,7 +1,7 @@
+-# Makefile.in generated by automake 1.15 from Makefile.am.
++# Makefile.in generated by automake 1.15.1 from Makefile.am.
+ # @configure_input@
+ 
+-# Copyright (C) 1994-2014 Free Software Foundation, Inc.
++# Copyright (C) 1994-2017 Free Software Foundation, Inc.
+ 
+ # This Makefile.in is free software; the Free Software Foundation
+ # gives unlimited permission to copy and/or distribute it,
+@@ -185,7 +185,8 @@ CTAGS = ctags
+ CSCOPE = cscope
+ DIST_SUBDIRS = $(SUBDIRS)
+ am__DIST_COMMON = $(srcdir)/Makefile.in ABOUT-NLS AUTHORS COPYING \
+-	ChangeLog NEWS README TODO compile depcomp install-sh missing
++	ChangeLog NEWS README TODO compile config.rpath depcomp \
++	install-sh missing
+ DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+ distdir = $(PACKAGE)-$(VERSION)
+ top_distdir = $(distdir)
+@@ -309,6 +310,7 @@ INCLUDE_DSL_G997_FRAMING_PARAMETERS = @I
+ INCLUDE_DSL_G997_LINE_INVENTORY = @INCLUDE_DSL_G997_LINE_INVENTORY@
+ INCLUDE_DSL_G997_PER_TONE = @INCLUDE_DSL_G997_PER_TONE@
+ INCLUDE_DSL_G997_STATUS = @INCLUDE_DSL_G997_STATUS@
++INCLUDE_DSL_JSON_PARSING = @INCLUDE_DSL_JSON_PARSING@
+ INCLUDE_DSL_PM = @INCLUDE_DSL_PM@
+ INCLUDE_DSL_RESOURCE_STATISTICS = @INCLUDE_DSL_RESOURCE_STATISTICS@
+ INCLUDE_DSL_SYSTEM_INTERFACE = @INCLUDE_DSL_SYSTEM_INTERFACE@
+@@ -323,6 +325,8 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LIBJSON_C_INCL_PATH = @LIBJSON_C_INCL_PATH@
++LIBJSON_C_LIBRARY_PATH = @LIBJSON_C_LIBRARY_PATH@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
+ LTLIBOBJS = @LTLIBOBJS@
+@@ -338,7 +342,6 @@ PACKAGE_URL = @PACKAGE_URL@
+ PACKAGE_VERSION = @PACKAGE_VERSION@
+ PATH_SEPARATOR = @PATH_SEPARATOR@
+ SAFEC_INCL_PATH = @SAFEC_INCL_PATH@
+-SAFEC_LIB_FUNC = @SAFEC_LIB_FUNC@
+ SAFEC_LIB_NAME = @SAFEC_LIB_NAME@
+ SAFEC_LIB_PATH = @SAFEC_LIB_PATH@
+ SAFEC_SUPPORT = @SAFEC_SUPPORT@
+@@ -637,7 +640,7 @@ distdir: $(DISTFILES)
+ 	  ! -type d ! -perm -444 -exec $(install_sh) -c -m a+r {} {} \; \
+ 	|| chmod -R a+r "$(distdir)"
+ dist-gzip: distdir
+-	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
++	tardir=$(distdir) && $(am__tar) | eval GZIP= gzip $(GZIP_ENV) -c >$(distdir).tar.gz
+ 	$(am__post_remove_distdir)
+ 
+ dist-bzip2: distdir
+@@ -663,7 +666,7 @@ dist-shar: distdir
+ 	@echo WARNING: "Support for shar distribution archives is" \
+ 	               "deprecated." >&2
+ 	@echo WARNING: "It will be removed altogether in Automake 2.0" >&2
+-	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
++	shar $(distdir) | eval GZIP= gzip $(GZIP_ENV) -c >$(distdir).shar.gz
+ 	$(am__post_remove_distdir)
+ 
+ dist-zip: distdir
+@@ -681,7 +684,7 @@ dist dist-all:
+ distcheck: dist
+ 	case '$(DIST_ARCHIVES)' in \
+ 	*.tar.gz*) \
+-	  GZIP=$(GZIP_ENV) gzip -dc $(distdir).tar.gz | $(am__untar) ;;\
++	  eval GZIP= gzip $(GZIP_ENV) -dc $(distdir).tar.gz | $(am__untar) ;;\
+ 	*.tar.bz2*) \
+ 	  bzip2 -dc $(distdir).tar.bz2 | $(am__untar) ;;\
+ 	*.tar.lz*) \
+@@ -691,7 +694,7 @@ distcheck: dist
+ 	*.tar.Z*) \
+ 	  uncompress -c $(distdir).tar.Z | $(am__untar) ;;\
+ 	*.shar.gz*) \
+-	  GZIP=$(GZIP_ENV) gzip -dc $(distdir).shar.gz | unshar ;;\
++	  eval GZIP= gzip $(GZIP_ENV) -dc $(distdir).shar.gz | unshar ;;\
+ 	*.zip*) \
+ 	  unzip $(distdir).zip ;;\
+ 	esac
+--- a/README
++++ b/README
+@@ -1,6 +1,8 @@
+ /******************************************************************************
+ 
+-			Copyright 2017, Intel Corporation
++                               Copyright (c) 2011
++                            Lantiq Deutschland GmbH
++                     Am Campeon 3; 85579 Neubiberg, Germany
+ 
+   For licensing information, see the file 'LICENSE' in the root folder of
+   this software module.
+--- a/src/dsl_cpe_cli_access2.c
++++ b/src/dsl_cpe_cli_access2.c
+@@ -1,9 +1,9 @@
+ /******************************************************************************
+ 
+-                     Copyright 2018, Intel Corporation
+-
+-                          Copyright (c) 2007-2015
+-                     Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2016 - 2019 Intel Corporation
++         Copyright 2015 - 2016 Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2009 - 2014 Lantiq Deutschland GmbH
++         Copyright 2007 - 2008 Infineon Technologies AG
+ 
+   For licensing information, see the file 'LICENSE' in the root folder of
+   this software module.
+@@ -239,6 +239,7 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Noti
+ 
+          if (g_sRcScript)
+          {
++            memset(g_sRcScript, 0, strlen (sNotifyScript) + 1);
+             cpe_control_strncpy_s(g_sRcScript, strlen (sNotifyScript) + 1, sNotifyScript, strlen (sNotifyScript));
+          }
+       }
+@@ -455,6 +456,7 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Auto
+             g_sAdslScript = DSL_CPE_Malloc (strlen (sAdslScript) + 1);
+             if (g_sAdslScript)
+             {
++               memset(g_sAdslScript, 0, strlen (sAdslScript) + 1);
+                cpe_control_strncpy_s(g_sAdslScript, strlen (sAdslScript) + 1, sAdslScript, strlen (sAdslScript));
+             }
+          }
+@@ -486,6 +488,7 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Auto
+             g_sVdslScript = DSL_CPE_Malloc (strlen (sVdslScript) + 1);
+             if (g_sVdslScript)
+             {
++               memset(g_sVdslScript, 0, strlen (sVdslScript) + 1);
+                cpe_control_strncpy_s(g_sVdslScript, strlen (sVdslScript) + 1, sVdslScript, strlen (sVdslScript));
+             }
+          }
+@@ -877,6 +880,7 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Auto
+       g_sFirmwareName1 = DSL_CPE_Malloc (strlen (pcFw) + 1);
+       if (g_sFirmwareName1)
+       {
++         memset(g_sFirmwareName1, 0, strlen (pcFw) + 1);
+          cpe_control_strncpy_s(g_sFirmwareName1, strlen (pcFw) + 1, pcFw, strlen (pcFw));
+       }
+       DSL_CPE_FwFeaturesGet(g_sFirmwareName1, &g_nFwFeatures1);
+@@ -893,6 +897,7 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Auto
+       g_sFirmwareName2 = DSL_CPE_Malloc (strlen (pcFw2) + 1);
+       if (g_sFirmwareName2)
+       {
++         memset(g_sFirmwareName2, 0, strlen (pcFw2) + 1);
+          cpe_control_strncpy_s(g_sFirmwareName2, strlen (pcFw2) + 1, pcFw2, strlen (pcFw2));
+       }
+       DSL_CPE_FwFeaturesGet(g_sFirmwareName2, &g_nFwFeatures2);
+--- a/src/dsl_cpe_cli_access.c
++++ b/src/dsl_cpe_cli_access.c
+@@ -1,9 +1,9 @@
+ /******************************************************************************
+ 
+-                     Copyright 2018, Intel Corporation
+-
+-                          Copyright (c) 2007-2015
+-                     Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2016 - 2019 Intel Corporation
++         Copyright 2015 - 2016 Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2009 - 2014 Lantiq Deutschland GmbH
++         Copyright 2007 - 2008 Infineon Technologies AG
+ 
+   For licensing information, see the file 'LICENSE' in the root folder of
+   this software module.
+@@ -560,6 +560,7 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Noti
+ 
+          if (g_sRcScript)
+          {
++            memset(g_sRcScript, 0, strlen (sNotifyScript) + 1);
+             cpe_control_strncpy_s(g_sRcScript, strlen (sNotifyScript) + 1, sNotifyScript, strlen (sNotifyScript));
+          }
+       }
+@@ -760,6 +761,7 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Auto
+             g_sAdslScript = DSL_CPE_Malloc (strlen (sAdslScript) + 1);
+             if (g_sAdslScript)
+             {
++               memset(g_sAdslScript, 0, strlen (sAdslScript) + 1);
+                cpe_control_strncpy_s(g_sAdslScript, strlen (sAdslScript) + 1, sAdslScript, strlen (sAdslScript));
+             }
+          }
+@@ -791,6 +793,7 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Auto
+             g_sVdslScript = DSL_CPE_Malloc (strlen (sVdslScript) + 1);
+             if (g_sVdslScript)
+             {
++               memset(g_sVdslScript, 0, strlen (sVdslScript) + 1);
+                cpe_control_strncpy_s(g_sVdslScript, strlen (sVdslScript) + 1, sVdslScript, strlen (sVdslScript));
+             }
+          }
+@@ -1774,6 +1777,10 @@ static const DSL_char_t g_sLfcg[] =
+    "   DSL_FEATURE_NA = -1" DSL_CPE_CRLF
+    "   DSL_FEATURE_DISABLED = 0" DSL_CPE_CRLF
+    "   DSL_FEATURE_ENABLED = 1" DSL_CPE_CRLF
++   "- DSL_FeatureSupport_t bRocEnable" DSL_CPE_CRLF
++   "   DSL_FEATURE_NA = -1" DSL_CPE_CRLF
++   "   DSL_FEATURE_DISABLED = 0" DSL_CPE_CRLF
++   "   DSL_FEATURE_ENABLED = 1" DSL_CPE_CRLF
+    DSL_CPE_CRLF "";
+ #else
+    "";
+@@ -1810,11 +1817,11 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Line
+    {
+       DSL_CPE_FPrintf (out, DSL_CPE_RET"nDslMode=%u nDirection=%u "
+          "bTrellisEnable=%u bBitswapEnable=%u bReTxEnable=%u "
+-         "bVirtualNoiseSupport=%u b20BitSupport=%d" DSL_CPE_CRLF,
++         "bVirtualNoiseSupport=%u b20BitSupport=%d bRocEnable=%d" DSL_CPE_CRLF,
+          DSL_CPE_RET_VAL(pData.accessCtl.nReturn), pData.nDslMode,
+          pData.nDirection, pData.data.bTrellisEnable, pData.data.bBitswapEnable,
+          pData.data.bReTxEnable, pData.data.bVirtualNoiseSupport,
+-         pData.data.b20BitSupport);
++         pData.data.b20BitSupport, pData.data.bRocEnable);
+    }
+ 
+    return 0;
+@@ -1852,6 +1859,10 @@ static const DSL_char_t g_sLfcs[] =
+    "   DSL_FEATURE_NA = -1" DSL_CPE_CRLF
+    "   DSL_FEATURE_DISABLED = 0" DSL_CPE_CRLF
+    "   DSL_FEATURE_ENABLED = 1" DSL_CPE_CRLF
++   "- DSL_FeatureSupport_t bRocEnable" DSL_CPE_CRLF
++   "   DSL_FEATURE_NA = -1" DSL_CPE_CRLF
++   "   DSL_FEATURE_DISABLED = 0" DSL_CPE_CRLF
++   "   DSL_FEATURE_ENABLED = 1" DSL_CPE_CRLF
+    DSL_CPE_CRLF
+    "Output Parameter" DSL_CPE_CRLF
+    "- DSL_Error_t nReturn" DSL_CPE_CRLF
+@@ -1883,17 +1894,18 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Line
+    unsigned int bReTxEnable;
+    unsigned int bVirtualNoiseSupport;
+    int b20BitSupport;
++   int bRocEnable;
+ 
+-   if (DSL_CPE_CLI_CheckParamNumber(pCommands, 7, DSL_CLI_EQUALS) == DSL_FALSE)
++   if (DSL_CPE_CLI_CheckParamNumber(pCommands, 8, DSL_CLI_EQUALS) == DSL_FALSE)
+    {
+       return -1;
+    }
+ 
+    memset(&pData, 0x0, sizeof(DSL_LineFeature_t));
+ 
+-   sscanf (pCommands, "%d %d %u %u %u %u %d", &nDslMode, &nDirection,
++   sscanf (pCommands, "%d %d %u %u %u %u %d %d", &nDslMode, &nDirection,
+       &bTrellisEnable, &bBitswapEnable,
+-      &bReTxEnable, &bVirtualNoiseSupport, &b20BitSupport);
++      &bReTxEnable, &bVirtualNoiseSupport, &b20BitSupport, &bRocEnable);
+ 
+    pData.nDslMode = nDslMode;
+    pData.nDirection = nDirection;
+@@ -1902,6 +1914,7 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Line
+    pData.data.bReTxEnable = bReTxEnable;
+    pData.data.bVirtualNoiseSupport = bVirtualNoiseSupport;
+    pData.data.b20BitSupport = b20BitSupport;
++   pData.data.bRocEnable = bRocEnable;
+ 
+    ret = DSL_CPE_Ioctl (fd, DSL_FIO_LINE_FEATURE_CONFIG_SET, (int) &pData);
+ 
+@@ -1952,6 +1965,10 @@ static const DSL_char_t g_sLfsg[] =
+    "   DSL_FEATURE_NA = -1" DSL_CPE_CRLF
+    "   DSL_FEATURE_DISABLED = 0" DSL_CPE_CRLF
+    "   DSL_FEATURE_ENABLED = 1" DSL_CPE_CRLF
++   "- DSL_FeatureSupport_t bRocEnable" DSL_CPE_CRLF
++   "   DSL_FEATURE_NA = -1" DSL_CPE_CRLF
++   "   DSL_FEATURE_DISABLED = 0" DSL_CPE_CRLF
++   "   DSL_FEATURE_ENABLED = 1" DSL_CPE_CRLF
+    DSL_CPE_CRLF "";
+ #else
+    "";
+@@ -1986,10 +2003,12 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Line
+    else
+    {
+       DSL_CPE_FPrintf (out, DSL_CPE_RET"nDirection=%u bTrellisEnable=%u "
+-         "bBitswapEnable=%u bReTxEnable=%u bVirtualNoiseSupport=%u b20BitSupport=%d" DSL_CPE_CRLF,
++         "bBitswapEnable=%u bReTxEnable=%u bVirtualNoiseSupport=%u b20BitSupport=%d "
++         "bRocEnable=%d" DSL_CPE_CRLF,
+          DSL_CPE_RET_VAL(pData.accessCtl.nReturn),
+          pData.nDirection, pData.data.bTrellisEnable, pData.data.bBitswapEnable,
+-         pData.data.bReTxEnable, pData.data.bVirtualNoiseSupport, pData.data.b20BitSupport);
++         pData.data.bReTxEnable, pData.data.bVirtualNoiseSupport, pData.data.b20BitSupport,
++         pData.data.bRocEnable);
+    }
+ 
+    return 0;
+@@ -4085,8 +4104,9 @@ static const DSL_char_t g_sG997lisg[] =
+    "   LINIT_SUB_S_PP_DRIVER = 7" DSL_CPE_CRLF
+    "   LINIT_SUB_S_INTENDED_LOCAL_SHUTDOWN = 8" DSL_CPE_CRLF
+    "   LINIT_SUB_TIMEOUT = 9" DSL_CPE_CRLF
+-   "   LINIT_SUB_S_PP_CLOCK_NEW = 12" DSL_CPE_CRLF
++   "   LINIT_SUB_S_AUTOMSG = 12" DSL_CPE_CRLF
+    "   LINIT_SUB_S_PP_ERB_INIT = 13" DSL_CPE_CRLF
++   "   LINIT_SUB_S_REBOOT_REQ = 14" DSL_CPE_CRLF
+    DSL_CPE_CRLF "";
+ #else
+    "";
+@@ -4501,6 +4521,8 @@ static const DSL_char_t g_sG997lsg[] =
+    "- DSL_uint32_t ATTNDR" DSL_CPE_CRLF
+    "- DSL_int16_t ACTPS" DSL_CPE_CRLF
+    "- DSL_int16_t ACTATP" DSL_CPE_CRLF
++   "- DSL_int16_t SNR_ROC" DSL_CPE_CRLF
++   "- DSL_int16_t ACTINP_ROC" DSL_CPE_CRLF
+    DSL_CPE_CRLF "";
+ #else
+    "";
+@@ -4536,11 +4558,11 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_G997
+    else
+    {
+       DSL_CPE_FPrintf (out, DSL_CPE_RET"nDirection=%u nDeltDataType=%u LATN=%hd SATN=%hd SNR=%hd "
+-         "ATTNDR=%u ACTPS=%hd ACTATP=%hd" DSL_CPE_CRLF,
++         "ATTNDR=%u ACTPS=%hd ACTATP=%hd SNR_ROC=%hd ACTINP_ROC=%hd" DSL_CPE_CRLF,
+          DSL_CPE_RET_VAL(pData.accessCtl.nReturn),
+          pData.nDirection, pData.nDeltDataType, pData.data.LATN,
+          (DSL_int32_t)pData.data.SATN, (DSL_int32_t)pData.data.SNR, (DSL_uint32_t)pData.data.ATTNDR, (DSL_int32_t)pData.data.ACTPS,
+-         (DSL_int32_t)pData.data.ACTATP);
++         (DSL_int32_t)pData.data.ACTATP, (DSL_int32_t)pData.data.SNR_ROC, (DSL_int32_t)pData.data.ACTINP_ROC);
+    }
+ 
+    return 0;
+--- a/src/dsl_cpe_cli.c
++++ b/src/dsl_cpe_cli.c
+@@ -1,9 +1,9 @@
+ /******************************************************************************
+ 
+-                     Copyright 2018, Intel Corporation
+-
+-                          Copyright (c) 2007-2015
+-                     Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2016 - 2019 Intel Corporation
++         Copyright 2015 - 2016 Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2009 - 2014 Lantiq Deutschland GmbH
++         Copyright 2007 - 2008 Infineon Technologies AG
+ 
+   For licensing information, see the file 'LICENSE' in the root folder of
+   this software module.
+@@ -37,10 +37,6 @@
+    #define LOGF_LOG_INFO(...)
+ #endif /* LOGGING_ID */
+ 
+-#if defined(INCLUDE_DSL_CPE_CLI_SUPPORT) && !defined(INCLUDE_DSL_CPE_CLI_AUTOGEN_SUPPORT)
+-   #include "drv_dsl_cpe_api_ioctl.h"
+-#endif
+-
+ #ifdef INCLUDE_DSL_CPE_CLI_SUPPORT
+ 
+ #undef DSL_CCA_DBG_BLOCK
+@@ -588,30 +584,6 @@ DSL_int_t DSL_CPE_CLI_HelpPrint(
+    return 0;
+ }
+ 
+-DSL_boolean_t DSL_CPE_CLI_CheckPowerDown(
+-   DSL_int_t fd,
+-   DSL_CPE_File_t *out)
+-{
+-   DSL_boolean_t retVal = DSL_FALSE;
+-   DSL_int_t ret = 0;
+-   DSL_AutobootStatus_t nAutobootStatus;
+-
+-   memset (&nAutobootStatus, 0, sizeof(DSL_AutobootStatus_t));
+-   ret = DSL_CPE_Ioctl(fd, DSL_FIO_AUTOBOOT_STATUS_GET, (DSL_int_t)&nAutobootStatus);
+-
+-   if ((ret < 0) && (nAutobootStatus.accessCtl.nReturn < DSL_SUCCESS))
+-   {
+-      DSL_CPE_FPrintf (out, "nReturn=%d%s", DSL_CPE_RET_VAL(nAutobootStatus.accessCtl.nReturn));
+-   }
+-   else if (nAutobootStatus.data.nStatus == DSL_AUTOBOOT_STATUS_SHUTDOWN_PD ||
+-            nAutobootStatus.data.nStatus == DSL_AUTOBOOT_STATUS_STOPPED_PD)
+-   {
+-      retVal = DSL_TRUE;
+-   }
+-
+-   return retVal;
+-}
+-
+ /**
+    Execute command.
+ 
+@@ -626,8 +598,6 @@ DSL_int_t DSL_CPE_CLI_CommandExecute(
+ {
+    DSL_CPE_recType  rec = {DSL_NULL, DSL_NULL, DSL_NULL, 0, DSL_NULL};
+    DSL_char_t dummy_arg[10] = "";
+-   DSL_boolean_t bCallable = DSL_TRUE;
+-   DSL_int_t nQuit = 0;
+ 
+    if(cmd == DSL_NULL)
+    {
+@@ -660,29 +630,12 @@ DSL_int_t DSL_CPE_CLI_CommandExecute(
+          }
+          else
+          {
+-            nQuit = strcmp(cmd, "quit");
+-
+-            if (DSL_CPE_CLI_CheckPowerDown(fd, out) == DSL_TRUE)
+-            {
+-               if(!(rec.mask & DSL_CPE_MASK_AFTER_POWER_DOWN) && nQuit != 0)
+-               {
+-                  bCallable = DSL_FALSE;
+-               }
+-            }
+-
+-            if (bCallable == DSL_TRUE)
+-            {
+-               if(rec.func(fd, arg, out) != 0)
+-               {
+-                  DSL_CPE_CLI_PrintHelp(rec.psHelp, rec.sCmdLong, rec.sCmdShort, rec.mask, rec.printFunc, out);
+-               }
+-            }
+-            else
++            if (rec.func(fd, arg, out) != 0)
+             {
+-               DSL_CPE_FPrintf (out, DSL_CPE_RET DSL_CPE_CRLF, DSL_CPE_RET_VAL(DSL_ERR_NOT_SUPPORTED_IN_CURRENT_AUTOBOOT_STATE));
++               DSL_CPE_CLI_PrintHelp(rec.psHelp, rec.sCmdLong, rec.sCmdShort, rec.mask, rec.printFunc, out);
+             }
+ 
+-            if (nQuit == 0)
++            if (strcmp(cmd, "quit") == 0)
+             {
+                DSL_CPE_CLI_Cleanup();
+                /* main() will execute exit */
+@@ -813,9 +766,6 @@ DSL_Error_t DSL_CPE_CLI_CommandAdd(
+    if(strstr(name, "g997") != 0)
+    {
+       rec.mask |= DSL_CPE_MASK_G997;
+-
+-      if(strstr(name, "g997lis") != 0)
+-         rec.mask |= DSL_CPE_MASK_AFTER_POWER_DOWN;
+    }
+    else if(long_name[0] == 'P' && long_name[1] == 'M')
+    {
+@@ -829,22 +779,6 @@ DSL_Error_t DSL_CPE_CLI_CommandAdd(
+    {
+       rec.mask |= DSL_CPE_MASK_DSM;
+    }
+-   else if(
+-      strstr(name, "esmcs")      != 0 ||
+-      strstr(name, "lfcg")       != 0 ||
+-      strstr(name, "lfcs")       != 0 ||
+-      strstr(name, "fdsg")       != 0 ||
+-      strstr(name, "acs")        != 0 ||
+-      strstr(name, "help")       != 0 ||
+-      strstr(name, "vig")        != 0 ||
+-      strstr(name, "asg")        != 0 ||
+-      strstr(name, "dbgmls")     != 0 ||
+-      strstr(name, "dbgmlg")     != 0 ||
+-      strstr(name, "ccadbgmls")  != 0 ||
+-      strstr(name, "ccadbgmlg")  != 0)
+-   {
+-      rec.mask |= DSL_CPE_MASK_AFTER_POWER_DOWN;
+-   }
+    else
+    {
+       rec.mask |= DSL_CPE_MASK_DEVICE;
+@@ -855,7 +789,7 @@ DSL_Error_t DSL_CPE_CLI_CommandAdd(
+    rec.sCmdShort = malloc(strlen(name)+1);
+    if(rec.sCmdShort)
+    {
+-      cpe_control_strncpy_s(rec.sCmdShort, strlen(name)+1, name, strlen(name)+1);
++      cpe_control_strncpy_s(rec.sCmdShort, strlen(name)+1, name, strlen(name));
+       rec.sCmdShort[strlen(name)] = 0;
+    }
+ 
+--- a/src/dsl_cpe_cli.h
++++ b/src/dsl_cpe_cli.h
+@@ -49,8 +49,6 @@
+ #define DSL_CPE_MASK_LONG       0x8000
+ /** Deprecated CLI functions */
+ #define DSL_CPE_MASK_DEPRECATED 0x10000
+-/** Commands available after Power Down mask */
+-#define DSL_CPE_MASK_AFTER_POWER_DOWN 0x20000
+ 
+ #define DSL_CPE_CLI_CMD_ADD_COMM(short_name, long_name, pFunc, pHelp) \
+            DSL_CPE_CLI_CommandAdd(short_name, long_name, pFunc, pHelp, 0x0, NULL)
+--- a/src/dsl_cpe_cli_vrx.c
++++ b/src/dsl_cpe_cli_vrx.c
+@@ -1,9 +1,9 @@
+ /******************************************************************************
+ 
+-                     Copyright 2018, Intel Corporation
+-
+-                          Copyright (c) 2007-2015
+-                     Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2016 - 2019 Intel Corporation
++         Copyright 2015 - 2016 Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2009 - 2014 Lantiq Deutschland GmbH
++         Copyright 2007 - 2008 Infineon Technologies AG
+ 
+   For licensing information, see the file 'LICENSE' in the root folder of
+   this software module.
+@@ -625,6 +625,7 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Auto
+             g_sFirmwareName1 = DSL_CPE_Malloc (strlen (pcFw) + 1);
+             if (g_sFirmwareName1)
+             {
++               memset(g_sFirmwareName1, 0, strlen (pcFw) + 1);
+                cpe_control_strncpy_s(g_sFirmwareName1, strlen (pcFw) + 1, pcFw, strlen (pcFw));
+             }
+             DSL_CPE_FwFeaturesGet(g_sFirmwareName1, &g_nFwFeatures1);
+@@ -648,6 +649,7 @@ DSL_CLI_LOCAL DSL_int_t DSL_CPE_CLI_Auto
+          g_sFirmwareName2 = DSL_CPE_Malloc (strlen (pcFw2) + 1);
+          if (g_sFirmwareName2)
+          {
++            memset(g_sFirmwareName2, 0, strlen (pcFw2) + 1);
+             cpe_control_strncpy_s(g_sFirmwareName2, strlen (pcFw2) + 1, pcFw2, strlen (pcFw2));
+          }
+          DSL_CPE_FwFeaturesGet(g_sFirmwareName2, &g_nFwFeatures2);
+--- a/src/dsl_cpe_config.h.in
++++ b/src/dsl_cpe_config.h.in
+@@ -43,6 +43,9 @@
+ /* Define to 1 if you have the <inttypes.h> header file. */
+ #undef HAVE_INTTYPES_H
+ 
++/* Define to 1 if you have the <json-c/json.h> header file. */
++#undef HAVE_JSON_C_JSON_H
++
+ /* Define to 1 if you have the <limits.h> header file. */
+ #undef HAVE_LIMITS_H
+ 
+@@ -220,6 +223,9 @@
+ /* Include G997 status support */
+ #undef INCLUDE_DSL_G997_STATUS
+ 
++/* Include JSON parsing */
++#undef INCLUDE_DSL_JSON_PARSING
++
+ /* Include DSL PM support */
+ #undef INCLUDE_DSL_PM
+ 
+@@ -265,7 +271,7 @@
+ /* Define to the version of this package. */
+ #undef PACKAGE_VERSION
+ 
+-/* Safe-C supported */
++/* Safe-C lib ver3.3 support */
+ #undef SAFEC_SUPPORT
+ 
+ /* Define to 1 if you have the ANSI C header files. */
+--- /dev/null
++++ b/src/dsl_cpe_configuration_parser.c
+@@ -0,0 +1,380 @@
++/******************************************************************************
++
++         Copyright (c) 2018-2019 Intel Corporation
++
++  For licensing information, see the file 'LICENSE' in the root folder of
++  this software module.
++
++*******************************************************************************/
++
++#if defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1)
++
++#include "json.h"
++#include "dsl_cpe_control.h"
++#include "dsl_cpe_configuration_parser.h"
++
++#define CONFIG_ROOT_NAME "Root"
++#define CONFIG_SECTION_PATH_SEPARATOR "."
++
++/* DSL sections */
++#define CONFIG_DSL_SECTION_PATH \
++   CONFIG_ROOT_NAME CONFIG_SECTION_PATH_SEPARATOR "DSL"
++
++#define CONFIG_BITSWAP_SECTION_PATH \
++   CONFIG_DSL_SECTION_PATH CONFIG_SECTION_PATH_SEPARATOR "Bitswap"
++
++#define CONFIG_RETRANSMISSION_SECTION_PATH \
++   CONFIG_DSL_SECTION_PATH CONFIG_SECTION_PATH_SEPARATOR "Retransmission"
++
++#define CONFIG_SRA_SECTION_PATH \
++   CONFIG_DSL_SECTION_PATH CONFIG_SECTION_PATH_SEPARATOR "Sra"
++
++#define CONFIG_VIRTUALNOISE_SECTION_PATH \
++   CONFIG_DSL_SECTION_PATH CONFIG_SECTION_PATH_SEPARATOR "VirtualNoise"
++
++#define CONFIG_REBOOTCRITERIA_SECTION_PATH \
++   CONFIG_DSL_SECTION_PATH CONFIG_SECTION_PATH_SEPARATOR "RebootCriteria"
++
++#define CONFIG_LOWLEVELHSTONES_SECTION_PATH \
++   CONFIG_DSL_SECTION_PATH CONFIG_SECTION_PATH_SEPARATOR "LowLevelHsTones"
++
++#define CONFIG_COMMON_SECTION_PATH \
++   CONFIG_DSL_SECTION_PATH CONFIG_SECTION_PATH_SEPARATOR "Common"
++
++/* DSL Common subsections */
++#define CONFIG_XTSE_SECTION_PATH \
++   CONFIG_COMMON_SECTION_PATH CONFIG_SECTION_PATH_SEPARATOR "G997XtuVal"
++
++#define PARSE_SECTION_INT(Section, ParameterName, ConfigField) \
++   do { \
++      if (strstr( \
++            pSectionPath, Section CONFIG_SECTION_PATH_SEPARATOR ParameterName) \
++         != NULL) \
++      { \
++         ConfigField = nIntVal; \
++         break; \
++      } \
++   } \
++   while(0)
++
++#define PARSE_SECTION_STRING(Section, ParameterName, ConfigField) \
++   do { \
++      if (strstr( \
++            pSectionPath, Section CONFIG_SECTION_PATH_SEPARATOR ParameterName) \
++         != NULL) \
++      { \
++         cpe_control_strncpy_s( \
++            ConfigField, sizeof(ConfigField), nStringVal, sizeof(nStringVal)); \
++         break; \
++      } \
++   } \
++   while(0)
++
++#define SECTION_PATH_LENGTH 256
++
++static DSL_void_t DSL_CPE_JsonReadObj(
++   json_object * pObj,
++   DSL_char_t * pSectionPath,
++   DSL_Configuration_t *pData
++);
++
++static DSL_void_t DSL_CPE_JsonParse(
++   json_object * pObj,
++   DSL_char_t * pSectionPath,
++   DSL_Configuration_t *pData
++);
++
++static DSL_void_t DSL_CPE_JsonParseArray(
++   json_object * pObj,
++   DSL_char_t * pKey,
++   DSL_char_t * pSectionPath,
++   DSL_Configuration_t *pData
++);
++
++DSL_Error_t DSL_CPE_ParseConfigFile(
++   DSL_char_t * pPath,
++   DSL_Configuration_t *pData)
++{
++   DSL_CPE_File_t *pFile = DSL_NULL;
++   DSL_int_t nFileLength = 0;
++   DSL_char_t * pBuffer = DSL_NULL;
++   DSL_char_t currentSectionPath[SECTION_PATH_LENGTH] = { CONFIG_ROOT_NAME };
++
++   json_object * pRootObj = DSL_NULL;
++
++   pFile = DSL_CPE_FOpen(pPath, "r");
++   if (pFile == DSL_NULL)
++   {
++      return DSL_ERROR;
++   }
++
++   /* Get length of file as JSON has strict format
++   and we have to read whole file at once */
++   fseek(pFile, 0, SEEK_END);
++   nFileLength = ftell(pFile);
++   fseek(pFile, 0, SEEK_SET);
++
++   /* Alloc buffer for JSON file content */
++   pBuffer = (DSL_char_t *)DSL_CPE_Malloc(nFileLength * sizeof(DSL_char_t));
++   if (pBuffer == DSL_NULL)
++   {
++      DSL_CPE_FClose(pFile);
++      return DSL_ERROR;
++   }
++
++   /* Read file */
++   DSL_CPE_FRead(pBuffer, sizeof(DSL_char_t), nFileLength, pFile);
++   DSL_CPE_FClose(pFile);
++
++   /* Create JSON Object from string */
++   pRootObj = json_tokener_parse(pBuffer);
++   DSL_CPE_Free(pBuffer);
++
++   if (pRootObj == DSL_NULL)
++   {
++      DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX
++         "Configuration Parser: invalid JSON file syntax" DSL_CPE_CRLF));
++      return DSL_ERROR;
++   }
++
++   /* Start parsing */
++   DSL_CPE_JsonReadObj(pRootObj, currentSectionPath, pData);
++
++   return DSL_SUCCESS;
++}
++
++static DSL_void_t DSL_CPE_JsonReadObj(
++   json_object * pObj,
++   DSL_char_t *pSectionPath,
++   DSL_Configuration_t *pData)
++{
++   enum json_type nType = json_type_null;
++   DSL_char_t currentSectionPath[SECTION_PATH_LENGTH];
++   json_object *pTmpObj = DSL_NULL;
++
++   json_object_object_foreach(pObj, key, val)
++   {
++      pTmpObj = pObj;
++      DSL_CPE_snprintf(currentSectionPath,
++         sizeof(currentSectionPath), "%s.%s", pSectionPath, key);
++
++      nType = json_object_get_type(val);
++
++      switch (nType)
++      {
++      case json_type_array:
++         DSL_CPE_JsonParseArray(pTmpObj, key, currentSectionPath, pData);
++         break;
++      case json_type_object:
++         json_object_object_get_ex(pTmpObj, key, &pTmpObj);
++
++         if (pTmpObj != DSL_NULL)
++         {
++            DSL_CPE_JsonReadObj(pTmpObj, currentSectionPath, pData);
++         }
++         break;
++      case json_type_null:
++      case json_type_boolean:
++      case json_type_double:
++      case json_type_int:
++      case json_type_string:
++         DSL_CPE_JsonParse(val, currentSectionPath, pData);
++         break;
++      }
++   }
++}
++
++static DSL_void_t DSL_CPE_JsonParse(
++   json_object * pObj,
++   DSL_char_t * pSectionPath,
++   DSL_Configuration_t *pData)
++{
++   enum json_type nType = json_type_null;
++   DSL_int_t nIntVal = 0;
++   DSL_char_t nStringVal[64] = { 0 };
++
++   DSL_CFG_Bitswap_t *pBitswapConfig = &pData->data.sBitswapConfig;
++   DSL_CFG_Common_t *pCommonConfig = &pData->data.sCommonConfig;
++   DSL_CFG_Retransmission_t *pRetransmissionConfig =
++      &pData->data.sRetransmissionConfig;
++   DSL_CFG_Sra_t *pSraConfig = &pData->data.sSraConfig;
++   DSL_CFG_VirtualNoise_t *pVirtualNoiseConfig =
++      &pData->data.sVirtualNoiseConfig;
++   DSL_CFG_RebootCriteria_t *pRebootCriteriaConfig =
++      &pData->data.sRebootCriteriaConfig;
++   DSL_CFG_LowLevelHsTones_t *pLowLevelHsTonesConfig =
++      &pData->data.sLowLevelHsTonesConfig;
++
++   /* We are only interested in Root.DSL section */
++   if (strstr(pSectionPath, CONFIG_DSL_SECTION_PATH) == DSL_NULL)
++   {
++      return;
++   }
++
++   nType = json_object_get_type(pObj);
++
++   switch (nType)
++   {
++      case json_type_boolean:
++      case json_type_int:
++         nIntVal = (DSL_int_t)json_object_get_int(pObj);
++
++         DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX
++            "Configuration Parser: %s: %d" DSL_CPE_CRLF,
++            pSectionPath, nIntVal));
++
++         /* Bitswap */
++         PARSE_SECTION_INT(
++            CONFIG_BITSWAP_SECTION_PATH, "Us_Vdsl", pBitswapConfig->Us_Vdsl);
++         PARSE_SECTION_INT(
++            CONFIG_BITSWAP_SECTION_PATH, "Ds_Vdsl", pBitswapConfig->Ds_Vdsl);
++         PARSE_SECTION_INT(
++            CONFIG_BITSWAP_SECTION_PATH, "Us_Adsl", pBitswapConfig->Us_Adsl);
++         PARSE_SECTION_INT(
++            CONFIG_BITSWAP_SECTION_PATH, "Ds_Adsl", pBitswapConfig->Ds_Adsl);
++
++         /* Retransmission */
++         PARSE_SECTION_INT(
++            CONFIG_RETRANSMISSION_SECTION_PATH, "Us_Vdsl", pRetransmissionConfig->Us_Vdsl);
++         PARSE_SECTION_INT(
++            CONFIG_RETRANSMISSION_SECTION_PATH, "Ds_Vdsl", pRetransmissionConfig->Ds_Vdsl);
++         PARSE_SECTION_INT(
++            CONFIG_RETRANSMISSION_SECTION_PATH, "Us_Adsl", pRetransmissionConfig->Us_Adsl);
++         PARSE_SECTION_INT(
++            CONFIG_RETRANSMISSION_SECTION_PATH, "Ds_Adsl", pRetransmissionConfig->Ds_Adsl);
++
++         /* SRA */
++         PARSE_SECTION_INT(
++            CONFIG_SRA_SECTION_PATH, "Us_Vdsl", pSraConfig->Us_Vdsl);
++         PARSE_SECTION_INT(
++            CONFIG_SRA_SECTION_PATH, "Ds_Vdsl", pSraConfig->Ds_Vdsl);
++         PARSE_SECTION_INT(
++            CONFIG_SRA_SECTION_PATH, "Us_Adsl", pSraConfig->Us_Adsl);
++         PARSE_SECTION_INT(
++            CONFIG_SRA_SECTION_PATH, "Ds_Adsl", pSraConfig->Ds_Adsl);
++
++         /* Virtualnoise */
++         PARSE_SECTION_INT(
++            CONFIG_VIRTUALNOISE_SECTION_PATH, "Us", pVirtualNoiseConfig->Us);
++         PARSE_SECTION_INT(
++            CONFIG_VIRTUALNOISE_SECTION_PATH, "Ds", pVirtualNoiseConfig->Ds);
++
++         /* Reboot criteria */
++         PARSE_SECTION_INT(
++            CONFIG_REBOOTCRITERIA_SECTION_PATH, "Adsl", pRebootCriteriaConfig->Adsl);
++         PARSE_SECTION_INT(
++            CONFIG_REBOOTCRITERIA_SECTION_PATH, "Vdsl", pRebootCriteriaConfig->Vdsl);
++
++         /* Low level HS tones */
++         PARSE_SECTION_INT(
++            CONFIG_LOWLEVELHSTONES_SECTION_PATH, "Adsl", pLowLevelHsTonesConfig->Adsl);
++         PARSE_SECTION_INT(
++            CONFIG_LOWLEVELHSTONES_SECTION_PATH, "Vdsl", pLowLevelHsTonesConfig->Vdsl);
++
++         /* Common */
++         PARSE_SECTION_INT(
++            CONFIG_COMMON_SECTION_PATH, "LdAfeShutdown", pCommonConfig->LdAfeShutdown);
++         PARSE_SECTION_INT(
++            CONFIG_COMMON_SECTION_PATH, "PLL_SwitchOff", pCommonConfig->PLL_SwitchOff);
++         PARSE_SECTION_INT(
++            CONFIG_COMMON_SECTION_PATH, "VectoringEnable", pCommonConfig->VectoringEnable);
++         PARSE_SECTION_INT(
++            CONFIG_COMMON_SECTION_PATH, "VdslProfileVal", pCommonConfig->VdslProfileVal);
++         PARSE_SECTION_INT(
++            CONFIG_COMMON_SECTION_PATH, "NextMode", pCommonConfig->NextMode);
++         PARSE_SECTION_INT(
++            CONFIG_COMMON_SECTION_PATH, "ActSeq", pCommonConfig->ActSeq);
++         PARSE_SECTION_INT(
++            CONFIG_COMMON_SECTION_PATH, "ActMode", pCommonConfig->ActMode);
++         PARSE_SECTION_INT(
++            CONFIG_COMMON_SECTION_PATH, "Remember", pCommonConfig->Remember);
++         PARSE_SECTION_INT(
++            CONFIG_COMMON_SECTION_PATH, "EntitiesEnabledSelect",
++            pCommonConfig->EntitiesEnabledSelect);
++
++         DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX
++            "Configuration Parser: Unknown parameter %s" DSL_CPE_CRLF,
++            pSectionPath));
++         break;
++      case json_type_string:
++         DSL_CPE_snprintf(nStringVal, sizeof(nStringVal), "%s",
++            json_object_get_string(pObj));
++         DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX
++            "Configuration Parser: %s: %s" DSL_CPE_CRLF, pSectionPath, nStringVal));
++
++         /* Common */
++         PARSE_SECTION_STRING(CONFIG_COMMON_SECTION_PATH, "SystemInterface",
++            pCommonConfig->SystemInterface);
++
++         DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX
++            "Configuration Parser: Unknown parameter %s" DSL_CPE_CRLF,
++            pSectionPath));
++         break;
++      default:
++         break;
++   }
++}
++
++static DSL_void_t DSL_CPE_JsonParseArray(
++   json_object * pObj,
++   DSL_char_t * pKey,
++   DSL_char_t * pSectionPath,
++   DSL_Configuration_t *pData)
++{
++   enum json_type nType = json_type_null;
++   json_object * pArrayObj = pObj;
++   json_object * pValue = DSL_NULL;
++   DSL_char_t currentSectionPath[SECTION_PATH_LENGTH];
++   DSL_int_t nArrayLength = 0;
++   DSL_int_t nIntVal = 0;
++   DSL_CFG_Common_t *pCommonConfig = &pData->data.sCommonConfig;
++
++   if (pKey != DSL_NULL)
++   {
++      json_object_object_get_ex(pObj, pKey, &pArrayObj);
++   }
++
++   nArrayLength = json_object_array_length(pArrayObj);
++
++   for (DSL_int_t i = 0; i < nArrayLength; i++)
++   {
++      DSL_CPE_snprintf(currentSectionPath,
++         sizeof(currentSectionPath), "%s[%d]", pSectionPath, i);
++
++      pValue = json_object_array_get_idx(pArrayObj, i);
++      nType = json_object_get_type(pValue);
++
++      switch (nType)
++      {
++      case json_type_array:
++         DSL_CPE_JsonParseArray(pValue, DSL_NULL, currentSectionPath, pData);
++         break;
++      case json_type_object:
++         DSL_CPE_JsonReadObj(pValue, currentSectionPath, pData);
++         break;
++      case json_type_null:
++      case json_type_boolean:
++      case json_type_double:
++      case json_type_int:
++         nIntVal = (DSL_int_t)json_object_get_int(pValue);
++
++         /* XTSE */
++         if (strstr(pSectionPath, CONFIG_XTSE_SECTION_PATH) != DSL_NULL)
++         {
++            if (i >= DSL_G997_NUM_XTSE_OCTETS)
++            {
++               DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX
++                  "Configuration Array Parser: G997XtuVal, index out of range (%d)"
++                  DSL_CPE_CRLF, i));
++               break;
++            }
++            PARSE_SECTION_INT(CONFIG_COMMON_SECTION_PATH, "G997XtuVal",
++               pCommonConfig->G997XtuVal[i]);
++         }
++      case json_type_string:
++      default:
++         break;
++      }
++   }
++}
++#endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
+--- /dev/null
++++ b/src/dsl_cpe_configuration_parser.h
+@@ -0,0 +1,23 @@
++/******************************************************************************
++
++         Copyright (c) 2018 Intel Corporation
++
++  For licensing information, see the file 'LICENSE' in the root folder of
++  this software module.
++
++*******************************************************************************/
++
++#ifndef _DSL_CPE_CONFIGURATION_PARSER_H
++#define _DSL_CPE_CONFIGURATION_PARSER_H
++
++#if defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1)
++#include "drv_dsl_cpe_api_error.h"
++#include "drv_dsl_cpe_api_types.h"
++#include "drv_dsl_cpe_configuration.h"
++
++DSL_Error_t DSL_CPE_ParseConfigFile(
++   DSL_char_t * pPath,
++   DSL_Configuration_t *pData);
++#endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
++
++#endif /* _LIB_DSL_CONFIGURATION_PARSER_H */
+--- a/src/dsl_cpe_control.c
++++ b/src/dsl_cpe_control.c
+@@ -1,9 +1,9 @@
+ /******************************************************************************
+ 
+-                     Copyright 2018, Intel Corporation
+-
+-                          Copyright (c) 2007-2015
+-                     Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2016 - 2019 Intel Corporation
++         Copyright 2015 - 2016 Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2009 - 2014 Lantiq Deutschland GmbH
++         Copyright 2007 - 2008 Infineon Technologies AG
+ 
+   For licensing information, see the file 'LICENSE' in the root folder of
+   this software module.
+@@ -19,7 +19,15 @@ Includes
+ #include "dsl_cpe_debug.h"
+ #include "drv_dsl_cpe_api_ioctl.h"
+ #include "dsl_cpe_simulator.h"
++#if defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1)
++#include "dsl_cpe_status_parser.h"
++#endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
++
+ #include <limits.h>
++#include <sys/file.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
+ 
+ #if defined (INCLUDE_DSL_CPE_API_DANUBE)
+ #include "drv_dsl_cpe_cmv_danube.h"
+@@ -37,6 +45,10 @@ Includes
+ 
+ #include "dsl_cpe_init_cfg.h"
+ 
++#if defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1)
++#include "dsl_cpe_configuration_parser.h"
++#endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
++
+ #undef DSL_CCA_DBG_BLOCK
+ #define DSL_CCA_DBG_BLOCK DSL_CCA_DBG_APP
+ 
+@@ -250,6 +262,29 @@ DSL_CPE_STATIC  DSL_int32_t bTcpMessageI
+ DSL_CPE_STATIC  DSL_int32_t bDTI = -1;
+ #endif
+ 
++#if defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1)
++/* Configuration file path */
++static char *g_pJsonConfigPath = CONFIG_FILE_PATH;
++/* Default configuration */
++static DSL_ConfigurationData_t g_sDefaultConfigData = {
++   /* DSL_CFG_Bitswap_t */
++   { 1, 1, 1, 1 },
++   /* DSL_CFG_Retransmission_t */
++   { 0, 0, 1, 1 },
++   /* DSL_CFG_Sra_t */
++   { 0, 0, 1, 1 },
++   /* DSL_CFG_VirtualNoise_t */
++   { 1, 1 },
++   /* DSL_CFG_RebootCriteria_t */
++   { 0x4F, 0xF },
++   /* DSL_CFG_LowLevelHsTones_t */
++   { 0, 0 },
++   /* DSL_CFG_Common_t */
++   { 1, 0, "", "", 0, 0x1FF, 0, 1, 1, 0, 1 },
++};
++static DSL_Configuration_t g_sDefaultConfig;
++#endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
++
+ #ifdef USE_DAEMONIZE
+ DSL_CPE_STATIC  DSL_int_t bNotSilent = 1;
+ #endif /* USE_DAEMONIZE */
+@@ -1047,18 +1082,17 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_ArgPa
+ {
+    DSL_char_t *pEndPtr = "\0";
+ 
+-   DSL_char_t string[30] = { 0 };
++   DSL_char_t string[30];
+    DSL_int_t i = 0;
+    DSL_uint32_t nVal = 0;
+    DSL_char_t seps[]   = "_";
+    DSL_char_t *token, *errMask;
+    DSL_int_t option_index = 1;
+ 
+-
+-
+    while (1)
+    {
+       DSL_int_t c;
++      memset(string, 0, sizeof(string));
+ 
+       /* 1 colon means there is a required parameter */
+       /* 2 colons means there is an optional parameter */
+@@ -1093,6 +1127,7 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_ArgPa
+          g_sRemoteTcpServerIp = DSL_CPE_Malloc(strlen (optarg) + 1);
+          if (g_sRemoteTcpServerIp)
+          {
++            memset(g_sRemoteTcpServerIp, 0, strlen (optarg) + 1);
+             cpe_control_strncpy_s(g_sRemoteTcpServerIp, strlen (optarg) + 1, optarg, strlen (optarg));
+ 
+             DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX
+@@ -1119,6 +1154,7 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_ArgPa
+             g_sTcpMessagesSocketAddr = DSL_CPE_Malloc(strlen (optarg) + 1);
+             if (g_sTcpMessagesSocketAddr)
+             {
++               memset(g_sTcpMessagesSocketAddr, 0, strlen (optarg) + 1);
+                cpe_control_strncpy_s(g_sTcpMessagesSocketAddr, strlen (optarg) + 1, optarg, strlen (optarg));
+             }
+          }
+@@ -1165,6 +1201,7 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_ArgPa
+             sDtiSocketAddr = DSL_CPE_Malloc(strlen (optarg) + 1);
+             if (sDtiSocketAddr)
+             {
++               memset(sDtiSocketAddr, 0, strlen (optarg) + 1);
+                cpe_control_strncpy_s(sDtiSocketAddr, strlen (optarg) + 1, optarg, strlen (optarg));
+             }
+          }
+@@ -1256,6 +1293,7 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_ArgPa
+ 
+             if (sLowLevCfgName)
+             {
++               memset(sLowLevCfgName, 0, strlen (optarg) + 1);
+                cpe_control_strncpy_s(sLowLevCfgName, strlen (optarg) + 1, optarg, strlen (optarg));
+             }
+          }
+@@ -1280,6 +1318,7 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_ArgPa
+             g_sRcScript = DSL_CPE_Malloc (strlen (optarg) + 1);
+             if (g_sRcScript)
+             {
++               memset(g_sRcScript, 0, strlen (optarg) + 1);
+                cpe_control_strncpy_s(g_sRcScript, strlen (optarg) + 1, optarg, strlen (optarg));
+             }
+          }
+@@ -1288,6 +1327,7 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_ArgPa
+             g_sRcScript = DSL_CPE_Malloc (strlen (sDefaultRcScript) + 1);
+             if (g_sRcScript)
+             {
++               memset(g_sRcScript, 0, strlen (sDefaultRcScript) + 1);
+                cpe_control_strncpy_s(g_sRcScript, strlen (sDefaultRcScript) + 1, sDefaultRcScript, strlen (sDefaultRcScript));
+             }
+          }
+@@ -1306,12 +1346,13 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_ArgPa
+             g_sFirmwareName1 = DSL_CPE_Malloc (strlen (optarg) + 1);
+             if (g_sFirmwareName1)
+             {
++               memset(g_sFirmwareName1, 0, strlen (optarg) + 1);
+                cpe_control_strncpy_s(g_sFirmwareName1, strlen (optarg) + 1, optarg, strlen(optarg));
+             }
+          }
+          break;
+       case 'F':
+-         if (g_nLines < 2) 
++         if (g_nLines < 2)
+          {
+             printf(DSL_CPE_PREFIX " Firmware 2 ignored when On Chip Bonding is off ");
+          }
+@@ -1326,6 +1367,7 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_ArgPa
+             g_sFirmwareName2 = DSL_CPE_Malloc (strlen (optarg) + 1);
+             if (g_sFirmwareName2)
+             {
++               memset(g_sFirmwareName2, 0, strlen (optarg) + 1);
+                cpe_control_strncpy_s(g_sFirmwareName2, strlen (optarg) + 1, optarg, strlen (optarg));
+             }
+          }
+@@ -1416,6 +1458,7 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_ArgPa
+             g_sAdslScript = DSL_CPE_Malloc (strlen (optarg) + 1);
+             if (g_sAdslScript)
+             {
++               memset(g_sAdslScript, 0, strlen (optarg) + 1);
+                cpe_control_strncpy_s(g_sAdslScript, strlen (optarg) + 1, optarg, strlen (optarg));
+             }
+          }
+@@ -1433,6 +1476,7 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_ArgPa
+             g_sVdslScript = DSL_CPE_Malloc (strlen (optarg) + 1);
+             if (g_sVdslScript)
+             {
++               memset(g_sVdslScript, 0, strlen (optarg) + 1);
+                cpe_control_strncpy_s(g_sVdslScript, strlen (optarg) + 1, optarg, strlen (optarg));
+             }
+          }
+@@ -1783,9 +1827,9 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_ArgPa
+    else
+    {
+       /* If no valid values are given for VDSL use the valid ADSL ones */
+-      cpe_control_memcpy_s(&g_sSysIfCfg[DSL_MODE_VDSL], 
+-             sizeof(DSL_SystemInterfaceConfigData_t), 
+-             &g_sSysIfCfg[DSL_MODE_ADSL], 
++      cpe_control_memcpy_s(&g_sSysIfCfg[DSL_MODE_VDSL],
++             sizeof(DSL_SystemInterfaceConfigData_t),
++             &g_sSysIfCfg[DSL_MODE_ADSL],
+              sizeof(g_sSysIfCfg[DSL_MODE_ADSL]));
+ 
+       DSL_CCA_DEBUG(DSL_CCA_DBG_ERR, (DSL_CPE_PREFIX
+@@ -2420,6 +2464,7 @@ DSL_Error_t DSL_CPE_DownloadFirmware(
+                g_sFirmwareName1 = DSL_CPE_Malloc (strlen (pcFw) + 1);
+                if (g_sFirmwareName1)
+                {
++                  memset(g_sFirmwareName1, 0, strlen (pcFw) + 1);
+                   cpe_control_strncpy_s(g_sFirmwareName1, strlen (pcFw) + 1, pcFw, strlen (pcFw));
+                }
+             }
+@@ -2461,6 +2506,7 @@ DSL_Error_t DSL_CPE_DownloadFirmware(
+                            g_sFirmwareName2 = DSL_CPE_Malloc (strlen (pcFw2) + 1);
+                            if (g_sFirmwareName2)
+                            {
++                              memset(g_sFirmwareName2, 0, strlen (pcFw2) + 1);
+                               cpe_control_strncpy_s(g_sFirmwareName2, strlen (pcFw2) + 1, pcFw2, strlen (pcFw2));
+                            }
+                         }
+@@ -2490,6 +2536,7 @@ DSL_Error_t DSL_CPE_DownloadFirmware(
+                            g_sFirmwareName1 = DSL_CPE_Malloc (strlen (pcFw) + 1);
+                            if (g_sFirmwareName1)
+                            {
++                              memset(g_sFirmwareName1, 0, strlen (pcFw) + 1);
+                               cpe_control_strncpy_s(g_sFirmwareName1, strlen (pcFw) + 1, pcFw, strlen (pcFw));
+                            }
+                         }
+@@ -2509,7 +2556,7 @@ DSL_Error_t DSL_CPE_DownloadFirmware(
+             {
+                if (pcFw2 != DSL_NULL)
+                {
+-                  cpe_control_memcpy_s(&ldFw.data.firmwareFeatures2, sizeof(DSL_FirmwareFeatures_t), 
++                  cpe_control_memcpy_s(&ldFw.data.firmwareFeatures2, sizeof(DSL_FirmwareFeatures_t),
+                      &g_nFwFeatures2, sizeof(g_nFwFeatures2));
+                }
+             }
+@@ -2517,7 +2564,7 @@ DSL_Error_t DSL_CPE_DownloadFirmware(
+             {
+                if (pcFw != DSL_NULL)
+                {
+-                  cpe_control_memcpy_s(&ldFw.data.firmwareFeatures, sizeof(DSL_FirmwareFeatures_t), 
++                  cpe_control_memcpy_s(&ldFw.data.firmwareFeatures, sizeof(DSL_FirmwareFeatures_t),
+                      &g_nFwFeatures1, sizeof(g_nFwFeatures1));
+                }
+             }
+@@ -4910,12 +4957,15 @@ DSL_CPE_STATIC  DSL_int_t DSL_CPE_Event_
+       pSubStatus = "LINIT_SUB_FAST_LOS";
+       break;
+ #if defined(DSL_VRX_DEVICE_VR11)
+-   case LINIT_SUB_S_PP_CLOCK_NEW:
+-      pSubStatus = "LINIT_SUB_S_PP_CLOCK_NEW";
++   case LINIT_SUB_S_AUTOMSG:
++      pSubStatus = "LINIT_SUB_S_AUTOMSG";
+       break;
+    case LINIT_SUB_S_PP_ERB_INIT:
+       pSubStatus = "LINIT_SUB_S_PP_ERB_INIT";
+       break;
++   case LINIT_SUB_S_REBOOT_REQ:
++      pSubStatus = "LINIT_SUB_S_REBOOT_REQ";
++      break;
+ #endif /* defined(DSL_VRX_DEVICE_VR11) */
+    default:
+       pSubStatus = "LINIT_SUB_UNKNOWN";
+@@ -5847,6 +5897,11 @@ DSL_int_t DSL_CPE_EventHandler (DSL_CPE_
+             DSL_CPE_CLI_HandleEvent(CLI_EventText);
+          }
+ #endif /* INCLUDE_DSL_CPE_CLI_SUPPORT */
++
++#if defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1)
++         /* update status file */
++         DSL_CPE_StatusFileUpdate(pContext);
++#endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
+       }
+    }                            /* for */
+ 
+@@ -6378,16 +6433,16 @@ DSL_int32_t DSL_CPE_DeviceInit (
+       user via -T option */
+    if (g_sSysIfCfg[DSL_MODE_ADSL].nTcLayer != DSL_TC_UNKNOWN)
+    {
+-      cpe_control_memcpy_s(&gInitCfgData.nDeviceCfg.sysCIF[DSL_MODE_ADSL], 
+-         sizeof(DSL_SystemInterfaceConfigData_t), 
+-         &g_sSysIfCfg[DSL_MODE_ADSL], 
++      cpe_control_memcpy_s(&gInitCfgData.nDeviceCfg.sysCIF[DSL_MODE_ADSL],
++         sizeof(DSL_SystemInterfaceConfigData_t),
++         &g_sSysIfCfg[DSL_MODE_ADSL],
+          sizeof(g_sSysIfCfg[DSL_MODE_ADSL]));
+    }
+ #if defined(INCLUDE_DSL_CPE_API_VRX)
+    if (g_sSysIfCfg[DSL_MODE_VDSL].nTcLayer != DSL_TC_UNKNOWN)
+    {
+       cpe_control_memcpy_s(&gInitCfgData.nDeviceCfg.sysCIF[DSL_MODE_VDSL],
+-         sizeof(DSL_SystemInterfaceConfigData_t), 
++         sizeof(DSL_SystemInterfaceConfigData_t),
+          &g_sSysIfCfg[DSL_MODE_VDSL],
+          sizeof(g_sSysIfCfg[DSL_MODE_VDSL]));
+    }
+@@ -6413,7 +6468,7 @@ DSL_int32_t DSL_CPE_DeviceInit (
+                init.data.pFirmware = pFirmware1;
+                init.data.nFirmwareSize = nFirmwareSize1;
+                DSL_CPE_FwFeaturesGet(g_sFirmwareName1, &fwFeatures1);
+-               cpe_control_memcpy_s(&init.data.nFirmwareFeatures, sizeof(DSL_FirmwareFeatures_t), 
++               cpe_control_memcpy_s(&init.data.nFirmwareFeatures, sizeof(DSL_FirmwareFeatures_t),
+                   &fwFeatures1, sizeof(fwFeatures1));
+             }
+          }
+@@ -6448,9 +6503,9 @@ DSL_int32_t DSL_CPE_DeviceInit (
+    {
+       DSL_CPE_FwFeaturesGet(g_sFirmwareName1, &fwFeatures1);
+    }
+-   cpe_control_memcpy_s(&init.data.nFirmwareFeatures, 
++   cpe_control_memcpy_s(&init.data.nFirmwareFeatures,
+       sizeof(DSL_FirmwareFeatures_t), &fwFeatures1, sizeof(fwFeatures1));
+-   cpe_control_memcpy_s(&g_nFwFeatures1, sizeof(DSL_FirmwareFeatures_t), 
++   cpe_control_memcpy_s(&g_nFwFeatures1, sizeof(DSL_FirmwareFeatures_t),
+       &fwFeatures1, sizeof(fwFeatures1));
+ 
+    if (DSL_CPE_LINES_PER_DEVICE == 2)
+@@ -6460,7 +6515,7 @@ DSL_int32_t DSL_CPE_DeviceInit (
+       {
+          DSL_CPE_FwFeaturesGet(g_sFirmwareName2, &fwFeatures2);
+       }
+-      cpe_control_memcpy_s(&init.data.nFirmwareFeatures2, 
++      cpe_control_memcpy_s(&init.data.nFirmwareFeatures2,
+              sizeof(DSL_FirmwareFeatures_t), &fwFeatures2, sizeof(&fwFeatures2));
+       cpe_control_memcpy_s(&g_nFwFeatures2, sizeof(DSL_FirmwareFeatures_t),
+          &fwFeatures2, sizeof(&fwFeatures2));
+@@ -6531,11 +6586,11 @@ DSL_int32_t DSL_CPE_DeviceInit (
+    inv.Auxiliary.nLength = 8;
+ #endif
+    /* $$ ND: this is for testing only --> */
+-   cpe_control_memcpy_s(&inv.SerialNumber, 32, 
++   cpe_control_memcpy_s(&inv.SerialNumber, 32,
+       "01234567890123456789012345678901", sizeof("01234567890123456789012345678901"));
+-   cpe_control_memcpy_s(&inv.SystemVendorID, 8, 
++   cpe_control_memcpy_s(&inv.SystemVendorID, 8,
+       G994VendorID, sizeof(G994VendorID));
+-   cpe_control_memcpy_s(&inv.VersionNumber, 16, 
++   cpe_control_memcpy_s(&inv.VersionNumber, 16,
+       "0123456789012345", sizeof("0123456789012345"));
+    init.data.pInventory = &inv;
+    /* $$ <-- */
+@@ -6611,6 +6666,65 @@ DSL_int32_t DSL_CPE_DeviceInit (
+    return ret;
+ }
+ 
++#if defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1)
++/**
++   Execute config update
++*/
++static DSL_Error_t DSL_CPE_UpdateConfig(DSL_CPE_Control_Context_t *pContext)
++{
++   for (int nDevice = 0; nDevice < DSL_CPE_DSL_ENTITIES; nDevice++)
++   {
++      /* Current configuration */
++      DSL_ConfigurationData_t sCurrentConfigData = {
++         /* DSL_CFG_Bitswap_t */
++         { CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED },
++         /* DSL_CFG_Retransmission_t */
++         { CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED },
++         /* DSL_CFG_Sra_t */
++         { CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED },
++         /* DSL_CFG_VirtualNoise_t */
++         { CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED },
++         /* DSL_CFG_RebootCriteria_t */
++         { CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED },
++         /* DSL_CFG_LowLevelHsTones_t */
++         { CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED },
++         /* DSL_CFG_Common_t */
++         { CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED, "", "",
++           CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED,
++           CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED, CONFIGURATION_VALUE_UNDEFINED,
++           CONFIGURATION_VALUE_UNDEFINED
++         }
++      };
++
++      DSL_Configuration_t sCurrentConfig;
++      cpe_control_memcpy_s(&(sCurrentConfig.data), sizeof(DSL_ConfigurationData_t), &sCurrentConfigData, sizeof(DSL_ConfigurationData_t));
++      cpe_control_memcpy_s(&(g_sDefaultConfig.data), sizeof(DSL_ConfigurationData_t), &g_sDefaultConfigData, sizeof(DSL_ConfigurationData_t));
++
++      if (DSL_CPE_ParseConfigFile(g_pJsonConfigPath, &sCurrentConfig) == DSL_ERROR)
++      {
++         DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX "DSL_CPE_ParseConfigFile failed! " \
++            "Fallback to default config" DSL_CPE_CRLF));
++         cpe_control_memcpy_s(&sCurrentConfig, sizeof(DSL_Configuration_t), &g_sDefaultConfig, sizeof(DSL_Configuration_t));
++      }
++
++      if (DSL_CPE_Ioctl (pContext->fd[nDevice], DSL_FIO_CONFIGURATION_RELOAD, (int) &sCurrentConfig) < DSL_SUCCESS)
++      {
++         DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX "DSL_ValidateAndApplyConfig failed! " \
++            "Applying default config" DSL_CPE_CRLF));
++
++         if (DSL_CPE_Ioctl (pContext->fd[nDevice], DSL_FIO_CONFIGURATION_RELOAD, (int) &g_sDefaultConfig) < DSL_SUCCESS)
++         {
++            DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX "DSL_ValidateAndApplyConfig failed! " \
++               "Applying default config failed! Exit dsl_daemon..." DSL_CPE_CRLF));
++
++            return DSL_ERROR;
++         }
++      }
++   }
++
++   return DSL_SUCCESS;
++}
++#endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
+ 
+ /**
+    Termination handler. Will clean up in case of ctrl-c.
+@@ -6632,6 +6746,33 @@ DSL_CPE_STATIC  void DSL_CPE_Termination
+ #endif /* RTEMS*/
+ }
+ 
++#if defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1)
++/**
++   DSL Update Config handler
++
++   \param sig signal number
++*/
++DSL_CPE_STATIC  void DSL_CPE_UpdateConfigHandler (
++   DSL_int_t sig)
++{
++   DSL_CPE_Control_Context_t *pCtrlCtx;
++
++   pCtrlCtx = DSL_CPE_GetGlobalContext();
++   if (pCtrlCtx != DSL_NULL)
++   {
++      pCtrlCtx->bRun = DSL_FALSE;
++   }
++
++#ifndef RTEMS
++   if (sig == SIGHUP)
++   {
++      DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX "configuration reload" DSL_CPE_CRLF));
++      DSL_CPE_UpdateConfig(pCtrlCtx);
++   }
++#endif /* RTEMS*/
++}
++#endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
++
+ DSL_CPE_STATIC  DSL_void_t DSL_CPE_Termination (void)
+ {
+ #ifdef INCLUDE_DSL_CPE_CLI_SUPPORT
+@@ -6675,7 +6816,8 @@ DSL_int_t dsl_cpe_daemon (
+ {
+    DSL_int_t ret = 0;
+    DSL_char_t device[128] = "";
+-   DSL_int_t fd = 0, i = 0, nDevice = 0;
++   DSL_char_t *lockPath = "/tmp/.dsl_cpe_control.lock";
++   DSL_int_t fd = 0, i = 0, nDevice = 0, lockFd = 0;
+    DSL_int_t nSysIfCfgSize = 0;
+ #ifndef DSL_CPE_DEBUG_DISABLE
+    DSL_DBG_ModuleLevel_t nDbgModLvl;
+@@ -6694,6 +6836,17 @@ DSL_int_t dsl_cpe_daemon (
+    DSL_ResourceUsageStatistics_t pDrvResStatData;
+ #endif /* INCLUDE_DSL_RESOURCE_STATISTICS*/
+ #endif /* INCLUDE_DSL_CPE_CLI_SUPPORT */
++
++   /* Prevents multiple instances of DSL Control Application */
++   lockFd = open(lockPath, O_CREAT);
++
++   if (flock(lockFd, LOCK_EX | LOCK_NB) < DSL_SUCCESS)
++   {
++      DSL_CPE_FPrintf (DSL_CPE_STDOUT,
++         DSL_CPE_PREFIX"stopping DSL CPE Control Application, another instance found!" DSL_CPE_CRLF);
++      return DSL_ERROR;
++   }
++
+    DSL_CPE_ArgParseLayout(argc, argv);
+ 
+ #if defined(RTEMS) && defined(INCLUDE_DSL_CPE_CLI_SUPPORT)
+@@ -6751,23 +6904,25 @@ DSL_int_t dsl_cpe_daemon (
+    g_sFirmwareName2 = DSL_CPE_Malloc(strlen(sDefaultFirmwareName2) + 1);
+    if(g_sFirmwareName1)
+    {
++      memset(g_sFirmwareName1, 0, strlen(sDefaultFirmwareName1) + 1);
+       cpe_control_strncpy_s(g_sFirmwareName1, strlen(sDefaultFirmwareName1) + 1,
+          sDefaultFirmwareName1, strlen(sDefaultFirmwareName1));
+    }
+    if(g_sFirmwareName2)
+    {
++      memset(g_sFirmwareName2, 0, strlen(sDefaultFirmwareName2) + 1);
+       cpe_control_strncpy_s(g_sFirmwareName2, strlen(sDefaultFirmwareName2) + 1,
+          sDefaultFirmwareName2, strlen(sDefaultFirmwareName2));
+    }
+-   
++
+    if (DSL_CPE_UpdateLayoutConfiguration() == DSL_FALSE)
+    {
+       ret = DSL_ERROR;
+       goto DSL_CPE_CONTROL_EXIT;
+    }
+    DSL_CPE_ArgParse (argc, argv);
+-   
+-      
++
++
+ 
+    /* display version */
+    if (bGetVersion != -1)
+@@ -6882,6 +7037,9 @@ DSL_int_t dsl_cpe_daemon (
+ 
+ #ifndef RTEMS
+    signal (SIGINT, DSL_CPE_TerminationHandler);
++#if defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1)
++   signal (SIGHUP, DSL_CPE_UpdateConfigHandler);
++#endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
+ #endif /* RTEMS*/
+ 
+    /* Open DSL_CPE_MAX_DSL_ENTITIES devices*/
+@@ -7181,6 +7339,12 @@ DSL_int_t dsl_cpe_daemon (
+             "Device initialized succeeded (ret=%d)." DSL_CPE_CRLF, ret));
+       }
+    }
++   #if defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1)
++   if (DSL_CPE_UpdateConfig(pCtrlCtx) == DSL_ERROR)
++   {
++      goto DSL_CPE_CONTROL_EXIT;
++   }
++   #endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
+ 
+    if (bInit != 1)
+    {
+--- a/src/dsl_cpe_debug.c
++++ b/src/dsl_cpe_debug.c
+@@ -1,9 +1,9 @@
+ /******************************************************************************
+ 
+-                     Copyright 2018, Intel Corporation
+-
+-                          Copyright (c) 2007-2015
+-                     Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2016 - 2019 Intel Corporation
++         Copyright 2015 - 2016 Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2009 - 2014 Lantiq Deutschland GmbH
++         Copyright 2007 - 2008 Infineon Technologies AG
+ 
+   For licensing information, see the file 'LICENSE' in the root folder of
+   this software module.
+@@ -625,6 +625,7 @@ DSL_Error_t DSL_CPE_TcpDebugMessageIntfS
+       g_sTcpMessagesSocketAddr = DSL_CPE_Malloc(strlen (sTcpServerIp) + 1);
+       if (g_sTcpMessagesSocketAddr)
+       {
++         memset(g_sTcpMessagesSocketAddr, 0, strlen (sTcpServerIp) + 1);
+          cpe_control_strncpy_s(g_sTcpMessagesSocketAddr, strlen (sTcpServerIp) + 1,
+             sTcpServerIp, strlen (sTcpServerIp));
+       }
+--- a/src/dsl_cpe_dti_vrx.c
++++ b/src/dsl_cpe_dti_vrx.c
+@@ -2841,11 +2841,11 @@ DTI_STATIC IFX_int_t DTI_VRX_TraceBuffer
+ 
+    /* read until buffer full or no more data available */
+    DTI_MemSet(&stream, 0x00, sizeof(IOCTL_MEI_DEBUG_STREAM_data_t));
+-   stream.dataBufferSize_byte = (unsigned int)pInTraceBufferGet->size;
++   stream.dataBufferSize_byte = (unsigned int)nBufferOutSize;
+    stream.pData = (unsigned char *)pOutTraceBufferGet->data;
+ 
+    DTI_PRN_USR_ERR_NL(DTI_VRX, DTI_PRN_LEVEL_LOW,
+-      ("ERROR: Mei Packet Trace Buffer Get - line %d, "\
++      ("Mei Packet Trace Buffer Get - line %d, "\
+       "InTraceBufferGet->size=%d, nBufferOutSize=%d."\
+       DTI_CRLF,
+       lineNum, pInTraceBufferGet->size, nBufferOutSize));
+@@ -2878,12 +2878,6 @@ DTI_STATIC IFX_int_t DTI_VRX_TraceBuffer
+          (nBufferOutSize -
+          sizeof(DTI_PacketHeader_t)),
+          pInTraceBufferGet->size ));
+-
+-      *pTrBufReadSize_byte = (IFX_int_t)pInTraceBufferGet->size;
+-   }
+-   else
+-   {
+-      *pTrBufReadSize_byte = (IFX_int_t)stream.dataBufferSize_byte;
+    }
+ 
+    *pPacketError = DTI_eNoError;
+--- a/src/dsl_cpe_linux.c
++++ b/src/dsl_cpe_linux.c
+@@ -1,9 +1,9 @@
+ /******************************************************************************
+ 
+-                     Copyright 2018, Intel Corporation
+-
+-                          Copyright (c) 2007-2015
+-                     Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2016 - 2019 Intel Corporation
++         Copyright 2015 - 2016 Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2009 - 2014 Lantiq Deutschland GmbH
++         Copyright 2007 - 2008 Infineon Technologies AG
+ 
+   For licensing information, see the file 'LICENSE' in the root folder of
+   this software module.
+@@ -254,6 +254,7 @@ DSL_Error_t DSL_CPE_PipeCreate(DSL_char_
+       return DSL_ERR_MEMORY;
+    }
+ 
++   memset(pipepath, 0, strlen(SYS_PIPE_PREFIX"/") + strlen(pName) + 1);
+    cpe_control_strncpy_s(pipepath,
+       strlen(SYS_PIPE_PREFIX"/") + strlen(pName) + 1,
+       SYS_PIPE_PREFIX"/",
+@@ -1607,6 +1608,8 @@ DSL_char_t* DSL_CPE_OwnAddrStringGet(DSL
+    nFd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (nFd != -1)
+    {
++      memset(&ifr, 0x0, sizeof(struct ifreq));
++
+       ifr.ifr_addr.sa_family = AF_INET;
+       cpe_control_strncpy_s(ifr.ifr_name, IFNAMSIZ-1, 
+          DSL_DEBUG_TOOL_INTERFACE_DEFAULT_IFACE, strlen(DSL_DEBUG_TOOL_INTERFACE_DEFAULT_IFACE));
+@@ -1623,6 +1626,9 @@ DSL_char_t* DSL_CPE_OwnAddrStringGet(DSL
+ 
+    if (pString != DSL_NULL)
+    {
++      memset(pString, 0,
++	     strlen(inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr)) + 1);
++
+       cpe_control_strncpy_s(pString,
+          strlen(inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr)) + 1,
+          inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr),
+--- a/src/dsl_cpe_safec_wrapper.h
++++ b/src/dsl_cpe_safec_wrapper.h
+@@ -1,6 +1,6 @@
+ /******************************************************************************
+ 
+-                     Copyright 2018, Intel Corporation
++                     Copyright 2018 - 2019 Intel Corporation
+ 
+   For licensing information, see the file 'LICENSE' in the root folder of
+   this software module.
+@@ -10,11 +10,15 @@
+ #ifndef _SAFEC_WRAPPER_H
+ #define _SAFEC_WRAPPER_H
+ 
+-#if defined (SAFEC_SUPPORT) && (SAFEC_SUPPORT == 1)
+-#include "safe_lib.h"
+-#define cpe_control_memcpy_s(dest, destsz, src, srcsz) memcpy_s(dest, destsz, src, srcsz)
+-#define cpe_control_strncpy_s(dest, destsz, src, srcsz) strncpy_s(dest, destsz, src, srcsz)
++#if defined (SAFEC_SUPPORT) && (SAFEC_SUPPORT == 3)
++#include "safe_mem_lib.h"
++#include "safe_str_lib.h"
++
++#define cpe_control_memcpy_s memcpy_s
++#define cpe_control_strncpy_s strncpy_s
++
+ #else
++
+ #warning "Safe C library is not available!"
+ 
+ #include <stddef.h>	/* size_t */
+@@ -25,6 +29,8 @@ static __inline__ size_t safec_wrapper_m
+ 
+ #define cpe_control_memcpy_s(dest, destsz, src, srcsz) memcpy(dest, src, safec_wrapper_min(destsz,srcsz))
+ #define cpe_control_strncpy_s(dest, destsz, src, srcsz) strncpy(dest, src, safec_wrapper_min(destsz,srcsz))
+-#endif /* defined (SAFEC_SUPPORT) && (SAFEC_SUPPORT == 1) */
++
++#endif /* defined (SAFEC_SUPPORT) && (SAFEC_SUPPORT == 3) */
+ 
+ #endif /* _SAFEC_WRAPPER_H */
++
+--- /dev/null
++++ b/src/dsl_cpe_status_parser.c
+@@ -0,0 +1,361 @@
++/******************************************************************************
++
++         Copyright (c) 2019 Intel Corporation
++
++  For licensing information, see the file 'LICENSE' in the root folder of
++  this software module.
++
++*******************************************************************************/
++
++#if defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1)
++
++#include "json.h"
++#include "dsl_cpe_status_parser.h"
++#include "drv_dsl_cpe_api_ioctl.h"
++
++#define STATUS_FILE_PATH "/opt/intel/etc/dsl_cpe_control.status"
++
++#define STATUS_ROOT_NAME "Root"
++#define STATUS_SECTION_PATH_SEPARATOR "."
++
++#define STATUS_DSL_SECTION_PATH \
++   STATUS_ROOT_NAME STATUS_SECTION_PATH_SEPARATOR "DSL"
++
++#define STATUS_LINE_SECTION_PATH \
++   STATUS_DSL_SECTION_PATH STATUS_SECTION_PATH_SEPARATOR "Line"
++
++#define SECTION_PATH_LENGTH 256
++
++static DSL_void_t DSL_CPE_JsonReadAndUpdate(
++   DSL_CPE_Control_Context_t *pContext,
++   json_object * pObj,
++   DSL_char_t * pSectionPath
++);
++
++static DSL_void_t DSL_CPE_JsonLineObjUpdate(
++   DSL_CPE_Control_Context_t *pContext,
++   json_object * pObj,
++   DSL_char_t * pSectionPath
++);
++
++static DSL_void_t DSL_CPE_JsonLineStatusUpdate(
++   DSL_CPE_Control_Context_t *pContext,
++   json_object * pObj,
++   DSL_char_t * pKey
++);
++
++static DSL_void_t DSL_CPE_JsonDataRatesUpdate(
++   DSL_CPE_Control_Context_t *pContext,
++   json_object * pObj,
++   char* key,
++   const DSL_AccessDir_t nDirection);
++
++static DSL_void_t DSL_CPE_JsonXtseArrayUpdate(
++   DSL_CPE_Control_Context_t *pContext,
++   json_object * pObj,
++   char* key);
++
++DSL_Error_t DSL_CPE_StatusFileUpdate(
++   DSL_CPE_Control_Context_t *pContext)
++{
++   DSL_CPE_File_t *pFile = DSL_NULL;
++   DSL_int_t nFileLength = 0;
++   DSL_char_t * pBufferIn = DSL_NULL;
++   const DSL_char_t * pBufferOut = DSL_NULL;
++   DSL_char_t currentSectionPath[SECTION_PATH_LENGTH] = { STATUS_ROOT_NAME };
++
++   json_object * pRootObj = DSL_NULL;
++
++   pFile = DSL_CPE_FOpen(STATUS_FILE_PATH, "r");
++   if (pFile == DSL_NULL)
++   {
++      return DSL_ERROR;
++   }
++
++   /* Get length of file as JSON has strict format
++   and we have to read whole file at once */
++   fseek(pFile, 0, SEEK_END);
++   nFileLength = ftell(pFile);
++   fseek(pFile, 0, SEEK_SET);
++
++   /* Alloc buffer for JSON file content */
++   pBufferIn = (DSL_char_t *)DSL_CPE_Malloc(nFileLength * sizeof(DSL_char_t));
++   if (pBufferIn == DSL_NULL)
++   {
++      DSL_CPE_FClose(pFile);
++      return DSL_ERROR;
++   }
++
++   /* Read file */
++   DSL_CPE_FRead(pBufferIn, sizeof(DSL_char_t), nFileLength, pFile);
++   DSL_CPE_FClose(pFile);
++
++   /* Create JSON Object from string */
++   pRootObj = json_tokener_parse(pBufferIn);
++   DSL_CPE_Free(pBufferIn);
++
++   if (pRootObj == DSL_NULL)
++   {
++      DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX
++         "Configuration Parser: invalid JSON file syntax" DSL_CPE_CRLF));
++      return DSL_ERROR;
++   }
++
++   /* Start reading and updating */
++   DSL_CPE_JsonReadAndUpdate(pContext, pRootObj, currentSectionPath);
++
++   /* Write updated data to file */
++   pBufferOut = json_object_to_json_string_ext(pRootObj, JSON_C_TO_STRING_PRETTY);
++   pFile = DSL_CPE_FOpen(STATUS_FILE_PATH, "w");
++   if (pFile == DSL_NULL)
++   {
++      return DSL_ERROR;
++   }
++   DSL_CPE_FWrite(pBufferOut, sizeof(DSL_char_t), strlen(pBufferOut), pFile);
++   DSL_CPE_FClose(pFile);
++
++   return DSL_SUCCESS;
++}
++
++static DSL_void_t DSL_CPE_JsonReadAndUpdate(
++   DSL_CPE_Control_Context_t *pContext,
++   json_object * pObj,
++   DSL_char_t *pSectionPath)
++{
++   enum json_type nType = json_type_null;
++   DSL_char_t currentSectionPath[SECTION_PATH_LENGTH];
++   json_object *pTmpObj = DSL_NULL;
++
++   json_object_object_foreach(pObj, key, val)
++   {
++      DSL_CPE_snprintf(currentSectionPath,
++         sizeof(currentSectionPath), "%s.%s", pSectionPath, key);
++
++      /* We are only interested in Root.DSL section here */
++      if (strstr(currentSectionPath, STATUS_DSL_SECTION_PATH) == DSL_NULL)
++      {
++         continue;
++      }
++
++      pTmpObj = pObj;
++
++      if (strcmp(key, "Line") == 0)
++      {
++         DSL_CPE_JsonLineObjUpdate(pContext, val, currentSectionPath);
++      }
++      else
++      {
++         nType = json_object_get_type(val);
++         if (nType == json_type_object)
++         {
++            json_object_object_get_ex(pTmpObj, key, &pTmpObj);
++
++            if (pTmpObj != DSL_NULL)
++            {
++               DSL_CPE_JsonReadAndUpdate(
++                  pContext, pTmpObj, currentSectionPath);
++            }
++         }
++      }
++   }
++}
++
++static DSL_void_t DSL_CPE_JsonLineObjUpdate(
++   DSL_CPE_Control_Context_t *pContext,
++   json_object * pObj,
++   DSL_char_t * pSectionPath)
++{
++   json_object *pTmpObj = json_type_null;
++   json_type nType = json_type_null;
++   DSL_char_t currentSectionPath[SECTION_PATH_LENGTH];
++
++   /* We are only interested in Root.DSL.Line section here */
++   if (strstr(pSectionPath, STATUS_LINE_SECTION_PATH) == DSL_NULL)
++   {
++      return;
++   }
++
++   json_object_object_foreach(pObj, key, val)
++   {
++      pTmpObj = pObj;
++
++      if (strcmp(key, "Status") == 0)
++      {
++         /* update line state */
++         DSL_CPE_JsonLineStatusUpdate(pContext, pObj, key);
++      }
++      else if (strcmp(key, "ActualDataRate_Us") == 0)
++      {
++         /* update data rates for upstream direction */
++         DSL_CPE_JsonDataRatesUpdate(pContext, pObj, key, DSL_UPSTREAM);
++      }
++      else if (strcmp(key, "ActualDataRate_Ds") == 0)
++      {
++         /* update data rates for downstream direction */
++         DSL_CPE_JsonDataRatesUpdate(pContext, pObj, key, DSL_DOWNSTREAM);
++      }
++      else if (strcmp(key, "XTSE") == 0)
++      {
++         /* update XTSE bits */
++         DSL_CPE_JsonXtseArrayUpdate(pContext, pObj, key);
++      }
++      else
++      {
++         nType = json_object_get_type(val);
++         if (nType == json_type_object)
++         {
++            json_object_object_get_ex(pTmpObj, key, &pTmpObj);
++
++            if (pTmpObj != DSL_NULL)
++            {
++               DSL_CPE_snprintf(currentSectionPath, sizeof(currentSectionPath), "%s.%s", pSectionPath, key);
++               DSL_CPE_JsonLineObjUpdate(
++                  pContext, pTmpObj, currentSectionPath);
++            }
++         }
++      }
++   }
++}
++
++static DSL_void_t DSL_CPE_JsonLineStatusUpdate(
++   DSL_CPE_Control_Context_t *pContext,
++   json_object * pObj,
++   DSL_char_t * key)
++{
++   DSL_Error_t nErrCode = DSL_SUCCESS;
++   DSL_LineState_t lineData = { 0 };
++   json_object *pTmpObj = DSL_NULL;
++   DSL_uint32_t nLineState = 0;
++   DSL_int_t nDevice;
++   static DSL_int_t nDev = 0;
++
++   /* update only for existing device */
++   for (nDevice = 0; nDevice < DSL_CPE_DSL_ENTITIES; nDevice++)
++   {
++      if (nDevice == nDev)
++      {
++         nErrCode = DSL_CPE_Ioctl(
++            pContext->fd[nDevice], DSL_FIO_LINE_STATE_GET, (int)&lineData);
++         if (nErrCode == DSL_SUCCESS)
++         {
++            nLineState = lineData.data.nLineState;
++         }
++      }
++   }
++
++   /* update json object */
++   pTmpObj = json_object_new_int(nLineState);
++   json_object_object_add(pObj, key, pTmpObj);
++
++   /* increase dev index for another line section */
++   nDev = (nDev + 1) % DSL_CPE_MAX_DSL_ENTITIES;
++}
++
++static DSL_void_t DSL_CPE_JsonDataRatesUpdate(
++   DSL_CPE_Control_Context_t *pContext,
++   json_object * pObj,
++   char* key,
++   const DSL_AccessDir_t nDirection)
++{
++   DSL_Error_t nErrCode = DSL_SUCCESS;
++   DSL_G997_ChannelStatus_t channelStatus = { 0 };
++   json_object *pTmpObj = DSL_NULL;
++   DSL_uint32_t nActualDataRate = 0;
++   DSL_int_t nDevice;
++   static DSL_int_t nDev_Us = 0;
++   static DSL_int_t nDev_Ds = 0;
++   const DSL_uint8_t nChannel = 0;
++
++   channelStatus.nChannel = nChannel;
++
++   if (nDirection == DSL_UPSTREAM)
++   {
++      for (nDevice = 0; nDevice < DSL_CPE_DSL_ENTITIES; nDevice++)
++      {
++         /* update only for existing device */
++         if (nDevice == nDev_Us)
++         {
++            channelStatus.nDirection = DSL_UPSTREAM;
++            nErrCode = DSL_CPE_Ioctl(pContext->fd[nDevice],
++               DSL_FIO_G997_CHANNEL_STATUS_GET, (int)&channelStatus);
++         }
++      }
++
++      /* increase US dev index for another line section */
++      nDev_Us = (nDev_Us + 1) % DSL_CPE_MAX_DSL_ENTITIES;
++   }
++   else /* DSL_DOWNSTREAM */
++   {
++      for (nDevice = 0; nDevice < DSL_CPE_DSL_ENTITIES; nDevice++)
++      {
++         /* update only for existing device */
++         if (nDevice == nDev_Ds)
++         {
++            channelStatus.nDirection = DSL_DOWNSTREAM;
++            nErrCode = DSL_CPE_Ioctl(pContext->fd[nDevice],
++               DSL_FIO_G997_CHANNEL_STATUS_GET, (int)&channelStatus);
++         }
++      }
++
++      /* increase DS dev index for another line section */
++      nDev_Ds = (nDev_Ds + 1) % DSL_CPE_MAX_DSL_ENTITIES;
++   }
++
++   if (nErrCode == DSL_SUCCESS)
++   {
++      nActualDataRate = channelStatus.data.ActualDataRate;
++   }
++
++   /* update json object */
++   pTmpObj = json_object_new_int(nActualDataRate);
++   json_object_object_add(pObj, key, pTmpObj);
++}
++
++static DSL_void_t DSL_CPE_JsonXtseArrayUpdate(
++   DSL_CPE_Control_Context_t *pContext,
++   json_object * pObj,
++   char* key)
++{
++   DSL_Error_t nErrCode = DSL_ERROR;
++   DSL_G997_XTUSystemEnabling_t xtseData = { 0 };
++   json_object *pTmpObj = DSL_NULL;
++   DSL_int_t i, nDevice;
++   static DSL_uint16_t nDev = 0;
++
++   for (nDevice = 0; nDevice < DSL_CPE_DSL_ENTITIES; nDevice++)
++   {
++      /* update only for existing device */
++      if (nDevice == nDev)
++      {
++         nErrCode = DSL_CPE_Ioctl(pContext->fd[nDevice],
++            DSL_FIO_G997_XTU_SYSTEM_ENABLING_STATUS_GET, (int)&xtseData);
++      }
++   }
++
++   /* create json array object */
++   pTmpObj = json_object_new_array();
++
++   if (nErrCode == DSL_SUCCESS)
++   {
++      for (i = 0; i < DSL_G997_NUM_XTSE_OCTETS; i++)
++      {
++         json_object_array_add(pTmpObj,
++            json_object_new_int(xtseData.data.XTSE[i]));
++      }
++   }
++   else
++   {
++      for (i = 0; i < DSL_G997_NUM_XTSE_OCTETS; i++)
++      {
++         json_object_array_add(pTmpObj,
++            json_object_new_int(0));
++      }
++   }
++
++   /* update json object */
++   json_object_object_add(pObj, key, pTmpObj);
++
++   /* increase line index for another line section */
++   nDev = (nDev + 1) % DSL_CPE_MAX_DSL_ENTITIES;
++}
++#endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
+--- /dev/null
++++ b/src/dsl_cpe_status_parser.h
+@@ -0,0 +1,20 @@
++/******************************************************************************
++
++         Copyright (c) 2019 Intel Corporation
++
++  For licensing information, see the file 'LICENSE' in the root folder of
++  this software module.
++
++*******************************************************************************/
++
++#ifndef _DSL_CPE_STATUS_PARSER_H
++#define _DSL_CPE_STATUS_PARSER_H
++
++#if defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1)
++#include "dsl_cpe_control.h"
++
++DSL_Error_t DSL_CPE_StatusFileUpdate(
++   DSL_CPE_Control_Context_t *pContext);
++#endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
++
++#endif /* _LIB_DSL_STATUS_PARSER_H */
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -27,6 +27,11 @@ AM_CPPFLAGS += @SAFEC_INCL_PATH@
+ dsl_cpe_control_LDADD += -l@SAFEC_LIB_NAME@
+ endif
+ 
++if INCLUDE_DSL_JSON_PARSING
++AM_CPPFLAGS += @LIBJSON_C_INCL_PATH@
++dsl_cpe_control_LDADD += -ljson-c
++endif
++
+ bin_SCRIPTS = ../scripts/alias_dsl_cpe.sh
+ 
+ if DEVICE_VRX
+@@ -40,6 +45,16 @@ dsl_cpe_control_cli_sources = \
+ 	dsl_cpe_cli_access.c \
+ 	dsl_cpe_cli_console.c
+ 
++if INCLUDE_DSL_JSON_PARSING
++dsl_cpe_configuration_parser_sources = \
++	dsl_cpe_configuration_parser.c
++dsl_cpe_status_parser_sources = \
++	dsl_cpe_status_parser.c
++else
++dsl_cpe_configuration_parser_sources =
++dsl_cpe_status_parser_sources =
++endif
++
+ dsl_cpe_control_cli_autogen_sources = \
+ 	dsl_cpe_cli_access2.c \
+ 	dsl_cpe_cli_autogen.c
+@@ -101,6 +116,12 @@ dsl_cpe_control_SOURCES += \
+ 	$(dsl_cpe_control_cli_danube_sources)
+ endif
+ 
++if INCLUDE_DSL_JSON_PARSING
++dsl_cpe_control_SOURCES += \
++	$(dsl_cpe_configuration_parser_sources) \
++	$(dsl_cpe_status_parser_sources)
++endif
++
+ if DEVICE_VRX
+ dsl_cpe_control_SOURCES += \
+ 	$(dsl_cpe_control_cli_vrx_sources)
+@@ -117,6 +138,8 @@ EXTRA_DIST = \
+ 	$(dsl_cpe_control_cli_vrx_sources) \
+ 	$(dsl_cpe_control_debug_danube_sources) \
+ 	$(dsl_cpe_control_debug_vrx_sources) \
++	$(dsl_cpe_configuration_parser_sources) \
++	$(dsl_cpe_status_parser_sources) \
+ 	dsl_cpe_control.h \
+ 	dsl_cpe_init_cfg.h \
+ 	dsl_cpe_cli.h \
+@@ -143,6 +166,12 @@ EXTRA_DIST = \
+ 	../tools/pipe/dsl_pipe_client.h \
+ 	dsl_cpe_safec_wrapper.h
+ 
++if INCLUDE_DSL_JSON_PARSING
++EXTRA_DIST += \
++   dsl_cpe_configuration_parser.h \
++   dsl_cpe_status_parser.h
++endif
++
+ if ADD_APPL_CFLAGS_SET
+ dsl_cpe_control_cflags = $(ADD_APPL_CFLAGS)
+ else
+@@ -173,6 +202,14 @@ else
+ dsl_cpe_control_safec_ldflags =
+ endif
+ 
++if INCLUDE_DSL_JSON_PARSING
++dsl_cpe_control_json_parsing_cflags = -DINCLUDE_DSL_JSON_PARSING=1
++dsl_cpe_control_json_c_ldflags = @LIBJSON_C_LIBRARY_PATH@
++else
++dsl_cpe_control_json_parsing_cflags = 
++dsl_cpe_control_json_c_ldflags =
++endif
++
+ dsl_cpe_control_common_cflags = -Wall -Wimplicit -Wreturn-type -Wunused -Wundef \
+ 	-Wswitch -Wno-format -Wcomment -Wuninitialized -DLINUX -g3 
+ 
+@@ -190,15 +227,16 @@ endif
+ dsl_cpe_control_CFLAGS = $(dsl_cpe_control_common_cflags) \
+                          $(dsl_cpe_control_cflags) \
+                          $(dsl_cpe_control_compile_cflags) \
+-                         $(dsl_cpe_control_external_cflags)
++                         $(dsl_cpe_control_external_cflags) \
++                         $(dsl_cpe_control_json_parsing_cflags)
+ 
+ dsl_cpe_control_LDFLAGS = $(dsl_cpe_control_common_ldflags) \
+                           $(dsl_cpe_control_ldflags) \
+                           $(dsl_cpe_control_compile_cflags) \
+                           $(dsl_cpe_control_ifxos_ldflags) \
+                           $(dsl_cpe_control_dti_ldflags) \
+-						  $(dsl_cpe_control_safec_ldflags)
+-
++                          $(dsl_cpe_control_safec_ldflags) \
++                          $(dsl_cpe_control_json_c_ldflags)
+ 
+ lint:
+ 	@flint +b -vm \
+--- a/src/Makefile.in
++++ b/src/Makefile.in
+@@ -1,7 +1,7 @@
+-# Makefile.in generated by automake 1.15 from Makefile.am.
++# Makefile.in generated by automake 1.15.1 from Makefile.am.
+ # @configure_input@
+ 
+-# Copyright (C) 1994-2014 Free Software Foundation, Inc.
++# Copyright (C) 1994-2017 Free Software Foundation, Inc.
+ 
+ # This Makefile.in is free software; the Free Software Foundation
+ # gives unlimited permission to copy and/or distribute it,
+@@ -92,25 +92,35 @@ bin_PROGRAMS = dsl_cpe_control$(EXEEXT)
+ @INCLUDE_DSL_CPE_IFXOS_SUPPORT_TRUE@am__append_2 = -lifxos
+ @SAFEC_SUPPORT_TRUE@am__append_3 = @SAFEC_INCL_PATH@
+ @SAFEC_SUPPORT_TRUE@am__append_4 = -l@SAFEC_LIB_NAME@
+-@DEVICE_DANUBE_TRUE@am__append_5 = \
++@INCLUDE_DSL_JSON_PARSING_TRUE@am__append_5 = @LIBJSON_C_INCL_PATH@
++@INCLUDE_DSL_JSON_PARSING_TRUE@am__append_6 = -ljson-c
++@DEVICE_DANUBE_TRUE@am__append_7 = \
+ @DEVICE_DANUBE_TRUE@	$(dsl_cpe_control_debug_danube_sources)
+ 
+-@DEVICE_VRX_LAYER_TRUE@am__append_6 = \
++@DEVICE_VRX_LAYER_TRUE@am__append_8 = \
+ @DEVICE_VRX_LAYER_TRUE@	$(dsl_cpe_control_debug_vrx_sources)
+ 
+-@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@am__append_7 = \
++@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@am__append_9 = \
+ @INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@	$(dsl_cpe_control_cli_sources)
+ 
+-@INCLUDE_DSL_CPE_CLI_AUTOGEN_SUPPORT_TRUE@@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@am__append_8 = \
++@INCLUDE_DSL_CPE_CLI_AUTOGEN_SUPPORT_TRUE@@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@am__append_10 = \
+ @INCLUDE_DSL_CPE_CLI_AUTOGEN_SUPPORT_TRUE@@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@	$(dsl_cpe_control_cli_autogen_sources)
+ 
+-@DEVICE_DANUBE_TRUE@@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@am__append_9 = \
++@DEVICE_DANUBE_TRUE@@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@am__append_11 = \
+ @DEVICE_DANUBE_TRUE@@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@	$(dsl_cpe_control_cli_danube_sources)
+ 
+-@DEVICE_VRX_TRUE@@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@am__append_10 = \
++@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@@INCLUDE_DSL_JSON_PARSING_TRUE@am__append_12 = \
++@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@@INCLUDE_DSL_JSON_PARSING_TRUE@	$(dsl_cpe_configuration_parser_sources) \
++@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@@INCLUDE_DSL_JSON_PARSING_TRUE@	$(dsl_cpe_status_parser_sources)
++
++@DEVICE_VRX_TRUE@@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@am__append_13 = \
+ @DEVICE_VRX_TRUE@@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@	$(dsl_cpe_control_cli_vrx_sources)
+ 
+-@DSL_CCA_DBG_MAX_LEVEL_SET_TRUE@am__append_11 = -DDSL_CCA_DBG_MAX_LEVEL=$(DSL_CCA_DBG_MAX_LEVEL_PRE)
++@INCLUDE_DSL_JSON_PARSING_TRUE@am__append_14 = \
++@INCLUDE_DSL_JSON_PARSING_TRUE@   dsl_cpe_configuration_parser.h \
++@INCLUDE_DSL_JSON_PARSING_TRUE@   dsl_cpe_status_parser.h
++
++@DSL_CCA_DBG_MAX_LEVEL_SET_TRUE@am__append_15 = -DDSL_CCA_DBG_MAX_LEVEL=$(DSL_CCA_DBG_MAX_LEVEL_PRE)
+ subdir = src
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+ am__aclocal_m4_deps = $(top_srcdir)/configure.in
+@@ -129,7 +139,9 @@ am__dsl_cpe_control_SOURCES_DIST = dsl_c
+ 	dsl_cpe_debug_vrx.c dsl_cpe_bnd_vrx.c dsl_cpe_cli.c \
+ 	dsl_cpe_cli_pipe.c dsl_cpe_cli_access.c dsl_cpe_cli_console.c \
+ 	dsl_cpe_cli_access2.c dsl_cpe_cli_autogen.c \
+-	dsl_cpe_cli_danube.c dsl_cpe_cli_mib.c dsl_cpe_cli_vrx.c
++	dsl_cpe_cli_danube.c dsl_cpe_cli_mib.c \
++	dsl_cpe_configuration_parser.c dsl_cpe_status_parser.c \
++	dsl_cpe_cli_vrx.c
+ @INCLUDE_DSL_CPE_DTI_SUPPORT_TRUE@am__objects_1 = dsl_cpe_control-dsl_cpe_dti.$(OBJEXT) \
+ @INCLUDE_DSL_CPE_DTI_SUPPORT_TRUE@	dsl_cpe_control-dsl_cpe_dti_vrx.$(OBJEXT)
+ am__objects_2 = dsl_cpe_control-dsl_cpe_debug_danube.$(OBJEXT)
+@@ -149,8 +161,12 @@ am__objects_9 = dsl_cpe_control-dsl_cpe_
+ am__objects_11 = dsl_cpe_control-dsl_cpe_cli_danube.$(OBJEXT) \
+ 	dsl_cpe_control-dsl_cpe_cli_mib.$(OBJEXT)
+ @DEVICE_DANUBE_TRUE@@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@am__objects_12 = $(am__objects_11)
+-am__objects_13 = dsl_cpe_control-dsl_cpe_cli_vrx.$(OBJEXT)
+-@DEVICE_VRX_TRUE@@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@am__objects_14 = $(am__objects_13)
++@INCLUDE_DSL_JSON_PARSING_TRUE@am__objects_13 = dsl_cpe_control-dsl_cpe_configuration_parser.$(OBJEXT)
++@INCLUDE_DSL_JSON_PARSING_TRUE@am__objects_14 = dsl_cpe_control-dsl_cpe_status_parser.$(OBJEXT)
++@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@@INCLUDE_DSL_JSON_PARSING_TRUE@am__objects_15 = $(am__objects_13) \
++@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@@INCLUDE_DSL_JSON_PARSING_TRUE@	$(am__objects_14)
++am__objects_16 = dsl_cpe_control-dsl_cpe_cli_vrx.$(OBJEXT)
++@DEVICE_VRX_TRUE@@INCLUDE_DSL_CPE_CLI_SUPPORT_TRUE@am__objects_17 = $(am__objects_16)
+ am_dsl_cpe_control_OBJECTS =  \
+ 	dsl_cpe_control-dsl_cpe_control.$(OBJEXT) \
+ 	dsl_cpe_control-dsl_cpe_init_cfg.$(OBJEXT) \
+@@ -158,11 +174,12 @@ am_dsl_cpe_control_OBJECTS =  \
+ 	dsl_cpe_control-dsl_cpe_debug.$(OBJEXT) $(am__objects_1) \
+ 	$(am__objects_3) $(am__objects_5) $(am__objects_6) \
+ 	$(am__objects_8) $(am__objects_10) $(am__objects_12) \
+-	$(am__objects_14)
++	$(am__objects_15) $(am__objects_17)
+ dsl_cpe_control_OBJECTS = $(am_dsl_cpe_control_OBJECTS)
+ am__DEPENDENCIES_1 =
+ dsl_cpe_control_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
++	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
++	$(am__DEPENDENCIES_1)
+ dsl_cpe_control_LINK = $(CCLD) $(dsl_cpe_control_CFLAGS) $(CFLAGS) \
+ 	$(dsl_cpe_control_LDFLAGS) $(LDFLAGS) -o $@
+ am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+@@ -336,6 +353,7 @@ INCLUDE_DSL_G997_FRAMING_PARAMETERS = @I
+ INCLUDE_DSL_G997_LINE_INVENTORY = @INCLUDE_DSL_G997_LINE_INVENTORY@
+ INCLUDE_DSL_G997_PER_TONE = @INCLUDE_DSL_G997_PER_TONE@
+ INCLUDE_DSL_G997_STATUS = @INCLUDE_DSL_G997_STATUS@
++INCLUDE_DSL_JSON_PARSING = @INCLUDE_DSL_JSON_PARSING@
+ INCLUDE_DSL_PM = @INCLUDE_DSL_PM@
+ INCLUDE_DSL_RESOURCE_STATISTICS = @INCLUDE_DSL_RESOURCE_STATISTICS@
+ INCLUDE_DSL_SYSTEM_INTERFACE = @INCLUDE_DSL_SYSTEM_INTERFACE@
+@@ -350,6 +368,8 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LIBJSON_C_INCL_PATH = @LIBJSON_C_INCL_PATH@
++LIBJSON_C_LIBRARY_PATH = @LIBJSON_C_LIBRARY_PATH@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
+ LTLIBOBJS = @LTLIBOBJS@
+@@ -365,7 +385,6 @@ PACKAGE_URL = @PACKAGE_URL@
+ PACKAGE_VERSION = @PACKAGE_VERSION@
+ PATH_SEPARATOR = @PATH_SEPARATOR@
+ SAFEC_INCL_PATH = @SAFEC_INCL_PATH@
+-SAFEC_LIB_FUNC = @SAFEC_LIB_FUNC@
+ SAFEC_LIB_NAME = @SAFEC_LIB_NAME@
+ SAFEC_LIB_PATH = @SAFEC_LIB_PATH@
+ SAFEC_SUPPORT = @SAFEC_SUPPORT@
+@@ -417,11 +436,11 @@ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+ AM_CPPFLAGS = -I@srcdir@ @DSL_DRIVER_INCL_PATH@ \
+ 	@DSL_DEVICE_DRIVER_INCL_PATH@ @IFXOS_INCLUDE_PATH@ \
+-	@DTI_INCL_PATH@ $(am__append_3)
++	@DTI_INCL_PATH@ $(am__append_3) $(am__append_5)
+ @DSL_CPE_STATIC_LINKING_FALSE@dsl_cpe_control_common_ldflags = 
+ @DSL_CPE_STATIC_LINKING_TRUE@dsl_cpe_control_common_ldflags = -static
+ dsl_cpe_control_LDADD = -lpthread -lrt $(am__append_1) $(am__append_2) \
+-	$(am__append_4)
++	$(am__append_4) $(am__append_6)
+ bin_SCRIPTS = ../scripts/alias_dsl_cpe.sh
+ @DEVICE_VRX_TRUE@dsl_cpe_control_bnd_sources = \
+ @DEVICE_VRX_TRUE@   dsl_cpe_bnd_vrx.c
+@@ -432,6 +451,14 @@ dsl_cpe_control_cli_sources = \
+ 	dsl_cpe_cli_access.c \
+ 	dsl_cpe_cli_console.c
+ 
++@INCLUDE_DSL_JSON_PARSING_FALSE@dsl_cpe_configuration_parser_sources = 
++@INCLUDE_DSL_JSON_PARSING_TRUE@dsl_cpe_configuration_parser_sources = \
++@INCLUDE_DSL_JSON_PARSING_TRUE@	dsl_cpe_configuration_parser.c
++
++@INCLUDE_DSL_JSON_PARSING_FALSE@dsl_cpe_status_parser_sources = 
++@INCLUDE_DSL_JSON_PARSING_TRUE@dsl_cpe_status_parser_sources = \
++@INCLUDE_DSL_JSON_PARSING_TRUE@	dsl_cpe_status_parser.c
++
+ dsl_cpe_control_cli_autogen_sources = \
+ 	dsl_cpe_cli_access2.c \
+ 	dsl_cpe_cli_autogen.c
+@@ -456,44 +483,27 @@ dsl_cpe_control_debug_vrx_sources = \
+ 
+ dsl_cpe_control_SOURCES = dsl_cpe_control.c dsl_cpe_init_cfg.c \
+ 	dsl_cpe_linux.c dsl_cpe_debug.c $(dsl_cpe_control_dti_sources) \
+-	$(am__append_5) $(am__append_6) $(dsl_cpe_control_bnd_sources) \
+-	$(am__append_7) $(am__append_8) $(am__append_9) \
+-	$(am__append_10)
+-EXTRA_DIST = \
+-	../LICENSE \
+-	$(dsl_cpe_control_bnd_sources) \
+-	$(dsl_cpe_control_cli_sources) \
+-	$(dsl_cpe_control_dti_sources) \
++	$(am__append_7) $(am__append_8) $(dsl_cpe_control_bnd_sources) \
++	$(am__append_9) $(am__append_10) $(am__append_11) \
++	$(am__append_12) $(am__append_13)
++EXTRA_DIST = ../LICENSE $(dsl_cpe_control_bnd_sources) \
++	$(dsl_cpe_control_cli_sources) $(dsl_cpe_control_dti_sources) \
+ 	$(dsl_cpe_control_cli_danube_sources) \
+ 	$(dsl_cpe_control_cli_vrx_sources) \
+ 	$(dsl_cpe_control_debug_danube_sources) \
+ 	$(dsl_cpe_control_debug_vrx_sources) \
+-	dsl_cpe_control.h \
+-	dsl_cpe_init_cfg.h \
+-	dsl_cpe_cli.h \
+-	dsl_cpe_dti.h \
+-	dsl_cpe_dti_vrx_ctx.h \
+-	dsl_cpe_bnd_vrx.h \
+-	dsl_cpe_cli_console.h \
+-	dsl_cpe_simulator.c \
+-	dsl_cpe_simulator.h \
+-	dsl_cpe_win32.c \
+-	dsl_cpe_win32.h \
+-	dsl_cpe_os.h \
+-	dsl_cpe_os_lint_map.h \
+-	dsl_cpe_linux.h \
+-	dsl_cpe_vxworks.c \
+-	dsl_cpe_vxworks.h \
+-	dsl_cpe_rtems.c \
+-	dsl_cpe_rtems.h \
+-	dsl_cpe_debug.h \
+-	dsl_cpe_debug_danube.h \
+-	dsl_cpe_debug_vrx.h \
+-	../scripts/alias_dsl_cpe.sh \
+-	../scripts/dsl_cpe_pipe.sh \
+-	../tools/pipe/dsl_pipe_client.h \
+-	dsl_cpe_safec_wrapper.h
+-
++	$(dsl_cpe_configuration_parser_sources) \
++	$(dsl_cpe_status_parser_sources) dsl_cpe_control.h \
++	dsl_cpe_init_cfg.h dsl_cpe_cli.h dsl_cpe_dti.h \
++	dsl_cpe_dti_vrx_ctx.h dsl_cpe_bnd_vrx.h dsl_cpe_cli_console.h \
++	dsl_cpe_simulator.c dsl_cpe_simulator.h dsl_cpe_win32.c \
++	dsl_cpe_win32.h dsl_cpe_os.h dsl_cpe_os_lint_map.h \
++	dsl_cpe_linux.h dsl_cpe_vxworks.c dsl_cpe_vxworks.h \
++	dsl_cpe_rtems.c dsl_cpe_rtems.h dsl_cpe_debug.h \
++	dsl_cpe_debug_danube.h dsl_cpe_debug_vrx.h \
++	../scripts/alias_dsl_cpe.sh ../scripts/dsl_cpe_pipe.sh \
++	../tools/pipe/dsl_pipe_client.h dsl_cpe_safec_wrapper.h \
++	$(am__append_14)
+ @ADD_APPL_CFLAGS_SET_FALSE@dsl_cpe_control_cflags = 
+ @ADD_APPL_CFLAGS_SET_TRUE@dsl_cpe_control_cflags = $(ADD_APPL_CFLAGS)
+ @ADD_APPL_LDFLAGS_SET_FALSE@dsl_cpe_control_ldflags = 
+@@ -504,9 +514,13 @@ EXTRA_DIST = \
+ @INCLUDE_DSL_CPE_DTI_SUPPORT_TRUE@dsl_cpe_control_dti_ldflags = @DTI_LIBRARY_PATH@
+ @SAFEC_SUPPORT_FALSE@dsl_cpe_control_safec_ldflags = 
+ @SAFEC_SUPPORT_TRUE@dsl_cpe_control_safec_ldflags = @SAFEC_LIB_PATH@
++@INCLUDE_DSL_JSON_PARSING_FALSE@dsl_cpe_control_json_parsing_cflags = 
++@INCLUDE_DSL_JSON_PARSING_TRUE@dsl_cpe_control_json_parsing_cflags = -DINCLUDE_DSL_JSON_PARSING=1
++@INCLUDE_DSL_JSON_PARSING_FALSE@dsl_cpe_control_json_c_ldflags = 
++@INCLUDE_DSL_JSON_PARSING_TRUE@dsl_cpe_control_json_c_ldflags = @LIBJSON_C_LIBRARY_PATH@
+ dsl_cpe_control_common_cflags = -Wall -Wimplicit -Wreturn-type \
+ 	-Wunused -Wundef -Wswitch -Wno-format -Wcomment \
+-	-Wuninitialized -DLINUX -g3 $(am__append_11)
++	-Wuninitialized -DLINUX -g3 $(am__append_15)
+ 
+ # compile cflags
+ dsl_cpe_control_compile_cflags = $(EXTRA_APP_CFLAGS)
+@@ -514,14 +528,16 @@ dsl_cpe_control_compile_cflags = $(EXTRA
+ dsl_cpe_control_CFLAGS = $(dsl_cpe_control_common_cflags) \
+                          $(dsl_cpe_control_cflags) \
+                          $(dsl_cpe_control_compile_cflags) \
+-                         $(dsl_cpe_control_external_cflags)
++                         $(dsl_cpe_control_external_cflags) \
++                         $(dsl_cpe_control_json_parsing_cflags)
+ 
+ dsl_cpe_control_LDFLAGS = $(dsl_cpe_control_common_ldflags) \
+                           $(dsl_cpe_control_ldflags) \
+                           $(dsl_cpe_control_compile_cflags) \
+                           $(dsl_cpe_control_ifxos_ldflags) \
+                           $(dsl_cpe_control_dti_ldflags) \
+-						  $(dsl_cpe_control_safec_ldflags)
++                          $(dsl_cpe_control_safec_ldflags) \
++                          $(dsl_cpe_control_json_c_ldflags)
+ 
+ all: dsl_cpe_config.h
+ 	$(MAKE) $(AM_MAKEFLAGS) all-am
+@@ -537,9 +553,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefi
+ 	      exit 1;; \
+ 	  esac; \
+ 	done; \
+-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/Makefile'; \
++	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign src/Makefile'; \
+ 	$(am__cd) $(top_srcdir) && \
+-	  $(AUTOMAKE) --gnu src/Makefile
++	  $(AUTOMAKE) --foreign src/Makefile
+ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+ 	@case '$?' in \
+ 	  *config.status*) \
+@@ -670,6 +686,7 @@ distclean-compile:
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_cpe_control-dsl_cpe_cli_mib.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_cpe_control-dsl_cpe_cli_pipe.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_cpe_control-dsl_cpe_cli_vrx.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_cpe_control-dsl_cpe_configuration_parser.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_cpe_control-dsl_cpe_control.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_cpe_control-dsl_cpe_debug.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_cpe_control-dsl_cpe_debug_danube.Po@am__quote@
+@@ -678,6 +695,7 @@ distclean-compile:
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_cpe_control-dsl_cpe_dti_vrx.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_cpe_control-dsl_cpe_init_cfg.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_cpe_control-dsl_cpe_linux.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_cpe_control-dsl_cpe_status_parser.Po@am__quote@
+ 
+ .c.o:
+ @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@@ -931,6 +949,34 @@ dsl_cpe_control-dsl_cpe_cli_mib.obj: dsl
+ @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+ @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dsl_cpe_control_CFLAGS) $(CFLAGS) -c -o dsl_cpe_control-dsl_cpe_cli_mib.obj `if test -f 'dsl_cpe_cli_mib.c'; then $(CYGPATH_W) 'dsl_cpe_cli_mib.c'; else $(CYGPATH_W) '$(srcdir)/dsl_cpe_cli_mib.c'; fi`
+ 
++dsl_cpe_control-dsl_cpe_configuration_parser.o: dsl_cpe_configuration_parser.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dsl_cpe_control_CFLAGS) $(CFLAGS) -MT dsl_cpe_control-dsl_cpe_configuration_parser.o -MD -MP -MF $(DEPDIR)/dsl_cpe_control-dsl_cpe_configuration_parser.Tpo -c -o dsl_cpe_control-dsl_cpe_configuration_parser.o `test -f 'dsl_cpe_configuration_parser.c' || echo '$(srcdir)/'`dsl_cpe_configuration_parser.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/dsl_cpe_control-dsl_cpe_configuration_parser.Tpo $(DEPDIR)/dsl_cpe_control-dsl_cpe_configuration_parser.Po
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dsl_cpe_configuration_parser.c' object='dsl_cpe_control-dsl_cpe_configuration_parser.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dsl_cpe_control_CFLAGS) $(CFLAGS) -c -o dsl_cpe_control-dsl_cpe_configuration_parser.o `test -f 'dsl_cpe_configuration_parser.c' || echo '$(srcdir)/'`dsl_cpe_configuration_parser.c
++
++dsl_cpe_control-dsl_cpe_configuration_parser.obj: dsl_cpe_configuration_parser.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dsl_cpe_control_CFLAGS) $(CFLAGS) -MT dsl_cpe_control-dsl_cpe_configuration_parser.obj -MD -MP -MF $(DEPDIR)/dsl_cpe_control-dsl_cpe_configuration_parser.Tpo -c -o dsl_cpe_control-dsl_cpe_configuration_parser.obj `if test -f 'dsl_cpe_configuration_parser.c'; then $(CYGPATH_W) 'dsl_cpe_configuration_parser.c'; else $(CYGPATH_W) '$(srcdir)/dsl_cpe_configuration_parser.c'; fi`
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/dsl_cpe_control-dsl_cpe_configuration_parser.Tpo $(DEPDIR)/dsl_cpe_control-dsl_cpe_configuration_parser.Po
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dsl_cpe_configuration_parser.c' object='dsl_cpe_control-dsl_cpe_configuration_parser.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dsl_cpe_control_CFLAGS) $(CFLAGS) -c -o dsl_cpe_control-dsl_cpe_configuration_parser.obj `if test -f 'dsl_cpe_configuration_parser.c'; then $(CYGPATH_W) 'dsl_cpe_configuration_parser.c'; else $(CYGPATH_W) '$(srcdir)/dsl_cpe_configuration_parser.c'; fi`
++
++dsl_cpe_control-dsl_cpe_status_parser.o: dsl_cpe_status_parser.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dsl_cpe_control_CFLAGS) $(CFLAGS) -MT dsl_cpe_control-dsl_cpe_status_parser.o -MD -MP -MF $(DEPDIR)/dsl_cpe_control-dsl_cpe_status_parser.Tpo -c -o dsl_cpe_control-dsl_cpe_status_parser.o `test -f 'dsl_cpe_status_parser.c' || echo '$(srcdir)/'`dsl_cpe_status_parser.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/dsl_cpe_control-dsl_cpe_status_parser.Tpo $(DEPDIR)/dsl_cpe_control-dsl_cpe_status_parser.Po
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dsl_cpe_status_parser.c' object='dsl_cpe_control-dsl_cpe_status_parser.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dsl_cpe_control_CFLAGS) $(CFLAGS) -c -o dsl_cpe_control-dsl_cpe_status_parser.o `test -f 'dsl_cpe_status_parser.c' || echo '$(srcdir)/'`dsl_cpe_status_parser.c
++
++dsl_cpe_control-dsl_cpe_status_parser.obj: dsl_cpe_status_parser.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dsl_cpe_control_CFLAGS) $(CFLAGS) -MT dsl_cpe_control-dsl_cpe_status_parser.obj -MD -MP -MF $(DEPDIR)/dsl_cpe_control-dsl_cpe_status_parser.Tpo -c -o dsl_cpe_control-dsl_cpe_status_parser.obj `if test -f 'dsl_cpe_status_parser.c'; then $(CYGPATH_W) 'dsl_cpe_status_parser.c'; else $(CYGPATH_W) '$(srcdir)/dsl_cpe_status_parser.c'; fi`
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/dsl_cpe_control-dsl_cpe_status_parser.Tpo $(DEPDIR)/dsl_cpe_control-dsl_cpe_status_parser.Po
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dsl_cpe_status_parser.c' object='dsl_cpe_control-dsl_cpe_status_parser.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dsl_cpe_control_CFLAGS) $(CFLAGS) -c -o dsl_cpe_control-dsl_cpe_status_parser.obj `if test -f 'dsl_cpe_status_parser.c'; then $(CYGPATH_W) 'dsl_cpe_status_parser.c'; else $(CYGPATH_W) '$(srcdir)/dsl_cpe_status_parser.c'; fi`
++
+ dsl_cpe_control-dsl_cpe_cli_vrx.o: dsl_cpe_cli_vrx.c
+ @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dsl_cpe_control_CFLAGS) $(CFLAGS) -MT dsl_cpe_control-dsl_cpe_cli_vrx.o -MD -MP -MF $(DEPDIR)/dsl_cpe_control-dsl_cpe_cli_vrx.Tpo -c -o dsl_cpe_control-dsl_cpe_cli_vrx.o `test -f 'dsl_cpe_cli_vrx.c' || echo '$(srcdir)/'`dsl_cpe_cli_vrx.c
+ @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/dsl_cpe_control-dsl_cpe_cli_vrx.Tpo $(DEPDIR)/dsl_cpe_control-dsl_cpe_cli_vrx.Po
+--- a/tools/pipe/dsl_cpe_safec_wrapper.h
++++ b/tools/pipe/dsl_cpe_safec_wrapper.h
+@@ -1,9 +1,6 @@
+ /******************************************************************************
+ 
+-                     Copyright 2018, Intel Corporation
+-
+-                          Copyright (c) 2007-2015
+-                     Lantiq Beteiligungs-GmbH & Co. KG
++                     Copyright 2018 - 2019 Intel Corporation
+ 
+   For licensing information, see the file 'LICENSE' in the root folder of
+   this software module.
+@@ -13,11 +10,23 @@
+ #ifndef _SAFEC_WRAPPER_H
+ #define _SAFEC_WRAPPER_H
+ 
+-#if defined (SAFEC_SUPPORT) && (SAFEC_SUPPORT == 1)
+-#include "safe_lib.h"
++#if defined (SAFEC_SUPPORT)
++#include "safe_mem_lib.h"
++#include "safe_str_lib.h"
++
++#if (SAFEC_SUPPORT == 1) || (SAFEC_SUPPORT == 3)
++
+ #define cpe_control_pipe_memcpy_s(dest, destsz, src, srcsz) memcpy_s(dest, destsz, src, srcsz)
+-#define cpe_control_pipe_strncpy_s(dest, destsz, src, srcsz)		strncpy_s(dest, destsz, src, srcsz)
++#define cpe_control_pipe_strncpy_s(dest, destsz, src, srcsz) strncpy_s(dest, destsz, src, srcsz)
++
++#else
++
++#warning "Safe C library version is unknown!"
++
++#endif /* if (SAFEC_SUPPORT == 1) elif (SAFEC_SUPPORT == 3) */
++
+ #else
++
+ #warning "Safe C library is not available!"
+ 
+ #include <stddef.h>	/* size_t */
+@@ -28,6 +37,7 @@ static __inline__ size_t safec_wrapper_m
+ 
+ #define cpe_control_pipe_memcpy_s(dest, destsz, src, srcsz) memcpy(dest, src, safec_wrapper_min(destsz,srcsz))
+ #define cpe_control_pipe_strncpy_s(dest, destsz, src, srcsz) strncpy(dest, src, safec_wrapper_min(destsz,srcsz))
+-#endif /* defined (SAFEC_SUPPORT) && (SAFEC_SUPPORT == 1) */
++
++#endif /* defined (SAFEC_SUPPORT) */
+ 
+ #endif /* _SAFEC_WRAPPER_H */
+--- a/tools/pipe/dsl_pipe_client.c
++++ b/tools/pipe/dsl_pipe_client.c
+@@ -1,9 +1,9 @@
+ /******************************************************************************
+ 
+-                     Copyright 2018, Intel Corporation
+-
+-                          Copyright (c) 2007-2015
+-                     Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2016 - 2019 Intel Corporation
++         Copyright 2015 - 2016 Lantiq Beteiligungs-GmbH & Co. KG
++         Copyright 2009 - 2014 Lantiq Deutschland GmbH
++         Copyright 2007 - 2008 Infineon Technologies AG
+ 
+   For licensing information, see the file 'LICENSE' in the root folder of
+   this software module.
+@@ -133,10 +133,9 @@ static int DSL_PIPE_SemaphoreGlobalCreat
+       fd = open(SYS_NAME_PREFIX, O_RDONLY);
+       fchmod(fd, 0777);
+       close(fd);
+-      cpe_control_pipe_strncpy_s(sempath, strlen(SYS_NAME_PREFIX"/") + strlen(pName) + 1,
+-         SYS_NAME_PREFIX"/\0", strlen(SYS_NAME_PREFIX"/"));
++      memset(sempath, 0, strlen(SYS_NAME_PREFIX"/") + strlen(pName) + 1);
++      cpe_control_pipe_strncpy_s(sempath, strlen(SYS_NAME_PREFIX"/") + strlen(pName) + 1, SYS_NAME_PREFIX"/\0", strlen(SYS_NAME_PREFIX"/\0"));
+       strcat(sempath, pName);
+-      strcat(sempath, "\0");
+ 
+       /* creat(sempath, 0666); */
+       creat(sempath, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+@@ -393,6 +392,7 @@ int main(int argc, char **argv)
+          return -1;
+       }
+ 
++      memset(pCommand, 0, 16);
+       cpe_control_pipe_strncpy_s(pCommand, 16, "help all", sizeof("help all"));
+    }
+    else
+@@ -405,7 +405,7 @@ int main(int argc, char **argv)
+          return -1;
+       }
+ 
+-      pCommand[0] = 0;
++      memset(pCommand, 0, len + 1);
+       for(i=k;i<argc;i++)
+       {
+          strcat(pCommand, argv[i]);
+--- a/tools/pipe/dsl_pipe_client.h
++++ b/tools/pipe/dsl_pipe_client.h
+@@ -19,7 +19,6 @@
+ 
+ #include "drv_dsl_cpe_api_types.h"
+ #include "drv_dsl_cpe_api_error.h"
+-#include "dsl_cpe_safec_wrapper.h"
+ 
+ #include <stdlib.h>
+ #include <stdio.h>
+@@ -55,6 +54,8 @@
+ #include "ifxos_misc.h"
+ #include "ifxos_socket.h"
+ 
++#include "dsl_cpe_safec_wrapper.h"
++
+ #endif /* INCLUDE_DSL_CPE_IFXOS_SUPPORT*/
+ 
+ #if defined(INCLUDE_DSL_CPE_IFXOS_SUPPORT)
+--- a/tools/pipe/Makefile.in
++++ b/tools/pipe/Makefile.in
+@@ -1,7 +1,7 @@
+-# Makefile.in generated by automake 1.15 from Makefile.am.
++# Makefile.in generated by automake 1.15.1 from Makefile.am.
+ # @configure_input@
+ 
+-# Copyright (C) 1994-2014 Free Software Foundation, Inc.
++# Copyright (C) 1994-2017 Free Software Foundation, Inc.
+ 
+ # This Makefile.in is free software; the Free Software Foundation
+ # gives unlimited permission to copy and/or distribute it,
+@@ -249,6 +249,7 @@ INCLUDE_DSL_G997_FRAMING_PARAMETERS = @I
+ INCLUDE_DSL_G997_LINE_INVENTORY = @INCLUDE_DSL_G997_LINE_INVENTORY@
+ INCLUDE_DSL_G997_PER_TONE = @INCLUDE_DSL_G997_PER_TONE@
+ INCLUDE_DSL_G997_STATUS = @INCLUDE_DSL_G997_STATUS@
++INCLUDE_DSL_JSON_PARSING = @INCLUDE_DSL_JSON_PARSING@
+ INCLUDE_DSL_PM = @INCLUDE_DSL_PM@
+ INCLUDE_DSL_RESOURCE_STATISTICS = @INCLUDE_DSL_RESOURCE_STATISTICS@
+ INCLUDE_DSL_SYSTEM_INTERFACE = @INCLUDE_DSL_SYSTEM_INTERFACE@
+@@ -263,6 +264,8 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LIBJSON_C_INCL_PATH = @LIBJSON_C_INCL_PATH@
++LIBJSON_C_LIBRARY_PATH = @LIBJSON_C_LIBRARY_PATH@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
+ LTLIBOBJS = @LTLIBOBJS@
+@@ -278,7 +281,6 @@ PACKAGE_URL = @PACKAGE_URL@
+ PACKAGE_VERSION = @PACKAGE_VERSION@
+ PATH_SEPARATOR = @PATH_SEPARATOR@
+ SAFEC_INCL_PATH = @SAFEC_INCL_PATH@
+-SAFEC_LIB_FUNC = @SAFEC_LIB_FUNC@
+ SAFEC_LIB_NAME = @SAFEC_LIB_NAME@
+ SAFEC_LIB_PATH = @SAFEC_LIB_PATH@
+ SAFEC_SUPPORT = @SAFEC_SUPPORT@
+@@ -355,9 +357,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefi
+ 	      exit 1;; \
+ 	  esac; \
+ 	done; \
+-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu tools/pipe/Makefile'; \
++	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign tools/pipe/Makefile'; \
+ 	$(am__cd) $(top_srcdir) && \
+-	  $(AUTOMAKE) --gnu tools/pipe/Makefile
++	  $(AUTOMAKE) --foreign tools/pipe/Makefile
+ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+ 	@case '$?' in \
+ 	  *config.status*) \
