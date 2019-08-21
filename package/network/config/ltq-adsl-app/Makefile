@@ -35,7 +35,7 @@ define Package/ltq-adsl-app
   CATEGORY:=Network
   TITLE:=Lantiq DSL userland tool
   URL:=http://www.lantiq.com/
-  DEPENDS:=@(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy||TARGET_lantiq_ase) +libpthread
+  DEPENDS:=@(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy||TARGET_lantiq_ase) +libpthread +ltq-xdsl-base-files
   MENU:=1
 endef
 
