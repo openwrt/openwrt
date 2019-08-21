@@ -175,7 +175,7 @@ define Device/avm_fritzbox-7530
 	DEVICE_VENDOR := AVM
 	DEVICE_MODEL := FRITZ!Box 7530
 	SOC := qcom-ipq4019
-	DEVICE_PACKAGES := fritz-caldata fritz-tffs-nand
+	DEVICE_PACKAGES := fritz-caldata fritz-tffs-nand kmod-ltq-vdsl-vr11 ltq-vdsl-app dsl-vr11-firmware-xdsl-a
 	IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += avm_fritzbox-7530

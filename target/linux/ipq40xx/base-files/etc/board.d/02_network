@@ -44,6 +44,15 @@ ipq40xx_setup_interfaces()
 	avm,fritzbox-7530)
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
+		vpi=1
+		vci=32
+		annex="j"
+		tone="b"
+		xfer_mode=""
+		encaps="llc"
+		payload="bridged"
+		ucidef_add_atm_bridge "$vpi" "$vci" "$encaps" "$payload" "dsl"
+		ucidef_add_vdsl_modem "$annex" "$tone" "$xfer_mode"
 		;;
 	aruba,ap-303|\
 	avm,fritzrepeater-1200|\
