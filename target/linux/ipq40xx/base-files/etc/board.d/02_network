@@ -98,6 +98,26 @@ ipq40xx_setup_interfaces()
 	esac
 }
 
+ipq40xx_setup_dsl()
+{
+	local board="$1"
+	local annex="j"
+	local tone="b"
+	local xfer_mode=""
+
+	case "$board" in
+	avm,fritzbox-7530)
+		;;
+	*)
+		return 0
+		;;
+	esac
+
+	ucidef_add_atm_bridge "1" "32" "llc" "bridged" "dsl"
+	ucidef_add_vdsl_modem "$annex" "$tone" "$xfer_mode"
+	ucidef_set_interface_wan "dsl0" "pppoe"
+}
+
 ipq40xx_setup_macs()
 {
 	local board="$1"
@@ -116,6 +136,10 @@ ipq40xx_setup_macs()
 		wan_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
 		lan_mac=$(mtd_get_mac_binary_ubi Factory 0x5006)
 		label_mac=$wan_mac
+		;;
+	avm,fritzbox-7530)
+		local tffsdev=$(find_mtd_chardev "nand-tffs")
+		wan_mac=$(/usr/bin/fritz_tffs_nand -b -d $tffsdev -n macdsl)
 		;;
 	cilab,meshpoint-one)
 		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
@@ -185,6 +209,7 @@ ipq40xx_setup_macs()
 board_config_update
 board=$(board_name)
 ipq40xx_setup_interfaces $board
+ipq40xx_setup_dsl $board
 ipq40xx_setup_macs $board
 board_config_flush
 
