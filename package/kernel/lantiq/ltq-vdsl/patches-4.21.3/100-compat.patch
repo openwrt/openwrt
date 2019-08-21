@@ -1,0 +1,25 @@
+--- a/src/Makefile.in
++++ b/src/Makefile.in
+@@ -117,7 +117,7 @@ POST_UNINSTALL = :
+ 
+ # the headerfile of linux kernels 2.6.x contain to much arithmetic
+ # with void pointers (which is allowed for gcc!)
+-@KERNEL_2_6_FALSE@am__append_6 = -Wpointer-arith
++@KERNEL_2_6_FALSE@am__append_6 =
+ subdir = src
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+ am__aclocal_m4_deps = $(top_srcdir)/configure.in
+--- a/src/device/drv_dsl_cpe_device_vrx.c
++++ b/src/device/drv_dsl_cpe_device_vrx.c
+@@ -23,9 +23,11 @@
+ #ifdef DSL_VRX_DEVICE_VR11
+ #include <net/dsl_tc.h>
+ #else
++#ifndef DSL_VRX_DEVICE_VR9
+ #include <net/ppa_stack_al.h>
+ #endif
+ #endif
++#endif
+ 
+ #undef DSL_DBG_BLOCK
+ #define DSL_DBG_BLOCK DSL_DBG_DEVICE
