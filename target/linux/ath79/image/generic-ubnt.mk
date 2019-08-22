@@ -44,16 +44,6 @@ define Device/ubnt
 	append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | mkubntimage-split
 endef
 
-define Device/ubnt-xm
-  $(Device/ubnt)
-  DEVICE_VARIANT := XM
-  DEVICE_PACKAGES += kmod-usb-ohci rssileds
-  UBNT_TYPE := XM
-  UBNT_CHIP := ar7240
-  ATH_SOC := ar7241
-  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | uImage lzma
-endef
-
 define Device/ubnt-bz
   $(Device/ubnt)
   UBNT_TYPE := BZ
@@ -70,6 +60,16 @@ define Device/ubnt-wa
   ATH_SOC := ar9342
 endef
 
+define Device/ubnt-xm
+  $(Device/ubnt)
+  DEVICE_VARIANT := XM
+  DEVICE_PACKAGES += kmod-usb-ohci rssileds
+  UBNT_TYPE := XM
+  UBNT_CHIP := ar7240
+  ATH_SOC := ar7241
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | uImage lzma
+endef
+
 define Device/ubnt-xw
   $(Device/ubnt)
   DEVICE_VARIANT := XW
@@ -80,6 +80,18 @@ define Device/ubnt-xw
   UBNT_REVISION := 42.$(UBNT_REVISION)
   ATH_SOC := ar9342
 endef
+
+define Device/ubnt_acb-isp
+  $(Device/ubnt)
+  ATH_SOC := qca9533
+  IMAGE_SIZE := 15744k
+  DEVICE_MODEL := airCube ISP
+  UBNT_BOARD := ACB-ISP
+  UBNT_TYPE := ACB
+  UBNT_CHIP := qca9533
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += ubnt_acb-isp
 
 define Device/ubnt_airrouter
   $(Device/ubnt-xm)
@@ -101,27 +113,6 @@ define Device/ubnt_bullet-m-xw
   SUPPORTED_DEVICES += bullet-m-xw
 endef
 TARGET_DEVICES += ubnt_bullet-m-xw
-
-define Device/ubnt_rocket-m
-  $(Device/ubnt-xm)
-  DEVICE_MODEL := Rocket-M
-  SUPPORTED_DEVICES += rocket-m
-endef
-TARGET_DEVICES += ubnt_rocket-m
-
-define Device/ubnt_nanostation-m
-  $(Device/ubnt-xm)
-  DEVICE_MODEL := Nanostation M
-  SUPPORTED_DEVICES += nano-m
-endef
-TARGET_DEVICES += ubnt_nanostation-m
-
-define Device/ubnt_nanostation-m-xw
-  $(Device/ubnt-xw)
-  DEVICE_MODEL := Nanostation M
-  SUPPORTED_DEVICES += nanostation-m-xw
-endef
-TARGET_DEVICES += ubnt_nanostation-m-xw
 
 define Device/ubnt_lap-120
   $(Device/ubnt-wa)
@@ -159,6 +150,59 @@ define Device/ubnt_nanostation-ac-loco
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
 TARGET_DEVICES += ubnt_nanostation-ac-loco
+
+define Device/ubnt_nanostation-m
+  $(Device/ubnt-xm)
+  DEVICE_MODEL := Nanostation M
+  SUPPORTED_DEVICES += nano-m
+endef
+TARGET_DEVICES += ubnt_nanostation-m
+
+define Device/ubnt_nanostation-m-xw
+  $(Device/ubnt-xw)
+  DEVICE_MODEL := Nanostation M
+  SUPPORTED_DEVICES += nanostation-m-xw
+endef
+TARGET_DEVICES += ubnt_nanostation-m-xw
+
+define Device/ubnt_rocket-m
+  $(Device/ubnt-xm)
+  DEVICE_MODEL := Rocket-M
+  SUPPORTED_DEVICES += rocket-m
+endef
+TARGET_DEVICES += ubnt_rocket-m
+
+define Device/ubnt_routerstation_common
+  DEVICE_PACKAGES := -kmod-ath9k -wpad-mini -uboot-envtools kmod-usb-ohci kmod-usb2 fconfig
+  DEVICE_VENDOR := Ubiquiti
+  ATH_SOC := ar7161
+  IMAGE_SIZE := 16128k
+  IMAGES := factory.bin
+  IMAGE/factory.bin := append-rootfs | pad-rootfs | mkubntimage | check-size $$$$(IMAGE_SIZE)
+  KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+endef
+
+define Device/ubnt_routerstation
+  $(Device/ubnt_routerstation_common)
+  DEVICE_MODEL := RouterStation
+  UBNT_BOARD := RS
+  UBNT_TYPE := RSx
+  UBNT_CHIP := ar7100
+  DEVICE_PACKAGES += -swconfig
+  SUPPORTED_DEVICES += routerstation
+endef
+TARGET_DEVICES += ubnt_routerstation
+
+define Device/ubnt_routerstation-pro
+  $(Device/ubnt_routerstation_common)
+  DEVICE_MODEL := RouterStation Pro
+  UBNT_BOARD := RSPRO
+  UBNT_TYPE := RSPRO
+  UBNT_CHIP := ar7100pro
+  SUPPORTED_DEVICES += routerstation-pro
+endef
+TARGET_DEVICES += ubnt_routerstation-pro
 
 define Device/ubnt_unifi
   $(Device/ubnt-bz)
@@ -202,47 +246,3 @@ define Device/ubnt_unifiac-pro
   SUPPORTED_DEVICES += ubnt-unifiac-pro
 endef
 TARGET_DEVICES += ubnt_unifiac-pro
-
-define Device/ubnt_routerstation_common
-  DEVICE_PACKAGES := -kmod-ath9k -wpad-mini -uboot-envtools kmod-usb-ohci kmod-usb2 fconfig
-  DEVICE_VENDOR := Ubiquiti
-  ATH_SOC := ar7161
-  IMAGE_SIZE := 16128k
-  IMAGES := factory.bin
-  IMAGE/factory.bin := append-rootfs | pad-rootfs | mkubntimage | check-size $$$$(IMAGE_SIZE)
-  KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
-  KERNEL_INITRAMFS := kernel-bin | append-dtb
-endef
-
-define Device/ubnt_routerstation
-  $(Device/ubnt_routerstation_common)
-  DEVICE_MODEL := RouterStation
-  UBNT_BOARD := RS
-  UBNT_TYPE := RSx
-  UBNT_CHIP := ar7100
-  DEVICE_PACKAGES += -swconfig
-  SUPPORTED_DEVICES += routerstation
-endef
-TARGET_DEVICES += ubnt_routerstation
-
-define Device/ubnt_routerstation-pro
-  $(Device/ubnt_routerstation_common)
-  DEVICE_MODEL := RouterStation Pro
-  UBNT_BOARD := RSPRO
-  UBNT_TYPE := RSPRO
-  UBNT_CHIP := ar7100pro
-  SUPPORTED_DEVICES += routerstation-pro
-endef
-TARGET_DEVICES += ubnt_routerstation-pro
-
-define Device/ubnt_acb-isp
-  $(Device/ubnt)
-  ATH_SOC := qca9533
-  IMAGE_SIZE := 15744k
-  DEVICE_MODEL := airCube ISP
-  UBNT_BOARD := ACB-ISP
-  UBNT_TYPE := ACB
-  UBNT_CHIP := qca9533
-  IMAGES := sysupgrade.bin
-endef
-TARGET_DEVICES += ubnt_acb-isp
