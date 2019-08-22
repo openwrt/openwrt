@@ -7,6 +7,7 @@ FEATURES:=squashfs fpu ramdisk nand
 CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=neon-vfpv4
 MAINTAINER:=John Crispin <john@phrozen.org>
+SUBTARGETS:=generic
 
 # TODO: drop kmod-usb-dwc3-of-simple when migrating to 4.19
 KERNEL_PATCHVER:=4.14
