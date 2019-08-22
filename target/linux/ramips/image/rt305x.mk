@@ -267,6 +267,8 @@ define Device/aztech_hw550-3g
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Aztech
   DEVICE_MODEL := HW550-3G
+  DEVICE_ALT0_VENDOR := Allnet
+  DEVICE_ALT0_MODEL := ALL0239-3G
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += hw550-3g
 endef
