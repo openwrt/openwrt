@@ -617,8 +617,10 @@ ifeq ($(SUBTARGET),xrx200)
 include tp-link.mk
 
 define Device/alphanetworks_asl56026
-  DEVICE_VENDOR := BT Openreach
-  DEVICE_MODEL := ECI VDSL Modem V-2FUb/I
+  DEVICE_VENDOR := Alpha
+  DEVICE_MODEL := ASL56026
+  DEVICE_ALT0_VENDOR := BT Openreach
+  DEVICE_ALT0_MODEL := ECI VDSL Modem V-2FUb/I
   DEVICE_DTS := ASL56026
   IMAGE_SIZE := 7488k
 endef
