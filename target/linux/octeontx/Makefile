@@ -10,6 +10,7 @@ ARCH:=aarch64
 BOARD:=octeontx
 BOARDNAME:=Octeon-TX
 FEATURES:=targz pcie gpio rtc usb fpu
+SUBTARGETS:=generic
 
 MAINTAINER:=Tim Harvey <tharvey@gateworks.com>
 
