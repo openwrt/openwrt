@@ -2,6 +2,7 @@
 
 . /lib/functions.sh
 . /lib/functions/system.sh
+. /usr/share/libubox/jshn.sh
 
 # initialize defaults
 export MTD_ARGS=""
@@ -191,9 +192,6 @@ add_overlayfiles() {
 	return 0
 }
 
-# hooks
-sysupgrade_image_check="fwtool_check_signature fwtool_check_image platform_check_image"
-
 if [ $SAVE_OVERLAY = 1 ]; then
 	[ ! -d /overlay/upper/etc ] && {
 		echo "Cannot find '/overlay/upper/etc', required for '-c'" >&2
@@ -316,17 +314,19 @@ case "$IMAGE" in
 		;;
 esac
 
-for check in $sysupgrade_image_check; do
-	( $check "$IMAGE" ) || {
-		if [ $FORCE -eq 1 ]; then
-			echo "Image check '$check' failed but --force given - will update anyway!" >&2
-			break
-		else
-			echo "Image check '$check' failed." >&2
-			exit 1
-		fi
-	}
-done
+json_load "$(/usr/libexec/validate_firmware_image "$IMAGE")" || {
+	echo "Failed to check image"
+	exit 1
+}
+json_get_var valid "valid"
+[ "$valid" -eq 0 ] && {
+	if [ $FORCE -eq 1 ]; then
+		echo "Image check failed but --force given - will update anyway!" >&2
+	else
+		echo "Image check failed." >&2
+		exit 1
+	fi
+}
 
 if [ -n "$CONF_IMAGE" ]; then
 	case "$(get_magic_word $CONF_IMAGE cat)" in
