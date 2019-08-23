@@ -77,7 +77,7 @@ define Device/alfa-network_ap120c-ac
 	DEVICE_VENDOR := ALFA Network
 	DEVICE_MODEL := AP120C-AC
 	DEVICE_DTS := qcom-ipq4018-ap120c-ac
-	DEVICE_PACKAGES := ipq-wifi-alfa-network_ap120c-ac kmod-usb-acm \
+	DEVICE_PACKAGES := kmod-usb-acm \
 		kmod-tpm-i2c-atmel uboot-envtools
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
