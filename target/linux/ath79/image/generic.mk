@@ -108,7 +108,7 @@ define Device/adtran_bsap1880
   IMAGES += kernel.bin rootfs.bin
   IMAGE/kernel.bin := append-kernel | pad-to $$$$(BLOCKSIZE)
   IMAGE/rootfs.bin := append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
 
 define Device/adtran_bsap1800-v2
