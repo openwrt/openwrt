@@ -15,10 +15,11 @@ find_wwan_iface() {
 
 	[ "$proto" = wwan ] || [ "$proto" = mbim ] || [ "$proto" = qmi ] || [ "$proto" = ncm ] || return 0
 	[ -z "$device" -a "$proto" = wwan ] || [ "$device" = "/dev/$DEVNAME" ] || return 0
-	if [ "$ACTION" = add ]; then
-		proto_set_available "$cfg" 1
-	else
+	if [ "$ACTION" = remove ]; then
 		proto_set_available "$cfg" 0
+	else
+		# add, bind...
+		proto_set_available "$cfg" 1
 	fi
 	exit 0
 }
