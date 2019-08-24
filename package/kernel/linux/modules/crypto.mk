@@ -46,6 +46,17 @@ endef
 $(eval $(call KernelPackage,crypto-aead))
 
 
+define KernelPackage/crypto-arc4
+  TITLE:=ARC4 cipher CryptoAPI module
+  KCONFIG:=CONFIG_CRYPTO_ARC4
+  FILES:=$(LINUX_DIR)/crypto/arc4.ko
+  AUTOLOAD:=$(call AutoLoad,09,arc4)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-arc4))
+
+
 define KernelPackage/crypto-authenc
   TITLE:=Combined mode wrapper for IPsec
   DEPENDS:=+kmod-crypto-manager +kmod-crypto-null
