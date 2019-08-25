@@ -26,7 +26,12 @@ vxlan_generic_setup() {
 
 	[ -n "$tunlink" ] && json_add_string link "$tunlink"
 	[ -n "$local" ] && json_add_string local "$local"
-	[ -n "$remote" ] && json_add_string remote "$remote"
+	[ -n "$remote" ] && {
+		local remgrp="remote"
+		[ "${remote%%\.*}" -ge 224 ] && \
+		[ "${remote%%\.*}" -le 239 ] && remgrp="group"
+		json_add_string "$remgrp" "$remote"
+	}
 
 	[ -n "$ttl" ] && json_add_int ttl "$ttl"
 	[ -n "$tos" ] && json_add_string tos "$tos"
