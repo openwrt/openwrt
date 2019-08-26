@@ -352,6 +352,22 @@ define Device/iodata_wn-ax1167gr
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr
 
+define Device/iodata_wn-ax1167gr2
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  UIMAGE_MAGIC := 0x434f4d42
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 51200k
+  DEVICE_VENDOR := I-O DATA
+  DEVICE_MODEL := WN-AX1167GR2
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(XBC.1)b10 | \
+	iodata-mstc-header
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7615e wpad-basic
+endef
+TARGET_DEVICES += iodata_wn-ax1167gr2
+
 define Device/iodata_wn-dx1167r
   BLOCKSIZE := 128k
   PAGESIZE := 2048
