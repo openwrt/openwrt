@@ -322,7 +322,12 @@ define Device/r6220
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 28672k
   UBINIZE_OPTS := -E 5
-  IMAGES += kernel.bin rootfs.bin
+  SERCOMM_HWID := AYA
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0086
+  IMAGES += factory.img kernel.bin rootfs.bin
+  IMAGE/factory.img := pad-extra 2048k | append-kernel | pad-to 6144k | append-ubi | \
+	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip R6220.bin | sercom-seal
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
