@@ -623,41 +623,30 @@ if KERNEL_NAMESPACES
 
 endif
 
-#
-# LXC related symbols
-#
+config KERNEL_DEVPTS_MULTIPLE_INSTANCES
+	bool "Support multiple instances of devpts"
+	default y
+	help
+	  Enable support for multiple instances of devpts filesystem.
+	  If you want to have isolated PTY namespaces (eg: in containers),
+	  say Y here. Otherwise, say N. If enabled, each mount of devpts
+	  filesystem with the '-o newinstance' option will create an
+	  independent PTY namespace.
 
-config KERNEL_LXC_MISC
-	bool "Enable miscellaneous LXC related options"
-	default y if !SMALL_FLASH
+config KERNEL_POSIX_MQUEUE
+	bool "POSIX Message Queues"
+	default y
+	help
+	  POSIX variant of message queues is a part of IPC. In POSIX message
+	  queues every message has a priority which decides about succession
+	  of receiving it by a process. If you want to compile and run
+	  programs written e.g. for Solaris with use of its POSIX message
+	  queues (functions mq_*) say Y here.
 
-if KERNEL_LXC_MISC
+	  POSIX message queues are visible as a filesystem called 'mqueue'
+	  and can be mounted somewhere if you want to do filesystem
+	  operations on message queues.
 
-	config KERNEL_DEVPTS_MULTIPLE_INSTANCES
-		bool "Support multiple instances of devpts"
-		default y
-		help
-		  Enable support for multiple instances of devpts filesystem.
-		  If you want to have isolated PTY namespaces (eg: in containers),
-		  say Y here. Otherwise, say N. If enabled, each mount of devpts
-		  filesystem with the '-o newinstance' option will create an
-		  independent PTY namespace.
-
-	config KERNEL_POSIX_MQUEUE
-		bool "POSIX Message Queues"
-		default y
-		help
-		  POSIX variant of message queues is a part of IPC. In POSIX message
-		  queues every message has a priority which decides about succession
-		  of receiving it by a process. If you want to compile and run
-		  programs written e.g. for Solaris with use of its POSIX message
-		  queues (functions mq_*) say Y here.
-
-		  POSIX message queues are visible as a filesystem called 'mqueue'
-		  and can be mounted somewhere if you want to do filesystem
-		  operations on message queues.
-
-endif
 
 config KERNEL_SECCOMP_FILTER
 	bool
