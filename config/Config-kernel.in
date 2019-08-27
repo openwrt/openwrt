@@ -54,6 +54,24 @@ config KERNEL_ARM_PMU
 	default n
 	depends on (arm || aarch64)
 
+config KERNEL_X86_VSYSCALL_EMULATION
+	bool "Enable vsyscall emulation"
+	default n
+	depends on x86_64
+	help
+	  This enables emulation of the legacy vsyscall page.  Disabling
+	  it is roughly equivalent to booting with vsyscall=none, except
+	  that it will also disable the helpful warning if a program
+	  tries to use a vsyscall.  With this option set to N, offending
+	  programs will just segfault, citing addresses of the form
+	  0xffffffffff600?00.
+
+	  This option is required by many programs built before 2013, and
+	  care should be used even with newer programs if set to N.
+
+	  Disabling this option saves about 7K of kernel size and
+	  possibly 4K of additional runtime pagetable memory.
+
 config KERNEL_PERF_EVENTS
 	bool "Compile the kernel with performance events and counters"
 	default n
