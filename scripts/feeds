@@ -44,7 +44,7 @@ my $feed_vpackage = {};
 sub parse_file($$);
 
 sub parse_file($$) {
-	my ($fname, $name) = @_;
+	my ($fname, $existing) = @_;
 	my $line = 0;
 	my $fh;
 
@@ -54,26 +54,33 @@ sub parse_file($$) {
 		s/#.+$//;
 		$line++;
 		next unless /\S/;
-		my @line = split /\s+/, $_, 3;
-		my @src;
 
-		my $valid = 1;
-		$line[0] =~ /^src-[\w-]+$/ or $valid = 0;
-		$line[1] =~ /^\w+$/ or $valid = 0;
-		@src = split /\s+/, ($line[2] or '');
-		@src = ('') if @src == 0;
-		$valid or die "Syntax error in $fname, line: $line\n";
+		my ($type, $flags, $name, $urls) = m!^src-(\w+)((?:\s+--\w+(?:=\S+)?)*)\s+(\w+)(?:\s+(\S.*))?$!;
+		unless ($type && $name) {
+			die "Syntax error in $fname, line $line\n";
+		}
 
-		$name->{$line[1]} and die "Duplicate feed name '$line[1]' in '$fname' line: $line\n";
-		$name->{$line[1]} = 1;
+		if ($existing->{$name}++) {
+			die "Duplicate feed name '$name' in '$fname' line: $line\n";
+		}
 
-		if ($line[0] eq "src-include") {
-			parse_file($line[2], $name) or
-			    die "Unable to open included file '$line[2]'";
+		my @src = defined($urls) ? split /\s+/, $urls : ();
+		push @src, '' if @src == 0;
+
+		my %flags;
+		if (defined $flags) {
+			while ($flags =~ m!\s+--(\w+)(?:=(\S+))?!g) {
+				$flags{$1} = defined($2) ? $2 : 1;
+			}
+		}
+
+		if ($type eq "include") {
+			parse_file($urls, $name) or
+			    die "Unable to open included file '$urls'";
 			next;
 		}
 
-		push @feeds, [$line[0], $line[1], \@src];
+		push @feeds, ["src-$type", $name, \@src, \%flags];
 	}
 	close $fh;
 	return 1;
@@ -520,6 +527,11 @@ sub install_src {
 	# switch to the metadata for the selected feed
 	get_feed($feed->[1]);
 	my $src = $feed_src->{$name} or return 1;
+
+	# enable force flag if feed src line was declared with --force
+	if (exists($feed->[3]{force})) {
+		$force = 1;
+	}
 
 	# If it's a core package and we don't want to override, just return
 	my $override = 0;
