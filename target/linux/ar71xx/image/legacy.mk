@@ -1054,7 +1054,7 @@ $(eval $(call SingleProfile,NetgearNAND,64k,R6100,r6100,R6100,ttyS0,115200,$$(r6
 
 $(eval $(call SingleProfile,ZyXELNAND,128k,NBG6716,nbg6716,NBG6716,ttyS0,115200,NBG6716,$$(zyx_nbg6716_mtdlayout),mem=256M))
 $(eval $(call SingleProfile,GLNAND,64k,GL-AR750S,gl-ar750s,GL-AR750S,ttyS0,115200,$$(gl-ar750s_mtdlayout),gl-ar750s))
-$(eval $(call SingleProfile,GLNAND,64k,GL-E750,gl-e750,GL-E750,null,115200,$$(gl-e750_mtdlayout),gl-e750))
+$(eval $(call SingleProfile,GLNAND,64k,GL-E750,gl-e750,GL-E750,ttyS0,115200,$$(gl-e750_mtdlayout),gl-e750))
 $(eval $(call SingleProfile,GLNAND,64k,GL-X750,gl-x750,GL-X750,ttyS0,115200,$$(gl-x750_mtdlayout),gl-x750))
 $(eval $(call SingleProfile,GLNAND,64k,GL-X1200,gl-x1200,GL-X1200,ttyS0,115200,$$(gl-x1200_mtdlayout),gl-x1200))
 $(eval $(call SingleProfile,GLNAND,64k,GL-AR300M,gl-ar300m,GL-AR300M,ttyS0,115200,$$(gl-ar300m_mtdlayout),gl-ar300m))
