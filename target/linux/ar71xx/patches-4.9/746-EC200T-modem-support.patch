@@ -1,0 +1,26 @@
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -591,6 +591,7 @@ static const struct usb_device_id option
+ 	{ USB_DEVICE(0x2C7C, 0x0306) }, /* Quectel EG06/EP06/EM06 */
+ 	{ USB_DEVICE(0x2C7C, 0x0296) }, /* Quectel BG96 */
+ 	{ USB_DEVICE(0x2C7C, 0x0435) }, /* Quectel AG35 */
++	{ USB_DEVICE(0x2C7C, 0x6026) }, /* Quectel AG35 */
+ #endif
+ 	{ USB_DEVICE(0x19d2, 0x0536) },/* MZ386 */
+ 	{ USB_DEVICE(0x19d2, 0x0117) },
+@@ -2061,9 +2062,14 @@ static int option_probe(struct usb_seria
+ 			&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
+ 		return -ENODEV;
+ 	//Quectel EC25&EC21&EG91&EG95&EG06&EP06&EM06&BG96/AG35's interface 4 can be used as USB network device
+-	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x2C7C) \
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x2C7C) && \
++			serial->dev->descriptor.idProduct != cpu_to_le16(0x6026) \
+ 			&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
+ 		return -ENODEV;
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x2C7C) && \
++			serial->dev->descriptor.idProduct == cpu_to_le16(0x6026) \
++			&& serial->interface->cur_altsetting->desc.bInterfaceNumber<= 1)
++		return -ENODEV;
+ #endif
+ #if 1 //Added by Quectel
+ 	//For USB Auto Suspend
