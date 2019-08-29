@@ -409,7 +409,7 @@ define Device/netgear_r6220
 endef
 TARGET_DEVICES += netgear_r6220
 
-define Device/netgear_r6350
+define Device/netgear_r6260_r6350_r6850
   MTK_SOC := mt7621
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -421,11 +421,27 @@ define Device/netgear_r6350
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   DEVICE_VENDOR := NETGEAR
-  DEVICE_MODEL := R6350
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt7615e kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
+
+define Device/netgear_r6260
+  $(Device/netgear_r6260_r6350_r6850)
+  DEVICE_MODEL := R6260
+endef
+TARGET_DEVICES += netgear_r6260
+
+define Device/netgear_r6350
+  $(Device/netgear_r6260_r6350_r6850)
+  DEVICE_MODEL := R6350
+endef
 TARGET_DEVICES += netgear_r6350
+
+define Device/netgear_r6850
+  $(Device/netgear_r6260_r6350_r6850)
+  DEVICE_MODEL := R6850
+endef
+TARGET_DEVICES += netgear_r6850
 
 define Device/netgear_wndr3700-v5
   MTK_SOC := mt7621
