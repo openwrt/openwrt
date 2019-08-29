@@ -23,7 +23,9 @@ platform_do_upgrade() {
 	case "$board" in
 	hiwifi,hc5962|\
 	netgear,r6220|\
+	netgear,r6260|\
 	netgear,r6350|\
+	netgear,r6850|\
 	xiaomi,mir3g|\
 	xiaomi,mir3p)
 		nand_do_upgrade "$1"
