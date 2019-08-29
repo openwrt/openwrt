@@ -19,7 +19,7 @@ Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
 -ENDIF
 --- a/crypto/init.c
 +++ b/crypto/init.c
-@@ -330,18 +330,6 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_engine_
+@@ -329,18 +329,6 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_engine_
      engine_load_openssl_int();
      return 1;
  }
@@ -38,7 +38,7 @@ Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
  
  # ifndef OPENSSL_NO_RDRAND
  static CRYPTO_ONCE engine_rdrand = CRYPTO_ONCE_STATIC_INIT;
-@@ -366,6 +354,18 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_engine_
+@@ -365,6 +353,18 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_engine_
      return 1;
  }
  # ifndef OPENSSL_NO_STATIC_ENGINE
@@ -57,7 +57,7 @@ Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
  #  if !defined(OPENSSL_NO_HW) && !defined(OPENSSL_NO_HW_PADLOCK)
  static CRYPTO_ONCE engine_padlock = CRYPTO_ONCE_STATIC_INIT;
  DEFINE_RUN_ONCE_STATIC(ossl_init_engine_padlock)
-@@ -714,11 +714,6 @@ int OPENSSL_init_crypto(uint64_t opts, c
+@@ -713,11 +713,6 @@ int OPENSSL_init_crypto(uint64_t opts, c
      if ((opts & OPENSSL_INIT_ENGINE_OPENSSL)
              && !RUN_ONCE(&engine_openssl, ossl_init_engine_openssl))
          return 0;
@@ -69,7 +69,7 @@ Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
  # ifndef OPENSSL_NO_RDRAND
      if ((opts & OPENSSL_INIT_ENGINE_RDRAND)
              && !RUN_ONCE(&engine_rdrand, ossl_init_engine_rdrand))
-@@ -728,6 +723,11 @@ int OPENSSL_init_crypto(uint64_t opts, c
+@@ -727,6 +722,11 @@ int OPENSSL_init_crypto(uint64_t opts, c
              && !RUN_ONCE(&engine_dynamic, ossl_init_engine_dynamic))
          return 0;
  # ifndef OPENSSL_NO_STATIC_ENGINE

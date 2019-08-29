@@ -6,9 +6,6 @@
 export IMAGE="$1"
 COMMAND="$2"
 
-export SAVE_CONFIG=1
-export SAVE_PARTITIONS=1
-
 export INTERACTIVE=0
 export VERBOSE=1
 export CONFFILES=/tmp/sysupgrade.conffiles
@@ -16,10 +13,6 @@ export CONF_TAR=/tmp/sysupgrade.tgz
 
 RAMFS_COPY_BIN=		# extra programs for temporary ramfs root
 RAMFS_COPY_DATA=	# extra data files
-
-
-[ -f "$CONF_TAR" ] || export SAVE_CONFIG=0
-[ -f /tmp/sysupgrade.always.overwrite.bootdisk.partmap ] && export SAVE_PARTITIONS=0
 
 include /lib/upgrade
 

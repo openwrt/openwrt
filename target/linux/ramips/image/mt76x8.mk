@@ -372,6 +372,7 @@ TARGET_DEVICES += tplink_tl-wr840n-v4
 define Device/tplink_tl-wr840n-v5
   MTK_SOC := mt7628an
   IMAGE_SIZE := 3904k
+  DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := TL-WR840N
   DEVICE_VARIANT := v5
   TPLINK_FLASHLAYOUT := 4Mmtk

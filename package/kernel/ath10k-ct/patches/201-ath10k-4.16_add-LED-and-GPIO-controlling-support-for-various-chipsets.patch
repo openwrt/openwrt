@@ -683,7 +683,7 @@ v13:
  		.patch_load_addr = QCA9888_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_EACH,
-@@ -3446,6 +3452,10 @@ int ath10k_core_start(struct ath10k *ar,
+@@ -3452,6 +3458,10 @@ int ath10k_core_start(struct ath10k *ar,
  			ath10k_wmi_check_apply_board_power_ctl_table(ar);
  	}
  
@@ -694,7 +694,7 @@ v13:
  	return 0;
  
  err_hif_stop:
-@@ -3702,9 +3712,18 @@ static void ath10k_core_register_work(st
+@@ -3708,9 +3718,18 @@ static void ath10k_core_register_work(st
  		goto err_spectral_destroy;
  	}
  
@@ -713,7 +713,7 @@ v13:
  err_spectral_destroy:
  	ath10k_spectral_destroy(ar);
  err_debug_destroy:
-@@ -3764,6 +3783,8 @@ void ath10k_core_unregister(struct ath10
+@@ -3770,6 +3789,8 @@ void ath10k_core_unregister(struct ath10
  	if (!test_bit(ATH10K_FLAG_CORE_REGISTERED, &ar->dev_flags))
  		return;
  
@@ -732,7 +732,7 @@ v13:
  
  #include "htt.h"
  #include "htc.h"
-@@ -1436,6 +1437,13 @@ struct ath10k {
+@@ -1441,6 +1442,13 @@ struct ath10k {
  	} testmode;
  
  	struct {
@@ -967,7 +967,7 @@ v13:
  {
 --- a/ath10k-5.2/wmi-tlv.c
 +++ b/ath10k-5.2/wmi-tlv.c
-@@ -4309,6 +4309,8 @@ static const struct wmi_ops wmi_tlv_ops
+@@ -4311,6 +4311,8 @@ static const struct wmi_ops wmi_tlv_ops
  	.gen_echo = ath10k_wmi_tlv_op_gen_echo,
  	.gen_vdev_spectral_conf = ath10k_wmi_tlv_op_gen_vdev_spectral_conf,
  	.gen_vdev_spectral_enable = ath10k_wmi_tlv_op_gen_vdev_spectral_enable,

@@ -106,7 +106,7 @@ define add_jffs2_mark
 	echo -ne '\xde\xad\xc0\xde' >> $(1)
 endef
 
-PROFILE_SANITIZED := $(call sanitize,$(subst DEVICE_,,$(PROFILE)))
+PROFILE_SANITIZED := $(call tolower,$(subst DEVICE_,,$(subst $(space),-,$(PROFILE))))
 
 define split_args
 $(foreach data, \
@@ -362,9 +362,21 @@ $(KDIR)/root.%: kernel_prepare
 define Device/InitProfile
   PROFILES := $(PROFILE)
   DEVICE_TITLE = $$(DEVICE_VENDOR) $$(DEVICE_MODEL)$$(if $$(DEVICE_VARIANT), $$(DEVICE_VARIANT))
+  DEVICE_ALT0_TITLE = $$(DEVICE_ALT0_VENDOR) $$(DEVICE_ALT0_MODEL)$$(if $$(DEVICE_ALT0_VARIANT), $$(DEVICE_ALT0_VARIANT))
+  DEVICE_ALT1_TITLE = $$(DEVICE_ALT1_VENDOR) $$(DEVICE_ALT1_MODEL)$$(if $$(DEVICE_ALT1_VARIANT), $$(DEVICE_ALT1_VARIANT))
+  DEVICE_ALT2_TITLE = $$(DEVICE_ALT2_VENDOR) $$(DEVICE_ALT2_MODEL)$$(if $$(DEVICE_ALT2_VARIANT), $$(DEVICE_ALT2_VARIANT))
   DEVICE_VENDOR :=
   DEVICE_MODEL :=
   DEVICE_VARIANT :=
+  DEVICE_ALT0_VENDOR :=
+  DEVICE_ALT0_MODEL :=
+  DEVICE_ALT0_VARIANT :=
+  DEVICE_ALT1_VENDOR :=
+  DEVICE_ALT1_MODEL :=
+  DEVICE_ALT1_VARIANT :=
+  DEVICE_ALT2_VENDOR :=
+  DEVICE_ALT2_MODEL :=
+  DEVICE_ALT2_VARIANT :=
   DEVICE_PACKAGES :=
   DEVICE_DESCRIPTION = Build firmware images for $$(DEVICE_TITLE)
 endef
@@ -426,7 +438,10 @@ DEFAULT_DEVICE_VARS := \
   VID_HDR_OFFSET UBINIZE_OPTS UBINIZE_PARTS MKUBIFS_OPTS DEVICE_DTS \
   DEVICE_DTS_CONFIG DEVICE_DTS_DIR BOARD_NAME UIMAGE_NAME SUPPORTED_DEVICES \
   IMAGE_METADATA KERNEL_ENTRY KERNEL_LOADADDR UBOOT_PATH DEVICE_VENDOR \
-  DEVICE_MODEL DEVICE_VARIANT
+  DEVICE_MODEL DEVICE_VARIANT \
+  DEVICE_ALT0_VENDOR DEVICE_ALT0_MODEL DEVICE_ALT0_VARIANT \
+  DEVICE_ALT1_VENDOR DEVICE_ALT1_MODEL DEVICE_ALT1_VARIANT \
+  DEVICE_ALT2_VENDOR DEVICE_ALT2_MODEL DEVICE_ALT2_VARIANT
 
 define Device/ExportVar
   $(1) : $(2):=$$($(2))
@@ -591,18 +606,35 @@ endef
 
 define Device/DumpInfo
 Target-Profile: DEVICE_$(1)
-Target-Profile-Name: $(DEVICE_TITLE)
+Target-Profile-Name: $(DEVICE_DISPLAY)
 Target-Profile-Packages: $(DEVICE_PACKAGES)
 Target-Profile-hasImageMetadata: $(if $(foreach image,$(IMAGES),$(findstring append-metadata,$(IMAGE/$(image)))),1,0)
 Target-Profile-SupportedDevices: $(SUPPORTED_DEVICES)
 $(if $(DEFAULT),Target-Profile-Default: $(DEFAULT))
 Target-Profile-Description:
 $(DEVICE_DESCRIPTION)
+$(if $(strip $(DEVICE_ALT0_TITLE)),Alternative device titles:
+- $(DEVICE_ALT0_TITLE))
+$(if $(strip $(DEVICE_ALT1_TITLE)),- $(DEVICE_ALT1_TITLE))
+$(if $(strip $(DEVICE_ALT2_TITLE)),- $(DEVICE_ALT2_TITLE))
 @@
 
 endef
 
 define Device/Dump
+ifneq ($$(strip $$(DEVICE_ALT0_TITLE)),)
+DEVICE_DISPLAY = $$(DEVICE_ALT0_TITLE) ($$(DEVICE_TITLE))
+$$(info $$(call Device/DumpInfo,$(1)))
+endif
+ifneq ($$(strip $$(DEVICE_ALT1_TITLE)),)
+DEVICE_DISPLAY = $$(DEVICE_ALT1_TITLE) ($$(DEVICE_TITLE))
+$$(info $$(call Device/DumpInfo,$(1)))
+endif
+ifneq ($$(strip $$(DEVICE_ALT2_TITLE)),)
+DEVICE_DISPLAY = $$(DEVICE_ALT2_TITLE) ($$(DEVICE_TITLE))
+$$(info $$(call Device/DumpInfo,$(1)))
+endif
+DEVICE_DISPLAY = $$(DEVICE_TITLE)
 $$(eval $$(if $$(DEVICE_TITLE),$$(info $$(call Device/DumpInfo,$(1)))))
 endef
 

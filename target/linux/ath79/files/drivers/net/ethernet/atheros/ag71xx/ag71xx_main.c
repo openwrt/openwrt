@@ -130,7 +130,7 @@ static void ag71xx_ring_tx_init(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->tx_ring;
 	int ring_size = BIT(ring->order);
-	int ring_mask = ring_size - 1;
+	int ring_mask = BIT(ring->order) - 1;
 	int i;
 
 	for (i = 0; i < ring_size; i++) {
@@ -284,7 +284,7 @@ static int ag71xx_rings_init(struct ag71xx *ag)
 		return -ENOMEM;
 	}
 
-	rx->buf = &tx->buf[BIT(tx->order)];
+	rx->buf = &tx->buf[tx_size];
 	rx->descs_cpu = ((void *)tx->descs_cpu) + tx_size * AG71XX_DESC_SIZE;
 	rx->descs_dma = tx->descs_dma + tx_size * AG71XX_DESC_SIZE;
 

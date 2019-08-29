@@ -351,12 +351,6 @@ if [ $TEST -eq 1 ]; then
 	exit 0
 fi
 
-if [ $SAVE_PARTITIONS -eq 0 ]; then
-	touch /tmp/sysupgrade.always.overwrite.bootdisk.partmap
-else
-	rm -f /tmp/sysupgrade.always.overwrite.bootdisk.partmap
-fi
-
 install_bin /sbin/upgraded
 v "Commencing upgrade. Closing all shell sessions."
 
@@ -369,6 +363,10 @@ else
 	ubus call system sysupgrade "{
 		\"prefix\": $(json_string "$RAM_ROOT"),
 		\"path\": $(json_string "$IMAGE"),
-		\"command\": $(json_string "$COMMAND")
+		\"command\": $(json_string "$COMMAND"),
+		\"options\": {
+			\"save_config\": $SAVE_CONFIG,
+			\"save_partitions\": $SAVE_PARTITIONS
+		}
 	}"
 fi
