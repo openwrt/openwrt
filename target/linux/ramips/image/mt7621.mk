@@ -416,7 +416,12 @@ define Device/netgear_r6260_r6350_r6850
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 40960k
   UBINIZE_OPTS := -E 5
-  IMAGES += kernel.bin rootfs.bin
+  SERCOMM_HWID := CHJ
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0052
+  IMAGES += factory.img kernel.bin rootfs.bin
+  IMAGE/factory.img := pad-extra 2048k | append-kernel | pad-to 6144k | append-ubi | \
+	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip $$$$(DEVICE_MODEL).bin | sercom-seal
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
