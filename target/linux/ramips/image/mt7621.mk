@@ -428,7 +428,7 @@ define Device/netgear_r6350
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := R6350
   DEVICE_PACKAGES := \
-	kmod-mt7603 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+	kmod-mt7603 kmod-mt7615e kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += netgear_r6350
 
