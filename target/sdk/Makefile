@@ -71,6 +71,7 @@ KERNEL_FILES_BASE := \
 	.config \
 	Makefile \
 	scripts \
+	tools/objtool \
 	include \
 	Module.symvers \
 	modules.builtin \
@@ -95,16 +96,9 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 	$(TAR) -cf - -C $(TOPDIR) $(KDIR_BASE)/tools/usb/usbip/ | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
 
-	# Copy objtool executables.  They are required for building external
-	# modules if "Compile-time stack metadata validation" is enabled.
-	if grep -q '^CONFIG_STACK_VALIDATION=y' $(LINUX_DIR)/.config; then \
-		$(TAR) -cf - -C $(TOPDIR) \
-				`cd $(TOPDIR); find $(KDIR_BASE)/tools/objtool -type f -executable` | \
-			$(TAR) -xf - -C $(SDK_BUILD_DIR); \
-	fi
-
 	(cd $(SDK_BUILD_DIR); find $(STAGING_SUBDIR_HOST)/bin $(STAGING_SUBDIR_HOST)/usr/bin \
 		$(STAGING_SUBDIR_TOOLCHAIN)/bin $(STAGING_SUBDIR_TOOLCHAIN)/*/bin $(STAGING_SUBDIR_TOOLCHAIN)/libexec \
+		$(KDIR_BASE) \
 		-type f | $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST))
 
 	@-( \
