@@ -1298,7 +1298,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/drivers/mtd/nand/mtk_nand2.c
-@@ -0,0 +1,2345 @@
+@@ -0,0 +1,2346 @@
 +/******************************************************************************
 +* mtk_nand2.c - MTK NAND Flash Device Driver
 + *
@@ -3299,11 +3299,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		}
 +		if (mtk_nand_exec_read_page(mtd, page, mtd->writesize, chip->buffers->databuf, chip->oob_poi))
 +		{
++			chip->pagebuf = page;
 +			printk("Signature matched and data read!\n");
 +			memcpy(fact_bbt, chip->buffers->databuf, (bbt_size <= mtd->writesize)? bbt_size:mtd->writesize);
 +			return 0;
-+		}
-+
++		} else
++			chip->pagebuf = -1;
 +	}
 +	printk("failed at page %x\n", page);
 +	return -1;
