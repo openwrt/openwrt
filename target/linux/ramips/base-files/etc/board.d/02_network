@@ -290,9 +290,11 @@ ramips_setup_interfaces()
 			"0:lan" "1:lan" "2:lan" "3:lan" "5:wan" "6@eth0"
 		;;
 	comfast,cf-wr800n|\
-	hnet,c108)
+	hnet,c108|\
+	tplink,tl-wr902ac-v3|\
+	trendnet,tew-638apb-v2)
 		ucidef_add_switch "switch0" \
-			"4:lan" "6t@eth0"
+			"4:lan" "6@eth0"
 		;;
 	cudy,wr1000)
 		ucidef_add_switch "switch0" \
@@ -462,14 +464,6 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "6t@eth0"
 		ucidef_set_interface_wan "usb0"
-		;;
-	tplink,tl-wr902ac-v3)
-		ucidef_add_switch "switch0" \
-			"4:lan" "6@eth0"
-		;;
-	trendnet,tew-638apb-v2)
-		ucidef_add_switch "switch0" \
-			"4:lan" "6@eth0"
 		;;
 	vocore,vocore2|\
 	vocore,vocore2-lite)
