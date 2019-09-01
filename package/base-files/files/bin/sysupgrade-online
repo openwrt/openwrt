@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# POC to simplify sysupgrade via JSON info files
+# based on https://github.com/openwrt/openwrt/pull/2192
+
+. /lib/upgrade/online.sh
+
+while [ -n "$1" ]; do                                                                                                                                                                                                
+        case "$1" in                                                                                                                                                                                                 
+                -s|--search) sysupgrade_search;;                                                                                                                                                                         
+								-d|--download) sysupgrade_download;;
+								-u|--unattended) sysupgrade_unattended;;	
+                -*)                                                                                                                                                                                                  
+                        echo "Invalid option: $1" >&2                                                                                                                                                                
+                        exit 1                                                                                                                                                                                       
+                ;;                                                                                                                                                                                                   
+                *) break;;                                                                                                                                                                                           
+        esac                                                                                                                                                                                                         
+        shift;                                                                                                                                                                                                       
+done   
