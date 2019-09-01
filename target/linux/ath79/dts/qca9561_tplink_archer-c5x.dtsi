@@ -8,6 +8,13 @@
 / {
 	compatible = "tplink,archer-c5x", "qca,qca9560";
 
+	aliases {
+		led-boot = &power;
+		led-failsafe = &power;
+		led-running = &power;
+		led-upgrade = &power;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200n8";
 	};
@@ -29,6 +36,48 @@
 			#gpio-cells = <2>;
 			registers-number = <1>;
 			spi-max-frequency = <10000000>;
+		};
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		power: power {
+			label = "tp-link:green:power";
+			gpios = <&led_gpio 0 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		wlan2g {
+			label = "tp-link:green:wlan2g";
+			gpios = <&led_gpio 1 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wlan5g {
+			label = "tp-link:green:wlan5g";
+			gpios = <&led_gpio 2 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wan_green {
+			label = "tp-link:green:wan";
+			gpios = <&led_gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_amber {
+			label = "tp-link:amber:wan";
+			gpios = <&led_gpio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		lan {
+			label = "tp-link:green:lan";
+			gpios = <&led_gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "tp-link:green:wps";
+			gpios = <&led_gpio 6 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -86,8 +135,13 @@
 };
 
 &eth0 {
+	status = "okay";
+
 	phy-mode = "mii";
 	phy-handle = <&swphy0>;
+
+	mtd-mac-address = <&mac 0x8>;
+	mtd-mac-address-increment = <1>;
 
 	gmac-config {
 		device = <&gmac>;
@@ -95,4 +149,17 @@
 		switch-phy-addr-swap = <1>;
 		switch-phy-swap = <1>;
 	};
+};
+
+&eth1 {
+	status = "okay";
+
+	mtd-mac-address = <&mac 0x8>;
+};
+
+&wmac {
+	status = "okay";
+
+	mtd-cal-data = <&art 0x1000>;
+	mtd-mac-address = <&mac 0x8>;
 };
