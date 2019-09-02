@@ -75,7 +75,7 @@ sub parse_file($$) {
 		}
 
 		if ($type eq "include") {
-			parse_file($urls, $name) or
+			parse_file($urls, $existing) or
 			    die "Unable to open included file '$urls'";
 			next;
 		}
