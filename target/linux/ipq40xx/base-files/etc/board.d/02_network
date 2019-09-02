@@ -58,7 +58,8 @@ ipq40xx_setup_interfaces()
 		;;
 	avm,fritzrepeater-3000|\
 	compex,wpj419|\
-	compex,wpj428)
+	compex,wpj428|\
+	engenius,eap2200)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
 	ezviz,cs-w3-wd1200g-eup)
@@ -109,6 +110,7 @@ ipq40xx_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii bdcfg lanmac)
 		label_mac=$lan_mac
 		;;
+	engenius,eap220|\
 	engenius,emd1)
 		lan_mac=$(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
 		label_mac=$lan_mac
