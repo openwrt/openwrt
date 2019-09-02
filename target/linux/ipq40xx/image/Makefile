@@ -278,6 +278,18 @@ define Device/engenius_eap1300
 endef
 TARGET_DEVICES += engenius_eap1300
 
+define Device/engenius_eap2200
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := EnGenius
+	DEVICE_MODEL := EAP2200
+	SOC := qcom-ipq4019
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-engenius_eap2200 -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
+endef
+TARGET_DEVICES += engenius_eap2200
+
 define Device/engenius_emd1
 	$(call Device/FitImage)
 	DEVICE_VENDOR := EnGenius
