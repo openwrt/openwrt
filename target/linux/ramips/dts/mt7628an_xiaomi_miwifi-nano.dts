@@ -52,10 +52,18 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "refclk", "wled_an", "gpio";
+			ralink,group = "gpio", "refclk", "wdt", "wled_an";
 			ralink,function = "gpio";
 		};
 	};
+};
+
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
 };
 
 &wmac {
@@ -73,7 +81,7 @@
 	m25p80@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <40000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -89,7 +97,6 @@
 			partition@30000 {
 				label = "u-boot-env";
 				reg = <0x30000 0x10000>;
-				read-only;
 			};
 
 			factory: partition@40000 {

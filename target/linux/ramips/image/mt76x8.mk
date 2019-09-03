@@ -560,7 +560,7 @@ define Device/xiaomi_miwifi-nano
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := MiWiFi Nano
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := uboot-envtools
   SUPPORTED_DEVICES += miwifi-nano
 endef
 TARGET_DEVICES += xiaomi_miwifi-nano
