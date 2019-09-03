@@ -360,9 +360,12 @@ if [ -n "$FAILSAFE" ]; then
 	printf '%s\x00%s\x00%s' "$RAM_ROOT" "$IMAGE" "$COMMAND" >/tmp/sysupgrade
 	lock -u /tmp/.failsafe
 else
+	force_attr=""
+	[ $FORCE -eq 1 ] && force_attr="\"force\": true,"
 	ubus call system sysupgrade "{
 		\"prefix\": $(json_string "$RAM_ROOT"),
 		\"path\": $(json_string "$IMAGE"),
+		$force_attr
 		\"command\": $(json_string "$COMMAND"),
 		\"options\": {
 			\"save_config\": $SAVE_CONFIG,
