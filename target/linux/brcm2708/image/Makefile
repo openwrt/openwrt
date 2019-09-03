@@ -28,6 +28,7 @@ define Build/boot-common
 	mcopy -i $@.boot $(KDIR)/LICENCE.broadcom ::
 	mcopy -i $@.boot cmdline.txt ::
 	mcopy -i $@.boot $(BOOT_CONFIG) ::config.txt
+	mcopy -i $@.boot distroconfig.txt ::
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::$(KERNEL_IMG)
 	$(foreach dts,$(shell echo $(DEVICE_DTS)),mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb ::;)
 	mmd -i $@.boot ::/overlays
