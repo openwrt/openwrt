@@ -17,7 +17,7 @@ enable_image_metadata_check
 
 apalis_copy_config() {
 	apalis_mount_boot
-	cp -af "$CONF_TAR" /boot/
+	cp -af "$CONF_TAR" "/boot/$BACKUP_FILE"
 	sync
 	umount /boot
 }

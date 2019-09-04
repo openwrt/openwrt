@@ -91,7 +91,7 @@ platform_copy_config() {
 	if export_partdevice partdev 1; then
 		mkdir -p /boot
 		[ -f /boot/kernel.img ] || mount -t vfat -o rw,noatime "/dev/$partdev" /boot
-		cp -af "$CONF_TAR" /boot/
+		cp -af "$CONF_TAR" "/boot/$BACKUP_FILE"
 		tar -C / -zxvf "$CONF_TAR" boot/config.txt
 		sync
 		unmount /boot
