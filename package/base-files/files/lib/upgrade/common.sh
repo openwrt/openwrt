@@ -2,6 +2,8 @@
 
 RAM_ROOT=/tmp/root
 
+export BACKUP_FILE=sysupgrade.tgz	# file extracted by preinit
+
 [ -x /usr/bin/ldd ] || ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
 libs() { ldd $* 2>/dev/null | sed -r 's/(.* => )?(.*) .*/\2/'; }
 

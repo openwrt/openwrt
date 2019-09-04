@@ -60,7 +60,7 @@ zyxel_do_flash() {
 	mkdir /tmp/new_root
 	mount -t ext4 $loopdev /tmp/new_root && {
 		echo "Saving config to rootfs_data at position ${offset}."
-		cp -v /tmp/sysupgrade.tgz /tmp/new_root/
+		cp -v "$CONF_TAR" /tmp/new_root/
 		umount /tmp/new_root
 	}
 
