@@ -40,7 +40,7 @@ mtd_get_mac_ascii() {
 
 mtd_get_mac_text() {
 	local mtdname=$1
-	local offset=$2
+	local offset=$(($2))
 	local part
 	local mac_dirty
 
