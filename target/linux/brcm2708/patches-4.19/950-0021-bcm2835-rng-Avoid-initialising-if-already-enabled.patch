@@ -1,7 +1,7 @@
-From 291ee006cdd9854201d82d78fa0930142e224990 Mon Sep 17 00:00:00 2001
+From e32dc682aad433523bbc8cad30dddbed1e9600c8 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Tue, 6 Dec 2016 17:05:39 +0000
-Subject: [PATCH 021/773] bcm2835-rng: Avoid initialising if already enabled
+Subject: [PATCH 021/782] bcm2835-rng: Avoid initialising if already enabled
 
 Avoids the 0x40000 cycles of warmup again if firmware has already used it
 ---

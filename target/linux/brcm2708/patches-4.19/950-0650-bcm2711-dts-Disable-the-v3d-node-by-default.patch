@@ -1,0 +1,23 @@
+From 06c221e6d62ff01f4728981d76fd512442d2a28d Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 10 Jun 2019 17:22:44 +0100
+Subject: [PATCH 650/782] bcm2711 dts: Disable the v3d node by default
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/bcm2711.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm2711.dtsi
++++ b/arch/arm/boot/dts/bcm2711.dtsi
+@@ -13,6 +13,10 @@
+ 	};
+ };
+ 
++&v3d {
++	status = "disabled";
++};
++
+ &dma {
+ 	brcm,dma-channel-mask = <0x7ef5>;
+ };
