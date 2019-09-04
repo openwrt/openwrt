@@ -98,7 +98,10 @@ platform_check_image() {
 
 			if ! otrx check "$1" -o "$header_len"; then
 				echo "No valid TRX firmware in the CHK image"
+				notify_firmware_test_result "trx_valid" 0
 				error=1
+			else
+				notify_firmware_test_result "trx_valid" 1
 			fi
 		;;
 		"cybertan")
@@ -113,17 +116,24 @@ platform_check_image() {
 
 			if ! otrx check "$1" -o 32; then
 				echo "No valid TRX firmware in the CyberTAN image"
+				notify_firmware_test_result "trx_valid" 0
 				error=1
+			else
+				notify_firmware_test_result "trx_valid" 1
 			fi
 		;;
 		"trx")
 			if ! otrx check "$1"; then
 				echo "Invalid (corrupted?) TRX firmware"
+				notify_firmware_test_result "trx_valid" 0
 				error=1
+			else
+				notify_firmware_test_result "trx_valid" 1
 			fi
 		;;
 		*)
-			echo "Invalid image type. Please use only .trx files"
+			echo "Invalid image type. Please use firmware specific for this device."
+			notify_firmware_broken
 			error=1
 		;;
 	esac
