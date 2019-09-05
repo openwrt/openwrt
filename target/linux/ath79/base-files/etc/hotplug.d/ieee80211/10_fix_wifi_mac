@@ -42,6 +42,4 @@ case "$board" in
 		[ "$PHYNBR" -eq 0 ] && \
 			macaddr_add "$(mtd_get_mac_text mac 0x18)" 1 > /sys${DEVPATH}/macaddress
 		;;
-	*)
-		;;
 esac
