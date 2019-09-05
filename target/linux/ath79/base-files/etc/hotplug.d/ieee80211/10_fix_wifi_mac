@@ -17,16 +17,16 @@ case "$board" in
 	adtran,bsap1840)
 		macaddr_add "$(mtd_get_mac_binary 'Board data' 2)" $(($PHYNBR * 8 + 1)) > /sys${DEVPATH}/macaddress
 		;;
-	iodata,wn-ag300dgr)
-		# There is no eeprom data for 5 GHz wlan in "art" partition
-		# which would allow to patch the macaddress
-		[ "$PHYNBR" -eq 1 ] && \
-			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1 > /sys${DEVPATH}/macaddress
-		;;
 	iodata,wn-ac1600dgr)
 		# There is no eeprom data for 5 GHz wlan in "art" partition
 		# which would allow to patch the macaddress
 		[ "$PHYNBR" -eq 0 ] && \
+			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1 > /sys${DEVPATH}/macaddress
+		;;
+	iodata,wn-ag300dgr)
+		# There is no eeprom data for 5 GHz wlan in "art" partition
+		# which would allow to patch the macaddress
+		[ "$PHYNBR" -eq 1 ] && \
 			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1 > /sys${DEVPATH}/macaddress
 		;;
 	phicomm,k2t)
