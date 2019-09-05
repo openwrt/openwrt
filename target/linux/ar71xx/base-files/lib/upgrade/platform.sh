@@ -65,7 +65,7 @@ platform_do_upgrade_combined() {
 	then
 		local rootfspart=$(platform_find_rootfspart "$partitions" "$kernelpart")
 		local append=""
-		[ -f "$CONF_TAR" -a "$SAVE_CONFIG" -eq 1 ] && append="-j $CONF_TAR"
+		[ -f "$CONF_TAR" -a "$UPGRADE_OPT_UPGRADE_OPT_SAVE_CONFIG" -eq 1 ] && append="-j $CONF_TAR"
 
 		if [ "$PLATFORM_DO_UPGRADE_COMBINED_SEPARATE_MTD" -ne 1 ]; then
 		    ( dd if="$1" bs=$CI_BLKSZ skip=1 count=$kern_blocks 2>/dev/null; \
@@ -164,7 +164,7 @@ platform_do_upgrade_compex() {
 
 	if [ -n "$fw_mtd" ] &&  [ ${fw_blocks:-0} -gt 0 ]; then
 		local append=""
-		[ -f "$CONF_TAR" -a "$SAVE_CONFIG" -eq 1 ] && append="-j $CONF_TAR"
+		[ -f "$CONF_TAR" -a "$UPGRADE_OPT_UPGRADE_OPT_SAVE_CONFIG" -eq 1 ] && append="-j $CONF_TAR"
 
 		sync
 		dd if="$fw_file" bs=64k skip=1 count=$fw_blocks 2>/dev/null | \
