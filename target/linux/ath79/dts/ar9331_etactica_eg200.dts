@@ -11,6 +11,9 @@
 	compatible = "etactica,eg200", "qca,ar9331";
 
 	aliases {
+		led-boot = &led_etactica;
+		led-failsafe = &led_etactica;
+		led-upgrade = &led_etactica;
 		serial0 = &uart;
 	};
 
@@ -34,7 +37,7 @@
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 		};
 
-		etactica {
+		led_etactica: etactica {
 			label = "eg200:red:etactica";
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
