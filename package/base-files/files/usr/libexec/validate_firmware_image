@@ -8,6 +8,7 @@ include /lib/upgrade
 
 VALID=1
 FORCEABLE=1
+ALLOW_BACKUP=1
 
 # Mark image as invalid but still possible to install
 notify_firmware_invalid() {
@@ -18,6 +19,11 @@ notify_firmware_invalid() {
 notify_firmware_broken() {
 	VALID=0
 	FORCEABLE=0
+}
+
+# Mark image as incompatible with preserving a backup
+notify_firmware_no_backup() {
+	ALLOW_BACKUP=0
 }
 
 # Add result of validation test
@@ -55,5 +61,6 @@ json_init
 	json_close_object
 	json_add_boolean valid "$VALID"
 	json_add_boolean forceable "$FORCEABLE"
+	json_add_boolean allow_backup "$ALLOW_BACKUP"
 json_dump -i
 json_set_namespace $old_ns
