@@ -149,8 +149,8 @@ platform_do_upgrade_uDPU() {
 
 platform_copy_config_uDPU() {
 	# Config is saved on the /misc partition and copied on the rootfs after the reboot
-	if [ -f "$CONF_TAR" ]; then
-		cp -f "$CONF_TAR" "/misc/$BACKUP_FILE"
+	if [ -f "$UPGRADE_BACKUP" ]; then
+		cp -f "$UPGRADE_BACKUP" "/misc/$BACKUP_FILE"
 		sync
 	fi
 }
