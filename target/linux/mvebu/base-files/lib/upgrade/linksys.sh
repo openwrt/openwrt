@@ -93,6 +93,6 @@ platform_do_upgrade_linksys() {
 }
 
 platform_copy_config_linksys() {
-	cp -f "$CONF_TAR" "/tmp/syscfg/$BACKUP_FILE"
+	cp -f "$UPGRADE_BACKUP" "/tmp/syscfg/$BACKUP_FILE"
 	sync
 }
