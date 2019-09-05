@@ -389,7 +389,12 @@ mac80211_generate_mac() {
 	}
 
 	[ "$((0x$mask6))" -lt 255 ] && {
-		printf "%s:%s:%s:%s:%s:%02x" $1 $2 $3 $4 $5 $(( 0x$6 ^ $id ))
+		local tmpmac=$(printf "%s:%s:%s:%s:%s:%02x" $1 $2 $3 $4 $5 $(( 0x$6 ^ $id )))
+		until ! grep -qF "$tmpmac" /sys/class/net/*/address ; do
+			id=$(($id + 1))
+			tmpmac=$(printf "%s:%s:%s:%s:%s:%02x" $1 $2 $3 $4 $5 $(( 0x$6 ^ $id )))
+		done
+		echo $tmpmac
 		return
 	}
 
