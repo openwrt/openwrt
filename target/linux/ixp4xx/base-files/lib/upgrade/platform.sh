@@ -68,7 +68,7 @@ platform_do_upgrade_combined() {
 	   [ ${erase_size:-0} -gt 0 ];
 	then
 		local append=""
-		[ -f "$UPGRADE_BACKUP" -a "$UPGRADE_OPT_SAVE_CONFIG" -eq 1 ] && append="-j $UPGRADE_BACKUP"
+		[ -f "$UPGRADE_BACKUP" ] && append="-j $UPGRADE_BACKUP"
 
 		# write the kernel
 		dd if="$1" bs=$CI_BLKSZ skip=1 count=$kern_blocks 2>/dev/null | \
