@@ -21,6 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define U-Boot/Default
   BUILD_TARGET:=ipq40xx
+  BUILD_SUBTARGET:=generic
   UBOOT_BOARD:=$(1)
   UBOOT_IMAGE:=uboot-$(1).bin
 endef
