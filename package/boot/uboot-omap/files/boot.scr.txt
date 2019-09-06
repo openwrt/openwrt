@@ -1,0 +1,5 @@
+setenv bootargs console=${console} root=/dev/mmcblk0p2 rootwait
+
+load mmc 0:1 ${loadaddr} /zImage \
+&& load mmc 0:1 ${fdtaddr} /dtbs/${fdtfile} \
+&& bootz ${loadaddr} - ${fdtaddr}
