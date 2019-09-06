@@ -78,7 +78,7 @@ platform_pre_upgrade() {
 
 	case "$board" in
 	apalis*)
-		[ "$UPGRADE_OPT_SAVE_CONFIG" -eq 0 ] && {
+		[ -z "$UPGRADE_BACKUP" ] && {
 			jffs2reset -y
 			umount /overlay
 		}

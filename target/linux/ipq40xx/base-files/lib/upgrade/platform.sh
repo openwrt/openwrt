@@ -37,7 +37,7 @@ zyxel_do_upgrade() {
 
 	tar Oxf $tar_file ${board_dir}/kernel | mtd write - kernel
 
-	if [ "$UPGRADE_OPT_SAVE_CONFIG" -eq 1 ]; then
+	if [ -n "$UPGRADE_BACKUP" ]; then
 		tar Oxf $tar_file ${board_dir}/root | mtd -j "$UPGRADE_BACKUP" write - rootfs
 	else
 		tar Oxf $tar_file ${board_dir}/root | mtd write - rootfs
