@@ -6,6 +6,13 @@
 #include "qca956x.dtsi"
 
 / {
+	aliases {
+		led-boot = &led_white;
+		led-failsafe = &led_white;
+		led-running = &led_blue;
+		led-upgrade = &led_blue;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200n8";
 	};
@@ -13,16 +20,14 @@
 	leds {
 		compatible = "gpio-leds";
 
-		wifi_ac {
+		led_white: led_white {
 			label = "ubnt:white:dome";
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0tpt";
 		};
 
-		wifi_n {
+		led_blue: led_blue {
 			label = "ubnt:blue:dome";
 			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy1tpt";
 		};
 
 	};
