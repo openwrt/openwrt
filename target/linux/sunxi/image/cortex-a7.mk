@@ -239,4 +239,14 @@ endef
 
 TARGET_DEVICES += sun7i-a20-pcduino3
 
+define Device/sun8i-r40-bananapi-m2-ultra
+  DEVICE_VENDOR := LeMaker
+  DEVICE_MODEL := Banana Pi M2 Ultra
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-ata-core kmod-ata-sunxi
+  SUPPORTED_DEVICES:=lemaker,bananapi-m2-ultra
+  SUNXI_DTS:=sun8i-r40-bananapi-m2-ultra
+endef
+
+TARGET_DEVICES += sun8i-r40-bananapi-m2-ultra
+
 endif
