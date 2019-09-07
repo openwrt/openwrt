@@ -5,9 +5,11 @@ include $(INCLUDE_DIR)/image.mk
 
 define Build/buffalo-rootfs-cksum
 	( \
-		echo -ne "\x$$(od -A n -t u1 $@ | tr -s ' ' '\n' | \
-			$(STAGING_DIR_HOST)/bin/awk '{s+=$$0}END{printf "%x", 255-s%256}')"; \
-	) >> $@
+		squashfs_size="$$(dd if=$@ bs=4 skip=10 count=1 2> /dev/null | od -An -tu4 | tr -d ' \n')"; \
+		od -An -tu1 $@ | tr -s ' ' '\n' | \
+			$(STAGING_DIR_HOST)/bin/awk '{s+=$$0}END{printf "%c", 255-s%256}' | \
+				dd of=$@ bs=1 seek=$${squashfs_size} count=1 conv=notrunc 2> /dev/null; \
+	)
 endef
 
 define Device/Default
