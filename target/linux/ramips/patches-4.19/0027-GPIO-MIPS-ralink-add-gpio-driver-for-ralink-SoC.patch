@@ -72,7 +72,7 @@ Cc: linux-gpio@vger.kernel.org
  obj-$(CONFIG_GPIO_RCAR)		+= gpio-rcar.o
 --- /dev/null
 +++ b/drivers/gpio/gpio-ralink.c
-@@ -0,0 +1,355 @@
+@@ -0,0 +1,341 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -328,20 +328,6 @@ Cc: linux-gpio@vger.kernel.org
 +	dev_info(rg->chip.parent, "registering %d irq handlers\n", rg->chip.ngpio);
 +}
 +
-+static int ralink_gpio_request(struct gpio_chip *chip, unsigned offset)
-+{
-+	int gpio = chip->base + offset;
-+
-+	return pinctrl_request_gpio(gpio);
-+}
-+
-+static void ralink_gpio_free(struct gpio_chip *chip, unsigned offset)
-+{
-+	int gpio = chip->base + offset;
-+
-+	pinctrl_free_gpio(gpio);
-+}
-+
 +static int ralink_gpio_probe(struct platform_device *pdev)
 +{
 +	struct device_node *np = pdev->dev.of_node;
@@ -393,9 +379,9 @@ Cc: linux-gpio@vger.kernel.org
 +	rg->chip.direction_output = ralink_gpio_direction_output;
 +	rg->chip.get = ralink_gpio_get;
 +	rg->chip.set = ralink_gpio_set;
-+	rg->chip.request = ralink_gpio_request;
++	rg->chip.request = gpiochip_generic_request;
 +	rg->chip.to_irq = ralink_gpio_to_irq;
-+	rg->chip.free = ralink_gpio_free;
++	rg->chip.free = gpiochip_generic_free;
 +
 +	/* set polarity to low for all lines */
 +	rt_gpio_w32(rg, GPIO_REG_POL, 0);
