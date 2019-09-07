@@ -28,11 +28,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/mtd/nand/nand_device_list.h
  create mode 100644 drivers/mtd/nand/partition.h
 
---- a/drivers/mtd/nand/Kconfig
-+++ b/drivers/mtd/nand/Kconfig
-@@ -563,4 +563,10 @@ config MTD_NAND_MTK
- 	  Enables support for NAND controller on MTK SoCs.
- 	  This controller is found on mt27xx, mt81xx, mt65xx SoCs.
+--- a/drivers/mtd/nand/raw/Kconfig
++++ b/drivers/mtd/nand/raw/Kconfig
+@@ -561,4 +561,10 @@ config MTD_NAND_TEGRA
+ 	  is supported. Extra OOB bytes when using HW ECC are currently
+ 	  not supported.
  
 +config MTK_MTD_NAND
 +	tristate "Support for MTK SoC NAND controller"
@@ -41,18 +41,18 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	select MTD_NAND_ECC
 +
  endif # MTD_NAND
---- a/drivers/mtd/nand/Makefile
-+++ b/drivers/mtd/nand/Makefile
-@@ -60,6 +60,7 @@ obj-$(CONFIG_MTD_NAND_HISI504)	        +
- obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= brcmnand/
+--- a/drivers/mtd/nand/raw/Makefile
++++ b/drivers/mtd/nand/raw/Makefile
+@@ -57,6 +57,7 @@ obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= brcm
  obj-$(CONFIG_MTD_NAND_QCOM)		+= qcom_nandc.o
- obj-$(CONFIG_MTD_NAND_MTK)		+= mtk_nand.o mtk_ecc.o
+ obj-$(CONFIG_MTD_NAND_MTK)		+= mtk_ecc.o mtk_nand.o
+ obj-$(CONFIG_MTD_NAND_TEGRA)		+= tegra_nand.o
 +obj-$(CONFIG_MTK_MTD_NAND)		+= mtk_nand2.o bmt.o
  
  nand-objs := nand_base.o nand_bbt.o nand_timings.o nand_ids.o
  nand-objs += nand_amd.o
 --- /dev/null
-+++ b/drivers/mtd/nand/bmt.c
++++ b/drivers/mtd/nand/raw/bmt.c
 @@ -0,0 +1,750 @@
 +#include "bmt.h"
 +
@@ -805,7 +805,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +MODULE_DESCRIPTION("Bad Block mapping management for MediaTek NAND Flash Driver");
 +#endif
 --- /dev/null
-+++ b/drivers/mtd/nand/bmt.h
++++ b/drivers/mtd/nand/raw/bmt.h
 @@ -0,0 +1,80 @@
 +#ifndef __BMT_H__
 +#define __BMT_H__
@@ -888,7 +888,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#endif                          // #ifndef __BMT_H__
 --- /dev/null
-+++ b/drivers/mtd/nand/dev-nand.c
++++ b/drivers/mtd/nand/raw/dev-nand.c
 @@ -0,0 +1,63 @@
 +#include <linux/init.h>
 +#include <linux/kernel.h>
@@ -954,7 +954,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 +arch_initcall(mtk_nand_register);
 --- /dev/null
-+++ b/drivers/mtd/nand/mt6575_typedefs.h
++++ b/drivers/mtd/nand/raw/mt6575_typedefs.h
 @@ -0,0 +1,340 @@
 +/* Copyright Statement:
 + *
@@ -1297,7 +1297,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif  // _MT6575_TYPEDEFS_H
 +
 --- /dev/null
-+++ b/drivers/mtd/nand/mtk_nand2.c
++++ b/drivers/mtd/nand/raw/mtk_nand2.c
 @@ -0,0 +1,2345 @@
 +/******************************************************************************
 +* mtk_nand2.c - MTK NAND Flash Device Driver
@@ -3645,7 +3645,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +module_exit(mtk_nand_exit);
 +MODULE_LICENSE("GPL");
 --- /dev/null
-+++ b/drivers/mtd/nand/mtk_nand2.h
++++ b/drivers/mtd/nand/raw/mtk_nand2.h
 @@ -0,0 +1,452 @@
 +#ifndef __MTK_NAND_H
 +#define __MTK_NAND_H
@@ -4099,8 +4099,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +extern u32	CFG_BLOCKSIZE;
 +#endif
 +#endif
---- a/drivers/mtd/nand/nand_base.c
-+++ b/drivers/mtd/nand/nand_base.c
+--- a/drivers/mtd/nand/raw/nand_base.c
++++ b/drivers/mtd/nand/raw/nand_base.c
 @@ -48,7 +48,7 @@
  #include <linux/mtd/partitions.h>
  #include <linux/of.h>
@@ -4119,7 +4119,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
  	struct nand_chip *chip = mtd_to_nand(mtd);
  
-@@ -968,7 +968,7 @@ static void panic_nand_get_device(struct
+@@ -1042,7 +1042,7 @@ static void panic_nand_get_device(struct
   *
   * Get the device and lock it for exclusive access
   */
@@ -4129,7 +4129,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
  	struct nand_chip *chip = mtd_to_nand(mtd);
 --- /dev/null
-+++ b/drivers/mtd/nand/nand_def.h
++++ b/drivers/mtd/nand/raw/nand_def.h
 @@ -0,0 +1,123 @@
 +#ifndef __NAND_DEF_H__
 +#define __NAND_DEF_H__
@@ -4255,7 +4255,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#endif /* __NAND_DEF_H__ */
 --- /dev/null
-+++ b/drivers/mtd/nand/nand_device_list.h
++++ b/drivers/mtd/nand/raw/nand_device_list.h
 @@ -0,0 +1,59 @@
 +/* Copyright Statement:
 + *
@@ -4317,7 +4317,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#endif
 --- /dev/null
-+++ b/drivers/mtd/nand/partition.h
++++ b/drivers/mtd/nand/raw/partition.h
 @@ -0,0 +1,115 @@
 +/* Copyright Statement:
 + *

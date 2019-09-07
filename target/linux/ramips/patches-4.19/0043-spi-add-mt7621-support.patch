@@ -43,7 +43,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
 
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -569,6 +569,12 @@ config SPI_RT2880
+@@ -539,6 +539,12 @@ config SPI_RT2880
  	help
  	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
  
@@ -58,7 +58,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	depends on ARCH_S3C24XX
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -60,6 +60,7 @@ obj-$(CONFIG_SPI_MPC512x_PSC)		+= spi-mp
+@@ -57,6 +57,7 @@ obj-$(CONFIG_SPI_MPC512x_PSC)		+= spi-mp
  obj-$(CONFIG_SPI_MPC52xx_PSC)		+= spi-mpc52xx-psc.o
  obj-$(CONFIG_SPI_MPC52xx)		+= spi-mpc52xx.o
  obj-$(CONFIG_SPI_MT65XX)                += spi-mt65xx.o

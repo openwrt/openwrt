@@ -13,10 +13,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/media/usb/uvc/uvc_driver.c
 +++ b/drivers/media/usb/uvc/uvc_driver.c
-@@ -2735,6 +2735,18 @@ static const struct usb_device_id uvc_id
+@@ -2831,6 +2831,18 @@ static const struct usb_device_id uvc_id
  	  .bInterfaceSubClass	= 1,
  	  .bInterfaceProtocol	= 0,
- 	  .driver_info		= UVC_QUIRK_FORCE_Y8 },
+ 	  .driver_info		= (kernel_ulong_t)&uvc_quirk_force_y8 },
 +	/* iPassion iP2970 */
 +	{ .match_flags          = USB_DEVICE_ID_MATCH_DEVICE
 +				| USB_DEVICE_ID_MATCH_INT_INFO,
@@ -25,24 +25,24 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	 .bInterfaceClass	= USB_CLASS_VIDEO,
 +	 .bInterfaceSubClass	= 1,
 +	 .bInterfaceProtocol	= 0,
-+	 .driver_info		= UVC_QUIRK_PROBE_MINMAX
++	 .driver_info		= UVC_QUIRK_INFO(UVC_QUIRK_PROBE_MINMAX
 +				| UVC_QUIRK_STREAM_NO_FID
 +				| UVC_QUIRK_MOTION
-+				| UVC_QUIRK_SINGLE_ISO },
++				| UVC_QUIRK_SINGLE_ISO) },
  	/* Generic USB Video Class */
  	{ USB_INTERFACE_INFO(USB_CLASS_VIDEO, 1, UVC_PC_PROTOCOL_UNDEFINED) },
  	{ USB_INTERFACE_INFO(USB_CLASS_VIDEO, 1, UVC_PC_PROTOCOL_15) },
 --- a/drivers/media/usb/uvc/uvc_status.c
 +++ b/drivers/media/usb/uvc/uvc_status.c
-@@ -139,6 +139,7 @@ static void uvc_status_complete(struct u
- 		switch (dev->status[0] & 0x0f) {
- 		case UVC_STATUS_TYPE_CONTROL:
- 			uvc_event_control(dev, dev->status, len);
+@@ -228,6 +228,7 @@ static void uvc_status_complete(struct u
+ 			if (uvc_event_control(urb, status, len))
+ 				/* The URB will be resubmitted in work context. */
+ 				return;
 +			dev->motion = 1;
  			break;
+ 		}
  
- 		case UVC_STATUS_TYPE_STREAMING:
-@@ -182,6 +183,7 @@ int uvc_status_init(struct uvc_device *d
+@@ -276,6 +277,7 @@ int uvc_status_init(struct uvc_device *d
  	}
  
  	pipe = usb_rcvintpipe(dev->udev, ep->desc.bEndpointAddress);
@@ -64,7 +64,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include <media/v4l2-common.h>
  
-@@ -1101,9 +1106,149 @@ static void uvc_video_decode_data(struct
+@@ -1126,9 +1131,149 @@ static void uvc_video_decode_data(struct
  	}
  }
  
@@ -196,7 +196,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#define MOTION_FLAG_OFFSET	4
  static void uvc_video_decode_end(struct uvc_streaming *stream,
- 		struct uvc_buffer *buf, const __u8 *data, int len)
+ 		struct uvc_buffer *buf, const u8 *data, int len)
  {
 +	if ((stream->dev->quirks & UVC_QUIRK_MOTION) &&
 +			(data[len - 2] == 0xff) && (data[len - 1] == 0xd9)) {
@@ -214,7 +214,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	/* Mark the buffer as done if the EOF marker is set. */
  	if (data[1] & UVC_STREAM_EOF && buf->bytesused != 0) {
  		uvc_trace(UVC_TRACE_FRAME, "Frame complete (EOF found).\n");
-@@ -1518,6 +1663,8 @@ static int uvc_init_video_isoc(struct uv
+@@ -1656,6 +1801,8 @@ static int uvc_init_video_isoc(struct uv
  	if (npackets == 0)
  		return -ENOMEM;
  
@@ -225,7 +225,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	for (i = 0; i < UVC_URBS; ++i) {
 --- a/drivers/media/usb/uvc/uvcvideo.h
 +++ b/drivers/media/usb/uvc/uvcvideo.h
-@@ -186,7 +186,9 @@
+@@ -195,7 +195,9 @@
  #define UVC_QUIRK_RESTRICT_FRAME_RATE	0x00000200
  #define UVC_QUIRK_RESTORE_CTRLS_ON_INIT	0x00000400
  #define UVC_QUIRK_FORCE_Y8		0x00000800
@@ -236,11 +236,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  /* Format flags */
  #define UVC_FMT_FLAG_COMPRESSED		0x00000001
  #define UVC_FMT_FLAG_STREAM		0x00000002
-@@ -584,6 +586,7 @@ struct uvc_device {
- 	__u8 *status;
+@@ -606,6 +608,7 @@ struct uvc_device {
+ 	u8 *status;
  	struct input_dev *input;
  	char input_phys[64];
 +	int motion;
- };
  
- enum uvc_handle_state {
+ 	struct uvc_ctrl_work {
+ 		struct work_struct work;

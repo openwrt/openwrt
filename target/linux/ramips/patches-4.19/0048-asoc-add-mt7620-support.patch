@@ -38,7 +38,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  __iomem void *plat_of_remap_node(const char *node)
 --- a/sound/soc/Kconfig
 +++ b/sound/soc/Kconfig
-@@ -59,6 +59,7 @@ source "sound/soc/mxs/Kconfig"
+@@ -62,6 +62,7 @@ source "sound/soc/mxs/Kconfig"
  source "sound/soc/pxa/Kconfig"
  source "sound/soc/qcom/Kconfig"
  source "sound/soc/rockchip/Kconfig"
@@ -48,7 +48,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  source "sound/soc/sirf/Kconfig"
 --- a/sound/soc/Makefile
 +++ b/sound/soc/Makefile
-@@ -40,6 +40,7 @@ obj-$(CONFIG_SND_SOC)	+= kirkwood/
+@@ -46,6 +46,7 @@ obj-$(CONFIG_SND_SOC)	+= kirkwood/
  obj-$(CONFIG_SND_SOC)	+= pxa/
  obj-$(CONFIG_SND_SOC)	+= qcom/
  obj-$(CONFIG_SND_SOC)	+= rockchip/

@@ -16,7 +16,7 @@ Signed-off-by: Tobias Wolf <dev-NTEO@vplace.de>
 
 --- a/arch/mips/kernel/setup.c
 +++ b/arch/mips/kernel/setup.c
-@@ -369,6 +369,8 @@ static unsigned long __init bootmap_byte
+@@ -377,6 +377,8 @@ static unsigned long __init bootmap_byte
  	return ALIGN(bytes, sizeof(long));
  }
  
@@ -25,7 +25,7 @@ Signed-off-by: Tobias Wolf <dev-NTEO@vplace.de>
  static void __init bootmem_init(void)
  {
  	unsigned long reserved_end;
-@@ -442,7 +444,7 @@ static void __init bootmem_init(void)
+@@ -456,7 +458,7 @@ static void __init bootmem_init(void)
  	/*
  	 * Reserve any memory between the start of RAM and PHYS_OFFSET
  	 */
@@ -34,7 +34,7 @@ Signed-off-by: Tobias Wolf <dev-NTEO@vplace.de>
  		add_memory_region(PHYS_OFFSET, ramstart - PHYS_OFFSET,
  				  BOOT_MEM_RESERVED);
  
-@@ -652,8 +654,6 @@ static void __init bootmem_init(void)
+@@ -665,8 +667,6 @@ static void __init bootmem_init(void)
   * initialization hook for anything else was introduced.
   */
  

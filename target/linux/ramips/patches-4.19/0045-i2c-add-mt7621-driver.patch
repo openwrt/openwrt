@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -868,6 +868,11 @@ config I2C_RALINK
+@@ -881,6 +881,11 @@ config I2C_RALINK
  	depends on RALINK && !SOC_MT7621
  	select OF_I2C
  
@@ -32,9 +32,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_I2C_PXA_PCI)	+= i2c-pxa-pci.o
  obj-$(CONFIG_I2C_RALINK)	+= i2c-ralink.o
 +obj-$(CONFIG_I2C_MT7621)	+= i2c-mt7621.o
+ obj-$(CONFIG_I2C_QCOM_GENI)	+= i2c-qcom-geni.o
  obj-$(CONFIG_I2C_QUP)		+= i2c-qup.o
  obj-$(CONFIG_I2C_RIIC)		+= i2c-riic.o
- obj-$(CONFIG_I2C_RK3X)		+= i2c-rk3x.o
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-mt7621.c
 @@ -0,0 +1,433 @@

@@ -47,7 +47,7 @@ Cc: linux-gpio@vger.kernel.org
 +#endif /* __ASM_MACH_RALINK_GPIO_H */
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -398,6 +398,12 @@ config GPIO_REG
+@@ -439,6 +439,12 @@ config GPIO_REG
  	  A 32-bit single register GPIO fixed in/out implementation.  This
  	  can be used to represent any register as a set of GPIO signals.
  
@@ -62,9 +62,9 @@ Cc: linux-gpio@vger.kernel.org
  	depends on PLAT_SPEAR
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -98,6 +98,7 @@ obj-$(CONFIG_GPIO_PCI_IDIO_16)	+= gpio-p
- obj-$(CONFIG_GPIO_PISOSR)	+= gpio-pisosr.o
+@@ -104,6 +104,7 @@ obj-$(CONFIG_GPIO_PISOSR)	+= gpio-pisosr
  obj-$(CONFIG_GPIO_PL061)	+= gpio-pl061.o
+ obj-$(CONFIG_GPIO_PMIC_EIC_SPRD)	+= gpio-pmic-eic-sprd.o
  obj-$(CONFIG_GPIO_PXA)		+= gpio-pxa.o
 +obj-$(CONFIG_GPIO_RALINK)	+= gpio-ralink.o
  obj-$(CONFIG_GPIO_RC5T583)	+= gpio-rc5t583.o

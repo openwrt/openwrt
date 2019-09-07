@@ -16,7 +16,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -563,6 +563,12 @@ config SPI_QUP
+@@ -533,6 +533,12 @@ config SPI_QUP
  	  This driver can also be built as a module.  If so, the module
  	  will be called spi_qup.
  
@@ -31,7 +31,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
  	depends on ARCH_S3C24XX
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -81,6 +81,7 @@ obj-$(CONFIG_SPI_QUP)			+= spi-qup.o
+@@ -78,6 +78,7 @@ obj-$(CONFIG_SPI_QUP)			+= spi-qup.o
  obj-$(CONFIG_SPI_ROCKCHIP)		+= spi-rockchip.o
  obj-$(CONFIG_SPI_RB4XX)			+= spi-rb4xx.o
  obj-$(CONFIG_SPI_RSPI)			+= spi-rspi.o

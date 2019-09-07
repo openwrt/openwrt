@@ -21,10 +21,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +					 * Like SPI_NOR_4B_OPCODES, but for read
 +					 * op code only.
 +					 */
- };
  
- #define JEDEC_MFR(info)	((info)->id[0])
-@@ -240,6 +244,15 @@ static inline u8 spi_nor_convert_3to4_er
+ 	int	(*quad_enable)(struct spi_nor *nor);
+ };
+@@ -242,6 +246,15 @@ static inline u8 spi_nor_convert_3to4_er
  				      ARRAY_SIZE(spi_nor_3to4_erase));
  }
  
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void spi_nor_set_4byte_opcodes(struct spi_nor *nor,
  				      const struct flash_info *info)
  {
-@@ -467,6 +480,36 @@ static int spi_nor_erase_sector(struct s
+@@ -497,6 +510,36 @@ static int spi_nor_erase_sector(struct s
  	return nor->write_reg(nor, nor->erase_opcode, buf, nor->addr_width);
  }
  
@@ -77,7 +77,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /*
   * Erase an address range on the nor chip.  The address range may extend
   * one or more erase sectors.  Return an error is there is a problem erasing.
-@@ -492,6 +535,10 @@ static int spi_nor_erase(struct mtd_info
+@@ -522,6 +565,10 @@ static int spi_nor_erase(struct mtd_info
  	if (ret)
  		return ret;
  
@@ -88,15 +88,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* whole-chip erase? */
  	if (len == mtd->size && !(nor->flags & SNOR_F_NO_OP_CHIP_ERASE)) {
  		unsigned long timeout;
-@@ -542,6 +589,7 @@ static int spi_nor_erase(struct mtd_info
+@@ -572,6 +619,7 @@ static int spi_nor_erase(struct mtd_info
  	write_disable(nor);
  
  erase_err:
 +	spi_nor_check_ext_addr(nor, 0);
  	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_ERASE);
  
- 	instr->state = ret ? MTD_ERASE_FAILED : MTD_ERASE_DONE;
-@@ -834,7 +882,9 @@ static int spi_nor_lock(struct mtd_info
+ 	return ret;
+@@ -872,7 +920,9 @@ static int spi_nor_lock(struct mtd_info
  	if (ret)
  		return ret;
  
@@ -106,7 +106,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_UNLOCK);
  	return ret;
-@@ -849,7 +899,9 @@ static int spi_nor_unlock(struct mtd_inf
+@@ -887,7 +937,9 @@ static int spi_nor_unlock(struct mtd_inf
  	if (ret)
  		return ret;
  
@@ -116,7 +116,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_LOCK);
  	return ret;
-@@ -1177,7 +1229,7 @@ static const struct flash_info spi_nor_i
+@@ -1252,7 +1304,7 @@ static const struct flash_info spi_nor_i
  	{ "w25q80", INFO(0xef5014, 0, 64 * 1024,  16, SECT_4K) },
  	{ "w25q80bl", INFO(0xef4014, 0, 64 * 1024,  16, SECT_4K) },
  	{ "w25q128", INFO(0xef4018, 0, 64 * 1024, 256, SECT_4K) },
@@ -125,7 +125,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	{ "w25m512jv", INFO(0xef7119, 0, 64 * 1024, 1024,
  			SECT_4K | SPI_NOR_QUAD_READ | SPI_NOR_DUAL_READ) },
  
-@@ -1237,6 +1289,9 @@ static int spi_nor_read(struct mtd_info
+@@ -1312,6 +1364,9 @@ static int spi_nor_read(struct mtd_info
  	if (ret)
  		return ret;
  
@@ -135,7 +135,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	while (len) {
  		loff_t addr = from;
  
-@@ -1261,6 +1316,18 @@ static int spi_nor_read(struct mtd_info
+@@ -1336,6 +1391,18 @@ static int spi_nor_read(struct mtd_info
  	ret = 0;
  
  read_err:
@@ -154,7 +154,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_READ);
  	return ret;
  }
-@@ -1362,6 +1429,10 @@ static int spi_nor_write(struct mtd_info
+@@ -1437,6 +1504,10 @@ static int spi_nor_write(struct mtd_info
  	if (ret)
  		return ret;
  
@@ -165,7 +165,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	for (i = 0; i < len; ) {
  		ssize_t written;
  		loff_t addr = to + i;
-@@ -1402,6 +1473,7 @@ static int spi_nor_write(struct mtd_info
+@@ -1477,6 +1548,7 @@ static int spi_nor_write(struct mtd_info
  	}
  
  write_err:
@@ -173,7 +173,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_WRITE);
  	return ret;
  }
-@@ -2818,8 +2890,10 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -2955,8 +3027,10 @@ int spi_nor_scan(struct spi_nor *nor, co
  	} else if (mtd->size > 0x1000000) {
  		/* enable 4-byte addressing if the device exceeds 16MiB */
  		nor->addr_width = 4;
@@ -184,11 +184,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		else if (JEDEC_MFR(info) == SNOR_MFR_SPANSION ||
 +			 info->flags & SPI_NOR_4B_OPCODES)
  			spi_nor_set_4byte_opcodes(nor, info);
- 		else
- 			set_4byte(nor, info, 1);
+ 	} else {
+ 		nor->addr_width = 3;
 --- a/include/linux/mtd/spi-nor.h
 +++ b/include/linux/mtd/spi-nor.h
-@@ -102,6 +102,7 @@
+@@ -105,6 +105,7 @@
  /* Used for Macronix and Winbond flashes. */
  #define SPINOR_OP_EN4B		0xb7	/* Enter 4-byte mode */
  #define SPINOR_OP_EX4B		0xe9	/* Exit 4-byte mode */
@@ -196,15 +196,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /* Used for Spansion flashes only. */
  #define SPINOR_OP_BRWR		0x17	/* Bank register write */
-@@ -229,6 +230,7 @@ enum spi_nor_option_flags {
- 	SNOR_F_S3AN_ADDR_DEFAULT = BIT(3),
+@@ -236,6 +237,7 @@ enum spi_nor_option_flags {
  	SNOR_F_READY_XSR_RDY	= BIT(4),
  	SNOR_F_USE_CLSR		= BIT(5),
-+	SNOR_F_4B_EXT_ADDR	= BIT(6),
+ 	SNOR_F_BROKEN_RESET	= BIT(6),
++	SNOR_F_4B_EXT_ADDR	= BIT(7),
  };
  
  /**
-@@ -280,6 +282,7 @@ struct spi_nor {
+@@ -296,6 +298,7 @@ struct spi_nor {
  	enum spi_nor_protocol	reg_proto;
  	bool			sst_write_second;
  	u32			flags;

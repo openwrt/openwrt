@@ -14,7 +14,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -629,6 +629,8 @@ config RALINK
+@@ -623,6 +623,8 @@ config RALINK
  	select CLKDEV_LOOKUP
  	select ARCH_HAS_RESET_CONTROLLER
  	select RESET_CONTROLLER
@@ -25,7 +25,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	bool "SGI IP22 (Indy/Indigo2)"
 --- a/drivers/pinctrl/Kconfig
 +++ b/drivers/pinctrl/Kconfig
-@@ -143,6 +143,11 @@ config PINCTRL_LPC18XX
+@@ -138,6 +138,11 @@ config PINCTRL_LPC18XX
  	help
  	  Pinctrl driver for NXP LPC18xx/43xx System Control Unit (SCU).
  
@@ -39,7 +39,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on SOC_FALCON
 --- a/drivers/pinctrl/Makefile
 +++ b/drivers/pinctrl/Makefile
-@@ -28,6 +28,7 @@ obj-$(CONFIG_PINCTRL_PALMAS)	+= pinctrl-
+@@ -26,6 +26,7 @@ obj-$(CONFIG_PINCTRL_PALMAS)	+= pinctrl-
  obj-$(CONFIG_PINCTRL_PIC32)	+= pinctrl-pic32.o
  obj-$(CONFIG_PINCTRL_PISTACHIO)	+= pinctrl-pistachio.o
  obj-$(CONFIG_PINCTRL_ROCKCHIP)	+= pinctrl-rockchip.o

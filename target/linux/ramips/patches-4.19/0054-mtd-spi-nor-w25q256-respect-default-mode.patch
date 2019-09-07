@@ -1,6 +1,6 @@
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -142,20 +142,29 @@ static int read_fsr(struct spi_nor *nor)
+@@ -144,20 +144,29 @@ static int read_fsr(struct spi_nor *nor)
   * location. Return the configuration register value.
   * Returns negative if error occurred.
   */
@@ -33,7 +33,7 @@
  /*
   * Write status register 1 byte
   * Returns negative if error occurred.
-@@ -2890,9 +2899,16 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -3027,9 +3036,16 @@ int spi_nor_scan(struct spi_nor *nor, co
  	} else if (mtd->size > 0x1000000) {
  		/* enable 4-byte addressing if the device exceeds 16MiB */
  		nor->addr_width = 4;
@@ -52,10 +52,10 @@
 +		} else if (JEDEC_MFR(info) == SNOR_MFR_SPANSION ||
  			 info->flags & SPI_NOR_4B_OPCODES)
  			spi_nor_set_4byte_opcodes(nor, info);
- 		else
+ 	} else {
 --- a/include/linux/mtd/spi-nor.h
 +++ b/include/linux/mtd/spi-nor.h
-@@ -103,6 +103,7 @@
+@@ -106,6 +106,7 @@
  #define SPINOR_OP_EN4B		0xb7	/* Enter 4-byte mode */
  #define SPINOR_OP_EX4B		0xe9	/* Exit 4-byte mode */
  #define SPINOR_OP_WREAR		0xc5	/* Write extended address register */
@@ -63,7 +63,7 @@
  
  /* Used for Spansion flashes only. */
  #define SPINOR_OP_BRWR		0x17	/* Bank register write */
-@@ -135,6 +136,7 @@
+@@ -141,6 +142,7 @@
  
  /* Configuration Register bits. */
  #define CR_QUAD_EN_SPAN		BIT(1)	/* Spansion Quad I/O */

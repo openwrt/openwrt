@@ -1,16 +1,16 @@
---- a/drivers/mtd/nand/nand_base.c
-+++ b/drivers/mtd/nand/nand_base.c
-@@ -1908,6 +1908,9 @@ static int nand_do_read_ops(struct mtd_i
- 						 __func__, buf);
- 
- read_retry:
+--- a/drivers/mtd/nand/raw/nand_base.c
++++ b/drivers/mtd/nand/raw/nand_base.c
+@@ -3588,6 +3588,9 @@ read_retry:
+ 			 * Now read the page into the buffer.  Absent an error,
+ 			 * the read methods return max bitflips per ecc step.
+ 			 */
 +#ifdef CONFIG_MTK_MTD_NAND
 +			ret = chip->read_page(mtd, chip, bufpoi, page);
 +#else
- 			if (nand_standard_page_accessors(&chip->ecc))
- 				chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
- 
-@@ -1927,6 +1930,7 @@ read_retry:
+ 			if (unlikely(ops->mode == MTD_OPS_RAW))
+ 				ret = chip->ecc.read_page_raw(mtd, chip, bufpoi,
+ 							      oob_required,
+@@ -3600,6 +3603,7 @@ read_retry:
  			else
  				ret = chip->ecc.read_page(mtd, chip, bufpoi,
  							  oob_required, page);
@@ -20,13 +20,13 @@
  					/* Invalidate page cache */
 --- a/include/linux/mtd/rawnand.h
 +++ b/include/linux/mtd/rawnand.h
-@@ -897,6 +897,9 @@ struct nand_chip {
- 	int (*setup_data_interface)(struct mtd_info *mtd, int chipnr,
- 				    const struct nand_data_interface *conf);
+@@ -1443,6 +1443,9 @@ static inline void *nand_get_manufacture
+ #define NAND_MFR_ATO		0x9b
+ #define NAND_MFR_WINBOND	0xef
  
 +#ifdef CONFIG_MTK_MTD_NAND
 +	int (*read_page)(struct mtd_info *mtd, struct nand_chip *chip, u8 *buf, int page);
 +#endif /* CONFIG_MTK_MTD_NAND */
  
- 	int chip_delay;
- 	unsigned int options;
+ /*
+  * A helper for defining older NAND chips where the second ID byte fully
