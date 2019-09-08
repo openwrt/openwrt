@@ -730,7 +730,7 @@ define Device/wt3020-4M
 	poray-header -B WT3020 -F 4M
   DEVICE_TITLE := Nexx WT3020 (4MB)
 endef
-TARGET_DEVICES += wt3020-4M
+#TARGET_DEVICES += wt3020-4M
 
 define Device/wt3020-8M
   DTS := WT3020-8M
