@@ -1,0 +1,52 @@
+From 00a6cc73da61b03c146b6c341d0d1e572bcef432 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <j@w1.fi>
+Date: Mon, 24 Jun 2019 23:02:51 +0300
+Subject: [PATCH 5/6] EAP-pwd: Run through prf result processing even if it >=
+ prime
+
+This reduces differences in timing and memory access within the
+hunting-and-pecking loop for ECC groups that have a prime that is not
+close to a power of two (e.g., Brainpool curves).
+
+Signed-off-by: Jouni Malinen <j@w1.fi>
+(cherry picked from commit cd803299ca485eb857e37c88f973fccfbb8600e5)
+---
+ src/eap_common/eap_pwd_common.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+--- a/src/eap_common/eap_pwd_common.c
++++ b/src/eap_common/eap_pwd_common.c
+@@ -155,6 +155,8 @@ int compute_password_element(EAP_PWD_gro
+ 	struct crypto_bignum *x_candidate = NULL, *cofactor = NULL;
+ 	const struct crypto_bignum *prime;
+ 	u8 mask, found_ctr = 0, is_odd = 0;
++	int cmp_prime;
++	unsigned int in_range;
+ 
+ 	if (grp->pwe)
+ 		return -1;
+@@ -247,8 +249,13 @@ int compute_password_element(EAP_PWD_gro
+ 		if (primebitlen % 8)
+ 			buf_shift_right(prfbuf, primebytelen,
+ 					8 - primebitlen % 8);
+-		if (const_time_memcmp(prfbuf, prime_bin, primebytelen) >= 0)
+-			continue;
++		cmp_prime = const_time_memcmp(prfbuf, prime_bin, primebytelen);
++		/* Create a const_time mask for selection based on prf result
++		 * being smaller than prime. */
++		in_range = const_time_fill_msb((unsigned int) cmp_prime);
++		/* The algorithm description would skip the next steps if
++		 * cmp_prime >= 0, but go through them regardless to minimize
++		 * externally observable differences in behavior. */
+ 
+ 		crypto_bignum_deinit(x_candidate, 1);
+ 		x_candidate = crypto_bignum_init_set(prfbuf, primebytelen);
+@@ -311,7 +318,7 @@ int compute_password_element(EAP_PWD_gro
+ 			goto fail;
+ 		mask = const_time_eq(res, check);
+ 		found_ctr = const_time_select_u8(found, found_ctr, ctr);
+-		found |= mask;
++		found |= mask & in_range;
+ 	}
+ 	if (found == 0) {
+ 		wpa_printf(MSG_INFO,
