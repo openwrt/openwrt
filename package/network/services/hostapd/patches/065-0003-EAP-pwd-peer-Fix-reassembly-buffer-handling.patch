@@ -1,0 +1,40 @@
+From d2d1a324ce937628e4d9d9999fe113819b7d4478 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni@codeaurora.org>
+Date: Wed, 17 Apr 2019 02:21:20 +0300
+Subject: [PATCH 3/3] EAP-pwd peer: Fix reassembly buffer handling
+
+Unexpected fragment might result in data->inbuf not being allocated
+before processing and that could have resulted in NULL pointer
+dereference. Fix that by explicitly checking for data->inbuf to be
+available before using it.
+
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+---
+ src/eap_peer/eap_pwd.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/src/eap_peer/eap_pwd.c
++++ b/src/eap_peer/eap_pwd.c
+@@ -969,6 +969,13 @@ eap_pwd_process(struct eap_sm *sm, void
+ 	 * buffer and ACK the fragment
+ 	 */
+ 	if (EAP_PWD_GET_MORE_BIT(lm_exch) || data->in_frag_pos) {
++		if (!data->inbuf) {
++			wpa_printf(MSG_DEBUG,
++				   "EAP-pwd: No buffer for reassembly");
++			ret->methodState = METHOD_DONE;
++			ret->decision = DECISION_FAIL;
++			return NULL;
++		}
+ 		data->in_frag_pos += len;
+ 		if (data->in_frag_pos > wpabuf_size(data->inbuf)) {
+ 			wpa_printf(MSG_INFO, "EAP-pwd: Buffer overflow attack "
+@@ -995,7 +1002,7 @@ eap_pwd_process(struct eap_sm *sm, void
+ 	/*
+ 	 * we're buffering and this is the last fragment
+ 	 */
+-	if (data->in_frag_pos) {
++	if (data->in_frag_pos && data->inbuf) {
+ 		wpa_printf(MSG_DEBUG, "EAP-pwd: Last fragment, %d bytes",
+ 			   (int) len);
+ 		pos = wpabuf_head_u8(data->inbuf);
