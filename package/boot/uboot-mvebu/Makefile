@@ -29,8 +29,15 @@ define U-Boot/clearfog
   UBOOT_IMAGE:=u-boot-spl.kwb
 endef
 
+define U-Boot/uDPU
+  NAME:=Methode uDPU
+  BUILD_DEVICES:=methode_udpu
+  BUILD_SUBTARGET:=cortexa53
+endef
+
 UBOOT_TARGETS:= \
-	clearfog
+	clearfog \
+	uDPU
 
 Build/Exports:=$(Host/Exports)
 
@@ -44,7 +51,7 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	$(CP) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-u-boot-spl.kwb
+	$(CP) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-$(UBOOT_IMAGE)
 endef
 
 $(eval $(call BuildPackage/U-Boot))
