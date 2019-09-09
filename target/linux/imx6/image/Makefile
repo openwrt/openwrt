@@ -131,7 +131,9 @@ define Device/Default
 endef
 
 define Device/ventana
-  DEVICE_TITLE := Gateworks Ventana family (normal NAND flash)
+  DEVICE_VENDOR := Gateworks
+  DEVICE_MODEL := Ventana family
+  DEVICE_VARIANT := normal NAND flash
   DEVICE_DTS:= \
 	imx6dl-gw51xx \
 	imx6dl-gw52xx \
@@ -171,8 +173,10 @@ TARGET_DEVICES += ventana
 
 define Device/ventana-large
   $(Device/ventana)
+  DEVICE_VENDOR := Gateworks
+  DEVICE_MODEL := Ventana family
+  DEVICE_VARIANT := large NAND flash
   DEVICE_NAME := ventana
-  DEVICE_TITLE := Gateworks Ventana family (large NAND flash)
   IMAGES := nand.ubi
   PAGESIZE := 4096
   BLOCKSIZE := 256k
@@ -181,17 +185,19 @@ endef
 TARGET_DEVICES += ventana-large
 
 define Device/wandboard
-  DEVICE_TITLE := Wandboard Dual
+  DEVICE_VENDOR := Wandboard
+  DEVICE_MODEL := Dual
   DEVICE_DTS := imx6dl-wandboard
 endef
 TARGET_DEVICES += wandboard
 
 define Device/cubox-i
+  DEVICE_VENDOR := SolidRun
+  DEVICE_MODEL := CuBox-i
   KERNEL := kernel-bin | install-dtb
   UBOOT := mx6cuboxi
   BOOT_SCRIPT = bootscript-cubox
   DEVICE_NAME := cubox
-  DEVICE_TITLE := SolidRun CuBox-i
   DEVICE_PACKAGES := kmod-drm-imx kmod-drm-imx-hdmi kmod-usb-hid
   DEVICE_DTS := imx6q-cubox-i imx6dl-cubox-i imx6q-hummingboard imx6dl-hummingboard
   IMAGES := combined.bin
@@ -201,7 +207,8 @@ endef
 TARGET_DEVICES += cubox-i
 
 define Device/apalis
-  DEVICE_TITLE := Toradex Apalis family
+  DEVICE_VENDOR := Toradex
+  DEVICE_MODEL := Apalis family
   SUPPORTED_DEVICES := apalis,ixora apalis,eval
   DEVICE_DTS := \
 	  imx6q-apalis-eval \
