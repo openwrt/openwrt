@@ -242,7 +242,7 @@ static void fe_clean_rx(struct fe_priv *priv)
 	}
 
 	if (ring->rx_dma) {
-		dma_free_coherent(&priv->netdev->dev,
+		dma_free_coherent(priv->dev,
 				  ring->rx_ring_size * sizeof(*ring->rx_dma),
 				  ring->rx_dma,
 				  ring->rx_phys);
@@ -259,7 +259,6 @@ static void fe_clean_rx(struct fe_priv *priv)
 
 static int fe_alloc_rx(struct fe_priv *priv)
 {
-	struct net_device *netdev = priv->netdev;
 	struct fe_rx_ring *ring = &priv->rx_ring;
 	int i, pad;
 
@@ -276,7 +275,7 @@ static int fe_alloc_rx(struct fe_priv *priv)
 			goto no_rx_mem;
 	}
 
-	ring->rx_dma = dma_alloc_coherent(&netdev->dev,
+	ring->rx_dma = dma_alloc_coherent(priv->dev,
 			ring->rx_ring_size * sizeof(*ring->rx_dma),
 			&ring->rx_phys,
 			GFP_ATOMIC | __GFP_ZERO);
@@ -288,11 +287,11 @@ static int fe_alloc_rx(struct fe_priv *priv)
 	else
 		pad = NET_IP_ALIGN;
 	for (i = 0; i < ring->rx_ring_size; i++) {
-		dma_addr_t dma_addr = dma_map_single(&netdev->dev,
+		dma_addr_t dma_addr = dma_map_single(priv->dev,
 				ring->rx_data[i] + NET_SKB_PAD + pad,
 				ring->rx_buf_size,
 				DMA_FROM_DEVICE);
-		if (unlikely(dma_mapping_error(&netdev->dev, dma_addr)))
+		if (unlikely(dma_mapping_error(priv->dev, dma_addr)))
 			goto no_rx_mem;
 		ring->rx_dma[i].rxd1 = (unsigned int)dma_addr;
 
@@ -342,7 +341,7 @@ static void fe_txd_unmap(struct device *dev, struct fe_tx_buf *tx_buf)
 static void fe_clean_tx(struct fe_priv *priv)
 {
 	int i;
-	struct device *dev = &priv->netdev->dev;
+	struct device *dev = priv->dev;
 	struct fe_tx_ring *ring = &priv->tx_ring;
 
 	if (ring->tx_buf) {
@@ -378,7 +377,7 @@ static int fe_alloc_tx(struct fe_priv *priv)
 	if (!ring->tx_buf)
 		goto no_tx_mem;
 
-	ring->tx_dma = dma_alloc_coherent(&priv->netdev->dev,
+	ring->tx_dma = dma_alloc_coherent(priv->dev,
 			ring->tx_ring_size * sizeof(*ring->tx_dma),
 			&ring->tx_phys,
 			GFP_ATOMIC | __GFP_ZERO);
@@ -664,7 +663,7 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	struct fe_map_state st = {
-		.dev = &dev->dev,
+		.dev = priv->dev,
 		.ring_idx = ring->tx_next_idx,
 	};
 	struct sk_buff *head = skb;
@@ -764,7 +763,7 @@ err_dma:
 	j = ring->tx_next_idx;
 	for (i = 0; i < tx_num; i++) {
 		/* unmap dma */
-		fe_txd_unmap(&dev->dev, &ring->tx_buf[j]);
+		fe_txd_unmap(priv->dev, &ring->tx_buf[j]);
 		ring->tx_dma[j].txd2 = TX_DMA_DESP2_DEF;
 
 		j = NEXT_TX_DESP_IDX(j);
@@ -908,11 +907,11 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 			stats->rx_dropped++;
 			goto release_desc;
 		}
-		dma_addr = dma_map_single(&netdev->dev,
+		dma_addr = dma_map_single(priv->dev,
 					  new_data + NET_SKB_PAD + pad,
 					  ring->rx_buf_size,
 					  DMA_FROM_DEVICE);
-		if (unlikely(dma_mapping_error(&netdev->dev, dma_addr))) {
+		if (unlikely(dma_mapping_error(priv->dev, dma_addr))) {
 			skb_free_frag(new_data);
 			goto release_desc;
 		}
@@ -925,7 +924,7 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 		}
 		skb_reserve(skb, NET_SKB_PAD + NET_IP_ALIGN);
 
-		dma_unmap_single(&netdev->dev, trxd.rxd1,
+		dma_unmap_single(priv->dev, trxd.rxd1,
 				 ring->rx_buf_size, DMA_FROM_DEVICE);
 		pktlen = RX_DMA_GET_PLEN0(trxd.rxd2);
 		skb->dev = netdev;
@@ -981,7 +980,6 @@ static int fe_poll_tx(struct fe_priv *priv, int budget, u32 tx_intr,
 		      int *tx_again)
 {
 	struct net_device *netdev = priv->netdev;
-	struct device *dev = &netdev->dev;
 	unsigned int bytes_compl = 0;
 	struct sk_buff *skb;
 	struct fe_tx_buf *tx_buf;
@@ -1004,7 +1002,7 @@ static int fe_poll_tx(struct fe_priv *priv, int budget, u32 tx_intr,
 			done++;
 			budget--;
 		}
-		fe_txd_unmap(dev, tx_buf);
+		fe_txd_unmap(priv->dev, tx_buf);
 		idx = NEXT_TX_DESP_IDX(idx);
 	}
 	ring->tx_free_idx = idx;
