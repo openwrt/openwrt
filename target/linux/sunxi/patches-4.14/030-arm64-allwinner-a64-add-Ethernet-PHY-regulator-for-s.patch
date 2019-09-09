@@ -46,6 +46,7 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  	phy-mode = "rgmii";
  	phy-handle = <&ext_rgmii_phy>;
 +	phy-supply = <&reg_dc1sw>;
++	allwinner,tx-delay-ps = <500>;
  	status = "okay";
  };
  
