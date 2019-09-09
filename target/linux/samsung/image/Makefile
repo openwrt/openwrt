@@ -16,9 +16,10 @@ define Device/Default
 endef
 
 define Device/tq210
+  DEVICE_VENDOR := Samsung
+  DEVICE_MODEL := TQ210
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS := TQ210
-  DEVICE_TITLE := TQ210
 endef
 TARGET_DEVICES += tq210
 
