@@ -144,6 +144,16 @@ define Device/avm_fritzbox-7530
 endef
 TARGET_DEVICES += avm_fritzbox-7530
 
+define Device/avm_fritzrepeater-1200
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := AVM
+	DEVICE_MODEL := FRITZ!Repeater 1200
+	DEVICE_DTS := qcom-ipq4019-fritzrepeater-1200
+	DEVICE_PACKAGES := fritz-caldata fritz-tffs-nand ipq-wifi-avm_fritzrepeater-1200
+	IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += avm_fritzrepeater-1200
+
 define Device/avm_fritzrepeater-3000
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := AVM
