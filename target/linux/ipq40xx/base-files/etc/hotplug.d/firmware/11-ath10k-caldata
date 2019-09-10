@@ -87,6 +87,10 @@ case "$FIRMWARE" in
 	unielec,u4019-32m)
 		caldata_extract "0:ART" 0x1000 0x2f20
 		;;
+	dlink,dap-2610)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii bdcfg wlanmac)
+		;;
 	engenius,ens620ext)
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +2)
@@ -157,6 +161,10 @@ case "$FIRMWARE" in
 	qxwlan,e2600ac-c2 |\
 	unielec,u4019-32m)
 		caldata_extract "0:ART" 0x5000 0x2f20
+		;;
+	dlink,dap-2610)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii bdcfg wlanmac_a)
 		;;
 	engenius,ens620ext)
 		caldata_extract "ART" 0x5000 0x2f20
