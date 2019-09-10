@@ -7,8 +7,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Build/copy-kernel
-	$(MAKE) -C copy-kernel CROSS_COMPILE=$(TARGET_CROSS)
+define Build/copy-kernel.bin
+	$(call locked,$(MAKE) -C copy-kernel CROSS_COMPILE=$(TARGET_CROSS) O=$(KDIR),gemini-copy-kernel.bin)
 endef
 
 # Cook a "WRGG" image, this board is apparently one in the D-Link
@@ -93,11 +93,10 @@ endef
 define Build/storlink-default-images
 	mkdir -p $@.tmp
 
-	$(call Build/copy-kernel)
 	# "App" partition is the rootfs
 	mv $@ $@.tmp/hddapp.tgz
 	# 256 bytes copy routine
-	dd if=copy-kernel/copy-kernel.bin of=$@.tmp/zImage
+	dd if=$(KDIR)/copy-kernel.bin of=$@.tmp/zImage
 	$(call Image/pad-to,$@.tmp/zImage,512)
 	# Copy first part of the kernel into zImage
 	dd if=$(IMAGE_KERNEL) of=$@.tmp/zImage bs=1 seek=512 count=2096640
@@ -182,6 +181,8 @@ TARGET_DEVICES += dlink_dns-313
 
 # Default images setup used by the StorLink reference designs
 define Device/storlink-reference
+	COMPILE := copy-kernel-$(1).bin
+	COMPILE/copy-kernel-$(1).bin := copy-kernel.bin
 	IMAGES := factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
 		storlink-default-images $(1)
