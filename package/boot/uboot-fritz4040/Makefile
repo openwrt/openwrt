@@ -26,6 +26,11 @@ define U-Boot/Default
   UBOOT_IMAGE:=uboot-$(1).bin
 endef
 
+define U-Boot/fritz1200
+  NAME:=FritzRepeater 1200
+  BUILD_DEVICES:=avm_fritzrepeater-1200
+endef
+
 define U-Boot/fritz3000
   NAME:=FritzRepeater 3000
   BUILD_DEVICES:=avm_fritzrepeater-3000
@@ -67,6 +72,6 @@ define Package/u-boot/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/upload-to-f4040.sh $(1)/
 endef
 
-UBOOT_TARGETS := fritz3000 fritz4040 fritz7530
+UBOOT_TARGETS := fritz1200 fritz3000 fritz4040 fritz7530
 
 $(eval $(call BuildPackage/U-Boot))
