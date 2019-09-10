@@ -136,10 +136,13 @@ define Build/append-dtb
 endef
 
 define Build/install-dtb
-	$(foreach dts,$(DEVICE_DTS), \
-		$(CP) \
-			$(DTS_DIR)/$(dts).dtb \
-			$(BIN_DIR)/$(IMG_PREFIX)-$(dts).dtb; \
+	$(call locked, \
+		$(foreach dts,$(DEVICE_DTS), \
+			$(CP) \
+				$(DTS_DIR)/$(dts).dtb \
+				$(BIN_DIR)/$(IMG_PREFIX)-$(dts).dtb; \
+		), \
+		install-dtb-$(IMG_PREFIX) \
 	)
 endef
 
