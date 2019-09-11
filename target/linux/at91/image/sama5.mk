@@ -11,7 +11,9 @@ define Build/at91-sdcard
   rm -f $@.boot
   mkfs.fat -C $@.boot $(FAT32_BLOCKS)
 
-  mcopy -i $@.boot $(KDIR)/zImage ::zImage
+  mcopy -i $@.boot \
+	$(KDIR)/$(DEVICE_NAME)-fit-zImage.itb \
+	::$(DEVICE_NAME:at91-%=%)-fit.itb
 
   $(if $(findstring at91-sama5d27_som1_ek,$@), \
       mcopy -i $@.boot \
