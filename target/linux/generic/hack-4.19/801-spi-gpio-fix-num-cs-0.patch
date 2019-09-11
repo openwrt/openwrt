@@ -1,0 +1,19 @@
+--- a/drivers/spi/spi-gpio.c
++++ b/drivers/spi/spi-gpio.c
+@@ -242,10 +241,12 @@ static int spi_gpio_setup(struct spi_dev
+ 	 * The CS GPIOs have already been
+ 	 * initialized from the descriptor lookup.
+ 	 */
+-	cs = spi_gpio->cs_gpios[spi->chip_select];
+-	if (!spi->controller_state && cs)
+-		status = gpiod_direction_output(cs,
+-						!(spi->mode & SPI_CS_HIGH));
++	if (spi_gpio->has_cs) {
++		cs = spi_gpio->cs_gpios[spi->chip_select];
++		if (!spi->controller_state && cs)
++			status = gpiod_direction_output(cs,
++						  !(spi->mode & SPI_CS_HIGH));
++	}
+ 
+ 	if (!status)
+ 		status = spi_bitbang_setup(spi);
