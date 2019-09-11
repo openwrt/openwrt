@@ -1238,7 +1238,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
 --- a/drivers/net/ethernet/tundra/tsi108_eth.c
 +++ b/drivers/net/ethernet/tundra/tsi108_eth.c
-@@ -887,7 +887,7 @@ static int tsi108_poll(struct napi_struc
+@@ -888,7 +888,7 @@ static int tsi108_poll(struct napi_struc
  
  	if (num_received < budget) {
  		data->rxpending = 0;
