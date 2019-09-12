@@ -41,14 +41,6 @@ define Package/ath10k-firmware-qca9887-ct
 $(Package/ath10k-firmware-default)
   TITLE:=ath10k-CT firmware for QCA9887 devices
 endef
-# https://www.candelatech.com/downloads/ath10k-4019-10-4b/firmware-5-ct-full-community-12.bin-lede.011
-define Download/ath10k-firmware-qca4019
-  URL:=https://www.candelatech.com/downloads/ath10k-10-4b
-  URL_FILE:=firmware-5-ct-full-community-12.bin-lede.011
-  FILE:=firmware-5-ct-full-community-12.bin-lede.011
-  HASH:=21a6b5b69e3c1591cb9fe6077971ddadb003cac698f2962d4d8d73bc04038bbf
-endef
-$(eval $(call Download,ath10k-firmware-qca4019))
 
 define Package/ath10k-firmware-qca988x
 $(Package/ath10k-firmware-default)
@@ -411,7 +403,7 @@ define Package/ath10k-firmware-qca4019/install
 		$(PKG_BUILD_DIR)/QCA4019/hw1.0/board-2.bin \
 		$(1)/lib/firmware/ath10k/QCA4019/hw1.0/
 	$(INSTALL_DATA) \
-		$(DL_DIR)/QCA4019-firmware-5-ct-full-community-12.bin-lede.011 \
+		$(PKG_BUILD_DIR)/QCA4019/hw1.0/3.5.3/firmware-5.bin_10.4-3.5.3-00057 \
 		$(1)/lib/firmware/ath10k/QCA4019/hw1.0/firmware-5.bin
 endef
 
