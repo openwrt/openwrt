@@ -1,0 +1,261 @@
+ath10k-driver: QCA4019 AP/VLAN support
+ 
+This patch enables ath10k AP/VLAN support for QCA4019
+on 4.19 and 4.20 kernels
+
+Signed-off-by: Damir Franusic <damir.franusic@sartura.hr>
+
+--- a/ath10k-4.19/core.h
++++ b/ath10k-4.19/core.h
+@@ -133,6 +133,7 @@ enum ath10k_skb_flags {
+ 	ATH10K_SKB_F_DELIVER_CAB = BIT(2),
+ 	ATH10K_SKB_F_MGMT = BIT(3),
+ 	ATH10K_SKB_F_QOS = BIT(4),
++        ATH10K_SKB_F_RAW_TX = BIT(5),
+ };
+ 
+ struct ath10k_skb_cb {
+--- a/ath10k-4.19/mac.c
++++ b/ath10k-4.19/mac.c
+@@ -4129,6 +4129,7 @@ ath10k_mac_tx_h_get_txmode(struct ath10k
+ 			   struct sk_buff *skb)
+ {
+ 	const struct ieee80211_hdr *hdr = (void *)skb->data;
++        const struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
+ 	__le16 fc = hdr->frame_control;
+ 
+ 	if (!vif || vif->type == NL80211_IFTYPE_MONITOR)
+@@ -4192,7 +4193,8 @@ do_native_mgt_ct:
+ 	if (ieee80211_is_data_present(fc) && sta && sta->tdls)
+ 		return ATH10K_HW_TXRX_ETHERNET;
+ 
+-	if (test_bit(ATH10K_FLAG_RAW_MODE, &ar->dev_flags))
++	if (test_bit(ATH10K_FLAG_RAW_MODE, &ar->dev_flags) ||
++            skb_cb->flags & ATH10K_SKB_F_RAW_TX)
+ 		return ATH10K_HW_TXRX_RAW;
+ 
+ 	return ATH10K_HW_TXRX_NATIVE_WIFI;
+@@ -4302,6 +4304,9 @@ static void ath10k_mac_tx_h_fill_cb(stru
+ {
+ 	struct ieee80211_hdr *hdr = (void *)skb->data;
+ 	struct ath10k_skb_cb *cb = ATH10K_SKB_CB(skb);
++        const struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++        bool is_data = ieee80211_is_data(hdr->frame_control) ||
++                        ieee80211_is_data_qos(hdr->frame_control);
+ 
+ 	cb->flags = 0;
+ 	if (!ath10k_tx_h_use_hwcrypto(vif, skb))
+@@ -4312,6 +4317,15 @@ static void ath10k_mac_tx_h_fill_cb(stru
+ 
+ 	if (ieee80211_is_data_qos(hdr->frame_control))
+ 		cb->flags |= ATH10K_SKB_F_QOS;
++	/* Data frames encrypted in software will be posted to firmware
++	 * with tx encap mode set to RAW. Ex: Multicast traffic generated
++	 * for a specific VLAN group will always be encrypted in software.
++	 */
++	if (is_data && ieee80211_has_protected(hdr->frame_control) &&
++	    !info->control.hw_key) {
++		cb->flags |= ATH10K_SKB_F_NO_HWCRYPT;
++		cb->flags |= ATH10K_SKB_F_RAW_TX;
++	}                
+ 
+ 	cb->vif = vif;
+ 	cb->txq = txq;
+@@ -4424,6 +4438,7 @@ static int ath10k_mac_tx(struct ath10k *
+ {
+ 	struct ieee80211_hw *hw = ar->hw;
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++        const struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
+ 	int ret;
+ 
+ 	/* We should disable CCK RATE due to P2P */
+@@ -4442,6 +4457,7 @@ static int ath10k_mac_tx(struct ath10k *
+ 		break;
+ 	case ATH10K_HW_TXRX_RAW:
+ 		if (!(test_bit(ATH10K_FLAG_RAW_MODE, &ar->dev_flags) ||
++                      (skb_cb->flags & ATH10K_SKB_F_RAW_TX) ||
+ 		      /* Any CT firmware recent enough to support rate-mask should be able to do
+ 		       * at least some raw-tx too.  Works on recent 10.1 firmware with non-encrypted
+ 		       * frames transmitted on a monitor device, at least.
+@@ -9978,6 +9994,11 @@ int ath10k_mac_register(struct ath10k *a
+ 		goto err_dfs_detector_exit;
+ 	}
+ 
++	if (test_bit(WMI_SERVICE_PER_PACKET_SW_ENCRYPT, ar->wmi.svc_map)) {
++		ar->hw->wiphy->interface_modes |= BIT(NL80211_IFTYPE_AP_VLAN);
++		ar->hw->wiphy->software_iftypes |= BIT(NL80211_IFTYPE_AP_VLAN);
++	}
++
+ 	if (!ath_is_world_regd(&ar->ath_common.regulatory)) {
+ 		ret = regulatory_hint(ar->hw->wiphy,
+ 				      ar->ath_common.regulatory.alpha2);
+--- a/ath10k-4.19/wmi.h
++++ b/ath10k-4.19/wmi.h
+@@ -203,6 +203,12 @@ enum wmi_service {
+ 	WMI_SERVICE_TPC_STATS_FINAL,
+ 	WMI_SERVICE_RESET_CHIP,
+ 	WMI_SERVICE_SPOOF_MAC_SUPPORT,
++        WMI_SERVICE_TX_DATA_ACK_RSSI,
++	WMI_SERVICE_VDEV_DIFFERENT_BEACON_INTERVAL_SUPPORT,
++	WMI_SERVICE_THERM_THROT,
++	WMI_SERVICE_RTT_RESPONDER_ROLE,
++	WMI_SERVICE_PER_PACKET_SW_ENCRYPT,
++	WMI_SERVICE_REPORT_AIRTIME,        
+ 
+ 	/* keep last */
+ 	WMI_SERVICE_MAX,
+@@ -350,6 +356,13 @@ enum wmi_10_4_service {
+ 	WMI_10_4_SERVICE_HTT_MGMT_TX_COMP_VALID_FLAGS,
+ 	WMI_10_4_SERVICE_HOST_DFS_CHECK_SUPPORT,
+ 	WMI_10_4_SERVICE_TPC_STATS_FINAL,
++        WMI_10_4_SERVICE_CFR_CAPTURE_SUPPORT,
++	WMI_10_4_SERVICE_TX_DATA_ACK_RSSI,
++	WMI_10_4_SERVICE_CFR_CAPTURE_IND_MSG_TYPE_LEGACY,
++	WMI_10_4_SERVICE_PER_PACKET_SW_ENCRYPT,
++	WMI_10_4_SERVICE_PEER_TID_CONFIGS_SUPPORT,
++	WMI_10_4_SERVICE_VDEV_BCN_RATE_CONTROL,
++	WMI_10_4_SERVICE_VDEV_DIFFERENT_BEACON_INTERVAL_SUPPORT,
+ };
+ 
+ static inline char *wmi_service_name(int service_id)
+@@ -463,6 +476,7 @@ static inline char *wmi_service_name(int
+ 	SVCSTR(WMI_SERVICE_HOST_DFS_CHECK_SUPPORT);
+ 	SVCSTR(WMI_SERVICE_TPC_STATS_FINAL);
+ 	SVCSTR(WMI_SERVICE_RESET_CHIP);
++        SVCSTR(WMI_SERVICE_PER_PACKET_SW_ENCRYPT);
+ 	default:
+ 		return NULL;
+ 	}
+@@ -557,6 +571,7 @@ static inline void wmi_10x_svc_map(const
+ 	       WMI_SERVICE_RESET_CHIP, len);
+ 	SVCMAP(WMI_10X_SERVICE_HTT_MGMT_TX_COMP_VALID_FLAGS,
+ 	       WMI_SERVICE_HTT_MGMT_TX_COMP_VALID_FLAGS, len);
++
+ }
+ 
+ static inline void wmi_main_svc_map(const __le32 *in, unsigned long *out,
+@@ -771,6 +786,8 @@ static inline void wmi_10_4_svc_map(cons
+ 	       WMI_SERVICE_HOST_DFS_CHECK_SUPPORT, len);
+ 	SVCMAP(WMI_10_4_SERVICE_TPC_STATS_FINAL,
+ 	       WMI_SERVICE_TPC_STATS_FINAL, len);
++	SVCMAP(WMI_10_4_SERVICE_PER_PACKET_SW_ENCRYPT,
++	       WMI_SERVICE_PER_PACKET_SW_ENCRYPT, len);               
+ }
+ 
+ #undef SVCMAP
+--- a/ath10k-4.20/core.h
++++ b/ath10k-4.20/core.h
+@@ -124,6 +124,7 @@ enum ath10k_skb_flags {
+ 	ATH10K_SKB_F_DELIVER_CAB = BIT(2),
+ 	ATH10K_SKB_F_MGMT = BIT(3),
+ 	ATH10K_SKB_F_QOS = BIT(4),
++        ATH10K_SKB_F_RAW_TX = BIT(5),
+ };
+ 
+ struct ath10k_skb_cb {
+--- a/ath10k-4.20/mac.c
++++ b/ath10k-4.20/mac.c
+@@ -4127,6 +4127,7 @@ ath10k_mac_tx_h_get_txmode(struct ath10k
+ 			   struct sk_buff *skb)
+ {
+ 	const struct ieee80211_hdr *hdr = (void *)skb->data;
++        const struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
+ 	__le16 fc = hdr->frame_control;
+ 
+ 	if (!vif || vif->type == NL80211_IFTYPE_MONITOR)
+@@ -4190,7 +4191,8 @@ do_native_mgt_ct:
+ 	if (ieee80211_is_data_present(fc) && sta && sta->tdls)
+ 		return ATH10K_HW_TXRX_ETHERNET;
+ 
+-	if (test_bit(ATH10K_FLAG_RAW_MODE, &ar->dev_flags))
++	if (test_bit(ATH10K_FLAG_RAW_MODE, &ar->dev_flags) ||
++            skb_cb->flags & ATH10K_SKB_F_RAW_TX)
+ 		return ATH10K_HW_TXRX_RAW;
+ 
+ 	return ATH10K_HW_TXRX_NATIVE_WIFI;
+@@ -4300,6 +4302,9 @@ static void ath10k_mac_tx_h_fill_cb(stru
+ {
+ 	struct ieee80211_hdr *hdr = (void *)skb->data;
+ 	struct ath10k_skb_cb *cb = ATH10K_SKB_CB(skb);
++        const struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++        bool is_data = ieee80211_is_data(hdr->frame_control) ||
++                        ieee80211_is_data_qos(hdr->frame_control);
+ 
+ 	cb->flags = 0;
+ 	if (!ath10k_tx_h_use_hwcrypto(vif, skb))
+@@ -4311,6 +4316,16 @@ static void ath10k_mac_tx_h_fill_cb(stru
+ 	if (ieee80211_is_data_qos(hdr->frame_control))
+ 		cb->flags |= ATH10K_SKB_F_QOS;
+ 
++        /* Data frames encrypted in software will be posted to firmware
++	 * with tx encap mode set to RAW. Ex: Multicast traffic generated
++	 * for a specific VLAN group will always be encrypted in software.
++	 */
++	if (is_data && ieee80211_has_protected(hdr->frame_control) &&
++	    !info->control.hw_key) {
++		cb->flags |= ATH10K_SKB_F_NO_HWCRYPT;
++		cb->flags |= ATH10K_SKB_F_RAW_TX;
++	}                
++
+ 	cb->vif = vif;
+ 	cb->txq = txq;
+ }
+@@ -4422,6 +4437,7 @@ static int ath10k_mac_tx(struct ath10k *
+ {
+ 	struct ieee80211_hw *hw = ar->hw;
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++        const struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
+ 	int ret;
+ 
+ 	/* We should disable CCK RATE due to P2P */
+@@ -4440,6 +4456,7 @@ static int ath10k_mac_tx(struct ath10k *
+ 		break;
+ 	case ATH10K_HW_TXRX_RAW:
+ 		if (!(test_bit(ATH10K_FLAG_RAW_MODE, &ar->dev_flags) ||
++                      (skb_cb->flags & ATH10K_SKB_F_RAW_TX) ||
+ 		      /* Any CT firmware recent enough to support rate-mask should be able to do
+ 		       * at least some raw-tx too.  Works on recent 10.1 firmware with non-encrypted
+ 		       * frames transmitted on a monitor device, at least.
+@@ -10100,6 +10117,11 @@ int ath10k_mac_register(struct ath10k *a
+ 		goto err_dfs_detector_exit;
+ 	}
+ 
++	if (test_bit(WMI_SERVICE_PER_PACKET_SW_ENCRYPT, ar->wmi.svc_map)) {
++		ar->hw->wiphy->interface_modes |= BIT(NL80211_IFTYPE_AP_VLAN);
++		ar->hw->wiphy->software_iftypes |= BIT(NL80211_IFTYPE_AP_VLAN);
++	}        
++
+ 	if (!ath_is_world_regd(&ar->ath_common.regulatory)) {
+ 		ret = regulatory_hint(ar->hw->wiphy,
+ 				      ar->ath_common.regulatory.alpha2);
+--- a/ath10k-4.20/wmi.h
++++ b/ath10k-4.20/wmi.h
+@@ -206,6 +206,11 @@ enum wmi_service {
+ 	WMI_SERVICE_TX_DATA_ACK_RSSI,
+ 	WMI_SERVICE_VDEV_DIFFERENT_BEACON_INTERVAL_SUPPORT,
+ 	WMI_SERVICE_THERM_THROT,
++        WMI_SERVICE_RTT_RESPONDER_ROLE,
++	WMI_SERVICE_PER_PACKET_SW_ENCRYPT,
++	WMI_SERVICE_REPORT_AIRTIME,
++
++       	/* Remember to add the new value to wmi_service_name()! */
+ 
+ 	/* keep last */
+ 	WMI_SERVICE_MAX,
+@@ -475,6 +480,7 @@ static inline char *wmi_service_name(int
+ 	SVCSTR(WMI_SERVICE_RESET_CHIP);
+ 	SVCSTR(WMI_SERVICE_TX_DATA_ACK_RSSI);
+ 	SVCSTR(WMI_SERVICE_VDEV_DIFFERENT_BEACON_INTERVAL_SUPPORT);
++        SVCSTR(WMI_SERVICE_PER_PACKET_SW_ENCRYPT);
+ 	default:
+ 		return NULL;
+ 	}
+@@ -787,6 +793,8 @@ static inline void wmi_10_4_svc_map(cons
+ 	       WMI_SERVICE_TX_DATA_ACK_RSSI, len);
+ 	SVCMAP(WMI_10_4_SERVICE_VDEV_DIFFERENT_BEACON_INTERVAL_SUPPORT,
+ 	       WMI_SERVICE_VDEV_DIFFERENT_BEACON_INTERVAL_SUPPORT, len);
++       	SVCMAP(WMI_10_4_SERVICE_PER_PACKET_SW_ENCRYPT,
++	       WMI_SERVICE_PER_PACKET_SW_ENCRYPT, len);
+ }
+ 
+ #undef SVCMAP
