@@ -218,7 +218,24 @@
  
  	/* keep last */
  	__NL80211_SCHED_SCAN_MATCH_ATTR_AFTER_LAST,
-@@ -4115,6 +4205,27 @@ enum nl80211_channel_type {
+@@ -3751,6 +3841,8 @@ enum nl80211_user_reg_hint_type {
+  * @NL80211_SURVEY_INFO_TIME_SCAN: time the radio spent for scan
+  *	(on this channel or globally)
+  * @NL80211_SURVEY_INFO_PAD: attribute used for padding for 64-bit alignment
++ * @NL80211_SURVEY_INFO_TIME_BSS_RX: amount of time the radio spent
++ *	receiving local BSS data
+  * @NL80211_SURVEY_INFO_MAX: highest survey info attribute number
+  *	currently defined
+  * @__NL80211_SURVEY_INFO_AFTER_LAST: internal use
+@@ -3767,6 +3859,7 @@ enum nl80211_survey_info {
+ 	NL80211_SURVEY_INFO_TIME_TX,
+ 	NL80211_SURVEY_INFO_TIME_SCAN,
+ 	NL80211_SURVEY_INFO_PAD,
++	NL80211_SURVEY_INFO_TIME_BSS_RX,
+ 
+ 	/* keep last */
+ 	__NL80211_SURVEY_INFO_AFTER_LAST,
+@@ -4115,6 +4208,27 @@ enum nl80211_channel_type {
  };
  
  /**
@@ -246,7 +263,7 @@
   * enum nl80211_chan_width - channel width definitions
   *
   * These values are used with the %NL80211_ATTR_CHANNEL_WIDTH
-@@ -4319,6 +4430,7 @@ enum nl80211_mfp {
+@@ -4319,6 +4433,7 @@ enum nl80211_mfp {
  enum nl80211_wpa_versions {
  	NL80211_WPA_VERSION_1 = 1 << 0,
  	NL80211_WPA_VERSION_2 = 1 << 1,
@@ -254,7 +271,7 @@
  };
  
  /**
-@@ -4357,6 +4469,9 @@ enum nl80211_key_default_types {
+@@ -4357,6 +4472,9 @@ enum nl80211_key_default_types {
   * @NL80211_KEY_DEFAULT_TYPES: A nested attribute containing flags
   *	attributes, specifying what a key should be set as default as.
   *	See &enum nl80211_key_default_types.
@@ -264,7 +281,7 @@
   * @__NL80211_KEY_AFTER_LAST: internal
   * @NL80211_KEY_MAX: highest key attribute
   */
-@@ -4370,6 +4485,7 @@ enum nl80211_key_attributes {
+@@ -4370,6 +4488,7 @@ enum nl80211_key_attributes {
  	NL80211_KEY_DEFAULT_MGMT,
  	NL80211_KEY_TYPE,
  	NL80211_KEY_DEFAULT_TYPES,
@@ -272,7 +289,7 @@
  
  	/* keep last */
  	__NL80211_KEY_AFTER_LAST,
-@@ -5223,7 +5339,7 @@ enum nl80211_feature_flags {
+@@ -5223,7 +5342,7 @@ enum nl80211_feature_flags {
  	NL80211_FEATURE_TDLS_CHANNEL_SWITCH		= 1 << 28,
  	NL80211_FEATURE_SCAN_RANDOM_MAC_ADDR		= 1 << 29,
  	NL80211_FEATURE_SCHED_SCAN_RANDOM_MAC_ADDR	= 1 << 30,
@@ -281,7 +298,7 @@
  };
  
  /**
-@@ -5315,6 +5431,24 @@ enum nl80211_feature_flags {
+@@ -5315,6 +5434,24 @@ enum nl80211_feature_flags {
   *      able to rekey an in-use key correctly. Userspace must not rekey PTK keys
   *      if this flag is not set. Ignoring this can leak clear text packets and/or
   *      freeze the connection.
@@ -306,7 +323,7 @@
   *
   * @NUM_NL80211_EXT_FEATURES: number of extended features.
   * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
-@@ -5355,6 +5489,12 @@ enum nl80211_ext_feature_index {
+@@ -5355,6 +5492,12 @@ enum nl80211_ext_feature_index {
  	NL80211_EXT_FEATURE_SCAN_MIN_PREQ_CONTENT,
  	NL80211_EXT_FEATURE_CAN_REPLACE_PTK0,
  	NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER,
@@ -319,7 +336,7 @@
  
  	/* add new features before the definition below */
  	NUM_NL80211_EXT_FEATURES,
-@@ -5606,9 +5746,14 @@ enum nl80211_crit_proto_id {
+@@ -5606,9 +5749,14 @@ enum nl80211_crit_proto_id {
   * Used by cfg80211_rx_mgmt()
   *
   * @NL80211_RXMGMT_FLAG_ANSWERED: frame was answered by device/driver.
