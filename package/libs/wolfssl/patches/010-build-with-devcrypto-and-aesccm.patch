@@ -1,0 +1,74 @@
+From e8e1d35744c68b165e172a687e870a549438bdf0 Mon Sep 17 00:00:00 2001
+From: Jacob Barthelmeh <jacob@wolfssl.com>
+Date: Tue, 13 Aug 2019 14:12:45 -0600
+Subject: [PATCH] build with devcrypto and aesccm
+
+
+diff --git a/configure.ac b/configure.ac
+index f943cc6ef..cf03e7f52 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1096,6 +1096,10 @@ then
+     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO"
+     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO_CBC"
+     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO_AES"
++    if test "$ENABLED_AESCCM" = "yes"
++    then
++        AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_AES_DIRECT"
++    fi
+     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO_HASH"
+     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_NO_HASH_RAW"
+     ENABLED_DEVCRYPTO=yes
+@@ -1106,6 +1110,10 @@ then
+     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO"
+     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO_AES"
+     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO_CBC"
++    if test "$ENABLED_AESCCM" = "yes"
++    then
++        AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_AES_DIRECT"
++    fi
+     ENABLED_DEVCRYPTO=yes
+ fi
+ if test "$ENABLED_DEVCRYPTO" = "cbc"
+diff --git a/wolfcrypt/src/aes.c b/wolfcrypt/src/aes.c
+index beeae72a6..b583d03e9 100644
+--- a/wolfcrypt/src/aes.c
++++ b/wolfcrypt/src/aes.c
+@@ -760,6 +760,14 @@
+ #elif defined(WOLFSSL_DEVCRYPTO_AES)
+     /* if all AES is enabled with devcrypto then tables are not needed */
+ 
++    #if defined(HAVE_AESCCM)
++    static int wc_AesEncrypt(Aes* aes, const byte* inBlock, byte* outBlock)
++    {
++        wc_AesEncryptDirect(aes, outBlock, inBlock);
++        return 0;
++    }
++    #endif
++
+ #else
+ 
+     /* using wolfCrypt software implementation */
+@@ -1314,7 +1322,8 @@ static const word32 Td[4][256] = {
+ };
+ 
+ 
+-#if defined(HAVE_AES_CBC) || defined(WOLFSSL_AES_DIRECT)
++#if (defined(HAVE_AES_CBC) && !defined(WOLFSSL_DEVCRYPTO_CBC)) \
++			|| defined(WOLFSSL_AES_DIRECT)
+ static const byte Td4[256] =
+ {
+     0x52U, 0x09U, 0x6aU, 0xd5U, 0x30U, 0x36U, 0xa5U, 0x38U,
+diff --git a/wolfcrypt/src/port/devcrypto/devcrypto_aes.c b/wolfcrypt/src/port/devcrypto/devcrypto_aes.c
+index 5c63421e2..d5061f364 100644
+--- a/wolfcrypt/src/port/devcrypto/devcrypto_aes.c
++++ b/wolfcrypt/src/port/devcrypto/devcrypto_aes.c
+@@ -168,7 +168,7 @@ static int wc_DevCrypto_AesDirect(Aes* aes, byte* out, const byte* in,
+ #endif
+ 
+ 
+-#if defined(WOLFSSL_AES_DIRECT)
++#if defined(WOLFSSL_AES_DIRECT) || defined(HAVE_AESCCM)
+ void wc_AesEncryptDirect(Aes* aes, byte* out, const byte* in)
+ {
+     wc_DevCrypto_AesDirect(aes, out, in, AES_BLOCK_SIZE, COP_ENCRYPT);
