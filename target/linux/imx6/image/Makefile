@@ -158,12 +158,13 @@ define Device/ventana
 	kmod-leds-gpio kmod-pps-gpio \
 	kobs-ng
   KERNEL += | boot-overlay
-  IMAGES := nand.ubi bootfs.tar.gz
+  IMAGES := nand.ubi bootfs.tar.gz dtb
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
   UBINIZE_PARTS = boot=$$(KDIR_KERNEL_IMAGE).boot.ubifs=15
   BOOT_SCRIPT := bootscript-ventana
   IMAGE/nand.ubi := append-ubi
-  IMAGE/bootfs.tar.gz := bootfs.tar.gz | install-dtb
+  IMAGE/bootfs.tar.gz := bootfs.tar.gz
+  IMAGE/dtb := install-dtb
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1)-$$(2)
   PAGESIZE := 2048
   BLOCKSIZE := 128k
@@ -194,15 +195,16 @@ TARGET_DEVICES += wandboard
 define Device/cubox-i
   DEVICE_VENDOR := SolidRun
   DEVICE_MODEL := CuBox-i
-  KERNEL := kernel-bin | install-dtb
+  KERNEL := kernel-bin
   UBOOT := mx6cuboxi
   BOOT_SCRIPT = bootscript-cubox
   DEVICE_NAME := cubox
   DEVICE_PACKAGES := kmod-drm-imx kmod-drm-imx-hdmi kmod-usb-hid
   DEVICE_DTS := imx6q-cubox-i imx6dl-cubox-i imx6q-hummingboard imx6dl-hummingboard
-  IMAGES := combined.bin
+  IMAGES := combined.bin dtb
   FILESYSTEMS := squashfs
   IMAGE/combined.bin := append-rootfs | pad-extra 128k | imx6-sdcard
+  IMAGE/dtb := install-dtb
 endef
 TARGET_DEVICES += cubox-i
 
