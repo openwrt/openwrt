@@ -46,6 +46,7 @@ ramips_setup_interfaces()
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
 	buffalo,wcr-1166ds|\
+	elecom,wrc-1167fs|\
 	wavlink,wl-wn577a2)
 		ucidef_add_switch "switch0" \
 			"3:lan" "4:wan" "6@eth0"
@@ -180,6 +181,10 @@ ramips_setup_macs()
 	wrtnode,wrtnode2r|\
 	zyxel,keenetic-extra-ii)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
+		;;
+	elecom,wrc-1167fs)
+		wan_mac=$(mtd_get_mac_binary factory 0x22)
+		label_mac=$wan_mac
 		;;
 	hilink,hlk-7628n)
 		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
