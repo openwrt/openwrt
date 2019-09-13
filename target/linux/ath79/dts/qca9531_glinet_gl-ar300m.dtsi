@@ -86,18 +86,18 @@
 				read-only;
 			};
 
-			partition@1 {
+			partition@40000 {
 				label = "u-boot-env";
 				reg = <0x040000 0x010000>;
 			};
 
-			partition@2 {
+			partition@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x050000 0xfa0000>;
 			};
 
-			art: partition@3 {
+			art: partition@ff0000 {
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
