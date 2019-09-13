@@ -1,0 +1,37 @@
+#!/bin/sh
+
+FLAG="/tmp/wifi.update"
+[ -f "$FLAG" ] && rm -f "$FLAG" || exit 0
+
+wifi_set() {
+	uci set wireless.$1.$2
+}
+
+logger "Reconfiguring the wifi to ensure it uses the /etc/board.json"
+
+config_load wireless
+config_foreach wifi_rfkill_set wifi-device
+
+config_load wireless
+CFG=/etc/board.json
+json_load "$(cat ${CFG})"
+if json_is_a system object; then
+	json_select system
+		local wifi_ssid wifi_key wifi_country wifi_txpower wifi_default
+		json_get_vars wifi_ssid wifi_key wifi_country wifi_txpower wifi_default
+	json_select ..
+fi
+
+[ -n "$wifi_country" ] && config_foreach wifi_set wifi-device country="$wifi_country"
+[ -n "$wifi_txpower" ] && config_foreach wifi_set wifi-device txpower="$wifi_txpower"
+grep -q $'^\xf7$' $(find /sys/firmware/devicetree -name linux,code) || \
+	if [ -n "$wifi_default" ] then ;
+		wifi_radio=$(uci show wireless|grep 11$wifi_default | cut -d. -f2)
+		[ -n "$wifi_radio" ] && uci set wireless.$wifi_radio.disabled=0
+	fi
+[ -n "$wifi_ssid" ] && config_foreach wifi_set wifi-iface ssid="$wifi_ssid"
+[ -n "$wifi_key" ] && config_foreach wifi_set wifi-iface key="$wifi_key"
+[ -n "$wifi_key" ] && uci -q set system.@system[0].default_key=$wifi_key && uci -q commit system
+[ -n "$(uci changes wireless)" ] && uci commit wireless && wifi reload
+
+exit 0
