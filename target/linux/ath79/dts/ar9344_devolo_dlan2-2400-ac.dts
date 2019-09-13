@@ -1,0 +1,214 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+#include "ar9344.dtsi"
+
+/ {
+	model = "Devolo Magic 2 Wifi";
+	compatible = "devolo,dlan2-2400-ac", "devolo,magic2wifi", "qca,ar9344";
+
+	aliases {
+		led-boot = &system;
+		led-failsafe = &system;
+		led-running = &system;
+		led-upgrade = &system;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wlan {
+			label = "devolo:status:wlan";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		system: lan_status {
+			label = "devolo:status:dlan";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "netdev";
+//			default-state = "on";
+		};
+
+		dlan_error {
+			label = "devolo:error:dlan";
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset_button {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+		wifi_button {
+			label = "WIFI button";
+			//                        linux,code = <KEY_RFKILL>;
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
+			debounce-interval = <60>;
+		};
+		dlan_button {
+			label = "DLAN button";
+			linux,code = <BTN_0>;
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+};
+
+&gpio {
+	status = "okay";
+
+	wlan_power {
+		line-name = "WLAN power";
+		gpios = <21 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+
+	plc_enable {
+		line-name = "PLC enable";
+		gpios = <13 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+
+	plc_pairing {
+		line-name = "PLC pairing";
+		gpios = <11 GPIO_ACTIVE_LOW>;
+		output-high;
+	};
+};
+
+
+&spi {
+	status = "okay";
+
+	num-cs = <1>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			uboot: partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "u-boot-env";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				label = "Config1";
+				reg = <0x50000 0x10000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "Config2";
+				reg = <0x60000 0x10000>;
+				read-only;
+			};
+
+			partition@70000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x70000 0xf80000>;
+			};
+
+			art: partition@ff0000 {
+				label = "art";
+				reg = <0xff0000 0x10000>;
+				read-only;
+			};
+		};
+	};
+
+};
+
+
+&ref {
+	clock-frequency = <40000000>;
+};
+
+&uart {
+	status = "okay";
+};
+
+
+&eth0 {
+	status = "okay";
+
+	/* default for ar934x, except for 1000M */
+	pll-data = <0x02000000 0x00000101 0x00001616>;
+
+	mtd-mac-address = <&art 0x1002>;
+	mtd-mac-address-increment = <2>;
+
+	phy-mode = "rgmii";
+	phy-handle = <&phy0>;
+/*	gmac-config {
+		device = <&gmac>;
+		switch-phy-swap = <1>;
+	};
+*/
+};
+
+&wmac {
+	status = "okay";
+	mtd-cal-data = <&art 0x1000>;
+	mtd-mac-address = <&art 0x1002>;
+//	mtd-mac-address-increment = <(-2)>;
+};
+
+&pcie {
+	status = "okay";
+
+	ath9k: wifi@0,0 {
+		compatible = "pci168c,003c";
+		reg = <0x0000 0 0 0 0>;
+		mtd-mac-address = <&art 0x5006>;
+		qca,no-eeprom;
+	};
+};
+
+
+&mdio0 {
+	status = "okay";
+
+	phy-mask = <0>;
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+		phy-mode = "rgmii";
+
+		qca,ar8327-initvals = <
+			0x04 0x06400000 /* PORT0: RGMII, MAC0/6 exchage, tx_delay 01, No rx_delay. To reset use 0x86400000 */
+			0x08 0x00000000 /* PORT5 PAD MODE CTRL */
+			0x0c 0x00000000 /* PORT6 PAD MODE CTRL */
+			0x7c 0x0000007e /* PORT0_STATUS */
+			//0xe4 0x0002a545  /* UNKNOWN */
+		>;
+	};
+};
+
+
+
