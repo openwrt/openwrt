@@ -230,6 +230,18 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:wan" "6@eth0"
 		;;
+	asus,rt-ac85p|\
+	dlink,dir-860l-b1|\
+	elecom,wrc-1167ghbk2-s|\
+	elecom,wrc-1900gst|\
+	elecom,wrc-2533gst|\
+	huawei,hg255d|\
+	iodata,wn-ax1167gr|\
+	iodata,wn-gx300gr|\
+	iptime,a604m)
+		ucidef_add_switch "switch0" \
+			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
+		;;
 	asus,rt-n15|\
 	belkin,f9k1109v1|\
 	sitecom,wl-351)
@@ -296,17 +308,6 @@ ramips_setup_interfaces()
 	zbtlink,zbt-we2026)
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan:5" "6@eth0"
-		;;
-	dlink,dir-860l-b1|\
-	elecom,wrc-1167ghbk2-s|\
-	elecom,wrc-1900gst|\
-	elecom,wrc-2533gst|\
-	huawei,hg255d|\
-	iodata,wn-ax1167gr|\
-	iodata,wn-gx300gr|\
-	iptime,a604m)
-		ucidef_add_switch "switch0" \
-			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
 		;;
 	dlink,dwr-118-a1)
 		ucidef_add_switch "switch0" \
@@ -552,6 +553,9 @@ ramips_setup_macs()
 	youku,yk-l2|\
 	zbtlink,zbt-we3526)
 		wan_mac=$(mtd_get_mac_binary factory 0xe006)
+		;;
+	asus,rt-ac85p)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env et1macaddr)
 		;;
 	asus,rt-n56u)
 		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")

@@ -18,9 +18,16 @@ platform_do_upgrade() {
 	mikrotik,rbm33g)
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
 		;;
+	asus,rt-ac85p)
+		echo "Backing up firmware"
+		dd if=/dev/mtd4 bs=1024 count=4096  > /tmp/backup_firmware.bin
+		dd if=/dev/mtd5 bs=1024 count=52224 >> /tmp/backup_firmware.bin
+		mtd -e firmware2 write /tmp/backup_firmware.bin firmware2
+		;;
 	esac
 
 	case "$board" in
+	asus,rt-ac85p|\
 	hiwifi,hc5962|\
 	netgear,r6220|\
 	netgear,r6260|\
