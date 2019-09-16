@@ -297,6 +297,15 @@ define Device/comfast_cf-wr650ac-v2
 endef
 TARGET_DEVICES += comfast_cf-wr650ac-v2
 
+define Device/devolo_dlan2-2400-ac
+  ATH_SOC := ar9344
+  DEVICE_VENDOR := Devolo
+  DEVICE_MODEL := Magic 2 WIFI
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-gpio-button-hotplug
+  IMAGE_SIZE := 15872k
+endef
+TARGET_DEVICES += devolo_dlan2-2400-ac
+
 define Device/devolo_dvl1200e
   ATH_SOC := qca9558
   DEVICE_VENDOR := devolo
