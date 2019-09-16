@@ -93,6 +93,9 @@ define Package/wireguard-tools/install
 	$(INSTALL_BIN) ./files/wireguard_watchdog $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/lib/netifd/proto/
 	$(INSTALL_BIN) ./files/wireguard.sh $(1)/lib/netifd/proto/
+	$(INSTALL_DIR) -m0700 $(1)/etc/wireguard/
+	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d/
+	$(INSTALL_DATA) ./files/wireguard-tools $(1)/lib/upgrade/keep.d/
 endef
 
 define KernelPackage/wireguard
