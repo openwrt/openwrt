@@ -80,6 +80,9 @@ comfast,cf-e560ac)
 	ucidef_set_led_switch "lan3" "LAN3" "$boardname:blue:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan4" "LAN4" "$boardname:blue:lan4" "switch0" "0x10"
 	;;
+devolo,magic-2-wifi)
+	ucidef_set_led_netdev "plcw" "dLAN" "devolo:white:dlan" "eth0.1" "rx"
+	;;
 dlink,dir-842-c1|\
 dlink,dir-842-c2|\
 dlink,dir-842-c3|\

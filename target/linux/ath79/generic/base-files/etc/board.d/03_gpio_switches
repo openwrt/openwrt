@@ -31,6 +31,10 @@ comfast,cf-e5)
 	ucidef_add_gpio_switch "lte_poweroff" "LTE Poweroff" "1" "1"
 	ucidef_add_gpio_switch "lte_reset" "LTE Reset" "12" "1"
 	;;
+devolo,magic-2-wifi)
+	ucidef_add_gpio_switch "plc_pairing" "PLC pairing" "11" "1"
+	ucidef_add_gpio_switch "plc_enable" "PLC enable" "13" "1"
+	;;
 dlink,dir-825-c1|\
 dlink,dir-835-a1)
 	ucidef_add_gpio_switch "wan_led_auto" "WAN LED Auto" "20" "0"

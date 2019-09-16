@@ -123,6 +123,10 @@ ath79_setup_interfaces()
 	ocedo,ursus)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
+	devolo,magic-2-wifi)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:wan" "3:lan" "4:lan"
+		;;
 	dlink,dir-825-b1)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
@@ -327,6 +331,9 @@ ath79_setup_macs()
 	avm,fritz4020)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(fritz_tffs -n macb -i $(find_mtd_part "tffs (1)"))
+		;;
+	devolo,magic-2-wifi)
+		label_mac=$(macaddr_add "$(mtd_get_mac_binary art 0x1002)" 3)
 		;;
 	dlink,dir-825-b1)
 		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)
