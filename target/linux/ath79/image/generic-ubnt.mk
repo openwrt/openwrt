@@ -119,7 +119,7 @@ define Device/ubnt_nanostation-m-xw
   $(Device/ubnt-xw)
   DEVICE_MODEL := Nanostation M
   DEVICE_VARIANT := XW
-  SUPPORTED_DEVICES += nano-m-xw
+  SUPPORTED_DEVICES += nano-m-xw nanostation-m-xw
 endef
 TARGET_DEVICES += ubnt_nanostation-m-xw
 
