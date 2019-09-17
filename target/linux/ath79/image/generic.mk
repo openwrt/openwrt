@@ -103,11 +103,11 @@ define Device/adtran_bsap1880
   ATH_SOC := ar7161
   DEVICE_VENDOR := Adtran/Bluesocket
   DEVICE_PACKAGES += -swconfig -uboot-envtools fconfig
-  KERNEL := kernel-bin | append-dtb | lzma
+  KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
   KERNEL_INITRAMFS := kernel-bin | append-dtb
   IMAGE_SIZE := 11200k
   IMAGES += kernel.bin rootfs.bin
-  IMAGE/kernel.bin := append-kernel | pad-to $$$$(BLOCKSIZE)
+  IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
