@@ -4,6 +4,7 @@
 . /lib/functions/migrations.sh
 
 board=$(board_name)
+boardonly="${board##*,}"
 
 case "$board" in
 engenius,epg5000)
@@ -12,11 +13,9 @@ engenius,epg5000)
 tplink,archer-c7-v2)
 	migrate_leds ":blue:=:green:"
 	;;
-tplink,archer-c7-v4)
-	migrate_leds "archer-c7-v4:=tp-link:"
-	;;
+tplink,archer-c7-v4|\
 tplink,archer-c7-v5)
-	migrate_leds "archer-c7-v5:=tp-link:"
+	migrate_leds "^$boardonly:=tp-link:"
 	;;
 tplink,re355-v1)
 	migrate_leds "re355:=tp-link:"
