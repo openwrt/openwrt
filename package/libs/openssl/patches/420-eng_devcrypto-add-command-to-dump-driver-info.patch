@@ -1,7 +1,7 @@
-From ced41f7d44cb8cd3c4523f7271530d9d92e4f064 Mon Sep 17 00:00:00 2001
+From 78e7b1cc7119622645bc5a8542c55b6c95dc7868 Mon Sep 17 00:00:00 2001
 From: Eneas U de Queiroz <cote2004-github@yahoo.com>
 Date: Tue, 6 Nov 2018 22:54:07 -0200
-Subject: [PATCH 3/4] eng_devcrypto: add command to dump driver info
+Subject: eng_devcrypto: add command to dump driver info
 
 This is useful to determine the kernel driver running each algorithm.
 
@@ -11,9 +11,11 @@ Reviewed-by: Matthias St. Pierre <Matthias.St.Pierre@ncp-e.com>
 Reviewed-by: Richard Levitte <levitte@openssl.org>
 (Merged from https://github.com/openssl/openssl/pull/7585)
 
+diff --git a/crypto/engine/eng_devcrypto.c b/crypto/engine/eng_devcrypto.c
+index 5ec38ca8f3..64dc6b891d 100644
 --- a/crypto/engine/eng_devcrypto.c
 +++ b/crypto/engine/eng_devcrypto.c
-@@ -50,16 +50,20 @@ static int use_softdrivers = DEVCRYPTO_D
+@@ -50,16 +50,20 @@ static int use_softdrivers = DEVCRYPTO_DEFAULT_USE_SOFDTRIVERS;
   */
  struct driver_info_st {
      enum devcrypto_status_t {
@@ -80,7 +82,7 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
  #endif /* CIOCGSESSINFO */
          }
          ioctl(cfd, CIOCFSESSION, &sess.ses);
-@@ -505,8 +514,11 @@ static void destroy_all_cipher_methods(v
+@@ -505,8 +514,11 @@ static void destroy_all_cipher_methods(void)
  {
      size_t i;
  
@@ -93,7 +95,7 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
  }
  
  static int devcrypto_ciphers(ENGINE *e, const EVP_CIPHER **cipher,
-@@ -550,6 +562,40 @@ static int cryptodev_select_cipher_cb(co
+@@ -550,6 +562,40 @@ static int cryptodev_select_cipher_cb(const char *str, int len, void *usr)
      return 1;
  }
  
@@ -188,7 +190,7 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
              EVP_MD_meth_free(known_digest_methods[i]);
              known_digest_methods[i] = NULL;
              goto finish;
-@@ -894,8 +945,11 @@ static void destroy_all_digest_methods(v
+@@ -894,8 +945,11 @@ static void destroy_all_digest_methods(void)
  {
      size_t i;
  
@@ -201,7 +203,7 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
  }
  
  static int devcrypto_digests(ENGINE *e, const EVP_MD **digest,
-@@ -939,6 +993,43 @@ static int cryptodev_select_digest_cb(co
+@@ -939,6 +993,43 @@ static int cryptodev_select_digest_cb(const char *str, int len, void *usr)
      return 1;
  }
  
@@ -245,7 +247,7 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
  #endif
  
  /******************************************************************************
-@@ -983,6 +1074,11 @@ static const ENGINE_CMD_DEFN devcrypto_c
+@@ -983,6 +1074,11 @@ static const ENGINE_CMD_DEFN devcrypto_cmds[] = {
      ENGINE_CMD_FLAG_STRING},
  #endif
  
@@ -257,7 +259,7 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
     {0, NULL, NULL, 0}
  };
  
-@@ -1051,6 +1147,13 @@ static int devcrypto_ctrl(ENGINE *e, int
+@@ -1051,6 +1147,13 @@ static int devcrypto_ctrl(ENGINE *e, int cmd, long i, void *p, void (*f) (void))
          return 1;
  #endif /* IMPLEMENT_DIGEST */
  
