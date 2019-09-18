@@ -45,6 +45,7 @@ ipq40xx_setup_interfaces()
 		;;
 	engenius,eap1300|\
 	meraki,mr33|\
+	mikrotik,lhgg-60ad|\
 	netgear,ex6100v2|\
 	netgear,ex6150v2|\
 	zyxel,wre6606)
@@ -84,6 +85,9 @@ ipq40xx_setup_macs()
 	linksys,ea6350v3)
 		wan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
+		;;
+	mikrotik,lhgg-60ad)
+		lan_mac=$(mtd_get_mac_binary hard_config 0x10)
 		;;
 	esac
 

@@ -14,6 +14,24 @@ define Device/Default
 	IMAGE/sysupgrade.bin/squashfs :=
 endef
 
+define Build/ipq-aux-loader-common
+	rm -rf $@.src
+	$(MAKE) -C ipq-aux-loader \
+		PKG_BUILD_DIR="$@.src" \
+		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
+		TEXT_BASE2="0x00000000" \
+		BOARD="$(BOARDNAME)" PLATFORM="$(PLATFORM)" \
+		BLOCKSIZE="$(BLOCKSIZE)" PAGESIZE="$(PAGESIZE)" \
+		UART="$(AUX_LOADER_UART)" \
+		$(1) LOADER_TYPE=$(2) compile loader.$(2)
+	mv "$@.$(2)" "$@"
+	rm -rf $@.src
+endef
+
+define Build/ipq-aux-loader-kernel
+	$(call Build/ipq-aux-loader-common,LOADER_DATA="$@",$(1))
+endef
+
 define Device/FitImage
 	KERNEL_SUFFIX := -fit-uImage.itb
 	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
@@ -286,6 +304,29 @@ define Device/meraki_mr33
 	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
 endef
 TARGET_DEVICES += meraki_mr33
+
+define Device/MikrotikNOR
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := MikroTik
+	BLOCKSIZE := 64k
+	IMAGE_SIZE := 16128k
+	AUX_LOADER_UART := NONE
+	KERNEL_INITRAMFS_SUFFIX := -fit-uImage.elf
+	PLATFORM := mikrotik-ipq4xxx
+	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb | ipq-aux-loader-kernel elf
+	IMAGES = sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	DEVICE_PACKAGES := rbcfg
+endef
+
+define Device/mikrotik_lhgg-60ad
+	$(call Device/MikrotikNOR)
+	DEVICE_MODEL := Wireless Wire Dish LHGG-60ad
+	DEVICE_DTS := qcom-ipq4019-lhgg-60ad
+	DEVICE_PACKAGES += -kmod-ath10k-ct -ath10k-firmware-qca4019-ct kmod-wil6210
+endef
+TARGET_DEVICES += mikrotik_lhgg-60ad
 
 define Device/netgear_ex61x0v2
 	$(call Device/DniImage)
