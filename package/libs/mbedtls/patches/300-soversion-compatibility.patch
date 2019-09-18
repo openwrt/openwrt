@@ -4,7 +4,7 @@
  
  if(USE_SHARED_MBEDTLS_LIBRARY)
      add_library(mbedcrypto SHARED ${src_crypto})
--    set_target_properties(mbedcrypto PROPERTIES VERSION 2.16.2 SOVERSION 3)
+-    set_target_properties(mbedcrypto PROPERTIES VERSION 2.16.3 SOVERSION 3)
 +    set_target_properties(mbedcrypto PROPERTIES VERSION 2.12.0 SOVERSION 1)
      target_link_libraries(mbedcrypto ${libs})
  
@@ -13,7 +13,7 @@
      target_link_libraries(mbedx509 ${libs} mbedcrypto)
  
      add_library(mbedtls SHARED ${src_tls})
--    set_target_properties(mbedtls PROPERTIES VERSION 2.16.2 SOVERSION 12)
+-    set_target_properties(mbedtls PROPERTIES VERSION 2.16.3 SOVERSION 12)
 +    set_target_properties(mbedtls PROPERTIES VERSION 2.12.0 SOVERSION 10)
      target_link_libraries(mbedtls ${libs} mbedx509)
  
@@ -30,5 +30,5 @@
 -SOEXT_CRYPTO=so.3
 +SOEXT_CRYPTO=so.1
  
- # Set AR_DASH= (empty string) to use an ar implentation that does not accept
+ # Set AR_DASH= (empty string) to use an ar implementation that does not accept
  # the - prefix for command line options (e.g. llvm-ar)
