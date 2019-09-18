@@ -23,11 +23,9 @@ CC: stable@vger.kernel.org # v3.2+
  arch/mips/ath79/irq.c | 12 +++++++++---
  1 file changed, 9 insertions(+), 3 deletions(-)
 
-diff --git a/arch/mips/ath79/irq.c b/arch/mips/ath79/irq.c
-index 2dfff1f19004..a03a6bcaf6fd 100644
 --- a/arch/mips/ath79/irq.c
 +++ b/arch/mips/ath79/irq.c
-@@ -32,15 +32,21 @@ static void ar934x_ip2_irq_dispatch(struct irq_desc *desc)
+@@ -32,15 +32,21 @@ static void ar934x_ip2_irq_dispatch(stru
  	u32 status;
  
  	status = ath79_reset_rr(AR934X_RESET_REG_PCIE_WMAC_INT_STATUS);
@@ -52,6 +50,3 @@ index 2dfff1f19004..a03a6bcaf6fd 100644
  	}
  }
  
--- 
-2.17.1
-
