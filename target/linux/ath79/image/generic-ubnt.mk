@@ -46,6 +46,7 @@ endef
 
 define Device/ubnt-xm
   $(Device/ubnt)
+  DEVICE_VARIANT := XM
   DEVICE_PACKAGES += kmod-usb-ohci rssileds
   UBNT_TYPE := XM
   UBNT_CHIP := ar7240
@@ -71,6 +72,7 @@ endef
 
 define Device/ubnt-xw
   $(Device/ubnt)
+  DEVICE_VARIANT := XW
   UBNT_TYPE := XW
   UBNT_CHIP := ar934x
   UBNT_BOARD := XM
@@ -96,7 +98,6 @@ TARGET_DEVICES += ubnt_bullet-m
 define Device/ubnt_bullet-m-xw
   $(Device/ubnt-xw)
   DEVICE_MODEL := Bullet-M
-  DEVICE_VARIANT := XW
   SUPPORTED_DEVICES += bullet-m-xw
 endef
 TARGET_DEVICES += ubnt_bullet-m-xw
@@ -118,7 +119,6 @@ TARGET_DEVICES += ubnt_nanostation-m
 define Device/ubnt_nanostation-m-xw
   $(Device/ubnt-xw)
   DEVICE_MODEL := Nanostation M
-  DEVICE_VARIANT := XW
   SUPPORTED_DEVICES += nano-m-xw
 endef
 TARGET_DEVICES += ubnt_nanostation-m-xw
