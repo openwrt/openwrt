@@ -302,7 +302,6 @@ platform_check_image() {
 	gl-ar750|\
 	gl-domino|\
 	gl-mifi|\
-	gl-e750|\
 	gl-usb150|\
 	hiwifi-hc6361|\
 	hornet-ub-x2|\
@@ -367,6 +366,7 @@ platform_check_image() {
 		return 0
 		;;
 	gl-ar300m|\
+	gl-e750|\
 	gl-x750|\
 	gl-x1200|\
 	gl-ar750s)
@@ -792,6 +792,7 @@ platform_pre_upgrade() {
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
 		;;
 	gl-ar300m|\
+	gl-e750|\
 	gl-x750|\
 	gl-x1200|\
 	gl-ar750s)
