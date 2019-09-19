@@ -105,6 +105,7 @@ case "$FIRMWARE" in
 		caldata_extract "0:ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
 		;;
+	engenius,enh1350ext |\
 	engenius,ens620ext)
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +2)
@@ -193,6 +194,7 @@ case "$FIRMWARE" in
 		caldata_extract "0:ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:APPSBLENV ethaddr) +1)
 		;;
+	engenius,enh1350ext |\
 	engenius,ens620ext)
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +3)

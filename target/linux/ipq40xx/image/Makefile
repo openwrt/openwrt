@@ -391,6 +391,20 @@ define Device/engenius_emr3500
 endef
 TARGET_DEVICES += engenius_emr3500
 
+define Device/engenius_enh1350ext
+	$(call Device/FitImage)
+	DEVICE_VENDOR := EnGenius
+	DEVICE_MODEL := ENH1350EXT
+	DEVICE_DTS_CONFIG := config@4
+	DEVICE_DTS := qcom-ipq4018-enh1350ext
+	KERNEL_SIZE := 4096k
+	IMAGE_SIZE := 30720k
+	IMAGES := sysupgrade.bin factory.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	IMAGE/factory.bin := qsdk-ipq-factory-nor | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += engenius_enh1350ext
+
 define Device/engenius_ens620ext
 	$(call Device/FitImage)
 	DEVICE_VENDOR := EnGenius
