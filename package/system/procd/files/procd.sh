@@ -412,7 +412,7 @@ procd_running() {
 
 	json_init
 	json_add_string name "$service"
-	running=$(_procd_ubus_call list | jsonfilter -e "@.$service.instances.${instance}.running")
+	running=$(_procd_ubus_call list | jsonfilter -e "@['$service'].instances['$instance'].running")
 
 	[ "$running" = "true" ]
 }
