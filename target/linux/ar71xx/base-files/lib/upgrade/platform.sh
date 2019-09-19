@@ -499,7 +499,7 @@ platform_check_image() {
 		local magic_ver="0100"
 
 		case "$board" in
-		tl-wdr6500-v2)
+		tl-wdr3320-v2|tl-wdr6500-v2)
 			magic_ver="0200"
 			;;
 		esac
