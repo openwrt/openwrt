@@ -1,7 +1,7 @@
-From 12f6eaa7d1f747d8df369bead3ce3d7b8b965801 Mon Sep 17 00:00:00 2001
+From 250db0df9643d122e00313313102c642f1adac72 Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dave.stevenson@raspberrypi.org>
 Date: Thu, 2 May 2019 15:50:01 +0100
-Subject: [PATCH 486/782] staging: mmal-vchiq: Fix memory leak in error path
+Subject: [PATCH 486/806] staging: mmal-vchiq: Fix memory leak in error path
 
 On error, vchiq_mmal_component_init could leave the
 event context allocated for ports.

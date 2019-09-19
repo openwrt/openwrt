@@ -1,7 +1,7 @@
-From 82abb69d99441fde0d3c5400131aa1d1565f2f3d Mon Sep 17 00:00:00 2001
+From f389abea861f9bd3165f98a8d3a1f3407e9fc01a Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 14 Jan 2019 12:35:43 -0800
-Subject: [PATCH 580/782] drm/v3d: Skip MMU flush if the device is currently
+Subject: [PATCH 580/806] drm/v3d: Skip MMU flush if the device is currently
  off.
 
 If it's off, we know it will be reset on poweron, so the MMU won't

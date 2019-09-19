@@ -1,7 +1,7 @@
-From d0589d9184a7dacebd9409b43a78fae8bba65f52 Mon Sep 17 00:00:00 2001
+From ccf319a0265bfdb4a622a52645f159461bc88079 Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Thu, 27 Dec 2018 12:11:52 -0800
-Subject: [PATCH 585/782] drm/v3d: Refactor job management.
+Subject: [PATCH 585/806] drm/v3d: Refactor job management.
 
 The CL submission had two jobs embedded in an exec struct.  When I
 added TFU support, I had to replicate some of the exec stuff and some

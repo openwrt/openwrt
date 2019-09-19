@@ -1,7 +1,7 @@
-From b62720d42acc076d4585704ee2fec20cc26c284d Mon Sep 17 00:00:00 2001
+From 5ca5bd799b4f4a065b969461fa7852415bfb8c6f Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Thu, 8 Nov 2018 08:16:53 -0800
-Subject: [PATCH 562/782] drm/v3d: Clean up the reservation object setup.
+Subject: [PATCH 562/806] drm/v3d: Clean up the reservation object setup.
 
 The extra to_v3d_bo() calls came from copying this from the vc4
 driver, which stored the cma gem object in the structs.

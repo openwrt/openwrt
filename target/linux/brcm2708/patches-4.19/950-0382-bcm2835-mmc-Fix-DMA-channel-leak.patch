@@ -1,7 +1,7 @@
-From 1bee80161e0c19402988933d2197dd99e50662d5 Mon Sep 17 00:00:00 2001
+From 7458efc95816cc9d716d94a4894172c2a9d9fba7 Mon Sep 17 00:00:00 2001
 From: Lukas Wunner <lukas@wunner.de>
 Date: Wed, 16 Jan 2019 12:22:32 +0100
-Subject: [PATCH 382/782] bcm2835-mmc: Fix DMA channel leak
+Subject: [PATCH 382/806] bcm2835-mmc: Fix DMA channel leak
 
 The BCM2835 MMC host driver requests a DMA channel on probe but neglects
 to release the channel in the probe error path and on driver unbind.

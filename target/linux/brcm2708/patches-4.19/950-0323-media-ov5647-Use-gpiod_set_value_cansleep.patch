@@ -1,7 +1,7 @@
-From 8dd2a324c67fd760976d42a9e8682deee283657e Mon Sep 17 00:00:00 2001
+From 3be30ee1b3aafd7c6cc45bcea77f25c9613732f4 Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dave.stevenson@raspberrypi.org>
 Date: Tue, 18 Sep 2018 11:08:51 +0100
-Subject: [PATCH 323/782] media: ov5647: Use gpiod_set_value_cansleep
+Subject: [PATCH 323/806] media: ov5647: Use gpiod_set_value_cansleep
 
 All calls to the gpio library are in contexts that can sleep,
 therefore there is no issue with having those GPIOs controlled

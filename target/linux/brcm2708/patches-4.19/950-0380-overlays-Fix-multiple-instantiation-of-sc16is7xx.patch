@@ -1,7 +1,7 @@
-From 238fd7a2cda959e7c645b7a6fc4967049c12f69f Mon Sep 17 00:00:00 2001
+From 649efe5db3900ed3bbfd3c3daa3b96d8fc0b9d68 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Fri, 22 Mar 2019 16:44:47 +0000
-Subject: [PATCH 380/782] overlays: Fix multiple-instantiation of sc16is7xx*
+Subject: [PATCH 380/806] overlays: Fix multiple-instantiation of sc16is7xx*
 
 The registration of the fixed clocks uses the node name as the clock
 name, causing a clash if two clock nodes have the same name, regardless

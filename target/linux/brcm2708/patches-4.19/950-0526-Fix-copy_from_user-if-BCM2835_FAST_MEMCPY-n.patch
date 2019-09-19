@@ -1,7 +1,7 @@
-From 5866e8496c13c2980a3bc448b8174bf361c8f1ed Mon Sep 17 00:00:00 2001
+From ab2695d38f4ffadde05c2275ac68f4aad68ef336 Mon Sep 17 00:00:00 2001
 From: Tim Gover <tim.gover@raspberrypi.org>
 Date: Thu, 14 Mar 2019 10:16:02 +0000
-Subject: [PATCH 526/782] Fix copy_from_user if BCM2835_FAST_MEMCPY=n
+Subject: [PATCH 526/806] Fix copy_from_user if BCM2835_FAST_MEMCPY=n
 
 The change which introduced CONFIG_BCM2835_FAST_MEMCPY unconditionally
 changed the behaviour of arm_copy_from_user. The page pinning code

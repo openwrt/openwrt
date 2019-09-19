@@ -1,7 +1,7 @@
-From 53bd5b442276d3983ecbe43b7ec447b41f6c982a Mon Sep 17 00:00:00 2001
+From 3e6b687bae81bdf5a430ffaa04aa04ee195a866c Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Thu, 2 May 2019 13:22:53 -0700
-Subject: [PATCH 610/782] drm/v3d: Clock V3D down when not in use.
+Subject: [PATCH 610/806] drm/v3d: Clock V3D down when not in use.
 
 My various attempts at re-enabling runtime PM have failed, so just
 crank the clock down when V3D is idle to reduce power consumption.

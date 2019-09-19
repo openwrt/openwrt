@@ -1,7 +1,7 @@
-From 907c3b401f27e6ae6125abc043586b22b5f128ee Mon Sep 17 00:00:00 2001
+From f5f3df2b1746a9ba9420ae11988fc37a7b93691d Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Fri, 28 Sep 2018 16:21:23 -0700
-Subject: [PATCH 559/782] drm/v3d: Fix a use-after-free race accessing the
+Subject: [PATCH 559/806] drm/v3d: Fix a use-after-free race accessing the
  scheduler's fences.
 
 Once we push the job, the scheduler could run it and free it.  So, if

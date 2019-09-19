@@ -1,7 +1,7 @@
-From 0ea3f880ec6425f72634b6a12b98ab7e82d01966 Mon Sep 17 00:00:00 2001
+From c2957d7709a43c81e5345d537feaa6980ffcc1a4 Mon Sep 17 00:00:00 2001
 From: James Hughes <james.hughes@raspberrypi.org>
 Date: Mon, 29 Jul 2019 12:02:59 +0100
-Subject: [PATCH 727/782] Fixup FKMS interrupt handing for non-existent display
+Subject: [PATCH 727/806] Fixup FKMS interrupt handing for non-existent display
 
 If an errant interrupt flag was received from a non-existent display,
 a NULL pointer access was made. Protect against this by checking if a

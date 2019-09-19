@@ -1,7 +1,7 @@
-From cae2325b0c66b3cbf9f3bdf47d0b398c7b684903 Mon Sep 17 00:00:00 2001
+From d8c3886387714f69359e2fce74b114f44a9b79f8 Mon Sep 17 00:00:00 2001
 From: P33M <P33M@users.noreply.github.com>
 Date: Tue, 26 Mar 2019 09:48:25 +0000
-Subject: [PATCH 389/782] defconfigs: disable memory and IO cgroups (#2908)
+Subject: [PATCH 389/806] defconfigs: disable memory and IO cgroups (#2908)
 
 Due to an upstream bug, memory is leaked in the inode cache when cgroups
 are enabled. Disable as this is causing crashes.

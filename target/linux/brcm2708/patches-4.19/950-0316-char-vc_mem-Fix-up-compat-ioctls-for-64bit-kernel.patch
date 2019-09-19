@@ -1,7 +1,7 @@
-From 67067496d0105ad88fcc0ba5146621b1c271326c Mon Sep 17 00:00:00 2001
+From 966ff2b4c758eb8c8c04f26422cd183e6aa8eda5 Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dave.stevenson@raspberrypi.org>
 Date: Wed, 23 Jan 2019 18:25:50 +0000
-Subject: [PATCH 316/782] char: vc_mem: Fix up compat ioctls for 64bit kernel
+Subject: [PATCH 316/806] char: vc_mem: Fix up compat ioctls for 64bit kernel
 
 compat_ioctl wasn't defined, so 32bit user/64bit kernel
 always failed.

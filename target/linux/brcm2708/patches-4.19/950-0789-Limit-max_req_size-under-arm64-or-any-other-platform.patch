@@ -1,7 +1,7 @@
-From ea1ecb2257bef3cc0b23c08364436103141999c7 Mon Sep 17 00:00:00 2001
+From 7bfcb31431f06efc233e4cc4d7ab65e10a6522cd Mon Sep 17 00:00:00 2001
 From: Yaroslav Rosomakho <yaroslavros@gmail.com>
 Date: Fri, 23 Aug 2019 11:02:22 +0200
-Subject: [PATCH 2/2] Limit max_req_size under arm64 (or any other platform
+Subject: [PATCH 789/806] Limit max_req_size under arm64 (or any other platform
  that uses swiotlb) to prevent potential buffer overflow due to bouncing.
 
 Signed-off-by: Yaroslav Rosomakho <yaroslavros@gmail.com>
@@ -19,7 +19,7 @@ Signed-off-by: Yaroslav Rosomakho <yaroslavros@gmail.com>
  
  #include "sdhci.h"
  
-@@ -1377,7 +1378,10 @@ static int bcm2835_mmc_add_host(struct b
+@@ -1374,7 +1375,10 @@ static int bcm2835_mmc_add_host(struct b
  	}
  #endif
  	mmc->max_segs = 128;

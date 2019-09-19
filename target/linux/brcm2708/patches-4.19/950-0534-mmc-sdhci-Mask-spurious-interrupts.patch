@@ -1,7 +1,7 @@
-From 18eeb92e1b770f5c56411d7a2559b3696450578f Mon Sep 17 00:00:00 2001
+From be309b7db77215610d5ac15bf0aacd47ea5b3433 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Fri, 28 Sep 2018 16:24:05 +0100
-Subject: [PATCH 534/782] mmc: sdhci: Mask "spurious" interrupts
+Subject: [PATCH 534/806] mmc: sdhci: Mask "spurious" interrupts
 
 Add a filter for "spurious" Transfer Complete interrupts, attempting
 to make it as specific as possible:

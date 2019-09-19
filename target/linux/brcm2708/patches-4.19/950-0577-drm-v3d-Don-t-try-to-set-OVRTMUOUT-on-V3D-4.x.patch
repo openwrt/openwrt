@@ -1,7 +1,7 @@
-From f56d4ecf8f2b666cf6fc166b1b9b30a9af650d00 Mon Sep 17 00:00:00 2001
+From 8011a92f6eabd682e62e268bcd80b45ce3f06af4 Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Tue, 16 Oct 2018 10:13:41 -0700
-Subject: [PATCH 577/782] drm/v3d: Don't try to set OVRTMUOUT on V3D 4.x.
+Subject: [PATCH 577/806] drm/v3d: Don't try to set OVRTMUOUT on V3D 4.x.
 
 The old field is gone and the register now has a different field,
 QRMAXCNT for how many TMU requests get serviced before thread switch.

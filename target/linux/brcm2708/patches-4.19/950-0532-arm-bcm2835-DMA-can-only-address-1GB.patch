@@ -1,7 +1,7 @@
-From 1d11e9f3af10168a795e2002de8ce909cb6c2558 Mon Sep 17 00:00:00 2001
+From 9334afe7293b3a78b7e070a70880b2db7aa98365 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Wed, 29 May 2019 15:47:42 +0100
-Subject: [PATCH 532/782] arm: bcm2835: DMA can only address 1GB
+Subject: [PATCH 532/806] arm: bcm2835: DMA can only address 1GB
 
 The legacy peripherals can only address the first gigabyte of RAM, so
 ensure that DMA allocations are restricted to that region.

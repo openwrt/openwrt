@@ -1,7 +1,7 @@
-From 220d93946024aea1000850bc4d13067891d4469e Mon Sep 17 00:00:00 2001
+From 0dbdeb9e76e956df275e162224e12eacb0cc8b02 Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dave.stevenson@raspberrypi.org>
 Date: Wed, 29 May 2019 15:44:11 +0100
-Subject: [PATCH 619/782] drm/vc4: Correct SAND support for FKMS.
+Subject: [PATCH 619/806] drm/vc4: Correct SAND support for FKMS.
 
 It was accepting NV21 which doesn't map through, but
 also wasn't advertising the modifier so nothing would know

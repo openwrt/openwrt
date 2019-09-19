@@ -1,7 +1,7 @@
-From 951bcfc65ab5fa3f91fd638c0addd8aa817fdd35 Mon Sep 17 00:00:00 2001
+From 5a58b2bb907d57dc2b1cc2619bd5f1d948509e3e Mon Sep 17 00:00:00 2001
 From: Kieran Bingham <kieran.bingham@ideasonboard.com>
 Date: Mon, 18 Mar 2019 17:16:41 +0000
-Subject: [PATCH 369/782] vcsm: Remove set but unused variable
+Subject: [PATCH 369/806] vcsm: Remove set but unused variable
 
 The 'success' variable is set by the call to vchi_service_close() but never checked.
 Remove it, keeping the call in place.

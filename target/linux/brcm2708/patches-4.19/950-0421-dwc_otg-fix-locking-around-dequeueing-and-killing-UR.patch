@@ -1,7 +1,7 @@
-From 3ddebbe50a6d47110e7f0c4f71c5a3364af25c9a Mon Sep 17 00:00:00 2001
+From ea7ff2070d564858c445cfdbd883ea00927c0ada Mon Sep 17 00:00:00 2001
 From: P33M <p33m@github.com>
 Date: Tue, 9 Apr 2019 16:40:48 +0100
-Subject: [PATCH 421/782] dwc_otg: fix locking around dequeueing and killing
+Subject: [PATCH 421/806] dwc_otg: fix locking around dequeueing and killing
  URBs
 
 kill_urbs_in_qh_list() is practically only ever called with the fiq lock

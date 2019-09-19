@@ -1,7 +1,7 @@
-From b67424dd64ed7700e9316975511b6388f1a31130 Mon Sep 17 00:00:00 2001
+From 7b2fac96ce48939e399707c4b8bd9905d6274a05 Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dave.stevenson@raspberrypi.org>
 Date: Fri, 8 Mar 2019 10:38:59 +0000
-Subject: [PATCH 367/782] staging: vc_sm_cma: Remove erroneous misc_deregister
+Subject: [PATCH 367/806] staging: vc_sm_cma: Remove erroneous misc_deregister
 
 Code from the misc /dev node was still present in
 bcm2835_vc_sm_cma_remove, which caused a NULL deref.

@@ -1,7 +1,7 @@
-From 958cb34d03c737d06701bae48a2bf319bc993803 Mon Sep 17 00:00:00 2001
+From d36a5a94156ebe7e9906574fa8b01b200a15c11d Mon Sep 17 00:00:00 2001
 From: Kieran Bingham <kieran.bingham@ideasonboard.com>
 Date: Mon, 18 Mar 2019 17:14:51 +0000
-Subject: [PATCH 368/782] vcsm: Fix makefile include on out-of-tree builds
+Subject: [PATCH 368/806] vcsm: Fix makefile include on out-of-tree builds
 
 The vc_sm module tries to include the 'fs' directory from the
 $(srctree). $(srctree) is already provided by the build system, and

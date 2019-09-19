@@ -1,7 +1,7 @@
-From e3d746c432f2c4d4718b65619b5008bf93e585fb Mon Sep 17 00:00:00 2001
+From fdbe849f960ee92befd781cff14d9b76142b0981 Mon Sep 17 00:00:00 2001
 From: P33M <p33m@github.com>
 Date: Thu, 2 May 2019 11:53:45 +0100
-Subject: [PATCH 479/782] lan78xx: use default alignment for rx buffers
+Subject: [PATCH 479/806] lan78xx: use default alignment for rx buffers
 
 The lan78xx uses a 12-byte hardware rx header, so there is no need
 to allocate SKBs with NET_IP_ALIGN set. Removes alignment faults

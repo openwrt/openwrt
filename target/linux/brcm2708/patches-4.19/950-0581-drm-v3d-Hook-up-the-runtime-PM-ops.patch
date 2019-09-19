@@ -1,7 +1,7 @@
-From db112a7e85663767c6cc71c094ba3751d91eb911 Mon Sep 17 00:00:00 2001
+From 30dd82d785715b2ed52a5079595ffcd2ec1f728d Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 14 Jan 2019 14:47:57 -0800
-Subject: [PATCH 581/782] drm/v3d: Hook up the runtime PM ops.
+Subject: [PATCH 581/806] drm/v3d: Hook up the runtime PM ops.
 
 In translating the runtime PM code from vc4, I missed the ".pm"
 assignment to actually connect them up.  Fixes missing MMU setup if

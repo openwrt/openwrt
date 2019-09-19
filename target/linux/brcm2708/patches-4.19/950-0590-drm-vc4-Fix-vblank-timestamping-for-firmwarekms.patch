@@ -1,7 +1,7 @@
-From a8e8da5e2dfaeb711d393579840d8852004f241c Mon Sep 17 00:00:00 2001
+From c0041a9fe33d6031267d9f3e2372833908e97337 Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Tue, 2 Apr 2019 13:29:00 -0700
-Subject: [PATCH 590/782] drm/vc4: Fix vblank timestamping for firmwarekms.
+Subject: [PATCH 590/806] drm/vc4: Fix vblank timestamping for firmwarekms.
 
 The core doesn't expect a false return from the scanoutpos function in
 normal usage, so we were doing the precise vblank timestamping path

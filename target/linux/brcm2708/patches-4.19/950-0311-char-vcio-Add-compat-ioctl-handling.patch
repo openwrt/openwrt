@@ -1,7 +1,7 @@
-From 38287ab40da441726d5394c65021d170a2e6840f Mon Sep 17 00:00:00 2001
+From 70194b474d22974cd46356e5b3d3b0582abd02da Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dave.stevenson@raspberrypi.org>
 Date: Thu, 24 Jan 2019 13:56:30 +0000
-Subject: [PATCH 311/782] char: vcio: Add compat ioctl handling
+Subject: [PATCH 311/806] char: vcio: Add compat ioctl handling
 
 There was no compat ioctl handler, so 32 bit userspace on a
 64 bit kernel failed as IOCTL_MBOX_PROPERTY used the size

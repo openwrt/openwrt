@@ -1,7 +1,7 @@
-From 76440af3e40de977e9efe4a8e4ef2fa993f6b3be Mon Sep 17 00:00:00 2001
+From 856c8fdf68e589c89ed0518aab727c54fdff5afa Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Tue, 21 May 2019 13:36:52 +0100
-Subject: [PATCH 545/782] dwc_otg: Choose appropriate IRQ handover strategy
+Subject: [PATCH 545/806] dwc_otg: Choose appropriate IRQ handover strategy
 
 2711 has no MPHI peripheral, but the ARM Control block can fake
 interrupts. Use the size of the DTB "mphi" reg block to determine

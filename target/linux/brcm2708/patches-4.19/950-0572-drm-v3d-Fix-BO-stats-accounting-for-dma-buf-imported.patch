@@ -1,7 +1,7 @@
-From da3b2808835148e309a3e6fd02ca351813d82f1e Mon Sep 17 00:00:00 2001
+From f91d0382b735a3d7711f6b160d80627cd4be54af Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Thu, 7 Feb 2019 15:26:13 -0800
-Subject: [PATCH 572/782] drm/v3d: Fix BO stats accounting for dma-buf-imported
+Subject: [PATCH 572/806] drm/v3d: Fix BO stats accounting for dma-buf-imported
  buffers.
 
 We always decrement at GEM free, so make sure we increment at GEM

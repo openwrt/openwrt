@@ -1,7 +1,7 @@
-From 1993e1c599de968f063a1b828c362da526ff4e57 Mon Sep 17 00:00:00 2001
+From abee30ca29ec11b62842934de04b5a0033bff21b Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 3 Dec 2018 14:24:37 -0800
-Subject: [PATCH 570/782] drm/v3d: Stop trying to flush L2C on V3D 3.3+
+Subject: [PATCH 570/806] drm/v3d: Stop trying to flush L2C on V3D 3.3+
 
 This cache was replaced with the slice accessing the L2T in the newer
 generations.  Noted by Dave during review.

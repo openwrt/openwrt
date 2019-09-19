@@ -1,7 +1,7 @@
-From c3fc29179a4dbbd9efa90fb462ef5aac7507ec1a Mon Sep 17 00:00:00 2001
+From 9f29c6c8865de6f2dc200cb4c59a447d0884a6b3 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Thu, 1 Aug 2019 08:58:48 +0100
-Subject: [PATCH 726/782] can: mcp251x: Allow more time after a reset
+Subject: [PATCH 726/806] can: mcp251x: Allow more time after a reset
 
 Some boards take longer than 5ms to power up after a reset, so allow
 a few retry attempts before giving up.

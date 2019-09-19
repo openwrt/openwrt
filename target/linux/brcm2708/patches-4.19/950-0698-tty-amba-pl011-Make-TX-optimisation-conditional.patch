@@ -1,7 +1,7 @@
-From 977b264d9ab1e0e4515b5066507d8737cef83fd7 Mon Sep 17 00:00:00 2001
+From 3e3c13488e4efa0236c47a98ee5e759bf1f7c757 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Thu, 11 Jul 2019 13:13:39 +0100
-Subject: [PATCH 698/782] tty: amba-pl011: Make TX optimisation conditional
+Subject: [PATCH 698/806] tty: amba-pl011: Make TX optimisation conditional
 
 pl011_tx_chars takes a "from_irq" parameter to reduce the number of
 register accesses. When from_irq is true the function assumes that the

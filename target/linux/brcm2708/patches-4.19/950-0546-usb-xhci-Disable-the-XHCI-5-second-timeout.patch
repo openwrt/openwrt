@@ -1,7 +1,7 @@
-From f158e5734e27cb6ef206828010876b45090e87b6 Mon Sep 17 00:00:00 2001
+From ff7222c0771a5e28666335663571058e560ad32b Mon Sep 17 00:00:00 2001
 From: Tim Gover <tim.gover@raspberrypi.org>
 Date: Fri, 22 Mar 2019 09:47:14 +0000
-Subject: [PATCH 546/782] usb: xhci: Disable the XHCI 5 second timeout
+Subject: [PATCH 546/806] usb: xhci: Disable the XHCI 5 second timeout
 
 If the VL805 EEPROM has not been programmed then boot will hang for five
 seconds. The timeout seems to be arbitrary and is an unecessary

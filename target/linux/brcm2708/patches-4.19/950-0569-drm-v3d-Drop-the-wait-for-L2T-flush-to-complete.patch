@@ -1,7 +1,7 @@
-From 74602def172fe07a4e8a9550c9e9e29a4ffe35fc Mon Sep 17 00:00:00 2001
+From 9d8fa62500ae52348d36766e70b49c7508addaf3 Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 3 Dec 2018 14:24:36 -0800
-Subject: [PATCH 569/782] drm/v3d: Drop the wait for L2T flush to complete.
+Subject: [PATCH 569/806] drm/v3d: Drop the wait for L2T flush to complete.
 
 According to Dave, once you've started an L2T flush, all L2T accesses
 will be blocked until the flush completes.  This fixes a consistent

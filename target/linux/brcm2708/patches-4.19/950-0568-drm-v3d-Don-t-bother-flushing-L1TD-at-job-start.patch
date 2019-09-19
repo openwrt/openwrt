@@ -1,7 +1,7 @@
-From 0dc89528490cf496fe2d4f75f07221713c94afe5 Mon Sep 17 00:00:00 2001
+From 4a6410a53059d6505680b70fc438b7cfbf8939ca Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 3 Dec 2018 14:24:35 -0800
-Subject: [PATCH 568/782] drm/v3d: Don't bother flushing L1TD at job start.
+Subject: [PATCH 568/806] drm/v3d: Don't bother flushing L1TD at job start.
 
 This is the write combiner for TMU writes.  You're supposed to flush
 that at job end if you had dirtied any cachelines.  Flushing it at job

@@ -1,7 +1,7 @@
-From d04fee15737ffb8dcc7ebbb4f0a48887c6e39d71 Mon Sep 17 00:00:00 2001
+From 51d6e1924fd0e9d075bcef61bea5a475a0ad6634 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Wed, 20 Feb 2019 08:49:39 +0000
-Subject: [PATCH 525/782] arm: bcm2835: Fix FIQ early ioremap
+Subject: [PATCH 525/806] arm: bcm2835: Fix FIQ early ioremap
 
 The ioremapping creates mappings within the vmalloc area. The
 equivalent early function, create_mapping, now checks that the

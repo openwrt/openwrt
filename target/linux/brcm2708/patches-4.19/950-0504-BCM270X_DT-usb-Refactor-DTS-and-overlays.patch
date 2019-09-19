@@ -1,7 +1,7 @@
-From 975f019fd6a030c7252fe6f899efaa64a51e2d81 Mon Sep 17 00:00:00 2001
+From 61c44e24ea212b92bf6a420b94070ee6fc715811 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Wed, 8 May 2019 10:08:31 +0100
-Subject: [PATCH 504/782] BCM270X_DT: usb: Refactor DTS and overlays
+Subject: [PATCH 504/806] BCM270X_DT: usb: Refactor DTS and overlays
 
 Move the IRQ interrupt declaration in the usb node before the FIQ
 declaration, so that the dwc2 driver will find it. Name the
