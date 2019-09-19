@@ -333,6 +333,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:wan" "6@eth0"
 		;;
+	edimax,rg21s)
+		ucidef_add_switch "switch0" \
+			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
+		;;
 	gehua,ghl-r-001)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "4:wan" "6@eth0"
@@ -623,6 +627,10 @@ ramips_setup_macs()
 	netgear,r6350|\
 	netgear,r6850)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
+		;;
+	edimax,rg21s)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		;;
 	hiwifi,hc5661|\
 	hiwifi,hc5661a|\
