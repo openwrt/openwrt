@@ -193,7 +193,7 @@
  	sta = ap_get_sta(hapd, mgmt->sa);
  	if (sta == NULL) {
  		wpa_msg(hapd->msg_ctx, MSG_DEBUG, "Station " MACSTR " trying "
-@@ -3951,7 +3980,7 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -3963,7 +3992,7 @@ int ieee802_11_mgmt(struct hostapd_data
  
  
  	if (stype == WLAN_FC_STYPE_PROBE_REQ) {
@@ -202,7 +202,7 @@
  		return 1;
  	}
  
-@@ -3971,17 +4000,17 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -3983,17 +4012,17 @@ int ieee802_11_mgmt(struct hostapd_data
  	switch (stype) {
  	case WLAN_FC_STYPE_AUTH:
  		wpa_printf(MSG_DEBUG, "mgmt::auth");
@@ -291,7 +291,7 @@
  
  	if (addr == NULL) {
  		/*
-@@ -195,6 +199,12 @@ int hostapd_notif_assoc(struct hostapd_d
+@@ -208,6 +212,12 @@ int hostapd_notif_assoc(struct hostapd_d
  		goto fail;
  	}
  
