@@ -43,11 +43,9 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  drivers/spi/spi-gpio.c | 10 ++++++----
  1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/spi/spi-gpio.c b/drivers/spi/spi-gpio.c
-index 088772ebef9b..57d5b6dc0dd0 100644
 --- a/drivers/spi/spi-gpio.c
 +++ b/drivers/spi/spi-gpio.c
-@@ -242,10 +242,12 @@ static int spi_gpio_setup(struct spi_device *spi)
+@@ -242,10 +242,12 @@ static int spi_gpio_setup(struct spi_dev
  	 * The CS GPIOs have already been
  	 * initialized from the descriptor lookup.
  	 */

@@ -82,7 +82,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  };
  
  static const struct attribute_group *nvmem_ro_root_dev_groups[] = {
-@@ -478,6 +498,7 @@ struct nvmem_device *nvmem_register(cons
+@@ -485,6 +505,7 @@ struct nvmem_device *nvmem_register(cons
  	nvmem->dev.bus = &nvmem_bus_type;
  	nvmem->dev.parent = config->dev;
  	nvmem->priv = config->priv;
