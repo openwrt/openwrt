@@ -99,13 +99,18 @@ prepare-tmpinfo: FORCE
 		$(_SINGLE)$(NO_TRACE_MAKE) menuconfig $(PREP_MK); \
 	fi
 
+ifneq ($(DISTRO_PKG_CONFIG),)
+scripts/config/mconf: export PATH:=$(dir $(DISTRO_PKG_CONFIG)):$(PATH)
+endif
 scripts/config/mconf:
 	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config all CC="$(HOSTCC_WRAPPER)"
 
 $(eval $(call rdep,scripts/config,scripts/config/mconf))
 
 scripts/config/qconf:
-	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config qconf CC="$(HOSTCC_WRAPPER)"
+	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config qconf \
+		CC="$(HOSTCC_WRAPPER)" \
+		DISTRO-PKG-CONFIG="$(DISTRO_PKG_CONFIG)"
 
 scripts/config/conf:
 	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config conf CC="$(HOSTCC_WRAPPER)"
@@ -157,6 +162,10 @@ endif
 kernel_oldconfig: prepare_kernel_conf
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux oldconfig
 
+ifneq ($(DISTRO_PKG_CONFIG),)
+kernel_menuconfig: export PATH:=$(dir $(DISTRO_PKG_CONFIG)):$(PATH)
+kernel_nconfig: export PATH:=$(dir $(DISTRO_PKG_CONFIG)):$(PATH)
+endif
 kernel_menuconfig: prepare_kernel_conf
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux menuconfig
 

@@ -20,8 +20,6 @@ check_lxdialog = $(shell $(SHELL) $(CURDIR)/lxdialog/check-lxdialog.sh -$(1))
 export CFLAGS += -DKBUILD_NO_NLS -I. $(call check_lxdialog,ccflags)
 export CXXFLAGS += -DKBUILD_NO_NLS
 
-DISTRO-PKG-CONFIG := $(shell which -a pkg-config | grep -E '\/usr' | head -n 1)
-
 conf-objs	:= conf.o zconf.tab.o
 mconf-objs	:= mconf.o zconf.tab.o
 qconf-cxxobjs	:= qconf.o
