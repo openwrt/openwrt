@@ -21,8 +21,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -30,6 +29,7 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
+
 	/* LED used is dual-color,dual lead LED */
 	leds {
 		compatible = "gpio-leds";

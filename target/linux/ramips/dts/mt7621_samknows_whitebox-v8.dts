@@ -36,13 +36,14 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
+
 		wps {
 			label = "wps";
 			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
+
 		reset {
 			label = "reset";
 			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;

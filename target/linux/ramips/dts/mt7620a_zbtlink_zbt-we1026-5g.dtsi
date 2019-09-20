@@ -45,6 +45,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		lan {
 			label = "we1026-5g:green:lan";
 			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
@@ -64,8 +65,8 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;

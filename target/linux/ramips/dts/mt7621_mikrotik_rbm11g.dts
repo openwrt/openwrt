@@ -55,8 +55,8 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
+
 		res {
 			label = "reset";
 			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
