@@ -517,7 +517,7 @@ define KernelPackage/sound-soc-hifiberry-dacplusdsp
   KCONFIG:= \
     CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUSDSP
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-dacplusdsp.ko \
+    $(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-dacplusdsp.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-hifiberry-dacplusdsp)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
