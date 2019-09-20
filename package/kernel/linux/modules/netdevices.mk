@@ -1021,3 +1021,24 @@ define KernelPackage/bnx2x/description
 endef
 
 $(eval $(call KernelPackage,bnx2x))
+
+define KernelPackage/be2net
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Broadcom Emulex OneConnect 10Gbps NIC
+  DEPENDS:=@PCI_SUPPORT +kmod-hwmon-core
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/emulex/benet/be2net.ko
+  KCONFIG:= \
+	CONFIG_BE2NET \
+	CONFIG_BE2NET_BE2=y \
+	CONFIG_BE2NET_BE3=y \
+	CONFIG_BE2NET_LANCER=y \
+	CONFIG_BE2NET_SKYHAWK=y \
+	CONFIG_BE2NET_HWMON=y
+  AUTOLOAD:=$(call AutoProbe,be2net)
+endef
+
+define KernelPackage/be2net/description
+  Broadcom Emulex OneConnect 10Gbit SFP+ support, OneConnect OCe10xxx OCe11xxx OCe14xxx, LightPulse LPe12xxx
+endef
+
+$(eval $(call KernelPackage,be2net))

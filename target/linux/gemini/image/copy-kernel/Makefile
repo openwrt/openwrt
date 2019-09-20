@@ -13,20 +13,26 @@ OBJCOPY		:= $(CROSS_COMPILE)objcopy
 
 BIN_FLAGS	:= -O binary -S
 
-all: copy-kernel.bin
+SRC_DIR		:= $(CURDIR)/
+OUT_DIR		:= $(if $(O),$(if $(patsubst %/,,$(O)),$(O)/,$(O)),$(SRC_DIR))
+
+all: $(OUT_DIR)copy-kernel.bin
 
 # Don't build dependencies, this may die if $(CC) isn't gcc
 dep:
 
 install:
 
-%.o : %.S
+$(OUT_DIR):
+	mkdir -p $(OUT_DIR)
+
+$(OUT_DIR)%.o : $(SRC_DIR)%.S | $(OUT_DIR)
 	$(AS) $(ASFLAGS) -k -o $@ $<
 
-%.bin: %.o
+$(OUT_DIR)%.bin: $(OUT_DIR)%.o
 	$(OBJCOPY) $(BIN_FLAGS) $< $@
 
 mrproper: clean
 
 clean:
-	rm -f copy-kernel.bin copy-kernel.o
+	rm -f $(OUT_DIR)copy-kernel.bin $(OUT_DIR)copy-kernel.o

@@ -1,3 +1,4 @@
+udpu_check_emmc() {
 # uDPU uses combined ext4 and f2fs partitions.
 # partition layout:
 #	1. boot	(ext4)
@@ -5,17 +6,18 @@
 #	3. rootfs (f2fs)
 #	4. misc (f2fs)
 
-# Check which device is available, depending on the board revision
-if [ -b "/dev/mmcblk1" ]; then
-	emmc_dev=/dev/mmcblk1
-elif [ -b "/dev/mmcblk0" ]; then
-	emmc_dev=/dev/mmcblk0
-else
-	echo "Cannot detect eMMC flash, aborting.."
-	exit 1
-fi
+	# Check which device is available, depending on the board revision
+	if [ -b "/dev/mmcblk1" ]; then
+		emmc_dev=/dev/mmcblk1
+	elif [ -b "/dev/mmcblk0" ]; then
+		emmc_dev=/dev/mmcblk0
+	else
+		echo "Cannot detect eMMC flash, aborting.."
+		exit 1
+	fi
+}
 
-part_prep() {
+udpu_part_prep() {
 	 if [ "$(grep $1 /proc/mounts)" ]; then
 		mounted_part="$(grep $1 /proc/mounts | awk '{print $2}' | head -1)"
 		umount $mounted_part
@@ -23,7 +25,7 @@ part_prep() {
 	fi
 }
 
-do_part_check() {
+udpu_do_part_check() {
 	local emmc_parts="1 2 3 4"
 	local part_valid="1"
 
@@ -39,17 +41,17 @@ do_part_check() {
 
 		# Format the /misc part right away as we will need it for the firmware
 		printf "Formating /misc partition, this make take a while..\n"
-		part_prep ${emmc_dev}p4
+		udpu_part_prep ${emmc_dev}p4
 		mkfs.f2fs -q -l misc ${emmc_dev}p4
 		[ $? -eq 0 ] && printf "/misc partition formated successfully\n" || printf "/misc partition formatting failed\n"
 
-		do_initial_setup
+		udpu_do_initial_setup
 	else
 		printf "Partition table looks ok\n"
 	fi
 }
 
-do_misc_prep() {
+udpu_do_misc_prep() {
 	if [ ! "$(grep -wo /misc /proc/mounts)" ]; then
 		mkdir -p /misc
 		mount ${emmc_dev}p4 /misc
@@ -61,7 +63,7 @@ do_misc_prep() {
 
 			format_count=0
 			while [ "$format_count" -lt "1" ]; do
-				part_prep ${emmc_dev}p4
+				udpu_part_prep ${emmc_dev}p4
 				mkfs.f2fs -q -l misc ${emmc_dev}p4
 				mount ${emmc_dev}p4 /misc
 				if [ $? -ne 0 ]; then
@@ -77,23 +79,23 @@ do_misc_prep() {
 	fi
 }
 
-do_initial_setup() {
+udpu_do_initial_setup() {
 	# Prepare /recovery parition
-	part_prep ${emmc_dev}p2
+	udpu_part_prep ${emmc_dev}p2
 	mkfs.ext4 -q ${emmc_dev}p2 | echo y &> /dev/null
 
 	# Prepare /boot partition
-	part_prep ${emmc_dev}p1
+	udpu_part_prep ${emmc_dev}p1
 	mkfs.ext4 -q ${emmc_dev}p1 | echo y &> /dev/null
 
 	# Prepare /root partition
 	printf "Formating /root partition, this may take a while..\n"
-	part_prep ${emmc_dev}p3
+	udpu_part_prep ${emmc_dev}p3
 	mkfs.f2fs -q -l rootfs ${emmc_dev}p3
 	[ $? -eq 0 ] && printf "/root partition reformated\n"
 }
 
-do_regular_upgrade() {
+udpu_do_regular_upgrade() {
 	# Clean /boot partition - mfks.ext4 is not available in chroot
 	[ "$(grep -wo /boot /proc/mounts)" ] && umount /boot
 	mkdir -p /tmp/boot
@@ -108,14 +110,16 @@ do_regular_upgrade() {
 }
 
 platform_do_upgrade_uDPU() {
+	udpu_check_emmc
+
 	# Prepare and extract firmware on /misc partition
-	do_misc_prep
+	udpu_do_misc_prep
 
 	[ -f "/misc/firmware" ] && rm -r /misc/firmware
 	mkdir -p /misc/firmware
 	tar xzf "$1" -C /misc/firmware/
 
-	do_regular_upgrade
+	udpu_do_regular_upgrade
 
 	printf "Updating /boot partition\n"
 	tar xzf /misc/firmware/boot.tgz -C /tmp/boot
@@ -145,8 +149,8 @@ platform_do_upgrade_uDPU() {
 
 platform_copy_config_uDPU() {
 	# Config is saved on the /misc partition and copied on the rootfs after the reboot
-	if [ -f "/tmp/sysupgrade.tgz" ]; then
-		cp -f /tmp/sysupgrade.tgz /misc
+	if [ -f "$UPGRADE_BACKUP" ]; then
+		cp -f "$UPGRADE_BACKUP" "/misc/$BACKUP_FILE"
 		sync
 	fi
 }

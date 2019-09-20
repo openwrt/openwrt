@@ -108,7 +108,7 @@ define Device/adtran_bsap1880
   IMAGES += kernel.bin rootfs.bin
   IMAGE/kernel.bin := append-kernel | pad-to $$$$(BLOCKSIZE)
   IMAGE/rootfs.bin := append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
 
 define Device/adtran_bsap1800-v2
@@ -653,11 +653,13 @@ define Device/jjplus_ja76pf2
   DEVICE_VENDOR := jjPlus
   DEVICE_MODEL := JA76PF2
   DEVICE_PACKAGES += -kmod-ath9k -swconfig -wpad-mini -uboot-envtools fconfig
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | check-size $$$$(IMAGE_SIZE)
-#  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
+  IMAGES := kernel.bin rootfs.bin
+  IMAGE/kernel.bin := append-kernel
+  IMAGE/rootfs.bin := append-rootfs | pad-rootfs
   KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
   KERNEL_INITRAMFS := kernel-bin | append-dtb
   IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += ja76pf2
 endef
 TARGET_DEVICES += jjplus_ja76pf2
 

@@ -12,6 +12,17 @@ get_mac_binary() {
 	hexdump -v -n 6 -s $offset -e '5/1 "%02x:" 1/1 "%02x"' $path 2>/dev/null
 }
 
+get_mac_label() {
+	local basepath="/proc/device-tree"
+	local macdevice="$(cat "$basepath/aliases/label-mac-device" 2>/dev/null)"
+	local macaddr
+
+	[ -n "$macdevice" ] && macaddr=$(get_mac_binary "$basepath/$macdevice/mac-address" 0 2>/dev/null)
+	[ -n "$macaddr" ] || macaddr=$(get_mac_binary "$basepath/$macdevice/local-mac-address" 0 2>/dev/null)
+	[ -n "$macaddr" ] || macaddr=$(uci -q get system.@system[0].label_macaddr)
+	echo $macaddr
+}
+
 find_mtd_chardev() {
 	local INDEX=$(find_mtd_index "$1")
 	local PREFIX=/dev/mtd
@@ -40,7 +51,7 @@ mtd_get_mac_ascii() {
 
 mtd_get_mac_text() {
 	local mtdname=$1
-	local offset=$2
+	local offset=$(($2))
 	local part
 	local mac_dirty
 
@@ -79,12 +90,7 @@ mtd_get_mac_binary_ubi() {
 	local ubidev=$(nand_find_ubi $CI_UBIPART)
 	local part=$(nand_find_volume $ubidev $1)
 
-	if [ -z "$part" ]; then
-		echo "mtd_get_mac_binary: ubi volume $mtdname not found!" >&2
-		return
-	fi
-
-	hexdump -v -n 6 -s $offset -e '5/1 "%02x:" 1/1 "%02x"' /dev/$part 2>/dev/null
+	get_mac_binary "/dev/$part" "$offset"
 }
 
 mtd_get_part_size() {

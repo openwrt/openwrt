@@ -307,6 +307,14 @@ ucidef_set_interface_macaddr() {
 	ucidef_set_interface "$network" macaddr "$macaddr"
 }
 
+ucidef_set_label_macaddr() {
+	local macaddr="$1"
+
+	json_select_object system
+		json_add_string label_macaddr "$macaddr"
+	json_select ..
+}
+
 ucidef_add_atm_bridge() {
 	local vpi="$1"
 	local vci="$2"

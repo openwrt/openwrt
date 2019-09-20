@@ -807,7 +807,6 @@ TARGET_DEVICES += DG834GTv4
 
 define Device/DGND3700v1
   $(Device/bcm63xx_netgear)
-  IMAGES := factory.chk sysupgrade.bin
   DEVICE_TITLE := Netgear DGND3700 v1
   DEVICE_DTS := dgnd3700v1
   CFE_BOARD_ID := 96368MVWG
@@ -822,7 +821,6 @@ TARGET_DEVICES += DGND3700v1
 
 define Device/DGND3800B
   $(Device/bcm63xx_netgear)
-  IMAGES := factory.chk sysupgrade.bin
   DEVICE_TITLE := Netgear DGND3800B
   DEVICE_DTS := dgnd3700v1
   CFE_BOARD_ID := 96368MVWG
@@ -837,7 +835,6 @@ TARGET_DEVICES += DGND3800B
 
 define Device/EVG2000
   $(Device/bcm63xx_netgear)
-  IMAGES := factory.chk sysupgrade.bin
   DEVICE_TITLE := Netgear EVG2000
   DEVICE_DTS := evg2000
   CFE_BOARD_ID := 96369PVG

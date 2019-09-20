@@ -109,7 +109,7 @@ nand_restore_config() {
 		rmdir /tmp/new_root
 		return 1
 	fi
-	mv "$1" "/tmp/new_root/sysupgrade.tgz"
+	mv "$1" "/tmp/new_root/$BACKUP_FILE"
 	umount /tmp/new_root
 	sync
 	rmdir /tmp/new_root

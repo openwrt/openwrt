@@ -30,7 +30,7 @@ platform_copy_config() {
 
 	if export_partdevice partdev 1; then
 		mount -t vfat -o rw,noatime "/dev/$partdev" /mnt
-		cp -af "$CONF_TAR" /mnt/
+		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
 		umount /mnt
 	fi
 }

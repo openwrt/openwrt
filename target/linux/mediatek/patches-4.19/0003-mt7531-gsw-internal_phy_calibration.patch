@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/mtk/mt753x/Makefile
 +++ b/drivers/net/phy/mtk/mt753x/Makefile
-@@ -8,4 +8,4 @@
+@@ -8,4 +8,4 @@ mt753x-$(CONFIG_SWCONFIG)	+= mt753x_swco
  
  mt753x-y			+= mt753x_mdio.o mt7530.o mt7531.o \
  					mt753x_common.o mt753x_vlan.o \
@@ -8,7 +8,7 @@
 +					mt753x_nl.o mt753x_phy.o
 --- a/drivers/net/phy/mtk/mt753x/mt7531.c
 +++ b/drivers/net/phy/mtk/mt753x/mt7531.c
-@@ -454,6 +454,27 @@ static void mt7531_core_pll_setup(struct gsw_mt753x *gsw)
+@@ -585,6 +585,27 @@ static void mt7531_core_pll_setup(struct
  
  static int mt7531_internal_phy_calibration(struct gsw_mt753x *gsw)
  {
@@ -38,7 +38,7 @@
  
 --- a/drivers/net/phy/mtk/mt753x/mt753x.h
 +++ b/drivers/net/phy/mtk/mt753x/mt753x.h
-@@ -141,6 +141,8 @@ void mt753x_mmd_ind_write(struct gsw_mt753x *gsw, int addr, int devad, u16 reg,
+@@ -129,6 +129,8 @@ void mt753x_mmd_ind_write(struct gsw_mt7
  void mt753x_irq_worker(struct work_struct *work);
  void mt753x_irq_enable(struct gsw_mt753x *gsw);
  
@@ -1111,8 +1111,6 @@
 +
 +	return ret;
 +}
-diff --git a/target/linux/generic/files/drivers/net/phy/mtk/mt753x/mt753x_phy.h b/target/linux/generic/files/drivers/net/phy/mtk/mt753x/mt753x_phy.h
-new file mode 100755
 --- /dev/null
 +++ b/drivers/net/phy/mtk/mt753x/mt753x_phy.h
 @@ -0,0 +1,145 @@

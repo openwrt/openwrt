@@ -46,6 +46,7 @@ endef
 
 define Device/ubnt-xm
   $(Device/ubnt)
+  DEVICE_VARIANT := XM
   DEVICE_PACKAGES += kmod-usb-ohci rssileds
   UBNT_TYPE := XM
   UBNT_CHIP := ar7240
@@ -71,6 +72,7 @@ endef
 
 define Device/ubnt-xw
   $(Device/ubnt)
+  DEVICE_VARIANT := XW
   UBNT_TYPE := XW
   UBNT_CHIP := ar934x
   UBNT_BOARD := XM
@@ -96,7 +98,6 @@ TARGET_DEVICES += ubnt_bullet-m
 define Device/ubnt_bullet-m-xw
   $(Device/ubnt-xw)
   DEVICE_MODEL := Bullet-M
-  DEVICE_VARIANT := XW
   SUPPORTED_DEVICES += bullet-m-xw
 endef
 TARGET_DEVICES += ubnt_bullet-m-xw
@@ -118,8 +119,7 @@ TARGET_DEVICES += ubnt_nanostation-m
 define Device/ubnt_nanostation-m-xw
   $(Device/ubnt-xw)
   DEVICE_MODEL := Nanostation M
-  DEVICE_VARIANT := XW
-  SUPPORTED_DEVICES += nano-m-xw
+  SUPPORTED_DEVICES += nanostation-m-xw
 endef
 TARGET_DEVICES += ubnt_nanostation-m-xw
 
@@ -208,10 +208,8 @@ define Device/ubnt_routerstation_common
   DEVICE_VENDOR := Ubiquiti
   ATH_SOC := ar7161
   IMAGE_SIZE := 16128k
-  IMAGES += factory.bin
+  IMAGES := factory.bin
   IMAGE/factory.bin := append-rootfs | pad-rootfs | mkubntimage | check-size $$$$(IMAGE_SIZE)
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | check-size $$$$(IMAGE_SIZE)
-#  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
   KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
   KERNEL_INITRAMFS := kernel-bin | append-dtb
 endef
@@ -223,6 +221,7 @@ define Device/ubnt_routerstation
   UBNT_TYPE := RSx
   UBNT_CHIP := ar7100
   DEVICE_PACKAGES += -swconfig
+  SUPPORTED_DEVICES += routerstation
 endef
 TARGET_DEVICES += ubnt_routerstation
 
@@ -232,6 +231,7 @@ define Device/ubnt_routerstation-pro
   UBNT_BOARD := RSPRO
   UBNT_TYPE := RSPRO
   UBNT_CHIP := ar7100pro
+  SUPPORTED_DEVICES += routerstation-pro
 endef
 TARGET_DEVICES += ubnt_routerstation-pro
 

@@ -59,7 +59,8 @@ ath79_setup_interfaces()
 	avm,fritz4020|\
 	pcs,cr3000|\
 	tplink,archer-c58-v1|\
-	tplink,archer-c59-v1)
+	tplink,archer-c59-v1|\
+	tplink,archer-c59-v2)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
@@ -83,6 +84,7 @@ ath79_setup_interfaces()
 	tplink,archer-c25-v1|\
 	tplink,tl-mr3220-v1|\
 	tplink,tl-mr3420-v1|\
+	tplink,tl-wdr3500-v1|\
 	tplink,tl-wr841-v7|\
 	tplink,tl-wr841-v9|\
 	tplink,tl-wr841-v10|\
@@ -312,9 +314,19 @@ ath79_setup_macs()
 	adtran,bsap1800-v2|\
 	adtran,bsap1840)
 		lan_mac=$(mtd_get_mac_binary "Board data" 2)
+		label_mac=$lan_mac
+		;;
+	alfa-network,ap121f|\
+	ubnt,airrouter|\
+	ubnt,bullet-m|\
+	ubnt,nanostation-m|\
+	ubnt,rocket-m|\
+	ubnt,unifi)
+		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;
 	avm,fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
+		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;
 	avm,fritz4020)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
@@ -332,8 +344,13 @@ ath79_setup_macs()
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
 	dlink,dir-842-c3|\
+	nec,wg1200cr)
+		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
+		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
+		label_mac=$lan_mac
+		;;
 	dlink,dir-859-a1|\
-	nec,wg1200cr|\
+	qihoo,c301|\
 	wd,mynet-n750)
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
@@ -344,12 +361,9 @@ ath79_setup_macs()
 		;;
 	engenius,ecb1750)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		label_mac=$(mtd_get_mac_ascii u-boot-env athaddr)
 		;;
-	engenius,epg5000|\
-	iodata,wn-ac1167dgr|\
-	iodata,wn-ac1600dgr|\
-	iodata,wn-ac1600dgr2|\
-	iodata,wn-ag300dgr)
+	engenius,epg5000)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		;;
@@ -362,6 +376,15 @@ ath79_setup_macs()
 	iodata,etg3-r)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(macaddr_add "$lan_mac" -1)
+		label_mac=$wan_mac
+		;;
+	iodata,wn-ac1167dgr|\
+	iodata,wn-ac1600dgr|\
+	iodata,wn-ac1600dgr2|\
+	iodata,wn-ag300dgr)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
+		label_mac=$wan_mac
 		;;
 	jjplus,ja76pf2)
 		wan_mac=$(fconfig -s -r -d $(find_mtd_part "RedBoot config") -n alias/ethaddr)
@@ -370,6 +393,7 @@ ath79_setup_macs()
 	nec,wg800hp)
 		lan_mac=$(mtd_get_mac_text board_data 0x280)
 		wan_mac=$(mtd_get_mac_text board_data 0x480)
+		label_mac=$wan_mac
 		;;
 	netgear,wndr3700|\
 	netgear,wndr3700v2|\
@@ -379,10 +403,6 @@ ath79_setup_macs()
 	phicomm,k2t)
 		lan_mac=$(k2t_get_mac "lan_mac")
 		wan_mac=$(k2t_get_mac "wan_mac")
-		;;
-	qihoo,c301)
-		lan_mac=$(mtd_get_mac_ascii devdata lanmac)
-		wan_mac=$(mtd_get_mac_ascii devdata wanmac)
 		;;
 	rosinson,wr818)
 		wan_mac=$(mtd_get_mac_binary factory 0x0)
@@ -404,6 +424,7 @@ ath79_setup_macs()
 	trendnet,tew-823dru)
 		lan_mac=$(mtd_get_mac_text mac 0x4)
 		wan_mac=$(mtd_get_mac_text mac 0x18)
+		label_mac=$wan_mac
 		;;
 	ubnt,routerstation|\
 	ubnt,routerstation-pro)
@@ -417,6 +438,7 @@ ath79_setup_macs()
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
 	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
 }
 
 board_config_update

@@ -124,7 +124,7 @@
   * configuration. The contents of buf is printed out has hex dump.
   */
 -void wpa_hexdump(int level, const char *title, const void *buf, size_t len);
-+static inline void wpa_hexdump(int level, const char *title, const u8 *buf, size_t len)
++static inline void wpa_hexdump(int level, const char *title, const void *buf, size_t len)
 +{
 +	if (level < CONFIG_MSG_MIN_PRIORITY)
 +		return;

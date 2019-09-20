@@ -238,7 +238,7 @@ define Device/wd_mybooklive
   DTB_SIZE := 16384
   KERNEL := kernel-bin | dtb | gzip | uImage gzip
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
-  IMAGES := factory.img.gz kernel.dtb sysupgrade.img.gz
+  IMAGES := factory.img.gz sysupgrade.img.gz
   ARTIFACTS := apollo3g.dtb
   DEVICE_DTB := apollo3g.dtb
   FILESYSTEMS := ext4 squashfs

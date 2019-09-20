@@ -25,7 +25,7 @@ platform_copy_config() {
 	case "$(board_name)" in
 	erlite)
 		mount -t vfat /dev/sda1 /mnt
-		cp -af "$CONF_TAR" /mnt/
+		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
 		umount /mnt
 		;;
 	esac

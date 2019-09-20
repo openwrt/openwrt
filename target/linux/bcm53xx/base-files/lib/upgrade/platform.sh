@@ -2,10 +2,18 @@ RAMFS_COPY_BIN='osafeloader oseama otrx'
 
 PART_NAME=firmware
 
+LXL_FLAGS_VENDOR_LUXUL=0x00000001
+
 # $(1): file to read magic from
 # $(2): offset in bytes
 get_magic_long_at() {
 	dd if="$1" skip=$2 bs=1 count=4 2>/dev/null | hexdump -v -e '1/1 "%02x"'
+}
+
+# $(1): file to read LE long number from
+# $(2): offset in bytes
+get_le_long_at() {
+	echo $((0x$(dd if="$1" skip=$2 bs=1 count=4 2>/dev/null | hexdump -v -e '1/4 "%02x"')))
 }
 
 platform_flash_type() {
@@ -23,6 +31,18 @@ platform_expected_image() {
 
 	case "$machine" in
 		"dlink,dir-885l")	echo "seama wrgac42_dlink.2015_dir885l"; return;;
+		"luxul,abr-4500-v1")	echo "lxl ABR-4500"; return;;
+		"luxul,xap-810-v1")	echo "lxl XAP-810"; return;;
+		"luxul,xap-1410v1")	echo "lxl XAP-1410"; return;;
+		"luxul,xap-1440-v1")	echo "lxl XAP-1440"; return;;
+		"luxul,xap-1510v1")	echo "lxl XAP-1510"; return;;
+		"luxul,xap-1610-v1")	echo "lxl XAP-1610"; return;;
+		"luxul,xbr-4500-v1")	echo "lxl XBR-4500"; return;;
+		"luxul,xwc-1000")	echo "lxl XWC-1000"; return;;
+		"luxul,xwc-2000")	echo "lxl XWC-2000"; return;;
+		"luxul,xwr-1200v1")	echo "lxl XWR-1200"; return;;
+		"luxul,xwr-3100v1")	echo "lxl XWR-3100"; return;;
+		"luxul,xwr-3150-v1")	echo "lxl XWR-3150"; return;;
 		"netgear,r6250v1")	echo "chk U12H245T00_NETGEAR"; return;;
 		"netgear,r6300v2")	echo "chk U12H240T00_NETGEAR"; return;;
 		"netgear,r7000")	echo "chk U12H270T00_NETGEAR"; return;;
@@ -46,6 +66,10 @@ platform_identify() {
 			echo "chk"
 			return
 			;;
+		"4c584c23")
+			echo "lxl"
+			return
+			;;
 		"5ea3a417")
 			echo "seama"
 			return
@@ -55,6 +79,12 @@ platform_identify() {
 	magic=$(get_magic_long_at "$1" 14)
 	[ "$magic" = "55324e44" ] && {
 		echo "cybertan"
+		return
+	}
+
+	magic=$(get_magic_long_at "$1" 60)
+	[ "$magic" = "4c584c23" ] && {
+		echo "lxlold"
 		return
 	}
 
@@ -88,7 +118,10 @@ platform_check_image() {
 
 			if ! otrx check "$1" -o "$header_len"; then
 				echo "No valid TRX firmware in the CHK image"
+				notify_firmware_test_result "trx_valid" 0
 				error=1
+			else
+				notify_firmware_test_result "trx_valid" 1
 			fi
 		;;
 		"cybertan")
@@ -103,7 +136,52 @@ platform_check_image() {
 
 			if ! otrx check "$1" -o 32; then
 				echo "No valid TRX firmware in the CyberTAN image"
+				notify_firmware_test_result "trx_valid" 0
 				error=1
+			else
+				notify_firmware_test_result "trx_valid" 1
+			fi
+		;;
+		"lxl")
+			local hdr_len=$(get_le_long_at "$1" 8)
+			local flags=$(get_le_long_at "$1" 12)
+			local board=$(dd if="$1" skip=16 bs=1 count=16 2>/dev/null | hexdump -v -e '1/1 "%c"')
+			local dev_board=$(platform_expected_image)
+			echo "Found LXL image for board $board"
+
+			[ -n "$dev_board" -a "lxl $board" != "$dev_board" ] && {
+				echo "Firmware ($board) doesn't match device ($dev_board)"
+				error=1
+			}
+
+			[ $((flags & LXL_FLAGS_VENDOR_LUXUL)) -gt 0 ] && notify_firmware_no_backup
+
+			if ! otrx check "$1" -o "$hdr_len"; then
+				echo "No valid TRX firmware in the LXL image"
+				notify_firmware_test_result "trx_valid" 0
+				error=1
+			else
+				notify_firmware_test_result "trx_valid" 1
+			fi
+		;;
+		"lxlold")
+			local board_id=$(dd if="$1" skip=48 bs=1 count=12 2>/dev/null | hexdump -v -e '1/1 "%c"')
+			local dev_board_id=$(platform_expected_image)
+			echo "Found LXL image with device board_id $board_id"
+
+			[ -n "$dev_board_id" -a "lxl $board_id" != "$dev_board_id" ] && {
+				echo "Firmware board_id doesn't match device board_id ($dev_board_id)"
+				error=1
+			}
+
+			notify_firmware_no_backup
+
+			if ! otrx check "$1" -o 64; then
+				echo "No valid TRX firmware in the Luxul image"
+				notify_firmware_test_result "trx_valid" 0
+				error=1
+			else
+				notify_firmware_test_result "trx_valid" 1
 			fi
 		;;
 		"safeloader")
@@ -133,11 +211,15 @@ platform_check_image() {
 
 			if ! otrx check "$1"; then
 				echo "Invalid (corrupted?) TRX firmware"
+				notify_firmware_test_result "trx_valid" 0
 				error=1
+			else
+				notify_firmware_test_result "trx_valid" 1
 			fi
 		;;
 		*)
-			echo "Invalid image type. Please use only .trx files"
+			echo "Invalid image type. Please use firmware specific for this device."
+			notify_firmware_broken
 			error=1
 		;;
 	esac
@@ -267,6 +349,16 @@ platform_trx_from_cybertan_cmd() {
 	echo -n dd skip=32 iflag=skip_bytes
 }
 
+platform_trx_from_lxl_cmd() {
+	local hdr_len=$(get_le_long_at "$1" 8)
+
+	echo -n dd skip=$hdr_len iflag=skip_bytes
+}
+
+platform_trx_from_lxlold_cmd() {
+	echo -n dd bs=64 skip=1
+}
+
 platform_img_from_safeloader() {
 	local dir="/tmp/sysupgrade-bcm53xx"
 
@@ -322,6 +414,8 @@ platform_do_upgrade() {
 	case "$file_type" in
 		"chk")		cmd=$(platform_trx_from_chk_cmd "$trx");;
 		"cybertan")	cmd=$(platform_trx_from_cybertan_cmd "$trx");;
+		"lxl")		cmd=$(platform_trx_from_lxl_cmd "$trx");;
+		"lxlold")	cmd=$(platform_trx_from_lxlold_cmd "$trx");;
 		"safeloader")	trx=$(platform_img_from_safeloader "$trx"); PART_NAME=os-image;;
 		"seama")	trx=$(platform_img_from_seama "$trx");;
 	esac

@@ -11,7 +11,7 @@ else
 	default_do_upgrade "$IMAGE"
 fi
 
-if [ "$UPGRADE_OPT_SAVE_CONFIG" -eq 1 ] && type 'platform_copy_config' >/dev/null 2>/dev/null; then
+if [ -n "$UPGRADE_BACKUP" ] && type 'platform_copy_config' >/dev/null 2>/dev/null; then
 	platform_copy_config
 fi
 

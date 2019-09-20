@@ -60,6 +60,18 @@ define Device/tplink_archer-c59-v1
 endef
 TARGET_DEVICES += tplink_archer-c59-v1
 
+define Device/tplink_archer-c59-v2
+  $(Device/tplink-safeloader-uimage)
+  ATH_SOC := qca9561
+  IMAGE_SIZE := 14400k
+  DEVICE_MODEL := Archer C59
+  DEVICE_VARIANT := v2
+  TPLINK_BOARD_ID := ARCHER-C59-V2
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  SUPPORTED_DEVICES += archer-c59-v2
+endef
+TARGET_DEVICES += tplink_archer-c59-v2
+
 define Device/tplink_archer-c60-v1
   $(Device/tplink-safeloader-uimage)
   ATH_SOC := qca9561
@@ -327,6 +339,17 @@ define Device/tplink_re450-v2
   LOADER_TYPE := elf
 endef
 TARGET_DEVICES += tplink_re450-v2
+
+define Device/tplink_tl-wdr3500-v1
+  $(Device/tplink-8mlzma)
+  ATH_SOC := ar9344
+  DEVICE_MODEL := TL-WDR3500
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x35000001
+  SUPPORTED_DEVICES += tl-wdr3500
+endef
+TARGET_DEVICES += tplink_tl-wdr3500-v1
 
 define Device/tplink_tl-wdr3600-v1
   $(Device/tplink-8mlzma)

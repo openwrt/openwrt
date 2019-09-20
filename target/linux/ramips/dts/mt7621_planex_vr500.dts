@@ -81,6 +81,10 @@
 	};
 };
 
+&ethernet {
+	mtd-mac-address = <&factory 0xe000>;
+};
+
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {

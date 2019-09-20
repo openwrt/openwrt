@@ -1,9 +1,17 @@
 PART_NAME=firmware
 
+LXL_FLAGS_VENDOR_LUXUL=0x00000001
+
 # $(1): file to read magic from
 # $(2): offset in bytes
 get_magic_long_at() {
 	dd if="$1" skip=$2 bs=1 count=4 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
+}
+
+# $(1): file to read LE long number from
+# $(2): offset in bytes
+get_le_long_at() {
+	echo $((0x$(dd if="$1" skip=$2 bs=1 count=4 2>/dev/null | hexdump -v -e '1/4 "%02x"')))
 }
 
 platform_expected_image() {
@@ -49,6 +57,16 @@ platform_expected_image() {
 		"Linksys WRT310N V2")	echo "cybertan 310N"; return;;
 		"Linksys WRT610N V1")	echo "cybertan 610N"; return;;
 		"Linksys WRT610N V2")	echo "cybertan 610N"; return;;
+		"Luxul XAP-310 V1")	echo "lxl XAP-310"; return;;
+		"Luxul XAP-1210 V1")	echo "lxl XAP-1210"; return;;
+		"Luxul XAP-1230 V1")	echo "lxl XAP-1230"; return;;
+		"Luxul XAP-1240 V1")	echo "lxl XAP-1240"; return;;
+		"Luxul XAP-1500 V1")	echo "lxl XAP-1500"; return;;
+		"Luxul ABR-4400 V1")	echo "lxl ABR-4400"; return;;
+		"Luxul XBR-4400 V1")	echo "lxl XBR-4400"; return;;
+		"Luxul XVW-P30 V1")	echo "lxl XVW-P30"; return;;
+		"Luxul XWR-600 V1")	echo "lxl XWR-600"; return;;
+		"Luxul XWR-1750 V1")	echo "lxl XWR-1750"; return;;
 	esac
 }
 
@@ -65,11 +83,21 @@ brcm47xx_identify() {
 			echo "chk"
 			return
 			;;
+		"4c584c23")
+			echo "lxl"
+			return
+			;;
 	esac
 
 	magic=$(get_magic_long_at "$1" 14)
 	[ "$magic" = "55324e44" ] && {
 		echo "cybertan"
+		return
+	}
+
+	magic=$(get_magic_long_at "$1" 60)
+	[ "$magic" = "4c584c23" ] && {
+		echo "lxlold"
 		return
 	}
 
@@ -98,7 +126,10 @@ platform_check_image() {
 
 			if ! otrx check "$1" -o "$header_len"; then
 				echo "No valid TRX firmware in the CHK image"
+				notify_firmware_test_result "trx_valid" 0
 				error=1
+			else
+				notify_firmware_test_result "trx_valid" 1
 			fi
 		;;
 		"cybertan")
@@ -113,17 +144,66 @@ platform_check_image() {
 
 			if ! otrx check "$1" -o 32; then
 				echo "No valid TRX firmware in the CyberTAN image"
+				notify_firmware_test_result "trx_valid" 0
 				error=1
+			else
+				notify_firmware_test_result "trx_valid" 1
+			fi
+		;;
+		"lxl")
+			local hdr_len=$(get_le_long_at "$1" 8)
+			local flags=$(get_le_long_at "$1" 12)
+			local board=$(dd if="$1" skip=16 bs=1 count=16 2>/dev/null | hexdump -v -e '1/1 "%c"')
+			local dev_board=$(platform_expected_image)
+			echo "Found Luxul image for board $board"
+
+			[ -n "$dev_board" -a "lxl $board" != "$dev_board" ] && {
+				echo "Firmware ($board) doesn't match device ($dev_board)"
+				error=1
+			}
+
+			[ $((flags & LXL_FLAGS_VENDOR_LUXUL)) -gt 0 ] && notify_firmware_no_backup
+
+			if ! otrx check "$1" -o "$hdr_len"; then
+				echo "No valid TRX firmware in the Luxul image"
+				notify_firmware_test_result "trx_valid" 0
+				error=1
+			else
+				notify_firmware_test_result "trx_valid" 1
+			fi
+		;;
+		"lxlold")
+			local board_id=$(dd if="$1" skip=48 bs=1 count=12 2>/dev/null | hexdump -v -e '1/1 "%c"')
+			local dev_board_id=$(platform_expected_image)
+			echo "Found Luxul image with device board_id $board_id"
+
+			[ -n "$dev_board_id" -a "lxl $board_id" != "$dev_board_id" ] && {
+				echo "Firmware board_id doesn't match device board_id ($dev_board_id)"
+				error=1
+			}
+
+			notify_firmware_no_backup
+
+			if ! otrx check "$1" -o 64; then
+				echo "No valid TRX firmware in the Luxul image"
+				notify_firmware_test_result "trx_valid" 0
+				error=1
+			else
+				notify_firmware_test_result "trx_valid" 1
 			fi
 		;;
 		"trx")
 			if ! otrx check "$1"; then
 				echo "Invalid (corrupted?) TRX firmware"
+				notify_firmware_test_result "trx_valid" 0
 				error=1
+			else
+				notify_firmware_test_result "trx_valid" 1
 			fi
 		;;
 		*)
-			echo "Invalid image type. Please use only .trx files"
+			echo "Invalid image type. Please use firmware specific for this device."
+			notify_firmware_broken
 			error=1
 		;;
 	esac
@@ -141,6 +221,16 @@ platform_trx_from_cybertan_cmd() {
 	echo -n dd bs=32 skip=1
 }
 
+platform_trx_from_lxl_cmd() {
+	local hdr_len=$(get_le_long_at "$1" 8)
+
+	echo -n dd skip=$hdr_len iflag=skip_bytes
+}
+
+platform_trx_from_lxlold_cmd() {
+	echo -n dd bs=64 skip=1
+}
+
 platform_do_upgrade() {
 	local file_type=$(brcm47xx_identify "$1")
 	local trx="$1"
@@ -149,6 +239,8 @@ platform_do_upgrade() {
 	case "$file_type" in
 		"chk")		cmd=$(platform_trx_from_chk_cmd "$trx");;
 		"cybertan")	cmd=$(platform_trx_from_cybertan_cmd "$trx");;
+		"lxl")		cmd=$(platform_trx_from_lxl_cmd "$trx");;
+		"lxlold")	cmd=$(platform_trx_from_lxlold_cmd "$trx");;
 	esac
 
 	default_do_upgrade "$trx" "$cmd"

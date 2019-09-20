@@ -10,6 +10,10 @@
 	compatible = "glinet,gl-ar750", "qca,qca9531";
 	model = "GL.iNet GL-AR750";
 
+	aliases {
+		label-mac-device = &eth0;
+	};
+
 	keys {
 		compatible = "gpio-keys";
 

@@ -14,6 +14,7 @@
 		led-failsafe = &led_power_green;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
+		label-mac-device = &ethernet;
 	};
 
 	keys {
@@ -143,6 +144,8 @@
 
 &wmac {
 	ralink,mtd-eeprom = <&factory 0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pa_pins>;
 };
 
 &pcie0 {

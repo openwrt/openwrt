@@ -159,7 +159,7 @@ platform_do_upgrade_openmesh()
 	local cfg_size= kernel_size= rootfs_size=
 	local append=""
 
-	[ -f "$CONF_TAR" -a "$SAVE_CONFIG" -eq 1 ] && append="-j $CONF_TAR"
+	[ -f "$UPGRADE_BACKUP" ] && append="-j $UPGRADE_BACKUP"
 
 	cfg_size=$(dd if="$img_path" bs=2 skip=35 count=4 2>/dev/null)
 	kernel_size=$(dd if="$img_path" bs=2 skip=71 count=4 2>/dev/null)
