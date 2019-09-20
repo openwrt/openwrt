@@ -8,13 +8,14 @@
 
 / {
 	model = "Devolo Magic 2 Wifi";
-	compatible = "devolo,dlan2-2400-ac", "qca,ar9344";
+	compatible = "devolo,magic-2-wifi", "qca,ar9344";
 
 	aliases {
 		led-boot = &plcr;
 		led-failsafe = &plcr;
 		led-running = &plcw;
 		led-upgrade = &plcr;
+		label-mac-device = &eth0;
 	};
 
 	leds {
@@ -67,20 +68,21 @@
 	status = "okay";
 
 	wlan_power {
+		gpio-hog;
 		line-name = "WLAN power";
-		gpios = <21 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		output-high;
 	};
 
 	plc_enable {
 		line-name = "PLC enable";
-		gpios = <13 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 		output-high;
 	};
 
 	plc_pairing {
 		line-name = "PLC pairing";
-		gpios = <11 GPIO_ACTIVE_LOW>;
+		gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		output-high;
 	};
 };
@@ -159,7 +161,7 @@
 	phy-handle = <&phy0>;
 };
 
-&wmac {
+&wmac {	/* Wifi ath9K 2.4GHz 802.11bgn */
 	status = "okay";
 	mtd-cal-data = <&art 0x1000>;
 };
@@ -167,10 +169,9 @@
 &pcie {
 	status = "okay";
 
-	ath9k: wifi@0,0 {
+	wifi@0,0 { /* ath10k 5GHz 802.11anac 2x2MIMO */
 		compatible = "pci168c,003c";
 		reg = <0x0000 0 0 0 0>;
-		mtd-mac-address = <&art 0x5006>;
 		qca,no-eeprom;
 	};
 };
