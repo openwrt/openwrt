@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uclibc++
 PKG_VERSION:=0.2.5
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=uClibc++-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://cxx.uclibc.org/src/
