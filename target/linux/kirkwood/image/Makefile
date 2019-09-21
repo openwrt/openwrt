@@ -88,6 +88,9 @@ define Device/linksys_audi
   DEVICE_MODEL := EA3500 (Audi)
   DEVICE_PACKAGES := kmod-mwl8k swconfig wpad-basic kmod-gpio-button-hotplug
   DEVICE_DTS := kirkwood-linksys-audi
+  PAGESIZE := 512
+  SUBPAGESIZE := 256
+  BLOCKSIZE := 16KiB
   KERNEL_SIZE := 2624k
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
