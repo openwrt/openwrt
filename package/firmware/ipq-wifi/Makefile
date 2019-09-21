@@ -27,6 +27,7 @@ ALLWIFIBOARDS:= \
 	alfa-network_ap120c-ac \
 	asus_map-ac2200 \
 	avm_fritzbox-7530 \
+	avm_fritzrepeater-1200 \
 	avm_fritzrepeater-3000 \
 	engenius_eap1300 \
 	engenius_ens620ext \
@@ -98,6 +99,7 @@ endef
 $(eval $(call generate-ipq-wifi-package,alfa-network_ap120c-ac,ALFA Network AP120C-AC))
 $(eval $(call generate-ipq-wifi-package,asus_map-ac2200,ASUS MAP-AC2200))
 $(eval $(call generate-ipq-wifi-package,avm_fritzbox-7530,AVM FRITZ!Box 7530))
+$(eval $(call generate-ipq-wifi-package,avm_fritzrepeater-1200,AVM FRITZRepeater 1200))
 $(eval $(call generate-ipq-wifi-package,avm_fritzrepeater-3000,AVM FRITZ!Repeater 3000))
 $(eval $(call generate-ipq-wifi-package,engenius_eap1300,EnGenius EAP1300))
 $(eval $(call generate-ipq-wifi-package,engenius_ens620ext,EnGenius ENS620EXT))
