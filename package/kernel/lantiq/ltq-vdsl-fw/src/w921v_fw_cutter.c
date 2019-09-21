@@ -26,7 +26,7 @@
 
 #include "LzmaWrapper.h"
 
-#define FW_NAME		"/tmp/firmware-speedport-w921v-1.45.000.bin"
+#define FW_NAME		"/tmp/firmware-speedport-w921v-1.46.000.bin"
 
 #define MAGIC		0x50
 #define MAGIC_SZ	0x3FFC00
