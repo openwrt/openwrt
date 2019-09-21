@@ -1,0 +1,203 @@
+--- a/drivers/net/wireless/ath/ath10k/ce.c
++++ b/drivers/net/wireless/ath/ath10k/ce.c
+@@ -8,6 +8,7 @@
+ #include "hif.h"
+ #include "ce.h"
+ #include "debug.h"
++#include "pci.h"
+ 
+ /*
+  * Support for Copy Engine hardware, which is mainly used for
+@@ -163,8 +164,33 @@ static inline void ath10k_ce_src_ring_wr
+ 						      u32 ce_ctrl_addr,
+ 						      unsigned int n)
+ {
+-	ath10k_ce_write32(ar, ce_ctrl_addr +
+-			  ar->hw_ce_regs->sr_wr_index_addr, n);
++	struct ath10k_hw_ce_dst_src_wm_regs *dstr_wm = ar->hw_ce_regs->wm_dstr;
++	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
++	void __iomem *indicator_addr;
++	unsigned long irq_flags;
++
++	indicator_addr = ar_pci->mem + ce_ctrl_addr + dstr_wm->addr;
++
++	if (ar->bus_param.chip_id == 0x043200ff) {
++		if (ce_ctrl_addr == ath10k_ce_base_address(ar, CDC_WAR_DATA_CE)) {
++			iowrite32((CDC_WAR_MAGIC_STR | n), indicator_addr);
++		} else {
++			local_irq_save(irq_flags);
++			iowrite32(1, indicator_addr);
++
++			(void)ioread32(indicator_addr);
++			(void)ioread32(indicator_addr);
++
++			ath10k_ce_write32(ar, ce_ctrl_addr +
++					  ar->hw_ce_regs->sr_wr_index_addr, n);
++
++			iowrite32(0, indicator_addr);
++			local_irq_restore(irq_flags);
++		}
++	} else {
++		ath10k_ce_write32(ar, ce_ctrl_addr +
++				  ar->hw_ce_regs->sr_wr_index_addr, n);
++	}
+ }
+ 
+ static inline u32 ath10k_ce_src_ring_write_index_get(struct ath10k *ar,
+--- a/drivers/net/wireless/ath/ath10k/core.c
++++ b/drivers/net/wireless/ath/ath10k/core.c
+@@ -57,6 +57,42 @@ MODULE_PARM_DESC(fw_diag_log, "Diag base
+ 
+ static const struct ath10k_hw_params ath10k_hw_params_list[] = {
+ 	{
++		.id = QCA988X_HW_1_0_VERSION,
++		.dev_id = QCA988X_2_0_DEVICE_ID,
++		.bus = ATH10K_BUS_PCI,
++		.name = "qca988x hw1.0",
++		.led_pin = 1,
++		.patch_load_addr = QCA988X_HW_2_0_PATCH_LOAD_ADDR,
++		.uart_pin = 7,
++		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_ALL,
++		.otp_exe_param = 0,
++		.channel_counters_freq_hz = 88000,
++		.max_probe_resp_desc_thres = 0,
++		.cal_data_len = 2116,
++		.fw = {
++			.dir = QCA988X_HW_2_0_FW_DIR,
++			.board = QCA988X_HW_2_0_BOARD_DATA_FILE,
++			.board_size = QCA988X_BOARD_DATA_SZ,
++			.board_ext_size = QCA988X_BOARD_EXT_DATA_SZ,
++		},
++		.hw_ops = &qca988x_ops,
++		.decap_align_bytes = 4,
++		.spectral_bin_discard = 0,
++		.spectral_bin_offset = 0,
++		.vht160_mcs_rx_highest = 0,
++		.vht160_mcs_tx_highest = 0,
++		.n_cipher_suites = 8,
++		.ast_skid_limit = 0x10,
++		.num_wds_entries = 0x20,
++		.target_64bit = false,
++		.rx_ring_fill_level = HTT_RX_RING_FILL_LEVEL,
++		.shadow_reg_support = false,
++		.rri_on_ddr = false,
++		.hw_filter_reset_required = true,
++		.fw_diag_ce_download = false,
++		.tx_stats_over_pktlog = true,
++	},
++	{
+ 		.id = QCA988X_HW_2_0_VERSION,
+ 		.dev_id = QCA988X_2_0_DEVICE_ID,
+ 		.bus = ATH10K_BUS_PCI,
+--- a/drivers/net/wireless/ath/ath10k/hw.h
++++ b/drivers/net/wireless/ath/ath10k/hw.h
+@@ -31,7 +31,8 @@ enum ath10k_bus {
+ #define QCA9377_1_0_DEVICE_ID   (0x0042)
+ #define QCA9887_1_0_DEVICE_ID   (0x0050)
+ 
+-/* QCA988X 1.0 definitions (unsupported) */
++/* QCA988X 1.0 definitions */
++#define QCA988X_HW_1_0_VERSION		0x4000002c
+ #define QCA988X_HW_1_0_CHIP_ID_REV	0x0
+ 
+ /* QCA988X 2.0 definitions */
+@@ -856,7 +857,7 @@ ath10k_is_rssi_enable(struct ath10k_hw_p
+ 
+ /* as of IP3.7.1 */
+ #define RTC_STATE_V_ON				ar->hw_values->rtc_state_val_on
+-
++#define RTC_STATE_COLD_RESET_MASK		0x00000400
+ #define RTC_STATE_V_LSB				0
+ #define RTC_STATE_V_MASK			0x00000007
+ #define RTC_STATE_ADDRESS			0x0000
+--- a/drivers/net/wireless/ath/ath10k/pci.c
++++ b/drivers/net/wireless/ath/ath10k/pci.c
+@@ -54,7 +54,7 @@ static const struct pci_device_id ath10k
+ 	/* PCI-E QCA988X V2 (Ubiquiti branded) */
+ 	{ PCI_VDEVICE(UBIQUITI, QCA988X_2_0_DEVICE_ID_UBNT) },
+ 
+-	{ PCI_VDEVICE(ATHEROS, QCA988X_2_0_DEVICE_ID) }, /* PCI-E QCA988X V2 */
++	{ PCI_VDEVICE(ATHEROS, QCA988X_2_0_DEVICE_ID) }, /* PCI-E QCA986X, QCA988X V1/V2 */
+ 	{ PCI_VDEVICE(ATHEROS, QCA6164_2_1_DEVICE_ID) }, /* PCI-E QCA6164 V2.1 */
+ 	{ PCI_VDEVICE(ATHEROS, QCA6174_2_1_DEVICE_ID) }, /* PCI-E QCA6174 V2.1 */
+ 	{ PCI_VDEVICE(ATHEROS, QCA99X0_2_0_DEVICE_ID) }, /* PCI-E QCA99X0 V2 */
+@@ -71,6 +71,7 @@ static const struct ath10k_pci_supp_chip
+ 	 * because of that.
+ 	 */
+ 	{ QCA988X_2_0_DEVICE_ID_UBNT, QCA988X_HW_2_0_CHIP_ID_REV },
++	{ QCA988X_2_0_DEVICE_ID, QCA988X_HW_1_0_CHIP_ID_REV },
+ 	{ QCA988X_2_0_DEVICE_ID, QCA988X_HW_2_0_CHIP_ID_REV },
+ 
+ 	{ QCA6164_2_1_DEVICE_ID, QCA6174_HW_2_1_CHIP_ID_REV },
+@@ -644,6 +645,9 @@ static void ath10k_bus_pci_write32(struc
+ 		return;
+ 	}
+ 
++	ioread32(ar_pci->mem + offset + 4);
++	ioread32(ar_pci->mem + offset + 4);
++	ioread32(ar_pci->mem + offset + 4);
+ 	iowrite32(value, ar_pci->mem + offset);
+ 	ath10k_pci_sleep(ar);
+ }
+@@ -3320,6 +3324,7 @@ int ath10k_pci_wait_for_target_init(stru
+ static int ath10k_pci_cold_reset(struct ath10k *ar)
+ {
+ 	u32 val;
++	int i;
+ 
+ 	ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot cold reset\n");
+ 
+@@ -3339,13 +3344,26 @@ static int ath10k_pci_cold_reset(struct
+ 	 * for any immediate pcie register access and cause bus error,
+ 	 * add delay before any pcie access request to fix this issue.
+ 	 */
+-	msleep(20);
++
++	for (i = 0; i < ATH_PCI_RESET_WAIT_MAX; i++) {
++		if (ath10k_pci_reg_read32(ar, RTC_STATE_ADDRESS) &
++					  RTC_STATE_COLD_RESET_MASK) {
++			ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot target and PCIe in reset\n");
++		}
++		break;
++	}
+ 
+ 	/* Pull Target, including PCIe, out of RESET. */
+ 	val &= ~1;
+ 	ath10k_pci_reg_write32(ar, SOC_GLOBAL_RESET_ADDRESS, val);
+ 
+-	msleep(20);
++	for (i = 0; i < ATH_PCI_RESET_WAIT_MAX; i++) {
++		if (!(ath10k_pci_reg_read32(ar, RTC_STATE_ADDRESS) &
++					  RTC_STATE_COLD_RESET_MASK)) {
++			ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot target and PCIe out of reset\n");
++		}
++		break;
++	}
+ 
+ 	ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot cold reset complete\n");
+ 
+@@ -3619,15 +3637,21 @@ static int ath10k_pci_probe(struct pci_d
+ 		goto err_deinit_irq;
+ 	}
+ 
++	bus_params.dev_type = ATH10K_DEV_TYPE_LL;
++	bus_params.link_can_suspend = true;
++	bus_params.chip_id = ath10k_pci_soc_read32(ar, SOC_CHIP_ID_ADDRESS);
++
++	if (bus_params.chip_id == 0x043200ff) {
++		ar_pci->pci_soft_reset = NULL;
++		ar_pci->pci_hard_reset = ath10k_pci_qca99x0_chip_reset;
++	}
++
+ 	ret = ath10k_pci_chip_reset(ar);
+ 	if (ret) {
+ 		ath10k_err(ar, "failed to reset chip: %d\n", ret);
+ 		goto err_free_irq;
+ 	}
+ 
+-	bus_params.dev_type = ATH10K_DEV_TYPE_LL;
+-	bus_params.link_can_suspend = true;
+-	bus_params.chip_id = ath10k_pci_soc_read32(ar, SOC_CHIP_ID_ADDRESS);
+ 	if (bus_params.chip_id == 0xffffffff) {
+ 		ath10k_err(ar, "failed to get chip id\n");
+ 		goto err_free_irq;
