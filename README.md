@@ -23,6 +23,7 @@ Downloading Source
 
 ```  
 $ git clone https://github.com/mattytap/openwrt.git openwrt
+$ cd openwrt
 ```  
 
 Updating Feeds  
