@@ -21,7 +21,7 @@ endef
 
 define Device/zbt-we1526
   DEVICE_TITLE := Zbtlink ZBT-WE1526
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  DEVICE_PACKAGES := kmod-usb2
   BOARDNAME := ZBT-WE1526
   IMAGE_SIZE := 16000k
   KERNEL_SIZE := 1472k

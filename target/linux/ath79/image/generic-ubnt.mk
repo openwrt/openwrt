@@ -35,7 +35,7 @@ endef
 # UBNT_VERSION e.g. one of (6.0.0, 8.5.0)
 define Device/ubnt
   DEVICE_VENDOR := Ubiquiti
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  DEVICE_PACKAGES := kmod-usb2
   IMAGE_SIZE := 7552k
   UBNT_BOARD := XM
   UBNT_VERSION := 6.0.0
@@ -242,7 +242,7 @@ TARGET_DEVICES += ubnt_unifiac-mesh-pro
 define Device/ubnt_unifiac-pro
   $(Device/ubnt_unifiac)
   DEVICE_MODEL := UniFi AC-Pro
-  DEVICE_PACKAGES += kmod-usb-core kmod-usb2
+  DEVICE_PACKAGES += kmod-usb2
   SUPPORTED_DEVICES += ubnt-unifiac-pro
 endef
 TARGET_DEVICES += ubnt_unifiac-pro

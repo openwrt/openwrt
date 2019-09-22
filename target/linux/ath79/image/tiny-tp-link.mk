@@ -15,7 +15,7 @@ define Device/tplink_tl-mr3020-v1
   ATH_SOC := ar9331
   DEVICE_MODEL := TL-MR3020
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x30200001
   SUPPORTED_DEVICES += tl-mr3020
 endef
@@ -26,7 +26,7 @@ define Device/tplink_tl-mr3040-v2
   ATH_SOC := ar9331
   DEVICE_MODEL := TL-MR3040
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x30400002
   SUPPORTED_DEVICES += tl-mr3040-v2
 endef
@@ -38,7 +38,7 @@ define Device/tplink_tl-mr3220-v1
   DEVICE_MODEL := TL-MR3220
   DEVICE_VARIANT := v1
   TPLINK_HWID := 0x32200001
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += tl-mr3220-v1
 endef
 TARGET_DEVICES += tplink_tl-mr3220-v1
@@ -49,7 +49,7 @@ define Device/tplink_tl-mr3420-v1
   DEVICE_MODEL := TL-MR3420
   DEVICE_VARIANT := v1
   TPLINK_HWID := 0x34200001
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += tl-mr3420-v1
 endef
 TARGET_DEVICES += tplink_tl-mr3420-v1

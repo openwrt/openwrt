@@ -362,7 +362,7 @@ define Device/engenius_esr600
        senao-header -r 0x101 -p 0x57 -t 2
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ESR600
-  DEVICE_PACKAGES += kmod-rt2800-pci kmod-usb-core kmod-usb-storage kmod-usb-ohci kmod-usb-ehci
+  DEVICE_PACKAGES += kmod-rt2800-pci kmod-usb-storage kmod-usb-ohci kmod-usb-ehci
 endef
 TARGET_DEVICES += engenius_esr600
 

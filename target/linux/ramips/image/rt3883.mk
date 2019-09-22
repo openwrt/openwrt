@@ -12,7 +12,7 @@ define Device/asus_rt-n56u
   IMAGE/sysupgrade.bin += | mkrtn56uimg -s
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-N56U
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 swconfig
   SUPPORTED_DEVICES += rt-n56u
 endef
 TARGET_DEVICES += asus_rt-n56u
@@ -23,7 +23,7 @@ define Device/belkin_f9k1109v1
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := F9K1109
   DEVICE_VARIANT := Version 1.0
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 swconfig
   IMAGE_SIZE := 7808k
   KERNEL := kernel-bin | append-dtb | lzma -d16 | uImage lzma
   # Stock firmware checks for this uImage image name during upload.
@@ -40,7 +40,7 @@ define Device/dlink_dir-645
   SEAMA_SIGNATURE := wrgn39_dlob.hans_dir645
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-645
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 swconfig
   SUPPORTED_DEVICES += dir-645
 endef
 TARGET_DEVICES += dlink_dir-645
@@ -75,7 +75,7 @@ define Device/omnima_hpm
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Omnima
   DEVICE_MODEL := HPM
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
   SUPPORTED_DEVICES += hpm
 endef
 TARGET_DEVICES += omnima_hpm
@@ -89,7 +89,7 @@ define Device/samsung_cy-swr1100
   SEAMA_SIGNATURE := wrgnd10_samsung_ss815
   DEVICE_VENDOR := Samsung
   DEVICE_MODEL := CY-SWR1100
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 swconfig
   SUPPORTED_DEVICES += cy-swr1100
 endef
 TARGET_DEVICES += samsung_cy-swr1100
@@ -103,7 +103,7 @@ define Device/sitecom_wlr-6000
 	senao-header -r 0x0202 -p 0x41 -t 2
   DEVICE_VENDOR := Sitecom
   DEVICE_MODEL := WLR-6000
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 swconfig
   SUPPORTED_DEVICES += wlr-6000
 endef
 TARGET_DEVICES += sitecom_wlr-6000

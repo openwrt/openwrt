@@ -27,7 +27,7 @@ define Device/7links_px-4885-4m
   DEVICE_VENDOR := 7Links
   DEVICE_MODEL := PX-4885
   DEVICE_VARIANT := 4M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport kmod-leds-gpio
   SUPPORTED_DEVICES += px-4885-4M
 endef
@@ -39,7 +39,7 @@ define Device/7links_px-4885-8m
   DEVICE_VENDOR := 7Links
   DEVICE_MODEL := PX-4885
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport kmod-leds-gpio
   SUPPORTED_DEVICES += px-4885-8M
 endef
@@ -110,7 +110,7 @@ define Device/allnet_all5002
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Allnet
   DEVICE_MODEL := ALL5002
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
           kmod-i2c-core kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
   SUPPORTED_DEVICES += all5002
 endef
@@ -121,7 +121,7 @@ define Device/allnet_all5003
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Allnet
   DEVICE_MODEL := ALL5003
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
           kmod-i2c-core kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
   SUPPORTED_DEVICES += all5003
 endef
@@ -133,7 +133,7 @@ define Device/alphanetworks_asl26555-16m
   DEVICE_VENDOR := Alpha
   DEVICE_MODEL := ASL26555
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += asl26555 asl26555-16M
 endef
 TARGET_DEVICES += alphanetworks_asl26555-16m
@@ -143,7 +143,7 @@ define Device/alphanetworks_asl26555-8m
   IMAGE_SIZE := 7744k
   DEVICE_VENDOR := Alpha
   DEVICE_MODEL := ASL26555
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += asl26555 asl26555-8M
 endef
 TARGET_DEVICES += alphanetworks_asl26555-8m
@@ -183,7 +183,7 @@ define Device/asiarf_awm002-evb-4m
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AWM002-EVB
   DEVICE_VARIANT := 4M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 \
 		kmod-i2c-core kmod-i2c-gpio
   SUPPORTED_DEVICES += awm002-evb-4M
 endef
@@ -195,7 +195,7 @@ define Device/asiarf_awm002-evb-8m
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AWM002-EVB/AWM003-EVB
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 \
 		kmod-i2c-core kmod-i2c-gpio
   SUPPORTED_DEVICES += awm002-evb-8M
 endef
@@ -269,7 +269,7 @@ define Device/aztech_hw550-3g
   DEVICE_MODEL := HW550-3G
   DEVICE_ALT0_VENDOR := Allnet
   DEVICE_ALT0_MODEL := ALL0239-3G
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += hw550-3g
 endef
 TARGET_DEVICES += aztech_hw550-3g
@@ -290,7 +290,7 @@ define Device/belkin_f7c027
   IMAGE_SIZE := 7616k
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := F7C027
-  DEVICE_PACKAGES := -kmod-usb-core -kmod-usb-dwc2 -kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := --kmod-usb-dwc2 -kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += f7c027
 endef
 TARGET_DEVICES += belkin_f7c027
@@ -327,7 +327,7 @@ define Device/dlink_dcs-930
   IMAGE_SIZE := 3776k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DCS-930
-  DEVICE_PACKAGES := kmod-video-core kmod-video-uvc kmod-sound-core kmod-usb-audio kmod-usb-core kmod-usb-dwc2
+  DEVICE_PACKAGES := kmod-video-core kmod-video-uvc kmod-sound-core kmod-usb-audio kmod-usb-dwc2
   SUPPORTED_DEVICES += dcs-930
 endef
 TARGET_DEVICES += dlink_dcs-930
@@ -338,7 +338,7 @@ define Device/dlink_dcs-930l-b1
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DCS-930L
   DEVICE_VARIANT := B1
-  DEVICE_PACKAGES := kmod-video-core kmod-video-uvc kmod-sound-core kmod-usb-audio kmod-usb-core kmod-usb-ohci kmod-usb2
+  DEVICE_PACKAGES := kmod-video-core kmod-video-uvc kmod-sound-core kmod-usb-audio kmod-usb-ohci kmod-usb2
   SUPPORTED_DEVICES += dcs-930l-b1
 endef
 TARGET_DEVICES += dlink_dcs-930l-b1
@@ -524,7 +524,7 @@ define Device/fon_fonera-20n
 	edimax-header -s RSDK -m NL1T -f 0x50000 -S 0xc0000
   DEVICE_VENDOR := Fon
   DEVICE_MODEL := Fonera 2.0N
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += fonera20n
 endef
 TARGET_DEVICES += fon_fonera-20n
@@ -537,7 +537,7 @@ define Device/hame_mpr-a1
   DEVICE_VENDOR := HAME
   DEVICE_MODEL := MPR
   DEVICE_VARIANT := A1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev
   SUPPORTED_DEVICES += mpr-a1
 endef
 TARGET_DEVICES += hame_mpr-a1
@@ -549,7 +549,7 @@ define Device/hame_mpr-a2
   DEVICE_VENDOR := HAME
   DEVICE_MODEL := MPR
   DEVICE_VARIANT := A2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev
   SUPPORTED_DEVICES += mpr-a2
 endef
 TARGET_DEVICES += hame_mpr-a2
@@ -560,7 +560,7 @@ define Device/hauppauge_broadway
   UIMAGE_NAME:= Broadway Kernel Image
   DEVICE_VENDOR := Hauppauge
   DEVICE_MODEL := Broadway
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += broadway
 endef
 TARGET_DEVICES += hauppauge_broadway
@@ -582,7 +582,7 @@ define Device/hootoo_ht-tm02
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := HooToo
   DEVICE_MODEL := HT-TM02
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += ht-tm02
 endef
 TARGET_DEVICES += hootoo_ht-tm02
@@ -613,7 +613,7 @@ define Device/intenso_memory2move
   DEVICE_VENDOR := Intenso
   DEVICE_MODEL := Memory 2 Move
   DEVICE_PACKAGES := kmod-ledtrig-netdev kmod-ledtrig-timer \
-		kmod-usb-core kmod-usb2 kmod-usb-storage kmod-scsi-core \
+		kmod-usb2 kmod-usb-storage kmod-scsi-core \
 		kmod-fs-ext4 kmod-fs-vfat block-mount
   SUPPORTED_DEVICES += m2m
 endef
@@ -729,7 +729,7 @@ define Device/nixcore_x1-16m
   DEVICE_VENDOR := Nixcore
   DEVICE_MODEL := X1
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink kmod-spi-dev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink kmod-spi-dev
   SUPPORTED_DEVICES += nixcore-x1 nixcore-x1-16M
 endef
 TARGET_DEVICES += nixcore_x1-16m
@@ -740,7 +740,7 @@ define Device/nixcore_x1-8m
   DEVICE_VENDOR := Nixcore
   DEVICE_MODEL := X1
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink kmod-spi-dev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink kmod-spi-dev
   SUPPORTED_DEVICES += nixcore-x1 nixcore-x1-8M
 endef
 TARGET_DEVICES += nixcore_x1-8m
@@ -750,7 +750,7 @@ define Device/olimex_rt5350f-olinuxino
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := OLIMEX
   DEVICE_MODEL := RT5350F-OLinuXino
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 \
 		kmod-i2c-core kmod-i2c-ralink \
 		kmod-spi-dev
   SUPPORTED_DEVICES += rt5350f-olinuxino
@@ -762,7 +762,7 @@ define Device/olimex_rt5350f-olinuxino-evb
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := OLIMEX
   DEVICE_MODEL := RT5350F-OLinuXino-EVB
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 \
 		kmod-i2c-core kmod-i2c-ralink \
 		kmod-spi-dev
   SUPPORTED_DEVICES += rt5350f-olinuxino-evb
@@ -846,7 +846,7 @@ define Device/poray_m3
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B M3 -F 4M
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := M3
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-netdev \
+  DEVICE_PACKAGES := kmod-usb2 kmod-ledtrig-netdev \
 	kmod-ledtrig-timer
   SUPPORTED_DEVICES += m3
 endef
@@ -861,7 +861,7 @@ define Device/poray_m4-4m
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := M4
   DEVICE_VARIANT := 4M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-netdev \
+  DEVICE_PACKAGES := kmod-usb2 kmod-ledtrig-netdev \
 	kmod-ledtrig-timer
   SUPPORTED_DEVICES += m4-4M
 endef
@@ -876,7 +876,7 @@ define Device/poray_m4-8m
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := M4
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
+  DEVICE_PACKAGES := kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
   SUPPORTED_DEVICES += m4-8M
 endef
 TARGET_DEVICES += poray_m4-8m
@@ -889,7 +889,7 @@ define Device/poray_x5
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B X5 -F 8M
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := X5/X6
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
+  DEVICE_PACKAGES := kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
   SUPPORTED_DEVICES += x5
 endef
 TARGET_DEVICES += poray_x5
@@ -902,7 +902,7 @@ define Device/poray_x8
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B X8 -F 8M
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := X8
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
+  DEVICE_PACKAGES := kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
   SUPPORTED_DEVICES += x8
 endef
 TARGET_DEVICES += poray_x8
@@ -975,7 +975,7 @@ define Device/tenda_3g150b
   UIMAGE_NAME:= Linux Kernel Image
   DEVICE_VENDOR := Tenda
   DEVICE_MODEL := 3G150B
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += 3g150b
 endef
 TARGET_DEVICES += tenda_3g150b
@@ -986,7 +986,7 @@ define Device/tenda_3g300m
   UIMAGE_NAME := 3G150M_SPI Kernel Image
   DEVICE_VENDOR := Tenda
   DEVICE_MODEL := 3G300M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += 3g300m
 endef
 TARGET_DEVICES += tenda_3g300m
@@ -1042,7 +1042,7 @@ define Device/unbranded_a5-v11
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B A5-V11 -F 4M
   DEVICE_VENDOR := 
   DEVICE_MODEL := A5-V11
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
   SUPPORTED_DEVICES += a5-v11
 endef
 TARGET_DEVICES += unbranded_a5-v11
@@ -1083,7 +1083,7 @@ define Device/upvel_ur-326n4g
   IMAGE_SIZE := 3776k
   DEVICE_VENDOR := UPVEL
   DEVICE_MODEL := UR-326N4G
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += ur-326n4g
 endef
 TARGET_DEVICES += upvel_ur-326n4g
@@ -1093,7 +1093,7 @@ define Device/upvel_ur-336un
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := UPVEL
   DEVICE_MODEL := UR-336UN
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += ur-336un
 endef
 TARGET_DEVICES += upvel_ur-336un
@@ -1104,7 +1104,7 @@ define Device/vocore_vocore-16m
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 \
 		kmod-i2c-core kmod-i2c-ralink \
 		kmod-spi-dev
   SUPPORTED_DEVICES += vocore vocore-16M
@@ -1117,7 +1117,7 @@ define Device/vocore_vocore-8m
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 \
 		kmod-i2c-core kmod-i2c-ralink \
 		kmod-spi-dev
   SUPPORTED_DEVICES += vocore vocore-8M
@@ -1130,7 +1130,7 @@ define Device/wansview_ncs601w
   DEVICE_VENDOR := Wansview
   DEVICE_MODEL := NCS601W
   DEVICE_PACKAGES := kmod-video-core kmod-video-uvc \
-		kmod-usb-core kmod-usb-ohci
+		kmod-usb-ohci
   SUPPORTED_DEVICES += ncs601w
 endef
 TARGET_DEVICES += wansview_ncs601w
@@ -1149,7 +1149,7 @@ define Device/zorlik_zl5900v2
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Zorlik
   DEVICE_MODEL := ZL5900V2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev
 endef
 TARGET_DEVICES += zorlik_zl5900v2
 
@@ -1159,7 +1159,7 @@ define Device/zyxel_keenetic
   IMAGE_SIZE := 3776k
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ehci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ehci kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += kn
 endef
 TARGET_DEVICES += zyxel_keenetic
