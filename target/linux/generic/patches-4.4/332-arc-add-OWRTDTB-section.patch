@@ -40,7 +40,7 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
  ;----------------------------------------------------------------
 --- a/arch/arc/kernel/setup.c
 +++ b/arch/arc/kernel/setup.c
-@@ -366,6 +366,8 @@ static inline int is_kernel(unsigned lon
+@@ -364,6 +364,8 @@ static inline int is_kernel(unsigned lon
  	return 0;
  }
  
@@ -49,7 +49,7 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
  void __init setup_arch(char **cmdline_p)
  {
  #ifdef CONFIG_ARC_UBOOT_SUPPORT
-@@ -379,7 +381,7 @@ void __init setup_arch(char **cmdline_p)
+@@ -377,7 +379,7 @@ void __init setup_arch(char **cmdline_p)
  #endif
  	{
  		/* No, so try the embedded one */

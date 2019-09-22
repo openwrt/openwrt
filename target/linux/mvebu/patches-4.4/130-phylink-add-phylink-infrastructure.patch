@@ -85,7 +85,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  obj-$(CONFIG_AQUANTIA_PHY)	+= aquantia.o
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -754,6 +754,7 @@ void phy_detach(struct phy_device *phyde
+@@ -760,6 +760,7 @@ void phy_detach(struct phy_device *phyde
  	phydev->attached_dev->phydev = NULL;
  	phydev->attached_dev = NULL;
  	phy_suspend(phydev);

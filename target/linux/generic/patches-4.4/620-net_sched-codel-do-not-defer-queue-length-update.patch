@@ -22,7 +22,7 @@ Link: https://bugzilla.kernel.org/show_bug.cgi?id=109581
 
 --- a/net/sched/sch_codel.c
 +++ b/net/sched/sch_codel.c
-@@ -79,11 +79,17 @@ static struct sk_buff *codel_qdisc_deque
+@@ -80,11 +80,17 @@ static struct sk_buff *codel_qdisc_deque
  
  	skb = codel_dequeue(sch, &q->params, &q->vars, &q->stats, dequeue);
  

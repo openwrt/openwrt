@@ -659,7 +659,7 @@ dwc_otg: Remove duplicate gadget probe/unregister function
  }
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -5014,7 +5014,7 @@ static void port_event(struct usb_hub *h
+@@ -5021,7 +5021,7 @@ static void port_event(struct usb_hub *h
  	if (portchange & USB_PORT_STAT_C_OVERCURRENT) {
  		u16 status = 0, unused;
  
