@@ -9,12 +9,13 @@ Prerequisites
 ```bash  
 Ubuntu is recommended. tested on 18.04LTS in Azure
 
-Installing Packages  
--------------------    
+Instsalling Packages 
+=============  
 
 ```bash  
 $ sudo apt-get update
 $ sudo apt-get install build-essential subversion libncurses5-dev zlib1g-dev gawk gcc-multilib flex git-core gettext libssl-dev
+$ sudo upgrade
 ```  
 
 Downloading Source  
