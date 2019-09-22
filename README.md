@@ -43,12 +43,21 @@ run this again a couple of times just to be sure
 $ ./scripts/feeds install -a
 run this again a couple of times jto clear the warnings (because packages appear initially to be installed out of order)
 
+Left with these issues
+WARNING: Makefile 'package/feeds/routing/hnetd/Makefile' has a dependency on 'odhcp6c', which does not exist
+WARNING: Makefile 'package/feeds/routing/hnetd/Makefile' has a dependency on 'odhcp6c', which does not exist
+WARNING: Makefile 'package/feeds/gli_pub/luci-app-chinadns/Makefile' has a dependency on 'redsocks2', which does not exist
+WARNING: Makefile 'package/feeds/gli_pub/luci-app-chinadns/Makefile' has a dependency on 'ShadowVPN', which does not exist
+WARNING: Makefile 'package/feeds/routing/nat46/Makefile' has a dependency on 'map', which does not exist
+WARNING: Makefile 'package/feeds/gli_pub/shadowsocks-libev/Makefile' has a build dependency on 'libpcre', which does not exist
+WARNING: Makefile 'package/feeds/gli_pub/shadowsocks-libev/Makefile' has a build dependency on 'libmbedtls', which does not exist
+
 ```  
 
 Compile  
 =======  
 
-make difconfig
+make defconfig
 make menuconfig
 make download
 
