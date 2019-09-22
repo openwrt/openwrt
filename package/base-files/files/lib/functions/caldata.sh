@@ -73,3 +73,62 @@ caldata_valid() {
 	return $?
 }
 
+caldata_patch_chksum() {
+	local mac=$1
+	local mac_offset=$(($2))
+	local chksum_offset=$(($3))
+	local xor_mac
+	local xor_fw_mac
+	local xor_fw_chksum
+
+	xor_mac=${mac//:/}
+	xor_mac="${xor_mac:0:4} ${xor_mac:4:4} ${xor_mac:8:4}"
+
+	xor_fw_mac=$(hexdump -v -n 6 -s $mac_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
+	xor_fw_mac="${xor_fw_mac:0:4} ${xor_fw_mac:4:4} ${xor_fw_mac:8:4}"
+
+	xor_fw_chksum=$(hexdump -v -n 2 -s $chksum_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
+	xor_fw_chksum=$(xor $xor_fw_chksum $xor_fw_mac $xor_mac)
+
+	printf "%b" "\x${xor_fw_chksum:0:2}\x${xor_fw_chksum:2:2}" | \
+		dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=$chksum_offset count=2
+}
+
+caldata_patch_mac() {
+	local mac=$1
+	local mac_offset=$(($2))
+	local chksum_offset=$3
+
+	[ -z "$mac" -o -z "$mac_offset" ] && return
+
+	[ -n "$chksum_offset" ] && caldata_patch_chksum "$mac" "$mac_offset" "$chksum_offset"
+
+	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc oflag=seek_bytes bs=6 seek=$mac_offset count=1 || \
+		caldata_die "failed to write MAC address to eeprom file"
+}
+
+ath9k_patch_mac() {
+	local mac=$1
+
+	caldata_patch_mac "$mac" 0x2
+}
+
+ath9k_patch_mac_crc() {
+	local mac=$1
+	local mac_offset=$2
+	local chksum_offset=$((mac_offset - 10))
+
+	caldata_patch_mac "$mac" "$mac_offset" "$chksum_offset"
+}
+
+ath10kcal_patch_mac() {
+	local mac=$1
+
+	caldata_patch_mac "$mac" 0x6
+}
+
+ath10kcal_patch_mac_crc() {
+	local mac=$1
+
+	caldata_patch_mac "$mac" 0x6 0x2
+}

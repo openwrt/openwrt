@@ -4,17 +4,6 @@
 
 . /lib/functions/caldata.sh
 
-tpl_set_wireless_mac()
-{
-	local offset=$1
-	local mac
-
-	mac=$(mtd_get_mac_binary u-boot 0x4fc00)
-	mac=$(macaddr_add $mac $offset)
-
-	macaddr_2bin $mac | dd bs=1 count=6 seek=2 conv=notrunc of=/lib/firmware/$FIRMWARE 2>/dev/null
-}
-
 board=$(board_name)
 
 case "$FIRMWARE" in
@@ -22,7 +11,7 @@ case "$FIRMWARE" in
 	case $board in
 	tplink,tl-wdr4900-v1)
 		caldata_extract "caldata" 0x1000 0x800
-		tpl_set_wireless_mac 0
+		ath9k_patch_mac $(mtd_get_mac_binary u-boot 0x4fc00)
 		;;
 	*)
 		caldata_die "board $board is not supported yet"
@@ -34,7 +23,7 @@ case "$FIRMWARE" in
 	case $board in
 	tplink,tl-wdr4900-v1)
 		caldata_extract "caldata" 0x5000 0x800
-		tpl_set_wireless_mac -1
+		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_binary u-boot 0x4fc00) -1)
 		;;
 	*)
 		caldata_die "board $board is not supported yet"

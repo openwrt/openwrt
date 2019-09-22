@@ -4,41 +4,6 @@
 
 . /lib/functions/caldata.sh
 
-ath9k_patch_fw_mac() {
-	local mac=$1
-	local mac_offset=$(($2))
-	local chksum_offset=$3
-	local xor_mac
-	local xor_fw_mac
-	local xor_fw_chksum
-
-	[ -z "$mac" -o -z "$mac_offset" ] && return
-
-	[ -n "$chksum_offset" ] && {
-		xor_mac=${mac//:/}
-		xor_mac="${xor_mac:0:4} ${xor_mac:4:4} ${xor_mac:8:4}"
-
-		xor_fw_mac=$(hexdump -v -n 6 -s $mac_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
-		xor_fw_mac="${xor_fw_mac:0:4} ${xor_fw_mac:4:4} ${xor_fw_mac:8:4}"
-
-		xor_fw_chksum=$(hexdump -v -n 2 -s $chksum_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
-		xor_fw_chksum=$(xor $xor_fw_chksum $xor_fw_mac $xor_mac)
-
-		printf "%b" "\x${xor_fw_chksum:0:2}\x${xor_fw_chksum:2:2}" | \
-			dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=$(($chksum_offset)) count=2
-	}
-
-	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc oflag=seek_bytes bs=6 seek=$mac_offset count=1
-}
-
-ath9k_patch_fw_mac_crc() {
-	local mac=$1
-	local mac_offset=$2
-	local chksum_offset=$((mac_offset - 10))
-
-	ath9k_patch_fw_mac "${mac}" "${mac_offset}" "${chksum_offset}"
-}
-
 board=$(board_name)
 
 case "$FIRMWARE" in
@@ -50,7 +15,7 @@ case "$FIRMWARE" in
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
 		caldata_extract "art" 0x1000 0x440
-		ath9k_patch_fw_mac $(mtd_get_mac_text "mac" 0x4) 0x2
+		ath9k_patch_mac $(mtd_get_mac_text "mac" 0x4)
 		;;
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
@@ -59,11 +24,11 @@ case "$FIRMWARE" in
 	nec,wg1200cr|\
 	wd,mynet-n750)
 		caldata_extract "art" 0x1000 0x440
-		ath9k_patch_fw_mac $(mtd_get_mac_ascii devdata "wlan24mac") 0x2
+		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan24mac")
 		;;
 	engenius,ecb1750)
 		caldata_extract "art" 0x1000 0x440
-		ath9k_patch_fw_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env "athaddr") +1) 0x2
+		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env "athaddr") +1)
 		;;
 	engenius,epg5000|\
 	iodata,wn-ac1167dgr|\
@@ -71,15 +36,15 @@ case "$FIRMWARE" in
 	iodata,wn-ac1600dgr2|\
 	iodata,wn-ag300dgr)
 		caldata_extract "art" 0x1000 0x440
-		ath9k_patch_fw_mac $(mtd_get_mac_ascii u-boot-env ethaddr) 0x2
+		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env ethaddr)
 		;;
 	nec,wg800hp)
 		caldata_extract "art" 0x1000 0x440
-		ath9k_patch_fw_mac $(mtd_get_mac_text board_data 0x680) 0x2
+		ath9k_patch_mac $(mtd_get_mac_text board_data 0x680)
 		;;
 	qihoo,c301)
 		caldata_extract "radiocfg" 0x1000 0x440
-		ath9k_patch_fw_mac $(mtd_get_mac_ascii devdata "wlan24mac") 0x2
+		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan24mac")
 		;;
 	*)
 		caldata_die "board $board is not supported yet"
@@ -103,7 +68,7 @@ case "$FIRMWARE" in
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
 		caldata_extract "art" 0x5000 0x440
-		ath9k_patch_fw_mac $(macaddr_add $(mtd_get_mac_text "mac" 0x18) 1) 0x2
+		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_text "mac" 0x18) 1)
 		;;
 	ocedo,raccoon|\
 	tplink,tl-wdr3500-v1|\
@@ -139,11 +104,11 @@ case "$FIRMWARE" in
 		;;
 	wd,mynet-n750)
 		caldata_extract "art" 0x5000 0x440
-		ath9k_patch_fw_mac $(mtd_get_mac_ascii devdata "wlan5mac") 0x2
+		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan5mac")
 		;;
 	wd,mynet-wifi-rangeextender)
 		caldata_extract "art" 0x1000 0x1000
-		ath9k_patch_fw_mac $(nvram get wl0_hwaddr) "$mac" 0x2
+		ath9k_patch_mac $(nvram get wl0_hwaddr) "$mac"
 		;;
 	*)
 		caldata_die "board $board is not supported yet"
@@ -161,7 +126,7 @@ case "$FIRMWARE" in
 		;;
 	dlink,dir-825-b1)
 		caldata_extract "caldata" 0x1000 0xeb8
-		ath9k_patch_fw_mac_crc $(mtd_get_mac_text "caldata" 0xffa0) 0x20c
+		ath9k_patch_mac_crc $(mtd_get_mac_text "caldata" 0xffa0) 0x20c
 		;;
 	*)
 		caldata_die "board $board is not supported yet"
@@ -179,7 +144,7 @@ case "$FIRMWARE" in
 		;;
 	dlink,dir-825-b1)
 		caldata_extract "caldata" 0x5000 0xeb8
-		ath9k_patch_fw_mac_crc $(macaddr_add $(mtd_get_mac_text "caldata" 0xffb4) 1) 0x20c
+		ath9k_patch_mac_crc $(macaddr_add $(mtd_get_mac_text "caldata" 0xffb4) 1) 0x20c
 		;;
 	*)
 		caldata_die "board $board is not supported yet"

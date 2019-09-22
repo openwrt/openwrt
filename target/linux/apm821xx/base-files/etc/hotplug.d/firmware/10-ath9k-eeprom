@@ -4,14 +4,6 @@
 
 . /lib/functions/caldata.sh
 
-ath9k_patch_firmware_mac() {
-	local mac=$1
-
-	[ -z "$mac" ] && return
-
-	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=2 count=6
-}
-
 board=$(board_name)
 
 case "$FIRMWARE" in
@@ -24,7 +16,7 @@ case "$FIRMWARE" in
 			caldata_extract_ubi "caldata" 0x5000 0x1000
 		else
 			caldata_extract "wifi_data" 0x5000 0x1000
-			ath9k_patch_firmware_mac $(mtd_get_mac_binary wifi_data 0xc)
+			ath9k_patch_mac $(mtd_get_mac_binary wifi_data 0xc)
 		fi
 		;;
 	*)
@@ -42,7 +34,7 @@ case "$FIRMWARE" in
 			caldata_extract_ubi "caldata" 0x1000 0x1000
 		else
 			caldata_extract "wifi_data" 0x1000 0x1000
-			ath9k_patch_firmware_mac $(mtd_get_mac_binary wifi_data 0x0)
+			ath9k_patch_mac $(mtd_get_mac_binary wifi_data 0x0)
 		fi
 		;;
 	*)
