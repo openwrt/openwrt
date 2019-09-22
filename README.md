@@ -65,4 +65,7 @@ Issuing **make menuconfig** to select a GL.iNet device, and then *exit* with *sa
 
 Note that if you have all the source already, just put them in your *openwrt/dl* folder and you save time to download resource.  
 
+Build Errors
+make V=s 2>&1 | tee build.log | grep -i '[^_-"a-z]error[^_-.a-z]' 
+
 
