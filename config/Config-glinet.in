@@ -35,7 +35,6 @@ menu "GL.iNet packages choice shortcut"
 		select PACKAGE_lighttpd-mod-proxy
 		select PACKAGE_luci
 		select PACKAGE_luci-mod-rpc
-		select LUCI_LANG_zh-cn
 		select LUCI_LANG_en
 		select PACKAGE_unzip
 		select PACKAGE_wpa-cli
@@ -71,14 +70,6 @@ menu "GL.iNet packages choice shortcut"
 			select PACKAGE_luci-proto-wireguard
 			help
 			  Choose packages to support wireguard.
-
-		config GLINET_SHADOWSOCKS
-			bool "Support Shadowsocks"
-			select PACKAGE_shadowsocks-libev
-			select PACKAGE_shadowsocks-libev-server
-			select PACKAGE_luci-app-shadowsocks
-			help
-			  Choose packages to support shadowsocks.
 
 		config GLINET_L2TP
 			bool "Support L2TP/IPsec"
@@ -127,20 +118,6 @@ menu "GL.iNet packages choice shortcut"
 		select PACKAGE_usbmuxd
 		help
 		  Choose packages to support USB related.
-
-	config GLINET_WEBCAM
-		bool "Support webcam"
-		select MJPG_STREAMER_INPUT_UVC
-		select MJPG_STREAMER_OUTPUT_HTTP
-		select PACKAGE_mjpg-streamer
-		select PACKAGE_kmod-video-core
-		select PACKAGE_kmod-video-uvc
-		select PACKAGE_kmod-video-gspca-core
-		select PACKAGE_kmod-video-gspca-zc3xx
-		select PACKAGE_kmod-video-gspca-sonixb
-		select PACKAGE_kmod-video-gspca-sonixj
-		help
-		  Choose packages to support webcam.
 
  	config GLINET_RTC
  		bool "Support rtc"
