@@ -88,9 +88,23 @@ static void ag71xx_setup_gmac_956x(struct device_node *np, void __iomem *base)
 {
 	u32 val = __raw_readl(base + QCA956X_GMAC_REG_ETH_CFG);
 
+	ag71xx_of_bit(np, "rgmii-ge0", &val, QCA956X_ETH_CFG_RGMII_GE0);
+	ag71xx_of_bit(np, "mii-ge0", &val, QCA956X_ETH_CFG_MII_GE0);
+	ag71xx_of_bit(np, "gmii-ge0", &val, QCA956X_ETH_CFG_GMII_GE0);
+	ag71xx_of_bit(np, "mii-ge0-master", &val, QCA956X_ETH_CFG_MII_GE0_MASTER);
+	ag71xx_of_bit(np, "mii-ge0-slave", &val, QCA956X_ETH_CFG_MII_GE0_SLAVE);
+	ag71xx_of_bit(np, "ge0-sgmii", &val, QCA956X_ETH_CFG_GE0_SGMII);
 	ag71xx_of_bit(np, "switch-phy-swap", &val, QCA956X_ETH_CFG_SW_PHY_SWAP);
 	ag71xx_of_bit(np, "switch-phy-addr-swap", &val,
 		QCA956X_ETH_CFG_SW_PHY_ADDR_SWAP);
+	ag71xx_of_set(np, "txen-delay", &val, QCA956X_ETH_CFG_TXE_DELAY_SHIFT,
+		      QCA956X_ETH_CFG_TXE_DELAY_MASK);
+	ag71xx_of_set(np, "txd-delay", &val, QCA956X_ETH_CFG_TXD_DELAY_SHIFT,
+		      QCA956X_ETH_CFG_TXD_DELAY_MASK);
+	ag71xx_of_set(np, "rxdv-delay", &val, QCA956X_ETH_CFG_RDV_DELAY_SHIFT,
+		      QCA956X_ETH_CFG_RDV_DELAY_MASK);
+	ag71xx_of_set(np, "rxd-delay", &val, QCA956X_ETH_CFG_RXD_DELAY_SHIFT,
+		      QCA956X_ETH_CFG_RXD_DELAY_MASK);
 
 	__raw_writel(val, base + QCA956X_GMAC_REG_ETH_CFG);
 }
