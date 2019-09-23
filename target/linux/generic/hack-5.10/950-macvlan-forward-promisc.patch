@@ -1,0 +1,49 @@
+--- a/drivers/net/macvlan.c
++++ b/drivers/net/macvlan.c
+@@ -421,6 +421,32 @@ static void macvlan_forward_source_one(s
+ 	macvlan_count_rx(vlan, len, ret == NET_RX_SUCCESS, false);
+ }
+ 
++static void macvlan_flood_promisc(struct sk_buff *skb,
++				       const struct macvlan_dev *vlan)
++{
++	struct sk_buff *nskb;
++	struct net_device *dev;
++	int len;
++	int ret;
++
++	dev = vlan->dev;
++	if (unlikely(!(dev->flags & IFF_UP)))
++		return;
++
++	if (ether_addr_equal_64bits(eth_hdr(skb)->h_dest, dev->dev_addr))
++		return;
++
++	nskb = skb_clone(skb, GFP_ATOMIC);
++	if (!nskb)
++		return;
++
++	len = nskb->len + ETH_HLEN;
++	nskb->dev = dev;
++
++	ret = netif_receive_skb(nskb);
++	macvlan_count_rx(vlan, len, ret == NET_RX_SUCCESS, false);
++}
++
+ static void macvlan_forward_source(struct sk_buff *skb,
+ 				   struct macvlan_port *port,
+ 				   const unsigned char *addr)
+@@ -480,6 +506,13 @@ static rx_handler_result_t macvlan_handl
+ 		return RX_HANDLER_PASS;
+ 	}
+ 
++	/* flood packets up if in PROMISC */
++	list_for_each_entry(vlan, &port->vlans, list) {
++		if ((vlan->dev->flags & IFF_PROMISC)) {
++			macvlan_flood_promisc(skb, vlan);
++		}
++	}
++
+ 	macvlan_forward_source(skb, port, eth->h_source);
+ 	if (macvlan_passthru(port))
+ 		vlan = list_first_or_null_rcu(&port->vlans,
