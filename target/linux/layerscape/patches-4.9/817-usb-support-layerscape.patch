@@ -44,7 +44,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 
 --- a/drivers/net/usb/cdc_ether.c
 +++ b/drivers/net/usb/cdc_ether.c
-@@ -533,6 +533,7 @@ static const struct driver_info wwan_inf
+@@ -540,6 +540,7 @@ static const struct driver_info wwan_inf
  #define LINKSYS_VENDOR_ID	0x13b1
  #define NVIDIA_VENDOR_ID	0x0955
  #define HP_VENDOR_ID		0x03f0
@@ -52,7 +52,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  static const struct usb_device_id	products[] = {
  /* BLACKLIST !!
-@@ -742,6 +743,13 @@ static const struct usb_device_id	produc
+@@ -749,6 +750,13 @@ static const struct usb_device_id	produc
  			USB_CDC_SUBCLASS_ETHERNET, USB_CDC_PROTO_NONE),
  	.driver_info = 0,
  },
@@ -76,7 +76,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  #define MCU_TYPE_PLA			0x0100
  #define MCU_TYPE_USB			0x0000
-@@ -1817,6 +1818,10 @@ static int rx_bottom(struct r8152 *tp, i
+@@ -1820,6 +1821,10 @@ static int rx_bottom(struct r8152 *tp, i
  			unsigned int pkt_len;
  			struct sk_buff *skb;
  
@@ -87,7 +87,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			pkt_len = le32_to_cpu(rx_desc->opts1) & RX_LEN_MASK;
  			if (pkt_len < ETH_ZLEN)
  				break;
-@@ -4513,6 +4518,7 @@ static struct usb_device_id rtl8152_tabl
+@@ -4516,6 +4521,7 @@ static struct usb_device_id rtl8152_tabl
  	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO,  0x304f)},
  	{REALTEK_USB_DEVICE(VENDOR_ID_LINKSYS, 0x0041)},
  	{REALTEK_USB_DEVICE(VENDOR_ID_NVIDIA,  0x09ff)},
