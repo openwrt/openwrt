@@ -322,9 +322,9 @@ $(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_VLAN, $(P_EBT)ebt_vlan))
 # targets
 $(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_ARPREPLY, $(P_EBT)ebt_arpreply))
 $(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_MARK_T, $(P_EBT)ebt_mark))
-$(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_DNAT, $(P_EBT)ebt_dnat))
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_DNAT, $(P_EBT)ebt_dnat))
 $(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_REDIRECT, $(P_EBT)ebt_redirect))
-$(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_SNAT, $(P_EBT)ebt_snat))
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_SNAT, $(P_EBT)ebt_snat))
 
 # watchers
 $(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_LOG, $(P_EBT)ebt_log))
