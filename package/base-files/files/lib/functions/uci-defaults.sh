@@ -587,6 +587,40 @@ ucidef_set_hostname() {
 	json_select ..
 }
 
+ucidef_set_wifi_ssid() {
+	local wifi_ssid="$1"
+
+	json_select_object system
+		json_add_string wifi_ssid "$wifi_ssid"
+	json_select ..
+}
+
+ucidef_set_wifi_key() {
+	local wifi_key="$1"
+
+	json_select_object system
+		json_add_string wifi_key "$wifi_key"
+	json_select ..
+}
+
+ucidef_set_wifi_country() {
+	local wifi_country="$1"
+
+	json_select_object system
+		json_add_string wifi_country "$wifi_country"
+	json_select ..
+}
+
+ucidef_set_wifi_default() {
+	local mode_band="$1"
+	local tx_power="$2"
+
+	json_select_object system
+		json_add_string wifi_default "$mode_band"
+		[ -n "$tx_power" ] && json_add_string wifi_txpower "$tx_power"
+	json_select ..
+}
+
 ucidef_set_ntpserver() {
 	local server
 
