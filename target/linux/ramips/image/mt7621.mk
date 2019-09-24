@@ -7,6 +7,21 @@ include ./common-tp-link.mk
 DEFAULT_SOC := mt7621
 
 KERNEL_DTB += -d21
+DEVICE_VARS += UIMAGE_MAGIC
+
+# The OEM webinterface expects an kernel with initramfs which has the uImage
+# header field ih_name.
+# We don't want to set the header name field for the kernel include in the
+# sysupgrade image as well, as this image shouldn't be accepted by the OEM
+# webinterface. It will soft-brick the board.
+define Build/custom-initramfs-uimage
+	mkimage -A $(LINUX_KARCH) \
+		-O linux -T kernel \
+		-C lzma -a $(KERNEL_LOADADDR) $(if $(UIMAGE_MAGIC),-M $(UIMAGE_MAGIC),) \
+		-e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
+		-n '$(1)' -d $@ $@.new
+	mv $@.new $@
+endef
 
 define Build/elecom-gst-factory
   $(eval product=$(word 1,$(1)))
@@ -72,19 +87,6 @@ define Build/ubnt-erx-factory-image
 	else \
 		echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
 	fi
-endef
-
-# The OEM webinterface expects an kernel with initramfs which has the uImage
-# header field ih_name.
-# We don't wan't to set the header name field for the kernel include in the
-# sysupgrade image as well, as this image shouldn't be accepted by the OEM
-# webinterface. It will soft-brick the board.
-define Build/wr1201-factory-header
-	mkimage -A $(LINUX_KARCH) \
-		-O linux -T kernel \
-		-C lzma -a $(KERNEL_LOADADDR) -e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
-		-n 'WR1201_8_128' -d $@ $@.new
-	mv $@.new $@
 endef
 
 define Device/afoundry_ew1200
@@ -466,7 +468,7 @@ define Device/mtc_wr1201
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := MTC
   DEVICE_MODEL := Wireless Router WR1201
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | wr1201-factory-header
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage WR1201_8_128
   DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport wpad-basic
 endef
