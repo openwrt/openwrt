@@ -20,6 +20,10 @@
 #include <linux/rtnetlink.h>
 #include <linux/debugfs.h>
 
+#define trelay_log(loglevel, tr, fmt, ...) \
+	printk(loglevel "trelay: %s <-> %s: " fmt "\n", \
+		tr->dev1->name, tr->dev2->name, ##__VA_ARGS__);
+
 static LIST_HEAD(trelay_devs);
 static struct dentry *debugfs_dir;
 
@@ -70,6 +74,8 @@ static int trelay_do_remove(struct trelay *tr)
 
 	netdev_rx_handler_unregister(tr->dev1);
 	netdev_rx_handler_unregister(tr->dev2);
+
+	trelay_log(KERN_INFO, tr, "stopped");
 
 	kfree(tr);
 
@@ -182,6 +188,8 @@ static int trelay_do_add(char *name, char *devn1, char *devn2)
 	tr->dev1 = dev1;
 	tr->dev2 = dev2;
 	list_add_tail(&tr->list, &trelay_devs);
+
+	trelay_log(KERN_INFO, tr, "started");
 
 	tr->debugfs = debugfs_create_dir(name, debugfs_dir);
 	debugfs_create_file("remove", S_IWUSR, tr->debugfs, tr, &fops_remove);
