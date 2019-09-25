@@ -23,8 +23,9 @@ define Build/strip-kernel
 endef
 
 define Device/generic
+  DEVICE_VENDOR := Generic
+  DEVICE_MODEL := Octeon
   FILESYSTEMS := ext4
-  DEVICE_TITLE := Generic
 endef
 TARGET_DEVICES += generic
 
