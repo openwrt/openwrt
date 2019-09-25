@@ -60,7 +60,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 	hdr_len = sizeof(struct fdt_header);
 
 	/* Parse the MTD device & search for the FIT image location */
-	for(offset = 0; offset + hdr_len < mtd->size; offset += mtd->erasesize) {
+	for(offset = 0; offset + hdr_len <= mtd->size; offset += mtd->erasesize) {
 		ret = mtd_read(mtd, offset, hdr_len, &retlen, (void*) &hdr);
 		if (ret) {
 			pr_err("read error in \"%s\" at offset 0x%llx\n",
