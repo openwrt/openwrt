@@ -21,7 +21,7 @@ define Build/tegra-sdcard
 		-e 's#@KERNEL@#$(KERNEL_NAME)#g' \
 		$(BOOT_SCRIPT) > $@-boot.scr
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
-		-n '$(DEVICE_TITLE) OpenWrt bootscript' \
+		-n '$(DEVICE_VENDOR) $(DEVICE_MODEL) OpenWrt bootscript' \
 		-d $@-boot.scr \
 		$@.boot/boot.scr
 
