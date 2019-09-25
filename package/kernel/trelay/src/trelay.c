@@ -86,7 +86,7 @@ static struct trelay *trelay_find(struct net_device *dev)
 static int tr_device_event(struct notifier_block *unused, unsigned long event,
 			   void *ptr)
 {
-	struct net_device *dev = ptr;
+	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
 	struct trelay *tr;
 
 	if (event != NETDEV_UNREGISTER)
