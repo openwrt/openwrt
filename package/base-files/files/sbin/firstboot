@@ -1,3 +1,5 @@
 #!/bin/sh
 
+test -x /usr/sbin/system_reset && /usr/sbin/system_reset $@ && exit 0
+
 /sbin/jffs2reset $@
