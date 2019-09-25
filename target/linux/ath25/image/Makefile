@@ -61,7 +61,8 @@ define Device/Default
 endef
 
 define Device/generic
-  DEVICE_TITLE := Generic Images
+  DEVICE_VENDOR := Atheros
+  DEVICE_MODEL := Generic AR2xxx board
   IMAGES := kernel.lzma kernel.elf kernel.gz rootfs.bin sysupgrade.bin
   IMAGE/kernel.gz := elf-kernel | gzip-kernel
   IMAGE/kernel.elf := elf-kernel
