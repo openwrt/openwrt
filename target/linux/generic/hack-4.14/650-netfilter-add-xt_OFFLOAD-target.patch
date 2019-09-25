@@ -98,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,419 @@
+@@ -0,0 +1,421 @@
 +/*
 + * Copyright (C) 2018 Felix Fietkau <nbd@nbd.name>
 + *
@@ -307,10 +307,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	switch (xt_family(par)) {
 +	case NFPROTO_IPV4:
 +		fl.u.ip4.daddr = ct->tuplehash[dir].tuple.src.u3.ip;
++		fl.u.ip4.flowi4_oif = ifindex;
 +		break;
 +	case NFPROTO_IPV6:
 +		fl.u.ip6.saddr = ct->tuplehash[dir].tuple.dst.u3.in6;
 +		fl.u.ip6.daddr = ct->tuplehash[dir].tuple.src.u3.in6;
++		fl.u.ip6.flowi6_oif = ifindex;
 +		break;
 +	}
 +

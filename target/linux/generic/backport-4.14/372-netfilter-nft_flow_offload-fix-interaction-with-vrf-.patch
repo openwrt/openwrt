@@ -62,7 +62,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
 --- a/net/netfilter/nft_flow_offload.c
 +++ b/net/netfilter/nft_flow_offload.c
-@@ -28,9 +28,11 @@ nft_flow_dst(const struct nf_conn *ct, e
+@@ -30,9 +30,11 @@ static int nft_flow_route(const struct n
  	switch (nft_pf(pkt)) {
  	case NFPROTO_IPV4:
  		fl.u.ip4.daddr = ct->tuplehash[dir].tuple.src.u3.ip;
@@ -74,7 +74,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		break;
  	}
  
-@@ -52,9 +54,7 @@ static int nft_flow_route(const struct n
+@@ -41,9 +43,7 @@ static int nft_flow_route(const struct n
  		return -ENOENT;
  
  	route->tuple[dir].dst		= this_dst;
