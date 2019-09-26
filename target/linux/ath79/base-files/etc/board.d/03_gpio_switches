@@ -38,6 +38,12 @@ dlink,dir-835-a1)
 librerouter,librerouter-v1)
 	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "1" "0"
 	;;
+telco_electronics,tel-t1)
+	ucidef_add_gpio_switch "modem_poweroff" "Modem Poweroff" "1" "1"
+	ucidef_add_gpio_switch "modem_wakeup" "Modem Wakeup" "11" "1"
+	ucidef_add_gpio_switch "modem_reset" "Modem Reset" "12" "1"
+	ucidef_add_gpio_switch "modem_power" "Modem Power" "14" "1"
+	;;
 tplink,archer-c25-v1)
 	ucidef_add_gpio_switch "led_control" "LED control" "21" "0"
 	ucidef_add_gpio_switch "led_reset" "LED reset" "19" "1"

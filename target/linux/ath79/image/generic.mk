@@ -88,6 +88,15 @@ define Device/seama
   SEAMA_SIGNATURE :=
 endef
 
+define Device/telco_electronics_tel-t1
+  ATH_SOC := qca9531
+  DEVICE_TITLE := Telco Electronics T1
+  DEVICE_PACKAGES := kmod-leds-gpio kmod-usb2 kmod-usb-net \
+	kmod-usb-net-qmi-wwan -swconfig
+  IMAGE_SIZE := 16192k
+  SUPPORTED_DEVICES += t1
+endef
+TARGET_DEVICES += telco_electronics_tel-t1
 
 define Device/8dev_carambola2
   ATH_SOC := ar9331
