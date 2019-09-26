@@ -1,0 +1,64 @@
+From 9fd38dc340c38dee6e5935da174f90270a63bfbf Mon Sep 17 00:00:00 2001
+From: Jacob Barthelmeh <jacob@wolfssl.com>
+Date: Fri, 30 Aug 2019 16:15:48 -0600
+Subject: [PATCH] build fix for aesccm + devcrypto=cbc + wpas and afalg
+
+
+diff --git a/configure.ac b/configure.ac
+index 61fad39dd..30731eb52 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1045,6 +1045,10 @@ AC_ARG_ENABLE([afalg],
+ 
+ if test "$ENABLED_AFALG" = "yes"
+ then
++    if test "$ENABLED_AESCCM" = "yes"
++    then
++        AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_AES_DIRECT"
++    fi
+     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_AFALG"
+     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_AFALG_HASH"
+ fi
+diff --git a/wolfcrypt/src/aes.c b/wolfcrypt/src/aes.c
+index fef2f9c74..d294f6236 100644
+--- a/wolfcrypt/src/aes.c
++++ b/wolfcrypt/src/aes.c
+@@ -759,7 +759,9 @@
+         }
+     #endif /* HAVE_AES_DECRYPT */
+ 
+-#elif defined(WOLFSSL_IMX6_CAAM) && !defined(NO_IMX6_CAAM_AES)
++#elif (defined(WOLFSSL_IMX6_CAAM) && !defined(NO_IMX6_CAAM_AES)) || \
++      ((defined(WOLFSSL_AFALG) || defined(WOLFSSL_DEVCRYPTO_AES)) && \
++        defined(HAVE_AESCCM))
+         static int wc_AesEncrypt(Aes* aes, const byte* inBlock, byte* outBlock)
+         {
+             wc_AesEncryptDirect(aes, outBlock, inBlock);
+@@ -768,16 +770,6 @@
+ 
+ #elif defined(WOLFSSL_AFALG)
+ #elif defined(WOLFSSL_DEVCRYPTO_AES)
+-    /* if all AES is enabled with devcrypto then tables are not needed */
+-
+-    #if defined(HAVE_AESCCM)
+-    static int wc_AesEncrypt(Aes* aes, const byte* inBlock, byte* outBlock)
+-    {
+-        wc_AesEncryptDirect(aes, outBlock, inBlock);
+-        return 0;
+-    }
+-    #endif
+-
+ #else
+ 
+     /* using wolfCrypt software implementation */
+@@ -1593,8 +1585,8 @@ static void wc_AesEncrypt(Aes* aes, const byte* inBlock, byte* outBlock)
+ #endif /* HAVE_AES_CBC || WOLFSSL_AES_DIRECT || HAVE_AESGCM */
+ 
+ #if defined(HAVE_AES_DECRYPT)
+-#if (defined(HAVE_AES_CBC) || defined(WOLFSSL_AES_DIRECT)) && \
+-    !defined(WOLFSSL_DEVCRYPTO_CBC)
++#if (defined(HAVE_AES_CBC) && !defined(WOLFSSL_DEVCRYPTO_CBC)) || \
++     defined(WOLFSSL_AES_DIRECT)
+ 
+ /* load 4 Td Tables into cache by cache line stride */
+ static WC_INLINE word32 PreFetchTd(void)

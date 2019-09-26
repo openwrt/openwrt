@@ -6,21 +6,6 @@ DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX
 
-define Build/cybertan-trx
-	@echo -n '' > $@-empty.bin
-	-$(STAGING_DIR_HOST)/bin/trx -o $@.new \
-		-f $(IMAGE_KERNEL) -F $@-empty.bin \
-		-x 32 -a 0x10000 -x -32 -f $@
-	-mv "$@.new" "$@"
-	-rm $@-empty.bin
-endef
-
-define Build/addpattern
-	-$(STAGING_DIR_HOST)/bin/addpattern -B $(ADDPATTERN_ID) \
-		-v v$(ADDPATTERN_VERSION) -i $@ -o $@.new
-	-mv "$@.new" "$@"
-endef
-
 define Build/add-elecom-factory-initramfs
   $(eval edimax_model=$(word 1,$(1)))
   $(eval product=$(word 2,$(1)))
@@ -41,6 +26,21 @@ define Build/add-elecom-factory-initramfs
   else \
 	echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
   fi
+endef
+
+define Build/addpattern
+	-$(STAGING_DIR_HOST)/bin/addpattern -B $(ADDPATTERN_ID) \
+		-v v$(ADDPATTERN_VERSION) -i $@ -o $@.new
+	-mv "$@.new" "$@"
+endef
+
+define Build/cybertan-trx
+	@echo -n '' > $@-empty.bin
+	-$(STAGING_DIR_HOST)/bin/trx -o $@.new \
+		-f $(IMAGE_KERNEL) -F $@-empty.bin \
+		-x 32 -a 0x10000 -x -32 -f $@
+	-mv "$@.new" "$@"
+	-rm $@-empty.bin
 endef
 
 define Build/nec-enc
@@ -88,6 +88,7 @@ define Device/seama
   SEAMA_SIGNATURE :=
 endef
 
+
 define Device/8dev_carambola2
   ATH_SOC := ar9331
   DEVICE_VENDOR := 8devices
@@ -102,11 +103,11 @@ define Device/adtran_bsap1880
   ATH_SOC := ar7161
   DEVICE_VENDOR := Adtran/Bluesocket
   DEVICE_PACKAGES += -swconfig -uboot-envtools fconfig
-  KERNEL := kernel-bin | append-dtb | lzma
+  KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
   KERNEL_INITRAMFS := kernel-bin | append-dtb
   IMAGE_SIZE := 11200k
   IMAGES += kernel.bin rootfs.bin
-  IMAGE/kernel.bin := append-kernel | pad-to $$$$(BLOCKSIZE)
+  IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
@@ -395,19 +396,6 @@ define Device/dlink_dir-835-a1
 endef
 TARGET_DEVICES += dlink_dir-835-a1
 
-define Device/dlink_dir-859-a1
-  $(Device/seama)
-  ATH_SOC := qca9563
-  DEVICE_VENDOR := D-Link
-  DEVICE_MODEL := DIR-859
-  DEVICE_VARIANT := A1
-  IMAGE_SIZE := 15872k
-  DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  SEAMA_SIGNATURE := wrgac37_dlink.2013gui_dir859
-  SUPPORTED_DEVICES += dir-859-a1
-endef
-TARGET_DEVICES += dlink_dir-859-a1
-
 define Device/dlink_dir-842-c
   ATH_SOC := qca9563
   DEVICE_VENDOR := D-Link
@@ -448,6 +436,19 @@ define Device/dlink_dir-842-c3
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
 endef
 TARGET_DEVICES += dlink_dir-842-c3
+
+define Device/dlink_dir-859-a1
+  $(Device/seama)
+  ATH_SOC := qca9563
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-859
+  DEVICE_VARIANT := A1
+  IMAGE_SIZE := 15872k
+  DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  SEAMA_SIGNATURE := wrgac37_dlink.2013gui_dir859
+  SUPPORTED_DEVICES += dir-859-a1
+endef
+TARGET_DEVICES += dlink_dir-859-a1
 
 define Device/elecom_wrc-1750ghbk2-i
   ATH_SOC := qca9563
@@ -706,6 +707,83 @@ define Device/nec_wg800hp
 endef
 TARGET_DEVICES += nec_wg800hp
 
+define Device/netgear_ex6400_ex7300
+  ATH_SOC := qca9558
+  NETGEAR_KERNEL_MAGIC := 0x27051956
+  NETGEAR_BOARD_ID := EX7300series
+  NETGEAR_HW_ID := 29765104+16+0+128
+  IMAGE_SIZE := 15552k
+  IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | netgear-rootfs | pad-rootfs
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca99x0-ct
+  $(Device/netgear_ath79)
+endef
+
+define Device/netgear_ex6400
+  $(Device/netgear_ex6400_ex7300)
+  DEVICE_MODEL := EX6400
+endef
+TARGET_DEVICES += netgear_ex6400
+
+define Device/netgear_ex7300
+  $(Device/netgear_ex6400_ex7300)
+  DEVICE_MODEL := EX7300
+endef
+TARGET_DEVICES += netgear_ex7300
+
+define Device/netgear_wndr3x00
+  ATH_SOC := ar7161
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
+  $(Device/netgear_ath79)
+endef
+
+define Device/netgear_wndr3700
+  $(Device/netgear_wndr3x00)
+  DEVICE_MODEL := WNDR3700
+  DEVICE_VARIANT := v1
+  NETGEAR_KERNEL_MAGIC := 0x33373030
+  NETGEAR_BOARD_ID := WNDR3700
+  IMAGE_SIZE := 7680k
+  IMAGES += factory-NA.img
+  IMAGE/factory-NA.img := $$(IMAGE/default) | netgear-dni NA | check-size $$$$(IMAGE_SIZE)
+  SUPPORTED_DEVICES += wndr3700
+endef
+TARGET_DEVICES += netgear_wndr3700
+
+define Device/netgear_wndr3700v2
+  $(Device/netgear_wndr3x00)
+  DEVICE_MODEL := WNDR3700
+  DEVICE_VARIANT := v2
+  NETGEAR_KERNEL_MAGIC := 0x33373031
+  NETGEAR_BOARD_ID := WNDR3700v2
+  NETGEAR_HW_ID := 29763654+16+64
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += wndr3700v2
+endef
+TARGET_DEVICES += netgear_wndr3700v2
+
+define Device/netgear_wndr3800
+  $(Device/netgear_wndr3x00)
+  DEVICE_MODEL := WNDR3800
+  NETGEAR_KERNEL_MAGIC := 0x33373031
+  NETGEAR_BOARD_ID := WNDR3800
+  NETGEAR_HW_ID := 29763654+16+128
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += wndr3800
+endef
+TARGET_DEVICES += netgear_wndr3800
+
+define Device/netgear_wndr3800ch
+  $(Device/netgear_wndr3x00)
+  DEVICE_MODEL := WNDR3800CH
+  NETGEAR_KERNEL_MAGIC := 0x33373031
+  NETGEAR_BOARD_ID := WNDR3800CH
+  NETGEAR_HW_ID := 29763654+16+128
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += wndr3800ch
+endef
+TARGET_DEVICES += netgear_wndr3800ch
+
 define Device/ocedo_koala
   ATH_SOC := qca9558
   DEVICE_VENDOR := Ocedo
@@ -775,60 +853,15 @@ define Device/pcs_cr5000
 endef
 TARGET_DEVICES += pcs_cr5000
 
-define Device/netgear_wndr3x00
-  ATH_SOC := ar7161
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
-  $(Device/netgear_ath79)
+define Device/phicomm_k2t
+  ATH_SOC := qca9563
+  DEVICE_VENDOR := Phicomm
+  DEVICE_MODEL := K2T
+  IMAGE_SIZE := 15744k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := kmod-leds-reset kmod-ath10k-ct ath10k-firmware-qca9888-ct
 endef
-
-define Device/netgear_ex7300_ex6400
-  ATH_SOC := qca9558
-  NETGEAR_KERNEL_MAGIC := 0x27051956
-  NETGEAR_BOARD_ID := EX7300series
-  NETGEAR_HW_ID := 29765104+16+0+128
-  IMAGE_SIZE := 15552k
-  IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | netgear-rootfs | pad-rootfs
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca99x0-ct
-  $(Device/netgear_ath79)
-endef
-
-define Device/netgear_ex6400
-  $(Device/netgear_ex7300_ex6400)
-  DEVICE_MODEL := EX6400
-endef
-TARGET_DEVICES += netgear_ex6400
-
-define Device/netgear_ex7300
-  $(Device/netgear_ex7300_ex6400)
-  DEVICE_MODEL := EX7300
-endef
-TARGET_DEVICES += netgear_ex7300
-
-define Device/netgear_wndr3700
-  $(Device/netgear_wndr3x00)
-  DEVICE_MODEL := WNDR3700
-  DEVICE_VARIANT := v1
-  NETGEAR_KERNEL_MAGIC := 0x33373030
-  NETGEAR_BOARD_ID := WNDR3700
-  IMAGE_SIZE := 7680k
-  IMAGES += factory-NA.img
-  IMAGE/factory-NA.img := $$(IMAGE/default) | netgear-dni NA | check-size $$$$(IMAGE_SIZE)
-  SUPPORTED_DEVICES += wndr3700
-endef
-TARGET_DEVICES += netgear_wndr3700
-
-define Device/netgear_wndr3700v2
-  $(Device/netgear_wndr3x00)
-  DEVICE_MODEL := WNDR3700
-  DEVICE_VARIANT := v2
-  NETGEAR_KERNEL_MAGIC := 0x33373031
-  NETGEAR_BOARD_ID := WNDR3700v2
-  NETGEAR_HW_ID := 29763654+16+64
-  IMAGE_SIZE := 15872k
-  SUPPORTED_DEVICES += wndr3700v2
-endef
-TARGET_DEVICES += netgear_wndr3700v2
+TARGET_DEVICES += phicomm_k2t
 
 define Device/pisen_ts-d084
   $(Device/tplink-8mlzma)
@@ -866,27 +899,6 @@ define Device/pisen_wmm003n
   TPLINK_HWID := 0x07030101
 endef
 TARGET_DEVICES += pisen_wmm003n
-
-define Device/netgear_wndr3800
-  $(Device/netgear_wndr3x00)
-  DEVICE_MODEL := WNDR3800
-  NETGEAR_KERNEL_MAGIC := 0x33373031
-  NETGEAR_BOARD_ID := WNDR3800
-  NETGEAR_HW_ID := 29763654+16+128
-  IMAGE_SIZE := 15872k
-  SUPPORTED_DEVICES += wndr3800
-endef
-TARGET_DEVICES += netgear_wndr3800
-
-define Device/phicomm_k2t
-  ATH_SOC := qca9563
-  DEVICE_VENDOR := Phicomm
-  DEVICE_MODEL := K2T
-  IMAGE_SIZE := 15744k
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
-  DEVICE_PACKAGES := kmod-leds-reset kmod-ath10k-ct ath10k-firmware-qca9888-ct
-endef
-TARGET_DEVICES += phicomm_k2t
 
 define Device/qihoo_c301
   $(Device/seama)

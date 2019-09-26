@@ -16,25 +16,6 @@ define Build/elecom-header
 		-f $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 
-define Build/elx-header
-  $(eval hw_id=$(word 1,$(1)))
-  $(eval xor_pattern=$(word 2,$(1)))
-  ( \
-    echo -ne "\x00\x00\x00\x00\x00\x00\x00\x03" | \
-      dd bs=42 count=1 conv=sync; \
-    hw_id="$(hw_id)"; \
-    echo -ne "\x$${hw_id:0:2}\x$${hw_id:2:2}\x$${hw_id:4:2}\x$${hw_id:6:2}" | \
-      dd bs=20 count=1 conv=sync; \
-    echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
-      dd bs=8 count=1 conv=sync; \
-    echo -ne "$$($(STAGING_DIR_HOST)/bin/mkhash md5 $@ | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
-      dd bs=58 count=1 conv=sync; \
-  ) > $(KDIR)/tmp/$(DEVICE_NAME).header
-  $(call Build/xor-image,-p $(xor_pattern) -x)
-  cat $(KDIR)/tmp/$(DEVICE_NAME).header $@ > $@.new
-  mv $@.new $@
-endef
-
 define Device/aigale_ai-br100
   MTK_SOC := mt7620a
   IMAGE_SIZE := 7936k
@@ -371,6 +352,19 @@ define Device/elecom_wrh-300cr
   SUPPORTED_DEVICES += wrh-300cr
 endef
 TARGET_DEVICES += elecom_wrh-300cr
+
+define Device/engenius_esr600
+  MTK_SOC := mt7620a
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 15616k
+  IMAGES += factory.dlf
+  IMAGE/factory.dlf := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+       senao-header -r 0x101 -p 0x57 -t 2
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := ESR600
+  DEVICE_PACKAGES += kmod-rt2800-pci kmod-usb-core kmod-usb-storage kmod-usb-ohci kmod-usb-ehci
+endef
+TARGET_DEVICES += engenius_esr600
 
 define Device/fon_fon2601
   MTK_SOC := mt7620a

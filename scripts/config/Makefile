@@ -20,8 +20,6 @@ check_lxdialog = $(shell $(SHELL) $(CURDIR)/lxdialog/check-lxdialog.sh -$(1))
 export CFLAGS += -DKBUILD_NO_NLS -I. $(call check_lxdialog,ccflags)
 export CXXFLAGS += -DKBUILD_NO_NLS
 
-DISTRO-PKG-CONFIG := $(shell which -a pkg-config | grep -E '\/usr' | head -n 1)
-
 conf-objs	:= conf.o zconf.tab.o
 mconf-objs	:= mconf.o zconf.tab.o
 qconf-cxxobjs	:= qconf.o
@@ -42,7 +40,7 @@ mconf: $(mconf-objs) $(lxdialog-objs)
 	$(CC) -o $@ $^ $(call check_lxdialog,ldflags $(CC))
 qconf: $(qconf-cxxobjs) $(qconf-objs)
 ifneq ($(DISTRO-PKG-CONFIG),)
-	$(CXX) $(HOSTLOADLIBES_qconf) -o $@ $^
+	$(CXX) -o $@ $^ $(HOSTLOADLIBES_qconf)
 else
 	echo "You don't have 'pkg-config' installed. Cannot continue"
 	echo "For now, you may use 'make menuconfig' instead of 'make xconfig'"

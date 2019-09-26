@@ -116,7 +116,6 @@ ath79_setup_interfaces()
 		;;
 	comfast,cf-wr650ac-v1|\
 	comfast,cf-wr650ac-v2)
-		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6@eth1"
 		;;
@@ -194,8 +193,9 @@ ath79_setup_interfaces()
 		;;
 	netgear,wndr3700|\
 	netgear,wndr3700v2|\
-	netgear,wndr3800)
-		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	netgear,wndr3800|\
+	netgear,wndr3800ch)
+		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5u@eth0"
 		ucidef_add_switch_attr "switch0" "blinkrate" 2

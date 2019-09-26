@@ -120,6 +120,16 @@ define Device/hiwifi_hc5861b
 endef
 TARGET_DEVICES += hiwifi_hc5861b
 
+define Device/iptime_a3
+  MTK_SOC := mt7628an
+  IMAGE_SIZE := 7936k
+  UIMAGE_NAME := a3
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := A3
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += iptime_a3
+
 define Device/iptime_a604m
   MTK_SOC := mt7628an
   IMAGE_SIZE := 7936k

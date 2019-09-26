@@ -186,6 +186,10 @@ elecom,wrh-300cr)
 	set_wifi_led "$boardname:green:wlan"
 	ucidef_set_led_netdev "lan" "lan" "$boardname:green:ethernet" "eth0"
 	;;
+engenius,esr600)
+	ucidef_set_led_netdev "wlan5g" "5.0GHz" "$boardname:blue:wlan5g" "wlan0"
+	ucidef_set_led_netdev "wlan2g" "2.4GHz" "$boardname:blue:wlan2g" "wlan1"
+	;;
 glinet,gl-mt300a|\
 glinet,gl-mt300n|\
 glinet,gl-mt750)

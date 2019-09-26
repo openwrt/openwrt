@@ -99,4 +99,5 @@ define prepare_rootfs
 	rm -rf $(1)/boot
 	$(call clean_ipkg,$(1))
 	$(call mklibs,$(1))
+	$(if $(SOURCE_DATE_EPOCH),find $(1)/ -mindepth 1 -execdir touch -hcd "@$(SOURCE_DATE_EPOCH)" "{}" +)
 endef

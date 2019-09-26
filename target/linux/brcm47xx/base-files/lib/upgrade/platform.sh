@@ -15,9 +15,9 @@ get_le_long_at() {
 }
 
 platform_expected_image() {
-	local machine=$(board_name)
+	local model="$(cat /tmp/sysinfo/model)"
 
-	case "$machine" in
+	case "$model" in
 		"Netgear WGR614 V8")	echo "chk U12H072T00_NETGEAR"; return;;
 		"Netgear WGR614 V9")	echo "chk U12H094T00_NETGEAR"; return;;
 		"Netgear WGR614 V10")	echo "chk U12H139T01_NETGEAR"; return;;

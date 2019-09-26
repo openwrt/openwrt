@@ -80,7 +80,7 @@ Minor modifications required on the backport
  	 * Any -EBUSY result from vb2_verify_memory_type can be mapped to 0.
 --- a/drivers/media/platform/vim2m.c
 +++ b/drivers/media/platform/vim2m.c
-@@ -841,6 +841,7 @@ static int queue_init(void *priv, struct
+@@ -840,6 +840,7 @@ static int queue_init(void *priv, struct
  	src_vq->mem_ops = &vb2_vmalloc_memops;
  	src_vq->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_COPY;
  	src_vq->lock = &ctx->dev->dev_mutex;

@@ -11,7 +11,7 @@
  		ath79_ddr_pci_win_base = ath79_ddr_base + 0x7c;
 --- a/arch/mips/ath79/irq.c
 +++ b/arch/mips/ath79/irq.c
-@@ -99,12 +99,12 @@ static void qca955x_ip2_irq_dispatch(str
+@@ -105,12 +105,12 @@ static void qca955x_ip2_irq_dispatch(str
  	}
  
  	if (status & QCA955X_EXT_INT_PCIE_RC1_ALL) {
@@ -26,7 +26,7 @@
  		generic_handle_irq(ATH79_IP2_IRQ(1));
  	}
  }
-@@ -124,17 +124,17 @@ static void qca955x_ip3_irq_dispatch(str
+@@ -130,17 +130,17 @@ static void qca955x_ip3_irq_dispatch(str
  	}
  
  	if (status & QCA955X_EXT_INT_USB1) {

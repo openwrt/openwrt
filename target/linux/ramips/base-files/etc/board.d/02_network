@@ -14,10 +14,10 @@ ramips_setup_rt3x5x_vlans()
 	local wanports=""
 	local lanports=""
 	for port in 5 4 3 2 1 0; do
-		if [ `swconfig dev rt305x port $port get disable` = "1" ]; then
+		if [ "$(swconfig dev rt305x port $port get disable)" = "1" ]; then
 			continue
 		fi
-		if [ `swconfig dev rt305x port $port get lan` = "0" ]; then
+		if [ "$(swconfig dev rt305x port $port get lan)" = "0" ]; then
 			wanports="$port:wan $wanports"
 		else
 			lanports="$port:lan $lanports"
@@ -88,6 +88,7 @@ ramips_setup_interfaces()
 	wavlink,wl-wn575a3|\
 	xiaomi,miwifi-mini|\
 	xiaomi,miwifi-nano|\
+	xiaoyu,xy-c5|\
 	xzwifi,creativebox-v1|\
 	youku,yk-l2|\
 	youku,yk1|\
@@ -226,9 +227,25 @@ ramips_setup_interfaces()
 	asiarf,ap7621-001)
 		ucidef_add_switch "switch0" "0:lan" "4:wan" "6@eth0"
 		;;
+	asiarf,ap7621-nv1)
+		ucidef_add_switch "switch0" "0:wan" "2:lan" "3:lan" "6@eth0"
+		;;
 	asiarf,awapn2403)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:wan" "6@eth0"
+		;;
+	asus,rt-ac85p|\
+	dlink,dir-860l-b1|\
+	elecom,wrc-1167ghbk2-s|\
+	elecom,wrc-1900gst|\
+	elecom,wrc-2533gst|\
+	huawei,hg255d|\
+	iodata,wn-ax1167gr|\
+	iodata,wn-gx300gr|\
+	iodata,wnpr2600g|\
+	iptime,a604m)
+		ucidef_add_switch "switch0" \
+			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
 		;;
 	asus,rt-n15|\
 	belkin,f9k1109v1|\
@@ -273,9 +290,11 @@ ramips_setup_interfaces()
 			"0:lan" "1:lan" "2:lan" "3:lan" "5:wan" "6@eth0"
 		;;
 	comfast,cf-wr800n|\
-	hnet,c108)
+	hnet,c108|\
+	tplink,tl-wr902ac-v3|\
+	trendnet,tew-638apb-v2)
 		ucidef_add_switch "switch0" \
-			"4:lan" "6t@eth0"
+			"4:lan" "6@eth0"
 		;;
 	cudy,wr1000)
 		ucidef_add_switch "switch0" \
@@ -296,17 +315,6 @@ ramips_setup_interfaces()
 	zbtlink,zbt-we2026)
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan:5" "6@eth0"
-		;;
-	dlink,dir-860l-b1|\
-	elecom,wrc-1167ghbk2-s|\
-	elecom,wrc-1900gst|\
-	elecom,wrc-2533gst|\
-	huawei,hg255d|\
-	iodata,wn-ax1167gr|\
-	iodata,wn-gx300gr|\
-	iptime,a604m)
-		ucidef_add_switch "switch0" \
-			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
 		;;
 	dlink,dwr-118-a1)
 		ucidef_add_switch "switch0" \
@@ -329,9 +337,17 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
+	engenius,esr600)
+		ucidef_add_switch "switch0" \
+			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan" "0@eth0"
+		;;
 	fon,fon2601)
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:wan" "6@eth0"
+		;;
+	edimax,rg21s)
+		ucidef_add_switch "switch0" \
+			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
 		;;
 	gehua,ghl-r-001)
 		ucidef_add_switch "switch0" \
@@ -362,6 +378,10 @@ ramips_setup_interfaces()
 	iodata,wn-ac733gr3)
 		ucidef_add_switch "switch1" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
+		;;
+	iptime,a3)
+		ucidef_add_switch "switch0" \
+			"2:lan:2" "3:lan:1" "0:wan" "6@eth0"
 		;;
 	lava,lr-25g001|\
 	sitecom,wlr-6000|\
@@ -445,14 +465,6 @@ ramips_setup_interfaces()
 			"0:lan" "1:lan" "2:lan" "3:lan" "6t@eth0"
 		ucidef_set_interface_wan "usb0"
 		;;
-	tplink,tl-wr902ac-v3)
-		ucidef_add_switch "switch0" \
-			"4:lan" "6@eth0"
-		;;
-	trendnet,tew-638apb-v2)
-		ucidef_add_switch "switch0" \
-			"4:lan" "6@eth0"
-		;;
 	vocore,vocore2|\
 	vocore,vocore2-lite)
 		ucidef_add_switch "switch0" \
@@ -491,7 +503,7 @@ ramips_setup_interfaces()
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "7t@eth0"
 		;;
 	*)
-		RT3X5X=`cat /proc/cpuinfo | egrep "(RT3.5|RT5350)"`
+		RT3X5X=$(grep -E "(RT3.5|RT5350)" /proc/cpuinfo)
 		if [ -n "${RT3X5X}" ]; then
 			ramips_setup_rt3x5x_vlans
 		else
@@ -545,9 +557,13 @@ ramips_setup_macs()
 	phicomm,k2p|\
 	planex,vr500|\
 	samknows,whitebox-v8|\
+	youhua,wr1200js|\
 	youku,yk-l2|\
 	zbtlink,zbt-we3526)
 		wan_mac=$(mtd_get_mac_binary factory 0xe006)
+		;;
+	asus,rt-ac85p)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env et1macaddr)
 		;;
 	asus,rt-n56u)
 		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
@@ -624,6 +640,11 @@ ramips_setup_macs()
 	netgear,r6850)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
 		;;
+	edimax,rg21s|\
+	engenius,esr600)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
+		;;
 	hiwifi,hc5661|\
 	hiwifi,hc5661a|\
 	hiwifi,hc5761|\
@@ -638,13 +659,18 @@ ramips_setup_macs()
 		;;
 	iodata,wn-ac1167gr|\
 	iodata,wn-ac733gr3)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" -1)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		;;
 	iodata,wn-ax1167gr|\
 	iodata,wn-gx300gr|\
 	trendnet,tew-692gr)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
 		;;
+	iodata,wnpr2600g)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
+		label_mac=$wan_mac
+		;;
+	iptime,a3|\
 	iptime,a604m)
 		wan_mac=$(mtd_get_mac_binary u-boot 0x1fc40)
 		;;

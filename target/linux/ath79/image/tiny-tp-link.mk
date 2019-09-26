@@ -1,6 +1,5 @@
 include ./common-tp-link.mk
 
-
 define Device/tplink_tl-mr10u
   $(Device/tplink-4mlzma)
   ATH_SOC := ar9331

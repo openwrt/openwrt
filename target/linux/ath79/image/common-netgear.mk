@@ -1,5 +1,15 @@
 DEVICE_VARS += NETGEAR_KERNEL_MAGIC NETGEAR_BOARD_ID NETGEAR_HW_ID
 
+define Build/netgear-rootfs
+	mkimage \
+		-A mips -O linux -T filesystem -C none \
+		-M $(NETGEAR_KERNEL_MAGIC) \
+		-n '$(VERSION_DIST) filesystem' \
+		-d $(IMAGE_ROOTFS) $@.fs
+	cat $@.fs >> $@
+	rm -rf $@.fs
+endef
+
 define Build/netgear-squashfs
 	rm -rf $@.fs $@.squashfs
 	mkdir -p $@.fs/image
@@ -17,16 +27,6 @@ define Build/netgear-squashfs
 		-n 'MIPS $(VERSION_DIST) Linux-$(LINUX_VERSION)' \
 		-d $@.squashfs $@
 	rm -rf $@.squashfs $@.fs
-endef
-
-define Build/netgear-rootfs
-	mkimage \
-		-A mips -O linux -T filesystem -C none \
-		-M $(NETGEAR_KERNEL_MAGIC) \
-		-n '$(VERSION_DIST) filesystem' \
-		-d $(IMAGE_ROOTFS) $@.fs
-	cat $@.fs >> $@
-	rm -rf $@.fs
 endef
 
 define Build/netgear-uImage

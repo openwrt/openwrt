@@ -16,7 +16,8 @@ define Device/Default
 endef
 
 define Device/ls1012ardb
-  DEVICE_TITLE := LS1012ARDB
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1012A-RDB
   DEVICE_PACKAGES += \
     layerscape-ppfe \
     tfa-ls1012ardb \
@@ -38,7 +39,8 @@ endef
 TARGET_DEVICES += ls1012ardb
 
 define Device/ls1012afrwy
-  DEVICE_TITLE := LS1012AFRWY
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := FRWY-LS1012A
   DEVICE_PACKAGES += \
     layerscape-ppfe \
     tfa-ls1012afrwy \
@@ -63,7 +65,9 @@ endef
 TARGET_DEVICES += ls1012afrwy
 
 define Device/ls1043ardb
-  DEVICE_TITLE := LS1043ARDB
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1043A-RDB
+  DEVICE_VARIANT := Default
   DEVICE_PACKAGES += \
     layerscape-fman-ls1043ardb \
     tfa-ls1043ardb \
@@ -83,7 +87,9 @@ endef
 TARGET_DEVICES += ls1043ardb
 
 define Device/ls1043ardb-sdboot
-  DEVICE_TITLE := LS1043ARDB (SD Card Boot)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1043A-RDB
+  DEVICE_VARIANT := SD Card Boot
   DEVICE_PACKAGES += \
     layerscape-fman-ls1043ardb \
     tfa-ls1043ardb-sdboot \
@@ -105,7 +111,9 @@ endef
 TARGET_DEVICES += ls1043ardb-sdboot
 
 define Device/ls1046ardb
-  DEVICE_TITLE := LS1046ARDB
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1046A-RDB
+  DEVICE_VARIANT := Default
   DEVICE_PACKAGES += \
     layerscape-fman-ls1046ardb \
     tfa-ls1046ardb \
@@ -127,7 +135,9 @@ endef
 TARGET_DEVICES += ls1046ardb
 
 define Device/ls1046ardb-sdboot
-  DEVICE_TITLE := LS1046ARDB (SD Card Boot)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1046A-RDB
+  DEVICE_VARIANT := SD Card Boot
   DEVICE_PACKAGES += \
     layerscape-fman-ls1046ardb \
     tfa-ls1046ardb-sdboot \
@@ -149,7 +159,9 @@ endef
 TARGET_DEVICES += ls1046ardb-sdboot
 
 define Device/ls1088ardb
-  DEVICE_TITLE := LS1088ARDB
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1088A-RDB
+  DEVICE_VARIANT := Default
   DEVICE_PACKAGES += \
     layerscape-mc-ls1088ardb \
     layerscape-dpl-ls1088ardb \
@@ -174,7 +186,9 @@ endef
 TARGET_DEVICES += ls1088ardb
 
 define Device/ls1088ardb-sdboot
-  DEVICE_TITLE := LS1088ARDB (SD Card Boot)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1088A-RDB
+  DEVICE_VARIANT := SD Card Boot
   DEVICE_PACKAGES += \
     layerscape-mc-ls1088ardb \
     layerscape-dpl-ls1088ardb \
@@ -199,7 +213,8 @@ endef
 TARGET_DEVICES += ls1088ardb-sdboot
 
 define Device/ls2088ardb
-  DEVICE_TITLE := LS2088ARDB
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS2088ARDB
   DEVICE_PACKAGES += \
     layerscape-mc-ls2088ardb \
     layerscape-dpl-ls2088ardb \
@@ -222,12 +237,13 @@ endef
 TARGET_DEVICES += ls2088ardb
 
 define Device/traverse-ls1043
+  DEVICE_VENDOR := Traverse
+  DEVICE_MODEL := LS1043 Boards
   KERNEL_NAME := Image
   KERNEL_SUFFIX := -kernel.itb
   KERNEL_INSTALL := 1
   FDT_LOADADDR = 0x90000000
   FILESYSTEMS := ubifs
-  DEVICE_TITLE := Traverse LS1043 Boards
   DEVICE_PACKAGES += \
     layerscape-fman-ls1043ardb \
     uboot-envtools \
