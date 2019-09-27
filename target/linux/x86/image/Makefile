@@ -109,6 +109,7 @@ define Device/Default
   IMAGE/combined.img.gz := grub-config pc | combined | grub-install | gzip | append-metadata
   IMAGE/combined.vdi := grub-config pc | combined | grub-install | qemu-image vdi
   IMAGE/combined.vmdk := grub-config pc | combined | grub-install | qemu-image vmdk
+  IMAGE/combined-esxi.vmdk := grub-config pc | combined | grub-install | qemu-image-esxi vmdk
   IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
   IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
   ARTIFACT/image-efi.iso := grub-config iso | iso efi
@@ -116,6 +117,7 @@ define Device/Default
   IMAGE/combined-efi.img.gz := grub-config efi | combined efi | grub-install efi | gzip | append-metadata
   IMAGE/combined-efi.vdi := grub-config efi | combined efi | grub-install efi | qemu-image vdi
   IMAGE/combined-efi.vmdk := grub-config efi | combined efi | grub-install efi | qemu-image vmdk
+  IMAGE/combined-efi-esxi.vmdk := grub-config efi | combined efi | grub-install efi | qemu-image-esxi vmdk
   ifeq ($(CONFIG_TARGET_IMAGES_GZIP),y)
     IMAGES-y := rootfs.img.gz
     IMAGES-$$(CONFIG_GRUB_IMAGES) += combined.img.gz

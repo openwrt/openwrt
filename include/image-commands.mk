@@ -338,6 +338,13 @@ define Build/qemu-image
 	fi
 endef
 
+# Convert a raw image into an ESXi $1 type image.
+# E.g. | qemu-image-esxi vdi
+define Build/qemu-image-esxi
+	$(STAGING_DIR_HOST)/bin/qemu-img convert -f raw -o adapter_type=lsilogic,subformat=monolithicFlat -O $1 $@ $@.new
+	@mv $@.new $@
+endef
+
 define Build/qsdk-ipq-factory-nand
 	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh \
 		$@.its ubi $@
