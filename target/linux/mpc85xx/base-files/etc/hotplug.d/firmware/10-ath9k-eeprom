@@ -1,11 +1,8 @@
 #!/bin/sh
 
-FW_FILE="/lib/firmware/$FIRMWARE"
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
 
-ath9k_eeprom_die() {
-	echo "ath9k eeprom: " "$*" >&2
-	exit 1
-}
+. /lib/functions/caldata.sh
 
 ath9k_eeprom_extract() {
 	local part=$1
@@ -15,10 +12,10 @@ ath9k_eeprom_extract() {
 
 	mtd=$(find_mtd_chardev $part)
 	[ -n "$mtd" ] || \
-		ath9k_eeprom_die "no mtd device found for partition $part"
+		caldata_die "no mtd device found for partition $part"
 
-	dd if=$mtd bs=$offset skip=1 count=1 2>/dev/null | dd of=$FW_FILE bs=$count count=1 2>/dev/null || \
-		ath9k_eeprom_die "failed to extract from $mtd"
+	dd if=$mtd bs=$offset skip=1 count=1 2>/dev/null | dd of=/lib/firmware/$FIRMWARE bs=$count count=1 2>/dev/null || \
+		caldata_die "failed to extract from $mtd"
 }
 
 tpl_set_wireless_mac()
@@ -29,13 +26,8 @@ tpl_set_wireless_mac()
 	mac=$(mtd_get_mac_binary u-boot 0x4fc00)
 	mac=$(macaddr_add $mac $offset)
 
-	macaddr_2bin $mac | dd bs=1 count=6 seek=2 conv=notrunc of=$FW_FILE 2>/dev/null
+	macaddr_2bin $mac | dd bs=1 count=6 seek=2 conv=notrunc of=/lib/firmware/$FIRMWARE 2>/dev/null
 }
-
-[ -e $FW_FILE ] && exit 0
-
-. /lib/functions.sh
-. /lib/functions/system.sh
 
 board=$(board_name)
 
@@ -47,7 +39,7 @@ case "$FIRMWARE" in
 		tpl_set_wireless_mac 0
 		;;
 	*)
-		ath9k_eeprom_die "board $board is not supported yet"
+		caldata_die "board $board is not supported yet"
 		;;
 	esac
 	;;
@@ -59,7 +51,7 @@ case "$FIRMWARE" in
 		tpl_set_wireless_mac -1
 		;;
 	*)
-		ath9k_eeprom_die "board $board is not supported yet"
+		caldata_die "board $board is not supported yet"
 		;;
 	esac
 	;;
