@@ -7,22 +7,6 @@
 . /lib/functions/system.sh
 . /lib/upgrade/nand.sh
 
-# xor multiple hex values of the same length
-xor() {
-	local val
-	local ret="0x$1"
-	local retlen=${#1}
-
-	shift
-	while [ -n "$1" ]; do
-		val="0x$1"
-		ret=$((ret ^ val))
-		shift
-	done
-
-	printf "%0${retlen}x" "$ret"
-}
-
 ath9k_eeprom_die() {
 	echo "ath9k eeprom: $*"
 	exit 1
