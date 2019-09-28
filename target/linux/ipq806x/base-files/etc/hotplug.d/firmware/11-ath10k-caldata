@@ -1,20 +1,6 @@
 #!/bin/sh
 
-# xor multiple hex values of the same length
-xor() {
-	local val
-	local ret="0x$1"
-	local retlen=${#1}
-
-	shift
-	while [ -n "$1" ]; do
-		val="0x$1"
-		ret=$((ret ^ val))
-		shift
-	done
-
-	printf "%0${retlen}x" "$ret"
-}
+. /lib/functions.sh
 
 ath10kcal_die() {
 	echo "ath10cal: " "$*"
@@ -71,7 +57,6 @@ ath10kcal_patch_mac_crc() {
 
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
-. /lib/functions.sh
 . /lib/functions/system.sh
 
 board=$(board_name)

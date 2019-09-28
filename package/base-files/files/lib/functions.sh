@@ -17,6 +17,22 @@ NO_EXPORT=1
 LOAD_STATE=1
 LIST_SEP=" "
 
+# xor multiple hex values of the same length
+xor() {
+	local val
+	local ret="0x$1"
+	local retlen=${#1}
+
+	shift
+	while [ -n "$1" ]; do
+		val="0x$1"
+		ret=$((ret ^ val))
+		shift
+	done
+
+	printf "%0${retlen}x" "$ret"
+}
+
 append() {
 	local var="$1"
 	local value="$2"
