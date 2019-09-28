@@ -17,17 +17,6 @@ jboot_eeprom_extract() {
 		caldata_die "failed to extract from $mtd"
 }
 
-rt2x00_eeprom_set_macaddr() {
-	local macaddr=$1
-
-	[ -n "$macaddr" ] || \
-		caldata_die "invalid wlan mac address"
-
-	macaddr_2bin $macaddr | dd of=/lib/firmware/$FIRMWARE \
-				conv=notrunc oflag=seek_bytes bs=6 seek=4 count=1 2>/dev/null || \
-		caldata_die "failed to write mac address to eeprom file"
-}
-
 board=$(board_name)
 
 case "$FIRMWARE" in
@@ -43,12 +32,12 @@ case "$FIRMWARE" in
 		wan_mac=$(jboot_config_read -m -i $(find_mtd_part "config") -o 0xE000)
 		wifi_mac=$(macaddr_add "$wan_mac" 1)
 		jboot_eeprom_extract "config" 0xE000
-		rt2x00_eeprom_set_macaddr $wifi_mac
+		caldata_patch_fw_mac $wifi_mac 0x4
 		;;
 	dovado,tiny-ac)
 		wifi_mac=$(mtd_get_mac_ascii u-boot-env INIC_MAC_ADDR)
 		caldata_extract "factory" 0x0 0x200
-		rt2x00_eeprom_set_macaddr $wifi_mac
+		caldata_patch_fw_mac $wifi_mac 0x4
 		;;
 	*)
 		caldata_die "Please define mtd-eeprom in $board DTS file!"
