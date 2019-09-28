@@ -40,6 +40,10 @@ GRUB_TITLE:=$(call qstrip,$(CONFIG_GRUB_TITLE))
 
 BOOTOPTS:=$(call qstrip,$(CONFIG_GRUB_BOOTOPTS))
 
+define Build/qemu-resize
+	qemu-img resize $@ $1
+endef
+
 define Build/pad-md5
 	md5sum "$@" | head -c32 >>$@
 endef
@@ -113,15 +117,15 @@ define Device/Default
   ARTIFACT/image.iso := grub-config iso | iso
   IMAGE/combined.img := grub-config pc | combined | grub-install | pad-md5 | append-metadata
   IMAGE/combined.img.gz := grub-config pc | combined | grub-install | pad-md5 | gzip | append-metadata
-  IMAGE/combined.vdi := grub-config pc | combined | grub-install | qemu-image vdi
-  IMAGE/combined.vmdk := grub-config pc | combined | grub-install | qemu-image vmdk
+  IMAGE/combined.vdi := grub-config pc | combined | grub-install | qemu-resize 8G | qemu-image vdi
+  IMAGE/combined.vmdk := grub-config pc | combined | grub-install | qemu-resize 8G | qemu-image vmdk
   IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
   IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
   ARTIFACT/image-efi.iso := grub-config iso | iso efi
   IMAGE/combined-efi.img := grub-config efi | combined efi | grub-install efi | pad-md5 | append-metadata
   IMAGE/combined-efi.img.gz := grub-config efi | combined efi | grub-install efi | pad-md5 | gzip | append-metadata
-  IMAGE/combined-efi.vdi := grub-config efi | combined efi | grub-install efi | qemu-image vdi
-  IMAGE/combined-efi.vmdk := grub-config efi | combined efi | grub-install efi | qemu-image vmdk
+  IMAGE/combined-efi.vdi := grub-config efi | combined efi | grub-install efi | qemu-resize 8G | qemu-image vdi
+  IMAGE/combined-efi.vmdk := grub-config efi | combined efi | grub-install efi | qemu-resize 8G | qemu-image vmdk
   ifeq ($(CONFIG_TARGET_IMAGES_GZIP),y)
     IMAGES-y := rootfs.img.gz
     IMAGES-$$(CONFIG_GRUB_IMAGES) += combined.img.gz
