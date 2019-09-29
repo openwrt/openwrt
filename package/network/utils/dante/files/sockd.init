@@ -1,0 +1,24 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2019 OpenWrt.org
+
+USE_PROCD=1
+
+START=90
+STOP=10
+
+PROG=/usr/sbin/sockd
+USER="root"
+GROUP="root"
+PIDFILE=/var/run/sockd.pid
+CONFFILE=/etc/sockd.conf
+
+. /lib/functions.sh
+
+
+start_service() {
+	procd_open_instance
+	procd_set_param command "$PROG" -f "$CONFFILE" -p "$PIDFILE"
+	procd_set_param user "$USER"
+	procd_set_param pidfile "$PIDFILE"
+	procd_close_instance
+}

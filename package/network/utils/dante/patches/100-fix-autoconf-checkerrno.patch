@@ -1,0 +1,42 @@
+diff --git a/acinclude.m4 b/acinclude.m4
+index 2a470b5..ca063d6 100644
+--- a/acinclude.m4
++++ b/acinclude.m4
+@@ -1106,6 +1106,8 @@ changequote([, ])dnl
+ dnl test function that tries to determine if a specified errno error exists
+ m4_define([checkerrno],
+  [AC_MSG_CHECKING(for errno symbol $3)
++  saved_cppflags="$CPPFLAGS"
++  CPPFLAGS="$CPPFLAGS -P"
+   AC_PREPROC_IFELSE(
+        [AC_LANG_PROGRAM([[#include <errno.h>]],
+                         [[
+@@ -1117,7 +1119,8 @@ errnoval: $3
+        [AC_MSG_RESULT([OK])
+         $1="$$1 $3"
+         cat conftest.i | grep errnoval: >>$2],
+-       [AC_MSG_RESULT([no])])])
++       [AC_MSG_RESULT([no])])
++  CPPFLAGS="$saved_cppflags"])
+ AC_DEFUN([L_CHECKERRNO],
+  [checkerrno($@)])
+ 
+@@ -1127,6 +1130,8 @@ dnl error exists
+ dnl test function that tries to determine if a specified errno error exists
+ m4_define([checkgaierror],
+  [AC_MSG_CHECKING(for getaddrinfo() error $3)
++  saved_cppflags="$CPPFLAGS"
++  CPPFLAGS="$CPPFLAGS -P"
+   AC_PREPROC_IFELSE(
+        [AC_LANG_PROGRAM([[
+ #include <sys/types.h>
+@@ -1142,7 +1147,8 @@ gaierrval: $3
+         $1="$$1 $3"
+         AC_DEFINE(HAVE_ERR_$3, 1, [$3 gai error found])
+         cat conftest.i | grep gaierrval: >>$2],
+-       [AC_MSG_RESULT([no])])])
++       [AC_MSG_RESULT([no])])
++  CPPFLAGS="$saved_cppflags"])
+ AC_DEFUN([L_CHECKGAIERROR],
+  [checkgaierror($@)])
+ 
