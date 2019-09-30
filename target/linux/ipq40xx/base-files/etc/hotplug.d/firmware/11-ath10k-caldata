@@ -151,7 +151,8 @@ case "$FIRMWARE" in
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_0" 0x0 0x2f20 )
 		;;
 	netgear,ex6100v2 |\
-	netgear,ex6150v2)
+	netgear,ex6150v2 |\
+	netgear,ex6200v2)
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary dnidata 0x0)
 		;;
@@ -265,7 +266,8 @@ case "$FIRMWARE" in
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_2" 0x0 0x2f20 )
 		;;
 	netgear,ex6100v2 |\
-	netgear,ex6150v2)
+	netgear,ex6150v2 |\
+	netgear,ex6200v2)
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary dnidata 0xc)
 		;;
