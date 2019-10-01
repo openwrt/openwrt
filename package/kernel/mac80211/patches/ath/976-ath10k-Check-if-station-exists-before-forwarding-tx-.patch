@@ -72,7 +72,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/net/wireless/ath/ath10k/htt_rx.c
 +++ b/drivers/net/wireless/ath/ath10k/htt_rx.c
-@@ -2639,7 +2639,7 @@ static void ath10k_htt_rx_tx_compl_ind(s
+@@ -2726,7 +2726,7 @@ static void ath10k_htt_rx_tx_compl_ind(s
  		spin_lock_bh(&ar->data_lock);
  
  		peer = ath10k_peer_find_by_id(ar, peer_id);
