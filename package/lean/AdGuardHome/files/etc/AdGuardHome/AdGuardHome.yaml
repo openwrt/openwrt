@@ -1,0 +1,102 @@
+bind_host: 0.0.0.0
+bind_port: 3000
+auth_name: AdGuardHome
+auth_pass: AdGuardHome
+language: zh-cn
+dns:
+  bind_host: 0.0.0.0
+  port: 5333
+  protection_enabled: true
+  filtering_enabled: true
+  blocked_response_ttl: 10
+  querylog_enabled: true
+  ratelimit: 20
+  ratelimit_whitelist: []
+  refuse_any: true
+  bootstrap_dns: 8.8.4.4:53
+  all_servers: true
+  parental_sensitivity: 0
+  parental_enabled: false
+  safesearch_enabled: false
+  safebrowsing_enabled: false
+  upstream_dns:
+  - 127.0.0.1:5383
+  - tls://1dot1dot1dot1.cloudflare-dns.com
+  - https://cloudflare-dns.com/dns-query
+  - https://1.0.0.1/dns-query
+  - https://dns.quad9.net/dns-query
+  - tcp://8.8.8.8
+  - tcp://8.8.4.4
+tls:
+  enabled: false
+  server_name: ""
+  force_https: false
+  port_https: 443
+  port_dns_over_tls: 853
+  certificate_chain: ""
+  private_key: ""
+filters:
+- enabled: true
+  url: https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt
+  name: AdGuard Simplified Domain Names filter
+  id: 1
+- enabled: true
+  url: https://adaway.org/hosts.txt
+  name: AdAway
+  id: 2
+- enabled: true
+  url: https://hosts-file.net/ad_servers.txt
+  name: hpHosts - Ad and Tracking servers only
+  id: 3
+- enabled: true
+  url: http://www.malwaredomainlist.com/hostslist/hosts.txt
+  name: MalwareDomainList.com Hosts List
+  id: 4
+- enabled: true
+  url: https://raw.githubusercontent.com/523860169/list/master/ad.txt
+  name: Diablo AdFilters
+  id: 1553073381
+- enabled: true
+  url: http://tools.yiclear.com/ChinaList2.0.txt
+  name: ChinaListV2.0[20190224001]
+  id: 1553073382
+- enabled: true
+  url: https://easylist-downloads.adblockplus.org/antiadblockfilters.txt
+  name: Adblock Warning Removal List
+  id: 1553073383
+- enabled: true
+  url: https://fanboy.co.nz/fanboy-problematic-sites.txt
+  name: Fanboy's problematic-sites
+  id: 1553073384
+- enabled: true
+  url: https://raw.githubusercontent.com/xinggsf/Adblock-Plus-Rule/master/ABP-FX.txt
+  name: "5"
+  id: 1553073385
+- enabled: true
+  url: https://raw.githubusercontent.com/adbyby/xwhyc-rules/master/lazy.txt
+  name: "6"
+  id: 1553073386
+- enabled: true
+  url: https://hosts.nfz.moe/127.0.0.1/full/hosts
+  name: "7"
+  id: 1553073387
+- enabled: true
+  url: https://raw.githubusercontent.com/vokins/yhosts/master/hosts
+  name: "8"
+  id: 1553073388
+- enabled: true
+  url: http://sub.adtchrome.com/adt-chinalist-easylist.txt
+  name: ChinaList+EasyList(修正)
+  id: 1553073405
+user_rules: []
+dhcp:
+  enabled: false
+  interface_name: ""
+  gateway_ip: ""
+  subnet_mask: ""
+  range_start: ""
+  range_end: ""
+  lease_duration: 0
+log_file: ""
+verbose: false
+schema_version: 2
