@@ -1,0 +1,34 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+# get config entity via UCI
+enabled=$(uci -q get pcap-dnsproxy.@pcap-dnsproxy[0].enabled)
+[ "1" = "$enabled" ] || [ "on" = "$enabled" ] || [ "true" = "$enabled" ] || exit 0
+[ "$INTERFACE" = wan ] || exit 0
+# We only handle 'ifup' and 'ifdown' events
+[ "$ACTION" = ifup ] || [ "$ACTION" = ifdown ] || exit 1
+# Exit if we don't have logger, this should not happen
+[ -x /usr/bin/logger ] || exit 2
+
+# only start if boot_delay is done
+[ -f /tmp/pcap-dnsproxy.hotplug ] || exit 0
+
+case "$ACTION" in
+	ifup)
+		# Restart, the default delay is 5 secs
+		# This hotplug script should be the last to execute
+		# due to high load on router
+		logger -p daemon.info -t "Pcap_DNSProxy" \
+				"Start request sent due to '$ACTION' of '$INTERFACE'"
+		/etc/init.d/pcap-dnsproxy start
+	;;
+	ifdown)
+		# Shutdown
+		logger -p daemon.info -t "Pcap_DNSProxy" \
+				"Shutdown request sent due to '$ACTION' of '$INTERFACE'"
+		/etc/init.d/pcap-dnsproxy stop
+	;;
+esac
+
+exit 0

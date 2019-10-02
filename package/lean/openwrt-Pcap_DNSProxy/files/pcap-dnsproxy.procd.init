@@ -1,0 +1,109 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2016-2017 wongsyrone
+
+. /lib/functions.sh
+
+START=95
+USE_PROCD=1
+#PROCD_DEBUG=1
+
+EXTRA_COMMANDS="status flush libver"
+EXTRA_HELP=\
+"	flush	Flush DNS cache stored in Pcap_DNSProxy and DNSMasq
+	libver	Print library version Pcap_DNSProxy linked to
+	status	Show the running status of Pcap_DNSProxy"
+
+PROG=/usr/sbin/Pcap_DNSProxy
+CONFDIR=/etc/pcap-dnsproxy
+HOTPLUGFILE=/tmp/pcap-dnsproxy.hotplug
+ERRLOG=/tmp/pcap-dnsproxy-error.log
+
+config_load "pcap-dnsproxy"
+
+parse_pcap_dnsproxy()
+{
+	config_get ENABLED "$section" "enabled"
+}
+
+config_foreach parse_pcap_dnsproxy 'pcap-dnsproxy'
+
+shutdown() {
+	rm -f $HOTPLUGFILE
+	stop
+}
+
+start_service() {
+	if [ "1" = "$ENABLED" ] || [ "on" = "$ENABLED" ] || [ "true" = "$ENABLED" ]; then
+		[ $(ps|grep ${PROG}|grep -v grep|wc -l) -ge 1 ] && {
+			echo "Pcap_DNSProxy is already running, no need to start again"
+			exit 1
+		}
+		[ -f "$ERRLOG" ] && {
+			echo "Removing previous ${ERRLOG##*/}"
+			rm -f "$ERRLOG" >/dev/null 2>&1
+		}
+		# do NOT use daemon code inside pcap-dnsproxy, use start-stop-daemon instead
+		# procd requires running in Foreground
+		procd_open_instance
+		procd_set_param command $PROG --config-path $CONFDIR --disable-daemon --log-file $ERRLOG
+		procd_set_param file $CONFDIR/Config.conf
+		procd_append_param file $CONFDIR/Hosts.conf
+		procd_append_param file $CONFDIR/IPFilter.conf
+		procd_append_param file $CONFDIR/Routing.txt
+		procd_append_param file $CONFDIR/WhiteList.txt
+		procd_set_param user root # run service as user root
+		procd_set_param stdout 1 # forward stdout of the command to logd
+		procd_set_param stderr 1 # same for stderr
+		procd_set_param limits nofile="unlimited"
+		[ -e /proc/sys/kernel/core_pattern ] && {
+			procd_append_param limits core="unlimited"
+		}
+		procd_close_instance
+		# create hotplug mark, it will update the last-modified date if the file exists
+		touch $HOTPLUGFILE
+		# wait to check error log file
+		sleep 1s
+		[ -f "$ERRLOG" ] \
+			&& echo "WARNING: ${ERRLOG##*/} exists, check its content and other config files in ${CONFDIR}"
+	else
+		echo "Pcap_DNSProxy is disabled, please check /etc/config/pcap-dnsproxy for more info"
+		return 0
+	fi
+}
+
+stop_service() {
+	rm -rf "/tmp/pcap_dnsproxy_fifo"
+}
+
+service_triggers() {
+	procd_add_reload_trigger "pcap-dnsproxy"
+}
+
+reload_service() {
+	stop
+	sleep 3s
+	start
+}
+
+flush() {
+	if [ $(ps|grep ${PROG}|grep -v grep|wc -l) -ge 1 ]; then
+		local _PID=$(pidof ${PROG##*/})
+		$PROG --flush-dns
+		logger -p daemon.notice -t "Pcap_DNSProxy[$_PID]" "Flush message sent"
+	else
+		echo "Pcap_DNSProxy is not running, I can NOT flush DNS cache for you."
+		exit 1
+	fi
+}
+
+libver() {
+	$PROG --lib-version
+}
+
+status() {
+	if [ $(ps|grep ${PROG}|grep -v grep|wc -l) -ge 1 ]; then
+		echo "Pcap_DNSProxy is running, PID is $(pidof ${PROG##*/})"
+	else
+		echo "Pcap_DNSProxy is NOT running"
+	fi
+}

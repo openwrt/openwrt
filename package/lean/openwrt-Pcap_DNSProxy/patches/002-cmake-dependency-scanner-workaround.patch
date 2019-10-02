@@ -1,0 +1,41 @@
+--- a/Source/Pcap_DNSProxy/Platform.h
++++ b/Source/Pcap_DNSProxy/Platform.h
+@@ -379,7 +379,7 @@
+ 	#define SODIUM_STATIC
+ #endif
+ #if defined(ENABLE_LIBSODIUM)
+-	#include "..\\Dependency\\LibSodium\\Include_Windows\\sodium.h"
++	#include "LibSodium\\Include_Windows\\sodium.h"
+ #endif
+ 
+ //WinPcap header, always enabled(Windows)
+@@ -393,7 +393,7 @@
+ 	#define HAVE_REMOTE                //WinPcap preprocessor definitions
+ #endif
+ #if defined(ENABLE_PCAP)
+-	#include "..\\Dependency\\WinPcap\\Include\\pcap.h"
++	#include "WinPcap\\Include\\pcap.h"
+ #endif
+ 
+ //Windows API headers
+@@ -575,13 +575,13 @@
+ #ifndef ENABLE_TLS
+ 	#define ENABLE_TLS
+ #endif
+-	#include "../Dependency/OpenSSL/openssl/bio.h"
+-	#include "../Dependency/OpenSSL/openssl/conf.h"
+-	#include "../Dependency/OpenSSL/openssl/err.h"
+-	#include "../Dependency/OpenSSL/openssl/ssl.h"
+-	#include "../Dependency/OpenSSL/openssl/x509v3.h"
+-	#pragma comment(lib, "../Dependency/OpenSSL/LibCrypto_macOS.a")
+-	#pragma comment(lib, "../Dependency/OpenSSL/LibSSL_macOS.a")
++	#include "OpenSSL/openssl/bio.h"
++	#include "OpenSSL/openssl/conf.h"
++	#include "OpenSSL/openssl/err.h"
++	#include "OpenSSL/openssl/ssl.h"
++	#include "OpenSSL/openssl/x509v3.h"
++	#pragma comment(lib, "OpenSSL/LibCrypto_macOS.a")
++	#pragma comment(lib, "OpenSSL/LibSSL_macOS.a")
+ #else
+ #if defined(ENABLE_TLS)
+ 	#include <openssl/bio.h>
