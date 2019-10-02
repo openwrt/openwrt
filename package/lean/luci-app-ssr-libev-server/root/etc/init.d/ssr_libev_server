@@ -1,0 +1,74 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2018-2019 Lienol <lawlienol@gmail.com>
+
+START=99
+
+CONFIG=ssr_libev_server
+CONFIG_PATH=/var/etc/$CONFIG
+
+gen_ssr_libev_config_file() {
+	config_get enable $1 enable
+	[ "$enable" = "0" ] && return 0
+	config_get remarks $1 remarks
+	config_get port $1 port
+	config_get password $1 password
+	config_get method $1 method
+	config_get protocol $1 protocol
+	config_get protocol_param $1 protocol_param
+	config_get obfs $1 obfs
+	config_get obfs_param $1 obfs_param
+	config_get timeout $1 timeout
+	config_get fast_open $1 fast_open
+	config_get udp_forward $1 udp_forward
+	udp_param=""
+	[ "$udp_forward" = "1" ] && udp_param="-u"
+	
+	cat <<-EOF >$CONFIG_PATH/$1.json
+		{
+		    "server": ["[::0]", "0.0.0.0"],
+		    "server_port": $port,
+		    "password": "$password",
+		    "timeout": $timeout,
+		    "method": "$method",
+		    "protocol": "$protocol",
+		    "protocol_param": "$protocol_param",
+		    "obfs": "$obfs",
+		    "obfs_param": "$obfs_param",
+		    "fast_open": $fast_open
+		}
+		EOF
+		
+	/usr/bin/ssr-server -c $CONFIG_PATH/$1.json $udp_param >/dev/null 2>&1 &
+}
+
+start_ssr_libev_server() {
+	config_foreach gen_ssr_libev_config_file "user"
+	fw3 reload
+}
+
+stop_ssr_libev_server() {
+	fw3 reload
+	ps -w | grep "$CONFIG_PATH/" | grep -v "grep" | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1 &
+}
+
+start() {
+	config_load $CONFIG
+	enable=$(uci get $CONFIG.@global[0].enable)
+	if [ "$enable" = "0" ];then
+		stop_ssr_libev_server
+	else
+		mkdir -p $CONFIG_PATH
+		start_ssr_libev_server
+	fi
+}
+
+stop() {
+	stop_ssr_libev_server
+	rm -rf $CONFIG_PATH
+}
+
+restart() {
+	stop
+	sleep 1
+	start
+}

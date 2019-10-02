@@ -1,0 +1,21 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	delete firewall.ssr_libev_server
+	set firewall.ssr_libev_server=include
+	set firewall.ssr_libev_server.type=script
+	set firewall.ssr_libev_server.path=/usr/share/ssr_libev_server/firewall.include
+	set firewall.ssr_libev_server.reload=1
+EOF
+
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@ssr_libev_server[-1]
+	add ucitrack ssr_libev_server
+	set ucitrack.@ssr_libev_server[-1].init=ssr_libev_server
+	commit ucitrack
+EOF
+
+chmod a+x /usr/share/ssr_libev_server/* >/dev/null 2>&1
+
+rm -f /tmp/luci-indexcache
+exit 0

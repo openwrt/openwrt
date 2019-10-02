@@ -1,0 +1,27 @@
+#!/bin/sh
+
+. $IPKG_INSTROOT/lib/functions.sh
+. $IPKG_INSTROOT/lib/functions/service.sh
+
+gen_user_iptables() {
+	config_get enable $1 enable
+	[ "$enable" = "0" ] && return 0
+	config_get remarks $1 remarks
+	config_get port $1 port
+	config_get udp_forward $1 udp_forward
+	
+	iptables -A SSR_LIBEV-SERVER -p tcp --dport $port -m comment --comment "$remarks" -j ACCEPT
+	[ "$udp_forward" = "1" ] && iptables -A SSR_LIBEV-SERVER -p udp --dport $port -m comment --comment "$remarks" -j ACCEPT
+}
+
+iptables -F SSR_LIBEV-SERVER 2>/dev/null
+iptables -D INPUT -j SSR_LIBEV-SERVER 2>/dev/null
+iptables -X SSR_LIBEV-SERVER 2>/dev/null
+
+enable=$(uci get ssr_libev_server.@global[0].enable)
+if [ $enable -eq 1 ]; then
+	iptables -N SSR_LIBEV-SERVER
+	iptables -I INPUT -j SSR_LIBEV-SERVER
+	config_load ssr_libev_server
+	config_foreach gen_user_iptables "user"
+fi
