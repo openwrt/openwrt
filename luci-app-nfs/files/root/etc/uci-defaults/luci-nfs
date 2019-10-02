@@ -1,0 +1,22 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	delete firewall.nfs
+	set firewall.nfs=include
+	set firewall.nfs.type=script
+	set firewall.nfs.path=/etc/firewall.nfs
+	set firewall.nfs.reload=1
+	commit firewall
+	delete ucitrack.@nfs[-1]
+	add ucitrack nfs
+	set ucitrack.@nfs[-1].init=nfs
+	commit ucitrack
+EOF
+
+/etc/init.d/portmap disable >/dev/null 2>&1
+/etc/init.d/nfsd disable >/dev/null 2>&1
+/etc/init.d/nfs stop >/dev/null 2>&1
+/etc/init.d/nfs disable >/dev/null 2>&1
+rm -f /tmp/luci-indexcache
+
+exit 0
