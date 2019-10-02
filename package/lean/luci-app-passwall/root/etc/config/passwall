@@ -1,0 +1,65 @@
+
+config global
+	option proxy_mode 'chnroute'
+	option dns_mode 'chinadns'
+	option up_chinadns_mode 'OpenDNS_1'
+	option socks5_proxy_server 'nil'
+	option udp_redir_server 'nil'
+	option tcp_redir_server 'nil'
+	option localhost_proxy_mode 'default'
+
+config global_haproxy
+	option admin_enable '0'
+	option balancing_enable '0'
+
+config global_delay
+	option auto_on '0'
+	option start_daemon '1'
+	option start_delay '20'
+
+config global_dns
+	option dns_port '0'
+	option wan_port '0'
+	option dns_53 '0'
+	option dns_forward '8.8.4.4:53'
+	option dns_1 '114.114.114.114'
+	option dns_2 '119.29.29.29'
+
+config global_forwarding
+	option udp_redir_ports '1:65535'
+	option tcp_redir_ports '1:65535'
+	option process '1'
+
+config global_proxy
+	option tcp_redir_port '1041'
+	option udp_redir_port '1041'
+	option socks5_port '1051'
+	option kcptun_port '11183'
+	option proxy_ipv6 '0'
+	
+config global_other
+	option auto_ping '1'
+	option tcp_redir_server_num '1'
+	option udp_redir_server_num '1'
+
+config global_rules
+	option gfwlist_update '1'
+	option chnroute_update '1'
+	option Pcap_Routing_update '1'
+	option Pcap_WhiteList_update '1'
+	option auto_update '0'
+	option gfwlist_version '2019-08-14'
+	option chnroute_version '2019-08-14'
+	
+config global_app
+	option v2ray_client_file '/usr/bin/v2ray/'
+	option kcptun_client_file '/usr/bin/kcptun-client'
+	option brook_client_file '/usr/bin/brook'
+
+config global_subscribe
+	option subscribe_by_ss '0'
+	option auto_update_subscribe '0'
+
+config auto_switch
+	option testing_time '50'
+	option enable '0'

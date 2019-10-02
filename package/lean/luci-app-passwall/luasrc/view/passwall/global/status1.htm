@@ -1,0 +1,201 @@
+﻿<%
+local dsp = require "luci.dispatcher"
+local ipkg = require "luci.model.ipkg"
+local function is_finded(e)
+	local result=luci.sys.exec("find /usr/*bin -iname "..e.." -type f")
+	if result~="" then
+		return true
+	end
+	return false
+end
+
+local function has_udp_relay()
+    return luci.sys.call("lsmod | grep TPROXY >/dev/null") == 0
+end
+-%>
+
+<fieldset id="_ss_status_fieldset" class="cbi-section">
+	<legend>
+		<%:Running Status%>
+	</legend>
+	<fieldset class="cbi-section">
+		<div class="cbi-value">
+			<label class="cbi-value-title">TCP
+				<%:Status%>
+			</label>
+			<div class="cbi-value-field" id="_tcp_redir_status">
+				<%:Collecting data...%>
+			</div>
+		</div>
+		<% if has_udp_relay() then %>
+		<div class="cbi-value">
+			<label class="cbi-value-title">UDP
+				<%:Status%>
+			</label>
+			<div class="cbi-value-field" id="_udp_redir_status">
+				<%:Collecting data...%>
+			</div>
+		</div>
+		<% end %>
+		<div class="cbi-value">
+			<label class="cbi-value-title">Socks5
+				<%:Status%>
+			</label>
+			<div class="cbi-value-field" id="_socks5_proxy_status">
+				<%:Collecting data...%>
+			</div>
+		</div>
+		<div class="cbi-value">
+			<label class="cbi-value-title">DNS
+				<%:Status%>
+			</label>
+			<div class="cbi-value-field" id="_dns_mode_status">
+				<%:Collecting data...%>
+			</div>
+		</div>
+		<% if ipkg.installed("haproxy") or is_finded("haproxy*") then %>
+		<div class="cbi-value">
+			<label class="cbi-value-title">
+				<%:Load Balancing%>
+			</label>
+			<div class="cbi-value-field" id="_haproxy_status">
+				<%:Collecting data...%>
+			</div>
+		</div>
+		<% end %>
+		<% if ipkg.installed("kcptun") or is_finded("kcptun*") then %>
+		<div class="cbi-value">
+			<label class="cbi-value-title">
+				<%:Kcptun Client%>
+			</label>
+			<div class="cbi-value-field" id="_kcptun_status">
+				<%:Collecting data...%>
+			</div>
+		</div>
+		<% end %>
+		<div class="cbi-value">
+			<label class="cbi-value-title">
+				<%:Baidu Connection%>
+			</label>
+			<div class="cbi-value-field">
+				<input type="button" class="cbi-button cbi-input-apply" value="<%:Check%>" onclick="return check_connect(this,'baidu')" />
+				<font id="_baidu_status"></font>
+			</div>
+		</div>
+		<div class="cbi-value">
+			<label class="cbi-value-title">
+				<%:Google Connection%>
+			</label>
+			<div class="cbi-value-field">
+				<input type="button" class="cbi-button cbi-input-apply" value="<%:Check%>" onclick="return check_connect(this,'google')" />
+				<font id="_google_status"></font>
+			</div>
+		</div>
+
+                                     <div class="cbi-value">
+			<label class="cbi-value-title"><%:公益节点%></label>
+			<div class="cbi-value-field">
+                                                                     
+				<input type="button" class="cbi-button cbi-input-reload" value="获取" onclick="javascript:window.open('https://free-ss.site//','target');" />
+			</div>
+		</div>                                 
+                                  <div class="cbi-value">
+			<label class="cbi-value-title"><%:IP检测%></label>
+			<div class="cbi-value-field">
+                                                                     
+				<input type="button" class="cbi-button cbi-input-reload" value="检查" onclick="javascript:window.open('http://www.ip111.cn/','target');" />
+			</div>
+		</div>
+		<div class="cbi-value">
+			<label class="cbi-value-title">
+				<%:Server Check%>
+			</label>
+			<div class="cbi-value-field">
+				<input type="button" class="cbi-button cbi-input-apply" value="<%:Check%>" onclick="return check_port(this)" />
+				<input id="clear_check_port_btn" type="button" class="cbi-button cbi-button-remove" style="display:none" value="<%:Clear%>" onclick="return clear_check_port(this)" />
+				<font id="_server_status"></font>
+			</div>
+		</div>
+		
+	</fieldset>
+</fieldset>
+
+<script type="text/javascript">
+	//<![CDATA[
+	var tcp_redir_status = document.getElementById('_tcp_redir_status');
+	var udp_redir_status = document.getElementById('_udp_redir_status');
+	var socks5_proxy_status = document.getElementById('_socks5_proxy_status');
+	var dns_mode_status = document.getElementById('_dns_mode_status');
+	var haproxy_status = document.getElementById('_haproxy_status');
+	var kcptun_status = document.getElementById('_kcptun_status');
+	var baidu_status = document.getElementById('_baidu_status');
+	var google_status = document.getElementById('_google_status');
+	XHR.poll(3, '<%=dsp.build_url("admin/vpn/passwall/server_status")%>', null,
+		function(x, json) {
+			if(x && x.status == 200) {
+				if(tcp_redir_status)
+					tcp_redir_status.innerHTML = json.tcp_redir_status ? '<font color=green><%:RUNNING%> ✓</font>' : '<font color=red><%:NOT RUNNING%> X</font>';
+				if(udp_redir_status)
+					udp_redir_status.innerHTML = json.udp_redir_status ? '<font color=green><%:RUNNING%> ✓</font>' : '<font color=red><%:NOT RUNNING%> X</font>';
+				if(socks5_proxy_status)
+					socks5_proxy_status.innerHTML = json.socks5_proxy_status ? '<font color=green><%:RUNNING%> ✓</font>' : '<font color=red><%:NOT RUNNING%> X</font>';
+				if(dns_mode_status)
+					dns_mode_status.innerHTML = json.dns_mode_status ? '<font color=green><%:RUNNING%> ✓</font>' : '<font color=red><%:NOT RUNNING%> X</font>';
+				if(haproxy_status)
+					haproxy_status.innerHTML = json.haproxy_status ? '<font color=green><%:RUNNING%> ✓</font>' : '<font color=red><%:NOT RUNNING%> X</font>';
+				if(kcptun_status)
+					kcptun_status.innerHTML = json.kcptun_status ? '<font color=green><%:RUNNING%> ✓</font>' : '<font color=red><%:NOT RUNNING%> X</font>';
+			}
+		});
+
+	function check_connect(btn, type) {
+		btn.disabled = true;
+		btn.value = '<%:Check...%>';
+		XHR.get('<%=dsp.build_url("admin/vpn/passwall/connect_status")%>', {
+				type: type
+			},
+			function(x, rv) {
+				var s = document.getElementById('_' + type + '_status');
+				if(s) {
+					if(rv.status) {
+						s.setAttribute("color","green");
+						s.innerHTML = '<%:Working...%> ✓';
+					}
+					else {
+						s.setAttribute("color","red");
+						s.innerHTML = '<%:Problem detected!%> X';
+					}
+				}
+				btn.disabled = false;
+				btn.value = '<%:Check%>';
+			}
+		);
+		return false;
+	}
+
+	function check_port(btn) {
+		btn.disabled = true;
+		btn.value = '<%:Check...%>';
+		XHR.get('<%=dsp.build_url("admin/vpn/passwall/check_port")%>', null,
+			function(x, rv) {
+				var s = document.getElementById('_server_status');
+				if(s) {
+					s.innerHTML = rv.ret;
+					var clear_btn = document.getElementById('clear_check_port_btn');
+					clear_btn.style.display = "inline-block";
+				}
+				btn.disabled = false;
+				btn.value = '<%:Check%>';
+			}
+		);
+		return false;
+	}
+
+	function clear_check_port(btn) {
+		btn.style.display = 'none';
+		var s = document.getElementById('_server_status');
+		s.innerHTML = "";
+		return false;
+	}
+	//]]>
+</script>

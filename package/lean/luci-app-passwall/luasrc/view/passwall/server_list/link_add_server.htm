@@ -1,0 +1,99 @@
+<%
+function trim(s)
+  return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+local dsp = require "luci.dispatcher"
+-%>
+
+<style>
+#div1{
+	display: none;
+	width: 30rem;
+	position: absolute;
+	left:50%;
+	top:50%;
+	transform: translate(-50%, -50%);
+	padding-top: 30px;
+	z-index: 99;
+	text-align: center;
+	background: white;
+    box-shadow: darkgrey 10px 10px 30px 5px;
+}
+</style>
+
+<script type="text/javascript">
+	//<![CDATA[
+	function ajax_add_server(type,link) {
+		if(type && link) {
+			XHR.get('<%=dsp.build_url("admin/vpn/passwall/link_add_server")%>', {
+				'type': type,
+				'link': link
+			},
+			function(x, data) {
+				if(x && x.status == 200) {
+					window.location.href = '<%=dsp.build_url("admin/vpn/passwall/server_list")%>';
+				}
+				else {
+					alert("<%:Error%>");
+				}
+			});
+		}
+	}
+	
+	function open_show_div() {
+		document.getElementById("div1").style.display="block";
+		document.getElementById("servers_link").focus();
+	}
+	
+	function close_show_div() {
+		document.getElementById("div1").style.display="none";
+	}
+	
+	function add_server() {
+		var servers_type_dom = document.getElementById("servers_type");
+		var servers_type_dom_index = servers_type_dom.selectedIndex;
+		
+		var servers_type = servers_type_dom.options[servers_type_dom_index].value;
+		var servers_link = document.getElementById("servers_link").value;
+		if (servers_link.trim() != "") {
+			ajax_add_server(servers_type,servers_link);
+		}
+		else {
+			alert("<%:Please Enter The Link%>");
+			document.getElementById("servers_link").focus();
+		}
+	}
+	//]]>
+</script>
+
+<div class="cbi-value">
+	<label class="cbi-value-title"><%:Add Server%></label>
+	<div class="cbi-value-field">
+		<input class="cbi-button cbi-button-add" type="button" onclick="open_show_div()" value="<%:Add the server via the link%>">
+	</div>
+</div>
+
+<div id="div1">
+	<div class="cbi-value" data-index="1" data-depends="[]">
+	<label class="cbi-value-title"><%:Server Type%></label>
+		<div class="cbi-value-field">
+			<select id="servers_type" class="cbi-input-select" size="1">
+				<option value="SSR" selected="selected">SSR</option>
+				<option value="V2ray">V2ray</option>
+			</select>
+		</div>
+	</div>
+	<div class="cbi-value">
+		<label class="cbi-value-title"><%:Please Enter The Link%></label>
+		<div class="cbi-value-field">
+			<textarea id="servers_link" rows="5" cols="50"></textarea>
+		</div>
+	</div>
+	<div class="cbi-value">
+		<label class="cbi-value-title"></label>
+		<div class="cbi-value-field">
+			<input class="cbi-button cbi-button-add" type="button" onclick="add_server()" value="<%:Add%>">
+			<input class="cbi-button cbi-button-remove" type="button" onclick="close_show_div()" value="<%:Close%>">
+		</div>
+	</div>
+</div>

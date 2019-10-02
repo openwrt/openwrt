@@ -1,0 +1,41 @@
+<%
+local dsp = require "luci.dispatcher"
+-%>
+
+<script type="text/javascript">
+	//<![CDATA[
+	var auto_ping_value = document.getElementsByClassName('auto_ping_value');
+	for(var i = 0; i < auto_ping_value.length; i++) {
+		XHR.get('<%=dsp.build_url("admin/vpn/passwall/auto_ping_server")%>', {
+				index: i,
+				domain: auto_ping_value[i].getAttribute("server")
+			},
+			function(x, result) {
+				auto_ping_value[result.index].innerHTML = (result.ping ? result.ping : "--") + " ms";
+			}
+		);
+	}
+	
+	function set_server(protocol,section) {
+		if (confirm('<%:Are you sure set to%> '+protocol.toUpperCase()+' <%:the server?%>')==true){
+			XHR.get('<%=dsp.build_url("admin/vpn/passwall/set_server")%>', { "protocol" : protocol , "section" : section },
+				function(x, result) {
+					if(x && x.status == 200) {
+						window.location.href = '<%=dsp.build_url("admin/vpn/passwall/log")%>'
+					}
+				}
+			);
+		}
+	}
+	
+	function ping_server(server,dom) {
+		XHR.get('<%=dsp.build_url("admin/vpn/passwall/ping_server")%>', { "server" : server },
+			function(x, result) {
+				if(x && x.status == 200) {
+					dom.outerHTML = result.ping + " ms";
+				}
+			}
+		);
+	}
+	//]]>
+</script>
