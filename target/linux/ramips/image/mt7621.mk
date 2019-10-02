@@ -628,10 +628,12 @@ define Device/netis_wf-2881
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   FILESYSTEMS := squashfs
+  KERNEL_SIZE := 4096k
   IMAGE_SIZE := 129280k
-  KERNEL := $(KERNEL_DTB) | pad-offset $$(BLOCKSIZE) 64 | uImage lzma
   UBINIZE_OPTS := -E 5
-  IMAGE/sysupgrade.bin := append-kernel | append-ubi | append-metadata | \
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 	check-size $$$$(IMAGE_SIZE)
   DEVICE_VENDOR := NETIS
   DEVICE_MODEL := WF-2881
