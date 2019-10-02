@@ -1,0 +1,18 @@
+#!/bin/sh
+
+	[ "$1" != "boot" ] && return 1
+	sleep 2
+	# 防止重复启动
+	for pid in $(ps | grep "${0##*/}" | grep -v grep | awk '{print $1}' &); do
+		[ "$pid" != "$$" ] && return 1
+	done
+
+	while : ; do
+		wget -4 --spider -q -t 1 -T 3 www.baidu.com
+		if [ "$?" != "0" ];then
+			sleep 2
+		else
+			/etc/init.d/n2n_v2 restart >/dev/null 2>&1 &
+			return 0
+		fi
+	done

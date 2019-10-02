@@ -1,0 +1,84 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2012 OpenWrt.org
+
+START=99
+STOP=10
+SERVICE_DAEMONIZE=1
+
+start_instance() {
+	local cfg="$1"
+
+	config_get type "$cfg" TYPE
+
+	case "$type" in
+		edge)
+		config_get_bool enabled "$cfg" 'enabled' '0'
+		[ "$enabled" = "0" ] && return 1
+		wget -4 --spider -q -t 1 -T 3 www.baidu.com
+		if [ "$?" != "0" ];then
+			service_start /usr/share/n2n_v2/n2n_v2-check boot
+			return 1
+		fi
+		config_get tunname "$cfg" 'tunname'
+		config_get mode "$cfg" 'mode'
+		config_get ipaddr "$cfg" 'ipaddr'
+		config_get netmask "$cfg" 'netmask'
+		config_get supernode "$cfg" 'supernode'
+		config_get port "$cfg" 'port'
+		config_get community "$cfg" 'community'
+		config_get key "$cfg" 'key'
+		config_get localip "$cfg" 'localip'
+		config_get interval "$cfg" 'interval'
+		config_get checkip "$cfg" 'checkip'
+		config_get route "$cfg" 'route'
+		config_get ddns "$cfg" 'ddns'
+		[ "$mode" = 'dhcp' ] && ipaddr='0.0.0.0'
+		echo "Start Edge"
+		/usr/sbin/edge -d $tunname -a ${mode}:${ipaddr} -c $community $([ -n "$key" ] && echo -k $key) $([ -n "$netmask" ] && echo -s $netmask) \
+		-l ${supernode}:${port} $([ -n "$route" ] && echo -r) $([ -n "$ddns" ] && echo -b) $([ -n "$localip" ] && echo -L $localip) $([ -n "$interval" ] && echo -i $interval)
+		[ -n "$checkip" ] && add_cron
+		;;
+		supernode)
+		config_get_bool enabled "$cfg" 'enabled' '0'
+		[ "$enabled" = "0" ] && return 1
+		config_get port "$cfg" port
+		echo "Start Supernode"
+		/usr/sbin/supernode -l $port
+		;;
+	esac
+}
+
+add_cron()
+{
+	local time_checkip=`uci get n2n_v2.@edge[0].time_checkip 2>/dev/null`
+	del_cron
+	if [ $time_checkip -eq 1 ];then
+		local cron_echo='* * * * * /usr/share/n2n_v2/n2n_v2-watchdog'
+	elif [ $time_checkip -eq 60 ];then
+		cron_echo='0 * * * * /usr/share/n2n_v2/n2n_v2-watchdog'
+	else
+		cron_echo="*/$time_checkip * * * * /usr/share/n2n_v2/n2n_v2-watchdog"
+	fi
+	crontab -l | {
+	cat
+	echo "$cron_echo"
+	} | crontab -
+}
+
+del_cron()
+{
+	crontab -l | sed '/n2n_v2/d' | crontab -
+}
+
+start() {
+	config_load 'n2n_v2'
+	config_foreach start_instance 'edge'
+	config_foreach start_instance 'supernode'
+}
+
+stop() {
+	del_cron
+	echo "Stop N2N"
+	killall -9 edge >/dev/null 2>&1
+	killall -9 supernode >/dev/null 2>&1
+}

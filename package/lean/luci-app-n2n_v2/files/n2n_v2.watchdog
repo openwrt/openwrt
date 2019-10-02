@@ -1,0 +1,10 @@
+#!/bin/sh
+
+	checkip=`uci -q get n2n_v2.@edge[0].checkip`
+	ping -c 1 -w 10 $checkip >/dev/null 2>&1
+	if [ "$?" != "0" ]; then
+		/etc/init.d/n2n_v2 restart
+		echo "N2N Restart"
+	else
+		echo "N2N No Problem"
+	fi
