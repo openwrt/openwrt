@@ -1,0 +1,230 @@
+
+<% local raid = {}
+   local devs = {}
+   local devinfo = {}
+   local colors = { "c0c0ff", "fbbd00", "e97c30", "a0e0a0", "b2c005", "e0c0ff"  }
+   local mounts = nixio.fs.readfile("/proc/mounts")
+   
+   local show_raid = 1
+   local show_disc = 1
+
+   if self then
+        if self.hide_raid then
+                show_raid = 0
+        end
+	if self.hide_disc then
+		show_disc = 0
+	end
+   end
+
+   function disp_size(s)
+	local units = { "kB", "MB", "GB", "TB" }
+	local i, unit
+	s = s / 2
+	for i, unit in ipairs(units) do
+		if (i == #units) or (s < 1024) then
+			return math.floor(s * 100) / 100 .. unit
+		end
+		s = s / 1024
+	end
+   end
+
+   function first_line(s)
+	local n = s:find("\n")
+	if n then
+		return s:sub(1, n-1)
+	end
+	return s
+   end
+
+   function get_fs(pname, status)
+  	for r,raid in ipairs(raid) do
+		for m,member in ipairs(raid.members) do
+			if member.name == pname then
+				return "(raid member)"
+			end
+		end
+	end
+
+	local mounted_fs = mounts:match("\n[a-z/]*" .. pname .. " [^ ]* ([^ ]*)")
+	if mounted_fs then
+		if status == "standby" then
+			return "(" .. mounted_fs .. ")"
+		end
+		local df = luci.sys.exec("df /dev/" .. pname):match(" ([0-9]+)%% ")
+		return "(" .. mounted_fs .. " " .. df .. "%)"
+	end
+
+	if status == "standby" then
+		return
+	end
+
+	local blkid = luci.sys.exec(" blkid -s TYPE /dev/" .. pname):match("TYPE=\"(.*)\"")
+	if blkid then
+		return "(" .. blkid .. ")"
+	end
+   end   
+
+   function get_status(raid)
+	for m,member in ipairs(raid.members) do
+		for d,dev in ipairs(devinfo) do
+			if member.name == dev.name then
+				return dev.status
+			end
+			for p,part in ipairs(dev.parts) do
+				if member.name == part.name then
+					return dev.status
+				end
+			end
+		end
+	end
+   end
+
+
+   function get_parts(dev,status,size)
+	local c = 1
+	local unused = size
+	local parts = {}
+
+	for part in nixio.fs.glob("/sys/block/" .. dev .."/" .. dev .. "*") do
+		local pname = nixio.fs.basename(part)
+		local psize = nixio.fs.readfile(part .. "/size")
+		table.insert(parts, {name=pname, size=psize, perc=math.floor(psize*100/size), fs=get_fs(pname,status), color=colors[c]})
+		c = c + 1
+		unused = unused - psize
+	end
+	if unused > 2048 then
+		table.insert(parts, { name="", fs=get_fs(dev,status), size=unused, color=colors[c] })
+	end
+	return parts
+   end
+
+   for dev in nixio.fs.glob("/sys/block/*") do
+	if nixio.fs.access(dev .. "/md") then
+		local name = nixio.fs.basename(dev)
+		local rlevel = first_line(nixio.fs.readfile(dev .. "/md/level"))
+		local ndisks = tonumber(nixio.fs.readfile(dev .. "/md/raid_disks"))
+		local size = tonumber(nixio.fs.readfile(dev .. "/size"))
+		local metav = nixio.fs.readfile(dev .. "/md/metadata_version")
+		local degr = tonumber(nixio.fs.readfile(dev .. "/md/degraded"))
+		local sync = first_line(nixio.fs.readfile(dev .. "/md/sync_action"))
+		local sync_speed = tonumber(nixio.fs.readfile(dev .. "/md/sync_speed"))
+		local sync_compl = nixio.fs.readfile(dev .. "/md/sync_completed")
+		local status = "active"
+		if sync ~= "idle" then
+			local progress, total = nixio.fs.readfile(dev .. "/md/sync_completed"):match("^([0-9]*)[^0-9]*([0-9]*)")
+			local rem = (total - progress) / sync_speed / 2
+			local rems = math.floor(rem % 60)
+			if rems < 10 then rems = "0" .. rems end
+			rem = math.floor(rem / 60)
+			local remm = math.floor(rem % 60)
+			if remm < 10 then remm = "0" .. remm end
+			local remh = math.floor(rem / 60)
+			local remstr = remh .. ":" .. remm .. ":" .. rems
+			status = sync .. " (" .. math.floor(sync_speed/1024) .. "MB/s, " .. math.floor(progress * 1000 / total) /10  .. "%, rem. " .. remstr .. ")"
+		elseif degr == 1 then
+			status = "degraded"
+		end
+
+		local members = {}
+		local c = 1
+		for member in nixio.fs.glob("/sys/block/" .. name .. "/md/dev-*") do
+			local dname = nixio.fs.basename(nixio.fs.readlink(member .. "/block"))
+			local dsize = disp_size(tonumber(nixio.fs.readfile(member .. "/block/size")))
+			local dstate = nixio.fs.readfile(member .. "/state"):gsub("_", " "):match "^%s*(.-)%s*$"
+			table.insert(members, { name = dname, size = dsize, state = dstate, color = colors[c] })
+			c = c + 1
+		end
+		table.insert(raid, {name=name, rlevel=rlevel, ndisks=ndisks, size=size, metav=metav, status=status, members=members })
+	end
+   end
+
+   if show_disc == 1 then
+   for dev in nixio.fs.glob("/sys/class/nvme/*/device/nvme/*") do
+	local section
+	local model = nixio.fs.readfile(dev .. "/model")
+	local fw = nixio.fs.readfile(dev .. "/firmware_rev")
+	for bdev in nixio.fs.glob(dev .. "/nvme*") do
+		local section
+		local name = nixio.fs.basename(bdev)
+		local size = tonumber(nixio.fs.readfile(bdev .. "/size"))
+		local unused = size
+		local status = "-"
+		local temp = "-"
+		local serial = "-"
+		local secsize = "-"
+
+		for _,line in ipairs(luci.util.execl("smartctl -A -i -d nvme -n standby -f brief /dev/" .. name)) do
+			local attrib, val
+			if section == 1 then
+				attrib, val = line:match "^(.*):%s*(.*)"
+			elseif section == 2 then
+				attrib, val = line:match("^([0-9 ]*) [^ ]* * [POSRCK-]* *[0-9-]* *[0-9-]* *[0-9-]* *[0-9-]* *([0-9-]*)")
+			else
+				attrib = line:match "^=== START OF (.*) SECTION ==="
+				if attrib == "INFORMATION" then
+					section = 1
+				elseif attrib == "READ SMART DATA" then
+                                                section = 2
+                                        elseif status == "-" then
+                                                val = line:match "^Device is in (.*) mode"
+                                                if val then
+                                                        status = val:lower()
+                                                end
+                                        end
+                                end
+
+                                if not attrib then
+                                        if section ~= 2 then section = 0 end
+                                elseif (attrib == "Power mode is") or (attrib == "Power mode was") then
+                                        status = val:lower():match "(%S*)"
+                                elseif attrib == "Serial Number" then
+                                        serial = val
+                                elseif attrib == "194" then
+                                        temp = val .. "&deg;C"
+                                end
+		end
+		table.insert(devinfo, {name=name, model=model, fw=fw, size=size, serial=serial, parts=get_parts(name,status,size) })
+	end
+   end
+   end
+
+   if show_disc == 1 then %>
+<div class="cbi-section">
+	<h3><%:NVMe SSD%></h3>
+        <table class="cbi-section-table" style="white-space: nowrap">
+                <tr>
+                        <th width="5%">&nbsp;</th>
+                        <th width="30%"><%:Model%></th>
+                        <th width="25%">&#24207;&#21015;&#21495;</th>
+                        <th width="20%">&#22266;&#20214;</th>
+                        <th width="20%">&#23481;&#37327;</th>
+                       <!-- <th width="10%"><%:Temperature%></th>-->
+                </tr>
+<%	local style=true
+	for d,dev in ipairs(devinfo) do %>
+                <tr class="cbi-section-table-row cbi-rowstyle-<%=(style and 1 or 2)%>">
+                        <td class="cbi-vluae-field" style="padding-bottom:0px; border-bottom-width:0px; vertical-align:middle" rowspan="4"><%=dev.name%></td>
+                        <td class="cbi-value-field" style="padding-bottom:0px; border-bottom-width:0px" rowspan="2"><%=dev.model%></td>
+                        <td class="cbi-value-field" style="padding-bottom:0px; border-bottom-width:0px" rowspan="2"><%=dev.serial%></td>
+                        <td class="cbi-value-field" style="padding-bottom:0px; border-bottom-width:0px" rowspan="2"><%=dev.fw%></td>
+                        <td class="cbi-value-field" style="padding-bottom:0px; border-bottom-width:0px" rowspan="2"><%=disp_size(dev.size)%></td>
+                        <!-- <td class="cbi-value-field" style="padding-bottom:0px; border-bottom-width:0px" rowspan="2"><%=dev.temp%></td>-->
+                </tr>
+		<tr style="height:0px" />
+                <tr class="cbi-section-table-row cbi-rowstyle-<%=(style and 1 or 2)%>">
+                        <td style="padding-top:0px; border-top-width:0px" colspan="7" rowspan="2">
+                        <table style="border: 0pt; border-collapse:collapse; width:100%; padding:0px; margin:0px"><tr>
+                        <% for _,part in pairs(dev.parts) do %>
+                                <td style="text-align:center; padding: 0px 4px; border-radius: 3px; background-color:#<%=part.color%>" width="<%=part.perc%>%"><%=part.name%> <%=disp_size(part.size)%> <%=part.fs%></td>
+                        <% end %>
+                        </tr></table>
+                        </td>
+                </tr>
+                <tr style="height:0px" />
+<%              style = not style
+	end %>
+	</table>
+
+</div>
+<% end %>
