@@ -1,0 +1,6 @@
+#!/bin/sh
+uci batch <<-EOF
+	set luci.themes.AdvancedTomatoMaterial2=/luci-static/atmaterial2
+	commit luci
+EOF
+exit 0
