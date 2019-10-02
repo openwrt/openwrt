@@ -1,0 +1,247 @@
+﻿<%+cbi/valueheader%>
+<style>
+    .modals-bg{
+        position: fixed;
+        z-index: 90;
+        width: 100%;
+        height: 100%;
+        left: 0;
+        top: 0;
+        background: rgba(0,0,0,0.8);
+        display: none;
+    }
+    .modals {
+        position: fixed;
+        z-index: 100;
+        width: 60%;
+        height: 500px;
+        background: #CC99CC;
+        left: 20%;
+        top: 15%;
+        color: #fff;
+        border-radius: 10px;
+        padding: 20px;
+
+        box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        /* Firefox */
+        -webkit-box-sizing: border-box;
+        /* Safari */
+    }
+
+    .modals h2 {}
+
+    .modals h3 {
+        font-size: 14px;
+        color: #ffcc00;
+        background: transparent;
+        margin: 0;
+        padding: 0;
+    }
+    @media screen and (max-width: 1024px) {
+        .modals {
+            position: fixed;
+            z-index: 100;
+            width: 80%;
+            height: 500px;
+            background: #172b4d;
+            left: 10%;
+            top: 15%;
+            color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+        }
+    }
+    @media screen and (max-width: 700px) {
+        .modals-bg{
+            position: fixed;
+            z-index: 100000;
+
+        }
+        .modals {
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+        }
+    }
+</style>
+<script type="text/javascript">
+    //<![CDATA[
+    var _responseLen;
+    var noChange = 0;
+    var x = 5;
+    function update_subscribe() {
+        $(".modals-bg").show();
+        setTimeout("get_realtime_log();", 500);
+    }
+
+    var btn = document.getElementsByClassName("cbi-input-reload");
+    btn[0].addEventListener("click", function () {
+        update_subscribe()
+    }, false);
+
+    function get_realtime_log() {
+        $.ajax({
+            url: '/check_update.htm',
+            dataType: 'html',
+            error: function (xhr) {
+                setTimeout("get_realtime_log();", 1000);
+            },
+            success: function (response) {
+                var retArea = document.getElementById("log_content3");
+                if (response.search("XU6J03M6") != -1) {
+                    console.log(response);
+                    retArea.value = response;
+                    retArea.scrollTop = retArea.scrollHeight;
+                    x = 5;
+                    return true;
+                }
+                if (_responseLen == response.length) {
+                    noChange++;
+                } else {
+                    noChange = 0;
+                }
+                console.log(noChange);
+                if (noChange > 100) {
+                    return false;
+                } else {
+                    setTimeout("get_realtime_log();", 250);
+                }
+                retArea.value = response;
+                retArea.scrollTop = retArea.scrollHeight;
+                _responseLen = response.length;
+            },
+            error: function () {
+                setTimeout("get_realtime_log();", 500);
+            }
+        });
+    }
+//]]>
+</script>
+<div class="modals-bg">
+    <div class="modals">
+        <h2>节点订阅</h2>
+        <h3 style="margin-left:0;">请勿刷新本页面，正在订阅中 ...</h3>
+        <textarea cols="63" rows="28" wrap="on" readonly="readonly" id="log_content3" autocomplete="off" autocorrect="off" autocapitalize="off"
+                  spellcheck="false" style="border:0;width:99%; font-family:'Lucida Console'; font-size:11px;background:transparent;color:#FFFFFF;outline: none;padding-left:3px;padding-right:22px;overflow:hidden"></textarea>
+    </div>
+</div>
+
+<script type="text/javascript">
+    //<![CDATA[
+    var _responseLen;
+    var noChange = 0;
+    var x = 5;
+    function update_subscribe() {
+        $(".modals-bg").show();
+        setTimeout("get_realtime_log();", 500);
+    }
+	
+	function submit_url(){
+		prefix_array = $("#cbi-shadowsocksr-server_subscribe .cbi-section-node").attr("id").split("-");
+		prefix_array[0] = "cbid";
+		prefix = prefix_array.join(".");
+		if($("[name='"+prefix+".auto_update']").is(":checked")){
+			var auto_update = "1";
+		}else{
+			var auto_update = "0";
+		}
+		var auto_update_time = $("[name='"+prefix+".auto_update_time']").val();
+		var subscribe_url = [];
+		$("[name='"+prefix+".subscribe_url']").each(function(){
+			if($(this).val() != ""){
+				subscribe_url.push($(this).val());
+			}
+		});
+		if($("[name='"+prefix+".proxy']").is(":checked")){
+			var proxy = "1";
+		}else{
+			var proxy = "0";
+		}
+		
+		var data = {
+			auto_update:auto_update,
+			auto_update_time : auto_update_time,
+			subscribe_url: JSON.stringify(subscribe_url),
+			proxy: proxy
+		}
+		//console.log(data);
+		$.ajax({
+			  type: "post",
+			  url: "<%=luci.dispatcher.build_url("admin", "services", "shadowsocksr","subscribe")%>",
+				dataType : "json",
+				data: data,
+				success: function (d) {
+					if(d.error == 0){
+						//console.log("开始订阅");
+						update_subscribe();
+					}else{
+						alert("请至少填写一个订阅链接");
+					}
+				}
+			});
+	}
+
+
+	$("#update_subscribe").click(function(){
+		//console.log("提交数据");
+		$.get("/lock.htm?v="+parseInt(Math.random() * 100000000), function(result){
+			//console.log(result);
+			if(parseInt(result) == 1){
+				alert("订阅程序正在后台执行中");
+			}else{
+				submit_url();
+			}
+		});
+		
+		return false;
+	});
+	
+	function refresh_page(){
+		location.reload();
+		return false;
+	}
+
+    function get_realtime_log() {
+		//console.log("马上开始");
+        $.ajax({
+            url: '/lock.htm?v='+parseInt(Math.random() * 100000000),
+            dataType: 'text',
+            error: function (xhr) {
+                setTimeout("get_realtime_log();", 1000);
+            },
+            success: function (response) {
+				//console.log(response);
+				if(parseInt(response) == 1){
+					//console.log(response);
+					$.get("/check_update.htm?v="+parseInt(Math.random() * 100000000), function(result){
+						//console.log(result);
+							var retArea = document.getElementById("log_content3");
+							retArea.value = result;
+							retArea.scrollTop = retArea.scrollHeight;
+						
+					});
+					setTimeout("get_realtime_log();", 250);
+				}else if(parseInt(response) == 0){
+					
+					setTimeout("refresh_page();", 2000);
+				}
+            },
+            error: function () {
+                setTimeout("get_realtime_log();", 500);
+            }
+        });
+    }
+	
+	<% if (tonumber(lock) == 1) then %>
+		update_subscribe();
+	<% end %>
+//]]>
+</script>
+
+
+
+
+
+<%+cbi/valuefooter%>
