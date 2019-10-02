@@ -11,7 +11,7 @@ LUCI_PKGARCH:=all
 PKG_VERSION:=1.0
 PKG_RELEASE:=6-20190704
 
-include ../luci_my.mk
+include ../luci
 
 # call BuildPackage - OpenWrt buildroot signature
 
