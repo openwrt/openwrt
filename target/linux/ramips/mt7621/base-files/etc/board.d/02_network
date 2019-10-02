@@ -18,7 +18,6 @@ ramips_setup_interfaces()
 	mediatek,mt7621-eval-board|\
 	mqmaker,witi|\
 	mtc,wr1201|\
-	netis,wf-2881|\
 	phicomm,k2p|\
 	planex,vr500|\
 	samknows,whitebox-v8|\
@@ -113,7 +112,8 @@ ramips_setup_interfaces()
 	netgear,r6260|\
 	netgear,r6350|\
 	netgear,r6850|\
-	netgear,wndr3700-v5)
+	netgear,wndr3700-v5|\
+	netis,wf-2881)
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
@@ -150,6 +150,7 @@ ramips_setup_macs()
 	elecom,wrc-1900gst|\
 	elecom,wrc-2533gst|\
 	lenovo,newifi-d1|\
+	netis,wf-2881|\
 	phicomm,k2p|\
 	planex,vr500|\
 	samknows,whitebox-v8|\
