@@ -129,7 +129,8 @@ ifdef CONFIG_USE_SPARSE
   KERNEL_MAKEOPTS += C=1 CHECK=$(STAGING_DIR_HOST)/bin/sparse
 endif
 
-ifeq ($(HOST_OS),Darwin)
+ifneq ($(HOST_OS),Linux)
+  KERNEL_MAKEOPTS += CONFIG_STACK_VALIDATION=
   export SKIP_STACK_VALIDATION:=1
 endif
 
