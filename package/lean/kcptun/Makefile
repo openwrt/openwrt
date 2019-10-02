@@ -31,7 +31,7 @@ ifeq ($(ARCH),aarch64)
 	PKG_ARCH_KCPTUN:=arm64
 endif
 
-PKG_NAME:=kcptun-client
+PKG_NAME:=kcptun
 PKG_VERSION:=20190515
 PKG_RELEASE:=2
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
