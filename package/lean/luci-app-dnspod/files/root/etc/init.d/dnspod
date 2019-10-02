@@ -1,0 +1,30 @@
+#!/bin/sh /etc/rc.common
+START=80
+
+restart()
+{                                                                                                       
+	icount=`ps -w | grep dnspod.sh |grep -v grep| wc -l`
+	if [ $icount = 1 ] ;then
+		kill -9 $(ps | grep dnspod.sh | grep -v "grep" | awk '{print $1}') >/dev/null 2>&1
+	fi
+	/usr/sbin/dnspod.sh --svc
+}
+
+start(){
+	enable=$(uci get dnspod.base_arg.enabled 2>/dev/null)
+	if [ $enable -eq 1 ]; then
+		icount=`ps -w | grep dnspod.sh |grep -v grep| wc -l`
+		if [ $icount = 1 ] ;then
+			kill -9 $(ps | grep dnspod.sh | grep -v "grep" | awk '{print $1}') >/dev/null 2>&1
+		fi
+		/usr/sbin/dnspod.sh --svc
+	fi
+}
+
+stop()
+{
+	enable=$(uci get dnspod.base_arg.enabled 2>/dev/null)
+	if [ $enable -eq 1 ]; then
+		kill -9 $(ps | grep dnspod.sh | grep -v "grep" | awk '{print $1}') >/dev/null 2>&1
+	fi
+}

@@ -1,0 +1,310 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2011-2015 OpenWrt.org
+
+START=90
+STOP=15
+DNSMASQ_RESTART=N
+
+DNS_SERVER="114.114.114.114,114.114.115.115,223.5.5.5,223.6.6.6,180.76.76.76,119.29.29.29,119.28.28.28,1.2.4.8,210.2.4.8"
+IPV6DNS_SERVER="2001:4860:4860::8888,2001:4860:4860::8844,2001:2001::1111,2001:2001::1001,2400:da00::6666,240C::6666,240C::6644"
+
+start_pdnsd() {
+	DNS_SERVER=$(uci get flowoffload.@flow[0].dns_server 2>/dev/null)
+	cp -a /usr/sbin/pdnsd /usr/sbin/dnscache
+	[ -d /var/etc ] || mkdir -p /var/etc
+	
+	if [ ! -f /var/dnscache/pdnsd.cache ]; then
+		mkdir -p /var/dnscache
+		echo -ne "pd13\000\000\000\000" > /var/dnscache/pdnsd.cache
+		chown -R nobody.nogroup /var/dnscache
+	fi
+	
+	cat > /var/etc/dnscache.conf <<EOF
+global {
+    perm_cache=1024;        # dns缓存大小，单位KB，建议不要写的太大
+    cache_dir="/var/dnscache";     # 缓存文件的位置
+    pid_file = /var/run/dnscache.pid;
+    server_ip = 0.0.0.0;        # pdnsd监听的网卡，0.0.0.0是全部网卡
+    server_port=5333;           # pdnsd监听的端口，不要和别的服务冲突即可
+    status_ctl = on;
+    paranoid=on;                  # 二次请求模式，如果请求主DNS服务器返回的是垃圾地址，就向备用服务器请求
+    query_method=udp_only;      
+    neg_domain_pol = off;  
+    par_queries = 400;          # 最多同时请求数
+    min_ttl = 1h;               # DNS结果最短缓存时间
+    max_ttl = 1w;               # DNS结果最长缓存时间
+    timeout = 10;               # DNS请求超时时间，单位秒
+}
+
+server {  
+    label = "routine";         
+    ip = $DNS_SERVER;     # 这里为主要上级 dns 的 ip 地址，建议填写一个当地最快的DNS地址  
+    timeout = 5;              # DNS请求超时时间
+    reject = 74.125.127.102,  # 以下是脏IP，也就是DNS污染一般会返回的结果，如果收到如下DNS结果会触发二次请求（TCP协议一般不会碰到脏IP）
+        74.125.155.102,  
+        74.125.39.102,  
+        74.125.39.113,  
+        209.85.229.138,  
+        128.121.126.139,  
+        159.106.121.75,  
+        169.132.13.103,  
+        192.67.198.6,  
+        202.106.1.2,  
+        202.181.7.85,  
+        203.161.230.171,  
+        203.98.7.65,  
+        207.12.88.98,  
+        208.56.31.43,  
+        209.145.54.50,  
+        209.220.30.174,  
+        209.36.73.33,  
+        211.94.66.147,  
+        213.169.251.35,  
+        216.221.188.182,  
+        216.234.179.13,  
+        243.185.187.39,  
+        37.61.54.158,  
+        4.36.66.178,  
+        46.82.174.68,  
+        59.24.3.173,  
+        64.33.88.161,  
+        64.33.99.47,  
+        64.66.163.251,  
+        65.104.202.252,  
+        65.160.219.113,  
+        66.45.252.237,  
+        69.55.52.253,  
+        72.14.205.104,  
+        72.14.205.99,  
+        78.16.49.15,  
+        8.7.198.45,  
+        93.46.8.89,  
+        37.61.54.158,  
+        243.185.187.39,  
+        190.93.247.4,  
+        190.93.246.4,  
+        190.93.245.4,  
+        190.93.244.4,  
+        65.49.2.178,  
+        189.163.17.5,  
+        23.89.5.60,  
+        49.2.123.56,  
+        54.76.135.1,  
+        77.4.7.92,  
+        118.5.49.6,  
+        159.24.3.173,  
+        188.5.4.96,  
+        197.4.4.12,  
+        220.250.64.24,  
+        243.185.187.30,  
+        249.129.46.48,  
+        253.157.14.165;  
+    reject_policy = fail;  
+}
+
+server {  
+    label = "special";                  # 这个随便写  
+    ip = 208.67.222.222,208.67.220.220; # 这里为备用DNS服务器的 ip 地址  
+    port = 5353;                        # 推荐使用53以外的端口（DNS服务器必须支持） 
+    proxy_only = on;
+    timeout = 5;  
+}  
+
+source {
+	owner=localhost;
+//	serve_aliases=on;
+	file="/etc/hosts";
+}
+
+rr {
+	name=localhost;
+	reverse=on;
+	a=127.0.0.1;
+	owner=localhost;
+	soa=localhost,root.localhost,42,86400,900,86400,86400;
+}
+EOF
+
+	[ -d /var/sbin ] || mkdir -p /var/sbin
+	[ -f /var/sbin/dnscache ] || cp -a /usr/sbin/pdnsd /var/sbin/dnscache
+	/usr/sbin/dnscache -c /var/etc/dnscache.conf -d
+	echo "Start DNS Cache"
+}
+
+start_dnsforwarder() {
+	DNS_SERVER=$(uci get flowoffload.@flow[0].dns_server 2>/dev/null)
+	IPV6DNS_SERVER=$(uci get flowoffload.@flow[0].ipv6dns_server 2>/dev/null)
+
+	cp -a /usr/bin/dnsforwarder /usr/sbin/dnscache
+	sleep 1
+	DNSCACHE_CONF=/var/run/dnscache/dnscache.conf
+	PID_PATH=/var/run/dnscache
+	PID_FILE=dns.pid
+	mkdir -p $PID_PATH
+	pid=`ps | awk '$5 ~ /\[dnscache\]/ {print $1}'`
+
+	cat > /var/run/dnscache/dnscache.conf <<EOF
+LogOn false
+LogFileThresholdLength 102400
+LogFileFolder /var/run/dnscache
+UDPLocal 0.0.0.0:5333
+UDPGroup $DNS_SERVER,$IPV6DNS_SERVER * on
+GroupFile
+BlockIP 243.185.187.39,46.82.174.68,37.61.54.158,93.46.8.89,59.24.3.173,203.98.7.65,8.7.198.45,78.16.49.15,159.106.121.75,69.63.187.12,31.13.76.8,31.13.64.49
+IPSubstituting
+BlockNegativeResponse false
+Hosts
+HostsUpdateInterval 18000
+HostsDownloadPath
+HostsScript
+HostsRetryInterval 30
+AppendHosts
+BlockIpv6WhenIpv4Exists false
+UseCache true
+CacheSize 1048576
+MemoryCache true
+CacheFile
+IgnoreTTL false
+OverrideTTL -1
+MultipleTTL 1
+ReloadCache false
+OverwriteCache false
+DisabledType
+DisabledDomain
+DisabledList
+DomainStatistic false
+DomainStatisticTempletFile
+StatisticUpdateInterval 29
+EOF
+	
+	dnscache -f $DNSCACHE_CONF -d
+	echo dnscache running pid is $pid
+
+}
+
+stop_dnscache() {
+	kill $(pidof AdGuardHome) >/dev/null 2>&1 || kill -9 $(ps | grep AdGuardHome | grep -v "grep" | awk '{print $1}') >/dev/null 2>&1
+	kill $(pidof dnscache) >/dev/null 2>&1 || kill -9 $(ps | grep dnscache | grep -v "grep" | awk '{print $1}') >/dev/null 2>&1
+	kill -9 $(ps | grep dnscache-while.sh | grep -v "grep" | awk '{print $1}') >/dev/null 2>&1
+	rm -rf /var/run/dnscache
+	rm -rf /var/dnscache
+	rm -rf /var/etc/AdGuardHome
+	echo "Stop DNS Cache"
+
+}
+
+change_dns() {
+ 	uci delete dhcp.@dnsmasq[0].server >/dev/null 2>&1
+	uci add_list dhcp.@dnsmasq[0].server=127.0.0.1#5333
+	uci set dhcp.@dnsmasq[0].noresolv=1
+	uci commit dhcp
+
+}
+
+revert_dns() {
+	uci del_list dhcp.@dnsmasq[0].server=127.0.0.1#5333 >/dev/null 2>&1
+	uci set dhcp.@dnsmasq[0].resolvfile=/tmp/resolv.conf.auto
+	uci set dhcp.@dnsmasq[0].noresolv=0
+	uci commit dhcp
+
+}
+
+start(){
+	dns=$(uci get flowoffload.@flow[0].dns 2>/dev/null)
+	dnscache_enable=$(uci get flowoffload.@flow[0].dnscache_enable 2>/dev/null)
+	bbr=$(uci get flowoffload.@flow[0].bbr 2>/dev/null)
+	aaaa=$(uci get flowoffload.@flow[0].filter_aaaa 2>/dev/null)
+	mem_mode=$(uci get flowoffload.@flow[0].mem_mode 2>/dev/null)
+	free_memory=$(uci get flowoffload.@flow[0].free_memory 2>/dev/null)
+	sed -i '/drop_caches/d' /etc/crontabs/root
+	if [ $free_memory -eq 1 ];  then
+		echo "3,33 * * * * sync && echo 3 > /proc/sys/vm/drop_caches" >> /etc/crontabs/root
+	else
+		sed -i '/drop_caches/d' /etc/crontabs/root
+	fi
+	crontab /etc/crontabs/root
+
+	if [ $aaaa -eq 1 ];  then
+		sed -i '/filter-aaaa/d' /etc/dnsmasq.conf
+		echo "filter-aaaa" >> /etc/dnsmasq.conf
+	else
+		sed -i '/filter-aaaa/d' /etc/dnsmasq.conf	
+	fi
+
+	if [ $dns -eq 1 ];  then
+		stop_dnscache
+		sleep 1
+		if [ $dnscache_enable = "1" ];  then
+			start_pdnsd
+		elif [ $dnscache_enable = "2" ];  then
+			start_dnsforwarder
+		elif [ $dnscache_enable = "3" ];  then
+			if [ ! -d "/var/etc/AdGuardHome/" ];  then
+				mkdir -p /var/etc/AdGuardHome
+				if [ $mem_mode -eq 1 ];  then
+					ln -s /etc/AdGuardHome/AdGuardHome.yaml /var/etc/AdGuardHome/AdGuardHome.yaml
+				else
+					ln -s /etc/AdGuardHome/* /var/etc/AdGuardHome/
+				fi
+			fi
+			AdGuardHome -c /var/etc/AdGuardHome/AdGuardHome.yaml -w /var/etc/AdGuardHome -h 0.0.0.0 -p 3333 >/dev/null 2>&1 &
+		fi
+		change_dns
+		nohup /usr/share/dnscache/dnscache-while.sh > /var/log/dnscache.file 2>&1 &
+	else
+		stop_dnscache
+		revert_dns
+	fi
+
+		if [ $bbr -eq 1 ];  then
+		sysctl -w net.ipv4.tcp_congestion_control=bbr
+	else
+		sysctl -w net.ipv4.tcp_congestion_control=cubic
+
+	fi
+
+	uci set firewall.@defaults[0].flow_offloading=$(uci get flowoffload.@flow[0].flow_offloading)
+	if [ X = "$(uci get flowoffload.@flow[0].flow_offloading_hw)"X ];  then
+		flow_offloading_hw=0
+	else
+		flow_offloading_hw=$(uci get flowoffload.@flow[0].flow_offloading_hw)
+	fi
+	uci set firewall.@defaults[0].flow_offloading_hw=$flow_offloading_hw
+	uci commit firewall
+	if [ "$DNSMASQ_RESTART" = N ]; then
+		/etc/init.d/dnsmasq restart && echo "DNSMASQ change"
+		/etc/init.d/firewall restart > /dev/null 2>&1
+	fi
+	kp=`ps -w | grep koolproxy | grep -v grep | wc -l`
+	if [ $kp -ne 0 ] ;then
+		/etc/init.d/koolproxy restart
+	fi
+}
+
+stop(){
+    dns=$(uci get firewall.@defaults[0].dns 2>/dev/null)
+	stop_dnscache
+    revert_dns
+    uci set firewall.@defaults[0].flow_offloading=$(uci get flowoffload.@flow[0].flow_offloading)
+	if [ X = "$(uci get flowoffload.@flow[0].flow_offloading_hw)"X ];  then
+		flow_offloading_hw=0
+	else
+		flow_offloading_hw=$(uci get flowoffload.@flow[0].flow_offloading_hw)
+	fi
+	uci set firewall.@defaults[0].flow_offloading_hw=$flow_offloading_hw
+    uci commit firewall
+	if [ "$DNSMASQ_RESTART" = N ]; then
+		/etc/init.d/dnsmasq restart && echo "DNSMASQ revert"
+		/etc/init.d/firewall restart > /dev/null 2>&1
+	fi
+	sed -i '/drop_caches/d' /etc/crontabs/root
+}
+
+restart(){
+	DNSMASQ_RESTART=Y
+    stop
+    start
+	/etc/init.d/dnsmasq restart && echo "DNSMASQ revert"
+	/etc/init.d/firewall restart > /dev/null 2>&1
+}
+
