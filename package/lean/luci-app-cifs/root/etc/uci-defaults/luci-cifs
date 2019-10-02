@@ -1,0 +1,14 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@cifs[-1]
+	add ucitrack cifs
+	set ucitrack.@cifs[-1].init=cifs
+	commit ucitrack
+EOF
+
+/etc/init.d/cifs stop >/dev/null 2>&1
+/etc/init.d/cifs disable >/dev/null 2>&1
+
+rm -f /tmp/luci-indexcache
+exit 0
