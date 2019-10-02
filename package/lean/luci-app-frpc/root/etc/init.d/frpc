@@ -1,0 +1,284 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright 2019 Xingwang Liao <kuoruan@gmail.com>
+# Licensed to the public under the MIT License.
+#
+
+START=99
+USE_PROCD=1
+
+NAME="frpc"
+CONFIG_FOLDER="/var/etc/$NAME"
+
+_log() {
+	local level="$1" ; shift
+	local msg="$@"
+	logger -p "daemon.$level" -t "$NAME" "$msg"
+
+	echo "[$level] $msg" >&2
+}
+
+_info() {
+	_log "info" $@
+}
+
+_err() {
+	_log "err" $@
+}
+
+append_options() {
+	local file="$1" ; shift
+	local o v
+	for o in "$@" ; do
+		v="$(eval echo "\$$o")"
+		if [ -n "$v" ] ; then
+			# add brackets when ipv6 address
+			if ( echo "$o" | grep -qE 'addr|ip' ) &&
+				( echo "$v" | grep -q ':' ) ; then
+				v="[$v]"
+			fi
+
+			echo "${o} = $v" >>"$file"
+		fi
+	done
+}
+
+append_setting() {
+	local file="$1" ; shift
+	local s="$1"
+	if [ -n "$s" ] ; then
+		echo "$s" >>"$file"
+	fi
+}
+
+frpc_scetion_validate() {
+	uci_validate_section "$NAME" "frpc" "$1" \
+		'enabled:bool:0' \
+		'server:uci("frpc", "@server")' \
+		'client_file:file:/usr/bin/frpc' \
+		'run_user:string' \
+		'enable_logging:bool:0' \
+		'log_file:file:/var/log/frpc.log' \
+		'log_level:or("trace", "debug", "info", "warn", "error"):warn' \
+		'log_max_days:uinteger:3' \
+		'pool_count:uinteger:0' \
+		'user:string' \
+		'login_fail_exit:or("true", "false"):true' \
+		'protocol:or("tcp", "kcp", "websocket"):tcp' \
+		'http_proxy:string' \
+		'tls_enable:or("true", "false")' \
+		'dns_server:host' \
+		'heartbeat_interval:uinteger:30' \
+		'heartbeat_timeout:uinteger:90' \
+		'admin_addr:host' \
+		'admin_port:port' \
+		'admin_user:string' \
+		'admin_pwd:string'
+}
+
+server_section_validate() {
+	uci_validate_section "$NAME" "server" "$1" \
+		'alias:string' \
+		'server_addr:host' \
+		'server_port:port' \
+		'token:string' \
+		'tcp_mux:or("true", "false"):true'
+}
+
+rule_section_validate() {
+	uci_validate_section "$NAME" "rule" "$1" \
+		'disabled:bool:0' \
+		'name:string' \
+		'type:or("tcp", "udp", "http", "https", "stcp", "xtcp")' \
+		'plugin:string' \
+		'plugin_unix_path:file' \
+		'plugin_user:string' \
+		'plugin_passwd:string' \
+		'plugin_local_path:file' \
+		'plugin_strip_prefix:string' \
+		'plugin_http_user:string' \
+		'plugin_http_passwd:string' \
+		'plugin_local_addr:string' \
+		'plugin_crt_path:file' \
+		'plugin_key_path:file' \
+		'plugin_host_header_rewrite:string' \
+		'local_ip:host' \
+		'local_port:port' \
+		'remote_port:or(port, portrange)' \
+		'use_encryption:or("true", "false"):false' \
+		'use_compression:or("true", "false"):false' \
+		'role:string' \
+		'server_name:string' \
+		'sk:string' \
+		'bind_addr:host' \
+		'bind_port:port' \
+		'http_user:string' \
+		'http_pwd:string' \
+		'subdomain:string' \
+		'custom_domains:string' \
+		'locations:string' \
+		'host_header_rewrite:string' \
+		'proxy_protocol_version:or("v1", "v2")' \
+		'group:string' \
+		'group_key:string' \
+		'health_check_type:or("tcp", "http")' \
+		'health_check_url:string' \
+		'health_check_timeout_s:uinteger' \
+		'health_check_max_failed:uinteger' \
+		'health_check_interval_s:uniteger' \
+		'extra_options:list(string)'
+}
+
+client_file_validate() {
+	local file="$1"
+
+	test -f "$file" || return 1
+	test -x "$file" || chmod 755 "$file"
+
+	eval "$file" -h | grep -q "$NAME"
+	return $?
+}
+
+add_rule_extra_option() {
+	append_setting "$2" "$1"
+}
+
+add_frpc_rule() {
+	local section="$1"
+	local file="$2"
+
+	if ! rule_section_validate "$section" ; then
+		_err "Rule section validate failed: \"$section\""
+		return 1
+	fi
+
+	if [ "x$disabled" = "x1" ] ; then
+		return 0
+	fi
+
+	if [ -z "$name" ] ; then
+		_err "Rule's name is required: \"$section\""
+		return 1
+	fi
+
+	echo "[$name]" >>"$file"
+
+	append_options "$file" \
+		"type" "plugin" "plugin_unix_path" "plugin_user" "plugin_passwd" "plugin_local_path" \
+		"plugin_strip_prefix" "plugin_http_user" "plugin_http_passwd" "plugin_local_addr" \
+		"plugin_crt_path" "plugin_key_path" "plugin_host_header_rewrite" "local_ip" "local_port" \
+		"remote_port" "use_encryption" "use_compression" "role" "server_name" "bind_addr" \
+		"bind_port" "sk" "http_user" "http_pwd" "subdomain" "custom_domains" "locations" \
+		"host_header_rewrite" "proxy_protocol_version" "group" "group_key" "health_check_type" \
+		"health_check_url" "health_check_timeout_s" "health_check_max_failed" "health_check_interval_s"
+
+	config_list_foreach "$section" "extra_options" add_rule_extra_option "$file"
+}
+
+create_config_file() {
+	local config_file="$1"
+	local tmp_file="$(mktemp /tmp/frpc-XXXXXX)"
+
+	echo "[common]" > "$tmp_file"
+
+	append_options "$tmp_file" \
+		"server_addr" "server_port" "token"
+
+	if [ "x$enable_logging" = "x1" ] ; then
+		if [ -z "$log_file" ]; then
+			log_file="/var/log/frpc.log"
+		fi
+
+		append_options "$tmp_file" \
+			"log_file" "log_level" "log_max_days"
+
+		if [ -f "$log_file" ] ; then
+			echo > "$log_file"
+		else
+			local log_folder="$(dirname "$log_file")"
+
+			if [ ! -d "$log_folder" ] ; then
+				mkdir -p "$log_folder"
+			fi
+		fi
+
+		if [ -n "$run_user" ] && ( user_exists "$run_user" ) ; then
+			chmod 644 "$log_file"
+			chown "$run_user" "$log_file"
+		else
+			run_user=""
+		fi
+	fi
+
+	append_options "$tmp_file" \
+		"pool_count" "tcp_mux" "user" "login_fail_exit" "protocol" "tls_enable" \
+		"admin_addr" "admin_port" "admin_user" "admin_pwd" "dns_server" \
+		"heartbeat_interval" "heartbeat_timeout"
+
+	config_foreach add_frpc_rule "rule" "$tmp_file"
+
+	sed '/^$/d' "$tmp_file" >"$config_file"
+
+	if [ "$?" = "0" ] ; then
+		rm -f "$tmp_file"
+	fi
+}
+
+start_instance() {
+	local section="$1"
+
+	if ! frpc_scetion_validate "$section" ; then
+		_err "Config validate failed."
+		return 1
+	fi
+
+	if [ "x$enabled" != "x1" ] ; then
+		_info "Instance \"$section\" disabled."
+		return 1
+	fi
+
+	if [ -z "$client_file" ] || ( ! client_file_validate "$client_file" ) ; then
+		_err "Client file not valid."
+		return 1
+	fi
+
+	if [ -z "$server" ] || [ "$server" = "nil" ] ; then
+		_err "No server selected for instance: \"$section\"."
+		return 1
+	elif ! server_section_validate "$server" ; then
+		_err "Server config validate failed: \"$server\""
+		return 1
+	fi
+
+	test -d "$CONFIG_FOLDER" || mkdir -p "$CONFIG_FOLDER"
+
+	local config_file="$CONFIG_FOLDER/frpc.$section.ini"
+
+	create_config_file "$config_file"
+
+	if [ ! -f "$config_file" ] ; then
+		_err "Could not create config file: \"$config_file\""
+		return 1
+	fi
+
+	procd_open_instance "$NAME.$section"
+	procd_set_param command "$client_file"
+	procd_append_param command -c "$config_file"
+	procd_set_param respawn
+	procd_set_param file "$config_file"
+
+	if [ -n "$run_user" ] ; then
+		procd_set_param user "$run_user"
+	fi
+
+	procd_close_instance
+}
+
+service_triggers() {
+	procd_add_reload_trigger "$NAME"
+}
+
+start_service() {
+	config_load "$NAME"
+	config_foreach start_instance "frpc"
+}

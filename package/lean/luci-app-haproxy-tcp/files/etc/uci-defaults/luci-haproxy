@@ -1,0 +1,14 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@haproxy[-1]
+	add ucitrack haproxy
+	set ucitrack.@haproxy[-1].init=haproxy
+	commit ucitrack
+EOF
+
+/etc/init.d/haproxy stop
+/etc/init.d/haproxy disable
+
+rm -f /tmp/luci-indexcache
+exit 0
