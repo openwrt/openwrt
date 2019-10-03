@@ -650,6 +650,23 @@ endef
 
 $(eval $(call KernelPackage,rtc-rs5c372a))
 
+define KernelPackage/rtc-rx8025
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Epson RX-8025 / RX-8035
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core
+  KCONFIG:=CONFIG_RTC_DRV_RX8025 \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-rx8025.ko
+  AUTOLOAD:=$(call AutoLoad,50,rtc-rx8025,1)
+endef
+
+define KernelPackage/rtc-rx8025/description
+ Kernel module for Epson RX-8025 and RX-8035 I2C RTC chip
+endef
+
+$(eval $(call KernelPackage,rtc-rx8025))
+
 
 define KernelPackage/mtdtests
   SUBMENU:=$(OTHER_MENU)
