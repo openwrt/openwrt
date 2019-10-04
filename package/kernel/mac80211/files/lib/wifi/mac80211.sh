@@ -76,21 +76,27 @@ detect_mac80211() {
 		config_foreach check_mac80211_device wifi-device
 		[ "$found" -gt 0 ] && continue
 
-		mode_band="g"
-		channel="11"
-		htmode=""
-		ht_capab=""
+		if iw phy "$dev" info | grep -q '58320 MHz'; then
+			mode_band="ad"
+			channel="1"
+			htmode=""
+			ht_capab=""
+		else
+			mode_band="g"
+			channel="11"
+			htmode=""
+			ht_capab=""
 
-		iw phy "$dev" info | grep -q 'Capabilities:' && htmode=HT20
+			iw phy "$dev" info | grep -q 'Capabilities:' && htmode=HT20
 
-		iw phy "$dev" info | grep -q '5180 MHz' && {
-			mode_band="a"
-			channel="36"
-			iw phy "$dev" info | grep -q 'VHT Capabilities' && htmode="VHT80"
-		}
+			iw phy "$dev" info | grep -q '5180 MHz' && {
+				mode_band="a"
+				channel="36"
+				iw phy "$dev" info | grep -q 'VHT Capabilities' && htmode="VHT80"
+			}
 
-		[ -n "$htmode" ] && ht_capab="set wireless.radio${devidx}.htmode=$htmode"
-
+			[ -n "$htmode" ] && ht_capab="set wireless.radio${devidx}.htmode=$htmode"
+		fi
 		if [ -x /usr/bin/readlink -a -h /sys/class/ieee80211/${dev} ]; then
 			path="$(readlink -f /sys/class/ieee80211/${dev}/device)"
 		else
