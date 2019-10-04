@@ -39,7 +39,7 @@ platform_expected_image() {
 		"luxul,xap-1610-v1")	echo "lxl XAP-1610"; return;;
 		"luxul,xbr-4500-v1")	echo "lxl XBR-4500"; return;;
 		"luxul,xwc-1000")	echo "lxl XWC-1000"; return;;
-		"luxul,xwc-2000")	echo "lxl XWC-2000"; return;;
+		"luxul,xwc-2000-v1")	echo "lxl XWC-2000"; return;;
 		"luxul,xwr-1200v1")	echo "lxl XWR-1200"; return;;
 		"luxul,xwr-3100v1")	echo "lxl XWR-3100"; return;;
 		"luxul,xwr-3150-v1")	echo "lxl XWR-3150"; return;;
