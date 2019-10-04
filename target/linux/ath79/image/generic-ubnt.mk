@@ -154,7 +154,7 @@ TARGET_DEVICES += ubnt_nanostation-ac-loco
 define Device/ubnt_nanostation-m
   $(Device/ubnt-xm)
   DEVICE_MODEL := Nanostation M
-  SUPPORTED_DEVICES += nano-m
+  SUPPORTED_DEVICES += nanostation-m
 endef
 TARGET_DEVICES += ubnt_nanostation-m
 
