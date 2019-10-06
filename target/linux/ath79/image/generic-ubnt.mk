@@ -225,6 +225,13 @@ define Device/ubnt_unifiac-lite
 endef
 TARGET_DEVICES += ubnt_unifiac-lite
 
+define Device/ubnt_unifiac-lr
+  $(Device/ubnt_unifiac)
+  DEVICE_MODEL := UniFi AC-LR
+  SUPPORTED_DEVICES += unifiac-lite ubnt,unifiac-lite
+endef
+TARGET_DEVICES += ubnt_unifiac-lr
+
 define Device/ubnt_unifiac-mesh
   $(Device/ubnt_unifiac)
   DEVICE_MODEL := UniFi AC-Mesh
