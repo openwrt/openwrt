@@ -728,7 +728,7 @@ profile() {
 	fi
 }
 
-status() {
+status_service() {
 	vendor
 	chipset
 	xtse
