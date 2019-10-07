@@ -728,6 +728,7 @@ TARGET_DEVICES += unielec_u7621-06-64m
 define Device/wevo_11acnas
   MTK_SOC := mt7621
   IMAGE_SIZE := 16064k
+  UIMAGE_NAME := 11AC-NAS-Router(0.0.0)
   DEVICE_VENDOR := WeVO
   DEVICE_MODEL := 11AC NAS Router
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
@@ -738,6 +739,7 @@ TARGET_DEVICES += wevo_11acnas
 define Device/wevo_w2914ns-v2
   MTK_SOC := mt7621
   IMAGE_SIZE := 16064k
+  UIMAGE_NAME := W2914NS-V2(0.0.0)
   DEVICE_VENDOR := WeVO
   DEVICE_MODEL := W2914NS
   DEVICE_VARIANT := v2
