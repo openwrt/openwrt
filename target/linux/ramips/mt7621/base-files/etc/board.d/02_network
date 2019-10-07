@@ -69,9 +69,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4:wan:5" "6@eth0"
 		;;
-	d-team,newifi-d2|\
-	wevo,11acnas|\
-	wevo,w2914ns-v2)
+	d-team,newifi-d2)
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan:5" "6@eth0"
 		;;
@@ -113,7 +111,9 @@ ramips_setup_interfaces()
 	netgear,r6350|\
 	netgear,r6850|\
 	netgear,wndr3700-v5|\
-	netis,wf-2881)
+	netis,wf-2881|\
+	wevo,11acnas|\
+	wevo,w2914ns-v2)
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
@@ -164,8 +164,6 @@ ramips_setup_macs()
 	ubiquiti,edgerouterx-sfp|\
 	unielec,u7621-06-16m|\
 	unielec,u7621-06-64m|\
-	wevo,11acnas|\
-	wevo,w2914ns-v2|\
 	xiaoyu,xy-c5|\
 	xzwifi,creativebox-v1|\
 	zbtlink,zbt-wg2626)
@@ -224,6 +222,11 @@ ramips_setup_macs()
 	netgear,r6350|\
 	netgear,r6850)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
+		;;
+	wevo,11acnas|\
+	wevo,w2914ns-v2)
+		wan_mac=$(mtd_get_mac_binary factory 0x2e)
+		label_mac=$wan_mac
 		;;
 	xiaomi,mir3g)
 		lan_mac=$(mtd_get_mac_binary factory 0xe006)
