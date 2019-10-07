@@ -122,7 +122,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  static DEFINE_IDA(soc_ida);
  
-@@ -159,3 +160,72 @@ static int __init soc_bus_register(void)
+@@ -161,3 +162,72 @@ static int __init soc_bus_register(void)
  	return bus_register(&soc_bus_type);
  }
  core_initcall(soc_bus_register);
