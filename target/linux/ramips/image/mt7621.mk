@@ -87,6 +87,7 @@ endef
 define Device/11acnas
   DTS := 11ACNAS
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  UIMAGE_NAME := 11AC-NAS-Router(0.0.0)
   DEVICE_TITLE := WeVO 11AC NAS Router
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
@@ -509,6 +510,7 @@ TARGET_DEVICES += vr500
 define Device/w2914nsv2
   DTS := W2914NSV2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  UIMAGE_NAME := W2914NS-V2(0.0.0)
   DEVICE_TITLE := WeVO W2914NS v2
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
