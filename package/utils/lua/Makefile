@@ -135,6 +135,7 @@ define Host/Install
 		install
 
 	$(LN) $(STAGING_DIR_HOSTPKG)/bin/lua5.1 $(STAGING_DIR_HOSTPKG)/bin/lua
+	$(LN) $(STAGING_DIR_HOSTPKG)/bin/luac5.1 $(STAGING_DIR_HOSTPKG)/bin/luac
 endef
 
 define Build/InstallDev
