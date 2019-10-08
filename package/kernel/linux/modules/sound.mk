@@ -254,6 +254,20 @@ endef
 $(eval $(call KernelPackage,sound-soc-imx-sgtl5000))
 
 
+define KernelPackage/sound-soc-spdif
+  TITLE:=SoC S/PDIF codec support
+  KCONFIG:=CONFIG_SND_SOC_SPDIF
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-spdif-tx.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-spdif-rx.ko
+  DEPENDS:=+kmod-sound-soc-core
+  AUTOLOAD:=$(call AutoProbe,snd-soc-spdif-tx snd-soc-spdif-rx)
+  $(call AddDepends/sound)
+endef
+
+$(eval $(call KernelPackage,sound-soc-spdif))
+
+
 define KernelPackage/pcspkr
   DEPENDS:=@TARGET_x86 +kmod-input-core
   TITLE:=PC speaker support
