@@ -176,7 +176,7 @@ define KernelPackage/fb-sys-ram
   AUTOLOAD:=$(call AutoLoad,07,syscopyarea sysfillrect sysimgblt)
 endef
 
-define KernelPackage/fb-sys-fops/description
+define KernelPackage/fb-sys-ram/description
  Kernel support for framebuffers in system RAM
 endef
 
@@ -990,7 +990,7 @@ define KernelPackage/video-gspca-gl860
   $(call AddDepends/camera-gspca)
 endef
 
-define KernelPackage/video-gspca-gl800/description
+define KernelPackage/video-gspca-gl860/description
  The GL860 USB Camera Driver (gl860) kernel module
 endef
 
