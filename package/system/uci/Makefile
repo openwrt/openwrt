@@ -9,7 +9,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uci
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/uci.git
 PKG_SOURCE_PROTO:=git
@@ -21,10 +21,14 @@ PKG_LICENSE:=LGPL-2.1
 PKG_LICENSE_FILES:=
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
+PKG_BUILD_DEPENDS := uci/host
 
 PKG_BUILD_PARALLEL:=0
 
+HOST_BUILD_DEPENDS:=libubox/host
+
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/cmake.mk
 
 # set to 1 to enable debugging
@@ -76,6 +80,11 @@ define Package/uci/install
 	$(CP) ./files/* $(1)/
 endef
 
+CMAKE_HOST_OPTIONS += \
+	-DBUILD_LUA=OFF \
+	-DCMAKE_SKIP_RPATH=FALSE \
+	-DCMAKE_INSTALL_RPATH="${STAGING_DIR_HOST}/lib"
+
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_BUILD_DIR)/uci{,_config,_blob,map}.h $(1)/usr/include
@@ -84,6 +93,11 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/libucimap.a $(1)/usr/lib
 endef
 
+define Host/Install
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/uci $(STAGING_DIR_HOST)/bin/uci
+endef
+
 $(eval $(call BuildPackage,uci))
 $(eval $(call BuildPackage,libuci))
 $(eval $(call BuildPackage,libuci-lua))
+$(eval $(call HostBuild))
