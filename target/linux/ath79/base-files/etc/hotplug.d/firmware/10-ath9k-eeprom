@@ -60,7 +60,7 @@ xor() {
 ath9k_patch_fw_mac() {
 	local mac=$1
 	local mac_offset=$(($2))
-	local chksum_offset=$(($3))
+	local chksum_offset=$3
 	local xor_mac
 	local xor_fw_mac
 	local xor_fw_chksum
@@ -78,7 +78,7 @@ ath9k_patch_fw_mac() {
 		xor_fw_chksum=$(xor $xor_fw_chksum $xor_fw_mac $xor_mac)
 
 		printf "%b" "\x${xor_fw_chksum:0:2}\x${xor_fw_chksum:2:2}" | \
-			dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=$chksum_offset count=2
+			dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=$(($chksum_offset)) count=2
 	}
 
 	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc oflag=seek_bytes bs=6 seek=$mac_offset count=1

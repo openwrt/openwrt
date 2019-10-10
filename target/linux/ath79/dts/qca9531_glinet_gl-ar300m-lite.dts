@@ -7,7 +7,11 @@
 	model = "GL.iNet GL-AR300M-Lite";
 };
 
-// GL-AR300M-Lite has different LED colors than the non-Lite version
+// "Disable" unpopulated GMAC1
+
+&eth1 {
+	compatible = "syscon", "simple-mfd";
+};
 
 &led_status {
 	label = "gl-ar300m-lite:red:status";

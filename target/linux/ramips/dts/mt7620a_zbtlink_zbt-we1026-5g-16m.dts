@@ -31,95 +31,51 @@
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "mt7620a.dtsi"
+/dts-v1/;
 
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input.h>
+#include "mt7620a_zbtlink_zbt-we1026-5g.dtsi"
 
 / {
-	compatible = "zbtlink,we1026-5g", "ralink,mt7620a-soc";
+	compatible = "zbtlink,zbt-we1026-5g-16m", "ralink,mt7620a-soc";
+	model = "Zbtlink ZBT-WE1026-5G (16M)";
+};
 
-	chosen {
-		bootargs = "console=ttyS0,115200";
-	};
+&spi0 {
+	status = "okay";
 
-	leds {
-		compatible = "gpio-leds";
-		lan {
-			label = "we1026-5g:green:lan";
-			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+	en25q128@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			firmware: partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0xfb0000>;
+			};
 		};
-
-		usb {
-			label = "we1026-5g:green:usb";
-			gpios = <&gpio2 2 GPIO_ACTIVE_HIGH>;
-			trigger-sources = <&ohci_port1>, <&ehci_port1>;
-			linux,default-trigger = "usbport";
-		};
-
-		wifi {
-			label = "we1026-5g:green:wifi";
-			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
-		};
-	};
-
-	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
-		reset {
-			label = "reset";
-			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_RESTART>;
-		};
-	};
-};
-
-&gpio2 {
-	status = "okay";
-};
-
-&gpio3 {
-	status = "okay";
-};
-
-&sdhci {
-	status = "okay";
-};
-
-&ehci {
-	status = "okay";
-};
-
-&ohci {
-	status = "okay";
-};
-
-&ethernet {
-	mtd-mac-address = <&factory 0x28>;
-};
-
-&wmac {
-	ralink,mtd-eeprom = <&factory 0>;
-};
-
-&pinctrl {
-	state_default: pinctrl0 {
-		default {
-			ralink,group = "i2c", "uartf", "spi refclk", "ephy", "wled";
-			ralink,function = "gpio";
-		};
-	};
-};
-
-&pcie {
-	status = "okay";
-};
-
-&pcie0 {
-	wifi@0,0 {
-		compatible = "pci14c3,7662";
-		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
-		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };

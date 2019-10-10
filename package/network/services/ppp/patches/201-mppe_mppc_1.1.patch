@@ -88,7 +88,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
   */
 --- a/pppd/ccp.c
 +++ b/pppd/ccp.c
-@@ -62,12 +62,10 @@ static int setdeflate __P((char **));
+@@ -61,12 +61,10 @@ static int setdeflate __P((char **));
  static char bsd_value[8];
  static char deflate_value[8];
  
@@ -104,7 +104,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  static option_t ccp_option_list[] = {
      { "noccp", o_bool, &ccp_protent.enabled_flag,
-@@ -108,54 +106,36 @@ static option_t ccp_option_list[] = {
+@@ -107,54 +105,36 @@ static option_t ccp_option_list[] = {
        "don't allow Predictor-1", OPT_ALIAS | OPT_PRIOSUB | OPT_A2CLR,
        &ccp_allowoptions[0].predictor_1 },
  
@@ -188,7 +188,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  #endif /* MPPE */
  
      { NULL }
-@@ -241,7 +221,7 @@ static fsm_callbacks ccp_callbacks = {
+@@ -240,7 +220,7 @@ static fsm_callbacks ccp_callbacks = {
   */
  #define ANY_COMPRESS(opt)	((opt).deflate || (opt).bsd_compress \
  				 || (opt).predictor_1 || (opt).predictor_2 \
@@ -197,7 +197,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  /*
   * Local state (mainly for handling reset-reqs and reset-acks).
-@@ -344,6 +324,100 @@ setdeflate(argv)
+@@ -343,6 +323,100 @@ setdeflate(argv)
      return 1;
  }
  
@@ -298,7 +298,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  /*
   * ccp_init - initialize CCP.
   */
-@@ -378,6 +452,30 @@ ccp_init(unit)
+@@ -377,6 +451,30 @@ ccp_init(unit)
      ccp_allowoptions[0].bsd_bits = BSD_MAX_BITS;
  
      ccp_allowoptions[0].predictor_1 = 1;
@@ -329,7 +329,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  }
  
  /*
-@@ -455,11 +553,11 @@ ccp_input(unit, p, len)
+@@ -454,11 +552,11 @@ ccp_input(unit, p, len)
      if (oldstate == OPENED && p[0] == TERMREQ && f->state != OPENED) {
  	notice("Compression disabled by peer.");
  #ifdef MPPE
@@ -343,7 +343,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      }
  
      /*
-@@ -487,6 +585,15 @@ ccp_extcode(f, code, id, p, len)
+@@ -486,6 +584,15 @@ ccp_extcode(f, code, id, p, len)
  	    break;
  	/* send a reset-ack, which the transmitter will see and
  	   reset its compression state. */
@@ -359,7 +359,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  	fsm_sdata(f, CCP_RESETACK, id, NULL, 0);
  	break;
  
-@@ -515,12 +622,11 @@ ccp_protrej(unit)
+@@ -514,12 +621,11 @@ ccp_protrej(unit)
      fsm_lowerdown(&ccp_fsm[unit]);
  
  #ifdef MPPE
@@ -374,7 +374,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  }
  
  /*
-@@ -537,7 +643,7 @@ ccp_resetci(f)
+@@ -536,7 +642,7 @@ ccp_resetci(f)
      all_rejected[f->unit] = 0;
  
  #ifdef MPPE
@@ -383,7 +383,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  	ccp_options *ao = &ccp_allowoptions[f->unit];
  	int auth_mschap_bits = auth_done[f->unit];
  	int numbits;
-@@ -551,80 +657,109 @@ ccp_resetci(f)
+@@ -550,80 +656,109 @@ ccp_resetci(f)
  	 * NB: If MPPE is required, all other compression opts are invalid.
  	 *     So, we return right away if we can't do it.
  	 */
@@ -559,7 +559,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      if (go->bsd_compress) {
  	opt_buf[0] = CI_BSD_COMPRESS;
  	opt_buf[1] = CILEN_BSD_COMPRESS;
-@@ -680,7 +815,8 @@ ccp_cilen(f)
+@@ -679,7 +814,8 @@ ccp_cilen(f)
  	+ (go->deflate && go->deflate_draft? CILEN_DEFLATE: 0)
  	+ (go->predictor_1? CILEN_PREDICTOR_1: 0)
  	+ (go->predictor_2? CILEN_PREDICTOR_2: 0)
@@ -569,7 +569,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  }
  
  /*
-@@ -694,6 +830,8 @@ ccp_addci(f, p, lenp)
+@@ -693,6 +829,8 @@ ccp_addci(f, p, lenp)
  {
      int res;
      ccp_options *go = &ccp_gotoptions[f->unit];
@@ -578,7 +578,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      u_char *p0 = p;
  
      /*
-@@ -702,22 +840,43 @@ ccp_addci(f, p, lenp)
+@@ -701,22 +839,43 @@ ccp_addci(f, p, lenp)
       * in case it gets Acked.
       */
  #ifdef MPPE
@@ -631,7 +631,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      if (go->deflate) {
  	p[0] = go->deflate_correct? CI_DEFLATE: CI_DEFLATE_DRAFT;
  	p[1] = CILEN_DEFLATE;
-@@ -803,7 +962,7 @@ ccp_addci(f, p, lenp)
+@@ -802,7 +961,7 @@ ccp_addci(f, p, lenp)
  
  /*
   * ccp_ackci - process a received configure-ack, and return
@@ -640,7 +640,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
   */
  static int
  ccp_ackci(f, p, len)
-@@ -812,24 +971,44 @@ ccp_ackci(f, p, len)
+@@ -811,24 +970,44 @@ ccp_ackci(f, p, len)
      int len;
  {
      ccp_options *go = &ccp_gotoptions[f->unit];
@@ -694,7 +694,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      if (go->deflate) {
  	if (len < CILEN_DEFLATE
  	    || p[0] != (go->deflate_correct? CI_DEFLATE: CI_DEFLATE_DRAFT)
-@@ -902,6 +1081,8 @@ ccp_nakci(f, p, len, treat_as_reject)
+@@ -901,6 +1080,8 @@ ccp_nakci(f, p, len, treat_as_reject)
      int treat_as_reject;
  {
      ccp_options *go = &ccp_gotoptions[f->unit];
@@ -703,7 +703,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      ccp_options no;		/* options we've seen already */
      ccp_options try;		/* options to ask for next time */
  
-@@ -909,28 +1090,100 @@ ccp_nakci(f, p, len, treat_as_reject)
+@@ -908,28 +1089,100 @@ ccp_nakci(f, p, len, treat_as_reject)
      try = *go;
  
  #ifdef MPPE
@@ -822,7 +822,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      if (go->deflate && len >= CILEN_DEFLATE
  	&& p[0] == (go->deflate_correct? CI_DEFLATE: CI_DEFLATE_DRAFT)
  	&& p[1] == CILEN_DEFLATE) {
-@@ -1003,14 +1256,50 @@ ccp_rejci(f, p, len)
+@@ -1002,14 +1255,50 @@ ccp_rejci(f, p, len)
  	return -1;
  
  #ifdef MPPE
@@ -877,7 +877,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      if (go->deflate_correct && len >= CILEN_DEFLATE
  	&& p[0] == CI_DEFLATE && p[1] == CILEN_DEFLATE) {
  	if (p[2] != DEFLATE_MAKE_OPT(go->deflate_size)
-@@ -1074,14 +1363,15 @@ ccp_reqci(f, p, lenp, dont_nak)
+@@ -1073,14 +1362,15 @@ ccp_reqci(f, p, lenp, dont_nak)
      int dont_nak;
  {
      int ret, newret, res;
@@ -897,7 +897,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
      ret = CONFACK;
      retp = p0 = p;
-@@ -1104,106 +1394,302 @@ ccp_reqci(f, p, lenp, dont_nak)
+@@ -1103,106 +1393,302 @@ ccp_reqci(f, p, lenp, dont_nak)
  	    switch (type) {
  #ifdef MPPE
  	    case CI_MPPE:
@@ -1293,7 +1293,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  	    case CI_DEFLATE:
  	    case CI_DEFLATE_DRAFT:
  		if (!ao->deflate || clen != CILEN_DEFLATE
-@@ -1345,12 +1831,6 @@ ccp_reqci(f, p, lenp, dont_nak)
+@@ -1344,12 +1830,6 @@ ccp_reqci(f, p, lenp, dont_nak)
  	else
  	    *lenp = retp - p0;
      }
@@ -1306,7 +1306,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      return ret;
  }
  
-@@ -1372,24 +1852,35 @@ method_name(opt, opt2)
+@@ -1371,24 +1851,35 @@ method_name(opt, opt2)
  	char *p = result;
  	char *q = result + sizeof(result); /* 1 past result */
  
@@ -1358,7 +1358,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      case CI_DEFLATE:
      case CI_DEFLATE_DRAFT:
  	if (opt2 != NULL && opt2->deflate_size != opt->deflate_size)
-@@ -1445,12 +1936,12 @@ ccp_up(f)
+@@ -1444,12 +1935,12 @@ ccp_up(f)
      } else if (ANY_COMPRESS(*ho))
  	notice("%s transmit compression enabled", method_name(ho, NULL));
  #ifdef MPPE
@@ -1373,7 +1373,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  }
  
  /*
-@@ -1473,7 +1964,7 @@ ccp_down(f)
+@@ -1472,7 +1963,7 @@ ccp_down(f)
  	    lcp_close(f->unit, "MPPE disabled");
  	}
      }
@@ -1382,7 +1382,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  }
  
  /*
-@@ -1533,24 +2024,28 @@ ccp_printpkt(p, plen, printer, arg)
+@@ -1532,24 +2023,28 @@ ccp_printpkt(p, plen, printer, arg)
  #ifdef MPPE
  	    case CI_MPPE:
  		if (optlen >= CILEN_MPPE) {
@@ -1423,7 +1423,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  	    case CI_DEFLATE:
  	    case CI_DEFLATE_DRAFT:
  		if (optlen >= CILEN_DEFLATE) {
-@@ -1636,6 +2131,7 @@ ccp_datainput(unit, pkt, len)
+@@ -1635,6 +2130,7 @@ ccp_datainput(unit, pkt, len)
  	    error("Lost compression sync: disabling compression");
  	    ccp_close(unit, "Lost compression sync");
  #ifdef MPPE
@@ -1431,7 +1431,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  	    /*
  	     * If we were doing MPPE, we must also take the link down.
  	     */
-@@ -1643,9 +2139,18 @@ ccp_datainput(unit, pkt, len)
+@@ -1642,9 +2138,18 @@ ccp_datainput(unit, pkt, len)
  		error("Too many MPPE errors, closing LCP");
  		lcp_close(unit, "Too many MPPE errors");
  	    }
@@ -1473,7 +1473,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
 --- a/pppd/chap_ms.c
 +++ b/pppd/chap_ms.c
-@@ -963,13 +963,17 @@ set_mppe_enc_types(int policy, int types
+@@ -962,13 +962,17 @@ set_mppe_enc_types(int policy, int types
      /*
       * Disable undesirable encryption types.  Note that we don't ENABLE
       * any encryption types, to avoid overriding manual configuration.

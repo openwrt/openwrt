@@ -8,7 +8,7 @@
 define Profile/USR8200
   NAME:=USRobotics USR8200
   PACKAGES:=-wpad-basic kmod-scsi-core \
-	kmod-usb-core kmod-usb-uhci kmod-usb2-pci kmod-usb-storage \
+	kmod-usb-uhci kmod-usb2-pci kmod-usb-storage \
 	kmod-fs-ext4 kmod-firewire kmod-firewire-ohci kmod-firewire-sbp2
 endef
 

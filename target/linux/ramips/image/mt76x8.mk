@@ -578,7 +578,7 @@ TARGET_DEVICES += xiaomi_miwifi-nano
 define Device/zbtlink_zbt-we1226
   MTK_SOC := mt7628an
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := ZBTlink
+  DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE1226
 endef
 TARGET_DEVICES += zbtlink_zbt-we1226

@@ -362,7 +362,7 @@ define Device/engenius_esr600
        senao-header -r 0x101 -p 0x57 -t 2
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ESR600
-  DEVICE_PACKAGES += kmod-rt2800-pci kmod-usb-core kmod-usb-storage kmod-usb-ohci kmod-usb-ehci
+  DEVICE_PACKAGES += kmod-rt2800-pci kmod-usb-storage kmod-usb-ohci kmod-usb-ehci
 endef
 TARGET_DEVICES += engenius_esr600
 
@@ -943,17 +943,6 @@ define Device/yukai_bocco
 endef
 TARGET_DEVICES += yukai_bocco
 
-define Device/zbtlink_we1026-5g-16m
-  MTK_SOC := mt7620a
-  IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Zbtlink
-  DEVICE_MODEL := ZBT-WE1026-5G
-  DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
-  SUPPORTED_DEVICES += we1026-5g-16m
-endef
-TARGET_DEVICES += zbtlink_we1026-5g-16m
-
 define Device/zbtlink_zbt-ape522ii
   MTK_SOC := mt7620a
   IMAGE_SIZE := 15872k
@@ -983,6 +972,17 @@ define Device/zbtlink_zbt-wa05
   SUPPORTED_DEVICES += zbt-wa05
 endef
 TARGET_DEVICES += zbtlink_zbt-wa05
+
+define Device/zbtlink_zbt-we1026-5g-16m
+  MTK_SOC := mt7620a
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WE1026-5G
+  DEVICE_VARIANT := 16M
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
+  SUPPORTED_DEVICES += we1026-5g-16m zbtlink,we1026-5g-16m
+endef
+TARGET_DEVICES += zbtlink_zbt-we1026-5g-16m
 
 define Device/zbtlink_zbt-we2026
   MTK_SOC := mt7620n

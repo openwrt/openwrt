@@ -451,7 +451,7 @@ ramips_setup_interfaces()
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "9@eth0"
 		;;
 	sparklan,wcr-150gn|\
-	zbtlink,we1026-5g-16m)
+	zbtlink,zbt-we1026-5g-16m)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6t@eth0"
 		;;
@@ -564,6 +564,7 @@ ramips_setup_macs()
 		;;
 	asus,rt-ac85p)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env et1macaddr)
+		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;
 	asus,rt-n56u)
 		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")

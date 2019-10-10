@@ -40,7 +40,6 @@
 			label = "librerouter-v1:blue:status";
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
-
 	};
 
 	button {
@@ -52,7 +51,6 @@
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
-
 	};
 
 	watchdog {
@@ -62,7 +60,6 @@
 		hw_margin_ms = <1000>;
 		always-running;
 	};
-
 };
 
 &pcie0 {
@@ -187,7 +184,6 @@
 	mtd-mac-address = <&art 0x0>;
 
 	phy-handle = <&phy0>;
-
 };
 
 &eth1 {

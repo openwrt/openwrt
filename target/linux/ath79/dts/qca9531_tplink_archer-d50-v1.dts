@@ -11,6 +11,10 @@
 	model = "TP-Link Archer D50 v1";
 
 	aliases {
+		led-boot = &system;
+		led-failsafe = &system;
+		led-running = &system;
+		led-upgrade = &system;
 		label-mac-device = &wmac;
 	};
 
@@ -18,22 +22,22 @@
 		bootargs = "console=ttyS0,115200n8";
 	};
 
-	gpio_leds: leds {
+	leds {
 		compatible = "gpio-leds";
 
-		led_wlan2g: wlan2g {
+		wlan2g {
 			label = "tp-link:white:wlan2g";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
-		led_wlan5g: wlan5g {
+		wlan5g {
 			label = "tp-link:white:wlan5g";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
-                };
+		};
 
-		qss_led: qss {
+		qss {
 			label = "tp-link:white:qss";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
@@ -60,7 +64,7 @@
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		system: system{
+		system: system {
 			label = "tp-link:white:system";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 			default-state = "on";
@@ -107,7 +111,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot:	partition@0 {
+			partition@0 {
 				label = "u-boot";
 				reg = <0x000000 0x020000>;
 				read-only;

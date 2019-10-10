@@ -805,7 +805,7 @@ TARGET_DEVICES += youku_yk-l2
 define Device/zbtlink_zbt-we1326
   MTK_SOC := mt7621
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := ZBT
+  DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE1326
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-sdhci-mt7620 wpad-basic
@@ -816,7 +816,7 @@ TARGET_DEVICES += zbtlink_zbt-we1326
 define Device/zbtlink_zbt-we3526
   MTK_SOC := mt7621
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := ZBT
+  DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE3526
   DEVICE_PACKAGES := \
 	kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
@@ -827,7 +827,7 @@ TARGET_DEVICES += zbtlink_zbt-we3526
 define Device/zbtlink_zbt-wg2626
   MTK_SOC := mt7621
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := ZBT
+  DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WG2626
   DEVICE_PACKAGES := \
 	kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 \
@@ -839,7 +839,7 @@ TARGET_DEVICES += zbtlink_zbt-wg2626
 define Device/zbtlink_zbt-wg3526-16m
   MTK_SOC := mt7621
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := ZBT
+  DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WG3526
   DEVICE_VARIANT := 16M
   DEVICE_PACKAGES := \
@@ -852,7 +852,7 @@ TARGET_DEVICES += zbtlink_zbt-wg3526-16m
 define Device/zbtlink_zbt-wg3526-32m
   MTK_SOC := mt7621
   IMAGE_SIZE := 32448k
-  DEVICE_VENDOR := ZBT
+  DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WG3526
   DEVICE_VARIANT := 32M
   DEVICE_PACKAGES := \

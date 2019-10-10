@@ -1,6 +1,6 @@
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -3344,6 +3344,7 @@ struct cfg80211_update_owe_info {
+@@ -3348,6 +3348,7 @@ struct cfg80211_update_owe_info {
   *	(as advertised by the nl80211 feature flag.)
   * @get_tx_power: store the current TX power into the dbm variable;
   *	return 0 if successful
@@ -8,7 +8,7 @@
   *
   * @set_wds_peer: set the WDS peer for a WDS interface
   *
-@@ -3656,6 +3657,7 @@ struct cfg80211_ops {
+@@ -3660,6 +3661,7 @@ struct cfg80211_ops {
  				enum nl80211_tx_power_setting type, int mbm);
  	int	(*get_tx_power)(struct wiphy *wiphy, struct wireless_dev *wdev,
  				int *dbm);

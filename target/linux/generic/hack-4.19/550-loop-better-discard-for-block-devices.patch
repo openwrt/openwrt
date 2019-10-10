@@ -150,7 +150,7 @@ Reviewed-by: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
  }
  
  static void loop_unprepare_queue(struct loop_device *lo)
-@@ -1893,7 +1912,10 @@ static void loop_handle_cmd(struct loop_
+@@ -1894,7 +1913,10 @@ static void loop_handle_cmd(struct loop_
   failed:
  	/* complete non-aio request */
  	if (!cmd->use_aio || ret) {

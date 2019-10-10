@@ -177,7 +177,7 @@ define Device/buffalo_bhr-4grv
   ATH_SOC := ar7242
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := BHR-4GRV
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
   IMAGE_SIZE := 32256k
   IMAGES += factory.bin tftp.bin
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
@@ -204,7 +204,7 @@ define Device/buffalo_wzr-hp-ag300h
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := $$(IMAGE/default) | buffalo-enc WZR-HP-AG300H 1.99 | buffalo-tag WZR-HP-AG300H 3
   IMAGE/tftp.bin := $$(IMAGE/default) | buffalo-tftp-header
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
   SUPPORTED_DEVICES += wzr-hp-ag300h
 endef
 TARGET_DEVICES += buffalo_wzr-hp-ag300h
@@ -214,7 +214,7 @@ define Device/buffalo_wzr-hp-g302h-a1a0
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WZR-HP-G302H
   DEVICE_VARIANT := A1A0
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
   IMAGE_SIZE := 32128k
   IMAGES += factory.bin tftp.bin
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
@@ -228,7 +228,7 @@ define Device/buffalo_wzr-hp-g450h
   ATH_SOC := ar7242
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WZR-HP-G450H/WZR-450HP
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
   IMAGE_SIZE := 32256k
   IMAGES += factory.bin tftp.bin
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
@@ -272,7 +272,7 @@ define Device/comfast_cf-e5
   ATH_SOC := qca9531
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-E5/E7
-  DEVICE_PACKAGES := rssileds kmod-leds-gpio kmod-usb-core kmod-usb2 kmod-usb-net \
+  DEVICE_PACKAGES := rssileds kmod-leds-gpio kmod-usb2 kmod-usb-net \
 	kmod-usb-net-qmi-wwan -swconfig -uboot-envtools
   IMAGE_SIZE := 16192k
 endef
@@ -359,7 +359,7 @@ define Device/dlink_dir-825-b1
   DEVICE_VARIANT := B1
   IMAGE_SIZE := 6208k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
   SUPPORTED_DEVICES += dir-825-b1
 endef
 TARGET_DEVICES += dlink_dir-825-b1
@@ -369,7 +369,7 @@ define Device/dlink_dir-825-c1
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-825
   DEVICE_VARIANT := C1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
   SUPPORTED_DEVICES += dir-825-c1
   IMAGE_SIZE := 15936k
   IMAGES := factory.bin sysupgrade.bin
@@ -385,7 +385,7 @@ define Device/dlink_dir-835-a1
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-835
   DEVICE_VARIANT := A1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-leds-reset kmod-owl-loader
+  DEVICE_PACKAGES := kmod-usb2 kmod-leds-reset kmod-owl-loader
   SUPPORTED_DEVICES += dir-835-a1
   IMAGE_SIZE := 15936k
   IMAGES := factory.bin sysupgrade.bin
@@ -444,7 +444,7 @@ define Device/dlink_dir-859-a1
   DEVICE_MODEL := DIR-859
   DEVICE_VARIANT := A1
   IMAGE_SIZE := 15872k
-  DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES :=  kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
   SEAMA_SIGNATURE := wrgac37_dlink.2013gui_dir859
   SUPPORTED_DEVICES += dir-859-a1
 endef
@@ -539,7 +539,7 @@ TARGET_DEVICES += glinet_gl-ar150
 
 define Device/glinet_gl-ar300m-common-nor
   ATH_SOC := qca9531
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  DEVICE_PACKAGES := kmod-usb2
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += gl-ar300m
 endef
@@ -582,7 +582,7 @@ define Device/glinet_gl-x750
   ATH_SOC := qca9531
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-X750
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += glinet_gl-x750
@@ -605,7 +605,7 @@ define Device/iodata_wn-ac1167dgr
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
     append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | \
     senao-header -r 0x30a -p 0x61 -t 2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 TARGET_DEVICES += iodata_wn-ac1167dgr
 
@@ -618,7 +618,7 @@ define Device/iodata_wn-ac1600dgr
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
     append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | \
     senao-header -r 0x30a -p 0x60 -t 2 -v 200
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 TARGET_DEVICES += iodata_wn-ac1600dgr
 
@@ -632,7 +632,7 @@ define Device/iodata_wn-ac1600dgr2
     append-kernel | pad-to $$$$(BLOCKSIZE) | \
     append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | \
     senao-header -r 0x30a -p 0x60 -t 2 -v 200
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 TARGET_DEVICES += iodata_wn-ac1600dgr2
 
@@ -645,7 +645,7 @@ define Device/iodata_wn-ag300dgr
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
     append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | \
     senao-header -r 0x30a -p 0x47 -t 2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  DEVICE_PACKAGES := kmod-usb2
 endef
 TARGET_DEVICES += iodata_wn-ag300dgr
 
@@ -670,7 +670,7 @@ define Device/librerouter_librerouter-v1
   DEVICE_MODEL := LibreRouter
   DEVICE_VARIANT := v1
   IMAGE_SIZE := 7936k
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  DEVICE_PACKAGES := kmod-usb2
 endef
 TARGET_DEVICES += librerouter_librerouter-v1
 
@@ -733,7 +733,7 @@ TARGET_DEVICES += netgear_ex7300
 define Device/netgear_wndr3x00
   ATH_SOC := ar7161
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-reset kmod-owl-loader
   $(Device/netgear_ath79)
 endef
 
@@ -847,7 +847,7 @@ define Device/pcs_cr5000
   ATH_SOC := ar9344
   DEVICE_VENDOR := PowerCloud Systems
   DEVICE_MODEL := CR5000
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-core
+  DEVICE_PACKAGES := kmod-usb2
   IMAGE_SIZE := 7808k
   SUPPORTED_DEVICES += cr5000
 endef
@@ -868,7 +868,7 @@ define Device/pisen_ts-d084
   ATH_SOC := ar9331
   DEVICE_VENDOR := PISEN
   DEVICE_MODEL := TS-D084
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-chipidea2
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-chipidea2
   TPLINK_HWID := 0x07030101
 endef
 TARGET_DEVICES += pisen_ts-d084
@@ -895,7 +895,7 @@ define Device/pisen_wmm003n
   ATH_SOC := ar9331
   DEVICE_VENDOR := PISEN
   DEVICE_MODEL := Cloud Easy Power (WMM003N)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-chipidea2
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-chipidea2
   TPLINK_HWID := 0x07030101
 endef
 TARGET_DEVICES += pisen_wmm003n
@@ -917,7 +917,7 @@ define Device/rosinson_wr818
   DEVICE_VENDOR := Rosinson
   DEVICE_MODEL := WR818
   IMAGE_SIZE := 15872k
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += rosinson_wr818
 
@@ -926,7 +926,7 @@ define Device/trendnet_tew-823dru
   DEVICE_VENDOR := Trendnet
   DEVICE_MODEL := TEW-823DRU
   DEVICE_VARIANT := v1.0R
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
   SUPPORTED_DEVICES += tew-823dru
   IMAGE_SIZE := 15296k
   IMAGES := factory.bin sysupgrade.bin
@@ -943,7 +943,7 @@ define Device/wd_mynet-n750
   DEVICE_VENDOR := Western Digital
   DEVICE_MODEL := My Net N750
   IMAGE_SIZE := 15872k
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  DEVICE_PACKAGES := kmod-usb2
   SEAMA_SIGNATURE := wrgnd13_wd_av
   SUPPORTED_DEVICES += mynet-n750
 endef

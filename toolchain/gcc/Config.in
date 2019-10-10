@@ -2,8 +2,7 @@
 
 choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
-	default GCC_USE_VERSION_8 if arc
-	default GCC_USE_VERSION_7
+	default GCC_USE_VERSION_8
 	help
 	  Select the version of gcc you wish to use.
 
@@ -21,6 +20,11 @@ choice
 	config GCC_USE_VERSION_9
 		bool "gcc 9.x"
 endchoice
+
+config GCC_USE_IREMAP
+	default y if ( GCC_USE_VERSION_5 || GCC_USE_VERSION_7 )
+	default n
+	bool
 
 config GCC_USE_GRAPHITE
 	bool

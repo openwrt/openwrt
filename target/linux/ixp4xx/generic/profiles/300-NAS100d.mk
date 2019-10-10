@@ -10,7 +10,7 @@ define Profile/NAS100d
   PACKAGES:=kmod-ath5k \
 	kmod-scsi-core \
 	kmod-ata-core kmod-ata-artop \
-	kmod-usb-core kmod-usb2-pci kmod-usb-storage \
+	kmod-usb2-pci kmod-usb-storage \
 	kmod-fs-ext4
 endef
 
