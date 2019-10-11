@@ -10,6 +10,10 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	asrock,g10)
+		asrock_upgrade_prepare
+		nand_do_upgrade "$1"
+		;;
 	buffalo,wxr-2533dhp)
 		buffalo_upgrade_prepare_ubi
 		CI_ROOTPART="ubi_rootfs"
