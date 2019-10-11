@@ -12,6 +12,11 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+asrock,g10 |\
+nec,wg2600hp)
+	ucidef_add_switch "switch0" \
+		"2:lan" "3:lan" "4:lan" "5:lan" "6@eth1" "1:wan" "0@eth0"
+	;;
 buffalo,wxr-2533dhp |\
 compex,wpq864 |\
 netgear,d7800 |\
@@ -40,10 +45,6 @@ linksys,ea8500)
 		"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
 	ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
 	ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
-	;;
-nec,wg2600hp)
-	ucidef_add_switch "switch0" \
-		"2:lan" "3:lan" "4:lan" "5:lan" "6@eth1" "1:wan" "0@eth0"
 	;;
 netgear,r7800 |\
 tplink,c2600)
