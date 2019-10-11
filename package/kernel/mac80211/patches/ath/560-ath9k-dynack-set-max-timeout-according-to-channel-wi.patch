@@ -12,11 +12,9 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  drivers/net/wireless/ath/ath9k/dynack.c | 38 +++++++++++++++++++------
  1 file changed, 30 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/net/wireless/ath/ath9k/dynack.c b/drivers/net/wireless/ath/ath9k/dynack.c
-index 398ea872751f..fe9181533de3 100644
 --- a/drivers/net/wireless/ath/ath9k/dynack.c
 +++ b/drivers/net/wireless/ath/ath9k/dynack.c
-@@ -20,11 +20,30 @@
+@@ -20,12 +20,31 @@
  
  #define COMPUTE_TO		(5 * HZ)
  #define LATEACK_DELAY		(10 * HZ)
@@ -25,7 +23,7 @@ index 398ea872751f..fe9181533de3 100644
  #define EWMA_LEVEL		96
  #define EWMA_DIV		128
  
-+/**
+ /**
 + * ath_dynack_get_max_to - set max timeout according to channel width
 + * @ah: ath hw
 + *
@@ -46,10 +44,11 @@ index 398ea872751f..fe9181533de3 100644
 +	return 600;
 +}
 +
- /**
++/**
   * ath_dynack_ewma - EWMA (Exponentially Weighted Moving Average) calculation
   *
-@@ -126,15 +145,16 @@ static void ath_dynack_compute_ackto(struct ath_hw *ah)
+  */
+@@ -126,15 +145,16 @@ static void ath_dynack_compute_ackto(str
   */
  static void ath_dynack_compute_to(struct ath_hw *ah)
  {
@@ -70,7 +69,7 @@ index 398ea872751f..fe9181533de3 100644
  	while (da->st_rbf.h_rb != da->st_rbf.t_rb &&
  	       da->ack_rbf.h_rb != da->ack_rbf.t_rb) {
  		ack_ts = da->ack_rbf.tstamp[da->ack_rbf.h_rb];
-@@ -150,7 +170,7 @@ static void ath_dynack_compute_to(struct ath_hw *ah)
+@@ -150,7 +170,7 @@ static void ath_dynack_compute_to(struct
  		if (ack_ts > st_ts->tstamp + st_ts->dur) {
  			ackto = ack_ts - st_ts->tstamp - st_ts->dur;
  
@@ -79,7 +78,7 @@ index 398ea872751f..fe9181533de3 100644
  				sta = ieee80211_find_sta_by_ifaddr(ah->hw, dst,
  								   src);
  				if (sta) {
-@@ -207,8 +227,10 @@ void ath_dynack_sample_tx_ts(struct ath_hw *ah, struct sk_buff *skb,
+@@ -207,8 +227,10 @@ void ath_dynack_sample_tx_ts(struct ath_
  		if (ieee80211_is_assoc_req(hdr->frame_control) ||
  		    ieee80211_is_assoc_resp(hdr->frame_control) ||
  		    ieee80211_is_auth(hdr->frame_control)) {
@@ -91,6 +90,3 @@ index 398ea872751f..fe9181533de3 100644
  			if (sta) {
  				struct ath_node *an;
  
--- 
-2.17.1
-
