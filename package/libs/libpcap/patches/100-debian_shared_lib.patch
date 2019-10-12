@@ -21,8 +21,8 @@ build a shared library.
  EXTRA_NETWORK_LIBS=@EXTRA_NETWORK_LIBS@
  
  # Standard CFLAGS for building members of a shared library
--FULL_CFLAGS = $(CCOPT) $(SHLIB_CCOPT) $(INCLS) $(DEFS) $(CFLAGS)
-+FULL_CFLAGS = $(CCOPT) $(SHLIB_CCOPT) $(INCLS) $(DEFS) $(CFLAGS) $(CPPFLAGS)
+-FULL_CFLAGS = $(CCOPT) @V_LIB_CCOPT_FAT@ $(SHLIB_CCOPT) $(INCLS) $(DEFS) $(CFLAGS)
++FULL_CFLAGS = $(CCOPT) @V_LIB_CCOPT_FAT@ $(SHLIB_CCOPT) $(INCLS) $(DEFS) $(CFLAGS) $(CPPFLAGS)
 +CFLAGS_SHARED = -shared -Wl,-soname,$(SHAREDLIB)
  
  INSTALL = @INSTALL@
@@ -48,7 +48,7 @@ build a shared library.
  PUBHDR = \
  	pcap.h \
  	pcap-bpf.h \
-@@ -154,7 +167,7 @@ TAGFILES = \
+@@ -155,7 +168,7 @@ TAGFILES = \
  
  CLEANFILES = $(OBJ) libpcap.a libpcap.so.`cat $(srcdir)/VERSION` \
  	$(PROG)-`cat $(srcdir)/VERSION`.tar.gz $(GENSRC) $(GENHDR) \
@@ -57,7 +57,7 @@ build a shared library.
  
  MAN1 = pcap-config.1
  
-@@ -386,7 +399,7 @@ libpcap.a: $(OBJ)
+@@ -392,7 +405,7 @@ libpcap.a: $(OBJ)
  	$(AR) rc $@ $(OBJ) $(ADDLARCHIVEOBJS)
  	$(RANLIB) $@
  
@@ -66,7 +66,7 @@ build a shared library.
  
  libpcap.so: $(OBJ)
  	@rm -f $@
-@@ -462,6 +475,12 @@ libpcap.shareda: $(OBJ)
+@@ -468,6 +481,12 @@ libpcap.shareda: $(OBJ)
  #
  libpcap.none:
  
@@ -79,7 +79,7 @@ build a shared library.
  scanner.c: $(srcdir)/scanner.l
  	$(LEX) -P pcap_ --header-file=scanner.h --nounput -o scanner.c $<
  scanner.h: scanner.c
-@@ -474,6 +493,9 @@ scanner.h: scanner.c
+@@ -480,6 +499,9 @@ scanner.h: scanner.c
  scanner.o: scanner.c grammar.h
  	$(CC) $(FULL_CFLAGS) -c scanner.c
  
@@ -89,7 +89,7 @@ build a shared library.
  grammar.c: $(srcdir)/grammar.y
  	$(YACC) -p pcap_ -o grammar.c -d $<
  grammar.h: grammar.c
-@@ -486,6 +508,9 @@ grammar.h: grammar.c
+@@ -492,6 +514,9 @@ grammar.h: grammar.c
  grammar.o: grammar.c scanner.h
  	$(CC) $(FULL_CFLAGS) -c grammar.c
  
@@ -99,7 +99,7 @@ build a shared library.
  gencode.o: $(srcdir)/gencode.c grammar.h scanner.h
  	$(CC) $(FULL_CFLAGS) -c $(srcdir)/gencode.c
  
-@@ -524,6 +549,9 @@ pcap-config: $(srcdir)/pcap-config.in ./
+@@ -539,6 +564,9 @@ pcap-config: $(srcdir)/pcap-config.in ./
  	mv $@.tmp $@
  	chmod a+x $@
  
@@ -109,7 +109,7 @@ build a shared library.
  #
  # Remote pcap daemon.
  #
-@@ -614,14 +642,11 @@ install: install-shared install-archive
+@@ -632,14 +660,11 @@ install: install-shared install-archive
  		    $(DESTDIR)$(mandir)/man@MAN_MISC_INFO@/`echo $$i | sed 's/.manmisc.in/.@MAN_MISC_INFO@/'`; done
  
  install-shared: install-shared-$(DYEXT)
