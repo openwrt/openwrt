@@ -1,6 +1,6 @@
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -573,14 +573,6 @@ install: install-shared install-archive
+@@ -588,14 +588,6 @@ install: install-shared install-archive
  	    (mkdir -p $(DESTDIR)$(includedir); chmod 755 $(DESTDIR)$(includedir))
  	[ -d $(DESTDIR)$(includedir)/pcap ] || \
  	    (mkdir -p $(DESTDIR)$(includedir)/pcap; chmod 755 $(DESTDIR)$(includedir)/pcap)
@@ -15,7 +15,7 @@
  	for i in $(PUBHDR); do \
  		$(INSTALL_DATA) $(srcdir)/$$i \
  		    $(DESTDIR)$(includedir)/$$i; done
-@@ -590,56 +582,6 @@ install: install-shared install-archive
+@@ -605,59 +597,6 @@ install: install-shared install-archive
  	[ -d $(DESTDIR)$(libdir)/pkgconfig ] || \
  	    (mkdir -p $(DESTDIR)$(libdir)/pkgconfig; chmod 755 $(DESTDIR)$(libdir)/pkgconfig)
  	$(INSTALL_DATA) libpcap.pc $(DESTDIR)$(libdir)/pkgconfig/libpcap.pc
@@ -32,6 +32,9 @@
 -	rm -f pcap_datalink_val_to_description.3pcap && \
 -	$(LN_S) pcap_datalink_val_to_name.3pcap \
 -		 pcap_datalink_val_to_description.3pcap && \
+-	rm -f pcap_datalink_val_to_description_or_dlt.3pcap && \
+-	$(LN_S) pcap_datalink_val_to_name.3pcap \
+-		 pcap_datalink_val_to_description_or_dlt.3pcap && \
 -	rm -f pcap_dump_fopen.3pcap && \
 -	$(LN_S) pcap_dump_open.3pcap pcap_dump_fopen.3pcap && \
 -	rm -f pcap_freealldevs.3pcap && \
