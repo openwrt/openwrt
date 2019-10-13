@@ -100,8 +100,11 @@ diffconfig: FORCE
 	mkdir -p $(BIN_DIR)
 	$(SCRIPT_DIR)/diffconfig.sh > $(BIN_DIR)/config.buildinfo
 
-prepare: .config $(tools/stamp-compile) $(toolchain/stamp-compile)
+buildinfo: FORCE
 	$(_SINGLE)$(SUBMAKE) -r diffconfig buildversion feedsversion
+
+prepare: .config $(tools/stamp-compile) $(toolchain/stamp-compile)
+	$(_SINGLE)$(SUBMAKE) -r buildinfo
 
 world: prepare $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-install) $(target/stamp-install) FORCE
 	$(_SINGLE)$(SUBMAKE) -r package/index
