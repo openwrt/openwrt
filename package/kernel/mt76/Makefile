@@ -144,7 +144,6 @@ define KernelPackage/mt7615e
   DEPENDS+=@PCI_SUPPORT +kmod-mt76-core
   FILES:=\
 	$(PKG_BUILD_DIR)/mt7615/mt7615e.ko
-  MODPARAMS:=async_probe
   AUTOLOAD:=$(call AutoProbe,mt7615e)
 endef
 
