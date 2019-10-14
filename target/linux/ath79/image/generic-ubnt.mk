@@ -221,7 +221,7 @@ endef
 define Device/ubnt_unifiac-lite
   $(Device/ubnt_unifiac)
   DEVICE_MODEL := UniFi AC-Lite
-  SUPPORTED_DEVICES += ubnt-unifiac-lite
+  SUPPORTED_DEVICES += unifiac-lite
 endef
 TARGET_DEVICES += ubnt_unifiac-lite
 
