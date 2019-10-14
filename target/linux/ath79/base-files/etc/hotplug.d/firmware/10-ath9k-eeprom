@@ -111,7 +111,7 @@ case "$FIRMWARE" in
 		;;
 	wd,mynet-wifi-rangeextender)
 		caldata_extract "art" 0x1000 0x1000
-		ath9k_patch_mac $(nvram get wl0_hwaddr) "$mac"
+		ath9k_patch_mac $(nvram get wl0_hwaddr)
 		;;
 	*)
 		caldata_die "board $board is not supported yet"
