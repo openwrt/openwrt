@@ -9,13 +9,7 @@ provide the same headers as the kernel or musl.
 
 --- a/gdb/nat/aarch64-sve-linux-ptrace.h
 +++ b/gdb/nat/aarch64-sve-linux-ptrace.h
-@@ -20,12 +20,12 @@
- #ifndef AARCH64_SVE_LINUX_PTRACE_H
- #define AARCH64_SVE_LINUX_PTRACE_H
- 
--#include <asm/sigcontext.h>
-+#include <signal.h>
- #include <sys/utsname.h>
+@@ -25,7 +25,7 @@
  #include <sys/ptrace.h>
  #include <asm/ptrace.h>
  
@@ -27,8 +21,8 @@ provide the same headers as the kernel or musl.
 --- a/gdb/nat/aarch64-sve-linux-sigcontext.h
 +++ b/gdb/nat/aarch64-sve-linux-sigcontext.h
 @@ -19,6 +19,7 @@
- #ifndef AARCH64_SVE_LINUX_SIGCONTEXT_H
- #define AARCH64_SVE_LINUX_SIGCONTEXT_H
+ #ifndef NAT_AARCH64_SVE_LINUX_SIGCONTEXT_H
+ #define NAT_AARCH64_SVE_LINUX_SIGCONTEXT_H
  
 +#ifndef SVE_MAGIC
  #define SVE_MAGIC	0x53564501
