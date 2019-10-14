@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libpcap
-PKG_VERSION:=1.9.0
-PKG_RELEASE:=2
+PKG_VERSION:=1.9.1
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.us.tcpdump.org/release/ \
         http://www.tcpdump.org/release/
-PKG_HASH:=2edb88808e5913fdaa8e9c1fcaf272e19b2485338742b5074b9fe44d68f37019
+PKG_HASH:=635237637c5b619bcceba91900666b64d56ecb7be63f298f601ec786ce087094
 PKG_FIXUP:=patch-libtool
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>

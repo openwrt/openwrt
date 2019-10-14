@@ -603,6 +603,7 @@ define KernelPackage/rtc-pcf2127
   SUBMENU:=$(OTHER_MENU)
   TITLE:=NXP PCF2127 and PCF2129 RTC support
   DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core +kmod-regmap-spi
   KCONFIG:=CONFIG_RTC_DRV_PCF2127 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf2127.ko

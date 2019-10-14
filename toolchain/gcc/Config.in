@@ -21,11 +21,6 @@ choice
 		bool "gcc 9.x"
 endchoice
 
-config GCC_USE_IREMAP
-	default y if ( GCC_USE_VERSION_5 || GCC_USE_VERSION_7 )
-	default n
-	bool
-
 config GCC_USE_GRAPHITE
 	bool
 	prompt "Compile in support for the new Graphite framework in GCC 4.4+" if TOOLCHAINOPTS

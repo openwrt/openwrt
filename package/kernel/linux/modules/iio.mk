@@ -129,6 +129,51 @@ endef
 
 $(eval $(call KernelPackage,iio-dht11))
 
+
+define KernelPackage/iio-bme680
+  SUBMENU:=$(IIO_MENU)
+  TITLE:=BME680 gas/humidity/pressure/temperature sensor
+  DEPENDS:=@LINUX_4_19 +kmod-iio-core +kmod-regmap-core
+  KCONFIG:=CONFIG_BME680
+  FILES:=$(LINUX_DIR)/drivers/iio/chemical/bme680_core.ko
+endef
+
+define KernelPackage/iio-bme680/description
+ This driver adds support for Bosch Sensortec BME680 sensor with gas,
+ humidity, pressure and temperatue sensing capability.
+endef
+
+$(eval $(call KernelPackage,iio-bme680))
+
+define KernelPackage/iio-bme680-i2c
+  SUBMENU:=$(IIO_MENU)
+  TITLE:=BME680 gas/humidity/pressure/temperature sensor (I2C)
+  DEPENDS:=+kmod-iio-bme680 +kmod-regmap-i2c
+  KCONFIG:=CONFIG_BME680_I2C
+  FILES:=$(LINUX_DIR)/drivers/iio/chemical/bme680_i2c.ko
+  AUTOLOAD:=$(call AutoProbe,bme680-i2c)
+endef
+define KernelPackage/iio-bme680-i2c/description
+ This driver adds support for Bosch Sensortec's BME680 connected via I2C.
+endef
+
+$(eval $(call KernelPackage,iio-bme680-i2c))
+
+define KernelPackage/iio-bme680-spi
+  SUBMENU:=$(IIO_MENU)
+  TITLE:=BME680 gas/humidity/pressure/temperature sensor (SPI)
+  DEPENDS:=+kmod-iio-bme680 +kmod-regmap-spi
+  KCONFIG:=CONFIG_BME680_SPI
+  FILES:=$(LINUX_DIR)/drivers/iio/chemical/bme680_spi.ko
+  AUTOLOAD:=$(call AutoProbe,bme680-spi)
+endef
+define KernelPackage/iio-bme680-spi/description
+ This driver adds support for Bosch Sensortec's BME680 connected via SPI.
+endef
+
+$(eval $(call KernelPackage,iio-bme680-spi))
+
+
 define KernelPackage/iio-bmp280
   SUBMENU:=$(IIO_MENU)
   TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor

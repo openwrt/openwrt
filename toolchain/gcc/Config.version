@@ -16,3 +16,8 @@ config GCC_VERSION
 	default "7.4.0"		if GCC_VERSION_7
 	default "9.2.0"		if GCC_VERSION_9
 	default "8.3.0"
+
+config GCC_USE_IREMAP
+	bool
+	default y if ( GCC_USE_VERSION_5 || GCC_USE_VERSION_7 )
+	default n
