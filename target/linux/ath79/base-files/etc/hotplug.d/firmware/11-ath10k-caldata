@@ -22,54 +22,54 @@ case "$FIRMWARE" in
 	devolo,dvl1750i|\
 	devolo,dvl1750x)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac_crc $(macaddr_add $(mtd_get_mac_binary art 0x0) -1)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) -1)
 		;;
 	dlink,dir-859-a1)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(mtd_get_mac_ascii devdata "wlan5mac")
+		ath10k_patch_mac $(mtd_get_mac_ascii devdata "wlan5mac")
 		;;
 	elecom,wrc-1750ghbk2-i)
 		caldata_extract "art" 0x5000 0x844
 		;;
 	engenius,ecb1750)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(mtd_get_mac_ascii u-boot-env athaddr)
+		ath10k_patch_mac $(mtd_get_mac_ascii u-boot-env athaddr)
 		;;
 	engenius,epg5000|\
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr2)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +1)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +1)
 		;;
 	engenius,ews511ap)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
+		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
 		;;
 	glinet,gl-ar750|\
 	glinet,gl-ar750s)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) +1)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) +1)
 		;;
 	glinet,gl-x750)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) +2)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) +2)
 		;;
 	nec,wg800hp)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac_crc $(mtd_get_mac_text board_data 0x880)
+		ath10k_patch_mac $(mtd_get_mac_text board_data 0x880)
 		;;
 	ocedo,koala|\
 	ocedo,ursus)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(mtd_get_mac_binary art 0xc)
+		ath10k_patch_mac $(mtd_get_mac_binary art 0xc)
 		;;
 	openmesh,om5p-ac-v2)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
+		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
 		;;
 	qihoo,c301)
 		caldata_extract "radiocfg" 0x5000 0x844
-		ath10kcal_patch_mac_crc $(mtd_get_mac_ascii devdata wlan5mac)
+		ath10k_patch_mac $(mtd_get_mac_ascii devdata wlan5mac)
 		;;
 	tplink,archer-a7-v5|\
 	tplink,archer-c2-v3|\
@@ -77,29 +77,29 @@ case "$FIRMWARE" in
 	tplink,archer-c7-v5|\
 	tplink,archer-c25-v1)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) -1)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) -1)
 		;;
 	tplink,archer-c5-v1|\
 	tplink,archer-c7-v2)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary u-boot 0x1fc00) -1)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary u-boot 0x1fc00) -1)
 		;;
 	tplink,archer-d50-v1)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary romfile 0xf100) +2)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary romfile 0xf100) +2)
 		;;
 	tplink,re350k-v1)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary config 0x10008) +2)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary config 0x10008) +2)
 		;;
 	tplink,re355-v1|\
 	tplink,re450-v1)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -2)
+		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -2)
 		;;
 	tplink,re450-v2)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) +1)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) +1)
 		;;
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-lr|\
@@ -118,7 +118,7 @@ case "$FIRMWARE" in
 	case $board in
 	comfast,cf-e313ac)
 		caldata_extract "art" 0x5000 0x2f20
-		ath10kcal_patch_mac_crc $(mtd_get_mac_binary art 0x6)
+		ath10k_patch_mac $(mtd_get_mac_binary art 0x6)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		rm /lib/firmware/ath10k/QCA9888/hw2.0/board-2.bin
@@ -128,18 +128,18 @@ case "$FIRMWARE" in
 	dlink,dir-842-c3|\
 	nec,wg1200cr)
 		caldata_extract "art" 0x5000 0x2f20
-		ath10kcal_patch_mac_crc $(mtd_get_mac_ascii devdata wlan5mac)
+		ath10k_patch_mac $(mtd_get_mac_ascii devdata wlan5mac)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
 	netgear,ex6400|\
 	netgear,ex7300)
 		caldata_extract "caldata" 0x5000 0x2f20
-		ath10kcal_patch_mac $(mtd_get_mac_binary caldata 0xc)
+		ath10k_patch_mac $(mtd_get_mac_binary caldata 0xc)
 		;;
 	phicomm,k2t)
 		caldata_extract "art" 0x5000 0x2f20
-		ath10kcal_patch_mac_crc $(k2t_get_mac "5g_mac")
+		ath10k_patch_mac $(k2t_get_mac "5g_mac")
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
@@ -150,7 +150,7 @@ case "$FIRMWARE" in
 	tplink,archer-c60-v2|\
 	tplink,archer-c6-v2)
 		caldata_extract "art" 0x5000 0x2f20
-		ath10kcal_patch_mac_crc $(macaddr_add $(mtd_get_mac_binary mac 0x8) -1)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary mac 0x8) -1)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;

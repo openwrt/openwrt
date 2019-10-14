@@ -121,13 +121,7 @@ ath9k_patch_mac_crc() {
 	caldata_patch_mac "$mac" "$mac_offset" "$chksum_offset"
 }
 
-ath10kcal_patch_mac() {
-	local mac=$1
-
-	caldata_patch_mac "$mac" 0x6
-}
-
-ath10kcal_patch_mac_crc() {
+ath10k_patch_mac() {
 	local mac=$1
 
 	caldata_patch_mac "$mac" 0x6 0x2
