@@ -315,6 +315,16 @@ define Package/lscpu/description
  lscpu displays information about the CPU architecture
 endef
 
+define Package/more
+$(call Package/util-linux/Default)
+  TITLE:=filter for paging through text one screenful at a time
+  DEPENDS:= +libncurses
+endef
+
+define Package/more/description
+ more is a filter for paging through text one screenful at a time
+endef
+
 define Package/mcookie
 $(call Package/util-linux/Default)
   TITLE:=generate magic cookies for xauth
@@ -508,7 +518,6 @@ CONFIGURE_ARGS += \
 	--without-python		\
 	--without-udev			\
 	--without-readline		\
-	--disable-more			\
 	--with-ncursesw
 
 TARGET_CFLAGS += $(FPIC) -std=gnu99
@@ -667,6 +676,11 @@ define Package/lscpu/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/lscpu $(1)/usr/bin/
 endef
 
+define Package/more/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/more $(1)/usr/bin/
+endef
+
 define Package/mcookie/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/mcookie $(1)/usr/bin/
@@ -782,6 +796,7 @@ $(eval $(call BuildPackage,look))
 $(eval $(call BuildPackage,losetup))
 $(eval $(call BuildPackage,lsblk))
 $(eval $(call BuildPackage,lscpu))
+$(eval $(call BuildPackage,more))
 $(eval $(call BuildPackage,mcookie))
 $(eval $(call BuildPackage,mount-utils))
 $(eval $(call BuildPackage,namei))
