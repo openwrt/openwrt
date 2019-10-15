@@ -52,8 +52,6 @@ check: $(tools/stamp-check) $(toolchain/stamp-check) $(package/stamp-check)
 printdb:
 	@true
 
-prepare: $(target/stamp-compile)
-
 clean: FORCE
 	rm -rf $(BUILD_DIR) $(STAGING_DIR) $(BIN_DIR) $(OUTPUT_DIR)/packages/$(ARCH_PACKAGES) $(BUILD_LOG_DIR) $(TOPDIR)/staging_dir/packages
 
