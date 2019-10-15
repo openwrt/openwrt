@@ -37,7 +37,8 @@ case "$FIRMWARE" in
 		;;
 	engenius,epg5000|\
 	iodata,wn-ac1167dgr|\
-	iodata,wn-ac1600dgr2)
+	iodata,wn-ac1600dgr2|\
+	sitecom,wlr-7100)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +1)
 		;;

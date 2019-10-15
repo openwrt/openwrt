@@ -173,6 +173,7 @@ ath79_setup_interfaces()
 	iodata,wn-ac1600dgr2|\
 	iodata,wn-ag300dgr|\
 	pcs,cr5000|\
+	sitecom,wlr-7100|\
 	wd,mynet-n750)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
@@ -408,6 +409,11 @@ ath79_setup_macs()
 	rosinson,wr818)
 		wan_mac=$(mtd_get_mac_binary factory 0x0)
 		lan_mac=$(macaddr_setbit_la "$wan_mac")
+		;;
+	sitecom,wlr-7100)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
+		label_mac=$lan_mac
 		;;
 	tplink,archer-a7-v5|\
 	tplink,archer-c7-v4|\
