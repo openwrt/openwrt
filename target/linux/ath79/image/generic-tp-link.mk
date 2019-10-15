@@ -440,6 +440,16 @@ define Device/tplink_tl-wr1043n-v5
 endef
 TARGET_DEVICES += tplink_tl-wr1043n-v5
 
+define Device/tplink_tl-wr1045nd-v2
+  $(Device/tplink-8mlzma)
+  ATH_SOC := qca9558
+  DEVICE_MODEL := TL-WR1045ND
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x10450002
+endef
+TARGET_DEVICES += tplink_tl-wr1045nd-v2
+
 define Device/tplink_tl-wr2543-v1
   $(Device/tplink-8mlzma)
   ATH_SOC := ar7242
