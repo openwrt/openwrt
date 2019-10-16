@@ -86,7 +86,6 @@ ramips_setup_interfaces()
 	unielec,u7621-06-512m-64m|\
 	wavlink,wl-wn570ha1|\
 	wavlink,wl-wn575a3|\
-	xiaomi,miwifi-mini|\
 	xiaomi,miwifi-nano|\
 	xiaoyu,xy-c5|\
 	xzwifi,creativebox-v1|\
@@ -395,6 +394,7 @@ ramips_setup_interfaces()
 		"1:lan:2" "2:lan:1" "4:wan" "6@eth0"
 		;;
 	lenovo,newifi-y1|\
+	xiaomi,miwifi-mini|\
 	zbtlink,zbt-we1226)
 		ucidef_add_switch "switch0" \
 			"0:lan:2" "1:lan:1" "4:wan" "6@eth0"
