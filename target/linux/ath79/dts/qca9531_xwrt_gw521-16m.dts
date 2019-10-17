@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "qca9531_xwrt_gw521.dtsi"
+
+/ {
+	compatible = "xwrt,gw521-16m", "qca,qca9531";
+	model = "XWRT GW521 (16M)";
+};
+
+&nor_firmware {
+	compatible = "denx,uimage";
+	label = "firmware";
+};
+
+/delete-node/ &nand_flash;

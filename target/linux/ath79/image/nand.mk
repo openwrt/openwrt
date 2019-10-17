@@ -446,3 +446,34 @@ define Device/zyxel_emg2926_q10a
   RAS_BOARD := AAVK-EMG2926Q10A
 endef
 TARGET_DEVICES += zyxel_emg2926_q10a
+
+define Device/xwrt_gw521-common-nand
+  SOC := qca9531
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := GW521
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  IMAGE_SIZE := 16000k
+  KERNEL_SIZE := 4096k
+  PAGESIZE := 2048
+  VID_HDR_OFFSET := 2048
+endef
+
+define Device/xwrt_gw521-nand
+  $(Device/xwrt_gw521-common-nand)
+  DEVICE_VARIANT := NAND
+  BLOCKSIZE := 128k
+  UBINIZE_OPTS := -E 5
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SUPPORTED_DEVICES += gw521 xwrt,gw521-nand
+endef
+TARGET_DEVICES += xwrt_gw521-nand
+
+define Device/xwrt_gw521-nor
+  $(Device/xwrt_gw521-common-nand)
+  DEVICE_VARIANT := NOR
+  BLOCKSIZE := 64k
+  SUPPORTED_DEVICES += gw521 xwrt,gw521-nand
+endef
+TARGET_DEVICES += xwrt_gw521-nor

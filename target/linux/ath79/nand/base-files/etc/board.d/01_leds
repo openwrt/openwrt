@@ -37,6 +37,11 @@ netgear,wndr4300-v2|\
 netgear,wndr4500-v3)
 	ucidef_set_led_switch "wan-amber" "WAN (amber)" "amber:wan" "switch0" "0x20"
 	;;
+xwrt,gw521-nand|\
+xwrt,gw521-nor)
+	ucidef_set_led_switch "eth" "ETH" "green:eth" "switch0" "0x6"
+	ucidef_set_led_wlan "wifi" "WIFI" "green:wifi" "phy1tpt"
+	;;
 esac
 
 board_config_flush

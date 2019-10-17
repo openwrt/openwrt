@@ -13,6 +13,12 @@ zte,mf286a|\
 zte,mf286r)
 	ucidef_add_gpio_switch "power_btn_block" "Power button blocker" "20" "0"
 	;;
+xwrt,gw521-nand|\
+xwrt,gw521-nor)
+	ucidef_add_gpio_switch "lte_4v_en" "LTE 4V_EN" "16" "1"
+	ucidef_add_gpio_switch "lte_reset" "LTE Reset" "3" "0"
+	ucidef_add_gpio_switch "lte_power" "LTE Power" "1" "1"
+	;;
 esac
 
 board_config_flush
