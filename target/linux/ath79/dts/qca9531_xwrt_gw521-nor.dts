@@ -1,0 +1,13 @@
+/dts-v1/;
+
+#include "qca9531_xwrt_gw521.dtsi"
+
+/ {
+	compatible = "xwrt,gw521-nor", "qca,qca9531";
+	model = "XWRT GW521 (NOR)";
+};
+
+&nor_firmware {
+	compatible = "denx,uimage";
+	label = "firmware";
+};
