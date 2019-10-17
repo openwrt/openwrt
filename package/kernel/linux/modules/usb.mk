@@ -1399,7 +1399,7 @@ define KernelPackage/usb-net-cdc-mbim
 endef
 
 define KernelPackage/usb-net-cdc-mbim/description
- Kernel module for Option USB High Speed Mobile Devices
+ Kernel module for CDC MBIM (Mobile Broadband Interface Model) devices
 endef
 
 $(eval $(call KernelPackage,usb-net-cdc-mbim))
