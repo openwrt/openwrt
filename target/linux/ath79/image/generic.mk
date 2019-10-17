@@ -2440,6 +2440,17 @@ define Device/xwrt_m-ap300g
 endef
 TARGET_DEVICES += xwrt_m-ap300g
 
+define Device/xwrt_gw521-16m
+  SOC := qca9531
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := GW521
+  DEVICE_VARIANT := 16M
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += gw521
+endef
+TARGET_DEVICES += xwrt_gw521-16m
+
 define Device/yuncore_a770
   SOC := qca9531
   DEVICE_VENDOR := YunCore
