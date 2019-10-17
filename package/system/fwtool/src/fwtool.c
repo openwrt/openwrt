@@ -328,11 +328,13 @@ extract_data(const char *name)
 		if (extract_tail(&dbuf, &tr, sizeof(tr)))
 			break;
 
-		data_len = be32_to_cpu(tr.size) - sizeof(tr);
 		if (tr.magic != cpu_to_be32(FWIMAGE_MAGIC)) {
 			msg("Data not found\n");
+			metadata_keep = true;
 			break;
 		}
+
+		data_len = be32_to_cpu(tr.size) - sizeof(tr);
 
 		if (be32_to_cpu(tr.crc32) != tail_crc32(&dbuf, crc32)) {
 			msg("CRC error\n");
