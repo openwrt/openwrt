@@ -16,11 +16,11 @@
 		led-failsafe = &system;
 		led-running = &system;
 		led-upgrade = &system;
+		label-mac-device = &wmac;
 	};
 
-	gpio-keys-polled {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+	keys {
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -37,10 +37,10 @@
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 		pinctrl-names = "default";
-		pinctrl-0 = <&switch_led_pins>;
+		pinctrl-0 = <&switch_led_disable_pins>;
 
 		lan1 {
 			label = "tp-link:green:lan1";

@@ -294,12 +294,22 @@ static int b53_phy_probe(struct phy_device *phydev)
 	if (ret)
 		return ret;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+	linkmode_zero(phydev->supported);
+	if (is5325(dev) || is5365(dev))
+		linkmode_set_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, phydev->supported);
+	else
+		linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, phydev->supported);
+
+	linkmode_copy(phydev->advertising, phydev->supported);
+#else
 	if (is5325(dev) || is5365(dev))
 		phydev->supported = SUPPORTED_100baseT_Full;
 	else
 		phydev->supported = SUPPORTED_1000baseT_Full;
 
 	phydev->advertising = phydev->supported;
+#endif
 
 	ret = b53_switch_register(dev);
 	if (ret) {

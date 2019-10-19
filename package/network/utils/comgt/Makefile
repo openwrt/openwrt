@@ -47,7 +47,7 @@ endef
 define Package/comgt-ncm
 $(call Package/comgt/Default)
   TITLE+=NCM 3G/4G Support
-  DEPENDS:=+comgt +wwan
+  DEPENDS:=+comgt +wwan +kmod-usb-serial-option +kmod-usb-net-huawei-cdc-ncm
 endef
 
 define Package/comgt/description

@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0
+/dts-v1/;
+
+#include "mt7621_netgear_r6260_r6350_r6850.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "netgear,r6350", "mediatek,mt7621-soc";
+	model = "Netgear R6350";
+};
+
+&led_power {
+	label = "r6350:green:power";
+};
+
+&led_usb {
+	label = "r6350:green:usb";
+};
+
+&led_internet {
+	label = "r6350:green:wan";
+};
+
+&led_wifi {
+	label = "r6350:green:wifi";
+};

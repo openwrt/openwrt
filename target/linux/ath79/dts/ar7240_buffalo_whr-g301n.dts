@@ -16,9 +16,8 @@
 		led-upgrade = &diag;
 	};
 
-	gpio-keys-polled {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+	keys {
+		compatible = "gpio-keys";
 
 		router_on {
 			label = "router_on";

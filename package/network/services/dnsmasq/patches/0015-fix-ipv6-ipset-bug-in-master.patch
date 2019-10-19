@@ -1,0 +1,45 @@
+From 3becf468bad699bfdcb2d18d553bc72d4c79e23c Mon Sep 17 00:00:00 2001
+From: Kevin Darbyshire-Bryant <kevin@darbyshire-bryant.me.uk>
+Date: Wed, 12 Dec 2018 12:00:19 +0000
+Subject: [PATCH 15/32] fix ipv6 ipset bug in master
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Hi Simon,
+
+Another one fallen out of the openwrt tree shake :-)
+
+ipv6 ipset addresses weren’t being set correctly.  patch attached
+
+Cheers,
+
+Kevin D-B
+
+012C ACB2 28C6 C53E 9775  9123 B3A2 389B 9DE2 334A
+From b50fc0491e374186f982b019f293379955afd203 Mon Sep 17 00:00:00 2001
+From: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+Date: Wed, 12 Dec 2018 11:35:12 +0000
+Subject: [PATCH] ipset fix ternary order swap
+
+ee87504 Remove ability to compile without IPv6 support introduced a
+ternary operator for ip address size.  Unfortunately the true/false
+order was incorrect which meant ipv6 ipset addresses were added
+incorrectly.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/ipset.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/ipset.c
++++ b/src/ipset.c
+@@ -120,7 +120,7 @@ static int new_add_to_ipset(const char *
+   struct my_nfgenmsg *nfg;
+   struct my_nlattr *nested[2];
+   uint8_t proto;
+-  int addrsz = (af == AF_INET6) ? INADDRSZ : IN6ADDRSZ;
++  int addrsz = (af == AF_INET6) ? IN6ADDRSZ : INADDRSZ;
+ 
+   if (strlen(setname) >= IPSET_MAXNAMELEN) 
+     {

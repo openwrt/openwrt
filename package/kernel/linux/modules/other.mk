@@ -30,7 +30,7 @@ $(eval $(call KernelPackage,6lowpan))
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +kmod-crypto-ecb +kmod-lib-crc16 +kmod-hid +!LINUX_3_18:kmod-crypto-cmac +!LINUX_3_18:kmod-regmap +!(LINUX_3_18||LINUX_4_9):kmod-crypto-ecdh
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +kmod-crypto-ecb +kmod-lib-crc16 +kmod-hid +kmod-crypto-cmac +kmod-regmap-core +!LINUX_4_9:kmod-crypto-ecdh
   KCONFIG:= \
 	CONFIG_BT \
 	CONFIG_BT_BREDR=y \
@@ -172,7 +172,7 @@ define KernelPackage/eeprom-at24
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM AT24 support
   KCONFIG:=CONFIG_EEPROM_AT24
-  DEPENDS:=+kmod-i2c-core +kmod-nvmem +LINUX_4_19:kmod-regmap
+  DEPENDS:=+kmod-i2c-core +kmod-nvmem +LINUX_4_19:kmod-regmap-i2c
   FILES:=$(LINUX_DIR)/drivers/misc/eeprom/at24.ko
   AUTOLOAD:=$(call AutoProbe,at24)
 endef
@@ -219,7 +219,7 @@ $(eval $(call KernelPackage,gpio-dev))
 define KernelPackage/gpio-mcp23s08
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Microchip MCP23xxx I/O expander
-  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core +!(LINUX_3_18||LINUX_4_9):kmod-regmap
+  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core +!LINUX_4_9:kmod-regmap-i2c
   KCONFIG:= \
 	CONFIG_GPIO_MCP23S08 \
 	CONFIG_PINCTRL_MCP23S08
@@ -476,7 +476,7 @@ define KernelPackage/rtc-ds1307
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1307 (and compatible) RTC support
   DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
-  DEPENDS:=+kmod-i2c-core +!(LINUX_3_18||LINUX_4_9):kmod-regmap +!(LINUX_3_18||LINUX_4_9):kmod-hwmon-core
+  DEPENDS:=+kmod-i2c-core +!LINUX_4_9:kmod-regmap-i2c +!LINUX_4_9:kmod-hwmon-core
   KCONFIG:=CONFIG_RTC_DRV_DS1307 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1307.ko
@@ -526,6 +526,24 @@ define KernelPackage/rtc-ds1672/description
 endef
 
 $(eval $(call KernelPackage,rtc-ds1672))
+
+
+define KernelPackage/rtc-em3027
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Microelectronic EM3027 RTC support
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core
+  KCONFIG:=CONFIG_RTC_DRV_EM3027 \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-em3027.ko
+  AUTOLOAD:=$(call AutoProbe,rtc-em3027)
+endef
+
+define KernelPackage/rtc-em3027/description
+ Kernel module for Microelectronic EM3027 RTC.
+endef
+
+$(eval $(call KernelPackage,rtc-em3027))
 
 
 define KernelPackage/rtc-isl1208
@@ -580,6 +598,23 @@ define KernelPackage/rtc-pcf2123/description
 endef
 
 $(eval $(call KernelPackage,rtc-pcf2123))
+
+define KernelPackage/rtc-pcf2127
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=NXP PCF2127 and PCF2129 RTC support
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core +kmod-regmap-spi
+  KCONFIG:=CONFIG_RTC_DRV_PCF2127 \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf2127.ko
+  AUTOLOAD:=$(call AutoProbe,rtc-pcf2127)
+endef
+
+define KernelPackage/rtc-pcf2127/description
+ Kernel module for NXP PCF2127 and PCF2129 RTC chip
+endef
+
+$(eval $(call KernelPackage,rtc-pcf2127))
 
 define KernelPackage/rtc-pt7c4338
   SUBMENU:=$(OTHER_MENU)
@@ -710,32 +745,71 @@ endef
 $(eval $(call KernelPackage,serial-8250-exar))
 
 
-define KernelPackage/regmap
+define KernelPackage/regmap-core
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Generic register map support
-  DEPENDS:=+kmod-lib-lzo +kmod-i2c-core
-  KCONFIG:=CONFIG_REGMAP \
-	   CONFIG_REGMAP_MMIO \
-	   CONFIG_REGMAP_SPI \
-	   CONFIG_REGMAP_I2C \
-	   CONFIG_SPI=y
-  FILES:= \
-	$(LINUX_DIR)/drivers/base/regmap/regmap-i2c.ko \
-	$(LINUX_DIR)/drivers/base/regmap/regmap-mmio.ko \
-	$(if $(CONFIG_SPI),$(LINUX_DIR)/drivers/base/regmap/regmap-spi.ko)
-  AUTOLOAD:=$(call AutoLoad,21,regmap-core regmap-i2c regmap-mmio regmap-spi)
-  ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
-   ifeq ($(strip $(CONFIG_KERNEL_GIT_CLONE_URI)),"")
-    FILES += $(LINUX_DIR)/drivers/base/regmap/regmap-core.ko
-   endif
-  endif
+  HIDDEN:=1
+  KCONFIG:=CONFIG_REGMAP
+ifneq ($(wildcard $(LINUX_DIR)/drivers/base/regmap/regmap-core.ko),)
+  FILES:=$(LINUX_DIR)/drivers/base/regmap/regmap-core.ko
+endif
 endef
 
-define KernelPackage/regmap/description
+define KernelPackage/regmap-core/description
  Generic register map support
 endef
 
-$(eval $(call KernelPackage,regmap))
+$(eval $(call KernelPackage,regmap-core))
+
+
+define KernelPackage/regmap-spi
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=SPI register map support
+  DEPENDS:=+kmod-regmap-core
+  HIDDEN:=1
+  KCONFIG:=CONFIG_REGMAP_SPI \
+	   CONFIG_SPI=y
+  FILES:=$(LINUX_DIR)/drivers/base/regmap/regmap-spi.ko
+endef
+
+define KernelPackage/regmap-spi/description
+ SPI register map support
+endef
+
+$(eval $(call KernelPackage,regmap-spi))
+
+
+define KernelPackage/regmap-i2c
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=I2C register map support
+  DEPENDS:=+kmod-regmap-core +kmod-i2c-core
+  HIDDEN:=1
+  KCONFIG:=CONFIG_REGMAP_I2C
+  FILES:=$(LINUX_DIR)/drivers/base/regmap/regmap-i2c.ko
+endef
+
+define KernelPackage/regmap-i2c/description
+ I2C register map support
+endef
+
+$(eval $(call KernelPackage,regmap-i2c))
+
+
+define KernelPackage/regmap-mmio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=MMIO register map support
+  DEPENDS:=+kmod-regmap-core
+  HIDDEN:=1
+  KCONFIG:=CONFIG_REGMAP_MMIO
+  FILES:=$(LINUX_DIR)/drivers/base/regmap/regmap-mmio.ko
+endef
+
+define KernelPackage/regmap-mmio/description
+ MMIO register map support
+endef
+
+$(eval $(call KernelPackage,regmap-mmio))
+
 
 define KernelPackage/ikconfig
   SUBMENU:=$(OTHER_MENU)
@@ -895,21 +969,6 @@ endef
 
 $(eval $(call KernelPackage,random-core))
 
-define KernelPackage/random-omap
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Hardware Random Number Generator OMAP support
-  KCONFIG:=CONFIG_HW_RANDOM_OMAP
-  FILES:=$(LINUX_DIR)/drivers/char/hw_random/omap-rng.ko
-  DEPENDS:=@TARGET_omap24xx +kmod-random-core
-  AUTOLOAD:=$(call AutoProbe,random-omap)
-endef
-
-define KernelPackage/random-omap/description
- Kernel module for the OMAP Random Number Generator
- found on OMAP16xx, OMAP2/3/4/5 and AM33xx/AM43xx multimedia processors.
-endef
-
-$(eval $(call KernelPackage,random-omap))
 
 define KernelPackage/random-tpm
   SUBMENU:=$(OTHER_MENU)
@@ -996,7 +1055,7 @@ $(eval $(call KernelPackage,echo))
 define KernelPackage/bmp085
   SUBMENU:=$(OTHER_MENU)
   TITLE:=BMP085/BMP18x pressure sensor
-  DEPENDS:= +kmod-regmap @!LINUX_3_18
+  DEPENDS:= +kmod-regmap-core
   KCONFIG:= CONFIG_BMP085
   FILES:= $(LINUX_DIR)/drivers/misc/bmp085.ko
 endef
@@ -1043,6 +1102,7 @@ $(eval $(call KernelPackage,bmp085-spi))
 define KernelPackage/tpm
   SUBMENU:=$(OTHER_MENU)
   TITLE:=TPM Hardware Support
+  DEPENDS:= +!LINUX_4_14:kmod-random-core
   KCONFIG:= CONFIG_TCG_TPM
   FILES:= $(LINUX_DIR)/drivers/char/tpm/tpm.ko
   AUTOLOAD:=$(call AutoLoad,10,tpm,1)

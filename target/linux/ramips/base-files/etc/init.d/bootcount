@@ -2,11 +2,13 @@
 
 START=99
 
-start() {
-	. /lib/functions.sh
-
-	local board=$(board_name)
-	if [ $board = "sk-wb8" ]; then
+boot() {
+	case $(board_name) in
+	samknows,whitebox-v8)
 		fw_setenv bootcount 0
-	fi
+		;;
+	xiaomi,miwifi-nano)
+		fw_setenv flag_boot_success 1
+		;;
+	esac
 }

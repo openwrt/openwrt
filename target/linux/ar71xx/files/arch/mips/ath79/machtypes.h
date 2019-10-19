@@ -76,6 +76,7 @@ enum ath79_mach_type {
 	ATH79_MACH_CF_E530N,			/* COMFAST CF-E530N */
 	ATH79_MACH_CPE210,			/* TP-LINK CPE210 v1 */
 	ATH79_MACH_CPE210_V2,			/* TP-LINK CPE210 v2 */
+	ATH79_MACH_CPE210_V3,			/* TP-LINK CPE210 v3 */
 	ATH79_MACH_CPE505N,			/* P&W CPE505N */
 	ATH79_MACH_CPE510,			/* TP-LINK CPE510 */
 	ATH79_MACH_CPE830,			/* YunCore CPE830 */
@@ -320,6 +321,7 @@ enum ath79_mach_type {
 	ATH79_MACH_UBNT_AIRGWP,			/* Ubiquiti AirGateway Pro */
 	ATH79_MACH_UBNT_AIRROUTER,		/* Ubiquiti AirRouter */
 	ATH79_MACH_UBNT_BULLET_M,		/* Ubiquiti Bullet M */
+	ATH79_MACH_UBNT_BULLET_M_XW,		/* Ubiquiti Bullet M XW */
 	ATH79_MACH_UBNT_LBE_M5,			/* Ubiquiti Litebeam M5 */
 	ATH79_MACH_UBNT_LOCO_M_XW,		/* Ubiquiti Loco M XW */
 	ATH79_MACH_UBNT_LSSR71,			/* Ubiquiti LS-SR71 */

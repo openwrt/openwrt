@@ -99,6 +99,7 @@ define Device/96345GW2-generic
   DEVICE_DTS := bcm96345GW2
   CFE_BOARD_ID := 96345GW2
   CFE_CHIP_ID := 6345
+  DEFAULT := n
 endef
 TARGET_DEVICES += 96345GW2-generic
 
@@ -250,6 +251,7 @@ define Device/AR1004G
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += AR1004G
 
@@ -263,6 +265,7 @@ define Device/F5D7633
   BLOCK_SIZE := 0x20000
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += F5D7633
 
@@ -341,6 +344,7 @@ define Device/BTV2110
   CFE_EXTRAS += --layoutver 5
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += BTV2110
 
@@ -353,6 +357,7 @@ define Device/BTV2500V
   CFE_EXTRAS += --layoutver 5
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += BTV2500V
 
@@ -404,6 +409,7 @@ define Device/CT-536_CT-5621
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += CT-536_CT-5621
 
@@ -415,6 +421,7 @@ define Device/CT-5365
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += CT-5365
 
@@ -488,6 +495,7 @@ define Device/DSL2640B-B
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += DSL2640B-B
 
@@ -499,6 +507,7 @@ define Device/DSL2640U
   CFE_CHIP_ID := 6338
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += DSL2640U
 
@@ -582,6 +591,7 @@ define Device/DV-201AMR
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += DV-201AMR
 
@@ -596,6 +606,7 @@ define Device/RTA770BW
   CFE_EXTRAS += --layoutver 5
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += RTA770BW
 
@@ -609,6 +620,7 @@ define Device/RTA770W
   CFE_EXTRAS += --layoutver 5
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += RTA770W
 
@@ -621,6 +633,7 @@ define Device/RTA1025W_16
   CFE_EXTRAS += --layoutver 5
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += RTA1025W_16
 
@@ -631,6 +644,7 @@ define Device/RTA1320_16M
   CFE_BOARD_ID := RTA1320_16M
   CFE_CHIP_ID := 6338
   CFE_EXTRAS += --layoutver 5
+  DEFAULT := n
 endef
 TARGET_DEVICES += RTA1320_16M
 
@@ -751,6 +765,7 @@ define Device/livebox
   DEVICE_DTS := livebox-blue-5g
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB1_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += livebox
 
@@ -773,6 +788,7 @@ define Device/DG834GT_PN
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(ATH5K_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += DG834GT_PN
 
@@ -785,12 +801,12 @@ define Device/DG834GTv4
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += DG834GTv4
 
 define Device/DGND3700v1
   $(Device/bcm63xx_netgear)
-  IMAGES := factory.chk sysupgrade.bin
   DEVICE_TITLE := Netgear DGND3700 v1
   DEVICE_DTS := dgnd3700v1
   CFE_BOARD_ID := 96368MVWG
@@ -805,7 +821,6 @@ TARGET_DEVICES += DGND3700v1
 
 define Device/DGND3800B
   $(Device/bcm63xx_netgear)
-  IMAGES := factory.chk sysupgrade.bin
   DEVICE_TITLE := Netgear DGND3800B
   DEVICE_DTS := dgnd3700v1
   CFE_BOARD_ID := 96368MVWG
@@ -820,7 +835,6 @@ TARGET_DEVICES += DGND3800B
 
 define Device/EVG2000
   $(Device/bcm63xx_netgear)
-  IMAGES := factory.chk sysupgrade.bin
   DEVICE_TITLE := Netgear EVG2000
   DEVICE_DTS := evg2000
   CFE_BOARD_ID := 96369PVG
@@ -922,6 +936,7 @@ define Device/FAST2404
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += FAST2404
 
@@ -944,6 +959,7 @@ define Device/FAST2604
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += FAST2604
 
@@ -1055,6 +1071,7 @@ define Device/SPW500V
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += SPW500V
 
@@ -1092,6 +1109,7 @@ define Device/CPVA502PLUS
   CFE_EXTRAS += --signature "Telsey Tlc" --signature2 "99.99.999"
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += CPVA502PLUS
 
@@ -1117,6 +1135,7 @@ define Device/MAGIC
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(RT63_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += MAGIC
 
@@ -1131,6 +1150,7 @@ define Device/TD-W8900GB
   IMAGE_OFFSET := 0x20000
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += TD-W8900GB
 
@@ -1143,6 +1163,7 @@ define Device/USR9108
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB1_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += USR9108
 

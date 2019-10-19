@@ -20,8 +20,7 @@
 	};
 
 	keys: keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		usb {
 			label = "usb";
@@ -89,9 +88,9 @@
 				label = "u-boot-env";
 			};
 
-			ART: partition@50000 {
+			art: partition@50000 {
 				reg = <0x50000 0x10000>;
-				label = "ART";
+				label = "art";
 				read-only;
 			};
 

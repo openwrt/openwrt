@@ -14,12 +14,12 @@ CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=neon
 MAINTAINER:=Luka Perkov <luka@openwrt.org>
 
-KERNEL_PATCHVER:=4.14
+KERNEL_PATCHVER:=4.19
 
 include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:=zImage dtbs
 
-DEFAULT_PACKAGES += uboot-envtools mkf2fs e2fsprogs
+DEFAULT_PACKAGES += uboot-envtools mkf2fs e2fsprogs blkid
 
 $(eval $(call BuildTarget))

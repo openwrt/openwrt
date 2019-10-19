@@ -25,7 +25,7 @@
 		clock-frequency = <40000000>;
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		rf: rf_green {
@@ -34,9 +34,8 @@
 		};
 	};
 
-	gpio-keys-polled {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+	keys {
+		compatible = "gpio-keys";
 
 		wps {
 			label = "sw4";

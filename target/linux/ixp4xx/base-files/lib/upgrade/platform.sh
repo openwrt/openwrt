@@ -68,7 +68,7 @@ platform_do_upgrade_combined() {
 	   [ ${erase_size:-0} -gt 0 ];
 	then
 		local append=""
-		[ -f "$CONF_TAR" -a "$SAVE_CONFIG" -eq 1 ] && append="-j $CONF_TAR"
+		[ -f "$UPGRADE_BACKUP" ] && append="-j $UPGRADE_BACKUP"
 
 		# write the kernel
 		dd if="$1" bs=$CI_BLKSZ skip=1 count=$kern_blocks 2>/dev/null | \
@@ -128,10 +128,10 @@ platform_do_upgrade() {
 	v "board=$board"
 	case "$board" in
 	avila | cambria )
-		platform_do_upgrade_combined "$ARGV"
+		platform_do_upgrade_combined "$1"
 		;;
 	*)
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$1"
 		;;
 	esac
 }

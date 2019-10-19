@@ -15,13 +15,13 @@
  
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1509,6 +1509,9 @@ int genphy_update_link(struct phy_device
+@@ -1512,6 +1512,9 @@ int genphy_update_link(struct phy_device
  {
  	int status;
  
 +	if (phydev->drv && phydev->drv->update_link)
 +		return phydev->drv->update_link(phydev);
 +
- 	/* Do a fake read */
- 	status = phy_read(phydev, MII_BMSR);
- 	if (status < 0)
+ 	/* The link state is latched low so that momentary link
+ 	 * drops can be detected. Do not double-read the status
+ 	 * in polling mode to detect such short link drops.

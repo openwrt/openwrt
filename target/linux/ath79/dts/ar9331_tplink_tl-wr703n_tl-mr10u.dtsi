@@ -13,11 +13,11 @@
 		led-failsafe = &system;
 		led-running = &system;
 		led-upgrade = &system;
+		label-mac-device = &eth0;
 	};
 
-	gpio-keys-polled {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+	keys {
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -27,7 +27,7 @@
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		system: system {
@@ -43,7 +43,6 @@
 		regulator-max-microvolt = <5000000>;
 		enable-active-high;
 	};
-
 };
 
 &spi {

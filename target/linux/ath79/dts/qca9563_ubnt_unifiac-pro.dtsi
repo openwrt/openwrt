@@ -2,6 +2,12 @@
 
 #include "qca9563_ubnt_unifiac.dtsi"
 
+/ {
+	aliases {
+		label-mac-device = &eth0;
+	};
+};
+
 &mdio0 {
 	status = "okay";
 	phy-mask = <0>;

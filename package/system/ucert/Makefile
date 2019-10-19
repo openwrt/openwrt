@@ -17,8 +17,6 @@ PKG_LICENSE_FILES:=COPYING
 
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
-PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -47,6 +45,7 @@ define Package/ucert
   CATEGORY:=Base system
   DEPENDS:=+usign +libubox
   TITLE:=OpenWrt certificate verification utility
+  PROVIDES:=ucert
   CONFLICTS:=ucert-full
   VARIANT:=tiny
 endef

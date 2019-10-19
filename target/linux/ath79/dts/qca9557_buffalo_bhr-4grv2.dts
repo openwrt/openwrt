@@ -21,7 +21,7 @@
 		bootargs = "console=ttyS0,115200n8";
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		power: power {
@@ -46,9 +46,8 @@
 		};
 	};
 
-	gpio-keys-polled {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+	keys {
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";

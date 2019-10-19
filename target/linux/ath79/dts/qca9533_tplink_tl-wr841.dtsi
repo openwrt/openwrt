@@ -11,6 +11,10 @@
 		bootargs = "console=ttyS0,115200n8";
 	};
 
+	aliases {
+		label-mac-device = &wmac;
+	};
+
 	gpio_leds: leds {
 		compatible = "gpio-leds";
 

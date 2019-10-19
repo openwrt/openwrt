@@ -20,12 +20,13 @@ define Target/Description
 	Build firmware image for Zynq 7000 SoC devices.
 endef
 
-KERNEL_PATCHVER:=4.14
+KERNEL_PATCHVER:=4.19
 
 include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:=Image dtbs
 
-DEFAULT_PACKAGES += uboot-envtools mkf2fs e2fsprogs
+DEFAULT_PACKAGES += uboot-envtools mkf2fs e2fsprogs \
+	kmod-usb-storage kmod-fs-msdos
 
 $(eval $(call BuildTarget))

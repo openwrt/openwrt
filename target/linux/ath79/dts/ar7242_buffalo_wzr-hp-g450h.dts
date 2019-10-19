@@ -10,6 +10,10 @@
 	compatible = "buffalo,wzr-hp-g450h", "qca,ar7242";
 	model = "Buffalo WZR-HP-G450H/WZR-450HP";
 
+	aliases {
+		label-mac-device = &eth0;
+	};
+
 	ath9k-leds {
 		compatible = "gpio-leds";
 
@@ -57,7 +61,7 @@
 };
 
 &eth0 {
-	mtd-mac-address = <&ART 0x1002>;
+	mtd-mac-address = <&art 0x1002>;
 };
 
 &sec_vpn {
@@ -70,7 +74,7 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
-		mtd-mac-address = <&ART 0x1002>;
+		mtd-mac-address = <&art 0x1002>;
 		qca,no-eeprom;
 		#gpio-cells = <2>;
 		gpio-controller;
