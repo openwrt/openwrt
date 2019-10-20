@@ -56,7 +56,8 @@ generate_keys() {
 	[ -n "$GENKEY_CMD" ] && {
 		$GENKEY_CMD \
 			-days ${days:-730} -newkey ${KEY_OPTS} -keyout "${UHTTPD_KEY}.new" -out "${UHTTPD_CERT}.new" \
-			-subj /C="${country:-ZZ}"/ST="${state:-Somewhere}"/L="${location:-Unknown}"/O="${commonname:-OpenWrt}$UNIQUEID"/CN="${commonname:-OpenWrt}"
+			-subj /C="${country:-ZZ}"/ST="${state:-Somewhere}"/L="${location:-Unknown}"/O="${commonname:-OpenWrt}$UNIQUEID"/CN="${commonname:-OpenWrt}" \
+			-addext extendedKeyUsage=serverAuth -addext subjectAltName=DNS:"${commonname:-OpenWrt}"
 		sync
 		mv "${UHTTPD_KEY}.new" "${UHTTPD_KEY}"
 		mv "${UHTTPD_CERT}.new" "${UHTTPD_CERT}"
