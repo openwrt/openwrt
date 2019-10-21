@@ -188,7 +188,7 @@ case "$FIRMWARE" in
 		;;
 	wd,mynet-wifi-rangeextender)
 		ath9k_eeprom_extract "art" 4096 4096
-		ath9k_patch_fw_mac $(nvram get wl0_hwaddr) "$mac" 2
+		ath9k_patch_fw_mac $(nvram get wl0_hwaddr) 2
 		;;
 	*)
 		ath9k_eeprom_die "board $board is not supported yet"
