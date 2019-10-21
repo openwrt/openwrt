@@ -17,7 +17,6 @@
 			status = "okay";
 			pinctrl-0 = <&mdio_pins>;
 			pinctrl-names = "default";
-			phy-reset-gpio = <&tlmm 47 0>;
 		};
 
 		ess-psgmii@98000 {
@@ -157,6 +156,13 @@
 			pins = "gpio7";
 			function = "mdc";
 			bias-pull-up;
+		};
+
+		pin_rst {
+			pins = "gpio47";
+			function = "gpio";
+			bias-disable;
+			output-high;
 		};
 	};
 
