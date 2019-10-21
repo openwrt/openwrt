@@ -691,7 +691,7 @@ define Device/unielec_u7621-06-16m
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
   SUPPORTED_DEVICES += u7621-06-256M-16M unielec,u7621-06-256m-16m
 endef
-TARGET_DEVICES += unielec_u7621-06-256m-16m
+TARGET_DEVICES += unielec_u7621-06-16m
 
 define Device/unielec_u7621-06-64m
   MTK_SOC := mt7621
@@ -702,7 +702,7 @@ define Device/unielec_u7621-06-64m
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
   SUPPORTED_DEVICES += unielec,u7621-06-512m-64m
 endef
-TARGET_DEVICES += unielec_u7621-06-512m-64m
+TARGET_DEVICES += unielec_u7621-06-64m
 
 define Device/wevo_11acnas
   MTK_SOC := mt7621

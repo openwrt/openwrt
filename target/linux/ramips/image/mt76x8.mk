@@ -463,7 +463,7 @@ define Device/unielec_u7628-01-16m
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += u7628-01-128M-16M unielec,u7628-01-128m-16m
 endef
-TARGET_DEVICES += unielec_u7628-01-128m-16m
+TARGET_DEVICES += unielec_u7628-01-16m
 
 define Device/vocore_vocore2
   MTK_SOC := mt7628an
