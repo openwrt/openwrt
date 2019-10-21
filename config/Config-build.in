@@ -37,21 +37,13 @@ menu "Global build settings"
 		  - Enabling per-device rootfs support
 		  ...
 
-	config INSTALL_LOCAL_KEY
-		bool "Install local usign key into image"
-		default n
-
 	config SIGNED_PACKAGES
 		bool "Cryptographically signed package lists"
-		default n
-
-	config SIGNED_IMAGES
-		bool "Cryptographically signed firmware images"
-		default n
+		default y
 
 	config SIGNATURE_CHECK
 		bool "Enable signature checking in opkg"
-		default y
+		default SIGNED_PACKAGES
 
 	comment "General build options"
 
