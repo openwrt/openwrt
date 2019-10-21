@@ -22,10 +22,10 @@ add_insmod() {
 [ -e /etc/config/network ] && {
 	# only try to parse network config on openwrt
 
+	reset_cb
+	include /lib/network
+	scan_interfaces
 	find_ifname() {(
-		reset_cb
-		include /lib/network
-		scan_interfaces
 		config_get "$1" ifname
 	)}
 } || {
