@@ -10,12 +10,15 @@ case "$board" in
 engenius,epg5000)
 	migrate_leds ":wlan-2g=:wlan2g" ":wlan-5g=:wlan5g"
 	;;
-tplink,archer-c7-v2)
-	migrate_leds ":blue:=:green:"
-	;;
+tplink,archer-c25-v1|\
+tplink,archer-c58-v1|\
+tplink,archer-c59-v1|\
 tplink,archer-c7-v4|\
 tplink,archer-c7-v5)
 	migrate_leds "^$boardonly:=tp-link:"
+	;;
+tplink,archer-c7-v2)
+	migrate_leds ":blue:=:green:"
 	;;
 wd,mynet-n750)
 	migrate_leds "wd:=mynet-n750:"
