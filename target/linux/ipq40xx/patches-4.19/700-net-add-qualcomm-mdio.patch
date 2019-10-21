@@ -180,7 +180,7 @@ index 000000000..88fe5dc2b
 +	mdio_node = of_find_node_by_name(NULL, "mdio");
 +	if (!mdio_node) {
 +		dev_err(&pdev->dev, "Could not find mdio node\n");
-+		return -ENOENT;
++		return 0;
 +	}
 +
 +	ret = of_get_named_gpio(mdio_node, "phy-reset-gpio", 0);
