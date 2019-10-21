@@ -2,95 +2,7 @@
 
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
-. /lib/functions.sh
-. /lib/functions/system.sh
-
-ath9k_eeprom_die() {
-	echo "ath9k eeprom: " "$*"
-	exit 1
-}
-
-ath9k_eeprom_extract() {
-	local part=$1
-	local offset=$(($2))
-	local count=$(($3))
-	local mtd
-
-	mtd=$(find_mtd_chardev $part)
-	[ -n "$mtd" ] || \
-		ath9k_eeprom_die "no mtd device found for partition $part"
-
-	dd if=$mtd of=/lib/firmware/$FIRMWARE iflag=skip_bytes bs=$count skip=$offset count=1 2>/dev/null || \
-		ath9k_eeprom_die "failed to extract from $mtd"
-}
-
-ath9k_eeprom_extract_reverse() {
-	local part=$1
-	local offset=$2
-	local count=$(($3))
-	local mtd
-	local reversed
-	local caldata
-
-	mtd=$(find_mtd_chardev "$part")
-	reversed=$(hexdump -v -s $offset -n $count -e '/1 "%02x "' $mtd)
-
-	for byte in $reversed; do
-		caldata="\x${byte}${caldata}"
-	done
-
-	printf "%b" "$caldata" > /lib/firmware/$FIRMWARE
-}
-
-xor() {
-	local val
-	local ret="0x$1"
-	local retlen=${#1}
-
-	shift
-	while [ -n "$1" ]; do
-		val="0x$1"
-		ret=$((ret ^ val))
-		shift
-	done
-
-	printf "%0${retlen}x" "$ret"
-}
-
-ath9k_patch_fw_mac() {
-	local mac=$1
-	local mac_offset=$(($2))
-	local chksum_offset=$3
-	local xor_mac
-	local xor_fw_mac
-	local xor_fw_chksum
-
-	[ -z "$mac" -o -z "$mac_offset" ] && return
-
-	[ -n "$chksum_offset" ] && {
-		xor_mac=${mac//:/}
-		xor_mac="${xor_mac:0:4} ${xor_mac:4:4} ${xor_mac:8:4}"
-
-		xor_fw_mac=$(hexdump -v -n 6 -s $mac_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
-		xor_fw_mac="${xor_fw_mac:0:4} ${xor_fw_mac:4:4} ${xor_fw_mac:8:4}"
-
-		xor_fw_chksum=$(hexdump -v -n 2 -s $chksum_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
-		xor_fw_chksum=$(xor $xor_fw_chksum $xor_fw_mac $xor_mac)
-
-		printf "%b" "\x${xor_fw_chksum:0:2}\x${xor_fw_chksum:2:2}" | \
-			dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=$(($chksum_offset)) count=2
-	}
-
-	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc oflag=seek_bytes bs=6 seek=$mac_offset count=1
-}
-
-ath9k_patch_fw_mac_crc() {
-	local mac=$1
-	local mac_offset=$2
-	local chksum_offset=$((mac_offset - 10))
-
-	ath9k_patch_fw_mac "${mac}" "${mac_offset}" "${chksum_offset}"
-}
+. /lib/functions/caldata.sh
 
 board=$(board_name)
 
@@ -98,12 +10,12 @@ case "$FIRMWARE" in
 "ath9k-eeprom-ahb-18100000.wmac.bin")
 	case $board in
 	avm,fritz4020)
-		ath9k_eeprom_extract_reverse "urlader" 0x1541 0x440
+		caldata_extract_reverse "urlader" 0x1541 0x440
 		;;
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
-		ath9k_eeprom_extract "art" 0x1000 0x440
-		ath9k_patch_fw_mac $(mtd_get_mac_text "mac" 0x4) 0x2
+		caldata_extract "art" 0x1000 0x440
+		ath9k_patch_mac $(mtd_get_mac_text "mac" 0x4)
 		;;
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
@@ -111,52 +23,52 @@ case "$FIRMWARE" in
 	dlink,dir-859-a1|\
 	nec,wg1200cr|\
 	wd,mynet-n750)
-		ath9k_eeprom_extract "art" 0x1000 0x440
-		ath9k_patch_fw_mac $(mtd_get_mac_ascii devdata "wlan24mac") 0x2
+		caldata_extract "art" 0x1000 0x440
+		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan24mac")
 		;;
 	engenius,ecb1750)
-		ath9k_eeprom_extract "art" 0x1000 0x440
-		ath9k_patch_fw_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env "athaddr") +1) 0x2
+		caldata_extract "art" 0x1000 0x440
+		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env "athaddr") +1)
 		;;
 	engenius,epg5000|\
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr|\
 	iodata,wn-ac1600dgr2|\
 	iodata,wn-ag300dgr)
-		ath9k_eeprom_extract "art" 0x1000 0x440
-		ath9k_patch_fw_mac $(mtd_get_mac_ascii u-boot-env ethaddr) 0x2
+		caldata_extract "art" 0x1000 0x440
+		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env ethaddr)
 		;;
 	nec,wg800hp)
-		ath9k_eeprom_extract "art" 0x1000 0x440
-		ath9k_patch_fw_mac $(mtd_get_mac_text board_data 0x680) 0x2
+		caldata_extract "art" 0x1000 0x440
+		ath9k_patch_mac $(mtd_get_mac_text board_data 0x680)
 		;;
 	qihoo,c301)
-		ath9k_eeprom_extract "radiocfg" 0x1000 0x440
-		ath9k_patch_fw_mac $(mtd_get_mac_ascii devdata "wlan24mac") 0x2
+		caldata_extract "radiocfg" 0x1000 0x440
+		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan24mac")
 		;;
 	*)
-		ath9k_eeprom_die "board $board is not supported yet"
+		caldata_die "board $board is not supported yet"
 		;;
 	esac
 	;;
 "ath9k-eeprom-pci-0000:00:00.0.bin")
 	case $board in
 	avm,fritz300e)
-		ath9k_eeprom_extract_reverse "urloader" 0x1541 0x440
+		caldata_extract_reverse "urloader" 0x1541 0x440
 		;;
 	buffalo,whr-g301n|\
 	buffalo,wzr-hp-g302h-a1a0|\
 	tplink,tl-wr841-v5|\
 	tplink,tl-wr941-v4)
-		ath9k_eeprom_extract "art" 0x1000 0xeb8
+		caldata_extract "art" 0x1000 0xeb8
 		;;
 	buffalo,wzr-hp-g450h)
-		ath9k_eeprom_extract "art" 0x1000 0x440
+		caldata_extract "art" 0x1000 0x440
 		;;
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
-		ath9k_eeprom_extract "art" 0x5000 0x440
-		ath9k_patch_fw_mac $(macaddr_add $(mtd_get_mac_text "mac" 0x18) 1) 0x2
+		caldata_extract "art" 0x5000 0x440
+		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_text "mac" 0x18) 1)
 		;;
 	ocedo,raccoon|\
 	tplink,tl-wdr3500-v1|\
@@ -164,7 +76,7 @@ case "$FIRMWARE" in
 	tplink,tl-wdr4300-v1|\
 	tplink,tl-wdr4900-v2|\
 	winchannel,wb2000)
-		ath9k_eeprom_extract "art" 0x5000 0x440
+		caldata_extract "art" 0x5000 0x440
 		;;
 	netgear,wnr612-v2|\
 	on,n150r|\
@@ -182,24 +94,24 @@ case "$FIRMWARE" in
 	ubnt,bullet-m|\
 	ubnt,nano-m|\
 	ubnt,rocket-m)
-		ath9k_eeprom_extract "art" 0x1000 0x1000
+		caldata_extract "art" 0x1000 0x1000
 		;;
 	pqi,air-pen)
-		ath9k_eeprom_extract "art" 0x1000 0x7d2
+		caldata_extract "art" 0x1000 0x7d2
 		;;
 	ubnt,unifi)
-		ath9k_eeprom_extract "art" 0x1000 0x800
+		caldata_extract "art" 0x1000 0x800
 		;;
 	wd,mynet-n750)
-		ath9k_eeprom_extract "art" 0x5000 0x440
-		ath9k_patch_fw_mac $(mtd_get_mac_ascii devdata "wlan5mac") 0x2
+		caldata_extract "art" 0x5000 0x440
+		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan5mac")
 		;;
 	wd,mynet-wifi-rangeextender)
-		ath9k_eeprom_extract "art" 0x1000 0x1000
-		ath9k_patch_fw_mac $(nvram get wl0_hwaddr) "$mac" 0x2
+		caldata_extract "art" 0x1000 0x1000
+		ath9k_patch_mac $(nvram get wl0_hwaddr) "$mac"
 		;;
 	*)
-		ath9k_eeprom_die "board $board is not supported yet"
+		caldata_die "board $board is not supported yet"
 		;;
 	esac
 	;;
@@ -210,14 +122,14 @@ case "$FIRMWARE" in
 	netgear,wndr3700v2|\
 	netgear,wndr3800|\
 	netgear,wndr3800ch)
-		ath9k_eeprom_extract "art" 0x1000 0xeb8
+		caldata_extract "art" 0x1000 0xeb8
 		;;
 	dlink,dir-825-b1)
-		ath9k_eeprom_extract "caldata" 0x1000 0xeb8
-		ath9k_patch_fw_mac_crc $(mtd_get_mac_text "caldata" 0xffa0) 0x20c
+		caldata_extract "caldata" 0x1000 0xeb8
+		ath9k_patch_mac_crc $(mtd_get_mac_text "caldata" 0xffa0) 0x20c
 		;;
 	*)
-		ath9k_eeprom_die "board $board is not supported yet"
+		caldata_die "board $board is not supported yet"
 		;;
 	esac
 	;;
@@ -228,14 +140,14 @@ case "$FIRMWARE" in
 	netgear,wndr3700v2|\
 	netgear,wndr3800|\
 	netgear,wndr3800ch)
-		ath9k_eeprom_extract "art" 0x5000 0xeb8
+		caldata_extract "art" 0x5000 0xeb8
 		;;
 	dlink,dir-825-b1)
-		ath9k_eeprom_extract "caldata" 0x5000 0xeb8
-		ath9k_patch_fw_mac_crc $(macaddr_add $(mtd_get_mac_text "caldata" 0xffb4) 1) 0x20c
+		caldata_extract "caldata" 0x5000 0xeb8
+		ath9k_patch_mac_crc $(macaddr_add $(mtd_get_mac_text "caldata" 0xffb4) 1) 0x20c
 		;;
 	*)
-		ath9k_eeprom_die "board $board is not supported yet"
+		caldata_die "board $board is not supported yet"
 		;;
 	esac
 	;;

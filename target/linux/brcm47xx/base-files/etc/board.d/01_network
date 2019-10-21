@@ -143,8 +143,12 @@ configure_by_model() {
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
 
+	"Asus WL500GP V2")
+		ucidef_add_switch "switch0" \
+			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "5@eth0"
+		;;
+
 	"Asus RT-N12"* | \
-	"Asus WL500GP V2" | \
 	"Buffalo WHR-G125" | \
 	"D-Link DIR-330" | \
 	"Motorola WR850G" | \

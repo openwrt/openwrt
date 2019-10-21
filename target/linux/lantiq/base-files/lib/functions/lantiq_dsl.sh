@@ -728,7 +728,7 @@ profile() {
 	fi
 }
 
-status() {
+dslstat() {
 	vendor
 	chipset
 	xtse
@@ -744,6 +744,6 @@ status() {
 
 lucistat() {
 	echo "local dsl={}"
-	status
+	dslstat
 	echo "return dsl"
 }

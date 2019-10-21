@@ -25,7 +25,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -5451,6 +5451,14 @@ const struct ieee80211_reg_rule *freq_re
+@@ -5554,6 +5554,14 @@ const struct ieee80211_reg_rule *freq_re
  const char *reg_initiator_name(enum nl80211_reg_initiator initiator);
  
  /**
@@ -91,7 +91,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	if (!ieee80211_can_scan(local, sdata)) {
 --- a/net/wireless/reg.c
 +++ b/net/wireless/reg.c
-@@ -3866,6 +3866,7 @@ bool regulatory_pre_cac_allowed(struct w
+@@ -3883,6 +3883,7 @@ bool regulatory_pre_cac_allowed(struct w
  
  	return pre_cac_allowed;
  }

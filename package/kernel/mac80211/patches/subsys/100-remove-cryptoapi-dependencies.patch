@@ -476,7 +476,7 @@
  }
  
  ieee80211_tx_result
-@@ -1124,9 +1125,9 @@ ieee80211_crypto_aes_gmac_encrypt(struct
+@@ -1128,9 +1129,9 @@ ieee80211_crypto_aes_gmac_encrypt(struct
  	struct ieee80211_key *key = tx->key;
  	struct ieee80211_mmie_16 *mmie;
  	struct ieee80211_hdr *hdr;
@@ -488,7 +488,7 @@
  
  	if (WARN_ON(skb_queue_len(&tx->skbs) != 1))
  		return TX_DROP;
-@@ -1172,7 +1173,7 @@ ieee80211_crypto_aes_gmac_decrypt(struct
+@@ -1176,7 +1177,7 @@ ieee80211_crypto_aes_gmac_decrypt(struct
  	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
  	struct ieee80211_key *key = rx->key;
  	struct ieee80211_mmie_16 *mmie;
@@ -687,7 +687,7 @@
  #endif /* AES_GMAC_H */
 --- a/net/mac80211/key.h
 +++ b/net/mac80211/key.h
-@@ -87,7 +87,7 @@ struct ieee80211_key {
+@@ -88,7 +88,7 @@ struct ieee80211_key {
  			 * Management frames.
  			 */
  			u8 rx_pn[IEEE80211_NUM_TIDS + 1][IEEE80211_CCMP_PN_LEN];

@@ -3,30 +3,8 @@
 
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
-. /lib/functions.sh
-. /lib/functions/system.sh
+. /lib/functions/caldata.sh
 . /lib/upgrade/nand.sh
-
-# xor multiple hex values of the same length
-xor() {
-	local val
-	local ret="0x$1"
-	local retlen=${#1}
-
-	shift
-	while [ -n "$1" ]; do
-		val="0x$1"
-		ret=$((ret ^ val))
-		shift
-	done
-
-	printf "%0${retlen}x" "$ret"
-}
-
-ath9k_eeprom_die() {
-	echo "ath9k eeprom: $*"
-	exit 1
-}
 
 ath9k_eeprom_extract_raw() {
 	local source=$1
@@ -44,25 +22,7 @@ ath9k_eeprom_extract_raw() {
 	fi
 
 	dd if=$source of=/lib/firmware/$FIRMWARE bs=$bs skip=$offset count=$size $conv 2>/dev/null || \
-			ath9k_eeprom_die "failed to extract from $mtd"
-}
-
-ath9k_eeprom_extract_reverse() {
-	local part=$1
-	local offset=$2
-	local count=$(($3))
-	local mtd
-	local reversed
-	local caldata
-
-	mtd=$(find_mtd_chardev "$part")
-	reversed=$(hexdump -v -s $offset -n $count -e '/1 "%02x "' $mtd)
-
-	for byte in $reversed; do
-		caldata="\x${byte}${caldata}"
-	done
-
-	printf "%b" "$caldata" > /lib/firmware/$FIRMWARE
+			caldata_die "failed to extract from $mtd"
 }
 
 ath9k_eeprom_extract() {
@@ -73,7 +33,7 @@ ath9k_eeprom_extract() {
 
 	mtd=$(find_mtd_chardev $part)
 	[ -n "$mtd" ] || \
-		ath9k_eeprom_die "no mtd device found for partition $part"
+		caldata_die "no mtd device found for partition $part"
 
 	ath9k_eeprom_extract_raw $mtd $offset $swap
 }
@@ -87,44 +47,9 @@ ath9k_ubi_eeprom_extract() {
 
 	ubi=$(nand_find_volume $ubidev $part)
 	[ -n "$ubi" ] || \
-		ath9k_eeprom_die "no UBI volume found for $part"
+		caldata_die "no UBI volume found for $part"
 
 	ath9k_eeprom_extract_raw /dev/$ubi $offset $swap
-}
-
-ath9k_patch_fw_mac_crc() {
-	local mac=$1
-	local mac_offset=$2
-	local chksum_offset=$((mac_offset - 10))
-
-	ath9k_patch_fw_mac "${mac}" "${mac_offset}" "${chksum_offset}"
-}
-
-ath9k_patch_fw_mac() {
-	local mac=$1
-	local mac_offset=$(($2))
-	local chksum_offset=$3
-	local xor_mac
-	local xor_fw_mac
-	local xor_fw_chksum
-
-	[ -z "$mac" -o -z "$mac_offset" ] && return
-
-	[ -n "$chksum_offset" ] && {
-		xor_mac=${mac//:/}
-		xor_mac="${xor_mac:0:4} ${xor_mac:4:4} ${xor_mac:8:4}"
-
-		xor_fw_mac=$(hexdump -v -n 6 -s $mac_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
-		xor_fw_mac="${xor_fw_mac:0:4} ${xor_fw_mac:4:4} ${xor_fw_mac:8:4}"
-
-		xor_fw_chksum=$(hexdump -v -n 2 -s $chksum_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
-		xor_fw_chksum=$(xor $xor_fw_chksum $xor_fw_mac $xor_mac)
-
-		printf "%b" "\x${xor_fw_chksum:0:2}\x${xor_fw_chksum:2:2}" | \
-			dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=$(($chksum_offset)) count=2
-	}
-
-	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=$mac_offset count=6
 }
 
 case "$FIRMWARE" in
@@ -142,24 +67,24 @@ case "$FIRMWARE" in
 				;;
 			bt,homehub-v2b)
 				ath9k_eeprom_extract "art" 0x0 1
-				ath9k_patch_fw_mac_crc "00:00:00:00:00:00" 0x20c
+				ath9k_patch_mac_crc "00:00:00:00:00:00" 0x20c
 				;;
 			bt,homehub-v3a)
 				ath9k_eeprom_extract "art-copy" 0x0 1
-				ath9k_patch_fw_mac_crc $(macaddr_add $(mtd_get_mac_ascii uboot_env ethaddr) +2) 0x10c
+				ath9k_patch_mac_crc $(macaddr_add $(mtd_get_mac_ascii uboot_env ethaddr) +2) 0x10c
 				;;
 			bt,homehub-v5a)
 				ath9k_ubi_eeprom_extract "caldata" 0x1000 0
-				ath9k_patch_fw_mac_crc $(macaddr_add $(mtd_get_mac_binary_ubi caldata 0x110c) +2) 0x10c
+				ath9k_patch_mac_crc $(macaddr_add $(mtd_get_mac_binary_ubi caldata 0x110c) +2) 0x10c
 				;;
 			netgear,dgn3500|netgear,dgn3500b)
 				ath9k_eeprom_extract "calibration" 0xf000 0
-				ath9k_patch_fw_mac_crc $(macaddr_add $(mtd_get_mac_ascii uboot-env ethaddr) +2) 0x20c
+				ath9k_patch_mac_crc $(macaddr_add $(mtd_get_mac_ascii uboot-env ethaddr) +2) 0x20c
 				;;
 			avm,fritz3370-rev2-hynix|\
 			avm,fritz3370-rev2-micron|\
 			avm,fritz7362sl)
-				ath9k_eeprom_extract_reverse "urlader" 0x1541 0x440
+				caldata_extract_reverse "urlader" 0x1541 0x440
 				;;
 			avm,fritz7312|avm,fritz7320|avm,fritz7360sl)
 				ath9k_eeprom_extract "urlader" 0x985 0
@@ -171,7 +96,7 @@ case "$FIRMWARE" in
 				ath9k_eeprom_extract "boardconfig" 0x21000 0
 				;;
 			*)
-				ath9k_eeprom_die "board $board is not supported yet"
+				caldata_die "board $board is not supported yet"
 				;;
 		esac
 		;;
