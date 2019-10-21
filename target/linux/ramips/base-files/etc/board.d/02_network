@@ -587,6 +587,7 @@ ramips_setup_macs()
 	buffalo,whr-g300n|\
 	buffalo,wsr-600dhp|\
 	glinet,gl-mt300n-v2|\
+	xiaomi,miwifi-mini|\
 	zyxel,keenetic-start)
 		# This empty case has to be kept for devices without any MAC address adjustments
 		;;
@@ -720,9 +721,6 @@ ramips_setup_macs()
 	xiaomi,mir3p)
 		lan_mac=$(mtd_get_mac_binary factory 0xe006)
 		label_mac=$lan_mac
-		;;
-	xiaomi,miwifi-mini)
-		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
 		;;
 	zbtlink,zbt-we1326)
 		wan_mac=$(mtd_get_mac_binary factory 0xe006)
