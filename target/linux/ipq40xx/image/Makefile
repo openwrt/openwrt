@@ -417,7 +417,8 @@ TARGET_DEVICES += qxwlan_e2600ac-c2
 define Device/unielec_u4019-32m
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Unielec
-	DEVICE_MODEL := U4019 (32M)
+	DEVICE_MODEL := U4019
+	DEVICE_VARIANT := 32M
 	BOARD_NAME := u4019-32m
 	DEVICE_DTS := qcom-ipq4019-unielec-u4019-32m
 	KERNEL_SIZE := 4096k
