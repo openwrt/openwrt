@@ -166,15 +166,67 @@ ramips_setup_macs()
 	local label_mac=""
 
 	case $board in
+	7links,px-4885-4m|\
+	7links,px-4885-8m|\
+	accton,wr6202|\
+	airlive,air3gii|\
+	argus,atp-52b|\
+	asiarf,awapn2403|\
+	asiarf,awm002-evb-4m|\
+	asiarf,awm002-evb-8m|\
+	asus,rt-g32-b1|\
+	asus,rt-n10-plus|\
+	asus,rt-n13u|\
+	asus,wl-330n3g|\
+	aztech,hw550-3g|\
+	belkin,f5d8235-v2|\
+	belkin,f7c027|\
+	dlink,dap-1350|\
+	dlink,dir-300-b1|\
+	dlink,dir-600-b1|\
+	dlink,dir-610-a1|\
+	dlink,dir-620-d1|\
+	dlink,dwr-512-b|\
+	edimax,3g-6200n|\
+	edimax,3g-6200nl|\
+	fon,fonera-20n|\
+	huawei,hg255d|\
+	jcg,jhr-n805r|\
+	jcg,jhr-n825r|\
+	jcg,jhr-n926r|\
+	mofinetwork,mofi3500-3gn|\
+	netcore,nw718|\
+	nexx,wt1520-4m|\
+	nexx,wt1520-8m|\
+	nixcore,x1-16m|\
+	nixcore,x1-8m|\
+	olimex,rt5350f-olinuxino|\
+	olimex,rt5350f-olinuxino-evb|\
+	omnima,miniembplug|\
+	omnima,miniembwifi|\
+	planex,mzk-w300nh2|\
+	planex,mzk-wdpr|\
+	poray,ip2202|\
+	prolink,pwh2004|\
+	ralink,v22rw-2x2|\
+	sitecom,wl-351|\
+	teltonika,rut5xx|\
+	trendnet,tew-714tru|\
+	unbranded,wr512-3gn-4m|\
+	unbranded,wr512-3gn-8m|\
+	unbranded,xdx-rn502j|\
+	upvel,ur-326n4g|\
+	upvel,ur-336un|\
+	zyxel,keenetic|\
+	zyxel,nbg-419n|\
+	zyxel,nbg-419n-v2)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
+		;;
 	8devices,carambola|\
 	alfa-network,w502u|\
 	arcwireless,freestation5|\
 	netgear,wnce2001)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
-		;;
-	buffalo,whr-g300n|\
-	zyxel,keenetic-start)
-		# This empty case has to be kept for devices without any MAC address adjustments
 		;;
 	dlink,dir-300-b7|\
 	dlink,dir-320-b1|\
@@ -208,9 +260,6 @@ ramips_setup_macs()
 		;;
 	tenda,w306r-v2)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 5)
-		;;
-	*)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
 	esac
 

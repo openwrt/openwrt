@@ -143,6 +143,35 @@ ramips_setup_macs()
 	local label_mac=""
 
 	case $board in
+	adslr,g7|\
+	afoundry,ew1200|\
+	asiarf,ap7621-001|\
+	asiarf,ap7621-nv1|\
+	firefly,firewrt|\
+	gehua,ghl-r-001|\
+	mediatek,ap-mt7621a-v60|\
+	mediatek,mt7621-eval-board|\
+	mikrotik,rb750gr3|\
+	mikrotik,rbm33g|\
+	mqmaker,witi|\
+	mtc,wr1201|\
+	netgear,r6220|\
+	netgear,wndr3700-v5|\
+	netis,wf-2881|\
+	storylink,sap-g3200u3|\
+	telco-electronics,x1|\
+	totolink,a7000r|\
+	ubiquiti,edgerouterx|\
+	ubiquiti,edgerouterx-sfp|\
+	unielec,u7621-06-16m|\
+	unielec,u7621-06-64m|\
+	wevo,11acnas|\
+	wevo,w2914ns-v2|\
+	xiaoyu,xy-c5|\
+	xzwifi,creativebox-v1|\
+	zbtlink,zbt-wg2626)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
+		;;
 	asus,rt-ac57u|\
 	d-team,newifi-d2|\
 	d-team,pbr-m1|\
@@ -167,9 +196,6 @@ ramips_setup_macs()
 		local index="$(find_mtd_index "board_data")"
 		wan_mac="$(grep -m1 mac= "/dev/mtd${index}" | cut -d= -f2)"
 		lan_mac=$wan_mac
-		;;
-	buffalo,wsr-600dhp)
-		# This empty case has to be kept for devices without any MAC address adjustments
 		;;
 	dlink,dir-860l-b1)
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)
@@ -218,9 +244,6 @@ ramips_setup_macs()
 	zbtlink,zbt-wg3526-32m)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
-		;;
-	*)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
 	esac
 

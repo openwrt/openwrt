@@ -215,11 +215,44 @@ ramips_setup_macs()
 	local label_mac=""
 
 	case $board in
-	buffalo,whr-1166d|\
-	buffalo,whr-300hp2|\
-	buffalo,whr-600d|\
-	xiaomi,miwifi-mini)
-		# This empty case has to be kept for devices without any MAC address adjustments
+	aigale,ai-br100|\
+	alfa-network,ac1200rm|\
+	asus,rt-ac51u|\
+	asus,rt-n12p|\
+	asus,rt-n14u|\
+	bdcom,wap2100-sk|\
+	dlink,dir-810l|\
+	edimax,ew-7478apc|\
+	fon,fon2601|\
+	head-weblink,hdrm200|\
+	nexx,wt3020-4m|\
+	nexx,wt3020-8m|\
+	phicomm,psg1208|\
+	phicomm,psg1218a|\
+	phicomm,psg1218b|\
+	planex,db-wrt01|\
+	planex,mzk-750dhp|\
+	ralink,mt7620a-evb|\
+	ralink,mt7620a-mt7530-evb|\
+	ralink,mt7620a-mt7610e-evb|\
+	ralink,mt7620a-v22sg-evb|\
+	sanlinking,d240|\
+	tplink,archer-c2-v1|\
+	tplink,archer-c20-v1|\
+	tplink,archer-c20i|\
+	tplink,archer-c50-v1|\
+	tplink,archer-mr200|\
+	vonets,var11n-300|\
+	wrtnode,wrtnode|\
+	youku,yk1|\
+	zbtlink,zbt-ape522ii|\
+	zbtlink,zbt-wa05|\
+	zbtlink,zbt-we2026|\
+	zbtlink,zbt-we826-16m|\
+	zbtlink,zbt-we826-32m|\
+	zbtlink,zbt-we826-e|\
+	zbtlink,zbt-wr8305rt)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
 	dlink,dch-m225)
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)
@@ -277,9 +310,6 @@ ramips_setup_macs()
 	zyxel,keenetic-omni-ii|\
 	zyxel,keenetic-viva)
 		wan_mac=$(mtd_get_mac_binary factory 0x28)
-		;;
-	*)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
 	esac
 
