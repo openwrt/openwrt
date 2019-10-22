@@ -22,7 +22,8 @@ config-$(CONFIG_PACKAGE_RTLWIFI_DEBUG) += RTLWIFI_DEBUG
 config-$(call config_package,rtl8xxxu) += RTL8XXXU
 config-y += RTL8XXXU_UNTESTED
 
-config-$(call config_package,rtw88) += RTW88 RTW88_CORE RTW88_PCI RTW88_8822BE RTW88_8822CE
+config-$(call config_package,rtw88) += RTW88 RTW88_CORE RTW88_PCI
+config-y += RTW88_8822BE RTW88_8822CE
 
 define KernelPackage/rtl818x/Default
   $(call KernelPackage/mac80211/Default)
