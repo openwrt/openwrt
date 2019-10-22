@@ -35,19 +35,6 @@ do_checksumming_disable() {
 			echo "Checksum is already zero, nothing to do."
 		fi
 	;;
-	asus,rt-n56u)
-		echo "Board is ASUS RT-N56U, replacing uImage header..."
-		local firmware_mtd=$(find_mtd_part firmware)
-		local rootfs_mtd=$(find_mtd_part rootfs)
-		local rootfs_data_mtd=$(find_mtd_part rootfs_data)
-		local rootfs_len=$(grep \"rootfs\" /proc/mtd | awk -F' ' '{print "0x"$2}')
-		local rootfs_data_len=$(grep \"rootfs_data\" /proc/mtd | awk -F' ' '{print "0x"$2}')
-		local offset=$(echo "$rootfs_len $rootfs_data_len 0x40" | awk -F' ' '{printf "%i",$1-$2-$3}')
-		local signature=$(dd if=$rootfs_mtd skip=$offset bs=1 count=4 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"')
-		if [ "$signature" = "27051956" ]; then
-			dd conv=notrunc if=$rootfs_mtd skip=$offset of=$firmware_mtd bs=1 count=64 2>/dev/null
-		fi
-	;;
 	esac
 
 	return 0

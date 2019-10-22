@@ -39,10 +39,6 @@ platform_do_upgrade() {
 	xiaomi,mir3p)
 		nand_do_upgrade "$1"
 		;;
-	tplink,archer-c50-v4)
-		MTD_ARGS="-t romfile"
-		default_do_upgrade "$1"
-		;;
 	ubiquiti,edgerouterx|\
 	ubiquiti,edgerouterx-sfp)
 		platform_upgrade_ubnt_erx "$1"
