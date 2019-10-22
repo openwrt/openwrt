@@ -33,6 +33,8 @@ define Device/netgear_wnr1000-v2
   DEVICE_MODEL := WNR1000
   DEVICE_VARIANT := v2
   NETGEAR_KERNEL_MAGIC := 0x31303031
+  NETGEAR_BOARD_ID := WNR1000V2
+  NETGEAR_HW_ID := 29763331+4+32
   IMAGE_SIZE := 3712k
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
   SUPPORTED_DEVICES += wnr1000-v2
