@@ -138,6 +138,12 @@ define Device/ubnt-unifiac-lite
 endef
 TARGET_DEVICES += ubnt-unifiac-lite
 
+define Device/ubnt-unifiac-lr
+  $(Device/ubnt-unifiac-lite)
+  DEVICE_TITLE := Ubiquiti UniFi AC-LR
+endef
+TARGET_DEVICES += ubnt-unifiac-lr
+
 define Device/ubnt-unifiac-mesh
   $(Device/ubnt-unifiac-lite)
   DEVICE_TITLE := Ubiquiti UniFi AC-Mesh

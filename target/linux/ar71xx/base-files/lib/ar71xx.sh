@@ -111,6 +111,9 @@ ubnt_unifi_ac_board_detect() {
 	"e517")
 		model="Ubiquiti UniFi-AC-LITE"
 		;;
+	"e527")
+		model="Ubiquiti UniFi-AC-LR"
+		;;
 	"e537")
 		model="Ubiquiti UniFi-AC-PRO"
 		;;
