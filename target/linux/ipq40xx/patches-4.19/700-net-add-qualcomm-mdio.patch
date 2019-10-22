@@ -186,7 +186,7 @@ index 000000000..88fe5dc2b
 +	ret = of_get_named_gpio(mdio_node, "phy-reset-gpio", 0);
 +	if (ret < 0) {
 +		dev_err(&pdev->dev, "Could not find phy-reset-gpio\n");
-+		return ret;
++		return 0;
 +	}
 +
 +	phy_reset_gpio_number = ret;
