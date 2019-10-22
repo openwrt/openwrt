@@ -1,0 +1,35 @@
+#!/bin/sh
+
+. /lib/functions/system.sh
+. /lib/functions/uci-defaults.sh
+
+ath79_setup_interfaces()
+{
+	local board="$1"
+
+	case "$board" in
+	*)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		;;
+	esac
+}
+
+ath79_setup_macs()
+{
+	local board="$1"
+
+	case "$board" in
+	esac
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
+}
+
+board_config_update
+board=$(board_name)
+ath79_setup_interfaces $board
+ath79_setup_macs $board
+board_config_flush
+
+exit 0

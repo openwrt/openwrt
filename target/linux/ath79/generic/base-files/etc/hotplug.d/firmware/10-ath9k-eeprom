@@ -61,10 +61,7 @@ case "$FIRMWARE" in
 	avm,fritz300e)
 		caldata_extract_reverse "urloader" 0x1541 0x440
 		;;
-	buffalo,whr-g301n|\
-	buffalo,wzr-hp-g302h-a1a0|\
-	tplink,tl-wr841-v5|\
-	tplink,tl-wr941-v4)
+	buffalo,wzr-hp-g302h-a1a0)
 		caldata_extract "art" 0x1000 0xeb8
 		;;
 	buffalo,wzr-hp-g450h)
@@ -83,28 +80,14 @@ case "$FIRMWARE" in
 	winchannel,wb2000)
 		caldata_extract "art" 0x5000 0x440
 		;;
-	netgear,wnr1000-v2|\
-	netgear,wnr2000-v3|\
-	netgear,wnr612-v2|\
-	on,n150r|\
 	pcs,cap324|\
-	tplink,tl-mr3220-v1|\
-	tplink,tl-mr3420-v1|\
 	tplink,tl-wr2543-v1|\
-	tplink,tl-wr740n-v1|\
-	tplink,tl-wr740n-v3|\
-	tplink,tl-wr741-v1|\
-	tplink,tl-wr743nd-v1|\
-	tplink,tl-wr841-v7|\
 	tplink,tl-wr842n-v1|\
 	ubnt,airrouter|\
 	ubnt,bullet-m|\
 	ubnt,nano-m|\
 	ubnt,rocket-m)
 		caldata_extract "art" 0x1000 0x1000
-		;;
-	pqi,air-pen)
-		caldata_extract "art" 0x1000 0x7d2
 		;;
 	ubnt,unifi)
 		caldata_extract "art" 0x1000 0x800
