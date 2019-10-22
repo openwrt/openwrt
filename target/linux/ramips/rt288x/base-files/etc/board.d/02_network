@@ -42,7 +42,12 @@ ramips_setup_macs()
 	local label_mac=""
 
 	case $board in
-	*)
+	airlink101,ar670w|\
+	airlink101,ar725w|\
+	asus,rt-n15|\
+	belkin,f5d8235-v1|\
+	buffalo,wzr-agl300nh|\
+	ralink,v11st-fe)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
 	esac

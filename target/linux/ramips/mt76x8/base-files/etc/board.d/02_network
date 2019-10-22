@@ -136,8 +136,30 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;
-	glinet,gl-mt300n-v2)
-		# This empty case has to be kept for devices without any MAC address adjustments
+	duzun,dm06|\
+	mediatek,mt7628an-eval-board|\
+	netgear,r6120|\
+	rakwireless,rak633|\
+	tplink,archer-c20-v4|\
+	tplink,archer-c50-v3|\
+	tplink,archer-c50-v4|\
+	tplink,tl-mr3420-v5|\
+	tplink,tl-wr840n-v4|\
+	tplink,tl-wr840n-v5|\
+	tplink,tl-wr841n-v13|\
+	tplink,tl-wr841n-v14|\
+	tplink,tl-wr842n-v5|\
+	unielec,u7628-01-16m|\
+	wavlink,wl-wn570ha1|\
+	wavlink,wl-wn575a3|\
+	wiznet,wizfi630s|\
+	wrtnode,wrtnode2p|\
+	wrtnode,wrtnode2r|\
+	xiaomi,mir4a-100m|\
+	xiaomi,miwifi-nano|\
+	zbtlink,zbt-we1226|\
+	zyxel,keenetic-extra-ii)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
 	hilink,hlk-7628n)
 		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
@@ -171,9 +193,6 @@ ramips_setup_macs()
 	vocore,vocore2|\
 	vocore,vocore2-lite)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
-		;;
-	*)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
 	esac
 
