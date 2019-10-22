@@ -1,6 +1,7 @@
 --- a/libxfs/Makefile
 +++ b/libxfs/Makefile
-@@ -118,9 +118,9 @@ LTLIBS = $(LIBPTHREAD) $(LIBRT)
+@@ -114,10 +114,10 @@ LTLIBS = $(LIBPTHREAD) $(LIBRT)
+ 
  # don't try linking xfs_repair with a debug libxfs.
  DEBUG = -DNDEBUG
  
@@ -10,5 +11,5 @@
 -default: crc32selftest ltdepend $(LTLIBRARY)
 +default: ltdepend $(LTLIBRARY)
  
- crc32table.h: gen_crc32table.c
+ crc32table.h: gen_crc32table.c crc32defs.h
  	@echo "    [CC]     gen_crc32table"

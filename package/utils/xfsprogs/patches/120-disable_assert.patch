@@ -1,12 +1,12 @@
 --- a/libxfs/libxfs_priv.h
 +++ b/libxfs/libxfs_priv.h
-@@ -84,9 +84,6 @@ extern uint32_t crc32c_le(uint32_t crc,
+@@ -84,9 +84,6 @@ 
  /* for all the support code that uses progname in error messages */
  extern char    *progname;
  
 -#undef ASSERT
 -#define ASSERT(ex) assert(ex)
 -
- #ifndef EWRONGFS
- #define EWRONGFS	EINVAL
- #endif
+ /*
+  * We have no need for the "linux" dev_t in userspace, so these
+  * are no-ops, and an xfs_dev_t is stored in VFS_I(ip)->i_rdev
