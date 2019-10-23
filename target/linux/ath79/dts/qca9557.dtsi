@@ -178,6 +178,24 @@
 			};
 		};
 
+		nand: nand@1b800200 {
+			compatible = "qca,ar934x-nand";
+			reg = <0x1b800200 0xb8>;
+
+			interrupts = <21>;
+			interrupt-parent = <&miscintc>;
+
+			resets = <&rst 14>;
+			reset-names = "nand";
+
+			nand-ecc-mode = "hw";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
 		gmac: gmac@18070000 {
 			compatible = "qca,qca9550-gmac";
 			reg = <0x18070000 0x58>;
