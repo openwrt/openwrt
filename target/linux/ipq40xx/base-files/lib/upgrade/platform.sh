@@ -47,6 +47,7 @@ zyxel_do_upgrade() {
 platform_do_upgrade() {
 	case "$(board_name)" in
 	8dev,jalapeno |\
+	aruba,ap-303 |\
 	avm,fritzbox-7530 |\
 	avm,fritzrepeater-1200 |\
 	avm,fritzrepeater-3000 |\

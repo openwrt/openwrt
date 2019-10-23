@@ -91,6 +91,16 @@ define Device/alfa-network_ap120c-ac
 endef
 TARGET_DEVICES += alfa-network_ap120c-ac
 
+define Device/aruba_ap-303
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Aruba
+	DEVICE_MODEL := AP-303
+	DEVICE_DTS := qcom-ipq4029-ap-303
+	DEVICE_PACKAGES := ipq-wifi-aruba_ap-303
+	IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += aruba_ap-303
+
 define Device/asus_map-ac2200
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := ASUS
