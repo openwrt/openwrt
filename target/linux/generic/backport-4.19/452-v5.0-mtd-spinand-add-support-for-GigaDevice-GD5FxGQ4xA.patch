@@ -1,7 +1,7 @@
 From c93c613214ac70c87beab5422a60077bf126b855 Mon Sep 17 00:00:00 2001
 From: Chuanhong Guo <gch981213@gmail.com>
 Date: Wed, 28 Nov 2018 21:07:25 +0800
-Subject: [PATCH] mtd: spinand: add support for GigaDevice GD5FxGQ4xA
+Subject: [PATCH 3/8] mtd: spinand: add support for GigaDevice GD5FxGQ4xA
 
 Add support for GigaDevice GD5F1G/2G/4GQ4xA SPI NAND.
 
@@ -11,7 +11,7 @@ Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
 ---
  drivers/mtd/nand/spi/Makefile     |   2 +-
  drivers/mtd/nand/spi/core.c       |   1 +
- drivers/mtd/nand/spi/gigadevice.c | 148 ++++++++++++++++++++++++++++++++++++++
+ drivers/mtd/nand/spi/gigadevice.c | 148 ++++++++++++++++++++++++++++++
  include/linux/mtd/spinand.h       |   1 +
  4 files changed, 151 insertions(+), 1 deletion(-)
  create mode 100644 drivers/mtd/nand/spi/gigadevice.c
@@ -20,8 +20,8 @@ Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
 +++ b/drivers/mtd/nand/spi/Makefile
 @@ -1,3 +1,3 @@
  # SPDX-License-Identifier: GPL-2.0
--spinand-objs := core.o macronix.o micron.o winbond.o
-+spinand-objs := core.o gigadevice.o macronix.o micron.o winbond.o
+-spinand-objs := core.o macronix.o micron.o toshiba.o winbond.o
++spinand-objs := core.o gigadevice.o macronix.o micron.o toshiba.o winbond.o
  obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
@@ -32,7 +32,7 @@ Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
 +	&gigadevice_spinand_manufacturer,
  	&macronix_spinand_manufacturer,
  	&micron_spinand_manufacturer,
- 	&winbond_spinand_manufacturer,
+ 	&toshiba_spinand_manufacturer,
 --- /dev/null
 +++ b/drivers/mtd/nand/spi/gigadevice.c
 @@ -0,0 +1,148 @@
@@ -193,4 +193,4 @@ Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
 +extern const struct spinand_manufacturer gigadevice_spinand_manufacturer;
  extern const struct spinand_manufacturer macronix_spinand_manufacturer;
  extern const struct spinand_manufacturer micron_spinand_manufacturer;
- extern const struct spinand_manufacturer winbond_spinand_manufacturer;
+ extern const struct spinand_manufacturer toshiba_spinand_manufacturer;
