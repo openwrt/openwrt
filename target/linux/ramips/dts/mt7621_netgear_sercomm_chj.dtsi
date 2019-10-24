@@ -4,53 +4,21 @@
 #include "mt7621_netgear_sercomm.dtsi"
 
 / {
-	compatible = "netgear,r6220", "mediatek,mt7621-soc";
-	model = "Netgear R6220";
-
 	keys {
 		compatible = "gpio-keys";
 
 		wps {
 			label = "wps";
-			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
-		};
-
-		wifi {
-			label = "wifi";
-			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
-			linux,code = <KEY_RFKILL>;
 		};
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
-};
-
-&leds {
-	wps {
-		gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
-		label = "r6220:green:wps";
-	};
-};
-
-&led_power {
-	label = "r6220:green:power";
-};
-
-&led_usb {
-	label = "r6220:green:usb";
-};
-
-&led_internet {
-	label = "r6220:green:wan";
-};
-
-&led_wifi {
-	label = "r6220:green:wifi";
 };
 
 &nand {
@@ -68,7 +36,7 @@
 		};
 
 		partition@100000 {
-			label = "SC PID";
+			label = "SC PART_MAP";
 			reg = <0x100000 0x100000>;
 			read-only;
 		};
@@ -80,18 +48,24 @@
 
 		partition@600000 {
 			label = "ubi";
-			reg = <0x600000 0x1c00000>;
+			reg = <0x600000 0x2800000>;
 		};
 
-		factory: partition@2e00000 {
-			label = "factory";
-			reg = <0x2e00000 0x100000>;
+		partition@2e00000 {
+			label = "reserved0";
+			reg = <0x2e00000 0x1800000>;
 			read-only;
 		};
 
-		partition@4200000 {
-			label = "reserved";
-			reg = <0x4200000 0x3c00000>;
+		factory: partition@4600000 {
+			label = "factory";
+			reg = <0x4600000 0x200000>;
+			read-only;
+		};
+
+		partition@4800000 {
+			label = "reserved1";
+			reg = <0x4800000 0x3800000>;
 			read-only;
 		};
 	};
