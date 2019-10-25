@@ -437,10 +437,27 @@
 	nand: nand@1e003000 {
 		status = "disabled";
 
-		compatible = "mtk,mt7621-nand";
+		compatible = "mediatek,mt7621-nfc";
 		bank-width = <2>;
-		reg = <0x1e003000 0x800
-			0x1e003800 0x800>;
+		reg = <0x1e003000 0x800>;
+
+		ecc-engine = <&bch>;
+
+		resets = <&rstctrl 15>;
+		reset-names = "nfi";
+
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SHARED 14 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	bch: ecc@1e003800 {
+		status = "disabled";
+
+		compatible = "mediatek,mt7621-ecc";
+		reg = <0x1e003800 0x800>;
+
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SHARED 15 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
 	ethernet: ethernet@1e100000 {

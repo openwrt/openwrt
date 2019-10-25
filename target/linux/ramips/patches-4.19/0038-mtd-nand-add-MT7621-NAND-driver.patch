@@ -1,0 +1,1747 @@
+--- a/drivers/mtd/nand/raw/Kconfig
++++ b/drivers/mtd/nand/raw/Kconfig
+@@ -550,6 +550,14 @@ config MTD_NAND_MTK
+ 	  Enables support for NAND controller on MTK SoCs.
+ 	  This controller is found on mt27xx, mt81xx, mt65xx SoCs.
+ 
++config MTD_NAND_MTK_MT7621
++	tristate "Support for NAND controller on MTK 7621 SoC"
++	depends on (ARCH_MEDIATEK || SOC_MT7621) || COMPILE_TEST
++	depends on HAS_IOMEM
++	help
++	  Enables support for NAND controller on MTK SoCs.
++	  This controller is found on mt27xx, mt81xx, mt65xx SoCs.
++
+ config MTD_NAND_TEGRA
+ 	tristate "Support for NAND controller on NVIDIA Tegra"
+ 	depends on ARCH_TEGRA || COMPILE_TEST
+--- a/drivers/mtd/nand/raw/Makefile
++++ b/drivers/mtd/nand/raw/Makefile
+@@ -56,6 +56,7 @@ obj-$(CONFIG_MTD_NAND_HISI504)	        +
+ obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= brcmnand/
+ obj-$(CONFIG_MTD_NAND_QCOM)		+= qcom_nandc.o
+ obj-$(CONFIG_MTD_NAND_MTK)		+= mtk_ecc.o mtk_nand.o
++obj-$(CONFIG_MTD_NAND_MTK_MT7621)	+= mtk_ecc_mt7621.o mtk_nand_mt7621.o
+ obj-$(CONFIG_MTD_NAND_TEGRA)		+= tegra_nand.o
+ 
+ nand-objs := nand_base.o nand_bbt.o nand_timings.o nand_ids.o
+--- /dev/null
++++ b/drivers/mtd/nand/raw/mtk_ecc_mt7621.c
+@@ -0,0 +1,292 @@
++/*
++ * SPDX-License-Identifier: GPL-2.0
++ * Driver for MediaTek NFI ECC controller
++ *
++ * Copyright (C) 2018 MediaTek Inc.
++ * Authors:	Xiangsheng Hou	<xiangsheng.hou@mediatek.com>
++ *		Weijie Gao	<weijie.gao@mediatek.com>
++ *
++ */
++
++#include <linux/platform_device.h>
++#include <linux/dma-mapping.h>
++#include <linux/interrupt.h>
++#include <linux/clk.h>
++#include <linux/module.h>
++#include <linux/iopoll.h>
++#include <linux/of.h>
++#include <linux/of_platform.h>
++#include <linux/mutex.h>
++
++#include "mtk_nand_mt7621.h"
++
++static const u8 ecc_strength_mt7621[] = {
++	4, 6, 8, 10, 12
++};
++
++static inline void mtk_ecc_wait_idle(struct mtk_ecc *ecc,
++				     enum mtk_ecc_operation op)
++{
++	struct device *dev = ecc->dev;
++	u32 val;
++	int ret;
++
++	ret = readl_poll_timeout_atomic(ecc->regs + ECC_IDLE_REG(op), val,
++					val & ECC_IDLE_MASK,
++					10, MTK_TIMEOUT);
++	if (ret)
++		dev_warn(dev, "%s NOT idle\n",
++			 op == ECC_ENCODE ? "encoder" : "decoder");
++}
++
++int mtk_ecc_correct_check(struct mtd_info *mtd, struct mtk_ecc *ecc,
++			  u8 *sector_buf, u8 *fdm_buf, u32 sector_index)
++{
++	struct nand_chip *nand = mtd_to_nand(mtd);
++	struct mtk_nfc *nfc = nand_get_controller_data(nand);
++	struct device *dev = ecc->dev;
++	u32 error_byte_pos, error_bit_pos_in_byte;
++	u32 error_locations, error_bit_loc;
++	u32 num_error_bits;
++	int bitflips = 0;
++	u32 i;
++
++	num_error_bits = (readl(ecc->regs + ECC_DECENUM)
++		>> (sector_index << 2)) & ecc->caps->err_mask;
++	if (!num_error_bits)
++		return 0;
++
++	if (num_error_bits == ecc->caps->err_mask) {
++		mtd->ecc_stats.failed++;
++		dev_warn(dev, "Uncorrectable ecc error\n");
++		return -1;
++	}
++
++	for (i = 0; i < num_error_bits; i++) {
++		error_locations = readl(ecc->regs + ECC_DECEL(i / 2));
++		error_bit_loc = (error_locations >> ((i % 2) * DEC_EL_SHIFT))
++				 & DEC_EL_MASK;
++		error_byte_pos = error_bit_loc >> DEC_EL_BYTE_SHIFT;
++		error_bit_pos_in_byte = error_bit_loc & DEC_EL_BIT_MASK;
++
++		if (error_bit_loc < (nand->ecc.size << 3)) {
++			sector_buf[error_byte_pos] ^=
++				(1 << error_bit_pos_in_byte);
++		} else if (error_bit_loc <
++			((nand->ecc.size + nfc->caps->fdm_size) << 3)) {
++			fdm_buf[error_byte_pos - nand->ecc.size] ^=
++				(1 << error_bit_pos_in_byte);
++		}
++
++		bitflips++;
++	}
++
++	mtd->ecc_stats.corrected += bitflips;
++
++	return bitflips;
++}
++EXPORT_SYMBOL(mtk_ecc_correct_check);
++
++
++void mtk_ecc_release(struct mtk_ecc *ecc)
++{
++	put_device(ecc->dev);
++}
++EXPORT_SYMBOL(mtk_ecc_release);
++
++static void mtk_ecc_hw_init(struct mtk_ecc *ecc)
++{
++	mtk_ecc_wait_idle(ecc, ECC_ENCODE);
++	writew(ECC_OP_DISABLE, ecc->regs + ECC_ENCCON);
++
++	mtk_ecc_wait_idle(ecc, ECC_DECODE);
++	writel(ECC_OP_DISABLE, ecc->regs + ECC_DECCON);
++}
++
++static struct mtk_ecc *mtk_ecc_get(struct device_node *np)
++{
++	struct platform_device *pdev;
++	struct mtk_ecc *ecc;
++
++	pdev = of_find_device_by_node(np);
++	if (!pdev || !platform_get_drvdata(pdev))
++		return ERR_PTR(-EPROBE_DEFER);
++
++	get_device(&pdev->dev);
++	ecc = platform_get_drvdata(pdev);
++
++	mtk_ecc_hw_init(ecc);
++
++	return ecc;
++}
++
++struct mtk_ecc *of_mtk_ecc_get(struct device_node *of_node)
++{
++	struct mtk_ecc *ecc = NULL;
++	struct device_node *np;
++
++	np = of_parse_phandle(of_node, "ecc-engine", 0);
++	if (np) {
++		ecc = mtk_ecc_get(np);
++		of_node_put(np);
++	}
++
++	return ecc;
++}
++EXPORT_SYMBOL(of_mtk_ecc_get);
++
++int mtk_ecc_enable(struct mtk_ecc *ecc, struct mtk_ecc_config *config)
++{
++	enum mtk_ecc_operation op = config->op;
++	int ret;
++
++	ret = mutex_lock_interruptible(&ecc->lock);
++	if (ret) {
++		dev_err(ecc->dev, "interrupted when attempting to lock\n");
++		return ret;
++	}
++
++	mtk_ecc_wait_idle(ecc, op);
++	writew(ECC_OP_ENABLE, ecc->regs + ECC_CTL_REG(op));
++
++	return 0;
++}
++EXPORT_SYMBOL(mtk_ecc_enable);
++
++void mtk_ecc_disable(struct mtk_ecc *ecc)
++{
++	enum mtk_ecc_operation op = ECC_ENCODE;
++
++	/* find out the running operation */
++	if (readw(ecc->regs + ECC_CTL_REG(op)) != ECC_OP_ENABLE)
++		op = ECC_DECODE;
++
++	/* disable it */
++	mtk_ecc_wait_idle(ecc, op);
++	writew(ECC_OP_DISABLE, ecc->regs + ECC_CTL_REG(op));
++	mutex_unlock(&ecc->lock);
++}
++EXPORT_SYMBOL(mtk_ecc_disable);
++
++int mtk_ecc_wait_decode_done(struct mtk_ecc *ecc, u32 sector_index)
++{
++	u32 val;
++	int rc;
++
++	rc = readb_poll_timeout_atomic(ecc->regs + ECC_DECDONE, val,
++				  (val & (1 << sector_index)), 10, MTK_TIMEOUT);
++	if (rc < 0) {
++		dev_err(ecc->dev, "decoder timeout\n");
++		return -ETIMEDOUT;
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL(mtk_ecc_wait_decode_done);
++
++int mtk_ecc_init(struct mtk_nfc *nfc, struct mtk_ecc *ecc,
++		 struct mtk_ecc_config *config)
++{
++	u32 ecc_bit, dec_sz, enc_sz;
++	u32 reg, i;
++
++	for (i = 0; i < ecc->caps->num_ecc_strength; i++) {
++		if (ecc->caps->ecc_strength[i] == config->strength)
++			break;
++	}
++
++	if (i == ecc->caps->num_ecc_strength) {
++		dev_err(ecc->dev, "invalid ecc strength %d\n",
++			config->strength);
++		return -EINVAL;
++	}
++
++	ecc_bit = i;
++
++	if (config->op == ECC_ENCODE) {
++		/* configure ECC encoder (in bits) */
++		enc_sz = config->len << 3;
++
++		reg = ecc_bit | (ECC_NFI_MODE << ecc->caps->ecc_mode_shift);
++		reg |= (enc_sz << ECC_MS_SHIFT);
++		writel(reg, ecc->regs + ECC_ENCCNFG);
++		writel(0, ecc->regs + ECC_ENCCON);
++
++	} else {
++		/* configure ECC decoder (in bits) */
++		dec_sz = (config->len << 3) +
++			 config->strength * ecc->caps->parity_bits;
++
++		reg = ecc_bit | (ECC_NFI_MODE << ecc->caps->ecc_mode_shift);
++		reg |= (dec_sz << ECC_MS_SHIFT) | DEC_CNFG_EL;
++		reg |= DEC_EMPTY_EN;
++		writel(reg, ecc->regs + ECC_DECCNFG);
++		writel(0, ecc->regs + ECC_DECCON);
++	}
++
++	/* setup FDM register base */
++	writel(CPHYSADDR((u32) nfc->regs + NFI_FDML(0)),
++		ecc->regs + ECC_FDMADDR);
++
++	return 0;
++}
++EXPORT_SYMBOL(mtk_ecc_init);
++
++static const struct mtk_ecc_caps mtk_ecc_caps_mt7621 = {
++	.err_mask = 0xf,
++	.ecc_strength = ecc_strength_mt7621,
++	.num_ecc_strength = ARRAY_SIZE(ecc_strength_mt7621),
++	.ecc_mode_shift = 4,
++	.parity_bits = 13,
++};
++
++static const struct of_device_id mtk_ecc_dt_match[] = {
++	{
++		.compatible = "mediatek,mt7621-ecc",
++		.data = &mtk_ecc_caps_mt7621,
++	},
++	{},
++};
++
++static int mtk_ecc_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct mtk_ecc *ecc;
++	struct resource *res;
++
++	ecc = devm_kzalloc(dev, sizeof(*ecc), GFP_KERNEL);
++	if (!ecc)
++		return -ENOMEM;
++
++	ecc->caps = of_device_get_match_data(dev);
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	ecc->regs = devm_ioremap_resource(dev, res);
++	if (IS_ERR(ecc->regs)) {
++		dev_err(dev, "failed to map regs: %ld\n", PTR_ERR(ecc->regs));
++		return PTR_ERR(ecc->regs);
++	}
++
++	ecc->dev = dev;
++	mutex_init(&ecc->lock);
++	platform_set_drvdata(pdev, ecc);
++
++	return 0;
++}
++
++MODULE_DEVICE_TABLE(of, mtk_ecc_dt_match);
++
++static struct platform_driver mtk_ecc_driver = {
++	.probe  = mtk_ecc_probe,
++	.driver = {
++		.name  = "mtk7621-ecc",
++		.of_match_table = of_match_ptr(mtk_ecc_dt_match),
++	},
++};
++
++module_platform_driver(mtk_ecc_driver);
++
++MODULE_AUTHOR("Xiangsheng Hou <xiangsheng.hou@mediatek.com>");
++MODULE_AUTHOR("Weijie Gao <weijie.gao@mediatek.com>");
++MODULE_DESCRIPTION("MTK Nand ECC Driver");
++MODULE_LICENSE("GPL");
+--- /dev/null
++++ b/drivers/mtd/nand/raw/mtk_nand_mt7621.c
+@@ -0,0 +1,1222 @@
++/*
++ * SPDX-License-Identifier: GPL-2.0
++ * Driver for MediaTek SLC NAND Flash interface controller
++ *
++ * Copyright (C) 2018 MediaTek Inc.
++ * Authors:	Xiangsheng Hou	<xiangsheng.hou@mediatek.com>
++ *		Weijie Gao	<weijie.gao@mediatek.com>
++ *
++ */
++
++#include <linux/platform_device.h>
++#include <linux/delay.h>
++#include <linux/mtd/nand.h>
++#include <linux/mtd/mtd.h>
++#include <linux/module.h>
++#include <linux/iopoll.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/pm_runtime.h>
++#include <linux/mtd/partitions.h>
++#include <linux/sizes.h>
++#include "mtk_nand_mt7621.h"
++
++#define MTK_NAME		"mtk7621-nand"
++
++static int mtk_nfc_do_read_page_hwecc(struct mtd_info *mtd,
++	struct nand_chip *chip, uint8_t *buf, int page);
++
++static int mtk_nfc_page_erase_write(struct mtd_info *mtd,
++	struct nand_chip *chip, const uint8_t *buf, const uint8_t *oob,
++	int page);
++
++static inline struct mtk_nfc_nand_chip *to_mtk_nand(struct nand_chip *nand)
++{
++	return container_of(nand, struct mtk_nfc_nand_chip, nand);
++}
++
++static inline u8 *data_ptr(struct nand_chip *chip, const u8 *p, int i)
++{
++	return (u8 *)p + i * chip->ecc.size;
++}
++
++static inline u8 *oob_buf_ptr(struct nand_chip *chip, u8 *p, int i)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	u8 *poi;
++
++	poi = p + i * nfc->caps->fdm_size;
++
++	return poi;
++}
++
++static inline u8 *oob_ptr(struct nand_chip *chip, int i)
++{
++	return oob_buf_ptr(chip, chip->oob_poi, i);
++}
++
++static inline u8 *ecc_ptr(struct nand_chip *chip, int i)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(chip);
++	u8 *poi;
++
++	poi = chip->oob_poi + chip->ecc.steps * nfc->caps->fdm_size
++		+ i * (mtk_nand->spare_per_sector - nfc->caps->fdm_size);
++
++	return poi;
++}
++
++static inline int mtk_data_len(struct nand_chip *chip)
++{
++	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(chip);
++
++	return chip->ecc.size + mtk_nand->spare_per_sector;
++}
++
++static inline u8 *mtk_data_ptr(struct nand_chip *chip,  int i)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++
++	return nfc->buffer + i * mtk_data_len(chip);
++}
++
++static inline u8 *mtk_oob_ptr(struct nand_chip *chip, int i)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++
++	return nfc->buffer + i * mtk_data_len(chip) + chip->ecc.size;
++}
++
++static inline u8 *mtk_ecc_ptr(struct nand_chip *chip, int i)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++
++	return mtk_oob_ptr(chip, i) + nfc->caps->fdm_size;
++}
++
++static inline void nfi_clear_reg16(struct mtk_nfc *nfc, u32 val, u32 reg)
++{
++	u16 temp_val = 0;
++
++	temp_val = readw_relaxed(nfc->regs + reg);
++	temp_val &= ~val;
++	writew(temp_val, nfc->regs + reg);
++}
++
++static inline void nfi_set_reg16(struct mtk_nfc *nfc, u32 val, u32 reg)
++{
++	u16 temp_val = 0;
++
++	temp_val = readw_relaxed(nfc->regs + reg);
++	temp_val |= val;
++	writew(temp_val, nfc->regs + reg);
++}
++
++static inline void nfi_writel(struct mtk_nfc *nfc, u32 val, u32 reg)
++{
++	writel(val, nfc->regs + reg);
++}
++
++static inline void nfi_writew(struct mtk_nfc *nfc, u16 val, u32 reg)
++{
++	writew(val, nfc->regs + reg);
++}
++
++static inline u32 nfi_readl(struct mtk_nfc *nfc, u32 reg)
++{
++	return readl_relaxed(nfc->regs + reg);
++}
++
++static inline u16 nfi_readw(struct mtk_nfc *nfc, u32 reg)
++{
++	return readw_relaxed(nfc->regs + reg);
++}
++
++static void mtk_nfc_hw_reset(struct mtk_nfc *nfc)
++{
++	struct device *dev = nfc->dev;
++	u32 val;
++	int ret;
++
++	/* reset all registers and force the NFI master to terminate */
++	nfi_writel(nfc, CON_FIFO_FLUSH | CON_NFI_RST, NFI_CON);
++
++	/* wait for the master to finish the last transaction */
++	ret = readl_poll_timeout(nfc->regs + NFI_MASTER_STA, val,
++				 !(val & MASTER_STA_MASK), 50,
++				 MTK_RESET_TIMEOUT);
++	if (ret)
++		dev_warn(dev, "master active in reset [0x%x] = 0x%x\n",
++			 NFI_MASTER_STA, val);
++
++	/* ensure any status register affected by the NFI master is reset */
++	nfi_writel(nfc, CON_FIFO_FLUSH | CON_NFI_RST, NFI_CON);
++	nfi_writew(nfc, STAR_DE, NFI_STRDATA);
++}
++
++static int mtk_nfc_send_command(struct mtk_nfc *nfc, u8 command)
++{
++	struct device *dev = nfc->dev;
++	u32 val;
++	int ret;
++
++	nfi_writel(nfc, command, NFI_CMD);
++
++	ret = readl_poll_timeout_atomic(nfc->regs + NFI_STA, val,
++					!(val & STA_CMD), 10,  MTK_TIMEOUT);
++	if (ret) {
++		dev_warn(dev, "nfi core timed out entering command mode\n");
++		return -EIO;
++	}
++
++	return 0;
++}
++
++static int mtk_nfc_send_address(struct mtk_nfc *nfc, int addr)
++{
++	struct device *dev = nfc->dev;
++	u32 val;
++	int ret;
++
++	nfi_writel(nfc, addr, NFI_COLADDR);
++	nfi_writel(nfc, 0, NFI_ROWADDR);
++	nfi_writew(nfc, 1, NFI_ADDRNOB);
++
++	ret = readl_poll_timeout_atomic(nfc->regs + NFI_STA, val,
++					!(val & STA_ADDR), 10, MTK_TIMEOUT);
++	if (ret) {
++		dev_warn(dev, "nfi core timed out entering address mode\n");
++		return -EIO;
++	}
++
++	return 0;
++}
++
++static int mtk_nfc_hw_runtime_config(struct mtd_info *mtd)
++{
++	struct nand_chip *chip = mtd_to_nand(mtd);
++	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(chip);
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	struct device *dev = nfc->dev;
++	u32 fmt, spare_bit;
++
++	if (!mtd->writesize)
++		return 0;
++
++	chip->ecc.size = nfc->caps->sector_size;
++	mtk_nand->spare_per_sector = mtd->oobsize
++				/ (mtd->writesize / chip->ecc.size);
++
++	if (mtk_nand->spare_per_sector >= 28) {
++		spare_bit = PAGEFMT_SPARE_28;
++		chip->ecc.strength = 12;
++		mtk_nand->spare_per_sector = 28;
++	} else if (mtk_nand->spare_per_sector >= 27) {
++		spare_bit = PAGEFMT_SPARE_27;
++		chip->ecc.strength = 8;
++		mtk_nand->spare_per_sector = 27;
++	} else if (mtk_nand->spare_per_sector >= 26) {
++		spare_bit = PAGEFMT_SPARE_26;
++		chip->ecc.strength = 8;
++		mtk_nand->spare_per_sector = 26;
++	} else if (mtk_nand->spare_per_sector >= 16) {
++		spare_bit = PAGEFMT_SPARE_16;
++		chip->ecc.strength = 4;
++		mtk_nand->spare_per_sector = 16;
++	} else {
++		dev_err(dev, "MTK NFI not support oobsize: %x\n",
++			mtk_nand->spare_per_sector);
++		return -EINVAL;
++	}
++
++	switch (mtd->writesize) {
++	case 512:
++		fmt = PAGEFMT_512;
++		break;
++	case SZ_2K:
++		fmt = PAGEFMT_2K;
++		break;
++	case SZ_4K:
++		fmt = PAGEFMT_4K;
++		break;
++	default:
++		dev_err(nfc->dev, "invalid page len: %d\n", mtd->writesize);
++		return -EINVAL;
++	}
++
++	fmt |= spare_bit << nfc->caps->pageformat_spare_shift;
++	fmt |= nfc->caps->fdm_size << PAGEFMT_FDM_SHIFT;
++	fmt |= nfc->caps->fdm_ecc_size << PAGEFMT_FDM_ECC_SHIFT;
++	nfi_writel(nfc, fmt, NFI_PAGEFMT);
++
++	nfc->ecc_cfg.strength = chip->ecc.strength;
++	nfc->ecc_cfg.len = chip->ecc.size + nfc->caps->fdm_ecc_size;
++
++	return 0;
++}
++
++static void mtk_nfc_select_chip(struct mtd_info *mtd, int chip)
++{
++	struct nand_chip *nand = mtd_to_nand(mtd);
++	struct mtk_nfc *nfc = nand_get_controller_data(nand);
++	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(nand);
++
++	if (chip < 0)
++		return;
++
++	mtk_nfc_hw_runtime_config(mtd);
++
++	nfi_writel(nfc, mtk_nand->sels[chip], NFI_CSEL);
++}
++
++static int mtk_nfc_dev_ready(struct mtd_info *mtd)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(mtd_to_nand(mtd));
++
++	if (nfi_readl(nfc, NFI_STA) & STA_BUSY)
++		return 0;
++
++	return 1;
++}
++
++static void mtk_nfc_cmd_ctrl(struct mtd_info *mtd, int dat, unsigned int ctrl)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(mtd_to_nand(mtd));
++
++	if (ctrl & NAND_ALE) {
++		mtk_nfc_send_address(nfc, dat);
++	} else if (ctrl & NAND_CLE) {
++		mtk_nfc_hw_reset(nfc);
++
++		nfi_writew(nfc, CNFG_OP_CUST, NFI_CNFG);
++		mtk_nfc_send_command(nfc, dat);
++	}
++}
++
++static inline void mtk_nfc_wait_ioready(struct mtk_nfc *nfc)
++{
++	int rc;
++	u8 val;
++
++	rc = readb_poll_timeout_atomic(nfc->regs + NFI_PIO_DIRDY, val,
++				       val & PIO_DI_RDY, 10, MTK_TIMEOUT);
++	if (rc < 0)
++		dev_err(nfc->dev, "data not ready\n");
++}
++
++static u32 mtk_nfc_pio_read(struct mtd_info *mtd, int byterw)
++{
++	struct nand_chip *chip = mtd_to_nand(mtd);
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	u32 reg;
++
++	/* after each byte read, the NFI_STA reg is reset by the hardware */
++	reg = nfi_readl(nfc, NFI_STA) & NFI_FSM_MASK;
++	if (reg != NFI_FSM_CUSTDATA) {
++		if (byterw)
++			nfi_set_reg16(nfc, CNFG_BYTE_RW, NFI_CNFG);
++		else
++			nfi_clear_reg16(nfc, CNFG_BYTE_RW, NFI_CNFG);
++
++		reg = nfi_readw(nfc, NFI_CNFG);
++		reg |= CNFG_READ_EN;
++		nfi_writew(nfc, reg, NFI_CNFG);
++
++		/*
++		 * set to max sector to allow the HW to continue reading over
++		 * unaligned accesses
++		 */
++		reg = (nfc->caps->max_sector << CON_SEC_SHIFT) | CON_BRD;
++		nfi_writel(nfc, reg, NFI_CON);
++
++		/* trigger to fetch data */
++		nfi_writew(nfc, STAR_EN, NFI_STRDATA);
++	}
++
++	mtk_nfc_wait_ioready(nfc);
++
++	return nfi_readl(nfc, NFI_DATAR);
++}
++
++static inline u8 mtk_nfc_read_byte(struct mtd_info *mtd)
++{
++	return mtk_nfc_pio_read(mtd, 1) & 0xff;
++}
++
++static void mtk_nfc_read_buf(struct mtd_info *mtd, u8 *buf, int len)
++{
++	int i;
++	u32 *p = (u32 *) buf;
++
++	if ((u32) buf % sizeof(u32) || len % sizeof(u32)) {
++		for (i = 0; i < len; i++)
++			buf[i] = mtk_nfc_pio_read(mtd, 1);
++	} else {
++		for (i = 0; i < (len / sizeof(u32)); i++)
++			p[i] = mtk_nfc_pio_read(mtd, 0);
++	}
++}
++
++static void mtk_nfc_pio_write(struct mtd_info *mtd, u32 val, int byterw)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(mtd_to_nand(mtd));
++	u32 reg;
++
++	reg = nfi_readl(nfc, NFI_STA) & NFI_FSM_MASK;
++
++	if (reg != NFI_FSM_CUSTDATA) {
++		if (byterw)
++			nfi_set_reg16(nfc, CNFG_BYTE_RW, NFI_CNFG);
++		else
++			nfi_clear_reg16(nfc, CNFG_BYTE_RW, NFI_CNFG);
++
++		reg = nfc->caps->max_sector << CON_SEC_SHIFT | CON_BWR;
++		nfi_writew(nfc, reg, NFI_CON);
++
++		nfi_writew(nfc, STAR_EN, NFI_STRDATA);
++	}
++
++	mtk_nfc_wait_ioready(nfc);
++	nfi_writel(nfc, val, NFI_DATAW);
++}
++
++
++static void mtk_nfc_write_byte(struct mtd_info *mtd, u8 byte)
++{
++	mtk_nfc_pio_write(mtd, byte, 1);
++}
++
++static void mtk_nfc_write_buf(struct mtd_info *mtd, const u8 *buf, int len)
++{
++	int i;
++	const u32 *p = (const u32 *) buf;
++
++	if ((u32) buf % sizeof(u32) || len % sizeof(u32)) {
++		for (i = 0; i < len; i++)
++			mtk_nfc_pio_write(mtd, buf[i], 1);
++	} else {
++		for (i = 0; i < (len / sizeof(u32)); i++)
++			mtk_nfc_pio_write(mtd, p[i], 0);
++	}
++}
++
++static inline void mtk_nfc_read_fdm(struct nand_chip *chip, u32 start,
++				    u32 sectors)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	u32 vall, valm;
++	u8 *oobptr;
++	int i, j;
++
++	for (i = 0; i < sectors; i++) {
++		oobptr = oob_ptr(chip, start + i);
++		vall = nfi_readl(nfc, NFI_FDML(start + i));
++		valm = nfi_readl(nfc, NFI_FDMM(start + i));
++
++		for (j = 0; j < nfc->caps->fdm_size; j++)
++			oobptr[j] = (j >= 4 ? valm : vall) >> ((j % 4) * 8);
++	}
++}
++
++static inline void mtk_nfc_write_fdm(struct nand_chip *chip)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	u32 vall, valm;
++	u8 *oobptr;
++	int i, j;
++
++	for (i = 0; i < chip->ecc.steps; i++) {
++		oobptr = oob_ptr(chip, i);
++		vall = 0;
++		valm = 0;
++		for (j = 0; j < 8; j++) {
++			if (j < 4)
++				vall |= (j < nfc->caps->fdm_size ? oobptr[j]
++					: 0xff) << (j * 8);
++			else
++				valm |= (j < nfc->caps->fdm_size ? oobptr[j]
++					: 0xff) << ((j - 4) * 8);
++		}
++		nfi_writel(nfc, vall, NFI_FDML(i));
++		nfi_writel(nfc, valm, NFI_FDMM(i));
++	}
++}
++
++static int mtk_nfc_check_empty_page(struct mtd_info *mtd,
++				    struct nand_chip *chip, const u8 *buf)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	u32 i, j;
++	u8 *oob_poi;
++
++	for (i = 0; i < mtd->writesize; i++)
++		if (buf[i] != 0xff)
++			return 0;
++
++	for (i = 0; i < chip->ecc.steps; i++) {
++		oob_poi = oob_ptr(chip, i);
++		for (j = 0; j < nfc->caps->fdm_ecc_size; j++)
++			if (oob_poi[j] != 0xff)
++				return 0;
++	}
++
++	return 1;
++}
++
++static int mtk_nfc_write_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
++				  const u8 *buf, int oob_on, int page)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	struct device *dev = nfc->dev;
++	u32 i, ret, reg;
++
++	memset(nfc->buffer, 0xff, mtd->writesize + mtd->oobsize);
++
++	for (i = 0; i < chip->ecc.steps; i++)
++		memcpy(mtk_oob_ptr(chip, i), oob_ptr(chip, i),
++		       nfc->caps->fdm_size);
++
++	if (buf) {
++		for (i = 0; i < chip->ecc.steps; i++)
++			memcpy(mtk_data_ptr(chip, i), data_ptr(chip, buf, i),
++			       chip->ecc.size);
++	}
++
++	nand_prog_page_begin_op(chip, page, 0, NULL, 0);
++
++	nfi_clear_reg16(nfc, CNFG_READ_EN | CNFG_AUTO_FMT_EN
++		| CNFG_HW_ECC_EN, NFI_CNFG);
++	mtk_nfc_write_buf(mtd, nfc->buffer, mtd->writesize + mtd->oobsize);
++
++	ret = readl_poll_timeout_atomic(nfc->regs + NFI_ADDRCNTR, reg,
++					ADDRCNTR_SEC(reg) >= chip->ecc.steps,
++					10, MTK_TIMEOUT);
++	if (ret)
++		dev_err(dev, "raw write timeout\n");
++
++	nfi_writel(nfc, 0, NFI_CON);
++
++	return nand_prog_page_end_op(chip);
++}
++
++static int mtk_nfc_write_page_hwecc(struct mtd_info *mtd,
++	struct nand_chip *chip, const u8 *buf, int oob_on, int page)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	struct device *dev = nfc->dev;
++	int ret;
++	u32 reg;
++
++	if (mtk_nfc_check_empty_page(mtd, chip, buf)) {
++		/*
++		 * When the entire page is 0xff including oob data,
++		 * do not use ecc engine which will write ecc parity code
++		 * back to oob region.
++		 *
++		 * For 4-bit ecc strength, the ecc parity code of a full
++		 * 0xff subpage is 26 20 98 1b 87 6e fc
++		 *
++		 * Use raw mode instead.
++		 */
++		return mtk_nfc_write_page_raw(mtd, chip, NULL, oob_on, page);
++	}
++
++	nand_prog_page_begin_op(chip, page, 0, NULL, 0);
++
++	nfi_clear_reg16(nfc, CNFG_READ_EN, NFI_CNFG);
++	nfi_set_reg16(nfc, CNFG_AUTO_FMT_EN | CNFG_HW_ECC_EN, NFI_CNFG);
++
++	nfc->ecc_cfg.op = ECC_ENCODE;
++	mtk_ecc_init(nfc, nfc->ecc, &nfc->ecc_cfg);
++	mtk_ecc_enable(nfc->ecc, &nfc->ecc_cfg);
++
++	mtk_nfc_write_fdm(chip);
++	reg = chip->ecc.steps << CON_SEC_SHIFT | CON_BWR;
++	nfi_writew(nfc, reg, NFI_CON);
++	mtk_nfc_write_buf(mtd, buf, mtd->writesize);
++
++	ret = readl_poll_timeout_atomic(nfc->regs + NFI_ADDRCNTR, reg,
++					ADDRCNTR_SEC(reg) >= chip->ecc.steps,
++					10, MTK_TIMEOUT);
++	if (ret)
++		dev_err(dev, "hwecc write timeout\n");
++
++	mtk_ecc_disable(nfc->ecc);
++	nfi_writel(nfc, 0, NFI_CON);
++	return nand_prog_page_end_op(chip);
++}
++
++static int mtk_nfc_write_oob_raw(struct mtd_info *mtd, struct nand_chip *chip,
++				 int page)
++{
++	return mtk_nfc_write_page_raw(mtd, chip, NULL, 1, page);
++}
++
++static int mtk_nfc_write_oob_compat_check(struct mtd_info *mtd,
++	struct nand_chip *chip, int page)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	int i, j, oobsame = 1;
++	u8 *oob_poi, *oob_flash;
++
++	/* backup pending oob data */
++	memcpy(nfc->pending_oob[0], chip->oob_poi, mtd->oobsize);
++
++	mtk_nfc_do_read_page_hwecc(mtd, chip, nfc->pending_page, page);
++
++	if (mtk_nfc_check_empty_page(mtd, chip, nfc->pending_page)) {
++		/* page is empty, writing directly */
++		memcpy(chip->oob_poi, nfc->pending_oob[0], mtd->oobsize);
++		return 0;
++	}
++
++	for (i = 0; i < chip->ecc.steps; i++) {
++		oob_poi = oob_ptr(chip, i);
++		oob_flash = oob_buf_ptr(chip, nfc->pending_oob[0], i);
++		for (j = 0; j < nfc->caps->fdm_ecc_size; j++) {
++			if (oob_poi[j] != oob_flash[i]) {
++				oobsame = 0;
++				break;
++			}
++		}
++	}
++
++	if (oobsame) {
++		/* both oob are the same, doing nothing */
++		memcpy(chip->oob_poi, nfc->pending_oob[0], mtd->oobsize);
++		return 1;
++	}
++
++	/* backup nand oob data */
++	memcpy(nfc->pending_oob[1], chip->oob_poi, mtd->oobsize);
++
++	/* merge oob data */
++	for (i = 0; i < mtd->oobsize; i++)
++		nfc->pending_oob[1][i] &= nfc->pending_oob[0][i];
++
++	mtk_nfc_page_erase_write(mtd, chip, nfc->pending_page,
++		nfc->pending_oob[1], page);
++
++	/* restore original oob data */
++	memcpy(chip->oob_poi, nfc->pending_oob[0], mtd->oobsize);
++
++	return 1;
++}
++
++static int mtk_nfc_write_oob_std(struct mtd_info *mtd, struct nand_chip *chip,
++	int page)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	int ret;
++
++	if (mtk_nfc_write_oob_compat_check(mtd, chip, page))
++		return 0;
++
++	memset(nfc->buffer, 0xff, mtd->writesize + mtd->oobsize);
++
++	return mtk_nfc_write_page_hwecc(mtd, chip, nfc->buffer, 1, page);
++}
++
++static int mtk_nfc_read_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
++	u8 *buf, int oob_on, int page)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	int bitflips = 0;
++	int rc, i;
++	u32 reg;
++
++	nand_read_page_op(chip, page, 0, NULL, 0);
++
++	nfi_set_reg16(nfc, CNFG_READ_EN | CNFG_AUTO_FMT_EN
++			| CNFG_HW_ECC_EN, NFI_CNFG);
++
++	nfc->ecc_cfg.op = ECC_DECODE;
++	mtk_ecc_init(nfc, nfc->ecc, &nfc->ecc_cfg);
++	mtk_ecc_enable(nfc->ecc, &nfc->ecc_cfg);
++
++	reg =  chip->ecc.steps << CON_SEC_SHIFT | CON_BRD;
++	nfi_writew(nfc, reg, NFI_CON);
++
++	for (i = 0; i < chip->ecc.steps; i++) {
++		mtk_nfc_read_buf(mtd, data_ptr(chip, buf, i), chip->ecc.size);
++		rc = mtk_ecc_wait_decode_done(nfc->ecc, i);
++
++		mtk_nfc_read_fdm(chip, i, 1);
++
++		if (rc < 0) {
++			bitflips = -EIO;
++		} else {
++			rc = mtk_ecc_correct_check(mtd, nfc->ecc,
++				data_ptr(chip, buf, i), oob_ptr(chip, i), i);
++
++			if (rc < 0)
++				bitflips = -ETIMEDOUT;
++			else if (bitflips >= 0)
++				bitflips += rc;
++		}
++	}
++
++	mtk_ecc_disable(nfc->ecc);
++	nfi_writew(nfc, 0, NFI_CON);
++
++	return bitflips;
++}
++
++static int mtk_nfc_read_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
++				 u8 *buf, int oob_on, int page)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(chip);
++	int i;
++	u32 reg;
++
++	nand_read_page_op(chip, page, 0, NULL, 0);
++
++	nfi_set_reg16(nfc, CNFG_READ_EN, NFI_CNFG);
++	nfi_clear_reg16(nfc, CNFG_AUTO_FMT_EN | CNFG_HW_ECC_EN, NFI_CNFG);
++	reg =  chip->ecc.steps << CON_SEC_SHIFT | CON_BRD;
++	nfi_writew(nfc, reg, NFI_CON);
++
++	memset(nfc->buffer, 0xff, mtd->writesize + mtd->oobsize);
++	mtk_nfc_read_buf(mtd, nfc->buffer, mtd->writesize + mtd->oobsize);
++	nfi_writew(nfc, 0, NFI_CON);
++
++	for (i = 0; i < chip->ecc.steps; i++) {
++		memcpy(oob_ptr(chip, i), mtk_oob_ptr(chip, i),
++		       nfc->caps->fdm_size);
++		memcpy(ecc_ptr(chip, i), mtk_ecc_ptr(chip, i),
++		       mtk_nand->spare_per_sector - nfc->caps->fdm_size);
++
++		if (buf)
++			memcpy(data_ptr(chip, buf, i), mtk_data_ptr(chip, i),
++			       chip->ecc.size);
++	}
++
++	return 0;
++}
++
++static int mtk_nfc_read_oob_raw(struct mtd_info *mtd, struct nand_chip *chip,
++				int page)
++{
++	return mtk_nfc_read_page_raw(mtd, chip, NULL, 1, page);
++}
++
++static int mtk_nfc_read_oob_std(struct mtd_info *mtd, struct nand_chip *chip,
++	int page)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++
++	nand_read_page_op(chip, page, 0, NULL, 0);
++
++	return mtk_nfc_read_page_hwecc(mtd, chip, nfc->buffer, 1, page);
++}
++
++static inline void mtk_nfc_hw_init(struct mtk_nfc *nfc)
++{
++	/*
++	 * CNRNB: nand ready/busy register
++	 * -------------------------------
++	 * 7:4: timeout register for polling the NAND busy/ready signal
++	 * 0  : poll the status of the busy/ready signal after [7:4]*16 cycles.
++	 */
++	nfi_writew(nfc, 0xf1, NFI_CNRNB);
++	nfi_writel(nfc, PAGEFMT_4K, NFI_PAGEFMT);
++
++	mtk_nfc_hw_reset(nfc);
++
++	nfi_readl(nfc, NFI_INTR_STA);
++	nfi_writel(nfc, 0, NFI_INTR_EN);
++}
++
++static int mtk_nfc_ooblayout_free(struct mtd_info *mtd, int section,
++				  struct mtd_oob_region *oob_region)
++{
++	struct nand_chip *chip = mtd_to_nand(mtd);
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	u32 eccsteps;
++
++	eccsteps = mtd->writesize / chip->ecc.size;
++
++	if (section >= eccsteps)
++		return -ERANGE;
++
++	oob_region->length = nfc->caps->fdm_size - 1;
++	oob_region->offset = section * nfc->caps->fdm_size + 1;
++
++	return 0;
++}
++
++static int mtk_nfc_ooblayout_ecc(struct mtd_info *mtd, int section,
++				 struct mtd_oob_region *oob_region)
++{
++	struct nand_chip *chip = mtd_to_nand(mtd);
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	u32 eccsteps;
++
++	if (section)
++		return -ERANGE;
++
++	eccsteps = mtd->writesize / chip->ecc.size;
++	oob_region->offset = nfc->caps->fdm_size * eccsteps;
++	oob_region->length = mtd->oobsize - oob_region->offset;
++
++	return 0;
++}
++
++static const struct mtd_ooblayout_ops mtk_nfc_ooblayout_ops = {
++	.free = mtk_nfc_ooblayout_free,
++	.ecc = mtk_nfc_ooblayout_ecc,
++};
++
++static int mtk_nfc_block_bad(struct mtd_info *mtd, loff_t ofs)
++{
++	struct nand_chip *chip = mtd_to_nand(mtd);
++	int page, res = 0, i = 0;
++	u16 bad;
++
++	if (chip->bbt_options & NAND_BBT_SCANLASTPAGE)
++		ofs += mtd->erasesize - mtd->writesize;
++
++	page = (int) (ofs >> chip->page_shift) & chip->pagemask;
++
++	do {
++		nand_read_page_op(chip, page, chip->ecc.size + chip->badblockpos,
++			NULL, 0);
++
++		bad = chip->read_byte(mtd);
++		res = bad != 0xFF;
++
++		ofs += mtd->writesize;
++		page = (int) (ofs >> chip->page_shift) & chip->pagemask;
++		i++;
++	} while (!res && i < 2 && (chip->bbt_options & NAND_BBT_SCAN2NDPAGE));
++
++	return res;
++}
++
++static int mtk_nfc_block_markbad(struct mtd_info *mtd, loff_t ofs)
++{
++	struct nand_chip *chip = mtd_to_nand(mtd);
++	loff_t lofs;
++	int page, ret = 0, res, i = 0;
++
++	/* Create bad block mark OOB bata */
++	memset(chip->oob_poi, 0xff, mtd->oobsize);
++	chip->oob_poi[chip->badblockpos] = 0;
++
++	/* For BootROM compatibility, always write to offset 0 */
++	chip->oob_poi[0] = 0;
++
++	/* Write to last page(s) if necessary */
++	if (chip->bbt_options & NAND_BBT_SCANLASTPAGE) {
++		lofs = ofs + mtd->erasesize - mtd->writesize;
++		if (chip->bbt_options & NAND_BBT_SCAN2NDPAGE)
++			lofs -= mtd->writesize;
++
++		do {
++			page = lofs >> mtd->writesize_shift;
++			res = mtk_nfc_write_oob_raw(mtd, chip, page);
++			if (!ret)
++				ret = res;
++
++			i++;
++			lofs += mtd->writesize;
++		} while ((chip->bbt_options & NAND_BBT_SCAN2NDPAGE) && i < 2);
++	}
++
++	/* For BootROM compatibility, always write to first page(s) */
++	i = 0;
++	do {
++		page = ofs >> mtd->writesize_shift;
++		res = mtk_nfc_write_oob_raw(mtd, chip, page);
++		if (!ret)
++			ret = res;
++
++		i++;
++		ofs += mtd->writesize;
++	} while ((chip->bbt_options & NAND_BBT_SCAN2NDPAGE) && i < 2);
++
++	return ret;
++}
++
++static int mtk_nfc_do_write_page_hwecc(struct mtd_info *mtd,
++	struct nand_chip *chip, const uint8_t *buf, int page)
++{
++	return mtk_nfc_write_page_hwecc(mtd, chip, buf, 1, page);
++}
++
++static int mtk_nfc_do_read_page_hwecc(struct mtd_info *mtd,
++	struct nand_chip *chip, uint8_t *buf, int page)
++{
++	unsigned int ecc_failures = mtd->ecc_stats.failed;
++	int status;
++
++	nand_read_page_op(chip, page, 0, NULL, 0);
++
++	status = mtk_nfc_read_page_hwecc(mtd, chip, buf, 1,
++		page);
++
++	if (status < 0)
++		return status;
++
++	if (mtd->ecc_stats.failed - ecc_failures)
++		return -EBADMSG;
++
++	return 0;
++}
++
++/* single_earase() ??? */
++static int mtk_nfc_do_erase(struct mtd_info *mtd, struct nand_chip *chip,
++	int page)
++{
++	unsigned int eraseblock;
++
++	eraseblock = page >> (chip->phys_erase_shift - chip->page_shift);
++	return nand_erase_op(chip, eraseblock);
++}
++
++static int mtk_nfc_page_erase_write(struct mtd_info *mtd,
++	struct nand_chip *chip, const uint8_t *buf, const uint8_t *oob,
++	int page)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	int pages_per_block, page_start;
++	int i;
++
++	pages_per_block = mtd->erasesize / mtd->writesize;
++	page_start = page - page % pages_per_block;
++
++	/* read all pages within this block except the one to be rewritten */
++	for (i = 0; i < pages_per_block; i++) {
++		if (page_start + i != page) {
++			mtk_nfc_do_read_page_hwecc(mtd, chip,
++				nfc->block_buffer[i], page_start + i);
++			memcpy(nfc->block_buffer[i] + mtd->writesize,
++				chip->oob_poi,
++				nfc->caps->fdm_size * chip->ecc.steps);
++		}
++	}
++
++	/* erase this block */
++	mtk_nfc_do_erase(mtd, chip, page_start);
++
++	/* write back pages except the one to be rewritten */
++	for (i = 0; i < pages_per_block; i++) {
++		if (page_start + i != page) {
++			memcpy(chip->oob_poi,
++				nfc->block_buffer[i] + mtd->writesize,
++				nfc->caps->fdm_size * chip->ecc.steps);
++			mtk_nfc_do_write_page_hwecc(mtd, chip,
++				nfc->block_buffer[i], page_start + i);
++		}
++	}
++
++	/* write page */
++	memcpy(chip->oob_poi, oob, nfc->caps->fdm_size * chip->ecc.steps);
++
++	mtk_nfc_do_write_page_hwecc(mtd, chip, nfc->pending_page, page);
++
++	return 0;
++}
++
++static int mtk_nfc_write_page_compat_check(struct mtd_info *mtd,
++	struct nand_chip *chip, const uint8_t *buf, int page)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	int i;
++
++	/* backup pending oob data */
++	memcpy(nfc->pending_oob[0], chip->oob_poi, mtd->oobsize);
++
++	mtk_nfc_do_read_page_hwecc(mtd, chip, nfc->pending_page, page);
++
++	if (mtk_nfc_check_empty_page(mtd, chip, nfc->pending_page)) {
++		/* page is empty, writing directly */
++		memcpy(chip->oob_poi, nfc->pending_oob[0], mtd->oobsize);
++		return 0;
++	}
++
++	/* backup in-flash oob data */
++	memcpy(nfc->pending_oob[1], chip->oob_poi, mtd->oobsize);
++
++	/* merge page data */
++	for (i = 0; i < mtd->writesize; i++)
++		nfc->pending_page[i] &= buf[i];
++
++	for (i = 0; i < mtd->oobsize; i++)
++		nfc->pending_oob[1][i] &= nfc->pending_oob[0][i];
++
++	mtk_nfc_page_erase_write(mtd, chip, nfc->pending_page,
++		nfc->pending_oob[1], page);
++
++	/* restore original oob */
++	memcpy(chip->oob_poi, nfc->pending_oob[0], mtd->oobsize);
++
++	return 1;
++}
++
++static int mtk_nfc_attach_chip(struct nand_chip *chip)
++{
++	struct mtd_info *mtd = nand_to_mtd(chip);
++	struct device *dev = mtd->dev.parent;
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	int len, i, npgs;
++	int ret;
++
++	if (chip->options & NAND_BUSWIDTH_16) {
++		dev_err(dev, "16bits buswidth not supported");
++		return -EINVAL;
++	}
++
++	dev_info(dev,"Using programmed access timings: %08x\n", nfi_readl(nfc, NFI_ACCCON));
++
++	/* store bbt magic in page, cause OOB is not protected */
++	if (chip->bbt_options & NAND_BBT_USE_FLASH)
++		chip->bbt_options |= NAND_BBT_NO_OOB;
++
++	len = mtd->writesize + mtd->oobsize;
++
++	nfc->buffer = devm_kzalloc(dev, len, GFP_KERNEL);
++	if (!nfc->buffer)
++		return  -ENOMEM;
++
++	npgs = mtd->erasesize / mtd->writesize;
++	nfc->block_buffer = devm_kzalloc(dev, npgs * sizeof(*nfc->block_buffer), GFP_KERNEL);
++	if (!nfc->block_buffer)
++		return -ENOMEM;
++
++	for (i = 0; i < npgs; i++) {
++		nfc->block_buffer[i] = devm_kzalloc(dev, len, GFP_KERNEL);
++		if (!nfc->block_buffer[i])
++			return -ENOMEM;
++	}
++
++	nfc->pending_page = devm_kzalloc(dev, mtd->writesize, GFP_KERNEL);
++	if (!nfc->pending_page)
++		return -ENOMEM;
++
++	for (i = 0; i < ARRAY_SIZE(nfc->pending_oob); i++) {
++		nfc->pending_oob[i] = devm_kzalloc(dev, mtd->oobsize, GFP_KERNEL);
++		if (!nfc->pending_oob[i])
++			return -ENOMEM;
++	}
++
++	return 0;
++}
++
++static const struct nand_controller_ops mtk_nfc_controller_ops = {
++	.attach_chip = mtk_nfc_attach_chip,
++};
++
++static int mtk_nfc_nand_chip_init(struct device *dev, struct mtk_nfc *nfc,
++				  struct device_node *np)
++{
++	struct mtk_nfc_nand_chip *chip;
++	struct nand_chip *nand;
++	struct mtd_info *mtd;
++	int nsels, i, ret;
++	u32 tmp;
++
++	if (!of_get_property(np, "reg", &nsels))
++		return -ENODEV;
++
++	nsels /= sizeof(u32);
++	if (!nsels || nsels > MTK_NAND_MAX_NSELS) {
++		dev_err(dev, "invalid reg property size %d\n", nsels);
++		return -EINVAL;
++	}
++
++	chip = devm_kzalloc(dev, sizeof(*chip) + nsels * sizeof(u8),
++			    GFP_KERNEL);
++	if (!chip)
++		return -ENOMEM;
++
++	chip->nsels = nsels;
++	for (i = 0; i < nsels; i++) {
++		ret = of_property_read_u32_index(np, "reg", i, &tmp);
++		if (ret) {
++			dev_err(dev, "reg property failure : %d\n", ret);
++			return ret;
++		}
++		chip->sels[i] = tmp;
++	}
++
++	nand = &chip->nand;
++	nand->controller = &nfc->controller;
++
++	nand_set_flash_node(nand, np);
++	nand_set_controller_data(nand, nfc);
++
++	nand->options |= NAND_USE_BOUNCE_BUFFER | NAND_NO_SUBPAGE_WRITE;
++	nand->dev_ready = mtk_nfc_dev_ready;
++	nand->select_chip = mtk_nfc_select_chip;
++	nand->write_byte = mtk_nfc_write_byte;
++	nand->write_buf = mtk_nfc_write_buf;
++	nand->read_byte = mtk_nfc_read_byte;
++	nand->read_buf = mtk_nfc_read_buf;
++	nand->cmd_ctrl = mtk_nfc_cmd_ctrl;
++	nand->block_bad = mtk_nfc_block_bad;
++	nand->block_markbad = mtk_nfc_block_markbad;
++
++	/* set default mode in case dt entry is missing */
++	nand->ecc.mode = NAND_ECC_HW;
++
++	nand->ecc.write_page_raw = mtk_nfc_write_page_raw;
++	nand->ecc.write_page = mtk_nfc_write_page_hwecc;
++	nand->ecc.write_oob_raw = mtk_nfc_write_oob_raw;
++	nand->ecc.write_oob = mtk_nfc_write_oob_std;
++
++	nand->ecc.read_page_raw = mtk_nfc_read_page_raw;
++	nand->ecc.read_page = mtk_nfc_read_page_hwecc;
++	nand->ecc.read_oob_raw = mtk_nfc_read_oob_raw;
++	nand->ecc.read_oob = mtk_nfc_read_oob_std;
++
++	mtd = nand_to_mtd(nand);
++	mtd->owner = THIS_MODULE;
++	mtd->dev.parent = dev;
++	mtd->name = MTK_NAME;
++	mtd_set_ooblayout(mtd, &mtk_nfc_ooblayout_ops);
++
++	mtk_nfc_hw_init(nfc);
++
++	ret = nand_scan(mtd, nsels);
++	if (ret)
++		return ret;
++
++	nand->select_chip(mtd, 0);
++
++	mtd->dev.of_node = of_get_next_available_child(dev->of_node, NULL);
++	if (!mtd->dev.of_node) {
++		dev_err(dev, "no nand device to configure\n");
++		return -ENODEV;
++	}
++
++	ret = mtd_device_register(mtd, NULL, 0);
++
++	if (ret) {
++		dev_err(dev, "mtd parse partition error\n");
++		nand_release(mtd);
++		return ret;
++	}
++
++	list_add_tail(&chip->node, &nfc->chips);
++
++	return 0;
++}
++
++static int mtk_nfc_nand_chips_init(struct device *dev, struct mtk_nfc *nfc)
++{
++	struct device_node *np = dev->of_node;
++	struct device_node *nand_np;
++	int ret;
++
++	for_each_child_of_node(np, nand_np) {
++		ret = mtk_nfc_nand_chip_init(dev, nfc, nand_np);
++		if (ret) {
++			of_node_put(nand_np);
++			return ret;
++		}
++	}
++
++	return 0;
++}
++
++static const struct mtk_nfc_caps mtk_nfc_caps_mt7621 = {
++	.pageformat_spare_shift = 4,
++	.max_sector = 8,
++	.sector_size = 512,
++	.fdm_size = 8,
++	.fdm_ecc_size = 8,
++};
++
++static const struct of_device_id mtk_nfc_id_table[] = {
++	{
++		.compatible = "mediatek,mt7621-nfc",
++		.data = &mtk_nfc_caps_mt7621,
++	},
++	{}
++};
++MODULE_DEVICE_TABLE(of, mtk_nfc_id_table);
++
++static int mtk_nfc_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct mtk_nfc *nfc;
++	struct resource *res;
++	int ret;
++
++	nfc = devm_kzalloc(dev, sizeof(*nfc), GFP_KERNEL);
++	if (!nfc)
++		return -ENOMEM;
++
++	nand_controller_init(&nfc->controller);
++	INIT_LIST_HEAD(&nfc->chips);
++	nfc->controller.ops = &mtk_nfc_controller_ops;
++
++	/* probe defer if not ready */
++	nfc->ecc = of_mtk_ecc_get(np);
++	if (IS_ERR(nfc->ecc))
++		return PTR_ERR(nfc->ecc);
++	else if (!nfc->ecc)
++		return -ENODEV;
++
++	nfc->caps = of_device_get_match_data(dev);
++	nfc->dev = dev;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	nfc->regs = devm_ioremap_resource(dev, res);
++	if (IS_ERR(nfc->regs)) {
++		ret = PTR_ERR(nfc->regs);
++		goto release_ecc;
++	}
++
++	platform_set_drvdata(pdev, nfc);
++
++	ret = mtk_nfc_nand_chips_init(dev, nfc);
++	if (ret) {
++		dev_err(dev, "failed to init nand chips\n");
++		goto release_ecc;
++	}
++
++	return 0;
++
++release_ecc:
++	mtk_ecc_release(nfc->ecc);
++
++	return ret;
++}
++
++static int mtk_nfc_remove(struct platform_device *pdev)
++{
++	struct mtk_nfc *nfc = platform_get_drvdata(pdev);
++	struct mtk_nfc_nand_chip *chip;
++
++	while (!list_empty(&nfc->chips)) {
++		chip = list_first_entry(&nfc->chips, struct mtk_nfc_nand_chip,
++					node);
++		nand_release(nand_to_mtd(&chip->nand));
++		list_del(&chip->node);
++	}
++
++	mtk_ecc_release(nfc->ecc);
++
++	return 0;
++}
++
++static struct platform_driver mtk_nfc_driver = {
++	.probe  = mtk_nfc_probe,
++	.remove = mtk_nfc_remove,
++	.driver = {
++		.name  = MTK_NAME,
++		.of_match_table = mtk_nfc_id_table,
++	},
++};
++
++module_platform_driver(mtk_nfc_driver);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Xiangsheng Hou <xiangsheng.hou@mediatek.com>");
++MODULE_AUTHOR("Weijie Gao <weijie.gao@mediatek.com>");
++MODULE_DESCRIPTION("MTK Nand Flash Controller Driver");
+--- /dev/null
++++ b/drivers/mtd/nand/raw/mtk_nand_mt7621.h
+@@ -0,0 +1,197 @@
++/*
++ * SPDX-License-Identifier: GPL-2.0
++ * MTK NFI and ECC controller
++ *
++ * Copyright (C) 2018 MediaTek Inc.
++ * Authors:	Xiangsheng Hou	<xiangsheng.hou@mediatek.com>
++ *
++ */
++
++#ifndef __DRIVERS_MTD_NAND_MTK_ECC_H__
++#define __DRIVERS_MTD_NAND_MTK_ECC_H__
++
++#include <linux/types.h>
++#include <linux/mtd/nand.h>
++#include <linux/mtd/rawnand.h>
++#include <linux/mtd/mtd.h>
++
++/* NFI controller register definition */
++#define NFI_CNFG		(0x00)
++#define		CNFG_AHB		BIT(0)
++#define		CNFG_READ_EN		BIT(1)
++#define		CNFG_DMA_BURST_EN	BIT(2)
++#define		CNFG_BYTE_RW		BIT(6)
++#define		CNFG_HW_ECC_EN		BIT(8)
++#define		CNFG_AUTO_FMT_EN	BIT(9)
++#define		CNFG_OP_READ		(1 << 12)
++#define		CNFG_OP_PROG		(3 << 12)
++#define		CNFG_OP_CUST		(6 << 12)
++#define		CNFG_OP_MASK		(7 << 12)
++#define NFI_PAGEFMT		(0x04)
++#define		PAGEFMT_FDM_ECC_SHIFT	(12)
++#define		PAGEFMT_FDM_SHIFT	(8)
++#define		PAGEFMT_512		(0)
++#define		PAGEFMT_2K		(1)
++#define		PAGEFMT_4K		(2)
++#define		PAGEFMT_SPARE_16	(0)
++#define		PAGEFMT_SPARE_26	(1)
++#define		PAGEFMT_SPARE_27	(2)
++#define		PAGEFMT_SPARE_28	(3)
++#define NFI_CON			(0x08)
++#define		CON_FIFO_FLUSH		BIT(0)
++#define		CON_NFI_RST		BIT(1)
++#define		CON_BRD			BIT(8)  /* burst  read */
++#define		CON_BWR			BIT(9)	/* burst  write */
++#define		CON_SEC_SHIFT		(12)
++#define NFI_ACCCON		(0x0C)
++#define NFI_INTR_EN		(0x10)
++#define		INTR_AHB_DONE_EN	BIT(6)
++#define NFI_INTR_STA		(0x14)
++#define NFI_CMD			(0x20)
++#define NFI_ADDRNOB		(0x30)
++#define		ADDR_COL_NOB_S	(0)
++#define		ADDR_ROW_NOB_S	(4)
++#define		ADDR_COL_NOB_M	(7)
++#define		ADDR_ROW_NOB_M	(7)
++#define NFI_COLADDR		(0x34)
++#define NFI_ROWADDR		(0x38)
++#define NFI_STRDATA		(0x40)
++#define		STAR_EN			(1)
++#define		STAR_DE			(0)
++#define NFI_CNRNB		(0x44)
++#define NFI_DATAW		(0x50)
++#define NFI_DATAR		(0x54)
++#define NFI_PIO_DIRDY		(0x58)
++#define		PIO_DI_RDY		(0x01)
++#define NFI_STA			(0x60)
++#define		STA_CMD			BIT(0)
++#define		STA_ADDR		BIT(1)
++#define		STA_BUSY		BIT(8)
++#define		STA_EMP_PAGE		BIT(12)
++#define		NFI_FSM_CUSTDATA	(0xe << 16)
++#define		NFI_FSM_MASK		(0xf << 16)
++#define NFI_ADDRCNTR		(0x70)
++#define		CNTR_MASK		GENMASK(16, 12)
++#define		ADDRCNTR_SEC_SHIFT	(12)
++#define		ADDRCNTR_SEC(val) \
++		(((val) & CNTR_MASK) >> ADDRCNTR_SEC_SHIFT)
++#define NFI_STRADDR		(0x80)
++#define NFI_BYTELEN		(0x84)
++#define NFI_CSEL		(0x90)
++#define NFI_FDML(x)		(0xA0 + (x) * sizeof(u32) * 2)
++#define NFI_FDMM(x)		(0xA4 + (x) * sizeof(u32) * 2)
++#define NFI_MASTER_STA		(0x224)
++#define		MASTER_STA_MASK		(0x0FFF)
++#define NFI_EMPTY_THRESH	(0x23C)
++
++/* ECC controller register definition */
++#define ECC_ENCCON		(0x00)
++#define ECC_ENCCNFG		(0x04)
++#define ECC_ENCIDLE		(0x0C)
++#define		ECC_MS_SHIFT		(16)
++#define		DEC_CON_SHIFT		(12)
++#define ECC_DECCON		(0x100)
++#define		ECC_NFI_MODE		(1)
++#define ECC_DECCNFG		(0x104)
++#define		DEC_EMPTY_EN		BIT(31)
++#define		DEC_CNFG_EL	(0x2 << 12)
++#define ECC_DECIDLE		(0x10C)
++#define ECC_DECENUM		(0x114)
++#define ECC_DECDONE		(0x118)
++#define ECC_DECEL(x)		(0x11C + (x) * sizeof(u32))
++#define		DEC_EL_SHIFT		(16)
++#define		DEC_EL_MASK		(0x1fff)
++#define		DEC_EL_BIT_MASK		(0x7)
++#define		DEC_EL_BYTE_SHIFT	(3)
++#define ECC_FDMADDR		(0x13c)
++
++#define ECC_IDLE_REG(op)	((op) == ECC_ENCODE ? ECC_ENCIDLE : ECC_DECIDLE)
++#define ECC_CTL_REG(op)		((op) == ECC_ENCODE ? ECC_ENCCON : ECC_DECCON)
++
++#define MTK_TIMEOUT		(500000)
++#define MTK_RESET_TIMEOUT	(1000000)
++#define MTK_NAND_MAX_NSELS	(2)
++
++#define ECC_IDLE_MASK		BIT(0)
++#define ECC_OP_ENABLE		(1)
++#define ECC_OP_DISABLE		(0)
++
++enum mtk_ecc_operation {ECC_ENCODE, ECC_DECODE};
++
++struct mtk_nfc_caps {
++	u8 pageformat_spare_shift;
++	u8 max_sector;
++	u32 sector_size;
++	u32 fdm_size;
++	u32 fdm_ecc_size;
++};
++
++struct mtk_nfc_nand_chip {
++	struct list_head node;
++	struct nand_chip nand;
++
++	u32 spare_per_sector;
++
++	int nsels;
++	u8 sels[0];
++	/* nothing after this field */
++};
++
++struct mtk_ecc_config {
++	enum mtk_ecc_operation op;
++	u32 strength;
++	u32 sectors;
++	u32 len;
++};
++
++struct mtk_ecc_caps {
++	u32 err_mask;
++	const u8 *ecc_strength;
++	u8 num_ecc_strength;
++	u8 ecc_mode_shift;
++	u32 parity_bits;
++};
++
++struct mtk_ecc {
++	struct device *dev;
++	const struct mtk_ecc_caps *caps;
++	void __iomem *regs;
++
++	struct completion done;
++	struct mutex lock;
++	u32 sectors;
++};
++
++struct mtk_nfc {
++	struct nand_controller controller;
++	struct mtk_ecc_config ecc_cfg;
++	struct mtk_ecc *ecc;
++	struct nand_chip *nand;
++
++	struct device *dev;
++	const struct mtk_nfc_caps *caps;
++	void __iomem *regs;
++
++	struct list_head chips;
++
++	u8 *buffer;
++
++	u8 **block_buffer;
++	u8 *pending_page;
++	u8 *pending_oob[2];
++};
++
++int mtk_ecc_encode(struct mtk_ecc *, struct mtk_ecc_config *, u8 *, u32);
++int mtk_ecc_wait_decode_done(struct mtk_ecc *ecc, u32 sector_index);
++int mtk_ecc_enable(struct mtk_ecc *, struct mtk_ecc_config *);
++void mtk_ecc_disable(struct mtk_ecc *);
++void mtk_ecc_adjust_strength(struct mtk_ecc *ecc, u32 *p);
++unsigned int mtk_ecc_get_parity_bits(struct mtk_ecc *ecc);
++int mtk_ecc_correct_check(struct mtd_info *mtd, struct mtk_ecc *ecc,
++			  u8 *sector_buf, u8 *fdm_buf, u32 sector_index);
++int mtk_ecc_init(struct mtk_nfc *nfc, struct mtk_ecc *ecc,
++		 struct mtk_ecc_config *config);
++struct mtk_ecc *of_mtk_ecc_get(struct device_node *);
++void mtk_ecc_release(struct mtk_ecc *);
++
++#endif
