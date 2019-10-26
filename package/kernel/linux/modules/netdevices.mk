@@ -1042,3 +1042,53 @@ define KernelPackage/be2net/description
 endef
 
 $(eval $(call KernelPackage,be2net))
+
+
+define KernelPackage/qca7k
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Qualcomm Atheros QCA7000 support (library for SPI/UART driver)
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/qualcomm/qca_7k_common.ko
+  KCONFIG:=CONFIG_QCA7000
+endef
+
+define KernelPackage/qca7k/description
+  Kernel module for shared code for Qualcomm Atheros QCA7000 SPI/UART drivers
+endef
+
+$(eval $(call KernelPackage,qca7k))
+
+
+define KernelPackage/qcaspi
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Qualcomm Atheros QCA7000 SPI support
+  DEPENDS:=+kmod-qca7k
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/qualcomm/qcaspi.ko
+  KCONFIG:= \
+	CONFIG_QCA7000_SPI \
+	CONFIG_SPI=y \
+	CONFIG_SPI_MASTER=y
+  AUTOLOAD:=$(call AutoProbe,qcaspi)
+endef
+
+define KernelPackage/qcaspi/description
+  Kernel module for the Qualcomm Atheros QCA7000 SPI driver
+endef
+
+$(eval $(call KernelPackage,qcaspi))
+
+
+define KernelPackage/qcauart
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Qualcomm Atheros QCA7000 UART support
+  DEPENDS:=+kmod-qca7k +kmod-serdev-ttyport @LINUX_4_19
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/qualcomm/qcauart.ko
+  KCONFIG:=CONFIG_QCA7000_UART
+  AUTOLOAD:=$(call AutoProbe,qcauart)
+endef
+
+define KernelPackage/qcauart/description
+  Kernel module for the Qualcomm Atheros QCA7000 UART driver
+endef
+
+$(eval $(call KernelPackage,qcauart))
