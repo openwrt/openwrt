@@ -1,15 +1,15 @@
 include ./common-netgear.mk	# for netgear-uImage
 
 # attention: only zlib compression is allowed for the boot fs
-define  Build/zyxel-buildkerneljffs
-        rm -rf  $(KDIR_TMP)/zyxelnbg6716
-        mkdir -p $(KDIR_TMP)/zyxelnbg6716/image/boot
-        cp $@ $(KDIR_TMP)/zyxelnbg6716/image/boot/vmlinux.lzma.uImage
-        $(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
-                --big-endian --squash-uids -v -e 128KiB -q -f -n -x lzma -x rtime \
-                -o $@ \
-                -d $(KDIR_TMP)/zyxelnbg6716/image
-        rm -rf $(KDIR_TMP)/zyxelnbg6716
+define Build/zyxel-buildkerneljffs
+	rm -rf  $(KDIR_TMP)/zyxelnbg6716
+	mkdir -p $(KDIR_TMP)/zyxelnbg6716/image/boot
+	cp $@ $(KDIR_TMP)/zyxelnbg6716/image/boot/vmlinux.lzma.uImage
+	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
+		--big-endian --squash-uids -v -e 128KiB -q -f -n -x lzma -x rtime \
+		-o $@ \
+		-d $(KDIR_TMP)/zyxelnbg6716/image
+	rm -rf $(KDIR_TMP)/zyxelnbg6716
 endef
 
 define Build/zyxel-factory
@@ -94,6 +94,7 @@ TARGET_DEVICES += netgear_wndr4300
 define Device/zyxel_nbg6716
   ATH_SOC := qca9558
   DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := NBG6716
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
   RAS_BOARD := NBG6716
   RAS_ROOTFS_SIZE := 29696k
@@ -104,7 +105,7 @@ define Device/zyxel_nbg6716
   KERNEL := kernel-bin | append-dtb | uImage none | \
 	zyxel-buildkerneljffs | check-size 4096k
   IMAGES := sysupgrade.tar sysupgrade-4M-Kernel.bin factory.bin
-  IMAGE/sysupgrade.tar/squashfs := append-rootfs | pad-to $$$${BLOCKSIZE} | sysupgrade-tar rootfs=$$$$@ | append-metadata
+  IMAGE/sysupgrade.tar/squashfs := append-rootfs | pad-to $$$$(BLOCKSIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
   IMAGE/sysupgrade-4M-Kernel.bin/squashfs := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | pad-to 263192576 | gzip
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | zyxel-factory
   UBINIZE_OPTS := -E 5

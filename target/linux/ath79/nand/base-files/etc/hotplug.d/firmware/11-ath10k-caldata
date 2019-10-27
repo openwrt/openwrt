@@ -3,7 +3,6 @@
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
 . /lib/functions/caldata.sh
-. /lib/functions/k2t.sh
 
 board=$(board_name)
 
@@ -12,7 +11,7 @@ case "$FIRMWARE" in
 	case $board in
 	zyxel,nbg6716)
 		caldata_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +1)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +1)
 		;;
 	esac
 	;;

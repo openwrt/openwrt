@@ -76,21 +76,21 @@
 			debounce-interval = <60>;
 		};
 
-	        wifi_button {
-                        label = "WiFi button";
+		wifi_button {
+			label = "WiFi button";
 			linux,code = <KEY_RFKILL>;
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
 
-	        usb1 {
+		usb1 {
 			label = "USB1 eject button";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
 
-	        usb2 {
-                        label = "USB2 eject button";
+		usb2 {
+			label = "USB2 eject button";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
@@ -105,7 +105,7 @@
 };
 
 &gpio {
-	gpio_usb_power {
+	usb_power {
 		gpio-hog;
 		gpios = <16 0>;
 		output-high;
@@ -262,7 +262,7 @@
 };
 
 &pcie1 {
-        status = "okay";
+	status = "okay";
 
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
@@ -272,15 +272,15 @@
 };
 
 &usb_phy0 {
-        status = "okay";
+	status = "okay";
 };
 
 &usb_phy1 {
-        status = "okay";
+	status = "okay";
 };
 
 &usb0 {
-        status = "okay";
+	status = "okay";
 
 	hub_port0: port@1 {
 		reg = <1>;
@@ -290,7 +290,7 @@
 };
 
 &usb1 {
-        status = "okay";
+	status = "okay";
 
 	hub_port1: port@1 {
 		reg = <1>;
