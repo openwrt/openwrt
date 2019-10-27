@@ -13,13 +13,11 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-	aerohive,hiveap-121|\
-	netgear,wndr4300|\
-	zyxel,nbg6716)
-		nand_do_upgrade "$1"
+	glinet,gl-ar300m-nand)
+		default_do_upgrade "$1"
 		;;
 	*)
-		default_do_upgrade "$1"
+		nand_do_upgrade "$1"
 		;;
 	esac
 }
