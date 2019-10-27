@@ -26,6 +26,23 @@ define Build/zyxel-factory
 		fi
 endef
 
+define Device/aerohive_hiveap-121
+  ATH_SOC := ar9344
+  DEVICE_VENDOR := Aerohive
+  DEVICE_MODEL := HiveAP 121
+  DEVICE_PACKAGES := kmod-usb2
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 116m
+  KERNEL_SIZE := 5120k
+  UBINIZE_OPTS := -E 5
+  SUPPORTED_DEVICES += hiveap-121
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += aerohive_hiveap-121
+
 define Device/glinet_gl-ar300m-nand
   ATH_SOC := qca9531
   DEVICE_VENDOR := GL.iNet

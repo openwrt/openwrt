@@ -8,6 +8,9 @@ ath79_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+	aerohive,hiveap-121)
+		ucidef_set_interface_lan "eth0"
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
