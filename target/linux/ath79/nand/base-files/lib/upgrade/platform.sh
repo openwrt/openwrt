@@ -13,7 +13,8 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-	aerohive,hiveap-121)
+	aerohive,hiveap-121|\
+	zyxel,nbg6716)
 		nand_do_upgrade "$1"
 		;;
 	*)

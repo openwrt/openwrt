@@ -11,6 +11,10 @@ ath79_setup_interfaces()
 	aerohive,hiveap-121)
 		ucidef_set_interface_lan "eth0"
 		;;
+	zyxel,nbg6716)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6@eth1"
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
@@ -22,6 +26,10 @@ ath79_setup_macs()
 	local board="$1"
 
 	case "$board" in
+	zyxel,nbg6716)
+		lan_mac=$(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +2)
+		wan_mac=$(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +3)
+		;;
 	esac
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac

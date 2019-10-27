@@ -51,9 +51,6 @@ platform_do_upgrade() {
 	ubnt,routerstation-pro)
 		echo "Sysupgrade disabled due bug FS#2428"
 		;;
-	zyxel,nbg6716)
-		nand_do_upgrade "$1"
-		;;
 	*)
 		default_do_upgrade "$1"
 		;;
