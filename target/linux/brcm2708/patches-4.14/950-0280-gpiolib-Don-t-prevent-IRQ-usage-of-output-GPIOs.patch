@@ -35,7 +35,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  		gpiod_err(desc,
  			  "%s: tried to set a GPIO tied to an IRQ as output\n",
  			  __func__);
-@@ -2830,7 +2832,7 @@ int gpiochip_lock_as_irq(struct gpio_chi
+@@ -2841,7 +2843,7 @@ int gpiochip_lock_as_irq(struct gpio_chi
  			set_bit(FLAG_IS_OUT, &desc->flags);
  	}
  
