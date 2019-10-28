@@ -10,11 +10,9 @@ Subject: [PATCH] phy: Add ipq40xx mdio driver
  3 files changed, 255 insertions(+)
  create mode 100644 drivers/net/phy/mdio-ipq40xx.c
 
-diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
-index 1f5fd24cd..eb71b47a3 100644
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -436,6 +436,13 @@ config XILINX_GMII2RGMII
+@@ -519,6 +519,13 @@ config XILINX_GMII2RGMII
  	  the Reduced Gigabit Media Independent Interface(RGMII) between
  	  Ethernet physical media devices and the Gigabit Ethernet controller.
  
@@ -28,11 +26,9 @@ index 1f5fd24cd..eb71b47a3 100644
  endif # PHYLIB
  
  config MICREL_KS8995MA
-diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
-index f21cda9d8..804c52634 100644
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -33,6 +33,7 @@ obj-$(CONFIG_MDIO_CAVIUM)	+= mdio-cavium.o
+@@ -48,6 +48,7 @@ obj-$(CONFIG_MDIO_CAVIUM)	+= mdio-cavium
  obj-$(CONFIG_MDIO_GPIO)		+= mdio-gpio.o
  obj-$(CONFIG_MDIO_HISI_FEMAC)	+= mdio-hisi-femac.o
  obj-$(CONFIG_MDIO_I2C)		+= mdio-i2c.o
@@ -40,9 +36,6 @@ index f21cda9d8..804c52634 100644
  obj-$(CONFIG_MDIO_MOXART)	+= mdio-moxart.o
  obj-$(CONFIG_MDIO_MSCC_MIIM)	+= mdio-mscc-miim.o
  obj-$(CONFIG_MDIO_OCTEON)	+= mdio-octeon.o
-diff --git a/drivers/net/phy/mdio-ipq40xx.c b/drivers/net/phy/mdio-ipq40xx.c
-new file mode 100644
-index 000000000..88fe5dc2b
 --- /dev/null
 +++ b/drivers/net/phy/mdio-ipq40xx.c
 @@ -0,0 +1,247 @@
@@ -293,5 +286,3 @@ index 000000000..88fe5dc2b
 +MODULE_AUTHOR("Qualcomm Atheros");
 +MODULE_VERSION(DRV_VERSION);
 +MODULE_LICENSE("Dual BSD/GPL");
---
-2.20.1
