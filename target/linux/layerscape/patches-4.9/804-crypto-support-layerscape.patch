@@ -7122,7 +7122,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -#define DESC_AEAD_BASE			(4 * CAAM_CMD_SZ)
 -#define DESC_AEAD_ENC_LEN		(DESC_AEAD_BASE + 11 * CAAM_CMD_SZ)
 -#define DESC_AEAD_DEC_LEN		(DESC_AEAD_BASE + 15 * CAAM_CMD_SZ)
--#define DESC_AEAD_GIVENC_LEN		(DESC_AEAD_ENC_LEN + 9 * CAAM_CMD_SZ)
+-#define DESC_AEAD_GIVENC_LEN		(DESC_AEAD_ENC_LEN + 10 * CAAM_CMD_SZ)
 -
 -/* Note: Nonce is counted in enckeylen */
 -#define DESC_AEAD_CTR_RFC3686_LEN	(4 * CAAM_CMD_SZ)
@@ -7533,7 +7533,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	return 0;
  }
-@@ -470,11 +171,12 @@ static int aead_set_sh_desc(struct crypt
+@@ -470,12 +171,12 @@ static int aead_set_sh_desc(struct crypt
  	unsigned int ivsize = crypto_aead_ivsize(aead);
  	struct caam_ctx *ctx = crypto_aead_ctx(aead);
  	struct device *jrdev = ctx->jrdev;
@@ -7542,6 +7542,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +	struct caam_drv_private *ctrlpriv = dev_get_drvdata(jrdev->parent);
  	u32 ctx1_iv_off = 0;
 -	u32 *desc;
+-	u32 *wait_cmd;
 -	const bool ctr_mode = ((ctx->class1_alg_type & OP_ALG_AAI_MASK) ==
 +	u32 *desc, *nonce = NULL;
 +	u32 inl_mask;
@@ -7550,7 +7551,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			       OP_ALG_AAI_CTR_MOD128);
  	const bool is_rfc3686 = alg->caam.rfc3686;
  
-@@ -482,7 +184,7 @@ static int aead_set_sh_desc(struct crypt
+@@ -483,7 +184,7 @@ static int aead_set_sh_desc(struct crypt
  		return 0;
  
  	/* NULL encryption / decryption */
@@ -7559,7 +7560,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return aead_null_set_sh_desc(aead);
  
  	/*
-@@ -497,8 +199,14 @@ static int aead_set_sh_desc(struct crypt
+@@ -498,8 +199,14 @@ static int aead_set_sh_desc(struct crypt
  	 * RFC3686 specific:
  	 *	CONTEXT1[255:128] = {NONCE, IV, COUNTER}
  	 */
@@ -7575,7 +7576,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	if (alg->caam.geniv)
  		goto skip_enc;
-@@ -507,146 +215,64 @@ static int aead_set_sh_desc(struct crypt
+@@ -508,146 +215,64 @@ static int aead_set_sh_desc(struct crypt
  	 * Job Descriptor and Shared Descriptors
  	 * must all fit into the 64-word Descriptor h/w Buffer
  	 */
@@ -7697,7 +7698,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +		ctx->adata.key_virt = ctx->key;
  	else
 -		append_math_add(desc, VARSEQOUTLEN, ZERO, REG3, CAAM_CMD_SZ);
--
++		ctx->adata.key_dma = ctx->key_dma;
+ 
 -	/* Skip assoc data */
 -	append_seq_fifo_store(desc, 0, FIFOST_TYPE_SKIP | FIFOLDST_VLF);
 -
@@ -7719,8 +7721,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -				     LDST_SRCDST_BYTE_CONTEXT |
 -				     ((ctx1_iv_off + CTR_RFC3686_IV_SIZE) <<
 -				      LDST_OFFSET_SHIFT));
-+		ctx->adata.key_dma = ctx->key_dma;
- 
+-
 -	/* Choose operation */
 -	if (ctr_mode)
 -		append_operation(desc, ctx->class1_alg_type |
@@ -7764,7 +7765,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	if (!alg->caam.geniv)
  		goto skip_givenc;
-@@ -655,107 +281,32 @@ skip_enc:
+@@ -656,115 +281,32 @@ skip_enc:
  	 * Job Descriptor and Shared Descriptors
  	 * must all fit into the 64-word Descriptor h/w Buffer
  	 */
@@ -7780,19 +7781,10 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -
 -	/* Note: Context registers are saved. */
 -	init_sh_desc_key_aead(desc, ctx, keys_fit_inline, is_rfc3686);
-+	if (desc_inline_query(DESC_AEAD_GIVENC_LEN +
-+			      (is_rfc3686 ? DESC_AEAD_CTR_RFC3686_LEN : 0),
-+			      AUTHENC_DESC_JOB_IO_LEN, data_len, &inl_mask,
-+			      ARRAY_SIZE(data_len)) < 0)
-+		return -EINVAL;
- 
+-
 -	if (is_rfc3686)
 -		goto copy_iv;
-+	if (inl_mask & 1)
-+		ctx->adata.key_virt = ctx->key;
-+	else
-+		ctx->adata.key_dma = ctx->key_dma;
- 
+-
 -	/* Generate IV */
 -	geniv = NFIFOENTRY_STYPE_PAD | NFIFOENTRY_DEST_DECO |
 -		NFIFOENTRY_DTYPE_MSG | NFIFOENTRY_LC1 |
@@ -7837,11 +7829,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -			    LDST_SRCDST_WORD_INFO_FIFO | LDST_IMM);
 -	append_load_imm_u32(desc, ivsize, LDST_CLASS_2_CCB |
 -			    LDST_SRCDST_WORD_DATASZ_REG | LDST_IMM);
-+	if (inl_mask & 2)
-+		ctx->cdata.key_virt = ctx->key + ctx->adata.keylen_pad;
-+	else
-+		ctx->cdata.key_dma = ctx->key_dma + ctx->adata.keylen_pad;
- 
+-
 -	/* Load Counter into CONTEXT1 reg */
 -	if (is_rfc3686)
 -		append_load_imm_be32(desc, 1, LDST_IMM | LDST_CLASS_1_CCB |
@@ -7859,9 +7847,30 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -	/* Not need to reload iv */
 -	append_seq_fifo_load(desc, ivsize,
 -			     FIFOLD_CLASS_SKIP);
--
++	if (desc_inline_query(DESC_AEAD_GIVENC_LEN +
++				(is_rfc3686 ? DESC_AEAD_CTR_RFC3686_LEN : 0),
++				AUTHENC_DESC_JOB_IO_LEN, data_len, &inl_mask,
++				ARRAY_SIZE(data_len)) < 0)
++		return -EINVAL;
+ 
 -	/* Will read cryptlen */
 -	append_math_add(desc, VARSEQINLEN, SEQINLEN, REG0, CAAM_CMD_SZ);
++	if (inl_mask & 1)
++		ctx->adata.key_virt = ctx->key;
++	else
++		ctx->adata.key_dma = ctx->key_dma;
+ 
+-	/*
+-	 * Wait for IV transfer (ofifo -> class2) to finish before starting
+-	 * ciphertext transfer (ofifo -> external memory).
+-	 */
+-	wait_cmd = append_jump(desc, JUMP_JSL | JUMP_TEST_ALL | JUMP_COND_NIFP);
+-	set_jump_tgt_here(desc, wait_cmd);
++	if (inl_mask & 2)
++		ctx->cdata.key_virt = ctx->key + ctx->adata.keylen_pad;
++	else
++		ctx->cdata.key_dma = ctx->key_dma + ctx->adata.keylen_pad;
+ 
 -	append_seq_fifo_load(desc, 0, FIFOLD_CLASS_BOTH | KEY_VLF |
 -			     FIFOLD_TYPE_MSG1OUT2 | FIFOLD_TYPE_LASTBOTH);
 -	append_seq_fifo_store(desc, 0, FIFOST_TYPE_MESSAGE_DATA | KEY_VLF);
@@ -7887,14 +7896,14 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +	/* aead_givencrypt shared descriptor */
 +	desc = ctx->sh_desc_enc;
 +	cnstr_shdsc_aead_givencap(desc, &ctx->cdata, &ctx->adata, ivsize,
-+				  ctx->authsize, is_rfc3686, nonce,
-+				  ctx1_iv_off, false, ctrlpriv->era);
++				ctx->authsize, is_rfc3686, nonce,
++				ctx1_iv_off, false, ctrlpriv->era);
 +	dma_sync_single_for_device(jrdev, ctx->sh_desc_enc_dma,
-+				   desc_bytes(desc), DMA_TO_DEVICE);
++				desc_bytes(desc), DMA_TO_DEVICE);
  
  skip_givenc:
  	return 0;
-@@ -776,12 +327,12 @@ static int gcm_set_sh_desc(struct crypto
+@@ -785,12 +327,12 @@ static int gcm_set_sh_desc(struct crypto
  {
  	struct caam_ctx *ctx = crypto_aead_ctx(aead);
  	struct device *jrdev = ctx->jrdev;
@@ -7911,7 +7920,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return 0;
  
  	/*
-@@ -789,175 +340,35 @@ static int gcm_set_sh_desc(struct crypto
+@@ -798,175 +340,35 @@ static int gcm_set_sh_desc(struct crypto
  	 * Job Descriptor and Shared Descriptor
  	 * must fit into the 64-word Descriptor h/w Buffer
  	 */
@@ -8107,7 +8116,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	return 0;
  }
-@@ -976,11 +387,12 @@ static int rfc4106_set_sh_desc(struct cr
+@@ -985,11 +387,12 @@ static int rfc4106_set_sh_desc(struct cr
  {
  	struct caam_ctx *ctx = crypto_aead_ctx(aead);
  	struct device *jrdev = ctx->jrdev;
@@ -8123,7 +8132,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return 0;
  
  	/*
-@@ -988,148 +400,37 @@ static int rfc4106_set_sh_desc(struct cr
+@@ -997,148 +400,37 @@ static int rfc4106_set_sh_desc(struct cr
  	 * Job Descriptor and Shared Descriptor
  	 * must fit into the 64-word Descriptor h/w Buffer
  	 */
@@ -8294,7 +8303,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	return 0;
  }
-@@ -1149,12 +450,12 @@ static int rfc4543_set_sh_desc(struct cr
+@@ -1158,12 +450,12 @@ static int rfc4543_set_sh_desc(struct cr
  {
  	struct caam_ctx *ctx = crypto_aead_ctx(aead);
  	struct device *jrdev = ctx->jrdev;
@@ -8311,7 +8320,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return 0;
  
  	/*
-@@ -1162,151 +463,37 @@ static int rfc4543_set_sh_desc(struct cr
+@@ -1171,151 +463,37 @@ static int rfc4543_set_sh_desc(struct cr
  	 * Job Descriptor and Shared Descriptor
  	 * must fit into the 64-word Descriptor h/w Buffer
  	 */
@@ -8485,7 +8494,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	return 0;
  }
-@@ -1322,74 +509,67 @@ static int rfc4543_setauthsize(struct cr
+@@ -1331,74 +509,67 @@ static int rfc4543_setauthsize(struct cr
  	return 0;
  }
  
@@ -8592,7 +8601,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  badkey:
  	crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_KEY_LEN);
  	return -EINVAL;
-@@ -1400,7 +580,6 @@ static int gcm_setkey(struct crypto_aead
+@@ -1409,7 +580,6 @@ static int gcm_setkey(struct crypto_aead
  {
  	struct caam_ctx *ctx = crypto_aead_ctx(aead);
  	struct device *jrdev = ctx->jrdev;
@@ -8600,7 +8609,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  #ifdef DEBUG
  	print_hex_dump(KERN_ERR, "key in @"__stringify(__LINE__)": ",
-@@ -1408,21 +587,10 @@ static int gcm_setkey(struct crypto_aead
+@@ -1417,21 +587,10 @@ static int gcm_setkey(struct crypto_aead
  #endif
  
  	memcpy(ctx->key, key, keylen);
@@ -8611,21 +8620,21 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -		return -ENOMEM;
 -	}
 -	ctx->enckeylen = keylen;
-+	dma_sync_single_for_device(jrdev, ctx->key_dma, keylen, DMA_TO_DEVICE);
-+	ctx->cdata.keylen = keylen;
- 
+-
 -	ret = gcm_set_sh_desc(aead);
 -	if (ret) {
 -		dma_unmap_single(jrdev, ctx->key_dma, ctx->enckeylen,
 -				 DMA_TO_DEVICE);
 -	}
--
++	dma_sync_single_for_device(jrdev, ctx->key_dma, keylen, DMA_TO_DEVICE);
++	ctx->cdata.keylen = keylen;
+ 
 -	return ret;
 +	return gcm_set_sh_desc(aead);
  }
  
  static int rfc4106_setkey(struct crypto_aead *aead,
-@@ -1430,7 +598,6 @@ static int rfc4106_setkey(struct crypto_
+@@ -1439,7 +598,6 @@ static int rfc4106_setkey(struct crypto_
  {
  	struct caam_ctx *ctx = crypto_aead_ctx(aead);
  	struct device *jrdev = ctx->jrdev;
@@ -8633,7 +8642,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	if (keylen < 4)
  		return -EINVAL;
-@@ -1446,22 +613,10 @@ static int rfc4106_setkey(struct crypto_
+@@ -1455,22 +613,10 @@ static int rfc4106_setkey(struct crypto_
  	 * The last four bytes of the key material are used as the salt value
  	 * in the nonce. Update the AES key length.
  	 */
@@ -8660,7 +8669,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  
  static int rfc4543_setkey(struct crypto_aead *aead,
-@@ -1469,7 +624,6 @@ static int rfc4543_setkey(struct crypto_
+@@ -1478,7 +624,6 @@ static int rfc4543_setkey(struct crypto_
  {
  	struct caam_ctx *ctx = crypto_aead_ctx(aead);
  	struct device *jrdev = ctx->jrdev;
@@ -8668,7 +8677,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	if (keylen < 4)
  		return -EINVAL;
-@@ -1485,43 +639,28 @@ static int rfc4543_setkey(struct crypto_
+@@ -1494,43 +639,28 @@ static int rfc4543_setkey(struct crypto_
  	 * The last four bytes of the key material are used as the salt value
  	 * in the nonce. Update the AES key length.
  	 */
@@ -8719,7 +8728,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  #ifdef DEBUG
  	print_hex_dump(KERN_ERR, "key in @"__stringify(__LINE__)": ",
  		       DUMP_PREFIX_ADDRESS, 16, 4, key, keylen, 1);
-@@ -1544,215 +683,33 @@ static int ablkcipher_setkey(struct cryp
+@@ -1553,215 +683,33 @@ static int ablkcipher_setkey(struct cryp
  		keylen -= CTR_RFC3686_NONCE_SIZE;
  	}
  
@@ -8747,7 +8756,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -	append_key_as_imm(desc, (void *)ctx->key, ctx->enckeylen,
 -			  ctx->enckeylen, CLASS_1 |
 -			  KEY_DEST_CLASS_REG);
--
++	cnstr_shdsc_ablkcipher_encap(desc, &ctx->cdata, ivsize, is_rfc3686,
++				     ctx1_iv_off);
++	dma_sync_single_for_device(jrdev, ctx->sh_desc_enc_dma,
++				   desc_bytes(desc), DMA_TO_DEVICE);
+ 
 -	/* Load nonce into CONTEXT1 reg */
 -	if (is_rfc3686) {
 -		nonce = (u8 *)key + keylen;
@@ -8766,11 +8779,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -	/* Load iv */
 -	append_seq_load(desc, crt->ivsize, LDST_SRCDST_BYTE_CONTEXT |
 -			LDST_CLASS_1_CCB | (ctx1_iv_off << LDST_OFFSET_SHIFT));
-+	cnstr_shdsc_ablkcipher_encap(desc, &ctx->cdata, ivsize, is_rfc3686,
-+				     ctx1_iv_off);
-+	dma_sync_single_for_device(jrdev, ctx->sh_desc_enc_dma,
-+				   desc_bytes(desc), DMA_TO_DEVICE);
- 
+-
 -	/* Load counter into CONTEXT1 reg */
 -	if (is_rfc3686)
 -		append_load_imm_be32(desc, 1, LDST_IMM | LDST_CLASS_1_CCB |
@@ -8952,7 +8961,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  
  static int xts_ablkcipher_setkey(struct crypto_ablkcipher *ablkcipher,
-@@ -1760,8 +717,7 @@ static int xts_ablkcipher_setkey(struct
+@@ -1769,8 +717,7 @@ static int xts_ablkcipher_setkey(struct
  {
  	struct caam_ctx *ctx = crypto_ablkcipher_ctx(ablkcipher);
  	struct device *jrdev = ctx->jrdev;
@@ -8962,7 +8971,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	if (keylen != 2 * AES_MIN_KEY_SIZE  && keylen != 2 * AES_MAX_KEY_SIZE) {
  		crypto_ablkcipher_set_flags(ablkcipher,
-@@ -1771,126 +727,38 @@ static int xts_ablkcipher_setkey(struct
+@@ -1780,126 +727,38 @@ static int xts_ablkcipher_setkey(struct
  	}
  
  	memcpy(ctx->key, key, keylen);
@@ -9102,7 +9111,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	int sec4_sg_bytes;
  	dma_addr_t sec4_sg_dma;
  	struct sec4_sg_entry *sec4_sg;
-@@ -1899,12 +767,12 @@ struct aead_edesc {
+@@ -1908,12 +767,12 @@ struct aead_edesc {
  
  /*
   * ablkcipher_edesc - s/w-extended ablkcipher descriptor
@@ -9118,7 +9127,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * @hw_desc: the h/w job descriptor followed by any referenced link tables
   */
  struct ablkcipher_edesc {
-@@ -1924,10 +792,11 @@ static void caam_unmap(struct device *de
+@@ -1933,10 +792,11 @@ static void caam_unmap(struct device *de
  		       int sec4_sg_bytes)
  {
  	if (dst != src) {
@@ -9133,7 +9142,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  
  	if (iv_dma)
-@@ -2022,8 +891,7 @@ static void ablkcipher_encrypt_done(stru
+@@ -2031,8 +891,7 @@ static void ablkcipher_encrypt_done(stru
  	dev_err(jrdev, "%s %d: err 0x%x\n", __func__, __LINE__, err);
  #endif
  
@@ -9143,7 +9152,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	if (err)
  		caam_jr_strstatus(jrdev, err);
-@@ -2032,10 +900,10 @@ static void ablkcipher_encrypt_done(stru
+@@ -2041,10 +900,10 @@ static void ablkcipher_encrypt_done(stru
  	print_hex_dump(KERN_ERR, "dstiv  @"__stringify(__LINE__)": ",
  		       DUMP_PREFIX_ADDRESS, 16, 4, req->info,
  		       edesc->src_nents > 1 ? 100 : ivsize, 1);
@@ -9157,7 +9166,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	ablkcipher_unmap(jrdev, edesc, req);
  
-@@ -2065,8 +933,7 @@ static void ablkcipher_decrypt_done(stru
+@@ -2074,8 +933,7 @@ static void ablkcipher_decrypt_done(stru
  	dev_err(jrdev, "%s %d: err 0x%x\n", __func__, __LINE__, err);
  #endif
  
@@ -9167,7 +9176,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	if (err)
  		caam_jr_strstatus(jrdev, err);
  
-@@ -2074,10 +941,10 @@ static void ablkcipher_decrypt_done(stru
+@@ -2083,10 +941,10 @@ static void ablkcipher_decrypt_done(stru
  	print_hex_dump(KERN_ERR, "dstiv  @"__stringify(__LINE__)": ",
  		       DUMP_PREFIX_ADDRESS, 16, 4, req->info,
  		       ivsize, 1);
@@ -9181,7 +9190,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	ablkcipher_unmap(jrdev, edesc, req);
  
-@@ -2118,7 +985,7 @@ static void init_aead_job(struct aead_re
+@@ -2127,7 +985,7 @@ static void init_aead_job(struct aead_re
  	init_job_desc_shared(desc, ptr, len, HDR_SHARE_DEFER | HDR_REVERSE);
  
  	if (all_contig) {
@@ -9190,7 +9199,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		in_options = 0;
  	} else {
  		src_dma = edesc->sec4_sg_dma;
-@@ -2133,7 +1000,7 @@ static void init_aead_job(struct aead_re
+@@ -2142,7 +1000,7 @@ static void init_aead_job(struct aead_re
  	out_options = in_options;
  
  	if (unlikely(req->src != req->dst)) {
@@ -9199,7 +9208,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			dst_dma = sg_dma_address(req->dst);
  			out_options = 0;
  		} else {
-@@ -2152,9 +1019,6 @@ static void init_aead_job(struct aead_re
+@@ -2161,9 +1019,6 @@ static void init_aead_job(struct aead_re
  		append_seq_out_ptr(desc, dst_dma,
  				   req->assoclen + req->cryptlen - authsize,
  				   out_options);
@@ -9209,7 +9218,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  
  static void init_gcm_job(struct aead_request *req,
-@@ -2169,6 +1033,7 @@ static void init_gcm_job(struct aead_req
+@@ -2178,6 +1033,7 @@ static void init_gcm_job(struct aead_req
  	unsigned int last;
  
  	init_aead_job(req, edesc, all_contig, encrypt);
@@ -9217,7 +9226,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/* BUG This should not be specific to generic GCM. */
  	last = 0;
-@@ -2180,7 +1045,7 @@ static void init_gcm_job(struct aead_req
+@@ -2189,7 +1045,7 @@ static void init_gcm_job(struct aead_req
  			 FIFOLD_TYPE_IV | FIFOLD_TYPE_FLUSH1 | 12 | last);
  	/* Append Salt */
  	if (!generic_gcm)
@@ -9226,7 +9235,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* Append IV */
  	append_data(desc, req->iv, ivsize);
  	/* End of blank commands */
-@@ -2195,7 +1060,8 @@ static void init_authenc_job(struct aead
+@@ -2204,7 +1060,8 @@ static void init_authenc_job(struct aead
  						 struct caam_aead_alg, aead);
  	unsigned int ivsize = crypto_aead_ivsize(aead);
  	struct caam_ctx *ctx = crypto_aead_ctx(aead);
@@ -9236,7 +9245,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			       OP_ALG_AAI_CTR_MOD128);
  	const bool is_rfc3686 = alg->caam.rfc3686;
  	u32 *desc = edesc->hw_desc;
-@@ -2218,6 +1084,15 @@ static void init_authenc_job(struct aead
+@@ -2227,6 +1084,15 @@ static void init_authenc_job(struct aead
  
  	init_aead_job(req, edesc, all_contig, encrypt);
  
@@ -9252,7 +9261,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	if (ivsize && ((is_rfc3686 && encrypt) || !alg->caam.geniv))
  		append_load_as_imm(desc, req->iv, ivsize,
  				   LDST_CLASS_1_CCB |
-@@ -2241,16 +1116,15 @@ static void init_ablkcipher_job(u32 *sh_
+@@ -2250,16 +1116,15 @@ static void init_ablkcipher_job(u32 *sh_
  	int len, sec4_sg_index = 0;
  
  #ifdef DEBUG
@@ -9274,7 +9283,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	len = desc_len(sh_desc);
  	init_job_desc_shared(desc, ptr, len, HDR_SHARE_DEFER | HDR_REVERSE);
-@@ -2266,7 +1140,7 @@ static void init_ablkcipher_job(u32 *sh_
+@@ -2275,7 +1140,7 @@ static void init_ablkcipher_job(u32 *sh_
  	append_seq_in_ptr(desc, src_dma, req->nbytes + ivsize, in_options);
  
  	if (likely(req->src == req->dst)) {
@@ -9283,7 +9292,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			dst_dma = sg_dma_address(req->src);
  		} else {
  			dst_dma = edesc->sec4_sg_dma +
-@@ -2274,7 +1148,7 @@ static void init_ablkcipher_job(u32 *sh_
+@@ -2283,7 +1148,7 @@ static void init_ablkcipher_job(u32 *sh_
  			out_options = LDST_SGF;
  		}
  	} else {
@@ -9292,7 +9301,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			dst_dma = sg_dma_address(req->dst);
  		} else {
  			dst_dma = edesc->sec4_sg_dma +
-@@ -2301,20 +1175,18 @@ static void init_ablkcipher_giv_job(u32
+@@ -2310,20 +1175,18 @@ static void init_ablkcipher_giv_job(u32
  	int len, sec4_sg_index = 0;
  
  #ifdef DEBUG
@@ -9317,7 +9326,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		src_dma = sg_dma_address(req->src);
  		in_options = 0;
  	} else {
-@@ -2345,87 +1217,100 @@ static struct aead_edesc *aead_edesc_all
+@@ -2354,87 +1217,100 @@ static struct aead_edesc *aead_edesc_all
  	struct crypto_aead *aead = crypto_aead_reqtfm(req);
  	struct caam_ctx *ctx = crypto_aead_ctx(aead);
  	struct device *jrdev = ctx->jrdev;
@@ -9473,7 +9482,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  				   edesc->sec4_sg + sec4_sg_index, 0);
  	}
  
-@@ -2578,13 +1463,9 @@ static int aead_decrypt(struct aead_requ
+@@ -2587,13 +1463,9 @@ static int aead_decrypt(struct aead_requ
  	u32 *desc;
  	int ret = 0;
  
@@ -9490,7 +9499,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/* allocate extended descriptor */
  	edesc = aead_edesc_alloc(req, AUTHENC_DESC_JOB_IO_LEN,
-@@ -2624,51 +1505,80 @@ static struct ablkcipher_edesc *ablkciph
+@@ -2633,51 +1505,80 @@ static struct ablkcipher_edesc *ablkciph
  	struct device *jrdev = ctx->jrdev;
  	gfp_t flags = (req->base.flags & CRYPTO_TFM_REQ_MAY_SLEEP) ?
  		       GFP_KERNEL : GFP_ATOMIC;
@@ -9594,7 +9603,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return ERR_PTR(-ENOMEM);
  	}
  
-@@ -2678,23 +1588,24 @@ static struct ablkcipher_edesc *ablkciph
+@@ -2687,23 +1588,24 @@ static struct ablkcipher_edesc *ablkciph
  	edesc->sec4_sg = (void *)edesc + sizeof(struct ablkcipher_edesc) +
  			 desc_bytes;
  
@@ -9626,7 +9635,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return ERR_PTR(-ENOMEM);
  	}
  
-@@ -2706,7 +1617,7 @@ static struct ablkcipher_edesc *ablkciph
+@@ -2715,7 +1617,7 @@ static struct ablkcipher_edesc *ablkciph
  		       sec4_sg_bytes, 1);
  #endif
  
@@ -9635,7 +9644,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	return edesc;
  }
  
-@@ -2797,30 +1708,54 @@ static struct ablkcipher_edesc *ablkciph
+@@ -2806,30 +1708,54 @@ static struct ablkcipher_edesc *ablkciph
  	struct crypto_ablkcipher *ablkcipher = crypto_ablkcipher_reqtfm(req);
  	struct caam_ctx *ctx = crypto_ablkcipher_ctx(ablkcipher);
  	struct device *jrdev = ctx->jrdev;
@@ -9652,10 +9661,10 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +	bool out_contig;
  	int ivsize = crypto_ablkcipher_ivsize(ablkcipher);
 -	int sec4_sg_index;
+-
+-	src_nents = sg_count(req->src, req->nbytes);
 +	int dst_sg_idx, sec4_sg_ents, sec4_sg_bytes;
  
--	src_nents = sg_count(req->src, req->nbytes);
--
 -	if (unlikely(req->dst != req->src))
 -		dst_nents = sg_count(req->dst, req->nbytes);
 +	src_nents = sg_nents_for_len(req->src, req->nbytes);
@@ -9706,7 +9715,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  
  	/*
-@@ -2830,21 +1765,29 @@ static struct ablkcipher_edesc *ablkciph
+@@ -2839,21 +1765,29 @@ static struct ablkcipher_edesc *ablkciph
  	iv_dma = dma_map_single(jrdev, greq->giv, ivsize, DMA_TO_DEVICE);
  	if (dma_mapping_error(jrdev, iv_dma)) {
  		dev_err(jrdev, "unable to map IV\n");
@@ -9742,7 +9751,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return ERR_PTR(-ENOMEM);
  	}
  
-@@ -2854,24 +1797,24 @@ static struct ablkcipher_edesc *ablkciph
+@@ -2863,24 +1797,24 @@ static struct ablkcipher_edesc *ablkciph
  	edesc->sec4_sg = (void *)edesc + sizeof(struct ablkcipher_edesc) +
  			 desc_bytes;
  
@@ -9777,7 +9786,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return ERR_PTR(-ENOMEM);
  	}
  	edesc->iv_dma = iv_dma;
-@@ -2883,7 +1826,7 @@ static struct ablkcipher_edesc *ablkciph
+@@ -2892,7 +1826,7 @@ static struct ablkcipher_edesc *ablkciph
  		       sec4_sg_bytes, 1);
  #endif
  
@@ -9786,7 +9795,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	return edesc;
  }
  
-@@ -2894,7 +1837,7 @@ static int ablkcipher_givencrypt(struct
+@@ -2903,7 +1837,7 @@ static int ablkcipher_givencrypt(struct
  	struct crypto_ablkcipher *ablkcipher = crypto_ablkcipher_reqtfm(req);
  	struct caam_ctx *ctx = crypto_ablkcipher_ctx(ablkcipher);
  	struct device *jrdev = ctx->jrdev;
@@ -9795,7 +9804,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	u32 *desc;
  	int ret = 0;
  
-@@ -2938,7 +1881,6 @@ struct caam_alg_template {
+@@ -2947,7 +1881,6 @@ struct caam_alg_template {
  	} template_u;
  	u32 class1_alg_type;
  	u32 class2_alg_type;
@@ -9803,7 +9812,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  };
  
  static struct caam_alg_template driver_algs[] = {
-@@ -3123,7 +2065,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3132,7 +2065,6 @@ static struct caam_aead_alg driver_aeads
  		.caam = {
  			.class2_alg_type = OP_ALG_ALGSEL_MD5 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9811,7 +9820,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3145,7 +2086,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3154,7 +2086,6 @@ static struct caam_aead_alg driver_aeads
  		.caam = {
  			.class2_alg_type = OP_ALG_ALGSEL_SHA1 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9819,7 +9828,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3167,7 +2107,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3176,7 +2107,6 @@ static struct caam_aead_alg driver_aeads
  		.caam = {
  			.class2_alg_type = OP_ALG_ALGSEL_SHA224 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9827,7 +9836,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3189,7 +2128,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3198,7 +2128,6 @@ static struct caam_aead_alg driver_aeads
  		.caam = {
  			.class2_alg_type = OP_ALG_ALGSEL_SHA256 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9835,7 +9844,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3211,7 +2149,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3220,7 +2149,6 @@ static struct caam_aead_alg driver_aeads
  		.caam = {
  			.class2_alg_type = OP_ALG_ALGSEL_SHA384 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9843,7 +9852,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3233,7 +2170,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3242,7 +2170,6 @@ static struct caam_aead_alg driver_aeads
  		.caam = {
  			.class2_alg_type = OP_ALG_ALGSEL_SHA512 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9851,7 +9860,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3255,7 +2191,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3264,7 +2191,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_AES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_MD5 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9859,7 +9868,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3278,7 +2213,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3287,7 +2213,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_AES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_MD5 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9867,7 +9876,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3301,7 +2235,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3310,7 +2235,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_AES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA1 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9875,7 +9884,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3324,7 +2257,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3333,7 +2257,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_AES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA1 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9883,7 +9892,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3347,7 +2279,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3356,7 +2279,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_AES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA224 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9891,7 +9900,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3370,7 +2301,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3379,7 +2301,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_AES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA224 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9899,7 +9908,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3393,7 +2323,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3402,7 +2323,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_AES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA256 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9907,7 +9916,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3416,7 +2345,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3425,7 +2345,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_AES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA256 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9915,7 +9924,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3439,7 +2367,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3448,7 +2367,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_AES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA384 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9923,7 +9932,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3462,7 +2389,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3471,7 +2389,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_AES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA384 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9931,7 +9940,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3485,7 +2411,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3494,7 +2411,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_AES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA512 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9939,7 +9948,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3508,7 +2433,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3517,7 +2433,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_AES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA512 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9947,7 +9956,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3531,7 +2455,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3540,7 +2455,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_3DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_MD5 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9955,7 +9964,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		}
  	},
  	{
-@@ -3554,7 +2477,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3563,7 +2477,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_3DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_MD5 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9963,7 +9972,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		}
  	},
-@@ -3578,7 +2500,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3587,7 +2500,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_3DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA1 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9971,7 +9980,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3602,7 +2523,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3611,7 +2523,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_3DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA1 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9979,7 +9988,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3626,7 +2546,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3635,7 +2546,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_3DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA224 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9987,7 +9996,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3650,7 +2569,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3659,7 +2569,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_3DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA224 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -9995,7 +10004,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3674,7 +2592,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3683,7 +2592,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_3DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA256 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10003,7 +10012,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3698,7 +2615,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3707,7 +2615,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_3DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA256 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10011,7 +10020,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3722,7 +2638,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3731,7 +2638,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_3DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA384 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10019,7 +10028,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3746,7 +2661,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3755,7 +2661,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_3DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA384 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10027,7 +10036,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3770,7 +2684,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3779,7 +2684,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_3DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA512 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10035,7 +10044,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3794,7 +2707,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3803,7 +2707,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_3DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA512 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10043,7 +10052,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3817,7 +2729,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3826,7 +2729,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_MD5 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10051,7 +10060,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3840,7 +2751,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3849,7 +2751,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_MD5 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10059,7 +10068,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3863,7 +2773,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3872,7 +2773,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA1 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10067,7 +10076,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3886,7 +2795,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3895,7 +2795,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA1 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10075,7 +10084,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3909,7 +2817,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3918,7 +2817,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA224 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10083,7 +10092,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3932,7 +2839,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3941,7 +2839,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA224 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10091,7 +10100,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -3955,7 +2861,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3964,7 +2861,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA256 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10099,7 +10108,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -3978,7 +2883,6 @@ static struct caam_aead_alg driver_aeads
+@@ -3987,7 +2883,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA256 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10107,7 +10116,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -4001,7 +2905,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4010,7 +2905,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA384 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10115,7 +10124,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -4024,7 +2927,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4033,7 +2927,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA384 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10123,7 +10132,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -4047,7 +2949,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4056,7 +2949,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA512 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10131,7 +10140,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		},
  	},
  	{
-@@ -4070,7 +2971,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4079,7 +2971,6 @@ static struct caam_aead_alg driver_aeads
  			.class1_alg_type = OP_ALG_ALGSEL_DES | OP_ALG_AAI_CBC,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA512 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10139,7 +10148,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.geniv = true,
  		},
  	},
-@@ -4095,7 +2995,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4104,7 +2995,6 @@ static struct caam_aead_alg driver_aeads
  					   OP_ALG_AAI_CTR_MOD128,
  			.class2_alg_type = OP_ALG_ALGSEL_MD5 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10147,7 +10156,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.rfc3686 = true,
  		},
  	},
-@@ -4120,7 +3019,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4129,7 +3019,6 @@ static struct caam_aead_alg driver_aeads
  					   OP_ALG_AAI_CTR_MOD128,
  			.class2_alg_type = OP_ALG_ALGSEL_MD5 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10155,7 +10164,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.rfc3686 = true,
  			.geniv = true,
  		},
-@@ -4146,7 +3044,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4155,7 +3044,6 @@ static struct caam_aead_alg driver_aeads
  					   OP_ALG_AAI_CTR_MOD128,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA1 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10163,7 +10172,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.rfc3686 = true,
  		},
  	},
-@@ -4171,7 +3068,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4180,7 +3068,6 @@ static struct caam_aead_alg driver_aeads
  					   OP_ALG_AAI_CTR_MOD128,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA1 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10171,7 +10180,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.rfc3686 = true,
  			.geniv = true,
  		},
-@@ -4197,7 +3093,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4206,7 +3093,6 @@ static struct caam_aead_alg driver_aeads
  					   OP_ALG_AAI_CTR_MOD128,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA224 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10179,7 +10188,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.rfc3686 = true,
  		},
  	},
-@@ -4222,7 +3117,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4231,7 +3117,6 @@ static struct caam_aead_alg driver_aeads
  					   OP_ALG_AAI_CTR_MOD128,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA224 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10187,7 +10196,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.rfc3686 = true,
  			.geniv = true,
  		},
-@@ -4248,7 +3142,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4257,7 +3142,6 @@ static struct caam_aead_alg driver_aeads
  					   OP_ALG_AAI_CTR_MOD128,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA256 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10195,7 +10204,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.rfc3686 = true,
  		},
  	},
-@@ -4273,7 +3166,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4282,7 +3166,6 @@ static struct caam_aead_alg driver_aeads
  					   OP_ALG_AAI_CTR_MOD128,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA256 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10203,7 +10212,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.rfc3686 = true,
  			.geniv = true,
  		},
-@@ -4299,7 +3191,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4308,7 +3191,6 @@ static struct caam_aead_alg driver_aeads
  					   OP_ALG_AAI_CTR_MOD128,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA384 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10211,7 +10220,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.rfc3686 = true,
  		},
  	},
-@@ -4324,7 +3215,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4333,7 +3215,6 @@ static struct caam_aead_alg driver_aeads
  					   OP_ALG_AAI_CTR_MOD128,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA384 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10219,7 +10228,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.rfc3686 = true,
  			.geniv = true,
  		},
-@@ -4350,7 +3240,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4359,7 +3240,6 @@ static struct caam_aead_alg driver_aeads
  					   OP_ALG_AAI_CTR_MOD128,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA512 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10227,7 +10236,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.rfc3686 = true,
  		},
  	},
-@@ -4375,7 +3264,6 @@ static struct caam_aead_alg driver_aeads
+@@ -4384,7 +3264,6 @@ static struct caam_aead_alg driver_aeads
  					   OP_ALG_AAI_CTR_MOD128,
  			.class2_alg_type = OP_ALG_ALGSEL_SHA512 |
  					   OP_ALG_AAI_HMAC_PRECOMP,
@@ -10235,7 +10244,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			.rfc3686 = true,
  			.geniv = true,
  		},
-@@ -4390,16 +3278,34 @@ struct caam_crypto_alg {
+@@ -4399,16 +3278,34 @@ struct caam_crypto_alg {
  
  static int caam_init_common(struct caam_ctx *ctx, struct caam_alg_entry *caam)
  {
@@ -10273,7 +10282,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	return 0;
  }
-@@ -4426,25 +3332,9 @@ static int caam_aead_init(struct crypto_
+@@ -4435,25 +3332,9 @@ static int caam_aead_init(struct crypto_
  
  static void caam_exit_common(struct caam_ctx *ctx)
  {
@@ -10302,7 +10311,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	caam_jr_free(ctx->jrdev);
  }
  
-@@ -4520,7 +3410,6 @@ static struct caam_crypto_alg *caam_alg_
+@@ -4529,7 +3410,6 @@ static struct caam_crypto_alg *caam_alg_
  
  	t_alg->caam.class1_alg_type = template->class1_alg_type;
  	t_alg->caam.class2_alg_type = template->class2_alg_type;
