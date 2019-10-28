@@ -375,6 +375,78 @@ endef
 $(eval $(call KernelPackage,crypto-hw-padlock))
 
 
+define KernelPackage/crypto-hw-qce
+  TITLE:=Qualcomm Crypto Engine hw crypto module
+  DEPENDS:= @TARGET_ipq40xx +kmod-crypto-manager \
+	+QCE_SKCIPHER:kmod-crypto-des \
+	+QCE_SKCIPHER:kmod-crypto-ecb \
+	+QCE_SKCIPHER:kmod-crypto-cbc \
+	+QCE_SKCIPHER:kmod-crypto-xts \
+	+QCE_SKCIPHER:kmod-crypto-ctr
+  KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
+	CONFIG_CRYPTO_DEV_QCE
+  FILES:= $(LINUX_DIR)/drivers/crypto/qce/qcrypto.ko
+  AUTOLOAD:=$(call AutoLoad,09,qcrypto)
+  $(call AddDepends/crypto)
+endef
+
+define KernelPackage/crypto-hw-qce/config
+  if PACKAGE_kmod-crypto-hw-qce
+	config QCE_SKCIPHER
+		bool
+	choice
+		prompt "Algorithms enabled for QCE acceleration"
+		default KERNEL_CRYPTO_DEV_QCE_ENABLE_SKCIPHER
+		help
+		  The Qualcomm Crypto Engine is shown to severely slowdown ipsec,
+		  especially when built with all supported algorithms.
+		  When performing crypto in small blocks, typical of network usage,
+		  the neon asm drivers will outperform it.
+		  QCE is fast when fed with larger blocks.  If you are able to use
+		  jumbo frames, it will be much faster than software.
+		  Hashes are troublesome.  They fail the tcrypt multibuffer tests, and
+		  are slower than the Neon drivers, so the default is to enable
+		  symmetric-key ciphers only.
+
+		config KERNEL_CRYPTO_DEV_QCE_ENABLE_ALL
+			bool "All supported algorithms"
+			select QCE_SKCIPHER
+		config KERNEL_CRYPTO_DEV_QCE_ENABLE_SKCIPHER
+			bool "Symmetric-key ciphers only"
+			select QCE_SKCIPHER
+		config KERNEL_CRYPTO_DEV_QCE_ENABLE_SHA
+			bool "Hash/HMAC only"
+	endchoice
+
+	config KERNEL_CRYPTO_DEV_QCE_SW_MAX_LEN
+		int "Default maximum request size to use software for AES"
+		depends on QCE_SKCIPHER
+		default 512
+		help
+		  This sets the default maximum request size to perform AES requests
+		  using software instead of the crypto engine.  It can be changed by
+		  setting the aes_sw_max_len parameter.
+
+		  Small blocks are processed faster in software than hardware.
+		  Considering the 256-bit ciphers, software is 2-3 times faster than
+		  qce at 256-bytes, 30% faster at 512, and about even at 768-bytes.
+		  With 128-bit keys, the break-even point would be around 1024-bytes.
+
+		  The default is set a little lower, to 512 bytes, to balance the
+		  cost in CPU usage.  The minimum recommended setting is 16-bytes
+		  (1 AES block), since AES-GCM will fail if you set it lower.
+		  Setting this to zero will send all requests to the hardware.
+
+		  Note that 192-bit keys are not supported by the hardware and are
+		  always processed by the software fallback, and all DES requests
+		  are done by the hardware.
+  endif
+endef
+
+$(eval $(call KernelPackage,crypto-hw-qce))
+
+
 define KernelPackage/crypto-hw-safexcel
   TITLE:= MVEBU SafeXcel Crypto Engine module
   DEPENDS:=@!LINUX_4_14 @(TARGET_mvebu_cortexa53||TARGET_mvebu_cortexa72) \
