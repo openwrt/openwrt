@@ -41,6 +41,7 @@ platform_do_upgrade() {
 	case "$board" in
 	alfa-network,ac1200rm|\
 	alfa-network,awusfree1|\
+	alfa-network,r36m-e4g|\
 	alfa-network,tube-e4g)
 		[ "$(fw_printenv -n dual_image 2>/dev/null)" = "1" ] &&\
 		[ -n "$(find_mtd_part backup)" ] && {
