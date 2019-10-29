@@ -6,7 +6,7 @@ define Build/mkrtn56uimg
 endef
 
 define Device/asus_rt-n56u
-  MTK_SOC := rt3883
+  MTK_SOC := rt3662
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7872k
   IMAGE/sysupgrade.bin += | mkrtn56uimg -s
@@ -33,7 +33,7 @@ TARGET_DEVICES += belkin_f9k1109v1
 
 define Device/dlink_dir-645
   $(Device/seama)
-  MTK_SOC := rt3883
+  MTK_SOC := rt3662
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7872k
   KERNEL := $(KERNEL_DTB)
@@ -46,7 +46,7 @@ endef
 TARGET_DEVICES += dlink_dir-645
 
 define Device/edimax_br-6475nd
-  MTK_SOC := rt3883
+  MTK_SOC := rt3662
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
@@ -60,7 +60,7 @@ endef
 TARGET_DEVICES += edimax_br-6475nd
 
 define Device/loewe_wmdr-143n
-  MTK_SOC := rt3883
+  MTK_SOC := rt3662
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Loewe
@@ -70,7 +70,7 @@ endef
 TARGET_DEVICES += loewe_wmdr-143n
 
 define Device/omnima_hpm
-  MTK_SOC := rt3883
+  MTK_SOC := rt3662
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Omnima
@@ -82,7 +82,7 @@ TARGET_DEVICES += omnima_hpm
 
 define Device/samsung_cy-swr1100
   $(Device/seama)
-  MTK_SOC := rt3883
+  MTK_SOC := rt3662
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7872k
   KERNEL := $(KERNEL_DTB)
