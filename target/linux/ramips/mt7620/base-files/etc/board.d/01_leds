@@ -24,6 +24,11 @@ aigale,ai-br100)
 alfa-network,ac1200rm)
 	set_wifi_led "$boardname:green:wlan2g" "wlan1"
 	;;
+alfa-network,r36m-e4g)
+	ucidef_set_led_netdev "4g" "4g" "$boardname:orange:4g" "wwan0"
+	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x8"
+	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x10"
+	;;
 alfa-network,tube-e4g)
 	ucidef_set_led_netdev "4g" "4g" "$boardname:green:4g" "wwan0"
 	ucidef_set_led_netdev "lan" "lan" "$boardname:blue:lan" "eth0"

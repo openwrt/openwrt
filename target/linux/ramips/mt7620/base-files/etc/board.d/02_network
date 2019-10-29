@@ -32,6 +32,11 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
+	alfa-network,r36m-e4g|\
+	zbtlink,zbt-we1026-h-32m)
+		ucidef_add_switch "switch0" \
+			"3:lan" "4:wan" "6@eth0"
+		;;
 	alfa-network,tube-e4g|\
 	buffalo,wmr-300|\
 	dlink,dch-m225|\
@@ -190,10 +195,6 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "6t@eth0"
 		;;
-	zbtlink,zbt-we1026-h-32m)
-		ucidef_add_switch "switch0" \
-			"3:lan" "4:wan" "6@eth0"
-		;;
 	zbtlink,zbt-we2026)
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan:5" "6@eth0"
@@ -259,6 +260,11 @@ ramips_setup_macs()
 	zbtlink,zbt-wr8305rt)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
+	alfa-network,r36m-e4g|\
+	zbtlink,zbt-we1026-h-32m)
+		wan_mac=$(mtd_get_mac_binary factory 0x2e)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
+		;;
 	dlink,dch-m225)
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)
 		;;
@@ -312,10 +318,6 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
 		;;
 	zbtlink,zbt-we1026-5g-16m)
-		label_mac=$(mtd_get_mac_binary factory 0x4)
-		;;
-	zbtlink,zbt-we1026-h-32m)
-		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	zyxel,keenetic-omni|\
