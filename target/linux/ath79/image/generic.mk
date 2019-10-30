@@ -794,6 +794,40 @@ define Device/netgear_wndr3800ch
 endef
 TARGET_DEVICES += netgear_wndr3800ch
 
+define Device/netgear_wnr2200_common
+  ATH_SOC := ar7241
+  DEVICE_MODEL := WNR2200
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  NETGEAR_KERNEL_MAGIC := 0x32323030
+  NETGEAR_BOARD_ID := wnr2200
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | \
+	append-rootfs | pad-rootfs
+  $(Device/netgear_ath79)
+endef
+
+define Device/netgear_wnr2200-8m
+  $(Device/netgear_wnr2200_common)
+  DEVICE_VARIANT := 8M
+  NETGEAR_HW_ID := 29763600+08+64
+  IMAGE_SIZE := 7808k
+  IMAGES += factory-NA.img
+  IMAGE/factory-NA.img := $$(IMAGE/default) | netgear-dni NA | \
+	check-size $$$$(IMAGE_SIZE)
+  SUPPORTED_DEVICES += wnr2200
+endef
+TARGET_DEVICES += netgear_wnr2200-8m
+
+define Device/netgear_wnr2200-16m
+  $(Device/netgear_wnr2200_common)
+  DEVICE_VARIANT := 16M
+  DEVICE_ALT0_VENDOR := NETGEAR
+  DEVICE_ALT0_MODEL := WNR2200
+  DEVICE_ALT0_VARIANT := CN/RU
+  NETGEAR_HW_ID :=
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += netgear_wnr2200-16m
+
 define Device/ocedo_koala
   ATH_SOC := qca9558
   DEVICE_VENDOR := Ocedo
