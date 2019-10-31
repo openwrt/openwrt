@@ -1,0 +1,93 @@
+--- a/tracepath.c
++++ b/tracepath.c
+@@ -14,13 +14,13 @@
+ #include <unistd.h>
+ #include <sys/socket.h>
+ #include <linux/types.h>
++#include <sys/time.h>
+ #include <linux/errqueue.h>
+ #include <errno.h>
+ #include <string.h>
+ #include <netdb.h>
+ #include <netinet/in.h>
+ #include <resolv.h>
+-#include <sys/time.h>
+ #include <sys/uio.h>
+ #include <arpa/inet.h>
+ #ifdef USE_IDN
+--- a/ping_common.h
++++ b/ping_common.h
+@@ -8,11 +8,11 @@
+ #include <linux/sockios.h>
+ #include <sys/file.h>
+ #include <sys/time.h>
+-#include <sys/signal.h>
++#include <signal.h>
+ #include <sys/ioctl.h>
+ #include <net/if.h>
+ #include <sys/uio.h>
+-#include <sys/poll.h>
++#include <poll.h>
+ #include <ctype.h>
+ #include <errno.h>
+ #include <string.h>
+@@ -32,7 +32,9 @@
+ #include <netinet/in.h>
+ #include <arpa/inet.h>
+ #include <linux/types.h>
++#include <sys/types.h>
+ #include <linux/errqueue.h>
++#include <asm/param.h>
+ 
+ #include "SNAPSHOT.h"
+ 
+--- a/clockdiff.c
++++ b/clockdiff.c
+@@ -14,7 +14,6 @@
+ #include <netinet/ip.h>
+ #include <netinet/ip_icmp.h>
+ #define TSPTYPES
+-#include <protocols/timed.h>
+ #include <fcntl.h>
+ #include <netdb.h>
+ #include <arpa/inet.h>
+--- a/Makefile
++++ b/Makefile
+@@ -23,7 +23,7 @@ LDFLAG_SYSFS=-lsysfs
+ #
+ 
+ # Capability support (with libcap) [yes|static|no]
+-USE_CAP=yes
++USE_CAP=no
+ # sysfs support (with libsysfs - deprecated) [no|yes|static]
+ USE_SYSFS=no
+ # IDN support (experimental) [no|yes|static]
+@@ -35,7 +35,7 @@ WITHOUT_IFADDRS=no
+ ARPING_DEFAULT_DEVICE=
+ 
+ # Libgcrypt (for MD5) for ping6 [yes|no|static]
+-USE_GCRYPT=yes
++USE_GCRYPT=no
+ # Crypto library for ping6 [shared|static]
+ USE_CRYPTO=shared
+ # Resolv library for ping6 [yes|static]
+@@ -109,7 +109,7 @@ endif
+ endif
+ 
+ # -------------------------------------
+-IPV4_TARGETS=tracepath ping clockdiff rdisc arping tftpd rarpd
++IPV4_TARGETS=tracepath ping clockdiff arping tftpd
+ IPV6_TARGETS=tracepath6 traceroute6 ping6
+ TARGETS=$(IPV4_TARGETS) $(IPV6_TARGETS)
+ 
+--- a/arping.c
++++ b/arping.c
+@@ -16,7 +16,7 @@
+ #include <linux/sockios.h>
+ #include <sys/file.h>
+ #include <sys/time.h>
+-#include <sys/signal.h>
++#include <signal.h>
+ #include <sys/ioctl.h>
+ #include <net/if.h>
+ #include <linux/if_packet.h>

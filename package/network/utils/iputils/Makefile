@@ -8,18 +8,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iputils
-PKG_VERSION:=20101006
+PKG_VERSION:=20151218
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-s$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.skbuff.net/iputils
-PKG_HASH:=fd3af46c80ebb99607c2ca1f2a3608b6fe828e25bbec6e54f2afd25f6ddb6ee7
+PKG_HASH:=549f58d71951e52b46595829134d4e330642f522f50026917fadc349a54825a1
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0+
 PKG_CPE_ID:=cpe:/a:skbuff:iputils
 
-PKG_BUILD_DEPENDS:=sysfsutils
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-s$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
@@ -35,7 +34,6 @@ endef
 define Package/iputils-arping
 $(call Package/iputils/Default)
   TITLE:=iputils - arping
-  DEPENDS+= +libsysfs
 endef
 
 define Package/iputils-arping/description
@@ -69,7 +67,7 @@ endef
 define Package/iputils-ping6
 $(call Package/iputils/Default)
   TITLE:=iputils - ping6
-  DEPENDS+= @IPV6 +USE_GLIBC:libopenssl
+  DEPENDS+= @IPV6 +libopenssl
 endef
 
 define Package/iputils-ping6/description
