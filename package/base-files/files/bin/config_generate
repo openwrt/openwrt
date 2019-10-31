@@ -260,6 +260,11 @@ generate_static_system() {
 				uci -q set "system.@system[-1].hostname=$hostname"
 			fi
 
+			local label_macaddr
+			if json_get_var label_macaddr label_macaddr; then
+				uci -q set "system.@system[-1].label_macaddr=$label_macaddr"
+			fi
+
 			if json_is_a ntpserver array; then
 				local keys key
 				json_get_keys keys ntpserver

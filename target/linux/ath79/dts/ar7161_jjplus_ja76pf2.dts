@@ -53,8 +53,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		sw1 {
 			label = "sw1";
@@ -111,7 +110,7 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <104000000>;
+		spi-max-frequency = <25000000>;
 
 		partitions {
 			#address-cells = <1>;

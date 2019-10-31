@@ -11,8 +11,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -59,14 +58,6 @@
 				reg = <0x50000 0x1fb0000>;
 			};
 		};
-	};
-
-	spidev@1 {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		compatible = "linux,spidev";
-		reg = <1>;
-		spi-max-frequency = <10000000>;
 	};
 };
 

@@ -38,8 +38,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -51,17 +50,6 @@
 			label = "wps";
 			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
-		};
-	};
-
-	gpio_export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		enable-leds {
-			gpio-export,name = "enable-leds";
-			gpio-export,output = <1>;
-			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
@@ -112,6 +100,15 @@
 
 &ohci {
 	status = "okay";
+};
+
+&gpio0 {
+	enable-leds {
+		gpio-hog;
+		line-name = "enable-leds";
+		output-low;
+		gpios = <10 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &gpio3 {

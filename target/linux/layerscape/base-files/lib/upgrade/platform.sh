@@ -1,8 +1,11 @@
-
 #!/bin/sh
 #
 # Copyright 2015-2019 Traverse Technologies
 #
+
+RAMFS_COPY_BIN="/usr/sbin/fw_printenv /usr/sbin/fw_setenv /usr/sbin/ubinfo /bin/echo"
+RAMFS_COPY_DATA="/etc/fw_env.config /var/lock/fw_printenv.lock"
+
 platform_do_upgrade_traverse_nandubi() {
 	bootsys=$(fw_printenv bootsys | awk -F= '{{print $2}}')
 	newbootsys=2
@@ -39,6 +42,10 @@ platform_check_image() {
 platform_do_upgrade() {
 	local board=$(board_name)
 
+	# Force the creation of fw_printenv.lock
+	mkdir -p /var/lock
+	touch /var/lock/fw_printenv.lock
+
 	case "$board" in
 	traverse,ls1043v | \
 	traverse,ls1043s)
@@ -48,12 +55,4 @@ platform_do_upgrade() {
 		echo "Sysupgrade is not currently supported on $board"
 		;;
 	esac
-}
-platform_pre_upgrade() {
-	# Force the creation of fw_printenv.lock
-	mkdir -p /var/lock
-	touch /var/lock/fw_printenv.lock
-
-	export RAMFS_COPY_BIN="/usr/sbin/fw_printenv /usr/sbin/fw_setenv /usr/sbin/ubinfo /bin/echo ${RAMFS_COPY_BIN}"
-	export RAMFS_COPY_DATA="/etc/fw_env.config /var/lock/fw_printenv.lock ${RAMFS_COPY_DATA}"
 }

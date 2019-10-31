@@ -15,11 +15,11 @@
 		led-failsafe = &power;
 		led-running = &power;
 		led-upgrade = &power;
+		label-mac-device = &ath9k;
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		wps {
 			label = "wps";

@@ -19,8 +19,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		pinctrl-names = "default";
 		pinctrl-0 = <&jtag_disable_pins>;
@@ -140,7 +139,6 @@
 	status = "okay";
 
 	mtd-cal-data = <&art 0x1000>;
-	mtd-mac-address = <&art 0x1002>;
 };
 
 &eth0 {

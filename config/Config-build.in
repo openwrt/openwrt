@@ -7,6 +7,13 @@
 
 menu "Global build settings"
 
+	config JSON_ADD_IMAGE_INFO
+		bool "Create JSON info files per build image"
+		default BUILDBOT
+		help
+		  The JSON info files contain information about the device and
+		  build images, stored next to the firmware images.
+
 	config ALL_NONSHARED
 		bool "Select all target specific packages by default"
 		select ALL_KMODS
@@ -33,6 +40,10 @@ menu "Global build settings"
 	config SIGNED_PACKAGES
 		bool "Cryptographically signed package lists"
 		default y
+
+	config SIGNATURE_CHECK
+		bool "Enable signature checking in opkg"
+		default SIGNED_PACKAGES
 
 	comment "General build options"
 
@@ -89,7 +100,7 @@ menu "Global build settings"
 		bool "Include build configuration in firmware" if DEVEL
 		default n
 		help
-		  If enabled, config.seed will be stored in /etc/build.config of firmware.
+		  If enabled, config.buildinfo will be stored in /etc/build.config of firmware.
 
 	config COLLECT_KERNEL_DEBUG
 		bool
@@ -232,7 +243,6 @@ menu "Global build settings"
 		config PKG_CC_STACKPROTECTOR_STRONG
 			bool "Strong"
 			select GCC_LIBSSP if !USE_MUSL
-			depends on !GCC_VERSION_4_8
 			depends on KERNEL_CC_STACKPROTECTOR_STRONG
 	endchoice
 
@@ -247,7 +257,6 @@ menu "Global build settings"
 		config KERNEL_CC_STACKPROTECTOR_REGULAR
 			bool "Regular"
 		config KERNEL_CC_STACKPROTECTOR_STRONG
-			depends on !GCC_VERSION_4_8
 			bool "Strong"
 	endchoice
 

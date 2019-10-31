@@ -96,10 +96,6 @@ start_service() {
 	procd_close_instance
 }
 
-service_running() {
-	pgrep -x /usr/sbin/lldpd &> /dev/null
-}
-
 reload_service() {
 	running || return 1
 	$LLDPCLI -u $LLDPSOCKET &> /dev/null <<-EOF

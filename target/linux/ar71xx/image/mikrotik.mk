@@ -1,6 +1,6 @@
 define Device/mikrotik
   PROFILES := Default
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
   BOARD_NAME := routerboard
   LOADER_TYPE := elf
   KERNEL_NAME := vmlinux.bin.lzma

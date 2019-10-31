@@ -27,10 +27,12 @@
 			label = "miwifi-nano:blue:status";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
+
 		status_red {
 			label = "miwifi-nano:red:status";
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		};
+
 		status_amber {
 			label = "miwifi-nano:amber:status";
 			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
@@ -38,8 +40,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -52,10 +53,18 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "refclk", "wled_an", "gpio";
+			ralink,group = "gpio", "refclk", "wdt", "wled_an";
 			ralink,function = "gpio";
 		};
 	};
+};
+
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
 };
 
 &wmac {
@@ -73,7 +82,7 @@
 	m25p80@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <40000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -89,7 +98,6 @@
 			partition@30000 {
 				label = "u-boot-env";
 				reg = <0x30000 0x10000>;
-				read-only;
 			};
 
 			factory: partition@40000 {

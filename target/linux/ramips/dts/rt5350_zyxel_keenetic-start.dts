@@ -15,6 +15,7 @@
 		led-failsafe = &led_status;
 		led-running = &led_status;
 		led-upgrade = &led_status;
+		label-mac-device = &ethernet;
 	};
 
 	leds {
@@ -101,7 +102,6 @@
 &ethernet {
 	mtd-mac-address = <&factory 0x28>;
 };
-
 
 &esw {
 	mediatek,portmap = <0x2f>;

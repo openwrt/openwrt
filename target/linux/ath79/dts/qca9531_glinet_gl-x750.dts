@@ -11,9 +11,8 @@
 	model = "GL.iNet GL-X750";
 
 	keys {
-		compatible = "gpio-keys-polled";
+		compatible = "gpio-keys";
 
-		poll-interval = <20>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&jtag_disable_pins>;
 
@@ -134,5 +133,4 @@
 &wmac {
 	status = "okay";
 	mtd-cal-data = <&art 0x1000>;
-	mtd-mac-address = <&art 0x1002>;
 };

@@ -60,19 +60,19 @@ arcadyan,arv4525pw|arcadyan,arv452cqw|arcadyan,arv7525pw|arcadyan,arv752dpw)
 
 arcadyan,arv7506pw11)
 	annex="b"
-	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 2)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 0x16)" 2)
 	ucidef_add_switch "switch0" \
 		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5t@eth0"
 	;;
 
 arcadyan,arv7519pw)
-	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 1)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 0x16)" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan" "1:lan" "2:lan" "3:lan" "4t@eth0"
 	;;
 
 arcadyan,arv7519rw22)
-	wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 22)" 1)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0x16)" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan:5" "2:lan:3" "3:lan:4" "4:lan:1" "5:lan:2" "6t@eth0"
 	;;
@@ -104,7 +104,7 @@ bt,homehub-v3a)
 	;;
 
 bt,homehub-v5a)
-	lan_mac=$(mtd_get_mac_binary_ubi caldata 4364)
+	lan_mac=$(mtd_get_mac_binary_ubi caldata 0x110c)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "5:wan:5" "6t@eth0"
@@ -123,7 +123,7 @@ netgear,dgn3500|netgear,dgn3500b)
 	;;
 
 netgear,dm200)
-	lan_mac=$(mtd_get_mac_binary ART 0)
+	lan_mac=$(mtd_get_mac_binary ART 0x0)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
 	ucidef_set_interface_lan 'eth0'
 	;;
@@ -147,13 +147,13 @@ avm,fritz3370-rev2-micron)
 avm,fritz7312|\
 avm,fritz7320)
 	annex="b"
-	wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 2705)" 1)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 0xa91)" 1)
 	ucidef_set_interface_lan 'eth0'
 	;;
 
 avm,fritz7360sl)
 	annex="b"
-	wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 2705)" 1)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 0xa91)" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "6t@eth0"
 	;;
@@ -199,7 +199,7 @@ zyxel,p-2812hnu-f1|zyxel,p-2812hnu-f3)
 	;;
 
 tplink,tdw8970|tplink,tdw8980)
-	wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 61696)" 1)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0xf100)" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan:2" "2:lan:3" "4:lan:4" "5:lan:1" "6t@eth0"
 	;;
@@ -212,20 +212,20 @@ arcadyan,vg3503j)
 	;;
 
 tplink,vr200|tplink,vr200v)
-	wan_mac=$(macaddr_add "$(mtd_get_mac_binary romfile 61696)" 1)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary romfile 0xf100)" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan" "2:lan" "4:lan" "5:lan" "6t@eth0"
 	;;
 
 arcadyan,vgv7510kw22-nor|arcadyan,vgv7510kw22-brn)
 	annex="b"
-	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 2)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 0x16)" 2)
 	ucidef_add_switch "switch0" \
 		"2:lan:2" "3:lan:1" "4:lan:4" "5:lan:3" "0:wan:5" "6t@eth0"
 	;;
 
 arcadyan,vgv7519-nor|arcadyan,vgv7519-brn)
-	wan_mac=$(mtd_get_mac_binary board_config 22)
+	wan_mac=$(mtd_get_mac_binary board_config 0x16)
 	ucidef_add_switch "switch0" \
 		"0:lan:4" "1:lan:3" "2:lan:2" "4:lan:1" "5:wan:5" "6t@eth0"
 	;;

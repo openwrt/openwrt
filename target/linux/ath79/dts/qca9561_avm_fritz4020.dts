@@ -36,7 +36,6 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			registers-number = <1>;
-			lines-initial-states = /bits/ 8 <0xff>;
 			spi-max-frequency = <10000000>;
 
 			gpio_latch_bit {
@@ -85,8 +84,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
+		compatible = "gpio-keys";
 
 		wps_button {
 			label = "WPS button";

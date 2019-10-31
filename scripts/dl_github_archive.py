@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (c) 2018 Yousong Zhou <yszhou4tech@gmail.com>
 #
@@ -20,7 +20,7 @@ import ssl
 import subprocess
 import sys
 import time
-import urllib2
+import urllib.request
 
 TMPDIR = os.environ.get('TMP_DIR') or '/tmp'
 TMPDIR_DL = os.path.join(TMPDIR, 'dl')
@@ -194,7 +194,7 @@ class GitHubCommitTsCache(object):
             self.cache[k] = (ts, updated)
 
     def _cache_flush(self, fout):
-        cache = sorted(self.cache.iteritems(), cmp=lambda a, b: b[1][1] - a[1][1])
+        cache = sorted(self.cache.items(), key=lambda a: a[1][1])
         cache = cache[:self.__cachen]
         self.cache = {}
         os.ftruncate(fout.fileno(), 0)
@@ -203,7 +203,7 @@ class GitHubCommitTsCache(object):
             ts = ent[0]
             updated = ent[1]
             line = '{0} {1} {2}\n'.format(k, ts, updated)
-            fout.write(line)
+            fout.write(line.encode('utf-8'))
 
 
 class DownloadGitHubTarball(object):
@@ -345,6 +345,7 @@ class DownloadGitHubTarball(object):
         version_is_sha1sum = len(self.version) == 40
         if not version_is_sha1sum:
             apis.insert(0, apis.pop())
+        reasons = ''
         for api in apis:
             url = api['url']
             attr_path = api['attr_path']
@@ -357,9 +358,9 @@ class DownloadGitHubTarball(object):
                 self.commit_ts = ct
                 self.commit_ts_cache.set(url, ct)
                 return
-            except Exception:
-                pass
-        raise self._error('Cannot fetch commit ts: {}'.format(url))
+            except Exception as e:
+                reasons += '\n' + ("  {}: {}".format(url, e))
+        raise self._error('Cannot fetch commit ts:{}'.format(reasons))
 
     def _init_commit_ts_remote_get(self, url, attrpath):
         resp = self._make_request(url)
@@ -397,9 +398,9 @@ class DownloadGitHubTarball(object):
             'Accept': 'application/vnd.github.v3+json',
             'User-Agent': 'OpenWrt',
         }
-        req = urllib2.Request(url, headers=headers)
+        req = urllib.request.Request(url, headers=headers)
         sslcontext = ssl._create_unverified_context()
-        fileobj = urllib2.urlopen(req, context=sslcontext)
+        fileobj = urllib.request.urlopen(req, context=sslcontext)
         return fileobj
 
     def _error(self, msg):

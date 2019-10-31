@@ -30,8 +30,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -79,6 +78,10 @@
 			};
 		};
 	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0xe000>;
 };
 
 &pinctrl {

@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "qca9533_tplink_tl-wr841.dtsi"
+
+/ {
+	compatible = "tplink,tl-wr841-v10", "qca,qca9533";
+	model = "TP-Link TL-WR841N/ND v10";
+
+	aliases {
+		led-boot = &qss_led;
+		led-failsafe = &qss_led;
+		led-running = &qss_led;
+		led-upgrade = &qss_led;
+	};
+};

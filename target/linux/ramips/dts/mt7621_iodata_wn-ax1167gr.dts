@@ -35,8 +35,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -91,8 +90,8 @@
 				read-only;
 			};
 
-			Factory: partition@40000 {
-				label = "Factory";
+			factory: partition@40000 {
+				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
 			};
@@ -157,7 +156,7 @@
 &pcie1 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&Factory 0x0>;
+		mediatek,mtd-eeprom = <&factory 0x0>;
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };

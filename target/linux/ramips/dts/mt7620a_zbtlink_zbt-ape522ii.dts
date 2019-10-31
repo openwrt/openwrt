@@ -7,7 +7,7 @@
 
 / {
 	compatible = "zbtlink,zbt-ape522ii", "ralink,mt7620a-soc";
-	model = "ZBT-APE522II";
+	model = "Zbtlink ZBT-APE522II";
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
@@ -43,8 +43,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";

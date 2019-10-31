@@ -14,11 +14,11 @@
 		led-boot = &led_wps;
 		led-failsafe = &led_wps;
 		led-upgrade = &led_wps;
+		label-mac-device = &wmac;
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -100,7 +100,6 @@
 				label = "firmware";
 				reg = <0x50000 0x7b0000>;
 			};
-
 		};
 	};
 };
@@ -139,6 +138,6 @@
 };
 
 &ethernet {
-	mtd-mac-address = <&factory 0x2e>;
+	mtd-mac-address = <&factory 0x28>;
 	mediatek,portmap = "llllw";
 };

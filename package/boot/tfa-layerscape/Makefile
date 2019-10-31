@@ -15,9 +15,9 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://source.codeaurora.org/external/qoriq/qoriq-components/atf
 PKG_SOURCE_VERSION:=7e34aebe658c7c3439d2d68b0ce6b9776e8e6996
 PKG_MIRROR_HASH:=9cf0bc32fa589a0ee7c48c87898679e645341f29da1253d0ba5d2e82c6ea074d
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_BUILD_DEPENDS:=uboot-layerscape
+PKG_BUILD_DEPENDS:=uboot-layerscape tfa-layerscape/host
 
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/tfa-layerscape/Config
@@ -46,7 +46,27 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) CROSS_COMPILE=$(TARGET_CROSS) \
 		fip pbl PLAT=$(PLAT) BOOT_MODE=$(BOOT_MODE) \
 		RCW=$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-rcw.bin \
-		BL33=$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-uboot.bin
+		BL33=$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-uboot.bin \
+		FIPTOOL=$(STAGING_DIR_HOST)/bin/tfa-fiptool \
+		CREATE_PBL=$(STAGING_DIR_HOST)/bin/tfa-create-pbl \
+		BYTE_SWAP=$(STAGING_DIR_HOST)/bin/tfa-byte-swap
+endef
+
+HOST_CFLAGS += -Wall -Werror -pedantic -std=c99
+define Host/Compile
+	$(MAKE) -C \
+		$(HOST_BUILD_DIR)/tools/fiptool \
+		CFLAGS="$(HOST_CFLAGS)" \
+		LDFLAGS="$(HOST_LDFLAGS)"
+	$(MAKE) -C \
+		$(HOST_BUILD_DIR)/plat/nxp/tools \
+		CFLAGS="$(HOST_CFLAGS)"
+endef
+
+define Host/Install
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/tools/fiptool/fiptool $(STAGING_DIR_HOST)/bin/tfa-fiptool
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/plat/nxp/tools/create_pbl $(STAGING_DIR_HOST)/bin/tfa-create-pbl
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/plat/nxp/tools/byte_swap $(STAGING_DIR_HOST)/bin/tfa-byte-swap
 endef
 
 define Package/tfa-layerscape/ls1012ardb
@@ -132,6 +152,7 @@ TFAS := \
   ls1088ardb-sdboot \
   ls2088ardb
 
+$(eval $(call HostBuild))
 $(foreach tfa,$(TFAS), \
 	$(eval $(Package/tfa-layerscape/$(tfa))) \
 	$(eval $(call Package/tfa-layerscape/Config,$(tfa),$(TITLE),$(BIN_BL2),$(BIN_FIP))) \

@@ -5,7 +5,7 @@
 preinit_set_mac_address() {
 	case $(board_name) in
 	asus,map-ac2200)
-		base_mac=$(mtd_get_mac_binary_ubi Factory 4102)
+		base_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
 		ip link set dev eth0 address $(macaddr_add "$base_mac" +1)
 		ip link set dev eth1 address $(macaddr_add "$base_mac" +3)
 		;;
@@ -15,7 +15,7 @@ preinit_set_mac_address() {
 		ip link set dev eth1 address $(macaddr_add "${base_mac}" 1)
 		;;
 	meraki,mr33)
-		mac_lan=$(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 102)
+		mac_lan=$(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66)
 		[ -n "$mac_lan" ] && ip link set dev eth0 address "$mac_lan"
 		;;
 	zyxel,nbg6617)

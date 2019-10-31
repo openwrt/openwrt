@@ -11,16 +11,17 @@
 	model = "TP-Link TL-WR842N v3";
 
 	aliases {
-		led-boot = &qss_led;
-		led-failsafe = &qss_led;
-		led-running = &qss_led;
-		led-upgrade = &qss_led;
+		led-boot = &power_led;
+		led-failsafe = &power_led;
+		led-running = &power_led;
+		led-upgrade = &power_led;
+		label-mac-device = &eth1;
 	};
 
 	gpio_leds: leds {
 		compatible = "gpio-leds";
 
-		system: power {
+		power_led: power {
 			label = "tp-link:green:power";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "on";
@@ -32,7 +33,7 @@
 			linux,default-trigger = "phy0tpt";
 		};
 
-		qss_led: qss {
+		qss {
 			label = "tp-link:green:qss";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
@@ -110,7 +111,7 @@
 };
 
 &usb_phy {
-        status = "okay";
+	status = "okay";
 };
 
 &spi {
@@ -165,4 +166,3 @@
 	mtd-cal-data = <&art 0x1000>;
 	mtd-mac-address = <&uboot 0x1fc00>;
 };
-

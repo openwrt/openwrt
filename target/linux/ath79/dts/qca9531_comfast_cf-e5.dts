@@ -10,9 +10,12 @@
 	compatible = "comfast,cf-e5", "qca,qca9531";
 	model = "COMFAST CF-E5/E7";
 
+	aliases {
+		label-mac-device = &eth0;
+	};
+
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		button0 {
 			label = "reset";

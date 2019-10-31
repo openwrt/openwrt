@@ -135,25 +135,29 @@ define Device/asus
 endef
 
 define Device/asus-rt-ac56u
-  DEVICE_TITLE := Asus RT-AC56U
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-AC56U
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
 endef
 TARGET_DEVICES += asus-rt-ac56u
 
 define Device/asus-rt-ac68u
-  DEVICE_TITLE := Asus RT-AC68U
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-AC68U
   DEVICE_PACKAGES := $(USB3_PACKAGES)
 endef
 TARGET_DEVICES += asus-rt-ac68u
 
 define Device/asus-rt-ac87u
-  DEVICE_TITLE := Asus RT-AC87U
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-AC87U
   DEVICE_PACKAGES := $(USB3_PACKAGES)
 endef
 TARGET_DEVICES += asus-rt-ac87u
 
 define Device/asus-rt-n18u
-  DEVICE_TITLE := Asus RT-N18U
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-N18U
   DEVICE_PACKAGES := $(USB3_PACKAGES)
 endef
 TARGET_DEVICES += asus-rt-n18u
@@ -164,27 +168,28 @@ TARGET_DEVICES += asus-rt-n18u
 # TRX with initramfs kernel. It's not possible right now so let's just build
 # plain initramfs kernel as it may be more useful.
 define Device/buffalo/Default
+  DEVICE_VENDOR := Buffalo
   KERNEL_INITRAMFS_SUFFIX = $$(KERNEL_SUFFIX)
   KERNEL_INITRAMFS = $$(KERNEL)
 endef
 
 define Device/buffalo-wxr-1900dhp
   $(call Device/buffalo/Default)
-  DEVICE_TITLE := Buffalo WXR-1900DHP
+  DEVICE_MODEL := WXR-1900DHP
   DEVICE_PACKAGES := $(USB3_PACKAGES)
 endef
 TARGET_DEVICES += buffalo-wxr-1900dhp
 
 define Device/buffalo-wzr-600dhp2
   $(call Device/buffalo/Default)
-  DEVICE_TITLE := Buffalo WZR-600DHP2
+  DEVICE_MODEL := WZR-600DHP2
   DEVICE_PACKAGES := $(B43) $(USB2_PACKAGES)
 endef
 TARGET_DEVICES += buffalo-wzr-600dhp2
 
 define Device/buffalo-wzr-900dhp
   $(call Device/buffalo/Default)
-  DEVICE_TITLE := Buffalo WZR-900DHP
+  DEVICE_MODEL := WZR-900DHP
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
   BUFFALO_TAG_PLATFORM := bcm
   BUFFALO_TAG_VERSION := 9.99
@@ -205,18 +210,19 @@ TARGET_DEVICES += buffalo-wzr-900dhp
 
 define Device/buffalo-wzr-1750dhp
   $(call Device/buffalo/Default)
-  DEVICE_TITLE := Buffalo WZR-1750DHP
+  DEVICE_MODEL := WZR-1750DHP
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
 endef
 TARGET_DEVICES += buffalo-wzr-1750dhp
 
 define Device/dlink
+  DEVICE_VENDOR := D-Link
   IMAGES := bin
   IMAGE/bin := append-ubi | seama-nand
 endef
 
 define Device/dlink-dir-885l
-  DEVICE_TITLE := D-Link DIR-885L
+  DEVICE_MODEL := DIR-885L
   DEVICE_PACKAGES := $(BRCMFMAC_4366B1) $(USB3_PACKAGES)
   $(Device/dlink)
   SIGNATURE := wrgac42_dlink.2015_dir885l
@@ -225,38 +231,46 @@ TARGET_DEVICES += dlink-dir-885l
 
 # Linksys devices are disabled due to problem with 2 TRX partitions
 define Device/linksys-ea6300-v1
-  DEVICE_TITLE := Linksys EA6300 V1
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := EA6300
+  DEVICE_VARIANT := v1
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
 endef
 # TARGET_DEVICES += linksys-ea6300-v1
 
 define Device/linksys-ea6500-v2
-  DEVICE_TITLE := Linksys EA6500 V2
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := EA6500
+  DEVICE_VARIANT := v2
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
 endef
 TARGET_DEVICES += linksys-ea6500-v2
 
 define Device/linksys-ea9200
-  DEVICE_TITLE := Linksys EA9200 V1
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := EA9200
+  DEVICE_VARIANT := v1
   DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
 endef
 # TARGET_DEVICES += linksys-ea9200
 
 define Device/linksys-ea9500
-  DEVICE_TITLE := Linksys EA9500
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := EA9500
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
   DEVICE_DTS := bcm47094-linksys-panamera
 endef
 # TARGET_DEVICES += linksys-ea9500
 
 define Device/netgear
+  DEVICE_VENDOR := NETGEAR
   IMAGES := chk
   IMAGE/chk := append-ubi | trx-nand | netgear-chk
   NETGEAR_REGION := 1
 endef
 
 define Device/netgear-r6250
-  DEVICE_TITLE := Netgear R6250
+  DEVICE_MODEL := R6250
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H245T00_NETGEAR
@@ -264,7 +278,8 @@ endef
 TARGET_DEVICES += netgear-r6250
 
 define Device/netgear-r6300-v2
-  DEVICE_TITLE := Netgear R6300 V2
+  DEVICE_MODEL := R6300
+  DEVICE_VARIANT := v2
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H240T00_NETGEAR
@@ -272,7 +287,7 @@ endef
 TARGET_DEVICES += netgear-r6300-v2
 
 define Device/netgear-r7000
-  DEVICE_TITLE := Netgear R7000
+  DEVICE_MODEL := R7000
   DEVICE_PACKAGES := $(USB3_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H270T00_NETGEAR
@@ -280,7 +295,7 @@ endef
 TARGET_DEVICES += netgear-r7000
 
 define Device/netgear-r7900
-  DEVICE_TITLE := Netgear R7900
+  DEVICE_MODEL := R7900
   DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H315T30_NETGEAR
@@ -288,7 +303,7 @@ endef
 TARGET_DEVICES += netgear-r7900
 
 define Device/netgear-r8000
-  DEVICE_TITLE := Netgear R8000
+  DEVICE_MODEL := R8000
   DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H315T00_NETGEAR
@@ -296,7 +311,7 @@ endef
 TARGET_DEVICES += netgear-r8000
 
 define Device/netgear-r8500
-  DEVICE_TITLE := Netgear R8500
+  DEVICE_MODEL := R8500
   DEVICE_PACKAGES := $(BRCMFMAC_4366B1) $(USB3_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H334T00_NETGEAR
@@ -304,7 +319,8 @@ endef
 # TARGET_DEVICES += netgear-r8500
 
 define Device/smartrg-sr400ac
-  DEVICE_TITLE := SmartRG SR400ac
+  DEVICE_VENDOR := SmartRG
+  DEVICE_MODEL := SR400ac
   DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
   IMAGES := trx
   IMAGE/trx := append-rootfs | trx-serial
@@ -314,14 +330,16 @@ endef
 TARGET_DEVICES += smartrg-sr400ac
 
 define Device/phicomm-k3
-  DEVICE_TITLE := PHICOMM K3
+  DEVICE_VENDOR := PHICOMM
+  DEVICE_MODEL := K3
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
   IMAGES := trx
 endef
 TARGET_DEVICES += phicomm-k3
 
 define Device/tenda-ac9
-  DEVICE_TITLE := Tenda AC9
+  DEVICE_VENDOR := Tenda
+  DEVICE_MODEL := AC9
   DEVICE_PACKAGES := $(B43) $(USB2_PACKAGES)
   IMAGES := trx
   IMAGE/trx := append-rootfs | trx-serial
@@ -329,7 +347,9 @@ endef
 TARGET_DEVICES += tenda-ac9
 
 define Device/tplink-archer-c5-v2
-  DEVICE_TITLE := TP-LINK Archer C5 V2
+  DEVICE_VENDOR := TP-LINK
+  DEVICE_MODEL := Archer C5
+  DEVICE_VARIANT := v2
   DEVICE_PACKAGES := $(B43) $(USB2_PACKAGES)
   IMAGES := bin
   IMAGE/bin := append-rootfs | bcm53xx-tplink-safeloader
@@ -338,7 +358,9 @@ endef
 TARGET_DEVICES += tplink-archer-c5-v2
 
 define Device/tplink-archer-c9-v1
-  DEVICE_TITLE := TP-LINK Archer C9 V1
+  DEVICE_VENDOR := TP-LINK
+  DEVICE_MODEL := Archer C9
+  DEVICE_VARIANT := v1
   DEVICE_PACKAGES := $(USB3_PACKAGES)
   IMAGES := bin
   IMAGE/bin := append-rootfs | bcm53xx-tplink-safeloader

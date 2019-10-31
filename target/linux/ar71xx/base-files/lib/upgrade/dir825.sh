@@ -75,7 +75,7 @@ dir825b_do_upgrade_combined() {
 
 	if [ -n "$fw_mtd" ] &&  [ ${fw_blocks:-0} -gt 0 ]; then
 		local append=""
-		[ -f "$CONF_TAR" -a "$SAVE_CONFIG" -eq 1 ] && append="-j $CONF_TAR"
+		[ -f "$UPGRADE_BACKUP" ] && append="-j $UPGRADE_BACKUP"
 
 		sync
 		dd if="$fw_file" bs=64k skip=1 count=$fw_blocks 2>/dev/null | \

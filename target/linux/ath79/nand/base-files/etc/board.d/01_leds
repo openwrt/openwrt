@@ -1,0 +1,18 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+boardname="${board##*,}"
+
+case "$board" in
+glinet,gl-ar300m-nand)
+	ucidef_set_led_netdev "lan" "LAN" "gl-ar300m:green:lan" "eth0"
+	;;
+esac
+
+board_config_flush
+
+exit 0

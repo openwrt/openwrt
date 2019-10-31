@@ -7,7 +7,7 @@
 
 / {
 	compatible = "zbtlink,zbt-wg2626", "mediatek,mt7621-soc";
-	model = "ZBT-WG2626";
+	model = "Zbtlink ZBT-WG2626";
 
 	aliases {
 		led-boot = &led_status;
@@ -27,8 +27,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";

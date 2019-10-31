@@ -48,10 +48,10 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
+		compatible = "gpio-keys";
+
 		#address-cells = <1>;
 		#size-cells = <0>;
-		poll-interval = <20>;
 
 		reset {
 			label = "reset";
@@ -76,7 +76,6 @@
 			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_2>;
 		};
-
 	};
 };
 
@@ -96,7 +95,6 @@
 			ralink,group = "wdt";
 			ralink,function = "gpio";
 		};
-
 
 		i2c {
 			ralink,group = "i2c";

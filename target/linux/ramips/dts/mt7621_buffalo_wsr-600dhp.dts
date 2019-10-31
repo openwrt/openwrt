@@ -65,8 +65,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		power {
 			label = "power";
@@ -179,6 +178,10 @@
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x0000>;
 	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0x4>;
 };
 
 &xhci {

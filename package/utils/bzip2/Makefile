@@ -8,16 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bzip2
-PKG_VERSION:=1.0.6
-PKG_RELEASE:=5
+PKG_VERSION:=1.0.8
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://distfiles.gentoo.org/distfiles/ \
-	http://distcache.freebsd.org/ports-distfiles/
-PKG_HASH:=a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd
-PKG_MAINTAINER:=Steven Barth <cyrus@openwrt.org>
+PKG_SOURCE_URL:=https://sourceware.org/pub/bzip2
+PKG_HASH:=ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269
 
-PKG_LICENSE:=BZIP2
+PKG_MAINTAINER:=Steven Barth <cyrus@openwrt.org>
+PKG_LICENSE:=bzip2-1.0.8
 PKG_LICENSE_FILES:=LICENSE
 PKG_CPE_ID:=cpe:/a:bzip:bzip2
 
@@ -26,7 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/bzip2/Default
   SUBMENU:=Compression
-  URL:=http://www.bzip.org/
+  URL:=https://sourceware.org/bzip2/
 endef
 
 define Package/libbz2

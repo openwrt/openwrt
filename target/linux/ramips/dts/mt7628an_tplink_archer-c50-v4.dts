@@ -18,8 +18,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -38,37 +37,37 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "c50-v4:green:power";
+			label = "archer-c50-v4:green:power";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan2 {
-			label = "c50-v4:green:wlan2g";
+			label = "archer-c50-v4:green:wlan2g";
 			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan5 {
-			label = "c50-v4:green:wlan5g";
+			label = "archer-c50-v4:green:wlan5g";
 			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
 		};
 
 		lan {
-			label = "c50-v4:green:lan";
+			label = "archer-c50-v4:green:lan";
 			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			label = "c50-v4:green:wan";
+			label = "archer-c50-v4:green:wan";
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_orange {
-			label = "c50-v4:orange:wan";
+			label = "archer-c50-v4:orange:wan";
 			gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
-			label = "c50-v4:green:wps";
+			label = "archer-c50-v4:green:wps";
 			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 		};
 	};

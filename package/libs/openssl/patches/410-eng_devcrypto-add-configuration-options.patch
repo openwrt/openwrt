@@ -1,7 +1,7 @@
-From 800272d22acf95070f22c870eca15bdba0539a6a Mon Sep 17 00:00:00 2001
+From 1c2fabcdb34e436286b4a8760cfbfbff11ea551a Mon Sep 17 00:00:00 2001
 From: Eneas U de Queiroz <cote2004-github@yahoo.com>
 Date: Sat, 3 Nov 2018 15:41:10 -0300
-Subject: [PATCH 2/4] eng_devcrypto: add configuration options
+Subject: eng_devcrypto: add configuration options
 
 USE_SOFTDRIVERS: whether to use software (not accelerated) drivers
 CIPHERS: list of ciphers to enable
@@ -13,6 +13,8 @@ Reviewed-by: Matthias St. Pierre <Matthias.St.Pierre@ncp-e.com>
 Reviewed-by: Richard Levitte <levitte@openssl.org>
 (Merged from https://github.com/openssl/openssl/pull/7585)
 
+diff --git a/crypto/engine/eng_devcrypto.c b/crypto/engine/eng_devcrypto.c
+index a2c9a966f7..5ec38ca8f3 100644
 --- a/crypto/engine/eng_devcrypto.c
 +++ b/crypto/engine/eng_devcrypto.c
 @@ -16,6 +16,7 @@
@@ -78,7 +80,7 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
  
      /*
       * Code further down must make sure that only NIDs in the table above
-@@ -333,19 +367,40 @@ static int cipher_cleanup(EVP_CIPHER_CTX
+@@ -333,19 +367,40 @@ static int cipher_cleanup(EVP_CIPHER_CTX *ctx)
  }
  
  /*
@@ -184,7 +186,7 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
  static const EVP_CIPHER *get_cipher_method(int nid)
  {
      size_t i = get_cipher_data_index(nid);
-@@ -438,6 +520,36 @@ static int devcrypto_ciphers(ENGINE *e,
+@@ -438,6 +520,36 @@ static int devcrypto_ciphers(ENGINE *e, const EVP_CIPHER **cipher,
      return *cipher != NULL;
  }
  
@@ -245,7 +247,7 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
  
      /*
       * Code further down must make sure that only NIDs in the table above
-@@ -516,8 +637,8 @@ static const struct digest_data_st *get_
+@@ -516,8 +637,8 @@ static const struct digest_data_st *get_digest_data(int nid)
  }
  
  /*
@@ -256,7 +258,7 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
   */
  
  static int digest_init(EVP_MD_CTX *ctx)
-@@ -630,52 +751,94 @@ static int digest_cleanup(EVP_MD_CTX *ct
+@@ -630,52 +751,94 @@ static int digest_cleanup(EVP_MD_CTX *ctx)
      return clean_devcrypto_session(&digest_ctx->sess);
  }
  
@@ -401,7 +403,7 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
      }
  }
  
-@@ -739,7 +909,153 @@ static int devcrypto_digests(ENGINE *e,
+@@ -739,8 +909,154 @@ static int devcrypto_digests(ENGINE *e, const EVP_MD **digest,
      return *digest != NULL;
  }
  
@@ -477,8 +479,8 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
 +    "DIGESTS",
 +    "either ALL, NONE, or a comma-separated list of digests to enable [default=ALL]",
 +    ENGINE_CMD_FLAG_STRING},
-+#endif
-+
+ #endif
+ 
 +   {0, NULL, NULL, 0}
 +};
 +
@@ -502,7 +504,7 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
 +        use_softdrivers = i;
 +#ifdef IMPLEMENT_DIGEST
 +        rebuild_known_digest_nids(e);
- #endif
++#endif
 +        rebuild_known_cipher_nids(e);
 +        return 1;
 +#endif /* CIOCGSESSINFO */
@@ -552,9 +554,10 @@ Reviewed-by: Richard Levitte <levitte@openssl.org>
 +    }
 +    return 0;
 +}
- 
++
  /******************************************************************************
   *
+  * LOAD / UNLOAD
 @@ -793,6 +1109,8 @@ void engine_load_devcrypto_int()
  
      if (!ENGINE_set_id(e, "devcrypto")

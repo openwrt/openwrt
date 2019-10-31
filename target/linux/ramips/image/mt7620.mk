@@ -16,25 +16,6 @@ define Build/elecom-header
 		-f $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 
-define Build/elx-header
-  $(eval hw_id=$(word 1,$(1)))
-  $(eval xor_pattern=$(word 2,$(1)))
-  ( \
-    echo -ne "\x00\x00\x00\x00\x00\x00\x00\x03" | \
-      dd bs=42 count=1 conv=sync; \
-    hw_id="$(hw_id)"; \
-    echo -ne "\x$${hw_id:0:2}\x$${hw_id:2:2}\x$${hw_id:4:2}\x$${hw_id:6:2}" | \
-      dd bs=20 count=1 conv=sync; \
-    echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
-      dd bs=8 count=1 conv=sync; \
-    echo -ne "$$($(STAGING_DIR_HOST)/bin/mkhash md5 $@ | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
-      dd bs=58 count=1 conv=sync; \
-  ) > $(KDIR)/tmp/$(DEVICE_NAME).header
-  $(call Build/xor-image,-p $(xor_pattern) -x)
-  cat $(KDIR)/tmp/$(DEVICE_NAME).header $@ > $@.new
-  mv $@.new $@
-endef
-
 define Device/aigale_ai-br100
   MTK_SOC := mt7620a
   IMAGE_SIZE := 7936k
@@ -86,6 +67,7 @@ endef
 
 define Device/asus_rp-n53
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RP-N53
   DEVICE_PACKAGES := kmod-rt2800-pci
@@ -95,7 +77,7 @@ TARGET_DEVICES += asus_rp-n53
 
 define Device/asus_rt-ac51u
   MTK_SOC := mt7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-AC51U
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
@@ -105,6 +87,7 @@ TARGET_DEVICES += asus_rt-ac51u
 
 define Device/asus_rt-n12p
   MTK_SOC := mt7620n
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-N11P/RT-N12+/RT-N12Eb1
   SUPPORTED_DEVICES += rt-n12p
@@ -113,6 +96,7 @@ TARGET_DEVICES += asus_rt-n12p
 
 define Device/asus_rt-n14u
   MTK_SOC := mt7620n
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-N14u
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -131,7 +115,7 @@ TARGET_DEVICES += bdcom_wap2100-sk
 
 define Device/buffalo_whr-1166d
   MTK_SOC := mt7620a
-  IMAGE_SIZE := 15040k
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WHR-1166D
   DEVICE_PACKAGES := kmod-mt76x2
@@ -141,7 +125,7 @@ TARGET_DEVICES += buffalo_whr-1166d
 
 define Device/buffalo_whr-300hp2
   MTK_SOC := mt7620a
-  IMAGE_SIZE := 6848k
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WHR-300HP2
   SUPPORTED_DEVICES += whr-300hp2
@@ -150,7 +134,7 @@ TARGET_DEVICES += buffalo_whr-300hp2
 
 define Device/buffalo_whr-600d
   MTK_SOC := mt7620a
-  IMAGE_SIZE := 6848k
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WHR-600D
   DEVICE_PACKAGES := kmod-rt2800-pci
@@ -160,6 +144,7 @@ TARGET_DEVICES += buffalo_whr-600d
 
 define Device/buffalo_wmr-300
   MTK_SOC := mt7620n
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WMR-300
   SUPPORTED_DEVICES += wmr-300
@@ -168,6 +153,7 @@ TARGET_DEVICES += buffalo_wmr-300
 
 define Device/comfast_cf-wr800n
   MTK_SOC := mt7620n
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Comfast
   DEVICE_MODEL := CF-WR800N
   SUPPORTED_DEVICES += cf-wr800n
@@ -190,6 +176,7 @@ TARGET_DEVICES += dlink_dch-m225
 define Device/dlink_dir-510l
   $(Device/amit_jboot)
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 14208k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-510L
   DEVICE_PACKAGES += kmod-mt76x0e
@@ -213,6 +200,7 @@ TARGET_DEVICES += dlink_dir-810l
 define Device/dlink_dwr-116-a1
   $(Device/amit_jboot)
   MTK_SOC := mt7620n
+  IMAGE_SIZE := 8064k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DWR-116
   DEVICE_VARIANT := A1/A2
@@ -225,6 +213,7 @@ TARGET_DEVICES += dlink_dwr-116-a1
 define Device/dlink_dwr-118-a1
   $(Device/amit_jboot)
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 16256k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DWR-118
   DEVICE_VARIANT := A1
@@ -238,6 +227,7 @@ TARGET_DEVICES += dlink_dwr-118-a1
 define Device/dlink_dwr-118-a2
   $(Device/amit_jboot)
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 16256k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DWR-118
   DEVICE_VARIANT := A2
@@ -251,7 +241,7 @@ TARGET_DEVICES += dlink_dwr-118-a2
 define Device/dlink_dwr-921-c1
   $(Device/amit_jboot)
   MTK_SOC := mt7620n
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16256k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DWR-921
   DEVICE_VARIANT := C1
@@ -276,7 +266,7 @@ TARGET_DEVICES += dlink_dwr-921-c3
 define Device/dlink_dwr-922-e2
   $(Device/amit_jboot)
   MTK_SOC := mt7620n
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16256k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DWR-922
   DEVICE_VARIANT := E2
@@ -289,6 +279,7 @@ TARGET_DEVICES += dlink_dwr-922-e2
 
 define Device/dovado_tiny-ac
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Dovado
   DEVICE_MODEL := Tiny AC
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci
@@ -302,7 +293,7 @@ define Device/edimax_br-6478ac-v2
   DEVICE_MODEL := BR-6478AC
   DEVICE_VARIANT := V2
   BLOCKSIZE := 64k
-  IMAGE_SIZE := 7616k
+  IMAGE_SIZE := 7744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN68 -f 0x70000 -S 0x01100000 | pad-rootfs | \
 	append-metadata | check-size $$$$(IMAGE_SIZE)
@@ -351,7 +342,7 @@ TARGET_DEVICES += edimax_ew-7478apc
 
 define Device/elecom_wrh-300cr
   MTK_SOC := mt7620n
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 14272k
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	elecom-header
@@ -362,9 +353,35 @@ define Device/elecom_wrh-300cr
 endef
 TARGET_DEVICES += elecom_wrh-300cr
 
+define Device/engenius_esr600
+  MTK_SOC := mt7620a
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 15616k
+  IMAGES += factory.dlf
+  IMAGE/factory.dlf := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+       senao-header -r 0x101 -p 0x57 -t 2
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := ESR600
+  DEVICE_PACKAGES += kmod-rt2800-pci kmod-usb-storage kmod-usb-ohci kmod-usb-ehci
+endef
+TARGET_DEVICES += engenius_esr600
+
+define Device/fon_fon2601
+  MTK_SOC := mt7620a
+  IMAGE_SIZE := 15936k
+  DEVICE_VENDOR := Fon
+  DEVICE_MODEL := FON2601
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+  KERNEL_INITRAMFS := $$(KERNEL) | fonfxcimage
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs |\
+			fonfxcimage |\
+			pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += fon_fon2601
+
 define Device/glinet_gl-mt300a
   MTK_SOC := mt7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15872k
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MT300A
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -374,7 +391,7 @@ TARGET_DEVICES += glinet_gl-mt300a
 
 define Device/glinet_gl-mt300n
   MTK_SOC := mt7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15872k
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MT300N
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -384,7 +401,7 @@ TARGET_DEVICES += glinet_gl-mt300n
 
 define Device/glinet_gl-mt750
   MTK_SOC := mt7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15872k
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MT750
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci
@@ -434,7 +451,7 @@ TARGET_DEVICES += hiwifi_hc5861
 
 define Device/hnet_c108
   MTK_SOC := mt7620a
-  IMAGE_SIZE := 16777216
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := HNET
   DEVICE_MODEL := C108
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
@@ -474,7 +491,8 @@ define Device/kimax_u25awf-h1
   DEVICE_VENDOR := Kimax
   DEVICE_MODEL := U25AWF
   DEVICE_VARIANT := H1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-storage kmod-scsi-core \
+		     kmod-fs-ext4 kmod-fs-vfat block-mount
   SUPPORTED_DEVICES += u25awf-h1
 endef
 TARGET_DEVICES += kimax_u25awf-h1
@@ -484,13 +502,14 @@ define Device/kimax_u35wf
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Kimax
   DEVICE_MODEL := U35WF
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-storage kmod-scsi-core \
+		     kmod-fs-ext4 kmod-fs-vfat block-mount
 endef
 TARGET_DEVICES += kimax_u35wf
 
 define Device/kingston_mlw221
   MTK_SOC := mt7620n
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15744k
   DEVICE_VENDOR := Kingston
   DEVICE_MODEL := MLW221
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
@@ -500,7 +519,7 @@ TARGET_DEVICES += kingston_mlw221
 
 define Device/kingston_mlwg2
   MTK_SOC := mt7620n
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15744k
   DEVICE_VENDOR := Kingston
   DEVICE_MODEL := MLWG2
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
@@ -511,6 +530,7 @@ TARGET_DEVICES += kingston_mlwg2
 define Device/lava_lr-25g001
   $(Device/amit_jboot)
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 16256k
   DEVICE_VENDOR := LAVA
   DEVICE_MODEL := LR-25G001
   DLINK_ROM_ID := LVA6E3804001
@@ -522,7 +542,7 @@ TARGET_DEVICES += lava_lr-25g001
 
 define Device/lenovo_newifi-y1
   MTK_SOC := mt7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Lenovo
   DEVICE_MODEL := Y1
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
@@ -532,7 +552,7 @@ TARGET_DEVICES += lenovo_newifi-y1
 
 define Device/lenovo_newifi-y1s
   MTK_SOC := mt7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Lenovo
   DEVICE_MODEL := Y1S
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
@@ -542,6 +562,7 @@ TARGET_DEVICES += lenovo_newifi-y1s
 
 define Device/linksys_e1700
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	umedia-header 0x013326
@@ -566,7 +587,7 @@ define Device/netgear_ex2700
   NETGEAR_HW_ID := 29764623+4+0+32+2x2+0
   NETGEAR_BOARD_ID := EX2700
   BLOCKSIZE := 4k
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := 3776k
   IMAGES += factory.bin
   KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | append-uImage-fakehdr filesystem
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
@@ -593,6 +614,7 @@ TARGET_DEVICES += netgear_ex3700
 
 define Device/netgear_wn3000rp-v3
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   NETGEAR_HW_ID := 29764836+8+0+32+2x2+0
   NETGEAR_BOARD_ID := WN3000RPv3
   BLOCKSIZE := 4k
@@ -610,7 +632,7 @@ TARGET_DEVICES += netgear_wn3000rp-v3
 define Device/nexx_wt3020-4m
   MTK_SOC := mt7620n
   BLOCKSIZE := 4k
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := 3776k
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	poray-header -B WT3020 -F 4M
@@ -623,6 +645,7 @@ TARGET_DEVICES += nexx_wt3020-4m
 
 define Device/nexx_wt3020-8m
   MTK_SOC := mt7620n
+  IMAGE_SIZE := 7872k
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	poray-header -B WT3020 -F 8M
@@ -636,7 +659,7 @@ TARGET_DEVICES += nexx_wt3020-8m
 
 define Device/ohyeah_oy-0001
   MTK_SOC := mt7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Oh Yeah
   DEVICE_MODEL := OY-0001
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -655,6 +678,7 @@ TARGET_DEVICES += phicomm_k2g
 
 define Device/phicomm_psg1208
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Phicomm
   DEVICE_MODEL := PSG1208
   DEVICE_PACKAGES := kmod-mt76x2
@@ -664,6 +688,7 @@ TARGET_DEVICES += phicomm_psg1208
 
 define Device/phicomm_psg1218a
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Phicomm
   DEVICE_MODEL := PSG1218
   DEVICE_VARIANT:= Ax
@@ -674,6 +699,7 @@ TARGET_DEVICES += phicomm_psg1218a
 
 define Device/phicomm_psg1218b
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Phicomm
   DEVICE_MODEL := PSG1218
   DEVICE_VARIANT := Bx
@@ -684,6 +710,7 @@ TARGET_DEVICES += phicomm_psg1218b
 
 define Device/planex_cs-qr10
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := CS-QR10
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci \
@@ -695,6 +722,7 @@ TARGET_DEVICES += planex_cs-qr10
 
 define Device/planex_db-wrt01
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := DB-WRT01
   SUPPORTED_DEVICES += db-wrt01
@@ -703,6 +731,7 @@ TARGET_DEVICES += planex_db-wrt01
 
 define Device/planex_mzk-750dhp
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := MZK-750DHP
   DEVICE_PACKAGES := kmod-mt76x0e
@@ -712,6 +741,7 @@ TARGET_DEVICES += planex_mzk-750dhp
 
 define Device/planex_mzk-ex300np
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7360k
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := MZK-EX300NP
   SUPPORTED_DEVICES += mzk-ex300np
@@ -720,6 +750,7 @@ TARGET_DEVICES += planex_mzk-ex300np
 
 define Device/planex_mzk-ex750np
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7360k
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := MZK-EX750NP
   DEVICE_PACKAGES := kmod-mt76x2
@@ -729,6 +760,7 @@ TARGET_DEVICES += planex_mzk-ex750np
 
 define Device/ralink_mt7620a-evb
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7620a EVB
 endef
@@ -736,6 +768,7 @@ TARGET_DEVICES += ralink_mt7620a-evb
 
 define Device/ralink_mt7620a-mt7530-evb
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7620a + MT7530 EVB
   SUPPORTED_DEVICES += mt7620a_mt7530
@@ -744,6 +777,7 @@ TARGET_DEVICES += ralink_mt7620a-mt7530-evb
 
 define Device/ralink_mt7620a-mt7610e-evb
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7620a + MT7610e EVB
   DEVICE_PACKAGES := kmod-mt76x0e
@@ -753,6 +787,7 @@ TARGET_DEVICES += ralink_mt7620a-mt7610e-evb
 
 define Device/ralink_mt7620a-v22sg-evb
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 130560k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7620a V22SG
   SUPPORTED_DEVICES += mt7620a_v22sg
@@ -761,7 +796,7 @@ TARGET_DEVICES += ralink_mt7620a-v22sg-evb
 
 define Device/ravpower_wd03
   MTK_SOC := mt7620n
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Ravpower
   DEVICE_MODEL := WD03
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -770,7 +805,7 @@ TARGET_DEVICES += ravpower_wd03
 
 define Device/sanlinking_d240
   MTK_SOC := mt7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Sanlinking Technologies
   DEVICE_MODEL := D240
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
@@ -780,7 +815,7 @@ TARGET_DEVICES += sanlinking_d240
 
 define Device/sercomm_na930
   MTK_SOC := mt7620a
-  IMAGE_SIZE := 20m
+  IMAGE_SIZE := 20480k
   DEVICE_VENDOR := Sercomm
   DEVICE_MODEL := NA930
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -790,6 +825,7 @@ TARGET_DEVICES += sercomm_na930
 
 define Device/tplink_archer-c20i
   $(Device/Archer)
+  IMAGE_SIZE := 7808k
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc2000001
   TPLINK_HWREV := 58
@@ -803,6 +839,7 @@ TARGET_DEVICES += tplink_archer-c20i
 
 define Device/tplink_archer-c20-v1
   $(Device/Archer)
+  IMAGE_SIZE := 7808k
   SUPPORTED_DEVICES += tplink,c20-v1
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc2000001
@@ -817,6 +854,7 @@ TARGET_DEVICES += tplink_archer-c20-v1
 
 define Device/tplink_archer-c2-v1
   $(Device/Archer)
+  IMAGE_SIZE := 7808k
   SUPPORTED_DEVICES += tplink,c2-v1
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc7500001
@@ -830,6 +868,7 @@ TARGET_DEVICES += tplink_archer-c2-v1
 
 define Device/tplink_archer-c50-v1
   $(Device/Archer)
+  IMAGE_SIZE := 7808k
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc7500001
   TPLINK_HWREV := 69
@@ -845,6 +884,7 @@ TARGET_DEVICES += tplink_archer-c50-v1
 
 define Device/tplink_archer-mr200
   $(Device/Archer)
+  IMAGE_SIZE := 7872k
   TPLINK_FLASHLAYOUT := 8MLmtk
   TPLINK_HWID := 0xd7500001
   TPLINK_HWREV := 0x4a
@@ -856,7 +896,7 @@ TARGET_DEVICES += tplink_archer-mr200
 
 define Device/vonets_var11n-300
   MTK_SOC := mt7620n
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := 3776k
   BLOCKSIZE := 4k
   DEVICE_VENDOR := Vonets
   DEVICE_MODEL := VAR11N-300
@@ -865,7 +905,7 @@ TARGET_DEVICES += vonets_var11n-300
 
 define Device/wrtnode_wrtnode
   MTK_SOC := mt7620n
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := WRTNode
   DEVICE_MODEL := WRTNode
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -875,7 +915,7 @@ TARGET_DEVICES += wrtnode_wrtnode
 
 define Device/xiaomi_miwifi-mini
   MTK_SOC := mt7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15872k
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := MiWiFi Mini
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
@@ -885,7 +925,7 @@ TARGET_DEVICES += xiaomi_miwifi-mini
 
 define Device/youku_yk1
   MTK_SOC := mt7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  IMAGE_SIZE := 32448k
   DEVICE_VENDOR := YOUKU
   DEVICE_MODEL := YK1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
@@ -895,6 +935,7 @@ TARGET_DEVICES += youku_yk1
 
 define Device/yukai_bocco
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := YUKAI Engineering
   DEVICE_MODEL := BOCCO
   DEVICE_PACKAGES := kmod-sound-core kmod-sound-mt7620 kmod-i2c-ralink
@@ -902,19 +943,9 @@ define Device/yukai_bocco
 endef
 TARGET_DEVICES += yukai_bocco
 
-define Device/zbtlink_we1026-5g-16m
-  MTK_SOC := mt7620a
-  IMAGE_SIZE := 16777216
-  DEVICE_VENDOR := Zbtlink
-  DEVICE_MODEL := ZBT-WE1026-5G
-  DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
-  SUPPORTED_DEVICES += we1026-5g-16m
-endef
-TARGET_DEVICES += zbtlink_we1026-5g-16m
-
 define Device/zbtlink_zbt-ape522ii
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 15872k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-APE522II
   DEVICE_PACKAGES := kmod-mt76x2
@@ -924,6 +955,7 @@ TARGET_DEVICES += zbtlink_zbt-ape522ii
 
 define Device/zbtlink_zbt-cpe102
   MTK_SOC := mt7620n
+  IMAGE_SIZE := 7552k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-CPE102
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -933,6 +965,7 @@ TARGET_DEVICES += zbtlink_zbt-cpe102
 
 define Device/zbtlink_zbt-wa05
   MTK_SOC := mt7620n
+  IMAGE_SIZE := 7552k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WA05
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -940,8 +973,20 @@ define Device/zbtlink_zbt-wa05
 endef
 TARGET_DEVICES += zbtlink_zbt-wa05
 
+define Device/zbtlink_zbt-we1026-5g-16m
+  MTK_SOC := mt7620a
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WE1026-5G
+  DEVICE_VARIANT := 16M
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
+  SUPPORTED_DEVICES += we1026-5g-16m zbtlink,we1026-5g-16m
+endef
+TARGET_DEVICES += zbtlink_zbt-we1026-5g-16m
+
 define Device/zbtlink_zbt-we2026
   MTK_SOC := mt7620n
+  IMAGE_SIZE := 7552k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE2026
   SUPPORTED_DEVICES += zbt-we2026
@@ -950,7 +995,7 @@ TARGET_DEVICES += zbtlink_zbt-we2026
 
 define Device/zbtlink_zbt-we826-16m
   MTK_SOC := mt7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE826
   DEVICE_VARIANT := 16M
@@ -961,7 +1006,7 @@ TARGET_DEVICES += zbtlink_zbt-we826-16m
 
 define Device/zbtlink_zbt-we826-32m
   MTK_SOC := mt7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE826
   DEVICE_VARIANT := 32M
@@ -982,6 +1027,7 @@ TARGET_DEVICES += zbtlink_zbt-we826-e
 
 define Device/zbtlink_zbt-wr8305rt
   MTK_SOC := mt7620n
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WR8305RT
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -991,6 +1037,7 @@ TARGET_DEVICES += zbtlink_zbt-wr8305rt
 
 define Device/zte_q7
   MTK_SOC := mt7620a
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := ZTE
   DEVICE_MODEL := Q7
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -1000,6 +1047,7 @@ TARGET_DEVICES += zte_q7
 
 define Device/zyxel_keenetic-omni
   MTK_SOC := mt7620n
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic Omni
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
@@ -1012,6 +1060,7 @@ TARGET_DEVICES += zyxel_keenetic-omni
 
 define Device/zyxel_keenetic-omni-ii
   MTK_SOC := mt7620n
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic Omni II
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
@@ -1024,7 +1073,7 @@ TARGET_DEVICES += zyxel_keenetic-omni-ii
 
 define Device/zyxel_keenetic-viva
   MTK_SOC := mt7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic Viva
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-switch-rtl8366-smi kmod-switch-rtl8367b

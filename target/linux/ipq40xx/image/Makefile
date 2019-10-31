@@ -77,7 +77,7 @@ define Device/alfa-network_ap120c-ac
 	DEVICE_VENDOR := ALFA Network
 	DEVICE_MODEL := AP120C-AC
 	DEVICE_DTS := qcom-ipq4018-ap120c-ac
-	DEVICE_PACKAGES := ipq-wifi-alfa-network_ap120c-ac kmod-usb-acm \
+	DEVICE_PACKAGES := kmod-usb-acm \
 		kmod-tpm-i2c-atmel uboot-envtools
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
@@ -93,7 +93,7 @@ define Device/asus_map-ac2200
 	DEVICE_MODEL := Lyra (MAP-AC2200)
 	DEVICE_DTS := qcom-ipq4019-map-ac2200
 	IMAGES := sysupgrade.bin
-	DEVICE_PACKAGES := ipq-wifi-asus_map-ac2200 ath10k-firmware-qca9888-ct kmod-ath3k
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-ath3k
 endef
 TARGET_DEVICES += asus_map-ac2200
 
@@ -139,17 +139,27 @@ define Device/avm_fritzbox-7530
 	DEVICE_VENDOR := AVM
 	DEVICE_MODEL := FRITZ!Box 7530
 	DEVICE_DTS := qcom-ipq4019-fritzbox-7530
-	DEVICE_PACKAGES := fritz-caldata fritz-tffs-nand ipq-wifi-avm_fritzbox-7530
+	DEVICE_PACKAGES := fritz-caldata fritz-tffs-nand
 	IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += avm_fritzbox-7530
+
+define Device/avm_fritzrepeater-1200
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := AVM
+	DEVICE_MODEL := FRITZ!Repeater 1200
+	DEVICE_DTS := qcom-ipq4019-fritzrepeater-1200
+	DEVICE_PACKAGES := fritz-caldata fritz-tffs-nand ipq-wifi-avm_fritzrepeater-1200
+	IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += avm_fritzrepeater-1200
 
 define Device/avm_fritzrepeater-3000
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := AVM
 	DEVICE_MODEL := FRITZ!Repeater 3000
 	DEVICE_DTS := qcom-ipq4019-fritzrepeater-3000
-	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct fritz-caldata fritz-tffs-nand ipq-wifi-avm_fritzrepeater-3000
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct fritz-caldata fritz-tffs-nand
 	IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += avm_fritzrepeater-3000
@@ -180,7 +190,6 @@ define Device/engenius_eap1300
 	IMAGE_SIZE := 25344k
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
-	DEVICE_PACKAGES := ipq-wifi-engenius_eap1300
 endef
 TARGET_DEVICES += engenius_eap1300
 
@@ -207,7 +216,6 @@ define Device/engenius_ens620ext
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
 	IMAGE/factory_30.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | SenaoFW $$$$(PRODUCT_ID) $$$$(FW_VER)
 	IMAGE/factory_35.bin := qsdk-ipq-factory-nor | check-size $$$$(IMAGE_SIZE) | SenaoFW $$$$(PRODUCT_ID_NEW) $$$$(FW_VER_NEW)
-	DEVICE_PACKAGES := ipq-wifi-engenius_ens620ext
 endef
 TARGET_DEVICES += engenius_ens620ext
 
@@ -257,7 +265,7 @@ define Device/linksys_ea6350v3
 	UBINIZE_OPTS := -E 5
 	IMAGES := factory.bin sysupgrade.bin
 	IMAGE/factory.bin := append-kernel | append-uImage-fakehdr filesystem | pad-to $$$${KERNEL_SIZE} | append-ubi | linksys-image type=EA6350v3
-	DEVICE_PACKAGES := ipq-wifi-linksys_ea6350v3 uboot-envtools
+	DEVICE_PACKAGES := uboot-envtools
 endef
 TARGET_DEVICES += linksys_ea6350v3
 
@@ -405,6 +413,20 @@ define Device/qxwlan_e2600ac-c2
 	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c2
+
+define Device/unielec_u4019-32m
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Unielec
+	DEVICE_MODEL := U4019
+	DEVICE_VARIANT := 32M
+	BOARD_NAME := u4019-32m
+	DEVICE_DTS := qcom-ipq4019-unielec-u4019-32m
+	KERNEL_SIZE := 4096k
+	IMAGE_SIZE := 31232k
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += unielec_u4019-32m
 
 define Device/zyxel_nbg6617
 	$(call Device/FitImageLzma)

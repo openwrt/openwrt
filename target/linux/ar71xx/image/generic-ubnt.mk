@@ -43,7 +43,7 @@ endef
 # UBNT_CHIP e.g. one of (ar7240, ar933x, ar934x)
 # UBNT_VERSION e.g. one of (6.0.0, 8.5.0)
 define Device/ubnt
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  DEVICE_PACKAGES := kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7552k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7552k(firmware),256k(cfg)ro,64k(EEPROM)ro
@@ -121,7 +121,7 @@ endef
 TARGET_DEVICES += ubnt-unifi
 
 define Device/ubnt-unifiac
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  DEVICE_PACKAGES := kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7744k
   MTDPARTS := spi0.0:384k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),7744k(ubnt-airos)ro,128k(bs),256k(cfg)ro,64k(EEPROM)ro
@@ -137,6 +137,12 @@ define Device/ubnt-unifiac-lite
   BOARDNAME := UBNT-UF-AC-LITE
 endef
 TARGET_DEVICES += ubnt-unifiac-lite
+
+define Device/ubnt-unifiac-lr
+  $(Device/ubnt-unifiac-lite)
+  DEVICE_TITLE := Ubiquiti UniFi AC-LR
+endef
+TARGET_DEVICES += ubnt-unifiac-lr
 
 define Device/ubnt-unifiac-mesh
   $(Device/ubnt-unifiac-lite)
@@ -239,7 +245,7 @@ endef
 TARGET_DEVICES += ubdev01
 
 define Device/ubnt-routerstation
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 16128k
   IMAGES := sysupgrade.bin factory.bin

@@ -14,6 +14,7 @@
 		led-failsafe = &led_power_blue;
 		led-running = &led_power_blue;
 		led-upgrade = &led_power_blue;
+		label-mac-device = &ethernet;
 	};
 
 	chosen {
@@ -62,8 +63,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";

@@ -73,4 +73,6 @@ platform_upgrade_ubnt_erx() {
 	fi
 
 	ubnt_update_target_kernel ${factory_mtd} ${kernel_part} || exit 1
+
+	nand_do_upgrade "$1"
 }

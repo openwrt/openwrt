@@ -10,6 +10,10 @@
 	compatible = "buffalo,wzr-hp-g450h", "qca,ar7242";
 	model = "Buffalo WZR-HP-G450H/WZR-450HP";
 
+	aliases {
+		label-mac-device = &eth0;
+	};
+
 	ath9k-leds {
 		compatible = "gpio-leds";
 

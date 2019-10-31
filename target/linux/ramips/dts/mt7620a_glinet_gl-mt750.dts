@@ -9,6 +9,10 @@
 	compatible = "glinet,gl-mt750", "ralink,mt7620a-soc";
 	model = "GL-MT750";
 
+	aliases {
+		label-mac-device = &wmac;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -33,8 +37,8 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;

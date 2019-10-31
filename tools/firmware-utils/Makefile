@@ -38,7 +38,7 @@ define Host/Compile
 	$(call cc,mkzynfw)
 	$(call cc,lzma2eva,-lz)
 	$(call cc,mkcasfw)
-	$(call cc,mkfwimage,-lz -Wall -Werror -Wextra)
+	$(call cc,mkfwimage,-lz -Wall -Werror -Wextra -D_FILE_OFFSET_BITS=64)
 	$(call cc,mkfwimage2,-lz)
 	$(call cc,imagetag imagetag_cmdline cyg_crc32)
 	$(call cc,add_header)
@@ -92,6 +92,7 @@ define Host/Compile
 	$(call cc,dns313-header, -Wall)
 	$(call cc,mksercommfw, -Wall)
 	$(call cc,nec-enc, -Wall --std=gnu99)
+	$(call cc,uimage_padhdr, -Wall -lz)
 endef
 
 define Host/Install

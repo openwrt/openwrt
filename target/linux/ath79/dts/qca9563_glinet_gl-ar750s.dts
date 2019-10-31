@@ -22,8 +22,8 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
+
 		pinctrl-names = "default";
 		pinctrl-0 = <&jtag_disable_pins>;
 
@@ -61,6 +61,13 @@
 			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
+	};
+
+	i2c: i2c {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&gpio  5 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 21 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
 	};
 
 	usb_vbus: regulator-usb-vbus {
@@ -166,5 +173,4 @@
 &wmac {
 	status = "okay";
 	mtd-cal-data = <&art 0x1000>;
-	mtd-mac-address = <&art 0x1002>;
 };

@@ -109,7 +109,7 @@ nand_restore_config() {
 		rmdir /tmp/new_root
 		return 1
 	fi
-	mv "$1" "/tmp/new_root/sysupgrade.tgz"
+	mv "$1" "/tmp/new_root/$BACKUP_FILE"
 	umount /tmp/new_root
 	sync
 	rmdir /tmp/new_root
@@ -281,10 +281,6 @@ nand_upgrade_tar() {
 # Recognize type of passed file and start the upgrade process
 nand_do_upgrade() {
 	local file_type=$(identify $1)
-
-	if type 'platform_nand_pre_upgrade' >/dev/null 2>/dev/null; then
-		platform_nand_pre_upgrade "$1"
-	fi
 
 	[ ! "$(find_mtd_index "$CI_UBIPART")" ] && CI_UBIPART="rootfs"
 

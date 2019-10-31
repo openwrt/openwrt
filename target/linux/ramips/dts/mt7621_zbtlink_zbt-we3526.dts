@@ -7,7 +7,7 @@
 
 / {
 	compatible = "zbtlink,zbt-we3526", "mediatek,mt7621-soc";
-	model = "ZBT-WE3526";
+	model = "Zbtlink ZBT-WE3526";
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
@@ -20,8 +20,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";

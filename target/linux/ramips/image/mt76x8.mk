@@ -4,7 +4,7 @@
 
 define Device/alfa-network_awusfree1
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := AWUSFREE1
   DEVICE_PACKAGES := uboot-envtools
@@ -13,6 +13,7 @@ TARGET_DEVICES += alfa-network_awusfree1
 
 define Device/buffalo_wcr-1166ds
   MTK_SOC := mt7628an
+  IMAGE_SIZE := 7936k
   BUFFALO_TAG_PLATFORM := MTK
   BUFFALO_TAG_VERSION := 9.99
   BUFFALO_TAG_MINOR := 9.99
@@ -32,7 +33,7 @@ TARGET_DEVICES += buffalo_wcr-1166ds
 
 define Device/cudy_wr1000
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  IMAGE_SIZE := 7872k
   IMAGES += factory.bin
   IMAGE/factory.bin := \
         $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | jcg-header 92.122
@@ -46,7 +47,7 @@ TARGET_DEVICES += cudy_wr1000
 
 define Device/d-team_pbr-d1
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := PandoraBox
   DEVICE_MODEL := PBR-D1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -56,6 +57,7 @@ TARGET_DEVICES += d-team_pbr-d1
 
 define Device/duzun_dm06
   MTK_SOC := mt7628an
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := DuZun
   DEVICE_MODEL := DM06
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
@@ -85,7 +87,7 @@ TARGET_DEVICES += glinet_vixmini
 
 define Device/hilink_hlk-7628n
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  IMAGE_SIZE := 32448k
   DEVICE_VENDOR := HILINK
   DEVICE_MODEL := HLK-7628N
 endef
@@ -93,12 +95,21 @@ TARGET_DEVICES += hilink_hlk-7628n
 
 define Device/hiwifi_hc5661a
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15808k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5661A
   SUPPORTED_DEVICES += hc5661a
 endef
 TARGET_DEVICES += hiwifi_hc5661a
+
+define Device/hiwifi_hc5761a
+  MTK_SOC := mt7628an
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := HiWiFi
+  DEVICE_MODEL := HC5761A
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += hiwifi_hc5761a
 
 define Device/hiwifi_hc5861b
   MTK_SOC := mt7628an
@@ -109,12 +120,32 @@ define Device/hiwifi_hc5861b
 endef
 TARGET_DEVICES += hiwifi_hc5861b
 
+define Device/iptime_a3
+  MTK_SOC := mt7628an
+  IMAGE_SIZE := 7936k
+  UIMAGE_NAME := a3
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := A3
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += iptime_a3
+
+define Device/iptime_a604m
+  MTK_SOC := mt7628an
+  IMAGE_SIZE := 7936k
+  UIMAGE_NAME := a604m
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := A604M
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += iptime_a604m
+
 define Device/mediatek_linkit-smart-7688
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  IMAGE_SIZE := 32448k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := LinkIt Smart 7688
-  DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools
+  DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools kmod-sdhci-mt7620
   SUPPORTED_DEVICES += linkits7688 linkits7688d
 endef
 TARGET_DEVICES += mediatek_linkit-smart-7688
@@ -122,7 +153,7 @@ TARGET_DEVICES += mediatek_linkit-smart-7688
 define Device/mediatek_mt7628an-eval-board
   MTK_SOC := mt7628an
   BLOCKSIZE := 64k
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7628 EVB
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
@@ -132,6 +163,7 @@ TARGET_DEVICES += mediatek_mt7628an-eval-board
 
 define Device/mercury_mac1200r-v2
   MTK_SOC := mt7628an
+  IMAGE_SIZE := 7936k
   DEVICE_VENDOR := Mercury
   DEVICE_MODEL := MAC1200R
   DEVICE_VARIANT := v2.0
@@ -144,7 +176,7 @@ TARGET_DEVICES += mercury_mac1200r-v2
 define Device/netgear_r6120
   MTK_SOC := mt7628an
   BLOCKSIZE := 64k
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 15744k
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := R6120
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
@@ -161,7 +193,7 @@ TARGET_DEVICES += netgear_r6120
 
 define Device/onion_omega2
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Onion
   DEVICE_MODEL := Omega2
   DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools
@@ -171,7 +203,7 @@ TARGET_DEVICES += onion_omega2
 
 define Device/onion_omega2p
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Onion
   DEVICE_MODEL := Omega2+
   DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools kmod-sdhci-mt7620
@@ -181,6 +213,7 @@ TARGET_DEVICES += onion_omega2p
 
 define Device/rakwireless_rak633
   MTK_SOC := mt7628an
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Rakwireless
   DEVICE_MODEL := RAK633
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -349,6 +382,7 @@ TARGET_DEVICES += tplink_tl-wr840n-v4
 define Device/tplink_tl-wr840n-v5
   MTK_SOC := mt7628an
   IMAGE_SIZE := 3904k
+  DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := TL-WR840N
   DEVICE_VARIANT := v5
   TPLINK_FLASHLAYOUT := 4Mmtk
@@ -420,20 +454,20 @@ define Device/tplink_tl-wr902ac-v3
 endef
 TARGET_DEVICES += tplink_tl-wr902ac-v3
 
-define Device/unielec_u7628-01-128m-16m
+define Device/unielec_u7628-01-16m
   MTK_SOC := mt7628an
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7628-01
-  DEVICE_VARIANT := 128M RAM/16M flash
+  DEVICE_VARIANT := 16M
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
-  SUPPORTED_DEVICES += u7628-01-128M-16M
+  SUPPORTED_DEVICES += u7628-01-128M-16M unielec,u7628-01-128m-16m
 endef
-TARGET_DEVICES += unielec_u7628-01-128m-16m
+TARGET_DEVICES += unielec_u7628-01-16m
 
 define Device/vocore_vocore2
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore2
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
@@ -444,7 +478,7 @@ TARGET_DEVICES += vocore_vocore2
 
 define Device/vocore_vocore2-lite
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore2-Lite
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
@@ -455,7 +489,7 @@ TARGET_DEVICES += vocore_vocore2-lite
 
 define Device/wavlink_wl-wn570ha1
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Wavlink
   DEVICE_MODEL := WL-WN570HA1
   DEVICE_PACKAGES := kmod-mt76x0e
@@ -464,7 +498,7 @@ TARGET_DEVICES += wavlink_wl-wn570ha1
 
 define Device/wavlink_wl-wn575a3
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Wavlink
   DEVICE_MODEL := WL-WN575A3
   DEVICE_PACKAGES := kmod-mt76x2
@@ -474,7 +508,7 @@ TARGET_DEVICES += wavlink_wl-wn575a3
 
 define Device/widora_neo-16m
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Widora
   DEVICE_MODEL := Widora-NEO
   DEVICE_VARIANT := 16M
@@ -485,7 +519,7 @@ TARGET_DEVICES += widora_neo-16m
 
 define Device/widora_neo-32m
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Widora
   DEVICE_MODEL := Widora-NEO
   DEVICE_VARIANT := 32M
@@ -495,7 +529,7 @@ TARGET_DEVICES += widora_neo-32m
 
 define Device/wiznet_wizfi630s
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  IMAGE_SIZE := 32448k
   DEVICE_VENDOR := WIZnet
   DEVICE_MODEL := WizFi630S
 endef
@@ -503,7 +537,7 @@ TARGET_DEVICES += wiznet_wizfi630s
 
 define Device/wrtnode_wrtnode2p
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 32448k
   DEVICE_VENDOR := WRTnode
   DEVICE_MODEL := WRTnode 2P
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
@@ -513,7 +547,7 @@ TARGET_DEVICES += wrtnode_wrtnode2p
 
 define Device/wrtnode_wrtnode2r
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 32448k
   DEVICE_VENDOR := WRTnode
   DEVICE_MODEL := WRTnode 2R
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -533,18 +567,18 @@ TARGET_DEVICES += xiaomi_mir4a-100m
 
 define Device/xiaomi_miwifi-nano
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := MiWiFi Nano
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := uboot-envtools
   SUPPORTED_DEVICES += miwifi-nano
 endef
 TARGET_DEVICES += xiaomi_miwifi-nano
 
 define Device/zbtlink_zbt-we1226
   MTK_SOC := mt7628an
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
-  DEVICE_VENDOR := ZBTlink
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE1226
 endef
 TARGET_DEVICES += zbtlink_zbt-we1226

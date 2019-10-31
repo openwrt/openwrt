@@ -30,15 +30,15 @@ commit system
 __EOF
 
 # add mac address from U-Boot partition to lan and wan devices
-	MTD=`grep -e 'u-boot' /proc/mtd`
-	MTD=`echo ${MTD} | sed 's/[a-z]*\([0-9]*\):.*/\1/'`
+	MTD=$(grep -e 'u-boot' /proc/mtd)
+	MTD=$(echo ${MTD} | sed 's/[a-z]*\([0-9]*\):.*/\1/')
 	[ -n "${MTD}" ] && {
-		MACADDR=`dd if=/dev/mtdblock${MTD} bs=1 skip=262048 count=6 2>/dev/null | hexdump -e '1/1 "%02x"'`
+		MACADDR=$(dd if=/dev/mtdblock${MTD} bs=1 skip=262048 count=6 2>/dev/null | hexdump -e '1/1 "%02x"')
 		MACADDR2=$(( 0x${MACADDR} + 1))
-		MACADDR2=`printf "%012x" ${MACADDR2}`
+		MACADDR2=$(printf "%012x" ${MACADDR2})
 
-		MACADDR=`echo ${MACADDR} | sed 's/\(..\)/\1:/g' | sed 's/:$//'`
-		MACADDR2=`echo ${MACADDR2} | sed 's/\(..\)/\1:/g' | sed 's/:$//'`
+		MACADDR=$(echo ${MACADDR} | sed 's/\(..\)/\1:/g' | sed 's/:$//')
+		MACADDR2=$(echo ${MACADDR2} | sed 's/\(..\)/\1:/g' | sed 's/:$//')
 
 		uci set network.eth0.macaddr=${MACADDR}
 		uci set network.lan.macaddr=${MACADDR}

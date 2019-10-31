@@ -11,11 +11,12 @@
 		led-failsafe = &led_status;
 		led-running = &led_status;
 		led-upgrade = &led_status;
+		label-mac-device = &eth0;
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
+
 		pinctrl-names = "default";
 		pinctrl-0 = <&jtag_disable_pins>;
 
@@ -58,6 +59,13 @@
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
+	};
+
+	i2c: i2c {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&gpio 17 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 16 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
 	};
 };
 
@@ -133,5 +141,4 @@
 &wmac {
 	status = "okay";
 	mtd-cal-data = <&art 0x1000>;
-	mtd-mac-address = <&art 0x1002>;
 };

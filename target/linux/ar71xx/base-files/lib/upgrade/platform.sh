@@ -65,7 +65,7 @@ platform_do_upgrade_combined() {
 	then
 		local rootfspart=$(platform_find_rootfspart "$partitions" "$kernelpart")
 		local append=""
-		[ -f "$CONF_TAR" -a "$SAVE_CONFIG" -eq 1 ] && append="-j $CONF_TAR"
+		[ -f "$UPGRADE_BACKUP" ] && append="-j $UPGRADE_BACKUP"
 
 		if [ "$PLATFORM_DO_UPGRADE_COMBINED_SEPARATE_MTD" -ne 1 ]; then
 		    ( dd if="$1" bs=$CI_BLKSZ skip=1 count=$kern_blocks 2>/dev/null; \
@@ -164,7 +164,7 @@ platform_do_upgrade_compex() {
 
 	if [ -n "$fw_mtd" ] &&  [ ${fw_blocks:-0} -gt 0 ]; then
 		local append=""
-		[ -f "$CONF_TAR" -a "$SAVE_CONFIG" -eq 1 ] && append="-j $CONF_TAR"
+		[ -f "$UPGRADE_BACKUP" ] && append="-j $UPGRADE_BACKUP"
 
 		sync
 		dd if="$fw_file" bs=64k skip=1 count=$fw_blocks 2>/dev/null | \
@@ -394,7 +394,7 @@ platform_check_image() {
 		}
 
 		local md5_img=$(dd if="$1" bs=2 skip=9 count=16 2>/dev/null)
-		local md5_chk=$(dd if="$1" bs=$CI_BLKSZ skip=1 2>/dev/null | md5sum -); md5_chk="${md5_chk%% *}"
+		local md5_chk=$(fwtool -q -t -i /dev/null "$1"; dd if="$1" bs=$CI_BLKSZ skip=1 2>/dev/null | md5sum -); md5_chk="${md5_chk%% *}"
 
 		if [ -n "$md5_img" -a -n "$md5_chk" ] && [ "$md5_img" = "$md5_chk" ]; then
 			return 0
@@ -586,6 +586,7 @@ platform_check_image() {
 		return $?
 		;;
 	cpe210|\
+	cpe510|\
 	eap120|\
 	wbs210|\
 	wbs510)
@@ -597,19 +598,9 @@ platform_check_image() {
 		tplink_pharos_check_image "$1" "01000000" "$(tplink_pharos_v2_get_model_string)" '\0\xff\r' && return 0
 		return 1
 		;;
-	cpe510)
-		local modelstr="$(tplink_pharos_v2_get_model_string)"
-		tplink_pharos_board_detect $modelstr
-		case $AR71XX_MODEL in
-		'TP-Link CPE510 v2.0')
-			tplink_pharos_check_image "$1" "7f454c46" "$modelstr" '\0\xff\r' && return 0
-			return 1
-			;;
-		*)
-			tplink_pharos_check_image "$1" "7f454c46" "$(tplink_pharos_get_model_string)" '' && return 0
-			return 1
-			;;
-		esac
+	cpe510-v2)
+		tplink_pharos_check_image "$1" "7f454c46" "$(tplink_pharos_v2_get_model_string)" '\0\xff\r' && return 0
+		return 1
 		;;
 	a40|\
 	a60|\
@@ -746,36 +737,35 @@ platform_check_image() {
 	return 1
 }
 
-platform_nand_pre_upgrade() {
-	local board=$(board_name)
+platform_do_upgrade_mikrotik_rb() {
+	CI_KERNPART=none
+	local fw_mtd=$(find_mtd_part kernel)
+	fw_mtd="${fw_mtd/block/}"
+	[ -n "$fw_mtd" ] || return
+	mtd erase kernel
+	tar xf "$1" sysupgrade-routerboard/kernel -O | nandwrite -o "$fw_mtd" -
 
-	case "$board" in
-	rb*)
-		CI_KERNPART=none
-		local fw_mtd=$(find_mtd_part kernel)
-		fw_mtd="${fw_mtd/block/}"
-		[ -n "$fw_mtd" ] || return
-		mtd erase kernel
-		tar xf "$1" sysupgrade-routerboard/kernel -O | nandwrite -o "$fw_mtd" -
+	nand_do_upgrade "$1"
+}
+
+platform_do_upgrade_nokia() {
+	case "$(fw_printenv -n dualPartition)" in
+		imgA)
+			fw_setenv dualPartition imgB
+			fw_setenv ActImg NokiaImageB
 		;;
-	wi2a-ac200i)
-		case "$(fw_printenv -n dualPartition)" in
-			imgA)
-				fw_setenv dualPartition imgB
-				fw_setenv ActImg NokiaImageB
-			;;
-			imgB)
-				fw_setenv dualPartition imgA
-				fw_setenv ActImg NokiaImageA
-			;;
-		esac
-		ubiblock -r /dev/ubiblock0_0 2>/dev/null >/dev/null
-		rm -f /dev/ubiblock0_0
-		ubidetach -d 0 2>/dev/null >/dev/null
-		CI_UBIPART=ubi_alt
-		CI_KERNPART=kernel_alt
+		imgB)
+			fw_setenv dualPartition imgA
+			fw_setenv ActImg NokiaImageA
 		;;
 	esac
+	ubiblock -r /dev/ubiblock0_0 2>/dev/null >/dev/null
+	rm -f /dev/ubiblock0_0
+	ubidetach -d 0 2>/dev/null >/dev/null
+	CI_UBIPART=ubi_alt
+	CI_KERNPART=kernel_alt
+
+	nand_do_upgrade "$1"
 }
 
 platform_do_upgrade() {
@@ -859,6 +849,14 @@ platform_do_upgrade() {
 	nbg6716|\
 	r6100|\
 	rambutan|\
+	wndr3700v4|\
+	wndr4300)
+		nand_do_upgrade "$1"
+		;;
+	mr18|\
+	z1)
+		merakinand_do_upgrade "$1"
+		;;
 	rb-411|\
 	rb-411u|\
 	rb-433|\
@@ -890,20 +888,16 @@ platform_do_upgrade() {
 	rb-2011uias-2hnd|\
 	rb-2011uias-2hnd-r2|\
 	rb-sxt2n|\
-	rb-sxt5n|\
-	wi2a-ac200i|\
-	wndr3700v4|\
-	wndr4300)
-		nand_do_upgrade "$1"
-		;;
-	mr18|\
-	z1)
-		merakinand_do_upgrade "$1"
+	rb-sxt5n)
+		platform_do_upgrade_mikrotik_rb "$1"
 		;;
 	uap-pro|\
 	unifi-outdoor-plus)
 		MTD_CONFIG_ARGS="-s 0x180000"
 		default_do_upgrade "$1"
+		;;
+	wi2a-ac200i)
+		platform_do_upgrade_nokia "$1"
 		;;
 	wp543|\
 	wpe72)

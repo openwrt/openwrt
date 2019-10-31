@@ -95,7 +95,9 @@ service_data() {
 }
 
 service_running() {
-	return 0
+	local service="${1:-$(basename $initscript)}"
+	local instance="${2:-*}"
+	procd_running "$service" "$instance" "$@"
 }
 
 ${INIT_TRACE:+set -x}
@@ -103,7 +105,11 @@ ${INIT_TRACE:+set -x}
 . "$initscript"
 
 [ -n "$USE_PROCD" ] && {
-	EXTRA_COMMANDS="${EXTRA_COMMANDS} running trace"
+	EXTRA_COMMANDS="${EXTRA_COMMANDS} running status trace"
+	EXTRA_HELP="\
+	running	Check if service is running
+	status	Service status
+	"
 
 	. $IPKG_INSTROOT/lib/functions/procd.sh
 	basescript=$(readlink "$initscript")
@@ -147,6 +153,14 @@ ${INIT_TRACE:+set -x}
 
 	running() {
 		service_running "$@"
+	}
+
+	status() {
+		if eval "type status_service" 2>/dev/null >/dev/null; then
+			status_service "$@"
+		else
+			_procd_status "$(basename ${basescript:-$initscript})" "$1"
+		fi
 	}
 }
 

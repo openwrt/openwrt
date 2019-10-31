@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=5.2-rc7-1
+PKG_VERSION:=5.4-rc2-1
 PKG_RELEASE:=1
-PKG_SOURCE_URL:=@KERNEL/linux/kernel/projects/backports/stable/v5.2-rc7/
-PKG_HASH:=3179a4ec398bd6366a4fd8a44b311a57f8da87ad10720baf7c17aef9c8ec2983
+PKG_SOURCE_URL:=@KERNEL/linux/kernel/projects/backports/stable/v5.4-rc2/
+PKG_HASH:=b3baedc135b455f09f266cb77e73276ca21bceeb0f24bac2184cc4b97d09cdbf
 
 PKG_SOURCE:=backports-$(PKG_VERSION).tar.xz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/backports-$(PKG_VERSION)
@@ -162,7 +162,7 @@ endef
 define KernelPackage/airo
   $(call KernelPackage/mac80211/Default)
   TITLE:=Cisco Aironet driver
-  DEPENDS+=@PCI_SUPPORT +@DRIVER_WEXT_SUPPORT +kmod-cfg80211 @TARGET_x86
+  DEPENDS+=@PCI_SUPPORT +@DRIVER_WEXT_SUPPORT +kmod-cfg80211 @TARGET_x86 @BROKEN
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/cisco/airo.ko
   AUTOLOAD:=$(call AutoProbe,airo)
 endef
@@ -223,7 +223,7 @@ endef
 define KernelPackage/lib80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=802.11 Networking stack
-  DEPENDS:=+kmod-cfg80211 +kmod-crypto-hash
+  DEPENDS:=+kmod-cfg80211 +kmod-crypto-hash +kmod-crypto-ccm
   FILES:= \
 	$(PKG_BUILD_DIR)/net/wireless/lib80211.ko \
 	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_wep.ko \

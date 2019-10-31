@@ -58,7 +58,7 @@ define Build/MerakiAdd-dtb
 	$(call Image/BuildDTB,../dts/$(DEVICE_DTS).dts,$@.dtb)
 	( \
 		dd if=$@.dtb bs=$(DTB_SIZE) conv=sync; \
-		dd if=$@ bs=$(BLOCKSIZE) conv=sync; \
+		cat $@ ; \
 	) > $@.new
 	@mv $@.new $@
 endef
@@ -122,11 +122,11 @@ endef
 ifeq ($(SUBTARGET),nand)
 
 define Device/meraki_mr24
-  DEVICE_TITLE := Cisco Meraki MR24
+  DEVICE_VENDOR := Cisco Meraki
+  DEVICE_MODEL := MR24
   DEVICE_PACKAGES := kmod-spi-gpio -swconfig
   BOARD_NAME := mr24
   DEVICE_DTS := meraki-mr24
-  BLOCKSIZE := 63k
   IMAGES := sysupgrade.bin
   DTB_SIZE := 64512
   IMAGE_SIZE := 8191k
@@ -139,7 +139,8 @@ endef
 TARGET_DEVICES += meraki_mr24
 
 define Device/meraki_mx60
-  DEVICE_TITLE := Cisco Meraki MX60/MX60W
+  DEVICE_VENDOR := Cisco Meraki
+  DEVICE_MODEL := MX60/MX60W
   DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-ledtrig-usbport kmod-usb-dwc2 \
 		     kmod-usb-storage block-mount
   BOARD_NAME := mx60
@@ -158,6 +159,7 @@ endef
 TARGET_DEVICES += meraki_mx60
 
 define Device/netgear_wndap6x0
+  DEVICE_VENDOR := NETGEAR
   DEVICE_PACKAGES := kmod-eeprom-at24
   SUBPAGESIZE := 256
   PAGESIZE := 512
@@ -174,20 +176,21 @@ endef
 
 define Device/netgear_wndap620
   $(Device/netgear_wndap6x0)
-  DEVICE_TITLE := Netgear WNDAP620 - Premium Wireless-N
+  DEVICE_MODEL := WNDAP620 (Premium Wireless-N)
   DEVICE_DTS := netgear-wndap620
 endef
 TARGET_DEVICES += netgear_wndap620
 
 define Device/netgear_wndap660
   $(Device/netgear_wndap6x0)
-  DEVICE_TITLE := Netgear WNDAP660 - Dual Radio Dual Band Wireless-N
+  DEVICE_MODEL := WNDAP660 (Dual Radio Dual Band Wireless-N)
   DEVICE_DTS := netgear-wndap660
 endef
 TARGET_DEVICES += netgear_wndap660
 
 define Device/netgear_wndr4700
-  DEVICE_TITLE := Netgear Centria N900 WNDR4700/WNDR4720
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := Centria N900 WNDR4700/WNDR4720
   DEVICE_PACKAGES := badblocks block-mount e2fsprogs \
 	kmod-dm kmod-fs-ext4 kmod-fs-vfat kmod-usb-ledtrig-usbport \
 	kmod-md-mod kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-iso8859-15 \
@@ -224,7 +227,8 @@ endif
 ifeq ($(SUBTARGET),sata)
 
 define Device/wd_mybooklive
-  DEVICE_TITLE := Western Digital My Book Live Series (Single + Duo)
+  DEVICE_VENDOR := Western Digital
+  DEVICE_MODEL := My Book Live Series (Single + Duo)
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-fs-vfat wpad-basic
   DEVICE_TYPE := nas
   DEVICE_DTS := wd-mybooklive
@@ -233,7 +237,7 @@ define Device/wd_mybooklive
   DTB_SIZE := 16384
   KERNEL := kernel-bin | dtb | gzip | uImage gzip
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
-  IMAGES := factory.img.gz kernel.dtb sysupgrade.img.gz
+  IMAGES := factory.img.gz sysupgrade.img.gz
   ARTIFACTS := apollo3g.dtb
   DEVICE_DTB := apollo3g.dtb
   FILESYSTEMS := ext4 squashfs
