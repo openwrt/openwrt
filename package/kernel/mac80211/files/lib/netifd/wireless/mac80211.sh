@@ -1,6 +1,7 @@
 #!/bin/sh
 . /lib/netifd/netifd-wireless.sh
 . /lib/netifd/hostapd.sh
+. /lib/netifd/mac80211.sh
 
 init_wireless_driver "$@"
 
@@ -407,11 +408,8 @@ mac80211_generate_mac() {
 find_phy() {
 	[ -n "$phy" -a -d /sys/class/ieee80211/$phy ] && return 0
 	[ -n "$path" ] && {
-		for phy in $(ls /sys/class/ieee80211 2>/dev/null); do
-			case "$(readlink -f /sys/class/ieee80211/$phy/device)" in
-				*$path) return 0;;
-			esac
-		done
+		phy="$(mac80211_path_to_phy "$path")"
+		[ -n "$phy" ] && return 0
 	}
 	[ -n "$macaddr" ] && {
 		for phy in $(ls /sys/class/ieee80211 2>/dev/null); do
@@ -740,6 +738,9 @@ mac80211_interface_cleanup() {
 	local phy="$1"
 
 	for wdev in $(list_phy_interfaces "$phy"); do
+		local wdev_phy="$(readlink /sys/class/net/${wdev}/phy80211)"
+		wdev_phy="$(basename "$wdev_phy")"
+		[ -n "$wdev_phy" -a "$wdev_phy" != "$phy" ] && continue
 		ip link set dev "$wdev" down 2>/dev/null
 		iw dev "$wdev" del
 	done
