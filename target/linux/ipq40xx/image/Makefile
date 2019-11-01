@@ -164,6 +164,20 @@ define Device/avm_fritzrepeater-3000
 endef
 TARGET_DEVICES += avm_fritzrepeater-3000
 
+define Device/compex_wpj419
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Compex
+	DEVICE_MODEL := WPJ419
+	DEVICE_DTS := qcom-ipq4019-wpj419
+	DEVICE_DTS_CONFIG := config@12
+	KERNEL_INSTALL := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	FILESYSTEMS := squashfs
+endef
+TARGET_DEVICES += compex_wpj419
+
 define Device/compex_wpj428
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Compex
