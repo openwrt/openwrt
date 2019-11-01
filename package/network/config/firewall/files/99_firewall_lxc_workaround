@@ -1,0 +1,15 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+firewall_lxc_workaround() {
+	local tt
+	for tt in filter nat mangle raw ; do
+	    {
+	    grep ${tt} /proc/net/ip6_tables_names || /usr/sbin/ip6tables -t ${tt} -L
+            grep ${tt} /proc/net/ip_tables_names || /usr/sbin/iptables -t ${tt} -L
+	    } >/dev/null 2>/dev/null
+	done
+
+}
+
+boot_hook_add preinit_main firewall_lxc_workaround
