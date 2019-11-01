@@ -278,6 +278,19 @@ define Device/engenius_eap1300
 endef
 TARGET_DEVICES += engenius_eap1300
 
+define Device/engenius_emd1
+	$(call Device/FitImage)
+	DEVICE_VENDOR := EnGenius
+	DEVICE_MODEL := EMD1
+	DEVICE_DTS_CONFIG := config@4
+	SOC := qcom-ipq4018
+	IMAGE_SIZE := 30720k
+	IMAGES := sysupgrade.bin factory.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	IMAGE/factory.bin := qsdk-ipq-factory-nor | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += engenius_emd1
+
 define Device/engenius_ens620ext
 	$(call Device/FitImage)
 	DEVICE_VENDOR := EnGenius
