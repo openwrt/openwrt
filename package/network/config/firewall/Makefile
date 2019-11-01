@@ -57,6 +57,8 @@ define Package/firewall/install
 	$(INSTALL_CONF) ./files/firewall.user $(1)/etc/firewall.user
 	$(INSTALL_DIR) $(1)/usr/share/fw3
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/helpers.conf $(1)/usr/share/fw3
+	$(INSTALL_DIR) $(1)/lib/preinit
+	$(INSTALL_BIN) ./files/99_firewall_lxc_workaround $(1)/lib/preinit/99_firewall_lxc_workaround
 endef
 
 $(eval $(call BuildPackage,firewall))
