@@ -128,6 +128,10 @@ define Build/Configure
 
 	# Enforce rebuild of svr-chansession.c
 	rm -f $(PKG_BUILD_DIR)/svr-chansession.o
+
+	# Rebuild them on config change
+	+$(MAKE) -C $(PKG_BUILD_DIR)/libtomcrypt clean
+	+$(MAKE) -C $(PKG_BUILD_DIR)/libtommath clean
 endef
 
 define Build/Compile
