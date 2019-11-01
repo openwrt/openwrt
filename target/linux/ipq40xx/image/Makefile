@@ -193,6 +193,22 @@ define Device/engenius_eap1300
 endef
 TARGET_DEVICES += engenius_eap1300
 
+define Device/engenius_emr5000
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := EnGenius
+	DEVICE_MODEL := EMR5000
+	BOARD_NAME := emr5000
+	DEVICE_DTS := qcom-ipq4019-emr5000
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ath10k-firmware-qca9888 uboot-envtools
+	IMAGES := nand-factory.bin nand-factory.ubi nand-sysupgrade.bin
+	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
+	IMAGE/nand-factory.ubi := append-ubi
+endef
+TARGET_DEVICES += engenius_emr5000
+
 define Device/engenius_ens620ext
 	$(call Device/FitImage)
 	DEVICE_VENDOR := EnGenius

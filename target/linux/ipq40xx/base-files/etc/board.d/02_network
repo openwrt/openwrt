@@ -14,6 +14,7 @@ ipq40xx_setup_interfaces()
 	case "$board" in
 	8dev,jalapeno|\
 	alfa-network,ap120c-ac|\
+	engenius,emr5000|\
 	engenius,ens620ext)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
@@ -82,6 +83,9 @@ ipq40xx_setup_macs()
 		CI_UBIPART=UBI_DEV
 		wan_mac=$(mtd_get_mac_binary_ubi Factory 0x5006)
 		lan_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
+		;;
+	engenius,emr5000)
+		label_mac=$(cat /sys/class/net/eth0/address)
 		;;
 	engenius,ens620ext)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)

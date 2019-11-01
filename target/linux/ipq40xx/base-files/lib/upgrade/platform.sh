@@ -73,6 +73,17 @@ platform_do_upgrade() {
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
 		;;
+	engenius,emr5000)
+		part="$(awk -F 'ubi.mtd=' '{printf $2}' /proc/cmdline | sed -e 's/ .*$//')"
+		if [ "$part" = "rootfs" ]; then
+			fw_setenv active_fw 1 || exit 1
+			CI_UBIPART="rootfs2"
+		else
+			fw_setenv active_fw 0 || exit 1
+			CI_UBIPART="rootfs"
+		fi
+		nand_do_upgrade "$1"
+		;;
 	linksys,ea6350v3 |\
 	linksys,ea8300)
 		platform_do_upgrade_linksys "$1"

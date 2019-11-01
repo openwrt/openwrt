@@ -1,0 +1,306 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "EnGenius EMR5000";
+	compatible = "engenius,emr5000";
+
+	chosen {
+		/*
+		 * Overwrite u-boot mtdparts cmdline parameters
+		 */
+		 bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	soc {
+		rng@22000 {
+			status = "okay";
+		};
+
+		mdio@90000 {
+			status = "okay";
+		};
+
+		ess-psgmii@98000 {
+			status = "okay";
+		};
+
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+
+		usb2@60f8800 {
+			status = "okay";
+		};
+
+		usb3@8af8800 {
+			status = "okay";
+		};
+
+
+		crypto@8e3a000 {
+			status = "okay";
+		};
+
+		watchdog@b017000 {
+			status = "okay";
+		};
+
+		ess-switch@c000000 {
+			status = "okay";
+		};
+
+		edma@c080000 {
+			status = "ok";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	aliases {
+		led-boot = &power;
+		led-failsafe = &power;
+		led-running = &power;
+		led-upgrade = &power;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		power: white {
+			label = "emr5000:white:power";
+			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
+		};
+
+		blue {
+			label = "emr5000:blue";
+			gpios = <&tlmm 45 GPIO_ACTIVE_HIGH>;
+		};
+
+		orange {
+			label = "emr5000:orange";
+			gpios = <&tlmm 44 GPIO_ACTIVE_HIGH>;
+		};
+
+		red {
+			label = "emr5000:red";
+			gpios = <&tlmm 43 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&nand {
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	nand@0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "0:MIBIB";
+				reg = <0x100000 0x100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x200000 0x100000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "0:QSEE";
+				reg = <0x300000 0x100000>;
+				read-only;
+			};
+
+			partition@400000 {
+				label = "0:QSEE_ALT";
+				reg = <0x400000 0x100000>;
+				read-only;
+			};
+
+			partition@500000 {
+				label = "0:CDT";
+				reg = <0x500000 0x80000>;
+				read-only;
+			};
+
+			partition@580000 {
+				label = "0:CDT_ALT";
+				reg = <0x580000 0x80000>;
+				read-only;
+			};
+
+			partition@600000 {
+				label = "0:DDRPARAMS";
+				reg = <0x600000 0x80000>;
+				read-only;
+			};
+
+			partition@680000 {
+				label = "0:APPSBLENV";
+				reg = <0x680000 0x80000>;
+				// writable -- U-Boddot environment
+			};
+
+			partition@700000 {
+				label = "0:APPSBL";
+				reg = <0x700000 0x200000>;
+				read-only;
+			};
+
+			partition@900000 {
+				label = "0:APPSBL_ALT";
+				reg = <0x900000 0x200000>;
+				read-only;
+			};
+
+			partition@b00000 {
+				label = "0:ART";
+				reg = <0xb00000 0x80000>;
+				read-only;
+			};
+
+			partition@b80000 {
+				label = "rootfs";
+				reg = <0xb80000 0x3a40000>;
+			};
+
+			partition@45c0000 {
+				label = "rootfs2";
+				reg = <0x45c0000 0x3a40000>;
+			};
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi2: wifi@1,0 {
+			compatible = "qcom,ath10k";
+			reg = <0x00010000 0 0 0 0>;
+			ieee80211-freq-limit = <5170000 5330000>;
+			qcom,ath10k-calibration-variant = "EnGenius-EMR5000";
+		};
+	};
+};
+
+&qpic_bam {
+	status = "ok";
+};
+
+&tlmm {
+	nand_pins: nand_pins {
+		pullups {
+			pins = "gpio53", "gpio58", "gpio59";
+			function = "qpic";
+			bias-pull-up;
+		};
+
+		pulldowns {
+			pins = "gpio54", "gpio55", "gpio56",
+				"gpio57", "gpio60", "gpio61",
+				"gpio62", "gpio63", "gpio64",
+				"gpio65", "gpio66", "gpio67",
+				"gpio68", "gpio69";
+			function = "qpic";
+			bias-pull-down;
+		};
+	};
+
+	serial_0_pins: serial_pinmux {
+		mux {
+			pins = "gpio16", "gpio17";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&wifi0 {
+	status = "ok";
+	qcom,ath10k-calibration-variant = "EnGenius-EMR5000";
+};
+
+&wifi1 {
+	status = "ok";
+	ieee80211-freq-limit = <5490000 5835000>;
+	qcom,ath10k-calibration-variant = "EnGenius-EMR5000";
+};
