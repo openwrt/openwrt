@@ -1,0 +1,57 @@
+From a43379dddf1ba14b6a9d50d95175117bbdf52ed2 Mon Sep 17 00:00:00 2001
+From: Ryder Lee <ryder.lee@mediatek.com>
+Date: Tue, 29 Jan 2019 12:31:18 +0800
+Subject: [PATCH] arm: mediatek: add MT7629 smp bring up code
+
+Add support for booting secondary CPUs on MT7629.
+
+Signed-off-by: Ryder Lee <ryder.lee@mediatek.com>
+Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
+---
+ arch/arm/mach-mediatek/Kconfig    | 4 ++++
+ arch/arm/mach-mediatek/mediatek.c | 1 +
+ arch/arm/mach-mediatek/platsmp.c  | 1 +
+ 3 files changed, 6 insertions(+)
+
+diff --git a/arch/arm/mach-mediatek/Kconfig b/arch/arm/mach-mediatek/Kconfig
+index 91cc461f7b04..11ed264f0731 100644
+--- a/arch/arm/mach-mediatek/Kconfig
++++ b/arch/arm/mach-mediatek/Kconfig
+@@ -26,6 +26,10 @@ config MACH_MT7623
+ 	bool "MediaTek MT7623 SoCs support"
+ 	default ARCH_MEDIATEK
+ 
++config MACH_MT7629
++	bool "MediaTek MT7629 SoCs support"
++	default ARCH_MEDIATEK
++
+ config MACH_MT8127
+ 	bool "MediaTek MT8127 SoCs support"
+ 	default ARCH_MEDIATEK
+diff --git a/arch/arm/mach-mediatek/mediatek.c b/arch/arm/mach-mediatek/mediatek.c
+index c3cf215773b2..b6a81ba1ce32 100644
+--- a/arch/arm/mach-mediatek/mediatek.c
++++ b/arch/arm/mach-mediatek/mediatek.c
+@@ -49,6 +49,7 @@ static const char * const mediatek_board_dt_compat[] = {
+ 	"mediatek,mt6589",
+ 	"mediatek,mt6592",
+ 	"mediatek,mt7623",
++	"mediatek,mt7629",
+ 	"mediatek,mt8127",
+ 	"mediatek,mt8135",
+ 	NULL,
+diff --git a/arch/arm/mach-mediatek/platsmp.c b/arch/arm/mach-mediatek/platsmp.c
+index 51e85562098c..c9d7c0458452 100644
+--- a/arch/arm/mach-mediatek/platsmp.c
++++ b/arch/arm/mach-mediatek/platsmp.c
+@@ -60,6 +60,7 @@ static const struct of_device_id mtk_tz_smp_boot_infos[] __initconst = {
+ static const struct of_device_id mtk_smp_boot_infos[] __initconst = {
+ 	{ .compatible   = "mediatek,mt6589", .data = &mtk_mt6589_boot },
+ 	{ .compatible   = "mediatek,mt7623", .data = &mtk_mt7623_boot },
++	{ .compatible   = "mediatek,mt7629", .data = &mtk_mt7623_boot },
+ 	{},
+ };
+ 
+-- 
+2.21.0
+
