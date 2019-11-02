@@ -77,7 +77,6 @@ include ./generic-ubnt.mk
 endif
 ifeq ($(SUBTARGET),nand)
 include ./nand.mk
-include ./nand-netgear.mk
 endif
 ifeq ($(SUBTARGET),tiny)
 include ./tiny.mk
