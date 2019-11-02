@@ -759,7 +759,7 @@ static int rtl8367b_init_regs(struct rtl8366_smi *smi)
 		break;
 
 	default:
-		dev_err(smi->parent, "unknow rlvid %u\n", rlvid);
+		dev_err(smi->parent, "unknown rlvid %u\n", rlvid);
 		return -ENODEV;
 	}
 
