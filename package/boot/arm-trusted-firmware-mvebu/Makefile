@@ -26,15 +26,126 @@ include $(INCLUDE_DIR)/package.mk
 define Package/arm-trusted-firmware-mvebu
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  TITLE:=ARM Trusted Firmware for mvebu devices
+  DEPENDS:=@TARGET_mvebu_cortexa53
+  VARIANT:=$(subst arm-trusted-firmware-mvebu-,,$(1))
 endef
 
-define Package/arm-trusted-firmware-mvebu/uDPU
-$(call Package/arm-trusted-firmware-mvebu)
-  BOARDNAME:=uDPU
+define Package/arm-trusted-firmware-mvebu-espressobin-512mb
+  $(Package/arm-trusted-firmware-mvebu)
+  TITLE:=ARM Trusted Firmware for Marvell ESPRESSObin (512MB)
+  DEPENDS:=+u-boot-espressobin
+  UBOOT:=espressobin
+  DDR_TOPOLOGY:=0
+  CLOCKSPRESET:=CPU_800_DDR_800
+  PLAT:=a3700
+endef
+
+define Package/arm-trusted-firmware-mvebu-espressobin-v3-v5-1gb-1cs
+  $(Package/arm-trusted-firmware-mvebu)
+  TITLE:=ARM Trusted Firmware for Marvell ESPRESSObin V3-V5 (1GB 1CS)
+  DEPENDS:=+u-boot-espressobin
+  UBOOT:=espressobin
+  DDR_TOPOLOGY:=2
+  CLOCKSPRESET:=CPU_800_DDR_800
+  PLAT:=a3700
+endef
+
+define Package/arm-trusted-firmware-mvebu-espressobin-v3-v5-1gb-1cs-emmc
+  $(Package/arm-trusted-firmware-mvebu)
+  TITLE:=ARM Trusted Firmware for Marvell ESPRESSObin V3-V5 (1GB 1CS, eMMC)
+  DEPENDS:=+u-boot-espressobin-emmc
+  UBOOT:=espressobin-emmc
+  DDR_TOPOLOGY:=4
+  CLOCKSPRESET:=CPU_800_DDR_800
+  PLAT:=a3700
+endef
+
+define Package/arm-trusted-firmware-mvebu-espressobin-v3-v5-1gb-2cs
+  $(Package/arm-trusted-firmware-mvebu)
+  TITLE:=ARM Trusted Firmware for Marvell ESPRESSObin V3-V5 (1GB, 2CS)
+  DEPENDS:=+u-boot-espressobin
+  UBOOT:=espressobin
+  DDR_TOPOLOGY:=2
+  CLOCKSPRESET:=CPU_800_DDR_800
+  PLAT:=a3700
+endef
+
+define Package/arm-trusted-firmware-mvebu-espressobin-v3-v5-1gb-2cs-emmc
+  $(Package/arm-trusted-firmware-mvebu)
+  TITLE:=ARM Trusted Firmware for Marvell ESPRESSObin V3-V5 (1GB 2CS, eMMC)
+  DEPENDS:=+u-boot-espressobin-emmc
+  UBOOT:=espressobin-emmc
+  DDR_TOPOLOGY:=2
+  CLOCKSPRESET:=CPU_800_DDR_800
+  PLAT:=a3700
+endef
+
+define Package/arm-trusted-firmware-mvebu-espressobin-v3-v5-2gb
+  $(Package/arm-trusted-firmware-mvebu)
+  TITLE:=ARM Trusted Firmware for Marvell ESPRESSObin V3-V5 (2GB)
+  DEPENDS:=+u-boot-espressobin
+  UBOOT:=espressobin
+  DDR_TOPOLOGY:=7
+  CLOCKSPRESET:=CPU_800_DDR_800
+  PLAT:=a3700
+endef
+
+define Package/arm-trusted-firmware-mvebu-espressobin-v3-v5-2gb-emmc
+  $(Package/arm-trusted-firmware-mvebu)
+  TITLE:=ARM Trusted Firmware for Marvell ESPRESSObin V3-V5 (2GB, eMMC)
+  DEPENDS:=+u-boot-espressobin-emmc
+  UBOOT:=espressobin-emmc
+  DDR_TOPOLOGY:=7
+  CLOCKSPRESET:=CPU_800_DDR_800
+  PLAT:=a3700
+endef
+
+define Package/arm-trusted-firmware-mvebu-espressobin-v7-1gb
+  $(Package/arm-trusted-firmware-mvebu)
+  TITLE:=ARM Trusted Firmware for Marvell ESPRESSObin V7 (1GB)
+  DEPENDS:=+u-boot-espressobin
+  UBOOT:=espressobin
+  DDR_TOPOLOGY:=5
+  CLOCKSPRESET:=CPU_800_DDR_800
+  PLAT:=a3700
+endef
+
+define Package/arm-trusted-firmware-mvebu-espressobin-v7-1gb-emmc
+  $(Package/arm-trusted-firmware-mvebu)
+  TITLE:=ARM Trusted Firmware for Marvell ESPRESSObin V7 (1GB, eMMC)
+  DEPENDS:=+u-boot-espressobin
+  UBOOT:=espressobin-emmc
+  DDR_TOPOLOGY:=5
+  CLOCKSPRESET:=CPU_800_DDR_800
+  PLAT:=a3700
+endef
+
+define Package/arm-trusted-firmware-mvebu-espressobin-v7-2gb
+  $(Package/arm-trusted-firmware-mvebu)
+  TITLE:=ARM Trusted Firmware for Marvell ESPRESSObin V7 (2GB)
+  DEPENDS:=+u-boot-espressobin
+  UBOOT:=espressobin
+  DDR_TOPOLOGY:=6
+  CLOCKSPRESET:=CPU_800_DDR_800
+  PLAT:=a3700
+endef
+
+define Package/arm-trusted-firmware-mvebu-espressobin-v7-2gb-emmc
+  $(Package/arm-trusted-firmware-mvebu)
+  TITLE:=ARM Trusted Firmware for Marvell ESPRESSObin V7 (2GB, eMMC)
+  DEPENDS:=+u-boot-espressobin
+  UBOOT:=espressobin-emmc
+  DDR_TOPOLOGY:=6
+  CLOCKSPRESET:=CPU_800_DDR_800
+  PLAT:=a3700
+endef
+
+define Package/arm-trusted-firmware-mvebu-udpu
+  $(Package/arm-trusted-firmware-mvebu)
   TITLE:=ARM Trusted Firmware for Methode uDPU
   DEPENDS:=+u-boot-uDPU
   UBOOT:=uDPU
+  DDR_TOPOLOGY:=0
   CLOCKSPRESET:=CPU_1000_DDR_800
   PLAT:=a3700
 endef
@@ -94,24 +205,37 @@ export GCC_HONOUR_COPTS=s
 
 TARGET_CFLAGS = ""
 
-MAKE_VARS= \
-	CROSS_COMPILE="$(TARGET_CROSS)"
-
-MAKE_FLAGS = \
-	OPENSSL_DIR=$(STAGING_DIR_HOST) \
-	CROSS_CM3=$(STAGING_DIR_IMAGE)/$(LINARO_NAME)-$(LINARO_RELEASE).$(LINARO_VERSION)/bin/arm-linux-gnueabi- \
-	BL33=$(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.bin \
-	MV_DDR_PATH=$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
-	WTP=$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
-	CLOCKSPRESET=$(CLOCKSPRESET) \
-	PLAT=$(PLAT) \
-	all \
-	fip
-
-define Build/InstallDev
-	$(INSTALL_DIR) $(BIN_DIR)/flash-image-$(BOARDNAME)
-	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/flash-image.bin $(BIN_DIR)/flash-image-$(BOARDNAME)/
-	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/uart-images.tgz $(BIN_DIR)/flash-image-$(BOARDNAME)/
+define Build/Compile
+	$(eval $(Package/arm-trusted-firmware-mvebu-$(BUILD_VARIANT))) \
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
+		CROSS_COMPILE=$(TARGET_CROSS) \
+		OPENSSL_DIR=$(STAGING_DIR_HOST) \
+		CROSS_CM3=$(STAGING_DIR_IMAGE)/$(LINARO_NAME)-$(LINARO_RELEASE).$(LINARO_VERSION)/bin/arm-linux-gnueabi- \
+		BL33=$(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.bin \
+		MV_DDR_PATH=$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
+		WTP=$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
+		DDR_TOPOLOGY=$(DDR_TOPOLOGY) \
+		CLOCKSPRESET=$(CLOCKSPRESET) \
+		PLAT=$(PLAT) \
+		all \
+		fip
 endef
 
-$(eval $(call BuildPackage,arm-trusted-firmware-mvebu/uDPU))
+define Build/InstallDev
+	$(INSTALL_DIR) $(BIN_DIR)/flash-image-$(BUILD_VARIANT)
+	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/flash-image.bin $(BIN_DIR)/flash-image-$(BUILD_VARIANT)/
+	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/uart-images.tgz $(BIN_DIR)/flash-image-$(BUILD_VARIANT)/
+endef
+
+$(eval $(call BuildPackage,arm-trusted-firmware-mvebu-espressobin-512mb))
+$(eval $(call BuildPackage,arm-trusted-firmware-mvebu-espressobin-v3-v5-1gb-1cs))
+$(eval $(call BuildPackage,arm-trusted-firmware-mvebu-espressobin-v3-v5-1gb-1cs-emmc))
+$(eval $(call BuildPackage,arm-trusted-firmware-mvebu-espressobin-v3-v5-1gb-2cs))
+$(eval $(call BuildPackage,arm-trusted-firmware-mvebu-espressobin-v3-v5-1gb-2cs-emmc))
+$(eval $(call BuildPackage,arm-trusted-firmware-mvebu-espressobin-v3-v5-2gb))
+$(eval $(call BuildPackage,arm-trusted-firmware-mvebu-espressobin-v3-v5-2gb-emmc))
+$(eval $(call BuildPackage,arm-trusted-firmware-mvebu-espressobin-v7-1gb))
+$(eval $(call BuildPackage,arm-trusted-firmware-mvebu-espressobin-v7-1gb-emmc))
+$(eval $(call BuildPackage,arm-trusted-firmware-mvebu-espressobin-v7-2gb))
+$(eval $(call BuildPackage,arm-trusted-firmware-mvebu-espressobin-v7-2gb-emmc))
+$(eval $(call BuildPackage,arm-trusted-firmware-mvebu-udpu))
