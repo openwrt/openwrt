@@ -36,6 +36,21 @@ define U-Boot/helios4
   UBOOT_IMAGE:=u-boot-spl.kwb
 endef
 
+define U-Boot/espressobin
+  NAME:=Marvell ESPRESSObin
+  BUILD_DEVICES:=globalscale_espressobin globalscale_espressobin-v7
+  BUILD_SUBTARGET:=cortexa53
+  UBOOT_CONFIG:=mvebu_espressobin-88f3720
+endef
+
+define U-Boot/espressobin-emmc
+  NAME:=Marvell ESPRESSObin
+  BUILD_DEVICES:=globalscale_espressobin-emmc globalscale_espressobin-v7-emmc
+  BUILD_SUBTARGET:=cortexa53
+  UBOOT_CONFIG:=mvebu_espressobin-88f3720
+  UBOOT_MAKE_FLAGS+=DEVICE_TREE=armada-3720-espressobin-emmc
+endef
+
 define U-Boot/uDPU
   NAME:=Methode uDPU
   BUILD_DEVICES:=methode_udpu
@@ -45,6 +60,8 @@ endef
 UBOOT_TARGETS:= \
 	clearfog \
 	helios4 \
+	espressobin \
+	espressobin-emmc \
 	uDPU
 
 Build/Exports:=$(Host/Exports)
