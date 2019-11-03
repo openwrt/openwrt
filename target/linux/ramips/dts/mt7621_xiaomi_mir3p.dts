@@ -91,64 +91,67 @@
 &nand {
 	status = "okay";
 
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
+	nand@0 {
+		reg = <0>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		partition@0 {
-			label = "Bootloader";
-			reg = <0x0 0x40000>;
-			read-only;
-		};
+			partition@0 {
+				label = "Bootloader";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
 
-		partition@40000 {
-			label = "Config";
-			reg = <0x40000 0x40000>;
-		};
+			partition@40000 {
+				label = "Config";
+				reg = <0x40000 0x40000>;
+			};
 
-		partition@80000 {
-			label = "Bdata";
-			reg = <0x80000 0x40000>;
-			read-only;
-		};
+			partition@80000 {
+				label = "Bdata";
+				reg = <0x80000 0x40000>;
+				read-only;
+			};
 
-		factory: partition@c0000 {
-			label = "factory";
-			reg = <0x0c0000 0x40000>;
-			read-only;
-		};
+			factory: partition@c0000 {
+				label = "factory";
+				reg = <0x0c0000 0x40000>;
+				read-only;
+			};
 
-		partition@100000 {
-			label = "crash";
-			reg = <0x100000 0x40000>;
-		};
+			partition@100000 {
+				label = "crash";
+				reg = <0x100000 0x40000>;
+			};
 
-		partition@140000 {
-			label = "crash_syslog";
-			reg = <0x140000 0x80000>;
-		};
+			partition@140000 {
+				label = "crash_syslog";
+				reg = <0x140000 0x80000>;
+			};
 
-		partition@1c0000 {
-			label = "reserved0";
-			reg = <0x1c0000 0x40000>;
-			read-only;
-		};
+			partition@1c0000 {
+				label = "reserved0";
+				reg = <0x1c0000 0x40000>;
+				read-only;
+			};
 
-		/* We keep stock xiaomi firmware (kernel0) here */
-		partition@200000 {
-			label = "kernel_stock";
-			reg = <0x200000 0x400000>;
-		};
+			/* We keep stock xiaomi firmware (kernel0) here */
+			partition@200000 {
+				label = "kernel_stock";
+				reg = <0x200000 0x400000>;
+			};
 
-		partition@600000 {
-			label = "kernel";
-			reg = <0x600000 0x400000>;
-		};
+			partition@600000 {
+				label = "kernel";
+				reg = <0x600000 0x400000>;
+			};
 
-		partition@a00000 {
-			label = "ubi";
-			reg = <0xa00000 0xf580000>;
+			partition@a00000 {
+				label = "ubi";
+				reg = <0xa00000 0xf580000>;
+			};
 		};
 	};
 };

@@ -55,45 +55,48 @@
 &nand {
 	status = "okay";
 
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		partition@0 {
-			label = "u-boot";
-			reg = <0x0 0x80000>;
-			read-only;
-		};
-
-		partition@80000 {
-			label = "config";
-			reg = <0x80000 0x80000>;
-			read-only;
-		};
-
-		factory: partition@100000 {
-			label = "factory";
-			reg = <0x100000 0x40000>;
-			read-only;
-		};
-
-		partition@140000 {
-			label = "firmware";
-			reg = <0x140000 0x7e40000>;
-
+	nand@0 {
+		reg = <0>;
+		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "kernel";
-				reg = <0x0 0x400000>;
+				label = "u-boot";
+				reg = <0x0 0x80000>;
+				read-only;
 			};
 
-			partition@400000 {
-				label = "ubi";
-				reg = <0x400000 0x7a40000>;
+			partition@80000 {
+				label = "config";
+				reg = <0x80000 0x80000>;
+				read-only;
+			};
+
+			factory: partition@100000 {
+				label = "factory";
+				reg = <0x100000 0x40000>;
+				read-only;
+			};
+
+			partition@140000 {
+				label = "firmware";
+				reg = <0x140000 0x7e40000>;
+
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "kernel";
+					reg = <0x0 0x400000>;
+				};
+
+				partition@400000 {
+					label = "ubi";
+					reg = <0x400000 0x7a40000>;
+				};
 			};
 		};
 	};

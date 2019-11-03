@@ -3572,7 +3572,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	}
 +#endif
 +
-+	nand_set_flash_node(nand_chip, pdev->dev.of_node);
++	nand_set_flash_node(nand_chip, of_get_next_available_child(pdev->dev.of_node, NULL));
 +	err = mtd_device_parse_register(mtd, probe_types, &ppdata,
 +					NULL, 0);
 +	if (!err) {
