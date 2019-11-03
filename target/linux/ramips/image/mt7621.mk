@@ -96,6 +96,16 @@ define Device/afoundry_ew1200
 endef
 TARGET_DEVICES += afoundry_ew1200
 
+define Device/alfa-network_quad-e4g
+  MTK_SOC := mt7621
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := Quad-E4G
+  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 \
+	uboot-envtools
+endef
+TARGET_DEVICES += alfa-network_quad-e4g
+
 define Device/asiarf_ap7621-001
   MTK_SOC := mt7621
   IMAGE_SIZE := 16000k

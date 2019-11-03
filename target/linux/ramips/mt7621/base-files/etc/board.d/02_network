@@ -37,6 +37,18 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
+	alfa-network,quad-e4g|\
+	netgear,r6220|\
+	netgear,r6260|\
+	netgear,r6350|\
+	netgear,r6850|\
+	netgear,wndr3700-v5|\
+	netis,wf-2881|\
+	wevo,11acnas|\
+	wevo,w2914ns-v2)
+		ucidef_add_switch "switch0" \
+			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
+		;;
 	asiarf,ap7621-001)
 		ucidef_add_switch "switch0" "0:lan" "4:wan" "6@eth0"
 		;;
@@ -106,17 +118,6 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"
 		;;
-	netgear,r6220|\
-	netgear,r6260|\
-	netgear,r6350|\
-	netgear,r6850|\
-	netgear,wndr3700-v5|\
-	netis,wf-2881|\
-	wevo,11acnas|\
-	wevo,w2914ns-v2)
-		ucidef_add_switch "switch0" \
-			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
-		;;
 	xiaomi,mir3g)
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "3:lan:1" "1:wan" "6t@eth0"
@@ -169,6 +170,7 @@ ramips_setup_macs()
 	zbtlink,zbt-wg2626)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
+	alfa-network,quad-e4g|\
 	asus,rt-ac57u|\
 	d-team,newifi-d2|\
 	d-team,pbr-m1|\
