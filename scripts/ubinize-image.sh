@@ -9,6 +9,7 @@ kernel=""
 rootfs=""
 outfile=""
 err=""
+ubinize_seq=""
 
 ubivol() {
 	volid=$1
@@ -81,6 +82,12 @@ ubilayout() {
 	[ "$rootfs_type" = "ubifs" ] || ubivol $vol_id rootfs_data "" 1
 }
 
+set_ubinize_seq() {
+	if [ -n "$SOURCE_DATE_EPOCH" ] ; then
+		ubinize_seq="-Q $SOURCE_DATE_EPOCH"
+	fi
+}
+
 while [ "$1" ]; do
 	case "$1" in
 	"--uboot-env")
@@ -137,8 +144,9 @@ if [ -z "$ubinizecfg" ]; then
 fi
 ubilayout "$ubootenv" "$rootfs" "$kernel" > "$ubinizecfg"
 
+set_ubinize_seq
 cat "$ubinizecfg"
-ubinize -o "$outfile" $ubinize_param "$ubinizecfg"
+ubinize $ubinize_seq -o "$outfile" $ubinize_param "$ubinizecfg"
 err="$?"
 [ ! -e "$outfile" ] && err=2
 rm "$ubinizecfg"
