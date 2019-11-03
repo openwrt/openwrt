@@ -93,6 +93,15 @@ define Device/11acnas
 endef
 TARGET_DEVICES += 11acnas
 
+define Device/alfa-network_quad-e4g
+  DTS := QUAD-E4G
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := ALFA Network Quad-E4G
+  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 \
+	uboot-envtools
+endef
+TARGET_DEVICES += alfa-network_quad-e4g
+
 define Device/asus_rt-ac57u
   DTS := RT-AC57U
   DEVICE_TITLE := ASUS RT-AC57U
