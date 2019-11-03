@@ -525,3 +525,14 @@ define Device/tplink_tl-wr842n-v3
   SUPPORTED_DEVICES += tl-wr842n-v3
 endef
 TARGET_DEVICES += tplink_tl-wr842n-v3
+
+define Device/tplink_wbs210-v2
+  $(Device/tplink-loader-okli)
+  ATH_SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := WBS210
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := WBS210V2
+endef
+TARGET_DEVICES += tplink_wbs210-v2
