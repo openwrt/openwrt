@@ -96,6 +96,10 @@ define ImageConfigOptions
 	echo 'pi_preinit_net_messages="$(CONFIG_TARGET_PREINIT_SHOW_NETMSG)"' >>$(1)/lib/preinit/00_preinit.conf
 	echo 'pi_preinit_no_failsafe_netmsg="$(CONFIG_TARGET_PREINIT_SUPPRESS_FAILSAFE_NETMSG)"' >>$(1)/lib/preinit/00_preinit.conf
 	echo 'pi_preinit_no_failsafe="$(CONFIG_TARGET_PREINIT_DISABLE_FAILSAFE)"' >>$(1)/lib/preinit/00_preinit.conf
+ifndef CONFIG_TARGET_PREINIT_USER_CONFIG_REMOVED
+	echo 'pi_user_config_wait_timeout="$(if $(CONFIG_TARGET_PREINIT_USER_CONFIG_TIMEOUT),$(CONFIG_TARGET_PREINIT_USER_CONFIG_TIMEOUT),4)"' >>$(1)/lib/preinit/00_preinit.conf
+	echo 'pi_no_user_config="$(CONFIG_TARGET_PREINIT_USER_CONFIG_DISABLED)"' >>$(1)/lib/preinit/00_preinit.conf
+endif
 endef
 
 define Build/Prepare
@@ -206,6 +210,9 @@ define Package/base-files/install
 		$(VERSION_SED_SCRIPT) $(1)/etc/opkg/distfeeds.conf)
 	$(if $(CONFIG_IPK_FILES_CHECKSUMS), \
 		rm -f $(1)/sbin/pkg_check,)
+	$(if $(CONFIG_TARGET_PREINIT_USER_CONFIG_REMOVED), \
+		rm -f $(1)/lib/preinit/90_user_config_menu $(1)/etc/hotplug-config.json $(1)/etc/rc.button/buttons \
+		rm -rf $(1)/etc/config-menu.d/,)
 endef
 
 ifneq ($(DUMP),1)

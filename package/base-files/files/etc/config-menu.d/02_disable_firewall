@@ -1,0 +1,10 @@
+#!/bin/sh
+INVERSE=0
+
+[ -z "$1" ] && return
+
+ACTION=$(( ($1+$INVERSE) %2 ))
+case "$ACTION" in
+	0)	/etc/init.d/firewall enable ;;
+	1)	/etc/init.d/firewall disable ;;
+esac

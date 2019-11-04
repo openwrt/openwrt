@@ -1,0 +1,21 @@
+#!/bin/sh
+INVERSE=1
+
+[ -z "$1" ] && return
+if [ ! -s "/etc/config/wireless" ] ; then
+	echo -e "#!/bin/sh\n$(readlink -f $0) $1" > /etc/uci-defaults/20_set_wifi
+	return
+fi
+
+. /lib/functions.sh
+
+wifi_rfkill_set() {
+	uci set wireless.$1.disabled=$ACTION
+}
+
+ACTION=$(( ($1+$INVERSE) %2 ))
+config_load wireless
+config_foreach wifi_rfkill_set wifi-device
+
+uci commit wireless
+wifi up

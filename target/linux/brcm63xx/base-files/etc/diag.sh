@@ -154,6 +154,9 @@ set_state() {
 	preinit_regular)
 		status_led_blink_preinit_regular
 		;;
+	config)
+		status_led_blink_pulse
+		;;
 	done)
 		if [ "${status_led/power}" != "$status_led" ]; then
 			status_led_on

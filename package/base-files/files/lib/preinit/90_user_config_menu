@@ -1,0 +1,129 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# (c) 2019, Manuel Giganto <mgigantoregistros@gmail.com>
+
+config_wait_for_key () {
+	local options_limit=$1
+	local timeout=$2
+	local buttons_file=$3
+	local keypressed
+	local buttonspressed=0
+	local wait
+
+	wait="$(mktemp)" || wait=/tmp/.wait && touch $wait
+	local undo="lock -u $wait ; rm -f $wait"
+	trap "$undo" INT
+	trap "$undo" USR1
+
+	[ -n "$timeout" ] && [ $timeout -ge 1 ] || timeout=1
+	local gettime="date +%s"
+	local now=$($gettime)
+	local deadline=$(( $now + $timeout ))
+
+	lock $wait
+	{
+		sleep $timeout
+		lock -u $wait
+	} &
+
+	{
+		while [ "$now" -lt "$deadline" ] ; do
+			wait_time=$(( $deadline - $now ))
+			user_read=""
+			read -t "$wait_time" user_read
+			if [ "$user_read" -ge 0 -a "$user_read" -le "$options_limit" ] ; then
+				keypressed=$user_read
+				break
+			fi &>/dev/null
+			now=$($gettime)
+			[ "$now" -lt "$deadline" ] && echo -n "Option not valid. Choose 0-$options_limit: "
+		done
+		lock -u $wait
+	}
+
+	lock -w $wait
+	rm -f $wait
+
+	if [ -f "$buttons_file" ] ; then
+		set -- $(wc -l $buttons_file)
+		[ "$1" -le "$options_limit" ] && buttonspressed=$1
+		rm "$buttons_file"
+	fi
+
+	[ -n "$keypressed" ] && return $keypressed || return $buttonspressed
+}
+
+notice() {
+	echo "$@"
+	preinit_net_echo "$@"
+}
+
+user_config_menu() {
+	local user_config_options
+	local no_user_config
+	local user_config_wait_timeout
+
+	user_config_options=$(ls /etc/config-menu.d)
+	set -- $user_config_options
+	local options_limit=$#
+	no_user_config=$(uci -q get user.@config[0].no_user_config) ||
+		no_user_config=$pi_no_user_config
+	[ "$no_user_config" = "y" -o "$options_limit" -eq 0 ] && return
+
+	user_config_wait_timeout=$(uci -q get user.@config[0].user_config_wait_timeout) ||
+		user_config_wait_timeout=$pi_user_config_wait_timeout
+	[ -z "$user_config_wait_timeout" ] && user_config_wait_timeout=2
+	local buttons_hook=$(mktemp -d)
+	cp -pa /etc/rc.button/buttons "$buttons_hook"
+	mount --bind "$buttons_hook" /etc/rc.button/
+	/sbin/procd -h /etc/hotplug-config.json &
+	local procd_pid=$!
+
+	local undo="kill $procd_pid ; umount /etc/rc.button/ ; rm $buttons_hook/buttons && rmdir $buttons_hook"
+	trap "$undo" INT
+	trap "$undo" USR1
+
+	while true ; do
+		set_state config
+		notice "Please press the number or any button X times within [$user_config_wait_timeout] " \
+		       "seconds to switch the config:"
+		echo "0: Exit the menu and continue booting."
+		local NUMBER=0
+		for option in $user_config_options ; do
+			optionval=$(uci -q get user.@config[0].${option})
+			msg="$((++NUMBER)): $option=$optionval -> $((($optionval+1)%2))"
+			notice "$msg"
+		done
+		echo -n "Option: "
+
+		config_wait_for_key $options_limit $user_config_wait_timeout /tmp/buttons
+		option=$?
+		if [ "$option" -ge 1 ] ; then
+			local optionvar=$(eval echo "\$$option")
+			local optionval=$(uci -q get user.@config[0].$optionvar)
+			local optionvalnew=$(( ($optionval+1)%2 ))
+			if [ ! -f "/etc/config/user" ] ; then
+				touch "/etc/config/user"
+				uci add user config &> /dev/null
+			fi
+			uci set user.@config[0].$optionvar=$optionvalnew
+			uci commit user
+			/etc/config-menu.d/$optionvar $optionvalnew
+			notice "Config changed: $optionvar=$optionvalnew"
+			echo
+			set_state failsafe
+			sleep 1
+		else
+			echo
+			notice "Continue booting..."
+			break
+		fi
+	done
+
+	kill $procd_pid
+	umount /etc/rc.button/
+	rm "$buttons_hook/buttons" && rmdir "$buttons_hook"
+	set_state preinit_regular
+}
+
+boot_hook_add preinit_main user_config_menu

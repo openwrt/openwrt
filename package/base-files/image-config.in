@@ -97,6 +97,33 @@ config TARGET_PREINIT_BROADCAST
 		Broadcast address to which to send preinit network messages, as
 		as failsafe messages
 
+config TARGET_PREINIT_USER_CONFIG_TIMEOUT
+	int
+	prompt "User config wait timeout" if PREINITOPT
+	default 4
+	help
+		How long to wait for a user interaction with the user config menu
+		before continuing with a regular boot.
+		Each time the user interactues with the user config menu, this timer
+		gets reseted.
+		This value can be changed latter with:
+		uci set user.@config[0].user_config_wait_timeout option.
+
+config TARGET_PREINIT_USER_CONFIG_DISABLED
+	bool
+	prompt "Disable user config menu" if PREINITOPT
+	default n
+	help
+		Disable the user config menu at preinit stage.
+		This value can be changed latter with
+		uci set user.@config[0].no_user_config option.
+
+config TARGET_PREINIT_USER_CONFIG_REMOVED
+	bool
+	prompt "Remove user config menu files" if ( PREINITOPT && TARGET_PREINIT_USER_CONFIG_DISABLED )
+	default n
+	help
+		Remove the user config menu files from the firmware.
 
 menuconfig INITOPT
 	bool "Init configuration options" if IMAGEOPT

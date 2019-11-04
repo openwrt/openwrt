@@ -73,3 +73,7 @@ status_led_blink_failsafe() {
 status_led_blink_preinit_regular() {
 	led_timer $status_led 200 200
 }
+
+status_led_blink_pulse() {
+	[ "$#" -ge 2 ] && led_timer $status_led $1 $2 || led_timer $status_led 50 950
+}
