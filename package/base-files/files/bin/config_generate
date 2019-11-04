@@ -3,6 +3,7 @@
 CFG=/etc/board.json
 
 . /usr/share/libubox/jshn.sh
+. /lib/functions/system.sh
 
 [ -s $CFG ] || /bin/board_detect || exit 1
 [ -s /etc/config/network -a -s /etc/config/system ] && exit 0
@@ -253,9 +254,22 @@ generate_static_system() {
 		add_list system.ntp.server='3.openwrt.pool.ntp.org'
 	EOF
 
+	local label_macaddr=$(get_mac_label_dt)
+	local hostname
+
 	if json_is_a system object; then
 		json_select system
-			local hostname
+			[ -n "$label_macaddr" ] || json_get_var label_macaddr label_macaddr
+		json_select ..
+	fi
+
+	if [ -n "$label_macaddr" ]; then
+		hostname="OpenWrt-$(macaddr_geteui $label_macaddr)"
+		uci -q set "system.@system[-1].hostname=$hostname"
+	fi
+
+	if json_is_a system object; then
+		json_select system
 			if json_get_var hostname hostname; then
 				uci -q set "system.@system[-1].hostname=$hostname"
 			fi
