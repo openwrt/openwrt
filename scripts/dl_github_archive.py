@@ -203,7 +203,7 @@ class GitHubCommitTsCache(object):
             ts = ent[0]
             updated = ent[1]
             line = '{0} {1} {2}\n'.format(k, ts, updated)
-            fout.write(line.encode('utf-8'))
+            fout.write(line)
 
 
 class DownloadGitHubTarball(object):
