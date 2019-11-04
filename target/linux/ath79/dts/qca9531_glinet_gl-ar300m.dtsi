@@ -60,6 +60,13 @@
 			linux,default-trigger = "phy0tpt";
 		};
 	};
+
+	i2c: i2c {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&gpio 17 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 16 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+	};
 };
 
 &pcie0 {
@@ -134,5 +141,4 @@
 &wmac {
 	status = "okay";
 	mtd-cal-data = <&art 0x1000>;
-	mtd-mac-address = <&art 0x1002>;
 };

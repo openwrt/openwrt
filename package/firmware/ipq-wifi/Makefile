@@ -24,6 +24,7 @@ endef
 #
 
 ALLWIFIBOARDS:= \
+	avm_fritzrepeater-1200 \
 	linksys_ea8300 \
 	qxwlan_e2600ac
 
@@ -88,6 +89,7 @@ endef
 # Place files in this directory as board-<devicename>.<qca4019|qca9888|qca9984>
 # Add $(eval $(call generate-ipq-wifi-package,<devicename>,<display name>))
 
+$(eval $(call generate-ipq-wifi-package,avm_fritzrepeater-1200,AVM FRITZRepeater 1200))
 $(eval $(call generate-ipq-wifi-package,linksys_ea8300,Linksys EA8300))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac,Qxwlan E2600AC))
 

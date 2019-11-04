@@ -7,3 +7,7 @@
 	compatible = "tplink,cpe220-v2", "qca,ar9344";
 	model = "TP-Link CPE220 v2";
 };
+
+&led_link4 {
+	gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+};

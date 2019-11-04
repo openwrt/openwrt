@@ -454,16 +454,16 @@ define Device/tplink_tl-wr902ac-v3
 endef
 TARGET_DEVICES += tplink_tl-wr902ac-v3
 
-define Device/unielec_u7628-01-128m-16m
+define Device/unielec_u7628-01-16m
   MTK_SOC := mt7628an
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7628-01
-  DEVICE_VARIANT := 128M RAM/16M flash
+  DEVICE_VARIANT := 16M
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
-  SUPPORTED_DEVICES += u7628-01-128M-16M
+  SUPPORTED_DEVICES += u7628-01-128M-16M unielec,u7628-01-128m-16m
 endef
-TARGET_DEVICES += unielec_u7628-01-128m-16m
+TARGET_DEVICES += unielec_u7628-01-16m
 
 define Device/vocore_vocore2
   MTK_SOC := mt7628an

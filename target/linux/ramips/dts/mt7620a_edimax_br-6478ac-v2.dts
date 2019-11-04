@@ -34,8 +34,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset_wps {
 			label = "reset_wps";
@@ -51,14 +50,17 @@
 			label = "br-6478ac-v2:white:power";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
+
 		internet {
 			label = "br-6478ac-v2:blue:internet";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
+
 		wlan {
 			label = "br-6478ac-v2:blue:wlan";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};
+
 		usb {
 			label = "br-6478ac-v2:blue:usb";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
@@ -66,7 +68,6 @@
 			linux,default-trigger = "usbport";
 		};
 	};
-
 
 	gpio_export {
 		compatible = "gpio-export";
@@ -78,7 +79,6 @@
 		};
 	};
 };
-
 
 &gpio2 {
 	status = "okay";
