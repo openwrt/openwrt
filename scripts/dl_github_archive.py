@@ -177,7 +177,7 @@ class GitHubCommitTsCache(object):
     def set(self, k, v):
         """Update timestamp with ``k``."""
         fileno = os.open(self.cachef, os.O_RDWR | os.O_CREAT)
-        with os.fdopen(fileno, 'wb+') as f:
+        with os.fdopen(fileno, 'w+') as f:
             try:
                 fcntl.lockf(fileno, fcntl.LOCK_EX)
                 self._cache_init(f)
