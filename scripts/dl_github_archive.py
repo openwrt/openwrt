@@ -177,7 +177,7 @@ class GitHubCommitTsCache(object):
     def set(self, k, v):
         """Update timestamp with ``k``."""
         fileno = os.open(self.cachef, os.O_RDWR | os.O_CREAT)
-        with os.fdopen(fileno, 'wb+') as f:
+        with os.fdopen(fileno, 'w+') as f:
             try:
                 fcntl.lockf(fileno, fcntl.LOCK_EX)
                 self._cache_init(f)
@@ -203,7 +203,7 @@ class GitHubCommitTsCache(object):
             ts = ent[0]
             updated = ent[1]
             line = '{0} {1} {2}\n'.format(k, ts, updated)
-            fout.write(line.encode('utf-8'))
+            fout.write(line)
 
 
 class DownloadGitHubTarball(object):
