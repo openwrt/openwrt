@@ -7,8 +7,6 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-SIGNATURE:=$(shell printf "%.8s" $(SOURCE_DATE_EPOCH))
-
 define Build/tegra-sdcard
 	rm -fR $@.boot
 	mkdir -p $@.boot
@@ -17,7 +15,7 @@ define Build/tegra-sdcard
 		$(foreach dtb,$(DEVICE_DTS),$(CP) $(DTS_DIR)/$(dtb).dtb $@.boot), \
 		$(CP) $(DTS_DIR)/*.dtb $@.boot)
 	sed \
-		-e 's#@ROOT@#$(SIGNATURE)#g' \
+		-e 's#@ROOT@#$(IMG_PART_SIGNATURE)#g' \
 		-e 's#@KERNEL@#$(KERNEL_NAME)#g' \
 		$(BOOT_SCRIPT) > $@-boot.scr
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
@@ -25,7 +23,7 @@ define Build/tegra-sdcard
 		-d $@-boot.scr \
 		$@.boot/boot.scr
 
-	SIGNATURE="$(SIGNATURE)" \
+	SIGNATURE="$(IMG_PART_SIGNATURE)" \
 	$(SCRIPT_DIR)/gen_image_generic.sh \
 		$@ \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
