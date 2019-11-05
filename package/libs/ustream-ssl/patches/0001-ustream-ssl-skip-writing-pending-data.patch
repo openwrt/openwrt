@@ -1,0 +1,56 @@
+From c9b6668215a27f2346d5eedd6f29cc720985b448 Mon Sep 17 00:00:00 2001
+From: Jo-Philipp Wich <jo@mein.io>
+Date: Wed, 11 Sep 2019 21:09:59 +0200
+Subject: [PATCH] ustream-ssl: skip writing pending data if .eof is true after
+ connect
+
+Check the .eof member of the underlying ustream after the call to
+__ustream_ssl_connect() since existing users of the library appear
+to set the eof flag as a way to signal connection termination upon
+failing certificate verification.
+
+This is a stop-gap measure to address TALOS-2019-0893 but a proper
+API redesign is required to give applications proper control over
+whether certificate failures are to be ignored or not and the default
+implementation without custom callbacks should always terminate on
+verification failures.
+
+Signed-off-by: Jo-Philipp Wich <jo@mein.io>
+---
+ ustream-ssl.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/ustream-ssl.c b/ustream-ssl.c
+index e6b084b..47f66d6 100644
+--- a/ustream-ssl.c
++++ b/ustream-ssl.c
+@@ -40,6 +40,26 @@ static void ustream_ssl_check_conn(struct ustream_ssl *us)
+ 		return;
+ 
+ 	if (__ustream_ssl_connect(us) == U_SSL_OK) {
++
++		/* __ustream_ssl_connect() will also return U_SSL_OK when certificate
++		 * verification failed!
++		 *
++		 * Applications may register a custom .notify_verify_error callback in the
++		 * struct ustream_ssl which is called upon verification failures, but there
++		 * is no straight forward way for the callback to terminate the connection
++		 * initiation right away, e.g. through a true or false return value.
++		 *
++		 * Instead, existing implementations appear to set .eof field of the underlying
++		 * ustream in the hope that this inhibits further operations on the stream.
++		 *
++		 * Declare this informal behaviour "official" and check for the state of the
++		 * .eof member after __ustream_ssl_connect() returned, and do not write the
++		 * pending data if it is set to true.
++		 */
++
++		if (us->stream.eof)
++			return;
++
+ 		us->connected = true;
+ 		if (us->notify_connected)
+ 			us->notify_connected(us);
+-- 
+2.20.1
+
