@@ -550,6 +550,7 @@ define Device/Build/image
 		SUPPORTED_DEVICES="$(SUPPORTED_DEVICES)" \
 		$(TOPDIR)/scripts/json_add_image_info.py \
 	)
+
 endef
 
 define Device/Build/artifact
