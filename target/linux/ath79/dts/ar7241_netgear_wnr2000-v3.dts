@@ -15,10 +15,10 @@
 	};
 
 	aliases {
-		led-boot = &power_amber;
-		led-failsafe = &power_amber;
-		led-running = &power_green;
-		led-upgrade = &power_amber;
+		led-boot = &led_power_amber;
+		led-failsafe = &led_power_amber;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_amber;
 		label-mac-device = &eth1;
 	};
 
@@ -116,12 +116,12 @@
 	ath9k-leds {
 		compatible = "gpio-leds";
 
-		power_green: power_green {
+		led_power_green: power_green {
 			label = "netgear:green:power";
 			gpios = <&ath9k 3 GPIO_ACTIVE_LOW>;
 		};
 
-		power_amber: power_amber {
+		led_power_amber: power_amber {
 			label = "netgear:amber:power";
 			gpios = <&ath9k 2 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
@@ -137,6 +137,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {

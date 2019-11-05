@@ -11,10 +11,10 @@
 	model = "TP-Link Archer D50 v1";
 
 	aliases {
-		led-boot = &system;
-		led-failsafe = &system;
-		led-running = &system;
-		led-upgrade = &system;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
 		label-mac-device = &wmac;
 	};
 
@@ -64,7 +64,7 @@
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		system: system {
+		led_system: system {
 			label = "tp-link:white:system";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 			default-state = "on";
@@ -156,6 +156,7 @@
 
 &eth0 {
 	status = "okay";
+
 	phy-handle = <&swphy4>;
 
 	mtd-mac-address = <&romfile 0xf100>;
@@ -164,6 +165,7 @@
 
 &wmac {
 	status = "okay";
+
 	mtd-cal-data = <&art 0x1000>;
 	mtd-mac-address = <&romfile 0xf100>;
 };

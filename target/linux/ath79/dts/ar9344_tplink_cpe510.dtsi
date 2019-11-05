@@ -5,10 +5,10 @@
 
 / {
 	aliases {
-		led-boot = &system;
-		led-failsafe = &system;
-		led-running = &system;
-		led-upgrade = &system;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
 	};
 
 	leds {
@@ -34,7 +34,7 @@
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
-		system: link4 {
+		led_system: link4 {
 			label = "tp-link:green:link4";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};

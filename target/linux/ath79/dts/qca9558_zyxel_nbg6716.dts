@@ -15,16 +15,16 @@
 	};
 
 	aliases {
-		led-boot = &power;
-		led-failsafe = &power;
-		led-running = &power;
-		led-upgrade = &power;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		power: power {
+		led_power: power {
 			label = "nbg6716:white:power";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
@@ -119,6 +119,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {

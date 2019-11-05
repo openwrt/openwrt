@@ -21,6 +21,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {
@@ -78,7 +79,7 @@
 	};
 };
 
-&gpio_leds {
+&leds {
 	usb {
 		label = "tp-link:green:usb";
 		gpios = <&gpio 7 GPIO_ACTIVE_LOW>;

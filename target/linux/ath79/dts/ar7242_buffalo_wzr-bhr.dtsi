@@ -8,9 +8,9 @@
 
 / {
 	aliases {
-		led-boot = &diag;
-		led-failsafe = &diag;
-		led-upgrade = &diag;
+		led-boot = &led_diag;
+		led-failsafe = &led_diag;
+		led-upgrade = &led_diag;
 	};
 
 	extosc: ref {
@@ -37,14 +37,10 @@
 		};
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 
-		sec_vpn: sec_vpn {
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-		};
-
-		diag: diag {
+		led_diag: diag {
 			label = "buffalo:red:diag";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
@@ -111,6 +107,7 @@
 
 &spi {
 	status = "okay";
+
 	cs-gpios = <0>, <0>;
 	num-cs = <2>;
 

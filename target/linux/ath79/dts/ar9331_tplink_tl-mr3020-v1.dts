@@ -12,10 +12,10 @@
 
 	aliases {
 		serial0 = &uart;
-		led-boot = &system;
-		led-failsafe = &system;
-		led-running = &system;
-		led-upgrade = &system;
+		led-boot = &led_wps;
+		led-failsafe = &led_wps;
+		led-running = &led_wps;
+		led-upgrade = &led_wps;
 		label-mac-device = &eth0;
 	};
 
@@ -33,7 +33,7 @@
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 
-		system: wps {
+		led_wps: wps {
 			label = "tp-link:green:wps";
 			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
 		};
@@ -113,8 +113,9 @@
 };
 
 &spi {
-	num-chipselects = <1>;
 	status = "okay";
+
+	num-chipselects = <1>;
 
 	/* Spansion S25FL032PIF SPI flash */
 	flash@0 {
@@ -168,11 +169,13 @@
 
 &eth1 {
 	status = "okay";
+
 	compatible = "syscon", "simple-mfd";
 };
 
 &wmac {
 	status = "okay";
+
 	mtd-cal-data = <&art 0x1000>;
 	mtd-mac-address = <&uboot 0x1fc00>;
 };

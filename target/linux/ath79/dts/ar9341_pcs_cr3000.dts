@@ -12,10 +12,10 @@
 
 	aliases {
 		serial0 = &uart;
-		led-boot = &status;
-		led-failsafe = &status;
-		led-running = &status;
-		led-upgrade = &status;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 	};
 
 	keys {
@@ -42,7 +42,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		status: power {
+		led_power: power {
 			label = "pcs:amber:power";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 			default-state = "on";

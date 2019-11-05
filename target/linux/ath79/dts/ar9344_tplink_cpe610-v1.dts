@@ -8,15 +8,15 @@
 	compatible = "tplink,cpe610-v1", "qca,ar9344";
 
 	aliases {
-		led-boot = &system;
-		led-failsafe = &system;
-		led-upgrade = &system;
+		led-boot = &led_lan;
+		led-failsafe = &led_lan;
+		led-upgrade = &led_lan;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		system: lan {
+		led_lan: lan {
 			label = "tp-link:green:lan";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
@@ -40,5 +40,6 @@
 
 &eth1 {
 	status = "okay";
+
 	compatible = "syscon", "simple-mfd";
 };

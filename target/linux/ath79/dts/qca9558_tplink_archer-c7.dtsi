@@ -12,17 +12,17 @@
 	};
 
 	aliases {
-		led-boot = &system;
-		led-failsafe = &system;
-		led-running = &system;
-		led-upgrade = &system;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
 		label-mac-device = &eth1;
 	};
 
-	gpio_leds: leds {
+	leds: leds {
 		compatible = "gpio-leds";
 
-		system: system {
+		led_system: system {
 			label = "tp-link:green:system";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			default-state = "on";
@@ -42,7 +42,7 @@
 			linux,default-trigger = "usbport";
 		};
 
-		led_wlan2g: wlan2g {
+		wlan2g {
 			label = "tp-link:green:wlan2g";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
@@ -54,7 +54,7 @@
 		};
 	};
 
-	gpio_keys: keys {
+	keys: keys {
 		compatible = "gpio-keys";
 
 		reset {
@@ -126,6 +126,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {
@@ -188,6 +189,7 @@
 
 &wmac {
 	status = "okay";
+
 	mtd-cal-data = <&art 0x1000>;
 	mtd-mac-address = <&uboot 0x1fc00>;
 };
