@@ -15,7 +15,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	(PCI_IRQ_LEGACY | PCI_IRQ_MSI | PCI_IRQ_MSIX)
  #endif
  
-+#if LINUX_VERSION_IS_LESS(5,3,0)
++#if defined(CONFIG_PCI) && LINUX_VERSION_IS_LESS(5,3,0)
 +
 +static inline int
 +LINUX_BACKPORT(pci_disable_link_state)(struct pci_dev *pdev, int state)
