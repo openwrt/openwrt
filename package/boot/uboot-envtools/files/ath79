@@ -22,8 +22,11 @@ glinet,gl-ar300m-nor|\
 librerouter,librerouter-v1|\
 netgear,ex6400|\
 netgear,ex7300|\
+netgear,wnr1000-v2|\
+netgear,wnr2000-v3|\
 netgear,wnr2200-8m|\
 netgear,wnr2200-16m|\
+netgear,wnr612-v2|\
 ocedo,koala|\
 ocedo,raccoon|\
 openmesh,om5p-ac-v2|\
@@ -32,6 +35,9 @@ yuncore,a770)
 	;;
 buffalo,wzr-hp-ag300h)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000" "0x10000"
+	;;
+netgear,wndr3700)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x10000"
 	;;
 netgear,wndr4300)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x20000"
