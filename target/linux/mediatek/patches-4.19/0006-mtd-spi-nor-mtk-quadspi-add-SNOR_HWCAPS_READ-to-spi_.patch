@@ -15,11 +15,9 @@ Signed-off-by: Boris Brezillon <bbrezillon@kernel.org>
  drivers/mtd/spi-nor/mtk-quadspi.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/spi-nor/mtk-quadspi.c b/drivers/mtd/spi-nor/mtk-quadspi.c
-index 5442993b71ff..d9eed6844ba1 100644
 --- a/drivers/mtd/spi-nor/mtk-quadspi.c
 +++ b/drivers/mtd/spi-nor/mtk-quadspi.c
-@@ -431,7 +431,8 @@ static int mtk_nor_init(struct mtk_nor *mtk_nor,
+@@ -431,7 +431,8 @@ static int mtk_nor_init(struct mtk_nor *
  			struct device_node *flash_node)
  {
  	const struct spi_nor_hwcaps hwcaps = {
@@ -29,6 +27,3 @@ index 5442993b71ff..d9eed6844ba1 100644
  			SNOR_HWCAPS_READ_1_1_2 |
  			SNOR_HWCAPS_PP,
  	};
--- 
-2.21.0
-

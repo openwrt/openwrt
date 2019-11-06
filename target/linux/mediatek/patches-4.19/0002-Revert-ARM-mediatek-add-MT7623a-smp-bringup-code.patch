@@ -14,11 +14,9 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  arch/arm/mach-mediatek/platsmp.c  | 1 -
  2 files changed, 3 deletions(-)
 
-diff --git a/arch/arm/mach-mediatek/mediatek.c b/arch/arm/mach-mediatek/mediatek.c
-index 6910b4e0d913..c3cf215773b2 100644
 --- a/arch/arm/mach-mediatek/mediatek.c
 +++ b/arch/arm/mach-mediatek/mediatek.c
-@@ -30,7 +30,6 @@ static void __init mediatek_timer_init(void)
+@@ -30,7 +30,6 @@ static void __init mediatek_timer_init(v
  
  	if (of_machine_is_compatible("mediatek,mt6589") ||
  	    of_machine_is_compatible("mediatek,mt7623") ||
@@ -26,7 +24,7 @@ index 6910b4e0d913..c3cf215773b2 100644
  	    of_machine_is_compatible("mediatek,mt8135") ||
  	    of_machine_is_compatible("mediatek,mt8127")) {
  		/* turn on GPT6 which ungates arch timer clocks */
-@@ -50,7 +49,6 @@ static const char * const mediatek_board_dt_compat[] = {
+@@ -50,7 +49,6 @@ static const char * const mediatek_board
  	"mediatek,mt6589",
  	"mediatek,mt6592",
  	"mediatek,mt7623",
@@ -34,11 +32,9 @@ index 6910b4e0d913..c3cf215773b2 100644
  	"mediatek,mt8127",
  	"mediatek,mt8135",
  	NULL,
-diff --git a/arch/arm/mach-mediatek/platsmp.c b/arch/arm/mach-mediatek/platsmp.c
-index 6882ff07aaa6..51e85562098c 100644
 --- a/arch/arm/mach-mediatek/platsmp.c
 +++ b/arch/arm/mach-mediatek/platsmp.c
-@@ -60,7 +60,6 @@ static const struct of_device_id mtk_tz_smp_boot_infos[] __initconst = {
+@@ -60,7 +60,6 @@ static const struct of_device_id mtk_tz_
  static const struct of_device_id mtk_smp_boot_infos[] __initconst = {
  	{ .compatible   = "mediatek,mt6589", .data = &mtk_mt6589_boot },
  	{ .compatible   = "mediatek,mt7623", .data = &mtk_mt7623_boot },
@@ -46,6 +42,3 @@ index 6882ff07aaa6..51e85562098c 100644
  	{},
  };
  
--- 
-2.21.0
-

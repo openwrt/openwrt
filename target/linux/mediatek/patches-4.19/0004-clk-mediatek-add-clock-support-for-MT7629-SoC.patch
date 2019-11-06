@@ -22,8 +22,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  create mode 100644 drivers/clk/mediatek/clk-mt7629.c
  create mode 100644 include/dt-bindings/clock/mt7629-clk.h
 
-diff --git a/drivers/clk/mediatek/Kconfig b/drivers/clk/mediatek/Kconfig
-index 3dd1dab92223..53edade25a1d 100644
 --- a/drivers/clk/mediatek/Kconfig
 +++ b/drivers/clk/mediatek/Kconfig
 @@ -178,6 +178,29 @@ config COMMON_CLK_MT7622_AUDSYS
@@ -56,11 +54,9 @@ index 3dd1dab92223..53edade25a1d 100644
  config COMMON_CLK_MT8135
  	bool "Clock driver for MediaTek MT8135"
  	depends on (ARCH_MEDIATEK && ARM) || COMPILE_TEST
-diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
-index 844b55d2770d..ee4410ff43ab 100644
 --- a/drivers/clk/mediatek/Makefile
 +++ b/drivers/clk/mediatek/Makefile
-@@ -26,5 +26,8 @@ obj-$(CONFIG_COMMON_CLK_MT7622) += clk-mt7622.o
+@@ -26,5 +26,8 @@ obj-$(CONFIG_COMMON_CLK_MT7622) += clk-m
  obj-$(CONFIG_COMMON_CLK_MT7622_ETHSYS) += clk-mt7622-eth.o
  obj-$(CONFIG_COMMON_CLK_MT7622_HIFSYS) += clk-mt7622-hif.o
  obj-$(CONFIG_COMMON_CLK_MT7622_AUDSYS) += clk-mt7622-aud.o
@@ -69,9 +65,6 @@ index 844b55d2770d..ee4410ff43ab 100644
 +obj-$(CONFIG_COMMON_CLK_MT7629_HIFSYS) += clk-mt7629-hif.o
  obj-$(CONFIG_COMMON_CLK_MT8135) += clk-mt8135.o
  obj-$(CONFIG_COMMON_CLK_MT8173) += clk-mt8173.o
-diff --git a/drivers/clk/mediatek/clk-mt7629-eth.c b/drivers/clk/mediatek/clk-mt7629-eth.c
-new file mode 100644
-index 000000000000..88279d0ea1a7
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt7629-eth.c
 @@ -0,0 +1,159 @@
@@ -234,9 +227,6 @@ index 000000000000..88279d0ea1a7
 +};
 +
 +builtin_platform_driver(clk_mt7629_eth_drv);
-diff --git a/drivers/clk/mediatek/clk-mt7629-hif.c b/drivers/clk/mediatek/clk-mt7629-hif.c
-new file mode 100644
-index 000000000000..5c5b37207afb
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt7629-hif.c
 @@ -0,0 +1,156 @@
@@ -396,9 +386,6 @@ index 000000000000..5c5b37207afb
 +};
 +
 +builtin_platform_driver(clk_mt7629_hif_drv);
-diff --git a/drivers/clk/mediatek/clk-mt7629.c b/drivers/clk/mediatek/clk-mt7629.c
-new file mode 100644
-index 000000000000..200ba147bbc6
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt7629.c
 @@ -0,0 +1,723 @@
@@ -1125,9 +1112,6 @@ index 000000000000..200ba147bbc6
 +}
 +
 +arch_initcall(clk_mt7629_init);
-diff --git a/include/dt-bindings/clock/mt7629-clk.h b/include/dt-bindings/clock/mt7629-clk.h
-new file mode 100644
-index 000000000000..ad8e6d7f0154
 --- /dev/null
 +++ b/include/dt-bindings/clock/mt7629-clk.h
 @@ -0,0 +1,203 @@
@@ -1334,6 +1318,3 @@ index 000000000000..ad8e6d7f0154
 +#define CLK_SGMII_NR_CLK		4
 +
 +#endif /* _DT_BINDINGS_CLK_MT7629_H */
--- 
-2.21.0
-
