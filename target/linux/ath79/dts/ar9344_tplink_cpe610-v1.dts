@@ -29,15 +29,6 @@
 	};
 };
 
-&eth0 {
-	status = "okay";
-
-	mtd-mac-address = <&info 0x08>;
-
-	phy-mode = "mii";
-	phy-handle = <&swphy4>;
-};
-
 &eth1 {
 	status = "okay";
 

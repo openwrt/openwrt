@@ -72,11 +72,3 @@
 		switch-only-mode = <1>;
 	};
 };
-
-&eth0 {
-	status = "okay";
-
-	phy-handle = <&swphy4>;
-
-	mtd-mac-address = <&info 0x8>;
-};
