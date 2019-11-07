@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# Copyright (C) 2019 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+
+
+ath79_setup_device()
+{
+	local board="$1"
+
+	case "$board" in
+	devolo,magic-2-wifi)
+		ucidef_set_hostname devolo-$(grep SerialNumber /dev/mtd1 | grep -o ...$)
+		ucidef_set_wifi_key $(grep DlanSecurityID /dev/mtd1 | cut -d'=' -f 2 | tr -d -)
+		ucidef_set_wifi_country $(grep WiFiCountryCode /dev/mtd1 | cut -d'=' -f 2)
+		echo -e '#!/bin/sh\n[ -z ${ACTION##p*} ] && STATE=0 || STATE=1 ; ' \
+			'echo $STATE > /sys/class/gpio/gpio11/value  ; logger PLC pairing button $ACTION' \
+			 > /etc/rc.button/BTN_0 ; chmod +x /etc/rc.button/BTN_0
+		;;
+	esac
+}
+
+ath79_setup_wifi()
+{
+	local board="$1"
+
+	case "$board" in
+	devolo,magic-2-wifi)	#2.4GHz Wifi with default power
+		ucidef_set_wifi_default "g"
+		;;
+	example,5ghzdevice)	#5GHz Wifi with default power
+		ucidef_set_wifi_default "a"
+		;;
+	example,custompower)   #Custom Power
+		ucidef_set_wifi_default "" "10"
+		;;
+	example,5ghzwithpower)   #5GHz Wifi with custom power
+		ucidef_set_wifi_default "a" "12"
+		;;
+	esac
+}
+
+board_config_update
+board=$(board_name)
+ath79_setup_device $board
+ath79_setup_wifi $board
+board_config_flush
+
+exit 0
