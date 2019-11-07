@@ -222,6 +222,21 @@ define Device/compex_wpj419
 endef
 TARGET_DEVICES += compex_wpj419
 
+define Build/mkmylofw_32m
+  $(eval device_id=$(word 1,$(1)))
+  $(eval revision=$(word 2,$(1)))
+
+  size="$$(python -c \
+    "import os, math; \
+    size=math.ceil(os.stat('$@').st_size / 65536) * 65536; \
+    print(hex(size))")"; \
+  $(STAGING_DIR_HOST)/bin/mkmylofw \
+    -B WPE72 -i 0x11f6:$(device_id):0x11f6:$(device_id) -r $(revision) -s 0x2000000 \
+    -p0x180000:$$size:al:0x84000000:"OpenWRT":$@ \
+    $@.new
+  @mv $@.new $@
+endef
+
 define Device/compex_wpj428
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Compex
@@ -231,8 +246,9 @@ define Device/compex_wpj428
 	BLOCKSIZE := 64k
 	IMAGE_SIZE := 31232k
 	KERNEL_SIZE := 4096k
-	IMAGES = sysupgrade.bin
+	IMAGES = sysupgrade.bin cpximg-6A04.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	IMAGE/cpximg-6A04.bin := append-kernel | append-rootfs | pad-rootfs | mkmylofw_32m 0x8A2 3
 	DEVICE_PACKAGES := kmod-gpio-beeper
 endef
 TARGET_DEVICES += compex_wpj428
