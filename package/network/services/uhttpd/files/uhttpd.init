@@ -98,6 +98,10 @@ start_instance()
 	local cfg="$1"
 	local realm="$(uci_get system.@system[0].hostname)"
 	local listen http https interpreter indexes path handler httpdconf haveauth
+	local enabled
+
+	config_get_bool enabled "$cfg" 'enabled' 1
+	[ $enabled -gt 0 ] || return
 
 	procd_open_instance
 	procd_set_param respawn
