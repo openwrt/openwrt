@@ -85,19 +85,19 @@
 	keys {
 		compatible = "gpio-keys";
 
-		wps_button {
+		wps {
 			label = "WPS button";
 			linux,code = <KEY_WPS_BUTTON>;
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
-		wifi_button {
+		wifi {
 			label = "WiFi button";
 			linux,code = <KEY_RFKILL>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
-		reset_button {
+		reset {
 			label = "Reset button";
 			linux,code = <KEY_RESTART>;
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;

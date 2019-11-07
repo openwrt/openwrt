@@ -49,14 +49,14 @@
 	keys {
 		compatible = "gpio-keys";
 
-		button0 {
+		reset {
 			label = "reset";
 			linux,code = <KEY_RESTART>;
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 			debounce-interval = <60>;
 		};
 
-		button1 {
+		sw1 {
 			label = "sw1";
 			linux,input-type = <EV_SW>;
 			linux,code = <BTN_0>;
@@ -64,7 +64,7 @@
 			debounce-interval = <60>;
 		};
 
-		button2 {
+		sw2 {
 			label = "sw2";
 			linux,input-type = <EV_SW>;
 			linux,code = <BTN_1>;
