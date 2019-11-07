@@ -395,7 +395,7 @@ define Device/glinet_gl-ar300m-nor
   $(Device/glinet_gl-ar300m-common-nor)
   DEVICE_TITLE := GL.iNet GL-AR300M
 endef
-TARGET_DEVICES += glinet_gl-ar300m-nor
+#TARGET_DEVICES += glinet_gl-ar300m-nor
 
 define Device/glinet_gl-ar750s
   ATH_SOC := qca9563
@@ -404,7 +404,7 @@ define Device/glinet_gl-ar750s
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += gl-ar750s
 endef
-TARGET_DEVICES += glinet_gl-ar750s
+#TARGET_DEVICES += glinet_gl-ar750s
 
 define Device/glinet_gl-x750
   ATH_SOC := qca9531
