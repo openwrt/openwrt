@@ -549,6 +549,18 @@ define Device/tplink_wbs210-v2
 endef
 TARGET_DEVICES += tplink_wbs210-v2
 
+define Device/tplink_wbs510-v1
+  $(Device/tplink-loader-okli)
+  ATH_SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := WBS510
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := WBS510
+  SUPPORTED_DEVICES += wbs510
+endef
+TARGET_DEVICES += tplink_wbs510-v1
+
 define Device/tplink_wbs510-v2
   $(Device/tplink-loader-okli)
   ATH_SOC := ar9344

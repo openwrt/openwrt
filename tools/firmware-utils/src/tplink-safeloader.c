@@ -545,7 +545,8 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"WBS510(TP-LINK|UN|N300-5):1.20\r\n"
 			"WBS510(TP-LINK|US|N300-5):1.20\r\n"
-			"WBS510(TP-LINK|EU|N300-5):1.20\r\n",
+			"WBS510(TP-LINK|EU|N300-5):1.20\r\n"
+			"WBS510(TP-LINK|CA|N300-5):1.20\r\n",
 		.support_trail = '\xff',
 		.soft_ver = NULL,
 
