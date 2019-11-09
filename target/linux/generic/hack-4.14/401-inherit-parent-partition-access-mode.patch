@@ -1,0 +1,60 @@
+--- a/drivers/mtd/mtdchar.c
++++ b/drivers/mtd/mtdchar.c
+@@ -595,7 +595,10 @@
+ 		/* Sanitize user input */
+ 		p.devname[BLKPG_DEVNAMELTH - 1] = '\0';
+ 
+-		return mtd_add_partition(mtd, p.devname, p.start, p.length);
++		/* No mtd flags masking required */
++		uint32_t mask_flags = 0;
++
++		return mtd_add_partition(mtd, p.devname, p.start, p.length, mask_flags);
+ 
+ 	case BLKPG_DEL_PARTITION:
+ 
+--- a/drivers/mtd/mtdpart.c
++++ b/drivers/mtd/mtdpart.c
+@@ -726,7 +726,7 @@
+ }
+ 
+ int mtd_add_partition(struct mtd_info *parent, const char *name,
+-		      long long offset, long long length)
++		      long long offset, long long length, uint32_t mask_flags)
+ {
+ 	struct mtd_partition part;
+ 	struct mtd_part *new;
+@@ -747,6 +747,7 @@
+ 	part.name = name;
+ 	part.size = length;
+ 	part.offset = offset;
++	part.mask_flags = mask_flags;
+ 
+ 	new = allocate_partition(parent, &part, -1, offset);
+ 	if (IS_ERR(new))
+@@ -855,10 +856,14 @@
+ 		/* adjust partition offsets */
+ 		parts[i].offset += slave->offset;
+ 
++		/* adjust partition mask */
++		parts[i].mask_flags = !(slave->mtd.flags & MTD_WRITEABLE) ? MTD_WRITEABLE : 0;
++
+ 		mtd_add_partition(slave->parent,
+ 				  parts[i].name,
+ 				  parts[i].offset,
+-				  parts[i].size);
++				  parts[i].size,
++				  parts[i].mask_flags);
+ 	}
+ 
+ 	kfree(parts);
+--- a/include/linux/mtd/partitions.h
++++ b/include/linux/mtd/partitions.h
+@@ -114,7 +114,7 @@
+ 
+ int mtd_is_partition(const struct mtd_info *mtd);
+ int mtd_add_partition(struct mtd_info *master, const char *name,
+-		      long long offset, long long length);
++		      long long offset, long long length, uint32_t mask_flags);
+ int mtd_del_partition(struct mtd_info *master, int partno);
+ struct mtd_info *mtdpart_get_master(const struct mtd_info *mtd);
+ uint64_t mtdpart_get_offset(const struct mtd_info *mtd);
