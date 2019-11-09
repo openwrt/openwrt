@@ -8,15 +8,24 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fwtool
-PKG_RELEASE:=2
+PKG_RELEASE:=1
+
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL=$(PROJECT_GIT)/project/fwtool.git
+PKG_SOURCE_DATE:=2019-11-09
+PKG_SOURCE_VERSION:=9d9d4c2847862adec2f474d4126213c17f98e024
+PKG_MIRROR_HASH:=4a72a48cbc7cda4c1860ec8328c049b4b84f7f00273d82ee98175937b63af1f8
+CMAKE_INSTALL:=1
 
 PKG_FLAGS:=nonshared
 
+PKG_LICENSE:=GPL-2.0
 PKG_MAINTAINER := Felix Fietkau <nbd@nbd.name>
 PKG_BUILD_DEPENDS := fwtool/host
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/cmake.mk
 
 HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
 
@@ -26,21 +35,13 @@ define Package/fwtool
   TITLE:=Utility for appending and extracting firmware metadata and signatures
 endef
 
-define Host/Compile
-	$(HOSTCC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $(HOST_BUILD_DIR)/fwtool ./src/fwtool.c
-endef
-
 define Host/Install
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/fwtool $(1)/bin/
 endef
 
-define Build/Compile
-	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) -o $(PKG_BUILD_DIR)/fwtool ./src/fwtool.c
-endef
-
 define Package/fwtool/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fwtool $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/fwtool $(1)/usr/bin/
 endef
 
 $(eval $(call HostBuild))
