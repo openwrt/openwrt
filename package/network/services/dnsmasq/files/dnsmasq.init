@@ -22,45 +22,10 @@ DHCPSCRIPT="/usr/lib/dnsmasq/dhcp-script.sh"
 
 DNSMASQ_DHCP_VER=4
 
-dnsmasq_ignore_opt() {
-	local opt="$1"
-
-	if [ -z "$dnsmasq_features" ]; then
-		dnsmasq_features="$(dnsmasq --version | grep -m1 'Compile time options:' | cut -d: -f2) "
-		[ "${dnsmasq_features#* DHCP }" = "$dnsmasq_features" ] || dnsmasq_has_dhcp=1
-		[ "${dnsmasq_features#* DHCPv6 }" = "$dnsmasq_features" ] || dnsmasq_has_dhcp6=1
-		[ "${dnsmasq_features#* DNSSEC }" = "$dnsmasq_features" ] || dnsmasq_has_dnssec=1
-		[ "${dnsmasq_features#* TFTP }" = "$dnsmasq_features" ] || dnsmasq_has_tftp=1
-		[ "${dnsmasq_features#* ipset }" = "$dnsmasq_features" ] || dnsmasq_has_ipset=1
-	fi
-
-	case "$opt" in
-		dhcp-duid|\
-		ra-param)
-			[ -z "$dnsmasq_has_dhcp6" ] ;;
-		dhcp-*|\
-		bootp-*|\
-		pxe-*)
-			[ -z "$dnsmasq_has_dhcp" ] ;;
-		dnssec-*|\
-		trust-anchor)
-			[ -z "$dnsmasq_has_dnssec" ] ;;
-		tftp-*)
-			[ -z "$dnsmasq_has_tftp" ] ;;
-		ipset)
-			[ -z "$dnsmasq_has_ipset" ] ;;
-		*)
-			return 1
-	esac
-}
-
 xappend() {
-	local value="${1#--}"
-	local opt="${value%%=*}"
+	local value="$1"
 
-	if ! dnsmasq_ignore_opt "$opt"; then
-		echo "$value" >>$CONFIGFILE_TMP
-	fi
+	echo "${value#--}" >> $CONFIGFILE_TMP
 }
 
 hex_to_hostid() {
