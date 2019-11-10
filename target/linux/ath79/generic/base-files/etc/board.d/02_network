@@ -292,11 +292,11 @@ ath79_setup_macs()
 	ubnt,nanostation-m|\
 	ubnt,rocket-m|\
 	ubnt,unifi)
-		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
+		label_mac=$(mtd_get_mac_binary art 0x1002)
 		;;
 	avm,fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
-		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
+		label_mac=$(fritz_tffs -n macwlan -i $(find_mtd_part "tffs (1)"))
 		;;
 	avm,fritz4020)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
