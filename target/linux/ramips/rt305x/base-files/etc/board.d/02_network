@@ -242,10 +242,13 @@ ramips_setup_macs()
 		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
-	dlink,dir-615-d|\
+	dlink,dir-615-d)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
+		label_mac=$(mtd_get_mac_binary devdata 0x4004)
+		;;
 	dlink,dir-615-h1)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
-		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	poray,m3|\
 	poray,m4-4m|\

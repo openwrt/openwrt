@@ -188,7 +188,7 @@ ramips_setup_macs()
 	asus,rt-ac65p|\
 	asus,rt-ac85p)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env et1macaddr)
-		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	buffalo,wsr-1166dhp)
 		local index="$(find_mtd_index "board_data")"
@@ -198,7 +198,7 @@ ramips_setup_macs()
 	dlink,dir-860l-b1)
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)
 		wan_mac=$(mtd_get_mac_ascii factory wanmac)
-		label_mac=$(cat /sys/class/ieee80211/phy1/macaddress)
+		label_mac=$(mtd_get_mac_binary radio 0x4)
 		;;
 	edimax,rg21s)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
@@ -241,12 +241,12 @@ ramips_setup_macs()
 		;;
 	zbtlink,zbt-we1326)
 		wan_mac=$(mtd_get_mac_binary factory 0xe006)
-		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	zbtlink,zbt-wg3526-16m|\
 	zbtlink,zbt-wg3526-32m)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
-		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	esac
 

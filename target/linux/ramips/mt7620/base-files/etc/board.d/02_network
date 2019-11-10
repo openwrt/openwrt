@@ -288,7 +288,7 @@ ramips_setup_macs()
 	glinet,gl-mt300n|\
 	glinet,gl-mt750)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
-		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	hiwifi,hc5661|\
 	hiwifi,hc5761|\
@@ -312,11 +312,11 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
 		;;
 	zbtlink,zbt-we1026-5g-16m)
-		label_mac=$(cat /sys/class/ieee80211/phy1/macaddress)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	zbtlink,zbt-we1026-h-32m)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
-		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	zyxel,keenetic-omni|\
 	zyxel,keenetic-omni-ii|\

@@ -134,7 +134,7 @@ ramips_setup_macs()
 		;;
 	cudy,wr1000)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
-		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
+		label_mac=$(mtd_get_mac_binary factory 0x8)
 		;;
 	duzun,dm06|\
 	mediatek,mt7628an-eval-board|\
@@ -192,7 +192,7 @@ ramips_setup_macs()
 		;;
 	vocore,vocore2|\
 	vocore,vocore2-lite)
-		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
+		label_mac=$(mtd_get_mac_binary factory 0x8)
 		;;
 	esac
 
