@@ -15,7 +15,8 @@ migrate_wifi_path() {
 
 			case "$board" in
 				tplink,archer-c7-v1|\
-				tplink,archer-c7-v2)
+				tplink,archer-c7-v2|\
+				zyxel,nbg6716)
 					path="pci0000:00/0000:00:00.0"
 					WIFI_PATH_CHANGED=1
 				;;

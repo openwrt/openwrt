@@ -15,10 +15,10 @@
 	};
 
 	aliases {
-		led-boot = &power;
-		led-failsafe = &power;
-		led-running = &power;
-		led-upgrade = &power;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 	};
 
 	keys {
@@ -44,7 +44,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		power: power {
+		led_power: power {
 			label = "gl-ar750s:green:power";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
@@ -63,6 +63,13 @@
 		};
 	};
 
+	i2c: i2c {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&gpio  5 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 21 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+	};
+
 	usb_vbus: regulator-usb-vbus {
 		compatible = "regulator-fixed";
 
@@ -79,6 +86,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <0>;
 
 	flash@0 {
@@ -144,6 +152,7 @@
 
 &mdio0 {
 	status = "okay";
+
 	phy-mask = <0>;
 
 	phy0: ethernet-phy@0 {
@@ -165,6 +174,6 @@
 
 &wmac {
 	status = "okay";
+
 	mtd-cal-data = <&art 0x1000>;
-	mtd-mac-address = <&art 0x1002>;
 };

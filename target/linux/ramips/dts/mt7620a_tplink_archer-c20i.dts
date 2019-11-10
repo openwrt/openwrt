@@ -15,24 +15,29 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		lan {
 			label = "archer-c20i:blue:lan";
 			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 		};
+
 		usb {
 			label = "archer-c20i:blue:usb";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
 		};
+
 		wps {
 			label = "archer-c20i:blue:wps";
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
+
 		wan {
 			label = "archer-c20i:blue:wan";
 			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		};
+
 		wlan {
 			label = "archer-c20i:blue:wlan";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
@@ -47,6 +52,7 @@
 			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
 		};
+
 		reset_wps {
 			label = "reset_wps";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;

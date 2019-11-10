@@ -11,10 +11,10 @@
 	model = "Ubiquiti UniFi AP";
 
 	aliases {
-		led-boot = &dome_green;
-		led-failsafe = &dome_green;
-		led-running = &dome_green;
-		led-upgrade = &dome_green;
+		led-boot = &led_dome_green;
+		led-failsafe = &led_dome_green;
+		led-running = &led_dome_green;
+		led-upgrade = &led_dome_green;
 		label-mac-device = &wifi;
 	};
 
@@ -36,12 +36,13 @@
 
 	leds {
 		compatible = "gpio-leds";
-		dome_green: dome-green {
+
+		led_dome_green: dome_green {
 			label = "ubnt:green:dome";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 
-		dome-orange {
+		dome_orange {
 			label = "ubnt:orange:dome";
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
@@ -58,6 +59,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {

@@ -10,10 +10,10 @@
 	model = "Ubiquiti Networks XW board";
 
 	aliases {
-		led-boot = &system;
-		led-running = &system;
-		led-upgrade = &system;
-		led-failsafe = &system;
+		led-boot = &led_link4;
+		led-running = &led_link4;
+		led-upgrade = &led_link4;
+		led-failsafe = &led_link4;
 		label-mac-device = &wmac;
 	};
 
@@ -35,7 +35,7 @@
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		system: link4 {
+		led_link4: link4 {
 			label = "ubnt:green:link4";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
@@ -116,7 +116,6 @@
 	status = "okay";
 
 	mtd-cal-data = <&eeprom 0x1000>;
-	mtd-mac-address = <&eeprom 0x1002>;
 };
 
 &eth0 {

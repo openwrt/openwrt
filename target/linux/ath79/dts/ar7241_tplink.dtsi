@@ -32,7 +32,7 @@
 		};
 	};
 
-	gpio_leds: gpio-leds {
+	leds: leds {
 		compatible = "gpio-leds";
 
 		led_system: system {
@@ -49,6 +49,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {

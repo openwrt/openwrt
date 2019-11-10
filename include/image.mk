@@ -287,7 +287,7 @@ define Image/mkfs/ubifs
 endef
 
 define Image/mkfs/ext4
-	$(STAGING_DIR_HOST)/bin/make_ext4fs \
+	$(STAGING_DIR_HOST)/bin/make_ext4fs -L rootfs \
 		-l $(ROOTFS_PARTSIZE) -b $(CONFIG_TARGET_EXT4_BLOCKSIZE) \
 		$(if $(CONFIG_TARGET_EXT4_RESERVED_PCT),-m $(CONFIG_TARGET_EXT4_RESERVED_PCT)) \
 		$(if $(CONFIG_TARGET_EXT4_JOURNAL),,-J) \
@@ -597,6 +597,7 @@ define Device/Build/image
 		SUPPORTED_DEVICES="$(SUPPORTED_DEVICES)" \
 		$(TOPDIR)/scripts/json_add_image_info.py \
 	)
+
 endef
 
 define Device/Build/artifact

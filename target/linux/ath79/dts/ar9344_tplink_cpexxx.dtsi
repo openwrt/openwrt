@@ -31,9 +31,9 @@
 };
 
 &spi {
-	num-cs = <1>;
-
 	status = "okay";
+
+	num-cs = <1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -102,4 +102,12 @@
 
 	mtd-cal-data = <&art 0x1000>;
 	mtd-mac-address = <&info 0x08>;
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&swphy4>;
+
+	mtd-mac-address = <&info 0x8>;
 };

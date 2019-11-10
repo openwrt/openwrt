@@ -125,6 +125,22 @@ define Device/asus_rt-ac57u
 endef
 TARGET_DEVICES += asus_rt-ac57u
 
+define Device/asus_rt-ac65p
+  MTK_SOC := mt7621
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-AC65P
+  IMAGE_SIZE := 51200k
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e wpad-basic uboot-envtools
+endef
+TARGET_DEVICES += asus_rt-ac65p
+
 define Device/asus_rt-ac85p
   MTK_SOC := mt7621
   DEVICE_VENDOR := ASUS
@@ -443,66 +459,71 @@ define Device/netgear_ex6150
 endef
 TARGET_DEVICES += netgear_ex6150
 
-define Device/netgear_r6220
+define Device/netgear_sercomm_nand
   MTK_SOC := mt7621
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
-  IMAGE_SIZE := 28672k
   UBINIZE_OPTS := -E 5
-  SERCOMM_HWID := AYA
-  SERCOMM_HWVER := A001
-  SERCOMM_SWVER := 0x0086
   IMAGES += factory.img kernel.bin rootfs.bin
   IMAGE/factory.img := pad-extra 2048k | append-kernel | pad-to 6144k | append-ubi | \
-	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip R6220.bin | sercom-seal
+	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | \
+	zip $$$$(SERCOMM_HWNAME).bin | sercom-seal
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   DEVICE_VENDOR := NETGEAR
+  DEVICE_PACKAGES := kmod-mt7603 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+endef
+DEVICE_VARS += SERCOMM_HWNAME SERCOMM_HWID SERCOMM_HWVER SERCOMM_SWVER
+
+define Device/netgear_r6220
+  $(Device/netgear_sercomm_nand)
   DEVICE_MODEL := R6220
-  DEVICE_PACKAGES := \
-	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SERCOMM_HWNAME := R6220
+  SERCOMM_HWID := AYA
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0086
+  IMAGE_SIZE := 28672k
+  DEVICE_PACKAGES += kmod-mt76x2
   SUPPORTED_DEVICES += r6220
 endef
 TARGET_DEVICES += netgear_r6220
 
-define Device/netgear_r6260_r6350_r6850
-  MTK_SOC := mt7621
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  KERNEL_SIZE := 4096k
-  IMAGE_SIZE := 40960k
-  UBINIZE_OPTS := -E 5
+
+define Device/netgear_r6260
+  $(Device/netgear_sercomm_nand)
+  DEVICE_MODEL := R6260
+  SERCOMM_HWNAME := R6260
   SERCOMM_HWID := CHJ
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x0052
-  IMAGES += factory.img kernel.bin rootfs.bin
-  IMAGE/factory.img := pad-extra 2048k | append-kernel | pad-to 6144k | append-ubi | \
-	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip $$$$(DEVICE_MODEL).bin | sercom-seal
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGE/kernel.bin := append-kernel
-  IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
-  DEVICE_VENDOR := NETGEAR
-  DEVICE_PACKAGES := \
-	kmod-mt7603 kmod-mt7615e kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
-endef
-
-define Device/netgear_r6260
-  $(Device/netgear_r6260_r6350_r6850)
-  DEVICE_MODEL := R6260
+  IMAGE_SIZE := 40960k
+  DEVICE_PACKAGES += kmod-mt7615e
 endef
 TARGET_DEVICES += netgear_r6260
 
 define Device/netgear_r6350
-  $(Device/netgear_r6260_r6350_r6850)
+  $(Device/netgear_sercomm_nand)
   DEVICE_MODEL := R6350
+  SERCOMM_HWNAME := R6350
+  SERCOMM_HWID := CHJ
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0052
+  IMAGE_SIZE := 40960k
+  DEVICE_PACKAGES += kmod-mt7615e
 endef
 TARGET_DEVICES += netgear_r6350
 
 define Device/netgear_r6850
-  $(Device/netgear_r6260_r6350_r6850)
+  $(Device/netgear_sercomm_nand)
   DEVICE_MODEL := R6850
+  SERCOMM_HWNAME := R6850
+  SERCOMM_HWID := CHJ
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0052
+  IMAGE_SIZE := 40960k
+  DEVICE_PACKAGES += kmod-mt7615e
 endef
 TARGET_DEVICES += netgear_r6850
 
@@ -682,26 +703,27 @@ define Device/ubiquiti_edgerouterx-sfp
 endef
 TARGET_DEVICES += ubiquiti_edgerouterx-sfp
 
-define Device/unielec_u7621-06-256m-16m
+define Device/unielec_u7621-06-16m
   MTK_SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
-  DEVICE_VARIANT := 256M RAM/16M flash
+  DEVICE_VARIANT := 16M
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
-  SUPPORTED_DEVICES += u7621-06-256M-16M
+  SUPPORTED_DEVICES += u7621-06-256M-16M unielec,u7621-06-256m-16m
 endef
-TARGET_DEVICES += unielec_u7621-06-256m-16m
+TARGET_DEVICES += unielec_u7621-06-16m
 
-define Device/unielec_u7621-06-512m-64m
+define Device/unielec_u7621-06-64m
   MTK_SOC := mt7621
   IMAGE_SIZE := 65216k
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
-  DEVICE_VARIANT := 512M RAM/64M flash
+  DEVICE_VARIANT := 64M
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
+  SUPPORTED_DEVICES += unielec,u7621-06-512m-64m
 endef
-TARGET_DEVICES += unielec_u7621-06-512m-64m
+TARGET_DEVICES += unielec_u7621-06-64m
 
 define Device/wevo_11acnas
   MTK_SOC := mt7621
@@ -745,6 +767,19 @@ define Device/xiaomi_mir3g
 	uboot-envtools
 endef
 TARGET_DEVICES += xiaomi_mir3g
+
+define Device/xiaomi_mir3g-v2
+  MTK_SOC := mt7621
+  IMAGE_SIZE := 14848k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 3G
+  DEVICE_VARIANT := v2
+  DEVICE_ALT0_VENDOR := Xiaomi
+  DEVICE_ALT0_MODEL := Mi Router 4A
+  DEVICE_ALT0_VARIANT := Gigabit Edition
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 wpad-basic
+endef
+TARGET_DEVICES += xiaomi_mir3g-v2
 
 define Device/xiaomi_mir3p
   MTK_SOC := mt7621

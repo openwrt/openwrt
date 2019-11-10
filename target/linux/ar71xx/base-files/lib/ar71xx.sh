@@ -111,6 +111,9 @@ ubnt_unifi_ac_board_detect() {
 	"e517")
 		model="Ubiquiti UniFi-AC-LITE"
 		;;
+	"e527")
+		model="Ubiquiti UniFi-AC-LR"
+		;;
 	"e537")
 		model="Ubiquiti UniFi-AC-PRO"
 		;;
@@ -760,14 +763,11 @@ ar71xx_board_detect() {
 		;;
 	*"CPE510/520")
 		name="cpe510"
+		tplink_pharos_board_detect "$(tplink_pharos_get_model_string | tr -d '\r')"
+		;;
+	*"CPE510 v2")
+		name="cpe510-v2"
 		tplink_pharos_board_detect "$(tplink_pharos_v2_get_model_string)"
-		case $AR71XX_MODEL in
-		'TP-Link CPE510 v2.0')
-			;;
-		*)
-			tplink_pharos_board_detect "$(tplink_pharos_get_model_string | tr -d '\r')"
-			;;
-		esac
 		;;
 	*"CPE830")
 		name="cpe830"

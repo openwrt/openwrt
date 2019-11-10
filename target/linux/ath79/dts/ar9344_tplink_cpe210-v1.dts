@@ -7,3 +7,7 @@
 	compatible = "tplink,cpe210-v1", "qca,ar9344";
 	model = "TP-Link CPE210 v1";
 };
+
+&led_link4 {
+	gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+};
