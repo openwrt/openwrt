@@ -17,11 +17,6 @@
 		led-upgrade = &led_power;
 	};
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x10000000>;
-	};
-
 	chosen {
 		bootargs = "console=ttyS0,57600";
 	};
@@ -34,7 +29,6 @@
 			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		};
 
-		
 		wlan {
 			label = "r6700v2:white:wlan";
 			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
@@ -156,7 +150,7 @@
 };
 
 &ethernet {
-	mtd-mac-address = <&factory 0x00000004>;
+	mtd-mac-address = <&factory 0x4>;
 };
 
 &pinctrl {
