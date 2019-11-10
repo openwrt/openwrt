@@ -416,7 +416,6 @@ ramips_setup_interfaces()
 	netgear,r6220|\
 	netgear,r6260|\
 	netgear,r6350|\
-	netgear,r6700v2|\
 	netgear,r6850|\
 	netgear,wndr3700-v5)
 		ucidef_add_switch "switch0" \
@@ -639,7 +638,6 @@ ramips_setup_macs()
 	edimax,br-6478ac-v2|\
 	netgear,r6260|\
 	netgear,r6350|\
-	netgear,r6700v2|\
 	netgear,r6850)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
 		;;

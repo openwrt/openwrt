@@ -506,30 +506,6 @@ define Device/netgear_r6850
 endef
 TARGET_DEVICES += netgear_r6850
 
-define Device/netgear_r6700v2
-  MTK_SOC := mt7621
-  DTS := R6700v2
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  KERNEL_SIZE := 4096k
-  IMAGE_SIZE := 40960k
-  UBINIZE_OPTS := -E 5
-  SERCOMM_HWID := BZV
-  SERCOMM_HWVER := A001
-  SERCOMM_SWVER := 0x1032
-  IMAGES += factory.img kernel.bin rootfs.bin
-  IMAGE/factory.img := pad-extra 2048k | append-kernel | pad-to 6144k | append-ubi | \
-	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip $$$$(DEVICE_MODEL).bin | sercom-seal
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGE/kernel.bin := append-kernel
-  IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
-  DEVICE_VENDOR := NETGEAR
-  DEVICE_MODEL :=  R6700
-  DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
-endef
-TARGET_DEVICES += netgear_r6700v2
-
 define Device/netgear_wndr3700-v5
   MTK_SOC := mt7621
   BLOCKSIZE := 64k
