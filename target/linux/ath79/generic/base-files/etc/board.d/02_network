@@ -156,11 +156,11 @@ ath79_setup_interfaces()
 	wd,mynet-n750)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
-	;;
+		;;
 	librerouter,librerouter-v1)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "5:wan" "6@eth1" "4:lan"
-	;;
+		;;
 	nec,wg1200cr|\
 	ubnt,nanostation-ac|\
 	ubnt,unifiac-mesh-pro|\
