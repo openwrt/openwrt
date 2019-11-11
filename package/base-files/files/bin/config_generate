@@ -85,12 +85,27 @@ generate_network() {
 		set network.$1.proto='none'
 	EOF
 
-	[ -n "$macaddr" ] && uci -q batch <<-EOF
-		delete network.$1_dev
-		set network.$1_dev='device'
-		set network.$1_dev.name='$ifname'
-		set network.$1_dev.macaddr='$macaddr'
-	EOF
+	[ -n "$macaddr" ] && case "$ifname" in
+	*\ *)
+		uci -q delete network.$1_dev
+		for name in $ifname; do
+			uci -q batch <<-EOF
+				delete network.${name/./_}_dev
+				set network.${name/./_}_dev='device'
+				set network.${name/./_}_dev.name='$name'
+				set network.${name/./_}_dev.macaddr='$macaddr'
+			EOF
+		done
+		;;
+	*)
+		uci -q batch <<-EOF
+			delete network.$1_dev
+			set network.$1_dev='device'
+			set network.$1_dev.name='$ifname'
+			set network.$1_dev.macaddr='$macaddr'
+		EOF
+		;;
+	esac
 
 	case "$protocol" in
 		static)
