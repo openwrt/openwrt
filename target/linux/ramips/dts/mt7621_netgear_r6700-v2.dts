@@ -1,0 +1,74 @@
+// SPDX-License-Identifier: GPL-2.0
+/dts-v1/;
+
+#include "mt7621_netgear_sercomm_chj.dtsi"
+
+/ {
+	compatible = "netgear,r6700-v2", "mediatek,mt7621-soc";
+	model = "Netgear R6700v2";
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "r6700v2:green:power";
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		};
+
+		
+		wlan {
+			label = "r6700v2:white:wlan";
+			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		wps {
+			label = "r6700v2:white:wps";
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		wps {
+			label = "wps";
+			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		wifi {
+			label = "wifi";
+			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_RFKILL>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x0>;
+		ieee80211-freq-limit = <2400000 2500000>;
+		
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x8000>;
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
+
+
