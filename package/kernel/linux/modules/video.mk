@@ -151,7 +151,7 @@ define KernelPackage/fb-sys-fops
   DEPENDS:=+kmod-fb
   KCONFIG:=CONFIG_FB_SYS_FOPS
   FILES:=$(LINUX_DIR)/drivers/video/fbdev/core/fb_sys_fops.ko
-  AUTOLOAD:=$(call AutoLoad,07,fbsysfops)
+  AUTOLOAD:=$(call AutoLoad,07,fb_sys_fops)
 endef
 
 define KernelPackage/fb-sys-fops/description
