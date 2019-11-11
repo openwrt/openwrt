@@ -100,6 +100,12 @@ define Build/mkdlinkfw-factory
 	mv $@.new $@
 endef
 
+define Build/netis-tail
+	echo -n $(1) >> $@
+	echo -n $(UIMAGE_NAME)-yun | $(STAGING_DIR_HOST)/bin/mkhash md5 | \
+		sed 's/../\\\\x&/g' | xargs echo -ne >> $@
+endef
+
 define Build/poray-header
 	$(STAGING_DIR_HOST)/bin/mkporayfw $(1) -f $@ -o $@.new
 	mv $@.new $@
