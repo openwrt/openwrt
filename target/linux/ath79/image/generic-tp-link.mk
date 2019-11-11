@@ -303,7 +303,7 @@ define Device/tplink_tl-wr1043nd-v3
   DEVICE_TITLE := TP-Link TL-WR1043N/ND v3
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x10430003
-  SUPPORTED_DEVICES += tl-wr1043nd-v3
+  SUPPORTED_DEVICES += tl-wr1043nd-v2
 endef
 TARGET_DEVICES += tplink_tl-wr1043nd-v3
 
