@@ -6,12 +6,6 @@
 board=$(board_name)
 
 case "$board" in
-fon,fonera-20n)
-	migrate_leds "^fonera20n:=fonera-20n:"
-	;;
-intenso,memory2move)
-	migrate_leds "^m2m:=memory2move:"
-	;;
 lenovo,newifi-y1)
 	migrate_leds "^y1:=newifi-y1:"
 	;;
@@ -21,29 +15,17 @@ lenovo,newifi-y1s)
 netgear,wn3000rp-v3)
 	migrate_leds "^wn3000rpv3:=wn3000rp-v3:"
 	;;
-netgear,wndr3700-v5)
-	migrate_leds "^wndr3700v5:=wndr3700-v5:"
-	;;
 tplink,archer-c2-v1)
 	migrate_leds "^c2-v1:=archer-c2-v1:"
 	;;
 tplink,archer-c20-v1)
 	migrate_leds "^c20-v1:=archer-c20-v1:"
 	;;
-tplink,archer-c20-v4)
-	migrate_leds "^c20-v4:=archer-c20-v4:"
-	;;
 tplink,archer-c20i)
 	migrate_leds "^c20i:=archer-c20i:"
 	;;
 tplink,archer-c50-v1)
 	migrate_leds "^c50:=archer-c50-v1:"
-	;;
-tplink,archer-c50-v3)
-	migrate_leds "^c50-v3:=archer-c50-v3:"
-	;;
-tplink,archer-c50-v4)
-	migrate_leds "^c50-v4:=archer-c50-v4:"
 	;;
 tplink,archer-mr200)
 	migrate_leds "^mr200:=archer-mr200:"

@@ -4,9 +4,6 @@ START=99
 
 boot() {
 	case $(board_name) in
-	samknows,whitebox-v8)
-		fw_setenv bootcount 0
-		;;
 	xiaomi,miwifi-nano)
 		fw_setenv flag_boot_success 1
 		;;
