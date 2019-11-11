@@ -81,12 +81,6 @@ define Build/iodata-mstc-header
 	)
 endef
 
-define Build/netis-tail
-	echo -n $(1) >> $@
-	echo -n $(UIMAGE_NAME)-yun | $(STAGING_DIR_HOST)/bin/mkhash md5 | \
-		sed 's/../\\\\x&/g' | xargs echo -ne >> $@
-endef
-
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:6' > $(1).compat; \

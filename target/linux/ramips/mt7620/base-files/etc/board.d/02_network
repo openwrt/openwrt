@@ -170,6 +170,7 @@ ramips_setup_interfaces()
 			"1:lan:4" "2:lan:3" "4:lan:2" "5:lan:1" "0:wan" "6@eth0"
 		;;
 	linksys,e1700|\
+	netis,wf2770|\
 	ralink,mt7620a-mt7530-evb)
 		ucidef_add_switch "switch0"
 		ucidef_add_switch_attr "switch0" "enable" "false"
@@ -337,6 +338,10 @@ ramips_setup_macs()
 		;;
 	linksys,e1700)
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
+		;;
+	netis,wf2770)
+		wan_mac=$(mtd_get_mac_binary factory 0x2e)
+		label_mac=$wan_mac
 		;;
 	tplink,archer-c2-v1|\
 	tplink,archer-c20-v1|\

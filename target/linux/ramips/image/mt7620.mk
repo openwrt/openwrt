@@ -700,6 +700,17 @@ define Device/netgear_wn3000rp-v3
 endef
 TARGET_DEVICES += netgear_wn3000rp-v3
 
+define Device/netis_wf2770
+  SOC := mt7620a
+  IMAGE_SIZE := 16064k
+  UIMAGE_NAME := WF2770_0.0.00
+  DEVICE_VENDOR := NETIS
+  DEVICE_MODEL := WF2770
+  DEVICE_PACKAGES := kmod-mt76x0e
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | netis-tail WF2770 | uImage lzma
+endef
+TARGET_DEVICES += netis_wf2770
+
 define Device/nexx_wt3020-4m
   SOC := mt7620n
   BLOCKSIZE := 4k
