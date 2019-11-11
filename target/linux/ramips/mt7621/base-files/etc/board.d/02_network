@@ -45,7 +45,8 @@ ramips_setup_interfaces()
 	netgear,wndr3700-v5|\
 	netis,wf-2881|\
 	wevo,11acnas|\
-	wevo,w2914ns-v2)
+	wevo,w2914ns-v2|\
+	zio,freezio)
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
@@ -241,7 +242,8 @@ ramips_setup_macs()
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x22)" 1)
 		;;
 	wevo,11acnas|\
-	wevo,w2914ns-v2)
+	wevo,w2914ns-v2|\
+	zio,freezio)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		label_mac=$wan_mac
 		;;
