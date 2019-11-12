@@ -723,6 +723,26 @@ define Device/yuncore_a770
 endef
 TARGET_DEVICES += yuncore_a770
 
+define Device/yuncore_a782
+  ATH_SOC := qca9563
+  DEVICE_TITLE := YunCore A782
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  IMAGE_SIZE := 16000k
+  IMAGES += tftp.bin
+  IMAGE/tftp.bin := $$(IMAGE/sysupgrade.bin) | yuncore-tftp-header-16m
+endef
+TARGET_DEVICES += yuncore_a782
+
+define Device/yuncore_xd4200
+  ATH_SOC := qca9563
+  DEVICE_TITLE := YunCore XD4200
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  IMAGE_SIZE := 16000k
+  IMAGES += tftp.bin
+  IMAGE/tftp.bin := $$(IMAGE/sysupgrade.bin) | yuncore-tftp-header-16m
+endef
+TARGET_DEVICES += yuncore_xd4200
+
 define Device/zbtlink_zbt-wd323
   ATH_SOC := ar9344
   DEVICE_TITLE := ZBT WD323

@@ -149,7 +149,9 @@ ath79_setup_interfaces()
 	nec,wg1200cr|\
 	ubnt,nanostation-ac|\
 	ubnt,unifiac-mesh-pro|\
-	ubnt,unifiac-pro)
+	ubnt,unifiac-pro|\
+	yuncore,a782|\
+	yuncore,xd4200)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:wan"
 		;;
