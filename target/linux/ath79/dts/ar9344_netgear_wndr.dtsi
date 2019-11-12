@@ -96,6 +96,22 @@
 			linux,default-trigger = "usbport";
 		};
 	};
+
+	ubi-concat {
+		compatible = "mtd-concat";
+		devices = <&ubipart0 &ubipart1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			ubi@8c0000 {
+				label = "ubi";
+				reg = <0x0 0x7700000>;
+			};
+		};
+	};
 };
 
 &pinmux {
@@ -154,8 +170,8 @@
 			reg = <0x6c0000 0x200000>;
 		};
 
-		ubi@8c0000 {
-			label = "ubi";
+		ubipart0: partition@8c0000 {
+			label = "ubipart0";
 			reg = <0x8c0000 0x1700000>;
 		};
 
@@ -171,10 +187,9 @@
 			read-only;
 		};
 
-		partition@2000000 {
-			label = "reserved";
+		ubipart1: partition@2000000 {
+			label = "ubipart1";
 			reg = <0x2000000 0x6000000>;
-			read-only;
 		};
 	};
 };
