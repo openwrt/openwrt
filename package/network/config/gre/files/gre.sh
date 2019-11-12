@@ -13,8 +13,8 @@ gre_generic_setup() {
 	local local="$3"
 	local remote="$4"
 	local link="$5"
-	local mtu ttl tos zone ikey okey icsum ocsum iseqno oseqno multicast
-	json_get_vars mtu ttl tos zone ikey okey icsum ocsum iseqno oseqno multicast
+	local mtu ipv6 ttl tos zone ikey okey icsum ocsum iseqno oseqno multicast
+	json_get_vars mtu ipv6 ttl tos zone ikey okey icsum ocsum iseqno oseqno multicast
 
 	[ -z "$multicast" ] && multicast=1
 
@@ -23,6 +23,7 @@ gre_generic_setup() {
 	proto_add_tunnel
 	json_add_string mode "$mode"
 	json_add_int mtu "${mtu:-1280}"
+	json_add_boolean ipv6 "${ipv6:-1}"
 	[ -n "$df" ] && json_add_boolean df "$df"
 	[ -n "$ttl" ] && json_add_int ttl "$ttl"
 	[ -n "$tos" ] && json_add_string tos "$tos"
@@ -248,6 +249,7 @@ gre_generic_init_config() {
 	available=1
 
 	proto_config_add_int "mtu"
+	proto_config_add_boolean "ipv6"
 	proto_config_add_int "ttl"
 	proto_config_add_string "tos"
 	proto_config_add_string "tunlink"
