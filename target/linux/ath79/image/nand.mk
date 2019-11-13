@@ -125,6 +125,18 @@ define Device/netgear_ath79_nand
   UBINIZE_OPTS := -E 5
 endef
 
+define Device/netgear_wndr3700-v4
+  ATH_SOC := ar9344
+  DEVICE_MODEL := WNDR3700
+  DEVICE_VARIANT := v4
+  NETGEAR_KERNEL_MAGIC := 0x33373033
+  NETGEAR_BOARD_ID := WNDR3700v4
+  NETGEAR_HW_ID := 29763948+128+128
+  SUPPORTED_DEVICES += wndr3700v4
+  $(Device/netgear_ath79_nand)
+endef
+TARGET_DEVICES += netgear_wndr3700-v4
+
 define Device/netgear_wndr4300
   ATH_SOC := ar9344
   DEVICE_MODEL := WNDR4300

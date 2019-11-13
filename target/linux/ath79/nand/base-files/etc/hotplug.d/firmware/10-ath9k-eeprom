@@ -9,6 +9,7 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath9k-eeprom-ahb-18100000.wmac.bin")
 	case $board in
+	netgear,wndr3700-v4|\
 	netgear,wndr4300)
 		caldata_extract "caldata" 0x1000 0x440
 		;;
@@ -23,6 +24,7 @@ case "$FIRMWARE" in
 	;;
 "ath9k-eeprom-pci-0000:00:00.0.bin")
 	case $board in
+	netgear,wndr3700-v4|\
 	netgear,wndr4300)
 		caldata_extract "caldata" 0x5000 0x440
 		;;
