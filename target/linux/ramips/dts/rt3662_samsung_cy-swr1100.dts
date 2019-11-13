@@ -49,8 +49,9 @@
 			};
 
 			partition@40000 {
-				label = "devdata";
+				label = "devconf";
 				reg = <0x40000 0x10000>;
+				read-only;
 			};
 
 			partition@50000 {
@@ -69,8 +70,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -98,6 +98,11 @@
 			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
+		};
+
+		power {
+			label = "cy-swr1100:blue:power";
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
@@ -130,9 +135,8 @@
 	status = "okay";
 
 	wifi@0,0 {
-		compatible = "pci0,0";
+		compatible = "pci1814,3091";
 		reg = <0x10000 0 0 0 0>;
-		ralink,5ghz = <0>;
 		ralink,mtd-eeprom = <&factory 0x2000>;
 	};
 };
