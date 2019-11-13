@@ -50,10 +50,23 @@ EOF
 fi
 
 service() {
-	[ -f "/etc/init.d/$1" ] || {
-		echo "service "'"'"$1"'"'" not found, the following services are available:"
-		ls "/etc/init.d"
-		return 1
-	}
-	/etc/init.d/$@
+        if [ "$1" = "list-enabled" ]; then
+                for F in /etc/init.d/* ; do
+                        $F enabled && echo "$F enabled"
+                done;
+        elif [ "$1" = "list-disabled" ]; then
+                for F in /etc/init.d/* ; do
+                        $F enabled || echo "$F disabled"
+                done;
+        elif [ -f "/etc/init.d/$1" ]; then
+                /etc/init.d/$@
+        else
+                echo "Usage: service list-disabled|list-enabled|<service> [command]"
+                if [ -n "$1" ]; then
+                        echo "service "'"'"$1"'"'" not found, the following services are available:"
+                        ls "/etc/init.d"
+                fi
+                return 1
+        fi
 }
+

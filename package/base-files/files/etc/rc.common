@@ -67,12 +67,13 @@ help() {
 Syntax: $initscript [command]
 
 Available commands:
-	start	Start the service
-	stop	Stop the service
-	restart	Restart the service
-	reload	Reload configuration files (or restart if service does not implement reload)
-	enable	Enable service autostart
-	disable	Disable service autostart
+	start		Start the service
+	stop		Stop the service
+	restart		Restart the service
+	reload		Reload configuration files (or restart if service does not implement reload)
+	enable		Enable service autostart
+	disable		Disable service autostart
+	status-ubus	Show ubus info for the service
 $EXTRA_HELP
 EOF
 }
@@ -164,6 +165,13 @@ ${INIT_TRACE:+set -x}
 	}
 }
 
-ALL_COMMANDS="start stop reload restart boot shutdown enable disable enabled depends ${EXTRA_COMMANDS}"
-list_contains ALL_COMMANDS "$action" || action=help
+status_ubus() {
+	name="$(basename "${initscript}")"
+	/bin/ubus call service list "{'name': '$name'}"
+	return 0
+}
+
+ALL_COMMANDS="start stop reload restart boot shutdown enable disable enabled depends status-ubus ${EXTRA_COMMANDS}"
+list_contains ALL_COMMANDS "$action" && action="${action/-/_}" || action=help
 $action "$@"
+
