@@ -533,12 +533,12 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary devdata 7)
 		;;
 	cy-swr1100|\
-	dch-m225)
-		lan_mac=$(mtd_get_mac_ascii factory lanmac)
-		;;
 	dir-645)
 		lan_mac=$(mtd_get_mac_ascii nvram lanmac)
 		wan_mac=$(mtd_get_mac_ascii nvram wanmac)
+		;;
+	dch-m225)
+		lan_mac=$(mtd_get_mac_ascii factory lanmac)
 		;;
 	dir-860l-b1)
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)
