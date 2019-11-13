@@ -212,8 +212,7 @@ static void __init common_setup(bool pcie_slot)
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(archer_c7_leds_gpio),
 				 archer_c7_leds_gpio);
 
-	ath79_init_mac(tmpmac, mac, -1);
-	ath79_register_wmac(art + ARCHER_C7_WMAC_CALDATA_OFFSET, tmpmac);
+	ath79_register_wmac(art + ARCHER_C7_WMAC_CALDATA_OFFSET, mac);
 
 	if (pcie_slot) {
 		ath79_register_pci();
