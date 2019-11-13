@@ -275,6 +275,13 @@ define Build/check-size
 	}
 endef
 
+define Build/check-kernel-size
+	@[ $$(($(subst k,* 1024,$(subst m, * 1024k,$(1))))) -ge "$$(stat -c%s $(IMAGE_KERNEL))" ] || { \
+		echo "WARNING: Kernel for $@ is too big > $(1)" >&2; \
+		rm -f $@; \
+	}
+endef
+
 define Build/combined-image
 	-sh $(TOPDIR)/scripts/combined-image.sh \
 		"$(IMAGE_KERNEL)" \
