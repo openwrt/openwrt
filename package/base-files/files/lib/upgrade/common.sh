@@ -64,7 +64,7 @@ ask_bool() {
 }
 
 v() {
-	[ "$VERBOSE" -ge 1 ] && echo "$@"
+	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo "$@"
 }
 
 json_string() {
