@@ -612,10 +612,11 @@ define Device/netgear_sercomm_nand
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
   UBINIZE_OPTS := -E 5
-  IMAGES += factory.img kernel.bin rootfs.bin
+  IMAGES += factory.img breed-factory.bin kernel.bin rootfs.bin
   IMAGE/factory.img := pad-extra 2048k | append-kernel | pad-to 6144k | \
 	append-ubi | pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | \
 	zip $$$$(SERCOMM_HWNAME).bin | sercom-seal
+  IMAGE/breed-factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-ubi | check-size
