@@ -64,7 +64,7 @@ endef
 define Device/ubnt-xm
   $(Device/ubnt)
   DEVICE_VARIANT := XM
-  DEVICE_PACKAGES += kmod-usb-ohci rssileds
+  DEVICE_PACKAGES += kmod-usb-ohci
   IMAGE_SIZE := 7448k
   UBNT_TYPE := XM
   UBNT_CHIP := ar7240
@@ -106,6 +106,7 @@ TARGET_DEVICES += ubnt_airrouter
 define Device/ubnt_bullet-m
   $(Device/ubnt-xm)
   DEVICE_MODEL := Bullet-M
+  DEVICE_PACKAGES += rssileds
   SUPPORTED_DEVICES += bullet-m
 endef
 TARGET_DEVICES += ubnt_bullet-m
@@ -113,6 +114,7 @@ TARGET_DEVICES += ubnt_bullet-m
 define Device/ubnt_bullet-m-xw
   $(Device/ubnt-xw)
   DEVICE_MODEL := Bullet-M
+  DEVICE_PACKAGES += rssileds
   SUPPORTED_DEVICES += bullet-m-xw
 endef
 TARGET_DEVICES += ubnt_bullet-m-xw
@@ -129,7 +131,7 @@ TARGET_DEVICES += ubnt_lap-120
 define Device/ubnt_nanobeam-ac
   $(Device/ubnt-wa)
   DEVICE_MODEL := NanoBeam AC
-  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct rssileds
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
 TARGET_DEVICES += ubnt_nanobeam-ac
@@ -137,7 +139,7 @@ TARGET_DEVICES += ubnt_nanobeam-ac
 define Device/ubnt_nanostation-ac
   $(Device/ubnt-wa)
   DEVICE_MODEL := Nanostation AC
-  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct rssileds
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
 TARGET_DEVICES += ubnt_nanostation-ac
@@ -153,6 +155,7 @@ TARGET_DEVICES += ubnt_nanostation-ac-loco
 define Device/ubnt_nanostation-m
   $(Device/ubnt-xm)
   DEVICE_MODEL := Nanostation M
+  DEVICE_PACKAGES += rssileds
   SUPPORTED_DEVICES += nanostation-m
 endef
 TARGET_DEVICES += ubnt_nanostation-m
@@ -160,6 +163,7 @@ TARGET_DEVICES += ubnt_nanostation-m
 define Device/ubnt_nanostation-m-xw
   $(Device/ubnt-xw)
   DEVICE_MODEL := Nanostation M
+  DEVICE_PACKAGES += rssileds
   SUPPORTED_DEVICES += nanostation-m-xw
 endef
 TARGET_DEVICES += ubnt_nanostation-m-xw
@@ -167,6 +171,7 @@ TARGET_DEVICES += ubnt_nanostation-m-xw
 define Device/ubnt_rocket-m
   $(Device/ubnt-xm)
   DEVICE_MODEL := Rocket-M
+  DEVICE_PACKAGES += rssileds
   SUPPORTED_DEVICES += rocket-m
 endef
 TARGET_DEVICES += ubnt_rocket-m
