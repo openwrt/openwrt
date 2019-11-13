@@ -10,8 +10,10 @@
 	model = "Samsung CY-SWR1100";
 
 	aliases {
-		led-boot = &led_wps;
-		led-failsafe = &led_wps;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 	};
 
 	nor-flash@1c000000 {
@@ -88,7 +90,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_wps: wps {
+		wps {
 			label = "cy-swr1100:blue:wps";
 			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 		};
@@ -100,7 +102,7 @@
 			linux,default-trigger = "usbport";
 		};
 
-		power {
+		led_power: power {
 			label = "cy-swr1100:blue:power";
 			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 		};
