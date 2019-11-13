@@ -89,7 +89,7 @@ define Device/samsung_cy-swr1100
   SEAMA_SIGNATURE := wrgnd10_samsung_ss815
   DEVICE_VENDOR := Samsung
   DEVICE_MODEL := CY-SWR1100
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 swconfig
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport swconfig
   SUPPORTED_DEVICES += cy-swr1100
 endef
 TARGET_DEVICES += samsung_cy-swr1100
