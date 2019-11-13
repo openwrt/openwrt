@@ -33,7 +33,8 @@ define Device/cy-swr1100
 	seama-seal -m "signature=wrgnd10_samsung_ss815" | \
 	check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := Samsung CY-SWR1100
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 | \
+	kmod-usb-ledtrig-usbport swconfig
 endef
 TARGET_DEVICES += cy-swr1100
 
