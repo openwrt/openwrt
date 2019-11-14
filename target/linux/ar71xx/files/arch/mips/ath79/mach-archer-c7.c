@@ -105,6 +105,34 @@ static struct gpio_led archer_c7_leds_gpio[] __initdata = {
 	},
 };
 
+static struct gpio_led wdr4900_leds_gpio[] __initdata = {
+	{
+		.name		= "tp-link:blue:qss",
+		.gpio		= ARCHER_C7_GPIO_LED_QSS,
+		.active_low	= 1,
+	},
+	{
+		.name		= "tp-link:blue:system",
+		.gpio		= ARCHER_C7_GPIO_LED_SYSTEM,
+		.active_low	= 1,
+	},
+	{
+		.name		= "tp-link:blue:wlan2g",
+		.gpio		= ARCHER_C7_GPIO_LED_WLAN2G,
+		.active_low	= 1,
+	},
+	{
+		.name		= "tp-link:green:usb1",
+		.gpio		= ARCHER_C7_GPIO_LED_USB1,
+		.active_low	= 1,
+	},
+	{
+		.name		= "tp-link:green:usb2",
+		.gpio		= ARCHER_C7_GPIO_LED_USB2,
+		.active_low	= 1,
+	},
+};
+
 static struct gpio_keys_button archer_c7_gpio_keys[] __initdata = {
 	{
 		.desc		= "Reset button",
@@ -210,8 +238,6 @@ static void __init common_setup(bool pcie_slot)
 	u8 tmpmac2[ETH_ALEN];
 
 	ath79_register_m25p80(&archer_c7_flash_data);
-	ath79_register_leds_gpio(-1, ARRAY_SIZE(archer_c7_leds_gpio),
-				 archer_c7_leds_gpio);
 
 	if (pcie_slot) {
 		ath79_register_wmac(art + ARCHER_C7_WMAC_CALDATA_OFFSET, mac);
@@ -263,6 +289,8 @@ static void __init archer_c5_setup(void)
 	ath79_register_gpio_keys_polled(-1, ARCHER_C7_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(archer_c7_gpio_keys),
 					archer_c7_gpio_keys);
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(archer_c7_leds_gpio),
+				 archer_c7_leds_gpio);
 	common_setup(true);
 }
 
@@ -274,6 +302,8 @@ static void __init archer_c7_setup(void)
 	ath79_register_gpio_keys_polled(-1, ARCHER_C7_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(archer_c7_gpio_keys),
 					archer_c7_gpio_keys);
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(archer_c7_leds_gpio),
+				 archer_c7_leds_gpio);
 	common_setup(true);
 }
 
@@ -285,6 +315,8 @@ static void __init archer_c7_v2_setup(void)
 	ath79_register_gpio_keys_polled(-1, ARCHER_C7_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(archer_c7_v2_gpio_keys),
 					archer_c7_v2_gpio_keys);
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(archer_c7_leds_gpio),
+				 archer_c7_leds_gpio);
 	common_setup(true);
 }
 
@@ -296,6 +328,8 @@ static void __init tl_wdr4900_v2_setup(void)
 	ath79_register_gpio_keys_polled(-1, ARCHER_C7_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(archer_c7_gpio_keys),
 					archer_c7_gpio_keys);
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(wdr4900_leds_gpio),
+				 wdr4900_leds_gpio);
 	common_setup(false);
 }
 
