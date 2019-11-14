@@ -814,6 +814,13 @@ mac80211_interface_cleanup() {
 
 	mac80211_vap_cleanup hostapd "${primary_ap}"
 	mac80211_vap_cleanup wpa_supplicant "$(uci -q -P /var/state get wireless._${phy}.splist)"
+	for wdev in $(list_phy_interfaces "$phy"); do
+		local wdev_phy="$(readlink /sys/class/net/${wdev}/phy80211)"
+		wdev_phy="$(basename "$wdev_phy")"
+		[ -n "$wdev_phy" -a "$wdev_phy" != "$phy" ] && continue
+		ip link set dev "$wdev" down 2>/dev/null
+		iw dev "$wdev" del
+	done
 }
 
 mac80211_set_noscan() {
@@ -943,6 +950,15 @@ drv_mac80211_setup() {
 	done
 	[ -n "$dropvap" ] && mac80211_vap_cleanup wpa_supplicant "$dropvap"
 	wireless_set_up
+}
+
+list_phy_interfaces() {
+	local phy="$1"
+	if [ -d "/sys/class/ieee80211/${phy}/device/net" ]; then
+		ls "/sys/class/ieee80211/${phy}/device/net" 2>/dev/null;
+	else
+		ls "/sys/class/ieee80211/${phy}/device" 2>/dev/null | grep net: | sed -e 's,net:,,g'
+	fi
 }
 
 drv_mac80211_teardown() {
