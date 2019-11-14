@@ -169,6 +169,17 @@ static struct gpio_keys_button archer_c7_v2_gpio_keys[] __initdata = {
 	},
 };
 
+static struct gpio_keys_button wdr4900_gpio_keys[] __initdata = {
+	{
+		.desc		= "Reset button",
+		.type		= EV_KEY,
+		.code		= KEY_WPS_BUTTON,
+		.debounce_interval = ARCHER_C7_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= ARCHER_C7_GPIO_BTN_RESET,
+		.active_low	= 1,
+	},
+};
+
 static const struct ar8327_led_info archer_c7_leds_ar8327[] = {
 	AR8327_LED_INFO(PHY0_0, HW, "tp-link:green:wan"),
 	AR8327_LED_INFO(PHY1_0, HW, "tp-link:green:lan1"),
@@ -326,8 +337,8 @@ MIPS_MACHINE(ATH79_MACH_ARCHER_C7_V2, "ARCHER-C7-V2", "TP-LINK Archer C7",
 static void __init tl_wdr4900_v2_setup(void)
 {
 	ath79_register_gpio_keys_polled(-1, ARCHER_C7_KEYS_POLL_INTERVAL,
-					ARRAY_SIZE(archer_c7_gpio_keys),
-					archer_c7_gpio_keys);
+					ARRAY_SIZE(wdr4900_gpio_keys),
+					wdr4900_gpio_keys);
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wdr4900_leds_gpio),
 				 wdr4900_leds_gpio);
 	common_setup(false);
