@@ -207,19 +207,22 @@ static void __init common_setup(bool pcie_slot)
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
 	u8 tmpmac[ETH_ALEN];
+	u8 tmpmac2[ETH_ALEN];
 
 	ath79_register_m25p80(&archer_c7_flash_data);
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(archer_c7_leds_gpio),
 				 archer_c7_leds_gpio);
 
-	ath79_register_wmac(art + ARCHER_C7_WMAC_CALDATA_OFFSET, mac);
-
 	if (pcie_slot) {
+		ath79_register_wmac(art + ARCHER_C7_WMAC_CALDATA_OFFSET, mac);
 		ath79_register_pci();
 	} else {
 		ath79_init_mac(tmpmac, mac, -1);
+		ath79_register_wmac(art + ARCHER_C7_WMAC_CALDATA_OFFSET, tmpmac);
+
+		ath79_init_mac(tmpmac2, mac, -2);
 		ap9x_pci_setup_wmac_led_pin(0, 0);
-		ap91_pci_init(art + ARCHER_C7_PCIE_CALDATA_OFFSET, tmpmac);
+		ap91_pci_init(art + ARCHER_C7_PCIE_CALDATA_OFFSET, tmpmac2);
 	}
 
 	mdiobus_register_board_info(archer_c7_mdio0_info,
