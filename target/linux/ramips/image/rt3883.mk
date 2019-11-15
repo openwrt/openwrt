@@ -24,7 +24,7 @@ define Device/cy-swr1100
   KERNEL := $(KERNEL_DTB)
   SEAMA_SIGNATURE := wrgnd10_samsung_ss815
   DEVICE_TITLE := Samsung CY-SWR1100
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 | \
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
 	kmod-usb-ledtrig-usbport swconfig
 endef
 TARGET_DEVICES += cy-swr1100
