@@ -190,8 +190,25 @@ add_overlayfiles() {
 	# busybox grep bug when file is empty
 	[ -s "$packagesfiles" ] || echo > "$packagesfiles"
 
+	# filter out paths hidden by mount
+	set -- \( \( -path ""
+	while read -r mount_line; do
+		mount_line="${mount_line#* }"
+		mount_dir="${mount_line%% *}"
+		[ "$mount_dir" != "/" ] || continue
+		# spaces are escaped as \040 in /proc/mounts
+		mount_dir="${mount_dir//\\040/ }"
+		# single quotes as \134 in /proc/mounts, but find needs it in double for glob pattern
+		mount_dir="${mount_dir//\\134/\\\\}"
+		# more glob pattern escape
+		mount_dir="${mount_dir//\*/\\*}"
+		mount_dir="${mount_dir//\[/\\[}"
+		set -- "$@" -o -path ".$mount_dir"
+	done </proc/mounts
+	set -- "$@" \) -prune \) -o
+
 	(cd /overlay/upper/ || exit 1
-		find_bkpfiles .$SAVE_OVERLAY_PATH | sed \
+		find_bkpfiles .$SAVE_OVERLAY_PATH "$@" | sed \
 		-e 's,^\.,,' \
 		-e '\,^/etc/board.json$,d' \
 		-e '\,/[^/]*-opkg$,d' \
