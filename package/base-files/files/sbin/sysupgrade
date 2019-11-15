@@ -197,8 +197,12 @@ add_overlayfiles() {
 		-e '\,/[^/]*-opkg$,d' \
 		-e '\,^/etc/urandom.seed$,d' \
 		-e "\,^$INSTALLED_PACKAGES$,d" \
-		-e '\,^/usr/lib/opkg/.*,d' \
-	) | grep -v -x -F -f $packagesfiles > "$file"
+		-e '\,^/usr/lib/opkg/.*,d' |
+		grep -v -x -F -f "$packagesfiles"
+	) > "$file" || {
+		echo "Failed to list files in '/overlay/upper/'" >&2
+		exit 1
+	}
 
 	rm -f "$packagesfiles"
 
@@ -259,18 +263,20 @@ do_save_conffiles() {
 
 	v "Saving config files..."
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
-	tar c${TAR_V}zf "$conf_tar" -T "$CONFFILES" 2>/dev/null
-	if [ "$?" -ne 0 ]; then
-		echo "Failed to create the configuration backup."
-		rm -f "$conf_tar"
-		exit 1
-	fi
-
+	sed -i -e 's,^/,,' $CONFFILES
+	tar -C / -c${TAR_V}zf "$conf_tar" -T "$CONFFILES"
+	local err=$?
 	[ "$UMOUNT_ETCBACKUP_DIR" -eq 1 ] && {
 		umount "$ETCBACKUP_DIR"
 		rm -rf "$RAMFS"
 	}
 	rm -f "$CONFFILES"
+
+	if [ "$err" -ne 0 ]; then
+		echo "Failed to create the configuration backup." >&2
+		rm -f "$conf_tar"
+		exit 1
+	fi
 }
 
 if [ $CONF_BACKUP_LIST -eq 1 ]; then
