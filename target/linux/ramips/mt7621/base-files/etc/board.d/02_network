@@ -87,6 +87,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan:5" "6@eth0"
 		;;
+	edimax,ra21s|\
 	edimax,rg21s)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
@@ -198,6 +199,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii factory wanmac)
 		label_mac=$(mtd_get_mac_binary radio 0x4)
 		;;
+	edimax,ra21s|\
 	edimax,rg21s)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)

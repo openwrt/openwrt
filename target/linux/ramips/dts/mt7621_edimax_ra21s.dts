@@ -4,8 +4,8 @@
 #include "mt7621_edimax_rx21s.dtsi"
 
 / {
-	compatible = "edimax,rg21s", "mediatek,mt7621-soc";
-	model = "Edimax RG21S";
+	compatible = "edimax,ra21s", "mediatek,mt7621-soc";
+	model = "Edimax RA21S";
 
 	aliases {
 		led-boot = &led_power;
@@ -18,22 +18,22 @@
 		compatible = "gpio-leds";
 
 		led_power: led_1 {
-			label = "rg21s:red:led1";
+			label = "ra21s:red:led1";
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_2 {
-			label = "rg21s:red:led2";
+			label = "ra21s:red:led2";
 			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_3 {
-			label = "rg21s:red:led3";
+			label = "ra21s:red:led3";
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_4 {
-			label = "rg21s:red:led4";
+			label = "ra21s:red:led4";
 			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 		};
 	};
