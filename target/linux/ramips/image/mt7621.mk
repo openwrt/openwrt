@@ -225,6 +225,20 @@ define Device/d-team_pbr-m1
 endef
 TARGET_DEVICES += d-team_pbr-m1
 
+define Device/edimax_ra21s
+  MTK_SOC := mt7621
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Edimax
+  DEVICE_MODEL := RA21S
+  DEVICE_ALT0_VENDOR := Edimax
+  DEVICE_ALT0_MODEL := Gemini RA21S
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+    elx-header 02020040 8844A2D168B45A2D
+  DEVICE_PACKAGES := kmod-mt7615e wpad-basic
+endef
+TARGET_DEVICES += edimax_ra21s
+
 define Device/edimax_rg21s
   MTK_SOC := mt7621
   IMAGE_SIZE := 16064k
