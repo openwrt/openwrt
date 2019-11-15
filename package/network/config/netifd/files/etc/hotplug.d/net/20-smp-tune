@@ -34,8 +34,8 @@ set_hex_val() {
 	echo "$val" > "$file"
 }
 
-default_ps="$(uci get "network.@globals[0].default_ps")"
-[ -n "$default_ps" -a "$default_ps" != 1 ] && exit 0
+packet_steering="$(uci get "network.@globals[0].packet_steering")"
+[ "$packet_steering" != 1 ] && exit 0
 
 exec 512>/var/lock/smp_tune.lock
 flock 512 || exit 1
@@ -53,15 +53,10 @@ for dev in /sys/class/net/*; do
 	irq_cpu_mask="$((1 << $irq_cpu))"
 
 	for q in ${dev}/queues/rx-*; do
-		set_hex_val "$q/rps_cpus" "$(($PROC_MASK & ~$irq_cpu_mask))"
+		set_hex_val "$q/rps_cpus" "$PROC_MASK"
 	done
 
-	ntxq="$(ls -d ${dev}/queues/tx-* | wc -l)"
-
-	idx=$(($irq_cpu + 1))
 	for q in ${dev}/queues/tx-*; do
-		set_hex_val "$q/xps_cpus" "$((1 << $idx))"
-		let "idx = idx + 1"
-		[ "$idx" -ge "$NPROCS" ] && idx=0
+		set_hex_val "$q/xps_cpus" "$PROC_MASK"
 	done
 done
