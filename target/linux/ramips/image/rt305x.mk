@@ -650,6 +650,7 @@ define Device/rt-n10-plus
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Asus RT-N10+
+  DEFAULT := n
 endef
 TARGET_DEVICES += rt-n10-plus
 
