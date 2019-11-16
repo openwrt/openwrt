@@ -228,6 +228,7 @@ define Device/dir-300-b1
   IMAGE/factory.bin := \
 	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | wrg-header wrgn23_dlwbr_dir300b
   DEVICE_TITLE := D-Link DIR-300 B1
+  DEFAULT := n
 endef
 TARGET_DEVICES += dir-300-b1
 
