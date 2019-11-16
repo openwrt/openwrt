@@ -817,6 +817,7 @@ define Device/wl-351
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Sitecom WL-351 v1
   DEVICE_PACKAGES := kmod-switch-rtl8366rb kmod-swconfig swconfig
+  DEFAULT := n
 endef
 TARGET_DEVICES += wl-351
 
