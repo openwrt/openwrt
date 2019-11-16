@@ -29,8 +29,8 @@ export UMOUNT_ETCBACKUP_DIR=0
 while [ -n "$1" ]; do
 	case "$1" in
 		-i) export INTERACTIVE=1;;
-		-v) export VERBOSE="$(($VERBOSE + 1))";;
-		-q) export VERBOSE="$(($VERBOSE - 1))";;
+		-v) export VERBOSE="$((VERBOSE + 1))";;
+		-q) export VERBOSE="$((VERBOSE - 1))";;
 		-n) export SAVE_CONFIG=0;;
 		-c) export SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/etc;;
 		-o) export SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/;;
@@ -60,7 +60,7 @@ export INSTALLED_PACKAGES=${ETCBACKUP_DIR}/installed_packages.txt
 
 IMAGE="$1"
 
-[ -z "$IMAGE" -a -z "$NEED_IMAGE" -a $CONF_BACKUP_LIST -eq 0 -o $HELP -gt 0 ] && {
+[ -z "$IMAGE" ] && [ -z "$NEED_IMAGE" ] && [ "$CONF_BACKUP_LIST" -eq 0 ] || [ "$HELP" -gt 0 ] && {
 	cat <<EOF
 Usage: $0 [<upgrade-option>...] <image file or URL>
        $0 [-q] [-i] [-c] [-u] [-o] [-k] <backup-command> <file>
@@ -101,7 +101,7 @@ EOF
 	exit 1
 }
 
-[ -n "$IMAGE" -a -n "$NEED_IMAGE" ] && {
+[ -n "$IMAGE" ] && [ -n "$NEED_IMAGE" ] && {
 	cat <<-EOF
 		-b|--create-backup and -r|--restore-backup do not perform a firmware upgrade.
 		Do not specify both -b|-r and a firmware image.
