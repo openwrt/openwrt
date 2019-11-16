@@ -916,6 +916,7 @@ define Device/netgear-wnr2000v2
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H114T00_NETGEAR
   NETGEAR_REGION := 2
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear-wnr2000v2
 
