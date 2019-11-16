@@ -235,6 +235,7 @@ define Device/tl-wa850re-v1
   BOARDNAME := TL-WA850RE
   DEVICE_PROFILE := TLWA850
   TPLINK_HWID := 0x08500001
+  DEFAULT := n
 endef
 TARGET_DEVICES += tl-wa850re-v1
 
