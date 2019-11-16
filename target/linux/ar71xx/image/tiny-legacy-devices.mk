@@ -116,6 +116,7 @@ LEGACY_DEVICES += REALWNR612V2
 
 define LegacyDevice/N150R
   DEVICE_TITLE := On Networks N150
+  DEFAULT := n
 endef
 LEGACY_DEVICES += N150R
 
