@@ -838,6 +838,7 @@ define Device/wr512-3gn-4M
   DTS := WR512-3GN-4M
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := WR512-3GN (4M)
+  DEFAULT := n
 endef
 TARGET_DEVICES += wr512-3gn-4M
 
