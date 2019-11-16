@@ -237,6 +237,7 @@ define Device/dir-300-b7
   BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := D-Link DIR-300 B7
+  DEFAULT := n
 endef
 TARGET_DEVICES += dir-300-b7
 
