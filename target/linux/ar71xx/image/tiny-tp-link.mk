@@ -164,6 +164,7 @@ define Device/tl-wa750re-v1
   BOARDNAME := TL-WA750RE
   DEVICE_PROFILE := TLWA750
   TPLINK_HWID := 0x07500001
+  DEFAULT := n
 endef
 TARGET_DEVICES += tl-wa750re-v1
 
