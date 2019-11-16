@@ -15,10 +15,6 @@ MP_CONFIG_INT="mesh_retry_timeout mesh_confirm_timeout mesh_holding_timeout mesh
 MP_CONFIG_BOOL="mesh_auto_open_plinks mesh_fwding"
 MP_CONFIG_STRING="mesh_power_mode"
 
-iw() {
-	command iw $@ || logger -t mac80211 "Failed command: iw $@"
-}
-
 NEWAPLIST=
 OLDAPLIST=
 NEWSPLIST=
@@ -447,6 +443,36 @@ mac80211_iw_interface_add() {
 	}
 
 	[ "$rc" = 233 ] && {
+		# Keep matching pre-existing interface
+		[ -d "/sys/class/ieee80211/${phy}/device/net/${ifname}" ] && \
+		case "$(iw dev wlan0 info | grep "^\ttype" | cut -d' ' -f2- 2>/dev/null)" in
+			"AP")
+				[ "$type" = "__ap" ] && rc=0
+				;;
+			"IBSS")
+				[ "$type" = "adhoc" ] && rc=0
+				;;
+			"managed")
+				[ "$type" = "managed" ] && rc=0
+				;;
+			"mesh point")
+				[ "$type" = "mp" ] && rc=0
+				;;
+			"monitor")
+				[ "$type" = "monitor" ] && rc=0
+				;;
+		esac
+	}
+
+	[ "$rc" = 233 ] && {
+		iw dev "$ifname" del
+		sleep 1
+
+		iw phy "$phy" interface add "$ifname" type "$type" $wdsflag
+		rc="$?"
+	}
+
+	[ "$rc" = 233 ] && {
 		# Device might not support virtual interfaces, so the interface never got deleted in the first place.
 		# Check if the interface already exists, and avoid failing in this case.
 		ip link show dev "$ifname" >/dev/null 2>/dev/null && rc=0
@@ -511,6 +537,11 @@ mac80211_prepare_vif() {
 			[ "$enable" = 0 ] || staidx="$(($staidx + 1))"
 			[ "$wds" -gt 0 ] && wdsflag="4addr on"
 			mac80211_iw_interface_add "$phy" "$ifname" managed "$wdsflag" || return
+			if [ "$wds" -gt 0 ]; then
+				iw "$ifname" set 4addr on
+			else
+				iw "$ifname" set 4addr off
+			fi
 			[ "$powersave" -gt 0 ] && powersave="on" || powersave="off"
 			iw "$ifname" set power_save "$powersave"
 		;;
