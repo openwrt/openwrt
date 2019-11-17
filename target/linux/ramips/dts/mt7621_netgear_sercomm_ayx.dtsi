@@ -21,7 +21,29 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	leds: leds {
+	keys {
+		compatible = "gpio-keys";
+
+		wps {
+			label = "wps";
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		wifi {
+			label = "wifi";
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
 		compatible = "gpio-leds";
 
 		led_power: power {
@@ -41,6 +63,10 @@
 		led_wifi: wifi {
 			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
+		};
+
+		led_wps: wps {
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 	};
 

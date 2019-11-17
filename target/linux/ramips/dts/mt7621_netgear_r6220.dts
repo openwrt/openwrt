@@ -1,40 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0
 /dts-v1/;
 
-#include "mt7621_netgear_sercomm.dtsi"
+#include "mt7621_netgear_sercomm_ayx.dtsi"
 
 / {
 	compatible = "netgear,r6220", "mediatek,mt7621-soc";
 	model = "Netgear R6220";
-
-	keys {
-		compatible = "gpio-keys";
-
-		wps {
-			label = "wps";
-			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_WPS_BUTTON>;
-		};
-
-		wifi {
-			label = "wifi";
-			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_RFKILL>;
-		};
-
-		reset {
-			label = "reset";
-			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_RESTART>;
-		};
-	};
-};
-
-&leds {
-	wps {
-		gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
-		label = "r6220:green:wps";
-	};
 };
 
 &led_power {
@@ -51,6 +22,10 @@
 
 &led_wifi {
 	label = "r6220:green:wifi";
+};
+
+&led_wps {
+	label = "r6220:green:wps";
 };
 
 &nand {
