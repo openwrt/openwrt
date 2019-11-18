@@ -206,19 +206,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		if (IS_ENABLED(CONFIG_USB_DWC3_HOST))
  			mode = USB_DR_MODE_HOST;
  		else if (IS_ENABLED(CONFIG_USB_DWC3_GADGET))
-@@ -227,8 +246,9 @@ static void dwc3_frame_length_adjustment
- 
- 	reg = dwc3_readl(dwc->regs, DWC3_GFLADJ);
- 	dft = reg & DWC3_GFLADJ_30MHZ_MASK;
--	if (!dev_WARN_ONCE(dwc->dev, dft == dwc->fladj,
--	    "request value same as default, ignoring\n")) {
-+	if (dft == dwc->fladj) {
-+		dev_warn(dwc->dev, "request value same as default, ignoring\n");
-+	} else {
- 		reg &= ~DWC3_GFLADJ_30MHZ_MASK;
- 		reg |= DWC3_GFLADJ_30MHZ_SDBND_SEL | dwc->fladj;
- 		dwc3_writel(dwc->regs, DWC3_GFLADJ, reg);
-@@ -599,6 +619,99 @@ static int dwc3_phy_setup(struct dwc3 *d
+@@ -598,6 +617,99 @@ static int dwc3_phy_setup(struct dwc3 *d
  	return 0;
  }
  
@@ -318,7 +306,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static void dwc3_core_exit(struct dwc3 *dwc)
  {
  	dwc3_event_buffers_cleanup(dwc);
-@@ -741,6 +854,8 @@ static int dwc3_core_init(struct dwc3 *d
+@@ -740,6 +852,8 @@ static int dwc3_core_init(struct dwc3 *d
  	if (ret)
  		goto err1;
  
@@ -327,7 +315,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* Adjust Frame Length */
  	dwc3_frame_length_adjustment(dwc);
  
-@@ -939,11 +1054,117 @@ static void dwc3_core_exit_mode(struct d
+@@ -938,11 +1052,117 @@ static void dwc3_core_exit_mode(struct d
  	}
  }
  
@@ -445,7 +433,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	struct resource		*res;
  	struct dwc3		*dwc;
  	u8			lpm_nyet_threshold;
-@@ -975,6 +1196,11 @@ static int dwc3_probe(struct platform_de
+@@ -974,6 +1194,11 @@ static int dwc3_probe(struct platform_de
  	dwc->xhci_resources[0].flags = res->flags;
  	dwc->xhci_resources[0].name = res->name;
  
@@ -457,7 +445,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	res->start += DWC3_GLOBALS_REGS_START;
  
  	/*
-@@ -1017,6 +1243,12 @@ static int dwc3_probe(struct platform_de
+@@ -1016,6 +1241,12 @@ static int dwc3_probe(struct platform_de
  	dwc->usb3_lpm_capable = device_property_read_bool(dev,
  				"snps,usb3_lpm_capable");
  
@@ -470,7 +458,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	dwc->disable_scramble_quirk = device_property_read_bool(dev,
  				"snps,disable_scramble_quirk");
  	dwc->u2exit_lfps_quirk = device_property_read_bool(dev,
-@@ -1061,6 +1293,8 @@ static int dwc3_probe(struct platform_de
+@@ -1060,6 +1291,8 @@ static int dwc3_probe(struct platform_de
  	dwc->hird_threshold = hird_threshold
  		| (dwc->is_utmi_l1_suspend << 4);
  
@@ -479,7 +467,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	platform_set_drvdata(pdev, dwc);
  	dwc3_cache_hwparams(dwc);
  
-@@ -1084,6 +1318,11 @@ static int dwc3_probe(struct platform_de
+@@ -1083,6 +1316,11 @@ static int dwc3_probe(struct platform_de
  	if (ret < 0)
  		goto err1;
  
@@ -881,15 +869,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* DR has been stopped in usb_gadget_unregister_driver() */
  	remove_proc_file();
  
-@@ -2570,7 +2580,7 @@ static int fsl_udc_remove(struct platfor
- 	dma_pool_destroy(udc_controller->td_pool);
- 	free_irq(udc_controller->irq, udc_controller);
- 	iounmap(dr_regs);
--	if (pdata->operating_mode == FSL_USB2_DR_DEVICE)
-+	if (res && (pdata->operating_mode == FSL_USB2_DR_DEVICE))
- 		release_mem_region(res->start, resource_size(res));
- 
- 	/* free udc --wait for the release() finished */
 --- a/drivers/usb/gadget/udc/fsl_usb2_udc.h
 +++ b/drivers/usb/gadget/udc/fsl_usb2_udc.h
 @@ -20,6 +20,10 @@
