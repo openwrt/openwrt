@@ -23,12 +23,10 @@ Signed-off-by: Martin Schiller <ms@dev.tdt.de>
  drivers/leds/trigger/ledtrig-netdev.c | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/leds/trigger/ledtrig-netdev.c b/drivers/leds/trigger/ledtrig-netdev.c
-index 136f86a1627d..d5e774d83021 100644
 --- a/drivers/leds/trigger/ledtrig-netdev.c
 +++ b/drivers/leds/trigger/ledtrig-netdev.c
-@@ -302,10 +302,12 @@ static int netdev_trig_notify(struct notifier_block *nb,
- 		container_of(nb, struct led_netdev_data, notifier);
+@@ -299,10 +299,12 @@ static int netdev_trig_notify(struct not
+ 							    notifier);
  
  	if (evt != NETDEV_UP && evt != NETDEV_DOWN && evt != NETDEV_CHANGE
 -	    && evt != NETDEV_REGISTER && evt != NETDEV_UNREGISTER)
@@ -41,7 +39,7 @@ index 136f86a1627d..d5e774d83021 100644
  	      (evt == NETDEV_REGISTER && !strcmp(dev->name, trigger_data->device_name))))
  		return NOTIFY_DONE;
  
-@@ -315,6 +317,7 @@ static int netdev_trig_notify(struct notifier_block *nb,
+@@ -312,6 +314,7 @@ static int netdev_trig_notify(struct not
  
  	clear_bit(NETDEV_LED_MODE_LINKUP, &trigger_data->mode);
  	switch (evt) {
@@ -49,6 +47,3 @@ index 136f86a1627d..d5e774d83021 100644
  	case NETDEV_REGISTER:
  		if (trigger_data->net_dev)
  			dev_put(trigger_data->net_dev);
--- 
-2.20.1
-
