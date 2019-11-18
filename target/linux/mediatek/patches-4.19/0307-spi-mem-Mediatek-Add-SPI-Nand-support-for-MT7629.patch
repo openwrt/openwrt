@@ -11,8 +11,6 @@ Signed-off-by: Xiangsheng Hou <xiangsheng.hou@mediatek.com>
  drivers/spi/spi-mtk-snfi.c       | 12 +++++++++
  3 files changed, 79 insertions(+)
 
-diff --git a/arch/arm/boot/dts/mt7629-rfb.dts b/arch/arm/boot/dts/mt7629-rfb.dts
-index 8043238fe..ef140623e 100755
 --- a/arch/arm/boot/dts/mt7629-rfb.dts
 +++ b/arch/arm/boot/dts/mt7629-rfb.dts
 @@ -258,6 +258,51 @@
@@ -67,8 +65,6 @@ index 8043238fe..ef140623e 100755
  &spi {
  	pinctrl-names = "default";
  	pinctrl-0 = <&spi_pins>;
-diff --git a/arch/arm/boot/dts/mt7629.dtsi b/arch/arm/boot/dts/mt7629.dtsi
-index 53f47796b..c7bd5fc9b 100755
 --- a/arch/arm/boot/dts/mt7629.dtsi
 +++ b/arch/arm/boot/dts/mt7629.dtsi
 @@ -259,6 +259,28 @@
@@ -100,11 +96,9 @@ index 53f47796b..c7bd5fc9b 100755
  		spi: spi@1100a000 {
  			compatible = "mediatek,mt7629-spi",
  				     "mediatek,mt7622-spi";
-diff --git a/drivers/spi/spi-mtk-snfi.c b/drivers/spi/spi-mtk-snfi.c
-index cd600d9fb..113f541e6 100644
 --- a/drivers/spi/spi-mtk-snfi.c
 +++ b/drivers/spi/spi-mtk-snfi.c
-@@ -1029,8 +1029,20 @@ static const struct mtk_snfi_caps snfi_mt7622 = {
+@@ -1029,8 +1029,20 @@ static const struct mtk_snfi_caps snfi_m
  	.bad_mark_swap = 0,
  };
  
@@ -125,14 +119,9 @@ index cd600d9fb..113f541e6 100644
  	{  /* sentinel */ }
  };
  
--- 
-2.21.0
-
-diff --git a/arch/arm/boot/dts/mt7629-lynx-rfb.dts b/arch/arm/boot/dts/mt7629-lynx-rfb.dts
-index f3fadd3..895d6c4 100755
 --- a/arch/arm/boot/dts/mt7629-lynx-rfb.dts
 +++ b/arch/arm/boot/dts/mt7629-lynx-rfb.dts
-@@ -278,6 +278,52 @@
+@@ -281,6 +281,52 @@
  	};
  };
  
