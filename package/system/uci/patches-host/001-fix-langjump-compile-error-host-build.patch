@@ -1,0 +1,11 @@
+--- a/uci_internal.h
++++ b/uci_internal.h
+@@ -185,7 +185,7 @@ struct uci_backend _var = {		\
+  */
+ #define UCI_HANDLE_ERR(ctx) do {	\
+ 	DPRINTF("ENTER: %s\n", __func__); \
+-	int __val = 0;			\
++	unsigned long __val = 0;	\
+ 	if (!ctx)			\
+ 		return UCI_ERR_INVAL;	\
+ 	ctx->err = 0;			\

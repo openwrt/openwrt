@@ -9,7 +9,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uci
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/uci.git
 PKG_SOURCE_PROTO:=git
@@ -26,6 +26,7 @@ PKG_BUILD_DEPENDS := uci/host
 PKG_BUILD_PARALLEL:=0
 
 HOST_BUILD_DEPENDS:=libubox/host
+HOST_PATCH_DIR := ./patches-host
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
