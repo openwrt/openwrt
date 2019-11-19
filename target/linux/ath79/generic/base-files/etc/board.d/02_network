@@ -282,12 +282,7 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_binary "Board data" 2)
 		label_mac=$lan_mac
 		;;
-	alfa-network,ap121f|\
-	ubnt,airrouter|\
-	ubnt,bullet-m|\
-	ubnt,nanostation-m|\
-	ubnt,rocket-m|\
-	ubnt,unifi)
+	alfa-network,ap121f)
 		label_mac=$(mtd_get_mac_binary art 0x1002)
 		;;
 	avm,fritz300e)
@@ -391,6 +386,13 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_text mac 0x4)
 		wan_mac=$(mtd_get_mac_text mac 0x18)
 		label_mac=$wan_mac
+		;;
+	ubnt,airrouter|\
+	ubnt,bullet-m|\
+	ubnt,nanostation-m|\
+	ubnt,rocket-m|\
+	ubnt,unifi)
+		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;
 	ubnt,routerstation|\
 	ubnt,routerstation-pro)
