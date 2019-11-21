@@ -15,7 +15,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
-@@ -866,10 +866,8 @@ static int bcm_enet_open(struct net_devi
+@@ -867,10 +867,8 @@ static int bcm_enet_open(struct net_devi
  	struct bcm_enet_priv *priv;
  	struct sockaddr addr;
  	struct device *kdev;
@@ -26,7 +26,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	void *p;
  	u32 val;
  
-@@ -877,40 +875,10 @@ static int bcm_enet_open(struct net_devi
+@@ -878,40 +876,10 @@ static int bcm_enet_open(struct net_devi
  	kdev = &priv->pdev->dev;
  
  	if (priv->has_phy) {
@@ -68,7 +68,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	}
  
  	/* mask all interrupts and request them */
-@@ -920,7 +888,7 @@ static int bcm_enet_open(struct net_devi
+@@ -921,7 +889,7 @@ static int bcm_enet_open(struct net_devi
  
  	ret = request_irq(dev->irq, bcm_enet_isr_mac, 0, dev->name, dev);
  	if (ret)
@@ -77,7 +77,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  
  	ret = request_irq(priv->irq_rx, bcm_enet_isr_dma, 0,
  			  dev->name, dev);
-@@ -1082,8 +1050,8 @@ static int bcm_enet_open(struct net_devi
+@@ -1083,8 +1051,8 @@ static int bcm_enet_open(struct net_devi
  	enet_dmac_writel(priv, priv->dma_chan_int_mask,
  			 ENETDMAC_IRMASK, priv->tx_chan);
  
@@ -88,7 +88,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	else
  		bcm_enet_adjust_link(dev);
  
-@@ -1124,10 +1092,6 @@ out_freeirq_rx:
+@@ -1125,10 +1093,6 @@ out_freeirq_rx:
  out_freeirq:
  	free_irq(dev->irq, dev);
  
@@ -99,7 +99,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	return ret;
  }
  
-@@ -1232,10 +1196,6 @@ static int bcm_enet_stop(struct net_devi
+@@ -1233,10 +1197,6 @@ static int bcm_enet_stop(struct net_devi
  	free_irq(priv->irq_rx, dev);
  	free_irq(dev->irq, dev);
  
@@ -110,7 +110,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	return 0;
  }
  
-@@ -1801,14 +1761,47 @@ static int bcm_enet_probe(struct platfor
+@@ -1802,14 +1762,47 @@ static int bcm_enet_probe(struct platfor
  
  	/* do minimal hardware init to be able to probe mii bus */
  	bcm_enet_hw_preinit(priv);
@@ -159,7 +159,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		}
  
  		bus = priv->mii_bus;
-@@ -1832,6 +1825,35 @@ static int bcm_enet_probe(struct platfor
+@@ -1833,6 +1826,35 @@ static int bcm_enet_probe(struct platfor
  			dev_err(&pdev->dev, "unable to register mdio bus\n");
  			goto out_free_mdio;
  		}
@@ -195,7 +195,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	} else {
  
  		/* run platform code to initialize PHY device */
-@@ -1839,45 +1861,16 @@ static int bcm_enet_probe(struct platfor
+@@ -1840,45 +1862,16 @@ static int bcm_enet_probe(struct platfor
  		    pd->mii_config(dev, 1, bcm_enet_mdio_read_mii,
  				   bcm_enet_mdio_write_mii)) {
  			dev_err(&pdev->dev, "unable to configure mdio bus\n");
@@ -245,7 +245,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	if (priv->mii_bus)
  		mdiobus_unregister(priv->mii_bus);
  
-@@ -1885,6 +1878,9 @@ out_free_mdio:
+@@ -1886,6 +1879,9 @@ out_free_mdio:
  	if (priv->mii_bus)
  		mdiobus_free(priv->mii_bus);
  
@@ -255,7 +255,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  out_uninit_hw:
  	/* turn off mdc clock */
  	enet_writel(priv, 0, ENET_MIISC_REG);
-@@ -1915,6 +1911,7 @@ static int bcm_enet_remove(struct platfo
+@@ -1916,6 +1912,7 @@ static int bcm_enet_remove(struct platfo
  	enet_writel(priv, 0, ENET_MIISC_REG);
  
  	if (priv->has_phy) {
