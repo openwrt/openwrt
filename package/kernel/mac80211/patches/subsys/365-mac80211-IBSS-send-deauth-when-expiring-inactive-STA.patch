@@ -78,7 +78,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	/* flush out frame - make sure the deauth was actually sent */
-@@ -4371,7 +4372,7 @@ void ieee80211_mgd_quiesce(struct ieee80
+@@ -4369,7 +4370,7 @@ void ieee80211_mgd_quiesce(struct ieee80
  		 * cfg80211 won't know and won't actually abort those attempts,
  		 * thus we need to do that ourselves.
  		 */
@@ -87,7 +87,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  					       IEEE80211_STYPE_DEAUTH,
  					       WLAN_REASON_DEAUTH_LEAVING,
  					       false, frame_buf);
-@@ -5351,7 +5352,7 @@ int ieee80211_mgd_deauth(struct ieee8021
+@@ -5349,7 +5350,7 @@ int ieee80211_mgd_deauth(struct ieee8021
  			   ieee80211_get_reason_code_string(req->reason_code));
  
  		drv_mgd_prepare_tx(sdata->local, sdata, 0);
@@ -96,7 +96,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  					       IEEE80211_STYPE_DEAUTH,
  					       req->reason_code, tx,
  					       frame_buf);
-@@ -5371,7 +5372,7 @@ int ieee80211_mgd_deauth(struct ieee8021
+@@ -5369,7 +5370,7 @@ int ieee80211_mgd_deauth(struct ieee8021
  			   ieee80211_get_reason_code_string(req->reason_code));
  
  		drv_mgd_prepare_tx(sdata->local, sdata, 0);
