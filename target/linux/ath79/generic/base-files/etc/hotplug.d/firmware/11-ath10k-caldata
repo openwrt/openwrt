@@ -12,6 +12,15 @@ case "$FIRMWARE" in
 	case $board in
 	comfast,cf-wr650ac-v1|\
 	comfast,cf-wr650ac-v2|\
+	ubnt,unifiac-lite|\
+	ubnt,unifiac-lr|\
+	ubnt,unifiac-mesh|\
+	ubnt,unifiac-mesh-pro|\
+	ubnt,lap-120|\
+	ubnt,nanobeam-ac|\
+	ubnt,nanostation-ac|\
+	ubnt,nanostation-ac-loco|\
+	ubnt,unifiac-pro|\
 	yuncore,a770)
 		caldata_extract "art" 0x5000 0x844
 		;;
@@ -100,17 +109,6 @@ case "$FIRMWARE" in
 	tplink,re450-v2)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) +1)
-		;;
-	ubnt,unifiac-lite|\
-	ubnt,unifiac-lr|\
-	ubnt,unifiac-mesh|\
-	ubnt,unifiac-mesh-pro|\
-	ubnt,lap-120|\
-	ubnt,nanobeam-ac|\
-	ubnt,nanostation-ac|\
-	ubnt,nanostation-ac-loco|\
-	ubnt,unifiac-pro)
-		caldata_extract "EEPROM" 0x5000 0x844
 		;;
 	esac
 	;;
