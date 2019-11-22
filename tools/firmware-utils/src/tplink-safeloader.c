@@ -511,9 +511,9 @@ static struct device_info boards[] = {
 		.vendor	= "CPE510(TP-LINK|UN|N300-5):1.0\r\n",
 		.support_list =
 			"SupportList:\r\n"
-			"WBS210(TP-LINK|UN|N300-2|00000000):2.00\r\n"
-			"WBS210(TP-LINK|US|N300-2|55530000):2.00\r\n"
-			"WBS210(TP-LINK|EU|N300-2|45550000):2.00\r\n",
+			"WBS210(TP-LINK|UN|N300-2|00000000):2.0\r\n"
+			"WBS210(TP-LINK|US|N300-2|55530000):2.0\r\n"
+			"WBS210(TP-LINK|EU|N300-2|45550000):2.0\r\n",
 		.support_trail = '\xff',
 		.soft_ver = NULL,
 
