@@ -966,7 +966,8 @@ dnsmasq_start()
 				[ -f "$TIMEVALIDFILE" ] || xappend "--dnssec-no-timecheck"
 			}
 		}
-		append_bool "$cfg" dnsseccheckunsigned "--dnssec-check-unsigned"
+		config_get_bool dnsseccheckunsigned "$cfg" dnsseccheckunsigned 1
+		[ "$dnsseccheckunsigned" -eq 0 ] && xappend "--dnssec-check-unsigned=no"
 	}
 
 	config_get addmac "$cfg" addmac 0
