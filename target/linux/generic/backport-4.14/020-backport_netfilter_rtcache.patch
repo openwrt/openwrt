@@ -127,7 +127,7 @@ Signed-off-by: Florian Westphal <fw@strlen.de>
  # netlink interface for nf_conntrack
 --- /dev/null
 +++ b/net/netfilter/nf_conntrack_rtcache.c
-@@ -0,0 +1,440 @@
+@@ -0,0 +1,430 @@
 +/* route cache for netfilter.
 + *
 + * (C) 2014 Red Hat GmbH
@@ -475,18 +475,8 @@ Signed-off-by: Florian Westphal <fw@strlen.de>
 +		return ret;
 +	}
 +
-+	ret = nf_register_net_hooks(&init_net, rtcache_ops,
-+				    ARRAY_SIZE(rtcache_ops));
-+	if (ret < 0) {
-+		nf_ct_extend_unregister(&rtcache_extend);
-+		unregister_pernet_subsys(&rtcache_ops_net_ops);
-+		return ret;
-+	}
-+
 +	ret = register_netdevice_notifier(&nf_rtcache_notifier);
 +	if (ret) {
-+		nf_unregister_net_hooks(&init_net, rtcache_ops,
-+					ARRAY_SIZE(rtcache_ops));
 +		nf_ct_extend_unregister(&rtcache_extend);
 +		unregister_pernet_subsys(&rtcache_ops_net_ops);
 +	}
