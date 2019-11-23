@@ -112,6 +112,25 @@
 	};
 };
 
+&pcie0 {
+	pcie@0 {
+		reg = <0 0 0 0 0>;
+		#interrupt-cells = <1>;
+		#size-cells = <2>;
+		#address-cells = <3>;
+		device_type = "pci";
+
+		wifi@0,0 {
+			reg = <0 0 0 0 0>;
+			mediatek,mtd-eeprom = <&radio 0x0000>;
+			big-endian;
+			ieee80211-freq-limit = <5000000 6000000>;
+			mtd-mac-address = <&romfile 0xf100>;
+			mtd-mac-address-increment = <2>;
+		};
+	};
+};
+
 &pci0 {
 	status = "okay";
 	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
@@ -166,7 +185,7 @@
 				read-only;
 			};
 
-			partition@ff0000 {
+			radio: partition@ff0000 {
 				reg = <0xff0000 0x10000>;
 				label = "radio";
 				read-only;
