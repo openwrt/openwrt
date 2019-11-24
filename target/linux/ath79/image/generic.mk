@@ -88,6 +88,17 @@ define Build/teltonika-fw-fake-checksum
 		dd of=$@ bs=1 count=16 seek=$$offs conv=notrunc
 endef
 
+define Build/bm100_hq55-loader-factory
+  -cat "$(KDIR)/loader-$(word 1,$(1)).uImage" >"$@"
+endef
+
+define Build/bm100_hq55-uboot-factory
+  -[ -f "$@" ] && \
+  dd if="$(KDIR)/loader-$(word 1,$(1)).uImage" of="$@".tmp bs=64k conv=sync && \
+  cat "$@" >>"$@".tmp && \
+  mv "$@".tmp "$@"
+endef
+
 define Build/xwrt_csac10-factory
   -[ -f "$@" ] && \
   mkdir -p "$@.tmp" && \
@@ -237,6 +248,24 @@ define Device/avm_fritz450e
   SUPPORTED_DEVICES += fritz450e
 endef
 TARGET_DEVICES += avm_fritz450e
+
+define Device/bm100_hq55
+  SOC := ar9344
+  DEVICE_VENDOR := BM100
+  DEVICE_MODEL := HQ55
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-gpio
+  IMAGE_SIZE := 15744k
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x60000
+  COMPILE := loader-$(1).bin loader-$(1).uImage
+  COMPILE/loader-$(1).bin := loader-okli-compile
+  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | lzma | uImage lzma
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  IMAGES += loader-factory.bin uboot-factory.bin
+  IMAGE/loader-factory.bin := bm100_hq55-loader-factory $(1)
+  IMAGE/uboot-factory.bin := $$(IMAGE/sysupgrade.bin) | bm100_hq55-uboot-factory $(1)
+endef
+TARGET_DEVICES += bm100_hq55
 
 define Device/buffalo_bhr-4grv
   SOC := ar7242
