@@ -1350,3 +1350,16 @@ define Device/fritz450e
   IMAGE_SIZE := 15232k
 endef
 TARGET_DEVICES += fritz450e
+
+define Device/zsun-sd100
+  DEVICE_TITLE := Zsun SD100
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-storage
+  BOARDNAME := ZSUN-SD100
+  SUPPORTED_DEVICES := zsun-sd100
+  IMAGE_SIZE := 12032k
+  CONSOLE := ttyATH0,115200
+  MTDPARTS := spi0.0:64k(u-boot)ro,64k(u-boot-env)ro,12032k(firmware),4096k(recovery)ro,64k(nvram)ro,64k(art)ro
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += zsun-sd100
