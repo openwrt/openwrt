@@ -1,0 +1,138 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+#include "ar9331.dtsi"
+
+/ {
+	model = "Zsun SD100";
+	compatible = "zsun,sd100", "qca,ar9331";
+
+	aliases {
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+		serial0 = &uart;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status: status {
+			label = "sd100:green:status";
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		sdcard_event {
+			label = "sdcard_event";
+			linux,code = <BTN_0>;
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		sdreader_reset {
+			gpio-export,name = "sdreader_reset";
+			gpio-export,output = <1>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+
+		sdreader_switch {
+			gpio-export,name = "sdreader_switch";
+			gpio-export,output = <0>;
+			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&spi {
+	status = "okay";
+
+	num-chipselects = <0>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <104000000>;
+		reg = <0>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x010000>;
+				read-only;
+			};
+
+			partition@10000 {
+				label = "u-boot-env";
+				reg = <0x010000 0x010000>;
+				read-only;
+			};
+
+			partition@20000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x020000 0xbc0000>;
+			};
+
+			partition@be0000 {
+				label = "recovery";
+				reg = <0xbe0000 0x400000>;
+				read-only;
+			};
+
+			partition@fe0000 {
+				label = "nvram";
+				reg = <0xfe0000 0x010000>;
+				read-only;
+			};
+
+			art: partition@ff0000 {
+				label = "art";
+				reg = <0xff0000 0x010000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&uart {
+	status = "okay";
+};
+
+&gpio {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+
+	compatible = "generic-ehci";
+	reg = <0x1b000000 0x1000>;
+
+	has-transaction-translator;
+	caps-offset = <0x100>;
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&wmac {
+	status = "okay";
+
+	mtd-cal-data = <&art 0x1000>;
+};

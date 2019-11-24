@@ -1099,3 +1099,12 @@ define Device/zbtlink_zbt-wd323
 	kmod-usb-serial kmod-usb-serial-cp210x uqmi
 endef
 TARGET_DEVICES += zbtlink_zbt-wd323
+
+define Device/zsun_sd100
+  SOC := ar9331
+  DEVICE_VENDOR := Zsun
+  DEVICE_MODEL := SD100
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-storage
+  IMAGE_SIZE := 12032k
+endef
+TARGET_DEVICES += zsun_sd100
