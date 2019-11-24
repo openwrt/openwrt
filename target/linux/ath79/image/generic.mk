@@ -569,6 +569,27 @@ define Device/belkin_f9k1115-v2
 endef
 TARGET_DEVICES += belkin_f9k1115-v2
 
+define Build/append-rootfs-64k
+	dd if=$(IMAGE_ROOTFS) bs=64k count=1 >> $@
+endef
+
+define Device/bm100_hq55
+  $(Device/loader-okli-uimage)
+  SOC := ar9344
+  DEVICE_VENDOR := BM100
+  DEVICE_MODEL := HQ55
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-gpio
+  IMAGE_SIZE := 14656k
+  LOADER_FLASH_OFFS := 0x60000
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  IMAGES += loader-factory.bin uboot-factory.bin breed-factory.bin
+  IMAGE/loader-factory.bin := append-okli-kernel $(1)
+  IMAGE/uboot-factory.bin := append-okli-kernel $(1) | pad-to 64k | append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs
+  IMAGE/breed-factory.bin := append-rootfs-64k | append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
+			     pad-to 14720k | append-okli-kernel $(1)
+endef
+TARGET_DEVICES += bm100_hq55
+
 define Device/buffalo_bhr-4grv
   $(Device/buffalo_common)
   SOC := ar7242
