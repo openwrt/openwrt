@@ -41,7 +41,7 @@ if [ -n "$BOOTLOADER" ]; then
 fi
 
 # generate image file
-printf "Creating $OUTFILE from /dev/zero: "
+printf "Creating %s from /dev/zero: " "$OUTFILE"
 dd if=/dev/zero of="$OUTFILE" bs=512 count=1 >/dev/null
 printf "Done\n"
 
