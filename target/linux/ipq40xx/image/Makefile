@@ -60,14 +60,18 @@ define Build/SenaoFW
 	@cp $@.new $@
 endef
 
-define Device/8dev_jalapeno
+define Device/8dev_jalapeno-common
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+endef
+
+define Device/8dev_jalapeno
+	$(call Device/8dev_jalapeno-common)
 	DEVICE_VENDOR := 8devices
 	DEVICE_MODEL := Jalapeno
 	DEVICE_DTS := qcom-ipq4018-jalapeno
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
 endef
 TARGET_DEVICES += 8dev_jalapeno
 
@@ -163,6 +167,15 @@ define Device/avm_fritzrepeater-3000
 	IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += avm_fritzrepeater-3000
+
+define Device/cilab_meshpoint-one
+	$(call Device/8dev_jalapeno-common)
+	DEVICE_DTS := qcom-ipq4018-meshpoint-one
+	DEVICE_VENDOR := Crisis Innovation Lab
+	DEVICE_MODEL := MeshPoint.One
+	DEVICE_PACKAGES := kmod-i2c-gpio kmod-iio-bmp280-i2c kmod-hwmon-ina2xx kmod-rtc-pcf2127
+endef
+TARGET_DEVICES += cilab_meshpoint-one
 
 define Device/compex_wpj419
 	$(call Device/FitImage)
