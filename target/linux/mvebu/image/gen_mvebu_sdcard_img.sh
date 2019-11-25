@@ -79,6 +79,6 @@ while [ "$#" -ge 2 ]; do
 	) | dd of="$OUTFILE" bs=512 seek=$(($1 / 512)) conv=notrunc 2>/dev/null
 	printf "Done\n"
 
-	let i=i+1
+	i=$((i+1))
 	shift; shift
 done
