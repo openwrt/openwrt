@@ -16,7 +16,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -30,6 +30,7 @@
+@@ -23,6 +23,7 @@
  #include <linux/ethtool.h>
  #include <linux/phy.h>
  #include <linux/phy_led_triggers.h>
@@ -24,38 +24,38 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  #include <linux/workqueue.h>
  #include <linux/mdio.h>
  #include <linux/io.h>
-@@ -871,6 +872,9 @@ void phy_stop(struct phy_device *phydev)
- 	if (phy_interrupt_is_valid(phydev))
- 		phy_disable_interrupts(phydev);
+@@ -841,6 +842,9 @@ void phy_stop(struct phy_device *phydev)
+ 
+ 	mutex_lock(&phydev->lock);
  
 +	if (phydev->sfp_bus)
 +		sfp_upstream_stop(phydev->sfp_bus);
 +
  	phydev->state = PHY_HALTED;
  
- out_unlock:
-@@ -899,6 +903,9 @@ void phy_start(struct phy_device *phydev
+ 	mutex_unlock(&phydev->lock);
+@@ -903,6 +907,9 @@ void phy_state_machine(struct work_struc
  
- 	mutex_lock(&phydev->lock);
+ 	old_state = phydev->state;
  
 +	if (phydev->sfp_bus)
 +		sfp_upstream_start(phydev->sfp_bus);
 +
  	switch (phydev->state) {
- 	case PHY_STARTING:
- 		phydev->state = PHY_PENDING;
+ 	case PHY_DOWN:
+ 	case PHY_READY:
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -31,6 +31,7 @@
- #include <linux/ethtool.h>
+@@ -27,6 +27,7 @@
+ #include <linux/bitmap.h>
  #include <linux/phy.h>
  #include <linux/phy_led_triggers.h>
 +#include <linux/sfp.h>
  #include <linux/mdio.h>
  #include <linux/io.h>
  #include <linux/uaccess.h>
-@@ -944,6 +945,65 @@ void phy_attached_print(struct phy_devic
- EXPORT_SYMBOL(phy_attached_print);
+@@ -1178,6 +1179,65 @@ phy_standalone_show(struct device *dev,
+ static DEVICE_ATTR_RO(phy_standalone);
  
  /**
 + * phy_sfp_attach - attach the SFP bus to the PHY upstream network device
@@ -120,9 +120,9 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
   * phy_attach_direct - attach a network device to a given PHY device pointer
   * @dev: network device to attach
   * @phydev: Pointer to phy_device to attach
-@@ -1016,6 +1076,9 @@ int phy_attach_direct(struct net_device
- 	phydev->attached_dev = dev;
- 	dev->phydev = phydev;
+@@ -1254,6 +1314,9 @@ int phy_attach_direct(struct net_device
+ 		dev->phydev = phydev;
+ 	}
  
 +	if (phydev->sfp_bus_attached)
 +		dev->sfp_bus = phydev->sfp_bus;
@@ -130,7 +130,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	/* Some Ethernet drivers try to connect to a PHY device before
  	 * calling register_netdevice() -> netdev_register_kobject() and
  	 * does the dev->dev.kobj initialization. Here we only check for
-@@ -1950,6 +2013,9 @@ static int phy_remove(struct device *dev
+@@ -2282,6 +2345,9 @@ static int phy_remove(struct device *dev
  	phydev->state = PHY_DOWN;
  	mutex_unlock(&phydev->lock);
  
@@ -142,7 +142,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -184,6 +184,8 @@ static inline const char *phy_modes(phy_
+@@ -203,6 +203,8 @@ static inline const char *phy_modes(phy_
  
  struct device;
  struct phylink;
@@ -151,16 +151,16 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  struct sk_buff;
  
  /*
-@@ -382,6 +384,8 @@ struct phy_c45_device_ids {
+@@ -342,6 +344,8 @@ struct phy_c45_device_ids {
+  * dev_flags: Device-specific flags used by the PHY driver.
   * irq: IRQ number of the PHY's interrupt (-1 if none)
   * phy_timer: The timer for handling the state machine
-  * phy_queue: A work_queue for the phy_mac_interrupt
 + * sfp_bus_attached: flag indicating whether the SFP bus has been attached
 + * sfp_bus: SFP bus attached to this PHY's fiber port
   * attached_dev: The attached enet driver's device instance ptr
   * adjust_link: Callback for the enet controller to respond to
   * changes in the link state.
-@@ -471,6 +475,9 @@ struct phy_device {
+@@ -432,6 +436,9 @@ struct phy_device {
  
  	struct mutex lock;
  
@@ -170,7 +170,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	struct phylink *phylink;
  	struct net_device *attached_dev;
  
-@@ -1031,6 +1038,10 @@ int phy_suspend(struct phy_device *phyde
+@@ -1020,6 +1027,10 @@ int phy_suspend(struct phy_device *phyde
  int phy_resume(struct phy_device *phydev);
  int __phy_resume(struct phy_device *phydev);
  int phy_loopback(struct phy_device *phydev, bool enable);

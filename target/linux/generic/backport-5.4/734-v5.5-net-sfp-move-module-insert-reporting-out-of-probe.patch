@@ -20,7 +20,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -45,11 +45,12 @@ enum {
+@@ -47,11 +47,12 @@ enum {
  	SFP_E_TIMEOUT,
  
  	SFP_MOD_EMPTY = 0,
@@ -34,7 +34,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  
  	SFP_DEV_DETACHED = 0,
  	SFP_DEV_DOWN,
-@@ -68,11 +69,12 @@ enum {
+@@ -70,11 +71,12 @@ enum {
  
  static const char  * const mod_state_strings[] = {
  	[SFP_MOD_EMPTY] = "empty",
@@ -48,7 +48,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  };
  
  static const char *mod_state_to_str(unsigned short mod_state)
-@@ -1479,16 +1481,13 @@ static int sfp_sm_mod_probe(struct sfp *
+@@ -1544,16 +1546,13 @@ static int sfp_sm_mod_probe(struct sfp *
  	if (ret < 0)
  		return ret;
  
@@ -67,7 +67,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  
  	sfp_hwmon_remove(sfp);
  
-@@ -1539,12 +1538,12 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1604,12 +1603,12 @@ static void sfp_sm_module(struct sfp *sf
  	}
  
  	/* Handle device detach globally */
@@ -83,7 +83,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		return;
  	}
  
-@@ -1555,6 +1554,7 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1620,6 +1619,7 @@ static void sfp_sm_module(struct sfp *sf
  		break;
  
  	case SFP_MOD_PROBE:
@@ -91,7 +91,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		if (event != SFP_E_TIMEOUT)
  			break;
  
-@@ -1568,6 +1568,20 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1633,6 +1633,20 @@ static void sfp_sm_module(struct sfp *sf
  			break;
  		}
  
@@ -112,7 +112,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		/* If this is a power level 1 module, we are done */
  		if (sfp->module_power_mW <= 1000)
  			goto insert;
-@@ -1577,12 +1591,17 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1642,12 +1656,17 @@ static void sfp_sm_module(struct sfp *sf
  	case SFP_MOD_HPOWER:
  		/* Enable high power mode */
  		err = sfp_sm_mod_hpower(sfp, true);
@@ -136,7 +136,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		break;
  
  	case SFP_MOD_WAITPWR:
-@@ -1750,8 +1769,6 @@ static void sfp_sm_event(struct sfp *sfp
+@@ -1815,8 +1834,6 @@ static void sfp_sm_event(struct sfp *sfp
  static void sfp_attach(struct sfp *sfp)
  {
  	sfp_sm_event(sfp, SFP_E_DEV_ATTACH);
@@ -145,7 +145,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  }
  
  static void sfp_detach(struct sfp *sfp)
-@@ -2001,6 +2018,11 @@ static int sfp_probe(struct platform_dev
+@@ -2084,6 +2101,11 @@ static int sfp_probe(struct platform_dev
  		sfp->state |= SFP_F_RATE_SELECT;
  	sfp_set_state(sfp, sfp->state);
  	sfp_module_tx_disable(sfp);

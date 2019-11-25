@@ -10,7 +10,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1144,6 +1144,10 @@ config SYNC_R4K
+@@ -1156,6 +1156,10 @@ config SYNC_R4K
  config MIPS_MACHINE
  	def_bool n
  
@@ -25,7 +25,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +++ b/arch/mips/kernel/head.S
 @@ -79,6 +79,12 @@ FEXPORT(__kernel_entry)
  	j	kernel_entry
- #endif
+ #endif /* CONFIG_BOOT_RAW */
  
 +#ifdef CONFIG_IMAGE_CMDLINE_HACK
 +	.ascii	"CMDLINE:"

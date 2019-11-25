@@ -37,7 +37,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  ifneq ($(CONFIG_DCB),)
 --- a/net/rfkill/Kconfig
 +++ b/net/rfkill/Kconfig
-@@ -1,7 +1,11 @@
+@@ -2,7 +2,11 @@
  #
  # RF switch subsystem configuration
  #
@@ -50,7 +50,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	tristate "RF switch subsystem support"
  	help
  	  Say Y here if you want to have control over RF switches
-@@ -13,19 +17,19 @@ menuconfig RFKILL
+@@ -14,19 +18,19 @@ menuconfig RFKILL
  # LED trigger support
  config RFKILL_LEDS
  	bool
@@ -75,7 +75,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	help
 --- a/net/rfkill/Makefile
 +++ b/net/rfkill/Makefile
-@@ -4,5 +4,5 @@
+@@ -5,5 +5,5 @@
  
  rfkill-y			+= core.o
  rfkill-$(CONFIG_RFKILL_INPUT)	+= input.o

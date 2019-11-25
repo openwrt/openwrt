@@ -15,7 +15,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -52,6 +52,7 @@ enum {
+@@ -54,6 +54,7 @@ enum {
  	SFP_DEV_UP,
  
  	SFP_S_DOWN = 0,
@@ -23,7 +23,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	SFP_S_INIT,
  	SFP_S_WAIT_LOS,
  	SFP_S_LINK_UP,
-@@ -108,6 +109,7 @@ static const char *event_to_str(unsigned
+@@ -110,6 +111,7 @@ static const char *event_to_str(unsigned
  
  static const char * const sm_state_strings[] = {
  	[SFP_S_DOWN] = "down",
@@ -31,7 +31,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	[SFP_S_INIT] = "init",
  	[SFP_S_WAIT_LOS] = "wait_los",
  	[SFP_S_LINK_UP] = "link_up",
-@@ -139,6 +141,7 @@ static const enum gpiod_flags gpio_flags
+@@ -141,6 +143,7 @@ static const enum gpiod_flags gpio_flags
  	GPIOD_ASIS,
  };
  
@@ -39,7 +39,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  #define T_INIT_JIFFIES	msecs_to_jiffies(300)
  #define T_RESET_US	10
  #define T_FAULT_RECOVER	msecs_to_jiffies(1000)
-@@ -159,9 +162,6 @@ static const enum gpiod_flags gpio_flags
+@@ -161,9 +164,6 @@ static const enum gpiod_flags gpio_flags
   */
  #define SFP_PHY_ADDR	22
  
@@ -49,7 +49,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  struct sff_data {
  	unsigned int gpios;
  	bool (*module_supported)(const struct sfp_eeprom_id *id);
-@@ -1202,8 +1202,6 @@ static void sfp_sm_probe_phy(struct sfp
+@@ -1267,8 +1267,6 @@ static void sfp_sm_probe_phy(struct sfp
  	struct phy_device *phy;
  	int err;
  
@@ -58,7 +58,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	phy = mdiobus_scan(sfp->i2c_mii, SFP_PHY_ADDR);
  	if (phy == ERR_PTR(-ENODEV)) {
  		dev_info(sfp->dev, "no PHY detected\n");
-@@ -1558,6 +1556,8 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1623,6 +1621,8 @@ static void sfp_sm_module(struct sfp *sf
  
  static void sfp_sm_main(struct sfp *sfp, unsigned int event)
  {
@@ -67,7 +67,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	/* Some events are global */
  	if (sfp->sm_state != SFP_S_DOWN &&
  	    (sfp->sm_mod_state != SFP_MOD_PRESENT ||
-@@ -1575,17 +1575,45 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -1640,17 +1640,45 @@ static void sfp_sm_main(struct sfp *sfp,
  	/* The main state machine */
  	switch (sfp->sm_state) {
  	case SFP_S_DOWN:
@@ -119,7 +119,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		}
  		break;
  
-@@ -1593,7 +1621,7 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -1658,7 +1686,7 @@ static void sfp_sm_main(struct sfp *sfp,
  		if (event == SFP_E_TIMEOUT && sfp->state & SFP_F_TX_FAULT)
  			sfp_sm_fault(sfp, true);
  		else if (event == SFP_E_TIMEOUT || event == SFP_E_TX_CLEAR)

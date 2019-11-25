@@ -14,7 +14,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -1500,6 +1500,14 @@ static void sfp_sm_device(struct sfp *sf
+@@ -1565,6 +1565,14 @@ static void sfp_sm_device(struct sfp *sf
   */
  static void sfp_sm_module(struct sfp *sfp, unsigned int event)
  {
@@ -29,7 +29,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	switch (sfp->sm_mod_state) {
  	default:
  		if (event == SFP_E_INSERT && sfp->attached) {
-@@ -1509,9 +1517,7 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1574,9 +1582,7 @@ static void sfp_sm_module(struct sfp *sf
  		break;
  
  	case SFP_MOD_PROBE:
@@ -40,7 +40,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  			int val = sfp_sm_mod_probe(sfp);
  
  			if (val == 0)
-@@ -1533,10 +1539,6 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1598,10 +1604,6 @@ static void sfp_sm_module(struct sfp *sf
  		/* fallthrough */
  	case SFP_MOD_PRESENT:
  	case SFP_MOD_ERROR:

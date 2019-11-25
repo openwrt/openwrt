@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -209,6 +209,89 @@ config LED_TRIGGER_PHY
+@@ -249,6 +249,89 @@ config LED_TRIGGER_PHY
  		for any speed known to the PHY.
  
  
@@ -123,9 +123,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +obj-$(CONFIG_RTL8367_PHY)	+= rtl8367.o
 +obj-$(CONFIG_RTL8367B_PHY)	+= rtl8367b.o
 +
+ obj-$(CONFIG_MDIO_ASPEED)	+= mdio-aspeed.o
  obj-$(CONFIG_MDIO_BCM_IPROC)	+= mdio-bcm-iproc.o
  obj-$(CONFIG_MDIO_BCM_UNIMAC)	+= mdio-bcm-unimac.o
- obj-$(CONFIG_MDIO_BITBANG)	+= mdio-bitbang.o
 --- a/include/linux/platform_data/b53.h
 +++ b/include/linux/platform_data/b53.h
 @@ -29,6 +29,9 @@ struct b53_platform_data {

@@ -19,7 +19,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp-bus.c
 +++ b/drivers/net/phy/sfp-bus.c
-@@ -123,35 +123,35 @@ int sfp_parse_port(struct sfp_bus *bus,
+@@ -124,35 +124,35 @@ int sfp_parse_port(struct sfp_bus *bus,
  
  	/* port is the physical connector, set this from the connector field. */
  	switch (id->base.connector) {
@@ -70,7 +70,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		port = PORT_OTHER;
  		break;
  	default:
-@@ -260,22 +260,33 @@ void sfp_parse_support(struct sfp_bus *b
+@@ -261,22 +261,33 @@ void sfp_parse_support(struct sfp_bus *b
  	}
  
  	switch (id->base.extended_cc) {
@@ -111,7 +111,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	default:
  		dev_warn(bus->sfp_dev,
  			 "Unknown/unsupported extended compliance code: 0x%02x\n",
-@@ -300,7 +311,7 @@ void sfp_parse_support(struct sfp_bus *b
+@@ -301,7 +312,7 @@ void sfp_parse_support(struct sfp_bus *b
  	 */
  	if (bitmap_empty(modes, __ETHTOOL_LINK_MODE_MASK_NBITS)) {
  		/* If the encoding and bit rate allows 1000baseX */
@@ -120,7 +120,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		    br_min <= 1300 && br_max >= 1200)
  			phylink_set(modes, 1000baseX_Full);
  	}
-@@ -331,7 +342,8 @@ phy_interface_t sfp_select_interface(str
+@@ -332,7 +343,8 @@ phy_interface_t sfp_select_interface(str
  	    phylink_test(link_modes, 10000baseSR_Full) ||
  	    phylink_test(link_modes, 10000baseLR_Full) ||
  	    phylink_test(link_modes, 10000baseLRM_Full) ||
@@ -132,7 +132,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	if (phylink_test(link_modes, 2500baseX_Full))
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -240,7 +240,7 @@ struct sfp {
+@@ -242,7 +242,7 @@ struct sfp {
  
  static bool sff_module_supported(const struct sfp_eeprom_id *id)
  {
@@ -141,7 +141,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	       id->base.phys_ext_id == SFP_PHYS_EXT_ID_SFP;
  }
  
-@@ -251,7 +251,7 @@ static const struct sff_data sff_data =
+@@ -253,7 +253,7 @@ static const struct sff_data sff_data =
  
  static bool sfp_module_supported(const struct sfp_eeprom_id *id)
  {

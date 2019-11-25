@@ -16,7 +16,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -199,7 +199,10 @@ struct sfp {
+@@ -201,7 +201,10 @@ struct sfp {
  	struct gpio_desc *gpio[GPIO_MAX];
  	int gpio_irq[GPIO_MAX];
  
@@ -27,7 +27,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	unsigned int state;
  	struct delayed_work poll;
  	struct delayed_work timeout;
-@@ -393,24 +396,90 @@ static int sfp_i2c_configure(struct sfp
+@@ -395,24 +398,90 @@ static int sfp_i2c_configure(struct sfp
  }
  
  /* Interface */
@@ -126,7 +126,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  }
  
  static unsigned int sfp_check(void *buf, size_t len)
-@@ -1342,11 +1411,6 @@ static void sfp_sm_fault(struct sfp *sfp
+@@ -1407,11 +1476,6 @@ static void sfp_sm_fault(struct sfp *sfp
  	}
  }
  
@@ -138,7 +138,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  static void sfp_sm_probe_for_phy(struct sfp *sfp)
  {
  	/* Setting the serdes link mode is guesswork: there's no
-@@ -1509,7 +1573,7 @@ static int sfp_sm_mod_probe(struct sfp *
+@@ -1574,7 +1638,7 @@ static int sfp_sm_mod_probe(struct sfp *
  		 (int)sizeof(id.ext.datecode), id.ext.datecode);
  
  	/* Check whether we support this module */
@@ -147,7 +147,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		dev_err(sfp->dev,
  			"module is not supported - phys id 0x%02x 0x%02x\n",
  			sfp->id.base.phys_id, sfp->id.base.phys_ext_id);
-@@ -1699,6 +1763,7 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -1764,6 +1828,7 @@ static void sfp_sm_main(struct sfp *sfp,
  		if (sfp->mod_phy)
  			sfp_sm_phy_detach(sfp);
  		sfp_module_tx_disable(sfp);
@@ -155,7 +155,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		sfp_sm_next(sfp, SFP_S_DOWN, 0);
  		return;
  	}
-@@ -1710,7 +1775,10 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -1775,7 +1840,10 @@ static void sfp_sm_main(struct sfp *sfp,
  		    sfp->sm_dev_state != SFP_DEV_UP)
  			break;
  
@@ -167,7 +167,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  
  		/* Initialise the fault clearance retries */
  		sfp->sm_retries = 5;
-@@ -1966,7 +2034,10 @@ static void sfp_poll(struct work_struct
+@@ -2031,7 +2099,10 @@ static void sfp_poll(struct work_struct
  	struct sfp *sfp = container_of(work, struct sfp, poll.work);
  
  	sfp_check_state(sfp);
@@ -179,15 +179,15 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  }
  
  static struct sfp *sfp_alloc(struct device *dev)
-@@ -2010,7 +2081,6 @@ static int sfp_probe(struct platform_dev
- {
+@@ -2076,7 +2147,6 @@ static int sfp_probe(struct platform_dev
  	const struct sff_data *sff;
+ 	struct i2c_adapter *i2c;
  	struct sfp *sfp;
 -	bool poll = false;
  	int err, i;
  
  	sfp = sfp_alloc(&pdev->dev);
-@@ -2100,7 +2170,7 @@ static int sfp_probe(struct platform_dev
+@@ -2183,7 +2253,7 @@ static int sfp_probe(struct platform_dev
  
  		sfp->gpio_irq[i] = gpiod_to_irq(sfp->gpio[i]);
  		if (!sfp->gpio_irq[i]) {
@@ -196,7 +196,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  			continue;
  		}
  
-@@ -2112,11 +2182,11 @@ static int sfp_probe(struct platform_dev
+@@ -2195,11 +2265,11 @@ static int sfp_probe(struct platform_dev
  						dev_name(sfp->dev), sfp);
  		if (err) {
  			sfp->gpio_irq[i] = 0;

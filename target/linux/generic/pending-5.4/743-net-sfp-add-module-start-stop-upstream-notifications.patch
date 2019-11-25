@@ -32,7 +32,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp-bus.c
 +++ b/drivers/net/phy/sfp-bus.c
-@@ -711,6 +711,27 @@ void sfp_module_remove(struct sfp_bus *b
+@@ -712,6 +712,27 @@ void sfp_module_remove(struct sfp_bus *b
  }
  EXPORT_SYMBOL_GPL(sfp_module_remove);
  
@@ -62,7 +62,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	bus->sfp_dev = NULL;
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -57,6 +57,7 @@ enum {
+@@ -59,6 +59,7 @@ enum {
  	SFP_DEV_UP,
  
  	SFP_S_DOWN = 0,
@@ -70,7 +70,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	SFP_S_WAIT,
  	SFP_S_INIT,
  	SFP_S_INIT_TX_FAULT,
-@@ -120,6 +121,7 @@ static const char *event_to_str(unsigned
+@@ -122,6 +123,7 @@ static const char *event_to_str(unsigned
  
  static const char * const sm_state_strings[] = {
  	[SFP_S_DOWN] = "down",
@@ -78,7 +78,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	[SFP_S_WAIT] = "wait",
  	[SFP_S_INIT] = "init",
  	[SFP_S_INIT_TX_FAULT] = "init_tx_fault",
-@@ -1766,6 +1768,8 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -1831,6 +1833,8 @@ static void sfp_sm_main(struct sfp *sfp,
  		if (sfp->sm_state == SFP_S_LINK_UP &&
  		    sfp->sm_dev_state == SFP_DEV_UP)
  			sfp_sm_link_down(sfp);
@@ -87,7 +87,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		if (sfp->mod_phy)
  			sfp_sm_phy_detach(sfp);
  		sfp_module_tx_disable(sfp);
-@@ -1833,6 +1837,10 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -1898,6 +1902,10 @@ static void sfp_sm_main(struct sfp *sfp,
  			 * clear.  Probe for the PHY and check the LOS state.
  			 */
  			sfp_sm_probe_for_phy(sfp);

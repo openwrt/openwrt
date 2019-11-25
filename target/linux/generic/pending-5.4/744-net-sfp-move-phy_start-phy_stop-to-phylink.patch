@@ -16,7 +16,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1717,6 +1717,26 @@ static int phylink_sfp_module_insert(voi
+@@ -1772,6 +1772,26 @@ static int phylink_sfp_module_insert(voi
  	return ret;
  }
  
@@ -43,7 +43,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  static void phylink_sfp_link_down(void *upstream)
  {
  	struct phylink *pl = upstream;
-@@ -1752,6 +1772,8 @@ static const struct sfp_upstream_ops sfp
+@@ -1807,6 +1827,8 @@ static const struct sfp_upstream_ops sfp
  	.attach = phylink_sfp_attach,
  	.detach = phylink_sfp_detach,
  	.module_insert = phylink_sfp_module_insert,
@@ -54,7 +54,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	.connect_phy = phylink_sfp_connect_phy,
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -1331,7 +1331,6 @@ static void sfp_sm_mod_next(struct sfp *
+@@ -1396,7 +1396,6 @@ static void sfp_sm_mod_next(struct sfp *
  
  static void sfp_sm_phy_detach(struct sfp *sfp)
  {
@@ -62,7 +62,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	sfp_remove_phy(sfp->sfp_bus);
  	phy_device_remove(sfp->mod_phy);
  	phy_device_free(sfp->mod_phy);
-@@ -1362,7 +1361,6 @@ static void sfp_sm_probe_phy(struct sfp
+@@ -1427,7 +1426,6 @@ static void sfp_sm_probe_phy(struct sfp
  	}
  
  	sfp->mod_phy = phy;

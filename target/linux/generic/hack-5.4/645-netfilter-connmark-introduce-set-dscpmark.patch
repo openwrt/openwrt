@@ -109,7 +109,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	__u8 invert;
 --- a/net/netfilter/xt_connmark.c
 +++ b/net/netfilter/xt_connmark.c
-@@ -36,12 +36,13 @@ MODULE_ALIAS("ipt_connmark");
+@@ -24,12 +24,13 @@ MODULE_ALIAS("ipt_connmark");
  MODULE_ALIAS("ip6t_connmark");
  
  static unsigned int
@@ -124,7 +124,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  
  	ct = nf_ct_get(skb, &ctinfo);
  	if (ct == NULL)
-@@ -49,12 +50,24 @@ connmark_tg_shift(struct sk_buff *skb, c
+@@ -37,12 +38,24 @@ connmark_tg_shift(struct sk_buff *skb, c
  
  	switch (info->mode) {
  	case XT_CONNMARK_SET:
@@ -154,7 +154,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  		if (ct->mark != newmark) {
  			ct->mark = newmark;
  			nf_conntrack_event_cache(IPCT_MARK, ct);
-@@ -93,20 +106,36 @@ static unsigned int
+@@ -81,20 +94,36 @@ static unsigned int
  connmark_tg(struct sk_buff *skb, const struct xt_action_param *par)
  {
  	const struct xt_connmark_tginfo1 *info = par->targinfo;
@@ -193,7 +193,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  
  	return connmark_tg_shift(skb, info);
  }
-@@ -177,6 +206,16 @@ static struct xt_target connmark_tg_reg[
+@@ -165,6 +194,16 @@ static struct xt_target connmark_tg_reg[
  		.targetsize     = sizeof(struct xt_connmark_tginfo2),
  		.destroy        = connmark_tg_destroy,
  		.me             = THIS_MODULE,

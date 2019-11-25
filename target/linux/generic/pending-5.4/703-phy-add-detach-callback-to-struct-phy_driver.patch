@@ -11,21 +11,21 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1201,6 +1201,9 @@ void phy_detach(struct phy_device *phyde
- 	struct module *ndev_owner = dev->dev.parent->driver->owner;
+@@ -1458,6 +1458,9 @@ void phy_detach(struct phy_device *phyde
+ 	struct module *ndev_owner = NULL;
  	struct mii_bus *bus;
  
 +	if (phydev->drv && phydev->drv->detach)
 +		phydev->drv->detach(phydev);
 +
  	if (phydev->sysfs_links) {
- 		sysfs_remove_link(&dev->dev.kobj, "phydev");
- 		sysfs_remove_link(&phydev->mdio.dev.kobj, "attached_dev");
+ 		if (dev)
+ 			sysfs_remove_link(&dev->dev.kobj, "phydev");
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -567,6 +567,12 @@ struct phy_driver {
- 	 */
- 	int (*did_interrupt)(struct phy_device *phydev);
+@@ -537,6 +537,12 @@ struct phy_driver {
+ 	/* Override default interrupt handling */
+ 	int (*handle_interrupt)(struct phy_device *phydev);
  
 +	/*
 +	 * Called before an ethernet device is detached

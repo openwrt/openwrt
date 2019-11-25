@@ -14,12 +14,12 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
-@@ -197,7 +197,7 @@ config PPC
- 	select HAVE_IOREMAP_PROT
- 	select HAVE_IRQ_EXIT_ON_IRQ_STACK
+@@ -204,7 +204,7 @@ config PPC
  	select HAVE_KERNEL_GZIP
--	select HAVE_KERNEL_XZ			if PPC_BOOK3S
-+	select HAVE_KERNEL_XZ			if PPC_BOOK3S || PPC_85xx
+ 	select HAVE_KERNEL_LZMA			if DEFAULT_UIMAGE
+ 	select HAVE_KERNEL_LZO			if DEFAULT_UIMAGE
+-	select HAVE_KERNEL_XZ			if PPC_BOOK3S || 44x
++	select HAVE_KERNEL_XZ			if PPC_BOOK3S || 44x || PPC_85xx
  	select HAVE_KPROBES
  	select HAVE_KPROBES_ON_FTRACE
  	select HAVE_KRETPROBES

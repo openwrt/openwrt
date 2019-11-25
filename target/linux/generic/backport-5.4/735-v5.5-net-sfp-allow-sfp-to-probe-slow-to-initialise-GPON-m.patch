@@ -19,7 +19,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -165,9 +165,12 @@ static const enum gpiod_flags gpio_flags
+@@ -167,9 +167,12 @@ static const enum gpiod_flags gpio_flags
   * The SFF-8472 specifies t_serial ("Time from power on until module is
   * ready for data transmission over the two wire serial bus.") as 300ms.
   */
@@ -35,7 +35,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  
  /* SFP modules appear to always have their PHY configured for bus address
   * 0x56 (which with mdio-i2c, translates to a PHY address of 22).
-@@ -202,6 +205,8 @@ struct sfp {
+@@ -204,6 +207,8 @@ struct sfp {
  	struct delayed_work timeout;
  	struct mutex sm_mutex;			/* Protects state machine */
  	unsigned char sm_mod_state;
@@ -44,7 +44,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	unsigned char sm_dev_state;
  	unsigned short sm_state;
  	unsigned int sm_retries;
-@@ -1392,7 +1397,7 @@ static int sfp_sm_mod_hpower(struct sfp
+@@ -1457,7 +1462,7 @@ static int sfp_sm_mod_hpower(struct sfp
  	return 0;
  }
  
@@ -53,7 +53,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  {
  	/* SFP module inserted - read I2C data */
  	struct sfp_eeprom_id id;
-@@ -1402,7 +1407,8 @@ static int sfp_sm_mod_probe(struct sfp *
+@@ -1467,7 +1472,8 @@ static int sfp_sm_mod_probe(struct sfp *
  
  	ret = sfp_read(sfp, false, 0, &id, sizeof(id));
  	if (ret < 0) {
@@ -63,7 +63,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		return -EAGAIN;
  	}
  
-@@ -1549,8 +1555,11 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1614,8 +1620,11 @@ static void sfp_sm_module(struct sfp *sf
  
  	switch (sfp->sm_mod_state) {
  	default:
@@ -76,7 +76,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		break;
  
  	case SFP_MOD_PROBE:
-@@ -1558,10 +1567,19 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1623,10 +1632,19 @@ static void sfp_sm_module(struct sfp *sf
  		if (event != SFP_E_TIMEOUT)
  			break;
  
@@ -99,7 +99,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		}
  		if (err < 0) {
  			sfp_sm_mod_next(sfp, SFP_MOD_ERROR, 0);
-@@ -1596,7 +1614,7 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1661,7 +1679,7 @@ static void sfp_sm_module(struct sfp *sf
  				sfp_module_remove(sfp->sfp_bus);
  				sfp_sm_mod_next(sfp, SFP_MOD_ERROR, 0);
  			} else {

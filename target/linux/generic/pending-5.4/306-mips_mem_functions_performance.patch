@@ -77,7 +77,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	   strnlen_user.o uncached.o
 +	   strnlen_user.o uncached.o memcmp.o
  
- obj-y			+= iomap.o iomap_copy.o
+ obj-y			+= iomap_copy.o
  obj-$(CONFIG_PCI)	+= iomap-pci.o
 --- /dev/null
 +++ b/arch/mips/lib/memcmp.c

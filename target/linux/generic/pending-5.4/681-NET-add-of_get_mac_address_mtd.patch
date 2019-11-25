@@ -16,9 +16,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
 @@ -11,6 +11,7 @@
- #include <linux/of_net.h>
  #include <linux/phy.h>
  #include <linux/export.h>
+ #include <linux/device.h>
 +#include <linux/mtd/mtd.h>
  
  /**
@@ -32,8 +32,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct property *pp = of_find_property(np, name, NULL);
  
-@@ -48,6 +49,79 @@ static const void *of_get_mac_addr(struc
- 	return NULL;
+@@ -72,6 +73,79 @@ static const void *of_get_mac_addr_nvmem
+ 	return mac;
  }
  
 +static const void *of_get_mac_address_mtd(struct device_node *np)
@@ -112,13 +112,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /**
   * Search the device tree for the best MAC address to use.  'mac-address' is
   * checked first, because that is supposed to contain to "most recent" MAC
-@@ -65,11 +139,18 @@ static const void *of_get_mac_addr(struc
-  * addresses.  Some older U-Boots only initialized 'local-mac-address'.  In
+@@ -92,12 +166,20 @@ static const void *of_get_mac_addr_nvmem
   * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
   * but is all zeros.
+  *
 + *
 + * If a mtd-mac-address property exists, try to fetch the MAC address from the
 + * specified mtd device, and store it as a 'mac-address' property
++ *
+  * Return: Will be a valid pointer on success and ERR_PTR in case of error.
  */
  const void *of_get_mac_address(struct device_node *np)
  {

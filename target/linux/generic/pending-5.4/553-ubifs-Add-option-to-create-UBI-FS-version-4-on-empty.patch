@@ -20,11 +20,10 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/fs/ubifs/Kconfig
 +++ b/fs/ubifs/Kconfig
-@@ -85,3 +85,16 @@ config UBIFS_FS_SECURITY
- 	  the extended attribute support in advance.
+@@ -85,6 +85,19 @@ config UBIFS_FS_SECURITY
  
  	  If you are not using a security module, say N.
-+
+ 
 +config UBIFS_FS_FORMAT4
 +	bool "Use file system format version 4 for new file systems"
 +	depends on UBIFS_FS
@@ -37,9 +36,13 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	  format version 5 for ubifs file systems created with version 5.
 +
 +	  If you are unsure, say N.
++
+ config UBIFS_FS_AUTHENTICATION
+ 	bool "UBIFS authentication support"
+ 	select KEYS
 --- a/fs/ubifs/sb.c
 +++ b/fs/ubifs/sb.c
-@@ -176,7 +176,9 @@ static int create_default_filesystem(str
+@@ -175,7 +175,9 @@ static int create_default_filesystem(str
  	tmp64 = (long long)max_buds * c->leb_size;
  	if (big_lpt)
  		sup_flags |= UBIFS_FLG_BIGLPT;
@@ -47,9 +50,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	sup_flags |= UBIFS_FLG_DOUBLE_HASH;
 +#endif
  
- 	sup->ch.node_type  = UBIFS_SB_NODE;
- 	sup->key_hash      = UBIFS_KEY_HASH_R5;
-@@ -192,7 +194,11 @@ static int create_default_filesystem(str
+ 	if (ubifs_authenticated(c)) {
+ 		sup_flags |= UBIFS_FLG_AUTHENTICATION;
+@@ -201,7 +203,11 @@ static int create_default_filesystem(str
  	sup->jhead_cnt     = cpu_to_le32(DEFAULT_JHEADS_CNT);
  	sup->fanout        = cpu_to_le32(DEFAULT_FANOUT);
  	sup->lsave_cnt     = cpu_to_le32(c->lsave_cnt);

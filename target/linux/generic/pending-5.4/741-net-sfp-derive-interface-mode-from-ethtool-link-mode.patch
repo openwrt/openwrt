@@ -18,7 +18,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/marvell10g.c
 +++ b/drivers/net/phy/marvell10g.c
-@@ -227,7 +227,7 @@ static int mv3310_sfp_insert(void *upstr
+@@ -214,7 +214,7 @@ static int mv3310_sfp_insert(void *upstr
  	phy_interface_t iface;
  
  	sfp_parse_support(phydev->sfp_bus, id, support);
@@ -29,18 +29,18 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		dev_err(&phydev->mdio.dev, "incompatible SFP module inserted\n");
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1663,7 +1663,7 @@ static int phylink_sfp_module_insert(voi
+@@ -1718,7 +1718,7 @@ static int phylink_sfp_module_insert(voi
  
  	linkmode_copy(support1, support);
  
 -	iface = sfp_select_interface(pl->sfp_bus, id, config.advertising);
 +	iface = sfp_select_interface(pl->sfp_bus, config.advertising);
  	if (iface == PHY_INTERFACE_MODE_NA) {
- 		netdev_err(pl->netdev,
- 			   "selection of interface failed, advertisement %*pb\n",
+ 		phylink_err(pl,
+ 			    "selection of interface failed, advertisement %*pb\n",
 --- a/drivers/net/phy/sfp-bus.c
 +++ b/drivers/net/phy/sfp-bus.c
-@@ -319,16 +319,12 @@ EXPORT_SYMBOL_GPL(sfp_parse_support);
+@@ -320,16 +320,12 @@ EXPORT_SYMBOL_GPL(sfp_parse_support);
  /**
   * sfp_select_interface() - Select appropriate phy_interface_t mode
   * @bus: a pointer to the &struct sfp_bus structure for the sfp module
@@ -59,7 +59,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  				     unsigned long *link_modes)
  {
  	if (phylink_test(link_modes, 10000baseCR_Full) ||
-@@ -341,7 +337,8 @@ phy_interface_t sfp_select_interface(str
+@@ -342,7 +338,8 @@ phy_interface_t sfp_select_interface(str
  	if (phylink_test(link_modes, 2500baseX_Full))
  		return PHY_INTERFACE_MODE_2500BASEX;
  

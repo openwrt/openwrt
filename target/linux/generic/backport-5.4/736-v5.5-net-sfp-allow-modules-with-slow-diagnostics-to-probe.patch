@@ -27,7 +27,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -216,6 +216,8 @@ struct sfp {
+@@ -218,6 +218,8 @@ struct sfp {
  
  #if IS_ENABLED(CONFIG_HWMON)
  	struct sfp_diag diag;
@@ -36,7 +36,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	struct device *hwmon_dev;
  	char *hwmon_name;
  #endif
-@@ -1094,29 +1096,27 @@ static const struct hwmon_chip_info sfp_
+@@ -1159,29 +1161,27 @@ static const struct hwmon_chip_info sfp_
  	.info = sfp_hwmon_info,
  };
  
@@ -81,7 +81,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  
  	for (i = 0; sfp->hwmon_name[i]; i++)
  		if (hwmon_is_bad_char(sfp->hwmon_name[i]))
-@@ -1126,18 +1126,52 @@ static int sfp_hwmon_insert(struct sfp *
+@@ -1191,18 +1191,52 @@ static int sfp_hwmon_insert(struct sfp *
  							 sfp->hwmon_name, sfp,
  							 &sfp_hwmon_chip_info,
  							 NULL);
@@ -135,7 +135,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  #else
  static int sfp_hwmon_insert(struct sfp *sfp)
  {
-@@ -1147,6 +1181,15 @@ static int sfp_hwmon_insert(struct sfp *
+@@ -1212,6 +1246,15 @@ static int sfp_hwmon_insert(struct sfp *
  static void sfp_hwmon_remove(struct sfp *sfp)
  {
  }
@@ -151,7 +151,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  #endif
  
  /* Helpers */
-@@ -1483,10 +1526,6 @@ static int sfp_sm_mod_probe(struct sfp *
+@@ -1548,10 +1591,6 @@ static int sfp_sm_mod_probe(struct sfp *
  	if (ret < 0)
  		return ret;
  
@@ -162,7 +162,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	return 0;
  }
  
-@@ -1635,6 +1674,15 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1700,6 +1739,15 @@ static void sfp_sm_module(struct sfp *sf
  	case SFP_MOD_ERROR:
  		break;
  	}
@@ -178,7 +178,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  }
  
  static void sfp_sm_main(struct sfp *sfp, unsigned int event)
-@@ -1936,6 +1984,8 @@ static struct sfp *sfp_alloc(struct devi
+@@ -2001,6 +2049,8 @@ static struct sfp *sfp_alloc(struct devi
  	INIT_DELAYED_WORK(&sfp->poll, sfp_poll);
  	INIT_DELAYED_WORK(&sfp->timeout, sfp_timeout);
  
@@ -187,7 +187,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	return sfp;
  }
  
-@@ -1943,6 +1993,8 @@ static void sfp_cleanup(void *data)
+@@ -2008,6 +2058,8 @@ static void sfp_cleanup(void *data)
  {
  	struct sfp *sfp = data;
  

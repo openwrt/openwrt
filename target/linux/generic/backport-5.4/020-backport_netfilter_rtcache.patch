@@ -94,7 +94,7 @@ Signed-off-by: Florian Westphal <fw@strlen.de>
 +}
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -135,6 +135,18 @@ config NF_CONNTRACK_EVENTS
+@@ -136,6 +136,18 @@ config NF_CONNTRACK_EVENTS
  
  	  If unsure, say `N'.
  
@@ -115,16 +115,16 @@ Signed-off-by: Florian Westphal <fw@strlen.de>
  	depends on NETFILTER_ADVANCED
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -25,6 +25,9 @@ obj-$(CONFIG_NETFILTER_NETLINK_OSF) += n
+@@ -26,6 +26,9 @@ obj-$(CONFIG_NETFILTER_NETLINK_OSF) += n
  # connection tracking
  obj-$(CONFIG_NF_CONNTRACK) += nf_conntrack.o
  
 +# optional conntrack route cache extension
 +obj-$(CONFIG_NF_CONNTRACK_RTCACHE) += nf_conntrack_rtcache.o
 +
- obj-$(CONFIG_NF_CT_PROTO_GRE) += nf_conntrack_proto_gre.o
- 
  # netlink interface for nf_conntrack
+ obj-$(CONFIG_NF_CT_NETLINK) += nf_conntrack_netlink.o
+ obj-$(CONFIG_NF_CT_NETLINK_TIMEOUT) += nfnetlink_cttimeout.o
 --- /dev/null
 +++ b/net/netfilter/nf_conntrack_rtcache.c
 @@ -0,0 +1,428 @@

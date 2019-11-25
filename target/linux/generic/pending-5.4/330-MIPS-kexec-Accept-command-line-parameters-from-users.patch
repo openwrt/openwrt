@@ -11,9 +11,9 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
 
 --- a/arch/mips/kernel/machine_kexec.c
 +++ b/arch/mips/kernel/machine_kexec.c
-@@ -10,14 +10,11 @@
- #include <linux/mm.h>
+@@ -9,14 +9,11 @@
  #include <linux/delay.h>
+ #include <linux/libfdt.h>
  
 +#include <asm/bootinfo.h>
  #include <asm/cacheflush.h>
@@ -27,11 +27,11 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
 +#include <linux/uaccess.h>
 +#include "machine_kexec.h"
  
- int (*_machine_kexec_prepare)(struct kimage *) = NULL;
+ static unsigned long reboot_code_buffer;
+ 
+@@ -30,6 +27,101 @@ void (*_crash_smp_send_stop)(void) = NUL
  void (*_machine_kexec_shutdown)(void) = NULL;
-@@ -28,6 +25,101 @@ atomic_t kexec_ready_to_reboot = ATOMIC_
- void (*_crash_smp_send_stop)(void) = NULL;
- #endif
+ void (*_machine_crash_shutdown)(struct pt_regs *regs) = NULL;
  
 +static void machine_kexec_print_args(void)
 +{
@@ -131,9 +131,9 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  static void kexec_image_info(const struct kimage *kimage)
  {
  	unsigned long i;
-@@ -52,6 +144,18 @@ int
- machine_kexec_prepare(struct kimage *kimage)
- {
+@@ -99,6 +191,18 @@ machine_kexec_prepare(struct kimage *kim
+ #endif
+ 
  	kexec_image_info(kimage);
 +	/*
 +	 * Whenever arguments passed from kexec-tools, Init the arguments as
@@ -150,7 +150,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  	if (_machine_kexec_prepare)
  		return _machine_kexec_prepare(kimage);
-@@ -89,10 +193,12 @@ machine_kexec(struct kimage *image)
+@@ -212,10 +316,12 @@ machine_kexec(struct kimage *image)
  	unsigned long *ptr;
  
  	reboot_code_buffer =
@@ -164,7 +164,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  	if (image->type == KEXEC_TYPE_DEFAULT) {
  		kexec_indirection_page =
-@@ -100,9 +206,19 @@ machine_kexec(struct kimage *image)
+@@ -223,9 +329,19 @@ machine_kexec(struct kimage *image)
  	} else {
  		kexec_indirection_page = (unsigned long)&image->head;
  	}
@@ -186,18 +186,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  	/*
  	 * The generic kexec code builds a page list with physical
-@@ -124,15 +240,16 @@ machine_kexec(struct kimage *image)
- 	/*
- 	 * we do not want to be bothered.
- 	 */
-+	pr_info("Before irq_disable.\n");
- 	local_irq_disable();
- 
--	printk("Will call new kernel at %08lx\n", image->start);
--	printk("Bye ...\n");
-+	pr_info("Will call new kernel at %08lx\n", image->start);
-+	pr_info("Bye ...\n");
- 	__flush_cache_all();
+@@ -256,7 +372,7 @@ machine_kexec(struct kimage *image)
  #ifdef CONFIG_SMP
  	/* All secondary cpus now may jump to kexec_wait cycle */
  	relocated_kexec_smp_wait = reboot_code_buffer +
@@ -231,7 +220,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
 +#endif
 --- a/arch/mips/kernel/relocate_kernel.S
 +++ b/arch/mips/kernel/relocate_kernel.S
-@@ -12,8 +12,9 @@
+@@ -10,8 +10,9 @@
  #include <asm/mipsregs.h>
  #include <asm/stackframe.h>
  #include <asm/addrspace.h>
@@ -242,7 +231,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  	PTR_L a0,	arg0
  	PTR_L a1,	arg1
  	PTR_L a2,	arg2
-@@ -98,7 +99,7 @@ done:
+@@ -96,7 +97,7 @@ done:
  #endif
  	/* jump to kexec_start_address */
  	j		s1
@@ -251,7 +240,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  #ifdef CONFIG_SMP
  /*
-@@ -184,9 +185,15 @@ kexec_indirection_page:
+@@ -182,9 +183,15 @@ kexec_indirection_page:
  	PTR		0
  	.size		kexec_indirection_page, PTRSIZE
  

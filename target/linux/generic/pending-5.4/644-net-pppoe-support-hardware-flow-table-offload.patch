@@ -9,7 +9,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/ppp/ppp_generic.c
 +++ b/drivers/net/ppp/ppp_generic.c
-@@ -57,6 +57,11 @@
+@@ -53,6 +53,11 @@
  #include <net/net_namespace.h>
  #include <net/netns/generic.h>
  
@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define PPP_VERSION	"2.4.2"
  
  /*
-@@ -1368,12 +1373,37 @@ static void ppp_dev_priv_destructor(stru
+@@ -1362,12 +1367,37 @@ static void ppp_dev_priv_destructor(stru
  		ppp_destroy_interface(ppp);
  }
  
@@ -61,7 +61,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static struct device_type ppp_type = {
 --- a/drivers/net/ppp/pppoe.c
 +++ b/drivers/net/ppp/pppoe.c
-@@ -78,6 +78,11 @@
+@@ -73,6 +73,11 @@
  #include <linux/proc_fs.h>
  #include <linux/seq_file.h>
  
@@ -73,7 +73,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <linux/nsproxy.h>
  #include <net/net_namespace.h>
  #include <net/netns/generic.h>
-@@ -976,8 +981,36 @@ static int pppoe_xmit(struct ppp_channel
+@@ -971,8 +976,36 @@ static int pppoe_xmit(struct ppp_channel
  	return __pppoe_xmit(sk, skb);
  }
  
@@ -112,7 +112,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int pppoe_recvmsg(struct socket *sock, struct msghdr *m,
 --- a/include/linux/ppp_channel.h
 +++ b/include/linux/ppp_channel.h
-@@ -32,6 +32,10 @@ struct ppp_channel_ops {
+@@ -28,6 +28,10 @@ struct ppp_channel_ops {
  	int	(*start_xmit)(struct ppp_channel *, struct sk_buff *);
  	/* Handle an ioctl call that has come in via /dev/ppp. */
  	int	(*ioctl)(struct ppp_channel *, unsigned int, unsigned long);

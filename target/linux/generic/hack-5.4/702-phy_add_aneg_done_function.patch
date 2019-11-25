@@ -1,6 +1,6 @@
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -555,6 +555,12 @@ struct phy_driver {
+@@ -522,6 +522,12 @@ struct phy_driver {
  	/* Determines the negotiated speed and duplex */
  	int (*read_status)(struct phy_device *phydev);
  
@@ -15,9 +15,9 @@
  
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1577,6 +1577,9 @@ int genphy_update_link(struct phy_device
- {
- 	int status;
+@@ -1822,6 +1822,9 @@ int genphy_update_link(struct phy_device
+ 	if (bmcr & BMCR_ANRESTART)
+ 		goto done;
  
 +	if (phydev->drv && phydev->drv->update_link)
 +		return phydev->drv->update_link(phydev);

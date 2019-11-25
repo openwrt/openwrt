@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/arch/mips/include/asm/r4kcache.h
 +++ b/arch/mips/include/asm/r4kcache.h
-@@ -683,16 +683,48 @@ static inline void prot##extra##blast_##
+@@ -617,14 +617,46 @@ static inline void prot##extra##blast_##
  						    unsigned long end)	\
  {									\
  	unsigned long lsize = cpu_##desc##_line_size();			\
@@ -25,8 +25,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	unsigned long aend = (end - 1) & ~(lsize - 1);			\
 +	unsigned long aend = (end + lsize - 1) & ~(lsize - 1);		\
 +	int lines = (aend - addr) / lsize;				\
- 									\
- 	__##pfx##flush_prologue						\
  									\
 -	while (1) {							\
 +	while (lines >= 8) {						\
@@ -62,5 +60,5 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -			break;						\
 -		addr += lsize;						\
  	}								\
- 									\
- 	__##pfx##flush_epilogue						\
+ }
+ 

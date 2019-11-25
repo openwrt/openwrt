@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/mtd/spi-nor/Kconfig
 +++ b/drivers/mtd/spi-nor/Kconfig
-@@ -39,6 +39,17 @@ config SPI_ASPEED_SMC
+@@ -34,6 +34,17 @@ config SPI_ASPEED_SMC
  	  and support for the SPI flash memory controller (SPI) for
  	  the host firmware. The implementation only supports SPI NOR.
  
@@ -34,23 +34,46 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	  Any flash chip larger than the size specified in this option will
 +	  not use 4K sectors.
 +
- config SPI_ATMEL_QUADSPI
- 	tristate "Atmel Quad SPI Controller"
- 	depends on ARCH_AT91 || (ARM && COMPILE_TEST && !ARCH_EBSA110)
+ config SPI_CADENCE_QUADSPI
+ 	tristate "Cadence Quad SPI controller"
+ 	depends on OF && (ARM || ARM64 || COMPILE_TEST)
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -2649,10 +2649,12 @@ static int spi_nor_select_erase(struct s
+@@ -4464,6 +4464,7 @@ static void spi_nor_info_init_params(str
+ 	struct spi_nor_erase_map *map = &params->erase_map;
+ 	const struct flash_info *info = nor->info;
+ 	struct device_node *np = spi_nor_get_flash_node(nor);
++	struct mtd_info *mtd = &nor->mtd;
+ 	u8 i, erase_mask;
  
- #ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
- 	/* prefer "small sector" erase if possible */
--	if (info->flags & SECT_4K) {
-+	if ((info->flags & SECT_4K) && (mtd->size <=
-+	    CONFIG_MTD_SPI_NOR_USE_4K_SECTORS_LIMIT * 1024)) {
- 		nor->erase_opcode = SPINOR_OP_BE_4K;
- 		mtd->erasesize = 4096;
--	} else if (info->flags & SECT_4K_PMC) {
-+	} else if ((info->flags & SECT_4K_PMC) && (mtd->size <=
+ 	/* Initialize legacy flash parameters and settings. */
+@@ -4527,6 +4528,21 @@ static void spi_nor_info_init_params(str
+ 	 */
+ 	erase_mask = 0;
+ 	i = 0;
++#ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
++	if ((info->flags & SECT_4K_PMC) && (mtd->size <=
 +		   CONFIG_MTD_SPI_NOR_USE_4K_SECTORS_LIMIT * 1024)) {
- 		nor->erase_opcode = SPINOR_OP_BE_4K_PMC;
- 		mtd->erasesize = 4096;
- 	} else
++		erase_mask |= BIT(i);
++		spi_nor_set_erase_type(&map->erase_type[i], 4096u,
++				       SPINOR_OP_BE_4K_PMC);
++		i++;
++	} else if ((info->flags & SECT_4K) && (mtd->size <=
++	    CONFIG_MTD_SPI_NOR_USE_4K_SECTORS_LIMIT * 1024)) {
++		erase_mask |= BIT(i);
++		spi_nor_set_erase_type(&map->erase_type[i], 4096u,
++				       SPINOR_OP_BE_4K);
++		i++;
++	}
++#else
+ 	if (info->flags & SECT_4K_PMC) {
+ 		erase_mask |= BIT(i);
+ 		spi_nor_set_erase_type(&map->erase_type[i], 4096u,
+@@ -4538,6 +4554,7 @@ static void spi_nor_info_init_params(str
+ 				       SPINOR_OP_BE_4K);
+ 		i++;
+ 	}
++#endif
+ 	erase_mask |= BIT(i);
+ 	spi_nor_set_erase_type(&map->erase_type[i], info->sector_size,
+ 			       SPINOR_OP_SE);

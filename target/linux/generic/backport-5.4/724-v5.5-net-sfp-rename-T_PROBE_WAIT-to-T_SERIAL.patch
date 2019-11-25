@@ -14,7 +14,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -147,11 +147,10 @@ static const enum gpiod_flags gpio_flags
+@@ -149,11 +149,10 @@ static const enum gpiod_flags gpio_flags
   * the same length on the PCB, which means it's possible for MOD DEF 0 to
   * connect before the I2C bus on MOD DEF 1/2.
   *
@@ -29,7 +29,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  #define T_HPOWER_LEVEL	msecs_to_jiffies(300)
  #define T_PROBE_RETRY	msecs_to_jiffies(100)
  
-@@ -1495,8 +1494,8 @@ static void sfp_sm_device(struct sfp *sf
+@@ -1560,8 +1559,8 @@ static void sfp_sm_device(struct sfp *sf
  	}
  }
  
@@ -40,7 +40,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
   */
  static void sfp_sm_module(struct sfp *sfp, unsigned int event)
  {
-@@ -1512,7 +1511,7 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1577,7 +1576,7 @@ static void sfp_sm_module(struct sfp *sf
  	default:
  		if (event == SFP_E_INSERT && sfp->attached) {
  			sfp_module_tx_disable(sfp);

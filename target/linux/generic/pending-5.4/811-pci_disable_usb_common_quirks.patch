@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static struct amd_chipset_info {
  	struct pci_dev	*nb_dev;
  	struct pci_dev	*smbus_dev;
-@@ -628,6 +630,10 @@ bool usb_amd_pt_check_port(struct device
+@@ -630,6 +632,10 @@ bool usb_amd_pt_check_port(struct device
  }
  EXPORT_SYMBOL_GPL(usb_amd_pt_check_port);
  
@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /*
   * Make sure the controller is completely inactive, unable to
   * generate interrupts or do DMA.
-@@ -707,8 +713,17 @@ reset_needed:
+@@ -709,8 +715,17 @@ reset_needed:
  	uhci_reset_hc(pdev, base);
  	return 1;
  }
@@ -48,7 +48,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static inline int io_type_enabled(struct pci_dev *pdev, unsigned int mask)
  {
  	u16 cmd;
-@@ -1275,3 +1290,4 @@ static void quirk_usb_early_handoff(stru
+@@ -1271,3 +1286,4 @@ static void quirk_usb_early_handoff(stru
  }
  DECLARE_PCI_FIXUP_CLASS_FINAL(PCI_ANY_ID, PCI_ANY_ID,
  			PCI_CLASS_SERIAL_USB, 8, quirk_usb_early_handoff);
@@ -62,14 +62,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#endif  /* CONFIG_USB_PCI */
 +
 +#if defined(CONFIG_USB_PCI) && !defined(CONFIG_PCI_DISABLE_COMMON_QUIRKS)
- int usb_amd_find_chipset_info(void);
  int usb_hcd_amd_remote_wakeup_quirk(struct pci_dev *pdev);
  bool usb_amd_hang_symptom_quirk(void);
+ bool usb_amd_prefetch_quirk(void);
 @@ -19,6 +22,18 @@ void sb800_prefetch(struct device *dev,
  bool usb_amd_pt_check_port(struct device *device, int port);
  #else
  struct pci_dev;
-+static inline int usb_amd_find_chipset_info(void)
++static inline int usb_amd_quirk_pll_check(void)
 +{
 +	return 0;
 +}
@@ -98,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif  /*  __LINUX_USB_PCI_QUIRKS_H  */
 --- a/include/linux/usb/hcd.h
 +++ b/include/linux/usb/hcd.h
-@@ -473,7 +473,14 @@ extern int usb_hcd_pci_probe(struct pci_
+@@ -483,7 +483,14 @@ extern int usb_hcd_pci_probe(struct pci_
  extern void usb_hcd_pci_remove(struct pci_dev *dev);
  extern void usb_hcd_pci_shutdown(struct pci_dev *dev);
  

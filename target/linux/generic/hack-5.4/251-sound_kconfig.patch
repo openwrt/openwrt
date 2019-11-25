@@ -43,8 +43,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_BLKCIPHER2
  	select CRYPTO_ALGAPI
  
-@@ -64,7 +64,7 @@ config CRYPTO_BLKCIPHER2
- 	select CRYPTO_WORKQUEUE
+@@ -63,7 +63,7 @@ config CRYPTO_BLKCIPHER2
+ 	select CRYPTO_RNG2
  
  config CRYPTO_HASH
 -	tristate
@@ -52,7 +52,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_HASH2
  	select CRYPTO_ALGAPI
  
-@@ -73,7 +73,7 @@ config CRYPTO_HASH2
+@@ -72,7 +72,7 @@ config CRYPTO_HASH2
  	select CRYPTO_ALGAPI2
  
  config CRYPTO_RNG
@@ -73,7 +73,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/drivers/ssb/Kconfig
 +++ b/drivers/ssb/Kconfig
-@@ -28,6 +28,7 @@ config SSB_SPROM
+@@ -29,6 +29,7 @@ config SSB_SPROM
  config SSB_BLOCKIO
  	bool
  	depends on SSB
@@ -81,7 +81,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  config SSB_PCIHOST_POSSIBLE
  	bool
-@@ -48,7 +49,7 @@ config SSB_PCIHOST
+@@ -49,7 +50,7 @@ config SSB_PCIHOST
  config SSB_B43_PCI_BRIDGE
  	bool
  	depends on SSB_PCIHOST
@@ -92,7 +92,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -377,16 +377,16 @@ config BCH_CONST_T
+@@ -402,16 +402,16 @@ config BCH_CONST_T
  # Textsearch support is select'ed if needed
  #
  config TEXTSEARCH
@@ -115,7 +115,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -10,7 +10,7 @@ config NETFILTER_INGRESS
+@@ -11,7 +11,7 @@ config NETFILTER_INGRESS
  	  infrastructure.
  
  config NETFILTER_NETLINK
@@ -126,14 +126,15 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/net/wireless/Kconfig
 +++ b/net/wireless/Kconfig
-@@ -1,5 +1,5 @@
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0-only
  config WIRELESS_EXT
 -	bool
 +	bool "Wireless extensions"
  
  config WEXT_CORE
  	def_bool y
-@@ -11,10 +11,10 @@ config WEXT_PROC
+@@ -12,10 +12,10 @@ config WEXT_PROC
  	depends on WEXT_CORE
  
  config WEXT_SPY
@@ -146,7 +147,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  config CFG80211
  	tristate "cfg80211 - wireless configuration API"
-@@ -202,7 +202,7 @@ config CFG80211_WEXT_EXPORT
+@@ -203,7 +203,7 @@ config CFG80211_WEXT_EXPORT
  endif # CFG80211
  
  config LIB80211
@@ -155,29 +156,29 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	default n
  	help
  	  This options enables a library of common routines used
-@@ -211,13 +211,16 @@ config LIB80211
+@@ -212,16 +212,16 @@ config LIB80211
  	  Drivers should select this themselves if needed.
  
  config LIB80211_CRYPT_WEP
 -	tristate
 +	tristate "LIB80211_CRYPT_WEP"
-+	select LIB80211
+ 	select CRYPTO_LIB_ARC4
  
  config LIB80211_CRYPT_CCMP
 -	tristate
 +	tristate "LIB80211_CRYPT_CCMP"
-+	select LIB80211
+ 	select CRYPTO_AES
+ 	select CRYPTO_CCM
  
  config LIB80211_CRYPT_TKIP
 -	tristate
 +	tristate "LIB80211_CRYPT_TKIP"
-+	select LIB80211
+ 	select CRYPTO_LIB_ARC4
  
  config LIB80211_DEBUG
- 	bool "lib80211 debugging messages"
 --- a/sound/core/Kconfig
 +++ b/sound/core/Kconfig
-@@ -16,7 +16,7 @@ config SND_DMAENGINE_PCM
+@@ -17,7 +17,7 @@ config SND_DMAENGINE_PCM
  	tristate
  
  config SND_HWDEP
@@ -186,7 +187,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  config SND_SEQ_DEVICE
  	tristate
-@@ -26,7 +26,7 @@ config SND_RAWMIDI
+@@ -27,7 +27,7 @@ config SND_RAWMIDI
  	select SND_SEQ_DEVICE if SND_SEQUENCER != n
  
  config SND_COMPRESS_OFFLOAD

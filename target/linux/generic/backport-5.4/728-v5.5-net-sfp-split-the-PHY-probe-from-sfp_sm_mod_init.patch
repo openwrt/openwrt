@@ -14,7 +14,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -1288,14 +1288,10 @@ static void sfp_sm_fault(struct sfp *sfp
+@@ -1353,14 +1353,10 @@ static void sfp_sm_fault(struct sfp *sfp
  static void sfp_sm_mod_init(struct sfp *sfp)
  {
  	sfp_module_tx_enable(sfp);
@@ -32,7 +32,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	/* Setting the serdes link mode is guesswork: there's no
  	 * field in the EEPROM which indicates what mode should
  	 * be used.
-@@ -1580,8 +1576,17 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -1645,8 +1641,17 @@ static void sfp_sm_main(struct sfp *sfp,
  	switch (sfp->sm_state) {
  	case SFP_S_DOWN:
  		if (sfp->sm_mod_state == SFP_MOD_PRESENT &&

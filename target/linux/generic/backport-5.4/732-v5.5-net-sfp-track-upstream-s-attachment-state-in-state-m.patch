@@ -24,7 +24,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -34,6 +34,8 @@ enum {
+@@ -36,6 +36,8 @@ enum {
  
  	SFP_E_INSERT = 0,
  	SFP_E_REMOVE,
@@ -33,7 +33,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	SFP_E_DEV_DOWN,
  	SFP_E_DEV_UP,
  	SFP_E_TX_FAULT,
-@@ -48,7 +50,8 @@ enum {
+@@ -50,7 +52,8 @@ enum {
  	SFP_MOD_PRESENT,
  	SFP_MOD_ERROR,
  
@@ -43,7 +43,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	SFP_DEV_UP,
  
  	SFP_S_DOWN = 0,
-@@ -78,6 +81,7 @@ static const char *mod_state_to_str(unsi
+@@ -80,6 +83,7 @@ static const char *mod_state_to_str(unsi
  }
  
  static const char * const dev_state_strings[] = {
@@ -51,7 +51,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	[SFP_DEV_DOWN] = "down",
  	[SFP_DEV_UP] = "up",
  };
-@@ -92,6 +96,8 @@ static const char *dev_state_to_str(unsi
+@@ -94,6 +98,8 @@ static const char *dev_state_to_str(unsi
  static const char * const event_strings[] = {
  	[SFP_E_INSERT] = "insert",
  	[SFP_E_REMOVE] = "remove",
@@ -60,7 +60,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	[SFP_E_DEV_DOWN] = "dev_down",
  	[SFP_E_DEV_UP] = "dev_up",
  	[SFP_E_TX_FAULT] = "tx_fault",
-@@ -186,7 +192,6 @@ struct sfp {
+@@ -188,7 +194,6 @@ struct sfp {
  	struct gpio_desc *gpio[GPIO_MAX];
  	int gpio_irq[GPIO_MAX];
  
@@ -68,7 +68,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	struct mutex st_mutex;			/* Protects state */
  	unsigned int state;
  	struct delayed_work poll;
-@@ -1494,17 +1499,26 @@ static void sfp_sm_mod_remove(struct sfp
+@@ -1559,17 +1564,26 @@ static void sfp_sm_mod_remove(struct sfp
  	dev_info(sfp->dev, "module removed\n");
  }
  
@@ -98,7 +98,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  			sfp->sm_dev_state = SFP_DEV_DOWN;
  		break;
  	}
-@@ -1515,17 +1529,20 @@ static void sfp_sm_device(struct sfp *sf
+@@ -1580,17 +1594,20 @@ static void sfp_sm_device(struct sfp *sf
   */
  static void sfp_sm_module(struct sfp *sfp, unsigned int event)
  {
@@ -123,7 +123,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  			sfp_sm_mod_next(sfp, SFP_MOD_PROBE, T_SERIAL);
  		break;
  
-@@ -1691,8 +1708,8 @@ static void sfp_sm_event(struct sfp *sfp
+@@ -1756,8 +1773,8 @@ static void sfp_sm_event(struct sfp *sfp
  		sm_state_to_str(sfp->sm_state),
  		event_to_str(event));
  
@@ -133,7 +133,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	sfp_sm_main(sfp, event);
  
  	dev_dbg(sfp->dev, "SM: exit %s:%s:%s\n",
-@@ -1705,15 +1722,14 @@ static void sfp_sm_event(struct sfp *sfp
+@@ -1770,15 +1787,14 @@ static void sfp_sm_event(struct sfp *sfp
  
  static void sfp_attach(struct sfp *sfp)
  {

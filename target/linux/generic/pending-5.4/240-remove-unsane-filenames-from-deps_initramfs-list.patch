@@ -18,7 +18,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/usr/Makefile
 +++ b/usr/Makefile
-@@ -42,20 +42,22 @@ ifneq ($(wildcard $(obj)/$(datafile_d_y)
+@@ -42,21 +42,23 @@ ifneq ($(wildcard $(obj)/$(datafile_d_y)
  	include $(obj)/$(datafile_d_y)
  endif
  
@@ -36,11 +36,12 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 -$(deps_initramfs): klibcdirs
 +$(deps_initramfs_sane): klibcdirs
  # We rebuild initramfs_data.cpio if:
- # 1) Any included file is newer then initramfs_data.cpio
+ # 1) Any included file is newer than initramfs_data.cpio
  # 2) There are changes in which files are included (added or deleted)
  # 3) If gen_init_cpio are newer than initramfs_data.cpio
- # 4) arguments to gen_initramfs.sh changes
+ # 4) Arguments to gen_initramfs.sh changes
 -$(obj)/$(datafile_y): $(obj)/gen_init_cpio $(deps_initramfs) klibcdirs
 +$(obj)/$(datafile_y): $(obj)/gen_init_cpio $(deps_initramfs_sane) klibcdirs
  	$(Q)$(initramfs) -l $(ramfs-input) > $(obj)/$(datafile_d_y)
  	$(call if_changed,initfs)
+ 

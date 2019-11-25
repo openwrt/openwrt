@@ -1,7 +1,7 @@
-From 3d8592a23dd67fb78ad85ddf711a059d3880fcb4 Mon Sep 17 00:00:00 2001
+From 7adb5b2126bc013f0964ddaefad6ad1b132e86c3 Mon Sep 17 00:00:00 2001
 From: Russell King <rmk+kernel@armlinux.org.uk>
-Date: Fri, 8 Nov 2019 17:19:16 +0000
-Subject: [PATCH 654/660] net: phylink: make Broadcom BCM84881 based SFPs work
+Date: Wed, 11 Dec 2019 10:56:50 +0000
+Subject: [PATCH] net: phylink: make Broadcom BCM84881 based SFPs work
 
 The Broadcom BCM84881 does not appear to send the SGMII control word
 when operating in SGMII mode, which causes network adapters to fail
@@ -11,14 +11,16 @@ the PHY negotiated 100M.
 Work around this by detecting the Broadcom BCM84881 and switch to phy
 mode rather than inband mode.
 
+Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
 Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
- drivers/net/phy/phylink.c | 17 ++++++++++++++++-
- 1 file changed, 16 insertions(+), 1 deletion(-)
+ drivers/net/phy/phylink.c | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1787,12 +1787,22 @@ static void phylink_sfp_link_up(void *up
+@@ -1842,10 +1842,20 @@ static void phylink_sfp_link_up(void *up
  	phylink_run_resolve(pl);
  }
  
@@ -34,16 +36,14 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  static int phylink_sfp_connect_phy(void *upstream, struct phy_device *phy)
  {
  	struct phylink *pl = upstream;
- 	__ETHTOOL_DECLARE_LINK_MODE_MASK(supported);
- 	__ETHTOOL_DECLARE_LINK_MODE_MASK(advertising);
  	phy_interface_t interface;
 +	u8 mode;
  	int ret;
  
  	/*
-@@ -1807,8 +1817,13 @@ static int phylink_sfp_connect_phy(void
- 	ethtool_convert_legacy_u32_to_link_mode(supported, phy->supported);
- 	ethtool_convert_legacy_u32_to_link_mode(advertising, phy->advertising);
+@@ -1857,9 +1867,13 @@ static int phylink_sfp_connect_phy(void
+ 	 */
+ 	phy_support_asym_pause(phy);
  
 +	if (phylink_phy_no_inband(phy))
 +		mode = MLO_AN_PHY;
@@ -51,8 +51,9 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 +		mode = MLO_AN_INBAND;
 +
  	/* Do the initial configuration */
--	ret = phylink_sfp_config(pl, ML_AN_INBAND, supported, advertising);
-+	ret = phylink_sfp_config(pl, mode, supported, advertising);
+-	ret = phylink_sfp_config(pl, MLO_AN_INBAND, phy->supported,
+-				 phy->advertising);
++	ret = phylink_sfp_config(pl, mode, phy->supported, phy->advertising);
  	if (ret < 0)
  		return ret;
  

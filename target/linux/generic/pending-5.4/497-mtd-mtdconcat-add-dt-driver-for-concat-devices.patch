@@ -43,22 +43,22 @@ Signed-off-by: Bernhard Frauendienst <kernel@nospam.obeliks.de>
 
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -374,4 +374,6 @@ source "drivers/mtd/spi-nor/Kconfig"
+@@ -244,4 +244,6 @@ source "drivers/mtd/ubi/Kconfig"
  
- source "drivers/mtd/ubi/Kconfig"
+ source "drivers/mtd/hyperbus/Kconfig"
  
 +source "drivers/mtd/composite/Kconfig"
 +
  endif # MTD
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -39,3 +39,6 @@ obj-y		+= chips/ lpddr/ maps/ devices/ n
- 
+@@ -32,3 +32,6 @@ obj-y		+= chips/ lpddr/ maps/ devices/ n
  obj-$(CONFIG_MTD_SPI_NOR)	+= spi-nor/
  obj-$(CONFIG_MTD_UBI)		+= ubi/
+ obj-$(CONFIG_MTD_HYPERBUS)	+= hyperbus/
 +
 +# Composite drivers must be loaded last
-+obj-y		+= composite/
++obj-y				+= composite/
 --- /dev/null
 +++ b/drivers/mtd/composite/Kconfig
 @@ -0,0 +1,12 @@

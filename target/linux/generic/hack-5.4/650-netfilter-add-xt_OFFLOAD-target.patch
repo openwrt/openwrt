@@ -8,7 +8,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -63,8 +63,6 @@ config NF_TABLES_ARP
+@@ -56,8 +56,6 @@ config NF_TABLES_ARP
  	help
  	  This option enables the ARP support for nf_tables.
  
@@ -17,7 +17,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  config NF_FLOW_TABLE_IPV4
  	tristate "Netfilter flow table IPv4 module"
  	depends on NF_FLOW_TABLE
-@@ -73,6 +71,8 @@ config NF_FLOW_TABLE_IPV4
+@@ -66,6 +64,8 @@ config NF_FLOW_TABLE_IPV4
  
  	  To compile it as a module, choose M here.
  
@@ -28,7 +28,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	depends on !NF_CONNTRACK || NF_CONNTRACK
 --- a/net/ipv6/netfilter/Kconfig
 +++ b/net/ipv6/netfilter/Kconfig
-@@ -80,7 +80,6 @@ config NFT_FIB_IPV6
+@@ -45,7 +45,6 @@ config NFT_FIB_IPV6
  	  multicast or blackhole.
  
  endif # NF_TABLES_IPV6
@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  config NF_FLOW_TABLE_IPV6
  	tristate "Netfilter flow table IPv6 module"
-@@ -90,6 +89,8 @@ config NF_FLOW_TABLE_IPV6
+@@ -55,6 +54,8 @@ config NF_FLOW_TABLE_IPV6
  
  	  To compile it as a module, choose M here.
  
@@ -47,7 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	depends on !NF_CONNTRACK || NF_CONNTRACK
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -693,8 +693,6 @@ config NFT_FIB_NETDEV
+@@ -702,8 +702,6 @@ config NFT_FIB_NETDEV
  
  endif # NF_TABLES_NETDEV
  
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  config NF_FLOW_TABLE_INET
  	tristate "Netfilter flow table mixed IPv4/IPv6 module"
  	depends on NF_FLOW_TABLE
-@@ -703,11 +701,12 @@ config NF_FLOW_TABLE_INET
+@@ -712,11 +710,12 @@ config NF_FLOW_TABLE_INET
  
  	  To compile it as a module, choose M here.
  
@@ -70,7 +70,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	help
  	  This option adds the flow table core infrastructure.
  
-@@ -996,6 +995,15 @@ config NETFILTER_XT_TARGET_NOTRACK
+@@ -1005,6 +1004,15 @@ config NETFILTER_XT_TARGET_NOTRACK
  	depends on NETFILTER_ADVANCED
  	select NETFILTER_XT_TARGET_CT
  
@@ -98,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,422 @@
+@@ -0,0 +1,427 @@
 +/*
 + * Copyright (C) 2018 Felix Fietkau <nbd@nbd.name>
 + *
@@ -142,6 +142,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	return NF_ACCEPT;
 +}
++
++int nf_flow_table_iterate(struct nf_flowtable *flow_table,
++			   void (*iter)(struct flow_offload *flow, void *data),
++			   void *data);
 +
 +static int
 +xt_flowoffload_create_hook(struct net_device *dev)
@@ -240,11 +244,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	struct flow_offload_tuple *tuple = &flow->tuplehash[0].tuple;
 +	struct xt_flowoffload_hook *hook;
 +	bool *found = data;
++	struct rtable *rt = (struct rtable *)tuple->dst_cache;
 +
 +	spin_lock_bh(&hooks_lock);
 +	hlist_for_each_entry(hook, &hooks, list) {
 +		if (hook->ops.dev->ifindex != tuple->iifidx &&
-+		    hook->ops.dev->ifindex != tuple->oifidx)
++		    hook->ops.dev->ifindex != rt->dst.dev->ifindex)
 +			continue;
 +
 +		hook->used = true;
@@ -483,7 +488,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		kfree(hook);
 +	}
 +
-+	nf_flow_table_cleanup(dev_net(dev), dev);
++	nf_flow_table_cleanup(dev);
 +
 +	return NOTIFY_DONE;
 +}
@@ -523,7 +528,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +module_exit(xt_flowoffload_tg_exit);
 --- a/net/netfilter/nf_flow_table_core.c
 +++ b/net/netfilter/nf_flow_table_core.c
-@@ -6,7 +6,6 @@
+@@ -7,7 +7,6 @@
  #include <linux/netdevice.h>
  #include <net/ip.h>
  #include <net/ip6_route.h>
@@ -531,6 +536,24 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <net/netfilter/nf_flow_table.h>
  #include <net/netfilter/nf_conntrack.h>
  #include <net/netfilter/nf_conntrack_core.h>
+@@ -338,8 +337,7 @@ flow_offload_lookup(struct nf_flowtable
+ }
+ EXPORT_SYMBOL_GPL(flow_offload_lookup);
+ 
+-static int
+-nf_flow_table_iterate(struct nf_flowtable *flow_table,
++int nf_flow_table_iterate(struct nf_flowtable *flow_table,
+ 		      void (*iter)(struct flow_offload *flow, void *data),
+ 		      void *data)
+ {
+@@ -372,6 +370,7 @@ nf_flow_table_iterate(struct nf_flowtabl
+ 
+ 	return err;
+ }
++EXPORT_SYMBOL_GPL(nf_flow_table_iterate);
+ 
+ static void nf_flow_offload_gc_step(struct flow_offload *flow, void *data)
+ {
 --- /dev/null
 +++ b/include/uapi/linux/netfilter/xt_FLOWOFFLOAD.h
 @@ -0,0 +1,17 @@
@@ -551,3 +574,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +};
 +
 +#endif /* _XT_FLOWOFFLOAD_H */
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -128,6 +128,10 @@ static inline void flow_offload_dead(str
+ 	flow->flags |= FLOW_OFFLOAD_DYING;
+ }
+ 
++int nf_flow_table_iterate(struct nf_flowtable *flow_table,
++                      void (*iter)(struct flow_offload *flow, void *data),
++                      void *data);
++
+ int nf_flow_snat_port(const struct flow_offload *flow,
+ 		      struct sk_buff *skb, unsigned int thoff,
+ 		      u8 protocol, enum flow_offload_tuple_dir dir);

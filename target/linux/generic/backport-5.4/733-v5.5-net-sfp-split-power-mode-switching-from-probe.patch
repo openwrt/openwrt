@@ -18,7 +18,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -47,6 +47,7 @@ enum {
+@@ -49,6 +49,7 @@ enum {
  	SFP_MOD_EMPTY = 0,
  	SFP_MOD_PROBE,
  	SFP_MOD_HPOWER,
@@ -26,7 +26,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	SFP_MOD_PRESENT,
  	SFP_MOD_ERROR,
  
-@@ -69,6 +70,7 @@ static const char  * const mod_state_str
+@@ -71,6 +72,7 @@ static const char  * const mod_state_str
  	[SFP_MOD_EMPTY] = "empty",
  	[SFP_MOD_PROBE] = "probe",
  	[SFP_MOD_HPOWER] = "hpower",
@@ -34,7 +34,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	[SFP_MOD_PRESENT] = "present",
  	[SFP_MOD_ERROR] = "error",
  };
-@@ -1358,37 +1360,34 @@ static int sfp_module_parse_power(struct
+@@ -1423,37 +1425,34 @@ static int sfp_module_parse_power(struct
  	return 0;
  }
  
@@ -84,7 +84,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  }
  
  static int sfp_sm_mod_probe(struct sfp *sfp)
-@@ -1484,7 +1483,7 @@ static int sfp_sm_mod_probe(struct sfp *
+@@ -1549,7 +1548,7 @@ static int sfp_sm_mod_probe(struct sfp *
  	if (ret < 0)
  		return ret;
  
@@ -93,7 +93,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  }
  
  static void sfp_sm_mod_remove(struct sfp *sfp)
-@@ -1529,13 +1528,22 @@ static void sfp_sm_device(struct sfp *sf
+@@ -1594,13 +1593,22 @@ static void sfp_sm_device(struct sfp *sf
   */
  static void sfp_sm_module(struct sfp *sfp, unsigned int event)
  {
@@ -121,7 +121,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  			sfp_sm_mod_next(sfp, SFP_MOD_EMPTY, 0);
  		return;
  	}
-@@ -1547,26 +1555,45 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1612,26 +1620,45 @@ static void sfp_sm_module(struct sfp *sf
  		break;
  
  	case SFP_MOD_PROBE:

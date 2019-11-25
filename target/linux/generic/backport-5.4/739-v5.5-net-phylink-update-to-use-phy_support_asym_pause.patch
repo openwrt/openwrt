@@ -12,20 +12,19 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -678,12 +678,6 @@ static int phylink_bringup_phy(struct ph
- 	u32 advertising;
+@@ -718,11 +718,6 @@ static int phylink_bringup_phy(struct ph
+ 	__ETHTOOL_DECLARE_LINK_MODE_MASK(supported);
  	int ret;
  
 -	memset(&config, 0, sizeof(config));
--	ethtool_convert_legacy_u32_to_link_mode(supported, phy->supported);
--	ethtool_convert_legacy_u32_to_link_mode(config.advertising,
--						phy->advertising);
+-	linkmode_copy(supported, phy->supported);
+-	linkmode_copy(config.advertising, phy->advertising);
 -	config.interface = pl->link_config.interface;
 -
  	/*
  	 * This is the new way of dealing with flow control for PHYs,
  	 * as described by Timur Tabi in commit 529ed1275263 ("net: phy:
-@@ -691,10 +685,13 @@ static int phylink_bringup_phy(struct ph
+@@ -730,10 +725,12 @@ static int phylink_bringup_phy(struct ph
  	 * using our validate call to the MAC, we rely upon the MAC
  	 * clearing the bits from both supported and advertising fields.
  	 */
@@ -36,9 +35,8 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 +	phy_support_asym_pause(phy);
 +
 +	memset(&config, 0, sizeof(config));
-+	ethtool_convert_legacy_u32_to_link_mode(supported, phy->supported);
-+	ethtool_convert_legacy_u32_to_link_mode(config.advertising,
-+						phy->advertising);
++	linkmode_copy(supported, phy->supported);
++	linkmode_copy(config.advertising, phy->advertising);
 +	config.interface = pl->link_config.interface;
  
  	ret = phylink_validate(pl, supported, &config);

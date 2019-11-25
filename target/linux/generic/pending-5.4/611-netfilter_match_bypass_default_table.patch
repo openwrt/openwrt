@@ -8,7 +8,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/ipv4/netfilter/ip_tables.c
 +++ b/net/ipv4/netfilter/ip_tables.c
-@@ -249,6 +249,33 @@ struct ipt_entry *ipt_next_entry(const s
+@@ -246,6 +246,33 @@ struct ipt_entry *ipt_next_entry(const s
  	return (void *)entry + entry->next_offset;
  }
  
@@ -42,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* Returns one of the generic firewall policies, like NF_ACCEPT. */
  unsigned int
  ipt_do_table(struct sk_buff *skb,
-@@ -269,27 +296,28 @@ ipt_do_table(struct sk_buff *skb,
+@@ -266,27 +293,28 @@ ipt_do_table(struct sk_buff *skb,
  	unsigned int addend;
  
  	/* Initialization */
@@ -86,7 +86,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	jumpstack  = (struct ipt_entry **)private->jumpstack[cpu];
  
  	/* Switch to alternate jumpstack if we're being invoked via TEE.
-@@ -302,7 +330,16 @@ ipt_do_table(struct sk_buff *skb,
+@@ -299,7 +327,16 @@ ipt_do_table(struct sk_buff *skb,
  	if (static_key_false(&xt_tee_enabled))
  		jumpstack += private->stacksize * __this_cpu_read(nf_skb_duplicated);
  

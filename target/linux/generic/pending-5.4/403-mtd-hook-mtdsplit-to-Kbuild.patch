@@ -10,7 +10,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -26,6 +26,8 @@ config MTD_SPLIT_FIRMWARE_NAME
+@@ -27,6 +27,8 @@ config MTD_SPLIT_FIRMWARE_NAME
  	depends on MTD_SPLIT_FIRMWARE
  	default "firmware"
  
@@ -21,12 +21,12 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  config MTD_TESTS
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -7,6 +7,8 @@
- obj-$(CONFIG_MTD)		+= mtd.o
- mtd-y				:= mtdcore.o mtdsuper.o mtdconcat.o mtdpart.o mtdchar.o
+@@ -9,6 +9,8 @@ mtd-y				:= mtdcore.o mtdsuper.o mtdconc
+ 
+ obj-y				+= parsers/
  
 +obj-$(CONFIG_MTD_SPLIT)		+= mtdsplit/
 +
- obj-$(CONFIG_MTD_OF_PARTS)	+= ofpart.o
- obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot.o
- obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
+ # 'Users' - code which presents functionality to userspace.
+ obj-$(CONFIG_MTD_BLKDEVS)	+= mtd_blkdevs.o
+ obj-$(CONFIG_MTD_BLOCK)		+= mtdblock.o

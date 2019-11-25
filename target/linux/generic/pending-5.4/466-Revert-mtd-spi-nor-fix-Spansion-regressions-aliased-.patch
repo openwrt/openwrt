@@ -17,21 +17,19 @@ Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -2737,6 +2737,7 @@ static int spi_nor_init(struct spi_nor *
+@@ -4397,6 +4397,7 @@ static void st_micron_set_default_init(s
+ 
+ static void winbond_set_default_init(struct spi_nor *nor)
+ {
++	nor->flags |= SNOR_F_HAS_LOCK;
+ 	nor->params.set_4byte = winbond_set_4byte;
+ }
+ 
+@@ -4886,6 +4887,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  	    JEDEC_MFR(nor->info) == SNOR_MFR_INTEL ||
  	    JEDEC_MFR(nor->info) == SNOR_MFR_MACRONIX ||
  	    JEDEC_MFR(nor->info) == SNOR_MFR_SST ||
 +	    JEDEC_MFR(nor->info) == SNOR_MFR_WINBOND ||
- 	    nor->info->flags & SPI_NOR_HAS_LOCK) {
- 		write_enable(nor);
- 		write_sr(nor, 0);
-@@ -2873,7 +2874,8 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 	    nor->info->flags & SPI_NOR_HAS_LOCK)
+ 		nor->clear_sr_bp = spi_nor_clear_sr_bp;
  
- 	/* NOR protection support for STmicro/Micron chips and similar */
- 	if (JEDEC_MFR(info) == SNOR_MFR_MICRON ||
--			info->flags & SPI_NOR_HAS_LOCK) {
-+	    JEDEC_MFR(info) == SNOR_MFR_WINBOND ||
-+	    info->flags & SPI_NOR_HAS_LOCK) {
- 		nor->flash_lock = stm_lock;
- 		nor->flash_unlock = stm_unlock;
- 		nor->flash_is_locked = stm_is_locked;

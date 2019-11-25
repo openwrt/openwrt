@@ -12,7 +12,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -177,6 +177,22 @@ menu "Partition parsers"
+@@ -46,6 +46,22 @@ menu "Partition parsers"
  source "drivers/mtd/parsers/Kconfig"
  endmenu
  
@@ -35,13 +35,10 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  comment "User Modules And Translation Layers"
  
  #
---- a/drivers/mtd/Makefile
-+++ b/drivers/mtd/Makefile
-@@ -16,6 +16,7 @@ obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o
- obj-$(CONFIG_MTD_AR7_PARTS)	+= ar7part.o
- obj-$(CONFIG_MTD_BCM63XX_PARTS)	+= bcm63xxpart.o
- obj-$(CONFIG_MTD_BCM47XX_PARTS)	+= bcm47xxpart.o
-+obj-$(CONFIG_MTD_MYLOADER_PARTS) += myloader.o
- obj-y				+= parsers/
- 
- # 'Users' - code which presents functionality to userspace.
+--- a/drivers/mtd/parsers/Makefile
++++ b/drivers/mtd/parsers/Makefile
+@@ -9,3 +9,4 @@ obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o
+ obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_trx.o
+ obj-$(CONFIG_MTD_SHARPSL_PARTS)		+= sharpslpart.o
+ obj-$(CONFIG_MTD_REDBOOT_PARTS)		+= redboot.o
++obj-$(CONFIG_MTD_MYLOADER_PARTS)	+= myloader.o

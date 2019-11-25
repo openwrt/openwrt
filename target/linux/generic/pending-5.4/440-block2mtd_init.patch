@@ -75,7 +75,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return dev;
  
  err_destroy_mutex:
-@@ -379,7 +387,7 @@ static int block2mtd_setup2(const char *
+@@ -381,7 +389,7 @@ static int block2mtd_setup2(const char *
  	/* 80 for device, 12 for erase size, 80 for name, 8 for timeout */
  	char buf[80 + 12 + 80 + 8];
  	char *str = buf;
@@ -84,7 +84,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	char *name;
  	size_t erase_size = PAGE_SIZE;
  	unsigned long timeout = MTD_DEFAULT_TIMEOUT;
-@@ -393,7 +401,7 @@ static int block2mtd_setup2(const char *
+@@ -395,7 +403,7 @@ static int block2mtd_setup2(const char *
  	strcpy(str, val);
  	kill_final_newline(str);
  
@@ -93,7 +93,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		token[i] = strsep(&str, ",");
  
  	if (str) {
-@@ -419,8 +427,10 @@ static int block2mtd_setup2(const char *
+@@ -421,8 +429,10 @@ static int block2mtd_setup2(const char *
  			return 0;
  		}
  	}
@@ -105,7 +105,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	return 0;
  }
-@@ -454,7 +464,7 @@ static int block2mtd_setup(const char *v
+@@ -456,7 +466,7 @@ static int block2mtd_setup(const char *v
  
  
  module_param_call(block2mtd, block2mtd_setup, NULL, NULL, 0200);

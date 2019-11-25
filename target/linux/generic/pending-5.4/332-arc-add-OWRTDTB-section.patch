@@ -23,7 +23,7 @@ Signed-off-by: Evgeniy Didin <Evgeniy.Didin@synopsys.com>
 
 --- a/arch/arc/kernel/head.S
 +++ b/arch/arc/kernel/head.S
-@@ -59,6 +59,16 @@
+@@ -61,6 +61,16 @@
  #endif
  .endm
  
@@ -42,7 +42,7 @@ Signed-off-by: Evgeniy Didin <Evgeniy.Didin@synopsys.com>
  ;----------------------------------------------------------------
 --- a/arch/arc/kernel/setup.c
 +++ b/arch/arc/kernel/setup.c
-@@ -526,7 +526,7 @@ void __init handle_uboot_args(void)
+@@ -529,7 +529,7 @@ void __init handle_uboot_args(void)
  ignore_uboot_args:
  
  	if (use_embedded_dtb) {
@@ -51,7 +51,7 @@ Signed-off-by: Evgeniy Didin <Evgeniy.Didin@synopsys.com>
  		if (!machine_desc)
  			panic("Embedded DT invalid\n");
  	}
-@@ -542,6 +542,8 @@ ignore_uboot_args:
+@@ -545,6 +545,8 @@ ignore_uboot_args:
  	}
  }
  
@@ -62,7 +62,7 @@ Signed-off-by: Evgeniy Didin <Evgeniy.Didin@synopsys.com>
  	handle_uboot_args();
 --- a/arch/arc/kernel/vmlinux.lds.S
 +++ b/arch/arc/kernel/vmlinux.lds.S
-@@ -30,6 +30,19 @@ SECTIONS
+@@ -27,6 +27,19 @@ SECTIONS
  
  	. = CONFIG_LINUX_LINK_BASE;
  

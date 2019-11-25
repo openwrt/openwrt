@@ -13,15 +13,15 @@ Signed-off-by: Roman Yeryomin <roman@advem.lv>
 
 --- a/drivers/net/phy/at803x.c
 +++ b/drivers/net/phy/at803x.c
-@@ -44,6 +44,7 @@
- #define AT803X_FUNC_DATA			0x4003
+@@ -46,6 +46,7 @@
+ #define AT803X_LOC_MAC_ADDR_32_47_OFFSET	0x804A
  #define AT803X_REG_CHIP_CONFIG			0x1f
  #define AT803X_BT_BX_REG_SEL			0x8000
 +#define AT803X_SGMII_ANEG_EN			0x1000
  
  #define AT803X_DEBUG_ADDR			0x1D
  #define AT803X_DEBUG_DATA			0x1E
-@@ -252,6 +253,27 @@ static int at803x_probe(struct phy_devic
+@@ -259,6 +260,27 @@ static int at803x_probe(struct phy_devic
  static int at803x_config_init(struct phy_device *phydev)
  {
  	int ret;
@@ -47,5 +47,5 @@ Signed-off-by: Roman Yeryomin <roman@advem.lv>
 +			return ret;
 +	}
  
- 	ret = genphy_config_init(phydev);
- 	if (ret < 0)
+ 	/* The RX and TX delay default is:
+ 	 *   after HW reset: RX delay enabled and TX delay disabled

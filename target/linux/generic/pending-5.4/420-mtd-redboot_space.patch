@@ -9,9 +9,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  drivers/mtd/redboot.c | 19 +++++++++++++------
  1 file changed, 13 insertions(+), 6 deletions(-)
 
---- a/drivers/mtd/redboot.c
-+++ b/drivers/mtd/redboot.c
-@@ -265,14 +265,21 @@ static int parse_redboot_partitions(stru
+--- a/drivers/mtd/parsers/redboot.c
++++ b/drivers/mtd/parsers/redboot.c
+@@ -274,14 +274,21 @@ static int parse_redboot_partitions(stru
  #endif
  		names += strlen(names)+1;
  

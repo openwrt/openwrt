@@ -17,7 +17,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp-bus.c
 +++ b/drivers/net/phy/sfp-bus.c
-@@ -341,9 +341,7 @@ phy_interface_t sfp_select_interface(str
+@@ -342,9 +342,7 @@ phy_interface_t sfp_select_interface(str
  	if (phylink_test(link_modes, 2500baseX_Full))
  		return PHY_INTERFACE_MODE_2500BASEX;
  
@@ -30,7 +30,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	if (phylink_test(link_modes, 1000baseX_Full))
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -1424,18 +1424,7 @@ static void sfp_sm_fault(struct sfp *sfp
+@@ -1489,18 +1489,7 @@ static void sfp_sm_fault(struct sfp *sfp
  
  static void sfp_sm_probe_for_phy(struct sfp *sfp)
  {

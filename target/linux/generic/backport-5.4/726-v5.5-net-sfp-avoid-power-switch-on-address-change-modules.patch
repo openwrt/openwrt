@@ -17,7 +17,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -1320,25 +1320,34 @@ static int sfp_module_parse_power(struct
+@@ -1385,25 +1385,34 @@ static int sfp_module_parse_power(struct
  	if (sfp->id.ext.options & cpu_to_be16(SFP_OPTIONS_HIGH_POWER_LEVEL))
  		power_mW = 2000;
  

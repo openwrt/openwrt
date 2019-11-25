@@ -14,7 +14,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/nvmem/Kconfig
 +++ b/drivers/nvmem/Kconfig
-@@ -1,5 +1,5 @@
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0-only
  menuconfig NVMEM
 -	bool "NVMEM Support"
 +	tristate "NVMEM Support"
@@ -23,7 +24,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
 --- a/drivers/of/Kconfig
 +++ b/drivers/of/Kconfig
-@@ -71,6 +71,7 @@ config OF_IRQ
+@@ -72,6 +72,7 @@ config OF_IRQ
  
  config OF_NET
  	depends on NETDEVICES

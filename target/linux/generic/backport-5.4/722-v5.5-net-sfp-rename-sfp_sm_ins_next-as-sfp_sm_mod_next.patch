@@ -14,7 +14,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -1180,7 +1180,7 @@ static void sfp_sm_next(struct sfp *sfp,
+@@ -1245,7 +1245,7 @@ static void sfp_sm_next(struct sfp *sfp,
  	sfp_sm_set_timer(sfp, timeout);
  }
  
@@ -23,7 +23,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  			    unsigned int timeout)
  {
  	sfp->sm_mod_state = state;
-@@ -1504,22 +1504,22 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1569,22 +1569,22 @@ static void sfp_sm_module(struct sfp *sf
  	default:
  		if (event == SFP_E_INSERT && sfp->attached) {
  			sfp_module_tx_disable(sfp);
@@ -51,7 +51,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  			else
  				sfp_sm_set_timer(sfp, T_PROBE_RETRY);
  		}
-@@ -1527,7 +1527,7 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1592,7 +1592,7 @@ static void sfp_sm_module(struct sfp *sf
  
  	case SFP_MOD_HPOWER:
  		if (event == SFP_E_TIMEOUT) {
@@ -60,7 +60,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  			break;
  		}
  		/* fallthrough */
-@@ -1535,7 +1535,7 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1600,7 +1600,7 @@ static void sfp_sm_module(struct sfp *sf
  	case SFP_MOD_ERROR:
  		if (event == SFP_E_REMOVE) {
  			sfp_sm_mod_remove(sfp);

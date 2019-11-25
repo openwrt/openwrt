@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* Align . to a 8 byte boundary equals to maximum function alignment. */
  #define ALIGN_FUNCTION()  . = ALIGN(8)
  
-@@ -372,14 +382,14 @@
+@@ -405,14 +415,14 @@
  	/* Kernel symbol table: Normal symbols */			\
  	__ksymtab         : AT(ADDR(__ksymtab) - LOAD_OFFSET) {		\
  		__start___ksymtab = .;					\
@@ -47,7 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		__stop___ksymtab_gpl = .;				\
  	}								\
  									\
-@@ -441,7 +451,7 @@
+@@ -474,7 +484,7 @@
  									\
  	/* Kernel symbol table: strings */				\
          __ksymtab_strings : AT(ADDR(__ksymtab_strings) - LOAD_OFFSET) {	\
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}								\
  									\
  	/* __*init sections */						\
-@@ -841,6 +851,8 @@
+@@ -865,6 +875,8 @@
  	EXIT_TEXT							\
  	EXIT_DATA							\
  	EXIT_CALL							\
@@ -64,12 +64,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	SYMTAB_DISCARD_GPL						\
  	*(.discard)							\
  	*(.discard.*)							\
- 	}
+ 	*(.modinfo)							\
 --- a/include/linux/export.h
 +++ b/include/linux/export.h
-@@ -74,12 +74,19 @@ struct kernel_symbol {
- };
- #endif
+@@ -98,18 +98,26 @@ struct kernel_symbol {
+ 
+ #else
  
 +#ifdef MODULE
 +#define __EXPORT_SUFFIX(sym)
@@ -77,20 +77,28 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#define __EXPORT_SUFFIX(sym) "+" #sym
 +#endif
 +
- /* For every exported symbol, place a struct in the __ksymtab section */
- #define ___EXPORT_SYMBOL(sym, sec)					\
+ #define ___export_symbol_common(sym, sec)				\
  	extern typeof(sym) sym;						\
- 	__CRC_SYMBOL(sym, sec)						\
+ 	__CRC_SYMBOL(sym, sec);						\
  	static const char __kstrtab_##sym[]				\
 -	__attribute__((section("__ksymtab_strings"), used, aligned(1)))	\
 +	__attribute__((section("__ksymtab_strings"			\
 +	  __EXPORT_SUFFIX(sym)), used, aligned(1)))			\
- 	= #sym;								\
- 	__KSYMTAB_ENTRY(sym, sec)
+ 	= #sym								\
+ 
+ /* For every exported symbol, place a struct in the __ksymtab section */
+ #define ___EXPORT_SYMBOL_NS(sym, sec, ns)				\
+ 	___export_symbol_common(sym, sec);				\
+ 	static const char __kstrtabns_##sym[]				\
+-	__attribute__((section("__ksymtab_strings"), used, aligned(1)))	\
++	__attribute__((section("__ksymtab_strings"			\
++	  __EXPORT_SUFFIX(sym)), used, aligned(1)))			\
+ 	= #ns;								\
+ 	__KSYMTAB_ENTRY_NS(sym, sec)
  
 --- a/scripts/Makefile.build
 +++ b/scripts/Makefile.build
-@@ -408,7 +408,7 @@ targets += $(extra-y) $(MAKECMDGOALS) $(
+@@ -362,7 +362,7 @@ targets += $(extra-y) $(MAKECMDGOALS) $(
  # Linker scripts preprocessor (.lds.S -> .lds)
  # ---------------------------------------------------------------------------
  quiet_cmd_cpp_lds_S = LDS     $@

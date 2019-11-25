@@ -18,8 +18,8 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -671,7 +671,8 @@ static void phylink_phy_change(struct ph
- 		   phy_duplex_to_str(phydev->duplex));
+@@ -712,7 +712,8 @@ static void phylink_phy_change(struct ph
+ 		    phy_duplex_to_str(phydev->duplex));
  }
  
 -static int phylink_bringup_phy(struct phylink *pl, struct phy_device *phy)
@@ -28,16 +28,16 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  {
  	struct phylink_link_state config;
  	__ETHTOOL_DECLARE_LINK_MODE_MASK(supported);
-@@ -691,7 +692,7 @@ static int phylink_bringup_phy(struct ph
- 	ethtool_convert_legacy_u32_to_link_mode(supported, phy->supported);
- 	ethtool_convert_legacy_u32_to_link_mode(config.advertising,
- 						phy->advertising);
+@@ -730,7 +731,7 @@ static int phylink_bringup_phy(struct ph
+ 	memset(&config, 0, sizeof(config));
+ 	linkmode_copy(supported, phy->supported);
+ 	linkmode_copy(config.advertising, phy->advertising);
 -	config.interface = pl->link_config.interface;
 +	config.interface = interface;
  
  	ret = phylink_validate(pl, supported, &config);
  	if (ret)
-@@ -707,6 +708,7 @@ static int phylink_bringup_phy(struct ph
+@@ -746,6 +747,7 @@ static int phylink_bringup_phy(struct ph
  	mutex_lock(&phy->lock);
  	mutex_lock(&pl->state_mutex);
  	pl->phydev = phy;
@@ -45,7 +45,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	linkmode_copy(pl->supported, supported);
  	linkmode_copy(pl->link_config.advertising, config.advertising);
  
-@@ -771,7 +773,7 @@ int phylink_connect_phy(struct phylink *
+@@ -808,7 +810,7 @@ int phylink_connect_phy(struct phylink *
  	if (ret < 0)
  		return ret;
  
@@ -54,7 +54,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	if (ret)
  		phy_detach(phy);
  
-@@ -824,7 +826,7 @@ int phylink_of_phy_connect(struct phylin
+@@ -861,7 +863,7 @@ int phylink_of_phy_connect(struct phylin
  	if (!phy_dev)
  		return -ENODEV;
  
@@ -63,7 +63,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	if (ret)
  		phy_detach(phy_dev);
  
-@@ -1759,13 +1761,22 @@ static void phylink_sfp_link_up(void *up
+@@ -1814,13 +1816,22 @@ static void phylink_sfp_link_up(void *up
  static int phylink_sfp_connect_phy(void *upstream, struct phy_device *phy)
  {
  	struct phylink *pl = upstream;

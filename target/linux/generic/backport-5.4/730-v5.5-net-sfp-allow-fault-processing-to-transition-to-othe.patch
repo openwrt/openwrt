@@ -14,7 +14,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -1269,7 +1269,7 @@ static bool sfp_los_event_inactive(struc
+@@ -1334,7 +1334,7 @@ static bool sfp_los_event_inactive(struc
  		event == SFP_E_LOS_LOW);
  }
  
@@ -23,7 +23,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  {
  	if (sfp->sm_retries && !--sfp->sm_retries) {
  		dev_err(sfp->dev,
-@@ -1279,7 +1279,7 @@ static void sfp_sm_fault(struct sfp *sfp
+@@ -1344,7 +1344,7 @@ static void sfp_sm_fault(struct sfp *sfp
  		if (warn)
  			dev_err(sfp->dev, "module transmit fault indicated\n");
  
@@ -32,7 +32,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	}
  }
  
-@@ -1619,14 +1619,14 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -1684,14 +1684,14 @@ static void sfp_sm_main(struct sfp *sfp,
  
  	case SFP_S_INIT:
  		if (event == SFP_E_TIMEOUT && sfp->state & SFP_F_TX_FAULT)
@@ -49,7 +49,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		else if (sfp_los_event_inactive(sfp, event))
  			sfp_sm_link_up(sfp);
  		break;
-@@ -1634,7 +1634,7 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -1699,7 +1699,7 @@ static void sfp_sm_main(struct sfp *sfp,
  	case SFP_S_LINK_UP:
  		if (event == SFP_E_TX_FAULT) {
  			sfp_sm_link_down(sfp);
@@ -58,7 +58,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		} else if (sfp_los_event_active(sfp, event)) {
  			sfp_sm_link_down(sfp);
  			sfp_sm_next(sfp, SFP_S_WAIT_LOS, 0);
-@@ -1650,7 +1650,7 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -1715,7 +1715,7 @@ static void sfp_sm_main(struct sfp *sfp,
  
  	case SFP_S_REINIT:
  		if (event == SFP_E_TIMEOUT && sfp->state & SFP_F_TX_FAULT) {

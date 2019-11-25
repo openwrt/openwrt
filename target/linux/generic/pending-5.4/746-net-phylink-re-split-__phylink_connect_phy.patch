@@ -16,7 +16,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -728,11 +728,9 @@ static int phylink_bringup_phy(struct ph
+@@ -765,11 +765,9 @@ static int phylink_bringup_phy(struct ph
  	return 0;
  }
  
@@ -30,7 +30,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	if (WARN_ON(pl->link_an_mode == MLO_AN_FIXED ||
  		    (pl->link_an_mode == MLO_AN_INBAND &&
  		     phy_interface_mode_is_8023z(interface))))
-@@ -741,15 +739,7 @@ static int __phylink_connect_phy(struct
+@@ -778,15 +776,7 @@ static int __phylink_connect_phy(struct
  	if (pl->phydev)
  		return -EBUSY;
  
@@ -47,7 +47,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  }
  
  /**
-@@ -769,13 +759,23 @@ static int __phylink_connect_phy(struct
+@@ -806,13 +796,23 @@ static int __phylink_connect_phy(struct
   */
  int phylink_connect_phy(struct phylink *pl, struct phy_device *phy)
  {
@@ -72,7 +72,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  }
  EXPORT_SYMBOL_GPL(phylink_connect_phy);
  
-@@ -1759,8 +1759,17 @@ static void phylink_sfp_link_up(void *up
+@@ -1814,8 +1814,17 @@ static void phylink_sfp_link_up(void *up
  static int phylink_sfp_connect_phy(void *upstream, struct phy_device *phy)
  {
  	struct phylink *pl = upstream;

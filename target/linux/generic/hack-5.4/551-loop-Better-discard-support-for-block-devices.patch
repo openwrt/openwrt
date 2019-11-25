@@ -28,7 +28,7 @@ Reviewed-by: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
 
 --- a/drivers/block/loop.c
 +++ b/drivers/block/loop.c
-@@ -426,11 +426,12 @@ static int lo_fallocate(struct loop_devi
+@@ -427,11 +427,12 @@ static int lo_fallocate(struct loop_devi
  	 * information.
  	 */
  	struct file *file = lo->lo_backing_file;
@@ -42,7 +42,7 @@ Reviewed-by: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
  		ret = -EOPNOTSUPP;
  		goto out;
  	}
-@@ -863,6 +864,21 @@ static void loop_config_discard(struct l
+@@ -862,6 +863,21 @@ static void loop_config_discard(struct l
  	struct file *file = lo->lo_backing_file;
  	struct inode *inode = file->f_mapping->host;
  	struct request_queue *q = lo->lo_queue;
@@ -64,7 +64,7 @@ Reviewed-by: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
  
  	/*
  	 * We use punch hole to reclaim the free space used by the
-@@ -870,22 +886,24 @@ static void loop_config_discard(struct l
+@@ -869,22 +885,24 @@ static void loop_config_discard(struct l
  	 * encryption is enabled, because it may give an attacker
  	 * useful information.
  	 */

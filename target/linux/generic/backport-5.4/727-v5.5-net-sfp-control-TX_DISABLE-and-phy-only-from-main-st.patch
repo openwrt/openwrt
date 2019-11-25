@@ -26,7 +26,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -1492,11 +1492,6 @@ static void sfp_sm_mod_remove(struct sfp
+@@ -1557,11 +1557,6 @@ static void sfp_sm_mod_remove(struct sfp
  
  	sfp_hwmon_remove(sfp);
  
@@ -38,7 +38,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	memset(&sfp->id, 0, sizeof(sfp->id));
  	sfp->module_power_mW = 0;
  
-@@ -1534,10 +1529,8 @@ static void sfp_sm_module(struct sfp *sf
+@@ -1599,10 +1594,8 @@ static void sfp_sm_module(struct sfp *sf
  
  	switch (sfp->sm_mod_state) {
  	default:

@@ -16,7 +16,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -1479,19 +1479,34 @@ static void sfp_sm_mod_remove(struct sfp
+@@ -1544,19 +1544,34 @@ static void sfp_sm_mod_remove(struct sfp
  	dev_info(sfp->dev, "module removed\n");
  }
  
@@ -61,7 +61,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	switch (sfp->sm_mod_state) {
  	default:
  		if (event == SFP_E_INSERT && sfp->attached) {
-@@ -1531,27 +1546,10 @@ static void sfp_sm_event(struct sfp *sfp
+@@ -1596,27 +1611,10 @@ static void sfp_sm_event(struct sfp *sfp
  		}
  		break;
  	}
@@ -92,7 +92,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	/* Some events are global */
  	if (sfp->sm_state != SFP_S_DOWN &&
  	    (sfp->sm_mod_state != SFP_MOD_PRESENT ||
-@@ -1562,7 +1560,6 @@ static void sfp_sm_event(struct sfp *sfp
+@@ -1627,7 +1625,6 @@ static void sfp_sm_event(struct sfp *sfp
  		if (sfp->mod_phy)
  			sfp_sm_phy_detach(sfp);
  		sfp_sm_next(sfp, SFP_S_DOWN, 0);
@@ -100,7 +100,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		return;
  	}
  
-@@ -1617,6 +1614,21 @@ static void sfp_sm_event(struct sfp *sfp
+@@ -1682,6 +1679,21 @@ static void sfp_sm_event(struct sfp *sfp
  	case SFP_S_TX_DISABLE:
  		break;
  	}

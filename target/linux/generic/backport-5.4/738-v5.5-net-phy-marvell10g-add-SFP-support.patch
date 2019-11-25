@@ -19,15 +19,15 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/marvell10g.c
 +++ b/drivers/net/phy/marvell10g.c
-@@ -25,6 +25,7 @@
+@@ -26,6 +26,7 @@
  #include <linux/hwmon.h>
  #include <linux/marvell_phy.h>
  #include <linux/phy.h>
 +#include <linux/sfp.h>
  
- enum {
- 	MV_PMA_BOOT		= 0xc050,
-@@ -219,6 +220,28 @@ static int mv3310_hwmon_probe(struct phy
+ #define MV_PHY_ALASKA_NBT_QUIRK_MASK	0xfffffffe
+ #define MV_PHY_ALASKA_NBT_QUIRK_REV	(MARVELL_PHY_ID_88X3310 | 0xa)
+@@ -206,6 +207,28 @@ static int mv3310_hwmon_probe(struct phy
  }
  #endif
  
@@ -56,7 +56,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  static int mv3310_probe(struct phy_device *phydev)
  {
  	struct mv3310_priv *priv;
-@@ -249,7 +272,7 @@ static int mv3310_probe(struct phy_devic
+@@ -236,7 +259,7 @@ static int mv3310_probe(struct phy_devic
  	if (ret)
  		return ret;
  

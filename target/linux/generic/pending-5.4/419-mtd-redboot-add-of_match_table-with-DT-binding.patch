@@ -10,22 +10,13 @@ flash device in DT.
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 ---
 
---- a/drivers/mtd/redboot.c
-+++ b/drivers/mtd/redboot.c
-@@ -289,9 +289,16 @@ static int parse_redboot_partitions(stru
- 	return ret;
- }
+--- a/drivers/mtd/parsers/redboot.c
++++ b/drivers/mtd/parsers/redboot.c
+@@ -300,6 +300,7 @@ static int parse_redboot_partitions(stru
  
-+static const struct of_device_id redboot_parser_of_match_table[] = {
+ static const struct of_device_id mtd_parser_redboot_of_match_table[] = {
+ 	{ .compatible = "redboot-fis" },
 +	{ .compatible = "ecoscentric,redboot-fis-partitions" },
-+	{},
-+};
-+MODULE_DEVICE_TABLE(of, redboot_parser_of_match_table);
-+
- static struct mtd_part_parser redboot_parser = {
- 	.parse_fn = parse_redboot_partitions,
- 	.name = "RedBoot",
-+	.of_match_table = redboot_parser_of_match_table,
+ 	{},
  };
- module_mtd_part_parser(redboot_parser);
- 
+ MODULE_DEVICE_TABLE(of, mtd_parser_redboot_of_match_table);

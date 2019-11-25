@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/crypto/Kconfig
 +++ b/crypto/Kconfig
-@@ -144,13 +144,13 @@ config CRYPTO_MANAGER
+@@ -120,13 +120,13 @@ config CRYPTO_MANAGER
  	  cbc(aes).
  
  config CRYPTO_MANAGER2
@@ -35,17 +35,27 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  config CRYPTO_USER
  	tristate "Userspace cryptographic algorithm configuration"
-@@ -163,7 +163,6 @@ config CRYPTO_USER
+@@ -136,8 +136,6 @@ config CRYPTO_USER
+ 	  Userspace configuration for cryptographic instantiations such as
+ 	  cbc(aes).
+ 
+-if CRYPTO_MANAGER2
+-
  config CRYPTO_MANAGER_DISABLE_TESTS
  	bool "Disable run-time self tests"
  	default y
--	depends on CRYPTO_MANAGER2
- 	help
+@@ -145,6 +143,8 @@ config CRYPTO_MANAGER_DISABLE_TESTS
  	  Disable run-time self tests that normally take place at
  	  algorithm registration.
+ 
++if CRYPTO_MANAGER2
++
+ config CRYPTO_MANAGER_EXTRA_TESTS
+ 	bool "Enable extra run-time crypto self tests"
+ 	depends on DEBUG_KERNEL && !CRYPTO_MANAGER_DISABLE_TESTS
 --- a/crypto/algboss.c
 +++ b/crypto/algboss.c
-@@ -247,8 +247,12 @@ static int cryptomgr_schedule_test(struc
+@@ -242,8 +242,12 @@ static int cryptomgr_schedule_test(struc
  	type = alg->cra_flags;
  
  	/* Do not test internal algorithms. */
