@@ -70,8 +70,6 @@ generate_network() {
 		json_select ..
 	json_select ..
 
-	[ -n "$ifname" ] || return
-
 	# force bridge for multi-interface devices (and lan)
 	case "$1:$ifname" in
 		*\ * | lan:*) type="bridge" ;;
