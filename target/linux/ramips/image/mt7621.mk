@@ -561,7 +561,7 @@ define Device/mqmaker_witi-512m
 endef
 TARGET_DEVICES += mqmaker_witi-512m
 
-define Device/wndr3700v5
+define Device/netgear_wndr3700-v5
   DTS := WNDR3700V5
   BLOCKSIZE := 64k
   IMAGE_SIZE := 15232k
@@ -576,8 +576,9 @@ define Device/wndr3700v5
   DEVICE_TITLE := Netgear WNDR3700v5
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  SUPPORTED_DEVICES += wndr3700v5
 endef
-TARGET_DEVICES += wndr3700v5
+TARGET_DEVICES += netgear_wndr3700-v5
 
 define Device/youhua_wr1200js
   DTS := WR1200JS
