@@ -6,13 +6,13 @@ Subject: [PATCH 51/69] PM / OPP: Add a helper to get an opp regulator for
 
 Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
 ---
- drivers/base/power/opp/core.c | 21 +++++++++++++++++++++
+ drivers/opp/core.c            | 21 +++++++++++++++++++++
  include/linux/pm_opp.h        |  1 +
  2 files changed, 22 insertions(+)
 
---- a/drivers/base/power/opp/core.c
-+++ b/drivers/base/power/opp/core.c
-@@ -126,6 +126,27 @@ unsigned long dev_pm_opp_get_freq(struct
+--- a/drivers/opp/core.c
++++ b/drivers/opp/core.c
+@@ -125,6 +125,27 @@ unsigned long dev_pm_opp_get_freq(struct
  }
  EXPORT_SYMBOL_GPL(dev_pm_opp_get_freq);
  

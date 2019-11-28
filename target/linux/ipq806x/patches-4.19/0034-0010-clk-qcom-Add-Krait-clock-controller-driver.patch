@@ -1,19 +1,7 @@
-From patchwork Fri Dec  8 09:42:27 2017
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Subject: [v4,09/12] clk: qcom: Add Krait clock controller driver
-From: Sricharan R <sricharan@codeaurora.org>
-X-Patchwork-Id: 10102061
-Message-Id: <1512726150-7204-10-git-send-email-sricharan@codeaurora.org>
-To: mturquette@baylibre.com, sboyd@codeaurora.org,
- devicetree@vger.kernel.org, linux-pm@vger.kernel.org,
- linux-arm-msm@vger.kernel.org, linux-kernel@vger.kernel.org,
- viresh.kumar@linaro.org, linux-arm-kernel@lists.infradead.org
-Cc: sricharan@codeaurora.org
-Date: Fri,  8 Dec 2017 15:12:27 +0530
-
+From bb5c4a85051e5e0be39c775b6df85521f2ae807d Mon Sep 17 00:00:00 2001
 From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Tue, 14 Aug 2018 17:42:29 +0530
+Subject: [PATCH 10/12] clk: qcom: Add Krait clock controller driver
 
 The Krait CPU clocks are made up of a primary mux and secondary
 mux for each CPU and the L2, controlled via cp15 accessors. For
@@ -23,46 +11,24 @@ source.
 
 Cc: <devicetree@vger.kernel.org>
 Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Sricharan R <sricharan@codeaurora.org>
+Tested-by: Craig Tatlor <ctatlor97@gmail.com>
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 ---
- .../devicetree/bindings/clock/qcom,krait-cc.txt    |  22 ++
- drivers/clk/qcom/Kconfig                           |   8 +
- drivers/clk/qcom/Makefile                          |   1 +
- drivers/clk/qcom/krait-cc.c                        | 350 +++++++++++++++++++++
- 4 files changed, 381 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/clock/qcom,krait-cc.txt
+ drivers/clk/qcom/Kconfig     |   8 +
+ drivers/clk/qcom/Makefile    |   1 +
+ drivers/clk/qcom/clk-krait.c |   4 +-
+ drivers/clk/qcom/krait-cc.c  | 341 +++++++++++++++++++++++++++++++++++
+ 4 files changed, 352 insertions(+), 2 deletions(-)
  create mode 100644 drivers/clk/qcom/krait-cc.c
 
---- /dev/null
-+++ b/Documentation/devicetree/bindings/clock/qcom,krait-cc.txt
-@@ -0,0 +1,22 @@
-+Krait Clock Controller
-+
-+PROPERTIES
-+
-+- compatible:
-+	Usage: required
-+	Value type: <string>
-+	Definition: must be one of:
-+			"qcom,krait-cc-v1"
-+			"qcom,krait-cc-v2"
-+
-+- #clock-cells:
-+	Usage: required
-+	Value type: <u32>
-+	Definition: must be 1
-+
-+Example:
-+
-+	kraitcc: clock-controller {
-+		compatible = "qcom,krait-cc-v1";
-+		#clock-cells = <1>;
-+	};
 --- a/drivers/clk/qcom/Kconfig
 +++ b/drivers/clk/qcom/Kconfig
-@@ -213,6 +213,14 @@ config KPSS_XCC
+@@ -292,3 +292,11 @@ config KPSS_XCC
+ 	  Support for the Krait ACC and GCC clock controllers. Say Y
  	  if you want to support CPU frequency scaling on devices such
  	  as MSM8960, APQ8064, etc.
- 
++
 +config KRAITCC
 +	tristate "Krait Clock Controller"
 +	depends on COMMON_CLK_QCOM && ARM
@@ -70,31 +36,38 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 +	help
 +	  Support for the Krait CPU clocks on Qualcomm devices.
 +	  Say Y if you want to support CPU frequency scaling.
-+
- config KRAIT_CLOCKS
- 	bool
- 	select KRAIT_L2_ACCESSORS
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
-@@ -38,3 +38,4 @@ obj-$(CONFIG_QCOM_CLK_RPM) += clk-rpm.o
- obj-$(CONFIG_QCOM_CLK_SMD_RPM) += clk-smd-rpm.o
+@@ -47,3 +47,4 @@ obj-$(CONFIG_SDM_VIDEOCC_845) += videocc
+ obj-$(CONFIG_SPMI_PMIC_CLKDIV) += clk-spmi-pmic-div.o
  obj-$(CONFIG_KPSS_XCC) += kpss-xcc.o
  obj-$(CONFIG_QCOM_HFPLL) += hfpll.o
 +obj-$(CONFIG_KRAITCC) += krait-cc.o
+--- a/drivers/clk/qcom/clk-krait.c
++++ b/drivers/clk/qcom/clk-krait.c
+@@ -44,7 +44,7 @@ static int krait_mux_set_parent(struct c
+ 	struct krait_mux_clk *mux = to_krait_mux_clk(hw);
+ 	u32 sel;
+ 
+-	sel = clk_mux_reindex(index, mux->parent_map, 0);
++	sel = clk_mux_index_to_val(mux->parent_map, 0, index);
+ 	mux->en_mask = sel;
+ 	/* Don't touch mux if CPU is off as it won't work */
+ 	if (__clk_is_enabled(hw->clk))
+@@ -63,7 +63,7 @@ static u8 krait_mux_get_parent(struct cl
+ 	sel &= mux->mask;
+ 	mux->en_mask = sel;
+ 
+-	return clk_mux_get_parent(hw, sel, mux->parent_map, 0);
++	return clk_mux_val_to_index(hw, mux->parent_map, 0, sel);
+ }
+ 
+ const struct clk_ops krait_mux_clk_ops = {
 --- /dev/null
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -0,0 +1,350 @@
-+/* Copyright (c) 2013-2015, The Linux Foundation. All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 and
-+ * only version 2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
+@@ -0,0 +1,341 @@
++// SPDX-License-Identifier: GPL-2.0
++// Copyright (c) 2018, The Linux Foundation. All rights reserved.
 +
 +#include <linux/kernel.h>
 +#include <linux/init.h>

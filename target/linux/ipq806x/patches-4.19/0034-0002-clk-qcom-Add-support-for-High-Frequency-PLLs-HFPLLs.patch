@@ -1,57 +1,39 @@
-From patchwork Fri Dec  8 09:42:21 2017
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Subject: [v4,03/12] clk: qcom: Add support for High-Frequency PLLs (HFPLLs)
-From: Sricharan R <sricharan@codeaurora.org>
-X-Patchwork-Id: 10102083
-Message-Id: <1512726150-7204-4-git-send-email-sricharan@codeaurora.org>
-To: mturquette@baylibre.com, sboyd@codeaurora.org,
- devicetree@vger.kernel.org, linux-pm@vger.kernel.org,
- linux-arm-msm@vger.kernel.org, linux-kernel@vger.kernel.org,
- viresh.kumar@linaro.org, linux-arm-kernel@lists.infradead.org
-Cc: sricharan@codeaurora.org
-Date: Fri,  8 Dec 2017 15:12:21 +0530
-
+From b3f2f10693aadeacf83ab5be03810941a4b77612 Mon Sep 17 00:00:00 2001
 From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Tue, 14 Aug 2018 17:42:21 +0530
+Subject: [PATCH 02/12] clk: qcom: Add support for High-Frequency PLLs (HFPLLs)
 
 HFPLLs are the main frequency source for Krait CPU clocks. Add
 support for changing the rate of these PLLs.
 
 Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Sricharan R <sricharan@codeaurora.org>
+Tested-by: Craig Tatlor <ctatlor97@gmail.com>
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 ---
  drivers/clk/qcom/Makefile    |   1 +
- drivers/clk/qcom/clk-hfpll.c | 253 +++++++++++++++++++++++++++++++++++++++++++
- drivers/clk/qcom/clk-hfpll.h |  54 +++++++++
- 3 files changed, 308 insertions(+)
+ drivers/clk/qcom/clk-hfpll.c | 244 +++++++++++++++++++++++++++++++++++
+ drivers/clk/qcom/clk-hfpll.h |  44 +++++++
+ 3 files changed, 289 insertions(+)
  create mode 100644 drivers/clk/qcom/clk-hfpll.c
  create mode 100644 drivers/clk/qcom/clk-hfpll.h
 
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
-@@ -10,6 +10,7 @@ clk-qcom-y += clk-rcg2.o
- clk-qcom-y += clk-branch.o
+@@ -11,6 +11,7 @@ clk-qcom-y += clk-branch.o
  clk-qcom-y += clk-regmap-divider.o
  clk-qcom-y += clk-regmap-mux.o
+ clk-qcom-y += clk-regmap-mux-div.o
 +clk-qcom-y += clk-hfpll.o
  clk-qcom-y += reset.o
  clk-qcom-$(CONFIG_QCOM_GDSC) += gdsc.o
  
 --- /dev/null
 +++ b/drivers/clk/qcom/clk-hfpll.c
-@@ -0,0 +1,253 @@
-+/*
-+ * Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 and
-+ * only version 2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
+@@ -0,0 +1,244 @@
++// SPDX-License-Identifier: GPL-2.0
++// Copyright (c) 2018, The Linux Foundation. All rights reserved.
++
 +#include <linux/kernel.h>
 +#include <linux/export.h>
 +#include <linux/regmap.h>
@@ -295,19 +277,9 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 +EXPORT_SYMBOL_GPL(clk_ops_hfpll);
 --- /dev/null
 +++ b/drivers/clk/qcom/clk-hfpll.h
-@@ -0,0 +1,54 @@
-+/*
-+ * Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 and
-+ * only version 2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
+@@ -0,0 +1,44 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++
 +#ifndef __QCOM_CLK_HFPLL_H__
 +#define __QCOM_CLK_HFPLL_H__
 +

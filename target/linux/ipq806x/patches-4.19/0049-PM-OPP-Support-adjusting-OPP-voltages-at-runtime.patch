@@ -21,13 +21,13 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 Acked-by: Viresh Kumar <viresh.kumar@linaro.org>
 Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
 ---
- drivers/base/power/opp/core.c | 77 +++++++++++++++++++++++++++++++++++++++++++
+ drivers/opp/core.c | 77 +++++++++++++++++++++++++++++++++++++++++++
  include/linux/pm_opp.h        | 11 +++++++
  2 files changed, 88 insertions(+)
 
---- a/drivers/base/power/opp/core.c
-+++ b/drivers/base/power/opp/core.c
-@@ -1608,6 +1608,83 @@ put_table:
+--- a/drivers/opp/core.c
++++ b/drivers/opp/core.c
+@@ -1625,6 +1625,83 @@ put_table:
  }
  
  /**

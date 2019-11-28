@@ -11,23 +11,23 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
 
 --- a/drivers/cpufreq/cpufreq-dt.c
 +++ b/drivers/cpufreq/cpufreq-dt.c
-@@ -49,11 +49,41 @@ static int set_target(struct cpufreq_pol
+@@ -49,11 +49,39 @@ static int set_target(struct cpufreq_pol
  	struct private_data *priv = policy->driver_data;
+ 	unsigned long freq = policy->freq_table[index].frequency;
  	int ret;
- 	unsigned long target_freq = policy->freq_table[index].frequency * 1000;
 +	struct clk *l2_clk = policy->l2_clk;
 +	unsigned int l2_freq;
 +	unsigned long new_l2_freq = 0;
  
  	mutex_lock(&priv->lock);
- 	ret = dev_pm_opp_set_rate(priv->cpu_dev, target_freq);
--	if (!ret)
-+
-+	if (!ret) {
+ 	ret = dev_pm_opp_set_rate(priv->cpu_dev, freq * 1000);
+ 
+ 	if (!ret) {
 +		if (!IS_ERR(l2_clk) && policy->l2_rate[0] && policy->l2_rate[1] &&
 +				policy->l2_rate[2]) {
 +			static unsigned long krait_l2[CONFIG_NR_CPUS] = { };
 +			int cpu, ret = 0;
++			unsigned long target_freq = freq * 1000;
 +
 +			if (target_freq >= policy->l2_rate[2])
 +				new_l2_freq = policy->l2_rate[2];
@@ -48,13 +48,10 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
 +			}
 +		}
 +
- 		priv->opp_freq = target_freq;
-+	}
-+
- 	mutex_unlock(&priv->lock);
- 
- 	return ret;
-@@ -197,6 +227,8 @@ static int cpufreq_init(struct cpufreq_p
+ 		priv->opp_freq = freq * 1000;
+ 		arch_set_freq_scale(policy->related_cpus, freq,
+ 				    policy->cpuinfo.max_freq);
+@@ -201,6 +229,8 @@ static int cpufreq_init(struct cpufreq_p
  	const char *name;
  	int ret;
  	struct srcu_notifier_head *opp_srcu_head;
@@ -63,7 +60,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  
  	cpu_dev = get_cpu_device(policy->cpu);
  	if (!cpu_dev) {
-@@ -305,6 +337,13 @@ static int cpufreq_init(struct cpufreq_p
+@@ -310,6 +340,13 @@ static int cpufreq_init(struct cpufreq_p
  
  	policy->suspend_freq = dev_pm_opp_get_suspend_opp_freq(cpu_dev) / 1000;
  
@@ -74,9 +71,9 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
 +	if (l2_np)
 +		of_property_read_u32_array(l2_np, "qcom,l2-rates", policy->l2_rate, 3);
 +
- 	ret = cpufreq_table_validate_and_show(policy, freq_table);
- 	if (ret) {
- 		dev_err(cpu_dev, "%s: invalid frequency table: %d\n", __func__,
+ 	/* Support turbo/boost mode */
+ 	if (policy_has_boost_freq(policy)) {
+ 		/* This gets disabled by core on driver unregister */
 --- a/include/linux/cpufreq.h
 +++ b/include/linux/cpufreq.h
 @@ -73,6 +73,8 @@ struct cpufreq_policy {

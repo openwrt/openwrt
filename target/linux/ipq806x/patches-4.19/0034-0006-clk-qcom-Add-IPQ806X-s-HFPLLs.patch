@@ -1,25 +1,16 @@
-From patchwork Fri Dec  8 09:42:24 2017
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Subject: [v4,06/12] clk: qcom: Add IPQ806X's HFPLLs
-From: Sricharan R <sricharan@codeaurora.org>
-X-Patchwork-Id: 10102047
-Message-Id: <1512726150-7204-7-git-send-email-sricharan@codeaurora.org>
-To: mturquette@baylibre.com, sboyd@codeaurora.org,
- devicetree@vger.kernel.org, linux-pm@vger.kernel.org,
- linux-arm-msm@vger.kernel.org, linux-kernel@vger.kernel.org,
- viresh.kumar@linaro.org, linux-arm-kernel@lists.infradead.org
-Cc: sricharan@codeaurora.org
-Date: Fri,  8 Dec 2017 15:12:24 +0530
-
+From 1f79131bfd512f322c16b58dca581ce39beafab9 Mon Sep 17 00:00:00 2001
 From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Tue, 14 Aug 2018 17:42:25 +0530
+Subject: [PATCH 06/12] clk: qcom: Add IPQ806X's HFPLLs
 
 Describe the HFPLLs present on IPQ806X devices.
 
 Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Sricharan R <sricharan@codeaurora.org>
+Tested-by: Craig Tatlor <ctatlor97@gmail.com>
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 ---
- drivers/clk/qcom/gcc-ipq806x.c | 82 ++++++++++++++++++++++++++++++++++++++++++
+ drivers/clk/qcom/gcc-ipq806x.c | 82 ++++++++++++++++++++++++++++++++++
  1 file changed, 82 insertions(+)
 
 --- a/drivers/clk/qcom/gcc-ipq806x.c
@@ -117,7 +108,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  static struct clk_pll pll14 = {
  	.l_reg = 0x31c4,
  	.m_reg = 0x31c8,
-@@ -2801,6 +2880,9 @@ static struct clk_regmap *gcc_ipq806x_cl
+@@ -2798,6 +2877,9 @@ static struct clk_regmap *gcc_ipq806x_cl
  	[UBI32_CORE2_CLK_SRC] = &ubi32_core2_src_clk.clkr,
  	[NSSTCM_CLK_SRC] = &nss_tcm_src.clkr,
  	[NSSTCM_CLK] = &nss_tcm_clk.clkr,
