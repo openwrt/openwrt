@@ -12,12 +12,12 @@ Fix this by updating the voltage tolerance values too.
 
 Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
 ---
- drivers/base/power/opp/core.c | 5 +++++
+ drivers/opp/core.c | 5 +++++
  1 file changed, 5 insertions(+)
 
---- a/drivers/base/power/opp/core.c
-+++ b/drivers/base/power/opp/core.c
-@@ -1652,6 +1652,7 @@ int dev_pm_opp_adjust_voltage(struct dev
+--- a/drivers/opp/core.c
++++ b/drivers/opp/core.c
+@@ -1669,6 +1669,7 @@ int dev_pm_opp_adjust_voltage(struct dev
  	struct opp_table *opp_table;
  	struct dev_pm_opp *new_opp, *tmp_opp, *opp = ERR_PTR(-ENODEV);
  	int r = 0;
@@ -25,7 +25,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  
  	/* keep the node allocated */
  	new_opp = kmalloc(sizeof(*new_opp), GFP_KERNEL);
-@@ -1688,6 +1689,10 @@ int dev_pm_opp_adjust_voltage(struct dev
+@@ -1705,6 +1706,10 @@ int dev_pm_opp_adjust_voltage(struct dev
  
  	/* plug in new node */
  	new_opp->supplies[0].u_volt = u_volt;

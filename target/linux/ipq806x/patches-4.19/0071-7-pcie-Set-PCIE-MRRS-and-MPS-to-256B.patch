@@ -14,9 +14,9 @@ Signed-off-by: Gokul Sriram Palanisamy <gpalan@codeaurora.org>
 
 (limited to 'drivers/pci/host/pcie-qcom.c')
 
---- a/drivers/pci/dwc/pcie-qcom.c
-+++ b/drivers/pci/dwc/pcie-qcom.c
-@@ -131,6 +131,14 @@
+--- a/drivers/pci/controller/dwc/pcie-qcom.c
++++ b/drivers/pci/controller/dwc/pcie-qcom.c
+@@ -124,6 +124,14 @@
  
  #define PCIE20_LNK_CONTROL2_LINK_STATUS2        0xA0
  
@@ -28,10 +28,10 @@ Signed-off-by: Gokul Sriram Palanisamy <gpalan@codeaurora.org>
 +#define PCIE20_MPS_MASK			__mask(7, 5)
 +#define PCIE20_MPS(x)			__set(x, 7, 5)
 +
+ #define QCOM_PCIE_2_1_0_MAX_SUPPLY	3
  struct qcom_pcie_resources_2_1_0 {
  	struct clk *iface_clk;
- 	struct clk *core_clk;
-@@ -1472,6 +1480,35 @@ static int qcom_pcie_probe(struct platfo
+@@ -1453,6 +1461,35 @@ static int qcom_pcie_probe(struct platfo
  	return 0;
  }
  

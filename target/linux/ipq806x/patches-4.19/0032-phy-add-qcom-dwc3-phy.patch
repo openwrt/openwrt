@@ -5,15 +5,10 @@ Subject: [PATCH 32/69] phy: add qcom dwc3 phy
 
 Signed-off-by: Andy Gross <agross@codeaurora.org>
 ---
- drivers/phy/Kconfig         |  12 +
- drivers/phy/Makefile        |   1 +
- drivers/phy/phy-qcom-dwc3.c | 575 ++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 588 insertions(+)
- create mode 100644 drivers/phy/phy-qcom-dwc3.c
 
 --- a/drivers/phy/qualcomm/Kconfig
 +++ b/drivers/phy/qualcomm/Kconfig
-@@ -56,3 +56,15 @@ config PHY_QCOM_USB_HSIC
+@@ -65,3 +65,15 @@ config PHY_QCOM_USB_HSIC
  	select GENERIC_PHY
  	help
  	  Support for the USB HSIC ULPI compliant PHY on QCOM chipsets.
@@ -31,14 +26,14 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +
 --- a/drivers/phy/qualcomm/Makefile
 +++ b/drivers/phy/qualcomm/Makefile
-@@ -8,3 +8,4 @@ obj-$(CONFIG_PHY_QCOM_UFS)		+= phy-qcom-
+@@ -9,3 +9,4 @@ obj-$(CONFIG_PHY_QCOM_UFS)		+= phy-qcom-
  obj-$(CONFIG_PHY_QCOM_UFS)		+= phy-qcom-ufs-qmp-20nm.o
  obj-$(CONFIG_PHY_QCOM_USB_HS) 		+= phy-qcom-usb-hs.o
  obj-$(CONFIG_PHY_QCOM_USB_HSIC) 	+= phy-qcom-usb-hsic.o
 +obj-$(CONFIG_PHY_QCOM_DWC3)		+= phy-qcom-dwc3.o
 --- /dev/null
 +++ b/drivers/phy/qualcomm/phy-qcom-dwc3.c
-@@ -0,0 +1,575 @@
+@@ -0,0 +1,578 @@
 +/* Copyright (c) 2014-2015, Code Aurora Forum. All rights reserved.
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -59,6 +54,8 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +#include <linux/phy/phy.h>
 +#include <linux/platform_device.h>
 +#include <linux/delay.h>
++#include <linux/regmap.h>
++#include <linux/mfd/syscon.h>
 +
 +/**
 + *  USB QSCRATCH Hardware registers
@@ -86,15 +83,15 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +/**
 + *  USB QSCRATCH Hardware registers
 + */
-+#define SSUSB_PHY_CTRL_REG		(0x00)
-+#define SSUSB_PHY_PARAM_CTRL_1		(0x04)
-+#define SSUSB_PHY_PARAM_CTRL_2		(0x08)
-+#define CR_PROTOCOL_DATA_IN_REG		(0x0c)
-+#define CR_PROTOCOL_DATA_OUT_REG	(0x10)
-+#define CR_PROTOCOL_CAP_ADDR_REG	(0x14)
-+#define CR_PROTOCOL_CAP_DATA_REG	(0x18)
-+#define CR_PROTOCOL_READ_REG		(0x1c)
-+#define CR_PROTOCOL_WRITE_REG		(0x20)
++#define SSUSB_PHY_CTRL_REG		(0x30)
++#define SSUSB_PHY_PARAM_CTRL_1		(0x34)
++#define SSUSB_PHY_PARAM_CTRL_2		(0x38)
++#define CR_PROTOCOL_DATA_IN_REG	(0x3c)
++#define CR_PROTOCOL_DATA_OUT_REG	(0x40)
++#define CR_PROTOCOL_CAP_ADDR_REG	(0x44)
++#define CR_PROTOCOL_CAP_DATA_REG	(0x48)
++#define CR_PROTOCOL_READ_REG		(0x4c)
++#define CR_PROTOCOL_WRITE_REG		(0x50)
 +
 +/* PHY_CTRL_REG */
 +#define SSUSB_CTRL_REF_USE_PAD		BIT(28)
@@ -103,7 +100,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +#define SSUSB_CTRL_SS_PHY_EN		BIT(8)
 +#define SSUSB_CTRL_SS_PHY_RESET		BIT(7)
 +
-+/* SSPHY control registers */
++/* SSPHY control registers - Does this need 0x30? */
 +#define SSPHY_CTRL_RX_OVRD_IN_HI(lane)	(0x1006 + 0x100 * lane)
 +#define SSPHY_CTRL_TX_OVRD_DRV_LO(lane)	(0x1002 + 0x100 * lane)
 +
@@ -160,7 +157,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +#define SS_CR_WRITE_REG			BIT(0)
 +
 +struct qcom_dwc3_usb_phy {
-+	void __iomem		*base;
++	struct regmap		*base;
 +	struct device		*dev;
 +	struct clk		*xo_clk;
 +	struct clk		*ref_clk;
@@ -186,15 +183,16 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +	struct qcom_dwc3_usb_phy *phy_dwc3, u32 offset,
 +	const u32 mask, u32 val)
 +{
-+	u32 write_val, tmp = readl(phy_dwc3->base + offset);
++	u32 write_val, tmp;
 +
++	tmp = regmap_read(phy_dwc3->base, offset, &tmp);
 +	tmp &= ~mask;		/* retain other bits */
 +	write_val = tmp | val;
 +
-+	writel(write_val, phy_dwc3->base + offset);
++	regmap_write(phy_dwc3->base, offset, write_val);
 +
 +	/* Read back to see if val was written */
-+	tmp = readl(phy_dwc3->base + offset);
++	regmap_read(phy_dwc3->base, offset, &tmp);
 +	tmp &= mask;		/* clear other bits */
 +
 +	if (tmp != val)
@@ -202,12 +200,13 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +			val, offset);
 +}
 +
-+static int wait_for_latch(void __iomem *addr)
++static int wait_for_latch(struct regmap *base, u32 addr)
 +{
-+	u32 retry = 10;
++	u32 retry = 10, data;
 +
 +	while (true) {
-+		if (!readl(addr))
++		regmap_read(base, addr, &data);
++		if (!data)
 +			break;
 +
 +		if (--retry == 0)
@@ -231,23 +230,23 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +{
 +	int ret;
 +
-+	writel(addr, phy_dwc3->base + CR_PROTOCOL_DATA_IN_REG);
-+	writel(SS_CR_CAP_ADDR_REG, phy_dwc3->base + CR_PROTOCOL_CAP_ADDR_REG);
++	regmap_write(phy_dwc3->base, CR_PROTOCOL_DATA_IN_REG, addr);
++	regmap_write(phy_dwc3->base, CR_PROTOCOL_CAP_ADDR_REG, SS_CR_CAP_ADDR_REG);
 +
-+	ret = wait_for_latch(phy_dwc3->base + CR_PROTOCOL_CAP_ADDR_REG);
++	ret = wait_for_latch(phy_dwc3->base, CR_PROTOCOL_CAP_ADDR_REG);
 +	if (ret)
 +		goto err_wait;
 +
-+	writel(val, phy_dwc3->base + CR_PROTOCOL_DATA_IN_REG);
-+	writel(SS_CR_CAP_DATA_REG, phy_dwc3->base + CR_PROTOCOL_CAP_DATA_REG);
++	regmap_write(phy_dwc3->base, CR_PROTOCOL_DATA_IN_REG, val);
++	regmap_write(phy_dwc3->base, CR_PROTOCOL_CAP_DATA_REG, SS_CR_CAP_DATA_REG);
 +
-+	ret = wait_for_latch(phy_dwc3->base + CR_PROTOCOL_CAP_DATA_REG);
++	ret = wait_for_latch(phy_dwc3->base, CR_PROTOCOL_CAP_DATA_REG);
 +	if (ret)
 +		goto err_wait;
 +
-+	writel(SS_CR_WRITE_REG, phy_dwc3->base + CR_PROTOCOL_WRITE_REG);
++	regmap_write(phy_dwc3->base, CR_PROTOCOL_WRITE_REG, SS_CR_WRITE_REG);
 +
-+	ret = wait_for_latch(phy_dwc3->base + CR_PROTOCOL_WRITE_REG);
++	ret = wait_for_latch(phy_dwc3->base, CR_PROTOCOL_WRITE_REG);
 +
 +err_wait:
 +	if (ret)
@@ -261,14 +260,14 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 + * @base - QCOM DWC3 PHY base virtual address.
 + * @addr - SSPHY address to read.
 + */
-+static int qcom_dwc3_ss_read_phycreg(void __iomem *base, u32 addr, u32 *val)
++static int qcom_dwc3_ss_read_phycreg(struct regmap *base, u32 addr, u32 *val)
 +{
 +	int ret;
 +
-+	writel(addr, base + CR_PROTOCOL_DATA_IN_REG);
-+	writel(SS_CR_CAP_ADDR_REG, base + CR_PROTOCOL_CAP_ADDR_REG);
++	regmap_write(base, CR_PROTOCOL_DATA_IN_REG, addr);
++	regmap_write(base, CR_PROTOCOL_CAP_ADDR_REG, SS_CR_CAP_ADDR_REG);
 +
-+	ret = wait_for_latch(base + CR_PROTOCOL_CAP_ADDR_REG);
++	ret = wait_for_latch(base, CR_PROTOCOL_CAP_ADDR_REG);
 +	if (ret)
 +		goto err_wait;
 +
@@ -277,22 +276,22 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +	 * incorrect. Hence as workaround, SW should perform SSPHY register
 +	 * read twice, but use only second read and ignore first read.
 +	 */
-+	writel(SS_CR_READ_REG, base + CR_PROTOCOL_READ_REG);
++	regmap_write(base, CR_PROTOCOL_READ_REG, SS_CR_READ_REG);
 +
-+	ret = wait_for_latch(base + CR_PROTOCOL_READ_REG);
++	ret = wait_for_latch(base, CR_PROTOCOL_READ_REG);
 +	if (ret)
 +		goto err_wait;
 +
 +	/* throwaway read */
-+	readl(base + CR_PROTOCOL_DATA_OUT_REG);
++	regmap_read(base, CR_PROTOCOL_DATA_OUT_REG, &ret);
 +
-+	writel(SS_CR_READ_REG, base + CR_PROTOCOL_READ_REG);
++	regmap_write(base, CR_PROTOCOL_READ_REG, SS_CR_READ_REG);
 +
-+	ret = wait_for_latch(base + CR_PROTOCOL_READ_REG);
++	ret = wait_for_latch(base, CR_PROTOCOL_READ_REG);
 +	if (ret)
 +		goto err_wait;
 +
-+	*val = readl(base + CR_PROTOCOL_DATA_OUT_REG);
++	regmap_read(base, CR_PROTOCOL_DATA_OUT_REG, val);
 +
 +err_wait:
 +	return ret;
@@ -328,11 +327,11 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +	if (!phy_dwc3->xo_clk)
 +		val |= HSUSB_CTRL_USE_CLKCORE;
 +
-+	writel(val, phy_dwc3->base + HSUSB_PHY_CTRL_REG);
++	regmap_write(phy_dwc3->base, HSUSB_PHY_CTRL_REG, val);
 +	usleep_range(2000, 2200);
 +
 +	/* Disable (bypass) VBUS and ID filters */
-+	writel(HSUSB_GCFG_XHCI_REV, phy_dwc3->base + QSCRATCH_GENERAL_CFG);
++	regmap_write(phy_dwc3->base, QSCRATCH_GENERAL_CFG, HSUSB_GCFG_XHCI_REV);
 +
 +	return 0;
 +}
@@ -364,11 +363,11 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +	}
 +
 +	/* reset phy */
-+	data = readl(phy_dwc3->base + SSUSB_PHY_CTRL_REG);
-+	writel(data | SSUSB_CTRL_SS_PHY_RESET,
-+		phy_dwc3->base + SSUSB_PHY_CTRL_REG);
++	regmap_read(phy_dwc3->base, SSUSB_PHY_CTRL_REG, &data);
++	regmap_write(phy_dwc3->base, SSUSB_PHY_CTRL_REG,
++		data | SSUSB_CTRL_SS_PHY_RESET);
 +	usleep_range(2000, 2200);
-+	writel(data, phy_dwc3->base + SSUSB_PHY_CTRL_REG);
++	regmap_write(phy_dwc3->base, SSUSB_PHY_CTRL_REG, data);
 +
 +	/* clear REF_PAD if we don't have XO clk */
 +	if (!phy_dwc3->xo_clk)
@@ -376,13 +375,13 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +	else
 +		data |= SSUSB_CTRL_REF_USE_PAD;
 +
-+	writel(data, phy_dwc3->base + SSUSB_PHY_CTRL_REG);
++	regmap_write(phy_dwc3->base, SSUSB_PHY_CTRL_REG, data);
 +
 +	/* wait for ref clk to become stable, this can take up to 30ms */
 +	msleep(30);
 +
 +	data |= SSUSB_CTRL_SS_PHY_EN | SSUSB_CTRL_LANE0_PWR_PRESENT;
-+	writel(data, phy_dwc3->base + SSUSB_PHY_CTRL_REG);
++	regmap_write(phy_dwc3->base, SSUSB_PHY_CTRL_REG, data);
 +
 +	/*
 +	 * WORKAROUND: There is SSPHY suspend bug due to which USB enumerates
@@ -460,7 +459,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +	 * TX_DEEMPH_3_5DB [13:8] set based on SoC version
 +	 * LOS_BIAS [7:3] to 9
 +	 */
-+	data = readl(phy_dwc3->base + SSUSB_PHY_PARAM_CTRL_1);
++	regmap_read(phy_dwc3->base, SSUSB_PHY_PARAM_CTRL_1, &data);
 +
 +	data &= ~PHY_PARAM_CTRL1_MASK;
 +
@@ -542,10 +541,9 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +
 +	phy_dwc3->dev = &pdev->dev;
 +
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	phy_dwc3->base = devm_ioremap_resource(phy_dwc3->dev, res);
-+	if (IS_ERR(phy_dwc3->base))
-+		return PTR_ERR(phy_dwc3->base);
++	phy_dwc3->base = syscon_regmap_lookup_by_phandle(pdev->dev.of_node, "regmap");
++	if (IS_ERR_OR_NULL(phy_dwc3->base))
++		return PTR_ERR_OR_ZERO(phy_dwc3->base) ? : -EINVAL;
 +
 +	phy_dwc3->ref_clk = devm_clk_get(phy_dwc3->dev, "ref");
 +	if (IS_ERR(phy_dwc3->ref_clk)) {

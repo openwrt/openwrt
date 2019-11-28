@@ -1,19 +1,7 @@
-From patchwork Fri Dec  8 09:42:22 2017
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Subject: [v4,04/12] clk: qcom: Add HFPLL driver
-From: Sricharan R <sricharan@codeaurora.org>
-X-Patchwork-Id: 10102079
-Message-Id: <1512726150-7204-5-git-send-email-sricharan@codeaurora.org>
-To: mturquette@baylibre.com, sboyd@codeaurora.org,
- devicetree@vger.kernel.org, linux-pm@vger.kernel.org,
- linux-arm-msm@vger.kernel.org, linux-kernel@vger.kernel.org,
- viresh.kumar@linaro.org, linux-arm-kernel@lists.infradead.org
-Cc: sricharan@codeaurora.org
-Date: Fri,  8 Dec 2017 15:12:22 +0530
-
+From cb546b797a0da4dbb1a0c76a2a357921887b6189 Mon Sep 17 00:00:00 2001
 From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Tue, 14 Aug 2018 17:42:22 +0530
+Subject: [PATCH 03/12] clk: qcom: Add HFPLL driver
 
 On some devices (MSM8974 for example), the HFPLLs are
 instantiated within the Krait processor subsystem as separate
@@ -22,64 +10,22 @@ provide HFPLL clocks for use by the system.
 
 Cc: <devicetree@vger.kernel.org>
 Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Sricharan R <sricharan@codeaurora.org>
+Tested-by: Craig Tatlor <ctatlor97@gmail.com>
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 ---
- .../devicetree/bindings/clock/qcom,hfpll.txt       |  40 ++++++++
- drivers/clk/qcom/Kconfig                           |   8 ++
- drivers/clk/qcom/Makefile                          |   1 +
- drivers/clk/qcom/hfpll.c                           | 106 +++++++++++++++++++++
- 4 files changed, 155 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/clock/qcom,hfpll.txt
+ drivers/clk/qcom/Kconfig  |  8 ++++
+ drivers/clk/qcom/Makefile |  1 +
+ drivers/clk/qcom/hfpll.c  | 96 +++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 105 insertions(+)
  create mode 100644 drivers/clk/qcom/hfpll.c
 
---- /dev/null
-+++ b/Documentation/devicetree/bindings/clock/qcom,hfpll.txt
-@@ -0,0 +1,40 @@
-+High-Frequency PLL (HFPLL)
-+
-+PROPERTIES
-+
-+- compatible:
-+	Usage: required
-+	Value type: <string>
-+	Definition: must be "qcom,hfpll"
-+
-+- reg:
-+	Usage: required
-+	Value type: <prop-encoded-array>
-+	Definition: address and size of HPLL registers. An optional second
-+		    element specifies the address and size of the alias
-+		    register region.
-+
-+- clock-output-names:
-+	Usage: required
-+	Value type: <string>
-+	Definition: Name of the PLL. Typically hfpllX where X is a CPU number
-+		    starting at 0. Otherwise hfpll_Y where Y is more specific
-+		    such as "l2".
-+
-+Example:
-+
-+1) An HFPLL for the L2 cache.
-+
-+	clock-controller@f9016000 {
-+		compatible = "qcom,hfpll";
-+		reg = <0xf9016000 0x30>;
-+		clock-output-names = "hfpll_l2";
-+	};
-+
-+2) An HFPLL for CPU0. This HFPLL has the alias register region.
-+
-+	clock-controller@f908a000 {
-+		compatible = "qcom,hfpll";
-+		reg = <0xf908a000 0x30>, <0xf900a000 0x30>;
-+		clock-output-names = "hfpll0";
-+	};
 --- a/drivers/clk/qcom/Kconfig
 +++ b/drivers/clk/qcom/Kconfig
-@@ -196,3 +196,11 @@ config MSM_MMCC_8996
- 	  Support for the multimedia clock controller on msm8996 devices.
- 	  Say Y if you want to support multimedia devices such as display,
- 	  graphics, video encode/decode, camera, etc.
+@@ -272,3 +272,11 @@ config SPMI_PMIC_CLKDIV
+ 	  Technologies, Inc. SPMI PMIC. It configures the frequency of
+ 	  clkdiv outputs of the PMIC. These clocks are typically wired
+ 	  through alternate functions on GPIO pins.
 +
 +config QCOM_HFPLL
 +	tristate "High-Frequency PLL (HFPLL) Clock Controller"
@@ -90,26 +36,16 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 +	  such as MSM8974, APQ8084, etc.
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
-@@ -35,3 +35,4 @@ obj-$(CONFIG_MSM_MMCC_8974) += mmcc-msm8
- obj-$(CONFIG_MSM_MMCC_8996) += mmcc-msm8996.o
- obj-$(CONFIG_QCOM_CLK_RPM) += clk-rpm.o
- obj-$(CONFIG_QCOM_CLK_SMD_RPM) += clk-smd-rpm.o
+@@ -44,3 +44,4 @@ obj-$(CONFIG_SDM_DISPCC_845) += dispcc-s
+ obj-$(CONFIG_SDM_GCC_845) += gcc-sdm845.o
+ obj-$(CONFIG_SDM_VIDEOCC_845) += videocc-sdm845.o
+ obj-$(CONFIG_SPMI_PMIC_CLKDIV) += clk-spmi-pmic-div.o
 +obj-$(CONFIG_QCOM_HFPLL) += hfpll.o
 --- /dev/null
 +++ b/drivers/clk/qcom/hfpll.c
-@@ -0,0 +1,106 @@
-+/*
-+ * Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 and
-+ * only version 2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
+@@ -0,0 +1,96 @@
++// SPDX-License-Identifier: GPL-2.0
++// Copyright (c) 2018, The Linux Foundation. All rights reserved.
 +
 +#include <linux/kernel.h>
 +#include <linux/init.h>

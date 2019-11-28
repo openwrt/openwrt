@@ -35,26 +35,23 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  	bool have_static_opps;
  };
  
-@@ -44,9 +47,16 @@ static struct freq_attr *cpufreq_dt_attr
- static int set_target(struct cpufreq_policy *policy, unsigned int index)
- {
- 	struct private_data *priv = policy->driver_data;
-+	int ret;
-+	unsigned long target_freq = policy->freq_table[index].frequency * 1000;
-+
+@@ -47,12 +50,15 @@ static int set_target(struct cpufreq_pol
+ 	unsigned long freq = policy->freq_table[index].frequency;
+ 	int ret;
+ 
 +	mutex_lock(&priv->lock);
-+	ret = dev_pm_opp_set_rate(priv->cpu_dev, target_freq);
-+	if (!ret)
-+		priv->opp_freq = target_freq;
+ 	ret = dev_pm_opp_set_rate(priv->cpu_dev, freq * 1000);
+ 
+ 	if (!ret) {
++		priv->opp_freq = freq * 1000;
+ 		arch_set_freq_scale(policy->related_cpus, freq,
+ 				    policy->cpuinfo.max_freq);
+ 	}
 +	mutex_unlock(&priv->lock);
  
--	return dev_pm_opp_set_rate(priv->cpu_dev,
--				   policy->freq_table[index].frequency * 1000);
-+	return ret;
+ 	return ret;
  }
- 
- /*
-@@ -87,6 +97,39 @@ node_put:
+@@ -95,6 +101,39 @@ node_put:
  	return name;
  }
  
@@ -94,7 +91,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  static int resources_available(void)
  {
  	struct device *cpu_dev;
-@@ -153,6 +196,7 @@ static int cpufreq_init(struct cpufreq_p
+@@ -161,6 +200,7 @@ static int cpufreq_init(struct cpufreq_p
  	bool fallback = false;
  	const char *name;
  	int ret;
@@ -102,7 +99,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  
  	cpu_dev = get_cpu_device(policy->cpu);
  	if (!cpu_dev) {
-@@ -246,10 +290,13 @@ static int cpufreq_init(struct cpufreq_p
+@@ -254,10 +294,13 @@ static int cpufreq_init(struct cpufreq_p
  				__func__, ret);
  	}
  
@@ -117,7 +114,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  	}
  
  	priv->cpu_dev = cpu_dev;
-@@ -285,6 +332,8 @@ static int cpufreq_init(struct cpufreq_p
+@@ -287,6 +330,8 @@ static int cpufreq_init(struct cpufreq_p
  
  out_free_cpufreq_table:
  	dev_pm_opp_free_cpufreq_table(cpu_dev, &freq_table);
