@@ -282,6 +282,7 @@ define Device/glinet_gl-s1300
 	IMAGE_SIZE := 26624k
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel |append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := ipq-wifi-glinet_gl-s1300
 endef
 TARGET_DEVICES += glinet_gl-s1300
 
