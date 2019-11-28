@@ -3,6 +3,7 @@
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
 . /lib/functions/caldata.sh
+. /lib/functions/mikrotik-caldata.sh
 
 board=$(board_name)
 
@@ -39,6 +40,10 @@ case "$FIRMWARE" in
 	sitecom,wlr-7100)
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env ethaddr)
+		;;
+	mikrotik,routerboard-wap-g-5hact2hnd)
+		mikrotik_caldata_extract "art" 0x1000 0x440
+		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x10) +2)
 		;;
 	nec,wg800hp)
 		caldata_extract "art" 0x1000 0x440
