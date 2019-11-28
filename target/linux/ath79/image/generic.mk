@@ -1,4 +1,5 @@
 include ./common-buffalo.mk
+include ./common-mikrotik.mk
 include ./common-netgear.mk
 include ./common-tp-link.mk
 include ./common-yuncore.mk
