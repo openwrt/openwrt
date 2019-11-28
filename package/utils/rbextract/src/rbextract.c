@@ -333,7 +333,35 @@ __rb_get_wlan_data(void)
 			goto err_free_rle_out;
 		}
 	}
+	/* Older ath79-based boards directly show the RB_MAGIC_ERD bytes followed by
+	the LZO-compressed calibration data with no RLE */
+	if (magic == RB_MAGIC_ERD) {
+		if (tag_len > RB_ART_SIZE) {
+			printf("Calibration data too large\n");
+			goto err_free_lzo_in;
+		}
 
+		err = routerboot_find_tag(tag, tag_len,
+					  0x1, &buf_lzo_in, &erd_tag_len);
+		if (err) {
+			printf("No ERD chunk found\n");
+			goto err_free_lzo_out;
+		}
+
+		printf("Decompressing with LZO\n");
+		lzo_out_len = RB_ART_SIZE;
+		err = lzo1x_decompress_safe(buf_lzo_in, tag_len,
+					    buf_lzo_out, &lzo_out_len, NULL);
+		/* For some reason, I get this "input not consumed" error
+		 * even though the output is correct, so ignore it. */
+		if (err && err != LZO_E_INPUT_NOT_CONSUMED) {
+			printf("unable to decompress calibration data: %d\n",
+			       err);
+			goto err_free_lzo_out;
+		}
+
+		buf_rle_out = buf_lzo_out;
+	}
 	return buf_rle_out;
 
 err_free_rle_out:
