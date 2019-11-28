@@ -694,6 +694,19 @@ define Device/librerouter_librerouter-v1
 endef
 TARGET_DEVICES += librerouter_librerouter-v1
 
+define Device/mikrotik_routerboard-wap-g-5hact2hnd
+  $(Device/mikrotik)
+  SOC := qca9556
+  DEVICE_MODEL := RouterBOARD wAP G-5HacT2HnD (wAP AC)
+  IMAGE_SIZE := 16000k
+  IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 -e | \
+	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
+	append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
+  SUPPORTED_DEVICES += rb-wapg-5hact2hnd
+endef
+TARGET_DEVICES += mikrotik_routerboard-wap-g-5hact2hnd
+
 define Device/nec_wg1200cr
   SOC := qca9563
   DEVICE_VENDOR := NEC
