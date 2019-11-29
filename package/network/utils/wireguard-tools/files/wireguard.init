@@ -1,0 +1,45 @@
+#!/bin/sh /etc/rc.common
+
+START=80
+USE_PROCD=1
+
+WG_DIR="/tmp/wireguard"
+
+wireguard_check_peer(){
+	local cfg="${1}"
+	local cfile="${2}"
+
+	uci show "network.${cfg}" >> "${cfile}"
+}
+
+wireguard_check_interface() {
+	local cfg="${1}"
+	local proto cfile n_sum o_sum
+
+	config_get proto "${cfg}" proto
+	[ "${proto}" = "wireguard" ] || return 0
+	cfile="$(mktemp -p "${WG_DIR}")"
+	config_foreach wireguard_check_peer "wireguard_${1}" "${cfile}"
+
+	. /lib/functions/network.sh
+
+	n_sum="$(md5sum "${cfile}" | cut -d" " -f1)"
+	rm -rf "${cfile}"
+	[ -f "${WG_DIR}/${cfg}.check" ] && {
+		o_sum="$(cat "${WG_DIR}/${cfg}.check")"
+		[ "${o_sum}" != "${n_sum}" ] && {
+			network_is_up "${cfg}" && ifup "${cfg}"
+		}
+	}
+	echo "$n_sum" > "${WG_DIR}/${cfg}.check"
+}
+
+service_triggers() {
+	procd_add_reload_trigger "network"
+}
+
+start_service() {
+	mkdir -p "${WG_DIR}"
+	config_load network
+	config_foreach wireguard_check_interface interface
+}
