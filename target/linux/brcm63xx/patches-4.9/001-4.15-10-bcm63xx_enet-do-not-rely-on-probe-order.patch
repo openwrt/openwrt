@@ -14,7 +14,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
-@@ -1739,10 +1739,8 @@ static int bcm_enet_probe(struct platfor
+@@ -1740,10 +1740,8 @@ static int bcm_enet_probe(struct platfor
  	const char *clk_name;
  	int i, ret;
  
@@ -26,7 +26,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  
  	res_irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
  	res_irq_rx = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
-@@ -2714,11 +2712,8 @@ static int bcm_enetsw_probe(struct platf
+@@ -2715,11 +2713,8 @@ static int bcm_enetsw_probe(struct platf
  	struct resource *res_mem;
  	int ret, irq_rx, irq_tx;
  

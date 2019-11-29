@@ -335,16 +335,16 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  #include <linux/of.h>
  #include <linux/of_address.h>
  #include <linux/of_platform.h>
-@@ -209,6 +210,9 @@ static int of_flash_probe(struct platfor
+@@ -201,6 +202,9 @@ static int of_flash_probe(struct platfor
  			return err;
  		}
  
 +		if (of_property_read_bool(dp->parent, "big-endian"))
 +			info->list[i].map.swap = CFI_BIG_ENDIAN;
 +
- 		err = -ENOMEM;
- 		info->list[i].map.virt = ioremap(info->list[i].map.phys,
- 						 info->list[i].map.size);
+ 		simple_map_init(&info->list[i].map);
+ 
+ 		/*
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
 @@ -438,7 +438,7 @@ config MTD_NAND_FSL_ELBC

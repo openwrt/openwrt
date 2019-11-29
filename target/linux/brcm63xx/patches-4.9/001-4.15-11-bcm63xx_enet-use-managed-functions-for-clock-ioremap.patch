@@ -13,7 +13,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
-@@ -1784,14 +1784,14 @@ static int bcm_enet_probe(struct platfor
+@@ -1785,14 +1785,14 @@ static int bcm_enet_probe(struct platfor
  		clk_name = "enet1";
  	}
  
@@ -30,7 +30,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  
  	/* initialize default and fetch platform data */
  	priv->rx_ring_size = BCMENET_DEF_RX_DESC;
-@@ -1819,7 +1819,7 @@ static int bcm_enet_probe(struct platfor
+@@ -1820,7 +1820,7 @@ static int bcm_enet_probe(struct platfor
  
  	if (priv->mac_id == 0 && priv->has_phy && !priv->use_external_mii) {
  		/* using internal PHY, enable clock */
@@ -39,7 +39,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (IS_ERR(priv->phy_clk)) {
  			ret = PTR_ERR(priv->phy_clk);
  			priv->phy_clk = NULL;
-@@ -1827,7 +1827,7 @@ static int bcm_enet_probe(struct platfor
+@@ -1828,7 +1828,7 @@ static int bcm_enet_probe(struct platfor
  		}
  		ret = clk_prepare_enable(priv->phy_clk);
  		if (ret)
@@ -48,7 +48,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	}
  
  	/* do minimal hardware init to be able to probe mii bus */
-@@ -1921,14 +1921,8 @@ out_uninit_hw:
+@@ -1922,14 +1922,8 @@ out_uninit_hw:
  	if (priv->phy_clk)
  		clk_disable_unprepare(priv->phy_clk);
  
@@ -63,7 +63,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  out:
  	free_netdev(dev);
  	return ret;
-@@ -1964,12 +1958,10 @@ static int bcm_enet_remove(struct platfo
+@@ -1965,12 +1959,10 @@ static int bcm_enet_remove(struct platfo
  	}
  
  	/* disable hw block clocks */
@@ -78,7 +78,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  
  	free_netdev(dev);
  	return 0;
-@@ -2752,26 +2744,20 @@ static int bcm_enetsw_probe(struct platf
+@@ -2753,26 +2745,20 @@ static int bcm_enetsw_probe(struct platf
  	if (ret)
  		goto out;
  
@@ -111,7 +111,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  
  	priv->rx_chan = 0;
  	priv->tx_chan = 1;
-@@ -2803,15 +2789,6 @@ static int bcm_enetsw_probe(struct platf
+@@ -2804,15 +2790,6 @@ static int bcm_enetsw_probe(struct platf
  
  out_disable_clk:
  	clk_disable_unprepare(priv->mac_clk);
@@ -127,7 +127,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  out:
  	free_netdev(dev);
  	return ret;
-@@ -2823,20 +2800,13 @@ static int bcm_enetsw_remove(struct plat
+@@ -2824,20 +2801,13 @@ static int bcm_enetsw_remove(struct plat
  {
  	struct bcm_enet_priv *priv;
  	struct net_device *dev;

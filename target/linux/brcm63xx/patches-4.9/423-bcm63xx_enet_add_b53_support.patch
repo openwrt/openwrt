@@ -20,7 +20,7 @@
  
  #include <bcm63xx_dev_enet.h>
  #include "bcm63xx_enet.h"
-@@ -1950,7 +1951,8 @@ static int bcm_enet_remove(struct platfo
+@@ -1951,7 +1952,8 @@ static int bcm_enet_remove(struct platfo
  	return 0;
  }
  
@@ -30,7 +30,7 @@
  	.probe	= bcm_enet_probe,
  	.remove	= bcm_enet_remove,
  	.driver	= {
-@@ -1959,6 +1961,42 @@ struct platform_driver bcm63xx_enet_driv
+@@ -1960,6 +1962,42 @@ struct platform_driver bcm63xx_enet_driv
  	},
  };
  
@@ -73,7 +73,7 @@
  /*
   * switch mii access callbacks
   */
-@@ -2217,29 +2255,6 @@ static int bcm_enetsw_open(struct net_de
+@@ -2218,29 +2256,6 @@ static int bcm_enetsw_open(struct net_de
  		enetsw_writeb(priv, rgmii_ctrl, ENETSW_RGMII_CTRL_REG(i));
  	}
  
@@ -103,7 +103,7 @@
  	/* initialize flow control buffer allocation */
  	enet_dma_writel(priv, ENETDMA_BUFALLOC_FORCE_MASK | 0,
  			ENETDMA_BUFALLOC_REG(priv->rx_chan));
-@@ -2698,6 +2713,9 @@ static int bcm_enetsw_probe(struct platf
+@@ -2699,6 +2714,9 @@ static int bcm_enetsw_probe(struct platf
  	struct bcm63xx_enetsw_platform_data *pd;
  	struct resource *res_mem;
  	int ret, irq_rx, irq_tx;
@@ -113,7 +113,7 @@
  
  	if (!bcm_enet_shared_base[0])
  		return -EPROBE_DEFER;
-@@ -2780,6 +2798,43 @@ static int bcm_enetsw_probe(struct platf
+@@ -2781,6 +2799,43 @@ static int bcm_enetsw_probe(struct platf
  	priv->pdev = pdev;
  	priv->net_dev = dev;
  
@@ -157,7 +157,7 @@
  	return 0;
  
  out_disable_clk:
-@@ -2801,6 +2856,9 @@ static int bcm_enetsw_remove(struct plat
+@@ -2802,6 +2857,9 @@ static int bcm_enetsw_remove(struct plat
  	priv = netdev_priv(dev);
  	unregister_netdev(dev);
  
