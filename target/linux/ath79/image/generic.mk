@@ -370,6 +370,17 @@ define Device/etactica_eg200
 endef
 TARGET_DEVICES += etactica_eg200
 
+define Device/glinet_6416a
+  $(Device/tplink-16mlzma)
+  ATH_SOC := ar9331
+  DEVICE_TITLE := GL.iNet 6416A
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea2
+  TPLINK_HWID := 0x08000001
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += gl-inet
+endef
+TARGET_DEVICES += glinet_6416a
+
 define Device/glinet_gl-ar150
   ATH_SOC := ar9330
   DEVICE_TITLE := GL.iNet GL-AR150
