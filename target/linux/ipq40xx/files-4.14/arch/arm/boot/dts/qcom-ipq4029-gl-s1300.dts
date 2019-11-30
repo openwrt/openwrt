@@ -28,6 +28,7 @@
 		led-failsafe = &power;
 		led-running = &power;
 		led-upgrade = &power;
+		sdhc1 = &sdhc_1;
 	};
 
 	memory {
@@ -99,6 +100,33 @@
 
 		edma@c080000 {
 			status = "okay";
+		};
+
+		sdhc_1: sdhci@7824000 {
+			compatible = "qcom,sdhci-msm";
+			reg = <0x7824900 0x11c>, <0x7824000 0x800>;
+			reg-names = "hc_mem", "core_mem";
+			interrupts = <0 123 0>, <0 138 0>;
+			interrupt-names = "hc_irq", "pwr_irq";
+			qcom,bus-width = <8>;
+			qcom,max_clk = <192000000>;
+			clocks = <&gcc 47>,
+				 <&gcc 46>;
+			clock-names = "core_clk", "iface_clk";
+			qcom,large-address-bus;
+			qcom,disable-aggressive-pm;
+			status = "disabled";
+		};
+
+		sdhc_1: sdhci@7824000{
+			status = "ok";
+			qcom,bus-speed-mode = "HS200_1p8v", "DDR_1p8v";
+			qcom,clk-rates = <400000 25000000 50000000 100000000 \
+					 192000000 384000000>;
+			pinctrl-0 = <&sd_0_pins>;
+			pinctrl-names = "active", "sleep";
+			cd-gpios = <&tlmm 22 0x1>;
+			sd-ldo-gpios = <&tlmm 33 0x1>;
 		};
 	};
 
@@ -244,6 +272,78 @@
 			drive-strength = <2>;
 			bias-disable;
 			output-high;
+		};
+	};
+	sd_0_pins: sd_0_pinmux {
+		sd0 {
+			pins = "gpio23";
+			function = "sdio";
+			pull-res = <2>;
+			drive-type = <1>;
+			vm-enable;
+		};
+		sd1 {
+			pins = "gpio24";
+			function = "sdio";
+			pull-res = <2>;
+			drive-type = <1>;
+			vm-enable;
+		};
+		sd2 {
+			pins = "gpio25";
+			function = "sdio";
+			pull-res = <2>;
+			drive-type = <1>;
+			vm-enable;
+		};
+		sd3 {
+			pins = "gpio26";
+			function = "sdio";
+			pull-res = <2>;
+			drive-type = <1>;
+			vm-enable;
+		};
+		sdclk {
+			pins = "gpio27";
+			function = "sdio";
+			pull-res = <2>;
+			drive-type = <7>;
+			vm-enable;
+		};
+		sdcmd {
+			pins = "gpio28";
+			function = "sdio";
+			pull-res = <2>;
+			drive-type = <1>;
+			vm-enable;
+		};
+		sd4 {
+			pins = "gpio29";
+			function = "sdio";
+			pull-res = <2>;
+			drive-type = <1>;
+			vm-enable;
+		};
+		sd5 {
+			pins = "gpio30";
+			function = "sdio";
+			pull-res = <2>;
+			drive-type = <1>;
+			vm-enable;
+		};
+		sd6 {
+			pins = "gpio31";
+			function = "sdio";
+			pull-res = <2>;
+			drive-type = <1>;
+			vm-enable;
+		};
+		sd7 {
+			pins = "gpio32";
+			function = "sdio";
+			pull-res = <2>;
+			drive-type = <1>;
+			vm-enable;
 		};
 	};
 };
