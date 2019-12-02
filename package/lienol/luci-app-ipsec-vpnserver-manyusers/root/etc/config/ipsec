@@ -1,0 +1,14 @@
+
+config service 'ipsec'
+	option secret 'ipsec'
+	option clientip '192.168.100.1/24'
+	option is_nat '1'
+	option export_interface 'default'
+	option clientdns '208.67.222.222'
+	option enabled '0'
+
+config users
+	option enabled '1'
+	option username 'guest'
+	option password '123456'
+

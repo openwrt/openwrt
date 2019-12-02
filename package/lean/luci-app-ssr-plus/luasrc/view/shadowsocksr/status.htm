@@ -1,0 +1,25 @@
+<script type="text/javascript">//<![CDATA[
+XHR.poll(3, '<%=url([[admin]], [[services]], [[shadowsocksr]], [[run]])%>', null,
+	function(x, data) {
+		var tb = document.getElementById('shadowsocksr_status');
+		if (data && tb) {
+			if (data.running) {
+				var links = '<em><b><font color=green>ShadowsocksR Plus+ <%:RUNNING%></font></b></em>';
+				links += '<input class="cbi-button mar-10" type="button" value="<%:Recommend SSR%>" onclick="window.open(\'https://www.tophedu.com/index.php/ssr%E4%B8%8Ev2ray%E6%9C%8D%E5%8A%A1%E6%8E%A8%E8%8D%90/\');" />';
+				tb.innerHTML = links;
+			} else {
+				var links = '<em><b><font color=red>ShadowsocksR Plus+ <%:NOT RUNNING%></font></b></em>';
+				links += '<input class="cbi-button mar-10" type="button" value="<%:Recommend SSR%>" onclick="window.open(\'https://www.tophedu.com/index.php/ssr%E4%B8%8Ev2ray%E6%9C%8D%E5%8A%A1%E6%8E%A8%E8%8D%90/\');" />';
+				tb.innerHTML = links;
+			}
+		}
+	}
+);
+//]]>
+</script>
+<style>.mar-10 {margin-left: 50px; margin-right: 10px;}</style>
+<fieldset class="cbi-section">
+	<p id="shadowsocksr_status">
+		<em><%:Collecting data...%></em>
+	</p>
+</fieldset>

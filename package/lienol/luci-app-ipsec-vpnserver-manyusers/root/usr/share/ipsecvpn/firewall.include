@@ -1,0 +1,45 @@
+#!/bin/sh
+
+iptables -D INPUT -p udp -m multiport --dports 500,4500 -m comment --comment "Rule For IPSec VPN Server" -j ACCEPT 2> /dev/null
+ipsec_nums=`iptables -t nat -L POSTROUTING 2> /dev/null|grep -c "Rule For IPSec VPN Server"`
+if [ -n "$ipsec_nums" ]; then
+	until [ "$ipsec_nums" = 0 ]
+	do
+		rules=`iptables -t nat -L POSTROUTING --line-num 2> /dev/null|grep "Rule For IPSec VPN Server" |awk '{print $1}'`
+		for rule in $rules
+		do
+			iptables -t nat -D POSTROUTING $rule 2> /dev/null
+			break
+		done
+		ipsec_nums=`expr $ipsec_nums - 1`
+	done
+fi
+nums=`iptables -L forwarding_rule 2> /dev/null|grep -c "Rule For IPSec VPN Server"`
+if [ -n "$nums" ]; then
+	until [ "$nums" = 0 ]
+	do
+		rules=`iptables -L forwarding_rule --line-num 2> /dev/null|grep "Rule For IPSec VPN Server" |awk '{print $1}'`
+		for rule in $rules
+		do
+			iptables -D forwarding_rule $rule 2> /dev/null
+			break
+		done
+			nums=`expr $nums - 1`
+	done
+fi
+
+enable=$(uci get ipsec.ipsec.enabled)
+if [ $enable -eq 1 ]; then
+	is_nat=$(uci get ipsec.ipsec.is_nat)
+	if [ "$is_nat" -eq 1 ];then
+		clientip=$(uci get ipsec.ipsec.clientip)
+		export_interface=$(uci get ipsec.ipsec.export_interface)
+		if [ "$export_interface" != "default" ];then
+			iptables -t nat -I POSTROUTING -s ${clientip%.*}.0/24 -o ${export_interface} -m comment --comment "Rule For IPSec VPN Server" -j MASQUERADE
+		else
+			iptables -t nat -I POSTROUTING -s ${clientip%.*}.0/24 -m comment --comment "Rule For IPSec VPN Server" -j MASQUERADE
+		fi
+		iptables -I forwarding_rule -s ${clientip%.*}.0/24 -m comment --comment "Rule For IPSec VPN Server" -j ACCEPT
+	fi
+	iptables -I INPUT -p udp -m multiport --dports 500,4500 -m comment --comment "Rule For IPSec VPN Server" -j ACCEPT
+fi

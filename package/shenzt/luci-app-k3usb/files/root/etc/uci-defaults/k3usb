@@ -1,0 +1,10 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@k3usb[-1]
+	add ucitrack k3usb
+	set ucitrack.@k3usb[-1].init=k3usb
+	commit ucitrack
+EOF
+
+exit 0

@@ -1,0 +1,23 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	delete firewall.ipsecvpn
+	set firewall.ipsecvpn=include
+	set firewall.ipsecvpn.type=script
+	set firewall.ipsecvpn.path=/usr/share/ipsecvpn/firewall.include
+	set firewall.ipsecvpn.reload=1
+EOF
+
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@ipsec[-1]
+	add ucitrack ipsec
+	set ucitrack.@ipsec[-1].exec='/etc/init.d/ipsecvpn start'
+	commit ucitrack
+EOF
+
+/etc/init.d/ipsec disable && /etc/init.d/ipsec stop
+rm -f /etc/init.d/ipsec
+chmod a+x /usr/share/ipsecvpn/* >/dev/null 2>&1
+
+rm -f /tmp/luci-indexcache
+exit 0

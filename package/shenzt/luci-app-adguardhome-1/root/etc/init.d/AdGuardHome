@@ -1,0 +1,325 @@
+#!/bin/sh /etc/rc.common
+ 
+USE_PROCD=1
+ 
+START=95
+STOP=01
+
+CONFIGURATION=AdGuardHome
+config_get configpath $CONFIGURATION configpath "/etc/AdGuardHome.yaml"
+config_get binpath $CONFIGURATION binpath "/usr/bin/AdGuardHome/AdGuardHome"
+mkdir -p ${binpath%/*}
+
+set_forward_dnsmasq()
+{
+	local PORT="$1"
+	addr="127.0.0.1#$PORT"
+	OLD_SERVER="`uci get dhcp.@dnsmasq[0].server 2>/dev/null`"
+	echo $OLD_SERVER | grep "^$addr" >/dev/null 2>&1
+	if [ $? -eq 0 ]; then
+		return
+	fi
+	uci delete dhcp.@dnsmasq[0].server 2>/dev/null
+	uci add_list dhcp.@dnsmasq[0].server=$addr
+	for server in $OLD_SERVER; do
+		if [ "$server" = "$addr" ]; then
+			continue
+		fi
+		uci add_list dhcp.@dnsmasq[0].server=$server
+	done
+	uci delete dhcp.@dnsmasq[0].resolvfile 2>/dev/null
+	uci set dhcp.@dnsmasq[0].noresolv=1
+	uci commit dhcp 
+	/etc/init.d/dnsmasq restart
+}
+
+stop_forward_dnsmasq()
+{
+	local OLD_PORT="$1"
+	addr="127.0.0.1#$OLD_PORT"
+	OLD_SERVER="`uci get dhcp.@dnsmasq[0].server 2>/dev/null`"
+	echo $OLD_SERVER | grep "^$addr" >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		return
+	fi
+
+	uci del_list dhcp.@dnsmasq[0].server=$addr 2>/dev/null
+	addrlist="`uci get dhcp.@dnsmasq[0].server 2>/dev/null`"
+	if [ -z "$addrlist" ] ; then
+		uci set dhcp.@dnsmasq[0].resolvfile=/tmp/resolv.conf.auto 2>/dev/null
+		uci delete dhcp.@dnsmasq[0].noresolv 2>/dev/null
+	fi
+	uci commit dhcp
+	/etc/init.d/dnsmasq restart
+}
+
+set_iptable()
+{
+	local ipv6_server=$1
+	local tcp_server=$2
+
+	IPS="`ifconfig | grep "inet addr" | grep -v ":127" | grep "Bcast" | awk '{print $2}' | awk -F : '{print $2}'`"
+	for IP in $IPS
+	do
+		if [ "$tcp_server" == "1" ]; then
+			iptables -t nat -A PREROUTING -p tcp -d $IP --dport 53 -j REDIRECT --to-ports $AdGuardHome_PORT >/dev/null 2>&1
+		fi
+		iptables -t nat -A PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-ports $AdGuardHome_PORT >/dev/null 2>&1
+	done
+
+	if [ "$ipv6_server" == 0 ]; then
+		return
+	fi
+
+	IPS="`ifconfig | grep "inet6 addr" | grep -v " fe80::" | grep -v " ::1" | grep "Global" | awk '{print $3}'`"
+	for IP in $IPS
+	do
+		if [ "$tcp_server" == "1" ]; then
+			ip6tables -t nat -A PREROUTING -p tcp -d $IP --dport 53 -j REDIRECT --to-ports $AdGuardHome_PORT >/dev/null 2>&1
+		fi
+		ip6tables -t nat -A PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-ports $AdGuardHome_PORT >/dev/null 2>&1
+	done
+
+}
+
+clear_iptable()
+{
+	local OLD_PORT="$1"
+	local ipv6_server=$2
+	IPS="`ifconfig | grep "inet addr" | grep -v ":127" | grep "Bcast" | awk '{print $2}' | awk -F : '{print $2}'`"
+	for IP in $IPS
+	do
+		iptables -t nat -D PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-ports $OLD_PORT >/dev/null 2>&1
+		iptables -t nat -D PREROUTING -p tcp -d $IP --dport 53 -j REDIRECT --to-ports $OLD_PORT >/dev/null 2>&1
+	done
+
+	if [ "$ipv6_server" == 0 ]; then
+		return
+	fi
+
+	IPS="`ifconfig | grep "inet6 addr" | grep -v " fe80::" | grep -v " ::1" | grep "Global" | awk '{print $3}'`"
+	for IP in $IPS
+	do
+		ip6tables -t nat -D PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-ports $OLD_PORT >/dev/null 2>&1
+		ip6tables -t nat -D PREROUTING -p tcp -d $IP --dport 53 -j REDIRECT --to-ports $OLD_PORT >/dev/null 2>&1
+	done
+	
+}
+
+service_triggers() {
+	procd_add_reload_trigger firewall
+	procd_add_reload_trigger "CONFIGURATION"
+}
+
+get_tz()
+{
+	SET_TZ=""
+
+	if [ -e "/etc/localtime" ]; then
+		return 
+	fi
+	
+	for tzfile in /etc/TZ /var/etc/TZ
+	do
+		if [ ! -e "$tzfile" ]; then
+			continue
+		fi
+		
+		tz="`cat $tzfile 2>/dev/null`"
+	done
+	
+	if [ -z "$tz" ]; then
+		return  
+	fi
+	
+	SET_TZ=$tz
+}
+
+reload_service()
+{
+	stop
+	start
+}
+
+do_redirect() 
+{
+	local section="$CONFIGURATION"
+	args=""
+	ipv6_server=0
+	tcp_server=0
+	enabled=$1
+	AdGuardHome_PORT=$(awk '/  port:/{printf($2)}' $configpath)
+	if [ -z "$AdGuardHome_PORT" ]; then
+		AdGuardHome_PORT="0"
+	fi
+	config_get "redirect" "$section" "redirect" "none"
+	config_get "old_redirect" "$section" "old_redirect" "none"
+	config_get "old_port" "$section" "old_port" "0"
+	config_get "old_enabled" "$section" "old_enabled" "0"
+
+	if [ "$old_redirect" != "$redirect" ] || [ "$old_port" != "$AdGuardHome_PORT" ] || [ "$old_enabled" = "1" -a "$enabled" = "0" ]; then
+		if [ "$old_redirect" != "none" ]; then
+			if [ "$old_port" != "0" ]; then
+				clear_iptable "$old_port" "$ipv6_server"
+			fi
+			if [ "$old_redirect" == "dnsmasq-upstream" ]; then
+				stop_forward_dnsmasq "$old_port"
+			fi
+		fi
+	fi
+	
+	uci delete AdGuardHome.@AdGuardHome[0].old_redirect 2>/dev/null
+	uci delete AdGuardHome.@AdGuardHome[0].old_port 2>/dev/null
+	uci delete AdGuardHome.@AdGuardHome[0].old_enabled 2>/dev/null
+	uci add_list AdGuardHome.@AdGuardHome[0].old_redirect="$redirect" 2>/dev/null
+	uci add_list AdGuardHome.@AdGuardHome[0].old_port="$AdGuardHome_PORT" 2>/dev/null
+	uci add_list AdGuardHome.@AdGuardHome[0].old_enabled="$enabled" 2>/dev/null
+	uci commit AdGuardHome
+
+	[ "$enabled" -gt 0 ] || return 1
+	if [ "$AdGuardHome_PORT" == "0" ]; then
+		return 1
+	fi
+	if [ "$redirect" = "redirect" ]; then
+		set_iptable $ipv6_server $tcp_server
+	elif [ "$redirect" = "dnsmasq-upstream" ]; then
+		set_forward_dnsmasq "$AdGuardHome_PORT"
+	fi
+
+	#procd_open_instance "AdGuardHome"
+
+	#get_tz
+	#if [ ! -z "$SET_TZ" ]; then
+	#    procd_set_param env TZ="$SET_TZ"
+	#fi
+	#procd_set_param file "$AdGuardHome_CONF"
+	#procd_close_instance
+}
+get_filesystem()
+{
+# print out path filesystem
+	echo $1 | awk '
+	BEGIN{
+	while (("mount"| getline ret) > 0)
+	{
+	split(ret,d);
+	fs[d[3]]=d[5];
+	}
+	}{
+	split($0,d,"/");
+	if ("/" in fs)
+	{ 
+	result=fs["/"];
+	}
+	for (i=2;i<=length(d);i++)
+	{
+	   p[i]=p[i-1]"/"d[i];
+	   if (p[i] in fs)
+		{ 
+		result=fs[p[i]];
+		}
+	}
+	print(result);}'
+}
+
+config_editor()
+{
+	awk -v yaml="$1" -v value="$2" -v file="$3" '
+	BEGIN{split(yaml,part,"\.");s="";i=1;l=length(part);}
+    {
+        if (match($0,s""part[i]))
+        {
+            if (i==l)
+            {
+                split($0,t,":");
+                system("sed -i '\''"FNR"c \\"t[1]": "value"'\'' "file);
+                exit;
+            }
+            s=s"[- ]{2}";
+            i++;
+        }
+    }' $3
+}
+start_service() {
+	# Reading config
+	config_load "${CONFIGURATION}"
+	local enabled
+	local ADDITIONAL_ARGS=""
+	
+	ADDITIONAL_ARGS="$ADDITIONAL_ARGS -c $configpath"
+	
+	config_get hashpass $CONFIGURATION hashpass ""
+	if [ ! -z "$hashpass" ]; then
+		config_editor "users.password" "$hashpass" "$configpath"
+		uci set $CONFIGURATION.$CONFIGURATION.hashpass=""
+	fi
+	
+	config_get_bool enabled $CONFIGURATION enabled 0
+	config_get httpport $CONFIGURATION httpport 3000
+	ADDITIONAL_ARGS="$ADDITIONAL_ARGS -p $httpport"
+	
+	config_get workdir $CONFIGURATION workdir "/usr/bin/AdGuardHome"
+	ADDITIONAL_ARGS="$ADDITIONAL_ARGS -w $workdir"
+	mkdir -p $workdir/data
+
+	
+	config_get logfile $CONFIGURATION logfile ""
+	if [ ! -z "$logfile" ]; then
+		ADDITIONAL_ARGS="$ADDITIONAL_ARGS -l $logfile"
+	fi
+	
+	if [ ! -f "$binpath" ]; then
+		do_redirect 0
+		touch /var/run/update_core
+		sh /usr/share/AdGuardHome/update_core.sh >/tmp/AdGuardHome_update.log
+		rm /var/run/update_core
+		exit 0
+	elif [ ! -f "$configpath" ]; then
+		do_redirect 0
+	fi 
+
+	config_get_bool verbose $CONFIGURATION verbose 0
+	if [ "$verbose" -eq 1 ]; then
+		ADDITIONAL_ARGS="$ADDITIONAL_ARGS -v"
+	fi
+	
+	# for overlay data-stk-oo not suppport
+	local cwdfs=$(get_filesystem $workdir)
+	if [ "${cwdfs:0:7}" == "overlay" ]; then
+		echo "fs error ln db to tmp $workdir ${cwdfs:0:7}"
+		logger "AdGuardHome" "warning db redirect to tmp"
+		touch $workdir/data/stats.db
+		if [ ! -L $workdir/data/stats.db ]; then
+		mv -f $workdir/data/stats.db /tmp/stats.db
+		ln -s /tmp/stats.db $workdir/data/stats.db
+		fi
+		touch $workdir/data/sessions.db
+		if [ ! -L $workdir/data/sessions.db ]; then
+		mv -f $workdir/data/sessions.db /tmp/sessions.db
+		ln -s /tmp/sessions.db $workdir/data/sessions.db
+		fi
+	fi
+	if [ "$enabled" == "1" ]; then
+		procd_open_instance
+		procd_set_param respawn
+		# pass config to script on start
+		procd_set_param command $binpath $ADDITIONAL_ARGS
+		procd_close_instance
+		if [ -f "$configpath" ]; then
+			do_redirect 1
+		fi
+		echo "AdGuardHome turn on"
+		echo "enabled="$enabled""
+	fi
+}
+
+stop_service()
+{
+	config_load "${CONFIGURATION}"
+	do_redirect 0
+	config_get lastbinpath $CONFIGURATION lastbinpath $binpath
+	killall -q $lastbinpath
+	uci set $CONFIGURATION.$CONFIGURATION.lastbinpath=$binpath
+	echo "AdGuardHome turn off"
+	echo "enabled="$enabled""
+}

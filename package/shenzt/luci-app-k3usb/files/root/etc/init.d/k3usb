@@ -1,0 +1,62 @@
+#!/bin/sh /etc/rc.common
+
+START=55
+STOP=55
+
+usb3_enable=$(uci get k3usb.usb.usb3_enable 2>/dev/null)
+
+kernel=$(uname -a | awk '{print $3}')
+
+boot(){
+	if [ "$usb3_enable" == "1" ]; then
+		#usb3
+		kmodloader /usr/k3usb/45-phy-bcm-ns-usb3
+		kmodloader /usr/k3usb/54-usb3
+		
+		#usb2
+		kmodloader /usr/k3usb/35-usb-ehci
+		kmodloader /usr/k3usb/40-usb2
+		kmodloader /usr/k3usb/45-phy-bcm-ns-usb2
+		kmodloader /usr/k3usb/50-usb-ohci
+		
+		echo "usb switch to usb3 mode!"
+	else
+		#usb2
+		kmodloader /usr/k3usb/35-usb-ehci
+		kmodloader /usr/k3usb/40-usb2
+		kmodloader /usr/k3usb/45-phy-bcm-ns-usb2
+		kmodloader /usr/k3usb/50-usb-ohci
+		echo "usb switch to usb2 mode!"
+	fi
+	
+	kmodloader /usr/k3usb/usb-storage
+	kmodloader /usr/k3usb/usb-storage-extras
+	
+}
+
+
+start(){
+	if [ "$usb3_enable" == "1" ]; then
+		if [ -z "$(lsmod | grep  usb3)" ]; then
+			echo "usb change to usb3 mode, will reboot!"
+			reboot
+		else
+			echo "usb mode is usb3 , nothing to do"
+		fi
+	else
+		if [ -n "$(lsmod | grep  usb3)" ]; then
+			echo "usb change usb2 mode, will reboot!"
+			reboot
+		else
+			echo "usb mode is usb2 , nothing to do"
+		fi
+	fi
+}
+
+stop(){
+	echo "nothing do"
+}
+
+restart(){
+	start
+}

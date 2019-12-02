@@ -1,0 +1,95 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2018-2019 Lienol <lawlienol@gmail.com>
+
+START=99
+CONFIG=pptpd
+CONFIG_FILE=/var/etc/$CONFIG.conf
+BIN=/usr/sbin/$CONFIG
+DEFAULT=/etc/default/$BIN
+RUN_D=/var/run
+PID_F=$RUN_D/$BIN.pid
+CHAP_SECRETS=/var/etc/chap-secrets
+SERVER_NAME="pptp-server"
+TEMP=/tmp/pptpd.tmp
+
+setup_dns() {
+	[ -n "$1" ] || return 0
+	echo ms-dns $1>>/etc/ppp/options.pptpd
+}
+setup_login() {
+	config_get enabled $1 enabled
+	[ "$enabled" -eq 0 ] && return 0
+	config_get ipaddress $1 ipaddress
+	[ -n "$ipaddress" ] || local ipaddress = "*"
+	config_get username $1 username
+	config_get password $1 password
+	[ -n "$username" ] || return 0
+	[ -n "$password" ] || return 0
+	echo "$username $SERVER_NAME $password $ipaddress" >> $CHAP_SECRETS
+}
+
+setup_config() {
+	config_get enabled $1 enabled
+	[ "$enabled" -eq 0 ] && return 1
+
+	mkdir -p /var/etc
+	cp /etc/pptpd.conf $CONFIG_FILE
+	
+	config_get localip $1 localip
+	config_get remoteip $1 remoteip
+	config_get is_nat $1 is_nat
+
+	[ -z "$localip" ] && localip=$(ifconfig br-lan 2>/dev/null | grep "inet addr:" | grep -E -o "[0-9]+\.[0-9]+\.[0-9]+\."|head -1)2
+	[ -z "$localip" ] && remoteip=$(ifconfig br-lan 2>/dev/null | grep "inet addr:" | grep -E -o "[0-9]+\.[0-9]+\.[0-9]+\."|head -1)10-20
+	options="cat /etc/pptpd.conf |grep options"
+	[ -n "$localip" ] && echo "localip  $localip" >> $CONFIG_FILE
+	[ -n "$remoteip" ] && echo "remoteip  $remoteip" >> $CONFIG_FILE
+	[ -n "$options" ] && echo "option /etc/ppp/options.pptpd" >> $CONFIG_FILE
+
+	fw3 reload
+	
+	config_get mppe $1 mppe
+	[ -n "$(cat "/etc/ppp/options.pptpd" |grep mppe)" ] && sed -i '/mppe/'d /etc/ppp/options.pptpd
+	[ -z "$(cat "/etc/ppp/options.pptpd" |grep mppe)" ] && echo "mppe required,no40,no56,stateless" >> /etc/ppp/options.pptpd
+	if [ "$mppe" -eq 0 ]; then
+		sed -i -e 's/mppe/#mppe/g' /etc/ppp/options.pptpd
+	fi
+	sed -i -e '/ms-dns/d' /etc/ppp/options.pptpd
+	config_get dns $1 dns
+	setup_dns $dns
+	echo ms-dns 223.5.5.5 >>/etc/ppp/options.pptpd
+	return 0
+}
+
+start_pptpd() {
+	[ -f $DEFAULT ] && . $DEFAULT
+	mkdir -p $RUN_D
+	for m in arc4 sha1_generic slhc crc-ccitt ppp_generic ppp_async ppp_mppe; do
+		insmod $m >/dev/null 2>&1
+	done
+	ln -sfn $CHAP_SECRETS /etc/ppp/chap-secrets
+	chmod 600 /etc/ppp/*-secrets
+	service_start $BIN $OPTIONS -c $CONFIG_FILE
+}
+
+del_user()
+{
+	cat $CHAP_SECRETS | grep -v $SERVER_NAME > $TEMP
+	cat $TEMP > $CHAP_SECRETS
+	rm $TEMP
+}
+
+start() {
+	config_load $CONFIG
+	setup_config $CONFIG || return
+	del_user
+	config_foreach setup_login users
+	start_pptpd
+}
+
+stop() {
+	service_stop $BIN
+	ps | grep "pppd local" | grep -v "grep" | awk '{print $1}' | xargs kill -9
+	fw3 reload
+	del_user
+}

@@ -1,0 +1,21 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	delete firewall.pptpd
+	set firewall.pptpd=include
+	set firewall.pptpd.type=script
+	set firewall.pptpd.path=/usr/share/pptpd/firewall.include
+	set firewall.pptpd.reload=1
+EOF
+
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@pptpd[-1]
+	add ucitrack pptpd
+	set ucitrack.@pptpd[-1].init=pptpd
+	commit ucitrack
+EOF
+
+chmod a+x /usr/share/pptpd/* >/dev/null 2>&1
+
+rm -f /tmp/luci-indexcache
+exit 0

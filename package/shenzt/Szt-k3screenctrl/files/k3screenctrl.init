@@ -1,0 +1,19 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=99
+
+SCRIPTS_BASE=/lib/k3screenctrl/
+TEMP_DIR=/tmp/k3screenctrl
+
+start() {
+    mkdir -p $TEMP_DIR
+    mkdir -p $TEMP_DIR/device_speed
+    m=$(uci get k3screenctrl.@general[0].screen_time) && [ $m -lt 10 ] && m=10
+    d=$(uci get k3screenctrl.@general[0].refresh_time) && [ $d -lt 2 ] && d=2
+    /usr/bin/k3screenctrl -m $m -d $d &
+}
+
+stop() {
+    killall k3screenctrl
+}
