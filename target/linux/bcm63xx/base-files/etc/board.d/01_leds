@@ -21,6 +21,12 @@ adb,a4001n1)
 	ucidef_set_led_netdev "lan" "LAN" "A4001N1:green:eth" "eth0"
 	ucidef_set_led_usbdev "usb" "USB" "A4001N1:green:3g" "1-1"
 	;;
+adb,pdg-a4001n-a-000-1a1-ax)
+	ucidef_set_led_netdev "lan" "LAN" "$model:green:internet" "eth0.1"
+	ucidef_set_led_netdev "wan" "WAN" "$model:green:adsl" "eth0.2"
+	ucidef_set_led_netdev "wlan0" "WIFI" "$model:green:wifi" "wlan0"
+	ucidef_set_led_usbdev "usb" "USB" "$model:green:service" "1-1"
+	;;
 adb,av4202n)
 	ucidef_set_led_netdev "wlan0" "WLAN" "AV4202N:blue:wifi" "wlan0"
 	;;
