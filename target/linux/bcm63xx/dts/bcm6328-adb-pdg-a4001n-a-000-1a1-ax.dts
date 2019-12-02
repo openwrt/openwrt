@@ -1,0 +1,129 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "bcm6328.dtsi"
+
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "ADB P.DG A4001N A-000-1A1-AX";
+	compatible = "adb,pdg-a4001n-a-000-1a1-ax", "brcm,bcm6328";
+
+	chosen {
+		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+
+		reset {
+			label = "reset";
+			gpios = <&pinctrl 23 1>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wifi-led";
+			gpios = <&pinctrl 24 1>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		power_red {
+			label = "pdg-a4001n-a-000-1a1-ax:red:power";
+			gpios = <&pinctrl 8 1>;
+		};
+		power_green {
+			label = "pdg-a4001n-a-000-1a1-ax:green:power";
+			gpios = <&pinctrl 12 1>;
+			default-state = "on";
+		};
+		
+		adsl_red {
+			label = "pdg-a4001n-a-000-1a1-ax:red:adsl";
+			gpios = <&pinctrl 5 1>;
+		};
+		adsl_green {
+			label = "pdg-a4001n-a-000-1a1-ax:green:adsl";
+			gpios = <&pinctrl 3 1>;
+		};
+		
+		internet_red {
+			label = "pdg-a4001n-a-000-1a1-ax:red:internet";
+			gpios = <&pinctrl 2 1>;
+		};
+		internet_green {
+			label = "pdg-a4001n-a-000-1a1-ax:green:internet";
+			gpios = <&pinctrl 11 1>;
+		};
+		
+		wifi_red {
+			label = "pdg-a4001n-a-000-1a1-ax:red:wifi";
+			gpios = <&pinctrl 10 1>;
+		};
+		wifi_green {
+			label = "pdg-a4001n-a-000-1a1-ax:green:wifi";
+			gpios = <&pinctrl 9 1>;
+		};
+		
+		service_red {
+			label = "pdg-a4001n-a-000-1a1-ax:red:service";
+			gpios = <&pinctrl 7 1>;
+		};
+		service_green {
+			label = "pdg-a4001n-a-000-1a1-ax:green:service";
+			gpios = <&pinctrl 6 1>;
+		};
+	};
+};
+
+&hsspi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <16666667>;
+		spi-tx-bus-width = <2>;
+		spi-rx-bus-width = <2>;
+		reg = <0>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			cfe@0 {
+				reg = <0x000000 0x010000>;
+				label = "cfe";
+				read-only;
+			};
+
+			linux@10000 {
+				reg = <0x010000 0xfe0000>;
+				label = "linux";
+				compatible = "brcm,bcm963xx-imagetag";
+			};
+
+			nvram@ff0000 {
+				reg = <0xff0000 0x010000>;
+				label = "nvram";
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};

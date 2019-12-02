@@ -7,7 +7,10 @@
 
 board_config_update
 
-case "$(board_name)" in
+board=$(board_name)
+boardname="${board##*,}"
+
+case "$board" in
 actiontec,r1000h)
 	ucidef_set_led_usbport "usb" "USB" "R1000H:green:usb" "usb1-port1" "usb2-port1"
 	;;
@@ -17,6 +20,12 @@ adb,a4001n)
 adb,a4001n1)
 	ucidef_set_led_netdev "lan" "LAN" "A4001N1:green:eth" "eth0"
 	ucidef_set_led_usbdev "usb" "USB" "A4001N1:green:3g" "1-1"
+	;;
+adb,pdg-a4001n-a-000-1a1-ax)
+	ucidef_set_led_netdev "lan" "LAN" "$boardname:green:internet" "eth0.1"
+	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:adsl" "eth0.2"
+	ucidef_set_led_netdev "wlan0" "WIFI" "$boardname:green:wifi" "wlan0"
+	ucidef_set_led_usbdev "usb" "USB" "$boardname:green:service" "1-1"
 	;;
 adb,av4202n)
 	ucidef_set_led_netdev "wlan0" "WLAN" "AV4202N:blue:wifi" "wlan0"

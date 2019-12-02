@@ -5,7 +5,10 @@
 . /lib/functions/leds.sh
 
 set_state() {
-	case "$(board_name)" in
+	board=$(board_name)
+	boardname="${board##*,}"
+
+	case "$board" in
 	actiontec,r1000h)
 		status_led="R1000H:green:power"
 		;;
@@ -14,6 +17,9 @@ set_state() {
 		;;
 	adb,a4001n1)
 		status_led="A4001N1:green:power"
+		;;
+	adb,pdg-a4001n-a-000-1a1-ax)
+		status_led="$boardname:green:power"
 		;;
 	adb,av4202n)
 		status_led="AV4202N:white:power"
