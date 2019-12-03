@@ -1,0 +1,63 @@
+#!/bin/sh /etc/rc.common
+ 
+USE_PROCD=1
+ 
+START=95
+STOP=01
+
+BINLOADER_BIN="/usr/bin/AdGuardHome"
+CONFIGURATION=AdGuardHome
+
+service_triggers()
+{
+    procd_add_reload_trigger "CONFIGURATION"
+}
+
+reload_service()
+{
+	stop
+    start
+}
+
+start_service() {
+    # Reading config
+    config_load "${CONFIGURATION}"
+    local enabled
+ 
+   config_get_bool enabled AdGuardHome enabled 0
+	
+	if [ "$enabled" -eq 0 ]; then
+		echo "AdGuardHome has turned off"
+		return 1
+	fi
+	
+    procd_open_instance
+	procd_set_param respawn
+    # pass config to script on start
+    cat <<-EOF >> "/etc/dnsmasq.conf"
+no-resolv
+no-poll
+server=127.0.0.1#5335
+cache-size=6000
+EOF
+    procd_set_param command "$BINLOADER_BIN" -w /etc/AdGuardHome/
+    /etc/init.d/dnsmasq restart
+    procd_close_instance
+	echo "AdGuardHome turn on"
+	echo "enabled="$enabled""
+}
+
+stop_service()
+{
+    config_load "${CONFIGURATION}"
+    local enabled
+    sed -i '/no-resolv/d' /etc/dnsmasq.conf
+    sed -i '/no-poll/d' /etc/dnsmasq.conf
+    sed -i '/server=127.0.0.1#5335/d' /etc/dnsmasq.conf
+    sed -i '/cache-size=6000/d' /etc/dnsmasq.conf
+    /etc/init.d/dnsmasq restart
+    config_get_bool enabled AdGuardHome enabled 0
+	killall -q AdGuardHome
+	echo "AdGuardHome turn off"
+	echo "enabled="$enabled""
+}
