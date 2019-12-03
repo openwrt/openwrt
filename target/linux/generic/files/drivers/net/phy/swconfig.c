@@ -1256,6 +1256,7 @@ switch_generic_set_link(struct switch_dev *dev, int port,
 
 	return 0;
 }
+EXPORT_SYMBOL_GPL(switch_generic_set_link);
 
 static int __init
 swconfig_init(void)
