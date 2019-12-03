@@ -424,6 +424,43 @@ static struct mtd_part_parser uimage_fonfxc_parser = {
 };
 
 /**************************************************
+ * ubootpad96
+ **************************************************/
+
+#define ubootpad96_PAD_LEN		96
+
+static ssize_t uimage_find_ubootpad96(u_char *buf, size_t len, int *extralen)
+{
+	if (uimage_verify_default(buf, len, extralen) < 0)
+		return -EINVAL;
+
+	*extralen = ubootpad96_PAD_LEN;
+
+	return 0;
+}
+
+static int
+mtdsplit_uimage_parse_ubootpad96(struct mtd_info *master,
+			      const struct mtd_partition **pparts,
+			      struct mtd_part_parser_data *data)
+{
+	return __mtdsplit_parse_uimage(master, pparts, data,
+				       uimage_find_ubootpad96);
+}
+
+static const struct of_device_id mtdsplit_uimage_ubootpad96_of_match_table[] = {
+	{ .compatible = "ubootpad96,uimage" },
+	{},
+};
+
+static struct mtd_part_parser uimage_ubootpad96_parser = {
+	.owner = THIS_MODULE,
+	.name = "ubootpad96-fw",
+	.of_match_table = mtdsplit_uimage_ubootpad96_of_match_table,
+	.parse_fn = mtdsplit_uimage_parse_ubootpad96,
+};
+
+/**************************************************
  * OKLI (OpenWrt Kernel Loader Image)
  **************************************************/
 
@@ -490,6 +527,7 @@ static int __init mtdsplit_uimage_init(void)
 	register_mtd_parser(&uimage_netgear_parser);
 	register_mtd_parser(&uimage_edimax_parser);
 	register_mtd_parser(&uimage_fonfxc_parser);
+	register_mtd_parser(&uimage_ubootpad96_parser);
 	register_mtd_parser(&uimage_okli_parser);
 
 	return 0;

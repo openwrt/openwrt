@@ -87,6 +87,11 @@ define Build/netis-tail
 		sed 's/../\\\\x&/g' | xargs echo -ne >> $@
 endef
 
+define Build/ubootpad96
+	uimage_padhdr -i $@ -o $@.new -l 96
+	mv $@.new $@
+endef
+
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:6' > $(1).compat; \
@@ -227,6 +232,21 @@ define Device/dlink_dir-860l-b1
   SUPPORTED_DEVICES += dir-860l-b1
 endef
 TARGET_DEVICES += dlink_dir-860l-b1
+
+define Device/dlink_dir-878-a1
+  IMAGE_SIZE := 16000k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-878
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := kmod-mt7615e wpad-basic
+  KERNEL_INITRAMFS := $$(KERNEL) | ubootpad96
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | ubootpad96 |\
+	pad-rootfs | check-size | append-metadata
+  IMAGE/factory.bin := append-kernel | append-rootfs | ubootpad96 |\
+  	check-size
+endef
+TARGET_DEVICES += dlink_dir-878-a1
 
 define Device/d-team_newifi-d2
   $(Device/uimage-lzma-loader)
