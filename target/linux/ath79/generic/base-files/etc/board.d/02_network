@@ -259,6 +259,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:1" "3:lan:3" "4:lan:2"
 		;;
+	ubnt,edgeswitch-8xp)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4:lan:5" "5:lan:6" "6:lan:7" "7:lan:8"  "8@eth0"
+		;;
 	ubnt,routerstation-pro)
 		ucidef_set_interface_wan "eth0"
 		ucidef_add_switch "switch0" \

@@ -1,0 +1,322 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+#include "ar7242.dtsi"
+
+/ {
+	compatible = "ubnt,edgeswitch-8xp", "qca,ar7242";
+	model = "Ubiquiti EdgeSwitch 8XP";
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+	};
+
+	aliases {
+		led-boot = &led_usr;
+		led-failsafe = &led_usr;
+		led-running = &led_usr;
+		led-upgrade = &led_usr;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_usr: usr {
+			label = "ubnt:yellow:usr";
+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	gpio_spi {
+		compatible = "spi-gpio";
+		#address-cells = <0x1>;
+		ranges;
+
+		sck-gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <1>;
+
+		gpio_hc595: gpio_spi@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			registers-number = <2>;
+			spi-max-frequency = <100000>;
+			enable-gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		poe_24v_port1 {
+			gpio-export,name = "ubnt:24v-poe:port1";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_48v_port1 {
+			gpio-export,name = "ubnt:48v-poe:port1";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_24v_port2 {
+			gpio-export,name = "ubnt:24v-poe:port2";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_48v_port2 {
+			gpio-export,name = "ubnt:48v-poe:port2";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_24v_port3 {
+			gpio-export,name = "ubnt:24v-poe:port3";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_48v_port3 {
+			gpio-export,name = "ubnt:48v-poe:port3";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_24v_port4 {
+			gpio-export,name = "ubnt:24v-poe:port4";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_48v_port4 {
+			gpio-export,name = "ubnt:48v-poe:port4";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_24v_port5 {
+			gpio-export,name = "ubnt:24v-poe:port5";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 9 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_48v_port5 {
+			gpio-export,name = "ubnt:48v-poe:port5";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 8 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_24v_port6 {
+			gpio-export,name = "ubnt:24v-poe:port6";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_48v_port6 {
+			gpio-export,name = "ubnt:48v-poe:port6";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 10 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_24v_port7 {
+			gpio-export,name = "ubnt:24v-poe:port7";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_48v_port7 {
+			gpio-export,name = "ubnt:48v-poe:port7";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 12 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_24v_port8 {
+			gpio-export,name = "ubnt:24v-poe:port8";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 15 GPIO_ACTIVE_HIGH>;
+		};
+
+		poe_48v_port8 {
+			gpio-export,name = "ubnt:48v-poe:port8";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 14 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&spi {
+	status = "okay";
+
+	num-cs = <1>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x000000 0x040000>;
+				label = "u-boot";
+				read-only;
+			};
+
+			partition@40000 {
+				reg = <0x040000 0x010000>;
+				label = "u-boot-env";
+				read-only;
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				reg = <0x050000 0x760000>;
+				label = "firmware";
+			};
+
+			partition@7b0000 {
+				reg = <0x7b0000 0x040000>;
+				label = "cfg";
+				read-only;
+			};
+
+			art: partition@7f0000 {
+				reg = <0x7f0000 0x010000>;
+				label = "art";
+				read-only;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy-mask = <0x10>;
+
+	ethernet-switch@1e {
+		compatible = "brcm,bcm53128";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x1e>;
+
+		ports {
+			port0@0 {
+				reg = <0>;
+				label = "lan1";
+			};
+
+			port1@1 {
+				reg = <1>;
+				label = "lan2";
+			};
+
+			port2@2 {
+				reg = <2>;
+				label = "lan3";
+			};
+
+			port3@3 {
+				reg = <3>;
+				label = "lan4";
+			};
+
+			port4@4 {
+				reg = <4>;
+				label = "lan5";
+			};
+
+			port5@5 {
+				reg = <5>;
+				label = "lan6";
+			};
+
+			port6@6 {
+				reg = <6>;
+				label = "lan7";
+			};
+
+			port7@7 {
+				reg = <7>;
+				label = "lan8";
+			};
+
+			phy0: port8@8 {
+				reg = <8>;
+				label = "cpu";
+				ethernet = <&eth0>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+		};
+	};
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&usb {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	hub_port: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&uart {
+	status = "okay";
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-mode = "rgmii-rxid";
+	pll-data = <0x16000000 0x00000101 0x00001313>;
+	mtd-mac-address = <&art 0x0>;
+
+	phy-handle = <&phy0>;
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&eth1 {
+	status = "okay";
+
+	mtd-mac-address = <&art 0x6>;
+};
