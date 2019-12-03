@@ -47,6 +47,18 @@ define Device/ubnt-bz
   UBNT_VERSION := 6.0.0
 endef
 
+define Device/ubnt-sw
+  $(Device/ubnt)
+  SOC := ar7242
+  DEVICE_PACKAGES += kmod-usb-ohci
+  IMAGE_SIZE := 7552k
+  UBNT_BOARD := SW
+  UBNT_CHIP := ar7240
+  UBNT_TYPE := SW
+  UBNT_VERSION := 1.4.1
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | uImage lzma
+endef
+
 define Device/ubnt-wa
   $(Device/ubnt)
   SOC := ar9342
