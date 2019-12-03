@@ -124,7 +124,6 @@ define Device/ubnt_lap-120
   DEVICE_MODEL := LiteAP ac
   DEVICE_VARIANT := LAP-120
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
 TARGET_DEVICES += ubnt_lap-120
 
@@ -132,7 +131,6 @@ define Device/ubnt_nanobeam-ac
   $(Device/ubnt-wa)
   DEVICE_MODEL := NanoBeam AC
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct rssileds
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
 TARGET_DEVICES += ubnt_nanobeam-ac
 
@@ -140,7 +138,6 @@ define Device/ubnt_nanostation-ac
   $(Device/ubnt-wa)
   DEVICE_MODEL := Nanostation AC
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct rssileds
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
 TARGET_DEVICES += ubnt_nanostation-ac
 
@@ -148,7 +145,6 @@ define Device/ubnt_nanostation-ac-loco
   $(Device/ubnt-wa)
   DEVICE_MODEL := Nanostation AC loco
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
 TARGET_DEVICES += ubnt_nanostation-ac-loco
 
