@@ -227,7 +227,6 @@ ramips_setup_interfaces()
 	awm002-evb-4M|\
 	awm002-evb-8M|\
 	bdcom,wap2100-sk|\
-	c20i|\
 	dir-645|\
 	gl-mt300a|\
 	gl-mt300n|\
@@ -263,6 +262,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
+	c20i|\
 	c50|\
 	tplink,c20-v1)
 		ucidef_add_switch "switch0" \
