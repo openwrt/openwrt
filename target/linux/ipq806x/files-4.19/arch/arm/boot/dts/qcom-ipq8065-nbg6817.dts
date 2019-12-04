@@ -151,9 +151,9 @@
 
 		gsbi@16300000 {
 			qcom,mode = <GSBI_PROT_I2C_UART>;
-			status = "ok";
+			status = "okay";
 			serial@16340000 {
-				status = "ok";
+				status = "okay";
 			};
 			/*
 			 * The i2c device on gsbi4 should not be enabled.
@@ -165,10 +165,10 @@
 
 		gsbi5: gsbi@1a200000 {
 			qcom,mode = <GSBI_PROT_SPI>;
-			status = "ok";
+			status = "okay";
 
 			spi4: spi@1a280000 {
-				status = "ok";
+				status = "okay";
 
 				pinctrl-0 = <&spi_pins>;
 				pinctrl-names = "default";
@@ -190,44 +190,44 @@
 		};
 
 		phy@100f8800 {		/* USB3 port 1 HS phy */
-			status = "ok";
+			status = "okay";
 		};
 
 		phy@100f8830 {		/* USB3 port 1 SS phy */
-			status = "ok";
+			status = "okay";
 		};
 
 		phy@110f8800 {		/* USB3 port 0 HS phy */
-			status = "ok";
+			status = "okay";
 		};
 
 		phy@110f8830 {		/* USB3 port 0 SS phy */
-			status = "ok";
+			status = "okay";
 		};
 
 		usb30@0 {
-			status = "ok";
+			status = "okay";
 
 			pinctrl-0 = <&usb0_pwr_en_pins>;
 			pinctrl-names = "default";
 		};
 
 		usb30@1 {
-			status = "ok";
+			status = "okay";
 
 			pinctrl-0 = <&usb1_pwr_en_pins>;
 			pinctrl-names = "default";
 		};
 
 		pcie0: pci@1b500000 {
-			status = "ok";
+			status = "okay";
 			reset-gpio = <&qcom_pinmux 3 GPIO_ACTIVE_LOW>;
 			pinctrl-0 = <&pcie0_pins>;
 			pinctrl-names = "default";
 		};
 
 		pcie1: pci@1b700000 {
-			status = "ok";
+			status = "okay";
 			reset-gpio = <&qcom_pinmux 48 GPIO_ACTIVE_LOW>;
 			pinctrl-0 = <&pcie1_pins>;
 			pinctrl-names = "default";
@@ -279,7 +279,7 @@
 		};
 
 		gmac1: ethernet@37200000 {
-			status = "ok";
+			status = "okay";
 			phy-mode = "rgmii";
 			qcom,id = <1>;
 			qcom,phy_mdio_addr = <4>;
@@ -300,7 +300,7 @@
 		};
 
 		gmac2: ethernet@37400000 {
-			status = "ok";
+			status = "okay";
 			phy-mode = "sgmii";
 			qcom,id = <2>;
 			qcom,phy_mdio_addr = <0>;	/* none */
@@ -382,5 +382,5 @@
 };
 
 &adm_dma {
-	status = "ok";
+	status = "okay";
 };

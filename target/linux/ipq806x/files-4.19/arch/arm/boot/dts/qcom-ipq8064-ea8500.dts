@@ -111,9 +111,9 @@
 
 		gsbi@16300000 {
 			qcom,mode = <GSBI_PROT_I2C_UART>;
-			status = "ok";
+			status = "okay";
 			serial@16340000 {
-				status = "ok";
+				status = "okay";
 			};
 			/*
 			 * The i2c device on gsbi4 should not be enabled.
@@ -124,52 +124,52 @@
 		};
 
 		sata-phy@1b400000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		sata@29000000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		phy@100f8800 {		/* USB3 port 1 HS phy */
-			status = "ok";
+			status = "okay";
 		};
 
 		phy@100f8830 {		/* USB3 port 1 SS phy */
-			status = "ok";
+			status = "okay";
 		};
 
 		phy@110f8800 {		/* USB3 port 0 HS phy */
-			status = "ok";
+			status = "okay";
 		};
 
 		phy@110f8830 {		/* USB3 port 0 SS phy */
-			status = "ok";
+			status = "okay";
 		};
 
 		usb30@0 {
-			status = "ok";
+			status = "okay";
 		};
 
 		usb30@1 {
-			status = "ok";
+			status = "okay";
 		};
 
 		pcie0: pci@1b500000 {
-			status = "ok";
+			status = "okay";
 			force_gen1 = <1>;
 		};
 
 		pcie1: pci@1b700000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		pcie2: pci@1b900000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		nand@1ac00000 {
-			status = "ok";
+			status = "okay";
 
 			pinctrl-0 = <&nand_pins>;
 			pinctrl-names = "default";
@@ -317,7 +317,7 @@
 		};
 
 		gmac1: ethernet@37200000 {
-			status = "ok";
+			status = "okay";
 			phy-mode = "rgmii";
 			qcom,id = <1>;
 			qcom,phy_mdio_addr = <4>;
@@ -333,7 +333,7 @@
 		};
 		//lan
 		gmac2: ethernet@37400000 {
-			status = "ok";
+			status = "okay";
 			phy-mode = "sgmii";
 			qcom,id = <2>;
 			qcom,phy_mdio_addr = <0>;	/* none */
@@ -347,7 +347,7 @@
 		};
 
 		adm_dma: dma@18300000 {
-			status = "ok";
+			status = "okay";
 		};
 	};
 
