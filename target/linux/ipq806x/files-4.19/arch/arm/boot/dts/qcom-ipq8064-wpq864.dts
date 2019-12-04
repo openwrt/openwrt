@@ -226,7 +226,8 @@
 		pinctrl-0 = <&mdio0_pins>;
 		pinctrl-names = "default";
 
-		gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH &qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
+		gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH>,
+			<&qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
 
 		ethernet-phy@0 {
 			reg = <0>;

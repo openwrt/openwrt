@@ -40,7 +40,8 @@
 			compatible = "virtual,mdio-gpio";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH &qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH>,
+				<&qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
 			pinctrl-0 = <&mdio0_pins>;
 			pinctrl-names = "default";
 
