@@ -57,12 +57,15 @@ ramips_setup_interfaces()
 		;;
 	asus,rt-ac57u|\
 	mikrotik,rb750gr3|\
-	mikrotik,rbm33g|\
 	ubiquiti,edgerouterx|\
 	ubiquiti,edgerouterx-sfp|\
 	youhua,wr1200js)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
+		;;
+	mikrotik,rbm33g)
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "0:wan" "6@eth0"
 		;;
 	asus,rt-ac65p|\
 	asus,rt-ac85p|\
