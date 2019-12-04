@@ -198,7 +198,6 @@ ramips_setup_interfaces()
 	jhr-n805r|\
 	jhr-n825r|\
 	jhr-n926r|\
-	mikrotik,rbm33g|\
 	mzk-wdpr|\
 	rb750gr3|\
 	rt-n14u|\
@@ -220,6 +219,10 @@ ramips_setup_interfaces()
 	zbt-wa05)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
+		;;
+	mikrotik,rbm33g)
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "0:wan" "6@eth0"
 		;;
 	c20i|\
 	c50|\
