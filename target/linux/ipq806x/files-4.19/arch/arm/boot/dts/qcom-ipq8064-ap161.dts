@@ -92,9 +92,9 @@
 
 		gsbi@16300000 {
 			qcom,mode = <GSBI_PROT_I2C_UART>;
-			status = "ok";
+			status = "okay";
 			serial@16340000 {
-				status = "ok";
+				status = "okay";
 			};
 
 			/*
@@ -107,10 +107,10 @@
 
 		gsbi5: gsbi@1a200000 {
 			qcom,mode = <GSBI_PROT_SPI>;
-			status = "ok";
+			status = "okay";
 
 			spi4: spi@1a280000 {
-				status = "ok";
+				status = "okay";
 				spi-max-frequency = <50000000>;
 
 				pinctrl-0 = <&spi_pins>;
@@ -133,52 +133,52 @@
 		};
 
 		sata-phy@1b400000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		sata@29000000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		phy@100f8800 {		/* USB3 port 1 HS phy */
-			status = "ok";
+			status = "okay";
 		};
 
 		phy@100f8830 {		/* USB3 port 1 SS phy */
-			status = "ok";
+			status = "okay";
 		};
 
 		phy@110f8800 {		/* USB3 port 0 HS phy */
-			status = "ok";
+			status = "okay";
 		};
 
 		phy@110f8830 {		/* USB3 port 0 SS phy */
-			status = "ok";
+			status = "okay";
 		};
 
 		usb30@0 {
-			status = "ok";
+			status = "okay";
 		};
 
 		usb30@1 {
-			status = "ok";
+			status = "okay";
 		};
 
 		pcie0: pci@1b500000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		pcie1: pci@1b700000 {
-			status = "ok";
+			status = "okay";
 			force_gen1 = <1>;
 		};
 
 		pcie2: pci@1b900000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		nand@1ac00000 {
-			status = "ok";
+			status = "okay";
 
 			pinctrl-0 = <&nand_pins>;
 			pinctrl-names = "default";
@@ -232,7 +232,7 @@
 		};
 
 		gmac0: ethernet@37000000 {
-			status = "ok";
+			status = "okay";
 			phy-mode = "rgmii";
 			qcom,id = <0>;
 
@@ -247,7 +247,7 @@
 		};
 
 		gmac1: ethernet@37200000 {
-			status = "ok";
+			status = "okay";
 			phy-mode = "rgmii";
 			qcom,id = <1>;
 			mdiobus = <&mdio0>;
@@ -259,7 +259,7 @@
 		};
 
 		gmac2: ethernet@37400000 {
-			status = "ok";
+			status = "okay";
 			phy-mode = "sgmii";
 			qcom,id = <2>;
 			mdiobus = <&mdio0>;
@@ -273,5 +273,5 @@
 };
 
 &adm_dma {
-	status = "ok";
+	status = "okay";
 };
