@@ -1,4 +1,4 @@
-From a06ece503d941eefa92ba48dc981ccaa4093330b Mon Sep 17 00:00:00 2001
+From 147b0d133b53635db0cc572294840652c9c7b662 Mon Sep 17 00:00:00 2001
 From: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 Date: Wed, 13 Mar 2019 20:54:49 +0000
 Subject: [PATCH] net: sched: Backport Introduce act_ctinfo action
@@ -112,8 +112,8 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  include/uapi/linux/tc_act/tc_ctinfo.h |  29 ++
  net/sched/Kconfig                     |  13 +
  net/sched/Makefile                    |   1 +
- net/sched/act_ctinfo.c                | 407 ++++++++++++++++++++++++++
- 6 files changed, 485 insertions(+), 1 deletion(-)
+ net/sched/act_ctinfo.c                | 394 ++++++++++++++++++++++++++
+ 6 files changed, 472 insertions(+), 1 deletion(-)
  create mode 100644 include/net/tc_act/tc_ctinfo.h
  create mode 100644 include/uapi/linux/tc_act/tc_ctinfo.h
  create mode 100644 net/sched/act_ctinfo.c
@@ -232,7 +232,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  obj-$(CONFIG_NET_IFE_SKBMARK)	+= act_meta_mark.o
 --- /dev/null
 +++ b/net/sched/act_ctinfo.c
-@@ -0,0 +1,407 @@
+@@ -0,0 +1,394 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/* net/sched/act_ctinfo.c  netfilter ctinfo connmark actions
 + *
@@ -400,20 +400,15 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 +	u8 dscpmaskshift;
 +	int ret = 0, err;
 +
-+	if (!nla) {
-+		NL_SET_ERR_MSG_MOD(extack, "ctinfo requires attributes to be passed");
++	if (!nla)
 +		return -EINVAL;
-+	}
 +
 +	err = nla_parse_nested(tb, TCA_CTINFO_MAX, nla, ctinfo_policy, NULL);
 +	if (err < 0)
 +		return err;
 +
-+	if (!tb[TCA_CTINFO_ACT]) {
-+		NL_SET_ERR_MSG_MOD(extack,
-+				   "Missing required TCA_CTINFO_ACT attribute");
++	if (!tb[TCA_CTINFO_ACT])
 +		return -EINVAL;
-+	}
 +	actparm = nla_data(tb[TCA_CTINFO_ACT]);
 +
 +	/* do some basic validation here before dynamically allocating things */
@@ -422,21 +417,13 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 +		dscpmask = nla_get_u32(tb[TCA_CTINFO_PARMS_DSCP_MASK]);
 +		/* need contiguous 6 bit mask */
 +		dscpmaskshift = dscpmask ? __ffs(dscpmask) : 0;
-+		if ((~0 & (dscpmask >> dscpmaskshift)) != 0x3f) {
-+			NL_SET_ERR_MSG_ATTR(extack,
-+					    tb[TCA_CTINFO_PARMS_DSCP_MASK],
-+					    "dscp mask must be 6 contiguous bits");
++		if ((~0 & (dscpmask >> dscpmaskshift)) != 0x3f)
 +			return -EINVAL;
-+		}
 +		dscpstatemask = tb[TCA_CTINFO_PARMS_DSCP_STATEMASK] ?
 +			nla_get_u32(tb[TCA_CTINFO_PARMS_DSCP_STATEMASK]) : 0;
 +		/* mask & statemask must not overlap */
-+		if (dscpmask & dscpstatemask) {
-+			NL_SET_ERR_MSG_ATTR(extack,
-+					    tb[TCA_CTINFO_PARMS_DSCP_STATEMASK],
-+					    "dscp statemask must not overlap dscp mask");
++		if (dscpmask & dscpstatemask)
 +			return -EINVAL;
-+		}
 +	}
 +	/* done the validation:now to the actual action allocation */
 +	err = tcf_idr_check(tn, actparm->index, a, bind);
