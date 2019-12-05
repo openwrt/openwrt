@@ -160,6 +160,18 @@ endef
 TARGET_DEVICES += friendlyarm_nanopi-neo
 
 
+define Device/friendlyarm_nanopi-neo-air
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi NEO Air
+  DEVICE_PACKAGES := kmod-rtc-sunxi \
+        kmod-leds-gpio kmod-ledtrig-heartbeat \
+        kmod-brcmfmac brcmfmac-firmware-43430-sdio wpad-basic
+  SUNXI_SOC := sun8i-h3
+endef
+
+TARGET_DEVICES += friendlyarm_nanopi-neo-air
+
+
 define Device/xunlong_orangepi-one
   DEVICE_VENDOR := Xunlong
   DEVICE_MODEL := Orange Pi One
