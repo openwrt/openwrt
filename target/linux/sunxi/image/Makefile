@@ -37,6 +37,7 @@ define Device/Default
   KERNEL := kernel-bin | uImage none
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 endef
 
 include cortex-a7.mk
