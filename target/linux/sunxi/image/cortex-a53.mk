@@ -11,7 +11,8 @@ define Device/friendlyarm_nanopi-neo-plus2
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi NEO Plus2
   SUPPORTED_DEVICES:=nanopi-neo-plus2
-  SUNXI_DTS:=allwinner/sun50i-h5-nanopi-neo-plus2
+  SUNXI_DTS_DIR := allwinner/
+  SUNXI_SOC := sun50i-h5
   KERNEL_NAME := Image
   KERNEL := kernel-bin
 endef
@@ -22,7 +23,8 @@ define Device/friendlyarm_nanopi-neo2
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi NEO2
   SUPPORTED_DEVICES:=nanopi-neo2
-  SUNXI_DTS:=allwinner/sun50i-h5-nanopi-neo2
+  SUNXI_DTS_DIR := allwinner/
+  SUNXI_SOC := sun50i-h5
   KERNEL_NAME := Image
   KERNEL := kernel-bin
 endef
@@ -32,7 +34,8 @@ TARGET_DEVICES += friendlyarm_nanopi-neo2
 define Device/pine64_pine64-plus
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := Pine64+
-  SUNXI_DTS:=allwinner/sun50i-a64-pine64-plus
+  SUNXI_DTS_DIR := allwinner/
+  SUNXI_SOC := sun50i-a64
   KERNEL_NAME := Image
   KERNEL := kernel-bin
 endef
@@ -42,7 +45,8 @@ TARGET_DEVICES += pine64_pine64-plus
 define Device/pine64_sopine-baseboard
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := SoPine
-  SUNXI_DTS:=allwinner/sun50i-a64-sopine-baseboard
+  SUNXI_DTS_DIR := allwinner/
+  SUNXI_SOC := sun50i-a64
   KERNEL_NAME := Image
   KERNEL := kernel-bin
 endef
@@ -53,7 +57,8 @@ TARGET_DEVICES += pine64_sopine-baseboard
 define Device/xunlong_orangepi-zero-plus
   DEVICE_VENDOR := Xunlong
   DEVICE_MODEL := Orange Pi Zero Plus
-  SUNXI_DTS:=allwinner/sun50i-h5-orangepi-zero-plus
+  SUNXI_DTS_DIR := allwinner/
+  SUNXI_SOC := sun50i-h5
   KERNEL_NAME := Image
   KERNEL := kernel-bin
 endef
@@ -63,7 +68,8 @@ TARGET_DEVICES += xunlong_orangepi-zero-plus
 define Device/xunlong_orangepi-pc2
   DEVICE_VENDOR := Xunlong
   DEVICE_MODEL := Orange Pi PC 2
-  SUNXI_DTS:=allwinner/sun50i-h5-orangepi-pc2
+  SUNXI_DTS_DIR := allwinner/
+  SUNXI_SOC := sun50i-h5
   KERNEL_NAME := Image
   KERNEL := kernel-bin
 endef
