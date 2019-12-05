@@ -110,7 +110,7 @@ endef
 
 define Image/Default/FileSizeCheck
  # parameters: 1 = file path, 2 = maximum size in bytes
-	[ `stat -c %s '$(1)'` -le $(2) ] || { echo '   ERROR: $(1) too big (> $(2) bytes)'; rm -f $(1); }
+	[ $(stat -c %s '$(1)') -le $(2) ] || { echo '   ERROR: $(1) too big (> $(2) bytes)'; rm -f $(1); }
 endef
 
 

@@ -383,14 +383,24 @@ static void qca955x_set_speed_xmii(int speed)
 	iounmap(base);
 }
 
-static void qca955x_set_speed_sgmii(int speed)
+static void qca955x_set_speed_sgmii(int id, int speed)
 {
 	void __iomem *base;
-	u32 val = ath79_get_eth_pll(1, speed);
+	u32 val = ath79_get_eth_pll(id, speed);
 
 	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
 	__raw_writel(val, base + QCA955X_PLL_ETH_SGMII_CONTROL_REG);
 	iounmap(base);
+}
+
+static void qca9556_set_speed_sgmii(int speed)
+{
+	qca955x_set_speed_sgmii(0, speed);
+}
+
+static void qca9558_set_speed_sgmii(int speed)
+{
+	qca955x_set_speed_sgmii(1, speed);
 }
 
 static void qca956x_set_speed_sgmii(int speed)
@@ -1028,10 +1038,14 @@ void __init ath79_register_eth(unsigned int id)
 			pdata->reset_bit = QCA955X_RESET_GE0_MAC |
 					   QCA955X_RESET_GE0_MDIO;
 			pdata->set_speed = qca955x_set_speed_xmii;
+
+			/* QCA9556 only has SGMII interface */
+			if (ath79_soc == ATH79_SOC_QCA9556)
+				pdata->set_speed = qca9556_set_speed_sgmii;
 		} else {
 			pdata->reset_bit = QCA955X_RESET_GE1_MAC |
 					   QCA955X_RESET_GE1_MDIO;
-			pdata->set_speed = qca955x_set_speed_sgmii;
+			pdata->set_speed = qca9558_set_speed_sgmii;
 		}
 
 		pdata->has_gbit = 1;
@@ -1172,6 +1186,15 @@ void __init ath79_parse_ascii_mac(char *mac_str, u8 *mac)
 		memset(mac, 0, ETH_ALEN);
 		printk(KERN_DEBUG "ar71xx: invalid mac address \"%s\"\n",
 		       mac_str);
+	}
+}
+
+void __init ath79_extract_mac_reverse(u8 *ptr, u8 *out)
+{
+	int i;
+
+	for (i = 0; i < ETH_ALEN; i++) {
+		out[i] = ptr[ETH_ALEN-i-1];
 	}
 }
 

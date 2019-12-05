@@ -43,15 +43,19 @@ generate_keys() {
 	config_get state      "$cfg" state
 	config_get location   "$cfg" location
 	config_get commonname "$cfg" commonname
+	config_get key_type   "$cfg" key_type
+	config_get ec_curve   "$cfg" ec_curve
 
 	# Prefer px5g for certificate generation (existence evaluated last)
 	local GENKEY_CMD=""
+	local KEY_OPTS="rsa:${bits:-2048}"
 	local UNIQUEID=$(dd if=/dev/urandom bs=1 count=4 | hexdump -e '1/1 "%02x"')
+	[ "$key_type" = "ec" ] && KEY_OPTS="ec -pkeyopt ec_paramgen_curve:${ec_curve:-P-256}"
 	[ -x "$OPENSSL_BIN" ] && GENKEY_CMD="$OPENSSL_BIN req -x509 -sha256 -outform der -nodes"
 	[ -x "$PX5G_BIN" ] && GENKEY_CMD="$PX5G_BIN selfsigned -der"
 	[ -n "$GENKEY_CMD" ] && {
 		$GENKEY_CMD \
-			-days ${days:-730} -newkey rsa:${bits:-2048} -keyout "${UHTTPD_KEY}.new" -out "${UHTTPD_CERT}.new" \
+			-days ${days:-730} -newkey ${KEY_OPTS} -keyout "${UHTTPD_KEY}.new" -out "${UHTTPD_CERT}.new" \
 			-subj /C="${country:-ZZ}"/ST="${state:-Somewhere}"/L="${location:-Unknown}"/O="${commonname:-OpenWrt}$UNIQUEID"/CN="${commonname:-OpenWrt}"
 		sync
 		mv "${UHTTPD_KEY}.new" "${UHTTPD_KEY}"
@@ -72,6 +76,18 @@ create_httpauth() {
 	fi
 	echo "${prefix}:${username}:${password}" >>$httpdconf
 	haveauth=1
+}
+
+append_lua_prefix() {
+	local v="$1"
+	local prefix="${v%%=*}"
+	local handler="${v#*=}"
+
+	if [ "$prefix" != "$handler" ] && [ -n "$prefix" ] && [ -f "$handler" ]; then
+		procd_append_param command -l "$prefix" -L "$handler"
+	else
+		echo "Skipping invalid Lua prefix \"$v\"" >&2
+	fi
 }
 
 start_instance()
@@ -105,10 +121,16 @@ start_instance()
 	append_arg "$cfg" config "-c"
 	append_arg "$cfg" cgi_prefix "-x"
 	[ -f /usr/lib/uhttpd_lua.so ] && {
-		config_get handler "$cfg" lua_handler
-		[ -f "$handler" ] && append_arg "$cfg" lua_prefix "-l" && {
-			procd_append_param command "-L" "$handler"
-		}
+		local len
+		config_get len "$cfg" lua_prefix_LENGTH
+
+		if [ -n "$len" ]; then
+			config_list_foreach "$cfg" lua_prefix append_lua_prefix
+		else
+			config_get prefix "$cfg" lua_prefix
+			config_get handler "$cfg" lua_handler
+			append_lua_prefix "$prefix=$handler"
+		fi
 	}
 	[ -f /usr/lib/uhttpd_ubus.so ] && {
 		append_arg "$cfg" ubus_prefix "-u"

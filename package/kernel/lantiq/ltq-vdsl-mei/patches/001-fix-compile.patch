@@ -22,3 +22,23 @@
                                             void *usedDevId );
  
  
+--- a/src/drv_mei_cpe_linux.c
++++ b/src/drv_mei_cpe_linux.c
+@@ -129,7 +129,7 @@ static int MEI_module_init(void);
+ #endif
+ 
+ #if (MEI_DRV_LKM_ENABLE == 1) && (MEI_SUPPORT_DEVICE_VR10_320 != 1)
+-static void __exit MEI_module_exit(void);
++static void MEI_module_exit(void);
+ #else
+ static void MEI_module_exit(void);
+ #endif
+@@ -2188,7 +2188,7 @@ static int MEI_module_init (void)
+    Called by the kernel.
+ */
+ #if (MEI_DRV_LKM_ENABLE == 1) && (MEI_SUPPORT_DEVICE_VR10_320 != 1)
+-static void __exit MEI_module_exit (void)
++static void MEI_module_exit (void)
+ #else
+ static void MEI_module_exit (void)
+ #endif

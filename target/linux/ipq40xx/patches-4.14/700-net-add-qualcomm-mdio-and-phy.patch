@@ -2484,7 +2484,7 @@ Subject: [PATCH 30/38] NET: add qualcomm mdio and PHY
 +#endif
 --- /dev/null
 +++ b/drivers/net/phy/mdio-ipq40xx.c
-@@ -0,0 +1,203 @@
+@@ -0,0 +1,198 @@
 +/*
 + * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
 + *
@@ -2527,7 +2527,6 @@ Subject: [PATCH 30/38] NET: add qualcomm mdio and PHY
 +struct ipq40xx_mdio_data {
 +	struct mii_bus	*mii_bus;
 +	void __iomem	*membase;
-+	int		phy_irq[PHY_MAX_ADDR];
 +	struct device	*dev;
 +};
 +
@@ -2640,13 +2639,9 @@ Subject: [PATCH 30/38] NET: add qualcomm mdio and PHY
 +	am->mii_bus->name = "ipq40xx_mdio";
 +	am->mii_bus->read = ipq40xx_mdio_read;
 +	am->mii_bus->write = ipq40xx_mdio_write;
-+	memcpy(am->mii_bus->irq, am->phy_irq, sizeof(am->phy_irq));
 +	am->mii_bus->priv = am;
 +	am->mii_bus->parent = &pdev->dev;
 +	snprintf(am->mii_bus->id, MII_BUS_ID_SIZE, "%s", dev_name(&pdev->dev));
-+
-+	for (i = 0; i < PHY_MAX_ADDR; i++)
-+		am->phy_irq[i] = PHY_POLL;
 +
 +	am->dev = &pdev->dev;
 +	platform_set_drvdata(pdev, am);

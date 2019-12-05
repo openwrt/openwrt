@@ -1,5 +1,5 @@
 /*
- *  WHQX E600G/E600GAC v2 board support
+ *  Qxwlan E600G/E600GAC v2 board support
  *
  *  Copyright (C) 2017 Peng Zhang <sd20@qxwlan.com>
  *  Copyright (C) 2018 Piotr Dymacz <pepe2k@gmail.com>
@@ -177,8 +177,8 @@ static void __init e600gac_v2_setup(void)
 					e600gac_v2_gpio_keys);
 }
 
-MIPS_MACHINE(ATH79_MACH_E600G_V2, "E600G-V2", "WHQX E600G v2",
+MIPS_MACHINE(ATH79_MACH_E600G_V2, "E600G-V2", "Qxwlan E600G v2",
 	     e600g_v2_setup);
 
-MIPS_MACHINE(ATH79_MACH_E600GAC_V2, "E600GAC-V2", "WHQX E600GAC v2",
+MIPS_MACHINE(ATH79_MACH_E600GAC_V2, "E600GAC-V2", "Qxwlan E600GAC v2",
 	     e600gac_v2_setup);

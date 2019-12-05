@@ -1,0 +1,80 @@
+From bde46476ee06c96e821653dfdb8fa11fe7326998 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Mon, 31 Dec 2018 23:28:24 +0000
+Subject: [PATCH 18/32] Tidy all_addr union, merge log and rcode fields.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ src/cache.c   | 2 +-
+ src/dnsmasq.h | 6 +-----
+ src/forward.c | 2 +-
+ src/rfc1035.c | 6 +++---
+ 4 files changed, 6 insertions(+), 10 deletions(-)
+
+--- a/src/cache.c
++++ b/src/cache.c
+@@ -1926,7 +1926,7 @@ void log_query(unsigned int flags, char
+ 	sprintf(daemon->addrbuff, arg, addr->addr.log.keytag, addr->addr.log.algo, addr->addr.log.digest);
+       else if (flags & F_RCODE)
+ 	{
+-	  unsigned int rcode = addr->addr.rcode.rcode;
++	  unsigned int rcode = addr->addr.log.rcode;
+ 
+ 	   if (rcode == SERVFAIL)
+ 	     dest = "SERVFAIL";
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -279,12 +279,8 @@ struct all_addr {
+     struct in6_addr addr6;
+     /* for log_query */
+     struct {
+-      unsigned short keytag, algo, digest;
++      unsigned short keytag, algo, digest, rcode;
+     } log;
+-    /* for log_query */
+-    struct {
+-      unsigned int rcode;
+-    } rcode;
+     /* for cache_insert of DNSKEY, DS */
+     struct {
+       unsigned short class, type;
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -658,7 +658,7 @@ static size_t process_reply(struct dns_h
+   if (rcode != NOERROR && rcode != NXDOMAIN)
+     {
+       struct all_addr a;
+-      a.addr.rcode.rcode = rcode;
++      a.addr.log.rcode = rcode;
+       log_query(F_UPSTREAM | F_RCODE, "error", &a, NULL);
+       
+       return resize_packet(header, n, pheader, plen);
+--- a/src/rfc1035.c
++++ b/src/rfc1035.c
+@@ -950,7 +950,7 @@ size_t setup_reply(struct dns_header *he
+   else if (flags == F_SERVFAIL)
+     {
+       struct all_addr a;
+-      a.addr.rcode.rcode = SERVFAIL;
++      a.addr.log.rcode = SERVFAIL;
+       log_query(F_CONFIG | F_RCODE, "error", &a, NULL);
+       SET_RCODE(header, SERVFAIL);
+     }
+@@ -975,7 +975,7 @@ size_t setup_reply(struct dns_header *he
+   else /* nowhere to forward to */
+     {
+       struct all_addr a;
+-      a.addr.rcode.rcode = REFUSED;
++      a.addr.log.rcode = REFUSED;
+       log_query(F_CONFIG | F_RCODE, "error", &a, NULL);
+       SET_RCODE(header, REFUSED);
+     }
+@@ -1374,7 +1374,7 @@ size_t answer_request(struct dns_header
+ 		  notimp = 1, auth = 0;
+ 		  if (!dryrun)
+ 		    {
+-		       addr.addr.rcode.rcode = NOTIMP;
++		       addr.addr.log.rcode = NOTIMP;
+ 		       log_query(F_CONFIG | F_RCODE, name, &addr, NULL);
+ 		    }
+ 		  ans = 1, sec_data = 0;

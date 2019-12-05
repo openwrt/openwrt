@@ -11,13 +11,18 @@
 
 #define pr_fmt(fmt) "rb2011: " fmt
 
+#include <linux/version.h>
 #include <linux/phy.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <linux/ath9k_platform.h>
 #include <linux/ar8216_platform.h>
 #include <linux/mtd/mtd.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
 #include <linux/mtd/nand.h>
+#else
+#include <linux/mtd/rawnand.h>
+#endif
 #include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
@@ -156,7 +161,7 @@ static struct ar8327_platform_data rb2011_ar8327_data = {
 static struct mdio_board_info rb2011_mdio0_info[] = {
 	{
 		.bus_id = "ag71xx-mdio.0",
-		.phy_addr = 0,
+		.mdio_addr = 0,
 		.platform_data = &rb2011_ar8327_data,
 	},
 };
@@ -251,7 +256,9 @@ static int rb2011_nand_scan_fixup(struct mtd_info *mtd)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
 	struct nand_chip *chip = mtd->priv;
-#endif
+#else
+	struct nand_chip *chip = mtd_to_nand(mtd);
+#endif /* < 4.6.0 */
 
 	if (mtd->writesize == 512) {
 		/*
@@ -264,6 +271,8 @@ static int rb2011_nand_scan_fixup(struct mtd_info *mtd)
 		mtd_set_ooblayout(mtd, &rb2011_nand_ecclayout_ops);
 #endif
 	}
+
+	chip->options = NAND_NO_SUBPAGE_WRITE;
 
 	return 0;
 }

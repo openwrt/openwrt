@@ -66,6 +66,18 @@ define RequireHeader
   $$(eval $$(call Require,$(1),$(2)))
 endef
 
+define CleanupPython2
+  define Require/python2-cleanup
+	if [ -f "$(STAGING_DIR_HOST)/bin/python" ] && \
+		$(STAGING_DIR_HOST)/bin/python -V 2>&1 | \
+		grep -q 'Python 2'; then \
+			rm $(STAGING_DIR_HOST)/bin/python; \
+	fi
+  endef
+
+  $$(eval $$(call Require,python2-cleanup))
+endef
+
 define QuoteHostCommand
 '$(subst ','"'"',$(strip $(1)))'
 endef
@@ -90,7 +102,8 @@ define SetupHostCommand
 	for cmd in $(call QuoteHostCommand,$(3)) $(call QuoteHostCommand,$(4)) \
 	           $(call QuoteHostCommand,$(5)) $(call QuoteHostCommand,$(6)) \
 	           $(call QuoteHostCommand,$(7)) $(call QuoteHostCommand,$(8)) \
-			   $(call QuoteHostCommand,$(9)); do \
+	           $(call QuoteHostCommand,$(9)) $(call QuoteHostCommand,$(10)) \
+	           $(call QuoteHostCommand,$(11)) $(call QuoteHostCommand,$(12)); do \
 		if [ -n "$$$$$$$$cmd" ]; then \
 			bin="$$$$$$$$(PATH="$(subst $(space),:,$(filter-out $(STAGING_DIR_HOST)/%,$(subst :,$(space),$(PATH))))" \
 				which "$$$$$$$${cmd%% *}")"; \

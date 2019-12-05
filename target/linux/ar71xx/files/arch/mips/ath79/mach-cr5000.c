@@ -1,5 +1,5 @@
 /*
- * PowerCloud CR5000 support
+ * PowerCloud Systems CR5000 support
  *
  * Copyright (c) 2011 Qualcomm Atheros
  * Copyright (c) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
@@ -58,7 +58,7 @@
 #define CR5000_WMAC_CALDATA_OFFSET	0x1000
 #define CR5000_WMAC_MAC_OFFSET	        0x1002
 #define CR5000_PCIE_CALDATA_OFFSET	0x5000
-#define CR5000_PCIE_MAC_OFFSET	        0x5002
+#define CR5000_PCIE_WMAC_OFFSET		0x5002
 
 static struct gpio_led cr5000_leds_gpio[] __initdata = {
 	{
@@ -90,7 +90,7 @@ static struct gpio_keys_button cr5000_gpio_keys[] __initdata = {
 	{
 		.desc		= "Reset button",
 		.type		= EV_KEY,
-		.code		= KEY_WPS_BUTTON,
+		.code		= KEY_RESTART,
 		.debounce_interval = CR5000_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= CR5000_GPIO_BTN_RESET,
 		.active_low	= 1,
@@ -106,10 +106,10 @@ static struct ar8327_pad_cfg cr5000_ar8327_pad0_cfg = {
 };
 
 static struct ar8327_led_cfg cr5000_ar8327_led_cfg = {
-	.led_ctrl0 = 0x00000000,
-	.led_ctrl1 = 0xc737c737,
-	.led_ctrl2 = 0x00000000,
-	.led_ctrl3 = 0x00c30c00,
+	.led_ctrl0 = 0xcc35cc35,
+	.led_ctrl1 = 0xca35ca35,
+	.led_ctrl2 = 0xc935c935,
+	.led_ctrl3 = 0x03ffff00,
 	.open_drain = true,
 };
 
@@ -128,7 +128,7 @@ static struct ar8327_platform_data cr5000_ar8327_data = {
 static struct mdio_board_info cr5000_mdio0_info[] = {
 	{
 		.bus_id = "ag71xx-mdio.0",
-		.phy_addr = 0,
+		.mdio_addr = 0,
 		.platform_data = &cr5000_ar8327_data,
 	},
 };
@@ -136,6 +136,7 @@ static struct mdio_board_info cr5000_mdio0_info[] = {
 static void __init cr5000_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
+	struct ath9k_platform_data *pdata;
 
 	ath79_gpio_function_enable(AR934X_GPIO_FUNC_JTAG_DISABLE);
 	gpio_request_one(CR5000_GPIO_LED_POWER_ENABLE,
@@ -153,10 +154,12 @@ static void __init cr5000_setup(void)
 					cr5000_gpio_keys);
 	ath79_register_usb();
 	ath79_register_wmac(art + CR5000_WMAC_CALDATA_OFFSET, art + CR5000_WMAC_MAC_OFFSET);
-	ap94_pci_init(NULL, NULL, NULL, art + CR5000_PCIE_MAC_OFFSET);
+	ap91_pci_init(NULL, art + CR5000_PCIE_WMAC_OFFSET);
+	pdata = ap9x_pci_get_wmac_data(0);
+	if (pdata)
+		pdata->use_eeprom = true;
 
-        ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0);
-
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0);
 	ath79_register_mdio(0, 0x0);
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, art + CR5000_MAC0_OFFSET, 0);
@@ -172,5 +175,5 @@ static void __init cr5000_setup(void)
 	ath79_register_eth(0);
 }
 
-MIPS_MACHINE(ATH79_MACH_CR5000, "CR5000", "PowerCloud CR5000",
+MIPS_MACHINE(ATH79_MACH_CR5000, "CR5000", "PowerCloud Systems CR5000",
 	     cr5000_setup);

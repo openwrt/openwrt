@@ -17,6 +17,22 @@ NO_EXPORT=1
 LOAD_STATE=1
 LIST_SEP=" "
 
+# xor multiple hex values of the same length
+xor() {
+	local val
+	local ret="0x$1"
+	local retlen=${#1}
+
+	shift
+	while [ -n "$1" ]; do
+		val="0x$1"
+		ret=$((ret ^ val))
+		shift
+	done
+
+	printf "%0${retlen}x" "$ret"
+}
+
 append() {
 	local var="$1"
 	local value="$2"
@@ -57,16 +73,16 @@ config () {
 	export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=$(($CONFIG_NUM_SECTIONS + 1))
 	name="${name:-cfg$CONFIG_NUM_SECTIONS}"
 	append CONFIG_SECTIONS "$name"
-	[ -n "$NO_CALLBACK" ] || config_cb "$cfgtype" "$name"
 	export ${NO_EXPORT:+-n} CONFIG_SECTION="$name"
-	export ${NO_EXPORT:+-n} "CONFIG_${CONFIG_SECTION}_TYPE=$cfgtype"
+	config_set "$CONFIG_SECTION" "TYPE" "${cfgtype}"
+	[ -n "$NO_CALLBACK" ] || config_cb "$cfgtype" "$name"
 }
 
 option () {
 	local varname="$1"; shift
 	local value="$*"
 
-	export ${NO_EXPORT:+-n} "CONFIG_${CONFIG_SECTION}_${varname}=$value"
+	config_set "$CONFIG_SECTION" "${varname}" "${value}"
 	[ -n "$NO_CALLBACK" ] || option_cb "$varname" "$*"
 }
 
@@ -81,7 +97,7 @@ list() {
 	config_set "$CONFIG_SECTION" "${varname}_ITEM$len" "$value"
 	config_set "$CONFIG_SECTION" "${varname}_LENGTH" "$len"
 	append "CONFIG_${CONFIG_SECTION}_${varname}" "$value" "$LIST_SEP"
-	list_cb "$varname" "$*"
+	[ -n "$NO_CALLBACK" ] || list_cb "$varname" "$*"
 }
 
 config_unset() {
@@ -92,7 +108,7 @@ config_unset() {
 # config_get <section> <option>
 config_get() {
 	case "$3" in
-		"") eval echo "\${CONFIG_${1}_${2}:-\${4}}";;
+		"") eval echo "\"\${CONFIG_${1}_${2}:-\${4}}\"";;
 		*)  eval export ${NO_EXPORT:+-n} -- "${1}=\${CONFIG_${2}_${3}:-\${4}}";;
 	esac
 }
@@ -113,11 +129,8 @@ config_set() {
 	local section="$1"
 	local option="$2"
 	local value="$3"
-	local old_section="$CONFIG_SECTION"
 
-	CONFIG_SECTION="$section"
-	option "$option" "$value"
-	CONFIG_SECTION="$old_section"
+	export ${NO_EXPORT:+-n} "CONFIG_${section}_${option}=${value}"
 }
 
 config_foreach() {
@@ -153,34 +166,29 @@ config_list_foreach() {
 	done
 }
 
-insert_modules() {
-	for m in $*; do
-		if [ -f /etc/modules.d/$m ]; then
-			sed 's/^[^#]/insmod &/' /etc/modules.d/$m | ash 2>&- || :
-		else
-			modprobe $m
-		fi
-	done
-}
-
 default_prerm() {
 	local root="${IPKG_INSTROOT}"
-	local name
+	local pkgname="$(basename ${1%.*})"
+	local ret=0
 
-	name=$(basename ${1%.*})
-	[ -f "$root/usr/lib/opkg/info/${name}.prerm-pkg" ] && . "$root/usr/lib/opkg/info/${name}.prerm-pkg"
+	if [ -f "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" ]; then
+		( . "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" )
+		ret=$?
+	fi
 
 	local shell="$(which bash)"
-	for i in `cat "$root/usr/lib/opkg/info/${name}.list" | grep "^/etc/init.d/"`; do
+	for i in $(grep -s "^/etc/init.d/" "$root/usr/lib/opkg/info/${pkgname}.list"); do
 		if [ -n "$root" ]; then
 			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" disable
 		else
 			if [ "$PKG_UPGRADE" != "1" ]; then
 				"$i" disable
 			fi
-			"$i" stop || /bin/true
+			"$i" stop
 		fi
 	done
+
+	return $ret
 }
 
 add_group_and_user() {
@@ -221,6 +229,7 @@ add_group_and_user() {
 default_postinst() {
 	local root="${IPKG_INSTROOT}"
 	local pkgname="$(basename ${1%.*})"
+	local filelist="/usr/lib/opkg/info/${pkgname}.list"
 	local ret=0
 
 	add_group_and_user "${pkgname}"
@@ -235,24 +244,29 @@ default_postinst() {
 		rm -fR $root/rootfs-overlay/
 	fi
 
-	if [ -z "$root" ] && grep -q -s "^/etc/modules.d/" "/usr/lib/opkg/info/${pkgname}.list"; then
-		kmodloader
-	fi
+	if [ -z "$root" ]; then
+		if grep -m1 -q -s "^/etc/modules.d/" "$filelist"; then
+			kmodloader
+		fi
 
-	if [ -z "$root" ] && grep -q -s "^/etc/uci-defaults/" "/usr/lib/opkg/info/${pkgname}.list"; then
-		. /lib/functions/system.sh
-		[ -d /tmp/.uci ] || mkdir -p /tmp/.uci
-		for i in $(sed -ne 's!^/etc/uci-defaults/!!p' "/usr/lib/opkg/info/${pkgname}.list"); do (
-			cd /etc/uci-defaults
-			[ -f "$i" ] && . ./"$i" && rm -f "$i"
-		) done
-		uci commit
-	fi
+		if grep -m1 -q -s "^/etc/sysctl.d/" "$filelist"; then
+			/etc/init.d/sysctl restart
+		fi
 
-	[ -n "$root" ] || rm -f /tmp/luci-indexcache 2>/dev/null
+		if grep -m1 -q -s "^/etc/uci-defaults/" "$filelist"; then
+			. /lib/functions/system.sh
+			[ -d /tmp/.uci ] || mkdir -p /tmp/.uci
+			for i in $(grep -s "^/etc/uci-defaults/" "$filelist"); do
+				( [ -f "$i" ] && cd "$(dirname $i)" && . "$i" ) && rm -f "$i"
+			done
+			uci commit
+		fi
+
+		rm -f /tmp/luci-indexcache
+	fi
 
 	local shell="$(which bash)"
-	for i in $(grep -s "^/etc/init.d/" "$root/usr/lib/opkg/info/${pkgname}.list"); do
+	for i in $(grep -s "^/etc/init.d/" "$root$filelist"); do
 		if [ -n "$root" ]; then
 			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" enable
 		else

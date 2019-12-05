@@ -18,7 +18,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
 
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -2989,11 +2989,17 @@ out:
+@@ -2994,11 +2994,17 @@ out:
  static int single_erase(struct mtd_info *mtd, int page)
  {
  	struct nand_chip *chip = mtd_to_nand(mtd);
@@ -37,7 +37,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  }
  
  /**
-@@ -3077,7 +3083,7 @@ int nand_erase_nand(struct mtd_info *mtd
+@@ -3082,7 +3088,7 @@ int nand_erase_nand(struct mtd_info *mtd
  		status = chip->erase(mtd, page & chip->pagemask);
  
  		/* See if block erase succeeded */

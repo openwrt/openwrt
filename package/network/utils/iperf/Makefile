@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iperf
-PKG_VERSION:=2.0.10
+PKG_VERSION:=2.0.13
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_HASH:=7fe4348dcca313b74e0aa9c34a8ccd713b84a5615b8578f4aa94cedce9891ef2
+PKG_HASH:=c88adec966096a81136dda91b4bd19c27aae06df4d45a7f547a8e50d723778ad
 PKG_SOURCE_URL:=@SF/iperf2
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
@@ -39,6 +39,10 @@ endef
 
 TARGET_CFLAGS += -D_GNU_SOURCE
 CONFIGURE_ARGS += --disable-multicast
+
+ifeq ($(CONFIG_IPV6),)
+	CONFIGURE_ARGS += --disable-ipv6
+endif
 
 CONFIGURE_VARS += CXXFLAGS="$$$$CXXFLAGS -fno-rtti"
 CONFIGURE_VARS += LIBS="-lpthread -lm"

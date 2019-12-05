@@ -144,12 +144,12 @@ endef
 
 define Package/iputils-ping/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ping $(1)/usr/bin/
+	$(INSTALL_SUID) $(PKG_BUILD_DIR)/ping $(1)/usr/bin/
 endef
 
 define Package/iputils-ping6/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ping6 $(1)/usr/bin/
+	$(INSTALL_SUID) $(PKG_BUILD_DIR)/ping6 $(1)/usr/bin/
 endef
 
 define Package/iputils-tftpd/install
@@ -169,7 +169,7 @@ endef
 
 define Package/iputils-traceroute6/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/traceroute6 $(1)/usr/bin/
+	$(INSTALL_SUID) $(PKG_BUILD_DIR)/traceroute6 $(1)/usr/bin/
 endef
 
 $(eval $(call BuildPackage,iputils-arping))

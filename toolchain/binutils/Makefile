@@ -11,29 +11,20 @@ PKG_VERSION:=$(call qstrip,$(CONFIG_BINUTILS_VERSION))
 BIN_VERSION:=$(PKG_VERSION)
 
 PKG_SOURCE_URL:=@GNU/binutils/
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 
 TAR_OPTIONS += --exclude='*.rej'
 
-ifeq ($(PKG_VERSION),2.27)
-  PKG_HASH:=369737ce51587f92466041a97ab7d2358c6d9e1b6490b3940eb09fb0a9a6ac88
-endif
-
 ifeq ($(PKG_VERSION),2.29.1)
-  PKG_HASH:=1509dff41369fb70aed23682351b663b56db894034773e6dbf7d5d6071fc55cc
+  PKG_HASH:=e7010a46969f9d3e53b650a518663f98a5dde3c3ae21b7d71e5e6803bc36b577
 endif
 
-ifeq ($(PKG_VERSION),2.30)
-  PKG_HASH:=efeade848067e9a03f1918b1da0d37aaffa0b0127a06b5e9236229851d9d0c09
+ifeq ($(PKG_VERSION),2.31.1)
+  PKG_HASH:=5d20086ecf5752cc7d9134246e9588fa201740d540f7eb84d795b1f7a93bca86
 endif
 
-ifneq ($(CONFIG_BINUTILS_VERSION_2_29_ARC),)
-  PKG_REV:=arc-2017.09-release
-  PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/binutils-gdb/archive/$(PKG_REV)/
-  PKG_SOURCE:=$(PKG_NAME)-$(PKG_REV).tar.gz
-  PKG_HASH:=2ea086fd5521e942926dd6ff6922ce31c29ee7ffc754fca3d06385e0f27600f8
-  BINUTILS_DIR:=$(PKG_NAME)-gdb-$(PKG_REV)
-  HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
+ifeq ($(PKG_VERSION),2.32)
+  PKG_HASH:=0ab6c55dd86a92ed561972ba15b9b70a8b9f75557f896446c82e8b36e473ee04
 endif
 
 HOST_BUILD_PARALLEL:=1
@@ -42,34 +33,33 @@ PATCH_DIR:=./patches/$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
-BINUTILS_CONFIGURE:= \
-	./configure \
-		--prefix=$(TOOLCHAIN_DIR) \
-		--build=$(GNU_HOST_NAME) \
-		--host=$(GNU_HOST_NAME) \
-		--target=$(REAL_GNU_TARGET_NAME) \
-		--with-sysroot=$(TOOLCHAIN_DIR) \
-		--enable-deterministic-archives \
-		--enable-plugins \
-		--disable-multilib \
-		--disable-werror \
-		--disable-nls \
-		--disable-sim \
-		--disable-gdb \
-		$(GRAPHITE_CONFIGURE) \
-		$(SOFT_FLOAT_CONFIG_OPTION) \
-		$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS)) 
+HOST_CONFIGURE_ARGS = \
+	--prefix=$(TOOLCHAIN_DIR) \
+	--build=$(GNU_HOST_NAME) \
+	--host=$(GNU_HOST_NAME) \
+	--target=$(REAL_GNU_TARGET_NAME) \
+	--with-sysroot=$(TOOLCHAIN_DIR) \
+	--enable-deterministic-archives \
+	--enable-plugins \
+	--disable-multilib \
+	--disable-werror \
+	--disable-nls \
+	--disable-sim \
+	--disable-gdb \
+	$(GRAPHITE_CONFIGURE) \
+	$(SOFT_FLOAT_CONFIG_OPTION) \
+	$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS))
 
 ifneq ($(CONFIG_SSP_SUPPORT),)
-  BINUTILS_CONFIGURE+= \
+  HOST_CONFIGURE_ARGS+= \
 		--enable-libssp
 else
-  BINUTILS_CONFIGURE+= \
+  HOST_CONFIGURE_ARGS+= \
 		--disable-libssp
 endif
 
 ifneq ($(CONFIG_EXTRA_TARGET_ARCH),)
-  BINUTILS_CONFIGURE+= \
+  HOST_CONFIGURE_ARGS+= \
 		--enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-$(TARGET_SUFFIX)
 endif
 
@@ -78,12 +68,6 @@ define Host/Prepare
 	ln -snf $(notdir $(HOST_BUILD_DIR)) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/
 	$(SED) 's, " Linaro.*,,' $(HOST_BUILD_DIR)/bfd/version.h
-endef
-
-define Host/Configure
-	(cd $(HOST_BUILD_DIR); \
-		$(BINUTILS_CONFIGURE) \
-	);
 endef
 
 define Host/Compile

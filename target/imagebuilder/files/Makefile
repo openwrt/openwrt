@@ -45,6 +45,15 @@ Building images:
 	make image FILES="<path>" # include extra files from <path>
 	make image BIN_DIR="<path>" # alternative output directory for the images
 	make image EXTRA_IMAGE_NAME="<string>" # Add this to the output image filename (sanitized)
+	make image DISABLED_SERVICES="<svc1> [<svc2> [<svc3> ..]]" # Which services in /etc/init.d/ should be disabled
+
+Print manifest:
+	List "all" packages which get installed into the image.
+	You can use the following parameters:
+
+	make manifest PROFILE="<profilename>" # override the default target profile
+	make manifest PACKAGES="<pkg1> [<pkg2> [<pkg3> ...]]" # include extra packages
+
 endef
 $(eval $(call shexport,Helptext))
 
@@ -65,8 +74,10 @@ include $(INCLUDE_DIR)/target.mk
 
 USER_PROFILE ?= $(firstword $(PROFILE_NAMES))
 PROFILE_LIST = $(foreach p,$(PROFILE_NAMES), \
-	echo '$(patsubst DEVICE_%,%,$(p)):'; $(if $($(p)_NAME),echo '    $(subst ','"'"',$($(p)_NAME))'; ) echo '    Packages: $($(p)_PACKAGES)'; \
-)
+	echo '$(patsubst DEVICE_%,%,$(p)):'; $(if $($(p)_NAME),echo '    $(subst ','"'"',$($(p)_NAME))'; ) \
+	echo '    Packages: $($(p)_PACKAGES)'; echo '    hasImageMetadata: $($(p)_HAS_IMAGE_METADATA)'; \
+	$(if $($(p)_SUPPORTED_DEVICES),echo '    SupportedDevices: $($(p)_SUPPORTED_DEVICES)';) )
+
 
 .profiles.mk: .targetinfo
 	@$(SCRIPT_DIR)/target-metadata.pl profile_mk $< '$(BOARD)$(if $(SUBTARGET),/$(SUBTARGET))' > $@
@@ -86,7 +97,8 @@ staging_dir/host/.prereq-build: include/prereq-build.mk
 	touch $@
 
 _call_info: FORCE
-	echo 'Current Target: "$(BOARD)$(if $(SUBTARGET), ($(BOARDNAME)))"'
+	echo 'Current Target: "$(TARGETID)"'
+	echo 'Current Revision: "$(REVISION)"'
 	echo 'Default Packages: $(DEFAULT_PACKAGES)'
 	echo 'Available Profiles:'
 	echo; $(PROFILE_LIST)
@@ -107,6 +119,13 @@ _call_image: staging_dir/host/.prereq-build
 	$(MAKE) -s prepare_rootfs
 	$(MAKE) -s build_image
 	$(MAKE) -s checksum
+
+_call_manifest: FORCE
+	rm -rf $(TARGET_DIR)
+	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR) $(DL_DIR)
+	$(MAKE) package_reload >/dev/null
+	$(MAKE) package_install >/dev/null
+	$(OPKG) list-installed
 
 package_index: FORCE
 	@echo >&2
@@ -142,7 +161,7 @@ prepare_rootfs: FORCE
 	@echo Finalizing root filesystem...
 
 	$(CP) $(TARGET_DIR) $(TARGET_DIR_ORIG)
-	$(call prepare_rootfs,$(TARGET_DIR),$(USER_FILES))
+	$(call prepare_rootfs,$(TARGET_DIR),$(USER_FILES),$(DISABLED_SERVICES))
 
 build_image: FORCE
 	@echo
@@ -164,7 +183,7 @@ info:
 
 PROFILE_FILTER = $(filter DEVICE_$(PROFILE) $(PROFILE),$(PROFILE_NAMES))
 
-image:
+_check_profile: FORCE
 ifneq ($(PROFILE),)
   ifeq ($(PROFILE_FILTER),)
 	@echo 'Profile "$(PROFILE)" does not exist!'
@@ -172,11 +191,22 @@ ifneq ($(PROFILE),)
 	@exit 1
   endif
 endif
+
+image:
+	$(MAKE) -s _check_profile
 	(unset PROFILE FILES PACKAGES MAKEFLAGS; \
 	$(MAKE) -s _call_image \
 		$(if $(PROFILE),USER_PROFILE="$(PROFILE_FILTER)") \
 		$(if $(FILES),USER_FILES="$(FILES)") \
 		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)") \
-		$(if $(BIN_DIR),BIN_DIR="$(BIN_DIR)"))
+		$(if $(BIN_DIR),BIN_DIR="$(BIN_DIR)") \
+		$(if $(DISABLED_SERVICES),DISABLED_SERVICES="$(DISABLED_SERVICES)"))
 
-.SILENT: help info image
+manifest: FORCE
+	$(MAKE) -s _check_profile
+	(unset PROFILE FILES PACKAGES MAKEFLAGS; \
+	$(MAKE) -s _call_manifest \
+		$(if $(PROFILE),USER_PROFILE="$(PROFILE_FILTER)") \
+		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)"))
+
+.SILENT: help info image manifest

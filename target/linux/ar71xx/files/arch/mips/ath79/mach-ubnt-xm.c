@@ -97,7 +97,9 @@ static void __init ubnt_xm_init(void)
 	ap91_pci_init(eeprom, NULL);
 
 	ath79_register_mdio(0, ~UBNT_M_WAN_PHYMASK);
+	ath79_eth0_data.speed = SPEED_100;
 	ath79_init_mac(ath79_eth0_data.mac_addr, mac1, 0);
+	ath79_eth1_data.speed = SPEED_100;
 	ath79_init_mac(ath79_eth1_data.mac_addr, mac2, 0);
 	ath79_register_eth(0);
 }
@@ -340,7 +342,7 @@ static struct ar8327_platform_data uap_pro_ar8327_data = {
 static struct mdio_board_info uap_pro_mdio0_info[] = {
 	{
 		.bus_id = "ag71xx-mdio.0",
-		.phy_addr = 0,
+		.mdio_addr = 0,
 		.platform_data = &uap_pro_ar8327_data,
 	},
 };
@@ -487,7 +489,7 @@ static struct at803x_platform_data ubnt_loco_m_xw_at803x_data = {
 static struct mdio_board_info ubnt_loco_m_xw_mdio_info[] = {
 	{
 		.bus_id = "ag71xx-mdio.0",
-		.phy_addr = 1,
+		.mdio_addr = 1,
 		.platform_data = &ubnt_loco_m_xw_at803x_data,
 	},
 };
@@ -594,7 +596,7 @@ static struct at803x_platform_data ubnt_rocket_m_ti_at803_data = {
 static struct mdio_board_info ubnt_rocket_m_ti_mdio_info[] = {
         {
                 .bus_id = "ag71xx-mdio.0",
-                .phy_addr = 4,
+                .mdio_addr = 4,
                 .platform_data = &ubnt_rocket_m_ti_at803_data,
         },
 };
@@ -652,6 +654,9 @@ MIPS_MACHINE(ATH79_MACH_UBNT_LOCO_M_XW, "UBNT-LOCO-XW", "Ubiquiti Loco M XW",
 	     ubnt_loco_m_xw_setup);
 
 MIPS_MACHINE(ATH79_MACH_UBNT_ROCKET_M_XW, "UBNT-RM-XW", "Ubiquiti Rocket M XW",
+	     ubnt_rocket_m_xw_setup);
+
+MIPS_MACHINE(ATH79_MACH_UBNT_BULLET_M_XW, "UBNT-BM-XW", "Ubiquiti Bullet M XW",
 	     ubnt_rocket_m_xw_setup);
 
 MIPS_MACHINE(ATH79_MACH_UBNT_ROCKET_M_TI, "UBNT-RM-TI", "Ubiquiti Rocket M TI",

@@ -9,13 +9,12 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnfnetlink
 PKG_VERSION:=1.0.1
-PKG_RELEASE:=1
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/libnfnetlink/files/ \
-	ftp://ftp.netfilter.org/pub/libnfnetlink/ \
-	http://mirrors.evolva.ro/netfilter.org/libnfnetlink/
+	ftp://ftp.netfilter.org/pub/libnfnetlink/
 PKG_HASH:=f270e19de9127642d2a11589ef2ec97ef90a649a74f56cf9a96306b04817b51a
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0+
@@ -31,6 +30,7 @@ define Package/libnfnetlink
   CATEGORY:=Libraries
   TITLE:=A low-level library for netfilter related kernel/userspace communication
   URL:=http://netfilter.org/projects/libnfnetlink/
+  ABI_VERSION:=0
 endef
 
 define Package/libnfnetlink/description
@@ -40,11 +40,12 @@ define Package/libnfnetlink/description
  and/or management tools in userspace.
 endef
 
-TARGET_CFLAGS += $(FPIC)
-
 CONFIGURE_ARGS += \
 	--enable-static \
 	--enable-shared
+
+CONFIGURE_VARS += \
+	lt_prog_compiler_pic=$(FPIC)
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/libnfnetlink

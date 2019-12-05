@@ -1,13 +1,12 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2012 OpenWrt.org
 
-# needs to start before the atm layer which starts at 50
-START=48
+START=97
 USE_PROCD=1
 
-EXTRA_COMMANDS="status lucistat"
-EXTRA_HELP="	status  Get DSL status information
-	lucistat  Get status information if lua friendly format"
+EXTRA_COMMANDS="dslstat lucistat"
+EXTRA_HELP="	dslstat Get DSL status information
+	lucistat Get status information in lua friendly format"
 
 [ -f /lib/functions/lantiq_dsl.sh ] && . /lib/functions/lantiq_dsl.sh
 
@@ -253,7 +252,9 @@ start_service() {
 				fi
 				;;
 			b*|j*)
-				if [ -f "/lib/firmware/lantiq-vrx200-b.bin" ]; then
+				if [ -f "/lib/firmware/vr9_dsl_fw_annex_b.bin" ]; then
+					firmware="/lib/firmware/vr9_dsl_fw_annex_b.bin"
+				elif [ -f "/lib/firmware/lantiq-vrx200-b.bin" ]; then
 					firmware="/lib/firmware/lantiq-vrx200-b.bin"
 				elif [ -f "/tmp/lantiq-vrx200-b.bin" ]; then
 					firmware="/tmp/lantiq-vrx200-b.bin"

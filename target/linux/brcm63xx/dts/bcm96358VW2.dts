@@ -13,7 +13,7 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		stop_green {
@@ -38,8 +38,6 @@
 
 &pflash {
 	status = "ok";
-
-	linux,part-probe = "bcm63xxpart";
 
 	partitions {
 		compatible = "brcm,bcm963xx-cfe-nor-partitions";

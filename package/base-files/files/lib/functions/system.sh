@@ -1,15 +1,55 @@
 # Copyright (C) 2006-2013 OpenWrt.org
 
+. /usr/share/libubox/jshn.sh
+
 get_mac_binary() {
 	local path="$1"
 	local offset="$2"
 
-	if [ -z "$path" ]; then
+	if ! [ -e "$path" ]; then
 		echo "get_mac_binary: file $path not found!" >&2
 		return
 	fi
 
 	hexdump -v -n 6 -s $offset -e '5/1 "%02x:" 1/1 "%02x"' $path 2>/dev/null
+}
+
+get_mac_label_dt() {
+	local basepath="/proc/device-tree"
+	local macdevice="$(cat "$basepath/aliases/label-mac-device" 2>/dev/null)"
+	local macaddr
+
+	[ -n "$macdevice" ] || return
+
+	macaddr=$(get_mac_binary "$basepath/$macdevice/mac-address" 0 2>/dev/null)
+	[ -n "$macaddr" ] || macaddr=$(get_mac_binary "$basepath/$macdevice/local-mac-address" 0 2>/dev/null)
+
+	echo $macaddr
+}
+
+get_mac_label_json() {
+	local cfg="/etc/board.json"
+	local macaddr
+
+	[ -s "$cfg" ] || return
+
+	json_init
+	json_load "$(cat $cfg)"
+	if json_is_a system object; then
+		json_select system
+			json_get_var macaddr label_macaddr
+		json_select ..
+	fi
+
+	echo $macaddr
+}
+
+get_mac_label() {
+	local macaddr=$(get_mac_label_dt)
+
+	[ -n "$macaddr" ] || macaddr=$(get_mac_label_json)
+
+	echo $macaddr
 }
 
 find_mtd_chardev() {
@@ -20,8 +60,7 @@ find_mtd_chardev() {
 	echo "${INDEX:+$PREFIX$INDEX}"
 }
 
-mtd_get_mac_ascii()
-{
+mtd_get_mac_ascii() {
 	local mtdname="$1"
 	local key="$2"
 	local part
@@ -34,6 +73,29 @@ mtd_get_mac_ascii()
 	fi
 
 	mac_dirty=$(strings "$part" | sed -n 's/^'"$key"'=//p')
+
+	# "canonicalize" mac
+	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
+}
+
+mtd_get_mac_text() {
+	local mtdname=$1
+	local offset=$(($2))
+	local part
+	local mac_dirty
+
+	part=$(find_mtd_part "$mtdname")
+	if [ -z "$part" ]; then
+		echo "mtd_get_mac_text: partition $mtdname not found!" >&2
+		return
+	fi
+
+	if [ -z "$offset" ]; then
+		echo "mtd_get_mac_text: offset missing!" >&2
+		return
+	fi
+
+	mac_dirty=$(dd if="$part" bs=1 skip="$offset" count=17 2>/dev/null)
 
 	# "canonicalize" mac
 	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
@@ -57,12 +119,7 @@ mtd_get_mac_binary_ubi() {
 	local ubidev=$(nand_find_ubi $CI_UBIPART)
 	local part=$(nand_find_volume $ubidev $1)
 
-	if [ -z "$part" ]; then
-		echo "mtd_get_mac_binary: ubi volume $mtdname not found!" >&2
-		return
-	fi
-
-	hexdump -v -n 6 -s $offset -e '5/1 "%02x:" 1/1 "%02x"' /dev/$part 2>/dev/null
+	get_mac_binary "/dev/$part" "$offset"
 }
 
 mtd_get_part_size() {
@@ -87,22 +144,26 @@ macaddr_add() {
 	echo $oui:$nic
 }
 
-macaddr_setbit_la()
-{
+macaddr_geteui() {
+	local mac=$1
+	local sep=$2
+
+	echo ${mac:9:2}$sep${mac:12:2}$sep${mac:15:2}
+}
+
+macaddr_setbit_la() {
 	local mac=$1
 
 	printf "%02x:%s" $((0x${mac%%:*} | 0x02)) ${mac#*:}
 }
 
-macaddr_2bin()
-{
+macaddr_2bin() {
 	local mac=$1
 
 	echo -ne \\x${mac//:/\\x}
 }
 
-macaddr_canonicalize()
-{
+macaddr_canonicalize() {
 	local mac="$1"
 	local canon=""
 

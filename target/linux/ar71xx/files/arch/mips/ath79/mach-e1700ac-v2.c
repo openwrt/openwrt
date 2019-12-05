@@ -1,5 +1,5 @@
 /*
- *  WHQX E1700AC v2 board support
+ *  Qxwlan E1700AC v2 board support
  *
  *  Copyright (C) 2017 Peng Zhang <sd20@qxwlan.com>
  *  Copyright (C) 2018 Piotr Dymacz <pepe2k@gmail.com>
@@ -103,7 +103,7 @@ static struct ar8327_platform_data e1700ac_v2_qca8334_data = {
 static struct mdio_board_info e1700ac_v2_mdio0_info[] = {
 	{
 		.bus_id = "ag71xx-mdio.0",
-		.phy_addr = 0,
+		.mdio_addr = 0,
 		.platform_data = &e1700ac_v2_qca8334_data,
 	},
 };
@@ -141,5 +141,5 @@ static void __init e1700ac_v2_setup(void)
 	ath79_register_wmac(art, NULL);
 }
 
-MIPS_MACHINE(ATH79_MACH_E1700AC_V2, "E1700AC-V2", "WHQX E1700AC v2",
+MIPS_MACHINE(ATH79_MACH_E1700AC_V2, "E1700AC-V2", "Qxwlan E1700AC v2",
 	     e1700ac_v2_setup);

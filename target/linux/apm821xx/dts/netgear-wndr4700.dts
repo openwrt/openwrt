@@ -26,7 +26,7 @@
 	};
 
 	chosen {
-		linux,stdout-path = "/plb/opb/serial@ef600300";
+		stdout-path = "/plb/opb/serial@ef600300:115200n8";
 	};
 
 	thermal-zones {
@@ -79,7 +79,7 @@
 				};
 
 				cpu_alert6: cpu-alert6 {
-					temperature = <850000>; /* millicelsius */
+					temperature = <85000>; /* millicelsius */
 					hysteresis = <2000>; /* millicelsius */
 					type = "active";
 				};
@@ -157,78 +157,79 @@
 		status = "okay";
 		/* 128 MiB Nand Flash */
 		nand {
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition0,0@0x00000000 {
+			partition0,0@0 {
 				label = "NAND 128MiB 3,3V 8-bit";
 				reg = <0x00000000 0x08000000>;
 				read-only;
 			};
 
-			partition0,1@0x00000000 {
+			partition0,1@0 {
 				label = "uboot";
 				reg = <0x00000000 0x00180000>;
 				read-only;
 			};
 
-			partition0,2@0x00180000 {
+			partition0,2@180000 {
 				label = "device-tree";
 				reg = <0x00180000 0x00020000>;
 			};
 
-			partition0,3@0x001a0000 {
+			partition0,3@180000 {
 				label = "kernel";
-				reg = <0x001a0000 0x001e0000>;
+				reg = <0x00180000 0x00380000>;
 				/*
-				 * will also contain a fake/empty
-				 * rootfs to fool Netgear's uboot
-				 * rootfs integrety checks.
+				 * device-tree is @ 0x00180000 - 0x001fffff
+				 * kernel starts from 0x200000.
+				 * this is coded into netgear's u-boot.
+				 *
+				 * this partition will also contain a
+				 * fake/empty rootfs at the end to fool
+				 * Netgear's uboot rootfs integrety checks.
 				 */
 			};
 
-			partition0,4@0x00380000 {
+			partition0,4@500000 {
 				label = "ubi";
-				reg = <0x00380000 0x01660000>;
+				reg = <0x00500000 0x014e0000>;
 			};
 
-			partition0,5@0x019e0000 {
+			partition0,5@19e0000 {
 				label = "config";
 				reg = <0x019e0000 0x00080000>;
 				read-only;
 			};
 
-			partition0,6@0x01a60000 {
+			partition0,6@1a60000 {
 				label = "pot";
 				reg = <0x01a60000 0x00080000>;
 				read-only;
 			};
 
-			partition0,7@0x01ae0000 {
+			partition0,7@1ae0000 {
 				label = "traffic_meter";
 				reg = <0x01ae0000 0x00300000>;
 				read-only;
 			};
 
-			partition0,8@0x01de0000 {
+			partition0,8@1de0000 {
 				label = "language";
 				reg = <0x01de0000 0x001c0000>;
 				read-only;
 			};
 
-			partition0,9@0x01fa0000 {
+			partition0,9@1fa0000 {
 				label = "ecos";
 				reg = <0x01fa0000 0x06020000>;
 				read-only;
 			};
 
-			partition0,10@0x07fc0000 {
+			partition0,10@7fc0000 {
 				label = "wifi_data";
 				reg = <0x07fc0000 0x00040000>;
 				read-only;
 			};
 
-			partition0,11@0x00180000 {
+			partition0,11@180000 {
 				label = "firmware";
 				reg = <0x00180000 0x01860000>;
 				read-only;
@@ -284,6 +285,7 @@
 &EMAC0 {
 	status = "okay";
 	phy-handle = <&phy0>;
+	fifo-entry-size = <10>;
 
 	mdio {
 		#address-cells = <1>;
@@ -291,6 +293,8 @@
 		phy0: ethernet-phy@0 {
 			device_type = "ethernet-phy";
 			reg = <0>;
+			qca,mib-poll-interval = <500>;
+
 			qca,ar8327-initvals = <
 				0x0010 0x40000000
 				0x0624 0x007f7f7f
@@ -303,54 +307,48 @@
 };
 
 &POB0 {
-	gpio_keys_polled {
-		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		#interrupt-cells = <2>;
-		autorepeat;
-		poll-interval = <60>;   /* 3 * 20 = 60ms */
+
+	keys {
+		compatible = "gpio-keys";
 
 		reset {
 			label = "Reset button";
+			gpios = <&GPIO0 15 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
-			gpios = <&GPIO0 15 GPIO_ACTIVE_HIGH>;
 			interrupt-parent = <&UIC1>;
 			interrupts = <0x14 IRQ_TYPE_EDGE_FALLING>;
+			debounce-interval = <60>;
 		};
 
 		backup_hd {
 			label = "Backup HD button";
-			gpios = <&GPIO0 19 GPIO_ACTIVE_HIGH>;
+			gpios = <&GPIO0 19 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
 			interrupt-parent = <&UIC1>;
 			interrupts = <0x1e IRQ_TYPE_EDGE_FALLING>;
+			debounce-interval = <60>;
 		};
 
 		rfkill {
 			label = "RFKILL button";
-			gpios = <&GPIO0 20 GPIO_ACTIVE_HIGH>;
+			gpios = <&GPIO0 20 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
 			interrupt-parent = <&UIC1>;
 			interrupts = <0x1f IRQ_TYPE_EDGE_FALLING>;
+			debounce-interval = <60>;
 		};
 
 		wps {
 			label = "WPS button";
-			gpios = <&GPIO0 23 GPIO_ACTIVE_HIGH>;
+			gpios = <&GPIO0 23 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 			interrupt-parent = <&UIC2>;
 			interrupts = <0x19 IRQ_TYPE_EDGE_FALLING>;
-		};
-
-		sdcard {
-			label = "SDCard inserted";
-			gpios = <&GPIO0 7 GPIO_ACTIVE_LOW>;
-			linux,code = <BTN_1>;
+			debounce-interval = <60>;
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 		status: power-green {
 			label = "wndr4700:green:power";
@@ -386,6 +384,7 @@
 		hd-green {
 			label = "wndr4700:green:hd";
 			gpios = <&GPIO0 14 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "disk-activity";
 		};
 
 		hd-red {

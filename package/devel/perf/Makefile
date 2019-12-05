@@ -26,7 +26,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/perf
   SECTION:=devel
   CATEGORY:=Development
-  DEPENDS:= +libelf1 +libdw +(mips||mipsel||powerpc||i386||x86_64||arm||aarch64):libunwind +libpthread +librt +objdump @!LINUX_3_18 @!IN_SDK @!TARGET_arc770 @KERNEL_PERF_EVENTS
+  DEPENDS:= +libelf +libdw +(mips||mipsel||powerpc||i386||x86_64||arm||aarch64):libunwind +libpthread +librt +objdump @!IN_SDK @!TARGET_arc770 @KERNEL_PERF_EVENTS
   TITLE:=Linux performance monitoring tool
   VERSION:=$(LINUX_VERSION)-$(PKG_RELEASE)
   URL:=http://www.kernel.org
@@ -34,10 +34,6 @@ endef
 
 define Package/perf/description
   perf is the Linux performance monitoring tool
-endef
-
-define Build/Prepare
-	$(CP) $(LINUX_DIR)/tools/perf/* $(PKG_BUILD_DIR)/
 endef
 
 MAKE_FLAGS = \
@@ -59,19 +55,13 @@ MAKE_FLAGS = \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
 	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
 	WERROR=0 \
+	O=$(PKG_BUILD_DIR) \
 	prefix=/usr
-
-ifdef CONFIG_LINUX_4_4
-ifdef CONFIG_USE_MUSL
- MAKE_FLAGS += EXTRA_CFLAGS="-I$(CURDIR)/musl-include -include $(CURDIR)/musl-compat.h -D__UCLIBC__"
-endif
-endif
 
 define Build/Compile
 	+$(MAKE_FLAGS) $(MAKE) $(PKG_JOBS) \
-		-C $(PKG_BUILD_DIR) \
-		-f Makefile.perf \
-		--no-print-directory
+		--no-print-directory \
+		-C $(LINUX_DIR)/tools/perf
 endef
 
 define Package/perf/install

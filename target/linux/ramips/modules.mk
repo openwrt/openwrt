@@ -7,24 +7,24 @@
 
 OTHER_MENU:=Other modules
 
-define KernelPackage/pwm-mediatek
+define KernelPackage/pwm-mediatek-ramips
   SUBMENU:=Other modules
   TITLE:=MT7628 PWM
   DEPENDS:=@(TARGET_ramips_mt76x8)
   KCONFIG:= \
 	CONFIG_PWM=y \
-	CONFIG_PWM_MEDIATEK \
+	CONFIG_PWM_MEDIATEK_RAMIPS \
 	CONFIG_PWM_SYSFS=y
   FILES:= \
-	$(LINUX_DIR)/drivers/pwm/pwm-mediatek.ko
-  AUTOLOAD:=$(call AutoProbe,pwm-mediatek)
+	$(LINUX_DIR)/drivers/pwm/pwm-mediatek-ramips.ko
+  AUTOLOAD:=$(call AutoProbe,pwm-mediatek-ramips)
 endef
 
 define KernelPackage/pwm-mediatek/description
   Kernel modules for MediaTek Pulse Width Modulator
 endef
 
-$(eval $(call KernelPackage,pwm-mediatek))
+$(eval $(call KernelPackage,pwm-mediatek-ramips))
 
 define KernelPackage/sdhci-mt7620
   SUBMENU:=Other modules
@@ -116,7 +116,7 @@ $(eval $(call KernelPackage,hsdma-mtk))
 
 define KernelPackage/sound-mt7620
   TITLE:=MT7620 PCM/I2S Alsa Driver
-  DEPENDS:=@TARGET_ramips +kmod-sound-soc-core +kmod-regmap +kmod-dma-ralink @!TARGET_ramips_rt288x
+  DEPENDS:=@TARGET_ramips +kmod-sound-soc-core +kmod-regmap-i2c +kmod-dma-ralink @!TARGET_ramips_rt288x
   KCONFIG:= \
 	CONFIG_SND_RALINK_SOC_I2S \
 	CONFIG_SND_SIMPLE_CARD \

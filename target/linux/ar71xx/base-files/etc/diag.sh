@@ -24,9 +24,13 @@ get_status_led() {
 	antminer-s3|\
 	antminer-r1|\
 	e1700ac-v2|\
+	e558-v2|\
 	e600gac-v2|\
+	e750a-v4|\
+	e750g-v8|\
 	eap120|\
 	minibox-v1|\
+	minibox-v3.2|\
 	packet-squirrel|\
 	som9331|\
 	sr3200|\
@@ -63,9 +67,14 @@ get_status_led() {
 	archer-c25-v1|\
 	archer-c58-v1|\
 	archer-c59-v1|\
+	archer-c59-v2|\
 	archer-c60-v1|\
+	archer-c60-v2|\
 	archer-c7-v4|\
+	archer-c7-v5|\
 	fritz300e|\
+	fritz4020|\
+	fritz450e|\
 	gl-usb150|\
 	mr12|\
 	mr16|\
@@ -76,8 +85,6 @@ get_status_led() {
 	tl-wr902ac-v1)
 		status_led="$board:green:power"
 		;;
-	archer-c5|\
-	archer-c7|\
 	tl-mr10u|\
 	tl-mr12u|\
 	tl-mr13u|\
@@ -120,6 +127,7 @@ get_status_led() {
 		status_led="$board:red:sys"
 		;;
 	bullet-m|\
+	bullet-m-xw|\
 	loco-m-xw|\
 	nano-m|\
 	nanostation-m|\
@@ -162,6 +170,7 @@ get_status_led() {
 	cr5000)
 		status_led="pcs:amber:power"
 		;;
+	dap-1330-a1|\
 	dgl-5500-a1|\
 	dhp-1565-a1|\
 	dir-505-a1|\
@@ -206,6 +215,7 @@ get_status_led() {
 		;;
 	e600g-v2|\
 	oolite-v5.2-dev|\
+	ts-d084|\
 	wifi-pineapple-nano)
 		status_led="$board:blue:system"
 		;;
@@ -256,6 +266,9 @@ get_status_led() {
 		;;
 	jwap230)
 		status_led="$board:green:led1"
+		;;
+	koala)
+		status_led="$board:blue:sys"
 		;;
 	lan-turtle)
 		status_led="$board:orange:system"
@@ -333,6 +346,7 @@ get_status_led() {
 		status_led="$board:green:wan"
 		;;
 	rb-2011il|\
+	rb-2011ils|\
 	rb-2011l|\
 	rb-2011uas|\
 	rb-2011uas-2hnd)
@@ -358,13 +372,17 @@ get_status_led() {
 	rb-911g-2hpnd|\
 	rb-911g-5hpacd|\
 	rb-911g-5hpnd|\
+	rb-931-2nd|\
 	rb-941-2nd|\
 	rb-951ui-2nd|\
 	rb-952ui-5ac2nd|\
 	rb-962uigs-5hact2hnt|\
 	rb-lhg-5nd|\
 	rb-map-2nd|\
-	rb-mapl-2nd)
+	rb-mapl-2nd|\
+	rb-sxt-2nd-r3|\
+	rb-wap-2nd|\
+	rb-wapr-2nd)
 		status_led="rb:green:user"
 		;;
 	rb-951ui-2hnd)
@@ -373,7 +391,8 @@ get_status_led() {
 	rb-912uag-2hpnd|\
 	rb-912uag-5hpnd|\
 	rb-sxt2n|\
-	rb-sxt5n)
+	rb-sxt5n|\
+	rb-wapg-5hact2hnd)
 		status_led="rb:green:power"
 		;;
 	re355|\
@@ -429,6 +448,8 @@ get_status_led() {
 	tl-mr6400)
 		status_led="tp-link:white:power"
 		;;
+	archer-c5|\
+	archer-c7|\
 	tl-mr3220|\
 	tl-mr3220-v2|\
 	tl-mr3420|\
@@ -466,6 +487,9 @@ get_status_led() {
 		;;
 	tl-wr841n-v9)
 		status_led="tp-link:green:qss"
+		;;
+	tl-wr940n-v6)
+		status_led="tp-link:orange:diag"
 		;;
 	tl-wdr6500-v2)
 		status_led="tp-link:white:system"

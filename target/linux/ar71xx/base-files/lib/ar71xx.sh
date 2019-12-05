@@ -16,7 +16,7 @@ ar71xx_get_mtd_offset_size_format() {
 	dev=$(find_mtd_part $mtd)
 	[ -z "$dev" ] && return
 
-	dd if=$dev bs=1 skip=$offset count=$size 2>/dev/null | hexdump -v -e "1/1 \"$format\""
+	dd if=$dev iflag=skip_bytes bs=$size skip=$offset count=1 2>/dev/null | hexdump -v -e "1/1 \"$format\""
 }
 
 ar71xx_get_mtd_part_magic() {
@@ -96,6 +96,36 @@ ubnt_xm_board_detect() {
 	esac
 
 	[ -z "$model" ] || AR71XX_MODEL="${model}${magic:3:1}"
+}
+
+ubnt_unifi_ac_get_mtd_part_magic() {
+	ar71xx_get_mtd_offset_size_format EEPROM 12 2 %02x
+}
+
+ubnt_unifi_ac_board_detect() {
+	local model
+	local magic
+
+	magic="$(ubnt_unifi_ac_get_mtd_part_magic)"
+	case ${magic:0:4} in
+	"e517")
+		model="Ubiquiti UniFi-AC-LITE"
+		;;
+	"e527")
+		model="Ubiquiti UniFi-AC-LR"
+		;;
+	"e537")
+		model="Ubiquiti UniFi-AC-PRO"
+		;;
+	"e557")
+		model="Ubiquiti UniFi-AC-MESH"
+		;;
+	"e567")
+		model="Ubiquiti UniFi-AC-MESH-PRO"
+		;;
+	esac
+
+	[ -z "$model" ] || AR71XX_MODEL="${model}"
 }
 
 cybertan_get_hw_magic() {
@@ -350,12 +380,182 @@ tplink_pharos_get_model_string() {
 }
 
 tplink_pharos_board_detect() {
-	local model_string="$(tplink_pharos_get_model_string | tr -d '\r')"
+	local model_string="$1"
 	local oIFS="$IFS"; IFS=":"; set -- $model_string; IFS="$oIFS"
 
 	local model="${1%%\(*}"
 
 	AR71XX_MODEL="TP-Link $model v$2"
+}
+
+tplink_pharos_v2_get_model_string() {
+	local part
+	part=$(find_mtd_part 'product-info')
+	[ -z "$part" ] && return 1
+
+	dd if=$part iflag=skip_bytes bs=64 skip=4360 count=1 2>/dev/null | tr -d '\r\0' | head -n 1
+}
+
+mikrotik_board_detect() {
+	local machine="$1"
+
+	case "$machine" in
+	*"2011iL")
+		name="rb-2011il"
+		;;
+	*"2011iLS")
+		name="rb-2011ils"
+		;;
+	*"2011L")
+		name="rb-2011l"
+		;;
+	*"2011UAS")
+		name="rb-2011uas"
+		;;
+	*"2011UAS-2HnD")
+		name="rb-2011uas-2hnd"
+		;;
+	*"2011UiAS")
+		name="rb-2011uias"
+		;;
+	*"2011UiAS-2HnD")
+		name="rb-2011uias-2hnd"
+		;;
+	*"2011UiAS-2HnD r2")
+		name="rb-2011uias-2hnd-r2"
+		;;
+	*"411/A/AH")
+		name="rb-411"
+		;;
+	*"411U")
+		name="rb-411u"
+		;;
+	*"433/AH")
+		name="rb-433"
+		;;
+	*"433UAH")
+		name="rb-433u"
+		;;
+	*"435G")
+		name="rb-435g"
+		;;
+	*"450")
+		name="rb-450"
+		;;
+	*"450G")
+		name="rb-450g"
+		;;
+	*"493/AH")
+		name="rb-493"
+		;;
+	*"493G")
+		name="rb-493g"
+		;;
+	*"750")
+		name="rb-750"
+		;;
+	*"750 r2"|\
+	*"750r2")
+		name="rb-750-r2"
+		;;
+	*"750GL")
+		name="rb-750gl"
+		;;
+	*"750P r2")
+		name="rb-750p-pbr2"
+		;;
+	*"750UP r2"|\
+	*"750UPr2")
+		name="rb-750up-r2"
+		;;
+	*"751")
+		name="rb-751"
+		;;
+	*"751G")
+		name="rb-751g"
+		;;
+	*"911-2Hn")
+		name="rb-911-2hn"
+		;;
+	*"911-5Hn")
+		name="rb-911-5hn"
+		;;
+	*"911G-2HPnD")
+		name="rb-911g-2hpnd"
+		;;
+	*"911G-5HPacD")
+		name="rb-911g-5hpacd"
+		;;
+	*"911G-5HPnD")
+		name="rb-911g-5hpnd"
+		;;
+	*"912UAG-2HPnD")
+		name="rb-912uag-2hpnd"
+		;;
+	*"912UAG-5HPnD")
+		name="rb-912uag-5hpnd"
+		;;
+	*"921GS-5HPacD r2")
+		name="rb-921gs-5hpacd-r2"
+		;;
+	*"922UAGS-5HPacD")
+		name="rb-922uags-5hpacd"
+		;;
+	*"931-2nD")
+		name="rb-931-2nd"
+		;;
+	*"941-2nD")
+		name="rb-941-2nd"
+		;;
+	*"951G-2HnD")
+		name="rb-951g-2hnd"
+		;;
+	*"951Ui-2HnD")
+		name="rb-951ui-2hnd"
+		;;
+	*"951Ui-2nD")
+		name="rb-951ui-2nd"
+		;;
+	*"952Ui-5ac2nD")
+		name="rb-952ui-5ac2nd"
+		;;
+	*"962UiGS-5HacT2HnT")
+		name="rb-962uigs-5hact2hnt"
+		;;
+	*"LHG 5nD")
+		name="rb-lhg-5nd"
+		;;
+	*"mAP 2nD"|\
+	*"mAP2nD")
+		name="rb-map-2nd"
+		;;
+	*"mAP L-2nD"|\
+	*"mAPL-2nD")
+		name="rb-mapl-2nd"
+		;;
+	*"SXT 2nD r3")
+		name="rb-sxt-2nd-r3"
+		;;
+	*"SXT Lite2")
+		name="rb-sxt2n"
+		;;
+	*"SXT Lite5")
+		name="rb-sxt5n"
+		;;
+	*"wAP 2nD r2")
+		name="rb-wap-2nd"
+		;;
+	*"wAP R-2nD"|\
+	*"wAPR-2nD")
+		name="rb-wapr-2nd"
+		;;
+	*"wAP G-5HacT2HnD"|\
+	*"wAPG-5HacT2HnD")
+		name="rb-wapg-5hact2hnd"
+		;;
+	esac
+
+	echo "$name"
 }
 
 ar71xx_board_detect() {
@@ -455,14 +655,23 @@ ar71xx_board_detect() {
 	*"Archer C7 v4")
 		name="archer-c7-v4"
 		;;
+	*"Archer C7 v5")
+		name="archer-c7-v5"
+		;;
 	*"Archer C58 v1")
 		name="archer-c58-v1"
 		;;
 	*"Archer C59 v1")
 		name="archer-c59-v1"
+        ;;
+	*"Archer C59 v2")
+		name="archer-c59-v2"
 		;;
 	*"Archer C60 v1")
 		name="archer-c60-v1"
+		;;
+	*"Archer C60 v2")
+		name="archer-c60-v2"
 		;;
 	*"Archer C7")
 		name="archer-c7"
@@ -485,6 +694,9 @@ ar71xx_board_detect() {
 	*"Bullet M")
 		name="bullet-m"
 		ubnt_xm_board_detect
+		;;
+	*"Bullet M XW")
+		name="bullet-m-xw"
 		;;
 	*"BXU2000n-2 rev. A1")
 		name="bxu2000n-2-a1"
@@ -536,14 +748,26 @@ ar71xx_board_detect() {
 		;;
 	*"CPE210/220")
 		name="cpe210"
-		tplink_pharos_board_detect
+		tplink_pharos_board_detect "$(tplink_pharos_get_model_string | tr -d '\r')"
+		;;
+	*"CPE210 v2")
+		name="cpe210-v2"
+		tplink_pharos_board_detect "$(tplink_pharos_v2_get_model_string)"
+		;;
+	*"CPE210 v3")
+		name="cpe210-v3"
+		tplink_pharos_board_detect "$(tplink_pharos_v2_get_model_string)"
 		;;
 	*"CPE505N")
 		name="cpe505n"
 		;;
 	*"CPE510/520")
 		name="cpe510"
-		tplink_pharos_board_detect
+		tplink_pharos_board_detect "$(tplink_pharos_get_model_string | tr -d '\r')"
+		;;
+	*"CPE510 v2")
+		name="cpe510-v2"
+		tplink_pharos_board_detect "$(tplink_pharos_v2_get_model_string)"
 		;;
 	*"CPE830")
 		name="cpe830"
@@ -556,6 +780,9 @@ ar71xx_board_detect() {
 		;;
 	*"CR5000")
 		name="cr5000"
+		;;
+	*"DAP-1330 Rev. A1")
+		name="dap-1330-a1"
 		;;
 	*"DAP-2695 rev. A1")
 		name="dap-2695-a1"
@@ -633,15 +860,24 @@ ar71xx_board_detect() {
 	*"E2100L")
 		name="e2100l"
 		;;
+	*"E558 v2")
+		name="e558-v2"
+		;;
 	*"E600G v2")
 		name="e600g-v2"
 		;;
 	*"E600GAC v2")
 		name="e600gac-v2"
 		;;
+	*"E750A v4")
+		name="e750a-v4"
+		;;
+	*"E750G v8")
+		name="e750g-v8"
+		;;
 	*"EAP120")
 		name="eap120"
-		tplink_pharos_board_detect
+		tplink_pharos_board_detect "$(tplink_pharos_get_model_string | tr -d '\r')"
 		;;
 	*"EAP300 v2")
 		name="eap300v2"
@@ -682,8 +918,14 @@ ar71xx_board_detect() {
 	*"eTactica EG-200")
 		name="rme-eg200"
 		;;
+	*"FRITZ!Box 4020")
+		name="fritz4020"
+		;;
 	*"FRITZ!WLAN Repeater 300E")
 		name="fritz300e"
+		;;
+	*"FRITZ!WLAN Repeater 450E")
+		name="fritz450e"
 		;;
 	*"GL-AR150")
 		name="gl-ar150"
@@ -696,6 +938,9 @@ ar71xx_board_detect() {
 		;;
 	*"GL-AR750")
 		name="gl-ar750"
+		;;
+	*"GL-AR750S")
+		name="gl-ar750s"
 		;;
 	*"GL-CONNECT INET v1")
 		name="gl-inet"
@@ -735,6 +980,9 @@ ar71xx_board_detect() {
 	*"JWAP230")
 		name="jwap230"
 		;;
+	*"Koala")
+		name="koala"
+		;;
 	*"LAN Turtle")
 		name="lan-turtle"
 		;;
@@ -753,8 +1001,15 @@ ar71xx_board_detect() {
 	*"MAC1200R")
 		name="mc-mac1200r"
 		;;
+	"MikroTik"*|\
+	"Mikrotik"*)
+		name=$(mikrotik_board_detect "$machine")
+		;;
 	*"MiniBox V1.0")
 		name="minibox-v1"
+		;;
+	*"Minibox V3.2")
+		name="minibox-v3.2"
 		;;
 	*"MR12")
 		name="mr12"
@@ -913,135 +1168,6 @@ ar71xx_board_detect() {
 		;;
 	*"Rocket M XW")
 		name="rocket-m-xw"
-		;;
-	*"RouterBOARD 2011iL")
-		name="rb-2011il"
-		;;
-	*"RouterBOARD 2011L")
-		name="rb-2011l"
-		;;
-	*"RouterBOARD 2011UAS")
-		name="rb-2011uas"
-		;;
-	*"RouterBOARD 2011UAS-2HnD")
-		name="rb-2011uas-2hnd"
-		;;
-	*"RouterBOARD 2011UiAS")
-		name="rb-2011uias"
-		;;
-	*"RouterBOARD 2011UiAS-2HnD")
-		name="rb-2011uias-2hnd"
-		;;
-	*"RouterBOARD 411/A/AH")
-		name="rb-411"
-		;;
-	*"RouterBOARD 411U")
-		name="rb-411u"
-		;;
-	*"RouterBOARD 433/AH")
-		name="rb-433"
-		;;
-	*"RouterBOARD 433UAH")
-		name="rb-433u"
-		;;
-	*"RouterBOARD 435G")
-		name="rb-435g"
-		;;
-	*"RouterBOARD 450")
-		name="rb-450"
-		;;
-	*"RouterBOARD 450G")
-		name="rb-450g"
-		;;
-	*"RouterBOARD 493/AH")
-		name="rb-493"
-		;;
-	*"RouterBOARD 493G")
-		name="rb-493g"
-		;;
-	*"RouterBOARD 750")
-		name="rb-750"
-		;;
-	*"RouterBOARD 750 r2")
-		name="rb-750-r2"
-		;;
-	*"RouterBOARD 750GL")
-		name="rb-750gl"
-		;;
-	*"RouterBOARD 750P r2")
-		name="rb-750p-pbr2"
-		;;
-	*"RouterBOARD 750UP r2")
-		name="rb-750up-r2"
-		;;
-	*"RouterBOARD 751")
-		name="rb-751"
-		;;
-	*"RouterBOARD 751G")
-		name="rb-751g"
-		;;
-	*"RouterBOARD 911-2Hn")
-		name="rb-911-2hn"
-		;;
-	*"RouterBOARD 911-5Hn")
-		name="rb-911-5hn"
-		;;
-	*"RouterBOARD 911G-2HPnD")
-		name="rb-911g-2hpnd"
-		;;
-	*"RouterBOARD 911G-5HPacD")
-		name="rb-911g-5hpacd"
-		;;
-	*"RouterBOARD 911G-5HPnD")
-		name="rb-911g-5hpnd"
-		;;
-	*"RouterBOARD 912UAG-2HPnD")
-		name="rb-912uag-2hpnd"
-		;;
-	*"RouterBOARD 912UAG-5HPnD")
-		name="rb-912uag-5hpnd"
-		;;
-	*"RouterBOARD 921GS-5HPacD r2")
-		name="rb-921gs-5hpacd-r2"
-		;;
-	*"RouterBOARD 941-2nD")
-		name="rb-941-2nd"
-		;;
-	*"RouterBOARD 951G-2HnD")
-		name="rb-951g-2hnd"
-		;;
-	*"RouterBOARD 951Ui-2HnD")
-		name="rb-951ui-2hnd"
-		;;
-	*"RouterBOARD 951Ui-2nD")
-		name="rb-951ui-2nd"
-		;;
-	*"RouterBOARD 952Ui-5ac2nD")
-		name="rb-952ui-5ac2nd"
-		;;
-	*"RouterBOARD 962UiGS-5HacT2HnT")
-		name="rb-962uigs-5hact2hnt"
-		;;
-	*"RouterBOARD LHG 5nD")
-		name="rb-lhg-5nd"
-		;;
-	*"RouterBOARD mAP 2nD")
-		name="rb-map-2nd"
-		;;
-	*"RouterBOARD mAP L-2nD")
-		name="rb-mapl-2nd"
-		;;
-	*"RouterBOARD SXT Lite2")
-		name="rb-sxt2n"
-		;;
-	*"RouterBOARD SXT Lite5")
-		name="rb-sxt5n"
-		;;
-	*"RouterBOARD wAP 2nD r2")
-		name="rb-wap-2nd"
-		;;
-	*"RouterBOARD wAP G-5HacT2HnD")
-		name="rb-wapg-5hact2hnd"
 		;;
 	*"RouterStation")
 		name="routerstation"
@@ -1277,6 +1403,9 @@ ar71xx_board_detect() {
 	*"TL-WR940N v4")
 		name="tl-wr940n-v4"
 		;;
+	*"TL-WR940N v6")
+		name="tl-wr940n-v6"
+		;;
 	*"TL-WR941N/ND v5")
 		name="tl-wr941nd-v5"
 		;;
@@ -1289,6 +1418,9 @@ ar71xx_board_detect() {
 	*"TL-WR942N v1")
 		name="tl-wr942n-v1"
 		;;
+	*"TS-D084")
+		name="ts-d084"
+		;;
 	*"Tube2H")
 		name="tube2h"
 		;;
@@ -1300,9 +1432,11 @@ ar71xx_board_detect() {
 		;;
 	*"UniFi-AC-LITE/MESH")
 		name="unifiac-lite"
+		ubnt_unifi_ac_board_detect
 		;;
-	*"UniFi-AC-PRO")
+	*"UniFi-AC-PRO/MESH-PRO")
 		name="unifiac-pro"
+		ubnt_unifi_ac_board_detect
 		;;
 	*"UniFiAP Outdoor")
 		name="unifi-outdoor"
@@ -1315,11 +1449,11 @@ ar71xx_board_detect() {
 		;;
 	*"WBS210")
 		name="wbs210"
-		tplink_pharos_board_detect
+		tplink_pharos_board_detect "$(tplink_pharos_get_model_string | tr -d '\r')"
 		;;
 	*"WBS510")
 		name="wbs510"
-		tplink_pharos_board_detect
+		tplink_pharos_board_detect "$(tplink_pharos_get_model_string | tr -d '\r')"
 		;;
 	"WeIO"*)
 		name="weio"

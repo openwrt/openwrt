@@ -128,6 +128,49 @@ ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
 }
 
 static void
+ar8327_phy_rgmii_set(struct ar8xxx_priv *priv, struct phy_device *phydev)
+{
+	u16 phy_val = 0;
+	int phyaddr = phydev->mdio.addr;
+	struct device_node *np = phydev->mdio.dev.of_node;
+
+	if (!np)
+		return;
+
+	if (!of_property_read_bool(np, "qca,phy-rgmii-en")) {
+		pr_err("ar8327: qca,phy-rgmii-en is not specified\n");
+		return;
+	}
+	ar8xxx_phy_dbg_read(priv, phyaddr,
+				AR8327_PHY_MODE_SEL, &phy_val);
+	phy_val |= AR8327_PHY_MODE_SEL_RGMII;
+	ar8xxx_phy_dbg_write(priv, phyaddr,
+				AR8327_PHY_MODE_SEL, phy_val);
+
+	/* set rgmii tx clock delay if needed */
+	if (!of_property_read_bool(np, "qca,txclk-delay-en")) {
+		pr_err("ar8327: qca,txclk-delay-en is not specified\n");
+		return;
+	}
+	ar8xxx_phy_dbg_read(priv, phyaddr,
+				AR8327_PHY_SYS_CTRL, &phy_val);
+	phy_val |= AR8327_PHY_SYS_CTRL_RGMII_TX_DELAY;
+	ar8xxx_phy_dbg_write(priv, phyaddr,
+				AR8327_PHY_SYS_CTRL, phy_val);
+
+	/* set rgmii rx clock delay if needed */
+	if (!of_property_read_bool(np, "qca,rxclk-delay-en")) {
+		pr_err("ar8327: qca,rxclk-delay-en is not specified\n");
+		return;
+	}
+	ar8xxx_phy_dbg_read(priv, phyaddr,
+				AR8327_PHY_TEST_CTRL, &phy_val);
+	phy_val |= AR8327_PHY_TEST_CTRL_RGMII_RX_DELAY;
+	ar8xxx_phy_dbg_write(priv, phyaddr,
+				AR8327_PHY_TEST_CTRL, phy_val);
+}
+
+static void
 ar8327_phy_fixup(struct ar8xxx_priv *priv, int phy)
 {
 	switch (priv->chip_rev) {
@@ -506,14 +549,6 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 	ar8xxx_write(priv, AR8327_REG_PAD0_MODE, t);
 
 	t = ar8327_get_pad_cfg(pdata->pad5_cfg);
-	if (chip_is_ar8337(priv)) {
-		/*
-		 * Workaround: RGMII RX delay setting needs to be
-		 * always specified for AR8337 to avoid port 5
-		 * RX hang on high traffic / flood conditions
-		 */
-		t |= AR8327_PAD_RGMII_RXCLK_DELAY_EN;
-	}
 	ar8xxx_write(priv, AR8327_REG_PAD5_MODE, t);
 	t = ar8327_get_pad_cfg(pdata->pad6_cfg);
 	ar8xxx_write(priv, AR8327_REG_PAD6_MODE, t);
@@ -627,8 +662,8 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 	if (!priv->chip_data)
 		return -ENOMEM;
 
-	if (priv->phy->mdio.dev.of_node)
-		ret = ar8327_hw_config_of(priv, priv->phy->mdio.dev.of_node);
+	if (priv->pdev->of_node)
+		ret = ar8327_hw_config_of(priv, priv->pdev->of_node);
 	else
 		ret = ar8327_hw_config_pdata(priv,
 					     priv->phy->mdio.dev.platform_data);
@@ -678,39 +713,6 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 	/* Disable EEE on all phy's due to stability issues */
 	for (i = 0; i < AR8XXX_NUM_PHYS; i++)
 		data->eee[i] = false;
-
-	if (chip_is_ar8337(priv)) {
-		/* Update HOL registers with values suggested by QCA switch team */
-		for (i = 0; i < AR8327_NUM_PORTS; i++) {
-			if (i == AR8216_PORT_CPU || i == 5 || i == 6) {
-				t = 0x3 << AR8327_PORT_HOL_CTRL0_EG_PRI0_BUF_S;
-				t |= 0x4 << AR8327_PORT_HOL_CTRL0_EG_PRI1_BUF_S;
-				t |= 0x4 << AR8327_PORT_HOL_CTRL0_EG_PRI2_BUF_S;
-				t |= 0x4 << AR8327_PORT_HOL_CTRL0_EG_PRI3_BUF_S;
-				t |= 0x6 << AR8327_PORT_HOL_CTRL0_EG_PRI4_BUF_S;
-				t |= 0x8 << AR8327_PORT_HOL_CTRL0_EG_PRI5_BUF_S;
-				t |= 0x1e << AR8327_PORT_HOL_CTRL0_EG_PORT_BUF_S;
-			} else {
-				t = 0x3 << AR8327_PORT_HOL_CTRL0_EG_PRI0_BUF_S;
-				t |= 0x4 << AR8327_PORT_HOL_CTRL0_EG_PRI1_BUF_S;
-				t |= 0x6 << AR8327_PORT_HOL_CTRL0_EG_PRI2_BUF_S;
-				t |= 0x8 << AR8327_PORT_HOL_CTRL0_EG_PRI3_BUF_S;
-				t |= 0x19 << AR8327_PORT_HOL_CTRL0_EG_PORT_BUF_S;
-			}
-			ar8xxx_write(priv, AR8327_REG_PORT_HOL_CTRL0(i), t);
-
-			t = 0x6 << AR8327_PORT_HOL_CTRL1_ING_BUF_S;
-			t |= AR8327_PORT_HOL_CTRL1_EG_PRI_BUF_EN;
-			t |= AR8327_PORT_HOL_CTRL1_EG_PORT_BUF_EN;
-			t |= AR8327_PORT_HOL_CTRL1_WRED_EN;
-			ar8xxx_rmw(priv, AR8327_REG_PORT_HOL_CTRL1(i),
-				   AR8327_PORT_HOL_CTRL1_ING_BUF |
-				   AR8327_PORT_HOL_CTRL1_EG_PRI_BUF_EN |
-				   AR8327_PORT_HOL_CTRL1_EG_PORT_BUF_EN |
-				   AR8327_PORT_HOL_CTRL1_WRED_EN,
-				   t);
-		}
-	}
 }
 
 static void
@@ -1083,8 +1085,10 @@ ar8327_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
 {
 	int timeout = 20;
 
-	while (ar8xxx_mii_read32(priv, r2, r1) & AR8327_ATU_FUNC_BUSY && --timeout)
-                udelay(10);
+	while (ar8xxx_mii_read32(priv, r2, r1) & AR8327_ATU_FUNC_BUSY && --timeout) {
+		udelay(10);
+		cond_resched();
+	}
 
 	if (!timeout)
 		pr_err("ar8327: timeout waiting for atu to become ready\n");
@@ -1096,8 +1100,7 @@ static void ar8327_get_arl_entry(struct ar8xxx_priv *priv,
 	struct mii_bus *bus = priv->mii_bus;
 	u16 r2, page;
 	u16 r1_data0, r1_data1, r1_data2, r1_func;
-	u32 t, val0, val1, val2;
-	int i;
+	u32 val0, val1, val2;
 
 	split_addr(AR8327_REG_ATU_DATA0, &r1_data0, &r2, &page);
 	r2 |= 0x10;
@@ -1134,12 +1137,7 @@ static void ar8327_get_arl_entry(struct ar8xxx_priv *priv,
 		if (!*status)
 			break;
 
-		i = 0;
-		t = AR8327_ATU_PORT0;
-		while (!(val1 & t) && ++i < AR8327_NUM_PORTS)
-			t <<= 1;
-
-		a->port = i;
+		a->portmap = (val1 & AR8327_ATU_PORTS) >> AR8327_ATU_PORTS_S;
 		a->mac[0] = (val0 & AR8327_ATU_ADDR0) >> AR8327_ATU_ADDR0_S;
 		a->mac[1] = (val0 & AR8327_ATU_ADDR1) >> AR8327_ATU_ADDR1_S;
 		a->mac[2] = (val0 & AR8327_ATU_ADDR2) >> AR8327_ATU_ADDR2_S;
@@ -1325,6 +1323,20 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 	},
 	{
 		.type = SWITCH_TYPE_INT,
+		.name = "ar8xxx_mib_poll_interval",
+		.description = "MIB polling interval in msecs (0 to disable)",
+		.set = ar8xxx_sw_set_mib_poll_interval,
+		.get = ar8xxx_sw_get_mib_poll_interval
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "ar8xxx_mib_type",
+		.description = "MIB type (0=basic 1=extended)",
+		.set = ar8xxx_sw_set_mib_type,
+		.get = ar8xxx_sw_get_mib_type
+	},
+	{
+		.type = SWITCH_TYPE_INT,
 		.name = "enable_mirror_rx",
 		.description = "Enable mirroring of RX packets",
 		.set = ar8xxx_sw_set_mirror_rx_enable,
@@ -1459,16 +1471,7 @@ static const struct switch_dev_ops ar8327_sw_ops = {
 	.apply_config = ar8327_sw_hw_apply,
 	.reset_switch = ar8xxx_sw_reset_switch,
 	.get_port_link = ar8xxx_sw_get_port_link,
-/* The following op is disabled as it hogs the CPU and degrades performance.
-   An implementation has been attempted in 4d8a66d but reading MIB data is slow
-   on ar8xxx switches.
-
-   The high CPU load has been traced down to the ar8xxx_reg_wait() call in
-   ar8xxx_mib_op(), which has to usleep_range() till the MIB busy flag set by
-   the request to update the MIB counter is cleared. */
-#if 0
 	.get_port_stats = ar8xxx_sw_get_port_stats,
-#endif
 };
 
 const struct ar8xxx_chip ar8327_chip = {
@@ -1478,41 +1481,7 @@ const struct ar8xxx_chip ar8327_chip = {
 
 	.name = "Atheros AR8327",
 	.ports = AR8327_NUM_PORTS,
-	.vlans = AR8X16_MAX_VLANS,
-	.swops = &ar8327_sw_ops,
-
-	.reg_port_stats_start = 0x1000,
-	.reg_port_stats_length = 0x100,
-	.reg_arl_ctrl = AR8327_REG_ARL_CTRL,
-
-	.hw_init = ar8327_hw_init,
-	.cleanup = ar8327_cleanup,
-	.init_globals = ar8327_init_globals,
-	.init_port = ar8327_init_port,
-	.setup_port = ar8327_setup_port,
-	.read_port_status = ar8327_read_port_status,
-	.read_port_eee_status = ar8327_read_port_eee_status,
-	.atu_flush = ar8327_atu_flush,
-	.atu_flush_port = ar8327_atu_flush_port,
-	.vtu_flush = ar8327_vtu_flush,
-	.vtu_load_vlan = ar8327_vtu_load_vlan,
-	.set_mirror_regs = ar8327_set_mirror_regs,
-	.get_arl_entry = ar8327_get_arl_entry,
-	.sw_hw_apply = ar8327_sw_hw_apply,
-
-	.num_mibs = ARRAY_SIZE(ar8236_mibs),
-	.mib_decs = ar8236_mibs,
-	.mib_func = AR8327_REG_MIB_FUNC
-};
-
-const struct ar8xxx_chip ar8337_chip = {
-	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
-	.config_at_probe = true,
-	.mii_lo_first = true,
-
-	.name = "Atheros AR8337",
-	.ports = AR8327_NUM_PORTS,
-	.vlans = AR8X16_MAX_VLANS,
+	.vlans = AR83X7_MAX_VLANS,
 	.swops = &ar8327_sw_ops,
 
 	.reg_port_stats_start = 0x1000,
@@ -1537,5 +1506,45 @@ const struct ar8xxx_chip ar8337_chip = {
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
-	.mib_func = AR8327_REG_MIB_FUNC
+	.mib_func = AR8327_REG_MIB_FUNC,
+	.mib_rxb_id = AR8236_MIB_RXB_ID,
+	.mib_txb_id = AR8236_MIB_TXB_ID,
+};
+
+const struct ar8xxx_chip ar8337_chip = {
+	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+	.config_at_probe = true,
+	.mii_lo_first = true,
+
+	.name = "Atheros AR8337",
+	.ports = AR8327_NUM_PORTS,
+	.vlans = AR83X7_MAX_VLANS,
+	.swops = &ar8327_sw_ops,
+
+	.reg_port_stats_start = 0x1000,
+	.reg_port_stats_length = 0x100,
+	.reg_arl_ctrl = AR8327_REG_ARL_CTRL,
+
+	.hw_init = ar8327_hw_init,
+	.cleanup = ar8327_cleanup,
+	.init_globals = ar8327_init_globals,
+	.init_port = ar8327_init_port,
+	.setup_port = ar8327_setup_port,
+	.read_port_status = ar8327_read_port_status,
+	.read_port_eee_status = ar8327_read_port_eee_status,
+	.atu_flush = ar8327_atu_flush,
+	.atu_flush_port = ar8327_atu_flush_port,
+	.vtu_flush = ar8327_vtu_flush,
+	.vtu_load_vlan = ar8327_vtu_load_vlan,
+	.phy_fixup = ar8327_phy_fixup,
+	.set_mirror_regs = ar8327_set_mirror_regs,
+	.get_arl_entry = ar8327_get_arl_entry,
+	.sw_hw_apply = ar8327_sw_hw_apply,
+	.phy_rgmii_set = ar8327_phy_rgmii_set,
+
+	.num_mibs = ARRAY_SIZE(ar8236_mibs),
+	.mib_decs = ar8236_mibs,
+	.mib_func = AR8327_REG_MIB_FUNC,
+	.mib_rxb_id = AR8236_MIB_RXB_ID,
+	.mib_txb_id = AR8236_MIB_TXB_ID,
 };

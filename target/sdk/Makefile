@@ -49,6 +49,12 @@ BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C svn inf
 BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),src-git base $(PROJECT_GIT)/openwrt/openwrt.git$(if $(GIT_BRANCH),;$(GIT_BRANCH),$(if $(GIT_TAGNAME),;$(GIT_TAGNAME))))
 
 KDIR_BASE = $(patsubst $(TOPDIR)/%,%,$(LINUX_DIR))
+KDIR_ARCHES = $(LINUX_KARCH)
+
+# arch/arm64/ includes reference files in arch/arm/, so we'll need both
+ifeq ($(LINUX_KARCH),arm64)
+  KDIR_ARCHES += arm
+endif
 
 KERNEL_FILES_ARCH = \
 	Makefile* \
@@ -58,16 +64,18 @@ KERNEL_FILES_ARCH = \
 	include \
 	*/include \
 	scripts \
-	kernel/asm-offsets.s
+	kernel/asm-offsets.s \
+	kernel/module.lds
 
 KERNEL_FILES_BASE := \
 	.config \
 	Makefile \
 	scripts \
+	tools/objtool \
 	include \
 	Module.symvers \
 	modules.builtin \
-	$(addprefix arch/$(LINUX_KARCH)/,$(KERNEL_FILES_ARCH))
+	$(foreach arch,$(KDIR_ARCHES),$(addprefix arch/$(arch)/,$(KERNEL_FILES_ARCH)))
 
 KERNEL_FILES := $(patsubst $(TOPDIR)/%,%,$(wildcard $(addprefix $(LINUX_DIR)/,$(KERNEL_FILES_BASE))))
 
@@ -77,15 +85,20 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 	mkdir -p $(SDK_BUILD_DIR)/dl $(SDK_BUILD_DIR)/package
 	$(CP) -L $(INCLUDE_DIR) $(SCRIPT_DIR) $(SDK_BUILD_DIR)/
 	$(TAR) -cf - -C $(TOPDIR) \
-		`cd $(TOPDIR); find $(KDIR_BASE) -name \*.ko` \
+		`cd $(TOPDIR); find $(KDIR_BASE)/ -name \*.ko` \
 		`cd $(TOPDIR); find $(KDIR_BASE)/firmware/ -newer $(KDIR_BASE)/firmware/Makefile \
 			-type f -name '*.bin' -or -name '*.cis' -or -name '*.csp' -or -name '*.dsp' -or -name '*.fw'` \
 		$(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") \
 		$(SDK_DIRS) $(KERNEL_FILES) | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
 
+	# Copy usbip sources, this is required for the usbip userspace packages to be buildable by the SDK.
+	$(TAR) -cf - -C $(TOPDIR) $(KDIR_BASE)/tools/usb/usbip/ | \
+		$(TAR) -xf - -C $(SDK_BUILD_DIR)
+
 	(cd $(SDK_BUILD_DIR); find $(STAGING_SUBDIR_HOST)/bin $(STAGING_SUBDIR_HOST)/usr/bin \
 		$(STAGING_SUBDIR_TOOLCHAIN)/bin $(STAGING_SUBDIR_TOOLCHAIN)/*/bin $(STAGING_SUBDIR_TOOLCHAIN)/libexec \
+		$(KDIR_BASE) \
 		-type f | $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST))
 
 	@-( \
@@ -125,7 +138,8 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 	-rm -rf \
 		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/ccache \
 		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TARGET)/ccache \
-		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TOOLCHAIN)/ccache
+		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TOOLCHAIN)/ccache \
+		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/.prereq-build
 
 	-rm -f $(SDK_BUILD_DIR)/feeds.conf.default
 	$(if $(BASE_FEED),echo "$(BASE_FEED)" > $(SDK_BUILD_DIR)/feeds.conf.default)

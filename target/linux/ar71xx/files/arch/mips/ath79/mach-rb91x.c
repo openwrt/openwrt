@@ -10,12 +10,17 @@
 
 #define pr_fmt(fmt) "rb91x: " fmt
 
+#include <linux/version.h>
 #include <linux/phy.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <linux/ath9k_platform.h>
 #include <linux/mtd/mtd.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
 #include <linux/mtd/nand.h>
+#else
+#include <linux/mtd/rawnand.h>
+#endif
 #include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/74x164.h>
@@ -214,7 +219,7 @@ static struct gpio_led rb711gr100_leds[] __initdata = {
 		.name		= "rb:green:power",
 		.gpio		= RB91X_GPIO_LED_POWER,
 		.active_low	= 0,
-		.default_state	= LEDS_GPIO_DEFSTATE_KEEP,
+		.default_state	= LEDS_GPIO_DEFSTATE_ON,
 	},
 };
 
@@ -227,7 +232,7 @@ static struct at803x_platform_data rb91x_at803x_data = {
 static struct mdio_board_info rb91x_mdio0_info[] = {
 	{
 		.bus_id = "ag71xx-mdio.0",
-		.phy_addr = 0,
+		.mdio_addr = 0,
 		.platform_data = &rb91x_at803x_data,
 	},
 };

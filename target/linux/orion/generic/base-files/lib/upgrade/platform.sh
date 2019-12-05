@@ -6,7 +6,7 @@
 # use default for platform_do_upgrade()
 
 platform_check_image() {
-	[ "${ARGC}" -gt 1 ] && { echo 'Too many arguments. Only flash file expected.'; return 1; }
+	[ "$#" -gt 1 ] && { echo 'Too many arguments. Only flash file expected.'; return 1; }
 
 	local hardware="$(board_name)"
 	local magic="$(get_magic_word "$1")"

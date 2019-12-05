@@ -43,7 +43,7 @@ set_state() {
 		status_led="spw303v:green:power+adsl"
 		;;
 	vh4032n)
-		status_led="VH4032N:red:power"
+		status_led="VH4032N:blue:power"
 		;;
 	vr-3025un)
 		status_led="VR-3025un:green:power"
@@ -131,6 +131,10 @@ set_state() {
 		;;
 	rta770w)
 		status_led="RTA770W:green:diag"
+		;;
+	sr102)
+		status_led="SR102:white:power"
+		status_led2="SR102:red:power"
 		;;
 	spw500v)
 		status_led="SPW500V:green:power"

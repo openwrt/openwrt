@@ -16,7 +16,6 @@
  */
 
 #include "qcom-ipq4019.dtsi"
-#include "qcom-ipq4019-bus.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/soc/qcom,tcsr.h>
@@ -24,27 +23,6 @@
 / {
 	model = "OpenMesh A42";
 	compatible = "openmesh,a42", "qcom,ipq4019";
-
-	reserved-memory {
-		#address-cells = <0x1>;
-		#size-cells = <0x1>;
-		ranges;
-
-		rsvd1@87000000 {
-			reg = <0x87000000 0x500000>;
-			no-map;
-		};
-
-		wifi_dump@87500000 {
-			reg = <0x87500000 0x600000>;
-			no-map;
-		};
-
-		rsvd2@87B00000 {
-			reg = <0x87b00000 0x500000>;
-			no-map;
-		};
-	};
 
 	soc {
 		mdio@90000 {
@@ -60,7 +38,7 @@
 			compatible = "qcom,tcsr";
 			reg = <0x194b000 0x100>;
 			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
-			status = "ok";
+			status = "okay";
 		};
 
 		tcsr@1949000 {
@@ -82,21 +60,15 @@
 		};
 
 		usb2: usb2@60f8800 {
-			status = "ok";
-		};
-
-		serial@78af000 {
-			pinctrl-0 = <&serial_pins>;
-			pinctrl-names = "default";
-			status = "ok";
+			status = "okay";
 		};
 
 		crypto@8e3a000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		watchdog@b017000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		ess-switch@c000000 {
@@ -108,7 +80,7 @@
 		};
 	};
 
-	gpio-keys {
+	keys {
 		compatible = "gpio-keys";
 
 		reset {
@@ -125,7 +97,7 @@
 		led-upgrade = &power;
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		red {
@@ -183,14 +155,14 @@
 };
 
 &blsp_dma {
-	status = "ok";
+	status = "okay";
 };
 
-&spi_0 {
+&blsp1_spi1 {
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
-	status = "ok";
-	cs-gpios = <&tlmm 54 0>;
+	status = "okay";
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
 
 	m25p80@0 {
 		#address-cells = <1>;
@@ -202,8 +174,14 @@
 	};
 };
 
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &cryptobam {
-	status = "ok";
+	status = "okay";
 };
 
 &gmac0 {
@@ -223,7 +201,7 @@
 };
 
 &usb2_hs_phy {
-	status = "ok";
+	status = "okay";
 };
 
 &wifi0 {

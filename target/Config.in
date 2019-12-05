@@ -2,6 +2,9 @@ source "tmp/.config-target.in"
 
 # Kernel/Hardware features
 
+config HAS_TESTING_KERNEL
+	bool
+
 config HAS_SPE_FPU
 	depends on powerpc
 	select HAS_FPU
@@ -94,6 +97,12 @@ config ARCH_64BIT
 	bool
 
 config VIRTIO_SUPPORT
+	bool
+
+config USES_ROOTFS_PART
+	bool
+
+config USES_BOOT_PART
 	bool
 
 # Architecture selection

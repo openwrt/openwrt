@@ -69,7 +69,6 @@ mode
 mssfix
 mtu_disc
 mute
-ncp_ciphers
 nice
 ns_cert_type
 ping
@@ -118,7 +117,6 @@ status_version
 syslog
 tcp_queue_limit
 tls_auth
-tls_cipher
 tls_crypt
 tls_timeout
 tls_verify
@@ -132,6 +130,7 @@ txqueuelen
 up
 user
 verb
+verify_client_cert
 verify_x509_name
 x509_username_field
 '
@@ -143,7 +142,6 @@ auth_user_pass_optional
 bind
 ccd_exclusive
 client
-client_cert_not_required
 client_to_client
 comp_noadapt
 disable
@@ -155,7 +153,6 @@ float
 http_proxy_retry
 ifconfig_noexec
 ifconfig_nowarn
-ifconfig_pool_linear
 management_forget_disconnect
 management_hold
 management_query_passwords
@@ -167,9 +164,6 @@ multihome
 mute_replay_warnings
 ncp_disable
 nobind
-no_iv
-no_name_remapping
-no_replay
 opt_verify
 passtos
 persist_key
@@ -191,8 +185,13 @@ test_crypto
 tls_client
 tls_exit
 tls_server
-tun_ipv6
 up_delay
 up_restart
 username_as_common_name
+'
+
+OPENVPN_LIST='
+ncp_ciphers
+tls_cipher
+tls_ciphersuites
 '

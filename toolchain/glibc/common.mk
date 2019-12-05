@@ -7,13 +7,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=glibc
-PKG_VERSION:=2.26
+PKG_VERSION:=2.27
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=d300041c533a3d837c9f37a099bcc95466860e98
-PKG_MIRROR_HASH:=31e90926a1d3093355aa85c04c68b3d109c3dc3d9f80afe50505e864b32ac784
-PKG_SOURCE_URL:=git://sourceware.org/git/glibc.git
+PKG_SOURCE_VERSION:=5b4f7382af46b4187a958e40fb3123ac3ce16810
+PKG_MIRROR_HASH:=8ab4c8c1f769c4d5d482c30e7aa029f1cc2c8163c347ca5f0d8224a7b4b61ddd
+PKG_SOURCE_URL:=https://sourceware.org/git/glibc.git
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.xz
 
 HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(PKG_SOURCE_SUBDIR)
@@ -44,6 +44,7 @@ endif
 # only -O2 tested by upstream changeset
 # "Optimize i386 syscall inlining for GCC 5"
 GLIBC_CONFIGURE:= \
+	unset LD_LIBRARY_PATH; \
 	BUILD_CC="$(HOSTCC)" \
 	$(TARGET_CONFIGURE_OPTS) \
 	CFLAGS="-O2 $(filter-out -Os,$(call qstrip,$(TARGET_CFLAGS)))" \

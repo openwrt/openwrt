@@ -135,6 +135,22 @@ endef
 $(eval $(call KernelPackage,sound-seq))
 
 
+define KernelPackage/sound-ens1371
+  TITLE:=(Creative) Ensoniq AudioPCI 1371
+  KCONFIG:=CONFIG_SND_ENS1371
+  DEPENDS:=@PCI_SUPPORT +kmod-ac97
+  FILES:=$(LINUX_DIR)/sound/pci/snd-ens1371.ko
+  AUTOLOAD:=$(call AutoLoad,36,snd-ens1371)
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-ens1371/description
+ support for (Creative) Ensoniq AudioPCI 1371 chips
+endef
+
+$(eval $(call KernelPackage,sound-ens1371))
+
+
 define KernelPackage/sound-i8x0
   TITLE:=Intel/SiS/nVidia/AMD/ALi AC97 Controller
   DEPENDS:=+kmod-ac97
@@ -172,9 +188,10 @@ $(eval $(call KernelPackage,sound-via82xx))
 
 define KernelPackage/sound-soc-core
   TITLE:=SoC sound support
-  DEPENDS:=+kmod-regmap +kmod-ac97
+  DEPENDS:=+kmod-regmap-core +kmod-ac97
   KCONFIG:= \
 	CONFIG_SND_SOC \
+	CONFIG_SND_SOC_ADI=n \
 	CONFIG_SND_SOC_DMAENGINE_PCM=y \
 	CONFIG_SND_SOC_ALL_CODECS=n
   FILES:=$(LINUX_DIR)/sound/soc/snd-soc-core.ko
@@ -305,7 +322,7 @@ define KernelPackage/sound-hda-core
 	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec.ko \
 	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-generic.ko
   AUTOLOAD:=$(call AutoProbe,snd-hda-core@ge4.1 snd-hda-codec snd-hda-codec-generic)
-  $(call AddDepends/sound,+kmod-regmap)
+  $(call AddDepends/sound,+kmod-regmap-core)
 endef
 
 define KernelPackage/sound-hda-core/description

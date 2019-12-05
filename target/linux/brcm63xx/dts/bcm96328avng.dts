@@ -13,7 +13,7 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		inet_fail {
@@ -56,8 +56,6 @@
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		linux,part-probe = "bcm63xxpart";
 
 		partitions {
 			compatible = "brcm,bcm963xx-cfe-nor-partitions";

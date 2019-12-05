@@ -5,9 +5,9 @@ PKG_RELEASE=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/libubox.git
-PKG_SOURCE_DATE:=2018-02-08
-PKG_SOURCE_VERSION:=bb0c830b2a259b7c5ffa7c309ce9d3004f3c41a1
-PKG_MIRROR_HASH:=25d6a194b0dfdcf85119af90d354e00b8d1c20df94aa0f5ec43cf0399f407298
+PKG_MIRROR_HASH:=e7ef39ffe693d6f106aa320268d90a68aebd0a0aa1baa0051d70b3bb1f8a64fc
+PKG_SOURCE_DATE:=2019-11-24
+PKG_SOURCE_VERSION:=07413cce72e19520af55dfcbc765484f5ab41dd9
 CMAKE_INSTALL:=1
 
 PKG_LICENSE:=ISC
@@ -16,6 +16,8 @@ PKG_LICENSE_FILES:=
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 PKG_BUILD_DEPENDS:=lua
+HOST_BUILD_DEPENDS:=libjson-c/host
+HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
@@ -25,7 +27,7 @@ define Package/libubox
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Basic utility library
-  ABI_VERSION:=$(PKG_VERSION)
+  ABI_VERSION:=20170601
   DEPENDS:=
 endef
 
@@ -95,6 +97,9 @@ endef
 CMAKE_HOST_OPTIONS += \
 	-DBUILD_LUA=OFF \
 	-DBUILD_EXAMPLES=OFF \
+	-DCMAKE_SKIP_RPATH=FALSE \
+	-DCMAKE_MACOSX_RPATH=1 \
+	-DCMAKE_INSTALL_RPATH="${STAGING_DIR_HOST}/lib" \
 
 $(eval $(call BuildPackage,libubox))
 $(eval $(call BuildPackage,libblobmsg-json))
