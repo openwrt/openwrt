@@ -189,30 +189,14 @@
 			};
 		};
 
-		phy@100f8800 {		/* USB3 port 1 HS phy */
-			status = "okay";
-		};
-
-		phy@100f8830 {		/* USB3 port 1 SS phy */
-			status = "okay";
-		};
-
-		phy@110f8800 {		/* USB3 port 0 HS phy */
-			status = "okay";
-		};
-
-		phy@110f8830 {		/* USB3 port 0 SS phy */
-			status = "okay";
-		};
-
-		usb30@0 {
+		usb3_0: usb3@110f8800 {
 			status = "okay";
 
 			pinctrl-0 = <&usb0_pwr_en_pins>;
 			pinctrl-names = "default";
 		};
 
-		usb30@1 {
+		usb3_1: usb3@100f8800 {
 			status = "okay";
 
 			pinctrl-0 = <&usb1_pwr_en_pins>;

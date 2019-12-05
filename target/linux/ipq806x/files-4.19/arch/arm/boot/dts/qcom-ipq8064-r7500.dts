@@ -132,32 +132,12 @@
 			status = "okay";
 		};
 
-		phy@100f8800 {		/* USB3 port 1 HS phy */
-			clocks = <&gcc USB30_0_UTMI_CLK>;
-			status = "okay";
-		};
-
-		phy@100f8830 {		/* USB3 port 1 SS phy */
-			clocks = <&gcc USB30_0_MASTER_CLK>;
-			status = "okay";
-		};
-
-		phy@110f8800 {		/* USB3 port 0 HS phy */
-			clocks = <&gcc USB30_1_UTMI_CLK>;
-			status = "okay";
-		};
-
-		phy@110f8830 {		/* USB3 port 0 SS phy */
+		usb3_0: usb3@110f8800 {
 			clocks = <&gcc USB30_1_MASTER_CLK>;
 			status = "okay";
 		};
 
-		usb30@0 {
-			clocks = <&gcc USB30_1_MASTER_CLK>;
-			status = "okay";
-		};
-
-		usb30@1 {
+		usb3_1: usb3@100f8800 {
 			clocks = <&gcc USB30_0_MASTER_CLK>;
 			status = "okay";
 		};
