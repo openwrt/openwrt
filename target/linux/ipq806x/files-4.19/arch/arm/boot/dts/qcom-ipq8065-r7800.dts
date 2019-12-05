@@ -241,11 +241,41 @@
 
 		pcie0: pci@1b500000 {
 			status = "okay";
+
+			bridge@0,0 {
+				reg = <0x00000000 0 0 0 0>;
+				#address-cells = <3>;
+				#size-cells = <2>;
+				ranges;
+
+				wifi@1,0 {
+					compatible = "pci168c,0046";
+					reg = <0x00010000 0 0 0 0>;
+
+					mtd-mac-address = <&art 6>;
+					mtd-mac-address-increment = <(1)>;
+				};
+			};
 		};
 
 		pcie1: pci@1b700000 {
 			status = "okay";
 			force_gen1 = <1>;
+
+			bridge@0,0 {
+				reg = <0x00000000 0 0 0 0>;
+				#address-cells = <3>;
+				#size-cells = <2>;
+				ranges;
+
+				wifi@1,0 {
+					compatible = "pci168c,0046";
+					reg = <0x00010000 0 0 0 0>;
+
+					mtd-mac-address = <&art 6>;
+					mtd-mac-address-increment = <(2)>;
+				};
+			};
 		};
 
 		nand@1ac00000 {
