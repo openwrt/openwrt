@@ -70,6 +70,7 @@
 			CPU_SPC: spc {
 				compatible = "qcom,idle-state-spc",
 						"arm,idle-state";
+				status = "okay";
 				entry-latency-us = <400>;
 				exit-latency-us = <900>;
 				min-residency-us = <3000>;
@@ -704,13 +705,13 @@
 		};
 
 		saw0: regulator@2089000 {
-			compatible = "qcom,saw2", "syscon";
+			compatible = "qcom,saw2", "qcom,apq8064-saw2-v1.1-cpu", "syscon";
 			reg = <0x02089000 0x1000>, <0x02009000 0x1000>;
 			regulator;
 		};
 
 		saw1: regulator@2099000 {
-			compatible = "qcom,saw2", "syscon";
+			compatible = "qcom,saw2", "qcom,apq8064-saw2-v1.1-cpu", "syscon";
 			reg = <0x02099000 0x1000>, <0x02009000 0x1000>;
 			regulator;
 		};
