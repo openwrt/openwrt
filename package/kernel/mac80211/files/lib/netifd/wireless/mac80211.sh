@@ -925,7 +925,7 @@ drv_mac80211_setup() {
 	for_each_interface "sta adhoc mesh monitor" mac80211_prepare_vif
 	NEWAPLIST=
 	for_each_interface "ap" mac80211_prepare_vif
-	NEW_MD5=$(md5sum ${hostapd_conf_file})
+	NEW_MD5=$(test -e "${hostapd_conf_file}" && md5sum ${hostapd_conf_file})
 	OLD_MD5=$(uci -q -P /var/state get wireless._${phy}.md5)
 	if [ "${NEWAPLIST}" != "${OLDAPLIST}" ]; then
 		mac80211_vap_cleanup hostapd "${OLDAPLIST}"
