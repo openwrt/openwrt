@@ -914,7 +914,7 @@
 			status = "disabled";
 		};
 
-		sata@29000000 {
+		sata: sata@29000000 {
 			compatible = "qcom,ipq806x-ahci", "generic-ahci";
 			reg = <0x29000000 0x180>;
 
@@ -1244,7 +1244,7 @@
 			status = "disabled";
 		};
 
-		nand@1ac00000 {
+		nand: nand@1ac00000 {
 			compatible = "qcom,ipq806x-nand";
 			reg = <0x1ac00000 0x800>;
 
