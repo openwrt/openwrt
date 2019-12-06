@@ -1,0 +1,8 @@
+#!/bin/sh
+
+[ ! -z "$(uci -q get network.lan.ifname)" ] && exit 0
+
+uci set wireless.@wifi-device[0].disabled=0
+uci commit wireless
+
+exit 0
