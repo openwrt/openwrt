@@ -1271,3 +1271,29 @@ void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *
 
 	ubus_notify(ctx, &hapd->ubus.obj, type, b.head, -1);
 }
+
+void hostapd_ubus_notify_beacon_report(
+	struct hostapd_data *hapd, const u8 *addr, u8 token, u8 rep_mode,
+	struct rrm_measurement_beacon_report *rep, size_t len)
+{
+	if (!hapd->ubus.obj.has_subscribers)
+		return;
+
+	if (!addr || !rep)
+		return;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_macaddr(&b, "address", addr);
+	blobmsg_add_u16(&b, "op-class", rep->op_class);
+	blobmsg_add_u16(&b, "channel", rep->channel);
+	blobmsg_add_u64(&b, "start-time", rep->start_time);
+	blobmsg_add_u16(&b, "duration", rep->duration);
+	blobmsg_add_u16(&b, "report-info", rep->report_info);
+	blobmsg_add_u16(&b, "rcpi", rep->rcpi);
+	blobmsg_add_u16(&b, "rsni", rep->rsni);
+	blobmsg_add_macaddr(&b, "bssid", rep->bssid);
+	blobmsg_add_u16(&b, "antenna-id", rep->antenna_id);
+	blobmsg_add_u16(&b, "parent-tsf", rep->parent_tsf);
+
+	ubus_notify(ctx, &hapd->ubus.obj, "beacon-report", b.head, -1);
+}
