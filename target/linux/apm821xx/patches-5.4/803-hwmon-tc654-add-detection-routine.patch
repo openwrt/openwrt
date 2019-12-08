@@ -13,7 +13,7 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
 
 --- a/drivers/hwmon/tc654.c
 +++ b/drivers/hwmon/tc654.c
-@@ -64,6 +64,11 @@ enum tc654_regs {
+@@ -55,6 +55,11 @@ enum tc654_regs {
  /* Register data is read (and cached) at most once per second. */
  #define TC654_UPDATE_INTERVAL		HZ
  
@@ -25,7 +25,7 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  struct tc654_data {
  	struct i2c_client *client;
  
-@@ -497,6 +502,29 @@ static const struct i2c_device_id tc654_
+@@ -482,6 +487,29 @@ static const struct i2c_device_id tc654_
  	{}
  };
  
@@ -55,7 +55,7 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  MODULE_DEVICE_TABLE(i2c, tc654_id);
  
  static struct i2c_driver tc654_driver = {
-@@ -505,6 +533,7 @@ static struct i2c_driver tc654_driver =
+@@ -490,6 +518,7 @@ static struct i2c_driver tc654_driver =
  		   },
  	.probe = tc654_probe,
  	.id_table = tc654_id,

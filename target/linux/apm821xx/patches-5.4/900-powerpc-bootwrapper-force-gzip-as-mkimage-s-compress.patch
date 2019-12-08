@@ -16,8 +16,6 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  arch/powerpc/boot/Makefile | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/powerpc/boot/Makefile b/arch/powerpc/boot/Makefile
-index dfbd7f22eef5..0bdef8e5f362 100644
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
 @@ -254,7 +254,7 @@ compressor-$(CONFIG_KERNEL_LZO) := lzo
@@ -29,6 +27,3 @@ index dfbd7f22eef5..0bdef8e5f362 100644
  		$(CROSSWRAP) $(if $3, -s $3)$(if $4, -d $4)$(if $5, -i $5) \
  		vmlinux
  
--- 
-2.24.0
-

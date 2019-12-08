@@ -9,6 +9,7 @@ SUBTARGETS:=generic nand tiny
 FEATURES:=ramdisk
 
 KERNEL_PATCHVER:=4.19
+KERNEL_TESTING_PATCHVER:=5.4
 
 include $(INCLUDE_DIR)/target.mk
 

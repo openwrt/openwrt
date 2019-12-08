@@ -1,0 +1,25 @@
+--- a/drivers/mtd/Kconfig
++++ b/drivers/mtd/Kconfig
+@@ -62,6 +62,12 @@ config MTD_MYLOADER_PARTS
+ 	  You will still need the parsing functions to be called by the driver
+ 	  for your particular device. It won't happen automatically.
+ 
++config MTD_TPLINK_PARTS
++	tristate "TP-Link AR7XXX/AR9XXX partitioning support"
++	depends on ATH79
++	---help---
++	  TBD.
++
+ comment "User Modules And Translation Layers"
+ 
+ #
+--- a/drivers/mtd/Makefile
++++ b/drivers/mtd/Makefile
+@@ -8,6 +8,7 @@ obj-$(CONFIG_MTD)		+= mtd.o
+ mtd-y				:= mtdcore.o mtdsuper.o mtdconcat.o mtdpart.o mtdchar.o
+ 
+ obj-y				+= parsers/
++obj-$(CONFIG_MTD_TPLINK_PARTS)	+= tplinkpart.o
+ 
+ # 'Users' - code which presents functionality to userspace.
+ obj-$(CONFIG_MTD_BLKDEVS)	+= mtd_blkdevs.o

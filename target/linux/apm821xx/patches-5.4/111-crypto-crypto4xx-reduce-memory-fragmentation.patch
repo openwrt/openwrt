@@ -28,11 +28,9 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  drivers/crypto/amcc/crypto4xx_core.c | 27 +++++++++++++--------------
  1 file changed, 13 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/crypto/amcc/crypto4xx_core.c b/drivers/crypto/amcc/crypto4xx_core.c
-index 7d6b695c4ab3..3ce5f0a24cbc 100644
 --- a/drivers/crypto/amcc/crypto4xx_core.c
 +++ b/drivers/crypto/amcc/crypto4xx_core.c
-@@ -286,7 +286,8 @@ static u32 crypto4xx_build_gdr(struct crypto4xx_device *dev)
+@@ -286,7 +286,8 @@ static u32 crypto4xx_build_gdr(struct cr
  
  static inline void crypto4xx_destroy_gdr(struct crypto4xx_device *dev)
  {
@@ -42,7 +40,7 @@ index 7d6b695c4ab3..3ce5f0a24cbc 100644
  			  sizeof(struct ce_gd) * PPC4XX_NUM_GD,
  			  dev->gdr, dev->gdr_pa);
  }
-@@ -354,13 +355,6 @@ static u32 crypto4xx_build_sdr(struct crypto4xx_device *dev)
+@@ -354,13 +355,6 @@ static u32 crypto4xx_build_sdr(struct cr
  {
  	int i;
  
@@ -56,7 +54,7 @@ index 7d6b695c4ab3..3ce5f0a24cbc 100644
  	dev->scatter_buffer_va =
  		dma_alloc_coherent(dev->core_dev->device,
  			PPC4XX_SD_BUFFER_SIZE * PPC4XX_NUM_SD,
-@@ -368,6 +362,13 @@ static u32 crypto4xx_build_sdr(struct crypto4xx_device *dev)
+@@ -368,6 +362,13 @@ static u32 crypto4xx_build_sdr(struct cr
  	if (!dev->scatter_buffer_va)
  		return -ENOMEM;
  
@@ -70,7 +68,7 @@ index 7d6b695c4ab3..3ce5f0a24cbc 100644
  	for (i = 0; i < PPC4XX_NUM_SD; i++) {
  		dev->sdr[i].ptr = dev->scatter_buffer_pa +
  				  PPC4XX_SD_BUFFER_SIZE * i;
-@@ -1439,15 +1440,14 @@ static int crypto4xx_probe(struct platform_device *ofdev)
+@@ -1439,16 +1440,15 @@ static int crypto4xx_probe(struct platfo
  	spin_lock_init(&core_dev->lock);
  	INIT_LIST_HEAD(&core_dev->dev->alg_list);
  	ratelimit_default_init(&core_dev->dev->aead_ratelimit);
@@ -83,14 +81,15 @@ index 7d6b695c4ab3..3ce5f0a24cbc 100644
 +		goto err_build_sdr;
  
  	rc = crypto4xx_build_gdr(core_dev->dev);
--	if (rc)
+ 	if (rc)
 -		goto err_build_pdr;
 -
 -	rc = crypto4xx_build_sdr(core_dev->dev);
- 	if (rc)
+-	if (rc)
  		goto err_build_sdr;
  
-@@ -1493,7 +1493,6 @@ static int crypto4xx_probe(struct platform_device *ofdev)
+ 	/* Init tasklet for bottom half processing */
+@@ -1493,7 +1493,6 @@ err_iomap:
  err_build_sdr:
  	crypto4xx_destroy_sdr(core_dev->dev);
  	crypto4xx_destroy_gdr(core_dev->dev);
@@ -98,6 +97,3 @@ index 7d6b695c4ab3..3ce5f0a24cbc 100644
  	crypto4xx_destroy_pdr(core_dev->dev);
  	kfree(core_dev->dev);
  err_alloc_dev:
--- 
-2.25.0.rc0
-

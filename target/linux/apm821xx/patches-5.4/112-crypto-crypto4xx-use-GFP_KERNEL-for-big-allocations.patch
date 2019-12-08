@@ -17,11 +17,9 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  drivers/crypto/amcc/crypto4xx_core.c | 12 ++++++------
  1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/crypto/amcc/crypto4xx_core.c b/drivers/crypto/amcc/crypto4xx_core.c
-index 3ce5f0a24cbc..981de43ea5e2 100644
 --- a/drivers/crypto/amcc/crypto4xx_core.c
 +++ b/drivers/crypto/amcc/crypto4xx_core.c
-@@ -169,7 +169,7 @@ static u32 crypto4xx_build_pdr(struct crypto4xx_device *dev)
+@@ -169,7 +169,7 @@ static u32 crypto4xx_build_pdr(struct cr
  	int i;
  	dev->pdr = dma_alloc_coherent(dev->core_dev->device,
  				      sizeof(struct ce_pd) * PPC4XX_NUM_PD,
@@ -30,7 +28,7 @@ index 3ce5f0a24cbc..981de43ea5e2 100644
  	if (!dev->pdr)
  		return -ENOMEM;
  
-@@ -185,13 +185,13 @@ static u32 crypto4xx_build_pdr(struct crypto4xx_device *dev)
+@@ -185,13 +185,13 @@ static u32 crypto4xx_build_pdr(struct cr
  	dev->shadow_sa_pool = dma_alloc_coherent(dev->core_dev->device,
  				   sizeof(union shadow_sa_buf) * PPC4XX_NUM_PD,
  				   &dev->shadow_sa_pool_pa,
@@ -46,7 +44,7 @@ index 3ce5f0a24cbc..981de43ea5e2 100644
  	if (!dev->shadow_sr_pool)
  		return -ENOMEM;
  	for (i = 0; i < PPC4XX_NUM_PD; i++) {
-@@ -277,7 +277,7 @@ static u32 crypto4xx_build_gdr(struct crypto4xx_device *dev)
+@@ -277,7 +277,7 @@ static u32 crypto4xx_build_gdr(struct cr
  {
  	dev->gdr = dma_alloc_coherent(dev->core_dev->device,
  				      sizeof(struct ce_gd) * PPC4XX_NUM_GD,
@@ -55,7 +53,7 @@ index 3ce5f0a24cbc..981de43ea5e2 100644
  	if (!dev->gdr)
  		return -ENOMEM;
  
-@@ -358,14 +358,14 @@ static u32 crypto4xx_build_sdr(struct crypto4xx_device *dev)
+@@ -358,14 +358,14 @@ static u32 crypto4xx_build_sdr(struct cr
  	dev->scatter_buffer_va =
  		dma_alloc_coherent(dev->core_dev->device,
  			PPC4XX_SD_BUFFER_SIZE * PPC4XX_NUM_SD,
@@ -72,6 +70,3 @@ index 3ce5f0a24cbc..981de43ea5e2 100644
  	if (!dev->sdr)
  		return -ENOMEM;
  
--- 
-2.25.0.rc0
-

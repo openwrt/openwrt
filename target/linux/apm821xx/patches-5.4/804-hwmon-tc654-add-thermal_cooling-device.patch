@@ -11,8 +11,6 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  drivers/hwmon/tc654.c | 103 +++++++++++++++++++++++++++++++++++-------
  1 file changed, 86 insertions(+), 17 deletions(-)
 
-diff --git a/drivers/hwmon/tc654.c b/drivers/hwmon/tc654.c
-index c7939b7c417b..66e6bbe795a5 100644
 --- a/drivers/hwmon/tc654.c
 +++ b/drivers/hwmon/tc654.c
 @@ -15,6 +15,7 @@
@@ -33,7 +31,7 @@ index c7939b7c417b..66e6bbe795a5 100644
  };
  
  /* helper to grab and cache data, at most one time per second */
-@@ -367,36 +371,30 @@ static ssize_t pwm_mode_store(struct device *dev, struct device_attribute *da,
+@@ -367,36 +371,30 @@ static ssize_t pwm_mode_store(struct dev
  static const int tc654_pwm_map[16] = { 77,  88, 102, 112, 124, 136, 148, 160,
  				      172, 184, 196, 207, 219, 231, 243, 255};
  
@@ -80,7 +78,7 @@ index c7939b7c417b..66e6bbe795a5 100644
  	mutex_lock(&data->update_lock);
  
  	if (val == 0)
-@@ -416,6 +414,22 @@ static ssize_t pwm_store(struct device *dev, struct device_attribute *da,
+@@ -416,6 +414,22 @@ static ssize_t pwm_store(struct device *
  
  out:
  	mutex_unlock(&data->update_lock);
@@ -103,7 +101,7 @@ index c7939b7c417b..66e6bbe795a5 100644
  	return ret < 0 ? ret : count;
  }
  
-@@ -447,6 +461,47 @@ static struct attribute *tc654_attrs[] = {
+@@ -447,6 +461,47 @@ static struct attribute *tc654_attrs[] =
  
  ATTRIBUTE_GROUPS(tc654);
  
@@ -151,7 +149,7 @@ index c7939b7c417b..66e6bbe795a5 100644
  /*
   * device probe and removal
   */
-@@ -478,7 +533,21 @@ static int tc654_probe(struct i2c_client *client,
+@@ -478,7 +533,21 @@ static int tc654_probe(struct i2c_client
  	hwmon_dev =
  	    devm_hwmon_device_register_with_groups(dev, client->name, data,
  						   tc654_groups);
@@ -174,6 +172,3 @@ index c7939b7c417b..66e6bbe795a5 100644
  }
  
  static const struct i2c_device_id tc654_id[] = {
--- 
-2.24.0
-
