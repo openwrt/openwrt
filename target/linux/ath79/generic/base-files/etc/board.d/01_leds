@@ -90,6 +90,10 @@ etactica,eg200)
 	ucidef_set_led_netdev "lan" "LAN" "$boardname:red:eth0" "eth0"
 	ucidef_set_led_oneshot "modbus" "Modbus" "$boardname:red:modbus" "100" "33"
 	;;
+glinet,6408|\
+glinet,6416)
+	ucidef_set_led_netdev "lan" "LAN" "gl-inet:green:lan" "eth0"
+	;;
 glinet,gl-ar150)
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth1"
 	ucidef_set_led_switch "lan" "LAN" "$boardname:green:lan" "switch0" "0x02"
