@@ -222,28 +222,19 @@ ramips_setup_macs()
 
 	case $board in
 	aigale,ai-br100|\
-	alfa-network,ac1200rm|\
 	asus,rt-ac51u|\
 	asus,rt-n12p|\
 	asus,rt-n14u|\
 	bdcom,wap2100-sk|\
-	dlink,dir-810l|\
 	edimax,ew-7478apc|\
 	fon,fon2601|\
 	head-weblink,hdrm200|\
 	nexx,wt3020-4m|\
 	nexx,wt3020-8m|\
 	phicomm,psg1208|\
-	phicomm,psg1218a|\
-	phicomm,psg1218b|\
 	planex,db-wrt01|\
 	planex,mzk-750dhp|\
 	sanlinking,d240|\
-	tplink,archer-c2-v1|\
-	tplink,archer-c20-v1|\
-	tplink,archer-c20i|\
-	tplink,archer-c50-v1|\
-	tplink,archer-mr200|\
 	vonets,var11n-300|\
 	wrtnode,wrtnode|\
 	youku,yk1|\
@@ -254,7 +245,13 @@ ramips_setup_macs()
 	zbtlink,zbt-we826-32m|\
 	zbtlink,zbt-we826-e|\
 	zbtlink,zbt-wr8305rt)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
+		;;
+	alfa-network,ac1200rm|\
+	dlink,dir-810l|\
+	phicomm,psg1218a|\
+	phicomm,psg1218b)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x28)" 1)
 		;;
 	alfa-network,r36m-e4g|\
 	zbtlink,zbt-we1026-h-32m)
@@ -280,7 +277,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env WAN_MAC_ADDR)
 		;;
 	edimax,br-6478ac-v2)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 2)
 		;;
 	engenius,esr600)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
@@ -289,7 +286,7 @@ ramips_setup_macs()
 	glinet,gl-mt300a|\
 	glinet,gl-mt300n|\
 	glinet,gl-mt750)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4000)" 1)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	hiwifi,hc5661|\
@@ -312,6 +309,13 @@ ramips_setup_macs()
 		;;
 	linksys,e1700)
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
+		;;
+	tplink,archer-c2-v1|\
+	tplink,archer-c20-v1|\
+	tplink,archer-c20i|\
+	tplink,archer-c50-v1|\
+	tplink,archer-mr200)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary rom 0xf100)" 1)
 		;;
 	zbtlink,zbt-we1026-5g-16m)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
