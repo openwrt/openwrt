@@ -3,7 +3,7 @@ PATH="/usr/sbin:/usr/bin:/sbin:/bin"
 configpath=$(uci get AdGuardHome.AdGuardHome.configpath)
 gfwupstream=$(uci get AdGuardHome.AdGuardHome.gfwupstream)
 if [ -z $gfwupstream ]; then
-gfwupstream="tcp://208.67.220.220#5353"
+gfwupstream="tcp://208.67.220.220:5353"
 fi
 if [ ! -f "$configpath" ]; then
 	echo "please make a config first"

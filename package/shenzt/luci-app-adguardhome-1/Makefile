@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-adguardhome-1
 PKG_VERSION:=1.7
-PKG_RELEASE:=7
+PKG_RELEASE:=22
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
@@ -18,13 +18,13 @@ define Package/luci-app-adguardhome-1
 	CATEGORY:=LuCI
 	SUBMENU:=3. Applications
 	TITLE:=LuCI app for adguardhome
-	PKG_MAINTAINER:=<https://github.com/rufengsuixing/shenzt/luci-app-adguardhome-1>
+	PKG_MAINTAINER:=<https://github.com/rufengsuixing/luci-app-adguardhome-1>
 	PKGARCH:=all
 	DEPENDS:=
 endef
 
 define Package/luci-app-adguardhome-1/description
-	LuCI support for adguardhome
+	LuCI support for adguardhome-1
 endef
 
 define Build/Prepare

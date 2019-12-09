@@ -2,7 +2,7 @@ require("luci.sys")
 require("luci.util")
 local fs=require"nixio.fs"
 local uci=require"luci.model.uci".cursor()
-
+require("io")
 local configpath=uci:get("AdGuardHome","AdGuardHome","configpath")
 if (configpath==nil) then
 configpath="/etc/AdGuardHome.yaml"
@@ -23,7 +23,7 @@ s = mp:section(TypedSection, "AdGuardHome")
 s.anonymous=true
 s.addremove=false
 ---- enable
-o = s:option(Flag, "enabled", translate("Enable adblock"))
+o = s:option(Flag, "enabled", translate("Enable"))
 o.default = 0
 o.rmempty = false
 ---- httpport
@@ -64,6 +64,7 @@ o.placeholder = "none"
 o:value("none", translate("none"))
 o:value("dnsmasq-upstream", translate("Run as dnsmasq upstream server"))
 o:value("redirect", translate("Redirect 53 port to AdGuardHome"))
+o:value("exchange", translate("Use port 53 replace dnsmasq"))
 o.default     = "none"
 
 ---- bin path
@@ -109,7 +110,7 @@ luci.sys.exec("sh /usr/share/AdGuardHome/gfw2adg.sh 2>&1")
 luci.http.redirect(luci.dispatcher.build_url("admin","services","AdGuardHome"))
 end
 o = s:option(Value, "gfwupstream", translate("Gfwlist upstream dns server"), translate("Gfwlist domain upstream dns service"))
-o.default     = "tcp://208.67.220.220#5353"
+o.default     = "tcp://208.67.220.220:5353"
 o.datatype    = "string"
 ---- chpass
 
@@ -117,10 +118,12 @@ o = s:option(Value, "hashpass", translate("Change browser management password"),
 o.default     = ""
 o.datatype    = "string"
 o.template = "AdGuardHome/AdGuardHome_chpass"
+---- database protect
+o = s:option(Flag, "keepdb", translate("Keep database when system upgrade"))
+o.default = 0
 
-local apply = luci.http.formvalue("cbi.apply")
- if apply then
-     io.popen("/etc/init.d/AdGuardHome reload &")
+function mp.on_commit(map)
+	io.popen("/etc/init.d/AdGuardHome reload &")
 end
-
+nixio.fs.writefile("/var/run/lucilogpos","0")
 return mp

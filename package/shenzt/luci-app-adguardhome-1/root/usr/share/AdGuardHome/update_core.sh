@@ -56,13 +56,13 @@ check_latest_version(){
 				if [ $filesize -gt 8000000 ]; then
 					echo -e "start upx may take a long time"
 					doupx
-					mkdir -p "/tmp/AdGuardHome/update/AdGuardHome" >/dev/null 2>&1
-					rm -fr /tmp/AdGuardHome/update/AdGuardHome/${binpath##*/}
-					/tmp/upx-${upx_latest_ver}-${Arch}_linux/upx $upxflag $binpath -o /tmp/AdGuardHome/update/AdGuardHome/${binpath##*/}
+					mkdir -p "/tmp/AdGuardHomeupdate/AdGuardHome" >/dev/null 2>&1
+					rm -fr /tmp/AdGuardHomeupdate/AdGuardHome/${binpath##*/}
+					/tmp/upx-${upx_latest_ver}-${Arch}_linux/upx $upxflag $binpath -o /tmp/AdGuardHomeupdate/AdGuardHome/${binpath##*/}
 					rm -rf /tmp/upx-${upx_latest_ver}-${Arch}_linux
 					/etc/init.d/AdGuardHome stop
 					rm $binpath
-					mv -f /tmp/AdGuardHome/update/AdGuardHome/${binpath##*/} $binpath
+					mv -f /tmp/AdGuardHomeupdate/AdGuardHome/${binpath##*/} $binpath
 					/etc/init.d/AdGuardHome start
 					echo -e "finished"
 				fi
@@ -129,8 +129,8 @@ doupx(){
 }
 doupdate_core(){
 	echo -e "Updating core..." 
-	mkdir -p "/tmp/AdGuardHome/update" >/dev/null 2>&1
-	rm -rf /tmp/AdGuardHome/update/* >/dev/null 2>&1
+	mkdir -p "/tmp/AdGuardHomeupdate"
+	rm -rf /tmp/AdGuardHomeupdate/* >/dev/null 2>&1
 	Archt="$(opkg info kernel | grep Architecture | awk -F "[ _]" '{print($2)}')"
 	case $Archt in
 	"i386")
@@ -181,11 +181,11 @@ doupdate_core(){
 	;;
 	esac
 	echo -e "start download ${latest_ver}/AdGuardHome_linux_${Arch}.tar.gz" 
-	wget-ssl --no-check-certificate -t 1 -T 10 -O  /tmp/AdGuardHome/update/AdGuardHome_linux_${Arch}.tar.gz "https://github.com/AdguardTeam/AdGuardHome/releases/download/${latest_ver}/AdGuardHome_linux_${Arch}.tar.gz"  >/dev/null 2>&1
-	tar -zxf "/tmp/AdGuardHome/update/AdGuardHome_linux_${Arch}.tar.gz" -C "/tmp/AdGuardHome/update/" >/dev/null 2>&1
-	if [ ! -e "/tmp/AdGuardHome/update/AdGuardHome" ]; then
+	wget-ssl --no-check-certificate -t 1 -T 10 -O /tmp/AdGuardHomeupdate/AdGuardHome_linux_${Arch}.tar.gz "https://github.com/AdguardTeam/AdGuardHome/releases/download/${latest_ver}/AdGuardHome_linux_${Arch}.tar.gz"
+	tar -zxf "/tmp/AdGuardHomeupdate/AdGuardHome_linux_${Arch}.tar.gz" -C "/tmp/AdGuardHomeupdate/"
+	if [ ! -e "/tmp/AdGuardHomeupdate/AdGuardHome" ]; then
 		echo -e "Failed to download core." 
-		rm -rf "/tmp/AdGuardHome/update" >/dev/null 2>&1
+		rm -rf "/tmp/AdGuardHomeupdate" >/dev/null 2>&1
 		exit 1
 	else 
 		echo -e "download success start copy" 
@@ -193,20 +193,20 @@ doupdate_core(){
 		echo -e "start upx may take a long time" 
 		doupx
         #maybe need chmod
-		/tmp/upx-${upx_latest_ver}-${Arch}_linux/upx $upxflag /tmp/AdGuardHome/update/AdGuardHome/AdGuardHome
+		/tmp/upx-${upx_latest_ver}-${Arch}_linux/upx $upxflag /tmp/AdGuardHomeupdate/AdGuardHome/AdGuardHome
 		rm -rf /tmp/upx-${upx_latest_ver}-${Arch}_linux
 		fi
 		echo -e "start copy" 
 		/etc/init.d/AdGuardHome stop
 		rm "$binpath"
-		mv -f /tmp/AdGuardHome/update/AdGuardHome/AdGuardHome "$binpath"
+		mv -f /tmp/AdGuardHomeupdate/AdGuardHome/AdGuardHome "$binpath"
 		if [ "$?" == "1" ]; then
 			echo "mv failed maybe not enough space please use upx or change bin to /tmp/AdGuardHome" 
 			exit 1
 		fi
 		/etc/init.d/AdGuardHome start
 	fi
-	rm -rf "/tmp/AdGuardHome/update" >/dev/null 2>&1
+	rm -rf "/tmp/AdGuardHomeupdate" >/dev/null 2>&1
 	echo -e "Succeeded in updating core." 
 	uci set AdGuardHome.AdGuardHome.version="${latest_ver}"
 	uci commit AdGuardHome
