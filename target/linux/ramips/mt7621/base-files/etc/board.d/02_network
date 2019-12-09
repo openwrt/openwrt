@@ -55,7 +55,9 @@ ramips_setup_interfaces()
 	asiarf,ap7621-nv1)
 		ucidef_add_switch "switch0" "0:wan" "2:lan" "3:lan" "6@eth0"
 		;;
+	asus,rt-ac65p|\
 	asus,rt-ac57u|\
+	asus,rt-ac85p|\
 	mikrotik,rb750gr3|\
 	ubiquiti,edgerouterx|\
 	ubiquiti,edgerouterx-sfp|\
@@ -63,8 +65,6 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
-	asus,rt-ac65p|\
-	asus,rt-ac85p|\
 	dlink,dir-860l-b1|\
 	elecom,wrc-1167ghbk2-s|\
 	elecom,wrc-1900gst|\
