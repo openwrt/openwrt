@@ -273,6 +273,16 @@ define Device/tplink_tl-wdr4300-v1-il
 endef
 TARGET_DEVICES += tplink_tl-wdr4300-v1-il
 
+define Device/tplink_tl-wdr4310-v1
+  $(Device/tplink-8mlzma)
+  ATH_SOC := ar9344
+  DEVICE_TITLE := TP-Link TL-WDR4310 v1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x43100001
+  SUPPORTED_DEVICES += tl-wdr4300
+endef
+TARGET_DEVICES += tplink_tl-wdr4310-v1
+
 define Device/tplink_tl-wdr4900-v2
   $(Device/tplink-8mlzma)
   ATH_SOC := qca9558
