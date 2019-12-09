@@ -57,7 +57,6 @@ ramips_setup_interfaces()
 		;;
 	asus,rt-ac57u|\
 	mikrotik,rb750gr3|\
-	mikrotik,rbm33g|\
 	ubiquiti,edgerouterx|\
 	ubiquiti,edgerouterx-sfp|\
 	youhua,wr1200js)
@@ -111,6 +110,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0"
 		ucidef_add_switch_attr "switch0" "enable" "false"
 		ucidef_set_interface_lan "eth0"
+		;;
+	mikrotik,rbm33g)
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "0:wan" "6@eth0"
 		;;
 	netgear,ex6150|\
 	tplink,re350-v1|\
