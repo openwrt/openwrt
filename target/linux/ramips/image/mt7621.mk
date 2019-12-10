@@ -135,6 +135,15 @@ define Device/asus_rt-ac57u
 endef
 TARGET_DEVICES += asus_rt-ac57u
 
+define Device/asus_rt-n56u-b1
+  MTK_SOC := mt7621
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-N56U-B1
+  IMAGE_SIZE := 16064k
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+endef
+TARGET_DEVICES += asus_rt-n56u-b1
+
 define Device/asus_rt-ac65p
   MTK_SOC := mt7621
   DEVICE_VENDOR := ASUS
