@@ -14,6 +14,10 @@ case "$FIRMWARE" in
 	tplink,tl-wr941-v4)
 		caldata_extract "art" 0x1000 0xeb8
 		;;
+	dlink,dir-615-e4)
+		caldata_extract "art" 0x1000 0x1000
+		ath9k_patch_mac_crc $(mtd_get_mac_ascii "nvram" "lan_mac") 0x10c
+		;;
 	netgear,wnr1000-v2|\
 	netgear,wnr2000-v3|\
 	netgear,wnr612-v2|\

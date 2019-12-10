@@ -13,6 +13,22 @@ define Device/buffalo_whr-g301n
 endef
 TARGET_DEVICES += buffalo_whr-g301n
 
+define Device/dlink_dir-615-e4
+  ATH_SOC := ar7240
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-615
+  DEVICE_VARIANT := E4
+  IMAGE_SIZE := 3776k
+  FACTORY_IMAGE_SIZE := 3456k
+  IMAGES += factory.bin
+  IMAGE/default := append-kernel | append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/default) | check-size $$$$(FACTORY_IMAGE_SIZE) | \
+    pad-to $$$$(FACTORY_IMAGE_SIZE) | append-string "AP99-AR7240-RT-091105-05"
+  SUPPORTED_DEVICES += dir-615-e4
+endef
+TARGET_DEVICES += dlink_dir-615-e4
+
 define Device/pqi_air-pen
   ATH_SOC := ar9330
   DEVICE_VENDOR := PQI
