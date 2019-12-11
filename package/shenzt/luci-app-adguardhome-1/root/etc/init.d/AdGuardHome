@@ -136,7 +136,7 @@ get_tz()
 rm_port53()
 {
 	AdGuardHome_PORT=$(awk '/  port:/{printf($2)}' $configpath)
-	dnsmasq_port=$(uci get dhcp.@dnsmasq[0].port)
+	dnsmasq_port=$(uci get dhcp.@dnsmasq[0].port 2>/dev/null)
 	if [ -z "$dnsmasq_port" ]; then
 	dnsmasq_port="53"
 	fi
@@ -156,7 +156,7 @@ rm_port53()
 use_port53()
 {
 	AdGuardHome_PORT=$(awk '/  port:/{printf($2)}' $configpath)
-	dnsmasq_port=$(uci get dhcp.@dnsmasq[0].port)
+	dnsmasq_port=$(uci get dhcp.@dnsmasq[0].port 2>/dev/null)
 	if [ -z "$dnsmasq_port" ]; then
 		dnsmasq_port="53"
 	fi
@@ -181,6 +181,11 @@ do_redirect()
 	ipv6_server=1
 	tcp_server=0
 	enabled=$1
+	if [ "$enabled" == "1" ]; then
+		echo -n "1">/var/run/AdGredir
+	else
+		echo -n "0">/var/run/AdGredir
+	fi
 	config_get configpath $CONFIGURATION configpath "/etc/AdGuardHome.yaml"
 	AdGuardHome_PORT=$(awk '/  port:/{printf($2)}' $configpath)
 	if [ -z "$AdGuardHome_PORT" ]; then
@@ -191,7 +196,7 @@ do_redirect()
 	config_get "old_port" "$section" "old_port" "0"
 	config_get "old_enabled" "$section" "old_enabled" "0"
 	if [ "$old_enabled" = "1" -a "$old_redirect" == "exchange" ]; then
-		AdGuardHome_PORT=$(uci get dhcp.@dnsmasq[0].port)
+		AdGuardHome_PORT=$(uci get dhcp.@dnsmasq[0].port 2>/dev/null)
 	fi
 	
 	if [ "$old_redirect" != "$redirect" ] || [ "$old_port" != "$AdGuardHome_PORT" ] || [ "$old_enabled" = "1" -a "$enabled" = "0" ]; then
@@ -225,7 +230,7 @@ do_redirect()
 		set_iptable $ipv6_server $tcp_server
 	elif [ "$redirect" = "dnsmasq-upstream" ]; then
 		set_forward_dnsmasq "$AdGuardHome_PORT"
-	elif [ "$redirect" == "exchange" -a "$(uci get dhcp.@dnsmasq[0].port)" == "53" ]; then
+	elif [ "$redirect" == "exchange" -a "$(uci get dhcp.@dnsmasq[0].port 2>/dev/null)" == "53" ]; then
 		use_port53
 	fi
 }
@@ -288,12 +293,27 @@ config_editor()
         }
     }' $3
 }
-
+boot_service() {
+	config_load "${CONFIGURATION}"
+	config_get waitonboot $CONFIGURATION waitonboot "0"
+	config_get_bool enabled $CONFIGURATION enabled 0
+	if [ "$enabled" == "1" ]; then
+		if [ "$waitonboot" == "1" ]; then
+			do_redirect 0
+			procd_open_instance "waitnet"
+			procd_set_param command "/usr/share/AdGuardHome/waitnet.sh"
+			procd_close_instance
+			echo "no net start pinging"
+		else
+			start_service
+		fi
+	fi
+}
 start_service() {
 	# Reading config
 	config_load "${CONFIGURATION}"
 	config_get hashpass $CONFIGURATION hashpass ""
-	if [ ! -z "$hashpass" ]; then
+	if [ -n "$hashpass" ]; then
 		config_editor "users.password" "$hashpass" "$configpath"
 		uci set $CONFIGURATION.$CONFIGURATION.hashpass=""
 	fi
@@ -314,6 +334,11 @@ start_service() {
 	
 	config_get workdir $CONFIGURATION workdir "/usr/bin/AdGuardHome"
 	ADDITIONAL_ARGS="$ADDITIONAL_ARGS -w $workdir"
+	config_get backupwd $CONFIGURATION backupwd "0"
+	if [ "$backupwd" == "1" ] && [ ! -d "$workdir/data" ]; then
+		config_get backupwdpath $CONFIGURATION backupwdpath "/usr/bin/AdGuardHome"
+		cp -r -f $backupwdpath/data $workdir/
+	fi
 	mkdir -p $workdir/data
 	echo -e "$configpath\n$binpath">/lib/upgrade/keep.d/luci-app-adguardhome
 	# hack to save config file when upgrade system
@@ -322,14 +347,15 @@ start_service() {
 		echo -e "$workdir/data/sessions.db\n$workdir/data/stats.db\n$workdir/data/querylog.json">>/lib/upgrade/keep.d/luci-app-adguardhome
 	fi
 	config_get logfile $CONFIGURATION logfile ""
-	if [ ! -z "$logfile" ]; then
+	if [ -n "$logfile" ]; then
 		ADDITIONAL_ARGS="$ADDITIONAL_ARGS -l $logfile"
 	fi
 	
 	if [ ! -f "$binpath" ]; then
 		do_redirect 0
+		rm /var/run/update_core_error 2>/dev/null
 		touch /var/run/update_core
-		sh /usr/share/AdGuardHome/update_core.sh >/tmp/AdGuardHome_update.log
+		sh /usr/share/AdGuardHome/update_core.sh 2>&1 >/tmp/AdGuardHome_update.log || touch /var/run/update_core_error
 		rm /var/run/update_core
 		exit 0
 	fi 
@@ -347,18 +373,18 @@ start_service() {
 		logger "AdGuardHome" "warning db redirect to tmp"
 		touch $workdir/data/stats.db
 		if [ ! -L $workdir/data/stats.db ]; then
-		mv -f $workdir/data/stats.db /tmp/stats.db
-		ln -s /tmp/stats.db $workdir/data/stats.db
+		mv -f $workdir/data/stats.db /tmp/stats.db 2>/dev/null
+		ln -s /tmp/stats.db $workdir/data/stats.db 2>/dev/null
 		fi
 		touch $workdir/data/sessions.db
 		if [ ! -L $workdir/data/sessions.db ]; then
-		mv -f $workdir/data/sessions.db /tmp/sessions.db
-		ln -s /tmp/sessions.db $workdir/data/sessions.db
+		mv -f $workdir/data/sessions.db /tmp/sessions.db 2>/dev/null
+		ln -s /tmp/sessions.db $workdir/data/sessions.db 2>/dev/null
 		fi
 	fi
 	procd_open_instance
 	get_tz
-	if [ ! -z "$SET_TZ" ]; then 
+	if [ -n "$SET_TZ" ]; then 
 		procd_set_param env TZ="$SET_TZ" 
 	fi
 	procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
@@ -378,10 +404,11 @@ start_service() {
 			procd_open_instance "waitconfig"
 			procd_set_param command "/usr/share/AdGuardHome/watchconfig.sh"
 			procd_close_instance
+			echo "no config start watching"
 		fi
 	fi
 	echo "AdGuardHome turn on"
-	(sleep 10 && [ -z "$(pgrep $binpath)" ] && do_redirect 0 )&
+	(sleep 10 && [ -z "$(pgrep $binpath)" ] && logger "AdGuardHome" "no process in 10s cancel redirect" && do_redirect 0 )&
 	fi
 }
 reload_service()
@@ -389,18 +416,35 @@ reload_service()
 	config_load "${CONFIGURATION}"
 	echo "AdGuardHome reloading"
 	config_get_bool enabled $CONFIGURATION enabled 0
-	procd_send_signal $CONFIGURATION
 	if [ "$enabled" == "0" ]; then
+		procd_kill $CONFIGURATION
 		do_redirect 0
+		config_get hashpass $CONFIGURATION hashpass ""
+		if [ -n "$hashpass" ]; then
+			config_editor "users.password" "$hashpass" "$configpath"
+			uci set $CONFIGURATION.$CONFIGURATION.hashpass=""
+		fi
+	else
+		start
 	fi
-	start
 	echo "enabled=$enabled"
 }
 stop_service()
 {
 	config_load "${CONFIGURATION}"
 	do_redirect 0
-	procd_send_signal $CONFIGURATION
+	config_get backupwd $CONFIGURATION backupwd "0"
+	if [ "$backupwd" == "1" ]; then
+		config_get backupwdpath $CONFIGURATION backupwdpath "/usr/bin/AdGuardHome"
+		config_get workdir $CONFIGURATION workdir "/usr/bin/AdGuardHome"
+		cp -r -f $workdir/data $backupwdpath/
+	fi
 	echo "AdGuardHome turn off"
 	echo "enabled=$enabled"
+}
+boot() {
+	rc_procd boot_service "$@"
+	if eval "type service_started" 2>/dev/null >/dev/null; then
+		service_started
+	fi
 }

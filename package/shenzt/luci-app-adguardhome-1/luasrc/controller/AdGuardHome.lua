@@ -19,12 +19,18 @@ function act_status()
 	local e={}
 	binpath=uci:get("AdGuardHome","AdGuardHome","binpath")
 	e.running=luci.sys.call("pgrep "..binpath.." >/dev/null")==0
+	st=nixio.fs.readfile("/var/run/AdGredir")
+	if (st=="0") then
+		e.redirect=false
+	else
+		e.redirect=true
+	end
 	luci.http.prepare_content("application/json")
 	luci.http.write_json(e)
 end
 function do_update()
 	nixio.fs.writefile("/var/run/lucilogpos","0")
-	luci.sys.exec("(touch /var/run/update_core ; sh /usr/share/AdGuardHome/update_core.sh >/tmp/AdGuardHome_update.log;rm /var/run/update_core) &")
+	luci.sys.exec("(rm /var/run/update_core_error ; touch /var/run/update_core ; sh /usr/share/AdGuardHome/update_core.sh >/tmp/AdGuardHome_update.log 2>&1 || touch /var/run/update_core_error ;rm /var/run/update_core) &")
 	luci.http.prepare_content("application/json")
 	luci.http.write('')
 end
@@ -39,6 +45,9 @@ function get_log()
 		end
 		logfile="/tmp/AdGuardHometmp.log"
 		nixio.fs.writefile("/var/run/AdGuardHomesyslog","1")
+	elseif not nixio.fs.access(logfile) then
+		luci.http.write("log file not created\n")
+		return
 	end
 	luci.http.prepare_content("text/plain; charset=utf-8")
 	logpos=nixio.fs.readfile("/var/run/lucilogpos")

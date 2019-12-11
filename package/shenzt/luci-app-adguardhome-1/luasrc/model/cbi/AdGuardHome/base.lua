@@ -71,6 +71,13 @@ o.default     = "none"
 o = s:option(Value, "binpath", translate("Bin Path"), translate("AdGuardHome Bin path if no bin will auto download"))
 o.default     = "/usr/bin/AdGuardHome/AdGuardHome"
 o.datatype    = "string"
+o.validate=function(self, value)
+if fs.stat(value,"type")=="dir" then
+	mp.message ="error!bin path is a dir"
+	return nil
+end 
+return value
+end
 --- upx
 o = s:option(ListValue, "upxflag", translate("use upx to compress bin after download"))
 o:value("", translate("none"))
@@ -85,14 +92,35 @@ o.description=translate("bin use less space,but may have compatibility issues")
 o = s:option(Value, "configpath", translate("Config Path"), translate("AdGuardHome config path"))
 o.default     = "/etc/AdGuardHome.yaml"
 o.datatype    = "string"
+o.validate=function(self, value)
+if fs.stat(value,"type")=="dir" then
+	mp.message ="error!config path is a dir"
+	return nil
+end 
+return value
+end
 ---- work dir
 o = s:option(Value, "workdir", translate("Work dir"), translate("AdGuardHome work dir include rules,audit log and database"))
 o.default     = "/usr/bin/AdGuardHome"
 o.datatype    = "string"
+o.validate=function(self, value)
+if fs.stat(value,"type")=="reg" then
+	mp.message ="error!work dir is a file"
+	return nil
+end 
+return value
+end
 ---- log file
 o = s:option(Value, "logfile", translate("Runtime log file"), translate("AdGuardHome runtime Log file if 'syslog': write to system log;if empty no log"))
 o.default     = ""
 o.datatype    = "string"
+o.validate=function(self, value)
+if fs.stat(value,"type")=="dir" then
+	mp.message ="error!log file is a dir"
+	return nil
+end 
+return value
+end
 ---- debug
 o = s:option(Flag, "verbose", translate("Verbose log"))
 o.default = 0
@@ -121,7 +149,24 @@ o.template = "AdGuardHome/AdGuardHome_chpass"
 ---- database protect
 o = s:option(Flag, "keepdb", translate("Keep database when system upgrade"))
 o.default = 0
-
+---- wait net on boot
+o = s:option(Flag, "waitonboot", translate("Boot delay until network ok"))
+o.default = 1
+---- backup workdir on shutdown
+o = s:option(Flag, "backupwd", translate("Backup workdir when shutdown"))
+o.default = 0
+o.description=translate("Will be restore when workdir/data is empty")
+----backup workdir path
+o = s:option(Value, "backupwdpath", translate("Backup workdir path"))
+o.default     = "/usr/bin/AdGuardHome"
+o.datatype    = "string"
+o.validate=function(self, value)
+if fs.stat(value,"type")=="reg" then
+	mp.message ="error!backup dir is a file"
+	return nil
+end 
+return value
+end
 function mp.on_commit(map)
 	io.popen("/etc/init.d/AdGuardHome reload &")
 end

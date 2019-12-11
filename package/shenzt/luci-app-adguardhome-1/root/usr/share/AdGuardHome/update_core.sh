@@ -67,7 +67,7 @@ check_latest_version(){
 					echo -e "finished"
 				fi
 			fi
-			exit 3
+			exit 0
 	fi
 }
 doupx(){
@@ -120,11 +120,15 @@ doupx(){
 	;;
 	esac
 	upx_latest_ver="$(wget -O- https://api.github.com/repos/upx/upx/releases/latest 2>/dev/null|grep -E 'tag_name' |grep -E '[0-9.]+' -o 2>/dev/null)"
-	wget-ssl --no-check-certificate -t 1 -T 10 -O  /tmp/upx-${upx_latest_ver}-${Arch}_linux.tar.xz "https://github.com/upx/upx/releases/download/v${upx_latest_ver}/upx-${upx_latest_ver}-${Arch}_linux.tar.xz"  >/dev/null 2>&1
+	wget-ssl --no-check-certificate -t 1 -T 10 -O  /tmp/upx-${upx_latest_ver}-${Arch}_linux.tar.xz "https://github.com/upx/upx/releases/download/v${upx_latest_ver}/upx-${upx_latest_ver}-${Arch}_linux.tar.xz" 2>&1
 	#tar xvJf
-	which xz || (opkg update && opkg install xz) || exit 1
+	which xz || (opkg update && opkg install xz) || (echo "xz download fail" && exit 1)
 	mkdir -p /tmp/upx-${upx_latest_ver}-${Arch}_linux
 	xz -d -c /tmp/upx-${upx_latest_ver}-${Arch}_linux.tar.xz| tar -x -C "/tmp" >/dev/null 2>&1
+	if [ ! -e "/tmp/upx-${upx_latest_ver}-${Arch}_linux/upx" ]; then
+		echo -e "Failed to download upx." 
+		exit 1
+	fi
 	rm /tmp/upx-${upx_latest_ver}-${Arch}_linux.tar.xz
 }
 doupdate_core(){
@@ -181,7 +185,10 @@ doupdate_core(){
 	;;
 	esac
 	echo -e "start download ${latest_ver}/AdGuardHome_linux_${Arch}.tar.gz" 
-	wget-ssl --no-check-certificate -t 1 -T 10 -O /tmp/AdGuardHomeupdate/AdGuardHome_linux_${Arch}.tar.gz "https://github.com/AdguardTeam/AdGuardHome/releases/download/${latest_ver}/AdGuardHome_linux_${Arch}.tar.gz"
+	wget-ssl --no-check-certificate -t 2 -T 20 -O /tmp/AdGuardHomeupdate/AdGuardHome_linux_${Arch}.tar.gz "https://github.com/AdguardTeam/AdGuardHome/releases/download/${latest_ver}/AdGuardHome_linux_${Arch}.tar.gz" 2>&1
+	if [ "$?" != "0" ]; then
+		echo "download failed"
+	fi
 	tar -zxf "/tmp/AdGuardHomeupdate/AdGuardHome_linux_${Arch}.tar.gz" -C "/tmp/AdGuardHomeupdate/"
 	if [ ! -e "/tmp/AdGuardHomeupdate/AdGuardHome" ]; then
 		echo -e "Failed to download core." 

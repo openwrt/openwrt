@@ -13,13 +13,13 @@
 function apply_update(){
 	XHR.get('<%=url([[admin]], [[services]], [[AdGuardHome]], [[doupdate]])%>',null,function(x, data){}
 		);
+	var	btn = document.getElementById('apply_update_button');
+	btn.disabled = true;
+	btn.value    = '<%:Check...%>';
 	poll_check();
 	return
 }
 function poll_check(){
-var	btn = document.getElementById('apply_update_button');
-	btn.disabled = true;
-	btn.value    = '<%:Check...%>';
 var lv = document.getElementById('cbid.logview.1.conf');
 	lv.style.display="inline"
 XHR.poll(3, '<%=url([[admin]], [[services]], [[AdGuardHome]], [[check]])%>', null,
@@ -32,9 +32,10 @@ XHR.poll(3, '<%=url([[admin]], [[services]], [[AdGuardHome]], [[check]])%>', nul
 				if (this.XHR._q[j].url == '<%=url([[admin]], [[services]], [[AdGuardHome]], [[check]])%>')
 				{
 				this.XHR._q.splice(j,1);
+				var	btn = document.getElementById('apply_update_button');
 				btn.disabled = false;
 				btn.value    = '<%:Updated%>';
-				document.getElementById('updateversion').innerText="<%=uci:get("AdGuardHome","AdGuardHome","version")%>"
+				document.getElementById('updateversion').innerText='<%=uci:get("AdGuardHome","AdGuardHome","version")%>'
 				}
 				}
 				return	
@@ -43,7 +44,12 @@ XHR.poll(3, '<%=url([[admin]], [[services]], [[AdGuardHome]], [[check]])%>', nul
 		}
 	}
 );}
-<% if nixio.fs.access("/var/run/update_core")then %>
+<% if nixio.fs.access("/var/run/update_core") then %>
+var	btn = document.getElementById('apply_update_button');
+	btn.disabled = true;
+	btn.value    = '<%:Check...%>';
+poll_check();
+<%elseif nixio.fs.access("/var/run/update_core_error") then %>
 poll_check();
 <%else%>
 var	btn = document.getElementById('apply_update_button');
