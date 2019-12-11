@@ -90,8 +90,7 @@ define Device/ubnt_acb-isp
   UBNT_BOARD := ACB-ISP
   UBNT_CHIP := qca9533
   UBNT_TYPE := ACB
-  UBNT_VERSION := 6.0.0
-  IMAGES := sysupgrade.bin
+  UBNT_VERSION := 2.5.0
 endef
 TARGET_DEVICES += ubnt_acb-isp
 
