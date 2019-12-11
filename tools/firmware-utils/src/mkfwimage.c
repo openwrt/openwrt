@@ -129,6 +129,15 @@ struct fw_info fw_info[] = {
 		.sign = true,
 	},
 	{
+		.name = "ACB-ISP",
+		.fw_layout = {
+			.kern_start	=	0x9f050000,
+			.kern_entry	=	0x80002000,
+			.firmware_max_length=	0x00F60000,
+		},
+		.sign = true,
+	},
+	{
 		.name = "",
 	},
 };
