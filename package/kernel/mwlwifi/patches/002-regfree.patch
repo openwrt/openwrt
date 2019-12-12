@@ -1,0 +1,110 @@
+This makes mwlwifi to not lock the regulatory domain to avoid undesired effects
+like messed up system reg domain when another adapter is present in the system
+or broadcasting incorrect country code in many countries.
+
+Author: ValCher1961 <valcher@bk.ru>
+
+--- a/core.c
++++ b/core.c
+@@ -858,11 +858,7 @@
+ 		mwl_fwcmd_get_txpwrlmt_cfg_data(hw);
+ 	}
+ 
+-	if (priv->chip_type == MWL8964)
+-		rc = mwl_fwcmd_get_fw_region_code_sc4(hw,
+-						      &priv->fw_region_code);
+-	else
+-		rc = mwl_fwcmd_get_fw_region_code(hw, &priv->fw_region_code);
++	rc = mwl_fwcmd_get_fw_region_code(hw, &priv->fw_region_code);
+ 	if (!rc) {
+ 		priv->fw_device_pwrtbl = true;
+ 		mwl_regd_init(priv);
+--- a/hif/fwcmd.c
++++ b/hif/fwcmd.c
+@@ -94,7 +94,6 @@
+ 		{ HOSTCMD_CMD_GET_DEVICE_PWR_TBL, "GetDevicePwrTbl" },
+ 		{ HOSTCMD_CMD_SET_RATE_DROP, "SetRateDrop" },
+ 		{ HOSTCMD_CMD_NEWDP_DMATHREAD_START, "NewdpDMAThreadStart" },
+-		{ HOSTCMD_CMD_GET_FW_REGION_CODE_SC4, "GetFwRegionCodeSC4" },
+ 		{ HOSTCMD_CMD_GET_DEVICE_PWR_TBL_SC4, "GetDevicePwrTblSC4" },
+ 		{ HOSTCMD_CMD_QUIET_MODE, "QuietMode" },
+ 		{ HOSTCMD_CMD_CORE_DUMP_DIAG_MODE, "CoreDumpDiagMode" },
+@@ -3431,42 +3430,6 @@
+ }
+ 
+ 
+-int mwl_fwcmd_get_fw_region_code_sc4(struct ieee80211_hw *hw,
+-				     u32 *fw_region_code)
+-{
+-	struct mwl_priv *priv = hw->priv;
+-	struct hostcmd_cmd_get_fw_region_code_sc4 *pcmd;
+-	u16 cmd;
+-
+-	pcmd = (struct hostcmd_cmd_get_fw_region_code_sc4 *)&priv->pcmd_buf[0];
+-
+-	mutex_lock(&priv->fwcmd_mutex);
+-
+-	memset(pcmd, 0x00, sizeof(*pcmd));
+-	cmd = HOSTCMD_CMD_GET_FW_REGION_CODE_SC4;
+-	pcmd->cmd_hdr.cmd = cpu_to_le16(cmd);
+-	pcmd->cmd_hdr.len = cpu_to_le16(sizeof(*pcmd));
+-
+-	if (mwl_hif_exec_cmd(hw, cmd)) {
+-		mutex_unlock(&priv->fwcmd_mutex);
+-		return -EIO;
+-	}
+-
+-	if (pcmd->cmd_hdr.result != 0) {
+-		mutex_unlock(&priv->fwcmd_mutex);
+-		return -EINVAL;
+-	}
+-
+-	if (pcmd->status)
+-		*fw_region_code = (pcmd->status == 1) ? 0 : pcmd->status;
+-	else
+-		*fw_region_code = le32_to_cpu(pcmd->fw_region_code);
+-
+-	mutex_unlock(&priv->fwcmd_mutex);
+-
+-	return 0;
+-}
+-
+ int mwl_fwcmd_get_pwr_tbl_sc4(struct ieee80211_hw *hw,
+ 			      struct mwl_device_pwr_tbl *device_ch_pwrtbl,
+ 			      u8 *region_code,
+--- a/hif/fwcmd.h
++++ b/hif/fwcmd.h
+@@ -253,9 +253,6 @@
+ 
+ int mwl_fwcmd_newdp_dmathread_start(struct ieee80211_hw *hw);
+ 
+-int mwl_fwcmd_get_fw_region_code_sc4(struct ieee80211_hw *hw,
+-				     u32 *fw_region_code);
+-
+ int mwl_fwcmd_get_pwr_tbl_sc4(struct ieee80211_hw *hw,
+ 			      struct mwl_device_pwr_tbl *device_ch_pwrtbl,
+ 			      u8 *region_code,
+--- a/hif/hostcmd.h
++++ b/hif/hostcmd.h
+@@ -73,7 +73,6 @@
+ #define HOSTCMD_CMD_GET_DEVICE_PWR_TBL          0x116B
+ #define HOSTCMD_CMD_SET_RATE_DROP               0x1172
+ #define HOSTCMD_CMD_NEWDP_DMATHREAD_START       0x1189
+-#define HOSTCMD_CMD_GET_FW_REGION_CODE_SC4      0x118A
+ #define HOSTCMD_CMD_GET_DEVICE_PWR_TBL_SC4      0x118B
+ #define HOSTCMD_CMD_QUIET_MODE                  0x1201
+ #define HOSTCMD_CMD_CORE_DUMP_DIAG_MODE         0x1202
+@@ -1110,13 +1109,6 @@
+ 	struct hostcmd_header cmd_hdr;
+ } __packed;
+ 
+-/* HOSTCMD_CMD_GET_FW_REGION_CODE_SC4 */
+-struct hostcmd_cmd_get_fw_region_code_sc4 {
+-	struct hostcmd_header cmd_hdr;
+-	__le32 status; /* 0 = Found, 1 = Error */
+-	__le32 fw_region_code;
+-} __packed;
+-
+ /* HOSTCMD_CMD_GET_DEVICE_PWR_TBL_SC4 */
+ #define HAL_TRPC_ID_MAX_SC4        32
+ #define MAX_GROUP_PER_CHANNEL_5G   39
