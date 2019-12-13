@@ -14,6 +14,7 @@ ramips_setup_interfaces()
 	d-team,pbr-m1|\
 	firefly,firewrt|\
 	hiwifi,hc5962|\
+	jcg,jhr-ac876m|\
 	mediatek,ap-mt7621a-v60|\
 	mediatek,mt7621-eval-board|\
 	mqmaker,witi|\
@@ -221,6 +222,10 @@ ramips_setup_macs()
 		;;
 	iptime,a6ns-m)
 		wan_mac=$(mtd_get_mac_binary u-boot 0x1fc40)
+		;;
+	jcg,jhr-ac876m)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
+		wan_mac=$label_mac
 		;;
 	mediatek,ap-mt7621a-v60)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x5)" 1)
