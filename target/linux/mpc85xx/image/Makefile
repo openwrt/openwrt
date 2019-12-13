@@ -102,6 +102,16 @@ define Device/aerohive_hiveap-330
 endef
 TARGET_DEVICES += aerohive_hiveap-330
 
+define Device/enterasys_ws-ap3710i
+  DEVICE_VENDOR := Enterasys
+  DEVICE_MODEL := WS-AP3710i
+  BLOCKSIZE := 128k
+  KERNEL = kernel-bin | lzma | fit lzma $(KDIR)/image-$$(DEVICE_DTS).dtb
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += enterasys_ws-ap3710i
+
 define Device/ocedo_panda
   DEVICE_VENDOR := OCEDO
   DEVICE_MODEL := Panda
