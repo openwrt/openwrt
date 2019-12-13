@@ -36,8 +36,6 @@ endef
 define Device/ubnt
   DEVICE_VENDOR := Ubiquiti
   DEVICE_PACKAGES := kmod-usb2
-  UBNT_BOARD := XM
-  UBNT_VERSION := 6.0.0
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | mkubntimage-split
@@ -45,53 +43,58 @@ endef
 
 define Device/ubnt-bz
   $(Device/ubnt)
-  IMAGE_SIZE := 7448k
-  UBNT_TYPE := BZ
-  UBNT_CHIP := ar7240
   ATH_SOC := ar7241
+  IMAGE_SIZE := 7448k
+  UBNT_BOARD := XM
+  UBNT_CHIP := ar7240
+  UBNT_TYPE := BZ
+  UBNT_VERSION := 6.0.0
 endef
 
 define Device/ubnt-wa
   $(Device/ubnt)
-  IMAGE_SIZE := 15744k
-  UBNT_TYPE := WA
-  UBNT_CHIP := ar934x
-  UBNT_BOARD := WA
-  UBNT_VERSION := 8.5.0
   ATH_SOC := ar9342
+  IMAGE_SIZE := 15744k
+  UBNT_BOARD := WA
+  UBNT_CHIP := ar934x
+  UBNT_TYPE := WA
+  UBNT_VERSION := 8.5.0
 endef
 
 define Device/ubnt-xm
   $(Device/ubnt)
+  ATH_SOC := ar7241
   DEVICE_VARIANT := XM
   DEVICE_PACKAGES += kmod-usb-ohci
   IMAGE_SIZE := 7448k
-  UBNT_TYPE := XM
+  UBNT_BOARD := XM
   UBNT_CHIP := ar7240
-  ATH_SOC := ar7241
+  UBNT_TYPE := XM
+  UBNT_VERSION := 6.0.0
   KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | uImage lzma
 endef
 
 define Device/ubnt-xw
   $(Device/ubnt)
+  ATH_SOC := ar9342
   DEVICE_VARIANT := XW
   IMAGE_SIZE := 7552k
-  UBNT_TYPE := XW
-  UBNT_CHIP := ar934x
   UBNT_BOARD := XM
-  UBNT_VERSION := 6.0.4
+  UBNT_CHIP := ar934x
   UBNT_REVISION := 42.$(UBNT_REVISION)
-  ATH_SOC := ar9342
+  UBNT_TYPE := XW
+  UBNT_VERSION := 6.0.4
 endef
 
 define Device/ubnt_acb-isp
   $(Device/ubnt)
   ATH_SOC := qca9533
-  IMAGE_SIZE := 15744k
   DEVICE_MODEL := airCube ISP
+  IMAGE_SIZE := 15744k
   UBNT_BOARD := ACB-ISP
-  UBNT_TYPE := ACB
   UBNT_CHIP := qca9533
+  UBNT_TYPE := ACB
+  UBNT_VERSION := 6.0.0
   IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += ubnt_acb-isp
