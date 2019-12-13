@@ -958,6 +958,7 @@ wpa_supplicant_run() {
 
 	_wpa_supplicant_common "$ifname"
 
+	ubus wait_for wpa_supplicant.$phy
 	ubus call wpa_supplicant.$phy config_add "{ \
 		\"driver\": \"${_w_driver:-wext}\", \"ctrl\": \"$_rpath\", \
 		\"iface\": \"$ifname\", \"config\": \"$_config\" \
@@ -968,6 +969,9 @@ wpa_supplicant_run() {
 	ret="$?"
 
 	[ "$ret" != 0 ] && wireless_setup_vif_failed WPA_SUPPLICANT_FAILED
+
+	local supplicant_pid=$(ubus call service list '{"name": "hostapd"}' | jsonfilter -l 1 -e "@['hostapd'].instances['supplicant-${phy}'].pid")
+	wireless_add_process "$supplicant_pid" "/usr/sbin/wpa_supplicant" 1
 
 	return $ret
 }

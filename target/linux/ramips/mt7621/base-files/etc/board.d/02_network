@@ -55,17 +55,16 @@ ramips_setup_interfaces()
 	asiarf,ap7621-nv1)
 		ucidef_add_switch "switch0" "0:wan" "2:lan" "3:lan" "6@eth0"
 		;;
+	asus,rt-ac65p|\
 	asus,rt-ac57u|\
+	asus,rt-ac85p|\
 	mikrotik,rb750gr3|\
-	mikrotik,rbm33g|\
 	ubiquiti,edgerouterx|\
 	ubiquiti,edgerouterx-sfp|\
 	youhua,wr1200js)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
-	asus,rt-ac65p|\
-	asus,rt-ac85p|\
 	dlink,dir-860l-b1|\
 	elecom,wrc-1167ghbk2-s|\
 	elecom,wrc-1900gst|\
@@ -112,6 +111,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch_attr "switch0" "enable" "false"
 		ucidef_set_interface_lan "eth0"
 		;;
+	mikrotik,rbm33g)
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "0:wan" "6@eth0"
+		;;
 	netgear,ex6150|\
 	tplink,re350-v1|\
 	tplink,re650-v1)
@@ -144,31 +147,21 @@ ramips_setup_macs()
 	local label_mac=""
 
 	case $board in
-	adslr,g7|\
+	adslr,g7)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0xe00c)" 1)
+		;;
 	afoundry,ew1200|\
 	asiarf,ap7621-001|\
 	asiarf,ap7621-nv1|\
 	firefly,firewrt|\
 	gehua,ghl-r-001|\
-	mediatek,ap-mt7621a-v60|\
-	mediatek,mt7621-eval-board|\
-	mikrotik,rb750gr3|\
-	mikrotik,rbm33g|\
 	mqmaker,witi|\
-	mtc,wr1201|\
-	netgear,r6220|\
-	netgear,wndr3700-v5|\
-	storylink,sap-g3200u3|\
-	telco-electronics,x1|\
 	totolink,a7000r|\
-	ubiquiti,edgerouterx|\
-	ubiquiti,edgerouterx-sfp|\
 	unielec,u7621-06-16m|\
 	unielec,u7621-06-64m|\
-	xiaoyu,xy-c5|\
 	xzwifi,creativebox-v1|\
 	zbtlink,zbt-wg2626)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0xe000)" 1)
 		;;
 	alfa-network,quad-e4g|\
 	asus,rt-ac57u|\
@@ -213,17 +206,39 @@ ramips_setup_macs()
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	iodata,wn-ax1167gr|\
-	iodata,wn-gx300gr)
+	iodata,wn-gx300gr|\
+	mtc,wr1201|\
+	netgear,r6220|\
+	netgear,wndr3700-v5|\
+	xiaoyu,xy-c5)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
 		;;
 	iodata,wnpr2600g)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
 		;;
+	mediatek,ap-mt7621a-v60)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x5)" 1)
+		;;
+	mikrotik,rb750gr3)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary hard_config 0x10)" 2)
+		;;
+	mikrotik,rbm33g)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary hard_config 0x10)" 2)
+		label_mac=$(mtd_get_mac_binary hard_config 0x10)
+		;;
 	netgear,r6260|\
 	netgear,r6350|\
 	netgear,r6850)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 2)
+		;;
+	storylink,sap-g3200u3|\
+	telco-electronics,x1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0xe006)" 1)
+		;;
+	ubiquiti,edgerouterx|\
+	ubiquiti,edgerouterx-sfp)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x22)" 1)
 		;;
 	wevo,11acnas|\
 	wevo,w2914ns-v2)
@@ -247,7 +262,7 @@ ramips_setup_macs()
 		;;
 	zbtlink,zbt-wg3526-16m|\
 	zbtlink,zbt-wg3526-32m)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0xe000)" 1)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	esac
