@@ -32,12 +32,23 @@
 			linux,default-trigger = "phy1tpt";
 		};
 	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		usbpower {
+			gpio-export,name = "usb";
+			gpio-export,output = <1>;
+			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
 };
 
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "i2c", "refclk", "wdt", "p3led_an", "wled_an";
+			ralink,group = "i2c", "refclk", "wdt", "p2led_an", "p3led_an", "wled_an";
 			ralink,function = "gpio";
 		};
 	};
@@ -53,4 +64,8 @@
 		mediatek,mtd-eeprom = <&factory 0x8000>;
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
+};
+
+&sdhci {
+	status = "okay";
 };
