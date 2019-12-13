@@ -98,6 +98,16 @@ define Device/hiveap-330
 endef
 TARGET_DEVICES += hiveap-330
 
+define Device/ws-ap3710i
+  DEVICE_TITLE := Enterasys WS-AP3710i
+  BLOCKSIZE := 128k
+  KERNEL = kernel-bin | lzma | fit lzma $(KDIR)/image-$$(DEVICE_DTS).dtb
+  SUPPORTED_DEVICES := enterasys,ws-ap3710i
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += ws-ap3710i
+
 define Device/panda
   DEVICE_TITLE := OCEDO Panda
   DEVICE_PACKAGES := kmod-rtc-ds1307 uboot-envtools
