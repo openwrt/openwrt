@@ -743,7 +743,7 @@ mac80211_setup_vif() {
 
 	json_select config
 	json_get_vars mode
-	json_get_var vif_txpower txpower
+	json_get_var vif_txpower
 	json_get_var vif_enable enable 1
 
 	[ "$vif_enable" = 1 ] || action=down
@@ -753,7 +753,6 @@ mac80211_setup_vif() {
 		json_select ..
 		return
 	}
-	set_default vif_txpower "$txpower"
 	[ -z "$vif_txpower" ] || iw dev "$ifname" set txpower fixed "${vif_txpower%%.*}00"
 
 	case "$mode" in
@@ -907,6 +906,12 @@ drv_mac80211_setup() {
 	iw phy "$phy" set antenna $txantenna $rxantenna >/dev/null 2>&1
 	iw phy "$phy" set antenna_gain $antenna_gain
 	iw phy "$phy" set distance "$distance"
+
+	if [ -n "$txpower" ]; then
+		iw phy "$phy" set txpower fixed "${txpower%%.*}00"
+	else
+		iw phy "$phy" set txpower auto
+	fi
 
 	[ -n "$frag" ] && iw phy "$phy" set frag "${frag%%.*}"
 	[ -n "$rts" ] && iw phy "$phy" set rts "${rts%%.*}"
