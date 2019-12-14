@@ -32,11 +32,15 @@ endef
 # why \x00\x00\x00\x00 for zImage-initramfs
 define Device/Default
   PROFILES := Default
-  DEVICE_VARS := SUNXI_DTS SUNXI_UBOOT
+  DEVICE_VARS := SUNXI_SOC SUNXI_DTS SUNXI_DTS_DIR SUNXI_UBOOT
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | uImage none
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
+  SUNXI_SOC :=
+  SUNXI_DTS_DIR :=
+  SUNXI_DTS = $$(SUNXI_DTS_DIR)$$(SUNXI_SOC)-$(lastword $(subst _, ,$(1)))
 endef
 
 include cortex-a7.mk
