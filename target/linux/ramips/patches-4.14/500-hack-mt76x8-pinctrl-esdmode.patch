@@ -1,0 +1,55 @@
+From: Chuanhong Guo <gch981213@gmail.com>
+Date: Sat, 13 Jul 2019 17:59:03 +0800
+Subject: [PATCH] ramips: hack: add esdmode pinctrl group
+
+Since mt76x8an ver1 eco2, SDXC pins can be switched to the
+following pinmap:
+sd_d1  -> PAD_I2S_SDI
+sd_d0  -> PAD_I2S_WS
+sd_cmd -> PAD_I2S_CLK
+sd_d3  -> PAD_I2C_SCLK
+sd_d2  -> PAD_I2C_SD
+sd_clk -> PAD_GPIO0
+sd_wp  -> PAD_TXD1
+sd_cd  -> PAD_RXD1
+
+To use this pinmap, one would need to set ESD_MODE bit (bit 15)
+to 1 in GPIO1_MODE and switch other used pads into GPIO mode.
+
+MTK called this pinmap "router mode" and the pinmap described
+in their datasheed is called "iot mode".
+
+This patch is hacky because:
+1. pinmux-rt2880 doesn't support reserving noncontiguous GPIO
+   pins so those GPIOs can't be properly reserved.
+2. it misused "gpio" function for "iot mode", due to the fact
+   that this mode doesn't reserve any GPIOs.
+
+Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
+---
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
+@@ -149,6 +149,7 @@ static struct rt2880_pmx_func refclk_grp
+ static struct rt2880_pmx_func perst_grp_mt7628[] = { FUNC("perst", 0, 36, 1) };
+ static struct rt2880_pmx_func wdt_grp_mt7628[] = { FUNC("wdt", 0, 38, 1) };
+ static struct rt2880_pmx_func spi_grp_mt7628[] = { FUNC("spi", 0, 7, 4) };
++static struct rt2880_pmx_func esd_mode_grp_mt7628[] = { FUNC("sdxc", 1, 0, 0) };
+ 
+ static struct rt2880_pmx_func sd_mode_grp_mt7628[] = {
+ 	FUNC("jtag", 3, 22, 8),
+@@ -297,6 +298,7 @@ static struct rt2880_pmx_func wled_an_gr
+ #define MT7628_GPIO_MODE_I2C		20
+ #define MT7628_GPIO_MODE_REFCLK		18
+ #define MT7628_GPIO_MODE_PERST		16
++#define MT7628_GPIO_MODE_ESDMODE	15
+ #define MT7628_GPIO_MODE_WDT		14
+ #define MT7628_GPIO_MODE_SPI		12
+ #define MT7628_GPIO_MODE_SDMODE		10
+@@ -319,6 +321,7 @@ static struct rt2880_pmx_group mt7628an_
+ 				1, MT7628_GPIO_MODE_I2C),
+ 	GRP("refclk", refclk_grp_mt7628, 1, MT7628_GPIO_MODE_REFCLK),
+ 	GRP("perst", perst_grp_mt7628, 1, MT7628_GPIO_MODE_PERST),
++	GRP_G("esdmode", esd_mode_grp_mt7628, 1, 0, MT7628_GPIO_MODE_ESDMODE),
+ 	GRP("wdt", wdt_grp_mt7628, 1, MT7628_GPIO_MODE_WDT),
+ 	GRP("spi", spi_grp_mt7628, 1, MT7628_GPIO_MODE_SPI),
+ 	GRP_G("sdmode", sd_mode_grp_mt7628, MT7628_GPIO_MODE_MASK,
