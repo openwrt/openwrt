@@ -4,7 +4,7 @@ define Device/arcadyan_arv4510pw
   DEVICE_ALT0_VENDOR := Wippies
   DEVICE_ALT0_MODEL := BeWan iBox v1.0
   IMAGE_SIZE := 15616k
-  DEVICE_DTS := ARV4510PW
+  SOC := danube
   DEVICE_PACKAGES := kmod-usb-ledtrig-usbport kmod-usb2-pci kmod-usb-uhci \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
@@ -23,7 +23,7 @@ define Device/arcadyan_arv4519pw
   DEVICE_ALT1_VENDOR := Pirelli
   DEVICE_ALT1_MODEL := P.RG A4201G
   IMAGE_SIZE := 3776k
-  DEVICE_DTS := ARV4519PW
+  SOC := danube
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
@@ -38,7 +38,7 @@ define Device/arcadyan_arv7506pw11
   DEVICE_ALT0_VENDOR := Alice/O2
   DEVICE_ALT0_MODEL := IAD 4421
   IMAGE_SIZE := 7808k
-  DEVICE_DTS := ARV7506PW11
+  SOC := danube
   DEVICE_PACKAGES := kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -53,7 +53,7 @@ define Device/arcadyan_arv7510pw22
   DEVICE_ALT0_VENDOR := Astoria Networks
   DEVICE_ALT0_MODEL := ARV7510PW22
   IMAGE_SIZE := 31232k
-  DEVICE_DTS := ARV7510PW22
+  SOC := danube
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
@@ -71,7 +71,7 @@ define Device/arcadyan_arv7518pw
   DEVICE_ALT0_VENDOR := Astoria Networks
   DEVICE_ALT0_MODEL := ARV7518PW
   IMAGE_SIZE := 7872k
-  DEVICE_DTS := ARV7518PW
+  SOC := danube
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
@@ -87,7 +87,7 @@ define Device/arcadyan_arv7519pw
   DEVICE_ALT0_VENDOR := Astoria Networks
   DEVICE_ALT0_MODEL := ARV7519PW
   IMAGE_SIZE := 15488k
-  DEVICE_DTS := ARV7519PW
+  SOC := danube
   DEVICE_PACKAGES := kmod-usb-dwc2 \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
@@ -104,7 +104,7 @@ define Device/arcadyan_arv7525pw
   DEVICE_ALT0_MODEL := Speedport W303V
   DEVICE_ALT0_VARIANT := Typ A
   IMAGE_SIZE := 3776k
-  DEVICE_DTS := ARV4510PW
+  SOC := danube
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-basic \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
@@ -119,7 +119,7 @@ define Device/arcadyan_arv752dpw
   DEVICE_ALT0_VENDOR := Vodafone
   DEVICE_ALT0_MODEL := Easybox 802
   IMAGE_SIZE := 7872k
-  DEVICE_DTS := ARV752DPW
+  SOC := danube
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
@@ -136,7 +136,7 @@ define Device/arcadyan_arv752dpw22
   DEVICE_ALT0_VENDOR := Vodafone
   DEVICE_ALT0_MODEL := Easybox 803
   IMAGE_SIZE := 7616k
-  DEVICE_DTS := ARV752DPW22
+  SOC := danube
   DEVICE_PACKAGES := kmod-usb2-pci kmod-usb-uhci kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
@@ -153,7 +153,7 @@ define Device/arcadyan_arv8539pw22
   DEVICE_ALT0_VENDOR := Telekom
   DEVICE_ALT0_MODEL := Speedport W504V Typ A
   IMAGE_SIZE := 7616k
-  DEVICE_DTS := ARV8539PW22
+  SOC := danube
   DEVICE_PACKAGES := kmod-usb-dwc2 \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
@@ -167,7 +167,7 @@ define Device/audiocodes_mp-252
   DEVICE_VENDOR := AudioCodes
   DEVICE_MODEL := MediaPack MP-252
   IMAGE_SIZE := 14848k
-  DEVICE_DTS := ACMP252
+  SOC := danube
   DEVICE_PACKAGES :=  kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	kmod-ltq-tapi kmod-ltq-vmmc \
@@ -185,7 +185,7 @@ define Device/bt_homehub-v2b
   DEVICE_MODEL := Home Hub 2
   DEVICE_VARIANT := Type B
   BOARD_NAME := BTHOMEHUBV2B
-  DEVICE_DTS := BTHOMEHUBV2B
+  SOC := danube
   DEVICE_PACKAGES := kmod-usb-dwc2 \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
@@ -199,7 +199,7 @@ TARGET_DEVICES += bt_homehub-v2b
 define Device/lantiq_easy50712
   DEVICE_VENDOR := Lantiq
   DEVICE_MODEL := Danube (EASY50712)
-  DEVICE_DTS := EASY50712
+  SOC := danube
   IMAGE_SIZE := 3776k
 endef
 TARGET_DEVICES += lantiq_easy50712
@@ -208,7 +208,7 @@ define Device/siemens_gigaset-sx76x
   DEVICE_VENDOR := Siemens
   DEVICE_MODEL := Gigaset sx76x
   IMAGE_SIZE := 7680k
-  DEVICE_DTS := GIGASX76X
+  SOC := danube
   DEVICE_PACKAGES := kmod-usb-dwc2 \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \

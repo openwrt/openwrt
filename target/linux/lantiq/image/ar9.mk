@@ -1,7 +1,7 @@
 define Device/avm_fritz7312
   $(Device/AVM)
   DEVICE_MODEL := FRITZ!Box 7312
-  DEVICE_DTS := FRITZ7312
+  SOC := ar9
   IMAGE_SIZE := 15744k
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
@@ -16,7 +16,7 @@ define Device/avm_fritz7320
   DEVICE_MODEL := FRITZ!Box 7320
   DEVICE_ALT0_VENDOR := 1&1
   DEVICE_ALT0_MODEL := HomeServer
-  DEVICE_DTS := FRITZ7320
+  SOC := ar9
   IMAGE_SIZE := 15744k
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
@@ -33,7 +33,7 @@ define Device/bt_homehub-v3a
   DEVICE_MODEL := Home Hub
   DEVICE_VARIANT := Type A
   BOARD_NAME := BTHOMEHUBV3A
-  DEVICE_DTS := BTHOMEHUBV3A
+  SOC := ar9
   DEVICE_PACKAGES := kmod-usb-dwc2 \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
@@ -50,7 +50,8 @@ define Device/buffalo_wbmr-hp-g300h-a
   DEVICE_MODEL := WBMR-HP-G300H
   DEVICE_VARIANT := A
   IMAGE_SIZE := 31488k
-  DEVICE_DTS := WBMR
+  SOC := ar9
+  DEVICE_DTS := ar9_buffalo_wbmr-hp-g300h
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
@@ -65,7 +66,8 @@ define Device/buffalo_wbmr-hp-g300h-b
   DEVICE_MODEL := WBMR-HP-G300H
   DEVICE_VARIANT := B
   IMAGE_SIZE := 31488k
-  DEVICE_DTS := WBMR
+  SOC := ar9
+  DEVICE_DTS := ar9_buffalo_wbmr-hp-g300h
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
@@ -80,7 +82,7 @@ DGN3500_KERNEL_OFFSET_DEC=327680
 define Device/netgear_dgn3500
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := DGN3500
-  DEVICE_DTS := DGN3500
+  SOC := ar9
   IMAGE_SIZE := 16000k
   IMAGES := \
 	sysupgrade-na.bin sysupgrade.bin \
@@ -112,7 +114,7 @@ TARGET_DEVICES += netgear_dgn3500
 define Device/netgear_dgn3500b
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := DGN3500B
-  DEVICE_DTS := DGN3500B
+  SOC := ar9
   IMAGE_SIZE := 16000k
   IMAGES += factory.img
   IMAGE/sysupgrade.bin := \
@@ -136,7 +138,7 @@ define Device/zte_h201l
   DEVICE_VENDOR := ZTE
   DEVICE_MODEL := H201L
   IMAGE_SIZE := 7808k
-  DEVICE_DTS := H201L
+  SOC := ar9
   DEVICE_PACKAGES := kmod-ath9k-htc wpad-basic \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
@@ -152,7 +154,7 @@ define Device/zyxel_p-2601hn
   DEVICE_MODEL := P-2601HN
   DEVICE_VARIANT := F1/F3
   IMAGE_SIZE := 15616k
-  DEVICE_DTS := P2601HNFX
+  SOC := ar9
   DEVICE_PACKAGES := kmod-rt2800-usb wpad-basic \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
