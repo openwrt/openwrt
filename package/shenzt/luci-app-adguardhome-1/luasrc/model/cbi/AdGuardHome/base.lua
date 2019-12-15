@@ -167,8 +167,5 @@ if fs.stat(value,"type")=="reg" then
 end 
 return value
 end
-function mp.on_commit(map)
-	io.popen("/etc/init.d/AdGuardHome reload &")
-end
 nixio.fs.writefile("/var/run/lucilogpos","0")
 return mp

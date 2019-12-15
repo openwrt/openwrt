@@ -88,7 +88,4 @@ o.write=function()
 end
 end
 end
-function m.on_commit(map)
-	io.popen("/etc/init.d/AdGuardHome reload &")
-end
 return m

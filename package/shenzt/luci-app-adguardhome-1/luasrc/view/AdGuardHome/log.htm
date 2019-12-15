@@ -1,13 +1,22 @@
 <%+cbi/valueheader%>
 <%uci=require"luci.model.uci".cursor()%>
 <%nixio=require"nixio"%>
-
-<input type="checkbox" name="NAME" value="reverse" onclick=" return reverselog()" style="vertical-align:middle;height: auto;" checked><%:reverse%></input><br>
+<%logfile=uci:get("AdGuardHome","AdGuardHome","logfile")%>
+<%if (logfile=="syslog" or logfile==nil ) then%>
+<%timereplace=false%>
+<%else%>
+<%timereplace=true%>
+<%end%>
+<input type="checkbox" name="NAME" value="reverse" onclick=" return reverselog()" style="vertical-align:middle;height: auto;" checked><%:reverse%></input>
+<%if timereplace==true then%>
+<input type="checkbox" name="NAME" value="localtime" onclick=" return chlogtime()" style="vertical-align:middle;height: auto;" checked><%:localtime%></input><br>
+<%end%>
 <textarea id="cbid.logview.1.conf" class="cbi-input-textarea" style="width: 100%;display:inline" data-update="change" name="vbid.logview.1.conf" rows="32" cols="60" readonly="readonly" > </textarea>
 <input class="cbi-button cbi-button-apply" name="apply_update_button" id="apply_update_button" value="<%:dellog%>" onclick=" return apply_del_log() "/>
 <input class="cbi-button cbi-button-apply" name="backup" value="<%:download log%>" style=" display:inline;" onclick=" return download_log()" />
 <script type="text/javascript">//<![CDATA[
 var islogreverse = true;
+var isutc2local = <%=tostring(timereplace)%>;
 function createAndDownloadFile(fileName, content) {
     var aTag = document.createElement('a');
     var blob = new Blob([content]);
@@ -19,7 +28,7 @@ function createAndDownloadFile(fileName, content) {
 function download_log(){
 	var lv = document.getElementById('cbid.logview.1.conf');
 	var dt = new Date();
-	var timestamp = dt.getMonth()+"-"+dt.getDay()+"-"+dt.getHours()+"_"+dt.getMinutes();
+	var timestamp = (dt.getMonth()+1)+"-"+dt.getDay()+"-"+dt.getHours()+"_"+dt.getMinutes();
 	createAndDownloadFile("AdGuardHome"+timestamp+".log",lv.innerHTML)
 	return
 }
@@ -29,6 +38,17 @@ function apply_del_log(){
 		lv.innerHTML="";
 	}
 		);
+	return
+}
+function chlogtime(){
+	var lv = document.getElementById('cbid.logview.1.conf');
+	if (isutc2local){
+	lv.innerHTML=line_toUTC(lv.innerHTML).join('\n');
+	isutc2local=false;
+	}else{
+	lv.innerHTML=line_tolocal(lv.innerHTML).join('\n');
+	isutc2local=true;
+	}
 	return
 }
 function reverselog(){
@@ -41,15 +61,47 @@ function reverselog(){
 	}
 	return
 }
+function p(s) {
+        return s < 10 ? '0' + s: s;
+}
+function line_tolocal(str){
+var strt=new Array();
+str.trim().split('\n').forEach(function(v, i) {
+if (v==""){strt[i]="";return;}
+var dt = new Date(v.substring(0,19)+" UTC");
+  strt[i]=dt.getFullYear()+"/"+p(dt.getMonth()+1)+"/"+p(dt.getDate())+" "+p(dt.getHours())+":"+p(dt.getMinutes())+":"+p(dt.getSeconds())+v.substring(19)
+})
+return strt
+}
+function line_toUTC(str){
+var strt=new Array();
+str.trim().split('\n').forEach(function(v, i) {
+if (v==""){strt[i]="";return;}
+var dt = new Date(v.substring(0,19))
+  strt[i]=dt.getUTCFullYear()+"/"+p(dt.getUTCMonth()+1)+"/"+p(dt.getUTCDate())+" "+p(dt.getUTCHours())+":"+p(dt.getUTCMinutes())+":"+p(dt.getUTCSeconds())+v.substring(19)
+})
+console.debug("toutc",strt[2]);
+return strt
+}
 function poll_check(){
 XHR.poll(3, '<%=url([[admin]], [[services]], [[AdGuardHome]], [[getlog]])%>', null,
 	function(x, data) {
 		var lv = document.getElementById('cbid.logview.1.conf');
 		if (x.responseText && lv) {
-			if (islogreverse){
-				lv.innerHTML = x.responseText.split('\n').reverse().join('\n')+lv.innerHTML;
+			if (isutc2local)
+			{
+				var lines=line_tolocal(x.responseText);
+				if (islogreverse){
+					lv.innerHTML = lines.reverse().join('\n')+lv.innerHTML;
+				}else{
+					lv.innerHTML += lines.join('\n');
+				}
 			}else{
-				lv.innerHTML += x.responseText;
+				if (islogreverse){
+					lv.innerHTML = x.responseText.split('\n').reverse().join('\n')+lv.innerHTML;
+				}else{
+					lv.innerHTML += x.responseText;
+				}
 			}
 		}
 	}

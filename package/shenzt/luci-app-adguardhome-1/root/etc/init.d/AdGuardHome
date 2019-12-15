@@ -135,7 +135,7 @@ get_tz()
 
 rm_port53()
 {
-	AdGuardHome_PORT=$(awk '/  port:/{printf($2)}' $configpath)
+	local AdGuardHome_PORT=$(config_editor "dns.port" "" "$configpath" "1")
 	dnsmasq_port=$(uci get dhcp.@dnsmasq[0].port 2>/dev/null)
 	if [ -z "$dnsmasq_port" ]; then
 	dnsmasq_port="53"
@@ -155,7 +155,7 @@ rm_port53()
 
 use_port53()
 {
-	AdGuardHome_PORT=$(awk '/  port:/{printf($2)}' $configpath)
+	local AdGuardHome_PORT=$(config_editor "dns.port" "" "$configpath" "1")
 	dnsmasq_port=$(uci get dhcp.@dnsmasq[0].port 2>/dev/null)
 	if [ -z "$dnsmasq_port" ]; then
 		dnsmasq_port="53"
@@ -187,7 +187,7 @@ do_redirect()
 		echo -n "0">/var/run/AdGredir
 	fi
 	config_get configpath $CONFIGURATION configpath "/etc/AdGuardHome.yaml"
-	AdGuardHome_PORT=$(awk '/  port:/{printf($2)}' $configpath)
+	AdGuardHome_PORT=$(config_editor "dns.port" "" "$configpath" "1")
 	if [ -z "$AdGuardHome_PORT" ]; then
 		AdGuardHome_PORT="0"
 	fi
@@ -277,22 +277,27 @@ get_filesystem()
 
 config_editor()
 {
-	awk -v yaml="$1" -v value="$2" -v file="$3" '
+	awk -v yaml="$1" -v value="$2" -v file="$3" -v ro="$4" '
 	BEGIN{split(yaml,part,"\.");s="";i=1;l=length(part);}
     {
-        if (match($0,s""part[i]))
+        if (match($0,s""part[i]":"))
         {
             if (i==l)
             {
-                split($0,t,":");
-                system("sed -i '\''"FNR"c \\"t[1]": "value"'\'' "file);
-                exit;
+                split($0,t,": ");
+				if (ro==""){
+				system("sed -i '\''"FNR"c \\"t[1]": "value"'\'' "file);
+				}else{
+				print(t[2]);
+				}
+				exit;
             }
             s=s"[- ]{2}";
             i++;
         }
     }' $3
 }
+
 boot_service() {
 	config_load "${CONFIGURATION}"
 	config_get waitonboot $CONFIGURATION waitonboot "0"
@@ -425,6 +430,7 @@ reload_service()
 			uci set $CONFIGURATION.$CONFIGURATION.hashpass=""
 		fi
 	else
+		procd_send_signal $CONFIGURATION
 		start
 	fi
 	echo "enabled=$enabled"
