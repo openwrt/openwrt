@@ -11,7 +11,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
 
 --- a/drivers/cpufreq/cpufreq-dt.c
 +++ b/drivers/cpufreq/cpufreq-dt.c
-@@ -49,11 +49,41 @@ static int set_target(struct cpufreq_pol
+@@ -49,11 +49,42 @@ static int set_target(struct cpufreq_pol
  	struct private_data *priv = policy->driver_data;
  	int ret;
  	unsigned long target_freq = policy->freq_table[index].frequency * 1000;
@@ -43,6 +43,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
 +			l2_freq = clk_get_rate(l2_clk);
 +
 +			if (l2_freq != new_l2_freq) {
++				ret = clk_set_rate(l2_clk, policy->l2_rate[0]);
 +				/* scale l2 with the core */
 +				ret = clk_set_rate(l2_clk, new_l2_freq);
 +			}
