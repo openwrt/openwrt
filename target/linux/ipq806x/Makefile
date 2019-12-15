@@ -11,7 +11,7 @@ CPU_SUBTYPE:=neon-vfpv4
 MAINTAINER:=John Crispin <john@phrozen.org>
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=4.14
+KERNEL_PATCHVER:=4.19
 
 KERNELNAME:=zImage Image dtbs
 
