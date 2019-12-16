@@ -39,11 +39,9 @@ Signed-off-by: Sricharan R <sricharan@codeaurora.org>
 #  - nvmem-cells: A phandle pointing to a nvmem-cells node representing the
 #  		efuse registers that has information about the
 #  		speedbin that is used to select the right frequency/voltage
-diff --git a/drivers/cpufreq/Kconfig.arm b/drivers/cpufreq/Kconfig.arm
-index 13fbd97..497ae89 100644
 --- a/drivers/cpufreq/Kconfig.arm
 +++ b/drivers/cpufreq/Kconfig.arm
-@@ -126,7 +126,7 @@ config ARM_OMAP2PLUS_CPUFREQ
+@@ -112,7 +112,7 @@ config ARM_OMAP2PLUS_CPUFREQ
  
  config ARM_QCOM_CPUFREQ_NVMEM
  	tristate "Qualcomm nvmem based CPUFreq"
@@ -52,11 +50,9 @@ index 13fbd97..497ae89 100644
  	depends on QCOM_QFPROM
  	depends on QCOM_SMEM
  	select PM_OPP
-diff --git a/drivers/cpufreq/cpufreq-dt-platdev.c b/drivers/cpufreq/cpufreq-dt-platdev.c
-index fe14c57..917cdc2 100644
 --- a/drivers/cpufreq/cpufreq-dt-platdev.c
 +++ b/drivers/cpufreq/cpufreq-dt-platdev.c
-@@ -128,6 +128,11 @@
+@@ -128,6 +128,11 @@ static const struct of_device_id blackli
  	{ .compatible = "ti,am43", },
  	{ .compatible = "ti,dra7", },
  
@@ -68,11 +64,9 @@ index fe14c57..917cdc2 100644
  	{ }
  };
  
-diff --git a/drivers/cpufreq/qcom-cpufreq-nvmem.c b/drivers/cpufreq/qcom-cpufreq-nvmem.c
-index 0ad8e5b..5f2add0 100644
 --- a/drivers/cpufreq/qcom-cpufreq-nvmem.c
 +++ b/drivers/cpufreq/qcom-cpufreq-nvmem.c
-@@ -48,17 +48,92 @@
+@@ -48,17 +48,92 @@ struct qcom_cpufreq_drv;
  struct qcom_cpufreq_match_data {
  	int (*get_version)(struct device *cpu_dev,
  			   struct nvmem_cell *speedbin_nvmem,
@@ -166,7 +160,7 @@ index 0ad8e5b..5f2add0 100644
  static enum _msm8996_version qcom_cpufreq_get_msm_id(void)
  {
  	size_t len;
-@@ -90,11 +165,13 @@
+@@ -90,11 +165,13 @@ static enum _msm8996_version qcom_cpufre
  
  static int qcom_cpufreq_kryo_name_version(struct device *cpu_dev,
  					  struct nvmem_cell *speedbin_nvmem,
@@ -180,7 +174,7 @@ index 0ad8e5b..5f2add0 100644
  
  	msm8996_version = qcom_cpufreq_get_msm_id();
  	if (NUM_OF_MSM8996_VERSIONS == msm8996_version) {
-@@ -122,16 +199,51 @@
+@@ -122,16 +199,51 @@ static int qcom_cpufreq_kryo_name_versio
  	return 0;
  }
  
@@ -232,7 +226,7 @@ index 0ad8e5b..5f2add0 100644
  	unsigned cpu;
  	const struct of_device_id *match;
  	int ret;
-@@ -144,7 +256,7 @@
+@@ -144,7 +256,7 @@ static int qcom_cpufreq_probe(struct pla
  	if (!np)
  		return -ENOENT;
  
@@ -241,7 +235,7 @@ index 0ad8e5b..5f2add0 100644
  	if (!ret) {
  		of_node_put(np);
  		return -ENOENT;
-@@ -172,7 +284,7 @@
+@@ -172,7 +284,7 @@ static int qcom_cpufreq_probe(struct pla
  			goto free_drv;
  		}
  
@@ -250,7 +244,7 @@ index 0ad8e5b..5f2add0 100644
  		if (ret) {
  			nvmem_cell_put(speedbin_nvmem);
  			goto free_drv;
-@@ -181,12 +293,18 @@
+@@ -181,12 +293,18 @@ static int qcom_cpufreq_probe(struct pla
  	}
  	of_node_put(np);
  
@@ -271,7 +265,7 @@ index 0ad8e5b..5f2add0 100644
  
  	for_each_possible_cpu(cpu) {
  		cpu_dev = get_cpu_device(cpu);
-@@ -196,11 +314,22 @@
+@@ -196,11 +314,22 @@ static int qcom_cpufreq_probe(struct pla
  		}
  
  		if (drv->data->get_version) {
@@ -298,7 +292,7 @@ index 0ad8e5b..5f2add0 100644
  				dev_err(cpu_dev,
  					"Failed to set supported hardware\n");
  				goto free_opp;
-@@ -220,11 +349,18 @@
+@@ -220,11 +349,18 @@ static int qcom_cpufreq_probe(struct pla
  
  free_opp:
  	for_each_possible_cpu(cpu) {
@@ -320,7 +314,7 @@ index 0ad8e5b..5f2add0 100644
  free_drv:
  	kfree(drv);
  
-@@ -239,10 +375,14 @@
+@@ -239,10 +375,14 @@ static int qcom_cpufreq_remove(struct pl
  	platform_device_unregister(cpufreq_dt_pdev);
  
  	for_each_possible_cpu(cpu)
@@ -338,7 +332,7 @@ index 0ad8e5b..5f2add0 100644
  	kfree(drv);
  
  	return 0;
-@@ -259,6 +399,10 @@
+@@ -259,6 +399,10 @@ static struct platform_driver qcom_cpufr
  static const struct of_device_id qcom_cpufreq_match_list[] __initconst = {
  	{ .compatible = "qcom,apq8096", .data = &match_data_kryo },
  	{ .compatible = "qcom,msm8996", .data = &match_data_kryo },
