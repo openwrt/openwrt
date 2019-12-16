@@ -1,0 +1,11 @@
+--- a/drivers/media/Kconfig
++++ b/drivers/media/Kconfig
+@@ -118,7 +118,7 @@ config MEDIA_CONTROLLER_DVB
+ config VIDEO_DEV
+ 	tristate
+ 	depends on MEDIA_SUPPORT
+-	depends on MEDIA_CAMERA_SUPPORT || MEDIA_ANALOG_TV_SUPPORT || MEDIA_RADIO_SUPPORT || MEDIA_SDR_SUPPORT
++	depends on MEDIA_CAMERA_SUPPORT || MEDIA_ANALOG_TV_SUPPORT || MEDIA_DIGITAL_TV_SUPPORT || MEDIA_RADIO_SUPPORT || MEDIA_SDR_SUPPORT
+ 	default y
+ 
+ config VIDEO_V4L2_SUBDEV_API
