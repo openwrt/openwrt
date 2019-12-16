@@ -762,6 +762,36 @@ endef
 $(eval $(call KernelPackage,serial-8250-exar))
 
 
+define KernelPackage/rc-core
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=RC core support
+  DEPENDS:=+kmod-input-core
+  KCONFIG:=CONFIG_RC_CORE
+  FILES:=$(LINUX_DIR)/drivers/media/rc/rc-core.ko
+endef
+
+define KernelPackage/rc-core/description
+  Remote controller core support
+endef
+
+$(eval $(call KernelPackage,rc-core))
+
+
+define KernelPackage/rc-keymap-pinnacle-pctv-hd
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=RC keymap support for PCTV 461e
+  DEPENDS:=+kmod-rc-core
+  KCONFIG:=CONFIG_RC_MAP
+  FILES:=$(LINUX_DIR)/drivers/media/rc/keymaps/rc-pinnacle-pctv-hd.ko
+endef
+
+define KernelPackage/rc-keymap-pinnacle-pctv-hd/description
+  Remote controller keymap support for PCTV 461e
+endef
+
+$(eval $(call KernelPackage,rc-keymap-pinnacle-pctv-hd))
+
+
 define KernelPackage/regmap-core
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Generic register map support
