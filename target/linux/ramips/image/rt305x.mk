@@ -769,6 +769,18 @@ define Device/olimex_rt5350f-olinuxino-evb
 endef
 TARGET_DEVICES += olimex_rt5350f-olinuxino-evb
 
+define Device/olimex_rt5350f-olinuxino-evb-plus
+  MTK_SOC := rt5350
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := OLIMEX
+  DEVICE_MODEL := RT5350F-OLinuXino-EVB+
+  DEVICE_PACKAGES := mod-usb-core kmod-usb-ohci kmod-usb2 \
+		kmod-i2c-core kmod-i2c-ralink \
+		kmod-spi-dev kmod-mmc-spi
+  SUPPORTED_DEVICES += rt5350f-olinuxino-evb-plus
+endef
+TARGET_DEVICES += olimex_rt5350f-olinuxino-evb-plus
+
 define Device/omnima_miniembplug
   MTK_SOC := rt5350
   IMAGE_SIZE := 7872k
