@@ -20,8 +20,6 @@ Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
  drivers/cpufreq/qcom-cpufreq-nvmem.c | 123 +++++++++++++++++----------
  1 file changed, 79 insertions(+), 44 deletions(-)
 
-diff --git a/drivers/cpufreq/qcom-cpufreq-nvmem.c b/drivers/cpufreq/qcom-cpufreq-nvmem.c
-index fd08120768af2..2d798a1685c5d 100644
 --- a/drivers/cpufreq/qcom-cpufreq-nvmem.c
 +++ b/drivers/cpufreq/qcom-cpufreq-nvmem.c
 @@ -43,6 +43,20 @@ enum _msm8996_version {
@@ -45,7 +43,7 @@ index fd08120768af2..2d798a1685c5d 100644
  static struct platform_device *cpufreq_dt_pdev, *cpufreq_pdev;
  
  static enum _msm8996_version qcom_cpufreq_get_msm_id(void)
-@@ -76,7 +90,7 @@ static enum _msm8996_version qcom_cpufreq_get_msm_id(void)
+@@ -76,7 +90,7 @@ static enum _msm8996_version qcom_cpufre
  
  static int qcom_cpufreq_kryo_name_version(struct device *cpu_dev,
  					  struct nvmem_cell *speedbin_nvmem,
@@ -54,7 +52,7 @@ index fd08120768af2..2d798a1685c5d 100644
  {
  	size_t len;
  	u8 *speedbin;
-@@ -94,10 +108,10 @@ static int qcom_cpufreq_kryo_name_version(struct device *cpu_dev,
+@@ -94,10 +108,10 @@ static int qcom_cpufreq_kryo_name_versio
  
  	switch (msm8996_version) {
  	case MSM8996_V3:
@@ -67,7 +65,7 @@ index fd08120768af2..2d798a1685c5d 100644
  		break;
  	default:
  		BUG();
-@@ -108,17 +122,17 @@ static int qcom_cpufreq_kryo_name_version(struct device *cpu_dev,
+@@ -108,17 +122,17 @@ static int qcom_cpufreq_kryo_name_versio
  	return 0;
  }
  
@@ -90,7 +88,7 @@ index fd08120768af2..2d798a1685c5d 100644
  	const struct of_device_id *match;
  	int ret;
  
-@@ -126,11 +140,6 @@ static int qcom_cpufreq_probe(struct platform_device *pdev)
+@@ -126,11 +140,6 @@ static int qcom_cpufreq_probe(struct pla
  	if (!cpu_dev)
  		return -ENODEV;
  
@@ -102,7 +100,7 @@ index fd08120768af2..2d798a1685c5d 100644
  	np = dev_pm_opp_of_get_opp_desc_node(cpu_dev);
  	if (!np)
  		return -ENOENT;
-@@ -141,23 +150,43 @@ static int qcom_cpufreq_probe(struct platform_device *pdev)
+@@ -141,23 +150,43 @@ static int qcom_cpufreq_probe(struct pla
  		return -ENOENT;
  	}
  
@@ -160,7 +158,7 @@ index fd08120768af2..2d798a1685c5d 100644
  
  	for_each_possible_cpu(cpu) {
  		cpu_dev = get_cpu_device(cpu);
-@@ -166,19 +195,23 @@ static int qcom_cpufreq_probe(struct platform_device *pdev)
+@@ -166,19 +195,23 @@ static int qcom_cpufreq_probe(struct pla
  			goto free_opp;
  		}
  
@@ -191,7 +189,7 @@ index fd08120768af2..2d798a1685c5d 100644
  		return 0;
  	}
  
-@@ -187,26 +220,30 @@ static int qcom_cpufreq_probe(struct platform_device *pdev)
+@@ -187,26 +220,30 @@ static int qcom_cpufreq_probe(struct pla
  
  free_opp:
  	for_each_possible_cpu(cpu) {
@@ -228,7 +226,7 @@ index fd08120768af2..2d798a1685c5d 100644
  
  	return 0;
  }
-@@ -220,10 +257,8 @@ static struct platform_driver qcom_cpufreq_driver = {
+@@ -220,10 +257,8 @@ static struct platform_driver qcom_cpufr
  };
  
  static const struct of_device_id qcom_cpufreq_match_list[] __initconst = {

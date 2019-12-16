@@ -99,7 +99,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  
  	cpu_dev = get_cpu_device(policy->cpu);
  	if (!cpu_dev) {
-@@ -254,10 +294,13 @@ static int cpufreq_init(struct cpufreq_p
+@@ -251,10 +291,13 @@ static int cpufreq_init(struct cpufreq_p
  				__func__, ret);
  	}
  
@@ -114,7 +114,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  	}
  
  	priv->cpu_dev = cpu_dev;
-@@ -287,6 +330,8 @@ static int cpufreq_init(struct cpufreq_p
+@@ -284,6 +327,8 @@ static int cpufreq_init(struct cpufreq_p
  
  out_free_cpufreq_table:
  	dev_pm_opp_free_cpufreq_table(cpu_dev, &freq_table);

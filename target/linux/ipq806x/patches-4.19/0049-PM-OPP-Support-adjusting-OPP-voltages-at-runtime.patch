@@ -37,15 +37,12 @@ Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
  include/linux/pm_opp.h | 13 ++++++++
  2 files changed, 82 insertions(+)
 
-diff --git a/drivers/opp/core.c b/drivers/opp/core.c
-index 3b7ffd0234e9..f38b3be85072 100644
 --- a/drivers/opp/core.c
 +++ b/drivers/opp/core.c
-@@ -2112,6 +2112,75 @@ static int _opp_set_availability(struct device *dev, unsigned long freq,
- 	return r;
+@@ -1623,6 +1623,75 @@ put_table:
  }
-
-+/**
+ 
+ /**
 + * dev_pm_opp_adjust_voltage() - helper to change the voltage of an OPP
 + * @dev:		device for which we do this operation
 + * @freq:		OPP frequency to adjust voltage of
@@ -114,36 +111,35 @@ index 3b7ffd0234e9..f38b3be85072 100644
 +	return r;
 +}
 +
- /**
++/**
   * dev_pm_opp_enable() - Enable a specific OPP
   * @dev:	device for which we do this operation
-diff --git a/include/linux/pm_opp.h b/include/linux/pm_opp.h
-index b8197ab014f2..747861816f4f 100644
+  * @freq:	OPP frequency to enable
 --- a/include/linux/pm_opp.h
 +++ b/include/linux/pm_opp.h
-@@ -22,6 +22,7 @@ struct opp_table;
-
+@@ -25,6 +25,7 @@ struct opp_table;
+ 
  enum dev_pm_opp_event {
  	OPP_EVENT_ADD, OPP_EVENT_REMOVE, OPP_EVENT_ENABLE, OPP_EVENT_DISABLE,
 +	OPP_EVENT_ADJUST_VOLTAGE,
  };
-
+ 
  /**
-@@ -113,6 +114,10 @@ int dev_pm_opp_add(struct device *dev, unsigned long freq,
+@@ -108,6 +109,10 @@ int dev_pm_opp_add(struct device *dev, u
+ 		   unsigned long u_volt);
  void dev_pm_opp_remove(struct device *dev, unsigned long freq);
- void dev_pm_opp_remove_all_dynamic(struct device *dev);
-
+ 
 +int dev_pm_opp_adjust_voltage(struct device *dev, unsigned long freq,
 +			      unsigned long u_volt, unsigned long u_volt_min,
 +			      unsigned long u_volt_max);
 +
  int dev_pm_opp_enable(struct device *dev, unsigned long freq);
-
+ 
  int dev_pm_opp_disable(struct device *dev, unsigned long freq);
-@@ -242,6 +247,14 @@ static inline void dev_pm_opp_remove_all_dynamic(struct device *dev)
+@@ -208,6 +213,14 @@ static inline void dev_pm_opp_remove(str
  {
  }
-
+ 
 +static inline int
 +dev_pm_opp_adjust_voltage(struct device *dev, unsigned long freq,
 +			  unsigned long u_volt, unsigned long u_volt_min,
