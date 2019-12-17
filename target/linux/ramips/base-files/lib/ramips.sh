@@ -214,6 +214,9 @@ ramips_board_detect() {
 	*"GL-MT300N-V2")
 		name="gl-mt300n-v2"
 		;;
+	*"HC5611")
+		name="hc5611"
+		;;
 	*"HC5661")
 		name="hc5661"
 		;;
