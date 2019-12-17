@@ -15,6 +15,7 @@
 		led-failsafe = &led_power;
 		led-running = &led_power;
 		led-upgrade = &led_power;
+		label-mac-device = &ethernet;
 	};
 
 	chosen {
@@ -125,6 +126,8 @@
 };
 
 &ethernet {
+	mtd-mac-address = <&factory 0x4>;
+
 	mediatek,portmap = "wllll";
 	port@5 {
 		status = "disabled";
