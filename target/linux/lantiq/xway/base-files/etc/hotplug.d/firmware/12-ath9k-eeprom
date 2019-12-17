@@ -41,27 +41,12 @@ case "$FIRMWARE" in
 				caldata_extract_swap "art-copy" 0x0 0x1000
 				ath9k_patch_mac_crc $(macaddr_add $(mtd_get_mac_ascii uboot_env ethaddr) +2) 0x10c
 				;;
-			bt,homehub-v5a)
-				caldata_extract_ubi "caldata" 0x1000 0x1000
-				ath9k_patch_mac_crc $(macaddr_add $(mtd_get_mac_binary_ubi caldata 0x110c) +2) 0x10c
-				;;
 			netgear,dgn3500|netgear,dgn3500b)
 				caldata_extract "calibration" 0xf000 0x1000
 				ath9k_patch_mac_crc $(macaddr_add $(mtd_get_mac_ascii uboot-env ethaddr) +2) 0x20c
 				;;
-			avm,fritz3370-rev2-hynix|\
-			avm,fritz3370-rev2-micron|\
-			avm,fritz7362sl)
-				caldata_extract_reverse "urlader" 0x1541 0x440
-				;;
-			avm,fritz7312|avm,fritz7320|avm,fritz7360sl)
+			avm,fritz7312|avm,fritz7320)
 				caldata_extract "urlader" 0x985 0x1000
-				;;
-			avm,fritz7412)
-				/usr/bin/fritz_cal_extract -i 1 -s 0x1e000 -e 0x207 -l 4096 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader")
-				;;
-			tplink,tdw8970|tplink,tdw8980)
-				caldata_extract "boardconfig" 0x21000 0x1000
 				;;
 			*)
 				caldata_die "board $board is not supported yet"
