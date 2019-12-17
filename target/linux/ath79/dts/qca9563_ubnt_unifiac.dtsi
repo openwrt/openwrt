@@ -62,7 +62,9 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <25000000>;
+		spi-max-frequency = <50000000>;
+		/* The unifiac series uses mx25l12805d with fast-read support */
+		m25p,fast-read;
 
 		partitions {
 			compatible = "fixed-partitions";
