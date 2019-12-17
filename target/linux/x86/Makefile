@@ -19,7 +19,8 @@ KERNELNAME:=bzImage
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += partx-utils mkf2fs e2fsprogs
+DEFAULT_PACKAGES += partx-utils mkf2fs e2fsprogs \
+luci-app-passwall luci-app-v2ray-server luci-app-trojan-server \
 
 $(eval $(call BuildTarget))
 
