@@ -29,7 +29,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/tty/serial/amba-pl011.c
 +++ b/drivers/tty/serial/amba-pl011.c
-@@ -2063,9 +2063,11 @@ pl011_set_termios(struct uart_port *port
+@@ -2061,9 +2061,11 @@ pl011_set_termios(struct uart_port *port
  
  		old_cr |= UART011_CR_CTSEN;
  		uap->autorts = true;
