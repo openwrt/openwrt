@@ -52,7 +52,8 @@ tama,w06)
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "$boardname:green:wlan" "phy0tpt"
 	;;
-tplink,archer-c20-v4)
+tplink,archer-c20-v4|\
+tplink,archer-c20-v5)
 	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x01"
 	;;
