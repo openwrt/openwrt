@@ -34,6 +34,51 @@ wireguard_check_interface() {
 	echo "$n_sum" > "${WG_DIR}/${cfg}.check"
 }
 
+wireguard_fw_rules() {
+	local zone="$1"
+	local port="$2"
+
+	json_add_object ""
+	json_add_string type rule
+	json_add_string src "$zone"
+	json_add_string proto udp
+	json_add_string dest_port "$port"
+	json_add_string target ACCEPT
+	json_close_object
+}
+
+wireguard_start_interface() {
+	local cfg="${1}"
+
+	local proto listen_port zone
+
+	config_get proto "${cfg}" proto
+	[ "${proto}" = "wireguard" ] || return 0
+
+	config_get listen_port "${cfg}" listen_port
+
+	procd_open_instance "${cfg}"
+	procd_set_param command /bin/true
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	[ -n "$listen_port" ] && {
+		procd_open_data
+		json_add_array firewall
+		config_list_foreach "$cfg" allowed_zones wireguard_fw_rules "$listen_port"
+		json_close_array
+		procd_close_data
+	}
+	procd_close_instance
+}
+
+service_started() {
+	procd_set_config_changed firewall
+}
+
+service_stopped() {
+	procd_set_config_changed firewall
+}
+
 service_triggers() {
 	procd_add_reload_trigger "network"
 }
@@ -42,4 +87,5 @@ start_service() {
 	mkdir -p "${WG_DIR}"
 	config_load network
 	config_foreach wireguard_check_interface interface
+	config_foreach wireguard_start_interface interface
 }
