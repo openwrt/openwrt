@@ -382,7 +382,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	dwc->lpm_nyet_threshold = lpm_nyet_threshold;
  	dwc->tx_de_emphasis = tx_de_emphasis;
  
-@@ -1367,12 +1532,14 @@ static int dwc3_resume_common(struct dwc
+@@ -1368,12 +1533,14 @@ static int dwc3_resume_common(struct dwc
  
  	switch (dwc->dr_mode) {
  	case USB_DR_MODE_PERIPHERAL:
@@ -1340,7 +1340,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  		while (ep_ring->dequeue != td->last_trb)
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -1607,13 +1607,38 @@ static int xhci_urb_dequeue(struct usb_h
+@@ -1604,13 +1604,38 @@ static int xhci_urb_dequeue(struct usb_h
  			ret = -ENOMEM;
  			goto done;
  		}
