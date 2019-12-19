@@ -31,10 +31,10 @@ set_hex_val() {
 	local val="$2"
 	val="$(printf %x "$val")"
 	[ -n "$DEBUG" ] && echo "$file = $val"
-	echo "$val" > "$file"
+	echo "$val" > "$file" 2>/dev/null
 }
 
-default_ps="$(uci get "network.@globals[0].default_ps")"
+default_ps="$(uci -q get "network.@globals[0].default_ps")"
 [ -n "$default_ps" -a "$default_ps" != 1 ] && exit 0
 
 exec 512>/var/lock/smp_tune.lock
@@ -47,21 +47,11 @@ for dev in /sys/class/net/*; do
 	[ -n "$(ls "${dev}/" | grep '^lower_')" ] && continue
 	[ -d "${dev}/device" ] || continue
 
-	device="$(readlink "${dev}/device")"
-	device="$(basename "$device")"
-	irq_cpu="$(find_irq_cpu "$device")"
-	irq_cpu_mask="$((1 << $irq_cpu))"
-
 	for q in ${dev}/queues/rx-*; do
-		set_hex_val "$q/rps_cpus" "$(($PROC_MASK & ~$irq_cpu_mask))"
+		set_hex_val "$q/rps_cpus" "$PROC_MASK"
 	done
 
-	ntxq="$(ls -d ${dev}/queues/tx-* | wc -l)"
-
-	idx=$(($irq_cpu + 1))
 	for q in ${dev}/queues/tx-*; do
-		set_hex_val "$q/xps_cpus" "$((1 << $idx))"
-		let "idx = idx + 1"
-		[ "$idx" -ge "$NPROCS" ] && idx=0
+		set_hex_val "$q/xps_cpus" "$PROC_MASK"
 	done
 done
