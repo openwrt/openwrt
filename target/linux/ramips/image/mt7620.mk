@@ -16,6 +16,23 @@ define Build/elecom-header
 		--owner=0 --group=0 -f $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 
+# combine kernel and rootfs into one image
+# mktplinkfw <type> <optional extra arguments to mktplinkfw binary>
+# <type> is "sysupgrade" or "factory"
+#
+# -a align the rootfs start on an <align> bytes boundary
+# -j add jffs2 end-of-filesystem markers
+# -s strip padding from end of the image
+# -X reserve <size> bytes in the firmware image (hexval prefixed with 0x)
+define Build/mktplinkfw
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) \
+		-N OpenWrt -V $(REVISION) -m $(TPLINK_HEADER_VERSION) \
+		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) -o $@.new -j -X 0x40000 -a 0x4 \
+		$(wordlist 2,$(words $(1)),$(1)) \
+		$(if $(findstring sysupgrade,$(word 1,$(1))),-s) && mv $@.new $@ || rm -f $@
+endef
+
 define Device/aigale_ai-br100
   SOC := mt7620a
   IMAGE_SIZE := 7936k
@@ -937,6 +954,25 @@ define Device/tplink_archer-mr200
   SUPPORTED_DEVICES += mr200
 endef
 TARGET_DEVICES += tplink_archer-mr200
+
+define Device/tplink_re200-v1
+  SOC := mt7620a
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := RE200
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt76x0e
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := mktplinkfw sysupgrade -e -O
+  IMAGE/factory.bin := mktplinkfw factory -e -O
+  IMAGE_SIZE := 7936k
+  KERNEL := $(KERNEL_DTB)
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-v1-header -e -O
+  TPLINK_HWID := 0x02000001
+  TPLINK_HWREV := 0x1
+  TPLINK_HEADER_VERSION := 1
+  TPLINK_FLASHLAYOUT := 8Mmtk
+endef
+TARGET_DEVICES += tplink_re200-v1
 
 define Device/vonets_var11n-300
   SOC := mt7620n
