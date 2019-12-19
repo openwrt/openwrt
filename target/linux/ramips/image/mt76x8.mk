@@ -19,11 +19,9 @@ define Device/buffalo_wcr-1166ds
   BUFFALO_TAG_MINOR := 9.99
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
-  IMAGE/factory.bin := \
-	trx -M 0x746f435c | pad-rootfs | append-metadata | \
+  IMAGE/factory.bin := trx -M 0x746f435c | pad-rootfs | append-metadata | \
 	buffalo-enc WCR-1166DS $$(BUFFALO_TAG_VERSION) -l | \
-	buffalo-tag-dhp WCR-1166DS JP JP | buffalo-enc-tag -l | \
-	buffalo-dhp-image
+	buffalo-tag-dhp WCR-1166DS JP JP | buffalo-enc-tag -l | buffalo-dhp-image
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WCR-1166DS
   DEVICE_PACKAGES := kmod-mt76x2
@@ -35,8 +33,8 @@ define Device/cudy_wr1000
   MTK_SOC := mt7628an
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
-  IMAGE/factory.bin := \
-        $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | jcg-header 92.122
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	jcg-header 92.122
   JCG_MAXSIZE := 7872k
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := WR1000
@@ -184,10 +182,13 @@ define Device/netgear_r6120
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x0040
   IMAGES += factory.img
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE)| append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.img := pad-extra 576k | $$(IMAGE/default) | pad-to $$$$(BLOCKSIZE) | \
-	sercom-footer | pad-to 128 | zip R6120.bin | sercom-seal
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE)| append-rootfs | \
+	pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | \
+	check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.img := pad-extra 576k | $$(IMAGE/default) | \
+	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip R6120.bin | \
+	sercom-seal
 endef
 TARGET_DEVICES += netgear_r6120
 
@@ -263,7 +264,8 @@ define Device/tplink
   IMAGE/sysupgrade.bin := tplink-v2-image -s -e | append-metadata | \
 	check-size $$$$(IMAGE_SIZE)
 endef
-DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD TPLINK_HVERSION
+DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD
+DEVICE_VARS += TPLINK_HVERSION
 
 define Device/tplink_archer-c20-v4
   $(Device/tplink)
@@ -450,7 +452,8 @@ define Device/tplink_tl-wr902ac-v3
   TPLINK_HWREV := 0x89
   TPLINK_HWREVADD := 0x1
   TPLINK_HVERSION := 3
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += tplink_tl-wr902ac-v3
 
@@ -471,7 +474,7 @@ define Device/vocore_vocore2
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore2
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
-    kmod-sdhci-mt7620
+	kmod-sdhci-mt7620
   SUPPORTED_DEVICES += vocore2
 endef
 TARGET_DEVICES += vocore_vocore2
@@ -482,7 +485,7 @@ define Device/vocore_vocore2-lite
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore2-Lite
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
-    kmod-sdhci-mt7620
+	kmod-sdhci-mt7620
   SUPPORTED_DEVICES += vocore2lite
 endef
 TARGET_DEVICES += vocore_vocore2-lite
@@ -589,7 +592,8 @@ define Device/zyxel_keenetic-extra-ii
   BLOCKSIZE := 64k
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic Extra II
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
 	check-size $$$$(IMAGE_SIZE) | zyimage -d 6162 -v "ZyXEL Keenetic Extra II"

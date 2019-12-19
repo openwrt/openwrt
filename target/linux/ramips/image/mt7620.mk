@@ -40,7 +40,8 @@ define Device/alfa-network_r36m-e4g
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := R36M-E4G
-  DEVICE_PACKAGES := kmod-i2c-ralink kmod-usb2 kmod-usb-ohci uboot-envtools uqmi
+  DEVICE_PACKAGES := kmod-i2c-ralink kmod-usb2 kmod-usb-ohci uboot-envtools \
+	uqmi
 endef
 TARGET_DEVICES += alfa-network_r36m-e4g
 
@@ -49,8 +50,8 @@ define Device/alfa-network_tube-e4g
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := Tube-E4G
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci uboot-envtools uqmi \
-	-iwinfo -kmod-rt2800-soc -wpad-basic
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci uboot-envtools uqmi -iwinfo \
+	-kmod-rt2800-soc -wpad-basic
 endef
 TARGET_DEVICES += alfa-network_tube-e4g
 
@@ -89,7 +90,8 @@ define Device/asus_rt-ac51u
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-AC51U
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += rt-ac51u
 endef
 TARGET_DEVICES += asus_rt-ac51u
@@ -118,7 +120,8 @@ define Device/bdcom_wap2100-sk
   IMAGE_SIZE := 15808k
   DEVICE_VENDOR := BDCOM
   DEVICE_MODEL := WAP2100-SK (ZTE ZXECS EBG3130)
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76x2 kmod-mt76x0e kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76x2 kmod-mt76x0e \
+	kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += bdcom_wap2100-sk
 
@@ -306,7 +309,8 @@ define Device/edimax_br-6478ac-v2
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN68 -f 0x70000 -S 0x01100000 | pad-rootfs | \
 	append-metadata | check-size $$$$(IMAGE_SIZE)
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += edimax_br-6478ac-v2
 
@@ -317,8 +321,8 @@ define Device/edimax_ew-7476rpc
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
-        edimax-header -s CSYS -m RN79 -f 0x70000 -S 0x01100000 | pad-rootfs | \
-        append-metadata | check-size $$$$(IMAGE_SIZE)
+	edimax-header -s CSYS -m RN79 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	append-metadata | check-size $$$$(IMAGE_SIZE)
   DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
 endef
 TARGET_DEVICES += edimax_ew-7476rpc
@@ -330,8 +334,8 @@ define Device/edimax_ew-7478ac
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
-        edimax-header -s CSYS -m RN70 -f 0x70000 -S 0x01100000 | pad-rootfs | \
-        append-metadata | check-size $$$$(IMAGE_SIZE)
+	edimax-header -s CSYS -m RN70 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	append-metadata | check-size $$$$(IMAGE_SIZE)
   DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
 endef
 TARGET_DEVICES += edimax_ew-7478ac
@@ -343,9 +347,10 @@ define Device/edimax_ew-7478apc
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
-        edimax-header -s CSYS -m RN75 -f 0x70000 -S 0x01100000 | pad-rootfs | \
-        append-metadata | check-size $$$$(IMAGE_SIZE)
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+	edimax-header -s CSYS -m RN75 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += edimax_ew-7478apc
 
@@ -368,10 +373,11 @@ define Device/engenius_esr600
   IMAGE_SIZE := 15616k
   IMAGES += factory.dlf
   IMAGE/factory.dlf := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
-       senao-header -r 0x101 -p 0x57 -t 2
+	senao-header -r 0x101 -p 0x57 -t 2
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ESR600
-  DEVICE_PACKAGES += kmod-rt2800-pci kmod-usb-storage kmod-usb-ohci kmod-usb-ehci
+  DEVICE_PACKAGES += kmod-rt2800-pci kmod-usb-storage kmod-usb-ohci \
+	kmod-usb-ehci
 endef
 TARGET_DEVICES += engenius_esr600
 
@@ -382,9 +388,8 @@ define Device/fon_fon2601
   DEVICE_MODEL := FON2601
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
   KERNEL_INITRAMFS := $$(KERNEL) | fonfxcimage
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs |\
-			fonfxcimage |\
-			pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | fonfxcimage | \
+	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += fon_fon2601
 
@@ -424,7 +429,7 @@ define Device/head-weblink_hdrm200
   DEVICE_VENDOR := Head Weblink
   DEVICE_MODEL := HDRM2000
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
-		     uqmi kmod-usb-serial kmod-usb-serial-option
+	uqmi kmod-usb-serial kmod-usb-serial-option
 endef
 TARGET_DEVICES += head-weblink_hdrm200
 
@@ -443,7 +448,8 @@ define Device/hiwifi_hc5761
   IMAGE_SIZE := 15872k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5761
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
+	kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += hc5761
 endef
 TARGET_DEVICES += hiwifi_hc5761
@@ -453,7 +459,8 @@ define Device/hiwifi_hc5861
   IMAGE_SIZE := 15872k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5861
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
+	kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += hc5861
 endef
 TARGET_DEVICES += hiwifi_hc5861
@@ -474,9 +481,8 @@ define Device/iodata_wn-ac1167gr
   DEVICE_MODEL := WN-AC1167GR
   IMAGE_SIZE := 6864k
   IMAGES += factory.bin
-  IMAGE/factory.bin := \
-    $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
-    elx-header 01040016 8844A2D168B45A2D
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	elx-header 01040016 8844A2D168B45A2D
   DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += iodata_wn-ac1167gr
@@ -487,9 +493,8 @@ define Device/iodata_wn-ac733gr3
   DEVICE_MODEL := WN-AC733GR3
   IMAGE_SIZE := 6992k
   IMAGES += factory.bin
-  IMAGE/factory.bin := \
-    $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
-    elx-header 01040006 8844A2D168B45A2D
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	elx-header 01040006 8844A2D168B45A2D
   DEVICE_PACKAGES := kmod-mt76x0e kmod-switch-rtl8367b
 endef
 TARGET_DEVICES += iodata_wn-ac733gr3
@@ -500,7 +505,8 @@ define Device/iptime_a104ns
   UIMAGE_NAME := a104ns
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := A104ns
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += iptime_a104ns
 
@@ -511,7 +517,7 @@ define Device/kimax_u25awf-h1
   DEVICE_MODEL := U25AWF
   DEVICE_VARIANT := H1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-storage kmod-scsi-core \
-		     kmod-fs-ext4 kmod-fs-vfat block-mount
+	kmod-fs-ext4 kmod-fs-vfat block-mount
   SUPPORTED_DEVICES += u25awf-h1
 endef
 TARGET_DEVICES += kimax_u25awf-h1
@@ -522,7 +528,7 @@ define Device/kimax_u35wf
   DEVICE_VENDOR := Kimax
   DEVICE_MODEL := U35WF
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-storage kmod-scsi-core \
-		     kmod-fs-ext4 kmod-fs-vfat block-mount
+	kmod-fs-ext4 kmod-fs-vfat block-mount
 endef
 TARGET_DEVICES += kimax_u35wf
 
@@ -608,7 +614,8 @@ define Device/netgear_ex2700
   BLOCKSIZE := 4k
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | append-uImage-fakehdr filesystem
+  KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | \
+	append-uImage-fakehdr filesystem
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	netgear-dni
   DEVICE_VENDOR := NETGEAR
@@ -623,7 +630,8 @@ define Device/netgear_ex3700
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7744k
   IMAGES += factory.chk
-  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | netgear-chk
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	netgear-chk
   DEVICE_PACKAGES := kmod-mt76x2
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX3700/EX3800
@@ -637,7 +645,8 @@ define Device/netgear_ex6130
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7744k
   IMAGES += factory.chk
-  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | netgear-chk
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	netgear-chk
   DEVICE_PACKAGES := kmod-mt76x2
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX6130
@@ -651,7 +660,8 @@ define Device/netgear_wn3000rp-v3
   NETGEAR_BOARD_ID := WN3000RPv3
   BLOCKSIZE := 4k
   IMAGES += factory.bin
-  KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | append-uImage-fakehdr filesystem
+  KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | \
+	append-uImage-fakehdr filesystem
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	netgear-dni
   DEVICE_VENDOR := NETGEAR
@@ -745,9 +755,8 @@ define Device/planex_cs-qr10
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := CS-QR10
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci \
-	kmod-sound-core kmod-sound-mt7620 \
-	kmod-i2c-ralink kmod-sdhci-mt7620
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sound-core \
+	kmod-sound-mt7620 kmod-i2c-ralink kmod-sdhci-mt7620
   SUPPORTED_DEVICES += cs-qr10
 endef
 TARGET_DEVICES += planex_cs-qr10
@@ -880,7 +889,8 @@ define Device/tplink_archer-c20-v1
   IMAGES += factory.bin
   DEVICE_MODEL := Archer C20
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += tplink_archer-c20-v1
 
@@ -894,7 +904,8 @@ define Device/tplink_archer-c2-v1
   IMAGES += factory.bin
   DEVICE_MODEL := Archer C2
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-switch-rtl8366-smi kmod-switch-rtl8367b
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport kmod-switch-rtl8366-smi kmod-switch-rtl8367b
 endef
 TARGET_DEVICES += tplink_archer-c2-v1
 
@@ -920,7 +931,8 @@ define Device/tplink_archer-mr200
   TPLINK_FLASHLAYOUT := 8MLmtk
   TPLINK_HWID := 0xd7500001
   TPLINK_HWREV := 0x4a
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-net kmod-usb-net-rndis kmod-usb-serial kmod-usb-serial-option adb-enablemodem
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-net kmod-usb-net-rndis \
+	kmod-usb-serial kmod-usb-serial-option adb-enablemodem
   DEVICE_MODEL := Archer MR200
   SUPPORTED_DEVICES += mr200
 endef
@@ -960,7 +972,8 @@ define Device/youku_yk1
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := YOUKU
   DEVICE_MODEL := YK1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
+	kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += youku-yk1
 endef
 TARGET_DEVICES += youku_yk1
@@ -1064,7 +1077,7 @@ define Device/zbtlink_zbt-we826-e
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE826-E
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 uqmi \
-		     kmod-usb-serial kmod-usb-serial-option
+	kmod-usb-serial kmod-usb-serial-option
 endef
 TARGET_DEVICES += zbtlink_zbt-we826-e
 
@@ -1095,8 +1108,8 @@ define Device/zyxel_keenetic-omni
   DEVICE_MODEL := Keenetic Omni
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | pad-to 64k | check-size $$$$(IMAGE_SIZE) | \
-	zyimage -d 4882 -v "ZyXEL Keenetic Omni"
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | pad-to 64k | \
+	check-size $$$$(IMAGE_SIZE) | zyimage -d 4882 -v "ZyXEL Keenetic Omni"
   SUPPORTED_DEVICES += kn_rc
 endef
 TARGET_DEVICES += zyxel_keenetic-omni
@@ -1108,7 +1121,8 @@ define Device/zyxel_keenetic-omni-ii
   DEVICE_MODEL := Keenetic Omni II
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | pad-to 64k | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | pad-to 64k | \
+	check-size $$$$(IMAGE_SIZE) | \
 	zyimage -d 2102034 -v "ZyXEL Keenetic Omni II"
   SUPPORTED_DEVICES += kn_rf
 endef
@@ -1119,10 +1133,11 @@ define Device/zyxel_keenetic-viva
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic Viva
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-switch-rtl8366-smi kmod-switch-rtl8367b
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
+	kmod-switch-rtl8366-smi kmod-switch-rtl8367b
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | check-size $$$$(IMAGE_SIZE) | \
-	zyimage -d 8997 -v "ZyXEL Keenetic Viva"
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | \
+	check-size $$$$(IMAGE_SIZE) | zyimage -d 8997 -v "ZyXEL Keenetic Viva"
   SUPPORTED_DEVICES += kng_rc
 endef
 TARGET_DEVICES += zyxel_keenetic-viva

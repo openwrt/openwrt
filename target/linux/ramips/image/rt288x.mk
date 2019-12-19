@@ -53,7 +53,7 @@ define Device/belkin_f5d8235-v1
   DEVICE_MODEL := F5D8235
   DEVICE_VARIANT := V1
   DEVICE_PACKAGES := kmod-switch-rtl8366s kmod-usb-ohci \
-    kmod-usb-ohci-pci kmod-usb2 kmod-usb2-pci kmod-usb-ledtrig-usbport
+	kmod-usb-ohci-pci kmod-usb2 kmod-usb2-pci kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += f5d8235-v1
 endef
 TARGET_DEVICES += belkin_f5d8235-v1
@@ -90,10 +90,8 @@ define Device/dlink_dap-1522-a1
   DEVICE_PACKAGES := kmod-switch-rtl8366s
   KERNEL := $(KERNEL_DTB)
   IMAGES += factory.bin
-  IMAGE/factory.bin := \
-	append-kernel | pad-offset $$$$(BLOCKSIZE) 96 | \
-	append-rootfs | pad-rootfs -x 96 | \
-	wrg-header wapnd01_dlink_dap1522 | \
+  IMAGE/factory.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 96 | \
+	append-rootfs | pad-rootfs -x 96 | wrg-header wapnd01_dlink_dap1522 | \
 	check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += dlink_dap-1522-a1
