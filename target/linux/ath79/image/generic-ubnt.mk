@@ -8,11 +8,9 @@ UBNT_REVISION := $(VERSION_DIST)-$(REVISION)
 # mkubntimage is using the kernel image direct
 # routerboard creates partitions out of the ubnt header
 define Build/mkubntimage
-	-$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-$(VERSION_DIST)-$(REVISION) \
-		-k $(IMAGE_KERNEL) \
-		-r $@ \
-		-o $@
+	-$(STAGING_DIR_HOST)/bin/mkfwimage -B $(UBNT_BOARD) \
+		-v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-$(VERSION_DIST)-$(REVISION) \
+		-k $(IMAGE_KERNEL) -r $@ -o $@
 endef
 
 # all UBNT XM/WA devices expect the kernel image to have 1024k while flash, when
@@ -21,11 +19,9 @@ define Build/mkubntimage-split
 	-[ -f $@ ] && ( \
 	dd if=$@ of=$@.old1 bs=1024k count=1; \
 	dd if=$@ of=$@.old2 bs=1024k skip=1; \
-	$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v$(UBNT_VERSION)-$(UBNT_REVISION) \
-		-k $@.old1 \
-		-r $@.old2 \
-		-o $@; \
+	$(STAGING_DIR_HOST)/bin/mkfwimage -B $(UBNT_BOARD) \
+		-v $(UBNT_TYPE).$(UBNT_CHIP).v$(UBNT_VERSION)-$(UBNT_REVISION) \
+		-k $@.old1 -r $@.old2 -o $@; \
 	rm $@.old1 $@.old2 )
 endef
 
@@ -184,12 +180,14 @@ endef
 TARGET_DEVICES += ubnt_rocket-m
 
 define Device/ubnt_routerstation_common
-  DEVICE_PACKAGES := -kmod-ath9k -wpad-mini -uboot-envtools kmod-usb-ohci kmod-usb2 fconfig
+  DEVICE_PACKAGES := -kmod-ath9k -wpad-mini -uboot-envtools kmod-usb-ohci \
+	kmod-usb2 fconfig
   DEVICE_VENDOR := Ubiquiti
   ATH_SOC := ar7161
   IMAGE_SIZE := 16128k
   IMAGES := factory.bin
-  IMAGE/factory.bin := append-rootfs | pad-rootfs | mkubntimage | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := append-rootfs | pad-rootfs | mkubntimage | \
+	check-size $$$$(IMAGE_SIZE)
   KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
   KERNEL_INITRAMFS := kernel-bin | append-dtb
 endef

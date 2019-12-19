@@ -5,7 +5,8 @@ define Device/netgear_ar7240
   NETGEAR_KERNEL_MAGIC := 0x32303631
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
   IMAGE_SIZE := 3712k
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | \
+	append-rootfs | pad-rootfs
   $(Device/netgear_ath79)
 endef
 
@@ -36,7 +37,8 @@ define Device/netgear_wnr1000-v2
   NETGEAR_BOARD_ID := WNR1000V2
   NETGEAR_HW_ID := 29763331+4+32
   IMAGE_SIZE := 3712k
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | \
+	append-rootfs | pad-rootfs
   SUPPORTED_DEVICES += wnr1000-v2
   $(Device/netgear_ath79)
 endef
@@ -50,9 +52,11 @@ define Device/netgear_wnr2000-v3
   NETGEAR_BOARD_ID := WNR2000V3
   NETGEAR_HW_ID := 29763551+04+32
   IMAGE_SIZE := 3712k
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | \
+	append-rootfs | pad-rootfs
   IMAGES += factory-NA.img
-  IMAGE/factory-NA.img := $$(IMAGE/default) | netgear-dni NA | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory-NA.img := $$(IMAGE/default) | netgear-dni NA | \
+	check-size $$$$(IMAGE_SIZE)
   SUPPORTED_DEVICES += wnr2000-v3
   $(Device/netgear_ath79)
 endef
