@@ -12,9 +12,9 @@
  
 --- a/libdw/libdwP.h
 +++ b/libdw/libdwP.h
-@@ -35,7 +35,9 @@
- #include <libdw.h>
+@@ -37,7 +37,9 @@
  #include <dwarf.h>
+ #include "atomics.h"
  
 -
 +#ifdef _ /* fix libintl-stub */
@@ -25,7 +25,7 @@
  
 --- a/libdwfl/libdwflP.h
 +++ b/libdwfl/libdwflP.h
-@@ -43,6 +43,9 @@
+@@ -44,6 +44,9 @@
  
  typedef struct Dwfl_Process Dwfl_Process;
  
@@ -60,7 +60,7 @@
  Requires.private: zlib
 --- a/configure.ac
 +++ b/configure.ac
-@@ -543,6 +543,9 @@ AC_CONFIG_FILES([config/libelf.pc config
+@@ -577,6 +577,9 @@ AC_CONFIG_FILES([config/libelf.pc config
  AC_SUBST(USE_NLS, yes)
  AM_PO_SUBDIRS
  

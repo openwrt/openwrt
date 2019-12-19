@@ -35,7 +35,7 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  # define LE64(n)	(n)
 --- a/libdw/libdw_alloc.c
 +++ b/libdw/libdw_alloc.c
-@@ -73,5 +73,5 @@ __attribute ((noreturn)) attribute_hidde
+@@ -147,5 +147,5 @@ __attribute ((noreturn)) attribute_hidde
  __libdw_oom (void)
  {
    while (1)
@@ -44,12 +44,20 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  }
 --- a/libdwfl/dwfl_error.c
 +++ b/libdwfl/dwfl_error.c
-@@ -154,7 +154,7 @@ dwfl_errmsg (int error)
+@@ -154,7 +154,16 @@ dwfl_errmsg (int error)
    switch (error &~ 0xffff)
      {
      case OTHER_ERROR (ERRNO):
--      return strerror_r (error & 0xffff, "bad", 0);
-+      return strerror_l (error & 0xffff, LC_GLOBAL_LOCALE);
++#if defined(__GLIBC__)
+       return strerror_r (error & 0xffff, "bad", 0);
++#else
++      {
++        static __thread char buf[128] = "";
++        if (0 == strerror_r(error & 0xffff, buf, sizeof(buf)))
++          return buf;
++      }
++      return "strerror_r() failed";
++#endif
      case OTHER_ERROR (LIBELF):
        return elf_errmsg (error & 0xffff);
      case OTHER_ERROR (LIBDW):

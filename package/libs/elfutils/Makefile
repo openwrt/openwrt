@@ -7,12 +7,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elfutils
-PKG_VERSION:=0.177
-PKG_RELEASE:=2
+PKG_VERSION:=0.178
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://sourceware.org/$(PKG_NAME)/ftp/$(PKG_VERSION)
-PKG_HASH:=fa489deccbcae7d8c920f60d85906124c1989c591196d90e0fd668e3dc05042e
+PKG_HASH:=31e7a00e96d4e9c4bda452e1f2cdac4daf8abd24f5e154dee232131899f3a0f2
 
 PKG_MAINTAINER:=Luiz Angelo Daros de Luca <luizluca@gmail.com>
 PKG_LICENSE:=GPL-3.0-or-later
@@ -62,6 +62,7 @@ CONFIGURE_ARGS += --disable-nls
 endif
 
 CONFIGURE_ARGS += \
+	--disable-debuginfod \
 	--program-prefix=eu- \
 	--without-lzma
 
