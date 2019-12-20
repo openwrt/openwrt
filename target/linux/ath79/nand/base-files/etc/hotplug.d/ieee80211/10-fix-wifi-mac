@@ -1,0 +1,17 @@
+#!/bin/sh
+
+[ "$ACTION" = add ] || exit
+
+PHYNBR=${DEVPATH##*/phy}
+
+. /lib/functions/system.sh
+
+board=$(board_name)
+
+case $board in
+zyxel,nbg6716)
+	# Set mac address for ath9k device
+	[ "$PHYNBR" -eq 1 ] && \
+		macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 2 > /sys${DEVPATH}/macaddress
+	;;
+esac
