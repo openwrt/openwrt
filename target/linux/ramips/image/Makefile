@@ -23,9 +23,8 @@ KERNEL_DTB = kernel-bin | append-dtb | lzma
 define Device/Default
   PROFILES = Default
   KERNEL := $(KERNEL_DTB) | uImage lzma
-  MTK_SOC :=
   DEVICE_DTS_DIR := ../dts
-  DEVICE_DTS = $$(MTK_SOC)_$(1)
+  DEVICE_DTS = $$(SOC)_$(1)
   IMAGES := sysupgrade.bin
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   sysupgrade_bin := append-kernel | append-rootfs | pad-rootfs

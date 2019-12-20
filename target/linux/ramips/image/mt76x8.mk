@@ -3,7 +3,7 @@
 #
 
 define Device/alfa-network_awusfree1
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := AWUSFREE1
@@ -12,7 +12,7 @@ endef
 TARGET_DEVICES += alfa-network_awusfree1
 
 define Device/buffalo_wcr-1166ds
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7936k
   BUFFALO_TAG_PLATFORM := MTK
   BUFFALO_TAG_VERSION := 9.99
@@ -30,7 +30,7 @@ endef
 TARGET_DEVICES += buffalo_wcr-1166ds
 
 define Device/cudy_wr1000
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
@@ -44,7 +44,7 @@ endef
 TARGET_DEVICES += cudy_wr1000
 
 define Device/d-team_pbr-d1
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := PandoraBox
   DEVICE_MODEL := PBR-D1
@@ -54,7 +54,7 @@ endef
 TARGET_DEVICES += d-team_pbr-d1
 
 define Device/duzun_dm06
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := DuZun
   DEVICE_MODEL := DM06
@@ -64,7 +64,7 @@ endef
 TARGET_DEVICES += duzun_dm06
 
 define Device/glinet_gl-mt300n-v2
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MT300N
@@ -75,7 +75,7 @@ endef
 TARGET_DEVICES += glinet_gl-mt300n-v2
 
 define Device/glinet_vixmini
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := VIXMINI
@@ -84,7 +84,7 @@ endef
 TARGET_DEVICES += glinet_vixmini
 
 define Device/hilink_hlk-7628n
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := HILINK
   DEVICE_MODEL := HLK-7628N
@@ -92,7 +92,7 @@ endef
 TARGET_DEVICES += hilink_hlk-7628n
 
 define Device/hiwifi_hc5661a
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 15808k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5661A
@@ -101,7 +101,7 @@ endef
 TARGET_DEVICES += hiwifi_hc5661a
 
 define Device/hiwifi_hc5761a
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 15808k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5761A
@@ -110,7 +110,7 @@ endef
 TARGET_DEVICES += hiwifi_hc5761a
 
 define Device/hiwifi_hc5861b
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 15808k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5861B
@@ -119,7 +119,7 @@ endef
 TARGET_DEVICES += hiwifi_hc5861b
 
 define Device/iptime_a3
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7936k
   UIMAGE_NAME := a3
   DEVICE_VENDOR := ipTIME
@@ -129,7 +129,7 @@ endef
 TARGET_DEVICES += iptime_a3
 
 define Device/iptime_a604m
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7936k
   UIMAGE_NAME := a604m
   DEVICE_VENDOR := ipTIME
@@ -139,7 +139,7 @@ endef
 TARGET_DEVICES += iptime_a604m
 
 define Device/mediatek_linkit-smart-7688
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := LinkIt Smart 7688
@@ -149,7 +149,7 @@ endef
 TARGET_DEVICES += mediatek_linkit-smart-7688
 
 define Device/mediatek_mt7628an-eval-board
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := MediaTek
@@ -160,7 +160,7 @@ endef
 TARGET_DEVICES += mediatek_mt7628an-eval-board
 
 define Device/mercury_mac1200r-v2
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7936k
   DEVICE_VENDOR := Mercury
   DEVICE_MODEL := MAC1200R
@@ -172,7 +172,7 @@ endef
 TARGET_DEVICES += mercury_mac1200r-v2
 
 define Device/netgear_r6120
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   BLOCKSIZE := 64k
   IMAGE_SIZE := 15744k
   DEVICE_VENDOR := NETGEAR
@@ -193,7 +193,7 @@ endef
 TARGET_DEVICES += netgear_r6120
 
 define Device/onion_omega2
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Onion
   DEVICE_MODEL := Omega2
@@ -203,7 +203,7 @@ endef
 TARGET_DEVICES += onion_omega2
 
 define Device/onion_omega2p
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Onion
   DEVICE_MODEL := Omega2+
@@ -213,7 +213,7 @@ endef
 TARGET_DEVICES += onion_omega2p
 
 define Device/rakwireless_rak633
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Rakwireless
   DEVICE_MODEL := RAK633
@@ -222,7 +222,7 @@ endef
 TARGET_DEVICES += rakwireless_rak633
 
 define Device/skylab_skw92a
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Skylab
   DEVICE_MODEL := SKW92A
@@ -231,7 +231,7 @@ endef
 TARGET_DEVICES += skylab_skw92a
 
 define Device/tama_w06
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 15040k
   DEVICE_VENDOR := Tama
   DEVICE_MODEL := W06
@@ -240,7 +240,7 @@ endef
 TARGET_DEVICES += tama_w06
 
 define Device/totolink_lr1200
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := TOTOLINK
   DEVICE_MODEL := LR1200
@@ -249,7 +249,7 @@ endef
 TARGET_DEVICES += totolink_lr1200
 
 define Device/tplink
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   DEVICE_VENDOR := TP-Link
   TPLINK_FLASHLAYOUT :=
   TPLINK_HWID :=
@@ -382,7 +382,7 @@ endef
 TARGET_DEVICES += tplink_tl-wr840n-v4
 
 define Device/tplink_tl-wr840n-v5
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 3904k
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := TL-WR840N
@@ -458,7 +458,7 @@ endef
 TARGET_DEVICES += tplink_tl-wr902ac-v3
 
 define Device/unielec_u7628-01-16m
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7628-01
@@ -469,7 +469,7 @@ endef
 TARGET_DEVICES += unielec_u7628-01-16m
 
 define Device/vocore_vocore2
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore2
@@ -480,7 +480,7 @@ endef
 TARGET_DEVICES += vocore_vocore2
 
 define Device/vocore_vocore2-lite
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore2-Lite
@@ -491,7 +491,7 @@ endef
 TARGET_DEVICES += vocore_vocore2-lite
 
 define Device/wavlink_wl-wn570ha1
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Wavlink
   DEVICE_MODEL := WL-WN570HA1
@@ -500,7 +500,7 @@ endef
 TARGET_DEVICES += wavlink_wl-wn570ha1
 
 define Device/wavlink_wl-wn575a3
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Wavlink
   DEVICE_MODEL := WL-WN575A3
@@ -510,7 +510,7 @@ endef
 TARGET_DEVICES += wavlink_wl-wn575a3
 
 define Device/widora_neo-16m
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Widora
   DEVICE_MODEL := Widora-NEO
@@ -521,7 +521,7 @@ endef
 TARGET_DEVICES += widora_neo-16m
 
 define Device/widora_neo-32m
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Widora
   DEVICE_MODEL := Widora-NEO
@@ -531,7 +531,7 @@ endef
 TARGET_DEVICES += widora_neo-32m
 
 define Device/wiznet_wizfi630s
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := WIZnet
   DEVICE_MODEL := WizFi630S
@@ -539,7 +539,7 @@ endef
 TARGET_DEVICES += wiznet_wizfi630s
 
 define Device/wrtnode_wrtnode2p
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := WRTnode
   DEVICE_MODEL := WRTnode 2P
@@ -549,7 +549,7 @@ endef
 TARGET_DEVICES += wrtnode_wrtnode2p
 
 define Device/wrtnode_wrtnode2r
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := WRTnode
   DEVICE_MODEL := WRTnode 2R
@@ -559,7 +559,7 @@ endef
 TARGET_DEVICES += wrtnode_wrtnode2r
 
 define Device/xiaomi_mir4a-100m
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 14976k
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 4A
@@ -569,7 +569,7 @@ endef
 TARGET_DEVICES += xiaomi_mir4a-100m
 
 define Device/xiaomi_miwifi-nano
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := MiWiFi Nano
@@ -579,7 +579,7 @@ endef
 TARGET_DEVICES += xiaomi_miwifi-nano
 
 define Device/zbtlink_zbt-we1226
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE1226
@@ -587,7 +587,7 @@ endef
 TARGET_DEVICES += zbtlink_zbt-we1226
 
 define Device/zyxel_keenetic-extra-ii
-  MTK_SOC := mt7628an
+  SOC := mt7628an
   IMAGE_SIZE := 14912k
   BLOCKSIZE := 64k
   DEVICE_VENDOR := ZyXEL
