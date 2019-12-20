@@ -10,9 +10,9 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_SOURCE_URL:=https://github.com/chunkeey/FritzBox-4040-UBOOT
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=572ff7ff5a8b98022e75c4cca25fdede90eda1c3
-PKG_SOURCE_DATE:=2019-09-07
-PKG_MIRROR_HASH:=72a63dd6d4a968d0736938d1c7e1dda2afc54475c5ff456eff0f56c6bd6b84e9
+PKG_SOURCE_VERSION:=f92be9d783b1210c020d5d6129e210a94bb7e290
+PKG_SOURCE_DATE:=2019-10-19
+PKG_MIRROR_HASH:=e40a7f624b1758b276f81c765ef1da568c595b8bd54568b9cceca7d170ebc612
 
 PKG_RELEASE:=1
 
@@ -24,6 +24,11 @@ define U-Boot/Default
   BUILD_SUBTARGET:=generic
   UBOOT_BOARD:=$(1)
   UBOOT_IMAGE:=uboot-$(1).bin
+endef
+
+define U-Boot/fritz1200
+  NAME:=FritzRepeater 1200
+  BUILD_DEVICES:=avm_fritzrepeater-1200
 endef
 
 define U-Boot/fritz3000
@@ -67,6 +72,6 @@ define Package/u-boot/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/upload-to-f4040.sh $(1)/
 endef
 
-UBOOT_TARGETS := fritz3000 fritz4040 fritz7530
+UBOOT_TARGETS := fritz1200 fritz3000 fritz4040 fritz7530
 
 $(eval $(call BuildPackage/U-Boot))

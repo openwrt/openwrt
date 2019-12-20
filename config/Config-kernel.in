@@ -782,7 +782,7 @@ menu "Filesystem ACL and attr support options"
 		select KERNEL_FS_POSIX_ACL
 		default y if USE_FS_ACL_ATTR
 
-	config KERNEL_HFSPLUG_FS_POSIX_ACL
+	config KERNEL_HFSPLUS_FS_POSIX_ACL
 		bool "Enable POSIX ACL for HFS+ Filesystems"
 		select KERNEL_FS_POSIX_ACL
 		default y if USE_FS_ACL_ATTR

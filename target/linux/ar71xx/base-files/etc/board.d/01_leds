@@ -255,6 +255,7 @@ cpe210|\
 cpe210-v2|\
 cpe210-v3|\
 cpe510|\
+cpe510-v2|\
 wbs210|\
 wbs510)
 	ucidef_set_rssimon "wlan0" "200000" "1"
@@ -265,7 +266,8 @@ wbs510)
 
 	case "$board" in
 	cpe210-v2|\
-	cpe210-v3)
+	cpe210-v3|\
+	cpe510-v2)
 		ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan0" "eth0"
 		;;
 	*)
@@ -1011,8 +1013,7 @@ wi2a-ac200i)
 	;;
 wndr3700v4|\
 wndr4300)
-	ucidef_set_led_switch "wan-green" "WAN (green)" "netgear:green:wan" "switch0" "0x20" "0x08"
-	ucidef_set_led_switch "wan-amber" "WAN (amber)" "netgear:amber:wan" "switch0" "0x20" "0x06"
+	ucidef_set_led_switch "wan-amber" "WAN (amber)" "netgear:amber:wan" "switch0" "0x20"
 	ucidef_set_led_usbport "usb" "USB" "netgear:green:usb" "usb1-port1"
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "netgear:green:wlan2g" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "netgear:blue:wlan5g" "phy1tpt"

@@ -22,8 +22,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -50,7 +49,6 @@
 			label = "dir-510l:red:status";
 			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 		};
-
 	};
 };
 
@@ -139,4 +137,3 @@
 		};
 	};
 };
-

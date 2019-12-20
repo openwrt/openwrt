@@ -21,12 +21,6 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	palmbus: palmbus@1E000000 {
-		i2c@900 {
-			status = "okay";
-		};
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -39,7 +33,7 @@
 		wps {
 			label = "wps";
 			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_RESTART>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 
@@ -68,17 +62,13 @@
 	};
 };
 
-&sdhci {
-	status = "okay";
-};
-
 &spi0 {
 	status = "okay";
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <40000000>;
 
 		partitions {
 			compatible = "fixed-partitions";

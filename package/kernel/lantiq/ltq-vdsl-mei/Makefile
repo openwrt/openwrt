@@ -22,8 +22,6 @@ PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 PKG_LICENSE:=GPL-2.0 BSD-2-Clause
 PKG_LICENSE_FILES:=LICENSE
 
-PKG_ASLR_PIE:=0
-
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ltq-vdsl-vr9-mei

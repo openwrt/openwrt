@@ -1,5 +1,7 @@
 # Copyright (C) 2006-2013 OpenWrt.org
 
+. /usr/share/libubox/jshn.sh
+
 get_mac_binary() {
 	local path="$1"
 	local offset="$2"
@@ -12,14 +14,41 @@ get_mac_binary() {
 	hexdump -v -n 6 -s $offset -e '5/1 "%02x:" 1/1 "%02x"' $path 2>/dev/null
 }
 
-get_mac_label() {
+get_mac_label_dt() {
 	local basepath="/proc/device-tree"
 	local macdevice="$(cat "$basepath/aliases/label-mac-device" 2>/dev/null)"
 	local macaddr
 
-	[ -n "$macdevice" ] && macaddr=$(get_mac_binary "$basepath/$macdevice/mac-address" 0 2>/dev/null)
+	[ -n "$macdevice" ] || return
+
+	macaddr=$(get_mac_binary "$basepath/$macdevice/mac-address" 0 2>/dev/null)
 	[ -n "$macaddr" ] || macaddr=$(get_mac_binary "$basepath/$macdevice/local-mac-address" 0 2>/dev/null)
-	[ -n "$macaddr" ] || macaddr=$(uci -q get system.@system[0].label_macaddr)
+
+	echo $macaddr
+}
+
+get_mac_label_json() {
+	local cfg="/etc/board.json"
+	local macaddr
+
+	[ -s "$cfg" ] || return
+
+	json_init
+	json_load "$(cat $cfg)"
+	if json_is_a system object; then
+		json_select system
+			json_get_var macaddr label_macaddr
+		json_select ..
+	fi
+
+	echo $macaddr
+}
+
+get_mac_label() {
+	local macaddr=$(get_mac_label_dt)
+
+	[ -n "$macaddr" ] || macaddr=$(get_mac_label_json)
+
 	echo $macaddr
 }
 
@@ -113,6 +142,13 @@ macaddr_add() {
 
 	nic=$(printf "%06x" $((0x${nic//:/} + $val & 0xffffff)) | sed 's/^\(.\{2\}\)\(.\{2\}\)\(.\{2\}\)/\1:\2:\3/')
 	echo $oui:$nic
+}
+
+macaddr_geteui() {
+	local mac=$1
+	local sep=$2
+
+	echo ${mac:9:2}$sep${mac:12:2}$sep${mac:15:2}
 }
 
 macaddr_setbit_la() {

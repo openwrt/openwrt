@@ -12,10 +12,10 @@
 
 	aliases {
 		serial0 = &uart;
-		led-boot = &status;
-		led-failsafe = &status;
-		led-running = &status;
-		led-upgrade = &status;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 	};
 
 	keys {
@@ -42,7 +42,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		status: power {
+		led_power: power {
 			label = "pcs:amber:power";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>,
 				<&gpio 4 GPIO_ACTIVE_LOW>;
@@ -75,9 +75,9 @@
 };
 
 &spi {
-	num-cs = <1>;
-
 	status = "okay";
+
+	num-cs = <1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -220,5 +220,4 @@
 	status = "okay";
 
 	mtd-cal-data = <&art 0x1000>;
-	mtd-mac-address = <&art 0x1002>;
 };
