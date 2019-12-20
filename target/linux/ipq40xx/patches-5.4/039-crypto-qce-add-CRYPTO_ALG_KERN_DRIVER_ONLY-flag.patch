@@ -9,7 +9,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
 
 --- a/drivers/crypto/qce/ablkcipher.c
 +++ b/drivers/crypto/qce/ablkcipher.c
-@@ -370,7 +370,7 @@ static int qce_ablkcipher_register_one(c
+@@ -380,7 +380,7 @@ static int qce_ablkcipher_register_one(c
  
  	alg->cra_priority = 300;
  	alg->cra_flags = CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_ASYNC |
@@ -20,7 +20,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  	alg->cra_type = &crypto_ablkcipher_type;
 --- a/drivers/crypto/qce/sha.c
 +++ b/drivers/crypto/qce/sha.c
-@@ -503,7 +503,7 @@ static int qce_ahash_register_one(const
+@@ -495,7 +495,7 @@ static int qce_ahash_register_one(const
  	base = &alg->halg.base;
  	base->cra_blocksize = def->blocksize;
  	base->cra_priority = 300;
