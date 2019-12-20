@@ -55,8 +55,8 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
+
 		res {
 			label = "reset";
 			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
@@ -76,7 +76,6 @@
 		regulator-always-on;
 	};
 };
-
 
 &spi0 {
 	status = "okay";
@@ -143,7 +142,6 @@
 	mtd-mac-address = <&hard_config 0x0010>;
 	mtd-mac-address-increment = <1>;
 };
-
 
 &pinctrl {
 	state_default: pinctrl0 {

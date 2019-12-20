@@ -72,7 +72,7 @@ $(eval $(call KernelPackage,usb-phy-nop))
 
 define KernelPackage/usb-phy-qcom-dwc3
   TITLE:=DWC3 USB QCOM PHY driver
-  DEPENDS:=@(TARGET_ipq40xx||TARGET_ipq806x) +kmod-usb-dwc3-of-simple
+  DEPENDS:=@(TARGET_ipq40xx||TARGET_ipq806x)
   KCONFIG:= CONFIG_PHY_QCOM_DWC3
   FILES:= \
     $(LINUX_DIR)/drivers/phy/phy-qcom-dwc3.ko@lt4.13 \
@@ -480,7 +480,7 @@ $(eval $(call KernelPackage,usb-dwc3))
 
 define KernelPackage/usb-dwc3-of-simple
   TITLE:=DWC3 USB simple OF driver
-  DEPENDS:=@!LINUX_4_19 @(TARGET_ipq40xx||TARGET_ipq806x) +kmod-usb-dwc3
+  DEPENDS:=@LINUX_4_14 @(TARGET_ipq40xx||TARGET_ipq806x) +kmod-usb-dwc3
   KCONFIG:= CONFIG_USB_DWC3_OF_SIMPLE
   FILES:= $(LINUX_DIR)/drivers/usb/dwc3/dwc3-of-simple.ko
   AUTOLOAD:=$(call AutoLoad,53,dwc3-of-simple,1)
@@ -936,6 +936,7 @@ define KernelPackage/usb-serial-wwan
   TITLE:=Support for GSM and CDMA modems
   KCONFIG:=CONFIG_USB_SERIAL_WWAN
   FILES:=$(LINUX_DIR)/drivers/usb/serial/usb_wwan.ko
+  HIDDEN:=1
   AUTOLOAD:=$(call AutoProbe,usb_wwan)
   $(call AddDepends/usb-serial)
 endef
@@ -949,11 +950,10 @@ $(eval $(call KernelPackage,usb-serial-wwan))
 
 define KernelPackage/usb-serial-option
   TITLE:=Support for Option HSDPA modems
-  DEPENDS:=+kmod-usb-serial-wwan
   KCONFIG:=CONFIG_USB_SERIAL_OPTION
   FILES:=$(LINUX_DIR)/drivers/usb/serial/option.ko
   AUTOLOAD:=$(call AutoProbe,option)
-  $(call AddDepends/usb-serial)
+  $(call AddDepends/usb-serial,+kmod-usb-serial-wwan)
 endef
 
 define KernelPackage/usb-serial-option/description
@@ -1399,7 +1399,7 @@ define KernelPackage/usb-net-cdc-mbim
 endef
 
 define KernelPackage/usb-net-cdc-mbim/description
- Kernel module for Option USB High Speed Mobile Devices
+ Kernel module for CDC MBIM (Mobile Broadband Interface Model) devices
 endef
 
 $(eval $(call KernelPackage,usb-net-cdc-mbim))

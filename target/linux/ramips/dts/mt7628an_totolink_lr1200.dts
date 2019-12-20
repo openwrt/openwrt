@@ -24,35 +24,43 @@
 			label = "lr1200:blue:sys";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
+
 		sms {
 			label = "lr1200:blue:sms";
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		};
+
 		wifi {
 			label = "lr1200:blue:wifi";
 			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
+
 		3g {
 			label = "lr1200:blue:3g";
 			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
 		};
+
 		4g {
 			label = "lr1200:blue:4g";
 			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 		};
+
 		rssi1 {
 			label = "lr1200:blue:rssi1";
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 		};
+
 		rssi2 {
 			label = "lr1200:blue:rssi2";
 			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 		};
+
 		rssi3 {
 			label = "lr1200:blue:rssi3";
 			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 		};
+
 		rssi4 {
 			label = "lr1200:blue:rssi4";
 			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
@@ -60,8 +68,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";

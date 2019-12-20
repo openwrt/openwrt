@@ -143,7 +143,7 @@ case "$FIRMWARE" in
 	archer-c5|\
 	archer-c7)
 		ath10kcal_extract "art" 0x5000 0x844
-		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -2)
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -1)
 		;;
 	nbg6616|\
 	nbg6716)

@@ -18,6 +18,7 @@ ipq40xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
 	asus,map-ac2200|\
+	cilab,meshpoint-one|\
 	openmesh,a42|\
 	openmesh,a62)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
@@ -39,16 +40,19 @@ ipq40xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
 		;;
-	avm,fritzrepeater-3000|\
-	compex,wpj428)
-		ucidef_set_interface_lan "eth0 eth1"
-		;;
+	aruba,ap-303|\
+	avm,fritzrepeater-1200|\
 	engenius,eap1300|\
 	meraki,mr33|\
 	netgear,ex6100v2|\
 	netgear,ex6150v2|\
 	zyxel,wre6606)
 		ucidef_set_interface_lan "eth0"
+		;;
+	avm,fritzrepeater-3000|\
+	compex,wpj419|\
+	compex,wpj428)
+		ucidef_set_interface_lan "eth0 eth1"
 		;;
 	glinet,gl-b1300)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
@@ -60,6 +64,11 @@ ipq40xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "3:lan" "4:lan" "0u@eth1" "5:wan"
+		;;
+	unielec,u4019-32m)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "0u@eth1" "5:wan"
 		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
@@ -77,6 +86,9 @@ ipq40xx_setup_macs()
 		wan_mac=$(mtd_get_mac_binary_ubi Factory 0x5006)
 		lan_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
 		;;
+	cilab,meshpoint-one)
+		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
+		;;
 	engenius,ens620ext)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
@@ -89,6 +101,7 @@ ipq40xx_setup_macs()
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
 	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
 }
 
 board_config_update

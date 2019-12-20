@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
-PKG_VERSION:=8.2.1
-PKG_RELEASE:=2
+PKG_VERSION:=8.3.1
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gdb
-PKG_HASH:=0a6a432907a03c5c8eaad3c3cffd50c00a40c3a5e3c4039440624bae703f2202
+PKG_HASH:=1e55b4d7cdca7b34be12f4ceae651623aa73b2fd640152313f9f66a7149757c4
 
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
@@ -57,7 +57,8 @@ CONFIGURE_ARGS+= \
 	--without-expat \
 	--without-lzma \
 	--disable-sim \
-	--disable-werror
+	--disable-werror \
+	--disable-source-highlight
 
 CONFIGURE_VARS+= \
 	ac_cv_search_tgetent="$(TARGET_LDFLAGS) -lncurses -lreadline"

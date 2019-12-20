@@ -38,8 +38,8 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  #LIBS     += -lshadow $(LIBS)
  endif
  
--ifneq ($(wildcard /usr/include/crypt.h),)
-+#ifneq ($(wildcard /usr/include/crypt.h),)
+-ifneq ($(wildcard $(shell $CC --print-sysroot)/usr/include/crypt.h),)
++#ifneq ($(wildcard $(shell $CC --print-sysroot)/usr/include/crypt.h),)
  CFLAGS  += -DHAVE_CRYPT_H=1
  LIBS	+= -lcrypt
 -endif

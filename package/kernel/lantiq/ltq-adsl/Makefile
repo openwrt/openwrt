@@ -18,7 +18,6 @@ PKG_HASH:=eb2ed59715d3bf4e8a1460bbbe2f1660039e0a9f9d72afb1b2b16590094eb33c
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
 PKG_CHECK_FORMAT_SECURITY:=0
-PKG_ASLR_PIE:=0
 PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk

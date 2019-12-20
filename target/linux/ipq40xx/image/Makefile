@@ -60,14 +60,18 @@ define Build/SenaoFW
 	@cp $@.new $@
 endef
 
-define Device/8dev_jalapeno
+define Device/8dev_jalapeno-common
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+endef
+
+define Device/8dev_jalapeno
+	$(call Device/8dev_jalapeno-common)
 	DEVICE_VENDOR := 8devices
 	DEVICE_MODEL := Jalapeno
 	DEVICE_DTS := qcom-ipq4018-jalapeno
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
 endef
 TARGET_DEVICES += 8dev_jalapeno
 
@@ -86,6 +90,16 @@ define Device/alfa-network_ap120c-ac
 	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
 endef
 TARGET_DEVICES += alfa-network_ap120c-ac
+
+define Device/aruba_ap-303
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Aruba
+	DEVICE_MODEL := AP-303
+	DEVICE_DTS := qcom-ipq4029-ap-303
+	DEVICE_PACKAGES := ipq-wifi-aruba_ap-303
+	IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += aruba_ap-303
 
 define Device/asus_map-ac2200
 	$(call Device/FitImageLzma)
@@ -124,7 +138,7 @@ define Device/avm_fritzbox-4040
 	DEVICE_MODEL := FRITZ!Box 4040
 	DEVICE_DTS := qcom-ipq4018-fritz4040
 	BOARD_NAME := fritz4040
-	IMAGE_SIZE := 29753344
+	IMAGE_SIZE := 29056k
 	UBOOT_PATH := $(STAGING_DIR_IMAGE)/uboot-fritz4040.bin
 	UBOOT_PARTITION_SIZE := 524288
 	IMAGES = eva.bin sysupgrade.bin
@@ -144,6 +158,16 @@ define Device/avm_fritzbox-7530
 endef
 TARGET_DEVICES += avm_fritzbox-7530
 
+define Device/avm_fritzrepeater-1200
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := AVM
+	DEVICE_MODEL := FRITZ!Repeater 1200
+	DEVICE_DTS := qcom-ipq4019-fritzrepeater-1200
+	DEVICE_PACKAGES := fritz-caldata fritz-tffs-nand ipq-wifi-avm_fritzrepeater-1200
+	IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += avm_fritzrepeater-1200
+
 define Device/avm_fritzrepeater-3000
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := AVM
@@ -153,6 +177,29 @@ define Device/avm_fritzrepeater-3000
 	IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += avm_fritzrepeater-3000
+
+define Device/cilab_meshpoint-one
+	$(call Device/8dev_jalapeno-common)
+	DEVICE_DTS := qcom-ipq4018-meshpoint-one
+	DEVICE_VENDOR := Crisis Innovation Lab
+	DEVICE_MODEL := MeshPoint.One
+	DEVICE_PACKAGES := kmod-i2c-gpio kmod-iio-bmp280-i2c kmod-hwmon-ina2xx kmod-rtc-pcf2127
+endef
+TARGET_DEVICES += cilab_meshpoint-one
+
+define Device/compex_wpj419
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Compex
+	DEVICE_MODEL := WPJ419
+	DEVICE_DTS := qcom-ipq4019-wpj419
+	DEVICE_DTS_CONFIG := config@12
+	KERNEL_INSTALL := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	FILESYSTEMS := squashfs
+endef
+TARGET_DEVICES += compex_wpj419
 
 define Device/compex_wpj428
 	$(call Device/FitImage)
@@ -199,7 +246,7 @@ define Device/engenius_ens620ext
 	FW_VER := 3.1.2
 	FW_VER_NEW := 3.5.6
 	CW_VER := 1.8.99
-	IMAGE_SIZE := 21823488
+	IMAGE_SIZE := 21312k
 	KERNEL_SIZE := 5120k
 	FILESYSTEMS := squashfs
 	IMAGES := sysupgrade.bin factory_30.bin factory_35.bin
@@ -250,8 +297,8 @@ define Device/linksys_ea6350v3
 	DEVICE_DTS := qcom-ipq4018-ea6350v3
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	KERNEL_SIZE := 3145728
-	IMAGE_SIZE := 38797312
+	KERNEL_SIZE := 3072k
+	IMAGE_SIZE := 37888k
 	UBINIZE_OPTS := -E 5
 	IMAGES := factory.bin sysupgrade.bin
 	IMAGE/factory.bin := append-kernel | append-uImage-fakehdr filesystem | pad-to $$$${KERNEL_SIZE} | append-ubi | linksys-image type=EA6350v3
@@ -280,7 +327,7 @@ define Device/meraki_mr33
 	DEVICE_VENDOR := Cisco Meraki
 	DEVICE_MODEL := MR33
 	DEVICE_DTS := qcom-ipq4029-mr33
-	BLOCKSIZE := 131072
+	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	IMAGES = sysupgrade.bin
 	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
@@ -403,6 +450,20 @@ define Device/qxwlan_e2600ac-c2
 	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c2
+
+define Device/unielec_u4019-32m
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Unielec
+	DEVICE_MODEL := U4019
+	DEVICE_VARIANT := 32M
+	BOARD_NAME := u4019-32m
+	DEVICE_DTS := qcom-ipq4019-unielec-u4019-32m
+	KERNEL_SIZE := 4096k
+	IMAGE_SIZE := 31232k
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += unielec_u4019-32m
 
 define Device/zyxel_nbg6617
 	$(call Device/FitImageLzma)

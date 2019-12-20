@@ -12,9 +12,9 @@
 
 	aliases {
 		serial0 = &uart;
-		led-boot = &system;
-		led-failsafe = &system;
-		led-upgrade = &system;
+		led-boot = &led_rssihigh;
+		led-failsafe = &led_rssihigh;
+		led-upgrade = &led_rssihigh;
 	};
 
 	leds {
@@ -48,7 +48,7 @@
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		system: rssihigh {
+		led_rssihigh: rssihigh {
 			label = "cf-e314n-v2:green:signal4";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};

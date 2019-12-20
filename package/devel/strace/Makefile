@@ -9,18 +9,17 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=strace
-PKG_VERSION:=5.0
+PKG_VERSION:=5.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://strace.io/files/$(PKG_VERSION)
-PKG_HASH:=3b7ad77eb2b81dc6078046a9cc56eed5242b67b63748e7fc28f7c2daf4e647da
-
-PKG_LICENSE:=BSD-3c
-PKG_LICENSE_FILES:=COPYRIGHT
-PKG_CPE_ID:=cpe:/a:paul_kranenburg:strace
+PKG_HASH:=6c131198749656401fe3efd6b4b16a07ea867e8f530867ceae8930bbc937a047
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
+PKG_LICENSE:=LGPL-2.1-or-later
+PKG_LICENSE_FILES:=COPYING
+PKG_CPE_ID:=cpe:/a:paul_kranenburg:strace
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
@@ -47,13 +46,13 @@ define Package/strace
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=System call tracer
+  URL:=https://strace.io/
   DEPENDS:=+STRACE_LIBDW:libdw +STRACE_LIBUNWIND:libunwind
-  URL:=http://strace.sourceforge.net/
 endef
 
 define Package/strace/description
-A useful diagnostic, instructional, and debugging tool. Allows you to track what
-system calls a program makes while it is running.
+  A useful diagnostic, instructional, and debugging tool. Allows you to track what
+  system calls a program makes while it is running.
 endef
 
 define Package/strace/config

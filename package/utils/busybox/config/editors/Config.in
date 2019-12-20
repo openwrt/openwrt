@@ -126,8 +126,9 @@ config BUSYBOX_CONFIG_FEATURE_VI_SEARCH
 
 config BUSYBOX_CONFIG_FEATURE_VI_REGEX_SEARCH
 	bool "Enable regex in search and replace"
-	default BUSYBOX_DEFAULT_FEATURE_VI_REGEX_SEARCH   # Uses GNU regex, which may be unavailable. FIXME
+	default BUSYBOX_DEFAULT_FEATURE_VI_REGEX_SEARCH
 	depends on BUSYBOX_CONFIG_FEATURE_VI_SEARCH
+	depends on USE_GLIBC
 	help
 	Use extended regex search.
 

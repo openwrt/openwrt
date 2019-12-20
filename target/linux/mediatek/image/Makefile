@@ -36,6 +36,10 @@ ifeq ($(SUBTARGET),mt7622)
 KERNEL_LOADADDR = 0x41080000
 endif
 
+ifeq ($(SUBTARGET),mt7629)
+KERNEL_LOADADDR = 0x40008000
+endif
+
 define Build/sysupgrade-emmc
 	rm -f $@.recovery
 	mkfs.fat -C $@.recovery 3070
@@ -53,7 +57,8 @@ define Device/Default
   FILESYSTEMS := squashfs
   DEVICE_DTS_DIR := $(DTS_DIR)
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata 
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 ifeq ($(SUBTARGET),mt7623)
   DEVICE_VARS := MEDIATEK_UBOOT
   KERNEL_NAME := zImage
@@ -78,6 +83,14 @@ endif
 ifeq ($(SUBTARGET),mt7623)
 include mt7623.mk
 endif
+
+ifeq ($(SUBTARGET),mt7629)
+include mt7629.mk
+endif
+
+define Image/Build
+	$(call Image/Build/$(1),$(1))
+endef
 
 $(eval $(call BuildImage))
 

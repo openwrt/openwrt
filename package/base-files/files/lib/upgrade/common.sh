@@ -103,7 +103,7 @@ get_magic_long() {
 }
 
 export_bootdevice() {
-	local cmdline bootdisk rootpart uuid blockdev uevent line
+	local cmdline bootdisk rootpart uuid blockdev uevent line class
 	local MAJOR MINOR DEVNAME DEVTYPE
 
 	if read cmdline < /proc/cmdline; then
@@ -138,6 +138,18 @@ export_bootdevice() {
 			;;
 			/dev/*)
 				uevent="/sys/class/block/${rootpart##*/}/../uevent"
+			;;
+			0x[a-f0-9][a-f0-9][a-f0-9] | 0x[a-f0-9][a-f0-9][a-f0-9][a-f0-9] | \
+			[a-f0-9][a-f0-9][a-f0-9] | [a-f0-9][a-f0-9][a-f0-9][a-f0-9])
+				rootpart=0x${rootpart#0x}
+				for class in /sys/class/block/*; do
+					while read line; do
+						export -n "$line"
+					done < "$class/uevent"
+					if [ $((rootpart/256)) = $MAJOR -a $((rootpart%256)) = $MINOR ]; then
+						uevent="$class/../uevent"
+					fi
+				done
 			;;
 		esac
 

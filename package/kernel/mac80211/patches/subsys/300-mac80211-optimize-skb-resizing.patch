@@ -24,7 +24,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1779,6 +1779,9 @@ int ieee80211_tx_control_port(struct wip
+@@ -1782,6 +1782,9 @@ int ieee80211_tx_control_port(struct wip
  			      const u8 *dest, __be16 proto, bool unencrypted);
  int ieee80211_probe_mesh_link(struct wiphy *wiphy, struct net_device *dev,
  			      const u8 *buf, size_t len);
@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  void ieee80211_apply_htcap_overrides(struct ieee80211_sub_if_data *sdata,
 --- a/net/mac80211/status.c
 +++ b/net/mac80211/status.c
-@@ -655,6 +655,11 @@ void ieee80211_tx_monitor(struct ieee802
+@@ -815,6 +815,11 @@ void ieee80211_tx_monitor(struct ieee802
  	struct net_device *prev_dev = NULL;
  	int rtap_len;
  
@@ -46,11 +46,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	}
 +
  	/* send frame to monitor interfaces now */
- 	rtap_len = ieee80211_tx_radiotap_len(info);
+ 	rtap_len = ieee80211_tx_radiotap_len(info, status);
  	if (WARN_ON_ONCE(skb_headroom(skb) < rtap_len)) {
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1936,37 +1936,53 @@ static bool ieee80211_tx(struct ieee8021
+@@ -1937,37 +1937,53 @@ static bool ieee80211_tx(struct ieee8021
  }
  
  /* device xmit handlers */
@@ -123,7 +123,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		wiphy_debug(local->hw.wiphy,
  			    "failed to reallocate TX buffer\n");
  		return -ENOMEM;
-@@ -1982,18 +1998,8 @@ void ieee80211_xmit(struct ieee80211_sub
+@@ -1983,18 +1999,8 @@ void ieee80211_xmit(struct ieee80211_sub
  	struct ieee80211_local *local = sdata->local;
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	struct ieee80211_hdr *hdr;
@@ -143,7 +143,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		ieee80211_free_txskb(&local->hw, skb);
  		return;
  	}
-@@ -2774,29 +2780,13 @@ static struct sk_buff *ieee80211_build_h
+@@ -2775,29 +2781,13 @@ static struct sk_buff *ieee80211_build_h
  	}
  
  	skb_pull(skb, skip_header_bytes);
@@ -179,7 +179,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	if (encaps_data)
-@@ -3411,7 +3401,6 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3412,7 +3402,6 @@ static bool ieee80211_xmit_fast(struct i
  	struct ieee80211_local *local = sdata->local;
  	u16 ethertype = (skb->data[12] << 8) | skb->data[13];
  	int extra_head = fast_tx->hdr_len - (ETH_HLEN - 2);
@@ -187,7 +187,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ethhdr eth;
  	struct ieee80211_tx_info *info;
  	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
-@@ -3463,10 +3452,7 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3464,10 +3453,7 @@ static bool ieee80211_xmit_fast(struct i
  	 * as the may-encrypt argument for the resize to not account for
  	 * more room than we already have in 'extra_head'
  	 */

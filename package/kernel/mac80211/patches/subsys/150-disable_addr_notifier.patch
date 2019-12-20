@@ -18,7 +18,7 @@
  static int ieee80211_ifa6_changed(struct notifier_block *nb,
  				  unsigned long data, void *arg)
  {
-@@ -1269,14 +1269,14 @@ int ieee80211_register_hw(struct ieee802
+@@ -1264,14 +1264,14 @@ int ieee80211_register_hw(struct ieee802
  
  	rtnl_unlock();
  
@@ -35,7 +35,7 @@
  	local->ifa6_notifier.notifier_call = ieee80211_ifa6_changed;
  	result = register_inet6addr_notifier(&local->ifa6_notifier);
  	if (result)
-@@ -1285,13 +1285,13 @@ int ieee80211_register_hw(struct ieee802
+@@ -1280,13 +1280,13 @@ int ieee80211_register_hw(struct ieee802
  
  	return 0;
  
@@ -52,7 +52,7 @@
   fail_ifa:
  #endif
  	rtnl_lock();
-@@ -1319,10 +1319,10 @@ void ieee80211_unregister_hw(struct ieee
+@@ -1314,10 +1314,10 @@ void ieee80211_unregister_hw(struct ieee
  	tasklet_kill(&local->tx_pending_tasklet);
  	tasklet_kill(&local->tasklet);
  
