@@ -29,7 +29,7 @@ define Build/zyxel-factory
 endef
 
 define Device/aerohive_hiveap-121
-  ATH_SOC := ar9344
+  SOC := ar9344
   DEVICE_VENDOR := Aerohive
   DEVICE_MODEL := HiveAP 121
   DEVICE_PACKAGES := kmod-usb2
@@ -47,7 +47,7 @@ endef
 TARGET_DEVICES += aerohive_hiveap-121
 
 define Device/glinet_gl-ar300m-common-nand
-  ATH_SOC := qca9531
+  SOC := qca9531
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-AR300M
   DEVICE_PACKAGES := kmod-usb2
@@ -77,7 +77,7 @@ endef
 TARGET_DEVICES += glinet_gl-ar300m-nor
 
 define Device/glinet_gl-ar750s-common
-  ATH_SOC := qca9563
+  SOC := qca9563
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-AR750S
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct kmod-usb2 \
@@ -129,7 +129,7 @@ define Device/netgear_ath79_nand
 endef
 
 define Device/netgear_wndr3700-v4
-  ATH_SOC := ar9344
+  SOC := ar9344
   DEVICE_MODEL := WNDR3700
   DEVICE_VARIANT := v4
   NETGEAR_KERNEL_MAGIC := 0x33373033
@@ -141,7 +141,7 @@ endef
 TARGET_DEVICES += netgear_wndr3700-v4
 
 define Device/netgear_wndr4300
-  ATH_SOC := ar9344
+  SOC := ar9344
   DEVICE_MODEL := WNDR4300
   NETGEAR_KERNEL_MAGIC := 0x33373033
   NETGEAR_BOARD_ID := WNDR4300
@@ -152,7 +152,7 @@ endef
 TARGET_DEVICES += netgear_wndr4300
 
 define Device/zyxel_nbg6716
-  ATH_SOC := qca9558
+  SOC := qca9558
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NBG6716
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \

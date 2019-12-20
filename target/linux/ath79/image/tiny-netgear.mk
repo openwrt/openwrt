@@ -1,7 +1,7 @@
 include ./common-netgear.mk
 
 define Device/netgear_ar7240
-  ATH_SOC := ar7240
+  SOC := ar7240
   NETGEAR_KERNEL_MAGIC := 0x32303631
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
   IMAGE_SIZE := 3712k
@@ -30,7 +30,7 @@ endef
 TARGET_DEVICES += on_n150r
 
 define Device/netgear_wnr1000-v2
-  ATH_SOC := ar7240
+  SOC := ar7240
   DEVICE_MODEL := WNR1000
   DEVICE_VARIANT := v2
   NETGEAR_KERNEL_MAGIC := 0x31303031
@@ -45,7 +45,7 @@ endef
 TARGET_DEVICES += netgear_wnr1000-v2
 
 define Device/netgear_wnr2000-v3
-  ATH_SOC := ar7241
+  SOC := ar7241
   DEVICE_MODEL := WNR2000
   DEVICE_VARIANT := v3
   NETGEAR_KERNEL_MAGIC := 0x32303033

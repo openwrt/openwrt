@@ -1,7 +1,7 @@
 include ./common-buffalo.mk
 
 define Device/buffalo_whr-g301n
-  ATH_SOC := ar7240
+  SOC := ar7240
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WHR-G301N
   IMAGE_SIZE := 3712k
@@ -16,7 +16,7 @@ endef
 TARGET_DEVICES += buffalo_whr-g301n
 
 define Device/dlink_dir-615-e4
-  ATH_SOC := ar7240
+  SOC := ar7240
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-615
   DEVICE_VARIANT := E4
@@ -34,7 +34,7 @@ endef
 TARGET_DEVICES += dlink_dir-615-e4
 
 define Device/pqi_air-pen
-  ATH_SOC := ar9330
+  SOC := ar9330
   DEVICE_VENDOR := PQI
   DEVICE_MODEL := Air-Pen
   DEVICE_PACKAGES := kmod-usb2

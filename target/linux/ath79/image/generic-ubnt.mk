@@ -39,7 +39,7 @@ endef
 
 define Device/ubnt-bz
   $(Device/ubnt)
-  ATH_SOC := ar7241
+  SOC := ar7241
   IMAGE_SIZE := 7448k
   UBNT_BOARD := XM
   UBNT_CHIP := ar7240
@@ -49,7 +49,7 @@ endef
 
 define Device/ubnt-wa
   $(Device/ubnt)
-  ATH_SOC := ar9342
+  SOC := ar9342
   IMAGE_SIZE := 15744k
   UBNT_BOARD := WA
   UBNT_CHIP := ar934x
@@ -59,7 +59,7 @@ endef
 
 define Device/ubnt-xm
   $(Device/ubnt)
-  ATH_SOC := ar7241
+  SOC := ar7241
   DEVICE_VARIANT := XM
   DEVICE_PACKAGES += kmod-usb-ohci
   IMAGE_SIZE := 7448k
@@ -72,7 +72,7 @@ endef
 
 define Device/ubnt-xw
   $(Device/ubnt)
-  ATH_SOC := ar9342
+  SOC := ar9342
   DEVICE_VARIANT := XW
   IMAGE_SIZE := 7552k
   UBNT_BOARD := XM
@@ -84,7 +84,7 @@ endef
 
 define Device/ubnt_acb-isp
   $(Device/ubnt)
-  ATH_SOC := qca9533
+  SOC := qca9533
   DEVICE_MODEL := airCube ISP
   IMAGE_SIZE := 15744k
   UBNT_BOARD := ACB-ISP
@@ -183,7 +183,7 @@ define Device/ubnt_routerstation_common
   DEVICE_PACKAGES := -kmod-ath9k -wpad-mini -uboot-envtools kmod-usb-ohci \
 	kmod-usb2 fconfig
   DEVICE_VENDOR := Ubiquiti
-  ATH_SOC := ar7161
+  SOC := ar7161
   IMAGE_SIZE := 16128k
   IMAGES := factory.bin
   IMAGE/factory.bin := append-rootfs | pad-rootfs | mkubntimage | \
@@ -222,7 +222,7 @@ TARGET_DEVICES += ubnt_unifi
 
 define Device/ubnt_unifiac
   DEVICE_VENDOR := Ubiquiti
-  ATH_SOC := qca9563
+  SOC := qca9563
   IMAGE_SIZE := 7744k
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
