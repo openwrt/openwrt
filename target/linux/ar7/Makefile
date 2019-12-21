@@ -10,7 +10,6 @@ ARCH:=mipsel
 BOARD:=ar7
 BOARDNAME:=TI AR7
 FEATURES:=squashfs atm low_mem
-MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 SUBTARGETS:=generic ac49x
 
 KERNEL_PATCHVER:=4.9

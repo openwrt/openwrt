@@ -23,7 +23,6 @@ define Package/spidev-test
   TITLE:=SPI testing utility
   VERSION:=$(LINUX_VERSION)-$(PKG_RELEASE)
   URL:=http://www.kernel.org
-  MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 endef
 
 define Package/spidev-test/description

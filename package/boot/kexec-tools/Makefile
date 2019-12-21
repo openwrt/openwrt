@@ -25,7 +25,6 @@ define Package/kexec-tools/Default
   SECTION:=utils
   CATEGORY:=Utilities
   URL:=http://kernel.org/pub/linux/kernel/people/horms/kexec-tools/
-  MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 endef
 
 define Package/kexec-tools
