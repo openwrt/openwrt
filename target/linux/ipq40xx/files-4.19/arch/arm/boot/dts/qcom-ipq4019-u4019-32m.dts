@@ -1,16 +1,14 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT
- *
- * Copyright (c) 2018 Peng Zhang <sd20@qxwlan.com>
- *
- */
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "qcom-ipq4019-qxwlan-e2600ac.dtsi"
+/dts-v1/;
+
+#include "qcom-ipq4019-u4019.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	model = "Qxwlan E2600AC c2";
-	compatible = "qxwlan,e2600ac-c2", "qcom,ipq4019";
+	model = "Unielec U4019 (32M)";
+	compatible = "unielec,u4019-32m","unielec,u4019","qcom,ipq4019";
 };
 
 &blsp1_spi1 {
@@ -23,6 +21,7 @@
 		reg = <0>;
 		compatible = "jedec,spi-nor";
 		spi-max-frequency = <24000000>;
+		broken-flash-reset;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -69,46 +68,11 @@
 				reg = <0x170000 0x10000>;
 				read-only;
 			};
-		};
-	};
-};
-
-&nand {
-	pinctrl-0 = <&nand_pins>;
-	pinctrl-names = "default";
-	status = "okay";
-
-	nand@0 {
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				label = "ubi";
-				reg = <0x00000000 0x04000000>;
+			partition@180000 {
+				compatible = "denx,fit";
+				label = "firmware";
+				reg = <0x180000 0x1e80000>;
 			};
-		};
-	};
-};
-
-&tlmm {
-	nand_pins: nand-pins {
-
-		pullups {
-			pins = "gpio53", "gpio58", "gpio59";
-			function = "qpic";
-			bias-pull-up;
-		};
-
-		pulldowns {
-			pins = "gpio54", "gpio55", "gpio56",
-				"gpio57", "gpio60", "gpio61",
-				"gpio62", "gpio63", "gpio64",
-				"gpio65", "gpio66", "gpio67",
-				"gpio68", "gpio69";
-			function = "qpic";
-			bias-pull-down;
 		};
 	};
 };
