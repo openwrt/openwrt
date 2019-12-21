@@ -1,0 +1,12 @@
+preinit_set_mac_address() {
+	case $(board_name) in
+	zyxel,nbg6716)
+		mac_eth1=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		[ ! -z $mac_eth1 ] && ifconfig eth1 hw ether $mac_eth1
+		mac_eth0=$(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) -1)
+		[ ! -z $mac_eth0 ] && ifconfig eth0 hw ether $mac_eth0
+		;;
+	esac
+}
+
+boot_hook_add preinit_main preinit_set_mac_address
