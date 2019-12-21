@@ -15,10 +15,10 @@
 	};
 
 	aliases {
-		led-boot = &power;
-		led-failsafe = &power;
-		led-running = &power;
-		led-upgrade = &power;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 	};
 
 	chosen {
@@ -131,7 +131,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		power: status {
+		led_power: status {
 			label = "rt-ac58u:blue:status";
 			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
 		};
@@ -144,11 +144,13 @@
 		wlan2G {
 			label = "rt-ac58u:blue:wlan2G";
 			gpios = <&tlmm 58 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 
-		wan5G {
+		wlan5G {
 			label = "rt-ac58u:blue:wlan5G";
 			gpios = <&tlmm 5 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		usb {
@@ -216,7 +218,7 @@
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		linux,modalias = "m25p80", "mx25l1606e", "n25q128a11";
-		spi-max-frequency = <24000000>;
+		spi-max-frequency = <30000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -270,7 +272,7 @@
 	spi-nand@1 {
 		compatible = "spi-nand";
 		reg = <1>;
-		spi-max-frequency = <24000000>;
+		spi-max-frequency = <30000000>;
 
 		/*
 		 * U-boot looks for "spinand,mt29f" node,
