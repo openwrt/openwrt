@@ -58,20 +58,6 @@
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
 
-		usb2@60f8800 {
-			status = "okay";
-
-			dwc3@6000000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				usb2_port1: port@1 {
-					reg = <1>;
-					#trigger-source-cells = <0>;
-				};
-			};
-		};
-
 		usb3@8af8800 {
 			status = "okay";
 
@@ -81,11 +67,6 @@
 
 				usb3_port1: port@1 {
 					reg = <1>;
-					#trigger-source-cells = <0>;
-				};
-
-				usb3_port2: port@2 {
-					reg = <2>;
 					#trigger-source-cells = <0>;
 				};
 			};
@@ -162,7 +143,7 @@
 		usb {
 			label = "rt-ac58u:blue:usb";
 			gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
-			trigger-sources = <&usb3_port1>, <&usb3_port2>, <&usb2_port1>;
+			trigger-sources = <&usb3_port1>;
 			linux,default-trigger = "usbport";
 		};
 
@@ -314,9 +295,5 @@
 };
 
 &usb3_hs_phy {
-	status = "okay";
-};
-
-&usb2_hs_phy {
 	status = "okay";
 };
