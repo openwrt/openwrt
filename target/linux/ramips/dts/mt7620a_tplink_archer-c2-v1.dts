@@ -20,15 +20,6 @@
 		bootargs = "console=ttyS0,115200";
 	};
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "i2c", "uartf", "wled", "ephy", "spi refclk";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -163,6 +154,13 @@
 
 &gpio3 {
 	status = "okay";
+};
+
+&state_default {
+	gpio {
+		ralink,group = "i2c", "uartf", "wled", "ephy", "spi refclk";
+		ralink,function = "gpio";
+	};
 };
 
 &wmac {

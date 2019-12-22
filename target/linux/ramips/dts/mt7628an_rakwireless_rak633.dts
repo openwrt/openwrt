@@ -20,12 +20,10 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		wled_an {
-			ralink,group = "wled_an";
-			ralink,function = "gpio";
-		};
+&state_default {
+	wled_an {
+		ralink,group = "wled_an";
+		ralink,function = "gpio";
 	};
 };
 

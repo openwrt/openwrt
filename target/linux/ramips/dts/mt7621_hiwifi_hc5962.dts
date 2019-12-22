@@ -141,11 +141,9 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "uart3", "jtag";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		ralink,group = "uart3", "jtag";
+		ralink,function = "gpio";
 	};
 };

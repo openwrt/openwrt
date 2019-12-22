@@ -98,11 +98,9 @@
 	mediatek,portmap = "wllll";
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "p0led_an", "p2led_an", "perst";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		ralink,group = "p0led_an", "p2led_an", "perst";
+		ralink,function = "gpio";
 	};
 };
