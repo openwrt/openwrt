@@ -273,7 +273,7 @@ define Device/comfast_cf-e313ac
   SOC := qca9531
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-E313AC
-  DEVICE_PACKAGES := rssileds kmod-leds-gpio kmod-ath10k-ct \
+  DEVICE_PACKAGES := rssileds kmod-leds-gpio kmod-ath10k-ct-smallbuffers \
 	ath10k-firmware-qca9888-ct -swconfig -uboot-envtools
   IMAGE_SIZE := 7936k
 endef
@@ -473,7 +473,7 @@ define Device/dlink_dir-859-a1
   DEVICE_MODEL := DIR-859
   DEVICE_VARIANT := A1
   IMAGE_SIZE := 15872k
-  DEVICE_PACKAGES :=  kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES :=  kmod-usb2 kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
   SEAMA_SIGNATURE := wrgac37_dlink.2013gui_dir859
   SUPPORTED_DEVICES += dir-859-a1
 endef
@@ -719,7 +719,7 @@ define Device/nec_wg800hp
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | \
 	xor-image -p 6A57190601121E4C004C1E1201061957 -x | nec-fw LASER_ATERM
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct-htt
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9887-ct-htt
 endef
 TARGET_DEVICES += nec_wg800hp
 
@@ -917,7 +917,7 @@ define Device/phicomm_k2t
   IMAGE_SIZE := 15744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
 	append-metadata | check-size $$$$(IMAGE_SIZE)
-  DEVICE_PACKAGES := kmod-leds-reset kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-leds-reset kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9888-ct
 endef
 TARGET_DEVICES += phicomm_k2t
 

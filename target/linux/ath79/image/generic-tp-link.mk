@@ -20,7 +20,7 @@ define Device/tplink_archer-c2-v3
   IMAGE_SIZE := 7808k
   DEVICE_MODEL := Archer C2
   DEVICE_VARIANT := v3
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9887-ct
   TPLINK_BOARD_ID := ARCHER-C2-V3
 endef
 TARGET_DEVICES += tplink_archer-c2-v3
@@ -32,7 +32,7 @@ define Device/tplink_archer-c25-v1
   DEVICE_MODEL := Archer C25
   DEVICE_VARIANT := v1
   TPLINK_BOARD_ID := ARCHER-C25-V1
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9887-ct
   SUPPORTED_DEVICES += archer-c25-v1
 endef
 TARGET_DEVICES += tplink_archer-c25-v1
@@ -56,7 +56,7 @@ define Device/tplink_archer-c58-v1
   DEVICE_MODEL := Archer C58
   DEVICE_VARIANT := v1
   TPLINK_BOARD_ID := ARCHER-C58-V1
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9888-ct
   SUPPORTED_DEVICES += archer-c58-v1
 endef
 TARGET_DEVICES += tplink_archer-c58-v1
@@ -119,7 +119,7 @@ define Device/tplink_archer-c60-v1
   DEVICE_MODEL := Archer C60
   DEVICE_VARIANT := v1
   TPLINK_BOARD_ID := ARCHER-C60-V1
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9888-ct
   SUPPORTED_DEVICES += archer-c60-v1
 endef
 TARGET_DEVICES += tplink_archer-c60-v1
@@ -131,7 +131,7 @@ define Device/tplink_archer-c60-v2
   DEVICE_MODEL := Archer C60
   DEVICE_VARIANT := v2
   TPLINK_BOARD_ID := ARCHER-C60-V2
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9888-ct
   SUPPORTED_DEVICES += archer-c60-v2
 endef
 TARGET_DEVICES += tplink_archer-c60-v2
