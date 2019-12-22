@@ -171,8 +171,7 @@ ramips_setup_macs()
 	rakwireless,rak633|\
 	unielec,u7628-01-16m|\
 	wavlink,wl-wn575a3|\
-	wiznet,wizfi630s|\
-	xiaomi,miwifi-nano)
+	wiznet,wizfi630s)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x28)" 1)
 		;;
 	skylab,skw92a|\
