@@ -66,6 +66,11 @@
 	status = "disabled";
 };
 
+&esw {
+	mediatek,portmap = <0x2f>;
+	mediatek,portdisable = <0x2a>;
+};
+
 &wmac {
 	status = "okay";
 	ralink,mtd-eeprom = <&factory 0x4>;
