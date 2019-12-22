@@ -106,9 +106,9 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			ubi@8c0000 {
+			ubi@ac0000 {
 				label = "ubi";
-				reg = <0x0 0x7700000>;
+				reg = <0x0 0x7500000>;
 			};
 		};
 	};
@@ -167,12 +167,12 @@
 
 		kernel@6c0000 {
 			label = "kernel";
-			reg = <0x6c0000 0x200000>;
+			reg = <0x6c0000 0x400000>;
 		};
 
-		ubipart0: partition@8c0000 {
+		ubipart0: partition@ac0000 {
 			label = "ubipart0";
-			reg = <0x8c0000 0x1700000>;
+			reg = <0xac0000 0x1500000>;
 		};
 
 		partition@6c0000 {
