@@ -174,7 +174,7 @@ $(Package/ath10k-firmware-default)
   SECTION:=firmware
   CATEGORY:=Firmware
   PROVIDES:=ath10k-firmware-qca988x
-  DEPENDS:=+kmod-ath10k-ct
+  DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 
 define Package/ath10k-firmware-qca9887-ct
@@ -190,7 +190,7 @@ $(Package/ath10k-firmware-default)
   SECTION:=firmware
   CATEGORY:=Firmware
   PROVIDES:=ath10k-firmware-qca9887
-  DEPENDS:=+kmod-ath10k-ct
+  DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 
 define Package/ath10k-firmware-qca988x-ct/description
@@ -308,7 +308,7 @@ $(Package/ath10k-firmware-default)
   SECTION:=firmware
   CATEGORY:=Firmware
   PROVIDES:=ath10k-firmware-qca99x0
-  DEPENDS:=+kmod-ath10k-ct
+  DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 
 define Package/ath10k-firmware-qca9984-ct
@@ -324,7 +324,7 @@ $(Package/ath10k-firmware-default)
   SECTION:=firmware
   CATEGORY:=Firmware
   PROVIDES:=ath10k-firmware-qca9984
-  DEPENDS:=+kmod-ath10k-ct
+  DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 
 define Package/ath10k-firmware-qca4019-ct
@@ -340,7 +340,7 @@ $(Package/ath10k-firmware-default)
   SECTION:=firmware
   CATEGORY:=Firmware
   PROVIDES:=ath10k-firmware-qca4019
-  DEPENDS:=+kmod-ath10k-ct
+  DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 
 define Package/ath10k-firmware-qca9888-ct
@@ -356,7 +356,7 @@ $(Package/ath10k-firmware-default)
   SECTION:=firmware
   CATEGORY:=Firmware
   PROVIDES:=ath10k-firmware-qca9888
-  DEPENDS:=+kmod-ath10k-ct
+  DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 
 
