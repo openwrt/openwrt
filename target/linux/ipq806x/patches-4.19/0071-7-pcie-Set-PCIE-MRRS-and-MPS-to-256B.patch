@@ -31,8 +31,8 @@ Signed-off-by: Gokul Sriram Palanisamy <gpalan@codeaurora.org>
  #define QCOM_PCIE_2_1_0_MAX_SUPPLY	3
  struct qcom_pcie_resources_2_1_0 {
  	struct clk *iface_clk;
-@@ -1453,6 +1461,35 @@ static int qcom_pcie_probe(struct platfo
- 	return 0;
+@@ -1475,6 +1483,35 @@ err_pm_runtime_put:
+ 	return ret;
  }
  
 +static void qcom_pcie_fixup_final(struct pci_dev *dev)
