@@ -30,6 +30,7 @@ define Device/dlink_dir-615-e4
 	check-size $$$$(FACTORY_IMAGE_SIZE) | pad-to $$$$(FACTORY_IMAGE_SIZE) | \
 	append-string "AP99-AR7240-RT-091105-05"
   SUPPORTED_DEVICES += dir-615-e4
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dir-615-e4
 
