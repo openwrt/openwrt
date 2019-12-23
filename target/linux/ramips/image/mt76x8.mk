@@ -267,6 +267,20 @@ endef
 DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD
 DEVICE_VARS += TPLINK_HVERSION
 
+define Device/tplink-safeloader
+  SOC := mt7628an
+  DEVICE_VENDOR := TP-Link
+  TPLINK_BOARD_ID :=
+  TPLINK_HWID := 0x0
+  TPLINK_HWREV := 0
+  TPLINK_HEADER_VERSION := 1
+  KERNEL := $(KERNEL_DTB) | tplink-v1-header -e -O
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
+	append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+endef
+
 define Device/tplink_archer-c20-v4
   $(Device/tplink)
   IMAGE_SIZE := 7808k
@@ -327,6 +341,16 @@ define Device/tplink_archer-c50-v4
   SUPPORTED_DEVICES += tplink,c50-v4
 endef
 TARGET_DEVICES += tplink_archer-c50-v4
+
+define Device/tplink_re305-v1
+  $(Device/tplink-safeloader)
+  IMAGE_SIZE := 6016k
+  DEVICE_MODEL := RE305
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt76x2
+  TPLINK_BOARD_ID := RE305-V1
+endef
+TARGET_DEVICES += tplink_re305-v1
 
 define Device/tplink_tl-mr3020-v3
   $(Device/tplink)
