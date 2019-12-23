@@ -175,11 +175,12 @@ define Device/cznic_turris-omnia
     wpad-basic kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
     partx-utils kmod-i2c-core kmod-i2c-mux kmod-i2c-mux-pca954x
   IMAGES := $$(IMAGE_PREFIX)-sysupgrade.img.gz omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz
-  IMAGE/$$(IMAGE_PREFIX)-sysupgrade.img.gz := boot-img | sdcard-img | gzip | append-metadata
+  IMAGE/$$(IMAGE_PREFIX)-sysupgrade.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
   IMAGE/omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz := omnia-medkit-initramfs | gzip
   IMAGE_NAME = $$(2)
   DEVICE_DTS := armada-385-turris-omnia
   SUPPORTED_DEVICES += armada-385-turris-omnia
+  BOOT_SCRIPT := turris-omnia
 endef
 TARGET_DEVICES += cznic_turris-omnia
 
