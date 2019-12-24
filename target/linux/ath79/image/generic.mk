@@ -1079,6 +1079,19 @@ define Device/yuncore_a782
 endef
 TARGET_DEVICES += yuncore_a782
 
+define Device/yuncore_cpe830
+  SOC := qca9531
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := CPE830(D)
+  DEVICE_ALT0_VENDOR = KuWfi
+  DEVICE_ALT0_MODEL = CPE830(D)
+  IMAGE_SIZE := 16000k
+  IMAGES += tftp.bin
+  IMAGE/tftp.bin := $$(IMAGE/sysupgrade.bin) | yuncore-tftp-header-16m
+  DEVICE_PACKAGES := rssileds -uboot-envtools swconfig
+endef
+TARGET_DEVICES += yuncore_cpe830
+
 define Device/yuncore_xd4200
   SOC := qca9563
   DEVICE_VENDOR := YunCore
