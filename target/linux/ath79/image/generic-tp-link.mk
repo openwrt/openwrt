@@ -428,6 +428,17 @@ define Device/tplink_tl-wdr4900-v2
 endef
 TARGET_DEVICES += tplink_tl-wdr4900-v2
 
+define Device/tplink_tl-wdr6500-v2
+  $(Device/tplink-8mlzma)
+  SOC := qca9561
+  DEVICE_MODEL := TL-WDR6500
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  TPLINK_BOARD_ID := TL-WDR6500-v2
+  TPLINK_HWID := 0x65000002
+endef
+TARGET_DEVICES += tplink_tl-wdr6500-v2
+
 define Device/tplink_tl-wr1043nd-v1
   $(Device/tplink-8m)
   SOC := ar9132

@@ -226,7 +226,8 @@ ath79_setup_interfaces()
 			"0@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth0" "1:wan"
 		;;
 	tplink,archer-c60-v1|\
-	tplink,archer-c60-v2)
+	tplink,archer-c60-v2|\
+	tplink,tl-wdr6500-v2)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
@@ -394,6 +395,10 @@ ath79_setup_macs()
 	tplink,tl-wdr4300-v1|\
 	tplink,tl-wdr4300-v1-il)
 		base_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
+		wan_mac=$(macaddr_add "$base_mac" 1)
+		;;
+	tplink,tl-wdr6500-v2)
+		base_mac=$(mtd_get_mac_binary u-boot 0x0fc00)
 		wan_mac=$(macaddr_add "$base_mac" 1)
 		;;
 	trendnet,tew-823dru)
