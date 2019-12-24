@@ -18,7 +18,7 @@
    add_RunCMake_test(FindPkgConfig)
 --- a/Tests/CMakeLists.txt
 +++ b/Tests/CMakeLists.txt
-@@ -483,13 +483,6 @@ if(BUILD_TESTING)
+@@ -489,32 +489,6 @@ if(BUILD_TESTING)
  
    list(APPEND TEST_BUILD_DIRS ${CMake_TEST_INSTALL_PREFIX})
  
@@ -29,6 +29,109 @@
 -    find_package(Qt4 QUIET)
 -  endif()
 -
-   if(CMake_TEST_Qt4 AND QT4_FOUND)
-     # test whether the Qt4 which has been found works, on some machines
-     # which run nightly builds there were errors like "wrong file format"
+-  if(CMake_TEST_Qt4 AND QT4_FOUND)
+-    # test whether the Qt4 which has been found works, on some machines
+-    # which run nightly builds there were errors like "wrong file format"
+-    # for libQtCore.so. So first check it works, and only if it does add
+-    # the automoc test.
+-    include(CheckCXXSourceCompiles)
+-    set(_save_CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES}")
+-    set(_save_CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES}")
+-
+-    set(CMAKE_REQUIRED_INCLUDES ${QT_INCLUDES})
+-    set(CMAKE_REQUIRED_LIBRARIES ${QT_QTCORE_LIBRARIES})
+-
+-    CHECK_CXX_SOURCE_COMPILES("#include <QCoreApplication>\n int main() {return (qApp == 0 ? 0 : 1); }\n"
+-                              QT4_WORKS)
+-
+-    set(CMAKE_REQUIRED_INCLUDES "${_save_CMAKE_REQUIRED_INCLUDES}")
+-    set(CMAKE_REQUIRED_LIBRARIES "${_save_CMAKE_REQUIRED_LIBRARIES}")
+-  endif()
+-
+   # run test for BundleUtilities on supported platforms/compilers
+   if(MSVC OR
+      MINGW OR
+@@ -532,22 +506,6 @@
+       )
+     list(APPEND TEST_BUILD_DIRS "${CMake_BINARY_DIR}/Tests/BundleUtilities")
+ 
+-    # run test for DeployQt4 on supported platforms/compilers (which depends on BundleUtilities)
+-    # this test also depends on the existence of the standard qtiff plugin
+-    if(QT4_WORKS AND QT_QTSQL_FOUND)
+-      add_test(Qt4Deploy ${CMAKE_CTEST_COMMAND}
+-        --build-and-test
+-        "${CMake_SOURCE_DIR}/Tests/Qt4Deploy"
+-        "${CMake_BINARY_DIR}/Tests/Qt4Deploy"
+-        ${build_generator_args}
+-        --build-project Qt4Deploy
+-        --build-options ${build_options}
+-        -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+-        -DQT_QMAKE_EXECUTABLE:FILEPATH=${QT_QMAKE_EXECUTABLE}
+-        )
+-      list(APPEND TEST_BUILD_DIRS "${CMake_BINARY_DIR}/Tests/Qt4Deploy")
+-    endif()
+-
+   endif()
+   endif()
+ 
+@@ -1344,60 +1302,6 @@
+     )
+   list(APPEND TEST_BUILD_DIRS "${CMake_BINARY_DIR}/Tests/QtAutomocNoQt")
+ 
+-  if(NOT DEFINED CMake_TEST_Qt5)
+-    set(CMake_TEST_Qt5 1)
+-  endif()
+-  if(CMake_TEST_Qt5)
+-    find_package(Qt5Widgets QUIET NO_MODULE)
+-  endif()
+-  if(CMake_TEST_Qt5 AND Qt5Widgets_FOUND)
+-    add_subdirectory(Qt5Autogen)
+-  endif()
+-  if(QT4_WORKS AND QT_QTGUI_FOUND)
+-    add_subdirectory(Qt4Autogen)
+-
+-    add_test(Qt4Targets ${CMAKE_CTEST_COMMAND}
+-      --build-and-test
+-      "${CMake_SOURCE_DIR}/Tests/Qt4Targets"
+-      "${CMake_BINARY_DIR}/Tests/Qt4Targets"
+-      ${build_generator_args}
+-      --build-project Qt4Targets
+-      --build-exe-dir "${CMake_BINARY_DIR}/Tests/Qt4Targets"
+-      --force-new-ctest-process
+-      --build-options ${build_options}
+-        -DQT_QMAKE_EXECUTABLE:FILEPATH=${QT_QMAKE_EXECUTABLE}
+-      --test-command ${CMAKE_CTEST_COMMAND} -V
+-      )
+-    list(APPEND TEST_BUILD_DIRS "${CMake_BINARY_DIR}/Tests/Qt4Targets")
+-
+-    if(Qt5Widgets_FOUND AND NOT Qt5Widgets_VERSION VERSION_LESS 5.1.0)
+-      add_test(Qt4And5AutomocForward ${CMAKE_CTEST_COMMAND}
+-        --build-and-test
+-        "${CMake_SOURCE_DIR}/Tests/Qt4And5Automoc"
+-        "${CMake_BINARY_DIR}/Tests/Qt4And5AutomocForward"
+-        ${build_generator_args}
+-        --build-project Qt4And5Automoc
+-        --build-exe-dir "${CMake_BINARY_DIR}/Tests/Qt4And5AutomocForward"
+-        --force-new-ctest-process
+-        --build-options ${build_options}
+-        --test-command ${CMAKE_CTEST_COMMAND} -V
+-        )
+-      list(APPEND TEST_BUILD_DIRS "${CMake_BINARY_DIR}/Tests/Qt4And5AutomocForward")
+-      add_test(Qt4And5AutomocReverse ${CMAKE_CTEST_COMMAND}
+-        --build-and-test
+-        "${CMake_SOURCE_DIR}/Tests/Qt4And5Automoc"
+-        "${CMake_BINARY_DIR}/Tests/Qt4And5AutomocReverse"
+-        ${build_generator_args}
+-        --build-project Qt4And5Automoc
+-        --build-exe-dir "${CMake_BINARY_DIR}/Tests/Qt4And5AutomocReverse"
+-        --force-new-ctest-process
+-        --build-options ${build_options} -DQT_REVERSE_FIND_ORDER=1
+-        --test-command ${CMAKE_CTEST_COMMAND} -V
+-        )
+-      list(APPEND TEST_BUILD_DIRS "${CMake_BINARY_DIR}/Tests/Qt4And5AutomocReverse")
+-    endif()
+-  endif()
+-
+   if(CMake_TEST_FindALSA)
+     add_subdirectory(FindALSA)
+   endif()
