@@ -25,12 +25,13 @@
 			device_type = "cpu";
 			reg = <0>;
 			next-level-cache = <&L2>;
-			qcom,acc = <&acc0>;
+			qcom,acc = <&acpu0_aux>;
 			qcom,saw = <&saw0>;
 			clocks = <&kraitcc 0>, <&kraitcc 4>;
 			clock-names = "cpu", "l2";
 			clock-latency = <100000>;
 			cpu-supply = <&smb208_s2a>;
+			operating-points-v2 = <&opp_table0>;
 			voltage-tolerance = <5>;
 			cooling-min-state = <0>;
 			cooling-max-state = <10>;
@@ -44,12 +45,13 @@
 			device_type = "cpu";
 			reg = <1>;
 			next-level-cache = <&L2>;
-			qcom,acc = <&acc1>;
+			qcom,acc = <&acpu1_aux>;
 			qcom,saw = <&saw1>;
 			clocks = <&kraitcc 1>, <&kraitcc 4>;
 			clock-names = "cpu", "l2";
 			clock-latency = <100000>;
 			cpu-supply = <&smb208_s2b>;
+			operating-points-v2 = <&opp_table0>;
 			voltage-tolerance = <5>;
 			cooling-min-state = <0>;
 			cooling-max-state = <10>;
@@ -77,6 +79,72 @@
 				min-residency-us = <3000>;
 			};
 		};
+	};
+
+	opp_table0: opp_table0 {
+		compatible = "operating-points-v2-qcom-cpu";
+		nvmem-cells = <&speedbin_efuse>;
+
+		opp-384000000 {
+			opp-hz = /bits/ 64 <384000000>;
+			opp-microvolt-speed0-pvs0-v0 = <1000000>;
+			opp-microvolt-speed0-pvs1-v0 = <925000>;
+			opp-microvolt-speed0-pvs2-v0 = <875000>;
+			opp-microvolt-speed0-pvs3-v0 = <800000>;
+			opp-supported-hw = <0x1>;
+			clock-latency-ns = <100000>;
+		};
+
+		opp-600000000 {
+			opp-hz = /bits/ 64 <600000000>;
+			opp-microvolt-speed0-pvs0-v0 = <1050000>;
+			opp-microvolt-speed0-pvs1-v0 = <975000>;
+			opp-microvolt-speed0-pvs2-v0 = <925000>;
+			opp-microvolt-speed0-pvs3-v0 = <850000>;
+			opp-supported-hw = <0x1>;
+			clock-latency-ns = <100000>;
+		};
+
+		opp-800000000 {
+			opp-hz = /bits/ 64 <800000000>;
+			opp-microvolt-speed0-pvs0-v0 = <1100000>;
+			opp-microvolt-speed0-pvs1-v0 = <1025000>;
+			opp-microvolt-speed0-pvs2-v0 = <995000>;
+			opp-microvolt-speed0-pvs3-v0 = <900000>;
+			opp-supported-hw = <0x1>;
+			clock-latency-ns = <100000>;
+		};
+
+		opp-1000000000 {
+			opp-hz = /bits/ 64 <1000000000>;
+			opp-microvolt-speed0-pvs0-v0 = <1150000>;
+			opp-microvolt-speed0-pvs1-v0 = <1075000>;
+			opp-microvolt-speed0-pvs2-v0 = <1025000>;
+			opp-microvolt-speed0-pvs3-v0 = <950000>;
+			opp-supported-hw = <0x1>;
+			clock-latency-ns = <100000>;
+		};
+
+		opp-1200000000 {
+			opp-hz = /bits/ 64 <1200000000>;
+			opp-microvolt-speed0-pvs0-v0 = <1200000>;
+			opp-microvolt-speed0-pvs1-v0 = <1125000>;
+			opp-microvolt-speed0-pvs2-v0 = <1075000>;
+			opp-microvolt-speed0-pvs3-v0 = <1000000>;
+			opp-supported-hw = <0x1>;
+			clock-latency-ns = <100000>;
+		};
+
+		opp-1400000000 {
+			opp-hz = /bits/ 64 <1400000000>;
+			opp-microvolt-speed0-pvs0-v0 = <1250000>;
+			opp-microvolt-speed0-pvs1-v0 = <1175000>;
+			opp-microvolt-speed0-pvs2-v0 = <1125000>;
+			opp-microvolt-speed0-pvs3-v0 = <1050000>;
+			opp-supported-hw = <0x1>;
+			clock-latency-ns = <100000>;
+		};
+
 	};
 
 	thermal-zones {
@@ -481,46 +549,6 @@
 		};
 	};
 
-	kraitcc: clock-controller {
-		compatible = "qcom,krait-cc-v1";
-		#clock-cells = <1>;
-	};
-
-	qcom,pvs {
-		qcom,pvs-format-a;
-		qcom,speed0-pvs0-bin-v0 =
-			< 1400000000 1250000 >,
-			< 1200000000 1200000 >,
-			< 1000000000 1150000 >,
-			 < 800000000 1100000 >,
-			 < 600000000 1050000 >,
-			 < 384000000 1000000 >;
-
-		qcom,speed0-pvs1-bin-v0 =
-			< 1400000000 1175000 >,
-			< 1200000000 1125000 >,
-			< 1000000000 1075000 >,
-			 < 800000000 1025000 >,
-			 < 600000000  975000 >,
-			 < 384000000  925000 >;
-
-		qcom,speed0-pvs2-bin-v0 =
-			< 1400000000 1125000 >,
-			< 1200000000 1075000 >,
-			< 1000000000 1025000 >,
-			 < 800000000  995000 >,
-			 < 600000000  925000 >,
-			 < 384000000  875000 >;
-
-		qcom,speed0-pvs3-bin-v0 =
-			< 1400000000 1050000 >,
-			< 1200000000 1000000 >,
-			< 1000000000  950000 >,
-			 < 800000000  900000 >,
-			 < 600000000  850000 >,
-			 < 384000000  800000 >;
-	};
-
 	soc: soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -553,6 +581,9 @@
 			};
 			tsens_backup: backup@410 {
 				reg = <0x410 0x10>;
+			};
+			speedbin_efuse: speedbin@0c0 {
+				reg = <0x0c0 0x4>;
 			};
 		};
 
@@ -716,13 +747,13 @@
 			cpu-offset = <0x80000>;
 		};
 
-		acc0: clock-controller@2088000 {
+		acpu0_aux: clock-controller@2088000 {
 			compatible = "qcom,kpss-acc-v1";
 			reg = <0x02088000 0x1000>, <0x02008000 0x1000>;
 			clock-output-names = "acpu0_aux";
 		};
 
-		acc1: clock-controller@2098000 {
+		acpu1_aux: clock-controller@2098000 {
 			compatible = "qcom,kpss-acc-v1";
 			reg = <0x02098000 0x1000>, <0x02008000 0x1000>;
 			clock-output-names = "acpu1_aux";
@@ -732,6 +763,11 @@
 			compatible = "qcom,kpss-gcc", "syscon";
 			reg = <0x2011000 0x1000>;
 			clock-output-names = "acpu_l2_aux";
+		};
+
+		kraitcc: clock-controller {
+			compatible = "qcom,krait-cc-v1";
+			#clock-cells = <1>;
 		};
 
 		saw0: regulator@2089000 {
