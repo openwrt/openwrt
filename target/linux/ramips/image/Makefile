@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += LOADER_TYPE
+DEVICE_VARS += LOADER_TYPE LOADER_FLASH_OFFS
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
@@ -72,6 +72,21 @@ endef
 
 define Build/loader-kernel
 	$(call Build/loader-common,LOADER_DATA="$@")
+endef
+
+define Build/loader-okli-compile
+	$(call Build/loader-common,FLASH_OFFS=$(LOADER_FLASH_OFFS))
+endef
+
+# Arguments: <output name> <pad-to>
+define Build/loader-okli
+	dd if=$(KDIR)/loader-$(word 1,$(1)).$(LOADER_TYPE) bs=$(word 2,$(1)) conv=sync of="$@.new"
+	cat "$@" >> "$@.new"
+	mv "$@.new" "$@"
+endef
+
+define Build/append-loader-okli
+	cat "$(KDIR)/loader-$(word 1,$(1)).$(LOADER_TYPE)" >> "$@"
 endef
 
 # combine kernel and rootfs into one image
