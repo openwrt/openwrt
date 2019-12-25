@@ -145,3 +145,19 @@ define KernelPackage/leds-pca963x/description
 endef
 
 $(eval $(call KernelPackage,leds-pca963x))
+
+
+define KernelPackage/leds-apu
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:= PC Engines APU LED support
+  DEPENDS:= @GPIO_SUPPORT @TARGET_x86
+  KCONFIG:=CONFIG_LEDS_APU
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-apu.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-apu,1)
+endef
+
+define KernelPackage/leds-apu/description
+  Driver for the PC Engines APU LEDs.
+endef
+
+$(eval $(call KernelPackage,leds-apu))

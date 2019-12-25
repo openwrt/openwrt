@@ -1,0 +1,50 @@
+From: Andreas Eberlein <foodeas@aeberlein.de>
+Subject: x86: add LED support for PC Engines APU1 with mainline bios
+
+This add support for the LEDs on PC Engines APU1 with the mainline bios.
+
+Signed-off-by: Andreas Eberlein <foodeas@aeberlein.de>
+---
+--- a/drivers/leds/leds-apu.c
++++ b/drivers/leds/leds-apu.c
+@@ -110,6 +110,7 @@ static const struct apu_led_profile apu3
+ };
+ 
+ static const struct dmi_system_id apu_led_dmi_table[] __initconst = {
++	/* PC Engines APU with "Legacy" bios < 4.0.8 */
+ 	{
+ 		.ident = "apu",
+ 		.matches = {
+@@ -117,6 +118,14 @@ static const struct dmi_system_id apu_le
+ 			DMI_MATCH(DMI_PRODUCT_NAME, "APU")
+ 		}
+ 	},
++	/* PC Engines APU with "Mainline" bios >= 4.0.8 */
++	{
++		.ident = "apu",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "PC Engines"),
++			DMI_MATCH(DMI_BOARD_NAME, "apu1")
++		}
++	},
+ 	/* PC Engines APU2 with "Legacy" bios < 4.0.8 */
+ 	{
+ 		.ident = "apu2",
+@@ -254,7 +263,8 @@ static int __init apu_led_probe(struct p
+ 
+ 	apu_led->pdev = pdev;
+ 
+-	if (dmi_match(DMI_PRODUCT_NAME, "APU")) {
++	if (dmi_match(DMI_PRODUCT_NAME, "APU") ||
++	    dmi_match(DMI_BOARD_NAME, "apu1")) {
+ 		apu_led->profile = apu1_led_profile;
+ 		apu_led->platform = APU1_LED_PLATFORM;
+ 		apu_led->num_led_instances = ARRAY_SIZE(apu1_led_profile);
+@@ -296,6 +306,7 @@ static int __init apu_led_init(void)
+ 		return -ENODEV;
+ 	}
+ 	if (!(dmi_match(DMI_PRODUCT_NAME, "APU") ||
++	      dmi_match(DMI_PRODUCT_NAME, "apu1") ||
+ 	      dmi_match(DMI_PRODUCT_NAME, "APU2") ||
+ 	      dmi_match(DMI_PRODUCT_NAME, "apu2") ||
+ 	      dmi_match(DMI_PRODUCT_NAME, "PC Engines apu2") ||
