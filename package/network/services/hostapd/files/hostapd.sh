@@ -731,7 +731,7 @@ wpa_supplicant_prepare_interface() {
 
 	_w_mode="$mode"
 
-	[[ "$mode" = adhoc ]] && {
+	[ "$mode" = adhoc ] && {
 		ap_scan="ap_scan=2"
 	}
 
@@ -810,7 +810,7 @@ wpa_supplicant_add_network() {
 	local scan_ssid="scan_ssid=1"
 	local freq wpa_key_mgmt
 
-	[[ "$_w_mode" = "adhoc" ]] && {
+	[ "$_w_mode" = "adhoc" ] && {
 		append network_data "mode=1" "$N$T"
 		[ -n "$freq" ] && wpa_supplicant_set_fixed_freq "$freq" "$htmode"
 		[ "$noscan" = "1" ] && append network_data "noscan=1" "$N$T"
@@ -820,7 +820,7 @@ wpa_supplicant_add_network() {
 		[ "$_w_driver" = "nl80211" ] ||	append wpa_key_mgmt "WPA-NONE"
 	}
 
-	[[ "$_w_mode" = "mesh" ]] && {
+	[ "$_w_mode" = "mesh" ] && {
 		json_get_vars mesh_id mesh_fwding mesh_rssi_threshold
 		[ -n "$mesh_id" ] && ssid="${mesh_id}"
 
