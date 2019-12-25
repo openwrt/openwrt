@@ -31,7 +31,7 @@ udpu_do_part_check() {
 
 	# Check if the block devices exist
 	for num in ${emmc_parts}; do
-		[[ ! -b ${emmc_dev}p${num} ]] && part_valid="0"
+		[ ! -b ${emmc_dev}p${num} ] && part_valid="0"
 	done
 
 	# If partitions are missing create a new partition table
