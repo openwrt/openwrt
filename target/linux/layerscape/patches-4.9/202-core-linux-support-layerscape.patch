@@ -365,9 +365,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   *	@type:		Interface hardware type
   *	@hard_header_len: Maximum hardware header length.
   *	@min_header_len:  Minimum hardware header length
-@@ -1738,6 +1740,8 @@ struct net_device {
- 	unsigned char		dma;
- 
+@@ -1743,6 +1745,8 @@ struct net_device {
+ 	 * and to use WRITE_ONCE() to annotate the writes.
+ 	 */
  	unsigned int		mtu;
 +	unsigned int		min_mtu;
 +	unsigned int		max_mtu;
@@ -421,7 +421,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   *	These are the defined Ethernet Protocol ID's.
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -6659,9 +6659,18 @@ int dev_set_mtu(struct net_device *dev,
+@@ -6660,9 +6660,18 @@ int dev_set_mtu(struct net_device *dev,
  	if (new_mtu == dev->mtu)
  		return 0;
  

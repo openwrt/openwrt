@@ -257,7 +257,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* Get I2C clock */
  	i2c_imx->clk = devm_clk_get(&pdev->dev, NULL);
  	if (IS_ERR(i2c_imx->clk)) {
-@@ -1099,7 +1292,7 @@ static int i2c_imx_probe(struct platform
+@@ -1100,7 +1293,7 @@ static int i2c_imx_probe(struct platform
  	}
  
  	/* Request IRQ */
