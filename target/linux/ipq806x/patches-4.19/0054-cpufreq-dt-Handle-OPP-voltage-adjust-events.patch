@@ -91,19 +91,12 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  static int resources_available(void)
  {
  	struct device *cpu_dev;
-@@ -161,6 +200,7 @@ static int cpufreq_init(struct cpufreq_p
- 	bool fallback = false;
- 	const char *name;
- 	int ret;
-+	struct srcu_notifier_head *opp_srcu_head;
- 
- 	cpu_dev = get_cpu_device(policy->cpu);
- 	if (!cpu_dev) {
-@@ -251,10 +291,13 @@ static int cpufreq_init(struct cpufreq_p
+@@ -251,10 +291,14 @@ static int cpufreq_init(struct cpufreq_p
  				__func__, ret);
  	}
  
 +	mutex_init(&priv->lock);
++	priv->opp_nb.notifier_call = opp_notifier;
 +	dev_pm_opp_register_notifier(cpu_dev, &priv->opp_nb);
 +
  	ret = dev_pm_opp_init_cpufreq_table(cpu_dev, &freq_table);
