@@ -50,16 +50,16 @@ marvell,axp-gp)
 	ucidef_set_interface_lan "eth0 eth1 eth2 eth3"
 	;;
 solidrun,clearfog*a1)
-	# eth0 is standalone ethernet
-	# eth1 is switch (-pro) or standalone ethernet (-base)
-	# eth2 is SFP
-	ucidef_set_interfaces_lan_wan "eth1" "eth0 eth2"
+	# eth2 is standalone ethernet
+	# eth0 is switch (-pro) or standalone ethernet (-base)
+	# eth1 is SFP
+	ucidef_set_interfaces_lan_wan "eth0" "eth2 eth1"
 
 	# if switch exists (clearfog-pro)
-	# switch port 5 is connected to eth1
+	# switch port 5 is connected to eth0
 	swconfig list 2>&1 | grep -q switch0 && \
 		ucidef_add_switch "switch0" \
-			"0:lan:5" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5u@eth1" "6:lan:6"
+			"0:lan:5" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5u@eth0" "6:lan:6"
 	;;
 *)
 	ucidef_set_interface_lan "eth0"
