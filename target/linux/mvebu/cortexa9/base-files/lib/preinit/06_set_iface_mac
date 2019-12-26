@@ -33,7 +33,7 @@ preinit_set_mac_address() {
 		ip link set dev eth0 address $mac 2>/dev/null
 		ip link set dev eth1 address $mac 2>/dev/null
 		;;
-	marvell,a385-db-ap|solidrun,clearfog*a1)
+	marvell,a385-db-ap)
 		# rename interfaces back to the way they were with 4.4
 		case "$(readlink /sys/class/net/eth0)" in
 			*f1070000*)
