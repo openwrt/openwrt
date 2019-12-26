@@ -142,9 +142,9 @@ configure_by_model() {
 	"Microsoft MN-700")
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
-		
-	"Netgear WN2500RP V1" | \
-	"Asus WL500GP V2")
+
+	"Asus WL500GP V2" | \
+	"Netgear WN2500RP V1")
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "5@eth0"
 		;;
