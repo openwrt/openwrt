@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include "mt7628an.dtsi"
 
@@ -70,12 +69,10 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "uart1", "wdt";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		ralink,group = "uart1", "wdt";
+		ralink,function = "gpio";
 	};
 };
 

@@ -15,16 +15,11 @@
 		led-failsafe = &led_power;
 		led-running = &led_power;
 		led-upgrade = &led_power;
+		label-mac-device = &ethernet;
 	};
 
 	chosen {
 		bootargs = "console=ttyS0,57600";
-	};
-
-	palmbus: palmbus@1E000000 {
-		i2c@900 {
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -68,17 +63,13 @@
 	};
 };
 
-&sdhci {
-	status = "okay";
-};
-
 &spi0 {
 	status = "okay";
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <40000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -118,7 +109,7 @@
 
 &pcie0 {
 	wifi0: wifi@0,0 {
-		compatible = "pci14c3,7615";
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x0000>;
 		ieee80211-freq-limit = <2400000 2500000>;
@@ -127,7 +118,7 @@
 
 &pcie1 {
 	wifi1: wifi@0,0 {
-		compatible = "pci14c3,7615";
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x8000>;
 		ieee80211-freq-limit = <5000000 6000000>;
@@ -135,18 +126,18 @@
 };
 
 &ethernet {
+	mtd-mac-address = <&factory 0x4>;
+
 	mediatek,portmap = "wllll";
 	port@5 {
 		status = "disabled";
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "wdt", "rgmii2", "jtag", "mdio";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		ralink,group = "uart3", "uart2", "jtag", "wdt";
+		ralink,function = "gpio";
 	};
 };
 

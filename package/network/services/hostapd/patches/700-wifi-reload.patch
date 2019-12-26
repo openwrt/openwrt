@@ -87,7 +87,7 @@
  	hapd->iconf = conf;
  	hapd->conf = bss;
  	hapd->iface = hapd_iface;
-+	if (bss->config_id)
++	if (bss && bss->config_id)
 +		hapd->config_id = strdup(bss->config_id);
 +	else
 +		hapd->config_id = NULL;

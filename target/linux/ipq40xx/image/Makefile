@@ -60,14 +60,18 @@ define Build/SenaoFW
 	@cp $@.new $@
 endef
 
-define Device/8dev_jalapeno
+define Device/8dev_jalapeno-common
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+endef
+
+define Device/8dev_jalapeno
+	$(call Device/8dev_jalapeno-common)
 	DEVICE_VENDOR := 8devices
 	DEVICE_MODEL := Jalapeno
 	DEVICE_DTS := qcom-ipq4018-jalapeno
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
 endef
 TARGET_DEVICES += 8dev_jalapeno
 
@@ -86,6 +90,16 @@ define Device/alfa-network_ap120c-ac
 	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
 endef
 TARGET_DEVICES += alfa-network_ap120c-ac
+
+define Device/aruba_ap-303
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Aruba
+	DEVICE_MODEL := AP-303
+	DEVICE_DTS := qcom-ipq4029-ap-303
+	DEVICE_PACKAGES := ipq-wifi-aruba_ap-303
+	IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += aruba_ap-303
 
 define Device/asus_map-ac2200
 	$(call Device/FitImageLzma)
@@ -114,7 +128,8 @@ define Device/asus_rt-ac58u
 #	string and call it a day.... Yeah, we do the latter!
 	UIMAGE_NAME:=$(shell echo -e '\03\01\01\01RT-AC58U')
 	IMAGES := sysupgrade.bin
-	DEVICE_PACKAGES := kmod-usb-ledtrig-usbport
+	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers \
+		kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += asus_rt-ac58u
 
@@ -163,6 +178,15 @@ define Device/avm_fritzrepeater-3000
 	IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += avm_fritzrepeater-3000
+
+define Device/cilab_meshpoint-one
+	$(call Device/8dev_jalapeno-common)
+	DEVICE_DTS := qcom-ipq4018-meshpoint-one
+	DEVICE_VENDOR := Crisis Innovation Lab
+	DEVICE_MODEL := MeshPoint.One
+	DEVICE_PACKAGES := kmod-i2c-gpio kmod-iio-bmp280-i2c kmod-hwmon-ina2xx kmod-rtc-pcf2127
+endef
+TARGET_DEVICES += cilab_meshpoint-one
 
 define Device/compex_wpj419
 	$(call Device/FitImage)
@@ -471,6 +495,7 @@ define Device/zyxel_wre6606
 	DEVICE_DTS := qcom-ipq4018-wre6606
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
 endef
 TARGET_DEVICES += zyxel_wre6606
 

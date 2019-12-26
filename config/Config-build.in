@@ -197,6 +197,10 @@ menu "Global build settings"
 		config USE_UCLIBCXX
 			bool "uClibc++"
 
+		config USE_LIBCXX
+			bool "libc++"
+			depends on !USE_UCLIBC
+
 		config USE_LIBSTDCXX
 			bool "libstdc++"
 	endchoice

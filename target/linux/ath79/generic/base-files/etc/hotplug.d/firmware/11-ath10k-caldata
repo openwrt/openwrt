@@ -17,6 +17,7 @@ case "$FIRMWARE" in
 	ubnt,unifiac-mesh|\
 	ubnt,unifiac-mesh-pro|\
 	ubnt,lap-120|\
+	ubnt,litebeam-ac-gen2|\
 	ubnt,nanobeam-ac|\
 	ubnt,nanostation-ac|\
 	ubnt,nanostation-ac-loco|\
@@ -109,6 +110,10 @@ case "$FIRMWARE" in
 	tplink,re450-v2)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) +1)
+		;;
+	tplink,tl-wr902ac-v1)
+		caldata_extract "art" 0x5000 0x844
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary tplink 0x8) -1)
 		;;
 	esac
 	;;

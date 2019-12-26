@@ -160,12 +160,10 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "i2c", "uartf", "rgmii1", "rgmii2", "wled", "nd_sd", "ephy", "spi refclk";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		ralink,group = "i2c", "uartf", "rgmii1", "rgmii2", "wled", "nd_sd", "ephy", "spi refclk";
+		ralink,function = "gpio";
 	};
 };
 
@@ -187,7 +185,7 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&radio 0>;
+	ralink,mtd-eeprom = <&radio 0x0>;
 };
 
 &pcie {
@@ -197,6 +195,6 @@
 &pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&radio 32768>;
+		mediatek,mtd-eeprom = <&radio 0x8000>;
 	};
 };

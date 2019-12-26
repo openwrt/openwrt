@@ -167,34 +167,38 @@ ramips_setup_macs()
 
 	case $board in
 	7links,px-4885-4m|\
-	7links,px-4885-8m|\
+	7links,px-4885-8m)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary devconf 0x28)" 1)
+		;;
+	8devices,carambola|\
+	alfa-network,w502u|\
+	arcwireless,freestation5|\
+	netgear,wnce2001)
+		wan_mac=$(mtd_get_mac_binary factory 0x2e)
+		;;
 	accton,wr6202|\
-	airlive,air3gii|\
-	argus,atp-52b|\
-	asiarf,awapn2403|\
 	asiarf,awm002-evb-4m|\
 	asiarf,awm002-evb-8m|\
-	asus,rt-g32-b1|\
-	asus,rt-n10-plus|\
 	asus,rt-n13u|\
-	asus,wl-330n3g|\
 	aztech,hw550-3g|\
-	belkin,f5d8235-v2|\
-	belkin,f7c027|\
-	dlink,dap-1350|\
-	dlink,dir-300-b1|\
-	dlink,dir-600-b1|\
-	dlink,dir-610-a1|\
-	dlink,dir-620-d1|\
-	dlink,dwr-512-b|\
-	edimax,3g-6200n|\
-	edimax,3g-6200nl|\
 	fon,fonera-20n|\
 	huawei,hg255d|\
-	jcg,jhr-n805r|\
-	jcg,jhr-n825r|\
-	jcg,jhr-n926r|\
-	mofinetwork,mofi3500-3gn|\
+	omnima,miniembwifi|\
+	planex,mzk-wdpr|\
+	poray,ip2202|\
+	teltonika,rut5xx|\
+	unbranded,xdx-rn502j|\
+	zyxel,keenetic|\
+	zyxel,nbg-419n|\
+	zyxel,nbg-419n-v2)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x28)" 1)
+		;;
+	airlive,air3gii|\
+	argus,atp-52b|\
+	asus,wl-330n3g|\
+	dlink,dir-620-d1|\
+	edimax,3g-6200n|\
+	edimax,3g-6200nl|\
 	netcore,nw718|\
 	nexx,wt1520-4m|\
 	nexx,wt1520-8m|\
@@ -203,30 +207,17 @@ ramips_setup_macs()
 	olimex,rt5350f-olinuxino|\
 	olimex,rt5350f-olinuxino-evb|\
 	omnima,miniembplug|\
-	omnima,miniembwifi|\
 	planex,mzk-w300nh2|\
-	planex,mzk-wdpr|\
-	poray,ip2202|\
-	prolink,pwh2004|\
-	ralink,v22rw-2x2|\
 	sitecom,wl-351|\
-	teltonika,rut5xx|\
-	trendnet,tew-714tru|\
-	unbranded,wr512-3gn-4m|\
-	unbranded,wr512-3gn-8m|\
-	unbranded,xdx-rn502j|\
-	upvel,ur-326n4g|\
-	upvel,ur-336un|\
-	zyxel,keenetic|\
-	zyxel,nbg-419n|\
-	zyxel,nbg-419n-v2)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
+	trendnet,tew-714tru)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
 		;;
-	8devices,carambola|\
-	alfa-network,w502u|\
-	arcwireless,freestation5|\
-	netgear,wnce2001)
-		wan_mac=$(mtd_get_mac_binary factory 0x2e)
+	asus,rt-g32-b1|\
+	asus,rt-n10-plus)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary devconf 0x4)" 1)
+		;;
+	belkin,f5d8235-v2)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary uboot 0x40004)" 1)
 		;;
 	dlink,dir-300-b7|\
 	dlink,dir-320-b1|\
@@ -242,27 +233,46 @@ ramips_setup_macs()
 		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
+	dlink,dap-1350)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary devdata 0x2e)" 1)
+		;;
+	dlink,dir-300-b1|\
+	dlink,dir-600-b1|\
+	dlink,dir-610-a1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary devdata 0x4004)" 1)
+		;;
 	dlink,dir-615-d)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		label_mac=$(mtd_get_mac_binary devdata 0x4004)
 		;;
 	dlink,dir-615-h1)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x28)" 1)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
+		;;
+	dlink,dwr-512-b)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary config 0xe07e)" 1)
+		;;
+	jcg,jhr-n805r|\
+	jcg,jhr-n825r|\
+	jcg,jhr-n926r)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x2e)" 1)
 		;;
 	poray,m3|\
 	poray,m4-4m|\
 	poray,m4-8m|\
 	poray,x5|\
 	poray,x8)
-		lan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" -2)
+		lan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" -2)
 		;;
 	sparklan,wcr-150gn|\
 	wiznet,wizfi630a)
 		wan_mac=$(mtd_get_mac_binary factory 0x28)
 		;;
 	tenda,w306r-v2)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 5)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x28)" 5)
+		;;
+	upvel,ur-326n4g|\
+	upvel,ur-336un)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4004)" 1)
 		;;
 	esac
 

@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += DTS IMAGE_SIZE NETGEAR_BOARD_ID NETGEAR_HW_ID
+DEVICE_VARS += IMAGE_SIZE NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += SERCOMM_HWID SERCOMM_HWVER SERCOMM_SWVER
@@ -23,9 +23,8 @@ KERNEL_DTB = kernel-bin | append-dtb | lzma
 define Device/Default
   PROFILES = Default
   KERNEL := $(KERNEL_DTB) | uImage lzma
-  MTK_SOC :=
   DEVICE_DTS_DIR := ../dts
-  DEVICE_DTS = $$(MTK_SOC)_$(1)
+  DEVICE_DTS = $$(SOC)_$(1)
   IMAGES := sysupgrade.bin
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   sysupgrade_bin := append-kernel | append-rootfs | pad-rootfs
@@ -48,7 +47,9 @@ define Device/seama
 endef
 
 define Build/jcg-header
-	$(STAGING_DIR_HOST)/bin/jcgimage -v $(1) $(if $(JCG_MAXSIZE), -m $(JCG_MAXSIZE),) -u $@ -o $@.new
+	$(STAGING_DIR_HOST)/bin/jcgimage -v $(1) \
+		$(if $(JCG_MAXSIZE), -m $$(($(subst k, * 1024,$(JCG_MAXSIZE)))),) \
+		-u $@ -o $@.new
 	mv $@.new $@
 endef
 

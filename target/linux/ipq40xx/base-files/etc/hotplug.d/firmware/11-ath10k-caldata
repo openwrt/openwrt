@@ -45,10 +45,15 @@ case "$FIRMWARE" in
 	case "$board" in
 	8dev,jalapeno |\
 	alfa-network,ap120c-ac |\
+	cilab,meshpoint-one |\
 	glinet,gl-b1300 |\
 	linksys,ea6350v3 |\
 	qcom,ap-dk01.1-c1)
 		caldata_extract "ART" 0x1000 0x2f20
+		;;
+	aruba,ap-303)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_binary mfginfo 0x1D)
 		;;
 	asus,map-ac2200)
 		caldata_extract_ubi "Factory" 0x1000 0x2f20
@@ -109,10 +114,15 @@ case "$FIRMWARE" in
 	case "$board" in
 	8dev,jalapeno |\
 	alfa-network,ap120c-ac |\
+	cilab,meshpoint-one |\
 	glinet,gl-b1300 |\
 	linksys,ea6350v3 |\
 	qcom,ap-dk01.1-c1)
 		caldata_extract "ART" 0x5000 0x2f20
+		;;
+	aruba,ap-303)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary mfginfo 0x1D) +1)
 		;;
 	asus,map-ac2200)
 		caldata_extract_ubi "Factory" 0x5000 0x2f20

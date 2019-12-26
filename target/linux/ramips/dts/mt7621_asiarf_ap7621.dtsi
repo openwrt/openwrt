@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-/dts-v1/;
 #include "mt7621.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
@@ -109,11 +108,9 @@
 	mediatek,portmap = "llllw";
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "wdt", "jtag";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		ralink,group = "wdt", "jtag";
+		ralink,function = "gpio";
 	};
 };

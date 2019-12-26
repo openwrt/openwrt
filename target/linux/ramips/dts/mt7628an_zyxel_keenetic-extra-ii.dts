@@ -107,7 +107,7 @@
 			};
 
 			factory: partition@40000 {
-				label = "rf-eeprom";
+				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
 			};
@@ -198,11 +198,9 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "gpio", "i2s", "refclk", "spi cs1", "uart1", "wled_an";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		ralink,group = "gpio", "i2s", "refclk", "spi cs1", "uart1", "wled_an";
+		ralink,function = "gpio";
 	};
 };
