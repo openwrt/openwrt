@@ -14,6 +14,7 @@ ath79_setup_interfaces()
 	alfa-network,ap121f|\
 	aruba,ap-105|\
 	avm,fritz300e|\
+    comfast,cf-wr752ac|\
 	devolo,dvl1200i|\
 	devolo,dvl1750c|\
 	devolo,dvl1750i|\
@@ -301,6 +302,9 @@ ath79_setup_macs()
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(fritz_tffs -n macb -i $(find_mtd_part "tffs (1)"))
 		;;
+    comfast,cf-wr752ac)
+		lan_mac=$(mtd_get_mac_binary art 0)
+		;;	
 	dlink,dir-825-b1)
 		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)
 		wan_mac=$(mtd_get_mac_text "caldata" 0xffb4)
