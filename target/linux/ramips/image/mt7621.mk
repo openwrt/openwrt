@@ -2497,7 +2497,7 @@ define Device/xiaomi_mi-router-3g-v2
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 3G
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 -uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
   SUPPORTED_DEVICES += xiaomi,mir3g-v2
 endef
 TARGET_DEVICES += xiaomi_mi-router-3g-v2
@@ -2551,7 +2551,7 @@ define Device/xiaomi_mi-router-4a-gigabit
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 4A
   DEVICE_VARIANT := Gigabit Edition
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 -uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
 endef
 TARGET_DEVICES += xiaomi_mi-router-4a-gigabit
 
