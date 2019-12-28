@@ -17,11 +17,15 @@ define Device/Default
   DEVICE_DTS = $$(SOC)_$(1)
 endef
 
+ifeq ($(SUBTARGET),s5pv210)
+
 define Device/embedsky_tq210
   DEVICE_VENDOR := EmbedSky
   DEVICE_MODEL := TQ210
   SOC := s5pv210
 endef
 TARGET_DEVICES += embedsky_tq210
+
+endif
 
 $(eval $(call BuildImage))
