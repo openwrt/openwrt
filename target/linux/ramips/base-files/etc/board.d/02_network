@@ -77,6 +77,10 @@ ramips_setup_interfaces()
 	mr-102n)
 		ucidef_set_interface_lan "eth0.2"
 		;;
+	hc5611)
+		ucidef_add_switch "switch0" \
+			"3:lan" "6@eth0"
+		;;
 	3g-6200n|\
 	ai-br100|\
 	alfa-network,ac1200rm|\
@@ -583,6 +587,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		;;
 	hc5*61|\
+	hc5611|\
 	hc5661a|\
 	hc5962|\
 	hiwifi,hc5861b)
