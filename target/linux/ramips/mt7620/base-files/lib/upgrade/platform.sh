@@ -30,6 +30,10 @@ platform_do_upgrade() {
 		}
 		default_do_upgrade "$1"
 		;;
+	modou,m101c)
+		CI_KERNPART_EXT="kernel2"
+		nand_do_upgrade "$1"
+		;;
 	xiaomi,miwifi-r3)
 		# this make it compatible with breed
 		dd if=/dev/mtd0 bs=64 count=1 2>/dev/null | grep -qi breed && CI_KERNPART_EXT="kernel_stock"
