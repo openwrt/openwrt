@@ -767,6 +767,23 @@ define Device/netcore_nw5212
 endef
 TARGET_DEVICES += netcore_nw5212
 
+define Device/modou_m101c
+  SOC := mt7620a
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 6144k
+  IMAGE_SIZE := 18432k
+  UBINIZE_OPTS := -E 5
+  IMAGES += kernel0.bin rootfs0.bin
+  IMAGE/kernel0.bin := append-kernel | check-size $$$$(KERNEL_SIZE)
+  IMAGE/rootfs0.bin := append-ubi | check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_VENDOR := Modou
+  DEVICE_MODEL := M101C
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci uboot-envtools
+endef
+TARGET_DEVICES += modou_m101c
+
 define Device/netgear_ex2700
   SOC := mt7620a
   NETGEAR_HW_ID := 29764623+4+0+32+2x2+0

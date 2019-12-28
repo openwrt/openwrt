@@ -206,6 +206,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
+	modou,m101c)
+		ucidef_add_switch "switch0" \
+			"2:lan:2" "3:lan:1" "4:wan" "6@eth0"
+		;;
 	netgear,pr2000|\
 	nexx,wt3020-4m|\
 	nexx,wt3020-8m)
@@ -405,6 +409,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		label_mac=$(mtd_get_mac_binary factory 0x8004)
 		;;
+	modou,m101c|\
 	xiaomi,miwifi-r3)
 		wan_mac=$(mtd_get_mac_binary factory 0x28)
 		lan_mac=$(macaddr_setbit_la "$wan_mac")

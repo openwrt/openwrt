@@ -1,0 +1,134 @@
+/dts-v1/;
+
+#include "mt7620a.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "modou,m101c", "ralink,mt7620a-soc";
+	model = "Modou M101C";
+
+	chosen {
+		bootargs = "console=ttyS1,57600";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	nand {
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "mtk,mt7620-nand";
+
+		partition@0 {
+			label = "uboot";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "safe";
+			reg = <0x80000 0x600000>;
+			read-only;
+		};
+
+		partition@680000 {
+			label = "sn";
+			reg = <0x680000 0x40000>;
+			read-only;
+		};
+
+		partition@6c0000 {
+			label = "nvram";
+			reg = <0x6c0000 0x40000>;
+		};
+
+		factory: partition@0x700000 {
+			label = "factory";
+			reg = <0x700000 0x20000>;
+			read-only;
+		};
+
+		partition@720000 {
+			label = "kernel";
+			reg = <0x720000 0x600000>;
+		};
+
+		partition@d20000 {
+			label = "kernel2";
+			reg = <0xd20000 0x600000>;
+		};
+
+		partition@b20000 {
+			label = "ubi";
+			reg = <0x1320000 0x6ce0000>;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};
+
+&ethernet {
+	pinctrl-names = "default";
+	pinctrl-0 = <&ephy_pins>;
+	mtd-mac-address = <&factory 0x28>;
+	nvmem-cells = <&macaddr_factory_28>;
+	nvmem-cell-names = "mac-address";
+	mediatek,portmap = "llllw";
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	mt76x0e@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x8000>;
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "rgmii1";
+		function = "gpio";
+	};
+
+	pa {
+		groups = "pa";
+		function = "pa";
+	};
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_28: macaddr@28 {
+		reg = <0x28 0x6>;
+	};
+};
