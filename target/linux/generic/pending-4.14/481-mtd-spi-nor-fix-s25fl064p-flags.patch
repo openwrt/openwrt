@@ -1,0 +1,25 @@
+From: Jeremy Tan <jtanx@outlook.com>
+Date: Sat, 28 Dec 2019 15:19:00 +0800
+Subject: [PATCH] mtd: spi-nor: Fix s25fl064p flags
+
+As per section 9.11 of the datasheet, there are block protect bits
+on the status register. Section 9.21 also indicates support for the
+CLSR command.
+
+Note s25sl064p should actually be s25fl064p.
+
+https://www.cypress.com/file/196856/download
+
+Signed-off-by: Jeremy Tan <jtanx@outlook.com>
+---
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -1063,7 +1063,7 @@ static const struct flash_info spi_nor_i
+ 	 * for the chips listed here (without boot sectors).
+ 	 */
+ 	{ "s25sl032p",  INFO(0x010215, 0x4d00,  64 * 1024,  64, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+-	{ "s25sl064p",  INFO(0x010216, 0x4d00,  64 * 1024, 128, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
++	{ "s25sl064p",  INFO(0x010216, 0x4d00,  64 * 1024, 128, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | USE_CLSR | SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB) },
+ 	{ "s25fl256s0", INFO(0x010219, 0x4d00, 256 * 1024, 128, USE_CLSR) },
+ 	{ "s25fl256s1", INFO(0x010219, 0x4d01,  64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | USE_CLSR) },
+ 	{ "s25fl512s",  INFO(0x010220, 0x4d00, 256 * 1024, 256, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | USE_CLSR) },
