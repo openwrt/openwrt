@@ -8,6 +8,12 @@ DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX
 
+define Build/wasp-checksum
+	$(STAGING_DIR_HOST)/bin/wasp-checksum \
+		-i "$@" -o "$@.new"
+	mv "$@.new" "$@"
+endef
+
 define Build/add-elecom-factory-initramfs
   $(eval edimax_model=$(word 1,$(1)))
   $(eval product=$(word 2,$(1)))
@@ -160,6 +166,21 @@ define Device/avm_fritz300e
   DEVICE_PACKAGES := fritz-tffs rssileds -swconfig
 endef
 TARGET_DEVICES += avm_fritz300e
+
+define Device/avm_fritzbox-3390-wasp
+  SOC := ar9342
+  DEVICE_VENDOR := AVM
+  DEVICE_MODEL := FRITZ!Box 3390 WASP
+  IMAGES :=
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | \
+	loader-kernel | pad-to 4096 | pad-extra 208 | wasp-checksum
+  LOADER_LOADADDR := 0x80020000
+  LOADER_LZMA_TEXT_START := 0x81a00000
+  LOADER_TYPE := bin
+  KERNEL_INITRAMFS := $$(KERNEL)
+  DEVICE_PACKAGES := kmod-owl-loader -swconfig -uboot-env-tools
+endef
+TARGET_DEVICES += avm_fritzbox-3390-wasp
 
 define Device/avm_fritz4020
   SOC := qca9561

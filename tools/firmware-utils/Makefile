@@ -93,6 +93,7 @@ define Host/Compile
 	$(call cc,mksercommfw, -Wall)
 	$(call cc,nec-enc, -Wall --std=gnu99)
 	$(call cc,uimage_padhdr, -Wall -lz)
+	$(call cc,wasp-checksum, -Wall --std=gnu99)
 endef
 
 define Host/Install

@@ -3,13 +3,15 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR = 0x80060000
 
-DEVICE_VARS += IMAGE_SIZE LOADER_FLASH_OFFS LOADER_TYPE
+DEVICE_VARS += IMAGE_SIZE LOADER_FLASH_OFFS LOADER_TYPE LOADER_LZMA_TEXT_START LOADER_LOADADDR
 
 define Build/loader-common
 	rm -rf $@.src
 	$(MAKE) -C lzma-loader \
 		PKG_BUILD_DIR="$@.src" \
 		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
+		$(if $(LOADER_LZMA_TEXT_START),LZMA_TEXT_START=$(LOADER_LZMA_TEXT_START),) \
+		$(if $(LOADER_LOADADDR),LOADADDR=$(LOADER_LOADADDR),) \
 		$(1) compile loader.$(LOADER_TYPE)
 	mv "$@.$(LOADER_TYPE)" "$@"
 	rm -rf $@.src
