@@ -38,7 +38,6 @@ define Device/dir-645
   SEAMA_SIGNATURE := wrgn39_dlob.hans_dir645
   DEVICE_TITLE := D-Link DIR-645
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
-  DEFAULT := n
 endef
 TARGET_DEVICES += dir-645
 
