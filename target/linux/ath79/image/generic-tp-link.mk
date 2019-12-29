@@ -429,13 +429,19 @@ endef
 TARGET_DEVICES += tplink_tl-wdr4900-v2
 
 define Device/tplink_tl-wdr6500-v2
-  $(Device/tplink-8mlzma)
+  $(Device/tplink-16mlzma)
   SOC := qca9561
   DEVICE_MODEL := TL-WDR6500
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  TPLINK_BOARD_ID := TL-WDR6500-v2
+  TPLINK_BOARD_ID := TL-WDR6500-V2
   TPLINK_HWID := 0x65000002
+  KERNEL := kernel-bin | append-dtb | lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | \
+	tplink-v2-header -s -V "ver. 1.0"
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := tplink-v2-image -s -V "ver. 2.0" | append-metadata | \
+	check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += tplink_tl-wdr6500-v2
 
