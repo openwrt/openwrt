@@ -24,7 +24,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		system {
+		led_system: system {
 			label = "tp-link:white:system";
 			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "heartbeat";
