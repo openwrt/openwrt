@@ -161,6 +161,8 @@ define Device/Default
   KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
   KERNEL_INITRAMFS_SUFFIX := .elf
   DEVICE_DTS_DIR := ../dts
+  SOC = bcm$$(CFE_CHIP_ID)
+  DEVICE_DTS = $$(SOC)-$(subst _,-,$(1))
 endef
 
 ATH5K_PACKAGES := kmod-ath5k wpad-basic

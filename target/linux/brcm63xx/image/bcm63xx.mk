@@ -55,148 +55,134 @@ endef
 DEVICE_VARS += REDBOOT_PREFIX
 
 ### Generic ###
-define Device/963281TAN-generic
+define Device/brcm_bcm963281tan
   $(Device/bcm63xx)
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := 963281TAN
   IMAGES := cfe-4M.bin cfe-8M.bin cfe-16M.bin
-  DEVICE_DTS := bcm963281TAN
   CFE_BOARD_ID := 963281TAN
   CFE_CHIP_ID := 6328
 endef
-TARGET_DEVICES += 963281TAN-generic
+TARGET_DEVICES += brcm_bcm963281tan
 
-define Device/96328avng-generic
+define Device/brcm_bcm96328avng
   $(Device/bcm63xx)
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := 96328avng
   IMAGES := cfe-4M.bin cfe-8M.bin cfe-16M.bin
-  DEVICE_DTS := bcm96328avng
   CFE_BOARD_ID := 96328avng
   CFE_CHIP_ID := 6328
 endef
-TARGET_DEVICES += 96328avng-generic
+TARGET_DEVICES += brcm_bcm96328avng
 
-define Device/96338GW-generic
+define Device/brcm_bcm96338gw
   $(Device/bcm63xx)
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := 96338GW
-  DEVICE_DTS := bcm96338GW
   CFE_BOARD_ID := 6338GW
   CFE_CHIP_ID := 6338
 endef
-TARGET_DEVICES += 96338GW-generic
+TARGET_DEVICES += brcm_bcm96338gw
 
-define Device/96338W-generic
+define Device/brcm_bcm96338w
   $(Device/bcm63xx)
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := 96338W
-  DEVICE_DTS := bcm96338W
   CFE_BOARD_ID := 6338W
   CFE_CHIP_ID := 6338
 endef
-TARGET_DEVICES += 96338W-generic
+TARGET_DEVICES += brcm_bcm96338w
 
-define Device/96345GW2-generic
+define Device/brcm_bcm96345gw2
   $(Device/bcm63xx)
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := 96345GW2
   IMAGES += cfe-bc221.bin
-  DEVICE_DTS := bcm96345GW2
   CFE_BOARD_ID := 96345GW2
   CFE_CHIP_ID := 6345
   DEFAULT := n
 endef
-TARGET_DEVICES += 96345GW2-generic
+TARGET_DEVICES += brcm_bcm96345gw2
 
-define Device/96348GW-generic
+define Device/brcm_bcm96348gw
   $(Device/bcm63xx)
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := 96348GW
   IMAGES += cfe-bc221.bin
-  DEVICE_DTS := bcm96348GW
   CFE_BOARD_ID := 96348GW
   CFE_CHIP_ID := 6348
 endef
-TARGET_DEVICES += 96348GW-generic
+TARGET_DEVICES += brcm_bcm96348gw
 
-define Device/96348GW-10-generic
+define Device/brcm_bcm96348gw-10
   $(Device/bcm63xx)
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := 96348GW-10
-  DEVICE_DTS := bcm96348GW-10
   CFE_BOARD_ID := 96348GW-10
   CFE_CHIP_ID := 6348
 endef
-TARGET_DEVICES += 96348GW-10-generic
+TARGET_DEVICES += brcm_bcm96348gw-10
 
-define Device/96348GW-11-generic
+define Device/brcm_bcm96348gw-11
   $(Device/bcm63xx)
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := 96348GW-11
-  DEVICE_DTS := bcm96348GW-11
   CFE_BOARD_ID := 96348GW-11
   CFE_CHIP_ID := 6348
 endef
-TARGET_DEVICES += 96348GW-11-generic
+TARGET_DEVICES += brcm_bcm96348gw-11
 
-define Device/96348R-generic
+define Device/brcm_bcm96348r
   $(Device/bcm63xx)
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := 96348R
-  DEVICE_DTS := bcm96348R
   CFE_BOARD_ID := 96348R
   CFE_CHIP_ID := 6348
 endef
-TARGET_DEVICES += 96348R-generic
+TARGET_DEVICES += brcm_bcm96348r
 
-define Device/96358VW-generic
+define Device/brcm_bcm96358vw
   $(Device/bcm63xx)
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := 96358VW
-  DEVICE_DTS := bcm96358VW
   CFE_BOARD_ID := 96358VW
   CFE_CHIP_ID := 6358
 endef
-TARGET_DEVICES += 96358VW-generic
+TARGET_DEVICES += brcm_bcm96358vw
 
-define Device/96358VW2-generic
+define Device/brcm_bcm96358vw2
   $(Device/bcm63xx)
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := 96358VW2
-  DEVICE_DTS := bcm96358VW2
   CFE_BOARD_ID := 96358VW2
   CFE_CHIP_ID := 6358
 endef
-TARGET_DEVICES += 96358VW2-generic
+TARGET_DEVICES += brcm_bcm96358vw2
 
-define Device/96368MVNgr-generic
+define Device/brcm_bcm96368mvngr
   $(Device/bcm63xx)
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := 96368MVNgr
-  DEVICE_DTS := bcm96368MVNgr
   CFE_BOARD_ID := 96368MVNgr
   CFE_CHIP_ID := 6368
 endef
-TARGET_DEVICES += 96368MVNgr-generic
+TARGET_DEVICES += brcm_bcm96368mvngr
 
-define Device/96368MVWG-generic
+define Device/brcm_bcm96368mvwg
   $(Device/bcm63xx)
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := 96368MVWG
-  DEVICE_DTS := bcm96368MVWG
   CFE_BOARD_ID := 96368MVWG
   CFE_CHIP_ID := 6368
 endef
-TARGET_DEVICES += 96368MVWG-generic
+TARGET_DEVICES += brcm_bcm96368mvwg
 
 ### Actiontec ###
-define Device/R1000H
+define Device/actiontec_r1000h
   $(Device/bcm63xx)
   DEVICE_VENDOR := Actiontec
   DEVICE_MODEL := R1000H
   FILESYSTEMS := squashfs
-  DEVICE_DTS := r1000h
   CFE_BOARD_ID := 96368MVWG
   CFE_CHIP_ID := 6368
   FLASH_MB := 32
@@ -204,83 +190,77 @@ define Device/R1000H
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES) $(BRCMWL_PACKAGES)
 endef
-TARGET_DEVICES += R1000H
+TARGET_DEVICES += actiontec_r1000h
 
 ### ADB ###
-define Device/A4001N
+define Device/adb_a4001n
   $(Device/bcm63xx)
   DEVICE_VENDOR := ADB
   DEVICE_MODEL := P.DG A4001N
-  DEVICE_DTS := a4001n
   CFE_BOARD_ID := 96328dg2x2
   CFE_CHIP_ID := 6328
   FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES) $(B43_PACKAGES)
 endef
-TARGET_DEVICES += A4001N
+TARGET_DEVICES += adb_a4001n
 
-define Device/A4001N1
+define Device/adb_a4001n1
   $(Device/bcm63xx)
   DEVICE_VENDOR := ADB
   DEVICE_MODEL := P.DG A4001N1
   IMAGES += sysupgrade.bin
-  DEVICE_DTS := a4001n1
   CFE_BOARD_ID := 963281T_TEF
   CFE_CHIP_ID := 6328
   FLASH_MB := 16
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES) $(B43_PACKAGES)
 endef
-TARGET_DEVICES += A4001N1
+TARGET_DEVICES += adb_a4001n1
 
-define Device/AV4202N
+define Device/adb_av4202n
   $(Device/bcm63xx)
   DEVICE_VENDOR := ADB
   DEVICE_MODEL := P.DG AV4202N
   IMAGE_OFFSET := 0x20000
-  DEVICE_DTS := av4202n
   CFE_BOARD_ID := 96368_Swiss_S1
   CFE_CHIP_ID := 6368
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES) $(B43_PACKAGES)
 endef
-TARGET_DEVICES += AV4202N
+TARGET_DEVICES += adb_av4202n
 
 ### Alcatel ###
-define Device/RG100A
+define Device/alcatel_rg100a
   $(Device/bcm63xx)
   DEVICE_VENDOR := Alcatel
   DEVICE_MODEL := RG100A
-  DEVICE_DTS := rg100a
   CFE_BOARD_ID := 96358VW2
   CFE_CHIP_ID := 6358
   BLOCK_SIZE := 0x20000
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES) $(B43_PACKAGES)
 endef
-TARGET_DEVICES += RG100A
+TARGET_DEVICES += alcatel_rg100a
 
 ### Asmax ###
-define Device/AR1004G
+define Device/asmax_ar-1004g
   $(Device/bcm63xx)
   DEVICE_VENDOR := Asmax
   DEVICE_MODEL := AR 1004g
-  DEVICE_DTS := ar1004g
   CFE_BOARD_ID := 96348GW-10
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += AR1004G
+TARGET_DEVICES += asmax_ar-1004g
 
 ### Belkin ###
-define Device/F5D7633
+define Device/belkin_f5d7633
   $(Device/bcm63xx)
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := F5D7633
-  DEVICE_DTS := f5d7633
   CFE_BOARD_ID := 96348GW-10
   CFE_CHIP_ID := 6348
   BLOCK_SIZE := 0x20000
@@ -288,85 +268,79 @@ define Device/F5D7633
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += F5D7633
+TARGET_DEVICES += belkin_f5d7633
 
 ### Broadcom ###
-define Device/BCM96318REF
+define Device/brcm_bcm96318ref
   $(Device/bcm63xx)
   DEVICE_VENDOR := Broadcom
   DEVICE_MODEL := BCM96318REF reference board
   IMAGES :=
-  DEVICE_DTS := bcm96318ref
   CFE_BOARD_ID := 96318REF
   CFE_CHIP_ID := 6318
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES) \
     kmod-bcm63xx-udc
 endef
-TARGET_DEVICES += BCM96318REF
+TARGET_DEVICES += brcm_bcm96318ref
 
-define Device/BCM96318REF_P300
+define Device/brcm_bcm96318ref-p300
   $(Device/bcm63xx)
   DEVICE_VENDOR := Broadcom
   DEVICE_MODEL := BCM96318REF_P300 reference board
   IMAGES :=
-  DEVICE_DTS := bcm96318ref_p300
   CFE_BOARD_ID := 96318REF_P300
   CFE_CHIP_ID := 6318
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES) \
     kmod-bcm63xx-udc
 endef
-TARGET_DEVICES += BCM96318REF_P300
+TARGET_DEVICES += brcm_bcm96318ref-p300
 
-define Device/BCM963268BU_P300
+define Device/brcm_bcm963268bu-p300
   $(Device/bcm63xx)
   DEVICE_VENDOR := Broadcom
   DEVICE_MODEL := BCM963268BU_P300 reference board
   IMAGES :=
-  DEVICE_DTS := bcm963268bu_p300
   CFE_BOARD_ID := 963268BU_P300
   CFE_CHIP_ID := 63268
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES) \
     kmod-bcm63xx-udc
 endef
-TARGET_DEVICES += BCM963268BU_P300
+TARGET_DEVICES += brcm_bcm963268bu-p300
 
-define Device/BCM963269BHR
+define Device/brcm_bcm963269bhr
   $(Device/bcm63xx)
   DEVICE_VENDOR := Broadcom
   DEVICE_MODEL := BCM963269BHR reference board
   IMAGES :=
-  DEVICE_DTS := bcm963269bhr
   CFE_BOARD_ID := 963269BHR
   CFE_CHIP_ID := 63268
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES) \
     kmod-bcm63xx-udc
 endef
-TARGET_DEVICES += BCM963269BHR
+TARGET_DEVICES += brcm_bcm963269bhr
 
 ### BT ###
-define Device/HomeHub2A
+define Device/bt_home-hub-2-a
   $(Device/bcm63xx)
   DEVICE_VENDOR := BT
   DEVICE_MODEL := Home Hub 2.0
   DEVICE_VARIANT := A
-  DEVICE_DTS := homehub2a
   CFE_BOARD_ID := HOMEHUB2A
   CFE_CHIP_ID := 6358
   BLOCK_SIZE := 0x20000
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += HomeHub2A
+TARGET_DEVICES += bt_home-hub-2-a
 
-define Device/BTV2110
+define Device/bt_voyager-2110
   $(Device/bcm63xx)
   DEVICE_VENDOR := BT
-  DEVICE_MODEL := Voyager V2110
-  DEVICE_DTS := v2110
+  DEVICE_MODEL := Voyager 2110
   CFE_BOARD_ID := V2110
   CFE_CHIP_ID := 6348
   CFE_EXTRAS += --layoutver 5
@@ -374,13 +348,12 @@ define Device/BTV2110
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += BTV2110
+TARGET_DEVICES += bt_voyager-2110
 
-define Device/BTV2500V
+define Device/bt_voyager-2500v-bb
   $(Device/bcm63xx)
   DEVICE_VENDOR := BT
-  DEVICE_MODEL := Voyager V2500V
-  DEVICE_DTS := v2500v-bb
+  DEVICE_MODEL := Voyager 2500V
   CFE_BOARD_ID := V2500V_BB
   CFE_CHIP_ID := 6348
   CFE_EXTRAS += --layoutver 5
@@ -388,97 +361,90 @@ define Device/BTV2500V
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += BTV2500V
+TARGET_DEVICES += bt_voyager-2500v-bb
 
 ### Comtrend ###
-define Device/AR5315u
+define Device/comtrend_ar-5315u
   $(Device/bcm63xx)
   DEVICE_VENDOR := Comtrend
   DEVICE_MODEL := AR-5315u
   IMAGES += sysupgrade.bin
-  DEVICE_DTS := ar-5315u
   CFE_BOARD_ID := 96318A-1441N1
   CFE_CHIP_ID := 6318
   FLASH_MB := 16
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += AR5315u
+TARGET_DEVICES += comtrend_ar-5315u
 
-define Device/AR5381u
+define Device/comtrend_ar-5381u
   $(Device/bcm63xx)
   DEVICE_VENDOR := Comtrend
   DEVICE_MODEL := AR-5381u
   IMAGES += sysupgrade.bin
-  DEVICE_DTS := ar-5381u
   CFE_BOARD_ID := 96328A-1241N
   CFE_CHIP_ID := 6328
   FLASH_MB := 16
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += AR5381u
+TARGET_DEVICES += comtrend_ar-5381u
 
-define Device/AR5387un
+define Device/comtrend_ar-5387un
   $(Device/bcm63xx)
   DEVICE_VENDOR := Comtrend
   DEVICE_MODEL := AR-5387un
   IMAGES += sysupgrade.bin
-  DEVICE_DTS := ar-5387un
   CFE_BOARD_ID := 96328A-1441N1
   CFE_CHIP_ID := 6328
   FLASH_MB := 16
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += AR5387un
+TARGET_DEVICES += comtrend_ar-5387un
 
-define Device/CT-536_CT-5621
+define Device/comtrend_ct-536plus
   $(Device/bcm63xx)
   DEVICE_VENDOR := Comtrend
   DEVICE_MODEL := CT-536+
   DEVICE_ALT0_VENDOR := Comtrend
   DEVICE_ALT0_MODEL := CT-5621
-  DEVICE_DTS := ct536plus
   CFE_BOARD_ID := 96348GW-11
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += CT-536_CT-5621
+TARGET_DEVICES += comtrend_ct-536plus
 
-define Device/CT-5365
+define Device/comtrend_ct-5365
   $(Device/bcm63xx)
   DEVICE_VENDOR := Comtrend
   DEVICE_MODEL := CT-5365
-  DEVICE_DTS := ct-5365
   CFE_BOARD_ID := 96348A-122
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += CT-5365
+TARGET_DEVICES += comtrend_ct-5365
 
-define Device/CT-6373
+define Device/comtrend_ct-6373
   $(Device/bcm63xx)
   DEVICE_VENDOR := Comtrend
   DEVICE_MODEL := CT-6373
-  DEVICE_DTS := ct-6373
   CFE_BOARD_ID := CT6373-1
   CFE_CHIP_ID := 6358
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += CT-6373
+TARGET_DEVICES += comtrend_ct-6373
 
-define Device/VR-3025u
+define Device/comtrend_vr-3025u
   $(Device/bcm63xx)
   DEVICE_VENDOR := Comtrend
   DEVICE_MODEL := VR-3025u
   IMAGES += sysupgrade.bin
-  DEVICE_DTS := vr-3025u
   CFE_BOARD_ID := 96368M-1541N
   CFE_CHIP_ID := 6368
   BLOCK_SIZE := 0x20000
@@ -486,91 +452,85 @@ define Device/VR-3025u
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += VR-3025u
+TARGET_DEVICES += comtrend_vr-3025u
 
-define Device/VR-3025un
+define Device/comtrend_vr-3025un
   $(Device/bcm63xx)
   DEVICE_VENDOR := Comtrend
   DEVICE_MODEL := VR-3025un
-  DEVICE_DTS := vr-3025un
   CFE_BOARD_ID := 96368M-1341N
   CFE_CHIP_ID := 6368
   FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += VR-3025un
+TARGET_DEVICES += comtrend_vr-3025un
 
-define Device/VR-3026e
+define Device/comtrend_vr-3026e
   $(Device/bcm63xx)
   DEVICE_VENDOR := Comtrend
   DEVICE_MODEL := VR-3026e
-  DEVICE_DTS := vr-3026e
   CFE_BOARD_ID := 96368MT-1341N1
   CFE_CHIP_ID := 6368
   FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
 endef
-TARGET_DEVICES += VR-3026e
+TARGET_DEVICES += comtrend_vr-3026e
 
-define Device/WAP-5813n
+define Device/comtrend_wap-5813n
   $(Device/bcm63xx)
   DEVICE_VENDOR := Comtrend
   DEVICE_MODEL := WAP-5813n
-  DEVICE_DTS := wap-5813n
   CFE_BOARD_ID := 96369R-1231N
   CFE_CHIP_ID := 6368
   FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += WAP-5813n
+TARGET_DEVICES += comtrend_wap-5813n
 
 ### D-Link ###
-define Device/DSL2640B-B
+define Device/d-link_dsl-2640b-b
   $(Device/bcm63xx)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DSL-2640B
   DEVICE_VARIANT := B2
-  DEVICE_DTS := dsl-2640b-b
   CFE_BOARD_ID := D-4P-W
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += DSL2640B-B
+TARGET_DEVICES += d-link_dsl-2640b-b
 
-define Device/DSL2640U
+define Device/d-link_dsl-2640u
   $(Device/bcm63xx)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DSL-2640U
   DEVICE_VARIANT := C1
   DEVICE_ALT0_VENDOR := D-Link
   DEVICE_ALT0_MODEL := DSL-2640U/BRU/C
-  DEVICE_DTS := dsl-2640u
   CFE_BOARD_ID := 96338W2_E7T
   CFE_CHIP_ID := 6338
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += DSL2640U
+TARGET_DEVICES += d-link_dsl-2640u
 
-define Device/DSL2650U
+define Device/d-link_dsl-2650u
   $(Device/bcm63xx)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DSL-2650U
-  DEVICE_DTS := dsl-2650u
   CFE_BOARD_ID := 96358VW2
   CFE_CHIP_ID := 6358
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += DSL2650U
+TARGET_DEVICES += d-link_dsl-2650u
 
-define Device/DSL274XB-C2
+define Device/d-link_dsl-274xb-c2
   $(Device/bcm63xx)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DSL-2740B
@@ -578,15 +538,14 @@ define Device/DSL274XB-C2
   DEVICE_ALT0_VENDOR := D-Link
   DEVICE_ALT0_MODEL := DSL-2741B
   DEVICE_ALT0_VARIANT := C2
-  DEVICE_DTS := dsl-274xb-c
   CFE_BOARD_ID := 96358GW
   CFE_CHIP_ID := 6358
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
 endef
-TARGET_DEVICES += DSL274XB-C2
+TARGET_DEVICES += d-link_dsl-274xb-c2
 
-define Device/DSL274XB-C3
+define Device/d-link_dsl-274xb-c3
   $(Device/bcm63xx)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DSL-2740B
@@ -594,15 +553,15 @@ define Device/DSL274XB-C3
   DEVICE_ALT0_VENDOR := D-Link
   DEVICE_ALT0_MODEL := DSL-2741B
   DEVICE_ALT0_VARIANT := C3
-  DEVICE_DTS := dsl-274xb-c
+  DEVICE_DTS := bcm6358-d-link-dsl-274xb-c2
   CFE_BOARD_ID := AW4139
   CFE_CHIP_ID := 6358
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
 endef
-TARGET_DEVICES += DSL274XB-C3
+TARGET_DEVICES += d-link_dsl-274xb-c3
 
-define Device/DSL274XB-F1
+define Device/d-link_dsl-274xb-f1
   $(Device/bcm63xx)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DSL-2740B
@@ -610,7 +569,6 @@ define Device/DSL274XB-F1
   DEVICE_ALT0_VENDOR := D-Link
   DEVICE_ALT0_MODEL := DSL-2741B
   DEVICE_ALT0_VARIANT := F1
-  DEVICE_DTS := dsl-274xb-f
   CFE_BOARD_ID := AW4339U
   CFE_CHIP_ID := 6328
   IMAGES := cfe-EU.bin cfe-AU.bin
@@ -619,9 +577,9 @@ define Device/DSL274XB-F1
   DEVICE_PACKAGES := \
     $(ATH9K_PACKAGES)
 endef
-TARGET_DEVICES += DSL274XB-F1
+TARGET_DEVICES += d-link_dsl-274xb-f1
 
-define Device/DSL275XB-D1
+define Device/d-link_dsl-275xb-d1
   $(Device/bcm63xx)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DSL-2750B
@@ -629,51 +587,47 @@ define Device/DSL275XB-D1
   DEVICE_ALT0_VENDOR := D-Link
   DEVICE_ALT0_MODEL := DSL-2751
   DEVICE_ALT0_VARIANT := D1
-  DEVICE_DTS := dsl-275xb-d
   CFE_BOARD_ID := AW5200B
   CFE_CHIP_ID := 6318
   FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += DSL275XB-D1
+TARGET_DEVICES += d-link_dsl-275xb-d1
 
-define Device/DVAG3810BN
+define Device/d-link_dva-g3810bn-tl
   $(Device/bcm63xx)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DVA-G3810BN/TL
-  DEVICE_DTS := dva-g3810bn_tl
   CFE_BOARD_ID := 96358VW
   CFE_CHIP_ID := 6358
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += DVAG3810BN
+TARGET_DEVICES += d-link_dva-g3810bn-tl
 
 ### Davolink ###
-define Device/DV-201AMR
+define Device/davolink_dv-201amr
   $(Device/bcm63xx)
   DEVICE_VENDOR := Davolink
   DEVICE_MODEL := DV-201AMR
   IMAGES := cfe-old.bin
-  DEVICE_DTS := dv-201amr
   CFE_BOARD_ID := DV201AMR
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += DV-201AMR
+TARGET_DEVICES += davolink_dv-201amr
 
 ### Dynalink ###
-define Device/RTA770BW
+define Device/dynalink_rta770bw
   $(Device/bcm63xx)
   DEVICE_VENDOR := Dynalink
   DEVICE_MODEL := RTA770BW
   DEVICE_ALT0_VENDOR := Siemens
   DEVICE_ALT0_MODEL := SE515
   IMAGES =
-  DEVICE_DTS := rta770bw
   CFE_BOARD_ID := RTA770BW
   CFE_CHIP_ID := 6345
   CFE_EXTRAS += --layoutver 5
@@ -681,14 +635,13 @@ define Device/RTA770BW
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += RTA770BW
+TARGET_DEVICES += dynalink_rta770bw
 
-define Device/RTA770W
+define Device/dynalink_rta770w
   $(Device/bcm63xx)
   DEVICE_VENDOR := Dynalink
   DEVICE_MODEL := RTA770W
   IMAGES =
-  DEVICE_DTS := rta770w
   CFE_BOARD_ID := RTA770W
   CFE_CHIP_ID := 6345
   CFE_EXTRAS += --layoutver 5
@@ -696,13 +649,12 @@ define Device/RTA770W
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += RTA770W
+TARGET_DEVICES += dynalink_rta770w
 
-define Device/RTA1025W_16
+define Device/dynalink_rta1025w
   $(Device/bcm63xx)
   DEVICE_VENDOR := Dynalink
   DEVICE_MODEL := RTA1025W
-  DEVICE_DTS := rta1025w
   CFE_BOARD_ID := RTA1025W_16
   CFE_CHIP_ID := 6348
   CFE_EXTRAS += --layoutver 5
@@ -710,39 +662,36 @@ define Device/RTA1025W_16
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += RTA1025W_16
+TARGET_DEVICES += dynalink_rta1025w
 
-define Device/RTA1320_16M
+define Device/dynalink_rta1320
   $(Device/bcm63xx)
   DEVICE_VENDOR := Dynalink
   DEVICE_MODEL := RTA1320
-  DEVICE_DTS := rta1320
   CFE_BOARD_ID := RTA1320_16M
   CFE_CHIP_ID := 6338
   CFE_EXTRAS += --layoutver 5
   DEFAULT := n
 endef
-TARGET_DEVICES += RTA1320_16M
+TARGET_DEVICES += dynalink_rta1320
 
 ### Huawei ###
-define Device/HG520v
+define Device/huawei_echolife-hg520v
   $(Device/bcm63xx)
   DEVICE_VENDOR := Huawei
   DEVICE_MODEL := EchoLife HG520v
-  DEVICE_DTS := hg520v
   CFE_BOARD_ID := HW6358GW_B
   CFE_CHIP_ID := 6358
   CFE_EXTRAS += --rsa-signature "EchoLife_HG520v"
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
 endef
-TARGET_DEVICES += HG520v
+TARGET_DEVICES += huawei_echolife-hg520v
 
-define Device/HG553
+define Device/huawei_echolife-hg553
   $(Device/bcm63xx)
   DEVICE_VENDOR := Huawei
   DEVICE_MODEL := EchoLife HG553
-  DEVICE_DTS := hg553
   CFE_BOARD_ID := HW553
   CFE_CHIP_ID := 6358
   CFE_EXTRAS += --rsa-signature "EchoLife_HG553" --tag-version 7
@@ -750,15 +699,14 @@ define Device/HG553
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += HG553
+TARGET_DEVICES += huawei_echolife-hg553
 
-define Device/HG556a-A
+define Device/huawei_echolife-hg556a-a
   $(Device/bcm63xx)
   DEVICE_VENDOR := Huawei
   DEVICE_MODEL := EchoLife HG556a
   DEVICE_VARIANT := A
   DEVICE_DESCRIPTION = Build firmware images for Huawei HG556a version A (Atheros)
-  DEVICE_DTS := hg556a-a
   CFE_BOARD_ID := HW556
   CFE_CHIP_ID := 6358
   CFE_EXTRAS += --rsa-signature "EchoLife_HG556a" --tag-version 8
@@ -766,15 +714,14 @@ define Device/HG556a-A
   DEVICE_PACKAGES := \
     $(ATH9K_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += HG556a-A
+TARGET_DEVICES += huawei_echolife-hg556a-a
 
-define Device/HG556a-B
+define Device/huawei_echolife-hg556a-b
   $(Device/bcm63xx)
   DEVICE_VENDOR := Huawei
   DEVICE_MODEL := EchoLife HG556a
   DEVICE_VARIANT := B
   DEVICE_DESCRIPTION = Build firmware images for Huawei HG556a version B (Atheros)
-  DEVICE_DTS := hg556a-b
   CFE_BOARD_ID := HW556
   CFE_CHIP_ID := 6358
   CFE_EXTRAS += --rsa-signature "EchoLife_HG556a" --tag-version 8
@@ -782,15 +729,14 @@ define Device/HG556a-B
   DEVICE_PACKAGES := \
     $(ATH9K_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += HG556a-B
+TARGET_DEVICES += huawei_echolife-hg556a-b
 
-define Device/HG556a-C
+define Device/huawei_echolife-hg556a-c
   $(Device/bcm63xx)
   DEVICE_VENDOR := Huawei
   DEVICE_MODEL := EchoLife HG556a
   DEVICE_VARIANT := C
   DEVICE_DESCRIPTION = Build firmware images for Huawei HG556a version C (Ralink)
-  DEVICE_DTS := hg556a-c
   CFE_BOARD_ID := HW556
   CFE_CHIP_ID := 6358
   CFE_EXTRAS += --rsa-signature "EchoLife_HG556a" --tag-version 8
@@ -798,14 +744,13 @@ define Device/HG556a-C
   DEVICE_PACKAGES := \
     $(RT28_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += HG556a-C
+TARGET_DEVICES += huawei_echolife-hg556a-c
 
-define Device/HG622
+define Device/huawei_echolife-hg622
   $(Device/bcm63xx)
   DEVICE_VENDOR := Huawei
   DEVICE_MODEL := EchoLife HG622
   IMAGES += sysupgrade.bin
-  DEVICE_DTS := hg622
   CFE_BOARD_ID := 96368MVWG_hg622
   CFE_CHIP_ID := 6368
   CFE_EXTRAS += --tag-version 7
@@ -814,13 +759,12 @@ define Device/HG622
   DEVICE_PACKAGES := \
     $(RT28_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += HG622
+TARGET_DEVICES += huawei_echolife-hg622
 
-define Device/HG655b
+define Device/huawei_echolife-hg655b
   $(Device/bcm63xx)
   DEVICE_VENDOR := Huawei
   DEVICE_MODEL := EchoLife HG655b
-  DEVICE_DTS := hg655b
   CFE_BOARD_ID := HW65x
   CFE_CHIP_ID := 6368
   CFE_EXTRAS += --tag-version 7
@@ -829,81 +773,77 @@ define Device/HG655b
   DEVICE_PACKAGES := \
     $(RT28_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += HG655b
+TARGET_DEVICES += huawei_echolife-hg655b
 
 ### Inteno ###
-define Device/VG50
+define Device/inteno_vg50
   $(Device/bcm63xx)
   DEVICE_VENDOR := Inteno
   DEVICE_MODEL := VG50 Multi-WAN CPE
   IMAGES :=
-  DEVICE_DTS := vg50
   CFE_BOARD_ID := VW6339GU
   CFE_CHIP_ID := 63268
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += VG50
+TARGET_DEVICES += inteno_vg50
 
 ### Inventel ###
-define Device/livebox
+define Device/inventel_livebox-1
   $(Device/bcm63xx_redboot)
   DEVICE_VENDOR := Inventel
   DEVICE_MODEL := Livebox 1
-  DEVICE_DTS := livebox-blue-5g
+  SOC := bcm6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB1_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += livebox
+TARGET_DEVICES += inventel_livebox-1
 
 ### Netgear ###
-define Device/CVG834G
+define Device/netgear_cvg834g
   $(Device/bcm33xx)
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := CVG834G
-  DEVICE_DTS := cvg834g
+  SOC := bcm3368
   HCS_MAGIC_BYTES := 0xa020
   HCS_REV_MIN := 0001
   HCS_REV_MAJ := 0022
 endef
-TARGET_DEVICES += CVG834G
+TARGET_DEVICES += netgear_cvg834g
 
-define Device/DG834GT_PN
+define Device/netgear_dg834gt-pn
   $(Device/bcm63xx)
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := DG834GT
   DEVICE_ALT0_VENDOR := NETGEAR
   DEVICE_ALT0_MODEL := DG834PN
-  DEVICE_DTS := dg834gtpn
   CFE_BOARD_ID := 96348GW-10
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(ATH5K_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += DG834GT_PN
+TARGET_DEVICES += netgear_dg834gt-pn
 
-define Device/DG834GTv4
+define Device/netgear_dg834g-v4
   $(Device/bcm63xx)
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := DG834G
   DEVICE_VARIANT := v4
   IMAGES :=
-  DEVICE_DTS := dg834g_v4
   CFE_BOARD_ID := 96348W3
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += DG834GTv4
+TARGET_DEVICES += netgear_dg834g-v4
 
-define Device/DGND3700v1
+define Device/netgear_dgnd3700-v1
   $(Device/bcm63xx_netgear)
   DEVICE_MODEL := DGND3700
   DEVICE_VARIANT := v1
-  DEVICE_DTS := dgnd3700v1
   CFE_BOARD_ID := 96368MVWG
   CFE_CHIP_ID := 6368
   BLOCK_SIZE := 0x20000
@@ -912,12 +852,12 @@ define Device/DGND3700v1
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += DGND3700v1
+TARGET_DEVICES += netgear_dgnd3700-v1
 
-define Device/DGND3800B
+define Device/netgear_dgnd3800b
   $(Device/bcm63xx_netgear)
   DEVICE_MODEL := DGND3800B
-  DEVICE_DTS := dgnd3700v1
+  DEVICE_DTS := bcm6368-netgear-dgnd3700-v1
   CFE_BOARD_ID := 96368MVWG
   CFE_CHIP_ID := 6368
   BLOCK_SIZE := 0x20000
@@ -926,12 +866,11 @@ define Device/DGND3800B
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += DGND3800B
+TARGET_DEVICES += netgear_dgnd3800b
 
-define Device/EVG2000
+define Device/netgear_evg2000
   $(Device/bcm63xx_netgear)
   DEVICE_MODEL := EVG2000
-  DEVICE_DTS := evg2000
   CFE_BOARD_ID := 96369PVG
   CFE_CHIP_ID := 6368
   BLOCK_SIZE := 0x20000
@@ -940,31 +879,29 @@ define Device/EVG2000
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += EVG2000
+TARGET_DEVICES += netgear_evg2000
 
 ### NuCom ###
-define Device/R5010UNv2
+define Device/nucom_r5010un-v2
   $(Device/bcm63xx)
   DEVICE_VENDOR := NuCom
   DEVICE_MODEL := R5010UN
   DEVICE_VARIANT := v2
   IMAGES += sysupgrade.bin
-  DEVICE_DTS := r5010unv2
   CFE_BOARD_ID := 96328ang
   CFE_CHIP_ID := 6328
   FLASH_MB := 16
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
 endef
-TARGET_DEVICES += R5010UNv2
+TARGET_DEVICES += nucom_r5010un-v2
 
 ### Observa ###
-define Device/VH4032N
+define Device/observa_vh4032n
   $(Device/bcm63xx)
   DEVICE_VENDOR := Observa
   DEVICE_MODEL := VH4032N
   IMAGES += sysupgrade.bin
-  DEVICE_DTS := vh4032n
   CFE_BOARD_ID := 96368VVW
   CFE_CHIP_ID := 6368
   BLOCK_SIZE := 0x20000
@@ -972,40 +909,37 @@ define Device/VH4032N
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += VH4032N
+TARGET_DEVICES += observa_vh4032n
 
 ### Pirelli ###
-define Device/A226G
+define Device/pirelli_a226g
   $(Device/bcm63xx)
   DEVICE_VENDOR := Pirelli
   DEVICE_MODEL := A226G
-  DEVICE_DTS := a226g
   CFE_BOARD_ID := DWV-S0
   CFE_CHIP_ID := 6358
   CFE_EXTRAS += --signature2 IMAGE --tag-version 8
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += A226G
+TARGET_DEVICES += pirelli_a226g
 
-define Device/A226M
+define Device/pirelli_a226m
   $(Device/bcm63xx)
   DEVICE_VENDOR := Pirelli
   DEVICE_MODEL := A226M
-  DEVICE_DTS := a226m
   CFE_BOARD_ID := DWV-S0
   CFE_CHIP_ID := 6358
   CFE_EXTRAS += --signature2 IMAGE --tag-version 8
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += A226M
+TARGET_DEVICES += pirelli_a226m
 
-define Device/A226M-FWB
+define Device/pirelli_a226m-fwb
   $(Device/bcm63xx)
   DEVICE_VENDOR := Pirelli
   DEVICE_MODEL := A226M-FWB
-  DEVICE_DTS := a226m-fwb
   CFE_BOARD_ID := DWV-S0
   CFE_CHIP_ID := 6358
   CFE_EXTRAS += --signature2 IMAGE --tag-version 8
@@ -1013,13 +947,12 @@ define Device/A226M-FWB
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += A226M-FWB
+TARGET_DEVICES += pirelli_a226m-fwb
 
-define Device/AGPF-S0
+define Device/pirelli_agpf-s0
   $(Device/bcm63xx)
   DEVICE_VENDOR := Pirelli
   DEVICE_MODEL := Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
-  DEVICE_DTS := agpf-s0
   CFE_BOARD_ID := AGPF-S0
   CFE_CHIP_ID := 6358
   CFE_EXTRAS += --signature2 IMAGE --tag-version 8
@@ -1027,203 +960,189 @@ define Device/AGPF-S0
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += AGPF-S0
+TARGET_DEVICES += pirelli_agpf-s0
 
 ### Sagem ###
-define Device/FAST2404
+define Device/sagem_fast-2404
   $(Device/bcm63xx)
   DEVICE_VENDOR := Sagemcom
   DEVICE_MODEL := F@st 2404
-  DEVICE_DTS := fast2404
   CFE_BOARD_ID := F@ST2404
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += FAST2404
+TARGET_DEVICES += sagem_fast-2404
 
-define Device/FAST2504n
+define Device/sagem_fast-2504n
   $(Device/bcm63xx)
   DEVICE_VENDOR := Sagemcom
   DEVICE_MODEL := F@st 2504N
-  DEVICE_DTS := fast2504n
   CFE_BOARD_ID := F@ST2504n
   CFE_CHIP_ID := 6362
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
 endef
-TARGET_DEVICES += FAST2504n
+TARGET_DEVICES += sagem_fast-2504n
 
-define Device/FAST2604
+define Device/sagem_fast-2604
   $(Device/bcm63xx)
   DEVICE_VENDOR := Sagemcom
   DEVICE_MODEL := F@st 2604
-  DEVICE_DTS := fast2604
   CFE_BOARD_ID := F@ST2604
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += FAST2604
+TARGET_DEVICES += sagem_fast-2604
 
-define Device/FAST2704N
+define Device/sagem_fast-2704n
   $(Device/bcm63xx)
   DEVICE_VENDOR := Sagemcom
   DEVICE_MODEL := F@st 2704N
-  DEVICE_DTS := fast2704n
   CFE_BOARD_ID := F@ST2704N
   CFE_CHIP_ID := 6318
   FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += FAST2704N
+TARGET_DEVICES += sagem_fast-2704n
 
-define Device/FAST2704V2
+define Device/sagem_fast-2704-v2
   $(Device/bcm63xx)
   DEVICE_VENDOR := Sagemcom
-  DEVICE_MODEL := F@st 2704 V2
-  DEVICE_DTS := fast2704v2
+  DEVICE_MODEL := F@st 2704
+  DEVICE_VARIANT := V2
   CFE_BOARD_ID := F@ST2704V2
   CFE_CHIP_ID := 6328
   FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += FAST2704V2
+TARGET_DEVICES += sagem_fast-2704-v2
 
 ### Sercomm ###
-define Device/AD1018-SPI_flash
+define Device/sercomm_ad1018-nor
   $(Device/bcm63xx)
   DEVICE_VENDOR := Sercomm
   DEVICE_MODEL := AD1018
   DEVICE_VARIANT := SPI flash mod
-  DEVICE_DTS := ad1018-nor
   CFE_BOARD_ID := 96328avngr
   CFE_CHIP_ID := 6328
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += AD1018-SPI_flash
+TARGET_DEVICES += sercomm_ad1018-nor
 
 ### SFR ###
-define Device/NEUFBOX4-SER
+define Device/sfr_neufbox-4-sercomm-r0
   $(Device/bcm63xx)
   DEVICE_VENDOR := SFR
   DEVICE_MODEL := Neufbox4
   DEVICE_VARIANT := Sercomm
-  DEVICE_DTS := nb4-ser-r0
   CFE_BOARD_ID := 96358VW
   CFE_CHIP_ID := 6358
   CFE_EXTRAS += --rsa-signature "$(VERSION_DIST)-$(firstword $(subst -,$(space),$(REVISION)))"
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += NEUFBOX4-SER
+TARGET_DEVICES += sfr_neufbox-4-sercomm-r0
 
-define Device/NEUFBOX4-FXC
+define Device/sfr_neufbox-4-foxconn-r1
   $(Device/bcm63xx)
   DEVICE_VENDOR := SFR
   DEVICE_MODEL := Neufbox4
   DEVICE_VARIANT := Foxconn
-  DEVICE_DTS := nb4-fxc-r1
   CFE_BOARD_ID := 96358VW
   CFE_CHIP_ID := 6358
   CFE_EXTRAS += --rsa-signature "$(VERSION_DIST)-$(firstword $(subst -,$(space),$(REVISION)))"
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += NEUFBOX4-FXC
+TARGET_DEVICES += sfr_neufbox-4-foxconn-r1
 
-define Device/NEUFBOX6
+define Device/sfr_neufbox-6-sercomm-r0
   $(Device/bcm63xx)
   DEVICE_VENDOR := SFR
   DEVICE_MODEL := Neufbox6
-  DEVICE_DTS := nb6-ser-r0
   CFE_BOARD_ID := NB6-SER-r0
   CFE_CHIP_ID := 6362
   CFE_EXTRAS += --rsa-signature "$(VERSION_DIST)-$(firstword $(subst -,$(space),$(REVISION)))"
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += NEUFBOX6
+TARGET_DEVICES += sfr_neufbox-6-sercomm-r0
 
-define Device/SR102
+define Device/sky_sr102
   $(Device/bcm63xx)
   DEVICE_VENDOR := SKY
   DEVICE_MODEL := SR102
-  DEVICE_DTS := sr102
   CFE_BOARD_ID := BSKYB_63168
   CFE_CHIP_ID := 63268
   CFE_EXTRAS += --rsa-signature "$(VERSION_DIST)-$(firstword $(subst -,$(space),$(REVISION)))"
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += SR102
+TARGET_DEVICES += sky_sr102
 
 ### T-Com ###
-define Device/SPW303V
+define Device/t-com_speedport-w-303v
   $(Device/bcm63xx)
   DEVICE_VENDOR := T-Com
   DEVICE_MODEL := Speedport W 303V
   IMAGES := factory.bin sysupgrade.bin
   IMAGE/factory.bin := cfe-spw303v-bin --pad 4 | spw303v-bin | xor-image
   IMAGE/sysupgrade.bin := cfe-spw303v-bin | spw303v-bin
-  DEVICE_DTS := spw303v
   CFE_BOARD_ID := 96358-502V
   CFE_CHIP_ID := 6358
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
 endef
-TARGET_DEVICES += SPW303V
+TARGET_DEVICES += t-com_speedport-w-303v
 
-define Device/SPW500V
+define Device/t-com_speedport-w-500v
   $(Device/bcm63xx)
   DEVICE_VENDOR := T-Com
   DEVICE_MODEL := Speedport W 500V
-  DEVICE_DTS := spw500v
   CFE_BOARD_ID := 96348GW
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += SPW500V
+TARGET_DEVICES += t-com_speedport-w-500v
 
 ### Tecom ###
-define Device/GW6000
+define Device/tecom_gw6000
   $(Device/bcm63xx)
   DEVICE_VENDOR := Tecom
   DEVICE_MODEL := GW6000
-  DEVICE_DTS := gw6000
   CFE_BOARD_ID := 96348GW
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(BRCMWL_PACKAGES) $(USB1_PACKAGES)
 endef
-TARGET_DEVICES += GW6000
+TARGET_DEVICES += tecom_gw6000
 
-define Device/GW6200
+define Device/tecom_gw6200
   $(Device/bcm63xx)
   DEVICE_VENDOR := Tecom
   DEVICE_MODEL := GW6200
-  DEVICE_DTS := gw6200
   CFE_BOARD_ID := 96348GW
   CFE_CHIP_ID := 6348
   CFE_EXTRAS += --rsa-signature "$(shell printf '\x99')"
   DEVICE_PACKAGES := \
     $(BRCMWL_PACKAGES) $(USB1_PACKAGES)
 endef
-TARGET_DEVICES += GW6200
+TARGET_DEVICES += tecom_gw6200
 
 ### Telsey ###
-define Device/CPVA502PLUS
+define Device/telsey_cpva502plus
   $(Device/bcm63xx)
   DEVICE_VENDOR := Telsey
   DEVICE_MODEL := CPVA502+
-  DEVICE_DTS := cpva502plus
   CFE_BOARD_ID := CPVA502+
   CFE_CHIP_ID := 6348
   CFE_EXTRAS += --signature "Telsey Tlc" --signature2 "99.99.999"
@@ -1231,13 +1150,12 @@ define Device/CPVA502PLUS
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += CPVA502PLUS
+TARGET_DEVICES += telsey_cpva502plus
 
-define Device/CPA-ZNTE60T
+define Device/telsey_cpva642
   $(Device/bcm63xx)
   DEVICE_VENDOR := Telsey
   DEVICE_MODEL := CPVA642-type (CPA-ZNTE60T)
-  DEVICE_DTS := cpva642
   CFE_BOARD_ID := CPVA642
   CFE_CHIP_ID := 6358
   CFE_EXTRAS += --signature "Telsey Tlc" --signature2 "99.99.999" --second-image-flag "0"
@@ -1245,30 +1163,28 @@ define Device/CPA-ZNTE60T
   DEVICE_PACKAGES := \
     $(RT63_PACKAGES) $(USB2_PACKAGES)
 endef
-TARGET_DEVICES += CPA-ZNTE60T
+TARGET_DEVICES += telsey_cpva642
 
-define Device/MAGIC
+define Device/telsey_magic
   $(Device/bcm63xx)
   DEVICE_VENDOR := Alice
   DEVICE_MODEL := W-Gate
   DEVICE_ALT0_VENDOR := Telsey
   DEVICE_ALT0_MODEL := MAGIC
   IMAGES :=
-  DEVICE_DTS := magic
   CFE_BOARD_ID := MAGIC
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(RT63_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += MAGIC
+TARGET_DEVICES += telsey_magic
 
 ### TP-Link ###
-define Device/TD-W8900GB
+define Device/tp-link_td-w8900gb
   $(Device/bcm63xx)
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := TD-W8900GB
-  DEVICE_DTS := td-w8900gb
   CFE_BOARD_ID := 96348GW-11
   CFE_CHIP_ID := 6348
   CFE_EXTRAS += --rsa-signature "$(shell printf 'PRID\x89\x10\x00\x02')"
@@ -1277,35 +1193,33 @@ define Device/TD-W8900GB
     $(B43_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += TD-W8900GB
+TARGET_DEVICES += tp-link_td-w8900gb
 
 ### USRobotics ###
-define Device/USR9108
+define Device/usrobotics_usr9108
   $(Device/bcm63xx)
   DEVICE_VENDOR := USRobotics
   DEVICE_MODEL := 9108
-  DEVICE_DTS := usr9108
   CFE_BOARD_ID := 96348GW-A
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB1_PACKAGES)
   DEFAULT := n
 endef
-TARGET_DEVICES += USR9108
+TARGET_DEVICES += usrobotics_usr9108
 
 ### ZyXEL ###
-define Device/P870HW-51a_v2
+define Device/zyxel_p870hw-51a-v2
   $(Device/bcm63xx)
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := P870HW-51a
   DEVICE_VARIANT := v2
   IMAGES := factory.bin
   IMAGE/factory.bin := cfe-bin | zyxel-bin
-  DEVICE_DTS := p870hw-51a-v2
   CFE_BOARD_ID := 96368VVW
   CFE_CHIP_ID := 6368
   CFE_EXTRAS += --rsa-signature "ZyXEL" --signature "ZyXEL_0001"
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
 endef
-TARGET_DEVICES += P870HW-51a_v2
+TARGET_DEVICES += zyxel_p870hw-51a-v2
