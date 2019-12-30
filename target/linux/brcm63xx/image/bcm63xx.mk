@@ -974,7 +974,7 @@ TARGET_DEVICES += sercomm_ad1018-nor
 define Device/sfr_neufbox-4-sercomm-r0
   $(Device/bcm63xx)
   DEVICE_VENDOR := SFR
-  DEVICE_MODEL := Neufbox4
+  DEVICE_MODEL := Neufbox 4
   DEVICE_VARIANT := Sercomm
   CFE_BOARD_ID := 96358VW
   CFE_CHIP_ID := 6358
@@ -986,7 +986,7 @@ TARGET_DEVICES += sfr_neufbox-4-sercomm-r0
 define Device/sfr_neufbox-4-foxconn-r1
   $(Device/bcm63xx)
   DEVICE_VENDOR := SFR
-  DEVICE_MODEL := Neufbox4
+  DEVICE_MODEL := Neufbox 4
   DEVICE_VARIANT := Foxconn
   CFE_BOARD_ID := 96358VW
   CFE_CHIP_ID := 6358
@@ -998,7 +998,7 @@ TARGET_DEVICES += sfr_neufbox-4-foxconn-r1
 define Device/sfr_neufbox-6-sercomm-r0
   $(Device/bcm63xx)
   DEVICE_VENDOR := SFR
-  DEVICE_MODEL := Neufbox6
+  DEVICE_MODEL := Neufbox 6
   CFE_BOARD_ID := NB6-SER-r0
   CFE_CHIP_ID := 6362
   CFE_EXTRAS += --rsa-signature "$(VERSION_DIST)-$(firstword $(subst -,$(space),$(REVISION)))"
@@ -1121,7 +1121,7 @@ TARGET_DEVICES += tp-link_td-w8900gb
 define Device/usrobotics_usr9108
   $(Device/bcm63xx)
   DEVICE_VENDOR := USRobotics
-  DEVICE_MODEL := 9108
+  DEVICE_MODEL := USR9108
   CFE_BOARD_ID := 96348GW-A
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := $(B43_PACKAGES) $(USB1_PACKAGES)
