@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 IFS=$'\n'
-[ -n "$1" -a -n "$2" ] || {
+
+if [ -z "$1" ] || [ -z "$2" ]; then
 	echo "Usage: $0 <file> <directory>"
 	exit 1
-}
-[ -f "$1" -a -d "$2" ] || {
+fi
+if [ ! -f "$1" ] || [ ! -d "$2" ]; then
 	echo "File/directory not found"
 	exit 1
-}
+fi
 (
 	cd "$2" || exit 1
 	while read -r entry; do
