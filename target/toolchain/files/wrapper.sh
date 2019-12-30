@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # 2009 (C) Copyright Industrie Dial Face S.p.A.
 #          Luigi 'Comio' Mantellini <luigi.mantellini@idf-hit.com>
