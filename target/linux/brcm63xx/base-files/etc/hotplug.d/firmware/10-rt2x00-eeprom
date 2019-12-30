@@ -10,11 +10,11 @@ board=$(board_name)
 case "$FIRMWARE" in
 "rt2x00.eeprom" )
 	case $board in
-	hg556a_c)
+	huawei,echolife-hg556a-c)
 		caldata_extract "cal_data" 0x1fe00 0x200
 		;;
-	hg622 |\
-	hg655b)
+	huawei,echolife-hg622|\
+	huawei,echolife-hg655b)
 		caldata_extract "cal_data" 0x0 0x200
 		;;
 	*)
