@@ -126,6 +126,23 @@ define Device/ocedo_panda
 endef
 TARGET_DEVICES += ocedo_panda
 
+define Device/edgecore_ecw7210-l
+  DEVICE_VENDOR := Edgecore
+  DEVICE_MODEL := ECW7210-L
+  DEVICE_PACKAGES := uboot-envtools
+  # Original firmware uses a dedicated DTB-partition in NOR.
+  # This u-boot supports fit images, but has issues with gzipped kernels
+  # larger than about 4.3 MB. Thus, we use an uncompressed kernel.
+  KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  BLOCKSIZE := 128k
+  IMAGES := fdt.bin sysupgrade.bin
+  IMAGE/fdt.bin := append-dtb
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += edgecore_ecw7210-l
+
 endif
 
 ifeq ($(SUBTARGET),p2020)

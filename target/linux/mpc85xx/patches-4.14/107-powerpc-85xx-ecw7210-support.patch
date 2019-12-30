@@ -1,0 +1,30 @@
+--- a/arch/powerpc/platforms/85xx/Kconfig
++++ b/arch/powerpc/platforms/85xx/Kconfig
+@@ -71,6 +71,17 @@ config PANDA
+       This board is a Concurrent Dual-Band wireless access point with a
+       Freescale P1020 SoC.
+ 
++config ECW7210_L
++	bool "Edgecore ECW7210-L"
++	select DEFAULT_UIMAGE
++	select ARCH_REQUIRE_GPIOLIB
++	select GPIO_MPC8XXX
++	help
++	  This option enables support for the Edgecore ECW7210-L board.
++
++	  This board is a Concurrent Dual-Band wireless access point with a
++	  Freescale P1020 SoC.
++
+ config MPC8540_ADS
+ 	bool "Freescale MPC8540 ADS"
+ 	select DEFAULT_UIMAGE
+--- a/arch/powerpc/platforms/85xx/Makefile
++++ b/arch/powerpc/platforms/85xx/Makefile
+@@ -23,6 +23,7 @@ obj-$(CONFIG_BSC9131_RDB) += bsc913x_rdb.o
+ obj-$(CONFIG_BSC9132_QDS) += bsc913x_qds.o
+ obj-$(CONFIG_C293_PCIE)   += c293pcie.o
+ obj-$(CONFIG_HIVEAP_330) += hiveap-330.o
++obj-$(CONFIG_ECW7210_L)  += ecw7210-l.o
+ obj-$(CONFIG_MPC8540_ADS) += mpc85xx_ads.o
+ obj-$(CONFIG_MPC8560_ADS) += mpc85xx_ads.o
+ obj-$(CONFIG_MPC85xx_CDS) += mpc85xx_cds.o
