@@ -50,6 +50,6 @@ $3 && $2 ~ /[brtd]/ && $3 !~ /\$LC/ && !def[$3] {
 }
 ' > "$MODULE.tmp1"
 
-${CROSS}objcopy `cat ${MODULE}.tmp1` ${MODULE}.tmp ${MODULE}.out
+${CROSS}objcopy $(cat ${MODULE}.tmp1) ${MODULE}.tmp ${MODULE}.out
 mv "${MODULE}.out" "${MODULE}"
 rm -f "${MODULE}".t*
