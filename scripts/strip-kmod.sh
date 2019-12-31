@@ -19,7 +19,7 @@ else
 fi
 
 if [ -z "$KEEP_BUILD_ID" ]; then
-    ARGS="$ARGS -R .note.gnu.build-id"
+	ARGS="$ARGS -R .note.gnu.build-id"
 fi
 
 ${CROSS}objcopy \
