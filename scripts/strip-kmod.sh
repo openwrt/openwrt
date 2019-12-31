@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 [ -n "$CROSS" ] || {
 	echo "The variable CROSS must be set to point to the cross-compiler prefix"
 	exit 1
