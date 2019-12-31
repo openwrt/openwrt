@@ -198,8 +198,8 @@ define Device/tplink_tl-wr841-v11
   TPLINK_HWID := 0x08410011
   SUPPORTED_DEVICES += tl-wr841n-v11
   IMAGES += factory-us.bin factory-eu.bin
-  IMAGE/factory-us.bin := append-rootfs | mktplinkfw factory -C US
-  IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
+  IMAGE/factory-us.bin := tplink-v1-image factory -C US
+  IMAGE/factory-eu.bin := tplink-v1-image factory -C EU
 endef
 TARGET_DEVICES += tplink_tl-wr841-v11
 
@@ -211,8 +211,8 @@ define Device/tplink_tl-wr841-v12
   TPLINK_HWID := 0x08410012
   SUPPORTED_DEVICES += tl-wr841n-v11
   IMAGES += factory-us.bin factory-eu.bin
-  IMAGE/factory-us.bin := append-rootfs | mktplinkfw factory -C US
-  IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
+  IMAGE/factory-us.bin := tplink-v1-image factory -C US
+  IMAGE/factory-eu.bin := tplink-v1-image factory -C EU
 endef
 TARGET_DEVICES += tplink_tl-wr841-v12
 
@@ -234,9 +234,9 @@ define Device/tplink_tl-wr940n-v4
   TPLINK_HWID := 0x09400004
   SUPPORTED_DEVICES += tl-wr940n-v4
   IMAGES += factory-us.bin factory-eu.bin factory-br.bin
-  IMAGE/factory-us.bin := append-rootfs | mktplinkfw factory -C US
-  IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
-  IMAGE/factory-br.bin := append-rootfs | mktplinkfw factory -C BR
+  IMAGE/factory-us.bin := tplink-v1-image factory -C US
+  IMAGE/factory-eu.bin := tplink-v1-image factory -C EU
+  IMAGE/factory-br.bin := tplink-v1-image factory -C BR
 endef
 TARGET_DEVICES += tplink_tl-wr940n-v4
 
