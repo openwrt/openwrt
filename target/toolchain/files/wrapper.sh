@@ -48,22 +48,22 @@ export GCC_HONOUR_COPTS
 
 TOOLCHAIN_SYSROOT="$TOOLCHAIN_BIN_DIR/../.."
 if [ ! -d "$TOOLCHAIN_SYSROOT" ]; then
-  echo "Error: Unable to determine sysroot (looking for $TOOLCHAIN_SYSROOT)!" >&2
-  exit 1
+	echo "Error: Unable to determine sysroot (looking for $TOOLCHAIN_SYSROOT)!" >&2
+	exit 1
 fi
 
 # -Wl,--dynamic-linker=$TOOLCHAIN_SYSROOT/lib/ld-uClibc.so.0 
 # --dynamic-linker=$TOOLCHAIN_SYSROOT/lib/ld-uClibc.so.0 
 
 case $TOOLCHAIN_PLATFORM in
-   gnu|glibc|uclibc|musl)
-	GCC_SYSROOT_FLAGS="--sysroot=$TOOLCHAIN_SYSROOT -Wl,-rpath=$TOOLCHAIN_SYSROOT/lib:$TOOLCHAIN_SYSROOT/usr/lib"
-	LD_SYSROOT_FLAGS="-rpath=$TOOLCHAIN_SYSROOT/lib:$TOOLCHAIN_SYSROOT/usr/lib"
-       ;;
-   *)
-	GCC_SYSROOT_FLAGS=""
-	LD_SYSROOT_FLAGS=""
-       ;;
+	gnu|glibc|uclibc|musl)
+		GCC_SYSROOT_FLAGS="--sysroot=$TOOLCHAIN_SYSROOT -Wl,-rpath=$TOOLCHAIN_SYSROOT/lib:$TOOLCHAIN_SYSROOT/usr/lib"
+		LD_SYSROOT_FLAGS="-rpath=$TOOLCHAIN_SYSROOT/lib:$TOOLCHAIN_SYSROOT/usr/lib"
+		;;
+	*)
+		GCC_SYSROOT_FLAGS=""
+		LD_SYSROOT_FLAGS=""
+		;;
 esac
 
 #
