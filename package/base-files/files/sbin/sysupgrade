@@ -294,7 +294,7 @@ type platform_check_image >/dev/null 2>/dev/null || {
 case "$IMAGE" in
 	http://*|\
 	https://*)
-		wget -O/tmp/sysupgrade.img "$IMAGE"
+		wget -O/tmp/sysupgrade.img "$IMAGE" || exit 1
 		IMAGE=/tmp/sysupgrade.img
 		;;
 esac
