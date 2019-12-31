@@ -111,19 +111,12 @@ glinet,gl-mt300n|\
 glinet,gl-mt750)
 	set_wifi_led "$boardname:wlan"
 	;;
-hiwifi,hc5661)
-	ucidef_set_led_switch "internet" "internet" "$boardname:blue:internet" "switch0" "0x01"
-	set_wifi_led "$boardname:blue:wlan2g"
-	;;
+hiwifi,hc5661|\
 hiwifi,hc5761)
 	ucidef_set_led_switch "internet" "internet" "$boardname:blue:internet" "switch0" "0x01"
-	ucidef_set_led_netdev "wifi5g" "wifi5g" "$boardname:blue:wlan5g" "wlan0"
-	ucidef_set_led_netdev "wifi2g" "wifi2g" "$boardname:blue:wlan2g" "wlan1"
 	;;
 hiwifi,hc5861)
 	ucidef_set_led_switch "internet" "internet" "$boardname:blue:internet" "switch0" "0x20"
-	ucidef_set_led_netdev "wifi5g" "wifi5g" "$boardname:blue:wlan5g" "wlan0"
-	ucidef_set_led_netdev "wifi2g" "wifi2g" "$boardname:blue:wlan2g" "wlan1"
 	;;
 hnet,c108)
 	ucidef_set_led_netdev "lan" "lan" "$boardname:green:lan" "eth0"
