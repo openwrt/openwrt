@@ -1,0 +1,19 @@
+From b2eebb31fc21b5ce12ef8944b50088119f1b9427 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?S=C3=B6ren=20Tempel?= <soeren+git@soeren-tempel.net>
+Date: Mon, 25 Mar 2019 18:43:03 +0100
+Subject: [PATCH] priv: include limits.h for PATH_MAX
+
+---
+ src/daemon/priv.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/src/daemon/priv.c
++++ b/src/daemon/priv.c
+@@ -27,6 +27,7 @@
+ #include <unistd.h>
+ #include <signal.h>
+ #include <errno.h>
++#include <limits.h>
+ #include <sys/wait.h>
+ #include <sys/stat.h>
+ #include <sys/socket.h>
