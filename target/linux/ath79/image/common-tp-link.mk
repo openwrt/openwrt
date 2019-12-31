@@ -1,17 +1,6 @@
 DEVICE_VARS += TPLINK_HWID TPLINK_HWREV TPLINK_FLASHLAYOUT TPLINK_HEADER_VERSION
 DEVICE_VARS += TPLINK_BOARD_NAME TPLINK_BOARD_ID
 
-# mktplinkfw-combined
-#
-# -c combined image
-define Build/mktplinkfw-combined
-	$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) \
-		-N OpenWrt -V $(REVISION) $(1) -m $(TPLINK_HEADER_VERSION) \
-		-k $@ -o $@.new -s -S -c
-	@mv $@.new $@
-endef
-
 define Build/uImageArcher
 	mkimage -A $(LINUX_KARCH) \
 		-O linux -T kernel -C $(1) -a $(KERNEL_LOADADDR) \
