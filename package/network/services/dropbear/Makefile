@@ -72,6 +72,7 @@ define Package/dropbearconvert
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Utility for converting SSH keys
+  DEPENDS:= +DROPBEAR_ZLIB:zlib
 endef
 
 CONFIGURE_ARGS += \
