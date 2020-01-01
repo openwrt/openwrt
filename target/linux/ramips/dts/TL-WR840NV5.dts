@@ -101,7 +101,10 @@
 
 &ethernet {
 	mtd-mac-address = <&factory 0xf100>;
-	mediatek,portmap = "wllll";
+};
+
+&esw {
+	mediatek,portmap = <0x3e>;
 };
 
 &pinctrl {

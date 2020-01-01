@@ -185,7 +185,10 @@
 
 &ethernet {
 	mtd-mac-address = <&factory 0x4>;
-	mediatek,portmap = "wllll";
+};
+
+&esw {
+	mediatek,portmap = <0x3e>;
 };
 
 &wmac {

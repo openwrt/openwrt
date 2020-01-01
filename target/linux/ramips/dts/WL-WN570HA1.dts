@@ -131,5 +131,8 @@
 
 &ethernet {
 	mtd-mac-address = <&factory 0x2e>;
-	mediatek,portmap = "llllw";
+};
+
+&esw {
+	mediatek,portmap = <0x2f>;
 };
