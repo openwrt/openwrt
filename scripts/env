@@ -136,7 +136,7 @@ env_clear() {
 	env_init
 	[ -L "$BASEDIR/.config" ] && rm -f "$BASEDIR/.config"
 	[ -L "$BASEDIR/files" ] && rm -f "$BASEDIR/files"
-	[ -f "$ENVDIR/.config" ] || ( cd "$ENVDIR/files" && find | grep -vE '^\.$' > /dev/null )
+	[ -f "$ENVDIR/.config" ] || ( cd "$ENVDIR/files" && find . | grep -vE '^\.$' > /dev/null )
 	env_sync_data
 	if ask_bool 1 "Do you want to keep your current config and files"; then
 		mkdir -p "$BASEDIR/files"
