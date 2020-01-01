@@ -129,6 +129,12 @@ define Device/ubnt_bullet-m-xw
 endef
 TARGET_DEVICES += ubnt_bullet-m-xw
 
+define Device/ubnt_edgeswitch-5xp
+  $(Device/ubnt-sw)
+  DEVICE_MODEL := EdgeSwitch 5XP
+endef
+TARGET_DEVICES += ubnt_edgeswitch-5xp
+
 define Device/ubnt_edgeswitch-8xp
   $(Device/ubnt-sw)
   DEVICE_MODEL := EdgeSwitch 8XP
