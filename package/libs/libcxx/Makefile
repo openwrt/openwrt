@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libcxx
 PKG_VERSION:=9.0.1
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://git.llvm.org/git/libcxx
@@ -37,6 +37,7 @@ define Package/libcxx/description
 endef
 
 CMAKE_OPTIONS += \
+	-DLIBCXX_CXX_ABI="libsupc++" \
 	-DLIBCXX_ENABLE_ASSERTIONS=OFF \
 	-DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF \
 	-DLIBCXX_INCLUDE_BENCHMARKS=OFF \
