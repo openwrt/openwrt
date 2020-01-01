@@ -47,7 +47,7 @@ CMAKE_OPTIONS += \
 	-DLIBCXX_HAS_MUSL_LIBC=$(if $(CONFIG_USE_MUSL),ON,OFF)
 
 TARGET_CXXFLAGS += -D_LIBCPP_DISABLE_DEPRECATION_WARNINGS -Wno-attributes -flto
-TARGET_LDFLAGS += -Wl,--as-needed
+TARGET_LDFLAGS += -Wl,--gc-sections,--as-needed -flto=jobserver
 
 define Build/InstallDev
 	$(call Build/InstallDev/cmake,$(1))
