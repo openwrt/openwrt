@@ -302,7 +302,7 @@ ath79_setup_macs()
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(fritz_tffs -n macb -i $(find_mtd_part "tffs (1)"))
 		;;
-    comfast,cf-wr752ac)
+	comfast,cf-wr752ac)
 		lan_mac=$(mtd_get_mac_binary art 0)
 		;;	
 	dlink,dir-825-b1)
