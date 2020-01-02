@@ -7,33 +7,36 @@
 #include "qca953x.dtsi"
 
 /{
-    compatible = "comfast,cf-wr752ac", "qca,qca9531";
+	compatible = "comfast,cf-wr752ac", "qca,qca9531";
 	model = "COMFAST CF-WR752AC";
     
-    chosen {
-        bootargs = "console=ttyS0,115200";
-    };
+	chosen {
+	bootargs = "console=ttyS0,115200";
+	};
 
-    leds{
-        wlan5g {
-			label = "cf-wr752:green:wlan5g";
+	leds {
+
+		wlan5g {
+			label = "cf-wr752ac:green:wlan5g";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
-        wlan2g {
-			label = "cf-wr752:blue:wlan2g";
+
+		wlan2g {
+			label = "cf-wr752ac:blue:wlan2g";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
-        status {
-			label = "cf-wr752:red:lan";
+
+		status {
+			label = "cf-wr752ac:red:lan";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
-    };
+	};
 
-    keys {
+	keys {
 		compatible = "gpio-keys";
-        
+
 		reset {
 			label = "Reset button";
 			linux,code = <KEY_RESTART>;
@@ -51,65 +54,64 @@
 	status = "okay";
 };
 
-&gpio {
-	status = "okay";
-};
-
 &spi {
-	    status = "okay";
-	    num-cs = <1>;
+		status = "okay";
 
-    flash@0 {
-	    compatible = "jedec,spi-nor";
-	    reg = <0>;
-	    spi-max-frequency = <25000000>;
+		num-cs = <1>;
 
-	    partitions {
-		    compatible = "fixed-partitions";
-		    #address-cells = <1>;
-	        #size-cells = <1>;
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
 
-		    partition@0 {
-			    label = "u-boot";
-			    reg = <0x0 0x10000>;
-			    read-only;
-		    };
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-            art: partition@10000 {
-			    label = "art";
-			    reg = <0x10000 0x10000>;
-			    read-only;
-            };
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x10000>;
+				read-only;
+			};
 
-            partition@20000 {
-                    label = "firmware";
-                    reg = <0x20000 0xfc0000>;
-					compatible = "denx,uimage";         
-            };
+			art: partition@10000 {
+				label = "art";
+				reg = <0x10000 0x10000>;
+				read-only;
+			};
+
+			partition@20000 {
+				label = "firmware";
+				reg = <0x20000 0xfc0000>;
+				compatible = "denx,uimage";
+			};
 
 			partition@fe0000 {
-                    label = "configs";
-                    reg = <0x0fe0000 0x10000>;
-            };
+				label = "configs";
+				reg = <0x0fe0000 0x10000>;
+			};
 
-            partition@ff0000 {
-            	label = "nvram";    
-                reg = <0x0ff0000 0x10000>;
-            };
-
-        };
+			partition@ff0000 {
+				label = "nvram";
+				reg = <0x0ff0000 0x10000>;
+			};
+		};
 	};
 };
 
 &wmac {
-    status = "okay";
-    mtd-cal-data = <&art 0x1000>;
+	status = "okay";
+
+	mtd-cal-data = <&art 0x1000>;
 	mtd-mac-address = <&art 0x6>;
 };
 
 &eth0 {
-    status = "okay";
-    mtd-mac-address = <&art 0x1002>;
+	status = "okay";
+
+	mtd-mac-address = <&art 0x1002>;
+
 	fixed-link {
 		speed = <100>;
 		full-duplex;
