@@ -188,5 +188,7 @@
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&radio 0x8000>;
+		mtd-mac-address = <&rom 0xf100>;
+		mtd-mac-address-increment = <(-1)>;
 	};
 };
