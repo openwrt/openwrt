@@ -337,7 +337,7 @@ define Device/tplink_rex5x-v1
   $(Device/tplink-safeloader)
   SOC := qca9558
   IMAGE_SIZE := 6016k
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0
 endef
