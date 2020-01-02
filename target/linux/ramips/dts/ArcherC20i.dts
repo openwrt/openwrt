@@ -9,6 +9,13 @@
 	compatible = "tplink,c20i", "ralink,mt7620a-soc";
 	model = "TP-Link Archer C20i";
 
+	aliases {
+		led-boot = &led_wps;
+		led-failsafe = &led_wps;
+		led-running = &led_wps;
+		led-upgrade = &led_wps;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -25,7 +32,7 @@
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
 		};
-		wps {
+		led_wps: wps {
 			label = "c20i:blue:wps";
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
