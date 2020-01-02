@@ -53,3 +53,12 @@
 		ralink,function = "gpio";
 	};
 };
+
+&wmac {
+	mtd-mac-address = <&rom 0xf100>;
+};
+
+&wifi {
+	mtd-mac-address = <&rom 0xf100>;
+	mtd-mac-address-increment = <(-1)>;
+};
