@@ -768,7 +768,7 @@ dnsmasq_start()
 {
 	local cfg="$1"
 	local disabled user_dhcpscript
-	local resolvfile localuse=0
+	local resolvfile resolvdir localuse=0
 
 	config_get_bool disabled "$cfg" disabled 0
 	[ "$disabled" -gt 0 ] && return 0
@@ -923,10 +923,11 @@ dnsmasq_start()
 
 	config_get_bool noresolv "$cfg" noresolv 0
 	if [ "$noresolv" != "1" ]; then
-		config_get resolvfile "$cfg" resolvfile /tmp/resolv.conf.auto
+		config_get resolvfile "$cfg" resolvfile /tmp/resolv.conf.d/resolv.conf.auto
 		[ -n "$resolvfile" -a ! -e "$resolvfile" ] && touch "$resolvfile"
 		xappend "--resolv-file=$resolvfile"
-		[ "$resolvfile" = "/tmp/resolv.conf.auto" ] && localuse=1
+		[ "$resolvfile" = "/tmp/resolv.conf.d/resolv.conf.auto" ] && localuse=1
+		resolvdir="$(dirname "$resolvfile")"
 	fi
 	config_get_bool localuse "$cfg" localuse "$localuse"
 
@@ -1070,7 +1071,7 @@ dnsmasq_start()
 	procd_set_param respawn
 
 	procd_add_jail dnsmasq ubus log
-	procd_add_jail_mount $CONFIGFILE $TRUSTANCHORSFILE $HOSTFILE $RFC6761FILE $DHCPBOGUSHOSTNAMEFILE /etc/passwd /etc/group /etc/TZ /dev/null /dev/urandom $dnsmasqconffile $dnsmasqconfdir $resolvfile $user_dhcpscript /etc/hosts /etc/ethers /sbin/hotplug-call $EXTRA_MOUNT $DHCPSCRIPT
+	procd_add_jail_mount $CONFIGFILE $TRUSTANCHORSFILE $HOSTFILE $RFC6761FILE $DHCPBOGUSHOSTNAMEFILE /etc/passwd /etc/group /etc/TZ /dev/null /dev/urandom $dnsmasqconffile $dnsmasqconfdir $resolvdir $user_dhcpscript /etc/hosts /etc/ethers /sbin/hotplug-call $EXTRA_MOUNT $DHCPSCRIPT
 	procd_add_jail_mount_rw /var/run/dnsmasq/ $leasefile
 
 	procd_close_instance
@@ -1084,9 +1085,9 @@ dnsmasq_stop()
 	config_get_bool noresolv "$cfg" noresolv 0
 	config_get resolvfile "$cfg" "resolvfile"
 
-	[ "$noresolv" = 0 -a "$resolvfile" = "/tmp/resolv.conf.auto" ] && localuse=1
+	[ "$noresolv" = 0 -a "$resolvfile" = "/tmp/resolv.conf.d/resolv.conf.auto" ] && localuse=1
 	config_get_bool localuse "$cfg" localuse "$localuse"
-	[ "$localuse" -gt 0 ] && ln -sf "/tmp/resolv.conf.auto" /tmp/resolv.conf
+	[ "$localuse" -gt 0 ] && ln -sf "/tmp/resolv.conf.d/resolv.conf.auto" /tmp/resolv.conf
 
 	rm -f ${BASEDHCPSTAMPFILE}.${cfg}.*.dhcp
 }
