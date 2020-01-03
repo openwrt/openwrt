@@ -7,6 +7,10 @@ USE_PROCD=1
 LOGFILE="/var/etc/nps.log"
 tmpconf="/tmp/etc/nps.conf"
 
+service_triggers() {
+    procd_add_reload_trigger "nps"
+}
+
 nps_header() {
 	local enabled server_addr server_port protocol vkey compress crypt log_level
 

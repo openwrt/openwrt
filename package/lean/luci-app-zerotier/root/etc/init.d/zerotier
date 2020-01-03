@@ -12,6 +12,10 @@ section_enabled() {
 	[ $enabled -gt 0 ]
 }
 
+service_triggers() {
+    procd_add_reload_trigger "zerotier"
+}
+
 start_instance() {
 	local cfg="$1"
 	local port secret config_path

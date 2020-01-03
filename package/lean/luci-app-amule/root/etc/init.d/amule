@@ -8,6 +8,10 @@ USE_PROCD=1
 LIST_SEP="
 "
 
+service_triggers() {
+    procd_add_reload_trigger "amule"
+}
+
 unregex() {
    echo "$1" | sed -e 's/[]\/()$*.^|[]/\\&/g'
 }
