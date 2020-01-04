@@ -152,7 +152,7 @@ Minor modifications required on the backport
  	return __put_v4l2_format32(&p64->format, &p32->format);
 --- a/drivers/media/v4l2-core/v4l2-ioctl.c
 +++ b/drivers/media/v4l2-core/v4l2-ioctl.c
-@@ -1879,7 +1879,7 @@ static int v4l_reqbufs(const struct v4l2
+@@ -1882,7 +1882,7 @@ static int v4l_reqbufs(const struct v4l2
  	if (ret)
  		return ret;
  
@@ -161,7 +161,7 @@ Minor modifications required on the backport
  
  	return ops->vidioc_reqbufs(file, fh, p);
  }
-@@ -1920,7 +1920,7 @@ static int v4l_create_bufs(const struct
+@@ -1923,7 +1923,7 @@ static int v4l_create_bufs(const struct
  	if (ret)
  		return ret;
  
