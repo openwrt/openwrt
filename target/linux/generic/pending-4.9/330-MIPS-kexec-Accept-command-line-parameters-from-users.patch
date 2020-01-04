@@ -29,7 +29,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  int (*_machine_kexec_prepare)(struct kimage *) = NULL;
  void (*_machine_kexec_shutdown)(void) = NULL;
-@@ -28,9 +25,115 @@ atomic_t kexec_ready_to_reboot = ATOMIC_
+@@ -28,9 +25,117 @@ atomic_t kexec_ready_to_reboot = ATOMIC_
  void (*_crash_smp_send_stop)(void) = NULL;
  #endif
  
@@ -81,7 +81,9 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
 +		pr_warn("kexec command line truncated to %zd bytes\n", size);
 +
 +	/* Copy to kernel space */
-+	copy_from_user(kexec_argv_buf, buf, size);
++	if (copy_from_user(kexec_argv_buf, buf, size))
++		pr_warn("kexec command line copy to kernel space failed\n");
++
 +	kexec_argv_buf[size - 1] = 0;
 +}
 +
@@ -145,7 +147,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  	if (_machine_kexec_prepare)
  		return _machine_kexec_prepare(kimage);
  	return 0;
-@@ -67,10 +170,12 @@ machine_kexec(struct kimage *image)
+@@ -67,10 +172,12 @@ machine_kexec(struct kimage *image)
  	unsigned long *ptr;
  
  	reboot_code_buffer =
@@ -159,7 +161,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  	if (image->type == KEXEC_TYPE_DEFAULT) {
  		kexec_indirection_page =
-@@ -78,9 +183,19 @@ machine_kexec(struct kimage *image)
+@@ -78,9 +185,19 @@ machine_kexec(struct kimage *image)
  	} else {
  		kexec_indirection_page = (unsigned long)&image->head;
  	}
@@ -181,7 +183,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  	/*
  	 * The generic kexec code builds a page list with physical
-@@ -102,15 +217,16 @@ machine_kexec(struct kimage *image)
+@@ -102,15 +219,16 @@ machine_kexec(struct kimage *image)
  	/*
  	 * we do not want to be bothered.
  	 */
