@@ -141,7 +141,7 @@ define Device/tplink_archer-c7-v1
   SOC := qca9558
   DEVICE_MODEL := Archer C7
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-ath10k kmod-usb2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x75000001
   SUPPORTED_DEVICES += archer-c7
 endef

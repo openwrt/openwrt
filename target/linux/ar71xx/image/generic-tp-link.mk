@@ -95,7 +95,7 @@ TARGET_DEVICES += archer-c5-v1
 define Device/archer-c7-v1
   $(Device/tplink-8mlzma)
   DEVICE_TITLE := TP-LINK Archer C7 v1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-ath10k kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := ARCHER-C7
   DEVICE_PROFILE := ARCHERC7
   TPLINK_HWID := 0x75000001
