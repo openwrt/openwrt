@@ -304,6 +304,7 @@ define Device/brcm_bcm963269bhr
   IMAGES :=
   CFE_BOARD_ID := 963269BHR
   CFE_CHIP_ID := 63268
+  SOC := bcm63269
   DEVICE_PACKAGES := $(USB2_PACKAGES) kmod-bcm63xx-udc
 endef
 TARGET_DEVICES += brcm_bcm963269bhr
@@ -458,6 +459,7 @@ define Device/comtrend_wap-5813n
   CFE_BOARD_ID := 96369R-1231N
   CFE_CHIP_ID := 6368
   FLASH_MB := 8
+  SOC := bcm6369
   DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
 TARGET_DEVICES += comtrend_wap-5813n
@@ -643,6 +645,7 @@ define Device/huawei_echolife-hg520v
   CFE_BOARD_ID := HW6358GW_B
   CFE_CHIP_ID := 6358
   CFE_EXTRAS += --rsa-signature "EchoLife_HG520v"
+  SOC := bcm6359
   DEVICE_PACKAGES := $(B43_PACKAGES)
 endef
 TARGET_DEVICES += huawei_echolife-hg520v
@@ -823,6 +826,7 @@ define Device/netgear_evg2000
   BLOCK_SIZE := 0x20000
   NETGEAR_BOARD_ID := U12H154T90_NETGEAR
   NETGEAR_REGION := 1
+  SOC := bcm6369
   DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
 TARGET_DEVICES += netgear_evg2000
@@ -1002,6 +1006,7 @@ define Device/sfr_neufbox-6-sercomm-r0
   CFE_BOARD_ID := NB6-SER-r0
   CFE_CHIP_ID := 6362
   CFE_EXTRAS += --rsa-signature "$(VERSION_DIST)-$(firstword $(subst -,$(space),$(REVISION)))"
+  SOC := bcm6361
   DEVICE_PACKAGES := $(USB2_PACKAGES)
 endef
 TARGET_DEVICES += sfr_neufbox-6-sercomm-r0
@@ -1013,6 +1018,7 @@ define Device/sky_sr102
   CFE_BOARD_ID := BSKYB_63168
   CFE_CHIP_ID := 63268
   CFE_EXTRAS += --rsa-signature "$(VERSION_DIST)-$(firstword $(subst -,$(space),$(REVISION)))"
+  SOC := bcm63168
   DEVICE_PACKAGES := $(USB2_PACKAGES)
 endef
 TARGET_DEVICES += sky_sr102
