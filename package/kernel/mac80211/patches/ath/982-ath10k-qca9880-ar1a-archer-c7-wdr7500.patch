@@ -1,0 +1,979 @@
+--- a/drivers/net/wireless/ath/ath10k/ce.c
++++ b/drivers/net/wireless/ath/ath10k/ce.c
+@@ -8,6 +8,7 @@
+ #include "hif.h"
+ #include "ce.h"
+ #include "debug.h"
++#include "pci.h"
+ 
+ /*
+  * Support for Copy Engine hardware, which is mainly used for
+@@ -163,8 +164,33 @@ static inline void ath10k_ce_src_ring_wr
+ 						      u32 ce_ctrl_addr,
+ 						      unsigned int n)
+ {
+-	ath10k_ce_write32(ar, ce_ctrl_addr +
+-			  ar->hw_ce_regs->sr_wr_index_addr, n);
++	struct ath10k_hw_ce_dst_src_wm_regs *dstr_wm = ar->hw_ce_regs->wm_dstr;
++	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
++	void __iomem *indicator_addr;
++	unsigned long irq_flags;
++
++	indicator_addr = ar_pci->mem + ce_ctrl_addr + dstr_wm->addr;
++
++	if (ar->bus_param.chip_id == 0x043200ff) {
++		if (ce_ctrl_addr == ath10k_ce_base_address(ar, CDC_WAR_DATA_CE)) {
++			iowrite32((CDC_WAR_MAGIC_STR | n), indicator_addr);
++		} else {
++			local_irq_save(irq_flags);
++			iowrite32(1, indicator_addr);
++
++			(void)ioread32(indicator_addr);
++			(void)ioread32(indicator_addr);
++
++			ath10k_ce_write32(ar, ce_ctrl_addr +
++					  ar->hw_ce_regs->sr_wr_index_addr, n);
++
++			iowrite32(0, indicator_addr);
++			local_irq_restore(irq_flags);
++		}
++	} else {
++		ath10k_ce_write32(ar, ce_ctrl_addr +
++				  ar->hw_ce_regs->sr_wr_index_addr, n);
++	}
+ }
+ 
+ static inline u32 ath10k_ce_src_ring_write_index_get(struct ath10k *ar,
+--- a/drivers/net/wireless/ath/ath10k/core.c
++++ b/drivers/net/wireless/ath/ath10k/core.c
+@@ -57,6 +57,42 @@ MODULE_PARM_DESC(fw_diag_log, "Diag base
+ 
+ static const struct ath10k_hw_params ath10k_hw_params_list[] = {
+ 	{
++		.id = QCA988X_HW_1_0_VERSION,
++		.dev_id = QCA988X_2_0_DEVICE_ID,
++		.bus = ATH10K_BUS_PCI,
++		.name = "qca988x hw1.0",
++		.led_pin = 0,
++		.patch_load_addr = QCA988X_HW_2_0_PATCH_LOAD_ADDR,
++		.uart_pin = 7,
++		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_ALL,
++		.otp_exe_param = 0,
++		.channel_counters_freq_hz = 88000,
++		.max_probe_resp_desc_thres = 0,
++		.cal_data_len = 2116,
++		.fw = {
++			.dir = QCA988X_HW_1_0_FW_DIR,
++			.board = QCA988X_HW_1_0_BOARD_DATA_FILE,
++			.board_size = QCA988X_BOARD_DATA_SZ,
++			.board_ext_size = QCA988X_BOARD_EXT_DATA_SZ,
++		},
++		.hw_ops = &qca988x_ops,
++		.decap_align_bytes = 4,
++		.spectral_bin_discard = 0,
++		.spectral_bin_offset = 0,
++		.vht160_mcs_rx_highest = 0,
++		.vht160_mcs_tx_highest = 0,
++		.n_cipher_suites = 8,
++		.ast_skid_limit = 0x30,
++		.num_wds_entries = 0x20,
++		.target_64bit = false,
++		.rx_ring_fill_level = HTT_RX_RING_FILL_LEVEL,
++		.shadow_reg_support = false,
++		.rri_on_ddr = false,
++		.hw_filter_reset_required = false,
++		.fw_diag_ce_download = false,
++		.tx_stats_over_pktlog = false,
++	},
++	{
+ 		.id = QCA988X_HW_2_0_VERSION,
+ 		.dev_id = QCA988X_2_0_DEVICE_ID,
+ 		.bus = ATH10K_BUS_PCI,
+@@ -2369,8 +2414,13 @@ static int ath10k_core_init_firmware_fea
+ 			max_num_peers = TARGET_10X_TX_STATS_NUM_PEERS;
+ 			ar->max_num_stations = TARGET_10X_TX_STATS_NUM_STATIONS;
+ 		} else {
+-			max_num_peers = TARGET_10X_NUM_PEERS;
+-			ar->max_num_stations = TARGET_10X_NUM_STATIONS;
++			if (ar->bus_param.chip_id != 0x043200ff) {
++				max_num_peers = TARGET_10X_NUM_PEERS;
++				ar->max_num_stations = TARGET_10X_NUM_STATIONS;
++			} else {
++				max_num_peers = TARGET_10X_NUM_PEERS_V1;
++				ar->max_num_stations = TARGET_10X_NUM_STATIONS_V1;
++			}
+ 		}
+ 		ar->max_num_vdevs = TARGET_10X_NUM_VDEVS;
+ 		ar->htt.max_num_pending_tx = TARGET_10X_NUM_MSDU_DESC;
+@@ -2993,7 +3045,8 @@ static int ath10k_core_probe_fw(struct a
+ 	}
+ 
+ 	ath10k_debug_print_boot_info(ar);
+-	ath10k_core_stop(ar);
++	if (ar->bus_param.chip_id != 0x043200ff)
++		ath10k_core_stop(ar);
+ 
+ 	mutex_unlock(&ar->conf_mutex);
+ 
+--- a/drivers/net/wireless/ath/ath10k/hw.h
++++ b/drivers/net/wireless/ath/ath10k/hw.h
+@@ -31,8 +31,11 @@ enum ath10k_bus {
+ #define QCA9377_1_0_DEVICE_ID   (0x0042)
+ #define QCA9887_1_0_DEVICE_ID   (0x0050)
+ 
+-/* QCA988X 1.0 definitions (unsupported) */
++/* QCA988X 1.0 definitions */
++#define QCA988X_HW_1_0_VERSION		0x4000002c
+ #define QCA988X_HW_1_0_CHIP_ID_REV	0x0
++#define QCA988X_HW_1_0_FW_DIR		ATH10K_FW_DIR "/QCA988X/hw1.0"
++#define QCA988X_HW_1_0_BOARD_DATA_FILE	"board.bin"
+ 
+ /* QCA988X 2.0 definitions */
+ #define QCA988X_HW_2_0_VERSION		0x4100016c
+@@ -135,8 +138,9 @@ enum qca9377_chip_id_rev {
+ 
+ #define ATH10K_FW_FILE_BASE		"firmware"
+ #define ATH10K_FW_API_MAX		6
+-#define ATH10K_FW_API_MIN		2
++#define ATH10K_FW_API_MIN		1
+ 
++#define ATH10K_FW_API1_FILE		"firmware-1.bin"
+ #define ATH10K_FW_API2_FILE		"firmware-2.bin"
+ #define ATH10K_FW_API3_FILE		"firmware-3.bin"
+ 
+@@ -715,11 +719,15 @@ ath10k_is_rssi_enable(struct ath10k_hw_p
+ #define TARGET_10X_NUM_VDEVS			16
+ #define TARGET_10X_NUM_PEER_AST			2
+ #define TARGET_10X_NUM_WDS_ENTRIES		32
+-#define TARGET_10X_DMA_BURST_SIZE		0
++#define TARGET_10X_DMA_BURST_SIZE		1
+ #define TARGET_10X_MAC_AGGR_DELIM		0
++#define TARGET_10X_AST_SKID_LIMIT_V1		48
+ #define TARGET_10X_AST_SKID_LIMIT		128
++#define TARGET_10X_NUM_STATIONS_V1		56
+ #define TARGET_10X_NUM_STATIONS			128
+ #define TARGET_10X_TX_STATS_NUM_STATIONS	118
++#define TARGET_10X_NUM_PEERS_V1			((TARGET_10X_NUM_STATIONS_V1) + \
++						 (TARGET_10X_NUM_VDEVS))
+ #define TARGET_10X_NUM_PEERS			((TARGET_10X_NUM_STATIONS) + \
+ 						 (TARGET_10X_NUM_VDEVS))
+ #define TARGET_10X_TX_STATS_NUM_PEERS		((TARGET_10X_TX_STATS_NUM_STATIONS) + \
+@@ -727,9 +735,14 @@ ath10k_is_rssi_enable(struct ath10k_hw_p
+ #define TARGET_10X_NUM_OFFLOAD_PEERS		0
+ #define TARGET_10X_NUM_OFFLOAD_REORDER_BUFS	0
+ #define TARGET_10X_NUM_PEER_KEYS		2
++#define TARGET_10X_NUM_TIDS_MAX_V1		144
+ #define TARGET_10X_NUM_TIDS_MAX			256
++#define TARGET_10X_NUM_TIDS_V1			min((TARGET_10X_NUM_TIDS_MAX_V1), \
++						    (TARGET_10X_NUM_PEERS_V1) * 2)
+ #define TARGET_10X_NUM_TIDS			min((TARGET_10X_NUM_TIDS_MAX), \
+ 						    (TARGET_10X_NUM_PEERS) * 2)
++#define TARGET_10X_TX_STATS_NUM_TIDS_V1		min((TARGET_10X_NUM_TIDS_MAX_V1), \
++						    (TARGET_10X_TX_STATS_NUM_PEERS_V1) * 2)
+ #define TARGET_10X_TX_STATS_NUM_TIDS		min((TARGET_10X_NUM_TIDS_MAX), \
+ 						    (TARGET_10X_TX_STATS_NUM_PEERS) * 2)
+ #define TARGET_10X_TX_CHAIN_MASK		(BIT(0) | BIT(1) | BIT(2))
+@@ -745,7 +758,7 @@ ath10k_is_rssi_enable(struct ath10k_hw_p
+ #define TARGET_10X_NUM_MCAST_TABLE_ELEMS	0
+ #define TARGET_10X_MCAST2UCAST_MODE		ATH10K_MCAST2UCAST_DISABLED
+ #define TARGET_10X_TX_DBG_LOG_SIZE		1024
+-#define TARGET_10X_RX_SKIP_DEFRAG_TIMEOUT_DUP_DETECTION_CHECK 1
++#define TARGET_10X_RX_SKIP_DEFRAG_TIMEOUT_DUP_DETECTION_CHECK 0
+ #define TARGET_10X_VOW_CONFIG			0
+ #define TARGET_10X_NUM_MSDU_DESC		(1024 + 400)
+ #define TARGET_10X_MAX_FRAG_ENTRIES		0
+@@ -856,7 +869,7 @@ ath10k_is_rssi_enable(struct ath10k_hw_p
+ 
+ /* as of IP3.7.1 */
+ #define RTC_STATE_V_ON				ar->hw_values->rtc_state_val_on
+-
++#define RTC_STATE_COLD_RESET_MASK		0x00000400
+ #define RTC_STATE_V_LSB				0
+ #define RTC_STATE_V_MASK			0x00000007
+ #define RTC_STATE_ADDRESS			0x0000
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -4513,7 +4513,8 @@ void ath10k_halt(struct ath10k *ar)
+ 	ath10k_scan_finish(ar);
+ 	ath10k_peer_cleanup_all(ar);
+ 	ath10k_stop_radar_confirmation(ar);
+-	ath10k_core_stop(ar);
++	if (ar->bus_param.chip_id != 0x043200ff)
++		ath10k_core_stop(ar);
+ 	ath10k_hif_power_down(ar);
+ 
+ 	spin_lock_bh(&ar->data_lock);
+@@ -4841,17 +4842,19 @@ static int ath10k_start(struct ieee80211
+ 		goto err;
+ 	}
+ 
+-	ret = ath10k_hif_power_up(ar, ATH10K_FIRMWARE_MODE_NORMAL);
+-	if (ret) {
+-		ath10k_err(ar, "Could not init hif: %d\n", ret);
+-		goto err_off;
+-	}
+-
+-	ret = ath10k_core_start(ar, ATH10K_FIRMWARE_MODE_NORMAL,
+-				&ar->normal_mode_fw);
+-	if (ret) {
+-		ath10k_err(ar, "Could not init core: %d\n", ret);
+-		goto err_power_down;
++	if (ar->bus_param.chip_id != 0x043200ff) {
++		ret = ath10k_hif_power_up(ar, ATH10K_FIRMWARE_MODE_NORMAL);
++		if (ret) {
++			ath10k_err(ar, "Could not init hif: %d\n", ret);
++			goto err_off;
++		}
++
++		ret = ath10k_core_start(ar, ATH10K_FIRMWARE_MODE_NORMAL,
++					&ar->normal_mode_fw);
++		if (ret) {
++			ath10k_err(ar, "Could not init core: %d\n", ret);
++			goto err_power_down;
++		}
+ 	}
+ 
+ 	param = ar->wmi.pdev_param->pmf_qos;
+--- a/drivers/net/wireless/ath/ath10k/pci.c
++++ b/drivers/net/wireless/ath/ath10k/pci.c
+@@ -54,7 +54,7 @@ static const struct pci_device_id ath10k
+ 	/* PCI-E QCA988X V2 (Ubiquiti branded) */
+ 	{ PCI_VDEVICE(UBIQUITI, QCA988X_2_0_DEVICE_ID_UBNT) },
+ 
+-	{ PCI_VDEVICE(ATHEROS, QCA988X_2_0_DEVICE_ID) }, /* PCI-E QCA988X V2 */
++	{ PCI_VDEVICE(ATHEROS, QCA988X_2_0_DEVICE_ID) }, /* PCI-E QCA986X, QCA988X V1/V2 */
+ 	{ PCI_VDEVICE(ATHEROS, QCA6164_2_1_DEVICE_ID) }, /* PCI-E QCA6164 V2.1 */
+ 	{ PCI_VDEVICE(ATHEROS, QCA6174_2_1_DEVICE_ID) }, /* PCI-E QCA6174 V2.1 */
+ 	{ PCI_VDEVICE(ATHEROS, QCA99X0_2_0_DEVICE_ID) }, /* PCI-E QCA99X0 V2 */
+@@ -66,10 +66,7 @@ static const struct pci_device_id ath10k
+ };
+ 
+ static const struct ath10k_pci_supp_chip ath10k_pci_supp_chips[] = {
+-	/* QCA988X pre 2.0 chips are not supported because they need some nasty
+-	 * hacks. ath10k doesn't have them and these devices crash horribly
+-	 * because of that.
+-	 */
++	{ QCA988X_2_0_DEVICE_ID, QCA988X_HW_1_0_CHIP_ID_REV },
+ 	{ QCA988X_2_0_DEVICE_ID_UBNT, QCA988X_HW_2_0_CHIP_ID_REV },
+ 	{ QCA988X_2_0_DEVICE_ID, QCA988X_HW_2_0_CHIP_ID_REV },
+ 
+@@ -98,6 +95,7 @@ static const struct ath10k_pci_supp_chip
+ };
+ 
+ static void ath10k_pci_buffer_cleanup(struct ath10k *ar);
++static int ath10k_pci_qca988x_v1_cold_reset(struct ath10k *ar);
+ static int ath10k_pci_cold_reset(struct ath10k *ar);
+ static int ath10k_pci_safe_chip_reset(struct ath10k *ar);
+ static int ath10k_pci_init_irq(struct ath10k *ar);
+@@ -629,6 +627,7 @@ static void ath10k_pci_sleep_sync(struct
+ static void ath10k_bus_pci_write32(struct ath10k *ar, u32 offset, u32 value)
+ {
+ 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
++	unsigned long irq_flags;
+ 	int ret;
+ 
+ 	if (unlikely(offset + sizeof(value) > ar_pci->mem_len)) {
+@@ -644,7 +643,12 @@ static void ath10k_bus_pci_write32(struc
+ 		return;
+ 	}
+ 
++	spin_lock_irqsave(&pciwar_lock, irq_flags);
++	ioread32(ar_pci->mem + offset + 4);
++	ioread32(ar_pci->mem + offset + 4);
++	ioread32(ar_pci->mem + offset + 4);
+ 	iowrite32(value, ar_pci->mem + offset);
++	spin_unlock_irqrestore(&pciwar_lock, irq_flags);
+ 	ath10k_pci_sleep(ar);
+ }
+ 
+@@ -2652,6 +2656,30 @@ static int ath10k_pci_safe_chip_reset(st
+ 	return ar_pci->pci_soft_reset(ar);
+ }
+ 
++static int ath10k_pci_qca988x_v1_chip_reset(struct ath10k *ar)
++{
++	int ret;
++
++	ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot qca988x chip reset\n");
++
++	ret = ath10k_pci_qca988x_v1_cold_reset(ar);
++	if (ret) {
++		ath10k_warn(ar, "failed to cold reset: %d\n", ret);
++		return ret;
++	}
++
++	ret = ath10k_pci_wait_for_target_init(ar);
++	if (ret) {
++		ath10k_warn(ar, "failed to wait for target after cold reset: %d\n",
++			    ret);
++		return ret;
++	}
++
++	ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot qca988x chip reset complete (cold)\n");
++
++	return 0;
++}
++
+ static int ath10k_pci_qca988x_chip_reset(struct ath10k *ar)
+ {
+ 	int i, ret;
+@@ -3317,6 +3345,55 @@ int ath10k_pci_wait_for_target_init(stru
+ 	return 0;
+ }
+ 
++static int ath10k_pci_qca988x_v1_cold_reset(struct ath10k *ar)
++{
++	u32 val;
++	int i;
++
++	ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot cold reset\n");
++
++	spin_lock_bh(&ar->data_lock);
++
++	ar->stats.fw_cold_reset_counter++;
++
++	spin_unlock_bh(&ar->data_lock);
++
++	/* Put Target, including PCIe, into RESET. */
++	val = ath10k_pci_reg_read32(ar, SOC_GLOBAL_RESET_ADDRESS);
++	val |= 1;
++	ath10k_pci_reg_write32(ar, SOC_GLOBAL_RESET_ADDRESS, val);
++
++	/* After writing into SOC_GLOBAL_RESET to put device into
++	 * reset and pulling out of reset pcie may not be stable
++	 * for any immediate pcie register access and cause bus error,
++	 * add delay before any pcie access request to fix this issue.
++	 */
++
++	for (i = 0; i < ATH_PCI_RESET_WAIT_MAX; i++) {
++		if (ath10k_pci_reg_read32(ar, RTC_STATE_ADDRESS) &
++					  RTC_STATE_COLD_RESET_MASK) {
++			ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot target and PCIe in reset\n");
++		}
++		break;
++	}
++
++	/* Pull Target, including PCIe, out of RESET. */
++	val &= ~1;
++	ath10k_pci_reg_write32(ar, SOC_GLOBAL_RESET_ADDRESS, val);
++
++	for (i = 0; i < ATH_PCI_RESET_WAIT_MAX; i++) {
++		if (!(ath10k_pci_reg_read32(ar, RTC_STATE_ADDRESS) &
++					  RTC_STATE_COLD_RESET_MASK)) {
++			ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot target and PCIe out of reset\n");
++		}
++		break;
++	}
++
++	ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot cold reset complete\n");
++
++	return 0;
++}
++
+ static int ath10k_pci_cold_reset(struct ath10k *ar)
+ {
+ 	u32 val;
+@@ -3619,14 +3696,21 @@ static int ath10k_pci_probe(struct pci_d
+ 		goto err_deinit_irq;
+ 	}
+ 
++	bus_params.dev_type = ATH10K_DEV_TYPE_LL;
++	bus_params.link_can_suspend = true;
++	bus_params.chip_id = ath10k_pci_soc_read32(ar, SOC_CHIP_ID_ADDRESS);
++
++	if (bus_params.chip_id == 0x043200ff) {
++		ar_pci->pci_soft_reset = NULL;
++		ar_pci->pci_hard_reset = ath10k_pci_qca988x_v1_chip_reset;
++	}
++
+ 	ret = ath10k_pci_chip_reset(ar);
+ 	if (ret) {
+ 		ath10k_err(ar, "failed to reset chip: %d\n", ret);
+ 		goto err_free_irq;
+ 	}
+ 
+-	bus_params.dev_type = ATH10K_DEV_TYPE_LL;
+-	bus_params.link_can_suspend = true;
+ 	bus_params.chip_id = ath10k_pci_soc_read32(ar, SOC_CHIP_ID_ADDRESS);
+ 	if (bus_params.chip_id == 0xffffffff) {
+ 		ath10k_err(ar, "failed to get chip id\n");
+@@ -3760,6 +3844,10 @@ MODULE_AUTHOR("Qualcomm Atheros");
+ MODULE_DESCRIPTION("Driver support for Qualcomm Atheros 802.11ac WLAN PCIe/AHB devices");
+ MODULE_LICENSE("Dual BSD/GPL");
+ 
++/* QCA988x 1.0 firmware files */
++MODULE_FIRMWARE(QCA988X_HW_1_0_FW_DIR "/" ATH10K_FW_API1_FILE);
++MODULE_FIRMWARE(QCA988X_HW_1_0_FW_DIR "/" QCA988X_HW_1_0_BOARD_DATA_FILE);
++
+ /* QCA988x 2.0 firmware files */
+ MODULE_FIRMWARE(QCA988X_HW_2_0_FW_DIR "/" ATH10K_FW_API2_FILE);
+ MODULE_FIRMWARE(QCA988X_HW_2_0_FW_DIR "/" ATH10K_FW_API3_FILE);
+--- a/drivers/net/wireless/ath/ath10k/pci.h
++++ b/drivers/net/wireless/ath/ath10k/pci.h
+@@ -14,6 +14,8 @@
+ #include "ce.h"
+ #include "ahb.h"
+ 
++DEFINE_SPINLOCK(pciwar_lock);
++
+ /*
+  * maximum number of bytes that can be
+  * handled atomically by DiagRead/DiagWrite
+--- a/drivers/net/wireless/ath/ath10k/wmi.c
++++ b/drivers/net/wireless/ath/ath10k/wmi.c
+@@ -192,6 +192,175 @@ static struct wmi_cmd_map wmi_cmd_map =
+ 	.radar_found_cmdid = WMI_CMD_UNSUPPORTED,
+ };
+ 
++/* 10.X v1 WMI cmd track */
++static struct wmi_cmd_map wmi_10x_cmd_map_v1 = {
++	.init_cmdid = WMI_10X_V1_INIT_CMDID,
++	.start_scan_cmdid = WMI_10X_V1_START_SCAN_CMDID,
++	.stop_scan_cmdid = WMI_10X_V1_STOP_SCAN_CMDID,
++	.scan_chan_list_cmdid = WMI_10X_V1_SCAN_CHAN_LIST_CMDID,
++	.scan_sch_prio_tbl_cmdid = WMI_CMD_UNSUPPORTED,
++	.scan_prob_req_oui_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_set_regdomain_cmdid = WMI_10X_V1_PDEV_SET_REGDOMAIN_CMDID,
++	.pdev_set_channel_cmdid = WMI_10X_V1_PDEV_SET_CHANNEL_CMDID,
++	.pdev_set_param_cmdid = WMI_10X_V1_PDEV_SET_PARAM_CMDID,
++	.pdev_pktlog_enable_cmdid = WMI_10X_V1_PDEV_PKTLOG_ENABLE_CMDID,
++	.pdev_pktlog_disable_cmdid = WMI_10X_V1_PDEV_PKTLOG_DISABLE_CMDID,
++	.pdev_set_wmm_params_cmdid = WMI_10X_V1_PDEV_SET_WMM_PARAMS_CMDID,
++	.pdev_set_ht_cap_ie_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_set_vht_cap_ie_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_set_dscp_tid_map_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_set_quiet_mode_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_green_ap_ps_enable_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_get_tpc_config_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_set_base_macaddr_cmdid = WMI_CMD_UNSUPPORTED,
++	.vdev_create_cmdid = WMI_10X_V1_VDEV_CREATE_CMDID,
++	.vdev_delete_cmdid = WMI_10X_V1_VDEV_DELETE_CMDID,
++	.vdev_start_request_cmdid = WMI_10X_V1_VDEV_START_REQUEST_CMDID,
++	.vdev_restart_request_cmdid = WMI_CMD_UNSUPPORTED,
++	.vdev_up_cmdid = WMI_10X_V1_VDEV_UP_CMDID,
++	.vdev_stop_cmdid = WMI_10X_V1_VDEV_STOP_CMDID,
++	.vdev_down_cmdid = WMI_10X_V1_VDEV_DOWN_CMDID,
++	.vdev_set_param_cmdid = WMI_10X_V1_VDEV_SET_PARAM_CMDID,
++	.vdev_install_key_cmdid = WMI_10X_V1_VDEV_INSTALL_KEY_CMDID,
++	.peer_create_cmdid = WMI_10X_V1_PEER_CREATE_CMDID,
++	.peer_delete_cmdid = WMI_10X_V1_PEER_DELETE_CMDID,
++	.peer_flush_tids_cmdid = WMI_10X_V1_PEER_FLUSH_TIDS_CMDID,
++	.peer_set_param_cmdid = WMI_10X_V1_PEER_SET_PARAM_CMDID,
++	.peer_assoc_cmdid = WMI_10X_V1_PEER_ASSOC_CMDID,
++	.peer_add_wds_entry_cmdid = WMI_CMD_UNSUPPORTED,
++	.peer_remove_wds_entry_cmdid = WMI_CMD_UNSUPPORTED,
++	.peer_mcast_group_cmdid = WMI_CMD_UNSUPPORTED,
++	.bcn_tx_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_send_bcn_cmdid = WMI_10X_V1_PDEV_SEND_BCN_CMDID,
++	.bcn_tmpl_cmdid = WMI_CMD_UNSUPPORTED,
++	.bcn_filter_rx_cmdid = WMI_CMD_UNSUPPORTED,
++	.prb_req_filter_rx_cmdid = WMI_CMD_UNSUPPORTED,
++	.mgmt_tx_cmdid = WMI_10X_V1_MGMT_TX_CMDID,
++	.prb_tmpl_cmdid = WMI_CMD_UNSUPPORTED,
++	.addba_clear_resp_cmdid = WMI_CMD_UNSUPPORTED,
++	.addba_send_cmdid = WMI_CMD_UNSUPPORTED,
++	.addba_status_cmdid = WMI_CMD_UNSUPPORTED,
++	.delba_send_cmdid = WMI_CMD_UNSUPPORTED,
++	.addba_set_resp_cmdid = WMI_CMD_UNSUPPORTED,
++	.send_singleamsdu_cmdid = WMI_CMD_UNSUPPORTED,
++	.sta_powersave_mode_cmdid = WMI_10X_V1_STA_POWERSAVE_MODE_CMDID,
++	.sta_powersave_param_cmdid = WMI_10X_V1_STA_POWERSAVE_PARAM_CMDID,
++	.sta_mimo_ps_mode_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_dfs_enable_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_dfs_disable_cmdid = WMI_CMD_UNSUPPORTED,
++	.roam_scan_mode = WMI_CMD_UNSUPPORTED,
++	.roam_scan_rssi_threshold = WMI_CMD_UNSUPPORTED,
++	.roam_scan_period = WMI_CMD_UNSUPPORTED,
++	.roam_scan_rssi_change_threshold =
++				WMI_CMD_UNSUPPORTED,
++	.roam_ap_profile = WMI_CMD_UNSUPPORTED,
++	.ofl_scan_add_ap_profile = WMI_CMD_UNSUPPORTED,
++	.ofl_scan_remove_ap_profile = WMI_CMD_UNSUPPORTED,
++	.ofl_scan_period = WMI_CMD_UNSUPPORTED,
++	.p2p_dev_set_device_info = WMI_CMD_UNSUPPORTED,
++	.p2p_dev_set_discoverability = WMI_CMD_UNSUPPORTED,
++	.p2p_go_set_beacon_ie = WMI_CMD_UNSUPPORTED,
++	.p2p_go_set_probe_resp_ie = WMI_CMD_UNSUPPORTED,
++	.p2p_set_vendor_ie_data_cmdid = WMI_CMD_UNSUPPORTED,
++	.ap_ps_peer_param_cmdid = WMI_CMD_UNSUPPORTED,
++	.ap_ps_peer_uapsd_coex_cmdid = WMI_CMD_UNSUPPORTED,
++	.peer_rate_retry_sched_cmdid = WMI_CMD_UNSUPPORTED,
++	.wlan_profile_trigger_cmdid = WMI_CMD_UNSUPPORTED,
++	.wlan_profile_set_hist_intvl_cmdid =
++				WMI_CMD_UNSUPPORTED,
++	.wlan_profile_get_profile_data_cmdid =
++				WMI_CMD_UNSUPPORTED,
++	.wlan_profile_enable_profile_id_cmdid =
++				WMI_CMD_UNSUPPORTED,
++	.wlan_profile_list_profile_id_cmdid =
++				WMI_CMD_UNSUPPORTED,
++	.pdev_suspend_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_resume_cmdid = WMI_CMD_UNSUPPORTED,
++	.add_bcn_filter_cmdid = WMI_CMD_UNSUPPORTED,
++	.rmv_bcn_filter_cmdid = WMI_CMD_UNSUPPORTED,
++	.wow_add_wake_pattern_cmdid = WMI_CMD_UNSUPPORTED,
++	.wow_del_wake_pattern_cmdid = WMI_CMD_UNSUPPORTED,
++	.wow_enable_disable_wake_event_cmdid =
++				WMI_CMD_UNSUPPORTED,
++	.wow_enable_cmdid = WMI_CMD_UNSUPPORTED,
++	.wow_hostwakeup_from_sleep_cmdid =
++				WMI_CMD_UNSUPPORTED,
++	.rtt_measreq_cmdid = WMI_CMD_UNSUPPORTED,
++	.rtt_tsf_cmdid = WMI_CMD_UNSUPPORTED,
++	.vdev_spectral_scan_configure_cmdid =
++				WMI_CMD_UNSUPPORTED,
++	.vdev_spectral_scan_enable_cmdid =
++				WMI_CMD_UNSUPPORTED,
++	.request_stats_cmdid = WMI_CMD_UNSUPPORTED,
++	.set_arp_ns_offload_cmdid = WMI_CMD_UNSUPPORTED,
++	.network_list_offload_config_cmdid = WMI_CMD_UNSUPPORTED,
++	.gtk_offload_cmdid = WMI_CMD_UNSUPPORTED,
++	.csa_offload_enable_cmdid = WMI_CMD_UNSUPPORTED,
++	.csa_offload_chanswitch_cmdid = WMI_CMD_UNSUPPORTED,
++	.chatter_set_mode_cmdid = WMI_CMD_UNSUPPORTED,
++	.peer_tid_addba_cmdid = WMI_CMD_UNSUPPORTED,
++	.peer_tid_delba_cmdid = WMI_CMD_UNSUPPORTED,
++	.sta_dtim_ps_method_cmdid = WMI_CMD_UNSUPPORTED,
++	.sta_uapsd_auto_trig_cmdid = WMI_CMD_UNSUPPORTED,
++	.sta_keepalive_cmd = WMI_CMD_UNSUPPORTED,
++	.echo_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_utf_cmdid = WMI_CMD_UNSUPPORTED,
++	.dbglog_cfg_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_qvit_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_ftm_intg_cmdid = WMI_CMD_UNSUPPORTED,
++	.vdev_set_keepalive_cmdid = WMI_CMD_UNSUPPORTED,
++	.vdev_get_keepalive_cmdid = WMI_CMD_UNSUPPORTED,
++	.force_fw_hang_cmdid = WMI_CMD_UNSUPPORTED,
++	.gpio_config_cmdid = WMI_CMD_UNSUPPORTED,
++	.gpio_output_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_get_temperature_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_enable_adaptive_cca_cmdid = WMI_CMD_UNSUPPORTED,
++	.scan_update_request_cmdid = WMI_CMD_UNSUPPORTED,
++	.vdev_standby_response_cmdid = WMI_CMD_UNSUPPORTED,
++	.vdev_resume_response_cmdid = WMI_CMD_UNSUPPORTED,
++	.wlan_peer_caching_add_peer_cmdid = WMI_CMD_UNSUPPORTED,
++	.wlan_peer_caching_evict_peer_cmdid = WMI_CMD_UNSUPPORTED,
++	.wlan_peer_caching_restore_peer_cmdid = WMI_CMD_UNSUPPORTED,
++	.wlan_peer_caching_print_all_peers_info_cmdid = WMI_CMD_UNSUPPORTED,
++	.peer_update_wds_entry_cmdid = WMI_CMD_UNSUPPORTED,
++	.peer_add_proxy_sta_entry_cmdid = WMI_CMD_UNSUPPORTED,
++	.rtt_keepalive_cmdid = WMI_CMD_UNSUPPORTED,
++	.oem_req_cmdid = WMI_CMD_UNSUPPORTED,
++	.nan_cmdid = WMI_CMD_UNSUPPORTED,
++	.vdev_ratemask_cmdid = WMI_CMD_UNSUPPORTED,
++	.qboost_cfg_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_smart_ant_enable_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_smart_ant_set_rx_antenna_cmdid = WMI_CMD_UNSUPPORTED,
++	.peer_smart_ant_set_tx_antenna_cmdid = WMI_CMD_UNSUPPORTED,
++	.peer_smart_ant_set_train_info_cmdid = WMI_CMD_UNSUPPORTED,
++	.peer_smart_ant_set_node_config_ops_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_set_antenna_switch_table_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_set_ctl_table_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_set_mimogain_table_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_ratepwr_table_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_ratepwr_chainmsk_table_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_fips_cmdid = WMI_CMD_UNSUPPORTED,
++	.tt_set_conf_cmdid = WMI_CMD_UNSUPPORTED,
++	.fwtest_cmdid = WMI_CMD_UNSUPPORTED,
++	.vdev_atf_request_cmdid = WMI_CMD_UNSUPPORTED,
++	.peer_atf_request_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_get_ani_cck_config_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_get_ani_ofdm_config_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_reserve_ast_entry_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_get_nfcal_power_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_get_tpc_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_get_ast_info_cmdid = WMI_CMD_UNSUPPORTED,
++	.vdev_set_dscp_tid_map_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_get_info_cmdid = WMI_CMD_UNSUPPORTED,
++	.vdev_get_info_cmdid = WMI_CMD_UNSUPPORTED,
++	.vdev_filter_neighbor_rx_packets_cmdid = WMI_CMD_UNSUPPORTED,
++	.mu_cal_start_cmdid = WMI_CMD_UNSUPPORTED,
++	.set_cca_params_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_bss_chan_info_request_cmdid = WMI_CMD_UNSUPPORTED,
++	.pdev_get_tpc_table_cmdid = WMI_CMD_UNSUPPORTED,
++	.radar_found_cmdid = WMI_CMD_UNSUPPORTED,
++};
++
+ /* 10.X WMI cmd track */
+ static struct wmi_cmd_map wmi_10x_cmd_map = {
+ 	.init_cmdid = WMI_10X_INIT_CMDID,
+@@ -3350,6 +3519,23 @@ void ath10k_wmi_event_update_stats(struc
+ }
+ 
+ static int
++ath10k_wmi_op_pull_vdev_start_ev_v1(struct ath10k *ar, struct sk_buff *skb,
++				 struct wmi_vdev_start_ev_arg *arg)
++{
++	struct wmi_vdev_start_response_event_v1 *ev = (void *)skb->data;
++
++	if (skb->len < sizeof(*ev))
++		return -EPROTO;
++
++	skb_pull(skb, sizeof(*ev));
++	arg->vdev_id = ev->vdev_id;
++	arg->req_id = ev->req_id;
++	arg->status = ev->status;
++
++	return 0;
++}
++
++static int
+ ath10k_wmi_op_pull_vdev_start_ev(struct ath10k *ar, struct sk_buff *skb,
+ 				 struct wmi_vdev_start_ev_arg *arg)
+ {
+@@ -5373,6 +5559,33 @@ ath10k_wmi_main_op_pull_svc_rdy_ev(struc
+ }
+ 
+ static int
++ath10k_wmi_10x_op_pull_svc_rdy_ev_v1(struct ath10k *ar, struct sk_buff *skb,
++				     struct wmi_svc_rdy_ev_arg *arg)
++{
++	struct wmi_10x_service_ready_event_v1 *ev;
++
++	if (skb->len < sizeof(*ev))
++		return -EPROTO;
++
++	ev = (void *)skb->data;
++	skb_pull(skb, sizeof(*ev));
++	arg->min_tx_power = ev->hw_min_tx_power;
++	arg->max_tx_power = ev->hw_max_tx_power;
++	arg->ht_cap = ev->ht_cap_info;
++	arg->vht_cap = ev->vht_cap_info;
++	arg->sw_ver0 = ev->sw_version;
++	arg->phy_capab = ev->phy_capability;
++	arg->num_rf_chains = ev->num_rf_chains;
++	arg->eeprom_rd = 0;
++	arg->low_5ghz_chan = ev->hal_reg_capabilities.low_5ghz_chan;
++	arg->high_5ghz_chan = ev->hal_reg_capabilities.high_5ghz_chan;
++	arg->service_map = ev->wmi_service_bitmap;
++	arg->service_map_len = sizeof(ev->wmi_service_bitmap);
++
++	return 0;
++}
++
++static int
+ ath10k_wmi_10x_op_pull_svc_rdy_ev(struct ath10k *ar, struct sk_buff *skb,
+ 				  struct wmi_svc_rdy_ev_arg *arg)
+ {
+@@ -5499,6 +5712,9 @@ static void ath10k_wmi_event_service_rea
+ 	 * and WMI_SERVICE_IRAM_TIDS, etc.
+ 	 */
+ 
++	if (ar->bus_param.chip_id == 0x043200ff)
++		goto skip_mem_alloc;
++
+ 	allocated = ath10k_wmi_is_host_mem_allocated(ar, arg.mem_reqs,
+ 						     num_mem_reqs);
+ 	if (allocated)
+@@ -5863,6 +6079,87 @@ out:
+ 	dev_kfree_skb(skb);
+ }
+ 
++static void ath10k_wmi_10_1_op_rx_v1(struct ath10k *ar, struct sk_buff *skb)
++{
++	struct wmi_cmd_hdr *cmd_hdr;
++	enum wmi_10x_event_id_v1 id;
++	bool consumed;
++
++	cmd_hdr = (struct wmi_cmd_hdr *)skb->data;
++	id = MS(__le32_to_cpu(cmd_hdr->cmd_id), WMI_CMD_HDR_CMD_ID);
++
++	if (skb_pull(skb, sizeof(struct wmi_cmd_hdr)) == NULL)
++		goto out;
++
++	trace_ath10k_wmi_event(ar, id, skb->data, skb->len);
++
++	consumed = ath10k_tm_event_wmi(ar, id, skb);
++
++	/* Ready event must be handled normally also in UTF mode so that we
++	 * know the UTF firmware has booted, others we are just bypass WMI
++	 * events to testmode.
++	 */
++	if (consumed && id != WMI_10X_V1_READY_EVENTID) {
++		ath10k_dbg(ar, ATH10K_DBG_WMI,
++			   "wmi testmode consumed 0x%x\n", id);
++		goto out;
++	}
++
++	switch (id) {
++	case WMI_10X_V1_MGMT_RX_EVENTID:
++		ath10k_wmi_event_mgmt_rx(ar, skb);
++		/* mgmt_rx() owns the skb now! */
++		return;
++	case WMI_10X_V1_SCAN_EVENTID:
++		ath10k_wmi_event_scan(ar, skb);
++		ath10k_wmi_queue_set_coverage_class_work(ar);
++		break;
++	case WMI_10X_V1_CHAN_INFO_EVENTID:
++		ath10k_wmi_event_chan_info(ar, skb);
++		break;
++	case WMI_10X_V1_ECHO_EVENTID:
++		ath10k_wmi_event_echo(ar, skb);
++		break;
++	case WMI_10X_V1_DEBUG_MESG_EVENTID:
++		ath10k_wmi_event_debug_mesg(ar, skb);
++		ath10k_wmi_queue_set_coverage_class_work(ar);
++		break;
++	case WMI_10X_V1_UPDATE_STATS_EVENTID:
++		ath10k_wmi_event_update_stats(ar, skb);
++		break;
++	case WMI_10X_V1_VDEV_START_RESP_EVENTID:
++		ath10k_wmi_event_vdev_start_resp(ar, skb);
++		ath10k_wmi_queue_set_coverage_class_work(ar);
++		break;
++	case WMI_10X_V1_VDEV_STOPPED_EVENTID:
++		ath10k_wmi_event_vdev_stopped(ar, skb);
++		ath10k_wmi_queue_set_coverage_class_work(ar);
++		break;
++	case WMI_10X_V1_PEER_STA_KICKOUT_EVENTID:
++		ath10k_wmi_event_peer_sta_kickout(ar, skb);
++		break;
++	case WMI_10X_V1_HOST_SWBA_EVENTID:
++		ath10k_wmi_event_host_swba(ar, skb);
++		break;
++	case WMI_10X_V1_TBTTOFFSET_UPDATE_EVENTID:
++		ath10k_wmi_event_tbttoffset_update(ar, skb);
++		break;
++	case WMI_10X_V1_SERVICE_READY_EVENTID:
++		ath10k_wmi_event_service_ready(ar, skb);
++		return;
++	case WMI_10X_V1_READY_EVENTID:
++		ath10k_wmi_event_ready(ar, skb);
++		ath10k_wmi_queue_set_coverage_class_work(ar);
++		break;
++	default:
++		ath10k_warn(ar, "Unknown eventid: %d\n", id);
++		break;
++	}
++
++out:
++	dev_kfree_skb(skb);
++}
++
+ static void ath10k_wmi_10_1_op_rx(struct ath10k *ar, struct sk_buff *skb)
+ {
+ 	struct wmi_cmd_hdr *cmd_hdr;
+@@ -6528,10 +6825,16 @@ static struct sk_buff *ath10k_wmi_10_1_o
+ 	u32 len, val;
+ 
+ 	config.num_vdevs = __cpu_to_le32(TARGET_10X_NUM_VDEVS);
+-	config.num_peers = __cpu_to_le32(TARGET_10X_NUM_PEERS);
++	if (ar->bus_param.chip_id != 0x043200ff) {
++		config.num_peers = __cpu_to_le32(TARGET_10X_NUM_PEERS);
++		config.num_tids = __cpu_to_le32(TARGET_10X_NUM_TIDS);
++		config.ast_skid_limit = __cpu_to_le32(TARGET_10X_AST_SKID_LIMIT);
++	} else {
++		config.num_peers = __cpu_to_le32(TARGET_10X_NUM_PEERS_V1);
++		config.num_tids = __cpu_to_le32(TARGET_10X_NUM_TIDS_V1);
++		config.ast_skid_limit = __cpu_to_le32(TARGET_10X_AST_SKID_LIMIT_V1);
++	}
+ 	config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS);
+-	config.num_tids = __cpu_to_le32(TARGET_10X_NUM_TIDS);
+-	config.ast_skid_limit = __cpu_to_le32(TARGET_10X_AST_SKID_LIMIT);
+ 	config.tx_chain_mask = __cpu_to_le32(TARGET_10X_TX_CHAIN_MASK);
+ 	config.rx_chain_mask = __cpu_to_le32(TARGET_10X_RX_CHAIN_MASK);
+ 	config.rx_timeout_pri_vo = __cpu_to_le32(TARGET_10X_RX_TIMEOUT_LO_PRI);
+@@ -9082,6 +9385,78 @@ static const struct wmi_ops wmi_ops = {
+ 	/* .gen_pdev_enable_adaptive_cca not implemented */
+ };
+ 
++static const struct wmi_ops wmi_10_1_ops_v1 = {
++	.rx = ath10k_wmi_10_1_op_rx_v1,
++	.map_svc = wmi_10x_svc_map,
++	.pull_svc_rdy = ath10k_wmi_10x_op_pull_svc_rdy_ev_v1,
++	.pull_fw_stats = ath10k_wmi_10x_op_pull_fw_stats,
++	.gen_init = ath10k_wmi_10_1_op_gen_init,
++	.gen_pdev_set_rd = ath10k_wmi_op_gen_pdev_set_rd,
++	.gen_start_scan = ath10k_wmi_10x_op_gen_start_scan,
++	.gen_peer_assoc = ath10k_wmi_10_1_op_gen_peer_assoc,
++	/* .gen_pdev_get_temperature not implemented */
++
++	/* shared with main branch */
++	.pull_scan = ath10k_wmi_op_pull_scan_ev,
++	.pull_mgmt_rx = ath10k_wmi_op_pull_mgmt_rx_ev,
++	.pull_ch_info = ath10k_wmi_op_pull_ch_info_ev,
++	.pull_vdev_start = ath10k_wmi_op_pull_vdev_start_ev_v1,
++	.pull_peer_kick = ath10k_wmi_op_pull_peer_kick_ev,
++	.pull_swba = ath10k_wmi_op_pull_swba_ev,
++	.pull_phyerr_hdr = ath10k_wmi_op_pull_phyerr_ev_hdr,
++	.pull_phyerr = ath10k_wmi_op_pull_phyerr_ev,
++	.pull_rdy = ath10k_wmi_op_pull_rdy_ev,
++	.pull_roam_ev = ath10k_wmi_op_pull_roam_ev,
++	.pull_echo_ev = ath10k_wmi_op_pull_echo_ev,
++
++	.gen_pdev_suspend = ath10k_wmi_op_gen_pdev_suspend,
++	.gen_pdev_resume = ath10k_wmi_op_gen_pdev_resume,
++	.gen_pdev_set_param = ath10k_wmi_op_gen_pdev_set_param,
++	.gen_stop_scan = ath10k_wmi_op_gen_stop_scan,
++	.gen_vdev_create = ath10k_wmi_op_gen_vdev_create,
++	.gen_vdev_delete = ath10k_wmi_op_gen_vdev_delete,
++	.gen_vdev_start = ath10k_wmi_op_gen_vdev_start,
++	.gen_vdev_stop = ath10k_wmi_op_gen_vdev_stop,
++	.gen_vdev_up = ath10k_wmi_op_gen_vdev_up,
++	.gen_vdev_down = ath10k_wmi_op_gen_vdev_down,
++	.gen_vdev_set_param = ath10k_wmi_op_gen_vdev_set_param,
++	.gen_vdev_install_key = ath10k_wmi_op_gen_vdev_install_key,
++	.gen_vdev_spectral_conf = ath10k_wmi_op_gen_vdev_spectral_conf,
++	.gen_vdev_spectral_enable = ath10k_wmi_op_gen_vdev_spectral_enable,
++	/* .gen_vdev_wmm_conf not implemented */
++	.gen_peer_create = ath10k_wmi_op_gen_peer_create,
++	.gen_peer_delete = ath10k_wmi_op_gen_peer_delete,
++	.gen_peer_flush = ath10k_wmi_op_gen_peer_flush,
++	.gen_peer_set_param = ath10k_wmi_op_gen_peer_set_param,
++	.gen_set_psmode = ath10k_wmi_op_gen_set_psmode,
++	.gen_set_sta_ps = ath10k_wmi_op_gen_set_sta_ps,
++	.gen_set_ap_ps = ath10k_wmi_op_gen_set_ap_ps,
++	.gen_scan_chan_list = ath10k_wmi_op_gen_scan_chan_list,
++	.gen_beacon_dma = ath10k_wmi_op_gen_beacon_dma,
++	.gen_pdev_set_wmm = ath10k_wmi_op_gen_pdev_set_wmm,
++	.gen_request_stats = ath10k_wmi_op_gen_request_stats,
++	.gen_force_fw_hang = ath10k_wmi_op_gen_force_fw_hang,
++	.gen_mgmt_tx = ath10k_wmi_op_gen_mgmt_tx,
++	.gen_dbglog_cfg = ath10k_wmi_op_gen_dbglog_cfg,
++	.gen_pktlog_enable = ath10k_wmi_op_gen_pktlog_enable,
++	.gen_pktlog_disable = ath10k_wmi_op_gen_pktlog_disable,
++	.gen_pdev_set_quiet_mode = ath10k_wmi_op_gen_pdev_set_quiet_mode,
++	.gen_addba_clear_resp = ath10k_wmi_op_gen_addba_clear_resp,
++	.gen_addba_send = ath10k_wmi_op_gen_addba_send,
++	.gen_addba_set_resp = ath10k_wmi_op_gen_addba_set_resp,
++	.gen_delba_send = ath10k_wmi_op_gen_delba_send,
++	.fw_stats_fill = ath10k_wmi_10x_op_fw_stats_fill,
++	.get_vdev_subtype = ath10k_wmi_op_get_vdev_subtype,
++	.gen_echo = ath10k_wmi_op_gen_echo,
++	.gen_gpio_config = ath10k_wmi_op_gen_gpio_config,
++	.gen_gpio_output = ath10k_wmi_op_gen_gpio_output,
++	/* .gen_bcn_tmpl not implemented */
++	/* .gen_prb_tmpl not implemented */
++	/* .gen_p2p_go_bcn_ie not implemented */
++	/* .gen_adaptive_qcs not implemented */
++	/* .gen_pdev_enable_adaptive_cca not implemented */
++};
++
+ static const struct wmi_ops wmi_10_1_ops = {
+ 	.rx = ath10k_wmi_10_1_op_rx,
+ 	.map_svc = wmi_10x_svc_map,
+@@ -9406,8 +9781,13 @@ int ath10k_wmi_attach(struct ath10k *ar)
+ 		ar->wmi_key_cipher = wmi_key_cipher_suites;
+ 		break;
+ 	case ATH10K_FW_WMI_OP_VERSION_10_1:
+-		ar->wmi.cmd = &wmi_10x_cmd_map;
+-		ar->wmi.ops = &wmi_10_1_ops;
++		if (ar->bus_param.chip_id != 0x043200ff) {
++			ar->wmi.cmd = &wmi_10x_cmd_map;
++			ar->wmi.ops = &wmi_10_1_ops;
++		} else {
++			ar->wmi.cmd = &wmi_10x_cmd_map_v1;
++			ar->wmi.ops = &wmi_10_1_ops_v1;
++		}
+ 		ar->wmi.vdev_param = &wmi_10x_vdev_param_map;
+ 		ar->wmi.pdev_param = &wmi_10x_pdev_param_map;
+ 		ar->wmi.peer_flags = &wmi_10x_peer_flags_map;
+--- a/drivers/net/wireless/ath/ath10k/wmi.h
++++ b/drivers/net/wireless/ath/ath10k/wmi.h
+@@ -1312,6 +1312,58 @@ enum wmi_event_id {
+ 	WMI_GPIO_INPUT_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_GPIO),
+ };
+ 
++/* Command IDs and command events for 10.X v1 firmware */
++enum wmi_10x_cmd_id_v1 {
++	WMI_10X_V1_START_CMDID = 0x9000,
++	WMI_10X_V1_END_CMDID = 0x9FFF,
++	WMI_10X_V1_INIT_CMDID,
++	WMI_10X_V1_START_SCAN_CMDID = WMI_10X_V1_START_CMDID,
++	WMI_10X_V1_STOP_SCAN_CMDID = 0x9001,
++	WMI_10X_V1_SCAN_CHAN_LIST_CMDID = 0x9002,
++	WMI_10X_V1_ECHO_CMDID = 0x9003,
++	WMI_10X_V1_PDEV_PKTLOG_ENABLE_CMDID,
++	WMI_10X_V1_PDEV_PKTLOG_DISABLE_CMDID,
++	WMI_10X_V1_PDEV_SET_REGDOMAIN_CMDID = 0x9006,
++	WMI_10X_V1_PDEV_SET_CHANNEL_CMDID = 0x9007,
++	WMI_10X_V1_PDEV_SET_PARAM_CMDID = 0x9009,
++	WMI_10X_V1_PDEV_SET_WMM_PARAMS_CMDID = 0x900c,
++	WMI_10X_V1_VDEV_CREATE_CMDID = 0x9010,
++	WMI_10X_V1_VDEV_DELETE_CMDID = 0x9011,
++	WMI_10X_V1_VDEV_START_REQUEST_CMDID = 0x9012,
++	WMI_10X_V1_VDEV_UP_CMDID = 0x9013,
++	WMI_10X_V1_VDEV_STOP_CMDID = 0x9014,
++	WMI_10X_V1_VDEV_DOWN_CMDID = 0x9015,
++	WMI_10X_V1_VDEV_SET_PARAM_CMDID = 0x9018,
++	WMI_10X_V1_VDEV_INSTALL_KEY_CMDID = 0x9019,
++	WMI_10X_V1_PEER_CREATE_CMDID = 0x901a,
++	WMI_10X_V1_PEER_DELETE_CMDID = 0x901b,
++	WMI_10X_V1_PEER_FLUSH_TIDS_CMDID = 0x901c,
++	WMI_10X_V1_PEER_SET_PARAM_CMDID = 0x901f,
++	WMI_10X_V1_PEER_ASSOC_CMDID = 0x9021,
++	WMI_10X_V1_MGMT_TX_CMDID = 0x9029,
++	WMI_10X_V1_STA_POWERSAVE_MODE_CMDID = 0x9030,
++	WMI_10X_V1_STA_POWERSAVE_PARAM_CMDID = 0x9031,
++	WMI_10X_V1_PDEV_SEND_BCN_CMDID = 0x9057,
++};
++
++enum wmi_10x_event_id_v1 {
++	WMI_10X_V1_SERVICE_READY_EVENTID = 0x8000,
++	WMI_10X_V1_READY_EVENTID,
++	WMI_10X_V1_START_EVENTID = 0x9000,
++	WMI_10X_V1_END_EVENTID = 0x9FFF,
++	WMI_10X_V1_SCAN_EVENTID = WMI_10X_V1_START_EVENTID,
++	WMI_10X_V1_ECHO_EVENTID = 0x9001,
++	WMI_10X_V1_DEBUG_MESG_EVENTID = 0x9002,
++	WMI_10X_V1_UPDATE_STATS_EVENTID = 0x9003,
++	WMI_10X_V1_VDEV_START_RESP_EVENTID = 0x9005,
++	WMI_10X_V1_VDEV_STOPPED_EVENTID = 0x9008,
++	WMI_10X_V1_PEER_STA_KICKOUT_EVENTID = 0x900a,
++	WMI_10X_V1_HOST_SWBA_EVENTID = 0x900b,
++	WMI_10X_V1_TBTTOFFSET_UPDATE_EVENTID = 0x900c,
++	WMI_10X_V1_MGMT_RX_EVENTID = 0x900d,
++	WMI_10X_V1_CHAN_INFO_EVENTID = 0x900e,
++};
++
+ /* Command IDs and command events for 10.X firmware */
+ enum wmi_10x_cmd_id {
+ 	WMI_10X_START_CMDID = 0x9000,
+@@ -2285,6 +2337,34 @@ struct wmi_service_ready_event {
+ } __packed;
+ 
+ /* This is the definition from 10.X firmware branch */
++struct wmi_10x_service_ready_event_v1 {
++	__le32 sw_version;
++	__le32 abi_version;
++
++	/* WMI_PHY_CAPABILITY */
++	__le32 phy_capability;
++
++	/* Maximum number of frag table entries that SW will populate less 1 */
++	__le32 max_frag_entry;
++	__le32 wmi_service_bitmap[16];
++	__le32 num_rf_chains;
++
++	/*
++	 * The following field is only valid for service type
++	 * WMI_SERVICE_11AC
++	 */
++	__le32 ht_cap_info; /* WMI HT Capability */
++	__le32 vht_cap_info; /* VHT capability info field of 802.11ac */
++	__le32 vht_supp_mcs; /* VHT Supported MCS Set field Rx/Tx same */
++	__le32 hw_min_tx_power;
++	__le32 hw_max_tx_power;
++
++	struct hal_reg_capabilities hal_reg_capabilities;
++
++	__le32 sys_cap_info;
++} __packed;
++
++/* This is the definition from 10.X firmware branch */
+ struct wmi_10x_service_ready_event {
+ 	__le32 sw_version;
+ 	__le32 abi_version;
+@@ -5555,6 +5635,12 @@ enum wmi_start_event_param {
+ 	WMI_VDEV_RESP_RESTART_EVENT,
+ };
+ 
++struct wmi_vdev_start_response_event_v1 {
++	__le32 vdev_id;
++	__le32 req_id;
++	__le32 status;
++} __packed;
++
+ struct wmi_vdev_start_response_event {
+ 	__le32 vdev_id;
+ 	__le32 req_id;
