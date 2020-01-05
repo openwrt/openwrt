@@ -269,7 +269,7 @@ define Device/xiaomi_mir3p
 endef
 TARGET_DEVICES += xiaomi_mir3p
 
-define Device/xiaomi_mir3g
+define Device/mir3g
   DTS := MIR3G
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -282,12 +282,12 @@ define Device/xiaomi_mir3g
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_TITLE := Xiaomi Mi Router 3G
   SUPPORTED_DEVICES += R3G
-  SUPPORTED_DEVICES += mir3g
+  SUPPORTED_DEVICES += xiaomi,mir3g
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic \
 	uboot-envtools
 endef
-TARGET_DEVICES += xiaomi_mir3g
+TARGET_DEVICES += mir3g
 
 define Device/mt7621
   DTS := MT7621
