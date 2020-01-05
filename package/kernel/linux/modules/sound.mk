@@ -255,25 +255,6 @@ endef
 $(eval $(call KernelPackage,sound-soc-imx-sgtl5000))
 
 
-define KernelPackage/sound-soc-gw_avila
-  TITLE:=Gateworks Avila SoC sound support
-  KCONFIG:= \
-	CONFIG_SND_GW_AVILA_SOC \
-	CONFIG_SND_GW_AVILA_SOC_PCM \
-	CONFIG_SND_GW_AVILA_SOC_HSS
-  FILES:= \
-	$(LINUX_DIR)/sound/soc/codecs/snd-soc-tlv320aic3x.ko \
-	$(LINUX_DIR)/sound/soc/gw-avila/snd-soc-gw-avila.ko \
-	$(LINUX_DIR)/sound/soc/gw-avila/snd-soc-gw-avila-pcm.ko \
-	$(LINUX_DIR)/sound/soc/gw-avila/snd-soc-gw-avila-hss.ko
-  AUTOLOAD:=$(call AutoLoad,65,snd-soc-tlv320aic3x snd-soc-gw-avila snd-soc-gw-avila-pcm snd-soc-gw-avila-hss)
-  DEPENDS:=@TARGET_ixp4xx +kmod-sound-soc-core
-  $(call AddDepends/sound)
-endef
-
-$(eval $(call KernelPackage,sound-soc-gw_avila))
-
-
 define KernelPackage/pcspkr
   DEPENDS:=@TARGET_x86 +kmod-input-core
   TITLE:=PC speaker support
