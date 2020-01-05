@@ -24,6 +24,10 @@
 	};
 	
 	cpus {
+		qcom,l2 {
+			qcom,l2-cpufreq = <384000000 600000000 1400000000>;
+		};
+
 		idle-states {
 			CPU_SPC: spc {
 				status = "disabled";
