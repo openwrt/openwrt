@@ -510,9 +510,17 @@ hostapd_set_bss_options() {
 			json_get_vars mobility_domain ft_psk_generate_local ft_over_ds reassociation_deadline
 			
 			set_default mobility_domain "$(echo "$ssid" | md5sum | head -c 4)"
-			set_default ft_psk_generate_local 1
 			set_default ft_over_ds 1
 			set_default reassociation_deadline 1000
+
+			case "$auth_type" in
+				psk|sae|psk-sae)
+					set_default ft_psk_generate_local 1
+				;;
+				*)
+					set_default ft_psk_generate_local 0
+				;;
+			esac
 
 			append bss_conf "mobility_domain=$mobility_domain" "$N"
 			append bss_conf "ft_psk_generate_local=$ft_psk_generate_local" "$N"
