@@ -17,10 +17,8 @@ define KernelPackage/iio-core
 	CONFIG_IIO_TRIGGERED_BUFFER
   FILES:= \
 	$(LINUX_DIR)/drivers/iio/industrialio.ko \
-	$(if $(CONFIG_IIO_TRIGGERED_BUFFER),$(LINUX_DIR)/drivers/iio/industrialio-triggered-buffer.ko@lt4.4) \
-	$(if $(CONFIG_IIO_TRIGGERED_BUFFER),$(LINUX_DIR)/drivers/iio/buffer/industrialio-triggered-buffer.ko@ge4.4) \
-	$(LINUX_DIR)/drivers/iio/kfifo_buf.ko@lt4.4 \
-	$(LINUX_DIR)/drivers/iio/buffer/kfifo_buf.ko@ge4.4
+	$(if $(CONFIG_IIO_TRIGGERED_BUFFER),$(LINUX_DIR)/drivers/iio/buffer/industrialio-triggered-buffer.ko) \
+	$(LINUX_DIR)/drivers/iio/buffer/kfifo_buf.ko
   AUTOLOAD:=$(call AutoLoad,55,industrialio kfifo_buf industrialio-triggered-buffer)
 endef
 

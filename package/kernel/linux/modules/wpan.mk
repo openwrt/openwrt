@@ -15,7 +15,7 @@ define KernelPackage/ieee802154
 	CONFIG_IEEE802154_NL802154_EXPERIMENTAL=n
   FILES:= \
 	$(LINUX_DIR)/net/ieee802154/ieee802154.ko \
-	$(LINUX_DIR)/net/ieee802154/ieee802154_socket.ko@ge4.0
+	$(LINUX_DIR)/net/ieee802154/ieee802154_socket.ko
   AUTOLOAD:=$(call AutoLoad,90,ieee802154 ieee802154_socket)
 endef
 
@@ -122,8 +122,7 @@ define KernelPackage/ieee802154_6lowpan
   DEPENDS:=+kmod-6lowpan +kmod-ieee802154
   KCONFIG:=CONFIG_IEEE802154_6LOWPAN
   FILES:= \
-	$(LINUX_DIR)/net/ieee802154/6lowpan/ieee802154_6lowpan.ko@ge4.0 \
-	$(LINUX_DIR)/net/ieee802154/ieee802154_6lowpan.ko@lt4.0
+	$(LINUX_DIR)/net/ieee802154/6lowpan/ieee802154_6lowpan.ko
   AUTOLOAD:=$(call AutoLoad,91,ieee802154_6lowpan)
 endef
 

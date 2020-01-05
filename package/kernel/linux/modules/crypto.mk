@@ -110,8 +110,8 @@ define KernelPackage/crypto-crc32
   DEPENDS:=+kmod-crypto-hash
   KCONFIG:=CONFIG_CRYPTO_CRC32
   HIDDEN:=1
-  FILES:=$(LINUX_DIR)/crypto/crc32_generic.ko@ge4.9
-  AUTOLOAD:=$(call AutoLoad,04,crc32_generic@ge4.9,1)
+  FILES:=$(LINUX_DIR)/crypto/crc32_generic.ko
+  AUTOLOAD:=$(call AutoLoad,04,crc32_generic,1)
   $(call AddDepends/crypto)
 endef
 
@@ -132,7 +132,7 @@ $(eval $(call KernelPackage,crypto-crc32c))
 
 define KernelPackage/crypto-ctr
   TITLE:=Counter Mode CryptoAPI module
-  DEPENDS:=+kmod-crypto-manager +kmod-crypto-seqiv +kmod-crypto-iv
+  DEPENDS:=+kmod-crypto-manager +kmod-crypto-seqiv
   KCONFIG:=CONFIG_CRYPTO_CTR
   FILES:=$(LINUX_DIR)/crypto/ctr.ko
   AUTOLOAD:=$(call AutoLoad,09,ctr)
@@ -156,7 +156,7 @@ $(eval $(call KernelPackage,crypto-cts))
 
 define KernelPackage/crypto-deflate
   TITLE:=Deflate compression CryptoAPI module
-  DEPENDS:=+kmod-lib-zlib-inflate +kmod-lib-zlib-deflate +!LINUX_4_9:kmod-crypto-acompress
+  DEPENDS:=+kmod-lib-zlib-inflate +kmod-lib-zlib-deflate +kmod-crypto-acompress
   KCONFIG:=CONFIG_CRYPTO_DEFLATE
   FILES:=$(LINUX_DIR)/crypto/deflate.ko
   AUTOLOAD:=$(call AutoLoad,09,deflate)
@@ -297,7 +297,7 @@ $(eval $(call KernelPackage,crypto-hmac))
 
 define KernelPackage/crypto-hw-ccp
   TITLE:=AMD Cryptographic Coprocessor
-  DEPENDS:=+kmod-crypto-authenc +kmod-crypto-hash +kmod-crypto-manager +kmod-random-core +kmod-crypto-sha1 +kmod-crypto-sha256 +!LINUX_4_9:kmod-crypto-rsa
+  DEPENDS:=+kmod-crypto-authenc +kmod-crypto-hash +kmod-crypto-manager +kmod-random-core +kmod-crypto-sha1 +kmod-crypto-sha256 +kmod-crypto-rsa
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_CCP=y \
@@ -401,21 +401,6 @@ define KernelPackage/crypto-hw-talitos
 endef
 
 $(eval $(call KernelPackage,crypto-hw-talitos))
-
-
-define KernelPackage/crypto-iv
-  TITLE:=CryptoAPI initialization vectors
-  DEPENDS:=+kmod-crypto-manager +kmod-crypto-rng +kmod-crypto-wq
-  KCONFIG:= CONFIG_CRYPTO_BLKCIPHER2
-  HIDDEN:=1
-  FILES:= \
-	$(LINUX_DIR)/crypto/eseqiv.ko@lt4.9 \
-	$(LINUX_DIR)/crypto/chainiv.ko@lt4.9
-  AUTOLOAD:=$(call AutoLoad,10,eseqiv chainiv)
-  $(call AddDepends/crypto)
-endef
-
-$(eval $(call KernelPackage,crypto-iv))
 
 
 define KernelPackage/crypto-kpp
@@ -656,11 +641,10 @@ define KernelPackage/crypto-rng
 	CONFIG_CRYPTO_JITTERENTROPY \
 	CONFIG_CRYPTO_RNG2
   FILES:= \
-	$(LINUX_DIR)/crypto/drbg.ko@ge4.2 \
-	$(LINUX_DIR)/crypto/jitterentropy_rng.ko@ge4.2 \
-	$(LINUX_DIR)/crypto/krng.ko@lt4.2 \
+	$(LINUX_DIR)/crypto/drbg.ko \
+	$(LINUX_DIR)/crypto/jitterentropy_rng.ko \
 	$(LINUX_DIR)/crypto/rng.ko
-  AUTOLOAD:=$(call AutoLoad,09,drbg@ge4.2 jitterentropy_rng@ge4.2 krng@lt4.2 rng)
+  AUTOLOAD:=$(call AutoLoad,09,drbg jitterentropy_rng rng)
   $(call AddDepends/crypto)
 endef
 

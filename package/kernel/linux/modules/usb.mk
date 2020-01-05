@@ -75,8 +75,7 @@ define KernelPackage/usb-phy-qcom-dwc3
   DEPENDS:=@(TARGET_ipq40xx||TARGET_ipq806x)
   KCONFIG:= CONFIG_PHY_QCOM_DWC3
   FILES:= \
-    $(LINUX_DIR)/drivers/phy/phy-qcom-dwc3.ko@lt4.13 \
-    $(LINUX_DIR)/drivers/phy/qualcomm/phy-qcom-dwc3.ko@ge4.13
+    $(LINUX_DIR)/drivers/phy/qualcomm/phy-qcom-dwc3.ko
   AUTOLOAD:=$(call AutoLoad,45,phy-qcom-dwc3,1)
   $(call AddDepends/usb)
 endef
@@ -442,9 +441,8 @@ define KernelPackage/usb-dwc2
 	CONFIG_USB_DWC2_TRACK_MISSED_SOFS=n \
 	CONFIG_USB_DWC2_DEBUG_PERIODIC=n
   FILES:= \
-	$(LINUX_DIR)/drivers/usb/dwc2/dwc2.ko \
-	$(LINUX_DIR)/drivers/usb/dwc2/dwc2_platform.ko@lt4.3
-  AUTOLOAD:=$(call AutoLoad,54,dwc2 dwc2_platform@lt4.3,1)
+	$(LINUX_DIR)/drivers/usb/dwc2/dwc2.ko
+  AUTOLOAD:=$(call AutoLoad,54,dwc2,1)
   $(call AddDepends/usb)
 endef
 
@@ -1604,8 +1602,7 @@ define KernelPackage/usb-chipidea
 	CONFIG_USB_CHIPIDEA_UDC=y \
 	CONFIG_USB_CHIPIDEA_DEBUG=y
   FILES:= \
-	$(LINUX_DIR)/drivers/extcon/extcon.ko@lt4.9 \
-	$(LINUX_DIR)/drivers/extcon/extcon-core.ko@ge4.9 \
+	$(LINUX_DIR)/drivers/extcon/extcon-core.ko \
 	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko \
 	$(LINUX_DIR)/drivers/usb/common/ulpi.ko@ge4.18
   AUTOLOAD:=$(call AutoLoad,39,ci_hdrc,1)
@@ -1629,8 +1626,7 @@ define KernelPackage/usb-chipidea2
 	CONFIG_USB_CHIPIDEA_UDC=y \
 	CONFIG_USB_CHIPIDEA_DEBUG=y
   FILES:= \
-	$(LINUX_DIR)/drivers/extcon/extcon.ko@lt4.9 \
-	$(LINUX_DIR)/drivers/extcon/extcon-core.ko@ge4.9 \
+	$(LINUX_DIR)/drivers/extcon/extcon-core.ko \
 	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc_usb2.ko
   AUTOLOAD:=$(call AutoLoad,39,ci_hdrc_usb2,1)
   $(call AddDepends/usb)

@@ -152,7 +152,7 @@ define KernelPackage/nf-flow
 	CONFIG_NETFILTER_INGRESS=y \
 	CONFIG_NF_FLOW_TABLE \
 	CONFIG_NF_FLOW_TABLE_HW
-  DEPENDS:=+kmod-nf-conntrack @!LINUX_4_9
+  DEPENDS:=+kmod-nf-conntrack
   FILES:= \
 	$(LINUX_DIR)/net/netfilter/nf_flow_table.ko \
 	$(LINUX_DIR)/net/netfilter/nf_flow_table_hw.ko

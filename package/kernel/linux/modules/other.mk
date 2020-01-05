@@ -30,7 +30,7 @@ $(eval $(call KernelPackage,6lowpan))
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +kmod-crypto-ecb +kmod-lib-crc16 +kmod-hid +kmod-crypto-cmac +kmod-regmap-core +!LINUX_4_9:kmod-crypto-ecdh
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +kmod-crypto-ecb +kmod-lib-crc16 +kmod-hid +kmod-crypto-cmac +kmod-regmap-core +kmod-crypto-ecdh
   KCONFIG:= \
 	CONFIG_BT \
 	CONFIG_BT_BREDR=y \
@@ -144,7 +144,7 @@ define KernelPackage/nvmem
   TITLE:=Non Volatile Memory support
   KCONFIG:=CONFIG_NVMEM
   HIDDEN:=1
-  FILES:=$(LINUX_DIR)/drivers/nvmem/nvmem_core.ko@ge4.9
+  FILES:=$(LINUX_DIR)/drivers/nvmem/nvmem_core.ko
 endef
 
 define KernelPackage/nvmem/description
@@ -219,14 +219,13 @@ $(eval $(call KernelPackage,gpio-dev))
 define KernelPackage/gpio-mcp23s08
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Microchip MCP23xxx I/O expander
-  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core +!LINUX_4_9:kmod-regmap-i2c
+  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core +kmod-regmap-i2c
   KCONFIG:= \
 	CONFIG_GPIO_MCP23S08 \
 	CONFIG_PINCTRL_MCP23S08
   FILES:= \
-	$(LINUX_DIR)/drivers/gpio/gpio-mcp23s08.ko@lt4.13 \
-	$(LINUX_DIR)/drivers/pinctrl/pinctrl-mcp23s08.ko@ge4.13
-  AUTOLOAD:=$(call AutoLoad,40,gpio-mcp23s08@lt4.13 pinctrl-mcp23s08@ge4.13)
+	$(LINUX_DIR)/drivers/pinctrl/pinctrl-mcp23s08.ko
+  AUTOLOAD:=$(call AutoLoad,40,pinctrl-mcp23s08)
 endef
 
 define KernelPackage/gpio-mcp23s08/description
@@ -349,8 +348,7 @@ define KernelPackage/mmc
 	CONFIG_SDIO_UART=n
   FILES:= \
 	$(LINUX_DIR)/drivers/mmc/core/mmc_core.ko \
-	$(LINUX_DIR)/drivers/mmc/card/mmc_block.ko@lt4.10 \
-	$(LINUX_DIR)/drivers/mmc/core/mmc_block.ko@ge4.10
+	$(LINUX_DIR)/drivers/mmc/core/mmc_block.ko
   AUTOLOAD:=$(call AutoProbe,mmc_core mmc_block,1)
 endef
 
@@ -476,7 +474,7 @@ define KernelPackage/rtc-ds1307
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1307 (and compatible) RTC support
   DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
-  DEPENDS:=+kmod-i2c-core +!LINUX_4_9:kmod-regmap-i2c +!LINUX_4_9:kmod-hwmon-core
+  DEPENDS:=+kmod-i2c-core +kmod-regmap-i2c +kmod-hwmon-core
   KCONFIG:=CONFIG_RTC_DRV_DS1307 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1307.ko
@@ -734,8 +732,8 @@ define KernelPackage/serial-8250
 	CONFIG_SERIAL_8250_RSA=n
   FILES:= \
 	$(LINUX_DIR)/drivers/tty/serial/8250/8250.ko \
-	$(LINUX_DIR)/drivers/tty/serial/8250/8250_base.ko@ge4.4 \
-	$(if $(CONFIG_PCI),$(LINUX_DIR)/drivers/tty/serial/8250/8250_pci.ko@ge4.4)
+	$(LINUX_DIR)/drivers/tty/serial/8250/8250_base.ko \
+	$(if $(CONFIG_PCI),$(LINUX_DIR)/drivers/tty/serial/8250/8250_pci.ko)
   AUTOLOAD:=$(call AutoProbe,8250 8250_base 8250_pci)
 endef
 

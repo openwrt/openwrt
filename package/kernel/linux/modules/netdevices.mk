@@ -742,7 +742,7 @@ define KernelPackage/tg3
   TITLE:=Broadcom Tigon3 Gigabit Ethernet
   KCONFIG:=CONFIG_TIGON3 \
 	CONFIG_TIGON3_HWMON=n
-  DEPENDS:=+!TARGET_brcm47xx:kmod-libphy +LINUX_4_9:kmod-hwmon-core +kmod-ptp
+  DEPENDS:=+!TARGET_brcm47xx:kmod-libphy +kmod-ptp
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/tg3.ko
   AUTOLOAD:=$(call AutoLoad,19,tg3,1)
@@ -958,7 +958,7 @@ define KernelPackage/of-mdio
   DEPENDS:=+kmod-libphy
   KCONFIG:=CONFIG_OF_MDIO
   FILES:= \
-	$(LINUX_DIR)/drivers/net/phy/fixed_phy.ko@ge4.9 \
+	$(LINUX_DIR)/drivers/net/phy/fixed_phy.ko \
 	$(LINUX_DIR)/drivers/of/of_mdio.ko
   AUTOLOAD:=$(call AutoLoad,41,of_mdio)
 endef

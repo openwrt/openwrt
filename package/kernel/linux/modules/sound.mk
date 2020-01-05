@@ -24,8 +24,7 @@ SOUNDCORE_FILES ?= \
 	$(LINUX_DIR)/sound/soundcore.ko \
 	$(LINUX_DIR)/sound/core/snd.ko \
 	$(LINUX_DIR)/sound/core/snd-hwdep.ko \
-	$(LINUX_DIR)/sound/core/seq/snd-seq-device.ko@lt4.13 \
-	$(LINUX_DIR)/sound/core/snd-seq-device.ko@ge4.13 \
+	$(LINUX_DIR)/sound/core/snd-seq-device.ko \
 	$(LINUX_DIR)/sound/core/snd-rawmidi.ko \
 	$(LINUX_DIR)/sound/core/snd-timer.ko \
 	$(LINUX_DIR)/sound/core/snd-pcm.ko \
@@ -292,17 +291,17 @@ define KernelPackage/sound-hda-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=HD Audio Sound Core Support
   KCONFIG:= \
-	CONFIG_SND_HDA_CORE@ge4.1 \
+	CONFIG_SND_HDA_CORE \
 	CONFIG_SND_HDA_HWDEP=y \
 	CONFIG_SND_HDA_RECONFIG=n \
 	CONFIG_SND_HDA_INPUT_BEEP=n \
 	CONFIG_SND_HDA_PATCH_LOADER=n \
 	CONFIG_SND_HDA_GENERIC
   FILES:= \
-	$(LINUX_DIR)/sound/hda/snd-hda-core.ko@ge4.1 \
+	$(LINUX_DIR)/sound/hda/snd-hda-core.ko \
 	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec.ko \
 	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-generic.ko
-  AUTOLOAD:=$(call AutoProbe,snd-hda-core@ge4.1 snd-hda-codec snd-hda-codec-generic)
+  AUTOLOAD:=$(call AutoProbe,snd-hda-core snd-hda-codec snd-hda-codec-generic)
   $(call AddDepends/sound,+kmod-regmap-core)
 endef
 
@@ -507,9 +506,8 @@ define KernelPackage/sound-hda-intel
 	CONFIG_SOUND_PCI \
 	CONFIG_SND_HDA_INTEL
   FILES:= \
-	$(LINUX_DIR)/sound/pci/hda/snd-hda-intel.ko \
-	$(LINUX_DIR)/sound/pci/hda/snd-hda-controller.ko@lt4.4
-  AUTOLOAD:=$(call AutoProbe,snd-hda-controller@lt4.4 snd-hda-intel)
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-intel.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-intel)
   $(call AddDepends/sound,kmod-sound-hda-core)
 endef
 

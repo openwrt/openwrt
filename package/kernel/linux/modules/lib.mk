@@ -101,17 +101,17 @@ $(eval $(call KernelPackage,lib-crc32c))
 define KernelPackage/lib-lzo
   SUBMENU:=$(LIB_MENU)
   TITLE:=LZO support
-  DEPENDS:=+!LINUX_4_9:kmod-crypto-acompress
+  DEPENDS:=+kmod-crypto-acompress
   KCONFIG:= \
-	CONFIG_CRYPTO_LZO@ge4.9 \
+	CONFIG_CRYPTO_LZO \
 	CONFIG_LZO_COMPRESS \
 	CONFIG_LZO_DECOMPRESS
   HIDDEN:=1
   FILES:= \
-	$(LINUX_DIR)/crypto/lzo.ko@ge4.9 \
+	$(LINUX_DIR)/crypto/lzo.ko \
 	$(LINUX_DIR)/lib/lzo/lzo_compress.ko \
 	$(LINUX_DIR)/lib/lzo/lzo_decompress.ko
-  AUTOLOAD:=$(call AutoProbe,lzo@ge4.9 lzo_compress lzo_decompress)
+  AUTOLOAD:=$(call AutoProbe,lzo lzo_compress lzo_decompress)
 endef
 
 define KernelPackage/lib-lzo/description
@@ -146,17 +146,17 @@ $(eval $(call KernelPackage,lib-zstd))
 define KernelPackage/lib-lz4
   SUBMENU:=$(LIB_MENU)
   TITLE:=LZ4 support
-  DEPENDS:=+!LINUX_4_9:kmod-crypto-acompress
+  DEPENDS:=+kmod-crypto-acompress
   HIDDEN:=1
   KCONFIG:= \
-	CONFIG_CRYPTO_LZ4@ge4.9 \
+	CONFIG_CRYPTO_LZ4 \
 	CONFIG_LZ4_COMPRESS \
 	CONFIG_LZ4_DECOMPRESS
   FILES:= \
-	$(LINUX_DIR)/crypto/lz4.ko@ge4.9 \
+	$(LINUX_DIR)/crypto/lz4.ko \
 	$(LINUX_DIR)/lib/lz4/lz4_compress.ko \
 	$(LINUX_DIR)/lib/lz4/lz4_decompress.ko
-  AUTOLOAD:=$(call AutoProbe,lz4@ge4.9 lz4_compress lz4_decompress)
+  AUTOLOAD:=$(call AutoProbe,lz4 lz4_compress lz4_decompress)
 endef
 
 define KernelPackage/lib-lz4/description
