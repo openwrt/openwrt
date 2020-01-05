@@ -962,7 +962,7 @@ define Device/tplink_re200-v1
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt76x0e
   IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := mktplinkfw sysupgrade -e -O
+  IMAGE/sysupgrade.bin := mktplinkfw sysupgrade -e -O | append-metadata
   IMAGE/factory.bin := mktplinkfw factory -e -O
   IMAGE_SIZE := 7936k
   KERNEL := $(KERNEL_DTB)
