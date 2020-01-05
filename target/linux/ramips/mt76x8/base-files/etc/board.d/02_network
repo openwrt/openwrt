@@ -33,6 +33,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "0:wan" "6@eth0"
 		;;
+	glinet,microuter-n300|\
 	glinet,vixmini)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"

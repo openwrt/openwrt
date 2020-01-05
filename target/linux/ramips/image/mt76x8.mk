@@ -70,6 +70,14 @@ define Device/glinet_gl-mt300n-v2
 endef
 TARGET_DEVICES += glinet_gl-mt300n-v2
 
+define Device/glinet_microuter-n300
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := microuter-N300
+  SUPPORTED_DEVICES += microuter-n300
+endef
+TARGET_DEVICES += glinet_microuter-n300
+
 define Device/glinet_vixmini
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := GL.iNet
