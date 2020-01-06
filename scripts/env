@@ -73,7 +73,7 @@ env_init() {
 }
 
 env_sync_data() {
-	[ \! -L "$BASEDIR/.config" ] && [ -f "$BASEDIR/.config" ] && mv "$BASEDIR/.config" "$ENVDIR"
+	[ ! -L "$BASEDIR/.config" ] && [ -f "$BASEDIR/.config" ] && mv "$BASEDIR/.config" "$ENVDIR"
 	git add .
 	git add -u
 }
@@ -195,7 +195,7 @@ env_new() {
 	git checkout -b "$1" "$from"
 	if [ -f "$BASEDIR/.config" ] || [ -d "$BASEDIR/files" ]; then
 		if ask_bool 1 "Do you want to start your configuration repository with the current configuration?"; then
-			if [ -d "$BASEDIR/files" ] && [ \! -L "$BASEDIR/files" ]; then
+			if [ -d "$BASEDIR/files" ] && [ ! -L "$BASEDIR/files" ]; then
 				mkdir -p "$ENVDIR/files"
 				shopt -s dotglob
 				mv "$BASEDIR/files/"* "$ENVDIR/files/" 2>/dev/null
