@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Copyright (C) 2006-2012 OpenWrt.org
 set -e -x
 if [ $# -ne 5 ] && [ $# -ne 6 ]; then
