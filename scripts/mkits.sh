@@ -43,7 +43,7 @@ do
 		k ) KERNEL=$OPTARG;;
 		o ) OUTPUT=$OPTARG;;
 		v ) VERSION=$OPTARG;;
-		* ) echo "Invalid option passed to '$0' (options:$@)"
+		* ) echo "Invalid option passed to '$0' (options:$*)"
 		usage;;
 	esac
 done
