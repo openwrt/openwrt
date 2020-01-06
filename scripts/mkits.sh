@@ -55,7 +55,7 @@ if [ -z "${ARCH}" ] || [ -z "${COMPRESS}" ] || [ -z "${LOAD_ADDR}" ] || \
 	usage
 fi
 
-ARCH_UPPER=$(echo $ARCH | tr '[:lower:]' '[:upper:]')
+ARCH_UPPER=$(echo "$ARCH" | tr '[:lower:]' '[:upper:]')
 
 # Conditionally create fdt information
 if [ -n "${DTB}" ]; then
@@ -115,4 +115,4 @@ ${FDT_NODE}
 };"
 
 # Write .its file to disk
-echo "$DATA" > ${OUTPUT}
+echo "$DATA" > "${OUTPUT}"
