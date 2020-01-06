@@ -42,7 +42,7 @@ ask_bool() {
 		local VAL
 
 		echo -n "$* ($defstr): "
-		read VAL
+		read -r VAL
 		case "$VAL" in
 			y*|Y*) val=0;;
 			n*|N*) val=1;;
