@@ -1,0 +1,13 @@
+diff --git a/net/netfilter/nf_conntrack_rtcache.c b/net/netfilter/nf_conntrack_rtcache.c
+index f6e3d46..cff765c 100644
+--- a/net/netfilter/nf_conntrack_rtcache.c
++++ b/net/netfilter/nf_conntrack_rtcache.c
+@@ -194,7 +194,7 @@ static unsigned int nf_rtcache_forward(u_int8_t pf,
+ 		return NF_ACCEPT;
+ 
+ 	if (!nf_ct_is_confirmed(ct)) {
+-		if (WARN_ON(nf_ct_rtcache_find(ct)))
++		if (nf_ct_rtcache_find(ct))
+ 			return NF_ACCEPT;
+ 		nf_ct_rtcache_ext_add(ct);
+ 		return NF_ACCEPT;
