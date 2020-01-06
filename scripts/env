@@ -147,7 +147,7 @@ env_clear() {
 	else
 		rm -rf "$BASEDIR/files" "$BASEDIR/.config"
 	fi
-	cd "$BASEDIR"
+	cd "$BASEDIR" || exit 1
 	rm -rf "$ENVDIR"
 }
 
