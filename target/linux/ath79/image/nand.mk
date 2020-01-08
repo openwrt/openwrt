@@ -82,7 +82,7 @@ define Device/glinet_gl-ar750s-common
   DEVICE_MODEL := GL-AR750S
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct kmod-usb2 \
 	kmod-usb-storage block-mount
-  KERNEL_SIZE := 4096k
+  KERNEL_SIZE := 2048k
   IMAGE_SIZE := 16000k
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
