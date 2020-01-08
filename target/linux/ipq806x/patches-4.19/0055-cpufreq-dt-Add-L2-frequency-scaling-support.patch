@@ -72,7 +72,7 @@
  	mutex_unlock(&priv->lock);
  
  	return ret;
-@@ -202,6 +257,9 @@ static int cpufreq_init(struct cpufreq_p
+@@ -200,6 +255,9 @@ static int cpufreq_init(struct cpufreq_p
  	bool fallback = false;
  	const char *name;
  	int ret;
@@ -82,7 +82,7 @@
  
  	cpu_dev = get_cpu_device(policy->cpu);
  	if (!cpu_dev) {
-@@ -309,6 +367,57 @@ static int cpufreq_init(struct cpufreq_p
+@@ -307,6 +365,57 @@ static int cpufreq_init(struct cpufreq_p
  
  	policy->suspend_freq = dev_pm_opp_get_suspend_opp_freq(cpu_dev) / 1000;
  
