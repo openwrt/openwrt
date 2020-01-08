@@ -258,16 +258,14 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		label_mac=$wan_mac
 		;;
-	xiaomi,mir3g)
+	xiaomi,mir3g|\
+	xiaomi,mir3p)
 		lan_mac=$(mtd_get_mac_binary factory 0xe006)
+		label_mac=$lan_mac
 		;;
 	xiaomi,mir3g-v2)
 		wan_mac=$(mtd_get_mac_binary factory 0xe006)
 		label_mac=$wan_mac
-		;;
-	xiaomi,mir3p)
-		lan_mac=$(mtd_get_mac_binary factory 0xe006)
-		label_mac=$lan_mac
 		;;
 	zbtlink,zbt-we1326)
 		wan_mac=$(mtd_get_mac_binary factory 0xe006)
