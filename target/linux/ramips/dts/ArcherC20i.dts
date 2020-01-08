@@ -9,6 +9,13 @@
 	compatible = "tplink,c20i", "ralink,mt7620a-soc";
 	model = "TP-Link Archer C20i";
 
+	aliases {
+		led-boot = &led_wps;
+		led-failsafe = &led_wps;
+		led-running = &led_wps;
+		led-upgrade = &led_wps;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -25,7 +32,7 @@
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
 		};
-		wps {
+		led_wps: wps {
 			label = "c20i:blue:wps";
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
@@ -36,6 +43,7 @@
 		wlan {
 			label = "c20i:blue:wlan";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 
@@ -144,6 +152,7 @@
 
 &wmac {
 	ralink,mtd-eeprom = <&radio 0>;
+	mtd-mac-address = <&rom 0xf100>;
 };
 
 &pcie {
@@ -155,5 +164,7 @@
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&radio 32768>;
 		ieee80211-freq-limit = <5000000 6000000>;
+		mtd-mac-address = <&rom 0xf100>;
+		mtd-mac-address-increment = <(-1)>;
 	};
 };

@@ -276,6 +276,7 @@ define Device/xiaomi_mir3g
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 32768k
   UBINIZE_OPTS := -E 5
+  BOARD_NAME := mir3g
   IMAGES += kernel1.bin rootfs0.bin
   IMAGE/kernel1.bin := append-kernel
   IMAGE/rootfs0.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
