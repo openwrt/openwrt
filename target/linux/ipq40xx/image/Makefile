@@ -249,6 +249,21 @@ define Device/compex_wpj428
 endef
 TARGET_DEVICES += compex_wpj428
 
+define Device/corewav_m019u0-s1
+	DEVICE_VENDOR := Corewav
+	DEVICE_MODEL := M019U0
+	DEVICE_VARIANT := S1
+	BOARD_NAME := m019u0-s1
+	SOC := qcom-ipq4019
+	KERNEL_INSTALL := 1
+	KERNEL_SIZE := 4096k
+	IMAGE_SIZE := 15552k
+	$(call Device/FitImage)
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += corewav_m019u0-s1
+
 define Device/dlink_dap-2610
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := D-Link
