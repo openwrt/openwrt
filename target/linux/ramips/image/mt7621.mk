@@ -337,6 +337,8 @@ define Device/hiwifi_hc5962
   DEVICE_MODEL := HC5962
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 wpad-basic
   SUPPORTED_DEVICES += hc5962
+  # Kernel partition too small
+  DEFAULT := n
 endef
 TARGET_DEVICES += hiwifi_hc5962
 
