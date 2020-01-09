@@ -21,6 +21,7 @@ PKG_LICENSE:=GPL-2.0
 
 PKG_INSTALL:=1
 PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_odhcpd_$(BUILD_VARIANT)_ext_cer_id
+PKG_ASLR_PIE_REGULAR:=1
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
