@@ -73,6 +73,11 @@
 					reg = <1>;
 					#trigger-source-cells = <0>;
 				};
+
+				usb3_port2: port@2 {
+					reg = <2>;
+					#trigger-source-cells = <0>;
+				};
 			};
 		};
 
@@ -137,7 +142,7 @@
 		usb {
 			label = "rt-ac58u:blue:usb";
 			gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
-			trigger-sources = <&usb3_port1>;
+			trigger-sources = <&usb3_port1>, <&usb3_port2>;
 			linux,default-trigger = "usbport";
 		};
 
