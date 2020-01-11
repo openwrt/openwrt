@@ -455,6 +455,7 @@ static int build_image(image_info_t* im)
 	if ((f = fopen(im->outputfile, "w")) == NULL)
 	{
 		ERROR("Can not create output file: '%s'\n", im->outputfile);
+		free(mem);
 		return -10;
 	}
 
@@ -462,6 +463,8 @@ static int build_image(image_info_t* im)
 	{
 		ERROR("Could not write %d bytes into file: '%s'\n",
 				mem_size, im->outputfile);
+		free(mem);
+		fclose(f);
 		return -11;
 	}
 
