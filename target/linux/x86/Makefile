@@ -31,4 +31,4 @@ $(eval $(call BuildTarget))
 $(eval $(call $(if $(CONFIG_TARGET_ROOTFS_ISO),RequireCommand,Ignore),mkisofs, \
    	Please install mkisofs. \
 ))
-© 2020 GitHub, Inc.
+
