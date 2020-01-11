@@ -1,0 +1,13 @@
+diff --git a/net/netfilter/nf_nat_core.c b/net/netfilter/nf_nat_core.c
+index 965c518..1310fbc 100644
+--- a/net/netfilter/nf_nat_core.c
++++ b/net/netfilter/nf_nat_core.c
+@@ -98,6 +98,8 @@ int nf_xfrm_me_harder(struct net *net, struct sk_buff *skb, unsigned int family)
+ 		return err;
+ 
+ 	dst = skb_dst(skb);
++	if (!dst)
++		return -EHOSTUNREACH;
+ 	if (dst->xfrm)
+ 		dst = ((struct xfrm_dst *)dst)->route;
+ 	if (!dst_hold_safe(dst))
