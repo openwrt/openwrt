@@ -257,6 +257,22 @@ define Device/engenius_ens620ext
 endef
 TARGET_DEVICES += engenius_ens620ext
 
+define Device/ezviz_cs-w3-wd1200g-eup
+	$(call Device/FitImage)
+	DEVICE_VENDOR := EZVIZ
+	DEVICE_MODEL := CS-W3-WD1200G
+	DEVICE_VARIANT := EUP
+	DEVICE_DTS_CONFIG := config@4
+	IMAGE_SIZE := 14848k
+	SOC := qcom-ipq4018
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+		append-metadata
+	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers \
+		ipq-wifi-ezviz_cs-w3-wd1200g-eup
+endef
+TARGET_DEVICES += ezviz_cs-w3-wd1200g-eup
+
 define Device/glinet_gl-b1300
 	$(call Device/FitImage)
 	DEVICE_VENDOR := GL.iNet

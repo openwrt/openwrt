@@ -26,6 +26,7 @@ endef
 ALLWIFIBOARDS:= \
 	aruba_ap-303 \
 	avm_fritzrepeater-1200 \
+	ezviz_cs-w3-wd1200g-eup \
 	linksys_ea8300 \
 	qxwlan_e2600ac
 
@@ -92,6 +93,7 @@ endef
 
 $(eval $(call generate-ipq-wifi-package,aruba_ap-303,Aruba AP-303))
 $(eval $(call generate-ipq-wifi-package,avm_fritzrepeater-1200,AVM FRITZRepeater 1200))
+$(eval $(call generate-ipq-wifi-package,ezviz_cs-w3-wd1200g-eup,EZVIZ CS-W3-WD1200G EUP))
 $(eval $(call generate-ipq-wifi-package,linksys_ea8300,Linksys EA8300))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac,Qxwlan E2600AC))
 
