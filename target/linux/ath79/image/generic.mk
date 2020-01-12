@@ -210,6 +210,17 @@ define Device/alfa-network_ap121f
 endef
 TARGET_DEVICES += alfa-network_ap121f
 
+define Device/arduino_yun
+  SOC := ar9331
+  DEVICE_VENDOR := Arduino
+  DEVICE_MODEL := Yun
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-chipidea2 kmod-usb-ledtrig-usbport \
+	kmod-usb-storage block-mount -swconfig
+  IMAGE_SIZE := 15936k
+  SUPPORTED_DEVICES += arduino-yun
+endef
+TARGET_DEVICES += arduino_yun
+
 define Device/aruba_ap-105
   SOC := ar7161
   DEVICE_VENDOR := Aruba
