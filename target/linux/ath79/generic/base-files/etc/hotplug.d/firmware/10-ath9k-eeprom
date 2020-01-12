@@ -12,6 +12,7 @@ case "$FIRMWARE" in
 	avm,fritz4020)
 		caldata_extract_reverse "urlader" 0x1541 0x440
 		;;
+	dlink,dir-505|\
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
 		caldata_extract "art" 0x1000 0x440
