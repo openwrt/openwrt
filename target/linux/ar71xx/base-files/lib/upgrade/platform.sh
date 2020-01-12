@@ -216,6 +216,7 @@ platform_check_image() {
 	archer-c60-v2|\
 	archer-c7-v4|\
 	archer-c7-v5|\
+	arduino-yun|\
 	bullet-m|\
 	c-55|\
 	carambola2|\
@@ -343,7 +344,6 @@ platform_check_image() {
 	ap152|\
 	ap91-5g|\
 	ap96|\
-	arduino-yun|\
 	bhr-4grv2|\
 	bxu2000n-2-a1|\
 	db120|\
