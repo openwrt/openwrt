@@ -194,6 +194,7 @@ define Device/gehua_ghl-r-001
   DEVICE_TITLE := GeHua GHL-R-001
   DEVICE_PACKAGES := \
 	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  DEFAULT := n
 endef
 TARGET_DEVICES += gehua_ghl-r-001
 
