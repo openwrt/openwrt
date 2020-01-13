@@ -983,13 +983,22 @@ drv_mac80211_setup() {
 	wireless_set_up
 }
 
-list_phy_interfaces() {
+_list_phy_interfaces() {
 	local phy="$1"
 	if [ -d "/sys/class/ieee80211/${phy}/device/net" ]; then
 		ls "/sys/class/ieee80211/${phy}/device/net" 2>/dev/null;
 	else
 		ls "/sys/class/ieee80211/${phy}/device" 2>/dev/null | grep net: | sed -e 's,net:,,g'
 	fi
+}
+
+list_phy_interfaces() {
+	local phy="$1"
+
+	for dev in $(_list_phy_interfaces "$phy"); do
+		readlink "/sys/class/net/${dev}/phy80211" | grep -q "/${phy}\$" || continue
+		echo "$dev"
+	done
 }
 
 drv_mac80211_teardown() {
