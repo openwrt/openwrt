@@ -36,7 +36,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  	if (features & NETIF_F_HW_VLAN_CTAG_FILTER)
  		pdata->rfe_ctl |= RFE_CTL_VLAN_FILTER_;
  	else
-@@ -2898,6 +2904,9 @@ static int lan78xx_bind(struct lan78xx_n
+@@ -2895,6 +2901,9 @@ static int lan78xx_bind(struct lan78xx_n
  	if (DEFAULT_TSO_CSUM_ENABLE)
  		dev->net->features |= NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_SG;
  
@@ -46,7 +46,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  	if (DEFAULT_VLAN_FILTER_ENABLE)
  		dev->net->features |= NETIF_F_HW_VLAN_CTAG_FILTER;
  
-@@ -2978,6 +2987,16 @@ static void lan78xx_rx_csum_offload(stru
+@@ -2975,6 +2984,16 @@ static void lan78xx_rx_csum_offload(stru
  	}
  }
  
@@ -63,7 +63,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  static void lan78xx_skb_return(struct lan78xx_net *dev, struct sk_buff *skb)
  {
  	int		status;
-@@ -3042,6 +3061,8 @@ static int lan78xx_rx(struct lan78xx_net
+@@ -3039,6 +3058,8 @@ static int lan78xx_rx(struct lan78xx_net
  			if (skb->len == size) {
  				lan78xx_rx_csum_offload(dev, skb,
  							rx_cmd_a, rx_cmd_b);
@@ -72,7 +72,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  
  				skb_trim(skb, skb->len - 4); /* remove fcs */
  				skb->truesize = size + sizeof(struct sk_buff);
-@@ -3060,6 +3081,7 @@ static int lan78xx_rx(struct lan78xx_net
+@@ -3057,6 +3078,7 @@ static int lan78xx_rx(struct lan78xx_net
  			skb_set_tail_pointer(skb2, size);
  
  			lan78xx_rx_csum_offload(dev, skb2, rx_cmd_a, rx_cmd_b);

@@ -26,7 +26,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  /* Device and char device-related information */
  static DEFINE_IDA(gpio_ida);
  static dev_t gpio_devt;
-@@ -2315,7 +2317,7 @@ static int _gpiod_direction_output_raw(s
+@@ -2323,7 +2325,7 @@ static int _gpiod_direction_output_raw(s
  	int ret;
  
  	/* GPIOs used for IRQs shall not be set as output */
@@ -35,7 +35,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  		gpiod_err(desc,
  			  "%s: tried to set a GPIO tied to an IRQ as output\n",
  			  __func__);
-@@ -2841,7 +2843,7 @@ int gpiochip_lock_as_irq(struct gpio_chi
+@@ -2849,7 +2851,7 @@ int gpiochip_lock_as_irq(struct gpio_chi
  			set_bit(FLAG_IS_OUT, &desc->flags);
  	}
  

@@ -24,7 +24,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  		pdata->rfe_ctl |= RFE_CTL_VLAN_FILTER_;
  	else
  		pdata->rfe_ctl &= ~RFE_CTL_VLAN_FILTER_;
-@@ -2898,6 +2898,9 @@ static int lan78xx_bind(struct lan78xx_n
+@@ -2895,6 +2895,9 @@ static int lan78xx_bind(struct lan78xx_n
  	if (DEFAULT_TSO_CSUM_ENABLE)
  		dev->net->features |= NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_SG;
  
