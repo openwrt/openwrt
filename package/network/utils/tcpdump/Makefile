@@ -55,7 +55,7 @@ CONFIGURE_ARGS += \
 endif
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
-TARGET_LDFLAGS += -Wl,--gc-sections
+TARGET_LDFLAGS += -Wl,--gc-sections -lpcap
 
 CONFIGURE_VARS += \
 	BUILD_CC="$(TARGET_CC)" \
