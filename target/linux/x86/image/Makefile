@@ -60,6 +60,7 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
 
   define Image/Build/grub2
 	# left here because the image builder doesnt need these
+	rm -fR $(KDIR)/root.grub $(KDIR)/grub2
 	$(INSTALL_DIR) $(KDIR)/root.grub/boot/grub $(KDIR)/grub2
 	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz
 	grub-mkimage \
@@ -93,6 +94,7 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
 endif
 
 define Image/Build/iso
+	rm -fR $(KDIR)/root.grub $(KDIR)/grub2
 	$(INSTALL_DIR) $(KDIR)/root.grub/boot/grub $(KDIR)/grub2
 	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz
 	grub-mkimage \
