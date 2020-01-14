@@ -10,6 +10,7 @@ MAINTAINER:=John Crispin <john@phrozen.org>
 SUBTARGETS:=generic
 
 KERNEL_PATCHVER:=4.19
+KERNEL_TESTING_PATCHVER:=5.4
 
 KERNELNAME:=zImage Image dtbs
 
