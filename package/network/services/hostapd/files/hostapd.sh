@@ -202,6 +202,9 @@ hostapd_common_add_bss_config() {
 	config_add_string radius_client_addr
 	config_add_string iapp_interface
 	config_add_string eap_type ca_cert client_cert identity anonymous_identity auth priv_key priv_key_pwd
+	config_add_string subject_match subject_match2
+	config_add_array altsubject_match altsubject_match2
+	config_add_array domain_match domain_match2 domain_suffix_match domain_suffix_match2
 	config_add_string ieee80211w_mgmt_cipher
 
 	config_add_int dynamic_vlan vlan_naming
@@ -864,6 +867,36 @@ wpa_supplicant_add_network() {
 					append network_data "client_cert=\"$client_cert\"" "$N$T"
 					append network_data "private_key=\"$priv_key\"" "$N$T"
 					append network_data "private_key_passwd=\"$priv_key_pwd\"" "$N$T"
+
+					json_get_vars subject_match
+					[ -n "$subject_match" ] && append network_data "subject_match=\"$subject_match\"" "$N$T"
+
+					json_get_values altsubject_match altsubject_match
+					if [ -n "$altsubject_match" ]; then
+						local list=
+						for x in $altsubject_match; do
+							append list "$x" ";"
+						done
+						append network_data "altsubject_match=\"$list\"" "$N$T"
+					fi
+
+					json_get_values domain_match domain_match
+					if [ -n "$domain_match" ]; then
+						local list=
+						for x in $domain_match; do
+							append list "$x" ";"
+						done
+						append network_data "domain_match=\"$list\"" "$N$T"
+					fi
+
+					json_get_values domain_suffix_match domain_suffix_match
+					if [ -n "$domain_suffix_match" ]; then
+						local list=
+						for x in $domain_suffix_match; do
+							append list "$x" ";"
+						done
+						append network_data "domain_suffix_match=\"$list\"" "$N$T"
+					fi
 				;;
 				fast|peap|ttls)
 					json_get_vars auth password ca_cert2 client_cert2 priv_key2 priv_key2_pwd
@@ -879,6 +912,36 @@ wpa_supplicant_add_network() {
 						append network_data "password=\"$password\"" "$N$T"
 					fi
 
+					json_get_vars subject_match
+					[ -n "$subject_match" ] && append network_data "subject_match=\"$subject_match\"" "$N$T"
+
+					json_get_values altsubject_match altsubject_match
+					if [ -n "$altsubject_match" ]; then
+						local list=
+						for x in $altsubject_match; do
+							append list "$x" ";"
+						done
+						append network_data "altsubject_match=\"$list\"" "$N$T"
+					fi
+
+					json_get_values domain_match domain_match
+					if [ -n "$domain_match" ]; then
+						local list=
+						for x in $domain_match; do
+							append list "$x" ";"
+						done
+						append network_data "domain_match=\"$list\"" "$N$T"
+					fi
+
+					json_get_values domain_suffix_match domain_suffix_match
+					if [ -n "$domain_suffix_match" ]; then
+						local list=
+						for x in $domain_suffix_match; do
+							append list "$x" ";"
+						done
+						append network_data "domain_suffix_match=\"$list\"" "$N$T"
+					fi
+
 					phase2proto="auth="
 					case "$auth" in
 						"auth"*)
@@ -888,6 +951,35 @@ wpa_supplicant_add_network() {
 							auth="$(echo $auth | cut -b 5- )"
 							[ "$eap_type" = "ttls" ] &&
 								phase2proto="autheap="
+							json_get_vars subject_match2
+							[ -n "$subject_match2" ] && append network_data "subject_match2=\"$subject_match2\"" "$N$T"
+
+							json_get_values altsubject_match2 altsubject_match2
+							if [ -n "$altsubject_match2" ]; then
+								local list=
+								for x in $altsubject_match2; do
+									append list "$x" ";"
+								done
+								append network_data "altsubject_match2=\"$list\"" "$N$T"
+							fi
+
+							json_get_values domain_match2 domain_match2
+							if [ -n "$domain_match2" ]; then
+								local list=
+								for x in $domain_match2; do
+									append list "$x" ";"
+								done
+								append network_data "domain_match2=\"$list\"" "$N$T"
+							fi
+
+							json_get_values domain_suffix_match2 domain_suffix_match2
+							if [ -n "$domain_suffix_match2" ]; then
+								local list=
+								for x in $domain_suffix_match2; do
+									append list "$x" ";"
+								done
+								append network_data "domain_suffix_match2=\"$list\"" "$N$T"
+							fi
 						;;
 					esac
 					append network_data "phase2=\"$phase2proto$auth\"" "$N$T"
