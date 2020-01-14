@@ -986,7 +986,7 @@ define Device/sitecom_wlr-7100
   DEVICE_VENDOR := Sitecom
   DEVICE_MODEL := WLR-7100
   DEVICE_VARIANT := v1 002
-  DEVICE_PACKAGES := ath10k-firmware-qca988x kmod-ath10k kmod-usb2
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct-smallbuffers kmod-usb2
   IMAGES += factory.dlf
   IMAGE/factory.dlf := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | \
