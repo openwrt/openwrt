@@ -82,6 +82,11 @@ define Host/Configure
 	$(Host/Configure/Default)
 endef
 
+define Package/grub2/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/grub-bios-setup $(1)/usr/sbin/
+endef
+
 define Package/grub2-editenv/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/grub-editenv $(1)/usr/sbin/

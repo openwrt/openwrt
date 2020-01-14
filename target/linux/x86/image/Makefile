@@ -66,11 +66,11 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
 	grub-mkimage \
 		-p /boot/grub \
 		-d $(STAGING_DIR_HOST)/lib/grub/i386-pc \
-		-o $(KDIR)/grub2/core.img \
+		-o $(KDIR)/root.grub/boot/grub/core.img \
 		-O i386-pc \
 		-c ./grub-early.cfg \
 		$(GRUB2_MODULES)
-	$(CP) $(STAGING_DIR_HOST)/lib/grub/i386-pc/*.img $(KDIR)/grub2/
+	$(CP) $(STAGING_DIR_HOST)/lib/grub/i386-pc/*.img $(KDIR)/root.grub/boot/grub/
 	echo '(hd0) $(BIN_DIR)/$(IMG_COMBINED)-$(1).img' > $(KDIR)/grub2/device.map
 	sed \
 		-e 's#@SERIAL_CONFIG@#$(strip $(GRUB_SERIAL_CONFIG))#g' \
@@ -80,6 +80,7 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
 		-e 's#@TITLE@#$(GRUB_TITLE)#g' \
 		./grub.cfg > $(KDIR)/root.grub/boot/grub/grub.cfg
 	-$(CP) $(STAGING_DIR_ROOT)/boot/. $(KDIR)/root.grub/boot/
+	grub-bios-setup -V | cut -d' ' -f3 > $(KDIR)/root.grub/boot/grub/version
 	PADDING="1" SIGNATURE="$(IMG_PART_SIGNATURE)" PATH="$(TARGET_PATH)" $(SCRIPT_DIR)/gen_image_generic.sh \
 		$(BIN_DIR)/$(IMG_COMBINED)-$(1).img \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $(KDIR)/root.grub \
@@ -87,7 +88,7 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
 		256
 	grub-bios-setup \
 		--device-map="$(KDIR)/grub2/device.map" \
-		-d "$(KDIR)/grub2" \
+		-d "$(KDIR)/root.grub/boot/grub" \
 		-r "hd0,msdos1" \
 		"$(BIN_DIR)/$(IMG_COMBINED)-$(1).img"
   endef
