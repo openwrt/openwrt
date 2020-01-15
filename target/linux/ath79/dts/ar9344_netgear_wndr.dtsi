@@ -139,7 +139,7 @@
 			reg = <0x40000 0x40000>;
 		};
 
-		art: partition@80000 {
+		caldata: partition@80000 {
 			label = "caldata";
 			reg = <0x80000 0x40000>;
 			read-only;
@@ -233,7 +233,7 @@
 	/* default for ar934x, except for 1000M */
 	pll-data = <0x06000000 0x00000101 0x00001616>;
 
-	mtd-mac-address = <&art 0x0>;
+	mtd-mac-address = <&caldata 0x0>;
 
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
@@ -260,7 +260,7 @@
 &wmac {
 	status = "okay";
 
-	mtd-mac-address = <&art 0x0>;
+	mtd-mac-address = <&caldata 0x0>;
 	qca,no-eeprom;
 };
 
@@ -270,7 +270,7 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
-		mtd-mac-address = <&art 0xc>;
+		mtd-mac-address = <&caldata 0xc>;
 		qca,no-eeprom;
 		#gpio-cells = <2>;
 		gpio-controller;

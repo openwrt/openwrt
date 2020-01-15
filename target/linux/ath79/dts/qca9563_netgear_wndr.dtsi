@@ -149,7 +149,7 @@
 				reg = <0x90000 0x160000>;
 			};
 
-			art: partition@1f0000 {
+			caldata: partition@1f0000 {
 				label = "caldata";
 				reg = <0x1f0000 0x10000>;
 				read-only;
@@ -208,7 +208,7 @@
 
 	pll-data = <0x03000101 0x00000101 0x00001919>;
 
-	mtd-mac-address = <&art 0x0>;
+	mtd-mac-address = <&caldata 0x0>;
 
 	phy-mode = "sgmii";
 	phy-handle = <&phy0>;
@@ -217,7 +217,7 @@
 &wmac {
 	status = "okay";
 
-	mtd-mac-address = <&art 0x0>;
+	mtd-mac-address = <&caldata 0x0>;
 	qca,no-eeprom;
 };
 
@@ -228,7 +228,7 @@
 		/* chip is AR9580, override bogus PCI ID 168c:abcd */
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
-		mtd-mac-address = <&art 0xc>;
+		mtd-mac-address = <&caldata 0xc>;
 		qca,no-eeprom;
 		qca,gpio-mask=<0xf6ff>;	/* unmask pin 9 for RFKILL button */
 		#gpio-cells = <2>;
