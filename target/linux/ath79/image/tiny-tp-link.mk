@@ -77,6 +77,20 @@ define Device/tplink_tl-wa850re-v1
 endef
 TARGET_DEVICES += tplink_tl-wa850re-v1
 
+define Device/tplink_tl-wa850re-v2
+  $(Device/tplink-safeloader)
+  SOC := qca9533
+  IMAGE_SIZE := 3648k
+  DEVICE_MODEL := TL-WA850RE
+  DEVICE_VARIANT := v2
+  TPLINK_BOARD_ID := TLWA850REV2
+  TPLINK_HWID := 0x08500002
+  TPLINK_HWREV := 0x0
+  DEVICE_PACKAGES := rssileds
+  SUPPORTED_DEVICES += tl-wa850re-v2
+endef
+TARGET_DEVICES += tplink_tl-wa850re-v2
+
 define Device/tplink_tl-wa901nd-v2
   $(Device/tplink-4m)
   SOC := ar9132

@@ -54,7 +54,8 @@ tplink,tl-wr841-v8)
 	ucidef_set_led_switch "lan3" "LAN3" "tp-link:green:lan3" "switch0" "0x10"
 	ucidef_set_led_switch "lan4" "LAN4" "tp-link:green:lan4" "switch0" "0x02"
 	;;
-tplink,tl-wa850re-v1)
+tplink,tl-wa850re-v1|\
+tplink,tl-wa850re-v2)
 	ucidef_set_led_netdev "lan" "LAN" "tp-link:blue:lan" "eth0"
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_led_rssi "rssilow" "RSSILOW" "tp-link:blue:signal1" "wlan0" "1" "100"
