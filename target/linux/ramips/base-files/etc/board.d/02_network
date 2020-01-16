@@ -94,7 +94,6 @@ ramips_setup_interfaces()
 	ew1200|\
 	firewrt|\
 	hc5661a|\
-	hc5962|\
 	hlk-rm04|\
 	k2p|\
 	kn|\
@@ -343,6 +342,10 @@ ramips_setup_interfaces()
 	hc5861)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "5:wan" "6@eth0"
+		;;
+	hc5962)
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
 	iodata,wn-ac1167gr|\
 	iodata,wn-ac733gr3)
