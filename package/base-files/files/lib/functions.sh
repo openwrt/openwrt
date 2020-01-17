@@ -324,7 +324,7 @@ group_add_next() {
 		echo $gid
 		return
 	fi
-	gids=$(cat ${IPKG_INSTROOT}/etc/group | cut -d: -f3)
+	gids=$(cut -d: -f3 ${IPKG_INSTROOT}/etc/group)
 	gid=65536
 	while [ -n "$(echo "$gids" | grep "^$gid$")" ] ; do
 	        gid=$((gid + 1))
@@ -352,7 +352,7 @@ user_add() {
 	local shell="${6:-/bin/false}"
 	local rc
 	[ -z "$uid" ] && {
-		uids=$(cat ${IPKG_INSTROOT}/etc/passwd | cut -d: -f3)
+		uids=$(cut -d: -f3 ${IPKG_INSTROOT}/etc/passwd)
 		uid=65536
 		while [ -n "$(echo "$uids" | grep "^$uid$")" ] ; do
 		        uid=$((uid + 1))
