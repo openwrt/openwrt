@@ -374,6 +374,18 @@ define Device/tplink_re450-v2
 endef
 TARGET_DEVICES += tplink_re450-v2
 
+define Device/tplink_tl-mr6400-v1
+  $(Device/tplink-8mlzma)
+  SOC := qca9531
+  DEVICE_MODEL := TL-MR6400
+  DEVICE_VARIANT := v1
+  TPLINK_HWID := 0x64000001
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-net kmod-usb-net-rndis kmod-usb-serial \
+	kmod-usb-serial-option adb-enablemodem
+  SUPPORTED_DEVICES += tl-mr6400
+endef
+TARGET_DEVICES += tplink_tl-mr6400-v1
+
 define Device/tplink_tl-wdr3500-v1
   $(Device/tplink-8mlzma)
   SOC := ar9344
