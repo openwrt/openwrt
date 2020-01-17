@@ -143,7 +143,7 @@ config_foreach() {
 	[ -z "$CONFIG_SECTIONS" ] && return 0
 	for section in ${CONFIG_SECTIONS}; do
 		config_get cfgtype "$section" TYPE
-		[ -n "$___type" -a "x$cfgtype" != "x$___type" ] && continue
+		[ -n "$___type" ] && [ "x$cfgtype" != "x$___type" ] && continue
 		eval "$___function \"\$section\" \"\$@\""
 	done
 }
@@ -374,4 +374,4 @@ board_name() {
 	[ -e /tmp/sysinfo/board_name ] && cat /tmp/sysinfo/board_name || echo "generic"
 }
 
-[ -z "$IPKG_INSTROOT" -a -f /lib/config/uci.sh ] && . /lib/config/uci.sh
+[ -z "$IPKG_INSTROOT" ] && [ -f /lib/config/uci.sh ] && . /lib/config/uci.sh
