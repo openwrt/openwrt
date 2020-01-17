@@ -70,7 +70,7 @@ config () {
 	local cfgtype="$1"
 	local name="$2"
 
-	export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=$(($CONFIG_NUM_SECTIONS + 1))
+	export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=$((CONFIG_NUM_SECTIONS + 1))
 	name="${name:-cfg$CONFIG_NUM_SECTIONS}"
 	append CONFIG_SECTIONS "$name"
 	export ${NO_EXPORT:+-n} CONFIG_SECTION="$name"
@@ -93,7 +93,7 @@ list() {
 
 	config_get len "$CONFIG_SECTION" "${varname}_LENGTH" 0
 	[ $len = 0 ] && append CONFIG_LIST_STATE "${CONFIG_SECTION}_${varname}"
-	len=$(($len + 1))
+	len=$((len + 1))
 	config_set "$CONFIG_SECTION" "${varname}_ITEM$len" "$value"
 	config_set "$CONFIG_SECTION" "${varname}_LENGTH" "$len"
 	append "CONFIG_${CONFIG_SECTION}_${varname}" "$value" "$LIST_SEP"
@@ -162,7 +162,7 @@ config_list_foreach() {
 	while [ $c -le "$len" ]; do
 		config_get val "${section}" "${option}_ITEM$c"
 		eval "$function \"\$val\" \"\$@\""
-		c="$(($c + 1))"
+		c="$((c + 1))"
 	done
 }
 
