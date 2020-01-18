@@ -53,7 +53,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 
 --- a/net/sched/sch_cake.c
 +++ b/net/sched/sch_cake.c
-@@ -585,26 +585,48 @@ static bool cobalt_should_drop(struct co
+@@ -584,26 +584,48 @@ static bool cobalt_should_drop(struct co
  	return drop;
  }
  
@@ -110,7 +110,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  #endif
  }
  
-@@ -625,23 +647,36 @@ static bool cake_ddst(int flow_mode)
+@@ -624,23 +646,36 @@ static bool cake_ddst(int flow_mode)
  static u32 cake_hash(struct cake_tin_data *q, const struct sk_buff *skb,
  		     int flow_mode, u16 flow_override, u16 host_override)
  {
@@ -152,7 +152,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  
  	/* flow_hash_from_keys() sorts the addresses by value, so we have
  	 * to preserve their order in a separate data structure to treat
-@@ -680,12 +715,14 @@ static u32 cake_hash(struct cake_tin_dat
+@@ -679,12 +714,14 @@ static u32 cake_hash(struct cake_tin_dat
  	/* This *must* be after the above switch, since as a
  	 * side-effect it sorts the src and dst addresses.
  	 */
