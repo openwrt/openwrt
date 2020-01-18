@@ -6,7 +6,7 @@ define Device/globalscale_espressobin
   DEVICE_ALT0_VENDOR := Marvell
   DEVICE_ALT0_MODEL := Armada 3700 Community Board
   DEVICE_ALT0_VARIANT := Non-eMMC
-  DEVICE_DTS := armada-3720-espressobin
+  SOC := armada-3720
 endef
 TARGET_DEVICES += globalscale_espressobin
 
@@ -18,7 +18,7 @@ define Device/globalscale_espressobin-emmc
   DEVICE_ALT0_VENDOR := Marvell
   DEVICE_ALT0_MODEL := Armada 3700 Community Board
   DEVICE_ALT0_VARIANT := eMMC
-  DEVICE_DTS := armada-3720-espressobin-emmc
+  SOC := armada-3720
 endef
 TARGET_DEVICES += globalscale_espressobin-emmc
 
@@ -30,7 +30,7 @@ define Device/globalscale_espressobin-v7
   DEVICE_ALT0_VENDOR := Marvell
   DEVICE_ALT0_MODEL := Armada 3700 Community Board
   DEVICE_ALT0_VARIANT := V7 Non-eMMC
-  DEVICE_DTS := armada-3720-espressobin-v7
+  SOC := armada-3720
 endef
 TARGET_DEVICES += globalscale_espressobin-v7
 
@@ -42,7 +42,7 @@ define Device/globalscale_espressobin-v7-emmc
   DEVICE_ALT0_VENDOR := Marvell
   DEVICE_ALT0_MODEL := Armada 3700 Community Board
   DEVICE_ALT0_VARIANT := V7 eMMC
-  DEVICE_DTS := armada-3720-espressobin-v7-emmc
+  SOC := armada-3720
 endef
 TARGET_DEVICES += globalscale_espressobin-v7-emmc
 

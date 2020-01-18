@@ -93,7 +93,7 @@ define Device/plathome_openblocks-ax3-4
   DEVICE_VENDOR := Plat'Home
   DEVICE_MODEL := OpenBlocks AX3
   DEVICE_VARIANT := 4 ports
-  DEVICE_DTS := armada-xp-openblocks-ax3-4
+  SOC := armada-xp
   SUPPORTED_DEVICES += openblocks-ax3-4
   BLOCKSIZE := 128k
   PAGESIZE := 1
@@ -193,7 +193,7 @@ define Device/globalscale_mirabox
   $(Device/NAND-512K)
   DEVICE_VENDOR := Globalscale
   DEVICE_MODEL := Mirabox
-  DEVICE_DTS := armada-370-mirabox
+  SOC := armada-370
   SUPPORTED_DEVICES += mirabox
 endef
 TARGET_DEVICES += globalscale_mirabox
@@ -212,7 +212,7 @@ define Device/cznic_turris-omnia
   IMAGE/$$(IMAGE_PREFIX)-sysupgrade.img.gz := boot-img | sdcard-img | gzip | append-metadata
   IMAGE/omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz := omnia-medkit-initramfs | gzip
   IMAGE_NAME = $$(2)
-  DEVICE_DTS := armada-385-turris-omnia
+  SOC := armada-385
   SUPPORTED_DEVICES += armada-385-turris-omnia
 endef
 TARGET_DEVICES += cznic_turris-omnia
