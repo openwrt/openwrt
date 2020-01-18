@@ -53,11 +53,8 @@ define KernelPackage/bluetooth
 	$(LINUX_DIR)/net/bluetooth/bnep/bnep.ko \
 	$(LINUX_DIR)/net/bluetooth/hidp/hidp.ko \
 	$(LINUX_DIR)/drivers/bluetooth/hci_uart.ko \
-	$(LINUX_DIR)/drivers/bluetooth/btusb.ko
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,4.1.0)),1)
-  FILES+= \
+	$(LINUX_DIR)/drivers/bluetooth/btusb.ko \
 	$(LINUX_DIR)/drivers/bluetooth/btintel.ko
-endif
   AUTOLOAD:=$(call AutoProbe,bluetooth rfcomm bnep hidp hci_uart btusb)
 endef
 
