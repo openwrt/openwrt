@@ -15,12 +15,6 @@ cznic,turris-omnia)
 	ucidef_set_interface_lan "lan0 lan1 lan2 lan3 lan4"
 	ucidef_set_interface_wan "eth2"
 	;;
-globalscale,espressobin|\
-globalscale,espressobin-emmc|\
-globalscale,espressobin-v7|\
-globalscale,espressobin-v7-emmc)
-	ucidef_set_interfaces_lan_wan "lan0 lan1" "wan"
-	;;
 linksys,caiman|\
 linksys,cobra|\
 linksys,mamba|\
@@ -34,25 +28,11 @@ linksys,venom)
 marvell,a385-db-ap)
 	ucidef_set_interfaces_lan_wan "eth0 eth1" "eth2"
 	;;
-marvell,armada8040-mcbin)
-	ucidef_set_interfaces_lan_wan "eth0 eth1 eth3" "eth2"
-	;;
-marvell,armada8040-db)
-	ucidef_set_interfaces_lan_wan "eth0 eth2 eth3" "eth1"
-	;;
-marvell,armada7040-db)
-	ucidef_set_interfaces_lan_wan "eth0 eth2" "eth1"
-	;;
-marvell,armada-3720-db)
-	ucidef_set_interfaces_lan_wan "eth1" "eth0"
-	;;
 marvell,axp-gp)
 	ucidef_set_interface_lan "eth0 eth1 eth2 eth3"
 	;;
-methode,udpu)
-	ucidef_set_interfaces_lan_wan "eth1" "eth0"
-	;;
-solidrun,clearfog-a1|solidrun,clearfog-pro-a1)
+solidrun,clearfog-a1|\
+solidrun,clearfog-pro-a1)
 	# eth0 is standalone ethernet
 	# eth1 is switch
 	# eth2 is SFP
