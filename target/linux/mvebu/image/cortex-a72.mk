@@ -1,5 +1,3 @@
-ifeq ($(SUBTARGET),cortexa72)
-
 define Device/marvell_macchiatobin
   $(call Device/Default-arm64)
   DEVICE_VENDOR := SolidRun
@@ -29,5 +27,3 @@ define Device/marvell_armada7040-db
   IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
 endef
 TARGET_DEVICES += marvell_armada7040-db
-
-endif

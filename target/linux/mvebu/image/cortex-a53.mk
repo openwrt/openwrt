@@ -1,5 +1,3 @@
-ifeq ($(SUBTARGET),cortexa53)
-
 define Device/globalscale_espressobin
   $(call Device/Default-arm64)
   DEVICE_VENDOR := Marvell
@@ -73,5 +71,3 @@ define Device/methode_udpu
   BOOT_SCRIPT := udpu
 endef
 TARGET_DEVICES += methode_udpu
-
-endif

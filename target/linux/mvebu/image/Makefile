@@ -116,8 +116,16 @@ define Device/NAND-512K
   PAGESIZE := 4096
 endef
 
+ifeq ($(SUBTARGET),cortexa9)
 include cortex-a9.mk
+endif
+
+ifeq ($(SUBTARGET),cortexa53)
 include cortex-a53.mk
+endif
+
+ifeq ($(SUBTARGET),cortexa72)
 include cortex-a72.mk
+endif
 
 $(eval $(call BuildImage))

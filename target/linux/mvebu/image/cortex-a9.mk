@@ -6,8 +6,6 @@
 # See /LICENSE for more information.
 #
 
-ifeq ($(SUBTARGET),cortexa9)
-
 define Device/linksys
   $(Device/NAND-128K)
   DEVICE_VENDOR := Linksys
@@ -218,5 +216,3 @@ define Device/cznic_turris-omnia
   SUPPORTED_DEVICES += armada-385-turris-omnia
 endef
 TARGET_DEVICES += cznic_turris-omnia
-
-endif
