@@ -183,6 +183,10 @@ tplink,archer-d50-v1)
 	ucidef_set_led_switch "wan_data" "WAN Data" "tp-link:white:internet" "switch0" "0x02" "" "tx rx"
 	ucidef_set_led_switch "wan_link" "WAN Link" "tp-link:white:wan" "switch0" "0x02" "" "link"
 	;;
+tplink,archer-d7-v1|\
+tplink,archer-d7b-v1)
+	ucidef_set_led_switch "lan" "LAN" "tp-link:white:lan" "switch0" "0x3c"
+	;;
 tplink,cpe210-v1|\
 tplink,cpe220-v2|\
 tplink,cpe220-v3|\

@@ -239,6 +239,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1" "1:wan"
 		;;
+	tplink,archer-d7-v1|\
+	tplink,archer-d7b-v1)
+		ucidef_add_switch "switch0" \
+			"0@eth1" "3:lan:3" "4:lan:2" "5:lan:1" "6@eth0" "2:wan:4" "1:wan:5"
+		;;
 	tplink,tl-mr6400-v1)
 		ucidef_set_interfaces_lan_wan "eth0.1 eth1" "usb0"
 		ucidef_add_switch "switch0" \
