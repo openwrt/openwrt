@@ -488,6 +488,7 @@ define Device/ubnt-erx
   KERNEL_INITRAMFS := $$(KERNEL) | ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_TITLE := Ubiquiti EdgeRouter X
+  SUPPORTED_DEVICES += ubiquiti,edgerouterx
 endef
 TARGET_DEVICES += ubnt-erx
 
@@ -496,6 +497,7 @@ define Device/ubnt-erx-sfp
   DTS := UBNT-ERX-SFP
   DEVICE_TITLE := Ubiquiti EdgeRouter X-SFP
   DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x kmod-i2c-gpio-custom
+  SUPPORTED_DEVICES += ubiquiti,edgerouterx-sfp
 endef
 TARGET_DEVICES += ubnt-erx-sfp
 
