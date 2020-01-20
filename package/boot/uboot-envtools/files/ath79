@@ -47,7 +47,8 @@ buffalo,wzr-hp-ag300h)
 glinet,gl-ar150)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x8000" "0x10000"
 	;;
-netgear,wndr3700)
+netgear,wndr3700|\
+netgear,wndr3700-v2)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x10000"
 	;;
 netgear,wndr3700-v4|\
