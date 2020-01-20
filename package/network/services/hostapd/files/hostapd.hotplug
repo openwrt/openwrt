@@ -21,7 +21,7 @@ service_data() {
 
 procd_open_service hostapd
 
-for phy in phy*; do
+for phy in *; do
 	[ -d "$phy" ] || continue
 
 	mkdir -p /var/run/wpa_supplicant-$phy /var/run/hostapd-$phy
