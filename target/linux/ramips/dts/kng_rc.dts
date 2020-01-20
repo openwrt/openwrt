@@ -83,8 +83,8 @@
 
 	rtl8367rb {
 		compatible = "realtek,rtl8367b";
-		cpu_port = <7>;
-		realtek,extif2 = <1 0 1 1 1 1 1 1 2>;
+		cpu_port = <6>;
+		realtek,extif1 = <1 0 1 1 1 1 1 1 2>;
 		mii-bus = <&mdio0>;
 	};
 };
@@ -141,28 +141,22 @@
 &ethernet {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&rgmii2_pins &mdio_pins>;
+	pinctrl-0 = <&mdio_pins>;
 	mtd-mac-address = <&factory 0x00004>;
 
-	port@4 {
+	port@5 {
 		status = "okay";
 		mediatek,fixed-link = <1000 1 1 1>;
 		phy-mode = "rgmii";
-		phy-handle = <&phy4>;
 	};
 
 	mdio0: mdio-bus {
 		status = "okay";
-
-		phy4: ethernet-phy@4 {
-			reg = <4>;
-			phy-mode = "rgmii";
-		};
 	};
 };
 
 &gsw {
-	mediatek,port4 = "gmac";
+	mediatek,port5 = "gmac";
 };
 
 &wmac {
