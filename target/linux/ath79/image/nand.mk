@@ -138,7 +138,6 @@ define Device/netgear_wndr3700-v4
   NETGEAR_KERNEL_MAGIC := 0x33373033
   NETGEAR_BOARD_ID := WNDR3700v4
   NETGEAR_HW_ID := 29763948+128+128
-  SUPPORTED_DEVICES += wndr3700v4
   $(Device/netgear_ath79_nand)
 endef
 TARGET_DEVICES += netgear_wndr3700-v4
@@ -149,7 +148,6 @@ define Device/netgear_wndr4300
   NETGEAR_KERNEL_MAGIC := 0x33373033
   NETGEAR_BOARD_ID := WNDR4300
   NETGEAR_HW_ID := 29763948+0+128+128+2x2+3x3
-  SUPPORTED_DEVICES += wndr4300
   $(Device/netgear_ath79_nand)
 endef
 TARGET_DEVICES += netgear_wndr4300
