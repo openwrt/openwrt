@@ -819,7 +819,7 @@ define Device/netgear_wndr3700
 endef
 TARGET_DEVICES += netgear_wndr3700
 
-define Device/netgear_wndr3700v2
+define Device/netgear_wndr3700-v2
   $(Device/netgear_wndr3x00)
   DEVICE_MODEL := WNDR3700
   DEVICE_VARIANT := v2
@@ -827,9 +827,9 @@ define Device/netgear_wndr3700v2
   NETGEAR_BOARD_ID := WNDR3700v2
   NETGEAR_HW_ID := 29763654+16+64
   IMAGE_SIZE := 15872k
-  SUPPORTED_DEVICES += wndr3700
+  SUPPORTED_DEVICES += wndr3700 netgear,wndr3700v2
 endef
-TARGET_DEVICES += netgear_wndr3700v2
+TARGET_DEVICES += netgear_wndr3700-v2
 
 define Device/netgear_wndr3800
   $(Device/netgear_wndr3x00)
