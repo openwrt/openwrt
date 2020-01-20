@@ -6,15 +6,16 @@
 
 #include "qca953x.dtsi"
 
-/{
+/ {
 	compatible = "comfast,cf-wr752ac", "qca,qca9531";
 	model = "COMFAST CF-WR752AC";
     
 	chosen {
-	bootargs = "console=ttyS0,115200";
+		bootargs = "console=ttyS0,115200";
 	};
 
 	leds {
+		compatible = "gpio-leds";
 
 		wlan5g {
 			label = "cf-wr752ac:green:wlan5g";
@@ -55,9 +56,9 @@
 };
 
 &spi {
-		status = "okay";
+	status = "okay";
 
-		num-cs = <1>;
+	num-cs = <1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -89,12 +90,12 @@
 
 			partition@fe0000 {
 				label = "configs";
-				reg = <0x0fe0000 0x10000>;
+				reg = <0xfe0000 0x10000>;
 			};
 
 			partition@ff0000 {
 				label = "nvram";
-				reg = <0x0ff0000 0x10000>;
+				reg = <0xff0000 0x10000>;
 			};
 		};
 	};
