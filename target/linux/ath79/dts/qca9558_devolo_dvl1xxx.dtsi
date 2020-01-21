@@ -105,7 +105,8 @@
 
 	phy4: ethernet-phy@4 {
 		reg = <4>;
-		at803x-disable-smarteee;
+		eee-broken-100tx;
+		eee-broken-1000t;
 	};
 };
 
