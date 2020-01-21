@@ -1,0 +1,41 @@
+From 1cc755d7c3989b399bf0c60535a858d22819ca27 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Sun, 12 Jan 2020 22:40:18 +0100
+Subject: blobmsg_json: fix int16 serialization
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+int16 blobmsg type is currently being serialized as uint16_t due to
+missing cast during JSON output.
+
+Following blobmsg content:
+
+ bar-min: -32768 (i16)
+ bar-max: 32767 (i16)
+
+Produces following JSON:
+
+ { "bar-min":32768,"bar-max":32767 }
+
+Whereas one would expect:
+
+ { "bar-min":-32768,"bar-max":32767 }
+
+Reviewed-by: Jo-Philipp Wich <jo@mein.io>
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ blobmsg_json.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/blobmsg_json.c
++++ b/blobmsg_json.c
+@@ -250,7 +250,7 @@ static void blobmsg_format_element(struc
+ 		sprintf(buf, "%s", *(uint8_t *)data ? "true" : "false");
+ 		break;
+ 	case BLOBMSG_TYPE_INT16:
+-		sprintf(buf, "%d", be16_to_cpu(*(uint16_t *)data));
++		sprintf(buf, "%d", (int16_t) be16_to_cpu(*(uint16_t *)data));
+ 		break;
+ 	case BLOBMSG_TYPE_INT32:
+ 		sprintf(buf, "%d", (int32_t) be32_to_cpu(*(uint32_t *)data));

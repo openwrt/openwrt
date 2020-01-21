@@ -1,0 +1,78 @@
+From 7425d421340594f50c717ff7129b6ee71280a447 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Mon, 9 Dec 2019 15:27:16 +0100
+Subject: blob: fix OOB access in blob_check_type
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Found by fuzzer:
+
+ ERROR: AddressSanitizer: SEGV on unknown address 0x602100000455
+ The signal is caused by a READ memory access.
+     #0 in blob_check_type blob.c:214:43
+     #1 in blob_parse_attr blob.c:234:9
+     #2 in blob_parse_untrusted blob.c:272:12
+     #3 in fuzz_blob_parse tests/fuzzer/test-blob-parse-fuzzer.c:34:2
+     #4 in LLVMFuzzerTestOneInput tests/fuzzer/test-blob-parse-fuzzer.c:39:2
+
+Caused by following line:
+
+	if (type == BLOB_ATTR_STRING && data[len - 1] != 0)
+
+where len was pointing outside of the data buffer.
+
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ blob.c | 23 ++++++++++++++++++-----
+ 1 file changed, 18 insertions(+), 5 deletions(-)
+
+--- a/blob.c
++++ b/blob.c
+@@ -218,20 +218,33 @@ blob_check_type(const void *ptr, unsigne
+ }
+ 
+ static int
+-blob_parse_attr(struct blob_attr *attr, struct blob_attr **data, const struct blob_attr_info *info, int max)
++blob_parse_attr(struct blob_attr *attr, size_t attr_len, struct blob_attr **data, const struct blob_attr_info *info, int max)
+ {
++	int id;
++	size_t len;
+ 	int found = 0;
+-	int id = blob_id(attr);
+-	size_t len = blob_len(attr);
++	size_t data_len;
+ 
++	if (!attr || attr_len < sizeof(struct blob_attr))
++		return 0;
++
++	id = blob_id(attr);
+ 	if (id >= max)
+ 		return 0;
+ 
++	len = blob_raw_len(attr);
++	if (len > attr_len || len < sizeof(struct blob_attr))
++		return 0;
++
++	data_len = blob_len(attr);
++	if (data_len > len)
++		return 0;
++
+ 	if (info) {
+ 		int type = info[id].type;
+ 
+ 		if (type < BLOB_ATTR_LAST) {
+-			if (!blob_check_type(blob_data(attr), len, type))
++			if (!blob_check_type(blob_data(attr), data_len, type))
+ 				return 0;
+ 		}
+ 
+@@ -285,7 +298,7 @@ blob_parse(struct blob_attr *attr, struc
+ 
+ 	memset(data, 0, sizeof(struct blob_attr *) * max);
+ 	blob_for_each_attr(pos, attr, rem) {
+-		found += blob_parse_attr(pos, data, info, max);
++		found += blob_parse_attr(pos, rem, data, info, max);
+ 	}
+ 
+ 	return found;

@@ -1,0 +1,38 @@
+From 935bb933e4a74de7326a4373340fd50655712334 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Tue, 14 Jan 2020 08:57:05 +0100
+Subject: blobmsg: blobmsg_vprintf: prefer vsnprintf
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Better safe than sorry and while at it add handling of possible
+*printf() failures.
+
+Reviewed-by: Jo-Philipp Wich <jo@mein.io>
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ blobmsg.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/blobmsg.c
++++ b/blobmsg.c
+@@ -296,10 +296,17 @@ blobmsg_vprintf(struct blob_buf *buf, co
+ 	len = vsnprintf(&cbuf, sizeof(cbuf), format, arg2);
+ 	va_end(arg2);
+ 
++	if (len < 0)
++		return -1;
++
+ 	sbuf = blobmsg_alloc_string_buffer(buf, name, len + 1);
+ 	if (!sbuf)
+ 		return -1;
+-	ret = vsprintf(sbuf, format, arg);
++
++	ret = vsnprintf(sbuf, len + 1, format, arg);
++	if (ret < 0)
++		return -1;
++
+ 	blobmsg_add_string_buffer(buf);
+ 
+ 	return ret;

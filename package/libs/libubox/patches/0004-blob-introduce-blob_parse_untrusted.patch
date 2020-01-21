@@ -1,0 +1,78 @@
+From b6a0a070f2e14808e835c2fcfa3820a55041902f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Mon, 9 Dec 2019 14:11:45 +0100
+Subject: blob: introduce blob_parse_untrusted
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+blob_parse can be only used on trusted input as it has no possibility to
+check the length of the provided input buffer, which might lead to
+undefined behaviour and/or crashes when supplied with malformed,
+corrupted or otherwise specially crafted input.
+
+So this introduces blob_parse_untrusted variant which expects additional
+input buffer length argument and thus should be able to process also
+inputs from untrusted sources.
+
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ blob.c | 24 ++++++++++++++++++++++++
+ blob.h |  7 +++++++
+ 2 files changed, 31 insertions(+)
+
+--- a/blob.c
++++ b/blob.c
+@@ -253,6 +253,30 @@ blob_parse_attr(struct blob_attr *attr,
+ }
+ 
+ int
++blob_parse_untrusted(struct blob_attr *attr, size_t attr_len, struct blob_attr **data, const struct blob_attr_info *info, int max)
++{
++	struct blob_attr *pos;
++	size_t len = 0;
++	int found = 0;
++	size_t rem;
++
++	if (!attr || attr_len < sizeof(struct blob_attr))
++		return 0;
++
++	len = blob_raw_len(attr);
++	if (len != attr_len)
++		return 0;
++
++	memset(data, 0, sizeof(struct blob_attr *) * max);
++	blob_for_each_attr_len(pos, attr, len, rem) {
++		found += blob_parse_attr(pos, rem, data, info, max);
++	}
++
++	return found;
++}
++
++/* use only on trusted input, otherwise consider blob_parse_untrusted */
++int
+ blob_parse(struct blob_attr *attr, struct blob_attr **data, const struct blob_attr_info *info, int max)
+ {
+ 	struct blob_attr *pos;
+--- a/blob.h
++++ b/blob.h
+@@ -199,6 +199,7 @@ extern void blob_nest_end(struct blob_bu
+ extern struct blob_attr *blob_put(struct blob_buf *buf, int id, const void *ptr, unsigned int len);
+ extern bool blob_check_type(const void *ptr, unsigned int len, int type);
+ extern int blob_parse(struct blob_attr *attr, struct blob_attr **data, const struct blob_attr_info *info, int max);
++extern int blob_parse_untrusted(struct blob_attr *attr, size_t attr_len, struct blob_attr **data, const struct blob_attr_info *info, int max);
+ extern struct blob_attr *blob_memdup(struct blob_attr *attr);
+ extern struct blob_attr *blob_put_raw(struct blob_buf *buf, const void *ptr, unsigned int len);
+ 
+@@ -254,5 +255,11 @@ blob_put_u64(struct blob_buf *buf, int i
+ 	     (blob_pad_len(pos) >= sizeof(struct blob_attr)); \
+ 	     rem -= blob_pad_len(pos), pos = blob_next(pos))
+ 
++#define blob_for_each_attr_len(pos, attr, attr_len, rem) \
++	for (rem = attr ? blob_len(attr) : 0, \
++	     pos = (struct blob_attr *) (attr ? blob_data(attr) : NULL); \
++	     rem >= sizeof(struct blob_attr) && rem < attr_len && (blob_pad_len(pos) <= rem) && \
++	     (blob_pad_len(pos) >= sizeof(struct blob_attr)); \
++	     rem -= blob_pad_len(pos), pos = blob_next(pos))
+ 
+ #endif

@@ -1,0 +1,39 @@
+From 44d9e85ef058fbb9981d53218cafdc451afa5535 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Wed, 25 Dec 2019 10:27:59 +0100
+Subject: blobmsg: fix array out of bounds GCC 10 warning
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fixes following warning reported by GCC 10.0.0 20191203:
+
+ blobmsg.c:234:2: error: 'strcpy' offset 6 from the object at 'attr' is out of the bounds of referenced subobject 'name' with type 'uint8_t[0]' {aka 'unsigned char[0]'} at offset 6 [-Werror=array-bounds]
+   234 |  strcpy((char *) hdr->name, (const char *)name);
+       |  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ In file included from blobmsg.c:16:
+ blobmsg.h:42:10: note: subobject 'name' declared here
+    42 |  uint8_t name[];
+       |          ^~~~
+
+Reported-by: Khem Raj <raj.khem@gmail.com>
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ blobmsg.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/blobmsg.c
++++ b/blobmsg.c
+@@ -246,7 +246,10 @@ blobmsg_new(struct blob_buf *buf, int ty
+ 	attr->id_len |= be32_to_cpu(BLOB_ATTR_EXTENDED);
+ 	hdr = blob_data(attr);
+ 	hdr->namelen = cpu_to_be16(namelen);
+-	strcpy((char *) hdr->name, (const char *)name);
++
++	memcpy(hdr->name, name, namelen);
++	hdr->name[namelen] = '\0';
++
+ 	pad_end = *data = blobmsg_data(attr);
+ 	pad_start = (char *) &hdr->name[namelen];
+ 	if (pad_start < pad_end)

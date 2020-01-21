@@ -1,0 +1,61 @@
+From 31778937b4153492955495e550435c8bbf7cfde8 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Tue, 14 Jan 2020 08:55:34 +0100
+Subject: jshn: prefer snprintf usage
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Better safe than sorry.
+
+Reviewed-by: Jo-Philipp Wich <jo@mein.io>
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ jshn.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+--- a/jshn.c
++++ b/jshn.c
+@@ -68,7 +68,7 @@ static int add_json_array(struct array_l
+ 	int ret;
+ 
+ 	for (i = 0, len = array_list_length(a); i < len; i++) {
+-		sprintf(seq, "%d", i);
++		snprintf(seq, sizeof(seq), "%d", i);
+ 		ret = add_json_element(seq, array_list_get_idx(a, i));
+ 		if (ret)
+ 			return ret;
+@@ -197,25 +197,27 @@ static char *getenv_avl(const char *key)
+ static char *get_keys(const char *prefix)
+ {
+ 	char *keys;
++	size_t len = var_prefix_len + strlen(prefix) + sizeof("K_") + 1;
+ 
+-	keys = alloca(var_prefix_len + strlen(prefix) + sizeof("K_") + 1);
+-	sprintf(keys, "%sK_%s", var_prefix, prefix);
++	keys = alloca(len);
++	snprintf(keys, len, "%sK_%s", var_prefix, prefix);
+ 	return getenv_avl(keys);
+ }
+ 
+ static void get_var(const char *prefix, const char **name, char **var, char **type)
+ {
+ 	char *tmpname, *varname;
++	size_t len = var_prefix_len + strlen(prefix) + 1 + strlen(*name) + 1 + sizeof("T_");
+ 
+-	tmpname = alloca(var_prefix_len + strlen(prefix) + 1 + strlen(*name) + 1 + sizeof("T_"));
++	tmpname = alloca(len);
+ 
+-	sprintf(tmpname, "%s%s_%s", var_prefix, prefix, *name);
++	snprintf(tmpname, len, "%s%s_%s", var_prefix, prefix, *name);
+ 	*var = getenv_avl(tmpname);
+ 
+-	sprintf(tmpname, "%sT_%s_%s", var_prefix, prefix, *name);
++	snprintf(tmpname, len, "%sT_%s_%s", var_prefix, prefix, *name);
+ 	*type = getenv_avl(tmpname);
+ 
+-	sprintf(tmpname, "%sN_%s_%s", var_prefix, prefix, *name);
++	snprintf(tmpname, len, "%sN_%s_%s", var_prefix, prefix, *name);
+ 	varname = getenv_avl(tmpname);
+ 	if (varname)
+ 		*name = varname;

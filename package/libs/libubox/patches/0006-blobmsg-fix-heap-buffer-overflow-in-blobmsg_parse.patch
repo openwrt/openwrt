@@ -1,0 +1,32 @@
+From 0773eef13674964d890420673d2501342979d8bf Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Tue, 10 Dec 2019 12:02:40 +0100
+Subject: blobmsg: fix heap buffer overflow in blobmsg_parse
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fixes following error found by the fuzzer:
+
+ ==29774==ERROR: AddressSanitizer: heap-buffer-overflow
+ READ of size 1 at 0x6020004f1c56 thread T0
+     #0 strcmp sanitizer_common_interceptors.inc:442:3
+     #1 blobmsg_parse blobmsg.c:168:8
+
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ blobmsg.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/blobmsg.c
++++ b/blobmsg.c
+@@ -52,6 +52,9 @@ bool blobmsg_check_attr(const struct blo
+ 
+ 	id = blob_id(attr);
+ 	len = blobmsg_data_len(attr);
++	if (len > blob_raw_len(attr))
++		return false;
++
+ 	data = blobmsg_data(attr);
+ 
+ 	if (id > BLOBMSG_TYPE_LAST)

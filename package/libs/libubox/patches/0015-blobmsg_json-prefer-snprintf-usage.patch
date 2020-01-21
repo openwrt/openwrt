@@ -1,0 +1,66 @@
+From 0e330ec3662795aea42ac36ecf7a9f32a249c36d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Tue, 14 Jan 2020 09:05:02 +0100
+Subject: blobmsg_json: prefer snprintf usage
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Better safe than sorry and while at it prefer use of PRId16 and PRId32
+formatting constants as well.
+
+Reviewed-by: Jo-Philipp Wich <jo@mein.io>
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ blobmsg_json.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+--- a/blobmsg_json.c
++++ b/blobmsg_json.c
+@@ -203,7 +203,7 @@ static void blobmsg_format_string(struct
+ 		buf[1] = escape;
+ 
+ 		if (escape == 'u') {
+-			sprintf(buf + 4, "%02x", (unsigned char) *p);
++			snprintf(buf + 4, sizeof(buf) - 4, "%02x", (unsigned char) *p);
+ 			len = 6;
+ 		} else {
+ 			len = 2;
+@@ -220,7 +220,7 @@ static void blobmsg_format_json_list(str
+ static void blobmsg_format_element(struct strbuf *s, struct blob_attr *attr, bool without_name, bool head)
+ {
+ 	const char *data_str;
+-	char buf[32];
++	char buf[317];
+ 	void *data;
+ 	int len;
+ 
+@@ -244,22 +244,22 @@ static void blobmsg_format_element(struc
+ 	data_str = buf;
+ 	switch(blob_id(attr)) {
+ 	case BLOBMSG_TYPE_UNSPEC:
+-		sprintf(buf, "null");
++		snprintf(buf, sizeof(buf), "null");
+ 		break;
+ 	case BLOBMSG_TYPE_BOOL:
+-		sprintf(buf, "%s", *(uint8_t *)data ? "true" : "false");
++		snprintf(buf, sizeof(buf), "%s", *(uint8_t *)data ? "true" : "false");
+ 		break;
+ 	case BLOBMSG_TYPE_INT16:
+-		sprintf(buf, "%d", (int16_t) be16_to_cpu(*(uint16_t *)data));
++		snprintf(buf, sizeof(buf), "%" PRId16, (int16_t) be16_to_cpu(*(uint16_t *)data));
+ 		break;
+ 	case BLOBMSG_TYPE_INT32:
+-		sprintf(buf, "%d", (int32_t) be32_to_cpu(*(uint32_t *)data));
++		snprintf(buf, sizeof(buf), "%" PRId32, (int32_t) be32_to_cpu(*(uint32_t *)data));
+ 		break;
+ 	case BLOBMSG_TYPE_INT64:
+-		sprintf(buf, "%" PRId64, (int64_t) be64_to_cpu(*(uint64_t *)data));
++		snprintf(buf, sizeof(buf), "%" PRId64, (int64_t) be64_to_cpu(*(uint64_t *)data));
+ 		break;
+ 	case BLOBMSG_TYPE_DOUBLE:
+-		sprintf(buf, "%lf", blobmsg_get_double(attr));
++		snprintf(buf, sizeof(buf), "%lf", blobmsg_get_double(attr));
+ 		break;
+ 	case BLOBMSG_TYPE_STRING:
+ 		blobmsg_format_string(s, data);

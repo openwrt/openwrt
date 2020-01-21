@@ -1,0 +1,110 @@
+From 6289e2d29883d5d9510b6a15c18c597478967a42 Mon Sep 17 00:00:00 2001
+From: Juraj Vijtiuk <juraj.vijtiuk@sartura.hr>
+Date: Sun, 12 Jan 2020 12:26:18 +0100
+Subject: blobmsg: blobmsg_parse and blobmsg_parse_array oob read fixes
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fix out of bounds read in blobmsg_parse and blobmsg_check_name. The
+out of bounds read happens because blob_attr and blobmsg_hdr have
+flexible array members, whose size is 0 in the corresponding sizeofs.
+For example the __blob_for_each_attr macro checks whether rem >=
+sizeof(struct blob_attr). However, what LibFuzzer discovered was,
+if the input data was only 4 bytes, the data would be casted to blob_attr,
+and later on blob_data(attr) would be called even though attr->data was empty.
+The same issue could appear with data larger than 4 bytes, where data
+wasn't empty, but contained only the start of the blobmsg_hdr struct,
+and blobmsg_hdr name was empty. The bugs were discovered by fuzzing
+blobmsg_parse and blobmsg_array_parse with LibFuzzer.
+
+CC: Luka Perkov <luka.perkov@sartura.hr>
+Reviewed-by: Jo-Philipp Wich <jo@mein.io>
+Signed-off-by: Juraj Vijtiuk <juraj.vijtiuk@sartura.hr>
+[refactored some checks, added fuzz inputs, adjusted unit test results]
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ blobmsg.c | 40 ++++++++++++++++++++++++++++++++--------
+ 1 file changed, 32 insertions(+), 8 deletions(-)
+
+--- a/blobmsg.c
++++ b/blobmsg.c
+@@ -36,16 +36,38 @@ bool blobmsg_check_attr(const struct blo
+ 	return blobmsg_check_attr_len(attr, name, blob_raw_len(attr));
+ }
+ 
++static const struct blobmsg_hdr* blobmsg_hdr_from_blob(const struct blob_attr *attr, size_t len)
++{
++	if (len < sizeof(struct blob_attr) + sizeof(struct blobmsg_hdr))
++		return NULL;
++
++	return blob_data(attr);
++}
++
++static bool blobmsg_hdr_valid_namelen(const struct blobmsg_hdr *hdr, size_t len)
++{
++	if (len < sizeof(struct blob_attr) + sizeof(struct blobmsg_hdr) + blobmsg_namelen(hdr) + 1)
++		return false;
++
++	return true;
++}
++
+ static bool blobmsg_check_name(const struct blob_attr *attr, size_t len, bool name)
+ {
+ 	char *limit = (char *) attr + len;
+ 	const struct blobmsg_hdr *hdr;
+ 
+-	hdr = blob_data(attr);
++	hdr = blobmsg_hdr_from_blob(attr, len);
++	if (!hdr)
++		return false;
++
+ 	if (name && !hdr->namelen)
+ 		return false;
+ 
+-	if ((char *) hdr->name + blobmsg_namelen(hdr) > limit)
++	if (name && !blobmsg_hdr_valid_namelen(hdr, len))
++		return false;
++
++	if ((char *) hdr->name + blobmsg_namelen(hdr) + 1 > limit)
+ 		return false;
+ 
+ 	if (blobmsg_namelen(hdr) > (blob_len(attr) - sizeof(struct blobmsg_hdr)))
+@@ -79,9 +101,6 @@ bool blobmsg_check_attr_len(const struct
+ 	size_t data_len;
+ 	int id;
+ 
+-	if (len < sizeof(struct blob_attr))
+-		return false;
+-
+ 	if (!blobmsg_check_name(attr, len, name))
+ 		return false;
+ 
+@@ -176,11 +195,10 @@ int blobmsg_parse_array(const struct blo
+ 	return 0;
+ }
+ 
+-
+ int blobmsg_parse(const struct blobmsg_policy *policy, int policy_len,
+                   struct blob_attr **tb, void *data, unsigned int len)
+ {
+-	struct blobmsg_hdr *hdr;
++	const struct blobmsg_hdr *hdr;
+ 	struct blob_attr *attr;
+ 	uint8_t *pslen;
+ 	int i;
+@@ -197,7 +215,13 @@ int blobmsg_parse(const struct blobmsg_p
+ 	}
+ 
+ 	__blob_for_each_attr(attr, data, len) {
+-		hdr = blob_data(attr);
++		hdr = blobmsg_hdr_from_blob(attr, len);
++		if (!hdr)
++			return -1;
++
++		if (!blobmsg_hdr_valid_namelen(hdr, len))
++			return -1;
++
+ 		for (i = 0; i < policy_len; i++) {
+ 			if (!policy[i].name)
+ 				continue;

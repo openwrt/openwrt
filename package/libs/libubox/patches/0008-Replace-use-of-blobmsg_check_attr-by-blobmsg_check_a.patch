@@ -1,0 +1,132 @@
+From 8b6a401638317906b6d9039417c1c19ea8cfeab0 Mon Sep 17 00:00:00 2001
+From: Tobias Schramm <tobleminer@gmail.com>
+Date: Tue, 13 Nov 2018 04:16:12 +0100
+Subject: Replace use of blobmsg_check_attr by blobmsg_check_attr_len
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+blobmsg_check_attr_len adds a length limit specifying the max offset
+from attr that can be read safely.
+
+Signed-off-by: Tobias Schramm <tobleminer@gmail.com>
+[rebased and reworked, line wrapped commit message, _safe -> _len]
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ blobmsg.c | 59 +++++++++++++++++++++++++++++++++++++++++++------------
+ blobmsg.h |  2 ++
+ 2 files changed, 48 insertions(+), 13 deletions(-)
+
+--- a/blobmsg.c
++++ b/blobmsg.c
+@@ -33,37 +33,70 @@ blobmsg_namelen(const struct blobmsg_hdr
+ 
+ bool blobmsg_check_attr(const struct blob_attr *attr, bool name)
+ {
++	return blobmsg_check_attr_len(attr, name, blob_raw_len(attr));
++}
++
++static bool blobmsg_check_name(const struct blob_attr *attr, size_t len, bool name)
++{
++	char *limit = (char *) attr + len;
+ 	const struct blobmsg_hdr *hdr;
+-	const char *data;
+-	int id, len;
+ 
+-	if (blob_len(attr) < sizeof(struct blobmsg_hdr))
++	hdr = blob_data(attr);
++	if (name && !hdr->namelen)
+ 		return false;
+ 
+-	hdr = (void *) attr->data;
+-	if (!hdr->namelen && name)
++	if ((char *) hdr->name + blobmsg_namelen(hdr) > limit)
+ 		return false;
+ 
+-	if (blobmsg_namelen(hdr) > blob_len(attr) - sizeof(struct blobmsg_hdr))
++	if (blobmsg_namelen(hdr) > (blob_len(attr) - sizeof(struct blobmsg_hdr)))
+ 		return false;
+ 
+ 	if (hdr->name[blobmsg_namelen(hdr)] != 0)
+ 		return false;
+ 
+-	id = blob_id(attr);
+-	len = blobmsg_data_len(attr);
+-	if (len > blob_raw_len(attr))
+-		return false;
++	return true;
++}
++
++static const char* blobmsg_check_data(const struct blob_attr *attr, size_t len, size_t *data_len)
++{
++	char *limit = (char *) attr + len;
++	const char *data;
++
++	*data_len = blobmsg_data_len(attr);
++	if (*data_len > blob_raw_len(attr))
++		return NULL;
+ 
+ 	data = blobmsg_data(attr);
++	if (data + *data_len > limit)
++		return NULL;
+ 
++	return data;
++}
++
++bool blobmsg_check_attr_len(const struct blob_attr *attr, bool name, size_t len)
++{
++	const char *data;
++	size_t data_len;
++	int id;
++
++	if (len < sizeof(struct blob_attr))
++		return false;
++
++	if (!blobmsg_check_name(attr, len, name))
++		return false;
++
++	id = blob_id(attr);
+ 	if (id > BLOBMSG_TYPE_LAST)
+ 		return false;
+ 
+ 	if (!blob_type[id])
+ 		return true;
+ 
+-	return blob_check_type(data, len, blob_type[id]);
++	data = blobmsg_check_data(attr, len, &data_len);
++	if (!data)
++		return false;
++
++	return blob_check_type(data, data_len, blob_type[id]);
+ }
+ 
+ int blobmsg_check_array(const struct blob_attr *attr, int type)
+@@ -114,7 +147,7 @@ int blobmsg_parse_array(const struct blo
+ 		    blob_id(attr) != policy[i].type)
+ 			continue;
+ 
+-		if (!blobmsg_check_attr(attr, false))
++		if (!blobmsg_check_attr_len(attr, false, len))
+ 			return -1;
+ 
+ 		if (tb[i])
+@@ -161,7 +194,7 @@ int blobmsg_parse(const struct blobmsg_p
+ 			if (blobmsg_namelen(hdr) != pslen[i])
+ 				continue;
+ 
+-			if (!blobmsg_check_attr(attr, true))
++			if (!blobmsg_check_attr_len(attr, true, len))
+ 				return -1;
+ 
+ 			if (tb[i])
+--- a/blobmsg.h
++++ b/blobmsg.h
+@@ -107,6 +107,8 @@ static inline int blobmsg_len(const stru
+ bool blobmsg_check_attr(const struct blob_attr *attr, bool name);
+ bool blobmsg_check_attr_list(const struct blob_attr *attr, int type);
+ 
++bool blobmsg_check_attr_len(const struct blob_attr *attr, bool name, size_t len);
++
+ /*
+  * blobmsg_check_array: validate array/table and return size
+  *

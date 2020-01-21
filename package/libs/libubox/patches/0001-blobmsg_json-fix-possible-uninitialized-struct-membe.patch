@@ -1,0 +1,39 @@
+From 2acfe84e4c871fb994c38c9f2508eb9ebd296b74 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Tue, 19 Nov 2019 17:34:25 +0100
+Subject: blobmsg_json: fix possible uninitialized struct member
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+clang-10 analyzer reports following:
+
+ blobmsg_json.c:285:2: warning: The expression is an uninitialized value. The computed value will also be garbage
+         s->indent_level++;
+         ^~~~~~~~~~~~~~~~~
+
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ blobmsg_json.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/blobmsg_json.c
++++ b/blobmsg_json.c
+@@ -316,7 +316,7 @@ static void setup_strbuf(struct strbuf *
+ 
+ char *blobmsg_format_json_with_cb(struct blob_attr *attr, bool list, blobmsg_json_format_t cb, void *priv, int indent)
+ {
+-	struct strbuf s;
++	struct strbuf s = {0};
+ 	bool array;
+ 	char *ret;
+ 
+@@ -350,7 +350,7 @@ char *blobmsg_format_json_with_cb(struct
+ 
+ char *blobmsg_format_json_value_with_cb(struct blob_attr *attr, blobmsg_json_format_t cb, void *priv, int indent)
+ {
+-	struct strbuf s;
++	struct strbuf s = {0};
+ 	char *ret;
+ 
+ 	setup_strbuf(&s, attr, cb, priv, indent);

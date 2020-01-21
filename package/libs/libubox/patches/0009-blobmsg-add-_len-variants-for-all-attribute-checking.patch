@@ -1,0 +1,157 @@
+From ad29d0304983e283d4aec4ee5462942eaf5c03ac Mon Sep 17 00:00:00 2001
+From: Tobias Schramm <tobleminer@gmail.com>
+Date: Thu, 15 Nov 2018 03:42:48 +0100
+Subject: blobmsg: add _len variants for all attribute checking methods
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Introduce _len variants of blobmsg attribute checking functions which
+aims to provide safer implementation as those functions should limit all
+memory accesses performed on the blob to the range [attr, attr + len]
+(upper bound non inclusive) and thus should be suited for checking of
+untrusted blob attributes.
+
+While at it add some comments in order to make it clear.
+
+Signed-off-by: Tobias Schramm <tobleminer@gmail.com>
+[_safe -> _len, blobmsg_check_array_len fix, commit subject/desc facelift]
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ blobmsg.c | 21 ++++++++++++++++++---
+ blobmsg.h | 55 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 72 insertions(+), 4 deletions(-)
+
+--- a/blobmsg.c
++++ b/blobmsg.c
+@@ -101,11 +101,21 @@ bool blobmsg_check_attr_len(const struct
+ 
+ int blobmsg_check_array(const struct blob_attr *attr, int type)
+ {
++	return blobmsg_check_array_len(attr, type, blob_raw_len(attr));
++}
++
++int blobmsg_check_array_len(const struct blob_attr *attr, int type, size_t len)
++{
+ 	struct blob_attr *cur;
+ 	bool name;
+-	int rem;
+ 	int size = 0;
+ 
++	if (type > BLOBMSG_TYPE_LAST)
++		return -1;
++
++	if (!blobmsg_check_attr_len(attr, false, len))
++		return -1;
++
+ 	switch (blobmsg_type(attr)) {
+ 	case BLOBMSG_TYPE_TABLE:
+ 		name = true;
+@@ -117,11 +127,11 @@ int blobmsg_check_array(const struct blo
+ 		return -1;
+ 	}
+ 
+-	blobmsg_for_each_attr(cur, attr, rem) {
++	__blobmsg_for_each_attr(cur, attr, len) {
+ 		if (type != BLOBMSG_TYPE_UNSPEC && blobmsg_type(cur) != type)
+ 			return -1;
+ 
+-		if (!blobmsg_check_attr(cur, name))
++		if (!blobmsg_check_attr_len(cur, name, len))
+ 			return -1;
+ 
+ 		size++;
+@@ -135,6 +145,11 @@ bool blobmsg_check_attr_list(const struc
+ 	return blobmsg_check_array(attr, type) >= 0;
+ }
+ 
++bool blobmsg_check_attr_list_len(const struct blob_attr *attr, int type, size_t len)
++{
++	return blobmsg_check_array_len(attr, type, len) >= 0;
++}
++
+ int blobmsg_parse_array(const struct blobmsg_policy *policy, int policy_len,
+ 			struct blob_attr **tb, void *data, unsigned int len)
+ {
+--- a/blobmsg.h
++++ b/blobmsg.h
+@@ -104,19 +104,66 @@ static inline int blobmsg_len(const stru
+ 	return blobmsg_data_len(attr);
+ }
+ 
++/*
++ * blobmsg_check_attr: validate a list of attributes
++ *
++ * This method may be used with trusted data only. Providing
++ * malformed blobs will cause out of bounds memory access.
++ */
+ bool blobmsg_check_attr(const struct blob_attr *attr, bool name);
+-bool blobmsg_check_attr_list(const struct blob_attr *attr, int type);
+ 
++/*
++ * blobmsg_check_attr_len: validate a list of attributes
++ *
++ * This method should be safer implementation of blobmsg_check_attr.
++ * It will limit all memory access performed on the blob to the
++ * range [attr, attr + len] (upper bound non inclusive) and is
++ * thus suited for checking of untrusted blob attributes.
++ */
+ bool blobmsg_check_attr_len(const struct blob_attr *attr, bool name, size_t len);
+ 
+ /*
++ * blobmsg_check_attr_list: validate a list of attributes
++ *
++ * This method may be used with trusted data only. Providing
++ * malformed blobs will cause out of bounds memory access.
++ */
++bool blobmsg_check_attr_list(const struct blob_attr *attr, int type);
++
++/*
++ * blobmsg_check_attr_list_len: validate a list of untrusted attributes
++ *
++ * This method should be safer implementation of blobmsg_check_attr_list.
++ * It will limit all memory access performed on the blob to the
++ * range [attr, attr + len] (upper bound non inclusive) and is
++ * thus suited for checking of untrusted blob attributes.
++ */
++bool blobmsg_check_attr_list_len(const struct blob_attr *attr, int type, size_t len);
++
++/*
+  * blobmsg_check_array: validate array/table and return size
+  *
+  * Checks if all elements of an array or table are valid and have
+  * the specified type. Returns the number of elements in the array
++ *
++ * This method may be used with trusted data only. Providing
++ * malformed blobs will cause out of bounds memory access.
+  */
+ int blobmsg_check_array(const struct blob_attr *attr, int type);
+ 
++/*
++ * blobmsg_check_array_len: validate untrusted array/table and return size
++ *
++ * Checks if all elements of an array or table are valid and have
++ * the specified type. Returns the number of elements in the array.
++ *
++ * This method should be safer implementation of blobmsg_check_array.
++ * It will limit all memory access performed on the blob to the
++ * range [attr, attr + len] (upper bound non inclusive) and is
++ * thus suited for checking of untrusted blob attributes.
++ */
++int blobmsg_check_array_len(const struct blob_attr *attr, int type, size_t len);
++
+ int blobmsg_parse(const struct blobmsg_policy *policy, int policy_len,
+                   struct blob_attr **tb, void *data, unsigned int len);
+ int blobmsg_parse_array(const struct blobmsg_policy *policy, int policy_len,
+@@ -271,5 +318,11 @@ int blobmsg_printf(struct blob_buf *buf,
+ 	     rem >= sizeof(struct blob_attr) && (blob_pad_len(pos) <= rem) && \
+ 	     (blob_pad_len(pos) >= sizeof(struct blob_attr)); \
+ 	     rem -= blob_pad_len(pos), pos = blob_next(pos))
++
++#define __blobmsg_for_each_attr(pos, attr, rem) \
++	for (pos = (struct blob_attr *) (attr ? blobmsg_data(attr) : NULL); \
++	     rem >= sizeof(struct blob_attr) && (blob_pad_len(pos) <= rem) && \
++	     (blob_pad_len(pos) >= sizeof(struct blob_attr)); \
++	     rem -= blob_pad_len(pos), pos = blob_next(pos))
+ 
+ #endif

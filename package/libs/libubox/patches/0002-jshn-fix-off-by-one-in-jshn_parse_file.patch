@@ -1,0 +1,39 @@
+From f27853d71a2cb99ec5de3881716a14611ada307c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Sat, 23 Nov 2019 22:48:25 +0100
+Subject: jshn: fix off by one in jshn_parse_file
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fixes following error:
+
+ Invalid read of size 1
+   at 0x4C32D04: strlen
+   by 0x5043367: json_tokener_parse_ex
+   by 0x5045316: json_tokener_parse_verbose
+   by 0x504537D: json_tokener_parse
+   by 0x401AB1: jshn_parse (jshn.c:179)
+   by 0x40190D: jshn_parse_file (jshn.c:370)
+   by 0x40190D: main (jshn.c:434)
+ Address 0x5848c4c is 0 bytes after a block of size 1,036 alloc'd
+   at 0x4C2FB0F: malloc
+   by 0x4018E2: jshn_parse_file (jshn.c:357)
+   by 0x4018E2: main (jshn.c:434)
+
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ jshn.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/jshn.c
++++ b/jshn.c
+@@ -384,7 +384,7 @@ int main(int argc, char **argv)
+ 				close(fd);
+ 				return 3;
+ 			}
+-			if (!(fbuf = malloc(sb.st_size))) {
++			if (!(fbuf = calloc(1, sb.st_size+1))) {
+ 				fprintf(stderr, "Error allocating memory for %s\n", optarg);
+ 				close(fd);
+ 				return 3;

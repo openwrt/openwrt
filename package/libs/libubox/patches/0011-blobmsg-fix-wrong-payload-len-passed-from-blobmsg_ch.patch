@@ -1,0 +1,38 @@
+From d0f05d5e6873b30315127d47abbf4ac9f3c8bfb7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Sat, 28 Dec 2019 19:00:39 +0100
+Subject: blobmsg: fix wrong payload len passed from blobmsg_check_array
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fix incorrect use of blob_raw_len() on passed blobmsg to
+blobmsg_check_array_len()  introduced in commit b0e21553ae8c ("blobmsg:
+add _len variants for all attribute checking methods") by using correct
+blobmsg_len().
+
+This wrong (higher) length was then for example causing issues in
+procd's instance_config_parse_command() where blobmsg_check_attr_list()
+was failing sanity checking of service command, thus resulting in the
+startup failures of some services like collectd, nlbwmon and samba4.
+
+Ref: http://lists.infradead.org/pipermail/openwrt-devel/2019-December/020840.html
+Fixes: b0e21553ae8c ("blobmsg: add _len variants for all attribute checking methods")
+Reported-by: Hannu Nyman <hannu.nyman@welho.com>
+Tested-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ blobmsg.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/blobmsg.c
++++ b/blobmsg.c
+@@ -101,7 +101,7 @@ bool blobmsg_check_attr_len(const struct
+ 
+ int blobmsg_check_array(const struct blob_attr *attr, int type)
+ {
+-	return blobmsg_check_array_len(attr, type, blob_raw_len(attr));
++	return blobmsg_check_array_len(attr, type, blobmsg_len(attr));
+ }
+ 
+ int blobmsg_check_array_len(const struct blob_attr *attr, int type, size_t len)

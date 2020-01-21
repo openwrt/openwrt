@@ -1,0 +1,97 @@
+From af2a074160e32692b570f8a3562b4370d38f34e7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Mon, 9 Dec 2019 13:53:27 +0100
+Subject: blob: refactor attr parsing into separate function
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Making blob_parse easier to review.
+
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ blob.c | 61 +++++++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 35 insertions(+), 26 deletions(-)
+
+--- a/blob.c
++++ b/blob.c
+@@ -217,44 +217,53 @@ blob_check_type(const void *ptr, unsigne
+ 	return true;
+ }
+ 
+-int
+-blob_parse(struct blob_attr *attr, struct blob_attr **data, const struct blob_attr_info *info, int max)
++static int
++blob_parse_attr(struct blob_attr *attr, struct blob_attr **data, const struct blob_attr_info *info, int max)
+ {
+-	struct blob_attr *pos;
+ 	int found = 0;
+-	int rem;
++	int id = blob_id(attr);
++	size_t len = blob_len(attr);
+ 
+-	memset(data, 0, sizeof(struct blob_attr *) * max);
+-	blob_for_each_attr(pos, attr, rem) {
+-		int id = blob_id(pos);
+-		int len = blob_len(pos);
++	if (id >= max)
++		return 0;
+ 
+-		if (id >= max)
+-			continue;
++	if (info) {
++		int type = info[id].type;
+ 
+-		if (info) {
+-			int type = info[id].type;
++		if (type < BLOB_ATTR_LAST) {
++			if (!blob_check_type(blob_data(attr), len, type))
++				return 0;
++		}
+ 
+-			if (type < BLOB_ATTR_LAST) {
+-				if (!blob_check_type(blob_data(pos), len, type))
+-					continue;
+-			}
++		if (info[id].minlen && len < info[id].minlen)
++			return 0;
+ 
+-			if (info[id].minlen && len < info[id].minlen)
+-				continue;
++		if (info[id].maxlen && len > info[id].maxlen)
++			return 0;
+ 
+-			if (info[id].maxlen && len > info[id].maxlen)
+-				continue;
++		if (info[id].validate && !info[id].validate(&info[id], attr))
++			return 0;
++	}
+ 
+-			if (info[id].validate && !info[id].validate(&info[id], pos))
+-				continue;
+-		}
++	if (!data[id])
++		found++;
+ 
+-		if (!data[id])
+-			found++;
++	data[id] = attr;
++	return found;
++}
+ 
+-		data[id] = pos;
++int
++blob_parse(struct blob_attr *attr, struct blob_attr **data, const struct blob_attr_info *info, int max)
++{
++	struct blob_attr *pos;
++	int found = 0;
++	size_t rem;
++
++	memset(data, 0, sizeof(struct blob_attr *) * max);
++	blob_for_each_attr(pos, attr, rem) {
++		found += blob_parse_attr(pos, data, info, max);
+ 	}
++
+ 	return found;
+ }
+ 
