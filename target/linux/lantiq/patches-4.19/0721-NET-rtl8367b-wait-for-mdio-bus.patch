@@ -1,0 +1,64 @@
+From 11a6fc05b7f8a3ad69f15f74a95d7c44dce59ca5 Mon Sep 17 00:00:00 2001
+From: Jonas Albrecht <plonkbong100@protonmail.com>
+Date: Sun, 19 Jan 2020 17:44:55 +0000
+Subject: [PATCH] net: phy/rtl8367b: Wait until mdio bus appears
+X-Patchwork-Bot: notify
+
+This patch modifie: drivers/net/phy/rtl8367b.c
+For waiting until mdio bus appears
+
+It is required for the routers devices Arcadyan VGV952CJW33-E-IR
+
+Co-Developed-by: Holger Foerster <Hamsi2k@freenet.de>
+Signed-off-by: Holger Foerster <Hamsi2k@freenet.de>
+Acked-by: Jonas Albrecht <plonkbong100@protonmail.com>
+Signed-off-by: Jonas Albrecht <plonkbong100@protonmail.com>
+---
+ drivers/net/phy/rtl8367b.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/drivers/net/phy/rtl8367b.c b/drivers/net/phy/rtl8367b.c
+index be9f74f..1d5879d 100644
+--- a/drivers/net/phy/rtl8367b.c
++++ b/drivers/net/phy/rtl8367b.c
+@@ -17,9 +17,11 @@
+ #include <linux/delay.h>
+ #include <linux/skbuff.h>
+ #include <linux/rtl8367.h>
++#include <linux/of_mdio.h>
+ 
+ #include "rtl8366_smi.h"
+ 
++
+ #define RTL8367B_RESET_DELAY	1000	/* msecs*/
+ 
+ #define RTL8367B_PHY_ADDR_MAX	8
+@@ -1526,6 +1528,25 @@ static int  rtl8367b_probe(struct platform_device *pdev)
+ 	struct rtl8366_smi *smi;
+ 	int err;
+ 
++#ifdef CONFIG_OF
++    struct device_node *np = pdev->dev.of_node;
++	struct device_node *mdio_node;
++	struct mii_bus * ext_mbus;
++	mdio_node = of_parse_phandle(np, "mii-bus", 0);
++	if (!mdio_node) {
++		dev_err(&pdev->dev, "cannot find mdio node phandle");
++		goto try_gpio;
++	}
++
++	ext_mbus = of_mdio_find_bus(mdio_node);
++	if (!ext_mbus) {
++		dev_err(&pdev->dev,
++			"cannot find mdio bus from bus handle, try again later");
++		return -EPROBE_DEFER;
++	}
++
++try_gpio:
++#endif
+ 	smi = rtl8366_smi_probe(pdev);
+ 	if (IS_ERR(smi))
+ 		return PTR_ERR(smi);
+-- 
+2.7.4
+
