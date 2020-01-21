@@ -24,6 +24,14 @@ define Build/append-avm-fakeroot
 	cat ./eva.dummy.squashfs >> $@
 endef
 
+define Build/append-uImage-dummyrootfs
+	echo -n "dummy" > $@.dummyrootfs
+	mkimage -A mips -O linux -C none -T filesystem  \
+		-n 'OpenWRT dummy RootFS' \
+	-d $@.dummyrootfs $@.mkimage
+	cat $@.mkimage >> $@
+endef
+
 define Build/dgn3500-sercom-footer
 	$(STAGING_DIR_HOST)/bin/dgn3500sum $@ $(1) $(2)
 endef

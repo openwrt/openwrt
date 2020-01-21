@@ -1,0 +1,409 @@
+// SPDX-License-Identifier: GPL-2.0
+/dts-v1/;
+
+#include "vr9.dtsi"
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/mips/lantiq_rcu_gphy.h>
+
+/ {
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x8000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+		
+		rfkill {
+			label = "wps";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+		
+		reset {
+			label = "reset";
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "USB_VBUS";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio 33 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		power_green: power {
+			label = "VGV952CJW33:red:power";
+			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
+		};
+	};
+
+	spi-gpio {
+		compatible = "spi-gpio";
+		address-cells = <1>;
+		size-cells = <0>;
+		gpio-sck = <&gpio 29 GPIO_ACTIVE_HIGH >;
+		gpio-mosi = <&gpio 30 GPIO_ACTIVE_HIGH >;
+		num-chipselects = <1>;
+		cs-gpios = <&gpio 39 GPIO_ACTIVE_HIGH >;
+
+		hc595: gpio_spi@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			registers-number = <1>;
+			spi-max-frequency = <1000000>;
+			spi-cpol = <0>;
+			spi-cpha = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		out_0 { /*Unknown*/
+			gpio-export,name = "hc595_0";
+			gpio-export,output = <1>;
+			gpios = <&hc595 0 GPIO_ACTIVE_HIGH>;
+		};
+		
+		out_1 { /*Unknown*/
+			gpio-export,name = "hc595_1";
+			gpio-export,output = <1>;
+			gpios = <&hc595 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* out_2 is used to reset touch IC and owned by eb904_keypad */
+
+		out_3 { /*Unknown*/
+			gpio-export,name = "hc595_3";
+			gpio-export,output = <1>;
+			gpios = <&hc595 3 GPIO_ACTIVE_HIGH>;
+		};
+		
+		out_dsl_eth { /* Switches DSL line + 100MiB eth or 1GiB ethernet on DSL/WAN input. Relay 1.*/
+			gpio-export,name = "dsl_en";
+			gpio-export,output = <1>;
+			gpios = <&hc595 4 GPIO_ACTIVE_LOW>;
+		};
+		
+		out_5 { /* Switches filter for DSL line On/Off. Relays 2 and 3 simultaneously.*/
+			gpio-export,name = "annexj";
+			gpio-export,output = <1>;
+			gpios = <&hc595 5 GPIO_ACTIVE_HIGH>;
+		};
+		
+		out_6 { /* Switch DSL line betwean ISDN modem and Si3050. Relay 5.*/
+			gpio-export,name = "annexb";
+			gpio-export,output = <1>;
+			gpios = <&hc595 6 GPIO_ACTIVE_HIGH>;
+		};
+		
+		out_7 { /* Switch phone outputs N and F betwean analog DSL line and XS1 output from Lantiq SLIC. Relay 4.*/
+			gpio-export,name = "annexa";
+			gpio-export,output = <1>;
+			gpios = <&hc595 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	i2c {
+		compatible = "i2c-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		gpios = <&gpio 19 GPIO_ACTIVE_HIGH /* sda */
+			&gpio 14 GPIO_ACTIVE_HIGH /* scl */
+		>;
+
+		i2c-gpio,delay-us = <5>;
+		
+		tp: eb904tp@0x14 { /* Add touch panel Support */
+			compatible = "lantiq,eb904_keypad";
+			reg = <0x14>;
+			interrupt-parent = <&icu0>;
+			interrupts = <135>;
+			eb904,interrupt-gpio = <&gpio  0 GPIO_ACTIVE_HIGH /* EXIN */>;
+			eb904,ctrl-rst-gpio = <&hc595 2 GPIO_ACTIVE_LOW /* rst */>;
+			eb904,alphas = /bits/ 8
+				 <0x07 /* left */
+				  0x0a /* down */
+				  0x0a /* right */
+				  0x0a /* ok */
+				  0x07 /* up */
+			>;
+			keypad,num-rows = <3>;
+			keypad,num-columns = <3>;
+			linux,keymap = <
+				    MATRIX_KEY(0x0, 0x1, KEY_UP)         /* ROW0, COL1 */
+				    MATRIX_KEY(0x1, 0x0, KEY_LEFT)       /* ROW1, COL0 */
+				    MATRIX_KEY(0x1, 0x1, KEY_ENTER)      /* ROW1, COL1 */
+				    MATRIX_KEY(0x1, 0x2, KEY_RIGHT)      /* ROW1, COL2 */
+				    MATRIX_KEY(0x2, 0x1, KEY_DOWN)       /* ROW2, COL1 */
+				    >;
+		};
+	};
+
+	mdio: mdio {
+		compatible = "lantiq,xrx200-mdio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		
+		phy13: ethernet-phy@13 {
+			reg = <0x13>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+	};
+
+	rtl8367b {
+		compatible = "realtek,rtl8367b";
+		realtek,extif1   = <1 0 1 1 0 0 1 1 2>; /* based on vendor uboot-config */
+		mii-bus = <&mdio>;
+	};
+};
+
+&vmmc {
+	status = "okay";
+	gpios = <&gpio 37 GPIO_ACTIVE_HIGH>; /* reset_slic! */
+};
+
+&localbus {
+	ranges = <0 0 0x0       0x2000000 /* addrsel0	Was set up this way by arcadian eb904 U-Boot for nand. Not used by eb904 linux */
+		  1 0 0x2000000 0x1000000 /* addrsel1	Size 0x1000000 hardcoded in xway_nand.c. Excessive, as first 0x80 is used only */
+		  2 0 0x3000000 0x0000800>; /* addrsel2	Size 0x800 hardcoded in display driver. This is the min size supported by ebu  */
+
+	flash@1 { /* @1 because using ebu BUSCON1/ADDSEL1 */
+		compatible = "lantiq,nand-xway";
+		reg = <1 0x0 0x80>; /* Only adresses 0x0..0x7F needed (but driver ignores size 0x80 and tells ebu to map 0x1000000) */
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		lantiq,cs = <1>; /* Seems to be needed (EASY80920NAND.dts) */
+
+		nand-on-flash-bbt;
+		customized-samsung-K9F4G08U0x;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "uboot";
+				reg = <0x0 0x40000>;
+			};
+
+			partition@40000 {
+				label = "rootfs1"; 	   /* Called "rootfs" in original u-boot env. */
+				reg = <0x40000 0x3c00000>; /* Auto mounted as rootfs if no UBI volume named "rootfs" exists */
+			};
+
+			partition@3C40000 {
+				label = "kernel"; /* Called "kernel" in original u-boot env. */
+				reg = <0x3c40000 0x500000>;
+			};
+
+			partition@4140000 {
+				label = "tmp1";
+				reg = <0x4140000 0x100000>;
+			};
+
+			partition@4240000 {
+				label = "tmp2";
+				reg = <0x4240000 0x200000>;
+			};
+
+			partition@4440000 {
+				label = "sysconfig";
+				reg = <0x4440000 0x100000>;
+			};
+
+			partition@4540000 {
+				label = "ubootconfig";
+				reg = <0x4540000 0x100000>;
+			};
+
+			partition@4640000 {
+				label = "fwdiag";
+				reg = <0x4640000 0xc0000>;
+			};
+
+			partition@4700000 {
+				label = "lcdimage";
+				reg = <0x4700000 0x300000>;
+			};
+
+			partition@4A00000 {
+				label = "mfgconfig";
+				reg = <0x4a00000 0x100000>;
+			};
+
+			partition@4B00000 {
+				label = "sipdata";
+				reg = <0x4b00000 0x100000>;
+			};
+
+			partition@4C00000 {
+				label = "voice";
+				reg = <0x4c00000 0x4000000>;
+			};
+
+			partition@8C00000 {			/* Called "misc" in original u-boot env. */
+				label = "ubi";			/* Rename to "ubi" for auto ubi attachment and usage of rootfs, rootfs_data, kernel volumes */
+				reg = <0x8c00000 0x13200000>;	/* Rename to "firmware" for special squashfs-rootfs/jffs2-rootfs_data treatment */
+			};
+
+			partition@1BE00000 {
+				label = "rootfs2";
+				reg = <0x1be00000 0x3c00000>;
+			};
+
+			partition@1FA00000 {
+				label = "kernel2";
+				reg = <0x1fa00000 0x500000>;
+			};
+
+			partition@1FF00000 {
+				label = "mystery";		/* Missing in original u-boot environment, seems to be empty (erased) */
+				reg = <0x1ff00000 0x100000>;
+			};
+		};
+	};
+
+	display@2 {					/* @2 because using ebu BUSCON2/ADDSEL2. Name not 'easybox904-display', */
+		compatible = "ilitek,ili9341_eb904";	/* see 'Node Names' at https://elinux.org/Device_Tree_Usage */
+		reg = <2 0x0 0x4>;			/* Size 0x4 contains 2 byte data and 2 byte command registers */
+		status = "okay";
+		rotate = <270>;
+		fps = <30>;
+		bgr;
+		buswidth = <8>;
+		reset-gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		led-gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
+		debug = <1>;
+	};
+};
+
+/*
+*  Following is the very experimental part which is broken and requires much more elaboration
+*/
+
+/* From FRITZ3370.dts */ 
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		phy-rst { /* I have no idea wether this makes sense */
+			lantiq,pins = "io37", "io44";			/* FRITZ3370.dts */
+		     /*	lantiq,pins = "io42";				// TDW8970.dts */
+			lantiq,pull = <0>;
+			lantiq,open-drain = <0>;
+			lantiq,output = <1>;
+						};
+
+		pcie-rst {
+			lantiq,pins = "io38";	/* FRITZ3370.dts, TDW8970.dts, EASY80920.dtsi, P2812HNUFX.dtsi */
+		     /*	lantiq,pins = "io21";	// ARV7519RW22.dts */
+			lantiq,pull = <0>;
+			lantiq,output = <1>;
+		};
+
+		exin1 {
+			lantiq,groups = "exin1";
+			lantiq,function = "exin";
+		};
+
+		conf_tp {
+			lantiq,pins = "io1"; /* exin1 */
+			lantiq,open-drain;
+			lantiq,pull = <0>;
+		};
+
+		conf_spi {
+			lantiq,pins = "io29", "io30", "io39"; /* gpiois for spi */
+			lantiq,pull = <2>; /*Pull Up*/
+		};
+	};
+};
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb_phy1 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+	vbus-supply = <&usb_vbus>;
+};
+
+&usb1 {
+	status = "okay";
+	vbus-supply = <&usb_vbus>;
+};
+
+&eth0 {
+	interface@0 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		mac-address = [ 00 11 22 33 44 55 ];
+		lantiq,switch;
+		
+		ethernet@0 { /*rtl8367*/
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <0>;
+			phy-mode = "rgmii";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+		ethernet@5 { /* rt3883 soc */
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <5>;
+			phy-mode = "rgmii";
+			tx-delay = /bits/ 8 <3>;
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+		
+		ethernet@4 { /* wan port */
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <4>;
+			phy-mode = "gmii";
+			phy-handle = <&phy13>;
+		};
+	};
+};
+
+&pci0 {
+	status = "disabled";
+	/* gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>; */
+};
+
+&pcie0 {
+	pcie@0 {
+		reg = <0 0 0 0 0>;
+		#interrupt-cells = <1>;
+		#size-cells = <2>;
+		#address-cells = <3>;
+		device_type = "pci";
+	};
+};
