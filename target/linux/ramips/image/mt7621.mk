@@ -2,6 +2,8 @@
 # MT7621 Profiles
 #
 
+DEFAULT_SOC := mt7621
+
 KERNEL_DTB += -d21
 DEVICE_VARS += TPLINK_BOARD_ID TPLINK_HEADER_VERSION TPLINK_HWID TPLINK_HWREV
 
@@ -85,7 +87,6 @@ define Build/wr1201-factory-header
 endef
 
 define Device/afoundry_ew1200
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := AFOUNDRY
   DEVICE_MODEL := EW1200
@@ -96,7 +97,6 @@ endef
 TARGET_DEVICES += afoundry_ew1200
 
 define Device/alfa-network_quad-e4g
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := Quad-E4G
@@ -106,7 +106,6 @@ endef
 TARGET_DEVICES += alfa-network_quad-e4g
 
 define Device/asiarf_ap7621-001
-  SOC := mt7621
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AP7621-001
@@ -115,7 +114,6 @@ endef
 TARGET_DEVICES += asiarf_ap7621-001
 
 define Device/asiarf_ap7621-nv1
-  SOC := mt7621
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AP7621-NV1
@@ -124,7 +122,6 @@ endef
 TARGET_DEVICES += asiarf_ap7621-nv1
 
 define Device/asus_rt-ac57u
-  SOC := mt7621
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC57U
   IMAGE_SIZE := 16064k
@@ -134,7 +131,6 @@ endef
 TARGET_DEVICES += asus_rt-ac57u
 
 define Device/asus_rt-ac65p
-  SOC := mt7621
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC65P
   IMAGE_SIZE := 51200k
@@ -151,7 +147,6 @@ endef
 TARGET_DEVICES += asus_rt-ac65p
 
 define Device/asus_rt-ac85p
-  SOC := mt7621
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC85P
   IMAGE_SIZE := 51200k
@@ -168,7 +163,6 @@ endef
 TARGET_DEVICES += asus_rt-ac85p
 
 define Device/buffalo_wsr-1166dhp
-  SOC := mt7621
   IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
   IMAGE_SIZE := 15936k
   DEVICE_VENDOR := Buffalo
@@ -179,7 +173,6 @@ endef
 TARGET_DEVICES += buffalo_wsr-1166dhp
 
 define Device/buffalo_wsr-600dhp
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WSR-600DHP
@@ -190,7 +183,6 @@ TARGET_DEVICES += buffalo_wsr-600dhp
 
 define Device/dlink_dir-860l-b1
   $(Device/seama)
-  SOC := mt7621
   BLOCKSIZE := 64k
   SEAMA_SIGNATURE := wrgac13_dlink.2013gui_dir860lb
   KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | uImage lzma
@@ -204,7 +196,6 @@ endef
 TARGET_DEVICES += dlink_dir-860l-b1
 
 define Device/d-team_newifi-d2
-  SOC := mt7621
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Newifi
   DEVICE_MODEL := D2
@@ -214,7 +205,6 @@ endef
 TARGET_DEVICES += d-team_newifi-d2
 
 define Device/d-team_pbr-m1
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := PandoraBox
   DEVICE_MODEL := PBR-M1
@@ -225,7 +215,6 @@ endef
 TARGET_DEVICES += d-team_pbr-m1
 
 define Device/edimax_ra21s
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Edimax
   DEVICE_MODEL := RA21S
@@ -239,7 +228,6 @@ endef
 TARGET_DEVICES += edimax_ra21s
 
 define Device/edimax_rg21s
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Edimax
   DEVICE_MODEL := Gemini AC2600 RG21S
@@ -251,7 +239,6 @@ endef
 TARGET_DEVICES += edimax_rg21s
 
 define Device/elecom_wrc-1167ghbk2-s
-  SOC := mt7621
   IMAGE_SIZE := 15488k
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-1167GHBK2-S
@@ -263,7 +250,6 @@ endef
 TARGET_DEVICES += elecom_wrc-1167ghbk2-s
 
 define Device/elecom_wrc-1900gst
-  SOC := mt7621
   IMAGE_SIZE := 11264k
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-1900GST
@@ -274,7 +260,6 @@ endef
 TARGET_DEVICES += elecom_wrc-1900gst
 
 define Device/elecom_wrc-2533gst
-  SOC := mt7621
   IMAGE_SIZE := 11264k
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-2533GST
@@ -285,7 +270,6 @@ endef
 TARGET_DEVICES += elecom_wrc-2533gst
 
 define Device/firefly_firewrt
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Firefly
   DEVICE_MODEL := FireWRT
@@ -295,7 +279,6 @@ endef
 TARGET_DEVICES += firefly_firewrt
 
 define Device/gehua_ghl-r-001
-  SOC := mt7621
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := GeHua
   DEVICE_MODEL := GHL-R-001
@@ -306,7 +289,6 @@ endef
 TARGET_DEVICES += gehua_ghl-r-001
 
 define Device/gnubee_gb-pc1
-  SOC := mt7621
   DEVICE_VENDOR := GnuBee
   DEVICE_MODEL := Personal Cloud One
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620
@@ -315,7 +297,6 @@ endef
 TARGET_DEVICES += gnubee_gb-pc1
 
 define Device/gnubee_gb-pc2
-  SOC := mt7621
   DEVICE_VENDOR := GnuBee
   DEVICE_MODEL := Personal Cloud Two
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620
@@ -324,7 +305,6 @@ endef
 TARGET_DEVICES += gnubee_gb-pc2
 
 define Device/hiwifi_hc5962
-  SOC := mt7621
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 2097152
@@ -344,7 +324,6 @@ endef
 TARGET_DEVICES += hiwifi_hc5962
 
 define Device/iodata_wn-ax1167gr
-  SOC := mt7621
   IMAGE_SIZE := 15552k
   KERNEL_INITRAMFS := $$(KERNEL) | \
 	iodata-factory 7864320 4 0x1055 $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
@@ -355,7 +334,6 @@ endef
 TARGET_DEVICES += iodata_wn-ax1167gr
 
 define Device/iodata_wn-gx300gr
-  SOC := mt7621
   IMAGE_SIZE := 7616k
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-GX300GR
@@ -364,7 +342,6 @@ endef
 TARGET_DEVICES += iodata_wn-gx300gr
 
 define Device/iodata_wnpr2600g
-  SOC := mt7621
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WNPR2600G
   IMAGE_SIZE := 13952k
@@ -376,7 +353,6 @@ endef
 TARGET_DEVICES += iodata_wnpr2600g
 
 define Device/iptime_a6ns-m
-  SOC := mt7621
   IMAGE_SIZE := 16128k
   UIMAGE_NAME := a6nm
   DEVICE_VENDOR := ipTIME
@@ -386,7 +362,6 @@ endef
 TARGET_DEVICES += iptime_a6ns-m
 
 define Device/iptime_a8004t
-  SOC := mt7621
   IMAGE_SIZE := 16128k
   UIMAGE_NAME := a8004t
   DEVICE_VENDOR := ipTIME
@@ -396,7 +371,6 @@ endef
 TARGET_DEVICES += iptime_a8004t
 
 define Device/jcg_jhr-ac876m
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
@@ -409,7 +383,6 @@ endef
 TARGET_DEVICES += jcg_jhr-ac876m
 
 define Device/lenovo_newifi-d1
-  SOC := mt7621
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Newifi
   DEVICE_MODEL := D1
@@ -420,7 +393,6 @@ endef
 TARGET_DEVICES += lenovo_newifi-d1
 
 define Device/linksys_re6500
-  SOC := mt7621
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := RE6500
@@ -430,7 +402,6 @@ endef
 TARGET_DEVICES += linksys_re6500
 
 define Device/mediatek_ap-mt7621a-v60
-  SOC := mt7621
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Mediatek
   DEVICE_MODEL := AP-MT7621A-V60 EVB
@@ -439,7 +410,6 @@ endef
 TARGET_DEVICES += mediatek_ap-mt7621a-v60
 
 define Device/mediatek_mt7621-eval-board
-  SOC := mt7621
   BLOCKSIZE := 64k
   IMAGE_SIZE := 15104k
   DEVICE_VENDOR := MediaTek
@@ -449,7 +419,6 @@ endef
 TARGET_DEVICES += mediatek_mt7621-eval-board
 
 define Device/MikroTik
-  SOC := mt7621
   DEVICE_VENDOR := MikroTik
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16128k
@@ -483,7 +452,6 @@ endef
 TARGET_DEVICES += mikrotik_rbm33g
 
 define Device/mqmaker_witi
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := MQmaker
   DEVICE_MODEL := WiTi
@@ -494,7 +462,6 @@ endef
 TARGET_DEVICES += mqmaker_witi
 
 define Device/mtc_wr1201
-  SOC := mt7621
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := MTC
   DEVICE_MODEL := Wireless Router WR1201
@@ -505,7 +472,6 @@ endef
 TARGET_DEVICES += mtc_wr1201
 
 define Device/netgear_ex6150
-  SOC := mt7621
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX6150
   DEVICE_PACKAGES := kmod-mt76x2 wpad-basic
@@ -518,7 +484,6 @@ endef
 TARGET_DEVICES += netgear_ex6150
 
 define Device/netgear_sercomm_nand
-  SOC := mt7621
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
@@ -586,7 +551,6 @@ endef
 TARGET_DEVICES += netgear_r6850
 
 define Device/netgear_wndr3700-v5
-  SOC := mt7621
   BLOCKSIZE := 64k
   IMAGE_SIZE := 15232k
   SERCOMM_HWID := AYB
@@ -610,7 +574,6 @@ endef
 TARGET_DEVICES += netgear_wndr3700-v5
 
 define Device/netis_wf-2881
-  SOC := mt7621
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   FILESYSTEMS := squashfs
@@ -627,7 +590,6 @@ endef
 TARGET_DEVICES += netis_wf-2881
 
 define Device/phicomm_k2p
-  SOC := mt7621
   IMAGE_SIZE := 15744k
   DEVICE_VENDOR := Phicomm
   DEVICE_MODEL := K2P
@@ -639,7 +601,6 @@ endef
 TARGET_DEVICES += phicomm_k2p
 
 define Device/planex_vr500
-  SOC := mt7621
   IMAGE_SIZE := 65216k
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := VR500
@@ -649,7 +610,6 @@ endef
 TARGET_DEVICES += planex_vr500
 
 define Device/samknows_whitebox-v8
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := SamKnows
   DEVICE_MODEL := Whitebox 8
@@ -660,7 +620,6 @@ endef
 TARGET_DEVICES += samknows_whitebox-v8
 
 define Device/storylink_sap-g3200u3
-  SOC := mt7621
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := STORYLiNK
   DEVICE_MODEL := SAP-G3200U3
@@ -670,7 +629,6 @@ endef
 TARGET_DEVICES += storylink_sap-g3200u3
 
 define Device/telco-electronics_x1
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Telco Electronics
   DEVICE_MODEL := X1
@@ -679,7 +637,6 @@ endef
 TARGET_DEVICES += telco-electronics_x1
 
 define Device/thunder_timecloud
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Thunder
   DEVICE_MODEL := Timecloud
@@ -689,7 +646,6 @@ endef
 TARGET_DEVICES += thunder_timecloud
 
 define Device/totolink_a7000r
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   UIMAGE_NAME := C8340R1C-9999
   DEVICE_VENDOR := TOTOLINK
@@ -699,7 +655,6 @@ endef
 TARGET_DEVICES += totolink_a7000r
 
 define Device/adslr_g7
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := ADSLR
   DEVICE_MODEL := G7
@@ -708,7 +663,6 @@ endef
 TARGET_DEVICES += adslr_g7
 
 define Device/tplink-safeloader
-  SOC := mt7621
   DEVICE_VENDOR := TP-Link
   TPLINK_BOARD_ID :=
   TPLINK_HWID := 0x0
@@ -743,7 +697,6 @@ endef
 TARGET_DEVICES += tplink_re650-v1
 
 define Device/ubiquiti_edgerouterx
-  SOC := mt7621
   IMAGE_SIZE := 256768k
   FILESYSTEMS := squashfs
   KERNEL_SIZE := 3145728
@@ -766,7 +719,6 @@ endef
 TARGET_DEVICES += ubiquiti_edgerouterx-sfp
 
 define Device/unielec_u7621-06-16m
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
@@ -777,7 +729,6 @@ endef
 TARGET_DEVICES += unielec_u7621-06-16m
 
 define Device/unielec_u7621-06-64m
-  SOC := mt7621
   IMAGE_SIZE := 65216k
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
@@ -788,7 +739,6 @@ endef
 TARGET_DEVICES += unielec_u7621-06-64m
 
 define Device/wevo_11acnas
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   UIMAGE_NAME := 11AC-NAS-Router(0.0.0)
   DEVICE_VENDOR := WeVO
@@ -800,7 +750,6 @@ endef
 TARGET_DEVICES += wevo_11acnas
 
 define Device/wevo_w2914ns-v2
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   UIMAGE_NAME := W2914NS-V2(0.0.0)
   DEVICE_VENDOR := WeVO
@@ -813,7 +762,6 @@ endef
 TARGET_DEVICES += wevo_w2914ns-v2
 
 define Device/xiaomi_mir3g
-  SOC := mt7621
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
@@ -833,7 +781,6 @@ endef
 TARGET_DEVICES += xiaomi_mir3g
 
 define Device/xiaomi_mir3g-v2
-  SOC := mt7621
   IMAGE_SIZE := 14848k
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 3G
@@ -846,7 +793,6 @@ endef
 TARGET_DEVICES += xiaomi_mir3g-v2
 
 define Device/xiaomi_mir3p
-  SOC := mt7621
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE:= 4096k
@@ -864,7 +810,6 @@ endef
 TARGET_DEVICES += xiaomi_mir3p
 
 define Device/xiaoyu_xy-c5
-  SOC := mt7621
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := XiaoYu
   DEVICE_MODEL := XY-C5
@@ -873,7 +818,6 @@ endef
 TARGET_DEVICES += xiaoyu_xy-c5
 
 define Device/xzwifi_creativebox-v1
-  SOC := mt7621
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := CreativeBox
   DEVICE_MODEL := v1
@@ -883,7 +827,6 @@ endef
 TARGET_DEVICES += xzwifi_creativebox-v1
 
 define Device/youhua_wr1200js
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := YouHua
   DEVICE_MODEL := WR1200JS
@@ -893,7 +836,6 @@ endef
 TARGET_DEVICES += youhua_wr1200js
 
 define Device/youku_yk-l2
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Youku
   DEVICE_MODEL := YK-L2
@@ -903,7 +845,6 @@ endef
 TARGET_DEVICES += youku_yk-l2
 
 define Device/zbtlink_zbt-we1326
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE1326
@@ -914,7 +855,6 @@ endef
 TARGET_DEVICES += zbtlink_zbt-we1326
 
 define Device/zbtlink_zbt-we3526
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE3526
@@ -924,7 +864,6 @@ endef
 TARGET_DEVICES += zbtlink_zbt-we3526
 
 define Device/zbtlink_zbt-wg2626
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WG2626
@@ -935,7 +874,6 @@ endef
 TARGET_DEVICES += zbtlink_zbt-wg2626
 
 define Device/zbtlink_zbt-wg3526-16m
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WG3526
@@ -947,7 +885,6 @@ endef
 TARGET_DEVICES += zbtlink_zbt-wg3526-16m
 
 define Device/zbtlink_zbt-wg3526-32m
-  SOC := mt7621
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WG3526
@@ -959,7 +896,6 @@ endef
 TARGET_DEVICES += zbtlink_zbt-wg3526-32m
 
 define Device/zio_freezio
-  SOC := mt7621
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := ZIO
   DEVICE_MODEL := FREEZIO
