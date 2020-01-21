@@ -1,0 +1,63 @@
+From 57625b2044e1084a07fbc6010b075933ee7317fb Mon Sep 17 00:00:00 2001
+From: Jonas Albrecht <plonkbong100@protonmail.com>
+Date: Sun, 19 Jan 2020 17:20:51 +0000
+Subject: [PATCH] mips: lantiq: add buscon2 and addrsel2 param
+X-Patchwork-Bot: notify
+
+This patch modifie following files:
+/arch/mips/lantiq/xway/sysctrl.c
+arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.c
+For adding buscon2 and addrsel2 parameters, taken from vendor firmware of
+the Arcardyan VGV952CJW33-E-IR router.
+It is needed to setup the attached display.
+
+Co-Developed-by: Holger Foerster <Hamsi2k@freenet.de>
+Signed-off-by: Holger Foerster <Hamsi2k@freenet.de>
+Co-Developed-by: Arnold Schulz <arnysch@gmx.net>
+Signed-off-by: Arnold Schulz <arnysch@gmx.net>
+Acked-by: Jonas Albrecht <plonkbong100@protonmail.com>
+Signed-off-by: Jonas Albrecht <plonkbong100@protonmail.com>
+---
+ arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h | 2 ++
+ arch/mips/lantiq/xway/sysctrl.c                     | 4 +++-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+index 4d93189..beac171 100644
+--- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
++++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+@@ -87,6 +87,8 @@ extern __iomem void *ltq_cgu_membase;
+ #define LTQ_EBU_PCC_ISTAT	0x00A0
+ #define LTQ_EBU_BUSCON1		0x0064
+ #define LTQ_EBU_ADDRSEL1	0x0024
++#define LTQ_EBU_BUSCON2		0x0068
++#define LTQ_EBU_ADDRSEL2	0x0028
+ #define EBU_WRDIS		0x80000000
+ 
+ /* WDT */
+diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
+index c7f6dee..8f1754b 100644
+--- a/arch/mips/lantiq/xway/sysctrl.c
++++ b/arch/mips/lantiq/xway/sysctrl.c
+@@ -147,7 +147,9 @@ static u32 pmu_clk_cr_b[] = {
+ 
+ static void __iomem *pmu_membase;
+ void __iomem *ltq_cgu_membase;
++
+ void __iomem *ltq_ebu_membase;
++EXPORT_SYMBOL(ltq_ebu_membase);
+ 
+ static u32 ifccr = CGU_IFCCR;
+ static u32 pcicr = CGU_PCICR;
+@@ -474,7 +476,7 @@ void __init ltq_soc_init(void)
+ 	if (!pmu_membase || !ltq_cgu_membase || !ltq_ebu_membase)
+ 		panic("Failed to remap core resources");
+ 
+-	/* make sure to unprotect the memory region where flash is located */
++	/* make sure to unprotect the memory region where NOR flash is located */
+ 	ltq_ebu_w32(ltq_ebu_r32(LTQ_EBU_BUSCON0) & ~EBU_WRDIS, LTQ_EBU_BUSCON0);
+ 
+ 	/* add our generic xway clocks */
+-- 
+2.7.4
+
