@@ -1,0 +1,102 @@
+Index: ubox-2019-12-31-0e34af14/log/logd.c
+===================================================================
+--- ubox-2019-12-31-0e34af14.orig/log/logd.c
++++ ubox-2019-12-31-0e34af14/log/logd.c
+@@ -238,21 +238,27 @@ int
+ main(int argc, char **argv)
+ {
+ 	int ch, log_size = 16;
++	unsigned char log_level = 6;
+ 
+ 	signal(SIGPIPE, SIG_IGN);
+-	while ((ch = getopt(argc, argv, "S:")) != -1) {
++	while ((ch = getopt(argc, argv, "S:P:")) != -1) {
+ 		switch (ch) {
+ 		case 'S':
+ 			log_size = atoi(optarg);
+ 			if (log_size < 1)
+ 				log_size = 16;
+ 			break;
++		case 'P':
++			log_level = atoi(optarg);
++			if (log_level > 7)
++				log_level = 7;
++			break;
+ 		}
+ 	}
+ 	log_size *= 1024;
+ 
+ 	uloop_init();
+-	log_init(log_size);
++	log_init(log_size, log_level);
+ 	conn.cb = ubus_connect_handler;
+ 	ubus_auto_connect(&conn);
+ 	uloop_run();
+Index: ubox-2019-12-31-0e34af14/log/syslog.c
+===================================================================
+--- ubox-2019-12-31-0e34af14.orig/log/syslog.c
++++ ubox-2019-12-31-0e34af14/log/syslog.c
+@@ -16,6 +16,7 @@
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <sys/stat.h>
++#include <sys/syslog.h>
+ 
+ #include <fcntl.h>
+ #include <regex.h>
+@@ -35,6 +36,7 @@
+ #include "syslog.h"
+ 
+ #define LOG_DEFAULT_SIZE	(16 * 1024)
++#define LOG_DEFAULT_LEVEL       LOG_INFO
+ #define LOG_DEFAULT_SOCKET	"/dev/log"
+ #define SYSLOG_PADDING		16
+ 
+@@ -44,6 +46,7 @@
+ 
+ static char *log_dev = LOG_DEFAULT_SOCKET;
+ static int log_size = LOG_DEFAULT_SIZE;
++static unsigned char log_level = LOG_DEFAULT_LEVEL;
+ static struct log_head *log, *log_end, *oldest, *newest;
+ static int current_id = 0;
+ static regex_t pat_prio;
+@@ -89,6 +92,11 @@ log_add(char *buf, int size, int source)
+ 	ret = regexec(&pat_prio, buf, 3, matches, 0);
+ 	if (!ret) {
+ 		priority = atoi(&buf[matches[1].rm_so]);
++		// const unsigned int facility = LOG_FAC(priority);
++		const unsigned char prio = LOG_PRI(priority);
++		if (prio > log_level) {
++			return;
++		}
+ 		size -= matches[2].rm_so;
+ 		buf += matches[2].rm_so;
+ 	}
+@@ -279,11 +287,13 @@ log_buffer_init(int size)
+ }
+ 
+ void
+-log_init(int _log_size)
++log_init(int _log_size, const unsigned char _log_level)
+ {
+ 	if (_log_size > 0)
+ 		log_size = _log_size;
+ 
++	log_level = _log_level;
++
+ 	regcomp(&pat_prio, "^<([0-9]*)>(.*)", REG_EXTENDED);
+ 	regcomp(&pat_tstamp, "^\[[ 0]*([0-9]*).([0-9]*)] (.*)", REG_EXTENDED);
+ 
+Index: ubox-2019-12-31-0e34af14/log/syslog.h
+===================================================================
+--- ubox-2019-12-31-0e34af14.orig/log/syslog.h
++++ ubox-2019-12-31-0e34af14/log/syslog.h
+@@ -32,7 +32,7 @@ struct log_head {
+ 	char data[];
+ };
+ 
+-void log_init(int log_size);
++void log_init(int log_size, const unsigned char log_level);
+ void log_shutdown(void);
+ 
+ typedef void (*log_list_cb)(struct log_head *h);
