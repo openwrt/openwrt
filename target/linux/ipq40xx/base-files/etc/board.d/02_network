@@ -48,6 +48,7 @@ ipq40xx_setup_interfaces()
 	aruba,ap-303|\
 	avm,fritzrepeater-1200|\
 	engenius,eap1300|\
+	engenius,emd1|\
 	meraki,mr33|\
 	netgear,ex6100v2|\
 	netgear,ex6150v2|\
@@ -102,6 +103,10 @@ ipq40xx_setup_macs()
 		;;
 	cilab,meshpoint-one)
 		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
+		;;
+	engenius,emd1)
+		lan_mac=$(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
+		label_mac=$lan_mac
 		;;
 	engenius,ens620ext)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
