@@ -462,7 +462,7 @@ define Device/gl-ar150
   BOARDNAME := GL-AR150
   IMAGE_SIZE := 16000k
   CONSOLE := ttyATH0,115200
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += gl-ar150
 
@@ -516,7 +516,7 @@ define Device/gl-domino
   BOARDNAME := DOMINO
   IMAGE_SIZE := 16000k
   CONSOLE := ttyATH0,115200
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += gl-domino
 
@@ -526,7 +526,7 @@ define Device/gl-mifi
   BOARDNAME := GL-MIFI
   IMAGE_SIZE := 16000k
   CONSOLE := ttyATH0,115200
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += gl-mifi
 
