@@ -117,8 +117,14 @@ TARGET_DEVICES += ap531b0
 define Device/ap90q
   DEVICE_TITLE := YunCore AP80Q/AP90Q
   BOARDNAME := AP90Q
+  BLOCKSIZE := 64k
   IMAGE_SIZE := 16000k
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
+  KERNEL_SIZE := 1472k
+  ROOTFS_SIZE := 14528k
+  CONSOLE = ttyS0,115200
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),14528k(rootfs),1408k(kernel),64k(art)ro,16000k@0x50000(firmware)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs |\
+	  pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += ap90q
 

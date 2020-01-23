@@ -208,7 +208,6 @@ platform_check_image() {
 	ap121f|\
 	ap132|\
 	ap531b0|\
-	ap90q|\
 	archer-c25-v1|\
 	archer-c58-v1|\
 	archer-c59-v1|\
@@ -335,6 +334,7 @@ platform_check_image() {
 
 		return 0
 		;;
+	ap90q|\
 	alfa-ap96|\
 	alfa-nx|\
 	ap121|\
