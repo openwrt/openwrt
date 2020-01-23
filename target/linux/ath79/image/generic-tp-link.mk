@@ -8,7 +8,6 @@ define Device/tplink_archer-a7-v5
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct ath10k-firmware-qca988x-ct
   TPLINK_BOARD_ID := ARCHER-A7-V5
   BOARDNAME := ARCHER-A7-V5
-  SUPPORTED_DEVICES += archer-a7-v5
 endef
 TARGET_DEVICES += tplink_archer-a7-v5
 
@@ -380,6 +379,6 @@ define Device/tplink_tl-wr2543-v1
   IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade -v 3.13.99 | \
     append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := append-rootfs | mktplinkfw factory -v 3.13.99
-  SUPPORTED_DEVICES += tl-wr2543-v1
+  SUPPORTED_DEVICES += tl-wr2543n
 endef
 TARGET_DEVICES += tplink_tl-wr2543-v1
