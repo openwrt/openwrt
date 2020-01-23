@@ -16,6 +16,9 @@ case "$FIRMWARE" in
 			avm,fritz7362sl)
 				caldata_extract_reverse "urlader" 0x1541 0x440
 				;;
+			avm,fritz3390)
+				caldata_extract_reverse "urlader" 0x2546 0x440
+				;;
 			avm,fritz7360sl)
 				caldata_extract "urlader" 0x985 0x1000
 				;;
