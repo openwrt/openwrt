@@ -120,6 +120,17 @@ define Device/avm_fritz3370-rev2-micron
 endef
 TARGET_DEVICES += avm_fritz3370-rev2-micron
 
+define Device/avm_fritz3390
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 3390
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-wolfssl \
+	kmod-usb-dwc2 fritz-tffs
+endef
+TARGET_DEVICES += avm_fritz3390
+
 define Device/avm_fritz7360sl
   $(Device/AVM)
   DEVICE_MODEL := FRITZ!Box 7360 SL
