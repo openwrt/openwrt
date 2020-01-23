@@ -268,14 +268,14 @@ TARGET_DEVICES += ubnt_unifiac-lr
 define Device/ubnt_unifiac-mesh
   $(Device/ubnt_unifiac)
   DEVICE_MODEL := UniFi AC-Mesh
-  SUPPORTED_DEVICES += ubnt-unifiac-mesh
+  SUPPORTED_DEVICES += unifiac-lite
 endef
 TARGET_DEVICES += ubnt_unifiac-mesh
 
 define Device/ubnt_unifiac-mesh-pro
   $(Device/ubnt_unifiac)
   DEVICE_MODEL := UniFi AC-Mesh Pro
-  SUPPORTED_DEVICES += ubnt-unifiac-mesh-pro
+  SUPPORTED_DEVICES += unifiac-pro
 endef
 TARGET_DEVICES += ubnt_unifiac-mesh-pro
 
@@ -283,6 +283,6 @@ define Device/ubnt_unifiac-pro
   $(Device/ubnt_unifiac)
   DEVICE_MODEL := UniFi AC-Pro
   DEVICE_PACKAGES += kmod-usb2
-  SUPPORTED_DEVICES += ubnt-unifiac-pro
+  SUPPORTED_DEVICES += unifiac-pro
 endef
 TARGET_DEVICES += ubnt_unifiac-pro
