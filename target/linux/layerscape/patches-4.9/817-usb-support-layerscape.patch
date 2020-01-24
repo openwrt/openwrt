@@ -87,7 +87,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			pkt_len = le32_to_cpu(rx_desc->opts1) & RX_LEN_MASK;
  			if (pkt_len < ETH_ZLEN)
  				break;
-@@ -4516,6 +4521,7 @@ static struct usb_device_id rtl8152_tabl
+@@ -4519,6 +4524,7 @@ static struct usb_device_id rtl8152_tabl
  	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO,  0x304f)},
  	{REALTEK_USB_DEVICE(VENDOR_ID_LINKSYS, 0x0041)},
  	{REALTEK_USB_DEVICE(VENDOR_ID_NVIDIA,  0x09ff)},
@@ -156,7 +156,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	int ret;
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -4454,6 +4454,14 @@ hub_port_init(struct usb_hub *hub, struc
+@@ -4455,6 +4455,14 @@ hub_port_init(struct usb_hub *hub, struc
  	else
  		speed = usb_speed_string(udev->speed);
  

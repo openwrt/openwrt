@@ -1360,7 +1360,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	return ret;
  }
-@@ -563,6 +714,19 @@ struct iommu_group *iommu_group_get(stru
+@@ -564,6 +715,19 @@ struct iommu_group *iommu_group_get(stru
  EXPORT_SYMBOL_GPL(iommu_group_get);
  
  /**
@@ -1380,7 +1380,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * iommu_group_put - Decrement group reference
   * @group: the group to use
   *
-@@ -845,10 +1009,19 @@ struct iommu_group *iommu_group_get_for_
+@@ -846,10 +1010,19 @@ struct iommu_group *iommu_group_get_for_
  	 * IOMMU driver.
  	 */
  	if (!group->default_domain) {
@@ -1403,7 +1403,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  
  	ret = iommu_group_add_device(group, dev);
-@@ -1557,20 +1730,38 @@ int iommu_domain_set_attr(struct iommu_d
+@@ -1558,20 +1731,38 @@ int iommu_domain_set_attr(struct iommu_d
  }
  EXPORT_SYMBOL_GPL(iommu_domain_set_attr);
  
