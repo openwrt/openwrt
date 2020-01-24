@@ -15,9 +15,9 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 ifeq ($(SUBTARGET),xway)
-  UBIFS_OPTS := -m 512 -e 15872 -c 1959
+	UBIFS_OPTS := -m 512 -e 15872 -c 1959
 else
-  UBIFS_OPTS := -m 2048 -e 126KiB -c 4096
+	UBIFS_OPTS := -m 2048 -e 126KiB -c 4096
 endif
 
 define Build/append-avm-fakeroot
@@ -29,12 +29,12 @@ define Build/dgn3500-sercom-footer
 endef
 
 define Build/mkbrncmdline
-   mkbrncmdline -i $@ -o $@.new BRN-BOOT
-   mv $@.new $@
+	mkbrncmdline -i $@ -o $@.new BRN-BOOT
+	mv $@.new $@
 endef
 
 define Build/mkbrnimg
-   mkbrnimg -s $(SIGNATURE) -m $(MAGIC) -p $(CRC32_POLY) -o $@ $(IMAGE_KERNEL) $(IMAGE_ROOTFS)
+	mkbrnimg -s $(SIGNATURE) -m $(MAGIC) -p $(CRC32_POLY) -o $@ $(IMAGE_KERNEL) $(IMAGE_ROOTFS)
 endef
 
 define Build/fullimage
@@ -126,13 +126,11 @@ include danube.mk
 include ar9.mk
 endif
 
-
 ifeq ($(SUBTARGET),xrx200)
 DEFAULT_SOC := vr9
 include tp-link.mk
 include vr9.mk
 endif
-
 
 ifeq ($(SUBTARGET),falcon)
 DEFAULT_SOC := falcon
