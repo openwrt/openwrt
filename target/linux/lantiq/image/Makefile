@@ -52,6 +52,8 @@ define Build/fullimage
 	rm $@.tmp
 endef
 
+DTS_DIR := $(DTS_DIR)/lantiq
+
 # Shared device definition: applies to every defined device
 define Device/Default
   PROFILES = Default
@@ -61,7 +63,6 @@ define Device/Default
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
   FILESYSTEMS := squashfs
   IMAGE_SIZE :=
-  DTS_DIR := $(DTS_DIR)/lantiq
   DEVICE_DTS = $$(SOC)_$(1)
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   IMAGES := sysupgrade.bin
