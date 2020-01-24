@@ -111,10 +111,12 @@ define Device/AVM
 endef
 
 ifeq ($(SUBTARGET),ase)
+DEFAULT_SOC := amazonse
 include amazonse.mk
 endif
 
 ifeq ($(SUBTARGET),xway_legacy)
+DEFAULT_SOC := danube
 include xway_legacy.mk
 endif
 
@@ -125,12 +127,14 @@ endif
 
 
 ifeq ($(SUBTARGET),xrx200)
+DEFAULT_SOC := vr9
 include tp-link.mk
 include vr9.mk
 endif
 
 
 ifeq ($(SUBTARGET),falcon)
+DEFAULT_SOC := falcon
 include falcon.mk
 endif
 

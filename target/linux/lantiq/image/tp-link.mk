@@ -2,7 +2,6 @@ DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD TPLIN
 
 define Device/lantiqTpLink
   DEVICE_VENDOR := TP-Link
-  SOC := vr9
   TPLINK_HWREVADD := 0
   TPLINK_HVERSION := 2
   KERNEL := kernel-bin | append-dtb | lzma
