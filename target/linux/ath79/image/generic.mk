@@ -300,6 +300,16 @@ define Device/comfast_cf-e5
 endef
 TARGET_DEVICES += comfast_cf-e5
 
+define Device/comfast_cf-e560ac
+  SOC := qca9531
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E560AC
+  DEVICE_PACKAGES := kmod-leds-gpio kmod-usb2 kmod-ath10k-ct \
+	ath10k-firmware-qca9888-ct
+  IMAGE_SIZE := 16128k
+endef
+TARGET_DEVICES += comfast_cf-e560ac
+
 define Device/comfast_cf-wr650ac-v1
   SOC := qca9558
   DEVICE_VENDOR := COMFAST
