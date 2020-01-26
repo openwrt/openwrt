@@ -22,7 +22,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1926,6 +1926,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
+@@ -1825,6 +1825,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
  	  The command-line arguments provided by the boot loader will be
  	  appended to the the device tree bootargs property.
  
@@ -133,7 +133,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  	}
  	*ptr = '\0';
  
-@@ -148,7 +212,9 @@ int atags_to_fdt(void *atag_list, void *
+@@ -166,7 +230,9 @@ int atags_to_fdt(void *atag_list, void *
  			else
  				setprop_string(fdt, "/chosen", "bootargs",
  					       atag->u.cmdline.cmdline);
@@ -144,7 +144,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  			if (memcount >= sizeof(mem_reg_property)/4)
  				continue;
  			if (!atag->u.mem.size)
-@@ -187,6 +253,10 @@ int atags_to_fdt(void *atag_list, void *
+@@ -210,6 +276,10 @@ int atags_to_fdt(void *atag_list, void *
  		setprop(fdt, "/memory", "reg", mem_reg_property,
  			4 * memcount * memsize);
  	}
@@ -157,7 +157,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  }
 --- a/init/main.c
 +++ b/init/main.c
-@@ -102,6 +102,10 @@
+@@ -103,6 +103,10 @@
  #define CREATE_TRACE_POINTS
  #include <trace/events/initcall.h>
  
@@ -168,7 +168,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  static int kernel_init(void *);
  
  extern void init_IRQ(void);
-@@ -593,6 +597,18 @@ asmlinkage __visible void __init start_k
+@@ -632,6 +636,18 @@ asmlinkage __visible void __init start_k
  	pr_notice("Kernel command line: %s\n", boot_command_line);
  	/* parameters may set static keys */
  	jump_label_init();

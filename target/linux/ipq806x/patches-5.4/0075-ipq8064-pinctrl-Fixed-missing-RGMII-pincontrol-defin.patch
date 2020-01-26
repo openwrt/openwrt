@@ -10,7 +10,7 @@ Signed-off-by: Ram Chandra Jangir <rjangir@codeaurora.org>
 
 --- a/drivers/pinctrl/qcom/pinctrl-ipq8064.c
 +++ b/drivers/pinctrl/qcom/pinctrl-ipq8064.c
-@@ -308,7 +308,7 @@ static const char * const gpio_groups[]
+@@ -299,7 +299,7 @@ static const char * const gpio_groups[]
  };
  
  static const char * const mdio_groups[] = {
@@ -19,7 +19,7 @@ Signed-off-by: Ram Chandra Jangir <rjangir@codeaurora.org>
  };
  
  static const char * const mi2s_groups[] = {
-@@ -412,8 +412,8 @@ static const char * const usb2_hsic_grou
+@@ -403,8 +403,8 @@ static const char * const usb2_hsic_grou
  };
  
  static const char * const rgmii2_groups[] = {
@@ -30,7 +30,7 @@ Signed-off-by: Ram Chandra Jangir <rjangir@codeaurora.org>
  };
  
  static const char * const sata_groups[] = {
-@@ -548,7 +548,7 @@ static const struct msm_function ipq8064
+@@ -539,7 +539,7 @@ static const struct msm_function ipq8064
  static const struct msm_pingroup ipq8064_groups[] = {
  	PINGROUP(0, mdio, NA, NA, NA, NA, NA, NA, NA, NA, NA),
  	PINGROUP(1, mdio, NA, NA, NA, NA, NA, NA, NA, NA, NA),
@@ -39,7 +39,7 @@ Signed-off-by: Ram Chandra Jangir <rjangir@codeaurora.org>
  	PINGROUP(3, pcie1_rst, pcie1_prsnt, pdm, NA, NA, NA, NA, NA, NA, NA),
  	PINGROUP(4, pcie1_pwren_n, pcie1_pwren, NA, NA, NA, NA, NA, NA, NA, NA),
  	PINGROUP(5, pcie1_clk_req, pcie1_pwrflt, NA, NA, NA, NA, NA, NA, NA, NA),
-@@ -612,7 +612,7 @@ static const struct msm_pingroup ipq8064
+@@ -603,7 +603,7 @@ static const struct msm_pingroup ipq8064
  	PINGROUP(63, pcie3_rst, NA, NA, NA, NA, NA, NA, NA, NA, NA),
  	PINGROUP(64, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
  	PINGROUP(65, pcie3_clk_req, NA, NA, NA, NA, NA, NA, NA, NA, NA),

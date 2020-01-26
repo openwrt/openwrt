@@ -33,7 +33,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -331,7 +331,7 @@ config ARCH_MULTIPLATFORM
+@@ -318,7 +318,7 @@ config ARCH_MULTIPLATFORM
  	depends on MMU
  	select ARM_HAS_SG_CHAIN
  	select ARM_PATCH_PHYS_VIRT
@@ -44,7 +44,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  	select GENERIC_CLOCKEVENTS
 --- a/arch/arm/Makefile
 +++ b/arch/arm/Makefile
-@@ -255,9 +255,11 @@ MACHINE  := arch/arm/mach-$(word 1,$(mac
+@@ -258,9 +258,11 @@ MACHINE  := arch/arm/mach-$(word 1,$(mac
  else
  MACHINE  :=
  endif

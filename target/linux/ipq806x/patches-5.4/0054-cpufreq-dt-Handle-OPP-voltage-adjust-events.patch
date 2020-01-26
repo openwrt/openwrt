@@ -25,9 +25,9 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
 
 --- a/drivers/cpufreq/cpufreq-dt.c
 +++ b/drivers/cpufreq/cpufreq-dt.c
-@@ -32,6 +32,9 @@ struct private_data {
+@@ -27,6 +27,9 @@ struct private_data {
+ 	struct opp_table *opp_table;
  	struct device *cpu_dev;
- 	struct thermal_cooling_device *cdev;
  	const char *reg_name;
 +	struct notifier_block opp_nb;
 +	struct mutex lock;
@@ -35,7 +35,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  	bool have_static_opps;
  };
  
-@@ -47,12 +50,15 @@ static int set_target(struct cpufreq_pol
+@@ -42,12 +45,15 @@ static int set_target(struct cpufreq_pol
  	unsigned long freq = policy->freq_table[index].frequency;
  	int ret;
  
@@ -51,7 +51,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  
  	return ret;
  }
-@@ -95,6 +101,39 @@ node_put:
+@@ -90,6 +96,39 @@ node_put:
  	return name;
  }
  
@@ -91,7 +91,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  static int resources_available(void)
  {
  	struct device *cpu_dev;
-@@ -251,10 +290,14 @@ static int cpufreq_init(struct cpufreq_p
+@@ -246,10 +285,14 @@ static int cpufreq_init(struct cpufreq_p
  				__func__, ret);
  	}
  
@@ -107,7 +107,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  	}
  
  	priv->cpu_dev = cpu_dev;
-@@ -284,6 +327,8 @@ static int cpufreq_init(struct cpufreq_p
+@@ -281,6 +324,8 @@ static int cpufreq_init(struct cpufreq_p
  
  out_free_cpufreq_table:
  	dev_pm_opp_free_cpufreq_table(cpu_dev, &freq_table);

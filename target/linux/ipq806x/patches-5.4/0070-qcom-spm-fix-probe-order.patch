@@ -4,9 +4,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/soc/qcom/spm.c
 +++ b/drivers/soc/qcom/spm.c
-@@ -219,6 +219,9 @@ static int __init qcom_cpuidle_init(stru
- 	cpumask_t mask;
- 	bool use_scm_power_down = false;
+@@ -214,6 +214,9 @@ static int __init qcom_cpuidle_init(stru
+ 	if (!qcom_scm_is_available())
+ 		return -EPROBE_DEFER;
  
 +	if (!qcom_scm_is_available())
 +		return -EPROBE_DEFER;

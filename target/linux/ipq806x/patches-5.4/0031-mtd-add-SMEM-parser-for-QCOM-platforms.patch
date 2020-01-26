@@ -10,17 +10,17 @@ SMEM and use it to register an MTD layout according to its content.
 Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
 ---
- drivers/mtd/Kconfig          |   7 ++
- drivers/mtd/Makefile         |   1 +
- drivers/mtd/qcom_smem_part.c | 228 +++++++++++++++++++++++++++++++++++++++++++
+ drivers/mtd/parsers/Kconfig          |   7 ++
+ drivers/mtd/parsers/Makefile         |   1 +
+ drivers/mtd/parsers/qcom_smem_part.c | 228 +++++++++++++++++++++++++++++++++++++++++++
  3 files changed, 236 insertions(+)
- create mode 100644 drivers/mtd/qcom_smem_part.c
+ create mode 100644 drivers/mtd/parsers/qcom_smem_part.c
 
---- a/drivers/mtd/Kconfig
-+++ b/drivers/mtd/Kconfig
-@@ -193,6 +193,13 @@ config MTD_MYLOADER_PARTS
- 	  You will still need the parsing functions to be called by the driver
- 	  for your particular device. It won't happen automatically.
+--- a/drivers/mtd/parsers/Kconfig
++++ b/drivers/mtd/parsers/Kconfig
+@@ -20,6 +20,13 @@ config MTD_BCM63XX_PARTS
+ 	  This provides partition parsing for BCM63xx devices with CFE
+ 	  bootloaders.
  
 +config MTD_QCOM_SMEM_PARTS
 +	tristate "QCOM SMEM partitioning support"
@@ -29,11 +29,11 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
 +	  This provides partitions parser for QCOM devices using SMEM
 +	  such as IPQ806x.
 +
- comment "User Modules And Translation Layers"
- 
- #
+ config MTD_CMDLINE_PARTS
+ 	tristate "Command line partition table parsing"
+ 	depends on MTD
 --- /dev/null
-+++ b/drivers/mtd/qcom_smem_part.c
++++ b/drivers/mtd/parsers/qcom_smem_part.c
 @@ -0,0 +1,235 @@
 +/*
 + * Copyright (c) 2015, The Linux Foundation. All rights reserved.
@@ -149,7 +149,7 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
 +	return 0;
 +}
 +
-+static int of_dev_node_match(struct device *dev, void *data)
++static int of_dev_node_match(struct device *dev, const void *data)
 +{
 +	return dev->of_node == data;
 +}
@@ -270,13 +270,13 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Mathieu Olivari <mathieu@codeaurora.org>");
 +MODULE_DESCRIPTION("Parsing code for SMEM based partition tables");
---- a/drivers/mtd/Makefile
-+++ b/drivers/mtd/Makefile
-@@ -17,6 +17,7 @@ obj-$(CONFIG_MTD_AR7_PARTS)	+= ar7part.o
- obj-$(CONFIG_MTD_BCM63XX_PARTS)	+= bcm63xxpart.o
- obj-$(CONFIG_MTD_BCM47XX_PARTS)	+= bcm47xxpart.o
- obj-$(CONFIG_MTD_MYLOADER_PARTS) += myloader.o
+--- a/drivers/mtd/parsers/Makefile
++++ b/drivers/mtd/parsers/Makefile
+@@ -3,6 +3,7 @@ obj-$(CONFIG_MTD_AR7_PARTS)		+= ar7part.
+ obj-$(CONFIG_MTD_BCM47XX_PARTS)		+= bcm47xxpart.o
+ obj-$(CONFIG_MTD_BCM63XX_PARTS)		+= bcm63xxpart.o
+ obj-$(CONFIG_MTD_CMDLINE_PARTS)		+= cmdlinepart.o
 +obj-$(CONFIG_MTD_QCOM_SMEM_PARTS) += qcom_smem_part.o
- obj-y				+= parsers/
- 
- # 'Users' - code which presents functionality to userspace.
+ obj-$(CONFIG_MTD_OF_PARTS)		+= ofpart.o
+ obj-$(CONFIG_MTD_PARSER_IMAGETAG)	+= parser_imagetag.o
+ obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o
