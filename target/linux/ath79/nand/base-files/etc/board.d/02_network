@@ -8,7 +8,8 @@ ath79_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
-	aerohive,hiveap-121)
+	aerohive,hiveap-121|\
+	mikrotik,routerboard-922uags-5hpacd)
 		ucidef_set_interface_lan "eth0"
 		;;
 	glinet,gl-ar750s-nor|\

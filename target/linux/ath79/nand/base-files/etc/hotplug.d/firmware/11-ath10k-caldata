@@ -3,6 +3,7 @@
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
 . /lib/functions/caldata.sh
+. /lib/functions/mikrotik-caldata.sh
 
 board=$(board_name)
 
@@ -17,6 +18,13 @@ case "$FIRMWARE" in
 	zyxel,nbg6716)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +1)
+		;;
+	esac
+	;;
+"ath10k/cal-pci-0000:01:00.0.bin")
+	case $board in
+	mikrotik,routerboard-922uags-5hpacd)
+		mikrotik_caldata_extract "art" 0x5000 0x844
 		;;
 	esac
 	;;
