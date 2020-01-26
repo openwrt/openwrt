@@ -1,6 +1,5 @@
 /dts-v1/;
 
-#include "skeleton.dtsi"
 #include <dt-bindings/clock/qcom,gcc-ipq806x.h>
 #include <dt-bindings/mfd/qcom-rpm.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
@@ -14,6 +13,10 @@
 	model = "Qualcomm IPQ8064";
 	compatible = "qcom,ipq8064";
 	interrupt-parent = <&intc>;
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+	memory { device_type = "memory"; reg = <0 0>; };
 
 	cpus {
 		#address-cells = <1>;
@@ -1294,7 +1297,7 @@
 			status = "disabled";
 		};
 
-		nand: nand@1ac00000 {
+		nand_controller: nand-controller@1ac00000 {
 			compatible = "qcom,ipq806x-nand";
 			reg = <0x1ac00000 0x800>;
 
@@ -1377,7 +1380,7 @@
 
 		gmac2: ethernet@37400000 {
 			device_type = "network";
-			compatible = "qcom,ipq806x-gmac";
+			compatible = "qcom,ipq806x-gmac", "snps,dwmac";
 			reg = <0x37400000 0x200000>;
 			interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "macirq";
@@ -1400,7 +1403,7 @@
 
 		gmac3: ethernet@37600000 {
 			device_type = "network";
-			compatible = "qcom,ipq806x-gmac";
+			compatible = "qcom,ipq806x-gmac", "snps,dwmac";
 			reg = <0x37600000 0x200000>;
 			interrupts = <GIC_SPI 229 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "macirq";
