@@ -11,6 +11,9 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+"checkpoint,l-50")
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 dmz" "eth0"
+	;;
 "cisco,on100")
 	ucidef_set_interface_lan "eth0 eth1"
 	;;
