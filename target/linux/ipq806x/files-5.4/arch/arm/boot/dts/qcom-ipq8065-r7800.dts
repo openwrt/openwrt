@@ -62,11 +62,13 @@
 			};
 
 			led_pins: led_pins {
-				pins = "gpio7", "gpio8", "gpio9", "gpio22", "gpio23",
-					"gpio24","gpio26", "gpio53", "gpio64";
-				function = "gpio";
-				drive-strength = <2>;
-				bias-pull-down;
+				mux {
+					pins = "gpio7", "gpio8", "gpio9", "gpio22", "gpio23",
+						"gpio24","gpio26", "gpio53", "gpio64";
+					function = "gpio";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
 			};
 
 			nand_pins: nand_pins {
