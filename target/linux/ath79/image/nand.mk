@@ -1,3 +1,4 @@
+include ./common-mikrotik.mk
 include ./common-netgear.mk	# for netgear-uImage
 
 # attention: only zlib compression is allowed for the boot fs
@@ -109,6 +110,19 @@ define Device/glinet_gl-ar750s-nor
   SUPPORTED_DEVICES += gl-ar750s glinet,gl-ar750s glinet,gl-ar750s-nor-nand
 endef
 TARGET_DEVICES += glinet_gl-ar750s-nor
+
+define Device/mikrotik_routerboard-922uags-5hpacd
+  $(Device/mikrotik)
+  SOC := qca9558
+  DEVICE_MODEL := RouterBOARD 922UAGS-5HPacD
+  BOARD_NAME := routerboard
+  IMAGE/sysupgrade.bin = append-kernel | kernel2minor -s 2048 -e -c | \
+	sysupgrade-tar kernel=$$$$@ | append-metadata
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+	kmod-usb2 nand-utils
+  SUPPORTED_DEVICES += rb-922uags-5hpacd
+endef
+TARGET_DEVICES += mikrotik_routerboard-922uags-5hpacd
 
 # fake rootfs is mandatory, pad-offset 129 equals (2 * uimage_header + 0xff)
 define Device/netgear_ath79_nand
