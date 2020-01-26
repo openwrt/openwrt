@@ -28,6 +28,16 @@ define Device/Default
   SUPPORTED_DEVICES = $(subst _,$(comma),$(1)) $$(BOARD_NAME)
 endef
 
+define Device/checkpoint_l-50
+  DEVICE_VENDOR := Check Point
+  DEVICE_MODEL := L-50
+  DEVICE_DTS := kirkwood-l-50
+  DEVICE_PACKAGES := kmod-ath9k kmod-gpio-button-hotplug kmod-mvsdio \
+	kmod-rtc-s35390a kmod-usb-ledtrig-usbport wpad-basic
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += checkpoint_l-50
+
 define Device/cisco_on100
   DEVICE_VENDOR := Cisco Systems
   DEVICE_MODEL := ON100
