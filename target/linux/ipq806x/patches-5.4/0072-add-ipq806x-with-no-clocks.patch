@@ -1,12 +1,10 @@
 --- a/drivers/firmware/qcom_scm.c
 +++ b/drivers/firmware/qcom_scm.c
-@@ -609,6 +609,9 @@ static const struct of_device_id qcom_sc
- 	{ .compatible = "qcom,scm-ipq4019",
- 	  .data = NULL, /* no clocks */
+@@ -601,6 +601,7 @@ static const struct of_device_id qcom_sc
+ 							     SCM_HAS_BUS_CLK)
  	},
-+	{ .compatible = "qcom,scm-ipq806x",
-+	  .data = NULL, /* no clocks */
-+	},
- 	{ .compatible = "qcom,scm",
- 	  .data = (void *)(SCM_HAS_CORE_CLK
- 			   | SCM_HAS_IFACE_CLK
+ 	{ .compatible = "qcom,scm-ipq4019" },
++	{ .compatible = "qcom,scm-ipq806x" },
+ 	{ .compatible = "qcom,scm-msm8660", .data = (void *) SCM_HAS_CORE_CLK },
+ 	{ .compatible = "qcom,scm-msm8960", .data = (void *) SCM_HAS_CORE_CLK },
+ 	{ .compatible = "qcom,scm-msm8916", .data = (void *)(SCM_HAS_CORE_CLK |

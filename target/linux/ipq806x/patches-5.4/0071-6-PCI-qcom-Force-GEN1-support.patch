@@ -38,7 +38,7 @@ Signed-off-by: Sham Muthayyan <smuthayy@codeaurora.org>
  
  
  	/* Set the Max TLP size to 2K, instead of using default of 4K */
-@@ -1367,6 +1375,8 @@ static int qcom_pcie_probe(struct platfo
+@@ -1340,6 +1348,8 @@ static int qcom_pcie_probe(struct platfo
  	struct dw_pcie *pci;
  	struct qcom_pcie *pcie;
  	int ret;
@@ -47,7 +47,7 @@ Signed-off-by: Sham Muthayyan <smuthayy@codeaurora.org>
  
  	pcie = devm_kzalloc(dev, sizeof(*pcie), GFP_KERNEL);
  	if (!pcie)
-@@ -1397,6 +1407,9 @@ static int qcom_pcie_probe(struct platfo
+@@ -1370,6 +1380,9 @@ static int qcom_pcie_probe(struct platfo
  		goto err_pm_runtime_put;
  	}
  

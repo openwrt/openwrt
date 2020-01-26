@@ -17,12 +17,12 @@ Signed-off-by: John Crispin <john@phrozen.org>
  			"qcom,rpmcc-apq8064", "qcom,rpmcc"
  			"qcom,rpmcc-msm8996", "qcom,rpmcc"
 +			"qcom,rpmcc-ipq806x", "qcom,rpmcc"
- 
- - #clock-cells : shall contain 1
+ 			"qcom,rpmcc-msm8998", "qcom,rpmcc"
+ 			"qcom,rpmcc-qcs404", "qcom,rpmcc"
  
 --- a/include/dt-bindings/clock/qcom,rpmcc.h
 +++ b/include/dt-bindings/clock/qcom,rpmcc.h
-@@ -45,6 +45,10 @@
+@@ -37,6 +37,10 @@
  #define RPM_XO_A0				27
  #define RPM_XO_A1				28
  #define RPM_XO_A2				29
@@ -35,7 +35,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  #define RPM_SMD_XO_CLK_SRC				0
 --- a/drivers/clk/qcom/clk-rpm.c
 +++ b/drivers/clk/qcom/clk-rpm.c
-@@ -520,6 +520,16 @@ DEFINE_CLK_RPM_XO_BUFFER(apq8064, xo_a0_
+@@ -512,6 +512,16 @@ DEFINE_CLK_RPM_XO_BUFFER(apq8064, xo_a0_
  DEFINE_CLK_RPM_XO_BUFFER(apq8064, xo_a1_clk, xo_a1_a_clk, 24);
  DEFINE_CLK_RPM_XO_BUFFER(apq8064, xo_a2_clk, xo_a2_a_clk, 28);
  
@@ -52,7 +52,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  static struct clk_rpm *apq8064_clks[] = {
  	[RPM_APPS_FABRIC_CLK] = &apq8064_afab_clk,
  	[RPM_APPS_FABRIC_A_CLK] = &apq8064_afab_a_clk,
-@@ -546,15 +556,40 @@ static struct clk_rpm *apq8064_clks[] =
+@@ -538,15 +548,40 @@ static struct clk_rpm *apq8064_clks[] =
  	[RPM_XO_A2] = &apq8064_xo_a2_clk,
  };
  

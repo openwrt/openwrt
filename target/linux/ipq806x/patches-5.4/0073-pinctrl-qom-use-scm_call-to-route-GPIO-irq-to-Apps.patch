@@ -14,7 +14,7 @@ Signed-off-by: Ajay Kishore <akisho@codeaurora.org>
 
 --- a/drivers/pinctrl/qcom/pinctrl-msm.c
 +++ b/drivers/pinctrl/qcom/pinctrl-msm.c
-@@ -30,7 +30,8 @@
+@@ -22,7 +22,8 @@
  #include <linux/reboot.h>
  #include <linux/pm.h>
  #include <linux/log2.h>
@@ -24,7 +24,7 @@ Signed-off-by: Ajay Kishore <akisho@codeaurora.org>
  #include "../core.h"
  #include "../pinconf.h"
  #include "pinctrl-msm.h"
-@@ -628,6 +629,9 @@ static void msm_gpio_irq_mask(struct irq
+@@ -706,6 +707,9 @@ static void msm_gpio_irq_mask(struct irq
  	const struct msm_pingroup *g;
  	unsigned long flags;
  	u32 val;
@@ -34,22 +34,30 @@ Signed-off-by: Ajay Kishore <akisho@codeaurora.org>
  
  	g = &pctrl->soc->groups[d->hwirq];
  
-@@ -732,11 +736,30 @@ static int msm_gpio_irq_set_type(struct
+@@ -819,6 +823,7 @@ static int msm_gpio_irq_set_type(struct
+ 	const struct msm_pingroup *g;
+ 	unsigned long flags;
+ 	u32 val;
++	int ret;
+ 
+ 	g = &pctrl->soc->groups[d->hwirq];
+ 
+@@ -832,11 +837,30 @@ static int msm_gpio_irq_set_type(struct
  	else
  		clear_bit(d->hwirq, pctrl->dual_edge_irqs);
  
-+	int ret = of_device_is_compatible(pctrl->dev->of_node,
++	ret = of_device_is_compatible(pctrl->dev->of_node,
 +					"qcom,ipq8064-pinctrl");
  	/* Route interrupts to application cpu */
--	val = readl(pctrl->regs + g->intr_target_reg);
+-	val = msm_readl_intr_target(pctrl, g);
 -	val &= ~(7 << g->intr_target_bit);
 -	val |= g->intr_target_kpss_val << g->intr_target_bit;
--	writel(val, pctrl->regs + g->intr_target_reg);
+-	msm_writel_intr_target(val, pctrl, g);
 +	if (!ret) {
-+		val = readl(pctrl->regs + g->intr_target_reg);
++		val = msm_readl_intr_target(pctrl, g);
 +		val &= ~(7 << g->intr_target_bit);
 +		val |= g->intr_target_kpss_val << g->intr_target_bit;
-+		writel(val, pctrl->regs + g->intr_target_reg);
++		msm_writel_intr_target(val, pctrl, g);
 +	} else {
 +		const __be32 *reg = of_get_property(pctrl->dev->of_node, "reg", NULL);
 +		if (reg) {

@@ -39,7 +39,7 @@ Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
 
 --- a/drivers/opp/core.c
 +++ b/drivers/opp/core.c
-@@ -1623,6 +1623,75 @@ put_table:
+@@ -2103,6 +2103,75 @@ put_table:
  }
  
  /**
@@ -117,7 +117,7 @@ Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
   * @freq:	OPP frequency to enable
 --- a/include/linux/pm_opp.h
 +++ b/include/linux/pm_opp.h
-@@ -25,6 +25,7 @@ struct opp_table;
+@@ -22,6 +22,7 @@ struct opp_table;
  
  enum dev_pm_opp_event {
  	OPP_EVENT_ADD, OPP_EVENT_REMOVE, OPP_EVENT_ENABLE, OPP_EVENT_DISABLE,
@@ -125,9 +125,9 @@ Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
  };
  
  /**
-@@ -108,6 +109,10 @@ int dev_pm_opp_add(struct device *dev, u
- 		   unsigned long u_volt);
+@@ -113,6 +114,10 @@ int dev_pm_opp_add(struct device *dev, u
  void dev_pm_opp_remove(struct device *dev, unsigned long freq);
+ void dev_pm_opp_remove_all_dynamic(struct device *dev);
  
 +int dev_pm_opp_adjust_voltage(struct device *dev, unsigned long freq,
 +			      unsigned long u_volt, unsigned long u_volt_min,
@@ -136,7 +136,7 @@ Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
  int dev_pm_opp_enable(struct device *dev, unsigned long freq);
  
  int dev_pm_opp_disable(struct device *dev, unsigned long freq);
-@@ -208,6 +213,14 @@ static inline void dev_pm_opp_remove(str
+@@ -242,6 +247,14 @@ static inline void dev_pm_opp_remove_all
  {
  }
  
