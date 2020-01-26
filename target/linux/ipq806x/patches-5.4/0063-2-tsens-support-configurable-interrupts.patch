@@ -23,7 +23,7 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
 
 --- a/drivers/thermal/of-thermal.c
 +++ b/drivers/thermal/of-thermal.c
-@@ -77,7 +77,7 @@ static int of_thermal_get_temp(struct th
+@@ -91,7 +91,7 @@ static int of_thermal_get_temp(struct th
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -32,7 +32,7 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  		return -EINVAL;
  
  	return data->ops->get_temp(data->sensor_data, temp);
-@@ -88,7 +88,8 @@ static int of_thermal_set_trips(struct t
+@@ -102,7 +102,8 @@ static int of_thermal_set_trips(struct t
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -42,7 +42,7 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  		return -EINVAL;
  
  	return data->ops->set_trips(data->sensor_data, low, high);
-@@ -174,6 +175,9 @@ static int of_thermal_set_emul_temp(stru
+@@ -188,6 +189,9 @@ static int of_thermal_set_emul_temp(stru
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -52,7 +52,7 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  	return data->ops->set_emul_temp(data->sensor_data, temp);
  }
  
-@@ -182,7 +186,7 @@ static int of_thermal_get_trend(struct t
+@@ -196,7 +200,7 @@ static int of_thermal_get_trend(struct t
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -61,7 +61,7 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  		return -EINVAL;
  
  	return data->ops->get_trend(data->sensor_data, trip, trend);
-@@ -271,7 +275,9 @@ static int of_thermal_set_mode(struct th
+@@ -297,7 +301,9 @@ static int of_thermal_set_mode(struct th
  	mutex_unlock(&tz->lock);
  
  	data->mode = mode;
@@ -72,7 +72,7 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  
  	return 0;
  }
-@@ -281,7 +287,8 @@ static int of_thermal_get_trip_type(stru
+@@ -307,7 +313,8 @@ static int of_thermal_get_trip_type(stru
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -82,7 +82,7 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  		return -EDOM;
  
  	*type = data->trips[trip].type;
-@@ -289,12 +296,39 @@ static int of_thermal_get_trip_type(stru
+@@ -315,12 +322,39 @@ static int of_thermal_get_trip_type(stru
  	return 0;
  }
  
@@ -123,7 +123,7 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  		return -EDOM;
  
  	*temp = data->trips[trip].temperature;
-@@ -307,7 +341,8 @@ static int of_thermal_set_trip_temp(stru
+@@ -333,7 +367,8 @@ static int of_thermal_set_trip_temp(stru
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -133,7 +133,7 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  		return -EDOM;
  
  	if (data->ops->set_trip_temp) {
-@@ -329,7 +364,8 @@ static int of_thermal_get_trip_hyst(stru
+@@ -355,7 +390,8 @@ static int of_thermal_get_trip_hyst(stru
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -143,7 +143,7 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  		return -EDOM;
  
  	*hyst = data->trips[trip].hysteresis;
-@@ -342,7 +378,8 @@ static int of_thermal_set_trip_hyst(stru
+@@ -368,7 +404,8 @@ static int of_thermal_set_trip_hyst(stru
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -153,7 +153,7 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  		return -EDOM;
  
  	/* thermal framework should take care of data->mask & (1 << trip) */
-@@ -417,6 +454,9 @@ thermal_zone_of_add_sensor(struct device
+@@ -443,6 +480,9 @@ thermal_zone_of_add_sensor(struct device
  	if (ops->set_emul_temp)
  		tzd->ops->set_emul_temp = of_thermal_set_emul_temp;
  
@@ -163,7 +163,7 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  	mutex_unlock(&tzd->lock);
  
  	return tzd;
-@@ -711,7 +751,10 @@ static const char * const trip_types[] =
+@@ -762,7 +802,10 @@ static const char * const trip_types[] =
  	[THERMAL_TRIP_ACTIVE]	= "active",
  	[THERMAL_TRIP_PASSIVE]	= "passive",
  	[THERMAL_TRIP_HOT]	= "hot",
@@ -177,52 +177,52 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  /**
 --- a/drivers/thermal/qcom/tsens.c
 +++ b/drivers/thermal/qcom/tsens.c
-@@ -31,7 +31,7 @@ static int tsens_get_temp(void *data, in
+@@ -22,7 +22,7 @@ static int tsens_get_temp(void *data, in
  
- static int tsens_get_trend(void *p, int trip, enum thermal_trend *trend)
+ static int tsens_get_trend(void *data, int trip, enum thermal_trend *trend)
  {
--	const struct tsens_sensor *s = p;
-+	struct tsens_sensor *s = p;
- 	struct tsens_device *tmdev = s->tmdev;
+-	const struct tsens_sensor *s = data;
++	struct tsens_sensor *s = data;
+ 	struct tsens_priv *priv = s->priv;
  
- 	if (tmdev->ops->get_trend)
-@@ -40,9 +40,10 @@ static int tsens_get_trend(void *p, int
+ 	if (priv->ops->get_trend)
+@@ -31,9 +31,10 @@ static int tsens_get_trend(void *data, i
  	return -ENOTSUPP;
  }
  
 -static int  __maybe_unused tsens_suspend(struct device *dev)
 +static int  __maybe_unused tsens_suspend(void *data)
  {
--	struct tsens_device *tmdev = dev_get_drvdata(dev);
+-	struct tsens_priv *priv = dev_get_drvdata(dev);
 +	struct tsens_sensor *s = data;
-+	struct tsens_device *tmdev = s->tmdev;
++	struct tsens_priv *priv = s->priv;
  
- 	if (tmdev->ops && tmdev->ops->suspend)
- 		return tmdev->ops->suspend(tmdev);
-@@ -50,9 +51,10 @@ static int  __maybe_unused tsens_suspend
+ 	if (priv->ops && priv->ops->suspend)
+ 		return priv->ops->suspend(priv);
+@@ -41,9 +42,10 @@ static int  __maybe_unused tsens_suspend
  	return 0;
  }
  
 -static int __maybe_unused tsens_resume(struct device *dev)
 +static int __maybe_unused tsens_resume(void *data)
  {
--	struct tsens_device *tmdev = dev_get_drvdata(dev);
+-	struct tsens_priv *priv = dev_get_drvdata(dev);
 +	struct tsens_sensor *s = data;
-+	struct tsens_device *tmdev = s->tmdev;
++	struct tsens_priv *priv = s->priv;
  
- 	if (tmdev->ops && tmdev->ops->resume)
- 		return tmdev->ops->resume(tmdev);
-@@ -60,6 +62,30 @@ static int __maybe_unused tsens_resume(s
+ 	if (priv->ops && priv->ops->resume)
+ 		return priv->ops->resume(priv);
+@@ -51,6 +53,30 @@ static int __maybe_unused tsens_resume(s
  	return 0;
  }
  
 +static int  __maybe_unused tsens_set_trip_temp(void *data, int trip, int temp)
 +{
 +	struct tsens_sensor *s = data;
-+	struct tsens_device *tmdev = s->tmdev;
++	struct tsens_priv *priv = s->priv;
 +
-+	if (tmdev->ops && tmdev->ops->set_trip_temp)
-+		return tmdev->ops->set_trip_temp(s, trip, temp);
++	if (priv->ops && priv->ops->set_trip_temp)
++		return priv->ops->set_trip_temp(s, trip, temp);
 +
 +	return 0;
 +}
@@ -231,10 +231,10 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
 +					enum thermal_trip_activation_mode mode)
 +{
 +	struct tsens_sensor *s = data;
-+	struct tsens_device *tmdev = s->tmdev;
++	struct tsens_priv *priv = s->priv;
 +
-+	if (tmdev->ops && tmdev->ops->set_trip_activate)
-+		return tmdev->ops->set_trip_activate(s, trip, mode);
++	if (priv->ops && priv->ops->set_trip_activate)
++		return priv->ops->set_trip_activate(s, trip, mode);
 +
 +	return 0;
 +}
@@ -243,7 +243,7 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  static SIMPLE_DEV_PM_OPS(tsens_pm_ops, tsens_suspend, tsens_resume);
  
  static const struct of_device_id tsens_table[] = {
-@@ -86,6 +112,8 @@ MODULE_DEVICE_TABLE(of, tsens_table);
+@@ -80,6 +106,8 @@ MODULE_DEVICE_TABLE(of, tsens_table);
  static const struct thermal_zone_of_device_ops tsens_of_ops = {
  	.get_temp = tsens_get_temp,
  	.get_trend = tsens_get_trend,
@@ -251,8 +251,8 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
 +	.set_trip_activate = tsens_activate_trip_type,
  };
  
- static int tsens_register(struct tsens_device *tmdev)
-@@ -134,7 +162,7 @@ static int tsens_probe(struct platform_d
+ static int tsens_register(struct tsens_priv *priv)
+@@ -123,7 +151,7 @@ static int tsens_probe(struct platform_d
  	if (id)
  		data = id->data;
  	else
@@ -261,32 +261,32 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  
  	num_sensors = data->num_sensors;
  
-@@ -155,6 +183,9 @@ static int tsens_probe(struct platform_d
- 	tmdev->dev = dev;
- 	tmdev->num_sensors = num_sensors;
- 	tmdev->ops = data->ops;
+@@ -144,6 +172,9 @@ static int tsens_probe(struct platform_d
+ 	priv->dev = dev;
+ 	priv->num_sensors = num_sensors;
+ 	priv->ops = data->ops;
 +
-+	tmdev->tsens_irq = platform_get_irq(pdev, 0);
++	priv->tsens_irq = platform_get_irq(pdev, 0);
 +
- 	for (i = 0;  i < tmdev->num_sensors; i++) {
+ 	for (i = 0;  i < priv->num_sensors; i++) {
  		if (data->hw_ids)
- 			tmdev->sensor[i].hw_id = data->hw_ids[i];
+ 			priv->sensor[i].hw_id = data->hw_ids[i];
 --- a/drivers/thermal/qcom/tsens.h
 +++ b/drivers/thermal/qcom/tsens.h
-@@ -24,9 +24,12 @@ struct tsens_device;
+@@ -40,9 +40,12 @@ enum tsens_ver {
  struct tsens_sensor {
- 	struct tsens_device		*tmdev;
+ 	struct tsens_priv		*priv;
  	struct thermal_zone_device	*tzd;
 +	struct work_struct		notify_work;
  	int				offset;
- 	int				id;
- 	int				hw_id;
+ 	unsigned int			id;
+ 	unsigned int			hw_id;
 +	int				calib_data;
 +	int				calib_data_backup;
  	int				slope;
  	u32				status;
  };
-@@ -41,6 +44,9 @@ struct tsens_sensor {
+@@ -57,6 +60,9 @@ struct tsens_sensor {
   * @suspend: Function to suspend the tsens device
   * @resume: Function to resume the tsens device
   * @get_trend: Function to get the thermal/temp trend
@@ -296,24 +296,27 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
   */
  struct tsens_ops {
  	/* mandatory callbacks */
-@@ -53,6 +59,9 @@ struct tsens_ops {
- 	int (*suspend)(struct tsens_device *);
- 	int (*resume)(struct tsens_device *);
- 	int (*get_trend)(struct tsens_device *, int, enum thermal_trend *);
-+	int (*set_trip_temp)(void *, int, int);
-+	int (*set_trip_activate)(void *, int,
-+					enum thermal_trip_activation_mode);
+@@ -69,6 +75,9 @@ struct tsens_ops {
+ 	int (*suspend)(struct tsens_priv *priv);
+ 	int (*resume)(struct tsens_priv *priv);
+ 	int (*get_trend)(struct tsens_priv *priv, int i, enum thermal_trend *trend);
++	int (*set_trip_temp)(void *data, int trip, int temp);
++	int (*set_trip_activate)(void *data, int trip,
++					enum thermal_trip_activation_mode mode);
  };
  
- /**
-@@ -76,10 +85,12 @@ struct tsens_context {
- struct tsens_device {
+ #define REG_FIELD_FOR_EACH_SENSOR11(_name, _offset, _startbit, _stopbit) \
+@@ -300,6 +309,7 @@ struct tsens_context {
+ struct tsens_priv {
  	struct device			*dev;
  	u32				num_sensors;
 +	u32				tsens_irq;
- 	struct regmap			*map;
+ 	struct regmap			*tm_map;
+ 	struct regmap			*srot_map;
  	u32				tm_offset;
- 	struct tsens_context		ctx;
+@@ -308,6 +318,7 @@ struct tsens_priv {
+ 	const struct tsens_features	*feat;
+ 	const struct reg_field		*fields;
  	const struct tsens_ops		*ops;
 +	struct work_struct		tsens_work;
  	struct tsens_sensor		sensor[0];

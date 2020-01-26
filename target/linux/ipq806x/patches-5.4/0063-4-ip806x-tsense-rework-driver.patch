@@ -11,10 +11,10 @@
  #include <linux/thermal.h>
 +#include <linux/slab.h>
  #include <linux/nvmem-consumer.h>
+ #include <linux/of_platform.h>
  #include <linux/io.h>
- #include <linux/interrupt.h>
-@@ -210,9 +212,8 @@ static void tsens_scheduler_fn(struct wo
- 	struct tsens_device *tmdev = container_of(work, struct tsens_device,
+@@ -211,9 +213,8 @@ static void tsens_scheduler_fn(struct wo
+ 	struct tsens_priv *priv = container_of(work, struct tsens_priv,
  					tsens_work);
  	unsigned int threshold, threshold_low, code, reg, sensor, mask;
 -	unsigned int sensor_addr;
@@ -22,32 +22,32 @@
 -	int adc_code, ret;
 +	int ret;
  
- 	ret = regmap_read(tmdev->map, STATUS_CNTL_8064, &reg);
+ 	ret = regmap_read(priv->tm_map, STATUS_CNTL_8064, &reg);
  	if (ret)
-@@ -261,9 +262,8 @@ static void tsens_scheduler_fn(struct wo
+@@ -262,9 +263,8 @@ static void tsens_scheduler_fn(struct wo
  		if (upper_th_x || lower_th_x) {
  			/* Notify user space */
- 			schedule_work(&tmdev->sensor[0].notify_work);
--			regmap_read(tmdev->map, sensor_addr, &adc_code);
+ 			schedule_work(&priv->sensor[0].notify_work);
+-			regmap_read(priv->tm_map, sensor_addr, &adc_code);
  			pr_debug("Trigger (%d degrees) for sensor %d\n",
--				code_to_degC(adc_code, &tmdev->sensor[0]), 0);
-+				code_to_degC(code, &tmdev->sensor[0]), 0);
+-				code_to_degC(adc_code, &priv->sensor[0]), 0);
++				code_to_degC(code, &priv->sensor[0]), 0);
  		}
  	}
- 	regmap_write(tmdev->map, STATUS_CNTL_8064, reg & mask);
-@@ -372,40 +372,55 @@ static int init_ipq8064(struct tsens_dev
- static int calibrate_ipq8064(struct tsens_device *tmdev)
+ 	regmap_write(priv->tm_map, STATUS_CNTL_8064, reg & mask);
+@@ -404,40 +404,55 @@ err_put_device:
+ static int calibrate_ipq8064(struct tsens_priv *priv)
  {
  	int i;
 -	char *data, *data_backup;
 -
 +	int ret = 0;
 +	u8 *data, *data_backup;
-+	struct device *dev = tmdev->dev;
- 	ssize_t num_read = tmdev->num_sensors;
- 	struct tsens_sensor *s = tmdev->sensor;
++	struct device *dev = priv->dev;
+ 	ssize_t num_read = priv->num_sensors;
+ 	struct tsens_sensor *s = priv->sensor;
  
--	data = qfprom_read(tmdev->dev, "calib");
+-	data = qfprom_read(priv->dev, "calib");
 +	data = qfprom_read(dev, "calib");
  	if (IS_ERR(data)) {
 -		pr_err("Calibration not found.\n");
@@ -58,7 +58,7 @@
 +		goto exit;
  	}
  
--	data_backup = qfprom_read(tmdev->dev, "calib_backup");
+-	data_backup = qfprom_read(priv->dev, "calib_backup");
 +	data_backup = qfprom_read(dev, "calib_backup");
  	if (IS_ERR(data_backup)) {
 -		pr_err("Backup calibration not found.\n");
@@ -93,7 +93,7 @@
  		s[i].offset = CAL_MDEGC - (s[i].calib_data * s[i].slope);
  	}
  
- 	hw_init(tmdev);
+ 	hw_init(priv);
  
 -	return 0;
 +free_backup:
@@ -104,4 +104,4 @@
 +	return ret;
  }
  
- static int get_temp_ipq8064(struct tsens_device *tmdev, int id, int *temp)
+ static int get_temp_ipq8064(struct tsens_priv *priv, int id, int *temp)
