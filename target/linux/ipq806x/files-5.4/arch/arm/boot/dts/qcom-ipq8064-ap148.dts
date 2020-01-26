@@ -144,7 +144,7 @@
 
 		cs-gpios = <&qcom_pinmux 20 0>;
 
-		flash: m25p80@0 {
+		m25p80@0 {
 			compatible = "s25fl256s1";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -175,13 +175,13 @@
 	force_gen1 = <1>;
 };
 
-&nand {
+&nand_controller {
 	status = "okay";
 
 	pinctrl-0 = <&nand_pins>;
 	pinctrl-names = "default";
 
-	cs0 {
+	nand@0 {
 		reg = <0>;
 		compatible = "qcom,nandcs";
 
