@@ -281,13 +281,13 @@
 			};
 		};
 
-		nand@1ac00000 {
+		nand-controller@1ac00000 {
 			status = "okay";
 
 			pinctrl-0 = <&nand_pins>;
 			pinctrl-names = "default";
 
-			cs0 {
+			nand@0 {
 				reg = <0>;
 				compatible = "qcom,nandcs";
 
