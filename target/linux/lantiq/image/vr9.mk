@@ -89,6 +89,20 @@ define Device/arcadyan_vgv7519-nor
 endef
 TARGET_DEVICES += arcadyan_vgv7519-nor
 
+define Device/arcadyan_vgv953akw22
+  $(Device/NAND)
+  DEVICE_VENDOR := Arcadyan
+  DEVICE_MODEL := VGV953AKW22
+  DEVICE_VARIANT := NAND
+  DEVICE_ALT0_VENDOR := Telekom
+  DEVICE_ALT0_MODEL := Speedport W 921V
+  BOARD_NAME := VGV953AKW22
+  SOC := vr9
+  DEVICE_PACKAGES := kmod-usb-dwc2
+  SUPPORTED_DEVICES += VGV953AKW22
+endef
+TARGET_DEVICES += arcadyan_vgv953
+
 define Device/avm_fritz3370
   $(Device/AVM)
   $(Device/NAND)

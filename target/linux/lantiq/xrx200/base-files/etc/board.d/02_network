@@ -36,6 +36,10 @@ lantiq_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "4:lan:1" "5:wan:5" "6t@eth0"
 		;;
+	arcadyan,vgv953akw22)
+		ucidef_add_switch "switch0" \
+		"0:lan:4" "1:lan:3" "2:lan:2" "4:lan:1" "6t@eth0"
+		;;
 	avm,fritz3370-rev2-hynix|\
 	avm,fritz3370-rev2-micron|\
 	avm,fritz7360sl|\
@@ -110,7 +114,8 @@ lantiq_setup_macs()
 	lantiq,easy80920-nand|\
 	lantiq,easy80920-nor|\
 	zyxel,p-2812hnu-f1|\
-	zyxel,p-2812hnu-f3)
+	zyxel,p-2812hnu-f3|\
+	arcadyan,vgv953akw22)
 		lan_mac=$(mtd_get_mac_ascii uboot-env ethaddr)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;

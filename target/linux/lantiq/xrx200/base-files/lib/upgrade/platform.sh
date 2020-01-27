@@ -9,6 +9,7 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	arcadyan,vgv953akw22|\
 	avm,fritz3370-rev2-hynix|\
 	avm,fritz3370-rev2-micron|\
 	avm,fritz7362sl|\

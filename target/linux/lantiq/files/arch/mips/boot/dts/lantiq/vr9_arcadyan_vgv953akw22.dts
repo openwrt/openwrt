@@ -1,0 +1,301 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "vr9.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/mips/lantiq_rcu_gphy.h>
+
+/ {
+	compatible = "arcadyan,vgv953akw22", "lantiq,xway", "lantiq,vr9";
+	model = "Speedport W 921V";
+
+	chosen {
+		bootargs = "console=ttyLTQ0,115200";
+	};
+
+	aliases {
+		led-boot = &led_power_white;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_white;
+		led-upgrade = &led_waiting;
+
+		led-dsl = &led_dsl;
+		led-internet = &led_internet;
+		led-wifi = &led_wifi;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x8000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		wifi {
+			label = "wifi";
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+
+		dect_paging {
+			label = "dect_paging";
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_PHONE>;
+		};
+
+		dect_pairing {
+			label = "dect";
+			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_CONFIG>;
+		};
+
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_waiting: waiting {
+			label = "vgv953:yellow:waiting";
+			gpios = <&stp 16 GPIO_ACTIVE_LOW>;
+		};
+		led_service: service {
+			label = "vgv953:yellow:sevice";
+			gpios = <&stp 17 GPIO_ACTIVE_LOW>;
+		};
+		led_phone: phone {
+			label = "vgv953:white:phone";
+			gpios = <&stp 18 GPIO_ACTIVE_LOW>;
+		};
+		led_wifi: wifi {
+			label = "vgv953:white:wifi";
+			gpios = <&stp 19 GPIO_ACTIVE_LOW>;
+		};
+		led_internet: internet {
+			label = "vgv953:white:internet";
+			gpios = <&stp 20 GPIO_ACTIVE_LOW>;
+		};
+		led_dsl: dsl {
+			label = "vgv953:white:dsl";
+			gpios = <&stp 21 GPIO_ACTIVE_LOW>;
+		};
+		led_power_red: power_red {
+			label = "vgv953:red:power";
+			gpios = <&stp 22 GPIO_ACTIVE_LOW>;
+		};
+		led_power_white: power_white {
+			label = "vgv953:white:power";
+			gpios = <&stp 23 GPIO_ACTIVE_LOW>;
+			default-state = "keep";
+		};
+	};
+
+	usb0_vbus: regulator-usb0-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB0_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 32 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+	usb1_vbus: regulator-usb1-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB1_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 33 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+};
+
+&eth0 {
+	interface@0 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		lantiq,switch;
+
+		ethernet@0 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <0>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy0>;
+		};
+
+		ethernet@1 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <1>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy1>;
+		};
+
+		ethernet@2 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <2>;
+			phy-mode = "gmii";
+			phy-handle = <&phy11>;
+		};
+
+		ethernet@4 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <4>;
+			phy-mode = "gmii";
+			phy-handle = <&phy13>;
+		};
+	};
+
+	mdio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "lantiq,xrx200-mdio";
+
+		phy0: ethernet-phy@0 {
+			reg = <0x0>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+
+		phy1: ethernet-phy@1 {
+			reg = <0x1>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+
+		phy11: ethernet-phy@11 {
+			reg = <0x11>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+
+		phy13: ethernet-phy@13 {
+			reg = <0x13>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+	};
+};
+
+&gphy0 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
+};
+
+&gphy1 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
+};
+
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		pci_rst {
+			lantiq,pins = "io21";
+			lantiq,output = <1>;
+			lantiq,open-drain = <0>;
+			lantiq,pull = <2>;
+		};
+		pcie-rst {
+			lantiq,pins = "io38";
+			lantiq,pull = <0>;
+			lantiq,output = <1>;
+		};
+		ifxhcd-rst {
+			lantiq,pins = "io33";
+			lantiq,pull = <0>;
+			lantiq,open-drain = <0>;
+			lantiq,output = <1>;
+		};
+	};
+};
+
+&localbus {
+	flash@0 {
+		compatible = "lantiq,nand-xway";
+		lantiq,cs = <1>;
+		bank-width = <2>;
+		reg = <0x0 0x0 0x2000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x00000 0x40000>;
+			};
+			partition@40000 {
+				label = "uboot-env";
+				reg = <0x40000 0x20000>;
+			};
+			partition@60000 {
+				label = "kernel";
+				reg = <0x60000 0x200000>;
+			};
+			partition@260000 {
+				label = "ubi";
+				reg = <0x260000 0x1da0000>;
+			};
+		};
+	};
+};
+
+&pci0 {
+	status = "okay";
+
+	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
+	pinctrl-names = "default";
+
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+
+/*	wifi@1a30,0700*/
+};
+
+&pcie0 {
+	status = "disabled";
+	gpio-reset = <&gpio 38 GPIO_ACTIVE_HIGH>;
+};
+&stp {
+	status = "okay";
+
+	lantiq,shadow = <0xffffff>;
+	lantiq,groups = <0x7>;
+	lantiq,dsl = <0x0>;
+	lantiq,phy1 = <0x0>;
+	lantiq,phy2 = <0x0>;
+};
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb_phy1 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+	vbus-supply = <&usb0_vbus>;
+};
+
+&usb1 {
+	status = "okay";
+	vbus-supply = <&usb1_vbus>;
+};
