@@ -101,7 +101,7 @@ define Device/arcadyan_vgv953akw22
   DEVICE_PACKAGES := kmod-usb-dwc2
   SUPPORTED_DEVICES += VGV953AKW22
 endef
-TARGET_DEVICES += arcadyan_vgv953
+TARGET_DEVICES += arcadyan_vgv953akw22
 
 define Device/avm_fritz3370
   $(Device/AVM)

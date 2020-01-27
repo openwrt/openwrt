@@ -205,6 +205,17 @@
 	pinctrl-0 = <&state_default>;
 
 	state_default: pinmux {
+		exin3 {
+			lantiq,groups = "exin3";
+			lantiq,function = "exin";
+		};
+		stp {
+			lantiq,groups = "stp";
+			lantiq,function = "stp";
+			lantiq,pull = <2>;
+			lantiq,open-drain = <0>;
+			lantiq,output = <1>;
+		};
 		pci_rst {
 			lantiq,pins = "io21";
 			lantiq,output = <1>;
@@ -247,11 +258,11 @@
 			};
 			partition@60000 {
 				label = "kernel";
-				reg = <0x60000 0x200000>;
+				reg = <0x60000 0x400000>;
 			};
-			partition@260000 {
+			partition@460000 {
 				label = "ubi";
-				reg = <0x260000 0x1da0000>;
+				reg = <0x460000 0x1ba0000>;
 			};
 		};
 	};
