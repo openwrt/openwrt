@@ -257,6 +257,7 @@ define Device/tplink-safeloader
 	append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
+DEVICE_VARS += TPLINK_BOARD_ID
 
 define Device/tplink_archer-c20-v4
   $(Device/tplink)
@@ -318,6 +319,17 @@ define Device/tplink_archer-c50-v4
   SUPPORTED_DEVICES += tplink,c50-v4
 endef
 TARGET_DEVICES += tplink_archer-c50-v4
+
+define Device/tplink_re200-v2
+  $(Device/tplink-safeloader)
+  IMAGE_SIZE := 6016k
+  DEVICE_MODEL := RE200
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-mt76x0e
+  TPLINK_BOARD_ID := RE200-V2
+  KERNEL_ENTRY := 0x8000c310
+endef
+TARGET_DEVICES += tplink_re200-v2
 
 define Device/tplink_re305-v1
   $(Device/tplink-safeloader)
