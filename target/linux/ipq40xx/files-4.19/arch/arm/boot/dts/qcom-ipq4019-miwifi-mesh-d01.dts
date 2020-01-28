@@ -1,0 +1,379 @@
+/* Copyright (c) 2015, The Linux Foundation. All rights reserved.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ */
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Xiaomi MiWiFi Mesh D01";
+	compatible = "xiaomi,miwifi-mesh-d01", "qcom,ipq4019";
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_0 clk_ignore_unused debug";
+	};
+
+	aliases {
+		serial0 = &blsp1_uart1;
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x80000000 0x10000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+		ranges;
+
+		rsvd1@87000000 {
+			reg = <0x87000000 0x500000>;
+			no-map;
+		};
+
+		wifi_dump@87500000 {
+			reg = <0x87500000 0x600000>;
+			no-map;
+		};
+
+		rsvd2@87B00000 {
+			reg = <0x87b00000 0x500000>;
+			no-map;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button@0 {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+		};
+
+		button@1 {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&tlmm 40 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	soc {
+		rng@22000 {
+			status = "okay";
+		};
+
+		ess-psgmii@98000 {
+			status = "okay";
+			resets = <&gcc 0x4d>;
+			reset-names = "psgmii_rst";
+		};
+
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+
+		usb2@60f8800 {
+			status = "okay";
+
+			dwc3@6000000 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				usb2_port1: port@1 {
+					reg = <1>;
+					#trigger-source-cells = <0>;
+				};
+			};
+		};
+
+		usb3@8af8800 {
+			status = "okay";
+
+			dwc3@8a00000 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				usb3_port1: port@1 {
+					reg = <1>;
+					#trigger-source-cells = <0>;
+				};
+
+				usb3_port2: port@2 {
+					reg = <2>;
+					#trigger-source-cells = <0>;
+				};
+			};
+		};
+
+		crypto@8e3a000 {
+			status = "okay";
+		};
+
+		watchdog@b017000 {
+			status = "okay";
+		};
+
+		ess-switch@c000000 {
+			status = "okay";
+			resets = <&gcc 0x1d
+			&gcc 0x4e
+			&gcc 0x4f
+			&gcc 0x50
+			&gcc 0x51
+			&gcc 0x52>;
+			reset-names = "ess_rst", "ess_mac1_clk_dis", "ess_mac2_clk_dis", "ess_mac3_clk_dis", "ess_mac4_clk_dis", "ess_mac5_clk_dis";
+		};
+
+		edma@c080000 {
+			compatible = "qcom,ess-edma";
+			status = "okay";
+		};
+
+		pinctrl@1000000 {
+			mdio_pins: mdio_pinmux {
+				mux_1 {
+					pins = "gpio6";
+					function = "mdio";
+					bias-pull-up;
+				};
+
+				mux_2 {
+					pins = "gpio7";
+					function = "mdc";
+					bias-pull-up;
+				};
+			};
+
+			serial_0_pins: serial_pinmux {
+				mux {
+					pins = "gpio16", "gpio17";
+					function = "blsp_uart0";
+					bias-disable;
+				};
+			};
+
+			serial_1_pins: serial1_pinmux {
+				mux {
+					pins = "gpio8", "gpio9", "gpio10", "gpio11";
+					function = "blsp_uart1";
+					bias-disable;
+				};
+			};
+
+			i2c_0_pins: i2c_0_pinmux {
+				mux {
+					pins = "gpio20", "gpio21";
+					function = "blsp_i2c0";
+					bias-disable;
+				};
+			};
+
+			nand_pins: nand_pins {
+				pullups {
+					pins = "gpio52", "gpio53", "gpio58", "gpio59";
+					function = "qpic";
+					bias-pull-up;
+				};
+
+				pulldowns {
+					pins = "gpio54", "gpio55", "gpio56",
+					"gpio57", "gpio60", "gpio61",
+					"gpio62", "gpio63", "gpio64",
+					"gpio65", "gpio66", "gpio67",
+					"gpio68", "gpio69";
+					function = "qpic";
+					bias-pull-down;
+				};
+			};
+		};
+
+		mdio@90000 {
+			status = "okay";
+			pinctrl-0 = <&mdio_pins>;
+			pinctrl-names = "default";
+			reset-gpios = <&tlmm 0x29 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_uart1 {
+	status = "okay";
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&nand {
+	compatible = "qcom,ipq4019-nand";
+	status = "okay";
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+
+	nand@0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "0:MIBIB";
+				reg = <0x100000 0x100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "0:QSEE";
+				reg = <0x200000 0x100000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "0:CDT";
+				reg = <0x300000 0x80000>;
+				read-only;
+			};
+
+			partition@380000 {
+				label = "0:APPSBLENV";
+				reg = <0x380000 0x80000>;
+				read-only;
+			};
+
+			partition@400000 {
+				label = "0:APPSBL";
+				reg = <0x400000 0x200000>;
+				read-only;
+			};
+
+			partition@600000 {
+				label = "0:ART";
+				reg = <0x600000 0x80000>;
+				read-only;
+			};
+
+			partition@680000 {
+				label = "rsvd0";
+				reg = <0x680000 0x80000>;
+				read-only;
+			};
+
+			partition@700000 {
+				label = "bdata";
+				reg = <0x700000 0x40000>;
+				read-only;
+			};
+
+			partition@740000 {
+				label = "crash";
+				reg = <0x740000 0x40000>;
+				read-only;
+			};
+
+			partition@780000 {
+				label = "crash_syslog";
+				reg = <0x780000 0x80000>;
+				read-only;
+			};
+
+			partition@800000 {
+				label = "kernel";
+				reg = <0x800000 0x400000>;
+			};
+
+			partition@c00000 {
+				label = "kernel1";
+				reg = <0xc00000 0x400000>;
+				read-only;
+			};
+
+			partition@1000000 {
+				label = "ubi";
+				reg = <0x1000000 0x2000000>;
+			};
+
+			partition@3000000 {
+				label = "rootfs1";
+				reg = <0x3000000 0x2000000>;
+				read-only;
+			};
+
+			partition@5000000 {
+				label = "overlay";
+				reg = <0x5000000 0x2f00000>;
+				read-only;
+			};
+
+			partition@7F00000 {
+				label = "cfg_bak";
+				reg = <0x7f00000 0x100000>;
+				read-only;
+			};
+		};
+
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+};
+
+&wifi1 {
+	status = "okay";
+};

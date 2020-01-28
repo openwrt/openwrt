@@ -56,6 +56,9 @@ ipq40xx_setup_interfaces()
 	zyxel,wre6606)
 		ucidef_set_interface_lan "eth0"
 		;;
+	xiaomi,miwifi-mesh-d01)
+		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3" "eth0"
+		;;
 	avm,fritzrepeater-3000|\
 	compex,wpj419|\
 	compex,wpj428)

@@ -564,6 +564,20 @@ define Device/zyxel_nbg6617
 endef
 TARGET_DEVICES += zyxel_nbg6617
 
+define Device/xiaomi_miwifi-mesh-d01
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Xiaomi
+	DEVICE_MODEL := MiWiFi Mesh D01
+	SOC := qcom-ipq4019
+	DEVICE_DTS := qcom-ipq4019-miwifi-mesh-d01
+	KERNEL_INSTALL := 1
+	KERNEL_SIZE := 4048k
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+endef
+TARGET_DEVICES += xiaomi_miwifi-mesh-d01
+
 define Device/zyxel_wre6606
 	$(call Device/FitImage)
 	DEVICE_VENDOR := ZyXEL

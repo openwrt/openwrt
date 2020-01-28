@@ -36,7 +36,8 @@ case "$FIRMWARE" in
 		# OEM assigns 4 sequential MACs
 		ath10k_patch_mac $(macaddr_setbit_la $(macaddr_add "$(cat /sys/class/net/eth0/address)" 4))
 		;;
-	openmesh,a62)
+	openmesh,a62|\
+	xiaomi,miwifi-mesh-d01)
 		caldata_extract "0:ART" 0x9000 0x2f20
 		;;
 	esac
@@ -84,7 +85,8 @@ case "$FIRMWARE" in
 	openmesh,a62 |\
 	qxwlan,e2600ac-c1 |\
 	qxwlan,e2600ac-c2 |\
-	unielec,u4019-32m)
+	unielec,u4019-32m |\
+	xiaomi,miwifi-mesh-d01)
 		caldata_extract "0:ART" 0x1000 0x2f20
 		;;
 	dlink,dap-2610)
@@ -163,7 +165,8 @@ case "$FIRMWARE" in
 	openmesh,a62 |\
 	qxwlan,e2600ac-c1 |\
 	qxwlan,e2600ac-c2 |\
-	unielec,u4019-32m)
+	unielec,u4019-32m |\
+	xiaomi,miwifi-mesh-d01)
 		caldata_extract "0:ART" 0x5000 0x2f20
 		;;
 	dlink,dap-2610)
