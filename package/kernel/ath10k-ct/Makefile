@@ -8,9 +8,9 @@ PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/greearb/ath10k-ct.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2019-09-09
-PKG_SOURCE_VERSION:=5e8cd86f90dac966d12df6ece84ac41458d0e95f
-PKG_MIRROR_HASH:=dc1097f3a7b4b7e346918f206746d00a0b7df07ae3be9b89be55dfaef3cbbe45
+PKG_SOURCE_DATE:=2020-01-29
+PKG_SOURCE_VERSION:=3e3d0adb3cc6c6cf56a05ff661796948f09c5aa8
+PKG_MIRROR_HASH:=6341de2d3b19b2a32205a1633bf9556815943a2cff38acbbe5f61c6c0164fdcc
 
 # Build the 5.2 ath10k-ct driver version.  Other option is "-4.19".
 # Probably this should match as closely as

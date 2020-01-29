@@ -16,7 +16,7 @@ Signed-off-by: Mathias Kresin <dev@kresin.me>
 
 --- a/ath10k-4.19/core.h
 +++ b/ath10k-4.19/core.h
-@@ -1488,6 +1488,10 @@ struct ath10k {
+@@ -1489,6 +1489,10 @@ struct ath10k {
  	u8 csi_data[4096];
  	u16 csi_data_len;
  
@@ -42,7 +42,7 @@ Signed-off-by: Mathias Kresin <dev@kresin.me>
  	if (ret)
 --- a/ath10k-4.19/mac.c
 +++ b/ath10k-4.19/mac.c
-@@ -9983,7 +9983,7 @@ int ath10k_mac_register(struct ath10k *a
+@@ -9987,7 +9987,7 @@ int ath10k_mac_register(struct ath10k *a
  	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_CQM_RSSI_LIST);
  
  #ifdef CPTCFG_MAC80211_LEDS
@@ -53,7 +53,7 @@ Signed-off-by: Mathias Kresin <dev@kresin.me>
  #endif
 --- a/ath10k-5.2/core.h
 +++ b/ath10k-5.2/core.h
-@@ -1543,6 +1543,10 @@ struct ath10k {
+@@ -1550,6 +1550,10 @@ struct ath10k {
  	u8 csi_data[4096];
  	u16 csi_data_len;
  
@@ -79,7 +79,7 @@ Signed-off-by: Mathias Kresin <dev@kresin.me>
  	if (ret)
 --- a/ath10k-5.2/mac.c
 +++ b/ath10k-5.2/mac.c
-@@ -10179,7 +10179,7 @@ int ath10k_mac_register(struct ath10k *a
+@@ -10187,7 +10187,7 @@ int ath10k_mac_register(struct ath10k *a
  	ar->hw->weight_multiplier = ATH10K_AIRTIME_WEIGHT_MULTIPLIER;
  
  #ifdef CPTCFG_MAC80211_LEDS
