@@ -871,7 +871,6 @@ define Device/tplink_archer-c20i
   TPLINK_HWID := 0xc2000001
   TPLINK_HWREV := 58
   IMAGES += factory.bin
-  DEVICE_PACKAGES := kmod-mt76x0e
   DEVICE_MODEL := Archer C20i
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci
   SUPPORTED_DEVICES += c20i
