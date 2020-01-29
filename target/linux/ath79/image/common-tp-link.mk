@@ -9,7 +9,7 @@ define Build/uImageArcher
 	@mv $@.new $@
 endef
 
-define Device/tplink
+define Device/tplink-v1
   DEVICE_VENDOR := TP-Link
   TPLINK_HWREV := 0x1
   TPLINK_HEADER_VERSION := 1
@@ -22,7 +22,7 @@ define Device/tplink
 endef
 
 define Device/tplink-nolzma
-  $(Device/tplink)
+  $(Device/tplink-v1)
   LOADER_FLASH_OFFS := 0x22000
   COMPILE := loader-$(1).gz
   COMPILE/loader-$(1).gz := loader-okli-compile
@@ -38,7 +38,7 @@ define Device/tplink-4m
 endef
 
 define Device/tplink-4mlzma
-  $(Device/tplink)
+  $(Device/tplink-v1)
   TPLINK_FLASHLAYOUT := 4Mlzma
   IMAGE_SIZE := 3904k
 endef
@@ -50,19 +50,19 @@ define Device/tplink-8m
 endef
 
 define Device/tplink-8mlzma
-  $(Device/tplink)
+  $(Device/tplink-v1)
   TPLINK_FLASHLAYOUT := 8Mlzma
   IMAGE_SIZE := 8000k
 endef
 
 define Device/tplink-16mlzma
-  $(Device/tplink)
+  $(Device/tplink-v1)
   TPLINK_FLASHLAYOUT := 16Mlzma
   IMAGE_SIZE := 16192k
 endef
 
 define Device/tplink-safeloader
-  $(Device/tplink)
+  $(Device/tplink-v1)
   KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
     append-metadata | check-size $$$$(IMAGE_SIZE)
