@@ -48,6 +48,7 @@
 		wlan {
 			label = "tl-wa801nd-v5:green:wlan";
 			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		wps_red {
