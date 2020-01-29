@@ -245,6 +245,18 @@ define Device/avm_fritzrepeater-3000
 endef
 TARGET_DEVICES += avm_fritzrepeater-3000
 
+define Device/buffalo_wtr-m2133hp
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Buffalo
+	DEVICE_MODEL := WTR-M2133HP
+	SOC := qcom-ipq4019
+	DEVICE_PACKAGES := uboot-envtools ath10k-firmware-qca9984-ct ipq-wifi-buffalo_wtr-m2133hp
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+endef
+TARGET_DEVICES += buffalo_wtr-m2133hp
+
 define Device/cellc_rtl30vw
 	KERNEL_SUFFIX := -fit-uImage.itb
 	KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb

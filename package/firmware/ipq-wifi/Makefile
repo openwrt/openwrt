@@ -28,6 +28,7 @@ ALLWIFIBOARDS:= \
 	8dev_habanero-dvk \
 	aruba_ap-303 \
 	avm_fritzrepeater-1200 \
+	buffalo_wtr-m2133hp \
 	cellc_rtl30vw \
 	dlink_dap2610 \
 	engenius_eap2200 \
@@ -101,6 +102,7 @@ endef
 $(eval $(call generate-ipq-wifi-package,8dev_habanero-dvk,8devices Habanero DVK))
 $(eval $(call generate-ipq-wifi-package,aruba_ap-303,Aruba AP-303))
 $(eval $(call generate-ipq-wifi-package,avm_fritzrepeater-1200,AVM FRITZRepeater 1200))
+$(eval $(call generate-ipq-wifi-package,buffalo_wtr-m2133hp,Buffalo WTR-M2133HP))
 $(eval $(call generate-ipq-wifi-package,cellc_rtl30vw, Cell C RTL30VW))
 $(eval $(call generate-ipq-wifi-package,dlink_dap2610,D-Link DAP-2610))
 $(eval $(call generate-ipq-wifi-package,engenius_eap2200,EnGenius EAP2200))
