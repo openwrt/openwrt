@@ -74,7 +74,7 @@ define Device/tplink-safeloader-uimage
   KERNEL := kernel-bin | append-dtb | lzma | uImageArcher lzma
 endef
 
-define Device/tplink-loader-okli
+define Device/tplink-safeloader-okli
   $(Device/tplink-safeloader)
   LOADER_TYPE := elf
   LOADER_FLASH_OFFS := 0x43000

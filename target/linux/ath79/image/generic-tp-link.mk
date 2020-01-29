@@ -213,7 +213,7 @@ endef
 TARGET_DEVICES += tplink_archer-d50-v1
 
 define Device/tplink_cpe210-v1
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE210
@@ -251,7 +251,7 @@ endef
 TARGET_DEVICES += tplink_cpe210-v3
 
 define Device/tplink_cpe220-v2
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE220
@@ -274,7 +274,7 @@ endef
 TARGET_DEVICES += tplink_cpe220-v3
 
 define Device/tplink_cpe510-v1
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE510
@@ -286,7 +286,7 @@ endef
 TARGET_DEVICES += tplink_cpe510-v1
 
 define Device/tplink_cpe510-v2
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE510
@@ -298,7 +298,7 @@ endef
 TARGET_DEVICES += tplink_cpe510-v2
 
 define Device/tplink_cpe510-v3
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE510
@@ -309,7 +309,7 @@ endef
 TARGET_DEVICES += tplink_cpe510-v3
 
 define Device/tplink_cpe610-v1
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE610
@@ -598,7 +598,7 @@ endef
 TARGET_DEVICES += tplink_tl-wr902ac-v1
 
 define Device/tplink_wbs210-v2
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := WBS210
@@ -609,7 +609,7 @@ endef
 TARGET_DEVICES += tplink_wbs210-v2
 
 define Device/tplink_wbs510-v1
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := WBS510
@@ -621,7 +621,7 @@ endef
 TARGET_DEVICES += tplink_wbs510-v1
 
 define Device/tplink_wbs510-v2
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := WBS510
