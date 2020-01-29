@@ -190,8 +190,8 @@ endef
 TARGET_DEVICES += tplink_archer-c7-v5
 
 define Device/tplink_archer-d50-v1
+  $(Device/tplink-v2)
   SOC := qca9531
-  DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer D50
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport \
@@ -201,14 +201,8 @@ define Device/tplink_archer-d50-v1
   TPLINK_HWID := 0xC1200001
   TPLINK_HWREV := 0x00000046
   TPLINK_FLASHLAYOUT := 8Mqca
-  TPLINK_HWREVADD := 0x00000000
-  TPLINK_HVERSION := 3
-  KERNEL := kernel-bin | append-dtb | lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | \
 	tplink-v2-header -s -V "ver. 1.0"
-  IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := tplink-v2-image -s -V "ver. 2.0" | append-metadata | \
-	check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += tplink_archer-d50-v1
 

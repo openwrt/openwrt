@@ -1,5 +1,5 @@
 DEVICE_VARS += TPLINK_HWID TPLINK_HWREV TPLINK_FLASHLAYOUT TPLINK_HEADER_VERSION
-DEVICE_VARS += TPLINK_BOARD_ID
+DEVICE_VARS += TPLINK_BOARD_ID TPLINK_HWREVADD TPLINK_HVERSION
 
 define Build/uImageArcher
 	mkimage -A $(LINUX_KARCH) \
@@ -19,6 +19,17 @@ define Device/tplink-v1
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := tplink-v1-image sysupgrade | append-metadata
   IMAGE/factory.bin := tplink-v1-image factory
+endef
+
+define Device/tplink-v2
+  DEVICE_VENDOR := TP-Link
+  TPLINK_HWREV := 0x1
+  TPLINK_HWREVADD := 0x0
+  TPLINK_HVERSION := 3
+  KERNEL := kernel-bin | append-dtb | lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | tplink-v2-header
+  IMAGE/sysupgrade.bin := tplink-v2-image -s | append-metadata | \
+	check-size $$$$(IMAGE_SIZE)
 endef
 
 define Device/tplink-nolzma
