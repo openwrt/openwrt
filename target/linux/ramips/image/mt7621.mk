@@ -2,10 +2,11 @@
 # MT7621 Profiles
 #
 
+include ./common-tp-link.mk
+
 DEFAULT_SOC := mt7621
 
 KERNEL_DTB += -d21
-DEVICE_VARS += TPLINK_BOARD_ID TPLINK_HEADER_VERSION TPLINK_HWID TPLINK_HWREV
 
 define Build/elecom-gst-factory
   $(eval product=$(word 1,$(1)))
@@ -661,19 +662,6 @@ define Device/adslr_g7
   DEVICE_PACKAGES := kmod-mt7615e wpad-basic
 endef
 TARGET_DEVICES += adslr_g7
-
-define Device/tplink-safeloader
-  DEVICE_VENDOR := TP-Link
-  TPLINK_BOARD_ID :=
-  TPLINK_HWID := 0x0
-  TPLINK_HWREV := 0
-  TPLINK_HEADER_VERSION := 1
-  KERNEL := $(KERNEL_DTB) | tplink-v1-header -e -O
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
-endef
 
 define Device/tplink_re350-v1
   $(Device/tplink-safeloader)

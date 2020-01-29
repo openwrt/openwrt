@@ -2,8 +2,9 @@
 # MT7620A Profiles
 #
 
-DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD TPLINK_HVERSION \
-	DLINK_ROM_ID DLINK_FAMILY_MEMBER DLINK_FIRMWARE_SIZE DLINK_IMAGE_OFFSET
+include ./common-tp-link.mk
+
+DEVICE_VARS += DLINK_ROM_ID DLINK_FAMILY_MEMBER DLINK_FIRMWARE_SIZE DLINK_IMAGE_OFFSET
 
 define Build/elecom-header
 	cp $@ $(KDIR)/v_0.0.0.bin
@@ -62,17 +63,6 @@ define Device/amit_jboot
   IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
   IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
   DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-usb-ohci
-endef
-
-define Device/Archer
-  SOC := mt7620a
-  DEVICE_VENDOR := TP-Link
-  TPLINK_HWREVADD := 0
-  TPLINK_HVERSION := 3
-  KERNEL := $(KERNEL_DTB)
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-v2-header -e
-  IMAGE/factory.bin := tplink-v2-image -e
-  IMAGE/sysupgrade.bin := tplink-v2-image -s -e | append-metadata
 endef
 
 define Device/asus_rp-n53
@@ -865,12 +855,12 @@ endef
 TARGET_DEVICES += sercomm_na930
 
 define Device/tplink_archer-c20i
-  $(Device/Archer)
+  $(Device/tplink-v2)
+  SOC := mt7620a
   IMAGE_SIZE := 7808k
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc2000001
   TPLINK_HWREV := 58
-  IMAGES += factory.bin
   DEVICE_MODEL := Archer C20i
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci
   SUPPORTED_DEVICES += c20i
@@ -878,14 +868,14 @@ endef
 TARGET_DEVICES += tplink_archer-c20i
 
 define Device/tplink_archer-c20-v1
-  $(Device/Archer)
+  $(Device/tplink-v2)
+  SOC := mt7620a
   IMAGE_SIZE := 7808k
   SUPPORTED_DEVICES += tplink,c20-v1
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc2000001
   TPLINK_HWREV := 0x44
   TPLINK_HWREVADD := 0x1
-  IMAGES += factory.bin
   DEVICE_MODEL := Archer C20
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
@@ -894,13 +884,13 @@ endef
 TARGET_DEVICES += tplink_archer-c20-v1
 
 define Device/tplink_archer-c2-v1
-  $(Device/Archer)
+  $(Device/tplink-v2)
+  SOC := mt7620a
   IMAGE_SIZE := 7808k
   SUPPORTED_DEVICES += tplink,c2-v1
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc7500001
   TPLINK_HWREV := 50
-  IMAGES += factory.bin
   DEVICE_MODEL := Archer C2
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
@@ -909,12 +899,13 @@ endef
 TARGET_DEVICES += tplink_archer-c2-v1
 
 define Device/tplink_archer-c50-v1
-  $(Device/Archer)
+  $(Device/tplink-v2)
+  SOC := mt7620a
   IMAGE_SIZE := 7808k
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc7500001
   TPLINK_HWREV := 69
-  IMAGES += factory-us.bin factory-eu.bin
+  IMAGES := sysupgrade.bin factory-us.bin factory-eu.bin
   IMAGE/factory-us.bin := tplink-v2-image -e -w 0
   IMAGE/factory-eu.bin := tplink-v2-image -e -w 2
   DEVICE_MODEL := Archer C50
@@ -925,11 +916,13 @@ endef
 TARGET_DEVICES += tplink_archer-c50-v1
 
 define Device/tplink_archer-mr200
-  $(Device/Archer)
+  $(Device/tplink-v2)
+  SOC := mt7620a
   IMAGE_SIZE := 7872k
   TPLINK_FLASHLAYOUT := 8MLmtk
   TPLINK_HWID := 0xd7500001
   TPLINK_HWREV := 0x4a
+  IMAGES := sysupgrade.bin
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-net kmod-usb-net-rndis \
 	kmod-usb-serial kmod-usb-serial-option adb-enablemodem
   DEVICE_MODEL := Archer MR200
@@ -938,20 +931,13 @@ endef
 TARGET_DEVICES += tplink_archer-mr200
 
 define Device/tplink_re200-v1
+  $(Device/tplink-v1)
   SOC := mt7620a
-  DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := RE200
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt76x0e
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := tplink-v1-image sysupgrade -e -O | append-metadata
-  IMAGE/factory.bin := tplink-v1-image factory -e -O
   IMAGE_SIZE := 7936k
-  KERNEL := $(KERNEL_DTB)
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-v1-header -e -O
   TPLINK_HWID := 0x02000001
-  TPLINK_HWREV := 0x1
-  TPLINK_HEADER_VERSION := 1
   TPLINK_FLASHLAYOUT := 8Mmtk
 endef
 TARGET_DEVICES += tplink_re200-v1

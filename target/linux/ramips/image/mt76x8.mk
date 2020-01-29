@@ -2,6 +2,8 @@
 # MT76x8 Profiles
 #
 
+include ./common-tp-link.mk
+
 DEFAULT_SOC := mt7628an
 
 define Device/alfa-network_awusfree1
@@ -235,69 +237,36 @@ define Device/totolink_lr1200
 endef
 TARGET_DEVICES += totolink_lr1200
 
-define Device/tplink
-  DEVICE_VENDOR := TP-Link
-  TPLINK_FLASHLAYOUT :=
-  TPLINK_HWID :=
-  TPLINK_HWREV :=
-  TPLINK_HWREVADD :=
-  TPLINK_HVERSION :=
-  KERNEL := $(KERNEL_DTB)
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-v2-header -e
-  IMAGES += tftp-recovery.bin
-  IMAGE/factory.bin := tplink-v2-image -e
-  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
-  IMAGE/sysupgrade.bin := tplink-v2-image -s -e | append-metadata | \
-	check-size $$$$(IMAGE_SIZE)
-endef
-DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD
-DEVICE_VARS += TPLINK_HVERSION
-
-define Device/tplink-safeloader
-  DEVICE_VENDOR := TP-Link
-  TPLINK_BOARD_ID :=
-  TPLINK_HWID := 0x0
-  TPLINK_HWREV := 0
-  TPLINK_HEADER_VERSION := 1
-  KERNEL := $(KERNEL_DTB) | tplink-v1-header -e -O
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
-endef
-
 define Device/tplink_archer-c20-v4
-  $(Device/tplink)
+  $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
   DEVICE_MODEL := Archer C20
   DEVICE_VARIANT := v4
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc200004
-  TPLINK_HWREV := 0x1
   TPLINK_HWREVADD := 0x4
-  TPLINK_HVERSION := 3
   DEVICE_PACKAGES := kmod-mt76x0e
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
   SUPPORTED_DEVICES += tplink,c20-v4
 endef
 TARGET_DEVICES += tplink_archer-c20-v4
 
 define Device/tplink_archer-c20-v5
-  $(Device/tplink)
+  $(Device/tplink-v2)
   IMAGE_SIZE := 7616k
   DEVICE_MODEL := Archer C20
   DEVICE_VARIANT := v5
   TPLINK_FLASHLAYOUT := 8MSUmtk
   TPLINK_HWID := 0xc200005
-  TPLINK_HWREV := 0x1
   TPLINK_HWREVADD := 0x5
-  TPLINK_HVERSION := 3
   DEVICE_PACKAGES := kmod-mt76x0e
   IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += tplink_archer-c20-v5
 
 define Device/tplink_archer-c50-v3
-  $(Device/tplink)
+  $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
   DEVICE_MODEL := Archer C50
   DEVICE_VARIANT := v3
@@ -305,14 +274,15 @@ define Device/tplink_archer-c50-v3
   TPLINK_HWID := 0x001D9BA4
   TPLINK_HWREV := 0x79
   TPLINK_HWREVADD := 0x1
-  TPLINK_HVERSION := 3
   DEVICE_PACKAGES := kmod-mt76x2
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
   SUPPORTED_DEVICES += tplink,c50-v3
 endef
 TARGET_DEVICES += tplink_archer-c50-v3
 
 define Device/tplink_archer-c50-v4
-  $(Device/tplink)
+  $(Device/tplink-v2)
   IMAGE_SIZE := 7616k
   DEVICE_MODEL := Archer C50
   DEVICE_VARIANT := v4
@@ -320,7 +290,6 @@ define Device/tplink_archer-c50-v4
   TPLINK_HWID := 0x001D589B
   TPLINK_HWREV := 0x93
   TPLINK_HWREVADD := 0x2
-  TPLINK_HVERSION := 3
   DEVICE_PACKAGES := kmod-mt76x2
   IMAGES := sysupgrade.bin
   SUPPORTED_DEVICES += tplink,c50-v4
@@ -338,7 +307,7 @@ endef
 TARGET_DEVICES += tplink_re305-v1
 
 define Device/tplink_tl-mr3020-v3
-  $(Device/tplink)
+  $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
   DEVICE_MODEL := TL-MR3020
   DEVICE_VARIANT := v3
@@ -346,13 +315,14 @@ define Device/tplink_tl-mr3020-v3
   TPLINK_HWID := 0x30200003
   TPLINK_HWREV := 0x3
   TPLINK_HWREVADD := 0x3
-  TPLINK_HVERSION := 3
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
 endef
 TARGET_DEVICES += tplink_tl-mr3020-v3
 
 define Device/tplink_tl-mr3420-v5
-  $(Device/tplink)
+  $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
   DEVICE_MODEL := TL-MR3420
   DEVICE_VARIANT := v5
@@ -360,71 +330,67 @@ define Device/tplink_tl-mr3420-v5
   TPLINK_HWID := 0x34200005
   TPLINK_HWREV := 0x5
   TPLINK_HWREVADD := 0x5
-  TPLINK_HVERSION := 3
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
 endef
 TARGET_DEVICES += tplink_tl-mr3420-v5
 
 define Device/tplink_tl-wa801nd-v5
-  $(Device/tplink)
+  $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
   DEVICE_MODEL := TL-WA801ND
   DEVICE_VARIANT := v5
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0x08010005
-  TPLINK_HWREV := 0x1
   TPLINK_HWREVADD := 0x5
-  TPLINK_HVERSION := 3
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
 endef
 TARGET_DEVICES += tplink_tl-wa801nd-v5
 
 define Device/tplink_tl-wr802n-v4
-  $(Device/tplink)
+  $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
   DEVICE_MODEL := TL-WR802N
   DEVICE_VARIANT := v4
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0x08020004
-  TPLINK_HWREV := 0x1
   TPLINK_HWREVADD := 0x4
-  TPLINK_HVERSION := 3
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
 endef
 TARGET_DEVICES += tplink_tl-wr802n-v4
 
 define Device/tplink_tl-wr840n-v4
-  $(Device/tplink)
+  $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
   DEVICE_MODEL := TL-WR840N
   DEVICE_VARIANT := v4
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0x08400004
-  TPLINK_HWREV := 0x1
   TPLINK_HWREVADD := 0x4
-  TPLINK_HVERSION := 3
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
   SUPPORTED_DEVICES += tl-wr840n-v4
 endef
 TARGET_DEVICES += tplink_tl-wr840n-v4
 
 define Device/tplink_tl-wr840n-v5
+  $(Device/tplink-v2)
   IMAGE_SIZE := 3904k
-  DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := TL-WR840N
   DEVICE_VARIANT := v5
   TPLINK_FLASHLAYOUT := 4Mmtk
   TPLINK_HWID := 0x08400005
-  TPLINK_HWREV := 0x1
   TPLINK_HWREVADD := 0x5
-  TPLINK_HVERSION := 3
-  KERNEL := $(KERNEL_DTB)
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-v2-header -e
-  IMAGE/sysupgrade.bin := tplink-v2-image -s -e | append-metadata | \
-	check-size $$$$(IMAGE_SIZE)
+  IMAGES := sysupgrade.bin
   SUPPORTED_DEVICES += tl-wr840n-v5
 endef
 TARGET_DEVICES += tplink_tl-wr840n-v5
 
 define Device/tplink_tl-wr841n-v13
-  $(Device/tplink)
+  $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
   DEVICE_MODEL := TL-WR841N
   DEVICE_VARIANT := v13
@@ -432,27 +398,27 @@ define Device/tplink_tl-wr841n-v13
   TPLINK_HWID := 0x08410013
   TPLINK_HWREV := 0x268
   TPLINK_HWREVADD := 0x13
-  TPLINK_HVERSION := 3
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
   SUPPORTED_DEVICES += tl-wr841n-v13
 endef
 TARGET_DEVICES += tplink_tl-wr841n-v13
 
 define Device/tplink_tl-wr841n-v14
-  $(Device/tplink)
+  $(Device/tplink-v2)
   IMAGE_SIZE := 3968k
   DEVICE_MODEL := TL-WR841N
   DEVICE_VARIANT := v14
   TPLINK_FLASHLAYOUT := 4Mmtk
   TPLINK_HWID := 0x08410014
-  TPLINK_HWREV := 0x1
   TPLINK_HWREVADD := 0x14
-  TPLINK_HVERSION := 3
+  IMAGES := sysupgrade.bin tftp-recovery.bin
   IMAGE/tftp-recovery.bin := pad-extra 64k | $$(IMAGE/factory.bin)
 endef
 TARGET_DEVICES += tplink_tl-wr841n-v14
 
 define Device/tplink_tl-wr842n-v5
-  $(Device/tplink)
+  $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
   DEVICE_MODEL := TL-WR842N
   DEVICE_VARIANT := v5
@@ -460,13 +426,14 @@ define Device/tplink_tl-wr842n-v5
   TPLINK_HWID := 0x08420005
   TPLINK_HWREV := 0x5
   TPLINK_HWREVADD := 0x5
-  TPLINK_HVERSION := 3
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
 endef
 TARGET_DEVICES += tplink_tl-wr842n-v5
 
 define Device/tplink_tl-wr902ac-v3
-  $(Device/tplink)
+  $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
   DEVICE_MODEL := TL-WR902AC
   DEVICE_VARIANT := v3
@@ -474,9 +441,10 @@ define Device/tplink_tl-wr902ac-v3
   TPLINK_HWID := 0x000dc88f
   TPLINK_HWREV := 0x89
   TPLINK_HWREVADD := 0x1
-  TPLINK_HVERSION := 3
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
 endef
 TARGET_DEVICES += tplink_tl-wr902ac-v3
 
