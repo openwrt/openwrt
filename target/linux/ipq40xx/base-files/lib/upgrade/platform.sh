@@ -64,6 +64,7 @@ platform_do_upgrade() {
 	avm,fritzbox-7530 |\
 	avm,fritzrepeater-1200 |\
 	avm,fritzrepeater-3000 |\
+	buffalo,wtr-m2133hp |\
 	cilab,meshpoint-one |\
 	engenius,eap2200 |\
 	mobipromo,cm520-79f |\
