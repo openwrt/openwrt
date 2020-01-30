@@ -73,7 +73,7 @@
 			mdio0_pins: mdio0_pins {
 				mux {
 					pins = "gpio0", "gpio1";
-					function = "gpio";
+					function = "mdio";
 					drive-strength = <8>;
 					bias-disable;
 				};
@@ -184,11 +184,17 @@
 			};
 		};
 
-		mdio0: mdio {
-			compatible = "virtual,mdio-gpio";
+		mdio0: mdio@37000000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			gpios = <&qcom_pinmux 1 0 &qcom_pinmux 0 0>;
+
+			compatible = "qcom,ipq8064-mdio", "syscon";
+			reg = <0x37000000 0x200000>;
+			resets = <&gcc GMAC_CORE1_RESET>;
+			reset-names = "stmmaceth";
+			clocks = <&gcc GMAC_CORE1_CLK>;
+			clock-names = "stmmaceth";
+
 			pinctrl-0 = <&mdio0_pins>;
 			pinctrl-names = "default";
 
