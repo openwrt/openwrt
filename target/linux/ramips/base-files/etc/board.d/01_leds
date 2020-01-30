@@ -337,13 +337,9 @@ tplink,c50-v4)
 	ucidef_set_led_wlan "wlan2g" "wlan2g" "$boardname:green:wlan2g" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "wlan5g" "$boardname:green:wlan5g" "phy1tpt"
 	;;
-tplink,tl-wa801nd-v5)
-	ucidef_set_led_wlan "wlan" "wlan" "$boardname:green:wlan" "phy0tpt"
-	ucidef_set_led_netdev "lan" "lan" "$boardname:green:lan" "eth0"
-	;;
+tplink,tl-wa801nd-v5|\
 tplink,tl-mr3020-v3)
-	set_wifi_led "$boardname:green:wlan"
-	ucidef_set_led_netdev "lan" "LAN" "$boardname:green:lan" "eth0"
+	ucidef_set_led_netdev "lan" "lan" "$boardname:green:lan" "eth0"
 	;;
 tplink,tl-mr3420-v5|\
 tplink,tl-wr842n-v5)
