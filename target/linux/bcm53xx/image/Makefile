@@ -123,15 +123,15 @@ define Device/Default
   FILESYSTEMS := squashfs
   KERNEL_NAME := zImage
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
-  IMAGES := trx
+  IMAGES := factory.trx
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  IMAGE/trx := append-ubi | trx-nand
+  IMAGE/factory.trx := append-ubi | trx-nand
 endef
 
 define Device/asus
-  IMAGES := trx
-  IMAGE/trx := append-ubi | trx-nand | asus-trx
+  IMAGES := factory.trx
+  IMAGE/factory.trx := append-ubi | trx-nand | asus-trx
 endef
 
 define Device/asus-rt-ac56u
@@ -194,13 +194,13 @@ define Device/buffalo-wzr-900dhp
   BUFFALO_TAG_PLATFORM := bcm
   BUFFALO_TAG_VERSION := 9.99
   BUFFALO_TAG_MINOR := 9.99
-  IMAGES += factory-DHP-EU.bin factory-DHP2-JP.bin
-  IMAGE/factory-DHP-EU.bin := \
+  IMAGES += DHP-EU-factory.bin DHP2-JP-factory.bin
+  IMAGE/DHP-EU-factory.bin := \
 	append-ubi | trx-nand | buffalo-wzr-header WZR-900DHP EU | \
 	buffalo-enc WZR-900DHP $$(BUFFALO_TAG_VERSION) | \
 	buffalo-tag-dhp WZR-900DHP EU mlang20 | buffalo-enc-tag | \
 	buffalo-dhp-image
-  IMAGE/factory-DHP2-JP.bin := \
+  IMAGE/DHP2-JP-factory.bin := \
 	append-ubi | trx-nand | buffalo-wzr-header WZR-900DHP2 JP | \
 	buffalo-enc WZR-900DHP2 $$(BUFFALO_TAG_VERSION) | \
 	buffalo-tag-dhp WZR-900DHP2 JP jp | buffalo-enc-tag | \
@@ -322,8 +322,8 @@ define Device/smartrg-sr400ac
   DEVICE_VENDOR := SmartRG
   DEVICE_MODEL := SR400ac
   DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
-  IMAGES := trx
-  IMAGE/trx := append-rootfs | trx-serial
+  IMAGES := factory.trx
+  IMAGE/factory.trx := append-rootfs | trx-serial
   KERNEL_INITRAMFS_SUFFIX := .bin
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma-d16
 endef
@@ -333,7 +333,7 @@ define Device/phicomm-k3
   DEVICE_VENDOR := PHICOMM
   DEVICE_MODEL := K3
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
-  IMAGES := trx
+  IMAGES := factory.trx
 endef
 TARGET_DEVICES += phicomm-k3
 
@@ -341,8 +341,8 @@ define Device/tenda-ac9
   DEVICE_VENDOR := Tenda
   DEVICE_MODEL := AC9
   DEVICE_PACKAGES := $(B43) $(USB2_PACKAGES)
-  IMAGES := trx
-  IMAGE/trx := append-rootfs | trx-serial
+  IMAGES := factory.trx
+  IMAGE/factory.trx := append-rootfs | trx-serial
 endef
 TARGET_DEVICES += tenda-ac9
 
@@ -351,7 +351,7 @@ define Device/tplink-archer-c5-v2
   DEVICE_MODEL := Archer C5
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := $(B43) $(USB2_PACKAGES)
-  IMAGES := bin
+  IMAGES := factory.bin
   IMAGE/bin := append-rootfs | bcm53xx-tplink-safeloader
   TPLINK_BOARD := ARCHER-C5-V2
 endef
@@ -362,7 +362,7 @@ define Device/tplink-archer-c9-v1
   DEVICE_MODEL := Archer C9
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := $(USB3_PACKAGES)
-  IMAGES := bin
+  IMAGES := factory.bin
   IMAGE/bin := append-rootfs | bcm53xx-tplink-safeloader
   TPLINK_BOARD := ARCHERC9
 endef

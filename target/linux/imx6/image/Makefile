@@ -201,9 +201,9 @@ define Device/cubox-i
   DEVICE_NAME := cubox
   DEVICE_PACKAGES := kmod-drm-imx kmod-drm-imx-hdmi kmod-usb-hid
   DEVICE_DTS := imx6q-cubox-i imx6dl-cubox-i imx6q-hummingboard imx6dl-hummingboard
-  IMAGES := combined.bin dtb
+  IMAGES := factory.bin dtb
   FILESYSTEMS := squashfs
-  IMAGE/combined.bin := append-rootfs | pad-extra 128k | imx6-sdcard
+  IMAGE/factory.bin := append-rootfs | pad-extra 128k | imx6-sdcard
   IMAGE/dtb := install-dtb
 endef
 TARGET_DEVICES += cubox-i
@@ -223,9 +223,9 @@ define Device/apalis
   BOOT_SCRIPT := bootscript-apalis
   UBOOT := apalis_imx6
   FILESYSTEMS := squashfs
-  IMAGES := combined.bin sysupgrade.bin
+  IMAGES := factory.bin sysupgrade.bin
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
-  IMAGE/combined.bin := append-rootfs | pad-extra 128k | apalis-emmc
+  IMAGE/factory.bin := append-rootfs | pad-extra 128k | apalis-emmc
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   ARTIFACTS := recovery.scr
   ARTIFACT/recovery.scr := recovery-scr

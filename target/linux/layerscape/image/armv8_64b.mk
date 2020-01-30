@@ -7,7 +7,7 @@
 
 define Device/Default
   PROFILES := Default
-  IMAGES := firmware.bin
+  IMAGES := factory.bin
   FILESYSTEMS := ubifs
   MKUBIFS_OPTS := -m 1 -e 262016 -c 128
   KERNEL := kernel-bin | gzip | uImage gzip
@@ -26,7 +26,7 @@ define Device/ls1012ardb
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 256KiB
   PAGESIZE := 1
-  IMAGE/firmware.bin := \
+  IMAGE/factory.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
     ls-append $(1)-fip.bin | pad-to 5M | \
@@ -47,8 +47,8 @@ define Device/ls1012afrwy
     kmod-ppfe
   DEVICE_DTS := freescale/fsl-ls1012a-frwy
   FILESYSTEMS := ext4
-  IMAGES := firmware.bin sdcard.img
-  IMAGE/firmware.bin := \
+  IMAGES := factory.bin sdcard.img
+  IMAGE/factory.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 128K | \
     ls-append pfe.itb | pad-to 384K | \
@@ -74,7 +74,7 @@ define Device/ls1043ardb
     fmc fmc-eth-config
   DEVICE_DTS := freescale/fsl-ls1043a-rdb-sdk
   FILESYSTEMS := squashfs
-  IMAGE/firmware.bin := \
+  IMAGE/factory.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
     ls-append $(1)-fip.bin | pad-to 5M | \
@@ -122,7 +122,7 @@ define Device/ls1046ardb
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 256KiB
   PAGESIZE := 1
-  IMAGE/firmware.bin := \
+  IMAGE/factory.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
     ls-append $(1)-fip.bin | pad-to 5M | \
@@ -171,7 +171,7 @@ define Device/ls1088ardb
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 256KiB
   PAGESIZE := 1
-  IMAGE/firmware.bin := \
+  IMAGE/factory.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
     ls-append $(1)-fip.bin | pad-to 5M | \
@@ -222,7 +222,7 @@ define Device/ls2088ardb
     restool
   DEVICE_DTS := freescale/fsl-ls2088a-rdb
   FILESYSTEMS := squashfs
-  IMAGE/firmware.bin := \
+  IMAGE/factory.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
     ls-append $(1)-fip.bin | pad-to 5M | \

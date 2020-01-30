@@ -143,8 +143,8 @@ define Device/Default
 	KERNEL_NAME = vmlinux.lzma
 	KERNEL_INITRAMFS_NAME = vmlinux-initramfs.lzma
 	FILESYSTEMS := $(FS_64K)
-	IMAGES := trx
-	IMAGE/trx := append-rootfs | trx-with-loader
+	IMAGES := factory.trx
+	IMAGE/factory.trx := append-rootfs | trx-with-loader
 endef
 
 define Device/standard
@@ -154,7 +154,7 @@ endef
 define Device/standard-noloader-gz
   DEVICE_TITLE := Image with gzipped kernel
   KERNEL_NAME = vmlinux.gz
-  IMAGE/trx := append-rootfs | trx-without-loader
+  IMAGE/factory.trx := append-rootfs | trx-without-loader
 endef
 
 define Device/standard-noloader-nodictionarylzma
@@ -165,26 +165,26 @@ endef
 
 define Device/asus
 	DEVICE_VENDOR := ASUS
-	IMAGES := trx
-	IMAGE/trx := append-rootfs | trx-with-loader | asus-trx
+	IMAGES := factory.trx
+	IMAGE/factory.trx := append-rootfs | trx-with-loader | asus-trx
 endef
 
 define Device/linksys
 	DEVICE_VENDOR := Linksys
-	IMAGES := bin
-	IMAGE/bin := append-rootfs | trx-with-loader | linksys-bin
+	IMAGES := factory.bin
+	IMAGE/factory.bin := append-rootfs | trx-with-loader | linksys-bin
 endef
 
 define Device/motorola
 	DEVICE_VENDOR := Motorola
-	IMAGES := bin
-	IMAGE/bin := append-rootfs | trx-with-loader | motorola-bin
+	IMAGES := factory.bin
+	IMAGE/factory.bin := append-rootfs | trx-with-loader | motorola-bin
 endef
 
 define Device/netgear
 	DEVICE_VENDOR := NETGEAR
-	IMAGES := chk
-	IMAGE/chk := append-rootfs | trx-with-loader | netgear-chk
+	IMAGES := factory.chk
+	IMAGE/factory.chk := append-rootfs | trx-with-loader | netgear-chk
 endef
 
 #################################################
@@ -353,8 +353,8 @@ TARGET_DEVICES += asus-wl-hdd25
 define Device/dlink-dwl-3150
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DWL-3150
-  IMAGES := bin
-  IMAGE/bin := append-rootfs | trx-with-loader | tailed-bin
+  IMAGES := factory.bin
+  IMAGE/factory.bin := append-rootfs | trx-with-loader | tailed-bin
   BIN_TAIL := BCM-5352-2050-0000000-01
 endef
 TARGET_DEVICES += dlink-dwl-3150
@@ -363,8 +363,8 @@ define Device/edimax-ps1208-mfg
   DEVICE_VENDOR := Edimax
   DEVICE_MODEL := PS-1208MFg
   DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
-  IMAGES := bin
-  IMAGE/bin := append-rootfs | trx-with-loader | edimax-bin
+  IMAGES := factory.bin
+  IMAGE/factory.bin := append-rootfs | trx-with-loader | edimax-bin
 endef
 TARGET_DEVICES += edimax-ps1208-mfg
 
@@ -373,8 +373,8 @@ define Device/huawei-e970
   DEVICE_MODEL := E970
   DEVICE_PACKAGES := kmod-b43
   KERNEL_NAME = vmlinux.gz
-  IMAGES := bin
-  IMAGE/bin := append-rootfs | trx-without-loader | huawei-bin
+  IMAGES := factory.bin
+  IMAGE/factory.bin := append-rootfs | trx-without-loader | huawei-bin
 endef
 TARGET_DEVICES += huawei-e970
 
@@ -400,9 +400,9 @@ define Device/linksys-wrt54g3gv2-vf
   DEVICE_MODEL := WRT54G3GV2-VF
   DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
   FILESYSTEMS := $(FS_128K)
-  IMAGES := noheader.bin bin
-  IMAGE/noheader.bin := linksys-pattern-partition | append-rootfs | trx-v2-with-loader
-  IMAGE/bin := linksys-pattern-partition | append-rootfs | trx-v2-with-loader | linksys-bin
+  IMAGES := noheader-factory.bin factory.bin
+  IMAGE/noheader-factory.bin := linksys-pattern-partition | append-rootfs | trx-v2-with-loader
+  IMAGE/factory.bin := linksys-pattern-partition | append-rootfs | trx-v2-with-loader | linksys-bin
   DEVICE_ID := 3G2V
   VERSION := 3.00.24
   SERIAL := 6
@@ -476,7 +476,7 @@ define Device/linksys-wrt300n-v1
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-b43
   $(Device/linksys)
-  IMAGES := bin trx
+  IMAGES := factory.bin factory.trx
   DEVICE_ID := EWCB
   VERSION := 1.03.6
 endef
@@ -521,8 +521,8 @@ define Device/netgear-wgt634u
   DEVICE_MODEL := WGT634U
   DEVICE_PACKAGES := kmod-ath5k $(USB2_PACKAGES)
   FILESYSTEMS := $(FS_128K)
-  IMAGES := bin
-  IMAGE/bin := append-rootfs | trx-with-loader | prepend-with-elf
+  IMAGES := factory.bin
+  IMAGE/factory.bin := append-rootfs | trx-with-loader | prepend-with-elf
 endef
 TARGET_DEVICES += netgear-wgt634u
 
@@ -550,8 +550,8 @@ define Device/usrobotics-usr5461
   DEVICE_VENDOR := US Robotics
   DEVICE_MODEL := USR5461
   DEVICE_PACKAGES := kmod-b43 $(USB1_PACKAGES)
-  IMAGES := bin
-  IMAGE/bin := append-rootfs | trx-with-loader | usrobotics-bin
+  IMAGES := factory.bin
+  IMAGE/factory.bin := append-rootfs | trx-with-loader | usrobotics-bin
 endef
 TARGET_DEVICES += usrobotics-usr5461
 

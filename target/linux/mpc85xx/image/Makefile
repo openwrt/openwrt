@@ -97,9 +97,9 @@ define Device/ocedo_panda
   PAGESIZE := 2048
   SUBPAGESIZE := 512
   BLOCKSIZE := 128k
-  IMAGES := fdt.bin sysupgrade.bin
+  IMAGES := tftp.fdt sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGE/fdt.bin := append-dtb
+  IMAGE/tftp.fdt := append-dtb
 endef
 TARGET_DEVICES += ocedo_panda
 
