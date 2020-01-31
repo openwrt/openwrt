@@ -248,7 +248,7 @@ $(eval $(call KernelPackage,gpio-nxp-74hc164))
 
 define KernelPackage/gpio-pca953x
   SUBMENU:=$(OTHER_MENU)
-  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core
+  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core +LINUX_5_4:kmod-regmap-i2c
   TITLE:=PCA95xx, TCA64xx, and MAX7310 I/O ports
   KCONFIG:=CONFIG_GPIO_PCA953X
   FILES:=$(LINUX_DIR)/drivers/gpio/gpio-pca953x.ko
