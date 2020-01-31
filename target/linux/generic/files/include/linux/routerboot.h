@@ -12,6 +12,7 @@
 #ifndef _ROUTERBOOT_H
 #define _ROUTERBOOT_H
 
+
 #define RB_MAC_SIZE		6
 
 /*
@@ -20,6 +21,8 @@
 #define RB_MAGIC_HARD	0x64726148 /* "Hard" */
 #define RB_MAGIC_SOFT	0x74666F53 /* "Soft" */
 #define RB_MAGIC_DAWN	0x6E776144 /* "Dawn" */
+#define RB_MAGIC_LZOR	0x524F5A4C
+
 
 #define RB_ID_TERMINATOR	0
 
@@ -30,7 +33,7 @@
 #define RB_ID_HARD_02		2
 #define RB_ID_FLASH_INFO	3
 #define RB_ID_MAC_ADDRESS_PACK	4
-#define RB_ID_BOARD_NAME	5
+#define RB_ID_BOARD_PRODUCT_CODE	5
 #define RB_ID_BIOS_VERSION	6
 #define RB_ID_HARD_07		7
 #define RB_ID_SDRAM_TIMINGS	8
@@ -42,6 +45,9 @@
 #define RB_ID_MAC_ADDRESS_COUNT	14
 #define RB_ID_HW_OPTIONS	21
 #define RB_ID_WLAN_DATA		22
+#define RB_ID_BOARD_IDENTIFIER	23
+#define RB_ID_BOARD_NAME	33
+
 
 /*
  * ID values for Software settings
