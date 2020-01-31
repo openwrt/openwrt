@@ -809,7 +809,7 @@ $(eval $(call KernelPackage,hfcmulti))
 define KernelPackage/gigaset
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Siemens Gigaset support for isdn4linux
-  DEPENDS:=@USB_SUPPORT +kmod-isdn4linux +kmod-lib-crc-ccitt +kmod-usb-core
+  DEPENDS:=@USB_SUPPORT +kmod-isdn4linux +kmod-lib-crc-ccitt +kmod-usb-core @!LINUX_5_4
   URL:=http://gigaset307x.sourceforge.net/
   KCONFIG:= \
     CONFIG_ISDN_DRV_GIGASET \
