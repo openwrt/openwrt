@@ -477,7 +477,7 @@ __rb_get_wlan_data(u16 id)
 		if (id != 0)
 			goto err_free;
     
-		err = rle_decode(erd_tag, erd_tag_len, buf_rle_out, RB_ART_SIZE,
+		err = rle_decode(tag, tag_len, buf_rle_out, RB_ART_SIZE,
 					     NULL, NULL);
 		if (err) {
     			pr_err("unable to decode calibration data\n");
