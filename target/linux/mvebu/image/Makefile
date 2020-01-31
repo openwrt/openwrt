@@ -118,15 +118,15 @@ define Device/NAND-512K
 endef
 
 ifeq ($(SUBTARGET),cortexa9)
-include cortex-a9.mk
+include cortexa9.mk
 endif
 
 ifeq ($(SUBTARGET),cortexa53)
-include cortex-a53.mk
+include cortexa53.mk
 endif
 
 ifeq ($(SUBTARGET),cortexa72)
-include cortex-a72.mk
+include cortexa72.mk
 endif
 
 $(eval $(call BuildImage))
