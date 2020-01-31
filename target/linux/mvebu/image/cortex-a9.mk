@@ -6,6 +6,34 @@
 # See /LICENSE for more information.
 #
 
+define Device/cznic_turris-omnia
+  DEVICE_VENDOR := CZ.NIC
+  DEVICE_MODEL := Turris Omnia
+  KERNEL_INSTALL := 1
+  KERNEL := kernel-bin
+  KERNEL_INITRAMFS := kernel-bin
+  DEVICE_PACKAGES :=  \
+    mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
+    wpad-basic kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+    partx-utils kmod-i2c-core kmod-i2c-mux kmod-i2c-mux-pca954x
+  IMAGES := $$(IMAGE_PREFIX)-sysupgrade.img.gz omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz
+  IMAGE/$$(IMAGE_PREFIX)-sysupgrade.img.gz := boot-img | sdcard-img | gzip | append-metadata
+  IMAGE/omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz := omnia-medkit-initramfs | gzip
+  IMAGE_NAME = $$(2)
+  SOC := armada-385
+  SUPPORTED_DEVICES += armada-385-turris-omnia
+endef
+TARGET_DEVICES += cznic_turris-omnia
+
+define Device/globalscale_mirabox
+  $(Device/NAND-512K)
+  DEVICE_VENDOR := Globalscale
+  DEVICE_MODEL := Mirabox
+  SOC := armada-370
+  SUPPORTED_DEVICES += mirabox
+endef
+TARGET_DEVICES += globalscale_mirabox
+
 define Device/linksys
   $(Device/NAND-128K)
   DEVICE_VENDOR := Linksys
@@ -24,6 +52,34 @@ define Device/linksys_wrt1200ac
   SUPPORTED_DEVICES := armada-385-linksys-caiman linksys,caiman
 endef
 TARGET_DEVICES += linksys_wrt1200ac
+
+define Device/linksys_wrt1900acs
+  $(call Device/linksys)
+  DEVICE_MODEL := WRT1900ACS
+  DEVICE_VARIANT := v1
+  DEVICE_ALT0_VENDOR := Linksys
+  DEVICE_ALT0_MODEL := WRT1900ACS
+  DEVICE_ALT0_VARIANT := v2
+  DEVICE_ALT1_VENDOR := Linksys
+  DEVICE_ALT1_MODEL := Shelby
+  DEVICE_DTS := armada-385-linksys-shelby
+  DEVICE_PACKAGES += mwlwifi-firmware-88w8864
+  SUPPORTED_DEVICES := armada-385-linksys-shelby linksys,shelby
+endef
+TARGET_DEVICES += linksys_wrt1900acs
+
+define Device/linksys_wrt1900ac
+  $(call Device/linksys)
+  DEVICE_MODEL := WRT1900AC
+  DEVICE_VARIANT := v1
+  DEVICE_ALT0_VENDOR := Linksys
+  DEVICE_ALT0_MODEL := Mamba
+  DEVICE_DTS := armada-xp-linksys-mamba
+  DEVICE_PACKAGES += mwlwifi-firmware-88w8864
+  KERNEL_SIZE := 3072k
+  SUPPORTED_DEVICES := armada-xp-linksys-mamba linksys,mamba
+endef
+TARGET_DEVICES += linksys_wrt1900ac
 
 define Device/linksys_wrt1900acv2
   $(call Device/linksys)
@@ -48,21 +104,6 @@ define Device/linksys_wrt3200acm
 endef
 TARGET_DEVICES += linksys_wrt3200acm
 
-define Device/linksys_wrt1900acs
-  $(call Device/linksys)
-  DEVICE_MODEL := WRT1900ACS
-  DEVICE_VARIANT := v1
-  DEVICE_ALT0_VENDOR := Linksys
-  DEVICE_ALT0_MODEL := WRT1900ACS
-  DEVICE_ALT0_VARIANT := v2
-  DEVICE_ALT1_VENDOR := Linksys
-  DEVICE_ALT1_MODEL := Shelby
-  DEVICE_DTS := armada-385-linksys-shelby
-  DEVICE_PACKAGES += mwlwifi-firmware-88w8864
-  SUPPORTED_DEVICES := armada-385-linksys-shelby linksys,shelby
-endef
-TARGET_DEVICES += linksys_wrt1900acs
-
 define Device/linksys_wrt32x
   $(call Device/linksys)
   DEVICE_MODEL := WRT32X
@@ -75,43 +116,6 @@ define Device/linksys_wrt32x
   SUPPORTED_DEVICES := armada-385-linksys-venom linksys,venom
 endef
 TARGET_DEVICES += linksys_wrt32x
-
-define Device/linksys_wrt1900ac
-  $(call Device/linksys)
-  DEVICE_MODEL := WRT1900AC
-  DEVICE_VARIANT := v1
-  DEVICE_ALT0_VENDOR := Linksys
-  DEVICE_ALT0_MODEL := Mamba
-  DEVICE_DTS := armada-xp-linksys-mamba
-  DEVICE_PACKAGES += mwlwifi-firmware-88w8864
-  KERNEL_SIZE := 3072k
-  SUPPORTED_DEVICES := armada-xp-linksys-mamba linksys,mamba
-endef
-TARGET_DEVICES += linksys_wrt1900ac
-
-define Device/plathome_openblocks-ax3-4
-  DEVICE_VENDOR := Plat'Home
-  DEVICE_MODEL := OpenBlocks AX3
-  DEVICE_VARIANT := 4 ports
-  SOC := armada-xp
-  SUPPORTED_DEVICES += openblocks-ax3-4
-  BLOCKSIZE := 128k
-  PAGESIZE := 1
-  IMAGES += factory.img
-  IMAGE/factory.img := append-kernel | pad-to $$(BLOCKSIZE) | append-ubi
-endef
-TARGET_DEVICES += plathome_openblocks-ax3-4
-
-define Device/marvell_a385-db-ap
-  $(Device/NAND-256K)
-  DEVICE_VENDOR := Marvell
-  DEVICE_MODEL := Armada 385 Development Board AP (DB-88F6820-AP)
-  DEVICE_DTS := armada-385-db-ap
-  IMAGES += factory.img
-  KERNEL_SIZE := 8192k
-  SUPPORTED_DEVICES += armada-385-db-ap
-endef
-TARGET_DEVICES += marvell_a385-db-ap
 
 define Device/marvell_a370-db
   $(Device/NAND-512K)
@@ -131,6 +135,27 @@ define Device/marvell_a370-rd
 endef
 TARGET_DEVICES += marvell_a370-rd
 
+define Device/marvell_a385-db-ap
+  $(Device/NAND-256K)
+  DEVICE_VENDOR := Marvell
+  DEVICE_MODEL := Armada 385 Development Board AP (DB-88F6820-AP)
+  DEVICE_DTS := armada-385-db-ap
+  IMAGES += factory.img
+  KERNEL_SIZE := 8192k
+  SUPPORTED_DEVICES += armada-385-db-ap
+endef
+TARGET_DEVICES += marvell_a385-db-ap
+
+define Device/marvell_a388-rd
+  DEVICE_VENDOR := Marvell
+  DEVICE_MODEL := Armada 388 RD (RD-88F6820-AP)
+  DEVICE_DTS := armada-388-rd
+  IMAGES := firmware.bin
+  IMAGE/firmware.bin := append-kernel | pad-to 256k | append-rootfs | pad-rootfs
+  SUPPORTED_DEVICES := armada-388-rd marvell,a385-rd
+endef
+TARGET_DEVICES += marvell_a388-rd
+
 define Device/marvell_axp-db
   $(Device/NAND-512K)
   DEVICE_VENDOR := Marvell
@@ -149,30 +174,18 @@ define Device/marvell_axp-gp
 endef
 TARGET_DEVICES += marvell_axp-gp
 
-define Device/marvell_a388-rd
-  DEVICE_VENDOR := Marvell
-  DEVICE_MODEL := Armada 388 RD (RD-88F6820-AP)
-  DEVICE_DTS := armada-388-rd
-  IMAGES := firmware.bin
-  IMAGE/firmware.bin := append-kernel | pad-to 256k | append-rootfs | pad-rootfs
-  SUPPORTED_DEVICES := armada-388-rd marvell,a385-rd
+define Device/plathome_openblocks-ax3-4
+  DEVICE_VENDOR := Plat'Home
+  DEVICE_MODEL := OpenBlocks AX3
+  DEVICE_VARIANT := 4 ports
+  SOC := armada-xp
+  SUPPORTED_DEVICES += openblocks-ax3-4
+  BLOCKSIZE := 128k
+  PAGESIZE := 1
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$(BLOCKSIZE) | append-ubi
 endef
-TARGET_DEVICES += marvell_a388-rd
-
-define Device/solidrun_clearfog-pro-a1
-  DEVICE_VENDOR := SolidRun
-  DEVICE_MODEL := ClearFog Pro
-  KERNEL_INSTALL := 1
-  KERNEL := kernel-bin
-  DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils swconfig
-  IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
-  DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
-  SUPPORTED_DEVICES += armada-388-clearfog armada-388-clearfog-pro
-  UBOOT := clearfog-u-boot-spl.kwb
-  BOOT_SCRIPT := clearfog
-endef
-TARGET_DEVICES += solidrun_clearfog-pro-a1
+TARGET_DEVICES += plathome_openblocks-ax3-4
 
 define Device/solidrun_clearfog-base-a1
   DEVICE_VENDOR := SolidRun
@@ -189,30 +202,17 @@ define Device/solidrun_clearfog-base-a1
 endef
 TARGET_DEVICES += solidrun_clearfog-base-a1
 
-define Device/globalscale_mirabox
-  $(Device/NAND-512K)
-  DEVICE_VENDOR := Globalscale
-  DEVICE_MODEL := Mirabox
-  SOC := armada-370
-  SUPPORTED_DEVICES += mirabox
-endef
-TARGET_DEVICES += globalscale_mirabox
-
-define Device/cznic_turris-omnia
-  DEVICE_VENDOR := CZ.NIC
-  DEVICE_MODEL := Turris Omnia
+define Device/solidrun_clearfog-pro-a1
+  DEVICE_VENDOR := SolidRun
+  DEVICE_MODEL := ClearFog Pro
   KERNEL_INSTALL := 1
   KERNEL := kernel-bin
-  KERNEL_INITRAMFS := kernel-bin
-  DEVICE_PACKAGES :=  \
-    mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
-    wpad-basic kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
-    partx-utils kmod-i2c-core kmod-i2c-mux kmod-i2c-mux-pca954x
-  IMAGES := $$(IMAGE_PREFIX)-sysupgrade.img.gz omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz
-  IMAGE/$$(IMAGE_PREFIX)-sysupgrade.img.gz := boot-img | sdcard-img | gzip | append-metadata
-  IMAGE/omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz := omnia-medkit-initramfs | gzip
-  IMAGE_NAME = $$(2)
-  SOC := armada-385
-  SUPPORTED_DEVICES += armada-385-turris-omnia
+  DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils swconfig
+  IMAGES := sdcard.img.gz
+  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
+  DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
+  SUPPORTED_DEVICES += armada-388-clearfog armada-388-clearfog-pro
+  UBOOT := clearfog-u-boot-spl.kwb
+  BOOT_SCRIPT := clearfog
 endef
-TARGET_DEVICES += cznic_turris-omnia
+TARGET_DEVICES += solidrun_clearfog-pro-a1
