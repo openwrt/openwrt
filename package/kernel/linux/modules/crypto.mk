@@ -169,7 +169,9 @@ $(eval $(call KernelPackage,crypto-deflate))
 define KernelPackage/crypto-des
   TITLE:=DES/3DES cipher CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_DES
-  FILES:=$(LINUX_DIR)/crypto/des_generic.ko
+  FILES:= \
+	$(LINUX_DIR)/crypto/des_generic.ko \
+	$(LINUX_DIR)/lib/crypto/libdes.ko@ge5.4
   AUTOLOAD:=$(call AutoLoad,09,des_generic)
   $(call AddDepends/crypto)
 endef
@@ -194,7 +196,8 @@ define KernelPackage/crypto-ecdh
   DEPENDS:=+kmod-crypto-kpp
   KCONFIG:= CONFIG_CRYPTO_ECDH
   FILES:= \
-	$(LINUX_DIR)/crypto/ecdh_generic.ko
+	$(LINUX_DIR)/crypto/ecdh_generic.ko \
+	$(LINUX_DIR)/crypto/ecc.ko@ge5.2
   AUTOLOAD:=$(call AutoLoad,10,ecdh_generic)
   $(call AddDepends/crypto)
 endef
@@ -695,7 +698,9 @@ define KernelPackage/crypto-sha256
 	CONFIG_CRYPTO_SHA256 \
 	CONFIG_CRYPTO_SHA256_OCTEON \
 	CONFIG_CRYPTO_SHA256_SSSE3
-  FILES:=$(LINUX_DIR)/crypto/sha256_generic.ko
+  FILES:= \
+	$(LINUX_DIR)/crypto/sha256_generic.ko \
+	$(LINUX_DIR)/lib/crypto/libsha256.ko@ge5.4
   AUTOLOAD:=$(call AutoLoad,09,sha256_generic)
   $(call AddDepends/crypto)
 endef
