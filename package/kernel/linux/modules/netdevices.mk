@@ -323,7 +323,7 @@ define KernelPackage/switch-rtl8366-smi
   DEPENDS:=@GPIO_SUPPORT +kmod-swconfig +(TARGET_armvirt||TARGET_bcm27xx_bcm2708||TARGET_samsung||TARGET_tegra):kmod-of-mdio
   KCONFIG:=CONFIG_RTL8366_SMI
   FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8366_smi.ko
-  AUTOLOAD:=$(call AutoLoad,42,rtl8366_smi)
+  AUTOLOAD:=$(call AutoLoad,42,rtl8366_smi,1)
 endef
 
 define KernelPackage/switch-rtl8366-smi/description
@@ -371,7 +371,7 @@ define KernelPackage/switch-rtl8367b
   DEPENDS:=+kmod-switch-rtl8366-smi
   KCONFIG:=CONFIG_RTL8367B_PHY
   FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8367b.ko
-  AUTOLOAD:=$(call AutoLoad,43,rtl8367b)
+  AUTOLOAD:=$(call AutoLoad,43,rtl8367b,1)
 endef
 
 define KernelPackage/switch-rtl8367b/description
