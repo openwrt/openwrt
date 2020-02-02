@@ -133,6 +133,19 @@
 
 				#reset-cells = <1>;
 			};
+
+			hs_uart: uart@18500000 {
+				compatible = "qca,ar9330-uart";
+				reg = <0x18500000 0x14>;
+
+				interrupts = <6>;
+				interrupt-parent = <&miscintc>;
+
+				clocks = <&pll ATH79_CLK_UART1>;
+				clock-names = "uart";
+
+				status = "disabled";
+			};
 		};
 
 		nand: nand@1b000200 {
