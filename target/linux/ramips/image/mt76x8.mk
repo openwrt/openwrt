@@ -359,6 +359,16 @@ define Device/tplink_tl-wa801nd-v5
 endef
 TARGET_DEVICES += tplink_tl-wa801nd-v5
 
+define Device/tplink_tl-wa850re-v4
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := TL-WA850RE
+  DEVICE_VARIANT := v4
+  IMAGE_SIZE := 3712k
+  TPLINK_BOARD_ID := TLWA850REV4
+  DEVICE_PACKAGES := -wpad-basic wpad-mini rssileds
+endef
+TARGET_DEVICES += tplink_tl-wa850re-v4
+
 define Device/tplink_tl-wr802n-v4
   $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
