@@ -6,7 +6,11 @@ import hashlib
 
 
 def e(variable, default=None):
-    return os.environ.get(variable, default)
+    value = os.environ.get(variable)
+    if value == None or value == '':
+        return default
+    else:
+        return value
 
 
 json_path = "{}{}{}.json".format(e("BIN_DIR"), os.sep, e("IMAGE_PREFIX"))
