@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libusb
-PKG_VERSION:=1.0.22
-PKG_RELEASE:=2
+PKG_VERSION:=1.0.23
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=\
   https://github.com/libusb/libusb/releases/download/v$(PKG_VERSION) \
   @SF/$(PKG_NAME)
-PKG_HASH:=75aeb9d59a4fdb800d329a545c2e6799f732362193b465ea198f2aa275518157
+PKG_HASH:=db11c06e958a82dac52cf3c65cb4dd2c3f339c8a988665110e0d24d19312ad8d
 
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=0
@@ -41,6 +41,7 @@ endef
 
 TARGET_CFLAGS += $(FPIC)
 CONFIGURE_ARGS += \
+	--disable-static \
 	--disable-udev \
 	--disable-log
 
