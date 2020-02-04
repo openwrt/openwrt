@@ -137,6 +137,15 @@ case "$FIRMWARE" in
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		rm /lib/firmware/ath10k/QCA9888/hw2.0/board-2.bin
 		;;
+	comfast,cf-wr752ac)
+		caldata_extract "art" 0x5000 0x2f20
+		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
+			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
+		ln -sf /lib/firmware/ath10k/QCA9888/hw2.0/firmware-5.bin \
+			/lib/firmware/ath10k/QCA9888/hw2.0/ct-firmware-5.bin
+		board2file="/lib/firmware/ath10k/QCA9888/hw2.0/board-2.bin"
+		[ -e $board2file ] && rm $board2file
+		;;
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
 	dlink,dir-842-c3|\
