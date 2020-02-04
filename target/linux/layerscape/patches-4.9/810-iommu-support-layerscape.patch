@@ -34,7 +34,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	return entry->group;
  }
-@@ -3197,9 +3199,10 @@ static bool amd_iommu_capable(enum iommu
+@@ -3199,9 +3201,10 @@ static bool amd_iommu_capable(enum iommu
  	return false;
  }
  
@@ -47,7 +47,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	struct unity_map_entry *entry;
  	int devid;
  
-@@ -3208,41 +3211,56 @@ static void amd_iommu_get_dm_regions(str
+@@ -3210,41 +3213,56 @@ static void amd_iommu_get_dm_regions(str
  		return;
  
  	list_for_each_entry(entry, &amd_iommu_unity_map, list) {
@@ -118,7 +118,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  {
  	struct dma_ops_domain *dma_dom = to_dma_ops_domain(to_pdomain(domain));
  	unsigned long start, end;
-@@ -3266,9 +3284,9 @@ static const struct iommu_ops amd_iommu_
+@@ -3268,9 +3286,9 @@ static const struct iommu_ops amd_iommu_
  	.add_device = amd_iommu_add_device,
  	.remove_device = amd_iommu_remove_device,
  	.device_group = amd_iommu_device_group,
@@ -995,7 +995,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  };
  
  struct dmar_atsr_unit {
-@@ -4268,27 +4269,40 @@ static inline void init_iommu_pm_ops(voi
+@@ -4271,27 +4272,40 @@ static inline void init_iommu_pm_ops(voi
  int __init dmar_parse_one_rmrr(struct acpi_dmar_header *header, void *arg)
  {
  	struct acpi_dmar_reserved_memory *rmrr;
@@ -1041,7 +1041,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  
  static struct dmar_atsr_unit *dmar_find_atsr(struct acpi_dmar_atsr *atsr)
-@@ -4502,6 +4516,7 @@ static void intel_iommu_free_dmars(void)
+@@ -4505,6 +4519,7 @@ static void intel_iommu_free_dmars(void)
  	list_for_each_entry_safe(rmrru, rmrr_n, &dmar_rmrr_units, list) {
  		list_del(&rmrru->list);
  		dmar_free_dev_scope(&rmrru->devices, &rmrru->devices_cnt);
@@ -1049,7 +1049,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		kfree(rmrru);
  	}
  
-@@ -5240,6 +5255,45 @@ static void intel_iommu_remove_device(st
+@@ -5243,6 +5258,45 @@ static void intel_iommu_remove_device(st
  	iommu_device_unlink(iommu->iommu_dev, dev);
  }
  
@@ -1095,7 +1095,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  #ifdef CONFIG_INTEL_IOMMU_SVM
  #define MAX_NR_PASID_BITS (20)
  static inline unsigned long intel_iommu_get_pts(struct intel_iommu *iommu)
-@@ -5370,19 +5424,21 @@ struct intel_iommu *intel_svm_device_to_
+@@ -5373,19 +5427,21 @@ struct intel_iommu *intel_svm_device_to_
  #endif /* CONFIG_INTEL_IOMMU_SVM */
  
  static const struct iommu_ops intel_iommu_ops = {

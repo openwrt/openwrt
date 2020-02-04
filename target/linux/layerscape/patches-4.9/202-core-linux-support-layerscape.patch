@@ -197,7 +197,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +EXPORT_SYMBOL_GPL(soc_device_match);
 --- a/include/linux/device.h
 +++ b/include/linux/device.h
-@@ -688,6 +688,25 @@ void __iomem *devm_ioremap_resource(stru
+@@ -689,6 +689,25 @@ void __iomem *devm_ioremap_resource(stru
  int devm_add_action(struct device *dev, void (*action)(void *), void *data);
  void devm_remove_action(struct device *dev, void (*action)(void *), void *data);
  

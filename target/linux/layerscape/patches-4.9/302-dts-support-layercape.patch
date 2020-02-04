@@ -255,9 +255,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +};
 +
  &enet0 {
- 	tbi-handle = <&tbi1>;
+ 	tbi-handle = <&tbi0>;
  	phy-handle = <&sgmii_phy2>;
-@@ -228,6 +241,10 @@
+@@ -235,6 +248,10 @@
  	};
  };
  
@@ -268,7 +268,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  &sai1 {
  	status = "okay";
  };
-@@ -243,3 +260,11 @@
+@@ -250,3 +267,11 @@
  &uart1 {
  	status = "okay";
  };
@@ -597,7 +597,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			clock-names = "dcu", "pix";
  			big-endian;
  			status = "disabled";
-@@ -626,6 +643,8 @@
+@@ -635,6 +652,8 @@
  			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL_HIGH>;
  			dr_mode = "host";
  			snps,quirk-frame-length-adjustment = <0x20>;
@@ -606,7 +606,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			snps,dis_rxdet_inp3_quirk;
  		};
  
-@@ -634,7 +653,9 @@
+@@ -643,7 +662,9 @@
  			reg = <0x00 0x03400000 0x0 0x00010000   /* controller registers */
  			       0x40 0x00000000 0x0 0x00002000>; /* configuration space */
  			reg-names = "regs", "config";
@@ -617,7 +617,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			fsl,pcie-scfg = <&scfg 0>;
  			#address-cells = <3>;
  			#size-cells = <2>;
-@@ -643,7 +664,7 @@
+@@ -652,7 +673,7 @@
  			bus-range = <0x0 0xff>;
  			ranges = <0x81000000 0x0 0x00000000 0x40 0x00010000 0x0 0x00010000   /* downstream I/O */
  				  0x82000000 0x0 0x40000000 0x40 0x40000000 0x0 0x40000000>; /* non-prefetchable memory */
@@ -626,7 +626,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			#interrupt-cells = <1>;
  			interrupt-map-mask = <0 0 0 7>;
  			interrupt-map = <0000 0 0 1 &gic GIC_SPI 91  IRQ_TYPE_LEVEL_HIGH>,
-@@ -657,7 +678,9 @@
+@@ -666,7 +687,9 @@
  			reg = <0x00 0x03500000 0x0 0x00010000   /* controller registers */
  			       0x48 0x00000000 0x0 0x00002000>; /* configuration space */
  			reg-names = "regs", "config";
@@ -637,7 +637,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			fsl,pcie-scfg = <&scfg 1>;
  			#address-cells = <3>;
  			#size-cells = <2>;
-@@ -666,7 +689,7 @@
+@@ -675,7 +698,7 @@
  			bus-range = <0x0 0xff>;
  			ranges = <0x81000000 0x0 0x00000000 0x48 0x00010000 0x0 0x00010000   /* downstream I/O */
  				  0x82000000 0x0 0x40000000 0x48 0x40000000 0x0 0x40000000>; /* non-prefetchable memory */
@@ -646,7 +646,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			#interrupt-cells = <1>;
  			interrupt-map-mask = <0 0 0 7>;
  			interrupt-map = <0000 0 0 1 &gic GIC_SPI 92  IRQ_TYPE_LEVEL_HIGH>,
-@@ -674,5 +697,45 @@
+@@ -683,5 +706,45 @@
  					<0000 0 0 3 &gic GIC_SPI 191 IRQ_TYPE_LEVEL_HIGH>,
  					<0000 0 0 4 &gic GIC_SPI 193 IRQ_TYPE_LEVEL_HIGH>;
  		};

@@ -1607,7 +1607,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +MODULE_LICENSE("GPL v2");
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -591,7 +591,7 @@ int phy_mii_ioctl(struct phy_device *phy
+@@ -592,7 +592,7 @@ int phy_mii_ioctl(struct phy_device *phy
  		return 0;
  
  	case SIOCSHWTSTAMP:
@@ -1616,7 +1616,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			return phydev->drv->hwtstamp(phydev, ifr);
  		/* fall through */
  
-@@ -616,6 +616,9 @@ static int phy_start_aneg_priv(struct ph
+@@ -617,6 +617,9 @@ static int phy_start_aneg_priv(struct ph
  	bool trigger = 0;
  	int err;
  
@@ -1626,7 +1626,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	mutex_lock(&phydev->lock);
  
  	if (AUTONEG_DISABLE == phydev->autoneg)
-@@ -1015,7 +1018,7 @@ void phy_state_machine(struct work_struc
+@@ -1016,7 +1019,7 @@ void phy_state_machine(struct work_struc
  
  	old_state = phydev->state;
  
@@ -1635,7 +1635,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		phydev->drv->link_change_notify(phydev);
  
  	switch (phydev->state) {
-@@ -1317,6 +1320,9 @@ EXPORT_SYMBOL(phy_write_mmd_indirect);
+@@ -1318,6 +1321,9 @@ EXPORT_SYMBOL(phy_write_mmd_indirect);
   */
  int phy_init_eee(struct phy_device *phydev, bool clk_stop_enable)
  {
@@ -1645,7 +1645,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* According to 802.3az,the EEE is supported only in full duplex-mode.
  	 * Also EEE feature is active when core is operating with MII, GMII
  	 * or RGMII (all kinds). Internal PHYs are also allowed to proceed and
-@@ -1394,6 +1400,9 @@ EXPORT_SYMBOL(phy_init_eee);
+@@ -1395,6 +1401,9 @@ EXPORT_SYMBOL(phy_init_eee);
   */
  int phy_get_eee_err(struct phy_device *phydev)
  {
@@ -1655,7 +1655,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	return phy_read_mmd_indirect(phydev, MDIO_PCS_EEE_WK_ERR, MDIO_MMD_PCS);
  }
  EXPORT_SYMBOL(phy_get_eee_err);
-@@ -1410,6 +1419,9 @@ int phy_ethtool_get_eee(struct phy_devic
+@@ -1411,6 +1420,9 @@ int phy_ethtool_get_eee(struct phy_devic
  {
  	int val;
  
@@ -1665,7 +1665,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* Get Supported EEE */
  	val = phy_read_mmd_indirect(phydev, MDIO_PCS_EEE_ABLE, MDIO_MMD_PCS);
  	if (val < 0)
-@@ -1443,6 +1455,9 @@ int phy_ethtool_set_eee(struct phy_devic
+@@ -1444,6 +1456,9 @@ int phy_ethtool_set_eee(struct phy_devic
  {
  	int val = ethtool_adv_to_mmd_eee_adv_t(data->advertised);
  
@@ -1675,7 +1675,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* Mask prohibited EEE modes */
  	val &= ~phydev->eee_broken_modes;
  
-@@ -1454,7 +1469,7 @@ EXPORT_SYMBOL(phy_ethtool_set_eee);
+@@ -1455,7 +1470,7 @@ EXPORT_SYMBOL(phy_ethtool_set_eee);
  
  int phy_ethtool_set_wol(struct phy_device *phydev, struct ethtool_wolinfo *wol)
  {
@@ -1684,7 +1684,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return phydev->drv->set_wol(phydev, wol);
  
  	return -EOPNOTSUPP;
-@@ -1463,7 +1478,7 @@ EXPORT_SYMBOL(phy_ethtool_set_wol);
+@@ -1464,7 +1479,7 @@ EXPORT_SYMBOL(phy_ethtool_set_wol);
  
  void phy_ethtool_get_wol(struct phy_device *phydev, struct ethtool_wolinfo *wol)
  {
@@ -1695,7 +1695,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  EXPORT_SYMBOL(phy_ethtool_get_wol);
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1049,7 +1049,7 @@ int phy_suspend(struct phy_device *phyde
+@@ -1050,7 +1050,7 @@ int phy_suspend(struct phy_device *phyde
  	if (wol.wolopts)
  		return -EBUSY;
  
@@ -1704,7 +1704,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		ret = phydrv->suspend(phydev);
  
  	if (ret)
-@@ -1066,7 +1066,7 @@ int phy_resume(struct phy_device *phydev
+@@ -1067,7 +1067,7 @@ int phy_resume(struct phy_device *phydev
  	struct phy_driver *phydrv = to_phy_driver(phydev->mdio.dev.driver);
  	int ret = 0;
  
@@ -1713,7 +1713,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		ret = phydrv->resume(phydev);
  
  	if (ret)
-@@ -1723,7 +1723,7 @@ static int phy_remove(struct device *dev
+@@ -1724,7 +1724,7 @@ static int phy_remove(struct device *dev
  	phydev->state = PHY_DOWN;
  	mutex_unlock(&phydev->lock);
  

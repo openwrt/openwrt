@@ -301,7 +301,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	default:
  		goto bad_args;
  	}
-@@ -1253,6 +1398,7 @@ static void __init clockgen_init(struct
+@@ -1254,6 +1399,7 @@ static void __init clockgen_init(struct
  		clockgen.info.flags |= CG_CMUX_GE_PLAT;
  
  	clockgen.sysclk = create_sysclk("cg-sysclk");
@@ -309,7 +309,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	create_plls(&clockgen);
  	create_muxes(&clockgen);
  
-@@ -1273,8 +1419,11 @@ err:
+@@ -1274,8 +1420,11 @@ err:
  
  CLK_OF_DECLARE(qoriq_clockgen_1, "fsl,qoriq-clockgen-1.0", clockgen_init);
  CLK_OF_DECLARE(qoriq_clockgen_2, "fsl,qoriq-clockgen-2.0", clockgen_init);
