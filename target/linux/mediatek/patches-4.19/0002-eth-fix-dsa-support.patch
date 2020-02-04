@@ -1,7 +1,6 @@
-diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
---- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c	2019-12-23 11:42:02.728620670 +0800
-+++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c	2019-12-23 11:42:48.747289058 +0800
-@@ -999,11 +999,6 @@
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -999,11 +999,6 @@ static int mtk_poll_rx(struct napi_struc
  		if (!(trxd.rxd2 & RX_DMA_DONE))
  			break;
  
@@ -13,7 +12,7 @@ diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/m
  		mac = (trxd.rxd4 >> RX_DMA_FPORT_SHIFT) &
  			RX_DMA_FPORT_MASK;
  		/* From QDMA(5). This is a external interface case of HWNAT.
-@@ -1017,7 +1012,7 @@
+@@ -1017,7 +1012,7 @@ static int mtk_poll_rx(struct napi_struc
  			mac = 0;
  		else
  			mac--;
@@ -22,7 +21,7 @@ diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/m
  		if (unlikely(mac < 0 || mac >= MTK_MAC_COUNT ||
  			     !eth->netdev[mac]))
  			goto release_desc;
-@@ -2030,10 +2025,6 @@
+@@ -2030,10 +2025,6 @@ static int mtk_hw_init(struct mtk_eth *e
  	/* Disable RX VLan Offloading */
  	mtk_w32(eth, 0, MTK_CDMP_EG_CTRL);
  
