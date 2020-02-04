@@ -20,7 +20,7 @@ NOTE: this patch can be upstreamed as-is, LEDE-specific
  	kirkwood-openblocks_a6.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-nsa310b.dts
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,131 @@
 +/dts-v1/;
 +
 +#include "kirkwood-nsa3x0-common.dtsi"
@@ -34,7 +34,14 @@ NOTE: this patch can be upstreamed as-is, LEDE-specific
 +	model = "ZyXEL NSA310b";
 +	compatible = "zyxel,nsa310b", "zyxel,nsa310", "marvell,kirkwood-88f6281", "marvell,kirkwood";
 +
-+	memory {
++	aliases {
++		led-boot = &led_green_sys;
++		led-failsafe = &led_red_sys;
++		led-running = &led_green_sys;
++		led-upgrade = &led_red_sys;
++	};
++
++	memory@0 {
 +		device_type = "memory";
 +		reg = <0x00000000 0x10000000>;
 +	};
@@ -103,11 +110,11 @@ NOTE: this patch can be upstreamed as-is, LEDE-specific
 +	gpio-leds {
 +		compatible = "gpio-leds";
 +
-+		green-sys {
++		led_green_sys: green-sys {
 +			label = "nsa310:green:sys";
 +			gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
 +		};
-+		red-sys {
++		led_red_sys: red-sys {
 +			label = "nsa310:red:sys";
 +			gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
 +		};

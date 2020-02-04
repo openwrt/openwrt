@@ -1,6 +1,20 @@
 --- a/arch/arm/boot/dts/kirkwood-iconnect.dts
 +++ b/arch/arm/boot/dts/kirkwood-iconnect.dts
-@@ -16,8 +16,6 @@
+@@ -8,6 +8,13 @@
+ 	model = "Iomega Iconnect";
+ 	compatible = "iom,iconnect-1.1", "iom,iconnect", "marvell,kirkwood-88f6281", "marvell,kirkwood";
+ 
++	aliases {
++		led-boot = &led_power_blue;
++		led-failsafe = &led_power_red;
++		led-running = &led_power_blue;
++		led-upgrade = &led_power_red;
++	};
++
+ 	memory {
+ 		device_type = "memory";
+ 		reg = <0x00000000 0x10000000>;
+@@ -16,8 +23,6 @@
  	chosen {
  		bootargs = "console=ttyS0,115200n8 earlyprintk";
  		stdout-path = &uart0;
@@ -9,7 +23,22 @@
  	};
  
  	ocp@f1000000 {
-@@ -146,28 +144,23 @@
+@@ -89,12 +94,11 @@
+ 			gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+ 			default-state = "on";
+ 		};
+-		power-blue {
++		led_power_blue: power-blue {
+ 			label = "power:blue";
+ 			gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+-			default-state = "keep";
+ 		};
+-		power-red {
++		led_power_red: power-red {
+ 			label = "power:red";
+ 			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+ 		};
+@@ -146,28 +150,23 @@
  	status = "okay";
  
  	partition@0 {
