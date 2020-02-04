@@ -33,14 +33,13 @@
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
 
-		// key "DECT"
-		key_dect {
+		dect {
 			label = "dect";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_PHONE>;
 		};
-		// key "WLAN/WPS"
-		key_wlan {
+
+		wlan {
 			label = "wlan";
 			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
@@ -49,32 +48,33 @@
 
 	leds {
 		compatible = "gpio-leds";
-		// led 5 "Power/DSL"
+
 		led_power: power {
 			label = "fritz7490:green:power";
 			gpios = <&gpio 45 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
-		// led 4 "Internet"
+
 		led_internet: internet {
 			label = "fritz7490:green:internet";
 			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 		};
-		// led 3 "FixedLine"
-		led_fixedline: fixedline {
+
+		led_fixedline {
 			label = "fritz7490:green:fixedline";
 			gpios = <&gpio 36 GPIO_ACTIVE_LOW>;
 		};
-		// led 2 "WLAN"
+
 		led_wlan: wlan {
 			label = "fritz7490:green:wlan";
 			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
 		};
-		// led 1 "Info"
-		led_info: info {
+
+		led_info_green {
 			label = "fritz7490:green:info";
 			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
 		};
+
 		led_info_red: info_red {
 			label = "fritz7490:red:info";
 			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
@@ -89,6 +89,7 @@
 			gpio-export,output = <1>;
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 		};
+
 		gpio_wasp_wakeup {
 			gpio-export,name = "fritz7490:wasp:wakeup";
 			gpio-export,output = <2>;
@@ -187,6 +188,7 @@
 	pinctrl-0 = <&state_default>;
 
 	state_default: pinmux {
+
 		phy-rst {
 			lantiq,pins = "io32", "io44";
 			lantiq,pull = <0>;
@@ -222,7 +224,7 @@
 	flash@4 {
 		compatible = "jedec,spi-nor";
 		reg = <4>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <80000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -235,13 +237,13 @@
 				read-only;
 			};
 
-			partition@20000 {
+			partition@40000 {
 				reg = <0x40000 0x60000>;
 				label = "tffs (1)";
 				read-only;
 			};
 
-			partition@30000 {
+			partition@a0000 {
 				reg = <0xa0000 0x60000>;
 				label = "tffs (2)";
 				read-only;
@@ -278,5 +280,6 @@
 
 &pcie0 {
 	status = "okay";
+
 	gpio-reset = <&gpio 21 GPIO_ACTIVE_LOW>;
 };
