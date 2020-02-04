@@ -75,7 +75,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	priv->chip_rev = phy_read_mmd(phydev, 3, LAN88XX_MMD3_CHIP_REV);
 --- a/drivers/net/usb/lan78xx.c
 +++ b/drivers/net/usb/lan78xx.c
-@@ -36,7 +36,8 @@
+@@ -37,7 +37,8 @@
  #include <linux/irq.h>
  #include <linux/irqchip/chained_irq.h>
  #include <linux/microchipphy.h>
@@ -85,7 +85,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  #include <linux/of_net.h>
  #include "lan78xx.h"
  
-@@ -1763,6 +1764,7 @@ done:
+@@ -1764,6 +1765,7 @@ done:
  
  static int lan78xx_mdio_init(struct lan78xx_net *dev)
  {
@@ -93,7 +93,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	int ret;
  
  	dev->mdiobus = mdiobus_alloc();
-@@ -1792,7 +1794,9 @@ static int lan78xx_mdio_init(struct lan7
+@@ -1793,7 +1795,9 @@ static int lan78xx_mdio_init(struct lan7
  		break;
  	}
  

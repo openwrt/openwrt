@@ -1,6 +1,6 @@
 --- a/drivers/net/usb/lan78xx.c
 +++ b/drivers/net/usb/lan78xx.c
-@@ -2463,6 +2463,15 @@ static int lan78xx_reset(struct lan78xx_
+@@ -2464,6 +2464,15 @@ static int lan78xx_reset(struct lan78xx_
  
  	ret = lan78xx_read_reg(dev, HW_CFG, &buf);
  	buf |= HW_CFG_MEF_;

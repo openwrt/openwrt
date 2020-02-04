@@ -14,7 +14,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/net/usb/lan78xx.c
 +++ b/drivers/net/usb/lan78xx.c
-@@ -1999,6 +1999,7 @@ static int lan78xx_phy_init(struct lan78
+@@ -2000,6 +2000,7 @@ static int lan78xx_phy_init(struct lan78
  {
  	int ret;
  	u32 mii_adv;
@@ -22,7 +22,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	struct phy_device *phydev = dev->net->phydev;
  
  	phydev = phy_find_first(dev->mdiobus);
-@@ -2071,6 +2072,19 @@ static int lan78xx_phy_init(struct lan78
+@@ -2072,6 +2073,19 @@ static int lan78xx_phy_init(struct lan78
  	mii_adv = (u32)mii_advertise_flowctrl(dev->fc_request_control);
  	phydev->advertising |= mii_adv_to_ethtool_adv_t(mii_adv);
  
