@@ -10,7 +10,7 @@
  	kirkwood-ib62x0.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-goflexhome.dts
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,123 @@
 +/dts-v1/;
 +
 +#include "kirkwood.dtsi"
@@ -19,6 +19,13 @@
 +/ {
 +	model = "Seagate GoFlex Home";
 +	compatible = "seagate,goflexhome", "marvell,kirkwood-88f6281", "marvell,kirkwood";
++
++	aliases {
++		led-boot = &led_health;
++		led-failsafe = &led_fault;
++		led-running = &led_health;
++		led-upgrade = &led_fault;
++	};
 +
 +	memory@0 {
 +		device_type = "memory";
@@ -62,12 +69,11 @@
 +	gpio-leds {
 +		compatible = "gpio-leds";
 +
-+		health {
++		led_health: health {
 +			label = "status:green:health";
 +			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
-+			linux,default-trigger = "default-on";
 +		};
-+		fault {
++		led_fault: fault {
 +			label = "status:orange:fault";
 +			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 +		};

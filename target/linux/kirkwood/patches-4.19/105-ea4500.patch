@@ -1,6 +1,26 @@
 --- a/arch/arm/boot/dts/kirkwood-linksys-viper.dts
 +++ b/arch/arm/boot/dts/kirkwood-linksys-viper.dts
-@@ -67,9 +67,23 @@
+@@ -24,6 +24,10 @@
+ 	};
+ 
+ 	aliases {
++		led-boot = &led_white_health;
++		led-failsafe = &led_white_health;
++		led-running = &led_white_health;
++		led-upgrade = &led_white_health;
+ 		serial0 = &uart0;
+ 	};
+ 
+@@ -56,7 +60,7 @@
+ 		pinctrl-0 = < &pmx_led_white_health &pmx_led_white_pulse >;
+ 		pinctrl-names = "default";
+ 
+-		white-health {
++		led_white_health: white-health {
+ 			label = "viper:white:health";
+ 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+ 		};
+@@ -67,9 +71,23 @@
  		};
  	};
  
@@ -26,7 +46,7 @@
  		compatible = "marvell,dsa";
  		#address-cells = <2>;
  		#size-cells = <0>;
-@@ -161,22 +175,22 @@
+@@ -161,22 +179,22 @@
  		};
  
  		partition@200000 {
@@ -53,7 +73,7 @@
  			reg = <0x1EA0000 0x1760000>;
  		};
  
-@@ -207,53 +221,6 @@
+@@ -207,53 +225,6 @@
  
  &mdio {
  	status = "okay";
@@ -107,7 +127,7 @@
  };
  
  &uart0 {
-@@ -272,10 +239,14 @@
+@@ -272,10 +243,14 @@
  };
  
  /* eth1 is connected to the switch at port 6. However DSA only supports a

@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-on100.dts
-@@ -0,0 +1,160 @@
+@@ -0,0 +1,164 @@
 +/dts-v1/;
 +
 +#include "kirkwood.dtsi"
@@ -16,6 +16,10 @@
 +	};
 +
 +	aliases {
++		led-boot = &led_health_green;
++		led-failsafe = &led_health_red;
++		led-running = &led_health_green;
++		led-upgrade = &led_health_red;
 +		serial0 = &uart0;
 +	};
 +
@@ -43,22 +47,22 @@
 +		pinctrl-0 = < &pmx_led_health_r &pmx_led_health_g >;
 +		pinctrl-names = "default";
 +
-+		health-g {
++		led_health_green: health_green {
 +			label = "on100:green:health";
 +			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 +		};
 +
-+		health-r {
++		led_health_red: health_red {
 +			label = "on100:red:health";
 +			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
 +		};
 +
-+		health2-g {
++		health2_green {
 +			label = "on100:green:health2";
 +			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 +		};
 +
-+		health2-r {
++		health2_red {
 +			label = "on100:red:health2";
 +			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 +		};

@@ -10,7 +10,7 @@
  	kirkwood-lsxhl.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-linksys-audi.dts
-@@ -0,0 +1,245 @@
+@@ -0,0 +1,249 @@
 +/*
 + * kirkwood-linksys-audi.dts - Device Tree file for Linksys EA3500
 + *
@@ -39,6 +39,10 @@
 +	};
 +
 +	aliases {
++		led-boot = &led_power;
++		led-failsafe = &led_power;
++		led-running = &led_power;
++		led-upgrade = &led_power;
 +		serial0 = &uart0;
 +	};
 +
@@ -71,7 +75,7 @@
 +		pinctrl-0 = < &pmx_led_green_power >;
 +		pinctrl-names = "default";
 +
-+		green-power {
++		led_power: power {
 +			label = "audi:green:power";
 +			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 +		};
