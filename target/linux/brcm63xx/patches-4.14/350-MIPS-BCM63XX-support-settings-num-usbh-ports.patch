@@ -1,13 +1,13 @@
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-@@ -42,6 +42,7 @@ struct board_info {
+@@ -40,6 +40,7 @@ struct board_info {
  
  	/* USB config */
  	struct bcm63xx_usbd_platform_data usbd;
 +	unsigned int num_usbh_ports:2;
  
- 	/* DSP config */
- 	struct bcm63xx_dsp_platform_data dsp;
+ 	/* GPIO LEDs */
+ 	struct gpio_led leds[5];
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_usb_ehci.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_usb_ehci.h
 @@ -1,6 +1,6 @@

@@ -35,15 +35,18 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	bcm63xx_led_data.num_leds = ARRAY_SIZE(board.leds);
 --- a/arch/mips/bcm63xx/Makefile
 +++ b/arch/mips/bcm63xx/Makefile
-@@ -1,7 +1,7 @@
+@@ -1,9 +1,8 @@
  # SPDX-License-Identifier: GPL-2.0
  obj-y		+= clk.o cpu.o cs.o gpio.o irq.o nvram.o prom.o reset.o \
- 		   setup.o timer.o dev-dsp.o dev-enet.o dev-flash.o \
--		   dev-pcmcia.o dev-rng.o dev-spi.o dev-hsspi.o dev-uart.o \
-+		   dev-pcmcia.o dev-rng.o dev-uart.o \
- 		   dev-wdt.o dev-usb-ehci.o dev-usb-ohci.o dev-usb-usbd.o \
- 		   usb-common.o sprom.o
+ 		   setup.o timer.o dev-enet.o dev-flash.o dev-pcmcia.o \
+-		   dev-rng.o dev-spi.o dev-hsspi.o dev-uart.o dev-wdt.o \
+-		   dev-usb-ehci.o dev-usb-ohci.o dev-usb-usbd.o usb-common.o \
+-		   sprom.o
++		   dev-rng.o dev-uart.o dev-wdt.o dev-usb-ehci.o \
++		   dev-usb-ohci.o dev-usb-usbd.o usb-common.o sprom.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
+ 
+ obj-y		+= boards/
 --- a/arch/mips/bcm63xx/dev-hsspi.c
 +++ /dev/null
 @@ -1,48 +0,0 @@
