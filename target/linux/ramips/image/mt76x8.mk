@@ -31,6 +31,15 @@ define Device/buffalo_wcr-1166ds
 endef
 TARGET_DEVICES += buffalo_wcr-1166ds
 
+define Device/comfast_cf-wr752ac-v2
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-WR752AC-V2
+  DEVICE_PACKAGES := kmod-mt76x2 swconfig uboot-envtools
+  SUPPORTED_DEVICES += cf-wr752ac-v2
+endef
+TARGET_DEVICES += comfast_cf-wr752ac-v2
+
 define Device/cudy_wr1000
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
