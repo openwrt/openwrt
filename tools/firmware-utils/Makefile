@@ -19,6 +19,7 @@ define Host/Compile
 	mkdir -p $(HOST_BUILD_DIR)/bin
 	$(call cc,addpattern)
 	$(call cc,asustrx)
+	$(call cc,lxlfw)
 	$(call cc,trx)
 	$(call cc,otrx)
 	$(call cc,motorola-bin)
