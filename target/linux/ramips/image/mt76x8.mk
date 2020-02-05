@@ -34,7 +34,8 @@ TARGET_DEVICES += buffalo_wcr-1166ds
 define Device/comfast_cf-wr752ac-v2
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := COMFAST
-  DEVICE_MODEL := CF-WR752AC-V2
+  DEVICE_MODEL := CF-WR752AC
+  DEVICE_VARIANT := v2
   DEVICE_PACKAGES := kmod-mt76x2 swconfig uboot-envtools
   SUPPORTED_DEVICES += cf-wr752ac-v2
 endef
