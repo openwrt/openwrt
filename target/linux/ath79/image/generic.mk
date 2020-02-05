@@ -300,16 +300,6 @@ define Device/comfast_cf-e5
 endef
 TARGET_DEVICES += comfast_cf-e5
 
-define Device/comfast_cf-wr752ac
-  SOC := qca9531
-  DEVICE_VENDOR := COMFAST
-  DEVICE_MODEL := CF-WR752AC
-  DEVICE_PACKAGES := kmod-leds-gpio kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct \
-	-uboot-envtools swconfig
-  IMAGE_SIZE := 16192k
-endef
-TARGET_DEVICES += comfast_cf-wr752ac
-
 define Device/comfast_cf-e560ac
   SOC := qca9531
   DEVICE_VENDOR := COMFAST
