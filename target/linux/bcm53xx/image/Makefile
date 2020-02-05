@@ -83,6 +83,13 @@ define Build/asus-trx
 	mv $@.new $@
 endef
 
+define Build/luxul-lxl
+	$(STAGING_DIR_HOST)/bin/lxlfw create $@.new \
+		-i $@ \
+		-b $(LUXUL_BOARD)
+	mv $@.new $@
+endef
+
 define Build/seama-nand
 	# Seama entity
 	$(STAGING_DIR_HOST)/bin/oseama \
@@ -102,6 +109,7 @@ endef
 
 DEVICE_VARS += PRODUCTID SIGNATURE NETGEAR_BOARD_ID NETGEAR_REGION TPLINK_BOARD
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
+DEVICE_VARS += LUXUL_BOARD
 
 IEEE8021X := wpad-basic
 B43 := $(IEEE8021X) kmod-b43
@@ -248,6 +256,27 @@ define Device/linksys-ea9500
   DEVICE_DTS := bcm47094-linksys-panamera
 endef
 # TARGET_DEVICES += linksys-ea9500
+
+define Device/luxul
+  IMAGES := lxl
+  IMAGE/lxl := append-ubi | trx-nand | luxul-lxl
+endef
+
+define Device/luxul-abr-4500
+  $(Device/luxul)
+  DEVICE_TITLE := Luxul ABR-4500
+  DEVICE_PACKAGES := $(USB3_PACKAGES)
+  LUXUL_BOARD := ABR-4500
+endef
+TARGET_DEVICES += luxul-abr-4500
+
+define Device/luxul-xbr-4500
+  $(Device/luxul)
+  DEVICE_TITLE := Luxul XBR-4500
+  DEVICE_PACKAGES := $(USB3_PACKAGES)
+  LUXUL_BOARD := XBR-4500
+endef
+TARGET_DEVICES += luxul-xbr-4500
 
 define Device/netgear
   IMAGES := chk
