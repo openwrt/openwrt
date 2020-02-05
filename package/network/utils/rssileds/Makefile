@@ -40,6 +40,8 @@ define Package/rssileds/install
 	$(INSTALL_BIN) ./files/rssileds.init $(1)/etc/init.d/rssileds
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/rssileds $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/libexec/led-trigger
+	$(INSTALL_BIN) ./files/rssi $(1)/usr/libexec/led-trigger/
 endef
 
 $(eval $(call BuildPackage,rssileds))
