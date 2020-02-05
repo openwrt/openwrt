@@ -31,10 +31,11 @@ load_led() {
 	config_get gpio $1 gpio "0"
 	config_get inverted $1 inverted "0"
 
-	if [ "$trigger" = "rssi" ]; then
-		# handled by rssileds userspace process
-		return
-	fi
+	# execute application led trigger
+	[ -f "/usr/libexec/led-trigger/${trigger}" ] && {
+		. "/usr/libexec/led-trigger/${trigger}"
+		return 0
+	}
 
 	[ "$trigger" = "usbdev" ] && {
 		# Backward compatibility: translate to the new trigger
