@@ -38,37 +38,6 @@
 	};
 
 	soc {
-		nand-controller@1ac00000 {
-			status = "okay";
-
-			pinctrl-0 = <&nand_pins>;
-			pinctrl-names = "default";
-
-			cs@0 {
-				reg = <0>;
-				compatible = "qcom,nandcs";
-
-				nand-ecc-strength = <4>;
-				nand-bus-width = <8>;
-				nand-ecc-step-size = <512>;
-
-				partitions {
-					compatible = "fixed-partitions";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					ubi@0 {
-						label = "ubi";
-						reg = <0x0000000 0x4000000>;
-					};
-
-					rootfs_1@4000000 {
-						label = "rootfs_1";
-						reg = <0x4000000 0x4000000>;
-					};
-				};
-			};
-		};
 
 		mdio0: mdio@37000000 {
 			#address-cells = <1>;
@@ -219,6 +188,38 @@
 			gpios = <&qcom_pinmux 57 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_1>;
 			linux,input-type = <EV_SW>;
+		};
+	};
+};
+
+&nand_controller {
+	status = "okay";
+
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+
+	cs@0 {
+		reg = <0>;
+		compatible = "qcom,nandcs";
+
+		nand-ecc-strength = <4>;
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			ubi@0 {
+				label = "ubi";
+				reg = <0x0000000 0x4000000>;
+			};
+
+			rootfs_1@4000000 {
+				label = "rootfs_1";
+				reg = <0x4000000 0x4000000>;
+			};
 		};
 	};
 };
