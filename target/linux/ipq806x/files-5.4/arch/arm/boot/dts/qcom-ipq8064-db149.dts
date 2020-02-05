@@ -24,125 +24,6 @@
 	};
 
 	soc {
-		pinmux@800000 {
-			i2c4_pins: i2c4_pinmux {
-				pins = "gpio12", "gpio13";
-				function = "gsbi4";
-				bias-disable;
-			};
-
-			spi_pins: spi_pins {
-				mux {
-					pins = "gpio18", "gpio19", "gpio21";
-					function = "gsbi5";
-					drive-strength = <10>;
-					bias-none;
-				};
-			};
-
-			mdio0_pins: mdio0_pins {
-				mux {
-					pins = "gpio0", "gpio1";
-					function = "mdio";
-					drive-strength = <8>;
-					bias-disable;
-				};
-			};
-
-			rgmii0_pins: rgmii0_pins {
-				mux {
-					pins = "gpio2", "gpio66";
-					drive-strength = <8>;
-					bias-disable;
-				};
-			};
-		};
-
-		gsbi2: gsbi@12480000 {
-			qcom,mode = <GSBI_PROT_I2C_UART>;
-			status = "okay";
-			uart2: serial@12490000 {
-				status = "okay";
-			};
-		};
-
-		gsbi5: gsbi@1a200000 {
-			qcom,mode = <GSBI_PROT_SPI>;
-			status = "okay";
-
-			spi4: spi@1a280000 {
-				status = "okay";
-				spi-max-frequency = <50000000>;
-
-				pinctrl-0 = <&spi_pins>;
-				pinctrl-names = "default";
-
-				cs-gpios = <&qcom_pinmux 20 0>;
-
-				m25p80@0 {
-					compatible = "s25fl256s1";
-					#address-cells = <1>;
-					#size-cells = <1>;
-					spi-max-frequency = <50000000>;
-					reg = <0>;
-					m25p,fast-read;
-
-					partition@0 {
-						label = "lowlevel_init";
-						reg = <0x0 0x1b0000>;
-					};
-
-					partition@1 {
-						label = "u-boot";
-						reg = <0x1b0000 0x80000>;
-					};
-
-					partition@2 {
-						label = "u-boot-env";
-						reg = <0x230000 0x40000>;
-					};
-
-					partition@3 {
-						label = "caldata";
-						reg = <0x270000 0x40000>;
-					};
-
-					partition@4 {
-						label = "firmware";
-						reg = <0x2b0000 0x1d50000>;
-					};
-				};
-			};
-		};
-
-		sata-phy@1b400000 {
-			status = "okay";
-		};
-
-		sata@29000000 {
-			status = "okay";
-		};
-
-		usb3_0: usb3@110f8800 {
-			status = "okay";
-		};
-
-		usb3_1: usb3@100f8800 {
-			status = "okay";
-		};
-
-		pcie0: pci@1b500000 {
-			status = "okay";
-		};
-
-		pcie1: pci@1b700000 {
-			status = "okay";
-		};
-
-		pcie2: pci@1b900000 {
-			status = "okay";
-		};
-
 		mdio0: mdio@37000000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -182,40 +63,159 @@
 				reg = <7>;
 			};
 		};
+	};
+};
 
-		gmac0: ethernet@37000000 {
-			status = "okay";
-			phy-mode = "rgmii";
-			qcom,id = <0>;
-			phy-handle = <&phy4>;
+&qcom_pinmux {
+	i2c4_pins: i2c4_pinmux {
+		pins = "gpio12", "gpio13";
+		function = "gsbi4";
+		bias-disable;
+	};
 
-			pinctrl-0 = <&rgmii0_pins>;
-			pinctrl-names = "default";
-		};
-
-		gmac1: ethernet@37200000 {
-			status = "okay";
-			phy-mode = "sgmii";
-			qcom,id = <1>;
-
-			fixed-link {
-				speed = <1000>;
-				full-duplex;
-			};
-		};
-
-		gmac2: ethernet@37400000 {
-			status = "okay";
-			phy-mode = "sgmii";
-			qcom,id = <2>;
-			phy-handle = <&phy6>;
-		};
-
-		gmac3: ethernet@37600000 {
-			status = "okay";
-			phy-mode = "sgmii";
-			qcom,id = <3>;
-			phy-handle = <&phy7>;
+	spi_pins: spi_pins {
+		mux {
+			pins = "gpio18", "gpio19", "gpio21";
+			function = "gsbi5";
+			drive-strength = <10>;
+			bias-none;
 		};
 	};
+
+	mdio0_pins: mdio0_pins {
+		mux {
+			pins = "gpio0", "gpio1";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	rgmii0_pins: rgmii0_pins {
+		mux {
+			pins = "gpio2", "gpio66";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+};
+
+&gsbi2 {
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+	status = "okay";
+	uart2: serial@12490000 {
+		status = "okay";
+	};
+};
+
+&gsbi5 {
+	qcom,mode = <GSBI_PROT_SPI>;
+	status = "okay";
+
+	spi4: spi@1a280000 {
+		status = "okay";
+		spi-max-frequency = <50000000>;
+
+		pinctrl-0 = <&spi_pins>;
+		pinctrl-names = "default";
+
+		cs-gpios = <&qcom_pinmux 20 0>;
+
+		m25p80@0 {
+			compatible = "s25fl256s1";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			spi-max-frequency = <50000000>;
+			reg = <0>;
+			m25p,fast-read;
+
+			partition@0 {
+				label = "lowlevel_init";
+				reg = <0x0 0x1b0000>;
+			};
+
+			partition@1 {
+				label = "u-boot";
+				reg = <0x1b0000 0x80000>;
+			};
+
+			partition@2 {
+				label = "u-boot-env";
+				reg = <0x230000 0x40000>;
+			};
+
+			partition@3 {
+				label = "caldata";
+				reg = <0x270000 0x40000>;
+			};
+
+			partition@4 {
+				label = "firmware";
+				reg = <0x2b0000 0x1d50000>;
+			};
+		};
+	};
+};
+
+&sata_phy {
+	status = "okay";
+};
+
+&sata {
+	status = "okay";
+};
+
+&usb3_0 {
+	status = "okay";
+};
+
+&usb3_1 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&pcie2 {
+	status = "okay";
+};
+
+&gmac0 {
+	status = "okay";
+	phy-mode = "rgmii";
+	qcom,id = <0>;
+	phy-handle = <&phy4>;
+
+	pinctrl-0 = <&rgmii0_pins>;
+	pinctrl-names = "default";
+};
+
+&gmac1 {
+	status = "okay";
+	phy-mode = "sgmii";
+	qcom,id = <1>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gmac2 {
+	status = "okay";
+	phy-mode = "sgmii";
+	qcom,id = <2>;
+	phy-handle = <&phy6>;
+};
+
+&gmac3 {
+	status = "okay";
+	phy-mode = "sgmii";
+	qcom,id = <3>;
+	phy-handle = <&phy7>;
 };
