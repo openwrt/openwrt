@@ -26,8 +26,8 @@
 
 		led-lan: lan {
 			label = "cf-wr752ac-v2:blue:lan";
-			linux,default-trigger = "netdev";
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "netdev";
 		};
 
 		wlan2g {
