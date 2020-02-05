@@ -1,8 +1,8 @@
 --- a/Tests/RunCMake/CMakeLists.txt
 +++ b/Tests/RunCMake/CMakeLists.txt
-@@ -325,15 +325,6 @@ add_RunCMake_test(no_install_prefix)
- add_RunCMake_test(configure_file)
- add_RunCMake_test(CTestTimeoutAfterMatch)
+@@ -375,15 +375,6 @@ else()
+   message(WARNING "Could not find or build ctresalloc")
+ endif()
  
 -find_package(Qt4 QUIET)
 -find_package(Qt5Core QUIET)
@@ -18,7 +18,7 @@
    add_RunCMake_test(FindPkgConfig)
 --- a/Tests/CMakeLists.txt
 +++ b/Tests/CMakeLists.txt
-@@ -483,13 +483,6 @@ if(BUILD_TESTING)
+@@ -489,13 +489,6 @@ if(BUILD_TESTING)
  
    list(APPEND TEST_BUILD_DIRS ${CMake_TEST_INSTALL_PREFIX})
  

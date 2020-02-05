@@ -21,6 +21,7 @@ ath79_setup_interfaces()
 	dlink,dir-505|\
 	engenius,ecb1750|\
 	glinet,gl-ar300m-lite|\
+	mikrotik,routerboard-wap-g-5hact2hnd|\
 	netgear,ex6400|\
 	netgear,ex7300|\
 	ocedo,koala|\
@@ -45,6 +46,7 @@ ath79_setup_interfaces()
 	ubnt,litebeam-ac-gen2|\
 	ubnt,nanobeam-ac|\
 	ubnt,nanostation-ac-loco|\
+	ubnt,nanostation-loco-m-xw|\
 	ubnt,rocket-m|\
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-lr|\
@@ -100,6 +102,13 @@ ath79_setup_interfaces()
 	ubnt,nanostation-m|\
 	ubnt,routerstation)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		;;
+	comfast,cf-e560ac|\
+	tplink,archer-c60-v1|\
+	tplink,archer-c60-v2)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
 		;;
 	comfast,cf-wr650ac-v1|\
 	comfast,cf-wr650ac-v2)
@@ -182,7 +191,7 @@ ath79_setup_interfaces()
 			"0@eth0" "2:lan" "3:lan" "4:lan" "1:wan"
 		;;
 	netgear,wndr3700|\
-	netgear,wndr3700v2|\
+	netgear,wndr3700-v2|\
 	netgear,wndr3800|\
 	netgear,wndr3800ch)
 		ucidef_set_interface_wan "eth1"
@@ -230,15 +239,14 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth0" "1:wan"
 		;;
-	tplink,archer-c60-v1|\
-	tplink,archer-c60-v2)
-		ucidef_set_interface_wan "eth1"
-		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
-		;;
 	tplink,archer-d50-v1)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1" "1:wan"
+		;;
+	tplink,tl-mr6400-v1)
+		ucidef_set_interfaces_lan_wan "eth0.1 eth1" "usb0"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:1" "2:lan:3" "3:lan:2"
 		;;
 	tplink,tl-wr842n-v2)
 		ucidef_set_interface_wan "eth1"
@@ -386,7 +394,7 @@ ath79_setup_macs()
 		label_mac=$wan_mac
 		;;
 	netgear,wndr3700|\
-	netgear,wndr3700v2|\
+	netgear,wndr3700-v2|\
 	netgear,wndr3800)
 		lan_mac=$(macaddr_setbit_la "$(mtd_get_mac_binary art 0x0)")
 		;;

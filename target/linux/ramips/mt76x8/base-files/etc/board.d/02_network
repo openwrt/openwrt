@@ -12,6 +12,8 @@ ramips_setup_interfaces()
 	alfa-network,awusfree1|\
 	d-team,pbr-d1|\
 	tama,w06|\
+	tplink,re200-v2|\
+	tplink,re305-v1|\
 	tplink,tl-mr3020-v3|\
 	tplink,tl-wr802n-v4)
 		ucidef_set_interface_lan "eth0"
@@ -32,6 +34,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "0:wan" "6@eth0"
 		;;
+	glinet,microuter-n300|\
 	glinet,vixmini)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"

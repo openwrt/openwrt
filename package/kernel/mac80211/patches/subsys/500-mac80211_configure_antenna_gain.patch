@@ -1,6 +1,6 @@
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -3447,6 +3447,7 @@ struct cfg80211_update_owe_info {
+@@ -3454,6 +3454,7 @@ struct cfg80211_update_owe_info {
   *	(as advertised by the nl80211 feature flag.)
   * @get_tx_power: store the current TX power into the dbm variable;
   *	return 0 if successful
@@ -8,7 +8,7 @@
   *
   * @set_wds_peer: set the WDS peer for a WDS interface
   *
-@@ -3759,6 +3760,7 @@ struct cfg80211_ops {
+@@ -3766,6 +3767,7 @@ struct cfg80211_ops {
  				enum nl80211_tx_power_setting type, int mbm);
  	int	(*get_tx_power)(struct wiphy *wiphy, struct wireless_dev *wdev,
  				int *dbm);
@@ -18,7 +18,7 @@
  				const u8 *addr);
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1484,6 +1484,7 @@ enum ieee80211_smps_mode {
+@@ -1501,6 +1501,7 @@ enum ieee80211_smps_mode {
   *
   * @power_level: requested transmit power (in dBm), backward compatibility
   *	value only that is set to the minimum of all interfaces
@@ -26,7 +26,7 @@
   *
   * @chandef: the channel definition to tune to
   * @radar_enabled: whether radar detection is enabled
-@@ -1504,6 +1505,7 @@ enum ieee80211_smps_mode {
+@@ -1521,6 +1522,7 @@ enum ieee80211_smps_mode {
  struct ieee80211_conf {
  	u32 flags;
  	int power_level, dynamic_ps_timeout;
@@ -87,7 +87,7 @@
  	CFG80211_TESTMODE_CMD(ieee80211_testmode_cmd)
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1372,6 +1372,7 @@ struct ieee80211_local {
+@@ -1376,6 +1376,7 @@ struct ieee80211_local {
  	int dynamic_ps_forced_timeout;
  
  	int user_power_level; /* in dBm, for all interfaces */

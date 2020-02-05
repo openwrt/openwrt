@@ -1,4 +1,5 @@
 include ./common-buffalo.mk
+include ./common-mikrotik.mk
 include ./common-netgear.mk
 include ./common-tp-link.mk
 include ./common-yuncore.mk
@@ -299,6 +300,16 @@ define Device/comfast_cf-e5
 endef
 TARGET_DEVICES += comfast_cf-e5
 
+define Device/comfast_cf-e560ac
+  SOC := qca9531
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E560AC
+  DEVICE_PACKAGES := kmod-leds-gpio kmod-usb2 kmod-ath10k-ct \
+	ath10k-firmware-qca9888-ct
+  IMAGE_SIZE := 16128k
+endef
+TARGET_DEVICES += comfast_cf-e560ac
+
 define Device/comfast_cf-wr650ac-v1
   SOC := qca9558
   DEVICE_VENDOR := COMFAST
@@ -494,7 +505,6 @@ define Device/dlink_dir-859-a1
   IMAGE_SIZE := 15872k
   DEVICE_PACKAGES :=  kmod-usb2 kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
   SEAMA_SIGNATURE := wrgac37_dlink.2013gui_dir859
-  SUPPORTED_DEVICES += dir-859-a1
 endef
 TARGET_DEVICES += dlink_dir-859-a1
 
@@ -575,6 +585,32 @@ define Device/etactica_eg200
   SUPPORTED_DEVICES += rme-eg200
 endef
 TARGET_DEVICES += etactica_eg200
+
+define Device/glinet_6408
+  $(Device/tplink-8mlzma)
+  SOC := ar9331
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := 6408
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 8000k
+  TPLINK_HWID := 0x08000001
+  IMAGES := sysupgrade.bin
+  SUPPORTED_DEVICES += gl-inet
+endef
+TARGET_DEVICES += glinet_6408
+
+define Device/glinet_6416
+  $(Device/tplink-16mlzma)
+  SOC := ar9331
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := 6416
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 16192k
+  TPLINK_HWID := 0x08000001
+  IMAGES := sysupgrade.bin
+  SUPPORTED_DEVICES += gl-inet
+endef
+TARGET_DEVICES += glinet_6416
 
 define Device/glinet_gl-ar150
   SOC := ar9330
@@ -712,6 +748,19 @@ define Device/librerouter_librerouter-v1
 endef
 TARGET_DEVICES += librerouter_librerouter-v1
 
+define Device/mikrotik_routerboard-wap-g-5hact2hnd
+  $(Device/mikrotik)
+  SOC := qca9556
+  DEVICE_MODEL := RouterBOARD wAP G-5HacT2HnD (wAP AC)
+  IMAGE_SIZE := 16256k
+  IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 -e | \
+	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
+	append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
+  SUPPORTED_DEVICES += rb-wapg-5hact2hnd
+endef
+TARGET_DEVICES += mikrotik_routerboard-wap-g-5hact2hnd
+
 define Device/nec_wg1200cr
   SOC := qca9563
   DEVICE_VENDOR := NEC
@@ -789,7 +838,7 @@ define Device/netgear_wndr3700
 endef
 TARGET_DEVICES += netgear_wndr3700
 
-define Device/netgear_wndr3700v2
+define Device/netgear_wndr3700-v2
   $(Device/netgear_wndr3x00)
   DEVICE_MODEL := WNDR3700
   DEVICE_VARIANT := v2
@@ -797,9 +846,9 @@ define Device/netgear_wndr3700v2
   NETGEAR_BOARD_ID := WNDR3700v2
   NETGEAR_HW_ID := 29763654+16+64
   IMAGE_SIZE := 15872k
-  SUPPORTED_DEVICES += wndr3700
+  SUPPORTED_DEVICES += wndr3700 netgear,wndr3700v2
 endef
-TARGET_DEVICES += netgear_wndr3700v2
+TARGET_DEVICES += netgear_wndr3700-v2
 
 define Device/netgear_wndr3800
   $(Device/netgear_wndr3x00)

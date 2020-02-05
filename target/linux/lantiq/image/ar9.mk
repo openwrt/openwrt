@@ -30,7 +30,7 @@ TARGET_DEVICES += avm_fritz7320
 define Device/bt_homehub-v3a
   $(Device/NAND)
   DEVICE_VENDOR := British Telecom
-  DEVICE_MODEL := Home Hub
+  DEVICE_MODEL := Home Hub 3
   DEVICE_VARIANT := Type A
   BOARD_NAME := BTHOMEHUBV3A
   SOC := ar9

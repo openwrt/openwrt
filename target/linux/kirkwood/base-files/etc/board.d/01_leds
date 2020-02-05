@@ -46,8 +46,8 @@ case "$board" in
 "zyxel,nsa325")
 	ucidef_set_led_default "health" "health" "nsa325:green:sys" "1"
 	ucidef_set_led_usbhost "usb" "USB" "nsa325:green:usb"
-	ucidef_set_led_ataport "hdd1" "HDD1" "nsa325:green:sata1" "1"
-	ucidef_set_led_ataport "hdd2" "HDD2" "nsa325:green:sata2" "2"
+	ucidef_set_led_ataport "hdd1" "HDD1" "nsa325:green:hdd1" "1"
+	ucidef_set_led_ataport "hdd2" "HDD2" "nsa325:green:hdd2" "2"
 	;;
 esac
 

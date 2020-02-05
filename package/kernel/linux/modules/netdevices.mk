@@ -192,6 +192,23 @@ endef
 $(eval $(call KernelPackage,phy-broadcom))
 
 
+define KernelPackage/phy-bcm84881
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Broadcom BCM84881 PHY driver
+   KCONFIG:=CONFIG_BCM84881_PHY
+   DEPENDS:=+kmod-libphy
+   FILES:=$(LINUX_DIR)/drivers/net/phy/bcm84881.ko
+   AUTOLOAD:=$(call AutoLoad,18,bcm84881,1)
+endef
+
+define KernelPackage/phy-bcm84881/description
+   Supports the Broadcom 84881 PHY.
+endef
+
+$(eval $(call KernelPackage,phy-bcm84881))
+
+
+
 define KernelPackage/phy-realtek
    SUBMENU:=$(NETWORK_DEVICES_MENU)
    TITLE:=Realtek Ethernet PHY driver
@@ -524,7 +541,7 @@ $(eval $(call KernelPackage,8139cp))
 define KernelPackage/r8169
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8169 PCI Gigabit Ethernet Adapter kernel support
-  DEPENDS:=@PCI_SUPPORT +kmod-mii +r8169-firmware +LINUX_4_19:kmod-phy-realtek
+  DEPENDS:=@PCI_SUPPORT +kmod-mii +r8169-firmware +!LINUX_4_14:kmod-phy-realtek
   KCONFIG:=CONFIG_R8169 \
     CONFIG_R8169_NAPI=y \
     CONFIG_R8169_VLAN=n

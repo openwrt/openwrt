@@ -53,11 +53,8 @@ define KernelPackage/bluetooth
 	$(LINUX_DIR)/net/bluetooth/bnep/bnep.ko \
 	$(LINUX_DIR)/net/bluetooth/hidp/hidp.ko \
 	$(LINUX_DIR)/drivers/bluetooth/hci_uart.ko \
-	$(LINUX_DIR)/drivers/bluetooth/btusb.ko
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,4.1.0)),1)
-  FILES+= \
+	$(LINUX_DIR)/drivers/bluetooth/btusb.ko \
 	$(LINUX_DIR)/drivers/bluetooth/btintel.ko
-endif
   AUTOLOAD:=$(call AutoProbe,bluetooth rfcomm bnep hidp hci_uart btusb)
 endef
 
@@ -172,7 +169,7 @@ define KernelPackage/eeprom-at24
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM AT24 support
   KCONFIG:=CONFIG_EEPROM_AT24
-  DEPENDS:=+kmod-i2c-core +kmod-nvmem +LINUX_4_19:kmod-regmap-i2c
+  DEPENDS:=+kmod-i2c-core +kmod-nvmem +!LINUX_4_14:kmod-regmap-i2c
   FILES:=$(LINUX_DIR)/drivers/misc/eeprom/at24.ko
   AUTOLOAD:=$(call AutoProbe,at24)
 endef
@@ -941,7 +938,7 @@ $(eval $(call KernelPackage,ptp))
 define KernelPackage/ptp-gianfar
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Freescale Gianfar PTP support
-  DEPENDS:=@TARGET_mpc85xx +kmod-ptp @!LINUX_4_19
+  DEPENDS:=@TARGET_mpc85xx +kmod-ptp @LINUX_4_14
   KCONFIG:=CONFIG_PTP_1588_CLOCK_GIANFAR
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/freescale/gianfar_ptp.ko
   AUTOLOAD:=$(call AutoProbe,gianfar_ptp)
@@ -957,7 +954,7 @@ $(eval $(call KernelPackage,ptp-gianfar))
 define KernelPackage/ptp-qoriq
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Freescale QorIQ PTP support
-  DEPENDS:=@TARGET_mpc85xx +kmod-ptp @LINUX_4_19
+  DEPENDS:=@TARGET_mpc85xx +kmod-ptp @!LINUX_4_14
   KCONFIG:=CONFIG_PTP_1588_CLOCK_QORIQ
   FILES:=$(LINUX_DIR)/drivers/ptp/ptp_qoriq.o
   AUTOLOAD:=$(call AutoProbe,ptp_qoriq)
@@ -990,7 +987,7 @@ define KernelPackage/random-tpm
   TITLE:=Hardware Random Number Generator TPM support
   KCONFIG:=CONFIG_HW_RANDOM_TPM
   FILES:=$(LINUX_DIR)/drivers/char/hw_random/tpm-rng.ko
-  DEPENDS:= +kmod-random-core +kmod-tpm @!LINUX_4_19
+  DEPENDS:= +kmod-random-core +kmod-tpm @LINUX_4_14
   AUTOLOAD:=$(call AutoProbe,tpm-rng)
 endef
 

@@ -40,7 +40,7 @@ define Device/tplink_tl-mr3220-v1
   DEVICE_VARIANT := v1
   TPLINK_HWID := 0x32200001
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
-  SUPPORTED_DEVICES += tl-mr3220-v1
+  SUPPORTED_DEVICES += tl-mr3220
 endef
 TARGET_DEVICES += tplink_tl-mr3220-v1
 
@@ -51,7 +51,7 @@ define Device/tplink_tl-mr3420-v1
   DEVICE_VARIANT := v1
   TPLINK_HWID := 0x34200001
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
-  SUPPORTED_DEVICES += tl-mr3420-v1
+  SUPPORTED_DEVICES += tl-mr3420
 endef
 TARGET_DEVICES += tplink_tl-mr3420-v1
 
@@ -65,6 +65,31 @@ define Device/tplink_tl-mr3420-v2
   SUPPORTED_DEVICES += tl-mr3420-v2
 endef
 TARGET_DEVICES += tplink_tl-mr3420-v2
+
+define Device/tplink_tl-wa850re-v1
+  $(Device/tplink-4mlzma)
+  SOC := ar9341
+  DEVICE_MODEL := TL-WA850RE
+  DEVICE_VARIANT := v1
+  TPLINK_HWID := 0x08500001
+  DEVICE_PACKAGES := rssileds
+  SUPPORTED_DEVICES += tl-wa850re
+endef
+TARGET_DEVICES += tplink_tl-wa850re-v1
+
+define Device/tplink_tl-wa850re-v2
+  $(Device/tplink-safeloader)
+  SOC := qca9533
+  IMAGE_SIZE := 3648k
+  DEVICE_MODEL := TL-WA850RE
+  DEVICE_VARIANT := v2
+  TPLINK_BOARD_ID := TLWA850REV2
+  TPLINK_HWID := 0x08500002
+  TPLINK_HWREV := 0x0
+  DEVICE_PACKAGES := rssileds
+  SUPPORTED_DEVICES += tl-wa850re-v2
+endef
+TARGET_DEVICES += tplink_tl-wa850re-v2
 
 define Device/tplink_tl-wa901nd-v2
   $(Device/tplink-4m)
@@ -109,7 +134,6 @@ define Device/tplink_tl-wr740n-v4
   DEVICE_MODEL := TL-WR740N
   DEVICE_VARIANT := v4
   TPLINK_HWID := 0x07400004
-  SUPPORTED_DEVICES += tl-wr740n-v4
 endef
 TARGET_DEVICES += tplink_tl-wr740n-v4
 
@@ -128,7 +152,7 @@ define Device/tplink_tl-wr741nd-v4
   DEVICE_MODEL := TL-WR741N/ND
   DEVICE_VARIANT := v4
   TPLINK_HWID := 0x07410004
-  SUPPORTED_DEVICES += tl-wr741n-v4
+  SUPPORTED_DEVICES += tl-wr741nd-v4
 endef
 TARGET_DEVICES += tplink_tl-wr741nd-v4
 
@@ -156,7 +180,7 @@ define Device/tplink_tl-wr841-v7
   DEVICE_MODEL := TL-WR841N/ND
   DEVICE_VARIANT := v7
   TPLINK_HWID := 0x08410007
-  SUPPORTED_DEVICES += tl-wr841-v7
+  SUPPORTED_DEVICES += tl-wr841n-v7
 endef
 TARGET_DEVICES += tplink_tl-wr841-v7
 

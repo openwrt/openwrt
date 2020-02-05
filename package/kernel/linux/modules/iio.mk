@@ -131,7 +131,7 @@ $(eval $(call KernelPackage,iio-dht11))
 define KernelPackage/iio-bme680
   SUBMENU:=$(IIO_MENU)
   TITLE:=BME680 gas/humidity/pressure/temperature sensor
-  DEPENDS:=@LINUX_4_19 +kmod-iio-core +kmod-regmap-core
+  DEPENDS:=@!LINUX_4_14 +kmod-iio-core +kmod-regmap-core
   KCONFIG:=CONFIG_BME680
   FILES:=$(LINUX_DIR)/drivers/iio/chemical/bme680_core.ko
 endef

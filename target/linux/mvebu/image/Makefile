@@ -77,6 +77,7 @@ endef
 
 define Device/Default
   PROFILES := Default
+  DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
   BOARD_NAME = $$(DEVICE_DTS)
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | append-dtb | uImage none
@@ -116,8 +117,16 @@ define Device/NAND-512K
   PAGESIZE := 4096
 endef
 
-include cortex-a9.mk
-include cortex-a53.mk
-include cortex-a72.mk
+ifeq ($(SUBTARGET),cortexa9)
+include cortexa9.mk
+endif
+
+ifeq ($(SUBTARGET),cortexa53)
+include cortexa53.mk
+endif
+
+ifeq ($(SUBTARGET),cortexa72)
+include cortexa72.mk
+endif
 
 $(eval $(call BuildImage))

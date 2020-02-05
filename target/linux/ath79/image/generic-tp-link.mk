@@ -10,7 +10,6 @@ define Device/tplink_archer-a7-v5
 	ath10k-firmware-qca988x-ct
   TPLINK_BOARD_ID := ARCHER-A7-V5
   BOARDNAME := ARCHER-A7-V5
-  SUPPORTED_DEVICES += archer-a7-v5
 endef
 TARGET_DEVICES += tplink_archer-a7-v5
 
@@ -191,8 +190,8 @@ endef
 TARGET_DEVICES += tplink_archer-c7-v5
 
 define Device/tplink_archer-d50-v1
+  $(Device/tplink-v2)
   SOC := qca9531
-  DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer D50
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport \
@@ -202,19 +201,13 @@ define Device/tplink_archer-d50-v1
   TPLINK_HWID := 0xC1200001
   TPLINK_HWREV := 0x00000046
   TPLINK_FLASHLAYOUT := 8Mqca
-  TPLINK_HWREVADD := 0x00000000
-  TPLINK_HVERSION := 3
-  KERNEL := kernel-bin | append-dtb | lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | \
 	tplink-v2-header -s -V "ver. 1.0"
-  IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := tplink-v2-image -s -V "ver. 2.0" | append-metadata | \
-	check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += tplink_archer-d50-v1
 
 define Device/tplink_cpe210-v1
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE210
@@ -252,7 +245,7 @@ endef
 TARGET_DEVICES += tplink_cpe210-v3
 
 define Device/tplink_cpe220-v2
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE220
@@ -275,7 +268,7 @@ endef
 TARGET_DEVICES += tplink_cpe220-v3
 
 define Device/tplink_cpe510-v1
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE510
@@ -287,7 +280,7 @@ endef
 TARGET_DEVICES += tplink_cpe510-v1
 
 define Device/tplink_cpe510-v2
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE510
@@ -299,19 +292,18 @@ endef
 TARGET_DEVICES += tplink_cpe510-v2
 
 define Device/tplink_cpe510-v3
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE510
   DEVICE_VARIANT := v3
   DEVICE_PACKAGES := rssileds
   TPLINK_BOARD_ID := CPE510V3
-  SUPPORTED_DEVICES += cpe510-v3
 endef
 TARGET_DEVICES += tplink_cpe510-v3
 
 define Device/tplink_cpe610-v1
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := CPE610
@@ -373,6 +365,18 @@ define Device/tplink_re450-v2
   LOADER_TYPE := elf
 endef
 TARGET_DEVICES += tplink_re450-v2
+
+define Device/tplink_tl-mr6400-v1
+  $(Device/tplink-8mlzma)
+  SOC := qca9531
+  DEVICE_MODEL := TL-MR6400
+  DEVICE_VARIANT := v1
+  TPLINK_HWID := 0x64000001
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-net kmod-usb-net-rndis kmod-usb-serial \
+	kmod-usb-serial-option adb-enablemodem
+  SUPPORTED_DEVICES += tl-mr6400
+endef
+TARGET_DEVICES += tplink_tl-mr6400-v1
 
 define Device/tplink_tl-wdr3500-v1
   $(Device/tplink-8mlzma)
@@ -505,7 +509,7 @@ define Device/tplink_tl-wr2543-v1
   IMAGE/sysupgrade.bin := tplink-v1-image sysupgrade -v 3.13.99 | \
 	append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := tplink-v1-image factory -v 3.13.99
-  SUPPORTED_DEVICES += tl-wr2543-v1
+  SUPPORTED_DEVICES += tl-wr2543n
 endef
 TARGET_DEVICES += tplink_tl-wr2543-v1
 
@@ -588,7 +592,7 @@ endef
 TARGET_DEVICES += tplink_tl-wr902ac-v1
 
 define Device/tplink_wbs210-v2
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := WBS210
@@ -599,7 +603,7 @@ endef
 TARGET_DEVICES += tplink_wbs210-v2
 
 define Device/tplink_wbs510-v1
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := WBS510
@@ -611,7 +615,7 @@ endef
 TARGET_DEVICES += tplink_wbs510-v1
 
 define Device/tplink_wbs510-v2
-  $(Device/tplink-loader-okli)
+  $(Device/tplink-safeloader-okli)
   SOC := ar9344
   IMAGE_SIZE := 7680k
   DEVICE_MODEL := WBS510

@@ -212,6 +212,7 @@ hostapd_common_add_bss_config() {
 	config_add_string radius_client_addr
 	config_add_string iapp_interface
 	config_add_string eap_type ca_cert client_cert identity anonymous_identity auth priv_key priv_key_pwd
+	config_add_boolean ca_cert_usesystem ca_cert2_usesystem
 	config_add_string subject_match subject_match2
 	config_add_array altsubject_match altsubject_match2
 	config_add_array domain_match domain_match2 domain_suffix_match domain_suffix_match2
@@ -729,12 +730,9 @@ wpa_supplicant_prepare_interface() {
 	local ap_scan=
 
 	_w_mode="$mode"
-	_w_modestr=
 
-	[[ "$mode" = adhoc ]] && {
+	[ "$mode" = adhoc ] && {
 		ap_scan="ap_scan=2"
-
-		_w_modestr="mode=1"
 	}
 
 	local country_str=
@@ -812,16 +810,17 @@ wpa_supplicant_add_network() {
 	local scan_ssid="scan_ssid=1"
 	local freq wpa_key_mgmt
 
-	[[ "$_w_mode" = "adhoc" ]] && {
+	[ "$_w_mode" = "adhoc" ] && {
 		append network_data "mode=1" "$N$T"
 		[ -n "$freq" ] && wpa_supplicant_set_fixed_freq "$freq" "$htmode"
+		[ "$noscan" = "1" ] && append network_data "noscan=1" "$N$T"
 
 		scan_ssid="scan_ssid=0"
 
 		[ "$_w_driver" = "nl80211" ] ||	append wpa_key_mgmt "WPA-NONE"
 	}
 
-	[[ "$_w_mode" = "mesh" ]] && {
+	[ "$_w_mode" = "mesh" ] && {
 		json_get_vars mesh_id mesh_fwding mesh_rssi_threshold
 		[ -n "$mesh_id" ] && ssid="${mesh_id}"
 
@@ -833,8 +832,6 @@ wpa_supplicant_add_network() {
 		append wpa_key_mgmt "SAE"
 		scan_ssid=""
 	}
-
-	[ "$_w_mode" = "adhoc" -o "$_w_mode" = "mesh" ] && append network_data "$_w_modestr" "$N$T"
 
 	[ "$multi_ap" = 1 -a "$_w_mode" = "sta" ] && append network_data "multi_ap_backhaul_sta=1" "$N$T"
 
@@ -876,8 +873,13 @@ wpa_supplicant_add_network() {
 			hostapd_append_wpa_key_mgmt
 			key_mgmt="$wpa_key_mgmt"
 
-			json_get_vars eap_type identity anonymous_identity ca_cert
-			[ -n "$ca_cert" ] && append network_data "ca_cert=\"$ca_cert\"" "$N$T"
+			json_get_vars eap_type identity anonymous_identity ca_cert ca_cert_usesystem
+
+			if [ "$ca_cert_usesystem" -eq "1" -a -f "/etc/ssl/certs/ca-certificates.crt" ]; then
+				append network_data "ca_cert=\"/etc/ssl/certs/ca-certificates.crt\"" "$N$T"
+			else
+				[ -n "$ca_cert" ] && append network_data "ca_cert=\"$ca_cert\"" "$N$T"
+			fi
 			[ -n "$identity" ] && append network_data "identity=\"$identity\"" "$N$T"
 			[ -n "$anonymous_identity" ] && append network_data "anonymous_identity=\"$anonymous_identity\"" "$N$T"
 			case "$eap_type" in
@@ -918,12 +920,15 @@ wpa_supplicant_add_network() {
 					fi
 				;;
 				fast|peap|ttls)
-					json_get_vars auth password ca_cert2 client_cert2 priv_key2 priv_key2_pwd
+					json_get_vars auth password ca_cert2 ca_cert2_usesystem client_cert2 priv_key2 priv_key2_pwd
 					set_default auth MSCHAPV2
 
 					if [ "$auth" = "EAP-TLS" ]; then
-						[ -n "$ca_cert2" ] &&
-							append network_data "ca_cert2=\"$ca_cert2\"" "$N$T"
+						if [ "$ca_cert2_usesystem" -eq "1" -a -f "/etc/ssl/certs/ca-certificates.crt" ]; then
+							append network_data "ca_cert2=\"/etc/ssl/certs/ca-certificates.crt\"" "$N$T"
+						else
+							[ -n "$ca_cert2" ] && append network_data "ca_cert2=\"$ca_cert2\"" "$N$T"
+						fi
 						append network_data "client_cert2=\"$client_cert2\"" "$N$T"
 						append network_data "private_key2=\"$priv_key2\"" "$N$T"
 						append network_data "private_key2_passwd=\"$priv_key2_pwd\"" "$N$T"

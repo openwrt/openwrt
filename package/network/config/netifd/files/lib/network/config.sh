@@ -12,7 +12,7 @@ find_config() {
 			json_load "$(ifstatus $interface)"
 			json_get_var ifdev device
 			json_get_var ifl3dev l3_device
-			if [[ "$device" = "$ifdev" ]] || [[ "$device" = "$ifl3dev" ]]; then
+			if [ "$device" = "$ifdev" ] || [ "$device" = "$ifl3dev" ]; then
 				echo "$interface"
 				exit 0
 			else

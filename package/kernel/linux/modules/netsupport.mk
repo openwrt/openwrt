@@ -1143,7 +1143,7 @@ $(eval $(call KernelPackage,rxrpc))
 define KernelPackage/mpls
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=MPLS support
-  DEPENDS:=+LINUX_4_19:kmod-iptunnel
+  DEPENDS:=+!LINUX_4_14:kmod-iptunnel
   KCONFIG:= \
 	CONFIG_MPLS=y \
 	CONFIG_LWTUNNEL=y \

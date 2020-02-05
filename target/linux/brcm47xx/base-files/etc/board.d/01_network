@@ -171,9 +171,15 @@ configure_by_model() {
 
 	"Asus RT-N16"* | \
 	"Linksys E3000 V1" | \
+	"Netgear WNR3500 V2" | \
 	"Netgear WNR3500L")
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "8@eth0"
+		;;
+
+	"Netgear WN2500RP V1")
+		ucidef_add_switch "switch0" \
+			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5@eth0"
 		;;
 
 	*)

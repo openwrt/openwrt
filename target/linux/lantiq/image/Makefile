@@ -15,9 +15,9 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 ifeq ($(SUBTARGET),xway)
-  UBIFS_OPTS := -m 512 -e 15872 -c 1959
+	UBIFS_OPTS := -m 512 -e 15872 -c 1959
 else
-  UBIFS_OPTS := -m 2048 -e 126KiB -c 4096
+	UBIFS_OPTS := -m 2048 -e 126KiB -c 4096
 endif
 
 define Build/append-avm-fakeroot
@@ -29,12 +29,12 @@ define Build/dgn3500-sercom-footer
 endef
 
 define Build/mkbrncmdline
-   mkbrncmdline -i $@ -o $@.new BRN-BOOT
-   mv $@.new $@
+	mkbrncmdline -i $@ -o $@.new BRN-BOOT
+	mv $@.new $@
 endef
 
 define Build/mkbrnimg
-   mkbrnimg -s $(SIGNATURE) -m $(MAGIC) -p $(CRC32_POLY) -o $@ $(IMAGE_KERNEL) $(IMAGE_ROOTFS)
+	mkbrnimg -s $(SIGNATURE) -m $(MAGIC) -p $(CRC32_POLY) -o $@ $(IMAGE_KERNEL) $(IMAGE_ROOTFS)
 endef
 
 define Build/fullimage
@@ -52,6 +52,8 @@ define Build/fullimage
 	rm $@.tmp
 endef
 
+DTS_DIR := $(DTS_DIR)/lantiq
+
 # Shared device definition: applies to every defined device
 define Device/Default
   PROFILES = Default
@@ -61,7 +63,7 @@ define Device/Default
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
   FILESYSTEMS := squashfs
   IMAGE_SIZE :=
-  DTS_DIR := $(DTS_DIR)/lantiq
+  SOC := $(DEFAULT_SOC)
   DEVICE_DTS = $$(SOC)_$(1)
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   IMAGES := sysupgrade.bin
@@ -110,10 +112,12 @@ define Device/AVM
 endef
 
 ifeq ($(SUBTARGET),ase)
+DEFAULT_SOC := amazonse
 include amazonse.mk
 endif
 
 ifeq ($(SUBTARGET),xway_legacy)
+DEFAULT_SOC := danube
 include xway_legacy.mk
 endif
 
@@ -122,14 +126,14 @@ include danube.mk
 include ar9.mk
 endif
 
-
 ifeq ($(SUBTARGET),xrx200)
+DEFAULT_SOC := vr9
 include tp-link.mk
 include vr9.mk
 endif
 
-
 ifeq ($(SUBTARGET),falcon)
+DEFAULT_SOC := falcon
 include falcon.mk
 endif
 

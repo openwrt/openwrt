@@ -13,7 +13,6 @@ ramips_setup_interfaces()
 	afoundry,ew1200|\
 	d-team,pbr-m1|\
 	firefly,firewrt|\
-	hiwifi,hc5962|\
 	jcg,jhr-ac876m|\
 	mediatek,ap-mt7621a-v60|\
 	mediatek,mt7621-eval-board|\
@@ -101,6 +100,10 @@ ramips_setup_interfaces()
 	gnubee,gb-pc2)
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:lan" "6@eth0"
+		;;
+	hiwifi,hc5962)
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
 	lenovo,newifi-d1)
 		ucidef_add_switch "switch0" \

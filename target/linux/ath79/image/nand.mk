@@ -114,7 +114,7 @@ TARGET_DEVICES += glinet_gl-ar750s-nor
 define Device/netgear_ath79_nand
   DEVICE_VENDOR := NETGEAR
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
-  KERNEL_SIZE := 2048k
+  KERNEL_SIZE := 4096k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 25600k
@@ -138,7 +138,6 @@ define Device/netgear_wndr3700-v4
   NETGEAR_KERNEL_MAGIC := 0x33373033
   NETGEAR_BOARD_ID := WNDR3700v4
   NETGEAR_HW_ID := 29763948+128+128
-  SUPPORTED_DEVICES += wndr3700v4
   $(Device/netgear_ath79_nand)
 endef
 TARGET_DEVICES += netgear_wndr3700-v4
@@ -149,10 +148,31 @@ define Device/netgear_wndr4300
   NETGEAR_KERNEL_MAGIC := 0x33373033
   NETGEAR_BOARD_ID := WNDR4300
   NETGEAR_HW_ID := 29763948+0+128+128+2x2+3x3
-  SUPPORTED_DEVICES += wndr4300
   $(Device/netgear_ath79_nand)
 endef
 TARGET_DEVICES += netgear_wndr4300
+
+define Device/netgear_wndr4300-v2
+  SOC := qca9563
+  DEVICE_MODEL := WNDR4300
+  DEVICE_VARIANT := v2
+  NETGEAR_KERNEL_MAGIC := 0x27051956
+  NETGEAR_BOARD_ID := WNDR4500series
+  NETGEAR_HW_ID := 29764821+2+128+128+3x3+3x3+5508012175
+  $(Device/netgear_ath79_nand)
+endef
+TARGET_DEVICES += netgear_wndr4300-v2
+
+define Device/netgear_wndr4500-v3
+  SOC := qca9563
+  DEVICE_MODEL := WNDR4500
+  DEVICE_VARIANT := v3
+  NETGEAR_KERNEL_MAGIC := 0x27051956
+  NETGEAR_BOARD_ID := WNDR4500series
+  NETGEAR_HW_ID := 29764821+2+128+128+3x3+3x3+5508012173
+  $(Device/netgear_ath79_nand)
+endef
+TARGET_DEVICES += netgear_wndr4500-v3
 
 define Device/zyxel_nbg6716
   SOC := qca9558

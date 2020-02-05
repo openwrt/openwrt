@@ -14,6 +14,8 @@ endef
 define Build/Compile
 endef
 
+# Use ath10k-bdencoder from https://github.com/qca/qca-swiss-army-knife.git
+# to generate the board-* files here.
 #
 # This is intended to be used on an interim basis until device-specific
 # board data for new devices is available through the upstream compilation
@@ -21,11 +23,12 @@ endef
 # Please send a mail with your device-specific board files upstream.
 # You can find instructions and examples on the linux-wireless wiki:
 # <https://wireless.wiki.kernel.org/en/users/drivers/ath10k/boardfiles>
-#
 
 ALLWIFIBOARDS:= \
 	aruba_ap-303 \
 	avm_fritzrepeater-1200 \
+	dlink_dap2610 \
+	engenius_emd1 \
 	ezviz_cs-w3-wd1200g-eup \
 	linksys_ea8300 \
 	qxwlan_e2600ac
@@ -45,10 +48,8 @@ define ipq-wifi-install-one-to
   $(INSTALL_DATA) $(1) $(2)/lib/firmware/ath10k/$(3)/board-2.bin
 endef
 
-# Note: .bin deprecated; supports existing boards
-
 define ipq-wifi-install-one
-  $(if $(filter $(suffix $(1)),.QCA4019 .qca4019 .bin),\
+  $(if $(filter $(suffix $(1)),.QCA4019 .qca4019),\
     $(call ipq-wifi-install-one-to,$(1),$(2),QCA4019/hw1.0),\
   $(if $(filter $(suffix $(1)),.QCA9888 .qca9888),\
     $(call ipq-wifi-install-one-to,$(1),$(2),QCA9888/hw2.0),\
@@ -93,6 +94,8 @@ endef
 
 $(eval $(call generate-ipq-wifi-package,aruba_ap-303,Aruba AP-303))
 $(eval $(call generate-ipq-wifi-package,avm_fritzrepeater-1200,AVM FRITZRepeater 1200))
+$(eval $(call generate-ipq-wifi-package,dlink_dap2610,D-Link DAP-2610))
+$(eval $(call generate-ipq-wifi-package,engenius_emd1,EnGenius EMD1))
 $(eval $(call generate-ipq-wifi-package,ezviz_cs-w3-wd1200g-eup,EZVIZ CS-W3-WD1200G EUP))
 $(eval $(call generate-ipq-wifi-package,linksys_ea8300,Linksys EA8300))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac,Qxwlan E2600AC))
