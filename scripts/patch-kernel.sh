@@ -28,7 +28,7 @@ for i in ${patchdir}/${patchpattern} ; do
 	*.bz2)
 	type="bzip2"; uncomp="bunzip2 -dc"; ;; 
 	*.zip)
-	type="zip"; uncomp="unzip -d"; ;; 
+	type="zip"; uncomp="bsdtar --to-stdout -xf"; ;;
 	*.Z)
 	type="compress"; uncomp="uncompress -c"; ;; 
 	*)

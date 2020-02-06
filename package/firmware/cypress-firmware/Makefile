@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 
-UNPACK_CMD=unzip -q -p $(DL_DIR)/$(PKG_SOURCE) $(PKG_SOURCE_UNZIP) | gzip -dc | $(HOST_TAR) -C $(1) $(TAR_OPTIONS)
+UNPACK_CMD=bsdtar --to-stdout -xf $(DL_DIR)/$(PKG_SOURCE) $(PKG_SOURCE_UNZIP) | gzip -dc | $(HOST_TAR) -C $(1) $(TAR_OPTIONS)
 
 PKG_NAME:=cypress-firmware
 PKG_VERSION:=v4.14.77-2020_0115

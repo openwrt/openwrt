@@ -7,7 +7,7 @@
 
 HOST_TAR:=$(TAR)
 TAR_CMD=$(HOST_TAR) -C $(1)/.. $(TAR_OPTIONS)
-UNZIP_CMD=unzip -q -d $(1)/.. $(DL_DIR)/$(PKG_SOURCE)
+UNZIP_CMD=bsdtar -C $(1)/.. -xf $(DL_DIR)/$(PKG_SOURCE)
 
 ifeq ($(PKG_SOURCE),)
   PKG_UNPACK ?= true
@@ -25,7 +25,7 @@ ifeq ($(strip $(UNPACK_CMD)),)
     endif
     ifeq ($(filter bzip2 bz2 bz tbz2 tbz,$(EXT)),$(EXT))
       EXT:=$(call ext,$(PKG_SOURCE:.$(EXT)=))
-      DECOMPRESS_CMD:=bzcat $(DL_DIR)/$(PKG_SOURCE) |
+      DECOMPRESS_CMD:=bsdcat $(DL_DIR)/$(PKG_SOURCE) |
     endif
     ifeq ($(filter xz txz,$(EXT)),$(EXT))
       EXT:=$(call ext,$(PKG_SOURCE:.$(EXT)=))
