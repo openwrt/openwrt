@@ -208,7 +208,6 @@ struct mt7530_priv {
 	struct mii_bus		*bus;
 	struct switch_dev	swdev;
 
-	u8			mirror_src_port;
 	u8			mirror_dest_port;
 	bool			global_vlan_enable;
 	struct mt7530_vlan_entry	vlan_entries[MT7530_NUM_VLANS];
@@ -520,50 +519,6 @@ mt7530_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
 }
 
 static int
-mt7530_get_mirror_rx_enable(struct switch_dev *dev, const struct switch_attr *attr,
-		struct switch_val *val)
-{
-	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
-
-	val->value.i = priv->port_entries[priv->mirror_src_port].mirror_rx;
-
-	return 0;
-}
-
-static int
-mt7530_set_mirror_rx_enable(struct switch_dev *dev, const struct switch_attr *attr,
-		struct switch_val *val)
-{
-	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
-
-	priv->port_entries[priv->mirror_src_port].mirror_rx = val->value.i;
-
-	return 0;
-}
-
-static int
-mt7530_get_mirror_tx_enable(struct switch_dev *dev, const struct switch_attr *attr,
-		struct switch_val *val)
-{
-	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
-
-	val->value.i = priv->port_entries[priv->mirror_src_port].mirror_tx;
-
-	return 0;
-}
-
-static int
-mt7530_set_mirror_tx_enable(struct switch_dev *dev, const struct switch_attr *attr,
-		struct switch_val *val)
-{
-	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
-
-	priv->port_entries[priv->mirror_src_port].mirror_tx = val->value.i;
-
-	return 0;
-}
-
-static int
 mt7530_get_mirror_monitor_port(struct switch_dev *dev, const struct switch_attr *attr,
 		struct switch_val *val)
 {
@@ -581,28 +536,6 @@ mt7530_set_mirror_monitor_port(struct switch_dev *dev, const struct switch_attr 
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 
 	priv->mirror_dest_port = val->value.i;
-
-	return 0;
-}
-
-static int
-mt7530_get_mirror_source_port(struct switch_dev *dev, const struct switch_attr *attr,
-		struct switch_val *val)
-{
-	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
-
-	val->value.i = priv->mirror_src_port;
-
-	return 0;
-}
-
-static int
-mt7530_set_mirror_source_port(struct switch_dev *dev, const struct switch_attr *attr,
-		struct switch_val *val)
-{
-	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
-
-	priv->mirror_src_port = val->value.i;
 
 	return 0;
 }
@@ -1004,31 +937,10 @@ static const struct switch_attr mt7530_global[] = {
 		.set = NULL,
 	}, {
 		.type = SWITCH_TYPE_INT,
-		.name = "enable_mirror_rx",
-		.description = "Enable mirroring of RX packets",
-		.set = mt7530_set_mirror_rx_enable,
-		.get = mt7530_get_mirror_rx_enable,
-		.max = 1
-	}, {
-		.type = SWITCH_TYPE_INT,
-		.name = "enable_mirror_tx",
-		.description = "Enable mirroring of TX packets",
-		.set = mt7530_set_mirror_tx_enable,
-		.get = mt7530_get_mirror_tx_enable,
-		.max = 1
-	}, {
-		.type = SWITCH_TYPE_INT,
 		.name = "mirror_monitor_port",
 		.description = "Mirror monitor port",
 		.set = mt7530_set_mirror_monitor_port,
 		.get = mt7530_get_mirror_monitor_port,
-		.max = MT7530_NUM_PORTS - 1
-	}, {
-		.type = SWITCH_TYPE_INT,
-		.name = "mirror_source_port",
-		.description = "Mirror source port",
-		.set = mt7530_set_mirror_source_port,
-		.get = mt7530_get_mirror_source_port,
 		.max = MT7530_NUM_PORTS - 1
 	},
 };
