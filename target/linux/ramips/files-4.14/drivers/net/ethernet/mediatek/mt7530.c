@@ -435,7 +435,8 @@ mt7530_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 		if (etag == ETAG_CTRL_TAG)
 			p->flags |= BIT(SWITCH_PORT_FLAG_TAGGED);
 		else if (etag != ETAG_CTRL_UNTAG)
-			printk("vlan egress tag control neither untag nor tag.\n");
+			printk("vlan %d port %d egress tag control neither untag nor tag: %d.\n",
+					val->port_vlan, i, etag);
 	}
 
 	return 0;
