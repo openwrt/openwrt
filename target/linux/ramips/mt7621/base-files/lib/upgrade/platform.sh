@@ -55,6 +55,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	iodata,wn-ax1167gr2|\
+	iodata,wn-ax2033gr|\
 	iodata,wn-dx1167r)
 		iodata_mstc_upgrade_prepare
 		nand_do_upgrade "$1"
