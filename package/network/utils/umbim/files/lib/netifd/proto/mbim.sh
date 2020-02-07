@@ -86,7 +86,8 @@ _proto_mbim_setup() {
 	tid=$((tid + 1))
 
 	echo "mbim[$$]" "Checking pin"
-	umbim $DBG -n -t $tid -d $device pinstate || {
+	umbim $DBG -n -t $tid -d $device pinstate
+	[ $? -eq 2 ] && {
 		echo "mbim[$$]" "PIN required"
 		tid=$((tid + 1))
 		umbim $DBG -t $tid -d "$device" disconnect
