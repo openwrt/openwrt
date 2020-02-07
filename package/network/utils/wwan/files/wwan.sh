@@ -36,7 +36,7 @@ proto_wwan_init_config() {
 }
 
 proto_wwan_setup() {
-	local driver usb devicename desc bus
+	local driver usb devicename desc bus dhcp
 
 	json_get_vars bus
 
@@ -79,7 +79,7 @@ proto_wwan_setup() {
 		json_init
 		json_load "$(cat "$usb")"
 		json_select
-		json_get_vars desc control data
+		json_get_vars desc control data dhcp
 		json_set_namespace "$old_cb"
 
 		[ -n "$control" -a -n "$data" ] && {
@@ -113,6 +113,10 @@ proto_wwan_setup() {
 		proto_notify_error "$interface" NO_DEVICE
 		proto_block_restart "$interface"
 		return 1
+	}
+
+	[ -n "$dhcp" ] && {
+		json_add_string dhcp "$dhcp"
 	}
 
 	uci_set_state network "$interface" driver "$driver"
