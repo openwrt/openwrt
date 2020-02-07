@@ -81,6 +81,12 @@ define Build/iodata-mstc-header
   )
 endef
 
+define Build/netis-tail
+	echo -n $(1) >> $@
+	echo -n $(UIMAGE_NAME)-yun | $(STAGING_DIR_HOST)/bin/mkhash md5 | \
+		sed 's/../\\\\x&/g' | xargs echo -ne >> $@
+endef
+
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:6' > $(1).compat; \
@@ -631,6 +637,8 @@ define Device/netis_wf2881
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 129280k
   UBINIZE_OPTS := -E 5
+  UIMAGE_NAME := WF2881_0.0.00
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | netis-tail WF2881 | uImage lzma
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
