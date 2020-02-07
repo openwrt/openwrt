@@ -490,6 +490,13 @@ define Device/mikrotik_rb750gr3
 endef
 TARGET_DEVICES += mikrotik_rb750gr3
 
+define Device/mikrotik_routerboard-rb760igs
+  $(Device/MikroTik)
+  DEVICE_MODEL := RouterBOARD RB760iGS
+  DEVICE_PACKAGES += kmod-gpio-beeper
+endef
+TARGET_DEVICES += mikrotik_routerboard-rb760igs
+
 define Device/mikrotik_rbm11g
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD M11G

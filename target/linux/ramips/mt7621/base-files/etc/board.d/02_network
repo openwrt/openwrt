@@ -115,6 +115,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "6@eth0"
 		;;
+	mikrotik,rb760igs)
+		ucidef_add_switch "switch0" \
+			"1:lan:2" "2:lan:3" "3:lan:4" "4:lan:5" "0:wan:1" "6@eth0"
+		;;
 	mikrotik,rbm11g|\
 	thunder,timecloud)
 		ucidef_add_switch "switch0"
@@ -248,6 +252,10 @@ ramips_setup_macs()
 	mikrotik,rb750gr3|\
 	mikrotik,rbm33g)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary hard_config 0x10)" 2)
+		label_mac=$(mtd_get_mac_binary hard_config 0x10)
+		;;
+	mikrotik,rb760igs)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary hard_config 0x10)" 1)
 		label_mac=$(mtd_get_mac_binary hard_config 0x10)
 		;;
 	netgear,r6260|\

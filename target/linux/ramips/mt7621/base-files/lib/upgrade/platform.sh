@@ -28,6 +28,7 @@ platform_do_upgrade() {
 		}
 		;;
 	mikrotik,rb750gr3|\
+	mikrotik,rb760igs|\
 	mikrotik,rbm11g|\
 	mikrotik,rbm33g)
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
