@@ -81,6 +81,12 @@ define Build/iodata-mstc-header
   )
 endef
 
+define Build/netis-tail
+	echo -n "$(word 1,$(1))" >> $@
+	echo -n "$(word 2,$(1))-yun" | $(STAGING_DIR_HOST)/bin/mkhash md5 | \
+		sed 's/../\\\\x&/g' | xargs echo -ne >> $@
+endef
+
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:6' > $(1).compat; \
@@ -631,12 +637,15 @@ define Device/netis_wf2881
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 129280k
   UBINIZE_OPTS := -E 5
+  DEVICE_VENDOR := NETIS
+  DEVICE_MODEL := WF2881
+  UIMAGE_NAME := WF2881_0.0.00
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | \
+	netis-tail $$(DEVICE_MODEL) $$(UIMAGE_NAME) | uImage lzma
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 	check-size $$$$(IMAGE_SIZE)
-  DEVICE_VENDOR := NETIS
-  DEVICE_MODEL := WF2881
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
 TARGET_DEVICES += netis_wf2881
