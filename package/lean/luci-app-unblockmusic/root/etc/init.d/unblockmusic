@@ -50,7 +50,22 @@ set_firewall(){
 	
 	mkdir -p /var/etc
 	cat > "/var/etc/unblockmusic.include" <<-EOF
-/etc/init.d/unblockmusic restart
+		$ipt_n -D PREROUTING -p tcp --dport 80 -m set --match-set music dst -j cloud_music 2>/dev/null
+		$ipt_n -F cloud_music  2>/dev/null
+		$ipt_n -X cloud_music  2>/dev/null
+		
+		ipset -! -N music hash:ip
+		$ipt_n -N cloud_music
+		$ipt_n -A cloud_music -d 0.0.0.0/8 -j RETURN
+		$ipt_n -A cloud_music -d 10.0.0.0/8 -j RETURN
+		$ipt_n -A cloud_music -d 127.0.0.0/8 -j RETURN
+		$ipt_n -A cloud_music -d 169.254.0.0/16 -j RETURN
+		$ipt_n -A cloud_music -d 172.16.0.0/12 -j RETURN
+		$ipt_n -A cloud_music -d 192.168.0.0/16 -j RETURN
+		$ipt_n -A cloud_music -d 224.0.0.0/4 -j RETURN
+		$ipt_n -A cloud_music -d 240.0.0.0/4 -j RETURN
+		$ipt_n -A cloud_music -p tcp -j REDIRECT --to-ports 5200
+		$ipt_n -I PREROUTING -p tcp --dport 80 -m set --match-set music dst -j cloud_music
 	EOF
 }
 
