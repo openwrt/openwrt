@@ -60,6 +60,12 @@ define Build/wr1201-factory-header
 	mv $@.new $@
 endef
 
+define Build/netis-tail
+	echo -n $(1) >> $@
+	echo -n $(UIMAGE_NAME)-yun | $(STAGING_DIR_HOST)/bin/mkhash md5 | \
+		sed 's/../\\\\x&/g' | xargs echo -ne >> $@
+endef
+
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:6' > $(1).compat; \
@@ -544,6 +550,8 @@ define Device/wf-2881
   IMAGE_SIZE := 129280k
   KERNEL := $(KERNEL_DTB) | pad-offset $$(BLOCKSIZE) 64 | uImage lzma
   UBINIZE_OPTS := -E 5
+  UIMAGE_NAME := WF2881_0.0.00
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | netis-tail WF2881 | uImage lzma
   IMAGE/sysupgrade.bin := append-kernel | append-ubi | append-metadata | check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := NETIS WF-2881
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
