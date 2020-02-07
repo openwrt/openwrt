@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 ARCH:=mipsel
-BOARD:=brcm47xx
+BOARD:=bcm47xx
 BOARDNAME:=Broadcom BCM47xx/53xx (MIPS)
 FEATURES:=squashfs usb
 SUBTARGETS:=generic mips74k legacy

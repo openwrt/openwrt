@@ -70,7 +70,7 @@ platform_expected_image() {
 	esac
 }
 
-brcm47xx_identify() {
+bcm47xx_identify() {
 	local magic
 
 	magic=$(get_magic_long "$1")
@@ -107,7 +107,7 @@ brcm47xx_identify() {
 platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
-	local file_type=$(brcm47xx_identify "$1")
+	local file_type=$(bcm47xx_identify "$1")
 	local magic
 	local error=0
 
@@ -232,7 +232,7 @@ platform_trx_from_lxlold_cmd() {
 }
 
 platform_do_upgrade() {
-	local file_type=$(brcm47xx_identify "$1")
+	local file_type=$(bcm47xx_identify "$1")
 	local trx="$1"
 	local cmd=""
 

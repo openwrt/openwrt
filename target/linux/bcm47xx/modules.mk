@@ -8,7 +8,7 @@
 define KernelPackage/bgmac
   TITLE:=Broadcom bgmac driver
   KCONFIG:=CONFIG_BGMAC CONFIG_BGMAC_BCMA
-  DEPENDS:=@TARGET_brcm47xx @!TARGET_brcm47xx_legacy
+  DEPENDS:=@TARGET_bcm47xx @!TARGET_bcm47xx_legacy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:= \
 	$(LINUX_DIR)/drivers/net/ethernet/broadcom/bgmac-bcma.ko \
