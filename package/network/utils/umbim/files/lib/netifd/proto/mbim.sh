@@ -19,6 +19,7 @@ proto_mbim_init_config() {
 	proto_config_add_string auth
 	proto_config_add_string username
 	proto_config_add_string password
+	proto_config_add_boolean dhcp
 	proto_config_add_defaults
 }
 
@@ -27,8 +28,8 @@ _proto_mbim_setup() {
 	local tid=2
 	local ret
 
-	local device apn pincode delay allow_roaming allow_partner $PROTO_DEFAULT_OPTIONS
-	json_get_vars device apn pincode delay auth username password allow_roaming allow_partner $PROTO_DEFAULT_OPTIONS
+	local device apn pincode delay allow_roaming allow_partner dhcp $PROTO_DEFAULT_OPTIONS
+	json_get_vars device apn pincode delay auth username password allow_roaming allow_partner dhcp $PROTO_DEFAULT_OPTIONS
 
 	[ -n "$ctl_device" ] && device=$ctl_device
 
@@ -153,28 +154,69 @@ _proto_mbim_setup() {
 	done
 	tid=$((tid + 1))
 
+	echo "mbim[$$]" "Connected"
+
+	if [ "$dhcp" = 0 ]; then
+		echo "mbim[$$]" "Setting up $ifname"
+		eval $(umbim $DBG -n -t $tid -d $device config | sed 's/: /=/g')
+		tid=$((tid + 1))
+
+		proto_init_update "$ifname" 1
+		proto_send_update "$interface"
+
+		json_init
+		json_add_string name "${interface}_4"
+		json_add_string ifname "@$interface"
+		json_add_string proto "static"
+		json_add_array ipaddr
+		json_add_string "" "$ipv4address"
+		json_close_array
+		json_add_string gateway "$ipv4gateway"
+		json_add_array dns
+		json_add_string "" "$ipv4dnsserver"
+		json_close_array
+		proto_add_dynamic_defaults
+		json_close_object
+		ubus call network add_dynamic "$(json_dump)"
+
+		json_init
+		json_add_string name "${interface}_6"
+		json_add_string ifname "@$interface"
+		json_add_string proto "static"
+		json_add_array ip6addr
+		json_add_string "" "$ipv6address"
+		json_close_array
+		json_add_string ip6gw "$ipv6gateway"
+		json_add_array dns
+		json_add_string "" "$ipv6dnsserver"
+		json_close_array
+		proto_add_dynamic_defaults
+		json_close_object
+		ubus call network add_dynamic "$(json_dump)"
+	else
+		echo "mbim[$$]" "Starting DHCP on $ifname"
+		proto_init_update "$ifname" 1
+		proto_send_update "$interface"
+
+		json_init
+		json_add_string name "${interface}_4"
+		json_add_string ifname "@$interface"
+		json_add_string proto "dhcp"
+		proto_add_dynamic_defaults
+		json_close_object
+		ubus call network add_dynamic "$(json_dump)"
+
+		json_init
+		json_add_string name "${interface}_6"
+		json_add_string ifname "@$interface"
+		json_add_string proto "dhcpv6"
+		json_add_string extendprefix 1
+		proto_add_dynamic_defaults
+		json_close_object
+		ubus call network add_dynamic "$(json_dump)"
+	fi
+
 	uci_set_state network $interface tid "$tid"
-
-	echo "mbim[$$]" "Connected, starting DHCP"
-	proto_init_update "$ifname" 1
-	proto_send_update "$interface"
-
-	json_init
-	json_add_string name "${interface}_4"
-	json_add_string ifname "@$interface"
-	json_add_string proto "dhcp"
-	proto_add_dynamic_defaults
-	json_close_object
-	ubus call network add_dynamic "$(json_dump)"
-
-	json_init
-	json_add_string name "${interface}_6"
-	json_add_string ifname "@$interface"
-	json_add_string proto "dhcpv6"
-	json_add_string extendprefix 1
-	proto_add_dynamic_defaults
-	json_close_object
-	ubus call network add_dynamic "$(json_dump)"
 }
 
 proto_mbim_setup() {
