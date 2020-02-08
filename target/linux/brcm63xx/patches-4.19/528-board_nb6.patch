@@ -45,11 +45,11 @@
  	&board_96368mvwg,
  	&board_96368mvngr,
 @@ -1183,6 +1213,9 @@ static struct of_device_id const bcm963x
- 	{ .compatible = "t-com,spw303v", .data = &board_spw303v, },
+ 	{ .compatible = "t-com,speedport-w-303v", .data = &board_spw303v, },
  	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
  #endif
 +#ifdef CONFIG_BCM63XX_CPU_6362
-+	{ .compatible = "sfr,nb6-ser-r0", .data = &board_nb6, },
++	{ .compatible = "sfr,neufbox-6-sercomm-r0", .data = &board_nb6, },
 +#endif
  #ifdef CONFIG_BCM63XX_CPU_6368
  	{ .compatible = "brcm,bcm96368mvngr", .data = &board_96368mvngr, },

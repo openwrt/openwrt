@@ -41,10 +41,10 @@
  	&board_HW553,
  	&board_HW556_A,
 @@ -2247,6 +2273,7 @@ static struct of_device_id const bcm963x
- 	{ .compatible = "sfr,nb4-fxc-r1", .data = &board_nb4_fxc_r1, },
- 	{ .compatible = "t-com,spw303v", .data = &board_spw303v, },
+ 	{ .compatible = "sfr,neufbox-4-foxconn-r1", .data = &board_nb4_fxc_r1, },
+ 	{ .compatible = "t-com,speedport-w-303v", .data = &board_spw303v, },
  	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
-+	{ .compatible = "thomson,homehub2a", .data = &board_homehub2a, },
++	{ .compatible = "bt,home-hub-2-a", .data = &board_homehub2a, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6362
- 	{ .compatible = "sagem,f@st2504n", .data = &board_fast2504n, },
+ 	{ .compatible = "sagem,fast-2504n", .data = &board_fast2504n, },
