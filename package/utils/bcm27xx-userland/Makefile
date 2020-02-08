@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=brcm2708-userland
+PKG_NAME:=bcm27xx-userland
 PKG_VERSION:=42ec119e03eb8dffc7c83e2ac0e665e333abbef6
 PKG_RELEASE:=1
 
@@ -34,19 +34,19 @@ include $(INCLUDE_DIR)/cmake.mk
 TAR_OPTIONS:=--strip-components 1 $(TAR_OPTIONS)
 TAR_CMD=$(HOST_TAR) -C $(1) $(TAR_OPTIONS)
 
-define Package/brcm2708-userland
+define Package/bcm27xx-userland
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@TARGET_brcm2708
-  TITLE:=BCM2708 userland tools
-  DEFAULT:=y if TARGET_brcm2708
+  DEPENDS:=@TARGET_bcm27xx
+  TITLE:=BCM27xx userland tools
+  DEFAULT:=y if TARGET_bcm27xx
 endef
 
-define Package/brcm2708-userland/description
-  BCM2708 userland tools including vcgencmd and tvservice.
+define Package/bcm27xx-userland/description
+  BCM27xx userland tools including vcgencmd and tvservice.
 endef
 
-define Package/brcm2708-userland/install
+define Package/bcm27xx-userland/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/dtparam $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/dtoverlay $(1)/usr/bin
@@ -61,4 +61,4 @@ define Package/brcm2708-userland/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/ $(1)/usr/
 endef
 
-$(eval $(call BuildPackage,brcm2708-userland))
+$(eval $(call BuildPackage,bcm27xx-userland))
