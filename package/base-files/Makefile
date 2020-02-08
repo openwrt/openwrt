@@ -198,7 +198,9 @@ define Package/base-files/install
 
 	$(if $(CONFIG_INCLUDE_CONFIG), \
 		echo -e "# Build configuration for board $(BOARD)/$(SUBTARGET)/$(PROFILE)\n" >$(1)/etc/build.config; \
-		cat $(BIN_DIR)/config.buildinfo >>$(1)/etc/build.config)
+		cat $(BIN_DIR)/config.buildinfo >>$(1)/etc/build.config; \
+		cat $(BIN_DIR)/feeds.buildinfo >>$(1)/etc/build.feeds; \
+		cat $(BIN_DIR)/version.buildinfo >>$(1)/etc/build.version)
 
 	$(if $(CONFIG_CLEAN_IPKG),, \
 		mkdir -p $(1)/etc/opkg; \
