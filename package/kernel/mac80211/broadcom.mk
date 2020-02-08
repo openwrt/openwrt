@@ -478,6 +478,29 @@ define KernelPackage/brcmfmac/config
   endif
 endef
 
+
+define KernelPackage/b43/install
+	rm -rf $(1)/lib/firmware/
+ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
+	tar xzf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
+else
+	tar xjf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
+endif
+	$(INSTALL_DIR) $(1)/lib/firmware/
+ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
+	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/"
+	$(INSTALL_DIR) $(1)/lib/firmware/b43-open/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/ucode5.fw $(1)/lib/firmware/b43-open/ucode5.fw
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/b0g0bsinitvals5.fw $(1)/lib/firmware/b43-open/b0g0bsinitvals5.fw
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/b0g0initvals5.fw $(1)/lib/firmware/b43-open/b0g0initvals5.fw
+else
+	b43-fwcutter -w $(1)/lib/firmware/ $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)
+endif
+ifneq ($(CONFIG_B43_FW_SQUASH),)
+	b43-fwsquash.py "$(CONFIG_B43_FW_SQUASH_PHYTYPES)" "$(CONFIG_B43_FW_SQUASH_COREREVS)" "$(1)/lib/firmware/b43"
+endif
+endef
+
 define KernelPackage/brcmsmac/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 ifeq ($(CONFIG_BRCMSMAC_USE_FW_FROM_WL),y)
