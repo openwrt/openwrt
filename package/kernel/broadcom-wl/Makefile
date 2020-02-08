@@ -34,13 +34,13 @@ define Package/broadcom-wl/Default
   CATEGORY:=Kernel modules
   DEPENDS:=@(PACKAGE_kmod-brcm-wl||PACKAGE_kmod-brcm-wl-mini)
   SUBMENU:=Proprietary BCM43xx WiFi driver
-  SUBMENUDEP:=(TARGET_bcm47xx||TARGET_brcm63xx)
+  SUBMENUDEP:=(TARGET_bcm47xx||TARGET_bcm63xx)
 endef
 
 define KernelPackage/brcm-wl/Default
   $(call Package/broadcom-wl/Default)
   SECTION:=kernel
-  DEPENDS:=@(TARGET_bcm47xx||TARGET_brcm63xx) +wireless-tools
+  DEPENDS:=@(TARGET_bcm47xx||TARGET_bcm63xx) +wireless-tools
   TITLE:=Kernel driver for BCM43xx chipsets
   FILES:=$(PKG_BUILD_DIR)/driver$(1)/wl.ko $(PKG_BUILD_DIR)/glue/wl_glue.ko
   AUTOLOAD:=$(call AutoProbe,wl)

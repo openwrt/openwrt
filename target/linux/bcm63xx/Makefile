@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 ARCH:=mips
-BOARD:=brcm63xx
+BOARD:=bcm63xx
 BOARDNAME:=Broadcom BCM63xx
 SUBTARGETS:=generic smp
 FEATURES:=squashfs usb atm pci pcmcia usbgadget
