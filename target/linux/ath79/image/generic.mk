@@ -1041,6 +1041,20 @@ define Device/rosinson_wr818
 endef
 TARGET_DEVICES += rosinson_wr818
 
+define Device/siemens_ws-ap3610
+  SOC := ar7161
+  DEVICE_VENDOR := Siemens
+  DEVICE_MODEL := WS-AP3610
+  IMAGE_SIZE := 14336k
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x82000
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := loader-okli-compile
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 8128 | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+endef
+TARGET_DEVICES += siemens_ws-ap3610
+
 define Device/sitecom_wlr-7100
   SOC := ar1022
   DEVICE_VENDOR := Sitecom
