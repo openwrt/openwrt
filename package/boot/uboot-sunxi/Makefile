@@ -253,7 +253,7 @@ define U-Boot/orangepi_pc2
   UENV:=a64
 endef
 
-define U-Boot/Sinovoip_BPI_M2_Ultra
+define U-Boot/Bananapi_M2_Ultra
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Ultra
   BUILD_DEVICES:=lemaker_bananapi-m2-ultra
@@ -267,6 +267,7 @@ UBOOT_TARGETS := \
 	A20-OLinuXino-Lime2-eMMC \
 	A20-OLinuXino_MICRO \
 	Bananapi \
+	Bananapi_M2_Ultra \
 	Bananapro \
 	Cubieboard \
 	Cubieboard2 \
@@ -294,7 +295,6 @@ UBOOT_TARGETS := \
 	pangolin \
 	pine64_plus \
 	Sinovoip_BPI_M2_Plus \
-	Sinovoip_BPI_M2_Ultra \
 	sopine_baseboard \
 	orangepi_zero_plus
 
