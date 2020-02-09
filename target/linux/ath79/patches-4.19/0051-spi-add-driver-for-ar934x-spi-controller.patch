@@ -1,7 +1,7 @@
-From b518f18f89dbd49fe9403a8c92230f1af59219bc Mon Sep 17 00:00:00 2001
+From 7e161c423a232ef7ddf6c11b09ebe471dd5a23cf Mon Sep 17 00:00:00 2001
 From: Chuanhong Guo <gch981213@gmail.com>
 Date: Wed, 5 Feb 2020 18:25:37 +0800
-Subject: [PATCH 1/2] spi: add driver for ar934x spi controller
+Subject: [PATCH v4 1/2] spi: add driver for ar934x spi controller
 
 This patch adds driver for SPI controller found in Qualcomm Atheros
 AR934x/QCA95xx SoCs.
@@ -13,8 +13,8 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
 ---
  drivers/spi/Kconfig      |   7 ++
  drivers/spi/Makefile     |   1 +
- drivers/spi/spi-ar934x.c | 229 +++++++++++++++++++++++++++++++++++++++
- 3 files changed, 237 insertions(+)
+ drivers/spi/spi-ar934x.c | 235 +++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 243 insertions(+)
  create mode 100644 drivers/spi/spi-ar934x.c
 
 --- a/drivers/spi/Kconfig
@@ -45,7 +45,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  obj-$(CONFIG_SPI_ATH79)			+= spi-ath79.o
 --- /dev/null
 +++ b/drivers/spi/spi-ar934x.c
-@@ -0,0 +1,229 @@
+@@ -0,0 +1,235 @@
 +// SPDX-License-Identifier: GPL-2.0
 +//
 +// SPI controller driver for Qualcomm Atheros AR934x/QCA95xx SoCs
@@ -69,6 +69,9 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
 +
 +#define AR934X_SPI_REG_FS		0x00
 +#define AR934X_SPI_ENABLE		BIT(0)
++
++#define AR934X_SPI_REG_IOC		0x08
++#define AR934X_SPI_IOC_INITVAL		0x70000
 +
 +#define AR934X_SPI_REG_CTRL		0x04
 +#define AR934X_SPI_CLK_MASK		GENMASK(5, 0)
@@ -227,7 +230,10 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
 +		return -ENOMEM;
 +	}
 +
++	/* disable flash mapping and expose spi controller registers */
 +	iowrite32(AR934X_SPI_ENABLE, base + AR934X_SPI_REG_FS);
++	/* restore pins to default state: CSn=1 DO=CLK=0 */
++	iowrite32(AR934X_SPI_IOC_INITVAL, base + AR934X_SPI_REG_IOC);
 +
 +	ctlr->mode_bits = SPI_LSB_FIRST;
 +	ctlr->setup = ar934x_spi_setup;
