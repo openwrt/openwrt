@@ -22,6 +22,7 @@ PKG_LICENSE_FILES:=COPYING
 PKG_CPE_ID:=cpe:/a:json-c_project:json-c
 
 PKG_FIXUP:=autoreconf
+PKG_REMOVE_FILES:=autogen.sh aclocal.m4
 PKG_INSTALL:=1
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
