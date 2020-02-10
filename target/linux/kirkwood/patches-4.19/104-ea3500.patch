@@ -10,7 +10,7 @@
  	kirkwood-lsxhl.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-linksys-audi.dts
-@@ -0,0 +1,250 @@
+@@ -0,0 +1,245 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * kirkwood-linksys-audi.dts - Device Tree file for Linksys EA3500
@@ -77,20 +77,15 @@
 +		};
 +	};
 +
-+	switches {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
++	mvsw61xx {
++		compatible = "marvell,88e6171";
++		status = "okay";
++		reg = <0x10>;
 +
-+		mvsw61xx@10 {
-+			compatible = "marvell,88e6171";
-+			status = "okay";
-+			reg = <0x10>;
-+
-+			mii-bus = <&mdio>;
-+			cpu-port-0 = <5>;
-+			cpu-port-1 = <6>;
-+			is-indirect;
-+		};
++		mii-bus = <&mdio>;
++		cpu-port-0 = <5>;
++		cpu-port-1 = <6>;
++		is-indirect;
 +	};
 +
 +	dsa {
