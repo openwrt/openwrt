@@ -385,7 +385,7 @@ define Device/tplink-archer-c5-v2
   IMAGE/bin := append-rootfs | bcm53xx-tplink-safeloader
   TPLINK_BOARD := ARCHER-C5-V2
 endef
-TARGET_DEVICES += tplink-archer-c5-v2
+#TARGET_DEVICES += tplink-archer-c5-v2
 
 define Device/tplink-archer-c9-v1
   DEVICE_VENDOR := TP-LINK
@@ -396,6 +396,6 @@ define Device/tplink-archer-c9-v1
   IMAGE/bin := append-rootfs | bcm53xx-tplink-safeloader
   TPLINK_BOARD := ARCHERC9
 endef
-TARGET_DEVICES += tplink-archer-c9-v1
+#TARGET_DEVICES += tplink-archer-c9-v1
 
 $(eval $(call BuildImage))
