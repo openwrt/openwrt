@@ -43,6 +43,9 @@ linksys,ea6350v3)
 linksys,ea8300)
 	ubootenv_add_uci_config "/dev/mtd7" "0x0" "0x40000" "0x20000"
 	;;
+xiaomi,miwifi-mesh-d01)
+	ubootenv_add_uci_config "/dev/mtd4" "0x0" "0x10000" "0x20000"
+	;;
 zyxel,nbg6617)
 	ubootenv_add_uci_config "/dev/mtd6" "0x0" "0x10000" "0x10000"
 	;;

@@ -575,6 +575,7 @@ define Device/xiaomi_miwifi-mesh-d01
 	KERNEL_SIZE := 4048k
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
+	DEVICE_PACKAGES := uboot-envtools
 endef
 TARGET_DEVICES += xiaomi_miwifi-mesh-d01
 

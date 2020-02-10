@@ -24,7 +24,7 @@
 	compatible = "xiaomi,miwifi-mesh-d01", "qcom,ipq4019";
 
 	chosen {
-		bootargs-append = " root=/dev/ubiblock0_0 clk_ignore_unused debug";
+		bootargs-append = " root=/dev/ubiblock0_0 clk_ignore_unused";
 	};
 
 	aliases {
@@ -51,10 +51,6 @@
 			no-map;
 		};
 
-		rsvd2@87B00000 {
-			reg = <0x87b00000 0x500000>;
-			no-map;
-		};
 	};
 
 	keys {
@@ -106,39 +102,6 @@
 			compatible = "qcom,tcsr";
 			reg = <0x1957000 0x100>;
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
-		};
-
-		usb2@60f8800 {
-			status = "okay";
-
-			dwc3@6000000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				usb2_port1: port@1 {
-					reg = <1>;
-					#trigger-source-cells = <0>;
-				};
-			};
-		};
-
-		usb3@8af8800 {
-			status = "okay";
-
-			dwc3@8a00000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				usb3_port1: port@1 {
-					reg = <1>;
-					#trigger-source-cells = <0>;
-				};
-
-				usb3_port2: port@2 {
-					reg = <2>;
-					#trigger-source-cells = <0>;
-				};
-			};
 		};
 
 		crypto@8e3a000 {
@@ -285,7 +248,6 @@
 			partition@380000 {
 				label = "0:APPSBLENV";
 				reg = <0x380000 0x80000>;
-				read-only;
 			};
 
 			partition@400000 {
