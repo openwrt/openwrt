@@ -78,6 +78,7 @@ endef
 define Device/Default
   PROFILES := Default
   DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
+  DEVICE_DTS_DIR := $(DTS_DIR)
   BOARD_NAME = $$(DEVICE_DTS)
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | append-dtb | uImage none
@@ -93,7 +94,7 @@ DEVICE_VARS += BOOT_SCRIPT UBOOT
 
 define Device/Default-arm64
   BOOT_SCRIPT := generic-arm64
-  DTS_DIR := $(DTS_DIR)/marvell
+  DEVICE_DTS_DIR := $(DTS_DIR)/marvell
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   KERNEL_NAME := Image
