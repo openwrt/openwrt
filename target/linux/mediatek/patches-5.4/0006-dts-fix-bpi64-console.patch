@@ -1,0 +1,12 @@
+diff -urN a/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts b/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
+--- a/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts	2019-11-29 16:44:05.105269904 +0800
++++ b/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts	2019-11-29 16:44:20.184825647 +0800
+@@ -22,7 +22,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+-		bootargs = "earlycon=uart8250,mmio32,0x11002000 swiotlb=512";
++		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n1 swiotlb=512";
+ 	};
+ 
+ 	cpus {

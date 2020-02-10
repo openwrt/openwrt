@@ -1,0 +1,11 @@
+diff -urN a/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts b/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
+--- a/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts	2019-12-17 14:43:47.273940258 +0800
++++ b/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts	2019-12-17 14:44:20.300945884 +0800
+@@ -19,6 +19,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial2:115200n8";
++		bootargs = "console=ttyS2,115200n8";
+ 	};
+ 
+ 	cpus {
