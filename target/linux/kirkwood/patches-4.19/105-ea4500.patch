@@ -23,33 +23,28 @@
  		};
  
  		white-pulse {
-@@ -67,9 +72,23 @@
+@@ -67,9 +72,18 @@
  		};
  	};
  
 -	dsa {
 -		status = "disabled";
-+	switches {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
- 
-+		mvsw61xx@10 {
-+			compatible = "marvell,88e6171";
-+			status = "okay";
-+			reg = <0x10>;
++	mvsw61xx {
++		compatible = "marvell,88e6171";
++		status = "okay";
++		reg = <0x10>;
 +
-+			mii-bus = <&mdio>;
-+			cpu-port-0 = <5>;
-+			cpu-port-1 = <6>;
-+			is-indirect;
-+		};
++		mii-bus = <&mdio>;
++		cpu-port-0 = <5>;
++		cpu-port-1 = <6>;
++		is-indirect;
 +	};
-+
+ 
 +	dsa {
  		compatible = "marvell,dsa";
  		#address-cells = <2>;
  		#size-cells = <0>;
-@@ -161,22 +180,22 @@
+@@ -161,22 +175,22 @@
  		};
  
  		partition@200000 {
@@ -76,7 +71,7 @@
  			reg = <0x1EA0000 0x1760000>;
  		};
  
-@@ -207,53 +226,6 @@
+@@ -207,53 +221,6 @@
  
  &mdio {
  	status = "okay";
@@ -130,7 +125,7 @@
  };
  
  &uart0 {
-@@ -272,10 +244,14 @@
+@@ -272,10 +239,14 @@
  };
  
  /* eth1 is connected to the switch at port 6. However DSA only supports a
