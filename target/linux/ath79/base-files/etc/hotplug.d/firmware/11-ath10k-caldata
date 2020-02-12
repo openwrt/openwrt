@@ -202,6 +202,7 @@ case "$FIRMWARE" in
 	tplink,archer-c59-v1|\
 	tplink,archer-c60-v1|\
 	tplink,archer-c60-v2|\
+	tplink,archer-c60-v3|\
 	tplink,archer-c6-v2)
 		ath10kcal_extract "art" 20480 12064
 		ath10kcal_patch_mac_crc $(macaddr_add $(mtd_get_mac_binary mac 8) -1)

@@ -33,7 +33,7 @@
 		};
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 
 		led_power: power {
@@ -59,19 +59,9 @@
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 
-		wan_amber {
-			label = "tp-link:amber:wan";
-			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
-		};
-
 		lan {
 			label = "tp-link:green:lan";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
-		};
-
-		wps {
-			label = "tp-link:green:wps";
-			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
