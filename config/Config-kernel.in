@@ -85,6 +85,41 @@ config KERNEL_PROFILING
 	  Enable the extended profiling support mechanisms used by profilers such
 	  as OProfile.
 
+config KERNEL_UBSAN
+	bool "Compile the kernel with undefined behaviour sanity checker"
+	help
+	  This option enables undefined behaviour sanity checker
+	  Compile-time instrumentation is used to detect various undefined
+	  behaviours in runtime. Various types of checks may be enabled
+	  via boot parameter ubsan_handle
+	  (see: Documentation/dev-tools/ubsan.rst).
+
+config KERNEL_UBSAN_SANITIZE_ALL
+	bool "Enable instrumentation for the entire kernel"
+	depends on KERNEL_UBSAN
+	default y
+	help
+	  This option activates instrumentation for the entire kernel.
+	  If you don't enable this option, you have to explicitly specify
+	  UBSAN_SANITIZE := y for the files/directories you want to check for UB.
+	  Enabling this option will get kernel image size increased
+	  significantly.
+
+config KERNEL_UBSAN_ALIGNMENT
+	bool "Enable checking of pointers alignment"
+	depends on KERNEL_UBSAN
+	help
+	  This option enables detection of unaligned memory accesses.
+	  Enabling this option on architectures that support unaligned
+	  accesses may produce a lot of false positives.
+
+config KERNEL_UBSAN_NULL
+	bool "Enable checking of null pointers"
+	depends on KERNEL_UBSAN
+	help
+	  This option enables detection of memory accesses via a
+	  null pointer.
+
 config KERNEL_TASKSTATS
 	bool "Compile the kernel with task resource/io statistics and accounting"
 	default n
