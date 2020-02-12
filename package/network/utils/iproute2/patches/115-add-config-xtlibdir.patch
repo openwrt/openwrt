@@ -8,5 +8,5 @@
 +	CFLAGS += -DXT_LIB_DIR=\"$(XT_LIB_DIR)\"
 +endif
  
- YACC := bison
  LEX := flex
+ CFLAGS += -DYY_NO_INPUT
