@@ -377,6 +377,74 @@ config KERNEL_PROVE_LOCKING
 	select KERNEL_DEBUG_KERNEL
 	default n
 
+config KERNEL_LOCKUP_DETECTOR
+	bool "Compile the kernel with detect Hard and Soft Lockups"
+	depends on KERNEL_DEBUG_KERNEL
+	help
+	  Say Y here to enable the kernel to act as a watchdog to detect
+	  hard and soft lockups.
+
+	  Softlockups are bugs that cause the kernel to loop in kernel
+	  mode for more than 20 seconds, without giving other tasks a
+	  chance to run.  The current stack trace is displayed upon
+	  detection and the system will stay locked up.
+
+	  Hardlockups are bugs that cause the CPU to loop in kernel mode
+	  for more than 10 seconds, without letting other interrupts have a
+	  chance to run.  The current stack trace is displayed upon detection
+	  and the system will stay locked up.
+
+	  The overhead should be minimal.  A periodic hrtimer runs to
+	  generate interrupts and kick the watchdog task every 4 seconds.
+	  An NMI is generated every 10 seconds or so to check for hardlockups.
+
+	  The frequency of hrtimer and NMI events and the soft and hard lockup
+	  thresholds can be controlled through the sysctl watchdog_thresh.
+
+config KERNEL_DETECT_HUNG_TASK
+	bool "Compile the kernel with detect Hung Tasks"
+	depends on KERNEL_DEBUG_KERNEL
+	default KERNEL_LOCKUP_DETECTOR
+	help
+	  Say Y here to enable the kernel to detect "hung tasks",
+	  which are bugs that cause the task to be stuck in
+	  uninterruptible "D" state indefinitely.
+
+	  When a hung task is detected, the kernel will print the
+	  current stack trace (which you should report), but the
+	  task will stay in uninterruptible state. If lockdep is
+	  enabled then all held locks will also be reported. This
+	  feature has negligible overhead.
+
+config KERNEL_WQ_WATCHDOG
+	bool "Compile the kernel with detect Workqueue Stalls"
+	depends on KERNEL_DEBUG_KERNEL
+	help
+	  Say Y here to enable stall detection on workqueues.  If a
+	  worker pool doesn't make forward progress on a pending work
+	  item for over a given amount of time, 30s by default, a
+	  warning message is printed along with dump of workqueue
+	  state.  This can be configured through kernel parameter
+	  "workqueue.watchdog_thresh" and its sysfs counterpart.
+
+config KERNEL_DEBUG_ATOMIC_SLEEP
+	bool "Compile the kernel with sleep inside atomic section checking"
+	depends on KERNEL_DEBUG_KERNEL
+	help
+	  If you say Y here, various routines which may sleep will become very
+	  noisy if they are called inside atomic sections: when a spinlock is
+	  held, inside an rcu read side critical section, inside preempt disabled
+	  sections, inside an interrupt, etc...
+
+config KERNEL_DEBUG_VM
+	bool "Compile the kernel with debug VM"
+	depends on KERNEL_DEBUG_KERNEL
+	help
+	  Enable this to turn on extended checks in the virtual-memory system
+          that may impact performance.
+
+	  If unsure, say N.
+
 config KERNEL_PRINTK_TIME
 	bool "Enable printk timestamps"
 	default y
