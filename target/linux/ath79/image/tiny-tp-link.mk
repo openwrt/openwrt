@@ -61,6 +61,33 @@ define Device/tplink_tl-mr3420-v2
 endef
 TARGET_DEVICES += tplink_tl-mr3420-v2
 
+define Device/tplink_tl-wa701nd-v1
+  $(Device/tplink-4m)
+  ATH_SOC := ar7240
+  DEVICE_TITLE := TP-Link TL-WA701ND v1
+  TPLINK_HWID := 0x07010001
+  SUPPORTED_DEVICES += tl-wa901nd
+endef
+TARGET_DEVICES += tplink_tl-wa701nd-v1
+
+define Device/tplink_tl-wa730re-v1
+  $(Device/tplink-4m)
+  ATH_SOC := ar7240
+  DEVICE_TITLE := TP-Link TL-WA730RE v1
+  TPLINK_HWID := 0x07300001
+  SUPPORTED_DEVICES += tl-wa901nd
+endef
+TARGET_DEVICES += tplink_tl-wa730re-v1
+
+define Device/tplink_tl-wa801nd-v1
+  $(Device/tplink-4m)
+  ATH_SOC := ar7240
+  DEVICE_TITLE := TP-Link TL-WA801ND v1
+  TPLINK_HWID := 0x08010001
+  SUPPORTED_DEVICES += tl-wa901nd
+endef
+TARGET_DEVICES += tplink_tl-wa801nd-v1
+
 define Device/tplink_tl-wa830re-v1
   $(Device/tplink-4m)
   ATH_SOC := ar7240
@@ -88,6 +115,15 @@ define Device/tplink_tl-wa860re-v1
   SUPPORTED_DEVICES += tl-wa860re
 endef
 TARGET_DEVICES += tplink_tl-wa860re-v1
+
+define Device/tplink_tl-wa901nd-v1
+  $(Device/tplink-4m)
+  ATH_SOC := ar7240
+  DEVICE_TITLE := TP-Link TL-WA901ND v1
+  TPLINK_HWID := 0x09010001
+  SUPPORTED_DEVICES += tl-wa901nd
+endef
+TARGET_DEVICES += tplink_tl-wa901nd-v1
 
 define Device/tplink_tl-wa901nd-v2
   $(Device/tplink-4m)
