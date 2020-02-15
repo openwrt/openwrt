@@ -169,7 +169,10 @@ define Device/tplink_tl-wr841-v5
   $(Device/tplink-4m)
   SOC := ar7240
   DEVICE_MODEL := TL-WR841N/ND
-  DEVICE_VARIANT := v5/v6
+  DEVICE_VARIANT := v5
+  DEVICE_ALT0_VENDOR := TP-Link
+  DEVICE_ALT0_MODEL := TL-WR841N/ND
+  DEVICE_ALT0_VARIANT := v6
   TPLINK_HWID := 0x08410005
 endef
 TARGET_DEVICES += tplink_tl-wr841-v5

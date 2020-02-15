@@ -447,7 +447,7 @@ define Device/tplink_tl-wr841n-v14
   TPLINK_HWREV := 0x1
   TPLINK_HWREVADD := 0x14
   TPLINK_HVERSION := 3
-  IMAGE/tftp-recovery.bin := pad-extra 64k | $$(IMAGE/factory.bin)
+  IMAGE/tftp.bin := pad-extra 64k | $$(IMAGE/factory.bin)
 endef
 TARGET_DEVICES += tplink_tl-wr841n-v14
 

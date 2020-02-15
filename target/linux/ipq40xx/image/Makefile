@@ -163,8 +163,8 @@ define Device/avm_fritzbox-4040
 	IMAGE_SIZE := 29056k
 	UBOOT_PATH := $(STAGING_DIR_IMAGE)/uboot-fritz4040.bin
 	UBOOT_PARTITION_SIZE := 524288
-	IMAGES = eva.bin sysupgrade.bin
-	IMAGE/eva.bin := append-uboot | pad-to $$$$(UBOOT_PARTITION_SIZE) | append-kernel | append-rootfs | pad-rootfs
+	IMAGES = factory.bin sysupgrade.bin
+	IMAGE/factory.bin := append-uboot | pad-to $$$$(UBOOT_PARTITION_SIZE) | append-kernel | append-rootfs | pad-rootfs
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	DEVICE_PACKAGES := fritz-tffs fritz-caldata
 endef

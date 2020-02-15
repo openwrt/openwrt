@@ -96,9 +96,9 @@ define Device/avm_fritz3370
   DEVICE_VARIANT := Rev. 2
   KERNEL_SIZE := 4096k
   UBINIZE_OPTS := -E 5
-  IMAGES += eva-kernel.bin eva-filesystem.bin
+  IMAGES += eva-kernel.bin eva-rootfs.bin
   IMAGE/eva-kernel.bin := append-kernel
-  IMAGE/eva-filesystem.bin := append-ubi
+  IMAGE/eva-rootfs.bin := append-ubi
   DEVICE_PACKAGES := kmod-ath9k wpad-basic kmod-usb-dwc2 fritz-tffs
 endef
 
