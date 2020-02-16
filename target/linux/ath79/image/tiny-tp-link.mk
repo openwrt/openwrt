@@ -95,7 +95,6 @@ define Device/tplink_tl-wa850re-v2
   DEVICE_VARIANT := v2
   TPLINK_BOARD_ID := TLWA850REV2
   TPLINK_HWID := 0x08500002
-  TPLINK_HWREV := 0x0
   DEVICE_PACKAGES := rssileds
   SUPPORTED_DEVICES += tl-wa850re-v2
 endef
