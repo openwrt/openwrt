@@ -1,0 +1,69 @@
+From d42c6bf2752a46bdf3931bd6e56db419742fbb20 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Mon, 17 Feb 2020 23:55:22 +0100
+Subject: [PATCH 3/3] ag71xx: Run ag71xx_link_adjust() only when needed
+
+My system printed this line every second:
+  ag71xx 19000000.eth eth0: Link is Up - 1Gbps/Full - flow control off
+The function ag71xx_phy_link_adjust() was called by the PHY layer every
+second even when nothing changed.
+
+With this patch the old status is stored and the real
+ag71xx_link_adjust() function is only called when when something really
+changed. This way the update and also this print is only done once any
+more.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Fixes: d51b6ce441d3 ("net: ethernet: add ag71xx driver")
+---
+ drivers/net/ethernet/atheros/ag71xx.c | 24 +++++++++++++++++++++++-
+ 1 file changed, 23 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -307,6 +307,10 @@ struct ag71xx {
+ 	u32 msg_enable;
+ 	const struct ag71xx_dcfg *dcfg;
+ 
++	unsigned int		link;
++	unsigned int		speed;
++	int			duplex;
++
+ 	/* From this point onwards we're not looking at per-packet fields. */
+ 	void __iomem *mac_base;
+ 
+@@ -854,6 +858,7 @@ static void ag71xx_link_adjust(struct ag
+ 
+ 	if (!phydev->link && update) {
+ 		ag71xx_hw_stop(ag);
++		phy_print_status(phydev);
+ 		return;
+ 	}
+ 
+@@ -907,8 +912,25 @@ static void ag71xx_link_adjust(struct ag
+ static void ag71xx_phy_link_adjust(struct net_device *ndev)
+ {
+ 	struct ag71xx *ag = netdev_priv(ndev);
++	struct phy_device *phydev = ndev->phydev;
++	int status_change = 0;
++
++	if (phydev->link) {
++		if (ag->duplex != phydev->duplex
++		    || ag->speed != phydev->speed) {
++			status_change = 1;
++		}
++	}
++
++	if (phydev->link != ag->link)
++		status_change = 1;
++
++	ag->link = phydev->link;
++	ag->duplex = phydev->duplex;
++	ag->speed = phydev->speed;
+ 
+-	ag71xx_link_adjust(ag, true);
++	if (status_change)
++		ag71xx_link_adjust(ag, true);
+ }
+ 
+ static int ag71xx_phy_connect(struct ag71xx *ag)

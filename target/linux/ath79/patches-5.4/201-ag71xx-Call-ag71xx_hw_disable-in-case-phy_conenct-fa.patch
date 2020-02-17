@@ -1,0 +1,45 @@
+From 2f8c5a68d0030ae5e65fca1bf5ca44929d5b3b06 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Mon, 17 Feb 2020 23:50:23 +0100
+Subject: [PATCH 2/3] ag71xx: Call ag71xx_hw_disable() in case phy_conenct
+ fails
+
+When the ag71xx_phy_connect() failed only parts of the actions done
+previously in this function wrere reverted, because only
+ag71xx_rings_cleanup() was called. My system crashed the next time
+open() was called because napi_disable() was not called again and this
+resulted in two calls to napi_enable(), which is not allowed.
+
+Fix this by disabling the device again.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Fixes: d51b6ce441d3 ("net: ethernet: add ag71xx driver")
+---
+ drivers/net/ethernet/atheros/ag71xx.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -1263,18 +1263,18 @@ static int ag71xx_open(struct net_device
+ 
+ 	ret = ag71xx_hw_enable(ag);
+ 	if (ret)
+-		goto err;
++		return ret;
+ 
+ 	ret = ag71xx_phy_connect(ag);
+ 	if (ret)
+-		goto err;
++		goto err_hw_disable;
+ 
+ 	phy_start(ndev->phydev);
+ 
+ 	return 0;
+ 
+-err:
+-	ag71xx_rings_cleanup(ag);
++err_hw_disable:
++	ag71xx_hw_disable(ag);
+ 	return ret;
+ }
+ 
