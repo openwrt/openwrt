@@ -101,6 +101,14 @@ define Device/ubnt_bullet-m-xw
 endef
 TARGET_DEVICES += ubnt_bullet-m-xw
 
+define Device/ubnt_picostation-m
+  $(Device/ubnt-xm)
+  DEVICE_TITLE := Ubiquiti Picostation M
+  DEVICE_PACKAGES += rssileds
+  SUPPORTED_DEVICES += bullet-m
+endef
+TARGET_DEVICES += ubnt_picostation-m
+
 define Device/ubnt_rocket-m
   $(Device/ubnt-xm)
   DEVICE_TITLE := Ubiquiti Rocket-M
