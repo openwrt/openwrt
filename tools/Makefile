@@ -138,7 +138,7 @@ $(STAGING_DIR_HOST)/.prepared: $(TMP_DIR)/.build
 	mkdir -p $(BUILD_DIR_HOST)/stamp $(STAGING_DIR_HOST)/include/sys
 	$(INSTALL_DATA) $(TOPDIR)/tools/include/*.h $(STAGING_DIR_HOST)/include/
 	$(INSTALL_DATA) $(TOPDIR)/tools/include/sys/*.h $(STAGING_DIR_HOST)/include/sys/
-	ln -sf lib $(STAGING_DIR_HOST)/lib64
+	ln -snf lib $(STAGING_DIR_HOST)/lib64
 	touch $@
 
 endif
