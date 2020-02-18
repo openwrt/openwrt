@@ -116,7 +116,7 @@ endef
 
 $(eval $(call KernelPackage,cc2520))
 
-define KernelPackage/ieee802154_6lowpan
+define KernelPackage/ieee802154-6lowpan
   SUBMENU:=$(WPAN_MENU)
   TITLE:= 6LoWPAN support over IEEE-802.15.4
   DEPENDS:=+kmod-6lowpan +kmod-ieee802154
@@ -126,8 +126,8 @@ define KernelPackage/ieee802154_6lowpan
   AUTOLOAD:=$(call AutoLoad,91,ieee802154_6lowpan)
 endef
 
-define KernelPackage/ieee802154_6lowpan/description
+define KernelPackage/ieee802154-6lowpan/description
  IPv6 compression over IEEE 802.15.4
 endef
 
-$(eval $(call KernelPackage,ieee802154_6lowpan))
+$(eval $(call KernelPackage,ieee802154-6lowpan))

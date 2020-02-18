@@ -84,7 +84,7 @@ endef
 $(eval $(call KernelPackage,ath3k))
 
 
-define KernelPackage/bluetooth_6lowpan
+define KernelPackage/bluetooth-6lowpan
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth 6LoWPAN support
   DEPENDS:=+kmod-6lowpan +kmod-bluetooth
@@ -93,11 +93,11 @@ define KernelPackage/bluetooth_6lowpan
   AUTOLOAD:=$(call AutoProbe,bluetooth_6lowpan)
 endef
 
-define KernelPackage/bluetooth_6lowpan/description
+define KernelPackage/bluetooth-6lowpan/description
  Kernel support for 6LoWPAN over Bluetooth Low Energy devices
 endef
 
-$(eval $(call KernelPackage,bluetooth_6lowpan))
+$(eval $(call KernelPackage,bluetooth-6lowpan))
 
 
 define KernelPackage/btmrvl
