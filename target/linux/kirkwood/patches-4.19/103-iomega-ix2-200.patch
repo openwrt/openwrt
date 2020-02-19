@@ -14,7 +14,7 @@
  	memory {
  		device_type = "memory";
  		reg = <0x00000000 0x10000000>;
-@@ -127,16 +134,15 @@
+@@ -127,16 +134,16 @@
  			      &pmx_led_rebuild &pmx_led_health >;
  		pinctrl-names = "default";
  
@@ -23,6 +23,7 @@
  			label = "status:white:power_led";
  			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 -			default-state = "keep";
++			default-state = "on";
  		};
  		rebuild_led {
  			label = "status:white:rebuild_led";
@@ -33,7 +34,7 @@
  			label = "status:red:health_led";
  			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
  		};
-@@ -186,18 +192,18 @@
+@@ -186,18 +193,18 @@
  	};
  
  	partition@a0000 {
@@ -55,7 +56,7 @@
  		reg = <0x400000 0x1C00000>;
  	};
  };
-@@ -211,7 +217,7 @@
+@@ -211,7 +218,7 @@
  };
  
  &eth0 {

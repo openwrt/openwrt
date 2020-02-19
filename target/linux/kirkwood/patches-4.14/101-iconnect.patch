@@ -23,7 +23,7 @@
  	};
  
  	ocp@f1000000 {
-@@ -89,12 +94,11 @@
+@@ -89,12 +94,12 @@
  			gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
  			default-state = "on";
  		};
@@ -32,13 +32,14 @@
  			label = "power:blue";
  			gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 -			default-state = "keep";
++			default-state = "on";
  		};
 -		power-red {
 +		led_power_red: power-red {
  			label = "power:red";
  			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
  		};
-@@ -146,28 +150,23 @@
+@@ -146,28 +151,23 @@
  	status = "okay";
  
  	partition@0 {

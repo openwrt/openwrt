@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-on100.dts
-@@ -0,0 +1,164 @@
+@@ -0,0 +1,165 @@
 +/dts-v1/;
 +
 +#include "kirkwood.dtsi"
@@ -50,6 +50,7 @@
 +		led_health_green: health_green {
 +			label = "on100:green:health";
 +			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
++			default-state = "on";
 +		};
 +
 +		led_health_red: health_red {

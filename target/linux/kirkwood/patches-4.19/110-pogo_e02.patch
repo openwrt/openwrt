@@ -14,7 +14,7 @@
  	memory {
  		device_type = "memory";
  		reg = <0x00000000 0x10000000>;
-@@ -33,12 +40,11 @@
+@@ -33,12 +40,12 @@
  	gpio-leds {
  		compatible = "gpio-leds";
  
@@ -23,6 +23,7 @@
  			label = "pogo_e02:green:health";
  			gpios = <&gpio1 16 GPIO_ACTIVE_LOW>;
 -			default-state = "keep";
++			default-state = "on";
  		};
 -		fault {
 +		led_fault: fault {

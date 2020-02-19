@@ -20,7 +20,7 @@ NOTE: this patch can be upstreamed as-is, LEDE-specific
  	kirkwood-openblocks_a6.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-nsa310b.dts
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,132 @@
 +/dts-v1/;
 +
 +#include "kirkwood-nsa3x0-common.dtsi"
@@ -113,6 +113,7 @@ NOTE: this patch can be upstreamed as-is, LEDE-specific
 +		led_green_sys: green-sys {
 +			label = "nsa310:green:sys";
 +			gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
++			default-state = "on";
 +		};
 +		led_red_sys: red-sys {
 +			label = "nsa310:red:sys";

@@ -10,7 +10,7 @@
  	kirkwood-ib62x0.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-goflexhome.dts
-@@ -0,0 +1,123 @@
+@@ -0,0 +1,124 @@
 +/dts-v1/;
 +
 +#include "kirkwood.dtsi"
@@ -72,6 +72,7 @@
 +		led_health: health {
 +			label = "status:green:health";
 +			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
++			default-state = "on";
 +		};
 +		led_fault: fault {
 +			label = "status:orange:fault";

@@ -14,7 +14,7 @@
  	memory {
  		device_type = "memory";
  		reg = <0x00000000 0x8000000>;
-@@ -85,12 +92,11 @@
+@@ -85,12 +92,12 @@
  			    >;
  		pinctrl-names = "default";
  
@@ -23,13 +23,14 @@
  			label = "status:green:health";
  			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 -			default-state = "keep";
++			default-state = "on";
  		};
 -		fault {
 +		led_fault: fault {
  			label = "status:orange:fault";
  			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
  		};
-@@ -159,18 +165,8 @@
+@@ -159,18 +166,8 @@
  	};
  
  	partition@100000 {

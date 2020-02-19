@@ -14,7 +14,7 @@
  	memory {
  		device_type = "memory";
  		reg = <0x00000000 0x8000000>;
-@@ -42,12 +49,11 @@
+@@ -42,12 +49,12 @@
  		pinctrl-0 = <&pmx_led_green &pmx_led_orange>;
  		pinctrl-names = "default";
  
@@ -23,13 +23,14 @@
  			label = "status:green:health";
  			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 -			default-state = "keep";
++			default-state = "on";
  		};
 -		fault {
 +		led_fault: fault {
  			label = "status:orange:fault";
  			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
  		};
-@@ -78,18 +84,22 @@
+@@ -78,18 +85,22 @@
  
  	partition@0 {
  		label = "u-boot";

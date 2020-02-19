@@ -32,7 +32,7 @@
  			gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
  		};
  	};
-@@ -48,12 +56,11 @@
+@@ -48,12 +56,12 @@
  		pinctrl-0 = <&pmx_led_green &pmx_led_red>;
  		pinctrl-names = "default";
  
@@ -40,14 +40,14 @@
 +		led_health: health {
  			label = "pogoplugv4:green:health";
  			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
--			default-state = "on";
+ 			default-state = "on";
  		};
 -		fault {
 +		led_fault: fault {
  			label = "pogoplugv4:red:fault";
  			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
  		};
-@@ -137,29 +144,19 @@
+@@ -137,29 +145,19 @@
  		#size-cells = <1>;
  
  		partition@0 {

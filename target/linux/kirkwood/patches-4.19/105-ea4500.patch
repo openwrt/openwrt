@@ -11,7 +11,7 @@
  		serial0 = &uart0;
  	};
  
-@@ -56,7 +60,7 @@
+@@ -56,9 +60,10 @@
  		pinctrl-0 = < &pmx_led_white_health &pmx_led_white_pulse >;
  		pinctrl-names = "default";
  
@@ -19,8 +19,11 @@
 +		led_white_health: white-health {
  			label = "viper:white:health";
  			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
++			default-state = "on";
  		};
-@@ -67,9 +71,23 @@
+ 
+ 		white-pulse {
+@@ -67,9 +72,23 @@
  		};
  	};
  
@@ -46,7 +49,7 @@
  		compatible = "marvell,dsa";
  		#address-cells = <2>;
  		#size-cells = <0>;
-@@ -161,22 +179,22 @@
+@@ -161,22 +180,22 @@
  		};
  
  		partition@200000 {
@@ -73,7 +76,7 @@
  			reg = <0x1EA0000 0x1760000>;
  		};
  
-@@ -207,53 +225,6 @@
+@@ -207,53 +226,6 @@
  
  &mdio {
  	status = "okay";
@@ -127,7 +130,7 @@
  };
  
  &uart0 {
-@@ -272,10 +243,14 @@
+@@ -272,10 +244,14 @@
  };
  
  /* eth1 is connected to the switch at port 6. However DSA only supports a

@@ -16,7 +16,7 @@
  
  	memory {
  		device_type = "memory";
-@@ -81,12 +88,11 @@
+@@ -81,12 +88,12 @@
  			     &pmx_led_usb_transfer>;
  		pinctrl-names = "default";
  
@@ -25,13 +25,14 @@
  			label = "ib62x0:green:os";
  			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 -			default-state = "keep";
++			default-state = "on";
  		};
 -		red-os {
 +		led_red_os: red-os {
  			label = "ib62x0:red:os";
  			gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
  		};
-@@ -118,13 +124,13 @@
+@@ -118,13 +125,13 @@
  	};
  
  	partition@100000 {
