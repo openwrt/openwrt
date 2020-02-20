@@ -18,20 +18,16 @@ IPKG_REMOVE:= \
 
 IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/opkg
 
-# 1: command and initial arguments
-# 2: arguments list
-# 3: tmp filename
-define maybe_use_xargs
-  $(if $(word 512,$(2)), \
-    $(file >$(3),$(2)) $(XARGS) $(1) < "$(3)"; rm "$(3)", \
-    $(1) $(2))
+# Generates a make statement to return a wildcard for candidate ipkg files
+# 1: package name
+define gen_ipkg_wildcard
+  $(1)$$(if $$(filter -%,$$(ABIV_$(1))),,[^a-z-])*
 endef
 
 # 1: package name
 # 2: candidate ipk files
 define remove_ipkg_files
-  $(if $(strip $(2)), \
-    $(call maybe_use_xargs,$(IPKG_REMOVE) $(1),$(2),$(TMP_DIR)/$(1).in))
+  $(if $(strip $(2)),$(IPKG_REMOVE) $(1) $(2))
 endef
 
 # 1: package name
@@ -200,7 +196,8 @@ $(_endef)
     $$(IPKG_$(1)) : export DESCRIPTION=$$(Package/$(1)/description)
     $$(IPKG_$(1)) : export PATH=$$(TARGET_PATH_PKG)
     $(PKG_INFO_DIR)/$(1).provides $$(IPKG_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-ipkg.mk
-	@rm -rf $$(IDIR_$(1)); $$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(1)*))
+	@rm -rf $$(IDIR_$(1)); \
+		$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_ipkg_wildcard,$(1))))
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/CONTROL $(PKG_INFO_DIR)
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	$(if $(Package/$(1)/install-overlay),mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/rootfs-overlay)
@@ -268,7 +265,7 @@ $(_endef)
 	@[ -f $$(IPKG_$(1)) ]
 
     $(1)-clean:
-	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(1)*))
+	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_ipkg_wildcard,$(1))))
 
     clean: $(1)-clean
 
