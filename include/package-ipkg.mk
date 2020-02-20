@@ -18,10 +18,20 @@ IPKG_REMOVE:= \
 
 IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/opkg
 
+# 1: command and initial arguments
+# 2: arguments list
+# 3: tmp filename
+define maybe_use_xargs
+  $(if $(word 512,$(2)), \
+    $(file >$(3),$(2)) $(XARGS) $(1) < "$(3)"; rm "$(3)", \
+    $(1) $(2))
+endef
+
 # 1: package name
 # 2: candidate ipk files
 define remove_ipkg_files
-  $(if $(strip $(2)),$(IPKG_REMOVE) $(1) $(2))
+  $(if $(strip $(2)), \
+    $(call maybe_use_xargs,$(IPKG_REMOVE) $(1),$(2),$(TMP_DIR)/$(1).in))
 endef
 
 # 1: package name
