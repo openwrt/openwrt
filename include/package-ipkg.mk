@@ -19,6 +19,12 @@ IPKG_REMOVE:= \
 IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/opkg
 
 # 1: package name
+# 2: candidate ipk files
+define remove_ipkg_files
+  $(if $(strip $(2)),$(IPKG_REMOVE) $(1) $(2))
+endef
+
+# 1: package name
 # 2: variable name
 # 3: variable suffix
 # 4: file is a script
@@ -184,7 +190,7 @@ $(_endef)
     $$(IPKG_$(1)) : export DESCRIPTION=$$(Package/$(1)/description)
     $$(IPKG_$(1)) : export PATH=$$(TARGET_PATH_PKG)
     $(PKG_INFO_DIR)/$(1).provides $$(IPKG_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-ipkg.mk
-	@rm -rf $$(IDIR_$(1)) $$(if $$(call opkg_package_files,$(1)*),; $$(IPKG_REMOVE) $(1) $$(call opkg_package_files,$(1)*))
+	@rm -rf $$(IDIR_$(1)); $$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(1)*))
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/CONTROL $(PKG_INFO_DIR)
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	$(if $(Package/$(1)/install-overlay),mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/rootfs-overlay)
@@ -252,7 +258,7 @@ $(_endef)
 	@[ -f $$(IPKG_$(1)) ]
 
     $(1)-clean:
-	$$(if $$(call opkg_package_files,$(1)*),$$(IPKG_REMOVE) $(1) $$(call opkg_package_files,$(1)*))
+	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(1)*))
 
     clean: $(1)-clean
 
