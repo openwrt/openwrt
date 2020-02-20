@@ -1046,6 +1046,7 @@ define Device/siemens_ws-ap3610
   DEVICE_VENDOR := Siemens
   DEVICE_MODEL := WS-AP3610
   IMAGE_SIZE := 14336k
+  BLOCKSIZE := 256k
   LOADER_TYPE := bin
   LOADER_FLASH_OFFS := 0x82000
   COMPILE := loader-$(1).bin
