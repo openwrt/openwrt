@@ -88,8 +88,8 @@ Signed-off-by: Slawomir Stepien <sst@poczta.fm>
 +make sense for developers (since it avoids problems with namespaces).
 --- a/drivers/of/Kconfig
 +++ b/drivers/of/Kconfig
-@@ -112,4 +112,11 @@ config OF_OVERLAY
- config OF_NUMA
+@@ -116,4 +116,11 @@ config OF_DMA_DEFAULT_COHERENT
+ 	# arches should select this if DMA is coherent by default for OF devices
  	bool
  
 +config OF_CONFIGFS
