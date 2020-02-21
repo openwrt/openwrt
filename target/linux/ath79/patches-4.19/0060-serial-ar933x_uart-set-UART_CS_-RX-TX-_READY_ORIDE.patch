@@ -40,7 +40,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/tty/serial/ar933x_uart.c
 +++ b/drivers/tty/serial/ar933x_uart.c
-@@ -328,6 +328,10 @@ static void ar933x_uart_set_termios(stru
+@@ -286,6 +286,10 @@ static void ar933x_uart_set_termios(stru
  	ar933x_uart_rmw_set(up, AR933X_UART_CS_REG,
  			    AR933X_UART_CS_HOST_INT_EN);
  
@@ -51,7 +51,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	/* reenable the UART */
  	ar933x_uart_rmw(up, AR933X_UART_CS_REG,
  			AR933X_UART_CS_IF_MODE_M << AR933X_UART_CS_IF_MODE_S,
-@@ -460,6 +464,10 @@ static int ar933x_uart_startup(struct ua
+@@ -418,6 +422,10 @@ static int ar933x_uart_startup(struct ua
  	ar933x_uart_rmw_set(up, AR933X_UART_CS_REG,
  			    AR933X_UART_CS_HOST_INT_EN);
  
