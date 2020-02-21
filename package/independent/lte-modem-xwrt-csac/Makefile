@@ -18,25 +18,25 @@ PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/$(PKG_NAME)/Default
+define Package/lte-modem-xwrt-csac/Default
   SECTION:=Applications
   CATEGORY:=Independent
   TITLE:=lte-modem for xwrt_csac board
-  DEPENDS:=@(TARGET_ath79_generic_DEVICE_xwrt_csac||TARGET_DEVICE_ath79_generic_DEVICE_xwrt_csac)
+  DEPENDS:=@(TARGET_ath79_generic_DEVICE_xwrt_csac||TARGET_DEVICE_ath79_generic_DEVICE_xwrt_csac||TARGET_ath79_generic_DEVICE_xwrt_csac2||TARGET_DEVICE_ath79_generic_DEVICE_xwrt_csac2)
 endef
 
-define Package/$(PKG_NAME)
-  $(call Package/$(PKG_NAME)/Default)
+define Package/lte-modem-xwrt-csac
+  $(call Package/lte-modem-xwrt-csac/Default)
 endef
 
-define Package/$(PKG_NAME)/description
+define Package/lte-modem-xwrt-csac/description
   Standalone packages for xwrt_csac board
 endef
 
-define Package/$(PKG_NAME)/conffiles
+define Package/lte-modem-xwrt-csac/conffiles
 endef
 
-define Package/$(PKG_NAME)/postinst
+define Package/lte-modem-xwrt-csac/postinst
 #!/bin/sh
 
 if [ -z "$$IPKG_INSTROOT" ]; then
@@ -47,7 +47,7 @@ fi
 exit 0
 endef
 
-define Package/$(PKG_NAME)/install
+define Package/lte-modem-xwrt-csac/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_DATA) ./files/lte-setup.defaults $(1)/etc/uci-defaults/76-lte-setup
 	$(INSTALL_DIR) $(1)/etc/init.d
@@ -66,4 +66,4 @@ define Build/Compile
   true
 endef
 
-$(eval $(call BuildPackage,$(PKG_NAME)))
+$(eval $(call BuildPackage,lte-modem-xwrt-csac))

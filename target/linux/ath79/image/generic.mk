@@ -88,6 +88,17 @@ define Build/teltonika-fw-fake-checksum
 		dd of=$@ bs=1 count=16 seek=$$offs conv=notrunc
 endef
 
+define Build/append-okli-kernel
+	dd if="$(KDIR)/loader-$(word 1,$(1)).uImage" >> "$@"
+endef
+
+define Build/prepad-okli-kernel
+  -[ -f "$@" ] && \
+  dd if="$(KDIR)/loader-$(word 1,$(1)).uImage" of="$@".tmp bs=64k conv=sync && \
+  cat "$@" >>"$@".tmp && \
+  mv "$@".tmp "$@"
+endef
+
 define Build/bm100_hq55-loader-factory
   -cat "$(KDIR)/loader-$(word 1,$(1)).uImage" >"$@"
 endef
@@ -1313,6 +1324,25 @@ define Device/xwrt_csac
   DEVICE_PACKAGES := kmod-leds-reset kmod-ath10k-ct ath10k-firmware-qca9888-ct kmod-usb-core kmod-usb2 lte-modem-xwrt-csac
 endef
 TARGET_DEVICES += xwrt_csac
+
+define Device/xwrt_csac2
+  SOC := qca9563
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := CSAC2
+  IMAGE_SIZE := 14464k
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x60000
+  COMPILE := loader-$(1).bin loader-$(1).uImage
+  COMPILE/loader-$(1).bin := loader-okli-compile
+  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | lzma | uImage lzma
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  IMAGES += breed-factory.bin factory-10.bin factory-05.bin
+  IMAGE/breed-factory.bin := $$(IMAGE/sysupgrade.bin) | prepad-okli-kernel $(1) | pad-to 14528k | append-okli-kernel $(1)
+  IMAGE/factory-10.bin := $$(IMAGE/breed-factory.bin) | xwrt_csac10-factory $(1)
+  IMAGE/factory-05.bin := $$(IMAGE/breed-factory.bin) | xwrt_csac05-factory $(1)
+  DEVICE_PACKAGES := kmod-leds-reset kmod-ath10k-ct ath10k-firmware-qca9888-ct kmod-usb-core kmod-usb2 lte-modem-xwrt-csac
+endef
+TARGET_DEVICES += xwrt_csac2
 
 define Device/xwrt_m-ap300g
   SOC := ar9344
