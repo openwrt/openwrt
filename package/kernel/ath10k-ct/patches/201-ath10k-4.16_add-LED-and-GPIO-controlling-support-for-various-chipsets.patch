@@ -161,7 +161,7 @@ v13:
  		.patch_load_addr = QCA9888_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_EACH,
-@@ -3170,6 +3176,10 @@ int ath10k_core_start(struct ath10k *ar,
+@@ -3176,6 +3182,10 @@ int ath10k_core_start(struct ath10k *ar,
  			ath10k_wmi_check_apply_board_power_ctl_table(ar);
  	}
  
@@ -172,7 +172,7 @@ v13:
  	return 0;
  
  err_hif_stop:
-@@ -3424,9 +3434,18 @@ static void ath10k_core_register_work(st
+@@ -3430,9 +3440,18 @@ static void ath10k_core_register_work(st
  		goto err_spectral_destroy;
  	}
  
@@ -191,7 +191,7 @@ v13:
  err_spectral_destroy:
  	ath10k_spectral_destroy(ar);
  err_debug_destroy:
-@@ -3484,6 +3503,8 @@ void ath10k_core_unregister(struct ath10
+@@ -3490,6 +3509,8 @@ void ath10k_core_unregister(struct ath10
  	if (!test_bit(ATH10K_FLAG_CORE_REGISTERED, &ar->dev_flags))
  		return;
  
@@ -218,7 +218,7 @@ v13:
  	bool p2p;
  	bool ct_all_pkts_htt; /* CT firmware only: native-wifi for all pkts */
  
-@@ -1389,6 +1389,13 @@ struct ath10k {
+@@ -1391,6 +1391,13 @@ struct ath10k {
  	} testmode;
  
  	struct {
@@ -514,7 +514,7 @@ v13:
  static struct sk_buff *
  ath10k_wmi_op_gen_set_psmode(struct ath10k *ar, u32 vdev_id,
  			     enum wmi_sta_ps_mode psmode)
-@@ -9822,6 +9865,9 @@ static const struct wmi_ops wmi_ops = {
+@@ -9824,6 +9867,9 @@ static const struct wmi_ops wmi_ops = {
  	.fw_stats_fill = ath10k_wmi_main_op_fw_stats_fill,
  	.get_vdev_subtype = ath10k_wmi_op_get_vdev_subtype,
  	.gen_echo = ath10k_wmi_op_gen_echo,
@@ -524,7 +524,7 @@ v13:
  	/* .gen_bcn_tmpl not implemented */
  	/* .gen_prb_tmpl not implemented */
  	/* .gen_p2p_go_bcn_ie not implemented */
-@@ -9892,6 +9938,8 @@ static const struct wmi_ops wmi_10_1_ops
+@@ -9894,6 +9940,8 @@ static const struct wmi_ops wmi_10_1_ops
  	.fw_stats_fill = ath10k_wmi_10x_op_fw_stats_fill,
  	.get_vdev_subtype = ath10k_wmi_op_get_vdev_subtype,
  	.gen_echo = ath10k_wmi_op_gen_echo,
@@ -533,7 +533,7 @@ v13:
  	/* .gen_bcn_tmpl not implemented */
  	/* .gen_prb_tmpl not implemented */
  	/* .gen_p2p_go_bcn_ie not implemented */
-@@ -9970,6 +10018,8 @@ static const struct wmi_ops wmi_10_2_ops
+@@ -9972,6 +10020,8 @@ static const struct wmi_ops wmi_10_2_ops
  	.gen_delba_send = ath10k_wmi_op_gen_delba_send,
  	.fw_stats_fill = ath10k_wmi_10x_op_fw_stats_fill,
  	.get_vdev_subtype = ath10k_wmi_op_get_vdev_subtype,
@@ -542,7 +542,7 @@ v13:
  	/* .gen_pdev_enable_adaptive_cca not implemented */
  };
  
-@@ -10040,6 +10090,8 @@ static const struct wmi_ops wmi_10_2_4_o
+@@ -10042,6 +10092,8 @@ static const struct wmi_ops wmi_10_2_4_o
  	.gen_pdev_enable_adaptive_cca =
  		ath10k_wmi_op_gen_pdev_enable_adaptive_cca,
  	.get_vdev_subtype = ath10k_wmi_10_2_4_op_get_vdev_subtype,
@@ -551,7 +551,7 @@ v13:
  	/* .gen_bcn_tmpl not implemented */
  	/* .gen_prb_tmpl not implemented */
  	/* .gen_p2p_go_bcn_ie not implemented */
-@@ -10120,6 +10172,8 @@ static const struct wmi_ops wmi_10_4_ops
+@@ -10122,6 +10174,8 @@ static const struct wmi_ops wmi_10_4_ops
  	.gen_pdev_bss_chan_info_req = ath10k_wmi_10_2_op_gen_pdev_bss_chan_info,
  	.gen_echo = ath10k_wmi_op_gen_echo,
  	.gen_pdev_get_tpc_config = ath10k_wmi_10_2_4_op_gen_pdev_get_tpc_config,
@@ -683,7 +683,7 @@ v13:
  		.patch_load_addr = QCA9888_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_EACH,
-@@ -3497,6 +3503,10 @@ int ath10k_core_start(struct ath10k *ar,
+@@ -3503,6 +3509,10 @@ int ath10k_core_start(struct ath10k *ar,
  			ath10k_wmi_check_apply_board_power_ctl_table(ar);
  	}
  
@@ -694,7 +694,7 @@ v13:
  	return 0;
  
  err_hif_stop:
-@@ -3753,9 +3763,18 @@ static void ath10k_core_register_work(st
+@@ -3759,9 +3769,18 @@ static void ath10k_core_register_work(st
  		goto err_spectral_destroy;
  	}
  
@@ -713,7 +713,7 @@ v13:
  err_spectral_destroy:
  	ath10k_spectral_destroy(ar);
  err_debug_destroy:
-@@ -3815,6 +3834,8 @@ void ath10k_core_unregister(struct ath10
+@@ -3821,6 +3840,8 @@ void ath10k_core_unregister(struct ath10
  	if (!test_bit(ATH10K_FLAG_CORE_REGISTERED, &ar->dev_flags))
  		return;
  
@@ -732,7 +732,7 @@ v13:
  
  #include "htt.h"
  #include "htc.h"
-@@ -1447,6 +1448,13 @@ struct ath10k {
+@@ -1449,6 +1450,13 @@ struct ath10k {
  	} testmode;
  
  	struct {
@@ -1028,7 +1028,7 @@ v13:
  static struct sk_buff *
  ath10k_wmi_op_gen_set_psmode(struct ath10k *ar, u32 vdev_id,
  			     enum wmi_sta_ps_mode psmode)
-@@ -10067,6 +10110,9 @@ static const struct wmi_ops wmi_ops = {
+@@ -10069,6 +10112,9 @@ static const struct wmi_ops wmi_ops = {
  	.fw_stats_fill = ath10k_wmi_main_op_fw_stats_fill,
  	.get_vdev_subtype = ath10k_wmi_op_get_vdev_subtype,
  	.gen_echo = ath10k_wmi_op_gen_echo,
@@ -1038,7 +1038,7 @@ v13:
  	/* .gen_bcn_tmpl not implemented */
  	/* .gen_prb_tmpl not implemented */
  	/* .gen_p2p_go_bcn_ie not implemented */
-@@ -10137,6 +10183,8 @@ static const struct wmi_ops wmi_10_1_ops
+@@ -10139,6 +10185,8 @@ static const struct wmi_ops wmi_10_1_ops
  	.fw_stats_fill = ath10k_wmi_10x_op_fw_stats_fill,
  	.get_vdev_subtype = ath10k_wmi_op_get_vdev_subtype,
  	.gen_echo = ath10k_wmi_op_gen_echo,
@@ -1047,7 +1047,7 @@ v13:
  	/* .gen_bcn_tmpl not implemented */
  	/* .gen_prb_tmpl not implemented */
  	/* .gen_p2p_go_bcn_ie not implemented */
-@@ -10216,6 +10264,8 @@ static const struct wmi_ops wmi_10_2_ops
+@@ -10218,6 +10266,8 @@ static const struct wmi_ops wmi_10_2_ops
  	.gen_delba_send = ath10k_wmi_op_gen_delba_send,
  	.fw_stats_fill = ath10k_wmi_10x_op_fw_stats_fill,
  	.get_vdev_subtype = ath10k_wmi_op_get_vdev_subtype,
@@ -1056,7 +1056,7 @@ v13:
  	/* .gen_pdev_enable_adaptive_cca not implemented */
  };
  
-@@ -10287,6 +10337,8 @@ static const struct wmi_ops wmi_10_2_4_o
+@@ -10289,6 +10339,8 @@ static const struct wmi_ops wmi_10_2_4_o
  		ath10k_wmi_op_gen_pdev_enable_adaptive_cca,
  	.get_vdev_subtype = ath10k_wmi_10_2_4_op_get_vdev_subtype,
  	.gen_bb_timing = ath10k_wmi_10_2_4_op_gen_bb_timing,
@@ -1065,7 +1065,7 @@ v13:
  	/* .gen_bcn_tmpl not implemented */
  	/* .gen_prb_tmpl not implemented */
  	/* .gen_p2p_go_bcn_ie not implemented */
-@@ -10368,6 +10420,8 @@ static const struct wmi_ops wmi_10_4_ops
+@@ -10370,6 +10422,8 @@ static const struct wmi_ops wmi_10_4_ops
  	.gen_pdev_bss_chan_info_req = ath10k_wmi_10_2_op_gen_pdev_bss_chan_info,
  	.gen_echo = ath10k_wmi_op_gen_echo,
  	.gen_pdev_get_tpc_config = ath10k_wmi_10_2_4_op_gen_pdev_get_tpc_config,
