@@ -12,14 +12,9 @@ define KernelPackage/iio-core
   KCONFIG:= \
 	CONFIG_IIO \
 	CONFIG_IIO_BUFFER=y \
-	CONFIG_IIO_KFIFO_BUF \
-	CONFIG_IIO_TRIGGER=y \
-	CONFIG_IIO_TRIGGERED_BUFFER
-  FILES:= \
-	$(LINUX_DIR)/drivers/iio/industrialio.ko \
-	$(if $(CONFIG_IIO_TRIGGERED_BUFFER),$(LINUX_DIR)/drivers/iio/buffer/industrialio-triggered-buffer.ko) \
-	$(LINUX_DIR)/drivers/iio/buffer/kfifo_buf.ko
-  AUTOLOAD:=$(call AutoLoad,55,industrialio kfifo_buf industrialio-triggered-buffer)
+	CONFIG_IIO_TRIGGER=y
+  FILES:=$(LINUX_DIR)/drivers/iio/industrialio.ko
+  AUTOLOAD:=$(call AutoLoad,55,industrialio)
 endef
 
 define KernelPackage/iio-core/description
@@ -31,9 +26,42 @@ endef
 $(eval $(call KernelPackage,iio-core))
 
 
+define KernelPackage/iio-kfifo-buf
+  SUBMENU:=$(IIO_MENU)
+  TITLE:=Industrial I/O buffering based on kfifo
+  DEPENDS:=+kmod-iio-core
+  KCONFIG:=CONFIG_IIO_KFIFO_BUF
+  FILES:=$(LINUX_DIR)/drivers/iio/buffer/kfifo_buf.ko
+  AUTOLOAD:=$(call AutoLoad,55,kfifo_buf)
+endef
+
+define KernelPackage/iio-kfifo-buf/description
+ A simple fifo based on kfifo.  Note that this currently provides no buffer
+ events so it is up to userspace to work out how often to read from the buffer.
+endef
+
+$(eval $(call KernelPackage,iio-kfifo-buf))
+
+
+define KernelPackage/industrialio-triggered-buffer
+  SUBMENU:=$(IIO_MENU)
+  TITLE:=Provides helper functions for setting up triggered buffers.
+  DEPENDS:=+kmod-iio-core +kmod-iio-kfifo-buf
+  KCONFIG:=CONFIG_IIO_TRIGGERED_BUFFER
+  FILES:=$(LINUX_DIR)/drivers/iio/buffer/industrialio-triggered-buffer.ko
+  AUTOLOAD:=$(call AutoLoad,55,industrialio-triggered-buffer)
+endef
+
+define KernelPackage/industrialio-triggered-buffer/description
+ Provides helper functions for setting up triggered buffers.
+endef
+
+$(eval $(call KernelPackage,industrialio-triggered-buffer))
+
+
 define KernelPackage/iio-ad799x
   SUBMENU:=$(IIO_MENU)
-  DEPENDS:=+kmod-i2c-core +kmod-iio-core
+  DEPENDS:=+kmod-i2c-core +kmod-iio-core +kmod-industrialio-triggered-buffer
   TITLE:=Analog Devices AD799x ADC driver
   KCONFIG:= \
 	CONFIG_AD799X_RING_BUFFER=y \
@@ -52,7 +80,7 @@ $(eval $(call KernelPackage,iio-ad799x))
 
 define KernelPackage/iio-hmc5843
   SUBMENU:=$(IIO_MENU)
-  DEPENDS:=+kmod-i2c-core +kmod-iio-core +kmod-regmap-i2c
+  DEPENDS:=+kmod-i2c-core +kmod-iio-core +kmod-regmap-i2c +kmod-industrialio-triggered-buffer
   TITLE:=Honeywell HMC58x3 Magnetometer
   KCONFIG:= CONFIG_SENSORS_HMC5843_I2C
   FILES:= \
@@ -82,7 +110,7 @@ $(eval $(call KernelPackage,iio-bh1750))
 
 define KernelPackage/iio-am2315
   SUBMENU:=$(IIO_MENU)
-  DEPENDS:=+kmod-i2c-core +kmod-iio-core
+  DEPENDS:=+kmod-i2c-core +kmod-iio-core +kmod-industrialio-triggered-buffer
   TITLE:=Asong AM2315 humidity/temperature sensor
   KCONFIG:= CONFIG_AM2315
   FILES:=$(LINUX_DIR)/drivers/iio/humidity/am2315.ko
@@ -95,7 +123,7 @@ $(eval $(call KernelPackage,iio-am2315))
 
 define KernelPackage/iio-mxs-lradc
   SUBMENU:=$(IIO_MENU)
-  DEPENDS:=@TARGET_mxs +kmod-iio-core
+  DEPENDS:=@TARGET_mxs +kmod-iio-core +kmod-industrialio-triggered-buffer
   TITLE:=Freescale i.MX23/i.MX28 LRADC ADC driver
   KCONFIG:= \
 	CONFIG_MXS_LRADC_ADC
@@ -245,7 +273,7 @@ $(eval $(call KernelPackage,iio-htu21))
 
 define KernelPackage/iio-ccs811
   SUBMENU:=$(IIO_MENU)
-  DEPENDS:=+kmod-i2c-core +kmod-iio-core
+  DEPENDS:=+kmod-i2c-core +kmod-iio-core +kmod-industrialio-triggered-buffer
   TITLE:=AMS CCS811 VOC sensor
   KCONFIG:= \
 	CONFIG_CCS811
@@ -281,7 +309,7 @@ $(eval $(call KernelPackage,iio-si7020))
 define KernelPackage/iio-st_accel
   SUBMENU:=$(IIO_MENU)
   TITLE:=STMicroelectronics accelerometer 3-Axis Driver
-  DEPENDS:=+kmod-iio-core +kmod-regmap-core
+  DEPENDS:=+kmod-iio-core +kmod-regmap-core +kmod-industrialio-triggered-buffer
   KCONFIG:= \
 	CONFIG_IIO_ST_ACCEL_3AXIS \
 	CONFIG_IIO_ST_SENSORS_CORE
