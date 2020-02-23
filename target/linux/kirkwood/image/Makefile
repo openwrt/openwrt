@@ -62,7 +62,7 @@ define Device/iom_iconnect-1.1
 endef
 TARGET_DEVICES += iom_iconnect-1.1
 
-define Device/iom_ix2_200
+define Device/iom_ix2-200
   DEVICE_VENDOR := Iomega
   DEVICE_MODEL := StorCenter ix2-200
   DEVICE_DTS := kirkwood-iomega_ix2_200
@@ -77,7 +77,7 @@ define Device/iom_ix2_200
   IMAGE_SIZE := 32505856
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
 endef
-TARGET_DEVICES += iom_ix2_200
+TARGET_DEVICES += iom_ix2-200
 
 define Device/linksys_audi
   DEVICE_VENDOR := Linksys
