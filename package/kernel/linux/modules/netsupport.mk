@@ -267,15 +267,13 @@ endef
 
 $(eval $(call KernelPackage,ipsec))
 
-
-IPSEC4-m:= \
+IPSEC4-m = \
 	ipv4/ah4 \
 	ipv4/esp4 \
-	ipv4/xfrm4_mode_beet \
-	ipv4/xfrm4_mode_transport \
-	ipv4/xfrm4_mode_tunnel \
 	ipv4/xfrm4_tunnel \
 	ipv4/ipcomp \
+
+IPSEC4-m += $(ifeq ($$(strip $$(call CompareKernelPatchVer,$$(KERNEL_PATCHVER),le,5.2))),ipv4/xfrm4_mode_beet ipv4/xfrm4_mode_transport ipv4/xfrm4_mode_tunnel)
 
 define KernelPackage/ipsec4
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
@@ -309,14 +307,13 @@ endef
 $(eval $(call KernelPackage,ipsec4))
 
 
-IPSEC6-m:= \
+IPSEC6-m = \
 	ipv6/ah6 \
 	ipv6/esp6 \
-	ipv6/xfrm6_mode_beet \
-	ipv6/xfrm6_mode_transport \
-	ipv6/xfrm6_mode_tunnel \
 	ipv6/xfrm6_tunnel \
 	ipv6/ipcomp6 \
+
+IPSEC6-m += $(ifeq ($$(strip $$(call CompareKernelPatchVer,$$(KERNEL_PATCHVER),le,5.2))),ipv6/xfrm6_mode_beet ipv6/xfrm6_mode_transport ipv6/xfrm6_mode_tunnel)
 
 define KernelPackage/ipsec6
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
