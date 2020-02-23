@@ -31,7 +31,6 @@ endef
 define Device/cisco_on100
   DEVICE_VENDOR := Cisco Systems
   DEVICE_MODEL := ON100
-  DEVICE_PACKAGES := kmod-i2c-mv64xxx
   KERNEL_SIZE := 5376k
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
@@ -66,8 +65,7 @@ define Device/iom_ix2-200
   DEVICE_VENDOR := Iomega
   DEVICE_MODEL := StorCenter ix2-200
   DEVICE_DTS := kirkwood-iomega_ix2_200
-  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-i2c-mv64xxx kmod-hwmon-core \
-	kmod-hwmon-lm63
+  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-hwmon-core kmod-hwmon-lm63
   DEVICE_TYPE:=nas
   PAGESIZE := 512
   SUBPAGESIZE := 256
