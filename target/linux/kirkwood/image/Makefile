@@ -70,12 +70,13 @@ define Device/iom_ix2-200
   DEVICE_TYPE:=nas
   PAGESIZE := 512
   SUBPAGESIZE := 256
-  BLOCKSIZE := 16KiB
+  BLOCKSIZE := 16k
   KERNEL_SIZE := 3072k
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
-  IMAGE_SIZE := 32505856
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE_SIZE := 31744k
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
+	check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += iom_ix2-200
 
@@ -85,7 +86,7 @@ define Device/linksys_audi
   DEVICE_PACKAGES := kmod-mwl8k swconfig wpad-basic kmod-gpio-button-hotplug
   PAGESIZE := 512
   SUBPAGESIZE := 256
-  BLOCKSIZE := 16KiB
+  BLOCKSIZE := 16k
   KERNEL_SIZE := 2624k
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
