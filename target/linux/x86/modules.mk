@@ -20,7 +20,7 @@ endef
 
 $(eval $(call KernelPackage,sound-cs5535audio))
 
-define KernelPackage/sp5100_tco
+define KernelPackage/sp5100-tco
   SUBMENU:=$(OTHER_MENU)
   TITLE:=SP5100 Watchdog Support
   DEPENDS:=@TARGET_x86
@@ -29,8 +29,8 @@ define KernelPackage/sp5100_tco
   AUTOLOAD:=$(call AutoLoad,50,sp5100_tco,1)
 endef
 
-define KernelPackage/sp5100_tco/description
+define KernelPackage/sp5100-tco/description
  Kernel module for the SP5100_TCO hardware watchdog.
 endef
 
-$(eval $(call KernelPackage,sp5100_tco))
+$(eval $(call KernelPackage,sp5100-tco))
