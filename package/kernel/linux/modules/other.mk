@@ -139,6 +139,7 @@ $(eval $(call KernelPackage,dma-buf))
 define KernelPackage/nvmem
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Non Volatile Memory support
+  DEPENDS:=@!LINUX_5_4
   KCONFIG:=CONFIG_NVMEM
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/nvmem/nvmem_core.ko
@@ -169,7 +170,7 @@ define KernelPackage/eeprom-at24
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM AT24 support
   KCONFIG:=CONFIG_EEPROM_AT24
-  DEPENDS:=+kmod-i2c-core +kmod-nvmem +!LINUX_4_14:kmod-regmap-i2c
+  DEPENDS:=+kmod-i2c-core +!LINUX_5_4:kmod-nvmem +!LINUX_4_14:kmod-regmap-i2c
   FILES:=$(LINUX_DIR)/drivers/misc/eeprom/at24.ko
   AUTOLOAD:=$(call AutoProbe,at24)
 endef
@@ -185,7 +186,7 @@ define KernelPackage/eeprom-at25
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM AT25 support
   KCONFIG:=CONFIG_EEPROM_AT25
-  DEPENDS:=+kmod-nvmem
+  DEPENDS:=+!LINUX_5_4:kmod-nvmem
   FILES:=$(LINUX_DIR)/drivers/misc/eeprom/at25.ko
   AUTOLOAD:=$(call AutoProbe,at25)
 endef
