@@ -43,15 +43,6 @@ define Package/base-files
   VERSION:=$(PKG_RELEASE)-$(REVISION)
 endef
 
-define Package/urandom-seed
-  SECTION:=base
-  CATEGORY:=Base system
-  DEPENDS:=+libc +ubox-getrandom
-  TITLE:=/etc/urandom.seed handling for OpenWrt
-  URL:=http://openwrt.org/
-  VERSION:=$(PKG_RELEASE)-$(REVISION)
-endef
-
 define Package/base-files/conffiles
 /etc/config/
 /etc/config/network
