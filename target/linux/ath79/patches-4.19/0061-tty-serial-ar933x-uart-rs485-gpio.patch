@@ -32,11 +32,9 @@ v2: use bool to indicate ongoing half-duplex send, use it afterwards
  drivers/tty/serial/ar933x_uart.c | 113 +++++++++++++++++++++++++++++--
  2 files changed, 108 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
-index 52eaac21ff9f..b675924138e0 100644
 --- a/drivers/tty/serial/Kconfig
 +++ b/drivers/tty/serial/Kconfig
-@@ -1279,6 +1279,7 @@ config SERIAL_AR933X
+@@ -1296,6 +1296,7 @@ config SERIAL_AR933X
  	tristate "AR933X serial port support"
  	depends on HAVE_CLK && ATH79
  	select SERIAL_CORE
@@ -44,8 +42,6 @@ index 52eaac21ff9f..b675924138e0 100644
  	help
  	  If you have an Atheros AR933X SOC based board and want to use the
  	  built-in UART of the SoC, say Y to this option.
-diff --git a/drivers/tty/serial/ar933x_uart.c b/drivers/tty/serial/ar933x_uart.c
-index ea12f10610b6..7e7f1398019f 100644
 --- a/drivers/tty/serial/ar933x_uart.c
 +++ b/drivers/tty/serial/ar933x_uart.c
 @@ -13,6 +13,7 @@
@@ -74,7 +70,7 @@ index ea12f10610b6..7e7f1398019f 100644
  };
  
  static inline unsigned int ar933x_uart_read(struct ar933x_uart_port *up,
-@@ -100,6 +105,18 @@ static inline void ar933x_uart_stop_tx_interrupt(struct ar933x_uart_port *up)
+@@ -100,6 +105,18 @@ static inline void ar933x_uart_stop_tx_i
  	ar933x_uart_write(up, AR933X_UART_INT_EN_REG, up->ier);
  }
  
@@ -93,7 +89,7 @@ index ea12f10610b6..7e7f1398019f 100644
  static inline void ar933x_uart_putc(struct ar933x_uart_port *up, int ch)
  {
  	unsigned int rdata;
-@@ -125,11 +142,21 @@ static unsigned int ar933x_uart_tx_empty(struct uart_port *port)
+@@ -125,11 +142,21 @@ static unsigned int ar933x_uart_tx_empty
  
  static unsigned int ar933x_uart_get_mctrl(struct uart_port *port)
  {
@@ -116,7 +112,7 @@ index ea12f10610b6..7e7f1398019f 100644
  }
  
  static void ar933x_uart_start_tx(struct uart_port *port)
-@@ -140,6 +167,37 @@ static void ar933x_uart_start_tx(struct uart_port *port)
+@@ -140,6 +167,37 @@ static void ar933x_uart_start_tx(struct
  	ar933x_uart_start_tx_interrupt(up);
  }
  
@@ -154,7 +150,7 @@ index ea12f10610b6..7e7f1398019f 100644
  static void ar933x_uart_stop_tx(struct uart_port *port)
  {
  	struct ar933x_uart_port *up =
-@@ -153,8 +211,7 @@ static void ar933x_uart_stop_rx(struct uart_port *port)
+@@ -153,8 +211,7 @@ static void ar933x_uart_stop_rx(struct u
  	struct ar933x_uart_port *up =
  		container_of(port, struct ar933x_uart_port, port);
  
@@ -164,7 +160,7 @@ index ea12f10610b6..7e7f1398019f 100644
  }
  
  static void ar933x_uart_break_ctl(struct uart_port *port, int break_state)
-@@ -336,11 +393,20 @@ static void ar933x_uart_rx_chars(struct ar933x_uart_port *up)
+@@ -336,11 +393,20 @@ static void ar933x_uart_rx_chars(struct
  static void ar933x_uart_tx_chars(struct ar933x_uart_port *up)
  {
  	struct circ_buf *xmit = &up->port.state->xmit;
@@ -185,7 +181,7 @@ index ea12f10610b6..7e7f1398019f 100644
  	count = up->port.fifosize;
  	do {
  		unsigned int rdata;
-@@ -368,8 +434,14 @@ static void ar933x_uart_tx_chars(struct ar933x_uart_port *up)
+@@ -368,8 +434,14 @@ static void ar933x_uart_tx_chars(struct
  	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
  		uart_write_wakeup(&up->port);
  
@@ -201,7 +197,7 @@ index ea12f10610b6..7e7f1398019f 100644
  }
  
  static irqreturn_t ar933x_uart_interrupt(int irq, void *dev_id)
-@@ -427,8 +499,7 @@ static int ar933x_uart_startup(struct uart_port *port)
+@@ -427,8 +499,7 @@ static int ar933x_uart_startup(struct ua
  		AR933X_UART_CS_TX_READY_ORIDE | AR933X_UART_CS_RX_READY_ORIDE);
  
  	/* Enable RX interrupts */
@@ -211,7 +207,7 @@ index ea12f10610b6..7e7f1398019f 100644
  
  	spin_unlock_irqrestore(&up->port.lock, flags);
  
-@@ -511,6 +582,21 @@ static const struct uart_ops ar933x_uart_ops = {
+@@ -511,6 +582,21 @@ static const struct uart_ops ar933x_uart
  	.verify_port	= ar933x_uart_verify_port,
  };
  
@@ -233,7 +229,7 @@ index ea12f10610b6..7e7f1398019f 100644
  #ifdef CONFIG_SERIAL_AR933X_CONSOLE
  static struct ar933x_uart_port *
  ar933x_console_ports[CONFIG_SERIAL_AR933X_NR_UARTS];
-@@ -680,6 +766,8 @@ static int ar933x_uart_probe(struct platform_device *pdev)
+@@ -680,6 +766,8 @@ static int ar933x_uart_probe(struct plat
  		goto err_disable_clk;
  	}
  
@@ -242,7 +238,7 @@ index ea12f10610b6..7e7f1398019f 100644
  	port->mapbase = mem_res->start;
  	port->line = id;
  	port->irq = irq_res->start;
-@@ -690,6 +778,7 @@ static int ar933x_uart_probe(struct platform_device *pdev)
+@@ -690,6 +778,7 @@ static int ar933x_uart_probe(struct plat
  	port->regshift = 2;
  	port->fifosize = AR933X_UART_FIFO_SIZE;
  	port->ops = &ar933x_uart_ops;
@@ -250,7 +246,7 @@ index ea12f10610b6..7e7f1398019f 100644
  
  	baud = ar933x_uart_get_baud(port->uartclk, AR933X_UART_MAX_SCALE, 1);
  	up->min_baud = max_t(unsigned int, baud, AR933X_UART_MIN_BAUD);
-@@ -697,6 +786,18 @@ static int ar933x_uart_probe(struct platform_device *pdev)
+@@ -697,6 +786,18 @@ static int ar933x_uart_probe(struct plat
  	baud = ar933x_uart_get_baud(port->uartclk, 0, AR933X_UART_MAX_STEP);
  	up->max_baud = min_t(unsigned int, baud, AR933X_UART_MAX_BAUD);
  
