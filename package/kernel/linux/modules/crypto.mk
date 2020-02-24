@@ -682,6 +682,8 @@ define KernelPackage/crypto-sha1
   DEPENDS:=+kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_CRYPTO_SHA1 \
+	CONFIG_CRYPTO_SHA1_ARM \
+	CONFIG_CRYPTO_SHA1_ARM_NEON \
 	CONFIG_CRYPTO_SHA1_OCTEON \
 	CONFIG_CRYPTO_SHA1_SSSE3
   FILES:=$(LINUX_DIR)/crypto/sha1_generic.ko
@@ -689,10 +691,29 @@ define KernelPackage/crypto-sha1
   $(call AddDepends/crypto)
 endef
 
+define KernelPackage/crypto-sha1/arm
+  FILES+=$(LINUX_DIR)/arch/arm/crypto/sha1-arm.ko
+  AUTOLOAD+=$(call AutoLoad,09,sha1-arm)
+endef
+
+define KernelPackage/crypto-sha1/arm-neon
+  $(call KernelPackage/crypto-sha1/arm)
+  FILES+=$(LINUX_DIR)/arch/arm/crypto/sha1-arm-neon.ko
+  AUTOLOAD+=$(call AutoLoad,09,sha1-arm-neon)
+endef
+
+KernelPackage/crypto-sha1/imx6=$(KernelPackage/crypto-sha1/arm-neon)
+
+KernelPackage/crypto-sha1/ipq40xx=$(KernelPackage/crypto-sha1/arm-neon)
+
+KernelPackage/crypto-sha1/mvebu=$(KernelPackage/crypto-sha1/arm-neon)
+
 define KernelPackage/crypto-sha1/octeon
   FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-sha1.ko
   AUTOLOAD+=$(call AutoLoad,09,octeon-sha1)
 endef
+
+KernelPackage/crypto-sha1/tegra=$(KernelPakcage/crypto-sha1/arm)
 
 define KernelPackage/crypto-sha1/x86/64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/sha1-ssse3.ko
@@ -734,6 +755,7 @@ define KernelPackage/crypto-sha512
   DEPENDS:=+kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_CRYPTO_SHA512 \
+	CONFIG_CRYPTO_SHA512_ARM \
 	CONFIG_CRYPTO_SHA512_OCTEON \
 	CONFIG_CRYPTO_SHA512_SSSE3
   FILES:=$(LINUX_DIR)/crypto/sha512_generic.ko
@@ -741,10 +763,23 @@ define KernelPackage/crypto-sha512
   $(call AddDepends/crypto)
 endef
 
+define KernelPackage/crypto-sha512/arm
+  FILES+=$(LINUX_DIR)/arch/arm/crypto/sha512-arm.ko
+  AUTOLOAD+=$(call AutoLoad,09,sha512-arm)
+endef
+
+KernelPackage/crypto-sha512/imx6=$(KernelPackage/crypto-sha512/arm)
+
+KernelPackage/crypto-sha512/ipq40xx=$(KernelPackage/crypto-sha512/arm)
+
+KernelPackage/crypto-sha512/mvebu=$(KernelPackage/crypto-sha512/arm)
+
 define KernelPackage/crypto-sha512/octeon
   FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-sha512.ko
   AUTOLOAD+=$(call AutoLoad,09,octeon-sha512)
 endef
+
+KernelPackage/crypto-sha512/tegra=$(KernelPackage/crypto-sha512/arm)
 
 define KernelPackage/crypto-sha512/x86/64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/sha512-ssse3.ko
