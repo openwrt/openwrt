@@ -35,6 +35,7 @@ define Device/ls1012afrdm
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
     append-ubi | check-size 67108865
+  KERNEL_INITRAMFS := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
 endef
 TARGET_DEVICES += ls1012afrdm
 
