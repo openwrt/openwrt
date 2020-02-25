@@ -32,8 +32,9 @@ define Device/ls1012afrdm
     ls-append $(1)-uboot-env.bin | pad-to 10M | \
     ls-append pfe.itb | pad-to 15M | \
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to 32M | \
+    append-kernel | pad-to $$(BLOCKSIZE) | \
     append-rootfs | pad-rootfs | check-size 67108865
+  KERNEL := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   KERNEL_INITRAMFS := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
 endef
 TARGET_DEVICES += ls1012afrdm
