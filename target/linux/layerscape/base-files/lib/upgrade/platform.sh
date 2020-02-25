@@ -32,6 +32,9 @@ platform_check_image() {
 		nand_do_platform_check "traverse-ls1043" $1
 		return $?
 		;;
+	fsl,ls1012a-frdm)
+		return 0
+		;;
 	*)
 		echo "Sysupgrade is not currently supported on $board"
 		;;
@@ -50,6 +53,10 @@ platform_do_upgrade() {
 	traverse,ls1043v | \
 	traverse,ls1043s)
 		platform_do_upgrade_traverse_nandubi "$1"
+		;;
+	fsl,ls1012a-frdm)
+		PART_NAME=firmware
+		default_do_upgrade "$1"
 		;;
 	*)
 		echo "Sysupgrade is not currently supported on $board"

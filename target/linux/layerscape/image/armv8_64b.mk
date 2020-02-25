@@ -25,6 +25,7 @@ define Device/ls1012afrdm
   DEVICE_DTS := freescale/fsl-ls1012a-frdm
   BLOCKSIZE := 256KiB
   FILESYSTEMS := squashfs
+  IMAGES += sysupgrade.bin
   IMAGE/firmware.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
@@ -34,8 +35,11 @@ define Device/ls1012afrdm
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to $$(BLOCKSIZE) | \
     append-rootfs | pad-rootfs | check-size 67108865
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size 50331648 | append-metadata
   KERNEL := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   KERNEL_INITRAMFS := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  SUPPORTED_DEVICES := fsl,ls1012a-frdm
 endef
 TARGET_DEVICES += ls1012afrdm
 
