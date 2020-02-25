@@ -15,6 +15,29 @@ define Device/Default
   KERNEL_ENTRY_POINT := 0x80080000
 endef
 
+define Device/ls1012afrdm
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := FRDM-LS1012A
+  DEVICE_PACKAGES += \
+    layerscape-ppfe \
+    tfa-ls1012afrdm \
+    kmod-ppfe
+  DEVICE_DTS := freescale/fsl-ls1012a-frdm
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 256KiB
+  PAGESIZE := 1
+  IMAGE/firmware.bin := \
+    ls-clean | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 10M | \
+    ls-append pfe.itb | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to 32M | \
+    append-ubi | check-size 67108865
+endef
+TARGET_DEVICES += ls1012afrdm
+
 define Device/ls1012ardb
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1012A-RDB
