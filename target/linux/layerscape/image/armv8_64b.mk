@@ -23,9 +23,8 @@ define Device/ls1012afrdm
     tfa-ls1012afrdm \
     kmod-ppfe
   DEVICE_DTS := freescale/fsl-ls1012a-frdm
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 256KiB
-  PAGESIZE := 1
+  FILESYSTEMS := squashfs
   IMAGE/firmware.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
@@ -34,7 +33,7 @@ define Device/ls1012afrdm
     ls-append pfe.itb | pad-to 15M | \
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
-    append-ubi | check-size 67108865
+    append-rootfs | pad-rootfs | check-size 67108865
   KERNEL_INITRAMFS := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
 endef
 TARGET_DEVICES += ls1012afrdm
