@@ -291,5 +291,6 @@ define Device/traverse-ls1043
   IMAGE/root = append-rootfs
   IMAGE/sysupgrade.bin = sysupgrade-tar | append-metadata
   MKUBIFS_OPTS := -m 2048 -e 124KiB -c 4096
+  SUPPORTED_DEVICES := traverse,ls1043s traverse,ls1043v
 endef
 TARGET_DEVICES += traverse-ls1043

@@ -6,6 +6,8 @@
 RAMFS_COPY_BIN="/usr/sbin/fw_printenv /usr/sbin/fw_setenv /usr/sbin/ubinfo /bin/echo"
 RAMFS_COPY_DATA="/etc/fw_env.config /var/lock/fw_printenv.lock"
 
+REQUIRE_IMAGE_METADATA=1
+
 platform_do_upgrade_traverse_nandubi() {
 	bootsys=$(fw_printenv bootsys | awk -F= '{{print $2}}')
 	newbootsys=2
