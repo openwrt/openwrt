@@ -152,8 +152,7 @@ hostapd_bss_reload(struct ubus_context *ctx, struct ubus_object *obj,
 		   struct blob_attr *msg)
 {
 	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
-	hostapd_reload_config(hapd->iface);
-	hostapd_reload_iface(hapd->iface);
+	return hostapd_reload_config(hapd->iface, 1);
 }
 
 static int
