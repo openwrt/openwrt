@@ -329,6 +329,8 @@ $base_cfg
 
 EOF
 	json_select ..
+	radio_md5sum=$(md5sum $hostapd_conf_file | cut -d" " -f1)
+	echo "radio_config_id=${radio_md5sum}" >> $hostapd_conf_file
 }
 
 mac80211_hostapd_setup_bss() {
@@ -943,11 +945,16 @@ drv_mac80211_setup() {
 	local add_ap=0
 	local primary_ap=${NEWAPLIST%% *}
 	[ -n "$hostapd_ctrl" ] && {
+		local no_reload=1
 		if [ -n "$(ubus list | grep hostapd.$primary_ap)" ]; then
 			[ "${NEW_MD5}" = "${OLD_MD5}" ] || {
 				ubus call hostapd.$primary_ap reload
+				no_reload=$?
+				mac80211_vap_cleanup hostapd "${OLDAPLIST}"
+		                [ -n "${NEWAPLIST}" ] && mac80211_iw_interface_add "$phy" "${NEWAPLIST%% *}" __ap || return
 			}
-		else
+		fi
+		if [ "$no_reload" != "0" ]; then
 			add_ap=1
 			ubus wait_for hostapd.$phy
 			ubus call hostapd.${phy} config_add "{\"iface\":\"$primary_ap\", \"config\":\"${hostapd_conf_file}\"}"
