@@ -115,7 +115,6 @@ define Device/mikrotik_routerboard-922uags-5hpacd
   $(Device/mikrotik)
   SOC := qca9558
   DEVICE_MODEL := RouterBOARD 922UAGS-5HPacD
-  BOARD_NAME := routerboard
   IMAGE/sysupgrade.bin = append-kernel | kernel2minor -s 2048 -e -c | \
 	sysupgrade-tar kernel=$$$$@ | append-metadata
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct \
