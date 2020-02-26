@@ -14,6 +14,7 @@ FEATURES:=targz pcie gpio rtc usb fpu
 MAINTAINER:=Tim Harvey <tharvey@gateworks.com>
 
 KERNEL_PATCHVER:=4.14
+KERNEL_TESTING_PATCHVER:=5.4
 
 define Target/Description
 	Build images for Octeon-TX CN80XX/CN81XX based boards
