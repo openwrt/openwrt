@@ -92,38 +92,47 @@
 			gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
+
 		led_red_sys: red-sys {
 			label = "nsa310:red:sys";
 			gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
 		};
+
 		green-hdd {
 			label = "nsa310:green:hdd";
 			gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 		};
+
 		red-hdd {
 			label = "nsa310:red:hdd";
 			gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		};
+
 		green-esata {
 			label = "nsa310:green:esata";
 			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 		};
+
 		red-esata {
 			label = "nsa310:red:esata";
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 		};
+
 		green-usb {
 			label = "nsa310:green:usb";
 			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 		};
+
 		red-usb {
 			label = "nsa310:red:usb";
 			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 		};
+
 		green-copy {
 			label = "nsa310:green:copy";
 			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
 		};
+
 		red-copy {
 			label = "nsa310:red:copy";
 			gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;

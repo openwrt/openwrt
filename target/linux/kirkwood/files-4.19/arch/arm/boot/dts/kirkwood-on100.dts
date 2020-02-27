@@ -25,8 +25,9 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	gpio_keys {
+	gpio-keys {
 		compatible = "gpio-keys";
+
 		pinctrl-0 = <&pmx_btn_reset>;
 		pinctrl-names = "default";
 
@@ -39,26 +40,27 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = < &pmx_led_health_r &pmx_led_health_g >;
+
+		pinctrl-0 = <&pmx_led_health_red &pmx_led_health_green>;
 		pinctrl-names = "default";
 
-		led_health_green: health_green {
+		led_health_green: health-green {
 			label = "on100:green:health";
 			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
-		led_health_red: health_red {
+		led_health_red: health-red {
 			label = "on100:red:health";
 			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
 		};
 
-		health2_green {
+		health2-green {
 			label = "on100:green:health2";
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 		};
 
-		health2_red {
+		health2-red {
 			label = "on100:red:health2";
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
@@ -128,27 +130,27 @@
 };
 
 &pinctrl {
-	pmx_led_health_r: pmx-led-health-r {
+	pmx_led_health_red: pmx-led-health-red {
 		marvell,pins = "mpp45";
 		marvell,function = "gpio";
 	};
 
-	pmx_led_health_g: pmx-led-health-g {
+	pmx_led_health_green: pmx-led-health-green {
 		marvell,pins = "mpp44";
 		marvell,function = "gpio";
 	};
 
-	pmx_led_health2_r: pmx-led-health2-r {
+	pmx_led_health2_red: pmx-led-health2-red {
 		marvell,pins = "mpp47";
 		marvell,function = "gpio";
 	};
 
-	pmx_led_health2_g: pmx-led-health2-g {
+	pmx_led_health2_green: pmx-led-health2-green {
 		marvell,pins = "mpp46";
 		marvell,function = "gpio";
 	};
 
-	pmx_btn_reset: pmx-led-reset {
+	pmx_btn_reset: pmx-btn-reset {
 		marvell,pins = "mpp31";
 		marvell,function = "gpio";
 	};

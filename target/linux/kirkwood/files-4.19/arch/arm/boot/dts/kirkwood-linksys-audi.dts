@@ -35,9 +35,10 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	gpio_keys {
+	gpio-keys {
 		compatible = "gpio-keys";
-		pinctrl-0 = < &pmx_btn_wps &pmx_btn_reset >;
+
+		pinctrl-0 = <&pmx_btn_wps &pmx_btn_reset>;
 		pinctrl-names = "default";
 
 		wps {
@@ -55,7 +56,8 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = < &pmx_led_green_power >;
+
+		pinctrl-0 = <&pmx_led_green_power>;
 		pinctrl-names = "default";
 
 		led_power: power {
@@ -132,10 +134,12 @@
 		marvell,pins = "mpp7";
 		marvell,function = "gpo";
 	};
+
 	pmx_btn_wps: pmx-btn-wps {
 		marvell,pins = "mpp47";
 		marvell,function = "gpio";
 	};
+
 	pmx_btn_reset: pmx-btn-reset {
 		marvell,pins = "mpp48";
 		marvell,function = "gpio";
@@ -144,6 +148,7 @@
 
 &nand {
 	status = "okay";
+
 	pinctrl-0 = <&pmx_nand>;
 	pinctrl-names = "default";
 
@@ -197,7 +202,6 @@
 			label = "unused";
 			reg = <0x88000 0x178000>;
 		};
-
 	};
 };
 
@@ -226,6 +230,7 @@
  */
 &eth0 {
 	status = "okay";
+
 	ethernet0-port@0 {
 		speed = <1000>;
 		duplex = <1>;
@@ -237,6 +242,7 @@
  */
 &eth1 {
 	status = "okay";
+
 	ethernet1-port@0 {
 		speed = <1000>;
 		duplex = <1>;
