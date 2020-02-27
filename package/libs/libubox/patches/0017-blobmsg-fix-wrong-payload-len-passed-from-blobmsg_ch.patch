@@ -1,0 +1,33 @@
+From 75e300aeec25e032a9778bea34c713969960d1f0 Mon Sep 17 00:00:00 2001
+From: Chris Nisbet <nischris@gmail.com>
+Date: Wed, 12 Feb 2020 21:00:31 +1300
+Subject: [PATCH] blobmsg: fix wrong payload len passed from
+ blobmsg_check_array
+
+Fix incorrect use of blobmsg_len() on passed blobmsg to
+blobmsg_check_array_len() introduced in commit 379cd33d1992
+("fix wrong payload len passed from blobmsg_check_array") by using correct
+blob_len().
+
+By using blobmsg_len() a value too small was passed to blobmsg_check_array()
+which could lead to this function returning an error when there is none.
+
+Fixes: 379cd33d1992 ("fix wrong payload len passed from blobmsg_check_array")
+Signed-off-by: Chris Nisbet <nischris@gmail.com>
+[add fixes tag, rewrap commit message]
+Signed-off-by: Jo-Philipp Wich <jo@mein.io>
+---
+ blobmsg.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/blobmsg.c
++++ b/blobmsg.c
+@@ -120,7 +120,7 @@ bool blobmsg_check_attr_len(const struct
+ 
+ int blobmsg_check_array(const struct blob_attr *attr, int type)
+ {
+-	return blobmsg_check_array_len(attr, type, blobmsg_len(attr));
++	return blobmsg_check_array_len(attr, type, blob_len(attr));
+ }
+ 
+ int blobmsg_check_array_len(const struct blob_attr *attr, int type, size_t len)
