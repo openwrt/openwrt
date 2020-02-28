@@ -348,3 +348,53 @@ define KernelPackage/iio-tsl4531/description
 endef
 
 $(eval $(call KernelPackage,iio-tsl4531))
+
+
+define KernelPackage/iio-fxos8700
+  SUBMENU:=$(IIO_MENU)
+  TITLE:=Freescale FXOS8700 3-axis accelerometer driver
+  DEPENDS:=+kmod-iio-core +kmod-regmap-core
+  KCONFIG:= CONFIG_FXOS8700
+  FILES:=$(LINUX_DIR)/drivers/iio/imu/fxos8700_core.ko
+  AUTOLOAD:=$(call AutoLoad,56,fxos8700)
+endef
+
+define KernelPackage/iio-fxos8700/description
+ Support for Freescale FXOS8700 3-axis accelerometer.
+endef
+
+$(eval $(call KernelPackage,iio-fxos8700))
+
+
+define KernelPackage/iio-fxos8700-i2c
+  SUBMENU:=$(IIO_MENU)
+  TITLE:=Freescale FXOS8700 3-axis acceleromter driver (I2C)
+  DEPENDS:=+kmod-iio-fxos8700 +kmod-i2c-core +kmod-regmap-i2c
+  KCONFIG:= CONFIG_FXOS8700_I2C
+  FILES:=$(LINUX_DIR)/drivers/iio/imu/fxos8700_i2c.ko
+  AUTOLOAD:=$(call AutoLoad,56,fxos8700_i2c)
+endef
+
+define KernelPackage/iio-fxos8700-i2c/description
+ Support for Freescale FXOS8700 3-axis accelerometer
+ connected via I2C.
+endef
+
+
+$(eval $(call KernelPackage,iio-fxos8700-i2c))
+
+define KernelPackage/iio-fxos8700-spi
+  SUBMENU:=$(IIO_MENU)
+  DEPENDS:=+kmod-iio-fxos8700 +kmod-regmap-spi
+  TITLE:=Freescale FXOS8700 3-axis accelerometer driver (SPI)
+  KCONFIG:= CONFIG_FXOS8700_SPI
+  FILES:=$(LINUX_DIR)/drivers/iio/imu/fxos8700_spi.ko
+  AUTOLOAD:=$(call AutoLoad,56,fxos8700_spi)
+endef
+
+define KernelPackage/iio-fxos8700-spi/description
+ Support for Freescale FXOS8700 3-axis accelerometer
+ connected via SPI.
+endef
+
+$(eval $(call KernelPackage,iio-fxos8700-spi))
