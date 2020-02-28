@@ -91,6 +91,7 @@ define Device/brcm_bcm96338w
   DEVICE_MODEL := 96338W
   CFE_BOARD_ID := 6338W
   CFE_CHIP_ID := 6338
+  DEFAULT := n
 endef
 TARGET_DEVICES += brcm_bcm96338w
 
@@ -112,6 +113,7 @@ define Device/brcm_bcm96348gw
   IMAGES += cfe-bc221.bin
   CFE_BOARD_ID := 96348GW
   CFE_CHIP_ID := 6348
+  DEFAULT := n
 endef
 TARGET_DEVICES += brcm_bcm96348gw
 
@@ -121,6 +123,7 @@ define Device/brcm_bcm96348gw-10
   DEVICE_MODEL := 96348GW-10
   CFE_BOARD_ID := 96348GW-10
   CFE_CHIP_ID := 6348
+  DEFAULT := n
 endef
 TARGET_DEVICES += brcm_bcm96348gw-10
 
@@ -130,6 +133,7 @@ define Device/brcm_bcm96348gw-11
   DEVICE_MODEL := 96348GW-11
   CFE_BOARD_ID := 96348GW-11
   CFE_CHIP_ID := 6348
+  DEFAULT := n
 endef
 TARGET_DEVICES += brcm_bcm96348gw-11
 
@@ -139,6 +143,7 @@ define Device/brcm_bcm96348r
   DEVICE_MODEL := 96348R
   CFE_BOARD_ID := 96348R
   CFE_CHIP_ID := 6348
+  DEFAULT := n
 endef
 TARGET_DEVICES += brcm_bcm96348r
 
@@ -513,6 +518,7 @@ define Device/d-link_dsl-274xb-c2
   CFE_BOARD_ID := 96358GW
   CFE_CHIP_ID := 6358
   DEVICE_PACKAGES := $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += d-link_dsl-274xb-c2
 
@@ -528,6 +534,7 @@ define Device/d-link_dsl-274xb-c3
   CFE_BOARD_ID := AW4139
   CFE_CHIP_ID := 6358
   DEVICE_PACKAGES := $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += d-link_dsl-274xb-c3
 
@@ -648,6 +655,7 @@ define Device/huawei_echolife-hg520v
   CFE_EXTRAS += --rsa-signature "EchoLife_HG520v"
   SOC := bcm6359
   DEVICE_PACKAGES := $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += huawei_echolife-hg520v
 
@@ -1057,6 +1065,7 @@ define Device/tecom_gw6000
   CFE_BOARD_ID := 96348GW
   CFE_CHIP_ID := 6348
   DEVICE_PACKAGES := $(BRCMWL_PACKAGES) $(USB1_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += tecom_gw6000
 
@@ -1068,6 +1077,7 @@ define Device/tecom_gw6200
   CFE_CHIP_ID := 6348
   CFE_EXTRAS += --rsa-signature "$(shell printf '\x99')"
   DEVICE_PACKAGES := $(BRCMWL_PACKAGES) $(USB1_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += tecom_gw6200
 
@@ -1148,5 +1158,6 @@ define Device/zyxel_p870hw-51a-v2
   CFE_CHIP_ID := 6368
   CFE_EXTRAS += --rsa-signature "ZyXEL" --signature "ZyXEL_0001"
   DEVICE_PACKAGES := $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_p870hw-51a-v2
