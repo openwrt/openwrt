@@ -8,8 +8,7 @@ ath79_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
-	aerohive,hiveap-121|\
-	mikrotik,routerboard-922uags-5hpacd)
+	aerohive,hiveap-121)
 		ucidef_set_interface_lan "eth0"
 		;;
 	domywifi,dw33d)
