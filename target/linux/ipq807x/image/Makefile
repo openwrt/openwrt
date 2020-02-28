@@ -22,7 +22,7 @@ define Image/BuildKernel/FITInitramfs
 endef
 
 define Image/Build/squashfs
-        $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
 
 define Image/BuildKernel
