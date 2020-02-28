@@ -1,6 +1,6 @@
 BOARDNAME := Generic devices with NAND flash
 
-FEATURES += squashfs nand minor
+FEATURES += squashfs nand
 
 DEFAULT_PACKAGES += wpad-basic
 
