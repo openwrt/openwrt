@@ -582,6 +582,7 @@ define KernelPackage/rtc-pcf2123
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Philips PCF2123 RTC support
   DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+LINUX_5_4:kmod-regmap-spi
   KCONFIG:=CONFIG_RTC_DRV_PCF2123 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf2123.ko
