@@ -1,7 +1,5 @@
-Index: linux-5.4.11/drivers/net/phy/ar40xx.c
-===================================================================
---- linux-5.4.11.orig/drivers/net/phy/ar40xx.c
-+++ linux-5.4.11/drivers/net/phy/ar40xx.c
+--- a/drivers/net/phy/ar40xx.c
++++ b/drivers/net/phy/ar40xx.c
 @@ -1808,8 +1808,8 @@ ar40xx_phy_probe(struct phy_device *phyd
  	if (phydev->mdio.addr == 0)
  		ar40xx_priv->phy = phydev;

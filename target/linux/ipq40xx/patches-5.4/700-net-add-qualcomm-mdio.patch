@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -519,6 +519,13 @@ config XILINX_GMII2RGMII
+@@ -580,6 +580,13 @@ config XILINX_GMII2RGMII
  	  the Reduced Gigabit Media Independent Interface(RGMII) between
  	  Ethernet physical media devices and the Gigabit Ethernet controller.
  
@@ -16,7 +16,7 @@
  config MICREL_KS8995MA
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -48,6 +48,7 @@ obj-$(CONFIG_MDIO_CAVIUM)	+= mdio-cavium
+@@ -51,6 +51,7 @@ obj-$(CONFIG_MDIO_CAVIUM)	+= mdio-cavium
  obj-$(CONFIG_MDIO_GPIO)		+= mdio-gpio.o
  obj-$(CONFIG_MDIO_HISI_FEMAC)	+= mdio-hisi-femac.o
  obj-$(CONFIG_MDIO_I2C)		+= mdio-i2c.o

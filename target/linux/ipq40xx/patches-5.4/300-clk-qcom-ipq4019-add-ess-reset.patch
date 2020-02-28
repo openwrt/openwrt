@@ -11,11 +11,9 @@ Signed-off-by: Ram Chandra Jangir <rjangir@codeaurora.org>
  include/dt-bindings/clock/qcom,gcc-ipq4019.h | 11 +++++++++++
  2 files changed, 22 insertions(+)
 
-diff --git a/drivers/clk/qcom/gcc-ipq4019.c b/drivers/clk/qcom/gcc-ipq4019.c
-index b2dc68efd5c8..a8672c5870a5 100644
 --- a/drivers/clk/qcom/gcc-ipq4019.c
 +++ b/drivers/clk/qcom/gcc-ipq4019.c
-@@ -1744,6 +1744,17 @@ static const struct qcom_reset_map gcc_ipq4019_resets[] = {
+@@ -1736,6 +1736,17 @@ static const struct qcom_reset_map gcc_i
  	[GCC_TCSR_BCR] = {0x22000, 0},
  	[GCC_MPM_BCR] = {0x24000, 0},
  	[GCC_SPDM_BCR] = {0x25000, 0},
@@ -33,8 +31,6 @@ index b2dc68efd5c8..a8672c5870a5 100644
  };
  
  static const struct regmap_config gcc_ipq4019_regmap_config = {
-diff --git a/include/dt-bindings/clock/qcom,gcc-ipq4019.h b/include/dt-bindings/clock/qcom,gcc-ipq4019.h
-index 7e8a7be6dcda..b8f0cdcd9ec0 100644
 --- a/include/dt-bindings/clock/qcom,gcc-ipq4019.h
 +++ b/include/dt-bindings/clock/qcom,gcc-ipq4019.h
 @@ -165,5 +165,16 @@
@@ -54,6 +50,3 @@ index 7e8a7be6dcda..b8f0cdcd9ec0 100644
 +#define ESS_MAC5_CLK_DIS				82
  
  #endif
--- 
-2.20.1
-

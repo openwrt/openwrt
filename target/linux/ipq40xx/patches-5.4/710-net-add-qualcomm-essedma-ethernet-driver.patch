@@ -9,10 +9,8 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  drivers/net/ethernet/qualcomm/Makefile | 1 +
  2 files changed, 10 insertions(+)
 
-Index: linux-5.4.11/drivers/net/ethernet/qualcomm/Kconfig
-===================================================================
---- linux-5.4.11.orig/drivers/net/ethernet/qualcomm/Kconfig
-+++ linux-5.4.11/drivers/net/ethernet/qualcomm/Kconfig
+--- a/drivers/net/ethernet/qualcomm/Kconfig
++++ b/drivers/net/ethernet/qualcomm/Kconfig
 @@ -62,4 +62,13 @@ config QCOM_EMAC
  
  source "drivers/net/ethernet/qualcomm/rmnet/Kconfig"
@@ -27,10 +25,8 @@ Index: linux-5.4.11/drivers/net/ethernet/qualcomm/Kconfig
 +	  will be called essedma.ko.
 +
  endif # NET_VENDOR_QUALCOMM
-Index: linux-5.4.11/drivers/net/ethernet/qualcomm/Makefile
-===================================================================
---- linux-5.4.11.orig/drivers/net/ethernet/qualcomm/Makefile
-+++ linux-5.4.11/drivers/net/ethernet/qualcomm/Makefile
+--- a/drivers/net/ethernet/qualcomm/Makefile
++++ b/drivers/net/ethernet/qualcomm/Makefile
 @@ -10,5 +10,6 @@ obj-$(CONFIG_QCA7000_UART) += qcauart.o
  qcauart-objs := qca_uart.o
  
