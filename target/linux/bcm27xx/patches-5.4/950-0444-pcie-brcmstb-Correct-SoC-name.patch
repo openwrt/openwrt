@@ -1,0 +1,96 @@
+From 900b4ad0814df7dbacb01318bf49af5bab605fa0 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Fri, 31 Jan 2020 09:39:40 +0000
+Subject: [PATCH] pcie-brcmstb: Correct SoC name
+
+The Pi 4 SoC is called BCM2711, not BCM2838.
+
+Fixes: "bcm2835-dma: Add proper 40-bit DMA support"
+Fixes: "Ported pcie-brcmstb bounce buffer implementation to ARM64."
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ drivers/pci/controller/pcie-brcmstb-bounce.c   | 10 +++++-----
+ drivers/pci/controller/pcie-brcmstb-bounce64.c | 10 +++++-----
+ 2 files changed, 10 insertions(+), 10 deletions(-)
+
+--- a/drivers/pci/controller/pcie-brcmstb-bounce.c
++++ b/drivers/pci/controller/pcie-brcmstb-bounce.c
+@@ -91,8 +91,8 @@ struct dmabounce_device_info {
+ 
+ static struct dmabounce_device_info *g_dmabounce_device_info;
+ 
+-extern int bcm2838_dma40_memcpy_init(void);
+-extern void bcm2838_dma40_memcpy(dma_addr_t dst, dma_addr_t src, size_t size);
++extern int bcm2711_dma40_memcpy_init(void);
++extern void bcm2711_dma40_memcpy(dma_addr_t dst, dma_addr_t src, size_t size);
+ 
+ #ifdef STATS
+ static ssize_t
+@@ -320,7 +320,7 @@ map_single(struct device *dev, struct sa
+ 
+ 	if ((dir == DMA_TO_DEVICE || dir == DMA_BIDIRECTIONAL) &&
+ 	    !(attrs & DMA_ATTR_SKIP_CPU_SYNC))
+-		bcm2838_dma40_memcpy(buf->safe_dma_addr, buf->unsafe_dma_addr,
++		bcm2711_dma40_memcpy(buf->safe_dma_addr, buf->unsafe_dma_addr,
+ 				     size);
+ 
+ 	return buf->safe_dma_addr;
+@@ -338,7 +338,7 @@ unmap_single(struct device *dev, struct
+ 		dev_dbg(dev, "unmap: %llx->%llx\n", (u64)buf->safe_dma_addr,
+ 			(u64)buf->unsafe_dma_addr);
+ 
+-		bcm2838_dma40_memcpy(buf->unsafe_dma_addr, buf->safe_dma_addr,
++		bcm2711_dma40_memcpy(buf->unsafe_dma_addr, buf->safe_dma_addr,
+ 				     size);
+ 	}
+ 	return buf->unsafe_dma_addr;
+@@ -476,7 +476,7 @@ int brcm_pcie_bounce_init(struct device
+ 	if (g_dmabounce_device_info)
+ 		return -EBUSY;
+ 
+-	ret = bcm2838_dma40_memcpy_init();
++	ret = bcm2711_dma40_memcpy_init();
+ 	if (ret)
+ 		return ret;
+ 
+--- a/drivers/pci/controller/pcie-brcmstb-bounce64.c
++++ b/drivers/pci/controller/pcie-brcmstb-bounce64.c
+@@ -93,8 +93,8 @@ struct dmabounce_device_info {
+ 
+ static struct dmabounce_device_info *g_dmabounce_device_info;
+ 
+-extern int bcm2838_dma40_memcpy_init(void);
+-extern void bcm2838_dma40_memcpy(dma_addr_t dst, dma_addr_t src, size_t size);
++extern int bcm2711_dma40_memcpy_init(void);
++extern void bcm2711_dma40_memcpy(dma_addr_t dst, dma_addr_t src, size_t size);
+ 
+ #ifdef STATS
+ static ssize_t
+@@ -322,7 +322,7 @@ map_single(struct device *dev, struct sa
+ 
+ 	if ((dir == DMA_TO_DEVICE || dir == DMA_BIDIRECTIONAL) &&
+ 	    !(attrs & DMA_ATTR_SKIP_CPU_SYNC))
+-		bcm2838_dma40_memcpy(buf->safe_dma_addr, buf->unsafe_dma_addr,
++		bcm2711_dma40_memcpy(buf->safe_dma_addr, buf->unsafe_dma_addr,
+ 				     size);
+ 
+ 	return buf->safe_dma_addr;
+@@ -340,7 +340,7 @@ unmap_single(struct device *dev, struct
+ 		dev_dbg(dev, "unmap: %llx->%llx\n", (u64)buf->safe_dma_addr,
+ 			(u64)buf->unsafe_dma_addr);
+ 
+-		bcm2838_dma40_memcpy(buf->unsafe_dma_addr, buf->safe_dma_addr,
++		bcm2711_dma40_memcpy(buf->unsafe_dma_addr, buf->safe_dma_addr,
+ 				     size);
+ 	}
+ 	return buf->unsafe_dma_addr;
+@@ -483,7 +483,7 @@ int brcm_pcie_bounce_init(struct device
+ 	if (g_dmabounce_device_info)
+ 		return -EBUSY;
+ 
+-	ret = bcm2838_dma40_memcpy_init();
++	ret = bcm2711_dma40_memcpy_init();
+ 	if (ret)
+ 		return ret;
+ 

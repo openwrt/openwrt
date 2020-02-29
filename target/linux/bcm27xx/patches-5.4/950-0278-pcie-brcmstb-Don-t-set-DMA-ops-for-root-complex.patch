@@ -1,0 +1,27 @@
+From 510a127017a0aada2734dbf57d25aaa0189198ff Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 7 Aug 2019 17:19:33 +0100
+Subject: [PATCH] pcie-brcmstb: Don't set DMA ops for root complex
+
+A change to arm_get_dma_map_ops has stopped get_dma_ops from working
+on the root complex, causing an error to be logged. However, there is
+no need to override the DMA ops in that case, so skip it and
+eliminate the error message.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/pci/controller/pcie-brcmstb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/pci/controller/pcie-brcmstb.c
++++ b/drivers/pci/controller/pcie-brcmstb.c
+@@ -665,8 +665,8 @@ static int brcmstb_platform_notifier(str
+ 					ret);
+ 				return ret;
+ 			}
++			brcm_set_dma_ops(dev);
+ 		}
+-		brcm_set_dma_ops(dev);
+ 		return NOTIFY_OK;
+ 
+ 	case BUS_NOTIFY_DEL_DEVICE:

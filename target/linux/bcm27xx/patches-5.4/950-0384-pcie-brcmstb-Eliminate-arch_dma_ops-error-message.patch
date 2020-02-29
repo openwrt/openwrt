@@ -1,0 +1,148 @@
+From 27cf0ad95cdf30f52a5fc6c69014a0d7bf5a1222 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 8 Jan 2020 17:21:09 +0000
+Subject: [PATCH] pcie-brcmstb: Eliminate arch_dma_ops error message
+
+The driver attempts to set the dma_ops for the root complex, but doing
+so causes an error message and only the end points need it. Fix the
+error by making the code specific to the end point case.
+
+Also copy some cosmetic tidy-ups from 5.5.y.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/pci/controller/pcie-brcmstb.c | 43 ++++++++++++++-------------
+ 1 file changed, 22 insertions(+), 21 deletions(-)
+
+--- a/drivers/pci/controller/pcie-brcmstb.c
++++ b/drivers/pci/controller/pcie-brcmstb.c
+@@ -633,16 +633,17 @@ static int brcmstb_platform_notifier(str
+ 
+ 	switch (event) {
+ 	case BUS_NOTIFY_ADD_DEVICE:
+-		if (max_pfn > (bounce_threshold/PAGE_SIZE) &&
+-		    strcmp(dev->kobj.name, rc_name)) {
+-
+-			ret = brcm_pcie_bounce_register_dev(dev);
+-			if (ret) {
+-				dev_err(dev,
+-					"brcm_pcie_bounce_register_dev() failed: %d\n",
+-					ret);
+-				return ret;
++		if (strcmp(dev->kobj.name, rc_name)) {
++			if (max_pfn > (bounce_threshold/PAGE_SIZE)) {
++				ret = brcm_pcie_bounce_register_dev(dev);
++				if (ret) {
++					dev_err(dev,
++						"brcm_pcie_bounce_register_dev() failed: %d\n",
++						ret);
++					return ret;
++				}
+ 			}
++			brcm_set_dma_ops(dev);
+ 		} else if (IS_ENABLED(CONFIG_ARM64)) {
+ 			ret = of_dma_configure(dev, dev->of_node, true);
+ 			if (ret) {
+@@ -650,7 +651,6 @@ static int brcmstb_platform_notifier(str
+ 				return ret;
+ 			}
+ 		}
+-		brcm_set_dma_ops(dev);
+ 		return NOTIFY_OK;
+ 
+ 	case BUS_NOTIFY_DEL_DEVICE:
+@@ -1685,7 +1685,8 @@ MODULE_DEVICE_TABLE(of, brcm_pcie_match)
+ 
+ static int brcm_pcie_probe(struct platform_device *pdev)
+ {
+-	struct device_node *dn = pdev->dev.of_node, *msi_dn;
++	struct device *dev = &pdev->dev;
++	struct device_node *dn = dev->of_node, *msi_dn;
+ 	const struct of_device_id *of_id;
+ 	const struct pcie_cfg_data *data;
+ 	int ret;
+@@ -1696,7 +1697,7 @@ static int brcm_pcie_probe(struct platfo
+ 	struct pci_bus *child;
+ 	extern unsigned long max_pfn;
+ 
+-	bridge = devm_pci_alloc_host_bridge(&pdev->dev, sizeof(*pcie));
++	bridge = devm_pci_alloc_host_bridge(dev, sizeof(*pcie));
+ 	if (!bridge)
+ 		return -ENOMEM;
+ 
+@@ -1705,7 +1706,7 @@ static int brcm_pcie_probe(struct platfo
+ 
+ 	of_id = of_match_node(brcm_pcie_match, dn);
+ 	if (!of_id) {
+-		dev_err(&pdev->dev, "failed to look up compatible string\n");
++		dev_err(dev, "failed to look up compatible string\n");
+ 		return -EINVAL;
+ 	}
+ 
+@@ -1715,7 +1716,7 @@ static int brcm_pcie_probe(struct platfo
+ 	pcie->max_burst_size = data->max_burst_size;
+ 	pcie->type = data->type;
+ 	pcie->dn = dn;
+-	pcie->dev = &pdev->dev;
++	pcie->dev = dev;
+ 
+ 	/* We use the domain number as our controller number */
+ 	pcie->id = of_get_pci_domain_nr(dn);
+@@ -1726,18 +1727,18 @@ static int brcm_pcie_probe(struct platfo
+ 	if (!res)
+ 		return -EINVAL;
+ 
+-	base = devm_ioremap_resource(&pdev->dev, res);
++	base = devm_ioremap_resource(dev, res);
+ 	if (IS_ERR(base))
+ 		return PTR_ERR(base);
+ 
+ 	/* To Do: Add hardware check if this ever gets fixed */
+ 	if (max_pfn > (bounce_threshold/PAGE_SIZE)) {
+ 		int ret;
+-		ret = brcm_pcie_bounce_init(&pdev->dev, bounce_buffer,
++		ret = brcm_pcie_bounce_init(dev, bounce_buffer,
+ 					    (dma_addr_t)bounce_threshold);
+ 		if (ret) {
+ 			if (ret != -EPROBE_DEFER)
+-				dev_err(&pdev->dev,
++				dev_err(dev,
+ 					"could not init bounce buffers: %d\n",
+ 					ret);
+ 			return ret;
+@@ -1746,7 +1747,7 @@ static int brcm_pcie_probe(struct platfo
+ 
+ 	pcie->clk = of_clk_get_by_name(dn, "sw_pcie");
+ 	if (IS_ERR(pcie->clk)) {
+-		dev_warn(&pdev->dev, "could not get clock\n");
++		dev_warn(dev, "could not get clock\n");
+ 		pcie->clk = NULL;
+ 	}
+ 	pcie->base = base;
+@@ -1756,7 +1757,7 @@ static int brcm_pcie_probe(struct platfo
+ 
+ 	pcie->ssc = of_property_read_bool(dn, "brcm,enable-ssc");
+ 
+-	ret = irq_of_parse_and_map(pdev->dev.of_node, 0);
++	ret = irq_of_parse_and_map(dev->of_node, 0);
+ 	if (ret == 0)
+ 		/* keep going, as we don't use this intr yet */
+ 		dev_warn(pcie->dev, "cannot get PCIe interrupt\n");
+@@ -1770,7 +1771,7 @@ static int brcm_pcie_probe(struct platfo
+ 	ret = clk_prepare_enable(pcie->clk);
+ 	if (ret) {
+ 		if (ret != -EPROBE_DEFER)
+-			dev_err(&pdev->dev, "could not enable clock\n");
++			dev_err(dev, "could not enable clock\n");
+ 		return ret;
+ 	}
+ 
+@@ -1797,7 +1798,7 @@ static int brcm_pcie_probe(struct platfo
+ 	}
+ 
+ 	list_splice_init(&pcie->resources, &bridge->windows);
+-	bridge->dev.parent = &pdev->dev;
++	bridge->dev.parent = dev;
+ 	bridge->busnr = 0;
+ 	bridge->ops = &brcm_pcie_ops;
+ 	bridge->sysdata = pcie;

@@ -1,0 +1,47 @@
+From 9367715671c271913278a4abb43276d02ff954d6 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Fri, 31 Jan 2020 09:33:40 +0000
+Subject: [PATCH] thermal: brcmstb_thermal: Correct SoC name
+
+The Pi 4 SoC is called BCM2711, not BCM2838.
+
+Fixes: "thermal: brcmstb_thermal: Add BCM2838 support"
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ drivers/thermal/broadcom/brcmstb_thermal.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/drivers/thermal/broadcom/brcmstb_thermal.c
++++ b/drivers/thermal/broadcom/brcmstb_thermal.c
+@@ -303,7 +303,7 @@ static const struct thermal_zone_of_devi
+ 	.set_trips	= brcmstb_set_trips,
+ };
+ 
+-static const struct thermal_zone_of_device_ops bcm2838_thermal_of_ops = {
++static const struct thermal_zone_of_device_ops bcm2711_thermal_of_ops = {
+ 	.get_temp	= brcmstb_get_temp,
+ };
+ 
+@@ -314,8 +314,8 @@ static const struct brcmstb_thermal_of_d
+ 	.status_data_shift = 1,
+ };
+ 
+-static const struct brcmstb_thermal_of_data bcm2838_thermal_of_data = {
+-	.of_ops = &bcm2838_thermal_of_ops,
++static const struct brcmstb_thermal_of_data bcm2711_thermal_of_data = {
++	.of_ops = &bcm2711_thermal_of_ops,
+ 	.status_valid_mask = BIT(10),
+ 	.status_data_mask = GENMASK(9, 0),
+ 	.status_data_shift = 0,
+@@ -324,8 +324,8 @@ static const struct brcmstb_thermal_of_d
+ static const struct of_device_id brcmstb_thermal_id_table[] = {
+ 	{ .compatible = "brcm,avs-tmon",
+ 	  .data = &bcm7445_thermal_of_data },
+-	{ .compatible = "brcm,avs-tmon-bcm2838",
+-	  .data = &bcm2838_thermal_of_data },
++	{ .compatible = "brcm,avs-tmon-bcm2711",
++	  .data = &bcm2711_thermal_of_data },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, brcmstb_thermal_id_table);
