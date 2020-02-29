@@ -1,0 +1,24 @@
+--- a/libteredo/debug.h	2009-02-28 23:17:14.000000000 +0300
++++ b/libteredo/debug.h	2019-04-07 01:46:48.235087395 +0300
+@@ -43,8 +43,10 @@
+ #  ifdef __linux__
+ #   include <errno.h>
+ #   include <assert.h>
+-#   undef PTHREAD_MUTEX_INITIALIZER
+-#   define PTHREAD_MUTEX_INITIALIZER PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
++#   if defined(PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP)
++#     undef PTHREAD_MUTEX_INITIALIZER
++#     define PTHREAD_MUTEX_INITIALIZER PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
++#   endif
+ 
+ static inline int
+ d_pthread_mutex_init (pthread_mutex_t *mutex, pthread_mutexattr_t *pattr)
+@@ -57,7 +59,7 @@
+ 		pthread_mutexattr_init (&attr);
+ 	}
+ 
+-	pthread_mutexattr_settype (pattr, PTHREAD_MUTEX_ERRORCHECK_NP);
++	pthread_mutexattr_settype (pattr, PTHREAD_MUTEX_ERRORCHECK);
+ 	int res = pthread_mutex_init (mutex, pattr);
+ 
+ 	if (pattr == &attr)

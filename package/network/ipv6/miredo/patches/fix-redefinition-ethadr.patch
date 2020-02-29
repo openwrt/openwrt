@@ -1,0 +1,21 @@
+--- a/libtun6/tun6.c	2012-09-12 17:03:59.000000000 +0400
++++ b/libtun6/tun6.c	2019-04-07 02:21:07.439952535 +0300
+@@ -53,7 +53,7 @@
+ const char os_driver[] = "Linux";
+ # define USE_LINUX 1
+ 
+-# include <linux/if_tun.h> // TUNSETIFF - Linux tunnel driver
++# include <linux/if_tun.h> // TUNSETIFF - Linux tunnel driver, ETH_P_IPV6
+ /*
+  * <linux/ipv6.h> conflicts with <netinet/in.h> and <arpa/inet.h>,
+  * so we've got to declare this structure by hand.
+@@ -65,7 +65,7 @@
+ };
+ 
+ # include <net/route.h> // struct in6_rtmsg
+-# include <netinet/if_ether.h> // ETH_P_IPV6
++//# include <netinet/if_ether.h> // ETH_P_IPV6
+ 
+ typedef struct
+ {
+
