@@ -281,7 +281,7 @@ endef
 
 KernelPackage/crypto-ghash/imx6=$(KernelPackage/crypto-ghash/arm-ce)
 KernelPackage/crypto-ghash/ipq40xx=$(KernelPackage/crypto-ghash/arm-ce)
-KernelPackage/crypto-ghash/mvebu=$(KernelPackage/crypto-ghash/arm-ce)
+KernelPackage/crypto-ghash/mvebu/cortexa9=$(KernelPackage/crypto-ghash/arm-ce)
 
 $(eval $(call KernelPackage,crypto-ghash))
 
@@ -703,10 +703,8 @@ define KernelPackage/crypto-sha1/arm-neon
 endef
 
 KernelPackage/crypto-sha1/imx6=$(KernelPackage/crypto-sha1/arm-neon)
-
 KernelPackage/crypto-sha1/ipq40xx=$(KernelPackage/crypto-sha1/arm-neon)
-
-KernelPackage/crypto-sha1/mvebu=$(KernelPackage/crypto-sha1/arm-neon)
+KernelPackage/crypto-sha1/mvebu/cortexa9=$(KernelPackage/crypto-sha1/arm-neon)
 
 define KernelPackage/crypto-sha1/octeon
   FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-sha1.ko
@@ -769,10 +767,8 @@ define KernelPackage/crypto-sha512/arm
 endef
 
 KernelPackage/crypto-sha512/imx6=$(KernelPackage/crypto-sha512/arm)
-
 KernelPackage/crypto-sha512/ipq40xx=$(KernelPackage/crypto-sha512/arm)
-
-KernelPackage/crypto-sha512/mvebu=$(KernelPackage/crypto-sha512/arm)
+KernelPackage/crypto-sha512/mvebu/cortexa9=$(KernelPackage/crypto-sha512/arm)
 
 define KernelPackage/crypto-sha512/octeon
   FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-sha512.ko
