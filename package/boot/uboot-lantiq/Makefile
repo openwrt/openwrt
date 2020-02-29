@@ -332,6 +332,14 @@ define U-Boot/vgv7519_ram
   DDR_SETTINGS:=board/arcadyan/vgv7519/ddr_settings.h
 endef
 
+define U-Boot/vgv953akw22_ram
+  NAME:=Speedport W 921V (RAM)
+  BUILD_SUBTARGET:=xrx200
+  BUILD_DEVICES:=arcadyan_vgv953akw22
+#  DDR_SETTINGS:=board/arcadyan/vgv953akw22/ddr_settings.h
+  DDR_SETTINGS:=board/bt/bthomehubv5a/ddr_settings.h
+endef
+
 UBOOT_TARGETS:= \
 	arv4519pw_ram arv4519pw_nor arv4519pw_brn \
 	arv7506pw11_ram arv7506pw11_nor arv7506pw11_brn \
@@ -349,7 +357,8 @@ UBOOT_TARGETS:= \
 	fb3370_eva fb3370_ram fb3370_sfspl \
 	p2812hnufx_ram p2812hnufx_nandspl \
 	vgv7510kw22_brn vgv7510kw22_nor vgv7510kw22_ram \
-	vgv7519_brn vgv7519_nor vgv7519_ram
+	vgv7519_brn vgv7519_nor vgv7519_ram \
+	vgv953akw22_ram
 
 define CompressVR9Firmware
 	$(STAGING_DIR_HOST)/bin/lzma e \

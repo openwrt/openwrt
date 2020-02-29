@@ -104,17 +104,6 @@
 		};
 	};
 
-	usb0_vbus: regulator-usb0-vbus {
-		compatible = "regulator-fixed";
-
-		regulator-name = "USB0_VBUS";
-
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-
-		gpio = <&gpio 32 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
 	usb1_vbus: regulator-usb1-vbus {
 		compatible = "regulator-fixed";
 
@@ -234,6 +223,12 @@
 			lantiq,output = <1>;
 		};
 	};
+	ifxhcd-rst-dev {
+		gpio-hog;
+		line-name = "ifxhcd-rst-dev";
+		gpios = <32 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
 };
 
 &localbus {
@@ -262,8 +257,11 @@
 			};
 			partition@460000 {
 				label = "ubi";
-				reg = <0x460000 0x1ba0000>;
+				reg = <0x460000 0x1B98000>;
 			};
+			/*
+			 * last 32 KiB are for the bad block table, not writable
+			 */
 		};
 	};
 };
@@ -293,17 +291,8 @@
 	lantiq,phy2 = <0x0>;
 };
 
-&usb_phy0 {
-	status = "okay";
-};
-
 &usb_phy1 {
 	status = "okay";
-};
-
-&usb0 {
-	status = "okay";
-	vbus-supply = <&usb0_vbus>;
 };
 
 &usb1 {
