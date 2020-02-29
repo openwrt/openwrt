@@ -93,6 +93,11 @@ $(eval $(call SetupHostCommand,find,Please install GNU 'find', \
 $(eval $(call SetupHostCommand,bash,Please install GNU 'bash', \
 	bash --version 2>&1 | grep GNU))
 
+$(eval $(call SetupHostCommand,xargs, \
+	Please install 'xargs' that supports '-r/--no-run-if-empty', \
+	gxargs -r --version, \
+	xargs -r --version))
+
 $(eval $(call SetupHostCommand,patch,Please install GNU 'patch', \
 	gpatch --version 2>&1 | grep 'Free Software Foundation', \
 	patch --version 2>&1 | grep 'Free Software Foundation'))
