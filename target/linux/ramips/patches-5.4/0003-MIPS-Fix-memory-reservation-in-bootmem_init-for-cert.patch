@@ -16,27 +16,27 @@ Signed-off-by: Tobias Wolf <dev-NTEO@vplace.de>
 
 --- a/arch/mips/kernel/setup.c
 +++ b/arch/mips/kernel/setup.c
-@@ -369,6 +369,8 @@ static unsigned long __init bootmap_byte
- 	return ALIGN(bytes, sizeof(long));
- }
- 
+@@ -285,6 +285,8 @@ static unsigned long __init init_initrd(
+  * Initialize the bootmem allocator. It also setup initrd related data
+  * if needed.
+  */
 +static int usermem __initdata;
 +
+ #if defined(CONFIG_SGI_IP27) || (defined(CONFIG_CPU_LOONGSON3) && defined(CONFIG_NUMA))
+ 
  static void __init bootmem_init(void)
- {
- 	unsigned long reserved_end;
-@@ -442,7 +444,7 @@ static void __init bootmem_init(void)
+@@ -323,7 +325,7 @@ static void __init bootmem_init(void)
  	/*
  	 * Reserve any memory between the start of RAM and PHYS_OFFSET
  	 */
 -	if (ramstart > PHYS_OFFSET)
 +	if (usermem && ramstart > PHYS_OFFSET)
- 		add_memory_region(PHYS_OFFSET, ramstart - PHYS_OFFSET,
- 				  BOOT_MEM_RESERVED);
+ 		memblock_reserve(PHYS_OFFSET, ramstart - PHYS_OFFSET);
  
-@@ -652,8 +654,6 @@ static void __init bootmem_init(void)
-  * initialization hook for anything else was introduced.
-  */
+ 	if (PFN_UP(ramstart) > ARCH_PFN_OFFSET) {
+@@ -384,8 +386,6 @@ static void __init bootmem_init(void)
+ 
+ #endif	/* CONFIG_SGI_IP27 */
  
 -static int usermem __initdata;
 -

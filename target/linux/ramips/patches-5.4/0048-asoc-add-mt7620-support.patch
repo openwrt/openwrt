@@ -20,15 +20,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/ralink/of.c
 +++ b/arch/mips/ralink/of.c
-@@ -15,6 +15,7 @@
+@@ -13,6 +13,7 @@
  #include <linux/of_fdt.h>
  #include <linux/kernel.h>
- #include <linux/bootmem.h>
+ #include <linux/memblock.h>
 +#include <linux/module.h>
  #include <linux/of_platform.h>
  #include <linux/of_address.h>
  
-@@ -26,6 +27,7 @@
+@@ -24,6 +25,7 @@
  #include "common.h"
  
  __iomem void *rt_sysc_membase;
@@ -38,7 +38,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  __iomem void *plat_of_remap_node(const char *node)
 --- a/sound/soc/Kconfig
 +++ b/sound/soc/Kconfig
-@@ -59,6 +59,7 @@ source "sound/soc/mxs/Kconfig"
+@@ -60,6 +60,7 @@ source "sound/soc/mxs/Kconfig"
  source "sound/soc/pxa/Kconfig"
  source "sound/soc/qcom/Kconfig"
  source "sound/soc/rockchip/Kconfig"
@@ -48,7 +48,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  source "sound/soc/sirf/Kconfig"
 --- a/sound/soc/Makefile
 +++ b/sound/soc/Makefile
-@@ -40,6 +40,7 @@ obj-$(CONFIG_SND_SOC)	+= kirkwood/
+@@ -43,6 +43,7 @@ obj-$(CONFIG_SND_SOC)	+= kirkwood/
  obj-$(CONFIG_SND_SOC)	+= pxa/
  obj-$(CONFIG_SND_SOC)	+= qcom/
  obj-$(CONFIG_SND_SOC)	+= rockchip/
