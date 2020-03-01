@@ -28,7 +28,7 @@ TOOLCHAIN_PREFIX:=$(TOOLCHAIN_BUILD_DIR)/toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(G
 
 $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.bz2: clean
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)
-	$(TAR) -cf - -C $(TOPDIR)/staging_dir/  \
+	$(TAR) -cf - -C $(BUILDTOPDIR)/staging_dir/  \
 	       $(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") \
 	       toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(GCCV)$(DIR_SUFFIX) | \
 	       $(TAR) -xf - -C $(TOOLCHAIN_BUILD_DIR)

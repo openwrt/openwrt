@@ -354,7 +354,7 @@ void zconf_nextfile(const char *name)
 	glob_t gl;
 	int err;
 	int i;
-	char path[PATH_MAX], *p;
+	char path[PATH_MAX], *p, *env;
 
 	err = glob(name, GLOB_ERR | GLOB_MARK, NULL, &gl);
 
@@ -370,6 +370,14 @@ void zconf_nextfile(const char *name)
 			snprintf(path, sizeof(path), "%s/%s", dirname(p), name);
 			err = glob(path, GLOB_ERR | GLOB_MARK, NULL, &gl);
 			free(p);
+		}
+	}
+
+	if (err == GLOB_NOMATCH) {
+		env = getenv(SRCTREE);
+		if (env) {
+			snprintf(path, sizeof(path), "%s/%s", env, name);
+			err = glob(path, GLOB_ERR | GLOB_MARK, NULL, &gl);
 		}
 	}
 

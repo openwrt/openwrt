@@ -58,8 +58,8 @@ else
 endif
 
 	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
-	if [ -d $(TOPDIR)/staging_dir/host/lib/grub ]; then \
-		$(CP) $(TOPDIR)/staging_dir/host/lib/grub/ $(PKG_BUILD_DIR)/staging_dir/host/lib; \
+	if [ -d $(BUILDTOPDIR)/staging_dir/host/lib/grub ]; then \
+		$(CP) $(BUILDTOPDIR)/staging_dir/host/lib/grub/ $(PKG_BUILD_DIR)/staging_dir/host/lib; \
 	fi
 	rm -rf \
 		$(PKG_BUILD_DIR)/target/linux/*/files{,-*} \

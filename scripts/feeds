@@ -10,6 +10,7 @@ use Cwd 'abs_path';
 
 chdir "$FindBin::Bin/..";
 $ENV{TOPDIR} //= getcwd();
+$ENV{BUILDTOPDIR} or $ENV{BUILDTOPDIR}=$ENV{TOPDIR};
 chdir $ENV{TOPDIR};
 $ENV{GIT_CONFIG_PARAMETERS}="'core.autocrlf=false'";
 $ENV{GREP_OPTIONS}="";
@@ -270,10 +271,10 @@ sub get_feed($) {
 sub get_installed() {
 	system("$mk -s prepare-tmpinfo OPENWRT_BUILD=");
 	clear_packages();
-	parse_package_metadata("./tmp/.packageinfo");
+	parse_package_metadata("$ENV{BUILDTOPDIR}/tmp/.packageinfo");
 	%installed_pkg = %vpackage;
 	%installed = %srcpackage;
-	%installed_targets = get_targets("./tmp/.targetinfo");
+	%installed_targets = get_targets("$ENV{BUILDTOPDIR}/tmp/.targetinfo");
 }
 
 sub search_feed {
@@ -488,8 +489,8 @@ sub lookup_target($$) {
 
 sub is_core_src($) {
 	my $src = shift;
-	foreach my $file ("tmp/info/.packageinfo-$src", glob("tmp/info/.packageinfo-*_$src")) {
-		next unless index($file, "tmp/info/.packageinfo-feeds_");
+	foreach my $file ("$ENV{BUILDTOPDIR}/tmp/info/.packageinfo-$src", glob("$ENV{BUILDTOPDIR}/tmp/info/.packageinfo-*_$src")) {
+		next unless index($file, "$ENV{BUILDTOPDIR}/tmp/info/.packageinfo-feeds_");
 		return 1 if -s $file;
 	}
 	return 0;
@@ -634,7 +635,7 @@ sub refresh_config {
 	return if not (-e '.config');
 
 	# workaround for timestamp check
-	system("rm -f tmp/.packageinfo");
+	system("rm -f $ENV{BUILDTOPDIR}/tmp/.packageinfo");
 
 	# refresh the config
 	if ($default) {

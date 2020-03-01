@@ -7,10 +7,11 @@
 #
 
 TOPDIR:=${CURDIR}
+BUILDTOPDIR?=$(TOPDIR)
 LC_ALL:=C
 LANG:=C
 TZ:=UTC
-export TOPDIR LC_ALL LANG TZ
+export TOPDIR BUILDTOPDIR LC_ALL LANG TZ
 
 empty:=
 space:= $(empty) $(empty)
@@ -19,7 +20,7 @@ $(if $(findstring $(space),$(TOPDIR)),$(error ERROR: The path to the OpenWrt dir
 world:
 
 DISTRO_PKG_CONFIG:=$(shell which -a pkg-config | grep -E '\/usr' | head -n 1)
-export PATH:=$(TOPDIR)/staging_dir/host/bin:$(PATH)
+export PATH:=$(BUILDTOPDIR)/staging_dir/host/bin:$(PATH)
 
 ifneq ($(OPENWRT_BUILD),1)
   _SINGLE=export MAKEFLAGS=$(space);
@@ -55,7 +56,7 @@ printdb:
 prepare: $(target/stamp-compile)
 
 clean: FORCE
-	rm -rf $(BUILD_DIR) $(STAGING_DIR) $(BIN_DIR) $(OUTPUT_DIR)/packages/$(ARCH_PACKAGES) $(BUILD_LOG_DIR) $(TOPDIR)/staging_dir/packages
+	rm -rf $(BUILD_DIR) $(STAGING_DIR) $(BIN_DIR) $(OUTPUT_DIR)/packages/$(ARCH_PACKAGES) $(BUILD_LOG_DIR) $(BUILDTOPDIR)/staging_dir/packages
 
 dirclean: clean
 	rm -rf $(STAGING_DIR_HOST) $(STAGING_DIR_HOSTPKG) $(TOOLCHAIN_DIR) $(BUILD_DIR_BASE)/host $(BUILD_DIR_BASE)/hostpkg $(BUILD_DIR_TOOLCHAIN)
@@ -66,7 +67,7 @@ $(BUILD_DIR)/.prepared: Makefile
 	@mkdir -p $$(dirname $@)
 	@touch $@
 
-tmp/.prereq_packages: .config
+$(BUILDTOPDIR)/tmp/.prereq_packages: .config
 	unset ERROR; \
 	for package in $(sort $(prereq-y) $(prereq-m)); do \
 		$(_SINGLE)$(NO_TRACE_MAKE) -s -r -C package/$$package prereq || ERROR=1; \
@@ -79,7 +80,7 @@ tmp/.prereq_packages: .config
 endif
 
 # check prerequisites before starting to build
-prereq: $(target/stamp-prereq) tmp/.prereq_packages
+prereq: $(target/stamp-prereq) $(BUILDTOPDIR)/tmp/.prereq_packages
 	@if [ ! -f "$(INCLUDE_DIR)/site/$(ARCH)" ]; then \
 		echo 'ERROR: Missing site config for architecture "$(ARCH)" !'; \
 		echo '       The missing file will cause configure scripts to fail during compilation.'; \

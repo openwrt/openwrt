@@ -61,7 +61,7 @@ else
 endif
 
 ifeq ($(FORCE),)
-  .config scripts/config/conf scripts/config/mconf: staging_dir/host/.prereq-build
+  .config scripts/config/conf scripts/config/mconf: $(BUILDTOPDIR)/staging_dir/host/.prereq-build
 endif
 
 SCAN_COOKIE?=$(shell echo $$$$)
@@ -71,7 +71,7 @@ SUBMAKE:=umask 022; $(SUBMAKE)
 
 ULIMIT_FIX=_limit=`ulimit -n`; [ "$$_limit" = "unlimited" -o "$$_limit" -ge 1024 ] || ulimit -n 1024;
 
-prepare-mk: staging_dir/host/.prereq-build FORCE ;
+prepare-mk: $(BUILDTOPDIR)/staging_dir/host/.prereq-build FORCE ;
 
 ifdef SDK
   IGNORE_PACKAGES = linux
@@ -80,18 +80,18 @@ endif
 _ignore = $(foreach p,$(IGNORE_PACKAGES),--ignore $(p))
 
 prepare-tmpinfo: FORCE
-	@+$(MAKE) -r -s staging_dir/host/.prereq-build $(PREP_MK)
-	mkdir -p tmp/info
+	@+$(MAKE) -r -s $(BUILDTOPDIR)/staging_dir/host/.prereq-build $(PREP_MK)
+	mkdir -p $(BUILDTOPDIR)/tmp/info
 	$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPTH=5 SCAN_EXTRA=""
 	$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPTH=2 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1"
 	for type in package target; do \
-		f=tmp/.$${type}info; t=tmp/.config-$${type}.in; \
+		f=$(BUILDTOPDIR)/tmp/.$${type}info; t=$(BUILDTOPDIR)/tmp/.config-$${type}.in; \
 		[ "$$t" -nt "$$f" ] || ./scripts/$${type}-metadata.pl $(_ignore) config "$$f" > "$$t" || { rm -f "$$t"; echo "Failed to build $$t"; false; break; }; \
 	done
-	[ tmp/.config-feeds.in -nt tmp/.packageauxvars ] || ./scripts/feeds feed_config > tmp/.config-feeds.in
-	./scripts/package-metadata.pl mk tmp/.packageinfo > tmp/.packagedeps || { rm -f tmp/.packagedeps; false; }
-	./scripts/package-metadata.pl pkgaux tmp/.packageinfo > tmp/.packageauxvars || { rm -f tmp/.packageauxvars; false; }
-	touch $(TOPDIR)/tmp/.build
+	[ $(BUILDTOPDIR)/tmp/.config-feeds.in -nt $(BUILDTOPDIR)/tmp/.packageauxvars ] || ./scripts/feeds feed_config > $(BUILDTOPDIR)/tmp/.config-feeds.in
+	./scripts/package-metadata.pl mk $(BUILDTOPDIR)/tmp/.packageinfo > $(BUILDTOPDIR)/tmp/.packagedeps || { rm -f $(BUILDTOPDIR)/tmp/.packagedeps; false; }
+	./scripts/package-metadata.pl pkgaux $(BUILDTOPDIR)/tmp/.packageinfo > $(BUILDTOPDIR)/tmp/.packageauxvars || { rm -f $(BUILDTOPDIR)/tmp/.packageauxvars; false; }
+	touch $(BUILDTOPDIR)/tmp/.build
 
 .config: ./scripts/config/conf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo)
 	@+if [ \! -e .config ] || ! grep CONFIG_HAVE_DOT_CONFIG .config >/dev/null; then \
@@ -117,7 +117,7 @@ scripts/config/conf:
 
 config: scripts/config/conf prepare-tmpinfo FORCE
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
-		$< Config.in
+		srctree=$(BUILDTOPDIR) $< Config.in
 
 config-clean: FORCE
 	$(_SINGLE)$(NO_TRACE_MAKE) -C scripts/config clean
@@ -126,7 +126,7 @@ defconfig: scripts/config/conf prepare-tmpinfo FORCE
 	touch .config
 	@if [ ! -s .config -a -e $(HOME)/.openwrt/defconfig ]; then cp $(HOME)/.openwrt/defconfig .config; fi
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
-		$< --defconfig=.config Config.in
+		srctree=$(BUILDTOPDIR) $< --defconfig=.config Config.in
 
 confdefault-y=allyes
 confdefault-m=allmod
@@ -135,14 +135,14 @@ confdefault:=$(confdefault-$(CONFDEFAULT))
 
 oldconfig: scripts/config/conf prepare-tmpinfo FORCE
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
-		$< --$(if $(confdefault),$(confdefault),old)config Config.in
+		srctree=$(BUILDTOPDIR)  $< --$(if $(confdefault),$(confdefault),old)config Config.in
 
 menuconfig: scripts/config/mconf prepare-tmpinfo FORCE
 	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
 		cp $(HOME)/.openwrt/defconfig .config; \
 	fi
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
-		$< Config.in
+		srctree=$(BUILDTOPDIR) $< Config.in
 
 xconfig: scripts/config/qconf prepare-tmpinfo FORCE
 	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
@@ -152,7 +152,7 @@ xconfig: scripts/config/qconf prepare-tmpinfo FORCE
 
 prepare_kernel_conf: .config toolchain/install FORCE
 
-ifeq ($(wildcard staging_dir/host/bin/quilt),)
+ifeq ($(wildcard $(BUILDTOPDIR)/staging_dir/host/bin/quilt),)
   prepare_kernel_conf:
 	@+$(SUBMAKE) -r tools/quilt/compile
 else
@@ -172,8 +172,8 @@ kernel_menuconfig: prepare_kernel_conf
 kernel_nconfig: prepare_kernel_conf
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux nconfig
 
-staging_dir/host/.prereq-build: include/prereq-build.mk
-	mkdir -p tmp
+$(BUILDTOPDIR)/staging_dir/host/.prereq-build: include/prereq-build.mk
+	mkdir -p $(BUILDTOPDIR)/tmp
 	@$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
@@ -195,7 +195,7 @@ else
   DOWNLOAD_DIRS = package/download
 endif
 
-download: .config FORCE $(if $(wildcard $(TOPDIR)/staging_dir/host/bin/flock),,tools/flock/compile)
+download: .config FORCE $(if $(wildcard $(BUILDTOPDIR)/staging_dir/host/bin/flock),,tools/flock/compile)
 	@+$(foreach dir,$(DOWNLOAD_DIRS),$(SUBMAKE) $(dir);)
 
 clean dirclean: .config
@@ -224,9 +224,9 @@ else
 %::
 	@+$(PREP_MK) $(NO_TRACE_MAKE) -r -s prereq
 	@( \
-		cp .config tmp/.config; \
-		./scripts/config/conf --defconfig=tmp/.config -w tmp/.config Config.in > /dev/null 2>&1; \
-		if ./scripts/kconfig.pl '>' .config tmp/.config | grep -q CONFIG; then \
+		cp .config $(BUILDTOPDIR)/tmp/.config; \
+		./scripts/config/conf --defconfig=$(BUILDTOPDIR)/tmp/.config -w $(BUILDTOPDIR)/tmp/.config Config.in > /dev/null 2>&1; \
+		if ./scripts/kconfig.pl '>' .config $(BUILDTOPDIR)/tmp/.config | grep -q CONFIG; then \
 			printf "$(_R)WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!$(_N)\n" >&2; \
 		fi \
 	)

@@ -20,7 +20,7 @@ CHECK:=1
 DUMP:=1
 endif
 
-export TMP_DIR:=$(TOPDIR)/tmp
+export TMP_DIR:=$(BUILDTOPDIR)/tmp
 export TMPDIR:=$(TMP_DIR)
 
 qstrip=$(strip $(subst ",,$(1)))
@@ -118,7 +118,7 @@ OUTPUT_DIR:=$(if $(call qstrip,$(CONFIG_BINARY_FOLDER)),$(call qstrip,$(CONFIG_B
 BIN_DIR:=$(OUTPUT_DIR)/targets/$(BOARD)/$(SUBTARGET)
 INCLUDE_DIR:=$(TOPDIR)/include
 SCRIPT_DIR:=$(TOPDIR)/scripts
-BUILD_DIR_BASE:=$(TOPDIR)/build_dir
+BUILD_DIR_BASE:=$(BUILDTOPDIR)/build_dir
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   GCCV:=$(call qstrip,$(CONFIG_GCC_VERSION))
   LIBC:=$(call qstrip,$(CONFIG_LIBC))
@@ -149,23 +149,23 @@ ifeq ($(or $(CONFIG_EXTERNAL_TOOLCHAIN),$(CONFIG_TARGET_uml)),)
 endif
 
 PACKAGE_DIR:=$(BIN_DIR)/packages
-PACKAGE_DIR_ALL:=$(TOPDIR)/staging_dir/packages/$(BOARD)
+PACKAGE_DIR_ALL:=$(BUILDTOPDIR)/staging_dir/packages/$(BOARD)
 BUILD_DIR:=$(BUILD_DIR_BASE)/$(TARGET_DIR_NAME)
-STAGING_DIR:=$(TOPDIR)/staging_dir/$(TARGET_DIR_NAME)
+STAGING_DIR:=$(BUILDTOPDIR)/staging_dir/$(TARGET_DIR_NAME)
 BUILD_DIR_TOOLCHAIN:=$(BUILD_DIR_BASE)/$(TOOLCHAIN_DIR_NAME)
-TOOLCHAIN_DIR:=$(TOPDIR)/staging_dir/$(TOOLCHAIN_DIR_NAME)
+TOOLCHAIN_DIR:=$(BUILDTOPDIR)/staging_dir/$(TOOLCHAIN_DIR_NAME)
 STAMP_DIR:=$(BUILD_DIR)/stamp
 STAMP_DIR_HOST=$(BUILD_DIR_HOST)/stamp
 TARGET_ROOTFS_DIR?=$(if $(call qstrip,$(CONFIG_TARGET_ROOTFS_DIR)),$(call qstrip,$(CONFIG_TARGET_ROOTFS_DIR)),$(BUILD_DIR))
 TARGET_DIR:=$(TARGET_ROOTFS_DIR)/root-$(BOARD)
 STAGING_DIR_ROOT:=$(STAGING_DIR)/root-$(BOARD)
 STAGING_DIR_IMAGE:=$(STAGING_DIR)/image
-BUILD_LOG_DIR:=$(if $(call qstrip,$(CONFIG_BUILD_LOG_DIR)),$(call qstrip,$(CONFIG_BUILD_LOG_DIR)),$(TOPDIR)/logs)
+BUILD_LOG_DIR:=$(if $(call qstrip,$(CONFIG_BUILD_LOG_DIR)),$(call qstrip,$(CONFIG_BUILD_LOG_DIR)),$(BUILDTOPDIR)/logs)
 PKG_INFO_DIR := $(STAGING_DIR)/pkginfo
 
 BUILD_DIR_HOST:=$(if $(IS_PACKAGE_BUILD),$(BUILD_DIR_BASE)/hostpkg,$(BUILD_DIR_BASE)/host)
-STAGING_DIR_HOST:=$(TOPDIR)/staging_dir/host
-STAGING_DIR_HOSTPKG:=$(TOPDIR)/staging_dir/hostpkg
+STAGING_DIR_HOST:=$(BUILDTOPDIR)/staging_dir/host
+STAGING_DIR_HOSTPKG:=$(BUILDTOPDIR)/staging_dir/hostpkg
 
 TARGET_PATH:=$(subst $(space),:,$(filter-out .,$(filter-out ./,$(subst :,$(space),$(PATH)))))
 TARGET_INIT_PATH:=$(call qstrip,$(CONFIG_TARGET_INIT_PATH))

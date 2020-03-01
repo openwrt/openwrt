@@ -7,14 +7,15 @@
 #
 
 TOPDIR:=${CURDIR}
+BUILDTOPDIR?=$(TOPDIR)
 LC_ALL:=C
 LANG:=C
 SDK:=1
-export TOPDIR LC_ALL LANG SDK
+export TOPDIR BUILDTOPDIR LC_ALL LANG SDK
 
 world:
 
-export PATH:=$(TOPDIR)/staging_dir/host/bin:$(PATH)
+export PATH:=$(BUILDTOPDIR)/staging_dir/host/bin:$(PATH)
 
 ifneq ($(OPENWRT_BUILD),1)
   override OPENWRT_BUILD=1

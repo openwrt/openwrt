@@ -7,13 +7,14 @@
 #
 
 TOPDIR:=${CURDIR}
+BUILDTOPDIR?=$(TOPDIR)
 LC_ALL:=C
 LANG:=C
-export TOPDIR LC_ALL LANG
+export TOPDIR BUILDTOPDIR LC_ALL LANG
 export OPENWRT_VERBOSE=s
 all: help
 
-export PATH:=$(TOPDIR)/staging_dir/host/bin:$(PATH)
+export PATH:=$(BUILDTOPDIR)/staging_dir/host/bin:$(PATH)
 
 ifneq ($(OPENWRT_BUILD),1)
   override OPENWRT_BUILD=1

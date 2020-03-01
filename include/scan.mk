@@ -1,5 +1,5 @@
 include $(TOPDIR)/include/verbose.mk
-TMP_DIR:=$(TOPDIR)/tmp
+TMP_DIR:=$(BUILDTOPDIR)/tmp
 
 all: $(TMP_DIR)/.$(SCAN_TARGET)
 
@@ -10,7 +10,7 @@ TARGET_STAMP:=$(TMP_DIR)/info/.files-$(SCAN_TARGET).stamp
 FILELIST:=$(TMP_DIR)/info/.files-$(SCAN_TARGET)-$(SCAN_COOKIE)
 OVERRIDELIST:=$(TMP_DIR)/info/.overrides-$(SCAN_TARGET)-$(SCAN_COOKIE)
 
-export PATH:=$(TOPDIR)/staging_dir/host/bin:$(PATH)
+export PATH:=$(BUILDTOPDIR)/staging_dir/host/bin:$(PATH)
 
 define feedname
 $(if $(patsubst feeds/%,,$(1)),,$(word 2,$(subst /, ,$(1))))
@@ -49,8 +49,8 @@ define PackageDir
 		echo Source-Makefile: $(SCAN_DIR)/$(2)/Makefile; \
 		$(if $(3),echo Override: $(3),true); \
 		$(NO_TRACE_MAKE) --no-print-dir -r DUMP=1 FEED="$(call feedname,$(2))" -C $(SCAN_DIR)/$(2) $(SCAN_MAKEOPTS) 2>/dev/null || { \
-			mkdir -p "$(TOPDIR)/logs/$(SCAN_DIR)/$(2)"; \
-			$(NO_TRACE_MAKE) --no-print-dir -r DUMP=1 FEED="$(call feedname,$(2))" -C $(SCAN_DIR)/$(2) $(SCAN_MAKEOPTS) > $(TOPDIR)/logs/$(SCAN_DIR)/$(2)/dump.txt 2>&1; \
+			mkdir -p "$(BUILDTOPDIR)/logs/$(SCAN_DIR)/$(2)"; \
+			$(NO_TRACE_MAKE) --no-print-dir -r DUMP=1 FEED="$(call feedname,$(2))" -C $(SCAN_DIR)/$(2) $(SCAN_MAKEOPTS) > $(BUILDTOPDIR)/logs/$(SCAN_DIR)/$(2)/dump.txt 2>&1; \
 			$$(call progress,ERROR: please fix $(SCAN_DIR)/$(2)/Makefile - see logs/$(SCAN_DIR)/$(2)/dump.txt for details\n) \
 			rm -f $$@; \
 		}; \

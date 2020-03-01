@@ -82,7 +82,7 @@ ifdef CONFIG_INSTALL_GCCGO
 endif
 
 ifdef CONFIG_GCC_USE_GRAPHITE
-  GRAPHITE_CONFIGURE:= --with-isl=$(TOPDIR)/staging_dir/host
+  GRAPHITE_CONFIGURE:= --with-isl=$(BUILDTOPDIR)/staging_dir/host
 else
   GRAPHITE_CONFIGURE:= --without-isl --without-cloog
 endif
@@ -114,9 +114,9 @@ GCC_CONFIGURE:= \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 \
 			--with-abi=$(call qstrip,$(CONFIG_MIPS64_ABI))) \
 		$(if $(CONFIG_arc),--with-cpu=$(CONFIG_CPU_TYPE)) \
-		--with-gmp=$(TOPDIR)/staging_dir/host \
-		--with-mpfr=$(TOPDIR)/staging_dir/host \
-		--with-mpc=$(TOPDIR)/staging_dir/host \
+		--with-gmp=$(BUILDTOPDIR)/staging_dir/host \
+		--with-mpfr=$(BUILDTOPDIR)/staging_dir/host \
+		--with-mpc=$(BUILDTOPDIR)/staging_dir/host \
 		--disable-decimal-float \
 		--with-diagnostics-color=auto-if-env
 ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
