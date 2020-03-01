@@ -179,7 +179,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	/* register clock event */
  	systick.dev.irq = irq_of_parse_and_map(np, 0);
  	if (!systick.dev.irq) {
- 		pr_err("%s: request_irq failed", np->name);
+ 		pr_err("%pOFn: request_irq failed", np);
  		return -EINVAL;
  	}
  
@@ -196,5 +196,5 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	systick.dev.cpumask = cpumask_of(0);
 +	clockevents_config_and_register(&systick.dev, SYSTICK_FREQ, 0x3, 0x7fff);
  
- 	pr_info("%s: running - mult: %d, shift: %d\n",
- 			np->name, systick.dev.mult, systick.dev.shift);
+ 	pr_info("%pOFn: running - mult: %d, shift: %d\n",
+ 			np, systick.dev.mult, systick.dev.shift);

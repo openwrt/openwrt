@@ -1,12 +1,12 @@
 --- a/drivers/usb/dwc2/platform.c
 +++ b/drivers/usb/dwc2/platform.c
-@@ -406,6 +406,12 @@ static int dwc2_driver_probe(struct plat
- 	if (retval)
- 		return retval;
+@@ -432,6 +432,12 @@ static int dwc2_driver_probe(struct plat
+ 
+ 	hsotg->needs_byte_swap = dwc2_check_core_endianness(hsotg);
  
 +	/* Enable USB port before any regs access */
-+	if (dwc2_readl(hsotg->regs + PCGCTL) & 0x0f) {
-+		dwc2_writel(0x00, hsotg->regs + PCGCTL);
++	if (dwc2_readl(hsotg, PCGCTL) & 0x0f) {
++		dwc2_writel(0x00, hsotg, PCGCTL);
 +		/* TODO: mdelay(25) here? vendor driver don't use it */
 +	}
 +
