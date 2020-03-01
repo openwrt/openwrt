@@ -1,5 +1,6 @@
 #include <dt-bindings/interrupt-controller/mips-gic.h>
 #include <dt-bindings/clock/mt7621-clk.h>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	#address-cells = <1>;
@@ -67,36 +68,15 @@
 			reg = <0x100 0x100>;
 		};
 
-		gpio@600 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			compatible = "mtk,mt7621-gpio";
+		gpio: gpio@600 {
+			#gpio-cells = <2>;
+			#interrupt-cells = <2>;
+			compatible = "mediatek,mt7621-gpio";
+			gpio-controller;
+			interrupt-controller;
 			reg = <0x600 0x100>;
-
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 12 IRQ_TYPE_LEVEL_HIGH>;
-
-			gpio0: bank@0 {
-				reg = <0>;
-				compatible = "mtk,mt7621-gpio-bank";
-				gpio-controller;
-				#gpio-cells = <2>;
-			};
-
-			gpio1: bank@1 {
-				reg = <1>;
-				compatible = "mtk,mt7621-gpio-bank";
-				gpio-controller;
-				#gpio-cells = <2>;
-			};
-
-			gpio2: bank@2 {
-				reg = <2>;
-				compatible = "mtk,mt7621-gpio-bank";
-				gpio-controller;
-				#gpio-cells = <2>;
-			};
 		};
 
 		i2c: i2c@900 {
@@ -443,12 +423,22 @@
 			0x1e003800 0x800>;
 	};
 
+	ethsys: syscon@1e000000 {
+		compatible = "mediatek,mt7621-ethsys",
+			     "syscon";
+		reg = <0x1e000000 0x1000>;
+		#clock-cells = <1>;
+	};
+
 	ethernet: ethernet@1e100000 {
 		compatible = "mediatek,mt7621-eth";
 		reg = <0x1e100000 0x10000>;
 
+		clocks = <&sysclock>;
+		clock-names = "ethif";
+
 		#address-cells = <1>;
-		#size-cells = <1>;
+		#size-cells = <0>;
 
 		resets = <&rstctrl 6 &rstctrl 23>;
 		reset-names = "fe", "eth";
@@ -456,26 +446,88 @@
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 3 IRQ_TYPE_LEVEL_HIGH>;
 
-		mediatek,switch = <&gsw>;
+		mediatek,ethsys = <&ethsys>;
 
-		mdio-bus {
-			#address-cells = <1>;
-			#size-cells = <0>;
+		gmac0: mac@0 {
+			compatible = "mediatek,eth-mac";
+			reg = <0>;
+			phy-mode = "rgmii";
 
-			phy1f: ethernet-phy@1f {
-				reg = <0x1f>;
-				phy-mode = "rgmii";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+				pause;
 			};
 		};
 
-		hnat: hnat@0 {
-			compatible = "mediatek,mt7623-hnat";
-			reg = <0 0x10000>;
-			mtketh-ppd = "eth0";
-			mtketh-lan = "eth0";
-			mtketh-wan = "eth0";
-			resets = <&rstctrl 0>;
-			reset-names = "mtketh";
+		gmac1: mac@1 {
+			compatible = "mediatek,eth-mac";
+			reg = <1>;
+			status = "disabled";
+			phy-mode = "rgmii-rxid";
+		};
+
+		mdio: mdio-bus {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switch0: switch@1f {
+				compatible = "mediatek,mt7621";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x1f>;
+				mediatek,mcm;
+				resets = <&rstctrl 2>;
+				reset-names = "mcm";
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <0>;
+
+					port@0 {
+						status = "disabled";
+						reg = <0>;
+						label = "lan0";
+					};
+
+					port@1 {
+						status = "disabled";
+						reg = <1>;
+						label = "lan1";
+					};
+
+					port@2 {
+						status = "disabled";
+						reg = <2>;
+						label = "lan2";
+					};
+
+					port@3 {
+						status = "disabled";
+						reg = <3>;
+						label = "lan3";
+					};
+
+					port@4 {
+						status = "disabled";
+						reg = <4>;
+						label = "lan4";
+					};
+
+					port@6 {
+						reg = <6>;
+						label = "cpu";
+						ethernet = <&gmac0>;
+						phy-mode = "rgmii";
+
+						fixed-link {
+							speed = <1000>;
+							full-duplex;
+						};
+					};
+				};
+			};
 		};
 	};
 
