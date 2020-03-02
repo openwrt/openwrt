@@ -303,7 +303,7 @@ $(eval $(call KernelPackage,iio-st_accel))
 define KernelPackage/iio-st_sensors-i2c
   SUBMENU:=$(IIO_MENU)
   TITLE:=STMicroelectronics accelerometer 3-Axis Driver (I2C)
-  DEPENDS:=+kmod-iio-st_accel +kmod-i2c-core
+  DEPENDS:=+kmod-iio-st_accel +kmod-i2c-core +kmod-regmap-i2c
   KCONFIG:= CONFIG_IIO_ST_ACCEL_I2C_3AXIS
   FILES:=$(LINUX_DIR)/drivers/iio/common/st_sensors/st_sensors_i2c.ko
   AUTOLOAD:=$(call AutoLoad,56,st_sensors_i2c)
@@ -319,7 +319,7 @@ $(eval $(call KernelPackage,iio-st_sensors-i2c))
 define KernelPackage/iio-st_sensors-spi
   SUBMENU:=$(IIO_MENU)
   TITLE:=STMicroelectronics accelerometer 3-Axis Driver (SPI)
-  DEPENDS:=+kmod-iio-st_accel
+  DEPENDS:=+kmod-iio-st_accel +kmod-regmap-spi
   KCONFIG:= CONFIG_IIO_ST_ACCEL_SPI_3AXIS
   FILES:=$(LINUX_DIR)/drivers/iio/common/st_sensors/st_sensors_spi.ko
   AUTOLOAD:=$(call AutoLoad,56,st_sensors_spi)
