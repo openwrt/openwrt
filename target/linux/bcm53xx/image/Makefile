@@ -79,7 +79,7 @@ endef
 
 define Build/asus-trx
 	$(STAGING_DIR_HOST)/bin/asustrx \
-		-p $(PRODUCTID) -i $@ -o $@.new
+		-p $(ASUS_PRODUCTID) -i $@ -o $@.new
 	mv $@.new $@
 endef
 
@@ -107,8 +107,10 @@ define Build/seama-nand
 		-i $@.entity
 endef
 
-DEVICE_VARS += PRODUCTID SIGNATURE NETGEAR_BOARD_ID NETGEAR_REGION TPLINK_BOARD
+DEVICE_VARS += ASUS_PRODUCTID
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
+DEVICE_VARS += SIGNATURE
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION TPLINK_BOARD
 DEVICE_VARS += LUXUL_BOARD
 
 IEEE8021X := wpad-basic
@@ -138,35 +140,40 @@ define Device/Default
 endef
 
 define Device/asus
+  DEVICE_VENDOR := ASUS
   IMAGES := trx
   IMAGE/trx := append-ubi | trx-nand | asus-trx
 endef
 
 define Device/asus-rt-ac56u
-  DEVICE_VENDOR := ASUS
+  $(call Device/asus)
   DEVICE_MODEL := RT-AC56U
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC56U
 endef
 TARGET_DEVICES += asus-rt-ac56u
 
 define Device/asus-rt-ac68u
-  DEVICE_VENDOR := ASUS
+  $(call Device/asus)
   DEVICE_MODEL := RT-AC68U
   DEVICE_PACKAGES := $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC68U
 endef
 TARGET_DEVICES += asus-rt-ac68u
 
 define Device/asus-rt-ac87u
-  DEVICE_VENDOR := ASUS
+  $(call Device/asus)
   DEVICE_MODEL := RT-AC87U
   DEVICE_PACKAGES := $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC87U
 endef
 TARGET_DEVICES += asus-rt-ac87u
 
 define Device/asus-rt-n18u
-  DEVICE_VENDOR := ASUS
+  $(call Device/asus)
   DEVICE_MODEL := RT-N18U
   DEVICE_PACKAGES := $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-N18U
 endef
 TARGET_DEVICES += asus-rt-n18u
 
