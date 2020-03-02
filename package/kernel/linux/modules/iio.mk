@@ -281,7 +281,7 @@ $(eval $(call KernelPackage,iio-si7020))
 define KernelPackage/iio-st_accel
   SUBMENU:=$(IIO_MENU)
   TITLE:=STMicroelectronics accelerometer 3-Axis Driver
-  DEPENDS:=+kmod-iio-core
+  DEPENDS:=+kmod-iio-core +kmod-regmap-core
   KCONFIG:= \
 	CONFIG_IIO_ST_ACCEL_3AXIS \
 	CONFIG_IIO_ST_SENSORS_CORE
