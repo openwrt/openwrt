@@ -1,8 +1,8 @@
 --- a/drivers/pci/controller/Kconfig
 +++ b/drivers/pci/controller/Kconfig
-@@ -220,4 +220,9 @@ config VMD
- 	  To compile this driver as a module, choose M here: the
- 	  module will be called vmd.
+@@ -48,6 +48,11 @@ config PCIE_CADENCE_EP
+ 	  endpoint mode. This PCIe controller may be embedded into many
+ 	  different vendors SoCs.
  
 +config PCIE_OXNAS
 +	bool "PLX Oxnas PCIe controller"
@@ -10,19 +10,21 @@
 +	select PCIEPORTBUS
 +
  endmenu
+ 
+ config PCIE_XILINX_NWL
 --- a/drivers/pci/controller/Makefile
 +++ b/drivers/pci/controller/Makefile
-@@ -20,6 +20,7 @@ obj-$(CONFIG_PCIE_ALTERA) += pcie-altera
- obj-$(CONFIG_PCIE_ALTERA_MSI) += pcie-altera-msi.o
- obj-$(CONFIG_PCIE_ROCKCHIP) += pcie-rockchip.o
+@@ -28,6 +28,7 @@ obj-$(CONFIG_PCIE_ROCKCHIP_EP) += pcie-r
+ obj-$(CONFIG_PCIE_ROCKCHIP_HOST) += pcie-rockchip-host.o
  obj-$(CONFIG_PCIE_MEDIATEK) += pcie-mediatek.o
+ obj-$(CONFIG_PCIE_MOBIVEIL) += pcie-mobiveil.o
 +obj-$(CONFIG_PCIE_OXNAS) += pcie-oxnas.o
  obj-$(CONFIG_PCIE_TANGO_SMP8759) += pcie-tango.o
  obj-$(CONFIG_VMD) += vmd.o
- 
+ # pcie-hisi.o quirks are needed even without CONFIG_PCIE_DW
 --- a/arch/arm/boot/dts/ox820.dtsi
 +++ b/arch/arm/boot/dts/ox820.dtsi
-@@ -288,7 +288,7 @@
+@@ -289,7 +289,7 @@
  			#address-cells = <1>;
  			#size-cells = <1>;
  			compatible = "simple-bus";
@@ -31,7 +33,7 @@
  
  			scu: scu@0 {
  				compatible = "arm,arm11mp-scu";
-@@ -317,5 +317,86 @@
+@@ -318,5 +318,86 @@
  				      <0x100 0x500>;
  			};
  		};
