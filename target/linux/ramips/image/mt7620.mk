@@ -943,6 +943,18 @@ define Device/tplink_re200-v1
 endef
 TARGET_DEVICES += tplink_re200-v1
 
+define Device/tplink_re210-v1
+  $(Device/tplink-v1)
+  SOC := mt7620a
+  DEVICE_MODEL := RE210
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt76x0e
+  IMAGE_SIZE := 7936k
+  TPLINK_HWID := 0x02100001
+  TPLINK_FLASHLAYOUT := 8Mmtk
+endef
+TARGET_DEVICES += tplink_re210-v1
+
 define Device/vonets_var11n-300
   SOC := mt7620n
   IMAGE_SIZE := 3776k
