@@ -611,6 +611,7 @@ define Device/netgear_ex2700
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX2700
   SUPPORTED_DEVICES += ex2700
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_ex2700
 
