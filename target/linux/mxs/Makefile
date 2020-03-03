@@ -13,7 +13,7 @@ FEATURES:=ext4 rtc usb gpio
 CPU_TYPE:=arm926ej-s
 
 MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
-KERNEL_PATCHVER:=4.19
+KERNEL_PATCHVER:=5.4
 KERNELNAME:=zImage dtbs
 
 define Target/Description
