@@ -186,6 +186,15 @@ define Device/tplink_tl-wr740n-v4
 endef
 TARGET_DEVICES += tplink_tl-wr740n-v4
 
+define Device/tplink_tl-wr740n-v5
+  $(Device/tplink-4mlzma)
+  SOC := ar9331
+  DEVICE_MODEL := TL-WR740N
+  DEVICE_VARIANT := v5
+  TPLINK_HWID := 0x07400005
+endef
+TARGET_DEVICES += tplink_tl-wr740n-v5
+
 define Device/tplink_tl-wr741-v1
   $(Device/tplink-4m)
   SOC := ar7240
