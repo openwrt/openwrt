@@ -18,7 +18,7 @@
 
 		usb {
 			label = "sap-g3200u3:green:usb";
-			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&xhci_ehci_port1>, <&ehci_port2>;
 			linux,default-trigger = "usbport";
 		};
@@ -29,13 +29,13 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
 		};
 	};

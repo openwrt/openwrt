@@ -19,12 +19,12 @@
 
 		internet {
 			label = "ghl-r-001:blue:internet";
-			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
 			label = "ghl-r-001:blue:usb";
-			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&xhci_ehci_port1>, <&ehci_port2>;
 			linux,default-trigger = "usbport";
 		};
@@ -35,7 +35,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

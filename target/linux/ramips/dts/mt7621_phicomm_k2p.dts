@@ -25,17 +25,17 @@
 
 		stat_r {
 			label = "k2p:red:status";
-			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 		};
 
 		stat_y {
 			label = "k2p:yellow:status";
-			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		led_blue: stat_b {
 			label = "k2p:blue:status";
-			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -44,7 +44,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

@@ -26,14 +26,14 @@
 
 		usb {
 			label = "wf2881:green:usb";
-			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&xhci_ehci_port1>, <&ehci_port2>;
 			linux,default-trigger = "usbport";
 		};
 
 		led_wps: wps {
 			label = "wf2881:green:wps";
-			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -42,7 +42,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

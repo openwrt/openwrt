@@ -26,24 +26,24 @@
 
 		led_power: power {
 			label = "wr1201:green:power";
-			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
 			label = "wr1201:green:usb";
-			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&xhci_ehci_port1>, <&ehci_port2>;
 			linux,default-trigger = "usbport";
 		};
 
 		eth_link {
 			label = "wr1201:green:eth_link";
-			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
 			label = "wr1201:green:wps";
-			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -52,7 +52,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

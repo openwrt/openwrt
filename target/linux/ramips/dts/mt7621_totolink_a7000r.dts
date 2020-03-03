@@ -26,7 +26,7 @@
 
 		led_sys: sys {
 			label = "a7000r:blue:sys";
-			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -35,7 +35,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 			linux,code = <KEY_RESTART>;
 		};

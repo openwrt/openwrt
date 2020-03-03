@@ -26,12 +26,12 @@
 
 		work {
 			label = "xy-c5:green:work";
-			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 
 		led_sys: sys {
 			label = "xy-c5:green:sys";
-			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -40,7 +40,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
