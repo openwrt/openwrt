@@ -28,12 +28,12 @@
 
 		led_blue: dome_blue {
 			label = "nanohd:blue:dome";
-			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_white: dome_white {
 			label = "nanohd:white:dome";
-			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -42,7 +42,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

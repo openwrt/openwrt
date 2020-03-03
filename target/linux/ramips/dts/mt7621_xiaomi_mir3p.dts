@@ -26,37 +26,37 @@
 
 		led_status_red: status_red {
 			label = "mir3p:red:status";
-			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status_blue: status_blue {
 			label = "mir3p:blue:status";
-			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status_yellow: status_yellow {
 			label = "mir3p:yellow:status";
-			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_amber {
 			label = "mir3p:amber:wan";
-			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		lan3_amber {
 			label = "mir3p:amber:lan3";
-			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		lan2_amber {
 			label = "mir3p:amber:lan2";
-			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		lan1_amber {
 			label = "mir3p:amber:lan1";
-			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -65,7 +65,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -75,7 +75,7 @@
 		regulator-name = "usb_vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpio = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio 12 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };

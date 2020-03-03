@@ -25,7 +25,7 @@
 
 		led_power: power {
 			label = "firewrt:green:power";
-			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -34,13 +34,13 @@
 
 		wps {
 			label = "wps";
-			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		power {
 			label = "power";
-			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_POWER>;
 		};
 	};

@@ -29,7 +29,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -39,7 +39,7 @@
 
 		led_status: status {
 			label = "zbt-wg3526:green:status";
-			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

@@ -13,13 +13,13 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
