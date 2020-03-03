@@ -35,39 +35,6 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	soc {
-		mdio0: mdio@37000000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			compatible = "qcom,ipq8064-mdio", "syscon";
-			reg = <0x37000000 0x200000>;
-			resets = <&gcc GMAC_CORE1_RESET>;
-			reset-names = "stmmaceth";
-			clocks = <&gcc GMAC_CORE1_CLK>;
-			clock-names = "stmmaceth";
-
-			pinctrl-0 = <&mdio0_pins>;
-			pinctrl-names = "default";
-
-			ethernet-phy@0 {
-				reg = <0>;
-				qca,ar8327-initvals = <
-					0x00004 0x06000000  /* PAD0_MODE */
-					0x0000c 0x00080080  /* PAD6_MODE */
-					0x000e4 0x0006a545  /* MAC_POWER_SEL */
-					0x000e0 0xc74164de  /* SGMII_CTRL */
-					0x0007c 0x0000004e  /* PORT0_STATUS */
-					0x00094 0x0000004e  /* PORT6_STATUS */
-					>;
-			};
-
-			ethernet-phy@4 {
-				reg = <4>;
-			};
-		};
-	};
-
 	keys {
 		compatible = "gpio-keys";
 		pinctrl-0 = <&button_pins>;
@@ -169,6 +136,29 @@
 
 &adm_dma {
 	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio0_pins>;
+	pinctrl-names = "default";
+
+	ethernet-phy@0 {
+		reg = <0>;
+		qca,ar8327-initvals = <
+			0x00004 0x06000000  /* PAD0_MODE */
+			0x0000c 0x00080080  /* PAD6_MODE */
+			0x000e4 0x0006a545  /* MAC_POWER_SEL */
+			0x000e0 0xc74164de  /* SGMII_CTRL */
+			0x0007c 0x0000004e  /* PORT0_STATUS */
+			0x00094 0x0000004e  /* PORT6_STATUS */
+			>;
+	};
+
+	ethernet-phy@4 {
+		reg = <4>;
+	};
 };
 
 &gmac1 {
