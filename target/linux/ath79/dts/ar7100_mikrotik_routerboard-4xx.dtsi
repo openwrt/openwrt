@@ -1,0 +1,139 @@
+// SPDX-License-Identifier: GPL-1.0-or-later OR MIT
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+#include "ar7100.dtsi"
+
+/ {
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	aliases {
+		led-boot = &led_user;
+		led-failsafe = &led_user;
+		led-running = &led_user;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_user: user {
+			label = "mikrotik:yellow:user";
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led1 {
+			label = "mikrotik:green:led1";
+			gpios = <&cpld 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led2 {
+			label = "mikrotik:green:led2";
+			gpios = <&cpld 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led3 {
+			label = "mikrotik:green:led3";
+			gpios = <&cpld 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led4 {
+			label = "mikrotik:green:led4";
+			gpios = <&cpld 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led5 {
+			label = "mikrotik:green:led5";
+			gpios = <&cpld 8 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	nand: nand {
+		compatible = "mikrotik,rb4xx-nand";
+	};
+};
+
+&uart {
+	status = "okay";
+};
+
+&gpio {
+	ngpios = <31>;
+};
+
+&pcie0 {
+	// NOT TESTED (n.b. ath79_pci_irq struct has the slot/pin/IRQ mappings if needed)
+	status = "okay";
+};
+
+&spi {
+	status = "okay";
+
+	compatible = "mikrotik,rb4xx-spi";
+
+	flash@0 {
+		compatible = "pm25lv512", "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "mikrotik,routerboot-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "routerboot1";
+				reg = <0x0 0x0>;
+				read-only;
+			};
+
+			hard_config {
+				label = "hard_config";
+				read-only;
+			};
+
+			bios {
+				label = "bios";
+				size = <0x1000>;
+				read-only;
+			};
+
+			routerboot2 {
+				label = "routerboot2";
+				read-only;
+			};
+
+			soft_config {
+				label = "soft_config";
+			};
+		};
+	};
+
+	cpld: cpld@1 {
+		compatible = "mikrotik,rb4xx-spi-cpld";
+		reg = <1>;
+		spi-max-frequency = <25000000>;
+
+		gpio-base = <32>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&phy0>;
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+};
