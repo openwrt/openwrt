@@ -1,0 +1,51 @@
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -521,6 +521,13 @@ config SPI_RB4XX
+ 	help
+ 	  SPI controller driver for the Mikrotik RB4xx series boards.
+ 
++config SPI_RB4XX_CPLD
++	tristate "Mikrotik RB4XX CPLD driver"
++	depends on SPI_MASTER && ATH79
++	help
++	  SPI driver for the Xilinx CPLD chip present on the
++	  Mikrotik RB4xx series boards.
++
+ config SPI_RSPI
+ 	tristate "Renesas RSPI/QSPI controller"
+ 	depends on SUPERH || ARCH_RENESAS || COMPILE_TEST
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -78,6 +78,7 @@ obj-$(CONFIG_SPI_PXA2XX_PCI)		+= spi-pxa
+ obj-$(CONFIG_SPI_QUP)			+= spi-qup.o
+ obj-$(CONFIG_SPI_ROCKCHIP)		+= spi-rockchip.o
+ obj-$(CONFIG_SPI_RB4XX)			+= spi-rb4xx.o
++obj-$(CONFIG_SPI_RB4XX_CPLD)			+= spi-rb4xx-cpld.o
+ obj-$(CONFIG_SPI_RSPI)			+= spi-rspi.o
+ obj-$(CONFIG_SPI_S3C24XX)		+= spi-s3c24xx-hw.o
+ spi-s3c24xx-hw-y			:= spi-s3c24xx.o
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -1,6 +1,12 @@
+ config MTD_NAND_CORE
+ 	tristate
+ 
++config MTD_NAND_RB4XX
++	tristate "Mikrotik RB4XX NAND driver"
++	depends on MTD_NAND && ATH79
++	help
++	  NAND flash driver for the Mikrotik RB4xx series boards.
++
+ source "drivers/mtd/nand/onenand/Kconfig"
+ 
+ source "drivers/mtd/nand/raw/Kconfig"
+--- a/drivers/mtd/nand/Makefile
++++ b/drivers/mtd/nand/Makefile
+@@ -2,6 +2,7 @@
+ 
+ nandcore-objs := core.o bbt.o
+ obj-$(CONFIG_MTD_NAND_CORE) += nandcore.o
++obj-$(CONFIG_MTD_NAND_RB4XX) += rb4xx_nand.o
+ 
+ obj-y	+= onenand/
+ obj-y	+= raw/

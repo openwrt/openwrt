@@ -22,13 +22,14 @@
 #include <linux/workqueue.h>
 #include <linux/platform_device.h>
 #include <linux/spi/spi.h>
+#include <linux/of.h>
 
 #include <asm/mach-ath79/ar71xx_regs.h>
 #include <asm/mach-ath79/ath79.h>
 
 #define DRV_NAME	"rb4xx-spi"
 #define DRV_DESC	"Mikrotik RB4xx SPI controller driver"
-#define DRV_VERSION	"0.1.0"
+#define DRV_VERSION	"0.1.1"
 
 #define SPI_CTRL_FASTEST	0x40
 #define SPI_FLASH_HZ		33333334
@@ -315,6 +316,8 @@ static int rb4xx_spi_probe(struct platform_device *pdev)
 	struct resource *r;
 	int err = 0;
 
+	printk(KERN_INFO DRV_DESC " version " DRV_VERSION "\n");
+
 	master = spi_alloc_master(&pdev->dev, sizeof(*rbspi));
 	if (master == NULL) {
 		dev_err(&pdev->dev, "no memory for spi_master\n");
@@ -346,6 +349,7 @@ static int rb4xx_spi_probe(struct platform_device *pdev)
 		goto err_clk_disable;
 	}
 
+	master->dev.of_node = pdev->dev.of_node;
 	platform_set_drvdata(pdev, rbspi);
 
 	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -402,27 +406,23 @@ static int rb4xx_spi_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static const struct of_device_id rb4xx_spi_dt_match[] = {
+	{ .compatible = "mikrotik,rb4xx-spi" },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, rb4xx_spi_dt_match);
+
 static struct platform_driver rb4xx_spi_drv = {
 	.probe		= rb4xx_spi_probe,
 	.remove		= rb4xx_spi_remove,
 	.driver		= {
-		.name	= DRV_NAME,
-		.owner	= THIS_MODULE,
+		.name			= DRV_NAME,
+		.owner			= THIS_MODULE,
+		.of_match_table = of_match_ptr(rb4xx_spi_dt_match),
 	},
 };
 
-static int __init rb4xx_spi_init(void)
-{
-	return platform_driver_register(&rb4xx_spi_drv);
-}
-subsys_initcall(rb4xx_spi_init);
-
-static void __exit rb4xx_spi_exit(void)
-{
-	platform_driver_unregister(&rb4xx_spi_drv);
-}
-
-module_exit(rb4xx_spi_exit);
+module_platform_driver(rb4xx_spi_drv);
 
 MODULE_DESCRIPTION(DRV_DESC);
 MODULE_VERSION(DRV_VERSION);

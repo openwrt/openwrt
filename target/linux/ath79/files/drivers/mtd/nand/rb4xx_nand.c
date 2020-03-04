@@ -24,13 +24,14 @@
 #include <linux/io.h>
 #include <linux/gpio.h>
 #include <linux/slab.h>
+#include <linux/of.h>
 
 #include <asm/mach-ath79/ath79.h>
 #include <asm/mach-ath79/rb4xx_cpld.h>
 
 #define DRV_NAME        "rb4xx-nand"
-#define DRV_VERSION     "0.2.0"
-#define DRV_DESC        "NAND flash driver for RouterBoard 4xx series"
+#define DRV_VERSION     "0.2.1"
+#define DRV_DESC        "Mikrotik RB4xx NAND flash driver"
 
 #define RB4XX_NAND_GPIO_READY	5
 #define RB4XX_NAND_GPIO_ALE	37
@@ -323,27 +324,23 @@ static int rb4xx_nand_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static const struct of_device_id rb4xx_nand_dt_match[] = {
+		{ .compatible = "mikrotik,rb4xx-nand" },
+		{ },
+};
+MODULE_DEVICE_TABLE(of, rb4xx_nand_dt_match);
+
 static struct platform_driver rb4xx_nand_driver = {
 	.probe	= rb4xx_nand_probe,
 	.remove	= rb4xx_nand_remove,
 	.driver	= {
-		.name	= DRV_NAME,
-		.owner	= THIS_MODULE,
+		.name			= DRV_NAME,
+		.owner			= THIS_MODULE,
+		.of_match_table = of_match_ptr(rb4xx_nand_dt_match)
 	},
 };
 
-static int __init rb4xx_nand_init(void)
-{
-	return platform_driver_register(&rb4xx_nand_driver);
-}
-
-static void __exit rb4xx_nand_exit(void)
-{
-	platform_driver_unregister(&rb4xx_nand_driver);
-}
-
-module_init(rb4xx_nand_init);
-module_exit(rb4xx_nand_exit);
+module_platform_driver(rb4xx_nand_driver);
 
 MODULE_DESCRIPTION(DRV_DESC);
 MODULE_VERSION(DRV_VERSION);

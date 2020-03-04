@@ -22,12 +22,13 @@
 #include <linux/gpio.h>
 #include <linux/slab.h>
 #include <linux/version.h>
+#include <linux/of.h>
 
 #include <asm/mach-ath79/rb4xx_cpld.h>
 
 #define DRV_NAME	"spi-rb4xx-cpld"
-#define DRV_DESC	"RB4xx CPLD driver"
-#define DRV_VERSION	"0.1.0"
+#define DRV_DESC	"Mikrotik RB4xx CPLD driver"
+#define DRV_VERSION	"0.1.1"
 
 #define CPLD_CMD_WRITE_NAND	0x08 /* send cmd, n x send data, send indle */
 #define CPLD_CMD_WRITE_CFG	0x09 /* send cmd, n x send cfg */
@@ -262,9 +263,26 @@ static int rb4xx_cpld_probe(struct spi_device *spi)
 {
 	struct rb4xx_cpld *cpld;
 	struct rb4xx_cpld_platform_data *pdata;
+	struct device_node *np = (&spi->dev)->of_node;
 	int err;
 
-	pdata = spi->dev.platform_data;
+	printk(KERN_INFO DRV_DESC " version " DRV_VERSION "\n");
+
+	if ((&spi->dev)->platform_data || !np) {
+		pdata = (&spi->dev)->platform_data;
+	} else {
+		pdata = devm_kzalloc(&spi->dev, sizeof(*pdata), GFP_KERNEL);
+		if (!pdata)
+			return -ENOMEM;
+
+		err = of_property_read_u32(np, "gpio-base", &pdata->gpio_base);
+		if (err || pdata->gpio_base < 0) {
+			if (pdata->gpio_base != -EPROBE_DEFER)
+				dev_err(&spi->dev, "gpio-base not found\n");
+			return -EINVAL;
+		}
+	}
+
 	if (!pdata) {
 		dev_dbg(&spi->dev, "no platform data\n");
 		return -EINVAL;
@@ -315,27 +333,24 @@ static int rb4xx_cpld_remove(struct spi_device *spi)
 	return 0;
 }
 
+static const struct of_device_id rb4xx_spi_cpld_dt_match[] = {
+	{ .compatible = "mikrotik,rb4xx-spi-cpld" },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, rb4xx_spi_cpld_dt_match);
+
 static struct spi_driver rb4xx_cpld_driver = {
 	.driver = {
-		.name		= DRV_NAME,
-		.bus		= &spi_bus_type,
-		.owner		= THIS_MODULE,
+		.name			= DRV_NAME,
+		.bus			= &spi_bus_type,
+		.owner			= THIS_MODULE,
+		.of_match_table = of_match_ptr(rb4xx_spi_cpld_dt_match),
 	},
 	.probe		= rb4xx_cpld_probe,
 	.remove		= rb4xx_cpld_remove,
 };
 
-static int __init rb4xx_cpld_init(void)
-{
-	return spi_register_driver(&rb4xx_cpld_driver);
-}
-module_init(rb4xx_cpld_init);
-
-static void __exit rb4xx_cpld_exit(void)
-{
-	spi_unregister_driver(&rb4xx_cpld_driver);
-}
-module_exit(rb4xx_cpld_exit);
+module_spi_driver(rb4xx_cpld_driver);
 
 MODULE_DESCRIPTION(DRV_DESC);
 MODULE_VERSION(DRV_VERSION);
