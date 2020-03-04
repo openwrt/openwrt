@@ -14,7 +14,7 @@ Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
 
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -233,6 +233,8 @@ static int advk_pcie_wait_for_link(struc
+@@ -256,6 +256,8 @@ static void advk_pcie_wait_for_retrain(s
  
  static void advk_pcie_setup_hw(struct advk_pcie *pcie)
  {
@@ -23,7 +23,7 @@ Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
  	u32 reg;
  
  	/* Set to Direct mode */
-@@ -267,10 +269,15 @@ static void advk_pcie_setup_hw(struct ad
+@@ -290,10 +292,15 @@ static void advk_pcie_setup_hw(struct ad
  		PCIE_CORE_CTRL2_TD_ENABLE;
  	advk_writel(pcie, reg, PCIE_CORE_CTRL2_REG);
  

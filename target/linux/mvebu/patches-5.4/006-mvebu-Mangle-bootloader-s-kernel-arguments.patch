@@ -28,7 +28,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1926,6 +1926,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
+@@ -1825,6 +1825,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
  	  The command-line arguments provided by the boot loader will be
  	  appended to the the device tree bootargs property.
  
@@ -145,7 +145,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  	}
  	*ptr = '\0';
  
-@@ -148,7 +218,9 @@ int atags_to_fdt(void *atag_list, void *
+@@ -166,7 +236,9 @@ int atags_to_fdt(void *atag_list, void *
  			else
  				setprop_string(fdt, "/chosen", "bootargs",
  					       atag->u.cmdline.cmdline);
@@ -156,7 +156,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  			if (memcount >= sizeof(mem_reg_property)/4)
  				continue;
  			if (!atag->u.mem.size)
-@@ -187,6 +259,10 @@ int atags_to_fdt(void *atag_list, void *
+@@ -210,6 +282,10 @@ int atags_to_fdt(void *atag_list, void *
  		setprop(fdt, "/memory", "reg", mem_reg_property,
  			4 * memcount * memsize);
  	}
@@ -169,7 +169,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  }
 --- a/init/main.c
 +++ b/init/main.c
-@@ -102,6 +102,10 @@
+@@ -103,6 +103,10 @@
  #define CREATE_TRACE_POINTS
  #include <trace/events/initcall.h>
  
@@ -180,7 +180,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  static int kernel_init(void *);
  
  extern void init_IRQ(void);
-@@ -591,6 +595,18 @@ asmlinkage __visible void __init start_k
+@@ -630,6 +634,18 @@ asmlinkage __visible void __init start_k
  	page_alloc_init();
  
  	pr_notice("Kernel command line: %s\n", boot_command_line);
