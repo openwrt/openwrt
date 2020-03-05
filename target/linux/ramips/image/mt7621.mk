@@ -115,8 +115,8 @@ define Device/afoundry_ew1200
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := AFOUNDRY
   DEVICE_MODEL := EW1200
-  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-mt76x2 kmod-mt7603 \
-	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-mt76x2 kmod-mt7603 kmod-usb3 \
+	kmod-usb-ledtrig-usbport wpad-basic
   SUPPORTED_DEVICES += ew1200
 endef
 TARGET_DEVICES += afoundry_ew1200
@@ -125,8 +125,7 @@ define Device/alfa-network_quad-e4g
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := Quad-E4G
-  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 \
-	uboot-envtools
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 uboot-envtools
 endef
 TARGET_DEVICES += alfa-network_quad-e4g
 
@@ -233,8 +232,8 @@ define Device/d-team_pbr-m1
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := PandoraBox
   DEVICE_MODEL := PBR-M1
-  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-mt7603 kmod-mt76x2 \
-	kmod-sdhci-mt7620 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
+	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
   SUPPORTED_DEVICES += pbr-m1
 endef
 TARGET_DEVICES += d-team_pbr-m1
@@ -316,7 +315,7 @@ TARGET_DEVICES += gehua_ghl-r-001
 define Device/gnubee_gb-pc1
   DEVICE_VENDOR := GnuBee
   DEVICE_MODEL := Personal Cloud One
-  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620
   IMAGE_SIZE := 32448k
 endef
 TARGET_DEVICES += gnubee_gb-pc1
@@ -324,7 +323,7 @@ TARGET_DEVICES += gnubee_gb-pc1
 define Device/gnubee_gb-pc2
   DEVICE_VENDOR := GnuBee
   DEVICE_MODEL := Personal Cloud Two
-  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620
   IMAGE_SIZE := 32448k
 endef
 TARGET_DEVICES += gnubee_gb-pc2
@@ -512,8 +511,8 @@ define Device/mqmaker_witi
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := MQmaker
   DEVICE_MODEL := WiTi
-  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-mt76x2 \
-	kmod-sdhci-mt7620 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-mt76x2 kmod-sdhci-mt7620 kmod-usb3 \
+	kmod-usb-ledtrig-usbport wpad-basic
   SUPPORTED_DEVICES += witi mqmaker,witi-256m mqmaker,witi-512m
 endef
 TARGET_DEVICES += mqmaker_witi
@@ -805,7 +804,7 @@ define Device/unielec_u7621-06-16m
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
   SUPPORTED_DEVICES += u7621-06-256M-16M unielec,u7621-06-256m-16m
 endef
 TARGET_DEVICES += unielec_u7621-06-16m
@@ -815,7 +814,7 @@ define Device/unielec_u7621-06-64m
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
   DEVICE_VARIANT := 64M
-  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
   SUPPORTED_DEVICES += unielec,u7621-06-512m-64m
 endef
 TARGET_DEVICES += unielec_u7621-06-64m
@@ -895,7 +894,7 @@ define Device/xiaoyu_xy-c5
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := XiaoYu
   DEVICE_MODEL := XY-C5
-  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-usb3
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3
 endef
 TARGET_DEVICES += xiaoyu_xy-c5
 
@@ -903,8 +902,8 @@ define Device/xzwifi_creativebox-v1
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := CreativeBox
   DEVICE_MODEL := v1
-  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-mt7603 kmod-mt76x2 \
-	kmod-sdhci-mt7620 kmod-usb3
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
+	kmod-usb3
 endef
 TARGET_DEVICES += xzwifi_creativebox-v1
 
@@ -949,8 +948,8 @@ define Device/zbtlink_zbt-wg2626
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WG2626
-  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 \
-	kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 \
+	kmod-usb-ledtrig-usbport wpad-basic
   SUPPORTED_DEVICES += zbt-wg2626
 endef
 TARGET_DEVICES += zbtlink_zbt-wg2626
@@ -960,8 +959,8 @@ define Device/zbtlink_zbt-wg3526-16m
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WG3526
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 \
-	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
+	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
   SUPPORTED_DEVICES += zbt-wg3526 zbt-wg3526-16M
 endef
 TARGET_DEVICES += zbtlink_zbt-wg3526-16m
@@ -971,8 +970,8 @@ define Device/zbtlink_zbt-wg3526-32m
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WG3526
   DEVICE_VARIANT := 32M
-  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 \
-	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
+	kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
   SUPPORTED_DEVICES += ac1200pro zbt-wg3526-32M
 endef
 TARGET_DEVICES += zbtlink_zbt-wg3526-32m
