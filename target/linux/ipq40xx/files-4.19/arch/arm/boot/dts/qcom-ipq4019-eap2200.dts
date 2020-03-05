@@ -8,21 +8,21 @@
 	model = "EnGenius EAP2200";
 	compatible = "engenius,eap2200";
 
-	keys {
-			compatible = "gpio-keys";
-
-			wps {
-				label = "wps";
-				gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
-				linux,code = <KEY_WPS_BUTTON>;
-			};
-	};
-
 	aliases {
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
 		led-upgrade = &led_power;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		wps {
+			label = "wps";
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
 	};
 
 	leds {

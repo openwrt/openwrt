@@ -110,7 +110,7 @@ ipq40xx_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii bdcfg lanmac)
 		label_mac=$lan_mac
 		;;
-	engenius,eap220|\
+	engenius,eap2200|\
 	engenius,emd1)
 		lan_mac=$(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
 		label_mac=$lan_mac
