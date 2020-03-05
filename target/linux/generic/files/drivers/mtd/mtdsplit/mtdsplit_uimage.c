@@ -31,10 +31,19 @@
 #define IH_MAGIC	0x27051956	/* Image Magic Number		*/
 #define IH_NMLEN		32	/* Image Name Length		*/
 
-#define IH_OS_LINUX		5	/* Linux	*/
+#define IH_OS_LINUX		5	/* Linux			*/
 
 #define IH_TYPE_KERNEL		2	/* OS Kernel Image		*/
 #define IH_TYPE_FILESYSTEM	7	/* Filesystem Image		*/
+
+#define IH_PRODLEN		23	/* Asus product id size		*/
+/*
+ * Enum to identify uImage header type
+ */
+typedef enum {
+	HEADER_TYPE_GENERIC = 0,
+	HEADER_TYPE_ASUS    = 1
+} header_type_t;
 
 /*
  * Legacy format image header,
@@ -54,6 +63,25 @@ struct uimage_header {
 	uint8_t		ih_comp;	/* Compression Type		*/
 	uint8_t		ih_name[IH_NMLEN];	/* Image Name		*/
 };
+
+/*
+ * Asus-specific header add-on
+ * On some devices such as RP-AC56, Asus stores an additional data
+ * in ih_name field, in paricular, an offset to rootfs can be
+ * found there
+ */
+typedef struct {
+	uint8_t major;
+	uint8_t minor;
+} version_t;
+
+typedef struct {
+	version_t       kernel;
+	version_t       fs;
+	uint8_t         productid[IH_PRODLEN];
+	uint8_t         sub_fs;
+	uint32_t        ih_ksz;
+} asus_t;
 
 static int
 read_uimage_header(struct mtd_info *mtd, size_t offset, u_char *buf,
@@ -85,6 +113,7 @@ read_uimage_header(struct mtd_info *mtd, size_t offset, u_char *buf,
 static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		   const struct mtd_partition **pparts,
 		   struct mtd_part_parser_data *data,
+		   const header_type_t header_type,
 		   ssize_t (*find_header)(u_char *buf, size_t len, int *extralen))
 {
 	struct mtd_partition *parts;
@@ -132,6 +161,31 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 
 		uimage_size = sizeof(*header) +
 				be32_to_cpu(header->ih_size) + ret + extralen;
+
+		switch (header_type) {
+		case HEADER_TYPE_GENERIC:
+			uimage_size = sizeof(*header) +
+					be32_to_cpu(header->ih_size) + ret + extralen;
+			break;
+		case HEADER_TYPE_ASUS:
+			/* Asus stores kernel version and fs version in first 4 bytes
+			 * of the name field, so lets check if one of first 4 bytes is
+			 * non-printable character and if yes, this is Asus header */
+			if ((header->ih_name[0] < ' ') || (header->ih_name[1] < ' ') ||
+			    (header->ih_name[2] < ' ') || (header->ih_name[3] < ' ')) {
+				asus_t *asus_tail = (asus_t *)header->ih_name;
+				uimage_size = be32_to_cpu(asus_tail->ih_ksz);
+			} else {
+				/* It does not look like an Asus modified header
+				 * so it is a generic one */
+				uimage_size = sizeof(*header) +
+						be32_to_cpu(header->ih_size) + ret + extralen;
+			}
+			break;
+		default:
+			pr_debug("unknown uImage header %d in \"%s\"\n", header_type, master->name);
+			uimage_size = 0;
+		}
 
 		if ((offset + uimage_size) > master->size) {
 			pr_debug("uImage exceeds MTD device \"%s\"\n",
@@ -242,6 +296,7 @@ mtdsplit_uimage_parse_generic(struct mtd_info *master,
 			      struct mtd_part_parser_data *data)
 {
 	return __mtdsplit_parse_uimage(master, pparts, data,
+				      HEADER_TYPE_GENERIC,
 				      uimage_verify_default);
 }
 
@@ -255,6 +310,29 @@ static struct mtd_part_parser uimage_generic_parser = {
 	.name = "uimage-fw",
 	.of_match_table = mtdsplit_uimage_of_match_table,
 	.parse_fn = mtdsplit_uimage_parse_generic,
+	.type = MTD_PARSER_TYPE_FIRMWARE,
+};
+
+static int
+mtdsplit_uimage_parse_asus(struct mtd_info *master,
+			      const struct mtd_partition **pparts,
+			      struct mtd_part_parser_data *data)
+{
+	return __mtdsplit_parse_uimage(master, pparts, data,
+				      HEADER_TYPE_ASUS,
+				      uimage_verify_default);
+}
+
+static const struct of_device_id mtdsplit_asus_uimage_of_match_table[] = {
+	{ .compatible = "asus,uimage" },
+	{},
+};
+
+static struct mtd_part_parser uimage_asus_parser = {
+	.owner = THIS_MODULE,
+	.name = "asus_uimage-fw",
+	.of_match_table = mtdsplit_asus_uimage_of_match_table,
+	.parse_fn = mtdsplit_uimage_parse_asus,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
@@ -305,6 +383,7 @@ mtdsplit_uimage_parse_netgear(struct mtd_info *master,
 			      struct mtd_part_parser_data *data)
 {
 	return __mtdsplit_parse_uimage(master, pparts, data,
+				      HEADER_TYPE_GENERIC,
 				      uimage_verify_wndr3700);
 }
 
@@ -353,6 +432,7 @@ mtdsplit_uimage_parse_edimax(struct mtd_info *master,
 			      struct mtd_part_parser_data *data)
 {
 	return __mtdsplit_parse_uimage(master, pparts, data,
+				       HEADER_TYPE_GENERIC,
 				       uimage_find_edimax);
 }
 
@@ -392,6 +472,7 @@ mtdsplit_uimage_parse_fonfxc(struct mtd_info *master,
 			      struct mtd_part_parser_data *data)
 {
 	return __mtdsplit_parse_uimage(master, pparts, data,
+				       HEADER_TYPE_GENERIC,
 				       uimage_find_fonfxc);
 }
 
@@ -429,6 +510,7 @@ mtdsplit_uimage_parse_sge(struct mtd_info *master,
 			      struct mtd_part_parser_data *data)
 {
 	return __mtdsplit_parse_uimage(master, pparts, data,
+				       HEADER_TYPE_GENERIC,
 				       uimage_find_sge);
 }
 
@@ -482,6 +564,7 @@ mtdsplit_uimage_parse_okli(struct mtd_info *master,
 			      struct mtd_part_parser_data *data)
 {
 	return __mtdsplit_parse_uimage(master, pparts, data,
+				      HEADER_TYPE_GENERIC,
 				      uimage_verify_okli);
 }
 
@@ -509,6 +592,7 @@ static int __init mtdsplit_uimage_init(void)
 	register_mtd_parser(&uimage_fonfxc_parser);
 	register_mtd_parser(&uimage_sge_parser);
 	register_mtd_parser(&uimage_okli_parser);
+	register_mtd_parser(&uimage_asus_parser);
 
 	return 0;
 }
