@@ -1,0 +1,87 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "mt7621_elecom_wrc-1167gsxx.dtsi"
+
+/ {
+	compatible = "elecom,wrc-1167gs2-b", "mediatek,mt7621-soc";
+	model = "ELECOM WRC-1167GS2-B";
+
+	aliases {
+		label-mac-device = &wan;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wlan2g {
+			label = "wrc-1167gs2-b:white:wlan2g";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan5g {
+			label = "wrc-1167gs2-b:white:wlan5g";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_green: power_green {
+			label = "wrc-1167gs2-b:green:power";
+			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		power_blue {
+			label = "wrc-1167gs2-b:blue:power";
+			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
+		};
+
+		wps {
+			label = "wrc-1167gs2-b:red:wps";
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		};
+
+		power_red {
+			label = "wrc-1167gs2-b:red:power";
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&gmac0 {
+	mtd-mac-address = <&factory 0xfff4>;
+};
+
+&wan {
+	mtd-mac-address = <&factory 0xfffa>;
+};
+
+&partitions {
+	partition@50000 {
+		compatible = "denx,uimage";
+		label = "firmware";
+		reg = <0x50000 0xb00000>;
+	};
+
+	partition@b50000 {
+		label = "tm_pattern";
+		reg = <0xb50000 0x380000>;
+		read-only;
+	};
+
+	partition@ed0000 {
+		label = "tm_key";
+		reg = <0xed0000 0x80000>;
+		read-only;
+	};
+
+	partition@f50000 {
+		label = "nvram";
+		reg = <0xf50000 0x30000>;
+		read-only;
+	};
+
+	partition@f80000 {
+		label = "user_data";
+		reg = <0xf80000 0x80000>;
+		read-only;
+	};
+};
