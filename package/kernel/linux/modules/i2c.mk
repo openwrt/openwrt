@@ -42,7 +42,7 @@ I2C_ALGOBIT_MODULES:= \
 define KernelPackage/i2c-algo-bit
   $(call i2c_defaults,$(I2C_ALGOBIT_MODULES),55)
   TITLE:=I2C bit-banging interfaces
-  DEPENDS:=kmod-i2c-core
+  DEPENDS:=+kmod-i2c-core
 endef
 
 define KernelPackage/i2c-algo-bit/description
@@ -58,7 +58,7 @@ I2C_ALGOPCA_MODULES:= \
 define KernelPackage/i2c-algo-pca
   $(call i2c_defaults,$(I2C_ALGOPCA_MODULES),55)
   TITLE:=I2C PCA 9564 interfaces
-  DEPENDS:=kmod-i2c-core
+  DEPENDS:=+kmod-i2c-core
 endef
 
 define KernelPackage/i2c-algo-pca/description
@@ -74,7 +74,7 @@ I2C_ALGOPCF_MODULES:= \
 define KernelPackage/i2c-algo-pcf
   $(call i2c_defaults,$(I2C_ALGOPCF_MODULES),55)
   TITLE:=I2C PCF 8584 interfaces
-  DEPENDS:=kmod-i2c-core
+  DEPENDS:=+kmod-i2c-core
 endef
 
 define KernelPackage/i2c-algo-pcf/description
@@ -107,7 +107,7 @@ I2C_I801_MODULES:= \
 define KernelPackage/i2c-i801
   $(call i2c_defaults,$(I2C_I801_MODULES),59)
   TITLE:=Intel I801 and compatible I2C interfaces
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86 kmod-i2c-core +kmod-i2c-smbus
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core +kmod-i2c-smbus
 endef
 
 define KernelPackage/i2c-i801/description
@@ -132,7 +132,7 @@ I2C_MUX_MODULES:= \
 define KernelPackage/i2c-mux
   $(call i2c_defaults,$(I2C_MUX_MODULES),51)
   TITLE:=I2C bus multiplexing support
-  DEPENDS:=kmod-i2c-core
+  DEPENDS:=+kmod-i2c-core
 endef
 
 define KernelPackage/i2c-mux/description
@@ -194,7 +194,7 @@ I2C_PIIX4_MODULES:= \
 define KernelPackage/i2c-piix4
   $(call i2c_defaults,$(I2C_PIIX4_MODULES),59)
   TITLE:=Intel PIIX4 and compatible I2C interfaces
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86 kmod-i2c-core
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core
 endef
 
 define KernelPackage/i2c-piix4/description
@@ -216,7 +216,7 @@ I2C_PXA_MODULES:= \
 define KernelPackage/i2c-pxa
   $(call i2c_defaults,$(I2C_PXA_MODULES),50)
   TITLE:=Intel PXA I2C bus driver
-  DEPENDS:=kmod-i2c-core
+  DEPENDS:=+kmod-i2c-core
 endef
 
 define KernelPackage/i2c-pxa/description
@@ -232,7 +232,7 @@ I2C_SMBUS_MODULES:= \
 define KernelPackage/i2c-smbus
   $(call i2c_defaults,$(I2C_SMBUS_MODULES),58)
   TITLE:=SMBus-specific protocols helper
-  DEPENDS:=kmod-i2c-core
+  DEPENDS:=+kmod-i2c-core
 endef
 
 define KernelPackage/i2c-smbus/description
@@ -249,7 +249,7 @@ I2C_TINY_USB_MODULES:= \
 define KernelPackage/i2c-tiny-usb
   $(call i2c_defaults,$(I2C_TINY_USB_MODULES),59)
   TITLE:=I2C Tiny USB adaptor
-  DEPENDS:=@USB_SUPPORT kmod-i2c-core +kmod-usb-core
+  DEPENDS:=@USB_SUPPORT +kmod-i2c-core +kmod-usb-core
 endef
 
 define KernelPackage/i2c-tiny-usb/description

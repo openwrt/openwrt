@@ -22,7 +22,7 @@ define Device/marvell_macchiatobin
   DEVICE_MODEL := MACCHIATObin
   DEVICE_ALT0_VENDOR := SolidRun
   DEVICE_ALT0_MODEL := Armada 8040 Community Board
-  DEVICE_PACKAGES += kmod-i2c-core kmod-i2c-mux kmod-i2c-mux-pca954x
+  DEVICE_PACKAGES += kmod-i2c-mux kmod-i2c-mux-pca954x
   DEVICE_DTS := armada-8040-mcbin
   SUPPORTED_DEVICES := marvell,armada8040-mcbin
 endef
