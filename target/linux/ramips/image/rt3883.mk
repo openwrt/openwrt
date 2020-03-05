@@ -1,15 +1,15 @@
 #
 # RT3662/RT3883 Profiles
 #
-define Build/mkrtn56uimg
-	$(STAGING_DIR_HOST)/bin/mkrtn56uimg $(1) $@
+define Build/asus-factory
+	$(STAGING_DIR_HOST)/bin/mkasusfw $(1) $(2) $@
 endef
 
 define Device/asus_rt-n56u
   SOC := rt3662
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7872k
-  IMAGE/sysupgrade.bin += | mkrtn56uimg -s
+  IMAGE/sysupgrade.bin += | asus-factory -p RT-N56U -s
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-N56U
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
