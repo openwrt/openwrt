@@ -65,7 +65,7 @@ define Device/iom_ix2-200
   DEVICE_VENDOR := Iomega
   DEVICE_MODEL := StorCenter ix2-200
   DEVICE_DTS := kirkwood-iomega_ix2_200
-  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-hwmon-core kmod-hwmon-lm63
+  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-hwmon-lm63
   DEVICE_TYPE:=nas
   PAGESIZE := 512
   SUBPAGESIZE := 256
@@ -137,8 +137,7 @@ TARGET_DEVICES += seagate_goflexhome
 define Device/zyxel_nsa310b
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NSA310b
-  DEVICE_PACKAGES := kmod-r8169 kmod-gpio-button-hotplug kmod-hwmon-core \
-	kmod-hwmon-lm85
+  DEVICE_PACKAGES := kmod-r8169 kmod-gpio-button-hotplug kmod-hwmon-lm85
   BOARD_NAME := nsa310b
 endef
 TARGET_DEVICES += zyxel_nsa310b

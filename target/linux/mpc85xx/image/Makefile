@@ -111,7 +111,7 @@ define Device/freescale_p2020rdb
   DEVICE_VENDOR := Freescale
   DEVICE_MODEL := P2020RDB
   DEVICE_DTS_DIR := $(DTS_DIR)/fsl
-  DEVICE_PACKAGES := kmod-hwmon-core kmod-hwmon-lm90 kmod-rtc-ds1307 \
+  DEVICE_PACKAGES := kmod-hwmon-lm90 kmod-rtc-ds1307 \
 	kmod-gpio-pca953x kmod-eeprom-at24
   BLOCKSIZE := 128k
   KERNEL := kernel-bin | gzip | \
