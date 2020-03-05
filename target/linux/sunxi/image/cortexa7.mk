@@ -176,6 +176,15 @@ define Device/sinovoip_bananapi-m2-plus
 endef
 TARGET_DEVICES += sinovoip_bananapi-m2-plus
 
+define Device/sinovoip_bananapi-m3
+  DEVICE_VENDOR := Sinovoip
+  DEVICE_MODEL := Banana Pi M3
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-leds-gpio kmod-rtc-ac100 \
+	kmod-brcmfmac cypress-firmware-43430-sdio wpad-basic-mbedtls
+  SOC := sun8i-a83t
+endef
+TARGET_DEVICES += sinovoip_bananapi-m3
+
 define Device/xunlong_orangepi-one
   DEVICE_VENDOR := Xunlong
   DEVICE_MODEL := Orange Pi One

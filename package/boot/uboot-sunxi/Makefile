@@ -294,6 +294,12 @@ define U-Boot/bananapi_m2_plus_h3
   BUILD_DEVICES:=sinovoip_bananapi-m2-plus
 endef
 
+define U-Boot/Sinovoip_BPI_M3
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Bananapi M3
+  BUILD_DEVICES:=sinovoip_bananapi-m3
+endef
+
 define U-Boot/sopine_baseboard
   BUILD_SUBTARGET:=cortexa53
   NAME:=Sopine Baseboard
@@ -378,6 +384,7 @@ UBOOT_TARGETS := \
 	orangepi_pc2 \
 	pangolin \
 	pine64_plus \
+	Sinovoip_BPI_M3 \
 	sopine_baseboard \
 	orangepi_zero_plus \
 	libretech_all_h3_cc_h5
