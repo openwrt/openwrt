@@ -82,6 +82,37 @@ define Host/Configure
 	$(Host/Configure/Default)
 endef
 
+define Host/Install
+	$(call Host/Install/Default)
+
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/lib/grub/grub2-generic
+	$(STAGING_DIR_HOST)/bin/grub-mkimage \
+		-d $(STAGING_DIR_HOST)/lib/grub/i386-pc \
+		-p /boot/grub \
+		-O i386-pc \
+		-c ./files/grub-early.cfg \
+		-o $(STAGING_DIR_HOST)/lib/grub/grub2-generic/core.img \
+		at_keyboard biosdisk boot chain configfile ext2 linux ls part_msdos reboot serial vga
+
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/lib/grub/grub2-iso
+	$(STAGING_DIR_HOST)/bin/grub-mkimage \
+		-d $(STAGING_DIR_HOST)/lib/grub/i386-pc \
+		-p /boot/grub \
+		-O i386-pc \
+		-c ./files/grub-early.cfg \
+		-o $(STAGING_DIR_HOST)/lib/grub/grub2-iso/eltorito.img \
+		at_keyboard biosdisk boot chain configfile iso9660 linux ls part_msdos reboot serial vga
+
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/lib/grub/grub2-legacy
+	$(STAGING_DIR_HOST)/bin/grub-mkimage \
+		-d $(STAGING_DIR_HOST)/lib/grub/i386-pc \
+		-p /boot/grub \
+		-O i386-pc \
+		-c ./files/grub-early.cfg \
+		-o $(STAGING_DIR_HOST)/lib/grub/grub2-legacy/core.img \
+		biosdisk boot chain configfile ext2 linux ls part_msdos reboot serial vga
+endef
+
 define Package/grub2/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/grub-bios-setup $(1)/usr/sbin/

@@ -1,5 +1,5 @@
 BOARDNAME:=AMD Geode based systems
-FEATURES:=squashfs ext4 pci usb gpio
+FEATURES:=pci usb gpio
 DEFAULT_PACKAGES += \
 			kmod-crypto-hw-geode kmod-crypto-cbc \
 			kmod-ath5k kmod-ath9k \
