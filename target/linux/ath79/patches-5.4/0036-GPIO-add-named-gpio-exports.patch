@@ -22,8 +22,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include "gpiolib.h"
  #include "gpiolib-of.h"
-@@ -895,3 +897,68 @@ void of_gpiochip_remove(struct gpio_chip
- 	gpiochip_remove_pin_ranges(chip);
+@@ -915,3 +917,68 @@ void of_gpiochip_remove(struct gpio_chip
+ {
  	of_node_put(chip->of_node);
  }
 +
@@ -141,7 +141,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
 --- a/include/linux/gpio/consumer.h
 +++ b/include/linux/gpio/consumer.h
-@@ -661,6 +661,7 @@ static inline void devm_acpi_dev_remove_
+@@ -668,6 +668,7 @@ static inline void devm_acpi_dev_remove_
  
  #if IS_ENABLED(CONFIG_GPIOLIB) && IS_ENABLED(CONFIG_GPIO_SYSFS)
  
@@ -149,7 +149,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  int gpiod_export(struct gpio_desc *desc, bool direction_may_change);
  int gpiod_export_link(struct device *dev, const char *name,
  		      struct gpio_desc *desc);
-@@ -668,6 +669,13 @@ void gpiod_unexport(struct gpio_desc *de
+@@ -675,6 +676,13 @@ void gpiod_unexport(struct gpio_desc *de
  
  #else  /* CONFIG_GPIOLIB && CONFIG_GPIO_SYSFS */
  

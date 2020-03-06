@@ -305,7 +305,7 @@
  	list_for_each_entry(p, head, list) {
 --- a/net/ipv4/tcp_output.c
 +++ b/net/ipv4/tcp_output.c
-@@ -457,48 +457,53 @@ static void tcp_options_write(__be32 *pt
+@@ -460,48 +460,53 @@ static void tcp_options_write(__be32 *pt
  	u16 options = opts->options;	/* mungable copy */
  
  	if (unlikely(OPTION_MD5 & options)) {
@@ -382,7 +382,7 @@
  	}
  
  	if (unlikely(opts->num_sack_blocks)) {
-@@ -506,16 +511,17 @@ static void tcp_options_write(__be32 *pt
+@@ -509,16 +514,17 @@ static void tcp_options_write(__be32 *pt
  			tp->duplicate_sack : tp->selective_acks;
  		int this_sack;
  
@@ -406,7 +406,7 @@
  		}
  
  		tp->rx_opt.dsack = 0;
-@@ -528,13 +534,14 @@ static void tcp_options_write(__be32 *pt
+@@ -531,13 +537,14 @@ static void tcp_options_write(__be32 *pt
  
  		if (foc->exp) {
  			len = TCPOLEN_EXP_FASTOPEN_BASE + foc->len;
@@ -706,7 +706,7 @@
  EXPORT_SYMBOL(xfrm_parse_spi);
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -3953,14 +3953,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -3958,14 +3958,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
@@ -754,7 +754,7 @@
  	ptr = ip6hoff + sizeof(struct ipv6hdr);
 --- a/include/net/neighbour.h
 +++ b/include/net/neighbour.h
-@@ -274,8 +274,10 @@ static inline bool neigh_key_eq128(const
+@@ -273,8 +273,10 @@ static inline bool neigh_key_eq128(const
  	const u32 *n32 = (const u32 *)n->primary_key;
  	const u32 *p32 = pkey;
  
@@ -780,7 +780,7 @@
   * No flags defined yet.
 --- a/net/core/utils.c
 +++ b/net/core/utils.c
-@@ -443,8 +443,14 @@ void inet_proto_csum_replace16(__sum16 *
+@@ -460,8 +460,14 @@ void inet_proto_csum_replace16(__sum16 *
  			       bool pseudohdr)
  {
  	__be32 diff[] = {
@@ -799,7 +799,7 @@
  		*sum = csum_fold(csum_partial(diff, sizeof(diff),
 --- a/include/linux/etherdevice.h
 +++ b/include/linux/etherdevice.h
-@@ -496,7 +496,7 @@ static inline bool is_etherdev_addr(cons
+@@ -489,7 +489,7 @@ static inline bool is_etherdev_addr(cons
   * @b: Pointer to Ethernet header
   *
   * Compare two Ethernet headers, returns 0 if equal.
@@ -808,7 +808,7 @@
   * aligned OR the platform can handle unaligned access.  This is the
   * case for all packets coming into netif_receive_skb or similar
   * entry points.
-@@ -519,11 +519,12 @@ static inline unsigned long compare_ethe
+@@ -512,11 +512,12 @@ static inline unsigned long compare_ethe
  	fold |= *(unsigned long *)(a + 6) ^ *(unsigned long *)(b + 6);
  	return fold;
  #else
