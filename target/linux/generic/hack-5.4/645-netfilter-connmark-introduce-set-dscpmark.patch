@@ -87,8 +87,8 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  };
  
  enum {
-+	XT_CONNMARK_VALUE = BIT(0),
-+	XT_CONNMARK_DSCP = BIT(1)
++	XT_CONNMARK_VALUE = (1 << 0),
++	XT_CONNMARK_DSCP = (1 << 1)
 +};
 +
 +enum {
