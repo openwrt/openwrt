@@ -10,7 +10,10 @@
 board=$(board_name)
 
 case "$board" in
-linksys,wrt1900ac-v1)
+linksys,wrt1200ac|\
+linksys,wrt1900ac-v2|\
+linksys,wrt1900acs|\
+linksys,wrt32x)
 	SKU=$(strings /dev/mtd3|sed -ne 's/^cert_region=//p')
 	WIFIMAC2G=$(macaddr_add $(cat /sys/class/net/eth0/address) +1)
 	WIFIMAC5G=$(macaddr_add $WIFIMAC2G +1)
@@ -25,7 +28,7 @@ linksys,wrt1900ac-v1)
 			REGD=CA
 		;;
 		EU)
-			REGD=FR
+			REGD=DE
 		;;
 		US)
 			REGD=US
@@ -33,9 +36,9 @@ linksys,wrt1900ac-v1)
 	esac
 
 	uci get wireless.radio0.country || uci set wireless.radio0.country=$REGD
-	uci get wireless.@wifi-iface[0].macaddr || uci set wireless.@wifi-iface[0].macaddr=$WIFIMAC2G
+	uci get wireless.@wifi-iface[0].macaddr || uci set wireless.@wifi-iface[0].macaddr=$WIFIMAC5G
 	uci get wireless.radio1.country || uci set wireless.radio1.country=$REGD
-	uci get wireless.@wifi-iface[1].macaddr || uci set wireless.@wifi-iface[1].macaddr=$WIFIMAC5G
+	uci get wireless.@wifi-iface[1].macaddr || uci set wireless.@wifi-iface[1].macaddr=$WIFIMAC2G
 	;;
 esac
 
