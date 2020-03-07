@@ -1,5 +1,5 @@
---- a/drivers/pci/controller/Kconfig
-+++ b/drivers/pci/controller/Kconfig
+--- a/drivers/pci/host/Kconfig
++++ b/drivers/pci/host/Kconfig
 @@ -220,4 +220,9 @@ config VMD
  	  To compile this driver as a module, choose M here: the
  	  module will be called vmd.
@@ -10,8 +10,8 @@
 +	select PCIEPORTBUS
 +
  endmenu
---- a/drivers/pci/controller/Makefile
-+++ b/drivers/pci/controller/Makefile
+--- a/drivers/pci/host/Makefile
++++ b/drivers/pci/host/Makefile
 @@ -20,6 +20,7 @@ obj-$(CONFIG_PCIE_ALTERA) += pcie-altera
  obj-$(CONFIG_PCIE_ALTERA_MSI) += pcie-altera-msi.o
  obj-$(CONFIG_PCIE_ROCKCHIP) += pcie-rockchip.o
