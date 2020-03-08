@@ -809,3 +809,18 @@ endef
 
 $(eval $(call KernelPackage,crypto-xts))
 
+
+define KernelPackage/crypto-zstd
+  TITLE:=zstd compression CryptoAPI module
+  DEPENDS:=+kmod-lib-zstd +kmod-crypto-acompress
+  KCONFIG:=CONFIG_CRYPTO_ZSTD
+  FILES:=$(LINUX_DIR)/crypto/zstd.ko
+  AUTOLOAD:=$(call AutoLoad,09,zstd)
+  $(call AddDepends/crypto)
+endef
+
+define KernelPackage/crypto-zstd/description
+ Kernel module for the CryptoAPI to support Zstandard
+endef
+
+$(eval $(call KernelPackage,crypto-zstd))
