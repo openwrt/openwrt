@@ -792,6 +792,14 @@ define Device/ubiquiti_edgerouterx-sfp
 endef
 TARGET_DEVICES += ubiquiti_edgerouterx-sfp
 
+define Device/ubnt_unifi-nanohd
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi nanoHD
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e wpad-basic
+  IMAGE_SIZE := 15552k
+endef
+TARGET_DEVICES += ubnt_unifi-nanohd
+
 define Device/unielec_u7621-06-16m
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := UniElec
