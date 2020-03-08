@@ -1,0 +1,42 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright (C) 2019-2020 Oever González <notengobattery@gmail.com>
+#
+# Licensed to the public under the Apache License 2.0.
+#
+
+START=16
+USE_PROCD=1
+NAME="zswap"
+PROG="/bin/zswap"
+EXTRA_COMMANDS="stats"
+
+start_service() {
+  procd_open_instance "zswap"
+  procd_set_param command "$PROG"
+  procd_append_param command start
+  procd_set_param stdout 0
+  procd_set_param stderr 0
+  procd_close_instance
+}
+
+stop_service() {
+  rc_procd "$PROG" stop
+}
+
+reload_service() {
+  echo "Explicitly restarting the '$NAME' service..."
+  stop; start
+}
+
+restart_service() {
+  reload_service
+}
+
+service_triggers() {
+	procd_add_reload_trigger "compressed_memory"
+}
+
+stats() {
+  rc_procd "$PROG" status
+}

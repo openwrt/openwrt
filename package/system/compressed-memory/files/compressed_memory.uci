@@ -1,0 +1,93 @@
+
+config params 'zram'
+	# This is the main switch for the zram script
+	option enabled	'1'
+	# The compression algorithm to use for the zram device
+	option algorithm	'lz4'
+	# Base pool % which is scaled by the expected compression ratio
+	option pool_base	'40.00'
+	# Hard pool % which clamp the maximum size of the zram device
+	#   This value is scaled by the worst expected compression ratio
+	option pool_limit	'96.6183575'
+	# The worst ratio that is expected by the worst compression algorithm
+	#   This value should never be less than 1.00
+	option worst_ratio	'1.035'
+	# zram can evict pages that are hard to compress to a backing storage,
+	#  which must have to be a block device, or a file in a loop device
+#	option backing_file	'/data/zram.img'
+
+config params 'zswap'
+	# This is the main switch for the zswap script
+	option enabled	'1'
+	# Default compression algorithm, the same options for zram
+	#   There is no gain in selecting a better one, because the zpool limits
+	#   the compression ratio of the data
+	option algorithm	'lz4'
+	# Size of the memory pool for zswap (if zram is not enabled)
+	option pool	'30.00'
+	# This is the zpool, z3fold guarantees a compression ratio of 3.00
+	#   while zbud guarantees a compression ratio of 2.00
+	option zpool	'z3fold'
+	# Adjust the system swappiness to this value when zswap is enabled
+	option swappiness	'100'
+	# zswap will be adjusted in the presence of zram, and also will modify zram
+	# parameters in order to provide better interoperability and to prevent
+	# excesive memory usage.
+
+	# The compressor to set the scale, this should be the higher compression
+	option compressor_scale	'deflate'
+	# The target underestimate compression ratio for the above compressor
+	option compressor_factor	'0.725'
+	# This will scale the zswap pool to a percentage of the zram pool
+	option zwap_scale_pool	'30.00'
+
+# Define the compression algorithms:
+#  The expected ratio is what defines the capacity to save RAM, where higher
+#   is better. Generally, higher compression ration leads lo more latency.
+#  The streams factor defines the maximum CPU cores to be used. Where 100 is
+#   to use all CPUs. The lower it is, the faster that the compression algorithm
+#   is, so it doesn't need to use too much CPU to do it's job. This is also
+#   known as the "cost".
+
+config compress 'deflate'
+	# Deflate has the best compression ratio but is really slow
+	option driver	'deflate'
+	option expected_ratio	'4.713'
+	option streams_factor	'100.000'
+
+config compress 'zstd'
+	option driver	'zstd'
+	option expected_ratio	'4.699'
+	option streams_factor	'96.535'
+
+config compress 'lz4hc'
+	option driver	'lz4hc'
+	option expected_ratio	'4.047'
+	option streams_factor	'45.835'
+
+config compress 'lzo'
+	option driver	'lzo'
+	option expected_ratio	'4.276'
+	option streams_factor	'26.475'
+
+config compress 'lzo_rle'
+	option driver	'lzo-rle'
+	option expected_ratio	'4.266'
+	option streams_factor	'24.105'
+
+config compress 'lz4'
+	# lz4 is the faster of all and offers good saving
+	option driver	'lz4'
+	option expected_ratio	'4.232'
+	option streams_factor	'21.735'
+
+# Define the zpools:
+#  These zpools will limit the maximum compression ratio of zswap
+
+config zpool 'zbud'
+	# zbud guarantees a 2.00 compression ratio
+	option expected_ratio	'2.000'
+
+config zpool 'z3fold'
+	# zbud guarantees a 3.00 compression ratio
+	option expected_ratio	'3.000'
