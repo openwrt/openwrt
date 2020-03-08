@@ -12,6 +12,7 @@ ipq40xx_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+	8dev,habanero-dvk|\
 	8dev,jalapeno|\
 	alfa-network,ap120c-ac|\
 	engenius,ens620ext)
@@ -97,6 +98,9 @@ ipq40xx_setup_macs()
 	local label_mac=""
 
 	case "$board" in
+	8dev,habanero-dvk)
+		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
+		;;
 	asus,rt-ac58u)
 		CI_UBIPART=UBI_DEV
 		wan_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
