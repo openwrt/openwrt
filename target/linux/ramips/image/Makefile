@@ -26,6 +26,12 @@ LOADER_PLATFORM := $(ldrplatform-y)
 
 KERNEL_DTB = kernel-bin | append-dtb | lzma
 
+# Asus OEM firmware on certain boards like ASUS RP-AC65
+# is expecting another uBoot-like header at specific location
+define Build/asus-factory
+        $(STAGING_DIR_HOST)/bin/mkasusfw $(1) $@
+endef
+
 define Build/edimax-header
 	$(STAGING_DIR_HOST)/bin/mkedimaximg -i $@ -o $@.new $(1)
 	@mv $@.new $@

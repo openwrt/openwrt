@@ -1,10 +1,6 @@
 #
 # RT3662/RT3883 Profiles
 #
-define Build/asus-factory
-	$(STAGING_DIR_HOST)/bin/mkasusfw $(1) $(2) $@
-endef
-
 define Device/asus_rt-n56u
   SOC := rt3662
   BLOCKSIZE := 64k

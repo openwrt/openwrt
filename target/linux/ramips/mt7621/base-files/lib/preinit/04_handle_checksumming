@@ -1,0 +1,27 @@
+do_checksumming_disable() {
+	case "$(board_name)" in
+	asus,rp-ac56)
+		local firmware_mtd=$(find_mtd_part firmware)
+		local rootfs_mtd=$(find_mtd_part rootfs)
+		local rootfs_data_mtd=$(find_mtd_part rootfs_data)
+		local rootfs_len=$(grep \"rootfs\" /proc/mtd | awk -F' ' '{print "0x"$2}')
+		local rootfs_data_len=$(grep \"rootfs_data\" /proc/mtd | awk -F' ' '{print "0x"$2}')
+		local offset=$(echo "$rootfs_len $rootfs_data_len 0x40" | awk -F' ' '{printf "%i",$1-$2-$3}')
+		local signature=$(hexdump -v -n 4 -s $offset -e '1/1 "%02x"' $rootfs_mtd)
+		if [ "$signature" = "27051956" ]; then
+			dd conv=notrunc if=$firmware_mtd of=/tmp/header_orig.bin bs=64 count=1 2>/dev/null
+			dd conv=notrunc if=$rootfs_mtd skip=$offset iflag=skip_bytes of=/tmp/header_bkp.bin bs=64 count=1 2>/dev/null
+			if ! cmp -s /tmp/header_orig.bin /tmp/header_bkp.bin; then
+				echo "factory image for ASUS RP-AC56 detected, replacing uImage header..."
+				dd conv=notrunc if=$rootfs_mtd skip=$offset iflag=skip_bytes of=$firmware_mtd bs=64 count=1 2>/dev/null
+			fi
+			rm /tmp/header_orig.bin
+			rm /tmp/header_bkp.bin
+		fi
+	;;
+	esac
+
+	return 0
+}
+
+boot_hook_add preinit_main do_checksumming_disable

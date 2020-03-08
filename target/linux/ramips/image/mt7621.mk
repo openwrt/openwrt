@@ -147,6 +147,19 @@ define Device/asiarf_ap7621-nv1
 endef
 TARGET_DEVICES += asiarf_ap7621-nv1
 
+define Device/asus_rp-ac56
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RP-AC56
+  IMAGE_SIZE := 16000k
+  BLOCKSIZE := 64k
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 wpad-basic \
+	kmod-i2c-ralink kmod-sound-mt7620
+  IMAGES += factory.trx
+  IMAGE/factory.trx := append-kernel | append-rootfs | pad-rootfs | \
+	asus-factory -p RP-AC56 -f | check-size
+endef
+TARGET_DEVICES += asus_rp-ac56
+
 define Device/asus_rt-ac57u
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC57U
