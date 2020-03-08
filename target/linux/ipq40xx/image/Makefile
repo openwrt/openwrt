@@ -71,6 +71,18 @@ define Build/wrgg-image
 	mv $@.new $@
 endef
 
+define Device/8dev_habanero-dvk
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := 8devices
+	DEVICE_MODEL := Habanero DVK
+	IMAGE_SIZE := 30976k
+	SOC := qcom-ipq4019
+	DEVICE_PACKAGES := ipq-wifi-8dev_habanero-dvk
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += 8dev_habanero-dvk
+
 define Device/8dev_jalapeno-common
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
