@@ -40,8 +40,6 @@ Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
  create mode 100644 drivers/iio/imu/fxos8700_i2c.c
  create mode 100644 drivers/iio/imu/fxos8700_spi.c
 
-diff --git a/drivers/iio/imu/Kconfig b/drivers/iio/imu/Kconfig
-index f3c7282..60bb102 100644
 --- a/drivers/iio/imu/Kconfig
 +++ b/drivers/iio/imu/Kconfig
 @@ -40,6 +40,33 @@ config ADIS16480
@@ -78,11 +76,9 @@ index f3c7282..60bb102 100644
  config KMX61
  	tristate "Kionix KMX61 6-axis accelerometer and magnetometer"
  	depends on I2C
-diff --git a/drivers/iio/imu/Makefile b/drivers/iio/imu/Makefile
-index 4a69588..5237fd4 100644
 --- a/drivers/iio/imu/Makefile
 +++ b/drivers/iio/imu/Makefile
-@@ -14,6 +14,11 @@ adis_lib-$(CONFIG_IIO_ADIS_LIB_BUFFER) += adis_buffer.o
+@@ -14,6 +14,11 @@ adis_lib-$(CONFIG_IIO_ADIS_LIB_BUFFER) +
  obj-$(CONFIG_IIO_ADIS_LIB) += adis_lib.o
  
  obj-y += bmi160/
@@ -94,9 +90,6 @@ index 4a69588..5237fd4 100644
  obj-y += inv_mpu6050/
  
  obj-$(CONFIG_KMX61) += kmx61.o
-diff --git a/drivers/iio/imu/fxos8700.h b/drivers/iio/imu/fxos8700.h
-new file mode 100644
-index 00000000..6dfb8d7
 --- /dev/null
 +++ b/drivers/iio/imu/fxos8700.h
 @@ -0,0 +1,10 @@
@@ -110,9 +103,6 @@ index 00000000..6dfb8d7
 +			const char *name, bool use_spi);
 +
 +#endif  /* FXOS8700_H_ */
-diff --git a/drivers/iio/imu/fxos8700_core.c b/drivers/iio/imu/fxos8700_core.c
-new file mode 100644
-index 00000000..7b47be4
 --- /dev/null
 +++ b/drivers/iio/imu/fxos8700_core.c
 @@ -0,0 +1,649 @@
@@ -765,9 +755,6 @@ index 00000000..7b47be4
 +MODULE_AUTHOR("Robert Jones <rjones@gateworks.com>");
 +MODULE_DESCRIPTION("FXOS8700 6-Axis Acc and Mag Combo Sensor driver");
 +MODULE_LICENSE("GPL v2");
-diff --git a/drivers/iio/imu/fxos8700_i2c.c b/drivers/iio/imu/fxos8700_i2c.c
-new file mode 100644
-index 00000000..3ceb763
 --- /dev/null
 +++ b/drivers/iio/imu/fxos8700_i2c.c
 @@ -0,0 +1,71 @@
@@ -842,9 +829,6 @@ index 00000000..3ceb763
 +MODULE_AUTHOR("Robert Jones <rjones@gateworks.com>");
 +MODULE_DESCRIPTION("FXOS8700 I2C driver");
 +MODULE_LICENSE("GPL v2");
-diff --git a/drivers/iio/imu/fxos8700_spi.c b/drivers/iio/imu/fxos8700_spi.c
-new file mode 100644
-index 00000000..57e7bb6
 --- /dev/null
 +++ b/drivers/iio/imu/fxos8700_spi.c
 @@ -0,0 +1,59 @@
@@ -907,6 +891,3 @@ index 00000000..57e7bb6
 +MODULE_AUTHOR("Robert Jones <rjones@gateworks.com>");
 +MODULE_DESCRIPTION("FXOS8700 SPI driver");
 +MODULE_LICENSE("GPL v2");
--- 
-2.7.4
-
