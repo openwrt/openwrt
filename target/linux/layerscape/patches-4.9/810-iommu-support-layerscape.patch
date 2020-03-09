@@ -202,7 +202,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		dst[0] = cpu_to_le64(val);
  		dst[1] = cpu_to_le64(STRTAB_STE_1_SHCFG_INCOMING
  			 << STRTAB_STE_1_SHCFG_SHIFT);
-@@ -1114,10 +1127,7 @@ static void arm_smmu_write_strtab_ent(st
+@@ -1115,10 +1128,7 @@ static void arm_smmu_write_strtab_ent(st
  static void arm_smmu_init_bypass_stes(u64 *strtab, unsigned int nent)
  {
  	unsigned int i;
@@ -214,7 +214,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	for (i = 0; i < nent; ++i) {
  		arm_smmu_write_strtab_ent(NULL, -1, strtab, &ste);
-@@ -1371,8 +1381,6 @@ static bool arm_smmu_capable(enum iommu_
+@@ -1372,8 +1382,6 @@ static bool arm_smmu_capable(enum iommu_
  	switch (cap) {
  	case IOMMU_CAP_CACHE_COHERENCY:
  		return true;
@@ -223,7 +223,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	case IOMMU_CAP_NOEXEC:
  		return true;
  	default:
-@@ -1384,7 +1392,9 @@ static struct iommu_domain *arm_smmu_dom
+@@ -1385,7 +1393,9 @@ static struct iommu_domain *arm_smmu_dom
  {
  	struct arm_smmu_domain *smmu_domain;
  
@@ -234,7 +234,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return NULL;
  
  	/*
-@@ -1515,6 +1525,11 @@ static int arm_smmu_domain_finalise(stru
+@@ -1516,6 +1526,11 @@ static int arm_smmu_domain_finalise(stru
  	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
  	struct arm_smmu_device *smmu = smmu_domain->smmu;
  
@@ -246,7 +246,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* Restrict the stage to what we can actually support */
  	if (!(smmu->features & ARM_SMMU_FEAT_TRANS_S1))
  		smmu_domain->stage = ARM_SMMU_DOMAIN_S2;
-@@ -1587,7 +1602,7 @@ static __le64 *arm_smmu_get_step_for_sid
+@@ -1588,7 +1603,7 @@ static __le64 *arm_smmu_get_step_for_sid
  	return step;
  }
  
@@ -255,7 +255,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  {
  	int i, j;
  	struct arm_smmu_master_data *master = fwspec->iommu_priv;
-@@ -1606,17 +1621,14 @@ static int arm_smmu_install_ste_for_dev(
+@@ -1607,17 +1622,14 @@ static int arm_smmu_install_ste_for_dev(
  
  		arm_smmu_write_strtab_ent(smmu, sid, step, &master->ste);
  	}
@@ -275,7 +275,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  
  static int arm_smmu_attach_dev(struct iommu_domain *domain, struct device *dev)
-@@ -1635,7 +1647,7 @@ static int arm_smmu_attach_dev(struct io
+@@ -1636,7 +1648,7 @@ static int arm_smmu_attach_dev(struct io
  	ste = &master->ste;
  
  	/* Already attached to a different domain? */
@@ -284,7 +284,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		arm_smmu_detach_dev(dev);
  
  	mutex_lock(&smmu_domain->init_mutex);
-@@ -1656,10 +1668,12 @@ static int arm_smmu_attach_dev(struct io
+@@ -1657,10 +1669,12 @@ static int arm_smmu_attach_dev(struct io
  		goto out_unlock;
  	}
  
@@ -300,7 +300,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		ste->s1_cfg = &smmu_domain->s1_cfg;
  		ste->s2_cfg = NULL;
  		arm_smmu_write_ctx_desc(smmu, ste->s1_cfg);
-@@ -1668,10 +1682,7 @@ static int arm_smmu_attach_dev(struct io
+@@ -1669,10 +1683,7 @@ static int arm_smmu_attach_dev(struct io
  		ste->s2_cfg = &smmu_domain->s2_cfg;
  	}
  
@@ -312,7 +312,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  out_unlock:
  	mutex_unlock(&smmu_domain->init_mutex);
  	return ret;
-@@ -1719,6 +1730,9 @@ arm_smmu_iova_to_phys(struct iommu_domai
+@@ -1720,6 +1731,9 @@ arm_smmu_iova_to_phys(struct iommu_domai
  	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
  	struct io_pgtable_ops *ops = smmu_domain->pgtbl_ops;
  
@@ -322,7 +322,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	if (!ops)
  		return 0;
  
-@@ -1817,7 +1831,7 @@ static void arm_smmu_remove_device(struc
+@@ -1818,7 +1832,7 @@ static void arm_smmu_remove_device(struc
  		return;
  
  	master = fwspec->iommu_priv;
@@ -331,7 +331,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		arm_smmu_detach_dev(dev);
  	iommu_group_remove_device(dev);
  	kfree(master);
-@@ -1846,6 +1860,9 @@ static int arm_smmu_domain_get_attr(stru
+@@ -1847,6 +1861,9 @@ static int arm_smmu_domain_get_attr(stru
  {
  	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
  
@@ -341,7 +341,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	switch (attr) {
  	case DOMAIN_ATTR_NESTING:
  		*(int *)data = (smmu_domain->stage == ARM_SMMU_DOMAIN_NESTED);
-@@ -1861,6 +1878,9 @@ static int arm_smmu_domain_set_attr(stru
+@@ -1862,6 +1879,9 @@ static int arm_smmu_domain_set_attr(stru
  	int ret = 0;
  	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
  
@@ -351,7 +351,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	mutex_lock(&smmu_domain->init_mutex);
  
  	switch (attr) {
-@@ -1890,6 +1910,31 @@ static int arm_smmu_of_xlate(struct devi
+@@ -1891,6 +1911,31 @@ static int arm_smmu_of_xlate(struct devi
  	return iommu_fwspec_add_ids(dev, args->args, 1);
  }
  
@@ -383,7 +383,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static struct iommu_ops arm_smmu_ops = {
  	.capable		= arm_smmu_capable,
  	.domain_alloc		= arm_smmu_domain_alloc,
-@@ -1905,6 +1950,8 @@ static struct iommu_ops arm_smmu_ops = {
+@@ -1906,6 +1951,8 @@ static struct iommu_ops arm_smmu_ops = {
  	.domain_get_attr	= arm_smmu_domain_get_attr,
  	.domain_set_attr	= arm_smmu_domain_set_attr,
  	.of_xlate		= arm_smmu_of_xlate,
