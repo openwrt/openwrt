@@ -13,15 +13,14 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
 
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -1193,6 +1193,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1272,6 +1272,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7623a-rfb-nand.dtb \
  	mt7623n-rfb-emmc.dtb \
  	mt7623n-bananapi-bpi-r2.dtb \
 +	mt7623a-unielec-u7623-02-emmc-512m.dtb \
-	mt7629-rfb.dtb \
+ 	mt7629-rfb.dtb \
  	mt8127-moose.dtb \
  	mt8135-evbp1.dtb
- dtb-$(CONFIG_ARCH_ZX) += zx296702-ad1.dtb
 --- /dev/null
 +++ b/arch/arm/boot/dts/mt7623a-unielec-u7623-02-emmc-512m.dts
 @@ -0,0 +1,18 @@

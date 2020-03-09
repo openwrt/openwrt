@@ -13,11 +13,9 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  drivers/watchdog/qcom-wdt.c | 31 +++++++++++++++++++++++--------
  1 file changed, 23 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/watchdog/qcom-wdt.c b/drivers/watchdog/qcom-wdt.c
-index a494543d3ae1..d13c75028985 100644
 --- a/drivers/watchdog/qcom-wdt.c
 +++ b/drivers/watchdog/qcom-wdt.c
-@@ -40,6 +40,11 @@ static const u32 reg_offset_data_kpss[] = {
+@@ -40,6 +40,11 @@ static const u32 reg_offset_data_kpss[]
  	[WDT_BITE_TIME] = 0x14,
  };
  
@@ -29,7 +27,7 @@ index a494543d3ae1..d13c75028985 100644
  struct qcom_wdt {
  	struct watchdog_device	wdd;
  	unsigned long		rate;
-@@ -179,19 +184,29 @@ static void qcom_clk_disable_unprepare(void *data)
+@@ -179,19 +184,29 @@ static void qcom_clk_disable_unprepare(v
  	clk_disable_unprepare(data);
  }
  
@@ -62,7 +60,7 @@ index a494543d3ae1..d13c75028985 100644
  		dev_err(dev, "Unsupported QCOM WDT module\n");
  		return -ENODEV;
  	}
-@@ -247,7 +262,7 @@ static int qcom_wdt_probe(struct platform_device *pdev)
+@@ -247,7 +262,7 @@ static int qcom_wdt_probe(struct platfor
  
  	/* check if there is pretimeout support */
  	irq = platform_get_irq_optional(pdev, 0);
@@ -71,7 +69,7 @@ index a494543d3ae1..d13c75028985 100644
  		ret = devm_request_irq(dev, irq, qcom_wdt_isr,
  				       IRQF_TRIGGER_RISING,
  				       "wdt_bark", &wdt->wdd);
-@@ -267,7 +282,7 @@ static int qcom_wdt_probe(struct platform_device *pdev)
+@@ -267,7 +282,7 @@ static int qcom_wdt_probe(struct platfor
  	wdt->wdd.min_timeout = 1;
  	wdt->wdd.max_timeout = 0x10000000U / wdt->rate;
  	wdt->wdd.parent = dev;
@@ -80,7 +78,7 @@ index a494543d3ae1..d13c75028985 100644
  
  	if (readl(wdt_addr(wdt, WDT_STS)) & 1)
  		wdt->wdd.bootstatus = WDIOF_CARDRESET;
-@@ -311,9 +326,9 @@ static int __maybe_unused qcom_wdt_resume(struct device *dev)
+@@ -311,9 +326,9 @@ static int __maybe_unused qcom_wdt_resum
  static SIMPLE_DEV_PM_OPS(qcom_wdt_pm_ops, qcom_wdt_suspend, qcom_wdt_resume);
  
  static const struct of_device_id qcom_wdt_of_table[] = {
@@ -93,6 +91,3 @@ index a494543d3ae1..d13c75028985 100644
  	{ },
  };
  MODULE_DEVICE_TABLE(of, qcom_wdt_of_table);
--- 
-2.24.0
-

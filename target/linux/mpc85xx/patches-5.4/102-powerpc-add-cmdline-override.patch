@@ -1,6 +1,6 @@
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
-@@ -809,6 +809,14 @@ config CMDLINE_FORCE
+@@ -883,6 +883,14 @@ config CMDLINE_FORCE
  	  This is useful if you cannot or don't want to change the
  	  command-line options your boot loader passes to the kernel.
  
@@ -17,9 +17,9 @@
  	help
 --- a/drivers/of/fdt.c
 +++ b/drivers/of/fdt.c
-@@ -1091,6 +1091,17 @@ int __init early_init_dt_scan_chosen(uns
+@@ -1060,6 +1060,17 @@ int __init early_init_dt_scan_chosen(uns
  	if (p != NULL && l > 0)
- 		strlcpy(data, p, min((int)l, COMMAND_LINE_SIZE));
+ 		strlcpy(data, p, min(l, COMMAND_LINE_SIZE));
  
 +    /* CONFIG_CMDLINE_OVERRIDE is used to fallback to a different
 +     * device tree option of chosen/bootargs-override. This is

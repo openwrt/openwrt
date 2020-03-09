@@ -13,10 +13,8 @@ This is a workaround to get serial working in LEDE.
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 ---
 
-Index: linux-5.4.11/arch/arm/boot/dts/bcm47081-tplink-archer-c5-v2.dts
-===================================================================
---- linux-5.4.11.orig/arch/arm/boot/dts/bcm47081-tplink-archer-c5-v2.dts
-+++ linux-5.4.11/arch/arm/boot/dts/bcm47081-tplink-archer-c5-v2.dts
+--- a/arch/arm/boot/dts/bcm47081-tplink-archer-c5-v2.dts
++++ b/arch/arm/boot/dts/bcm47081-tplink-archer-c5-v2.dts
 @@ -12,7 +12,7 @@
  	model = "TP-LINK Archer C5 V2";
  
@@ -26,10 +24,8 @@ Index: linux-5.4.11/arch/arm/boot/dts/bcm47081-tplink-archer-c5-v2.dts
  	};
  
  	memory@0 {
-Index: linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-abr-4500.dts
-===================================================================
---- linux-5.4.11.orig/arch/arm/boot/dts/bcm47094-luxul-abr-4500.dts
-+++ linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-abr-4500.dts
+--- a/arch/arm/boot/dts/bcm47094-luxul-abr-4500.dts
++++ b/arch/arm/boot/dts/bcm47094-luxul-abr-4500.dts
 @@ -13,7 +13,7 @@
  	model = "Luxul ABR-4500 V1";
  
@@ -39,10 +35,8 @@ Index: linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-abr-4500.dts
  	};
  
  	memory@0 {
-Index: linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-xbr-4500.dts
-===================================================================
---- linux-5.4.11.orig/arch/arm/boot/dts/bcm47094-luxul-xbr-4500.dts
-+++ linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-xbr-4500.dts
+--- a/arch/arm/boot/dts/bcm47094-luxul-xbr-4500.dts
++++ b/arch/arm/boot/dts/bcm47094-luxul-xbr-4500.dts
 @@ -13,7 +13,7 @@
  	model = "Luxul XBR-4500 V1";
  
@@ -52,10 +46,8 @@ Index: linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-xbr-4500.dts
  	};
  
  	memory@0 {
-Index: linux-5.4.11/arch/arm/boot/dts/bcm47189-luxul-xap-1440.dts
-===================================================================
---- linux-5.4.11.orig/arch/arm/boot/dts/bcm47189-luxul-xap-1440.dts
-+++ linux-5.4.11/arch/arm/boot/dts/bcm47189-luxul-xap-1440.dts
+--- a/arch/arm/boot/dts/bcm47189-luxul-xap-1440.dts
++++ b/arch/arm/boot/dts/bcm47189-luxul-xap-1440.dts
 @@ -12,7 +12,7 @@
  	model = "Luxul XAP-1440 V1";
  
@@ -65,10 +57,8 @@ Index: linux-5.4.11/arch/arm/boot/dts/bcm47189-luxul-xap-1440.dts
  	};
  
  	memory@0 {
-Index: linux-5.4.11/arch/arm/boot/dts/bcm47189-luxul-xap-810.dts
-===================================================================
---- linux-5.4.11.orig/arch/arm/boot/dts/bcm47189-luxul-xap-810.dts
-+++ linux-5.4.11/arch/arm/boot/dts/bcm47189-luxul-xap-810.dts
+--- a/arch/arm/boot/dts/bcm47189-luxul-xap-810.dts
++++ b/arch/arm/boot/dts/bcm47189-luxul-xap-810.dts
 @@ -12,7 +12,7 @@
  	model = "Luxul XAP-810 V1";
  
@@ -78,10 +68,8 @@ Index: linux-5.4.11/arch/arm/boot/dts/bcm47189-luxul-xap-810.dts
  	};
  
  	memory@0 {
-Index: linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-xap-1610.dts
-===================================================================
---- linux-5.4.11.orig/arch/arm/boot/dts/bcm47094-luxul-xap-1610.dts
-+++ linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-xap-1610.dts
+--- a/arch/arm/boot/dts/bcm47094-luxul-xap-1610.dts
++++ b/arch/arm/boot/dts/bcm47094-luxul-xap-1610.dts
 @@ -12,7 +12,7 @@
  	model = "Luxul XAP-1610 V1";
  
@@ -91,10 +79,8 @@ Index: linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-xap-1610.dts
  	};
  
  	memory@0 {
-Index: linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-xwr-3150-v1.dts
-===================================================================
---- linux-5.4.11.orig/arch/arm/boot/dts/bcm47094-luxul-xwr-3150-v1.dts
-+++ linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-xwr-3150-v1.dts
+--- a/arch/arm/boot/dts/bcm47094-luxul-xwr-3150-v1.dts
++++ b/arch/arm/boot/dts/bcm47094-luxul-xwr-3150-v1.dts
 @@ -13,7 +13,7 @@
  	model = "Luxul XWR-3150 V1";
  
@@ -104,10 +90,8 @@ Index: linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-xwr-3150-v1.dts
  	};
  
  	memory@0 {
-Index: linux-5.4.11/arch/arm/boot/dts/bcm47094-phicomm-k3.dts
-===================================================================
---- linux-5.4.11.orig/arch/arm/boot/dts/bcm47094-phicomm-k3.dts
-+++ linux-5.4.11/arch/arm/boot/dts/bcm47094-phicomm-k3.dts
+--- a/arch/arm/boot/dts/bcm47094-phicomm-k3.dts
++++ b/arch/arm/boot/dts/bcm47094-phicomm-k3.dts
 @@ -13,6 +13,10 @@
  	compatible = "phicomm,k3", "brcm,bcm47094", "brcm,bcm4708";
  	model = "Phicomm K3";
@@ -119,10 +103,8 @@ Index: linux-5.4.11/arch/arm/boot/dts/bcm47094-phicomm-k3.dts
  	memory@0 {
  		device_type = "memory";
  		reg = <0x00000000 0x08000000
-Index: linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-xwc-2000.dts
-===================================================================
---- linux-5.4.11.orig/arch/arm/boot/dts/bcm47094-luxul-xwc-2000.dts
-+++ linux-5.4.11/arch/arm/boot/dts/bcm47094-luxul-xwc-2000.dts
+--- a/arch/arm/boot/dts/bcm47094-luxul-xwc-2000.dts
++++ b/arch/arm/boot/dts/bcm47094-luxul-xwc-2000.dts
 @@ -13,7 +13,7 @@
  	model = "Luxul XWC-2000 V1";
  

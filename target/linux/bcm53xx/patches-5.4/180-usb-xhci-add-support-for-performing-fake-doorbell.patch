@@ -17,10 +17,8 @@ it on BCM4708 family.
  drivers/usb/host/xhci.h      |  1 +
  3 files changed, 67 insertions(+), 3 deletions(-)
 
-Index: linux-5.4.11/drivers/usb/host/xhci-plat.c
-===================================================================
---- linux-5.4.11.orig/drivers/usb/host/xhci-plat.c
-+++ linux-5.4.11/drivers/usb/host/xhci-plat.c
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
 @@ -67,6 +67,8 @@ static int xhci_priv_resume_quirk(struct
  static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
  {
@@ -40,10 +38,8 @@ Index: linux-5.4.11/drivers/usb/host/xhci-plat.c
  }
  
  /* called during probe() after chip reset completes */
-Index: linux-5.4.11/drivers/usb/host/xhci.c
-===================================================================
---- linux-5.4.11.orig/drivers/usb/host/xhci.c
-+++ linux-5.4.11/drivers/usb/host/xhci.c
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
 @@ -156,6 +156,49 @@ int xhci_start(struct xhci_hcd *xhci)
  	return ret;
  }
@@ -129,11 +125,9 @@ Index: linux-5.4.11/drivers/usb/host/xhci.c
  }
  
  /*
-Index: linux-5.4.11/drivers/usb/host/xhci.h
-===================================================================
---- linux-5.4.11.orig/drivers/usb/host/xhci.h
-+++ linux-5.4.11/drivers/usb/host/xhci.h
-@@ -1867,6 +1867,7 @@ struct xhci_hcd {
+--- a/drivers/usb/host/xhci.h
++++ b/drivers/usb/host/xhci.h
+@@ -1872,6 +1872,7 @@ struct xhci_hcd {
  #define XHCI_DEFAULT_PM_RUNTIME_ALLOW	BIT_ULL(33)
  #define XHCI_RESET_PLL_ON_DISCONNECT	BIT_ULL(34)
  #define XHCI_SNPS_BROKEN_SUSPEND    BIT_ULL(35)
