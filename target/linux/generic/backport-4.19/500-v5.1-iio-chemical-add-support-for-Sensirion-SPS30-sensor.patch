@@ -14,8 +14,6 @@ Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
  3 files changed, 419 insertions(+)
  create mode 100644 drivers/iio/chemical/sps30.c
 
-diff --git a/drivers/iio/chemical/Kconfig b/drivers/iio/chemical/Kconfig
-index b8e005be4f87..57832b4360e9 100644
 --- a/drivers/iio/chemical/Kconfig
 +++ b/drivers/iio/chemical/Kconfig
 @@ -61,6 +61,17 @@ config IAQCORE
@@ -36,8 +34,6 @@ index b8e005be4f87..57832b4360e9 100644
  config VZ89X
  	tristate "SGX Sensortech MiCS VZ89X VOC sensor"
  	depends on I2C
-diff --git a/drivers/iio/chemical/Makefile b/drivers/iio/chemical/Makefile
-index 2f4c4ba4d781..9f42f4252151 100644
 --- a/drivers/iio/chemical/Makefile
 +++ b/drivers/iio/chemical/Makefile
 @@ -9,4 +9,5 @@ obj-$(CONFIG_BME680_I2C) += bme680_i2c.o
@@ -46,9 +42,6 @@ index 2f4c4ba4d781..9f42f4252151 100644
  obj-$(CONFIG_IAQCORE)		+= ams-iaq-core.o
 +obj-$(CONFIG_SPS30) += sps30.o
  obj-$(CONFIG_VZ89X)		+= vz89x.o
-diff --git a/drivers/iio/chemical/sps30.c b/drivers/iio/chemical/sps30.c
-new file mode 100644
-index 000000000000..fa3cd409b90b
 --- /dev/null
 +++ b/drivers/iio/chemical/sps30.c
 @@ -0,0 +1,407 @@

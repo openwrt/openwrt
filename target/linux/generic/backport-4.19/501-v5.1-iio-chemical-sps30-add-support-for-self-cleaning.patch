@@ -21,9 +21,6 @@ Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
  2 files changed, 42 insertions(+), 1 deletion(-)
  create mode 100644 Documentation/ABI/testing/sysfs-bus-iio-sps30
 
-diff --git a/Documentation/ABI/testing/sysfs-bus-iio-sps30 b/Documentation/ABI/testing/sysfs-bus-iio-sps30
-new file mode 100644
-index 000000000000..e7ce2c57635e
 --- /dev/null
 +++ b/Documentation/ABI/testing/sysfs-bus-iio-sps30
 @@ -0,0 +1,8 @@
@@ -35,8 +32,6 @@ index 000000000000..e7ce2c57635e
 +		Writing 1 starts sensor self cleaning. Internal fan accelerates
 +		to its maximum speed and keeps spinning for about 10 seconds in
 +		order to blow out accumulated dust.
-diff --git a/drivers/iio/chemical/sps30.c b/drivers/iio/chemical/sps30.c
-index fa3cd409b90b..f3b4390c8f5c 100644
 --- a/drivers/iio/chemical/sps30.c
 +++ b/drivers/iio/chemical/sps30.c
 @@ -7,7 +7,6 @@
@@ -55,7 +50,7 @@ index fa3cd409b90b..f3b4390c8f5c 100644
  
  enum {
  	PM1,
-@@ -104,6 +104,7 @@ static int sps30_do_cmd(struct sps30_state *state, u16 cmd, u8 *data, int size)
+@@ -104,6 +104,7 @@ static int sps30_do_cmd(struct sps30_sta
  		break;
  	case SPS30_STOP_MEAS:
  	case SPS30_RESET:
@@ -63,7 +58,7 @@ index fa3cd409b90b..f3b4390c8f5c 100644
  		ret = sps30_write_then_read(state, buf, 2, NULL, 0);
  		break;
  	case SPS30_READ_DATA_READY_FLAG:
-@@ -275,7 +276,39 @@ static int sps30_read_raw(struct iio_dev *indio_dev,
+@@ -275,7 +276,39 @@ static int sps30_read_raw(struct iio_dev
  	return -EINVAL;
  }
  

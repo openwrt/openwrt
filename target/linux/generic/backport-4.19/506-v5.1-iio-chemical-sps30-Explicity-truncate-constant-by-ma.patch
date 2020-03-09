@@ -18,11 +18,9 @@ Acked-by: Tomasz Duszynski <tduszyns@gmail.com>
  drivers/iio/chemical/sps30.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/iio/chemical/sps30.c b/drivers/iio/chemical/sps30.c
-index edbb956e81e8..acb9f8ecbb3d 100644
 --- a/drivers/iio/chemical/sps30.c
 +++ b/drivers/iio/chemical/sps30.c
-@@ -117,7 +117,7 @@ static int sps30_do_cmd(struct sps30_state *state, u16 cmd, u8 *data, int size)
+@@ -117,7 +117,7 @@ static int sps30_do_cmd(struct sps30_sta
  		break;
  	case SPS30_READ_AUTO_CLEANING_PERIOD:
  		buf[0] = SPS30_AUTO_CLEANING_PERIOD >> 8;

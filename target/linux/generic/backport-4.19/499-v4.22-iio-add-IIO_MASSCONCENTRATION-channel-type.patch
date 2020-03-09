@@ -28,8 +28,6 @@ Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
  tools/iio/iio_event_monitor.c           | 10 ++++++++++
  4 files changed, 36 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/ABI/testing/sysfs-bus-iio b/Documentation/ABI/testing/sysfs-bus-iio
-index 8127a08e366d..67fd88bf7910 100644
 --- a/Documentation/ABI/testing/sysfs-bus-iio
 +++ b/Documentation/ABI/testing/sysfs-bus-iio
 @@ -1684,4 +1684,19 @@ KernelVersion:	4.18
@@ -54,11 +52,9 @@ index 8127a08e366d..67fd88bf7910 100644
 +		Mass concentration reading of particulate matter in ug / m3.
 +		pmX consists of particles with aerodynamic diameter less or
 +		equal to X micrometers.
-diff --git a/drivers/iio/industrialio-core.c b/drivers/iio/industrialio-core.c
-index 4f5cd9f60870..4700fd5d8c90 100644
 --- a/drivers/iio/industrialio-core.c
 +++ b/drivers/iio/industrialio-core.c
-@@ -87,6 +87,7 @@ static const char * const iio_chan_type_name_spec[] = {
+@@ -87,6 +87,7 @@ static const char * const iio_chan_type_
  	[IIO_GRAVITY]  = "gravity",
  	[IIO_POSITIONRELATIVE]  = "positionrelative",
  	[IIO_PHASE] = "phase",
@@ -66,7 +62,7 @@ index 4f5cd9f60870..4700fd5d8c90 100644
  };
  
  static const char * const iio_modifier_names[] = {
-@@ -127,6 +128,10 @@ static const char * const iio_modifier_names[] = {
+@@ -127,6 +128,10 @@ static const char * const iio_modifier_n
  	[IIO_MOD_Q] = "q",
  	[IIO_MOD_CO2] = "co2",
  	[IIO_MOD_VOC] = "voc",
@@ -77,8 +73,6 @@ index 4f5cd9f60870..4700fd5d8c90 100644
  };
  
  /* relies on pairs of these shared then separate */
-diff --git a/include/uapi/linux/iio/types.h b/include/uapi/linux/iio/types.h
-index 92baabc103ac..c59adac24b1c 100644
 --- a/include/uapi/linux/iio/types.h
 +++ b/include/uapi/linux/iio/types.h
 @@ -46,6 +46,7 @@ enum iio_chan_type {
@@ -100,11 +94,9 @@ index 92baabc103ac..c59adac24b1c 100644
  };
  
  enum iio_event_type {
-diff --git a/tools/iio/iio_event_monitor.c b/tools/iio/iio_event_monitor.c
-index ac2de6b7e89f..f6b8003fbe3c 100644
 --- a/tools/iio/iio_event_monitor.c
 +++ b/tools/iio/iio_event_monitor.c
-@@ -60,6 +60,7 @@ static const char * const iio_chan_type_name_spec[] = {
+@@ -60,6 +60,7 @@ static const char * const iio_chan_type_
  	[IIO_GRAVITY] = "gravity",
  	[IIO_POSITIONRELATIVE] = "positionrelative",
  	[IIO_PHASE] = "phase",
@@ -112,7 +104,7 @@ index ac2de6b7e89f..f6b8003fbe3c 100644
  };
  
  static const char * const iio_ev_type_text[] = {
-@@ -115,6 +116,10 @@ static const char * const iio_modifier_names[] = {
+@@ -115,6 +116,10 @@ static const char * const iio_modifier_n
  	[IIO_MOD_Q] = "q",
  	[IIO_MOD_CO2] = "co2",
  	[IIO_MOD_VOC] = "voc",
@@ -123,7 +115,7 @@ index ac2de6b7e89f..f6b8003fbe3c 100644
  };
  
  static bool event_is_known(struct iio_event_data *event)
-@@ -156,6 +161,7 @@ static bool event_is_known(struct iio_event_data *event)
+@@ -156,6 +161,7 @@ static bool event_is_known(struct iio_ev
  	case IIO_GRAVITY:
  	case IIO_POSITIONRELATIVE:
  	case IIO_PHASE:
@@ -131,7 +123,7 @@ index ac2de6b7e89f..f6b8003fbe3c 100644
  		break;
  	default:
  		return false;
-@@ -200,6 +206,10 @@ static bool event_is_known(struct iio_event_data *event)
+@@ -200,6 +206,10 @@ static bool event_is_known(struct iio_ev
  	case IIO_MOD_Q:
  	case IIO_MOD_CO2:
  	case IIO_MOD_VOC:

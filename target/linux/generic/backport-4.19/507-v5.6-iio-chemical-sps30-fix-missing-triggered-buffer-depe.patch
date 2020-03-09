@@ -17,11 +17,9 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  drivers/iio/chemical/Kconfig | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/iio/chemical/Kconfig b/drivers/iio/chemical/Kconfig
-index 0b91de4df8f4..a7e65a59bf42 100644
 --- a/drivers/iio/chemical/Kconfig
 +++ b/drivers/iio/chemical/Kconfig
-@@ -91,6 +91,8 @@ config SPS30
+@@ -65,6 +65,8 @@ config SPS30
  	tristate "SPS30 particulate matter sensor"
  	depends on I2C
  	select CRC8
