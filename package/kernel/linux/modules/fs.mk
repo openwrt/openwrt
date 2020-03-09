@@ -177,7 +177,7 @@ define KernelPackage/fs-exfat
 	CONFIG_EXFAT_DEFAULT_IOCHARSET="utf8"
   FILES:=$(LINUX_DIR)/drivers/staging/exfat/exfat.ko
   AUTOLOAD:=$(call AutoLoad,30,exfat,1)
-  DEPENDS:=@!(LINUX_4_4||LINUX_4_19) +kmod-nls-base
+  DEPENDS:=@!(LINUX_4_14||LINUX_4_19) +kmod-nls-base
 endef
 
 define KernelPackage/fs-exfat/description
