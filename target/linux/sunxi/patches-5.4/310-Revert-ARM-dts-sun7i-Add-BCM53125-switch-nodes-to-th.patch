@@ -15,10 +15,10 @@ This reverts commit d7b9eaff5f0ca00726336b4c0c3c29decf30412a.
 
 --- a/arch/arm/boot/dts/sun7i-a20-lamobo-r1.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-lamobo-r1.dts
-@@ -124,67 +124,13 @@
+@@ -120,65 +120,13 @@
  &gmac {
  	pinctrl-names = "default";
- 	pinctrl-0 = <&gmac_pins_rgmii_a>;
+ 	pinctrl-0 = <&gmac_rgmii_pins>;
 +	phy = <&phy1>;
  	phy-mode = "rgmii";
  	phy-supply = <&reg_gmac_3v3>;
@@ -37,8 +37,6 @@ This reverts commit d7b9eaff5f0ca00726336b4c0c3c29decf30412a.
 -		switch: ethernet-switch@1e {
 -			compatible = "brcm,bcm53125";
 -			reg = <30>;
--			#address-cells = <1>;
--			#size-cells = <0>;
 -
 -			ports {
 -				#address-cells = <1>;
