@@ -29,6 +29,17 @@ EOF
 	return 0;
 }
 
+askey_do_upgrade() {
+	local tar_file="$1"
+
+	local board_dir=$(tar tf $tar_file | grep -m 1 '^sysupgrade-.*/$')
+	board_dir=${board_dir%/}
+
+	tar Oxf $tar_file ${board_dir}/root | mtd write - rootfs
+
+	nand_do_upgrade "$1"
+}
+
 zyxel_do_upgrade() {
 	local tar_file="$1"
 
@@ -77,6 +88,10 @@ platform_do_upgrade() {
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
+		;;
+	cellc,rtl30vw)
+		CI_UBIPART="ubifs"
+		askey_do_upgrade "$1"
 		;;
 	compex,wpj419)
 		nand_do_upgrade "$1"
