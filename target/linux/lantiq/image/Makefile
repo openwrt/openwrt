@@ -52,6 +52,7 @@ define Build/fullimage
 	rm $@.tmp
 endef
 
+DEVICE_VARS += SIGNATURE MAGIC CRC32_POLY
 DTS_DIR := $(DTS_DIR)/lantiq
 
 # Shared device definition: applies to every defined device
@@ -93,7 +94,6 @@ define Device/lantiqBrnImage
   IMAGES := factory.bin
   IMAGE/factory.bin := mkbrnimg | check-size $$$$(IMAGE_SIZE)
 endef
-DEVICE_VARS += SIGNATURE MAGIC CRC32_POLY
 
 define Device/lantiqFullImage
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | pad-offset 4 0
