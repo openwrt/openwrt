@@ -1,5 +1,7 @@
 include ./common-netgear.mk	# for netgear-uImage
 
+DEVICE_VARS += RAS_ROOTFS_SIZE RAS_BOARD RAS_VERSION
+
 # attention: only zlib compression is allowed for the boot fs
 define Build/zyxel-buildkerneljffs
 	rm -rf  $(KDIR_TMP)/zyxelnbg6716
@@ -216,4 +218,3 @@ define Device/zyxel_nbg6716
   UBINIZE_OPTS := -E 5
 endef
 TARGET_DEVICES += zyxel_nbg6716
-DEVICE_VARS += RAS_ROOTFS_SIZE RAS_BOARD RAS_VERSION

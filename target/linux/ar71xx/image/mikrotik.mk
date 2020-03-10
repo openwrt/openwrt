@@ -1,3 +1,5 @@
+DEVICE_VARS += MIKROTIK_CHUNKSIZE
+
 define Device/mikrotik
   PROFILES := Default
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
@@ -9,7 +11,6 @@ define Device/mikrotik
   MIKROTIK_CHUNKSIZE :=
   IMAGE/sysupgrade.bin/squashfs :=
 endef
-DEVICE_VARS += MIKROTIK_CHUNKSIZE
 
 define Device/mikrotik-nand
   $(Device/mikrotik)

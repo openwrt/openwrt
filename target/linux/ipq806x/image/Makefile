@@ -3,6 +3,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
+DEVICE_VARS += TPLINK_BOARD_ID
+
 define Build/buffalo-rootfs-cksum
 	( \
 		echo -ne "\x$$(od -A n -t u1 $@ | tr -s ' ' '\n' | \
@@ -58,7 +61,6 @@ define Device/DniImage
 	IMAGE/factory.img := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | append-ubi | netgear-dni
 	IMAGE/sysupgrade.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-uImage-fakehdr filesystem | sysupgrade-tar kernel=$$$$@ | append-metadata
 endef
-DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 
 define Device/TpSafeImage
 	KERNEL_SUFFIX := -uImage
@@ -69,7 +71,6 @@ define Device/TpSafeImage
 	IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 	IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata
 endef
-DEVICE_VARS += TPLINK_BOARD_ID
 
 define Device/ZyXELImage
 	KERNEL_SUFFIX := -uImage
