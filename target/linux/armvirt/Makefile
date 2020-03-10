@@ -12,7 +12,7 @@ FEATURES:=fpu pci rtc usb
 FEATURES+=cpiogz ext4 ramdisk squashfs targz
 MAINTAINER:=Yousong Zhou <yszhou4tech@gmail.com>
 
-KERNEL_PATCHVER:=4.19
+KERNEL_PATCHVER:=5.4
 
 include $(INCLUDE_DIR)/target.mk
 
