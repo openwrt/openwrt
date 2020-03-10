@@ -170,7 +170,7 @@ define Device/netgear_wndap6x0
   KERNEL_SIZE := 4032k
   KERNEL := dtb | kernel-bin | gzip | MuImage-initramfs gzip
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/factory.img := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi
   UBINIZE_OPTS := -E 5
 endef
 
@@ -211,7 +211,7 @@ define Device/netgear_wndr4700
   KERNEL := kernel-bin | lzma | uImage lzma | pad-offset $$(BLOCKSIZE) 64 | \
 	    append-uImage-fakehdr filesystem | dtb | create-uImage-dtb | prepend-dtb
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
-  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
+  IMAGE/factory.img := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 		       netgear-dni | check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   ARTIFACT/device-tree.dtb := export-dtb | uImage none
