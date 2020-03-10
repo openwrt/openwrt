@@ -9,7 +9,7 @@ define Device/lantiqTpLink
 	tplink-v2-header -s -V "ver. 1.0"
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := tplink-v2-image -s -V "ver. 1.0" | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-metadata | check-size
 endef
 
 define Device/tplink_tdw8970

@@ -23,6 +23,6 @@ define Device/ens202ext
   IMAGES += factory.bin
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),320k(custom)ro,1536k(kernel),12096k(rootfs),2048k(failsafe)ro,64k(art)ro,13632k@0xa0000(firmware)
   IMAGE/factory.bin := append-rootfs | pad-rootfs | senao-factory-image ens202ext
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size
 endef
 TARGET_DEVICES += ens202ext

@@ -298,7 +298,7 @@ define Device/edimax_br-6478ac-v2
   IMAGE_SIZE := 7744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN68 -f 0x70000 -S 0x01100000 | pad-rootfs | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-metadata | check-size
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport
 endef
@@ -312,7 +312,7 @@ define Device/edimax_ew-7476rpc
   IMAGE_SIZE := 7744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN79 -f 0x70000 -S 0x01100000 | pad-rootfs | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-metadata | check-size
   DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
 endef
 TARGET_DEVICES += edimax_ew-7476rpc
@@ -325,7 +325,7 @@ define Device/edimax_ew-7478ac
   IMAGE_SIZE := 7744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN70 -f 0x70000 -S 0x01100000 | pad-rootfs | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-metadata | check-size
   DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
 endef
 TARGET_DEVICES += edimax_ew-7478ac
@@ -338,7 +338,7 @@ define Device/edimax_ew-7478apc
   IMAGE_SIZE := 7744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN75 -f 0x70000 -S 0x01100000 | pad-rootfs | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-metadata | check-size
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport
 endef
@@ -348,7 +348,7 @@ define Device/elecom_wrh-300cr
   SOC := mt7620n
   IMAGE_SIZE := 14272k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elecom-header
   DEVICE_VENDOR := Elecom
   DEVICE_MODEL := WRH-300CR
@@ -362,7 +362,7 @@ define Device/engenius_esr600
   BLOCKSIZE := 64k
   IMAGE_SIZE := 15616k
   IMAGES += factory.dlf
-  IMAGE/factory.dlf := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.dlf := $$(sysupgrade_bin) | check-size | \
 	senao-header -r 0x101 -p 0x57 -t 2
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ESR600
@@ -379,7 +379,7 @@ define Device/fon_fon2601
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
   KERNEL_INITRAMFS := $$(KERNEL) | fonfxcimage
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | fonfxcimage | \
-	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += fon_fon2601
 
@@ -471,7 +471,7 @@ define Device/iodata_wn-ac1167gr
   DEVICE_MODEL := WN-AC1167GR
   IMAGE_SIZE := 6864k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elx-header 01040016 8844A2D168B45A2D
   DEVICE_PACKAGES := kmod-mt76x2
 endef
@@ -483,7 +483,7 @@ define Device/iodata_wn-ac733gr3
   DEVICE_MODEL := WN-AC733GR3
   IMAGE_SIZE := 6992k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elx-header 01040006 8844A2D168B45A2D
   DEVICE_PACKAGES := kmod-mt76x0e kmod-switch-rtl8367b
 endef
@@ -579,7 +579,7 @@ define Device/linksys_e1700
   SOC := mt7620a
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	umedia-header 0x013326
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := E1700
@@ -606,7 +606,7 @@ define Device/netgear_ex2700
   IMAGES += factory.bin
   KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | \
 	append-uImage-fakehdr filesystem
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	netgear-dni
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX2700
@@ -621,7 +621,7 @@ define Device/netgear_ex3700
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7744k
   IMAGES += factory.chk
-  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size | \
 	netgear-chk
   DEVICE_PACKAGES := kmod-mt76x2
   DEVICE_VENDOR := NETGEAR
@@ -636,7 +636,7 @@ define Device/netgear_ex6130
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7744k
   IMAGES += factory.chk
-  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size | \
 	netgear-chk
   DEVICE_PACKAGES := kmod-mt76x2
   DEVICE_VENDOR := NETGEAR
@@ -653,7 +653,7 @@ define Device/netgear_wn3000rp-v3
   IMAGES += factory.bin
   KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | \
 	append-uImage-fakehdr filesystem
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	netgear-dni
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WN3000RP
@@ -667,7 +667,7 @@ define Device/nexx_wt3020-4m
   BLOCKSIZE := 4k
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	poray-header -B WT3020 -F 4M
   DEVICE_VENDOR := Nexx
   DEVICE_MODEL := WT3020
@@ -680,7 +680,7 @@ define Device/nexx_wt3020-8m
   SOC := mt7620n
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	poray-header -B WT3020 -F 8M
   DEVICE_VENDOR := Nexx
   DEVICE_MODEL := WT3020
@@ -1126,7 +1126,7 @@ define Device/zyxel_keenetic-omni
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | \
-	check-size $$$$(IMAGE_SIZE) | zyimage -d 4882 -v "ZyXEL Keenetic Omni"
+	check-size | zyimage -d 4882 -v "ZyXEL Keenetic Omni"
   SUPPORTED_DEVICES += kn_rc
 endef
 TARGET_DEVICES += zyxel_keenetic-omni
@@ -1139,7 +1139,7 @@ define Device/zyxel_keenetic-omni-ii
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | \
-	check-size $$$$(IMAGE_SIZE) | \
+	check-size | \
 	zyimage -d 2102034 -v "ZyXEL Keenetic Omni II"
   SUPPORTED_DEVICES += kn_rf
 endef
@@ -1154,7 +1154,7 @@ define Device/zyxel_keenetic-viva
 	kmod-switch-rtl8366-smi kmod-switch-rtl8367b
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | \
-	check-size $$$$(IMAGE_SIZE) | zyimage -d 8997 -v "ZyXEL Keenetic Viva"
+	check-size | zyimage -d 8997 -v "ZyXEL Keenetic Viva"
   SUPPORTED_DEVICES += kng_rc
 endef
 TARGET_DEVICES += zyxel_keenetic-viva

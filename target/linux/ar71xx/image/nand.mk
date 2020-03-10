@@ -35,7 +35,7 @@ define Device/domywifi-dw33d
   BOARDNAME := DW33D
   IMAGE_SIZE := 16000k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,14528k(rootfs),1472k(kernel),64k(art)ro,16000k@0x50000(firmware);ar934x-nfc:96m(rootfs_data),32m(backup)ro
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 14528k | append-kernel | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 14528k | append-kernel | check-size
 endef
 TARGET_DEVICES += domywifi-dw33d
 
@@ -52,7 +52,7 @@ define Device/hiveap-121
   MTDPARTS := spi0.0:512k(u-boot)ro,64k(u-boot-env),64k(hw-info)ro,64k(boot-info)ro,64k(boot-sinfo)ro;ar934x-nfc:4096k(u-boot-1),4096k(u-boot-env-1),5m(kernel),111m(ubi),4096k(wifi-info)ro
   IMAGES := sysupgrade.tar factory.bin
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | check-size
   IMAGE/sysupgrade.tar := sysupgrade-tar
 endef
 TARGET_DEVICES += hiveap-121

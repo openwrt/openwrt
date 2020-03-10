@@ -50,7 +50,7 @@ define Device/ubnt
   UBNT_BOARD := XM
   UBNT_VERSION := 6.0.0
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
 
@@ -128,7 +128,7 @@ define Device/ubnt-unifiac
   IMAGE_SIZE := 7744k
   MTDPARTS := spi0.0:384k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),7744k(ubnt-airos)ro,128k(bs),256k(cfg)ro,64k(EEPROM)ro
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size
 endef
 
 define Device/ubnt-unifiac-lite
@@ -257,7 +257,7 @@ define Device/ubnt-routerstation
   IMAGE_SIZE := 16128k
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/factory.bin := append-rootfs | pad-rootfs | mkubntimage
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | check-size
   KERNEL := kernel-bin | patch-cmdline | lzma | pad-to $$(BLOCKSIZE)
 endef
 
@@ -304,7 +304,7 @@ define Device/ubnt-uap-pro
   DEVICE_PROFILE := UBNT UAPPRO
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma | jffs2 kernel0
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage2
 endef
 TARGET_DEVICES += ubnt-uap-pro

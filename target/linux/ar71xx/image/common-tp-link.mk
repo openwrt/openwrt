@@ -73,7 +73,7 @@ define Device/tplink-safeloader
   $(Device/tplink)
   KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-metadata | check-size
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
 

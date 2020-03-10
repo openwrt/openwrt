@@ -89,10 +89,10 @@ define Device/netgear_dgn3500
 	factory-na.img factory.img
   IMAGE/sysupgrade-na.bin := \
 	append-kernel | append-rootfs | dgn3500-sercom-footer 0x0 "NA" | \
-	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	pad-rootfs | append-metadata | check-size
   IMAGE/sysupgrade.bin := \
 	append-kernel | append-rootfs | dgn3500-sercom-footer 0x0 "WW" | \
-	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	pad-rootfs | append-metadata | check-size
   IMAGE/factory-na.img := \
 	pad-extra $(DGN3500_KERNEL_OFFSET_DEC) | append-kernel | append-rootfs | \
 	dgn3500-sercom-footer $(DGN3500_KERNEL_OFFSET_HEX) "NA" | pad-rootfs | \
@@ -119,7 +119,7 @@ define Device/netgear_dgn3500b
   IMAGES += factory.img
   IMAGE/sysupgrade.bin := \
 	append-kernel | append-rootfs | dgn3500-sercom-footer 0x0 "DE" | \
-	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	pad-rootfs | append-metadata | check-size
   IMAGE/factory.img := \
 	pad-extra $(DGN3500_KERNEL_OFFSET_DEC) | append-kernel | append-rootfs | \
 	dgn3500-sercom-footer $(DGN3500_KERNEL_OFFSET_HEX) "DE" | pad-rootfs | \

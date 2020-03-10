@@ -212,7 +212,7 @@ define Device/netgear_wndr4700
 	    append-uImage-fakehdr filesystem | dtb | create-uImage-dtb | prepend-dtb
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
-		       netgear-dni | check-size $$$$(IMAGE_SIZE)
+		       netgear-dni | check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   ARTIFACT/device-tree.dtb := export-dtb | uImage none
   NETGEAR_BOARD_ID := WNDR4700

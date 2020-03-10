@@ -63,7 +63,7 @@ define Device/Default
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
   COMPILE :=
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size
 endef
 
 $(eval $(call BuildImage))

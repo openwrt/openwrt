@@ -101,7 +101,7 @@ define Device/ap121f
   MTDPARTS := spi0.0:192k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
   SUPPORTED_DEVICES := ap121f
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += ap121f
 
@@ -132,9 +132,9 @@ define Device/ap91-5g
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),6144k(rootfs),1600k(kernel),64k(config)ro,64k(art)ro,7744k@0x50000(firmware)
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/factory.bin := append-rootfs | pad-rootfs |\
-	alfa-network-rootfs-header | append-kernel | check-size $$$$(IMAGE_SIZE)
+	alfa-network-rootfs-header | append-kernel | check-size
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs |\
-	pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size $$$$(IMAGE_SIZE)
+	pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size
 endef
 
 define Device/arduino-yun
@@ -302,7 +302,7 @@ define Device/e1700ac-v2-16M
   IMAGE_SIZE := 15936k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art)ro,-(firmware)
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += e1700ac-v2-16M
 
@@ -321,7 +321,7 @@ define Device/e558-v2-16M
   IMAGE_SIZE := 15936k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art),-(firmware)
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += e558-v2-16M
 
@@ -340,7 +340,7 @@ define Device/e600g-v2-16M
   IMAGE_SIZE := 15936k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art)ro,-(firmware)
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += e600g-v2-16M
 
@@ -360,7 +360,7 @@ define Device/e600gac-v2-16M
   IMAGE_SIZE := 15936k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art)ro,-(firmware)
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += e600gac-v2-16M
 
@@ -379,7 +379,7 @@ define Device/e750a-v4-16M
   IMAGE_SIZE := 15936k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art),-(firmware)
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += e750a-v4-16M
 
@@ -398,7 +398,7 @@ define Device/e750g-v8-16M
   IMAGE_SIZE := 15936k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art),-(firmware)
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += e750g-v8-16M
 
@@ -493,7 +493,7 @@ define Device/gl-ar750
   IMAGE_SIZE := 16000k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += gl-ar750
 
@@ -506,7 +506,7 @@ define Device/gl-ar750s
   IMAGE_SIZE := 16000k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += gl-ar750s
 
@@ -539,7 +539,7 @@ define Device/gl-usb150
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
   SUPPORTED_DEVICES := gl-usb150
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += gl-usb150
 
@@ -574,7 +574,7 @@ define Device/mr12
   MTDPARTS := spi0.0:256k(u-boot)ro,256k(u-boot-env)ro,13440k(rootfs),2240k(kernel),64k(mac),128k(art)ro,15680k@0x80000(firmware)
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size
   IMAGES := kernel.bin rootfs.bin sysupgrade.bin
 endef
 TARGET_DEVICES += mr12
@@ -602,7 +602,7 @@ define Device/dr344
   ROOTFS_SIZE := 6336k
   IMAGE_SIZE := 7744k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size
 endef
 
 define Device/dr531
@@ -625,9 +625,9 @@ define Device/wndr3700
   IMAGES := sysupgrade.bin factory.img factory-NA.img
   KERNEL := kernel-bin | patch-cmdline | lzma -d20 | netgear-uImage lzma
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory-NA.img := $$(IMAGE/default) | netgear-dni NA | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | check-size
+  IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size
+  IMAGE/factory-NA.img := $$(IMAGE/default) | netgear-dni NA | check-size
 endef
 TARGET_DEVICES += wndr3700
 
@@ -826,7 +826,7 @@ define Device/r36a
   IMAGE_SIZE := 15872k
   MTDPARTS := spi0.0:384k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += r36a
 
@@ -854,10 +854,10 @@ define Device/rut900
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs |\
 	pad-rootfs | teltonika-fw-fake-checksum | append-string master |\
-	append-md5sum-bin | check-size $$$$(IMAGE_SIZE)
+	append-md5sum-bin | check-size
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
 	append-rootfs | pad-rootfs | append-metadata |\
-	check-size $$$$(IMAGE_SIZE)
+	check-size
 endef
 TARGET_DEVICES += rut900
 
@@ -1023,7 +1023,7 @@ define Device/t830
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
   SUPPORTED_DEVICES := t830
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += t830
 
@@ -1057,7 +1057,7 @@ define Device/n5q
   IMAGE_SIZE := 15872k
   MTDPARTS := spi0.0:384k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += n5q
 
@@ -1074,8 +1074,8 @@ define Device/NBG6616
   RAS_VERSION := "$(VERSION_DIST) $(REVISION)"
   IMAGES := factory.bin sysupgrade.bin
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma | jffs2 boot/vmlinux.lzma.uImage
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | pad-to 64k | check-size $$$$(IMAGE_SIZE) | zyxel-ras-image
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | pad-to 64k | check-size | zyxel-ras-image
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size
   # We cannot currently build a factory image. It is the sysupgrade image
   # prefixed with a header (which is actually written into the MTD device).
   # The header is 2kiB and is filled with 0xff. The format seems to be:
@@ -1107,7 +1107,7 @@ define Device/c-55
   KERNEL_SIZE := 2048k
   IMAGE_SIZE := 15872k
   MTDPARTS := spi0.0:256k(u-boot)ro,128k(u-boot-env)ro,2048k(kernel),13824k(rootfs),13824k(opt)ro,2624k(failsafe)ro,64k(art)ro,15872k@0x60000(firmware)
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size
 endef
 TARGET_DEVICES += c-55
 
@@ -1139,10 +1139,10 @@ define Device/seama
   IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs
   IMAGE/sysupgrade.bin := \
 	$$(IMAGE/default) | seama | pad-rootfs | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   IMAGE/factory.bin := \
 	$$(IMAGE/default) | seama | pad-rootfs | \
-	seama-seal | check-size $$$$(IMAGE_SIZE)
+	seama-seal | check-size
   SEAMA_SIGNATURE :=
 endef
 
@@ -1157,7 +1157,7 @@ define Device/dir-869-a1
   IMAGE/factory.bin := \
 	$$(IMAGE/default) | pad-rootfs -x 64 | \
 	seama | seama-seal -m "signature=$$$$(SEAMA_SIGNATURE)" | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
 endef
 TARGET_DEVICES += dir-869-a1
 
@@ -1200,7 +1200,7 @@ define Device/dap-1330-a1
   BOARDNAME := DAP-1330-A1
   IMAGES := factory.img sysupgrade.bin
   IMAGE_SIZE := 7936k
-  IMAGE/factory.img := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | mkdapimg2 917504
+  IMAGE/factory.img := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | mkdapimg2 917504
   MTDPARTS := spi0.0:64k(u-boot)ro,64k(art)ro,64k(mp)ro,64k(config)ro,7936k(firmware)
   DAP_SIGNATURE := HONEYBEE-FIRMWARE-DAP-1330
 endef
@@ -1212,8 +1212,8 @@ define Device/dap-2695-a1
   BOARDNAME := DAP-2695-A1
   IMAGES := factory.img sysupgrade.bin
   IMAGE_SIZE := 15360k
-  IMAGE/factory.img := append-kernel | pad-offset 65536 160 | append-rootfs | wrgg-pad-rootfs | mkwrggimg | check-size $$$$(IMAGE_SIZE)
-  IMAGE/sysupgrade.bin := append-kernel | pad-offset 65536 160 | mkwrggimg | append-rootfs | wrgg-pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.img := append-kernel | pad-offset 65536 160 | append-rootfs | wrgg-pad-rootfs | mkwrggimg | check-size
+  IMAGE/sysupgrade.bin := append-kernel | pad-offset 65536 160 | mkwrggimg | append-rootfs | wrgg-pad-rootfs | check-size
   KERNEL := kernel-bin | patch-cmdline | relocate-kernel | lzma
   KERNEL_INITRAMFS := $$(KERNEL) | mkwrggimg
   MTDPARTS := spi0.0:256k(bootloader)ro,64k(bdcfg)ro,64k(rgdb)ro,64k(langpack)ro,15360k(firmware),448k(captival)ro,64k(certificate)ro,64k(radiocfg)ro
@@ -1229,7 +1229,7 @@ define Device/wam250
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),128k(nvram)ro,15872k(firmware),64k(art)ro
   SUPPORTED_DEVICES := wam250
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += wam250
 
@@ -1275,7 +1275,7 @@ define Device/wpj344
   BOARDNAME := WPJ344
   SUPPORTED_DEVICES := wpj344
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += wpj344
 
@@ -1292,7 +1292,7 @@ define Device/wpj558
   BOARDNAME := WPJ558
   SUPPORTED_DEVICES := wpj558
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += wpj558
 
@@ -1318,7 +1318,7 @@ define Device/AVM
   KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | \
 	append-squashfs-fakeroot-be | pad-to 256 | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 
 define Device/fritz300e

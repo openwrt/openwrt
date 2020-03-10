@@ -29,7 +29,7 @@ define Device/Default
   IMAGES := sysupgrade.bin
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   sysupgrade_bin := append-kernel | append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 
 define Device/seama
@@ -41,9 +41,9 @@ define Device/seama
   # - 36 bytes of META data (4-bytes aligned)
   IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs
   IMAGE/sysupgrade.bin := \
-	$$(IMAGE/default) | seama | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	$$(IMAGE/default) | seama | pad-rootfs | append-metadata | check-size
   IMAGE/factory.bin := \
-	$$(IMAGE/default) | pad-rootfs -x 64 | seama | seama-seal | check-size $$$$(IMAGE_SIZE)
+	$$(IMAGE/default) | pad-rootfs -x 64 | seama | seama-seal | check-size
   SEAMA_SIGNATURE :=
 endef
 

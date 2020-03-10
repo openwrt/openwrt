@@ -19,7 +19,7 @@ define Device/mikrotik_routerboard-wap-g-5hact2hnd
   IMAGE_SIZE := 16256k
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 -e | \
 	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-metadata | check-size
   DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
   SUPPORTED_DEVICES += rb-wapg-5hact2hnd
 endef
