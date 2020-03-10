@@ -165,7 +165,7 @@ define Device/asus_rt-ac65p
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e wpad-basic uboot-envtools
 endef
 TARGET_DEVICES += asus_rt-ac65p
@@ -181,7 +181,7 @@ define Device/asus_rt-ac85p
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e wpad-basic uboot-envtools
 endef
 TARGET_DEVICES += asus_rt-ac85p
@@ -245,7 +245,7 @@ define Device/edimax_ra21s
   DEVICE_ALT0_VENDOR := Edimax
   DEVICE_ALT0_MODEL := Gemini RA21S
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elx-header 02020040 8844A2D168B45A2D
   DEVICE_PACKAGES := kmod-mt7615e wpad-basic
 endef
@@ -256,7 +256,7 @@ define Device/edimax_rg21s
   DEVICE_VENDOR := Edimax
   DEVICE_MODEL := Gemini AC2600 RG21S
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elx-header 02020038 8844A2D168B45A2D
   DEVICE_PACKAGES := kmod-mt7615e wpad-basic
 endef
@@ -267,7 +267,7 @@ define Device/elecom_wrc-1167ghbk2-s
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-1167GHBK2-S
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elecom-wrc-factory WRC-1167GHBK2-S 0.00
   DEVICE_PACKAGES := kmod-mt7615e wpad-basic
 endef
@@ -278,7 +278,7 @@ define Device/elecom_wrc-1900gst
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-1900GST
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elecom-gst-factory WRC-1900GST 0.00
 endef
 TARGET_DEVICES += elecom_wrc-1900gst
@@ -288,7 +288,7 @@ define Device/elecom_wrc-2533gst
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-2533GST
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elecom-gst-factory WRC-2533GST 0.00
 endef
 TARGET_DEVICES += elecom_wrc-2533gst
@@ -337,7 +337,7 @@ define Device/hiwifi_hc5962
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5962
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 wpad-basic
@@ -402,7 +402,7 @@ define Device/iodata_wnpr2600g
   DEVICE_MODEL := WNPR2600G
   IMAGE_SIZE := 13952k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elx-header 0104003a 8844A2D168B45A2D
   DEVICE_PACKAGES := kmod-mt7615e wpad-basic
 endef
@@ -429,7 +429,7 @@ TARGET_DEVICES += iptime_a8004t
 define Device/jcg_jhr-ac876m
   IMAGE_SIZE := 16064k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	jcg-header 89.1
   JCG_MAXSIZE := 16064k
   DEVICE_VENDOR := JCG
@@ -484,7 +484,7 @@ define Device/MikroTik
   KERNEL := $(KERNEL_DTB) | loader-kernel
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | \
 	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
 endef
 
 define Device/mikrotik_rb750gr3
@@ -534,7 +534,7 @@ define Device/netgear_ex6150
   NETGEAR_BOARD_ID := U12H318T00_NETGEAR
   IMAGE_SIZE := 14848k
   IMAGES += factory.chk
-  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size | \
 	netgear-chk
 endef
 TARGET_DEVICES += netgear_ex6150
@@ -550,7 +550,7 @@ define Device/netgear_sercomm_nand
 	zip $$$$(SERCOMM_HWNAME).bin | sercom-seal
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/kernel.bin := append-kernel
-  IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/rootfs.bin := append-ubi | check-size
   DEVICE_VENDOR := NETGEAR
   DEVICE_PACKAGES := kmod-mt7603 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
 endef
@@ -642,7 +642,7 @@ define Device/netgear_wndr3700-v5
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
 	pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   IMAGE/factory.img := pad-extra 320k | $$(IMAGE/default) | \
 	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | \
 	zip WNDR3700v5.bin | sercom-seal
@@ -667,7 +667,7 @@ define Device/netis_wf2881
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   DEVICE_VENDOR := NETIS
   DEVICE_MODEL := WF2881
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
@@ -849,7 +849,7 @@ define Device/xiaomi_mir3g
   UBINIZE_OPTS := -E 5
   IMAGES += kernel1.bin rootfs0.bin
   IMAGE/kernel1.bin := append-kernel
-  IMAGE/rootfs0.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/rootfs0.bin := append-ubi | check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 3G
@@ -883,7 +883,7 @@ define Device/xiaomi_mir3p
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   DEVICE_PACKAGES := kmod-mt7615e kmod-usb3 kmod-usb-ledtrig-usbport \
 	wpad-basic uboot-envtools
 endef

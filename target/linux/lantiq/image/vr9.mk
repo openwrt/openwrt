@@ -195,7 +195,7 @@ define Device/netgear_dm200
   IMAGE/sysupgrade.bin := append-kernel | \
 	pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
 	pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
   IMAGE/factory.img := $$(IMAGE/sysupgrade.bin) | netgear-dni
   IMAGE_SIZE := 7872k
   NETGEAR_BOARD_ID := DM200

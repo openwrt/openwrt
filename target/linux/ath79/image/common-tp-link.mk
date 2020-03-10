@@ -31,7 +31,7 @@ define Device/tplink-v2
   KERNEL := kernel-bin | append-dtb | lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | tplink-v2-header
   IMAGE/sysupgrade.bin := tplink-v2-image -s | append-metadata | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
 endef
 
 define Device/tplink-nolzma
@@ -79,7 +79,7 @@ define Device/tplink-safeloader
   TPLINK_HWREV := 0x0
   KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-metadata | check-size
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
 

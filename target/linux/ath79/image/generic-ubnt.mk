@@ -34,7 +34,7 @@ define Device/ubnt
   DEVICE_PACKAGES := kmod-usb2
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | mkubntimage-split
+	append-rootfs | pad-rootfs | check-size | mkubntimage-split
 endef
 
 define Device/ubnt-bz
@@ -251,7 +251,7 @@ define Device/ubnt_routerstation_common
   IMAGE_SIZE := 16128k
   IMAGES := factory.bin
   IMAGE/factory.bin := append-rootfs | pad-rootfs | mkubntimage | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
   KERNEL_INITRAMFS := kernel-bin | append-dtb
 endef

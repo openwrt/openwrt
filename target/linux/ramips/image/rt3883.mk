@@ -51,7 +51,7 @@ define Device/edimax_br-6475nd
   IMAGE_SIZE := 7744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN54 -f 0x70000 -S 0x01100000 | pad-rootfs | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-metadata | check-size
   DEVICE_VENDOR := Edimax
   DEVICE_MODEL := BR-6475nD
   DEVICE_PACKAGES := swconfig
@@ -99,7 +99,7 @@ define Device/sitecom_wlr-6000
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7244k
   IMAGES += factory.dlf
-  IMAGE/factory.dlf := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.dlf := $$(sysupgrade_bin) | check-size | \
 	senao-header -r 0x0202 -p 0x41 -t 2
   DEVICE_VENDOR := Sitecom
   DEVICE_MODEL := WLR-6000
@@ -113,7 +113,7 @@ define Device/trendnet_tew-691gr
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	umedia-header 0x026910
   DEVICE_VENDOR := TRENDnet
   DEVICE_MODEL := TEW-691GR
@@ -127,7 +127,7 @@ define Device/trendnet_tew-692gr
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	umedia-header 0x026920
   DEVICE_VENDOR := TRENDnet
   DEVICE_MODEL := TEW-692GR

@@ -43,7 +43,7 @@ define Device/aerohive_hiveap-121
   SUPPORTED_DEVICES += hiveap-121
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += aerohive_hiveap-121
@@ -62,7 +62,7 @@ define Device/domywifi_dw33d
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
 endef
 TARGET_DEVICES += domywifi_dw33d
 
@@ -145,9 +145,9 @@ define Device/netgear_ath79_nand
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
   IMAGES := sysupgrade.bin factory.img
   IMAGE/factory.img := append-kernel | append-ubi | netgear-dni | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   UBINIZE_OPTS := -E 5
 endef
 

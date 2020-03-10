@@ -541,7 +541,7 @@ define Device/tplink_tl-wr2543-v1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x25430001
   IMAGE/sysupgrade.bin := tplink-v1-image sysupgrade -v 3.13.99 | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-metadata | check-size
   IMAGE/factory.bin := tplink-v1-image factory -v 3.13.99
   SUPPORTED_DEVICES += tl-wr2543n
 endef
