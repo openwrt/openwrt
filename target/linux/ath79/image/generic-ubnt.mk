@@ -113,14 +113,15 @@ define Device/ubnt_airrouter
 endef
 TARGET_DEVICES += ubnt_airrouter
 
-define Device/ubnt_bullet-m
+define Device/ubnt_bullet-m-ar7241
   $(Device/ubnt-xm)
   SOC := ar7241
   DEVICE_MODEL := Bullet-M
+  DEVICE_VARIANT := XM (AR7241)
   DEVICE_PACKAGES += rssileds
-  SUPPORTED_DEVICES += bullet-m
+  SUPPORTED_DEVICES += bullet-m ubnt,bullet-m
 endef
-TARGET_DEVICES += ubnt_bullet-m
+TARGET_DEVICES += ubnt_bullet-m-ar7241
 
 define Device/ubnt_bullet-m-xw
   $(Device/ubnt-xw)
