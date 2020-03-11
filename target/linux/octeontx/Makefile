@@ -11,8 +11,6 @@ BOARD:=octeontx
 BOARDNAME:=Octeon-TX
 FEATURES:=targz pcie gpio rtc usb fpu
 
-MAINTAINER:=Tim Harvey <tharvey@gateworks.com>
-
 KERNEL_PATCHVER:=4.14
 KERNEL_TESTING_PATCHVER:=5.4
 
