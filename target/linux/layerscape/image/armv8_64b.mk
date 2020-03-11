@@ -231,7 +231,7 @@ define Device/traverse-ls1043
   DEVICE_PACKAGES += \
     layerscape-fman-ls1043ardb \
     uboot-envtools \
-    kmod-i2c-core kmod-i2c-mux-pca954x \
+    kmod-i2c-core kmod-i2c-mux kmod-i2c-mux-pca954x \
     kmod-hwmon-core \
     kmod-gpio-pca953x kmod-input-gpio-keys-polled \
     kmod-rtc-isl1208
