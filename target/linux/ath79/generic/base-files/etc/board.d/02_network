@@ -80,6 +80,8 @@ ath79_setup_interfaces()
 		;;
 	buffalo,wzr-hp-ag300h|\
 	tplink,archer-c25-v1|\
+	tplink,archer-c60-v1|\
+	tplink,archer-c60-v2|\
 	tplink,tl-wdr3500-v1|\
 	tplink,tl-wr842n-v1|\
 	tplink,tl-wr842n-v3|\
@@ -106,9 +108,7 @@ ath79_setup_interfaces()
 	ubnt,routerstation)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
-	comfast,cf-e560ac|\
-	tplink,archer-c60-v1|\
-	tplink,archer-c60-v2)
+	comfast,cf-e560ac)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
