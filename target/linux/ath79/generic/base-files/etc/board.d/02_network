@@ -53,6 +53,7 @@ ath79_setup_interfaces()
 	ubnt,nanostation-loco-m|\
 	ubnt,nanostation-loco-m-xw|\
 	ubnt,picostation-m|\
+	ubnt,powerbeam-5ac-gen2|\
 	ubnt,rocket-m|\
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-lr|\
@@ -468,7 +469,8 @@ ath79_setup_macs()
 	ubnt,unifi)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;
-	ubnt,litebeam-ac-gen2)
+	ubnt,litebeam-ac-gen2|\
+	ubnt,powerbeam-5ac-gen2)
 		label_mac=$(mtd_get_mac_binary art 0x5006)
 		;;
 	ubnt,routerstation|\
