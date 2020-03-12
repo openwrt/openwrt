@@ -1207,7 +1207,7 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 			ht_capabilities = (struct ieee80211_ht_capabilities*) req->elems->ht_capabilities;
 			ht_cap = blobmsg_open_table(&b, "ht_capabilities");
 			blobmsg_add_u16(&b, "ht_capabilities_info", ht_capabilities->ht_capabilities_info);
-			ht_cap_mcs_set = blobmsg_open_table(&b, "supported_mcs_set");		
+			ht_cap_mcs_set = blobmsg_open_table(&b, "supported_mcs_set");
 			blobmsg_add_u16(&b, "a_mpdu_params", ht_capabilities->a_mpdu_params);
 			blobmsg_add_u16(&b, "ht_extended_capabilities", ht_capabilities->ht_extended_capabilities);
 			blobmsg_add_u32(&b, "tx_bf_capability_info", ht_capabilities->tx_bf_capability_info);
@@ -1218,7 +1218,7 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 			}
 			blobmsg_close_array(&b, mcs_set);
 			blobmsg_close_table(&b, ht_cap_mcs_set);
-			blobmsg_close_table(&b, ht_cap);		
+			blobmsg_close_table(&b, ht_cap);
 		}
 		if(req->elems->vht_capabilities)
 		{
