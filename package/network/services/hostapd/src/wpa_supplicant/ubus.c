@@ -320,6 +320,7 @@ static struct ubus_object_type wpas_daemon_object_type =
 void wpas_ubus_add(struct wpa_global *global)
 {
 	struct ubus_object *obj = &global->ubus_global;
+	char *name;
 	int name_len;
 	int ret;
 
@@ -329,14 +330,17 @@ void wpas_ubus_add(struct wpa_global *global)
 	name_len = strlen("wpa_supplicant") + 1;
 	if (global->params.name)
 		name_len += strlen(global->params.name) + 1;
-	obj->name = malloc(name_len);
-	strcpy(obj->name, "wpa_supplicant");
+
+	name = malloc(name_len);
+	strcpy(name, "wpa_supplicant");
 
 	if (global->params.name)
 	{
-		strcat(obj->name, ".");
-		strcat(obj->name, global->params.name);
+		strcat(name, ".");
+		strcat(name, global->params.name);
 	}
+
+	obj->name = name;
 
 	obj->type = &wpas_daemon_object_type;
 	obj->methods = wpas_daemon_object_type.methods;
