@@ -501,8 +501,11 @@ endef
 
 define Device/Build/image
   GZ_SUFFIX := $(if $(filter %dtb %gz,$(2)),,$(if $(and $(findstring ext4,$(1)),$(CONFIG_TARGET_IMAGES_GZIP)),.gz))
-  $$(_TARGET): $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2))$$(GZ_SUFFIX)
+  $$(_TARGET): $(if $(CONFIG_JSON_OVERVIEW_IMAGE_INFO), \
+	  $(BUILD_DIR)/json_info_files/$(call IMAGE_NAME,$(1),$(2)).json, \
+	  $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2))$$(GZ_SUFFIX))
   $(eval $(call Device/Export,$(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2)),$(1)))
+
   ROOTFS/$(1)/$(3) := \
 	$(KDIR)/root.$(1)$$(strip \
 		$$(if $$(FS_OPTIONS/$(1)),+fs=$$(call param_mangle,$$(FS_OPTIONS/$(1)))) \
@@ -524,20 +527,21 @@ define Device/Build/image
 
   $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2))
 	cp $$^ $$@
-	$(if $(CONFIG_JSON_ADD_IMAGE_INFO), \
-		DEVICE_ID="$(DEVICE_NAME)" \
-		BIN_DIR="$(BIN_DIR)" \
-		IMAGE_NAME="$(IMAGE_NAME)" \
-		IMAGE_TYPE=$(word 1,$(subst ., ,$(2))) \
-		IMAGE_PREFIX="$(IMAGE_PREFIX)" \
-		DEVICE_TITLE="$(DEVICE_TITLE)" \
-		TARGET="$(BOARD)" \
-		SUBTARGET="$(SUBTARGET)" \
-		VERSION_NUMBER="$(VERSION_NUMBER)" \
-		VERSION_CODE="$(VERSION_CODE)" \
-		SUPPORTED_DEVICES="$(SUPPORTED_DEVICES)" \
-		$(TOPDIR)/scripts/json_add_image_info.py \
-	)
+
+  $(BUILD_DIR)/json_info_files/$(call IMAGE_NAME,$(1),$(2)).json: $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2))$$(GZ_SUFFIX)
+	@mkdir -p $$(shell dirname $$@)
+	DEVICE_ID="$(DEVICE_NAME)" \
+	BIN_DIR="$(BIN_DIR)" \
+	IMAGE_NAME="$(IMAGE_NAME)" \
+	IMAGE_TYPE=$(word 1,$(subst ., ,$(2))) \
+	IMAGE_PREFIX="$(IMAGE_PREFIX)" \
+	DEVICE_TITLE="$(DEVICE_TITLE)" \
+	TARGET="$(BOARD)" \
+	SUBTARGET="$(if $(SUBTARGET),$(SUBTARGET),generic)" \
+	VERSION_NUMBER="$(VERSION_NUMBER)" \
+	VERSION_CODE="$(VERSION_CODE)" \
+	SUPPORTED_DEVICES="$(SUPPORTED_DEVICES)" \
+	$(TOPDIR)/scripts/json_add_image_info.py $$@
 
 endef
 
@@ -556,8 +560,6 @@ define Device/Build/artifact
 endef
 
 define Device/Build
-  $(shell rm -f $(BIN_DIR)/$(IMG_PREFIX)-$(1).json)
-
   $(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Device/Build/initramfs,$(1)))
   $(call Device/Build/kernel,$(1))
 
@@ -626,6 +628,7 @@ define BuildImage
 
     image_prepare: compile
 		mkdir -p $(BIN_DIR) $(KDIR)/tmp
+		rm -rf $(BUILD_DIR)/json_info_files
 		$(call Image/Prepare)
 
     legacy-images-prepare-make: image_prepare
