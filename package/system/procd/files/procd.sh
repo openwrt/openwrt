@@ -195,6 +195,7 @@ _procd_add_jail() {
 		sysfs)	json_add_boolean "sysfs" "1";;
 		ronly)	json_add_boolean "ronly" "1";;
 		requirejail)	json_add_boolean "requirejail" "1";;
+		netns)	json_add_boolean "netns" "1";;
 		esac
 	done
 	json_add_object "mount"
