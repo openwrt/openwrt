@@ -1581,11 +1581,15 @@ static int ag71xx_probe(struct platform_device *pdev)
 	ag->stop_desc->next = (u32) ag->stop_desc_dma;
 
 	mac_addr = of_get_mac_address(np);
-	if (mac_addr)
-		memcpy(dev->dev_addr, mac_addr, ETH_ALEN);
-	if (!mac_addr || !is_valid_ether_addr(dev->dev_addr)) {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,2,0))
+	if (!mac_addr || !is_valid_ether_addr(mac_addr)) {
+#else
+	if (IS_ERR(mac_addr) || !is_valid_ether_addr(mac_addr)) {
+#endif
 		dev_err(&pdev->dev, "invalid MAC address, using random address\n");
 		eth_random_addr(dev->dev_addr);
+	} else {
+		memcpy(dev->dev_addr, mac_addr, ETH_ALEN);
 	}
 
 	ag->phy_if_mode = of_get_phy_mode(np);
