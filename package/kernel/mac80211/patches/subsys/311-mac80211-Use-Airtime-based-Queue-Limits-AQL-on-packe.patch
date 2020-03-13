@@ -112,7 +112,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				if (sta->status_stats.lost_packets)
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3544,6 +3544,9 @@ struct sk_buff *ieee80211_tx_dequeue(str
+@@ -3553,6 +3553,9 @@ struct sk_buff *ieee80211_tx_dequeue(str
  
  	WARN_ON_ONCE(softirq_count() == 0);
  
@@ -122,7 +122,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  begin:
  	spin_lock_bh(&fq->lock);
  
-@@ -3654,6 +3657,21 @@ begin:
+@@ -3663,6 +3666,21 @@ begin:
  	}
  
  	IEEE80211_SKB_CB(skb)->control.vif = vif;

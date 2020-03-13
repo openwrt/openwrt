@@ -32,7 +32,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/drivers/net/wireless/ath/ath10k/mac.c
 +++ b/drivers/net/wireless/ath/ath10k/mac.c
-@@ -8868,6 +8868,7 @@ int ath10k_mac_register(struct ath10k *a
+@@ -8870,6 +8870,7 @@ int ath10k_mac_register(struct ath10k *a
  	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_VHT_IBSS);
  	wiphy_ext_feature_set(ar->hw->wiphy,
  			      NL80211_EXT_FEATURE_SET_SCAN_DWELL);
@@ -233,7 +233,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	u64 rx_airtime;
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3658,7 +3658,7 @@ begin:
+@@ -3667,7 +3667,7 @@ begin:
  
  	IEEE80211_SKB_CB(skb)->control.vif = vif;
  
@@ -242,7 +242,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		u32 airtime;
  
  		airtime = ieee80211_calc_expected_tx_airtime(hw, vif, txq->sta,
-@@ -3780,7 +3780,7 @@ bool ieee80211_txq_airtime_check(struct
+@@ -3789,7 +3789,7 @@ bool ieee80211_txq_airtime_check(struct
  	struct sta_info *sta;
  	struct ieee80211_local *local = hw_to_local(hw);
  
