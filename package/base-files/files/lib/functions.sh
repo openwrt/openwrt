@@ -254,7 +254,6 @@ default_postinst() {
 		fi
 
 		if grep -m1 -q -s "^/etc/uci-defaults/" "$filelist"; then
-			. /lib/functions/system.sh
 			[ -d /tmp/.uci ] || mkdir -p /tmp/.uci
 			for i in $(grep -s "^/etc/uci-defaults/" "$filelist"); do
 				( [ -f "$i" ] && cd "$(dirname $i)" && . "$i" ) && rm -f "$i"
