@@ -137,8 +137,8 @@
 &state_default {
 	gpio {
 		/* via gpio7 (uart3 group) the PoE status can be read */
-		ralink,group = "uart2", "uart3", "jtag", "wdt";
-		ralink,function = "gpio";
+		groups = "uart2", "uart3", "jtag", "wdt";
+		function = "gpio";
 	};
 };
 
