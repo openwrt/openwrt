@@ -139,7 +139,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	case NL80211_IFTYPE_AP:
  		return brcmf_cfg80211_del_ap_iface(wiphy, wdev);
  	case NL80211_IFTYPE_P2P_CLIENT:
-@@ -6479,9 +6558,10 @@ static int brcmf_setup_ifmodes(struct wi
+@@ -6547,9 +6626,10 @@ static int brcmf_setup_ifmodes(struct wi
  	struct ieee80211_iface_limit *c0_limits = NULL;
  	struct ieee80211_iface_limit *p2p_limits = NULL;
  	struct ieee80211_iface_limit *mbss_limits = NULL;
@@ -152,7 +152,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	mbss = brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS);
  	p2p = brcmf_feat_is_enabled(ifp, BRCMF_FEAT_P2P);
  	rsdb = brcmf_feat_is_enabled(ifp, BRCMF_FEAT_RSDB);
-@@ -6495,6 +6575,8 @@ static int brcmf_setup_ifmodes(struct wi
+@@ -6563,6 +6643,8 @@ static int brcmf_setup_ifmodes(struct wi
  	wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
  				 BIT(NL80211_IFTYPE_ADHOC) |
  				 BIT(NL80211_IFTYPE_AP);
@@ -161,7 +161,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	if (p2p)
  		wiphy->interface_modes |= BIT(NL80211_IFTYPE_P2P_CLIENT) |
  					  BIT(NL80211_IFTYPE_P2P_GO) |
-@@ -6502,18 +6584,18 @@ static int brcmf_setup_ifmodes(struct wi
+@@ -6570,18 +6652,18 @@ static int brcmf_setup_ifmodes(struct wi
  
  	c = 0;
  	i = 0;
@@ -186,7 +186,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	if (p2p) {
  		c0_limits[i].max = 1;
  		c0_limits[i++].types = BIT(NL80211_IFTYPE_P2P_DEVICE);
-@@ -6562,14 +6644,20 @@ static int brcmf_setup_ifmodes(struct wi
+@@ -6630,14 +6712,20 @@ static int brcmf_setup_ifmodes(struct wi
  	if (mbss) {
  		c++;
  		i = 0;
@@ -312,8 +312,8 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	{ BRCMF_FEAT_MONITOR, "monitor" },
 +	{ BRCMF_FEAT_MONITOR_FLAG, "rtap" },
  	{ BRCMF_FEAT_MONITOR_FMT_RADIOTAP, "rtap" },
- 	{ BRCMF_FEAT_DOT11H, "802.11h" }
- };
+ 	{ BRCMF_FEAT_DOT11H, "802.11h" },
+ 	{ BRCMF_FEAT_SAE, "sae" },
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.h
 @@ -23,6 +23,7 @@
@@ -324,14 +324,14 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
   * MONITOR_FMT_RADIOTAP: firmware provides monitor packets with radiotap header
   * MONITOR_FMT_HW_RX_HDR: firmware provides monitor packets with hw/ucode header
   * DOT11H: firmware supports 802.11h
-@@ -43,6 +44,7 @@
+@@ -44,6 +45,7 @@
  	BRCMF_FEAT_DEF(GSCAN) \
  	BRCMF_FEAT_DEF(FWSUP) \
  	BRCMF_FEAT_DEF(MONITOR) \
 +	BRCMF_FEAT_DEF(MONITOR_FLAG) \
  	BRCMF_FEAT_DEF(MONITOR_FMT_RADIOTAP) \
  	BRCMF_FEAT_DEF(MONITOR_FMT_HW_RX_HDR) \
- 	BRCMF_FEAT_DEF(DOT11H)
+ 	BRCMF_FEAT_DEF(DOT11H) \
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwil.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwil.h
 @@ -49,6 +49,8 @@
