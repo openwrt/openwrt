@@ -1,0 +1,20 @@
+Index: bzip2-1.0.8/Makefile-libbz2_so
+===================================================================
+--- bzip2-1.0.8.orig/Makefile-libbz2_so
++++ bzip2-1.0.8/Makefile-libbz2_so
+@@ -40,6 +40,15 @@ all: $(OBJS)
+ 	rm -f libbz2.so.1.0
+ 	ln -s libbz2.so.1.0.8 libbz2.so.1.0
+ 
++libbz2.a: $(OBJS)
++	rm -f libbz2.a
++	$(AR) cq libbz2.a $(OBJS)
++	@if ( test -f $(RANLIB) -o -f /usr/bin/ranlib -o \
++		-f /bin/ranlib -o -f /usr/ccs/bin/ranlib ) ; then \
++		echo $(RANLIB) libbz2.a ; \
++		$(RANLIB) libbz2.a ; \
++	fi
++
+ clean: 
+ 	rm -f $(OBJS) bzip2.o libbz2.so.1.0.8 libbz2.so.1.0 bzip2-shared
+ 
