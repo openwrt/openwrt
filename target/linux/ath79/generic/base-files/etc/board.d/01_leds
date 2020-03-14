@@ -296,6 +296,10 @@ tplink,tl-mr6400-v1)
 	ucidef_set_led_netdev "wan" "WAN" "tp-link:white:wan" "eth1"
 	ucidef_set_led_netdev "4g" "4G" "tp-link:white:4g" "usb0"
 	;;
+tplink,tl-wpa8630p-v2-eu|\
+tplink,tl-wpa8630p-v2-int)
+	ucidef_set_led_switch "lan" "LAN" "tp-link:green:lan" "switch0" "0x3c"
+	;;
 tplink,tl-wr842n-v2)
 	ucidef_set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth1"
 	ucidef_set_led_switch "lan1" "LAN1" "tp-link:green:lan1" "switch0" "0x04"
