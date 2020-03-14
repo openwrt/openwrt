@@ -97,7 +97,7 @@ define Device/ls1043ardb
   DEVICE_MODEL := LS1043A-RDB
   DEVICE_VARIANT := Default
   DEVICE_PACKAGES += \
-    layerscape-fman-ls1043ardb \
+    layerscape-fman \
     tfa-ls1043ardb \
     fmc fmc-eth-config
   DEVICE_DTS := freescale/fsl-ls1043a-rdb-sdk
@@ -119,7 +119,7 @@ define Device/ls1043ardb-sdboot
   DEVICE_MODEL := LS1043A-RDB
   DEVICE_VARIANT := SD Card Boot
   DEVICE_PACKAGES += \
-    layerscape-fman-ls1043ardb \
+    layerscape-fman \
     tfa-ls1043ardb-sdboot \
     fmc fmc-eth-config
   DEVICE_DTS := freescale/fsl-ls1043a-rdb-sdk
@@ -143,7 +143,7 @@ define Device/ls1046ardb
   DEVICE_MODEL := LS1046A-RDB
   DEVICE_VARIANT := Default
   DEVICE_PACKAGES += \
-    layerscape-fman-ls1046ardb \
+    layerscape-fman \
     tfa-ls1046ardb \
     fmc fmc-eth-config
   DEVICE_DTS := freescale/fsl-ls1046a-rdb-sdk
@@ -167,7 +167,7 @@ define Device/ls1046ardb-sdboot
   DEVICE_MODEL := LS1046A-RDB
   DEVICE_VARIANT := SD Card Boot
   DEVICE_PACKAGES += \
-    layerscape-fman-ls1046ardb \
+    layerscape-fman \
     tfa-ls1046ardb-sdboot \
     fmc fmc-eth-config
   DEVICE_DTS := freescale/fsl-ls1046a-rdb-sdk
@@ -273,7 +273,7 @@ define Device/traverse-ls1043
   FDT_LOADADDR = 0x90000000
   FILESYSTEMS := ubifs
   DEVICE_PACKAGES += \
-    layerscape-fman-ls1043ardb \
+    layerscape-fman \
     uboot-envtools \
     kmod-i2c-mux-pca954x \
     kmod-hwmon-core \
