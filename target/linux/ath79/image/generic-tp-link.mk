@@ -500,6 +500,28 @@ define Device/tplink_tl-wdr4900-v2
 endef
 TARGET_DEVICES += tplink_tl-wdr4900-v2
 
+define Device/tplink_tl-wpa8630p-v2-de
+  $(Device/tplink-safeloader)
+  SOC := qca9563
+  DEVICE_MODEL := TL-WPA8630P
+  DEVICE_VARIANT := v2 (DE)
+  IMAGE_SIZE := 6016k
+  TPLINK_BOARD_ID := TLWPA8630PV2DE
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+endef
+TARGET_DEVICES += tplink_tl-wpa8630p-v2-de
+
+define Device/tplink_tl-wpa8630p-v2-eu
+  $(Device/tplink-safeloader)
+  SOC := qca9563
+  DEVICE_MODEL := TL-WPA8630P
+  DEVICE_VARIANT := v2 (EU)
+  IMAGE_SIZE := 6016k
+  TPLINK_BOARD_ID := TLWPA8630PV2EU
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+endef
+TARGET_DEVICES += tplink_tl-wpa8630p-v2-eu
+
 define Device/tplink_tl-wr1043nd-v1
   $(Device/tplink-8m)
   SOC := ar9132
