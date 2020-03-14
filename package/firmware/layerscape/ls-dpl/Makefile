@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ls-dpl
-PKG_VERSION:=lsdk-1903
+PKG_VERSION:=LSDK-20.04
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://source.codeaurora.org/external/qoriq/qoriq-components/mc-utils
-PKG_SOURCE_VERSION:=eeb8972a3d4137c87a54c2795452b17f254a68c7
-PKG_MIRROR_HASH:=e96e72793fb9fea1d4f5112d318059ea4c836d65c02852d207407edf13fc92af
+PKG_SOURCE_VERSION:=8672a5f5abcd3a354dcab07e03f2a8a69b2e962d
+PKG_MIRROR_HASH:=4b8ad3148aee1e0c034206543472aebb435655fd03a661c4c1be545dcac7ddf0
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
