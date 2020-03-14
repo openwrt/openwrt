@@ -191,7 +191,7 @@ define Device/ls1088ardb
   DEVICE_MODEL := LS1088A-RDB
   DEVICE_VARIANT := Default
   DEVICE_PACKAGES += \
-    layerscape-mc-ls1088ardb \
+    layerscape-mc \
     layerscape-dpl-ls1088ardb \
     tfa-ls1088ardb \
     restool
@@ -218,7 +218,7 @@ define Device/ls1088ardb-sdboot
   DEVICE_MODEL := LS1088A-RDB
   DEVICE_VARIANT := SD Card Boot
   DEVICE_PACKAGES += \
-    layerscape-mc-ls1088ardb \
+    layerscape-mc \
     layerscape-dpl-ls1088ardb \
     tfa-ls1088ardb-sdboot \
     restool
@@ -244,7 +244,7 @@ define Device/ls2088ardb
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS2088ARDB
   DEVICE_PACKAGES += \
-    layerscape-mc-ls2088ardb \
+    layerscape-mc \
     layerscape-dpl-ls2088ardb \
     tfa-ls2088ardb \
     restool
