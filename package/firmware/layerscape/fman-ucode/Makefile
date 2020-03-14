@@ -18,34 +18,22 @@ PKG_MIRROR_HASH:=a630f1a86e4a67a0e390312291702560e3f64dd74fe6ccb8f3be4584d00c7f8
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/layerscape-fman-ls1043ardb
+define Package/layerscape-fman
   SECTION:=firmware
   CATEGORY:=Firmware
-  TITLE:=NXP LS1043ARDB FMan ucode
+  TITLE:=NXP FMan ucode
   DEPENDS:=@TARGET_layerscape
-  CONFIG:=fsl_fman_ucode_ls1043_r1.1_106_4_18.bin
-endef
-
-define Package/layerscape-fman-ls1046ardb
-  SECTION:=firmware
-  CATEGORY:=Firmware
-  TITLE:=NXP LS1046ARDB FMan ucode
-  DEPENDS:=@TARGET_layerscape
-  CONFIG:=fsl_fman_ucode_ls1046_r1.0_106_4_18.bin
 endef
 
 define Build/Compile
 endef
 
-define Package/layerscape-fman-ls1043ardb/install
+define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	$(CP) $(PKG_BUILD_DIR)/$(CONFIG) $(STAGING_DIR_IMAGE)/ls1043ardb-fman.bin
+	$(CP) $(PKG_BUILD_DIR)/fsl_fman_ucode_ls1043_r1.1_106_4_18.bin \
+		$(STAGING_DIR_IMAGE)/ls1043ardb-fman.bin
+	$(CP) $(PKG_BUILD_DIR)/fsl_fman_ucode_ls1046_r1.0_106_4_18.bin \
+		$(STAGING_DIR_IMAGE)/ls1046ardb-fman.bin
 endef
 
-define Package/layerscape-fman-ls1046ardb/install
-	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	$(CP) $(PKG_BUILD_DIR)/$(CONFIG) $(STAGING_DIR_IMAGE)/ls1046ardb-fman.bin
-endef
-
-$(eval $(call BuildPackage,layerscape-fman-ls1043ardb))
-$(eval $(call BuildPackage,layerscape-fman-ls1046ardb))
+$(eval $(call BuildPackage,layerscape-fman))
