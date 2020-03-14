@@ -192,7 +192,7 @@ define Device/ls1088ardb
   DEVICE_VARIANT := Default
   DEVICE_PACKAGES += \
     layerscape-mc \
-    layerscape-dpl-ls1088ardb \
+    layerscape-dpl \
     tfa-ls1088ardb \
     restool
   DEVICE_DTS := freescale/fsl-ls1088a-rdb
@@ -219,7 +219,7 @@ define Device/ls1088ardb-sdboot
   DEVICE_VARIANT := SD Card Boot
   DEVICE_PACKAGES += \
     layerscape-mc \
-    layerscape-dpl-ls1088ardb \
+    layerscape-dpl \
     tfa-ls1088ardb-sdboot \
     restool
   DEVICE_DTS := freescale/fsl-ls1088a-rdb
@@ -245,7 +245,7 @@ define Device/ls2088ardb
   DEVICE_MODEL := LS2088ARDB
   DEVICE_PACKAGES += \
     layerscape-mc \
-    layerscape-dpl-ls2088ardb \
+    layerscape-dpl \
     tfa-ls2088ardb \
     restool
   DEVICE_DTS := freescale/fsl-ls2088a-rdb
