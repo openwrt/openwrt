@@ -108,7 +108,7 @@
 
 &eth0 {
 	pinctrl-0 = <&mdio_pins>,
-		    <&gphy0_led0_pins>, <&gphy0_led1_pins>,
+		    <&gphy0_led0_pins>,
 		    <&gphy1_led0_pins>, <&gphy1_led1_pins>;
 	pinctrl-names = "default";
 
@@ -191,7 +191,7 @@
 
 &gpio {
 	pinctrl-names = "default";
-	pinctrl-0 = <&state_default>;
+	pinctrl-0 = <&state_default>, <&gphy0_led1_pins>;
 
 	state_default: pinmux {
 		pci-rst {
