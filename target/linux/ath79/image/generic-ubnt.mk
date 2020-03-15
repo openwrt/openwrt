@@ -219,6 +219,14 @@ define Device/ubnt_picostation-m
 endef
 TARGET_DEVICES += ubnt_picostation-m
 
+define Device/ubnt_nanobridge-m
+  $(Device/ubnt-xm)
+  DEVICE_MODEL := NanoBridge M
+  DEVICE_PACKAGES += rssileds
+  SUPPORTED_DEVICES += bullet-m
+endef
+TARGET_DEVICES += ubnt_nanobridge-m
+
 define Device/ubnt_rocket-m
   $(Device/ubnt-xm)
   DEVICE_MODEL := Rocket-M
