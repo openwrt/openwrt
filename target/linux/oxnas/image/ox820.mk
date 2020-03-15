@@ -38,11 +38,11 @@ define Build/encrypt-3des
 endef
 
 define Device/akitio_mycloud
-  DEVICE_VENDOR := Akition
-  DEVICE_MODEL := myCloud mini
+  DEVICE_VENDOR := Akitio
+  DEVICE_MODEL := MyCloud Mini
   SUPPORTED_DEVICES += akitio
-  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-ata-oxnas-sata kmod-usb-ledtrig-usbport \
-                     kmod-i2c-gpio kmod-rtc-ds1307
+  DEVICE_PACKAGES := kmod-ata-oxnas-sata kmod-i2c-gpio kmod-rtc-ds1307 \
+	kmod-usb2-oxnas kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += akitio_mycloud
 
@@ -50,7 +50,8 @@ define Device/cloudengines_pogoplugpro
   DEVICE_VENDOR := Cloud Engines
   DEVICE_MODEL := PogoPlug Pro (with mPCIe)
   SUPPORTED_DEVICES += pogoplug-pro
-  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb-ledtrig-usbport kmod-rt2800-pci wpad-basic
+  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb-ledtrig-usbport kmod-rt2800-pci \
+	wpad-basic
 endef
 TARGET_DEVICES += cloudengines_pogoplugpro
 
@@ -68,11 +69,12 @@ define Device/shuttle_kd20
   SUPPORTED_DEVICES += kd20
   KERNEL_INITRAMFS_PREFIX = $$(IMAGE_PREFIX)-factory
   KERNEL_INITRAMFS_SUFFIX := .tar.gz
-  KERNEL_INITRAMFS = kernel-bin | append-dtb | uImage none | omninas-factory | encrypt-3des sohmuntitnlaes
-  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-ata-oxnas-sata kmod-usb-ledtrig-usbport \
-                     kmod-usb3 kmod-i2c-gpio kmod-rtc-pcf8563 kmod-gpio-beeper \
-                     kmod-hwmon-gpiofan \
-                     kmod-md-mod kmod-md-raid0 kmod-md-raid1 kmod-fs-ext4 kmod-fs-xfs
+  KERNEL_INITRAMFS = kernel-bin | append-dtb | uImage none | omninas-factory | \
+	encrypt-3des sohmuntitnlaes
+  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb3 kmod-usb-ledtrig-usbport \
+	kmod-i2c-gpio kmod-rtc-pcf8563 kmod-gpio-beeper kmod-hwmon-gpiofan \
+	kmod-ata-oxnas-sata kmod-md-mod kmod-md-raid0 kmod-md-raid1 kmod-fs-ext4 \
+	kmod-fs-xfs
 endef
 TARGET_DEVICES += shuttle_kd20
 
@@ -80,7 +82,7 @@ define Device/mitrastar_stg-212
   DEVICE_VENDOR := MitraStar
   DEVICE_MODEL := STG-212
   SUPPORTED_DEVICES += stg212
-  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-ata-oxnas-sata kmod-fs-ext4 kmod-fs-xfs \
-                     kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-ata-oxnas-sata kmod-fs-ext4 kmod-fs-xfs \
+	kmod-usb2-oxnas kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += mitrastar_stg-212
