@@ -214,51 +214,63 @@
 			reg = <0xe100b10 0xa0>;
 
 			gphy0_led0_pins: gphy0-led0 {
-				lantiq,groups = "gphy0 led0";
-				lantiq,function = "gphy";
-				lantiq,open-drain = <0>;
-				lantiq,pull = <2>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "gphy0 led0";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
 			};
 
 			gphy0_led1_pins: gphy0-led1 {
-				lantiq,groups = "gphy0 led1";
-				lantiq,function = "gphy";
-				lantiq,open-drain = <0>;
-				lantiq,pull = <2>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "gphy0 led1";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
 			};
 
 			gphy0_led2_pins: gphy0-led2 {
-				lantiq,groups = "gphy0 led2";
-				lantiq,function = "gphy";
-				lantiq,open-drain = <0>;
-				lantiq,pull = <2>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "gphy0 led2";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
 			};
 
 			gphy1_led0_pins: gphy1-led0 {
-				lantiq,groups = "gphy1 led0";
-				lantiq,function = "gphy";
-				lantiq,open-drain = <0>;
-				lantiq,pull = <2>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "gphy1 led0";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
 			};
 
 			gphy1_led1_pins: gphy1-led1 {
-				lantiq,groups = "gphy1 led1";
-				lantiq,function = "gphy";
-				lantiq,open-drain = <0>;
-				lantiq,pull = <2>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "gphy1 led1";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
 			};
 
 			gphy1_led2_pins: gphy1-led2 {
-				lantiq,groups = "gphy1 led2";
-				lantiq,function = "gphy";
-				lantiq,open-drain = <0>;
-				lantiq,pull = <2>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "gphy1 led2";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
 			};
 
 			mdio_pins: mdio {
@@ -295,19 +307,23 @@
 			};
 
 			pci_gnt1_pins: pci-gnt1 {
-				lantiq,groups = "gnt1";
-				lantiq,function = "pci";
-				lantiq,output = <1>;
-				lantiq,open-drain = <0>;
-				lantiq,pull = <0>;
+				mux {
+					lantiq,groups = "gnt1";
+					lantiq,function = "pci";
+					lantiq,output = <1>;
+					lantiq,open-drain = <0>;
+					lantiq,pull = <0>;
+				};
 			};
 
 			pci_req1_pins: pci-req1 {
-				lantiq,groups = "req1";
-				lantiq,function = "pci";
-				lantiq,output = <0>;
-				lantiq,open-drain = <1>;
-				lantiq,pull = <2>;
+				mux {
+					lantiq,groups = "req1";
+					lantiq,function = "pci";
+					lantiq,output = <0>;
+					lantiq,open-drain = <1>;
+					lantiq,pull = <2>;
+				};
 			};
 
 			spi_pins: spi {
@@ -331,11 +347,13 @@
 			};
 
 			stp_pins: stp {
-				lantiq,groups = "stp";
-				lantiq,function = "stp";
-				lantiq,pull = <0>;
-				lantiq,open-drain = <0>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "stp";
+					lantiq,function = "stp";
+					lantiq,pull = <0>;
+					lantiq,open-drain = <0>;
+					lantiq,output = <1>;
+				};
 			};
 		};
 
