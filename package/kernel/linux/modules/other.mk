@@ -732,7 +732,8 @@ define KernelPackage/serial-8250
   FILES:= \
 	$(LINUX_DIR)/drivers/tty/serial/8250/8250.ko \
 	$(LINUX_DIR)/drivers/tty/serial/8250/8250_base.ko \
-	$(if $(CONFIG_PCI),$(LINUX_DIR)/drivers/tty/serial/8250/8250_pci.ko)
+	$(if $(CONFIG_PCI),$(LINUX_DIR)/drivers/tty/serial/8250/8250_pci.ko) \
+	$(if $(CONFIG_GPIOLIB),$(LINUX_DIR)/drivers/tty/serial/serial_mctrl_gpio.ko@ge5.3)
   AUTOLOAD:=$(call AutoProbe,8250 8250_base 8250_pci)
 endef
 
