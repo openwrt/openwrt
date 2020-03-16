@@ -533,6 +533,7 @@ mac80211_prepare_vif() {
 
 			NEWAPLIST="${NEWAPLIST}$ifname "
 			[ -n "$hostapd_ctrl" ] || {
+				ap_ifname="${ifname}"
 				hostapd_ctrl="${hostapd_ctrl:-/var/run/hostapd/$ifname}"
 			}
 		;;
@@ -753,13 +754,15 @@ mac80211_setup_vif() {
 	json_get_var vif_enable enable 1
 
 	[ "$vif_enable" = 1 ] || action=down
-	logger ip link set dev "$ifname" $action
-	ip link set dev "$ifname" "$action" || {
-		wireless_setup_vif_failed IFUP_ERROR
-		json_select ..
-		return
-	}
-	[ -z "$vif_txpower" ] || iw dev "$ifname" set txpower fixed "${vif_txpower%%.*}00"
+	if [ "$mode" != "ap" ] || [ "$ifname" = "$ap_ifname" ]; then
+		logger ip link set dev "$ifname" $action
+		ip link set dev "$ifname" "$action" || {
+			wireless_setup_vif_failed IFUP_ERROR
+			json_select ..
+			return
+		}
+		[ -z "$vif_txpower" ] || iw dev "$ifname" set txpower fixed "${vif_txpower%%.*}00"
+	fi
 
 	case "$mode" in
 		mesh)
@@ -924,6 +927,7 @@ drv_mac80211_setup() {
 
 	has_ap=
 	hostapd_ctrl=
+	ap_ifname=
 	hostapd_noscan=
 	for_each_interface "ap" mac80211_check_ap
 
