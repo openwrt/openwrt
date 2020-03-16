@@ -38,6 +38,15 @@ define Device/friendlyarm_nanopi-neo2
 endef
 TARGET_DEVICES += friendlyarm_nanopi-neo2
 
+define Device/olimex_a64-olinuxino
+  DEVICE_VENDOR := Olimex
+  DEVICE_MODEL := A64-Olinuxino
+  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bs-firmware
+  $(Device/sun50i-a64)
+  SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-olinuxino
+endef
+TARGET_DEVICES += olimex_a64-olinuxino
+
 define Device/pine64_pine64-plus
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := Pine64+
