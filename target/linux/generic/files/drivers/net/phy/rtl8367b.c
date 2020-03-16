@@ -133,9 +133,20 @@
 #define   RTL8367B_CHIP_MODE_MASK		0x7
 
 #define RTL8367B_CHIP_DEBUG0_REG		0x1303
-#define   RTL8367B_CHIP_DEBUG0_DUMMY0(_x)	BIT(8 + (_x))
+#define   RTL8367B_DEBUG0_SEL33(_x)		BIT(8 + (_x))
+#define   RTL8367B_DEBUG0_DRI_OTHER		BIT(7)
+#define   RTL8367B_DEBUG0_DRI_RG(_x)		BIT(5 + (_x))
+#define   RTL8367B_DEBUG0_DRI(_x)		BIT(3 + (_x))
+#define   RTL8367B_DEBUG0_SLR_OTHER		BIT(2)
+#define   RTL8367B_DEBUG0_SLR(_x)		BIT(_x)
 
 #define RTL8367B_CHIP_DEBUG1_REG		0x1304
+#define   RTL8367B_DEBUG1_DN_MASK(_x)		\
+	    GENMASK(6 + (_x)*8, 4 + (_x)*8)
+#define   RTL8367B_DEBUG1_DN_SHIFT(_x)		(4 + (_x) * 8)
+#define   RTL8367B_DEBUG1_DP_MASK(_x)		\
+	    GENMASK(2 + (_x) * 8, (_x) * 8)
+#define   RTL8367B_DEBUG1_DP_SHIFT(_x)		((_x) * 8)
 
 #define RTL8367B_DIS_REG			0x1305
 #define   RTL8367B_DIS_SKIP_MII_RXER(_x)	BIT(12 + (_x))
@@ -754,8 +765,22 @@ static int rtl8367b_extif_set_mode(struct rtl8366_smi *smi, int id,
 	switch (mode) {
 	case RTL8367_EXTIF_MODE_RGMII:
 	case RTL8367_EXTIF_MODE_RGMII_33V:
-		REG_WR(smi, RTL8367B_CHIP_DEBUG0_REG, 0x0367);
-		REG_WR(smi, RTL8367B_CHIP_DEBUG1_REG, 0x7777);
+		REG_RMW(smi, RTL8367B_CHIP_DEBUG0_REG,
+			RTL8367B_DEBUG0_SEL33(id),
+			RTL8367B_DEBUG0_SEL33(id));
+		if (id <= 1) {
+			REG_RMW(smi, RTL8367B_CHIP_DEBUG0_REG,
+				RTL8367B_DEBUG0_DRI(id) |
+					RTL8367B_DEBUG0_DRI_RG(id) |
+					RTL8367B_DEBUG0_SLR(id),
+				RTL8367B_DEBUG0_DRI_RG(id) |
+					RTL8367B_DEBUG0_SLR(id));
+			REG_RMW(smi, RTL8367B_CHIP_DEBUG1_REG,
+				RTL8367B_DEBUG1_DN_MASK(id) |
+					RTL8367B_DEBUG1_DP_MASK(id),
+				(7 << RTL8367B_DEBUG1_DN_SHIFT(id)) |
+					(7 << RTL8367B_DEBUG1_DP_SHIFT(id)));
+		}
 		break;
 
 	case RTL8367_EXTIF_MODE_TMII_MAC:
@@ -766,8 +791,8 @@ static int rtl8367b_extif_set_mode(struct rtl8366_smi *smi, int id,
 
 	case RTL8367_EXTIF_MODE_GMII:
 		REG_RMW(smi, RTL8367B_CHIP_DEBUG0_REG,
-		        RTL8367B_CHIP_DEBUG0_DUMMY0(id),
-			RTL8367B_CHIP_DEBUG0_DUMMY0(id));
+			RTL8367B_DEBUG0_SEL33(id),
+			RTL8367B_DEBUG0_SEL33(id));
 		REG_RMW(smi, RTL8367B_EXT_RGMXF_REG(id), BIT(6), BIT(6));
 		break;
 
