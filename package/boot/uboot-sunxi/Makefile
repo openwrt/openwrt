@@ -33,6 +33,14 @@ define U-Boot/a64-olinuxino
   UENV:=a64
 endef
 
+define U-Boot/a64-olinuxino-emmc
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Olimex A64-OLinuXino eMMC
+  BUILD_DEVICES:=olimex_a64-olinuxino-emmc
+  DEPENDS:=+PACKAGE_u-boot-olimex_a64-olinuxino-emmc:arm-trusted-firmware-sunxi
+  UENV:=a64
+endef
+
 define U-Boot/A10-OLinuXino-Lime
   BUILD_SUBTARGET:=cortexa8
   NAME:=A10 OLinuXino LIME
@@ -269,6 +277,7 @@ endef
 
 UBOOT_TARGETS := \
 	a64-olinuxino \
+	a64-olinuxino-emmc \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
 	A20-OLinuXino-Lime \
