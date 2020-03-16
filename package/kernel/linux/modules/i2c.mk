@@ -147,7 +147,7 @@ I2C_MUX_GPIO_MODULES:= \
 define KernelPackage/i2c-mux-gpio
   $(call i2c_defaults,$(I2C_MUX_GPIO_MODULES),51)
   TITLE:=GPIO-based I2C mux/switches
-  DEPENDS:=kmod-i2c-mux
+  DEPENDS:=+kmod-i2c-mux
 endef
 
 define KernelPackage/i2c-mux-gpio/description
@@ -163,7 +163,7 @@ I2C_MUX_PCA9541_MODULES:= \
 define KernelPackage/i2c-mux-pca9541
   $(call i2c_defaults,$(I2C_MUX_PCA9541_MODULES),51)
   TITLE:=Philips PCA9541 I2C mux/switches
-  DEPENDS:=kmod-i2c-mux
+  DEPENDS:=+kmod-i2c-mux
 endef
 
 define KernelPackage/i2c-mux-pca9541/description
@@ -178,7 +178,7 @@ I2C_MUX_PCA954x_MODULES:= \
 define KernelPackage/i2c-mux-pca954x
   $(call i2c_defaults,$(I2C_MUX_PCA954x_MODULES),51)
   TITLE:=Philips PCA954x I2C mux/switches
-  DEPENDS:=kmod-i2c-mux
+  DEPENDS:=+kmod-i2c-mux
 endef
 
 define KernelPackage/i2c-mux-pca954x/description
