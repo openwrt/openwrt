@@ -28,17 +28,3 @@ Subject: [PATCH] config: Permit LPAE and PCIE_BRCMSTB on BCM2835
  	help
  	  This enables support for the Broadcom BCM2835 and BCM2836 SoCs.
  	  This SoC is used in the Raspberry Pi and Roku 2 devices.
---- a/drivers/pci/controller/Kconfig
-+++ b/drivers/pci/controller/Kconfig
-@@ -290,9 +290,9 @@ config PCI_HYPERV_INTERFACE
- 
- config PCIE_BRCMSTB
- 	tristate "Broadcom Brcmstb PCIe platform host driver"
--	depends on ARCH_BRCMSTB || BMIPS_GENERIC
-+	depends on ARCH_BRCMSTB || BMIPS_GENERIC || ARCH_BCM2835
- 	depends on OF
--	depends on SOC_BRCMSTB
-+	depends on SOC_BRCMSTB || ARCH_BCM2835
- 	default ARCH_BRCMSTB || BMIPS_GENERIC
- 	help
- 	  Adds support for Broadcom Settop Box PCIe host controller.
