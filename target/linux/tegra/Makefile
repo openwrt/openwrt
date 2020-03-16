@@ -14,6 +14,7 @@ CPU_TYPE := cortex-a9
 CPU_SUBTYPE := vfpv3
 
 KERNEL_PATCHVER := 4.19
+KERNEL_TESTING_PATCHVER := 5.4
 
 include $(INCLUDE_DIR)/target.mk
 

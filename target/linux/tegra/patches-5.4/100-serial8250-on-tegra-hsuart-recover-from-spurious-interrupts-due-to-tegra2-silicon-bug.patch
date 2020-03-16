@@ -36,10 +36,10 @@ David
 
 --- a/drivers/tty/serial/8250/8250_core.c
 +++ b/drivers/tty/serial/8250/8250_core.c
-@@ -136,6 +136,38 @@ static irqreturn_t serial8250_interrupt(
- 				"serial8250: too much work for irq%d\n", irq);
+@@ -133,6 +133,38 @@ static irqreturn_t serial8250_interrupt(
+ 
+ 		if (l == i->head && pass_counter++ > PASS_LIMIT)
  			break;
- 		}
 +
 +#ifdef CONFIG_ARCH_TEGRA_2x_SOC
 +		if (!handled && (port->type == PORT_TEGRA)) {
