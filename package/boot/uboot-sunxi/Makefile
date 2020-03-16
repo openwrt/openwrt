@@ -25,6 +25,14 @@ define U-Boot/Default
   HIDDEN:=1
 endef
 
+define U-Boot/a64-olinuxino
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Olimex A64-OLinuXino
+  BUILD_DEVICES:=olimex_a64-olinuxino
+  DEPENDS:=+PACKAGE_u-boot-olimex_a64-olinuxino:arm-trusted-firmware-sunxi
+  UENV:=a64
+endef
+
 define U-Boot/A10-OLinuXino-Lime
   BUILD_SUBTARGET:=cortexa8
   NAME:=A10 OLinuXino LIME
@@ -260,6 +268,7 @@ define U-Boot/Bananapi_M2_Ultra
 endef
 
 UBOOT_TARGETS := \
+	a64-olinuxino \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
 	A20-OLinuXino-Lime \
