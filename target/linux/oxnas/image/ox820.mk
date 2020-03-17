@@ -50,8 +50,8 @@ define Device/cloudengines_pogoplugpro
   DEVICE_VENDOR := Cloud Engines
   DEVICE_MODEL := PogoPlug Pro (with mPCIe)
   SUPPORTED_DEVICES += pogoplug-pro
-  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb-ledtrig-usbport kmod-rt2800-pci \
-	wpad-basic
+  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb-ledtrig-usbport \
+	kmod-ata-oxnas-sata kmod-rt2800-pci wpad-basic
 endef
 TARGET_DEVICES += cloudengines_pogoplugpro
 
@@ -59,7 +59,8 @@ define Device/cloudengines_pogoplug-series-3
   DEVICE_VENDOR := Cloud Engines
   DEVICE_MODEL := PogoPlug Series V3 (without mPCIe)
   SUPPORTED_DEVICES += cloudengines,pogoplugv3 pogoplug-v3
-  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb-ledtrig-usbport \
+	kmod-ata-oxnas-sata
 endef
 TARGET_DEVICES += cloudengines_pogoplug-series-3
 
