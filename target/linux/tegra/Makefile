@@ -11,7 +11,7 @@ BOARD := tegra
 BOARDNAME := NVIDIA Tegra
 FEATURES := audio boot-part display ext4 fpu gpio pci pcie rootfs-part rtc squashfs usb
 CPU_TYPE := cortex-a9
-CPU_SUBTYPE := vfpv3
+CPU_SUBTYPE := vfpv3-d16
 MAINTAINER := Tomasz Maciej Nowak <tomek_n@o2.pl>
 
 KERNEL_PATCHVER := 4.14
