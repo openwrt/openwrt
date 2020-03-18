@@ -15,6 +15,7 @@
 		led-failsafe = &led_status_red;
 		led-running = &led_status_blue;
 		led-upgrade = &led_status_yellow;
+		label-mac-device = &gmac0;
 	};
 
 	chosen {
@@ -42,21 +43,25 @@
 		wan_amber {
 			label = "mir3p:amber:wan";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "dsa-0.0:04:1Gbps";
 		};
 
 		lan3_amber {
 			label = "mir3p:amber:lan3";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "dsa-0.0:01:1Gbps";
 		};
 
 		lan2_amber {
 			label = "mir3p:amber:lan2";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "dsa-0.0:02:1Gbps";
 		};
 
 		lan1_amber {
 			label = "mir3p:amber:lan1";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "dsa-0.0:03:1Gbps";
 		};
 	};
 
@@ -171,9 +176,33 @@
 	};
 };
 
-&ethernet {
-	mtd-mac-address = <&factory 0xe000>;
-	mediatek,portmap = "llllw";
+&gmac0 {
+	mtd-mac-address = <&factory 0xe006>;
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan1";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "wan";
+			mtd-mac-address = <&factory 0xe000>;
+		};
+	};
 };
 
 &state_default {

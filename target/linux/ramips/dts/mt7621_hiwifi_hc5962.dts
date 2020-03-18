@@ -142,6 +142,30 @@
 	};
 };
 
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "lan1";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "wan";
+		};
+	};
+};
+
 &state_default {
 	gpio {
 		groups = "uart3", "jtag";
