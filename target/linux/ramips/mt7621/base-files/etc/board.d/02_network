@@ -9,68 +9,6 @@ ramips_setup_interfaces()
 	local board="$1"
 
 	case $board in
-	adslr,g7|\
-	afoundry,ew1200|\
-	alfa-network,quad-e4g|\
-	asus,rt-ac57u|\
-	asus,rt-ac65p|\
-	asus,rt-ac85p|\
-	buffalo,wsr-1166dhp|\
-	buffalo,wsr-600dhp|\
-	dlink,dir-860l-b1|\
-	d-team,newifi-d2|\
-	d-team,pbr-m1|\
-	edimax,ra21s|\
-	edimax,rg21s|\
-	elecom,wrc-1167ghbk2-s|\
-	elecom,wrc-1900gst|\
-	elecom,wrc-2533gst|\
-	firefly,firewrt|\
-	iodata,wn-ax1167gr|\
-	iodata,wn-ax1167gr2|\
-	iodata,wn-dx1167r|\
-	iodata,wn-gx300gr|\
-	iodata,wnpr2600g|\
-	iptime,a6ns-m|\
-	iptime,a8004t|\
-	jcg,jhr-ac876m|\
-	mediatek,ap-mt7621a-v60|\
-	mediatek,mt7621-eval-board|\
-	mikrotik,rb750gr3|\
-	mqmaker,witi|\
-	mtc,wr1201|\
-	netgear,r6220|\
-	netgear,r6260|\
-	netgear,r6350|\
-	netgear,r6700-v2|\
-	netgear,r6800|\
-	netgear,r6850|\
-	netgear,wndr3700-v5|\
-	netis,wf2881|\
-	phicomm,k2p|\
-	planex,vr500|\
-	samknows,whitebox-v8|\
-	storylink,sap-g3200u3|\
-	telco-electronics,x1|\
-	totolink,a7000r|\
-	ubiquiti,edgerouterx|\
-	ubiquiti,edgerouterx-sfp|\
-	unielec,u7621-06-16m|\
-	unielec,u7621-06-64m|\
-	wevo,11acnas|\
-	wevo,w2914ns-v2|\
-	xiaoyu,xy-c5|\
-	xzwifi,creativebox-v1|\
-	youhua,wr1200js|\
-	youku,yk-l2|\
-	zbtlink,zbt-we1326|\
-	zbtlink,zbt-we3526|\
-	zbtlink,zbt-wg2626|\
-	zbtlink,zbt-wg3526-16m|\
-	zbtlink,zbt-wg3526-32m|\
-	zio,freezio)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
-		;;
 	asiarf,ap7621-001)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
@@ -102,7 +40,7 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "lan"
 		;;
 	*)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	esac
 }
