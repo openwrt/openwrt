@@ -14,7 +14,7 @@
 		led-failsafe = &led_blue;
 		led-running = &led_blue;
 		led-upgrade = &led_blue;
-		label-mac-device = &ethernet;
+		label-mac-device = &gmac0;
 	};
 
 	chosen {
@@ -133,8 +133,28 @@
 	};
 };
 
-&ethernet {
+&gmac0 {
 	mtd-mac-address = <&factory 0xe000>;
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan1";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "wan";
+			mtd-mac-address = <&factory 0xe006>;
+		};
+	};
 };
 
 &state_default {

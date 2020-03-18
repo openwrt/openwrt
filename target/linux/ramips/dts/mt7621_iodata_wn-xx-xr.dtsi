@@ -11,6 +11,7 @@
 		led-failsafe = &led_power;
 		led-running = &led_power;
 		led-upgrade = &led_power;
+		label-mac-device = &wan;
 	};
 
 	chosen {
@@ -120,8 +121,38 @@
 	};
 };
 
-&ethernet {
+&gmac0 {
 	mtd-mac-address = <&factory 0xe000>;
+};
+
+&switch0 {
+	ports {
+		wan: port@0 {
+			status = "okay";
+			label = "wan";
+			mtd-mac-address = <&factory 0xe006>;
+		};
+
+		port@1 {
+			status = "okay";
+			label = "lan4";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "lan1";
+		};
+	};
 };
 
 &pcie {
