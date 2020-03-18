@@ -181,6 +181,8 @@ void wpas_ubus_add_bss(struct wpa_supplicant *wpa_s)
 	char *name;
 	int ret;
 
+	if (!wpas_ubus_init())
+		return;
 
 	if (asprintf(&name, "wpa_supplicant.%s", wpa_s->ifname) < 0)
 		return;
