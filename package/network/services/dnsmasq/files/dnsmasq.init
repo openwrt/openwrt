@@ -866,6 +866,7 @@ dnsmasq_start()
 	append_bool "$cfg" allservers "--all-servers"
 	append_bool "$cfg" noping "--no-ping"
 	append_bool "$cfg" rapidcommit "--dhcp-rapid-commit"
+	append_bool "$cfg" scriptarp "--script-arp"
 
 	append_parm "$cfg" logfacility "--log-facility"
 
@@ -915,6 +916,7 @@ dnsmasq_start()
 	config_get user_dhcpscript $cfg dhcpscript
 	if has_handler || [ -n "$user_dhcpscript" ]; then
 		xappend "--dhcp-script=$DHCPSCRIPT"
+		xappend "--script-arp"
 	fi
 
 	config_get leasefile $cfg leasefile "/tmp/dhcp.leases"
