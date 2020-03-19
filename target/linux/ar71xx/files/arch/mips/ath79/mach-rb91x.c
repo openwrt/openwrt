@@ -64,7 +64,7 @@
 #define RB91X_SSR_BIT_LED3		2
 #define RB91X_SSR_BIT_LED4		3
 #define RB91X_SSR_BIT_LED5		4
-#define RB91X_SSR_BIT_5			5711Gr100
+#define RB91X_SSR_BIT_5			5
 #define RB91X_SSR_BIT_USB_POWER		6
 #define RB91X_SSR_BIT_PCIE_POWER	7
 
@@ -166,7 +166,7 @@ static struct spi_board_info rb711gr100_spi_info[] = {
 		.modalias	= "74x164",
 		.platform_data	= &rb711gr100_ssr_data,
 	}
-};711Gr100
+};
 
 static int rb711gr100_spi_cs_gpios[2] = {
 	-ENOENT,
