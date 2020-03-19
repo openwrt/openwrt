@@ -39,6 +39,10 @@ ramips_setup_interfaces()
 	ubnt,unifi-nanohd)
 		ucidef_set_interface_lan "lan"
 		;;
+	ubiquiti,edgerouterx|\
+	ubiquiti,edgerouterx-sfp)
+		ucidef_set_interface_lan "eth0 eth1 eth2 eth3 eth4"
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
