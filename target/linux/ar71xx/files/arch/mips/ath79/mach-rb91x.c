@@ -286,7 +286,6 @@ static u32 rb711gr100_get_flags(const struct rb_info *info)
 static void __init rb711gr100_setup(void)
 {
 	const struct rb_info *info;
-	char buf[64];
 	u32 flags;
 
 	info = rb_init_info((void *) KSEG1ADDR(0x1f000000), 0x10000);
