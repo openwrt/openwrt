@@ -293,10 +293,6 @@ static void __init rb711gr100_setup(void)
 	if (!info)
 		return;
 
-	scnprintf(buf, sizeof(buf), "Mikrotik RouterBOARD %s",
-		  (info->board_name) ? info->board_name : "");
-	mips_set_machine_name(buf);
-
 	rb711gr100_init_partitions(info);
 	ath79_register_spi(&rb711gr100_spi_data, rb711gr100_spi_info,
 			   ARRAY_SIZE(rb711gr100_spi_info));
@@ -341,4 +337,3 @@ static void __init rb711gr100_setup(void)
 }
 
 MIPS_MACHINE(ATH79_MACH_RB_711GR100, "711Gr100", rb711gr100_setup);
-MIPS_MACHINE_NONAME(ATH79_MACH_RB_711GR100, "711Gr100", rb711gr100_setup);
