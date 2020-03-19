@@ -71,8 +71,10 @@ proto_vxlan_setup() {
 		fi
 
 		if ! network_get_ipaddr ipaddr "$wanif"; then
-			proto_notify_error "$cfg" "NO_WAN_LINK"
-			exit
+			if [ -z "$tunlink" ]; then
+				proto_notify_error "$cfg" "NO_WAN_LINK"
+				exit
+			fi
 		fi
 	}
 
@@ -101,8 +103,10 @@ proto_vxlan6_setup() {
 		fi
 
 		if ! network_get_ipaddr6 ip6addr "$wanif"; then
-			proto_notify_error "$cfg" "NO_WAN_LINK"
-			exit
+			if [ -z "$tunlink" ]; then
+				proto_notify_error "$cfg" "NO_WAN_LINK"
+				exit
+			fi
 		fi
 	}
 
