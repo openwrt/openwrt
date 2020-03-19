@@ -335,4 +335,4 @@ static void __init rb711gr100_setup(void)
 
 }
 
-MIPS_MACHINE(ATH79_MACH_RB_711GR100, "711Gr100", rb711gr100_setup);
+MIPS_MACHINE(ATH79_MACH_RB_711GR100, "711Gr100", "MikroTik RouterBOARD 912Ui-2HnD", rb711gr100_setup);
