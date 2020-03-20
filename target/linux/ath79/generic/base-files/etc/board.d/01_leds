@@ -84,6 +84,10 @@ comfast,cf-ew72)
 	ucidef_set_led_switch "lan" "LAN" "$boardname:blue:lan" "switch0" "0x02"
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:blue:wan" "eth1"
 	;;
+comfast,cf-wr752ac-v1|\
+engenius,ecb1750)
+	ucidef_set_led_netdev "lan" "LAN" "$boardname:blue:lan" "eth0"
+	;;
 devolo,magic-2-wifi)
 	ucidef_set_led_netdev "plcw" "dLAN" "devolo:white:dlan" "eth0.1" "rx"
 	;;
@@ -92,9 +96,6 @@ dlink,dir-842-c2|\
 dlink,dir-842-c3|\
 dlink,dir-859-a1)
 	ucidef_set_led_switch "internet" "WAN" "$boardname:green:internet" "switch0" "0x20"
-	;;
-engenius,ecb1750)
-	ucidef_set_led_netdev "lan" "LAN" "$boardname:blue:lan" "eth0"
 	;;
 engenius,ews511ap)
 	ucidef_set_led_netdev "lan1" "LAN1" "$boardname:blue:lan1" "eth1"
