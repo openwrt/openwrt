@@ -13,7 +13,6 @@ KERNEL_TESTING_PATCHVER:=5.4
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += \
-	kmod-mt76 kmod-leds-gpio kmod-gpio-button-hotplug \
-	wpad-basic
+	kmod-leds-gpio kmod-gpio-button-hotplug
 
 $(eval $(call BuildTarget))
