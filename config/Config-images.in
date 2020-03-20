@@ -120,13 +120,6 @@ menu "Target Images"
 			help
 			  Create an ext4 filesystem with a journal.
 
-	config TARGET_ROOTFS_ISO
-		bool "iso"
-		default n
-		depends on TARGET_x86_generic
-		help
-		  Create a bootable ISO image.
-
 	config TARGET_ROOTFS_JFFS2
 		bool "jffs2"
 		depends on USES_JFFS2
@@ -191,7 +184,7 @@ menu "Target Images"
 	config GRUB_IMAGES
 		bool "Build GRUB images (Linux x86 or x86_64 host only)"
 		depends on TARGET_x86
-		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 		select PACKAGE_grub2
 		default y
 
@@ -237,6 +230,11 @@ menu "Target Images"
 		  This is the title of the GRUB menu entry.
 		  If unspecified, it defaults to OpenWrt.
 
+	config ISO_IMAGES
+		bool "Build LiveCD image (ISO)"
+		depends on TARGET_x86
+		select GRUB_IMAGES
+
 	config VDI_IMAGES
 		bool "Build VirtualBox image files (VDI)"
 		depends on TARGET_x86
@@ -260,14 +258,14 @@ menu "Target Images"
 
 	config TARGET_KERNEL_PARTSIZE
 		int "Kernel partition size (in MB)"
-		depends on GRUB_IMAGES || USES_BOOT_PART
+		depends on USES_BOOT_PART
 		default 8 if TARGET_apm821xx_sata
 		default 64 if TARGET_bcm27xx
 		default 16
 
 	config TARGET_ROOTFS_PARTSIZE
 		int "Root filesystem partition size (in MB)"
-		depends on GRUB_IMAGES || USES_ROOTFS_PART || TARGET_ROOTFS_EXT4FS || TARGET_omap || TARGET_rb532 || TARGET_sunxi || TARGET_uml
+		depends on USES_ROOTFS_PART || TARGET_ROOTFS_EXT4FS || TARGET_omap || TARGET_rb532 || TARGET_sunxi || TARGET_uml
 		default 104
 		help
 		  Select the root filesystem partition size.

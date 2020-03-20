@@ -93,7 +93,6 @@ fs-types-$(CONFIG_TARGET_ROOTFS_SQUASHFS) += squashfs
 fs-types-$(CONFIG_TARGET_ROOTFS_JFFS2) += $(addprefix jffs2-,$(JFFS2_BLOCKSIZE))
 fs-types-$(CONFIG_TARGET_ROOTFS_JFFS2_NAND) += $(addprefix jffs2-nand-,$(NAND_BLOCKSIZE))
 fs-types-$(CONFIG_TARGET_ROOTFS_EXT4FS) += ext4
-fs-types-$(CONFIG_TARGET_ROOTFS_ISO) += iso
 fs-types-$(CONFIG_TARGET_ROOTFS_UBIFS) += ubifs
 fs-subtypes-$(CONFIG_TARGET_ROOTFS_JFFS2) += $(addsuffix -raw,$(addprefix jffs2-,$(JFFS2_BLOCKSIZE)))
 
