@@ -414,3 +414,10 @@ define Build/kernel2minor
 	kernel2minor -k $@ -r $@.new $(1)
 	mv $@.new $@
 endef
+
+# Convert a raw image into a $1 type image.
+# E.g. | qemu-image vdi
+define Build/qemu-image
+	qemu-img convert -f raw -O $1 $@ $@.new
+	@mv $@.new $@
+endef

@@ -92,23 +92,13 @@ define Build/iso
 		-o $@ $@.boot $(TARGET_DIR)
 endef
 
-define Build/vdi
-	qemu-img convert -f raw -O vdi $@ $@.new
-	@mv $@.new $@
-endef
-
-define Build/vmdk
-	qemu-img convert -f raw -O vmdk $@ $@.new
-	@mv $@.new $@
-endef
-
 DEVICE_VARS += GRUB2_VARIANT
 define Device/Default
   ARTIFACT/image.iso := grub-config iso | iso
   IMAGES := combined.img.gz
   IMAGE/combined.img.gz := append-rootfs | pad-extra 128k | grub-config pc | combined | grub-install | gzip
-  IMAGE/combined.vdi := append-rootfs | pad-extra 128k | grub-config pc | combined | grub-install | vdi
-  IMAGE/combined.vmdk := append-rootfs | pad-extra 128k | grub-config pc | combined | grub-install | vmdk
+  IMAGE/combined.vdi := append-rootfs | pad-extra 128k | grub-config pc | combined | grub-install | qemu-image vdi
+  IMAGE/combined.vmdk := append-rootfs | pad-extra 128k | grub-config pc | combined | grub-install | qemu-image vmdk
   KERNEL := kernel-bin
   KERNEL_INSTALL := 1
   KERNEL_NAME := bzImage
