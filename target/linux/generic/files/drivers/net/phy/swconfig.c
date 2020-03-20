@@ -1260,15 +1260,20 @@ int
 switch_generic_set_link(struct switch_dev *dev, int port,
 			struct switch_port_link *link)
 {
-	if (WARN_ON(!dev->ops->phy_write16))
+	/* PHY reset can take up to 0.5s according to spec */
+	int timeout = 500;
+	u16 bmcr = BMCR_RESET;
+
+	if (WARN_ON(!dev->ops->phy_write16) ||
+		WARN_ON(!dev->ops->phy_read16))
 		return -ENOTSUPP;
 
 	/* Generic implementation */
 	if (link->aneg) {
 		dev->ops->phy_write16(dev, port, MII_BMCR, 0x0000);
-		dev->ops->phy_write16(dev, port, MII_BMCR, BMCR_ANENABLE | BMCR_ANRESTART);
+		dev->ops->phy_write16(dev, port, MII_BMCR, BMCR_RESET |
+					BMCR_ANENABLE | BMCR_ANRESTART);
 	} else {
-		u16 bmcr = 0;
 
 		if (link->duplex)
 			bmcr |= BMCR_FULLDPLX;
@@ -1287,6 +1292,19 @@ switch_generic_set_link(struct switch_dev *dev, int port,
 		}
 
 		dev->ops->phy_write16(dev, port, MII_BMCR, bmcr);
+	}
+
+	/* Poll until reset bit get cleared */
+	do{
+		usleep_range(1000, 2000);
+		dev->ops->phy_read16(dev, port, MII_BMCR, &bmcr);
+		timeout--;
+	} while (timeout > 0 || bmcr & BMCR_RESET);
+
+	if (!timeout) {
+		pr_warn("switch: %s: Port %d PHY failed to reset\n",
+			dev->name, port);
+		return -ENAVAIL;
 	}
 
 	return 0;
