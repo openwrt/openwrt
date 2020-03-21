@@ -99,32 +99,25 @@
 		spi-max-frequency = <25000000>;
 
 		partitions {
-			compatible = "fixed-partitions";
+			compatible = "mikrotik,routerboot-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			partition@0 {
 				label = "routerboot";
-				reg = <0x0000000 0x000c000>;
+				reg = <0x0 0x0>;
 				read-only;
 			};
 
-			hard_config: partition@c000 {
-				label = "hard_config";
-				reg = <0x000c000 0x0001000>;
+			hard_config: hard_config {
 				read-only;
 			};
 
-			partition@d000 {
-				label = "bios";
-				reg = <0x000d000 0x0001000>;
+			bios {
 				read-only;
 			};
 
-			partition@e000 {
-				label = "soft_config";
-				reg = <0x000e000 0x0001000>;
-				read-only;
+			soft_config {
 			};
 		};
 	};
