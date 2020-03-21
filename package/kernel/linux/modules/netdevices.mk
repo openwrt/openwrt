@@ -630,7 +630,7 @@ define KernelPackage/e1000e
   DEPENDS:=@PCIE_SUPPORT +kmod-ptp
   KCONFIG:=CONFIG_E1000E
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/e1000e/e1000e.ko
-  AUTOLOAD:=$(call AutoProbe,e1000e)
+  AUTOLOAD:=$(call AutoLoad,36,e1000e)
   MODPARAMS.e1000e:= \
     IntMode=1 \
     InterruptThrottleRate=4,4,4,4,4,4,4,4
@@ -651,7 +651,7 @@ define KernelPackage/igb
     CONFIG_IGB_HWMON=y \
     CONFIG_IGB_DCA=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/igb/igb.ko
-  AUTOLOAD:=$(call AutoLoad,35,igb)
+  AUTOLOAD:=$(call AutoLoad,37,igb)
 endef
 
 define KernelPackage/igb/description
@@ -688,7 +688,7 @@ define KernelPackage/ixgbe
     CONFIG_IXGBE_HWMON=y \
     CONFIG_IXGBE_DCA=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ixgbe/ixgbe.ko
-  AUTOLOAD:=$(call AutoLoad,35,ixgbe)
+  AUTOLOAD:=$(call AutoLoad,38,ixgbe)
 endef
 
 define KernelPackage/ixgbe/description
@@ -707,7 +707,7 @@ define KernelPackage/ixgbevf
     CONFIG_IXGBE_HWMON=y \
     CONFIG_IXGBE_DCA=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ixgbevf/ixgbevf.ko
-  AUTOLOAD:=$(call AutoLoad,35,ixgbevf)
+  AUTOLOAD:=$(call AutoLoad,38,ixgbevf)
 endef
 
 define KernelPackage/ixgbevf/description
