@@ -153,7 +153,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	kfree(bus->msgbuf->flowrings);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
-@@ -4251,17 +4251,26 @@ static void brcmf_sdio_firmware_callback
+@@ -4252,17 +4252,26 @@ static void brcmf_sdio_firmware_callback
  	sdiod->bus_if->chip = bus->ci->chip;
  	sdiod->bus_if->chiprev = bus->ci->chiprev;
  
@@ -185,7 +185,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  release:
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
-@@ -1178,8 +1178,12 @@ static void brcmf_usb_probe_phase2(struc
+@@ -1179,8 +1179,12 @@ static void brcmf_usb_probe_phase2(struc
  	if (ret)
  		goto error;
  
@@ -199,7 +199,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	if (ret)
  		goto error;
  
-@@ -1251,7 +1255,10 @@ static int brcmf_usb_probe_cb(struct brc
+@@ -1252,7 +1256,10 @@ static int brcmf_usb_probe_cb(struct brc
  	}
  
  	if (!brcmf_usb_dlneeded(devinfo)) {
@@ -211,7 +211,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		if (ret)
  			goto fail;
  		/* we are done */
-@@ -1279,6 +1286,7 @@ static int brcmf_usb_probe_cb(struct brc
+@@ -1280,6 +1287,7 @@ static int brcmf_usb_probe_cb(struct brc
  
  fail:
  	/* Release resources in reverse order */
@@ -219,7 +219,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	kfree(bus);
  	brcmf_usb_detach(devinfo);
  	return ret;
-@@ -1292,6 +1300,7 @@ brcmf_usb_disconnect_cb(struct brcmf_usb
+@@ -1293,6 +1301,7 @@ brcmf_usb_disconnect_cb(struct brcmf_usb
  	brcmf_dbg(USB, "Enter, bus_pub %p\n", devinfo);
  
  	brcmf_detach(devinfo->dev);
@@ -227,7 +227,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	kfree(devinfo->bus_pub.bus);
  	brcmf_usb_detach(devinfo);
  }
-@@ -1435,10 +1444,12 @@ static int brcmf_usb_suspend(struct usb_
+@@ -1436,10 +1445,12 @@ static int brcmf_usb_suspend(struct usb_
  
  	brcmf_dbg(USB, "Enter\n");
  	devinfo->bus_pub.state = BRCMFMAC_USB_STATE_SLEEP;
@@ -242,7 +242,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	return 0;
  }
  
-@@ -1451,8 +1462,19 @@ static int brcmf_usb_resume(struct usb_i
+@@ -1452,8 +1463,19 @@ static int brcmf_usb_resume(struct usb_i
  	struct brcmf_usbdev_info *devinfo = brcmf_usb_get_businfo(&usb->dev);
  
  	brcmf_dbg(USB, "Enter\n");

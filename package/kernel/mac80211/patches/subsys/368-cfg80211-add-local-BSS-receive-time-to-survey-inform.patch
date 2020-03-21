@@ -64,7 +64,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	__NL80211_SURVEY_INFO_AFTER_LAST,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -8367,6 +8367,10 @@ static int nl80211_send_survey(struct sk
+@@ -8373,6 +8373,10 @@ static int nl80211_send_survey(struct sk
  	    nla_put_u64_64bit(msg, NL80211_SURVEY_INFO_TIME_SCAN,
  			      survey->time_scan, NL80211_SURVEY_INFO_PAD))
  		goto nla_put_failure;

@@ -39,7 +39,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		num = 0;
  
  		/* Validate all the subframe headers */
-@@ -3422,7 +3421,6 @@ static int brcmf_sdio_bus_preinit(struct
+@@ -3426,7 +3425,6 @@ static int brcmf_sdio_bus_preinit(struct
  	struct brcmf_sdio_dev *sdiodev = bus_if->bus_priv.sdio;
  	struct brcmf_sdio *bus = sdiodev->bus;
  	struct brcmf_core *core = bus->sdio_core;
@@ -47,7 +47,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	u32 value;
  	int err;
  
-@@ -3465,7 +3463,6 @@ static int brcmf_sdio_bus_preinit(struct
+@@ -3467,7 +3465,6 @@ static int brcmf_sdio_bus_preinit(struct
  	if (sdiodev->sg_support) {
  		bus->txglom = false;
  		value = 1;

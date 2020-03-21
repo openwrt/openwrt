@@ -29,7 +29,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 -	an->ackto = ackto;
 +	an->ackto = da->ackto;
  
- 	spin_lock(&da->qlock);
+ 	spin_lock_bh(&da->qlock);
  	list_add_tail(&an->list, &da->nodes);
 @@ -356,20 +354,26 @@ EXPORT_SYMBOL(ath_dynack_node_deinit);
   */

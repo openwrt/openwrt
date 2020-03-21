@@ -20,7 +20,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
-@@ -575,7 +575,6 @@ static void
+@@ -576,7 +576,6 @@ static void
  brcmf_usb_state_change(struct brcmf_usbdev_info *devinfo, int state)
  {
  	struct brcmf_bus *bcmf_bus = devinfo->bus_pub.bus;
@@ -28,7 +28,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  	brcmf_dbg(USB, "Enter, current state=%d, new state=%d\n",
  		  devinfo->bus_pub.state, state);
-@@ -583,7 +582,6 @@ brcmf_usb_state_change(struct brcmf_usbd
+@@ -584,7 +583,6 @@ brcmf_usb_state_change(struct brcmf_usbd
  	if (devinfo->bus_pub.state == state)
  		return;
  

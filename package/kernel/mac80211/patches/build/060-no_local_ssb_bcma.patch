@@ -140,7 +140,7 @@
  # LED support
 --- a/drivers/net/wireless/broadcom/b43legacy/main.c
 +++ b/drivers/net/wireless/broadcom/b43legacy/main.c
-@@ -1937,7 +1937,7 @@ static int b43legacy_gpio_init(struct b4
+@@ -1938,7 +1938,7 @@ static int b43legacy_gpio_init(struct b4
  	if (dev->dev->id.revision >= 2)
  		mask  |= 0x0010; /* FIXME: This is redundant. */
  
@@ -149,7 +149,7 @@
  	pcidev = bus->pcicore.dev;
  #endif
  	gpiodev = bus->chipco.dev ? : pcidev;
-@@ -1956,7 +1956,7 @@ static void b43legacy_gpio_cleanup(struc
+@@ -1957,7 +1957,7 @@ static void b43legacy_gpio_cleanup(struc
  	struct ssb_bus *bus = dev->dev->bus;
  	struct ssb_device *gpiodev, *pcidev = NULL;
  

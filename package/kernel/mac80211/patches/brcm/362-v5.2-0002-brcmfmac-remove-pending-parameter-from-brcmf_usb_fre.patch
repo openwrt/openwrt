@@ -14,7 +14,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
-@@ -445,9 +445,10 @@ fail:
+@@ -446,9 +446,10 @@ fail:
  
  }
  
@@ -26,7 +26,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	int i = 0;
  	list_for_each_entry_safe(req, next, q, list) {
  		if (!req->urb) {
-@@ -455,12 +456,8 @@ static void brcmf_usb_free_q(struct list
+@@ -456,12 +457,8 @@ static void brcmf_usb_free_q(struct list
  			break;
  		}
  		i++;
@@ -41,7 +41,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	}
  }
  
-@@ -1029,8 +1026,8 @@ static void brcmf_usb_detach(struct brcm
+@@ -1030,8 +1027,8 @@ static void brcmf_usb_detach(struct brcm
  	brcmf_dbg(USB, "Enter, devinfo %p\n", devinfo);
  
  	/* free the URBS */
