@@ -104,19 +104,17 @@
 				label = "RouterBoot";
 				reg = <0x0 0x40000>;
 				read-only;
-				compatible = "fixed-partitions";
+				compatible = "mikrotik,routerboot-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
 
 				partition@0 {
 					label = "bootloader1";
-					reg = <0x0 0xf000>;
+					reg = <0x0 0x0>;
 					read-only;
 				};
 
-				hard_config: partition@f000 {
-					label = "hard_config";
-					reg = <0xf000 0x1000>;
+				hard_config: hard_config {
 					read-only;
 				};
 
@@ -126,9 +124,7 @@
 					read-only;
 				};
 
-				partition@20000 {
-					label = "soft_config";
-					reg = <0x20000 0x1000>;
+				soft_config {
 				};
 
 				partition@30000 {
