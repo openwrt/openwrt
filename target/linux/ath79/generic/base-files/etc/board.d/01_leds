@@ -13,6 +13,7 @@ case "$board" in
 	ucidef_set_led_switch "wan" "WAN" "$boardname:orange:eth1" "switch0" "0x04"
 	;;
 alfa-network,ap121f|\
+alfa-network,ap121fe|\
 avm,fritz450e)
 	ucidef_set_led_netdev "lan" "LAN" "$boardname:green:lan" "eth0"
 	;;

@@ -3,24 +3,24 @@
 #include "ar9331_alfa-network_ap121f.dtsi"
 
 / {
-	model = "ALFA Network AP121F";
-	compatible = "alfa-network,ap121f", "qca,ar9331";
+	model = "ALFA Network AP121FE";
+	compatible = "alfa-network,ap121fe", "qca,ar9331";
 
 	leds {
 		compatible = "gpio-leds";
 
 		lan {
-			label = "ap121f:green:lan";
+			label = "ap121fe:green:lan";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 
 		led_vpn: vpn {
-			label = "ap121f:green:vpn";
+			label = "ap121fe:green:vpn";
 			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "ap121f:green:wlan";
+			label = "ap121fe:green:wlan";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
@@ -28,5 +28,5 @@
 };
 
 &usb {
-	dr_mode = "host";
+	dr_mode = "peripheral";
 };
