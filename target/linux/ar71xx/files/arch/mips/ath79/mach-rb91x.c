@@ -286,11 +286,16 @@ static u32 rb711gr100_get_flags(const struct rb_info *info)
 static void __init rb711gr100_setup(void)
 {
 	const struct rb_info *info;
+	char buf[64];
 	u32 flags;
 
 	info = rb_init_info((void *) KSEG1ADDR(0x1f000000), 0x10000);
 	if (!info)
 		return;
+
+	scnprintf(buf, sizeof(buf), "Mikrotik RouterBOARD %s",
+		  (info->board_name) ? info->board_name : "");
+	mips_set_machine_name(buf);
 
 	rb711gr100_init_partitions(info);
 	ath79_register_spi(&rb711gr100_spi_data, rb711gr100_spi_info,
@@ -335,4 +340,4 @@ static void __init rb711gr100_setup(void)
 
 }
 
-MIPS_MACHINE(ATH79_MACH_RB_711GR100, "711Gr100", "MikroTik RouterBOARD 912UAG-5HPnD", rb711gr100_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_711GR100, "711Gr100", rb711gr100_setup);
