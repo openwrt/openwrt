@@ -1,0 +1,45 @@
+commit 753ffad3d6243303994227854d951ff5c70fa9e0
+Author: Fredrik Olofsson <fredrik.olofsson@anyfinetworks.com>
+Date:   Tue Nov 19 14:34:51 2019 +0100
+
+    mac80211: fix TID field in monitor mode transmit
+    
+    Fix overwriting of the qos_ctrl.tid field for encrypted frames injected on
+    a monitor interface. While qos_ctrl.tid is not encrypted, it's used as an
+    input into the encryption algorithm so it's protected, and thus cannot be
+    modified after encryption. For injected frames, the encryption may already
+    have been done in userspace, so we cannot change any fields.
+    
+    Before passing the frame to the driver, the qos_ctrl.tid field is updated
+    from skb->priority. Prior to dbd50a851c50 skb->priority was updated in
+    ieee80211_select_queue_80211(), but this function is no longer always
+    called.
+    
+    Update skb->priority in ieee80211_monitor_start_xmit() so that the value
+    is stored, and when later code 'modifies' the TID it really sets it to
+    the same value as before, preserving the encryption.
+    
+    Fixes: dbd50a851c50 ("mac80211: only allocate one queue when using iTXQs")
+    Signed-off-by: Fredrik Olofsson <fredrik.olofsson@anyfinetworks.com>
+    Link: https://lore.kernel.org/r/20191119133451.14711-1-fredrik.olofsson@anyfinetworks.com
+    [rewrite commit message based on our discussion]
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -2269,6 +2269,15 @@ netdev_tx_t ieee80211_monitor_start_xmit
+ 						    payload[7]);
+ 	}
+ 
++	/*
++	 * Initialize skb->priority for QoS frames. This is put in the TID field
++	 * of the frame before passing it to the driver.
++	 */
++	if (ieee80211_is_data_qos(hdr->frame_control)) {
++		u8 *p = ieee80211_get_qos_ctl(hdr);
++		skb->priority = *p & IEEE80211_QOS_CTL_TAG1D_MASK;
++	}
++
+ 	memset(info, 0, sizeof(*info));
+ 
+ 	info->flags = IEEE80211_TX_CTL_REQ_TX_STATUS |

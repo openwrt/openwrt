@@ -12,6 +12,7 @@ ipq40xx_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+	8dev,habanero-dvk|\
 	8dev,jalapeno|\
 	alfa-network,ap120c-ac|\
 	engenius,ens620ext)
@@ -61,7 +62,8 @@ ipq40xx_setup_interfaces()
 		;;
 	avm,fritzrepeater-3000|\
 	compex,wpj419|\
-	compex,wpj428)
+	compex,wpj428|\
+	engenius,eap2200)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
 	ezviz,cs-w3-wd1200g-eup)
@@ -99,6 +101,9 @@ ipq40xx_setup_macs()
 	local label_mac=""
 
 	case "$board" in
+	8dev,habanero-dvk)
+		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
+		;;
 	asus,rt-ac58u)
 		CI_UBIPART=UBI_DEV
 		wan_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
@@ -112,6 +117,7 @@ ipq40xx_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii bdcfg lanmac)
 		label_mac=$lan_mac
 		;;
+	engenius,eap2200|\
 	engenius,emd1)
 		lan_mac=$(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
 		label_mac=$lan_mac

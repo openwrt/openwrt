@@ -69,6 +69,14 @@ define Host/Install
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/plat/nxp/tools/byte_swap $(STAGING_DIR_HOST)/bin/tfa-byte-swap
 endef
 
+define Package/tfa-layerscape/ls1012afrdm
+  TITLE:=NXP LS1012AFRDM Trusted Firmware
+  PLAT:=ls1012afrdm
+  BOOT_MODE:=qspi
+  BIN_BL2:=build/ls1012afrdm/release/bl2_qspi.pbl
+  BIN_FIP:=build/ls1012afrdm/release/fip.bin
+endef
+
 define Package/tfa-layerscape/ls1012ardb
   TITLE:=NXP LS1012ARDB Trusted Firmware
   PLAT:=ls1012ardb
@@ -142,6 +150,7 @@ define Package/tfa-layerscape/ls2088ardb
 endef
 
 TFAS := \
+  ls1012afrdm \
   ls1012ardb \
   ls1012afrwy \
   ls1043ardb \

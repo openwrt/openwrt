@@ -15,6 +15,8 @@ board=$(board_name)
 case "$board" in
 alfa-network,ap121f|\
 buffalo,bhr-4grv2|\
+devolo,magic-2-wifi|\
+domywifi,dw33d|\
 engenius,ecb1750|\
 etactica,eg200|\
 glinet,gl-ar300m-lite|\
@@ -47,7 +49,8 @@ buffalo,wzr-hp-ag300h)
 glinet,gl-ar150)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x8000" "0x10000"
 	;;
-netgear,wndr3700)
+netgear,wndr3700|\
+netgear,wndr3700-v2)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x10000"
 	;;
 netgear,wndr3700-v4|\

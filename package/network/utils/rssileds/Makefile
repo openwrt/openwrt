@@ -18,7 +18,7 @@ define Package/rssileds
   SECTION:=net
   CATEGORY:=Network
   TITLE:=RSSI real-time LED indicator
-  DEPENDS:=+libiwinfo
+  DEPENDS:=+libiwinfo +libnl-tiny +libubox +libuci
   MAINTAINER:=Daniel Golle <dgolle@allnet.de>
 endef
 

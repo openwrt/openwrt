@@ -3,7 +3,7 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR = 0x80060000
 
-DEVICE_VARS += IMAGE_SIZE LOADER_FLASH_OFFS LOADER_TYPE
+DEVICE_VARS += LOADER_FLASH_OFFS LOADER_TYPE
 
 define Build/loader-common
 	rm -rf $@.src
@@ -72,6 +72,9 @@ ifeq ($(SUBTARGET),generic)
 include ./generic.mk
 include ./generic-tp-link.mk
 include ./generic-ubnt.mk
+endif
+ifeq ($(SUBTARGET),mikrotik)
+include ./mikrotik.mk
 endif
 ifeq ($(SUBTARGET),nand)
 include ./nand.mk

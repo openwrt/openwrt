@@ -26,7 +26,7 @@ $(eval $(call KernelPackage,hwmon-core))
 
 define AddDepends/hwmon
   SUBMENU:=$(HWMON_MENU)
-  DEPENDS:=kmod-hwmon-core $(1)
+  DEPENDS:=+kmod-hwmon-core $(1)
 endef
 
 define KernelPackage/hwmon-ads1015
@@ -75,6 +75,21 @@ define KernelPackage/hwmon-adt7475/description
 endef
 
 $(eval $(call KernelPackage,hwmon-adt7475))
+
+
+define KernelPackage/hwmon-drivetemp
+  TITLE:=Hard disk drives with temperature sensor
+  KCONFIG:=CONFIG_SENSORS_DRIVETEMP
+  FILES:=$(LINUX_DIR)/drivers/hwmon/drivetemp.ko
+  AUTOLOAD:=$(call AutoLoad,60,drivetemp)
+  $(call AddDepends/hwmon,+kmod-ata-core +kmod-scsi-core)
+endef
+
+define KernelPackage/hwmon-drivetemp/description
+ Kernel module for Hard disk drives with temperature sensor
+endef
+
+$(eval $(call KernelPackage,hwmon-drivetemp))
 
 
 define KernelPackage/hwmon-gpiofan
@@ -257,6 +272,21 @@ endef
 $(eval $(call KernelPackage,hwmon-ltc4151))
 
 
+define KernelPackage/hwmon-mcp3021
+  TITLE:=MCP3021/3221 monitoring support
+  KCONFIG:=CONFIG_SENSORS_MCP3021
+  FILES:=$(LINUX_DIR)/drivers/hwmon/mcp3021.ko
+  AUTOLOAD:=$(call AutoProbe,mcp3021)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-mcp3021/description
+ Kernel module for Linear Technology MCP3021/3221 current and voltage monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-mcp3021))
+
+
 define KernelPackage/hwmon-nct6775
   TITLE:=NCT6106D/6775F/6776F/6779D/6791D/6792D/6793D and compatibles monitoring support
   KCONFIG:=CONFIG_SENSORS_NCT6775
@@ -309,7 +339,7 @@ define KernelPackage/pmbus-zl6100
   $(call AddDepends/hwmon, +kmod-pmbus-core)
 endef
 
-define KernelPackage/hwmon-sht21/description
+define KernelPackage/pmbus-zl6100/description
  Kernel module for Intersil / Zilker Labs ZL6100 and
 compatible digital DC-DC controllers
 endef

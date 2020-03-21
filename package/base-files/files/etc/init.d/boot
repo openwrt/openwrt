@@ -40,7 +40,7 @@ boot() {
 	/sbin/kmodloader
 
 	[ ! -f /etc/config/wireless ] && {
-		# compat for brcm47xx and mvebu
+		# compat for bcm47xx and mvebu
 		sleep 1
 	}
 

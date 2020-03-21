@@ -329,6 +329,8 @@ $base_cfg
 
 EOF
 	json_select ..
+	radio_md5sum=$(md5sum $hostapd_conf_file | cut -d" " -f1)
+	echo "radio_config_id=${radio_md5sum}" >> $hostapd_conf_file
 }
 
 mac80211_hostapd_setup_bss() {
@@ -531,6 +533,7 @@ mac80211_prepare_vif() {
 
 			NEWAPLIST="${NEWAPLIST}$ifname "
 			[ -n "$hostapd_ctrl" ] || {
+				ap_ifname="${ifname}"
 				hostapd_ctrl="${hostapd_ctrl:-/var/run/hostapd/$ifname}"
 			}
 		;;
@@ -751,13 +754,15 @@ mac80211_setup_vif() {
 	json_get_var vif_enable enable 1
 
 	[ "$vif_enable" = 1 ] || action=down
-	logger ip link set dev "$ifname" $action
-	ip link set dev "$ifname" "$action" || {
-		wireless_setup_vif_failed IFUP_ERROR
-		json_select ..
-		return
-	}
-	[ -z "$vif_txpower" ] || iw dev "$ifname" set txpower fixed "${vif_txpower%%.*}00"
+	if [ "$mode" != "ap" ] || [ "$ifname" = "$ap_ifname" ]; then
+		logger ip link set dev "$ifname" $action
+		ip link set dev "$ifname" "$action" || {
+			wireless_setup_vif_failed IFUP_ERROR
+			json_select ..
+			return
+		}
+		[ -z "$vif_txpower" ] || iw dev "$ifname" set txpower fixed "${vif_txpower%%.*}00"
+	fi
 
 	case "$mode" in
 		mesh)
@@ -894,7 +899,7 @@ drv_mac80211_setup() {
 	staidx=0
 
 	[ -n "$chanbw" ] && {
-		for file in /sys/kernel/debug/ieee80211/$phy/ath9k/chanbw /sys/kernel/debug/ieee80211/$phy/ath5k/bwmode; do
+		for file in /sys/kernel/debug/ieee80211/$phy/ath9k*/chanbw /sys/kernel/debug/ieee80211/$phy/ath5k/bwmode; do
 			[ -f "$file" ] && echo "$chanbw" > "$file"
 		done
 	}
@@ -922,6 +927,7 @@ drv_mac80211_setup() {
 
 	has_ap=
 	hostapd_ctrl=
+	ap_ifname=
 	hostapd_noscan=
 	for_each_interface "ap" mac80211_check_ap
 
@@ -943,11 +949,16 @@ drv_mac80211_setup() {
 	local add_ap=0
 	local primary_ap=${NEWAPLIST%% *}
 	[ -n "$hostapd_ctrl" ] && {
+		local no_reload=1
 		if [ -n "$(ubus list | grep hostapd.$primary_ap)" ]; then
 			[ "${NEW_MD5}" = "${OLD_MD5}" ] || {
 				ubus call hostapd.$primary_ap reload
+				no_reload=$?
+				mac80211_vap_cleanup hostapd "${OLDAPLIST}"
+		                [ -n "${NEWAPLIST}" ] && mac80211_iw_interface_add "$phy" "${NEWAPLIST%% *}" __ap || return
 			}
-		else
+		fi
+		if [ "$no_reload" != "0" ]; then
 			add_ap=1
 			ubus wait_for hostapd.$phy
 			ubus call hostapd.${phy} config_add "{\"iface\":\"$primary_ap\", \"config\":\"${hostapd_conf_file}\"}"

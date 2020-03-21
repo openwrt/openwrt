@@ -9,10 +9,10 @@ define Device/unielec_u7623-02-emmc-512m
 endef
 TARGET_DEVICES += unielec_u7623-02-emmc-512m
 
-define Device/lemaker_bananapi-bpi-r2
-  DEVICE_VENDOR := LeMaker
+define Device/bpi_bananapi-r2
+  DEVICE_VENDOR := Bpi
   DEVICE_MODEL := Banana Pi R2
   DEVICE_DTS := mt7623n-bananapi-bpi-r2
   SUPPORTED_DEVICES := bananapi,bpi-r2
 endef
-TARGET_DEVICES += lemaker_bananapi-bpi-r2
+TARGET_DEVICES += bpi_bananapi-r2

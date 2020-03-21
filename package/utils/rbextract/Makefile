@@ -11,7 +11,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rbextract
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 CMAKE_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk

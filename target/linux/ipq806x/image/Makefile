@@ -73,11 +73,11 @@ DEVICE_VARS += TPLINK_BOARD_ID
 
 define Device/ZyXELImage
 	KERNEL_SUFFIX := -uImage
-	KERNEL = kernel-bin | append-dtb | uImage none | pad-to $${KERNEL_SIZE}
+	KERNEL = kernel-bin | append-dtb | uImage none | pad-to $$(KERNEL_SIZE)
 	KERNEL_NAME := zImage
 	IMAGES := factory.bin sysupgrade.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to $$$$(BLOCKSIZE) | zyxel-ras-image separate-kernel
-	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to $$$${BLOCKSIZE} | sysupgrade-tar rootfs=$$$$@ | append-metadata
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to $$$$(BLOCKSIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
 
 define Device/buffalo_wxr-2533dhp
@@ -121,7 +121,7 @@ define Device/linksys_ea8500
 	SUPPORTED_DEVICES += ea8500
 	UBINIZE_OPTS := -E 5
 	IMAGES := factory.bin sysupgrade.bin
-	IMAGE/factory.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-ubi
+	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
 endef
 TARGET_DEVICES += linksys_ea8500
@@ -295,7 +295,7 @@ define Device/tplink_vr2600v
 	SUPPORTED_DEVICES += vr2600v
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
 	IMAGES := sysupgrade.bin
-	IMAGE/sysupgrade.bin := pad-extra 512 | append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
+	IMAGE/sysupgrade.bin := pad-extra 512 | append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | append-metadata
 endef
 TARGET_DEVICES += tplink_vr2600v
 

@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += IMAGE_SIZE DTB_SIZE
+DEVICE_VARS += DTB_SIZE
 
 define Build/boot-img
 	$(RM) -rf $@.bootdir

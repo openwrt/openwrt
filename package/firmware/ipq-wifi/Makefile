@@ -25,9 +25,11 @@ endef
 # <https://wireless.wiki.kernel.org/en/users/drivers/ath10k/boardfiles>
 
 ALLWIFIBOARDS:= \
+	8dev_habanero-dvk \
 	aruba_ap-303 \
 	avm_fritzrepeater-1200 \
 	dlink_dap2610 \
+	engenius_eap2200 \
 	engenius_emd1 \
 	ezviz_cs-w3-wd1200g-eup \
 	linksys_ea8300 \
@@ -92,9 +94,11 @@ endef
 # Place files in this directory as board-<devicename>.<qca4019|qca9888|qca9984>
 # Add $(eval $(call generate-ipq-wifi-package,<devicename>,<display name>))
 
+$(eval $(call generate-ipq-wifi-package,8dev_habanero-dvk,8devices Habanero DVK))
 $(eval $(call generate-ipq-wifi-package,aruba_ap-303,Aruba AP-303))
 $(eval $(call generate-ipq-wifi-package,avm_fritzrepeater-1200,AVM FRITZRepeater 1200))
 $(eval $(call generate-ipq-wifi-package,dlink_dap2610,D-Link DAP-2610))
+$(eval $(call generate-ipq-wifi-package,engenius_eap2200,EnGenius EAP2200))
 $(eval $(call generate-ipq-wifi-package,engenius_emd1,EnGenius EMD1))
 $(eval $(call generate-ipq-wifi-package,ezviz_cs-w3-wd1200g-eup,EZVIZ CS-W3-WD1200G EUP))
 $(eval $(call generate-ipq-wifi-package,linksys_ea8300,Linksys EA8300))

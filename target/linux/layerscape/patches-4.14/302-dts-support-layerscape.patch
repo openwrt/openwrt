@@ -607,9 +607,9 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
 +};
 +
  &enet0 {
- 	tbi-handle = <&tbi1>;
+ 	tbi-handle = <&tbi0>;
  	phy-handle = <&sgmii_phy2>;
-@@ -228,6 +243,10 @@
+@@ -235,6 +250,10 @@
  	};
  };
  
@@ -620,7 +620,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  &sai1 {
  	status = "okay";
  };
-@@ -243,3 +262,11 @@
+@@ -250,3 +269,11 @@
  &uart1 {
  	status = "okay";
  };
@@ -740,7 +740,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  		dcu: dcu@2ce0000 {
  			compatible = "fsl,ls1021a-dcu";
  			reg = <0x0 0x2ce0000 0x0 0x10000>;
-@@ -684,6 +734,11 @@
+@@ -693,6 +743,11 @@
  			dr_mode = "host";
  			snps,quirk-frame-length-adjustment = <0x20>;
  			snps,dis_rxdet_inp3_quirk;
@@ -752,7 +752,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  		};
  
  		pcie@3400000 {
-@@ -691,7 +746,9 @@
+@@ -700,7 +755,9 @@
  			reg = <0x00 0x03400000 0x0 0x00010000   /* controller registers */
  			       0x40 0x00000000 0x0 0x00002000>; /* configuration space */
  			reg-names = "regs", "config";
@@ -763,7 +763,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  			fsl,pcie-scfg = <&scfg 0>;
  			#address-cells = <3>;
  			#size-cells = <2>;
-@@ -707,6 +764,7 @@
+@@ -716,6 +773,7 @@
  					<0000 0 0 2 &gic GIC_SPI 188 IRQ_TYPE_LEVEL_HIGH>,
  					<0000 0 0 3 &gic GIC_SPI 190 IRQ_TYPE_LEVEL_HIGH>,
  					<0000 0 0 4 &gic GIC_SPI 192 IRQ_TYPE_LEVEL_HIGH>;
@@ -771,7 +771,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  		};
  
  		pcie@3500000 {
-@@ -714,7 +772,9 @@
+@@ -723,7 +781,9 @@
  			reg = <0x00 0x03500000 0x0 0x00010000   /* controller registers */
  			       0x48 0x00000000 0x0 0x00002000>; /* configuration space */
  			reg-names = "regs", "config";
@@ -782,7 +782,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  			fsl,pcie-scfg = <&scfg 1>;
  			#address-cells = <3>;
  			#size-cells = <2>;
-@@ -730,6 +790,47 @@
+@@ -739,6 +799,47 @@
  					<0000 0 0 2 &gic GIC_SPI 189 IRQ_TYPE_LEVEL_HIGH>,
  					<0000 0 0 3 &gic GIC_SPI 191 IRQ_TYPE_LEVEL_HIGH>,
  					<0000 0 0 4 &gic GIC_SPI 193 IRQ_TYPE_LEVEL_HIGH>;

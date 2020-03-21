@@ -244,12 +244,6 @@
 
 &GPIO0 {
 	status = "okay";
-	#interrupt-cells = <2>;
-	interrupt-controller;
-	interrupts-extended = <&UIC1 0x14>,
-			      <&UIC1 0x1e>,
-			      <&UIC1 0x1f>,
-			      <&UIC2 0x19>;
 };
 
 &IIC0 {

@@ -335,7 +335,7 @@ __rb_get_wlan_data(void)
 	}
 	/* Older ath79-based boards directly show the RB_MAGIC_ERD bytes followed by
 	the LZO-compressed calibration data with no RLE */
-	if (magic == RB_MAGIC_ERD) {
+	else if (magic == RB_MAGIC_ERD) {
 		if (tag_len > RB_ART_SIZE) {
 			printf("Calibration data too large\n");
 			goto err_free_lzo_in;
@@ -362,6 +362,18 @@ __rb_get_wlan_data(void)
 
 		buf_rle_out = buf_lzo_out;
 	}
+	/* Even older ath79-base boards directly have RLE-encoded calibration data,
+	without any LZO compresion nor showing RB_MAGIC_ERD bytes */
+	else {
+		printf("Decode calibration data with RLE\n");
+		err = rle_decode(tag, tag_len, buf_rle_out, RB_ART_SIZE,
+				 NULL, NULL);
+		if (err) {
+			printf("unable to decode ERD data\n");
+			goto err_free_rle_out;
+		}
+	}
+
 	return buf_rle_out;
 
 err_free_rle_out:

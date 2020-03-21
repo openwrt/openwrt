@@ -53,8 +53,9 @@ platform_do_upgrade() {
 	avm,fritzrepeater-1200 |\
 	avm,fritzrepeater-3000 |\
 	cilab,meshpoint-one |\
+	engenius,eap2200 |\
 	qxwlan,e2600ac-c2 |\
-	xiaomi,miwifi-mesh-d01)
+  xiaomi,miwifi-mesh-d01)
 		nand_do_upgrade "$1"
 		;;
 	alfa-network,ap120c-ac)

@@ -187,10 +187,10 @@ define KernelPackage/lib-xor
   TITLE:=XOR blocks algorithm support
   HIDDEN:=1
   KCONFIG:=CONFIG_XOR_BLOCKS
-ifneq ($(wildcard $(LINUX_DIR)/arch/arm/lib/xor-neon.ko),)
+ifneq ($(wildcard $(LINUX_DIR)/arch/$(LINUX_KARCH)/lib/xor-neon.ko),)
   FILES:= \
     $(LINUX_DIR)/crypto/xor.ko \
-    $(LINUX_DIR)/arch/arm/lib/xor-neon.ko
+    $(LINUX_DIR)/arch/$(LINUX_KARCH)/lib/xor-neon.ko
   AUTOLOAD:=$(call AutoProbe,xor-neon xor)
 else
   FILES:=$(LINUX_DIR)/crypto/xor.ko
@@ -251,7 +251,8 @@ define KernelPackage/lib-cordic
   SUBMENU:=$(LIB_MENU)
   TITLE:=Cordic function support
   KCONFIG:=CONFIG_CORDIC
-  FILES:=$(LINUX_DIR)/lib/cordic.ko
+  FILES:=$(LINUX_DIR)/lib/cordic.ko@lt5.2 \
+	  $(LINUX_DIR)/lib/math/cordic.ko@ge5.2
   AUTOLOAD:=$(call AutoProbe,cordic)
 endef
 

@@ -32,7 +32,7 @@ endef
 # why \x00\x00\x00\x00 for zImage-initramfs
 define Device/Default
   PROFILES := Default
-  DEVICE_VARS := SUNXI_DTS SUNXI_DTS_DIR SUNXI_UBOOT
+  DEVICE_VARS := SUNXI_DTS SUNXI_DTS_DIR
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | uImage none
   IMAGES := sdcard.img.gz

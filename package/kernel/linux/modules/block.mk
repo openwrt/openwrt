@@ -38,7 +38,7 @@ $(eval $(call KernelPackage,ata-core))
 
 define AddDepends/ata
   SUBMENU:=$(BLOCK_MENU)
-  DEPENDS+=kmod-ata-core $(1)
+  DEPENDS+=+kmod-ata-core $(1)
 endef
 
 
@@ -117,14 +117,13 @@ $(eval $(call KernelPackage,ata-nvidia-sata))
 
 
 define KernelPackage/ata-pdc202xx-old
-  SUBMENU:=$(BLOCK_MENU)
   TITLE:=Older Promise PATA controller support
-  DEPENDS:=kmod-ata-core
   KCONFIG:= \
        CONFIG_ATA_SFF=y \
        CONFIG_PATA_PDC_OLD
   FILES:=$(LINUX_DIR)/drivers/ata/pata_pdc202xx_old.ko
   AUTOLOAD:=$(call AutoLoad,41,pata_pdc202xx_old,1)
+  $(call AddDepends/ata)
 endef
 
 define KernelPackage/ata-pdc202xx-old/description

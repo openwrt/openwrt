@@ -152,8 +152,7 @@ hostapd_bss_reload(struct ubus_context *ctx, struct ubus_object *obj,
 		   struct blob_attr *msg)
 {
 	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
-	hostapd_reload_config(hapd->iface);
-	hostapd_reload_iface(hapd->iface);
+	return hostapd_reload_config(hapd->iface, 1);
 }
 
 static int
@@ -1111,6 +1110,7 @@ static struct ubus_object_type daemon_object_type =
 void hostapd_ubus_add(struct hapd_interfaces *interfaces)
 {
 	struct ubus_object *obj = &interfaces->ubus;
+	char *name;
 	int name_len;
 	int ret;
 
@@ -1120,12 +1120,14 @@ void hostapd_ubus_add(struct hapd_interfaces *interfaces)
 	name_len = strlen("hostapd") + 1;
 	if (interfaces->name)
 		name_len += strlen(interfaces->name) + 1;
-	obj->name = malloc(name_len);
-	strcpy(obj->name, "hostapd");
+
+	name = malloc(name_len);
+	strcpy(name, "hostapd");
 	if (interfaces->name) {
-		strcat(obj->name, ".");
-		strcat(obj->name, interfaces->name);
+		strcat(name, ".");
+		strcat(name, interfaces->name);
 	}
+	obj->name = name;
 
 	obj->type = &daemon_object_type;
 	obj->methods = daemon_object_type.methods;
@@ -1208,7 +1210,7 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 			ht_capabilities = (struct ieee80211_ht_capabilities*) req->elems->ht_capabilities;
 			ht_cap = blobmsg_open_table(&b, "ht_capabilities");
 			blobmsg_add_u16(&b, "ht_capabilities_info", ht_capabilities->ht_capabilities_info);
-			ht_cap_mcs_set = blobmsg_open_table(&b, "supported_mcs_set");		
+			ht_cap_mcs_set = blobmsg_open_table(&b, "supported_mcs_set");
 			blobmsg_add_u16(&b, "a_mpdu_params", ht_capabilities->a_mpdu_params);
 			blobmsg_add_u16(&b, "ht_extended_capabilities", ht_capabilities->ht_extended_capabilities);
 			blobmsg_add_u32(&b, "tx_bf_capability_info", ht_capabilities->tx_bf_capability_info);
@@ -1219,7 +1221,7 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 			}
 			blobmsg_close_array(&b, mcs_set);
 			blobmsg_close_table(&b, ht_cap_mcs_set);
-			blobmsg_close_table(&b, ht_cap);		
+			blobmsg_close_table(&b, ht_cap);
 		}
 		if(req->elems->vht_capabilities)
 		{

@@ -111,7 +111,7 @@ define Device/allnet_all5002
   DEVICE_VENDOR := Allnet
   DEVICE_MODEL := ALL5002
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
-	kmod-i2c-core kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
+	kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
   SUPPORTED_DEVICES += all5002
 endef
 TARGET_DEVICES += allnet_all5002
@@ -122,7 +122,7 @@ define Device/allnet_all5003
   DEVICE_VENDOR := Allnet
   DEVICE_MODEL := ALL5003
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
-	kmod-i2c-core kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
+	kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
   SUPPORTED_DEVICES += all5003
 endef
 TARGET_DEVICES += allnet_all5003
@@ -184,7 +184,7 @@ define Device/asiarf_awm002-evb-4m
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AWM002-EVB
   DEVICE_VARIANT := 4M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-gpio
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-gpio
   SUPPORTED_DEVICES += awm002-evb-4M
 endef
 TARGET_DEVICES += asiarf_awm002-evb-4m
@@ -195,7 +195,7 @@ define Device/asiarf_awm002-evb-8m
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AWM002-EVB/AWM003-EVB
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-gpio
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-gpio
   SUPPORTED_DEVICES += awm002-evb-8M
 endef
 TARGET_DEVICES += asiarf_awm002-evb-8m
@@ -727,7 +727,7 @@ define Device/nixcore_x1-16m
   DEVICE_VENDOR := Nixcore
   DEVICE_MODEL := X1
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
 	kmod-spi-dev
   SUPPORTED_DEVICES += nixcore-x1 nixcore-x1-16M
 endef
@@ -739,7 +739,7 @@ define Device/nixcore_x1-8m
   DEVICE_VENDOR := Nixcore
   DEVICE_MODEL := X1
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
 	kmod-spi-dev
   SUPPORTED_DEVICES += nixcore-x1 nixcore-x1-8M
 endef
@@ -750,7 +750,7 @@ define Device/olimex_rt5350f-olinuxino
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := OLIMEX
   DEVICE_MODEL := RT5350F-OLinuXino
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
 	kmod-spi-dev
   SUPPORTED_DEVICES += rt5350f-olinuxino
 endef
@@ -761,7 +761,7 @@ define Device/olimex_rt5350f-olinuxino-evb
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := OLIMEX
   DEVICE_MODEL := RT5350F-OLinuXino-EVB
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
 	kmod-spi-dev
   SUPPORTED_DEVICES += rt5350f-olinuxino-evb
 endef
@@ -1100,7 +1100,7 @@ define Device/vocore_vocore-16m
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
 	kmod-spi-dev
   SUPPORTED_DEVICES += vocore vocore-16M
 endef
@@ -1112,7 +1112,7 @@ define Device/vocore_vocore-8m
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
 	kmod-spi-dev
   SUPPORTED_DEVICES += vocore vocore-8M
 endef

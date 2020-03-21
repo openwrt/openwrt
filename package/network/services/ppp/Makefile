@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/paulusmack/ppp
@@ -24,6 +24,7 @@ PKG_VERSION:=$(PKG_RELEASE_VERSION)
 
 PKG_BUILD_DEPENDS:=libpcap
 
+PKG_ASLR_PIE_REGULAR:=1
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
 

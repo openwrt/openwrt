@@ -11,7 +11,6 @@ BOARD:=ramips
 BOARDNAME:=MediaTek Ralink MIPS
 SUBTARGETS:=mt7620 mt7621 mt76x8 rt288x rt305x rt3883
 FEATURES:=squashfs gpio
-MAINTAINER:=John Crispin <john@phrozen.org>
 
 KERNEL_PATCHVER:=4.14
 

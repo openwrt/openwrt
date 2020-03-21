@@ -9,7 +9,7 @@
 define Device/cubietech_a10-cubieboard
   DEVICE_VENDOR := Cubietech
   DEVICE_MODEL := Cubieboard
-  DEVICE_PACKAGES:=kmod-ata-core kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi
+  DEVICE_PACKAGES:=kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi
   SOC := sun4i
 endef
 TARGET_DEVICES += cubietech_a10-cubieboard
@@ -34,7 +34,7 @@ TARGET_DEVICES += marsboard_a10-marsboard
 define Device/olimex_a10-olinuxino-lime
   DEVICE_VENDOR := Olimex
   DEVICE_MODEL := A10-OLinuXino-LIME
-  DEVICE_PACKAGES:=kmod-ata-core kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi
+  DEVICE_PACKAGES:=kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi
   SOC := sun4i
 endef
 TARGET_DEVICES += olimex_a10-olinuxino-lime

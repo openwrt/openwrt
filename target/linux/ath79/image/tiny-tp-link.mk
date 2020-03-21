@@ -66,6 +66,46 @@ define Device/tplink_tl-mr3420-v2
 endef
 TARGET_DEVICES += tplink_tl-mr3420-v2
 
+define Device/tplink_tl-wa701nd-v1
+  $(Device/tplink-4m)
+  SOC := ar7240
+  DEVICE_MODEL := TL-WA701ND
+  DEVICE_VARIANT := v1
+  TPLINK_HWID := 0x07010001
+  SUPPORTED_DEVICES += tl-wa901nd
+endef
+TARGET_DEVICES += tplink_tl-wa701nd-v1
+
+define Device/tplink_tl-wa730re-v1
+  $(Device/tplink-4m)
+  SOC := ar7240
+  DEVICE_MODEL := TL-WA730RE
+  DEVICE_VARIANT := v1
+  TPLINK_HWID := 0x07300001
+  SUPPORTED_DEVICES += tl-wa901nd
+endef
+TARGET_DEVICES += tplink_tl-wa730re-v1
+
+define Device/tplink_tl-wa801nd-v1
+  $(Device/tplink-4m)
+  SOC := ar7240
+  DEVICE_MODEL := TL-WA801ND
+  DEVICE_VARIANT := v1
+  TPLINK_HWID := 0x08010001
+  SUPPORTED_DEVICES += tl-wa901nd
+endef
+TARGET_DEVICES += tplink_tl-wa801nd-v1
+
+define Device/tplink_tl-wa830re-v1
+  $(Device/tplink-4m)
+  SOC := ar7240
+  DEVICE_MODEL := TL-WA830RE
+  DEVICE_VARIANT := v1
+  TPLINK_HWID := 0x08300010
+  SUPPORTED_DEVICES += tl-wa901nd
+endef
+TARGET_DEVICES += tplink_tl-wa830re-v1
+
 define Device/tplink_tl-wa850re-v1
   $(Device/tplink-4mlzma)
   SOC := ar9341
@@ -85,11 +125,20 @@ define Device/tplink_tl-wa850re-v2
   DEVICE_VARIANT := v2
   TPLINK_BOARD_ID := TLWA850REV2
   TPLINK_HWID := 0x08500002
-  TPLINK_HWREV := 0x0
   DEVICE_PACKAGES := rssileds
   SUPPORTED_DEVICES += tl-wa850re-v2
 endef
 TARGET_DEVICES += tplink_tl-wa850re-v2
+
+define Device/tplink_tl-wa901nd-v1
+  $(Device/tplink-4m)
+  SOC := ar7240
+  DEVICE_MODEL := TL-WA901ND
+  DEVICE_VARIANT := v1
+  TPLINK_HWID := 0x09010001
+  SUPPORTED_DEVICES += tl-wa901nd
+endef
+TARGET_DEVICES += tplink_tl-wa901nd-v1
 
 define Device/tplink_tl-wa901nd-v2
   $(Device/tplink-4m)
@@ -136,6 +185,15 @@ define Device/tplink_tl-wr740n-v4
   TPLINK_HWID := 0x07400004
 endef
 TARGET_DEVICES += tplink_tl-wr740n-v4
+
+define Device/tplink_tl-wr740n-v5
+  $(Device/tplink-4mlzma)
+  SOC := ar9331
+  DEVICE_MODEL := TL-WR740N
+  DEVICE_VARIANT := v5
+  TPLINK_HWID := 0x07400005
+endef
+TARGET_DEVICES += tplink_tl-wr740n-v5
 
 define Device/tplink_tl-wr741-v1
   $(Device/tplink-4m)
@@ -263,6 +321,20 @@ define Device/tplink_tl-wr940n-v4
   IMAGE/factory-br.bin := tplink-v1-image factory -C BR
 endef
 TARGET_DEVICES += tplink_tl-wr940n-v4
+
+define Device/tplink_tl-wr940n-v6
+  $(Device/tplink-4mlzma)
+  SOC := tp9343
+  DEVICE_MODEL := TL-WR940N
+  DEVICE_VARIANT := v6
+  TPLINK_HWID := 0x09400006
+  SUPPORTED_DEVICES += tl-wr940n-v6
+  IMAGES += factory-us.bin factory-eu.bin factory-br.bin
+  IMAGE/factory-us.bin := tplink-v1-image factory -C US
+  IMAGE/factory-eu.bin := tplink-v1-image factory -C EU
+  IMAGE/factory-br.bin := tplink-v1-image factory -C BR
+endef
+TARGET_DEVICES += tplink_tl-wr940n-v6
 
 define Device/tplink_tl-wr941-v2
   $(Device/tplink-4m)

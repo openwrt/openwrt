@@ -281,7 +281,7 @@ define KernelPackage/sound-dummy
   AUTOLOAD:=$(call AutoLoad,32,snd-dummy)
 endef
 
-define KernelPackage/sound_dummy/description
+define KernelPackage/sound-dummy/description
  Dummy sound device for Alsa when no hardware present
 endef
 
@@ -502,11 +502,13 @@ $(eval $(call KernelPackage,sound-hda-codec-hdmi))
 define KernelPackage/sound-hda-intel
   SUBMENU:=$(SOUND_MENU)
   TITLE:=HD Audio Intel Driver
+  DEPENDS:=@TARGET_x86
   KCONFIG:= \
 	CONFIG_SOUND_PCI \
 	CONFIG_SND_HDA_INTEL
   FILES:= \
-	$(LINUX_DIR)/sound/pci/hda/snd-hda-intel.ko
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-intel.ko \
+	$(LINUX_DIR)/sound/hda/snd-intel-nhlt.ko@ge5.4
   AUTOLOAD:=$(call AutoProbe,snd-hda-intel)
   $(call AddDepends/sound,kmod-sound-hda-core)
 endef

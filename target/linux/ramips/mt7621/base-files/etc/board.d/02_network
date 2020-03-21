@@ -41,9 +41,11 @@ ramips_setup_interfaces()
 	netgear,r6220|\
 	netgear,r6260|\
 	netgear,r6350|\
+	netgear,r6700-v2|\
+	netgear,r6800|\
 	netgear,r6850|\
 	netgear,wndr3700-v5|\
-	netis,wf-2881|\
+	netis,wf2881|\
 	wevo,11acnas|\
 	wevo,w2914ns-v2|\
 	zio,freezio)
@@ -72,6 +74,8 @@ ramips_setup_interfaces()
 	elecom,wrc-1900gst|\
 	elecom,wrc-2533gst|\
 	iodata,wn-ax1167gr|\
+	iodata,wn-ax1167gr2|\
+	iodata,wn-dx1167r|\
 	iodata,wn-gx300gr|\
 	iodata,wnpr2600g|\
 	iptime,a8004t)
@@ -125,7 +129,8 @@ ramips_setup_interfaces()
 		;;
 	netgear,ex6150|\
 	tplink,re350-v1|\
-	tplink,re650-v1)
+	tplink,re650-v1|\
+	ubnt,unifi-nanohd)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"
 		;;
@@ -179,7 +184,7 @@ ramips_setup_macs()
 	elecom,wrc-1900gst|\
 	elecom,wrc-2533gst|\
 	lenovo,newifi-d1|\
-	netis,wf-2881|\
+	netis,wf2881|\
 	phicomm,k2p|\
 	planex,vr500|\
 	samknows,whitebox-v8|\
@@ -222,6 +227,12 @@ ramips_setup_macs()
 	xiaoyu,xy-c5)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
 		;;
+	iodata,wn-ax1167gr2|\
+	iodata,wn-dx1167r|\
+	xiaomi,mir3g-v2)
+		wan_mac=$(mtd_get_mac_binary factory 0xe006)
+		label_mac=$wan_mac
+		;;
 	iodata,wnpr2600g)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
@@ -244,6 +255,8 @@ ramips_setup_macs()
 		;;
 	netgear,r6260|\
 	netgear,r6350|\
+	netgear,r6700-v2|\
+	netgear,r6800|\
 	netgear,r6850)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 2)
 		;;
@@ -265,10 +278,6 @@ ramips_setup_macs()
 	xiaomi,mir3p)
 		lan_mac=$(mtd_get_mac_binary factory 0xe006)
 		label_mac=$lan_mac
-		;;
-	xiaomi,mir3g-v2)
-		wan_mac=$(mtd_get_mac_binary factory 0xe006)
-		label_mac=$wan_mac
 		;;
 	zbtlink,zbt-we1326)
 		wan_mac=$(mtd_get_mac_binary factory 0xe006)
