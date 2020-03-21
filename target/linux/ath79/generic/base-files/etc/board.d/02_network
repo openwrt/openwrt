@@ -75,6 +75,9 @@ ath79_setup_interfaces()
 	winchannel,wb2000)
 		ucidef_set_interface_lan "eth0"
 		;;
+	alfa-network,ap121fe)
+		ucidef_set_interface_lan "eth0 usb0"
+		;;
 	avm,fritz4020|\
 	pcs,cr3000|\
 	tplink,archer-c58-v1|\
@@ -398,6 +401,7 @@ ath79_setup_macs()
 		label_mac=$lan_mac
 		;;
 	alfa-network,ap121f|\
+	alfa-network,ap121fe|\
 	engenius,ens202ext-v1)
 		label_mac=$(mtd_get_mac_binary art 0x1002)
 		;;

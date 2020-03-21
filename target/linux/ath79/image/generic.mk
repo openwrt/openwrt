@@ -228,6 +228,15 @@ define Device/alfa-network_ap121f
 endef
 TARGET_DEVICES += alfa-network_ap121f
 
+define Device/alfa-network_ap121fe
+  SOC := ar9331
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := AP121FE
+  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-gadget-eth -swconfig
+  IMAGE_SIZE := 16064k
+endef
+TARGET_DEVICES += alfa-network_ap121fe
+
 define Device/allnet_all-wap02860ac
   SOC := qca9558
   DEVICE_VENDOR := ALLNET
