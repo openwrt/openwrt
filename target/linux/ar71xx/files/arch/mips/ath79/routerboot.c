@@ -330,6 +330,8 @@ rb_get_board_name(void)
 
 	err = rb_find_hard_cfg_tag(RB_ID_BOARD_NAME, &tag, &tag_len);
 	if (err)
+		err = rb_find_hard_cfg_tag(RB_ID_BOARD_PRODUCT_CODE, &tag, &tag_len);
+	if (err)
 		return NULL;
 
 	return tag;
