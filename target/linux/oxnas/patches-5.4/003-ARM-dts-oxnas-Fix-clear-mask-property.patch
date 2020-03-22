@@ -1,0 +1,55 @@
+From patchwork Sat Mar 21 14:36:53 2020
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Sungbo Eo <mans0n@gorani.run>
+X-Patchwork-Id: 11451187
+From: Sungbo Eo <mans0n@gorani.run>
+To: Neil Armstrong <narmstrong@baylibre.com>,
+ Rob Herring <robh+dt@kernel.org>,
+ Mark Rutland <mark.rutland@arm.com>, linux-arm-kernel@lists.infradead.org,
+ linux-oxnas@groups.io, devicetree@vger.kernel.org,
+ linux-kernel@vger.kernel.org
+Subject: [PATCH] ARM: dts: oxnas: Fix clear-mask property
+Date: Sat, 21 Mar 2020 23:36:53 +0900
+Message-Id: <20200321143653.2412823-1-mans0n@gorani.run>
+Sender: "linux-arm-kernel" <linux-arm-kernel-bounces@lists.infradead.org>
+
+Disable all rps-irq interrupts during driver initialization to prevent
+an accidental interrupt on GIC.
+
+Fixes: 84316f4ef141 ("ARM: boot: dts: Add Oxford Semiconductor OX810SE dtsi")
+Fixes: 38d4a53733f5 ("ARM: dts: Add support for OX820 and Pogoplug V3")
+Signed-off-by: Sungbo Eo <mans0n@gorani.run>
+Acked-by: Neil Armstrong <narmstrong@baylibre.com>
+---
+ arch/arm/boot/dts/ox810se.dtsi | 4 ++--
+ arch/arm/boot/dts/ox820.dtsi   | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/ox810se.dtsi
++++ b/arch/arm/boot/dts/ox810se.dtsi
+@@ -323,8 +323,8 @@
+ 					interrupt-controller;
+ 					reg = <0 0x200>;
+ 					#interrupt-cells = <1>;
+-					valid-mask = <0xFFFFFFFF>;
+-					clear-mask = <0>;
++					valid-mask = <0xffffffff>;
++					clear-mask = <0xffffffff>;
+ 				};
+ 
+ 				timer0: timer@200 {
+--- a/arch/arm/boot/dts/ox820.dtsi
++++ b/arch/arm/boot/dts/ox820.dtsi
+@@ -240,8 +240,8 @@
+ 					reg = <0 0x200>;
+ 					interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL_HIGH>;
+ 					#interrupt-cells = <1>;
+-					valid-mask = <0xFFFFFFFF>;
+-					clear-mask = <0>;
++					valid-mask = <0xffffffff>;
++					clear-mask = <0xffffffff>;
+ 				};
+ 
+ 				timer0: timer@200 {
