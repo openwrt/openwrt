@@ -1082,14 +1082,22 @@ static int ar934x_nfc_write_page(struct nand_chip *chip,
 	return err;
 }
 
-static int ar934x_nfc_hw_reset_assert(struct ar934x_nfc *nfc) {
-	reset_control_assert(nfc->rst);
+static int ar934x_nfc_hw_reset_assert(struct ar934x_nfc *nfc)
+{
+	int err;
+
+	err = reset_control_assert(nfc->rst);
 	udelay(250);
+	return err;
 }
 
-static int ar934x_nfc_hw_reset_deassert(struct ar934x_nfc *nfc) {
-	reset_control_deassert(nfc->rst);
+static int ar934x_nfc_hw_reset_deassert(struct ar934x_nfc *nfc)
+{
+	int err;
+
+	err = reset_control_deassert(nfc->rst);
 	udelay(250);
+	return err;
 }
 
 static int ar934x_nfc_hw_init(struct ar934x_nfc *nfc)
