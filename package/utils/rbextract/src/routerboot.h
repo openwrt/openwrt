@@ -191,6 +191,10 @@ uint8_t lzo_prefix[] = {
     0xf3, 0x2d, 0x00, 0x00
 };
 
+typedef struct {
+	uint8_t bytes[6];
+} mac_addr;
+
 uint8_t	*rb_hardconfig;
 long    rb_hardconfig_len;
 
@@ -204,7 +208,7 @@ rb_find_hard_cfg_tag(uint16_t tag_id, uint8_t **tag_data, uint16_t *tag_len);
 
 const uint8_t * rb_get_board_product_code(void);
 
-uint32_t rb_get_board_mac(void);
+mac_addr rb_get_board_mac(void);
 
 const uint8_t * rb_get_board_serial(void);
 

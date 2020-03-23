@@ -140,18 +140,20 @@ rb_get_board_product_code(void)
 	return tag;
 }
 
-uint32_t
+mac_addr
 rb_get_board_mac(void)
 {
 	uint16_t tag_len;
 	uint8_t *tag;
+	mac_addr mac = {0};
 	int err;
 
 	err = rb_find_hard_cfg_tag(RB_ID_MAC_ADDRESS_PACK, &tag, &tag_len);
-	if (err)
-		return 0;
+	if (err || tag_len < sizeof(mac_addr))
+		return mac;
 
-	return htonl(get_u32(tag));
+	memcpy(&mac, tag, sizeof(mac_addr));
+	return mac;
 }
 
 const uint8_t *
@@ -394,6 +396,7 @@ main(int argc, char **argv)
 	uint8_t *buf;
 	uint32_t magic;
 	uint32_t i;
+	mac_addr mac;
 	
 	if(argc < 2){
 		printf("Not enough arguments\n");
@@ -448,7 +451,9 @@ main(int argc, char **argv)
 			printf("Board product code: %s\n", rb_get_board_product_code());
 			printf("Board identifier: %s\n", rb_get_board_identifier());
 			printf("Board serial: %s\n", rb_get_board_serial());
-			printf("Board MAC: %X\n", rb_get_board_mac());
+			mac = rb_get_board_mac();
+			printf("Board MAC: %02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 "\n",
+				mac.bytes[0], mac.bytes[1], mac.bytes[2], mac.bytes[3], mac.bytes[4], mac.bytes[5]);
 			printf("HW Options %x\n", rb_get_hw_options());
 			printf("Factory RouterBoot version: %s\n", rb_get_factory_booter_version());
 			printf("Flash identifier: %x\n", rb_get_flash_info());
@@ -461,7 +466,9 @@ main(int argc, char **argv)
 		} else if(strcmp(argv[1], "-s") == 0){
 			printf("%s\n", rb_get_board_serial());
 		} else if(strcmp(argv[1], "-m") == 0){
-			printf("%x\n", rb_get_board_mac());
+			mac = rb_get_board_mac();
+			printf("%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 "\n",
+				mac.bytes[0], mac.bytes[1], mac.bytes[2], mac.bytes[3], mac.bytes[4], mac.bytes[5]);
 		} else if(strcmp(argv[1], "-o") == 0){
 			printf("%x\n", rb_get_hw_options());
 		} else if(strcmp(argv[1], "-r") == 0){
