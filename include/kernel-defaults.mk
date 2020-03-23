@@ -19,7 +19,11 @@ endif
 export HOST_EXTRACFLAGS=-I$(STAGING_DIR_HOST)/include
 
 # defined in quilt.mk
+ifeq ($(PLATFORM_DIR),$(PLATFORM_SUBDIR))
 Kernel/Patch:=$(Kernel/Patch/Default)
+else
+Kernel/Patch:=$(Kernel/Patch/Subtarget)
+endif
 
 ifneq (,$(findstring .xz,$(LINUX_SOURCE)))
   LINUX_CAT:=xzcat
