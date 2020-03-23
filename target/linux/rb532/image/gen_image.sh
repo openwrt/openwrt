@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 OUTPUT="$1"
 KERNELSIZE="$2"
 KERNELIMAGE="$3"

@@ -48,7 +48,7 @@
 		wps {
 			label = "wps";
 			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_RESTART>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 };
@@ -93,12 +93,10 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "i2c", "jtag", "rgmii", "mdio", "uartf";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		ralink,group = "i2c", "jtag", "rgmii", "mdio", "uartf";
+		ralink,function = "gpio";
 	};
 };
 

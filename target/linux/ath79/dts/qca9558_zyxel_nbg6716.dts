@@ -15,16 +15,16 @@
 	};
 
 	aliases {
-		led-boot = &power;
-		led-failsafe = &power;
-		led-running = &power;
-		led-upgrade = &power;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		power: power {
+		led_power: power {
 			label = "nbg6716:white:power";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
@@ -76,7 +76,7 @@
 			debounce-interval = <60>;
 		};
 
-		wifi_button {
+		wifi {
 			label = "WiFi button";
 			linux,code = <KEY_RFKILL>;
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
@@ -119,6 +119,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {
@@ -199,8 +200,8 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <17>;
+	phy17: ethernet-phy@11 {
+		reg = <0x11>;
 		phy-mode = "rgmii-id";
 	};
 
@@ -235,7 +236,8 @@
 	status = "okay";
 
 	pll-data = <0xa6000000 0x00000101 0x00001616>;
-	phy-handle = <&phy0>;
+	phy-handle = <&phy17>;
+
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
@@ -247,6 +249,7 @@
 
 	pll-data = <0x03000101 0x00000101 0x00001616>;
 	phy-handle = <&phy1>;
+
 	fixed-link {
 		speed = <1000>;
 		full-duplex;

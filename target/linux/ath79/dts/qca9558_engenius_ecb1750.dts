@@ -15,16 +15,16 @@
 	};
 
 	aliases {
-		led-boot = &power_orange;
-		led-failsafe = &power_orange;
-		led-running = &power_orange;
-		led-upgrade = &power_orange;
+		led-boot = &led_power_orange;
+		led-failsafe = &led_power_orange;
+		led-running = &led_power_orange;
+		led-upgrade = &led_power_orange;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		power_orange: power_orange {
+		led_power_orange: power_orange {
 			label = "ecb1750:orange:power";
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 			default-state = "on";
@@ -69,6 +69,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {
@@ -124,7 +125,8 @@
 
 	phy5: ethernet-phy@5 {
 		reg = <5>;
-		at803x-disable-smarteee;
+		eee-broken-100tx;
+		eee-broken-1000t;
 	};
 };
 

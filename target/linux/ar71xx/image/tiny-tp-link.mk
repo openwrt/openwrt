@@ -248,7 +248,7 @@ define Device/tl-wa850re-v2
   TPLINK_HWID := 0x08500002
   TPLINK_HWREV := 0
   IMAGE_SIZE := 3648k
-  MTDPARTS := spi0.0:128k(u-boot)ro,1344k(kernel),2304k(rootfs),256k(config)ro,64k(art)ro,3648k@0x20000(firmware)
+  MTDPARTS := spi0.0:128k(u-boot)ro,3648k(firmware),256k(config)ro,64k(art)ro
 endef
 TARGET_DEVICES += tl-wa850re-v2
 

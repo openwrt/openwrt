@@ -15,10 +15,10 @@
 	};
 
 	aliases {
-		led-boot = &system;
-		led-failsafe = &system;
-		led-running = &system;
-		led-upgrade = &system;
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
 	};
 
 	leds {
@@ -29,7 +29,7 @@
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
-		system: power_green {
+		led_power_green: power_green {
 			label = "trendnet:green:power";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
@@ -112,6 +112,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {
@@ -124,7 +125,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot:	partition@0 {
+			partition@0 {
 				label = "u-boot";
 				reg = <0x000000 0x030000>;
 				read-only;
@@ -154,7 +155,7 @@
 				read-only;
 			};
 
-			mac: partition@fe0000 {
+			partition@fe0000 {
 				label = "mac";
 				reg = <0xfe0000 0x010000>;
 				read-only;
@@ -209,5 +210,6 @@
 
 &wmac {
 	status = "okay";
+
 	mtd-cal-data = <&art 0x1000>;
 };

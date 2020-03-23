@@ -56,7 +56,7 @@ endef
 
 define Device/ubnt-xm
   $(Device/ubnt)
-  DEVICE_PACKAGES += kmod-usb-ohci rssileds
+  DEVICE_PACKAGES += kmod-usb-ohci
   UBNT_TYPE := XM
   UBNT_CHIP := ar7240
   KERNEL := kernel-bin | patch-cmdline | relocate-kernel | lzma | uImage lzma
@@ -64,7 +64,6 @@ endef
 
 define Device/ubnt-xw
   $(Device/ubnt)
-  DEVICE_PACKAGES += rssileds
   UBNT_TYPE := XW
   UBNT_CHIP := ar934x
   UBNT_VERSION := 6.0.4
@@ -94,6 +93,7 @@ TARGET_DEVICES += ubnt-airrouter
 define Device/ubnt-bullet-m
   $(Device/ubnt-xm)
   DEVICE_TITLE := Ubiquiti Bullet-M
+  DEVICE_PACKAGES += rssileds
   BOARDNAME := UBNT-BM
 endef
 TARGET_DEVICES += ubnt-bullet-m
@@ -101,6 +101,7 @@ TARGET_DEVICES += ubnt-bullet-m
 define Device/ubnt-rocket-m
   $(Device/ubnt-xm)
   DEVICE_TITLE := Ubiquiti Rocket-M
+  DEVICE_PACKAGES += rssileds
   BOARDNAME := UBNT-RM
 endef
 TARGET_DEVICES += ubnt-rocket-m
@@ -108,6 +109,7 @@ TARGET_DEVICES += ubnt-rocket-m
 define Device/ubnt-nano-m
   $(Device/ubnt-xm)
   DEVICE_TITLE := Ubiquiti Nano-M
+  DEVICE_PACKAGES += rssileds
   BOARDNAME := UBNT-NM
 endef
 TARGET_DEVICES += ubnt-nano-m
@@ -176,6 +178,7 @@ TARGET_DEVICES += ubnt-unifi-outdoor
 define Device/ubnt-nano-m-xw
   $(Device/ubnt-xw)
   DEVICE_TITLE := Ubiquiti Nano M XW
+  DEVICE_PACKAGES += rssileds
   BOARDNAME := UBNT-NM-XW
 endef
 TARGET_DEVICES += ubnt-nano-m-xw
@@ -190,6 +193,7 @@ TARGET_DEVICES += ubnt-lbe-m5
 define Device/ubnt-loco-m-xw
   $(Device/ubnt-xw)
   DEVICE_TITLE := Ubiquiti Loco XW
+  DEVICE_PACKAGES += rssileds
   BOARDNAME := UBNT-LOCO-XW
 endef
 TARGET_DEVICES += ubnt-loco-m-xw
@@ -197,6 +201,7 @@ TARGET_DEVICES += ubnt-loco-m-xw
 define Device/ubnt-bullet-m-xw
   $(Device/ubnt-xw)
   DEVICE_TITLE := Ubiquiti Bullet-M XW
+  DEVICE_PACKAGES += rssileds
   BOARDNAME := UBNT-BM-XW
 endef
 TARGET_DEVICES += ubnt-bullet-m-xw
@@ -204,6 +209,7 @@ TARGET_DEVICES += ubnt-bullet-m-xw
 define Device/ubnt-rocket-m-xw
   $(Device/ubnt-xw)
   DEVICE_TITLE := Ubiquiti Rocket M XW
+  DEVICE_PACKAGES += rssileds
   BOARDNAME := UBNT-RM-XW
 endef
 TARGET_DEVICES += ubnt-rocket-m-xw
@@ -211,6 +217,7 @@ TARGET_DEVICES += ubnt-rocket-m-xw
 define Device/ubnt-rocket-m-ti
   $(Device/ubnt-xw)
   DEVICE_TITLE := Ubiquiti Rocket M TI
+  DEVICE_PACKAGES += rssileds
   BOARDNAME := UBNT-RM-TI
   UBNT_TYPE := TI
 endef

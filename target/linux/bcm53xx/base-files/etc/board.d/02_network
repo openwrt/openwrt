@@ -24,6 +24,13 @@ buffalo,wzr-1750dhp)
 	board_config_flush
 	exit 0
 	;;
+luxul,abr-4500-v1|\
+luxul,xbr-4500-v1)
+	ucidef_add_switch "switch0" \
+		"0:wan" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5@eth0"
+	board_config_flush
+	exit 0
+	;;
 phicomm,k3)
 	ucidef_add_switch "switch0" \
 		"0:lan" "1:lan" "2:lan" "3:wan" "5@eth0"

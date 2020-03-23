@@ -32,7 +32,7 @@ This reverts commit 3c7b86229f7bd2600d74db14b1fe5b3896be3875.
  
  ifdef NEEDDES
  ifndef USE_CRYPT
--CFLAGS   += -I$(shell $CC --print-sysroot)/usr/include/openssl
+-CFLAGS   += -I$(shell $(CC) --print-sysroot)/usr/include/openssl
 -LIBS     += -lcrypto
 +LIBS     += -ldes $(LIBS)
  else

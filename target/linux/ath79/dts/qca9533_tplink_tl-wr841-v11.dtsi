@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include "qca9533_tplink_tl-wr841.dtsi"
 
 / {
 	aliases {
-		led-boot = &system_led;
-		led-failsafe = &system_led;
-		led-running = &system_led;
-		led-upgrade = &system_led;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
 	};
 };
 
-&gpio_leds {
-	system_led: system {
+&leds {
+	led_system: system {
 		label = "tp-link:green:system";
 		gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 	};

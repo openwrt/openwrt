@@ -15,10 +15,10 @@
 	};
 
 	aliases {
-		led-boot = &power_amber;
-		led-failsafe = &power_amber;
-		led-running = &power_green;
-		led-upgrade = &power_amber;
+		led-boot = &led_power_amber;
+		led-failsafe = &led_power_amber;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_amber;
 		label-mac-device = &eth1;
 	};
 
@@ -54,12 +54,12 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&jtag_disable_pins &switch_led_disable_pins &clks_disable_pins>;
 
-		power_green: power_green {
+		led_power_green: power_green {
 			label = "netgear:green:power";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
-		power_amber: power_amber {
+		led_power_amber: power_amber {
 			label = "netgear:amber:power";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
@@ -134,6 +134,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {

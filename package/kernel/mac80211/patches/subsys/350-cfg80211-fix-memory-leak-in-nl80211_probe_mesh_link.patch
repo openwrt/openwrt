@@ -1,0 +1,22 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 8 Jan 2020 18:00:41 +0100
+Subject: [PATCH] cfg80211: fix memory leak in nl80211_probe_mesh_link
+
+The per-tid statistics need to be released after the call to rdev_get_station
+
+Cc: stable@vger.kernel.org
+Fixes: 5ab92e7fe49a ("cfg80211: add support to probe unexercised mesh link")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -13808,6 +13808,8 @@ static int nl80211_probe_mesh_link(struc
+ 	if (err)
+ 		return err;
+ 
++	cfg80211_sinfo_release_content(&sinfo);
++
+ 	return rdev_probe_mesh_link(rdev, dev, dest, buf, len);
+ }
+ 

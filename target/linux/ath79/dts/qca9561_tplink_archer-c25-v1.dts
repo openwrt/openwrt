@@ -14,6 +14,14 @@
 		bootargs = "console=ttyS0,115200n8";
 	};
 
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		label-mac-device = &eth0;
+	};
+
 	led_spi {
 		compatible = "spi-gpio";
 		#address-cells = <1>;
@@ -37,31 +45,23 @@
 	keys {
 		compatible = "gpio-keys";
 
-		wifi_button {
+		wifi {
 			label = "WiFi button";
 			linux,code = <KEY_RFKILL>;
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 
-		reset_button {
+		reset {
 			label = "Reset button";
 			linux,code = <KEY_RESTART>;
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 	};
 
-	aliases {
-		led-boot = &power;
-		led-failsafe = &power;
-		led-running = &power;
-		led-upgrade = &power;
-		label-mac-device = &eth0;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
-		power: power {
+		led_power: power {
 			label = "tp-link:green:power";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 			default-state = "on";
@@ -118,6 +118,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {
@@ -178,21 +179,23 @@
 };
 
 &eth0 {
-	phy-mode = "mii";
+	status = "okay";
+
 	phy-handle = <&swphy4>;
 
-	status = "okay";
 	mtd-mac-address = <&info 0x8>;
 };
 
 &eth1 {
 	status = "okay";
+
 	mtd-mac-address = <&info 0x8>;
 	mtd-mac-address-increment = <1>;
 };
 
 &wmac {
 	status = "okay";
+
 	mtd-cal-data = <&art 0x1000>;
 	mtd-mac-address = <&info 0x8>;
 };

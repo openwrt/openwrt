@@ -12,10 +12,10 @@
 
 	aliases {
 		serial0 = &uart;
-		led-boot = &wifi;
-		led-failsafe = &wifi;
-		led-running = &wifi;
-		led-upgrade = &wifi;
+		led-boot = &led_wifi;
+		led-failsafe = &led_wifi;
+		led-running = &led_wifi;
+		led-upgrade = &led_wifi;
 	};
 
 	i2c {
@@ -89,7 +89,7 @@
 			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
 		};
 
-		wifi: wifi {
+		led_wifi: wifi {
 			label = "wmb001n:blue:wifi";
 			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
 		};

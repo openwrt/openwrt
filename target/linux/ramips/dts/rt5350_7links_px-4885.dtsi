@@ -41,17 +41,15 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "i2c", "jtag", "uartf";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		ralink,group = "i2c", "jtag", "uartf";
+		ralink,function = "gpio";
 	};
 };
 
 &ethernet {
-	mtd-mac-address = <&factory 0x28>;
+	mtd-mac-address = <&devconf 0x28>;
 };
 
 &esw {
@@ -59,5 +57,5 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&factory 0>;
+	ralink,mtd-eeprom = <&devconf 0>;
 };

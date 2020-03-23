@@ -30,6 +30,9 @@ define Package/usign
   TITLE:=OpenWrt signature verification utility
 endef
 
+TARGET_CFLAGS += -flto
+TARGET_LDFLAGS += -flto=jobserver
+
 CMAKE_OPTIONS += \
 	-DUSE_LIBUBOX=on
 

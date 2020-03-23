@@ -12,9 +12,9 @@
 
 	aliases {
 		serial0 = &uart;
-		led-boot = &rssihigh;
-		led-failsafe = &rssihigh;
-		led-upgrade = &rssihigh;
+		led-boot = &led_rssihigh;
+		led-failsafe = &led_rssihigh;
+		led-upgrade = &led_rssihigh;
 		label-mac-device = &eth1;
 	};
 
@@ -53,7 +53,7 @@
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
-		rssihigh: rssihigh {
+		led_rssihigh: rssihigh {
 			label = "cf-e313ac:green:rssihigh";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};

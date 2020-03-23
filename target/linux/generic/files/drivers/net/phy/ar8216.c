@@ -1204,7 +1204,7 @@ ar8xxx_sw_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 
-	if (val->port_vlan >= AR8X16_MAX_VLANS)
+	if (val->port_vlan >= dev->vlans)
 		return -EINVAL;
 
 	priv->vlan_id[val->port_vlan] = val->value.i;
@@ -1237,7 +1237,7 @@ ar8xxx_sw_get_ports(struct switch_dev *dev, struct switch_val *val)
 	u8 ports;
 	int i;
 
-	if (val->port_vlan >= AR8X16_MAX_VLANS)
+	if (val->port_vlan >= dev->vlans)
 		return -EINVAL;
 
 	ports = priv->vlan_table[val->port_vlan];
@@ -1277,7 +1277,7 @@ ar8xxx_sw_set_ports(struct switch_dev *dev, struct switch_val *val)
 
 			/* make sure that an untagged port does not
 			 * appear in other vlans */
-			for (j = 0; j < AR8X16_MAX_VLANS; j++) {
+			for (j = 0; j < dev->vlans; j++) {
 				if (j == val->port_vlan)
 					continue;
 				priv->vlan_table[j] &= ~(1 << p->id);
@@ -1356,7 +1356,7 @@ ar8xxx_sw_hw_apply(struct switch_dev *dev)
 	if (!priv->init) {
 		/* calculate the port destination masks and load vlans
 		 * into the vlan translation unit */
-		for (j = 0; j < AR8X16_MAX_VLANS; j++) {
+		for (j = 0; j < dev->vlans; j++) {
 			u8 vp = priv->vlan_table[j];
 
 			if (!vp)
@@ -1409,7 +1409,7 @@ ar8xxx_sw_reset_switch(struct switch_dev *dev)
 	memset(&priv->vlan, 0, sizeof(struct ar8xxx_priv) -
 		offsetof(struct ar8xxx_priv, vlan));
 
-	for (i = 0; i < AR8X16_MAX_VLANS; i++)
+	for (i = 0; i < dev->vlans; i++)
 		priv->vlan_id[i] = i;
 
 	/* Configure all ports */
@@ -2487,7 +2487,9 @@ ar8xxx_phy_read_status(struct phy_device *phydev)
 	struct switch_port_link link;
 
 	/* check for switch port link changes */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
 	if (phydev->state == PHY_CHANGELINK)
+#endif
 		ar8xxx_check_link_states(priv);
 
 	if (phydev->mdio.addr != 0)
@@ -2628,6 +2630,14 @@ found:
 	priv->use_count++;
 
 	if (phydev->mdio.addr == 0) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+		linkmode_zero(phydev->supported);
+		if (ar8xxx_has_gige(priv))
+			linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, phydev->supported);
+		else
+			linkmode_set_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, phydev->supported);
+		linkmode_copy(phydev->advertising, phydev->supported);
+#else
 		if (ar8xxx_has_gige(priv)) {
 			phydev->supported = SUPPORTED_1000baseT_Full;
 			phydev->advertising = ADVERTISED_1000baseT_Full;
@@ -2635,6 +2645,7 @@ found:
 			phydev->supported = SUPPORTED_100baseT_Full;
 			phydev->advertising = ADVERTISED_100baseT_Full;
 		}
+#endif
 
 		if (priv->chip->config_at_probe) {
 			priv->phy = phydev;
@@ -2645,8 +2656,14 @@ found:
 		}
 	} else {
 		if (ar8xxx_has_gige(priv)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+			linkmode_zero(phydev->supported);
+			linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, phydev->supported);
+			linkmode_copy(phydev->advertising, phydev->supported);
+#else
 			phydev->supported |= SUPPORTED_1000baseT_Full;
 			phydev->advertising |= ADVERTISED_1000baseT_Full;
+#endif
 		}
 		if (priv->chip->phy_rgmii_set)
 			priv->chip->phy_rgmii_set(priv, phydev);

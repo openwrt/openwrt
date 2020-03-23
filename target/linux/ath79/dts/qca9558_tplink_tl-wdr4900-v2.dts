@@ -22,7 +22,7 @@
 		label-mac-device = &eth1;
 	};
 
-	gpio_leds: leds {
+	leds {
 		compatible = "gpio-leds";
 
 		led_system: system {
@@ -57,7 +57,7 @@
 		};
 	};
 
-	 ath9k-leds {
+	ath9k-leds {
 		compatible = "gpio-leds";
 
 		wlan5g {
@@ -145,6 +145,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {
@@ -225,6 +226,7 @@
 
 &wmac {
 	status = "okay";
+
 	mtd-cal-data = <&art 0x1000>;
 	mtd-mac-address = <&uboot 0x1fc00>;
 	mtd-mac-address-increment = <(-1)>;

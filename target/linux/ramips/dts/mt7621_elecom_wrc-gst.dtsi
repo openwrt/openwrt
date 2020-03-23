@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0
-/dts-v1/;
 
 #include "mt7621.dtsi"
 
@@ -155,12 +154,10 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "uart3", "jtag", "wdt", "sdhci";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		ralink,group = "uart3", "jtag", "wdt", "sdhci";
+		ralink,function = "gpio";
 	};
 };
 

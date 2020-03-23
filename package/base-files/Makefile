@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/version.mk
 include $(INCLUDE_DIR)/feeds.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=206
+PKG_RELEASE:=214
 PKG_FLAGS:=nonshared
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
@@ -72,6 +72,7 @@ define Package/base-files/conffiles
 /etc/services
 /etc/shadow
 /etc/shells
+/etc/shinit
 /etc/sysctl.conf
 /etc/sysupgrade.conf
 $(call $(TARGET)/conffiles)
@@ -198,14 +199,16 @@ define Package/base-files/install
 
 	$(if $(CONFIG_INCLUDE_CONFIG), \
 		echo -e "# Build configuration for board $(BOARD)/$(SUBTARGET)/$(PROFILE)\n" >$(1)/etc/build.config; \
-		cat $(BIN_DIR)/config.buildinfo >>$(1)/etc/build.config)
+		cat $(BIN_DIR)/config.buildinfo >>$(1)/etc/build.config; \
+		cat $(BIN_DIR)/feeds.buildinfo >>$(1)/etc/build.feeds; \
+		cat $(BIN_DIR)/version.buildinfo >>$(1)/etc/build.version)
 
 	$(if $(CONFIG_CLEAN_IPKG),, \
 		mkdir -p $(1)/etc/opkg; \
 		$(call FeedSourcesAppend,$(1)/etc/opkg/distfeeds.conf); \
 		$(VERSION_SED_SCRIPT) $(1)/etc/opkg/distfeeds.conf)
-	$(if $(CONFIG_IPK_FILES_CHECKSUMS), \
-		rm -f $(1)/sbin/pkg_check,)
+	$(if $(CONFIG_IPK_FILES_CHECKSUMS),, \
+		rm -f $(1)/sbin/pkg_check)
 endef
 
 ifneq ($(DUMP),1)

@@ -37,7 +37,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  	gettimeofday(&start_time, NULL);
  	script_unsetenv("CONNECT_TIME");
  	script_unsetenv("BYTES_SENT");
-@@ -1270,6 +1273,36 @@ struct	callout {
+@@ -1274,6 +1277,36 @@ struct	callout {
  
  static struct callout *callout = NULL;	/* Callout list */
  static struct timeval timenow;		/* Current time */
@@ -74,7 +74,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  /*
   * timeout - Schedule a timeout.
-@@ -1340,6 +1373,8 @@ calltimeout()
+@@ -1344,6 +1377,8 @@ calltimeout()
  {
      struct callout *p;
  
@@ -83,7 +83,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      while (callout != NULL) {
  	p = callout;
  
-@@ -1367,6 +1402,8 @@ timeleft(tvp)
+@@ -1371,6 +1406,8 @@ timeleft(tvp)
  {
      if (callout == NULL)
  	return NULL;

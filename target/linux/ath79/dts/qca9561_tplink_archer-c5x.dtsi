@@ -9,10 +9,10 @@
 	compatible = "tplink,archer-c5x", "qca,qca9560";
 
 	aliases {
-		led-boot = &power;
-		led-failsafe = &power;
-		led-running = &power;
-		led-upgrade = &power;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 		label-mac-device = &eth1;
 	};
 
@@ -43,7 +43,7 @@
 	leds: leds {
 		compatible = "gpio-leds";
 
-		power: power {
+		led_power: power {
 			label = "tp-link:green:power";
 			gpios = <&led_gpio 0 GPIO_ACTIVE_LOW>;
 			default-state = "on";
@@ -85,19 +85,19 @@
 	keys {
 		compatible = "gpio-keys";
 
-		wps_button {
+		wps {
 			label = "WPS button";
 			linux,code = <KEY_WPS_BUTTON>;
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
-		wifi_button {
+		wifi {
 			label = "WiFi button";
 			linux,code = <KEY_RFKILL>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
-		reset_button {
+		reset {
 			label = "Reset button";
 			linux,code = <KEY_RESTART>;
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
@@ -136,7 +136,6 @@
 &eth0 {
 	status = "okay";
 
-	phy-mode = "mii";
 	phy-handle = <&swphy0>;
 
 	mtd-mac-address = <&mac 0x8>;

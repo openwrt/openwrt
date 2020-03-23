@@ -7,10 +7,10 @@
 
 / {
 	aliases {
-		led-boot = &system;
-		led-failsafe = &system;
-		led-running = &system;
-		led-upgrade = &system;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
 	};
 
 	leds: leds {
@@ -22,7 +22,7 @@
 			linux,default-trigger = "phy0tpt";
 		};
 
-		system: system {
+		led_system: system {
 			label = "tp-link:green:system";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			default-state = "on";
@@ -71,9 +71,9 @@
 };
 
 &spi {
-	num-cs = <1>;
-
 	status = "okay";
+
+	num-cs = <1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";

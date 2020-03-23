@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -18,13 +17,13 @@
 	keys {
 		compatible = "gpio-keys";
 
-		wifi_button {
+		wifi {
 			label = "WiFi button";
 			linux,code = <KEY_RFKILL>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
-		reset_button {
+		reset {
 			label = "Reset button";
 			linux,code = <KEY_RESTART>;
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
@@ -74,7 +73,6 @@
 &eth0 {
 	status = "okay";
 
-	phy-mode = "mii";
 	phy-handle = <&swphy4>;
 
 	mtd-mac-address = <&uboot 0x1fc00>;

@@ -5,9 +5,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/urngd.git
-PKG_SOURCE_DATE:=2019-10-21
-PKG_SOURCE_VERSION:=40f939d57c67bbe2987a863500cca02e91d34b90
-PKG_MIRROR_HASH:=52efcc11a099fc2c11a88e45e71c751b307741bf30e5d80f56ae662cd886a7ff
+PKG_SOURCE_DATE:=2020-01-21
+PKG_SOURCE_VERSION:=c7f7b6b65b82eda4675b42d8cd28d76ea7aebf1a
+PKG_MIRROR_HASH:=2d31025b79fe130c579d6c3f4bf4dc12abc43a7319b20a5cdca24ae363ec70f3
 
 PKG_LICENSE:=GPL-2.0 BSD-3-Clause
 PKG_LICENSE_FILES:=
@@ -17,14 +17,14 @@ PKG_BUILD_PARALLEL:=1
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
-define Package/$(PKG_NAME)
+define Package/urngd
   SECTION:=utils
   CATEGORY:=Base system
   TITLE:=OpenWrt non-physical true random number generator based on timing jitter
   DEPENDS:=+libubox
 endef
 
-define Package/$(PKG_NAME)/description
+define Package/urngd/description
   urngd is OpenWrt's micro non-physical true random number generator based on
   timing jitter.
 
@@ -38,11 +38,11 @@ define Package/$(PKG_NAME)/description
   Jitter RNGd provides a source of sufficient entropy.
 endef
 
-define Package/$(PKG_NAME)/install
+define Package/urngd/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/$(PKG_NAME).init $(1)/etc/init.d/$(PKG_NAME)
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_NAME) $(1)/sbin/$(PKG_NAME)
 endef
 
-$(eval $(call BuildPackage,$(PKG_NAME)))
+$(eval $(call BuildPackage,urngd))

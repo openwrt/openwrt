@@ -1,20 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include "tp9343_tplink_tl-wr94x.dtsi"
 
 / {
 	aliases {
-		led-boot = &system;
-		led-failsafe = &system;
-		led-running = &system;
-		led-upgrade = &system;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		system: system {
+		led_system: system {
 			label = "tp-link:blue:system";
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			default-state = "on";

@@ -15,16 +15,16 @@
 	};
 
 	aliases {
-		led-boot = &system;
-		led-failsafe = &system;
-		led-running = &system;
-		led-upgrade = &system;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		system: system {
+		led_system: system {
 			label = "librerouter-v1:green:system";
 			gpios = <&gpio 23 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
@@ -42,7 +42,7 @@
 		};
 	};
 
-	button {
+	keys {
 		compatible = "gpio-keys";
 
 		reset {
@@ -110,6 +110,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {

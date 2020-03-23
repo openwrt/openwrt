@@ -1481,7 +1481,7 @@ const struct ar8xxx_chip ar8327_chip = {
 
 	.name = "Atheros AR8327",
 	.ports = AR8327_NUM_PORTS,
-	.vlans = AR8X16_MAX_VLANS,
+	.vlans = AR83X7_MAX_VLANS,
 	.swops = &ar8327_sw_ops,
 
 	.reg_port_stats_start = 0x1000,
@@ -1518,7 +1518,7 @@ const struct ar8xxx_chip ar8337_chip = {
 
 	.name = "Atheros AR8337",
 	.ports = AR8327_NUM_PORTS,
-	.vlans = AR8X16_MAX_VLANS,
+	.vlans = AR83X7_MAX_VLANS,
 	.swops = &ar8327_sw_ops,
 
 	.reg_port_stats_start = 0x1000,

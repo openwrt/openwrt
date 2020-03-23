@@ -15,16 +15,16 @@
 	};
 
 	aliases {
-		led-boot = &system;
-		led-failsafe = &system;
-		led-running = &system;
-		led-upgrade = &system;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
 	};
 
-	gpio_leds: leds {
+	leds {
 		compatible = "gpio-leds";
 
-		system: system {
+		led_system: system {
 			label = "tp-link:green:system";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			default-state = "on";
@@ -103,6 +103,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {
@@ -182,6 +183,7 @@
 
 &wmac {
 	status = "okay";
+
 	mtd-cal-data = <&art 0x1000>;
 	mtd-mac-address = <&info 0x8>;
 };

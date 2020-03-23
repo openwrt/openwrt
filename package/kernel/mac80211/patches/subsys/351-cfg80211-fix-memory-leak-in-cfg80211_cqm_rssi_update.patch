@@ -1,0 +1,21 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 8 Jan 2020 18:03:04 +0100
+Subject: [PATCH] cfg80211: fix memory leak in cfg80211_cqm_rssi_update
+
+The per-tid statistics need to be released after the call to rdev_get_station
+
+Cc: stable@vger.kernel.org
+Fixes: 8689c051a201 ("cfg80211: dynamically allocate per-tid stats for station info")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -10847,6 +10847,7 @@ static int cfg80211_cqm_rssi_update(stru
+ 		if (err)
+ 			return err;
+ 
++		cfg80211_sinfo_release_content(&sinfo);
+ 		if (sinfo.filled & BIT_ULL(NL80211_STA_INFO_BEACON_SIGNAL_AVG))
+ 			wdev->cqm_config->last_rssi_event_value =
+ 				(s8) sinfo.rx_beacon_signal_avg;

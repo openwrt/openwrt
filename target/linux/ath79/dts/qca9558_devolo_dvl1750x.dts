@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 /dts-v1/;
 
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input.h>
-
 #include "qca9558_devolo_dvl1xxx.dtsi"
 
 / {
@@ -11,16 +8,16 @@
 	model = "devolo WiFi pro 1750x";
 
 	aliases {
-		led-boot = &status_red;
-		led-failsafe = &status_red;
-		led-running = &status_red;
-		led-upgrade = &status_red;
+		led-boot = &led_status_red;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_red;
+		led-upgrade = &led_status_red;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		status_red: status_red {
+		led_status_red: status_red {
 			/* This LED is not visible on the external casing. */
 			label = "dvl1750x:red:status";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;

@@ -336,6 +336,9 @@ static int ptm_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
         dma_cache_wback((unsigned long)skb->data, skb->len);
     }
 
+    /* make the skb unowned */
+    skb_orphan(skb);
+
     *(struct sk_buff **)((unsigned int)skb->data - byteoff - sizeof(struct sk_buff *)) = skb;
     /*  write back to physical memory   */
     dma_cache_wback((unsigned long)skb->data - byteoff - sizeof(struct sk_buff *), skb->len + byteoff + sizeof(struct sk_buff *));

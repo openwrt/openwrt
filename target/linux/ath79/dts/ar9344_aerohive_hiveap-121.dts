@@ -11,10 +11,10 @@
 	model = "Aerohive HiveAP 121";
 
 	aliases {
-		led-boot = &power_white;
-		led-failsafe = &power_orange;
-		led-running = &power_white;
-		led-upgrade = &power_orange;
+		led-boot = &led_power_white;
+		led-failsafe = &led_power_orange;
+		led-running = &led_power_white;
+		led-upgrade = &led_power_orange;
 		label-mac-device = &eth0;
 	};
 
@@ -36,12 +36,12 @@
 	leds {
 		compatible = "gpio-leds";
 
-		power_orange: power_orange {
+		led_power_orange: power_orange {
 			label = "hiveap-121:orange:power";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
-		power_white: power_white {
+		led_power_white: power_white {
 			label = "hiveap-121:white:power";
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 		};
@@ -120,6 +120,7 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
 
 	flash@0 {

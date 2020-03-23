@@ -7,6 +7,9 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+cilab,meshpoint-one)
+	ucidef_add_gpio_switch "poe_passtrough" "POE passtrough enable" "413" "1"
+	;;
 compex,wpj428)
 	ucidef_add_gpio_switch "sim_card_select" "SIM card select" "3" "0"
 	;;

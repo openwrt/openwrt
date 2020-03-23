@@ -1,0 +1,25 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 13 Jan 2020 18:34:31 +0100
+Subject: [PATCH] cfg80211: fix page refcount issue in A-MSDU decap
+
+The fragments attached to a skb can be part of a compound page. In that case,
+page_ref_inc will increment the refcount for the wrong page. Fix this by
+using get_page instead, which calls page_ref_inc on the compound head and
+also checks for overflow.
+
+Fixes: 2b67f944f88c ("cfg80211: reuse existing page fragments in A-MSDU rx")
+Cc: stable@vger.kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -564,7 +564,7 @@ __frame_add_frag(struct sk_buff *skb, st
+ 	struct skb_shared_info *sh = skb_shinfo(skb);
+ 	int page_offset;
+ 
+-	page_ref_inc(page);
++	get_page(page);
+ 	page_offset = ptr - page_address(page);
+ 	skb_add_rx_frag(skb, sh->nr_frags, page, page_offset, len, size);
+ }

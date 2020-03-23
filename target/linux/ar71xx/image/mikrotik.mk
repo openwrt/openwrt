@@ -55,7 +55,7 @@ TARGET_DEVICES += rb-nor-flash-16M
 define Device/rb-nor-flash-16M-ac
   $(Device/rb-nor-flash-16M)
   DEVICE_TITLE := MikroTik RouterBoard (16 MB SPI NOR, 802.11ac)
-  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct ath10k-firmware-qca9887-ct kmod-usb-ehci
+  DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct ath10k-firmware-qca9887-ct kmod-usb-ehci
   SUPPORTED_DEVICES += rb-wapg-5hact2hnd
 endef
 TARGET_DEVICES += rb-nor-flash-16M-ac

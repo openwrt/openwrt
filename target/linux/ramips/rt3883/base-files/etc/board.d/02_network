@@ -70,7 +70,9 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary devdata 0x7)
 		;;
 	samsung,cy-swr1100)
-		lan_mac=$(mtd_get_mac_ascii factory lanmac)
+		lan_mac=$(mtd_get_mac_ascii nvram lanmac)
+		wan_mac=$(mtd_get_mac_ascii nvram wanmac)
+		label_mac=$wan_mac
 		;;
 	sitecom,wlr-6000)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x8004)" 2)
@@ -80,9 +82,6 @@ ramips_setup_macs()
 		;;
 	trendnet,tew-692gr)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
-		;;
-	*)
-		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
 	esac
 

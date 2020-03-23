@@ -85,12 +85,16 @@ generate_network() {
 		set network.$1.proto='none'
 	EOF
 
-	[ -n "$macaddr" ] && uci -q batch <<-EOF
-		delete network.$1_dev
-		set network.$1_dev='device'
-		set network.$1_dev.name='$ifname'
-		set network.$1_dev.macaddr='$macaddr'
-	EOF
+	if [ -n "$macaddr" ]; then
+		for name in $ifname; do
+			uci -q batch <<-EOF
+				delete network.$1_${name/./_}_dev
+				set network.$1_${name/./_}_dev='device'
+				set network.$1_${name/./_}_dev.name='$name'
+				set network.$1_${name/./_}_dev.macaddr='$macaddr'
+			EOF
+		done
+	fi
 
 	case "$protocol" in
 		static)
@@ -258,11 +262,6 @@ generate_static_system() {
 			local hostname
 			if json_get_var hostname hostname; then
 				uci -q set "system.@system[-1].hostname=$hostname"
-			fi
-
-			local label_macaddr
-			if json_get_var label_macaddr label_macaddr; then
-				uci -q set "system.@system[-1].label_macaddr=$label_macaddr"
 			fi
 
 			if json_is_a ntpserver array; then
