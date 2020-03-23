@@ -14,7 +14,7 @@ FEATURES:=usb usbgadget ext4 targz fpu audio display nand squashfs
 CPU_TYPE:=cortex-a8
 CPU_SUBTYPE:=vfpv3
 
-KERNEL_PATCHVER:=4.19
+KERNEL_PATCHVER:=5.4
 
 KERNELNAME:=zImage dtbs
 
