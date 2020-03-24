@@ -75,6 +75,7 @@ get_status_led() {
 	fritz300e|\
 	fritz4020|\
 	fritz450e|\
+	gl-ar750s|\
 	gl-usb150|\
 	mr12|\
 	mr16|\
