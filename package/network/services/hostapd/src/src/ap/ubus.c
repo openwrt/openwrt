@@ -937,6 +937,7 @@ enum {
 	WNM_DISASSOC_ADDR,
 	WNM_DISASSOC_DURATION,
 	WNM_DISASSOC_NEIGHBORS,
+	WNM_DISASSOC_ABRIDGED,
 	__WNM_DISASSOC_MAX,
 };
 
@@ -944,6 +945,7 @@ static const struct blobmsg_policy wnm_disassoc_policy[__WNM_DISASSOC_MAX] = {
 	[WNM_DISASSOC_ADDR] = { "addr", BLOBMSG_TYPE_STRING },
 	[WNM_DISASSOC_DURATION] { "duration", BLOBMSG_TYPE_INT32 },
 	[WNM_DISASSOC_NEIGHBORS] { "neighbors", BLOBMSG_TYPE_ARRAY },
+	[WNM_DISASSOC_ABRIDGED] { "abridged", BLOBMSG_TYPE_BOOL },
 };
 
 static int
@@ -1016,6 +1018,9 @@ hostapd_wnm_disassoc_imminent(struct ubus_context *ctx, struct ubus_object *obj,
 
 	if (nr)
 		req_mode |= WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED;
+
+	if (tb[WNM_DISASSOC_ABRIDGED] && blobmsg_get_bool(tb[WNM_DISASSOC_ABRIDGED]))
+		req_mode |= WNM_BSS_TM_REQ_ABRIDGED;
 
 	if (wnm_send_bss_tm_req(hapd, sta, req_mode, duration, 0, NULL,
 				NULL, nr, nr_len, NULL, 0))
