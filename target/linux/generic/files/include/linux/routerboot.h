@@ -33,7 +33,6 @@
 #define RB_ID_HARD_02		2
 #define RB_ID_FLASH_INFO	3
 #define RB_ID_MAC_ADDRESS_PACK	4
-#define RB_ID_BOARD_PRODUCT_CODE	5
 #define RB_ID_BIOS_VERSION	6
 #define RB_ID_HARD_07		7
 #define RB_ID_SDRAM_TIMINGS	8
@@ -46,7 +45,7 @@
 #define RB_ID_HW_OPTIONS	21
 #define RB_ID_WLAN_DATA		22
 #define RB_ID_BOARD_IDENTIFIER	23
-#define RB_ID_BOARD_NAME	33
+#define RB_ID_BOARD_NAME	5
 
 
 /*
