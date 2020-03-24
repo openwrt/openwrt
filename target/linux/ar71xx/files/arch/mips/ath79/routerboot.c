@@ -327,9 +327,10 @@ rb_get_board_name(void)
 	u16 tag_len;
 	u8 *tag;
 	int err;
+	
 
 	err = rb_find_hard_cfg_tag(RB_ID_BOARD_NAME, &tag, &tag_len);
-	if (err)
+	if (err || memcmp(tag, "\x0\x0\x0\x0" ,tag_len) == 0)
 		err = rb_find_hard_cfg_tag(RB_ID_BOARD_PRODUCT_CODE, &tag, &tag_len);
 	if (err)
 		return NULL;
