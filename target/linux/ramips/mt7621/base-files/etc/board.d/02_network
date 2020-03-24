@@ -138,6 +138,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "3:lan:1" "1:wan" "6t@eth0"
 		;;
+	xiaomi,mir4)
+		ucidef_add_switch "switch0" \
+			"1:lan:2" "2:lan:1" "4:wan" "6t@eth0"
+		;;
 	xiaomi,mir3g-v2)
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "3:lan:1" "4:wan" "6@eth0"
@@ -275,6 +279,7 @@ ramips_setup_macs()
 		label_mac=$wan_mac
 		;;
 	xiaomi,mir3g|\
+	xiaomi,mir4|\
 	xiaomi,mir3p)
 		lan_mac=$(mtd_get_mac_binary factory 0xe006)
 		label_mac=$lan_mac

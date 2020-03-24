@@ -53,6 +53,7 @@ platform_do_upgrade() {
 	netgear,r6850|\
 	netis,wf2881|\
 	xiaomi,mir3g|\
+	xiaomi,mir4|\
 	xiaomi,mir3p)
 		nand_do_upgrade "$1"
 		;;
