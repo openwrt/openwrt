@@ -146,6 +146,8 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 	int phy_mode, size, id;
 	int shift = 12;
 	u32 val, mask = 0;
+	u32 val_delay = 0;
+	u32 mask_delay = GSW_REG_GPCx_TXDELAY | GSW_REG_GPCx_RXDELAY;
 	int min = (gsw->port4 == PORT4_EPHY) ? (5) : (4);
 
 	if (!_id || (be32_to_cpu(*_id) < min) || (be32_to_cpu(*_id) > 5)) {
@@ -175,6 +177,25 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 	switch (phy_mode) {
 	case PHY_INTERFACE_MODE_RGMII:
 		mask = 0;
+		/* Do not touch rx/tx delay in this state to avoid problems with
+		 * backward compability.
+		 */
+		mask_delay = 0;
+		break;
+	case PHY_INTERFACE_MODE_RGMII_ID:
+		mask = 0;
+		val_delay |= GSW_REG_GPCx_TXDELAY;
+		val_delay &= ~GSW_REG_GPCx_RXDELAY;
+		break;
+	case PHY_INTERFACE_MODE_RGMII_RXID:
+		mask = 0;
+		val_delay &= ~GSW_REG_GPCx_TXDELAY;
+		val_delay &= ~GSW_REG_GPCx_RXDELAY;
+		break;
+	case PHY_INTERFACE_MODE_RGMII_TXID:
+		mask = 0;
+		val_delay &= ~GSW_REG_GPCx_TXDELAY;
+		val_delay |= GSW_REG_GPCx_RXDELAY;
 		break;
 	case PHY_INTERFACE_MODE_MII:
 		mask = 1;
@@ -195,6 +216,19 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 	val &= ~(3 << shift);
 	val |= mask << shift;
 	rt_sysc_w32(val, SYSC_REG_CFG1);
+
+	if (id == 4) {
+		val = mtk_switch_r32(gsw, GSW_REG_GPC2);
+		val &= ~(mask_delay);
+		val |= val_delay & mask_delay;
+		mtk_switch_w32(gsw, val, GSW_REG_GPC2);
+	}
+	else if (id == 5) {
+		val = mtk_switch_r32(gsw, GSW_REG_GPC1);
+		val &= ~(mask_delay);
+		val |= val_delay & mask_delay;
+		mtk_switch_w32(gsw, val, GSW_REG_GPC1);
+	}
 
 	if (priv->phy->phy_fixed[id]) {
 		const __be32 *link = priv->phy->phy_fixed[id];
