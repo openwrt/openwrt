@@ -852,6 +852,11 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	int tx_num;
 	int len = skb->len;
 
+	if (unlikely(test_bit(__FE_DOWN, &priv->state))) {
+		dev_kfree_skb_any(skb);
+		return NETDEV_TX_OK;
+	}
+
 	if (fe_skb_padto(skb, priv)) {
 		netif_warn(priv, tx_err, dev, "tx padding failed!\n");
 		return NETDEV_TX_OK;
@@ -973,16 +978,16 @@ release_desc:
 			rxd->rxd2 = RX_DMA_LSO;
 
 		ring->rx_calc_idx = idx;
+		done++;
+	}
+
+	if (done) {
 		/* make sure that all changes to the dma ring are flushed before
 		 * we continue
 		 */
 		wmb();
 		fe_reg_w32(ring->rx_calc_idx, FE_REG_RX_CALC_IDX0);
-		done++;
 	}
-
-	if (done < budget)
-		fe_reg_w32(rx_intr, FE_REG_FE_INT_STATUS);
 
 	return done;
 }
@@ -1018,14 +1023,7 @@ static int fe_poll_tx(struct fe_priv *priv, int budget, u32 tx_intr,
 	}
 	ring->tx_free_idx = idx;
 
-	if (idx == hwidx) {
-		/* read hw index again make sure no new tx packet */
-		hwidx = fe_reg_r32(FE_REG_TX_DTX_IDX0);
-		if (idx == hwidx)
-			fe_reg_w32(tx_intr, FE_REG_FE_INT_STATUS);
-		else
-			*tx_again = 1;
-	} else {
+	if (idx != hwidx && done) {
 		*tx_again = 1;
 	}
 
@@ -1048,6 +1046,11 @@ static int fe_poll(struct napi_struct *napi, int budget)
 	u32 status, fe_status, status_reg, mask;
 	u32 tx_intr, rx_intr, status_intr;
 
+	if (unlikely(test_bit(__FE_DOWN, &priv->state))) {
+		napi_complete(napi);
+		return 0;
+	}
+
 	status = fe_reg_r32(FE_REG_FE_INT_STATUS);
 	fe_status = status;
 	tx_intr = priv->soc->tx_int;
@@ -1057,6 +1060,10 @@ static int fe_poll(struct napi_struct *napi, int budget)
 	rx_done = 0;
 	tx_again = 0;
 
+	if ((status & (tx_intr | rx_intr))) {
+		fe_reg_w32((status & (tx_intr | rx_intr)), FE_REG_FE_INT_STATUS);
+	}
+
 	if (fe_reg_table[FE_REG_FE_INT_STATUS2]) {
 		fe_status = fe_reg_r32(FE_REG_FE_INT_STATUS2);
 		status_reg = FE_REG_FE_INT_STATUS2;
@@ -1064,11 +1071,15 @@ static int fe_poll(struct napi_struct *napi, int budget)
 		status_reg = FE_REG_FE_INT_STATUS;
 	}
 
-	if (status & tx_intr)
-		tx_done = fe_poll_tx(priv, budget, tx_intr, &tx_again);
+	tx_done = fe_poll_tx(priv, budget, tx_intr, &tx_again);
+	if (tx_done && !tx_again && !(status & tx_intr)) {
+		fe_reg_w32(tx_intr, FE_REG_FE_INT_STATUS);
+	}
 
-	if (status & rx_intr)
-		rx_done = fe_poll_rx(napi, budget, priv, rx_intr);
+	rx_done = fe_poll_rx(napi, budget, priv, rx_intr);
+	if (rx_done && rx_done < budget && !(status & rx_intr)) {
+		fe_reg_w32(rx_intr, FE_REG_FE_INT_STATUS);
+	}
 
 	if (unlikely(fe_status & status_intr)) {
 		if (hwstat && spin_trylock(&hwstat->stats_lock)) {
@@ -1086,20 +1097,13 @@ static int fe_poll(struct napi_struct *napi, int budget)
 	}
 
 	if (!tx_again && (rx_done < budget)) {
-		status = fe_reg_r32(FE_REG_FE_INT_STATUS);
-		if (status & (tx_intr | rx_intr)) {
-			/* let napi poll again */
-			rx_done = budget;
-			goto poll_again;
+		if (likely(napi_complete_done(napi, rx_done) && !test_bit(__FE_DOWN, &priv->state))) {
+			fe_int_enable(tx_intr | rx_intr);
 		}
-
-		napi_complete_done(napi, rx_done);
-		fe_int_enable(tx_intr | rx_intr);
 	} else {
 		rx_done = budget;
 	}
 
-poll_again:
 	return rx_done;
 }
 
@@ -1251,7 +1255,8 @@ static int fe_hw_init(struct net_device *dev)
 	/* disable delay interrupt */
 	fe_reg_w32(0, FE_REG_DLY_INT_CFG);
 
-	fe_int_disable(priv->soc->tx_int | priv->soc->rx_int);
+	/* disable all interrupts during hw init */
+	fe_int_disable(~0);
 
 	/* frame engine will push VLAN tag regarding to VIDX feild in Tx desc */
 	if (fe_reg_table[FE_REG_FE_DMA_VID_BASE])
@@ -1274,25 +1279,6 @@ static int fe_hw_init(struct net_device *dev)
 static int fe_open(struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
-	unsigned long flags;
-	u32 val;
-	int err;
-
-	err = fe_init_dma(priv);
-	if (err) {
-		fe_free_dma(priv);
-		return err;
-	}
-
-	spin_lock_irqsave(&priv->page_lock, flags);
-
-	val = FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN;
-	if (priv->flags & FE_FLAG_RX_2B_OFFSET)
-		val |= FE_RX_2B_OFFSET;
-	val |= priv->soc->pdma_glo_cfg;
-	fe_reg_w32(val, FE_REG_PDMA_GLO_CFG);
-
-	spin_unlock_irqrestore(&priv->page_lock, flags);
 
 	if (priv->phy)
 		priv->phy->start(priv);
@@ -1300,12 +1286,11 @@ static int fe_open(struct net_device *dev)
 	if (priv->soc->has_carrier && priv->soc->has_carrier(priv))
 		netif_carrier_on(dev);
 
+	clear_bit(__FE_DOWN, &priv->state);
+
 	napi_enable(&priv->rx_napi);
 	fe_int_enable(priv->soc->tx_int | priv->soc->rx_int);
 	netif_start_queue(dev);
-#ifdef CONFIG_NET_RALINK_OFFLOAD
-	mtk_ppe_probe(priv);
-#endif
 
 	return 0;
 }
@@ -1313,8 +1298,9 @@ static int fe_open(struct net_device *dev)
 static int fe_stop(struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
-	unsigned long flags;
 	int i;
+
+	set_bit(__FE_DOWN, &priv->state);
 
 	netif_tx_disable(dev);
 	fe_int_disable(priv->soc->tx_int | priv->soc->rx_int);
@@ -1322,13 +1308,6 @@ static int fe_stop(struct net_device *dev)
 
 	if (priv->phy)
 		priv->phy->stop(priv);
-
-	spin_lock_irqsave(&priv->page_lock, flags);
-
-	fe_reg_w32(fe_reg_r32(FE_REG_PDMA_GLO_CFG) &
-		     ~(FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN),
-		     FE_REG_PDMA_GLO_CFG);
-	spin_unlock_irqrestore(&priv->page_lock, flags);
 
 	/* wait dma stop */
 	for (i = 0; i < 10; i++) {
@@ -1339,12 +1318,6 @@ static int fe_stop(struct net_device *dev)
 		}
 		break;
 	}
-
-	fe_free_dma(priv);
-
-#ifdef CONFIG_NET_RALINK_OFFLOAD
-	mtk_ppe_remove(priv);
-#endif
 
 	return 0;
 }
@@ -1382,6 +1355,8 @@ static int __init fe_init(struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	struct device_node *port;
+	unsigned long flags;
+	u32 val;
 	int err;
 
 	if (priv->soc->reset_fe)
@@ -1434,6 +1409,24 @@ static int __init fe_init(struct net_device *dev)
 	if ((priv->flags & FE_FLAG_HAS_SWITCH) && priv->soc->switch_config)
 		priv->soc->switch_config(priv);
 
+	set_bit(__FE_DOWN, &priv->state);
+	err = fe_init_dma(priv);
+	if (err) {
+		fe_free_dma(priv);
+		goto err_phy_disconnect;
+	}
+
+	spin_lock_irqsave(&priv->page_lock, flags);
+	val = FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN;
+	if (priv->flags & FE_FLAG_RX_2B_OFFSET)
+		val |= FE_RX_2B_OFFSET;
+	val |= priv->soc->pdma_glo_cfg;
+	fe_reg_w32(val, FE_REG_PDMA_GLO_CFG);
+	spin_unlock_irqrestore(&priv->page_lock, flags);
+#ifdef CONFIG_NET_RALINK_OFFLOAD
+	mtk_ppe_probe(priv);
+#endif
+
 	return 0;
 
 err_phy_disconnect:
@@ -1446,7 +1439,18 @@ err_phy_disconnect:
 
 static void fe_uninit(struct net_device *dev)
 {
+	unsigned long flags;
 	struct fe_priv *priv = netdev_priv(dev);
+
+	spin_lock_irqsave(&priv->page_lock, flags);
+	fe_reg_w32(fe_reg_r32(FE_REG_PDMA_GLO_CFG) &
+		     ~(FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN),
+		     FE_REG_PDMA_GLO_CFG);
+	spin_unlock_irqrestore(&priv->page_lock, flags);
+	fe_free_dma(priv);
+#ifdef CONFIG_NET_RALINK_OFFLOAD
+	mtk_ppe_remove(priv);
+#endif
 
 	if (priv->phy)
 		priv->phy->disconnect(priv);
