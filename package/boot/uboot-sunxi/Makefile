@@ -222,9 +222,9 @@ define U-Boot/pine64_plus
   UENV:=a64
 endef
 
-define U-Boot/Sinovoip_BPI_M2_Plus
+define U-Boot/bananapi_m2_plus_h3
   BUILD_SUBTARGET:=cortexa7
-  NAME:=Bananapi M2 Plus
+  NAME:=Bananapi M2 Plus H3
   BUILD_DEVICES:=sinovoip_bananapi-m2-plus
 endef
 
@@ -266,6 +266,7 @@ UBOOT_TARGETS := \
 	A20-OLinuXino-Lime2 \
 	A20-OLinuXino-Lime2-eMMC \
 	A20-OLinuXino_MICRO \
+	bananapi_m2_plus_h3 \
 	Bananapi \
 	Bananapi_M2_Ultra \
 	Bananapro \
@@ -294,7 +295,6 @@ UBOOT_TARGETS := \
 	orangepi_pc2 \
 	pangolin \
 	pine64_plus \
-	Sinovoip_BPI_M2_Plus \
 	sopine_baseboard \
 	orangepi_zero_plus
 
