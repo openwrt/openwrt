@@ -177,7 +177,13 @@ ifeq ($(strip $(call kernel_patchver_ge,4.18.0)),1)
 endif
 
 define Image/pad-to
-	dd if=$(1) of=$(1).new bs=$(2) conv=sync
+	if [ $(2) -gt 1048576 ]; then \
+		dd if=$(1) of=$(1).new \
+			bs=1048576 count=$(shell expr $(2) / 1048576) \
+			conv=sync ; \
+	else \
+		dd if=$(1) of=$(1).new bs=$(2) conv=sync  ; \
+	fi
 	mv $(1).new $(1)
 endef
 
