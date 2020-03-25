@@ -487,6 +487,8 @@ __rb_get_wlan_data(u16 id)
 		}
 
 	}
+	kfree(buf_lzo_out);
+	kfree(buf_lzo_in);
 	return buf_rle_out;
 
 err_free:
