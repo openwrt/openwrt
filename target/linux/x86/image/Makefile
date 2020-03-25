@@ -47,7 +47,7 @@ BOOTOPTS:=$(call qstrip,$(CONFIG_GRUB_BOOTOPTS))
 define Build/combined
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/boot/vmlinuz
 	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
-	PADDING="$(CONFIG_TARGET_IMAGES_PAD)" SIGNATURE="$(IMG_PART_SIGNATURE)" $(SCRIPT_DIR)/gen_image_generic.sh \
+	PADDING="1" SIGNATURE="$(IMG_PART_SIGNATURE)" $(SCRIPT_DIR)/gen_image_generic.sh \
 		$@ \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS) \
@@ -95,10 +95,10 @@ endef
 DEVICE_VARS += GRUB2_VARIANT
 define Device/Default
   ARTIFACT/image.iso := grub-config iso | iso
-  IMAGE/combined.img := append-rootfs | pad-extra 128k | grub-config pc | combined | grub-install
-  IMAGE/combined.img.gz := append-rootfs | pad-extra 128k | grub-config pc | combined | grub-install | gzip
-  IMAGE/combined.vdi := append-rootfs | pad-extra 128k | grub-config pc | combined | grub-install | qemu-image vdi
-  IMAGE/combined.vmdk := append-rootfs | pad-extra 128k | grub-config pc | combined | grub-install | qemu-image vmdk
+  IMAGE/combined.img := grub-config pc | combined | grub-install
+  IMAGE/combined.img.gz := grub-config pc | combined | grub-install | gzip
+  IMAGE/combined.vdi := grub-config pc | combined | grub-install | qemu-image vdi
+  IMAGE/combined.vmdk := grub-config pc | combined | grub-install | qemu-image vmdk
   ifeq ($(CONFIG_TARGET_IMAGES_GZIP),y)
     IMAGES := combined.img.gz
   else
