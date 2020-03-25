@@ -99,10 +99,12 @@ define Device/Default
   IMAGE/combined.img.gz := grub-config pc | combined | grub-install | gzip
   IMAGE/combined.vdi := grub-config pc | combined | grub-install | qemu-image vdi
   IMAGE/combined.vmdk := grub-config pc | combined | grub-install | qemu-image vmdk
+  IMAGE/rootfs.img := append-rootfs
+  IMAGE/rootfs.img.gz := append-rootfs | gzip
   ifeq ($(CONFIG_TARGET_IMAGES_GZIP),y)
-    IMAGES := combined.img.gz
+    IMAGES := combined.img.gz rootfs.img.gz
   else
-    IMAGES := combined.img
+    IMAGES := combined.img rootfs.img
   endif
   KERNEL := kernel-bin
   KERNEL_INSTALL := 1
