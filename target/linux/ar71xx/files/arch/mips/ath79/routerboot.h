@@ -48,15 +48,12 @@ rb_has_hw_option(const struct rb_info *info, u32 mask)
 }
 
 #ifdef CONFIG_ATH79_ROUTERBOOT
-
-
 const struct rb_info *rb_init_info(void *data, unsigned int size);
 void *rb_get_wlan_data(void);
 void *rb_get_ext_wlan_data(u16 id);
 
 int routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 			u8 **tag_data, u16 *tag_len);
-
 int routerboot_find_magic(u8 *buf, unsigned int buflen, u32 *offset, bool hard);
 #else
 static inline const struct rb_info *
