@@ -463,9 +463,15 @@ struct fe_rx_ring {
 	u16 rx_calc_idx;
 };
 
+enum fe_state_t {
+	__FE_DOWN,
+};
+
 struct fe_priv {
 	/* make sure that register operations are atomic */
 	spinlock_t			page_lock;
+
+	unsigned long state;
 
 	struct fe_soc_data		*soc;
 	struct net_device		*netdev;
