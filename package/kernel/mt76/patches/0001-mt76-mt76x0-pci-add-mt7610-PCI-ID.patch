@@ -1,0 +1,30 @@
+From 9b082c3fd3fc954937444220995cb05662ab2e82 Mon Sep 17 00:00:00 2001
+From: Pawel Dembicki <paweldembicki@gmail.com>
+Date: Wed, 25 Mar 2020 06:51:29 +0100
+Subject: [PATCH] mt76: mt76x0: pci: add mt7610 PCI ID
+
+Add mt7610 PCI id found on D-Link DWR-960 to pci_device_id table.
+
+Run-tested on D-Link DWR-960 with no-name half-size mPCIE card
+with mt7610e.
+
+Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
+---
+ mt76x0/pci.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/mt76x0/pci.c b/mt76x0/pci.c
+index e2974e0ae1fc..3bd753cda190 100644
+--- a/mt76x0/pci.c
++++ b/mt76x0/pci.c
+@@ -215,6 +215,7 @@ mt76x0e_remove(struct pci_dev *pdev)
+ }
+
+ static const struct pci_device_id mt76x0e_device_table[] = {
++	{ PCI_DEVICE(0x14c3, 0x7610) },
+ 	{ PCI_DEVICE(0x14c3, 0x7630) },
+ 	{ PCI_DEVICE(0x14c3, 0x7650) },
+ 	{ },
+--
+2.20.1
+
