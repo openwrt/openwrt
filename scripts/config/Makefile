@@ -7,6 +7,8 @@
 # conf:	  Used for defconfig, oldconfig and related targets
 # mconf:  Used for the mconfig target.
 #         Utilizes the lxdialog package
+# nconf:  Used for the nconfig target.
+#         Utilizes the ncurses package
 # qconf:  Used for the xconfig target
 #         Based on Qt which needs to be installed to compile it
 # object files used by all kconfig flavours
@@ -20,10 +22,12 @@ check_lxdialog = $(shell $(SHELL) $(CURDIR)/lxdialog/check-lxdialog.sh -$(1))
 export CFLAGS += -DKBUILD_NO_NLS -I. $(call check_lxdialog,ccflags)
 export CXXFLAGS += -DKBUILD_NO_NLS
 
-conf-objs	:= conf.o zconf.tab.o
-mconf-objs	:= mconf.o zconf.tab.o
+common-objs	:= zconf.tab.o
+conf-objs	:= conf.o $(common-objs)
+mconf-objs	:= mconf.o $(common-objs)
+nconf-objs	:= nconf.o nconf.gui.o $(common-objs)
 qconf-cxxobjs	:= qconf.o
-qconf-objs	:= zconf.tab.o
+qconf-objs	:= $(common-objs)
 
 lxdialog-objs := \
 	lxdialog/checklist.o lxdialog/util.o lxdialog/inputbox.o \
@@ -35,9 +39,20 @@ clean-files	+= $(qconf-cxxobjs) qconf.moc .tmp_qtcheck qconf
 
 all: conf mconf
 
+$(obj)/%conf-cfg: $(src)/%conf-cfg.sh FORCE
+        $(call filechk,conf_cfg)
+
+HOSTLDLIBS_nconf = $(shell eval `./nconf-cfg.sh` && echo $$libs)
+HOSTCFLAGS_nconf = $(shell eval `./nconf-cfg.sh` && echo $$cflags)
+
+nconf.o: CFLAGS+=$(HOSTCFLAGS_nconf)
+nconf.gui.o: CFLAGS+=$(HOSTCFLAGS_nconf)
+
 conf: $(conf-objs)
 mconf: $(mconf-objs) $(lxdialog-objs)
 	$(CC) -o $@ $^ $(call check_lxdialog,ldflags $(CC))
+nconf: $(nconf-objs)
+	$(CC) -o $@ $^ $(HOSTLDLIBS_nconf)
 qconf: $(qconf-cxxobjs) $(qconf-objs)
 ifneq ($(DISTRO-PKG-CONFIG),)
 	$(CXX) -o $@ $^ $(HOSTLOADLIBES_qconf)
@@ -47,7 +62,7 @@ else
 endif
 
 clean:
-	rm -f *.o lxdialog/*.o $(clean-files) conf mconf
+	rm -f *.o lxdialog/*.o $(clean-files) conf mconf nconf
 
 zconf.tab.o: zconf.lex.c zconf.hash.c confdata.c
 
@@ -70,6 +85,7 @@ ifeq ($(MAKECMDGOALS),qconf)
 qconf.o: .tmp_qtcheck
 .tmp_qtcheck: Makefile
 -include .tmp_qtcheck
+
 
 # Qt needs some extra effort...
 .tmp_qtcheck:

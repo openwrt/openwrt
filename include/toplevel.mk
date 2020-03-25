@@ -101,11 +101,15 @@ prepare-tmpinfo: FORCE
 
 ifneq ($(DISTRO_PKG_CONFIG),)
 scripts/config/mconf: export PATH:=$(dir $(DISTRO_PKG_CONFIG)):$(PATH)
+scripts/config/nconf: export PATH:=$(dir $(DISTRO_PKG_CONFIG)):$(PATH)
 endif
 scripts/config/mconf:
 	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config all CC="$(HOSTCC_WRAPPER)"
 
 $(eval $(call rdep,scripts/config,scripts/config/mconf))
+
+scripts/config/nconf:
+	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config nconf CC="$(HOSTCC_WRAPPER)"
 
 scripts/config/qconf:
 	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config qconf \
@@ -138,6 +142,13 @@ oldconfig: scripts/config/conf prepare-tmpinfo FORCE
 		$< --$(if $(confdefault),$(confdefault),old)config Config.in
 
 menuconfig: scripts/config/mconf prepare-tmpinfo FORCE
+	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
+		cp $(HOME)/.openwrt/defconfig .config; \
+	fi
+	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
+		$< Config.in
+
+nconfig: scripts/config/nconf prepare-tmpinfo FORCE
 	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
 		cp $(HOME)/.openwrt/defconfig .config; \
 	fi
