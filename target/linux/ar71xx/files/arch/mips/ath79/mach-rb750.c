@@ -278,6 +278,8 @@ static void __init rb750gr3_setup(void)
 	rb750_nand_data.disable_pins = rb750gr3_nand_disable_pins;
 	rb750_nand_data.latch_change = rb750gr3_latch_change;
 	platform_device_register(&rb750_nand_device);
+
+	ath79_register_usb();
 }
 
 MIPS_MACHINE(ATH79_MACH_RB_750G_R3, "750Gr3", "MikroTik RouterBOARD 750GL",
