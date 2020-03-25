@@ -8,8 +8,6 @@
  *  by the Free Software Foundation.
  */
 
-
-
 #ifndef _ATH79_ROUTERBOOT_H_
 #define _ATH79_ROUTERBOOT_H_
 
