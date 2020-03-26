@@ -138,4 +138,4 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-1-hdego
 +		sep = delim;
  	}
  
- 	mode->rotation_reflection = rotation;
+ 	if (!(rotation & DRM_MODE_ROTATE_MASK))

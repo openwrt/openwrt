@@ -27,7 +27,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-8-hdego
 
 --- a/drivers/gpu/drm/drm_modes.c
 +++ b/drivers/gpu/drm/drm_modes.c
-@@ -1677,17 +1677,6 @@ static const char * const drm_named_mode
+@@ -1684,17 +1684,6 @@ static const char * const drm_named_mode
  	"PAL",
  };
  
@@ -45,7 +45,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-8-hdego
  /**
   * drm_mode_parse_command_line_for_connector - parse command line modeline for connector
   * @mode_option: optional per connector mode option
-@@ -1718,7 +1707,7 @@ bool drm_mode_parse_command_line_for_con
+@@ -1725,7 +1714,7 @@ bool drm_mode_parse_command_line_for_con
  					       struct drm_cmdline_mode *mode)
  {
  	const char *name;
@@ -54,7 +54,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-8-hdego
  	unsigned int bpp_off = 0, refresh_off = 0, options_off = 0;
  	unsigned int mode_end = 0;
  	const char *bpp_ptr = NULL, *refresh_ptr = NULL, *extra_ptr = NULL;
-@@ -1738,49 +1727,14 @@ bool drm_mode_parse_command_line_for_con
+@@ -1745,49 +1734,14 @@ bool drm_mode_parse_command_line_for_con
  
  	name = mode_option;
  
@@ -105,7 +105,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-8-hdego
  
  	/* Locate the start of named options */
  	options_ptr = strchr(name, ',');
-@@ -1800,23 +1754,45 @@ bool drm_mode_parse_command_line_for_con
+@@ -1807,23 +1761,45 @@ bool drm_mode_parse_command_line_for_con
  		parse_extras = true;
  	}
  
@@ -160,7 +160,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-8-hdego
  
  	if (bpp_ptr) {
  		ret = drm_mode_parse_cmdline_bpp(bpp_ptr, &bpp_end_ptr, mode);
-@@ -1852,7 +1828,7 @@ bool drm_mode_parse_command_line_for_con
+@@ -1859,7 +1835,7 @@ bool drm_mode_parse_command_line_for_con
  		else
  			len = strlen(extra_ptr);
  
@@ -169,7 +169,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-8-hdego
  						   connector, mode);
  		if (ret)
  			return false;
-@@ -1860,7 +1836,7 @@ bool drm_mode_parse_command_line_for_con
+@@ -1867,7 +1843,7 @@ bool drm_mode_parse_command_line_for_con
  
  	if (options_ptr) {
  		ret = drm_mode_parse_cmdline_options(options_ptr + 1,
@@ -180,7 +180,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-8-hdego
  			return false;
 --- a/drivers/gpu/drm/selftests/drm_cmdline_selftests.h
 +++ b/drivers/gpu/drm/selftests/drm_cmdline_selftests.h
-@@ -62,3 +62,5 @@ cmdline_test(drm_cmdline_test_multiple_o
+@@ -63,3 +63,5 @@ cmdline_test(drm_cmdline_test_multiple_o
  cmdline_test(drm_cmdline_test_invalid_option)
  cmdline_test(drm_cmdline_test_bpp_extra_and_option)
  cmdline_test(drm_cmdline_test_extra_and_option)
@@ -188,7 +188,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-8-hdego
 +cmdline_test(drm_cmdline_test_freestanding_force_e_and_options)
 --- a/drivers/gpu/drm/selftests/test-drm_cmdline_parser.c
 +++ b/drivers/gpu/drm/selftests/test-drm_cmdline_parser.c
-@@ -1042,6 +1042,56 @@ static int drm_cmdline_test_extra_and_op
+@@ -1053,6 +1053,56 @@ static int drm_cmdline_test_extra_and_op
  	return 0;
  }
  

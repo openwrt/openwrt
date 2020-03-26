@@ -29,9 +29,9 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-6-hdego
  					  const struct drm_connector *connector,
  					  struct drm_cmdline_mode *mode)
  {
-@@ -1663,6 +1664,9 @@ static int drm_mode_parse_cmdline_option
- 		option = sep + 1;
- 	} while (sep);
+@@ -1670,6 +1671,9 @@ static int drm_mode_parse_cmdline_option
+ 	if (!is_power_of_2(rotation & DRM_MODE_ROTATE_MASK))
+ 		return -EINVAL;
  
 +	if (rotation && freestanding)
 +		return -EINVAL;
@@ -39,7 +39,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-6-hdego
  	mode->rotation_reflection = rotation;
  
  	return 0;
-@@ -1855,6 +1859,7 @@ bool drm_mode_parse_command_line_for_con
+@@ -1862,6 +1866,7 @@ bool drm_mode_parse_command_line_for_con
  
  	if (options_ptr) {
  		ret = drm_mode_parse_cmdline_options(options_ptr + 1,

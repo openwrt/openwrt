@@ -27,7 +27,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-4-hdego
 
 --- a/drivers/gpu/drm/drm_modes.c
 +++ b/drivers/gpu/drm/drm_modes.c
-@@ -1794,6 +1794,7 @@ bool drm_mode_parse_command_line_for_con
+@@ -1801,6 +1801,7 @@ bool drm_mode_parse_command_line_for_con
  		mode_end = refresh_off;
  	} else if (options_ptr) {
  		mode_end = options_off;
@@ -37,14 +37,14 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-4-hdego
  		parse_extras = true;
 --- a/drivers/gpu/drm/selftests/drm_cmdline_selftests.h
 +++ b/drivers/gpu/drm/selftests/drm_cmdline_selftests.h
-@@ -61,3 +61,4 @@ cmdline_test(drm_cmdline_test_margin_opt
+@@ -62,3 +62,4 @@ cmdline_test(drm_cmdline_test_margin_opt
  cmdline_test(drm_cmdline_test_multiple_options)
  cmdline_test(drm_cmdline_test_invalid_option)
  cmdline_test(drm_cmdline_test_bpp_extra_and_option)
 +cmdline_test(drm_cmdline_test_extra_and_option)
 --- a/drivers/gpu/drm/selftests/test-drm_cmdline_parser.c
 +++ b/drivers/gpu/drm/selftests/test-drm_cmdline_parser.c
-@@ -1018,6 +1018,30 @@ static int drm_cmdline_test_bpp_extra_an
+@@ -1029,6 +1029,30 @@ static int drm_cmdline_test_bpp_extra_an
  	return 0;
  }
  

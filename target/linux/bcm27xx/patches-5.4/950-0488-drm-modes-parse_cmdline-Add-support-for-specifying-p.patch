@@ -91,7 +91,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-9-hdego
  		} else {
  			return -EINVAL;
  		}
-@@ -1715,6 +1745,8 @@ bool drm_mode_parse_command_line_for_con
+@@ -1722,6 +1752,8 @@ bool drm_mode_parse_command_line_for_con
  	char *bpp_end_ptr = NULL, *refresh_end_ptr = NULL;
  	int i, len, ret;
  
@@ -102,14 +102,14 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-9-hdego
  		mode_option = fb_mode_option;
 --- a/drivers/gpu/drm/selftests/drm_cmdline_selftests.h
 +++ b/drivers/gpu/drm/selftests/drm_cmdline_selftests.h
-@@ -64,3 +64,4 @@ cmdline_test(drm_cmdline_test_bpp_extra_
+@@ -65,3 +65,4 @@ cmdline_test(drm_cmdline_test_bpp_extra_
  cmdline_test(drm_cmdline_test_extra_and_option)
  cmdline_test(drm_cmdline_test_freestanding_options)
  cmdline_test(drm_cmdline_test_freestanding_force_e_and_options)
 +cmdline_test(drm_cmdline_test_panel_orientation)
 --- a/drivers/gpu/drm/selftests/test-drm_cmdline_parser.c
 +++ b/drivers/gpu/drm/selftests/test-drm_cmdline_parser.c
-@@ -1092,6 +1092,28 @@ static int drm_cmdline_test_freestanding
+@@ -1103,6 +1103,28 @@ static int drm_cmdline_test_freestanding
  	return 0;
  }
  

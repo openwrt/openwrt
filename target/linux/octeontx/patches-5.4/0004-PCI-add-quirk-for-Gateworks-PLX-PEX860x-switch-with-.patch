@@ -12,11 +12,9 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  drivers/pci/quirks.c | 32 ++++++++++++++++++++++++++++++++
  1 file changed, 32 insertions(+)
 
-diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
-index 419dda6..40e2ddb 100644
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
-@@ -26,6 +26,7 @@
+@@ -25,6 +25,7 @@
  #include <linux/ktime.h>
  #include <linux/mm.h>
  #include <linux/nvme.h>
@@ -24,7 +22,7 @@ index 419dda6..40e2ddb 100644
  #include <linux/platform_data/x86/apple.h>
  #include <linux/pm_runtime.h>
  #include <linux/switchtec.h>
-@@ -5216,3 +5217,34 @@ static void quirk_reset_lenovo_thinkpad_p50_nvgpu(struct pci_dev *pdev)
+@@ -5431,3 +5432,34 @@ out_disable:
  DECLARE_PCI_FIXUP_CLASS_FINAL(PCI_VENDOR_ID_NVIDIA, 0x13b1,
  			      PCI_CLASS_DISPLAY_VGA, 8,
  			      quirk_reset_lenovo_thinkpad_p50_nvgpu);
@@ -59,6 +57,3 @@ index 419dda6..40e2ddb 100644
 +DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8606, newport_pciesw_early_fixup);
 +DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8604, newport_pciesw_early_fixup);
 +#endif /* CONFIG_PCI_HOST_THUNDER_PEM */
--- 
-2.7.4
-

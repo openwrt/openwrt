@@ -20,8 +20,6 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  .../boot/dts/allwinner/sun50i-a64-olinuxino.dts | 17 +++++++++++++++++
  2 files changed, 21 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-emmc.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-emmc.dts
-index 96ab0227e82d..a1629688e694 100644
 --- a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-emmc.dts
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-emmc.dts
 @@ -21,3 +21,7 @@
@@ -32,8 +30,6 @@ index 96ab0227e82d..a1629688e694 100644
 +&pio {
 +	vcc-pc-supply = <&reg_eldo1>;
 +};
-diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino.dts
-index 01a9a52edae4..3e026a95a58a 100644
 --- a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino.dts
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino.dts
 @@ -163,6 +163,23 @@

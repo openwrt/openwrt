@@ -61,9 +61,9 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20191118155134.30468-5-hdego
 +		option = sep + 1;
 +	} while (sep);
  
- 	mode->rotation_reflection = rotation;
- 
-@@ -1855,9 +1854,7 @@ bool drm_mode_parse_command_line_for_con
+ 	if (!(rotation & DRM_MODE_ROTATE_MASK))
+ 		rotation |= DRM_MODE_ROTATE_0;
+@@ -1862,9 +1861,7 @@ bool drm_mode_parse_command_line_for_con
  	}
  
  	if (options_ptr) {
