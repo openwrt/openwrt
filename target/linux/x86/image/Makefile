@@ -70,9 +70,8 @@ endef
 define Build/grub-install
 	rm -fR $@.grub2
 	$(INSTALL_DIR) $@.grub2
-	$(CP) $(STAGING_DIR_HOST)/lib/grub/i386-pc/*.img \
-		$(STAGING_DIR_HOST)/lib/grub/grub2-$(GRUB2_VARIANT)/core.img \
-		$@.grub2/
+	$(CP) $(STAGING_DIR_IMAGE)/grub2/boot.img $@.grub2/
+	$(CP) $(STAGING_DIR_IMAGE)/grub2/$(GRUB2_VARIANT)-core.img $@.grub2/core.img
 	echo '(hd0) $@' > $@.grub2/device.map
 	$(STAGING_DIR_HOST)/bin/grub-bios-setup \
 		-m "$@.grub2/device.map" \
@@ -84,8 +83,8 @@ endef
 define Build/iso
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/boot/vmlinuz
 	cat \
-		$(STAGING_DIR_HOST)/lib/grub/i386-pc/cdboot.img \
-		$(STAGING_DIR_HOST)/lib/grub/grub2-iso/eltorito.img \
+		$(STAGING_DIR_IMAGE)/grub2/cdboot.img \
+		$(STAGING_DIR_IMAGE)/grub2/eltorito.img \
 		> $@.boot/boot/grub/eltorito.img
 	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
 	mkisofs -R -b boot/grub/eltorito.img -no-emul-boot -boot-info-table \
