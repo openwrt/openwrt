@@ -1313,9 +1313,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 +        DAT2    .req    ip
 +        DAT3    .req    lr
 +
-+        orr     DAT0, DAT0, lsl #8
++        orr     DAT0, DAT0, DAT0, lsl #8
 +        push    {S, lr}
-+        orr     DAT0, DAT0, lsl #16
++        orr     DAT0, DAT0, DAT0, lsl #16
 +        mov     DAT1, DAT0
 +
 +        /* See if we're guaranteed to have at least one 16-byte aligned 16-byte write */
