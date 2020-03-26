@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 /dts-v1/;
 
 #include "mt7621.dtsi"
@@ -37,21 +38,6 @@
 			label = "mir4:yellow:status";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};
-
-		wan_amber {
-			label = "mir4:amber:wan";
-			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
-		};
-
-		lan1_amber {
-			label = "mir4:amber:lan1";
-			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
-		};
-
-		lan2_amber {
-			label = "mir4:amber:lan2";
-			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
-		};
 	};
 
 	keys {
@@ -61,6 +47,12 @@
 			label = "reset";
 			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
+		};
+
+		minet {
+			label = "minet";
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 
@@ -176,7 +168,7 @@
 
 &ethernet {
 	mtd-mac-address = <&factory 0xe000>;
-	mediatek,portmap = "lwlll";
+	mediatek,portmap = "llllw";
 };
 
 &state_default {
