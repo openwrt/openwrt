@@ -1,11 +1,13 @@
 #!/bin/sh
 
 upgrade_bootloader() {
-	local diskdev
+	local diskdev magic
 
 	. /lib/upgrade/common.sh
 
 	if [ ! -f /boot/grub/upgraded ] && export_bootdevice && export_partdevice diskdev 0; then
+		magic="$(get_magic_gpt "/dev/$diskdev")"
+		[ "$magic" = "EFI PART" ] && return 0
 		echo "(hd0) /dev/$diskdev" > /tmp/device.map
 		/usr/sbin/grub-bios-setup \
 			-m "/tmp/device.map" \

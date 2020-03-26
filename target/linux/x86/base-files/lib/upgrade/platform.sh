@@ -20,7 +20,7 @@ platform_check_image() {
 	get_partitions "/dev/$diskdev" bootdisk
 
 	#extract the boot sector from the image
-	get_image "$@" | dd of=/tmp/image.bs count=1 bs=512b 2>/dev/null
+	get_image "$@" | dd of=/tmp/image.bs count=63 bs=512b 2>/dev/null
 
 	get_partitions /tmp/image.bs image
 
@@ -37,29 +37,33 @@ platform_check_image() {
 }
 
 platform_copy_config() {
-	local partdev
+	local partdev magic parttype=ext4
 
 	if export_partdevice partdev 1; then
-		mount -t ext4 -o rw,noatime "/dev/$partdev" /mnt
+		magic="$(get_magic_vfat "/dev/$partdev")"
+		[ "$magic" = "FAT" ] && parttype=vfat
+		mount -t $parttype -o rw,noatime "/dev/$partdev" /mnt
 		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
 		umount /mnt
 	fi
 }
 
 platform_do_bootloader_upgrade() {
-	local bootpart
+	local bootpart magic parttable=msdos
 	local diskdev="$1"
 
 	if export_partdevice bootpart 1; then
 		mkdir -p /tmp/boot
 		mount -o rw,noatime "/dev/$bootpart" /tmp/boot
 		echo "(hd0) /dev/$diskdev" > /tmp/device.map
+		magic="$(get_magic_gpt "/dev/$diskdev")"
+		[ "$magic" = "EFI PART" ] && parttable=gpt
 
 		echo "Upgrading bootloader on /dev/$diskdev..."
 		grub-bios-setup \
 			-m "/tmp/device.map" \
 			-d "/tmp/boot/boot/grub" \
-			-r "hd0,msdos1" \
+			-r "hd0,${parttable}1" \
 			"/dev/$diskdev" \
 		&& touch /boot/grub/upgraded
 
@@ -81,7 +85,7 @@ platform_do_upgrade() {
 		get_partitions "/dev/$diskdev" bootdisk
 
 		#extract the boot sector from the image
-		get_image "$@" | dd of=/tmp/image.bs count=1 bs=512b
+		get_image "$@" | dd of=/tmp/image.bs count=63 bs=512b >/dev/null
 
 		get_partitions /tmp/image.bs image
 
@@ -106,7 +110,7 @@ platform_do_upgrade() {
 	while read part start size; do
 		if export_partdevice partdev $part; then
 			echo "Writing image to /dev/$partdev..."
-			get_image "$@" | dd of="/dev/$partdev" ibs="512" obs=1M skip="$start" count="$size" conv=fsync
+			get_image "$@" | dd of="/dev/$partdev" ibs=512 obs=1M skip="$start" count="$size" conv=fsync
 		else
 			echo "Unable to find partition $part device, skipped."
 		fi
@@ -117,4 +121,16 @@ platform_do_upgrade() {
 	get_image "$@" | dd of="/dev/$diskdev" bs=1 skip=440 count=4 seek=440 conv=fsync
 
 	platform_do_bootloader_upgrade "$diskdev"
+	local magic parttype=ext4
+	magic="$(get_magic_gpt "/dev/$diskdev")"
+	[ "$magic" = "EFI PART" ] || return 0
+	if export_partdevice partdev 1; then
+		magic="$(get_magic_vfat "/dev/$partdev")"
+		[ "$magic" = "FAT" ] && parttype=vfat
+		mount -t $parttype -o rw,noatime "/dev/$partdev" /mnt
+		set -- $(dd if="/dev/$diskdev" bs=1 skip=1168 count=16 2>/dev/null | hexdump -v -e '8/1 "%02x "" "2/1 "%02x""-"6/1 "%02x"')
+		sed -i "s/\(PARTUUID=\)[a-f0-9-]\+/\1$4$3$2$1-$6$5-$8$7-$9/ig" /mnt/boot/grub/grub.cfg
+		umount /mnt
+	fi
+
 }
