@@ -1,0 +1,32 @@
+diff --git a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
+index 1ec68de..44cc80c 100644
+--- a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
+@@ -105,6 +105,18 @@
+ 		regulator-boot-on;
+ 		regulator-always-on;
+ 	};
++
++	wmac: wmac@18000000 {
++		compatible = "mediatek,mt7622-wmac";
++		reg = <0 0x18000000 0 0x100000>;
++		interrupts = <GIC_SPI 211 IRQ_TYPE_LEVEL_LOW>;
++
++		mediatek,infracfg = <&infracfg>;
++		status = "okay";
++
++		power-domains = <&scpsys MT7622_POWER_DOMAIN_WB>;
++		mediatek,mtd-eeprom = <&factory 0x0000>;
++	};
+ };
+ 
+ &bch {
+@@ -579,7 +591,7 @@
+ 				reg = <0x140000 0x0080000>;
+ 			};
+ 
+-			partition@1c0000 {
++			factory: partition@1c0000 {
+ 				label = "Factory";
+ 				reg = <0x1c0000 0x0040000>;
+ 			};
