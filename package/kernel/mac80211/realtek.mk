@@ -187,7 +187,7 @@ endef
 define KernelPackage/rtl8723bs
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8723BS SDIO Wireless LAN NIC driver (staging)
-  DEPENDS+= +kmod-mac80211
+  DEPENDS+=+kmod-mmc +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/staging/rtl8723bs/r8723bs.ko
   AUTOLOAD:=$(call AutoProbe,r8723bs)
 endef
