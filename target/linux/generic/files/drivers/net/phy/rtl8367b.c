@@ -798,7 +798,7 @@ static int rtl8367b_extif_set_mode(struct rtl8366_smi *smi, int id,
 				(7 << RTL8367B_DEBUG1_DN_SHIFT(id)) |
 					(7 << RTL8367B_DEBUG1_DP_SHIFT(id)));
 		} else {
-			REG_RMW(smi, RTL8367B_CHIP_DEBUG1_REG,
+			REG_RMW(smi, RTL8367B_CHIP_DEBUG2_REG,
 				RTL8367B_DEBUG2_DRI_EXT2 |
 					RTL8367B_DEBUG2_DRI_EXT2_RG |
 					RTL8367B_DEBUG2_SLR_EXT2 |
