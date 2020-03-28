@@ -73,9 +73,9 @@ define Device/shuttle_kd20
   KERNEL_INITRAMFS = kernel-bin | append-dtb | uImage none | omninas-factory | \
 	encrypt-3des sohmuntitnlaes
   DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb3 kmod-usb-ledtrig-usbport \
-	kmod-i2c-gpio kmod-rtc-pcf8563 kmod-gpio-beeper kmod-hwmon-gpiofan \
-	kmod-ata-oxnas-sata kmod-md-mod kmod-md-raid0 kmod-md-raid1 kmod-fs-ext4 \
-	kmod-fs-xfs
+	kmod-i2c-gpio kmod-rtc-pcf8563 kmod-gpio-beeper kmod-hwmon-drivetemp \
+	kmod-hwmon-gpiofan kmod-ata-oxnas-sata kmod-md-mod kmod-md-raid0 \
+	kmod-md-raid1 kmod-fs-ext4 kmod-fs-xfs
 endef
 TARGET_DEVICES += shuttle_kd20
 
