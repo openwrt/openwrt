@@ -71,9 +71,20 @@ define Build/Configure/Default
 			-DDL_LIBRARY=$(STAGING_DIR) \
 			-DCMAKE_PREFIX_PATH=$(STAGING_DIR) \
 			-DCMAKE_SKIP_RPATH=TRUE  \
+			-DCMAKE_GENERATOR="Ninja" \
 			$(CMAKE_OPTIONS) \
 		$(CMAKE_SOURCE_DIR) \
 	)
+endef
+
+define Build/Compile/Default
+	mkdir -p $(PKG_BUILD_DIR)/$(CMAKE_BINARY_SUBDIR)
+	cd $(PKG_BUILD_DIR)/$(CMAKE_BINARY_SUBDIR) && $(STAGING_DIR_HOST)/usr/bin/ninja
+endef
+
+define Build/Install/Default
+	DESTDIR=$(PKG_BUILD_DIR)/ipkg-install \
+	$(STAGING_DIR_HOST)/usr/bin/ninja install -C $(PKG_BUILD_DIR)/$(CMAKE_BINARY_SUBDIR)
 endef
 
 define Build/InstallDev/cmake
@@ -104,9 +115,19 @@ define Host/Configure/Default
 			-DCMAKE_PREFIX_PATH=$(HOST_BUILD_PREFIX) \
 			-DCMAKE_SKIP_RPATH=TRUE  \
 			-DCMAKE_INSTALL_LIBDIR=lib \
+			-DCMAKE_GENERATOR="Ninja" \
 			$(CMAKE_HOST_OPTIONS) \
 		$(HOST_CMAKE_SOURCE_DIR) \
 	)
+endef
+
+define Host/Compile/Default
+	mkdir -p $(HOST_BUILD_DIR)
+	cd $(HOST_BUILD_DIR) && $(STAGING_DIR_HOST)/usr/bin/ninja
+endef
+
+define Host/Install/Default
+	$(STAGING_DIR_HOST)/usr/bin/ninja install -C $(HOST_BUILD_DIR)
 endef
 
 MAKE_FLAGS += \
