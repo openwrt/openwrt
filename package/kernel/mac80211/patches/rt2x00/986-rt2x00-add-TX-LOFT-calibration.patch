@@ -1,8 +1,8 @@
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -9072,6 +9072,944 @@ restore_value:
+@@ -9063,6 +9063,943 @@ restore_value:
+ 	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, savemacsysctrl);
  }
- EXPORT_SYMBOL_GPL(rt2800_rxiq_calibration);
  
 +static void rt2800_rf_configstore(struct rt2x00_dev *rt2x00dev, rf_reg_pair rf_reg_record[][13], u8 chain)
 +{
@@ -940,12 +940,11 @@
 +
 +	return;
 +}
-+EXPORT_SYMBOL_GPL(rt2800_loft_iq_calibration);
 +
  static void rt2800_bbp_core_soft_reset(struct rt2x00_dev *rt2x00dev,
  				       bool set_bw, bool is_ht40)
  {
-@@ -9684,6 +10622,7 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -9675,6 +10612,7 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rxdcoc_calibration(rt2x00dev);
  	rt2800_bw_filter_calibration(rt2x00dev, true);
  	rt2800_bw_filter_calibration(rt2x00dev, false);
@@ -972,21 +971,3 @@
  
  /* RT2800 driver data structure */
  struct rt2800_drv_data {
-@@ -247,6 +257,7 @@ int rt2800_calcrcalibrationcode(struct r
- void rt2800_r_calibration(struct rt2x00_dev *rt2x00dev);
- void rt2800_rxdcoc_calibration(struct rt2x00_dev *rt2x00dev);
- void rt2800_rxiq_calibration(struct rt2x00_dev *rt2x00dev);
-+void rt2800_loft_iq_calibration(struct rt2x00_dev *rt2x00dev);
- 
- int rt2800_enable_radio(struct rt2x00_dev *rt2x00dev);
- void rt2800_disable_radio(struct rt2x00_dev *rt2x00dev);
---- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
-+++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
-@@ -567,6 +567,7 @@ struct rt2x00lib_ops {
- 	void (*r_calibration) (struct rt2x00_dev *rt2x00dev);
- 	void (*rxdcoc_calibration) (struct rt2x00_dev *rt2x00dev);
- 	void (*rxiq_calibration) (struct rt2x00_dev *rt2x00dev);
-+	void (*loft_iq_calibration) (struct rt2x00_dev *rt2x00dev);
- 
- 	/*
- 	 * Data queue handlers.
