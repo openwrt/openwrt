@@ -64,6 +64,10 @@ else
   zlib_link_flags := -lz
 endif
 
+$(eval $(call TestHostCommand,perl-data-dumper, \
+	Please install the Perl Data::Dumper module, \
+	perl -MData::Dumper -e 1))
+
 $(eval $(call TestHostCommand,perl-thread-queue, \
 	Please install the Perl Thread::Queue module, \
 	perl -MThread::Queue -e 1))
