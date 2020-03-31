@@ -11,36 +11,31 @@ PKG_NAME:=jansson
 PKG_VERSION:=2.12
 PKG_RELEASE:=1
 PKG_LICENSE:=MIT
+PKG_LICENSE_FILES:=LICENSE
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.digip.org/jansson/releases/
 PKG_HASH:=645d72cc5dbebd4df608d33988e55aa42a7661039e19a379fcbe5c79d1aee1d2
 
-PKG_INSTALL:=1
-
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/cmake.mk
+
+CMAKE_INSTALL:=1
+CMAKE_OPTIONS += \
+	-DJANSSON_BUILD_DOCS:BOOL=OFF \
+	-DJANSSON_BUILD_SHARED_LIBS:BOOL=ON \
+	-DJANSSON_EXAMPLES:BOOL=OFF \
+	-DJANSSON_WITHOUT_TESTS:BOOL=ON
 
 define Package/jansson
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Jansson library
   URL:=http://www.digip.org/jansson/
-  MAINTAINER:=Gergely Kiss <mail.gery@gmail.com>
 endef
 
 define Package/jansson/description
   Jansson is a C library for encoding, decoding and manipulating JSON data
-endef
-
-TARGET_CFLAGS += $(FPIC)
-TARGET_LDFLAGS += -Wl,-rpath-link=$(STAGING_DIR)/usr/lib -lm
-
-define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/{lib,include}
-	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libjansson* $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/* $(1)/usr/lib/pkgconfig
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include/
 endef
 
 define Package/jansson/install
