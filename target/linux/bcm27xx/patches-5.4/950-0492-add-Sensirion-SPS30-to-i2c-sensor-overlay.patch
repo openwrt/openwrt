@@ -1,4 +1,4 @@
-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From 60f3874207c50db6f6d9dbac40977843cb77acd5 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
 Date: Sat, 7 Mar 2020 22:37:52 +0100
 Subject: [PATCH] add Sensirion SPS30 to i2c-sensor overlay
@@ -10,12 +10,14 @@ Add support for Sensirion SPS30 particulate matter sensor with fixed
 address 0x69.
 
 Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ arch/arm/boot/dts/overlays/README                 |  3 +++
+ arch/arm/boot/dts/overlays/i2c-sensor-overlay.dts | 15 +++++++++++++++
+ 2 files changed, 18 insertions(+)
 
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 62ad35f78bad..0d7d00ac92c4 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -1261,6 +1261,9 @@ Params: addr                    Set the address for the BME280, BME680, BMP280,
+@@ -1261,6 +1261,9 @@ Params: addr                    Set the
          si7020                  Select the Silicon Labs Si7013/20/21 humidity/
                                  temperature sensor
  
@@ -25,8 +27,6 @@ index 62ad35f78bad..0d7d00ac92c4 100644
          tmp102                  Select the Texas Instruments TMP102 temp sensor
                                  Valid addresses 0x48-0x4b, default 0x48
  
-diff --git a/arch/arm/boot/dts/overlays/i2c-sensor-overlay.dts b/arch/arm/boot/dts/overlays/i2c-sensor-overlay.dts
-index 40881d72a157..ce97837b0db5 100644
 --- a/arch/arm/boot/dts/overlays/i2c-sensor-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/i2c-sensor-overlay.dts
 @@ -231,6 +231,20 @@
