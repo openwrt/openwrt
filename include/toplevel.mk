@@ -169,12 +169,16 @@ kernel_oldconfig: prepare_kernel_conf
 ifneq ($(DISTRO_PKG_CONFIG),)
 kernel_menuconfig: export PATH:=$(dir $(DISTRO_PKG_CONFIG)):$(PATH)
 kernel_nconfig: export PATH:=$(dir $(DISTRO_PKG_CONFIG)):$(PATH)
+kernel_xconfig: export PATH:=$(dir $(DISTRO_PKG_CONFIG)):$(PATH)
 endif
 kernel_menuconfig: prepare_kernel_conf
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux menuconfig
 
 kernel_nconfig: prepare_kernel_conf
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux nconfig
+
+kernel_xconfig: prepare_kernel_conf
+	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux xconfig
 
 staging_dir/host/.prereq-build: include/prereq-build.mk
 	mkdir -p tmp
