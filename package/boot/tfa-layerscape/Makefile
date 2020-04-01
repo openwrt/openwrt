@@ -25,7 +25,7 @@ define Package/tfa-layerscape/Config
     SECTION:=boot
     CATEGORY:=Boot Loaders
     TITLE:=$(2)
-    DEPENDS:=@TARGET_layerscape_armv8_64b +layerscape-rcw-$(1)
+    DEPENDS:=@TARGET_layerscape_armv8_64b +layerscape-rcw
     HIDDEN:=1
     VARIANT:=$(1)
     BIN_BL2:=$(3)
