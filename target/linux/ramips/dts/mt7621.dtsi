@@ -414,13 +414,23 @@
 		};
 	};
 
+	nficlock: nficlock {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+
+		clock-frequency = <125000000>;
+	};
+
 	nand: nand@1e003000 {
 		status = "disabled";
 
-		compatible = "mtk,mt7621-nand";
-		bank-width = <2>;
+		compatible = "mediatek,mt7621-nfc";
 		reg = <0x1e003000 0x800
 			0x1e003800 0x800>;
+		reg-names = "nfi", "ecc";
+
+		clocks = <&nficlock>;
+		clock-names = "nfi_clk";
 	};
 
 	ethsys: syscon@1e000000 {
