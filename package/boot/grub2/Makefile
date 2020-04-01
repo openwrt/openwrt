@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=grub
 PKG_CPE_ID:=cpe:/a:gnu:grub2
 PKG_VERSION:=2.04
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/grub
@@ -20,6 +20,7 @@ PKG_HASH:=e5292496995ad42dabe843a0192cf2a2c502e7ffcc7479398232b10a472df77d
 HOST_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=grub2/host
 
+PKG_ASLR_PIE:=0
 PKG_SSP:=0
 
 PKG_FLAGS:=nonshared
@@ -83,7 +84,7 @@ HOST_MAKE_FLAGS += \
 	TARGET_RANLIB=$(TARGET_RANLIB) \
 	LIBLZMA=$(STAGING_DIR_HOST)/lib/liblzma.a
 
-TARGET_CFLAGS :=
+TARGET_CFLAGS := $(filter-out -fno-plt,$(TARGET_CFLAGS))
 
 define Host/Configure
 	$(SED) 's,(RANLIB),(TARGET_RANLIB),' $(HOST_BUILD_DIR)/grub-core/Makefile.in
