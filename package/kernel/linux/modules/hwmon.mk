@@ -77,6 +77,22 @@ endef
 $(eval $(call KernelPackage,hwmon-adt7475))
 
 
+define KernelPackage/hwmon-dme1737
+  TITLE:=SMSC DME1737 and compatible monitoring support
+  KCONFIG:=CONFIG_SENSORS_DME1737
+  FILES:= \
+	$(LINUX_DIR)/drivers/hwmon/dme1737.ko
+  AUTOLOAD:=$(call AutoProbe,dme1737)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid)
+endef
+
+define KernelPackage/hwmon-dme1737/description
+ SMSC DME1737, SCH3112, SCH3114, SCH3116, SCH5027 monitoring support
+endef
+
+$(eval $(call KernelPackage,hwmon-dme1737))
+
+
 define KernelPackage/hwmon-drivetemp
   TITLE:=Hard disk drives with temperature sensor
   KCONFIG:=CONFIG_SENSORS_DRIVETEMP
