@@ -1,0 +1,31 @@
+From: Chuanhong Guo <gch981213@gmail.com>
+Date: Fri,  3 Apr 2020 19:28:24 +0800
+Subject: [PATCH] net: dsa: mt7530: fix null pointer dereferencing in port5 setup
+
+The 2nd gmac of mediatek soc ethernet may not be connected to a PHY
+and a phy-handle isn't always available.
+Unfortunately, mt7530 dsa driver assumes that the 2nd gmac is always
+connected to switch port 5 and setup mt7530 according to phy address
+of 2nd gmac node, causing null pointer dereferencing when phy-handle
+isn't defined in dts.
+This commit fix this setup code by checking return value of
+of_parse_phandle before using it.
+
+Fixes: 38f790a80560 ("net: dsa: mt7530: Add support for port 5")
+Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
+---
+ drivers/net/dsa/mt7530.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -1414,6 +1414,9 @@ mt7530_setup(struct dsa_switch *ds)
+ 				continue;
+ 
+ 			phy_node = of_parse_phandle(mac_np, "phy-handle", 0);
++			if (!phy_node)
++				continue;
++
+ 			if (phy_node->parent == priv->dev->of_node->parent) {
+ 				ret = of_get_phy_mode(mac_np, &interface);
+ 				if (ret && ret != -ENODEV)
