@@ -14,7 +14,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -151,6 +151,13 @@ config GPIO_BCM_KONA
+@@ -147,6 +147,13 @@ config GPIO_BCM_KONA
  	help
  	  Turn on GPIO support for Broadcom "Kona" chips.
  
@@ -30,14 +30,14 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	default y if (ARCH_BRCMSTB || BMIPS_GENERIC)
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -34,6 +34,7 @@ obj-$(CONFIG_GPIO_ATH79)	+= gpio-ath79.o
- obj-$(CONFIG_GPIO_ASPEED)	+= gpio-aspeed.o
- obj-$(CONFIG_GPIO_RASPBERRYPI_EXP)	+= gpio-raspberrypi-exp.o
- obj-$(CONFIG_GPIO_BCM_KONA)	+= gpio-bcm-kona.o
-+obj-$(CONFIG_GPIO_BCM63XX)	+= gpio-bcm63xx.o
- obj-$(CONFIG_GPIO_BD9571MWV)	+= gpio-bd9571mwv.o
- obj-$(CONFIG_GPIO_BRCMSTB)	+= gpio-brcmstb.o
- obj-$(CONFIG_GPIO_BT8XX)	+= gpio-bt8xx.o
+@@ -34,6 +34,7 @@ obj-$(CONFIG_GPIO_ARIZONA)		+= gpio-ariz
+ obj-$(CONFIG_GPIO_ASPEED)		+= gpio-aspeed.o
+ obj-$(CONFIG_GPIO_ATH79)		+= gpio-ath79.o
+ obj-$(CONFIG_GPIO_BCM_KONA)		+= gpio-bcm-kona.o
++obj-$(CONFIG_GPIO_BCM63XX)		+= gpio-bcm63xx.o
+ obj-$(CONFIG_GPIO_BD70528)		+= gpio-bd70528.o
+ obj-$(CONFIG_GPIO_BD9571MWV)		+= gpio-bd9571mwv.o
+ obj-$(CONFIG_GPIO_BRCMSTB)		+= gpio-brcmstb.o
 --- /dev/null
 +++ b/drivers/gpio/gpio-bcm63xx.c
 @@ -0,0 +1,135 @@

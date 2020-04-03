@@ -21,7 +21,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	select USE_OF
 +
  config BOARD_BCM963XX
-        bool "Generic Broadcom 963xx boards"
+ 	bool "Generic Broadcom 963xx boards"
  	select SSB
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
@@ -99,7 +99,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 @@ -8,6 +8,7 @@
  
  #include <linux/init.h>
- #include <linux/bootmem.h>
+ #include <linux/memblock.h>
 +#include <linux/of_fdt.h>
  #include <linux/smp.h>
  #include <asm/bootinfo.h>

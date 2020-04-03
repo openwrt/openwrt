@@ -15,7 +15,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
-@@ -867,10 +867,8 @@ static int bcm_enet_open(struct net_devi
+@@ -854,10 +854,8 @@ static int bcm_enet_open(struct net_devi
  	struct bcm_enet_priv *priv;
  	struct sockaddr addr;
  	struct device *kdev;
@@ -26,7 +26,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	void *p;
  	u32 val;
  
-@@ -878,40 +876,10 @@ static int bcm_enet_open(struct net_devi
+@@ -865,31 +863,10 @@ static int bcm_enet_open(struct net_devi
  	kdev = &priv->pdev->dev;
  
  	if (priv->has_phy) {
@@ -43,19 +43,10 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 -		}
 -
 -		/* mask with MAC supported features */
--		phydev->supported &= (SUPPORTED_10baseT_Half |
--				      SUPPORTED_10baseT_Full |
--				      SUPPORTED_100baseT_Half |
--				      SUPPORTED_100baseT_Full |
--				      SUPPORTED_Autoneg |
--				      SUPPORTED_Pause |
--				      SUPPORTED_MII);
--		phydev->advertising = phydev->supported;
--
--		if (priv->pause_auto && priv->pause_rx && priv->pause_tx)
--			phydev->advertising |= SUPPORTED_Pause;
--		else
--			phydev->advertising &= ~SUPPORTED_Pause;
+-		phy_support_sym_pause(phydev);
+-		phy_set_max_speed(phydev, SPEED_100);
+-		phy_set_sym_pause(phydev, priv->pause_rx, priv->pause_rx,
+-				  priv->pause_auto);
 -
 -		phy_attached_info(phydev);
 -
@@ -68,7 +59,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	}
  
  	/* mask all interrupts and request them */
-@@ -921,7 +889,7 @@ static int bcm_enet_open(struct net_devi
+@@ -899,7 +876,7 @@ static int bcm_enet_open(struct net_devi
  
  	ret = request_irq(dev->irq, bcm_enet_isr_mac, 0, dev->name, dev);
  	if (ret)
@@ -77,7 +68,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  
  	ret = request_irq(priv->irq_rx, bcm_enet_isr_dma, 0,
  			  dev->name, dev);
-@@ -1083,8 +1051,8 @@ static int bcm_enet_open(struct net_devi
+@@ -1061,8 +1038,8 @@ static int bcm_enet_open(struct net_devi
  	enet_dmac_writel(priv, priv->dma_chan_int_mask,
  			 ENETDMAC_IRMASK, priv->tx_chan);
  
@@ -88,7 +79,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	else
  		bcm_enet_adjust_link(dev);
  
-@@ -1125,10 +1093,6 @@ out_freeirq_rx:
+@@ -1103,10 +1080,6 @@ out_freeirq_rx:
  out_freeirq:
  	free_irq(dev->irq, dev);
  
@@ -99,7 +90,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	return ret;
  }
  
-@@ -1233,10 +1197,6 @@ static int bcm_enet_stop(struct net_devi
+@@ -1211,10 +1184,6 @@ static int bcm_enet_stop(struct net_devi
  	free_irq(priv->irq_rx, dev);
  	free_irq(dev->irq, dev);
  
@@ -110,7 +101,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	return 0;
  }
  
-@@ -1802,14 +1762,47 @@ static int bcm_enet_probe(struct platfor
+@@ -1779,14 +1748,47 @@ static int bcm_enet_probe(struct platfor
  
  	/* do minimal hardware init to be able to probe mii bus */
  	bcm_enet_hw_preinit(priv);
@@ -159,7 +150,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		}
  
  		bus = priv->mii_bus;
-@@ -1833,6 +1826,35 @@ static int bcm_enet_probe(struct platfor
+@@ -1810,6 +1812,26 @@ static int bcm_enet_probe(struct platfor
  			dev_err(&pdev->dev, "unable to register mdio bus\n");
  			goto out_free_mdio;
  		}
@@ -177,25 +168,16 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +		}
 +
 +		/* mask with MAC supported features */
-+		phydev->supported &= (SUPPORTED_10baseT_Half |
-+				      SUPPORTED_10baseT_Full |
-+				      SUPPORTED_100baseT_Half |
-+				      SUPPORTED_100baseT_Full |
-+				      SUPPORTED_Autoneg |
-+				      SUPPORTED_Pause |
-+				      SUPPORTED_MII);
-+		phydev->advertising = phydev->supported;
-+
-+		if (priv->pause_auto && priv->pause_rx && priv->pause_tx)
-+			phydev->advertising |= SUPPORTED_Pause;
-+		else
-+			phydev->advertising &= ~SUPPORTED_Pause;
++		phy_support_sym_pause(phydev);
++		phy_set_max_speed(phydev, SPEED_100);
++		phy_set_sym_pause(phydev, priv->pause_rx, priv->pause_rx,
++				  priv->pause_auto);
 +
 +		phy_attached_info(phydev);
  	} else {
  
  		/* run platform code to initialize PHY device */
-@@ -1840,45 +1862,16 @@ static int bcm_enet_probe(struct platfor
+@@ -1817,45 +1839,16 @@ static int bcm_enet_probe(struct platfor
  		    pd->mii_config(dev, 1, bcm_enet_mdio_read_mii,
  				   bcm_enet_mdio_write_mii)) {
  			dev_err(&pdev->dev, "unable to configure mdio bus\n");
@@ -245,7 +227,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	if (priv->mii_bus)
  		mdiobus_unregister(priv->mii_bus);
  
-@@ -1886,6 +1879,9 @@ out_free_mdio:
+@@ -1863,6 +1856,9 @@ out_free_mdio:
  	if (priv->mii_bus)
  		mdiobus_free(priv->mii_bus);
  
@@ -255,7 +237,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  out_uninit_hw:
  	/* turn off mdc clock */
  	enet_writel(priv, 0, ENET_MIISC_REG);
-@@ -1916,6 +1912,7 @@ static int bcm_enet_remove(struct platfo
+@@ -1893,6 +1889,7 @@ static int bcm_enet_remove(struct platfo
  	enet_writel(priv, 0, ENET_MIISC_REG);
  
  	if (priv->has_phy) {

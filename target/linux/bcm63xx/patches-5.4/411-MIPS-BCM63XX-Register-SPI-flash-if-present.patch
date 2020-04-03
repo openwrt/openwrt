@@ -79,7 +79,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (val & STRAPBUS_6328_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
-@@ -94,12 +138,20 @@ static int __init bcm63xx_detect_flash_t
+@@ -94,18 +138,31 @@ static int __init bcm63xx_detect_flash_t
  			return BCM63XX_FLASH_TYPE_SERIAL;
  	case BCM6362_CPU_ID:
  		val = bcm_misc_readl(MISC_STRAPBUS_6362_REG);
@@ -92,16 +92,6 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
  			return BCM63XX_FLASH_TYPE_NAND;
- 	case BCM6368_CPU_ID:
- 		val = bcm_gpio_readl(GPIO_STRAPBUS_REG);
-+		if (val & STRAPBUS_6368_SPI_CLK_FAST)
-+			bcm63xx_spi_flash_info[0].max_speed_hz = 20000000;
-+
- 		switch (val & STRAPBUS_6368_BOOT_SEL_MASK) {
- 		case STRAPBUS_6368_BOOT_SEL_NAND:
- 			return BCM63XX_FLASH_TYPE_NAND;
-@@ -110,6 +162,11 @@ static int __init bcm63xx_detect_flash_t
- 		}
  	case BCM63268_CPU_ID:
  		val = bcm_misc_readl(MISC_STRAPBUS_63268_REG);
 +		if (val & STRAPBUS_63268_HSSPI_CLK_FAST)
@@ -112,7 +102,16 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (val & STRAPBUS_63268_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
-@@ -176,6 +233,7 @@ void __init bcm63xx_flash_detect(void)
+ 			return BCM63XX_FLASH_TYPE_NAND;
+ 	case BCM6368_CPU_ID:
+ 		val = bcm_gpio_readl(GPIO_STRAPBUS_REG);
++		if (val & STRAPBUS_6368_SPI_CLK_FAST)
++			bcm63xx_spi_flash_info[0].max_speed_hz = 20000000;
++
+ 		switch (val & STRAPBUS_6368_BOOT_SEL_MASK) {
+ 		case STRAPBUS_6368_BOOT_SEL_NAND:
+ 			return BCM63XX_FLASH_TYPE_NAND;
+@@ -177,6 +234,7 @@ void __init bcm63xx_flash_detect(void)
  
  int __init bcm63xx_flash_register(void)
  {
@@ -120,7 +119,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	u32 val;
  
  	switch (flash_type) {
-@@ -195,8 +253,14 @@ int __init bcm63xx_flash_register(void)
+@@ -196,8 +254,14 @@ int __init bcm63xx_flash_register(void)
  
  		return platform_device_register(&mtd_dev);
  	case BCM63XX_FLASH_TYPE_SERIAL:

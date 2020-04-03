@@ -29,7 +29,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/drivers/gpio/gpiolib-of.c
 +++ b/drivers/gpio/gpiolib-of.c
-@@ -363,12 +363,15 @@ static struct gpio_desc *of_parse_own_gp
+@@ -621,12 +621,15 @@ static struct gpio_desc *of_parse_own_gp
  /**
   * of_gpiochip_scan_gpios - Scan gpio-controller for gpio definitions
   * @chip:	gpio chip to act on
@@ -48,8 +48,8 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  {
  	struct gpio_desc *desc = NULL;
  	struct device_node *np;
-@@ -376,7 +379,7 @@ static int of_gpiochip_scan_gpios(struct
- 	enum gpio_lookup_flags lflags;
+@@ -634,7 +637,7 @@ static int of_gpiochip_scan_gpios(struct
+ 	unsigned long lflags;
  	enum gpiod_flags dflags;
  	unsigned int i;
 -	int ret;
@@ -57,7 +57,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  
  	for_each_available_child_of_node(chip->of_node, np) {
  		if (!of_property_read_bool(np, "gpio-hog"))
-@@ -388,6 +391,10 @@ static int of_gpiochip_scan_gpios(struct
+@@ -646,6 +649,10 @@ static int of_gpiochip_scan_gpios(struct
  			if (IS_ERR(desc))
  				break;
  
@@ -68,28 +68,24 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  			ret = gpiod_hog(desc, name, lflags, dflags);
  			if (ret < 0) {
  				of_node_put(np);
-@@ -646,12 +653,13 @@ int of_gpiochip_add(struct gpio_chip *ch
+@@ -904,9 +911,11 @@ int of_gpiochip_add(struct gpio_chip *ch
  
  	of_node_get(chip->of_node);
  
--	status = of_gpiochip_scan_gpios(chip);
--	if (status) {
+-	ret = of_gpiochip_scan_gpios(chip);
+-	if (ret)
 -		of_node_put(chip->of_node);
--		gpiochip_remove_pin_ranges(chip);
 +	if (!chip->request) {
-+		status = of_gpiochip_scan_gpios(chip, 0, chip->ngpio);
-+		if (status) {
++		ret = of_gpiochip_scan_gpios(chip, 0, chip->ngpio);
++		if (ret)
 +			of_node_put(chip->of_node);
-+			gpiochip_remove_pin_ranges(chip);
-+		}
- 	}
--
- 	return status;
- }
++	}
  
+ 	return ret;
+ }
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -2205,7 +2205,8 @@ int gpiochip_add_pingroup_range(struct g
+@@ -2580,7 +2580,8 @@ int gpiochip_add_pingroup_range(struct g
  
  	list_add_tail(&pin_range->node, &gdev->pin_ranges);
  
@@ -99,7 +95,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  }
  EXPORT_SYMBOL_GPL(gpiochip_add_pingroup_range);
  
-@@ -2262,7 +2263,7 @@ int gpiochip_add_pin_range(struct gpio_c
+@@ -2637,7 +2638,7 @@ int gpiochip_add_pin_range(struct gpio_c
  
  	list_add_tail(&pin_range->node, &gdev->pin_ranges);
  
@@ -108,18 +104,18 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  }
  EXPORT_SYMBOL_GPL(gpiochip_add_pin_range);
  
---- a/drivers/gpio/gpiolib.h
-+++ b/drivers/gpio/gpiolib.h
-@@ -103,6 +103,8 @@ struct gpio_desc *of_get_named_gpiod_fla
- 		   const char *list_name, int index, enum of_gpio_flags *flags);
+--- a/drivers/gpio/gpiolib-of.h
++++ b/drivers/gpio/gpiolib-of.h
+@@ -13,6 +13,8 @@ struct gpio_desc *of_find_gpio(struct de
+ 			       unsigned long *lookupflags);
  int of_gpiochip_add(struct gpio_chip *gc);
  void of_gpiochip_remove(struct gpio_chip *gc);
 +int of_gpiochip_scan_gpios(struct gpio_chip *chip, unsigned int start,
 +			   unsigned int num);
+ int of_gpio_get_count(struct device *dev, const char *con_id);
+ bool of_gpio_need_valid_mask(const struct gpio_chip *gc);
  #else
- static inline struct gpio_desc *of_find_gpio(struct device *dev,
- 					     const char *con_id,
-@@ -118,6 +120,12 @@ static inline struct gpio_desc *of_get_n
+@@ -25,6 +27,12 @@ static inline struct gpio_desc *of_find_
  }
  static inline int of_gpiochip_add(struct gpio_chip *gc) { return 0; }
  static inline void of_gpiochip_remove(struct gpio_chip *gc) { }
@@ -129,6 +125,6 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +{
 +	return 0;
 +}
- #endif /* CONFIG_OF_GPIO */
- 
- #ifdef CONFIG_ACPI
+ static inline int of_gpio_get_count(struct device *dev, const char *con_id)
+ {
+ 	return 0;

@@ -26,7 +26,7 @@
 @@ -73,6 +73,8 @@ config BCM63XX_CPU_63268
  	bool "support 63268 CPU"
  	select SYS_HAS_CPU_BMIPS4350
- 	select HW_HAS_PCI
+ 	select HAVE_PCI
 +	select BCM63XX_OHCI
 +	select BCM63XX_EHCI
  endmenu
