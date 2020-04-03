@@ -124,7 +124,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  static unsigned int detect_cpu_clock(void)
  {
  	u32 cpu_id = bcm63xx_get_cpu_id();
-@@ -142,6 +154,28 @@ static unsigned int detect_cpu_clock(voi
+@@ -142,6 +154,30 @@ static unsigned int detect_cpu_clock(voi
  	case BCM3368_CPU_ID:
  		return 300000000;
  
@@ -148,12 +148,14 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
 +			return 250000000;
 +		case 3:
 +			return 333000000;
-+		};
++		default:
++			return 320000000;
++		}
 +	}
  	case BCM6328_CPU_ID:
  	{
  		unsigned int tmp, mips_pll_fcvo;
-@@ -297,6 +331,13 @@ static unsigned int detect_memory_size(v
+@@ -297,6 +333,13 @@ static unsigned int detect_memory_size(v
  	unsigned int cols = 0, rows = 0, is_32bits = 0, banks = 0;
  	u32 val;
  
@@ -167,7 +169,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  	if (BCMCPU_IS_6328() || BCMCPU_IS_6362() || BCMCPU_IS_63268())
  		return bcm_ddr_readl(DDR_CSEND_REG) << 24;
  
-@@ -343,6 +384,12 @@ void __init bcm63xx_cpu_init(void)
+@@ -343,6 +386,12 @@ void __init bcm63xx_cpu_init(void)
  
  	switch (current_cpu_type()) {
  	case CPU_BMIPS3300:
@@ -180,7 +182,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  		if ((read_c0_prid() & PRID_IMP_MASK) != PRID_IMP_BMIPS3300_ALT)
  			__cpu_name[cpu] = "Broadcom BCM6338";
  		/* fall-through */
-@@ -390,6 +437,10 @@ void __init bcm63xx_cpu_init(void)
+@@ -390,6 +439,10 @@ void __init bcm63xx_cpu_init(void)
  	bcm63xx_cpu_variant = bcm63xx_cpu_id;
  
  	switch (bcm63xx_cpu_id) {
