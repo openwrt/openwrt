@@ -19,7 +19,7 @@ TARGET_DEVICES += bpi_bananapi-r64
 
 define Device/elecom-wrc-2533gent
   DEVICE_VENDOR := Elecom
-  DEVICE_MODEL := Elecom WRC-2533GENT
+  DEVICE_MODEL := WRC-2533GENT
   DEVICE_DTS := mt7622-elecom-wrc-2533gent
   DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 \
