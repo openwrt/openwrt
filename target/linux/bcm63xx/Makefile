@@ -13,7 +13,7 @@ BOARDNAME:=Broadcom BCM63xx
 SUBTARGETS:=generic smp
 FEATURES:=squashfs usb atm pci pcmcia usbgadget
 KERNEL_PATCHVER:=4.14
-KERNEL_TESTING_PATCHVER:=4.19
+KERNEL_TESTING_PATCHVER:=5.4
 
 define Target/Description
 	Build firmware images for Broadcom based xDSL/routers
