@@ -8,7 +8,7 @@ platform_do_upgrade() {
 	esac
 }
 
-PART_NAME=Kernel
+PART_NAME=firmware
 
 platform_check_image() {
 	local board=$(board_name)
