@@ -21,7 +21,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/drivers/pinctrl/Kconfig
 +++ b/drivers/pinctrl/Kconfig
-@@ -341,6 +341,7 @@ config PINCTRL_OCELOT
+@@ -387,6 +387,7 @@ config PINCTRL_OCELOT
  source "drivers/pinctrl/actions/Kconfig"
  source "drivers/pinctrl/aspeed/Kconfig"
  source "drivers/pinctrl/bcm/Kconfig"
@@ -31,7 +31,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  source "drivers/pinctrl/intel/Kconfig"
 --- a/drivers/pinctrl/Makefile
 +++ b/drivers/pinctrl/Makefile
-@@ -46,6 +46,7 @@ obj-$(CONFIG_PINCTRL_OCELOT)	+= pinctrl-
+@@ -50,6 +50,7 @@ obj-$(CONFIG_PINCTRL_OCELOT)	+= pinctrl-
  obj-y				+= actions/
  obj-$(CONFIG_ARCH_ASPEED)	+= aspeed/
  obj-y				+= bcm/

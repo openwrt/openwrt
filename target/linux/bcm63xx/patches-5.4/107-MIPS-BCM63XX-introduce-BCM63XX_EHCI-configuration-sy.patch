@@ -32,7 +32,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  config BCM63XX_CPU_6328
  	bool "support 6328 CPU"
  	select SYS_HAS_CPU_BMIPS4350
- 	select HW_HAS_PCI
+ 	select HAVE_PCI
  	select BCM63XX_OHCI
 +	select BCM63XX_EHCI
  
@@ -40,21 +40,21 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  	bool "support 6338 CPU"
 @@ -39,18 +46,21 @@ config BCM63XX_CPU_6358
  	select SYS_HAS_CPU_BMIPS4350
- 	select HW_HAS_PCI
+ 	select HAVE_PCI
  	select BCM63XX_OHCI
 +	select BCM63XX_EHCI
  
  config BCM63XX_CPU_6362
  	bool "support 6362 CPU"
  	select SYS_HAS_CPU_BMIPS4350
- 	select HW_HAS_PCI
+ 	select HAVE_PCI
  	select BCM63XX_OHCI
 +	select BCM63XX_EHCI
  
  config BCM63XX_CPU_6368
  	bool "support 6368 CPU"
  	select SYS_HAS_CPU_BMIPS4350
- 	select HW_HAS_PCI
+ 	select HAVE_PCI
  	select BCM63XX_OHCI
 +	select BCM63XX_EHCI
  endmenu

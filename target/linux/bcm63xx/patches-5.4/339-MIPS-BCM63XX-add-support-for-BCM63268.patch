@@ -22,14 +22,14 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 --- a/arch/mips/bcm63xx/Kconfig
 +++ b/arch/mips/bcm63xx/Kconfig
 @@ -61,6 +61,11 @@ config BCM63XX_CPU_6368
- 	select HW_HAS_PCI
+ 	select HAVE_PCI
  	select BCM63XX_OHCI
  	select BCM63XX_EHCI
 +
 +config BCM63XX_CPU_63268
 +	bool "support 63268 CPU"
 +	select SYS_HAS_CPU_BMIPS4350
-+	select HW_HAS_PCI
++	select HAVE_PCI
  endmenu
  
  source "arch/mips/bcm63xx/boards/Kconfig"
@@ -260,19 +260,19 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		break;
 --- a/arch/mips/bcm63xx/dev-flash.c
 +++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -94,6 +94,12 @@ static int __init bcm63xx_detect_flash_t
- 		case STRAPBUS_6368_BOOT_SEL_PARALLEL:
- 			return BCM63XX_FLASH_TYPE_PARALLEL;
- 		}
+@@ -84,6 +84,12 @@ static int __init bcm63xx_detect_flash_t
+ 			return BCM63XX_FLASH_TYPE_SERIAL;
+ 		else
+ 			return BCM63XX_FLASH_TYPE_NAND;
 +	case BCM63268_CPU_ID:
 +		val = bcm_misc_readl(MISC_STRAPBUS_63268_REG);
 +		if (val & STRAPBUS_63268_BOOT_SEL_SERIAL)
 +			return BCM63XX_FLASH_TYPE_SERIAL;
 +		else
 +			return BCM63XX_FLASH_TYPE_NAND;
- 	default:
- 		return -EINVAL;
- 	}
+ 	case BCM6368_CPU_ID:
+ 		val = bcm_gpio_readl(GPIO_STRAPBUS_REG);
+ 		switch (val & STRAPBUS_6368_BOOT_SEL_MASK) {
 --- a/arch/mips/bcm63xx/dev-spi.c
 +++ b/arch/mips/bcm63xx/dev-spi.c
 @@ -51,7 +51,7 @@ int __init bcm63xx_spi_register(void)

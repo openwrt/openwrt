@@ -146,7 +146,7 @@ Subject: [PATCH 53/53] MIPS: BCM63XX: add PCIe support for BCM6318
   * _REG relative to RSET_OTP
 --- a/arch/mips/pci/ops-bcm63xx.c
 +++ b/arch/mips/pci/ops-bcm63xx.c
-@@ -488,8 +488,12 @@ static int bcm63xx_pcie_read(struct pci_
+@@ -489,8 +489,12 @@ static int bcm63xx_pcie_read(struct pci_
  	if (!bcm63xx_pcie_can_access(bus, devfn))
  		return PCIBIOS_DEVICE_NOT_FOUND;
  
@@ -161,7 +161,7 @@ Subject: [PATCH 53/53] MIPS: BCM63XX: add PCIe support for BCM6318
  
  	data = bcm_pcie_readl(reg);
  
-@@ -508,8 +512,12 @@ static int bcm63xx_pcie_write(struct pci
+@@ -509,8 +513,12 @@ static int bcm63xx_pcie_write(struct pci
  	if (!bcm63xx_pcie_can_access(bus, devfn))
  		return PCIBIOS_DEVICE_NOT_FOUND;
  

@@ -15,7 +15,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +++ b/arch/mips/bcm63xx/boards/Kconfig
 @@ -5,6 +5,7 @@ menu "Board support"
  config BOARD_BCM963XX
-        bool "Generic Broadcom 963xx boards"
+ 	bool "Generic Broadcom 963xx boards"
  	select SSB
 +	select BCMA
  	default y
