@@ -8,6 +8,10 @@ of users.
 
 Thus, we have to maintain it locally.
 
+This patch includes a fix due to changes in driver_find_device;
+kernel commit: 92ce7e83b4e5 ("driver_find_device: Unify the match function
+with class_find_device()")
+
 Signed-off-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
 
 --- a/drivers/mfd/syscon.c
@@ -16,7 +20,7 @@ Signed-off-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
  }
  EXPORT_SYMBOL_GPL(syscon_regmap_lookup_by_compatible);
  
-+static int syscon_match_pdevname(struct device *dev, void *data)
++static int syscon_match_pdevname(struct device *dev, const void *data)
 +{
 +	return !strcmp(dev_name(dev), (const char *)data);
 +}
