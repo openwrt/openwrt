@@ -23,7 +23,7 @@ define Device/belkin_f9k1109v1
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := F9K1109
   DEVICE_VARIANT := Version 1.0
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 swconfig
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport swconfig
   IMAGE_SIZE := 7808k
   KERNEL := kernel-bin | append-dtb | lzma -d16 | uImage lzma
   # Stock firmware checks for this uImage image name during upload.
