@@ -24,7 +24,7 @@ Subject: [PATCH 61/72] BCM63XX: add a fixup for ath9k devices
  obj-y		+= boards/
 --- /dev/null
 +++ b/arch/mips/bcm63xx/pci-ath9k-fixup.c
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,201 @@
 +/*
 + *  Broadcom BCM63XX Ath9k EEPROM fixup helper.
 + *
@@ -108,6 +108,7 @@ Subject: [PATCH 61/72] BCM63XX: add a fixup for ath9k devices
 +			return eeprom;
 +		}
 +		/* can't do anything here without talking to the SPI controller. */
++		/* Fall through */
 +	case BCM63XX_FLASH_TYPE_NAND:
 +	default:
 +		return NULL;
