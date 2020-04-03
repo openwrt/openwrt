@@ -1090,3 +1090,23 @@ define KernelPackage/be2net/description
 endef
 
 $(eval $(call KernelPackage,be2net))
+
+define KernelPackage/mlx4_en
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  DEPENDS:=+kmod-ptp
+  TITLE:=Mellanox ConnectX-3 and ConnectX-3 Pro Ethernet Adaptor
+  FILES:= \
+        $(LINUX_DIR)/drivers/net/ethernet/mellanox/mlx4/mlx4_en.ko \
+        $(LINUX_DIR)/drivers/net/ethernet/mellanox/mlx4/mlx4_core.ko
+  KCONFIG:= \
+        CONFIG_MLX4_CORE \
+        CONFIG_MLX4_EN \
+        CONFIG_MLX4_DEBUG=n
+  AUTOLOAD:=$(call AutoLoad,50,mlx4_en)
+endef
+
+define KernelPackage/mlx4_en/description
+  Kernel module for Mellanox ConnectX-3 and ConnectX-3 Pro Ethernet Adaptors
+endef
+
+$(eval $(call KernelPackage,mlx4_en))
