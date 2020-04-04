@@ -497,6 +497,7 @@ TARGET_DEVICES += mikrotik_rb750gr3
 define Device/mikrotik_rbm11g
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD M11G
+  DEFAULT := n # disabled due to unknown port assignment
 endef
 TARGET_DEVICES += mikrotik_rbm11g
 
