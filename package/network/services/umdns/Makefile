@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=umdns
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/mdnsd.git
 PKG_SOURCE_PROTO:=git
@@ -30,7 +30,7 @@ define Package/umdns
   DEPENDS:=+libubox +libubus +libblobmsg-json
 endef
 
-TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
+TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include -Wno-address-of-packed-member
 
 define Package/umdns/conffiles
 /etc/config/umdns
