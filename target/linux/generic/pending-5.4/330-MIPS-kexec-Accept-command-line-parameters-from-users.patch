@@ -150,6 +150,24 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  	if (_machine_kexec_prepare)
  		return _machine_kexec_prepare(kimage);
+@@ -161,7 +265,7 @@ machine_crash_shutdown(struct pt_regs *r
+ void kexec_nonboot_cpu_jump(void)
+ {
+ 	local_flush_icache_range((unsigned long)relocated_kexec_smp_wait,
+-				 reboot_code_buffer + relocate_new_kernel_size);
++				 reboot_code_buffer + KEXEC_RELOCATE_NEW_KERNEL_SIZE);
+ 
+ 	relocated_kexec_smp_wait(NULL);
+ }
+@@ -199,7 +303,7 @@ void kexec_reboot(void)
+ 	 * machine_kexec() CPU.
+ 	 */
+ 	local_flush_icache_range(reboot_code_buffer,
+-				 reboot_code_buffer + relocate_new_kernel_size);
++				 reboot_code_buffer + KEXEC_RELOCATE_NEW_KERNEL_SIZE);
+ 
+ 	do_kexec = (void *)reboot_code_buffer;
+ 	do_kexec();
 @@ -212,10 +316,12 @@ machine_kexec(struct kimage *image)
  	unsigned long *ptr;
  
