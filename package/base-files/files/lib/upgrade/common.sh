@@ -135,6 +135,10 @@ get_magic_fat32() {
 	(get_image "$@" | dd bs=1 count=5 skip=82) 2>/dev/null
 }
 
+is_efi_system() {
+	[ -d /sys/firmware/efi ]
+}
+
 part_magic_efi() {
 	local magic=$(get_magic_gpt "$@")
 	[ "$magic" = "EFI PART" ]
@@ -232,6 +236,30 @@ export_partdevice() {
 	done
 
 	return 1
+}
+
+export_partdevice_label() {
+	local var="$1" label="$2"
+	local found uevent line MAJOR MINOR DEVNAME DEVTYPE PARTN PARTNAME
+
+	found=
+	for uevent in /sys/class/block/*/uevent; do
+		while read line; do
+			export -n "$line"
+		done < "$uevent"
+		if [ "$DEVTYPE" = "partition" -a "$label" = "$PARTNAME" -a -b "/dev/$DEVNAME" ]; then
+			[ -n "$found" ] && {
+				echo "$label found more than once, remove duplicate partitions and try again"
+				return 1
+			}
+			echo "Found $label @ /dev/$DEVNAME"
+			found="$DEVNAME"
+		fi
+	done
+	[ -n "$found" ] || return 1
+
+	export "$var=$found"
+	return 0
 }
 
 hex_le32_to_cpu() {
