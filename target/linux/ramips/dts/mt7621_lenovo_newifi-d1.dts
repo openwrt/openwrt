@@ -79,9 +79,8 @@
 	m25p80@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <25000000>;
+		spi-max-frequency = <45000000>;
 		broken-flash-reset;
-		m25p,fast-read;
 
 		partitions {
 			compatible = "fixed-partitions";
