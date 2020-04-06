@@ -36,6 +36,15 @@ bcm53xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5@eth0"
 		;;
+	luxul,xap-1610-v1)
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "5@eth0"
+		ucidef_set_interface_lan "eth0.1" "dhcp"
+		;;
+	luxul,xwr-3150-v1)
+		ucidef_add_switch "switch0" \
+			"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4:wan" "5@eth0"
+		;;
 	phicomm,k3)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:wan" "5@eth0"
@@ -87,20 +96,28 @@ bcm53xx_setup_macs()
 	case "$board" in
 	asus,rt-ac87u)
 		etXmacaddr=$(nvram get et1macaddr)
+		offset=1
 		;;
 	dlink,dir-885l | \
 	netgear,r7900 | \
 	netgear,r8000 | \
 	netgear,r8500)
 		etXmacaddr=$(nvram get et2macaddr)
+		offset=1
+		;;
+	luxul,xwr-3100v1 | \
+	luxul,xwr-3150-v1)
+		etXmacaddr=$(nvram get et0macaddr)
+		offset=5
 		;;
 	*)
 		etXmacaddr=$(nvram get et0macaddr)
+		offset=1
 		;;
 	esac
 
 	# If WAN MAC isn't explicitly set, calculate it using base MAC as reference.
-	[ -z "$wan_macaddr" -a -n "$etXmacaddr" ] && wan_macaddr=$(macaddr_add "$etXmacaddr" 1)
+	[ -z "$wan_macaddr" -a -n "$etXmacaddr" ] && wan_macaddr=$(macaddr_add "$etXmacaddr" $offset)
 
 	[ -n "$wan_macaddr" ] && ucidef_set_interface_macaddr "wan" "$wan_macaddr"
 }
