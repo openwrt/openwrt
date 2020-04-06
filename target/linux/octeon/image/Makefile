@@ -7,9 +7,22 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+FAT32_BLOCK_SIZE=1024
+FAT32_BLOCKS=$(shell echo $$(($(CONFIG_TARGET_KERNEL_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
+
+define Build/boot-img
+  $(RM) -rf $@.boot
+  mkfs.fat $@.boot -C $(FAT32_BLOCKS)
+  mcopy -i $@.boot $(IMAGE_KERNEL) ::vmlinux.64
+endef
+
+define Build/usb-img
+  ./edgerouter_gen_usb_img.sh $@ $@.boot $(IMAGE_ROOTFS) $(CONFIG_TARGET_KERNEL_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
+endef
+
 define Build/strip-kernel
-	# Workaround pre-SDK-1.9.0 u-boot versions not handling the .notes section
-	$(TARGET_CROSS)strip -R .notes $@ -o $@.stripped && mv $@.stripped $@
+  # Workaround pre-SDK-1.9.0 u-boot versions not handling the .notes section
+  $(TARGET_CROSS)strip -R .notes $@ -o $@.stripped && mv $@.stripped $@
 endef
 
 define Device/Default
@@ -44,6 +57,10 @@ define Device/ubnt_edgerouter-lite
   DEVICE_MODEL := EdgeRouter Lite
   BOARD_NAME := erlite
   CMDLINE := $(ERLITE_CMDLINE)
+  FILESYSTEMS := squashfs
+  IMAGES := factory.img.gz sysupgrade.tar
+  IMAGE/factory.img.gz/squashfs := boot-img | usb-img | gzip
+  IMAGE/sysupgrade.tar/squashfs := append-rootfs | pad-extra 128k | sysupgrade-tar rootfs=$$$$@
 endef
 TARGET_DEVICES += ubnt_edgerouter-lite
 
