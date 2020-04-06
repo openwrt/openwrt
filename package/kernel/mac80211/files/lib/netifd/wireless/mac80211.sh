@@ -594,11 +594,11 @@ mac80211_setup_supplicant() {
 	NEWSPLIST="${NEWSPLIST}$ifname "
 
 	if [ "${NEWAPLIST%% *}" != "${OLDAPLIST%% *}" ]; then
-		[ "$spobj" ] && ubus call wpa_supplicant.${phy} config_del "{\"iface\":\"$ifname\"}"
+		[ "$spobj" ] && ubus call wpa_supplicant config_remove "{\"iface\":\"$ifname\"}"
 		add_sp=1
 	fi
 	[ "$enable" = 0 ] && {
-		ubus call wpa_supplicant.${phy} config_del "{\"iface\":\"$ifname\"}"
+		ubus call wpa_supplicant config_remove "{\"iface\":\"$ifname\"}"
 		ip link set dev "$ifname" down
 		return 0
 	}
@@ -623,7 +623,7 @@ mac80211_setup_supplicant_noctl() {
 
 	NEWSPLIST="${NEWSPLIST}$ifname "
 	[ "$enable" = 0 ] && {
-		ubus call wpa_supplicant.${phy} config_del "{\"iface\":\"$ifname\"}"
+		ubus call wpa_supplicant config_remove "{\"iface\":\"$ifname\"}"
 		ip link set dev "$ifname" down
 		return 0
 	}
@@ -814,7 +814,7 @@ mac80211_vap_cleanup() {
 	local vaps="$2"
 
 	for wdev in $vaps; do
-		[ "$service" != "none" ] && ubus call ${service}.${phy} config_remove "{\"iface\":\"$wdev\"}"
+		[ "$service" != "none" ] && ubus call ${service} config_remove "{\"iface\":\"$wdev\"}"
 		ip link set dev "$wdev" down 2>/dev/null
 		iw dev "$wdev" del
 	done
@@ -962,9 +962,9 @@ drv_mac80211_setup() {
 		fi
 		if [ "$no_reload" != "0" ]; then
 			add_ap=1
-			ubus wait_for hostapd.$phy
-			ubus call hostapd.${phy} config_add "{\"iface\":\"$primary_ap\", \"config\":\"${hostapd_conf_file}\"}"
-			local hostapd_pid=$(ubus call service list '{"name": "hostapd"}' | jsonfilter -l 1 -e "@['hostapd'].instances['hostapd-${phy}'].pid")
+			ubus wait_for hostapd
+			ubus call hostapd config_add "{\"iface\":\"$primary_ap\", \"config\":\"${hostapd_conf_file}\"}"
+			local hostapd_pid=$(ubus call service list '{"name": "hostapd"}' | jsonfilter -l 1 -e "@['hostapd'].instances['hostapd'].pid")
 			wireless_add_process "$hostapd_pid" "/usr/sbin/hostapd" 1
 		fi
 		ret="$?"
