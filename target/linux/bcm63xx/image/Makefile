@@ -8,22 +8,21 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-LOADADDR = 0x80010000		# RAM start + 64K
-KERNEL_ENTRY = $(LOADADDR)	# Newer kernels add a jmp to the kernel_entry at the start of the binary
-LOADER_ENTRY = 0x80a00000	# RAM start + 10M, for relocate
-RAMSIZE = 0x02000000		# 32MB
-LZMA_TEXT_START = 0x81800000	# 32MB - 8MB
+KERNEL_LOADADDR = 0x80010000		# RAM start + 64K
+LOADER_ENTRY = 0x80a00000		# RAM start + 10M, for relocate
+RAMSIZE = 0x02000000			# 32MB
+LZMA_TEXT_START = 0x81800000		# 32MB - 8MB
 
 LOADER_MAKEOPTS= \
 		KDIR=$(KDIR) \
-		LOADADDR=$(LOADADDR) \
-		KERNEL_ENTRY=$(KERNEL_ENTRY) \
+		LOADADDR=$(KERNEL_LOADADDR) \
+		KERNEL_ENTRY=$(KERNEL_LOADADDR) \
 		RAMSIZE=$(RAMSIZE) \
 		LZMA_TEXT_START=$(LZMA_TEXT_START) \
 
 RELOCATE_MAKEOPTS= \
 		CACHELINE_SIZE=16 \
-		KERNEL_ADDR=$(KERNEL_ENTRY) \
+		KERNEL_ADDR=$(KERNEL_LOADADDR) \
 		CROSS_COMPILE=$(TARGET_CROSS) \
 		LZMA_TEXT_START=$(LOADER_ENTRY)
 
@@ -37,7 +36,7 @@ endef
 define Build/hcs-initramfs
 	$(STAGING_DIR_HOST)/bin/hcsmakeimage --magic_bytes=$(HCS_MAGIC_BYTES) \
 		--rev_maj=$(HCS_REV_MAJ) --rev_min=$(HCS_REV_MIN) --input_file=$@ \
-		--output_file=$@.hcs --ldaddress=$(LOADADDR)
+		--output_file=$@.hcs --ldaddress=$(KERNEL_LOADADDR)
 	mv $@.hcs $@
 endef
 
