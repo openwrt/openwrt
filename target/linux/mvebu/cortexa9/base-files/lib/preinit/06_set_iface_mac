@@ -9,6 +9,10 @@ preinit_set_mac_address() {
 	. /lib/functions.sh
 
 	case $(board_name) in
+	buffalo,ls421de)
+		mac=$(mtd_get_mac_ascii u-boot-env eth1addr)
+		ip link set dev eth0 address $mac 2>/dev/null
+		;;
 	linksys,caiman|linksys,cobra|linksys,rango|linksys,shelby|linksys,venom)
 		# rename interfaces back to the way they were with 4.4
 		case "$(readlink /sys/class/net/eth0)" in
