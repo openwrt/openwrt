@@ -6,7 +6,7 @@ device_get_vars() {
 	json_init
 	json_load "$(ubus call block info)"
 
-	json_select devices
+	json_select devices || return 1
 
 	json_get_keys keys
 	for key in $keys
@@ -18,13 +18,16 @@ device_get_vars() {
 			shift
 			json_get_vars $@
 			json_select ..
-			break
+			json_select ..
+			return 0
 		}
 
 		json_select ..
 	done
 
 	json_select ..
+
+	return 2
 }
 
 [ -f /var/run/config/samba ] || {
@@ -32,7 +35,10 @@ device_get_vars() {
 }
 
 [ "$ACTION" = "add" ] && {
-	device_get_vars $DEVICE label mount
+	device_get_vars $DEVICE label mount || {
+		logger -t samba-hotplug "Failed to get $DEVICE info"
+		exit 1
+	}
 	[ -n "$mount" ] && {
 		uci -c /var/run/config batch <<-EOF
 			set samba.$DEVICE="sambashare"

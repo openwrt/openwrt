@@ -32,6 +32,10 @@
 
 		mdio@90000 {
 			status = "okay";
+			pinctrl-0 = <&mdio_pins>;
+			pinctrl-names = "default";
+			reset-gpios = <&tlmm 59 GPIO_ACTIVE_LOW>;
+			reset-delay-us = <2000>;
 		};
 
 		ess-psgmii@98000 {
@@ -129,6 +133,20 @@
 };
 
 &tlmm {
+	mdio_pins: mdio_pinmux {
+		mux_1 {
+			pins = "gpio53";
+			function = "mdio";
+			bias-pull-up;
+		};
+
+		mux_2 {
+			pins = "gpio52";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
 	serial_pins: serial_pinmux {
 		mux {
 			pins = "gpio60", "gpio61";

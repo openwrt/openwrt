@@ -1,16 +1,9 @@
-#
-# Copyright (C) 2012-2020 OpenWrt.org
-# Copyright (C) 2017 LEDE project
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=bcm27xx-gpu-fw
-PKG_VERSION:=2020-02-28
-PKG_RELEASE:=bf83b506b4a6f9e592e711d02871a278fad5bd1e
+PKG_VERSION:=2020-03-26
+PKG_RELEASE:=5574077183389cd4c65077ba18b59144ed6ccd6d
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_RELEASE)
 
@@ -33,7 +26,7 @@ define Download/bootcode_bin
   FILE:=$(RPI_FIRMWARE_FILE)-bootcode.bin
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=bootcode.bin
-  HASH:=6505bbc8798698bd8f1dff30789b22289ebb865ccba7833b87705264525cbe46
+  HASH:=1e3582640b97f6a1ba77b66181fe698767d205f5d4c4315f56d03b398a7e55d1
 endef
 $(eval $(call Download,bootcode_bin))
 
@@ -41,7 +34,7 @@ define Download/fixup_dat
   FILE:=$(RPI_FIRMWARE_FILE)-fixup.dat
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=fixup.dat
-  HASH:=3157bb56f162ed215fba9ed101c5c59abfce25d2723b687d4b6da5d527d4da74
+  HASH:=1b90af0c87d5f705b5b6d921b2b47d37f73af81c5c9fb1d683201e619a00d2df
 endef
 $(eval $(call Download,fixup_dat))
 
@@ -49,7 +42,7 @@ define Download/fixup_cd_dat
   FILE:=$(RPI_FIRMWARE_FILE)-fixup_cd.dat
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=fixup_cd.dat
-  HASH:=1ba8140ee21c61e3c86a0b864530e58de067139b4c93ddd258c12f2f0851796a
+  HASH:=134c5f3db2de3e5fd285bd4073016f074cf4151cdd1bfe3443b9a14700d48a55
 endef
 $(eval $(call Download,fixup_cd_dat))
 
@@ -57,7 +50,7 @@ define Download/fixup_x_dat
   FILE:=$(RPI_FIRMWARE_FILE)-fixup_x.dat
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=fixup_x.dat
-  HASH:=f0bcb0b9bebceaae272a86f8af5b789a2f1f51548ee428b04bd8f63f8d05dd56
+  HASH:=32fd8182a9a603f41acb7d542cbb15aa4e84c2768816ae48e36b68d0d4e1754c
 endef
 $(eval $(call Download,fixup_x_dat))
 
@@ -65,7 +58,7 @@ define Download/fixup4_dat
   FILE:=$(RPI_FIRMWARE_FILE)-fixup4.dat
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=fixup4.dat
-  HASH:=02534602e0310d3c101820d87e8a33423d541ad9be1874f918fa03af18aaa6c2
+  HASH:=605b28219ba13b73dbf57a45e995e7ea090421ad96a971c950afb34e0d3f7841
 endef
 $(eval $(call Download,fixup4_dat))
 
@@ -73,7 +66,7 @@ define Download/fixup4cd_dat
   FILE:=$(RPI_FIRMWARE_FILE)-fixup4cd.dat
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=fixup4cd.dat
-  HASH:=b5e82f7f932d618ff36e7f089f0350bbc0b1c7830f3c44eec87603becf47c47e
+  HASH:=a3a4c600472032cd6597e774f0b7be2cebbfa918ccfd7fa1cfecdf853c5f61a9
 endef
 $(eval $(call Download,fixup4cd_dat))
 
@@ -81,7 +74,7 @@ define Download/fixup4x_dat
   FILE:=$(RPI_FIRMWARE_FILE)-fixup4x.dat
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=fixup4x.dat
-  HASH:=2078b1241cbbd2b7e6e5d77240b266a71afd9617a9c6ffc223fb19bcd8b177cf
+  HASH:=c196692b2cac949fdeb354364eb15da83d192d77ab698cf3fe43142401c5281c
 endef
 $(eval $(call Download,fixup4x_dat))
 
@@ -89,7 +82,7 @@ define Download/start_elf
   FILE:=$(RPI_FIRMWARE_FILE)-start.elf
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=start.elf
-  HASH:=ea2dac517aa5c99eae864a1653fde467f481ccf34bd16ec6776595b8520c4ade
+  HASH:=2364737aade5c6459a0dfd7b5d5070ab6a6139803779d3f94b579744b40731a5
 endef
 $(eval $(call Download,start_elf))
 
@@ -97,7 +90,7 @@ define Download/start_cd_elf
   FILE:=$(RPI_FIRMWARE_FILE)-start_cd.elf
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=start_cd.elf
-  HASH:=f31559dde1c8984a2c681078b4a243c718383c481e5fd3dc8feafa8f8bc98113
+  HASH:=12b98b6c5336b4f1ee1a61753bd6471ce7ce8ee2644550dc79c8e41d3ee4e719
 endef
 $(eval $(call Download,start_cd_elf))
 
@@ -105,7 +98,7 @@ define Download/start_x_elf
   FILE:=$(RPI_FIRMWARE_FILE)-start_x.elf
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=start_x.elf
-  HASH:=9a18f7d063f9d721a779b23f189681f74b6ea04327bc0c7b5b868df974cf74f0
+  HASH:=d21ece84f1ac70148787578ec7549a01d5fa7453b46119ab230470f8e403c0f9
 endef
 $(eval $(call Download,start_x_elf))
 
@@ -113,7 +106,7 @@ define Download/start4_elf
   FILE:=$(RPI_FIRMWARE_FILE)-start4.elf
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=start4.elf
-  HASH:=88017c1e66ce10749540866bba331b6684f84eab333bf579b43ce7eea91140f7
+  HASH:=98c4cba6bd4ee03a53b02816c645f783becd9f9899787f7b1bcb8a784eeca4c0
 endef
 $(eval $(call Download,start4_elf))
 
@@ -121,7 +114,7 @@ define Download/start4cd_elf
   FILE:=$(RPI_FIRMWARE_FILE)-start4cd.elf
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=start4cd.elf
-  HASH:=7c658a86c42a86ffdb083294f21342c2cffe18fcef1bc457736173efbe71f419
+  HASH:=b9ee5a895563b891a74ac4be3e9e11be553aa69d600a196556328db164735f8a
 endef
 $(eval $(call Download,start4cd_elf))
 
@@ -129,7 +122,7 @@ define Download/start4x_elf
   FILE:=$(RPI_FIRMWARE_FILE)-start4x.elf
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=start4x.elf
-  HASH:=4a93c4ab29ad5e2aa537ef0a6b1ce0ed77d8283a44b443bc785af4c856ab20f5
+  HASH:=bd2741aca11ecface061fd93d6b412d4f2a777165d780f5a2924569c9417ed92
 endef
 $(eval $(call Download,start4x_elf))
 
@@ -148,20 +141,20 @@ endef
 define Build/Prepare
 	rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-LICENCE.broadcom $(PKG_BUILD_DIR)/LICENCE.broadcom
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-bootcode.bin $(PKG_BUILD_DIR)/bootcode.bin
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup.dat $(PKG_BUILD_DIR)/fixup.dat
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup_cd.dat $(PKG_BUILD_DIR)/fixup_cd.dat
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup_x.dat $(PKG_BUILD_DIR)/fixup_x.dat
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup4.dat $(PKG_BUILD_DIR)/fixup4.dat
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup4cd.dat $(PKG_BUILD_DIR)/fixup4cd.dat
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup4x.dat $(PKG_BUILD_DIR)/fixup4x.dat
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start.elf $(PKG_BUILD_DIR)/start.elf
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start_cd.elf $(PKG_BUILD_DIR)/start_cd.elf
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start_x.elf $(PKG_BUILD_DIR)/start_x.elf
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start4.elf $(PKG_BUILD_DIR)/start4.elf
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start4cd.elf $(PKG_BUILD_DIR)/start4cd.elf
-	cp $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start4x.elf $(PKG_BUILD_DIR)/start4x.elf
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-LICENCE.broadcom $(PKG_BUILD_DIR)/LICENCE.broadcom
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-bootcode.bin $(PKG_BUILD_DIR)/bootcode.bin
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup.dat $(PKG_BUILD_DIR)/fixup.dat
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup_cd.dat $(PKG_BUILD_DIR)/fixup_cd.dat
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup_x.dat $(PKG_BUILD_DIR)/fixup_x.dat
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup4.dat $(PKG_BUILD_DIR)/fixup4.dat
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup4cd.dat $(PKG_BUILD_DIR)/fixup4cd.dat
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-fixup4x.dat $(PKG_BUILD_DIR)/fixup4x.dat
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start.elf $(PKG_BUILD_DIR)/start.elf
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start_cd.elf $(PKG_BUILD_DIR)/start_cd.elf
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start_x.elf $(PKG_BUILD_DIR)/start_x.elf
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start4.elf $(PKG_BUILD_DIR)/start4.elf
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start4cd.elf $(PKG_BUILD_DIR)/start4cd.elf
+	$(CP) $(DL_DIR)/$(RPI_FIRMWARE_FILE)-start4x.elf $(PKG_BUILD_DIR)/start4x.elf
 endef
 
 define Build/Compile

@@ -111,7 +111,7 @@ define Device/allnet_all5002
   DEVICE_VENDOR := Allnet
   DEVICE_MODEL := ALL5002
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
-	kmod-i2c-core kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
+	kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
   SUPPORTED_DEVICES += all5002
 endef
 TARGET_DEVICES += allnet_all5002
@@ -122,7 +122,7 @@ define Device/allnet_all5003
   DEVICE_VENDOR := Allnet
   DEVICE_MODEL := ALL5003
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
-	kmod-i2c-core kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
+	kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
   SUPPORTED_DEVICES += all5003
 endef
 TARGET_DEVICES += allnet_all5003
@@ -184,7 +184,7 @@ define Device/asiarf_awm002-evb-4m
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AWM002-EVB
   DEVICE_VARIANT := 4M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-gpio
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-gpio
   SUPPORTED_DEVICES += awm002-evb-4M
 endef
 TARGET_DEVICES += asiarf_awm002-evb-4m
@@ -195,7 +195,7 @@ define Device/asiarf_awm002-evb-8m
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AWM002-EVB/AWM003-EVB
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-gpio
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-gpio
   SUPPORTED_DEVICES += awm002-evb-8M
 endef
 TARGET_DEVICES += asiarf_awm002-evb-8m
@@ -301,7 +301,7 @@ define Device/buffalo_whr-g300n
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WHR-G300N
   IMAGES += tftp.bin
-  IMAGE/tftp.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/tftp.bin := $$(sysupgrade_bin) | check-size | \
 	buffalo-tftp-header
   SUPPORTED_DEVICES += whr-g300n
 endef
@@ -311,9 +311,9 @@ define Device/dlink_dap-1350
   SOC := rt3052
   IMAGES += factory.bin factory-NA.bin
   IMAGE_SIZE := 7488k
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	dap-header -s RT3052-AP-DAP1350WW-3
-  IMAGE/factory-NA.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory-NA.bin := $$(sysupgrade_bin) | check-size | \
 	dap-header -s RT3052-AP-DAP1350-3
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DAP-1350
@@ -348,7 +348,7 @@ define Device/dlink_dir-300-b1
   SOC := rt3050
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	wrg-header wrgn23_dlwbr_dir300b
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-300
@@ -382,7 +382,7 @@ define Device/dlink_dir-600-b1
   SOC := rt3050
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	wrg-header wrgn23_dlwbr_dir600b
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-600
@@ -410,7 +410,7 @@ define Device/dlink_dir-615-d
   SOC := rt3050
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	wrg-header wrgn23_dlwbr_dir615d
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-615
@@ -486,7 +486,7 @@ define Device/edimax_3g-6200n
   IMAGE_SIZE := 3648k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m 3G62 -f 0x50000 -S 0x01100000 | pad-rootfs | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-metadata | check-size
   DEVICE_VENDOR := Edimax
   DEVICE_MODEL := 3g-6200n
   SUPPORTED_DEVICES += 3g-6200n
@@ -498,7 +498,7 @@ define Device/edimax_3g-6200nl
   IMAGE_SIZE := 3648k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m 3G62 -f 0x50000 -S 0x01100000 | pad-rootfs | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-metadata | check-size
   DEVICE_VENDOR := Edimax
   DEVICE_MODEL := 3g-6200nl
   SUPPORTED_DEVICES += 3g-6200nl
@@ -568,7 +568,7 @@ define Device/hilink_hlk-rm04
   SOC := rt5350
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	hilink-header
   DEVICE_VENDOR := Hi-Link
   DEVICE_MODEL := HLK-RM04
@@ -621,7 +621,7 @@ define Device/jcg_jhr-n805r
   SOC := rt3050
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	jcg-header 29.24
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := JHR-N805R
@@ -633,7 +633,7 @@ define Device/jcg_jhr-n825r
   SOC := rt3052
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	jcg-header 23.24
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := JHR-N825R
@@ -645,7 +645,7 @@ define Device/jcg_jhr-n926r
   SOC := rt3052
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	jcg-header 25.24
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := JHR-N926R
@@ -676,13 +676,14 @@ define Device/netgear_wnce2001
   SOC := rt3052
   IMAGE_SIZE := 3392k
   IMAGES += factory.bin factory-NA.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	dap-header -s RT3052-AP-WNCE2001-3 -r WW -v 1.0.0.99
-  IMAGE/factory-NA.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory-NA.bin := $$(sysupgrade_bin) | check-size | \
 	dap-header -s RT3052-AP-WNCE2001-3 -r NA -v 1.0.0.99
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WNCE2001
   SUPPORTED_DEVICES += wnce2001
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wnce2001
 
@@ -699,7 +700,7 @@ define Device/nexx_wt1520-4m
   SOC := rt5350
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	poray-header -B WT1520 -F 4M
   DEVICE_VENDOR := Nexx
   DEVICE_MODEL := WT1520
@@ -712,7 +713,7 @@ define Device/nexx_wt1520-8m
   SOC := rt5350
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	poray-header -B WT1520 -F 8M
   DEVICE_VENDOR := Nexx
   DEVICE_MODEL := WT1520
@@ -727,7 +728,7 @@ define Device/nixcore_x1-16m
   DEVICE_VENDOR := Nixcore
   DEVICE_MODEL := X1
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
 	kmod-spi-dev
   SUPPORTED_DEVICES += nixcore-x1 nixcore-x1-16M
 endef
@@ -739,7 +740,7 @@ define Device/nixcore_x1-8m
   DEVICE_VENDOR := Nixcore
   DEVICE_MODEL := X1
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
 	kmod-spi-dev
   SUPPORTED_DEVICES += nixcore-x1 nixcore-x1-8M
 endef
@@ -750,7 +751,7 @@ define Device/olimex_rt5350f-olinuxino
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := OLIMEX
   DEVICE_MODEL := RT5350F-OLinuXino
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
 	kmod-spi-dev
   SUPPORTED_DEVICES += rt5350f-olinuxino
 endef
@@ -761,7 +762,7 @@ define Device/olimex_rt5350f-olinuxino-evb
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := OLIMEX
   DEVICE_MODEL := RT5350F-OLinuXino-EVB
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
 	kmod-spi-dev
   SUPPORTED_DEVICES += rt5350f-olinuxino-evb
 endef
@@ -840,7 +841,7 @@ define Device/poray_m3
   SOC := rt5350
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	poray-header -B M3 -F 4M
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := M3
@@ -853,7 +854,7 @@ define Device/poray_m4-4m
   SOC := rt5350
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	poray-header -B M4 -F 4M
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := M4
@@ -867,7 +868,7 @@ define Device/poray_m4-8m
   SOC := rt5350
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	poray-header -B M4 -F 8M
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := M4
@@ -881,7 +882,7 @@ define Device/poray_x5
   SOC := rt5350
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	poray-header -B X5 -F 8M
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := X5/X6
@@ -894,7 +895,7 @@ define Device/poray_x8
   SOC := rt5350
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	poray-header -B X8 -F 8M
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := X8
@@ -1013,7 +1014,7 @@ define Device/trendnet_tew-638apb-v2
   BLOCKSIZE := 64k
   IMAGE_SIZE := 3776k
   IMAGE/sysupgrade.bin := $$(sysupgrade_bin) | umedia-header 0x026382 | \
-	append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-metadata | check-size
   DEVICE_VENDOR := TRENDnet
   DEVICE_MODEL := TEW-638APB
   DEVICE_VARIANT := v2
@@ -1034,7 +1035,7 @@ define Device/unbranded_a5-v11
   SOC := rt5350
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	poray-header -B A5-V11 -F 4M
   DEVICE_VENDOR := 
   DEVICE_MODEL := A5-V11
@@ -1100,7 +1101,7 @@ define Device/vocore_vocore-16m
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
 	kmod-spi-dev
   SUPPORTED_DEVICES += vocore vocore-16M
 endef
@@ -1112,7 +1113,7 @@ define Device/vocore_vocore-8m
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink \
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
 	kmod-spi-dev
   SUPPORTED_DEVICES += vocore vocore-8M
 endef

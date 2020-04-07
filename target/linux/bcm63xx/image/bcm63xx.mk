@@ -3,6 +3,12 @@
 # BCM33XX/BCM63XX Profiles
 #
 
+DEVICE_VARS += HCS_MAGIC_BYTES HCS_REV_MIN HCS_REV_MAJ
+DEVICE_VARS += BLOCK_SIZE FLASH_MB IMAGE_OFFSET
+DEVICE_VARS += CFE_BOARD_ID CFE_CHIP_ID CFE_EXTRAS
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION
+DEVICE_VARS += REDBOOT_PREFIX
+
 define Device/bcm33xx
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-lzma bin | hcs-initramfs
   IMAGES :=
@@ -10,7 +16,6 @@ define Device/bcm33xx
   HCS_REV_MIN :=
   HCS_REV_MAJ :=
 endef
-DEVICE_VARS += HCS_MAGIC_BYTES HCS_REV_MIN HCS_REV_MAJ
 
 define Device/bcm63xx
   FILESYSTEMS := squashfs jffs2-64k jffs2-128k
@@ -31,8 +36,6 @@ define Device/bcm63xx
   CFE_CHIP_ID :=
   CFE_EXTRAS = --block-size $$(BLOCK_SIZE) --image-offset $$(if $$(IMAGE_OFFSET),$$(IMAGE_OFFSET),$$(BLOCK_SIZE))
 endef
-DEVICE_VARS += BLOCK_SIZE FLASH_MB IMAGE_OFFSET
-DEVICE_VARS += CFE_BOARD_ID CFE_CHIP_ID CFE_EXTRAS
 
 define Device/bcm63xx_netgear
   $(Device/bcm63xx)
@@ -42,7 +45,6 @@ define Device/bcm63xx_netgear
   NETGEAR_BOARD_ID :=
   NETGEAR_REGION :=
 endef
-DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION
 
 define Device/bcm63xx_redboot
   FILESYSTEMS := squashfs
@@ -52,7 +54,6 @@ define Device/bcm63xx_redboot
   IMAGE/redboot.bin := redboot-bin
   REDBOOT_PREFIX := $$(IMAGE_PREFIX)
 endef
-DEVICE_VARS += REDBOOT_PREFIX
 
 ### Generic ###
 define Device/brcm_bcm963281tan

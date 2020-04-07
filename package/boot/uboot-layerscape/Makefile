@@ -27,6 +27,12 @@ define U-Boot/Default
   ENV_SIZE:=0x2000
 endef
 
+define U-Boot/ls1012afrdm
+  NAME:=NXP LS1012AFRDM
+  UBOOT_CONFIG:=ls1012afrdm_tfa
+  ENV_SIZE:=0x40000
+endef
+
 define U-Boot/ls1012ardb
   NAME:=NXP LS1012ARDB
   UBOOT_CONFIG:=ls1012ardb_tfa
@@ -102,6 +108,7 @@ endef
 
 
 UBOOT_TARGETS := \
+  ls1012afrdm \
   ls1012ardb \
   ls1012afrwy \
   ls1043ardb \

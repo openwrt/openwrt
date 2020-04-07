@@ -1,5 +1,6 @@
-include ./common-mikrotik.mk
 include ./common-netgear.mk	# for netgear-uImage
+
+DEVICE_VARS += RAS_ROOTFS_SIZE RAS_BOARD RAS_VERSION
 
 # attention: only zlib compression is allowed for the boot fs
 define Build/zyxel-buildkerneljffs
@@ -42,7 +43,7 @@ define Device/aerohive_hiveap-121
   SUPPORTED_DEVICES += hiveap-121
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += aerohive_hiveap-121
@@ -61,7 +62,7 @@ define Device/domywifi_dw33d
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
 endef
 TARGET_DEVICES += domywifi_dw33d
 
@@ -129,19 +130,6 @@ define Device/glinet_gl-ar750s-nor
 endef
 TARGET_DEVICES += glinet_gl-ar750s-nor
 
-define Device/mikrotik_routerboard-922uags-5hpacd
-  $(Device/mikrotik)
-  SOC := qca9558
-  DEVICE_MODEL := RouterBOARD 922UAGS-5HPacD
-  BOARD_NAME := routerboard
-  IMAGE/sysupgrade.bin = append-kernel | kernel2minor -s 2048 -e -c | \
-	sysupgrade-tar kernel=$$$$@ | append-metadata
-  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct \
-	kmod-usb2 nand-utils
-  SUPPORTED_DEVICES += rb-922uags-5hpacd
-endef
-TARGET_DEVICES += mikrotik_routerboard-922uags-5hpacd
-
 # fake rootfs is mandatory, pad-offset 129 equals (2 * uimage_header + 0xff)
 define Device/netgear_ath79_nand
   DEVICE_VENDOR := NETGEAR
@@ -157,9 +145,9 @@ define Device/netgear_ath79_nand
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma -d20 | netgear-uImage lzma
   IMAGES := sysupgrade.bin factory.img
   IMAGE/factory.img := append-kernel | append-ubi | netgear-dni | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   UBINIZE_OPTS := -E 5
 endef
 
@@ -230,4 +218,3 @@ define Device/zyxel_nbg6716
   UBINIZE_OPTS := -E 5
 endef
 TARGET_DEVICES += zyxel_nbg6716
-DEVICE_VARS += RAS_ROOTFS_SIZE RAS_BOARD RAS_VERSION

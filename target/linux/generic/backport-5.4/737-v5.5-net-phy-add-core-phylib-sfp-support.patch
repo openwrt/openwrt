@@ -24,7 +24,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  #include <linux/workqueue.h>
  #include <linux/mdio.h>
  #include <linux/io.h>
-@@ -841,6 +842,9 @@ void phy_stop(struct phy_device *phydev)
+@@ -842,6 +843,9 @@ void phy_stop(struct phy_device *phydev)
  
  	mutex_lock(&phydev->lock);
  
@@ -34,7 +34,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	phydev->state = PHY_HALTED;
  
  	mutex_unlock(&phydev->lock);
-@@ -903,6 +907,9 @@ void phy_state_machine(struct work_struc
+@@ -904,6 +908,9 @@ void phy_state_machine(struct work_struc
  
  	old_state = phydev->state;
  
@@ -54,7 +54,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  #include <linux/mdio.h>
  #include <linux/io.h>
  #include <linux/uaccess.h>
-@@ -1178,6 +1179,65 @@ phy_standalone_show(struct device *dev,
+@@ -1183,6 +1184,65 @@ phy_standalone_show(struct device *dev,
  static DEVICE_ATTR_RO(phy_standalone);
  
  /**
@@ -120,7 +120,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
   * phy_attach_direct - attach a network device to a given PHY device pointer
   * @dev: network device to attach
   * @phydev: Pointer to phy_device to attach
-@@ -1254,6 +1314,9 @@ int phy_attach_direct(struct net_device
+@@ -1259,6 +1319,9 @@ int phy_attach_direct(struct net_device
  		dev->phydev = phydev;
  	}
  
@@ -130,7 +130,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	/* Some Ethernet drivers try to connect to a PHY device before
  	 * calling register_netdevice() -> netdev_register_kobject() and
  	 * does the dev->dev.kobj initialization. Here we only check for
-@@ -2282,6 +2345,9 @@ static int phy_remove(struct device *dev
+@@ -2287,6 +2350,9 @@ static int phy_remove(struct device *dev
  	phydev->state = PHY_DOWN;
  	mutex_unlock(&phydev->lock);
  
@@ -151,7 +151,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  struct sk_buff;
  
  /*
-@@ -342,6 +344,8 @@ struct phy_c45_device_ids {
+@@ -343,6 +345,8 @@ struct phy_c45_device_ids {
   * dev_flags: Device-specific flags used by the PHY driver.
   * irq: IRQ number of the PHY's interrupt (-1 if none)
   * phy_timer: The timer for handling the state machine
@@ -160,7 +160,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
   * attached_dev: The attached enet driver's device instance ptr
   * adjust_link: Callback for the enet controller to respond to
   * changes in the link state.
-@@ -432,6 +436,9 @@ struct phy_device {
+@@ -434,6 +438,9 @@ struct phy_device {
  
  	struct mutex lock;
  
@@ -170,7 +170,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	struct phylink *phylink;
  	struct net_device *attached_dev;
  
-@@ -1020,6 +1027,10 @@ int phy_suspend(struct phy_device *phyde
+@@ -1023,6 +1030,10 @@ int phy_suspend(struct phy_device *phyde
  int phy_resume(struct phy_device *phydev);
  int __phy_resume(struct phy_device *phydev);
  int phy_loopback(struct phy_device *phydev, bool enable);

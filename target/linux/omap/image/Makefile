@@ -33,7 +33,6 @@ endef
 
 define Device/Default
   PROFILES := Default
-  DEVICE_VARS :=
   KERNEL_NAME := zImage
   KERNEL := kernel-bin
   IMAGES := sdcard.img.gz

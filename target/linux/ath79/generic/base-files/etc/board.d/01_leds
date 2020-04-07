@@ -80,6 +80,10 @@ comfast,cf-e560ac)
 	ucidef_set_led_switch "lan3" "LAN3" "$boardname:blue:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan4" "LAN4" "$boardname:blue:lan4" "switch0" "0x10"
 	;;
+comfast,cf-ew72)
+	ucidef_set_led_switch "lan" "LAN" "$boardname:blue:lan" "switch0" "0x02"
+	ucidef_set_led_netdev "wan" "WAN" "$boardname:blue:wan" "eth1"
+	;;
 devolo,magic-2-wifi)
 	ucidef_set_led_netdev "plcw" "dLAN" "devolo:white:dlan" "eth0.1" "rx"
 	;;
@@ -177,7 +181,8 @@ tplink,archer-c58-v1|\
 tplink,archer-c59-v1|\
 tplink,archer-c59-v2|\
 tplink,archer-c60-v1|\
-tplink,archer-c60-v2)
+tplink,archer-c60-v2|\
+tplink,archer-c60-v3)
 	ucidef_set_led_switch "lan" "LAN" "tp-link:green:lan" "switch0" "0x1E"
 	ucidef_set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth1"
 	;;
@@ -185,6 +190,10 @@ tplink,archer-d50-v1)
 	ucidef_set_led_switch "lan" "LAN" "tp-link:white:lan" "switch0" "0x1c"
 	ucidef_set_led_switch "wan_data" "WAN Data" "tp-link:white:internet" "switch0" "0x02" "" "tx rx"
 	ucidef_set_led_switch "wan_link" "WAN Link" "tp-link:white:wan" "switch0" "0x02" "" "link"
+	;;
+tplink,archer-d7-v1|\
+tplink,archer-d7b-v1)
+	ucidef_set_led_switch "lan" "LAN" "tp-link:white:lan" "switch0" "0x3c"
 	;;
 tplink,cpe210-v1|\
 tplink,cpe220-v2|\
@@ -245,8 +254,10 @@ tplink,tl-wr842n-v2)
 trendnet,tew-823dru)
 	ucidef_set_led_netdev "wan" "WAN" "trendnet:green:planet" "eth0"
 	;;
-ubnt,bullet-m|\
+ubnt,bullet-m-ar7240|\
+ubnt,bullet-m-ar7241|\
 ubnt,bullet-m-xw|\
+ubnt,nanobridge-m|\
 ubnt,nanostation-loco-m|\
 ubnt,nanostation-loco-m-xw|\
 ubnt,nanostation-m|\

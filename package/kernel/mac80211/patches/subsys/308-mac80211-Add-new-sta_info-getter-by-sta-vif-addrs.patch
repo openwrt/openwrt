@@ -54,7 +54,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			       sta_info_hash_lookup(local, _addr), hash_node)
 --- a/net/mac80211/status.c
 +++ b/net/mac80211/status.c
-@@ -1085,19 +1085,13 @@ void ieee80211_tx_status(struct ieee8021
+@@ -1086,19 +1086,13 @@ void ieee80211_tx_status(struct ieee8021
  		.skb = skb,
  		.info = IEEE80211_SKB_CB(skb),
  	};

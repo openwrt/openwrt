@@ -933,7 +933,7 @@ static int edma_axi_probe(struct platform_device *pdev)
 		}
 
 		mac_addr = of_get_mac_address(pnp);
-		if (mac_addr)
+		if (!IS_ERR(mac_addr))
 			memcpy(edma_netdev[idx_mac]->dev_addr, mac_addr, ETH_ALEN);
 
 		idx_mac++;

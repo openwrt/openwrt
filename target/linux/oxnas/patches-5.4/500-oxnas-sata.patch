@@ -47,3 +47,13 @@
 +
  	};
  };
+--- a/arch/arm/boot/dts/ox820-cloudengines-pogoplug-series-3.dts
++++ b/arch/arm/boot/dts/ox820-cloudengines-pogoplug-series-3.dts
+@@ -111,3 +111,7 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_etha_mdio>;
+ };
++
++&sata {
++	status = "okay";
++};

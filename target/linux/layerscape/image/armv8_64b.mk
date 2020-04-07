@@ -15,6 +15,34 @@ define Device/Default
   KERNEL_ENTRY_POINT := 0x80080000
 endef
 
+define Device/ls1012afrdm
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := FRDM-LS1012A
+  DEVICE_PACKAGES += \
+    layerscape-ppfe \
+    tfa-ls1012afrdm \
+    kmod-ppfe
+  DEVICE_DTS := freescale/fsl-ls1012a-frdm
+  BLOCKSIZE := 256KiB
+  FILESYSTEMS := squashfs
+  IMAGES += sysupgrade.bin
+  IMAGE/firmware.bin := \
+    ls-clean | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 10M | \
+    ls-append pfe.itb | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to $$(BLOCKSIZE) | \
+    append-rootfs | pad-rootfs | check-size 67108865
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size 50331648 | append-metadata
+  KERNEL := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL_INITRAMFS := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  SUPPORTED_DEVICES := fsl,ls1012a-frdm
+endef
+TARGET_DEVICES += ls1012afrdm
+
 define Device/ls1012ardb
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1012A-RDB
@@ -247,7 +275,7 @@ define Device/traverse-ls1043
   DEVICE_PACKAGES += \
     layerscape-fman-ls1043ardb \
     uboot-envtools \
-    kmod-i2c-core kmod-i2c-mux-pca954x \
+    kmod-i2c-mux-pca954x \
     kmod-hwmon-core \
     kmod-gpio-pca953x kmod-input-gpio-keys-polled \
     kmod-rtc-isl1208
@@ -263,5 +291,6 @@ define Device/traverse-ls1043
   IMAGE/root = append-rootfs
   IMAGE/sysupgrade.bin = sysupgrade-tar | append-metadata
   MKUBIFS_OPTS := -m 2048 -e 124KiB -c 4096
+  SUPPORTED_DEVICES := traverse,ls1043s traverse,ls1043v
 endef
 TARGET_DEVICES += traverse-ls1043

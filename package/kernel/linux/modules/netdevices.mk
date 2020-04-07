@@ -323,7 +323,7 @@ define KernelPackage/switch-rtl8366-smi
   DEPENDS:=@GPIO_SUPPORT +kmod-swconfig +(TARGET_armvirt||TARGET_bcm27xx_bcm2708||TARGET_samsung||TARGET_tegra):kmod-of-mdio
   KCONFIG:=CONFIG_RTL8366_SMI
   FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8366_smi.ko
-  AUTOLOAD:=$(call AutoLoad,42,rtl8366_smi)
+  AUTOLOAD:=$(call AutoLoad,42,rtl8366_smi,1)
 endef
 
 define KernelPackage/switch-rtl8366-smi/description
@@ -371,7 +371,7 @@ define KernelPackage/switch-rtl8367b
   DEPENDS:=+kmod-switch-rtl8366-smi
   KCONFIG:=CONFIG_RTL8367B_PHY
   FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8367b.ko
-  AUTOLOAD:=$(call AutoLoad,43,rtl8367b)
+  AUTOLOAD:=$(call AutoLoad,43,rtl8367b,1)
 endef
 
 define KernelPackage/switch-rtl8367b/description
@@ -927,6 +927,7 @@ define KernelPackage/ifb
 	CONFIG_NET_CLS=y
   FILES:=$(LINUX_DIR)/drivers/net/ifb.ko
   AUTOLOAD:=$(call AutoLoad,34,ifb)
+  MODPARAMS.ifb:=numifbs=0
 endef
 
 define KernelPackage/ifb/description
@@ -1089,6 +1090,57 @@ define KernelPackage/be2net/description
 endef
 
 $(eval $(call KernelPackage,be2net))
+
+define KernelPackage/mlx4-core
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Mellanox ConnectX(R) mlx4 core Network Driver
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlx4/mlx4_core.ko \
+	$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlx4/mlx4_en.ko
+  KCONFIG:= CONFIG_MLX4_EN \
+	CONFIG_MLX4_EN_DCB=n \
+	CONFIG_MLX4_CORE=y \
+	CONFIG_MLX4_CORE_GEN2=y \
+	CONFIG_MLX4_DEBUG=n
+  AUTOLOAD:=$(call AutoProbe,mlx4_core mlx4_en)
+endef
+
+define KernelPackage/mlx4-core/description
+  Supports Mellanox ConnectX-3 series and previous cards
+endef
+
+$(eval $(call KernelPackage,mlx4-core))
+
+define KernelPackage/mlx5-core
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Mellanox ConnectX(R) mlx5 core Network Driver
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlx5/core/mlx5_core.ko
+  KCONFIG:= CONFIG_MLX5_CORE \
+	CONFIG_MLX5_CORE_EN=y \
+	CONFIG_MLX5_CORE_EN_DCB=n \
+	CONFIG_MLX5_CORE_IPOIB=n \
+	CONFIG_MLX5_EN_ARFS=n \
+	CONFIG_MLX5_EN_IPSEC=n \
+	CONFIG_MLX5_EN_RXNFC=y \
+	CONFIG_MLX5_EN_TLS=n \
+	CONFIG_MLX5_ESWITCH=n \
+	CONFIG_MLX5_FPGA=n \
+	CONFIG_MLX5_FPGA_IPSEC=n \
+	CONFIG_MLX5_FPGA_TLS=n \
+	CONFIG_MLX5_MPFS=y \
+	CONFIG_MLX5_SW_STEERING=n \
+	CONFIG_MLX5_TC_CT=n \
+	CONFIG_MLX5_TLS=n
+  AUTOLOAD:=$(call AutoProbe,mlx5_core)
+endef
+
+define KernelPackage/mlx5-core/description
+  Supports Mellanox Connect-IB/ConnectX-4 series and later cards
+endef
+
+$(eval $(call KernelPackage,mlx5-core))
 
 define KernelPackage/sfc
   SUBMENU:=$(NETWORK_DEVICES_MENU)

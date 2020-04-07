@@ -18,7 +18,7 @@ define Device/airlink101_ar670w
   IMAGE_SIZE := 3840k
   KERNEL := $(KERNEL_DTB) | pad-to $$(BLOCKSIZE)
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	wrg-header wrgn16a_airlink_ar670w
   SUPPORTED_DEVICES += ar670w
 endef
@@ -87,7 +87,7 @@ define Device/dlink_dap-1522-a1
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 96 | \
 	append-rootfs | pad-rootfs -x 96 | wrg-header wapnd01_dlink_dap1522 | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
 endef
 TARGET_DEVICES += dlink_dap-1522-a1
 

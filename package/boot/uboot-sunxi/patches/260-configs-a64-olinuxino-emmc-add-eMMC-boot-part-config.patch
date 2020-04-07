@@ -1,0 +1,29 @@
+From 7fa26c287b225c5e42be6d1a81d45592ec45bd9c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Wed, 18 Mar 2020 12:59:01 +0100
+Subject: [PATCH] configs: a64-olinuxino-emmc: add eMMC boot part config
+ commands
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+mmc bootbus and partconf commands are needed in order to be able to
+configure booting from separate boot0/boot1 eMMC partitions.
+
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ configs/a64-olinuxino-emmc_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/configs/a64-olinuxino-emmc_defconfig b/configs/a64-olinuxino-emmc_defconfig
+index 8443a6dae9e3..9a96a964b1dc 100644
+--- a/configs/a64-olinuxino-emmc_defconfig
++++ b/configs/a64-olinuxino-emmc_defconfig
+@@ -12,6 +12,7 @@ CONFIG_USE_PREBOOT=y
+ CONFIG_DEFAULT_DEVICE_TREE="sun50i-a64-olinuxino-emmc"
+ CONFIG_SYS_RELOC_GD_ENV_ADDR=y
+ CONFIG_SUN8I_EMAC=y
++CONFIG_SUPPORT_EMMC_BOOT=y
+ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_OHCI_HCD=y
+ CONFIG_SYS_USB_EVENT_POLL_VIA_INT_QUEUE=y

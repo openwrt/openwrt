@@ -1,8 +1,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION \
-	       WRGG_DEVNAME WRGG_SIGNATURE
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
+DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
+DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
 
 define Device/Default
 	PROFILES := Default
@@ -51,7 +52,6 @@ define Device/DniImage
 	IMAGE/factory.img := append-kernel | pad-offset 64k 64 | append-uImage-fakehdr filesystem | append-rootfs | pad-rootfs | netgear-dni
 	IMAGE/sysupgrade.bin := append-kernel | pad-offset 64k 64 | append-uImage-fakehdr filesystem | append-rootfs | pad-rootfs | append-metadata
 endef
-DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 
 define Build/mkmylofw_32m
 	$(eval device_id=$(word 1,$(1)))
@@ -95,7 +95,7 @@ define Device/8dev_habanero-dvk
 	SOC := qcom-ipq4019
 	DEVICE_PACKAGES := ipq-wifi-8dev_habanero-dvk
 	IMAGES := sysupgrade.bin
-	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += 8dev_habanero-dvk
 
@@ -287,8 +287,8 @@ define Device/dlink_dap-2610
 	# the sysupgrade image only the kernel is included in the wrgg checksum,
 	# but this is not flashable from the D-link http server.
 	# append-rootfs must start on an erase block boundary.
-	IMAGE/factory.bin    := append-kernel | pad-offset 6144k 160 | append-rootfs | wrgg-image | check-size $$$$(IMAGE_SIZE)
-	IMAGE/sysupgrade.bin := append-kernel | wrgg-image | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
+	IMAGE/factory.bin    := append-kernel | pad-offset 6144k 160 | append-rootfs | wrgg-image | check-size
+	IMAGE/sysupgrade.bin := append-kernel | wrgg-image | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
 	DEVICE_PACKAGES := ipq-wifi-dlink_dap2610
 endef
 TARGET_DEVICES += dlink_dap-2610
@@ -328,7 +328,7 @@ define Device/engenius_emd1
 	IMAGE_SIZE := 30720k
 	IMAGES := sysupgrade.bin factory.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
-	IMAGE/factory.bin := qsdk-ipq-factory-nor | check-size $$$$(IMAGE_SIZE)
+	IMAGE/factory.bin := qsdk-ipq-factory-nor | check-size
 endef
 TARGET_DEVICES += engenius_emd1
 
@@ -352,9 +352,9 @@ define Device/engenius_ens620ext
 	KERNEL_SIZE := 5120k
 	FILESYSTEMS := squashfs
 	IMAGES := sysupgrade.bin factory_30.bin factory_35.bin
-	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
-	IMAGE/factory_30.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | SenaoFW $$$$(PRODUCT_ID) $$$$(FW_VER)
-	IMAGE/factory_35.bin := qsdk-ipq-factory-nor | check-size $$$$(IMAGE_SIZE) | SenaoFW $$$$(PRODUCT_ID_NEW) $$$$(FW_VER_NEW)
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
+	IMAGE/factory_30.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size | SenaoFW $$$$(PRODUCT_ID) $$$$(FW_VER)
+	IMAGE/factory_35.bin := qsdk-ipq-factory-nor | check-size | SenaoFW $$$$(PRODUCT_ID_NEW) $$$$(FW_VER_NEW)
 endef
 TARGET_DEVICES += engenius_ens620ext
 

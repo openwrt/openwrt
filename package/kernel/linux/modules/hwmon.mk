@@ -26,7 +26,7 @@ $(eval $(call KernelPackage,hwmon-core))
 
 define AddDepends/hwmon
   SUBMENU:=$(HWMON_MENU)
-  DEPENDS:=kmod-hwmon-core $(1)
+  DEPENDS:=+kmod-hwmon-core $(1)
 endef
 
 define KernelPackage/hwmon-ads1015
@@ -77,6 +77,21 @@ endef
 $(eval $(call KernelPackage,hwmon-adt7475))
 
 
+define KernelPackage/hwmon-drivetemp
+  TITLE:=Hard disk drives with temperature sensor
+  KCONFIG:=CONFIG_SENSORS_DRIVETEMP
+  FILES:=$(LINUX_DIR)/drivers/hwmon/drivetemp.ko
+  AUTOLOAD:=$(call AutoLoad,60,drivetemp)
+  $(call AddDepends/hwmon,+kmod-ata-core +kmod-scsi-core)
+endef
+
+define KernelPackage/hwmon-drivetemp/description
+ Kernel module for Hard disk drives with temperature sensor
+endef
+
+$(eval $(call KernelPackage,hwmon-drivetemp))
+
+
 define KernelPackage/hwmon-gpiofan
   TITLE:=Generic GPIO FAN support
   KCONFIG:=CONFIG_SENSORS_GPIO_FAN
@@ -90,6 +105,21 @@ define KernelPackage/hwmon-gpiofan/description
 endef
 
 $(eval $(call KernelPackage,hwmon-gpiofan))
+
+
+define KernelPackage/hwmon-f71882fg
+  TITLE:=F71882FG compatible monitoring support
+  KCONFIG:=CONFIG_SENSORS_F71882FG
+  FILES:=$(LINUX_DIR)/drivers/hwmon/f71882fg.ko
+  AUTOLOAD:=$(call AutoProbe,f71882fg)
+  $(call AddDepends/hwmon,@TARGET_x86)
+endef
+
+define KernelPackage/hwmon-f71882fg/description
+ Kernel module for hardware monitoring via many Fintek Super-IO chips.
+endef
+
+$(eval $(call KernelPackage,hwmon-f71882fg))
 
 
 define KernelPackage/hwmon-ina209

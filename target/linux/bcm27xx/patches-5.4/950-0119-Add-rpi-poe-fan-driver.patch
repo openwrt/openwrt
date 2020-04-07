@@ -108,7 +108,7 @@ Signed-off-by: Serge Schneider <serge@raspberrypi.org>
 +the fan to the user space through the hwmon sysfs interface.
 --- a/drivers/hwmon/Kconfig
 +++ b/drivers/hwmon/Kconfig
-@@ -1346,6 +1346,17 @@ config SENSORS_RASPBERRYPI_HWMON
+@@ -1356,6 +1356,17 @@ config SENSORS_RASPBERRYPI_HWMON
  	  This driver can also be built as a module. If so, the module
  	  will be called raspberrypi-hwmon.
  
@@ -128,7 +128,7 @@ Signed-off-by: Serge Schneider <serge@raspberrypi.org>
  	depends on GPIOLIB || COMPILE_TEST
 --- a/drivers/hwmon/Makefile
 +++ b/drivers/hwmon/Makefile
-@@ -144,6 +144,7 @@ obj-$(CONFIG_SENSORS_PCF8591)	+= pcf8591
+@@ -145,6 +145,7 @@ obj-$(CONFIG_SENSORS_PCF8591)	+= pcf8591
  obj-$(CONFIG_SENSORS_POWR1220)  += powr1220.o
  obj-$(CONFIG_SENSORS_PWM_FAN)	+= pwm-fan.o
  obj-$(CONFIG_SENSORS_RASPBERRYPI_HWMON)	+= raspberrypi-hwmon.o

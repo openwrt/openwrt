@@ -14,7 +14,6 @@ SUBTARGETS:=generic smp
 FEATURES:=squashfs usb atm pci pcmcia usbgadget
 KERNEL_PATCHVER:=4.14
 KERNEL_TESTING_PATCHVER:=4.19
-MAINTAINER:=Jonas Gorski <jogo@openwrt.org>
 
 define Target/Description
 	Build firmware images for Broadcom based xDSL/routers

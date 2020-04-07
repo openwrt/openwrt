@@ -327,7 +327,7 @@ group_add_next() {
 	gids=$(cut -d: -f3 ${IPKG_INSTROOT}/etc/group)
 	gid=65536
 	while echo "$gids" | grep -q "^$gid$"; do
-	        gid=$((gid + 1))
+		gid=$((gid + 1))
 	done
 	group_add $1 $gid
 	echo $gid
@@ -355,7 +355,7 @@ user_add() {
 		uids=$(cut -d: -f3 ${IPKG_INSTROOT}/etc/passwd)
 		uid=65536
 		while echo "$uids" | grep -q "^$uid$"; do
-		        uid=$((uid + 1))
+			uid=$((uid + 1))
 		done
 	}
 	[ -z "$gid" ] && gid=$uid

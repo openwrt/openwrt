@@ -3,7 +3,6 @@
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
 . /lib/functions/caldata.sh
-. /lib/functions/mikrotik-caldata.sh
 
 board=$(board_name)
 
@@ -42,10 +41,6 @@ case "$FIRMWARE" in
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env ethaddr)
 		;;
-	mikrotik,routerboard-wap-g-5hact2hnd)
-		mikrotik_caldata_extract "art" 0x1000 0x440
-		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x10) +2)
-		;;
 	nec,wg800hp)
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_text board_data 0x680)
@@ -80,6 +75,7 @@ case "$FIRMWARE" in
 	tplink,tl-wdr3600-v1|\
 	tplink,tl-wdr4300-v1|\
 	tplink,tl-wdr4300-v1-il|\
+	tplink,tl-wdr4310-v1|\
 	tplink,tl-wdr4900-v2|\
 	winchannel,wb2000)
 		caldata_extract "art" 0x5000 0x440
@@ -90,7 +86,9 @@ case "$FIRMWARE" in
 	tplink,tl-wr2543-v1|\
 	tplink,tl-wr842n-v1|\
 	ubnt,airrouter|\
-	ubnt,bullet-m|\
+	ubnt,bullet-m-ar7240|\
+	ubnt,bullet-m-ar7241|\
+	ubnt,nanobridge-m|\
 	ubnt,nanostation-loco-m|\
 	ubnt,nanostation-m|\
 	ubnt,picostation-m|\

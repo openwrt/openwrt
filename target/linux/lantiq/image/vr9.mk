@@ -1,3 +1,5 @@
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
+
 define Device/alphanetworks_asl56026
   DEVICE_VENDOR := Alpha
   DEVICE_MODEL := ASL56026
@@ -193,13 +195,12 @@ define Device/netgear_dm200
   IMAGE/sysupgrade.bin := append-kernel | \
 	pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
 	pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-metadata | check-size
   IMAGE/factory.img := $$(IMAGE/sysupgrade.bin) | netgear-dni
   IMAGE_SIZE := 7872k
   NETGEAR_BOARD_ID := DM200
   NETGEAR_HW_ID := 29765233+8+0+64+0+0
 endef
-DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 TARGET_DEVICES += netgear_dm200
 
 define Device/zyxel_p-2812hnu-f1
