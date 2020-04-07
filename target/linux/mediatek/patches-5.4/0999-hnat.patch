@@ -1,7 +1,5 @@
-Index: linux-5.4.28/drivers/net/ethernet/mediatek/Kconfig
-===================================================================
---- linux-5.4.28.orig/drivers/net/ethernet/mediatek/Kconfig
-+++ linux-5.4.28/drivers/net/ethernet/mediatek/Kconfig
+--- a/drivers/net/ethernet/mediatek/Kconfig
++++ b/drivers/net/ethernet/mediatek/Kconfig
 @@ -14,4 +14,8 @@ config NET_MEDIATEK_SOC
  	  This driver supports the gigabit ethernet MACs in the
  	  MediaTek SoC family.
@@ -11,19 +9,15 @@ Index: linux-5.4.28/drivers/net/ethernet/mediatek/Kconfig
 +        depends on NET_MEDIATEK_SOC
 +
  endif #NET_VENDOR_MEDIATEK
-Index: linux-5.4.28/drivers/net/ethernet/mediatek/Makefile
-===================================================================
---- linux-5.4.28.orig/drivers/net/ethernet/mediatek/Makefile
-+++ linux-5.4.28/drivers/net/ethernet/mediatek/Makefile
+--- a/drivers/net/ethernet/mediatek/Makefile
++++ b/drivers/net/ethernet/mediatek/Makefile
 @@ -5,3 +5,4 @@
  
  obj-$(CONFIG_NET_MEDIATEK_SOC)                 += mtk_eth.o
  mtk_eth-y := mtk_eth_soc.o mtk_sgmii.o mtk_eth_path.o
 +mtk_eth-$(CONFIG_NET_MEDIATEK_OFFLOAD)	+= mtk_offload.o mtk_debugfs.o
-Index: linux-5.4.28/drivers/net/ethernet/mediatek/mtk_debugfs.c
-===================================================================
 --- /dev/null
-+++ linux-5.4.28/drivers/net/ethernet/mediatek/mtk_debugfs.c
++++ b/drivers/net/ethernet/mediatek/mtk_debugfs.c
 @@ -0,0 +1,117 @@
 +/*   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -142,10 +136,8 @@ Index: linux-5.4.28/drivers/net/ethernet/mediatek/mtk_debugfs.c
 +
 +	return 0;
 +}
-Index: linux-5.4.28/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-===================================================================
---- linux-5.4.28.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ linux-5.4.28/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -19,6 +19,8 @@
  #include <linux/interrupt.h>
  #include <linux/pinctrl/devinfo.h>
@@ -259,10 +251,8 @@ Index: linux-5.4.28/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  };
  
  static const struct mtk_soc_data mt7623_data = {
-Index: linux-5.4.28/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-===================================================================
---- linux-5.4.28.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-+++ linux-5.4.28/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -771,6 +771,13 @@ enum mkt_eth_capabilities {
  		      MTK_MUX_U3_GMAC2_TO_QPHY | \
  		      MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA)
@@ -348,10 +338,8 @@ Index: linux-5.4.28/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +int mtk_offload_check_rx(struct mtk_eth *eth, struct sk_buff *skb, u32 rxd4);
 +
  #endif /* MTK_ETH_H */
-Index: linux-5.4.28/drivers/net/ethernet/mediatek/mtk_offload.c
-===================================================================
 --- /dev/null
-+++ linux-5.4.28/drivers/net/ethernet/mediatek/mtk_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_offload.c
 @@ -0,0 +1,593 @@
 +/*   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -946,10 +934,8 @@ Index: linux-5.4.28/drivers/net/ethernet/mediatek/mtk_offload.c
 +{
 +	mtk_ppe_stop(eth);
 +}
-Index: linux-5.4.28/drivers/net/ethernet/mediatek/mtk_offload.h
-===================================================================
 --- /dev/null
-+++ linux-5.4.28/drivers/net/ethernet/mediatek/mtk_offload.h
++++ b/drivers/net/ethernet/mediatek/mtk_offload.h
 @@ -0,0 +1,298 @@
 +/*   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by

@@ -1,6 +1,6 @@
 --- a/drivers/tty/serial/8250/8250.h
 +++ b/drivers/tty/serial/8250/8250.h
-@@ -80,6 +80,7 @@ struct serial8250_config {
+@@ -82,6 +82,7 @@ struct serial8250_config {
  #define UART_CAP_MINI	(1 << 17)	/* Mini UART on BCM283X family lacks:
  					 * STOP PARITY EPAR SPAR WLEN5 WLEN6
  					 */
@@ -10,7 +10,7 @@
  #define UART_BUG_TXEN	(1 << 1)	/* UART has buggy TX IIR status */
 --- a/drivers/tty/serial/8250/8250_port.c
 +++ b/drivers/tty/serial/8250/8250_port.c
-@@ -297,7 +297,7 @@ static const struct serial8250_config ua
+@@ -290,7 +290,7 @@ static const struct serial8250_config ua
  		.tx_loadsz	= 16,
  		.fcr		= UART_FCR_ENABLE_FIFO |
  				  UART_FCR_CLEAR_RCVR | UART_FCR_CLEAR_XMIT,
@@ -19,7 +19,7 @@
  	},
  	[PORT_NPCM] = {
  		.name		= "Nuvoton 16550",
-@@ -2648,6 +2648,11 @@ serial8250_do_set_termios(struct uart_po
+@@ -2559,6 +2559,11 @@ serial8250_do_set_termios(struct uart_po
  	unsigned long flags;
  	unsigned int baud, quot, frac = 0;
  

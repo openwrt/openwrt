@@ -1,7 +1,6 @@
-diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
---- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c	2020-03-31 16:05:24.398403054 +0800
-+++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c	2020-03-31 16:05:39.142008780 +0800
-@@ -1284,7 +1284,7 @@
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1284,7 +1284,7 @@ static int mtk_poll_rx(struct napi_struc
  		skb->protocol = eth_type_trans(skb, netdev);
  
  		if (netdev->features & NETIF_F_HW_VLAN_CTAG_RX &&
@@ -10,9 +9,8 @@ diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/m
  			__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q),
  					       RX_DMA_VID(trxd.rxd3));
  		skb_record_rx_queue(skb, 0);
-diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
---- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h	2020-03-31 16:05:29.726260583 +0800
-+++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h	2020-03-31 16:05:43.493892389 +0800
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -293,6 +293,7 @@
  #define RX_DMA_LSO		BIT(30)
  #define RX_DMA_PLEN0(_x)	(((_x) & 0x3fff) << 16)

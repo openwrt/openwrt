@@ -1,7 +1,6 @@
-diff -urN b/drivers/net/ethernet/mediatek/mtk_eth_soc.c c/drivers/net/ethernet/mediatek/mtk_eth_soc.c
---- b/drivers/net/ethernet/mediatek/mtk_eth_soc.c	2020-03-31 16:05:39.142008780 +0800
-+++ c/drivers/net/ethernet/mediatek/mtk_eth_soc.c	2020-03-31 16:08:12.422190657 +0800
-@@ -1090,17 +1090,6 @@
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1090,17 +1090,6 @@ static void mtk_wake_queue(struct mtk_et
  	}
  }
  
@@ -19,7 +18,7 @@ diff -urN b/drivers/net/ethernet/mediatek/mtk_eth_soc.c c/drivers/net/ethernet/m
  static int mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
  {
  	struct mtk_mac *mac = netdev_priv(dev);
-@@ -1121,7 +1110,7 @@
+@@ -1121,7 +1110,7 @@ static int mtk_start_xmit(struct sk_buff
  
  	tx_num = mtk_cal_txd_req(skb);
  	if (unlikely(atomic_read(&ring->free_count) <= tx_num)) {
@@ -28,7 +27,7 @@ diff -urN b/drivers/net/ethernet/mediatek/mtk_eth_soc.c c/drivers/net/ethernet/m
  		netif_err(eth, tx_queued, dev,
  			  "Tx Ring full when queue awake!\n");
  		spin_unlock(&eth->page_lock);
-@@ -1147,7 +1136,7 @@
+@@ -1147,7 +1136,7 @@ static int mtk_start_xmit(struct sk_buff
  		goto drop;
  
  	if (unlikely(atomic_read(&ring->free_count) <= ring->thresh))

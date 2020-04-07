@@ -1,8 +1,6 @@
-Index: linux-4.19.88/drivers/net/phy/Kconfig
-===================================================================
---- linux-4.19.88.orig/drivers/net/phy/Kconfig
-+++ linux-4.19.88/drivers/net/phy/Kconfig
-@@ -26,6 +26,12 @@ config MDIO_BCM_IPROC
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -42,6 +42,12 @@ config MDIO_BCM_IPROC
  	  This module provides a driver for the MDIO busses found in the
  	  Broadcom iProc SoC's.
  
@@ -15,11 +13,9 @@ Index: linux-4.19.88/drivers/net/phy/Kconfig
  config MDIO_BCM_UNIMAC
  	tristate "Broadcom UniMAC MDIO bus controller"
  	depends on HAS_IOMEM
-Index: linux-4.19.88/drivers/net/phy/Makefile
-===================================================================
---- linux-4.19.88.orig/drivers/net/phy/Makefile
-+++ linux-4.19.88/drivers/net/phy/Makefile
-@@ -101,4 +101,5 @@ obj-$(CONFIG_TERANETICS_PHY)	+= teraneti
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -111,4 +111,5 @@ obj-$(CONFIG_TERANETICS_PHY)	+= teraneti
  obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
  obj-$(CONFIG_XILINX_GMII2RGMII) += xilinx_gmii2rgmii.o
  obj-$(CONFIG_MT753X_GSW)        += mtk/mt753x/
