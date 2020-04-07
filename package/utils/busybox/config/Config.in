@@ -702,30 +702,30 @@ config BUSYBOX_CONFIG_EFENCE
 
 endchoice
 
-source libbb/Config.in
+source "libbb/Config.in"
 
 endmenu
 
 comment "Applets"
 
-source archival/Config.in
-source coreutils/Config.in
-source console-tools/Config.in
-source debianutils/Config.in
-source klibc-utils/Config.in
-source editors/Config.in
-source findutils/Config.in
-source init/Config.in
-source loginutils/Config.in
-source e2fsprogs/Config.in
-source modutils/Config.in
-source util-linux/Config.in
-source miscutils/Config.in
-source networking/Config.in
-source printutils/Config.in
-source mailutils/Config.in
-source procps/Config.in
-source runit/Config.in
-source selinux/Config.in
-source shell/Config.in
-source sysklogd/Config.in
+source "archival/Config.in"
+source "coreutils/Config.in"
+source "console-tools/Config.in"
+source "debianutils/Config.in"
+source "klibc-utils/Config.in"
+source "editors/Config.in"
+source "findutils/Config.in"
+source "init/Config.in"
+source "loginutils/Config.in"
+source "e2fsprogs/Config.in"
+source "modutils/Config.in"
+source "util-linux/Config.in"
+source "miscutils/Config.in"
+source "networking/Config.in"
+source "printutils/Config.in"
+source "mailutils/Config.in"
+source "procps/Config.in"
+source "runit/Config.in"
+source "selinux/Config.in"
+source "shell/Config.in"
+source "sysklogd/Config.in"
