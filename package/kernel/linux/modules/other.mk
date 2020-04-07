@@ -214,6 +214,22 @@ endef
 $(eval $(call KernelPackage,gpio-dev))
 
 
+define KernelPackage/gpio-f7188x
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Fintek F718xx/F818xx GPIO Support
+  DEPENDS:=@GPIO_SUPPORT @TARGET_x86
+  KCONFIG:=CONFIG_GPIO_F7188X
+  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-f7188x.ko
+  AUTOLOAD:=$(call AutoProbe,gpio-f7188x)
+endef
+
+define KernelPackage/gpio-f7188x/description
+  Kernel module for the GPIOs found on many Fintek Super-IO chips.
+endef
+
+$(eval $(call KernelPackage,gpio-f7188x))
+
+
 define KernelPackage/gpio-mcp23s08
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Microchip MCP23xxx I/O expander
@@ -1228,3 +1244,19 @@ define KernelPackage/it87-wdt/description
 endef
 
 $(eval $(call KernelPackage,it87-wdt))
+
+
+define KernelPackage/f71808e-wdt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Fintek F718xx/F818xx Watchdog Timer
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_F71808E_WDT
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/f71808e_wdt.ko
+  AUTOLOAD:=$(call AutoProbe,f71808e-wdt,1)
+endef
+
+define KernelPackage/f71808e-wdt/description
+  Kernel module for the watchdog timer found on many Fintek Super-IO chips.
+endef
+
+$(eval $(call KernelPackage,f71808e-wdt))

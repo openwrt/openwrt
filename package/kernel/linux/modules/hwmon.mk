@@ -107,6 +107,21 @@ endef
 $(eval $(call KernelPackage,hwmon-gpiofan))
 
 
+define KernelPackage/hwmon-f71882fg
+  TITLE:=F71882FG compatible monitoring support
+  KCONFIG:=CONFIG_SENSORS_F71882FG
+  FILES:=$(LINUX_DIR)/drivers/hwmon/f71882fg.ko
+  AUTOLOAD:=$(call AutoProbe,f71882fg)
+  $(call AddDepends/hwmon,@TARGET_x86)
+endef
+
+define KernelPackage/hwmon-f71882fg/description
+ Kernel module for hardware monitoring via many Fintek Super-IO chips.
+endef
+
+$(eval $(call KernelPackage,hwmon-f71882fg))
+
+
 define KernelPackage/hwmon-ina209
   TITLE:=INA209 monitoring support
   KCONFIG:=CONFIG_SENSORS_INA209

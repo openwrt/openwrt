@@ -32,7 +32,7 @@ define Host/Compile
 	$(call cc,dgfirmware)
 	$(call cc,mksenaofw md5, -Wall --std=gnu99)
 	$(call cc,trx2usr)
-	$(call cc,ptgen)
+	$(call cc,ptgen cyg_crc32)
 	$(call cc,srec2bin)
 	$(call cc,mkmylofw)
 	$(call cc,mkcsysimg)

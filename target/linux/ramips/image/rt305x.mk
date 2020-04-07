@@ -683,6 +683,7 @@ define Device/netgear_wnce2001
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WNCE2001
   SUPPORTED_DEVICES += wnce2001
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wnce2001
 

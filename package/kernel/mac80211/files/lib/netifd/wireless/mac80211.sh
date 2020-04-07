@@ -954,8 +954,10 @@ drv_mac80211_setup() {
 			[ "${NEW_MD5}" = "${OLD_MD5}" ] || {
 				ubus call hostapd.$primary_ap reload
 				no_reload=$?
-				mac80211_vap_cleanup hostapd "${OLDAPLIST}"
-		                [ -n "${NEWAPLIST}" ] && mac80211_iw_interface_add "$phy" "${NEWAPLIST%% *}" __ap || return
+				if [ "$no_reload" != "0" ]; then
+					mac80211_vap_cleanup hostapd "${OLDAPLIST}"
+			                [ -n "${NEWAPLIST}" ] && mac80211_iw_interface_add "$phy" "${NEWAPLIST%% *}" __ap || return
+				fi
 			}
 		fi
 		if [ "$no_reload" != "0" ]; then

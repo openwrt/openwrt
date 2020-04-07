@@ -11,14 +11,14 @@ case "$FIRMWARE" in
 "ath10k/cal-pci-0000:00:00.0.bin")
 	case $board in
 	mikrotik,routerboard-wap-g-5hact2hnd)
-		mikrotik_caldata_extract "art" 0x5000 0x844
+		mikrotik_caldata_extract "hard_config" 0x5000 0x844
 		;;
 	esac
 	;;
 "ath10k/cal-pci-0000:01:00.0.bin")
 	case $board in
 	mikrotik,routerboard-922uags-5hpacd)
-		mikrotik_caldata_extract "art" 0x5000 0x844
+		mikrotik_caldata_extract "hard_config" 0x5000 0x844
 		;;
 	esac
 	;;

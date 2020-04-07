@@ -66,6 +66,16 @@ define Device/tplink_tl-mr3420-v2
 endef
 TARGET_DEVICES += tplink_tl-mr3420-v2
 
+define Device/tplink_tl-mr3420-v3
+  $(Device/tplink-4mlzma)
+  SOC := qca9531
+  DEVICE_MODEL := TL-MR3420
+  DEVICE_VARIANT := v3
+  TPLINK_HWID := 0x34200003
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += tplink_tl-mr3420-v3
+
 define Device/tplink_tl-wa701nd-v1
   $(Device/tplink-4m)
   SOC := ar7240
@@ -129,6 +139,16 @@ define Device/tplink_tl-wa850re-v2
   SUPPORTED_DEVICES += tl-wa850re-v2
 endef
 TARGET_DEVICES += tplink_tl-wa850re-v2
+
+define Device/tplink_tl-wa860re-v1
+  $(Device/tplink-4mlzma)
+  SOC := ar9341
+  DEVICE_MODEL := TL-WA860RE
+  DEVICE_VARIANT := v1
+  TPLINK_HWID := 0x08600001
+  SUPPORTED_DEVICES += tl-wa860re
+endef
+TARGET_DEVICES += tplink_tl-wa860re-v1
 
 define Device/tplink_tl-wa901nd-v1
   $(Device/tplink-4m)

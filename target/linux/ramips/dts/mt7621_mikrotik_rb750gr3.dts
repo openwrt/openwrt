@@ -26,13 +26,13 @@
 
 		pwr {
 			label = "rb750gr3:blue:pwr";
-			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
 		led_usr: usr {
 			label = "rb750gr3:green:usr";
-			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -41,20 +41,20 @@
 
 		mode {
 			label = "mode";
-			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
 		};
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
 
 	beeper {
 		compatible = "gpio-beeper";
-		gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 	};
 
 	gpio_export {
@@ -64,7 +64,7 @@
 		usb_power {
 			gpio-export,name = "usb_power";
 			gpio-export,output = <1>;
-			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
@@ -129,16 +129,47 @@
 	};
 };
 
-&ethernet {
+&gmac0 {
 	mtd-mac-address = <&hard_config 0x0010>;
 	mtd-mac-address-increment = <1>;
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "wan";
+			mtd-mac-address = <&hard_config 0x0010>;
+			mtd-mac-address-increment = <2>;
+		};
+
+		port@1 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan4";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "lan5";
+		};
+	};
 };
 
 &state_default {
 	gpio {
 		/* via gpio7 (uart3 group) the PoE status can be read */
-		ralink,group = "uart2", "uart3", "jtag", "wdt";
-		ralink,function = "gpio";
+		groups = "uart2", "uart3", "jtag", "wdt";
+		function = "gpio";
 	};
 };
 

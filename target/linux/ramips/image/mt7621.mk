@@ -308,7 +308,6 @@ define Device/gehua_ghl-r-001
   DEVICE_MODEL := GHL-R-001
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport wpad-basic
-  DEFAULT := n
 endef
 TARGET_DEVICES += gehua_ghl-r-001
 
@@ -498,6 +497,7 @@ TARGET_DEVICES += mikrotik_rb750gr3
 define Device/mikrotik_rbm11g
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD M11G
+  DEFAULT := n # disabled due to unknown port assignment
 endef
 TARGET_DEVICES += mikrotik_rbm11g
 
@@ -785,7 +785,7 @@ define Device/ubiquiti_edgerouterx-sfp
   $(Device/ubiquiti_edgerouterx)
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := EdgeRouter X-SFP
-  DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x kmod-i2c-gpio-custom
+  DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x
   SUPPORTED_DEVICES += ubnt-erx-sfp
 endef
 TARGET_DEVICES += ubiquiti_edgerouterx-sfp

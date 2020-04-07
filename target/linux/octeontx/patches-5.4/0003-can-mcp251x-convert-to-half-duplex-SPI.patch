@@ -12,11 +12,9 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  drivers/net/can/spi/mcp251x.c | 10 +++++-----
  1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/net/can/spi/mcp251x.c b/drivers/net/can/spi/mcp251x.c
-index 0b0dd3f0..c655b29 100644
 --- a/drivers/net/can/spi/mcp251x.c
 +++ b/drivers/net/can/spi/mcp251x.c
-@@ -345,8 +345,7 @@ static u8 mcp251x_read_reg(struct spi_device *spi, uint8_t reg)
+@@ -291,23 +291,23 @@ static u8 mcp251x_read_reg(struct spi_de
  	priv->spi_tx_buf[0] = INSTRUCTION_READ;
  	priv->spi_tx_buf[1] = reg;
  
@@ -26,9 +24,8 @@ index 0b0dd3f0..c655b29 100644
  
  	return val;
  }
-@@ -354,15 +353,16 @@ static u8 mcp251x_read_reg(struct spi_device *spi, uint8_t reg)
- static void mcp251x_read_2regs(struct spi_device *spi, uint8_t reg,
- 		uint8_t *v1, uint8_t *v2)
+ 
+ static void mcp251x_read_2regs(struct spi_device *spi, u8 reg, u8 *v1, u8 *v2)
  {
 +	u8 val[4] = {0};
  	struct mcp251x_priv *priv = spi_get_drvdata(spi);
@@ -45,7 +42,4 @@ index 0b0dd3f0..c655b29 100644
 +	*v2 = val[1];
  }
  
- static void mcp251x_write_reg(struct spi_device *spi, u8 reg, uint8_t val)
--- 
-2.7.4
-
+ static void mcp251x_write_reg(struct spi_device *spi, u8 reg, u8 val)

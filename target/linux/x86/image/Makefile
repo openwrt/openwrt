@@ -38,6 +38,8 @@ endif
 
 ROOTPART:=$(call qstrip,$(CONFIG_TARGET_ROOTFS_PARTNAME))
 ROOTPART:=$(if $(ROOTPART),$(ROOTPART),PARTUUID=$(IMG_PART_SIGNATURE)-02)
+GPT_ROOTPART:=$(call qstrip,$(CONFIG_TARGET_ROOTFS_PARTNAME))
+GPT_ROOTPART:=$(if $(GPT_ROOTPART),$(GPT_ROOTPART),PARTUUID=$(shell echo $(IMG_PART_DISKGUID) | sed 's/00$$/02/'))
 
 GRUB_TIMEOUT:=$(call qstrip,$(CONFIG_GRUB_TIMEOUT))
 GRUB_TITLE:=$(call qstrip,$(CONFIG_GRUB_TITLE))
@@ -47,7 +49,12 @@ BOOTOPTS:=$(call qstrip,$(CONFIG_GRUB_BOOTOPTS))
 define Build/combined
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/boot/vmlinuz
 	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
-	PADDING="$(CONFIG_TARGET_IMAGES_PAD)" SIGNATURE="$(IMG_PART_SIGNATURE)" $(SCRIPT_DIR)/gen_image_generic.sh \
+	$(if $(filter $(1),efi),
+		$(INSTALL_DIR) $@.boot/efi/boot
+		$(CP) $(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_x86_64),x64,ia32).efi $@.boot/efi/boot/
+	)
+	PADDING="1" SIGNATURE="$(IMG_PART_SIGNATURE)" \
+		$(if $(filter $(1),efi),GUID="$(IMG_PART_DISKGUID)") $(SCRIPT_DIR)/gen_image_generic.sh \
 		$@ \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS) \
@@ -61,6 +68,7 @@ define Build/grub-config
 		-e 's#@SERIAL_CONFIG@#$(strip $(GRUB_SERIAL_CONFIG))#g' \
 		-e 's#@TERMINAL_CONFIG@#$(strip $(GRUB_TERMINAL_CONFIG))#g' \
 		-e 's#@ROOTPART@#root=$(ROOTPART) rootwait#g' \
+		-e 's#@GPT_ROOTPART@#root=$(GPT_ROOTPART) rootwait#g' \
 		-e 's#@CMDLINE@#$(BOOTOPTS) $(GRUB_CONSOLE_CMDLINE)#g' \
 		-e 's#@TIMEOUT@#$(GRUB_TIMEOUT)#g' \
 		-e 's#@TITLE@#$(GRUB_TITLE)#g' \
@@ -70,52 +78,75 @@ endef
 define Build/grub-install
 	rm -fR $@.grub2
 	$(INSTALL_DIR) $@.grub2
-	$(CP) $(STAGING_DIR_HOST)/lib/grub/i386-pc/*.img \
-		$(STAGING_DIR_HOST)/lib/grub/grub2-$(GRUB2_VARIANT)/core.img \
-		$@.grub2/
+	$(CP) $(STAGING_DIR_IMAGE)/grub2/boot.img $@.grub2/
+	$(CP) $(STAGING_DIR_IMAGE)/grub2/$(if $(filter $(1),efi),gpt,$(GRUB2_VARIANT))-core.img $@.grub2/core.img
 	echo '(hd0) $@' > $@.grub2/device.map
 	$(STAGING_DIR_HOST)/bin/grub-bios-setup \
 		-m "$@.grub2/device.map" \
 		-d "$@.grub2" \
-		-r "hd0,msdos1" \
+		-r "hd0,$(if $(filter $(1),efi),gpt1,msdos1)" \
 		$@
 endef
 
 define Build/iso
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/boot/vmlinuz
 	cat \
-		$(STAGING_DIR_HOST)/lib/grub/i386-pc/cdboot.img \
-		$(STAGING_DIR_HOST)/lib/grub/grub2-iso/eltorito.img \
+		$(STAGING_DIR_IMAGE)/grub2/cdboot.img \
+		$(STAGING_DIR_IMAGE)/grub2/eltorito.img \
 		> $@.boot/boot/grub/eltorito.img
 	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
+	$(if $(filter $(1),efi),
+		mkfs.fat -C $@.boot/boot/grub/isoboot.img -S 512 1440
+		mmd -i $@.boot/boot/grub/isoboot.img ::/efi ::/efi/boot
+		mcopy -i $@.boot/boot/grub/isoboot.img \
+			$(STAGING_DIR_IMAGE)/grub2/iso-boot$(if $(CONFIG_x86_64),x64,ia32).efi \
+			::/efi/boot/boot$(if $(CONFIG_x86_64),x64,ia32).efi
+	)
 	mkisofs -R -b boot/grub/eltorito.img -no-emul-boot -boot-info-table \
+		$(if $(filter $(1),efi),-boot-load-size 4 -c boot.cat -eltorito-alt-boot -b boot/grub/isoboot.img -no-emul-boot) \
 		-o $@ $@.boot $(TARGET_DIR)
 endef
 
 DEVICE_VARS += GRUB2_VARIANT
 define Device/Default
   ARTIFACT/image.iso := grub-config iso | iso
-  IMAGE/combined.img := append-rootfs | pad-extra 128k | grub-config pc | combined | grub-install
-  IMAGE/combined.img.gz := append-rootfs | pad-extra 128k | grub-config pc | combined | grub-install | gzip
-  IMAGE/combined.vdi := append-rootfs | pad-extra 128k | grub-config pc | combined | grub-install | qemu-image vdi
-  IMAGE/combined.vmdk := append-rootfs | pad-extra 128k | grub-config pc | combined | grub-install | qemu-image vmdk
+  IMAGE/combined.img := grub-config pc | combined | grub-install
+  IMAGE/combined.img.gz := grub-config pc | combined | grub-install | gzip
+  IMAGE/combined.vdi := grub-config pc | combined | grub-install | qemu-image vdi
+  IMAGE/combined.vmdk := grub-config pc | combined | grub-install | qemu-image vmdk
+  IMAGE/rootfs.img := append-rootfs
+  IMAGE/rootfs.img.gz := append-rootfs | gzip
+  ARTIFACT/image-efi.iso := grub-config iso | iso efi
+  IMAGE/combined-efi.img := grub-config efi | combined efi | grub-install efi
+  IMAGE/combined-efi.img.gz := grub-config efi | combined efi | grub-install efi | gzip
+  IMAGE/combined-efi.vdi := grub-config efi | combined efi | grub-install efi | qemu-image vdi
+  IMAGE/combined-efi.vmdk := grub-config efi | combined efi | grub-install efi | qemu-image vmdk
   ifeq ($(CONFIG_TARGET_IMAGES_GZIP),y)
-    IMAGES := combined.img.gz
+    IMAGES-y := rootfs.img.gz
+    IMAGES-$$(CONFIG_GRUB_IMAGES) += combined.img.gz
+    IMAGES-$$(CONFIG_GRUB_EFI_IMAGES) += combined-efi.img.gz
   else
-    IMAGES := combined.img
+    IMAGES-y := rootfs.img
+    IMAGES-$$(CONFIG_GRUB_IMAGES) += combined.img
+    IMAGES-$$(CONFIG_GRUB_EFI_IMAGES) += combined-efi.img
   endif
   KERNEL := kernel-bin
   KERNEL_INSTALL := 1
   KERNEL_NAME := bzImage
   ifeq ($(CONFIG_ISO_IMAGES),y)
-    ARTIFACTS := image.iso
+    ARTIFACTS-$$(CONFIG_GRUB_IMAGES) += image.iso
+    ARTIFACTS-$$(CONFIG_GRUB_EFI_IMAGES) += image-efi.iso
   endif
   ifeq ($(CONFIG_VDI_IMAGES),y)
-    IMAGES += combined.vdi
+    IMAGES-$$(CONFIG_GRUB_IMAGES) += combined.vdi
+    IMAGES-$$(CONFIG_GRUB_EFI_IMAGES) += combined-efi.vdi
   endif
   ifeq ($(CONFIG_VMDK_IMAGES),y)
-    IMAGES += combined.vmdk
+    IMAGES-$$(CONFIG_GRUB_IMAGES) += combined.vmdk
+    IMAGES-$$(CONFIG_GRUB_EFI_IMAGES) += combined-efi.vmdk
   endif
+  IMAGES := $$(IMAGES-y)
+  ARTIFACTS := $$(ARTIFACTS-y)
 endef
 
 $(eval $(call Image/gzip-ext4-padded-squashfs))

@@ -326,6 +326,16 @@ define Device/comfast_cf-e560ac
 endef
 TARGET_DEVICES += comfast_cf-e560ac
 
+define Device/comfast_cf-ew72
+  SOC := qca9531
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-EW72
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct \
+	-uboot-envtools -swconfig
+  IMAGE_SIZE := 16192k
+endef
+TARGET_DEVICES += comfast_cf-ew72
+
 define Device/comfast_cf-wr650ac-v1
   SOC := qca9558
   DEVICE_VENDOR := COMFAST

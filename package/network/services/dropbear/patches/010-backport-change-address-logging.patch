@@ -1,0 +1,119 @@
+From c153b3612b7c9f24a0f5af43618a646545ed6e22 Mon Sep 17 00:00:00 2001
+From: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+Date: Mon, 30 Sep 2019 12:42:13 +0100
+Subject: [PATCH] Improve address logging on early exit messages
+
+Change 'Early exit' and 'Exit before auth' messages to include the IP
+address & port as part of the message.
+
+This allows log scanning utilities such as 'fail2ban' to obtain the
+offending IP address as part of the failure event instead of extracting
+the PID from the message and then scanning the log again for match
+'child connection from' messages
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ svr-auth.c    | 18 +++++++-----------
+ svr-session.c | 20 ++++++++++++++------
+ 2 files changed, 21 insertions(+), 17 deletions(-)
+
+--- a/svr-auth.c
++++ b/svr-auth.c
+@@ -241,8 +241,7 @@ static int checkusername(const char *use
+ 	}
+ 
+ 	if (strlen(username) != userlen) {
+-		dropbear_exit("Attempted username with a null byte from %s",
+-			svr_ses.addrstring);
++		dropbear_exit("Attempted username with a null byte");
+ 	}
+ 
+ 	if (ses.authstate.username == NULL) {
+@@ -252,8 +251,7 @@ static int checkusername(const char *use
+ 	} else {
+ 		/* check username hasn't changed */
+ 		if (strcmp(username, ses.authstate.username) != 0) {
+-			dropbear_exit("Client trying multiple usernames from %s",
+-				svr_ses.addrstring);
++			dropbear_exit("Client trying multiple usernames");
+ 		}
+ 	}
+ 
+@@ -268,8 +266,7 @@ static int checkusername(const char *use
+ 	if (!ses.authstate.pw_name) {
+ 		TRACE(("leave checkusername: user '%s' doesn't exist", username))
+ 		dropbear_log(LOG_WARNING,
+-				"Login attempt for nonexistent user from %s",
+-				svr_ses.addrstring);
++				"Login attempt for nonexistent user");
+ 		ses.authstate.checkusername_failed = 1;
+ 		return DROPBEAR_FAILURE;
+ 	}
+@@ -279,9 +276,8 @@ static int checkusername(const char *use
+ 	if (!(DROPBEAR_SVR_MULTIUSER && uid == 0) && uid != ses.authstate.pw_uid) {
+ 		TRACE(("running as nonroot, only server uid is allowed"))
+ 		dropbear_log(LOG_WARNING,
+-				"Login attempt with wrong user %s from %s",
+-				ses.authstate.pw_name,
+-				svr_ses.addrstring);
++				"Login attempt with wrong user %s",
++				ses.authstate.pw_name);
+ 		ses.authstate.checkusername_failed = 1;
+ 		return DROPBEAR_FAILURE;
+ 	}
+@@ -440,8 +436,8 @@ void send_msg_userauth_failure(int parti
+ 		} else {
+ 			userstr = ses.authstate.pw_name;
+ 		}
+-		dropbear_exit("Max auth tries reached - user '%s' from %s",
+-				userstr, svr_ses.addrstring);
++		dropbear_exit("Max auth tries reached - user '%s'",
++				userstr);
+ 	}
+ 	
+ 	TRACE(("leave send_msg_userauth_failure"))
+--- a/svr-session.c
++++ b/svr-session.c
+@@ -149,28 +149,36 @@ void svr_session(int sock, int childpipe
+ void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
+ 	char exitmsg[150];
+ 	char fullmsg[300];
++	char fromaddr[60];
+ 	int i;
+ 
+ 	/* Render the formatted exit message */
+ 	vsnprintf(exitmsg, sizeof(exitmsg), format, param);
+ 
++	/* svr_ses.addrstring may not be set for some early exits, or for
++	the listener process */
++	fromaddr[0] = '\0';
++	if (svr_ses.addrstring) {
++	    snprintf(fromaddr, sizeof(fromaddr), " from <%s>", svr_ses.addrstring);
++    }
++
+ 	/* Add the prefix depending on session/auth state */
+ 	if (!ses.init_done) {
+ 		/* before session init */
+-		snprintf(fullmsg, sizeof(fullmsg), "Early exit: %s", exitmsg);
++		snprintf(fullmsg, sizeof(fullmsg), "Early exit%s: %s", fromaddr, exitmsg);
+ 	} else if (ses.authstate.authdone) {
+ 		/* user has authenticated */
+ 		snprintf(fullmsg, sizeof(fullmsg),
+-				"Exit (%s): %s", 
+-				ses.authstate.pw_name, exitmsg);
++				"Exit (%s)%s: %s", 
++				ses.authstate.pw_name, fromaddr, exitmsg);
+ 	} else if (ses.authstate.pw_name) {
+ 		/* we have a potential user */
+ 		snprintf(fullmsg, sizeof(fullmsg), 
+-				"Exit before auth (user '%s', %u fails): %s",
+-				ses.authstate.pw_name, ses.authstate.failcount, exitmsg);
++				"Exit before auth%s: (user '%s', %u fails): %s",
++				fromaddr, ses.authstate.pw_name, ses.authstate.failcount, exitmsg);
+ 	} else {
+ 		/* before userauth */
+-		snprintf(fullmsg, sizeof(fullmsg), "Exit before auth: %s", exitmsg);
++		snprintf(fullmsg, sizeof(fullmsg), "Exit before auth%s: %s", fromaddr, exitmsg);
+ 	}
+ 
+ 	dropbear_log(LOG_INFO, "%s", fullmsg);

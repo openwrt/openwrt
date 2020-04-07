@@ -798,7 +798,7 @@ static int rtl8367b_extif_set_mode(struct rtl8366_smi *smi, int id,
 				(7 << RTL8367B_DEBUG1_DN_SHIFT(id)) |
 					(7 << RTL8367B_DEBUG1_DP_SHIFT(id)));
 		} else {
-			REG_RMW(smi, RTL8367B_CHIP_DEBUG1_REG,
+			REG_RMW(smi, RTL8367B_CHIP_DEBUG2_REG,
 				RTL8367B_DEBUG2_DRI_EXT2 |
 					RTL8367B_DEBUG2_DRI_EXT2_RG |
 					RTL8367B_DEBUG2_SLR_EXT2 |
@@ -813,8 +813,7 @@ static int rtl8367b_extif_set_mode(struct rtl8366_smi *smi, int id,
 
 	case RTL8367_EXTIF_MODE_TMII_MAC:
 	case RTL8367_EXTIF_MODE_TMII_PHY:
-		REG_RMW(smi, RTL8367B_BYPASS_LINE_RATE_REG,
-			BIT((id + 1) % 2), BIT((id + 1) % 2));
+		REG_RMW(smi, RTL8367B_BYPASS_LINE_RATE_REG, BIT(id), BIT(id));
 		break;
 
 	case RTL8367_EXTIF_MODE_GMII:
@@ -827,8 +826,7 @@ static int rtl8367b_extif_set_mode(struct rtl8366_smi *smi, int id,
 	case RTL8367_EXTIF_MODE_MII_MAC:
 	case RTL8367_EXTIF_MODE_MII_PHY:
 	case RTL8367_EXTIF_MODE_DISABLED:
-		REG_RMW(smi, RTL8367B_BYPASS_LINE_RATE_REG,
-			BIT((id + 1) % 2), 0);
+		REG_RMW(smi, RTL8367B_BYPASS_LINE_RATE_REG, BIT(id), 0);
 		REG_RMW(smi, RTL8367B_EXT_RGMXF_REG(id), BIT(6), 0);
 		break;
 

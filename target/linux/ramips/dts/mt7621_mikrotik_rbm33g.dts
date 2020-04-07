@@ -25,7 +25,7 @@
 
 		led_usr: usr {
 			label = "rbm33g:green:usr";
-			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -34,7 +34,7 @@
 
 		res {
 			label = "res";
-			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -45,7 +45,7 @@
 
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-		gpio = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio 9 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-boot-on;
 		regulator-always-on;
@@ -57,7 +57,7 @@
 
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-		gpio = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio 10 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-boot-on;
 		regulator-always-on;
@@ -69,7 +69,7 @@
 
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-		gpio = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-boot-on;
 		regulator-always-on;
@@ -81,7 +81,7 @@
 
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpio = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio 12 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-always-on;
 	};
@@ -162,15 +162,36 @@
 	};
 };
 
-&ethernet {
+&gmac0 {
 	mtd-mac-address = <&hard_config 0x0010>;
 	mtd-mac-address-increment = <1>;
 };
 
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "wan";
+			mtd-mac-address = <&hard_config 0x0010>;
+			mtd-mac-address-increment = <2>;
+		};
+
+		port@1 {
+			status = "okay";
+			label = "lan1";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+	};
+};
+
 &state_default {
 	gpio {
-		ralink,group = "uart2", "wdt";
-		ralink,function = "gpio";
+		groups = "uart2", "wdt";
+		function = "gpio";
 	};
 };
 
