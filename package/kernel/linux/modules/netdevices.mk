@@ -1141,3 +1141,23 @@ define KernelPackage/mlx5-core/description
 endef
 
 $(eval $(call KernelPackage,mlx5-core))
+
+
+define KernelPackage/sfp
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=SFP cage support
+  DEPENDS:=+kmod-i2c-core +kmod-hwmon-core
+  KCONFIG:= \
+	CONFIG_SFP=m \
+	CONFIG_MDIO_I2C=m
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/phy/sfp.ko \
+	$(LINUX_DIR)/drivers/net/phy/mdio-i2c.ko
+  AUTOLOAD:=$(call AutoProbe,mdio-i2c sfp)
+endef
+
+define KernelPackage/SFP/description
+ Kernel module to support SFP cages
+endef
+
+$(eval $(call KernelPackage,sfp))
