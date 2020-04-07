@@ -1,0 +1,60 @@
+diff --git a/block.c b/block.c
+index 39212d2..3dfc4a5 100644
+--- a/block.c
++++ b/block.c
+@@ -1301,7 +1301,7 @@ static int find_block_ubi_RO(libubi_t libubi, char *name, char *part, int plen)
+ 	return err;
+ }
+ 
+-#else
++#endif
+ 
+ static int find_root_dev(char *buf, int len)
+ {
+@@ -1332,8 +1332,6 @@ static int find_root_dev(char *buf, int len)
+ 	return -1;
+ }
+ 
+-#endif
+-
+ static int test_fs_support(const char *name)
+ {
+ 	char line[128], *p;
+@@ -1363,25 +1361,20 @@ static int check_extroot(char *path)
+ 	struct probe_info *pr = NULL;
+ 	char devpath[32];
+ 
+-#ifdef UBIFS_EXTROOT
+ 	if (find_block_mtd("\"rootfs\"", devpath, sizeof(devpath))) {
+ 		int err = -1;
++#ifdef UBIFS_EXTROOT
+ 		libubi_t libubi;
+ 
+ 		libubi = libubi_open();
+ 		err = find_block_ubi_RO(libubi, "rootfs", devpath, sizeof(devpath));
+ 		libubi_close(libubi);
+-		if (err)
+-			return -1;
+-	}
+-#else
+-	if (find_block_mtd("\"rootfs\"", devpath, sizeof(devpath))) {
+-		if (find_root_dev(devpath, sizeof(devpath))) {
++#endif
++		if (err && find_root_dev(devpath, sizeof(devpath))) {
+ 			ULOG_ERR("extroot: unable to determine root device\n");
+ 			return -1;
+ 		}
+ 	}
+-#endif
+ 
+ 	list_for_each_entry(pr, &devices, list) {
+ 		if (!strcmp(pr->dev, devpath)) {
+@@ -1585,7 +1578,7 @@ static int main_extroot(int argc, char **argv)
+        }
+ #endif
+ 
+-	return mount_extroot(NULL);
++	return mount_extroot("/tmp/overlay");
+ }
+ 
+ static int main_mount(int argc, char **argv)
