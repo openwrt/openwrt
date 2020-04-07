@@ -1,0 +1,51 @@
+From a22d2eb48a0ef858203fa715716f69efbac35fa2 Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Thu, 9 Apr 2020 07:55:28 +0800
+Subject: [PATCH] net/core: __netif_receive_skb_core handle INGRESS before taps
+
+Signed-off-by: Chen Minqiang <ptpt52@gmail.com>
+---
+ net/core/dev.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/net/core/dev.c b/net/core/dev.c
+index a9b15b0..c899fa1 100644
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -4772,6 +4772,16 @@ static int __netif_receive_skb_core(struct sk_buff *skb, bool pfmemalloc,
+ 	if (skb_skip_tc_classify(skb))
+ 		goto skip_classify;
+ 
++#ifdef CONFIG_NET_INGRESS
++	if (static_branch_unlikely(&ingress_needed_key)) {
++		skb = sch_handle_ingress(skb, &pt_prev, &ret, orig_dev);
++		if (!skb)
++			goto out;
++
++		if (nf_ingress(skb, &pt_prev, &ret, orig_dev) < 0)
++			goto out;
++	}
++#endif
+ 	if (pfmemalloc)
+ 		goto skip_taps;
+ 
+@@ -4788,16 +4798,6 @@ static int __netif_receive_skb_core(struct sk_buff *skb, bool pfmemalloc,
+ 	}
+ 
+ skip_taps:
+-#ifdef CONFIG_NET_INGRESS
+-	if (static_branch_unlikely(&ingress_needed_key)) {
+-		skb = sch_handle_ingress(skb, &pt_prev, &ret, orig_dev);
+-		if (!skb)
+-			goto out;
+-
+-		if (nf_ingress(skb, &pt_prev, &ret, orig_dev) < 0)
+-			goto out;
+-	}
+-#endif
+ 	skb_reset_redirect(skb);
+ skip_classify:
+ 	if (pfmemalloc && !skb_pfmemalloc_protocol(skb))
+-- 
+2.17.1
+
