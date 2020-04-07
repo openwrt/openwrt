@@ -1,0 +1,17 @@
+/dts-v1/;
+
+#include "mt7621_ubnt_edgerouter-x.dtsi"
+
+/ {
+	model = "Ubiquiti EdgeRouter X SFP";
+	compatible = "ubnt,edgerouter-x-sfp", "mediatek,mt7621-soc";
+};
+
+&i2c {
+	status = "okay";
+
+	pca9555@25 {
+		compatible = "nxp,pca9555";
+		reg = <0x25>;
+	};
+};
