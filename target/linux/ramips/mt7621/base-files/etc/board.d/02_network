@@ -14,7 +14,7 @@ ramips_setup_interfaces()
 		;;
 	asiarf,ap7621-nv1|\
 	lenovo,newifi-d1|\
-	mikrotik,rbm33g|\
+	mikrotik,routerboard-m33g|\
 	xiaomi,mir3g|\
 	xiaomi,mir3g-v2)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
@@ -31,7 +31,7 @@ ramips_setup_interfaces()
 	linksys,re6500)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
-	mikrotik,rbm11g|\
+	mikrotik,routerboard-m11g|\
 	netgear,ex6150|\
 	thunder,timecloud|\
 	tplink,re350-v1|\
@@ -39,7 +39,7 @@ ramips_setup_interfaces()
 	ubnt,unifi-nanohd)
 		ucidef_set_interface_lan "lan"
 		;;
-	mikrotik,rb750gr3)
+	mikrotik,routerboard-750gr3)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
 		;;
 	ubiquiti,edgerouterx|\
@@ -89,9 +89,9 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
 		;;
-	mikrotik,rb750gr3|\
-	mikrotik,rbm11g|\
-	mikrotik,rbm33g)
+	mikrotik,routerboard-750gr3|\
+	mikrotik,routerboard-m11g|\
+	mikrotik,routerboard-m33g)
 		label_mac=$(mtd_get_mac_binary hard_config 0x10)
 		;;
 	zbtlink,zbt-we1326|\

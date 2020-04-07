@@ -7,7 +7,7 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	compatible = "mikrotik,rb750gr3", "mediatek,mt7621-soc";
+	compatible = "mikrotik,routerboard-750gr3", "mediatek,mt7621-soc";
 	model = "MikroTik RouterBOARD 750Gr3";
 
 	aliases {
@@ -25,13 +25,13 @@
 		compatible = "gpio-leds";
 
 		pwr {
-			label = "rb750gr3:blue:pwr";
+			label = "routerboard-750gr3:blue:pwr";
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
 		led_usr: usr {
-			label = "rb750gr3:green:usr";
+			label = "routerboard-750gr3:green:usr";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 	};

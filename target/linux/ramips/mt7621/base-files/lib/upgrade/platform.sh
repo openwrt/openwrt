@@ -27,9 +27,9 @@ platform_do_upgrade() {
 			fi
 		}
 		;;
-	mikrotik,rb750gr3|\
-	mikrotik,rbm11g|\
-	mikrotik,rbm33g)
+	mikrotik,routerboard-750gr3|\
+	mikrotik,routerboard-m11g|\
+	mikrotik,routerboard-m33g)
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
 		;;
 	asus,rt-ac65p|\
