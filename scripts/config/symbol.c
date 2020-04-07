@@ -1250,6 +1250,11 @@ struct symbol *sym_check_deps(struct symbol *sym)
 		sym->flags &= ~SYMBOL_CHECK;
 	}
 
+#ifdef WARN_RECURSIVE_DEP
+	if (sym2 && sym2 == sym)
+		sym2 = NULL;
+#endif
+
 	return sym2;
 }
 
