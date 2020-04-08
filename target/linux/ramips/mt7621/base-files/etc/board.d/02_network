@@ -90,6 +90,7 @@ ramips_setup_macs()
 		label_mac=$wan_mac
 		;;
 	mikrotik,rb750gr3|\
+	mikrotik,rbm11g|\
 	mikrotik,rbm33g)
 		label_mac=$(mtd_get_mac_binary hard_config 0x10)
 		;;
