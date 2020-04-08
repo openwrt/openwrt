@@ -15,8 +15,6 @@ assert getenv("WORK_DIR"), "$WORK_DIR required"
 
 work_dir = Path(getenv("WORK_DIR"))
 
-assert work_dir.is_dir(), "$WORK_DIR not a directory"
-
 output = {}
 
 for json_file in work_dir.glob("*.json"):
