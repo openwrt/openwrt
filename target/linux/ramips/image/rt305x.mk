@@ -1150,7 +1150,7 @@ TARGET_DEVICES += zorlik_zl5900v2
 define Device/zyxel_keenetic
   SOC := rt3052
   BLOCKSIZE := 64k
-  IMAGE_SIZE := 3776k
+  IMAGE_SIZE := 7872k
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ehci kmod-usb-ledtrig-usbport
