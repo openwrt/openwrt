@@ -30,6 +30,7 @@ define Device/7links_px-4885-4m
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport kmod-leds-gpio
   SUPPORTED_DEVICES += px-4885-4M
+  DEFAULT := n
 endef
 TARGET_DEVICES += 7links_px-4885-4m
 
@@ -71,6 +72,7 @@ define Device/airlive_air3gii
   DEVICE_VENDOR := AirLive
   DEVICE_MODEL := Air3GII
   SUPPORTED_DEVICES += air3gii
+  DEFAULT := n
 endef
 TARGET_DEVICES += airlive_air3gii
 
@@ -91,6 +93,7 @@ define Device/allnet_all0256n-4m
   DEVICE_VARIANT := 4M
   DEVICE_PACKAGES := rssileds
   SUPPORTED_DEVICES += all0256n-4M
+  DEFAULT := n
 endef
 TARGET_DEVICES += allnet_all0256n-4m
 
@@ -175,6 +178,7 @@ define Device/asiarf_awapn2403
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AWAPN2403
   SUPPORTED_DEVICES += awapn2403
+  DEFAULT := n
 endef
 TARGET_DEVICES += asiarf_awapn2403
 
@@ -186,6 +190,7 @@ define Device/asiarf_awm002-evb-4m
   DEVICE_VARIANT := 4M
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-gpio
   SUPPORTED_DEVICES += awm002-evb-4M
+  DEFAULT := n
 endef
 TARGET_DEVICES += asiarf_awm002-evb-4m
 
@@ -208,6 +213,7 @@ define Device/asus_rt-g32-b1
   DEVICE_MODEL := RT-G32
   DEVICE_VARIANT := B1
   SUPPORTED_DEVICES += rt-g32-b1
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_rt-g32-b1
 
@@ -218,6 +224,7 @@ define Device/asus_rt-n10-plus
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-N10+
   SUPPORTED_DEVICES += rt-n10-plus
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_rt-n10-plus
 
@@ -238,6 +245,7 @@ define Device/asus_wl-330n
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := WL-330N
   SUPPORTED_DEVICES += wl-330n
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_wl-330n
 
@@ -249,6 +257,7 @@ define Device/asus_wl-330n3g
   DEVICE_MODEL := WL-330N3G
   DEVICE_PACKAGES :=
   SUPPORTED_DEVICES += wl-330n3g
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_wl-330n3g
 
@@ -304,6 +313,7 @@ define Device/buffalo_whr-g300n
   IMAGE/tftp.bin := $$(sysupgrade_bin) | check-size | \
 	buffalo-tftp-header
   SUPPORTED_DEVICES += whr-g300n
+  DEFAULT := n
 endef
 TARGET_DEVICES += buffalo_whr-g300n
 
@@ -329,6 +339,7 @@ define Device/dlink_dcs-930
   DEVICE_PACKAGES := kmod-video-core kmod-video-uvc kmod-sound-core \
 	kmod-usb-audio kmod-usb-dwc2
   SUPPORTED_DEVICES += dcs-930
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dcs-930
 
@@ -341,6 +352,7 @@ define Device/dlink_dcs-930l-b1
   DEVICE_PACKAGES := kmod-video-core kmod-video-uvc kmod-sound-core \
 	kmod-usb-audio kmod-usb-ohci kmod-usb2
   SUPPORTED_DEVICES += dcs-930l-b1
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dcs-930l-b1
 
@@ -354,6 +366,7 @@ define Device/dlink_dir-300-b1
   DEVICE_MODEL := DIR-300
   DEVICE_VARIANT := B1
   SUPPORTED_DEVICES += dir-300-b1
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dir-300-b1
 
@@ -388,6 +401,7 @@ define Device/dlink_dir-600-b1
   DEVICE_MODEL := DIR-600
   DEVICE_VARIANT := B1/B2
   SUPPORTED_DEVICES += dir-600-b1 dir-600-b2
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dir-600-b1
 
@@ -403,6 +417,7 @@ define Device/dlink_dir-610-a1
   DEVICE_VARIANT := A1
   DEVICE_PACKAGES := kmod-ledtrig-netdev kmod-ledtrig-timer
   SUPPORTED_DEVICES += dir-610-a1
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dir-610-a1
 
@@ -416,6 +431,7 @@ define Device/dlink_dir-615-d
   DEVICE_MODEL := DIR-615
   DEVICE_VARIANT := D
   SUPPORTED_DEVICES += dir-615-d
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dir-615-d
 
@@ -429,6 +445,7 @@ define Device/dlink_dir-615-h1
   DEVICE_MODEL := DIR-615
   DEVICE_VARIANT := H1
   SUPPORTED_DEVICES += dir-615-h1
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dir-615-h1
 
@@ -490,6 +507,7 @@ define Device/edimax_3g-6200n
   DEVICE_VENDOR := Edimax
   DEVICE_MODEL := 3g-6200n
   SUPPORTED_DEVICES += 3g-6200n
+  DEFAULT := n
 endef
 TARGET_DEVICES += edimax_3g-6200n
 
@@ -502,6 +520,7 @@ define Device/edimax_3g-6200nl
   DEVICE_VENDOR := Edimax
   DEVICE_MODEL := 3g-6200nl
   SUPPORTED_DEVICES += 3g-6200nl
+  DEFAULT := n
 endef
 TARGET_DEVICES += edimax_3g-6200nl
 
@@ -512,6 +531,7 @@ define Device/engenius_esr-9753
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ESR-9753
   SUPPORTED_DEVICES += esr-9753
+  DEFAULT := n
 endef
 TARGET_DEVICES += engenius_esr-9753
 
@@ -538,6 +558,7 @@ define Device/hame_mpr-a1
   DEVICE_VARIANT := A1
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev
   SUPPORTED_DEVICES += mpr-a1
+  DEFAULT := n
 endef
 TARGET_DEVICES += hame_mpr-a1
 
@@ -573,6 +594,7 @@ define Device/hilink_hlk-rm04
   DEVICE_VENDOR := Hi-Link
   DEVICE_MODEL := HLK-RM04
   SUPPORTED_DEVICES += hlk-rm04
+  DEFAULT := n
 endef
 TARGET_DEVICES += hilink_hlk-rm04
 
@@ -593,6 +615,7 @@ define Device/huawei_d105
   DEVICE_VENDOR := Huawei
   DEVICE_MODEL := D105
   SUPPORTED_DEVICES += d105
+  DEFAULT := n
 endef
 TARGET_DEVICES += huawei_d105
 
@@ -626,6 +649,7 @@ define Device/jcg_jhr-n805r
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := JHR-N805R
   SUPPORTED_DEVICES += jhr-n805r
+  DEFAULT := n
 endef
 TARGET_DEVICES += jcg_jhr-n805r
 
@@ -638,6 +662,7 @@ define Device/jcg_jhr-n825r
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := JHR-N825R
   SUPPORTED_DEVICES += jhr-n825r
+  DEFAULT := n
 endef
 TARGET_DEVICES += jcg_jhr-n825r
 
@@ -650,6 +675,7 @@ define Device/jcg_jhr-n926r
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := JHR-N926R
   SUPPORTED_DEVICES += jhr-n926r
+  DEFAULT := n
 endef
 TARGET_DEVICES += jcg_jhr-n926r
 
@@ -669,6 +695,7 @@ define Device/netcore_nw718
   DEVICE_VENDOR := Netcore
   DEVICE_MODEL := NW718
   SUPPORTED_DEVICES += nw718
+  DEFAULT := n
 endef
 TARGET_DEVICES += netcore_nw718
 
@@ -706,6 +733,7 @@ define Device/nexx_wt1520-4m
   DEVICE_MODEL := WT1520
   DEVICE_VARIANT := 4M
   SUPPORTED_DEVICES += wt1520-4M
+  DEFAULT := n
 endef
 TARGET_DEVICES += nexx_wt1520-4m
 
@@ -793,6 +821,7 @@ define Device/petatel_psr-680w
   DEVICE_VENDOR := Petatel
   DEVICE_MODEL := PSR-680W Wireless 3G Router
   SUPPORTED_DEVICES += psr-680w
+  DEFAULT := n
 endef
 TARGET_DEVICES += petatel_psr-680w
 
@@ -804,6 +833,7 @@ define Device/planex_mzk-dp150n
   DEVICE_MODEL := MZK-DP150N
   DEVICE_PACKAGES := kmod-spi-dev
   SUPPORTED_DEVICES += mzk-dp150n
+  DEFAULT := n
 endef
 TARGET_DEVICES += planex_mzk-dp150n
 
@@ -816,6 +846,7 @@ define Device/planex_mzk-w300nh2
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := MZK-W300NH2
   SUPPORTED_DEVICES += mzk-w300nh2
+  DEFAULT := n
 endef
 TARGET_DEVICES += planex_mzk-w300nh2
 
@@ -847,6 +878,7 @@ define Device/poray_m3
   DEVICE_MODEL := M3
   DEVICE_PACKAGES := kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
   SUPPORTED_DEVICES += m3
+  DEFAULT := n
 endef
 TARGET_DEVICES += poray_m3
 
@@ -861,6 +893,7 @@ define Device/poray_m4-4m
   DEVICE_VARIANT := 4M
   DEVICE_PACKAGES := kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
   SUPPORTED_DEVICES += m4-4M
+  DEFAULT := n
 endef
 TARGET_DEVICES += poray_m4-4m
 
@@ -921,6 +954,7 @@ define Device/ralink_v22rw-2x2
   DEVICE_VENDOR := Ralink
   DEVICE_MODEL := AP-RT3052-V22RW-2X2
   SUPPORTED_DEVICES += v22rw-2x2
+  DEFAULT := n
 endef
 TARGET_DEVICES += ralink_v22rw-2x2
 
@@ -932,6 +966,7 @@ define Device/sitecom_wl-351
   DEVICE_MODEL := WL-351 v1
   DEVICE_PACKAGES := kmod-switch-rtl8366rb kmod-swconfig swconfig
   SUPPORTED_DEVICES += wl-351
+  DEFAULT := n
 endef
 TARGET_DEVICES += sitecom_wl-351
 
@@ -942,6 +977,7 @@ define Device/skyline_sl-r7205
   DEVICE_VENDOR := Skyline
   DEVICE_MODEL := SL-R7205 Wireless 3G Router
   SUPPORTED_DEVICES += sl-r7205
+  DEFAULT := n
 endef
 TARGET_DEVICES += skyline_sl-r7205
 
@@ -952,6 +988,7 @@ define Device/sparklan_wcr-150gn
   DEVICE_VENDOR := Sparklan
   DEVICE_MODEL := WCR-150GN
   SUPPORTED_DEVICES += wcr-150gn
+  DEFAULT := n
 endef
 TARGET_DEVICES += sparklan_wcr-150gn
 
@@ -974,6 +1011,7 @@ define Device/tenda_3g150b
   DEVICE_MODEL := 3G150B
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += 3g150b
+  DEFAULT := n
 endef
 TARGET_DEVICES += tenda_3g150b
 
@@ -985,6 +1023,7 @@ define Device/tenda_3g300m
   DEVICE_MODEL := 3G300M
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += 3g300m
+  DEFAULT := n
 endef
 TARGET_DEVICES += tenda_3g300m
 
@@ -995,6 +1034,7 @@ define Device/tenda_w150m
   DEVICE_VENDOR := Tenda
   DEVICE_MODEL := W150M
   SUPPORTED_DEVICES += w150m
+  DEFAULT := n
 endef
 TARGET_DEVICES += tenda_w150m
 
@@ -1006,6 +1046,7 @@ define Device/tenda_w306r-v2
   DEVICE_MODEL := W306R
   DEVICE_VARIANT := V2.0
   SUPPORTED_DEVICES += w306r-v20
+  DEFAULT := n
 endef
 TARGET_DEVICES += tenda_w306r-v2
 
@@ -1019,6 +1060,7 @@ define Device/trendnet_tew-638apb-v2
   DEVICE_MODEL := TEW-638APB
   DEVICE_VARIANT := v2
   SUPPORTED_DEVICES += tew-638apb-v2
+  DEFAULT := n
 endef
 TARGET_DEVICES += trendnet_tew-638apb-v2
 
@@ -1041,6 +1083,7 @@ define Device/unbranded_a5-v11
   DEVICE_MODEL := A5-V11
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
   SUPPORTED_DEVICES += a5-v11
+  DEFAULT := n
 endef
 TARGET_DEVICES += unbranded_a5-v11
 
@@ -1051,6 +1094,7 @@ define Device/unbranded_wr512-3gn-4m
   DEVICE_MODEL := WR512-3GN
   DEVICE_VARIANT := 4M
   SUPPORTED_DEVICES += wr512-3gn-4M
+  DEFAULT := n
 endef
 TARGET_DEVICES += unbranded_wr512-3gn-4m
 
@@ -1071,6 +1115,7 @@ define Device/unbranded_xdx-rn502j
   DEVICE_VENDOR := XDX
   DEVICE_MODEL := RN502J
   SUPPORTED_DEVICES += xdxrn502j
+  DEFAULT := n
 endef
 TARGET_DEVICES += unbranded_xdx-rn502j
 
@@ -1082,6 +1127,7 @@ define Device/upvel_ur-326n4g
   DEVICE_MODEL := UR-326N4G
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += ur-326n4g
+  DEFAULT := n
 endef
 TARGET_DEVICES += upvel_ur-326n4g
 
@@ -1163,6 +1209,7 @@ define Device/zyxel_keenetic-start
   IMAGE_SIZE := 3776k
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic Start
+  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_keenetic-start
 
@@ -1173,6 +1220,7 @@ define Device/zyxel_nbg-419n
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NBG-419N
   SUPPORTED_DEVICES += nbg-419n
+  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_nbg-419n
 
