@@ -1,0 +1,48 @@
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -1203,6 +1203,19 @@ mtk_get_tag_protocol(struct dsa_switch *
+ 	}
+ }
+ 
++static inline void
++mt7530_set_jumbo(struct mt7530_priv *priv, u8 kilobytes)
++{
++	if (kilobytes > 15)
++		kilobytes = 15;
++
++	if (kilobytes > 1)
++		mt7530_rmw(priv, MT7530_GMACCR, MAX_RX_JUMBO_MASK | MAX_RX_PKT_LEN_MASK,
++					MAX_RX_JUMBO_KB(kilobytes) | MAX_RX_PKT_LEN_JMB);
++	else
++		mt7530_rmw(priv, MT7530_GMACCR, MAX_RX_PKT_LEN_MASK, MAX_RX_PKT_LEN_1536);
++}
++
+ static int
+ mt7530_setup(struct dsa_switch *ds)
+ {
+@@ -1342,6 +1355,9 @@ mt7530_setup(struct dsa_switch *ds)
+ 	if (ret < 0)
+ 		return ret;
+ 
++	/* Enable jumbo frame */
++	mt7530_set_jumbo(priv, 15);
++
+ 	return 0;
+ }
+ 
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -233,6 +233,13 @@ enum mt7530_vlan_port_attr {
+ #define  PMSR_DPX			BIT(1)
+ #define  PMSR_LINK			BIT(0)
+ 
++#define MT7530_GMACCR			0x30e0
++#define  MAX_RX_JUMBO_KB(x)		((x) << 2)
++#define  MAX_RX_JUMBO_MASK		MAX_RX_JUMBO_KB(0xf)
++#define  MAX_RX_PKT_LEN_MASK	0x3
++#define  MAX_RX_PKT_LEN_1536	0x1
++#define  MAX_RX_PKT_LEN_JMB		MAX_RX_PKT_LEN_MASK
++
+ /* Register for MIB */
+ #define MT7530_PORT_MIB_COUNTER(x)	(0x4000 + (x) * 0x100)
+ #define MT7530_MIB_CCR			0x4fe0
