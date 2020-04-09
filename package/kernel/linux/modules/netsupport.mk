@@ -867,6 +867,16 @@ define KernelPackage/sched-ctinfo
 endef
 $(eval $(call KernelPackage,sched-ctinfo))
 
+define KernelPackage/sched-police
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic shaper police support
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_ACT_POLICE
+  FILES:=$(LINUX_DIR)/net/sched/act_police.ko
+  AUTOLOAD:=$(call AutoLoad,71, act_police)
+endef
+$(eval $(call KernelPackage,sched-police))
+
 define KernelPackage/sched-ipset
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic shaper ipset support
