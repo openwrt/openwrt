@@ -110,7 +110,7 @@ static void phy_init(struct fe_priv *priv, struct phy_device *phy)
 	phy->autoneg = AUTONEG_ENABLE;
 	phy->speed = 0;
 	phy->duplex = 0;
-	phy->supported &= IS_ENABLED(CONFIG_NET_MEDIATEK_MDIO_MT7620) ?
+	phy->supported &= IS_ENABLED(CONFIG_NET_RALINK_MDIO_MT7620) ?
 			PHY_GBIT_FEATURES : PHY_BASIC_FEATURES;
 	phy->advertising = phy->supported | ADVERTISED_Autoneg;
 

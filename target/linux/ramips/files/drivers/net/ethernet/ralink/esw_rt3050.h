@@ -12,17 +12,18 @@
  *   Copyright (C) 2013-2015 Michael Lee <igvtee@gmail.com>
  */
 
-#ifndef _RALINK_MDIO_H__
-#define _RALINK_MDIO_H__
+#ifndef _RALINK_ESW_RT3052_H__
+#define _RALINK_ESW_RT3052_H__
 
-#ifdef CONFIG_NET_MEDIATEK_MDIO
-int fe_mdio_init(struct fe_priv *priv);
-void fe_mdio_cleanup(struct fe_priv *priv);
-int fe_connect_phy_node(struct fe_priv *priv,
-			struct device_node *phy_node,
-			int port);
+#ifdef CONFIG_NET_RALINK_ESW_RT3052
+
+int __init mtk_switch_init(void);
+void mtk_switch_exit(void);
+
 #else
-static inline int fe_mdio_init(struct fe_priv *priv) { return 0; }
-static inline void fe_mdio_cleanup(struct fe_priv *priv) {}
+
+static inline int __init mtk_switch_init(void) { return 0; }
+static inline void mtk_switch_exit(void) { }
+
 #endif
 #endif
