@@ -1759,6 +1759,18 @@ define Device/xwrt_t-cpe1200k-v01
 endef
 TARGET_DEVICES += xwrt_t-cpe1200k-v01
 
+define Device/xwrt_t-cpe1201k-v01
+  $(Device/uimage-lzma-loader)
+  SOC := mt7621
+  IMAGE_SIZE := 16000k
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := T-CPE1201K
+  DEVICE_VARIANT := V01
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += xwrt_t-cpe1201k-v01
+
 define Device/youhua_wr1200js
   $(Device/dsa-migration)
   IMAGE_SIZE := 16064k
