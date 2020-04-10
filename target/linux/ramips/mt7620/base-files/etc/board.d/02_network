@@ -40,8 +40,14 @@ ramips_setup_interfaces()
 	alfa-network,tube-e4g|\
 	buffalo,wmr-300|\
 	dlink,dch-m225|\
+	edimax,ew-7476rpc|\
+	edimax,ew-7478ac|\
 	elecom,wrh-300cr|\
 	kimax,u25awf-h1|\
+	kimax,u35wf|\
+	kingston,mlw221|\
+	kingston,mlwg2|\
+	microduino,microwrt|\
 	netgear,ex2700|\
 	netgear,ex3700|\
 	netgear,ex6130|\
@@ -52,7 +58,12 @@ ramips_setup_interfaces()
 	ravpower,wd03|\
 	sercomm,na930|\
 	tplink,re200-v1|\
-	tplink,re210-v1)
+	tplink,re210-v1|\
+	yukai,bocco|\
+	zbtlink,zbt-cpe102|\
+	zte,q7)
+		ucidef_add_switch "switch0"
+		ucidef_add_switch_attr "switch0" "enable" "false"
 		ucidef_set_interface_lan "eth0"
 		;;
 	asus,rp-n53)
@@ -106,19 +117,10 @@ ramips_setup_interfaces()
 		;;
 	edimax,br-6478ac-v2|\
 	tplink,archer-c2-v1)
-		ucidef_add_switch "switch1" \
-			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
-		;;
-	edimax,ew-7476rpc|\
-	edimax,ew-7478ac|\
-	kimax,u35wf|\
-	microduino,microwrt|\
-	yukai,bocco|\
-	zbtlink,zbt-cpe102|\
-	zte,q7)
 		ucidef_add_switch "switch0"
 		ucidef_add_switch_attr "switch0" "enable" "false"
-		ucidef_set_interface_lan "eth0"
+		ucidef_add_switch "switch1" \
+			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
 	engenius,esr600)
 		ucidef_add_switch "switch0" \
@@ -142,18 +144,14 @@ ramips_setup_interfaces()
 		;;
 	iodata,wn-ac1167gr|\
 	iodata,wn-ac733gr3)
+		ucidef_add_switch "switch0"
+		ucidef_add_switch_attr "switch0" "enable" "false"
 		ucidef_add_switch "switch1" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
 		;;
 	iptime,a104ns)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
-		;;
-	kingston,mlw221)
-		ucidef_set_interface_lan "eth0.2"
-		;;
-	kingston,mlwg2)
-		ucidef_set_interface_lan "eth0.1"
 		;;
 	lava,lr-25g001)
 		ucidef_add_switch "switch0" \
@@ -170,6 +168,8 @@ ramips_setup_interfaces()
 		;;
 	linksys,e1700|\
 	ralink,mt7620a-mt7530-evb)
+		ucidef_add_switch "switch0"
+		ucidef_add_switch_attr "switch0" "enable" "false"
 		ucidef_add_switch "switch1" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;

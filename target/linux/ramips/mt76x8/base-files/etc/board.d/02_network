@@ -11,11 +11,19 @@ ramips_setup_interfaces()
 	case $board in
 	alfa-network,awusfree1|\
 	d-team,pbr-d1|\
+	mediatek,linkit-smart-7688|\
+	onion,omega2p|\
+	onion,omega2|\
 	tama,w06|\
 	tplink,re200-v2|\
 	tplink,re305-v1|\
 	tplink,tl-mr3020-v3|\
-	tplink,tl-wr802n-v4)
+	tplink,tl-wr802n-v4|\
+	tplink,tl-wa801nd-v5|\
+	widora,neo-16m|\
+	widora,neo-32m)
+		ucidef_add_switch "switch0"
+		ucidef_add_switch_attr "switch0" "enable" "false"
 		ucidef_set_interface_lan "eth0"
 		;;
 	buffalo,wcr-1166ds)
@@ -80,16 +88,6 @@ ramips_setup_interfaces()
 	iptime,a604m)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
-		;;
-	mediatek,linkit-smart-7688|\
-	onion,omega2p|\
-	onion,omega2|\
-	tplink,tl-wa801nd-v5|\
-	widora,neo-16m|\
-	widora,neo-32m)
-		ucidef_add_switch "switch0"
-		ucidef_add_switch_attr "switch0" "enable" "false"
-		ucidef_set_interface_lan "eth0"
 		;;
 	netgear,r6120)
 		ucidef_add_switch "switch0" \
