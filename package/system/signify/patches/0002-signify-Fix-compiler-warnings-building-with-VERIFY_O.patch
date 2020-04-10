@@ -1,0 +1,89 @@
+From 308788f65e17f66a1a12adffc79a185affb3a0ec Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Fri, 17 Apr 2020 16:53:58 +0200
+Subject: [PATCH 2/5] signify: Fix compiler warnings building with
+ VERIFY_ONLY=1
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fixes following compiler warnings when compiling with VERIFY_ONLY=1:
+
+ signify.c:763:6: error: variable ‘none’ set but not used [-Werror=unused-but-set-variable]
+ signify.c:760:14: error: variable ‘comment’ set but not used [-Werror=unused-but-set-variable]
+ signify.c:757:34: error: variable ‘seckeyfile’ set but not used [-Werror=unused-but-set-variable]
+
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ signify.c | 26 ++++++++++++++------------
+ 1 file changed, 14 insertions(+), 12 deletions(-)
+
+diff --git a/signify.c b/signify.c
+index 2da4a38..c4369fd 100644
+--- a/signify.c
++++ b/signify.c
+@@ -754,13 +754,15 @@ verifyzdata(uint8_t *zdata, unsigned long long zdatalen,
+ int
+ main(int argc, char **argv)
+ {
+-	const char *pubkeyfile = NULL, *seckeyfile = NULL, *msgfile = NULL,
+-	    *sigfile = NULL;
++	const char *pubkeyfile = NULL, *msgfile = NULL, *sigfile = NULL;
+ 	char sigfilebuf[PATH_MAX];
+-	const char *comment = "signify";
+ 	char *keytype = NULL;
+ 	int ch;
++#ifndef VERIFYONLY
+ 	int none = 0;
++	const char *comment = "signify";
++	const char *seckeyfile = NULL;
++#endif
+ 	int embedded = 0;
+ 	int quiet = 0;
+ 	int gzip = 0;
+@@ -796,33 +798,33 @@ main(int argc, char **argv)
+ 		case 'z':
+ 			gzip = 1;
+ 			break;
++		case 'n':
++			none = 1;
++			break;
++		case 's':
++			seckeyfile = optarg;
++			break;
++		case 'c':
++			comment = optarg;
++			break;
+ #endif
+ 		case 'V':
+ 			if (verb)
+ 				usage(NULL);
+ 			verb = VERIFY;
+ 			break;
+-		case 'c':
+-			comment = optarg;
+-			break;
+ 		case 'e':
+ 			embedded = 1;
+ 			break;
+ 		case 'm':
+ 			msgfile = optarg;
+ 			break;
+-		case 'n':
+-			none = 1;
+-			break;
+ 		case 'p':
+ 			pubkeyfile = optarg;
+ 			break;
+ 		case 'q':
+ 			quiet = 1;
+ 			break;
+-		case 's':
+-			seckeyfile = optarg;
+-			break;
+ 		case 't':
+ 			keytype = optarg;
+ 			break;
+-- 
+2.25.1
+

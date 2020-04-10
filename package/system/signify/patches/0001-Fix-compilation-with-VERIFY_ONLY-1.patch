@@ -1,0 +1,53 @@
+From 3a4ed347be236d76b516ada8deeb3d058b4082e4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Fri, 17 Apr 2020 14:35:47 +0200
+Subject: [PATCH 1/5] Fix compilation with VERIFY_ONLY=1
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Currently the compilation doesnt work as the C code expect VERIFYONLY
+set, so fix this by setting proper C define VERIFYONLY. Disable as well
+use of zverify which seems only available in the full signify variant.
+
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ Makefile  | 4 ++--
+ signify.c | 2 ++
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index f908451..e94b536 100644
+--- a/Makefile
++++ b/Makefile
+@@ -172,11 +172,11 @@ endif
+ ifeq ($(strip $(VERIFY_ONLY)),)
+ S += ohash.c
+ else
+-     CPPFLAGS += -DVERIFY_ONLY=1
++     CPPFLAGS += -DVERIFYONLY=1
+      $(warning )
+      $(warning ******************************************************)
+      $(warning )
+-     $(warning Building with VERIFY_ONLY enabled is unsupported, YMMV)
++     $(warning Building with VERIFYONLY enabled is unsupported, YMMV)
+      $(warning )
+      $(warning ******************************************************)
+      $(warning )
+diff --git a/signify.c b/signify.c
+index 8e54737..2da4a38 100644
+--- a/signify.c
++++ b/signify.c
+@@ -901,7 +901,9 @@ main(int argc, char **argv)
+ 				err(1, "pledge");
+ 		}
+ 		if (gzip) {
++#ifndef VERIFYONLY
+ 			zverify(pubkeyfile, msgfile, sigfile, keytype);
++#endif
+ 		} else {
+ 			if (!msgfile)
+ 				usage("must specify message");
+-- 
+2.25.1
+
