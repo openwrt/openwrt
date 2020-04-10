@@ -30,7 +30,9 @@ IF_INET="${IF_INET:-eth0}"
 # The helper can be provided by package qemu-system-common on debian, or
 # qemu-kvm-common on rhel
 #
-HELPER="${HELPER:-/usr/libexec/qemu-bridge-helper}"
+HELPER="${HELPER:-$(for helper in /usr/lib*/qemu-bridge-helper; do [ -e "$helper" ] && echo "$helper"; done)}"
+
+CACHE_DIR=${CACHE_DIR:-/dev/shm}
 
 ### end of global settings
 
@@ -82,6 +84,39 @@ check_setup() {
 }
 #do_setup; check_setup; exit $?
 
+get_file() {
+	local infile=$1
+	local outfile
+	case "$infile" in
+		http://*|https://*|ftp://*)
+			outfile="$CACHE_DIR/${infile//[:\/&]/_}"
+			[ -e "$outfile" ] || touch -d @0 "$outfile"
+			curl --fail --continue-at - --remote-time --time-cond "$outfile" -o "$outfile.part" "$infile" ||
+				return
+			! [ -e "$outfile.part" ] || mv -f "$outfile.part" "$outfile"
+		;;
+		file://)
+			outfile="${infile:7}";;
+		*://)
+			__errmsg "Unknown protocol '$1'"
+			return 1;;
+		*)
+			outfile="$infile";;
+	esac
+	case "$outfile" in
+		*.gz)
+			infile="$outfile"
+			outfile="${infile%.gz}"
+			if [ "$infile" -nt "$outfile"  ] || ! [ -e "$outfile" ]; then
+				gunzip -c "$infile" > "$outfile"
+				fallocate -l 500m "$outfile"
+				touch -r "$infile" "$outfile"
+			fi
+		;;
+	esac
+	echo "$outfile"
+}
+
 usage() {
 	cat >&2 <<EOF
 Usage: $SELF [-h|--help]
@@ -98,21 +133,34 @@ Usage: $SELF [-h|--help]
 e.g. <subtarget> for malta can be le, be, le64, be64, le-glibc, le64-glibc, etc
 
 <kernel>, <rootfs> can be required or optional arguments to qemu depending on
-the actual <target> in use.  They will default to files under bin/targets/
+the actual <target> in use. They will default to files under bin/targets/. It
+also accepts any curl supported protocol URI. Downloaded files are stored at
+$CACHE_DIR and they will be overwritten once the source file is updated.
 
 Examples
 
   $SELF x86 64
   $SELF x86 64 --machine q35,accel=kvm -device virtio-balloon-pci
   $SELF x86 64 -incoming tcp:0:4444
+  $SELF x86 64 \\
+         --rootfs https://downloads.openwrt.org/snapshots/targets/x86/64/openwrt-x86-64-generic-ext4-combined.img.gz
   $SELF x86 64-glibc
   $SELF malta be -m 64
+  $SELF malta be -m 64 \\
+         --kernel https://downloads.openwrt.org/snapshots/targets/malta/be/openwrt-malta-be-vmlinux-initramfs.elf
+  $SELF malta be -m 64 \\
+         --kernel https://downloads.openwrt.org/snapshots/targets/malta/be/openwrt-malta-be-vmlinux.elf \\
+         --rootfs https://downloads.openwrt.org/snapshots/targets/malta/be/openwrt-malta-be-rootfs-squashfs.img.gz
   $SELF malta le64
   $SELF malta be-glibc
   $SELF armvirt 32 \\
-                --machine virt,highmem=off \\
-                --kernel bin/targets/armvirt/32/openwrt-armvirt-32-zImage \\
-                --rootfs bin/targets/armvirt/32/openwrt-armvirt-32-root.ext4
+         --machine virt,highmem=off \\
+         --kernel bin/targets/armvirt/32/openwrt-armvirt-32-zImage \\
+         --rootfs bin/targets/armvirt/32/openwrt-armvirt-32-root.ext4
+  $SELF armvirt 32 \\
+         --machine virt,highmem=off \\
+         --kernel https://downloads.openwrt.org/snapshots/targets/armvirt/32/openwrt-armvirt-32-zImage \\
+         --rootfs https://downloads.openwrt.org/snapshots/targets/armvirt/32/openwrt-armvirt-32-rootfs-squashfs.img.gz
 EOF
 }
 
@@ -184,10 +232,11 @@ start_qemu_armvirt() {
 			return 1
 			;;
 	esac
+	kernel=$(get_file "$kernel") ||
+		return 1
 	[ -z "$rootfs" ] || {
-		if [ ! -f "$rootfs" -a -s "$rootfs.gz" ]; then
-			gunzip "$rootfs.gz"
-		fi
+		rootfs=$(get_file "$rootfs") ||
+			return 1
 		o_qemu_extra+=( \
 			"-drive" "file=$rootfs,format=raw,if=virtio" \
 			"-append" "root=/dev/vda rootwait" \
@@ -224,11 +273,12 @@ start_qemu_malta() {
 	[ -n "$is64" ] && cpu="MIPS64R2-generic" || cpu="24Kc"
 
 	[ -n "$kernel" ] || kernel="$o_bindir/openwrt-malta-${o_subtarget%-*}-vmlinux-initramfs.elf"
+	kernel=$(get_file "$kernel") ||
+		return 1
 
 	[ -z "$rootfs" ] || {
-		if [ ! -f "$rootfs" -a -s "$rootfs.gz" ]; then
-			gunzip "$rootfs.gz"
-		fi
+		rootfs=$(get_file "$rootfs") ||
+			return 1
 		o_qemu_extra+=( \
 			"-drive" "file=$rootfs,format=raw" \
 			"-append" "root=/dev/sda rootwait" \
@@ -257,11 +307,10 @@ start_qemu_x86() {
 	local mach="${o_mach:-pc}"
 
 	[ -n "$rootfs" ] || {
-		rootfs="$o_bindir/openwrt-$o_target-${o_subtarget%-*}-generic-squashfs-combined.img"
-		if [ ! -f "$rootfs" -a -s "$rootfs.gz" ]; then
-			gunzip "$rootfs.gz"
-		fi
+		rootfs="$o_bindir/openwrt-$o_target-${o_subtarget%-*}-generic-squashfs-combined.img.gz"
 	}
+	rootfs=$(get_file "$rootfs") ||
+		return 1
 	#
 	# generic: 32-bit, pentium4 (CONFIG_MPENTIUM4), kvm guest, virtio
 	# legacy: 32-bit, i486 (CONFIG_M486)
@@ -277,6 +326,8 @@ start_qemu_x86() {
 	esac
 
 	[ -n "$kernel" ] && {
+	    kernel=$(get_file "$kernel") ||
+	        return 1
 	    o_qemu_extra+=( \
 		"-kernel" "$kernel" \
 		"-append" "root=/dev/vda console=ttyS0 rootwait" \
