@@ -22,7 +22,9 @@ OpenWrt Buildroot:
    that may cause one.
  - use pre-built *.lex.c *.tab.[ch] files by default, to avoid depending on
    flex & bison.  Rebuild/remove these files only if running make with
-   BUILD_SHIPPED_FILES defined
+   BUILD_SHIPPED_FILES defined.
+ - allow a bool symbol to select a tristate symbol that depends on m (i.e.
+   a package that should only be built as a module).
 
 For a full list of changes, see the repository at:
 https://github.com/cotequeiroz/linux/commits/openwrt/scripts/kconfig
