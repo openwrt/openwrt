@@ -12,11 +12,11 @@ include $(INCLUDE_DIR)/version.mk
 include $(INCLUDE_DIR)/feeds.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=218
+PKG_RELEASE:=219
 PKG_FLAGS:=nonshared
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
-PKG_BUILD_DEPENDS:=usign/host ucert/host
+PKG_BUILD_DEPENDS:=signify/host ucert/host
 PKG_LICENSE:=GPL-2.0
 
 # Extend depends from version.mk
@@ -37,7 +37,7 @@ endif
 define Package/base-files
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+netifd +libc +procd +jsonfilter +SIGNED_PACKAGES:usign +SIGNED_PACKAGES:openwrt-keyring +NAND_SUPPORT:ubi-utils +fstools +fwtool
+  DEPENDS:=+netifd +libc +procd +jsonfilter +SIGNED_PACKAGES:signify +SIGNED_PACKAGES:openwrt-keyring +NAND_SUPPORT:ubi-utils +fstools +fwtool
   TITLE:=Base filesystem for OpenWrt
   URL:=http://openwrt.org/
   VERSION:=$(PKG_RELEASE)-$(REVISION)
@@ -110,18 +110,18 @@ Build/Compile = $(Build/Compile/Default)
 
 ifdef CONFIG_SIGNED_PACKAGES
   define Build/Configure
-	[ -s $(BUILD_KEY) -a -s $(BUILD_KEY).pub ] || \
-		$(STAGING_DIR_HOST)/bin/usign -G -s $(BUILD_KEY) -p $(BUILD_KEY).pub -c "Local build key"
+	[ -s $(BUILD_KEY).sec -a -s $(BUILD_KEY).pub ] || \
+		$(STAGING_DIR_HOST)/bin/signify -G -n -s $(BUILD_KEY).sec -p $(BUILD_KEY).pub -c "Local build key"
 
 	[ -s $(BUILD_KEY).ucert ] || \
-		$(STAGING_DIR_HOST)/bin/ucert -I -c $(BUILD_KEY).ucert -p $(BUILD_KEY).pub -s $(BUILD_KEY)
+		$(STAGING_DIR_HOST)/bin/ucert -I -c $(BUILD_KEY).ucert -p $(BUILD_KEY).pub -s $(BUILD_KEY).sec
 
   endef
 
 ifndef CONFIG_BUILDBOT
   define Package/base-files/install-key
 	mkdir -p $(1)/etc/opkg/keys
-	$(CP) $(BUILD_KEY).pub $(1)/etc/opkg/keys/`$(STAGING_DIR_HOST)/bin/usign -F -p $(BUILD_KEY).pub`
+	$(CP) $(BUILD_KEY).pub $(1)/etc/opkg/keys/`$(STAGING_DIR_HOST)/bin/signify -F -p $(BUILD_KEY).pub`
 
   endef
 endif
