@@ -16,7 +16,6 @@ case "$board" in
 alfa-network,ap121f|\
 buffalo,bhr-4grv2|\
 devolo,magic-2-wifi|\
-domywifi,dw33d|\
 engenius,ecb1750|\
 etactica,eg200|\
 glinet,gl-ar300m-lite|\
@@ -45,6 +44,9 @@ yuncore,xd4200)
 	;;
 buffalo,wzr-hp-ag300h)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000" "0x10000"
+	;;
+domywifi,dw33d)
+	ubootenv_add_uci_config "/dev/mtd4" "0x0" "0x10000" "0x10000"
 	;;
 glinet,gl-ar150)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x8000" "0x10000"
