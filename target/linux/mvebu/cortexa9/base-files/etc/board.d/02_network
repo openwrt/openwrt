@@ -16,12 +16,12 @@ mvebu_setup_interfaces()
 	cznic,turris-omnia)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3 lan4" "eth2"
 		;;
-	linksys,caiman|\
-	linksys,cobra|\
-	linksys,mamba|\
-	linksys,rango|\
-	linksys,shelby|\
-	linksys,venom)
+	linksys,wrt1200ac|\
+	linksys,wrt1900ac-v1|\
+	linksys,wrt1900ac-v2|\
+	linksys,wrt1900acs|\
+	linksys,wrt3200acm|\
+	linksys,wrt32x)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	marvell,a385-db-ap)
@@ -60,15 +60,15 @@ mvebu_setup_macs()
 	buffalo,ls421de)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env eth1addr)
 		;;
-	linksys,caiman|\
-	linksys,cobra|\
-	linksys,rango|\
-	linksys,shelby|\
-	linksys,venom)
+	linksys,wrt1200ac|\
+	linksys,wrt1900ac-v2|\
+	linksys,wrt1900acs|\
+	linksys,wrt3200acm|\
+	linksys,wrt32x)
 		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		wan_mac=$(macaddr_setbit_la $label_mac)
 		;;
-	linksys,mamba)
+	linksys,wrt1900ac-v1)
 		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$label_mac
 		wan_mac=$label_mac
