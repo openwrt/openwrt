@@ -1,24 +1,2 @@
-These files were taken from the Linux Kernel Configuration System at commit
-089b7d890f972f6b649fedc9259f6b93a18fb970 (Feb 4, 2020) and modified for the
-OpenWrt Buildroot:
- - removed nconf, gconf, tests and kernel configuration targets
- - adjusted the Makefile to compile outside the kernel
- - always use default file when running make all{no,mod,yes}config
- - added a 'reset' command to reset config when the target changes
- - allow config reading from & writing to a different file
- - allow 'source' command to use globs to include multiple files
- - don't write auto.conf and other files under include/ directory
- - reverted a commit to allow use of '/' & '.' in unquoted config symbols.
-   There are too many of those in OpenWrt right now.
- - reverted a commit that was issuing a warning when there were more than
-   one help text.  This is used in a few packages to use different texts
-   for the menuconfig help, and the ipkg package description.
- - reverted an upstream change that avoids writing symbols that are not
-   visible to .config, which breaks OpenWrt busybox's '.config' generation
-   logic.
- - use pre-built *.lex.c *.tab.[ch] files by default, to avoid depending on
-   flex & bison.  Rebuild/remove these files only if running make with
-   BUILD_SHIPPED_FILES defined
-
-For a full list of changes, see the repository at:
-https://github.com/cotequeiroz/linux/commits/openwrt/scripts/kconfig
+These files were taken from the Linux 3.9 Kernel
+Configuration System and modified for the OpenWrt Buildroot.
