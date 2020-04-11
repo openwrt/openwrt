@@ -16,10 +16,6 @@ OpenWrt Buildroot:
  - reverted an upstream change that avoids writing symbols that are not
    visible to .config, which breaks OpenWrt busybox's '.config' generation
    logic.
- - add a compilation option (-DWARN_RECURSIVE_DEP) to treat recursive deps
-   as a warning, avoiding a complete build failure because of unrelated or
-   minor recursive deps, or making a scrict check before commiting a change
-   that may cause one.
  - use pre-built *.lex.c *.tab.[ch] files by default, to avoid depending on
    flex & bison.  Rebuild/remove these files only if running make with
    BUILD_SHIPPED_FILES defined
