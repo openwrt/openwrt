@@ -38,14 +38,14 @@
 			label = "nbg6716:white:usb1";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "usbport";
-			trigger-sources = <&hub_port0>;
+			trigger-sources = <&hub_port1>;
 		};
 
 		usb2 {
 			label = "nbg6716:white:usb2";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "usbport";
-			trigger-sources = <&hub_port1>;
+			trigger-sources = <&hub_port0>;
 		};
 
 		wifi2 {
