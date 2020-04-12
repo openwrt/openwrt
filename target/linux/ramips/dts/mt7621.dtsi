@@ -453,7 +453,7 @@
 		clock-names = "ethif";
 
 		#address-cells = <1>;
-		#size-cells = <0>;
+		#size-cells = <1>;
 
 		resets = <&rstctrl 6 &rstctrl 23>;
 		reset-names = "fe", "eth";
@@ -546,6 +546,16 @@
 					};
 				};
 			};
+		};
+
+		hnat: hnat@0 {
+			compatible = "mediatek,mt7623-hnat";
+			reg = <0 0x10000>;
+			mtketh-ppd = "eth0";
+			mtketh-lan = "eth0";
+			mtketh-wan = "eth0";
+			resets = <&rstctrl 0>;
+			reset-names = "mtketh";
 		};
 	};
 
