@@ -63,8 +63,8 @@
 
 &state_default {
 	gpio {
-		ralink,group = "p4led_an", "p3led_an", "p2led_an", "p1led_an",
+		groups = "p4led_an", "p3led_an", "p2led_an", "p1led_an",
 				"p0led_an", "wled_an", "i2c", "wdt", "refclk";
-		ralink,function = "gpio";
+		function = "gpio";
 	};
 };

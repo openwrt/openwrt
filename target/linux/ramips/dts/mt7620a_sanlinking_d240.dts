@@ -179,8 +179,8 @@
 
 &state_default {
 	default {
-		ralink,group = "i2c", "uartf", "wled", "spi refclk", "pa";
-		ralink,function = "gpio";
+		groups = "i2c", "uartf", "wled", "spi refclk", "pa";
+		function = "gpio";
 	};
 
 	/*
@@ -193,8 +193,8 @@
 	 * means during pinmux driver load.
 	 */
 	gpio_sd {
-		ralink,group = "nd_sd";
-		ralink,function = "sd";
+		groups = "nd_sd";
+		function = "sd";
 	};
 };
 

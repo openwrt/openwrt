@@ -55,12 +55,12 @@
 
 &state_default {
 	gpio {
-		ralink,group = "jtag";
-		ralink,function = "gpio";
+		groups = "jtag";
+		function = "gpio";
 	};
 	uartf_gpio {
-		ralink,group = "uartf";
-		ralink,function = "gpio uartf";
+		groups = "uartf";
+		function = "gpio uartf";
 	};
 };
 

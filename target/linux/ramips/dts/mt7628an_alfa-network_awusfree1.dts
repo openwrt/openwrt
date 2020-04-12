@@ -95,18 +95,18 @@
 
 &state_default {
 	gpio {
-		ralink,group = "p0led_an", "wdt", "wled_an";
-		ralink,function = "gpio";
+		groups = "p0led_an", "wdt", "wled_an";
+		function = "gpio";
 	};
 
 	ext_lna {
-		ralink,group = "uart1";
-		ralink,function = "sw_r";
+		groups = "uart1";
+		function = "sw_r";
 	};
 
 	ext_pa {
-		ralink,group = "i2s";
-		ralink,function = "antenna";
+		groups = "i2s";
+		function = "antenna";
 	};
 };
 
