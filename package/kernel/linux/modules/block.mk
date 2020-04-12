@@ -270,6 +270,32 @@ endef
 $(eval $(call KernelPackage,dm-raid))
 
 
+define KernelPackage/iscsi-initiator
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=iSCSI Initiator over TCP/IP
+  DEPENDS:=+kmod-scsi-core
+  KCONFIG:= \
+	CONFIG_INET \
+	CONFIG_SCSI_LOWLEVEL \
+	CONFIG_ISCSI_TCP \
+	CONFIG_SCSI_ISCSI_ATTRS
+  FILES:= \
+	$(LINUX_DIR)/drivers/scsi/iscsi_tcp.ko \
+	$(LINUX_DIR)/drivers/scsi/libiscsi.ko \
+	$(LINUX_DIR)/drivers/scsi/libiscsi_tcp.ko \
+	$(LINUX_DIR)/drivers/scsi/scsi_transport_iscsi.ko
+  AUTOLOAD:=$(call AutoProbe,libiscsi libiscsi_tcp scsi_transport_iscsi iscsi_tcp)
+endef
+
+define KernelPackage/iscsi-initiator/description
+The iSCSI Driver provides a host with the ability to access storage through an
+IP network. The driver uses the iSCSI protocol to transport SCSI requests and
+responses over a TCP/IP network between the host (the "initiator") and "targets".
+endef
+
+$(eval $(call KernelPackage,iscsi-initiator))
+
+
 define KernelPackage/md-mod
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=MD RAID
