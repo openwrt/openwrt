@@ -202,7 +202,7 @@
 		};
 
 		pcie0: pcie-controller@180c0000 {
-			compatible = "qcom,ar7240-pci";
+			compatible = "qcom,qca9550-pci", "qcom,ar7240-pci";
 			#address-cells = <3>;
 			#size-cells = <2>;
 			bus-range = <0x0 0x0>;
@@ -214,6 +214,9 @@
 				  0x1000000 0 0x00000000 0x0000000 0 0x000001>;		/* io space */
 			interrupt-parent = <&intc2>;
 			interrupts = <1>;
+
+			resets = <&rst 6>, <&rst 7>;
+			reset-names = "hc", "phy";
 
 			interrupt-controller;
 			#interrupt-cells = <1>;
@@ -234,7 +237,7 @@
 		};
 
 		pcie1: pcie-controller@18250000 {
-			compatible = "qcom,ar7240-pci";
+			compatible = "qcom,qca9550-pci", "qcom,ar7240-pci";
 			#address-cells = <3>;
 			#size-cells = <2>;
 			bus-range = <0x0 0x0>;
@@ -246,6 +249,9 @@
 				  0x1000000 0 0x00000000 0x0000001 0 0x000001>;		/* io space */
 			interrupt-parent = <&intc3>;
 			interrupts = <0>;
+
+			resets = <&rst2 6>, <&rst2 7>;
+			reset-names = "hc", "phy";
 
 			interrupt-controller;
 			#interrupt-cells = <1>;
