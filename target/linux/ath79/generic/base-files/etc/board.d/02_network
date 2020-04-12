@@ -13,6 +13,7 @@ ath79_setup_interfaces()
 	adtran,bsap1840|\
 	alfa-network,ap121f|\
 	aruba,ap-105|\
+	avm,fritz1750e|\
 	avm,fritz300e|\
 	comfast,cf-wr752ac-v1|\
 	devolo,dvl1200i|\
@@ -336,6 +337,9 @@ ath79_setup_macs()
 		;;
 	alfa-network,ap121f)
 		label_mac=$(mtd_get_mac_binary art 0x1002)
+		;;
+	avm,fritz1750e)
+		label_mac=$(fritz_tffs -n macwlan -i $(find_mtd_part "tffs (1)"))
 		;;
 	avm,fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
