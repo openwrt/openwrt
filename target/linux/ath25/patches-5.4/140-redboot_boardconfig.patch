@@ -1,6 +1,6 @@
---- a/drivers/mtd/redboot.c
-+++ b/drivers/mtd/redboot.c
-@@ -30,6 +30,8 @@
+--- a/drivers/mtd/parsers/redboot.c
++++ b/drivers/mtd/parsers/redboot.c
+@@ -16,6 +16,8 @@
  #include <linux/mtd/partitions.h>
  #include <linux/module.h>
  
@@ -9,7 +9,7 @@
  struct fis_image_desc {
      unsigned char name[16];      // Null terminated name
      uint32_t	  flash_base;    // Address within FLASH of image
-@@ -60,6 +62,7 @@ static int parse_redboot_partitions(stru
+@@ -67,6 +69,7 @@ static int parse_redboot_partitions(stru
  				    const struct mtd_partition **pparts,
  				    struct mtd_part_parser_data *data)
  {
@@ -17,7 +17,7 @@
  	int nrparts = 0;
  	struct fis_image_desc *buf;
  	struct mtd_partition *parts;
-@@ -225,14 +228,15 @@ static int parse_redboot_partitions(stru
+@@ -234,14 +237,15 @@ static int parse_redboot_partitions(stru
  		}
  	}
  #endif
@@ -35,7 +35,7 @@
  #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
  	if (nulllen > 0) {
  		strcpy(nullname, nullstring);
-@@ -251,6 +255,8 @@ static int parse_redboot_partitions(stru
+@@ -260,6 +264,8 @@ static int parse_redboot_partitions(stru
  	}
  #endif
  	for ( ; i<nrparts; i++) {
@@ -44,7 +44,7 @@
  		parts[i].size = fl->img->size;
  		parts[i].offset = fl->img->flash_base;
  		parts[i].name = names;
-@@ -284,6 +290,13 @@ static int parse_redboot_partitions(stru
+@@ -293,6 +299,13 @@ static int parse_redboot_partitions(stru
  		fl = fl->next;
  		kfree(tmp_fl);
  	}

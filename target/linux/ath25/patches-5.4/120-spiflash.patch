@@ -1,6 +1,6 @@
 --- a/drivers/mtd/devices/Kconfig
 +++ b/drivers/mtd/devices/Kconfig
-@@ -130,6 +130,10 @@ config MTD_BCM47XXSFLASH
+@@ -114,6 +114,10 @@ config MTD_BCM47XXSFLASH
  	  registered by bcma as platform devices. This enables driver for
  	  serial flash memories.
  
@@ -13,7 +13,7 @@
  	help
 --- a/drivers/mtd/devices/Makefile
 +++ b/drivers/mtd/devices/Makefile
-@@ -16,6 +16,7 @@ obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
+@@ -15,6 +15,7 @@ obj-$(CONFIG_MTD_DATAFLASH)	+= mtd_dataf
  obj-$(CONFIG_MTD_MCHP23K256)	+= mchp23k256.o
  obj-$(CONFIG_MTD_SPEAR_SMI)	+= spear_smi.o
  obj-$(CONFIG_MTD_SST25L)	+= sst25l.o
