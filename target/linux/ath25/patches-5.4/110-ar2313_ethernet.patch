@@ -1,22 +1,22 @@
 --- a/drivers/net/ethernet/atheros/Makefile
 +++ b/drivers/net/ethernet/atheros/Makefile
-@@ -8,3 +8,4 @@ obj-$(CONFIG_ATL2) += atlx/
+@@ -9,3 +9,4 @@ obj-$(CONFIG_ATL2) += atlx/
  obj-$(CONFIG_ATL1E) += atl1e/
  obj-$(CONFIG_ATL1C) += atl1c/
  obj-$(CONFIG_ALX) += alx/
 +obj-$(CONFIG_NET_AR231X) += ar231x/
 --- a/drivers/net/ethernet/atheros/Kconfig
 +++ b/drivers/net/ethernet/atheros/Kconfig
-@@ -5,7 +5,7 @@
+@@ -6,7 +6,7 @@
  config NET_VENDOR_ATHEROS
  	bool "Atheros devices"
  	default y
--	depends on PCI
-+	depends on (PCI || ATH25)
+-	depends on (PCI || ATH79)
++	depends on (PCI || ATH25 || ATH79)
  	---help---
  	  If you have a network (Ethernet) card belonging to this class, say Y.
  
-@@ -78,4 +78,10 @@ config ALX
+@@ -87,4 +87,10 @@ config ALX
  	  To compile this driver as a module, choose M here.  The module
  	  will be called alx.
  
@@ -1713,7 +1713,7 @@
 +
  void __init ath25_serial_setup(u32 mapbase, int irq, unsigned int uartclk)
  {
- 	struct uart_port s;
+ #ifdef CONFIG_SERIAL_8250_CONSOLE
 --- a/arch/mips/include/asm/mach-ath25/ath25_platform.h
 +++ b/arch/mips/include/asm/mach-ath25/ath25_platform.h
 @@ -71,4 +71,15 @@ struct ar231x_board_config {
