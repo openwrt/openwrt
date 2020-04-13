@@ -11,6 +11,7 @@
 	model = "ALFA Network Tube-E4G";
 
 	aliases {
+		label-mac-device = &ethernet;
 		led-boot = &power;
 		led-failsafe = &power;
 		led-running = &power;
@@ -130,12 +131,10 @@
 	status = "disabled";
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "ephy", "nd_sd", "pcie", "uartf";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		groups = "ephy", "nd_sd", "pcie", "uartf";
+		function = "gpio";
 	};
 };
 

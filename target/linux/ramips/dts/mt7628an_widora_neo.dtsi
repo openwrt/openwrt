@@ -32,7 +32,7 @@
 
 		wps {
 			label = "reset";
-			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
@@ -46,47 +46,45 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "gpio";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		groups = "gpio";
+		function = "gpio";
+	};
 
-		perst {
-			ralink,group = "perst";
-			ralink,function = "gpio";
-		};
+	perst {
+		groups = "perst";
+		function = "gpio";
+	};
 
-		refclk {
-			ralink,group = "refclk";
-			ralink,function = "gpio";
-		};
+	refclk {
+		groups = "refclk";
+		function = "gpio";
+	};
 
-		i2s {
-			ralink,group = "i2s";
-			ralink,function = "gpio";
-		};
+	i2s {
+		groups = "i2s";
+		function = "gpio";
+	};
 
-		spis {
-			ralink,group = "spis";
-			ralink,function = "gpio";
-		};
+	spis {
+		groups = "spis";
+		function = "gpio";
+	};
 
-		wled_kn {
-			ralink,group = "wled_kn";
-			ralink,function = "gpio";
-		};
+	wled_kn {
+		groups = "wled_kn";
+		function = "gpio";
+	};
 
-		wled_an {
-			ralink,group = "wled_an";
-			ralink,function = "wled_an";
-		};
+	wled_an {
+		groups = "wled_an";
+		function = "wled_an";
+	};
 
-		wdt {
-			ralink,group = "wdt";
-			ralink,function = "gpio";
-		};
+	wdt {
+		groups = "wdt";
+		function = "gpio";
 	};
 };
 

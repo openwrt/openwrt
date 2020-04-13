@@ -81,6 +81,26 @@ imx6_board_detect() {
 		name="gw5904"
 		;;
 
+	"Gateworks Ventana i.MX6 DualLite/Solo GW5907" |\
+	"Gateworks Ventana i.MX6 Dual/Quad GW5907")
+		name="gw5907"
+		;;
+
+	"Gateworks Ventana i.MX6 DualLite/Solo GW5910" |\
+	"Gateworks Ventana i.MX6 Dual/Quad GW5910")
+		name="gw5910"
+		;;
+
+	"Gateworks Ventana i.MX6 DualLite/Solo GW5912" |\
+	"Gateworks Ventana i.MX6 Dual/Quad GW5912")
+		name="gw5912"
+		;;
+
+	"Gateworks Ventana i.MX6 DualLite/Solo GW5913" |\
+	"Gateworks Ventana i.MX6 Dual/Quad GW5913")
+		name="gw5913"
+		;;
+
 	"SolidRun Cubox-i Solo/DualLite" |\
 	"SolidRun Cubox-i Dual/Quad")
 		name="cubox-i"

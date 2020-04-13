@@ -39,12 +39,7 @@ conf: $(conf-objs)
 mconf: $(mconf-objs) $(lxdialog-objs)
 	$(CC) -o $@ $^ $(call check_lxdialog,ldflags $(CC))
 qconf: $(qconf-cxxobjs) $(qconf-objs)
-ifneq ($(DISTRO-PKG-CONFIG),)
 	$(CXX) -o $@ $^ $(HOSTLOADLIBES_qconf)
-else
-	echo "You don't have 'pkg-config' installed. Cannot continue"
-	echo "For now, you may use 'make menuconfig' instead of 'make xconfig'"
-endif
 
 clean:
 	rm -f *.o lxdialog/*.o $(clean-files) conf mconf
@@ -74,17 +69,17 @@ qconf.o: .tmp_qtcheck
 # Qt needs some extra effort...
 .tmp_qtcheck:
 	@set -e; echo "  CHECK   qt"; \
-	if $(DISTRO-PKG-CONFIG) --exists Qt5Core; then \
-	    cflags="-std=c++11 -fPIC `$(DISTRO-PKG-CONFIG) --cflags Qt5Core Qt5Gui Qt5Widgets`"; \
-	    libs=`$(DISTRO-PKG-CONFIG) --libs Qt5Core Qt5Gui Qt5Widgets`; \
-	    moc=`$(DISTRO-PKG-CONFIG) --variable=host_bins Qt5Core`/moc; \
-	elif $(DISTRO-PKG-CONFIG) --exists QtCore; then \
-	    cflags=`$(DISTRO-PKG-CONFIG) --cflags QtCore QtGui`; \
-	    libs=`$(DISTRO-PKG-CONFIG) --libs QtCore QtGui`; \
-	    moc=`$(DISTRO-PKG-CONFIG) --variable=moc_location QtCore`; \
+	if pkg-config --exists Qt5Core; then \
+	    cflags="-std=c++11 -fPIC `pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets`"; \
+	    libs=`pkg-config --libs Qt5Core Qt5Gui Qt5Widgets`; \
+	    moc=`pkg-config --variable=host_bins Qt5Core`/moc; \
+	elif pkg-config --exists QtCore; then \
+	    cflags=`pkg-config --cflags QtCore QtGui`; \
+	    libs=`pkg-config --libs QtCore QtGui`; \
+	    moc=`pkg-config --variable=moc_location QtCore`; \
 	else \
 	    echo >&2 "*"; \
-	    echo >&2 "* Could not find Qt via $(DISTRO-PKG-CONFIG)."; \
+	    echo >&2 "* Could not find Qt via pkg-config."; \
 	    echo >&2 "* Please install either Qt 4.8 or 5.x. and make sure it's in PKG_CONFIG_PATH"; \
 	    echo >&2 "*"; \
 	    exit 1; \

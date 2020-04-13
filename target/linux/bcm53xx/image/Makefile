@@ -79,7 +79,14 @@ endef
 
 define Build/asus-trx
 	$(STAGING_DIR_HOST)/bin/asustrx \
-		-p $(PRODUCTID) -i $@ -o $@.new
+		-p $(ASUS_PRODUCTID) -i $@ -o $@.new
+	mv $@.new $@
+endef
+
+define Build/luxul-lxl
+	$(STAGING_DIR_HOST)/bin/lxlfw create $@.new \
+		-i $@ \
+		-b $(LUXUL_BOARD)
 	mv $@.new $@
 endef
 
@@ -100,8 +107,11 @@ define Build/seama-nand
 		-i $@.entity
 endef
 
-DEVICE_VARS += PRODUCTID SIGNATURE NETGEAR_BOARD_ID NETGEAR_REGION TPLINK_BOARD
+DEVICE_VARS += ASUS_PRODUCTID
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
+DEVICE_VARS += SIGNATURE
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION TPLINK_BOARD
+DEVICE_VARS += LUXUL_BOARD
 
 IEEE8021X := wpad-basic
 B43 := $(IEEE8021X) kmod-b43
@@ -130,35 +140,40 @@ define Device/Default
 endef
 
 define Device/asus
+  DEVICE_VENDOR := ASUS
   IMAGES := trx
   IMAGE/trx := append-ubi | trx-nand | asus-trx
 endef
 
 define Device/asus-rt-ac56u
-  DEVICE_VENDOR := ASUS
+  $(call Device/asus)
   DEVICE_MODEL := RT-AC56U
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC56U
 endef
 TARGET_DEVICES += asus-rt-ac56u
 
 define Device/asus-rt-ac68u
-  DEVICE_VENDOR := ASUS
+  $(call Device/asus)
   DEVICE_MODEL := RT-AC68U
   DEVICE_PACKAGES := $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC68U
 endef
 TARGET_DEVICES += asus-rt-ac68u
 
 define Device/asus-rt-ac87u
-  DEVICE_VENDOR := ASUS
+  $(call Device/asus)
   DEVICE_MODEL := RT-AC87U
   DEVICE_PACKAGES := $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC87U
 endef
 TARGET_DEVICES += asus-rt-ac87u
 
 define Device/asus-rt-n18u
-  DEVICE_VENDOR := ASUS
+  $(call Device/asus)
   DEVICE_MODEL := RT-N18U
   DEVICE_PACKAGES := $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-N18U
 endef
 TARGET_DEVICES += asus-rt-n18u
 
@@ -262,6 +277,46 @@ define Device/linksys-ea9500
 endef
 # TARGET_DEVICES += linksys-ea9500
 
+define Device/luxul
+  DEVICE_VENDOR := Luxul
+  IMAGES := lxl
+  IMAGE/lxl := append-ubi | trx-nand | luxul-lxl
+endef
+
+define Device/luxul-abr-4500
+  $(Device/luxul)
+  DEVICE_MODEL := ABR-4500
+  DEVICE_PACKAGES := $(USB3_PACKAGES)
+  LUXUL_BOARD := ABR-4500
+endef
+TARGET_DEVICES += luxul-abr-4500
+
+define Device/luxul-xap-1610
+  $(Device/luxul)
+  DEVICE_MODEL := XAP-1610
+  DEVICE_PACKAGES := $(BRCMFMAC_4366C0)
+  IMAGE/lxl := append-rootfs | trx-serial | luxul-lxl
+  LUXUL_BOARD := XAP-1610
+endef
+TARGET_DEVICES += luxul-xap-1610
+
+define Device/luxul-xbr-4500
+  $(Device/luxul)
+  DEVICE_MODEL := XBR-4500
+  DEVICE_PACKAGES := $(USB3_PACKAGES)
+  LUXUL_BOARD := XBR-4500
+endef
+TARGET_DEVICES += luxul-xbr-4500
+
+define Device/luxul-xwr-3150
+  $(Device/luxul)
+  DEVICE_MODEL := XWR-3150
+  DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
+  DEVICE_DTS := bcm47094-luxul-xwr-3150-v1
+  LUXUL_BOARD := XWR-3150
+endef
+TARGET_DEVICES += luxul-xwr-3150
+
 define Device/netgear
   DEVICE_VENDOR := NETGEAR
   IMAGES := chk
@@ -355,7 +410,7 @@ define Device/tplink-archer-c5-v2
   IMAGE/bin := append-rootfs | bcm53xx-tplink-safeloader
   TPLINK_BOARD := ARCHER-C5-V2
 endef
-TARGET_DEVICES += tplink-archer-c5-v2
+#TARGET_DEVICES += tplink-archer-c5-v2
 
 define Device/tplink-archer-c9-v1
   DEVICE_VENDOR := TP-LINK
@@ -366,6 +421,6 @@ define Device/tplink-archer-c9-v1
   IMAGE/bin := append-rootfs | bcm53xx-tplink-safeloader
   TPLINK_BOARD := ARCHERC9
 endef
-TARGET_DEVICES += tplink-archer-c9-v1
+#TARGET_DEVICES += tplink-archer-c9-v1
 
 $(eval $(call BuildImage))

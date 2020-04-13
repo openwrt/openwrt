@@ -1,15 +1,38 @@
 --- a/arch/arm/boot/dts/kirkwood-ib62x0.dts
 +++ b/arch/arm/boot/dts/kirkwood-ib62x0.dts
-@@ -6,7 +6,7 @@
+@@ -6,7 +6,14 @@
  
  / {
  	model = "RaidSonic ICY BOX IB-NAS62x0 (Rev B)";
 -	compatible = "raidsonic,ib-nas6210-b", "raidsonic,ib-nas6220-b", "raidsonic,ib-nas6210", "raidsonic,ib-nas6220", "raidsonic,ib-nas62x0", "marvell,kirkwood-88f6281", "marvell,kirkwood";
 +	compatible = "raidsonic,ib-nas62x0", "marvell,kirkwood-88f6281", "marvell,kirkwood";
++
++	aliases {
++		led-boot = &led_green_os;
++		led-failsafe = &led_red_os;
++		led-running = &led_green_os;
++		led-upgrade = &led_red_os;
++	};
  
  	memory {
  		device_type = "memory";
-@@ -118,13 +118,13 @@
+@@ -81,12 +88,12 @@
+ 			     &pmx_led_usb_transfer>;
+ 		pinctrl-names = "default";
+ 
+-		green-os {
++		led_green_os: green-os {
+ 			label = "ib62x0:green:os";
+ 			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+-			default-state = "keep";
++			default-state = "on";
+ 		};
+-		red-os {
++		led_red_os: red-os {
+ 			label = "ib62x0:red:os";
+ 			gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+ 		};
+@@ -118,13 +125,13 @@
  	};
  
  	partition@100000 {

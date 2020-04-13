@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += IMAGE_SIZE DTB_SIZE
+DEVICE_VARS += DTB_SIZE
 
 define Build/boot-img
 	$(RM) -rf $@.bootdir
@@ -191,7 +191,7 @@ TARGET_DEVICES += netgear_wndap660
 define Device/netgear_wndr4700
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := Centria N900 WNDR4700/WNDR4720
-  DEVICE_PACKAGES := badblocks block-mount e2fsprogs \
+  DEVICE_PACKAGES := badblocks block-mount e2fsprogs kmod-hwmon-drivetemp \
 	kmod-dm kmod-fs-ext4 kmod-fs-vfat kmod-usb-ledtrig-usbport \
 	kmod-md-mod kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-iso8859-15 \
 	kmod-nls-utf8 kmod-usb3 kmod-usb-dwc2 kmod-usb-storage \
@@ -212,7 +212,7 @@ define Device/netgear_wndr4700
 	    append-uImage-fakehdr filesystem | dtb | create-uImage-dtb | prepend-dtb
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
-		       netgear-dni | check-size $$$$(IMAGE_SIZE)
+		       netgear-dni | check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   ARTIFACT/device-tree.dtb := export-dtb | uImage none
   NETGEAR_BOARD_ID := WNDR4700

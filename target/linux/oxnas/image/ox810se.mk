@@ -5,7 +5,7 @@ define Device/Default
   KERNEL_SUFFIX := -uImage
   KERNEL_INSTALL := 1
   FILESYSTEMS := squashfs ext4
-  PROFILES = Default $$(DTS)
+  PROFILES := Default
   IMAGES := sysupgrade.tar
   IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
 endef

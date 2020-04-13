@@ -5,73 +5,82 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-ifeq ($(SUBTARGET),cortexa53)
 
-define Device/sun50i-h5-nanopi-neo-plus2
+define Device/sun50i
+  SUNXI_DTS_DIR := allwinner/
+  KERNEL_NAME := Image
+  KERNEL := kernel-bin
+endef
+
+define Device/sun50i-h5
+  SOC := sun50i-h5
+  $(Device/sun50i)
+endef
+
+define Device/sun50i-a64
+  SOC := sun50i-a64
+  $(Device/sun50i)
+endef
+
+define Device/friendlyarm_nanopi-neo-plus2
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi NEO Plus2
   SUPPORTED_DEVICES:=nanopi-neo-plus2
-  SUNXI_DTS:=allwinner/sun50i-h5-nanopi-neo-plus2
-  KERNEL_NAME := Image
-  KERNEL := kernel-bin
+  $(Device/sun50i-h5)
 endef
+TARGET_DEVICES += friendlyarm_nanopi-neo-plus2
 
-TARGET_DEVICES += sun50i-h5-nanopi-neo-plus2
-
-define Device/sun50i-h5-nanopi-neo2
+define Device/friendlyarm_nanopi-neo2
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi NEO2
   SUPPORTED_DEVICES:=nanopi-neo2
-  SUNXI_DTS:=allwinner/sun50i-h5-nanopi-neo2
-  KERNEL_NAME := Image
-  KERNEL := kernel-bin
+  $(Device/sun50i-h5)
 endef
+TARGET_DEVICES += friendlyarm_nanopi-neo2
 
-TARGET_DEVICES += sun50i-h5-nanopi-neo2
+define Device/olimex_a64-olinuxino
+  DEVICE_VENDOR := Olimex
+  DEVICE_MODEL := A64-Olinuxino
+  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bs-firmware
+  $(Device/sun50i-a64)
+  SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-olinuxino
+endef
+TARGET_DEVICES += olimex_a64-olinuxino
 
-define Device/sun50i-a64-pine64-plus
+define Device/olimex_a64-olinuxino-emmc
+  DEVICE_VENDOR := Olimex
+  DEVICE_MODEL := A64-Olinuxino
+  DEVICE_VARIANT := eMMC
+  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bs-firmware
+  $(Device/sun50i-a64)
+  SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-olinuxino-emmc
+endef
+TARGET_DEVICES += olimex_a64-olinuxino-emmc
+
+define Device/pine64_pine64-plus
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := Pine64+
-  SUPPORTED_DEVICES:=pine64,pine64-plus
-  SUNXI_DTS:=allwinner/sun50i-a64-pine64-plus
-  KERNEL_NAME := Image
-  KERNEL := kernel-bin
+  $(Device/sun50i-a64)
 endef
+TARGET_DEVICES += pine64_pine64-plus
 
-TARGET_DEVICES += sun50i-a64-pine64-plus
-
-define Device/sun50i-a64-sopine-baseboard
+define Device/pine64_sopine-baseboard
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := SoPine
-  SUPPORTED_DEVICES:=pine64,sopine-baseboard
-  SUNXI_DTS:=allwinner/sun50i-a64-sopine-baseboard
-  KERNEL_NAME := Image
-  KERNEL := kernel-bin
+  $(Device/sun50i-a64)
 endef
+TARGET_DEVICES += pine64_sopine-baseboard
 
-TARGET_DEVICES += sun50i-a64-sopine-baseboard
-
-
-define Device/sun50i-h5-orangepi-zero-plus
-  DEVICE_VENDOR := Xunlong
-  DEVICE_MODEL := Orange Pi Zero Plus
-  SUPPORTED_DEVICES:=xunlong,orangepi-zero-plus
-  SUNXI_DTS:=allwinner/sun50i-h5-orangepi-zero-plus
-  KERNEL_NAME := Image
-  KERNEL := kernel-bin
-endef
-
-TARGET_DEVICES += sun50i-h5-orangepi-zero-plus
-
-define Device/sun50i-h5-orangepi-pc2
+define Device/xunlong_orangepi-pc2
   DEVICE_VENDOR := Xunlong
   DEVICE_MODEL := Orange Pi PC 2
-  SUPPORTED_DEVICES:=xunlong,orangepi-pc2
-  SUNXI_DTS:=allwinner/sun50i-h5-orangepi-pc2
-  KERNEL_NAME := Image
-  KERNEL := kernel-bin
+  $(Device/sun50i-h5)
 endef
+TARGET_DEVICES += xunlong_orangepi-pc2
 
-TARGET_DEVICES += sun50i-h5-orangepi-pc2
-
-endif
+define Device/xunlong_orangepi-zero-plus
+  DEVICE_VENDOR := Xunlong
+  DEVICE_MODEL := Orange Pi Zero Plus
+  $(Device/sun50i-h5)
+endef
+TARGET_DEVICES += xunlong_orangepi-zero-plus

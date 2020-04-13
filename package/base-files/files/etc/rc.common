@@ -73,6 +73,7 @@ Available commands:
 	reload		Reload configuration files (or restart if service does not implement reload)
 	enable		Enable service autostart
 	disable		Disable service autostart
+	enabled	Check if service is started on boot
 	status-ubus	Show ubus info for the service
 $EXTRA_HELP
 EOF
@@ -110,7 +111,7 @@ ${INIT_TRACE:+set -x}
 	EXTRA_HELP="\
 	running	Check if service is running
 	status	Service status
-	"
+${EXTRA_HELP}"
 
 	. $IPKG_INSTROOT/lib/functions/procd.sh
 	basescript=$(readlink "$initscript")

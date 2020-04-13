@@ -12,6 +12,7 @@ case "$FIRMWARE" in
 	avm,fritz4020)
 		caldata_extract_reverse "urlader" 0x1541 0x440
 		;;
+	dlink,dir-505|\
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
 		caldata_extract "art" 0x1000 0x440
@@ -35,7 +36,8 @@ case "$FIRMWARE" in
 	iodata,wn-ac1600dgr|\
 	iodata,wn-ac1600dgr2|\
 	iodata,wn-ag300dgr|\
-	sitecom,wlr-7100)
+	sitecom,wlr-7100|\
+	sitecom,wlr-8100)
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env ethaddr)
 		;;
@@ -72,6 +74,8 @@ case "$FIRMWARE" in
 	tplink,tl-wdr3500-v1|\
 	tplink,tl-wdr3600-v1|\
 	tplink,tl-wdr4300-v1|\
+	tplink,tl-wdr4300-v1-il|\
+	tplink,tl-wdr4310-v1|\
 	tplink,tl-wdr4900-v2|\
 	winchannel,wb2000)
 		caldata_extract "art" 0x5000 0x440
@@ -82,8 +86,12 @@ case "$FIRMWARE" in
 	tplink,tl-wr2543-v1|\
 	tplink,tl-wr842n-v1|\
 	ubnt,airrouter|\
-	ubnt,bullet-m|\
+	ubnt,bullet-m-ar7240|\
+	ubnt,bullet-m-ar7241|\
+	ubnt,nanobridge-m|\
+	ubnt,nanostation-loco-m|\
 	ubnt,nanostation-m|\
+	ubnt,picostation-m|\
 	ubnt,rocket-m)
 		caldata_extract "art" 0x1000 0x1000
 		;;
@@ -107,7 +115,7 @@ case "$FIRMWARE" in
 	case $board in
 	buffalo,wzr-hp-ag300h|\
 	netgear,wndr3700|\
-	netgear,wndr3700v2|\
+	netgear,wndr3700-v2|\
 	netgear,wndr3800|\
 	netgear,wndr3800ch)
 		caldata_extract "art" 0x1000 0xeb8
@@ -125,7 +133,7 @@ case "$FIRMWARE" in
 	case $board in
 	buffalo,wzr-hp-ag300h|\
 	netgear,wndr3700|\
-	netgear,wndr3700v2|\
+	netgear,wndr3700-v2|\
 	netgear,wndr3800|\
 	netgear,wndr3800ch)
 		caldata_extract "art" 0x5000 0xeb8

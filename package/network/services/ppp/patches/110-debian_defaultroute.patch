@@ -125,9 +125,9 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      bool old_vj;		/* use old (short) form of VJ option? */
 --- a/pppd/pppd.8
 +++ b/pppd/pppd.8
-@@ -127,6 +127,11 @@ is no other default route with the same
- value of -1, the route is only added if there is no default route at
- all.
+@@ -133,6 +133,11 @@ the gateway, when IPv6CP negotiation is
+ This entry is removed when the PPP connection is broken.  This option
+ is privileged if the \fInodefaultroute6\fR option has been specified.
  .TP
 +.B replacedefaultroute
 +This option is a flag to the defaultroute option. If defaultroute is
@@ -137,7 +137,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  .B disconnect \fIscript
  Execute the command specified by \fIscript\fR, by passing it to a
  shell, after
-@@ -740,7 +745,12 @@ disable both forms of hardware flow cont
+@@ -746,7 +751,12 @@ disable both forms of hardware flow cont
  .TP
  .B nodefaultroute
  Disable the \fIdefaultroute\fR option.  The system administrator who
@@ -150,10 +150,10 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 +wishes to prevent users from replacing a default route with pppd
  can do so by placing this option in the /etc/ppp/options file.
  .TP
- .B nodeflate
+ .B nodefaultroute6
 --- a/pppd/pppd.h
 +++ b/pppd/pppd.h
-@@ -681,7 +681,7 @@ int  sif6addr __P((int, eui64_t, eui64_t
+@@ -683,7 +683,7 @@ int  sif6addr __P((int, eui64_t, eui64_t
  int  cif6addr __P((int, eui64_t, eui64_t));
  				/* Remove an IPv6 address from i/f */
  #endif
@@ -164,16 +164,16 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  				/* Delete default route through i/f */
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
-@@ -207,6 +207,8 @@ static unsigned char inbuf[512]; /* buff
- static int	if_is_up;	/* Interface has been marked up */
+@@ -209,6 +209,8 @@ static int	if_is_up;	/* Interface has be
  static int	if6_is_up;	/* Interface has been marked up for IPv6, to help differentiate */
  static int	have_default_route;	/* Gateway for default route added */
+ static int	have_default_route6;	/* Gateway for default IPv6 route added */
 +static struct	rtentry old_def_rt;	/* Old default route */
 +static int	default_rt_repl_rest;	/* replace and restore old default rt */
  static u_int32_t proxy_arp_addr;	/* Addr for proxy arp entry added */
  static char proxy_arp_dev[16];		/* Device for proxy arp entry */
  static u_int32_t our_old_addr;		/* for detecting address changes */
-@@ -1570,6 +1572,9 @@ static int read_route_table(struct rtent
+@@ -1577,6 +1579,9 @@ static int read_route_table(struct rtent
  	p = NULL;
      }
  
@@ -183,7 +183,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      SIN_ADDR(rt->rt_dst) = strtoul(cols[route_dest_col], NULL, 16);
      SIN_ADDR(rt->rt_gateway) = strtoul(cols[route_gw_col], NULL, 16);
      SIN_ADDR(rt->rt_genmask) = strtoul(cols[route_mask_col], NULL, 16);
-@@ -1642,20 +1647,52 @@ int have_route_to(u_int32_t addr)
+@@ -1649,20 +1654,52 @@ int have_route_to(u_int32_t addr)
  /********************************************************************
   *
   * sifdefaultroute - assign a default route through the address given.
@@ -249,7 +249,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      }
  
      memset (&rt, 0, sizeof (rt));
-@@ -1671,10 +1708,16 @@ int sifdefaultroute (int unit, u_int32_t
+@@ -1678,10 +1715,16 @@ int sifdefaultroute (int unit, u_int32_t
  
      rt.rt_flags = RTF_UP;
      if (ioctl(sock_fd, SIOCADDRT, &rt) < 0) {
@@ -267,7 +267,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
      have_default_route = 1;
      return 1;
-@@ -1708,11 +1751,21 @@ int cifdefaultroute (int unit, u_int32_t
+@@ -1715,11 +1758,21 @@ int cifdefaultroute (int unit, u_int32_t
      rt.rt_flags = RTF_UP;
      if (ioctl(sock_fd, SIOCDELRT, &rt) < 0 && errno != ESRCH) {
  	if (still_ppp()) {
@@ -292,7 +292,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  }
 --- a/pppd/sys-solaris.c
 +++ b/pppd/sys-solaris.c
-@@ -2038,12 +2038,18 @@ cifaddr(u, o, h)
+@@ -2119,12 +2119,18 @@ cifaddr(u, o, h)
   * sifdefaultroute - assign a default route through the address given.
   */
  int

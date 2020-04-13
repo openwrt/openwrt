@@ -517,20 +517,20 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 		unsigned int gpio = button->gpio;
 
 		if (button->wakeup) {
-			dev_err(dev, DRV_NAME "does not support wakeup\n");
+			dev_err(dev, "does not support wakeup\n");
 			return -EINVAL;
 		}
 
 		bdata->map_entry = button_get_index(button->code);
 		if (bdata->map_entry < 0) {
-			dev_warn(dev, DRV_NAME "does not support key code:%u\n",
+			dev_warn(dev, "does not support key code:%u\n",
 				button->code);
 			continue;
 		}
 
 		if (!(button->type == 0 || button->type == EV_KEY ||
 		      button->type == EV_SW)) {
-			dev_warn(dev, DRV_NAME "only supports buttons or switches\n");
+			dev_warn(dev, "only supports buttons or switches\n");
 			continue;
 		}
 

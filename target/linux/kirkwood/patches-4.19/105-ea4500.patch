@@ -1,27 +1,45 @@
 --- a/arch/arm/boot/dts/kirkwood-linksys-viper.dts
 +++ b/arch/arm/boot/dts/kirkwood-linksys-viper.dts
-@@ -67,9 +67,23 @@
+@@ -24,6 +24,10 @@
+ 	};
+ 
+ 	aliases {
++		led-boot = &led_white_health;
++		led-failsafe = &led_white_health;
++		led-running = &led_white_health;
++		led-upgrade = &led_white_health;
+ 		serial0 = &uart0;
+ 	};
+ 
+@@ -56,9 +60,10 @@
+ 		pinctrl-0 = < &pmx_led_white_health &pmx_led_white_pulse >;
+ 		pinctrl-names = "default";
+ 
+-		white-health {
++		led_white_health: white-health {
+ 			label = "viper:white:health";
+ 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
++			default-state = "on";
+ 		};
+ 
+ 		white-pulse {
+@@ -67,9 +72,18 @@
  		};
  	};
  
 -	dsa {
 -		status = "disabled";
-+	switches {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
- 
-+		mvsw61xx@10 {
-+			compatible = "marvell,88e6171";
-+			status = "okay";
-+			reg = <0x10>;
++	mvsw61xx {
++		compatible = "marvell,88e6171";
++		status = "okay";
++		reg = <0x10>;
 +
-+			mii-bus = <&mdio>;
-+			cpu-port-0 = <5>;
-+			cpu-port-1 = <6>;
-+			is-indirect;
-+		};
++		mii-bus = <&mdio>;
++		cpu-port-0 = <5>;
++		cpu-port-1 = <6>;
++		is-indirect;
 +	};
-+
+ 
 +	dsa {
  		compatible = "marvell,dsa";
  		#address-cells = <2>;

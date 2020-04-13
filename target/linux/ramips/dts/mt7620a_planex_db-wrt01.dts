@@ -80,12 +80,10 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "i2c", "spi refclk", "rgmii1";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		groups = "i2c", "spi refclk", "rgmii1";
+		function = "gpio";
 	};
 };
 

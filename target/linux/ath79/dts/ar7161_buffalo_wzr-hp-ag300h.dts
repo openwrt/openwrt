@@ -47,7 +47,7 @@
 		usb {
 			label = "buffalo:green:usb";
 			gpios = <&ath9k0 3 GPIO_ACTIVE_LOW>;
-			trigger-sources = <&usb_ochi_port>, <&usb_echi_port>;
+			trigger-sources = <&usb_ohci_port>, <&usb_ehci_port>;
 			linux,default-trigger = "usbport";
 		};
 
@@ -180,7 +180,7 @@
 	#size-cells = <0>;
 	status = "okay";
 
-	usb_ochi_port: port@1 {
+	usb_ohci_port: port@1 {
 		reg = <1>;
 		#trigger-source-cells = <0>;
 	};
@@ -191,7 +191,7 @@
 	#size-cells = <0>;
 	status = "okay";
 
-	usb_echi_port: port@1 {
+	usb_ehci_port: port@1 {
 		reg = <1>;
 		#trigger-source-cells = <0>;
 	};
@@ -234,14 +234,14 @@
 	flash0: flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <104000000>;
+		spi-max-frequency = <50000000>;
 		m25p,fast-read;
 	};
 
 	flash1: flash@1 {
 		compatible = "jedec,spi-nor";
 		reg = <1>;
-		spi-max-frequency = <104000000>;
+		spi-max-frequency = <50000000>;
 		m25p,fast-read;
 	};
 };

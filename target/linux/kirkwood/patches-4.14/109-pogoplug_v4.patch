@@ -1,6 +1,19 @@
 --- a/arch/arm/boot/dts/kirkwood-pogoplug-series-4.dts
 +++ b/arch/arm/boot/dts/kirkwood-pogoplug-series-4.dts
-@@ -24,6 +24,7 @@
+@@ -18,12 +18,20 @@
+ 	compatible = "cloudengines,pogoplugv4", "marvell,kirkwood-88f6192",
+ 		     "marvell,kirkwood";
+ 
++	aliases {
++		led-boot = &led_health;
++		led-failsafe = &led_fault;
++		led-running = &led_health;
++		led-upgrade = &led_fault;
++	};
++
+ 	memory {
+ 		device_type = "memory";
+ 		reg = <0x00000000 0x08000000>;
  	};
  
  	chosen {
@@ -8,7 +21,7 @@
  		stdout-path = "uart0:115200n8";
  	};
  
-@@ -37,8 +38,8 @@
+@@ -37,8 +45,8 @@
  		eject {
  			debounce_interval = <50>;
  			wakeup-source;
@@ -19,7 +32,22 @@
  			gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
  		};
  	};
-@@ -137,29 +138,19 @@
+@@ -48,12 +56,12 @@
+ 		pinctrl-0 = <&pmx_led_green &pmx_led_red>;
+ 		pinctrl-names = "default";
+ 
+-		health {
++		led_health: health {
+ 			label = "pogoplugv4:green:health";
+ 			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+ 			default-state = "on";
+ 		};
+-		fault {
++		led_fault: fault {
+ 			label = "pogoplugv4:red:fault";
+ 			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+ 		};
+@@ -137,29 +145,19 @@
  		#size-cells = <1>;
  
  		partition@0 {
@@ -38,16 +66,16 @@
 -		partition@500000 {
 -			label = "uImage2";
 -			reg = <0x00500000 0x300000>;
+-		};
+-
+-		partition@800000 {
+-			label = "failsafe";
+-			reg = <0x00800000 0x800000>;
 +		partition@1c0000 {
 +			label = "uboot_env";
 +			reg = <0x001c0000 0x40000>;
  		};
  
--		partition@800000 {
--			label = "failsafe";
--			reg = <0x00800000 0x800000>;
--		};
--
 -		partition@1000000 {
 -			label = "root";
 -			reg = <0x01000000 0x7000000>;

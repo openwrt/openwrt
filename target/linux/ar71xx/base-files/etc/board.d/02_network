@@ -240,6 +240,8 @@ ar71xx_setup_interfaces()
 			"0@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth0" "1:wan"
 		;;
 	archer-c25-v1|\
+	archer-c60-v1|\
+	archer-c60-v2|\
 	rb-750-r2|\
 	rb-750p-pbr2|\
 	rb-750up-r2|\
@@ -257,12 +259,6 @@ ar71xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
-		;;
-	archer-c60-v1|\
-	archer-c60-v2)
-		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
-		ucidef_add_switch "switch0" \
-			"0@eth1" "1:lan:1" "2:lan:2" "3:lan:3" "4:lan:4"
 		;;
 	arduino-yun|\
 	dir-505-a1|\
@@ -632,6 +628,10 @@ ar71xx_setup_macs()
 		;;
 	fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
+		;;
+	tl-wdr4300)
+		base_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
+		wan_mac=$(macaddr_add "$base_mac" 1)
 		;;
 	tl-wr1043n-v5|\
 	tl-wr1043nd-v4)
