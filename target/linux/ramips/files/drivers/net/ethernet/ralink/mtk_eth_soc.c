@@ -230,7 +230,7 @@ static void fe_clean_rx(struct fe_priv *priv)
 		for (i = 0; i < ring->rx_ring_size; i++)
 			if (ring->rx_data[i]) {
 				if (ring->rx_dma && ring->rx_dma[i].rxd1)
-					dma_unmap_single(&priv->netdev->dev,
+					dma_unmap_single(priv->dev,
 							 ring->rx_dma[i].rxd1,
 							 ring->rx_buf_size,
 							 DMA_FROM_DEVICE);
