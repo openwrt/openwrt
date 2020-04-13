@@ -16,10 +16,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	} else if (!phydev->link && phydev->state != PHY_NOLINK) {
  		phydev->state = PHY_NOLINK;
 -		phy_link_down(phydev, true);
-+			if (!phydev->no_auto_carrier_off)
-+				phy_link_down(phydev, true);
-+			else
-+				phy_link_down(phydev, false);
++		if (!phydev->no_auto_carrier_off)
++			phy_link_down(phydev, true);
++		else
++			phy_link_down(phydev, false);
  	}
  
  	return 0;
