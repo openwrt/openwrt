@@ -37,6 +37,11 @@ define Device/Default
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 
+define Device/uimage-lzma-loader
+  LOADER_TYPE := bin
+  KERNEL := $(KERNEL_DTB) | loader-kernel | uImage none
+endef
+
 define Device/seama
   SEAMA_MTDBLOCK := 2
   IMAGES += factory.bin
