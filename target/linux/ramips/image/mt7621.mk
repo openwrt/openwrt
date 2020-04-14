@@ -504,7 +504,6 @@ define Device/MikroTik
   IMAGE_SIZE := 16128k
   DEVICE_PACKAGES := kmod-usb3
   LOADER_TYPE := elf
-  PLATFORM := mt7621
   KERNEL := $(KERNEL_DTB) | loader-kernel
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | \
 	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata | \
