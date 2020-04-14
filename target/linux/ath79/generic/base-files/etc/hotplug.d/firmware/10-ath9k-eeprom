@@ -10,7 +10,8 @@ case "$FIRMWARE" in
 "ath9k-eeprom-ahb-18100000.wmac.bin")
 	case $board in
 	avm,fritz1750e|\
-	avm,fritz4020)
+	avm,fritz4020|\
+	avm,fritz450e)
 		caldata_extract_reverse "urlader" 0x1541 0x440
 		;;
 	dlink,dir-505|\

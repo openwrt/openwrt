@@ -201,6 +201,15 @@ define Device/avm_fritz4020
 endef
 TARGET_DEVICES += avm_fritz4020
 
+define Device/avm_fritz450e
+  $(Device/avm)
+  SOC := qca9556
+  IMAGE_SIZE := 15232k
+  DEVICE_MODEL := FRITZ!WLAN Repeater 450E
+  SUPPORTED_DEVICES += fritz450e
+endef
+TARGET_DEVICES += avm_fritz450e
+
 define Device/buffalo_bhr-4grv
   SOC := ar7242
   DEVICE_VENDOR := Buffalo
