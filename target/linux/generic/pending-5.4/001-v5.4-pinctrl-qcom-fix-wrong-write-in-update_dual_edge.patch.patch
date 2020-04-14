@@ -13,11 +13,9 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  drivers/pinctrl/qcom/pinctrl-msm.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/qcom/pinctrl-msm.c b/drivers/pinctrl/qcom/pinctrl-msm.c
-index 1a948c3f54b7..9f1c9951949e 100644
 --- a/drivers/pinctrl/qcom/pinctrl-msm.c
 +++ b/drivers/pinctrl/qcom/pinctrl-msm.c
-@@ -692,7 +692,7 @@ static void msm_gpio_update_dual_edge_pos(struct msm_pinctrl *pctrl,
+@@ -688,7 +688,7 @@ static void msm_gpio_update_dual_edge_po
  
  		pol = msm_readl_intr_cfg(pctrl, g);
  		pol ^= BIT(g->intr_polarity_bit);
@@ -26,6 +24,3 @@ index 1a948c3f54b7..9f1c9951949e 100644
  
  		val2 = msm_readl_io(pctrl, g) & BIT(g->in_bit);
  		intstat = msm_readl_intr_status(pctrl, g);
--- 
-2.25.1
-
