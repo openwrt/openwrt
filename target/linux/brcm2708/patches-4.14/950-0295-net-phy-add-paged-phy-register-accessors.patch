@@ -181,7 +181,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +EXPORT_SYMBOL(phy_modify_paged);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -644,6 +644,9 @@ struct phy_driver {
+@@ -646,6 +646,9 @@ struct phy_driver {
  	int (*write_mmd)(struct phy_device *dev, int devnum, u16 regnum,
  			 u16 val);
  
@@ -191,7 +191,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* Get the size and type of the eeprom contained within a plug-in
  	 * module */
  	int (*module_info)(struct phy_device *dev,
-@@ -832,6 +835,14 @@ static inline bool phy_is_pseudo_fixed_l
+@@ -834,6 +837,14 @@ static inline bool phy_is_pseudo_fixed_l
   */
  int phy_write_mmd(struct phy_device *phydev, int devad, u32 regnum, u16 val);
  

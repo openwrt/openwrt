@@ -53,7 +53,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +EXPORT_SYMBOL_GPL(__phy_modify);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -726,6 +726,18 @@ static inline int phy_read(struct phy_de
+@@ -728,6 +728,18 @@ static inline int phy_read(struct phy_de
  }
  
  /**
@@ -72,7 +72,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
   * phy_write - Convenience function for writing a given PHY register
   * @phydev: the phy_device struct
   * @regnum: register number to write
-@@ -741,6 +753,22 @@ static inline int phy_write(struct phy_d
+@@ -743,6 +755,22 @@ static inline int phy_write(struct phy_d
  }
  
  /**
