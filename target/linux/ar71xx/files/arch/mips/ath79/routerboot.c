@@ -265,7 +265,6 @@ routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 		buf += 4;
 		buflen -= 4;
 		break;
-
 	case RB_MAGIC_SOFT:
 		if (buflen < 8)
 			return -EINVAL;
@@ -273,9 +272,7 @@ routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 		/* skip magic and CRC value */
 		buf += 8;
 		buflen -= 8;
-
 		break;
-
 	default:
 		return -EINVAL;
 	}
