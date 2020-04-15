@@ -75,6 +75,7 @@ define Device/tplink_tl-wa901nd-v2
   ATH_SOC := ar9132
   DEVICE_TITLE := TP-Link TL-WA901ND v2
   TPLINK_HWID := 0x09010002
+  SUPPORTED_DEVICES += tl-wa901nd-v2
 endef
 TARGET_DEVICES += tplink_tl-wa901nd-v2
 
