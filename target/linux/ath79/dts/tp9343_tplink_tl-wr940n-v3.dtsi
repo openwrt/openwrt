@@ -62,6 +62,14 @@
 	};
 };
 
+&keys {
+	wifi {
+		label = "WiFi button";
+		linux,code = <KEY_RFKILL>;
+		gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+	};
+};
+
 &eth1 {
 	mtd-mac-address = <&uboot 0x1fc00>;
 	mtd-mac-address-increment = <(-1)>;

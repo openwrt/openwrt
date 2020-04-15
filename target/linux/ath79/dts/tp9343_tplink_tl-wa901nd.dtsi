@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "tp9343_tplink_tl-wr94x.dtsi"
+
+/ {
+	aliases {
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_system: system {
+			label = "tp-link:green:system";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		qss {
+			label = "tp-link:green:qss";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		lan {
+			label = "tp-link:green:lan";
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			label = "tp-link:green:wlan";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+};
+
+&eth1 {
+	compatible = "syscon", "simple-mfd";
+};
