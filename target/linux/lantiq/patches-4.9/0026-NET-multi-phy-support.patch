@@ -43,10 +43,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		}
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -369,6 +369,7 @@ struct phy_device {
- 	bool is_pseudo_fixed_link;
+@@ -371,6 +371,7 @@ struct phy_device {
  	bool has_fixups;
  	bool suspended;
+ 	bool suspended_by_mdio_bus;
 +	bool no_auto_carrier_off;
  
  	enum phy_state state;

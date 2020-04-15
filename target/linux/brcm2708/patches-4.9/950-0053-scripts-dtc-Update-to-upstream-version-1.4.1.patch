@@ -174,7 +174,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
 --- a/scripts/dtc/dtc-lexer.l
 +++ b/scripts/dtc/dtc-lexer.l
-@@ -121,6 +121,11 @@ static void lexical_error(const char *fm
+@@ -120,6 +120,11 @@ static void lexical_error(const char *fm
  			return DT_V1;
  		}
  
@@ -629,7 +629,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
      } ;
  
  static yy_state_type yy_last_accepting_state;
-@@ -662,7 +664,7 @@ static int dts_version = 1;
+@@ -661,7 +663,7 @@ static int dts_version = 1;
  static void push_input_file(const char *filename);
  static bool pop_input_file(void);
  static void lexical_error(const char *fmt, ...);
@@ -638,7 +638,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
  #define INITIAL 0
  #define BYTESTRING 1
-@@ -704,7 +706,7 @@ FILE *yyget_out (void );
+@@ -703,7 +705,7 @@ FILE *yyget_out (void );
  
  void yyset_out  (FILE * out_str  );
  
@@ -647,7 +647,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
  char *yyget_text (void );
  
-@@ -853,6 +855,10 @@ YY_DECL
+@@ -852,6 +854,10 @@ YY_DECL
  	register char *yy_cp, *yy_bp;
  	register int yy_act;
      
@@ -658,7 +658,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	if ( !(yy_init) )
  		{
  		(yy_init) = 1;
-@@ -879,11 +885,6 @@ YY_DECL
+@@ -878,11 +884,6 @@ YY_DECL
  		yy_load_buffer_state( );
  		}
  
@@ -670,7 +670,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	while ( 1 )		/* loops until end-of-file is reached */
  		{
  		yy_cp = (yy_c_buf_p);
-@@ -901,7 +902,7 @@ YY_DECL
+@@ -900,7 +901,7 @@ YY_DECL
  yy_match:
  		do
  			{
@@ -679,7 +679,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  			if ( yy_accept[yy_current_state] )
  				{
  				(yy_last_accepting_state) = yy_current_state;
-@@ -910,13 +911,13 @@ yy_match:
+@@ -909,13 +910,13 @@ yy_match:
  			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
  				{
  				yy_current_state = (int) yy_def[yy_current_state];
@@ -695,7 +695,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  		yy_cp = (yy_last_accepting_cpos);
  		yy_current_state = (yy_last_accepting_state);
  
-@@ -951,39 +952,31 @@ case 2:
+@@ -950,39 +951,31 @@ case 2:
  YY_RULE_SETUP
  #line 75 "dtc-lexer.l"
  {
@@ -749,7 +749,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  {
  			if (!pop_input_file()) {
  				yyterminate();
-@@ -993,7 +986,7 @@ case YY_STATE_EOF(V1):
+@@ -992,7 +985,7 @@ case YY_STATE_EOF(V1):
  case 3:
  /* rule 3 can match eol */
  YY_RULE_SETUP
@@ -758,7 +758,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  {
  			DPRINT("String: %s\n", yytext);
  			yylval.data = data_copy_escape_string(yytext+1,
-@@ -1003,7 +996,7 @@ YY_RULE_SETUP
+@@ -1002,7 +995,7 @@ YY_RULE_SETUP
  	YY_BREAK
  case 4:
  YY_RULE_SETUP
@@ -767,7 +767,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  {
  			DPRINT("Keyword: /dts-v1/\n");
  			dts_version = 1;
-@@ -1013,25 +1006,33 @@ YY_RULE_SETUP
+@@ -1012,25 +1005,33 @@ YY_RULE_SETUP
  	YY_BREAK
  case 5:
  YY_RULE_SETUP
@@ -806,7 +806,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  {
  			DPRINT("Keyword: /delete-property/\n");
  			DPRINT("<PROPNODENAME>\n");
-@@ -1039,9 +1040,9 @@ YY_RULE_SETUP
+@@ -1038,9 +1039,9 @@ YY_RULE_SETUP
  			return DT_DEL_PROP;
  		}
  	YY_BREAK
@@ -818,7 +818,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  {
  			DPRINT("Keyword: /delete-node/\n");
  			DPRINT("<PROPNODENAME>\n");
-@@ -1049,9 +1050,9 @@ YY_RULE_SETUP
+@@ -1048,9 +1049,9 @@ YY_RULE_SETUP
  			return DT_DEL_NODE;
  		}
  	YY_BREAK
@@ -830,7 +830,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  {
  			DPRINT("Label: %s\n", yytext);
  			yylval.labelref = xstrdup(yytext);
-@@ -1059,9 +1060,9 @@ YY_RULE_SETUP
+@@ -1058,9 +1059,9 @@ YY_RULE_SETUP
  			return DT_LABEL;
  		}
  	YY_BREAK
@@ -842,7 +842,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  {
  			char *e;
  			DPRINT("Integer Literal: '%s'\n", yytext);
-@@ -1069,10 +1070,7 @@ YY_RULE_SETUP
+@@ -1068,10 +1069,7 @@ YY_RULE_SETUP
  			errno = 0;
  			yylval.integer = strtoull(yytext, &e, 0);
  
@@ -854,7 +854,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
  			if (errno == ERANGE)
  				lexical_error("Integer literal '%s' out of range",
-@@ -1084,10 +1082,10 @@ YY_RULE_SETUP
+@@ -1083,10 +1081,10 @@ YY_RULE_SETUP
  			return DT_LITERAL;
  		}
  	YY_BREAK
@@ -868,7 +868,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  {
  			struct data d;
  			DPRINT("Character literal: %s\n", yytext);
-@@ -1109,18 +1107,18 @@ YY_RULE_SETUP
+@@ -1108,18 +1106,18 @@ YY_RULE_SETUP
  			return DT_CHAR_LITERAL;
  		}
  	YY_BREAK
@@ -891,7 +891,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  {	/* new-style path reference */
  			yytext[yyleng-1] = '\0';
  			DPRINT("Ref: %s\n", yytext+2);
-@@ -1128,27 +1126,27 @@ YY_RULE_SETUP
+@@ -1127,27 +1125,27 @@ YY_RULE_SETUP
  			return DT_REF;
  		}
  	YY_BREAK
@@ -925,7 +925,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  {
  			DPRINT("PropNodeName: %s\n", yytext);
  			yylval.propnodename = xstrdup((yytext[0] == '\\') ?
-@@ -1157,75 +1155,75 @@ YY_RULE_SETUP
+@@ -1156,75 +1154,75 @@ YY_RULE_SETUP
  			return DT_PROPNODENAME;
  		}
  	YY_BREAK
@@ -1030,7 +1030,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  {
  			DPRINT("Char: %c (\\x%02x)\n", yytext[0],
  				(unsigned)yytext[0]);
-@@ -1241,12 +1239,12 @@ YY_RULE_SETUP
+@@ -1240,12 +1238,12 @@ YY_RULE_SETUP
  			return yytext[0];
  		}
  	YY_BREAK
@@ -1046,7 +1046,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
  	case YY_END_OF_BUFFER:
  		{
-@@ -1376,7 +1374,6 @@ ECHO;
+@@ -1375,7 +1373,6 @@ ECHO;
  			"fatal flex scanner internal error--no action found" );
  	} /* end of action switch */
  		} /* end of scanning one token */
@@ -1054,7 +1054,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  } /* end of yylex */
  
  /* yy_get_next_buffer - try to read in a new buffer
-@@ -1432,21 +1429,21 @@ static int yy_get_next_buffer (void)
+@@ -1431,21 +1428,21 @@ static int yy_get_next_buffer (void)
  
  	else
  		{
@@ -1079,7 +1079,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
  				if ( new_size <= 0 )
  					b->yy_buf_size += b->yy_buf_size / 8;
-@@ -1477,7 +1474,7 @@ static int yy_get_next_buffer (void)
+@@ -1476,7 +1473,7 @@ static int yy_get_next_buffer (void)
  
  		/* Read in more data. */
  		YY_INPUT( (&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move]),
@@ -1088,7 +1088,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
  		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
  		}
-@@ -1539,7 +1536,7 @@ static int yy_get_next_buffer (void)
+@@ -1538,7 +1535,7 @@ static int yy_get_next_buffer (void)
  		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
  			{
  			yy_current_state = (int) yy_def[yy_current_state];
@@ -1097,7 +1097,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  				yy_c = yy_meta[(unsigned int) yy_c];
  			}
  		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-@@ -1567,13 +1564,13 @@ static int yy_get_next_buffer (void)
+@@ -1566,13 +1563,13 @@ static int yy_get_next_buffer (void)
  	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
  		{
  		yy_current_state = (int) yy_def[yy_current_state];
@@ -1114,7 +1114,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  }
  
  #ifndef YY_NO_INPUT
-@@ -1600,7 +1597,7 @@ static int yy_get_next_buffer (void)
+@@ -1599,7 +1596,7 @@ static int yy_get_next_buffer (void)
  
  		else
  			{ /* need more input */
@@ -1123,7 +1123,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  			++(yy_c_buf_p);
  
  			switch ( yy_get_next_buffer(  ) )
-@@ -1874,7 +1871,7 @@ void yypop_buffer_state (void)
+@@ -1873,7 +1870,7 @@ void yypop_buffer_state (void)
   */
  static void yyensure_buffer_stack (void)
  {
@@ -1132,7 +1132,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
      
  	if (!(yy_buffer_stack)) {
  
-@@ -1971,12 +1968,12 @@ YY_BUFFER_STATE yy_scan_string (yyconst
+@@ -1970,12 +1967,12 @@ YY_BUFFER_STATE yy_scan_string (yyconst
   * 
   * @return the newly allocated buffer state object.
   */
@@ -1147,7 +1147,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
      
  	/* Get memory for full buffer, including space for trailing EOB's. */
  	n = _yybytes_len + 2;
-@@ -2058,7 +2055,7 @@ FILE *yyget_out  (void)
+@@ -2057,7 +2054,7 @@ FILE *yyget_out  (void)
  /** Get the length of the current token.
   * 
   */
@@ -1156,7 +1156,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  {
          return yyleng;
  }
-@@ -2206,7 +2203,7 @@ void yyfree (void * ptr )
+@@ -2205,7 +2202,7 @@ void yyfree (void * ptr )
  
  #define YYTABLES_NAME "yytables"
  

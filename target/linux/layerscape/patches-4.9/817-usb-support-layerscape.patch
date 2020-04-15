@@ -87,7 +87,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			pkt_len = le32_to_cpu(rx_desc->opts1) & RX_LEN_MASK;
  			if (pkt_len < ETH_ZLEN)
  				break;
-@@ -4520,6 +4525,7 @@ static struct usb_device_id rtl8152_tabl
+@@ -4526,6 +4531,7 @@ static struct usb_device_id rtl8152_tabl
  	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO,  0x304f)},
  	{REALTEK_USB_DEVICE(VENDOR_ID_LINKSYS, 0x0041)},
  	{REALTEK_USB_DEVICE(VENDOR_ID_NVIDIA,  0x09ff)},
@@ -156,7 +156,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	int ret;
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -4450,6 +4450,14 @@ hub_port_init(struct usb_hub *hub, struc
+@@ -4454,6 +4454,14 @@ hub_port_init(struct usb_hub *hub, struc
  	else
  		speed = usb_speed_string(udev->speed);
  
@@ -632,7 +632,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	struct platform_device *dwc3_pdev = to_platform_device(dwc->dev);
  
  	irq = platform_get_irq_byname(dwc3_pdev, "peripheral");
-@@ -3042,6 +3043,12 @@ int dwc3_gadget_init(struct dwc3 *dwc)
+@@ -3041,6 +3042,12 @@ int dwc3_gadget_init(struct dwc3 *dwc)
  		goto err5;
  	}
  
