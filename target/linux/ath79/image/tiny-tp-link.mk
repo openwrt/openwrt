@@ -166,6 +166,7 @@ define Device/tplink_tl-wa901nd-v2
   DEVICE_MODEL := TL-WA901ND
   DEVICE_VARIANT := v2
   TPLINK_HWID := 0x09010002
+  SUPPORTED_DEVICES += tl-wa901nd-v2
 endef
 TARGET_DEVICES += tplink_tl-wa901nd-v2
 
