@@ -218,6 +218,13 @@ static u32 get_u32(void *buf)
 	       ((u32) p[0] << 24));
 }
 
+static u16 get_u16(void *buf)
+{
+    u8 *p = buf;
+
+    return (u16) p[1] + ((u16) p[0] << 8);
+}
+
 __init int
 routerboot_find_magic(u8 *buf, unsigned int buflen, u32 *offset, bool hard)
 {
@@ -278,34 +285,42 @@ routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 	}
 
 	ret = -ENOENT;
-	while (buflen > 4) {
-		u32 id_and_len = get_u32(buf);
-		buf += 4;
-		buflen -= 4;
-		id = id_and_len & 0xFFFF;
-		len = id_and_len >> 16;
+        while (buflen > 2) {
+        u16 id;
+        u16 len;
 
-		if (id == RB_ID_TERMINATOR)
-			break;
+        len = get_u16(buf);
+        buf += 2;
+        buflen -= 2;
 
-		if (buflen < len)
-			break;
+        if (buflen < 2)
+            break;
 
-		if (id == tag_id) {
-			if (tag_len)
-				*tag_len = len;
-			if (tag_data)
-				*tag_data = buf;
-			ret = 0;
-			break;
-		}
+        id = get_u16(buf);
+        buf += 2;
+        buflen -= 2;
 
-		if (align)
-			len += (4 - len % 4) % 4;
+        if (id == RB_ID_TERMINATOR)
+            break;
 
-		buf += len;
-		buflen -= len;
-	}
+        if (buflen < len)
+            break;
+
+        if (id == tag_id) {
+            if (tag_len)
+                *tag_len = len;
+            if (tag_data)
+                *tag_data = buf;
+            ret = 0;
+            break;
+        }
+
+        if (align)
+            len = (len + 3) / 4;
+
+        buf += len;
+        buflen -= len;
+    }
 
 	return ret;
 }
