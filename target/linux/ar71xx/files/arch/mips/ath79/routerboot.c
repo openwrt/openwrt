@@ -286,41 +286,41 @@ routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 
 	ret = -ENOENT;
         while (buflen > 2) {
-        u16 id;
-        u16 len;
+                u16 id;
+                u16 len;
 
-        len = get_u16(buf);
-        buf += 2;
-        buflen -= 2;
+                len = get_u16(buf);
+                buf += 2;
+                buflen -= 2;
 
-        if (buflen < 2)
-            break;
+                if (buflen < 2)
+                    break;
 
-        id = get_u16(buf);
-        buf += 2;
-        buflen -= 2;
+                id = get_u16(buf);
+                buf += 2;
+                buflen -= 2;
 
-        if (id == RB_ID_TERMINATOR)
-            break;
+                if (id == RB_ID_TERMINATOR)
+                    break;
 
-        if (buflen < len)
-            break;
+                if (buflen < len)
+                    break;
 
-        if (id == tag_id) {
-            if (tag_len)
-                *tag_len = len;
-            if (tag_data)
-                *tag_data = buf;
-            ret = 0;
-            break;
-        }
+                if (id == tag_id) {
+                    if (tag_len)
+                        *tag_len = len;
+                    if (tag_data)
+                        *tag_data = buf;
+                    ret = 0;
+                    break;
+                }
 
-        if (align)
-            len = (len + 3) / 4;
+                if (align)
+                    len = (len + 3) / 4;
 
-        buf += len;
-        buflen -= len;
-    }
+                buf += len;
+                buflen -= len;
+            }
 
 	return ret;
 }
