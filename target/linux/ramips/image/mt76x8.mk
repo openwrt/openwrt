@@ -14,6 +14,30 @@ define Device/alfa-network_awusfree1
 endef
 TARGET_DEVICES += alfa-network_awusfree1
 
+define Device/asus_rt-n10p-v3
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Asus
+  DEVICE_MODEL := RT-N10P
+  DEVICE_VARIANT := V3
+endef
+TARGET_DEVICES += asus_rt-n10p-v3
+
+define Device/asus_rt-n11p-b1
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Asus
+  DEVICE_MODEL := RT-N11P
+  DEVICE_VARIANT := B1
+endef
+TARGET_DEVICES += asus_rt-n11p-b1
+
+define Device/asus_rt-n12-vp-b1
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Asus
+  DEVICE_MODEL := RT-N12 VP
+  DEVICE_VARIANT := B1
+endef
+TARGET_DEVICES += asus_rt-n12-vp-b1
+
 define Device/buffalo_wcr-1166ds
   IMAGE_SIZE := 7936k
   BUFFALO_TAG_PLATFORM := MTK
