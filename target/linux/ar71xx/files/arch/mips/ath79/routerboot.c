@@ -295,7 +295,7 @@ routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 		buflen -= 2;
 
 		if (buflen < 2)
-		 	break;
+			break;
 
 		id = get_u16(buf);
 		buf += 2;
@@ -305,12 +305,12 @@ routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 			break;
 
 		if (buflen < len)
- 			break;
+			break;
 
 		if (id == tag_id) {
 			if (tag_len)
 				*tag_len = len;
- 			if (tag_data)
+			if (tag_data)
 				*tag_data = buf;
 			ret = 0;
 			break;
