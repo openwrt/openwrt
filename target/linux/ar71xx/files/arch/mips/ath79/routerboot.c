@@ -220,9 +220,9 @@ static u32 get_u32(void *buf)
 
 static u16 get_u16(void *buf)
 {
-    u8 *p = buf;
+	u8 *p = buf;
 
-    return (u16) p[1] + ((u16) p[0] << 8);
+	return (u16) p[1] + ((u16) p[0] << 8);
 }
 
 __init int
@@ -249,8 +249,6 @@ __init int
 routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 		    u8 **tag_data, u16 *tag_len)
 {
-	u16 id;
-	u16 len;
 	uint32_t magic;
 	bool align = false;
 	int ret;
@@ -272,6 +270,7 @@ routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 		buf += 4;
 		buflen -= 4;
 		break;
+
 	case RB_MAGIC_SOFT:
 		if (buflen < 8)
 			return -EINVAL;
@@ -279,7 +278,9 @@ routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 		/* skip magic and CRC value */
 		buf += 8;
 		buflen -= 8;
+
 		break;
+
 	default:
 		return -EINVAL;
 	}
