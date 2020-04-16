@@ -285,9 +285,6 @@ routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 		id = id_and_len & 0xFFFF;
 		len = id_and_len >> 16;
 
-		if (align)
-			len += (4 - len % 4) % 4;
-
 		if (id == RB_ID_TERMINATOR)
 			break;
 
@@ -302,6 +299,9 @@ routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 			ret = 0;
 			break;
 		}
+
+		if (align)
+			len += (4 - len % 4) % 4;
 
 		buf += len;
 		buflen -= len;
@@ -409,9 +409,7 @@ __rb_get_wlan_data(u16 id)
 		lzo_out_len = RB_ART_SIZE;
 		err = lzo1x_decompress_safe(buf_lzo_in, tag_len + sizeof(lzo_prefix),
 					    buf_lzo_out, &lzo_out_len);
-		/* For some reason, I get this "input not consumed" error
-		 * even though the output is correct, so ignore it. */
-		if (err && err != LZO_E_INPUT_NOT_CONSUMED) {
+		if (err) {
 			pr_err("unable to decompress calibration data: %d\n",
 			       err);
 			goto err_free;
@@ -465,9 +463,7 @@ __rb_get_wlan_data(u16 id)
 		lzo_out_len = RB_ART_SIZE;
 		err = lzo1x_decompress_safe(buf_lzo_in, tag_len,
 					    buf_lzo_out, &lzo_out_len);
-		/* For some reason, I get this "input not consumed" error
-		 * even though the output is correct, so ignore it. */
-		if (err && err != LZO_E_INPUT_NOT_CONSUMED) {
+		if (err) {
 			pr_err("unable to decompress calibration data: %d\n",
 			       err);
 			goto err_free;
