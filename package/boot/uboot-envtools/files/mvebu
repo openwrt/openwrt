@@ -24,6 +24,9 @@ globalscale,espressobin-v7-emmc|\
 marvell,armada8040-mcbin)
 	ubootenv_add_uci_config "/dev/mtd0" "0x3f0000" "0x10000" "0x10000" "1"
 	;;
+glinet,gl-mv1000)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x8000" "0x8000" "1"
+	;;
 linksys,caiman|\
 linksys,cobra|\
 linksys,shelby)

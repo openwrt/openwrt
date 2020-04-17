@@ -69,3 +69,12 @@ define Device/methode_udpu
   BOOT_SCRIPT := udpu
 endef
 TARGET_DEVICES += methode_udpu
+
+define Device/glinet_gl-mv1000
+  $(call Device/Default-arm64)
+  DEVICE_TITLE := GL.iNet GL-MV1000
+  DEVICE_DTS := armada-gl-mv1000
+  SUPPORTED_DEVICES := glinet,gl-mv1000
+endef
+TARGET_DEVICES += glinet_gl-mv1000
+
