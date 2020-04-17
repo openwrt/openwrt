@@ -177,7 +177,7 @@ define Device/avm_fritz1750e
   SOC := qca9556
   IMAGE_SIZE := 15232k
   DEVICE_MODEL := FRITZ!WLAN Repeater 1750E
-  DEVICE_PACKAGES += rssileds kmod-ath10k-ct-smallbuffers | \
+  DEVICE_PACKAGES += rssileds kmod-ath10k-ct-smallbuffers \
 	ath10k-firmware-qca988x-ct -swconfig
 endef
 TARGET_DEVICES += avm_fritz1750e
