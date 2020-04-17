@@ -14,6 +14,7 @@ PKG_LICENSE_FILES:=COPYING
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
 
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libbsd
@@ -42,4 +43,4 @@ define Package/libbsd/install
 endef
 
 $(eval $(call BuildPackage,libbsd))
-
+$(eval $(call HostBuild))
