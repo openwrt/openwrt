@@ -579,6 +579,15 @@ define Device/lava_lr-25g001
 endef
 TARGET_DEVICES += lava_lr-25g001
 
+define Device/lb-link_bl-w1200
+  SOC := mt7620a
+  DEVICE_VENDOR := LB-Link
+  DEVICE_MODEL := BL-W1200
+  IMAGE_SIZE := 7872k
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76x2
+endef
+TARGET_DEVICES += lb-link_bl-w1200
+
 define Device/lenovo_newifi-y1
   SOC := mt7620a
   IMAGE_SIZE := 16064k
