@@ -440,15 +440,16 @@ mac80211_iw_interface_add() {
 	local type="$3"
 	local wdsflag="$4"
 	local rc
+	local oldifname
 
-	iw phy "$phy" interface add "$ifname" type "$type" $wdsflag
+	iw phy "$phy" interface add "$ifname" type "$type" $wdsflag >/dev/null 2>&1
 	rc="$?"
 
 	[ "$rc" = 233 ] && {
 		# Device might have just been deleted, give the kernel some time to finish cleaning it up
 		sleep 1
 
-		iw phy "$phy" interface add "$ifname" type "$type" $wdsflag
+		iw phy "$phy" interface add "$ifname" type "$type" $wdsflag >/dev/null 2>&1
 		rc="$?"
 	}
 
@@ -475,17 +476,26 @@ mac80211_iw_interface_add() {
 	}
 
 	[ "$rc" = 233 ] && {
-		iw dev "$ifname" del
-		sleep 1
+		iw dev "$ifname" del >/dev/null 2>&1
+		[ "$?" = 0 ] && {
+			sleep 1
 
-		iw phy "$phy" interface add "$ifname" type "$type" $wdsflag
-		rc="$?"
+			iw phy "$phy" interface add "$ifname" type "$type" $wdsflag >/dev/null 2>&1
+			rc="$?"
+		}
 	}
 
-	[ "$rc" = 233 ] && {
+	[ "$rc" != 0 ] && {
 		# Device might not support virtual interfaces, so the interface never got deleted in the first place.
 		# Check if the interface already exists, and avoid failing in this case.
-		ip link show dev "$ifname" >/dev/null 2>/dev/null && rc=0
+		[ -d "/sys/class/ieee80211/${phy}/device/net/${ifname}" ] && rc=0
+	}
+
+	[ "$rc" != 0 ] && {
+		# Device doesn't support virtual interfaces and may have existing interface other than ifname.
+		oldifname="$(basename "/sys/class/ieee80211/${phy}/device/net"/* 2>/dev/null)"
+		[ "$oldifname" ] && ip link set "$oldifname" name "$ifname" 1>/dev/null 2>&1
+		rc="$?"
 	}
 
 	[ "$rc" != 0 ] && wireless_setup_failed INTERFACE_CREATION_FAILED
