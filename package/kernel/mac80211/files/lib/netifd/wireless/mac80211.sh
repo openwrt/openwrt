@@ -455,7 +455,7 @@ mac80211_iw_interface_add() {
 	[ "$rc" = 233 ] && {
 		# Keep matching pre-existing interface
 		[ -d "/sys/class/ieee80211/${phy}/device/net/${ifname}" ] && \
-		case "$(iw dev wlan0 info | grep "^\ttype" | cut -d' ' -f2- 2>/dev/null)" in
+		case "$(iw dev $ifname info | grep "^\ttype" | cut -d' ' -f2- 2>/dev/null)" in
 			"AP")
 				[ "$type" = "__ap" ] && rc=0
 				;;
