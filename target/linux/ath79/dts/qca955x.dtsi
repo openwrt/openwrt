@@ -3,7 +3,7 @@
 #include "ath79.dtsi"
 
 / {
-	compatible = "qca,qca9557";
+	compatible = "qca,qca9550";
 
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -30,7 +30,7 @@
 	ahb {
 		apb {
 			ddr_ctrl: memory-controller@18000000 {
-				compatible = "qca,ar9557-ddr-controller",
+				compatible = "qca,qca9550-ddr-controller",
 						"qca,ar7240-ddr-controller";
 				reg = <0x18000000 0x100>;
 
@@ -78,7 +78,7 @@
 			};
 
 			gpio: gpio@18040000 {
-				compatible = "qca,ar9557-gpio",
+				compatible = "qca,qca9550-gpio",
 						"qca,ar9340-gpio";
 				reg = <0x18040000 0x28>;
 
@@ -110,7 +110,7 @@
 			};
 
 			pll: pll-controller@18050000 {
-				compatible = "qca,ar9557-pll",
+				compatible = "qca,qca9550-pll",
 						"qca,qca9550-pll", "syscon";
 				reg = <0x18050000 0x50>;
 
