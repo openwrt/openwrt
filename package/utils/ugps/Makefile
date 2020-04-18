@@ -31,10 +31,6 @@ endef
 
 TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
 
-ifneq ($(CONFIG_USE_GLIBC),)
-  TARGET_CFLAGS += -D_DEFAULT_SOURCE
-endif
-
 define Package/ugps/conffiles
 /etc/config/gps
 endef
