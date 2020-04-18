@@ -105,7 +105,7 @@ v9: use SM/MS macros from code.h to simplify shift/mask handling
  }
 --- a/drivers/net/wireless/ath/ath10k/wmi.c
 +++ b/drivers/net/wireless/ath/ath10k/wmi.c
-@@ -7601,12 +7601,7 @@ ath10k_wmi_peer_assoc_fill_10_4(struct a
+@@ -7615,12 +7615,7 @@ ath10k_wmi_peer_assoc_fill_10_4(struct a
  	struct wmi_10_4_peer_assoc_complete_cmd *cmd = buf;
  
  	ath10k_wmi_peer_assoc_fill_10_2(ar, buf, arg);
