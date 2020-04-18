@@ -699,6 +699,23 @@ define Device/tplink_tl-wpa8630-v1
 endef
 TARGET_DEVICES += tplink_tl-wpa8630-v1
 
+define Device/tplink_tl-wpa8730-v1
+  $(Device/tplink-8mlzma)
+  SOC := qca9558
+  DEVICE_MODEL := TL-WPA8730
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  TPLINK_HWID := 0x87300001
+  KERNEL := $$(KERNEL) | pad-offset $$(BLOCKSIZE) 512 | tplink-v1-header -O
+  KERNEL_INITRAMFS := $$(KERNEL)
+  IMAGE_SIZE := 8064k
+  IMAGES := sysupgrade.bin factory-eu.bin factory-us.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+  IMAGE/factory-eu.bin := tplink-v1-image factory -m 257 -C EU -s | tplink-plc-header
+  IMAGE/factory-us.bin := tplink-v1-image factory -m 257 -C US -s | tplink-plc-header
+endef
+TARGET_DEVICES += tplink_tl-wpa8730-v1
+
 define Device/tplink_tl-wr1043nd-v1
   $(Device/tplink-8m)
   SOC := ar9132
