@@ -1,0 +1,38 @@
+From 599f7aa541bb5a658cbfd2af73bd9d2f6e828d43 Mon Sep 17 00:00:00 2001
+From: Chris Packham <judge.packham@gmail.com>
+Date: Mon, 18 Mar 2019 20:51:58 +1300
+Subject: [PATCH] ARM: kirkwood: disable dcache for Kirkwood boards
+
+Prior to commit 93b283d49f93 ("ARM: CPU: arm926ejs: Consolidate cache
+routines to common file") the kirkwood boards didn't have and dcache
+support. The network and usb drivers rely on this. Set
+CONFIG_SYS_DCACHE_OFF in the Kirkwood specific config.h.
+
+Reported-by: Leigh Brown <leigh@solinno.co.uk>
+Signed-off-by: Chris Packham <judge.packham@gmail.com>
+Reviewed-by: Stefan Roese <sr@denx.de>
+Signed-off-by: Stefan Roese <sr@denx.de>
+---
+ arch/arm/mach-kirkwood/include/mach/config.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/mach-kirkwood/include/mach/config.h b/arch/arm/mach-kirkwood/include/mach/config.h
+index fcd903887b..aea60688c2 100644
+--- a/arch/arm/mach-kirkwood/include/mach/config.h
++++ b/arch/arm/mach-kirkwood/include/mach/config.h
+@@ -26,6 +26,12 @@
+ #define CONFIG_KIRKWOOD_EGIGA_INIT	/* Enable GbePort0/1 for kernel */
+ #define CONFIG_KIRKWOOD_RGMII_PAD_1V8	/* Set RGMII Pad voltage to 1.8V */
+ #define CONFIG_KIRKWOOD_PCIE_INIT       /* Enable PCIE Port0 for kernel */
++/*
++ * Disable the dcache. Currently the network driver (mvgbe.c) and USB
++ * EHCI driver (ehci-marvell.c) and possibly others rely on the data
++ * cache being disabled.
++ */
++#define CONFIG_SYS_DCACHE_OFF
+ 
+ /*
+  * By default kwbimage.cfg from board specific folder is used
+-- 
+2.20.1
+
