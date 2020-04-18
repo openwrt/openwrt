@@ -39,7 +39,7 @@ endef
 
 define Device/uimage-lzma-loader
   LOADER_TYPE := bin
-  KERNEL := $(KERNEL_DTB) | loader-kernel | uImage none
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
 endef
 
 define Device/seama
