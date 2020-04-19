@@ -7,7 +7,10 @@ all: conf mconf
 clean:
 	rm -f *.o lxdialog/*.o *.moc $(clean-files) conf mconf qconf
 
-clean-files	:=
+# This clean-files definition is here to ensure that temporary files from the
+# previous version are removed by make config-clean.
+# It should be removed or emptied when this Makefile get updated again.
+clean-files	:= zconf.tab.c zconf.lex.c zconf.hash.c .tmp_qtcheck
 
 # ===========================================================================
 # Variables needed by the upstream Makefile
