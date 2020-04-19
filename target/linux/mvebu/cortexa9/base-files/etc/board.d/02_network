@@ -21,9 +21,7 @@ linksys,mamba|\
 linksys,rango|\
 linksys,shelby|\
 linksys,venom)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth1.2"
-	ucidef_add_switch "switch0" \
-		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5@eth0" "4:wan" "6@eth1"
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 	;;
 marvell,a385-db-ap)
 	ucidef_set_interfaces_lan_wan "eth0 eth1" "eth2"
@@ -36,11 +34,7 @@ solidrun,clearfog-pro-a1)
 	# eth0 is standalone ethernet
 	# eth1 is switch
 	# eth2 is SFP
-	ucidef_set_interfaces_lan_wan "eth1" "eth0 eth2"
-
-	# switch port 5 is connected to eth1
-	ucidef_add_switch "switch0" \
-		"0:lan:5" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5u@eth1" "6:lan:6"
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6" "eth0 eth2"
 	;;
 solidrun,clearfog-base-a1)
 	# eth0 is standalone ethernet
