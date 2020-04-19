@@ -218,7 +218,9 @@ define Device/dlink_dir-860l-b1
   $(Device/seama)
   BLOCKSIZE := 64k
   SEAMA_SIGNATURE := wrgac13_dlink.2013gui_dir860lb
-  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | uImage lzma
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
+	relocate-kernel | lzma -a0 | uImage lzma
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-860L
