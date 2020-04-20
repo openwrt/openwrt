@@ -1,0 +1,99 @@
+From a1b291f3f6c80a6c5ccad7283fc472d77a2a4763 Mon Sep 17 00:00:00 2001
+From: Russell King <rmk+kernel@armlinux.org.uk>
+Date: Sun, 22 Dec 2019 12:40:11 +0000
+Subject: [PATCH] net: dsa: mv88e6xxx: fix vlan setup
+
+DSA assumes that a bridge which has vlan filtering disabled is not
+vlan aware, and ignores all vlan configuration. However, the kernel
+software bridge code allows configuration in this state.
+
+This causes the kernel's idea of the bridge vlan state and the
+hardware state to disagree, so "bridge vlan show" indicates a correct
+configuration but the hardware lacks all configuration. Even worse,
+enabling vlan filtering on a DSA bridge immediately blocks all traffic
+which, given the output of "bridge vlan show", is very confusing.
+
+Provide an option that drivers can set to indicate they want to receive
+vlan configuration even when vlan filtering is disabled. This is safe
+for Marvell DSA bridges, which do not look up ingress traffic in the
+VTU if the port is in 8021Q disabled state. Whether this change is
+suitable for all DSA bridges is not known.
+
+Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
+---
+ drivers/net/dsa/mv88e6xxx/chip.c |  1 +
+ include/net/dsa.h                |  1 +
+ net/dsa/slave.c                  | 12 ++++++++----
+ 3 files changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/dsa/mv88e6xxx/chip.c b/drivers/net/dsa/mv88e6xxx/chip.c
+index 6787d560e9e3..271a1190f7c5 100644
+--- a/drivers/net/dsa/mv88e6xxx/chip.c
++++ b/drivers/net/dsa/mv88e6xxx/chip.c
+@@ -2650,6 +2650,7 @@ static int mv88e6xxx_setup(struct dsa_switch *ds)
+ 
+ 	chip->ds = ds;
+ 	ds->slave_mii_bus = mv88e6xxx_default_mdio_bus(chip);
++	ds->vlan_bridge_vtu = true;
+ 
+ 	mv88e6xxx_reg_lock(chip);
+ 
+diff --git a/include/net/dsa.h b/include/net/dsa.h
+index 541fb514e31d..4cbac78d5878 100644
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -269,6 +269,7 @@ struct dsa_switch {
+ 	 * settings on ports if not hardware-supported
+ 	 */
+ 	bool			vlan_filtering_is_global;
++	bool			vlan_bridge_vtu;
+ 
+ 	/* In case vlan_filtering_is_global is set, the VLAN awareness state
+ 	 * should be retrieved from here and not from the per-port settings.
+diff --git a/net/dsa/slave.c b/net/dsa/slave.c
+index 23c2210fa7ec..c7225b42864c 100644
+--- a/net/dsa/slave.c
++++ b/net/dsa/slave.c
+@@ -319,7 +319,8 @@ static int dsa_slave_vlan_add(struct net_device *dev,
+ 	if (obj->orig_dev != dev)
+ 		return -EOPNOTSUPP;
+ 
+-	if (dp->bridge_dev && !br_vlan_enabled(dp->bridge_dev))
++	if (dp->bridge_dev && !dp->ds->vlan_bridge_vtu &&
++	    !br_vlan_enabled(dp->bridge_dev))
+ 		return 0;
+ 
+ 	vlan = *SWITCHDEV_OBJ_PORT_VLAN(obj);
+@@ -386,7 +387,8 @@ static int dsa_slave_vlan_del(struct net_device *dev,
+ 	if (obj->orig_dev != dev)
+ 		return -EOPNOTSUPP;
+ 
+-	if (dp->bridge_dev && !br_vlan_enabled(dp->bridge_dev))
++	if (dp->bridge_dev && !dp->ds->vlan_bridge_vtu &&
++	    !br_vlan_enabled(dp->bridge_dev))
+ 		return 0;
+ 
+ 	/* Do not deprogram the CPU port as it may be shared with other user
+@@ -1118,7 +1120,8 @@ static int dsa_slave_vlan_rx_add_vid(struct net_device *dev, __be16 proto,
+ 	 * need to emulate the switchdev prepare + commit phase.
+ 	 */
+ 	if (dp->bridge_dev) {
+-		if (!br_vlan_enabled(dp->bridge_dev))
++		if (!dp->ds->vlan_bridge_vtu &&
++		    !br_vlan_enabled(dp->bridge_dev))
+ 			return 0;
+ 
+ 		/* br_vlan_get_info() returns -EINVAL or -ENOENT if the
+@@ -1152,7 +1155,8 @@ static int dsa_slave_vlan_rx_kill_vid(struct net_device *dev, __be16 proto,
+ 	 * need to emulate the switchdev prepare + commit phase.
+ 	 */
+ 	if (dp->bridge_dev) {
+-		if (!br_vlan_enabled(dp->bridge_dev))
++		if (!dp->ds->vlan_bridge_vtu &&
++		    !br_vlan_enabled(dp->bridge_dev))
+ 			return 0;
+ 
+ 		/* br_vlan_get_info() returns -EINVAL or -ENOENT if the
+-- 
+2.26.1
+

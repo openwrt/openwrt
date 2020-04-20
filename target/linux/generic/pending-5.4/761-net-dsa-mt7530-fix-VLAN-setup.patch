@@ -1,0 +1,54 @@
+From 10d8d9666d7d573b836cef7f550c4e2f67bfb21f Mon Sep 17 00:00:00 2001
+From: DENG Qingfang <dqfext@gmail.com>
+Date: Tue, 14 Apr 2020 01:31:00 +0800
+Subject: [PATCH] net: dsa: mt7530: fix VLAN setup
+
+Allow DSA to add VLAN entry even if VLAN filtering is disabled, so
+enabling it will not block the traffic of existent ports in the bridge
+
+Signed-off-by: DENG Qingfang <dqfext@gmail.com>
+---
+ drivers/net/dsa/mt7530.c | 13 +------------
+ 1 file changed, 1 insertion(+), 12 deletions(-)
+
+diff --git a/drivers/net/dsa/mt7530.c b/drivers/net/dsa/mt7530.c
+index 5b8c7f99fe16..e865db8b25e1 100644
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -1091,12 +1091,6 @@ mt7530_port_vlan_add(struct dsa_switch *ds, int port,
+ 	struct mt7530_priv *priv = ds->priv;
+ 	u16 vid;
+ 
+-	/* The port is kept as VLAN-unaware if bridge with vlan_filtering not
+-	 * being set.
+-	 */
+-	if (!dsa_port_is_vlan_filtering(&ds->ports[port]))
+-		return;
+-
+ 	mutex_lock(&priv->reg_mutex);
+ 
+ 	for (vid = vlan->vid_begin; vid <= vlan->vid_end; ++vid) {
+@@ -1122,12 +1116,6 @@ mt7530_port_vlan_del(struct dsa_switch *ds, int port,
+ 	struct mt7530_priv *priv = ds->priv;
+ 	u16 vid, pvid;
+ 
+-	/* The port is kept as VLAN-unaware if bridge with vlan_filtering not
+-	 * being set.
+-	 */
+-	if (!dsa_port_is_vlan_filtering(&ds->ports[port]))
+-		return 0;
+-
+ 	mutex_lock(&priv->reg_mutex);
+ 
+ 	pvid = priv->ports[port].pvid;
+@@ -1240,6 +1228,7 @@ mt7530_setup(struct dsa_switch *ds)
+ 	 * as two netdev instances.
+ 	 */
+ 	dn = ds->ports[MT7530_CPU_PORT].master->dev.of_node->parent;
++	ds->vlan_bridge_vtu = true;
+ 
+ 	if (priv->id == ID_MT7530) {
+ 		regulator_set_voltage(priv->core_pwr, 1000000, 1000000);
+-- 
+2.26.1
+
