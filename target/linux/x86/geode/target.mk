@@ -3,7 +3,6 @@ FEATURES += pci usb gpio
 DEFAULT_PACKAGES += \
 			kmod-crypto-hw-geode kmod-crypto-cbc \
 			kmod-ath5k kmod-ath9k \
-			kmod-button-hotplug \
 			kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
 			kmod-ledtrig-netdev hwclock wpad-basic
 # Geos
