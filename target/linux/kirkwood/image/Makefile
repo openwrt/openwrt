@@ -82,7 +82,7 @@ TARGET_DEVICES += iom_ix2-200
 define Device/linksys_audi
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := EA3500 (Audi)
-  DEVICE_PACKAGES := kmod-mwl8k swconfig wpad-basic kmod-gpio-button-hotplug
+  DEVICE_PACKAGES := kmod-mwl8k wpad-basic kmod-gpio-button-hotplug
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k
@@ -97,7 +97,7 @@ TARGET_DEVICES += linksys_audi
 define Device/linksys_viper
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := E4200v2 / EA4500 (Viper)
-  DEVICE_PACKAGES := kmod-mwl8k swconfig wpad-basic kmod-gpio-button-hotplug
+  DEVICE_PACKAGES := kmod-mwl8k wpad-basic kmod-gpio-button-hotplug
   KERNEL_SIZE := 2688k
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
