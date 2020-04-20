@@ -110,6 +110,11 @@ Build/Compile = $(Build/Compile/Default)
 
 ifdef CONFIG_SIGNED_PACKAGES
   define Build/Configure
+	#migrating key-build over to key-build.sec
+	[ -s $(BUILD_KEY).sec -a ! -s $(BUILD_KEY) ] || \
+		echo "Migrate $(BUILD_KEY) to $(BUILD_KEY).sec to work with signify"
+		mv $(BUILD_KEY) $(BUILD_KEY).sec
+
 	[ -s $(BUILD_KEY).sec -a -s $(BUILD_KEY).pub ] || \
 		$(STAGING_DIR_HOST)/bin/signify -G -n -s $(BUILD_KEY).sec -p $(BUILD_KEY).pub -c "Local build key"
 
