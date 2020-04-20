@@ -13,12 +13,6 @@ GRUB_SERIAL_CONFIG =
 GRUB_TERMINAL_CONFIG =
 GRUB_CONSOLE_CMDLINE =
 
-ifneq ($(strip $(foreach subtarget,$(USE_ATKBD),$(CONFIG_TARGET_x86_$(subtarget)))),)
-  GRUB2_VARIANT := generic
-else
-  GRUB2_VARIANT := legacy
-endif
-
 ifneq ($(CONFIG_GRUB_CONSOLE),)
   GRUB_CONSOLE_CMDLINE += console=tty0
   GRUB_TERMINALS += console
@@ -151,8 +145,6 @@ define Device/Default
   IMAGES := $$(IMAGES-y)
   ARTIFACTS := $$(ARTIFACTS-y)
 endef
-
-$(eval $(call Image/gzip-ext4-padded-squashfs))
 
 ifeq ($(SUBTARGET),64)
   include 64.mk
