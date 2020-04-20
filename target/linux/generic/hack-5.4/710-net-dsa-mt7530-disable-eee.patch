@@ -1,0 +1,144 @@
+From d0ea1c9b79e177b2bddff460d00b8e2a553e1625 Mon Sep 17 00:00:00 2001
+From: DENG Qingfang <dqfext@gmail.com>
+Date: Wed, 22 Apr 2020 00:02:37 +0800
+Subject: [PATCH] net: dsa: mt7530: disable EEE
+
+Signed-off-by: DENG Qingfang <dqfext@gmail.com>
+---
+ drivers/net/dsa/mt7530.c | 40 ++++++++++++++++++++++++++++++----------
+ drivers/net/dsa/mt7530.h |  5 +++++
+ 2 files changed, 35 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/net/dsa/mt7530.c b/drivers/net/dsa/mt7530.c
+index e865db8b25e1..154d9098c8c6 100644
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -67,28 +67,28 @@ static const struct mt7530_mib_desc mt7530_mib[] = {
+ };
+ 
+ static int
+-core_read_mmd_indirect(struct mt7530_priv *priv, int prtad, int devad)
++read_mmd_indirect(struct mt7530_priv *priv, int addr, int prtad, int devad)
+ {
+ 	struct mii_bus *bus = priv->bus;
+ 	int value, ret;
+ 
+ 	/* Write the desired MMD Devad */
+-	ret = bus->write(bus, 0, MII_MMD_CTRL, devad);
++	ret = bus->write(bus, addr, MII_MMD_CTRL, devad);
+ 	if (ret < 0)
+ 		goto err;
+ 
+ 	/* Write the desired MMD register address */
+-	ret = bus->write(bus, 0, MII_MMD_DATA, prtad);
++	ret = bus->write(bus, addr, MII_MMD_DATA, prtad);
+ 	if (ret < 0)
+ 		goto err;
+ 
+ 	/* Select the Function : DATA with no post increment */
+-	ret = bus->write(bus, 0, MII_MMD_CTRL, (devad | MII_MMD_CTRL_NOINCR));
++	ret = bus->write(bus, addr, MII_MMD_CTRL, (devad | MII_MMD_CTRL_NOINCR));
+ 	if (ret < 0)
+ 		goto err;
+ 
+ 	/* Read the content of the MMD's selected register */
+-	value = bus->read(bus, 0, MII_MMD_DATA);
++	value = bus->read(bus, addr, MII_MMD_DATA);
+ 
+ 	return value;
+ err:
+@@ -98,29 +98,29 @@ core_read_mmd_indirect(struct mt7530_priv *priv, int prtad, int devad)
+ }
+ 
+ static int
+-core_write_mmd_indirect(struct mt7530_priv *priv, int prtad,
++write_mmd_indirect(struct mt7530_priv *priv, int addr, int prtad,
+ 			int devad, u32 data)
+ {
+ 	struct mii_bus *bus = priv->bus;
+ 	int ret;
+ 
+ 	/* Write the desired MMD Devad */
+-	ret = bus->write(bus, 0, MII_MMD_CTRL, devad);
++	ret = bus->write(bus, addr, MII_MMD_CTRL, devad);
+ 	if (ret < 0)
+ 		goto err;
+ 
+ 	/* Write the desired MMD register address */
+-	ret = bus->write(bus, 0, MII_MMD_DATA, prtad);
++	ret = bus->write(bus, addr, MII_MMD_DATA, prtad);
+ 	if (ret < 0)
+ 		goto err;
+ 
+ 	/* Select the Function : DATA with no post increment */
+-	ret = bus->write(bus, 0, MII_MMD_CTRL, (devad | MII_MMD_CTRL_NOINCR));
++	ret = bus->write(bus, addr, MII_MMD_CTRL, (devad | MII_MMD_CTRL_NOINCR));
+ 	if (ret < 0)
+ 		goto err;
+ 
+ 	/* Write the data into MMD's selected register */
+-	ret = bus->write(bus, 0, MII_MMD_DATA, data);
++	ret = bus->write(bus, addr, MII_MMD_DATA, data);
+ err:
+ 	if (ret < 0)
+ 		dev_err(&bus->dev,
+@@ -128,6 +128,20 @@ core_write_mmd_indirect(struct mt7530_priv *priv, int prtad,
+ 	return ret;
+ }
+ 
++
++static int
++core_read_mmd_indirect(struct mt7530_priv *priv, int prtad, int devad)
++{
++	return read_mmd_indirect(priv, 0, prtad, devad);
++}
++
++static int
++core_write_mmd_indirect(struct mt7530_priv *priv, int prtad,
++			int devad, u32 data)
++{
++	return write_mmd_indirect(priv, 0, prtad, devad, data);
++}
++
+ static void
+ core_write(struct mt7530_priv *priv, u32 reg, u32 val)
+ {
+@@ -1347,6 +1361,12 @@ mt7530_setup(struct dsa_switch *ds)
+ 
+ 	mt7530_setup_port5(ds, interface);
+ 
++	/* Disable EEE */
++	mutex_lock_nested(&priv->bus->mdio_lock, MDIO_MUTEX_NESTED);
++	for (i = 0; i < MT7530_NUM_PHYS; i++)
++		write_mmd_indirect(priv, i, PHY_DEV07_REG_03C, PHY_DEV07, 0);
++	mutex_unlock(&priv->bus->mdio_lock);
++
+ 	/* Flush the FDB table */
+ 	ret = mt7530_fdb_cmd(priv, MT7530_FDB_FLUSH, NULL);
+ 	if (ret < 0)
+diff --git a/drivers/net/dsa/mt7530.h b/drivers/net/dsa/mt7530.h
+index 20b35815150e..82865e902e94 100644
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -7,6 +7,7 @@
+ #define __MT7530_H
+ 
+ #define MT7530_NUM_PORTS		7
++#define MT7530_NUM_PHYS			5
+ #define MT7530_CPU_PORT			6
+ #define MT7530_NUM_FDB_RECORDS		2048
+ #define MT7530_ALL_MEMBERS		0xff
+@@ -20,6 +21,10 @@ enum {
+ 
+ #define TRGMII_BASE(x)			(0x10000 + (x))
+ 
++/* PHY EEE Register bitmap of define */
++#define PHY_DEV07			0x07
++#define PHY_DEV07_REG_03C		0x3c
++
+ /* Registers to ethsys access */
+ #define ETHSYS_CLKCFG0			0x2c
+ #define  ETHSYS_TRGMII_CLK_SEL362_5	BIT(11)
+-- 
+2.26.1
+
