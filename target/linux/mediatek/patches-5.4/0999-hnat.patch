@@ -147,8 +147,8 @@
  
  #include "mtk_eth_soc.h"
  
-@@ -65,6 +67,18 @@ u32 mtk_r32(struct mtk_eth *eth, unsigne
- 	return __raw_readl(eth->base + reg);
+@@ -76,6 +78,18 @@ u32 mtk_m32(struct mtk_eth *eth, u32 mas
+ 	return reg;
  }
  
 +void mtk_m32(struct mtk_eth *eth, u32 clear, u32 set, unsigned reg)
@@ -166,7 +166,7 @@
  static int mtk_mdio_busy_wait(struct mtk_eth *eth)
  {
  	unsigned long t_start = jiffies;
-@@ -1276,8 +1290,16 @@ static int mtk_poll_rx(struct napi_struc
+@@ -1298,8 +1312,16 @@ static int mtk_poll_rx(struct napi_struc
  		    (trxd.rxd2 & RX_DMA_VTAG))
  			__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q),
  					       RX_DMA_VID(trxd.rxd3));
@@ -185,7 +185,7 @@
  
  		ring->data[idx] = new_data;
  		rxd->rxd1 = (unsigned int)dma_addr;
-@@ -2194,6 +2216,9 @@ static int mtk_open(struct net_device *d
+@@ -2216,6 +2238,9 @@ static int mtk_open(struct net_device *d
  		mtk_tx_irq_enable(eth, MTK_TX_DONE_INT);
  		mtk_rx_irq_enable(eth, MTK_RX_DONE_INT);
  		refcount_set(&eth->dma_refcnt, 1);
@@ -195,7 +195,7 @@
  	}
  	else
  		refcount_inc(&eth->dma_refcnt);
-@@ -2252,6 +2277,9 @@ static int mtk_stop(struct net_device *d
+@@ -2274,6 +2299,9 @@ static int mtk_stop(struct net_device *d
  
  	mtk_dma_free(eth);
  
@@ -205,7 +205,7 @@
  	return 0;
  }
  
-@@ -2711,6 +2739,27 @@ static int mtk_set_rxnfc(struct net_devi
+@@ -2733,6 +2761,27 @@ static int mtk_set_rxnfc(struct net_devi
  	return ret;
  }
  
@@ -233,7 +233,7 @@
  static const struct ethtool_ops mtk_ethtool_ops = {
  	.get_link_ksettings	= mtk_get_link_ksettings,
  	.set_link_ksettings	= mtk_set_link_ksettings,
-@@ -2742,6 +2791,9 @@ static const struct net_device_ops mtk_n
+@@ -2764,6 +2813,9 @@ static const struct net_device_ops mtk_n
  #ifdef CONFIG_NET_POLL_CONTROLLER
  	.ndo_poll_controller	= mtk_poll_controller,
  #endif
@@ -243,7 +243,7 @@
  };
  
  static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
-@@ -3075,6 +3127,7 @@ static const struct mtk_soc_data mt7622_
+@@ -3097,6 +3149,7 @@ static const struct mtk_soc_data mt7622_
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7622_CLKS_BITMAP,
  	.required_pctl = false,
@@ -253,7 +253,7 @@
  static const struct mtk_soc_data mt7623_data = {
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -771,6 +771,13 @@ enum mkt_eth_capabilities {
+@@ -779,6 +779,13 @@ enum mkt_eth_capabilities {
  		      MTK_MUX_U3_GMAC2_TO_QPHY | \
  		      MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA)
  
@@ -267,7 +267,7 @@
  /* struct mtk_eth_data -	This is the structure holding all differences
   *				among various plaforms
   * @ana_rgc3:                   The offset for register ANA_RGC3 related to
-@@ -788,6 +795,7 @@ struct mtk_soc_data {
+@@ -796,6 +803,7 @@ struct mtk_soc_data {
  	u32		required_clks;
  	bool		required_pctl;
  	netdev_features_t hw_features;
@@ -275,7 +275,7 @@
  };
  
  /* currently no SoC has more than 2 macs */
-@@ -813,6 +821,23 @@ struct mtk_sgmii {
+@@ -821,6 +829,23 @@ struct mtk_sgmii {
  	u32             ana_rgc3;
  };
  
@@ -299,7 +299,7 @@
  /* struct mtk_eth -	This is the main datasructure for holding the state
   *			of the driver
   * @dev:		The device pointer
-@@ -886,6 +911,16 @@ struct mtk_eth {
+@@ -894,6 +919,16 @@ struct mtk_eth {
  	u32				tx_int_status_reg;
  	u32				rx_dma_l4_valid;
  	int				ip_align;
@@ -316,7 +316,7 @@
  };
  
  /* struct mtk_mac -	the structure that holds the info about the MACs of the
-@@ -918,6 +953,7 @@ void mtk_stats_update_mac(struct mtk_mac
+@@ -926,6 +961,7 @@ void mtk_stats_update_mac(struct mtk_mac
  
  void mtk_w32(struct mtk_eth *eth, u32 val, unsigned reg);
  u32 mtk_r32(struct mtk_eth *eth, unsigned reg);
@@ -324,7 +324,7 @@
  
  int mtk_sgmii_init(struct mtk_sgmii *ss, struct device_node *np,
  		   u32 ana_rgc3);
-@@ -930,4 +966,13 @@ int mtk_gmac_sgmii_path_setup(struct mtk
+@@ -938,4 +974,13 @@ int mtk_gmac_sgmii_path_setup(struct mtk
  int mtk_gmac_gephy_path_setup(struct mtk_eth *eth, int mac_id);
  int mtk_gmac_rgmii_path_setup(struct mtk_eth *eth, int mac_id);
  

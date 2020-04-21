@@ -17,7 +17,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -1222,6 +1222,64 @@ mt7530_port_vlan_del(struct dsa_switch *
+@@ -1151,6 +1151,64 @@ mt7530_port_vlan_del(struct dsa_switch *
  	return 0;
  }
  
@@ -82,7 +82,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static enum dsa_tag_protocol
  mtk_get_tag_protocol(struct dsa_switch *ds, int port)
  {
-@@ -1609,6 +1667,8 @@ static const struct dsa_switch_ops mt753
+@@ -1530,6 +1588,8 @@ static const struct dsa_switch_ops mt753
  	.port_vlan_prepare	= mt7530_port_vlan_prepare,
  	.port_vlan_add		= mt7530_port_vlan_add,
  	.port_vlan_del		= mt7530_port_vlan_del,
@@ -112,7 +112,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #define  PORT_VLAN(x)			((x) & 0x3)
  
  enum mt7530_port_mode {
-@@ -460,6 +465,8 @@ struct mt7530_priv {
+@@ -457,6 +462,8 @@ struct mt7530_priv {
  	phy_interface_t		p6_interface;
  	phy_interface_t		p5_interface;
  	unsigned int		p5_intf_sel;
