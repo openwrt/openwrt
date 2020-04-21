@@ -13,7 +13,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -2430,6 +2430,33 @@ static int ieee80211_lookup_ra_sta(struc
+@@ -2439,6 +2439,33 @@ static int ieee80211_lookup_ra_sta(struc
  	return 0;
  }
  
@@ -47,7 +47,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  /**
   * ieee80211_build_hdr - build 802.11 header in the given frame
   * @sdata: virtual interface to build the header for
-@@ -2723,26 +2750,8 @@ static struct sk_buff *ieee80211_build_h
+@@ -2732,26 +2759,8 @@ static struct sk_buff *ieee80211_build_h
  	}
  
  	if (unlikely(!multicast && skb->sk &&

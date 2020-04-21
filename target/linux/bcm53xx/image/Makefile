@@ -291,6 +291,15 @@ define Device/luxul-abr-4500
 endef
 TARGET_DEVICES += luxul-abr-4500
 
+define Device/luxul-xap-1610
+  $(Device/luxul)
+  DEVICE_MODEL := XAP-1610
+  DEVICE_PACKAGES := $(BRCMFMAC_4366C0)
+  IMAGE/lxl := append-rootfs | trx-serial | luxul-lxl
+  LUXUL_BOARD := XAP-1610
+endef
+TARGET_DEVICES += luxul-xap-1610
+
 define Device/luxul-xbr-4500
   $(Device/luxul)
   DEVICE_MODEL := XBR-4500
@@ -298,6 +307,15 @@ define Device/luxul-xbr-4500
   LUXUL_BOARD := XBR-4500
 endef
 TARGET_DEVICES += luxul-xbr-4500
+
+define Device/luxul-xwr-3150
+  $(Device/luxul)
+  DEVICE_MODEL := XWR-3150
+  DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
+  DEVICE_DTS := bcm47094-luxul-xwr-3150-v1
+  LUXUL_BOARD := XWR-3150
+endef
+TARGET_DEVICES += luxul-xwr-3150
 
 define Device/netgear
   DEVICE_VENDOR := NETGEAR

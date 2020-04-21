@@ -29,11 +29,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/ethernet/cavium/thunder/thunder_bgx.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/cavium/thunder/thunder_bgx.c b/drivers/net/ethernet/cavium/thunder/thunder_bgx.c
-index 8ae28f8..5f2db9c 100644
 --- a/drivers/net/ethernet/cavium/thunder/thunder_bgx.c
 +++ b/drivers/net/ethernet/cavium/thunder/thunder_bgx.c
-@@ -1042,7 +1042,7 @@ static int phy_interface_mode(u8 lmac_type)
+@@ -1048,7 +1048,7 @@ static int phy_interface_mode(u8 lmac_ty
  	if (lmac_type == BGX_MODE_QSGMII)
  		return PHY_INTERFACE_MODE_QSGMII;
  	if (lmac_type == BGX_MODE_RGMII)
@@ -42,6 +40,3 @@ index 8ae28f8..5f2db9c 100644
  
  	return PHY_INTERFACE_MODE_SGMII;
  }
--- 
-2.7.4
-

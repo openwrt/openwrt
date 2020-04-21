@@ -367,7 +367,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  /**
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3667,7 +3667,8 @@ struct ieee80211_txq *ieee80211_next_txq
+@@ -3676,7 +3676,8 @@ struct ieee80211_txq *ieee80211_next_txq
  {
  	struct ieee80211_local *local = hw_to_local(hw);
  	struct ieee80211_txq *ret = NULL;
@@ -377,7 +377,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	spin_lock_bh(&local->active_txq_lock[ac]);
  
-@@ -3678,13 +3679,30 @@ struct ieee80211_txq *ieee80211_next_txq
+@@ -3687,13 +3688,30 @@ struct ieee80211_txq *ieee80211_next_txq
  	if (!txqi)
  		goto out;
  
@@ -410,7 +410,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			list_move_tail(&txqi->schedule_order,
  				       &local->active_txqs[txqi->txq.ac]);
  			goto begin;
-@@ -3738,6 +3756,33 @@ void __ieee80211_schedule_txq(struct iee
+@@ -3747,6 +3765,33 @@ void __ieee80211_schedule_txq(struct iee
  }
  EXPORT_SYMBOL(__ieee80211_schedule_txq);
  

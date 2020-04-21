@@ -19,10 +19,13 @@ KERNELNAME:=bzImage
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += partx-utils mkf2fs e2fsprogs
+DEFAULT_PACKAGES += partx-utils mkf2fs e2fsprogs kmod-button-hotplug
 
 $(eval $(call BuildTarget))
 
-$(eval $(call $(if $(CONFIG_ISO_IMAGES),RequireCommand,Ignore),mkisofs, \
-   	Please install mkisofs. \
+$(eval $(call $(if $(CONFIG_ISO_IMAGES),SetupHostCommand,Ignore),mkisofs, \
+	Please install mkisofs. , \
+	mkisofs -v 2>&1 , \
+	genisoimage -v 2>&1 | grep genisoimage, \
+	xorrisofs -v 2>&1 | grep xorriso \
 ))

@@ -30,3 +30,39 @@
  			label = "pogo_e02:orange:fault";
  			gpios = <&gpio1 17 GPIO_ACTIVE_LOW>;
  		};
+@@ -97,24 +104,24 @@
+ 	status = "okay";
+ 
+ 	partition@0 {
+-		label = "u-boot";
+-		reg = <0x0000000 0x100000>;
++		label = "uboot";
++		reg = <0x0 0xe0000>;
+ 		read-only;
+ 	};
+ 
+-	partition@100000 {
+-		label = "uImage";
+-		reg = <0x0100000 0x400000>;
++	partition@e0000 {
++		label = "uboot_env";
++		reg = <0xe0000 0x20000>;
+ 	};
+ 
+-	partition@500000 {
+-		label = "pogoplug";
+-		reg = <0x0500000 0x2000000>;
++	partition@100000 {
++		label = "second_stage_uboot";
++		reg = <0x100000 0x100000>;
+ 	};
+ 
+-	partition@2500000 {
+-		label = "root";
+-		reg = <0x02500000 0x5b00000>;
++	partition@200000 {
++		label = "ubi";
++		reg = <0x200000 0x7e00000>;
+ 	};
+ };
+ 

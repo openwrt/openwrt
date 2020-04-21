@@ -1,0 +1,10 @@
+--- a/arch/arm/boot/dts/armada-xp-linksys-mamba.dts
++++ b/arch/arm/boot/dts/armada-xp-linksys-mamba.dts
+@@ -496,3 +496,7 @@
+ 		};
+ 	};
+ };
++
++&coherencyfab {
++	broken-idle;
++};

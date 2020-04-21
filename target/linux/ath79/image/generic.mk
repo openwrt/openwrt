@@ -162,35 +162,53 @@ define Device/aruba_ap-105
 endef
 TARGET_DEVICES += aruba_ap-105
 
-define Device/avm_fritz300e
-  SOC := ar7242
+define Device/avm
   DEVICE_VENDOR := AVM
-  DEVICE_MODEL := FRITZ!WLAN Repeater 300E
-  KERNEL := kernel-bin | append-dtb | lzma | eva-image
-  KERNEL_INITRAMFS := $$(KERNEL)
-  IMAGE_SIZE := 15232k
-  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | \
-	append-squashfs-fakeroot-be | pad-to 256 | append-rootfs | pad-rootfs | \
-	append-metadata | check-size
-  DEVICE_PACKAGES := fritz-tffs rssileds -swconfig
-  SUPPORTED_DEVICES += fritz300e
-endef
-TARGET_DEVICES += avm_fritz300e
-
-define Device/avm_fritz4020
-  SOC := qca9561
-  DEVICE_VENDOR := AVM
-  DEVICE_MODEL := FRITZ!Box 4020
-  IMAGE_SIZE := 15232k
   KERNEL := kernel-bin | append-dtb | lzma | eva-image
   KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | \
 	append-squashfs-fakeroot-be | pad-to 256 | append-rootfs | pad-rootfs | \
 	append-metadata | check-size
   DEVICE_PACKAGES := fritz-tffs
+endef
+
+define Device/avm_fritz1750e
+  $(Device/avm)
+  SOC := qca9556
+  IMAGE_SIZE := 15232k
+  DEVICE_MODEL := FRITZ!WLAN Repeater 1750E
+  DEVICE_PACKAGES += rssileds kmod-ath10k-ct-smallbuffers \
+	ath10k-firmware-qca988x-ct -swconfig
+endef
+TARGET_DEVICES += avm_fritz1750e
+
+define Device/avm_fritz300e
+  $(Device/avm)
+  SOC := ar7242
+  IMAGE_SIZE := 15232k
+  DEVICE_MODEL := FRITZ!WLAN Repeater 300E
+  DEVICE_PACKAGES += rssileds -swconfig
+  SUPPORTED_DEVICES += fritz300e
+endef
+TARGET_DEVICES += avm_fritz300e
+
+define Device/avm_fritz4020
+  $(Device/avm)
+  SOC := qca9561
+  IMAGE_SIZE := 15232k
+  DEVICE_MODEL := FRITZ!Box 4020
   SUPPORTED_DEVICES += fritz4020
 endef
 TARGET_DEVICES += avm_fritz4020
+
+define Device/avm_fritz450e
+  $(Device/avm)
+  SOC := qca9556
+  IMAGE_SIZE := 15232k
+  DEVICE_MODEL := FRITZ!WLAN Repeater 450E
+  SUPPORTED_DEVICES += fritz450e
+endef
+TARGET_DEVICES += avm_fritz450e
 
 define Device/buffalo_bhr-4grv
   SOC := ar7242
@@ -326,6 +344,16 @@ define Device/comfast_cf-e560ac
 endef
 TARGET_DEVICES += comfast_cf-e560ac
 
+define Device/comfast_cf-ew72
+  SOC := qca9531
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-EW72
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct \
+	-uboot-envtools -swconfig
+  IMAGE_SIZE := 16192k
+endef
+TARGET_DEVICES += comfast_cf-ew72
+
 define Device/comfast_cf-wr650ac-v1
   SOC := qca9558
   DEVICE_VENDOR := COMFAST
@@ -345,6 +373,17 @@ define Device/comfast_cf-wr650ac-v2
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += comfast_cf-wr650ac-v2
+
+define Device/comfast_cf-wr752ac-v1
+  SOC := qca9531
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-WR752AC
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct \
+	-uboot-envtools
+  IMAGE_SIZE := 16192k
+endef
+TARGET_DEVICES += comfast_cf-wr752ac-v1
 
 define Device/devolo_dvl1200e
   SOC := qca9558

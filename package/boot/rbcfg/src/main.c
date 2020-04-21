@@ -498,7 +498,7 @@ rbcfg_update(int tmp)
 	put_u32(ctx->buf + 4, crc);
 
 	name = (tmp) ? ctx->tmp_file : ctx->mtd_device;
-	fd = open(name, O_WRONLY | O_CREAT);
+	fd = open(name, O_WRONLY | O_CREAT, 0640);
 	if (fd < 0) {
 		fprintf(stderr, "unable to open %s for writing\n", name);
 		err = RB_ERR_IO;

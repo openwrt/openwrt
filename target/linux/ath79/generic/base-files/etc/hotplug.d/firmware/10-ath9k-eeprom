@@ -9,7 +9,9 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath9k-eeprom-ahb-18100000.wmac.bin")
 	case $board in
-	avm,fritz4020)
+	avm,fritz1750e|\
+	avm,fritz4020|\
+	avm,fritz450e)
 		caldata_extract_reverse "urlader" 0x1541 0x440
 		;;
 	dlink,dir-505|\
@@ -75,6 +77,7 @@ case "$FIRMWARE" in
 	tplink,tl-wdr3600-v1|\
 	tplink,tl-wdr4300-v1|\
 	tplink,tl-wdr4300-v1-il|\
+	tplink,tl-wdr4310-v1|\
 	tplink,tl-wdr4900-v2|\
 	winchannel,wb2000)
 		caldata_extract "art" 0x5000 0x440

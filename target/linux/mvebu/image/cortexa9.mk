@@ -6,6 +6,22 @@
 # See /LICENSE for more information.
 #
 
+define Device/buffalo_ls421de
+  $(Device/NAND-128K)
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := LinkStation LS421DE
+  SUBPAGESIZE :=
+  KERNEL_SIZE := 33554432
+  FILESYSTEMS := squashfs ubifs
+  KERNEL := kernel-bin | append-dtb | uImage none | buffalo-kernel-jffs2
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  DEVICE_DTS := armada-370-buffalo-ls421de
+  DEVICE_PACKAGES :=  \
+    kmod-rtc-rs5c372a kmod-hwmon-gpiofan kmod-usb3 kmod-md-raid0 \
+    kmod-md-raid1 kmod-md-mod kmod-fs-xfs mkf2fs e2fsprogs partx-utils
+endef
+TARGET_DEVICES += buffalo_ls421de
+
 define Device/cznic_turris-omnia
   DEVICE_VENDOR := CZ.NIC
   DEVICE_MODEL := Turris Omnia

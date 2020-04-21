@@ -35,11 +35,9 @@ Signed-off-by: Shawn Guo <shawnguo@kernel.org>
  create mode 100644 arch/arm/boot/dts/imx6q-gw5910.dts
  create mode 100644 arch/arm/boot/dts/imx6qdl-gw5910.dtsi
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 9ee80e2..85e53cc 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -423,6 +423,7 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
+@@ -405,6 +405,7 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
  	imx6dl-gw5903.dtb \
  	imx6dl-gw5904.dtb \
  	imx6dl-gw5907.dtb \
@@ -47,7 +45,7 @@ index 9ee80e2..85e53cc 100644
  	imx6dl-hummingboard.dtb \
  	imx6dl-hummingboard-emmc-som-v15.dtb \
  	imx6dl-hummingboard-som-v15.dtb \
-@@ -495,6 +496,7 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
+@@ -473,6 +474,7 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
  	imx6q-gw5903.dtb \
  	imx6q-gw5904.dtb \
  	imx6q-gw5907.dtb \
@@ -55,9 +53,6 @@ index 9ee80e2..85e53cc 100644
  	imx6q-h100.dtb \
  	imx6q-hummingboard.dtb \
  	imx6q-hummingboard-emmc-som-v15.dtb \
-diff --git a/arch/arm/boot/dts/imx6dl-gw5910.dts b/arch/arm/boot/dts/imx6dl-gw5910.dts
-new file mode 100644
-index 00000000..0d5e7e5
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6dl-gw5910.dts
 @@ -0,0 +1,14 @@
@@ -75,9 +70,6 @@ index 00000000..0d5e7e5
 +	model = "Gateworks Ventana i.MX6 DualLite/Solo GW5910";
 +	compatible = "gw,imx6dl-gw5910", "gw,ventana", "fsl,imx6dl";
 +};
-diff --git a/arch/arm/boot/dts/imx6q-gw5910.dts b/arch/arm/boot/dts/imx6q-gw5910.dts
-new file mode 100644
-index 00000000..6aafa2f
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6q-gw5910.dts
 @@ -0,0 +1,14 @@
@@ -95,9 +87,6 @@ index 00000000..6aafa2f
 +	model = "Gateworks Ventana i.MX6 Dual/Quad GW5910";
 +	compatible = "gw,imx6q-gw5910", "gw,ventana", "fsl,imx6q";
 +};
-diff --git a/arch/arm/boot/dts/imx6qdl-gw5910.dtsi b/arch/arm/boot/dts/imx6qdl-gw5910.dtsi
-new file mode 100644
-index 00000000..be1af74
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6qdl-gw5910.dtsi
 @@ -0,0 +1,491 @@
@@ -592,6 +581,3 @@ index 00000000..be1af74
 +		>;
 +	};
 +};
--- 
-2.7.4
-

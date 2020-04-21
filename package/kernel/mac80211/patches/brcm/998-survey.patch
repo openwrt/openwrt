@@ -1,8 +1,6 @@
-Index: backports-5.4-rc8-1/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-===================================================================
---- backports-5.4-rc8-1.orig/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-+++ backports-5.4-rc8-1/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -2747,6 +2747,63 @@ done:
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -2826,6 +2826,63 @@ done:
  }
  
  static int
@@ -66,7 +64,7 @@ Index: backports-5.4-rc8-1/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg8
  brcmf_cfg80211_dump_station(struct wiphy *wiphy, struct net_device *ndev,
  			    int idx, u8 *mac, struct station_info *sinfo)
  {
-@@ -2836,6 +2893,7 @@ static s32 brcmf_inform_single_bss(struc
+@@ -2915,6 +2972,7 @@ static s32 brcmf_inform_single_bss(struc
  	struct brcmu_chan ch;
  	u16 channel;
  	u32 freq;
@@ -74,7 +72,7 @@ Index: backports-5.4-rc8-1/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg8
  	u16 notify_capability;
  	u16 notify_interval;
  	u8 *notify_ie;
-@@ -2860,6 +2918,17 @@ static s32 brcmf_inform_single_bss(struc
+@@ -2939,6 +2997,17 @@ static s32 brcmf_inform_single_bss(struc
  		band = NL80211_BAND_5GHZ;
  
  	freq = ieee80211_channel_to_frequency(channel, band);
@@ -92,7 +90,7 @@ Index: backports-5.4-rc8-1/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg8
  	bss_data.chan = ieee80211_get_channel(wiphy, freq);
  	bss_data.scan_width = NL80211_BSS_CHAN_WIDTH_20;
  	bss_data.boottime_ns = ktime_to_ns(ktime_get_boottime());
-@@ -5277,6 +5346,7 @@ static struct cfg80211_ops brcmf_cfg8021
+@@ -5356,6 +5425,7 @@ static struct cfg80211_ops brcmf_cfg8021
  	.leave_ibss = brcmf_cfg80211_leave_ibss,
  	.get_station = brcmf_cfg80211_get_station,
  	.dump_station = brcmf_cfg80211_dump_station,
@@ -100,11 +98,9 @@ Index: backports-5.4-rc8-1/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg8
  	.set_tx_power = brcmf_cfg80211_set_tx_power,
  	.get_tx_power = brcmf_cfg80211_get_tx_power,
  	.add_key = brcmf_cfg80211_add_key,
-Index: backports-5.4-rc8-1/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-===================================================================
---- backports-5.4-rc8-1.orig/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-+++ backports-5.4-rc8-1/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -1277,6 +1277,8 @@ int brcmf_attach(struct device *dev)
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -1352,6 +1352,8 @@ int brcmf_attach(struct device *dev)
  
  	/* Link to bus module */
  	drvr->hdrlen = 0;
@@ -113,7 +109,7 @@ Index: backports-5.4-rc8-1/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core
  
  	/* Attach and link in the protocol */
  	ret = brcmf_proto_attach(drvr);
-@@ -1359,6 +1361,12 @@ void brcmf_detach(struct device *dev)
+@@ -1434,6 +1436,12 @@ void brcmf_detach(struct device *dev)
  	if (drvr == NULL)
  		return;
  
@@ -126,10 +122,8 @@ Index: backports-5.4-rc8-1/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core
  #ifdef CONFIG_INET
  	unregister_inetaddr_notifier(&drvr->inetaddr_notifier);
  #endif
-Index: backports-5.4-rc8-1/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
-===================================================================
---- backports-5.4-rc8-1.orig/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
-+++ backports-5.4-rc8-1/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
 @@ -91,6 +91,11 @@ struct brcmf_rev_info {
  	u32 nvramrev;
  };

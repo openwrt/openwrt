@@ -22,6 +22,9 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	buffalo,ls421de)
+		nand_do_upgrade "$1"
+		;;
 	cznic,turris-omnia|\
 	solidrun,clearfog-base-a1|\
 	solidrun,clearfog-pro-a1)

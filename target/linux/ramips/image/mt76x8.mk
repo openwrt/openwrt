@@ -405,6 +405,7 @@ define Device/tplink_tl-wr840n-v5
   TPLINK_HWREVADD := 0x5
   IMAGES := sysupgrade.bin
   SUPPORTED_DEVICES += tl-wr840n-v5
+  DEFAULT := n
 endef
 TARGET_DEVICES += tplink_tl-wr840n-v5
 
@@ -433,6 +434,7 @@ define Device/tplink_tl-wr841n-v14
   TPLINK_HWREVADD := 0x14
   IMAGES := sysupgrade.bin tftp-recovery.bin
   IMAGE/tftp-recovery.bin := pad-extra 64k | $$(IMAGE/factory.bin)
+  DEFAULT := n
 endef
 TARGET_DEVICES += tplink_tl-wr841n-v14
 

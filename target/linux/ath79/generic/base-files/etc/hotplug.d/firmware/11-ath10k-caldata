@@ -10,6 +10,9 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:00:00.0.bin")
 	case $board in
+	avm,fritz1750e)
+		caldata_extract "urlader" 0x198a 0x844
+		;;
 	comfast,cf-wr650ac-v1|\
 	comfast,cf-wr650ac-v2|\
 	devolo,magic-2-wifi|\
@@ -140,7 +143,9 @@ case "$FIRMWARE" in
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		rm /lib/firmware/ath10k/QCA9888/hw2.0/board-2.bin
 		;;
-	comfast,cf-e560ac)
+	comfast,cf-e560ac|\
+	comfast,cf-ew72|\
+	comfast,cf-wr752ac-v1)
 		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) +2)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \

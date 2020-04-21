@@ -1,7 +1,7 @@
 --- a/board/solidrun/mx6cuboxi/mx6cuboxi.c
 +++ b/board/solidrun/mx6cuboxi/mx6cuboxi.c
-@@ -292,6 +292,12 @@ static void setup_iomux_enet(void)
- 	udelay(100);
+@@ -286,6 +286,12 @@ static void setup_iomux_enet(void)
+ 	gpio_free_list_nodev(&desc, 1);
  }
  
 +void board_boot_order(u32 *spl_boot_list)

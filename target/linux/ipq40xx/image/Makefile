@@ -53,6 +53,14 @@ define Device/DniImage
 	IMAGE/sysupgrade.bin := append-kernel | pad-offset 64k 64 | append-uImage-fakehdr filesystem | append-rootfs | pad-rootfs | append-metadata
 endef
 
+define Build/append-rootfshdr
+	mkimage -A $(LINUX_KARCH) \
+		-O linux -T filesystem \
+		-C lzma -a $(KERNEL_LOADADDR) -e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
+		-n root.squashfs -d $(IMAGE_ROOTFS) $@.new
+	dd if=$@.new bs=64 count=1 >> $(IMAGE_KERNEL)
+endef
+
 define Build/mkmylofw_32m
 	$(eval device_id=$(word 1,$(1)))
 	$(eval revision=$(word 2,$(1)))
@@ -66,6 +74,15 @@ define Build/mkmylofw_32m
 		-B WPE72 -i 0x11f6:$(device_id):0x11f6:$(device_id) -r $(revision) \
 		-s 0x2000000 -p0x180000:$$newsize:al:0x80208000:"OpenWrt":$@ \
 		$@.new
+	@mv $@.new $@
+endef
+
+define Build/qsdk-ipq-factory-nand-askey
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its\
+		askey_kernel $(IMAGE_KERNEL) \
+		askey_fs $(IMAGE_ROOTFS) \
+		ubifs $@
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
 
@@ -227,6 +244,28 @@ define Device/avm_fritzrepeater-3000
 	IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += avm_fritzrepeater-3000
+
+define Device/cellc_rtl30vw
+	KERNEL_SUFFIX := -fit-uImage.itb
+	KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb | uImage lzma | pad-to 2048
+	KERNEL_NAME := Image
+	KERNEL_IN_UBI :=
+	IMAGES := nand-factory.bin nand-sysupgrade.bin
+	IMAGE/nand-factory.bin := append-rootfshdr | append-ubi | qsdk-ipq-factory-nand-askey
+	IMAGE/nand-sysupgrade.bin := append-rootfshdr | sysupgrade-tar | append-metadata
+	DEVICE_VENDOR := Cell C
+	DEVICE_MODEL := RTL30VW
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@5
+	KERNEL_INSTALL := 1
+	KERNEL_SIZE := 4096k
+	IMAGE_SIZE := 57344k
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi ipq-wifi-cellc_rtl30vw
+endef
+TARGET_DEVICES += cellc_rtl30vw
 
 define Device/cilab_meshpoint-one
 	$(call Device/8dev_jalapeno-common)
@@ -451,6 +490,18 @@ define Device/meraki_mr33
 	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
 endef
 TARGET_DEVICES += meraki_mr33
+
+define Device/mobipromo_cm520-79f
+	$(call Device/FitzImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := MobiPromo
+	DEVICE_MODEL := CM520-79F
+	SOC := qcom-ipq4019
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ipq-wifi-mobipromo_cm520-79f kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += mobipromo_cm520-79f
 
 define Device/netgear_ex61x0v2
 	$(call Device/DniImage)

@@ -63,6 +63,11 @@ ipq40xx_setup_interfaces()
 	engenius,eap2200)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
+	cellc,rtl30vw)
+		ucidef_set_interface_lan "eth0"
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "3:lan" "4:lan"
+		;;
 	ezviz,cs-w3-wd1200g-eup)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
@@ -72,6 +77,11 @@ ipq40xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "3:lan" "4:lan"
+		;;
+	mobipromo,cm520-79f)
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "3:lan:2" "4:lan:1"
+		ucidef_set_interface_wan "eth1"
 		;;
 	qxwlan,e2600ac-c1 |\
 	qxwlan,e2600ac-c2)
