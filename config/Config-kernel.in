@@ -1056,4 +1056,10 @@ config KERNEL_CC_OPTIMIZE_FOR_SIZE
 	  Enabling this option will pass "-Os" instead of "-O2" to
 	  your compiler resulting in a smaller kernel.
 
+config KERNEL_CC_OPTIMIZE_FOR_DEBUGGING
+	bool "Optimize for debugging"
+	help
+	  Enabling this option will pass "-Og" instead of "-O2" to
+	  your compiler resulting in a kernel better suited to debug.
+
 endchoice
