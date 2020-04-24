@@ -204,6 +204,15 @@ define U-Boot/orangepi_one
   BUILD_DEVICES:=xunlong_orangepi-one
 endef
 
+define U-Boot/orangepi_one_plus
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Orange Pi One Plus (H6)
+  DEPENDS:=+PACKAGE_u-boot-orangepi_one_plus:arm-trusted-firmware-sunxi-h6
+  BUILD_DEVICES:=xunlong_orangepi-one-plus
+  UENV:=h6
+  ATF:=h6
+endef
+
 define U-Boot/orangepi_pc
   BUILD_SUBTARGET:=cortexa7
   NAME:=Orange Pi PC (H3)
@@ -344,6 +353,7 @@ UBOOT_TARGETS := \
 	orangepi_zero \
 	orangepi_r1 \
 	orangepi_one \
+	orangepi_one_plus \
 	orangepi_pc \
 	orangepi_pc_plus \
 	orangepi_plus \

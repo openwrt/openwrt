@@ -9,13 +9,18 @@ define Device/sun50i
   KERNEL := kernel-bin
 endef
 
+define Device/sun50i-a64
+  SOC := sun50i-a64
+  $(Device/sun50i)
+endef
+
 define Device/sun50i-h5
   SOC := sun50i-h5
   $(Device/sun50i)
 endef
 
-define Device/sun50i-a64
-  SOC := sun50i-a64
+define Device/sun50i-h6
+  SOC := sun50i-h6
   $(Device/sun50i)
 endef
 
@@ -78,6 +83,14 @@ define Device/pine64_sopine-baseboard
   $(Device/sun50i-a64)
 endef
 TARGET_DEVICES += pine64_sopine-baseboard
+
+define Device/xunlong_orangepi-one-plus
+  $(Device/sun50i-h6)
+  DEVICE_VENDOR := Xunlong
+  DEVICE_MODEL := Orange Pi One Plus
+  SUNXI_DTS_DIR := allwinner/
+endef
+TARGET_DEVICES += xunlong_orangepi-one-plus
 
 define Device/xunlong_orangepi-pc2
   DEVICE_VENDOR := Xunlong
