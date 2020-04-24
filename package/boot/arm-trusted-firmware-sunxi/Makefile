@@ -37,6 +37,11 @@ define Package/arm-trusted-firmware-sunxi-a64
     VARIANT:=sun50i_a64
 endef
 
+define Package/arm-trusted-firmware-sunxi-h6
+    $(call Package/arm-trusted-firmware-sunxi/Default)
+    VARIANT:=sun50i_h6
+endef
+
 export GCC_HONOUR_COPTS=s
 
 MAKE_VARS = \
@@ -55,3 +60,4 @@ define Package/arm-trusted-firmware-sunxi/install
 endef
 
 $(eval $(call BuildPackage,arm-trusted-firmware-sunxi-a64))
+$(eval $(call BuildPackage,arm-trusted-firmware-sunxi-h6))
