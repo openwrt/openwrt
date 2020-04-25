@@ -217,8 +217,6 @@ ramips_setup_macs()
 	nexx,wt1520-8m|\
 	nixcore,x1-16m|\
 	nixcore,x1-8m|\
-	olimex,rt5350f-olinuxino|\
-	olimex,rt5350f-olinuxino-evb|\
 	omnima,miniembplug|\
 	planex,mzk-w300nh2|\
 	sitecom,wl-351|\
@@ -241,6 +239,8 @@ ramips_setup_macs()
 	huawei,d105|\
 	hilink,hlk-rm04|\
 	nexaira,bc2|\
+	olimex,rt5350f-olinuxino|\
+	olimex,rt5350f-olinuxino-evb|\
 	petatel,psr-680w|\
 	skyline,sl-r7205)
 		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
