@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Martin Willi <martin@strongswan.org>
+Date: Tue, 2 Jul 2019 16:19:44 +0200
+Subject: [PATCH] wireless-regdb: Fix overlapping ranges for Switzerland and
+ Liechtenstein
+
+The commit referenced below changes the 5GHz frequency range 5250-5330
+to 5150-5330, making that range overlapping with the existing range
+5170-5250. This imposes DFS limitations and a reduced maximum power
+level for the range 5170-5250.
+
+The change of the frequency range seems not intentional. Instead the
+commit should have changed the 5170-5250 range to 5150-5250, and the
+5250-5330 range to 5250-5350 (see [1]).
+
+[1] https://www.ofcomnet.ch/api/rir/1010/05
+
+Fixes: 957a7cff72a3 ("wireless-regdb: update regulatory rules for Switzerland (CH), and Liechtenstein (LI) on 5GHz")
+Signed-off-by: Martin Willi <martin@strongswan.org>
+Signed-off-by: Seth Forshee <seth.forshee@canonical.com>
+
+diff --git a/db.txt b/db.txt
+index d47ab94c3aa5..37393e6a793e 100644
+--- a/db.txt
++++ b/db.txt
+@@ -271,8 +271,8 @@ country CF: DFS-FCC
+ # transmitter power control is in use: 5250-5330@23db, 5490-5710@30db
+ country CH: DFS-ETSI
+ 	(2402 - 2482 @ 40), (20)
+-	(5170 - 5250 @ 80), (23), NO-OUTDOOR, AUTO-BW, wmmrule=ETSI
+-	(5150 - 5330 @ 80), (20), NO-OUTDOOR, DFS, AUTO-BW, wmmrule=ETSI
++	(5150 - 5250 @ 80), (23), NO-OUTDOOR, AUTO-BW, wmmrule=ETSI
++	(5250 - 5350 @ 80), (20), NO-OUTDOOR, DFS, AUTO-BW, wmmrule=ETSI
+ 	(5490 - 5710 @ 160), (27), DFS, wmmrule=ETSI
+ 	# 60 GHz band channels 1-4, ref: Etsi En 302 567
+ 	(57000 - 66000 @ 2160), (40)
+@@ -747,8 +747,8 @@ country LC: DFS-ETSI
+ # transmitter power control is in use: 5250-5330@23db, 5490-5710@30db
+ country LI: DFS-ETSI
+ 	(2402 - 2482 @ 40), (20)
+-	(5170 - 5250 @ 80), (23), NO-OUTDOOR, AUTO-BW, wmmrule=ETSI
+-	(5150 - 5330 @ 80), (20), NO-OUTDOOR, DFS, AUTO-BW, wmmrule=ETSI
++	(5150 - 5250 @ 80), (23), NO-OUTDOOR, AUTO-BW, wmmrule=ETSI
++	(5250 - 5350 @ 80), (20), NO-OUTDOOR, DFS, AUTO-BW, wmmrule=ETSI
+ 	(5490 - 5710 @ 160), (27), DFS, wmmrule=ETSI
+ 	# 60 GHz band channels 1-4, ref: Etsi En 302 567
+ 	(57000 - 66000 @ 2160), (40)

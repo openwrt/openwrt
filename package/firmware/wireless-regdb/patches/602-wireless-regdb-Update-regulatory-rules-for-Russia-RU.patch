@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Tunin <hanipouspilot@gmail.com>
+Date: Sat, 24 Aug 2019 11:48:10 +0300
+Subject: [PATCH] wireless-regdb: Update regulatory rules for Russia (RU)
+
+Russian entry is incorrect. According to the last regulations
+document of Feb 29, 2016, 160 MHz channels and 802.11ad are allowed.
+
+http://rfs-rf.ru/upload/medialibrary/c1a/prilozhenie-1-k-resheniyu-gkrch-_-16_36_03.pdf
+
+Note that there was never a DFS requirement in Russia, but always was
+NO-OUTDOOR on 5GHz.
+Maximum power is 200mW that is ~23dBm on all 5GHz channels.
+Also Russia has never been regulated by ETSI.
+
+EIRP has been reduced by 4dBm because of TPC requirement.
+
+Signed-off-by: Dmitry Tunin <hanipouspilot@gmail.com>
+Signed-off-by: Seth Forshee <seth.forshee@canonical.com>
+
+diff --git a/db.txt b/db.txt
+index f6b2f921416c..9c4b447536e4 100644
+--- a/db.txt
++++ b/db.txt
+@@ -1349,14 +1349,12 @@ country RS: DFS-ETSI
+ 	# 60 GHz band channels 1-4, ref: Etsi En 302 567
+ 	(57000 - 66000 @ 2160), (40)
+ 
+-country RU: DFS-ETSI
+-	(2402 - 2482 @ 40), (20)
+-	(5170 - 5250 @ 80), (20), AUTO-BW
+-	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
+-	(5650 - 5730 @ 80), (30), DFS
+-	(5735 - 5835 @ 80), (30)
++country RU:
++	(2400 - 2483.5 @ 40), (20)
++	(5150 - 5350 @ 160), (20), NO-OUTDOOR
++	(5650 - 5850 @ 160), (20), NO-OUTDOOR
+ 	# 60 GHz band channels 1-4, ref: Changes to NLA 124_Order №129_22042015.pdf
+-	(57000 - 66000 @ 2160), (40)
++	(57000 - 66000 @ 2160), (40), NO-OUTDOOR
+ 
+ country RW: DFS-FCC
+ 	(2402 - 2482 @ 40), (20)
