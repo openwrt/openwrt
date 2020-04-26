@@ -11,11 +11,11 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+glinet,gl-mv1000|\
 globalscale,espressobin|\
 globalscale,espressobin-emmc|\
 globalscale,espressobin-v7|\
-globalscale,espressobin-v7-emmc|\
-glinet,gl-mv1000)
+globalscale,espressobin-v7-emmc)
 	ucidef_set_interfaces_lan_wan "lan0 lan1" "wan"
 	;;
 marvell,armada-3720-db|\
