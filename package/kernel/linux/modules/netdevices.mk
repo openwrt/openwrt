@@ -1162,7 +1162,7 @@ $(eval $(call KernelPackage,mlx5-core))
 define KernelPackage/sfp
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SFP cage support
-  DEPENDS:=+kmod-i2c-core +kmod-hwmon-core
+  DEPENDS:=+kmod-i2c-core +kmod-hwmon-core +kmod-phylink
   KCONFIG:= \
 	CONFIG_SFP=m \
 	CONFIG_MDIO_I2C=m
