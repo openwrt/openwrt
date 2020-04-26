@@ -161,7 +161,6 @@ define Device/mercury_mac1200r-v2
   DEVICE_VENDOR := Mercury
   DEVICE_MODEL := MAC1200R
   DEVICE_VARIANT := v2.0
-  SUPPORTED_DEVICES := mac1200rv2
   DEVICE_PACKAGES := kmod-mt76x2
   SUPPORTED_DEVICES += mac1200rv2
 endef
