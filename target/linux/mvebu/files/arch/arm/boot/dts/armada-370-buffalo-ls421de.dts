@@ -42,7 +42,7 @@
 
 	gpio_fan {
 		gpios = <&gpio0 13 GPIO_ACTIVE_HIGH
-			&gpio0 14 GPIO_ACTIVE_HIGH>;
+			 &gpio0 14 GPIO_ACTIVE_HIGH>;
 		alarm-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
 	};
 
@@ -50,21 +50,8 @@
 		compatible = "gpio-keys";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		pinctrl-0 = <&pmx_hdd_present &pmx_buttons>;
+		pinctrl-0 = <&pmx_buttons>;
 		pinctrl-names = "default";
-
-		hdd1-present {
-			label = "HDD1 Present";
-			linux,code = <KEY_PROG1>;
-			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
-		};
-
-		hdd2-present {
-			label = "HDD2 Present";
-			linux,code = <KEY_PROG2>;
-			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
-
-		};
 
 		power {
 			label = "Power Switch";
@@ -75,7 +62,7 @@
 
 		function {
 			label = "Function Button";
-			linux,code = <KEY_OPTION>;
+			linux,code = <KEY_CONFIG>;
 			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -131,11 +118,11 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		pinctrl-0 = <&pmx_power_usb &pmx_power_hdd1 &pmx_power_hdd2>;
-
 		pinctrl-names = "default";
 
-		usb_v5_regulator: usb-v5-regulator {
+		usb_power: regulator@0 {
 			compatible = "regulator-fixed";
+			reg = <0>;
 			regulator-name = "USB";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
@@ -145,7 +132,7 @@
 			gpio = <&gpio0 5 GPIO_ACTIVE_HIGH>;
 		};
 
-		ata1_regulator: ata1-regulator {
+		sata1_power: regulator@1 {
 			compatible = "regulator-fixed";
 			reg = <1>;
 			regulator-name = "HDD1";
@@ -158,7 +145,7 @@
 			gpio = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		};
 
-		ata2_regulator: ata2-regulator {
+		sata2_power: regulator@2 {
 			compatible = "regulator-fixed";
 			reg = <2>;
 			regulator-name = "HDD2";
@@ -183,11 +170,13 @@
 	pinctrl-0 = <&ge1_rgmii_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	phy = <&phy0>;
-	phy-mode = "rgmii-id";
+	phy-handle = <&ethphy0>;
+	phy-connection-type = "rgmii-id";
 };
 
 &i2c0 {
+	pinctrl-0 = <&i2c0_pins>;
+	pinctrl-names = "default";
 	clock-frequency = <100000>;
 	status = "okay";
 
@@ -201,16 +190,18 @@
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
 
-	phy0: ethernet-phy@0 { /* Marvell 88E1518 */
+	ethphy0: ethernet-phy@0 { /* Marvell 88E1518 */
 		reg = <0>;
-		/* LED2 is used to inform uBoot if the power-switch was slided
-		   to the "off" position, and then power off the machine.
-		   Page 0x3, Register 0x10, bit 8:
-				0x800: LED2 off, power off the machine
-				0x900: LED2 on, boot the machine */
-		marvell,reg-init = <0x3 0x10 0x1 0x1991>, /* LED Function */
-					<0x3 0x11 0x1 0x4401>, /* LED polarity */
-					<0x3 0x12 0x1 0x4905>; /* LED Timer */
+		/*
+		 * LED2 is used to inform, at restart time, if the power
+		 * switch was slided to the "off" position.
+		 * Page 0x3, Register 0x10, bits 8-11:
+		 *     0x800: LED2 off, power off the machine
+		 *     0x900: LED2 on, boot the machine
+		 */
+		marvell,reg-init = <0x3 0x10 0x1 0x1991>, /* LED function */
+				   <0x3 0x11 0x1 0x4401>, /* LED polarity */
+				   <0x3 0x12 0x1 0x4905>; /* LED timer */
 	};
 };
 
