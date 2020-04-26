@@ -1172,7 +1172,7 @@ define KernelPackage/sfp
   AUTOLOAD:=$(call AutoProbe,mdio-i2c sfp)
 endef
 
-define KernelPackage/SFP/description
+define KernelPackage/sfp/description
  Kernel module to support SFP cages
 endef
 
