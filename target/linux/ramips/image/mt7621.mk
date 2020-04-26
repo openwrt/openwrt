@@ -377,6 +377,8 @@ define Device/iodata_wn-ax1167gr2
   IMAGE_SIZE := 51200k
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-AX1167GR2
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | lzma | uImage lzma
   KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(XBC.1)b10 | \
 	iodata-mstc-header
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -393,6 +395,8 @@ define Device/iodata_wn-ax2033gr
   IMAGE_SIZE := 51200k
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-AX2033GR
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | lzma | uImage lzma
   KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(VST.1)C10 | \
 	iodata-mstc-header
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -409,6 +413,8 @@ define Device/iodata_wn-dx1167r
   IMAGE_SIZE := 51200k
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-DX1167R
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | lzma | uImage lzma
   KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(XIK.1)b10 | \
 	iodata-mstc-header
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
