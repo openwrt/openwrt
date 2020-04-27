@@ -1549,11 +1549,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 	ag->stop_desc->next = (u32) ag->stop_desc_dma;
 
 	mac_addr = of_get_mac_address(np);
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,2,0))
-	if (!mac_addr || !is_valid_ether_addr(mac_addr)) {
-#else
-	if (IS_ERR(mac_addr) || !is_valid_ether_addr(mac_addr)) {
-#endif
+	if (IS_ERR_OR_NULL(mac_addr) || !is_valid_ether_addr(mac_addr)) {
 		dev_err(&pdev->dev, "invalid MAC address, using random address\n");
 		eth_random_addr(dev->dev_addr);
 	} else {
