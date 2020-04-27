@@ -963,7 +963,7 @@ define Device/sitecom_wl-351
   IMAGE_SIZE := 3776k
   DEVICE_VENDOR := Sitecom
   DEVICE_MODEL := WL-351 v1
-  DEVICE_PACKAGES := kmod-switch-rtl8366rb kmod-swconfig swconfig
+  DEVICE_PACKAGES := kmod-switch-rtl8366rb
   SUPPORTED_DEVICES += wl-351
   DEFAULT := n
 endef
