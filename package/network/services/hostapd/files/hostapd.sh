@@ -618,6 +618,31 @@ hostapd_set_bss_options() {
 			append bss_conf "macaddr_acl=0" "$N"
 			append bss_conf "deny_mac_file=$_macfile" "$N"
 		;;
+		radius)
+			append bss_conf "macaddr_acl=2" "$N"
+			_macfile=""
+
+			json_get_vars \
+				auth_server auth_secret auth_port \
+				ownip radius_client_addr
+
+			# radius can provide VLAN ID for clients
+			vlan_possible=1
+
+			# legacy compatibility
+			[ -n "$auth_server" ] || json_get_var auth_server server
+			[ -n "$auth_port" ] || json_get_var auth_port port
+			[ -n "$auth_secret" ] || json_get_var auth_secret key
+
+			set_default auth_port 1812
+
+			append bss_conf "auth_server_addr=$auth_server" "$N"
+			append bss_conf "auth_server_port=$auth_port" "$N"
+			append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+
+			[ -n "$ownip" ] && append bss_conf "own_ip_addr=$ownip" "$N"
+			[ -n "$radius_client_addr" ] && append bss_conf "radius_client_addr=$radius_client_addr" "$N"
+		;;
 		*)
 			_macfile=""
 		;;
