@@ -370,56 +370,44 @@ define Device/iodata_wn-ax1167gr
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr
 
-define Device/iodata_wn-ax1167gr2
+define Device/iodata_nand
+  DEVICE_VENDOR := I-O DATA
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   UBINIZE_OPTS := -E 5
-  UIMAGE_MAGIC := 0x434f4d42
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 51200k
-  DEVICE_VENDOR := I-O DATA
-  DEVICE_MODEL := WN-AX1167GR2
   LOADER_TYPE := bin
   KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | lzma | uImage lzma
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/iodata_wn-ax1167gr2
+  $(Device/iodata_nand)
+  UIMAGE_MAGIC := 0x434f4d42
+  DEVICE_MODEL := WN-AX1167GR2
   KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(XBC.1)b10 | \
 	iodata-mstc-header
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_PACKAGES := kmod-mt7615e wpad-basic
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr2
 
 define Device/iodata_wn-ax2033gr
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  UBINIZE_OPTS := -E 5
+  $(Device/iodata_nand)
   UIMAGE_MAGIC := 0x434f4d42
-  KERNEL_SIZE := 4096k
-  IMAGE_SIZE := 51200k
-  DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-AX2033GR
-  LOADER_TYPE := bin
-  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | lzma | uImage lzma
   KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(VST.1)C10 | \
 	iodata-mstc-header
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e wpad-basic
 endef
 TARGET_DEVICES += iodata_wn-ax2033gr
 
 define Device/iodata_wn-dx1167r
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  UBINIZE_OPTS := -E 5
+  $(Device/iodata_nand)
   UIMAGE_MAGIC := 0x434f4d43
-  KERNEL_SIZE := 4096k
-  IMAGE_SIZE := 51200k
-  DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-DX1167R
-  LOADER_TYPE := bin
-  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | lzma | uImage lzma
   KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(XIK.1)b10 | \
 	iodata-mstc-header
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_PACKAGES := kmod-mt7615e wpad-basic
 endef
 TARGET_DEVICES += iodata_wn-dx1167r
