@@ -117,6 +117,7 @@
 
 	phy2: ethernet-phy@2 {
 		reg = <2>;
+		at803x-override-sgmii-link-check;
 	};
 };
 
@@ -144,4 +145,5 @@
 	mtd-mac-address = <&art 0x12>;
 	phy-handle = <&phy2>;
 	pll-data = <0x3000101 0x101 0x1313>;
+	qca955x-sgmii-fixup;
 };
