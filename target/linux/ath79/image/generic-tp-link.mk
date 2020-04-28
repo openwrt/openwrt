@@ -289,6 +289,7 @@ define Device/tplink_tl-wdr4900-v2
   DEVICE_TITLE := TP-Link TL-WDR4900 v2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x49000002
+  SUPPORTED_DEVICES += tl-wdr4900-v2
 endef
 TARGET_DEVICES += tplink_tl-wdr4900-v2
 
@@ -298,6 +299,7 @@ define Device/tplink_tl-wr810n-v1
   DEVICE_TITLE := TP-Link TL-WR810N v1
   TPLINK_HWID := 0x8100001
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += tl-wr810n
 endef
 TARGET_DEVICES += tplink_tl-wr810n-v1
 
@@ -306,6 +308,7 @@ define Device/tplink_tl-wr810n-v2
   ATH_SOC := qca9533
   DEVICE_TITLE := TP-Link TL-WR810N v2
   TPLINK_HWID := 0x8100002
+  SUPPORTED_DEVICES += tl-wr810n-v2
 endef
 TARGET_DEVICES += tplink_tl-wr810n-v2
 
@@ -325,6 +328,7 @@ define Device/tplink_tl-wr842n-v1
   DEVICE_TITLE := TP-Link TL-WR842N/ND v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x8420001
+  SUPPORTED_DEVICES += tl-mr3420
 endef
 TARGET_DEVICES += tplink_tl-wr842n-v1
 
