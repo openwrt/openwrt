@@ -91,7 +91,6 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
 		;;
-	mikrotik,routerboard-750gr3|\
 	mikrotik,routerboard-m11g|\
 	mikrotik,routerboard-m33g)
 		label_mac=$(mtd_get_mac_binary hard_config 0x10)
