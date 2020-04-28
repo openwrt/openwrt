@@ -222,14 +222,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	mp->update_interval = HZ / 10;
 +	mp->new_avg = true;
  
- #ifdef CPTCFG_MAC80211_DEBUGFS
- 	mp->fixed_rate_idx = (u32) -1;
-@@ -1672,6 +1679,8 @@ minstrel_ht_alloc(struct ieee80211_hw *h
+ 	minstrel_ht_init_cck_rates(mp);
+ 
+@@ -1682,6 +1689,8 @@ static void minstrel_ht_add_debugfs(stru
  			   &mp->fixed_rate_idx);
  	debugfs_create_u32("sample_switch", S_IRUGO | S_IWUSR, debugfsdir,
  			   &mp->sample_switch);
 +	debugfs_create_bool("new_avg", S_IRUGO | S_IWUSR, debugfsdir,
 +			   &mp->new_avg);
+ }
  #endif
  
- 	minstrel_ht_init_cck_rates(mp);

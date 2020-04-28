@@ -129,7 +129,7 @@
  	local->hw.max_mtu = IEEE80211_MAX_DATA_LEN;
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -630,6 +630,7 @@ const struct nla_policy nl80211_policy[N
+@@ -628,6 +628,7 @@ const struct nla_policy nl80211_policy[N
  					.len = SAE_PASSWORD_MAX_LEN },
  	[NL80211_ATTR_TWT_RESPONDER] = { .type = NLA_FLAG },
  	[NL80211_ATTR_HE_OBSS_PD] = NLA_POLICY_NESTED(he_obss_pd_policy),
@@ -137,7 +137,7 @@
  };
  
  /* policy for the key attributes */
-@@ -2994,6 +2995,20 @@ static int nl80211_set_wiphy(struct sk_b
+@@ -2992,6 +2993,20 @@ static int nl80211_set_wiphy(struct sk_b
  		if (result)
  			return result;
  	}

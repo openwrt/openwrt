@@ -57,5 +57,5 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	mp->update_interval = 100;
 +	mp->update_interval = HZ / 10;
  
- #ifdef CPTCFG_MAC80211_DEBUGFS
- 	mp->fixed_rate_idx = (u32) -1;
+ 	minstrel_ht_init_cck_rates(mp);
+ 
