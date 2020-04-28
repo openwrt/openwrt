@@ -16,11 +16,15 @@ ramips_setup_interfaces()
 	dlink,dwr-116-a1|\
 	dlink,dwr-921-c1|\
 	dlink,dwr-922-e2|\
+	dovado,tiny-ac|\
 	ohyeah,oy-0001|\
 	phicomm,psg1208|\
 	phicomm,psg1218a|\
 	planex,db-wrt01|\
 	planex,mzk-750dhp|\
+	ralink,mt7620a-evb|\
+	ralink,mt7620a-mt7610e-evb|\
+	ralink,mt7620a-v22sg-evb|\
 	sanlinking,d240|\
 	youku,yk1|\
 	zbtlink,zbt-ape522ii|\
@@ -71,18 +75,17 @@ ramips_setup_interfaces()
 			"1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
 		;;
 	asus,rt-ac51u|\
-	asus,rt-ac54u)
-		ucidef_add_switch "switch0" \
-			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
-		;;
+	asus,rt-ac54u|\
 	asus,rt-n14u|\
 	bdcom,wap2100-sk|\
+	edimax,ew-7478apc|\
 	glinet,gl-mt300a|\
 	glinet,gl-mt300n|\
 	glinet,gl-mt750|\
 	hiwifi,hc5661|\
 	wrtnode,wrtnode|\
-	zbtlink,zbt-wa05)
+	zbtlink,zbt-wa05|\
+	zyxel,keenetic-omni-ii)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
@@ -213,16 +216,9 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan:5" "6@eth0"
 		;;
-	zyxel,keenetic-omni-ii)
-		ucidef_add_switch "switch0" \
-			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6@eth0"
-		;;
 	zyxel,keenetic-viva)
 		ucidef_add_switch "switch1" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "7t@eth0"
-		;;
-	*)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		;;
 	esac
 }
