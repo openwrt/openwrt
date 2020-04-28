@@ -186,6 +186,7 @@ define Device/tplink_tl-wr740n-v1
   DEVICE_MODEL := TL-WR740N
   DEVICE_VARIANT := v1/v2
   TPLINK_HWID := 0x07400001
+  SUPPORTED_DEVICES += tl-wr741nd
 endef
 TARGET_DEVICES += tplink_tl-wr740n-v1
 
@@ -195,6 +196,7 @@ define Device/tplink_tl-wr740n-v3
   DEVICE_MODEL := TL-WR740N
   DEVICE_VARIANT := v3
   TPLINK_HWID := 0x07400003
+  SUPPORTED_DEVICES += tl-wr741nd
 endef
 TARGET_DEVICES += tplink_tl-wr740n-v3
 
@@ -204,6 +206,7 @@ define Device/tplink_tl-wr740n-v4
   DEVICE_MODEL := TL-WR740N
   DEVICE_VARIANT := v4
   TPLINK_HWID := 0x07400004
+  SUPPORTED_DEVICES += tl-wr741nd-v4
 endef
 TARGET_DEVICES += tplink_tl-wr740n-v4
 
@@ -213,6 +216,7 @@ define Device/tplink_tl-wr740n-v5
   DEVICE_MODEL := TL-WR740N
   DEVICE_VARIANT := v5
   TPLINK_HWID := 0x07400005
+  SUPPORTED_DEVICES += tl-wr741nd-v4
 endef
 TARGET_DEVICES += tplink_tl-wr740n-v5
 
@@ -222,6 +226,7 @@ define Device/tplink_tl-wr741-v1
   DEVICE_MODEL := TL-WR741N/ND
   DEVICE_VARIANT := v1/v2
   TPLINK_HWID := 0x07410001
+  SUPPORTED_DEVICES += tl-wr741nd
 endef
 TARGET_DEVICES += tplink_tl-wr741-v1
 
@@ -241,6 +246,7 @@ define Device/tplink_tl-wr743nd-v1
   DEVICE_MODEL := TL-WR743ND
   DEVICE_VARIANT := v1
   TPLINK_HWID := 0x07430001
+  SUPPORTED_DEVICES += tl-wr741nd
 endef
 TARGET_DEVICES += tplink_tl-wr743nd-v1
 
@@ -250,6 +256,7 @@ define Device/tplink_tl-wr841-v5
   DEVICE_MODEL := TL-WR841N/ND
   DEVICE_VARIANT := v5/v6
   TPLINK_HWID := 0x08410005
+  SUPPORTED_DEVICES += tl-wr741nd
 endef
 TARGET_DEVICES += tplink_tl-wr841-v5
 
@@ -367,6 +374,7 @@ define Device/tplink_tl-wr941-v2
   DEVICE_ALT0_VARIANT := v2/v3
   TPLINK_HWID := 0x09410002
   TPLINK_HWREV := 2
+  SUPPORTED_DEVICES += tl-wr941nd
 endef
 TARGET_DEVICES += tplink_tl-wr941-v2
 
@@ -379,6 +387,7 @@ define Device/tplink_tl-wr941-v4
   DEVICE_ALT0_MODEL := TL-WR941N
   DEVICE_ALT0_VARIANT := v4
   TPLINK_HWID := 0x09410004
+  SUPPORTED_DEVICES += tl-wr741nd
 endef
 TARGET_DEVICES += tplink_tl-wr941-v4
 
