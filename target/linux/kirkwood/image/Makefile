@@ -86,12 +86,11 @@ define Device/linksys_audi
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k
-  KERNEL_SIZE := 2624k
+  KERNEL_SIZE := 3072k
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   BOARD_NAME := linksys-audi
-  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_audi
 
