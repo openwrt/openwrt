@@ -91,6 +91,7 @@ define Device/linksys_audi
   UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   BOARD_NAME := linksys-audi
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_audi
 
