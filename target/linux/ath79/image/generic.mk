@@ -1158,6 +1158,12 @@ define Device/teltonika_rut955
 endef
 TARGET_DEVICES += teltonika_rut955
 
+define Device/teltonika_rut955-h7v3c0
+  $(Device/teltonika_rut955)
+  DEVICE_VARIANT := H7V3C0
+endef
+TARGET_DEVICES += teltonika_rut955-h7v3c0
+
 define Device/trendnet_tew-823dru
   SOC := qca9558
   DEVICE_VENDOR := Trendnet
