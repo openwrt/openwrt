@@ -12,11 +12,9 @@ Signed-off-by: René van Dorst <opensource@vdorst.com>
  drivers/net/phy/at803x.c | 74 ++++++++++++++++++++++++++++++++++++++++
  1 file changed, 74 insertions(+)
 
-diff --git a/drivers/net/phy/at803x.c b/drivers/net/phy/at803x.c
-index 481cf48c9b9e4..a6536ecf15db4 100644
 --- a/drivers/net/phy/at803x.c
 +++ b/drivers/net/phy/at803x.c
-@@ -19,6 +19,7 @@
+@@ -14,6 +14,7 @@
  #include <linux/etherdevice.h>
  #include <linux/of_gpio.h>
  #include <linux/gpio/consumer.h>
@@ -24,7 +22,7 @@ index 481cf48c9b9e4..a6536ecf15db4 100644
  
  #define AT803X_SPECIFIC_STATUS			0x11
  #define AT803X_SS_SPEED_MASK			(3 << 14)
-@@ -57,9 +58,18 @@
+@@ -53,9 +54,18 @@
  
  #define AT803X_MODE_CFG_MASK			0x0F
  #define AT803X_MODE_CFG_SGMII			0x01
@@ -43,8 +41,8 @@ index 481cf48c9b9e4..a6536ecf15db4 100644
  
  #define AT803X_DEBUG_REG_0			0x00
  #define AT803X_DEBUG_RX_CLK_DLY_EN		BIT(15)
-@@ -475,10 +485,56 @@ static int at803x_parse_dt(struct phy_device *phydev)
- 	return 0;
+@@ -243,10 +253,56 @@ static int at803x_resume(struct phy_devi
+ 	return phy_modify(phydev, MII_BMCR, BMCR_PDOWN | BMCR_ISOLATE, 0);
  }
  
 +static int at803x_mode(struct phy_device *phydev)
@@ -100,7 +98,7 @@ index 481cf48c9b9e4..a6536ecf15db4 100644
  
  	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
  	if (!priv)
-@@ -658,6 +714,10 @@ static int at803x_read_status(struct phy_device *phydev)
+@@ -394,6 +450,10 @@ static int at803x_read_status(struct phy
  {
  	int ss, err, old_link = phydev->link;
  
@@ -111,7 +109,7 @@ index 481cf48c9b9e4..a6536ecf15db4 100644
  	/* Update the link, but return if there was an error */
  	err = genphy_update_link(phydev);
  	if (err)
-@@ -712,6 +772,19 @@ static int at803x_read_status(struct phy_device *phydev)
+@@ -448,6 +508,19 @@ static int at803x_read_status(struct phy
  	return 0;
  }
  
@@ -130,8 +128,8 @@ index 481cf48c9b9e4..a6536ecf15db4 100644
 +
  static struct phy_driver at803x_driver[] = {
  {
- 	/* Qualcomm Atheros AR8035 */
-@@ -758,6 +831,7 @@ static struct phy_driver at803x_driver[] = {
+ 	/* ATHEROS 8035 */
+@@ -491,6 +564,7 @@ static struct phy_driver at803x_driver[]
  	.suspend		= at803x_suspend,
  	.resume			= at803x_resume,
  	/* PHY_GBIT_FEATURES */

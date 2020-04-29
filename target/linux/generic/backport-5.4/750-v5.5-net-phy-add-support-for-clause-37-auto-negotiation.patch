@@ -18,15 +18,12 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  include/linux/phy.h          |   4 +
  2 files changed, 143 insertions(+)
 
-diff --git a/drivers/net/phy/phy_device.c b/drivers/net/phy/phy_device.c
-index f1f60bd4865a..fa71998fea51 100644
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1607,6 +1607,40 @@ static int genphy_config_advert(struct phy_device *phydev)
- 	return changed;
+@@ -1679,6 +1679,40 @@ static int genphy_config_advert(struct p
  }
  
-+/**
+ /**
 + * genphy_c37_config_advert - sanitize and advertise auto-negotiation parameters
 + * @phydev: target phy_device struct
 + *
@@ -60,14 +57,14 @@ index f1f60bd4865a..fa71998fea51 100644
 +				  adv);
 +}
 +
- /**
++/**
   * genphy_config_eee_advert - disable unwanted eee mode advertisement
   * @phydev: target phy_device struct
-@@ -1715,6 +1749,54 @@ int __genphy_config_aneg(struct phy_device *phydev, bool changed)
- }
+  *
+@@ -1787,6 +1821,54 @@ int __genphy_config_aneg(struct phy_devi
  EXPORT_SYMBOL(__genphy_config_aneg);
  
-+/**
+ /**
 + * genphy_c37_config_aneg - restart auto-negotiation or write BMCR
 + * @phydev: target phy_device struct
 + *
@@ -115,14 +112,14 @@ index f1f60bd4865a..fa71998fea51 100644
 +}
 +EXPORT_SYMBOL(genphy_c37_config_aneg);
 +
- /**
++/**
   * genphy_aneg_done - return auto-negotiation status
   * @phydev: target phy_device struct
-@@ -1886,6 +1968,63 @@ int genphy_read_status(struct phy_device *phydev)
- }
+  *
+@@ -1958,6 +2040,63 @@ int genphy_read_status(struct phy_device
  EXPORT_SYMBOL(genphy_read_status);
  
-+/**
+ /**
 + * genphy_c37_read_status - check the link status and update current link state
 + * @phydev: target phy_device struct
 + *
@@ -179,14 +176,13 @@ index f1f60bd4865a..fa71998fea51 100644
 +}
 +EXPORT_SYMBOL(genphy_c37_read_status);
 +
- /**
++/**
   * genphy_soft_reset - software reset the PHY via BMCR_RESET bit
   * @phydev: target phy_device struct
-diff --git a/include/linux/phy.h b/include/linux/phy.h
-index 9a0e981df502..78436d58ce7c 100644
+  *
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -1106,6 +1106,10 @@ int genphy_read_mmd_unsupported(struct phy_device *phdev, int devad,
+@@ -1120,6 +1120,10 @@ int genphy_read_mmd_unsupported(struct p
  int genphy_write_mmd_unsupported(struct phy_device *phdev, int devnum,
  				 u16 regnum, u16 val);
  
