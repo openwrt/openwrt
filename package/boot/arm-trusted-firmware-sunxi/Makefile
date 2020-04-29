@@ -42,7 +42,7 @@ MAKE_FLAGS += \
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	$(CP) $(PKG_BUILD_DIR)/build/sun50i_a64/release/bl31.bin $(STAGING_DIR_IMAGE)/bl31.bin
+	$(CP) $(PKG_BUILD_DIR)/build/sun50i_a64/release/bl31.bin $(STAGING_DIR_IMAGE)/bl31_a64.bin
 endef
 
 define Package/arm-trusted-firmware-sunxi/install
