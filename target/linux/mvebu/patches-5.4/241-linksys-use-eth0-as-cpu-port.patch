@@ -1,0 +1,27 @@
+diff --git a/arch/arm/boot/dts/armada-385-linksys.dtsi b/arch/arm/boot/dts/armada-385-linksys.dtsi
+index 827e82be2201..b6aecf4cc5eb 100644
+--- a/arch/arm/boot/dts/armada-385-linksys.dtsi
++++ b/arch/arm/boot/dts/armada-385-linksys.dtsi
+@@ -109,7 +109,7 @@
+ };
+ 
+ &eth2 {
+-	status = "okay";
++	status = "disabled";
+ 	phy-mode = "sgmii";
+ 	buffer-manager = <&bm>;
+ 	bm,pool-long = <2>;
+@@ -191,10 +191,10 @@
+ 				label = "wan";
+ 			};
+ 
+-			port@5 {
+-				reg = <5>;
++			port@6 {
++				reg = <6>;
+ 				label = "cpu";
+-				ethernet = <&eth2>;
++				ethernet = <&eth0>;
+ 
+ 				fixed-link {
+ 					speed = <1000>;
