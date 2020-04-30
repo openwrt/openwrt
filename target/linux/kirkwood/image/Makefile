@@ -50,7 +50,7 @@ define Device/cloudengines_pogoplugv4
   DEVICE_VENDOR := Cloud Engines
   DEVICE_MODEL := Pogoplug V4
   DEVICE_DTS := kirkwood-pogoplug-series-4
-  DEVICE_PACKAGES := kmod-usb3
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-usb3
 endef
 TARGET_DEVICES += cloudengines_pogoplugv4
 
@@ -65,7 +65,8 @@ define Device/iom_ix2-200
   DEVICE_VENDOR := Iomega
   DEVICE_MODEL := StorCenter ix2-200
   DEVICE_DTS := kirkwood-iomega_ix2_200
-  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-hwmon-lm63
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-gpio-button-hotplug \
+	kmod-hwmon-lm63
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k
@@ -110,6 +111,7 @@ define Device/raidsonic_ib-nas62x0
   DEVICE_VENDOR := RaidSonic
   DEVICE_MODEL := ICY BOX IB-NAS62x0
   BOARD_NAME := ib62x0
+  DEVICE_PACKAGES := kmod-ata-marvell-sata
 endef
 TARGET_DEVICES += raidsonic_ib-nas62x0
 
@@ -124,6 +126,7 @@ define Device/seagate_goflexnet
   DEVICE_VENDOR := Seagate
   DEVICE_MODEL := GoFlexNet
   BOARD_NAME := goflexnet
+  DEVICE_PACKAGES := kmod-ata-marvell-sata
 endef
 TARGET_DEVICES += seagate_goflexnet
 
@@ -131,13 +134,15 @@ define Device/seagate_goflexhome
   DEVICE_VENDOR := Seagate
   DEVICE_MODEL := GoFlexHome
   BOARD_NAME := goflexhome
+  DEVICE_PACKAGES := kmod-ata-marvell-sata
 endef
 TARGET_DEVICES += seagate_goflexhome
 
 define Device/zyxel_nsa310b
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NSA310b
-  DEVICE_PACKAGES := kmod-r8169 kmod-gpio-button-hotplug kmod-hwmon-lm85
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-r8169 \
+	kmod-gpio-button-hotplug kmod-hwmon-lm85
   BOARD_NAME := nsa310b
 endef
 TARGET_DEVICES += zyxel_nsa310b
@@ -146,7 +151,8 @@ define Device/zyxel_nsa325
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NSA325
   DEVICE_VARIANT := v1/v2
-  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-rtc-pcf8563 kmod-usb3
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-gpio-button-hotplug \
+	kmod-rtc-pcf8563 kmod-usb3
   BOARD_NAME := nsa325
 endef
 TARGET_DEVICES += zyxel_nsa325
