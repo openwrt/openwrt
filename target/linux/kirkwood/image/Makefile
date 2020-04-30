@@ -36,6 +36,7 @@ define Device/cisco_on100
   UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   BOARD_NAME := on100
+  DEVICE_PACKAGES := kmod-mvsdio
 endef
 TARGET_DEVICES += cisco_on100
 
@@ -50,7 +51,7 @@ define Device/cloudengines_pogoplugv4
   DEVICE_VENDOR := Cloud Engines
   DEVICE_MODEL := Pogoplug V4
   DEVICE_DTS := kirkwood-pogoplug-series-4
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-usb3
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-mvsdio kmod-usb3
 endef
 TARGET_DEVICES += cloudengines_pogoplugv4
 
