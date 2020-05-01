@@ -14,7 +14,7 @@
  	memory {
  		device_type = "memory";
  		reg = <0x00000000 0x20000000>;
-@@ -162,11 +169,12 @@
+@@ -162,17 +169,19 @@
  			     &pmx_led_hdd1_green &pmx_led_hdd1_red>;
  		pinctrl-names = "default";
  
@@ -29,3 +29,26 @@
  			label = "nsa325:orange:sys";
  			gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
  		};
+ 		green-hdd1 {
+ 			label = "nsa325:green:hdd1";
+ 			gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "ata1";
+ 		};
+ 		red-hdd1 {
+ 			label = "nsa325:red:hdd1";
+@@ -181,6 +190,7 @@
+ 		green-hdd2 {
+ 			label = "nsa325:green:hdd2";
+ 			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "ata2";
+ 		};
+ 		red-hdd2 {
+ 			label = "nsa325:red:hdd2";
+@@ -189,6 +199,7 @@
+ 		green-usb {
+ 			label = "nsa325:green:usb";
+ 			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "usb-host";
+ 		};
+ 		green-copy {
+ 			label = "nsa325:green:copy";
