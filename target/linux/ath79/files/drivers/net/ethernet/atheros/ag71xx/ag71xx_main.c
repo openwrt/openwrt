@@ -1080,16 +1080,9 @@ static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	return -EOPNOTSUPP;
 }
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0))
-static void ag71xx_oom_timer_handler(unsigned long data)
-{
-	struct net_device *dev = (struct net_device *) data;
-	struct ag71xx *ag = netdev_priv(dev);
-#else
 static void ag71xx_oom_timer_handler(struct timer_list *t)
 {
 	struct ag71xx *ag = from_timer(ag, t, oom_timer);
-#endif
 
 	napi_schedule(&ag->napi);
 }
@@ -1214,22 +1207,14 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 	unsigned int offset = ag->rx_buf_offset;
 	int ring_mask = BIT(ring->order) - 1;
 	int ring_size = BIT(ring->order);
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,19,0))
 	struct list_head rx_list;
 	struct sk_buff *next;
-#else
-	struct sk_buff_head queue;
-#endif
 	struct sk_buff *skb;
 	int done = 0;
 
 	DBG("%s: rx packets, limit=%d, curr=%u, dirty=%u\n",
 			dev->name, limit, ring->curr, ring->dirty);
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,19,0))
 	INIT_LIST_HEAD(&rx_list);
-#else
-	skb_queue_head_init(&queue);
-#endif
 
 	while (done < limit) {
 		unsigned int i = ring->curr & ring_mask;
@@ -1271,11 +1256,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		} else {
 			skb->dev = dev;
 			skb->ip_summed = CHECKSUM_NONE;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,19,0))
 			list_add_tail(&skb->list, &rx_list);
-#else
-			__skb_queue_tail(&queue, skb);
-#endif
 		}
 
 next:
@@ -1287,16 +1268,9 @@ next:
 
 	ag71xx_ring_rx_refill(ag);
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,19,0))
 	list_for_each_entry_safe(skb, next, &rx_list, list)
 		skb->protocol = eth_type_trans(skb, dev);
 	netif_receive_skb_list(&rx_list);
-#else
-	while ((skb = __skb_dequeue(&queue)) != NULL) {
-		skb->protocol = eth_type_trans(skb, dev);
-		netif_receive_skb(skb);
-	}
-#endif
 
 	DBG("%s: rx finish, curr=%u, dirty=%u, done=%d\n",
 		dev->name, ring->curr, ring->dirty, done);
@@ -1520,13 +1494,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	INIT_DELAYED_WORK(&ag->restart_work, ag71xx_restart_work_func);
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0))
-	init_timer(&ag->oom_timer);
-	ag->oom_timer.data = (unsigned long) dev;
-	ag->oom_timer.function = ag71xx_oom_timer_handler;
-#else
 	timer_setup(&ag->oom_timer, ag71xx_oom_timer_handler, 0);
-#endif
 
 	tx_size = AG71XX_TX_RING_SIZE_DEFAULT;
 	ag->rx_ring.order = ag71xx_ring_size_order(AG71XX_RX_RING_SIZE_DEFAULT);
@@ -1581,11 +1549,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 	ag->stop_desc->next = (u32) ag->stop_desc_dma;
 
 	mac_addr = of_get_mac_address(np);
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,2,0))
-	if (!mac_addr || !is_valid_ether_addr(mac_addr)) {
-#else
-	if (IS_ERR(mac_addr) || !is_valid_ether_addr(mac_addr)) {
-#endif
+	if (IS_ERR_OR_NULL(mac_addr) || !is_valid_ether_addr(mac_addr)) {
 		dev_err(&pdev->dev, "invalid MAC address, using random address\n");
 		eth_random_addr(dev->dev_addr);
 	} else {

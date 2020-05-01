@@ -147,26 +147,20 @@
  
  #include "mtk_eth_soc.h"
  
-@@ -76,6 +78,18 @@ u32 mtk_m32(struct mtk_eth *eth, u32 mas
+@@ -69,10 +71,12 @@ u32 mtk_m32(struct mtk_eth *eth, u32 mas
+ {
+ 	u32 val;
+ 
++	spin_lock(&eth->page_lock);
+ 	val = mtk_r32(eth, reg);
+ 	val &= ~mask;
+ 	val |= set;
+ 	mtk_w32(eth, val, reg);
++	spin_unlock(&eth->page_lock);
  	return reg;
  }
  
-+void mtk_m32(struct mtk_eth *eth, u32 clear, u32 set, unsigned reg)
-+{
-+	u32 val;
-+
-+	spin_lock(&eth->page_lock);
-+	val = __raw_readl(eth->base + reg);
-+	val &= ~clear;
-+	val |= set;
-+	__raw_writel(val, eth->base + reg);
-+	spin_unlock(&eth->page_lock);
-+}
-+
- static int mtk_mdio_busy_wait(struct mtk_eth *eth)
- {
- 	unsigned long t_start = jiffies;
-@@ -1298,8 +1312,16 @@ static int mtk_poll_rx(struct napi_struc
+@@ -1298,8 +1302,16 @@ static int mtk_poll_rx(struct napi_struc
  		    (trxd.rxd2 & RX_DMA_VTAG))
  			__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q),
  					       RX_DMA_VID(trxd.rxd3));
@@ -185,7 +179,7 @@
  
  		ring->data[idx] = new_data;
  		rxd->rxd1 = (unsigned int)dma_addr;
-@@ -2216,6 +2238,9 @@ static int mtk_open(struct net_device *d
+@@ -2216,6 +2228,9 @@ static int mtk_open(struct net_device *d
  		mtk_tx_irq_enable(eth, MTK_TX_DONE_INT);
  		mtk_rx_irq_enable(eth, MTK_RX_DONE_INT);
  		refcount_set(&eth->dma_refcnt, 1);
@@ -195,7 +189,7 @@
  	}
  	else
  		refcount_inc(&eth->dma_refcnt);
-@@ -2274,6 +2299,9 @@ static int mtk_stop(struct net_device *d
+@@ -2274,6 +2289,9 @@ static int mtk_stop(struct net_device *d
  
  	mtk_dma_free(eth);
  
@@ -205,7 +199,7 @@
  	return 0;
  }
  
-@@ -2733,6 +2761,27 @@ static int mtk_set_rxnfc(struct net_devi
+@@ -2733,6 +2751,27 @@ static int mtk_set_rxnfc(struct net_devi
  	return ret;
  }
  
@@ -233,7 +227,7 @@
  static const struct ethtool_ops mtk_ethtool_ops = {
  	.get_link_ksettings	= mtk_get_link_ksettings,
  	.set_link_ksettings	= mtk_set_link_ksettings,
-@@ -2764,6 +2813,9 @@ static const struct net_device_ops mtk_n
+@@ -2764,6 +2803,9 @@ static const struct net_device_ops mtk_n
  #ifdef CONFIG_NET_POLL_CONTROLLER
  	.ndo_poll_controller	= mtk_poll_controller,
  #endif
@@ -243,7 +237,7 @@
  };
  
  static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
-@@ -3097,6 +3149,7 @@ static const struct mtk_soc_data mt7622_
+@@ -3097,6 +3139,7 @@ static const struct mtk_soc_data mt7622_
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7622_CLKS_BITMAP,
  	.required_pctl = false,
@@ -320,7 +314,7 @@
  
  void mtk_w32(struct mtk_eth *eth, u32 val, unsigned reg);
  u32 mtk_r32(struct mtk_eth *eth, unsigned reg);
-+void mtk_m32(struct mtk_eth *eth, u32 clear, u32 set, unsigned reg);
++u32 mtk_m32(struct mtk_eth *eth, u32 mask, u32 set, unsigned reg);
  
  int mtk_sgmii_init(struct mtk_sgmii *ss, struct device_node *np,
  		   u32 ana_rgc3);

@@ -175,7 +175,7 @@ Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
  
  static void report_addr(struct device *dev, dma_addr_t dma_addr, size_t size)
  {
-@@ -69,7 +68,7 @@ static gfp_t __dma_direct_optimal_gfp_ma
+@@ -70,7 +69,7 @@ static gfp_t __dma_direct_optimal_gfp_ma
  	 * Note that GFP_DMA32 and GFP_DMA are no ops without the corresponding
  	 * zones.
  	 */
@@ -184,7 +184,7 @@ Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
  		return GFP_DMA;
  	if (*phys_mask <= DMA_BIT_MASK(32))
  		return GFP_DMA32;
-@@ -395,7 +394,7 @@ int dma_direct_supported(struct device *
+@@ -396,7 +395,7 @@ int dma_direct_supported(struct device *
  	u64 min_mask;
  
  	if (IS_ENABLED(CONFIG_ZONE_DMA))

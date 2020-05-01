@@ -298,7 +298,6 @@ define Device/belkin_f7c027
   IMAGE_SIZE := 7616k
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := F7C027
-  DEVICE_PACKAGES := --kmod-usb-dwc2 -kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += f7c027
 endef
 TARGET_DEVICES += belkin_f7c027
@@ -964,7 +963,7 @@ define Device/sitecom_wl-351
   IMAGE_SIZE := 3776k
   DEVICE_VENDOR := Sitecom
   DEVICE_MODEL := WL-351 v1
-  DEVICE_PACKAGES := kmod-switch-rtl8366rb kmod-swconfig swconfig
+  DEVICE_PACKAGES := kmod-switch-rtl8366rb
   SUPPORTED_DEVICES += wl-351
   DEFAULT := n
 endef

@@ -18,6 +18,17 @@ ipq40xx_setup_interfaces()
 	engenius,ens620ext)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
+	aruba,ap-303|\
+	avm,fritzrepeater-1200|\
+	dlink,dap-2610 |\
+	engenius,eap1300|\
+	engenius,emd1|\
+	meraki,mr33|\
+	netgear,ex6100v2|\
+	netgear,ex6150v2|\
+	zyxel,wre6606)
+		ucidef_set_interface_lan "eth0"
+		;;
 	aruba,ap-303h)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
@@ -45,17 +56,6 @@ ipq40xx_setup_interfaces()
 	avm,fritzbox-7530)
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
-		;;
-	aruba,ap-303|\
-	avm,fritzrepeater-1200|\
-	dlink,dap-2610 |\
-	engenius,eap1300|\
-	engenius,emd1|\
-	meraki,mr33|\
-	netgear,ex6100v2|\
-	netgear,ex6150v2|\
-	zyxel,wre6606)
-		ucidef_set_interface_lan "eth0"
 		;;
 	avm,fritzrepeater-3000|\
 	compex,wpj419|\

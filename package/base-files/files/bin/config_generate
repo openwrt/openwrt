@@ -426,6 +426,8 @@ generate_gpioswitch() {
 json_init
 json_load "$(cat ${CFG})"
 
+umask 077
+
 if [ ! -s /etc/config/network ]; then
 	touch /etc/config/network
 	generate_static_network

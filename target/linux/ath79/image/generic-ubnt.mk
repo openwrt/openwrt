@@ -243,6 +243,14 @@ define Device/ubnt_picostation-m
 endef
 TARGET_DEVICES += ubnt_picostation-m
 
+define Device/ubnt_powerbeam-5ac-gen2
+  $(Device/ubnt-wa)
+  DEVICE_MODEL := PowerBeam 5AC
+  DEVICE_VARIANT := Gen2
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct rssileds
+endef
+TARGET_DEVICES += ubnt_powerbeam-5ac-gen2
+
 define Device/ubnt_rocket-m
   $(Device/ubnt-xm)
   SOC := ar7241

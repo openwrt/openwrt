@@ -187,6 +187,7 @@ endef
 TARGET_DEVICES += asus_rt-ac85p
 
 define Device/buffalo_wsr-1166dhp
+  $(Device/uimage-lzma-loader)
   IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
   IMAGE_SIZE := 15936k
   DEVICE_VENDOR := Buffalo
@@ -197,6 +198,7 @@ endef
 TARGET_DEVICES += buffalo_wsr-1166dhp
 
 define Device/buffalo_wsr-2533dhpl
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 7936k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WSR-2533DHPL
@@ -218,7 +220,9 @@ define Device/dlink_dir-860l-b1
   $(Device/seama)
   BLOCKSIZE := 64k
   SEAMA_SIGNATURE := wrgac13_dlink.2013gui_dir860lb
-  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | uImage lzma
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
+	relocate-kernel | lzma -a0 | uImage lzma
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-860L
@@ -284,6 +288,7 @@ endef
 TARGET_DEVICES += elecom_wrc-1167ghbk2-s
 
 define Device/elecom_wrc-1900gst
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 11264k
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-1900GST
@@ -294,6 +299,7 @@ endef
 TARGET_DEVICES += elecom_wrc-1900gst
 
 define Device/elecom_wrc-2533gst
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 11264k
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-2533GST
@@ -354,6 +360,7 @@ endef
 TARGET_DEVICES += hiwifi_hc5962
 
 define Device/iodata_wn-ax1167gr
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 15552k
   KERNEL_INITRAMFS := $$(KERNEL) | \
 	iodata-factory 7864320 4 0x1055 $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
@@ -363,55 +370,50 @@ define Device/iodata_wn-ax1167gr
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr
 
-define Device/iodata_wn-ax1167gr2
+define Device/iodata_nand
+  DEVICE_VENDOR := I-O DATA
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   UBINIZE_OPTS := -E 5
-  UIMAGE_MAGIC := 0x434f4d42
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 51200k
-  DEVICE_VENDOR := I-O DATA
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | lzma | uImage lzma
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/iodata_wn-ax1167gr2
+  $(Device/iodata_nand)
+  UIMAGE_MAGIC := 0x434f4d42
   DEVICE_MODEL := WN-AX1167GR2
   KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(XBC.1)b10 | \
 	iodata-mstc-header
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_PACKAGES := kmod-mt7615e wpad-basic
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr2
 
 define Device/iodata_wn-ax2033gr
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  UBINIZE_OPTS := -E 5
+  $(Device/iodata_nand)
   UIMAGE_MAGIC := 0x434f4d42
-  KERNEL_SIZE := 4096k
-  IMAGE_SIZE := 51200k
-  DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-AX2033GR
   KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(VST.1)C10 | \
 	iodata-mstc-header
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e wpad-basic
 endef
 TARGET_DEVICES += iodata_wn-ax2033gr
 
 define Device/iodata_wn-dx1167r
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  UBINIZE_OPTS := -E 5
+  $(Device/iodata_nand)
   UIMAGE_MAGIC := 0x434f4d43
-  KERNEL_SIZE := 4096k
-  IMAGE_SIZE := 51200k
-  DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-DX1167R
   KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(XIK.1)b10 | \
 	iodata-mstc-header
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_PACKAGES := kmod-mt7615e wpad-basic
 endef
 TARGET_DEVICES += iodata_wn-dx1167r
 
 define Device/iodata_wn-gx300gr
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 7616k
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-GX300GR
@@ -420,6 +422,7 @@ endef
 TARGET_DEVICES += iodata_wn-gx300gr
 
 define Device/iodata_wnpr2600g
+  $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WNPR2600G
   IMAGE_SIZE := 13952k
@@ -716,6 +719,7 @@ endef
 TARGET_DEVICES += phicomm_k2p
 
 define Device/planex_vr500
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 65216k
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := VR500
@@ -820,7 +824,7 @@ TARGET_DEVICES += ubnt_edgerouter-x
 define Device/ubnt_edgerouter-x-sfp
   $(Device/ubnt_edgerouter_common)
   DEVICE_MODEL := EdgeRouter X SFP
-  DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x
+  DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x kmod-sfp
   SUPPORTED_DEVICES += ubnt-erx-sfp ubiquiti,edgerouterx-sfp
 endef
 TARGET_DEVICES += ubnt_edgerouter-x-sfp

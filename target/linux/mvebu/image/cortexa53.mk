@@ -1,3 +1,11 @@
+define Device/glinet_gl-mv1000
+  $(call Device/Default-arm64)
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-MV1000
+  SOC := armada-3720
+endef
+TARGET_DEVICES += glinet_gl-mv1000
+
 define Device/globalscale_espressobin
   $(call Device/Default-arm64)
   DEVICE_VENDOR := Marvell

@@ -12,7 +12,7 @@ define Device/asus_rt-n56u
   IMAGE/sysupgrade.bin += | mkrtn56uimg -s
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-N56U
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 swconfig
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
   SUPPORTED_DEVICES += rt-n56u
 endef
 TARGET_DEVICES += asus_rt-n56u
@@ -23,7 +23,7 @@ define Device/belkin_f9k1109v1
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := F9K1109
   DEVICE_VARIANT := Version 1.0
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport swconfig
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
   IMAGE_SIZE := 7808k
   KERNEL := kernel-bin | append-dtb | lzma -d16 | uImage lzma
   # Stock firmware checks for this uImage image name during upload.
@@ -40,7 +40,7 @@ define Device/dlink_dir-645
   SEAMA_SIGNATURE := wrgn39_dlob.hans_dir645
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-645
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 swconfig
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
   SUPPORTED_DEVICES += dir-645
 endef
 TARGET_DEVICES += dlink_dir-645
@@ -54,7 +54,6 @@ define Device/edimax_br-6475nd
 	append-metadata | check-size
   DEVICE_VENDOR := Edimax
   DEVICE_MODEL := BR-6475nD
-  DEVICE_PACKAGES := swconfig
   SUPPORTED_DEVICES += br-6475nd
 endef
 TARGET_DEVICES += edimax_br-6475nd
@@ -89,7 +88,7 @@ define Device/samsung_cy-swr1100
   SEAMA_SIGNATURE := wrgnd10_samsung_ss815
   DEVICE_VENDOR := Samsung
   DEVICE_MODEL := CY-SWR1100
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport swconfig
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += cy-swr1100
 endef
 TARGET_DEVICES += samsung_cy-swr1100
@@ -103,7 +102,7 @@ define Device/sitecom_wlr-6000
 	senao-header -r 0x0202 -p 0x41 -t 2
   DEVICE_VENDOR := Sitecom
   DEVICE_MODEL := WLR-6000
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 swconfig
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
   SUPPORTED_DEVICES += wlr-6000
 endef
 TARGET_DEVICES += sitecom_wlr-6000
@@ -117,7 +116,6 @@ define Device/trendnet_tew-691gr
 	umedia-header 0x026910
   DEVICE_VENDOR := TRENDnet
   DEVICE_MODEL := TEW-691GR
-  DEVICE_PACKAGES := swconfig
   SUPPORTED_DEVICES += tew-691gr
 endef
 TARGET_DEVICES += trendnet_tew-691gr
@@ -131,7 +129,6 @@ define Device/trendnet_tew-692gr
 	umedia-header 0x026920
   DEVICE_VENDOR := TRENDnet
   DEVICE_MODEL := TEW-692GR
-  DEVICE_PACKAGES := swconfig
   SUPPORTED_DEVICES += tew-692gr
 endef
 TARGET_DEVICES += trendnet_tew-692gr
