@@ -15,17 +15,3 @@ define KernelPackage/ata-ledtrig/description
 endef
 
 $(eval $(call KernelPackage,ata-ledtrig))
-
-
-define KernelPackage/ata-sata-pmp
-  TITLE:=SATA Port Multiplier support
-  DEPENDS:=@TARGET_kirkwood
-  KCONFIG:=CONFIG_SATA_PMP=y
-  $(call AddDepends/ata)
-endef
-
-define KernelPackage/ata-sata-pmp/description
-  Dummy package for SATA Port Multipliers support.
-endef
-
-$(eval $(call KernelPackage,ata-sata-pmp))

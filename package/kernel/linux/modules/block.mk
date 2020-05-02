@@ -26,7 +26,9 @@ define KernelPackage/ata-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Serial and Parallel ATA support
   DEPENDS:=@PCI_SUPPORT||TARGET_sunxi +kmod-scsi-core
-  KCONFIG:=CONFIG_ATA
+  KCONFIG:= \
+	CONFIG_SATA_PMP=y \
+	CONFIG_ATA
   FILES:=$(LINUX_DIR)/drivers/ata/libata.ko
 ifneq ($(wildcard $(LINUX_DIR)/drivers/ata/libahci.ko),)
   FILES+=$(LINUX_DIR)/drivers/ata/libahci.ko
