@@ -142,6 +142,14 @@ define Device/zyxel_nsa310b
 endef
 TARGET_DEVICES += zyxel_nsa310b
 
+define Device/zyxel_nsa310s
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := NSA310s
+  DEVICE_PACKAGES := kmod-r8169 kmod-gpio-button-hotplug kmod-hwmon-lm85
+  BOARD_NAME := nsa310s
+endef
+TARGET_DEVICES += zyxel_nsa310s
+
 define Device/zyxel_nsa325
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NSA325
