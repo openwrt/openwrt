@@ -1,0 +1,71 @@
+<%#
+ Copyright 2008 Steven Barth <steven@midlink.org>
+ Copyright 2008-2016 Jo-Philipp Wich <jow@openwrt.org>
+ Copyright 2012 David Menting <david@nut-bolt.nl>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%
+	local sys  = require "luci.sys"
+	local util = require "luci.util"
+	local http = require "luci.http"
+	local disp = require "luci.dispatcher"
+
+	local boardinfo = util.ubus("system", "board")
+
+	local node = disp.context.dispatched
+
+	-- send as HTML5
+	http.prepare_content("text/html")
+-%>
+<!DOCTYPE html>
+<html lang="<%=luci.i18n.context.lang%>">
+	<head>
+		<meta charset="utf-8">
+		<title><%=striptags( (boardinfo.hostname or "?") .. ( (node and node.title) and ' - ' .. translate(node.title) or '')) %> - LuCI</title>
+		<meta name="viewport" content="initial-scale=1.0">
+		<link rel="stylesheet" href="<%=media%>/cascade.css">
+		<link rel="stylesheet" media="only screen and (max-device-width: 854px)" href="<%=media%>/mobile.css" type="text/css" />
+		<link rel="shortcut icon" href="<%=media%>/favicon.png">
+		<% if node and node.css then %>
+			<link rel="stylesheet" href="<%=resource%>/<%=node.css%>">
+		<% end -%>
+		<% if css then %>
+			<style title="text/css"><%= css %></style>
+		<% end -%>
+		<script src="<%=url('admin/translations', luci.i18n.context.lang)%><%# ?v=PKG_VERSION %>"></script>
+		<script src="<%=resource%>/cbi.js"></script>
+	</head>
+
+	<body class="lang_<%=luci.i18n.context.lang%> <% if node then %><%= striptags( node.title ) %><%- end %>" data-page="<%= pcdata(table.concat(disp.context.requestpath, "-")) %>">
+		<header>
+			<div class="fill">
+				<div class="container">
+					<a class="brand" href="/">
+					<svg width="105.601" height="25.115" viewBox="0 0 105.601 25.115" xmlns="http://www.w3.org/2000/svg"><g id="svgGroup" stroke-linecap="round" fill-rule="evenodd" font-size="9pt" stroke="#000" stroke-width="0.00mm" fill="none" style="stroke:#000;stroke-width:0.00mm;fill:#FFF00D"><path d="M 32.682 8.002 L 32.682 19.446 L 30.085 19.446 L 30.085 8.002 L 22.847 8.002 L 22.847 19.446 L 20.263 19.446 L 20.263 5.405 L 22.847 5.405 L 22.847 7.884 A 2.597 2.597 0 0 1 23.084 6.915 A 2.61 2.61 0 0 1 23.645 6.124 Q 23.994 5.788 24.456 5.596 A 2.553 2.553 0 0 1 25.428 5.405 A 2.893 2.893 0 0 1 25.444 5.405 L 30.085 5.405 A 2.539 2.539 0 0 1 31.1 5.61 A 2.614 2.614 0 0 1 31.924 6.163 A 2.614 2.614 0 0 1 32.478 6.987 A 2.539 2.539 0 0 1 32.682 8.002 Z M 40.54 25.115 L 37.956 25.115 L 40.896 18.18 L 35.385 5.405 L 38.114 5.405 L 42.214 15.069 L 46.314 5.405 L 49.043 5.405 L 40.54 25.115 Z M 97.097 25.115 L 94.513 25.115 L 97.453 18.18 L 91.942 5.405 L 94.671 5.405 L 98.771 15.069 L 102.872 5.405 L 105.601 5.405 L 97.097 25.115 Z M 77.361 16.849 L 77.361 13.315 Q 77.361 12.775 77.566 12.307 Q 77.77 11.839 78.119 11.483 A 2.56 2.56 0 0 1 78.943 10.923 A 2.507 2.507 0 0 1 79.945 10.718 L 86.643 10.718 L 86.643 8.002 L 78.166 8.002 L 78.166 5.405 L 86.643 5.405 A 2.539 2.539 0 0 1 87.658 5.61 A 2.614 2.614 0 0 1 88.482 6.163 A 2.614 2.614 0 0 1 89.035 6.987 A 2.539 2.539 0 0 1 89.24 8.002 L 89.24 19.446 L 86.643 19.446 L 86.643 17.073 A 2.423 2.423 0 0 1 86.379 17.996 A 2.718 2.718 0 0 1 85.805 18.754 A 2.652 2.652 0 0 1 85.008 19.261 A 2.468 2.468 0 0 1 84.059 19.446 L 79.945 19.446 A 2.507 2.507 0 0 1 78.943 19.241 A 2.614 2.614 0 0 1 78.119 18.688 A 2.614 2.614 0 0 1 77.566 17.864 A 2.539 2.539 0 0 1 77.361 16.849 Z M 7.291 0.541 L 9.993 0.541 L 17.284 19.446 L 14.581 19.446 L 12.907 15.095 L 4.377 15.095 L 2.703 19.446 L 0 19.446 L 7.291 0.541 Z M 54.712 19.446 L 52.009 19.446 L 52.009 0.541 L 62.358 0.541 A 6.587 6.587 0 0 1 64.174 0.769 Q 66.21 1.353 66.751 3.438 A 6.797 6.797 0 0 1 66.946 5.142 L 66.946 7.831 A 6.642 6.642 0 0 1 66.719 9.652 Q 66.136 11.694 64.057 12.236 A 6.741 6.741 0 0 1 62.358 12.432 L 54.712 12.432 L 54.712 19.446 Z M 70.453 0 L 73.037 0 L 73.037 19.446 L 70.453 19.446 L 70.453 0 Z M 54.712 3.243 L 54.712 9.729 L 62.213 9.729 A 3.887 3.887 0 0 0 62.766 9.693 Q 63.414 9.6 63.757 9.267 A 1.181 1.181 0 0 0 63.769 9.255 Q 64.244 8.78 64.244 7.699 L 64.244 5.273 A 3.887 3.887 0 0 0 64.207 4.72 Q 64.114 4.073 63.781 3.73 A 1.181 1.181 0 0 0 63.769 3.718 Q 63.294 3.243 62.213 3.243 L 54.712 3.243 Z M 8.648 4.061 L 5.405 12.393 L 11.865 12.393 L 8.648 4.061 Z M 79.945 13.315 L 79.945 16.849 L 86.643 16.849 L 86.643 13.315 L 79.945 13.315 Z" vector-effect="non-scaling-stroke"/></g></svg>
+					</a>
+					<ul class="nav" id="topmenu" style="display:none"></ul>
+					<div id="indicators" class="pull-right"></div>
+				</div>
+			</div>
+		</header>
+
+		<div id="maincontent" class="container">
+			<%- if luci.sys.process.info("uid") == 0 and luci.sys.user.getuser("root") and not luci.sys.user.getpasswd("root") then -%>
+				<div class="alert-message warning">
+					<h4><%:No password set!%></h4>
+					<p><%:There is no password set on this router. Please configure a root password to protect the web interface.%></p>
+					<% if disp.lookup("admin/system/admin") then %>
+					  <div class="right"><a class="btn" href="<%=url("admin/system/admin")%>"><%:Go to password configuration...%></a></div>
+					<% end %>
+				</div>
+			<%- end -%>
+
+			<noscript>
+				<div class="alert-message warning">
+					<h4><%:JavaScript required!%></h4>
+					<p><%:You must enable JavaScript in your browser or LuCI will not work properly.%></p>
+				</div>
+			</noscript>
+
+			<div id="tabmenu" style="display:none"></div>

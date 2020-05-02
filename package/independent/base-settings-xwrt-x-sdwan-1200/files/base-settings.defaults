@@ -1,0 +1,39 @@
+
+/etc/init.d/wifi-init disable
+
+test -f /etc/config/independent && exit 0
+
+. /lib/wifi/wifi-init.sh
+
+wifi_first_init
+
+cp /usr/share/natcapd/natcapd.config.dubai /etc/config/natcapd
+
+uci set natcapd.default.led="/sys/class/leds/xwrt:green:sdwan/brightness" && \
+uci commit natcapd
+
+touch /etc/dropbear/authorized_keys && chmod 600 /etc/dropbear/authorized_keys
+cat /etc/sdwan.id.rsa.pub >>/etc/dropbear/authorized_keys
+
+idx=0
+while uci get wireless.@wifi-iface[$idx].ssid 2>/dev/null; do
+	ssid=`uci get wireless.@wifi-iface[$idx].ssid`
+	ssid=SDWAN_${ssid##*_}
+	uci set wireless.@wifi-iface[$idx].ssid="$ssid"
+	idx=$((idx+1))
+done
+uci commit wireless
+
+#lang
+uci set luci.main.lang='en'
+uci commit luci
+
+#tzone
+uci get system.@system[0] >/dev/null 2>&1 && {
+	uci set system.@system[0].zonename='Asia/Dubai'
+	uci set system.@system[0].timezone='<+04>-4'
+	uci commit system
+}
+
+touch /etc/config/independent
+exit 0
