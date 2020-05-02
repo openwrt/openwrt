@@ -1096,7 +1096,7 @@ define Device/xwrt_x-sdwan-1200
   DEVICE_VENDOR := XWRT
   DEVICE_MODEL := X-SDWAN-1200
   DEVICE_PACKAGES := \
-	kmod-mt7603 kmod-mt76x2
+	kmod-mt7603 kmod-mt76x2 base-settings-xwrt-x-sdwan-1200
 endef
 TARGET_DEVICES += xwrt_x-sdwan-1200
 

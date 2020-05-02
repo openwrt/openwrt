@@ -1,0 +1,12 @@
+#!/bin/sh
+
+[ "${ACTION}" = "released" ] || exit 0
+
+enabled=`uci get natcapd.default.enabled || echo 0`
+enabled=$((!enabled))
+
+uci set natcapd.default.enabled="$enabled" && \
+uci commit natcapd && \
+/etc/init.d/natcapd restart
+
+exit 0

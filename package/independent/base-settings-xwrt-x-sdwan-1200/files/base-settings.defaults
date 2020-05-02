@@ -1,0 +1,12 @@
+#!/bin/sh
+
+test -f /etc/config/independent && exit 0
+
+uci set natcapd.default.led="/sys/class/leds/xwrt:green:sdwan/brightness" && \
+uci commit natcapd
+
+touch /etc/dropbear/authorized_keys && chmod 600 /etc/dropbear/authorized_keys
+cat /etc/sdwan.id.rsa.pub >>/etc/dropbear/authorized_keys
+
+touch /etc/config/independent
+exit 0
