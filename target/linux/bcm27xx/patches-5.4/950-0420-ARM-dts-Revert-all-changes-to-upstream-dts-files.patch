@@ -1845,7 +1845,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  			#address-cells = <1>;
  			#size-cells = <0>;
  			status = "disabled";
-@@ -540,32 +446,6 @@
+@@ -541,32 +447,6 @@
  			status = "disabled";
  		};
  
@@ -1878,7 +1878,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  		i2c1: i2c@7e804000 {
  			compatible = "brcm,bcm2835-i2c";
  			reg = <0x7e804000 0x1000>;
-@@ -576,16 +456,6 @@
+@@ -577,16 +457,6 @@
  			status = "disabled";
  		};
  
@@ -1895,7 +1895,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  		vec: vec@7e806000 {
  			compatible = "brcm,bcm2835-vec";
  			reg = <0x7e806000 0x1000>;
-@@ -594,20 +464,6 @@
+@@ -595,20 +465,6 @@
  			status = "disabled";
  		};
  
@@ -1916,7 +1916,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  		usb: usb@7e980000 {
  			compatible = "brcm,bcm2835-usb";
  			reg = <0x7e980000 0x10000>;
-@@ -619,10 +475,6 @@
+@@ -620,10 +476,6 @@
  			phys = <&usbphy>;
  			phy-names = "usb2-phy";
  		};

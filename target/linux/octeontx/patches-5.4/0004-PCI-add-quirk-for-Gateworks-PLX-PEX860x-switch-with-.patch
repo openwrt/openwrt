@@ -22,10 +22,10 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  #include <linux/platform_data/x86/apple.h>
  #include <linux/pm_runtime.h>
  #include <linux/switchtec.h>
-@@ -5497,3 +5498,34 @@ out_disable:
- DECLARE_PCI_FIXUP_CLASS_FINAL(PCI_VENDOR_ID_NVIDIA, 0x13b1,
- 			      PCI_CLASS_DISPLAY_VGA, 8,
- 			      quirk_reset_lenovo_thinkpad_p50_nvgpu);
+@@ -5564,3 +5565,34 @@ static void apex_pci_fixup_class(struct
+ }
+ DECLARE_PCI_FIXUP_CLASS_HEADER(0x1ac1, 0x089a,
+ 			       PCI_CLASS_NOT_DEFINED, 8, apex_pci_fixup_class);
 +
 +#ifdef CONFIG_PCI_HOST_THUNDER_PEM
 +/*
