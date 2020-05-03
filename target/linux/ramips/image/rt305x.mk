@@ -1026,6 +1026,18 @@ define Device/tenda_3g300m
 endef
 TARGET_DEVICES += tenda_3g300m
 
+define Device/tenda_a6
+  SOC := rt5350
+  IMAGE_SIZE := 3776k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
+	poray-header -B A6 -F 4M
+  DEVICE_VENDOR := Tenda
+  DEVICE_MODEL := A6
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
+endef
+TARGET_DEVICES += tenda_a6
+
 define Device/tenda_w150m
   SOC := rt3050
   IMAGE_SIZE := 3776k

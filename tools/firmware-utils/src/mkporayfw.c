@@ -61,6 +61,7 @@
 #define HWID_NEXX_WT1520	0x30353332
 #define HWID_NEXX_WT3020	0x30323033
 #define HWID_A5_V11		0x32473352
+#define HWID_A6			0x32473352
 
 /* Recognized XOR obfuscation keys */
 #define KEY_HAME		0
@@ -71,6 +72,7 @@
 #define KEY_NEXX_1		5
 #define KEY_NEXX_2		6
 #define KEY_A5_V11		7
+#define KEY_A6			8
 
 /* XOR key length */
 #define KEY_LEN			15
@@ -146,6 +148,11 @@ static struct board_info boards[] = {
 		.hw_id          = HWID_A5_V11,
 		.layout_id      = "4M",
 		.key            = KEY_A5_V11,
+        }, {
+		.id             = "A6",
+		.hw_id          = HWID_A6,
+		.layout_id      = "4M",
+		.key            = KEY_A6,
         }, {
 		.id		= "MPR-A1",
 		.hw_id		= HWID_HAME_MPR_A1_L8,
