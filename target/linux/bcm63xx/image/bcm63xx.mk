@@ -19,7 +19,7 @@ endef
 
 define Device/bcm63xx
   FILESYSTEMS := squashfs jffs2-64k jffs2-128k
-  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | lzma-cfe
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma-cfe
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-lzma elf
   IMAGES := cfe.bin
   IMAGE/cfe.bin := cfe-bin --pad $$$$(shell expr $$$$(FLASH_MB) / 2)

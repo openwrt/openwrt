@@ -53,20 +53,16 @@ define Build/loader-lzma
 	rm -rf $@.src
 endef
 
-define Build/lzma
+define Build/lzma-cfe
 	# CFE is a LZMA nazi! It took me hours to find out the parameters!
 	# Also I think lzma has a bug cause it generates different output depending on
 	# if you use stdin / stdout or not. Use files instead of stdio here, cause
 	# otherwise CFE will complain and not boot the image.
-	$(STAGING_DIR_HOST)/bin/lzma e $@ -d22 -fb64 -a1 $@.lzma
-	mv $@.lzma $@
-endef
-
-define Build/lzma-cfe
+	$(call Build/lzma-no-dict,-d22 -fb64 -a1)
 	# Strip out the length, CFE doesn't like this
-	dd if=$@ of=$@.lzma.cfe bs=5 count=1
-	dd if=$@ of=$@.lzma.cfe ibs=13 obs=5 skip=1 seek=1 conv=notrunc
-	mv $@.lzma.cfe $@
+	dd if=$@ of=$@.new bs=5 count=1
+	dd if=$@ of=$@.new ibs=13 obs=5 skip=1 seek=1 conv=notrunc
+	mv $@.new $@
 endef
 
 define Build/relocate-kernel
