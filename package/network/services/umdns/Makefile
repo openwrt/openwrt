@@ -30,7 +30,7 @@ define Package/umdns
   DEPENDS:=+libubox +libubus +libblobmsg-json
 endef
 
-TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include -Wno-address-of-packed-member
+TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
 
 define Package/umdns/conffiles
 /etc/config/umdns
