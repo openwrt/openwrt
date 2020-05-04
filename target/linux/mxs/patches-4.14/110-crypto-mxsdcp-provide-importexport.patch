@@ -1,6 +1,6 @@
 --- a/drivers/crypto/mxs-dcp.c
 +++ b/drivers/crypto/mxs-dcp.c
-@@ -833,6 +833,24 @@ static void dcp_sha_cra_exit(struct cryp
+@@ -831,6 +831,24 @@ static void dcp_sha_cra_exit(struct cryp
  {
  }
  
@@ -25,7 +25,7 @@
  /* AES 128 ECB and AES 128 CBC */
  static struct crypto_alg dcp_aes_algs[] = {
  	{
-@@ -892,8 +910,11 @@ static struct ahash_alg dcp_sha1_alg = {
+@@ -890,8 +908,11 @@ static struct ahash_alg dcp_sha1_alg = {
  	.final	= dcp_sha_final,
  	.finup	= dcp_sha_finup,
  	.digest	= dcp_sha_digest,
@@ -37,7 +37,7 @@
  		.base		= {
  			.cra_name		= "sha1",
  			.cra_driver_name	= "sha1-dcp",
-@@ -916,8 +937,11 @@ static struct ahash_alg dcp_sha256_alg =
+@@ -914,8 +935,11 @@ static struct ahash_alg dcp_sha256_alg =
  	.final	= dcp_sha_final,
  	.finup	= dcp_sha_finup,
  	.digest	= dcp_sha_digest,
