@@ -162,8 +162,8 @@ endef
 
 define U-Boot/nanopi_r1
   BUILD_SUBTARGET:=cortexa7
-  NAME:=NanoPi R1 (H3)
-  BUILD_DEVICES:=sun8i-h3-nanopi-r1
+  NAME:=U-Boot for NanoPi R1 (H3)
+  BUILD_DEVICES:=friendlyarm_nanopi-r1
 endef
 
 define U-Boot/nanopi_neo

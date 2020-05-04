@@ -31,15 +31,15 @@ define Device/friendlyarm_nanopi-m1-plus
 endef
 TARGET_DEVICES += friendlyarm_nanopi-m1-plus
 
-define Device/sun8i-h3-nanopi-r1
-  DEVICE_TITLE:=FriendlyArm NanoPi R1
-  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-usb2 kmod-usb-net kmod-usb-net-rtl8152 \
-	kmod-leds-gpio kmod-ledtrig-heartbeat \
-	kmod-brcmfmac brcmfmac-firmware-43430-sdio wpad-basic
-  SUPPORTED_DEVICES:=friendlyarm,nanopi-r1
-  SUNXI_DTS:=sun8i-h3-nanopi-r1
+define Device/friendlyarm_nanopi-r1
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi R1
+  DEVICE_PACKAGES := kmod-rtc-sunxi kmod-usb2 kmod-usb-net kmod-usb-net-rtl8152 \
+  kmod-brcmfmac kmod-leds-gpio kmod-ledtrig-heartbeat wpad-basic \
+  brcmfmac-firmware-43430-sdio
+  SOC := sun8i-h3
 endef
-TARGET_DEVICES += sun8i-h3-nanopi-r1
+TARGET_DEVICES += friendlyarm_nanopi-r1
 
 define Device/friendlyarm_nanopi-neo
   DEVICE_VENDOR := FriendlyARM
