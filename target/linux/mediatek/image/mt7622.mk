@@ -1,3 +1,5 @@
+KERNEL_LOADADDR := 0x41080000
+
 define Device/mediatek_mt7622-rfb1
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MTK7622 rfb1 AP

@@ -1,3 +1,5 @@
+KERNEL_LOADADDR := 0x80008000
+
 define Device/unielec_u7623-02-emmc-512m
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7623-02
