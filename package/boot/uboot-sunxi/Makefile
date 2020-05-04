@@ -305,7 +305,7 @@ UBOOT_TARGETS := \
 	Linksprite_pcDuino3 \
 	Lamobo_R1 \
 	nanopi_m1_plus \
-  nanopi_r1 \
+	nanopi_r1 \
 	nanopi_neo \
 	nanopi_neo_air \
 	nanopi_neo_plus2 \
