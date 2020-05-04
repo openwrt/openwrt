@@ -32,6 +32,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_DRIVER_WEXT_SUPPORT \
 	CONFIG_DRIVER_11N_SUPPORT \
 	CONFIG_DRIVER_11AC_SUPPORT \
+	CONFIG_WPA_ENABLE_WEP
 
 EAPOL_TEST_PROVIDERS:=eapol-test eapol-test-openssl eapol-test-wolfssl
 
@@ -443,6 +444,10 @@ TARGET_LDFLAGS += -Wl,--gc-sections -flto=jobserver -fuse-linker-plugin -lubox -
 
 ifdef CONFIG_PACKAGE_kmod-cfg80211
   TARGET_LDFLAGS += -lm -lnl-tiny
+endif
+
+ifdef CONFIG_WPA_ENABLE_WEP
+    DRIVER_MAKEOPTS += CONFIG_WEP=y
 endif
 
 define Build/RunMake
