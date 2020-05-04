@@ -38,7 +38,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		}
  	}
  
-@@ -1146,13 +1142,10 @@ int mesh_nexthop_resolve(struct ieee8021
+@@ -1147,13 +1143,10 @@ int mesh_nexthop_resolve(struct ieee8021
  	info->flags |= IEEE80211_TX_INTFL_NEED_TXPROCESSING;
  	ieee80211_set_qos_hdr(sdata, skb);
  	skb_queue_tail(&mpath->frame_queue, skb);
@@ -53,7 +53,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  /**
-@@ -1172,13 +1165,10 @@ int mesh_nexthop_lookup(struct ieee80211
+@@ -1173,13 +1166,10 @@ int mesh_nexthop_lookup(struct ieee80211
  	struct sta_info *next_hop;
  	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
  	u8 *target_addr = hdr->addr3;
@@ -68,7 +68,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (time_after(jiffies,
  		       mpath->exp_time -
-@@ -1193,12 +1183,10 @@ int mesh_nexthop_lookup(struct ieee80211
+@@ -1194,12 +1184,10 @@ int mesh_nexthop_lookup(struct ieee80211
  		memcpy(hdr->addr1, next_hop->sta.addr, ETH_ALEN);
  		memcpy(hdr->addr2, sdata->vif.addr, ETH_ALEN);
  		ieee80211_mps_set_frame_flags(sdata, next_hop, hdr);
