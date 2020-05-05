@@ -1,5 +1,3 @@
-#!/bin/sh
-
 do_b53_hack() {
 	. /lib/functions.sh
 
