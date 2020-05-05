@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libpcap
 PKG_VERSION:=1.9.1
-PKG_RELEASE:=2
+PKG_RELEASE:=2.1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.us.tcpdump.org/release/ \
@@ -84,6 +84,10 @@ define Build/Configure
 	$(if $(CONFIG_PCAP_HAS_USB),,$(SED) 's/pcap-usb-linux.c *//' $(PKG_BUILD_DIR)/Makefile)
 	$(if $(CONFIG_PCAP_HAS_BT),,$(SED) '/^#define PCAP_SUPPORT_BT/D' $(PKG_BUILD_DIR)/config.h)
 	$(if $(CONFIG_PCAP_HAS_BT),,$(SED) 's/pcap-bt-linux.c *//' $(PKG_BUILD_DIR)/Makefile)
+
+	# Workaround https://bugs.openwrt.org/index.php?do=details&task_id=2970
+	mkdir $(PKG_BUILD_DIR)/debian
+	echo "libpcap (1-0)" > $(PKG_BUILD_DIR)/debian/changelog
 endef
 
 define Build/InstallDev
