@@ -10,7 +10,8 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:00:00.0.bin")
 	case $board in
-	avm,fritz1750e)
+	avm,fritz1750e|\
+	avm,fritzdvbc)
 		caldata_extract "urlader" 0x198a 0x844
 		;;
 	comfast,cf-wr650ac-v1|\

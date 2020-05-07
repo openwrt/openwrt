@@ -182,6 +182,16 @@ define Device/avm_fritz1750e
 endef
 TARGET_DEVICES += avm_fritz1750e
 
+define Device/avm_fritzdvbc
+  $(Device/avm)
+  SOC := qca9556
+  IMAGE_SIZE := 15232k
+  DEVICE_MODEL := FRITZ!WLAN Repeater DVB-C
+  DEVICE_PACKAGES += rssileds kmod-ath9k kmod-ath10k-ct-smallbuffers \
+	ath10k-firmware-qca988x-ct -swconfig
+endef
+TARGET_DEVICES += avm_fritzdvbc
+
 define Device/avm_fritz300e
   $(Device/avm)
   SOC := ar7242

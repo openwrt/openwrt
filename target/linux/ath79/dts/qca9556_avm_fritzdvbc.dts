@@ -1,0 +1,113 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+// OEM source for reference: <https://osp.avm.de/fritzwlan/fritzwlan-repeater-dvb-c/>
+
+#include <dt-bindings/gpio/gpio.h>
+#include "qca9556_avm_fritz-repeater.dtsi"
+
+/ {
+	compatible = "avm,fritzdvbc", "qca,qca9556";
+	model = "AVM FRITZ!WLAN Repeater DVB-C";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	led_spi {
+		compatible = "spi-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sck-gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		mosi-gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		num-chipselects = <0>;
+
+		spi_gpio: led_gpio@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			registers-number = <2>;
+			spi-max-frequency = <10000000>;
+
+			gpio_latch_bit {
+				gpio-hog;
+				// Not sure if ACTIVE_HIGH or ACTIVE_LOW is required here
+				gpios = <15 GPIO_ACTIVE_HIGH>;
+				output-high;
+				line-name = "gpio-latch-bit";
+			};
+		};
+	};
+
+	// This part of the code somehow has no effect.
+	// I tried &spi_gpio/&gpio and HIGH/LOW.
+	// Pins have been copied from OEM source which is
+	// why I left this part in here for reference.
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "fritzdvbc:green:power";
+			gpios = <&spi_gpio 106 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			label = "fritzdvbc:green:wlan";
+			gpios = <&spi_gpio 107 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		lan {
+			label = "fritzdvbc:green:tv";
+			gpios = <&spi_gpio 105 GPIO_ACTIVE_LOW>;
+		};
+
+		rssi0 {
+			label = "fritzdvbc:green:rssi0";
+			gpios = <&spi_gpio 100 GPIO_ACTIVE_LOW>;
+		};
+
+		rssi1 {
+			label = "fritzdvbc:green:rssi1";
+			gpios = <&spi_gpio 101 GPIO_ACTIVE_LOW>;
+		};
+
+		rssi2 {
+			label = "fritzdvbc:green:rssi2";
+			gpios = <&spi_gpio 102 GPIO_ACTIVE_LOW>;
+		};
+
+		rssi3 {
+			label = "fritzdvbc:green:rssi3";
+			gpios = <&spi_gpio 103 GPIO_ACTIVE_LOW>;
+		};
+
+		rssi4 {
+			label = "fritzdvbc:green:rssi4";
+			gpios = <&spi_gpio 104 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&gpio {
+	reset-pcie-ep {
+		gpio-hog;
+		gpios = <109 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "PCIE EP reset";
+	};
+
+	reset-pcie {
+		gpio-hog;
+		gpios = <110 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "PCIE Bus reset";
+	};
+};
