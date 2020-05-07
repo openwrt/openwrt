@@ -176,28 +176,24 @@ _proto_mbim_setup() {
 				proto_add_dns_server "$dns"
 			done
 		}
-
-	}
-	[ "$ip_6" ] && {
-		echo "mbim[$$]" "Configure IPv6 on $ifname"
-		ip=${ip_6%%/*}
-		mask=${ip_6##*/}
-		gateway=$(awk '$1=="ipv6gateway:" {print $2}' "$config")
-		mtu=$(awk '$1=="ipv6mtu:" {print $2}' "$config")
-		[ "$mtu" ] && ip -6 link set "$ifname" mtu "$mtu"
-
-		proto_add_ipv6_address "$ip" "$mask"
-		proto_add_ipv6_prefix "$ip_6"
-		[ "$defaultroute" = 0 ] || proto_add_ipv6_route "::" 0 "$gateway" "$metric" "" "$ip_6"
-		[ "$peerdns" = 0 ] || {
-			dns_servers=$(awk '$1=="ipv6dnsserver:" {printf "%s ",$2}' "$config")
-			for dns in $dns_servers; do
-				proto_add_dns_server "$dns"
-			done
-		}
 	}
 
 	proto_send_update "$interface"
+
+	[ "$ip_6" ] && {
+		echo "mbim[$$]" "Configure IPv6 via DHCPv6 on ${interface}_6"
+		mtu=$(awk '$1=="ipv6mtu:" {print $2}' "$config")
+		[ "$mtu" ] && ip -6 link set "$ifname" mtu "$mtu"
+
+		json_init
+		json_add_string name "${interface}_6"
+		json_add_string ifname "@$interface"
+		json_add_string proto "dhcpv6"
+		json_add_string extendprefix 1
+		proto_add_dynamic_defaults
+		ubus call network add_dynamic "$(json_dump)"
+	}
+
 	echo "mbim[$$]" "Connection setup complete"
 }
 
