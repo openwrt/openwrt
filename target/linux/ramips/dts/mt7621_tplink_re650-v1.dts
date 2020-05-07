@@ -146,7 +146,7 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&radio 0>;
+		mediatek,mtd-eeprom = <&radio 0x0>;
 		mtd-mac-address = <&config 0x10008>;
 		mtd-mac-address-increment = <1>;
 		ieee80211-freq-limit = <2400000 2500000>;
