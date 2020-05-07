@@ -1,7 +1,6 @@
-diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
---- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c	2020-04-21 14:33:05.702816632 +0800
-+++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c	2020-04-21 14:33:19.590328084 +0800
-@@ -2191,6 +2191,31 @@
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -2201,6 +2201,31 @@ static int mtk_start_dma(struct mtk_eth
  	return 0;
  }
  
@@ -33,7 +32,7 @@ diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/m
  static int mtk_open(struct net_device *dev)
  {
  	struct mtk_mac *mac = netdev_priv(dev);
-@@ -2211,6 +2236,8 @@
+@@ -2221,6 +2246,8 @@ static int mtk_open(struct net_device *d
  		if (err)
  			return err;
  
@@ -42,7 +41,7 @@ diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/m
  		napi_enable(&eth->tx_napi);
  		napi_enable(&eth->rx_napi);
  		mtk_tx_irq_enable(eth, MTK_TX_DONE_INT);
-@@ -2266,6 +2293,8 @@
+@@ -2276,6 +2303,8 @@ static int mtk_stop(struct net_device *d
  	if (!refcount_dec_and_test(&eth->dma_refcnt))
  		return 0;
  
@@ -51,7 +50,7 @@ diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/m
  	mtk_tx_irq_disable(eth, MTK_TX_DONE_INT);
  	mtk_rx_irq_disable(eth, MTK_RX_DONE_INT);
  	napi_disable(&eth->tx_napi);
-@@ -2392,8 +2421,6 @@
+@@ -2402,8 +2431,6 @@ static int mtk_hw_init(struct mtk_eth *e
  	mtk_w32(eth, 0, MTK_QDMA_DELAY_INT);
  	mtk_tx_irq_disable(eth, ~0);
  	mtk_rx_irq_disable(eth, ~0);
@@ -60,7 +59,7 @@ diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/m
  
  	/* FE int grouping */
  	mtk_w32(eth, MTK_TX_DONE_INT, MTK_PDMA_INT_GRP1);
-@@ -2402,19 +2429,6 @@
+@@ -2412,19 +2439,6 @@ static int mtk_hw_init(struct mtk_eth *e
  	mtk_w32(eth, MTK_RX_DONE_INT, MTK_QDMA_INT_GRP2);
  	mtk_w32(eth, 0x21021000, MTK_FE_INT_GRP);
  
@@ -80,9 +79,8 @@ diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/m
  	return 0;
  
  err_disable_pm:
-diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
---- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h	2020-04-21 14:33:10.702640743 +0800
-+++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h	2020-04-21 14:33:24.902141220 +0800
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -84,6 +84,8 @@
  #define MTK_GDMA_ICS_EN		BIT(22)
  #define MTK_GDMA_TCS_EN		BIT(21)

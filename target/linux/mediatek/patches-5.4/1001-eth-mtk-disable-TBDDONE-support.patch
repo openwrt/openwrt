@@ -1,7 +1,6 @@
-diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
---- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c       2020-04-21 14:33:05.702816632 +0800
-+++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c       2020-04-21 14:33:19.590328084 +0800
-@@ -1345,10 +1345,11 @@
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1355,10 +1355,11 @@ static int mtk_poll_tx_qdma(struct mtk_e
  		u32 next_cpu = desc->txd2;
  		int mac = 0;
  
@@ -14,7 +13,7 @@ diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/m
  		tx_buf = mtk_desc_to_tx_buf(ring, desc);
  		if (tx_buf->flags & MTK_TX_FLAGS_FPORT1)
  			mac = 1;
-@@ -2172,7 +2173,7 @@
+@@ -2182,7 +2183,7 @@ static int mtk_start_dma(struct mtk_eth
  
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA)) {
  		mtk_w32(eth,
