@@ -80,7 +80,7 @@
 &spi0 {
 	status = "okay";
 
-	w25q128@0 {
+	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		// XXX empiric value to obtain actual 10MHz SCK at the chip
