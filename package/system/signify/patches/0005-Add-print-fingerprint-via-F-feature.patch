@@ -1,0 +1,108 @@
+From d6987af53a00137eb5b4e68e0beea6857d26ce7a Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Thu, 9 Apr 2020 13:27:42 -1000
+Subject: [PATCH] Add print fingerprint via -F feature
+
+To know the fingerprint used for a public key or signature the option
+`-F` is added which works in combination with `-p` or `-x`. It will load
+the file and and print the used fingerprint in hex.
+
+This feature was ported over from OpenWrt's usign[0], which is a slimmed
+simpler implementation of `signify`.
+
+[0]: git@github.com:aparcar/signify.git
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ signify.c | 42 +++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 39 insertions(+), 3 deletions(-)
+
+diff --git a/signify.c b/signify.c
+index 2ecfd98..1a6999c 100644
+--- a/signify.c
++++ b/signify.c
+@@ -97,7 +97,8 @@ usage(const char *error)
+ 	    "\t%1$s -G [-n] [-c comment] -p pubkey -s seckey\n"
+ 	    "\t%1$s -S [-enz] [-x sigfile] -s seckey -m message\n"
+ #endif
+-	    "\t%1$s -V [-eqz] [-p pubkey] [-t keytype] [-x sigfile] -m message\n",
++	    "\t%1$s -V [-eqz] [-p pubkey] [-t keytype] [-x sigfile] -m message\n"
++	    "\t%1$s -F [-q] [-p pubkey] [-x sigfile]\n",
+ 	    getprogname());
+ 	exit(1);
+ }
+@@ -560,6 +561,31 @@ verifysimple(const char *pubkeyfile, const char *msgfile, const char *sigfile,
+ 	free(msg);
+ }
+ 
++static int
++fingerprint(const char *pubkeyfile, const char *sigfile)
++{
++	struct sig sig;
++	struct pubkey pubkey;
++	uint8_t *fp;
++
++	if (pubkeyfile) {
++		readb64file(pubkeyfile, &pubkey, sizeof(pubkey), NULL);
++		fp = pubkey.keynum;
++	} else if (sigfile) {
++		readb64file(sigfile, &sig, sizeof(sig), NULL);
++		fp = sig.keynum;
++	} else
++		return 1;
++
++	int i;
++	for (i = 0; i < KEYNUMLEN; i++)
++	{
++	    printf("%02x", fp[i]);
++	}
++	printf("\n");
++	return 0;
++}
++
+ static uint8_t *
+ verifyembedded(const char *pubkeyfile, const char *sigfile,
+     int quiet, unsigned long long *msglenp, const char *keytype)
+@@ -784,13 +810,14 @@ main(int argc, char **argv)
+ 		CHECK,
+ 		GENERATE,
+ 		SIGN,
+-		VERIFY
++		VERIFY,
++		FINGERPRINT
+ 	} verb = NONE;
+ 
+ 	if (pledge("stdio rpath wpath cpath tty", NULL) == -1)
+ 		err(1, "pledge");
+ 
+-	while ((ch = getopt(argc, argv, "CGSVzc:em:np:qs:t:x:")) != -1) {
++	while ((ch = getopt(argc, argv, "CGSVFzc:em:np:qs:t:x:")) != -1) {
+ 		switch (ch) {
+ #ifndef VERIFYONLY
+ 		case 'C':
+@@ -826,6 +853,11 @@ main(int argc, char **argv)
+ 				usage(NULL);
+ 			verb = VERIFY;
+ 			break;
++		case 'F':
++			if (verb)
++				usage(NULL);
++			verb = FINGERPRINT;
++			break;
+ 		case 'e':
+ 			embedded = 1;
+ 			break;
+@@ -926,6 +958,10 @@ main(int argc, char **argv)
+ 			    quiet, keytype);
+ 		}
+ 		break;
++	case FINGERPRINT:
++		if (!!pubkeyfile + !!sigfile != 1)
++			usage("Need one public key or signature");
++		return fingerprint(pubkeyfile, sigfile);
+ 	default:
+ 		if (pledge("stdio", NULL) == -1)
+ 			err(1, "pledge");
+-- 
+2.25.1
+

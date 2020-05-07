@@ -1,0 +1,36 @@
+From a981c9953b43f55de03da0b7236a4356b54fd4f8 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Fri, 17 Apr 2020 18:29:04 +0200
+Subject: [PATCH 3/5] bcrypt_pbkdf: disable build with VERIFY_ONLY=1
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Otherwise this drags in dependency on `arc4random_buf` which isnt needed
+in the stripped down version of signify.
+
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ bcrypt_pbkdf.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/bcrypt_pbkdf.c b/bcrypt_pbkdf.c
+index 26dba81..05f6f2f 100644
+--- a/bcrypt_pbkdf.c
++++ b/bcrypt_pbkdf.c
+@@ -15,6 +15,7 @@
+  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
++#ifndef VERIFYONLY
+ #include <sys/types.h>
+ 
+ #include <stdint.h>
+@@ -174,3 +175,4 @@ bad:
+ 	arc4random_buf(key, keylen);
+ 	return -1;
+ }
++#endif
+-- 
+2.25.1
+

@@ -15,28 +15,29 @@ EOF
 opkg_key_verify() {
 	local sigfile="$1"
 	local msgfile="$2"
+	local sigfile_pubkey="/etc/opkg/keys/$(signify -F -x $sigfile).pub"
 
 	(
 		zcat "$msgfile" 2>/dev/null ||
 		cat "$msgfile" 2>/dev/null
-	) | usign -V -P /etc/opkg/keys -q -x "$sigfile" -m -
+	) | signify -V -p "$sigfile_pubkey" -q -x "$sigfile" -m -
 }
 
 opkg_key_add() {
 	local key="$1"
 	[ -n "$key" ] || usage
 	[ -f "$key" ] || echo "Cannot open file $1"
-	local fingerprint="$(usign -F -p "$key")"
+	local fingerprint="$(signify -F -p "$key")"
 	mkdir -p "/etc/opkg/keys"
-	cp "$key" "/etc/opkg/keys/$fingerprint"
+	cp "$key" "/etc/opkg/keys/${fingerprint}.pub"
 }
 
 opkg_key_remove() {
 	local key="$1"
 	[ -n "$key" ] || usage
 	[ -f "$key" ] || echo "Cannot open file $1"
-	local fingerprint="$(usign -F -p "$key")"
-	rm -f "/etc/opkg/keys/$fingerprint"
+	local fingerprint="$(signify -F -p "$key")"
+	rm -f "/etc/opkg/keys/${fingerprint}.pub"
 }
 
 case "$1" in

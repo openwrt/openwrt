@@ -1,0 +1,254 @@
+From 7bc3581753640546868480913ef4671f19754d0b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Sat, 18 Apr 2020 09:02:39 +0200
+Subject: [PATCH 4/5] Allow compilation of VERIFY_ONLY=1 without libbsd
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Stripped down version of signify built with VERIFY_ONLY=1 needs just
+`getprogname` and `strlcpy` from libbsd so just provide the dependencies
+directly in the tree and allow compilation without libbsd.
+
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ Makefile     | 11 +++++++++-
+ crypto_api.h |  3 +++
+ progname.c   | 62 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ sha2.c       |  5 +++++
+ signify.c    | 13 +++++++++++
+ strlcpy.c    | 50 ++++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 143 insertions(+), 1 deletion(-)
+ create mode 100644 progname.c
+ create mode 100644 strlcpy.c
+
+diff --git a/Makefile b/Makefile
+index e94b536..49f6b8b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -29,7 +29,14 @@ S := crypto_api.c \
+ 	 sha512hl.c \
+ 	 sha512_256hl.c \
+ 	 signify.c \
+-	 zsig.c
++	 zsig.c \
++
++ifeq ($(strip $(VERIFY_ONLY)),1)
++CFLAGS += -DHAVE___PROGNAME
++S += \
++	progname.c \
++	strlcpy.c
++endif
+ 
+ define SED_LAST_LINE
+ sed -n -e '/^[a-zA-Z_-]\+$$/p' | sed -n '$$p'
+@@ -140,6 +147,7 @@ $S: $(libbsd_INCLUDE)/bsd/bsd.h
+ 
+ else
+ 
++ifneq ($(strip $(VERIFY_ONLY)),1)
+ LIBBSD_PKG_VERSION := 0.7
+ LIBBSD_PKG_CHECK   := $(shell pkg-config libbsd --atleast-version=$(LIBBSD_PKG_VERSION) && echo ok)
+ ifneq ($(strip $(LIBBSD_PKG_CHECK)),ok)
+@@ -148,6 +156,7 @@ endif
+ LIBBSD_DEPS    :=
+ LIBBSD_CFLAGS  := $(shell pkg-config libbsd --cflags)
+ LIBBSD_LDFLAGS := $(shell pkg-config libbsd --libs)
++endif
+ 
+ endif
+ 
+diff --git a/crypto_api.h b/crypto_api.h
+index 3eeb91c..be388e0 100644
+--- a/crypto_api.h
++++ b/crypto_api.h
+@@ -10,7 +10,10 @@
+ 
+ #include <stdint.h>
+ #include <stdlib.h>
++
++#ifndef VERIFYONLY
+ #include <bsd/stdlib.h>
++#endif
+ 
+ typedef int32_t crypto_int32;
+ typedef uint32_t crypto_uint32;
+diff --git a/progname.c b/progname.c
+new file mode 100644
+index 0000000..816505d
+--- /dev/null
++++ b/progname.c
+@@ -0,0 +1,62 @@
++/*
++ * Copyright © 2006 Robert Millan
++ * Copyright © 2010-2012 Guillem Jover <guillem@hadrons.org>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. The name of the author may not be used to endorse or promote products
++ *    derived from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
++ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
++ * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
++ * THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
++ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
++ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
++ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++/*
++ * Rejected in glibc
++ * <https://sourceware.org/ml/libc-alpha/2006-03/msg00125.html>.
++ */
++
++#include <errno.h>
++#include <string.h>
++#include <stdlib.h>
++
++#if defined(_WIN32) || defined(__WIN32__) || defined(__WINDOWS__)
++#define LIBBSD_IS_PATHNAME_SEPARATOR(c) ((c) == '/' || (c) == '\\')
++#else
++#define LIBBSD_IS_PATHNAME_SEPARATOR(c) ((c) == '/')
++#endif
++
++#ifdef HAVE___PROGNAME
++extern const char *__progname;
++#else
++static const char *__progname = NULL;
++#endif
++
++const char *
++getprogname(void)
++{
++#if defined(HAVE_PROGRAM_INVOCATION_SHORT_NAME)
++	if (__progname == NULL)
++		__progname = program_invocation_short_name;
++#elif defined(HAVE_GETEXECNAME)
++	/* getexecname(3) returns an absolute pathname, normalize it. */
++	if (__progname == NULL)
++		setprogname(getexecname());
++#endif
++
++	return __progname;
++}
+diff --git a/sha2.c b/sha2.c
+index da609c6..e27c82c 100644
+--- a/sha2.c
++++ b/sha2.c
+@@ -36,7 +36,12 @@
+ 
+ #include <sys/types.h>
+ 
++#ifndef VERIFYONLY
+ #include <bsd/string.h>
++#else
++#include <string.h>
++#endif
++
+ #include "sha2.h"
+ 
+ /*
+diff --git a/signify.c b/signify.c
+index c4369fd..2ecfd98 100644
+--- a/signify.c
++++ b/signify.c
+@@ -22,7 +22,13 @@
+ #include <limits.h>
+ #include <stdint.h>
+ #include <fcntl.h>
++
++#ifndef VERIFYONLY
+ #include <bsd/string.h>
++#else
++#include <string.h>
++#endif
++
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stddef.h>
+@@ -30,9 +36,16 @@
+ #include <err.h>
+ #include <unistd.h>
+ #include <errno.h>
++
++#ifndef VERIFYONLY
+ #include <bsd/readpassphrase.h>
+ #include <bsd/libutil.h>
+ #include <bsd/stdlib.h>
++#else
++const char* getprogname(void);
++size_t strlcpy(char *dst, const char *src, size_t dsize);
++#endif
++
+ #include "sha2.h"
+ 
+ #include "crypto_api.h"
+diff --git a/strlcpy.c b/strlcpy.c
+new file mode 100644
+index 0000000..e9a7fe4
+--- /dev/null
++++ b/strlcpy.c
+@@ -0,0 +1,50 @@
++/*	$OpenBSD: strlcpy.c,v 1.12 2015/01/15 03:54:12 millert Exp $	*/
++
++/*
++ * Copyright (c) 1998, 2015 Todd C. Miller <Todd.Miller@courtesan.com>
++ *
++ * Permission to use, copy, modify, and distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
++ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
++ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
++ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#include <sys/types.h>
++#include <string.h>
++
++/*
++ * Copy string src to buffer dst of size dsize.  At most dsize-1
++ * chars will be copied.  Always NUL terminates (unless dsize == 0).
++ * Returns strlen(src); if retval >= dsize, truncation occurred.
++ */
++size_t
++strlcpy(char *dst, const char *src, size_t dsize)
++{
++	const char *osrc = src;
++	size_t nleft = dsize;
++
++	/* Copy as many bytes as will fit. */
++	if (nleft != 0) {
++		while (--nleft != 0) {
++			if ((*dst++ = *src++) == '\0')
++				break;
++		}
++	}
++
++	/* Not enough room in dst, add NUL and traverse rest of src. */
++	if (nleft == 0) {
++		if (dsize != 0)
++			*dst = '\0';		/* NUL-terminate dst */
++		while (*src++)
++			;
++	}
++
++	return(src - osrc - 1);	/* count does not include NUL */
++}
+-- 
+2.25.1
+

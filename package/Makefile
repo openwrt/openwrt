@@ -96,7 +96,7 @@ ifdef CONFIG_SIGNED_PACKAGES
 	@for d in $(PACKAGE_SUBDIRS); do ( \
 		[ -d $$d ] && \
 			cd $$d || continue; \
-		$(STAGING_DIR_HOST)/bin/usign -S -m Packages -s $(BUILD_KEY); \
+		$(STAGING_DIR_HOST)/bin/signify -S -m Packages -s $(BUILD_KEY).sec; \
 	); done
 endif
 
