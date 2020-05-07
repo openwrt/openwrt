@@ -4,8 +4,8 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	model = "Aruba AP-303";
-	compatible = "aruba,ap-303";
+	model = "Aruba AP-365";
+	compatible = "aruba,ap-365";
 
 	aliases {
 		led-boot = &led_system_green;
@@ -17,27 +17,28 @@
 	leds {
 		compatible = "gpio-leds";
 
-		wifi_green {
-			label = "ap-303:green:wifi";
-			gpios = <&tlmm 39 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0tpt";
-		};
-
-		wifi_amber {
-			label = "ap-303:amber:wifi";
-			gpios = <&tlmm 40 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		led_system_red: system_red {
-			label = "ap-303:red:system";
-			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
+			label = "ap-365:red:system";
+			gpios = <&tlmm 46 GPIO_ACTIVE_LOW>;
 		};
 
 		led_system_green: system_green {
-			label = "ap-303:green:system";
-			gpios = <&tlmm 47 GPIO_ACTIVE_HIGH>;
+			label = "ap-365:green:system";
+			gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
 		};
+
+		system_amber {
+			label = "ap-365:amber:system";
+			gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&tlmm 41 GPIO_ACTIVE_LOW>;
+		hw_algo = "toggle";
+		hw_margin_ms = <1000>;
+		always-running;
 	};
 };
 
@@ -45,10 +46,17 @@
 	/*
 	 * In addition to the Pins listed below,
 	 * the following GPIOs have "features":
+	 * 39 - out - pulse low to reset watchdog status flipflop
+	 * 40 - out - active high to enable watchdog
+	 * 41 - out - watchdog poke
+	 * 42 - out - active low to reset BLE radio
+	 * 43 - out - active low to reset TPM
+	 * 47 - out - pulse low to reset warm reset status
 	 * 54 - out - active low to force HW reset
-	 * 41 - out - active low to reset TPM
-	 * 43 - out - active low to reset BLE radio
-	 * 19 - in  - active high when DC powered
+	 * 18 - in  - PHY interrupt line
+	 * 45 - in  - power monitor interrupt
+	 * 48 - in  - active low when cold reset
+	 * 52 - in  - active high when watchdog reset
 	 */
 
 	phy-reset {
@@ -56,6 +64,19 @@
 		gpios = <42 GPIO_ACTIVE_HIGH>;
 		gpio-hog;
 		output-high;
+	};
+};
+
+&i2c_0 {
+	power-monitor@40 {
+		/* No driver */
+		compatible = "isl,isl28022";
+		reg = <0x40>;
+	};
+
+	temperature-sensor@48 {
+		compatible = "adi,ad7416";
+		reg = <0x48>;
 	};
 };
 
@@ -115,44 +136,43 @@
 			};
 
 			partition@e0000 {
-				label = "ART";
+				label = "u-boot-env";
 				reg = <0xe0000 0x10000>;
 				read-only;
 			};
 
 			partition@f0000 {
 				label = "appsbl";
-				reg = <0xf0000 0xf0000>;
-				read-only;
-			};
-
-			partition@1e0000 {
-				label = "mfginfo";
-				reg = <0x1e0000 0x10000>;
+				reg = <0xf0000 0x100000>;
 				read-only;
 			};
 
 			partition@1f0000 {
-				label = "apcd";
+				label = "ART";
 				reg = <0x1f0000 0x10000>;
 				read-only;
 			};
 
 			partition@200000 {
 				label = "osss";
-				reg = <0x200000 0x180000>;
+				reg = <0x200000 0x170000>;
+				read-only;
+			};
+
+			partition@370000 {
+				label = "pds";
+				reg = <0x370000 0x10000>;
 				read-only;
 			};
 
 			partition@380000 {
-				/* This is empty */
-				label = "appsblenv";
+				label = "apcd";
 				reg = <0x380000 0x10000>;
 				read-only;
 			};
 
 			partition@390000 {
-				label = "pds";
+				label = "mfginfo";
 				reg = <0x390000 0x10000>;
 				read-only;
 			};
@@ -164,15 +184,8 @@
 			};
 
 			partition@3b0000 {
-				/* Called osss1 in smem */
-				label = "u-boot-env-bak";
-				reg = <0x3b0000 0x10000>;
-				read-only;
-			};
-
-			partition@3f0000 {
-				label = "u-boot-env";
-				reg = <0x3f0000 0x10000>;
+				label = "osss1";
+				reg = <0x3b0000 0x50000>;
 				read-only;
 			};
 		};
