@@ -672,12 +672,12 @@ static struct spi_board_info rbspi_spi_info[] = {
 	}
 };
 
-void __init rbspi_wlan_init(u16 id, int wmac_offset)
+void __init rbspi_wlan_init(int wmac_offset)
 {
 	char *art_buf;
 	u8 wlan_mac[ETH_ALEN];
 
-	art_buf = rb_get_ext_wlan_data(id);
+	art_buf = rb_get_wlan_data();
 	if (!art_buf)
 		return;
 
@@ -785,10 +785,10 @@ static void __init rbspi_network_setup(u32 flags, int gmac1_offset,
 	ath79_register_eth(1);
 
 	if (flags & RBSPI_HAS_WLAN0)
-		rbspi_wlan_init(0, wmac0_offset);
+		rbspi_wlan_init(wmac0_offset);
 
 	if (flags & RBSPI_HAS_WLAN1)
-		rbspi_wlan_init(1, wmac1_offset);
+		rbspi_wlan_init(wmac1_offset);
 }
 
 static __init void rbspi_register_reset_button(int gpio)
@@ -977,7 +977,7 @@ static void __init rb962_setup(void)
 	ath79_register_eth(0);
 
 	/* WLAN1 MAC is HW MAC + 7 */
-	rbspi_wlan_init(1, 7);
+	rbspi_wlan_init(7);
 
 	if (flags & RBSPI_HAS_USB)
 		gpio_request_one(RB962_GPIO_USB_PWROFF, GPIOF_ACTIVE_LOW |
@@ -1133,7 +1133,7 @@ static void __init rbwapgsc_setup(void)
 	ath79_eth1_data.duplex = DUPLEX_FULL;
 	ath79_register_eth(1);
 
-	rbspi_wlan_init(1, 2);
+	rbspi_wlan_init(2);
 
 	rbspi_register_reset_button(RBWAPGSC_GPIO_BTN_RESET);
 
@@ -1179,7 +1179,7 @@ static void __init rb911l_setup(void)
 
 	ath79_register_eth(1);
 
-	rbspi_wlan_init(0, 1);
+	rbspi_wlan_init(1);
 
 	rbspi_register_reset_button(RB911L_GPIO_BTN_RESET);
 
