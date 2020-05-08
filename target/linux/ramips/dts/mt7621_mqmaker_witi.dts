@@ -13,18 +13,6 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	palmbus: palmbus@1E000000 {
-		i2c@900 {
-			status = "okay";
-
-			pcf8563: rtc@51 {
-				status = "okay";
-				compatible = "nxp,pcf8563";
-				reg = <0x51>;
-			};
-		};
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -33,6 +21,16 @@
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
+	};
+};
+
+&i2c {
+	status = "okay";
+
+	rtc@51 {
+		status = "okay";
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
 	};
 };
 

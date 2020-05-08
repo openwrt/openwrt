@@ -18,12 +18,6 @@
 		bootargs = "console=ttyS0,115200";
 	};
 
-	palmbus: palmbus@1E000000 {
-		i2c@900 {
-			status = "okay";
-		};
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -42,6 +36,10 @@
 			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 		};
 	};
+};
+
+&i2c {
+	status = "okay";
 };
 
 &sdhci {
