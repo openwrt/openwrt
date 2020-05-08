@@ -112,8 +112,7 @@ define Device/trendnet_tew-691gr
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	umedia-header 0x026910
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | umedia-header 0x026910
   DEVICE_VENDOR := TRENDnet
   DEVICE_MODEL := TEW-691GR
   SUPPORTED_DEVICES += tew-691gr
@@ -125,8 +124,7 @@ define Device/trendnet_tew-692gr
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	umedia-header 0x026920
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | umedia-header 0x026920
   DEVICE_VENDOR := TRENDnet
   DEVICE_MODEL := TEW-692GR
   SUPPORTED_DEVICES += tew-692gr

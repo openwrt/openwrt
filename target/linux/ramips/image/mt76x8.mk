@@ -34,8 +34,7 @@ TARGET_DEVICES += buffalo_wcr-1166ds
 define Device/cudy_wr1000
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	jcg-header 92.122
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | jcg-header 92.122
   JCG_MAXSIZE := 7872k
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := WR1000
@@ -178,8 +177,7 @@ define Device/netgear_r6120
   IMAGES += factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE)| append-rootfs | \
 	pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | \
-	check-size
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size
   IMAGE/factory.img := pad-extra 576k | $$(IMAGE/default) | \
 	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip R6120.bin | \
 	sercom-seal

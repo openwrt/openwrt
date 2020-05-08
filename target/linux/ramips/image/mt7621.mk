@@ -24,61 +24,61 @@ define Build/custom-initramfs-uimage
 endef
 
 define Build/elecom-gst-factory
-  $(eval product=$(word 1,$(1)))
-  $(eval version=$(word 2,$(1)))
-  ( $(STAGING_DIR_HOST)/bin/mkhash md5 $@ | tr -d '\n' ) >> $@
-  ( \
-    echo -n "ELECOM $(product) v$(version)" | \
-      dd bs=32 count=1 conv=sync; \
-    dd if=$@; \
-  ) > $@.new
-  mv $@.new $@
-  echo -n "MT7621_ELECOM_$(product)" >> $@
+	$(eval product=$(word 1,$(1)))
+	$(eval version=$(word 2,$(1)))
+	( $(STAGING_DIR_HOST)/bin/mkhash md5 $@ | tr -d '\n' ) >> $@
+	( \
+		echo -n "ELECOM $(product) v$(version)" | \
+			dd bs=32 count=1 conv=sync; \
+		dd if=$@; \
+	) > $@.new
+	mv $@.new $@
+	echo -n "MT7621_ELECOM_$(product)" >> $@
 endef
 
 define Build/elecom-wrc-factory
-  $(eval product=$(word 1,$(1)))
-  $(eval version=$(word 2,$(1)))
-  $(STAGING_DIR_HOST)/bin/mkhash md5 $@ >> $@
-  ( \
-    echo -n "ELECOM $(product) v$(version)" | \
-      dd bs=32 count=1 conv=sync; \
-    dd if=$@; \
-  ) > $@.new
-  mv $@.new $@
+	$(eval product=$(word 1,$(1)))
+	$(eval version=$(word 2,$(1)))
+	$(STAGING_DIR_HOST)/bin/mkhash md5 $@ >> $@
+	( \
+		echo -n "ELECOM $(product) v$(version)" | \
+			dd bs=32 count=1 conv=sync; \
+		dd if=$@; \
+	) > $@.new
+	mv $@.new $@
 endef
 
 define Build/iodata-factory
-  $(eval fw_size=$(word 1,$(1)))
-  $(eval fw_type=$(word 2,$(1)))
-  $(eval product=$(word 3,$(1)))
-  $(eval factory_bin=$(word 4,$(1)))
-  if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(fw_size)" ]; then \
-    $(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) $(factory_bin); \
-    $(STAGING_DIR_HOST)/bin/mksenaofw \
-      -r 0x30a -p $(product) -t $(fw_type) \
-      -e $(factory_bin) -o $(factory_bin).new; \
-    mv $(factory_bin).new $(factory_bin); \
-    $(CP) $(factory_bin) $(BIN_DIR)/; \
+	$(eval fw_size=$(word 1,$(1)))
+	$(eval fw_type=$(word 2,$(1)))
+	$(eval product=$(word 3,$(1)))
+	$(eval factory_bin=$(word 4,$(1)))
+	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(fw_size)" ]; then \
+		$(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) $(factory_bin); \
+		$(STAGING_DIR_HOST)/bin/mksenaofw \
+			-r 0x30a -p $(product) -t $(fw_type) \
+			-e $(factory_bin) -o $(factory_bin).new; \
+		mv $(factory_bin).new $(factory_bin); \
+		$(CP) $(factory_bin) $(BIN_DIR)/; \
 	else \
 		echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
 	fi
 endef
 
 define Build/iodata-mstc-header
-  ( \
-    data_size_crc="$$(dd if=$@ ibs=64 skip=1 2>/dev/null | \
-      gzip -c | tail -c 8 | od -An -tx8 --endian little | tr -d ' \n')"; \
-    echo -ne "$$(echo $$data_size_crc | sed 's/../\\x&/g')" | \
-      dd of=$@ bs=8 count=1 seek=7 conv=notrunc 2>/dev/null; \
-  )
-  dd if=/dev/zero of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null
-  ( \
-    header_crc="$$(dd if=$@ bs=64 count=1 2>/dev/null | \
-      gzip -c | tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
-    echo -ne "$$(echo $$header_crc | sed 's/../\\x&/g')" | \
-      dd of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null; \
-  )
+	( \
+		data_size_crc="$$(dd if=$@ ibs=64 skip=1 2>/dev/null | gzip -c | \
+			tail -c 8 | od -An -tx8 --endian little | tr -d ' \n')"; \
+		echo -ne "$$(echo $$data_size_crc | sed 's/../\\x&/g')" | \
+			dd of=$@ bs=8 count=1 seek=7 conv=notrunc 2>/dev/null; \
+	)
+	dd if=/dev/zero of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null
+	( \
+		header_crc="$$(dd if=$@ bs=64 count=1 2>/dev/null | gzip -c | \
+			tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
+		echo -ne "$$(echo $$header_crc | sed 's/../\\x&/g')" | \
+			dd of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null; \
+	)
 endef
 
 define Build/netis-tail
@@ -221,8 +221,8 @@ define Device/dlink_dir-860l-b1
   BLOCKSIZE := 64k
   SEAMA_SIGNATURE := wrgac13_dlink.2013gui_dir860lb
   LOADER_TYPE := bin
-  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
-	relocate-kernel | lzma -a0 | uImage lzma
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | relocate-kernel | \
+	lzma -a0 | uImage lzma
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-860L
@@ -454,8 +454,7 @@ TARGET_DEVICES += iptime_a8004t
 define Device/jcg_jhr-ac876m
   IMAGE_SIZE := 16064k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	jcg-header 89.1
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | jcg-header 89.1
   JCG_MAXSIZE := 16064k
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := JHR-AC876M
@@ -561,8 +560,7 @@ define Device/netgear_ex6150
   NETGEAR_BOARD_ID := U12H318T00_NETGEAR
   IMAGE_SIZE := 14848k
   IMAGES += factory.chk
-  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size | \
-	netgear-chk
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size | netgear-chk
 endef
 TARGET_DEVICES += netgear_ex6150
 
@@ -674,11 +672,10 @@ define Device/netgear_wndr3700-v5
   IMAGES += factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
 	pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | \
-	check-size
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size
   IMAGE/factory.img := pad-extra 320k | $$(IMAGE/default) | \
-	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | \
-	zip WNDR3700v5.bin | sercom-seal
+	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip WNDR3700v5.bin | \
+	sercom-seal
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WNDR3700
   DEVICE_VARIANT := v5

@@ -362,8 +362,7 @@ define Device/elecom_wrh-300cr
   SOC := mt7620n
   IMAGE_SIZE := 14272k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	elecom-header
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | elecom-header
   DEVICE_VENDOR := Elecom
   DEVICE_MODEL := WRH-300CR
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
@@ -604,8 +603,7 @@ define Device/linksys_e1700
   SOC := mt7620a
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	umedia-header 0x013326
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | umedia-header 0x013326
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := E1700
   SUPPORTED_DEVICES += e1700
@@ -631,8 +629,7 @@ define Device/netgear_ex2700
   IMAGES += factory.bin
   KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | \
 	append-uImage-fakehdr filesystem
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	netgear-dni
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | netgear-dni
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX2700
   SUPPORTED_DEVICES += ex2700
@@ -646,8 +643,7 @@ define Device/netgear_ex3700
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7744k
   IMAGES += factory.chk
-  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size | \
-	netgear-chk
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size | netgear-chk
   DEVICE_PACKAGES := kmod-mt76x2
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX3700/EX3800
@@ -661,8 +657,7 @@ define Device/netgear_ex6130
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7744k
   IMAGES += factory.chk
-  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size | \
-	netgear-chk
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size | netgear-chk
   DEVICE_PACKAGES := kmod-mt76x2
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX6130
@@ -678,8 +673,7 @@ define Device/netgear_wn3000rp-v3
   IMAGES += factory.bin
   KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | \
 	append-uImage-fakehdr filesystem
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	netgear-dni
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | netgear-dni
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WN3000RP
   DEVICE_VARIANT := v3
@@ -1152,8 +1146,8 @@ define Device/zyxel_keenetic-omni
   DEVICE_MODEL := Keenetic Omni
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | \
-	check-size | zyimage -d 4882 -v "ZyXEL Keenetic Omni"
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | check-size | \
+	zyimage -d 4882 -v "ZyXEL Keenetic Omni"
   SUPPORTED_DEVICES += kn_rc
 endef
 TARGET_DEVICES += zyxel_keenetic-omni
@@ -1165,8 +1159,7 @@ define Device/zyxel_keenetic-omni-ii
   DEVICE_MODEL := Keenetic Omni II
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | \
-	check-size | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | check-size | \
 	zyimage -d 2102034 -v "ZyXEL Keenetic Omni II"
   SUPPORTED_DEVICES += kn_rf
 endef
@@ -1180,8 +1173,8 @@ define Device/zyxel_keenetic-viva
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
 	kmod-switch-rtl8366-smi kmod-switch-rtl8367b
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | \
-	check-size | zyimage -d 8997 -v "ZyXEL Keenetic Viva"
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | check-size | \
+	zyimage -d 8997 -v "ZyXEL Keenetic Viva"
   SUPPORTED_DEVICES += kng_rc
 endef
 TARGET_DEVICES += zyxel_keenetic-viva
