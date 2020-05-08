@@ -16,23 +16,25 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -160,3 +160,12 @@ config MTD_REDBOOT_PARTS_READONLY
- 	  'FIS directory' images, enable this option.
+@@ -176,3 +176,12 @@ config MTD_MYLOADER_PARTS
  
- endif # MTD_REDBOOT_PARTS
+ 	  You will still need the parsing functions to be called by the driver
+ 	  for your particular device. It won't happen automatically.
 +
 +config MTD_ROUTERBOOT_PARTS
 +	tristate "RouterBoot flash partition parser"
 +	depends on MTD && OF
 +	help
-+	  MikroTik RouterBoot is implemented as a multi segment system on the
-+	  flash, some of which are fixed and some of which are located at
-+	  variable offsets. This parser handles both cases via properly
-+	  formatted DTS.
++	 MikroTik RouterBoot is implemented as a multi segment system on the
++	 flash, some of which are fixed and some of which are located at
++	 variable offsets. This parser handles both cases via properly
++	 formatted DTS.
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
-@@ -10,3 +10,4 @@
+@@ -9,4 +9,5 @@ obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o
+ obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_trx.o
  obj-$(CONFIG_MTD_SHARPSL_PARTS)		+= sharpslpart.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS)		+= redboot.o
- obj-$(CONFIG_MTD_MYLOADER_PARTS)	+= myloader.o
+-obj-$(CONFIG_MTD_MYLOADER_PARTS)		+= myloader.o
++obj-$(CONFIG_MTD_MYLOADER_PARTS)	+= myloader.o
 +obj-$(CONFIG_MTD_ROUTERBOOT_PARTS)	+= routerbootpart.o
