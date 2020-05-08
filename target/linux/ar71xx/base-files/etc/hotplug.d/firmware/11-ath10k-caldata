@@ -121,7 +121,7 @@ case "$FIRMWARE" in
 		;;
 	rb-952ui-5ac2nd|\
 	rb-wapg-5hact2hnd)
-		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 20480 2116
+		ath10kcal_from_file "/sys/firmware/mikrotik/hard_config/wlan_data" 20480 2116
 		;;
 	re355|\
 	re450|\
@@ -158,7 +158,7 @@ case "$FIRMWARE" in
 	rb-921gs-5hpacd-r2|\
 	rb-922uags-5hpacd|\
 	rb-962uigs-5hact2hnt)
-		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 20480 2116
+		ath10kcal_from_file "/sys/firmware/mikrotik/hard_config/wlan_data" 20480 2116
 		;;
 	wlr8100)
 		ath10kcal_extract "art" 20480 2116
