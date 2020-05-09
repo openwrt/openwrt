@@ -74,7 +74,8 @@ TARGET_DEVICES += lemaker_bananapi
 define Device/lemaker_bananapi-m2-ultra
   DEVICE_VENDOR := LeMaker
   DEVICE_MODEL := Banana Pi M2 Ultra
-  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-ata-sunxi
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-ata-sunxi kmod-brcmfmac \
+	brcmfmac-firmware-43430a0-sdio wpad-basic
   SOC := sun8i-r40
 endef
 TARGET_DEVICES += lemaker_bananapi-m2-ultra
