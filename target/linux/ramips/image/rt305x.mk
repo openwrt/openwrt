@@ -906,7 +906,8 @@ define Device/kn
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7872k
   DEVICE_TITLE := ZyXEL Keenetic
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ehci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ehci \
+	kmod-usb-ledtrig-usbport kmod-usb-dwc2
 endef
 TARGET_DEVICES += kn
 
