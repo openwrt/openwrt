@@ -71,14 +71,15 @@ define Device/lemaker_bananapi
 endef
 TARGET_DEVICES += lemaker_bananapi
 
-define Device/lemaker_bananapi-m2-ultra
-  DEVICE_VENDOR := LeMaker
+define Device/sinovoip_bananapi-m2-ultra
+  DEVICE_VENDOR := Sinovoip
   DEVICE_MODEL := Banana Pi M2 Ultra
   DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-ata-sunxi kmod-brcmfmac \
 	brcmfmac-firmware-43430a0-sdio wpad-basic
+  SUPPORTED_DEVICES:=lemaker,bananapi-m2-ultra
   SOC := sun8i-r40
 endef
-TARGET_DEVICES += lemaker_bananapi-m2-ultra
+TARGET_DEVICES += sinovoip_bananapi-m2-ultra
 
 define Device/lemaker_bananapro
   DEVICE_VENDOR := LeMaker
