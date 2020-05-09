@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/version.mk
 include $(INCLUDE_DIR)/feeds.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=220
+PKG_RELEASE:=221
 PKG_FLAGS:=nonshared
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
@@ -54,8 +54,6 @@ endef
 
 define Package/base-files/conffiles
 /etc/config/
-/etc/config/network
-/etc/config/system
 /etc/crontabs/
 /etc/dropbear/
 /etc/ethers
@@ -66,7 +64,7 @@ define Package/base-files/conffiles
 /etc/iproute2/rt_tables
 /etc/passwd
 /etc/profile
-/etc/profile.d
+/etc/profile.d/
 /etc/protocols
 /etc/rc.local
 /etc/services
@@ -74,6 +72,7 @@ define Package/base-files/conffiles
 /etc/shells
 /etc/shinit
 /etc/sysctl.conf
+/etc/sysctl.d/
 /etc/sysupgrade.conf
 $(call $(TARGET)/conffiles)
 endef
