@@ -903,6 +903,24 @@ define Device/netgear_wndr3800
 endef
 TARGET_DEVICES += netgear_wndr3800
 
+define Device/netgear_wndrmac
+  $(Device/netgear_wndr3700-v2)
+  DEVICE_MODEL := WNDRMAC
+  DEVICE_VARIANT := v1
+  NETGEAR_BOARD_ID := WNDRMAC
+  SUPPORTED_DEVICES += wndrmac
+endef
+TARGET_DEVICES += netgear_wndrmac
+
+define Device/netgear_wndrmacv2
+  $(Device/netgear_wndr3800)
+  DEVICE_MODEL := WNDRMAC
+  DEVICE_VARIANT := v2
+  NETGEAR_BOARD_ID := WNDRMACv2
+  SUPPORTED_DEVICES += wndrmacv2
+endef
+TARGET_DEVICES += netgear_wndrmacv2
+
 define Device/netgear_wndr3800ch
   $(Device/netgear_wndr3x00)
   DEVICE_MODEL := WNDR3800CH
