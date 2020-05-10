@@ -6,7 +6,7 @@
 find_config() {
 	local device="$1"
 	local ifdev ifl3dev ifobj
-	for ifobj in `ubus list network.interface.\*`; do
+	for ifobj in $(ubus list network.interface.\*); do
 		interface="${ifobj##network.interface.}"
 		(
 			json_load "$(ifstatus $interface)"
