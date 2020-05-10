@@ -127,7 +127,8 @@ case "$FIRMWARE" in
 	netgear,wndr3700|\
 	netgear,wndr3700-v2|\
 	netgear,wndr3800|\
-	netgear,wndr3800ch)
+	netgear,wndr3800ch|\
+	netgear,wndrmac-v2)
 		caldata_extract "art" 0x1000 0xeb8
 		;;
 	dlink,dir-825-b1)
@@ -145,7 +146,8 @@ case "$FIRMWARE" in
 	netgear,wndr3700|\
 	netgear,wndr3700-v2|\
 	netgear,wndr3800|\
-	netgear,wndr3800ch)
+	netgear,wndr3800ch|\
+	netgear,wndrmac-v2)
 		caldata_extract "art" 0x5000 0xeb8
 		;;
 	dlink,dir-825-b1)

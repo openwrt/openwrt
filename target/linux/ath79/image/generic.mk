@@ -932,6 +932,18 @@ define Device/netgear_wndr3800ch
 endef
 TARGET_DEVICES += netgear_wndr3800ch
 
+define Device/netgear_wndrmac-v2
+  $(Device/netgear_wndr3x00)
+  DEVICE_MODEL := WNDRMAC
+  DEVICE_VARIANT := v2
+  NETGEAR_KERNEL_MAGIC := 0x33373031
+  NETGEAR_BOARD_ID := WNDRMACv2
+  NETGEAR_HW_ID := 29763654+16+128
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += wndr3700
+endef
+TARGET_DEVICES += netgear_wndrmac-v2
+
 define Device/netgear_wnr2200_common
   SOC := ar7241
   DEVICE_MODEL := WNR2200
