@@ -205,6 +205,7 @@ ath79_setup_interfaces()
 	netgear,wndr3700-v2|\
 	netgear,wndr3800|\
 	netgear,wndr3800ch|\
+	netgear,wndrmac-v1|\
 	netgear,wndrmac-v2)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
@@ -432,6 +433,7 @@ ath79_setup_macs()
 	netgear,wndr3700|\
 	netgear,wndr3700-v2|\
 	netgear,wndr3800|\
+	netgear,wndrmac-v1|\
 	netgear,wndrmac-v2)
 		lan_mac=$(macaddr_setbit_la "$(mtd_get_mac_binary art 0x0)")
 		;;
