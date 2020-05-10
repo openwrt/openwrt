@@ -91,7 +91,7 @@ while [ "$1" ]; do
 
 	# Do we have changed files or not?
 	if [ -z "$ERR" ]; then
-		[ $QUIET = yes ] || [ -z "$(cat "/usr/lib/opkg/info/$1.files-sha256sum")" ] || echo "$CHECK" | sed 's|^|   - |'
+		[ $QUIET = yes ] || [ ! -s "/usr/lib/opkg/info/$1.files-sha256sum" ] || echo "$CHECK" | sed 's|^|   - |'
 		[ $QUIET = yes ] || echo " * Package $1 is ok"
 		[ $QUIET = yes ] || echo
 	else
