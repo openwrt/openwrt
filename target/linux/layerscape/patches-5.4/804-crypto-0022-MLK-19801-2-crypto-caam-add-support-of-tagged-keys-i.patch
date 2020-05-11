@@ -205,7 +205,7 @@ Signed-off-by: Horia Geantă <horia.geanta@nxp.com>
  
 --- a/drivers/crypto/caam/caamalg_desc.c
 +++ b/drivers/crypto/caam/caamalg_desc.c
-@@ -1386,8 +1386,14 @@ void cnstr_shdsc_skcipher_encap(u32 * co
+@@ -1389,8 +1389,14 @@ void cnstr_shdsc_skcipher_encap(u32 * co
  				   JUMP_COND_SHRD);
  
  	/* Load class1 key only */
@@ -222,7 +222,7 @@ Signed-off-by: Horia Geantă <horia.geanta@nxp.com>
  
  	/* Load nonce into CONTEXT1 reg */
  	if (is_rfc3686) {
-@@ -1458,8 +1464,14 @@ void cnstr_shdsc_skcipher_decap(u32 * co
+@@ -1464,8 +1470,14 @@ void cnstr_shdsc_skcipher_decap(u32 * co
  				   JUMP_COND_SHRD);
  
  	/* Load class1 key only */
