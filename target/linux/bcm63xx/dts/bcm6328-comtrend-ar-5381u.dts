@@ -8,6 +8,13 @@
 	model = "Comtrend AR-5381u";
 	compatible = "comtrend,ar-5381u", "brcm,bcm6328";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -38,7 +45,7 @@
 			label = "AR-5381u:green:inet";
 			gpios = <&pinctrl 3 1>;
 		};
-		power_green {
+		led_power_green: power_green {
 			label = "AR-5381u:green:power";
 			gpios = <&pinctrl 4 1>;
 			default-state = "on";

@@ -8,6 +8,13 @@
 	model = "Sercomm AD1018 (SPI flash mod)";
 	compatible = "sercomm,ad1018-nor", "brcm,bcm6328";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -73,7 +80,7 @@
 		label = "AD1018:green:internet";
 	};
 
-	power_green@8 {
+	led_power_green: power_green@8 {
 		reg = <8>;
 		active-low;
 		label = "AD1018:green:power";

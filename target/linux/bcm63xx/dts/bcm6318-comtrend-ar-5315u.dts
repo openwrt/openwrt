@@ -8,6 +8,13 @@
 	model = "Comtrend AR-5315u";
 	compatible = "comtrend,ar-5315u", "brcm,bcm6318";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -41,7 +48,7 @@
 			label = "AR-5315u:green:wps";
 			gpios = <&pinctrl 0 1>;
 		};
-		power_green {
+		led_power_green: power_green {
 			label = "AR-5315u:green:power";
 			gpios = <&pinctrl 1 1>;
 			default-state = "on";
