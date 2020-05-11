@@ -14,11 +14,9 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
  drivers/mtd/parsers/Makefile | 1 +
  2 files changed, 10 insertions(+)
 
-diff --git a/drivers/mtd/parsers/Kconfig b/drivers/mtd/parsers/Kconfig
-index de6f5f8..0afa89c 100644
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -22,3 +22,12 @@ config MTD_SHARPSL_PARTS
+@@ -14,3 +14,12 @@ config MTD_SHARPSL_PARTS
  	  This provides the read-only FTL logic necessary to read the partition
  	  table from the NAND flash of Sharp SL Series (Zaurus) and the MTD
  	  partition parser using this code.
@@ -31,8 +29,6 @@ index de6f5f8..0afa89c 100644
 +	  flash, some of which are fixed and some of which are located at
 +	  variable offsets. This parser handles both cases via properly
 +	  formatted DTS.
-diff --git a/drivers/mtd/parsers/Makefile b/drivers/mtd/parsers/Makefile
-index 44ff342..0543362 100644
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
 @@ -1,2 +1,3 @@
