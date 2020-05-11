@@ -16,11 +16,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
-#include <linux/mtd/nand.h>
-#else
 #include <linux/mtd/rawnand.h>
-#endif
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/platform_device.h>
@@ -43,44 +39,19 @@
 
 struct rb4xx_nand_info {
 	struct nand_chip	chip;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
-	struct mtd_info		mtd;
-#endif
 };
 
 static inline struct rb4xx_nand_info *mtd_to_rbinfo(struct mtd_info *mtd)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
-	return container_of(mtd, struct rb4xx_nand_info, mtd);
-#else
 	struct nand_chip *chip = mtd_to_nand(mtd);
 
 	return container_of(chip, struct rb4xx_nand_info, chip);
-#endif
 }
 
 static struct mtd_info *rbinfo_to_mtd(struct rb4xx_nand_info *nfc)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
-	return &nfc->mtd;
-#else
 	return nand_to_mtd(&nfc->chip);
-#endif
 }
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
-/*
- * We need to use the OLD Yaffs-1 OOB layout, otherwise the RB bootloader
- * will not be able to find the kernel that we load.
- */
-static struct nand_ecclayout rb4xx_nand_ecclayout = {
-	.eccbytes	= 6,
-	.eccpos		= { 8, 9, 10, 13, 14, 15 },
-	.oobavail	= 9,
-	.oobfree	= { { 0, 4 }, { 6, 2 }, { 11, 2 }, { 4, 1 } }
-};
-
-#else
 
 static int rb4xx_ooblayout_ecc(struct mtd_info *mtd, int section,
 			       struct mtd_oob_region *oobregion)
@@ -128,7 +99,6 @@ static const struct mtd_ooblayout_ops rb4xx_nand_ecclayout_ops = {
 	.ecc = rb4xx_ooblayout_ecc,
 	.free = rb4xx_ooblayout_free,
 };
-#endif /* < 4.6 */
 
 static struct mtd_partition rb4xx_nand_partitions[] = {
 	{
@@ -288,9 +258,6 @@ static int rb4xx_nand_probe(struct platform_device *pdev)
 	info->chip.priv	= &info;
 	mtd = rbinfo_to_mtd(info);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
-	mtd->priv	= &info->chip;
-#endif
 	mtd->owner	= THIS_MODULE;
 
 	info->chip.cmd_ctrl	= rb4xx_nand_cmd_ctrl;
@@ -301,27 +268,16 @@ static int rb4xx_nand_probe(struct platform_device *pdev)
 
 	info->chip.chip_delay	= 25;
 	info->chip.ecc.mode	= NAND_ECC_SOFT;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0)
 	info->chip.ecc.algo = NAND_ECC_HAMMING;
-#endif
 	info->chip.options = NAND_NO_SUBPAGE_WRITE;
 
 	platform_set_drvdata(pdev, info);
 
-	ret = nand_scan_ident(mtd, 1, NULL);
-	if (ret) {
-		ret = -ENXIO;
-		goto err_free_info;
-	}
-
 	if (mtd->writesize == 512)
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
-		info->chip.ecc.layout = &rb4xx_nand_ecclayout;
-#else
 		mtd_set_ooblayout(mtd, &rb4xx_nand_ecclayout_ops);
-#endif
 
-	ret = nand_scan_tail(mtd);
+	ret = nand_scan(mtd, 1);
+
 	if (ret) {
 		return -ENXIO;
 		goto err_set_drvdata;
