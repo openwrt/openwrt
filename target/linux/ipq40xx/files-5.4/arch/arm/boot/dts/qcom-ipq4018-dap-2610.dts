@@ -19,7 +19,7 @@
 	soc {
 		edma@c080000 {
 			qcom,num_gmac = <1>;
-			status = "ok";
+			status = "okay";
 		};
 
 		tcsr@1949000 {
@@ -41,25 +41,25 @@
 		};
 
 		rng@22000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		crypto@8e3a000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		watchdog@b017000 {
-			status = "ok";
+			status = "okay";
 		};
 
 		ess-switch@c000000 {
-			status = "ok";
+			status = "okay";
 			switch_lan_bmp = <0x20>;
 			switch_wan_bmp = <0x00>;
 		};
 
 		ess-psgmii@98000 {
-			status = "ok";
+			status = "okay";
 		};
 	};
 
@@ -91,7 +91,7 @@
 &blsp1_spi1 {
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
 
 	flash@0 {
@@ -179,17 +179,17 @@
 };
 
 &blsp_dma {
-	status = "ok";
+	status = "okay";
 };
 
 &blsp1_uart1 {
 	pinctrl-0 = <&serial_pins>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 &cryptobam {
-	status = "ok";
+	status = "okay";
 };
 
 &gmac0 {
@@ -201,7 +201,7 @@
 };
 
 &mdio {
-	status = "ok";
+	status = "okay";
 };
 
 &tlmm {
@@ -231,11 +231,11 @@
 };
 
 &wifi0 {
-	status = "ok";
+	status = "okay";
 	qcom,ath10k-calibration-variant = "dlink,dap-2610";
 };
 
 &wifi1 {
-	status = "ok";
+	status = "okay";
 	qcom,ath10k-calibration-variant = "dlink,dap-2610";
 };
