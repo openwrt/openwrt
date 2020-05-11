@@ -124,6 +124,21 @@ define Build/wrgg-pad-rootfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 64 >>$@
 endef
 
+define Build/engenius_ens202ext-v1-factory
+	-[ -f "$@" ] && \
+	mkdir -p $@.tmp && \
+	echo '#!/bin/sh' > $@.tmp/before-upgrade.sh && \
+	echo ': > /tmp/_sys/sysupgrade.tgz' >> $@.tmp/before-upgrade.sh && \
+	$(CP) $(KDIR)/loader-ens202ext-v1.uImage \
+		$@.tmp/openwrt-senao-ens202ext-uImage-lzma.bin && \
+	$(CP) $@ $@.tmp/openwrt-senao-ens202ext-root.squashfs && \
+	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		-C $@.tmp . > $@ && \
+	$(Build/gzip) && \
+	rm -rf $@.tmp
+endef
+
 define Device/seama
   KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
   KERNEL_INITRAMFS := $$(KERNEL) | seama
@@ -711,6 +726,27 @@ define Device/engenius_ecb1750
 	append-metadata | check-size
 endef
 TARGET_DEVICES += engenius_ecb1750
+
+define Device/engenius_ens202ext-v1
+  SOC := ar9341
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := ENS202EXT
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := rssileds kmod-leds-gpio
+  IMAGE_SIZE := 12032k
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x230000
+  COMPILE := loader-ens202ext-v1.bin loader-ens202ext-v1.uImage
+  COMPILE/loader-ens202ext-v1.bin := loader-okli-compile
+  COMPILE/loader-ens202ext-v1.uImage := append-loader-okli ens202ext-v1 | \
+	pad-to $$$$(BLOCKSIZE) | lzma | uImage lzma
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-squashfs-fakeroot-be | pad-to $$$$(BLOCKSIZE) | \
+	append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
+	check-size | engenius_ens202ext-v1-factory
+endef
+TARGET_DEVICES += engenius_ens202ext-v1
 
 define Device/engenius_epg5000
   SOC := qca9558

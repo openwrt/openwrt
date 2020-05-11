@@ -129,6 +129,12 @@ compex,wpj531-16m)
 	ucidef_set_led_rssi "sig3" "SIG3" "wpj531:green:sig3" "wlan0" "65" "100"
 	ucidef_set_led_rssi "sig4" "SIG4" "wpj531:green:sig4" "wlan0" "50" "100"
 	;;
+engenius,ens202ext-v1)
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "$boardname:red:rssilow" "wlan0" "1"  "100"
+	ucidef_set_led_rssi "rssimedium" "RSSIMEDIUM" "$boardname:amber:rssimedium" "wlan0" "33" "100"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "$boardname:green:rssihigh" "wlan0" "67" "100"
+	;;
 devolo,magic-2-wifi)
 	ucidef_set_led_netdev "plcw" "dLAN" "devolo:white:dlan" "eth0.1" "rx"
 	;;
