@@ -14,8 +14,6 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
  drivers/mtd/parsers/Makefile | 1 +
  2 files changed, 10 insertions(+)
 
-diff --git a/drivers/mtd/parsers/Kconfig b/drivers/mtd/parsers/Kconfig
-index d206b3c..58cbdd6 100644
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
 @@ -6,3 +6,12 @@ config MTD_PARSER_TRX
@@ -31,13 +29,8 @@ index d206b3c..58cbdd6 100644
 +	  flash, some of which are fixed and some of which are located at
 +	  variable offsets. This parser handles both cases via properly
 +	  formatted DTS.
-diff --git a/drivers/mtd/parsers/Makefile b/drivers/mtd/parsers/Makefile
-index 4d9024e..41d363a 100644
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
 @@ -1 +1,2 @@
  obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_trx.o
 +obj-$(CONFIG_MTD_ROUTERBOOT_PARTS)	+= routerbootpart.o
--- 
-2.11.0
-
