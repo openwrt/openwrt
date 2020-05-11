@@ -6,7 +6,7 @@ include ./common-yuncore.mk
 DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX
-DEVICE_VARS += DAP_SIGNATURE
+DEVICE_VARS += DAP_SIGNATURE ENGENIUS_IMGNAME
 
 define Build/add-elecom-factory-initramfs
   $(eval edimax_model=$(word 1,$(1)))
@@ -48,6 +48,23 @@ define Build/cybertan-trx
 		-x 32 -a 0x10000 -x -32 -f $@
 	-mv "$@.new" "$@"
 	-rm $@-empty.bin
+endef
+
+# This needs to make /tmp/_sys/sysupgrade.tgz an empty file prior to
+# sysupgrade, as otherwise it will implant the old configuration from
+# OEM firmware when writing rootfs from factory.bin
+define Build/engenius-tar-gz
+	-[ -f "$@" ] && \
+	mkdir -p $@.tmp && \
+	echo '#!/bin/sh' > $@.tmp/before-upgrade.sh && \
+	echo ': > /tmp/_sys/sysupgrade.tgz' >> $@.tmp/before-upgrade.sh && \
+	$(CP) $(KDIR)/loader-$(DEVICE_NAME).uImage \
+		$@.tmp/openwrt-$(word 1,$(1))-uImage-lzma.bin && \
+	$(CP) $@ $@.tmp/openwrt-$(word 1,$(1))-root.squashfs && \
+	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		-C $@.tmp . | gzip -9n > $@ && \
+	rm -rf $@.tmp
 endef
 
 define Build/mkdapimg2
@@ -804,6 +821,32 @@ define Device/engenius_ecb1750
 	append-metadata | check-size
 endef
 TARGET_DEVICES += engenius_ecb1750
+
+define Device/engenius_loader_okli
+  DEVICE_VENDOR := EnGenius
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  LOADER_TYPE := bin
+  COMPILE := loader-$(1).bin loader-$(1).uImage
+  COMPILE/loader-$(1).bin := loader-okli-compile
+  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | lzma | \
+	uImage lzma
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-squashfs-fakeroot-be | pad-to $$$$(BLOCKSIZE) | \
+	append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
+	check-size | engenius-tar-gz $$$$(ENGENIUS_IMGNAME)
+endef
+
+define Device/engenius_ens202ext-v1
+  $(Device/engenius_loader_okli)
+  SOC := ar9341
+  DEVICE_MODEL := ENS202EXT
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := rssileds
+  IMAGE_SIZE := 12032k
+  LOADER_FLASH_OFFS := 0x230000
+  ENGENIUS_IMGNAME := senao-ens202ext
+endef
+TARGET_DEVICES += engenius_ens202ext-v1
 
 define Device/engenius_epg5000
   SOC := qca9558

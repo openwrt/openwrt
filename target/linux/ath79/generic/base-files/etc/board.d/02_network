@@ -187,6 +187,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:wan" "2:lan:3" "3:lan:2"
 		;;
+	engenius,ens202ext-v1)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan"
+		;;
 	engenius,ews511ap)
 		ucidef_set_interface_lan "eth0 eth1" "dhcp"
 		;;
@@ -373,7 +378,8 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_binary "Board data" 2)
 		label_mac=$lan_mac
 		;;
-	alfa-network,ap121f)
+	alfa-network,ap121f|\
+	engenius,ens202ext-v1)
 		label_mac=$(mtd_get_mac_binary art 0x1002)
 		;;
 	arduino,yun)
