@@ -772,7 +772,8 @@ wpa_supplicant_set_fixed_freq() {
 	case "$htmode" in
 		VHT80) append network_data "max_oper_chwidth=1" "$N$T";;
 		VHT160) append network_data "max_oper_chwidth=2" "$N$T";;
-		*) append network_data "max_oper_chwidth=0" "$N$T";;
+		VHT20|VHT40) append network_data "max_oper_chwidth=0" "$N$T";;
+		*) append network_data "disable_vht=1" "$N$T";;
 	esac
 }
 
