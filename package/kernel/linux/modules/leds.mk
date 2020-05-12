@@ -24,6 +24,20 @@ $(eval $(call KernelPackage,leds-gpio))
 
 LED_TRIGGER_DIR=$(LINUX_DIR)/drivers/leds/trigger
 
+define KernelPackage/ledtrig-activity
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED Activity Trigger
+  KCONFIG:=CONFIG_LEDS_TRIGGER_ACTIVITY
+  FILES:=$(LED_TRIGGER_DIR)/ledtrig-activity.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-activity)
+endef
+
+define KernelPackage/ledtrig-activity/description
+ Kernel module that allows LEDs to blink based on system load
+endef
+
+$(eval $(call KernelPackage,ledtrig-activity))
+
 define KernelPackage/ledtrig-heartbeat
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED Heartbeat Trigger
