@@ -25,6 +25,15 @@ alfa-network,n2q)
 	ucidef_set_led_rssi "signal2" "SIGNAL2" "$boardname:orange:signal2" "wlan0" "33" "100"
 	ucidef_set_led_rssi "signal3" "SIGNAL3" "$boardname:green:signal3" "wlan0" "66" "100"
 	;;
+alfa-network,n5q)
+	ucidef_set_led_netdev "lan2" "LAN2" "$boardname:green:lan2" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "$boardname:green:lan1" "switch0" "0x10"
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "signal1" "SIGNAL1" "$boardname:red:signal1" "wlan0" "1" "100"
+	ucidef_set_led_rssi "signal2" "SIGNAL2" "$boardname:orange:signal2" "wlan0" "25" "100"
+	ucidef_set_led_rssi "signal3" "SIGNAL3" "$boardname:green:signal3" "wlan0" "50" "100"
+	ucidef_set_led_rssi "signal4" "SIGNAL4" "$boardname:green:signal4" "wlan0" "75" "100"
+	;;
 alfa-network,r36a)
 	ucidef_set_led_netdev "lan" "LAN" "$boardname:blue:lan" "eth0"
 	ucidef_set_led_switch "wan" "WAN" "$boardname:blue:wan" "switch0" "0x10"
