@@ -247,6 +247,16 @@ define Device/alfa-network_n2q
 endef
 TARGET_DEVICES += alfa-network_n2q
 
+define Device/alfa-network_n5q
+  SOC := ar9344
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := N5Q
+  DEVICE_PACKAGES := rssileds
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += n5q
+endef
+TARGET_DEVICES += alfa-network_n5q
+
 define Device/alfa-network_r36a
   SOC := qca9531
   DEVICE_VENDOR := ALFA Network
