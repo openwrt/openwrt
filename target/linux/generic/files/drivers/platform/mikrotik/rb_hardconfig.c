@@ -18,6 +18,9 @@
  * the MTD device without using a local buffer (except when requesting WLAN
  * calibration data), at the cost of a performance penalty.
  *
+ * Note: PAGE_SIZE is assumed to be >= 4K, hence the device attribute show
+ * routines need not check for output overflow.
+ *
  * Some constant defines extracted from routerboot.{c,h} by Gabor Juhos
  * <juhosg@openwrt.org>
  */
@@ -36,7 +39,7 @@
 
 #include "routerboot.h"
 
-#define RB_HARDCONFIG_VER		"0.03"
+#define RB_HARDCONFIG_VER		"0.04"
 #define RB_HC_PR_PFX			"[rb_hardconfig] "
 
 /* ID values for hardware settings */
@@ -508,9 +511,9 @@ static int hc_wlan_data_unpack_lzor(const u8 *inbuf, size_t inlen,
 	if (ret) {
 		if (LZO_E_INPUT_NOT_CONSUMED == ret) {
 			/*
-			 * It is assumed that because the LZO payload is embedded
-			 * in a "root" RB_ID_WLAN_DATA tag, the tag length is aligned
-			 * and the payload is padded at the end, which triggers a
+			 * The tag length appears to always be aligned (probably
+			 * because it is the "root" RB_ID_WLAN_DATA tag), thus
+			 * the LZO payload may be padded, which can trigger a
 			 * spurious error which we ignore here.
 			 */
 			pr_debug(RB_HC_PR_PFX "LZOR: LZO EOF before buffer end - this may be harmless\n");
@@ -529,6 +532,7 @@ static int hc_wlan_data_unpack_lzor(const u8 *inbuf, size_t inlen,
 	while (RB_MAGIC_ERD != *needle++) {
 		if ((u8 *)needle >= tempbuf+templen) {
 			pr_debug(RB_HC_PR_PFX "LZOR: ERD magic not found\n");
+			ret = -ENODATA;
 			goto fail;
 		}
 	};
@@ -603,7 +607,7 @@ static int hc_wlan_data_unpack(const size_t tofs, size_t tlen,
 static ssize_t hc_attr_show(struct kobject *kobj, struct kobj_attribute *attr,
 			    char *buf)
 {
-	struct hc_attr *hc_attr;
+	const struct hc_attr *hc_attr;
 	const u8 *pld;
 	u16 pld_len;
 
@@ -688,6 +692,9 @@ int __init rb_hardconfig_init(struct kobject *rb_kobj)
 
 	ret = mtd_read(mtd, 0, hc_buflen, &bytes_read, hc_buf);
 
+	if (ret)
+		goto fail;
+
 	if (bytes_read != hc_buflen) {
 		ret = -EIO;
 		goto fail;
@@ -729,14 +736,14 @@ int __init rb_hardconfig_init(struct kobject *rb_kobj)
 
 			ret = sysfs_create_bin_file(hc_kobj, &hc_wlandata_battr.battr);
 			if (ret)
-				pr_err(RB_HC_PR_PFX "Could not create %s sysfs entry (%d)\n",
+				pr_warn(RB_HC_PR_PFX "Could not create %s sysfs entry (%d)\n",
 				       hc_wlandata_battr.battr.attr.name, ret);
 		}
 		/* All other tags are published via standard attributes */
 		else {
 			ret = sysfs_create_file(hc_kobj, &hc_attrs[i].kattr.attr);
 			if (ret)
-				pr_err(RB_HC_PR_PFX "Could not create %s sysfs entry (%d)\n",
+				pr_warn(RB_HC_PR_PFX "Could not create %s sysfs entry (%d)\n",
 				       hc_attrs[i].kattr.attr.name, ret);
 		}
 	}
