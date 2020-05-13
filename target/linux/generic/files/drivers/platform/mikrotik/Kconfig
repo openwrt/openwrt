@@ -12,6 +12,7 @@ config MIKROTIK_RB_SYSFS
 	tristate "RouterBoot sysfs support"
 	depends on MTD
 	select LZO_DECOMPRESS
+	select CRC32
 	help
 	  This driver exposes RouterBoot configuration in sysfs.
 
