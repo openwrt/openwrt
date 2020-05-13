@@ -32,7 +32,7 @@ Signed-off-by: Hui Wang <hui.wang@canonical.com>
 
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
-@@ -821,10 +821,6 @@ static int dwc_otg_urb_enqueue(struct us
+@@ -782,10 +782,6 @@ static int dwc_otg_urb_enqueue(struct us
  		dump_urb_info(urb, "dwc_otg_urb_enqueue");
  	}
  #endif
@@ -43,7 +43,7 @@ Signed-off-by: Hui Wang <hui.wang@canonical.com>
  	if ((usb_pipetype(urb->pipe) == PIPE_ISOCHRONOUS)
  	    || (usb_pipetype(urb->pipe) == PIPE_INTERRUPT)) {
  		if (!dwc_otg_hcd_is_bandwidth_allocated
-@@ -881,6 +877,13 @@ static int dwc_otg_urb_enqueue(struct us
+@@ -842,6 +838,13 @@ static int dwc_otg_urb_enqueue(struct us
  			      &urb->transfer_dma, buf);
  	}
  
