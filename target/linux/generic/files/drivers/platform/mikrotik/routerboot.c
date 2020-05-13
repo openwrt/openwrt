@@ -175,6 +175,13 @@ static void __exit routerboot_exit(void)
 	kobject_put(rb_kobj);	// recursive afaict
 }
 
+/* Common routines */
+
+ssize_t routerboot_tag_show_string(const u8 *pld, u16 pld_len, char *buf)
+{
+	return scnprintf(buf, pld_len+1, "%s\n", pld);
+}
+
 module_init(routerboot_init);
 module_exit(routerboot_exit);
 

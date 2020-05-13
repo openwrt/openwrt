@@ -310,11 +310,6 @@ static struct hc_hwopt {
 	},
 };
 
-static ssize_t hc_tag_show_string(const u8 *pld, u16 pld_len, char *buf)
-{
-	return snprintf(buf, pld_len+1, "%s\n", pld);
-}
-
 static ssize_t hc_tag_show_u32(const u8 *pld, u16 pld_len, char *buf)
 {
 	char *out = buf;
@@ -402,15 +397,15 @@ static struct hc_attr {
 		.kattr = __ATTR(mac_base, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_BOARD_PRODUCT_CODE,
-		.tshow = hc_tag_show_string,
+		.tshow = routerboot_tag_show_string,
 		.kattr = __ATTR(board_product_code, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_BIOS_VERSION,
-		.tshow = hc_tag_show_string,
+		.tshow = routerboot_tag_show_string,
 		.kattr = __ATTR(booter_version, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_SERIAL_NUMBER,
-		.tshow = hc_tag_show_string,
+		.tshow = routerboot_tag_show_string,
 		.kattr = __ATTR(board_serial, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_MEMORY_SIZE,
@@ -429,15 +424,15 @@ static struct hc_attr {
 		.tshow = NULL,
 	}, {
 		.tag_id = RB_ID_BOARD_IDENTIFIER,
-		.tshow = hc_tag_show_string,
+		.tshow = routerboot_tag_show_string,
 		.kattr = __ATTR(board_identifier, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_PRODUCT_NAME,
-		.tshow = hc_tag_show_string,
+		.tshow = routerboot_tag_show_string,
 		.kattr = __ATTR(product_name, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_DEFCONF,
-		.tshow = hc_tag_show_string,
+		.tshow = routerboot_tag_show_string,
 		.kattr = __ATTR(defconf, S_IRUSR, hc_attr_show, NULL),
 	}
 };
