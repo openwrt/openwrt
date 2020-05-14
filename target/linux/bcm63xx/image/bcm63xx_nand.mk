@@ -33,3 +33,21 @@ define Device/bcm63xx-nand
   DEVICE_PACKAGES += nand-utils
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 endef
+
+### Comtrend ###
+define Device/comtrend_vr-3032u
+  $(Device/bcm63xx-nand)
+  DEVICE_VENDOR := Comtrend
+  DEVICE_MODEL := VR-3032u
+  CFE_CHIP_ID := 63268
+  SOC := bcm63168
+  CFE_RAM_FILE := comtrend,vr-3032u/cferam.000
+  CFE_RAM_JFFS2_NAME := cferam.000
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  VID_HDR_OFFSET := 2048
+  DEVICE_PACKAGES += $(USB2_PACKAGES)
+  CFE_WFI_FLASH_TYPE := 3
+endef
+TARGET_DEVICES += comtrend_vr-3032u
