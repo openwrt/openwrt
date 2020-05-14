@@ -105,6 +105,79 @@ define Build/cfe-bin
 		$(CFE_EXTRAS) $(1)
 endef
 
+define Build/cfe-jffs2
+	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
+		--big-endian \
+		--pad \
+		--no-cleanmarkers \
+		--eraseblock=$(patsubst %k,%KiB,$(BLOCKSIZE)) \
+		--root=$(1) \
+		--output=$@ \
+		--compression-mode=none
+
+	$(call Build/pad-to,$(BLOCKSIZE))
+endef
+
+define Build/cfe-jffs2-cferam
+	mv $@ $@.kernel
+
+	rm -rf $@-cferam
+	mkdir -p $@-cferam
+
+	# CFE ROM checks JFFS2 dirent version of cferam.
+	# If version is not > 0 it will ignore the fs entry.
+	# JFFS2 sets version 0 to the first fs entry and increments
+	# it on the following ones, so let's create a dummy file that
+	# will have version 0 and let cferam be the second (version 1).
+	touch $@-cferam/1-openwrt
+	# Add cferam as the last file in the JFFS2 partition
+	cp $(KDIR)/bcm63xx-cfe/$(CFE_RAM_FILE) $@-cferam/$(CFE_RAM_JFFS2_NAME)
+
+	# The JFFS2 partition creation should result in the following
+	# layout:
+	# 1) 1-openwrt (version 0, ino 2)
+	# 2) cferam.000 (version 1, ino 3)
+	$(call Build/cfe-jffs2,$@-cferam)
+
+	# Some devices need padding between CFE RAM and kernel
+	$(if $(CFE_RAM_JFFS2_PAD),$(call Build/pad-to,$(CFE_RAM_JFFS2_PAD)))
+
+	# Append kernel
+	dd if=$@.kernel >> $@
+	rm -f $@.kernel
+endef
+
+define Build/cfe-jffs2-kernel
+	rm -rf $@-kernel
+	mkdir -p $@-kernel
+
+	# CFE RAM checks JFFS2 dirent version of vmlinux.
+	# If version is not > 0 it will ignore the fs entry.
+	# JFFS2 sets version 0 to the first fs entry and increments
+	# it on the following ones, so let's create a dummy file that
+	# will have version 0 and let cferam be the second (version 1).
+	touch $@-kernel/1-openwrt
+	# vmlinux is located on a different JFFS2 partition, but CFE RAM
+	# ignores it, so let's create another dummy file that will match
+	# the JFFS2 ino of cferam entry on the first JFFS2 partition.
+	# CFE RAM won't be able to find vmlinux if cferam has the same
+	# ino as vmlinux.
+	touch $@-kernel/2-openwrt
+	# Add vmlinux as the last file in the JFFS2 partition
+	$(TOPDIR)/scripts/cfe-bin-header.py \
+		--input-file $@ \
+		--output-file $@-kernel/vmlinux.lz \
+		--load-addr $(LOADER_ENTRY) \
+		--entry-addr $(LOADER_ENTRY)
+
+	# The JFFS2 partition creation should result in the following
+	# layout:
+	# 1) 1-openwrt (version 0, ino 2)
+	# 2) 2-openwrt (version 1, ino 3)
+	# 3) vmlinux.lz (version 2, ino 4)
+	$(call Build/cfe-jffs2,$@-kernel)
+endef
+
 define Build/cfe-old-bin
 	$(TOPDIR)/scripts/brcmImage.pl -t -p \
 		-o $@ -b $(CFE_BOARD_ID) -c $(CFE_CHIP_ID) \
@@ -119,6 +192,17 @@ define Build/cfe-spw303v-bin
 		--entry $(LOADER_ENTRY) --load-addr $(LOADER_ENTRY) \
 		$(call rootfspad/$(call Image/FileSystemStrip,$(IMAGE_ROOTFS))) \
 		$(CFE_EXTRAS) $(1)
+endef
+
+define Build/cfe-wfi-tag
+	$(TOPDIR)/scripts/cfe-wfi-tag.py \
+		--input-file $@ \
+		--output-file $@.new \
+		--version $(if $(1),$(1),$(CFE_WFI_VERSION)) \
+		--chip-id $(CFE_WFI_CHIP_ID) \
+		--flash-type $(CFE_WFI_FLASH_TYPE) \
+		$(if $(CFE_WFI_FLAGS),--flags $(CFE_WFI_FLAGS))
+	mv $@.new $@
 endef
 
 define Build/spw303v-bin
@@ -169,5 +253,9 @@ USB1_PACKAGES := kmod-usb-ohci kmod-usb-ledtrig-usbport
 USB2_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 
 include bcm63xx.mk
+
+ifeq ($(SUBTARGET),smp)
+include bcm63xx_nand.mk
+endif
 
 $(eval $(call BuildImage))

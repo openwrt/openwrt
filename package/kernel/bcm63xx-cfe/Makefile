@@ -2,11 +2,11 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=bcm63xx-cfe
-PKG_VERSION:=2020-05-18
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/openwrt/bcm63xx-cfe.git
 PKG_SOURCE_PROTO:=git
+PKG_SOURCE_DATE:=2020-05-18
 PKG_SOURCE_VERSION:=efe3b81121a84c0b8ba6a7d0d47cd5eeeb23808d
 PKG_MIRROR_HASH:=299dcf6ef1ad034df26daee6446b574abcd7526a2fe90fb8115890e71bc0d58b
 
