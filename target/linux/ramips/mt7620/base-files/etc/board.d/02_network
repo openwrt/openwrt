@@ -70,7 +70,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
 		;;
-	asus,rt-ac51u)
+	asus,rt-ac51u|\
+	asus,rt-ac54u)
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
 		;;
@@ -343,6 +344,7 @@ ramips_setup_macs()
 	zbtlink,zbt-we1026-5g-16m)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
+	asus,rt-ac54u|\
 	zyxel,keenetic-omni|\
 	zyxel,keenetic-omni-ii|\
 	zyxel,keenetic-viva)
