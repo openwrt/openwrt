@@ -129,10 +129,10 @@
 };
 
 &ethernet {
-	status = "okay";
-	mtd-mac-address = <&rom 0xf100>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+
+	mtd-mac-address = <&rom 0xf100>;
 
 	port@5 {
 		status = "okay";

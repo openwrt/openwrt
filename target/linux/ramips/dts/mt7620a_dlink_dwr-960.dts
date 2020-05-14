@@ -91,10 +91,9 @@
 };
 
 &ethernet {
-	status = "okay";
-
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii2_pins &mdio_pins>;
+
 	mediatek,portmap = "wllll";
 
 	port@5 {
