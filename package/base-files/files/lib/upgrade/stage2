@@ -39,7 +39,7 @@ switch_to_ramfs() {
 		md5sum hexdump cat zcat bzcat dd tar			\
 		ls basename find cp mv rm mkdir rmdir mknod touch chmod \
 		'[' printf wc grep awk sed cut				\
-		mtd partx losetup mkfs.ext4				\
+		mtd partx losetup mkfs.ext4 nandwrite flash_erase	\
 		ubiupdatevol ubiattach ubiblock ubiformat		\
 		ubidetach ubirsvol ubirmvol ubimkvol			\
 		snapshot snapshot_tool					\
