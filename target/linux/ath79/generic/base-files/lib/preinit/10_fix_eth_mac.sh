@@ -3,7 +3,8 @@
 preinit_set_mac_address() {
 	case $(board_name) in
 	avm,fritz1750e|\
-	avm,fritz450e)
+	avm,fritz450e|\
+	avm,fritzdvbc)
 		ip link set dev eth0 address $(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		;;
 	dlink,dap-2695-a1)

@@ -15,6 +15,7 @@ ath79_setup_interfaces()
 	aruba,ap-105|\
 	avm,fritz1750e|\
 	avm,fritz300e|\
+	avm,fritzdvbc|\
 	comfast,cf-wr752ac-v1|\
 	comfast,cf-e130n-v2|\
 	devolo,dvl1200i|\
@@ -352,7 +353,8 @@ ath79_setup_macs()
 		label_mac=$(mtd_get_mac_binary art 0x1002)
 		;;
 	avm,fritz1750e|\
-	avm,fritz450e)
+	avm,fritz450e|\
+	avm,fritzdvbc)
 		label_mac=$(fritz_tffs -n macwlan -i $(find_mtd_part "tffs (1)"))
 		;;
 	avm,fritz300e)
