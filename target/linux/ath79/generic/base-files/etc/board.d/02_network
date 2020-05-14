@@ -14,6 +14,7 @@ ath79_setup_interfaces()
 	alfa-network,ap121f|\
 	aruba,ap-105|\
 	avm,fritz1750e|\
+	avm,fritzdvbc|\
 	avm,fritz300e|\
 	comfast,cf-wr752ac-v1|\
 	devolo,dvl1200i|\
@@ -341,9 +342,7 @@ ath79_setup_macs()
 		label_mac=$(mtd_get_mac_binary art 0x1002)
 		;;
 	avm,fritz1750e|\
-	avm,fritz450e)
-		label_mac=$(fritz_tffs -n macwlan -i $(find_mtd_part "tffs (1)"))
-		;;
+	avm,fritz450e|\
 	avm,fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		label_mac=$(fritz_tffs -n macwlan -i $(find_mtd_part "tffs (1)"))
@@ -351,6 +350,9 @@ ath79_setup_macs()
 	avm,fritz4020)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(fritz_tffs -n macb -i $(find_mtd_part "tffs (1)"))
+		;;
+	avm,fritzdvbc)
+		label_mac=$(fritz_tffs -n macwlan -i $(find_mtd_part "tffs (1)"))
 		;;
 	devolo,magic-2-wifi)
 		label_mac=$(macaddr_add "$(mtd_get_mac_binary art 0x1002)" 3)
