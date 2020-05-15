@@ -32,5 +32,6 @@ int __init rb_softconfig_init(struct kobject *rb_kobj);
 void __exit rb_softconfig_exit(void);
 
 ssize_t routerboot_tag_show_string(const u8 *pld, u16 pld_len, char *buf);
+ssize_t routerboot_tag_show_u32s(const u8 *pld, u16 pld_len, char *buf);
 
 #endif /* _ROUTERBOOT_H_ */
