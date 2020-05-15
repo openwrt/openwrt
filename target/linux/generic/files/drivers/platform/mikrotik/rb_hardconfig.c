@@ -310,25 +310,6 @@ static struct hc_hwopt {
 	},
 };
 
-static ssize_t hc_tag_show_u32(const u8 *pld, u16 pld_len, char *buf)
-{
-	char *out = buf;
-	u32 data;	// cpu-endian
-
-	/* Caller ensures pld_len > 0 */
-	if (pld_len % sizeof(data))
-		return -EINVAL;
-
-	data = *(u32 *)pld;
-
-	do {
-		out += sprintf(out, "0x%08x\n", data);
-		data++;
-	} while ((pld_len -= sizeof(data)));
-
-	return out - buf;
-}
-
 /*
  * The MAC is stored network-endian on all devices, in 2 32-bit segments:
  * <XX:XX:XX:XX> <XX:XX:00:00>. Kernel print has us covered.
@@ -389,7 +370,7 @@ static struct hc_attr {
 } hc_attrs[] = {
 	{
 		.tag_id = RB_ID_FLASH_INFO,
-		.tshow = hc_tag_show_u32,
+		.tshow = routerboot_tag_show_u32s,
 		.kattr = __ATTR(flash_info, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_MAC_ADDRESS_PACK,
@@ -409,11 +390,11 @@ static struct hc_attr {
 		.kattr = __ATTR(board_serial, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_MEMORY_SIZE,
-		.tshow = hc_tag_show_u32,
+		.tshow = routerboot_tag_show_u32s,
 		.kattr = __ATTR(mem_size, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_MAC_ADDRESS_COUNT,
-		.tshow = hc_tag_show_u32,
+		.tshow = routerboot_tag_show_u32s,
 		.kattr = __ATTR(mac_count, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_HW_OPTIONS,
