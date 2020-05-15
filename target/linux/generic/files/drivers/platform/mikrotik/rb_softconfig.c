@@ -50,9 +50,13 @@
 #include <linux/spinlock.h>
 #include <linux/crc32.h>
 
+#ifdef CONFIG_ATH79
+ #include <asm/mach-ath79/ath79.h>
+#endif
+
 #include "routerboot.h"
 
-#define RB_SOFTCONFIG_VER		"0.01"
+#define RB_SOFTCONFIG_VER		"0.02"
 #define RB_SC_PR_PFX			"[rb_softconfig] "
 
 /*
@@ -128,6 +132,12 @@
 #define RB_CPU_FREQ_IDX_ATH79_U2	(4 << 3)	// 0x20
 #define RB_CPU_FREQ_IDX_ATH79_U3	(5 << 3)	// 0x28
 
+#define RB_CPU_FREQ_IDX_ATH79_MIN		0	// all devices support lowest setting
+#define RB_CPU_FREQ_IDX_ATH79_AR9334_MAX	5	// stops at U3
+#define RB_CPU_FREQ_IDX_ATH79_QCA953X_MAX	4	// stops at U2
+#define RB_CPU_FREQ_IDX_ATH79_QCA9556_MAX	2	// stops at N0
+#define RB_CPU_FREQ_IDX_ATH79_QCA9558_MAX	3	// stops at U1
+
 #define RB_SC_CRC32_OFFSET		4	// located right after magic
 
 static struct kobject *sc_kobj;
@@ -158,6 +168,9 @@ static ssize_t sc_tag_show_u32tvs(const u8 *pld, u16 pld_len, char *buf,
 	u32 data;	// cpu-endian
 	int i;
 
+	if (tvselmts < 0)
+		return tvselmts;
+
 	if (sizeof(data) != pld_len)
 		return -EINVAL;
 
@@ -178,6 +191,9 @@ static ssize_t sc_tag_store_u32tvs(const u8 *pld, u16 pld_len, const char *buf, 
 				   const struct sc_u32tvs tvs[], const int tvselmts)
 {
 	int i;
+
+	if (tvselmts < 0)
+		return tvselmts;
 
 	if (sizeof(u32) != pld_len)
 		return -EINVAL;
@@ -369,6 +385,48 @@ static ssize_t sc_tag_store_bootdelays(const u8 *pld, u16 pld_len, const char *b
 	return count;
 }
 
+/* Support CPU frequency accessors only when the tag format has been asserted */
+#if defined(CONFIG_ATH79)
+static struct sc_u32tvs const sc_cpufreq_indexes_ath79[] = {
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_D2,	"-2"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_D1,	"-1"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_N0,	"0"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_U1,	"+1"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_U2,	"+2"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_U3,	"+3"),
+};
+
+static int sc_tag_cpufreq_ath79_idxmax(void)
+{
+	int idx_max = -EOPNOTSUPP;
+
+	if (soc_is_ar9344())
+		idx_max = RB_CPU_FREQ_IDX_ATH79_AR9334_MAX;
+	else if (soc_is_qca953x())
+		idx_max = RB_CPU_FREQ_IDX_ATH79_QCA953X_MAX;
+	else if (soc_is_qca9556())
+		idx_max = RB_CPU_FREQ_IDX_ATH79_QCA9556_MAX;
+	else if (soc_is_qca9558())
+		idx_max = RB_CPU_FREQ_IDX_ATH79_QCA9558_MAX;
+
+	return idx_max;
+}
+
+static ssize_t sc_tag_show_cpufreq_indexes(const u8 *pld, u16 pld_len, char * buf)
+{
+	return sc_tag_show_u32tvs(pld, pld_len, buf, sc_cpufreq_indexes_ath79, sc_tag_cpufreq_ath79_idxmax()+1);
+}
+
+static ssize_t sc_tag_store_cpufreq_indexes(const u8 *pld, u16 pld_len, const char *buf, size_t count)
+{
+	return sc_tag_store_u32tvs(pld, pld_len, buf, count, sc_cpufreq_indexes_ath79, sc_tag_cpufreq_ath79_idxmax()+1);
+}
+#else
+ /* By default we only show the raw value to help with reverse-engineering */
+ #define sc_tag_show_cpufreq_indexes	routerboot_tag_show_u32s
+ #define sc_tag_store_cpufreq_indexes	NULL
+#endif
+
 static ssize_t sc_attr_show(struct kobject *kobj, struct kobj_attribute *attr,
 			    char *buf);
 static ssize_t sc_attr_store(struct kobject *kobj, struct kobj_attribute *attr,
@@ -421,6 +479,11 @@ static struct sc_attr {
 		.tstore = sc_tag_store_bootproto,
 		.kattr = __ATTR(boot_proto, RB_SC_RMODE|RB_SC_WMODE, sc_attr_show, sc_attr_store),
 	}, {
+		.tag_id = RB_SCID_CPU_FREQ_IDX,
+		.tshow = sc_tag_show_cpufreq_indexes,
+		.tstore = sc_tag_store_cpufreq_indexes,
+		.kattr = __ATTR(cpufreq_index, RB_SC_RMODE|RB_SC_WMODE, sc_attr_show, sc_attr_store),
+	}, {
 		.tag_id = RB_SCID_BOOTER,
 		.tshow = sc_tag_show_booter,
 		.tstore = sc_tag_store_booter,
@@ -431,7 +494,6 @@ static struct sc_attr {
 		.tstore = sc_tag_store_silent_boot,
 		.kattr = __ATTR(silent_boot, RB_SC_RMODE|RB_SC_WMODE, sc_attr_show, sc_attr_store),
 	},
-	// TODO CPU_FREQ
 };
 
 static ssize_t sc_attr_show(struct kobject *kobj, struct kobj_attribute *attr,
