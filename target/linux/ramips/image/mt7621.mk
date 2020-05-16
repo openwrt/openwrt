@@ -307,6 +307,18 @@ define Device/elecom_wrc-2533gst
 endef
 TARGET_DEVICES += elecom_wrc-2533gst
 
+define Device/elecom_wrc-2533gst2
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 24576k
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WRC-2533GST2
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
+	elecom-gst-factory WRC-2533GST2 0.00
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+endef
+TARGET_DEVICES += elecom_wrc-2533gst2
+
 define Device/firefly_firewrt
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Firefly
