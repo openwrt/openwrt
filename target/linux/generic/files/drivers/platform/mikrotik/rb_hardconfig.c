@@ -36,7 +36,7 @@
 
 #include "routerboot.h"
 
-#define RB_HARDCONFIG_VER		"0.02"
+#define RB_HARDCONFIG_VER		"0.03"
 #define RB_HC_PR_PFX			"[rb_hardconfig] "
 
 /* ID values for hardware settings */
@@ -484,16 +484,18 @@ static int hc_wlan_data_unpack_lzor(const u8 *inbuf, size_t inlen,
 				    void *outbuf, size_t *outlen)
 {
 	u16 rle_ofs, rle_len;
-	size_t templen;
+	const u32 *needle;
 	u8 *tempbuf;
+	size_t templen, lzo_len;
 	int ret;
 
-	templen = inlen + sizeof(hc_lzor_prefix);
-	if (templen > *outlen)
+	lzo_len = inlen + sizeof(hc_lzor_prefix);
+	if (lzo_len > *outlen)
 		return -EFBIG;
 
 	/* Temporary buffer same size as the outbuf */
-	tempbuf = kmalloc(*outlen, GFP_KERNEL);
+	templen = *outlen;
+	tempbuf = kmalloc(templen, GFP_KERNEL);
 	if (!outbuf)
 		return -ENOMEM;
 
@@ -501,41 +503,54 @@ static int hc_wlan_data_unpack_lzor(const u8 *inbuf, size_t inlen,
 	memcpy(outbuf, hc_lzor_prefix, sizeof(hc_lzor_prefix));
 	memcpy(outbuf + sizeof(hc_lzor_prefix), inbuf, inlen);
 
-	/* LZO-decompress templen bytes of outbuf into the tempbuf */
-	ret = lzo1x_decompress_safe(outbuf, templen, tempbuf, outlen);
+	/* LZO-decompress lzo_len bytes of outbuf into the tempbuf */
+	ret = lzo1x_decompress_safe(outbuf, lzo_len, tempbuf, &templen);
 	if (ret) {
-		pr_debug(RB_HC_PR_PFX "LZO decompression error (%d)\n", ret);
-		goto fail;
+		if (LZO_E_INPUT_NOT_CONSUMED == ret) {
+			/*
+			 * It is assumed that because the LZO payload is embedded
+			 * in a "root" RB_ID_WLAN_DATA tag, the tag length is aligned
+			 * and the payload is padded at the end, which triggers a
+			 * spurious error which we ignore here.
+			 */
+			pr_debug(RB_HC_PR_PFX "LZOR: LZO EOF before buffer end - this may be harmless\n");
+		} else {
+			pr_debug(RB_HC_PR_PFX "LZOR: LZO decompression error (%d)\n", ret);
+			goto fail;
+		}
 	}
-	templen = *outlen;
 
 	/*
 	 * Post decompression we have a blob (possibly byproduct of the lzo
 	 * dictionary). We need to find RB_MAGIC_ERD. The magic number seems to
 	 * be 32bit-aligned in the decompression output.
 	 */
-
-	while (RB_MAGIC_ERD != *(u32 *)tempbuf) {
-		tempbuf += 4;
-		templen -= 4;
-	}
+	needle = (const u32 *)tempbuf;
+	while (RB_MAGIC_ERD != *needle++) {
+		if ((u8 *)needle >= tempbuf+templen) {
+			pr_debug(RB_HC_PR_PFX "LZOR: ERD magic not found\n");
+			goto fail;
+		}
+	};
+	templen -= (u8 *)needle - tempbuf;
 
 	/* Past magic. Look for tag node */
-	ret = routerboot_tag_find(tempbuf, templen, 0x1, &rle_ofs, &rle_len);
+	ret = routerboot_tag_find((u8 *)needle, templen, 0x1, &rle_ofs, &rle_len);
 	if (ret) {
-		pr_debug(RB_HC_PR_PFX "RLE data not found\n");
+		pr_debug(RB_HC_PR_PFX "LZOR: RLE data not found\n");
 		goto fail;
 	}
 
 	if (rle_len > templen) {
-		pr_debug(RB_HC_PR_PFX "Invalid RLE data length\n");
+		pr_debug(RB_HC_PR_PFX "LZOR: Invalid RLE data length\n");
+		ret = -EINVAL;
 		goto fail;
 	}
 
-	/* RLE-decode tempbuf back into the outbuf */
-	ret = routerboot_rle_decode(tempbuf+rle_ofs, rle_len, outbuf, outlen);
+	/* RLE-decode tempbuf from needle back into the outbuf */
+	ret = routerboot_rle_decode((u8 *)needle+rle_ofs, rle_len, outbuf, outlen);
 	if (ret)
-		pr_debug(RB_HC_PR_PFX "RLE decoding error (%d)\n", ret);
+		pr_debug(RB_HC_PR_PFX "LZOR: RLE decoding error (%d)\n", ret);
 
 fail:
 	kfree(tempbuf);
