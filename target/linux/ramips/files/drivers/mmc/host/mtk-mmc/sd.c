@@ -439,6 +439,8 @@ static void msdc_tasklet_card(struct work_struct *work)
 		inserted = (status & MSDC_PS_CDSTS) ? 0 : 1;
 	else
 		inserted = (status & MSDC_PS_CDSTS) ? 1 : 0;
+	if (host->mmc->caps & MMC_CAP_NEEDS_POLL)
+		inserted = 1;
 
 #if 0
 	change = host->card_inserted ^ inserted;
@@ -1857,6 +1859,8 @@ static int msdc_ops_get_cd(struct mmc_host *mmc)
 			present = (sdr_read32(MSDC_PS) & MSDC_PS_CDSTS) ? 0 : 1;
 		else
 			present = (sdr_read32(MSDC_PS) & MSDC_PS_CDSTS) ? 1 : 0;
+		if (host->mmc->caps & MMC_CAP_NEEDS_POLL)
+			present = 1;
 		host->card_inserted = present;
 #endif
 		spin_unlock_irqrestore(&host->lock, flags);
