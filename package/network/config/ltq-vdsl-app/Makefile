@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-app
 PKG_VERSION:=4.17.18.6
-PKG_RELEASE:=6
+PKG_RELEASE:=7
 PKG_BASE_NAME:=dsl_cpe_control
 PKG_SOURCE:=$(PKG_BASE_NAME)_vrx-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@OPENWRT
@@ -67,7 +67,9 @@ CONFIGURE_ARGS += \
 CONFIGURE_ARGS += \
 	--enable-model=typical \
 	--enable-dsl-pm-showtime \
-	--disable-dsl-ceoc
+	--disable-dsl-ceoc \
+	--enable-dsl-pm-retx-counters \
+	--enable-dsl-pm-retx-thresholds
 #CONFIGURE_ARGS += --enable-model=debug
 
 define Package/ltq-vdsl-app/install
