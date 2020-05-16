@@ -83,7 +83,7 @@ endef
 
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
-		echo '21001:6' > $(1).compat; \
+		echo '21001:7' > $(1).compat; \
 		$(TAR) -cf $(1) --transform='s/^.*/compat/' $(1).compat; \
 		\
 		$(TAR) -rf $(1) --transform='s/^.*/vmlinux.tmp/' $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE); \
