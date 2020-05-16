@@ -32,6 +32,11 @@ buffalo,whr-g301n)
 	ucidef_set_led_switch "lan3" "LAN3" "$boardname:green:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan4" "LAN4" "$boardname:green:lan4" "switch0" "0x10"
 	;;
+buffalo,wzr-hp-g300nh)
+	ucidef_set_led_wlan "wlan" "Wireless" "buffalo:green:wireless" "phy0tpt"
+	ucidef_set_led_netdev "router" "Router" "buffalo:green:router" "eth1"
+	ucidef_set_led_usbport "usb" "USB" "buffalo:blue:usb" "usb1-port1"
+	;;
 comfast,cf-e110n-v2)
 	ucidef_set_led_netdev "lan" "LAN" "$boardname:green:lan" "eth1"
 	ucidef_set_led_switch "wan" "WAN" "$boardname:green:wan" "switch0" "0x02"

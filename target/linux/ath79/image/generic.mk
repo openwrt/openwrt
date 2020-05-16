@@ -154,6 +154,23 @@ define Device/buffalo_wzr-hp-ag300h
 endef
 TARGET_DEVICES += buffalo_wzr-hp-ag300h
 
+define Device/buffalo_wzr-hp-g300nh
+  ATH_SOC := ar9132
+  DEVICE_TITLE := Buffalo WZR-HP-G300NH
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-gpio-nxp-74hc153
+  BLOCKSIZE := 128k
+  IMAGE_SIZE := 32128k
+  IMAGES += factory.bin tftp.bin
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+  pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/default) | buffalo-enc WZR-HP-G300NH 1.99 | \
+  buffalo-tag WZR-HP-G300NH 1
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata
+  IMAGE/tftp.bin := $$(IMAGE/default) | buffalo-tftp-header
+  SUPPORTED_DEVICES += wzr-hp-g300nh
+endef
+TARGET_DEVICES += buffalo_wzr-hp-g300nh
+
 define Device/buffalo_wzr-hp-g302h-a1a0
   ATH_SOC := ar7242
   DEVICE_TITLE := Buffalo WZR-HP-G302H A1A0
