@@ -1,0 +1,19 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ codingdie ]
+  pull_request:
+    branches: [ codingdie ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: prebild
+      run: ./scripts/feeds update -a && ./scripts/feeds install -a
+    - name: make
+      run: make
