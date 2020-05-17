@@ -41,12 +41,6 @@
 			phy-handle = <&phy0>;
 			// gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 		};
-		ethernet@5 {
-			compatible = "lantiq,xrx200-pdi-port";
-			reg = <5>;
-			phy-mode = "rgmii";
-			phy-handle = <&phy5>;
-		};
 		ethernet@2 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <2>;
@@ -58,6 +52,12 @@
 			reg = <4>;
 			phy-mode = "gmii";
 			phy-handle = <&phy13>;
+		};
+		ethernet@5 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <5>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy5>;
 		};
 	};
 

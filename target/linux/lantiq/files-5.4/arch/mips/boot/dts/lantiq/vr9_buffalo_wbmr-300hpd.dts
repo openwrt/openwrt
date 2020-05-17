@@ -162,18 +162,6 @@
 		reg = <0>;
 		lantiq,switch;
 
-		ethernet@4 {
-			compatible = "lantiq,xrx200-pdi-port";
-			reg = <4>;
-			phy-mode = "mii";
-			phy-handle = <&phy13>;
-		};
-		ethernet@5 {
-			compatible = "lantiq,xrx200-pdi-port";
-			reg = <5>;
-			phy-mode = "mii";
-			phy-handle = <&phy14>;
-		};
 		ethernet@2 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <2>;
@@ -185,6 +173,18 @@
 			reg = <3>;
 			phy-mode = "mii";
 			phy-handle = <&phy12>;
+		};
+		ethernet@4 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <4>;
+			phy-mode = "mii";
+			phy-handle = <&phy13>;
+		};
+		ethernet@5 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <5>;
+			phy-mode = "mii";
+			phy-handle = <&phy14>;
 		};
 	};
 
