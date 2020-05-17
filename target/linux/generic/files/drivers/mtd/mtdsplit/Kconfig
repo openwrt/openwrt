@@ -20,6 +20,11 @@ config MTD_SPLIT_SQUASHFS_ROOT
 
 comment "Firmware partition parsers"
 
+config MTD_SPLIT_BCM63XX_FW
+	bool "BCM63xx firmware parser"
+	depends on MTD_SPLIT_SUPPORT
+	select MTD_SPLIT
+
 config MTD_SPLIT_BCM_WFI_FW
 	bool "Broadcom Whole Flash Image parser"
 	depends on MTD_SPLIT_SUPPORT
