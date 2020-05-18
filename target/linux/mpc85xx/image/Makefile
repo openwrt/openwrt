@@ -21,7 +21,7 @@ define Device/Default
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 endef
 
-ifeq ($(SUBTARGET),generic)
+ifeq ($(SUBTARGET),p1010)
 
 define Device/tplink_tl-wdr4900-v1
   DEVICE_VENDOR := TP-Link
