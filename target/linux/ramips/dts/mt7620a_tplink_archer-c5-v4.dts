@@ -1,0 +1,102 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "mt7620a_tplink_archer.dtsi"
+
+/ {
+	compatible = "tplink,archer-c5-v4", "ralink,mt7620a-soc";
+	model = "TP-Link Archer C5 v4";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		label-mac-device = &ethernet;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		lan {
+			label = "green:lan";
+			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power: power {
+			label = "green:power";
+			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
+		};
+
+		usb {
+			label = "green:usb";
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&ohci_port1>, <&ehci_port1>;
+			linux,default-trigger = "usbport";
+		};
+
+		wan {
+			label = "green:wan";
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_orange {
+			label = "orange:wan";
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		};
+
+
+		wlan2g {
+			label = "green:wlan2g";
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wlan5g {
+			label = "green:wlan5g";
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wps {
+			label = "green:wps";
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	rtkgsw: rtkgsw@0 {
+		compatible = "mediatek,rtk-gsw";
+		mediatek,mdio = <&mdio0>;
+		mediatek,reset-pin = <&gpio2 20 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uartf", "ephy", "rgmii2";
+		function = "gpio";
+	};
+};
+
+&ethernet {
+	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
+
+	port@5 {
+		status = "okay";
+		mediatek,fixed-link = <1000 1 1 1>;
+		phy-mode = "rgmii";
+	};
+
+	mdio0: mdio-bus {
+		status = "okay";
+	};
+};
+
+&wmac {
+	mtd-mac-address = <&rom 0xf100>;
+};
+
+&wifi {
+	mtd-mac-address = <&rom 0xf100>;
+	mtd-mac-address-increment = <2>;
+};
