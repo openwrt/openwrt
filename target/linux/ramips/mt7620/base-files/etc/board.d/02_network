@@ -273,8 +273,7 @@ ramips_setup_macs()
 		;;
 	asus,rt-ac51u|\
 	asus,rt-ac54u)
-		wan_mac=$(mtd_get_mac_binary factory 0x28)
-		label_mac=$wan_mac
+		lan_mac=$(mtd_get_mac_binary factory 0x22)
 		;;
 	dlink,dch-m225)
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)
