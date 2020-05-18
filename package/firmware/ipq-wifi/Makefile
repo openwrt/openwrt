@@ -46,7 +46,7 @@ define Package/ipq-wifi-default
   SUBMENU:=ath10k Board-Specific Overrides
   SECTION:=firmware
   CATEGORY:=Firmware
-  DEPENDS:=@TARGET_ipq40xx
+  DEPENDS:=@(TARGET_ipq40xx||TARGET_ipq806x)
   TITLE:=Custom Board
 endef
 
