@@ -133,7 +133,6 @@ define Device/avm_fritz7360-v2
   DEVICE_VARIANT := v2
   IMAGE_SIZE := 32128k
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic kmod-usb-dwc2
-  SUPPORTED_DEVICES += FRITZ7360V2
 endef
 TARGET_DEVICES += avm_fritz7360-v2
 
