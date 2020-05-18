@@ -127,7 +127,7 @@ define Device/avm_fritz7360sl
 endef
 TARGET_DEVICES += avm_fritz7360sl
 
-define Device/avm_fritz7360v2
+define Device/avm_fritz7360-v2
   $(Device/AVM)
   DEVICE_MODEL := FRITZ!Box 7360
   DEVICE_VARIANT := v2
@@ -135,7 +135,7 @@ define Device/avm_fritz7360v2
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic kmod-usb-dwc2
   SUPPORTED_DEVICES += FRITZ7360V2
 endef
-TARGET_DEVICES += avm_fritz7360v2
+TARGET_DEVICES += avm_fritz7360-v2
 
 define Device/avm_fritz7362sl
   $(Device/AVM)
