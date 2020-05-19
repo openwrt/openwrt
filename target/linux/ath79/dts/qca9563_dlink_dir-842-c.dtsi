@@ -25,14 +25,6 @@
 			debounce-interval = <60>;
 		};
 	};
-
-	// Pull up on boot - otherwise the reset button won't work
-	reset-button {
-		gpio-hog;
-		output-high;
-		gpios = <11 GPIO_ACTIVE_LOW>;
-		line-name = "reset-button";
-	};
 };
 
 &uart {
@@ -116,6 +108,7 @@
 	phy0: ethernet-phy@0 {
 		reg = <0>;
 		qca,mib-poll-interval = <500>;
+		reset-gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 
 		qca,ar8327-initvals = <
 			0x04 0x00080080 /* PORT0 PAD MODE CTRL */
@@ -140,5 +133,6 @@
 
 &wmac {
 	status = "okay";
+
 	qca,no-eeprom;
 };
