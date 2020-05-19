@@ -37,7 +37,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +obj-$(CONFIG_PINCTRL_BCM6348)	+= pinctrl-bcm6348.o
 --- /dev/null
 +++ b/drivers/pinctrl/bcm63xx/pinctrl-bcm6348.c
-@@ -0,0 +1,391 @@
+@@ -0,0 +1,370 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -225,15 +225,16 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +};
 +
 +static const char * const utopia_groups[] = {
-+	"group0",
 +	"group1",
 +	"group3",
++	"group4",
 +};
 +
 +static const char * const diag_groups[] = {
 +	"group0",
 +	"group1",
 +	"group2",
++	"group3",
 +	"group4",
 +};
 +
@@ -335,27 +336,6 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +	return 0;
 +}
 +
-+static int bcm6348_gpio_request_enable(struct pinctrl_dev *pctldev,
-+				       struct pinctrl_gpio_range *range,
-+				       unsigned offset)
-+{
-+	struct bcm6348_pinctrl *pctl = pinctrl_dev_get_drvdata(pctldev);
-+	struct pin_desc *desc;
-+	u32 mask;
-+
-+	/* don't reconfigure if already muxed */
-+	desc = pin_desc_get(pctldev, offset);
-+	if (desc->mux_usecount)
-+		return 0;
-+
-+	mask = GROUP_MASK(offset);
-+
-+	/* disable all functions using this pin */
-+	bcm6348_rmw_mux(pctl, mask, 0);
-+
-+	return 0;
-+}
-+
 +static struct pinctrl_ops bcm6348_pctl_ops = {
 +	.get_groups_count	= bcm6348_pinctrl_get_group_count,
 +	.get_group_name		= bcm6348_pinctrl_get_group_name,
@@ -371,8 +351,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +	.get_function_name	= bcm6348_pinctrl_get_func_name,
 +	.get_function_groups	= bcm6348_pinctrl_get_groups,
 +	.set_mux		= bcm6348_pinctrl_set_mux,
-+	.gpio_request_enable	= bcm6348_gpio_request_enable,
-+	.strict			= true,
++	.strict			= false,
 +};
 +
 +static int bcm6348_pinctrl_probe(struct platform_device *pdev)
