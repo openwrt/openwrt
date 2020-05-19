@@ -51,3 +51,20 @@ define Device/comtrend_vr-3032u
   CFE_WFI_FLASH_TYPE := 3
 endef
 TARGET_DEVICES += comtrend_vr-3032u
+
+### Netgear ###
+define Device/netgear_dgnd3700-v2
+  $(Device/bcm63xx-nand)
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := DGND3700
+  DEVICE_VARIANT := v2
+  CFE_CHIP_ID := 6362
+  CFE_RAM_FILE := netgear,dgnd3700-v2/cferam
+  CFE_RAM_JFFS2_NAME := cferam
+  CFE_RAM_JFFS2_PAD := 496k
+  BLOCKSIZE := 16k
+  PAGESIZE := 512
+  DEVICE_PACKAGES += $(B43_PACKAGES) $(USB2_PACKAGES)
+  CFE_WFI_FLASH_TYPE := 2
+endef
+TARGET_DEVICES += netgear_dgnd3700-v2
