@@ -85,3 +85,21 @@ define Device/netgear_dgnd3700-v2
   CFE_WFI_FLASH_TYPE := 2
 endef
 TARGET_DEVICES += netgear_dgnd3700-v2
+
+### Sercomm ###
+define Device/sercomm_ad1018
+  $(Device/bcm63xx-nand)
+  IMAGE/cfe.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | ad1018-jffs2-cferam | append-ubi | cfe-wfi-tag
+  DEVICE_VENDOR := Sercomm
+  DEVICE_MODEL := AD1018
+  CFE_CHIP_ID := 6328
+  CFE_RAM_FILE := sercomm,ad1018/cferam
+  CFE_RAM_JFFS2_NAME := cferam
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  VID_HDR_OFFSET := 2048
+  DEVICE_PACKAGES += $(B43_PACKAGES) $(USB2_PACKAGES)
+  CFE_WFI_FLASH_TYPE := 3
+endef
+TARGET_DEVICES += sercomm_ad1018

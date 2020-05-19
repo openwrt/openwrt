@@ -7,7 +7,8 @@ platform_check_image() {
 	case "$(board_name)" in
 		comtrend,vg-8050|\
 		comtrend,vr-3032u|\
-		netgear,dgnd3700-v2)
+		netgear,dgnd3700-v2|\
+		sercomm,ad1018)
 			# NAND sysupgrade
 			return 0
 			;;
@@ -65,7 +66,8 @@ platform_do_upgrade() {
 	case "$(board_name)" in
 		comtrend,vg-8050|\
 		comtrend,vr-3032u|\
-		netgear,dgnd3700-v2)
+		netgear,dgnd3700-v2|\
+		sercomm,ad1018)
 			REQUIRE_IMAGE_METADATA=1
 			cfe_jffs2_upgrade_tar "$1"
 			;;
