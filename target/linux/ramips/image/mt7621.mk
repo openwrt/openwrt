@@ -261,6 +261,24 @@ define Device/edimax_ra21s
 endef
 TARGET_DEVICES += edimax_ra21s
 
+define Device/edimax_re23s
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15680k
+  DEVICE_VENDOR := Edimax
+  DEVICE_MODEL := RE23S
+  DEVICE_ALT0_VENDOR := Edimax
+  DEVICE_ALT0_MODEL := Gemini RE23S
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m RN76 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	append-metadata | check-size
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m RN76 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	check-size
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+endef
+TARGET_DEVICES += edimax_re23s
+
 define Device/edimax_rg21s
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Edimax
