@@ -24,7 +24,7 @@
 
 #include "mtdsplit.h"
 
-#define BCM_WFI_PARTS		4
+#define BCM_WFI_PARTS		3
 
 #define CFERAM_NAME		"cferam"
 #define CFERAM_NAME_LEN		(sizeof(CFERAM_NAME) - 1)
@@ -126,7 +126,10 @@ static int mtdsplit_parse_bcm_wfi(struct mtd_info *master,
 				  struct mtd_part_parser_data *data)
 {
 	struct mtd_partition *parts;
+	struct device_node *mtd_node;
 	loff_t cfe_off, kernel_off, rootfs_off;
+	bool cfe_part = true;
+	unsigned int num_parts = BCM_WFI_PARTS, cur_part = 0;
 	uint8_t *buf;
 	int ret;
 
@@ -134,15 +137,29 @@ static int mtdsplit_parse_bcm_wfi(struct mtd_info *master,
 	if (!buf)
 		return -ENOMEM;
 
-	cfe_off = 0;
-	ret = jffs2_find_file(master, buf, CFERAM_NAME, CFERAM_NAME_LEN,
-			      &cfe_off);
-	if (ret) {
-		kfree(buf);
-		return ret;
+	mtd_node = mtd_get_of_node(master);
+	if (!mtd_node)
+		return -EINVAL;
+
+	if (of_device_is_compatible(mtd_node, "brcm,wfi-sercomm"))
+		cfe_part = false;
+
+	if (cfe_part) {
+		num_parts++;
+		cfe_off = 0;
+
+		ret = jffs2_find_file(master, buf, CFERAM_NAME,
+				      CFERAM_NAME_LEN, &cfe_off);
+		if (ret) {
+			kfree(buf);
+			return ret;
+		}
+
+		kernel_off = cfe_off + master->erasesize;
+	} else {
+		kernel_off = 0;
 	}
 
-	kernel_off = cfe_off + master->erasesize;
 	ret = jffs2_find_file(master, buf, KERNEL_NAME, KERNEL_NAME_LEN,
 			      &kernel_off);
 	kfree(buf);
@@ -154,34 +171,41 @@ static int mtdsplit_parse_bcm_wfi(struct mtd_info *master,
 	if (ret)
 		return ret;
 
-	parts = kzalloc(BCM_WFI_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kzalloc(num_parts * sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 
-	parts[0].name = "cferam";
-	parts[0].mask_flags = MTD_WRITEABLE;
-	parts[0].offset = 0;
-	parts[0].size = kernel_off;
+	if (cfe_part) {
+		parts[cur_part].name = "cferam";
+		parts[cur_part].mask_flags = MTD_WRITEABLE;
+		parts[cur_part].offset = 0;
+		parts[cur_part].size = kernel_off;
+		cur_part++;
+	}
 
-	parts[1].name = "firmware";
-	parts[1].offset = kernel_off;
-	parts[1].size = master->size - kernel_off;
+	parts[cur_part].name = "firmware";
+	parts[cur_part].offset = kernel_off;
+	parts[cur_part].size = master->size - kernel_off;
+	cur_part++;
 
-	parts[2].name = KERNEL_PART_NAME;
-	parts[2].offset = kernel_off;
-	parts[2].size = rootfs_off - kernel_off;
+	parts[cur_part].name = KERNEL_PART_NAME;
+	parts[cur_part].offset = kernel_off;
+	parts[cur_part].size = rootfs_off - kernel_off;
+	cur_part++;
 
-	parts[3].name = UBI_PART_NAME;
-	parts[3].offset = rootfs_off;
-	parts[3].size = master->size - rootfs_off;
+	parts[cur_part].name = UBI_PART_NAME;
+	parts[cur_part].offset = rootfs_off;
+	parts[cur_part].size = master->size - rootfs_off;
+	cur_part++;
 
 	*pparts = parts;
 
-	return BCM_WFI_PARTS;
+	return num_parts;
 }
 
 static const struct of_device_id mtdsplit_fit_of_match_table[] = {
 	{ .compatible = "brcm,wfi" },
+	{ .compatible = "brcm,wfi-sercomm" },
 	{ },
 };
 
