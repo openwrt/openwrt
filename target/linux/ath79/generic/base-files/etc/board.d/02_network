@@ -22,6 +22,7 @@ ath79_setup_interfaces()
 	devolo,dvl1750x|\
 	dlink,dir-505|\
 	engenius,ecb1750|\
+	enterasys,ws-ap3705i|\
 	glinet,gl-ar300m-lite|\
 	netgear,ex6400|\
 	netgear,ex7300|\
@@ -399,6 +400,9 @@ ath79_setup_macs()
 		eth1_mac=$(macaddr_add "$lan_mac" 1)
 		ucidef_set_interface "eth0" ifname "eth0" protocol "none" macaddr "$lan_mac"
 		ucidef_set_interface "eth1" ifname "eth1" protocol "none" macaddr "$eth1_mac"
+		;;
+	enterasys,ws-ap3705i)
+		label_mac=$(mtd_get_mac_ascii u-boot-env0 ethaddr)
 		;;
 	iodata,etg3-r)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)

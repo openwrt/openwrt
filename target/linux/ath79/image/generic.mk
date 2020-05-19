@@ -630,6 +630,14 @@ define Device/engenius_ews511ap
 endef
 TARGET_DEVICES += engenius_ews511ap
 
+define Device/enterasys_ws-ap3705i
+  SOC := ar9344
+  DEVICE_VENDOR := Enterasys
+  DEVICE_MODEL := WS-AP3705i
+  IMAGE_SIZE := 30528k
+endef
+TARGET_DEVICES += enterasys_ws-ap3705i
+
 define Device/etactica_eg200
   SOC := ar9331
   DEVICE_VENDOR := eTactica
