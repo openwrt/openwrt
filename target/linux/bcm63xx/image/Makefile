@@ -122,7 +122,7 @@ endef
 
 define Build/cfe-bin
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(IMAGE_KERNEL) -f $(IMAGE_ROOTFS) \
-		--output $@ --boardid $(CFE_BOARD_ID) --chipid $(CFE_CHIP_ID) \
+		--output $@ --boardid $(CFE_BOARD_ID) --chipid $(CHIP_ID) \
 		--entry $(LOADER_ENTRY) --load-addr $(LOADER_ENTRY) \
 		--info1 "$(call Image/LimitName16,$(DEVICE_NAME))" \
 		--info2 "$(call Image/FileSystemStrip,$(IMAGE_ROOTFS))" \
@@ -205,7 +205,7 @@ endef
 
 define Build/cfe-old-bin
 	$(TOPDIR)/scripts/brcmImage.pl -t -p \
-		-o $@ -b $(CFE_BOARD_ID) -c $(CFE_CHIP_ID) \
+		-o $@ -b $(CFE_BOARD_ID) -c $(CHIP_ID) \
 		-e $(LOADER_ENTRY) -a $(LOADER_ENTRY) \
 		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) \
 		$(CFE_EXTRAS)
@@ -213,7 +213,7 @@ endef
 
 define Build/cfe-spw303v-bin
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(IMAGE_KERNEL) -f $(IMAGE_ROOTFS) \
-		--output $@ --boardid $(CFE_BOARD_ID) --chipid $(CFE_CHIP_ID) \
+		--output $@ --boardid $(CFE_BOARD_ID) --chipid $(CHIP_ID) \
 		--entry $(LOADER_ENTRY) --load-addr $(LOADER_ENTRY) \
 		$(call rootfspad/$(call Image/FileSystemStrip,$(IMAGE_ROOTFS))) \
 		$(CFE_EXTRAS) $(1)
@@ -264,9 +264,11 @@ define Device/Default
   KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
   KERNEL_INITRAMFS_SUFFIX := .elf
   DEVICE_DTS_DIR := ../dts
-  SOC = bcm$$(CFE_CHIP_ID)
+  CHIP_ID :=
+  SOC = bcm$$(CHIP_ID)
   DEVICE_DTS = $$(SOC)-$(subst _,-,$(1))
 endef
+DEVICE_VARS += CHIP_ID
 
 ATH5K_PACKAGES := kmod-ath5k wpad-basic
 ATH9K_PACKAGES := kmod-ath9k wpad-basic
