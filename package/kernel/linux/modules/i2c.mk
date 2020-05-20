@@ -210,7 +210,6 @@ $(eval $(call KernelPackage,i2c-piix4))
 
 
 I2C_PXA_MODULES:= \
-  CONFIG_I2C_PXA_SLAVE=y \
   CONFIG_I2C_PXA:drivers/i2c/busses/i2c-pxa
 
 define KernelPackage/i2c-pxa
