@@ -767,7 +767,7 @@ define Device/netgear_cvg834g
   $(Device/bcm33xx)
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := CVG834G
-  SOC := bcm3368
+  CHIP_ID := 3368
   HCS_MAGIC_BYTES := 0xa020
   HCS_REV_MIN := 0001
   HCS_REV_MAJ := 0022
