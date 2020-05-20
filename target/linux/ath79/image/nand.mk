@@ -134,6 +134,7 @@ define Device/glinet_gl-ar750s-nor-nand
 	append-ubi | check-kernel-size $$$$(GL_UBOOT_UBI_OFFSET)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   SUPPORTED_DEVICES += glinet,gl-ar750s-nor
+  DEFAULT := n
 endef
 TARGET_DEVICES += glinet_gl-ar750s-nor-nand
 
@@ -142,6 +143,7 @@ define Device/glinet_gl-ar750s-nor
   DEVICE_VARIANT := NOR
   BLOCKSIZE := 64k
   SUPPORTED_DEVICES += gl-ar750s glinet,gl-ar750s glinet,gl-ar750s-nor-nand
+  DEFAULT := n
 endef
 TARGET_DEVICES += glinet_gl-ar750s-nor
 
