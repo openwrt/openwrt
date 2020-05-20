@@ -33,7 +33,7 @@ Signed-off-by: Ioana Radulescu <ruxandra.radulescu@nxp.com>
  	depends on FSL_DPAA2_ETH && PTP_1588_CLOCK_QORIQ
 --- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
 +++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
-@@ -3607,6 +3607,81 @@ static void del_ch_napi(struct dpaa2_eth
+@@ -3612,6 +3612,81 @@ static void del_ch_napi(struct dpaa2_eth
  	}
  }
  
@@ -115,7 +115,7 @@ Signed-off-by: Ioana Radulescu <ruxandra.radulescu@nxp.com>
  static int dpaa2_eth_probe(struct fsl_mc_device *dpni_dev)
  {
  	struct device *dev;
-@@ -3696,6 +3771,15 @@ static int dpaa2_eth_probe(struct fsl_mc
+@@ -3701,6 +3776,15 @@ static int dpaa2_eth_probe(struct fsl_mc
  	if (err)
  		goto err_alloc_rings;
  
@@ -141,7 +141,7 @@ Signed-off-by: Ioana Radulescu <ruxandra.radulescu@nxp.com>
  #include <linux/netdevice.h>
  #include <linux/if_vlan.h>
  #include <linux/fsl/mc.h>
-@@ -422,6 +423,10 @@ struct dpaa2_eth_priv {
+@@ -423,6 +424,10 @@ struct dpaa2_eth_priv {
  	struct dpaa2_eth_cls_rule *cls_rules;
  	u8 rx_cls_enabled;
  	u8 vlan_cls_enabled;

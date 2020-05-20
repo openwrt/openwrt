@@ -36,7 +36,7 @@ Signed-off-by: Valentin Catalin Neacsu <valentin-catalin.neacsu@nxp.com>
  			   "dpni_get_link_state() failed\n");
 --- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.h
 +++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.h
-@@ -542,6 +542,9 @@ static inline bool dpaa2_eth_rx_pause_en
+@@ -543,6 +543,9 @@ static inline bool dpaa2_eth_rx_pause_en
  	return !!(link_options & DPNI_LINK_OPT_PAUSE);
  }
  

@@ -1561,7 +1561,7 @@ Signed-off-by: Camelia Groza <camelia.groza@nxp.com>
  static const struct net_device_ops dpaa2_eth_ops = {
  	.ndo_open = dpaa2_eth_open,
  	.ndo_start_xmit = dpaa2_eth_tx,
-@@ -4166,18 +4186,27 @@ static int __init dpaa2_eth_driver_init(
+@@ -4171,18 +4191,27 @@ static int __init dpaa2_eth_driver_init(
  
  	dpaa2_eth_dbg_init();
  	err = fsl_mc_driver_register(&dpaa2_eth_driver);
@@ -1596,7 +1596,7 @@ Signed-off-by: Camelia Groza <camelia.groza@nxp.com>
  module_init(dpaa2_eth_driver_init);
 --- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.h
 +++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.h
-@@ -453,6 +453,8 @@ struct dpaa2_eth_priv {
+@@ -454,6 +454,8 @@ struct dpaa2_eth_priv {
  	struct dpaa2_debugfs dbg;
  #endif
  	struct dpni_tx_shaping_cfg shaping_cfg;
@@ -1605,7 +1605,7 @@ Signed-off-by: Camelia Groza <camelia.groza@nxp.com>
  };
  
  #define DPAA2_RXH_SUPPORTED	(RXH_L2DA | RXH_VLAN | RXH_L3_PROTO \
-@@ -573,6 +575,11 @@ static inline unsigned int dpaa2_eth_rx_
+@@ -574,6 +576,11 @@ static inline unsigned int dpaa2_eth_rx_
  	return priv->tx_data_offset - DPAA2_ETH_RX_HWA_SIZE;
  }
  

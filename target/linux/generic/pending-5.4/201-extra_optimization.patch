@@ -28,4 +28,4 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +KBUILD_CFLAGS += -Os -fno-reorder-blocks -fno-tree-ch $(EXTRA_OPTIMIZATION)
  endif
  
- ifdef CONFIG_CC_DISABLE_WARN_MAYBE_UNINITIALIZED
+ # Tell gcc to never replace conditional load with a non-conditional one
