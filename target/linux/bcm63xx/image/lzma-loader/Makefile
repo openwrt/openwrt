@@ -1,4 +1,6 @@
 #
+# Copyright (C) 2020 Álvaro Fernández Rojas <noltari@gmail.com>
+# Copyright (C) 2014 Jonas Gorski <jogo@openwrt.org>
 # Copyright (C) 2011 OpenWrt.org
 # Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>
 #
@@ -13,6 +15,25 @@ LOADER		:= loader.bin
 LOADER_NAME	:= $(basename $(notdir $(LOADER)))
 LOADER_DATA 	:=
 TARGET_DIR	:=
+
+UART_BASE_3329 := 0xb0000100
+UART_BASE_3368 := 0xfff8c100
+UART_BASE_3380 := 0xb4e00200
+UART_BASE_3383 := 0xb4e00500
+UART_BASE_3384 := 0xb4e00500
+UART_BASE_6318 := 0xb0000100
+UART_BASE_6328 := 0xb0000100
+UART_BASE_6338 := 0xfffe0300
+UART_BASE_6345 := 0xfffe0300
+UART_BASE_6348 := 0xfffe0300
+UART_BASE_6358 := 0xfffe0100
+UART_BASE_6362 := 0xb0000100
+UART_BASE_6368 := 0xb0000100
+UART_BASE_63268 := 0xb0000180
+UART_BASE_6816 := 0xb0000100
+UART_BASE_6818 := 0xb0000100
+UART_BASE_6828 := 0xb0000180
+UART_BASE := $(if $(UART_BASE_$(CHIP_ID)),$(UART_BASE_$(CHIP_ID)),0)
 
 ifeq ($(TARGET_DIR),)
 TARGET_DIR	:= $(KDIR)
@@ -35,6 +56,7 @@ loader-compile: $(PKG_BUILD_DIR)/.prepared
 	$(MAKE) -C $(PKG_BUILD_DIR) CROSS_COMPILE="$(TARGET_CROSS)" \
 		LZMA_TEXT_START=$(LZMA_TEXT_START) \
 		LOADER_DATA=$(LOADER_DATA) \
+		UART_BASE=$(UART_BASE) \
 		clean all
 
 loader.elf: $(PKG_BUILD_DIR)/loader.elf
