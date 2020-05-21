@@ -168,6 +168,9 @@ define Build/cfe-jffs2-cferam
 	# Some devices need padding between CFE RAM and kernel
 	$(if $(CFE_RAM_JFFS2_PAD),$(call Build/pad-to,$(CFE_RAM_JFFS2_PAD)))
 
+	# Add CFE partition tag
+	$(if $(CFE_PART_ID),$(call Build/cfe-part-tag))
+
 	# Append kernel
 	dd if=$@.kernel >> $@
 	rm -f $@.kernel
@@ -202,6 +205,22 @@ define Build/cfe-jffs2-kernel
 	# 2) 2-openwrt (version 1, ino 3)
 	# 3) vmlinux.lz (version 2, ino 4)
 	$(call Build/cfe-jffs2,$@-kernel)
+endef
+
+define Build/cfe-part-tag
+	mv $@ $@.part
+
+	$(TOPDIR)/scripts/cfe-partition-tag.py \
+		--input-file $@.part \
+		--output-file $@ \
+		--flags $(CFE_PART_FLAGS) \
+		--id $(CFE_PART_ID) \
+		--name $(VERSION_CODE) \
+		--version $(DEVICE_NAME)
+
+	$(call Build/pad-to,$(BLOCKSIZE))
+
+	dd if=$@.part >> $@
 endef
 
 define Build/cfe-old-bin

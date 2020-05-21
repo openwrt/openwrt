@@ -2,6 +2,7 @@
 # BCM63XX NAND Profiles
 #
 
+DEVICE_VARS += CFE_PART_FLAGS CFE_PART_ID
 DEVICE_VARS += CFE_RAM_FILE
 DEVICE_VARS += CFE_RAM_JFFS2_NAME CFE_RAM_JFFS2_PAD
 DEVICE_VARS += CFE_WFI_CHIP_ID CFE_WFI_FLASH_TYPE
@@ -21,6 +22,8 @@ define Device/bcm63xx-nand
   IMAGE/cfe.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | cfe-jffs2-cferam | append-ubi | cfe-wfi-tag
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   KERNEL_SIZE := 5120k
+  CFE_PART_FLAGS :=
+  CFE_PART_ID :=
   CFE_RAM_FILE :=
   CFE_RAM_JFFS2_NAME :=
   CFE_RAM_JFFS2_PAD :=
