@@ -1,0 +1,45 @@
+From: Russell King <rmk+kernel@armlinux.org.uk>
+Bcc: linux@mail.armlinux.org.uk
+Cc: Linus Walleij <linus.walleij@linaro.org>,Bartosz Golaszewski <bgolaszewski@baylibre.com>,linux-gpio@vger.kernel.org
+Subject: [PATCH] gpiolib: fix up emulated open drain outputs
+MIME-Version: 1.0
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="utf-8"
+
+gpiolib has a corner case with open drain outputs that are emulated.
+When such outputs are outputting a logic 1, emulation will set the
+hardware to input mode, which will cause gpiod_get_direction() to
+report that it is in input mode. This is different from the behaviour
+with a true open-drain output.
+
+Unify the semantics here.
+
+Suggested-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
+---
+ drivers/gpio/gpiolib.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/gpio/gpiolib.c b/drivers/gpio/gpiolib.c
+index 104ed299d5ea..99d19f80440e 100644
+--- a/drivers/gpio/gpiolib.c
++++ b/drivers/gpio/gpiolib.c
+@@ -220,6 +220,14 @@ int gpiod_get_direction(struct gpio_desc *desc)
+ 	chip = gpiod_to_chip(desc);
+ 	offset = gpio_chip_hwgpio(desc);
+ 
++	/*
++	 * Open drain emulation using input mode may incorrectly report
++	 * input here, fix that up.
++	 */
++	if (test_bit(FLAG_OPEN_DRAIN, &desc->flags) &&
++	    test_bit(FLAG_IS_OUT, &desc->flags))
++		return 0;
++
+ 	if (!chip->get_direction)
+ 		return -ENOTSUPP;
+ 
+-- 
+2.20.1
+
