@@ -12,6 +12,7 @@ define Device/buffalo_whr-g301n
 	buffalo-tag WHR-G301N 3
   IMAGE/tftp.bin := $$(IMAGE/default) | buffalo-tftp-header
   SUPPORTED_DEVICES += whr-g301n
+  DEFAULT := n
 endef
 TARGET_DEVICES += buffalo_whr-g301n
 
