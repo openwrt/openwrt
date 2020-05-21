@@ -49,7 +49,7 @@ setup_interface () {
 	proto_add_data
 	[ -n "$ZONE" ]     && json_add_string zone "$ZONE"
 	[ -n "$ntpsrv" ]   && json_add_string ntpserver "$ntpsrv"
-	[ -n "$timesvr" ]  && json_add_string timeserver "$timesvr"
+	[ -n "$timesrv" ]  && json_add_string timeserver "$timesrv"
 	[ -n "$hostname" ] && json_add_string hostname "$hostname"
 	[ -n "$message" ]  && json_add_string message "$message"
 	[ -n "$timezone" ] && json_add_int timezone "$timezone"
