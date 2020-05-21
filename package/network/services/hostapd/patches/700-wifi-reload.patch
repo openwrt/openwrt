@@ -38,7 +38,7 @@
  	os_free(conf->basic_rates);
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -859,6 +859,7 @@ struct hostapd_bss_config {
+@@ -861,6 +861,7 @@ struct hostapd_bss_config {
  	 */
  	u8 mka_psk_set;
  #endif /* CONFIG_MACSEC */
@@ -46,7 +46,7 @@
  };
  
  /**
-@@ -1050,6 +1051,7 @@ struct hostapd_config {
+@@ -1052,6 +1053,7 @@ struct hostapd_config {
  	unsigned int airtime_update_interval;
  #define AIRTIME_MODE_MAX (__AIRTIME_MODE_MAX - 1)
  #endif /* CONFIG_AIRTIME_POLICY */
@@ -56,7 +56,7 @@
  
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -216,6 +216,10 @@ static int hostapd_iface_conf_changed(st
+@@ -218,6 +218,10 @@ static int hostapd_iface_conf_changed(st
  {
  	size_t i;
  
@@ -67,7 +67,7 @@
  	if (newconf->num_bss != oldconf->num_bss)
  		return 1;
  
-@@ -229,7 +233,7 @@ static int hostapd_iface_conf_changed(st
+@@ -231,7 +235,7 @@ static int hostapd_iface_conf_changed(st
  }
  
  
@@ -76,7 +76,7 @@
  {
  	struct hapd_interfaces *interfaces = iface->interfaces;
  	struct hostapd_data *hapd = iface->bss[0];
-@@ -252,13 +256,16 @@ int hostapd_reload_config(struct hostapd
+@@ -254,13 +258,16 @@ int hostapd_reload_config(struct hostapd
  	if (newconf == NULL)
  		return -1;
  
@@ -95,7 +95,7 @@
  		wpa_printf(MSG_DEBUG,
  			   "Configuration changes include interface/BSS modification - force full disable+enable sequence");
  		fname = os_strdup(iface->config_fname);
-@@ -283,6 +290,24 @@ int hostapd_reload_config(struct hostapd
+@@ -285,6 +292,24 @@ int hostapd_reload_config(struct hostapd
  			wpa_printf(MSG_ERROR,
  				   "Failed to enable interface on config reload");
  		return res;
@@ -114,13 +114,13 @@
 +				 * items (e.g., open/close sockets, etc.) */
 +				radius_client_flush(iface->bss[j]->radius, 0);
 +#endif /* CONFIG_NO_RADIUS */
-+				wpa_printf(MSG_INFO, "bss %d changed", j);
++				wpa_printf(MSG_INFO, "bss %zu changed", j);
 +			}
 +		}
  	}
  	iface->conf = newconf;
  
-@@ -299,6 +324,12 @@ int hostapd_reload_config(struct hostapd
+@@ -301,6 +326,12 @@ int hostapd_reload_config(struct hostapd
  
  	for (j = 0; j < iface->num_bss; j++) {
  		hapd = iface->bss[j];
@@ -133,7 +133,7 @@
  		hapd->iconf = newconf;
  		hapd->conf = newconf->bss[j];
  		hostapd_reload_bss(hapd);
-@@ -2329,6 +2360,10 @@ hostapd_alloc_bss_data(struct hostapd_if
+@@ -2355,6 +2386,10 @@ hostapd_alloc_bss_data(struct hostapd_if
  	hapd->iconf = conf;
  	hapd->conf = bss;
  	hapd->iface = hapd_iface;
@@ -163,7 +163,7 @@
  	int interface_added; /* virtual interface added for this BSS */
  	unsigned int started:1;
  	unsigned int disabled:1;
-@@ -582,7 +583,7 @@ struct hostapd_iface {
+@@ -597,7 +598,7 @@ struct hostapd_iface {
  int hostapd_for_each_interface(struct hapd_interfaces *interfaces,
  			       int (*cb)(struct hostapd_iface *iface,
  					 void *ctx), void *ctx);
@@ -174,7 +174,7 @@
  hostapd_alloc_bss_data(struct hostapd_iface *hapd_iface,
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -4486,6 +4486,9 @@ static int wpa_driver_nl80211_set_ap(voi
+@@ -4492,6 +4492,9 @@ static int wpa_driver_nl80211_set_ap(voi
  	if (ret) {
  		wpa_printf(MSG_DEBUG, "nl80211: Beacon set failed: %d (%s)",
  			   ret, strerror(-ret));

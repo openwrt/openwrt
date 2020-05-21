@@ -1,6 +1,6 @@
 --- a/wpa_supplicant/config.c
 +++ b/wpa_supplicant/config.c
-@@ -2477,6 +2477,7 @@ static const struct parse_data ssid_fiel
+@@ -2478,6 +2478,7 @@ static const struct parse_data ssid_fiel
  #else /* CONFIG_MESH */
  	{ INT_RANGE(mode, 0, 4) },
  #endif /* CONFIG_MESH */
@@ -15,12 +15,12 @@
  	INT(mode);
  	INT(no_auto_peer);
 +	INT(noscan);
+ 	INT(mesh_fwding);
  	INT(frequency);
  	INT(enable_edmg);
- 	INT(edmg_channel);
 --- a/wpa_supplicant/mesh.c
 +++ b/wpa_supplicant/mesh.c
-@@ -333,6 +333,8 @@ static int wpa_supplicant_mesh_init(stru
+@@ -368,6 +368,8 @@ static int wpa_supplicant_mesh_init(stru
  			   frequency);
  		goto out_free;
  	}
@@ -31,7 +31,7 @@
  	if (conf->hw_mode == HOSTAPD_MODE_IEEE80211A && ssid->vht) {
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -2331,12 +2331,12 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2334,12 +2334,12 @@ void ibss_mesh_setup_freq(struct wpa_sup
  	int ieee80211_mode = wpas_mode_to_ieee80211_mode(ssid->mode);
  	enum hostapd_hw_mode hw_mode;
  	struct hostapd_hw_modes *mode = NULL;
@@ -46,7 +46,7 @@
  	unsigned int j, k;
  	struct hostapd_freq_params vht_freq;
  	int chwidth, seg0, seg1;
-@@ -2416,7 +2416,7 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2421,7 +2421,7 @@ void ibss_mesh_setup_freq(struct wpa_sup
  #endif /* CONFIG_HE_OVERRIDES */
  
  	/* Setup higher BW only for 5 GHz */
@@ -57,7 +57,7 @@
  	for (chan_idx = 0; chan_idx < mode->num_channels; chan_idx++) {
 --- a/wpa_supplicant/config_ssid.h
 +++ b/wpa_supplicant/config_ssid.h
-@@ -960,6 +960,8 @@ struct wpa_ssid {
+@@ -965,6 +965,8 @@ struct wpa_ssid {
  	 */
  	int no_auto_peer;
  
