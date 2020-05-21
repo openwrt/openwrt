@@ -60,7 +60,7 @@
  static struct sprom_fixup __initdata wap5813n_fixups[] = {
  	{ .offset = 97, .value = 0xfeed },
  	{ .offset = 98, .value = 0x15d1 },
-@@ -1839,6 +1892,7 @@ static const struct board_info __initcon
+@@ -1849,6 +1902,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
@@ -68,7 +68,7 @@
  	&board_WAP5813n,
  #endif
  #ifdef CONFIG_BCM63XX_CPU_63268
-@@ -1932,6 +1986,7 @@ static struct of_device_id const bcm963x
+@@ -1942,6 +1996,7 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_6368
  	{ .compatible = "brcm,bcm96368mvngr", .data = &board_96368mvngr, },
  	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },

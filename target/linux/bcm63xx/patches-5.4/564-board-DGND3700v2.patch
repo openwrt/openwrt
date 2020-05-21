@@ -32,7 +32,7 @@
  static struct board_info __initdata board_fast2504n = {
  	.name				= "F@ST2504n",
  	.expected_cpu_id		= 0x6362,
-@@ -2820,6 +2845,7 @@ static const struct board_info __initcon
+@@ -2830,6 +2855,7 @@ static const struct board_info __initcon
  
  #ifdef CONFIG_BCM63XX_CPU_6362
  	&board_nb6,
@@ -40,7 +40,7 @@
  	&board_fast2504n,
  #endif
  
-@@ -2935,6 +2961,7 @@ static struct of_device_id const bcm963x
+@@ -2945,6 +2971,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "bt,home-hub-2-a", .data = &board_homehub2a, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6362

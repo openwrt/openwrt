@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -2635,6 +2635,29 @@ static struct board_info __initdata boar
+@@ -2643,6 +2643,31 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -21,6 +21,8 @@
 +				.bypass_link = 1,
 +				.force_speed = 1000,
 +				.force_duplex_full = 1,
++				.mii_override = 1,
++				.timing_sel = 1,
 +				.name = "RGMII",
 +			},
 +		},
@@ -30,7 +32,7 @@
  static struct board_info __initdata board_VR3032u = {
  	.name				= "963168M-1841N1",
  	.expected_cpu_id	= 0x63268,
-@@ -2868,6 +2891,7 @@ static const struct board_info __initcon
+@@ -2878,6 +2903,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_63268
  	&board_963268bu_p300,
  	&board_963269bhr,
@@ -38,7 +40,7 @@
  	&board_VR3032u,
  	&board_vw6339gu,
  	&board_BSKYB_63168,
-@@ -2984,6 +3008,7 @@ static struct of_device_id const bcm963x
+@@ -2994,6 +3020,7 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_63268
  	{ .compatible = "brcm,bcm963268bu-p300", .data = &board_963268bu_p300, },
  	{ .compatible = "brcm,bcm963269bhr", .data = &board_963269bhr, },
