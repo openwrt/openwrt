@@ -518,3 +518,39 @@ define KernelPackage/sound-hda-intel/description
 endef
 
 $(eval $(call KernelPackage,sound-hda-intel))
+
+define KernelPackage/sound-soc-rockchip
+  TITLE:=Rockchip SoC support
+  KCONFIG:=\
+	CONFIG_SOUND=y \
+	CONFIG_SND=y \
+	CONFIG_SND_SIMPLE_CARD \
+	CONFIG_SND_SOC_DMAENGINE_PCM \
+	CONFIG_SND_SOC_RK3328 \
+	CONFIG_SND_SOC_ROCKCHIP \
+	CONFIG_SND_SOC_ROCKCHIP_I2S \
+	CONFIG_SND_SOC_ROCKCHIP_I2S_TDM \
+	CONFIG_SND_SOC_ROCKCHIP_PDM \
+	CONFIG_SND_SOC_SPDIF \
+	CONFIG_SND_SOC_ROCKCHIP_SPDIF
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/rockchip/snd-soc-rockchip-pcm.ko \
+	$(LINUX_DIR)/sound/soc/rockchip/snd-soc-rockchip-pdm.ko \
+	$(LINUX_DIR)/sound/soc/rockchip/snd-soc-rockchip-i2s.ko \
+	$(LINUX_DIR)/sound/soc/rockchip/snd-soc-rockchip-spdif.ko \
+	$(LINUX_DIR)/sound/soc/generic/snd-soc-simple-card.ko \
+	$(LINUX_DIR)/sound/soc/generic/snd-soc-simple-card-utils.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-rk3328.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-spdif-tx.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-spdif-rx.ko
+  AUTOLOAD:=$(call AutoProbe,snd-soc-rk3328 snd-soc-rockchip-i2s snd-soc-rockchip-pdm \
+	snd-soc-spdif-tx snd-soc-rockchip-spdif snd-soc-simple-card)
+  DEPENDS:=@TARGET_rockchip +kmod-sound-soc-core +kmod-sound-core
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-rockchip/description
+ Support for Rockchip Platform sound (pdm/pcm/spdif)
+endef
+
+$(eval $(call KernelPackage,sound-soc-rockchip))

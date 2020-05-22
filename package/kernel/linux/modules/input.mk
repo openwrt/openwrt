@@ -193,6 +193,78 @@ endef
 $(eval $(call KernelPackage,input-touchscreen-ads7846))
 
 
+define KernelPackage/multimedia-input
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=Multimedia input support
+  KCONFIG:=CONFIG_RC_CORE \
+	CONFIG_LIRC=y \
+	CONFIG_RC_DECODERS=y \
+	CONFIG_RC_DEVICES=y
+  FILES:=$(LINUX_DIR)/drivers/media/rc/rc-core.ko
+  AUTOLOAD:=$(call AutoProbe,rc-core)
+endef
+
+define KernelPackage/multimedia-input/description
+ Enable multimedia input.
+endef
+
+$(eval $(call KernelPackage,multimedia-input))
+
+
+define KernelPackage/infrared-sensor
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=infrared sensor support
+  DEPENDS:=+kmod-multimedia-input
+  KCONFIG:= \
+	CONFIG_GPIOLIB=y \
+	CONFIG_SPI=y \
+	CONFIG_PWM=y \
+	CONFIG_IR_GPIO_CIR \
+	CONFIG_BPF_LIRC_MODE2 \
+	CONFIG_IR_SANYO_DECODER \
+	CONFIG_IR_SHARP_DECODER \
+	CONFIG_IR_MCE_KBD_DECODER \
+	CONFIG_IR_NEC_DECODER \
+	CONFIG_IR_XMP_DECODER \
+	CONFIG_IR_IMON_DECODER \
+	CONFIG_IR_RCMM_DECODER \
+	CONFIG_IR_IMON_RAW \
+	CONFIG_IR_SPI \
+	CONFIG_IR_GPIO_TX \
+	CONFIG_IR_PWM_TX \
+	CONFIG_IR_SERIAL \
+	CONFIG_IR_SERIAL_TRANSMITTER=y \
+	CONFIG_IR_SIR \
+	CONFIG_RC_MAP \
+	CONFIG_RC_XBOX_DVD
+  FILES:= \
+	$(LINUX_DIR)/drivers/media/rc/gpio-ir-recv.ko \
+	$(LINUX_DIR)/drivers/media/rc/gpio-ir-tx.ko \
+	$(LINUX_DIR)/drivers/media/rc/imon_raw.ko \
+	$(LINUX_DIR)/drivers/media/rc/ir-imon-decoder.ko \
+	$(LINUX_DIR)/drivers/media/rc/ir-mce_kbd-decoder.ko \
+	$(LINUX_DIR)/drivers/media/rc/ir-nec-decoder.ko \
+	$(LINUX_DIR)/drivers/media/rc/ir-rcmm-decoder.ko \
+	$(LINUX_DIR)/drivers/media/rc/ir-sanyo-decoder.ko \
+	$(LINUX_DIR)/drivers/media/rc/ir-sharp-decoder.ko \
+	$(LINUX_DIR)/drivers/media/rc/ir-spi.ko \
+	$(LINUX_DIR)/drivers/media/rc/ir-xmp-decoder.ko \
+	$(LINUX_DIR)/drivers/media/rc/pwm-ir-tx.ko \
+	$(LINUX_DIR)/drivers/media/rc/serial_ir.ko \
+	$(LINUX_DIR)/drivers/media/rc/sir_ir.ko \
+	$(LINUX_DIR)/drivers/media/rc/xbox_remote.ko
+  AUTOLOAD:=$(call AutoProbe,gpio-ir-recv gpio-ir-tx imon_raw ir-imon-decoder \
+	ir-mce_kbd-decoder ir-nec-decoder ir-rcmm-decoder ir-sanyo-decoder \
+	ir-sharp-decoder ir-spi ir-xmp-decoder pwm-ir-tx sir_ir xbox_remote)
+endef
+
+define KernelPackage/infrared-sensor/description
+ Enable support for infrared sensors.
+endef
+
+$(eval $(call KernelPackage,infrared-sensor))
+
+
 define KernelPackage/keyboard-imx
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=IMX keypad support
@@ -209,7 +281,6 @@ define KernelPackage/keyboard-imx/description
 endef
 
 $(eval $(call KernelPackage,keyboard-imx))
-
 
 define KernelPackage/input-uinput
   SUBMENU:=$(INPUT_MODULES_MENU)

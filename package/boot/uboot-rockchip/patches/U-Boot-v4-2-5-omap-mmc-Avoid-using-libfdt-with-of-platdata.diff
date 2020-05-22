@@ -1,0 +1,17 @@
+diff --git a/drivers/mmc/davinci_mmc.c b/drivers/mmc/davinci_mmc.c
+index 0d63279db0..79a7f50d25 100644
+--- a/drivers/mmc/davinci_mmc.c
++++ b/drivers/mmc/davinci_mmc.c
+@@ -507,6 +507,12 @@ static int davinci_mmc_probe(struct udevice *dev)
+ 		priv->version = data->version;
+ 	}
+ 
++	/* FIXME: Cannot read from device tree with of-platdata */
++	if (CONFIG_IS_ENABLED(OF_PLATDATA)) {
++		printf("Please fix this driver to use of-platdata");
++		return -ENOSYS;
++	}
++
+ 	priv->reg_base = (struct davinci_mmc_regs *)dev_read_addr(dev);
+ 	priv->input_clk = clk_get(DAVINCI_MMCSD_CLKID);
+ 
