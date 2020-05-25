@@ -48,33 +48,16 @@ match_diag_led() {
 	fi
 }
 
-get_status_led() {
+get_status_led_platform() {
 	if [ -s /etc/config/system ]; then
 		config_load system
 		config_foreach match_diag_led led
 	else
 		preinit_match_diag_led
 	fi
-}
 
-set_state() {
-	get_status_led
-
-	case "$1" in
-	preinit)
-		status_led_blink_preinit
-		;;
-
-	failsafe)
-		status_led_blink_failsafe
-		;;
-
-	preinit_regular)
-		status_led_blink_preinit_regular
-		;;
-
-	done)
-		status_led_on
-		;;
-	esac
+	boot="$status_led"
+	failsafe="$status_led"
+	running="$status_led"
+	upgrade="$status_led"
 }

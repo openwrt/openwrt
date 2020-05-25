@@ -1,14 +1,18 @@
 #!/bin/sh
-# Copyright (C) 2006-2019 OpenWrt.org
+# Copyright (C) 2006-2020 OpenWrt.org
 
 . /lib/functions/leds.sh
 
-boot="$(get_dt_led boot)"
-failsafe="$(get_dt_led failsafe)"
-running="$(get_dt_led running)"
-upgrade="$(get_dt_led upgrade)"
+get_status_led_default() {
+	boot="$(get_dt_led boot)"
+	failsafe="$(get_dt_led failsafe)"
+	running="$(get_dt_led running)"
+	upgrade="$(get_dt_led upgrade)"
+}
 
-set_led_state() {
+set_state_default() {
+	[ -z "$boot" -a -z "$failsafe" -a -z "$running" -a -z "$upgrade" ] && return 0
+
 	status_led="$boot"
 
 	case "$1" in
@@ -37,7 +41,7 @@ set_led_state() {
 		;;
 	done)
 		status_led_off
-		[ "$status_led" != "$running" ] && \
+		[ "$boot" != "$running" ] && \
 			status_led_restore_trigger "boot"
 		[ -n "$running" ] && {
 			status_led="$running"
@@ -45,8 +49,4 @@ set_led_state() {
 		}
 		;;
 	esac
-}
-
-set_state() {
-	[ -n "$boot" -o -n "$failsafe" -o -n "$running" -o -n "$upgrade" ] && set_led_state "$1"
 }

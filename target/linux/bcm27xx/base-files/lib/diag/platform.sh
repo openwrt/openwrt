@@ -5,7 +5,7 @@
 . /lib/functions.sh
 . /lib/functions/leds.sh
 
-set_state() {
+set_state_platform() {
 	case "$(board_name)" in
 	raspberrypi,2-model-b |\
 	raspberrypi,2-model-b-rev2 |\

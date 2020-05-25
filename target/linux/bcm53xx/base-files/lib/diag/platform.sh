@@ -2,7 +2,7 @@
 
 . /lib/functions/leds.sh
 
-get_status_led() {
+get_status_led_platform() {
 	local status_led_file
 
 	# There may be more than one color of power LED, try to avoid amber/red
@@ -21,25 +21,9 @@ get_status_led() {
 
 	# And finally, let's also try the device-Tree aliases node
 	status_led="$(get_dt_led status)"
-}
 
-set_state() {
-	get_status_led
-
-	[ -z "$status_led" ] && return
-
-	case "$1" in
-	preinit)
-		status_led_blink_preinit
-		;;
-	failsafe)
-		status_led_blink_failsafe
-		;;
-	preinit_regular)
-		status_led_blink_preinit_regular
-		;;
-	done)
-		status_led_on
-		;;
-	esac
+	boot="$status_led"
+	failsafe="$status_led"
+	running="$status_led"
+	upgrade="$status_led"
 }
