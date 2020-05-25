@@ -16,10 +16,10 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -176,3 +176,12 @@ config MTD_MYLOADER_PARTS
+@@ -176,3 +176,12 @@ config MTD_REDBOOT_PARTS_READONLY
+ 	  'FIS directory' images, enable this option.
  
- 	  You will still need the parsing functions to be called by the driver
- 	  for your particular device. It won't happen automatically.
+ endif # MTD_REDBOOT_PARTS
 +
 +config MTD_ROUTERBOOT_PARTS
 +	tristate "RouterBoot flash partition parser"
@@ -31,10 +31,8 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 +	 formatted DTS.
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
-@@ -9,4 +9,5 @@ obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o
+@@ -10,3 +10,4 @@ obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o
  obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_trx.o
  obj-$(CONFIG_MTD_SHARPSL_PARTS)		+= sharpslpart.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS)		+= redboot.o
--obj-$(CONFIG_MTD_MYLOADER_PARTS)		+= myloader.o
-+obj-$(CONFIG_MTD_MYLOADER_PARTS)	+= myloader.o
-+obj-$(CONFIG_MTD_ROUTERBOOT_PARTS)	+= routerbootpart.o
++obj-$(CONFIG_MTD_ROUTERBOOT_PARTS)		+= routerbootpart.o
