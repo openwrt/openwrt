@@ -50,3 +50,5 @@ set_led_state() {
 set_state() {
 	[ -n "$boot" -o -n "$failsafe" -o -n "$running" -o -n "$upgrade" ] && set_led_state "$1"
 }
+
+[ -f /etc/diag.sh ] && . /etc/diag.sh

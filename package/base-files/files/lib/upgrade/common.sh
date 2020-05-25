@@ -268,7 +268,7 @@ get_partitions() { # <device> <filename>
 }
 
 indicate_upgrade() {
-	. /etc/diag.sh
+	. /lib/functions/diag.sh
 	set_state upgrade
 }
 
