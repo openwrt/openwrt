@@ -23,11 +23,9 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  drivers/i2c/busses/i2c-pxa.c | 12 ++++++++----
  1 file changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
-index 46f1cf97d955..f20f8b905793 100644
 --- a/drivers/i2c/busses/i2c-pxa.c
 +++ b/drivers/i2c/busses/i2c-pxa.c
-@@ -90,6 +90,7 @@
+@@ -91,6 +91,7 @@
   */
  #define DEF_TIMEOUT             32
  
@@ -35,7 +33,7 @@ index 46f1cf97d955..f20f8b905793 100644
  #define BUS_ERROR               (-EREMOTEIO)
  #define XFER_NAKED              (-ECONNREFUSED)
  #define I2C_RETRY               (-2000) /* an error has occurred retry transmit */
-@@ -881,7 +882,7 @@ static void i2c_pxa_irq_txempty(struct pxa_i2c *i2c, u32 isr)
+@@ -840,7 +841,7 @@ static void i2c_pxa_irq_txempty(struct p
  		 */
  		if (isr & ISR_ACKNAK) {
  			if (i2c->msg_ptr == 0 && i2c->msg_idx == 0)
@@ -44,7 +42,7 @@ index 46f1cf97d955..f20f8b905793 100644
  			else
  				ret = XFER_NAKED;
  		}
-@@ -1109,16 +1110,19 @@ static int i2c_pxa_internal_xfer(struct pxa_i2c *i2c,
+@@ -1068,16 +1069,19 @@ static int i2c_pxa_internal_xfer(struct
  {
  	int ret, i;
  
@@ -67,6 +65,3 @@ index 46f1cf97d955..f20f8b905793 100644
  	ret = -EREMOTEIO;
   out:
  	i2c_pxa_set_slave(i2c, ret);
--- 
-2.20.1
-

@@ -20,11 +20,9 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  drivers/i2c/busses/i2c-pxa.c | 6 ++----
  1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
-index db739cce93ac..a72d07bdb793 100644
 --- a/drivers/i2c/busses/i2c-pxa.c
 +++ b/drivers/i2c/busses/i2c-pxa.c
-@@ -795,11 +795,9 @@ static inline void i2c_pxa_stop_message(struct pxa_i2c *i2c)
+@@ -754,11 +754,9 @@ static inline void i2c_pxa_stop_message(
  {
  	u32 icr;
  
@@ -38,6 +36,3 @@ index db739cce93ac..a72d07bdb793 100644
  	writel(icr, _ICR(i2c));
  }
  
--- 
-2.20.1
-

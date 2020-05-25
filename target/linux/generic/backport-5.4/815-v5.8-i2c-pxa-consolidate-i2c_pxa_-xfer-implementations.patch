@@ -16,11 +16,9 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  drivers/i2c/busses/i2c-pxa.c | 36 ++++++++++++++++--------------------
  1 file changed, 16 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
-index c1e50c0b9756..46f1cf97d955 100644
 --- a/drivers/i2c/busses/i2c-pxa.c
 +++ b/drivers/i2c/busses/i2c-pxa.c
-@@ -1102,18 +1102,20 @@ static int i2c_pxa_do_xfer(struct pxa_i2c *i2c, struct i2c_msg *msg, int num)
+@@ -1061,18 +1061,20 @@ static int i2c_pxa_do_xfer(struct pxa_i2
  	return ret;
  }
  
@@ -46,7 +44,7 @@ index c1e50c0b9756..46f1cf97d955 100644
  		udelay(100);
  	}
  	i2c_pxa_scream_blue_murder(i2c, "exhausted retries");
-@@ -1123,6 +1125,14 @@ static int i2c_pxa_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int num
+@@ -1082,6 +1084,14 @@ static int i2c_pxa_xfer(struct i2c_adapt
  	return ret;
  }
  
@@ -61,7 +59,7 @@ index c1e50c0b9756..46f1cf97d955 100644
  static u32 i2c_pxa_functionality(struct i2c_adapter *adap)
  {
  	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL |
-@@ -1210,7 +1220,6 @@ static int i2c_pxa_pio_xfer(struct i2c_adapter *adap,
+@@ -1165,7 +1175,6 @@ static int i2c_pxa_pio_xfer(struct i2c_a
  			    struct i2c_msg msgs[], int num)
  {
  	struct pxa_i2c *i2c = adap->algo_data;
@@ -69,7 +67,7 @@ index c1e50c0b9756..46f1cf97d955 100644
  
  	/* If the I2C controller is disabled we need to reset it
  	  (probably due to a suspend/resume destroying state). We do
-@@ -1219,20 +1228,7 @@ static int i2c_pxa_pio_xfer(struct i2c_adapter *adap,
+@@ -1174,20 +1183,7 @@ static int i2c_pxa_pio_xfer(struct i2c_a
  	if (!(readl(_ICR(i2c)) & ICR_IUE))
  		i2c_pxa_reset(i2c);
  
@@ -91,6 +89,3 @@ index c1e50c0b9756..46f1cf97d955 100644
  }
  
  static const struct i2c_algorithm i2c_pxa_pio_algorithm = {
--- 
-2.20.1
-

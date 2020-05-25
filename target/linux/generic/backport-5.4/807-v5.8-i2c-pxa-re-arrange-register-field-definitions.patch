@@ -16,8 +16,6 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  drivers/i2c/busses/i2c-pxa.c | 113 ++++++++++++++++-------------------
  1 file changed, 53 insertions(+), 60 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
-index e5f00ae39861..ea96dfa6b9d5 100644
 --- a/drivers/i2c/busses/i2c-pxa.c
 +++ b/drivers/i2c/busses/i2c-pxa.c
 @@ -33,6 +33,56 @@
@@ -91,7 +89,7 @@ index e5f00ae39861..ea96dfa6b9d5 100644
  static struct pxa_reg_layout pxa_reg_layout[] = {
  	[REGS_PXA2XX] = {
  		.ibmr =	0x00,
-@@ -96,8 +141,8 @@ static struct pxa_reg_layout pxa_reg_layout[] = {
+@@ -96,8 +141,8 @@ static struct pxa_reg_layout pxa_reg_lay
  		.icr =	0x08,
  		.isr =	0x0c,
  		.isar =	0x10,
@@ -102,7 +100,7 @@ index e5f00ae39861..ea96dfa6b9d5 100644
  	},
  };
  
-@@ -111,58 +156,6 @@ static const struct platform_device_id i2c_pxa_id_table[] = {
+@@ -111,58 +156,6 @@ static const struct platform_device_id i
  };
  MODULE_DEVICE_TABLE(platform, i2c_pxa_id_table);
  
@@ -161,6 +159,3 @@ index e5f00ae39861..ea96dfa6b9d5 100644
  struct pxa_i2c {
  	spinlock_t		lock;
  	wait_queue_head_t	wait;
--- 
-2.20.1
-

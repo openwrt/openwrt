@@ -17,8 +17,6 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  include/linux/platform_data/i2c-pxa.h | 48 ---------------------------
  2 files changed, 43 insertions(+), 48 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
-index 05dbe6bf4633..482768a9fdd2 100644
 --- a/drivers/i2c/busses/i2c-pxa.c
 +++ b/drivers/i2c/busses/i2c-pxa.c
 @@ -86,6 +86,49 @@
@@ -71,8 +69,6 @@ index 05dbe6bf4633..482768a9fdd2 100644
  struct pxa_reg_layout {
  	u32 ibmr;
  	u32 idbr;
-diff --git a/include/linux/platform_data/i2c-pxa.h b/include/linux/platform_data/i2c-pxa.h
-index cb290092599c..5c08a6ff3444 100644
 --- a/include/linux/platform_data/i2c-pxa.h
 +++ b/include/linux/platform_data/i2c-pxa.h
 @@ -7,54 +7,6 @@
@@ -130,6 +126,3 @@ index cb290092599c..5c08a6ff3444 100644
  struct i2c_slave_client;
  
  struct i2c_pxa_platform_data {
--- 
-2.20.1
-

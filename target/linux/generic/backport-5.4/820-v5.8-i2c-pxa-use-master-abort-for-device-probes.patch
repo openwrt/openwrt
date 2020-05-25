@@ -14,11 +14,9 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  drivers/i2c/busses/i2c-pxa.c | 10 ++--------
  1 file changed, 2 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
-index a72d07bdb793..0e194d6cd1b5 100644
 --- a/drivers/i2c/busses/i2c-pxa.c
 +++ b/drivers/i2c/busses/i2c-pxa.c
-@@ -940,14 +940,8 @@ static void i2c_pxa_irq_txempty(struct pxa_i2c *i2c, u32 isr)
+@@ -899,14 +899,8 @@ static void i2c_pxa_irq_txempty(struct p
  		icr &= ~ICR_ALDIE;
  		icr |= ICR_START | ICR_TB;
  	} else {
@@ -35,6 +33,3 @@ index a72d07bdb793..0e194d6cd1b5 100644
  		i2c_pxa_master_complete(i2c, 0);
  	}
  
--- 
-2.20.1
-

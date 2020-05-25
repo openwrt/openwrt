@@ -16,11 +16,9 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  drivers/i2c/busses/i2c-pxa.c | 21 +++++++--------------
  1 file changed, 7 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
-index 2c3c3d6935c0..966000923e8e 100644
 --- a/drivers/i2c/busses/i2c-pxa.c
 +++ b/drivers/i2c/busses/i2c-pxa.c
-@@ -675,16 +675,6 @@ static void i2c_pxa_slave_stop(struct pxa_i2c *i2c)
+@@ -675,16 +675,6 @@ static void i2c_pxa_slave_stop(struct px
   * PXA I2C Master mode
   */
  
@@ -37,7 +35,7 @@ index 2c3c3d6935c0..966000923e8e 100644
  static inline void i2c_pxa_start_message(struct pxa_i2c *i2c)
  {
  	u32 icr;
-@@ -693,8 +683,8 @@ static inline void i2c_pxa_start_message(struct pxa_i2c *i2c)
+@@ -692,8 +682,8 @@ static inline void i2c_pxa_start_message
  	/*
  	 * Step 1: target slave address into IDBR
  	 */
@@ -48,7 +46,7 @@ index 2c3c3d6935c0..966000923e8e 100644
  
  	/*
  	 * Step 2: initiate the write.
-@@ -1006,8 +999,8 @@ static void i2c_pxa_irq_txempty(struct pxa_i2c *i2c, u32 isr)
+@@ -1006,8 +996,8 @@ static void i2c_pxa_irq_txempty(struct p
  		/*
  		 * Write the next address.
  		 */
@@ -59,6 +57,3 @@ index 2c3c3d6935c0..966000923e8e 100644
  
  		/*
  		 * And trigger a repeated start, and send the byte.
--- 
-2.20.1
-

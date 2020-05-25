@@ -16,11 +16,9 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  drivers/i2c/busses/i2c-pxa.c | 325 +++++++++++++++++------------------
  1 file changed, 162 insertions(+), 163 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
-index ee83d2e46de0..e5f00ae39861 100644
 --- a/drivers/i2c/busses/i2c-pxa.c
 +++ b/drivers/i2c/busses/i2c-pxa.c
-@@ -327,7 +327,6 @@ static void i2c_pxa_scream_blue_murder(struct pxa_i2c *i2c, const char *why)
+@@ -327,7 +327,6 @@ static void i2c_pxa_scream_blue_murder(s
  #endif /* ifdef DEBUG / else */
  
  static void i2c_pxa_master_complete(struct pxa_i2c *i2c, int ret);
@@ -28,7 +26,7 @@ index ee83d2e46de0..e5f00ae39861 100644
  
  static inline int i2c_pxa_is_slavemode(struct pxa_i2c *i2c)
  {
-@@ -703,34 +702,6 @@ static inline void i2c_pxa_stop_message(struct pxa_i2c *i2c)
+@@ -700,34 +699,6 @@ static inline void i2c_pxa_stop_message(
  	writel(icr, _ICR(i2c));
  }
  
@@ -63,7 +61,7 @@ index ee83d2e46de0..e5f00ae39861 100644
  /*
   * PXA I2C send master code
   * 1. Load master code to IDBR and send it.
-@@ -759,140 +730,6 @@ static int i2c_pxa_send_mastercode(struct pxa_i2c *i2c)
+@@ -756,140 +727,6 @@ static int i2c_pxa_send_mastercode(struc
  	return (timeout == 0) ? I2C_RETRY : 0;
  }
  
@@ -204,7 +202,7 @@ index ee83d2e46de0..e5f00ae39861 100644
  /*
   * i2c_pxa_master_complete - complete the message and wake up.
   */
-@@ -1099,6 +936,71 @@ static irqreturn_t i2c_pxa_handler(int this_irq, void *dev_id)
+@@ -1096,6 +933,71 @@ static irqreturn_t i2c_pxa_handler(int t
  	return IRQ_HANDLED;
  }
  
@@ -276,7 +274,7 @@ index ee83d2e46de0..e5f00ae39861 100644
  
  static int i2c_pxa_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int num)
  {
-@@ -1132,6 +1034,103 @@ static const struct i2c_algorithm i2c_pxa_algorithm = {
+@@ -1129,6 +1031,103 @@ static const struct i2c_algorithm i2c_px
  	.functionality	= i2c_pxa_functionality,
  };
  
@@ -380,6 +378,3 @@ index ee83d2e46de0..e5f00ae39861 100644
  static const struct i2c_algorithm i2c_pxa_pio_algorithm = {
  	.master_xfer	= i2c_pxa_pio_xfer,
  	.functionality	= i2c_pxa_functionality,
--- 
-2.20.1
-

@@ -15,8 +15,6 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  drivers/i2c/busses/i2c-pxa.c | 12 ++++++++----
  1 file changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
-index ea96dfa6b9d5..b3286d7ab75d 100644
 --- a/drivers/i2c/busses/i2c-pxa.c
 +++ b/drivers/i2c/busses/i2c-pxa.c
 @@ -34,6 +34,9 @@
@@ -29,7 +27,7 @@ index ea96dfa6b9d5..b3286d7ab75d 100644
  #define ICR_START	(1 << 0)	   /* start bit */
  #define ICR_STOP	(1 << 1)	   /* stop bit */
  #define ICR_ACKNAK	(1 << 2)	   /* send ACK(0) or NAK(1) */
-@@ -335,7 +338,7 @@ static void i2c_pxa_abort(struct pxa_i2c *i2c)
+@@ -335,7 +338,7 @@ static void i2c_pxa_abort(struct pxa_i2c
  		return;
  	}
  
@@ -38,7 +36,7 @@ index ea96dfa6b9d5..b3286d7ab75d 100644
  		unsigned long icr = readl(_ICR(i2c));
  
  		icr &= ~ICR_START;
-@@ -390,7 +393,8 @@ static int i2c_pxa_wait_master(struct pxa_i2c *i2c)
+@@ -390,7 +393,8 @@ static int i2c_pxa_wait_master(struct px
  		 * quick check of the i2c lines themselves to ensure they've
  		 * gone high...
  		 */
@@ -48,7 +46,7 @@ index ea96dfa6b9d5..b3286d7ab75d 100644
  			if (i2c_debug > 0)
  				dev_dbg(&i2c->adap.dev, "%s: done\n", __func__);
  			return 1;
-@@ -575,7 +579,7 @@ static void i2c_pxa_slave_start(struct pxa_i2c *i2c, u32 isr)
+@@ -575,7 +579,7 @@ static void i2c_pxa_slave_start(struct p
  	timeout = 0x10000;
  
  	while (1) {
@@ -57,7 +55,7 @@ index ea96dfa6b9d5..b3286d7ab75d 100644
  			break;
  
  		timeout--;
-@@ -638,7 +642,7 @@ static void i2c_pxa_slave_start(struct pxa_i2c *i2c, u32 isr)
+@@ -638,7 +642,7 @@ static void i2c_pxa_slave_start(struct p
  	timeout = 0x10000;
  
  	while (1) {
@@ -66,6 +64,3 @@ index ea96dfa6b9d5..b3286d7ab75d 100644
  			break;
  
  		timeout--;
--- 
-2.20.1
-

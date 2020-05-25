@@ -28,11 +28,9 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  drivers/i2c/busses/i2c-pxa.c | 7 +++----
  1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
-index 760a29fb6af5..f3a11050053c 100644
 --- a/drivers/i2c/busses/i2c-pxa.c
 +++ b/drivers/i2c/busses/i2c-pxa.c
-@@ -364,11 +364,10 @@ static void i2c_pxa_scream_blue_murder(struct pxa_i2c *i2c, const char *why)
+@@ -364,11 +364,10 @@ static void i2c_pxa_scream_blue_murder(s
  	dev_err(dev, "IBMR: %08x IDBR: %08x ICR: %08x ISR: %08x\n",
  		readl(_IBMR(i2c)), readl(_IDBR(i2c)), readl(_ICR(i2c)),
  		readl(_ISR(i2c)));
@@ -47,6 +45,3 @@ index 760a29fb6af5..f3a11050053c 100644
  }
  
  #else /* ifdef DEBUG */
--- 
-2.20.1
-

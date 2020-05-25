@@ -17,11 +17,9 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  drivers/i2c/busses/i2c-pxa.c | 17 ++++++++++++-----
  1 file changed, 12 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
-index b2c7765756e2..19505ffbb8f1 100644
 --- a/drivers/i2c/busses/i2c-pxa.c
 +++ b/drivers/i2c/busses/i2c-pxa.c
-@@ -417,19 +417,26 @@ static void i2c_pxa_abort(struct pxa_i2c *i2c)
+@@ -417,19 +417,26 @@ static void i2c_pxa_abort(struct pxa_i2c
  static int i2c_pxa_wait_bus_not_busy(struct pxa_i2c *i2c)
  {
  	int timeout = DEF_TIMEOUT;
@@ -53,6 +51,3 @@ index b2c7765756e2..19505ffbb8f1 100644
  }
  
  static int i2c_pxa_wait_master(struct pxa_i2c *i2c)
--- 
-2.20.1
-

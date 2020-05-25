@@ -14,8 +14,6 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  drivers/i2c/busses/i2c-pxa.c | 176 +++++++++++++++++++++++++++++++----
  1 file changed, 159 insertions(+), 17 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
-index 0e194d6cd1b5..a7885b8b5031 100644
 --- a/drivers/i2c/busses/i2c-pxa.c
 +++ b/drivers/i2c/busses/i2c-pxa.c
 @@ -20,6 +20,7 @@
@@ -24,9 +22,9 @@ index 0e194d6cd1b5..a7885b8b5031 100644
  #include <linux/errno.h>
 +#include <linux/gpio/consumer.h>
  #include <linux/i2c.h>
+ #include <linux/i2c-pxa.h>
  #include <linux/init.h>
- #include <linux/interrupt.h>
-@@ -28,6 +29,7 @@
+@@ -29,6 +30,7 @@
  #include <linux/module.h>
  #include <linux/of.h>
  #include <linux/of_device.h>
@@ -34,7 +32,7 @@ index 0e194d6cd1b5..a7885b8b5031 100644
  #include <linux/platform_device.h>
  #include <linux/platform_data/i2c-pxa.h>
  #include <linux/slab.h>
-@@ -260,6 +262,11 @@ struct pxa_i2c {
+@@ -261,6 +263,11 @@ struct pxa_i2c {
  	bool			highmode_enter;
  	u32			fm_mask;
  	u32			hs_mask;
@@ -46,7 +44,7 @@ index 0e194d6cd1b5..a7885b8b5031 100644
  };
  
  #define _IBMR(i2c)	((i2c)->reg_ibmr)
-@@ -559,13 +566,8 @@ static void i2c_pxa_set_slave(struct pxa_i2c *i2c, int errcode)
+@@ -560,13 +567,8 @@ static void i2c_pxa_set_slave(struct pxa
  #define i2c_pxa_set_slave(i2c, err)	do { } while (0)
  #endif
  
@@ -61,7 +59,7 @@ index 0e194d6cd1b5..a7885b8b5031 100644
  	/* reset according to 9.8 */
  	writel(ICR_UR, _ICR(i2c));
  	writel(I2C_ISR_INIT, _ISR(i2c));
-@@ -584,12 +586,25 @@ static void i2c_pxa_reset(struct pxa_i2c *i2c)
+@@ -585,12 +587,25 @@ static void i2c_pxa_reset(struct pxa_i2c
  #endif
  
  	i2c_pxa_set_slave(i2c, 0);
@@ -87,7 +85,7 @@ index 0e194d6cd1b5..a7885b8b5031 100644
  
  #ifdef CONFIG_I2C_PXA_SLAVE
  /*
-@@ -1043,6 +1058,7 @@ static int i2c_pxa_do_xfer(struct pxa_i2c *i2c, struct i2c_msg *msg, int num)
+@@ -1002,6 +1017,7 @@ static int i2c_pxa_do_xfer(struct pxa_i2
  	ret = i2c_pxa_wait_bus_not_busy(i2c);
  	if (ret) {
  		dev_err(&i2c->adap.dev, "i2c_pxa: timeout waiting for bus free\n");
@@ -95,7 +93,7 @@ index 0e194d6cd1b5..a7885b8b5031 100644
  		goto out;
  	}
  
-@@ -1088,6 +1104,7 @@ static int i2c_pxa_do_xfer(struct pxa_i2c *i2c, struct i2c_msg *msg, int num)
+@@ -1047,6 +1063,7 @@ static int i2c_pxa_do_xfer(struct pxa_i2
  
  	if (!timeout && i2c->msg_num) {
  		i2c_pxa_scream_blue_murder(i2c, "timeout with active message");
@@ -103,7 +101,7 @@ index 0e194d6cd1b5..a7885b8b5031 100644
  		ret = I2C_RETRY;
  	}
  
-@@ -1277,6 +1294,129 @@ static int i2c_pxa_probe_pdata(struct platform_device *pdev,
+@@ -1228,6 +1245,129 @@ static int i2c_pxa_probe_pdata(struct pl
  	return 0;
  }
  
@@ -233,7 +231,7 @@ index 0e194d6cd1b5..a7885b8b5031 100644
  static int i2c_pxa_probe(struct platform_device *dev)
  {
  	struct i2c_pxa_platform_data *plat = dev_get_platdata(&dev->dev);
-@@ -1289,6 +1429,16 @@ static int i2c_pxa_probe(struct platform_device *dev)
+@@ -1240,6 +1380,16 @@ static int i2c_pxa_probe(struct platform
  	if (!i2c)
  		return -ENOMEM;
  
@@ -250,9 +248,9 @@ index 0e194d6cd1b5..a7885b8b5031 100644
  	res = platform_get_resource(dev, IORESOURCE_MEM, 0);
  	i2c->reg_base = devm_ioremap_resource(&dev->dev, res);
  	if (IS_ERR(i2c->reg_base))
-@@ -1298,8 +1448,9 @@ static int i2c_pxa_probe(struct platform_device *dev)
- 	if (irq < 0)
+@@ -1251,8 +1401,9 @@ static int i2c_pxa_probe(struct platform
  		return irq;
+ 	}
  
 -	/* Default adapter num to device id; i2c_pxa_probe_dt can override. */
 -	i2c->adap.nr = dev->id;
@@ -262,7 +260,7 @@ index 0e194d6cd1b5..a7885b8b5031 100644
  
  	ret = i2c_pxa_probe_dt(dev, i2c, &i2c_type);
  	if (ret > 0)
-@@ -1307,9 +1458,6 @@ static int i2c_pxa_probe(struct platform_device *dev)
+@@ -1260,9 +1411,6 @@ static int i2c_pxa_probe(struct platform
  	if (ret < 0)
  		return ret;
  
@@ -272,7 +270,7 @@ index 0e194d6cd1b5..a7885b8b5031 100644
  	spin_lock_init(&i2c->lock);
  	init_waitqueue_head(&i2c->wait);
  
-@@ -1375,12 +1523,6 @@ static int i2c_pxa_probe(struct platform_device *dev)
+@@ -1332,12 +1480,6 @@ static int i2c_pxa_probe(struct platform
  
  	i2c_pxa_reset(i2c);
  
@@ -285,6 +283,3 @@ index 0e194d6cd1b5..a7885b8b5031 100644
  	ret = i2c_add_numbered_adapter(&i2c->adap);
  	if (ret < 0)
  		goto ereqirq;
--- 
-2.20.1
-

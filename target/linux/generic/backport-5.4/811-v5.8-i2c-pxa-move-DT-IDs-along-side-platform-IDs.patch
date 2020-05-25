@@ -14,11 +14,9 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  drivers/i2c/busses/i2c-pxa.c | 18 +++++++++---------
  1 file changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
-index 482768a9fdd2..760a29fb6af5 100644
 --- a/drivers/i2c/busses/i2c-pxa.c
 +++ b/drivers/i2c/busses/i2c-pxa.c
-@@ -200,6 +200,15 @@ static struct pxa_reg_layout pxa_reg_layout[] = {
+@@ -200,6 +200,15 @@ static struct pxa_reg_layout pxa_reg_lay
  	},
  };
  
@@ -34,7 +32,7 @@ index 482768a9fdd2..760a29fb6af5 100644
  static const struct platform_device_id i2c_pxa_id_table[] = {
  	{ "pxa2xx-i2c",		REGS_PXA2XX },
  	{ "pxa3xx-pwri2c",	REGS_PXA3XX },
-@@ -1184,15 +1193,6 @@ static const struct i2c_algorithm i2c_pxa_pio_algorithm = {
+@@ -1181,15 +1190,6 @@ static const struct i2c_algorithm i2c_px
  	.functionality	= i2c_pxa_functionality,
  };
  
@@ -50,6 +48,3 @@ index 482768a9fdd2..760a29fb6af5 100644
  static int i2c_pxa_probe_dt(struct platform_device *pdev, struct pxa_i2c *i2c,
  			    enum pxa_i2c_types *i2c_types)
  {
--- 
-2.20.1
-
