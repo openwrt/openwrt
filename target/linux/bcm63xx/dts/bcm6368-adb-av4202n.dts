@@ -9,6 +9,13 @@
 	model = "ADB P.DG AV4202N";
 	compatible = "adb,av4202n", "brcm,bcm6368";
 
+	aliases {
+		led-boot = &led_power_white;
+		led-failsafe = &led_power_white;
+		led-running = &led_power_white;
+		led-upgrade = &led_power_white;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -38,7 +45,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		power_white {
+		led_power_white: power_white {
 			label = "AV4202N:white:power";
 			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
 			default-state = "on";
@@ -71,7 +78,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -98,5 +105,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

@@ -8,6 +8,13 @@
 	model = "Observa VH4032N";
 	compatible = "observa,vh4032n", "brcm,bcm6368";
 
+	aliases {
+		led-boot = &led_power_blue;
+		led-failsafe = &led_power_blue;
+		led-running = &led_power_blue;
+		led-upgrade = &led_power_blue;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -53,7 +60,7 @@
 			label = "VH4032N:red:hspa";
 			gpios = <&pinctrl 12 1>;
 		};
-		power_blue {
+		led_power_blue: power_blue {
 			label = "VH4032N:blue:power";
 			gpios = <&pinctrl 22 0>;
 			default-state = "on";
@@ -87,7 +94,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -114,5 +121,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

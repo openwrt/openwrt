@@ -8,6 +8,13 @@
 	model = "Broadcom BCM96348GW-11 reference board";
 	compatible = "brcm,bcm96348gw-11", "brcm,bcm6348";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -30,7 +37,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		power_green {
+		led_power_green: power_green {
 			label = "96348GW-11:green:power";
 			gpios = <&pinctrl 0 1>;
 			default-state = "on";
@@ -55,7 +62,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "brcm,bcm963xx-cfe-nor-partitions";
@@ -68,5 +75,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

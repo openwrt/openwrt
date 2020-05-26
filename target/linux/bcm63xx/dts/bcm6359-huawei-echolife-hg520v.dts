@@ -8,6 +8,13 @@
 	model = "Huawei EchoLife HG520v";
 	compatible = "huawei,echolife-hg520v", "brcm,bcm6359", "brcm,bcm6358";
 
+	aliases {
+		led-boot = &led_inet_green;
+		led-failsafe = &led_inet_green;
+		led-running = &led_inet_green;
+		led-upgrade = &led_inet_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -30,7 +37,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		inet_green {
+		led_inet_green: inet_green {
 			label = "HW520:green:net";
 			gpios = <&pinctrl 32 1>;
 		};
@@ -38,7 +45,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -65,5 +72,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

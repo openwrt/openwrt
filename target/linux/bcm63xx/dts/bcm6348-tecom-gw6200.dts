@@ -8,6 +8,13 @@
 	model = "TECOM GW6200";
 	compatible = "tecom,gw6200", "brcm,bcm6348";
 
+	aliases {
+		led-boot = &led_line1_green;
+		led-failsafe = &led_line1_green;
+		led-running = &led_line1_green;
+		led-upgrade = &led_line1_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -30,7 +37,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		line1_green {
+		led_line1_green: line1_green {
 			label = "GW6200:green:line1";
 			gpios = <&pinctrl 4 1>;
 		};
@@ -50,7 +57,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -82,5 +89,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

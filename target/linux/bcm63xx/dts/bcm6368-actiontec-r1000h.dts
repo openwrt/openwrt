@@ -8,6 +8,13 @@
 	model = "Actiontec R1000H";
 	compatible = "actiontec,r1000h", "brcm,bcm6368";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -47,7 +54,7 @@
 			gpios = <&pinctrl 21 1>;
 		};
 
-		power_green {
+		led_power_green: power_green {
 			label = "R1000H:green:power";
 			gpios = <&pinctrl 22 0>;
 			default-state = "on";
@@ -76,7 +83,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -100,9 +107,9 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };
 
 &uart1 {
-	status = "ok";
+	status = "okay";
 };

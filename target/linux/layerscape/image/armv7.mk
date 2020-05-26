@@ -19,7 +19,7 @@ define Device/ls1021atwr
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := TWR-LS1021A
   DEVICE_VARIANT := Default
-  DEVICE_PACKAGES += layerscape-rcw-ls1021atwr
+  DEVICE_PACKAGES += layerscape-rcw
   DEVICE_DTS := ls1021a-twr
   IMAGE/firmware.bin := \
     ls-clean | \

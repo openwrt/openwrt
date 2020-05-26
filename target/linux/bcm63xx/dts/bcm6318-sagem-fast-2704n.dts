@@ -8,6 +8,13 @@
 	model = "Sagem F@st 2704N";
 	compatible = "sagem,fast-2704n", "brcm,bcm6318";
 
+	aliases {
+		led-boot = &led_power_red;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_red;
+		led-upgrade = &led_power_red;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -76,7 +83,7 @@
 			label = "F@ST2704N:green:dsl";
 			gpios = <&pinctrl 10 1>;
 		};
-		power_red {
+		led_power_red: power_red {
 			label = "F@ST2704N:red:power";
 			gpios = <&pinctrl 11 1>;
 		};
@@ -93,7 +100,7 @@
 };
 
 &hsspi {
-	status = "ok";
+	status = "okay";
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -131,5 +138,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

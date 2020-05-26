@@ -245,19 +245,15 @@ mtdsplit_uimage_parse_generic(struct mtd_info *master,
 				      uimage_verify_default);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static const struct of_device_id mtdsplit_uimage_of_match_table[] = {
 	{ .compatible = "denx,uimage" },
 	{},
 };
-#endif
 
 static struct mtd_part_parser uimage_generic_parser = {
 	.owner = THIS_MODULE,
 	.name = "uimage-fw",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 	.of_match_table = mtdsplit_uimage_of_match_table,
-#endif
 	.parse_fn = mtdsplit_uimage_parse_generic,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
@@ -312,19 +308,15 @@ mtdsplit_uimage_parse_netgear(struct mtd_info *master,
 				      uimage_verify_wndr3700);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static const struct of_device_id mtdsplit_uimage_netgear_of_match_table[] = {
 	{ .compatible = "netgear,uimage" },
 	{},
 };
-#endif
 
 static struct mtd_part_parser uimage_netgear_parser = {
 	.owner = THIS_MODULE,
 	.name = "netgear-fw",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 	.of_match_table = mtdsplit_uimage_netgear_of_match_table,
-#endif
 	.parse_fn = mtdsplit_uimage_parse_netgear,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
@@ -364,19 +356,15 @@ mtdsplit_uimage_parse_edimax(struct mtd_info *master,
 				       uimage_find_edimax);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static const struct of_device_id mtdsplit_uimage_edimax_of_match_table[] = {
 	{ .compatible = "edimax,uimage" },
 	{},
 };
-#endif
 
 static struct mtd_part_parser uimage_edimax_parser = {
 	.owner = THIS_MODULE,
 	.name = "edimax-fw",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 	.of_match_table = mtdsplit_uimage_edimax_of_match_table,
-#endif
 	.parse_fn = mtdsplit_uimage_parse_edimax,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
@@ -407,19 +395,15 @@ mtdsplit_uimage_parse_fonfxc(struct mtd_info *master,
 				       uimage_find_fonfxc);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static const struct of_device_id mtdsplit_uimage_fonfxc_of_match_table[] = {
 	{ .compatible = "fonfxc,uimage" },
 	{},
 };
-#endif
 
 static struct mtd_part_parser uimage_fonfxc_parser = {
 	.owner = THIS_MODULE,
 	.name = "fonfxc-fw",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 	.of_match_table = mtdsplit_uimage_fonfxc_of_match_table,
-#endif
 	.parse_fn = mtdsplit_uimage_parse_fonfxc,
 };
 
@@ -464,19 +448,15 @@ mtdsplit_uimage_parse_okli(struct mtd_info *master,
 				      uimage_verify_okli);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static const struct of_device_id mtdsplit_uimage_okli_of_match_table[] = {
 	{ .compatible = "openwrt,okli" },
 	{},
 };
-#endif
 
 static struct mtd_part_parser uimage_okli_parser = {
 	.owner = THIS_MODULE,
 	.name = "okli-fw",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 	.of_match_table = mtdsplit_uimage_okli_of_match_table,
-#endif
 	.parse_fn = mtdsplit_uimage_parse_okli,
 };
 

@@ -11,7 +11,6 @@
 	model = "MikroTik RouterBOARD wAP G-5HacT2HnD";
 
 	aliases {
-		label-mac-device = &eth1;
 		mdio-gpio1 = &mdio2;
 		serial0 = &uart;
 	};
@@ -53,8 +52,6 @@
 &eth1 {
 	status = "okay";
 
-	mtd-mac-address = <&hard_config 0x10>;
-
 	pll-data = <0x03000101 0x80000101 0x80001313>;
 	phy-handle = <&phy0>;
 
@@ -84,37 +81,33 @@
 				label = "RouterBoot";
 				reg = <0x0 0x20000>;
 				read-only;
-				compatible = "fixed-partitions";
+				compatible = "mikrotik,routerboot-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
 
 				partition@0 {
 					label = "bootloader1";
-					reg = <0x0 0xe000>;
+					reg = <0x0 0x0>;
 					read-only;
 				};
 
-				hard_config: partition@e000 {
-					label = "hard_config";
-					reg = <0xe000 0x1000>;
+				hard_config: hard_config {
 					read-only;
 				};
 
-				partition@f000 {
-					label = "bios";
-					reg = <0xf000 0x1000>;
+				bios {
+					size = <0x1000>;
 					read-only;
 				};
 
 				partition@10000 {
 					label = "bootloader2";
-					reg = <0x10000 0xf000>;
+					reg = <0x10000 0x0>;
 					read-only;
 				};
 
-				partition@1f000 {
+				soft_config {
 					label = "soft_config";
-					reg = <0x1f000 0x1000>;
 				};
 			};
 

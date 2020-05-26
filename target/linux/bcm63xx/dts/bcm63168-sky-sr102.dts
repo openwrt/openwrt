@@ -8,6 +8,13 @@
 	model = "SKY SR102";
 	compatible = "sky,sr102", "brcm,bcm63168", "brcm,bcm63268";
 
+	aliases {
+		led-boot = &led_power_white;
+		led-failsafe = &led_power_white;
+		led-running = &led_power_white;
+		led-upgrade = &led_power_white;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -50,7 +57,7 @@
 			label = "SR102:white:inet";
 			gpios = <&pinctrl 5 0>;
 		};
-		power_white {
+		led_power_white: power_white {
 			label = "SR102:white:power";
 			gpios = <&pinctrl 6 0>;
 			default-state = "on";
@@ -95,7 +102,7 @@
 };
 
 &hsspi {
-	status = "ok";
+	status = "okay";
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -114,5 +121,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

@@ -7,7 +7,10 @@
 
 board_config_update
 
-case "$(board_name)" in
+board=$(board_name)
+model="${board##*,}"
+
+case "$board" in
 actiontec,r1000h)
 	ucidef_set_led_usbport "usb" "USB" "R1000H:green:usb" "usb1-port1" "usb2-port1"
 	;;
@@ -17,6 +20,12 @@ adb,a4001n)
 adb,a4001n1)
 	ucidef_set_led_netdev "lan" "LAN" "A4001N1:green:eth" "eth0"
 	ucidef_set_led_usbdev "usb" "USB" "A4001N1:green:3g" "1-1"
+	;;
+adb,pdg-a4001n-a-000-1a1-ax)
+	ucidef_set_led_netdev "lan" "LAN" "$model:green:internet" "eth0.1"
+	ucidef_set_led_netdev "wan" "WAN" "$model:green:adsl" "eth0.2"
+	ucidef_set_led_netdev "wlan0" "WIFI" "$model:green:wifi" "wlan0"
+	ucidef_set_led_usbdev "usb" "USB" "$model:green:service" "1-1"
 	;;
 adb,av4202n)
 	ucidef_set_led_netdev "wlan0" "WLAN" "AV4202N:blue:wifi" "wlan0"
@@ -29,6 +38,10 @@ bt,home-hub-2-a)
 	;;
 comtrend,ar-5315u)
 	ucidef_set_led_usbdev "usb" "USB" "AR-5315u:green:usb" "1-1"
+	;;
+comtrend,vr-3032u|\
+huawei,hg253s-v2)
+	ucidef_set_led_usbdev "usb" "USB" "$model:green:usb" "1-1"
 	;;
 huawei,echolife-hg553)
 	ucidef_set_led_netdev "lan" "LAN" "HW553:blue:lan" "eth0"
@@ -60,6 +73,11 @@ netgear,dgnd3700-v1)
 	ucidef_set_led_usbdev "usb1" "USB1" "DGND3700v1_3800B:green:usb-back" "1-1"
 	ucidef_set_led_usbdev "usb2" "USB2" "DGND3700v1_3800B:green:usb-front" "1-2"
 	;;
+netgear,dgnd3700-v2)
+	ucidef_set_led_netdev "lan" "LAN" "$model:green:ethernet" "eth0"
+	ucidef_set_led_usbdev "usb1" "USB1" "$model:green:usb1" "1-1"
+	ucidef_set_led_usbdev "usb2" "USB2" "$model:green:usb2" "1-2"
+	;;
 netgear,evg2000)
 	ucidef_set_led_netdev "lan" "LAN" "EVG2000:green:lan" "eth0"
 	ucidef_set_led_netdev "wan" "WAN" "EVG2000:green:wan" "eth1"
@@ -75,6 +93,9 @@ sagem,fast-2704n)
 	;;
 sagem,fast-2704-v2)
 	ucidef_set_led_usbdev "usb" "USB" "F@ST2704V2:green:usb" "1-1"
+	;;
+sercomm,ad1018)
+	ucidef_set_led_netdev "wlan0" "WLAN" "$model:green:wifi" "wlan0"
 	;;
 sercomm,ad1018-nor)
 	ucidef_set_led_netdev "wlan0" "WLAN" "AD1018:green:wifi" "wlan0"

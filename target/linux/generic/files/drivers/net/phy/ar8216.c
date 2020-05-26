@@ -943,10 +943,14 @@ ar8229_init_globals(struct ar8xxx_priv *priv)
 	ar8xxx_reg_set(priv, AR8229_REG_QM_CTRL,
 		       AR8229_QM_CTRL_ARP_EN);
 
-	/* Enable Broadcast/Multicast frames transmitted to the CPU */
+	/*
+	 * Enable Broadcast/unknown multicast and unicast frames
+	 * transmitted to the CPU port.
+	 */
 	ar8xxx_reg_set(priv, AR8216_REG_FLOOD_MASK,
 		       AR8229_FLOOD_MASK_BC_DP(0) |
-		       AR8229_FLOOD_MASK_MC_DP(0));
+		       AR8229_FLOOD_MASK_MC_DP(0) |
+		       AR8229_FLOOD_MASK_UC_DP(0));
 
 	/* setup MTU */
 	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
@@ -1008,7 +1012,7 @@ ar7240sw_init_globals(struct ar8xxx_priv *priv)
 
 	/* Enable Broadcast frames transmitted to the CPU */
 	ar8xxx_reg_set(priv, AR8216_REG_FLOOD_MASK,
-		       AR8236_FM_CPU_BROADCAST_EN);
+		       AR8216_FM_CPU_BROADCAST_EN);
 
 	/* setup MTU */
 	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
@@ -1074,9 +1078,14 @@ ar8236_init_globals(struct ar8xxx_priv *priv)
 	ar8xxx_reg_set(priv, AR8216_REG_ATU_CTRL,
 		   AR8236_ATU_CTRL_RES);
 
-	/* enable cpu port to receive multicast and broadcast frames */
+	/*
+	 * Enable Broadcast/unknown multicast and unicast frames
+	 * transmitted to the CPU port.
+	 */
 	ar8xxx_reg_set(priv, AR8216_REG_FLOOD_MASK,
-		   AR8236_FM_CPU_BROADCAST_EN | AR8236_FM_CPU_BCAST_FWD_EN);
+		       AR8229_FLOOD_MASK_BC_DP(0) |
+		       AR8229_FLOOD_MASK_MC_DP(0) |
+		       AR8229_FLOOD_MASK_UC_DP(0));
 
 	/* Enable MIB counters */
 	ar8xxx_rmw(priv, AR8216_REG_MIB_FUNC, AR8216_MIB_FUNC | AR8236_MIB_EN,

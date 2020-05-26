@@ -8,6 +8,13 @@
 	model = "ADB P.DG A4001N1";
 	compatible = "adb,a4001n1", "brcm,bcm6328";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -45,7 +52,7 @@
 			label = "A4001N1:green:ppp";
 			gpios = <&pinctrl 3 1>;
 		};
-		power_green {
+		led_power_green: power_green {
 			label = "A4001N1:green:power";
 			gpios = <&pinctrl 4 1>;
 			default-state = "on";
@@ -90,7 +97,7 @@
 };
 
 &hsspi {
-	status = "ok";
+	status = "okay";
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -128,5 +135,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

@@ -12,6 +12,7 @@ actiontec,r1000h|\
 dynalink,rta770bw|\
 dynalink,rta770w|\
 netgear,cvg834g|\
+netgear,dgnd3700-v2|\
 netgear,evg2000|\
 t-com,speedport-w-303v|\
 t-com,speedport-w-500v)
@@ -19,6 +20,7 @@ t-com,speedport-w-500v)
 	;;
 adb,a4001n1|\
 adb,a4001n|\
+adb,pdg-a4001n-a-000-1a1-ax|\
 adb,av4202n|\
 brcm,bcm963281tan|\
 brcm,bcm96328avng|\
@@ -99,6 +101,14 @@ sagem,fast-2704n)
 	ucidef_add_switch "switch0" \
 		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "8t@eth0"
 	;;
+comtrend,vg-8050)
+	ucidef_add_switch "switch0" \
+		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "8t@eth0"
+	;;
+comtrend,vr-3032u)
+	ucidef_add_switch "switch0" \
+		"0:lan:2" "1:lan:3" "2:lan:4" "3:lan:1" "8t@eth0"
+	;;
 comtrend,wap-5813n)
 	ucidef_add_switch "switch0" \
 		"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5t@eth0"
@@ -110,6 +120,10 @@ sfr,neufbox-4-sercomm-r0)
 	ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
 	ucidef_add_switch "switch0" \
 		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5t@eth1"
+	;;
+huawei,hg253s-v2)
+	ucidef_add_switch "switch0" \
+		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "8t@eth0"
 	;;
 inteno,vg50)
 	ucidef_add_switch "switch0" \
@@ -123,6 +137,7 @@ netgear,dgnd3700-v1)
 	ucidef_add_switch "switch0" \
 		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "8t@eth0"
 	;;
+sercomm,ad1018|\
 sercomm,ad1018-nor)
 	ucidef_add_switch "switch0" \
 		"1:lan:3" "2:lan:2" "3:lan:1" "0:wan" "8t@eth0"

@@ -147,25 +147,32 @@ define Device/alfa-network_ap120c-ac
 endef
 TARGET_DEVICES += alfa-network_ap120c-ac
 
-define Device/aruba_ap-303
+define Device/aruba_glenmorangie
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Aruba
-	DEVICE_MODEL := AP-303
 	SOC := qcom-ipq4029
 	DEVICE_PACKAGES := ipq-wifi-aruba_ap-303
 	IMAGES := sysupgrade.bin
+endef
+
+define Device/aruba_ap-303
+	$(call Device/aruba_glenmorangie)
+	DEVICE_MODEL := AP-303
 endef
 TARGET_DEVICES += aruba_ap-303
 
 define Device/aruba_ap-303h
-	$(call Device/FitImageLzma)
-	DEVICE_VENDOR := Aruba
+	$(call Device/aruba_glenmorangie)
 	DEVICE_MODEL := AP-303H
-	SOC := qcom-ipq4029
-	DEVICE_PACKAGES := ipq-wifi-aruba_ap-303
-	IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += aruba_ap-303h
+
+define Device/aruba_ap-365
+	$(call Device/aruba_glenmorangie)
+	DEVICE_MODEL := AP-365
+	DEVICE_PACKAGES += kmod-hwmon-ad7418
+endef
+TARGET_DEVICES += aruba_ap-365
 
 define Device/asus_map-ac2200
 	$(call Device/FitImageLzma)

@@ -90,7 +90,7 @@
 &spi0 {
 	status = "okay";
 
-	w25q40@0 {
+	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <3125000>;
@@ -104,19 +104,17 @@
 				label = "RouterBoot";
 				reg = <0x0 0x40000>;
 				read-only;
-				compatible = "fixed-partitions";
+				compatible = "mikrotik,routerboot-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
 
 				partition@0 {
 					label = "bootloader1";
-					reg = <0x0 0xf000>;
+					reg = <0x0 0x0>;
 					read-only;
 				};
 
-				hard_config: partition@f000 {
-					label = "hard_config";
-					reg = <0xf000 0x1000>;
+				hard_config: hard_config {
 					read-only;
 				};
 
@@ -126,9 +124,7 @@
 					read-only;
 				};
 
-				partition@20000 {
-					label = "soft_config";
-					reg = <0x20000 0x1000>;
+				soft_config {
 				};
 
 				partition@30000 {
@@ -140,7 +136,7 @@
 		};
 	};
 
-	w25q128@1 {
+	flash@1 {
 		compatible = "jedec,spi-nor";
 		reg = <1>;
 		// XXX empiric value to obtain actual 10MHz SCK at the chip
@@ -162,18 +158,11 @@
 	};
 };
 
-&gmac0 {
-	mtd-mac-address = <&hard_config 0x0010>;
-	mtd-mac-address-increment = <1>;
-};
-
 &switch0 {
 	ports {
 		port@0 {
 			status = "okay";
 			label = "wan";
-			mtd-mac-address = <&hard_config 0x0010>;
-			mtd-mac-address-increment = <2>;
 		};
 
 		port@1 {

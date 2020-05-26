@@ -8,6 +8,13 @@
 	model = "D-Link DSL-2750B/DSL-2751 rev D1";
 	compatible = "d-link,dsl-275xb-d1", "brcm,bcm6318";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -44,7 +51,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		power_green {
+		led_power_green: power_green {
 			label = "dsl-275xb:green:power";
 			gpios = <&pinctrl 3 1>;
 			default-state = "on";
@@ -84,7 +91,7 @@
 };
 
 &hsspi {
-	status = "ok";
+	status = "okay";
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -129,5 +136,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

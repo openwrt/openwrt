@@ -44,8 +44,6 @@
 extern unsigned char workspace[];
 
 
-extern void board_init(void);
-
 static CLzmaDecoderState lzma_state;
 static unsigned char *lzma_data;
 static unsigned long lzma_datasize;
@@ -135,11 +133,10 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1,
 			      unsigned long);
 	int res;
 
-	board_init();
-
 	printf("\n\nOpenWrt kernel loader for BCM63XX\n");
 	printf("Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>\n");
 	printf("Copyright (C) 2014 Jonas Gorski <jogo@openwrt.org>\n");
+	printf("Copyright (C) 2020 Alvaro Fernandez Rojas <noltari@gmail.com>\n");
 
 	lzma_init_data();
 

@@ -170,6 +170,28 @@ define Device/tplink_tl-wa901nd-v2
 endef
 TARGET_DEVICES += tplink_tl-wa901nd-v2
 
+define Device/tplink_tl-wa901nd-v4
+  $(Device/tplink-4mlzma)
+  SOC := tp9343
+  DEVICE_MODEL := TL-WA901ND
+  DEVICE_VARIANT := v4
+  TPLINK_HWID := 0x09010004
+  SUPPORTED_DEVICES += tl-wa901nd-v4
+  IMAGE/factory.bin := tplink-v1-image factory -C EU
+endef
+TARGET_DEVICES += tplink_tl-wa901nd-v4
+
+define Device/tplink_tl-wa901nd-v5
+  $(Device/tplink-4mlzma)
+  SOC := tp9343
+  DEVICE_MODEL := TL-WA901ND
+  DEVICE_VARIANT := v5
+  TPLINK_HWID := 0x09010005
+  SUPPORTED_DEVICES += tl-wa901nd-v5
+  IMAGE/factory.bin := tplink-v1-image factory -C EU
+endef
+TARGET_DEVICES += tplink_tl-wa901nd-v5
+
 define Device/tplink_tl-wr703n
   $(Device/tplink-4mlzma)
   SOC := ar9331

@@ -8,6 +8,13 @@
 	model = "ASMAX AR 1004g";
 	compatible = "asmax,ar-1004g", "brcm,bcm6348";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -30,7 +37,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		power_green {
+		led_power_green: power_green {
 			label = "AR1004G:green:power";
 			gpios = <&pinctrl 0 1>;
 			default-state = "on";
@@ -47,7 +54,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -79,5 +86,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

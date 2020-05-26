@@ -19,7 +19,7 @@ Reduces overhead when using X
  module_param_named(mousepoll, hid_mousepoll_interval, uint, 0644);
  MODULE_PARM_DESC(mousepoll, "Polling interval of mice");
  
-@@ -1101,7 +1101,9 @@ static int usbhid_start(struct hid_devic
+@@ -1114,7 +1114,9 @@ static int usbhid_start(struct hid_devic
  		 */
  		switch (hid->collection->usage) {
  		case HID_GD_MOUSE:

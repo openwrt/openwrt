@@ -222,7 +222,7 @@ Signed-off-by: Yaroslav Rosomakho <yaroslavros@gmail.com>
  static inline int mmc_blk_part_switch(struct mmc_card *card,
  				      unsigned int part_type);
  
-@@ -2867,6 +2874,7 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2868,6 +2875,7 @@ static int mmc_blk_probe(struct mmc_card
  {
  	struct mmc_blk_data *md, *part_md;
  	char cap_str[10];
@@ -230,7 +230,7 @@ Signed-off-by: Yaroslav Rosomakho <yaroslavros@gmail.com>
  
  	/*
  	 * Check that the card supports the command class(es) we need.
-@@ -2874,7 +2882,16 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2875,7 +2883,16 @@ static int mmc_blk_probe(struct mmc_card
  	if (!(card->csd.cmdclass & CCC_BLOCK_READ))
  		return -ENODEV;
  
@@ -248,7 +248,7 @@ Signed-off-by: Yaroslav Rosomakho <yaroslavros@gmail.com>
  
  	card->complete_wq = alloc_workqueue("mmc_complete",
  					WQ_MEM_RECLAIM | WQ_HIGHPRI, 0);
-@@ -2889,9 +2906,14 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2890,9 +2907,14 @@ static int mmc_blk_probe(struct mmc_card
  
  	string_get_size((u64)get_capacity(md->disk), 512, STRING_UNITS_2,
  			cap_str, sizeof(cap_str));

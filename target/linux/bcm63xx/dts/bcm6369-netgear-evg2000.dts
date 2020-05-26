@@ -8,6 +8,13 @@
 	model = "Netgear EVG2000";
 	compatible = "netgear,evg2000", "brcm,bcm6369", "brcm,bcm6368";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -57,7 +64,7 @@
 			label = "EVG2000:green:usb";
 			gpios = <&pinctrl 15 1>;
 		};
-		power_green {
+		led_power_green: power_green {
 			label = "EVG2000:green:power";
 			gpios = <&pinctrl 22 1>;
 			default-state = "on";
@@ -82,7 +89,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -120,5 +127,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

@@ -16,16 +16,4 @@
 #define CONFIG_DCACHE_SIZE	(32 * 1024)
 #define CONFIG_CACHELINE_SIZE	16
 
-#ifndef CONFIG_FLASH_OFFS
-#define CONFIG_FLASH_OFFS	0
-#endif
-
-#ifndef CONFIG_FLASH_MAX
-#define CONFIG_FLASH_MAX	0
-#endif
-
-#ifndef CONFIG_FLASH_STEP
-#define CONFIG_FLASH_STEP	0x1000
-#endif
-
 #endif /* _CONFIG_H_ */

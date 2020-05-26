@@ -8,6 +8,13 @@
 	model = "Netgear DGND3700v1/DGND3800B";
 	compatible = "netgear,dgnd3700-v1", "brcm,bcm6368";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -76,7 +83,7 @@
 			label = "DGND3700v1_3800B:green:lan";
 			gpios = <&pinctrl 23 1>;
 		};
-		power_green {
+		led_power_green: power_green {
 			label = "DGND3700v1_3800B:green:power";
 			gpios = <&pinctrl 24 1>;
 			default-state = "on";
@@ -93,7 +100,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -180,6 +187,32 @@
 	};
 };
 
+&nflash {
+	status = "okay";
+
+	nandcs@0 {
+		compatible = "brcm,nandcs";
+		#size-cells = <1>;
+		#address-cells = <1>;
+		reg = <0>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-strength = <15>;
+		nand-on-flash-bbt;
+		brcm,nand-oob-sector-size = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "storage";
+				reg = <0x0000000 0x8000000>;
+			};
+		};
+	};
+};
+
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

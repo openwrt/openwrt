@@ -194,11 +194,7 @@ static int gpio_apu2_probe (struct platform_device *dev)
 		}
 	}
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,5,0)
-	gpio_apu2_chip.dev = &dev->dev;
-#else
 	gpio_apu2_chip.parent = &dev->dev;
-#endif
 	ret = gpiochip_add (&gpio_apu2_chip);
 	if (ret) {
 		pr_err ("%s: adding gpiochip failed\n", DEVNAME);
@@ -209,12 +205,7 @@ static int gpio_apu2_probe (struct platform_device *dev)
 
 static int gpio_apu2_remove (struct platform_device *dev)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
-	int ret;
-	ret = gpiochip_remove (&gpio_apu2_chip);
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0) */
 	gpiochip_remove (&gpio_apu2_chip);
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0) */
 	return 0;
 }
 

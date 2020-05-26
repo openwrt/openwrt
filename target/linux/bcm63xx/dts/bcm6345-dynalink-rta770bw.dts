@@ -8,6 +8,13 @@
 	model = "Siemens Gigaset SE515";
 	compatible = "dynalink,rta770bw", "brcm,bcm6345";
 
+	aliases {
+		led-boot = &led_diag;
+		led-failsafe = &led_diag;
+		led-running = &led_diag;
+		led-upgrade = &led_diag;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -40,7 +47,7 @@
 			gpios = <&gpio0 8 0>;
 		};
 
-		diag {
+		led_diag: diag {
 			label = "RTA770BW:green:diag";
 			gpios = <&gpio0 10 1>;
 		};
@@ -53,7 +60,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -80,5 +87,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

@@ -4,6 +4,7 @@
 	compatible = "brcm,bcm6362";
 
 	aliases {
+		nflash = &nflash;
 		pinctrl = &pinctrl;
 		serial0 = &uart0;
 		serial1 = &uart1;
@@ -281,6 +282,30 @@
 			reg = <0x10001000 0x600>;
 			interrupts = <5>;
 			/* clocks = <&clkctl 16>; */
+		};
+
+		nflash: nand@10000200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,nand-bcm6368",
+				     "brcm,brcmnand-v2.2",
+				     "brcm,brcmnand";
+			reg = <0x10000200 0x180>,
+			      <0x10000600 0x200>,
+			      <0x10000070 0x10>;
+			reg-names = "nand",
+				    "nand-cache",
+				    "nand-int-base";
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <12>;
+
+			/* clocks = <&clkctl 20>; */
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_nand>;
+
+			status = "disabled";
 		};
 
 		leds: led-controller@10001900 {

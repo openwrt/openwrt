@@ -185,7 +185,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  }
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pci_common.h
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,53 @@
 +/******************************************************************************
 +**
 +** FILE NAME    : ifxmips_pci_common.h
@@ -226,11 +226,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +  \ingroup IFX_PCI_COM
 +  \brief PCI/PCIe bus driver common OS header file
 +*/
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
-+#define IFX_PCI_CONST
-+#else
 +#define IFX_PCI_CONST const
-+#endif
 +#ifdef CONFIG_IFX_PCI
 +extern int ifx_pci_bios_map_irq(IFX_PCI_CONST struct pci_dev *dev, u8 slot, u8 pin);
 +extern int ifx_pci_bios_plat_dev_init(struct pci_dev *dev);
@@ -1340,7 +1336,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie.h
-@@ -0,0 +1,135 @@
+@@ -0,0 +1,131 @@
 +/******************************************************************************
 +**
 +** FILE NAME    : ifxmips_pcie.h
@@ -1393,10 +1389,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define PCIE_IRQ_UNLOCK(lock)                \
 +    spin_unlock_irqrestore(&(lock), flags);  \
 +} while (0)
-+
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
-+#define IRQF_SHARED SA_SHIRQ
-+#endif
 +
 +#define PCIE_MSG_MSI        0x00000001
 +#define PCIE_MSG_ISR        0x00000002
@@ -4174,7 +4166,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +EXPORT_SYMBOL(pcibios_1st_host_bus_nr);
 --- /dev/null
 +++ b/arch/mips/pci/pcie-lantiq.h
-@@ -0,0 +1,1305 @@
+@@ -0,0 +1,1301 @@
 +/******************************************************************************
 +**
 +** FILE NAME    : ifxmips_pcie_reg.h
@@ -5184,10 +5176,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define PCIE_IRQ_UNLOCK(lock)                \
 +    spin_unlock_irqrestore(&(lock), flags);  \
 +} while (0)
-+
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
-+#define IRQF_SHARED SA_SHIRQ
-+#endif
 +
 +#define PCIE_MSG_MSI        0x00000001
 +#define PCIE_MSG_ISR        0x00000002

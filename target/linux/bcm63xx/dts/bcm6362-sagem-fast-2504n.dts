@@ -8,6 +8,13 @@
 	model = "Sagem F@st 2504N";
 	compatible = "sagem,fast-2504n", "brcm,bcm6362";
 
+	aliases {
+		led-boot = &led_ok_green;
+		led-failsafe = &led_ok_green;
+		led-running = &led_ok_green;
+		led-upgrade = &led_ok_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -50,7 +57,7 @@
 			label = "fast2504n:red:internet";
 			gpios = <&pinctrl 26 1>;
 		};
-		ok_green {
+		led_ok_green: ok_green {
 			label = "fast2504n:green:ok";
 			gpios = <&pinctrl 28 1>;
 		};
@@ -66,7 +73,7 @@
 };
 
 &hsspi {
-	status = "ok";
+	status = "okay";
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -104,5 +111,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

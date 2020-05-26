@@ -1,15 +1,21 @@
-*.o
-conf*
-!conf*.c
-!conf*.h
-mconf*
-!mconf*.c
-!mconf*.h
-mconf_check
-*.*.c
-qconf*
-qconf*.moc
-!qconf*.cc
-!qconf*.h
-!images*.c
+#
+# Generated files
+#
+*.moc
+*conf-cfg
+
+#
+# configuration programs
+#
+conf
+mconf
+nconf
+qconf
+gconf
+
+#
+# temporary files from older version.  Should be removed
+#
+zconf.???.c
+zconf.hash.c
 .tmp_qtcheck

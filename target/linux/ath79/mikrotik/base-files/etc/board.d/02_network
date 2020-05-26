@@ -21,8 +21,17 @@ ath79_setup_interfaces()
 ath79_setup_macs()
 {
 	local board="$1"
+	local lan_mac=""
+	local wan_mac=""
+	local label_mac=""
+	local mac_base="$(cat /sys/firmware/mikrotik/hard_config/mac_base)"
 
 	case "$board" in
+	*)
+		label_mac="$mac_base"
+		wan_mac="$mac_base"
+		lan_mac=$(macaddr_add $mac_base 1)
+		;;
 	esac
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac

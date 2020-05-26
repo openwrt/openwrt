@@ -4,6 +4,7 @@
 	compatible = "brcm,bcm6368";
 
 	aliases {
+		nflash = &nflash;
 		pflash = &pflash;
 		pinctrl = &pinctrl;
 		serial0 = &uart0;
@@ -294,6 +295,27 @@
 
 			/* clocks = <&periph_clk>; */
 			/* clock-names = "refclk"; */
+
+			status = "disabled";
+		};
+
+		nflash: nand@10000200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,nand-bcm6368",
+				     "brcm,brcmnand-v2.1",
+				     "brcm,brcmnand";
+			reg = <0x10000200 0x180>,
+			      <0x10000600 0x200>,
+			      <0x10000070 0x10>;
+			reg-names = "nand",
+				    "nand-cache",
+				    "nand-int-base";
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <10>;
+
+			/* clocks = <&clkctl 17>; */
 
 			status = "disabled";
 		};

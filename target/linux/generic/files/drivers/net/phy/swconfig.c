@@ -594,12 +594,9 @@ swconfig_parse_ports(struct sk_buff *msg, struct nlattr *head,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,2,0)
 		if (nla_parse_nested_deprecated(tb, SWITCH_PORT_ATTR_MAX, nla,
 				port_policy, NULL))
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
-		if (nla_parse_nested(tb, SWITCH_PORT_ATTR_MAX, nla,
-				port_policy, NULL))
 #else
 		if (nla_parse_nested(tb, SWITCH_PORT_ATTR_MAX, nla,
-				port_policy))
+				port_policy, NULL))
 #endif
 			return -EINVAL;
 
@@ -623,10 +620,8 @@ swconfig_parse_link(struct sk_buff *msg, struct nlattr *nla,
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,2,0)
 	if (nla_parse_nested_deprecated(tb, SWITCH_LINK_ATTR_MAX, nla, link_policy, NULL))
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
-	if (nla_parse_nested(tb, SWITCH_LINK_ATTR_MAX, nla, link_policy, NULL))
 #else
-	if (nla_parse_nested(tb, SWITCH_LINK_ATTR_MAX, nla, link_policy))
+	if (nla_parse_nested(tb, SWITCH_LINK_ATTR_MAX, nla, link_policy, NULL))
 #endif
 		return -EINVAL;
 
@@ -1110,9 +1105,6 @@ static struct genl_ops swconfig_ops[] = {
 };
 
 static struct genl_family switch_fam = {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
-	.id = GENL_ID_GENERATE,
-#endif
 	.name = "switch",
 	.hdrsize = 0,
 	.version = 1,
@@ -1298,11 +1290,7 @@ swconfig_init(void)
 {
 	INIT_LIST_HEAD(&swdevs);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
-	return genl_register_family_with_ops(&switch_fam, swconfig_ops);
-#else
 	return genl_register_family(&switch_fam);
-#endif
 }
 
 static void __exit

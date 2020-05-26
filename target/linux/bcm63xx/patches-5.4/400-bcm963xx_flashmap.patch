@@ -40,7 +40,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 +	} else {
 +		for (i = 0; i < numslots; i++) {
 +			if (!strncmp(buf[i].name, "RedBoot", 8)) {
-+				fis_origin = (buf[i].flash_base & (master->size << 1) - 1);
++				fis_origin = (buf[i].flash_base & ((master->size << 1) - 1));
 +			}
 +		}
 +	}

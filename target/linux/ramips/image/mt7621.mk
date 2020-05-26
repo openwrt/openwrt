@@ -24,72 +24,66 @@ define Build/custom-initramfs-uimage
 endef
 
 define Build/elecom-gst-factory
-  $(eval product=$(word 1,$(1)))
-  $(eval version=$(word 2,$(1)))
-  ( $(STAGING_DIR_HOST)/bin/mkhash md5 $@ | tr -d '\n' ) >> $@
-  ( \
-    echo -n "ELECOM $(product) v$(version)" | \
-      dd bs=32 count=1 conv=sync; \
-    dd if=$@; \
-  ) > $@.new
-  mv $@.new $@
-  echo -n "MT7621_ELECOM_$(product)" >> $@
+	$(eval product=$(word 1,$(1)))
+	$(eval version=$(word 2,$(1)))
+	( $(STAGING_DIR_HOST)/bin/mkhash md5 $@ | tr -d '\n' ) >> $@
+	( \
+		echo -n "ELECOM $(product) v$(version)" | \
+			dd bs=32 count=1 conv=sync; \
+		dd if=$@; \
+	) > $@.new
+	mv $@.new $@
+	echo -n "MT7621_ELECOM_$(product)" >> $@
 endef
 
 define Build/elecom-wrc-factory
-  $(eval product=$(word 1,$(1)))
-  $(eval version=$(word 2,$(1)))
-  $(STAGING_DIR_HOST)/bin/mkhash md5 $@ >> $@
-  ( \
-    echo -n "ELECOM $(product) v$(version)" | \
-      dd bs=32 count=1 conv=sync; \
-    dd if=$@; \
-  ) > $@.new
-  mv $@.new $@
+	$(eval product=$(word 1,$(1)))
+	$(eval version=$(word 2,$(1)))
+	$(STAGING_DIR_HOST)/bin/mkhash md5 $@ >> $@
+	( \
+		echo -n "ELECOM $(product) v$(version)" | \
+			dd bs=32 count=1 conv=sync; \
+		dd if=$@; \
+	) > $@.new
+	mv $@.new $@
 endef
 
 define Build/iodata-factory
-  $(eval fw_size=$(word 1,$(1)))
-  $(eval fw_type=$(word 2,$(1)))
-  $(eval product=$(word 3,$(1)))
-  $(eval factory_bin=$(word 4,$(1)))
-  if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(fw_size)" ]; then \
-    $(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) $(factory_bin); \
-    $(STAGING_DIR_HOST)/bin/mksenaofw \
-      -r 0x30a -p $(product) -t $(fw_type) \
-      -e $(factory_bin) -o $(factory_bin).new; \
-    mv $(factory_bin).new $(factory_bin); \
-    $(CP) $(factory_bin) $(BIN_DIR)/; \
+	$(eval fw_size=$(word 1,$(1)))
+	$(eval fw_type=$(word 2,$(1)))
+	$(eval product=$(word 3,$(1)))
+	$(eval factory_bin=$(word 4,$(1)))
+	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(fw_size)" ]; then \
+		$(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) $(factory_bin); \
+		$(STAGING_DIR_HOST)/bin/mksenaofw \
+			-r 0x30a -p $(product) -t $(fw_type) \
+			-e $(factory_bin) -o $(factory_bin).new; \
+		mv $(factory_bin).new $(factory_bin); \
+		$(CP) $(factory_bin) $(BIN_DIR)/; \
 	else \
 		echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
 	fi
 endef
 
 define Build/iodata-mstc-header
-  ( \
-    data_size_crc="$$(dd if=$@ ibs=64 skip=1 2>/dev/null | \
-      gzip -c | tail -c 8 | od -An -tx8 --endian little | tr -d ' \n')"; \
-    echo -ne "$$(echo $$data_size_crc | sed 's/../\\x&/g')" | \
-      dd of=$@ bs=8 count=1 seek=7 conv=notrunc 2>/dev/null; \
-  )
-  dd if=/dev/zero of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null
-  ( \
-    header_crc="$$(dd if=$@ bs=64 count=1 2>/dev/null | \
-      gzip -c | tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
-    echo -ne "$$(echo $$header_crc | sed 's/../\\x&/g')" | \
-      dd of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null; \
-  )
-endef
-
-define Build/netis-tail
-	echo -n $(1) >> $@
-	echo -n $(UIMAGE_NAME)-yun | $(STAGING_DIR_HOST)/bin/mkhash md5 | \
-		sed 's/../\\\\x&/g' | xargs echo -ne >> $@
+	( \
+		data_size_crc="$$(dd if=$@ ibs=64 skip=1 2>/dev/null | gzip -c | \
+			tail -c 8 | od -An -tx8 --endian little | tr -d ' \n')"; \
+		echo -ne "$$(echo $$data_size_crc | sed 's/../\\x&/g')" | \
+			dd of=$@ bs=8 count=1 seek=7 conv=notrunc 2>/dev/null; \
+	)
+	dd if=/dev/zero of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null
+	( \
+		header_crc="$$(dd if=$@ bs=64 count=1 2>/dev/null | gzip -c | \
+			tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
+		echo -ne "$$(echo $$header_crc | sed 's/../\\x&/g')" | \
+			dd of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null; \
+	)
 endef
 
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
-		echo '21001:6' > $(1).compat; \
+		echo '21001:7' > $(1).compat; \
 		$(TAR) -cf $(1) --transform='s/^.*/compat/' $(1).compat; \
 		\
 		$(TAR) -rf $(1) --transform='s/^.*/vmlinux.tmp/' $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE); \
@@ -202,6 +196,8 @@ define Device/buffalo_wsr-2533dhpl
   IMAGE_SIZE := 7936k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WSR-2533DHPL
+  DEVICE_ALT0_VENDOR := Buffalo
+  DEVICE_ALT0_MODEL := WSR-2533DHP
   IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
   DEVICE_PACKAGES := kmod-mt7615e wpad-basic
 endef
@@ -221,8 +217,8 @@ define Device/dlink_dir-860l-b1
   BLOCKSIZE := 64k
   SEAMA_SIGNATURE := wrgac13_dlink.2013gui_dir860lb
   LOADER_TYPE := bin
-  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
-	relocate-kernel | lzma -a0 | uImage lzma
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | relocate-kernel | \
+	lzma -a0 | uImage lzma
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-860L
@@ -386,8 +382,8 @@ define Device/iodata_wn-ax1167gr2
   $(Device/iodata_nand)
   UIMAGE_MAGIC := 0x434f4d42
   DEVICE_MODEL := WN-AX1167GR2
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(XBC.1)b10 | \
-	iodata-mstc-header
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
+	custom-initramfs-uimage 3.10(XBC.1)b10 | iodata-mstc-header
   DEVICE_PACKAGES := kmod-mt7615e wpad-basic
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr2
@@ -396,8 +392,8 @@ define Device/iodata_wn-ax2033gr
   $(Device/iodata_nand)
   UIMAGE_MAGIC := 0x434f4d42
   DEVICE_MODEL := WN-AX2033GR
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(VST.1)C10 | \
-	iodata-mstc-header
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
+	custom-initramfs-uimage 3.10(VST.1)C10 | iodata-mstc-header
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e wpad-basic
 endef
 TARGET_DEVICES += iodata_wn-ax2033gr
@@ -406,8 +402,8 @@ define Device/iodata_wn-dx1167r
   $(Device/iodata_nand)
   UIMAGE_MAGIC := 0x434f4d43
   DEVICE_MODEL := WN-DX1167R
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage 3.10(XIK.1)b10 | \
-	iodata-mstc-header
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
+	custom-initramfs-uimage 3.10(XIK.1)b10 | iodata-mstc-header
   DEVICE_PACKAGES := kmod-mt7615e wpad-basic
 endef
 TARGET_DEVICES += iodata_wn-dx1167r
@@ -454,8 +450,7 @@ TARGET_DEVICES += iptime_a8004t
 define Device/jcg_jhr-ac876m
   IMAGE_SIZE := 16064k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	jcg-header 89.1
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | jcg-header 89.1
   JCG_MAXSIZE := 16064k
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := JHR-AC876M
@@ -473,6 +468,24 @@ define Device/lenovo_newifi-d1
   SUPPORTED_DEVICES += newifi-d1
 endef
 TARGET_DEVICES += lenovo_newifi-d1
+
+define Device/linksys_ea7500-v2
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 36864k
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := EA7500
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e wpad-basic uboot-envtools
+  UBINIZE_OPTS := -E 5
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+	append-ubi | check-size | linksys-image type=EA7500v2
+endef
+TARGET_DEVICES += linksys_ea7500-v2
 
 define Device/linksys_re6500
   IMAGE_SIZE := 7872k
@@ -561,8 +574,7 @@ define Device/netgear_ex6150
   NETGEAR_BOARD_ID := U12H318T00_NETGEAR
   IMAGE_SIZE := 14848k
   IMAGES += factory.chk
-  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size | \
-	netgear-chk
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size | netgear-chk
 endef
 TARGET_DEVICES += netgear_ex6150
 
@@ -674,11 +686,10 @@ define Device/netgear_wndr3700-v5
   IMAGES += factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
 	pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | \
-	check-size
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size
   IMAGE/factory.img := pad-extra 320k | $$(IMAGE/default) | \
-	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | \
-	zip WNDR3700v5.bin | sercom-seal
+	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip WNDR3700v5.bin | \
+	sercom-seal
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WNDR3700
   DEVICE_VARIANT := v5
@@ -930,6 +941,23 @@ define Device/xiaomi_mir3p
 	wpad-basic uboot-envtools
 endef
 TARGET_DEVICES += xiaomi_mir3p
+
+define Device/xiaomi_redmi-router-ac2100
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 124416k
+  UBINIZE_OPTS := -E 5
+  IMAGES += kernel1.bin rootfs0.bin
+  IMAGE/kernel1.bin := append-kernel
+  IMAGE/rootfs0.bin := append-ubi | check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Redmi Router AC2100
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e wpad-basic uboot-envtools
+endef
+TARGET_DEVICES += xiaomi_redmi-router-ac2100
 
 define Device/xiaoyu_xy-c5
   IMAGE_SIZE := 32448k

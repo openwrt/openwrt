@@ -2,13 +2,13 @@
 # RT305X Profiles
 #
 define Build/buffalo-tftp-header
-  ( \
-    echo -n -e "# Airstation FirmWare\nrun u_fw\nreset\n\n" | \
-      dd bs=512 count=1 conv=sync; \
-    dd if=$@; \
-  ) > $@.tmp && \
-  $(STAGING_DIR_HOST)/bin/buffalo-tftp -i $@.tmp -o $@.new
-  mv $@.new $@
+	( \
+		echo -n -e "# Airstation FirmWare\nrun u_fw\nreset\n\n" | \
+			dd bs=512 count=1 conv=sync; \
+		dd if=$@; \
+	) > $@.tmp && \
+	$(STAGING_DIR_HOST)/bin/buffalo-tftp -i $@.tmp -o $@.new
+	mv $@.new $@
 endef
 
 define Build/dap-header
@@ -309,8 +309,7 @@ define Device/buffalo_whr-g300n
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WHR-G300N
   IMAGES += tftp.bin
-  IMAGE/tftp.bin := $$(sysupgrade_bin) | check-size | \
-	buffalo-tftp-header
+  IMAGE/tftp.bin := $$(sysupgrade_bin) | check-size | buffalo-tftp-header
   SUPPORTED_DEVICES += whr-g300n
   DEFAULT := n
 endef
@@ -588,8 +587,7 @@ define Device/hilink_hlk-rm04
   SOC := rt5350
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	hilink-header
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | hilink-header
   DEVICE_VENDOR := Hi-Link
   DEVICE_MODEL := HLK-RM04
   SUPPORTED_DEVICES += hlk-rm04
@@ -643,8 +641,7 @@ define Device/jcg_jhr-n805r
   SOC := rt3050
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	jcg-header 29.24
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | jcg-header 29.24
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := JHR-N805R
   SUPPORTED_DEVICES += jhr-n805r
@@ -656,8 +653,7 @@ define Device/jcg_jhr-n825r
   SOC := rt3052
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	jcg-header 23.24
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | jcg-header 23.24
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := JHR-N825R
   SUPPORTED_DEVICES += jhr-n825r
@@ -669,8 +665,7 @@ define Device/jcg_jhr-n926r
   SOC := rt3052
   IMAGE_SIZE := 3776k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	jcg-header 25.24
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | jcg-header 25.24
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := JHR-N926R
   SUPPORTED_DEVICES += jhr-n926r
@@ -755,8 +750,7 @@ define Device/nixcore_x1-16m
   DEVICE_VENDOR := Nixcore
   DEVICE_MODEL := X1
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
-	kmod-spi-dev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink kmod-spi-dev
   SUPPORTED_DEVICES += nixcore-x1 nixcore-x1-16M
 endef
 TARGET_DEVICES += nixcore_x1-16m
@@ -767,8 +761,7 @@ define Device/nixcore_x1-8m
   DEVICE_VENDOR := Nixcore
   DEVICE_MODEL := X1
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
-	kmod-spi-dev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink kmod-spi-dev
   SUPPORTED_DEVICES += nixcore-x1 nixcore-x1-8M
 endef
 TARGET_DEVICES += nixcore_x1-8m
@@ -778,8 +771,7 @@ define Device/olimex_rt5350f-olinuxino
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := OLIMEX
   DEVICE_MODEL := RT5350F-OLinuXino
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
-	kmod-spi-dev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink kmod-spi-dev
   SUPPORTED_DEVICES += rt5350f-olinuxino
 endef
 TARGET_DEVICES += olimex_rt5350f-olinuxino
@@ -789,8 +781,7 @@ define Device/olimex_rt5350f-olinuxino-evb
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := OLIMEX
   DEVICE_MODEL := RT5350F-OLinuXino-EVB
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
-	kmod-spi-dev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink kmod-spi-dev
   SUPPORTED_DEVICES += rt5350f-olinuxino-evb
 endef
 TARGET_DEVICES += olimex_rt5350f-olinuxino-evb
@@ -1146,8 +1137,7 @@ define Device/vocore_vocore-16m
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
-	kmod-spi-dev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink kmod-spi-dev
   SUPPORTED_DEVICES += vocore vocore-16M
 endef
 TARGET_DEVICES += vocore_vocore-16m
@@ -1158,8 +1148,7 @@ define Device/vocore_vocore-8m
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink \
-	kmod-spi-dev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink kmod-spi-dev
   SUPPORTED_DEVICES += vocore vocore-8M
 endef
 TARGET_DEVICES += vocore_vocore-8m
