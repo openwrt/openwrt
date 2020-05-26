@@ -1005,6 +1005,15 @@ define Device/tplink_re210-v1
 endef
 TARGET_DEVICES += tplink_re210-v1
 
+define Device/trendnet_tew-810dr
+  SOC := mt7620a
+  DEVICE_PACKAGES := kmod-mt76x0e
+  DEVICE_VENDOR := TRENDnet
+  DEVICE_MODEL := TEW-810DR
+  IMAGE_SIZE := 6720k
+endef
+TARGET_DEVICES += trendnet_tew-810dr
+
 define Device/vonets_var11n-300
   SOC := mt7620n
   IMAGE_SIZE := 3776k
