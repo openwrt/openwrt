@@ -26,6 +26,7 @@ ramips_setup_interfaces()
 	ralink,mt7620a-mt7610e-evb|\
 	ralink,mt7620a-v22sg-evb|\
 	sanlinking,d240|\
+	trendnet,tew-810dr|\
 	youku,yk1|\
 	zbtlink,zbt-ape522ii|\
 	zbtlink,zbt-we826-16m|\
@@ -259,7 +260,8 @@ ramips_setup_macs()
 	alfa-network,ac1200rm|\
 	dlink,dir-810l|\
 	phicomm,psg1218a|\
-	phicomm,psg1218b)
+	phicomm,psg1218b|\
+	trendnet,tew-810dr)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x28)" 1)
 		;;
 	alfa-network,r36m-e4g|\
