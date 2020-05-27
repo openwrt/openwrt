@@ -15,8 +15,8 @@ vxlan_generic_setup() {
 
 	local link="$cfg"
 
-	local port vid ttl tos mtu macaddr zone rxcsum txcsum
-	json_get_vars port vid ttl tos mtu macaddr zone rxcsum txcsum
+	local port id ttl tos mtu macaddr zone rxcsum txcsum
+	json_get_vars port id ttl tos mtu macaddr zone rxcsum txcsum
 
 
 	proto_init_update "$link" 1
@@ -24,7 +24,7 @@ vxlan_generic_setup() {
 	proto_add_tunnel
 	json_add_string mode "$mode"
 
-	[ -n "$tunlink" ] && json_add_string link "$tunlink"
+	[ -n "$link" ] && json_add_string link "$link"
 	[ -n "$local" ] && json_add_string local "$local"
 	[ -n "$remote" ] && json_add_string remote "$remote"
 
@@ -34,7 +34,7 @@ vxlan_generic_setup() {
 
 	json_add_object 'data'
 	[ -n "$port" ] && json_add_int port "$port"
-	[ -n "$vid" ] && json_add_int id "$vid"
+	[ -n "$id" ] && json_add_int id "$id"
 	[ -n "$macaddr" ] && json_add_string macaddr "$macaddr"
 	[ -n "$rxcsum" ] && json_add_boolean rxcsum "$rxcsum"
 	[ -n "$txcsum" ] && json_add_boolean txcsum "$txcsum"
@@ -52,19 +52,19 @@ vxlan_generic_setup() {
 proto_vxlan_setup() {
 	local cfg="$1"
 
-	local ipaddr peeraddr
-	json_get_vars ipaddr peeraddr tunlink
+	local ipaddr remote
+	json_get_vars ipaddr remote link
 
-	[ -z "$peeraddr" ] && {
+	[ -z "$remote" ] && {
 		proto_notify_error "$cfg" "MISSING_ADDRESS"
 		proto_block_restart "$cfg"
 		exit
 	}
 
-	( proto_add_host_dependency "$cfg" '' "$tunlink" )
+	( proto_add_host_dependency "$cfg" '' "$link" )
 
 	[ -z "$ipaddr" ] && {
-		local wanif="$tunlink"
+		local wanif="$link"
 		if [ -z "$wanif" ] && ! network_find_wan wanif; then
 			proto_notify_error "$cfg" "NO_WAN_LINK"
 			exit
@@ -76,14 +76,14 @@ proto_vxlan_setup() {
 		fi
 	}
 
-	vxlan_generic_setup "$cfg" 'vxlan' "$ipaddr" "$peeraddr"
+	vxlan_generic_setup "$cfg" 'vxlan' "$ipaddr" "$remote"
 }
 
 proto_vxlan6_setup() {
 	local cfg="$1"
 
 	local ip6addr peer6addr
-	json_get_vars ip6addr peer6addr tunlink
+	json_get_vars ip6addr peer6addr link
 
 	[ -z "$peer6addr" ] && {
 		proto_notify_error "$cfg" "MISSING_ADDRESS"
@@ -91,10 +91,10 @@ proto_vxlan6_setup() {
 		exit
 	}
 
-	( proto_add_host_dependency "$cfg" '' "$tunlink" )
+	( proto_add_host_dependency "$cfg" '' "$link" )
 
 	[ -z "$ip6addr" ] && {
-		local wanif="$tunlink"
+		local wanif="$link"
 		if [ -z "$wanif" ] && ! network_find_wan6 wanif; then
 			proto_notify_error "$cfg" "NO_WAN_LINK"
 			exit
@@ -111,20 +111,22 @@ proto_vxlan6_setup() {
 
 proto_vxlan_teardown() {
 	local cfg="$1"
+	ip link del dev "${config}" >/dev/null 2>&1
 }
 
 proto_vxlan6_teardown() {
 	local cfg="$1"
+	ip link del dev "${config}" >/dev/null 2>&1
 }
 
 vxlan_generic_init_config() {
 	no_device=1
 	available=1
 
-	proto_config_add_string "tunlink"
+	proto_config_add_string "link"
 	proto_config_add_string "zone"
 
-	proto_config_add_int "vid"
+	proto_config_add_int "id"
 	proto_config_add_int "port"
 	proto_config_add_int "ttl"
 	proto_config_add_int "tos"
@@ -135,7 +137,7 @@ vxlan_generic_init_config() {
 proto_vxlan_init_config() {
 	vxlan_generic_init_config
 	proto_config_add_string "ipaddr"
-	proto_config_add_string "peeraddr"
+	proto_config_add_string "remote"
 }
 
 proto_vxlan6_init_config() {
