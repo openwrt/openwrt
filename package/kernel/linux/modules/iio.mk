@@ -364,6 +364,54 @@ endef
 $(eval $(call KernelPackage,iio-st_accel-spi))
 
 
+define KernelPackage/iio-lsm6dsx
+  SUBMENU:=$(IIO_MENU)
+  DEPENDS:=+kmod-iio-core +kmod-iio-kfifo-buf +kmod-regmap-core
+  TITLE:=ST LSM6DSx driver for IMU MEMS sensors
+  KCONFIG:=CONFIG_IIO_ST_LSM6DSX
+  FILES:=$(LINUX_DIR)/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx.ko
+  AUTOLOAD:=$(call AutoProbe,st_lsm6dsx)
+endef
+
+define KernelPackage/iio-lsm6dsx/description
+ Support for the ST LSM6DSx and related IMU MEMS sensors.
+endef
+
+$(eval $(call KernelPackage,iio-lsm6dsx))
+
+
+define KernelPackage/iio-lsm6dsx-i2c
+  SUBMENU:=$(IIO_MENU)
+  DEPENDS:=+kmod-iio-lsm6dsx +kmod-i2c-core +kmod-regmap-i2c
+  TITLE:=ST LSM6DSx driver for IMU MEMS sensors (I2C)
+  KCONFIG:=CONFIG_IIO_ST_LSM6DSX
+  FILES:=$(LINUX_DIR)/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_i2c.ko
+  AUTOLOAD:=$(call AutoProbe,st_lsm6dsx-i2c)
+endef
+
+define KernelPackage/iio-lsm6dsx-i2c/description
+ Support for the ST LSM6DSx and related IMU MEMS I2C sensors.
+endef
+
+$(eval $(call KernelPackage,iio-lsm6dsx-i2c))
+
+
+define KernelPackage/iio-lsm6dsx-spi
+  SUBMENU:=$(IIO_MENU)
+  DEPENDS:=+kmod-iio-lsm6dsx +kmod-regmap-spi
+  TITLE:=ST LSM6DSx driver for IMU MEMS sensors (SPI)
+  KCONFIG:=CONFIG_IIO_ST_LSM6DSX
+  FILES:=$(LINUX_DIR)/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_spi.ko
+  AUTOLOAD:=$(call AutoProbe,st_lsm6dsx-spi)
+endef
+
+define KernelPackage/iio-lsm6dsx-spi/description
+ Support for the ST LSM6DSx and related IMU MEMS SPI sensors.
+endef
+
+$(eval $(call KernelPackage,iio-lsm6dsx-spi))
+
+
 define KernelPackage/iio-sps30
   SUBMENU:=$(IIO_MENU)
   DEPENDS:=@!LINUX_4_14 +kmod-i2c-core +kmod-iio-core +kmod-industrialio-triggered-buffer +kmod-lib-crc8
