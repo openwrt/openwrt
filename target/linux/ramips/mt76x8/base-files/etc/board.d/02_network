@@ -152,6 +152,10 @@ ramips_setup_macs()
 	zyxel,keenetic-extra-ii)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
 		;;
+	zyxel,keenetic-kn-1210)
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "0:wan" "6@eth0"
+		;;
 	hilink,hlk-7628n)
 		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
 		wan_mac=$(macaddr_add "$lan_mac" 1)
