@@ -626,6 +626,6 @@ define Device/zyxel_keenetic-kn-1210
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
-	check-size $$$$(IMAGE_SIZE) | zyimage -d 4624 -v "KN-1210"
+	check-size  | zyimage -d 4624 -v "KN-1210"
 endef
 TARGET_DEVICES += zyxel_keenetic-kn-1210
