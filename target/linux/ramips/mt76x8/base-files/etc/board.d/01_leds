@@ -135,6 +135,10 @@ zyxel,keenetic-extra-ii)
 	set_wifi_led "$boardname:green:wifi"
 	ucidef_set_led_switch "internet" "internet" "$boardname:green:internet" "switch0" "0x01"
 	;;
+zyxel,keenetic-kn-1210)
+	set_wifi_led "$boardname:green:wifi"
+	ucidef_set_led_switch "internet" "internet" "$boardname:green:internet" "switch0" "0x01"
+	;;
 esac
 
 board_config_flush
