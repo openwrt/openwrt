@@ -1182,6 +1182,29 @@ define Device/teltonika_rut955-h7v3c0
 endef
 TARGET_DEVICES += teltonika_rut955-h7v3c0
 
+define Device/teltonika_rut230
+  SOC := ar9330
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT230
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-chipidea2 \
+       -uboot-envtools kmod-usb-serial-option comgt usb-modeswitch
+  IMAGE_SIZE := 15552k
+  KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header
+  KERNEL_INITRAMFS := $$(KERNEL)
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs |\
+       pad-rootfs | teltonika-fw-fake-checksum |\
+       append-string RUT200019999master |\
+       append-md5sum-bin | check-size 
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
+       append-rootfs | pad-rootfs | append-metadata |\
+       check-size 
+  TPLINK_HWID := 0x32200002
+  TPLINK_HWREV := 0x1
+  TPLINK_HEADER_VERSION := 1
+endef
+TARGET_DEVICES += teltonika_rut230
+
 define Device/trendnet_tew-823dru
   SOC := qca9558
   DEVICE_VENDOR := Trendnet

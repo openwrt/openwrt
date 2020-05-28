@@ -163,6 +163,10 @@ pcs,cr3000)
 qihoo,c301)
 	ucidef_set_led_wlan "wlan" "WLAN" "$boardname:green:wlan" "phy0tpt"
 	;;
+teltonika,rut230)
+       ucidef_set_led_netdev "lan" "LAN" "rut230:green:lan" "eth0"
+       ucidef_set_led_netdev "wan" "WAN" "rut230:green:wan" "eth1"
+       ;;
 tplink,archer-a7-v5|\
 tplink,archer-c7-v4|\
 tplink,archer-c7-v5)
