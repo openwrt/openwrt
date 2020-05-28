@@ -1193,6 +1193,15 @@ define Device/zyxel_keenetic
 endef
 TARGET_DEVICES += zyxel_keenetic
 
+define Device/zyxel_keenetic-lite-b
+  SOC := rt5350
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := Keenetic Lite
+  DEVICE_VARIANT := B
+endef
+TARGET_DEVICES += zyxel_keenetic-lite-b
+
 define Device/zyxel_keenetic-start
   SOC := rt5350
   IMAGE_SIZE := 3776k
