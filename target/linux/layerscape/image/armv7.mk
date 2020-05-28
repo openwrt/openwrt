@@ -1,5 +1,5 @@
 #
-# Copyright 2018 NXP
+# Copyright 2018-2020 NXP
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,11 +8,13 @@
 define Device/Default
   PROFILES := Default
   FILESYSTEMS := squashfs
-  IMAGES := firmware.bin
+  IMAGES := firmware.bin sysupgrade.bin
   KERNEL := kernel-bin | uImage none
   KERNEL_NAME := zImage
   KERNEL_LOADADDR := 0x80008000
   KERNEL_ENTRY_POINT := 0x80008000
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 16M | \
+    append-rootfs | pad-rootfs | check-size 50331649 | append-metadata
 endef
 
 define Device/ls1021atwr
@@ -29,6 +31,7 @@ define Device/ls1021atwr
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
     append-rootfs | pad-rootfs | check-size 67108865
+  SUPPORTED_DEVICES := fsl,ls1021a-twr
 endef
 TARGET_DEVICES += ls1021atwr
 
