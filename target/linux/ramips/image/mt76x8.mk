@@ -620,7 +620,6 @@ endef
 TARGET_DEVICES += zyxel_keenetic-extra-ii
 
 define Device/zyxel_keenetic-kn-1210
-  DTS := kn-1210
   IMAGE_SIZE := 16064k
   BLOCKSIZE := 64k
   DEVICE_TITLE := Keenetic 4G (KN-1210)
