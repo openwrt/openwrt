@@ -1,6 +1,7 @@
 #!/bin/sh
 #
 # Copyright 2015-2019 Traverse Technologies
+# Copyright 2020 NXP
 #
 
 RAMFS_COPY_BIN="/usr/sbin/fw_printenv /usr/sbin/fw_setenv /usr/sbin/ubinfo /bin/echo"
@@ -34,7 +35,13 @@ platform_check_image() {
 		nand_do_platform_check "traverse-ls1043" $1
 		return $?
 		;;
-	fsl,ls1012a-frdm)
+	fsl,ls1012a-frdm | \
+	fsl,ls1012a-rdb | \
+	fsl,ls1021a-twr | \
+	fsl,ls1043a-rdb | \
+	fsl,ls1046a-rdb | \
+	fsl,ls1088a-rdb | \
+	fsl,ls2088a-rdb)
 		return 0
 		;;
 	*)
@@ -56,7 +63,13 @@ platform_do_upgrade() {
 	traverse,ls1043s)
 		platform_do_upgrade_traverse_nandubi "$1"
 		;;
-	fsl,ls1012a-frdm)
+	fsl,ls1012a-frdm | \
+	fsl,ls1012a-rdb | \
+	fsl,ls1021a-twr | \
+	fsl,ls1043a-rdb | \
+	fsl,ls1046a-rdb | \
+	fsl,ls1088a-rdb | \
+	fsl,ls2088a-rdb)
 		PART_NAME=firmware
 		default_do_upgrade "$1"
 		;;

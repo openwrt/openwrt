@@ -1,5 +1,5 @@
 #
-# Copyright 2018 NXP
+# Copyright 2018-2020 NXP
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,11 +7,13 @@
 
 define Device/Default
   PROFILES := Default
-  IMAGES := firmware.bin
+  IMAGES := firmware.bin sysupgrade.bin
   FILESYSTEMS := squashfs
   KERNEL := kernel-bin | gzip | uImage gzip
   KERNEL_LOADADDR := 0x80080000
   KERNEL_ENTRY_POINT := 0x80080000
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 16M | \
+    append-rootfs | pad-rootfs | check-size 50331649 | append-metadata
 endef
 
 define Device/ls1012afrdm
@@ -23,7 +25,6 @@ define Device/ls1012afrdm
     kmod-ppfe
   DEVICE_DTS := freescale/fsl-ls1012a-frdm
   BLOCKSIZE := 256KiB
-  IMAGES += sysupgrade.bin
   IMAGE/firmware.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
@@ -58,6 +59,7 @@ define Device/ls1012ardb
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
     append-rootfs | pad-rootfs | check-size 67108865
+  SUPPORTED_DEVICES := fsl,ls1012a-rdb
 endef
 TARGET_DEVICES += ls1012ardb
 
@@ -105,6 +107,7 @@ define Device/ls1043ardb
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
     append-rootfs | pad-rootfs | check-size 67108865
+  SUPPORTED_DEVICES := fsl,ls1043a-rdb
 endef
 TARGET_DEVICES += ls1043ardb
 
@@ -150,6 +153,7 @@ define Device/ls1046ardb
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
     append-rootfs | pad-rootfs | check-size 67108865
+  SUPPORTED_DEVICES := fsl,ls1046a-rdb
 endef
 TARGET_DEVICES += ls1046ardb
 
@@ -198,6 +202,7 @@ define Device/ls1088ardb
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
     append-rootfs | pad-rootfs | check-size 67108865
+  SUPPORTED_DEVICES := fsl,ls1088a-rdb
 endef
 TARGET_DEVICES += ls1088ardb
 
@@ -248,6 +253,7 @@ define Device/ls2088ardb
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
     append-rootfs | pad-rootfs | check-size 67108865
+  SUPPORTED_DEVICES := fsl,ls2088a-rdb
 endef
 TARGET_DEVICES += ls2088ardb
 
