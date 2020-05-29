@@ -14,7 +14,7 @@ SUBTARGETS:=generic
 
 KERNEL_PATCHVER:=5.4
 
-DEVICE_TYPE:=developerboard
+DEVICE_TYPE:=basic
 
 define Target/Description
 	Synopsys DesignWare boards
