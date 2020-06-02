@@ -259,11 +259,12 @@ define Build/cfe-sercomm-part
 endef
 
 define Build/cfe-sercomm-load
-	mv $@ $@.ser
-	echo $(SERCOMM_PID) | xxd -p -r > $@
-	sha256sum $@.ser | awk '{ print $1 }' | xxd -p -r >> $@
-	dd if=$@.ser >> $@
-	rm -f $@.ser
+	$(TOPDIR)/scripts/sercomm-payload.py \
+		--input-file $@ \
+		--output-file $@.new \
+		--pid "$(SERCOMM_PID)"
+
+	mv $@.new $@
 endef
 
 define Build/cfe-sercomm-crypto
