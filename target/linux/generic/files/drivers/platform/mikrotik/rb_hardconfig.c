@@ -18,6 +18,9 @@
  * the MTD device without using a local buffer (except when requesting WLAN
  * calibration data), at the cost of a performance penalty.
  *
+ * Note: PAGE_SIZE is assumed to be >= 4K, hence the device attribute show
+ * routines need not check for output overflow.
+ *
  * Some constant defines extracted from routerboot.{c,h} by Gabor Juhos
  * <juhosg@openwrt.org>
  */
@@ -36,7 +39,7 @@
 
 #include "routerboot.h"
 
-#define RB_HARDCONFIG_VER		"0.03"
+#define RB_HARDCONFIG_VER		"0.04"
 #define RB_HC_PR_PFX			"[rb_hardconfig] "
 
 /* ID values for hardware settings */
@@ -307,30 +310,6 @@ static struct hc_hwopt {
 	},
 };
 
-static ssize_t hc_tag_show_string(const u8 *pld, u16 pld_len, char *buf)
-{
-	return snprintf(buf, pld_len+1, "%s\n", pld);
-}
-
-static ssize_t hc_tag_show_u32(const u8 *pld, u16 pld_len, char *buf)
-{
-	char *out = buf;
-	u32 data;	// cpu-endian
-
-	/* Caller ensures pld_len > 0 */
-	if (pld_len % sizeof(data))
-		return -EINVAL;
-
-	data = *(u32 *)pld;
-
-	do {
-		out += sprintf(out, "0x%08x\n", data);
-		data++;
-	} while ((pld_len -= sizeof(data)));
-
-	return out - buf;
-}
-
 /*
  * The MAC is stored network-endian on all devices, in 2 32-bit segments:
  * <XX:XX:XX:XX> <XX:XX:00:00>. Kernel print has us covered.
@@ -391,7 +370,7 @@ static struct hc_attr {
 } hc_attrs[] = {
 	{
 		.tag_id = RB_ID_FLASH_INFO,
-		.tshow = hc_tag_show_u32,
+		.tshow = routerboot_tag_show_u32s,
 		.kattr = __ATTR(flash_info, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_MAC_ADDRESS_PACK,
@@ -399,23 +378,23 @@ static struct hc_attr {
 		.kattr = __ATTR(mac_base, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_BOARD_PRODUCT_CODE,
-		.tshow = hc_tag_show_string,
+		.tshow = routerboot_tag_show_string,
 		.kattr = __ATTR(board_product_code, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_BIOS_VERSION,
-		.tshow = hc_tag_show_string,
+		.tshow = routerboot_tag_show_string,
 		.kattr = __ATTR(booter_version, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_SERIAL_NUMBER,
-		.tshow = hc_tag_show_string,
+		.tshow = routerboot_tag_show_string,
 		.kattr = __ATTR(board_serial, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_MEMORY_SIZE,
-		.tshow = hc_tag_show_u32,
+		.tshow = routerboot_tag_show_u32s,
 		.kattr = __ATTR(mem_size, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_MAC_ADDRESS_COUNT,
-		.tshow = hc_tag_show_u32,
+		.tshow = routerboot_tag_show_u32s,
 		.kattr = __ATTR(mac_count, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_HW_OPTIONS,
@@ -426,15 +405,15 @@ static struct hc_attr {
 		.tshow = NULL,
 	}, {
 		.tag_id = RB_ID_BOARD_IDENTIFIER,
-		.tshow = hc_tag_show_string,
+		.tshow = routerboot_tag_show_string,
 		.kattr = __ATTR(board_identifier, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_PRODUCT_NAME,
-		.tshow = hc_tag_show_string,
+		.tshow = routerboot_tag_show_string,
 		.kattr = __ATTR(product_name, S_IRUSR, hc_attr_show, NULL),
 	}, {
 		.tag_id = RB_ID_DEFCONF,
-		.tshow = hc_tag_show_string,
+		.tshow = routerboot_tag_show_string,
 		.kattr = __ATTR(defconf, S_IRUSR, hc_attr_show, NULL),
 	}
 };
@@ -508,9 +487,9 @@ static int hc_wlan_data_unpack_lzor(const u8 *inbuf, size_t inlen,
 	if (ret) {
 		if (LZO_E_INPUT_NOT_CONSUMED == ret) {
 			/*
-			 * It is assumed that because the LZO payload is embedded
-			 * in a "root" RB_ID_WLAN_DATA tag, the tag length is aligned
-			 * and the payload is padded at the end, which triggers a
+			 * The tag length appears to always be aligned (probably
+			 * because it is the "root" RB_ID_WLAN_DATA tag), thus
+			 * the LZO payload may be padded, which can trigger a
 			 * spurious error which we ignore here.
 			 */
 			pr_debug(RB_HC_PR_PFX "LZOR: LZO EOF before buffer end - this may be harmless\n");
@@ -529,6 +508,7 @@ static int hc_wlan_data_unpack_lzor(const u8 *inbuf, size_t inlen,
 	while (RB_MAGIC_ERD != *needle++) {
 		if ((u8 *)needle >= tempbuf+templen) {
 			pr_debug(RB_HC_PR_PFX "LZOR: ERD magic not found\n");
+			ret = -ENODATA;
 			goto fail;
 		}
 	};
@@ -603,7 +583,7 @@ static int hc_wlan_data_unpack(const size_t tofs, size_t tlen,
 static ssize_t hc_attr_show(struct kobject *kobj, struct kobj_attribute *attr,
 			    char *buf)
 {
-	struct hc_attr *hc_attr;
+	const struct hc_attr *hc_attr;
 	const u8 *pld;
 	u16 pld_len;
 
@@ -676,6 +656,9 @@ int __init rb_hardconfig_init(struct kobject *rb_kobj)
 	int i, ret;
 	u32 magic;
 
+	hc_buf = NULL;
+	hc_kobj = NULL;
+
 	// TODO allow override
 	mtd = get_mtd_device_nm(RB_MTD_HARD_CONFIG);
 	if (IS_ERR(mtd))
@@ -687,6 +670,9 @@ int __init rb_hardconfig_init(struct kobject *rb_kobj)
 		return -ENOMEM;
 
 	ret = mtd_read(mtd, 0, hc_buflen, &bytes_read, hc_buf);
+
+	if (ret)
+		goto fail;
 
 	if (bytes_read != hc_buflen) {
 		ret = -EIO;
@@ -729,14 +715,14 @@ int __init rb_hardconfig_init(struct kobject *rb_kobj)
 
 			ret = sysfs_create_bin_file(hc_kobj, &hc_wlandata_battr.battr);
 			if (ret)
-				pr_err(RB_HC_PR_PFX "Could not create %s sysfs entry (%d)\n",
+				pr_warn(RB_HC_PR_PFX "Could not create %s sysfs entry (%d)\n",
 				       hc_wlandata_battr.battr.attr.name, ret);
 		}
 		/* All other tags are published via standard attributes */
 		else {
 			ret = sysfs_create_file(hc_kobj, &hc_attrs[i].kattr.attr);
 			if (ret)
-				pr_err(RB_HC_PR_PFX "Could not create %s sysfs entry (%d)\n",
+				pr_warn(RB_HC_PR_PFX "Could not create %s sysfs entry (%d)\n",
 				       hc_attrs[i].kattr.attr.name, ret);
 		}
 	}
@@ -747,6 +733,7 @@ int __init rb_hardconfig_init(struct kobject *rb_kobj)
 
 fail:
 	kfree(hc_buf);
+	hc_buf = NULL;
 	return ret;
 }
 

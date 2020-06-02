@@ -166,13 +166,48 @@ static int __init routerboot_init(void)
 	if (!rb_kobj)
 		return -ENOMEM;
 
-	return rb_hardconfig_init(rb_kobj);
+	/*
+	 * We ignore the following return values and always register.
+	 * These init() routines are designed so that their failed state is
+	 * always manageable by the corresponding exit() calls.
+	 */
+	rb_hardconfig_init(rb_kobj);
+	rb_softconfig_init(rb_kobj);
+
+	return 0;
 }
 
 static void __exit routerboot_exit(void)
 {
+	rb_softconfig_exit();
 	rb_hardconfig_exit();
 	kobject_put(rb_kobj);	// recursive afaict
+}
+
+/* Common routines */
+
+ssize_t routerboot_tag_show_string(const u8 *pld, u16 pld_len, char *buf)
+{
+	return scnprintf(buf, pld_len+1, "%s\n", pld);
+}
+
+ssize_t routerboot_tag_show_u32s(const u8 *pld, u16 pld_len, char *buf)
+{
+	char *out = buf;
+	u32 data;	// cpu-endian
+
+	/* Caller ensures pld_len > 0 */
+	if (pld_len % sizeof(data))
+		return -EINVAL;
+
+	data = *(u32 *)pld;
+
+	do {
+		out += sprintf(out, "0x%08x\n", data);
+		data++;
+	} while ((pld_len -= sizeof(data)));
+
+	return out - buf;
 }
 
 module_init(routerboot_init);

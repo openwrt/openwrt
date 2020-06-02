@@ -782,6 +782,7 @@ mac80211_setup_vif() {
 	case "$mode" in
 		mesh)
 			wireless_vif_parse_encryption
+			[ -z "$htmode" ] && htmode="NOHT";
 			freq="$(get_freq "$phy" "$channel")"
 			if [ "$wpa" -gt 0 -o "$auto_channel" -gt 0 ] || chan_is_dfs "$phy" "$channel"; then
 				mac80211_setup_supplicant $vif_enable || failed=1
@@ -1040,10 +1041,12 @@ list_phy_interfaces() {
 drv_mac80211_teardown() {
 	wireless_process_kill_all
 
-	for phy in $(ls /sys/class/ieee80211/); do
-		mac80211_interface_cleanup "$phy"
-		uci -q -P /var/state revert wireless._${phy}
-	done
+	json_select data
+	json_get_vars phy
+	json_select ..
+
+	mac80211_interface_cleanup "$phy"
+	uci -q -P /var/state revert wireless._${phy}
 }
 
 add_driver mac80211

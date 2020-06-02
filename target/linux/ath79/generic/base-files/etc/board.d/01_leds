@@ -125,10 +125,6 @@ glinet,6408|\
 glinet,6416)
 	ucidef_set_led_netdev "lan" "LAN" "gl-inet:green:lan" "eth0"
 	;;
-glinet,gl-ar150)
-	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth1"
-	ucidef_set_led_switch "lan" "LAN" "$boardname:green:lan" "switch0" "0x02"
-	;;
 glinet,gl-ar300m-lite)
 	ucidef_set_led_netdev "lan" "LAN" "gl-ar300m-lite:green:lan" "eth0"
 	;;
@@ -252,7 +248,8 @@ tplink,tl-wr902ac-v1)
 	;;
 tplink,re355-v1|\
 tplink,re450-v1|\
-tplink,re450-v2)
+tplink,re450-v2|\
+tplink,re450-v3)
 	ucidef_set_led_netdev "lan_data" "LAN Data" "tp-link:green:lan_data" "eth0" "tx rx"
 	ucidef_set_led_netdev "lan_link" "LAN Link" "tp-link:green:lan_link" "eth0" "link"
 	;;
