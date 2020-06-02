@@ -37,6 +37,10 @@
 
 #define UBI_MAGIC		0x55424923
 
+#define CFE_MAGIC_PFX		"cferam."
+#define CFE_MAGIC_PFX_LEN	(sizeof(CFE_MAGIC_PFX) - 1)
+#define CFE_MAGIC		"cferam.000"
+#define CFE_MAGIC_LEN		(sizeof(CFE_MAGIC) - 1)
 #define SERCOMM_MAGIC_PFX	"eRcOmM."
 #define SERCOMM_MAGIC_PFX_LEN	(sizeof(SERCOMM_MAGIC_PFX) - 1)
 #define SERCOMM_MAGIC		"eRcOmM.000"
@@ -250,6 +254,111 @@ static struct mtd_part_parser mtdsplit_bcm_wfi_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
+static int cferam_bootflag_value(const char *name, size_t name_len)
+{
+	int rc = -ENOENT;
+
+	if (name &&
+	    (name_len >= CFE_MAGIC_LEN) &&
+	    !memcmp(name, CFE_MAGIC_PFX, CFE_MAGIC_PFX_LEN)) {
+		rc = char_to_num(name[CFE_MAGIC_PFX_LEN + 0]) * 100;
+		rc += char_to_num(name[CFE_MAGIC_PFX_LEN + 1]) * 10;
+		rc += char_to_num(name[CFE_MAGIC_PFX_LEN + 2]) * 1;
+	}
+
+	return rc;
+}
+
+static int mtdsplit_parse_bcm_wfi_split(struct mtd_info *master,
+					const struct mtd_partition **pparts,
+					struct mtd_part_parser_data *data)
+{
+	loff_t cfe_off;
+	loff_t img1_off = 0;
+	loff_t img2_off = master->size / 2;
+	loff_t img1_size = (img2_off - img1_off);
+	loff_t img2_size = (master->size - img2_off);
+	loff_t active_off, inactive_off;
+	loff_t active_size, inactive_size;
+	uint8_t *buf;
+	char *cfe1_name = NULL, *cfe2_name = NULL;
+	size_t cfe1_size = 0, cfe2_size = 0;
+	int ret;
+	int bf1, bf2;
+
+	buf = kzalloc(master->erasesize, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	cfe_off = img1_off;
+	ret = jffs2_find_file(master, buf, CFERAM_NAME, CFERAM_NAME_LEN,
+			      &cfe_off, img1_size, &cfe1_name, &cfe1_size);
+
+	cfe_off = img2_off;
+	ret = jffs2_find_file(master, buf, CFERAM_NAME, CFERAM_NAME_LEN,
+			      &cfe_off, img2_size, &cfe2_name, &cfe2_size);
+
+	bf1 = cferam_bootflag_value(cfe1_name, cfe1_size);
+	if (bf1 >= 0)
+		printk("cferam: bootflag1=%d\n", bf1);
+
+	bf2 = cferam_bootflag_value(cfe2_name, cfe2_size);
+	if (bf2 >= 0)
+		printk("cferam: bootflag2=%d\n", bf2);
+
+	kfree(cfe1_name);
+	kfree(cfe2_name);
+
+	if (bf1 >= bf2) {
+		active_off = img1_off;
+		active_size = img1_size;
+		inactive_off = img2_off;
+		inactive_size = img2_size;
+	} else {
+		active_off = img2_off;
+		active_size = img2_size;
+		inactive_off = img1_off;
+		inactive_size = img1_size;
+	}
+
+	ret = parse_bcm_wfi(master, pparts, buf, active_off, active_size, true);
+
+	kfree(buf);
+
+	if (ret > 0) {
+		struct mtd_partition *parts;
+
+		parts = kzalloc((ret + 1) * sizeof(*parts), GFP_KERNEL);
+		if (!parts)
+			return -ENOMEM;
+
+		memcpy(parts, *pparts, ret * sizeof(*parts));
+		kfree(*pparts);
+
+		parts[ret].name = "img2";
+		parts[ret].offset = inactive_off;
+		parts[ret].size = inactive_size;
+		ret++;
+
+		*pparts = parts;
+	}
+
+	return ret;
+}
+
+static const struct of_device_id mtdsplit_bcm_wfi_split_of_match[] = {
+	{ .compatible = "brcm,wfi-split" },
+	{ },
+};
+
+static struct mtd_part_parser mtdsplit_bcm_wfi_split_parser = {
+	.owner = THIS_MODULE,
+	.name = "bcm-wfi-split-fw",
+	.of_match_table = mtdsplit_bcm_wfi_split_of_match,
+	.parse_fn = mtdsplit_parse_bcm_wfi_split,
+	.type = MTD_PARSER_TYPE_FIRMWARE,
+};
+
 static int sercomm_bootflag_value(struct mtd_info *mtd, uint8_t *buf)
 {
 	size_t retlen;
@@ -370,6 +479,7 @@ static struct mtd_part_parser mtdsplit_ser_wfi_parser = {
 static int __init mtdsplit_bcm_wfi_init(void)
 {
 	register_mtd_parser(&mtdsplit_bcm_wfi_parser);
+	register_mtd_parser(&mtdsplit_bcm_wfi_split_parser);
 	register_mtd_parser(&mtdsplit_ser_wfi_parser);
 
 	return 0;
