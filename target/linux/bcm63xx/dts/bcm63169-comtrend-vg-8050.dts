@@ -107,7 +107,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_hsspi_cs5>;
 
-	switch@0 {
+	switch@5 {
 		compatible = "brcm,bcm53125";
 		reg = <5>;
 		spi-max-frequency = <781000>;
@@ -178,16 +178,16 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cferom@0 {
+			partition@0 {
 				label = "cferom";
 				reg = <0x0000000 0x0020000>;
 				read-only;
 			};
 
-			wfi@20000 {
-				compatible = "brcm,wfi";
+			partition@20000 {
+				compatible = "brcm,wfi-split";
 				label = "wfi";
-				reg = <0x0020000 0x7ee0000>;
+				reg = <0x0020000 0x7a80000>;
 			};
 		};
 	};
