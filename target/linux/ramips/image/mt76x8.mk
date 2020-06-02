@@ -622,7 +622,7 @@ TARGET_DEVICES += zyxel_keenetic-extra-ii
 define Device/zyxel_keenetic-kn-4g
   IMAGE_SIZE := 16064k
   BLOCKSIZE := 64k
-  DEVICE_TITLE := Keenetic 4G (KN-4G)
+  DEVICE_TITLE := Keenetic 4G
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
