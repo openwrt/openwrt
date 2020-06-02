@@ -57,7 +57,8 @@ static bool jffs2_dirent_valid(struct jffs2_raw_dirent *node)
 
 static int jffs2_find_file(struct mtd_info *mtd, uint8_t *buf,
 			   const char *name, size_t name_len,
-			   loff_t *offs, loff_t size)
+			   loff_t *offs, loff_t size,
+			   char **out_name, size_t *out_name_len)
 {
 	const loff_t end = *offs + size;
 	struct jffs2_raw_dirent *node;
@@ -97,10 +98,22 @@ static int jffs2_find_file(struct mtd_info *mtd, uint8_t *buf,
 			}
 
 			if (!memcmp(node->name, OPENWRT_NAME,
-				    OPENWRT_NAME_LEN))
+				    OPENWRT_NAME_LEN)) {
 				valid = true;
-			else if (!memcmp(node->name, name, name_len))
-				return valid ? 0 : -EINVAL;
+			} else if (!memcmp(node->name, name, name_len)) {
+				if (!valid)
+					return -EINVAL;
+
+				if (out_name)
+					*out_name = kstrndup(node->name,
+							     node->nsize,
+							     GFP_KERNEL);
+
+				if (out_name_len)
+					*out_name_len = node->nsize;
+
+				return 0;
+			}
 
 			block_offs += je32_to_cpu(node->totlen);
 			block_offs = (block_offs + 0x3) & ~0x3;
@@ -145,7 +158,7 @@ static int parse_bcm_wfi(struct mtd_info *master,
 
 		ret = jffs2_find_file(master, buf, CFERAM_NAME,
 				      CFERAM_NAME_LEN, &cfe_off,
-				      size - (cfe_off - off));
+				      size - (cfe_off - off), NULL, NULL);
 		if (ret)
 			return ret;
 
@@ -155,7 +168,8 @@ static int parse_bcm_wfi(struct mtd_info *master,
 	}
 
 	ret = jffs2_find_file(master, buf, KERNEL_NAME, KERNEL_NAME_LEN,
-			      &kernel_off, size - (kernel_off - off));
+			      &kernel_off, size - (kernel_off - off),
+			      NULL, NULL);
 	if (ret)
 		return ret;
 
