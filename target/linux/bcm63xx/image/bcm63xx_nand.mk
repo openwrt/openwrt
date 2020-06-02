@@ -121,7 +121,7 @@ TARGET_DEVICES += netgear_dgnd3700-v2
 
 ### Sercomm ###
 define Device/sercomm_ad1018
-  $(Device/bcm63xx-nand)
+  $(Device/sercomm-nand)
   IMAGE/cfe.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | ad1018-jffs2-cferam | append-ubi | cfe-wfi-tag
   DEVICE_VENDOR := Sercomm
   DEVICE_MODEL := AD1018
@@ -134,5 +134,15 @@ define Device/sercomm_ad1018
   VID_HDR_OFFSET := 2048
   DEVICE_PACKAGES += $(B43_PACKAGES) $(USB2_PACKAGES)
   CFE_WFI_FLASH_TYPE := 3
+  SERCOMM_PID := \
+    30 30 30 30 30 30 30 31 34 31 35 31 35 33 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 33 30 31 33 30 30 30 30 30 30 30 30 \
+    0D 0A 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  SERCOMM_VERSION := 1001
 endef
 TARGET_DEVICES += sercomm_ad1018
