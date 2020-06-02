@@ -48,21 +48,22 @@ static bool jffs2_dirent_valid(struct jffs2_raw_dirent *node)
 		je32_to_cpu(node->node_crc) == jffs2_dirent_crc(node));
 }
 
-static int jffs2_find_file(struct mtd_info *master, uint8_t *buf,
+static int jffs2_find_file(struct mtd_info *mtd, uint8_t *buf,
 			   const char *name, size_t name_len,
-			   loff_t *offs)
+			   loff_t *offs, loff_t size)
 {
+	const loff_t end = *offs + size;
 	struct jffs2_raw_dirent *node;
 	bool valid = false;
 	size_t retlen;
 	uint16_t magic;
 	int rc;
 
-	for (; *offs < master->size; *offs += master->erasesize) {
+	for (; *offs < end; *offs += mtd->erasesize) {
 		unsigned int block_offs = 0;
 
 		/* Skip CFE erased blocks */
-		rc = mtd_read(master, *offs, sizeof(magic), &retlen,
+		rc = mtd_read(mtd, *offs, sizeof(magic), &retlen,
 			      (void *) &magic);
 		if (rc || retlen != sizeof(magic)) {
 			continue;
@@ -73,14 +74,14 @@ static int jffs2_find_file(struct mtd_info *master, uint8_t *buf,
 			continue;
 
 		/* Read full block */
-		rc = mtd_read(master, *offs, master->erasesize, &retlen,
+		rc = mtd_read(mtd, *offs, mtd->erasesize, &retlen,
 			      (void *) buf);
 		if (rc)
 			return rc;
-		if (retlen != master->erasesize)
+		if (retlen != mtd->erasesize)
 			return -EINVAL;
 
-		while (block_offs < master->erasesize) {
+		while (block_offs < mtd->erasesize) {
 			node = (struct jffs2_raw_dirent *) &buf[block_offs];
 
 			if (!jffs2_dirent_valid(node)) {
@@ -102,14 +103,15 @@ static int jffs2_find_file(struct mtd_info *master, uint8_t *buf,
 	return -ENOENT;
 }
 
-static int ubifs_find(struct mtd_info *master, loff_t *offs)
+static int ubifs_find(struct mtd_info *mtd, loff_t *offs, loff_t size)
 {
+	const loff_t end = *offs + size;
 	uint32_t magic;
 	size_t retlen;
 	int rc;
 
-	for (; *offs < master->size; *offs += master->erasesize) {
-		rc = mtd_read(master, *offs, sizeof(magic), &retlen,
+	for (; *offs < end; *offs += mtd->erasesize) {
+		rc = mtd_read(mtd, *offs, sizeof(magic), &retlen,
 			      (unsigned char *) &magic);
 		if (rc || retlen != sizeof(magic))
 			continue;
@@ -149,7 +151,8 @@ static int mtdsplit_parse_bcm_wfi(struct mtd_info *master,
 		cfe_off = 0;
 
 		ret = jffs2_find_file(master, buf, CFERAM_NAME,
-				      CFERAM_NAME_LEN, &cfe_off);
+				      CFERAM_NAME_LEN, &cfe_off,
+				      master->size);
 		if (ret) {
 			kfree(buf);
 			return ret;
@@ -161,13 +164,13 @@ static int mtdsplit_parse_bcm_wfi(struct mtd_info *master,
 	}
 
 	ret = jffs2_find_file(master, buf, KERNEL_NAME, KERNEL_NAME_LEN,
-			      &kernel_off);
+			      &kernel_off, master->size);
 	kfree(buf);
 	if (ret)
 		return ret;
 
 	rootfs_off = kernel_off + master->erasesize;
-	ret = ubifs_find(master, &rootfs_off);
+	ret = ubifs_find(master, &rootfs_off, master->size);
 	if (ret)
 		return ret;
 
@@ -203,7 +206,7 @@ static int mtdsplit_parse_bcm_wfi(struct mtd_info *master,
 	return num_parts;
 }
 
-static const struct of_device_id mtdsplit_fit_of_match_table[] = {
+static const struct of_device_id mtdsplit_bcm_wfi_of_match[] = {
 	{ .compatible = "brcm,wfi" },
 	{ .compatible = "brcm,wfi-sercomm" },
 	{ },
@@ -212,7 +215,7 @@ static const struct of_device_id mtdsplit_fit_of_match_table[] = {
 static struct mtd_part_parser mtdsplit_bcm_wfi_parser = {
 	.owner = THIS_MODULE,
 	.name = "bcm-wfi-fw",
-	.of_match_table = mtdsplit_fit_of_match_table,
+	.of_match_table = mtdsplit_bcm_wfi_of_match,
 	.parse_fn = mtdsplit_parse_bcm_wfi,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
