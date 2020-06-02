@@ -130,54 +130,37 @@ static int ubifs_find(struct mtd_info *mtd, loff_t *offs, loff_t size)
 	return -ENOENT;
 }
 
-static int mtdsplit_parse_bcm_wfi(struct mtd_info *master,
-				  const struct mtd_partition **pparts,
-				  struct mtd_part_parser_data *data)
+static int parse_bcm_wfi(struct mtd_info *master,
+			 const struct mtd_partition **pparts,
+			 uint8_t *buf, loff_t off, loff_t size, bool cfe_part)
 {
 	struct mtd_partition *parts;
-	struct device_node *mtd_node;
 	loff_t cfe_off, kernel_off, rootfs_off;
-	bool cfe_part = true;
 	unsigned int num_parts = BCM_WFI_PARTS, cur_part = 0;
-	uint8_t *buf;
 	int ret;
-
-	buf = kzalloc(master->erasesize, GFP_KERNEL);
-	if (!buf)
-		return -ENOMEM;
-
-	mtd_node = mtd_get_of_node(master);
-	if (!mtd_node)
-		return -EINVAL;
-
-	if (of_property_read_bool(mtd_node, "brcm,no-cferam"))
-		cfe_part = false;
 
 	if (cfe_part) {
 		num_parts++;
-		cfe_off = 0;
+		cfe_off = off;
 
 		ret = jffs2_find_file(master, buf, CFERAM_NAME,
 				      CFERAM_NAME_LEN, &cfe_off,
-				      master->size);
-		if (ret) {
-			kfree(buf);
+				      size - (cfe_off - off));
+		if (ret)
 			return ret;
-		}
 
 		kernel_off = cfe_off + master->erasesize;
 	} else {
-		kernel_off = 0;
+		kernel_off = off;
 	}
 
 	ret = jffs2_find_file(master, buf, KERNEL_NAME, KERNEL_NAME_LEN,
-			      &kernel_off, master->size);
-	kfree(buf);
+			      &kernel_off, size - (kernel_off - off));
 	if (ret)
 		return ret;
 
 	rootfs_off = kernel_off + master->erasesize;
-	ret = ubifs_find(master, &rootfs_off, master->size);
+	ret = ubifs_find(master, &rootfs_off, size - (rootfs_off - off));
 	if (ret)
 		return ret;
 
@@ -188,14 +171,14 @@ static int mtdsplit_parse_bcm_wfi(struct mtd_info *master,
 	if (cfe_part) {
 		parts[cur_part].name = "cferam";
 		parts[cur_part].mask_flags = MTD_WRITEABLE;
-		parts[cur_part].offset = 0;
-		parts[cur_part].size = kernel_off;
+		parts[cur_part].offset = cfe_off;
+		parts[cur_part].size = kernel_off - cfe_off;
 		cur_part++;
 	}
 
 	parts[cur_part].name = "firmware";
 	parts[cur_part].offset = kernel_off;
-	parts[cur_part].size = master->size - kernel_off;
+	parts[cur_part].size = size - (kernel_off - off);
 	cur_part++;
 
 	parts[cur_part].name = KERNEL_PART_NAME;
@@ -205,12 +188,39 @@ static int mtdsplit_parse_bcm_wfi(struct mtd_info *master,
 
 	parts[cur_part].name = UBI_PART_NAME;
 	parts[cur_part].offset = rootfs_off;
-	parts[cur_part].size = master->size - rootfs_off;
+	parts[cur_part].size = size - (rootfs_off - off);
 	cur_part++;
 
 	*pparts = parts;
 
 	return num_parts;
+}
+
+static int mtdsplit_parse_bcm_wfi(struct mtd_info *master,
+				  const struct mtd_partition **pparts,
+				  struct mtd_part_parser_data *data)
+{
+	struct device_node *mtd_node;
+	bool cfe_part = true;
+	uint8_t *buf;
+	int ret;
+
+	mtd_node = mtd_get_of_node(master);
+	if (!mtd_node)
+		return -EINVAL;
+
+	buf = kzalloc(master->erasesize, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	if (of_property_read_bool(mtd_node, "brcm,no-cferam"))
+		cfe_part = false;
+
+	ret = parse_bcm_wfi(master, pparts, buf, 0, master->size, cfe_part);
+
+	kfree(buf);
+
+	return ret;
 }
 
 static const struct of_device_id mtdsplit_bcm_wfi_of_match[] = {
@@ -256,10 +266,12 @@ static int mtdsplit_parse_ser_wfi(struct mtd_info *master,
 {
 	struct mtd_info *mtd_bf1, *mtd_bf2;
 	struct erase_info bf_erase;
-	struct mtd_partition *parts;
-	loff_t kernel_off, rootfs_off, img_size;
-	loff_t img2_off, img2_size = 0;
-	unsigned int num_parts = BCM_WFI_PARTS, cur_part = 0;
+	loff_t img1_off = 0;
+	loff_t img2_off = master->size / 2;
+	loff_t img1_size = (img2_off - img1_off);
+	loff_t img2_size = (master->size - img2_off);
+	loff_t active_off, inactive_off;
+	loff_t active_size, inactive_size;
 	uint8_t *buf;
 	int bf1, bf2;
 	int ret;
@@ -292,65 +304,40 @@ static int mtdsplit_parse_ser_wfi(struct mtd_info *master,
 	}
 
 	if (bf1 >= bf2) {
-		kernel_off = 0;
-		if (bf2 >= 0) {
-			img_size = master->size / 2;
-
-			img2_off = img_size;
-			img2_size = master->size - img2_off;
-			num_parts++;
-		} else {
-			img_size = master->size;
-		}
+		active_off = img1_off;
+		active_size = img1_size;
+		inactive_off = img2_off;
+		inactive_size = img2_size;
 	} else {
-		kernel_off = master->size / 2;
-		img_size = master->size;
-
-		img2_off = 0;
-		img2_size = kernel_off;
-		num_parts++;
+		active_off = img2_off;
+		active_size = img2_size;
+		inactive_off = img1_off;
+		inactive_size = img1_size;
 	}
 
-	ret = jffs2_find_file(master, buf, KERNEL_NAME, KERNEL_NAME_LEN,
-			      &kernel_off, img_size);
+	ret = parse_bcm_wfi(master, pparts, buf, active_off, active_size, false);
+
 	kfree(buf);
-	if (ret)
-		return ret;
 
-	rootfs_off = kernel_off + master->erasesize;
-	ret = ubifs_find(master, &rootfs_off, img_size);
-	if (ret)
-		return ret;
+	if (ret > 0) {
+		struct mtd_partition *parts;
 
-	parts = kzalloc(num_parts * sizeof(*parts), GFP_KERNEL);
-	if (!parts)
-		return -ENOMEM;
+		parts = kzalloc((ret + 1) * sizeof(*parts), GFP_KERNEL);
+		if (!parts)
+			return -ENOMEM;
 
-	parts[cur_part].name = "firmware";
-	parts[cur_part].offset = kernel_off;
-	parts[cur_part].size = img_size - kernel_off;
-	cur_part++;
+		memcpy(parts, *pparts, ret * sizeof(*parts));
+		kfree(*pparts);
 
-	parts[cur_part].name = KERNEL_PART_NAME;
-	parts[cur_part].offset = kernel_off;
-	parts[cur_part].size = rootfs_off - kernel_off;
-	cur_part++;
+		parts[ret].name = "img2";
+		parts[ret].offset = inactive_off;
+		parts[ret].size = inactive_size;
+		ret++;
 
-	parts[cur_part].name = UBI_PART_NAME;
-	parts[cur_part].offset = rootfs_off;
-	parts[cur_part].size = img_size - rootfs_off;
-	cur_part++;
-
-	if (img2_size) {
-		parts[cur_part].name = "img2";
-		parts[cur_part].offset = img2_off;
-		parts[cur_part].size = img2_size;
-		cur_part++;
+		*pparts = parts;
 	}
 
-	*pparts = parts;
-
-	return num_parts;
+	return ret;
 }
 
 static const struct of_device_id mtdsplit_ser_wfi_of_match[] = {
