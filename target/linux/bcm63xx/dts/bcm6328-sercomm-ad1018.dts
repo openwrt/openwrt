@@ -167,12 +167,6 @@
 				read-only;
 			};
 
-			partition@520000 {
-				compatible = "brcm,wfi-sercomm";
-				label = "wfi";
-				reg = <0x0520000 0x6400000>;
-			};
-
 			partition@6920000 {
 				label = "bootflag1";
 				reg = <0x6920000 0x0140000>;
@@ -181,6 +175,12 @@
 			partition@6a60000 {
 				label = "bootflag2";
 				reg = <0x6a60000 0x0140000>;
+			};
+
+			partition@520000 {
+				compatible = "sercomm,wfi";
+				label = "wfi";
+				reg = <0x0520000 0x6400000>;
 			};
 
 			partition@6ba0000 {
