@@ -150,7 +150,7 @@ static int mtdsplit_parse_bcm_wfi(struct mtd_info *master,
 	if (!mtd_node)
 		return -EINVAL;
 
-	if (of_device_is_compatible(mtd_node, "brcm,wfi-sercomm"))
+	if (of_property_read_bool(mtd_node, "brcm,no-cferam"))
 		cfe_part = false;
 
 	if (cfe_part) {
@@ -215,7 +215,6 @@ static int mtdsplit_parse_bcm_wfi(struct mtd_info *master,
 
 static const struct of_device_id mtdsplit_bcm_wfi_of_match[] = {
 	{ .compatible = "brcm,wfi" },
-	{ .compatible = "brcm,wfi-sercomm" },
 	{ },
 };
 
