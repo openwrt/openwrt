@@ -223,6 +223,64 @@ define Build/cfe-part-tag
 	dd if=$@.part >> $@
 endef
 
+define Build/cfe-sercomm-part
+	$(TOPDIR)/scripts/sercomm-partition-tag.py \
+		--input-file $@ \
+		--output-file $@.kernel_rootfs \
+		--part-name kernel_rootfs \
+		--part-version OpenWrt \
+		--rootfs-version $(SERCOMM_VERSION)
+
+	rm -rf $@-rootfs_lib
+	mkdir -p $@-rootfs_lib
+	echo $(SERCOMM_VERSION) > $@-rootfs_lib/lib_ver
+	$(call Build/cfe-jffs2,$@-rootfs_lib)
+	$(call Build/pad-to,$(BLOCKSIZE))
+	$(TOPDIR)/scripts/sercomm-partition-tag.py \
+		--input-file $@ \
+		--output-file $@.rootfs_lib \
+		--part-name rootfs_lib \
+		--part-version $(SERCOMM_VERSION)
+
+	rm -rf $@-bootloader
+	mkdir -p $@-bootloader
+	cp $(KDIR)/bcm63xx-cfe/$(CFE_RAM_FILE) $@-bootloader/$(CFE_RAM_JFFS2_NAME)
+	$(call Build/cfe-jffs2,$@-bootloader)
+	$(call Build/pad-to,$(BLOCKSIZE))
+	$(TOPDIR)/scripts/sercomm-partition-tag.py \
+		--input-file $@ \
+		--output-file $@.bootloader \
+		--part-name bootloader \
+		--part-version $(SERCOMM_VERSION)
+
+	mv $@.kernel_rootfs $@
+	dd if=$@.rootfs_lib >> $@
+	dd if=$@.bootloader >> $@
+endef
+
+define Build/cfe-sercomm-load
+	mv $@ $@.ser
+	echo $(SERCOMM_PID) | xxd -p -r > $@
+	sha256sum $@.ser | awk '{ print $1 }' | xxd -p -r >> $@
+	dd if=$@.ser >> $@
+	rm -f $@.ser
+endef
+
+define Build/cfe-sercomm-crypto
+	$(TOPDIR)/scripts/sercomm-crypto.py \
+		--input-file $@ \
+		--key-file $@.key \
+		--output-file $@.ser \
+		--version OpenWrt
+	$(STAGING_DIR_HOST)/bin/openssl enc -md md5 -aes-256-cbc \
+		-in $@ -out $@.enc \
+		-K `cat $@.key` \
+		-iv 00000000000000000000000000000000
+	dd if=$@.enc >> $@.ser
+	mv $@.ser $@
+	rm -f $@.enc $@.key
+endef
+
 define Build/cfe-old-bin
 	$(TOPDIR)/scripts/brcmImage.pl -t -p \
 		-o $@ -b $(CFE_BOARD_ID) -c $(CHIP_ID) \

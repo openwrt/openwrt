@@ -7,6 +7,7 @@ DEVICE_VARS += CFE_RAM_FILE
 DEVICE_VARS += CFE_RAM_JFFS2_NAME CFE_RAM_JFFS2_PAD
 DEVICE_VARS += CFE_WFI_CHIP_ID CFE_WFI_FLASH_TYPE
 DEVICE_VARS += CFE_WFI_FLAGS CFE_WFI_VERSION
+DEVICE_VARS += SERCOMM_PID SERCOMM_VERSION
 
 # CFE expects a single JFFS2 partition with cferam and kernel. However,
 # it's possible to fool CFE into properly loading both cferam and kernel
@@ -34,6 +35,14 @@ define Device/bcm63xx-nand
   UBINIZE_OPTS := -E 5
   DEVICE_PACKAGES += nand-utils
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
+endef
+
+define Device/sercomm-nand
+  $(Device/bcm63xx-nand)
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | cfe-sercomm-part | gzip | cfe-sercomm-load | cfe-sercomm-crypto
+  SERCOM_PID :=
+  SERCOMM_VERSION :=
 endef
 
 ### Comtrend ###
