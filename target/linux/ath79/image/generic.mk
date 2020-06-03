@@ -565,6 +565,33 @@ define Device/devolo_magic-2-wifi
 endef
 TARGET_DEVICES += devolo_magic-2-wifi
 
+define Device/dlink_dap-13xx
+  SOC := qca9533
+  DEVICE_VENDOR := D-Link
+  DEVICE_PACKAGES += rssileds
+  IMAGE_SIZE := 7936k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | mkdapimg2 0xE0000
+endef
+
+define Device/dlink_dap-1330-a1
+  $(Device/dlink_dap-13xx)
+  DEVICE_MODEL := DAP-1330
+  DEVICE_VARIANT := A1
+  DAP_SIGNATURE := HONEYBEE-FIRMWARE-DAP-1330
+  SUPPORTED_DEVICES += dap-1330-a1
+endef
+TARGET_DEVICES += dlink_dap-1330-a1
+
+define Device/dlink_dap-1365-a1
+  $(Device/dlink_dap-13xx)
+  DEVICE_MODEL := DAP-1365
+  DEVICE_VARIANT := A1
+  DAP_SIGNATURE := HONEYBEE-FIRMWARE-DAP-1365
+endef
+TARGET_DEVICES += dlink_dap-1365-a1
+
 define Device/dlink_dap-2695-a1
   SOC := qca9558
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
