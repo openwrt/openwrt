@@ -404,7 +404,7 @@ ucidef_set_led_gpio() {
 }
 
 ucidef_set_led_ide() {
-	_ucidef_set_led_trigger "$1" "$2" "$3" ide-disk
+	_ucidef_set_led_trigger "$1" "$2" "$3" disk-activity
 }
 
 ucidef_set_led_netdev() {
