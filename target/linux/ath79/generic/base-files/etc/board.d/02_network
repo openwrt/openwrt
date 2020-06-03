@@ -23,6 +23,8 @@ ath79_setup_interfaces()
 	devolo,dvl1750c|\
 	devolo,dvl1750i|\
 	devolo,dvl1750x|\
+	dlink,dap-1330-a1|\
+	dlink,dap-1365-a1|\
 	dlink,dir-505|\
 	engenius,ecb1750|\
 	enterasys,ws-ap3705i|\
@@ -386,12 +388,14 @@ ath79_setup_macs()
 	devolo,magic-2-wifi)
 		label_mac=$(macaddr_add "$(mtd_get_mac_binary art 0x1002)" 3)
 		;;
-	dlink,dap-2695-a1)
-		label_mac=$(mtd_get_mac_ascii bdcfg "wlanmac")
-		;;
+	dlink,dap-1330-a1|\
+	dlink,dap-1365-a1|\
 	dlink,dch-g020-a1)
 		lan_mac=$(mtd_get_mac_text "mp" 0x1)
 		label_mac=$lan_mac
+		;;
+	dlink,dap-2695-a1)
+		label_mac=$(mtd_get_mac_ascii bdcfg "wlanmac")
 		;;
 	dlink,dir-825-b1)
 		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)
