@@ -39,7 +39,7 @@ endef
 
 define Device/sercomm-nand
   $(Device/bcm63xx-nand)
-  IMAGES += factory.img
+  IMAGES = factory.img sysupgrade.bin
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | cfe-sercomm-part | gzip | cfe-sercomm-load | cfe-sercomm-crypto
   SERCOM_PID :=
   SERCOMM_VERSION :=
@@ -125,7 +125,6 @@ TARGET_DEVICES += netgear_dgnd3700-v2
 ### Sercomm ###
 define Device/sercomm_ad1018
   $(Device/sercomm-nand)
-  IMAGE/cfe.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | ad1018-jffs2-cferam | append-ubi | cfe-wfi-tag
   DEVICE_VENDOR := Sercomm
   DEVICE_MODEL := AD1018
   CHIP_ID := 6328
