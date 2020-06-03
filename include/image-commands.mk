@@ -393,7 +393,7 @@ endef
 
 define Build/seama-seal
 	$(STAGING_DIR_HOST)/bin/seama -i $@ -s $@.seama \
-		-m "signature=$(SEAMA_SIGNATURE)"
+		-m "signature=$(if $(1),$(1),$(SEAMA_SIGNATURE))"
 	mv $@.seama $@
 endef
 
