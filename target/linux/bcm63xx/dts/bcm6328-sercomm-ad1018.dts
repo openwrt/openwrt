@@ -167,6 +167,18 @@
 				read-only;
 			};
 
+			partition@340000 {
+				label = "serial";
+				reg = <0x0340000 0x00a0000>;
+				read-only;
+			};
+
+			partition@3e0000 {
+				label = "protect";
+				reg = <0x03e0000 0x0140000>;
+				read-only;
+			};
+
 			partition@6920000 {
 				label = "bootflag1";
 				reg = <0x6920000 0x0140000>;
