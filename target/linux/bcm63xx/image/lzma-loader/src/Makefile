@@ -17,7 +17,8 @@
 # by the Free Software Foundation.
 #
 
-LOADADDR	:=
+LOADER_ADDR	:=
+KERNEL_ADDR	:=
 LZMA_TEXT_START	:= 0x80a00000
 LOADER_DATA	:=
 
@@ -49,7 +50,7 @@ OBJECTS		:= head.o loader.o cache.o board.o printf.o LzmaDecode.o
 
 ifneq ($(strip $(LOADER_DATA)),)
 OBJECTS		+= data.o
-CFLAGS		+= -DLZMA_WRAPPER=1 -DLOADADDR=$(LOADADDR)
+CFLAGS		+= -DLZMA_WRAPPER=1 -DLOADADDR=$(KERNEL_ADDR)
 endif
 
 
@@ -79,7 +80,7 @@ loader2.o: loader.bin
 	$(LD) -r -b binary --oformat $(O_FORMAT) -o $@ $<
 
 loader.elf: loader2.o
-	$(LD) -e startup -T loader2.lds -Ttext $(LOADADDR) -o $@ $<
+	$(LD) -e startup -T loader2.lds -Ttext $(LOADER_ADDR) -o $@ $<
 
 mrproper: clean
 
