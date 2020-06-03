@@ -27,6 +27,7 @@
 #define char_to_num(c)		((c >= '0' && c <= '9') ? (c - '0') : (0))
 
 #define BCM_WFI_PARTS		3
+#define BCM_WFI_SPLIT_PARTS	2
 
 #define CFERAM_NAME		"cferam"
 #define CFERAM_NAME_LEN		(sizeof(CFERAM_NAME) - 1)
@@ -45,6 +46,11 @@
 #define SERCOMM_MAGIC_PFX_LEN	(sizeof(SERCOMM_MAGIC_PFX) - 1)
 #define SERCOMM_MAGIC		"eRcOmM.000"
 #define SERCOMM_MAGIC_LEN	(sizeof(SERCOMM_MAGIC) - 1)
+
+#define PART_CFERAM		"cferam"
+#define PART_FIRMWARE		"firmware"
+#define PART_IMAGE_1		"img1"
+#define PART_IMAGE_2		"img2"
 
 static u32 jffs2_dirent_crc(struct jffs2_raw_dirent *node)
 {
@@ -187,14 +193,14 @@ static int parse_bcm_wfi(struct mtd_info *master,
 		return -ENOMEM;
 
 	if (cfe_part) {
-		parts[cur_part].name = "cferam";
+		parts[cur_part].name = PART_CFERAM;
 		parts[cur_part].mask_flags = MTD_WRITEABLE;
 		parts[cur_part].offset = cfe_off;
 		parts[cur_part].size = kernel_off - cfe_off;
 		cur_part++;
 	}
 
-	parts[cur_part].name = "firmware";
+	parts[cur_part].name = PART_FIRMWARE;
 	parts[cur_part].offset = kernel_off;
 	parts[cur_part].size = size - (kernel_off - off);
 	cur_part++;
@@ -273,6 +279,7 @@ static int mtdsplit_parse_bcm_wfi_split(struct mtd_info *master,
 					const struct mtd_partition **pparts,
 					struct mtd_part_parser_data *data)
 {
+	struct mtd_partition *parts;
 	loff_t cfe_off;
 	loff_t img1_off = 0;
 	loff_t img2_off = master->size / 2;
@@ -280,6 +287,7 @@ static int mtdsplit_parse_bcm_wfi_split(struct mtd_info *master,
 	loff_t img2_size = (master->size - img2_off);
 	loff_t active_off, inactive_off;
 	loff_t active_size, inactive_size;
+	const char *inactive_name;
 	uint8_t *buf;
 	char *cfe1_name = NULL, *cfe2_name = NULL;
 	size_t cfe1_size = 0, cfe2_size = 0;
@@ -314,11 +322,13 @@ static int mtdsplit_parse_bcm_wfi_split(struct mtd_info *master,
 		active_size = img1_size;
 		inactive_off = img2_off;
 		inactive_size = img2_size;
+		inactive_name = PART_IMAGE_2;
 	} else {
 		active_off = img2_off;
 		active_size = img2_size;
 		inactive_off = img1_off;
 		inactive_size = img1_size;
+		inactive_name = PART_IMAGE_1;
 	}
 
 	ret = parse_bcm_wfi(master, pparts, buf, active_off, active_size, true);
@@ -326,8 +336,6 @@ static int mtdsplit_parse_bcm_wfi_split(struct mtd_info *master,
 	kfree(buf);
 
 	if (ret > 0) {
-		struct mtd_partition *parts;
-
 		parts = kzalloc((ret + 1) * sizeof(*parts), GFP_KERNEL);
 		if (!parts)
 			return -ENOMEM;
@@ -335,10 +343,22 @@ static int mtdsplit_parse_bcm_wfi_split(struct mtd_info *master,
 		memcpy(parts, *pparts, ret * sizeof(*parts));
 		kfree(*pparts);
 
-		parts[ret].name = "img2";
+		parts[ret].name = inactive_name;
 		parts[ret].offset = inactive_off;
 		parts[ret].size = inactive_size;
 		ret++;
+
+		*pparts = parts;
+	} else {
+		parts = kzalloc(BCM_WFI_SPLIT_PARTS * sizeof(*parts), GFP_KERNEL);
+
+		parts[0].name = PART_IMAGE_1;
+		parts[0].offset = img1_off;
+		parts[0].size = img1_size;
+
+		parts[1].name = PART_IMAGE_2;
+		parts[1].offset = img2_off;
+		parts[1].size = img2_size;
 
 		*pparts = parts;
 	}
@@ -387,14 +407,15 @@ static int mtdsplit_parse_ser_wfi(struct mtd_info *master,
 				  const struct mtd_partition **pparts,
 				  struct mtd_part_parser_data *data)
 {
+	struct mtd_partition *parts;
 	struct mtd_info *mtd_bf1, *mtd_bf2;
-	struct erase_info bf_erase;
 	loff_t img1_off = 0;
 	loff_t img2_off = master->size / 2;
 	loff_t img1_size = (img2_off - img1_off);
 	loff_t img2_size = (master->size - img2_off);
 	loff_t active_off, inactive_off;
 	loff_t active_size, inactive_size;
+	const char *inactive_name;
 	uint8_t *buf;
 	int bf1, bf2;
 	int ret;
@@ -420,6 +441,8 @@ static int mtdsplit_parse_ser_wfi(struct mtd_info *master,
 		printk("sercomm: bootflag2=%d\n", bf2);
 
 	if (bf1 == bf2 && bf2 >= 0) {
+		struct erase_info bf_erase;
+
 		bf2 = -ENOENT;
 		bf_erase.addr = 0;
 		bf_erase.len = mtd_bf2->size;
@@ -431,11 +454,13 @@ static int mtdsplit_parse_ser_wfi(struct mtd_info *master,
 		active_size = img1_size;
 		inactive_off = img2_off;
 		inactive_size = img2_size;
+		inactive_name = PART_IMAGE_2;
 	} else {
 		active_off = img2_off;
 		active_size = img2_size;
 		inactive_off = img1_off;
 		inactive_size = img1_size;
+		inactive_name = PART_IMAGE_1;
 	}
 
 	ret = parse_bcm_wfi(master, pparts, buf, active_off, active_size, false);
@@ -443,8 +468,6 @@ static int mtdsplit_parse_ser_wfi(struct mtd_info *master,
 	kfree(buf);
 
 	if (ret > 0) {
-		struct mtd_partition *parts;
-
 		parts = kzalloc((ret + 1) * sizeof(*parts), GFP_KERNEL);
 		if (!parts)
 			return -ENOMEM;
@@ -452,10 +475,22 @@ static int mtdsplit_parse_ser_wfi(struct mtd_info *master,
 		memcpy(parts, *pparts, ret * sizeof(*parts));
 		kfree(*pparts);
 
-		parts[ret].name = "img2";
+		parts[ret].name = inactive_name;
 		parts[ret].offset = inactive_off;
 		parts[ret].size = inactive_size;
 		ret++;
+
+		*pparts = parts;
+	} else {
+		parts = kzalloc(BCM_WFI_SPLIT_PARTS * sizeof(*parts), GFP_KERNEL);
+
+		parts[0].name = PART_IMAGE_1;
+		parts[0].offset = img1_off;
+		parts[0].size = img1_size;
+
+		parts[1].name = PART_IMAGE_2;
+		parts[1].offset = img2_off;
+		parts[1].size = img2_size;
 
 		*pparts = parts;
 	}
