@@ -32,5 +32,5 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 +	$(Q)$(MAKE) $(build)=$(dtstree) $(dtstree)/$@
 +
  PHONY += dtbs dtbs_install dtbs_check
- dtbs dtbs_check: include/config/kernel.release scripts_dtc
+ dtbs: include/config/kernel.release scripts_dtc
  	$(Q)$(MAKE) $(build)=$(dtstree)

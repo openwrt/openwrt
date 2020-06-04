@@ -66,7 +66,6 @@ define Device/iom_ix2-200
   DEVICE_MODEL := StorCenter ix2-200
   DEVICE_DTS := kirkwood-iomega_ix2_200
   DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-hwmon-lm63
-  DEVICE_TYPE:=nas
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k

@@ -7,6 +7,7 @@ DEVICE_VARS += CFE_RAM_FILE
 DEVICE_VARS += CFE_RAM_JFFS2_NAME CFE_RAM_JFFS2_PAD
 DEVICE_VARS += CFE_WFI_CHIP_ID CFE_WFI_FLASH_TYPE
 DEVICE_VARS += CFE_WFI_FLAGS CFE_WFI_VERSION
+DEVICE_VARS += SERCOMM_PID SERCOMM_VERSION
 
 # CFE expects a single JFFS2 partition with cferam and kernel. However,
 # it's possible to fool CFE into properly loading both cferam and kernel
@@ -27,7 +28,7 @@ define Device/bcm63xx-nand
   CFE_RAM_FILE :=
   CFE_RAM_JFFS2_NAME :=
   CFE_RAM_JFFS2_PAD :=
-  CFE_WFI_VERSION := 0x5731
+  CFE_WFI_VERSION :=
   CFE_WFI_CHIP_ID = 0x$$(CHIP_ID)
   CFE_WFI_FLASH_TYPE :=
   CFE_WFI_FLAGS :=
@@ -36,24 +37,15 @@ define Device/bcm63xx-nand
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 endef
 
-### Comtrend ###
-define Device/comtrend_vr-3032u
+define Device/sercomm-nand
   $(Device/bcm63xx-nand)
-  DEVICE_VENDOR := Comtrend
-  DEVICE_MODEL := VR-3032u
-  CHIP_ID := 63268
-  SOC := bcm63168
-  CFE_RAM_FILE := comtrend,vr-3032u/cferam.000
-  CFE_RAM_JFFS2_NAME := cferam.000
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  SUBPAGESIZE := 512
-  VID_HDR_OFFSET := 2048
-  DEVICE_PACKAGES += $(USB2_PACKAGES)
-  CFE_WFI_FLASH_TYPE := 3
+  IMAGES = factory.img sysupgrade.bin
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | cfe-sercomm-part | gzip | cfe-sercomm-load | cfe-sercomm-crypto
+  SERCOM_PID :=
+  SERCOMM_VERSION :=
 endef
-TARGET_DEVICES += comtrend_vr-3032u
 
+### Comtrend ###
 define Device/comtrend_vg-8050
   $(Device/bcm63xx-nand)
   DEVICE_VENDOR := Comtrend
@@ -67,9 +59,28 @@ define Device/comtrend_vg-8050
   SUBPAGESIZE := 512
   VID_HDR_OFFSET := 2048
   DEVICE_PACKAGES += $(USB2_PACKAGES)
+  CFE_WFI_VERSION := 0x5732
   CFE_WFI_FLASH_TYPE := 3
 endef
 TARGET_DEVICES += comtrend_vg-8050
+
+define Device/comtrend_vr-3032u
+  $(Device/bcm63xx-nand)
+  DEVICE_VENDOR := Comtrend
+  DEVICE_MODEL := VR-3032u
+  CHIP_ID := 63268
+  SOC := bcm63168
+  CFE_RAM_FILE := comtrend,vr-3032u/cferam.000
+  CFE_RAM_JFFS2_NAME := cferam.000
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  VID_HDR_OFFSET := 2048
+  DEVICE_PACKAGES += $(USB2_PACKAGES)
+  CFE_WFI_VERSION := 0x5732
+  CFE_WFI_FLASH_TYPE := 3
+endef
+TARGET_DEVICES += comtrend_vr-3032u
 
 ### Huawei ###
 define Device/huawei_hg253s-v2
@@ -106,14 +117,14 @@ define Device/netgear_dgnd3700-v2
   BLOCKSIZE := 16k
   PAGESIZE := 512
   DEVICE_PACKAGES += $(B43_PACKAGES) $(USB2_PACKAGES)
+  CFE_WFI_VERSION := 0x5731
   CFE_WFI_FLASH_TYPE := 2
 endef
 TARGET_DEVICES += netgear_dgnd3700-v2
 
 ### Sercomm ###
 define Device/sercomm_ad1018
-  $(Device/bcm63xx-nand)
-  IMAGE/cfe.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | ad1018-jffs2-cferam | append-ubi | cfe-wfi-tag
+  $(Device/sercomm-nand)
   DEVICE_VENDOR := Sercomm
   DEVICE_MODEL := AD1018
   CHIP_ID := 6328
@@ -125,5 +136,16 @@ define Device/sercomm_ad1018
   VID_HDR_OFFSET := 2048
   DEVICE_PACKAGES += $(B43_PACKAGES) $(USB2_PACKAGES)
   CFE_WFI_FLASH_TYPE := 3
+  CFE_WFI_VERSION := 0x5731
+  SERCOMM_PID := \
+    30 30 30 30 30 30 30 31 34 31 35 31 35 33 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 33 30 31 33 30 30 30 30 30 30 30 30 \
+    0D 0A 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  SERCOMM_VERSION := 1001
 endef
 TARGET_DEVICES += sercomm_ad1018
