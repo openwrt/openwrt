@@ -362,6 +362,26 @@ define Device/tplink_cpe610-v2
 endef
 TARGET_DEVICES += tplink_cpe610-v2
 
+define Device/tplink-eap2x5
+  $(Device/tplink-safeloader)
+  SOC := qca9563
+  LOADER_TYPE := elf
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel
+  KERNEL_INITRAMFS := $$(KERNEL)
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory | \
+	pad-extra 128
+endef
+
+define Device/tplink_eap245-v3
+  $(Device/tplink-eap2x5)
+  IMAGE_SIZE := 14592k
+  DEVICE_MODEL := EAP245
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca99x0-ct
+  TPLINK_BOARD_ID := EAP245-V3
+endef
+TARGET_DEVICES += tplink_eap245-v3
+
 define Device/tplink_re350k-v1
   $(Device/tplink-safeloader)
   SOC := qca9558
