@@ -1298,6 +1298,38 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the EAP245 v3 */
+	{
+		.id     = "EAP245-V3",
+		.support_list =
+			"SupportList:\r\n"
+			"EAP245(TP-Link|UN|AC1750-D):3.0\r\n",
+		.support_trail = '\xff',
+		.soft_ver = NULL,
+		.soft_ver_compat_level = 1,
+
+		/** Firmware partition with dynamic kernel/rootfs split */
+		.partitions = {
+			{"factroy-boot", 0x00000, 0x40000},
+			{"fs-uboot", 0x40000, 0x40000},
+			{"partition-table", 0x80000, 0x10000},
+			{"default-mac", 0x90000, 0x01000},
+			{"support-list", 0x91000, 0x00100},
+			{"product-info", 0x91100, 0x00400},
+			{"soft-version", 0x92000, 0x00100},
+			{"radio", 0xa0000, 0x10000},
+			{"extra-para", 0xb0000, 0x10000},
+			{"firmware", 0xc0000, 0xe40000},
+			{"config", 0xf00000, 0x30000},
+			{"mutil-log", 0xf30000, 0x80000},
+			{"oops", 0xfb0000, 0x40000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
 	/** Firmware layout for the TL-WA850RE v2 */
 	{
 		.id     = "TLWA850REV2",
@@ -2513,6 +2545,9 @@ static void build_image(const char *output,
 	} else if (strcasecmp(info->id, "ARCHER-C6-V2-US") == 0) {
 		const char mdat[11] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00};
 		parts[5] = put_data("extra-para", mdat, 11);
+	} else if (strcasecmp(info->id, "EAP245-V3") == 0) {
+		const char mdat[10] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01};
+		parts[5] = put_data("extra-para", mdat, 10);
 	}
 
 	size_t len;
