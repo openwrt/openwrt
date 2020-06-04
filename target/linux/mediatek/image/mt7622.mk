@@ -10,7 +10,19 @@ define Device/bpi_bananapi-r64
 endef
 TARGET_DEVICES += bpi_bananapi-r64
 
-define Device/elecom_wrc-2533gent
+define Device/bpi_bananapi-r64-rootdisk
+  DEVICE_VENDOR := Bpi
+  DEVICE_MODEL := Banana Pi R64 (rootdisk)
+  DEVICE_DTS := mt7622-bananapi-bpi-r64-rootdisk
+  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
+  SUPPORTED_DEVICES := bananapi,bpi-r64
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
+  IMAGES := sysupgrade-emmc.bin.gz
+  IMAGE/sysupgrade-emmc.bin.gz := sysupgrade-emmc | gzip | append-metadata
+endef
+TARGET_DEVICES += bpi_bananapi-r64-rootdisk
+
+define Device/elecom-wrc-2533gent
   DEVICE_VENDOR := Elecom
   DEVICE_MODEL := WRC-2533GENT
   DEVICE_DTS := mt7622-elecom-wrc-2533gent
