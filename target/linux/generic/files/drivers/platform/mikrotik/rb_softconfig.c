@@ -56,7 +56,7 @@
 
 #include "routerboot.h"
 
-#define RB_SOFTCONFIG_VER		"0.02"
+#define RB_SOFTCONFIG_VER		"0.03"
 #define RB_SC_PR_PFX			"[rb_softconfig] "
 
 /*
@@ -123,20 +123,20 @@
 /*
  * ATH79 CPU frequency indices.
  * It is unknown if they apply to all ATH79 RBs, and some do not seem to feature
- * the up levels (QCA955x), while U3 is presumably AR9344-only.
+ * the upper levels (QCA955x), while F is presumably AR9344-only.
  */
-#define RB_CPU_FREQ_IDX_ATH79_D2	(0 << 3)
-#define RB_CPU_FREQ_IDX_ATH79_D1	(1 << 3)	// 0x8
-#define RB_CPU_FREQ_IDX_ATH79_N0	(2 << 3)	// 0x10 - factory freq for many devices
-#define RB_CPU_FREQ_IDX_ATH79_U1	(3 << 3)	// 0x18
-#define RB_CPU_FREQ_IDX_ATH79_U2	(4 << 3)	// 0x20
-#define RB_CPU_FREQ_IDX_ATH79_U3	(5 << 3)	// 0x28
+#define RB_CPU_FREQ_IDX_ATH79_A	(0 << 3)
+#define RB_CPU_FREQ_IDX_ATH79_B	(1 << 3)	// 0x8
+#define RB_CPU_FREQ_IDX_ATH79_C	(2 << 3)	// 0x10 - factory freq for many devices
+#define RB_CPU_FREQ_IDX_ATH79_D	(3 << 3)	// 0x18
+#define RB_CPU_FREQ_IDX_ATH79_E	(4 << 3)	// 0x20
+#define RB_CPU_FREQ_IDX_ATH79_F	(5 << 3)	// 0x28
 
 #define RB_CPU_FREQ_IDX_ATH79_MIN		0	// all devices support lowest setting
-#define RB_CPU_FREQ_IDX_ATH79_AR9334_MAX	5	// stops at U3
-#define RB_CPU_FREQ_IDX_ATH79_QCA953X_MAX	4	// stops at U2
-#define RB_CPU_FREQ_IDX_ATH79_QCA9556_MAX	2	// stops at N0
-#define RB_CPU_FREQ_IDX_ATH79_QCA9558_MAX	3	// stops at U1
+#define RB_CPU_FREQ_IDX_ATH79_AR9334_MAX	5	// stops at F
+#define RB_CPU_FREQ_IDX_ATH79_QCA953X_MAX	4	// stops at E
+#define RB_CPU_FREQ_IDX_ATH79_QCA9556_MAX	2	// stops at C
+#define RB_CPU_FREQ_IDX_ATH79_QCA9558_MAX	3	// stops at D
 
 #define RB_SC_CRC32_OFFSET		4	// located right after magic
 
@@ -387,13 +387,14 @@ static ssize_t sc_tag_store_bootdelays(const u8 *pld, u16 pld_len, const char *b
 
 /* Support CPU frequency accessors only when the tag format has been asserted */
 #if defined(CONFIG_ATH79)
+/* Use the same letter-based nomenclature as RouterBOOT */
 static struct sc_u32tvs const sc_cpufreq_indexes_ath79[] = {
-	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_D2,	"-2"),
-	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_D1,	"-1"),
-	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_N0,	"0"),
-	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_U1,	"+1"),
-	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_U2,	"+2"),
-	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_U3,	"+3"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_A,	"a"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_B,	"b"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_C,	"c"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_D,	"d"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_E,	"e"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_F,	"f"),
 };
 
 static int sc_tag_cpufreq_ath79_idxmax(void)
