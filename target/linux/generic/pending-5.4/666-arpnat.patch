@@ -38,7 +38,7 @@
  #endif
 --- /dev/null	2012-08-18 22:23:01.258815424 -0400
 +++ linux-3.7.9/net/bridge/netfilter/ebt_arpnat.c	2012-08-30 07:37:48.220576042 -0400
-@@ -0,0 +1,1356 @@
+@@ -0,0 +1,1468 @@
 +/*
 + *  ebt_arpnat
 + *
@@ -171,9 +171,21 @@
 +#define ARPNAT_DEBUG_VLAN 0x8
 +#define ARPNAT_DEBUG_IP 0x10
 +#define ARPNAT_DEBUG_OTHER 0x20
++#define ARPNAT_DEBUG_TRACE 0x40
 +
 +#define ARPNAT_DEBUG(flag,format,...) if (flag & debug) {\
 +    printk("Arpnat: "format"\n",##__VA_ARGS__); \
++}
++
++__STATIC inline aff_skb_info(struct sk_buff *skb){
++    ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "Skb  : %x", (unsigned int) skb);
++    ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "Head : %x", (unsigned int) skb->head);
++    ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "Data : %x", (unsigned int) skb->data);
++    ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "Tail : %x", (unsigned int) skb->tail);
++    ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "End  : %x", (unsigned int) skb->end);
++    ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "Mac header  : %x", (unsigned int) skb->mac_header);
++    ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "Transport header  : %x", (unsigned int) skb->transport_header);
++    ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "Network header  : %x", (unsigned int) skb->network_header);
 +}
 +
 +#ifndef __packed
@@ -645,8 +657,8 @@
 +       entry = find_ip_nat(&arpnat_table, *arp_dip);
 +       switch (ah->ar_op)
 +       {
-+       case __constant_htons(ARPOP_REPLY):
-+       case __constant_htons(ARPOP_REQUEST):
++       case htons(ARPOP_REPLY):
++       case htons(ARPOP_REQUEST):
 +               if (entry)
 +               {
 +                       __be32 dip = *arp_dip;
@@ -731,18 +743,35 @@
 +       uint8_t* eth_dmac = eth_hdr(skb)->h_dest;
 +       struct mac2ip* entry;
 +       struct iphdr *iph = ip_hdr_vlan(skb, vlan);
-+       struct udphdr *uh;
++       struct udphdr *uh, *udp_header;
 +       struct net_bridge_port *in_br_port;
++       
++       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_ip_in");
 +
 +       if (skb->len < sizeof(struct ethhdr) + sizeof(struct iphdr) + vlan)
-+               return 0;
-+
-+       if (bootpnat && iph->protocol == htons(IPPROTO_UDP) && !(iph->frag_off & htons(IP_OFFSET)))
 +       {
-+               uh = (struct udphdr*)((u_int32_t *)iph + iph->ihl);
++              ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_ip_in:return 0;");
++              return 0;
++       }
++       
++       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_ip_in: bootpnat: %d, iph->protocol: %d, frag: %d", bootpnat, iph->protocol, !(iph->frag_off & htons(IP_OFFSET)));
++       
++       // debug print the sk_buff
++       // aff_skb_info(skb);
++
++       if (bootpnat && (iph->protocol == IPPROTO_UDP) && !(iph->frag_off & htons(IP_OFFSET)))
++       {
++               // uh = (struct udphdr *)((u_int32_t *)iph + iph->ihl);
++               
++               //udp_header = (struct udphdr *)(skb->data + (iph->ihl*4));
++               
++               uh = (struct udphdr *)((void*)iph + 4*iph->ihl);
++               
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_ip_in:bootpnat uh->source %d (67 = %d, 68 = %d) (%d)", uh->source, htons(67), htons(68), ntohs(uh->source));
 +               if (uh->source == htons(67))
 +               {
 +                       //do something illegal for BOOTP
++                       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_ip_in:do something illegal for BOOTP");
 +                       uint32_t* giaddrp = (uint32_t*)(((uint8_t*)uh) + sizeof(*uh) + GIADDR_OFFSET);
 +                       /* XXX: uint8_t* flagp = (uint8_t*)(((uint8_t*)uh) + sizeof(*uh) + FLAGS_OFFSET); */
 +                       uint8_t* mac = (uint8_t*)(giaddrp + 1);
@@ -769,16 +798,21 @@
 +                       return 0;
 +               }
 +               else
++               {
++                       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_ip_in:goto HANDLE_IP_PKT;");
 +                       goto HANDLE_IP_PKT;
++               }
 +       }
 +       else
 +       {
 +               HANDLE_IP_PKT:
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_ip_in:HANDLE_IP_PKT:");
 +               spin_lock_bh(&arpnat_lock);
 +               entry = find_ip_nat(&arpnat_table, iph->daddr);
 +               in_br_port = br_port_get_rcu(in);
 +               if (entry)
 +               {
++                       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_ip_in:entry");
 +                       //to me
 +                       if (arpnat_confirm_addr(in_br_port->br->dev, iph->daddr))
 +                       {
@@ -803,6 +837,8 @@
 +               {
 +                       __be32 dip = iph->daddr;
 +                       __be32 sip = iph->saddr;
++                       
++                       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_ip_in:!entry");
 +                       if (sip && sip != dip && dip != 0xffffffff)
 +                       {
 +                               uint8_t* eth_smac = eth_hdr(skb)->h_source;
@@ -810,11 +846,18 @@
 +                               u16 vid = 0;
 +
 +                               rcu_read_lock();
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,17)
 +                               not_found = (__br_fdb_get(in_br_port->br, eth_smac,vid) == NULL);
++#else
++                               not_found = (br_fdb_find_rcu(in_br_port->br, eth_smac,vid) == NULL);
++#endif
 +                               rcu_read_unlock();
 +
 +                               if (not_found)
-+                                       forge_arp(in, sip, dip, eth_smac);
++                               {
++                                      ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_ip_in:not_found forge_arp");
++                                      forge_arp(in, sip, dip, eth_smac);
++                               }
 +
 +                               /* FIXME:
 +                               * if entry is not found we should attempt to find our
@@ -823,10 +866,12 @@
 +                               * broadcast the packet, which is not a good idea, but is
 +                               * probably better than discarding it into the void. Hmm, maybe
 +                               * some TCP retry emulation could be done here?
-+                           */
++                               */
++                               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_ip_in:FIXME");
 +                       }
 +               }
 +       }
++       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_ip_in:return 1;");
 +       return 1;
 +}
 +
@@ -941,8 +986,10 @@
 +       in_br_port = br_port_get_rcu(in);
 +
 +       eth_dmac = eth_hdr(skb)->h_dest;
++       
++       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_in: %d %d", proto, ntohs(proto));
 +
-+       if (proto == __constant_htons(ETH_P_8021Q))
++       if (proto == htons(ETH_P_8021Q))
 +       {
 +               struct vlan_ethhdr *hdr = vlan_eth_hdr(skb);
 +               proto = hdr->h_vlan_encapsulated_proto;
@@ -951,17 +998,26 @@
 +
 +       switch (proto)
 +       {
-+       case __constant_htons(ETH_P_ARP):
++       case htons(ETH_P_PAE):
++               // make sure we don't NAT PAE packets
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_in:ETH_P_PAE");
++               nat = 0;
++               break;
++       case htons(ETH_P_ARP):
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_in:ETH_P_ARP");
 +               nat = do_arp_in(skb, in, &target, vlan);
 +               break;
-+       case __constant_htons(ETH_P_IP):
++       case htons(ETH_P_IP):
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_in:ETH_P_IP");
 +               nat = do_ip_in(skb, in, &target, vlan);
 +               break;
-+       case __constant_htons(ETH_P_PPP_DISC):
++       case htons(ETH_P_PPP_DISC):
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_in:ETH_P_PPP_DISC");
 +               if (pppoenat)
 +                       nat = do_pppoed_in(skb, in, &target, vlan);
 +               break;
-+       case __constant_htons(ETH_P_PPP_SES):
++       case htons(ETH_P_PPP_SES):
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_in:ETH_P_PPP_SES");
 +               if (pppoenat)
 +                       nat = do_pppoes_in(skb, in, &target, vlan);
 +               break;
@@ -971,7 +1027,10 @@
 +#ifdef DROP_PACKETS_NOT_FOR_ME
 +               if (memcmp(in_br_port->br->dev->dev_addr, eth_dmac, ETH_ALEN) &&
 +                       memcmp(in->dev_addr, eth_dmac, ETH_ALEN))
++               {
++                       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_in:DROP_PACKETS_NOT_FOR_ME");
 +                       return EBT_DROP;
++               }
 +#endif
 +               ARPNAT_DEBUG(ARPNAT_DEBUG_OTHER, "DMAC["F_MAC"]->BRMAC["F_MAC"]",
 +                              A_MAC(eth_dmac), A_MAC(in_br_port->br->dev->dev_addr));
@@ -1010,8 +1069,8 @@
 +
 +       switch (ah->ar_op)
 +       {
-+       case __constant_htons(ARPOP_REQUEST):
-+       case __constant_htons(ARPOP_REPLY):
++       case htons(ARPOP_REQUEST):
++       case htons(ARPOP_REPLY):
 +               spin_lock_bh(&arpnat_lock);
 +               update_arp_nat(&arpnat_table, arp_smac, *arp_sip);
 +               spin_unlock_bh(&arpnat_lock);
@@ -1059,19 +1118,28 @@
 +       struct net_bridge_port *out_br_port;
 +       out_br_port = br_port_get_rcu(out);
 +
++       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_bootp_out");
++
 +       if (!memcmp(out_br_port->br->dev->dev_addr, eth_hdr(skb)->h_source, ETH_ALEN) ||
-+               iph->protocol != htons(IPPROTO_UDP) ||
++               iph->protocol != IPPROTO_UDP ||
 +               (iph->frag_off & htons(IP_OFFSET)))
++       {
 +               //to us or not UDP or fragment then just NAT
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_bootp_out:to us or not UDP or fragment then just NAT");
 +               return 1;
++       }
 +
 +       if (uh->dest != htons(67))
++       {
 +               //not bootp then just NAT
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_bootp_out:not bootp then just NAT");
 +               return 1;
++       }
 +
 +       if (bootpnat == BOOTP_RELAY)
 +       {
 +               //do something illegal for BOOTP
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_bootp_out:do something illegal for BOOTP");
 +               __be32 giaddr = inet_select_addr(out_br_port->br->dev, iph->daddr, RT_SCOPE_LINK);
 +               __be32* giaddrp = (__be32*)(((uint8_t*)uh) + sizeof(*uh) + GIADDR_OFFSET);
 +               ARPNAT_DEBUG(ARPNAT_DEBUG_BOOTP, "OUT BOOTPRELAY: "F_IP4" -> "F_IP4,
@@ -1080,6 +1148,7 @@
 +       }
 +       else
 +       {
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_bootp_out:not BOOTP_RELAY");
 +               uint8_t* flagp = (uint8_t*)(((uint8_t*)uh) + sizeof(*uh) + FLAGS_OFFSET);
 +               *flagp |= 0x80;
 +       }
@@ -1191,37 +1260,48 @@
 +       int nat = 1;
 +       __be32 proto = eth_hdr(skb)->h_proto;
 +       int vlan = 0;
++       
++       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_out: %d %d", proto, ntohs(proto));
 +
-+       if (proto == __constant_htons(ETH_P_8021Q))
++       if (proto == htons(ETH_P_8021Q))
 +       {
-+                       struct vlan_ethhdr *hdr = vlan_eth_hdr(skb);
++                struct vlan_ethhdr *hdr = vlan_eth_hdr(skb);
 +                proto = hdr->h_vlan_encapsulated_proto;
 +                vlan = 4;
 +       }
 +
 +       switch (proto)
 +       {
-+       case __constant_htons(ETH_P_ARP):
++       case htons(ETH_P_ARP):
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_out:ETH_P_ARP %d", ETH_P_ARP);
 +               nat = do_arp_out(skb, out, &target, vlan);
 +               break;
-+       case __constant_htons(ETH_P_IP):
++       case htons(ETH_P_IP):
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_out:ETH_P_IP %d bootpnat:%d", ETH_P_IP, bootpnat);
 +               nat = do_ip_out(skb, out, &target, vlan);
 +               if (bootpnat)
 +                       nat = do_bootp_out(skb, out, &target, vlan);
 +               break;
-+       case __constant_htons(ETH_P_PPP_SES):
++       case htons(ETH_P_PPP_SES):
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_out:ETH_P_PPP_SES %d", ETH_P_PPP_SES);
 +               if (pppoenat)
 +                       nat = do_pppoes_out(skb, out, &target, vlan);
 +               break;
-+       case __constant_htons(ETH_P_PPP_DISC):
++       case htons(ETH_P_PPP_DISC):
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_out:ETH_P_PPP_DISC %d", ETH_P_PPP_DISC);
 +               if (pppoenat)
 +                       nat = do_pppoed_out(skb, out, &target, vlan);
 +               break;
 +       }
 +       if (nat)
++       {
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "do_out:nat %d", nat);
 +               memcpy(eth_hdr(skb)->h_source, out->dev_addr, ETH_ALEN);
++       }
 +       return target;
 +}
++
++
 +
 +/**
 + * Handle ARPNAT
@@ -1243,8 +1323,19 @@
 +ebt_arpnat_tg(struct sk_buff *skb, const struct xt_action_param *par)
 +{
 +	const struct ebt_nat_info *info = par->targinfo;
++       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "ebt_arpnat_tg:info");
++       
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
++       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "ebt_arpnat_tg:par->state->in");
++       struct net_device *in = (struct net_device *)par->state->in;
++       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "ebt_arpnat_tg:par->state->out");
++       struct net_device *out = (struct net_device *)par->state->out;
++#else
++       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "ebt_arpnat_tg:par->in");
 +       struct net_device *in = (struct net_device *)par->in;
++       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "ebt_arpnat_tg:par->out");
 +       struct net_device *out = (struct net_device *)par->out;
++#endif
 +#endif
 +#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
 +       struct sk_buff *skb;
@@ -1265,18 +1356,29 @@
 +#elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,25)
 +       if (skb_make_writable(skb, 0))
 +               return NF_DROP;
-+#else
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(5,2,43)
 +       if(!skb_make_writable(skb, 0))
 +               return EBT_DROP;
++#else
++       if(skb_ensure_writable(skb, 0))
++       {
++              ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "ebt_arpnat_tg:return EBT_DROP;");
++              return EBT_DROP;
++              
++       }
 +#endif
 +
 +       if (in)
-+               return do_in(skb, in, info->target);
++       {
++              ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "ebt_arpnat_tg:return do_in(skb, in, info->target);");
++              return do_in(skb, in, info->target);
++       }
 +       else if (out)
 +       {
 +#ifdef NOT_IN_THIS_RELEASE_HAVE_SET_MAC_ADDR
 +               uint8_t* smac = eth_hdr(skb)->h_source;
 +               uint8_t* mac = info->mac;
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "ebt_arpnat_tg:NOT_IN_THIS_RELEASE_HAVE_SET_MAC_ADDR");
 +               if (mac[0] == 0xff && !(smac[0] & 1))
 +               {
 +                       memcpy(mac, smac, ETH_ALEN);
@@ -1287,8 +1389,10 @@
 +                       out->open((struct net_device *)out);
 +               }
 +#endif
++               ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "ebt_arpnat_tg:do_out(skb, out, info->target);");
 +               return do_out(skb, out, info->target);
 +       }
++       ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "ebt_arpnat_tg:return info->target;");
 +       return info->target;
 +}
 +
@@ -1317,11 +1421,19 @@
 +static int ebt_arpnat_tg_check(const struct xt_tgchk_param *par)
 +{
 +       const struct ebt_nat_info *info = par->targinfo;
++       int tmp;
 +
-+       if (BASE_CHAIN && info->target == EBT_RETURN)
++       tmp = info->target | ~EBT_VERDICT_BITS;
++
++       if (BASE_CHAIN && tmp == EBT_RETURN)
 +               return -EINVAL;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
++       if (ebt_invalid_target(tmp))
++               return -EINVAL;
++#else
 +       if (INVALID_TARGET)
 +               return -EINVAL;
++#endif
 +       return 0;
 +}
 +#endif
@@ -1397,9 +1509,8 @@
 +MODULE_LICENSE("GPL");
 --- linux-old/net/bridge/br_fdb.c	2009-09-15 13:46:05.000000000 -0400
 +++ linux-3.10.1/net/bridge/br_fdb.c	2009-09-22 19:52:51.000000000 -0400
-@@ -415,3 +415,5 @@
- 		spin_unlock(&br->hash_lock);
- 	}
+@@ -1211,3 +1211,4 @@
+ 	spin_unlock_bh(&p->br->hash_lock);
  }
-+EXPORT_SYMBOL(__br_fdb_get);
-+
+ EXPORT_SYMBOL_GPL(br_fdb_clear_offload);
++EXPORT_SYMBOL(br_fdb_find_rcu);

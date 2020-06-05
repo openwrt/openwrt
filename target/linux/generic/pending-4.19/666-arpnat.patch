@@ -1357,7 +1357,7 @@
 +       if (skb_make_writable(skb, 0))
 +               return NF_DROP;
 +#else
-+       if(!skb_make_writable(skb, 0))
++       if(skb_ensure_writable(skb, 0))
 +       {
 +              ARPNAT_DEBUG(ARPNAT_DEBUG_TRACE, "ebt_arpnat_tg:return EBT_DROP;");
 +              return EBT_DROP;
