@@ -168,8 +168,9 @@ static ssize_t sc_tag_show_u32tvs(const u8 *pld, u16 pld_len, char *buf,
 	u32 data;	// cpu-endian
 	int i;
 
+	// fallback to raw hex output if we can't handle the input
 	if (tvselmts < 0)
-		return tvselmts;
+		return routerboot_tag_show_u32s(pld, pld_len, buf);
 
 	if (sizeof(data) != pld_len)
 		return -EINVAL;
@@ -397,30 +398,32 @@ static struct sc_u32tvs const sc_cpufreq_indexes_ath79[] = {
 	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_F,	"f"),
 };
 
-static int sc_tag_cpufreq_ath79_idxmax(void)
+static int sc_tag_cpufreq_ath79_arraysize(void)
 {
-	int idx_max = -EOPNOTSUPP;
+	int idx_max;
 
 	if (soc_is_ar9344())
-		idx_max = RB_CPU_FREQ_IDX_ATH79_AR9334_MAX;
+		idx_max = RB_CPU_FREQ_IDX_ATH79_AR9334_MAX+1;
 	else if (soc_is_qca953x())
-		idx_max = RB_CPU_FREQ_IDX_ATH79_QCA953X_MAX;
+		idx_max = RB_CPU_FREQ_IDX_ATH79_QCA953X_MAX+1;
 	else if (soc_is_qca9556())
-		idx_max = RB_CPU_FREQ_IDX_ATH79_QCA9556_MAX;
+		idx_max = RB_CPU_FREQ_IDX_ATH79_QCA9556_MAX+1;
 	else if (soc_is_qca9558())
-		idx_max = RB_CPU_FREQ_IDX_ATH79_QCA9558_MAX;
+		idx_max = RB_CPU_FREQ_IDX_ATH79_QCA9558_MAX+1;
+	else
+		idx_max = -EOPNOTSUPP;
 
 	return idx_max;
 }
 
 static ssize_t sc_tag_show_cpufreq_indexes(const u8 *pld, u16 pld_len, char * buf)
 {
-	return sc_tag_show_u32tvs(pld, pld_len, buf, sc_cpufreq_indexes_ath79, sc_tag_cpufreq_ath79_idxmax()+1);
+	return sc_tag_show_u32tvs(pld, pld_len, buf, sc_cpufreq_indexes_ath79, sc_tag_cpufreq_ath79_arraysize());
 }
 
 static ssize_t sc_tag_store_cpufreq_indexes(const u8 *pld, u16 pld_len, const char *buf, size_t count)
 {
-	return sc_tag_store_u32tvs(pld, pld_len, buf, count, sc_cpufreq_indexes_ath79, sc_tag_cpufreq_ath79_idxmax()+1);
+	return sc_tag_store_u32tvs(pld, pld_len, buf, count, sc_cpufreq_indexes_ath79, sc_tag_cpufreq_ath79_arraysize());
 }
 #else
  /* By default we only show the raw value to help with reverse-engineering */
