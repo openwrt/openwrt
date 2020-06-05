@@ -1,0 +1,65 @@
+From 38152ea37d8bdaffa22603e0a5b5b86cfa8714c9 Mon Sep 17 00:00:00 2001
+From: DENG Qingfang <dqfext@gmail.com>
+Date: Wed, 13 May 2020 23:37:17 +0800
+Subject: net: dsa: mt7530: set CPU port to fallback mode
+
+Currently, setting a bridge's self PVID to other value and deleting
+the default VID 1 renders untagged ports of that VLAN unable to talk to
+the CPU port:
+
+	bridge vlan add dev br0 vid 2 pvid untagged self
+	bridge vlan del dev br0 vid 1 self
+	bridge vlan add dev sw0p0 vid 2 pvid untagged
+	bridge vlan del dev sw0p0 vid 1
+	# br0 cannot send untagged frames out of sw0p0 anymore
+
+That is because the CPU port is set to security mode and its PVID is
+still 1, and untagged frames are dropped due to VLAN member violation.
+
+Set the CPU port to fallback mode so untagged frames can pass through.
+
+Fixes: 83163f7dca56 ("net: dsa: mediatek: add VLAN support for MT7530")
+Signed-off-by: DENG Qingfang <dqfext@gmail.com>
+Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/mt7530.c | 11 ++++++++---
+ drivers/net/dsa/mt7530.h |  6 ++++++
+ 2 files changed, 14 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -821,10 +821,15 @@ mt7530_port_set_vlan_aware(struct dsa_sw
+ 		   PCR_MATRIX_MASK, PCR_MATRIX(MT7530_ALL_MEMBERS));
+ 
+ 	/* Trapped into security mode allows packet forwarding through VLAN
+-	 * table lookup.
++	 * table lookup. CPU port is set to fallback mode to let untagged
++	 * frames pass through.
+ 	 */
+-	mt7530_rmw(priv, MT7530_PCR_P(port), PCR_PORT_VLAN_MASK,
+-		   MT7530_PORT_SECURITY_MODE);
++	if (dsa_is_cpu_port(ds, port))
++		mt7530_rmw(priv, MT7530_PCR_P(port), PCR_PORT_VLAN_MASK,
++			   MT7530_PORT_FALLBACK_MODE);
++	else
++		mt7530_rmw(priv, MT7530_PCR_P(port), PCR_PORT_VLAN_MASK,
++			   MT7530_PORT_SECURITY_MODE);
+ 
+ 	/* Set the port as a user port which is to be able to recognize VID
+ 	 * from incoming packets before fetching entry within the VLAN table.
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -152,6 +152,12 @@ enum mt7530_port_mode {
+ 	/* Port Matrix Mode: Frames are forwarded by the PCR_MATRIX members. */
+ 	MT7530_PORT_MATRIX_MODE = PORT_VLAN(0),
+ 
++	/* Fallback Mode: Forward received frames with ingress ports that do
++	 * not belong to the VLAN member. Frames whose VID is not listed on
++	 * the VLAN table are forwarded by the PCR_MATRIX members.
++	 */
++	MT7530_PORT_FALLBACK_MODE = PORT_VLAN(1),
++
+ 	/* Security Mode: Discard any frame due to ingress membership
+ 	 * violation or VID missed on the VLAN table.
+ 	 */
