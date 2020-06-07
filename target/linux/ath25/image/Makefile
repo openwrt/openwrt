@@ -60,7 +60,7 @@ define Device/Default
   FILESYSTEMS := squashfs
 endef
 
-define Device/generic
+define Device/generic_ath25
   DEVICE_VENDOR := Atheros
   DEVICE_MODEL := Generic AR2xxx board
   IMAGES := kernel.lzma kernel.elf kernel.gz rootfs.bin sysupgrade.bin
@@ -71,7 +71,7 @@ define Device/generic
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 128k | combined-image
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(if $$(findstring kernel,$$(2)),,$$(1)-)$$(2)
 endef
-TARGET_DEVICES += generic
+TARGET_DEVICES += generic_ath25
 
 define Device/ubnt2-pico2
   DEVICE_VENDOR := Ubiquiti

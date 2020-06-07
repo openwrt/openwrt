@@ -22,12 +22,12 @@ define Device/Default
   IMAGE/sysupgrade.tar := sysupgrade-tar
 endef
 
-define Device/generic
+define Device/generic_octeon
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := Octeon
   FILESYSTEMS := ext4
 endef
-TARGET_DEVICES += generic
+TARGET_DEVICES += generic_octeon
 
 ER_CMDLINE:=-mtdparts=phys_mapped_flash:640k(boot0)ro,640k(boot1)ro,64k(eeprom)ro root=/dev/mmcblk0p2 rootfstype=squashfs,ext4 rootwait
 define Device/ubnt_edgerouter

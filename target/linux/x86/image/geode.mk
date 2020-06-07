@@ -1,13 +1,13 @@
-define Device/generic
-  DEVICE_TITLE := Generic x86/Geode
+define Device/generic_x86-geode
+  DEVICE_TITLE := Generic x86 (Geode)
   DEVICE_PACKAGES += kmod-crypto-cbc kmod-crypto-hw-geode kmod-ledtrig-gpio \
 	kmod-ledtrig-heartbeat kmod-ledtrig-netdev
   GRUB2_VARIANT := legacy
 endef
-TARGET_DEVICES += generic
+TARGET_DEVICES += generic_x86-geode
 
 define Device/geos
-  $(call Device/generic)
+  $(call Device/generic_x86-geode)
   DEVICE_TITLE := Traverse Technologies Geos
   DEVICE_PACKAGES += br2684ctl flashrom kmod-hwmon-lm90 kmod-mppe kmod-pppoa \
 	kmod-usb-ohci-pci linux-atm ppp-mod-pppoa pppdump pppstats soloscli tc
