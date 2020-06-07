@@ -22,7 +22,7 @@ define Device/bpi_bananapi-r64-rootdisk
 endef
 TARGET_DEVICES += bpi_bananapi-r64-rootdisk
 
-define Device/elecom-wrc-2533gent
+define Device/elecom_wrc-2533gent
   DEVICE_VENDOR := Elecom
   DEVICE_MODEL := WRC-2533GENT
   DEVICE_DTS := mt7622-elecom-wrc-2533gent
