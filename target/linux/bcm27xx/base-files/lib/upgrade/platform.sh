@@ -94,6 +94,6 @@ platform_copy_config() {
 		cp -af "$UPGRADE_BACKUP" "/boot/$BACKUP_FILE"
 		tar -C / -zxvf "$UPGRADE_BACKUP" boot/cmdline.txt boot/config.txt
 		sync
-		unmount /boot
+		umount /boot
 	fi
 }
