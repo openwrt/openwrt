@@ -1,0 +1,11 @@
+--- a/libopkg/file_util.c
++++ b/libopkg/file_util.c
+@@ -153,7 +153,7 @@
+ 
+ 	len = md5sum(file_name, md5sum_bin);
+ 
+-	if (len) {
++	if (len < 0) {
+ 		opkg_msg(ERROR, "Could't compute md5sum for %s.\n", file_name);
+ 		return NULL;
+ 	}
