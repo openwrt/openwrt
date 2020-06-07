@@ -39,7 +39,7 @@ endef
 
 define Device/sercomm-nand
   $(Device/bcm63xx-nand)
-  IMAGES = factory.img sysupgrade.bin
+  IMAGES := factory.img sysupgrade.bin
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | cfe-sercomm-part | gzip | cfe-sercomm-load | cfe-sercomm-crypto
   SERCOM_PID :=
   SERCOMM_VERSION :=
@@ -149,3 +149,57 @@ define Device/sercomm_ad1018
   SERCOMM_VERSION := 1001
 endef
 TARGET_DEVICES += sercomm_ad1018
+
+define Device/sercomm_h500-s-lowi
+  $(Device/sercomm-nand)
+  DEVICE_VENDOR := Sercomm
+  DEVICE_MODEL := H500-s
+  DEVICE_VARIANT := lowi
+  DEVICE_LOADADDR := $(KERNEL_LOADADDR)
+  KERNEL := kernel-bin | append-dtb | lzma | cfe-jffs2-kernel
+  CHIP_ID := 63268
+  SOC := bcm63167
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  VID_HDR_OFFSET := 2048
+  DEVICE_PACKAGES += $(USB2_PACKAGES)
+  SERCOMM_PID := \
+    30 30 30 30 30 30 30 31 34 33 34 62 33 31 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 33 33 30 35 30 30 30 30 30 30 30 30 \
+    0D 0A 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  SERCOMM_VERSION := 1001
+endef
+TARGET_DEVICES += sercomm_h500-s-lowi
+
+define Device/sercomm_h500-s-vfes
+  $(Device/sercomm-nand)
+  DEVICE_VENDOR := Sercomm
+  DEVICE_MODEL := H500-s
+  DEVICE_VARIANT := vfes
+  DEVICE_LOADADDR := $(KERNEL_LOADADDR)
+  KERNEL := kernel-bin | append-dtb | lzma | cfe-jffs2-kernel
+  CHIP_ID := 63268
+  SOC := bcm63167
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  VID_HDR_OFFSET := 2048
+  DEVICE_PACKAGES += $(USB2_PACKAGES)
+  SERCOMM_PID := \
+    30 30 30 30 30 30 30 31 34 32 35 38 34 62 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 33 34 31 37 30 30 30 30 30 30 30 30 \
+    0D 0A 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  SERCOMM_VERSION := 1001
+endef
+TARGET_DEVICES += sercomm_h500-s-vfes
