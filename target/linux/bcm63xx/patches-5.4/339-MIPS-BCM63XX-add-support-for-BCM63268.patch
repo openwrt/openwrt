@@ -242,10 +242,11 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	switch (bcm63xx_cpu_id) {
  	case BCM3368_CPU_ID:
-@@ -400,6 +442,15 @@ void __init bcm63xx_cpu_init(void)
+@@ -400,6 +442,16 @@ void __init bcm63xx_cpu_init(void)
  		/* BCM6369 is a BCM6368 without xDSL, so treat it the same */
  		bcm63xx_cpu_id = BCM6368_CPU_ID;
  		break;
++	case BCM63167_CPU_ID:
 +	case BCM63168_CPU_ID:
 +	case BCM63169_CPU_ID:
 +	case BCM63268_CPU_ID:
@@ -353,10 +354,11 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	return 0;
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
-@@ -22,6 +22,10 @@
+@@ -22,6 +22,11 @@
  #define BCM6362_CPU_ID		0x6362
  #define BCM6368_CPU_ID		0x6368
  #define BCM6369_CPU_ID		0x6369
++#define BCM63167_CPU_ID		0x63167
 +#define BCM63168_CPU_ID		0x63168
 +#define BCM63169_CPU_ID		0x63169
 +#define BCM63268_CPU_ID		0x63268
@@ -364,7 +366,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  void __init bcm63xx_cpu_init(void);
  u32 bcm63xx_get_cpu_variant(void);
-@@ -62,6 +66,10 @@ static inline u32 __pure __bcm63xx_get_c
+@@ -62,6 +67,10 @@ static inline u32 __pure __bcm63xx_get_c
  #ifdef CONFIG_BCM63XX_CPU_6368
  		case BCM6368_CPU_ID:
  #endif
@@ -375,7 +377,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		break;
  	default:
  		unreachable();
-@@ -87,6 +95,7 @@ static inline u32 __pure bcm63xx_get_cpu
+@@ -87,6 +96,7 @@ static inline u32 __pure bcm63xx_get_cpu
  #define BCMCPU_IS_6358()	(bcm63xx_get_cpu_id() == BCM6358_CPU_ID)
  #define BCMCPU_IS_6362()	(bcm63xx_get_cpu_id() == BCM6362_CPU_ID)
  #define BCMCPU_IS_6368()	(bcm63xx_get_cpu_id() == BCM6368_CPU_ID)
@@ -383,10 +385,12 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  #define BCMCPU_VARIANT_IS_3368() \
  	(bcm63xx_get_cpu_variant() == BCM3368_CPU_ID)
-@@ -110,6 +119,14 @@ static inline u32 __pure bcm63xx_get_cpu
+@@ -110,6 +120,16 @@ static inline u32 __pure bcm63xx_get_cpu
  	(bcm63xx_get_cpu_variant() == BCM6368_CPU_ID)
  #define BCMCPU_VARIANT_IS_6369() \
  	(bcm63xx_get_cpu_variant() == BCM6369_CPU_ID)
++#define BCMCPU_VARIANT_IS_63167() \
++	(bcm63xx_get_cpu_variant() == BCM63167_CPU_ID)
 +#define BCMCPU_VARIANT_IS_63168() \
 +	(bcm63xx_get_cpu_variant() == BCM63168_CPU_ID)
 +#define BCMCPU_VARIANT_IS_63169() \
@@ -398,7 +402,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  /*
   * While registers sets are (mostly) the same across 63xx CPU, base
-@@ -574,6 +591,52 @@ enum bcm63xx_regs_set {
+@@ -574,6 +594,52 @@ enum bcm63xx_regs_set {
  #define BCM_6368_RNG_BASE		(0xb0004180)
  #define BCM_6368_MISC_BASE		(0xdeadbeef)
  
@@ -451,7 +455,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  extern const unsigned long *bcm63xx_regs_base;
  
-@@ -1042,6 +1105,73 @@ enum bcm63xx_irq {
+@@ -1042,6 +1108,73 @@ enum bcm63xx_irq {
  #define BCM_6368_EXT_IRQ4		(IRQ_INTERNAL_BASE + 24)
  #define BCM_6368_EXT_IRQ5		(IRQ_INTERNAL_BASE + 25)
  
