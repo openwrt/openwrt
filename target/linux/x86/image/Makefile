@@ -146,21 +146,7 @@ define Device/Default
   ARTIFACTS := $$(ARTIFACTS-y)
 endef
 
-ifeq ($(SUBTARGET),64)
-  include 64.mk
-endif
-
-ifeq ($(SUBTARGET),generic)
-  include generic.mk
-endif
-
-ifeq ($(SUBTARGET),geode)
-  include geode.mk
-endif
-
-ifeq ($(SUBTARGET),legacy)
-  include legacy.mk
-endif
+include $(SUBTARGET).mk
 
 $(eval $(call BuildImage))
 
