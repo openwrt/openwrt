@@ -642,6 +642,36 @@ endef
 
 $(eval $(call KernelPackage,e1000e))
 
+define KernelPackage/aquantia
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=aQuantia device support
+  DEPENDS:=@PCI_SUPPORT +kmod-i2c-core +kmod-i2c-algo-bit +kmod-ptp +kmod-hwmon-core +LINUX_5_4:kmod-libphy
+  KCONFIG:=CONFIG_AQUANTIA_PHY
+  FILES:=$(LINUX_DIR)/drivers/net/phy/aquantia.ko
+  AUTOLOAD:=$(call AutoLoad,35,aquantia)
+endef
+
+define KernelPackage/aquantia/description
+ Kernel modules for aQuantia Ethernet adapters.
+endef
+
+$(eval $(call KernelPackage,aquantia))
+
+define KernelPackage/atlantic
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=aQuantia AQtion(tm) Support
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core +kmod-i2c-algo-bit +kmod-ptp
+  KCONFIG:=CONFIG_AQUANTIA_PHY \
+    CONFIG_AQTION=m
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/aquantia/atlantic/atlantic.ko
+  AUTOLOAD:=$(call AutoLoad,35,atlantic)
+endef
+
+define KernelPackage/atlantic/description
+ Kernel modules for the aQuantia AQtion(tm) Ethernet card
+endef
+
+$(eval $(call KernelPackage,atlantic))
 
 define KernelPackage/igb
   SUBMENU:=$(NETWORK_DEVICES_MENU)
