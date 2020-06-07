@@ -218,20 +218,8 @@ define Build/cfe-sercomm-part
 		--part-name rootfs_lib \
 		--part-version $(SERCOMM_VERSION)
 
-	rm -rf $@-bootloader
-	mkdir -p $@-bootloader
-	cp $(KDIR)/bcm63xx-cfe/$(CFE_RAM_FILE) $@-bootloader/$(CFE_RAM_JFFS2_NAME)
-	$(call Build/cfe-jffs2,$@-bootloader)
-	$(call Build/pad-to,$(BLOCKSIZE))
-	$(TOPDIR)/scripts/sercomm-partition-tag.py \
-		--input-file $@ \
-		--output-file $@.bootloader \
-		--part-name bootloader \
-		--part-version $(SERCOMM_VERSION)
-
 	mv $@.kernel_rootfs $@
 	dd if=$@.rootfs_lib >> $@
-	dd if=$@.bootloader >> $@
 endef
 
 define Build/cfe-sercomm-load
