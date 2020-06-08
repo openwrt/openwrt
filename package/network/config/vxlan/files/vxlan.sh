@@ -129,6 +129,8 @@ vxlan_generic_init_config() {
 	proto_config_add_int "ttl"
 	proto_config_add_int "tos"
 	proto_config_add_int "mtu"
+	proto_config_add_boolean "rxcsum"
+	proto_config_add_boolean "txcsum"
 	proto_config_add_string "macaddr"
 }
 
