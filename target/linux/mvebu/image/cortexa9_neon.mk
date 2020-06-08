@@ -38,8 +38,6 @@ endef
 define Device/linksys_wrt1200ac
   $(call Device/linksys)
   DEVICE_MODEL := WRT1200AC
-  DEVICE_ALT0_VENDOR := Linksys
-  DEVICE_ALT0_MODEL := Caiman
   DEVICE_DTS := armada-385-linksys-caiman
   DEVICE_PACKAGES += mwlwifi-firmware-88w8864
 endef
@@ -52,8 +50,6 @@ define Device/linksys_wrt1900acs
   DEVICE_ALT0_VENDOR := Linksys
   DEVICE_ALT0_MODEL := WRT1900ACS
   DEVICE_ALT0_VARIANT := v2
-  DEVICE_ALT1_VENDOR := Linksys
-  DEVICE_ALT1_MODEL := Shelby
   DEVICE_DTS := armada-385-linksys-shelby
   DEVICE_PACKAGES += mwlwifi-firmware-88w8864
 endef
@@ -63,8 +59,6 @@ define Device/linksys_wrt1900ac-v2
   $(call Device/linksys)
   DEVICE_MODEL := WRT1900AC
   DEVICE_VARIANT := v2
-  DEVICE_ALT0_VENDOR := Linksys
-  DEVICE_ALT0_MODEL := Cobra
   DEVICE_DTS := armada-385-linksys-cobra
   DEVICE_PACKAGES += mwlwifi-firmware-88w8864
 endef
@@ -73,8 +67,6 @@ TARGET_DEVICES += linksys_wrt1900ac-v2
 define Device/linksys_wrt3200acm
   $(call Device/linksys)
   DEVICE_MODEL := WRT3200ACM
-  DEVICE_ALT0_VENDOR := Linksys
-  DEVICE_ALT0_MODEL := Rango
   DEVICE_DTS := armada-385-linksys-rango
   DEVICE_PACKAGES += kmod-btmrvl kmod-mwifiex-sdio mwlwifi-firmware-88w8964
 endef
@@ -83,8 +75,6 @@ TARGET_DEVICES += linksys_wrt3200acm
 define Device/linksys_wrt32x
   $(call Device/linksys)
   DEVICE_MODEL := WRT32X
-  DEVICE_ALT0_VENDOR := Linksys
-  DEVICE_ALT0_MODEL := Venom
   DEVICE_DTS := armada-385-linksys-venom
   DEVICE_PACKAGES += kmod-btmrvl kmod-mwifiex-sdio mwlwifi-firmware-88w8964
   KERNEL_SIZE := 3072k

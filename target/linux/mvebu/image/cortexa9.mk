@@ -36,8 +36,6 @@ define Device/linksys_wrt1900ac-v1
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := WRT1900AC
   DEVICE_VARIANT := v1
-  DEVICE_ALT0_VENDOR := Linksys
-  DEVICE_ALT0_MODEL := Mamba
   DEVICE_DTS := armada-xp-linksys-mamba
   DEVICE_PACKAGES := kmod-mwlwifi wpad-basic mwlwifi-firmware-88w8864
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
