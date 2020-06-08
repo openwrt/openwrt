@@ -17,7 +17,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -7788,6 +7788,10 @@ static int wpa_driver_nl80211_send_actio
+@@ -7789,6 +7789,10 @@ static int wpa_driver_nl80211_send_actio
  	u8 *buf;
  	struct ieee80211_hdr *hdr;
  	int offchanok = 1;
@@ -28,7 +28,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  	if (is_ap_interface(drv->nlmode) && (int) freq == bss->freq &&
  	    bss->beacon_set)
-@@ -7816,6 +7820,21 @@ static int wpa_driver_nl80211_send_actio
+@@ -7817,6 +7821,21 @@ static int wpa_driver_nl80211_send_actio
  		os_memset(bss->rand_addr, 0, ETH_ALEN);
  	}
  

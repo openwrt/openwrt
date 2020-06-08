@@ -78,7 +78,7 @@
  
  #ifdef NEED_AP_MLME
  static int hostapd_ctrl_iface_sa_query(struct hostapd_data *hapd,
-@@ -3527,6 +3584,8 @@ static int hostapd_ctrl_iface_receive_pr
+@@ -3546,6 +3603,8 @@ static int hostapd_ctrl_iface_receive_pr
  	} else if (os_strncmp(buf, "VENDOR ", 7) == 0) {
  		reply_len = hostapd_ctrl_iface_vendor(hapd, buf + 7, reply,
  						      reply_size);
