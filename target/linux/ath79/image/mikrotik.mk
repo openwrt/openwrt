@@ -18,6 +18,14 @@ define Device/mikrotik_routerboard-922uags-5hpacd
 endef
 TARGET_DEVICES += mikrotik_routerboard-922uags-5hpacd
 
+define Device/mikrotik_routerboard-lhg-2nd
+  $(Device/mikrotik_nor)
+  SOC := qca9533
+  DEVICE_MODEL := RouterBOARD LHG 2nD (LHG 2)
+  IMAGE_SIZE := 16256k
+endef
+TARGET_DEVICES += mikrotik_routerboard-lhg-2nd
+
 define Device/mikrotik_routerboard-wap-g-5hact2hnd
   $(Device/mikrotik_nor)
   SOC := qca9556
