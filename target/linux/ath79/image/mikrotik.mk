@@ -1,5 +1,13 @@
 include ./common-mikrotik.mk
 
+define Device/mikrotik_lhg-2nd
+  $(Device/mikrotik_nor)
+  SOC := qca9533
+  DEVICE_MODEL := LHG 2nD (RBLHG-2nD)
+  IMAGE_SIZE := 16256k
+endef
+TARGET_DEVICES += mikrotik_lhg-2nd
+
 define Device/mikrotik_routerboard-493g
   $(Device/mikrotik_nand)
   SOC := ar7161
