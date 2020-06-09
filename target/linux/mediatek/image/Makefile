@@ -12,7 +12,7 @@ define Build/sysupgrade-emmc
 	rm -f $@.recovery
 	mkfs.fat -C $@.recovery 3070
 
-	./gen_mt7623_emmc_img.sh $@ \
+	./gen_$(SUBTARGET)_emmc_img.sh $@ \
 		$(IMAGE_KERNEL) \
 		$@.recovery \
 		$(IMAGE_ROOTFS)

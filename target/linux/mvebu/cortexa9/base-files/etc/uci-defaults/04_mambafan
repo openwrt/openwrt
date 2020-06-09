@@ -8,7 +8,7 @@
 board=$(board_name)
 
 case "$board" in
-linksys,mamba)
+linksys,wrt1900ac-v1)
 	# Set fan script execution in crontab
 	grep -s -q fan_ctrl.sh /etc/crontabs/root && exit 0
 

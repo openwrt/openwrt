@@ -273,7 +273,7 @@ hostapd_set_vlan_file() {
 hostapd_set_vlan() {
 	local ifname="$1"
 
-	rm /var/run/hostapd-${ifname}.vlan
+	rm -f /var/run/hostapd-${ifname}.vlan
 	for_each_vlan hostapd_set_vlan_file ${ifname}
 }
 
@@ -291,7 +291,7 @@ hostapd_set_psk_file() {
 hostapd_set_psk() {
 	local ifname="$1"
 
-	rm /var/run/hostapd-${ifname}.psk
+	rm -f /var/run/hostapd-${ifname}.psk
 	for_each_station hostapd_set_psk_file ${ifname}
 }
 

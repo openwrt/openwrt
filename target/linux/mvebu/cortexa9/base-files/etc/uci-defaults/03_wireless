@@ -11,7 +11,11 @@
 board=$(board_name)
 
 case "$board" in
-linksys,caiman|linksys,cobra|linksys,mamba|linksys,shelby|linksys,venom)
+linksys,wrt1200ac|\
+linksys,wrt1900ac-v1|\
+linksys,wrt1900ac-v2|\
+linksys,wrt1900acs|\
+linksys,wrt32x)
 	SKU=$(strings /dev/mtd3|sed -ne 's/^cert_region=//p')
 	WIFIMAC2G=$(macaddr_add $(cat /sys/class/net/eth0/address) +1)
 	WIFIMAC5G=$(macaddr_add $WIFIMAC2G +1)
@@ -34,7 +38,7 @@ linksys,caiman|linksys,cobra|linksys,mamba|linksys,shelby|linksys,venom)
 	esac
 
 	case "$board" in
-		linksys,mamba)
+		linksys,wrt1900ac-v1)
 			WIFIMAC0=$WIFIMAC2G
 			WIFIMAC1=$WIFIMAC5G
 		;;

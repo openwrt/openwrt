@@ -100,6 +100,10 @@ sercomm,ad1018)
 sercomm,ad1018-nor)
 	ucidef_set_led_netdev "wlan0" "WLAN" "AD1018:green:wifi" "wlan0"
 	;;
+sercomm,h500-s-lowi|\
+sercomm,h500-s-vfes)
+	ucidef_set_led_netdev "wan" "WAN" "h500-s:green:internet" "eth0.2"
+	;;
 telsey,cpva502plus)
 	ucidef_set_led_netdev "lan" "LAN" "CPVA502+:amber:link" "eth0"
 	;;

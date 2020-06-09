@@ -9,7 +9,9 @@ platform_check_image() {
 		comtrend,vr-3032u|\
 		huawei,hg253s-v2|\
 		netgear,dgnd3700-v2|\
-		sercomm,ad1018)
+		sercomm,ad1018|\
+		sercomm,h500-s-lowi|\
+		sercomm,h500-s-vfes)
 			# NAND sysupgrade
 			return 0
 			;;
@@ -69,7 +71,9 @@ platform_do_upgrade() {
 		comtrend,vr-3032u|\
 		huawei,hg253s-v2|\
 		netgear,dgnd3700-v2|\
-		sercomm,ad1018)
+		sercomm,ad1018|\
+		sercomm,h500-s-lowi|\
+		sercomm,h500-s-vfes)
 			REQUIRE_IMAGE_METADATA=1
 			cfe_jffs2_upgrade_tar "$1"
 			;;

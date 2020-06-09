@@ -327,7 +327,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  #define BCM6328_CPU_ID		0x6328
  #define BCM63281_CPU_ID		0x63281
  #define BCM63283_CPU_ID		0x63283
-@@ -39,6 +40,10 @@ static inline u32 __pure __bcm63xx_get_c
+@@ -40,6 +41,10 @@ static inline u32 __pure __bcm63xx_get_c
  		case BCM3368_CPU_ID:
  #endif
  
@@ -338,7 +338,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  #ifdef CONFIG_BCM63XX_CPU_6328
  		case BCM6328_CPU_ID:
  #endif
-@@ -88,6 +93,7 @@ static inline u32 __pure bcm63xx_get_cpu
+@@ -89,6 +94,7 @@ static inline u32 __pure bcm63xx_get_cpu
  }
  
  #define BCMCPU_IS_3368()	(bcm63xx_get_cpu_id() == BCM3368_CPU_ID)
@@ -346,7 +346,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  #define BCMCPU_IS_6328()	(bcm63xx_get_cpu_id() == BCM6328_CPU_ID)
  #define BCMCPU_IS_6338()	(bcm63xx_get_cpu_id() == BCM6338_CPU_ID)
  #define BCMCPU_IS_6345()	(bcm63xx_get_cpu_id() == BCM6345_CPU_ID)
-@@ -99,6 +105,8 @@ static inline u32 __pure bcm63xx_get_cpu
+@@ -100,6 +106,8 @@ static inline u32 __pure bcm63xx_get_cpu
  
  #define BCMCPU_VARIANT_IS_3368() \
  	(bcm63xx_get_cpu_variant() == BCM3368_CPU_ID)
@@ -355,7 +355,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  #define BCMCPU_VARIANT_IS_63281() \
  	(bcm63xx_get_cpu_variant() == BCM63281_CPU_ID)
  #define BCMCPU_VARIANT_IS_63283() \
-@@ -253,6 +261,56 @@ enum bcm63xx_regs_set {
+@@ -256,6 +264,56 @@ enum bcm63xx_regs_set {
  #define BCM_3368_MISC_BASE		(0xdeadbeef)
  
  /*
@@ -412,7 +412,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
   * 6328 register sets base address
   */
  #define BCM_6328_DSL_LMEM_BASE		(0xdeadbeef)
-@@ -775,6 +833,55 @@ enum bcm63xx_irq {
+@@ -778,6 +836,55 @@ enum bcm63xx_irq {
  #define BCM_3368_EXT_IRQ2		(IRQ_INTERNAL_BASE + 27)
  #define BCM_3368_EXT_IRQ3		(IRQ_INTERNAL_BASE + 28)
  
