@@ -168,6 +168,7 @@ prepare_rootfs: FORCE
 build_image: FORCE
 	@echo
 	@echo Building images...
+	rm -rf $(BUILD_DIR)/json_info_files/
 	$(NO_TRACE_MAKE) -C target/linux/$(BOARD)/image install TARGET_BUILD=1 IB=1 EXTRA_IMAGE_NAME="$(EXTRA_IMAGE_NAME)" \
 		$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)")
 
