@@ -23,6 +23,18 @@ define Device/mikrotik_routerboard-922uags-5hpacd
 endef
 TARGET_DEVICES += mikrotik_routerboard-922uags-5hpacd
 
+define Device/mikrotik_routerboard-lhg-2nd
+  $(Device/mikrotik)
+  SOC := qca9533
+  DEVICE_MODEL := RouterBOARD LHG 2nD
+  IMAGE_SIZE := 16256k
+  IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 -e | \
+	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
+	append-metadata | check-size
+  DEVICE_PACKAGES += rssileds
+endef
+TARGET_DEVICES += mikrotik_routerboard-lhg-2nd
+
 define Device/mikrotik_routerboard-wap-g-5hact2hnd
   $(Device/mikrotik)
   SOC := qca9556

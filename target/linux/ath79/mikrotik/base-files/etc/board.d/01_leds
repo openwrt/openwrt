@@ -1,0 +1,24 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+boardname="${board##*,}"
+
+case "$board" in
+mikrotik,routerboard-lhg-2nd)
+	ucidef_set_led_netdev "lan" "lan" "mikrotik:green:lan" "eth0"
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "rssilow" "mikrotik:green:rssilow" "wlan0" "1" "100"
+	ucidef_set_led_rssi "rssimediumlow" "rssimediumlow" "mikrotik:green:rssimediumlow" "wlan0" "26" "100"
+	ucidef_set_led_rssi "rssimediumhigh" "rssimediumhigh" "mikrotik:green:rssimediumhigh" "wlan0" "51" "100"
+	# The rssihigh LED is disabled, as it shares GPIO 16 with the reset button
+	# ucidef_set_led_rssi "rssihigh" "rssihigh" "mikrotik:green:rssihigh" "wlan0" "76" "100"
+	;;
+esac
+
+board_config_flush
+
+exit 0
