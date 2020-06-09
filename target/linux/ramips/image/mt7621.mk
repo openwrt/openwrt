@@ -676,6 +676,18 @@ define Device/netgear_r6850
 endef
 TARGET_DEVICES += netgear_r6850
 
+define Device/netgear_wac104
+  $(Device/netgear_sercomm_nand)
+  DEVICE_MODEL := WAC104
+  SERCOMM_HWNAME := WAC104
+  SERCOMM_HWID := CAY
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0006
+  IMAGE_SIZE := 28672k
+  DEVICE_PACKAGES += kmod-mt76x2
+endef
+TARGET_DEVICES += netgear_wac104
+
 define Device/netgear_wndr3700-v5
   $(Device/uimage-lzma-loader)
   BLOCKSIZE := 64k

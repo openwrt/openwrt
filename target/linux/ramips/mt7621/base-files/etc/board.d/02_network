@@ -29,7 +29,8 @@ ramips_setup_interfaces()
 	gnubee,gb-pc2)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
-	linksys,re6500)
+	linksys,re6500|\
+	netgear,wac104)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
 	mikrotik,routerboard-m11g|\
