@@ -1,6 +1,6 @@
 --- a/drivers/crypto/inside-secure/safexcel.c
 +++ b/drivers/crypto/inside-secure/safexcel.c
-@@ -75,9 +75,9 @@
+@@ -75,9 +75,9 @@ static void eip197_trc_cache_banksel(str
  }
  
  static u32 eip197_trc_cache_probe(struct safexcel_crypto_priv *priv,
@@ -12,7 +12,7 @@
  	int actbank;
  
  	/*
-@@ -87,32 +87,37 @@
+@@ -87,32 +87,37 @@ static u32 eip197_trc_cache_probe(struct
  	addrhi = 1 << (16 + maxbanks);
  	addrlo = 0;
  	actbank = min(maxbanks - 1, 0);
@@ -60,7 +60,7 @@
  	}
  	return addrhi;
  }
-@@ -150,7 +155,7 @@
+@@ -150,7 +155,7 @@ static void eip197_trc_cache_clear(struc
  		       htable_offset + i * sizeof(u32));
  }
  
@@ -69,7 +69,7 @@
  {
  	u32 val, dsize, asize;
  	int cs_rc_max, cs_ht_wc, cs_trc_rec_wc, cs_trc_lg_rec_wc;
-@@ -183,7 +188,7 @@
+@@ -183,7 +188,7 @@ static void eip197_trc_cache_init(struct
  	writel(val, priv->base + EIP197_TRC_PARAMS);
  
  	/* Probed data RAM size in bytes */
@@ -78,7 +78,7 @@
  
  	/*
  	 * Now probe the administration RAM size pretty much the same way
-@@ -196,11 +201,18 @@
+@@ -196,11 +201,18 @@ static void eip197_trc_cache_init(struct
  	writel(val, priv->base + EIP197_TRC_PARAMS);
  
  	/* Probed admin RAM size in admin words */
@@ -98,7 +98,7 @@
  	/*
  	 * Determine optimal configuration from RAM sizes
  	 * Note that we assume that the physical RAM configuration is sane
-@@ -251,6 +263,7 @@
+@@ -251,6 +263,7 @@ static void eip197_trc_cache_init(struct
  
  	dev_info(priv->dev, "TRC init: %dd,%da (%dr,%dh)\n",
  		 dsize, asize, cs_rc_max, cs_ht_wc + cs_ht_wc);
@@ -106,7 +106,7 @@
  }
  
  static void eip197_init_firmware(struct safexcel_crypto_priv *priv)
-@@ -298,13 +311,14 @@
+@@ -298,13 +311,14 @@ static void eip197_init_firmware(struct
  static int eip197_write_firmware(struct safexcel_crypto_priv *priv,
  				  const struct firmware *fw)
  {
@@ -123,7 +123,7 @@
  
  	/* Exclude final 2 NOPs from size */
  	return i - EIP197_FW_TERMINAL_NOPS;
-@@ -471,6 +485,14 @@
+@@ -471,6 +485,14 @@ static int safexcel_hw_setup_cdesc_rings
  		cd_fetch_cnt = ((1 << priv->hwconfig.hwcfsize) /
  				cd_size_rnd) - 1;
  	}
@@ -138,7 +138,7 @@
  
  	for (i = 0; i < priv->config.rings; i++) {
  		/* ring base address */
-@@ -479,12 +501,12 @@
+@@ -479,12 +501,12 @@ static int safexcel_hw_setup_cdesc_rings
  		writel(upper_32_bits(priv->ring[i].cdr.base_dma),
  		       EIP197_HIA_CDR(priv, i) + EIP197_HIA_xDR_RING_BASE_ADDR_HI);
  
@@ -154,7 +154,7 @@
  		       EIP197_HIA_CDR(priv, i) + EIP197_HIA_xDR_CFG);
  
  		/* Configure DMA tx control */
-@@ -527,13 +549,13 @@
+@@ -527,13 +549,13 @@ static int safexcel_hw_setup_rdesc_rings
  		writel(upper_32_bits(priv->ring[i].rdr.base_dma),
  		       EIP197_HIA_RDR(priv, i) + EIP197_HIA_xDR_RING_BASE_ADDR_HI);
  
@@ -170,7 +170,7 @@
  		       EIP197_HIA_RDR(priv, i) + EIP197_HIA_xDR_CFG);
  
  		/* Configure DMA tx control */
-@@ -559,7 +581,7 @@
+@@ -559,7 +581,7 @@ static int safexcel_hw_setup_rdesc_rings
  static int safexcel_hw_init(struct safexcel_crypto_priv *priv)
  {
  	u32 val;
@@ -179,7 +179,7 @@
  
  	dev_dbg(priv->dev, "HW init: using %d pipe(s) and %d ring(s)\n",
  		priv->config.pes, priv->config.rings);
-@@ -595,8 +617,8 @@
+@@ -595,8 +617,8 @@ static int safexcel_hw_init(struct safex
  		writel(EIP197_DxE_THR_CTRL_RESET_PE,
  		       EIP197_HIA_DFE_THR(priv) + EIP197_HIA_DFE_THR_CTRL(pe));
  
@@ -190,7 +190,7 @@
  			writel(EIP197_HIA_RA_PE_CTRL_RESET,
  			       EIP197_HIA_AIC(priv) + EIP197_HIA_RA_PE_CTRL(pe));
  
-@@ -639,9 +661,16 @@
+@@ -639,9 +661,16 @@ static int safexcel_hw_init(struct safex
  			;
  
  		/* DMA transfer size to use */
@@ -209,7 +209,7 @@
  		val |= EIP197_HIA_DxE_CFG_DATA_CACHE_CTRL(WR_CACHE_3BITS);
  		val |= EIP197_HIA_DSE_CFG_ALWAYS_BUFFERABLE;
  		/* FIXME: instability issues can occur for EIP97 but disabling
-@@ -655,8 +684,8 @@
+@@ -655,8 +684,8 @@ static int safexcel_hw_init(struct safex
  		writel(0, EIP197_HIA_DSE_THR(priv) + EIP197_HIA_DSE_THR_CTRL(pe));
  
  		/* Configure the procesing engine thresholds */
@@ -220,7 +220,7 @@
  		       EIP197_PE(priv) + EIP197_PE_OUT_DBUF_THRES(pe));
  
  		/* Processing Engine configuration */
-@@ -696,7 +725,7 @@
+@@ -696,7 +725,7 @@ static int safexcel_hw_init(struct safex
  		writel(0,
  		       EIP197_HIA_CDR(priv, i) + EIP197_HIA_xDR_PROC_PNTR);
  
@@ -229,7 +229,7 @@
  		       EIP197_HIA_CDR(priv, i) + EIP197_HIA_xDR_RING_SIZE);
  	}
  
-@@ -719,7 +748,7 @@
+@@ -719,7 +748,7 @@ static int safexcel_hw_init(struct safex
  		       EIP197_HIA_RDR(priv, i) + EIP197_HIA_xDR_PROC_PNTR);
  
  		/* Ring size */
@@ -238,7 +238,7 @@
  		       EIP197_HIA_RDR(priv, i) + EIP197_HIA_xDR_RING_SIZE);
  	}
  
-@@ -736,19 +765,28 @@
+@@ -736,19 +765,28 @@ static int safexcel_hw_init(struct safex
  	/* Clear any HIA interrupt */
  	writel(GENMASK(30, 20), EIP197_HIA_AIC_G(priv) + EIP197_HIA_AIC_G_ACK);
  
@@ -274,7 +274,7 @@
  }
  
  /* Called with ring's lock taken */
-@@ -836,20 +874,24 @@
+@@ -836,20 +874,24 @@ finalize:
  	spin_unlock_bh(&priv->ring[ring].lock);
  
  	/* let the RDR know we have pending descriptors */
@@ -305,7 +305,7 @@
  		return 0;
  
  	if (rdesc->descriptor_overflow)
-@@ -858,13 +900,14 @@
+@@ -858,13 +900,14 @@ inline int safexcel_rdesc_check_errors(s
  	if (rdesc->buffer_overflow)
  		dev_err(priv->dev, "Buffer overflow detected");
  
@@ -323,7 +323,7 @@
  		   (BIT(7) | BIT(4) | BIT(3) | BIT(0))) {
  		/*
  		 * Give priority over authentication fails:
-@@ -872,7 +915,7 @@
+@@ -872,7 +915,7 @@ inline int safexcel_rdesc_check_errors(s
  		 * something wrong with the input!
  		 */
  		return -EINVAL;
@@ -332,7 +332,7 @@
  		/* Authentication failed */
  		return -EBADMSG;
  	}
-@@ -931,16 +974,18 @@
+@@ -931,16 +974,18 @@ int safexcel_invalidate_cache(struct cry
  {
  	struct safexcel_command_desc *cdesc;
  	struct safexcel_result_desc *rdesc;
@@ -353,7 +353,7 @@
  	cdesc->control_data.control0 = CONTEXT_CONTROL_INV_TR;
  
  	/* Prepare result descriptor */
-@@ -1003,7 +1048,7 @@
+@@ -1003,7 +1048,7 @@ handle_results:
  acknowledge:
  	if (i)
  		writel(EIP197_xDR_PROC_xD_PKT(i) |
@@ -362,7 +362,7 @@
  		       EIP197_HIA_RDR(priv, ring) + EIP197_HIA_xDR_PROC_COUNT);
  
  	/* If the number of requests overflowed the counter, try to proceed more
-@@ -1171,6 +1216,44 @@
+@@ -1171,6 +1216,44 @@ static struct safexcel_alg_template *saf
  	&safexcel_alg_xts_aes,
  	&safexcel_alg_gcm,
  	&safexcel_alg_ccm,
@@ -407,7 +407,7 @@
  };
  
  static int safexcel_register_algorithms(struct safexcel_crypto_priv *priv)
-@@ -1240,30 +1323,30 @@
+@@ -1240,30 +1323,30 @@ static void safexcel_unregister_algorith
  
  static void safexcel_configure(struct safexcel_crypto_priv *priv)
  {
@@ -457,7 +457,7 @@
  }
  
  static void safexcel_init_register_offsets(struct safexcel_crypto_priv *priv)
-@@ -1309,7 +1392,7 @@
+@@ -1309,7 +1392,7 @@ static int safexcel_probe_generic(void *
  				  int is_pci_dev)
  {
  	struct device *dev = priv->dev;
@@ -466,7 +466,7 @@
  	int i, ret, hwctg;
  
  	priv->context_pool = dmam_pool_create("safexcel-context", dev,
-@@ -1371,13 +1454,16 @@
+@@ -1371,13 +1454,16 @@ static int safexcel_probe_generic(void *
  	 */
  	version = readl(EIP197_GLOBAL(priv) + EIP197_VERSION);
  	if (((priv->flags & SAFEXCEL_HW_EIP197) &&
@@ -484,7 +484,7 @@
  		return -ENODEV;
  	}
  
-@@ -1385,6 +1471,14 @@
+@@ -1385,6 +1471,14 @@ static int safexcel_probe_generic(void *
  	hwctg = version >> 28;
  	peid = version & 255;
  
@@ -499,7 +499,7 @@
  	/* Detect EIP96 packet engine and version */
  	version = readl(EIP197_PE(priv) + EIP197_PE_EIP96_VERSION(0));
  	if (EIP197_REG_LO16(version) != EIP96_VERSION_LE) {
-@@ -1393,10 +1487,13 @@
+@@ -1393,10 +1487,13 @@ static int safexcel_probe_generic(void *
  	}
  	priv->hwconfig.pever = EIP197_VERSION_MASK(version);
  
@@ -513,7 +513,7 @@
  		priv->hwconfig.hwdataw  = (hiaopt >> EIP197_HWDATAW_OFFSET) &
  					  EIP197_HWDATAW_MASK;
  		priv->hwconfig.hwcfsize = ((hiaopt >> EIP197_CFSIZE_OFFSET) &
-@@ -1405,6 +1502,19 @@
+@@ -1405,6 +1502,19 @@ static int safexcel_probe_generic(void *
  		priv->hwconfig.hwrfsize = ((hiaopt >> EIP197_RFSIZE_OFFSET) &
  					   EIP197_RFSIZE_MASK) +
  					  EIP197_RFSIZE_ADJUST;
@@ -533,7 +533,7 @@
  	} else {
  		/* EIP97 */
  		priv->hwconfig.hwdataw  = (hiaopt >> EIP197_HWDATAW_OFFSET) &
-@@ -1413,6 +1523,23 @@
+@@ -1413,6 +1523,23 @@ static int safexcel_probe_generic(void *
  					  EIP97_CFSIZE_MASK;
  		priv->hwconfig.hwrfsize = (hiaopt >> EIP97_RFSIZE_OFFSET) &
  					  EIP97_RFSIZE_MASK;
@@ -557,7 +557,7 @@
  	}
  
  	/* Get supported algorithms from EIP96 transform engine */
-@@ -1420,10 +1547,12 @@
+@@ -1420,10 +1547,12 @@ static int safexcel_probe_generic(void *
  				    EIP197_PE_EIP96_OPTIONS(0));
  
  	/* Print single info line describing what we just detected */
@@ -574,7 +574,7 @@
  		 priv->hwconfig.algo_flags);
  
  	safexcel_configure(priv);
-@@ -1547,7 +1676,6 @@
+@@ -1547,7 +1676,6 @@ static void safexcel_hw_reset_rings(stru
  	}
  }
  
@@ -582,7 +582,7 @@
  /* for Device Tree platform driver */
  
  static int safexcel_probe(struct platform_device *pdev)
-@@ -1625,6 +1753,7 @@
+@@ -1625,6 +1753,7 @@ static int safexcel_remove(struct platfo
  	safexcel_unregister_algorithms(priv);
  	safexcel_hw_reset_rings(priv);
  
@@ -590,7 +590,7 @@
  	clk_disable_unprepare(priv->clk);
  
  	for (i = 0; i < priv->config.rings; i++)
-@@ -1666,9 +1795,7 @@
+@@ -1666,9 +1795,7 @@ static struct platform_driver  crypto_sa
  		.of_match_table = safexcel_of_match_table,
  	},
  };
@@ -600,7 +600,7 @@
  /* PCIE devices - i.e. Inside Secure development boards */
  
  static int safexcel_pci_probe(struct pci_dev *pdev,
-@@ -1759,7 +1886,7 @@
+@@ -1759,7 +1886,7 @@ static int safexcel_pci_probe(struct pci
  	return rc;
  }
  
@@ -609,7 +609,7 @@
  {
  	struct safexcel_crypto_priv *priv = pci_get_drvdata(pdev);
  	int i;
-@@ -1789,54 +1916,32 @@
+@@ -1789,54 +1916,32 @@ static struct pci_driver safexcel_pci_dr
  	.probe         = safexcel_pci_probe,
  	.remove        = safexcel_pci_remove,
  };
@@ -702,7 +702,7 @@
  #include <crypto/xts.h>
  #include <crypto/skcipher.h>
  #include <crypto/internal/aead.h>
-@@ -33,6 +37,8 @@
+@@ -33,6 +37,8 @@ enum safexcel_cipher_alg {
  	SAFEXCEL_DES,
  	SAFEXCEL_3DES,
  	SAFEXCEL_AES,
@@ -711,7 +711,7 @@
  };
  
  struct safexcel_cipher_ctx {
-@@ -41,8 +47,12 @@
+@@ -41,8 +47,12 @@ struct safexcel_cipher_ctx {
  
  	u32 mode;
  	enum safexcel_cipher_alg alg;
@@ -726,7 +726,7 @@
  
  	__le32 key[16];
  	u32 nonce;
-@@ -51,10 +61,11 @@
+@@ -51,10 +61,11 @@ struct safexcel_cipher_ctx {
  	/* All the below is AEAD specific */
  	u32 hash_alg;
  	u32 state_sz;
@@ -740,7 +740,7 @@
  };
  
  struct safexcel_cipher_req {
-@@ -65,206 +76,298 @@
+@@ -65,206 +76,298 @@ struct safexcel_cipher_req {
  	int  nr_src, nr_dst;
  };
  
@@ -1201,7 +1201,7 @@
  }
  
  static int safexcel_skcipher_aes_setkey(struct crypto_skcipher *ctfm,
-@@ -277,14 +380,12 @@
+@@ -277,14 +380,12 @@ static int safexcel_skcipher_aes_setkey(
  	int ret, i;
  
  	ret = aes_expandkey(&aes, key, len);
@@ -1218,7 +1218,7 @@
  				ctx->base.needs_inv = true;
  				break;
  			}
-@@ -309,43 +410,57 @@
+@@ -309,43 +410,57 @@ static int safexcel_aead_setkey(struct c
  	struct safexcel_crypto_priv *priv = ctx->priv;
  	struct crypto_authenc_keys keys;
  	struct crypto_aes_ctx aes;
@@ -1286,7 +1286,7 @@
  
  	/* Auth key */
  	switch (ctx->hash_alg) {
-@@ -374,21 +489,24 @@
+@@ -374,21 +489,24 @@ static int safexcel_aead_setkey(struct c
  					 keys.authkeylen, &istate, &ostate))
  			goto badkey;
  		break;
@@ -1315,7 +1315,7 @@
  	ctx->key_len = keys.enckeylen;
  
  	memcpy(ctx->ipad, &istate.state, ctx->state_sz);
-@@ -398,8 +516,6 @@
+@@ -398,8 +516,6 @@ static int safexcel_aead_setkey(struct c
  	return 0;
  
  badkey:
@@ -1324,7 +1324,7 @@
  	memzero_explicit(&keys, sizeof(keys));
  	return err;
  }
-@@ -423,6 +539,17 @@
+@@ -423,6 +539,17 @@ static int safexcel_context_control(stru
  				CONTEXT_CONTROL_DIGEST_XCM |
  				ctx->hash_alg |
  				CONTEXT_CONTROL_SIZE(ctrl_size);
@@ -1342,7 +1342,7 @@
  		} else {
  			ctrl_size += ctx->state_sz / sizeof(u32) * 2;
  			cdesc->control_data.control0 =
-@@ -431,17 +558,21 @@
+@@ -431,17 +558,21 @@ static int safexcel_context_control(stru
  				ctx->hash_alg |
  				CONTEXT_CONTROL_SIZE(ctrl_size);
  		}
@@ -1372,7 +1372,7 @@
  	} else {
  		if (sreq->direction == SAFEXCEL_ENCRYPT)
  			cdesc->control_data.control0 =
-@@ -480,6 +611,12 @@
+@@ -480,6 +611,12 @@ static int safexcel_context_control(stru
  				ctx->key_len >> ctx->xts);
  			return -EINVAL;
  		}
@@ -1385,7 +1385,7 @@
  	}
  
  	return 0;
-@@ -563,6 +700,7 @@
+@@ -563,6 +700,7 @@ static int safexcel_send_req(struct cryp
  	unsigned int totlen;
  	unsigned int totlen_src = cryptlen + assoclen;
  	unsigned int totlen_dst = totlen_src;
@@ -1393,7 +1393,7 @@
  	int n_cdesc = 0, n_rdesc = 0;
  	int queued, i, ret = 0;
  	bool first = true;
-@@ -637,56 +775,60 @@
+@@ -637,56 +775,60 @@ static int safexcel_send_req(struct cryp
  
  	memcpy(ctx->base.ctxr->data, ctx->key, ctx->key_len);
  
@@ -1475,7 +1475,7 @@
  					cryptlen);
  
  	/* result descriptors */
-@@ -1073,6 +1215,8 @@
+@@ -1073,6 +1215,8 @@ static int safexcel_skcipher_cra_init(st
  
  	ctx->base.send = safexcel_skcipher_send;
  	ctx->base.handle_result = safexcel_skcipher_handle_result;
@@ -1484,7 +1484,7 @@
  	return 0;
  }
  
-@@ -1137,6 +1281,8 @@
+@@ -1137,6 +1281,8 @@ static int safexcel_skcipher_aes_ecb_cra
  	safexcel_skcipher_cra_init(tfm);
  	ctx->alg  = SAFEXCEL_AES;
  	ctx->mode = CONTEXT_CONTROL_CRYPTO_MODE_ECB;
@@ -1493,7 +1493,7 @@
  	return 0;
  }
  
-@@ -1171,6 +1317,7 @@
+@@ -1171,6 +1317,7 @@ static int safexcel_skcipher_aes_cbc_cra
  
  	safexcel_skcipher_cra_init(tfm);
  	ctx->alg  = SAFEXCEL_AES;
@@ -1501,7 +1501,7 @@
  	ctx->mode = CONTEXT_CONTROL_CRYPTO_MODE_CBC;
  	return 0;
  }
-@@ -1207,6 +1354,7 @@
+@@ -1207,6 +1354,7 @@ static int safexcel_skcipher_aes_cfb_cra
  
  	safexcel_skcipher_cra_init(tfm);
  	ctx->alg  = SAFEXCEL_AES;
@@ -1509,7 +1509,7 @@
  	ctx->mode = CONTEXT_CONTROL_CRYPTO_MODE_CFB;
  	return 0;
  }
-@@ -1243,6 +1391,7 @@
+@@ -1243,6 +1391,7 @@ static int safexcel_skcipher_aes_ofb_cra
  
  	safexcel_skcipher_cra_init(tfm);
  	ctx->alg  = SAFEXCEL_AES;
@@ -1517,7 +1517,7 @@
  	ctx->mode = CONTEXT_CONTROL_CRYPTO_MODE_OFB;
  	return 0;
  }
-@@ -1288,14 +1437,12 @@
+@@ -1288,14 +1437,12 @@ static int safexcel_skcipher_aesctr_setk
  	/* exclude the nonce here */
  	keylen = len - CTR_RFC3686_NONCE_SIZE;
  	ret = aes_expandkey(&aes, key, keylen);
@@ -1534,7 +1534,7 @@
  				ctx->base.needs_inv = true;
  				break;
  			}
-@@ -1317,6 +1464,7 @@
+@@ -1317,6 +1464,7 @@ static int safexcel_skcipher_aes_ctr_cra
  
  	safexcel_skcipher_cra_init(tfm);
  	ctx->alg  = SAFEXCEL_AES;
@@ -1542,7 +1542,7 @@
  	ctx->mode = CONTEXT_CONTROL_CRYPTO_MODE_CTR_LOAD;
  	return 0;
  }
-@@ -1352,6 +1500,7 @@
+@@ -1352,6 +1500,7 @@ static int safexcel_des_setkey(struct cr
  			       unsigned int len)
  {
  	struct safexcel_cipher_ctx *ctx = crypto_skcipher_ctx(ctfm);
@@ -1550,7 +1550,7 @@
  	int ret;
  
  	ret = verify_skcipher_des_key(ctfm, key);
-@@ -1359,7 +1508,7 @@
+@@ -1359,7 +1508,7 @@ static int safexcel_des_setkey(struct cr
  		return ret;
  
  	/* if context exits and key changed, need to invalidate it */
@@ -1559,7 +1559,7 @@
  		if (memcmp(ctx->key, key, len))
  			ctx->base.needs_inv = true;
  
-@@ -1375,6 +1524,8 @@
+@@ -1375,6 +1524,8 @@ static int safexcel_skcipher_des_cbc_cra
  
  	safexcel_skcipher_cra_init(tfm);
  	ctx->alg  = SAFEXCEL_DES;
@@ -1568,7 +1568,7 @@
  	ctx->mode = CONTEXT_CONTROL_CRYPTO_MODE_CBC;
  	return 0;
  }
-@@ -1412,6 +1563,8 @@
+@@ -1412,6 +1563,8 @@ static int safexcel_skcipher_des_ecb_cra
  	safexcel_skcipher_cra_init(tfm);
  	ctx->alg  = SAFEXCEL_DES;
  	ctx->mode = CONTEXT_CONTROL_CRYPTO_MODE_ECB;
@@ -1577,7 +1577,7 @@
  	return 0;
  }
  
-@@ -1444,6 +1597,7 @@
+@@ -1444,6 +1597,7 @@ static int safexcel_des3_ede_setkey(stru
  				   const u8 *key, unsigned int len)
  {
  	struct safexcel_cipher_ctx *ctx = crypto_skcipher_ctx(ctfm);
@@ -1585,7 +1585,7 @@
  	int err;
  
  	err = verify_skcipher_des3_key(ctfm, key);
-@@ -1451,13 +1605,11 @@
+@@ -1451,13 +1605,11 @@ static int safexcel_des3_ede_setkey(stru
  		return err;
  
  	/* if context exits and key changed, need to invalidate it */
@@ -1600,7 +1600,7 @@
  	ctx->key_len = len;
  
  	return 0;
-@@ -1469,6 +1621,8 @@
+@@ -1469,6 +1621,8 @@ static int safexcel_skcipher_des3_cbc_cr
  
  	safexcel_skcipher_cra_init(tfm);
  	ctx->alg  = SAFEXCEL_3DES;
@@ -1609,7 +1609,7 @@
  	ctx->mode = CONTEXT_CONTROL_CRYPTO_MODE_CBC;
  	return 0;
  }
-@@ -1506,6 +1660,8 @@
+@@ -1506,6 +1660,8 @@ static int safexcel_skcipher_des3_ecb_cr
  	safexcel_skcipher_cra_init(tfm);
  	ctx->alg  = SAFEXCEL_3DES;
  	ctx->mode = CONTEXT_CONTROL_CRYPTO_MODE_ECB;
@@ -1618,7 +1618,7 @@
  	return 0;
  }
  
-@@ -1561,6 +1717,9 @@
+@@ -1561,6 +1717,9 @@ static int safexcel_aead_cra_init(struct
  	ctx->priv = tmpl->priv;
  
  	ctx->alg  = SAFEXCEL_AES; /* default */
@@ -1628,7 +1628,7 @@
  	ctx->mode = CONTEXT_CONTROL_CRYPTO_MODE_CBC; /* default */
  	ctx->aead = true;
  	ctx->base.send = safexcel_aead_send;
-@@ -1749,6 +1908,8 @@
+@@ -1749,6 +1908,8 @@ static int safexcel_aead_sha1_des3_cra_i
  
  	safexcel_aead_sha1_cra_init(tfm);
  	ctx->alg = SAFEXCEL_3DES; /* override default */
@@ -1637,7 +1637,7 @@
  	return 0;
  }
  
-@@ -1777,6 +1938,330 @@
+@@ -1777,6 +1938,330 @@ struct safexcel_alg_template safexcel_al
  	},
  };
  
@@ -1968,7 +1968,7 @@
  static int safexcel_aead_sha1_ctr_cra_init(struct crypto_tfm *tfm)
  {
  	struct safexcel_cipher_ctx *ctx = crypto_tfm_ctx(tfm);
-@@ -1965,14 +2450,12 @@
+@@ -1965,14 +2450,12 @@ static int safexcel_skcipher_aesxts_setk
  	/* Only half of the key data is cipher key */
  	keylen = (len >> 1);
  	ret = aes_expandkey(&aes, key, keylen);
@@ -1985,7 +1985,7 @@
  				ctx->base.needs_inv = true;
  				break;
  			}
-@@ -1984,15 +2467,13 @@
+@@ -1984,15 +2467,13 @@ static int safexcel_skcipher_aesxts_setk
  
  	/* The other half is the tweak key */
  	ret = aes_expandkey(&aes, (u8 *)(key + keylen), keylen);
@@ -2004,7 +2004,7 @@
  				ctx->base.needs_inv = true;
  				break;
  			}
-@@ -2015,6 +2496,7 @@
+@@ -2015,6 +2496,7 @@ static int safexcel_skcipher_aes_xts_cra
  
  	safexcel_skcipher_cra_init(tfm);
  	ctx->alg  = SAFEXCEL_AES;
@@ -2012,7 +2012,7 @@
  	ctx->xts  = 1;
  	ctx->mode = CONTEXT_CONTROL_CRYPTO_MODE_XTS;
  	return 0;
-@@ -2075,14 +2557,13 @@
+@@ -2075,14 +2557,13 @@ static int safexcel_aead_gcm_setkey(stru
  
  	ret = aes_expandkey(&aes, key, len);
  	if (ret) {
@@ -2028,7 +2028,7 @@
  				ctx->base.needs_inv = true;
  				break;
  			}
-@@ -2099,8 +2580,6 @@
+@@ -2099,8 +2580,6 @@ static int safexcel_aead_gcm_setkey(stru
  	crypto_cipher_set_flags(ctx->hkaes, crypto_aead_get_flags(ctfm) &
  				CRYPTO_TFM_REQ_MASK);
  	ret = crypto_cipher_setkey(ctx->hkaes, key, len);
@@ -2037,7 +2037,7 @@
  	if (ret)
  		return ret;
  
-@@ -2109,7 +2588,7 @@
+@@ -2109,7 +2588,7 @@ static int safexcel_aead_gcm_setkey(stru
  
  	if (priv->flags & EIP197_TRC_CACHE && ctx->base.ctxr_dma) {
  		for (i = 0; i < AES_BLOCK_SIZE / sizeof(u32); i++) {
@@ -2046,7 +2046,7 @@
  				ctx->base.needs_inv = true;
  				break;
  			}
-@@ -2135,10 +2614,7 @@
+@@ -2135,10 +2614,7 @@ static int safexcel_aead_gcm_cra_init(st
  	ctx->mode = CONTEXT_CONTROL_CRYPTO_MODE_XCM; /* override default */
  
  	ctx->hkaes = crypto_alloc_cipher("aes", 0, 0);
@@ -2058,7 +2058,7 @@
  }
  
  static void safexcel_aead_gcm_cra_exit(struct crypto_tfm *tfm)
-@@ -2192,14 +2668,13 @@
+@@ -2192,14 +2668,13 @@ static int safexcel_aead_ccm_setkey(stru
  
  	ret = aes_expandkey(&aes, key, len);
  	if (ret) {
@@ -2074,7 +2074,7 @@
  				ctx->base.needs_inv = true;
  				break;
  			}
-@@ -2235,6 +2710,7 @@
+@@ -2235,6 +2710,7 @@ static int safexcel_aead_ccm_cra_init(st
  	ctx->state_sz = 3 * AES_BLOCK_SIZE;
  	ctx->xcm = EIP197_XCM_MODE_CCM;
  	ctx->mode = CONTEXT_CONTROL_CRYPTO_MODE_XCM; /* override default */
@@ -2082,7 +2082,7 @@
  	return 0;
  }
  
-@@ -2301,5 +2777,949 @@
+@@ -2301,5 +2777,949 @@ struct safexcel_alg_template safexcel_al
  			.cra_exit = safexcel_aead_cra_exit,
  			.cra_module = THIS_MODULE,
  		},
@@ -3183,7 +3183,7 @@
  
  	__le32 data[40];
  } __packed;
-@@ -358,10 +388,14 @@
+@@ -358,10 +388,14 @@ struct safexcel_context_record {
  #define CONTEXT_CONTROL_CRYPTO_ALG_AES128	(0x5 << 17)
  #define CONTEXT_CONTROL_CRYPTO_ALG_AES192	(0x6 << 17)
  #define CONTEXT_CONTROL_CRYPTO_ALG_AES256	(0x7 << 17)
@@ -3198,7 +3198,7 @@
  #define CONTEXT_CONTROL_CRYPTO_ALG_SHA1		(0x2 << 23)
  #define CONTEXT_CONTROL_CRYPTO_ALG_SHA224	(0x4 << 23)
  #define CONTEXT_CONTROL_CRYPTO_ALG_SHA256	(0x3 << 23)
-@@ -371,17 +405,25 @@
+@@ -371,17 +405,25 @@ struct safexcel_context_record {
  #define CONTEXT_CONTROL_CRYPTO_ALG_XCBC128	(0x1 << 23)
  #define CONTEXT_CONTROL_CRYPTO_ALG_XCBC192	(0x2 << 23)
  #define CONTEXT_CONTROL_CRYPTO_ALG_XCBC256	(0x3 << 23)
@@ -3224,7 +3224,7 @@
  #define CONTEXT_CONTROL_IV0			BIT(5)
  #define CONTEXT_CONTROL_IV1			BIT(6)
  #define CONTEXT_CONTROL_IV2			BIT(7)
-@@ -394,6 +436,13 @@
+@@ -394,6 +436,13 @@ struct safexcel_context_record {
  #define EIP197_XCM_MODE_GCM			1
  #define EIP197_XCM_MODE_CCM			2
  
@@ -3238,7 +3238,7 @@
  /* The hash counter given to the engine in the context has a granularity of
   * 64 bits.
   */
-@@ -423,6 +472,8 @@
+@@ -423,6 +472,8 @@ struct safexcel_context_record {
  #define EIP197_TRC_PARAMS2_RC_SZ_SMALL(n)	((n) << 18)
  
  /* Cache helpers */
@@ -3247,7 +3247,7 @@
  #define EIP197_CS_TRC_REC_WC			64
  #define EIP197_CS_RC_SIZE			(4 * sizeof(u32))
  #define EIP197_CS_RC_NEXT(x)			(x)
-@@ -447,7 +498,7 @@
+@@ -447,7 +498,7 @@ struct result_data_desc {
  	u16 application_id;
  	u16 rsvd1;
  
@@ -3256,7 +3256,7 @@
  } __packed;
  
  
-@@ -465,16 +516,15 @@
+@@ -465,16 +516,15 @@ struct safexcel_result_desc {
  
  	u32 data_lo;
  	u32 data_hi;
@@ -3276,7 +3276,7 @@
  					 sizeof(u32))
  
  struct safexcel_token {
-@@ -505,6 +555,8 @@
+@@ -505,6 +555,8 @@ static inline void eip197_noop_token(str
  {
  	token->opcode = EIP197_TOKEN_OPCODE_NOOP;
  	token->packet_length = BIT(2);
@@ -3285,7 +3285,7 @@
  }
  
  /* Instructions */
-@@ -526,14 +578,13 @@
+@@ -526,14 +578,13 @@ struct safexcel_control_data_desc {
  	u16 application_id;
  	u16 rsvd;
  
@@ -3302,7 +3302,7 @@
  } __packed;
  
  #define EIP197_OPTION_MAGIC_VALUE	BIT(0)
-@@ -543,7 +594,10 @@
+@@ -543,7 +594,10 @@ struct safexcel_control_data_desc {
  #define EIP197_OPTION_2_TOKEN_IV_CMD	GENMASK(11, 10)
  #define EIP197_OPTION_4_TOKEN_IV_CMD	GENMASK(11, 9)
  
@@ -3313,7 +3313,7 @@
  
  /* Basic Command Descriptor format */
  struct safexcel_command_desc {
-@@ -551,16 +605,22 @@
+@@ -551,16 +605,22 @@ struct safexcel_command_desc {
  	u8 rsvd0:5;
  	u8 last_seg:1;
  	u8 first_seg:1;
@@ -3337,7 +3337,7 @@
  /*
   * Internal structures & functions
   */
-@@ -578,15 +638,20 @@
+@@ -578,15 +638,20 @@ enum eip197_fw {
  
  struct safexcel_desc_ring {
  	void *base;
@@ -3359,7 +3359,7 @@
  };
  
  enum safexcel_alg_type {
-@@ -601,9 +666,11 @@
+@@ -601,9 +666,11 @@ struct safexcel_config {
  
  	u32 cd_size;
  	u32 cd_offset;
@@ -3371,7 +3371,7 @@
  };
  
  struct safexcel_work_data {
-@@ -654,6 +721,12 @@
+@@ -654,6 +721,12 @@ enum safexcel_eip_version {
  /* Priority we use for advertising our algorithms */
  #define SAFEXCEL_CRA_PRIORITY		300
  
@@ -3384,7 +3384,7 @@
  /* EIP algorithm presence flags */
  enum safexcel_eip_algorithms {
  	SAFEXCEL_ALG_BC0      = BIT(5),
-@@ -697,16 +770,23 @@
+@@ -697,16 +770,23 @@ struct safexcel_register_offsets {
  enum safexcel_flags {
  	EIP197_TRC_CACHE	= BIT(0),
  	SAFEXCEL_HW_EIP197	= BIT(1),
@@ -3408,7 +3408,7 @@
  };
  
  struct safexcel_crypto_priv {
-@@ -778,7 +858,7 @@
+@@ -778,7 +858,7 @@ struct safexcel_inv_result {
  
  void safexcel_dequeue(struct safexcel_crypto_priv *priv, int ring);
  int safexcel_rdesc_check_errors(struct safexcel_crypto_priv *priv,
@@ -3417,7 +3417,7 @@
  void safexcel_complete(struct safexcel_crypto_priv *priv, int ring);
  int safexcel_invalidate_cache(struct crypto_async_request *async,
  			      struct safexcel_crypto_priv *priv,
-@@ -797,7 +877,8 @@
+@@ -797,7 +877,8 @@ struct safexcel_command_desc *safexcel_a
  						 bool first, bool last,
  						 dma_addr_t data, u32 len,
  						 u32 full_data_len,
@@ -3427,7 +3427,7 @@
  struct safexcel_result_desc *safexcel_add_rdesc(struct safexcel_crypto_priv *priv,
  						 int ring_id,
  						bool first, bool last,
-@@ -853,5 +934,43 @@
+@@ -853,5 +934,43 @@ extern struct safexcel_alg_template safe
  extern struct safexcel_alg_template safexcel_alg_xts_aes;
  extern struct safexcel_alg_template safexcel_alg_gcm;
  extern struct safexcel_alg_template safexcel_alg_ccm;
@@ -3487,7 +3487,7 @@
  #include <linux/device.h>
  #include <linux/dma-mapping.h>
  #include <linux/dmapool.h>
-@@ -19,9 +23,19 @@
+@@ -19,9 +23,19 @@ struct safexcel_ahash_ctx {
  	struct safexcel_crypto_priv *priv;
  
  	u32 alg;
@@ -3510,7 +3510,7 @@
  };
  
  struct safexcel_ahash_req {
-@@ -31,6 +45,8 @@
+@@ -31,6 +45,8 @@ struct safexcel_ahash_req {
  	bool needs_inv;
  	bool hmac_zlen;
  	bool len_is_le;
@@ -3519,7 +3519,7 @@
  
  	int nents;
  	dma_addr_t result_dma;
-@@ -39,7 +55,9 @@
+@@ -39,7 +55,9 @@ struct safexcel_ahash_req {
  
  	u8 state_sz;    /* expected state size, only set once */
  	u8 block_sz;    /* block size, only set once */
@@ -3530,7 +3530,7 @@
  
  	u64 len;
  	u64 processed;
-@@ -57,22 +75,36 @@
+@@ -57,22 +75,36 @@ static inline u64 safexcel_queued_len(st
  }
  
  static void safexcel_hash_token(struct safexcel_command_desc *cdesc,
@@ -3573,7 +3573,7 @@
  }
  
  static void safexcel_context_control(struct safexcel_ahash_ctx *ctx,
-@@ -82,29 +114,49 @@
+@@ -82,29 +114,49 @@ static void safexcel_context_control(str
  	struct safexcel_crypto_priv *priv = ctx->priv;
  	u64 count = 0;
  
@@ -3630,7 +3630,7 @@
  		return;
  	}
  
-@@ -204,7 +256,7 @@
+@@ -204,7 +256,7 @@ static int safexcel_handle_req_result(st
  	}
  
  	if (sreq->result_dma) {
@@ -3639,7 +3639,7 @@
  				 DMA_FROM_DEVICE);
  		sreq->result_dma = 0;
  	}
-@@ -223,14 +275,15 @@
+@@ -223,14 +275,15 @@ static int safexcel_handle_req_result(st
  			memcpy(sreq->cache, sreq->state,
  			       crypto_ahash_digestsize(ahash));
  
@@ -3657,7 +3657,7 @@
  			areq->nbytes = 0;
  			safexcel_ahash_enqueue(areq);
  
-@@ -238,8 +291,14 @@
+@@ -238,8 +291,14 @@ static int safexcel_handle_req_result(st
  			return 1;
  		}
  
@@ -3674,7 +3674,7 @@
  	}
  
  	cache_len = safexcel_queued_len(sreq);
-@@ -261,10 +320,11 @@
+@@ -261,10 +320,11 @@ static int safexcel_ahash_send_req(struc
  	struct safexcel_command_desc *cdesc, *first_cdesc = NULL;
  	struct safexcel_result_desc *rdesc;
  	struct scatterlist *sg;
@@ -3689,7 +3689,7 @@
  	if (queued <= HASH_CACHE_SIZE)
  		cache_len = queued;
  	else
-@@ -287,15 +347,52 @@
+@@ -287,15 +347,52 @@ static int safexcel_ahash_send_req(struc
  				   areq->nbytes - extra);
  
  		queued -= extra;
@@ -3743,7 +3743,7 @@
  	/* Add a command descriptor for the cached data, if any */
  	if (cache_len) {
  		req->cache_dma = dma_map_single(priv->dev, req->cache,
-@@ -306,8 +403,9 @@
+@@ -306,8 +403,9 @@ static int safexcel_ahash_send_req(struc
  		req->cache_sz = cache_len;
  		first_cdesc = safexcel_add_cdesc(priv, ring, 1,
  						 (cache_len == len),
@@ -3755,7 +3755,7 @@
  		if (IS_ERR(first_cdesc)) {
  			ret = PTR_ERR(first_cdesc);
  			goto unmap_cache;
-@@ -319,10 +417,6 @@
+@@ -319,10 +417,6 @@ static int safexcel_ahash_send_req(struc
  			goto send_command;
  	}
  
@@ -3766,7 +3766,7 @@
  	/* Now handle the current ahash request buffer(s) */
  	req->nents = dma_map_sg(priv->dev, areq->src,
  				sg_nents_for_len(areq->src,
-@@ -336,26 +430,34 @@
+@@ -336,26 +430,34 @@ static int safexcel_ahash_send_req(struc
  	for_each_sg(areq->src, sg, req->nents, i) {
  		int sglen = sg_dma_len(sg);
  
@@ -3806,7 +3806,7 @@
  	}
  
  send_command:
-@@ -363,9 +465,9 @@
+@@ -363,9 +465,9 @@ send_command:
  	safexcel_context_control(ctx, req, first_cdesc);
  
  	/* Add the token */
@@ -3818,7 +3818,7 @@
  					 DMA_FROM_DEVICE);
  	if (dma_mapping_error(priv->dev, req->result_dma)) {
  		ret = -EINVAL;
-@@ -374,7 +476,7 @@
+@@ -374,7 +476,7 @@ send_command:
  
  	/* Add a result descriptor */
  	rdesc = safexcel_add_rdesc(priv, ring, 1, 1, req->result_dma,
@@ -3827,7 +3827,7 @@
  	if (IS_ERR(rdesc)) {
  		ret = PTR_ERR(rdesc);
  		goto unmap_result;
-@@ -382,17 +484,20 @@
+@@ -382,17 +484,20 @@ send_command:
  
  	safexcel_rdr_req_set(priv, ring, rdesc, &areq->base);
  
@@ -3851,7 +3851,7 @@
  cdesc_rollback:
  	for (i = 0; i < n_cdesc; i++)
  		safexcel_ring_rollback_wptr(priv, &priv->ring[ring].cdr);
-@@ -590,16 +695,12 @@
+@@ -590,16 +695,12 @@ static int safexcel_ahash_enqueue(struct
  
  	if (ctx->base.ctxr) {
  		if (priv->flags & EIP197_TRC_CACHE && !ctx->base.needs_inv &&
@@ -3871,7 +3871,7 @@
  		      memcmp(ctx->base.ctxr->data + (req->state_sz>>2),
  			     ctx->opad, req->state_sz))))
  			/*
-@@ -622,6 +723,7 @@
+@@ -622,6 +723,7 @@ static int safexcel_ahash_enqueue(struct
  		if (!ctx->base.ctxr)
  			return -ENOMEM;
  	}
@@ -3879,7 +3879,7 @@
  
  	ring = ctx->base.ring;
  
-@@ -691,8 +793,34 @@
+@@ -691,8 +793,34 @@ static int safexcel_ahash_final(struct a
  		else if (ctx->alg == CONTEXT_CONTROL_CRYPTO_ALG_SHA512)
  			memcpy(areq->result, sha512_zero_message_hash,
  			       SHA512_DIGEST_SIZE);
@@ -3914,7 +3914,7 @@
  	} else if (unlikely(req->hmac &&
  			    (req->len == req->block_sz) &&
  			    !areq->nbytes)) {
-@@ -792,6 +920,7 @@
+@@ -792,6 +920,7 @@ static int safexcel_ahash_cra_init(struc
  	ctx->priv = tmpl->priv;
  	ctx->base.send = safexcel_ahash_send;
  	ctx->base.handle_result = safexcel_handle_result;
@@ -3922,7 +3922,7 @@
  
  	crypto_ahash_set_reqsize(__crypto_ahash_cast(tfm),
  				 sizeof(struct safexcel_ahash_req));
-@@ -808,6 +937,7 @@
+@@ -808,6 +937,7 @@ static int safexcel_sha1_init(struct aha
  	ctx->alg = CONTEXT_CONTROL_CRYPTO_ALG_SHA1;
  	req->digest = CONTEXT_CONTROL_DIGEST_PRECOMPUTED;
  	req->state_sz = SHA1_DIGEST_SIZE;
@@ -3930,7 +3930,7 @@
  	req->block_sz = SHA1_BLOCK_SIZE;
  
  	return 0;
-@@ -889,6 +1019,7 @@
+@@ -889,6 +1019,7 @@ static int safexcel_hmac_sha1_init(struc
  	ctx->alg = CONTEXT_CONTROL_CRYPTO_ALG_SHA1;
  	req->digest = CONTEXT_CONTROL_DIGEST_PRECOMPUTED;
  	req->state_sz = SHA1_DIGEST_SIZE;
@@ -3938,7 +3938,7 @@
  	req->block_sz = SHA1_BLOCK_SIZE;
  	req->hmac = true;
  
-@@ -1125,6 +1256,7 @@
+@@ -1125,6 +1256,7 @@ static int safexcel_sha256_init(struct a
  	ctx->alg = CONTEXT_CONTROL_CRYPTO_ALG_SHA256;
  	req->digest = CONTEXT_CONTROL_DIGEST_PRECOMPUTED;
  	req->state_sz = SHA256_DIGEST_SIZE;
@@ -3946,7 +3946,7 @@
  	req->block_sz = SHA256_BLOCK_SIZE;
  
  	return 0;
-@@ -1180,6 +1312,7 @@
+@@ -1180,6 +1312,7 @@ static int safexcel_sha224_init(struct a
  	ctx->alg = CONTEXT_CONTROL_CRYPTO_ALG_SHA224;
  	req->digest = CONTEXT_CONTROL_DIGEST_PRECOMPUTED;
  	req->state_sz = SHA256_DIGEST_SIZE;
@@ -3954,7 +3954,7 @@
  	req->block_sz = SHA256_BLOCK_SIZE;
  
  	return 0;
-@@ -1248,6 +1381,7 @@
+@@ -1248,6 +1381,7 @@ static int safexcel_hmac_sha224_init(str
  	ctx->alg = CONTEXT_CONTROL_CRYPTO_ALG_SHA224;
  	req->digest = CONTEXT_CONTROL_DIGEST_PRECOMPUTED;
  	req->state_sz = SHA256_DIGEST_SIZE;
@@ -3962,7 +3962,7 @@
  	req->block_sz = SHA256_BLOCK_SIZE;
  	req->hmac = true;
  
-@@ -1318,6 +1452,7 @@
+@@ -1318,6 +1452,7 @@ static int safexcel_hmac_sha256_init(str
  	ctx->alg = CONTEXT_CONTROL_CRYPTO_ALG_SHA256;
  	req->digest = CONTEXT_CONTROL_DIGEST_PRECOMPUTED;
  	req->state_sz = SHA256_DIGEST_SIZE;
@@ -3970,7 +3970,7 @@
  	req->block_sz = SHA256_BLOCK_SIZE;
  	req->hmac = true;
  
-@@ -1375,6 +1510,7 @@
+@@ -1375,6 +1510,7 @@ static int safexcel_sha512_init(struct a
  	ctx->alg = CONTEXT_CONTROL_CRYPTO_ALG_SHA512;
  	req->digest = CONTEXT_CONTROL_DIGEST_PRECOMPUTED;
  	req->state_sz = SHA512_DIGEST_SIZE;
@@ -3978,7 +3978,7 @@
  	req->block_sz = SHA512_BLOCK_SIZE;
  
  	return 0;
-@@ -1430,6 +1566,7 @@
+@@ -1430,6 +1566,7 @@ static int safexcel_sha384_init(struct a
  	ctx->alg = CONTEXT_CONTROL_CRYPTO_ALG_SHA384;
  	req->digest = CONTEXT_CONTROL_DIGEST_PRECOMPUTED;
  	req->state_sz = SHA512_DIGEST_SIZE;
@@ -3986,7 +3986,7 @@
  	req->block_sz = SHA512_BLOCK_SIZE;
  
  	return 0;
-@@ -1498,6 +1635,7 @@
+@@ -1498,6 +1635,7 @@ static int safexcel_hmac_sha512_init(str
  	ctx->alg = CONTEXT_CONTROL_CRYPTO_ALG_SHA512;
  	req->digest = CONTEXT_CONTROL_DIGEST_PRECOMPUTED;
  	req->state_sz = SHA512_DIGEST_SIZE;
@@ -3994,7 +3994,7 @@
  	req->block_sz = SHA512_BLOCK_SIZE;
  	req->hmac = true;
  
-@@ -1568,6 +1706,7 @@
+@@ -1568,6 +1706,7 @@ static int safexcel_hmac_sha384_init(str
  	ctx->alg = CONTEXT_CONTROL_CRYPTO_ALG_SHA384;
  	req->digest = CONTEXT_CONTROL_DIGEST_PRECOMPUTED;
  	req->state_sz = SHA512_DIGEST_SIZE;
@@ -4002,7 +4002,7 @@
  	req->block_sz = SHA512_BLOCK_SIZE;
  	req->hmac = true;
  
-@@ -1625,6 +1764,7 @@
+@@ -1625,6 +1764,7 @@ static int safexcel_md5_init(struct ahas
  	ctx->alg = CONTEXT_CONTROL_CRYPTO_ALG_MD5;
  	req->digest = CONTEXT_CONTROL_DIGEST_PRECOMPUTED;
  	req->state_sz = MD5_DIGEST_SIZE;
@@ -4010,7 +4010,7 @@
  	req->block_sz = MD5_HMAC_BLOCK_SIZE;
  
  	return 0;
-@@ -1686,6 +1826,7 @@
+@@ -1686,6 +1826,7 @@ static int safexcel_hmac_md5_init(struct
  	ctx->alg = CONTEXT_CONTROL_CRYPTO_ALG_MD5;
  	req->digest = CONTEXT_CONTROL_DIGEST_PRECOMPUTED;
  	req->state_sz = MD5_DIGEST_SIZE;
@@ -4018,7 +4018,7 @@
  	req->block_sz = MD5_HMAC_BLOCK_SIZE;
  	req->len_is_le = true; /* MD5 is little endian! ... */
  	req->hmac = true;
-@@ -1738,5 +1879,1235 @@
+@@ -1738,5 +1879,1235 @@ struct safexcel_alg_template safexcel_al
  				.cra_module = THIS_MODULE,
  			},
  		},
@@ -5256,7 +5256,7 @@
  };
 --- a/drivers/crypto/inside-secure/safexcel_ring.c
 +++ b/drivers/crypto/inside-secure/safexcel_ring.c
-@@ -14,7 +14,12 @@
+@@ -14,7 +14,12 @@ int safexcel_init_ring_descriptors(struc
  				   struct safexcel_desc_ring *cdr,
  				   struct safexcel_desc_ring *rdr)
  {
@@ -5270,7 +5270,7 @@
  	cdr->base = dmam_alloc_coherent(priv->dev,
  					cdr->offset * EIP197_DEFAULT_RING_SIZE,
  					&cdr->base_dma, GFP_KERNEL);
-@@ -24,7 +29,34 @@
+@@ -24,7 +29,34 @@ int safexcel_init_ring_descriptors(struc
  	cdr->base_end = cdr->base + cdr->offset * (EIP197_DEFAULT_RING_SIZE - 1);
  	cdr->read = cdr->base;
  
@@ -5306,7 +5306,7 @@
  	rdr->base = dmam_alloc_coherent(priv->dev,
  					rdr->offset * EIP197_DEFAULT_RING_SIZE,
  					&rdr->base_dma, GFP_KERNEL);
-@@ -42,11 +74,40 @@
+@@ -42,11 +74,40 @@ inline int safexcel_select_ring(struct s
  	return (atomic_inc_return(&priv->ring_used) % priv->config.rings);
  }
  
@@ -5349,7 +5349,7 @@
  	if ((ring->write == ring->read - ring->offset) ||
  	    (ring->read == ring->base && ring->write == ring->base_end))
  		return ERR_PTR(-ENOMEM);
-@@ -106,10 +167,13 @@
+@@ -106,10 +167,13 @@ void safexcel_ring_rollback_wptr(struct
  	if (ring->write == ring->read)
  		return;
  
@@ -5365,7 +5365,7 @@
  }
  
  struct safexcel_command_desc *safexcel_add_cdesc(struct safexcel_crypto_priv *priv,
-@@ -117,26 +181,26 @@
+@@ -117,26 +181,26 @@ struct safexcel_command_desc *safexcel_a
  						 bool first, bool last,
  						 dma_addr_t data, u32 data_len,
  						 u32 full_data_len,
@@ -5403,7 +5403,7 @@
  		/*
  		 * Note that the length here MUST be >0 or else the EIP(1)97
  		 * may hang. Newer EIP197 firmware actually incorporates this
-@@ -146,20 +210,12 @@
+@@ -146,20 +210,12 @@ struct safexcel_command_desc *safexcel_a
  		cdesc->control_data.packet_length = full_data_len ?: 1;
  		cdesc->control_data.options = EIP197_OPTION_MAGIC_VALUE |
  					      EIP197_OPTION_64BIT_CTX |
@@ -5429,7 +5429,7 @@
  	}
  
  	return cdesc;
-@@ -171,18 +227,27 @@
+@@ -171,18 +227,27 @@ struct safexcel_result_desc *safexcel_ad
  						dma_addr_t data, u32 len)
  {
  	struct safexcel_result_desc *rdesc;

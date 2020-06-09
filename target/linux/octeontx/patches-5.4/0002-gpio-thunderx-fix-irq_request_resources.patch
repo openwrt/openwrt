@@ -15,11 +15,9 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  drivers/gpio/gpio-thunderx.c | 9 ++++++---
  1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/gpio/gpio-thunderx.c b/drivers/gpio/gpio-thunderx.c
-index 715371b..feda2a2 100644
 --- a/drivers/gpio/gpio-thunderx.c
 +++ b/drivers/gpio/gpio-thunderx.c
-@@ -363,15 +363,18 @@ static int thunderx_gpio_irq_request_resources(struct irq_data *data)
+@@ -363,15 +363,18 @@ static int thunderx_gpio_irq_request_res
  {
  	struct thunderx_line *txline = irq_data_get_irq_chip_data(data);
  	struct thunderx_gpio *txgpio = txline->txgpio;
@@ -41,6 +39,3 @@ index 715371b..feda2a2 100644
  
  	return r;
  }
--- 
-2.7.4
-

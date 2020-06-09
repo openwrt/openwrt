@@ -87,10 +87,8 @@ Signed-off-by: Sean Wang <sean.wang@mediatek.com>
  drivers/net/dsa/mt7530.h | 144 +++++++++
  3 files changed, 784 insertions(+), 9 deletions(-)
 
-Index: linux-5.4.43/drivers/net/dsa/Kconfig
-===================================================================
---- linux-5.4.43.orig/drivers/net/dsa/Kconfig
-+++ linux-5.4.43/drivers/net/dsa/Kconfig
+--- a/drivers/net/dsa/Kconfig
++++ b/drivers/net/dsa/Kconfig
 @@ -33,12 +33,12 @@ config NET_DSA_LANTIQ_GSWIP
  	  the xrx200 / VR9 SoC.
  
@@ -107,10 +105,8 @@ Index: linux-5.4.43/drivers/net/dsa/Kconfig
  
  config NET_DSA_MV88E6060
  	tristate "Marvell 88E6060 ethernet switch chip support"
-Index: linux-5.4.43/drivers/net/dsa/mt7530.c
-===================================================================
---- linux-5.4.43.orig/drivers/net/dsa/mt7530.c
-+++ linux-5.4.43/drivers/net/dsa/mt7530.c
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
 @@ -234,6 +234,12 @@ mt7530_write(struct mt7530_priv *priv, u
  }
  
@@ -882,10 +878,8 @@ Index: linux-5.4.43/drivers/net/dsa/mt7530.c
  	{ /* sentinel */ },
  };
  MODULE_DEVICE_TABLE(of, mt7530_of_match);
-Index: linux-5.4.43/drivers/net/dsa/mt7530.h
-===================================================================
---- linux-5.4.43.orig/drivers/net/dsa/mt7530.h
-+++ linux-5.4.43/drivers/net/dsa/mt7530.h
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
 @@ -14,6 +14,7 @@
  enum mt753x_id {
  	ID_MT7530 = 0,
