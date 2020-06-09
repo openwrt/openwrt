@@ -52,6 +52,7 @@ platform_do_upgrade() {
 	netgear,r6700-v2|\
 	netgear,r6800|\
 	netgear,r6850|\
+	netgear,wac104|\
 	netis,wf2881|\
 	xiaomi,mir3g|\
 	xiaomi,mir3p|\
