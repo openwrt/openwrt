@@ -1,0 +1,46 @@
+From: Sven Eckelmann <sven@narfation.org>
+Date: Tue, 9 Jun 2020 14:08:44 +0200
+Subject: essedma: Disable TCP segmentation offload for IPv6
+
+It was noticed that the the whole MAC can hang when transferring data from
+one ar40xx port (WAN ports) to the CPU and from the CPU back to another
+ar40xx port (LAN ports). The CPU was doing only NATing in that process.
+
+Usually, the problem first starts with a simple data corruption:
+
+  $ wget https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-10.4.0-amd64-netinst.iso -O /dev/null
+  ...
+  Connecting to saimei.ftp.acc.umu.se (saimei.ftp.acc.umu.se)|2001:6b0:19::138|:443... connected.
+  ...
+  Read  error at byte 48807936/352321536 (Decryption has failed.). Retrying.
+
+But after a short while, the whole MAC will stop to react. No traffic can
+be transported anymore from the CPU port from/to the AR40xx PHY/switch and
+the MAC has to be resetted.
+
+Signed-off-by: Sven Eckelmann <sven@narfation.org>
+
+--- a/drivers/net/ethernet/qualcomm/essedma/edma_axi.c
++++ b/drivers/net/ethernet/qualcomm/essedma/edma_axi.c
+@@ -972,17 +972,14 @@ static int edma_axi_probe(struct platfor
+ 		edma_netdev[i]->features = NETIF_F_HW_CSUM | NETIF_F_RXCSUM
+ 				      | NETIF_F_HW_VLAN_CTAG_TX
+ 				      | NETIF_F_HW_VLAN_CTAG_RX | NETIF_F_SG |
+-				      NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_GRO;
++				      NETIF_F_TSO | NETIF_F_GRO;
+ 		edma_netdev[i]->hw_features = NETIF_F_HW_CSUM | NETIF_F_RXCSUM |
+ 				NETIF_F_HW_VLAN_CTAG_RX
+-				| NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 |
+-				NETIF_F_GRO;
++				| NETIF_F_SG | NETIF_F_TSO | NETIF_F_GRO;
+ 		edma_netdev[i]->vlan_features = NETIF_F_HW_CSUM | NETIF_F_SG |
+-					   NETIF_F_TSO | NETIF_F_TSO6 |
+-					   NETIF_F_GRO;
++					   NETIF_F_TSO | NETIF_F_GRO;
+ 		edma_netdev[i]->wanted_features = NETIF_F_HW_CSUM | NETIF_F_SG |
+-					     NETIF_F_TSO | NETIF_F_TSO6 |
+-					     NETIF_F_GRO;
++					     NETIF_F_TSO | NETIF_F_GRO;
+ 
+ #ifdef CONFIG_RFS_ACCEL
+ 		edma_netdev[i]->features |=  NETIF_F_RXHASH | NETIF_F_NTUPLE;
