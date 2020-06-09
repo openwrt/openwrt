@@ -27,9 +27,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/net/ethernet/broadcom/genet/bcmgenet.c
 +++ b/drivers/net/ethernet/broadcom/genet/bcmgenet.c
-@@ -69,6 +69,10 @@
- #define GENET_RDMA_REG_OFF	(priv->hw_params->rdma_offset + \
- 				TOTAL_DESC * DMA_DESC_SIZE)
+@@ -72,6 +72,10 @@
+ /* Forward declarations */
+ static void bcmgenet_set_rx_mode(struct net_device *dev);
  
 +static bool skip_umac_reset = true;
 +module_param(skip_umac_reset, bool, 0444);
@@ -38,7 +38,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  static inline void bcmgenet_writel(u32 value, void __iomem *offset)
  {
  	/* MIPS chips strapped for BE will automagically configure the
-@@ -1994,6 +1998,11 @@ static void reset_umac(struct bcmgenet_p
+@@ -1997,6 +2001,11 @@ static void reset_umac(struct bcmgenet_p
  	bcmgenet_rbuf_ctrl_set(priv, 0);
  	udelay(10);
  
