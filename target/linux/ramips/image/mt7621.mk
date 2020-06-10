@@ -708,6 +708,13 @@ define Device/mikrotik_routerboard-750gr3
 endef
 TARGET_DEVICES += mikrotik_routerboard-750gr3
 
+define Device/mikrotik_routerboard-760igs
+  $(Device/MikroTik)
+  DEVICE_MODEL := RouterBOARD 760iGS
+  DEVICE_PACKAGES += kmod-sfp -wpad-basic
+endef
+TARGET_DEVICES += mikrotik_routerboard-760igs
+
 define Device/mikrotik_routerboard-m11g
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD M11G
