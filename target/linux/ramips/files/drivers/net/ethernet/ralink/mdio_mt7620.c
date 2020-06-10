@@ -29,6 +29,7 @@ static int mt7620_mii_busy_wait(struct mt7620_gsw *gsw)
 			return 0;
 		if (time_after(jiffies, t_start + GSW_REG_PHY_TIMEOUT))
 			break;
+		cond_resched();
 	}
 
 	dev_err(gsw->dev, "mdio: MDIO timeout\n");
