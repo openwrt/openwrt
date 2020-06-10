@@ -28,6 +28,7 @@ platform_do_upgrade() {
 		}
 		;;
 	mikrotik,routerboard-750gr3|\
+	mikrotik,routerboard-760igs|\
 	mikrotik,routerboard-m11g|\
 	mikrotik,routerboard-m33g)
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
