@@ -35,6 +35,7 @@ PKG_DRIVERS = \
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_kmod-mac80211 \
+	CONFIG_PACKAGE_CFG80211_TESTMODE \
 	CONFIG_PACKAGE_MAC80211_DEBUGFS \
 	CONFIG_PACKAGE_MAC80211_MESH \
 	CONFIG_PACKAGE_MAC80211_TRACING \
@@ -56,7 +57,6 @@ config_package=$(if $(CONFIG_PACKAGE_kmod-$(1)),m)
 
 config-y:= \
 	WLAN \
-	NL80211_TESTMODE \
 	CFG80211_WEXT \
 	CFG80211_CERTIFICATION_ONUS \
 	MAC80211_RC_MINSTREL \
@@ -80,6 +80,7 @@ config-y:= \
 	WLAN_VENDOR_ZYDAS \
 
 config-$(call config_package,cfg80211) += CFG80211
+config-$(CONFIG_PACKAGE_CFG80211_TESTMODE) += NL80211_TESTMODE
 
 config-$(call config_package,mac80211) += MAC80211
 config-$(CONFIG_PACKAGE_MAC80211_MESH) += MAC80211_MESH
@@ -107,6 +108,20 @@ endef
 define KernelPackage/cfg80211/description
 cfg80211 is the Linux wireless LAN (802.11) configuration API.
 endef
+
+define KernelPackage/cfg80211/config
+  if PACKAGE_kmod-cfg80211
+
+	config PACKAGE_CFG80211_TESTMODE
+		bool "Enable testmode command support"
+		default n
+		help
+		  This is typically used for tests and calibration during
+		  manufacturing, or vendor specific debugging features
+
+  endif
+endef
+
 
 define KernelPackage/mac80211
   $(call KernelPackage/mac80211/Default)
