@@ -37,12 +37,14 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  		gpiod_err(desc,
  			  "%s: tried to set a GPIO tied to an IRQ as output\n",
  			  __func__);
-@@ -3894,7 +3896,7 @@ int gpiochip_lock_as_irq(struct gpio_chi
- 		}
+@@ -3895,8 +3897,8 @@ int gpiochip_lock_as_irq(struct gpio_chi
  	}
  
--	if (test_bit(FLAG_IS_OUT, &desc->flags)) {
-+	if (dont_test_bit(FLAG_IS_OUT, &desc->flags)) {
+ 	/* To be valid for IRQ the line needs to be input or open drain */
+-	if (test_bit(FLAG_IS_OUT, &desc->flags) &&
+-	    !test_bit(FLAG_OPEN_DRAIN, &desc->flags)) {
++	if (dont_test_bit(FLAG_IS_OUT, &desc->flags) &&
++	    !dont_test_bit(FLAG_OPEN_DRAIN, &desc->flags)) {
  		chip_err(chip,
  			 "%s: tried to flag a GPIO set as output for IRQ\n",
  			 __func__);

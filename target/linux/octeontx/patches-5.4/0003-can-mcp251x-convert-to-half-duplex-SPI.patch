@@ -12,11 +12,9 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  drivers/net/can/spi/mcp251x.c | 15 ++++++++-------
  1 file changed, 8 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/net/can/spi/mcp251x.c b/drivers/net/can/spi/mcp251x.c
-index bb20a9b..dc0574a 100644
 --- a/drivers/net/can/spi/mcp251x.c
 +++ b/drivers/net/can/spi/mcp251x.c
-@@ -291,23 +291,23 @@ static u8 mcp251x_read_reg(struct spi_device *spi, u8 reg)
+@@ -291,23 +291,23 @@ static u8 mcp251x_read_reg(struct spi_de
  	priv->spi_tx_buf[0] = INSTRUCTION_READ;
  	priv->spi_tx_buf[1] = reg;
  
@@ -45,7 +43,7 @@ index bb20a9b..dc0574a 100644
  }
  
  static void mcp251x_write_reg(struct spi_device *spi, u8 reg, u8 val)
-@@ -398,8 +398,9 @@ static void mcp251x_hw_rx_frame(struct spi_device *spi, u8 *buf,
+@@ -398,8 +398,9 @@ static void mcp251x_hw_rx_frame(struct s
  			buf[i] = mcp251x_read_reg(spi, RXBCTRL(buf_idx) + i);
  	} else {
  		priv->spi_tx_buf[RXBCTRL_OFF] = INSTRUCTION_READ_RXB(buf_idx);
@@ -57,6 +55,3 @@ index bb20a9b..dc0574a 100644
  	}
  }
  
--- 
-2.7.4
-

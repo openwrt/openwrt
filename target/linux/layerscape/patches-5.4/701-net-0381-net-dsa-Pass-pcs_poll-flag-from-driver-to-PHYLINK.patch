@@ -24,7 +24,7 @@ on touch") which was merged in v5.4-rc3.
 
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -277,6 +277,11 @@ struct dsa_switch {
+@@ -284,6 +284,11 @@ struct dsa_switch {
  	 */
  	bool			vlan_filtering;
  
@@ -38,7 +38,7 @@ on touch") which was merged in v5.4-rc3.
  	struct dsa_port ports[];
 --- a/net/dsa/port.c
 +++ b/net/dsa/port.c
-@@ -625,6 +625,7 @@ static int dsa_port_phylink_register(str
+@@ -639,6 +639,7 @@ static int dsa_port_phylink_register(str
  
  	dp->pl_config.dev = ds->dev;
  	dp->pl_config.type = PHYLINK_DEV;

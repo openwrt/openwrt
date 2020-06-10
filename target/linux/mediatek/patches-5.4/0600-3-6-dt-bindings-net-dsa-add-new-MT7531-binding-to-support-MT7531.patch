@@ -79,8 +79,6 @@ Signed-off-by: Landen Chao <landen.chao@mediatek.com>
  .../devicetree/bindings/net/dsa/mt7530.txt    | 77 ++++++++++++++++++-
  1 file changed, 74 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/net/dsa/mt7530.txt b/Documentation/devicetree/bindings/net/dsa/mt7530.txt
-index c5ed5d25f642..dc226a4e402a 100644
 --- a/Documentation/devicetree/bindings/net/dsa/mt7530.txt
 +++ b/Documentation/devicetree/bindings/net/dsa/mt7530.txt
 @@ -5,6 +5,7 @@ Required properties:
@@ -91,7 +89,7 @@ index c5ed5d25f642..dc226a4e402a 100644
  - #address-cells: Must be 1.
  - #size-cells: Must be 0.
  - mediatek,mcm: Boolean; if defined, indicates that either MT7530 is the part
-@@ -32,10 +33,13 @@ Required properties for the child nodes within ports container:
+@@ -32,10 +33,13 @@ Required properties for the child nodes
  
  - reg: Port address described must be 6 for CPU port and from 0 to 5 for
  	user ports.
@@ -108,7 +106,7 @@ index c5ed5d25f642..dc226a4e402a 100644
  1. GMAC5: GMAC5 can interface with another external MAC or PHY.
  2. PHY of port 0 or port 4: PHY interfaces with an external MAC like 2nd GMAC
     of the SOC. Used in many setups where port 0/4 becomes the WAN port.
-@@ -308,3 +312,70 @@ Example 3: MT7621: Port 5 is connected to external PHY: Port 5 -> external PHY.
+@@ -308,3 +312,70 @@ Example 3: MT7621: Port 5 is connected t
  		};
  	};
  };

@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2460,6 +2460,8 @@ static int hostapd_config_fill(struct ho
+@@ -2501,6 +2501,8 @@ static int hostapd_config_fill(struct ho
  		bss->isolate = atoi(pos);
  	} else if (os_strcmp(buf, "ap_max_inactivity") == 0) {
  		bss->ap_max_inactivity = atoi(pos);
@@ -9,7 +9,7 @@
  	} else if (os_strcmp(buf, "skip_inactivity_poll") == 0) {
  		bss->skip_inactivity_poll = atoi(pos);
  	} else if (os_strcmp(buf, "country_code") == 0) {
-@@ -3156,6 +3158,8 @@ static int hostapd_config_fill(struct ho
+@@ -3197,6 +3199,8 @@ static int hostapd_config_fill(struct ho
  		}
  	} else if (os_strcmp(buf, "acs_exclude_dfs") == 0) {
  		conf->acs_exclude_dfs = atoi(pos);
@@ -20,7 +20,7 @@
  	} else if (os_strcmp(buf, "channel") == 0) {
 --- a/src/ap/ap_config.c
 +++ b/src/ap/ap_config.c
-@@ -772,6 +772,7 @@ void hostapd_config_free_bss(struct host
+@@ -780,6 +780,7 @@ void hostapd_config_free_bss(struct host
  	os_free(conf->radius_req_attr_sqlite);
  	os_free(conf->rsn_preauth_interfaces);
  	os_free(conf->ctrl_interface);
@@ -28,7 +28,7 @@
  	os_free(conf->ca_cert);
  	os_free(conf->server_cert);
  	os_free(conf->server_cert2);
-@@ -964,6 +965,7 @@ void hostapd_config_free(struct hostapd_
+@@ -972,6 +973,7 @@ void hostapd_config_free(struct hostapd_
  
  	for (i = 0; i < conf->num_bss; i++)
  		hostapd_config_free_bss(conf->bss[i]);
@@ -38,7 +38,7 @@
  	os_free(conf->basic_rates);
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -861,6 +861,7 @@ struct hostapd_bss_config {
+@@ -871,6 +871,7 @@ struct hostapd_bss_config {
  	 */
  	u8 mka_psk_set;
  #endif /* CONFIG_MACSEC */
@@ -46,7 +46,7 @@
  };
  
  /**
-@@ -1052,6 +1053,7 @@ struct hostapd_config {
+@@ -1062,6 +1063,7 @@ struct hostapd_config {
  	unsigned int airtime_update_interval;
  #define AIRTIME_MODE_MAX (__AIRTIME_MODE_MAX - 1)
  #endif /* CONFIG_AIRTIME_POLICY */
@@ -133,7 +133,7 @@
  		hapd->iconf = newconf;
  		hapd->conf = newconf->bss[j];
  		hostapd_reload_bss(hapd);
-@@ -2355,6 +2386,10 @@ hostapd_alloc_bss_data(struct hostapd_if
+@@ -2366,6 +2397,10 @@ hostapd_alloc_bss_data(struct hostapd_if
  	hapd->iconf = conf;
  	hapd->conf = bss;
  	hapd->iface = hapd_iface;
@@ -174,7 +174,7 @@
  hostapd_alloc_bss_data(struct hostapd_iface *hapd_iface,
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -4492,6 +4492,9 @@ static int wpa_driver_nl80211_set_ap(voi
+@@ -4493,6 +4493,9 @@ static int wpa_driver_nl80211_set_ap(voi
  	if (ret) {
  		wpa_printf(MSG_DEBUG, "nl80211: Beacon set failed: %d (%s)",
  			   ret, strerror(-ret));

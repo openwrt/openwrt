@@ -84,10 +84,8 @@ Signed-off-by: Sean Wang <sean.wang@mediatek.com>
  drivers/net/dsa/mt7530.h |  29 ++++-
  2 files changed, 203 insertions(+), 57 deletions(-)
 
-Index: linux-5.4.43/drivers/net/dsa/mt7530.c
-===================================================================
---- linux-5.4.43.orig/drivers/net/dsa/mt7530.c
-+++ linux-5.4.43/drivers/net/dsa/mt7530.c
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
 @@ -373,7 +373,7 @@ mt7530_fdb_write(struct mt7530_priv *pri
  }
  
@@ -389,10 +387,8 @@ Index: linux-5.4.43/drivers/net/dsa/mt7530.c
  
  	if (priv->id == ID_MT7530) {
  		priv->core_pwr = devm_regulator_get(&mdiodev->dev, "core");
-Index: linux-5.4.43/drivers/net/dsa/mt7530.h
-===================================================================
---- linux-5.4.43.orig/drivers/net/dsa/mt7530.h
-+++ linux-5.4.43/drivers/net/dsa/mt7530.h
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
 @@ -11,7 +11,7 @@
  #define MT7530_NUM_FDB_RECORDS		2048
  #define MT7530_ALL_MEMBERS		0xff

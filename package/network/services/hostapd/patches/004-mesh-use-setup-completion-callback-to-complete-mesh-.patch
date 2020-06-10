@@ -34,7 +34,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  #endif /* CONFIG_MESH */
  
  	hostapd_clean_rrm(hapd);
-@@ -2145,6 +2147,13 @@ dfs_offload:
+@@ -2156,6 +2158,13 @@ dfs_offload:
  	if (hapd->setup_complete_cb)
  		hapd->setup_complete_cb(hapd->setup_complete_cb_ctx);
  
@@ -48,7 +48,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  	wpa_printf(MSG_DEBUG, "%s: Setup of interface done.",
  		   iface->bss[0]->conf->iface);
  	if (iface->interfaces && iface->interfaces->terminate_on_error > 0)
-@@ -2288,7 +2297,7 @@ int hostapd_setup_interface(struct hosta
+@@ -2299,7 +2308,7 @@ int hostapd_setup_interface(struct hosta
  	ret = setup_interface(iface);
  	if (ret) {
  		wpa_printf(MSG_ERROR, "%s: Unable to setup interface.",
