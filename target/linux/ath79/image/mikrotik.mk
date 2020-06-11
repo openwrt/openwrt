@@ -35,6 +35,15 @@ define Device/mikrotik_routerboard-lhg-2nd
 endef
 TARGET_DEVICES += mikrotik_routerboard-lhg-2nd
 
+define Device/mikrotik_routerboard-sxt-5nd-r2
+  $(Device/mikrotik_nand)
+  SOC := ar9344
+  DEVICE_MODEL := RouterBOARD SXT 5nD r2 (SXT Lite5)
+  DEVICE_PACKAGES += rssileds kmod-gpio-beeper
+  SUPPORTED_DEVICES += rb-sxt5n
+endef
+TARGET_DEVICES += mikrotik_routerboard-sxt-5nd-r2
+
 define Device/mikrotik_routerboard-wap-g-5hact2hnd
   $(Device/mikrotik_nor)
   SOC := qca9556
