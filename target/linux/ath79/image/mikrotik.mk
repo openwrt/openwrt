@@ -35,3 +35,18 @@ define Device/mikrotik_routerboard-wap-g-5hact2hnd
   SUPPORTED_DEVICES += rb-wapg-5hact2hnd
 endef
 TARGET_DEVICES += mikrotik_routerboard-wap-g-5hact2hnd
+
+define Device/mikrotik_sxt5n
+  $(Device/mikrotik)
+  SOC := ar9344
+  IMAGE/sysupgrade.bin = append-kernel | kernel2minor -s 2048 -e -c | \
+	sysupgrade-tar kernel=$$$$@ | append-metadata
+  DEVICE_PACKAGES += nand-utils rssileds kmod-gpio-beeper
+endef
+
+define Device/mikrotik_routerboard-sxt-5nd-r2
+  $(Device/mikrotik_sxt5n)
+  DEVICE_MODEL := SXT Lite5 (RouterBOARD SXT 5nD r2)
+  SUPPORTED_DEVICES += rb-sxt5n
+endef
+TARGET_DEVICES += mikrotik_routerboard-sxt-5nd-r2
