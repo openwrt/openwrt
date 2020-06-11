@@ -27,7 +27,14 @@ define U-Boot/mt7622
   UBOOT_CONFIG:=mt7622_rfb
 endef
 
-UBOOT_TARGETS := mt7629 mt7622
+define U-Boot/mt7623n_bpir2
+  NAME:=Banana Pi R2 (mt7623)
+  BUILD_SUBTARGET:=mt7623
+  UBOOT_IMAGE:=u-boot.bin
+  UBOOT_CONFIG:=mt7623n_bpir2
+endef
+
+UBOOT_TARGETS := mt7629 mt7622 mt7623n_bpir2
 
 UBOOT_MAKE_FLAGS += $(UBOOT_IMAGE)
 
