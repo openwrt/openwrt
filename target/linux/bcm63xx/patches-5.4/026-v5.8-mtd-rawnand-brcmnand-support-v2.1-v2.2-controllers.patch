@@ -1,3 +1,22 @@
+From 7e7c7df5d50fe06469be106967fc5b5d62be8868 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Fri, 22 May 2020 14:15:24 +0200
+Subject: [PATCH] mtd: rawnand: brcmnand: support v2.1-v2.2 controllers
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+v2.1: tested on Netgear DGND3700v1 (BCM6368)
+v2.2: tested on Netgear DGND3700v2 (BCM6362)
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Link: https://lore.kernel.org/linux-mtd/20200522121524.4161539-6-noltari@gmail.com
+---
+ drivers/mtd/nand/raw/brcmnand/brcmnand.c | 85 +++++++++++++++++++++---
+ 1 file changed, 76 insertions(+), 9 deletions(-)
+
 --- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
 +++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
 @@ -196,6 +196,7 @@ struct brcmnand_controller {

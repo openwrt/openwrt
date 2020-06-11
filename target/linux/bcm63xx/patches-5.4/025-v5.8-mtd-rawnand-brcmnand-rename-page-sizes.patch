@@ -1,3 +1,21 @@
+From eeeac9cbc4ca5b8c245972f3a765d1cb5b7ef038 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Fri, 22 May 2020 14:15:22 +0200
+Subject: [PATCH] mtd: rawnand: brcmnand: rename page sizes
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Current pages sizes apply to controllers after v3.4
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Link: https://lore.kernel.org/linux-mtd/20200522121524.4161539-4-noltari@gmail.com
+---
+ drivers/mtd/nand/raw/brcmnand/brcmnand.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
 --- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
 +++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
 @@ -502,7 +502,7 @@ static int brcmnand_revision_init(struct
