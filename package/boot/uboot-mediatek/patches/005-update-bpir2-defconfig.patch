@@ -1,0 +1,14 @@
+diff --git a/configs/mt7623n_bpir2_defconfig b/configs/mt7623n_bpir2_defconfig
+index 6b9fbd7e22..fb2a004803 100644
+--- a/configs/mt7623n_bpir2_defconfig
++++ b/configs/mt7623n_bpir2_defconfig
+@@ -52,3 +52,9 @@ CONFIG_TIMER=y
+ CONFIG_WDT_MTK=y
+ CONFIG_LZMA=y
+ # CONFIG_EFI_LOADER is not set
++CONFIG_CMD_BOOTZ=y
++CONFIG_OF_LIBFDT_OVERLAY=y
++#enables savenenv-command
++CONFIG_ENV_IS_IN_MMC=y
++CONFIG_CMD_ASKENV=y
++CONFIG_ENV_SIZE=0x2000
