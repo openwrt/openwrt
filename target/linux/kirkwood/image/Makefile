@@ -96,34 +96,47 @@ define Device/iom_ix2-200
 endef
 TARGET_DEVICES += iom_ix2-200
 
-define Device/linksys_audi
-  $(Device/dsa-migration)
+define Device/linksys
   DEVICE_VENDOR := Linksys
-  DEVICE_MODEL := EA3500 (Audi)
   DEVICE_PACKAGES := kmod-mwl8k wpad-basic kmod-gpio-button-hotplug
+  KERNEL_IN_UBI :=
+  UBINIZE_OPTS := -E 5
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+endef
+
+define Device/linksys_e4200-v2
+  $(Device/linksys)
+  $(Device/dsa-migration)
+  DEVICE_MODEL := E4200
+  DEVICE_VARIANT := v2
+  DEVICE_DTS := kirkwood-e4200-v2
+  KERNEL_SIZE := 2688k
+  SUPPORTED_DEVICES += linksys,viper linksys-viper
+endef
+TARGET_DEVICES += linksys_e4200-v2
+
+define Device/linksys_ea3500
+  $(Device/linksys)
+  $(Device/dsa-migration)
+  DEVICE_MODEL := EA3500
+  DEVICE_DTS := kirkwood-ea3500
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k
   KERNEL_SIZE := 2624k
-  KERNEL_IN_UBI :=
-  UBINIZE_OPTS := -E 5
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
-  BOARD_NAME := linksys-audi
+  SUPPORTED_DEVICES += linksys,audi linksys-audi
 endef
-TARGET_DEVICES += linksys_audi
+TARGET_DEVICES += linksys_ea3500
 
-define Device/linksys_viper
+define Device/linksys_ea4500
+  $(Device/linksys)
   $(Device/dsa-migration)
-  DEVICE_VENDOR := Linksys
-  DEVICE_MODEL := E4200v2 / EA4500 (Viper)
-  DEVICE_PACKAGES := kmod-mwl8k wpad-basic kmod-gpio-button-hotplug
+  DEVICE_MODEL := EA4500
+  DEVICE_DTS := kirkwood-ea4500
   KERNEL_SIZE := 2688k
-  KERNEL_IN_UBI :=
-  UBINIZE_OPTS := -E 5
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
-  BOARD_NAME := linksys-viper
+  SUPPORTED_DEVICES += linksys,viper linksys-viper
 endef
-TARGET_DEVICES += linksys_viper
+TARGET_DEVICES += linksys_ea4500
 
 define Device/raidsonic_ib-nas62x0
   DEVICE_VENDOR := RaidSonic
