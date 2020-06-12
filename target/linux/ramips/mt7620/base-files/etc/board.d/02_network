@@ -25,7 +25,6 @@ ramips_setup_interfaces()
 	ralink,mt7620a-mt7610e-evb|\
 	ralink,mt7620a-v22sg-evb|\
 	sanlinking,d240|\
-	trendnet,tew-810dr|\
 	youku,yk1|\
 	zbtlink,zbt-ape522ii|\
 	zbtlink,zbt-we826-16m|\
@@ -109,6 +108,7 @@ ramips_setup_interfaces()
 			"0:lan" "6@eth0"
 		;;
 	dlink,dir-810l|\
+	trendnet,tew-810dr|\
 	zbtlink,zbt-we2026)
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
