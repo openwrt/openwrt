@@ -1,0 +1,73 @@
+From 5e75160f48785464f9213c6bc8c72b9372c5318b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Sat, 23 May 2020 13:18:51 +0200
+Subject: [PATCH] blobmsg: fix attrs iteration in the blobmsg_check_array_len()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Starting with 75e300aeec25 ("blobmsg: fix wrong payload len passed from
+blobmsg_check_array") blobmsg_check_array_len() gets *blob* length
+passed as argument. It cannot be used with __blobmsg_for_each_attr()
+which expects *data* length.
+
+Use blobmsg_for_each_attr() which calculates *data* length on its own.
+
+The same bug was already reported in the past and there was fix attempt
+in the commit cd75136b1342 ("blobmsg: fix wrong payload len passed from
+blobmsg_check_array"). That change made blobmsg_check_attr_len() calls
+fail however.
+
+This is hopefully the correct & complete fix:
+1. blobmsg_check_array_len() gets *blob* length
+2. It calls blobmsg_check_attr_len() which requires *blob* length
+3. It uses blobmsg_for_each_attr() which gets *data* length
+
+This fixes iterating over random memory treated as attrs. That was
+resulting in check failing randomly for totally correct blobs. It's
+critical e.g. for procd project with its instance_fill_array() failing
+and procd not starting services.
+
+Fixes: 75e300aeec25 ("blobmsg: fix wrong payload len passed from blobmsg_check_array")
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ blobmsg.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+--- a/blobmsg.c
++++ b/blobmsg.c
+@@ -123,16 +123,18 @@ int blobmsg_check_array(const struct blo
+ 	return blobmsg_check_array_len(attr, type, blob_len(attr));
+ }
+ 
+-int blobmsg_check_array_len(const struct blob_attr *attr, int type, size_t len)
++int blobmsg_check_array_len(const struct blob_attr *attr, int type,
++			    size_t blob_len)
+ {
+ 	struct blob_attr *cur;
++	size_t rem;
+ 	bool name;
+ 	int size = 0;
+ 
+ 	if (type > BLOBMSG_TYPE_LAST)
+ 		return -1;
+ 
+-	if (!blobmsg_check_attr_len(attr, false, len))
++	if (!blobmsg_check_attr_len(attr, false, blob_len))
+ 		return -1;
+ 
+ 	switch (blobmsg_type(attr)) {
+@@ -146,11 +148,11 @@ int blobmsg_check_array_len(const struct
+ 		return -1;
+ 	}
+ 
+-	__blobmsg_for_each_attr(cur, attr, len) {
++	blobmsg_for_each_attr(cur, attr, rem) {
+ 		if (type != BLOBMSG_TYPE_UNSPEC && blobmsg_type(cur) != type)
+ 			return -1;
+ 
+-		if (!blobmsg_check_attr_len(cur, name, len))
++		if (!blobmsg_check_attr_len(cur, name, rem))
+ 			return -1;
+ 
+ 		size++;

@@ -1,0 +1,26 @@
+From c2fc622b771f679e8f55060ac60cfe02b9a80995 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 25 May 2020 13:44:20 +0200
+Subject: [PATCH] blobmsg: fix length in blobmsg_check_array
+
+blobmsg_check_array_len expects the length of the full attribute buffer,
+not just the data length.
+Due to other missing length checks (fixed in the next commit), this did
+not show up as a test failure
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ blobmsg.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/blobmsg.c
++++ b/blobmsg.c
+@@ -120,7 +120,7 @@ bool blobmsg_check_attr_len(const struct
+ 
+ int blobmsg_check_array(const struct blob_attr *attr, int type)
+ {
+-	return blobmsg_check_array_len(attr, type, blob_len(attr));
++	return blobmsg_check_array_len(attr, type, blob_raw_len(attr));
+ }
+ 
+ int blobmsg_check_array_len(const struct blob_attr *attr, int type,

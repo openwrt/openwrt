@@ -1,0 +1,47 @@
+From 639c29d19717616b809d9a1e9042461ab8024370 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 25 May 2020 14:49:35 +0200
+Subject: [PATCH] blobmsg: simplify and fix name length checks in
+ blobmsg_check_name
+
+blobmsg_hdr_valid_namelen was omitted when name==false
+The blob_len vs blobmsg_namelen changes were not taking into account
+potential padding between name and data
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ blobmsg.c | 13 ++++---------
+ 1 file changed, 4 insertions(+), 9 deletions(-)
+
+--- a/blobmsg.c
++++ b/blobmsg.c
+@@ -54,8 +54,8 @@ static bool blobmsg_hdr_valid_namelen(co
+ 
+ static bool blobmsg_check_name(const struct blob_attr *attr, size_t len, bool name)
+ {
+-	char *limit = (char *) attr + len;
+ 	const struct blobmsg_hdr *hdr;
++	uint16_t namelen;
+ 
+ 	hdr = blobmsg_hdr_from_blob(attr, len);
+ 	if (!hdr)
+@@ -64,16 +64,11 @@ static bool blobmsg_check_name(const str
+ 	if (name && !hdr->namelen)
+ 		return false;
+ 
+-	if (name && !blobmsg_hdr_valid_namelen(hdr, len))
++	namelen = blobmsg_namelen(hdr);
++	if (blob_len(attr) < (size_t)blobmsg_hdrlen(namelen))
+ 		return false;
+ 
+-	if ((char *) hdr->name + blobmsg_namelen(hdr) + 1 > limit)
+-		return false;
+-
+-	if (blobmsg_namelen(hdr) > (blob_len(attr) - sizeof(struct blobmsg_hdr)))
+-		return false;
+-
+-	if (hdr->name[blobmsg_namelen(hdr)] != 0)
++	if (hdr->name[namelen] != 0)
+ 		return false;
+ 
+ 	return true;
