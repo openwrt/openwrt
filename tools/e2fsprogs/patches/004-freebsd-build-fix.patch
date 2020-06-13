@@ -1,0 +1,20 @@
+--- a/lib/ext2fs/ext2fs.h
++++ b/lib/ext2fs/ext2fs.h
+@@ -53,6 +53,7 @@
+  */
+ #define EXT2_LIB_CURRENT_REV	EXT2_DYNAMIC_REV
+ 
++#include <sys/param.h>
+ #ifdef HAVE_SYS_TYPES_H
+ #include <sys/types.h>
+ #endif
+@@ -81,6 +81,9 @@
+ typedef __s64 __bitwise		ext2_off64_t;
+ typedef __s64 __bitwise		e2_blkcnt_t;
+ typedef __u32 __bitwise		ext2_dirhash_t;
++#ifdef BSD
++typedef off_t			loff_t;
++#endif
+ 
+ #if EXT2_FLAT_INCLUDES
+ #include "com_err.h"

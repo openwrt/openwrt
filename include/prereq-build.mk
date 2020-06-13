@@ -8,6 +8,10 @@ include $(INCLUDE_DIR)/prereq.mk
 SHELL:=sh
 PKG_NAME:=Build dependency
 
+ifeq ($(HOST_OS),FreeBSD)
+  export PATH:=/usr/local/bin:$(PATH)
+  $(shell ln -sf `whereis -qb gmake` $(STAGING_DIR_HOST)/bin/make)
+endif
 
 # Required for the toolchain
 $(eval $(call TestHostCommand,working-make, \
@@ -27,6 +31,7 @@ ifndef IB
 $(eval $(call SetupHostCommand,gcc, \
 	Please install the GNU C Compiler (gcc) 6 or later, \
 	$(CC) -dumpversion | grep -E '^([6-9]\.?|1[0-9]\.?)', \
+	$(CC) --version | grep 'clang', \
 	gcc -dumpversion | grep -E '^([6-9]\.?|1[0-9]\.?)', \
 	gcc --version | grep -E 'Apple.(LLVM|clang)' ))
 
@@ -39,6 +44,7 @@ $(eval $(call TestHostCommand,working-gcc, \
 $(eval $(call SetupHostCommand,g++, \
 	Please install the GNU C++ Compiler (g++) 6 or later, \
 	$(CXX) -dumpversion | grep -E '^([6-9]\.?|1[0-9]\.?)', \
+	$(CXX) --version | grep 'clang', \
 	g++ -dumpversion | grep -E '^([6-9]\.?|1[0-9]\.?)', \
 	g++ --version | grep -E 'Apple.(LLVM|clang)' ))
 
@@ -73,7 +79,8 @@ $(eval $(call TestHostCommand,perl-thread-queue, \
 $(eval $(call SetupHostCommand,tar,Please install GNU 'tar', \
 	gtar --version 2>&1 | grep GNU, \
 	gnutar --version 2>&1 | grep GNU, \
-	tar --version 2>&1 | grep GNU))
+	tar --version 2>&1 | grep GNU, \
+	tar --version 2>&1 | grep bsdtar))
 
 $(eval $(call SetupHostCommand,find,Please install GNU 'find', \
 	gfind --version 2>&1 | grep GNU, \
@@ -89,7 +96,8 @@ $(eval $(call SetupHostCommand,xargs, \
 
 $(eval $(call SetupHostCommand,patch,Please install GNU 'patch', \
 	gpatch --version 2>&1 | grep 'Free Software Foundation', \
-	patch --version 2>&1 | grep 'Free Software Foundation'))
+	patch --version 2>&1 | grep 'Free Software Foundation', \
+	patch --version | grep BSD))
 
 $(eval $(call SetupHostCommand,diff,Please install diffutils, \
 	gdiff --version 2>&1 | grep diff, \

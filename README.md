@@ -29,6 +29,13 @@ binutils bzip2 diff find flex gawk gcc-6+ getopt grep install libc-dev libz-dev
 make4.1+ perl python3.6+ rsync subversion unzip which
 ```
 
+On FreeBSD:
+```
+devel/git, devel/gmake, devel/ncurses, ftp/wget, lang/gawk,
+misc/findutils, misc/getopt, shells/bash, sysutils/coreutils,
+textproc/diffutils, textproc/gnugrep
+```
+
 ### Quickstart
 
 1. Run `./scripts/feeds update -a` to obtain all the latest package definitions

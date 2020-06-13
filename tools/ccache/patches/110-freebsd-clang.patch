@@ -1,0 +1,30 @@
+--- a/cmake/config.h.in
++++ b/cmake/config.h.in
+@@ -27,11 +27,16 @@
+ // features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable them.
+ #cmakedefine _DARWIN_C_SOURCE
+ 
+-// Define to activate features from IEEE Stds 1003.1-2001.
++// Define to activate features from IEEE Stds 1003.1-2008.
+ #define _POSIX_C_SOURCE 200809L
+ 
+ #if defined(__SunOS_5_8) || defined(__SunOS_5_9) || defined(__SunOS_5_10)
+ #  define _XOPEN_SOURCE 500
++#elif defined(__FreeBSD__)
++#  define _XOPEN_SOURCE 700
++#elif defined(__ibmxl__) && defined(__clang__) // Compiler xlclang
++#  define _XOPEN_SOURCE 600
++#  define _ALL_SOURCE 1
+ #elif !defined(__SunOS_5_11) && !defined(__APPLE__)
+ #  define _XOPEN_SOURCE
+ #endif
+@@ -163,3 +168,9 @@
+ 
+ // Define if you have the "PTHREAD_MUTEX_ROBUST" constant.
+ #cmakedefine HAVE_PTHREAD_MUTEX_ROBUST
++
++#if defined(__ibmxl__) && defined(__clang__) // Compiler xlclang
++#  undef HAVE_VARARGS_H // varargs.h would hide macros of stdarg.h
++#  undef HAVE_STRUCT_STAT_ST_CTIM
++#  undef HAVE_STRUCT_STAT_ST_MTIM
++#endif

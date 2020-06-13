@@ -26,6 +26,12 @@ HOST_STAMP_CONFIGURED:=$(HOST_BUILD_DIR)/.configured
 HOST_STAMP_BUILT:=$(HOST_BUILD_DIR)/.built
 HOST_BUILD_PREFIX?=$(if $(IS_PACKAGE_BUILD),$(STAGING_DIR_HOSTPKG),$(STAGING_DIR_HOST))
 HOST_STAMP_INSTALLED:=$(HOST_BUILD_PREFIX)/stamp/.$(PKG_NAME)_installed
+# Add extra includes path for clang.
+# Required for use compiler specific things: immintrin.h and others.
+ifneq ($(shell $(HOSTCC) --version | grep clang),)
+  HOST_CFLAGS+=$(shell cc -Wp,-v -x c - -fsyntax-only < /dev/null 2>&1 | grep " /" | sed -e 's| | -I|' | tr -cd '[:print:]')
+  HOST_CPPFLAGS+=$(shell cc -Wp,-v -x c++ - -fsyntax-only < /dev/null 2>&1 | grep " /" | sed -e 's| | -I|' | tr -cd '[:print:]')
+endif
 
 override MAKEFLAGS=
 

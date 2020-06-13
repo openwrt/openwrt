@@ -1,0 +1,29 @@
+--- a/Utilities/cmliblzma/common/tuklib_integer.h
++++ b/Utilities/cmliblzma/common/tuklib_integer.h
+@@ -42,6 +42,8 @@
+ #define TUKLIB_INTEGER_H
+ 
+ #include "sysdefs.h"
++#include <sys/param.h>
++#include <sys/types.h>
+ 
+ #if defined(__GNUC__) && defined(__GNUC_MINOR__)
+ #   define TUKLIB_GNUC_REQ(major, minor) \
+@@ -126,7 +128,7 @@
+ 		(((uint16_t)(num) << 8) | ((uint16_t)(num) >> 8))
+ #endif
+ 
+-#ifndef bswap32
++#if !defined(bswap32) || defined(BSD)
+ #	define bswap32(num) \
+ 		( (((uint32_t)(num) << 24)                       ) \
+ 		| (((uint32_t)(num) <<  8) & UINT32_C(0x00FF0000)) \
+@@ -134,7 +136,7 @@
+ 		| (((uint32_t)(num) >> 24)                       ) )
+ #endif
+ 
+-#ifndef bswap64
++#if !defined(bswap64) || defined(BSD)
+ #	define bswap64(num) \
+ 		( (((uint64_t)(num) << 56)                               ) \
+ 		| (((uint64_t)(num) << 40) & UINT64_C(0x00FF000000000000)) \

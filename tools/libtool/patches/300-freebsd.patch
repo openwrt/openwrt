@@ -1,0 +1,112 @@
+--- a/libltdl/m4/libtool.m4
++++ b/libltdl/m4/libtool.m4
+@@ -2066,7 +2066,7 @@
+ else
+ # FIXME - insert some real tests, host_os isn't really good enough
+   case $host_os in
+-  darwin*)
++  *)
+     if test -n "$STRIP" ; then
+       striplib="$STRIP -x"
+       old_striplib="$STRIP -S"
+@@ -2405,52 +2405,13 @@
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
+-freebsd1*)
+-  dynamic_linker=no
+-  ;;
+-
+ freebsd* | dragonfly*)
+-  # DragonFly does not have aout.  When/if they implement a new
+-  # versioning mechanism, adjust this.
+-  if test -x /usr/bin/objformat; then
+-    objformat=`/usr/bin/objformat`
+-  else
+-    case $host_os in
+-    freebsd[[123]]*) objformat=aout ;;
+-    *) objformat=elf ;;
+-    esac
+-  fi
+-  version_type=freebsd-$objformat
+-  case $version_type in
+-    freebsd-elf*)
+-      library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext} $libname${shared_ext}'
+-      need_version=no
+-      need_lib_prefix=no
+-      ;;
+-    freebsd-*)
+-      library_names_spec='${libname}${release}${shared_ext}$versuffix $libname${shared_ext}$versuffix'
+-      need_version=yes
+-      ;;
+-  esac
++  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext} $libname${shared_ext}'
++  need_version=no
++  need_lib_prefix=no
+   shlibpath_var=LD_LIBRARY_PATH
+-  case $host_os in
+-  freebsd2*)
+-    shlibpath_overrides_runpath=yes
+-    ;;
+-  freebsd3.[[01]]* | freebsdelf3.[[01]]*)
+-    shlibpath_overrides_runpath=yes
+-    hardcode_into_libs=yes
+-    ;;
+-  freebsd3.[[2-9]]* | freebsdelf3.[[2-9]]* | \
+-  freebsd4.[[0-5]] | freebsdelf4.[[0-5]] | freebsd4.1.1 | freebsdelf4.1.1)
+-    shlibpath_overrides_runpath=no
+-    hardcode_into_libs=yes
+-    ;;
+-  *) # from 4.6 on, and DragonFly
+-    shlibpath_overrides_runpath=yes
+-    hardcode_into_libs=yes
+-    ;;
+-  esac
++  shlibpath_overrides_runpath=yes
++  hardcode_into_libs=yes
+   ;;
+ 
+ gnu*)
+@@ -5109,29 +5070,6 @@
+       _LT_TAGVAR(hardcode_shlibpath_var, $1)=no
+       ;;
+ 
+-    freebsd1*)
+-      _LT_TAGVAR(ld_shlibs, $1)=no
+-      ;;
+-
+-    # FreeBSD 2.2.[012] allows us to include c++rt0.o to get C++ constructor
+-    # support.  Future versions do this automatically, but an explicit c++rt0.o
+-    # does not break anything, and helps significantly (at the cost of a little
+-    # extra space).
+-    freebsd2.2*)
+-      _LT_TAGVAR(archive_cmds, $1)='$LD -Bshareable -o $lib $libobjs $deplibs $linker_flags /usr/lib/c++rt0.o'
+-      _LT_TAGVAR(hardcode_libdir_flag_spec, $1)='-R$libdir'
+-      _LT_TAGVAR(hardcode_direct, $1)=yes
+-      _LT_TAGVAR(hardcode_shlibpath_var, $1)=no
+-      ;;
+-
+-    # Unfortunately, older versions of FreeBSD 2 do not have this feature.
+-    freebsd2*)
+-      _LT_TAGVAR(archive_cmds, $1)='$LD -Bshareable -o $lib $libobjs $deplibs $linker_flags'
+-      _LT_TAGVAR(hardcode_direct, $1)=yes
+-      _LT_TAGVAR(hardcode_minus_L, $1)=yes
+-      _LT_TAGVAR(hardcode_shlibpath_var, $1)=no
+-      ;;
+-
+     # FreeBSD 3 and greater uses gcc -shared to do shared libraries.
+     freebsd* | dragonfly*)
+       _LT_TAGVAR(archive_cmds, $1)='$CC -shared $pic_flag -o $lib $libobjs $deplibs $compiler_flags'
+@@ -6134,12 +6072,6 @@
+ 	    _LT_TAGVAR(ld_shlibs, $1)=no
+ 	    ;;
+         esac
+-        ;;
+-
+-      freebsd[[12]]*)
+-        # C++ shared libraries reported to be fairly broken before
+-	# switch to ELF
+-        _LT_TAGVAR(ld_shlibs, $1)=no
+         ;;
+ 
+       freebsd-elf*)

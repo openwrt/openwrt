@@ -62,7 +62,7 @@ static uint32_t flag = 0;
 static uint32_t reserve = 0;
 static char *buildno;
 static uint32_t offset;
-static char *devname;
+static char *dev_name;
 static int big_endian;
 
 void usage(int status)
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 			buildno = optarg;
 			break;
 		case 'd':
-			devname = optarg;
+			dev_name = optarg;
 			break;
 		case 'i':
 			ifname = optarg;
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 		goto err;
 	}
 
-	if (devname == NULL) {
+	if (dev_name == NULL) {
 		ERR("no device name specified");
 		goto err;
 	}
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 	strncpy(header->buildno, buildno, sizeof(header->buildno));
 	put_u32(&header->size, st.st_size, big_endian);
 	put_u32(&header->offset, offset, big_endian);
-	strncpy(header->devname, devname, sizeof(header->devname));
+	strncpy(header->devname, dev_name, sizeof(header->devname));
 
 	get_digest(header, buf + sizeof(struct wrgg03_header), st.st_size);
 

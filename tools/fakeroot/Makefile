@@ -24,4 +24,8 @@ HOST_CONFIGURE_VARS += \
 HOST_CONFIGURE_ARGS += \
 	--with-ipc=tcp
 
+ifeq ($(HOST_OS),FreeBSD)
+HOST_CFLAGS += -D_ID_T
+endif
+
 $(eval $(call HostBuild))

@@ -1,0 +1,11 @@
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -91,7 +91,7 @@
+ 	$(MAKE) all MYCFLAGS="-DLUA_USE_POSIX -DLUA_USE_DLOPEN" MYLIBS="-Wl,-E"
+ 
+ freebsd:
+-	$(MAKE) all MYCFLAGS="-DLUA_USE_LINUX" $(RFLAG)" MYLIBS="-Wl,-E$(if $(USE_READLINE), -lreadline)"
++	$(MAKE) all MYCFLAGS="-DLUA_USE_LINUX $(RFLAG)" MYLIBS="-Wl,-E$(if $(USE_READLINE), -lreadline)"
+ 
+ generic:
+ 	$(MAKE) all MYCFLAGS=

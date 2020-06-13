@@ -34,12 +34,14 @@ define Host/Install
 	rm -rf $(STAGING_DIR_HOST)/share/aclocal-[0-9]*
 	rm -rf $(STAGING_DIR_HOST)/share/automake-[0-9]*
 	$(MAKE) -C $(HOST_BUILD_DIR) install
+	ln -sf automake $(STAGING_DIR_HOST)/bin/automake-1.14
 	mv $(STAGING_DIR_HOST)/bin/aclocal $(STAGING_DIR_HOST)/bin/aclocal.real
 	$(INSTALL_BIN) ./files/aclocal $(STAGING_DIR_HOST)/bin
 	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.9
 	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.10
 	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.11
 	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.11.6
+	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.14
 	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.15
 endef
 

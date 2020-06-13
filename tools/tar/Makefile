@@ -21,6 +21,10 @@ include $(INCLUDE_DIR)/host-build.mk
 HOSTCC := $(HOSTCC_NOCACHE)
 HOSTCXX := $(HOSTCXX_NOCACHE)
 
+HOST_CONFIGURE_VARS := \
+	CFLAGS="$(HOST_CFLAGS)" \
+	LDFLAGS="$(HOST_LDFLAGS)"
+
 HOST_CONFIGURE_ARGS += \
 	--without-posix-acls \
 	--without-selinux \
