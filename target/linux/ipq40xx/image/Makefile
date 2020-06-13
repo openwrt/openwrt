@@ -43,9 +43,7 @@ define Device/UbiFit
 endef
 
 define Device/DniImage
-	KERNEL_SUFFIX := -fit-uImage.itb
-	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
-	KERNEL_NAME := Image
+	$(call Device/FitzImage)
 	NETGEAR_BOARD_ID :=
 	NETGEAR_HW_ID :=
 	IMAGES := factory.img sysupgrade.bin
