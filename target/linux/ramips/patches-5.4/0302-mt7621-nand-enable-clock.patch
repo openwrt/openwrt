@@ -1,0 +1,48 @@
+--- a/drivers/mtd/nand/raw/mt7621_nand.c
++++ b/drivers/mtd/nand/raw/mt7621_nand.c
+@@ -20,6 +20,10 @@
+ #include <linux/mtd/partitions.h>
+ #include <linux/platform_device.h>
+ #include <asm/addrspace.h>
++#include <ralink_regs.h>
++
++#define RALINK_CLKCFG1			0x30
++#define RALINK_NAND_CLK_EN		BIT(15)
+ 
+ /* NFI core registers */
+ #define NFI_CNFG			0x000
+@@ -117,6 +121,13 @@
+ #define   CSEL_S			0
+ #define   CSEL_M			GENMASK(1, 0)
+ 
++#define NFI_IOCON			0x094
++#define   IOCON_BRSTN_S			4
++#define   IOCON_BRSTN_M			GENMASK(7, 4)
++#define   IOCON_L2NW			BIT(2)
++#define   IOCON_L2NR			BIT(1)
++#define   IOCON_NLDPD			BIT(0)
++
+ #define NFI_FDM0L			0x0a0
+ #define NFI_FDML(n)			(0x0a0 + ((n) << 3))
+ 
+@@ -432,6 +443,10 @@ static inline void mt7621_nfc_hw_init(st
+ 			   ACCCON_RLT_DEF);
+ 
+ 	nfi_write32(nfc, NFI_ACCCON, acccon);
++
++	/* data bus pull down when no use */
++	nfi_write16(nfc, NFI_IOCON, (4 << IOCON_BRSTN_S) | IOCON_L2NW |
++		    IOCON_L2NR | IOCON_NLDPD);
+ }
+ 
+ static int mt7621_nfc_send_command(struct mt7621_nfc *nfc, u8 command)
+@@ -1300,6 +1315,9 @@ static int mt7621_nfc_probe(struct platf
+ 		}
+ 	}
+ 
++	/* enable nand clock */
++	rt_sysc_m32(RALINK_NAND_CLK_EN, RALINK_NAND_CLK_EN, RALINK_CLKCFG1);
++
+ 	platform_set_drvdata(pdev, nfc);
+ 
+ 	ret = mt7621_nfc_init_chip(nfc);
