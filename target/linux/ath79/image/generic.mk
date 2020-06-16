@@ -749,6 +749,17 @@ define Device/dlink_dap-2xxx
   KERNEL_INITRAMFS := $$(KERNEL) | mkwrggimg
 endef
 
+define Device/dlink_dap-2230-a1
+  $(Device/dlink_dap-2xxx)
+  SOC := qca9533
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-2230
+  DEVICE_VARIANT := A1
+  IMAGE_SIZE := 15232k
+  DAP_SIGNATURE := wapn31_dkbs_dap2230
+endef
+TARGET_DEVICES += dlink_dap-2230-a1
+
 define Device/dlink_dap-2660-a1
   $(Device/dlink_dap-2xxx)
   SOC := qca9557
