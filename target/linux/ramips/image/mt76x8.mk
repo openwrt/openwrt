@@ -484,7 +484,6 @@ define Device/tplink_tl-wr850n-v2
   TPLINK_HWREVADD := 0x2
   IMAGES := sysupgrade.bin tftp-recovery.bin
   IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
-  SUPPORTED_DEVICES += tl-wr850n-v2
 endef
 TARGET_DEVICES += tplink_tl-wr850n-v2
 
