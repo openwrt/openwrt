@@ -1,0 +1,19 @@
+--- a/drivers/mtd/nand/raw/mt7621_nand.c
++++ b/drivers/mtd/nand/raw/mt7621_nand.c
+@@ -21,6 +21,7 @@
+ #include <linux/platform_device.h>
+ #include <asm/addrspace.h>
+ #include <ralink_regs.h>
++#include <linux/reset.h>
+ 
+ #define RALINK_CLKCFG1			0x30
+ #define RALINK_NAND_CLK_EN		BIT(15)
+@@ -427,6 +428,8 @@ static inline void mt7621_nfc_hw_init(st
+ {
+ 	u32 acccon;
+ 
++	device_reset(nfc->dev);
++
+ 	/*
+ 	 * CNRNB: nand ready/busy register
+ 	 * -------------------------------
