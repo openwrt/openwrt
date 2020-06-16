@@ -88,6 +88,24 @@ define Device/tplink_tl-wa801nd-v1
 endef
 TARGET_DEVICES += tplink_tl-wa801nd-v1
 
+define Device/tplink_tl-wa801nd-v3
+  $(Device/tplink-4mlzma)
+  ATH_SOC := qca9533
+  DEVICE_TITLE := TP-Link TL-WA801ND v3
+  TPLINK_HWID := 0x08010003
+  SUPPORTED_DEVICES += tl-wa801nd-v3
+endef
+TARGET_DEVICES += tplink_tl-wa801nd-v3
+
+define Device/tplink_tl-wa801nd-v4
+  $(Device/tplink-4mlzma)
+  ATH_SOC := qca9533
+  DEVICE_TITLE := TP-Link TL-WA801ND v4
+  TPLINK_HWID := 0x08010004
+  SUPPORTED_DEVICES += tl-wa801nd-v3
+endef
+TARGET_DEVICES += tplink_tl-wa801nd-v4
+
 define Device/tplink_tl-wa830re-v1
   $(Device/tplink-4m)
   ATH_SOC := ar7240
