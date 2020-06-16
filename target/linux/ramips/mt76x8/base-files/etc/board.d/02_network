@@ -73,6 +73,7 @@ ramips_setup_interfaces()
 	tplink,tl-wr841n-v13|\
 	tplink,tl-wr841n-v14|\
 	tplink,tl-wr842n-v5|\
+	tplink,tl-wr850n-v2|\
 	unielec,u7628-01-16m|\
 	wrtnode,wrtnode2p|\
 	wrtnode,wrtnode2r|\
@@ -203,7 +204,8 @@ ramips_setup_macs()
 	tplink,tl-wr840n-v5|\
 	tplink,tl-wr841n-v13|\
 	tplink,tl-wr841n-v14|\
-	tplink,tl-wr842n-v5)
+	tplink,tl-wr842n-v5|\
+	tplink,tl-wr850n-v2)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0xf100)" 1)
 		;;
 	tplink,archer-c20-v5|\
