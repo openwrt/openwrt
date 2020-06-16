@@ -650,6 +650,18 @@ define Device/tplink_tl-wr902ac-v1
 endef
 TARGET_DEVICES += tplink_tl-wr902ac-v1
 
+define Device/tplink_wbs210-v1
+  $(Device/tplink-safeloader-okli)
+  SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := WBS210
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := WBS210
+  SUPPORTED_DEVICES += wbs210
+endef
+TARGET_DEVICES += tplink_wbs210-v1
+
 define Device/tplink_wbs210-v2
   $(Device/tplink-safeloader-okli)
   SOC := ar9344
