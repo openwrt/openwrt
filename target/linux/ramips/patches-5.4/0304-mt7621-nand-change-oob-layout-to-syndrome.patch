@@ -1,0 +1,195 @@
+--- a/drivers/mtd/nand/raw/mt7621_nand.c
++++ b/drivers/mtd/nand/raw/mt7621_nand.c
+@@ -273,15 +273,16 @@ static inline void ecc_write32(struct mt
+ 
+ static inline u8 *oob_fdm_ptr(struct nand_chip *nand, int sect)
+ {
+-	return nand->oob_poi + sect * NFI_FDM_SIZE;
++	struct mt7621_nfc *nfc = nand_get_controller_data(nand);
++	return nand->oob_poi + sect * nfc->spare_per_sector;
+ }
+ 
+ static inline u8 *oob_ecc_ptr(struct mt7621_nfc *nfc, int sect)
+ {
+ 	struct nand_chip *nand = &nfc->nand;
+ 
+-	return nand->oob_poi + nand->ecc.steps * NFI_FDM_SIZE +
+-		sect * (nfc->spare_per_sector - NFI_FDM_SIZE);
++	return nand->oob_poi + sect * nfc->spare_per_sector +
++		nand->ecc.prepad;
+ }
+ 
+ static inline u8 *page_data_ptr(struct nand_chip *nand, const u8 *buf,
+@@ -807,6 +808,7 @@ static int mt7621_nfc_calc_ecc_strength(
+ 	}
+ 
+ 	nand->ecc.strength = mt7621_ecc_strength[i];
++	nand->ecc.prepad = NFI_FDM_SIZE;
+ 	nand->ecc.bytes =
+ 		DIV_ROUND_UP(nand->ecc.strength * ECC_PARITY_BITS, 8);
+ 
+@@ -838,6 +840,7 @@ static int mt7621_nfc_set_spare_per_sect
+ 	}
+ 
+ 	nfc->spare_per_sector = mt7621_nfi_spare_size[i];
++	nand->ecc.postpad = mt7621_nfi_spare_size[i] - size;
+ 
+ 	return i;
+ }
+@@ -945,12 +948,23 @@ static int mt7621_nfc_ooblayout_free(str
+ 				     struct mtd_oob_region *oob_region)
+ {
+ 	struct nand_chip *nand = mtd_to_nand(mtd);
++	int chunk = nand->ecc.prepad + nand->ecc.bytes + nand->ecc.postpad;
+ 
+-	if (section >= nand->ecc.steps)
++	if (section > nand->ecc.steps)
+ 		return -ERANGE;
+ 
+-	oob_region->length = NFI_FDM_SIZE - 1;
+-	oob_region->offset = section * NFI_FDM_SIZE + 1;
++	oob_region->length = nand->ecc.prepad;
++	oob_region->offset = section * chunk;
++
++	if (section == 0) {
++		oob_region->length -= 1;
++		oob_region->offset = 1;
++	} else if (section == nand->ecc.steps) {
++		chunk = mtd->oobsize - (nand->ecc.steps * chunk);
++		if (!chunk)
++			return -ERANGE;
++		oob_region->length = chunk;
++	}
+ 
+ 	return 0;
+ }
+@@ -959,12 +973,13 @@ static int mt7621_nfc_ooblayout_ecc(stru
+ 				    struct mtd_oob_region *oob_region)
+ {
+ 	struct nand_chip *nand = mtd_to_nand(mtd);
++	int chunk = nand->ecc.prepad + nand->ecc.bytes + nand->ecc.postpad;
+ 
+-	if (section)
++	if (section >= nand->ecc.steps)
+ 		return -ERANGE;
+ 
+-	oob_region->offset = NFI_FDM_SIZE * nand->ecc.steps;
+-	oob_region->length = mtd->oobsize - oob_region->offset;
++	oob_region->offset = section * chunk + nand->ecc.prepad;
++	oob_region->length = nand->ecc.bytes + nand->ecc.postpad;
+ 
+ 	return 0;
+ }
+@@ -974,45 +989,33 @@ static const struct mtd_ooblayout_ops mt
+ 	.ecc = mt7621_nfc_ooblayout_ecc,
+ };
+ 
+-static void mt7621_nfc_write_fdm(struct mt7621_nfc *nfc)
++static void mt7621_nfc_write_fdm(struct mt7621_nfc *nfc, const uint8_t *oob)
+ {
+ 	struct nand_chip *nand = &nfc->nand;
+-	u32 vall, valm;
+-	u8 *oobptr;
+-	int i, j;
++	uint32_t fdm[2];
++	int i;
+ 
++	fdm[0] = fdm[1] = 0xffffffff;
+ 	for (i = 0; i < nand->ecc.steps; i++) {
+-		vall = 0;
+-		valm = 0;
+-		oobptr = oob_fdm_ptr(nand, i);
+-
+-		for (j = 0; j < 4; j++)
+-			vall |= (u32)oobptr[j] << (j * 8);
+-
+-		for (j = 0; j < 4; j++)
+-			valm |= (u32)oobptr[j + 4] << ((j - 4) * 8);
+-
+-		nfi_write32(nfc, NFI_FDML(i), vall);
+-		nfi_write32(nfc, NFI_FDMM(i), valm);
++		if (oob) {
++			memcpy(&fdm, oob, sizeof(fdm));
++			oob += nfc->spare_per_sector;
++		}
++		nfi_write32(nfc, NFI_FDML(i), fdm[0]);
++		nfi_write32(nfc, NFI_FDMM(i), fdm[1]);
+ 	}
+ }
+ 
+ static void mt7621_nfc_read_sector_fdm(struct mt7621_nfc *nfc, u32 sect)
+ {
+ 	struct nand_chip *nand = &nfc->nand;
+-	u32 vall, valm;
++	uint32_t fdm[2];
+ 	u8 *oobptr;
+-	int i;
+ 
+-	vall = nfi_read32(nfc, NFI_FDML(sect));
+-	valm = nfi_read32(nfc, NFI_FDMM(sect));
++	fdm[0] = nfi_read32(nfc, NFI_FDML(sect));
++	fdm[1] = nfi_read32(nfc, NFI_FDMM(sect));
+ 	oobptr = oob_fdm_ptr(nand, sect);
+-
+-	for (i = 0; i < 4; i++)
+-		oobptr[i] = (vall >> (i * 8)) & 0xff;
+-
+-	for (i = 0; i < 4; i++)
+-		oobptr[i + 4] = (valm >> (i * 8)) & 0xff;
++	memcpy(oobptr, fdm, sizeof(fdm));
+ }
+ 
+ static int mt7621_nfc_read_page_hwecc(struct nand_chip *nand, uint8_t *buf,
+@@ -1164,7 +1167,10 @@ static int mt7621_nfc_write_page_hwecc(s
+ 
+ 	mt7621_ecc_encoder_op(nfc, true);
+ 
+-	mt7621_nfc_write_fdm(nfc);
++	if (oob_required)
++		mt7621_nfc_write_fdm(nfc, nand->oob_poi);
++	else
++		mt7621_nfc_write_fdm(nfc, NULL);
+ 
+ 	nfi_write16(nfc, NFI_CON,
+ 		    CON_NFI_BWR | (nand->ecc.steps << CON_NFI_SEC_S));
+@@ -1188,6 +1194,8 @@ static int mt7621_nfc_write_page_raw(str
+ 				     int page)
+ {
+ 	struct mt7621_nfc *nfc = nand_get_controller_data(nand);
++	struct mtd_info *mtd = nand_to_mtd(nand);
++	u8 *oobptr = nand->oob_poi;
+ 	int i;
+ 
+ 	nand_prog_page_begin_op(nand, page, 0, NULL, 0);
+@@ -1197,7 +1205,8 @@ static int mt7621_nfc_write_page_raw(str
+ 	nfi_write16(nfc, NFI_CON,
+ 		    CON_NFI_BWR | (nand->ecc.steps << CON_NFI_SEC_S));
+ 
+-	for (i = 0; i < nand->ecc.steps; i++) {
++	for (i = 0; i < nand->ecc.steps; i++,
++	     oobptr += nfc->spare_per_sector) {
+ 		/* Write data */
+ 		if (buf)
+ 			mt7621_nfc_write_data(nfc, page_data_ptr(nand, buf, i),
+@@ -1205,15 +1214,14 @@ static int mt7621_nfc_write_page_raw(str
+ 		else
+ 			mt7621_nfc_write_data_empty(nfc, nand->ecc.size);
+ 
+-		/* Write FDM */
+-		mt7621_nfc_write_data(nfc, oob_fdm_ptr(nand, i),
+-				      NFI_FDM_SIZE);
+-
+-		/* Write dummy ECC parity data */
+-		mt7621_nfc_write_data_empty(nfc, nfc->spare_per_sector -
+-					    NFI_FDM_SIZE);
++		/* Write FDM and ECC parity data */
++		mt7621_nfc_write_data(nfc, oobptr, nfc->spare_per_sector);
+ 	}
+ 
++	i = mtd->oobsize - (nand->ecc.steps * nfc->spare_per_sector);
++	if (i)
++		mt7621_nfc_write_data(nfc, oobptr, i);
++
+ 	mt7621_nfc_wait_write_completion(nfc, nand);
+ 
+ 	nfi_write16(nfc, NFI_CON, 0);
