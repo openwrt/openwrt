@@ -107,6 +107,15 @@ define Device/buffalo_wcr-1166ds
 endef
 TARGET_DEVICES += buffalo_wcr-1166ds
 
+define Device/comfast_cf-wr617ac
+  IMAGE_SIZE := 7872k
+  DTS := CF-WR617AC
+  DEVICE_VENDOR := Comfast
+  DEVICE_MODEL := CF-WR617AC
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-rt2800-pci
+endef
+TARGET_DEVICES += comfast_cf-wr617ac
+
 define Device/comfast_cf-wr758ac
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := COMFAST
