@@ -485,3 +485,14 @@ define Device/zyxel_keenetic-extra-ii
 	check-size $$$$(IMAGE_SIZE) | zyimage -d 6162 -v "ZyXEL Keenetic Extra II"
 endef
 TARGET_DEVICES += zyxel_keenetic-extra-ii
+
+define Device/comfast_cf-wr617ac
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  DTS := CF-WR617AC
+  DEVICE_VENDOR := Comfast
+  DEVICE_MODEL := CF-WR617AC
+  DEVICE_TITLE := Comfast CF-WR617AC
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-rt2800-pci
+  SUPPORTED_DEVICES += cf-wr617ac
+endef
+TARGET_DEVICES += comfast_cf-wr617ac
