@@ -434,6 +434,14 @@
 
 		resets = <&rstctrl 15>;
 		reset-names = "nfi";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&nand_pins>;
+
+		interrupt-parent = <&gic>;
+		interrupt-names = "nfi", "ecc";
+		interrupts = <GIC_SHARED 14 IRQ_TYPE_LEVEL_HIGH
+			GIC_SHARED 15 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
 	ethsys: syscon@1e000000 {
