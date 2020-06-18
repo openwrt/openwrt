@@ -1,0 +1,13 @@
+--- a/drivers/mtd/nand/raw/mt7621_nand.c
++++ b/drivers/mtd/nand/raw/mt7621_nand.c
+@@ -891,6 +891,10 @@ static int mt7621_nfc_attach_chip(struct
+ 		return -EINVAL;
+ 	}
+ 
++	/* store bbt magic in page, cause OOB is not protected */
++	if (nand->bbt_options & NAND_BBT_USE_FLASH)
++		nand->bbt_options |= NAND_BBT_NO_OOB;
++
+ 	ret = mt7621_nfc_ecc_init(nfc);
+ 	if (ret)
+ 		return ret;
