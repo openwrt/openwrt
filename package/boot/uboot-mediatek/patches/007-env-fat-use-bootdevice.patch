@@ -1,0 +1,88 @@
+From fb2810b2c7209d4ed690e48e5bffa52d1af2eda3 Mon Sep 17 00:00:00 2001
+From: David Woodhouse <dwmw2@infradead.org>
+Date: Fri, 19 Jun 2020 22:57:04 +0100
+Subject: [PATCH] env/fat.c: allow loading from a FAT partition on the MMC boot
+ device
+
+I don't want to have to specify the device; only the partition.
+
+Signed-off-by: David Woodhouse <dwmw2@infradead.org>
+---
+ env/Kconfig |  4 ++++
+ env/fat.c   | 31 +++++++++++++++++++++++++++++--
+ 2 files changed, 33 insertions(+), 2 deletions(-)
+
+diff --git a/env/Kconfig b/env/Kconfig
+index 0d6f559b39..a2020a8661 100644
+--- a/env/Kconfig
++++ b/env/Kconfig
+@@ -432,6 +432,10 @@ config ENV_FAT_DEVICE_AND_PART
+ 	                   If none, first valid partition in device D. If no
+ 	                   partition table then means device D.
+ 
++	  If ENV_FAT_INTERFACE is set to "mmc" then device 'D' can be omitted,
++	  leaving the string starting with a colon, and the boot device will
++	  be used.
++
+ config ENV_FAT_FILE
+ 	string "Name of the FAT file to use for the environment"
+ 	depends on ENV_IS_IN_FAT
+diff --git a/env/fat.c b/env/fat.c
+index 1836556f36..1c32d17bd5 100644
+--- a/env/fat.c
++++ b/env/fat.c
+@@ -31,6 +31,33 @@
+ # endif
+ #endif
+ 
++#if defined(CMD_SAVEENV) || defined(CMD_LOADENV)
++__weak int mmc_get_env_dev(void)
++{
++        return CONFIG_SYS_MMC_ENV_DEV;
++}
++
++static char *env_fat_device_and_part(void)
++{
++#ifdef CONFIG_MMC
++	static char *part_str;
++
++	if (!part_str) {
++		part_str = CONFIG_ENV_FAT_DEVICE_AND_PART;
++		if (!strcmp(CONFIG_ENV_FAT_INTERFACE, "mmc")
++		    && part_str[0] == ':') {
++			part_str = "0" CONFIG_ENV_FAT_DEVICE_AND_PART;
++			part_str[0] += mmc_get_env_dev();
++		}
++	}
++
++	return part_str;
++#else
++	return CONFIG_ENV_FAT_DEVICE_AND_PART;
++#endif
++}
++#endif
++
+ #ifdef CMD_SAVEENV
+ static int env_fat_save(void)
+ {
+@@ -46,7 +73,7 @@ static int env_fat_save(void)
+ 		return err;
+ 
+ 	part = blk_get_device_part_str(CONFIG_ENV_FAT_INTERFACE,
+-					CONFIG_ENV_FAT_DEVICE_AND_PART,
++					env_fat_device_and_part(),
+ 					&dev_desc, &info, 1);
+ 	if (part < 0)
+ 		return 1;
+@@ -93,7 +120,7 @@ static int env_fat_load(void)
+ #endif
+ 
+ 	part = blk_get_device_part_str(CONFIG_ENV_FAT_INTERFACE,
+-					CONFIG_ENV_FAT_DEVICE_AND_PART,
++					env_fat_device_and_part(),
+ 					&dev_desc, &info, 1);
+ 	if (part < 0)
+ 		goto err_env_relocate;
+-- 
+2.26.2
+
