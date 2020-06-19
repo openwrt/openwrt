@@ -128,6 +128,12 @@
 			cd-gpios = <&tlmm 22 0x1>;
 			sd-ldo-gpios = <&tlmm 33 0x1>;
 		};
+
+		serial@78b0000 {
+			pinctrl-0 = <&serial_1_pins>;
+			pinctrl-names = "default";
+			status = "okay";
+		};
 	};
 
 	gpio-keys {
@@ -175,7 +181,7 @@
 	status = "okay";
 };
 
-&spi_0 {
+&blsp1_spi1 {
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -244,11 +250,32 @@
 	};
 };
 
+&blsp1_spi2 {
+	pinctrl-0 = <&spi_1_pins>;
+	pinctrl-names = "default";
+	status = "ok";
+
+	spidev1: spi@1 {
+		compatible = "siliconlabs,si3210";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+	};
+};
+
 &tlmm {
 	serial_pins: serial_pinmux {
 		mux {
 			pins = "gpio16", "gpio17";
 			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	serial_1_pins: serial1_pinmux {
+		mux {
+			pins = "gpio8", "gpio9",
+				"gpio10", "gpio11";
+			function = "blsp_uart1";
 			bias-disable;
 		};
 	};
@@ -274,6 +301,35 @@
 			output-high;
 		};
 	};
+
+	spi_1_pins: spi_1_pinmux {
+		mux {
+			pins = "gpio44", "gpio46", "gpio47";
+			function = "blsp_spi1";
+			bias-disable;
+		};
+		host_int {
+			pins = "gpio42";
+			function = "gpio";
+			input;
+		};
+		cs {
+			pins = "gpio45";
+			function = "gpio";
+			bias-pull-up;
+		};
+		wake {
+			pins = "gpio40";
+			function = "gpio";
+			output-high;
+		};
+		reset {
+			pins = "gpio49";
+			function = "gpio";
+			output-high;
+		};
+	};
+
 	sd_0_pins: sd_0_pinmux {
 		sd0 {
 			pins = "gpio23";
