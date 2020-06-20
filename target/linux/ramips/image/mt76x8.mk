@@ -619,7 +619,7 @@ define Device/zyxel_keenetic-extra-ii
 endef
 TARGET_DEVICES += zyxel_keenetic-extra-ii
 
-define Device/zyxel_keenetic-kn-4g
+define Device/zyxel_keenetic-4g
   IMAGE_SIZE := 16064k
   BLOCKSIZE := 64k
   DEVICE_TITLE := Keenetic 4G
@@ -628,4 +628,4 @@ define Device/zyxel_keenetic-kn-4g
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
 	check-size  | zyimage -d 4624 -v "KN-4G"
 endef
-TARGET_DEVICES += zyxel_keenetic-kn-4g
+TARGET_DEVICES += zyxel_keenetic-4g
