@@ -121,22 +121,36 @@
 #define RB_BOOT_DEVICE_FLSHONCE		8	// "boot in flash configuration mode once, then NAND"
 
 /*
- * ATH79 CPU frequency indices.
+ * ATH79 9xxx CPU frequency indices.
  * It is unknown if they apply to all ATH79 RBs, and some do not seem to feature
  * the upper levels (QCA955x), while F is presumably AR9344-only.
  */
-#define RB_CPU_FREQ_IDX_ATH79_A	(0 << 3)
-#define RB_CPU_FREQ_IDX_ATH79_B	(1 << 3)	// 0x8
-#define RB_CPU_FREQ_IDX_ATH79_C	(2 << 3)	// 0x10 - factory freq for many devices
-#define RB_CPU_FREQ_IDX_ATH79_D	(3 << 3)	// 0x18
-#define RB_CPU_FREQ_IDX_ATH79_E	(4 << 3)	// 0x20
-#define RB_CPU_FREQ_IDX_ATH79_F	(5 << 3)	// 0x28
+#define RB_CPU_FREQ_IDX_ATH79_9X_A	(0 << 3)
+#define RB_CPU_FREQ_IDX_ATH79_9X_B	(1 << 3)	// 0x8
+#define RB_CPU_FREQ_IDX_ATH79_9X_C	(2 << 3)	// 0x10 - factory freq for many devices
+#define RB_CPU_FREQ_IDX_ATH79_9X_D	(3 << 3)	// 0x18
+#define RB_CPU_FREQ_IDX_ATH79_9X_E	(4 << 3)	// 0x20
+#define RB_CPU_FREQ_IDX_ATH79_9X_F	(5 << 3)	// 0x28
 
-#define RB_CPU_FREQ_IDX_ATH79_MIN		0	// all devices support lowest setting
-#define RB_CPU_FREQ_IDX_ATH79_AR9334_MAX	5	// stops at F
-#define RB_CPU_FREQ_IDX_ATH79_QCA953X_MAX	4	// stops at E
-#define RB_CPU_FREQ_IDX_ATH79_QCA9556_MAX	2	// stops at C
-#define RB_CPU_FREQ_IDX_ATH79_QCA9558_MAX	3	// stops at D
+#define RB_CPU_FREQ_IDX_ATH79_9X_MIN		0	// all devices support lowest setting
+#define RB_CPU_FREQ_IDX_ATH79_9X_AR9334_MAX	5	// stops at F
+#define RB_CPU_FREQ_IDX_ATH79_9X_QCA953X_MAX	4	// stops at E
+#define RB_CPU_FREQ_IDX_ATH79_9X_QCA9556_MAX	2	// stops at C
+#define RB_CPU_FREQ_IDX_ATH79_9X_QCA9558_MAX	3	// stops at D
+
+/* ATH79 7xxx CPU frequency indices. */
+#define RB_CPU_FREQ_IDX_ATH79_7X_A	((0 * 9) << 4)
+#define RB_CPU_FREQ_IDX_ATH79_7X_B	((1 * 9) << 4)
+#define RB_CPU_FREQ_IDX_ATH79_7X_C	((2 * 9) << 4)
+#define RB_CPU_FREQ_IDX_ATH79_7X_D	((3 * 9) << 4)
+#define RB_CPU_FREQ_IDX_ATH79_7X_E	((4 * 9) << 4)
+#define RB_CPU_FREQ_IDX_ATH79_7X_F	((5 * 9) << 4)
+#define RB_CPU_FREQ_IDX_ATH79_7X_G	((6 * 9) << 4)
+#define RB_CPU_FREQ_IDX_ATH79_7X_H	((7 * 9) << 4)
+
+#define RB_CPU_FREQ_IDX_ATH79_7X_MIN		0	// all devices support lowest setting
+#define RB_CPU_FREQ_IDX_ATH79_7X_AR724X_MAX	3	// stops at D
+#define RB_CPU_FREQ_IDX_ATH79_7X_AR7161_MAX	7	// stops at H - check if applies to all AR71xx devices
 
 #define RB_SC_CRC32_OFFSET		4	// located right after magic
 
@@ -389,41 +403,70 @@ static ssize_t sc_tag_store_bootdelays(const u8 *pld, u16 pld_len, const char *b
 /* Support CPU frequency accessors only when the tag format has been asserted */
 #if defined(CONFIG_ATH79)
 /* Use the same letter-based nomenclature as RouterBOOT */
-static struct sc_u32tvs const sc_cpufreq_indexes_ath79[] = {
-	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_A,	"a"),
-	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_B,	"b"),
-	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_C,	"c"),
-	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_D,	"d"),
-	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_E,	"e"),
-	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_F,	"f"),
+static struct sc_u32tvs const sc_cpufreq_indexes_ath79_9x[] = {
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_9X_A,	"a"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_9X_B,	"b"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_9X_C,	"c"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_9X_D,	"d"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_9X_E,	"e"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_9X_F,	"f"),
+};
+
+static struct sc_u32tvs const sc_cpufreq_indexes_ath79_7x[] = {
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_7X_A,	"a"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_7X_B,	"b"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_7X_C,	"c"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_7X_D,	"d"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_7X_E,	"e"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_7X_F,	"f"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_7X_G,	"g"),
+	RB_SC_TVS(RB_CPU_FREQ_IDX_ATH79_7X_H,	"h"),
 };
 
 static int sc_tag_cpufreq_ath79_arraysize(void)
 {
 	int idx_max;
 
-	if (soc_is_ar9344())
-		idx_max = RB_CPU_FREQ_IDX_ATH79_AR9334_MAX+1;
+	if (ATH79_SOC_AR7161 == ath79_soc)
+		idx_max = RB_CPU_FREQ_IDX_ATH79_7X_AR7161_MAX+1;
+	else if (soc_is_ar724x())
+		idx_max = RB_CPU_FREQ_IDX_ATH79_7X_AR724X_MAX+1;
+	else if (soc_is_ar9344())
+		idx_max = RB_CPU_FREQ_IDX_ATH79_9X_AR9334_MAX+1;
 	else if (soc_is_qca953x())
-		idx_max = RB_CPU_FREQ_IDX_ATH79_QCA953X_MAX+1;
+		idx_max = RB_CPU_FREQ_IDX_ATH79_9X_QCA953X_MAX+1;
 	else if (soc_is_qca9556())
-		idx_max = RB_CPU_FREQ_IDX_ATH79_QCA9556_MAX+1;
+		idx_max = RB_CPU_FREQ_IDX_ATH79_9X_QCA9556_MAX+1;
 	else if (soc_is_qca9558())
-		idx_max = RB_CPU_FREQ_IDX_ATH79_QCA9558_MAX+1;
+		idx_max = RB_CPU_FREQ_IDX_ATH79_9X_QCA9558_MAX+1;
 	else
 		idx_max = -EOPNOTSUPP;
 
 	return idx_max;
 }
 
-static ssize_t sc_tag_show_cpufreq_indexes(const u8 *pld, u16 pld_len, char * buf)
+static ssize_t sc_tag_show_cpufreq_indexes(const u8 *pld, u16 pld_len, char *buf)
 {
-	return sc_tag_show_u32tvs(pld, pld_len, buf, sc_cpufreq_indexes_ath79, sc_tag_cpufreq_ath79_arraysize());
+	const struct sc_u32tvs *tvs;
+
+	if (soc_is_ar71xx() || soc_is_ar724x())
+		tvs = sc_cpufreq_indexes_ath79_7x;
+	else
+		tvs = sc_cpufreq_indexes_ath79_9x;
+
+	return sc_tag_show_u32tvs(pld, pld_len, buf, tvs, sc_tag_cpufreq_ath79_arraysize());
 }
 
 static ssize_t sc_tag_store_cpufreq_indexes(const u8 *pld, u16 pld_len, const char *buf, size_t count)
 {
-	return sc_tag_store_u32tvs(pld, pld_len, buf, count, sc_cpufreq_indexes_ath79, sc_tag_cpufreq_ath79_arraysize());
+	const struct sc_u32tvs *tvs;
+
+	if (soc_is_ar71xx() || soc_is_ar724x())
+		tvs = sc_cpufreq_indexes_ath79_7x;
+	else
+		tvs = sc_cpufreq_indexes_ath79_9x;
+
+	return sc_tag_store_u32tvs(pld, pld_len, buf, count, tvs, sc_tag_cpufreq_ath79_arraysize());
 }
 #else
  /* By default we only show the raw value to help with reverse-engineering */
