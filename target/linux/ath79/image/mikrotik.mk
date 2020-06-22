@@ -9,6 +9,15 @@ define Device/mikrotik_routerboard-493g
 endef
 TARGET_DEVICES += mikrotik_routerboard-493g
 
+define Device/mikrotik_routerboard-921gs-5hpacd-15s
+  $(Device/mikrotik_nand)
+  SOC := qca9558
+  DEVICE_MODEL := RouterBOARD 921GS-5HPacD-15s (mANTBox 15s)
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  SUPPORTED_DEVICES += rb-921gs-5hpacd-r2
+endef
+TARGET_DEVICES += mikrotik_routerboard-921gs-5hpacd-15s
+
 define Device/mikrotik_routerboard-922uags-5hpacd
   $(Device/mikrotik_nand)
   SOC := qca9558
