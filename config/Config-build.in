@@ -103,6 +103,15 @@ menu "Global build settings"
 		help
 		  If enabled, buildinfo files will be stored in /etc/build.* of firmware.
 
+	config REPRODUCIBLE_DEBUG_INFO
+		bool "Make debug information reproducible"
+		default BUILDBOT
+		help
+		  This strips the local build path out of debug information. This has the
+		  advantage of making it reproducible, but the disadvantage of making local
+		  debugging using ./scripts/remote-gdb harder, since the debug data will
+		  no longer point to the full path on the build host.
+
 	config COLLECT_KERNEL_DEBUG
 		bool
 		prompt "Collect kernel debug information"

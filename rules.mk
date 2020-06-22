@@ -144,7 +144,7 @@ ifeq ($(or $(CONFIG_EXTERNAL_TOOLCHAIN),$(CONFIG_TARGET_uml)),)
   ifeq ($(CONFIG_GCC_USE_IREMAP),y)
     iremap = -iremap$(1):$(2)
   else
-    iremap = -ffile-prefix-map=$(1)=$(2)
+    iremap = -f$(if $(CONFIG_REPRODUCIBLE_DEBUG_INFO),file,macro)-prefix-map=$(1)=$(2)
   endif
 endif
 
