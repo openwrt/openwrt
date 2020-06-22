@@ -1,0 +1,17 @@
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Thu, 18 Jun 2020 19:12:07 +0800
+Subject: Disable toom and karatsuba for new libtommath
+
+--- a/libtommath/tommath_class.h
++++ b/libtommath/tommath_class.h
+@@ -1312,6 +1312,10 @@
+ #undef BN_MP_KARATSUBA_SQR_C
+ #undef BN_MP_TOOM_MUL_C
+ #undef BN_MP_TOOM_SQR_C
++#undef BN_S_MP_KARATSUBA_MUL_C
++#undef BN_S_MP_KARATSUBA_SQR_C
++#undef BN_S_MP_TOOM_MUL_C
++#undef BN_S_MP_TOOM_SQR_C
+ 
+ #include "dbmalloc.h"
+ #define MP_MALLOC    m_malloc
