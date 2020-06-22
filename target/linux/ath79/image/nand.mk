@@ -206,6 +206,16 @@ define Device/netgear_wndr4300sw
 endef
 TARGET_DEVICES += netgear_wndr4300sw
 
+define Device/netgear_wndr4300tn
+  SOC := ar9344
+  DEVICE_MODEL := WNDR4300TN
+  NETGEAR_KERNEL_MAGIC := 0x33373033
+  NETGEAR_BOARD_ID := WNDR4300TN
+  NETGEAR_HW_ID := 29763948+0+128+128+2x2+3x3
+  $(Device/netgear_ath79_nand)
+endef
+TARGET_DEVICES += netgear_wndr4300tn
+
 define Device/netgear_wndr4300-v2
   SOC := qca9563
   DEVICE_MODEL := WNDR4300
