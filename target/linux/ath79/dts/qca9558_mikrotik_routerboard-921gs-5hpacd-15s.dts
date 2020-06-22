@@ -4,8 +4,8 @@
 #include "qca9558_mikrotik_routerboard-92x.dtsi"
 
 / {
-	compatible = "mikrotik,routerboard-922uags-5hpacd", "qca,qca9558";
-	model = "MikroTik RouterBOARD 922UAGS-5HPacD";
+	compatible = "mikrotik,routerboard-921gs-5hpacd-15s", "qca,qca9558";
+	model = "MikroTik RouterBOARD 921GS-5HPacD-15s";
 
 	ath10k-leds {
 		compatible = "gpio-leds";
@@ -16,17 +16,9 @@
 			linux,default-trigger = "phy0tpt";
 		};
 	};
-
-	gpio-export {
-		gpio_usb_power {
-			gpio-export,name = "mikrotik:power:usb";
-			gpio-export,output = <0>;
-			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
-		};
-	};
 };
 
-&pcie0 {
+&pcie1 {
 	status = "okay";
 
 	ath10k: wifi@0,0 {
@@ -35,16 +27,4 @@
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
-};
-
-&pcie1 {
-	status = "okay";
-};
-
-&usb0 {
-	status = "okay";
-};
-
-&usb_phy0 {
-	status = "okay";
 };
