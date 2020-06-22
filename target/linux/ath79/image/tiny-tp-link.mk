@@ -157,6 +157,7 @@ define Device/tplink_tl-wa850re-v2
   TPLINK_HWID := 0x08500002
   DEVICE_PACKAGES := rssileds
   SUPPORTED_DEVICES += tl-wa850re-v2
+  DEFAULT := n
 endef
 TARGET_DEVICES += tplink_tl-wa850re-v2
 
