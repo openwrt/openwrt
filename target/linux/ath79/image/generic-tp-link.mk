@@ -352,6 +352,16 @@ define Device/tplink_cpe610-v1
 endef
 TARGET_DEVICES += tplink_cpe610-v1
 
+define Device/tplink_cpe610-v2
+  $(Device/tplink-safeloader-okli)
+  SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := CPE610
+  DEVICE_VARIANT := v2
+  TPLINK_BOARD_ID := CPE610V2
+endef
+TARGET_DEVICES += tplink_cpe610-v2
+
 define Device/tplink_re350k-v1
   $(Device/tplink-safeloader)
   SOC := qca9558
