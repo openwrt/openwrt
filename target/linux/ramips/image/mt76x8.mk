@@ -199,7 +199,7 @@ define Device/netgear_r6120
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x0040
   IMAGES += factory.img
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE)| append-rootfs | \
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
 	pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size
   IMAGE/factory.img := pad-extra 576k | $$(IMAGE/default) | \
