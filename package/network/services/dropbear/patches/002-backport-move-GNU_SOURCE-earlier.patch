@@ -1,0 +1,34 @@
+From a7a67585cbc3fe5df85c641618b347a51a943356 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Tue, 23 Jun 2020 22:24:58 +0800
+Subject: [PATCH] move GNU_SOURCE earlier
+
+---
+ includes.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/includes.h b/includes.h
+index 2789f23..884ebf7 100644
+--- a/includes.h
++++ b/includes.h
+@@ -25,6 +25,8 @@
+ #ifndef DROPBEAR_INCLUDES_H_
+ #define DROPBEAR_INCLUDES_H_
+ 
++/* uclibc needs _GNU_SOURCE, maybe other things? */
++#define _GNU_SOURCE
+ 
+ #include "options.h"
+ #include "debug.h"
+@@ -125,8 +127,6 @@
+ #endif
+ 
+ #ifdef HAVE_SYS_RANDOM_H
+-/* uclibc needs _GNU_SOURCE */
+-#define _GNU_SOURCE
+ #include <sys/random.h>
+ #endif
+ 
+-- 
+2.25.1
+
