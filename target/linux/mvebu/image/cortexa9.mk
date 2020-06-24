@@ -55,6 +55,8 @@ define Device/linksys
   DEVICE_VENDOR := Linksys
   DEVICE_PACKAGES := kmod-mwlwifi wpad-basic
   IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+	append-ubi | pad-to $$$$(PAGESIZE)
   KERNEL_SIZE := 6144k
 endef
 
@@ -151,6 +153,8 @@ define Device/marvell_a385-db-ap
   DEVICE_MODEL := Armada 385 Development Board AP (DB-88F6820-AP)
   DEVICE_DTS := armada-385-db-ap
   IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+	append-ubi | pad-to $$$$(PAGESIZE)
   KERNEL_SIZE := 8192k
   SUPPORTED_DEVICES += armada-385-db-ap
 endef
