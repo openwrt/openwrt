@@ -14,8 +14,8 @@ PKG_NAME:=Build dependency
 
 # Required for the toolchain
 $(eval $(call TestHostCommand,working-make, \
-	Please install GNU make v3.81 or later. (This version has bugs), \
-	$(MAKE) -v | grep -E 'Make (3\.8[1-9]|3\.9[0-9]|[4-9]\.)'))
+	Please install GNU make v3.82 or later. (This version has bugs), \
+	$(MAKE) -v | grep -E 'Make (3\.8[2-9]|3\.9[0-9]|[4-9]\.)'))
 
 $(eval $(call TestHostCommand,case-sensitive-fs, \
 	OpenWrt can only be built on a case-sensitive filesystem, \
@@ -51,16 +51,22 @@ $(eval $(call TestHostCommand,working-g++, \
 		g++ -x c++ -o $(TMP_DIR)/a.out - -lstdc++ && \
 		$(TMP_DIR)/a.out))
 
+ifndef IB
 $(eval $(call TestHostCommand,ncurses, \
 	Please install ncurses. (Missing libncurses.so or ncurses.h), \
 	echo 'int main(int argc, char **argv) { initscr(); return 0; }' | \
 		gcc -include ncurses.h -x c -o $(TMP_DIR)/a.out - -lncurses))
+endif
 
 ifeq ($(HOST_OS),Linux)
   zlib_link_flags := -Wl,-Bstatic -lz -Wl,-Bdynamic
 else
   zlib_link_flags := -lz
 endif
+
+$(eval $(call TestHostCommand,perl-data-dumper, \
+	Please install the Perl Data::Dumper module, \
+	perl -MData::Dumper -e 1))
 
 $(eval $(call TestHostCommand,perl-thread-queue, \
 	Please install the Perl Thread::Queue module, \

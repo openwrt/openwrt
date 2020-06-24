@@ -18,9 +18,9 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
 
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -20,6 +20,13 @@ config MTD_BCM63XX_PARTS
- 	  This provides partition parsing for BCM63xx devices with CFE
- 	  bootloaders.
+@@ -119,6 +119,13 @@ config MTD_PARSER_TRX
+ 	  This driver will parse TRX header and report at least two partitions:
+ 	  kernel and rootfs.
  
 +config MTD_QCOM_SMEM_PARTS
 +	tristate "QCOM SMEM partitioning support"
@@ -29,9 +29,19 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
 +	  This provides partitions parser for QCOM devices using SMEM
 +	  such as IPQ806x.
 +
- config MTD_CMDLINE_PARTS
- 	tristate "Command line partition table parsing"
- 	depends on MTD
+ config MTD_SHARPSL_PARTS
+ 	tristate "Sharp SL Series NAND flash partition parser"
+ 	depends on MTD_NAND_SHARPSL || MTD_NAND_TMIO || COMPILE_TEST
+--- a/drivers/mtd/parsers/Makefile
++++ b/drivers/mtd/parsers/Makefile
+@@ -8,6 +8,7 @@ obj-$(CONFIG_MTD_OF_PARTS)		+= ofpart.o
+ obj-$(CONFIG_MTD_PARSER_IMAGETAG)	+= parser_imagetag.o
+ obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o
+ obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_trx.o
++obj-$(CONFIG_MTD_QCOM_SMEM_PARTS)		+= qcom_smem_part.o
+ obj-$(CONFIG_MTD_SHARPSL_PARTS)		+= sharpslpart.o
+ obj-$(CONFIG_MTD_REDBOOT_PARTS)		+= redboot.o
+ obj-$(CONFIG_MTD_ROUTERBOOT_PARTS)		+= routerbootpart.o
 --- /dev/null
 +++ b/drivers/mtd/parsers/qcom_smem_part.c
 @@ -0,0 +1,235 @@
@@ -270,13 +280,3 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Mathieu Olivari <mathieu@codeaurora.org>");
 +MODULE_DESCRIPTION("Parsing code for SMEM based partition tables");
---- a/drivers/mtd/parsers/Makefile
-+++ b/drivers/mtd/parsers/Makefile
-@@ -3,6 +3,7 @@ obj-$(CONFIG_MTD_AR7_PARTS)		+= ar7part.
- obj-$(CONFIG_MTD_BCM47XX_PARTS)		+= bcm47xxpart.o
- obj-$(CONFIG_MTD_BCM63XX_PARTS)		+= bcm63xxpart.o
- obj-$(CONFIG_MTD_CMDLINE_PARTS)		+= cmdlinepart.o
-+obj-$(CONFIG_MTD_QCOM_SMEM_PARTS) += qcom_smem_part.o
- obj-$(CONFIG_MTD_OF_PARTS)		+= ofpart.o
- obj-$(CONFIG_MTD_PARSER_IMAGETAG)	+= parser_imagetag.o
- obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o

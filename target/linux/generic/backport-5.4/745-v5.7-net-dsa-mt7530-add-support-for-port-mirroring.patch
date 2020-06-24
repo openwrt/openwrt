@@ -17,7 +17,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -1151,6 +1151,64 @@ mt7530_port_vlan_del(struct dsa_switch *
+@@ -1153,6 +1153,64 @@ mt7530_port_vlan_del(struct dsa_switch *
  	return 0;
  }
  
@@ -93,7 +93,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.phylink_mac_config	= mt7530_phylink_mac_config,
 --- a/drivers/net/dsa/mt7530.h
 +++ b/drivers/net/dsa/mt7530.h
-@@ -36,6 +36,9 @@ enum {
+@@ -37,6 +37,9 @@ enum {
  #define  CPU_EN				BIT(7)
  #define  CPU_PORT(x)			((x) << 4)
  #define  CPU_MASK			(0xf << 4)
@@ -103,7 +103,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  /* Registers for address table access */
  #define MT7530_ATA1			0x74
-@@ -141,6 +144,8 @@ enum mt7530_stp_state {
+@@ -142,6 +145,8 @@ enum mt7530_stp_state {
  
  /* Register for port control */
  #define MT7530_PCR_P(x)			(0x2004 + ((x) * 0x100))
@@ -112,7 +112,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #define  PORT_VLAN(x)			((x) & 0x3)
  
  enum mt7530_port_mode {
-@@ -457,6 +462,8 @@ struct mt7530_priv {
+@@ -464,6 +469,8 @@ struct mt7530_priv {
  	phy_interface_t		p6_interface;
  	phy_interface_t		p5_interface;
  	unsigned int		p5_intf_sel;

@@ -8,6 +8,13 @@
 	model = "Zyxel P870HW-51a v2";
 	compatible = "zyxel,p870hw-51a-v2", "brcm,bcm6368";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -37,7 +44,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		power_green {
+		led_power_green: power_green {
 			label = "P870HW-51a:green:power";
 			gpios = <&pinctrl 0 0>;
 			default-state = "on";
@@ -62,7 +69,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -94,5 +101,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

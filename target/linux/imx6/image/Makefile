@@ -35,7 +35,7 @@ define Build/boot-overlay
 
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
 		--space-fixup --compr=zlib --squash-uids \
-		$(MKUBIFS_OPTS) -c 8124 \
+		$(MKUBIFS_OPTS) -c 16248 \
 		-o $@.boot.ubifs -d $@.boot
 
 	$(TAR) -C $@.boot -cf $@.boot.tar .

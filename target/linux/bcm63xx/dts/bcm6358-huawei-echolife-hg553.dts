@@ -8,6 +8,13 @@
 	model = "Huawei EchoLife HG553";
 	compatible = "huawei,echolife-hg553", "brcm,bcm6358";
 
+	aliases {
+		led-boot = &led_power_blue;
+		led-failsafe = &led_power_blue;
+		led-running = &led_power_blue;
+		led-upgrade = &led_power_blue;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -37,7 +44,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		power_green {
+		led_power_blue: power_blue {
 			label = "HW553:blue:power";
 			gpios = <&pinctrl 4 1>;
 			default-state = "on";
@@ -78,7 +85,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -105,5 +112,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

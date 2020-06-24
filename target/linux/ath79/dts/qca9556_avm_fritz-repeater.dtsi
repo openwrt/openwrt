@@ -78,6 +78,8 @@
 	phy-handle = <&phy0>;
 	pll-data = <0x3000000 0x101 0x1313>;
 
+	qca955x-sgmii-fixup;
+
 	gmac-config {
 		device = <&gmac>;
 		ge0-sgmii = <0>;
@@ -89,5 +91,6 @@
 
 	phy0: ethernet-phy@0 {
 		reg = <0>;
+		at803x-override-sgmii-link-check;
 	};
 };

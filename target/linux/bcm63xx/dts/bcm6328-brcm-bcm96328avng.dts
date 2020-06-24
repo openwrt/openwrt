@@ -8,6 +8,13 @@
 	model = "Broadcom BCM96328avng reference board";
 	compatible = "brcm,bcm96328avng", "brcm,bcm6328";
 
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -24,7 +31,7 @@
 			label = "96328avng::dsl";
 			gpios = <&pinctrl 3 1>;
 		};
-		power {
+		led_power: power {
 			label = "96328avng::power";
 			gpios = <&pinctrl 4 1>;
 			default-state = "on";
@@ -45,7 +52,7 @@
 };
 
 &hsspi {
-	status = "ok";
+	status = "okay";
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -69,5 +76,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

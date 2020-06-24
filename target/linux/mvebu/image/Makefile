@@ -138,16 +138,6 @@ define Device/NAND-512K
   PAGESIZE := 4096
 endef
 
-ifeq ($(SUBTARGET),cortexa9)
-include cortexa9.mk
-endif
-
-ifeq ($(SUBTARGET),cortexa53)
-include cortexa53.mk
-endif
-
-ifeq ($(SUBTARGET),cortexa72)
-include cortexa72.mk
-endif
+include $(SUBTARGET).mk
 
 $(eval $(call BuildImage))

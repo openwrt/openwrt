@@ -6,6 +6,7 @@ include ./common-yuncore.mk
 DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX
+DEVICE_VARS += DAP_SIGNATURE
 
 define Build/add-elecom-factory-initramfs
   $(eval edimax_model=$(word 1,$(1)))
@@ -49,6 +50,14 @@ define Build/cybertan-trx
 	-rm $@-empty.bin
 endef
 
+define Build/mkwrggimg
+	$(STAGING_DIR_HOST)/bin/mkwrggimg -b \
+		-i $@ -o $@.imghdr -d /dev/mtdblock/1 \
+		-m $(DEVICE_MODEL)-$(DEVICE_VARIANT) -s $(DAP_SIGNATURE) \
+		-v $(VERSION_DIST) -B $(REVISION)
+	mv $@.imghdr $@
+endef
+
 define Build/nec-enc
   $(STAGING_DIR_HOST)/bin/nec-enc \
     -i $@ -o $@.new -k $(1)
@@ -86,6 +95,10 @@ define Build/teltonika-fw-fake-checksum
 		offs="$$(stat -c%s $@) - 20"; \
 		dd if=$@ bs=1 count=16 skip=76 |\
 		dd of=$@ bs=1 count=16 seek=$$offs conv=notrunc
+endef
+
+define Build/wrgg-pad-rootfs
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 64 >>$@
 endef
 
 define Device/seama
@@ -304,6 +317,16 @@ define Device/comfast_cf-e120a-v3
 endef
 TARGET_DEVICES += comfast_cf-e120a-v3
 
+define Device/comfast_cf-e130n-v2
+  SOC := qca9531
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E130N
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := rssileds kmod-leds-gpio -swconfig -uboot-envtools
+  IMAGE_SIZE := 7936k
+endef
+TARGET_DEVICES += comfast_cf-e130n-v2
+
 define Device/comfast_cf-e313ac
   SOC := qca9531
   DEVICE_VENDOR := COMFAST
@@ -447,6 +470,26 @@ define Device/devolo_magic-2-wifi
   IMAGE_SIZE := 15872k
 endef
 TARGET_DEVICES += devolo_magic-2-wifi
+
+define Device/dlink_dap-2695-a1
+  SOC := qca9558
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-2965
+  DEVICE_VARIANT := A1
+  IMAGES := factory.img sysupgrade.bin
+  IMAGE_SIZE := 15360k
+  IMAGE/default := append-kernel | pad-offset 65536 160
+  IMAGE/factory.img := $$(IMAGE/default) | append-rootfs | wrgg-pad-rootfs | \
+	mkwrggimg | check-size
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | mkwrggimg | append-rootfs | \
+	wrgg-pad-rootfs | append-metadata |  check-size
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
+  KERNEL_INITRAMFS := $$(KERNEL) | mkwrggimg
+  DAP_SIGNATURE := wapac02_dkbs_dap2695
+  SUPPORTED_DEVICES += dap-2695-a1
+endef
+TARGET_DEVICES += dlink_dap-2695-a1
 
 define Device/dlink_dir-505
   SOC := ar9330
@@ -629,6 +672,14 @@ define Device/engenius_ews511ap
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += engenius_ews511ap
+
+define Device/enterasys_ws-ap3705i
+  SOC := ar9344
+  DEVICE_VENDOR := Enterasys
+  DEVICE_MODEL := WS-AP3705i
+  IMAGE_SIZE := 30528k
+endef
+TARGET_DEVICES += enterasys_ws-ap3705i
 
 define Device/etactica_eg200
   SOC := ar9331
@@ -829,7 +880,7 @@ define Device/nec_wg800hp
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | check-size | \
 	xor-image -p 6A57190601121E4C004C1E1201061957 -x | nec-fw LASER_ATERM
-  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9887-ct-htt
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9887-ct-full-htt
 endef
 TARGET_DEVICES += nec_wg800hp
 
@@ -913,6 +964,30 @@ define Device/netgear_wndr3800ch
   SUPPORTED_DEVICES += wndr3700
 endef
 TARGET_DEVICES += netgear_wndr3800ch
+
+define Device/netgear_wndrmac-v1
+  $(Device/netgear_wndr3x00)
+  DEVICE_MODEL := WNDRMAC
+  DEVICE_VARIANT := v1
+  NETGEAR_KERNEL_MAGIC := 0x33373031
+  NETGEAR_BOARD_ID := WNDRMAC
+  NETGEAR_HW_ID := 29763654+16+64
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += wndr3700
+endef
+TARGET_DEVICES += netgear_wndrmac-v1
+
+define Device/netgear_wndrmac-v2
+  $(Device/netgear_wndr3x00)
+  DEVICE_MODEL := WNDRMAC
+  DEVICE_VARIANT := v2
+  NETGEAR_KERNEL_MAGIC := 0x33373031
+  NETGEAR_BOARD_ID := WNDRMACv2
+  NETGEAR_HW_ID := 29763654+16+128
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += wndr3700
+endef
+TARGET_DEVICES += netgear_wndrmac-v2
 
 define Device/netgear_wnr2200_common
   SOC := ar7241
@@ -1157,6 +1232,12 @@ define Device/teltonika_rut955
 	check-size
 endef
 TARGET_DEVICES += teltonika_rut955
+
+define Device/teltonika_rut955-h7v3c0
+  $(Device/teltonika_rut955)
+  DEVICE_VARIANT := H7V3C0
+endef
+TARGET_DEVICES += teltonika_rut955-h7v3c0
 
 define Device/trendnet_tew-823dru
   SOC := qca9558

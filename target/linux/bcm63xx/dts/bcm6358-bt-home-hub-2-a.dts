@@ -8,6 +8,13 @@
 	model = "BT Home Hub 2.0 Type A";
 	compatible = "bt,home-hub-2-a", "brcm,bcm6358";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_upgrading_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -43,7 +50,7 @@
 };
 
 &leds {
-	status = "ok";
+	status = "okay";
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_serial_led>;
@@ -54,7 +61,7 @@
 		label = "HOMEHUB2A:red:power";
 	};
 
-	led@1 {
+	led_power_green: led@1 {
 		reg = <0>;
 		active-low;
 		label = "HOMEHUB2A:green:power";
@@ -127,7 +134,7 @@
 		label = "HOMEHUB2A:red:upgrading";
 	};
 
-	led@13 {
+	led_upgrading_green: led@13 {
 		reg = <13>;
 		active-low;
 		label = "HOMEHUB2A:green:upgrading";
@@ -141,7 +148,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -167,5 +174,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

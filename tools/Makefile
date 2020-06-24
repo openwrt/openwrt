@@ -22,7 +22,7 @@ ifneq ($(CONFIG_SDK)$(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_b43legacy-firmwar
 endif
 
 tools-$(BUILD_TOOLCHAIN) += gmp mpfr mpc libelf expat
-tools-y += m4 libtool autoconf automake flex bison pkgconf mklibs zlib
+tools-y += m4 libtool autoconf autoconf-archive automake flex bison pkgconf mklibs zlib
 tools-y += sstrip make-ext4fs e2fsprogs mtd-utils mkimage
 tools-y += firmware-utils patch-image quilt padjffs2
 tools-y += mm-macros missing-macros cmake bc findutils gengetopt patchelf
@@ -33,7 +33,7 @@ tools-$(CONFIG_TARGET_mxs) += elftosb sdimage
 tools-$(CONFIG_TARGET_ar71xx) += lzma-old
 tools-$(CONFIG_TARGET_ar71xx)$(CONFIG_TARGET_ath79) += squashfs
 tools-$(CONFIG_USES_MINOR) += kernel2minor
-tools-y += lzma squashfskit4 zip
+tools-y += lzma squashfskit4 zip zstd
 tools-$(BUILD_B43_TOOLS) += b43-tools
 tools-$(BUILD_ISL) += isl
 tools-$(CONFIG_USE_SPARSE) += sparse

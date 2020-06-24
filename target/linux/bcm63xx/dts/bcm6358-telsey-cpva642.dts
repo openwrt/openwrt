@@ -8,6 +8,13 @@
 	model = "Telsey CPVA642-type (CPA-ZNTE60T)";
 	compatible = "telsey,cpva642", "brcm,bcm6358";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -65,7 +72,7 @@
 			label = "CPVA642:green:link";
 			gpios = <&pinctrl 10 1>;
 		};
-		power_green {
+		led_power_green: power_green {
 			label = "CPVA642:green:power";
 			gpios = <&pinctrl 11 1>;
 			default-state = "on";
@@ -82,7 +89,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -109,5 +116,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

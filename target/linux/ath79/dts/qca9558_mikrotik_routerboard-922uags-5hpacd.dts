@@ -11,7 +11,6 @@
 	model = "MikroTik RouterBOARD 922UAGS-5HPacD";
 
 	aliases {
-		label-mac-device = &eth0;
 		led-boot = &led_user;
 		led-failsafe = &led_user;
 		led-upgrade = &led_user;
@@ -80,7 +79,6 @@
 &eth0 {
 	status = "okay";
 
-	mtd-mac-address = <&hard_config 0x10>;
 	phy-handle = <&phy4>;
 	pll-data = <0x8f000000 0xa0000101 0xa0001313>;
 
@@ -99,32 +97,25 @@
 		spi-max-frequency = <25000000>;
 
 		partitions {
-			compatible = "fixed-partitions";
+			compatible = "mikrotik,routerboot-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			partition@0 {
 				label = "routerboot";
-				reg = <0x0000000 0x000c000>;
+				reg = <0x0 0x0>;
 				read-only;
 			};
 
-			hard_config: partition@c000 {
-				label = "hard_config";
-				reg = <0x000c000 0x0001000>;
+			hard_config: hard_config {
 				read-only;
 			};
 
-			partition@d000 {
-				label = "bios";
-				reg = <0x000d000 0x0001000>;
+			bios {
 				read-only;
 			};
 
-			partition@e000 {
-				label = "soft_config";
-				reg = <0x000e000 0x0001000>;
-				read-only;
+			soft_config {
 			};
 		};
 	};

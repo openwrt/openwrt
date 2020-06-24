@@ -198,6 +198,7 @@ _procd_add_jail() {
 		netns)	json_add_boolean "netns" "1";;
 		userns)	json_add_boolean "userns" "1";;
 		cgroupsns)	json_add_boolean "cgroupsns" "1";;
+		console)	json_add_boolean "console" "1";;
 		esac
 	done
 	json_add_object "mount"
@@ -528,10 +529,10 @@ uci_validate_section()
 	local _result
 	local _error
 	shift; shift; shift
-	_result=`/sbin/validate_data "$_package" "$_type" "$_name" "$@" 2> /dev/null`
+	_result=$(/sbin/validate_data "$_package" "$_type" "$_name" "$@" 2> /dev/null)
 	_error=$?
 	eval "$_result"
-	[ "$_error" = "0" ] || `/sbin/validate_data "$_package" "$_type" "$_name" "$@" 1> /dev/null`
+	[ "$_error" = "0" ] || $(/sbin/validate_data "$_package" "$_type" "$_name" "$@" 1> /dev/null)
 	return $_error
 }
 

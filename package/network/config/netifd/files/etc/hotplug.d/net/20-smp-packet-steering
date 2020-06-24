@@ -14,7 +14,7 @@ find_irq_cpu() {
 	[ -n "$match" ] && {
 		set -- $match
 		shift
-		for cur in `seq 1 $NPROCS`; do
+		for cur in $(seq 1 $NPROCS); do
 			[ "$1" -gt 0 ] && {
 				cpu=$(($cur - 1))
 				break
@@ -52,11 +52,16 @@ for dev in /sys/class/net/*; do
 	irq_cpu="$(find_irq_cpu "$device")"
 	irq_cpu_mask="$((1 << $irq_cpu))"
 
-	for q in ${dev}/queues/rx-*; do
-		set_hex_val "$q/rps_cpus" "$PROC_MASK"
-	done
-
 	for q in ${dev}/queues/tx-*; do
 		set_hex_val "$q/xps_cpus" "$PROC_MASK"
+	done
+
+	# ignore dsa slave ports for RPS
+	subsys="$(readlink "${dev}/device/subsystem")"
+	subsys="$(basename "$subsys")"
+	[ "$subsys" = "mdio_bus" ] && continue
+
+	for q in ${dev}/queues/rx-*; do
+		set_hex_val "$q/rps_cpus" "$PROC_MASK"
 	done
 done

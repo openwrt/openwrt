@@ -60,7 +60,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
  jffs2-$(CONFIG_JFFS2_RTIME)	+= compr_rtime.o
  jffs2-$(CONFIG_JFFS2_ZLIB)	+= compr_zlib.o
  jffs2-$(CONFIG_JFFS2_LZO)	+= compr_lzo.o
-+jffs2-$(CONFIG_JFFS2_LZMA)      += compr_lzma.o
++jffs2-$(CONFIG_JFFS2_LZMA)	+= compr_lzma.o
  jffs2-$(CONFIG_JFFS2_SUMMARY)   += summary.o
 +
 +CFLAGS_compr_lzma.o += -Iinclude/linux -Ilib/lzma
@@ -71,7 +71,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
  	jffs2_lzo_init();
  #endif
 +#ifdef CONFIG_JFFS2_LZMA
-+        jffs2_lzma_init();
++	jffs2_lzma_init();
 +#endif
  /* Setting default compression mode */
  #ifdef CONFIG_JFFS2_CMODE_NONE
@@ -81,7 +81,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
  {
  /* Unregistering compressors */
 +#ifdef CONFIG_JFFS2_LZMA
-+        jffs2_lzma_exit();
++	jffs2_lzma_exit();
 +#endif
  #ifdef CONFIG_JFFS2_LZO
  	jffs2_lzo_exit();
@@ -152,14 +152,14 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +		lzma_free_workspace();
 +		return -1;
 +	}
-+	
++
 +	if (LzmaEnc_WriteProperties(p, propsEncoded, &propsSize) != SZ_OK)
 +	{
 +		lzma_free_workspace();
 +		return -1;
 +	}
 +
-+        return 0;
++	return 0;
 +}
 +
 +STATIC int jffs2_lzma_compress(unsigned char *data_in, unsigned char *cpage_out,
@@ -194,7 +194,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +	SizeT dl = (SizeT)destlen;
 +	SizeT sl = (SizeT)srclen;
 +	ELzmaStatus status;
-+	
++
 +	ret = LzmaDecode(cpage_out, &dl, data_in, &sl, propsEncoded,
 +		propsSize, LZMA_FINISH_ANY, &status, &lzma_alloc);
 +
@@ -215,26 +215,26 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +
 +int INIT jffs2_lzma_init(void)
 +{
-+        int ret;
++	int ret;
 +	CLzmaEncProps props;
 +	LzmaEncProps_Init(&props);
 +
-+        props.dictSize = LZMA_BEST_DICT(0x2000);
-+        props.level = LZMA_BEST_LEVEL;
-+        props.lc = LZMA_BEST_LC;
-+        props.lp = LZMA_BEST_LP;
-+        props.pb = LZMA_BEST_PB;
-+        props.fb = LZMA_BEST_FB;
++	props.dictSize = LZMA_BEST_DICT(0x2000);
++	props.level = LZMA_BEST_LEVEL;
++	props.lc = LZMA_BEST_LC;
++	props.lp = LZMA_BEST_LP;
++	props.pb = LZMA_BEST_PB;
++	props.fb = LZMA_BEST_FB;
 +
 +	ret = lzma_alloc_workspace(&props);
-+        if (ret < 0)
-+                return ret;
++	if (ret < 0)
++		return ret;
 +
 +	ret = jffs2_register_compressor(&jffs2_lzma_comp);
 +	if (ret)
 +		lzma_free_workspace();
-+	
-+        return ret;
++
++	return ret;
 +}
 +
 +void jffs2_lzma_exit(void)
@@ -339,16 +339,16 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +
 +static void *p_lzma_malloc(void *p, size_t size)
 +{
-+        if (size == 0)
-+                return NULL;
++	if (size == 0)
++		return NULL;
 +
-+        return LZMA_MALLOC(size);
++	return LZMA_MALLOC(size);
 +}
 +
 +static void p_lzma_free(void *p, void *address)
 +{
-+        if (address != NULL)
-+                LZMA_FREE(address);
++	if (address != NULL)
++		LZMA_FREE(address);
 +}
 +
 +static ISzAlloc lzma_alloc = {p_lzma_malloc, p_lzma_free};
@@ -664,7 +664,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +  SZ_ERROR_MEM         - Memory allocation error
 +  SZ_ERROR_UNSUPPORTED - Unsupported properties
 +*/
-+   
++
 +SRes LzmaDec_AllocateProbs(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc);
 +void LzmaDec_FreeProbs(CLzmaDec *p, ISzAlloc *alloc);
 +
@@ -693,7 +693,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +*/
 +
 +/* LzmaDec_DecodeToDic
-+   
++
 +   The decoding to internal dictionary buffer (CLzmaDec::dic).
 +   You must manually update CLzmaDec::dicPos, if it reaches CLzmaDec::dicBufSize !!!
 +
@@ -1645,7 +1645,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +
 +  delta2 = p->pos - p->hash[hash2Value];
 +  curMatch = p->hash[kFix3HashSize + hashValue];
-+  
++
 +  p->hash[hash2Value] =
 +  p->hash[kFix3HashSize + hashValue] = p->pos;
 +
@@ -1679,7 +1679,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +  delta2 = p->pos - p->hash[                hash2Value];
 +  delta3 = p->pos - p->hash[kFix3HashSize + hash3Value];
 +  curMatch = p->hash[kFix4HashSize + hashValue];
-+  
++
 +  p->hash[                hash2Value] =
 +  p->hash[kFix3HashSize + hash3Value] =
 +  p->hash[kFix4HashSize + hashValue] = p->pos;
@@ -2038,7 +2038,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +  Byte *dic = p->dic;
 +  SizeT dicBufSize = p->dicBufSize;
 +  SizeT dicPos = p->dicPos;
-+  
++
 +  UInt32 processedPos = p->processedPos;
 +  UInt32 checkDicSize = p->checkDicSize;
 +  unsigned len = 0;
@@ -2221,7 +2221,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +            {
 +              NORMALIZE
 +              range >>= 1;
-+              
++
 +              {
 +                UInt32 t;
 +                code -= range;
@@ -2619,7 +2619,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +  SizeT inSize = *srcLen;
 +  (*srcLen) = 0;
 +  LzmaDec_WriteRem(p, dicLimit);
-+  
++
 +  *status = LZMA_STATUS_NOT_SPECIFIED;
 +
 +  while (p->remainLen != kMatchSpecLenStart)
@@ -2665,7 +2665,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +
 +      if (p->needInitState)
 +        LzmaDec_InitStateReal(p);
-+  
++
 +      if (p->tempBufSize == 0)
 +      {
 +        SizeT processed;
@@ -2796,12 +2796,12 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +{
 +  UInt32 dicSize;
 +  Byte d;
-+  
++
 +  if (size < LZMA_PROPS_SIZE)
 +    return SZ_ERROR_UNSUPPORTED;
 +  else
 +    dicSize = data[1] | ((UInt32)data[2] << 8) | ((UInt32)data[3] << 16) | ((UInt32)data[4] << 24);
-+ 
++
 +  if (dicSize < LZMA_DIC_MIN)
 +    dicSize = LZMA_DIC_MIN;
 +  p->dicSize = dicSize;
@@ -2883,7 +2883,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +  p.dicBufSize = outSize;
 +
 +  LzmaDec_Init(&p);
-+  
++
 +  *srcLen = inSize;
 +  res = LzmaDec_DecodeToDic(&p, outSize, src, srcLen, finishMode, status);
 +
@@ -3011,7 +3011,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +  int c = 2, slotFast;
 +  g_FastPos[0] = 0;
 +  g_FastPos[1] = 1;
-+  
++
 +  for (slotFast = 2; slotFast < kNumLogBits * 2; slotFast++)
 +  {
 +    UInt32 k = (1 << ((slotFast >> 1) - 1));
@@ -3148,7 +3148,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +  CLzmaProb posSlotEncoder[kNumLenToPosStates][1 << kNumPosSlotBits];
 +  CLzmaProb posEncoders[kNumFullDistances - kEndPosModelIndex];
 +  CLzmaProb posAlignEncoder[1 << kNumAlignBits];
-+  
++
 +  CLenPriceEnc lenEnc;
 +  CLenPriceEnc repLenEnc;
 +
@@ -3171,7 +3171,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +  #ifndef _7ZIP_ST
 +  Byte pad[128];
 +  #endif
-+  
++
 +  UInt32 optimumEndIndex;
 +  UInt32 optimumCurrentIndex;
 +
@@ -3179,7 +3179,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +  UInt32 numPairs;
 +  UInt32 numAvail;
 +  COptimal opt[kNumOpts];
-+  
++
 +  #ifndef LZMA_LOG_BSR
 +  Byte g_FastPos[1 << kNumLogBits];
 +  #endif
@@ -3213,14 +3213,14 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +  CLzmaProb posSlotEncoder[kNumLenToPosStates][1 << kNumPosSlotBits];
 +  CLzmaProb posEncoders[kNumFullDistances - kEndPosModelIndex];
 +  CLzmaProb posAlignEncoder[1 << kNumAlignBits];
-+  
++
 +  CLenPriceEnc lenEnc;
 +  CLenPriceEnc repLenEnc;
 +
 +  unsigned lclp;
 +
 +  Bool fastMode;
-+  
++
 +  CRangeEnc rc;
 +
 +  Bool writeEndMark;
@@ -3811,10 +3811,10 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +    {
 +      UInt32 posPrev = posMem;
 +      UInt32 backCur = backMem;
-+      
++
 +      backMem = p->opt[posPrev].backPrev;
 +      posMem = p->opt[posPrev].posPrev;
-+      
++
 +      p->opt[posPrev].backPrev = backCur;
 +      p->opt[posPrev].posPrev = cur;
 +      cur = posPrev;
@@ -3845,7 +3845,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +    return lenRes;
 +  }
 +  p->optimumCurrentIndex = p->optimumEndIndex = 0;
-+  
++
 +  if (p->additionalOffset == 0)
 +    mainLen = ReadMatchDistances(p, &numPairs);
 +  else
@@ -4143,7 +4143,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +
 +    matchPrice = curPrice + GET_PRICE_1(p->isMatch[state][posState]);
 +    repMatchPrice = matchPrice + GET_PRICE_1(p->isRep[state]);
-+    
++
 +    if (matchByte == curByte && !(nextOpt->posPrev < cur && nextOpt->backPrev == 0))
 +    {
 +      UInt32 shortRepPrice = repMatchPrice + GetRepLen1Price(p, state, posState);
@@ -4205,7 +4205,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +        }
 +      }
 +    }
-+    
++
 +    startLen = 2; /* speed optimization */
 +    {
 +    UInt32 repIndex;
@@ -4236,10 +4236,10 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +      }
 +      while (--lenTest >= 2);
 +      lenTest = lenTestTemp;
-+      
++
 +      if (repIndex == 0)
 +        startLen = lenTest + 1;
-+        
++
 +      /* if (_maxMode) */
 +        {
 +          UInt32 lenTest2 = lenTest + 1;
@@ -4263,7 +4263,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +            nextRepMatchPrice = curAndLenCharPrice +
 +                GET_PRICE_1(p->isMatch[state2][posStateNext]) +
 +                GET_PRICE_1(p->isRep[state2]);
-+            
++
 +            /* for (; lenTest2 >= 2; lenTest2--) */
 +            {
 +              UInt32 curAndLenPrice;
@@ -4318,7 +4318,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +          curAndLenPrice += p->distancesPrices[lenToPosState][curBack];
 +        else
 +          curAndLenPrice += p->posSlotPrices[lenToPosState][posSlot] + p->alignPrices[curBack & kAlignMask];
-+        
++
 +        opt = &p->opt[cur + lenTest];
 +        if (curAndLenPrice < opt->price)
 +        {
@@ -4352,7 +4352,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +            nextRepMatchPrice = curAndLenCharPrice +
 +                GET_PRICE_1(p->isMatch[state2][posStateNext]) +
 +                GET_PRICE_1(p->isRep[state2]);
-+            
++
 +            /* for (; lenTest2 >= 2; lenTest2--) */
 +            {
 +              UInt32 offset = cur + lenTest + 1 + lenTest2;
@@ -4464,7 +4464,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +    MovePos(p, repLen - 1);
 +    return repLen;
 +  }
-+  
++
 +  if (mainLen < 2 || numAvail <= 2)
 +    return 1;
 +
@@ -4478,7 +4478,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +        (p->longestMatchLength + 1 >= mainLen && mainLen >= 3 && ChangePair(newDistance, mainDist)))
 +      return 1;
 +  }
-+  
++
 +  data = p->matchFinder.GetPointerToCurrentPos(p->matchFinderObj) - 1;
 +  for (i = 0; i < LZMA_NUM_REPS; i++)
 +  {
@@ -4739,7 +4739,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +        pos -= LZMA_NUM_REPS;
 +        GetPosSlot(pos, posSlot);
 +        RcTree_Encode(&p->rc, p->posSlotEncoder[GetLenToPosState(len)], kNumPosSlotBits, posSlot);
-+        
++
 +        if (posSlot >= kStartPosModelIndex)
 +        {
 +          UInt32 footerBits = ((posSlot >> 1) - 1);
@@ -5044,7 +5044,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +  p->rc.outStream = &outStream.funcTable;
 +
 +  res = LzmaEnc_CodeOneBlock(p, True, desiredPackSize, *unpackSize);
-+  
++
 +  *unpackSize = (UInt32)(p->nowPos64 - nowPos64);
 +  *destLen -= outStream.rem;
 +  if (outStream.overflow)

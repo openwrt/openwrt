@@ -12,7 +12,7 @@ BOARDNAME:=Cavium Networks Octeon
 FEATURES:=squashfs ramdisk pci usb
 CPU_TYPE:=octeonplus
 
-KERNEL_PATCHVER:=4.19
+KERNEL_PATCHVER:=5.4
 KERNEL_TESTING_PATCHVER:=5.4
 
 define Target/Description

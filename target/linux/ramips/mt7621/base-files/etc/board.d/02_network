@@ -21,14 +21,16 @@ ramips_setup_interfaces()
 		;;
 	gehua,ghl-r-001|\
 	hiwifi,hc5962|\
-	xiaomi,mir3p)
+	xiaomi,mir3p|\
+	xiaomi,redmi-router-ac2100)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	gnubee,gb-pc1|\
 	gnubee,gb-pc2)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
-	linksys,re6500)
+	linksys,re6500|\
+	netgear,wac104)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
 	mikrotik,routerboard-m11g|\
@@ -43,10 +45,10 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
 		;;
 	ubnt,edgerouter-x)
-		ucidef_set_interface_lan "eth0 eth1 eth2 eth3 eth4"
+		ucidef_set_interface_lan_wan "eth1 eth2 eth3 eth4" "eth0"
 		;;
 	ubnt,edgerouter-x-sfp)
-		ucidef_set_interface_lan "eth0 eth1 eth2 eth3 eth4 eth5"
+		ucidef_set_interface_lan_wan "eth1 eth2 eth3 eth4 eth5" "eth0"
 		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
@@ -91,10 +93,17 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
 		;;
+	linksys,ea7500-v2)
+		lan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		wan_mac=$lan_mac
+		label_mac=$lan_mac
+		;;
 	mikrotik,routerboard-750gr3|\
 	mikrotik,routerboard-m11g|\
 	mikrotik,routerboard-m33g)
-		label_mac=$(mtd_get_mac_binary hard_config 0x10)
+		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
+		wan_mac=$label_mac
+		lan_mac=$(macaddr_add $label_mac 1)
 		;;
 	zbtlink,zbt-we1326|\
 	zbtlink,zbt-wg3526-16m|\

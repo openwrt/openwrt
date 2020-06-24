@@ -352,6 +352,16 @@ define Device/tplink_cpe610-v1
 endef
 TARGET_DEVICES += tplink_cpe610-v1
 
+define Device/tplink_cpe610-v2
+  $(Device/tplink-safeloader-okli)
+  SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := CPE610
+  DEVICE_VARIANT := v2
+  TPLINK_BOARD_ID := CPE610V2
+endef
+TARGET_DEVICES += tplink_cpe610-v2
+
 define Device/tplink_re350k-v1
   $(Device/tplink-safeloader)
   SOC := qca9558
@@ -399,6 +409,18 @@ define Device/tplink_re450-v2
   LOADER_TYPE := elf
 endef
 TARGET_DEVICES += tplink_re450-v2
+
+define Device/tplink_re450-v3
+  $(Device/tplink-safeloader)
+  SOC := qca9563
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := RE450
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
+  TPLINK_BOARD_ID := RE450-V3
+  LOADER_TYPE := elf
+endef
+TARGET_DEVICES += tplink_re450-v3
 
 define Device/tplink_tl-mr6400-v1
   $(Device/tplink-8mlzma)
@@ -474,6 +496,7 @@ define Device/tplink_tl-wdr4900-v2
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x49000002
+  SUPPORTED_DEVICES += tl-wdr4900-v2
 endef
 TARGET_DEVICES += tplink_tl-wdr4900-v2
 
@@ -576,6 +599,7 @@ define Device/tplink_tl-wr810n-v1
   DEVICE_VARIANT := v1
   TPLINK_HWID := 0x8100001
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += tl-wr810n
 endef
 TARGET_DEVICES += tplink_tl-wr810n-v1
 
@@ -585,6 +609,7 @@ define Device/tplink_tl-wr810n-v2
   DEVICE_MODEL := TL-WR810N
   DEVICE_VARIANT := v2
   TPLINK_HWID := 0x8100002
+  SUPPORTED_DEVICES += tl-wr810n-v2
 endef
 TARGET_DEVICES += tplink_tl-wr810n-v2
 
@@ -595,6 +620,7 @@ define Device/tplink_tl-wr842n-v1
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x8420001
+  SUPPORTED_DEVICES += tl-mr3420
 endef
 TARGET_DEVICES += tplink_tl-wr842n-v1
 
@@ -633,6 +659,18 @@ define Device/tplink_tl-wr902ac-v1
   SUPPORTED_DEVICES += tl-wr902ac-v1
 endef
 TARGET_DEVICES += tplink_tl-wr902ac-v1
+
+define Device/tplink_wbs210-v1
+  $(Device/tplink-safeloader-okli)
+  SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := WBS210
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := rssileds
+  TPLINK_BOARD_ID := WBS210
+  SUPPORTED_DEVICES += wbs210
+endef
+TARGET_DEVICES += tplink_wbs210-v1
 
 define Device/tplink_wbs210-v2
   $(Device/tplink-safeloader-okli)

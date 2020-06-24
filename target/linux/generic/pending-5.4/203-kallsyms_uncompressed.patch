@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1295,6 +1295,17 @@ config SYSCTL_ARCH_UNALIGN_ALLOW
+@@ -1277,6 +1277,17 @@ config SYSCTL_ARCH_UNALIGN_ALLOW
  	  the unaligned access emulation.
  	  see arch/parisc/kernel/unaligned.c for reference
  
@@ -106,7 +106,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		}
 --- a/scripts/link-vmlinux.sh
 +++ b/scripts/link-vmlinux.sh
-@@ -152,6 +152,10 @@ kallsyms()
+@@ -160,6 +160,10 @@ kallsyms()
  		kallsymopt="${kallsymopt} --base-relative"
  	fi
  

@@ -30,12 +30,12 @@ platform_do_upgrade() {
 	solidrun,clearfog-pro-a1)
 		platform_do_upgrade_sdcard "$1"
 		;;
-	linksys,caiman|\
-	linksys,cobra|\
-	linksys,mamba|\
-	linksys,rango|\
-	linksys,shelby|\
-	linksys,venom)
+	linksys,wrt1200ac|\
+	linksys,wrt1900ac-v1|\
+	linksys,wrt1900ac-v2|\
+	linksys,wrt1900acs|\
+	linksys,wrt3200acm|\
+	linksys,wrt32x)
 		platform_do_upgrade_linksys "$1"
 		;;
 	*)
@@ -50,12 +50,12 @@ platform_copy_config() {
 	solidrun,clearfog-pro-a1)
 		platform_copy_config_sdcard
 		;;
-	linksys,caiman|\
-	linksys,cobra|\
-	linksys,mamba|\
-	linksys,rango|\
-	linksys,shelby|\
-	linksys,venom)
+	linksys,wrt1200ac|\
+	linksys,wrt1900ac-v1|\
+	linksys,wrt1900ac-v2|\
+	linksys,wrt1900acs|\
+	linksys,wrt3200acm|\
+	linksys,wrt32x)
 		platform_copy_config_linksys
 		;;
 	esac

@@ -8,6 +8,13 @@
 	model = "Inventel Livebox 1";
 	compatible = "inventel,livebox-1", "brcm,bcm6348";
 
+	aliases {
+		led-boot = &led_red_adsl_fail;
+		led-failsafe = &led_red_adsl_fail;
+		led-running = &led_red_adsl_fail;
+		led-upgrade = &led_red_adsl_fail;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -37,7 +44,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		red_adsl_fail {
+		led_red_adsl_fail: red_adsl_fail {
 			label = "Livebox1:red:adsl-fail-power";
 			gpios = <&pinctrl 0 0>;
 			default-state = "on";
@@ -67,7 +74,7 @@
 
 &pflash {
 	reg = <0x1e400000 0x800000>;
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "ecoscentric,redboot-fis-partitions";
@@ -80,5 +87,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

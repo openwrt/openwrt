@@ -8,6 +8,13 @@
 	model = "D-Link DSL-2740B/DSL-2741B rev F1";
 	compatible = "d-link,dsl-274xb-f1", "brcm,bcm6328";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -52,7 +59,7 @@
 			label = "dsl-274xb:green:dsl";
 			gpios = <&pinctrl 3 1>;
 		};
-		power_green {
+		led_power_green: power_green {
 			label = "dsl-274xb:green:power";
 			gpios = <&pinctrl 4 1>;
 			default-state = "on";
@@ -73,7 +80,7 @@
 };
 
 &hsspi {
-	status = "ok";
+	status = "okay";
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -117,5 +124,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

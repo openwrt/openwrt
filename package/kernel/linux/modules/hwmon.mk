@@ -29,6 +29,20 @@ define AddDepends/hwmon
   DEPENDS:=+kmod-hwmon-core $(1)
 endef
 
+define KernelPackage/hwmon-ad7418
+  TITLE:=AD741x monitoring support
+  KCONFIG:=CONFIG_SENSORS_AD7418
+  FILES:=$(LINUX_DIR)/drivers/hwmon/ad7418.ko
+  AUTOLOAD:=$(call AutoLoad,60,ad7418 ad7418)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-ad7418/description
+ Kernel module for Analog Devices AD7416, AD7417 and AD7418 temperature monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-ad7418))
+
 define KernelPackage/hwmon-ads1015
   TITLE:=Texas Instruments ADS1015
   KCONFIG:= CONFIG_SENSORS_ADS1015

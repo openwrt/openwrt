@@ -16,7 +16,7 @@
 		led-failsafe = &led_wired_blue;
 	};
 
-	cfi@1f000000 {
+	flash@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0xbc400000 0x800000>;
 		bank-width = <2>;

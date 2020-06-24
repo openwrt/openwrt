@@ -111,8 +111,8 @@ define Device/Default
   IMAGE/combined.img.gz := grub-config pc | combined | grub-install | gzip | append-metadata
   IMAGE/combined.vdi := grub-config pc | combined | grub-install | qemu-image vdi
   IMAGE/combined.vmdk := grub-config pc | combined | grub-install | qemu-image vmdk
-  IMAGE/rootfs.img := append-rootfs
-  IMAGE/rootfs.img.gz := append-rootfs | gzip
+  IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
+  IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
   ARTIFACT/image-efi.iso := grub-config iso | iso efi
   IMAGE/combined-efi.img := grub-config efi | combined efi | grub-install efi | append-metadata
   IMAGE/combined-efi.img.gz := grub-config efi | combined efi | grub-install efi | gzip | append-metadata
@@ -146,21 +146,7 @@ define Device/Default
   ARTIFACTS := $$(ARTIFACTS-y)
 endef
 
-ifeq ($(SUBTARGET),64)
-  include 64.mk
-endif
-
-ifeq ($(SUBTARGET),generic)
-  include generic.mk
-endif
-
-ifeq ($(SUBTARGET),geode)
-  include geode.mk
-endif
-
-ifeq ($(SUBTARGET),legacy)
-  include legacy.mk
-endif
+include $(SUBTARGET).mk
 
 $(eval $(call BuildImage))
 

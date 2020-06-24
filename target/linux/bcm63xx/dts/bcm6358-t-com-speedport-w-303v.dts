@@ -8,6 +8,13 @@
 	model = "T-Com Speedport W 303V";
 	compatible = "t-com,speedport-w-303v", "brcm,bcm6358";
 
+	aliases {
+		led-boot = &led_power_adsl_green;
+		led-failsafe = &led_power_adsl_green;
+		led-running = &led_power_adsl_green;
+		led-upgrade = &led_power_adsl_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -49,7 +56,7 @@
 			label = "spw303v:green:ppp";
 			gpios = <&pinctrl 5 1>;
 		};
-		power_adsl_green {
+		led_power_adsl_green: power_adsl_green {
 			label = "spw303v:green:power+adsl";
 			gpios = <&pinctrl 22 1>;
 			default-state = "on";
@@ -66,7 +73,7 @@
 };
 
 &pflash {
-	status = "ok";
+	status = "okay";
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -93,5 +100,5 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

@@ -56,8 +56,6 @@ define Device/Default
   DEVICE_DTS = rockchip/$$(SOC)-$(lastword $(subst _, ,$(1)))
 endef
 
-ifeq ($(SUBTARGET),armv8)
-  include armv8.mk
-endif
+include $(SUBTARGET).mk
 
 $(eval $(call BuildImage))

@@ -8,6 +8,13 @@
 	model = "Comtrend AR-5381u";
 	compatible = "comtrend,ar-5381u", "brcm,bcm6328";
 
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_alarm_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
 	chosen {
 		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 		stdout-path = "serial0:115200n8";
@@ -26,28 +33,10 @@
 			debounce-interval = <60>;
 		};
 	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		alarm_red {
-			label = "AR-5381u:red:alarm";
-			gpios = <&pinctrl 2 1>;
-		};
-		inet_green {
-			label = "AR-5381u:green:inet";
-			gpios = <&pinctrl 3 1>;
-		};
-		power_green {
-			label = "AR-5381u:green:power";
-			gpios = <&pinctrl 4 1>;
-			default-state = "on";
-		};
-	};
 };
 
 &hsspi {
-	status = "ok";
+	status = "okay";
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -84,6 +73,39 @@
 	};
 };
 
+&leds {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_leds>;
+
+	led_alarm_red: led@2 {
+		reg = <2>;
+		active-low;
+		label = "AR-5381u:red:alarm";
+	};
+
+	led@3 {
+		reg = <3>;
+		active-low;
+		label = "AR-5381u:green:inet";
+	};
+
+	led_power_green: led@4 {
+		reg = <4>;
+		active-low;
+		label = "AR-5381u:green:power";
+		default-state = "on";
+	};
+};
+
+&pinctrl {
+	pinctrl_leds: leds {
+		function = "led";
+		pins = "gpio2", "gpio3", "gpio4";
+	};
+};
+
 &uart0 {
-	status = "ok";
+	status = "okay";
 };

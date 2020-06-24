@@ -28,7 +28,7 @@ endef
 # UBNT_BOARD e.g. one of (XS2, XS5, RS, XM)
 # UBNT_TYPE e.g. one of (BZ, XM, XW)
 # UBNT_CHIP e.g. one of (ar7240, ar933x, ar934x)
-# UBNT_VERSION e.g. one of (6.0.0, 8.5.0)
+# UBNT_VERSION e.g. one of (6.0.0, 8.5.3)
 define Device/ubnt
   DEVICE_VENDOR := Ubiquiti
   DEVICE_PACKAGES := kmod-usb2
@@ -66,7 +66,16 @@ define Device/ubnt-wa
   UBNT_BOARD := WA
   UBNT_CHIP := ar934x
   UBNT_TYPE := WA
-  UBNT_VERSION := 8.5.0
+  UBNT_VERSION := 8.5.3
+endef
+
+define Device/ubnt-xc
+  $(Device/ubnt)
+  IMAGE_SIZE := 15744k
+  UBNT_BOARD := XC
+  UBNT_CHIP := qca955x
+  UBNT_TYPE := XC
+  UBNT_VERSION := 8.5.3
 endef
 
 define Device/ubnt-xm
@@ -242,6 +251,23 @@ define Device/ubnt_picostation-m
   SUPPORTED_DEVICES += bullet-m
 endef
 TARGET_DEVICES += ubnt_picostation-m
+
+define Device/ubnt_powerbeam-5ac-500
+  $(Device/ubnt-xc)
+  SOC := qca9558
+  DEVICE_MODEL := PowerBeam 5AC
+  DEVICE_VARIANT := 500
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += ubnt_powerbeam-5ac-500
+
+define Device/ubnt_powerbeam-5ac-gen2
+  $(Device/ubnt-wa)
+  DEVICE_MODEL := PowerBeam 5AC
+  DEVICE_VARIANT := Gen2
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct rssileds
+endef
+TARGET_DEVICES += ubnt_powerbeam-5ac-gen2
 
 define Device/ubnt_rocket-m
   $(Device/ubnt-xm)
