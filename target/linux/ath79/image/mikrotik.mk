@@ -1,5 +1,16 @@
 include ./common-mikrotik.mk
 
+define Device/mikrotik_routerboard-493ah
+  $(Device/mikrotik)
+  SOC := ar7161
+  DEVICE_MODEL := RouterBOARD 493AH
+  IMAGE/sysupgrade.bin = append-kernel | kernel2minor -s 2048 -e -c | \
+	sysupgrade-tar kernel=$$$$@ | append-metadata
+  DEVICE_PACKAGES += nand-utils
+  SUPPORTED_DEVICES += rb-493ah
+endef
+TARGET_DEVICES += mikrotik_routerboard-493ah
+
 define Device/mikrotik_routerboard-493g
   $(Device/mikrotik)
   SOC := ar7161
