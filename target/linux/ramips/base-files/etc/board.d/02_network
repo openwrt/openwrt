@@ -178,7 +178,8 @@ ramips_setup_interfaces()
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
 	alfa-network,r36m-e4g|\
-	wcr-1166ds)
+	wcr-1166ds|\
+	wavlink,wl-wn577a2)
 		ucidef_add_switch "switch0" \
 			"3:lan" "4:wan" "6@eth0"
 		;;
@@ -659,6 +660,10 @@ ramips_setup_macs()
 	w306r-v20)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 5)
+		;;
+	wavlink,wl-wn577a2)
+		wan_mac=$(mtd_get_mac_binary factory 0x2e)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	wcr-1166ds|\
 	wsr-1166)

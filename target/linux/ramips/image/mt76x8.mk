@@ -419,6 +419,15 @@ define Device/wcr-1166ds
 endef
 TARGET_DEVICES += wcr-1166ds
 
+define Device/wavlink_wl-wn577a2
+  DTS := WL-WN577A2
+  IMAGE_SIZE := 7872k
+  DEVICE_TITLE := Wavlink WL-WN577A2
+  DEVICE_PACKAGES := kmod-mt76x0e
+  SUPPORTED_DEVICES += wl-wn577a2
+endef
+TARGET_DEVICES += wavlink_wl-wn577a2
+
 define Device/widora_neo-16m
   DTS := WIDORA-NEO-16M
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
