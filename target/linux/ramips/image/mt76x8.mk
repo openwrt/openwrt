@@ -544,7 +544,6 @@ define Device/wavlink_wl-wn577a2
   DEVICE_ALT0_VENDOR := Maginon
   DEVICE_ALT0_MODEL := WLR-755
   DEVICE_PACKAGES := kmod-mt76x0e
-  SUPPORTED_DEVICES += wl-wn577a2
 endef
 TARGET_DEVICES += wavlink_wl-wn577a2
 

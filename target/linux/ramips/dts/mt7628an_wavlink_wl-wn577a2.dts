@@ -1,4 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 /dts-v1/;
+
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 
@@ -8,16 +10,12 @@
 	compatible = "wavlink,wl-wn577a2", "maginon,wlr-755", "mediatek,mt7628an-soc";
 	model = "WAVLINK WL-WN577A2";
 
-	chosen {
-		bootargs = "console=ttyS0,57600";
-	};
-
 	aliases {
 		led-boot = &led_wps;
 		led-failsafe = &led_wps;
 		led-running = &led_wps;
 		led-upgrade = &led_wps;
-    };
+	};
 
 	keys {
 		compatible = "gpio-keys";
@@ -47,7 +45,7 @@
 
 &state_default {
 	gpio {
-        groups = "i2c", "wled_an", "gpio", "refclk", "wdt", "p0led_an";
+		groups = "i2c", "wdt", "p0led_an";
 		function = "gpio";
 	};
 };
@@ -70,7 +68,7 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <40000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
