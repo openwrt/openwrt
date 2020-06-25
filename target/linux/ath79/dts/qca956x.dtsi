@@ -8,6 +8,10 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
