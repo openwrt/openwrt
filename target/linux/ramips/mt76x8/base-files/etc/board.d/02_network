@@ -38,6 +38,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
+	wavlink,wl-wn577a2|\
 	buffalo,wcr-1166ds)
 		ucidef_add_switch "switch0" \
 			"3:lan" "4:wan" "6@eth0"
@@ -183,6 +184,11 @@ ramips_setup_macs()
 	wavlink,wl-wn575a3|\
 	wiznet,wizfi630s)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x28)" 1)
+		;;
+	wavlink,wl-wn577a2)
+		wan_mac=$(mtd_get_mac_binary factory 0x2e)
+		lan_mac=$(mtd_get_mac_binary factory 0x28)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	skylab,skw92a|\
 	totolink,lr1200)
