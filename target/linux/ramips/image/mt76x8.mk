@@ -556,6 +556,16 @@ define Device/wavlink_wl-wn575a3
 endef
 TARGET_DEVICES += wavlink_wl-wn575a3
 
+define Device/wavlink_wl-wn577a2
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN577A2
+  DEVICE_ALT0_VENDOR := Maginon
+  DEVICE_ALT0_MODEL := WLR-755
+  DEVICE_PACKAGES := kmod-mt76x0e
+endef
+TARGET_DEVICES += wavlink_wl-wn577a2
+
 define Device/widora_neo-16m
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Widora
