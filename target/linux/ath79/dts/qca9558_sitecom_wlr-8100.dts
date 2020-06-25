@@ -10,10 +10,6 @@
 	model = "Sitecom WLR-8100 (X8 AC1750)";
 	compatible = "sitecom,wlr-8100", "qca,qca9558";
 
-	chosen {
-		bootargs = "console=ttyS0,115200n8";
-	};
-
 	aliases {
 		led-boot = &led_status_amber;
 		led-failsafe = &led_status_amber;
