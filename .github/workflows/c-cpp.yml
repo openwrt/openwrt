@@ -1,0 +1,27 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ v19.07.3 ]
+  pull_request:
+    branches: [ v19.07.3 ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: update
+      run: ./scripts/feeds update -a
+    - name: install update
+      run: ./scripts/feeds install -a
+    - name: configure
+      run: make menuconfigure
+    - name: make
+      run: make
+    - name: make check
+      run: make check
+    - name: make distcheck
+      run: make distcheck
