@@ -30,6 +30,21 @@ define Build/zyxel-factory
 		fi
 endef
 
+define Device/8dev_rambutan
+  SOC := qca9557
+  DEVICE_VENDOR := 8devices
+  DEVICE_MODEL := Rambutan
+  DEVICE_PACKAGES := kmod-usb2
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  KERNEL_IN_UBI := 1
+  IMAGES := factory.bin sysupgrade.tar
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-ubi
+endef
+TARGET_DEVICES += 8dev_rambutan
+
 define Device/aerohive_hiveap-121
   SOC := ar9344
   DEVICE_VENDOR := Aerohive
