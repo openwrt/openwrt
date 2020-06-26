@@ -36,6 +36,16 @@
 	leds {
 		compatible = "gpio-leds";
 
+		led_lan: lan {
+			label = "wl-wn577a2:green:lan";
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wan: wan {
+			label = "wl-wn577a2:green:wan";
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+		};
+
 		led_wps: wps {
 			label = "wl-wn577a2:green:wps";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
@@ -45,7 +55,7 @@
 
 &state_default {
 	gpio {
-		groups = "i2c", "wdt", "p0led_an";
+		groups = "i2c", "wdt", "p0led_an", "p3led_an", "p4led_an";
 		function = "gpio";
 	};
 };
@@ -112,4 +122,16 @@
 
 &esw {
 	mediatek,portmap = <0x2f>;
+};
+
+&usbphy {
+    status = "disabled";
+};
+
+&ehci {
+    status = "disabled";
+};
+
+&ohci {
+    status = "disabled";
 };
