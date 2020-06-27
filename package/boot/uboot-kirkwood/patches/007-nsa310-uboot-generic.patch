@@ -505,7 +505,7 @@ NOTE: this patch is ready for upstream, LEDE-specific parts are in
 +#endif /* __NSA310_H */
 --- /dev/null
 +++ b/configs/nsa310_defconfig
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,48 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_DCACHE_OFF=y
 +CONFIG_ARCH_CPU_INIT=y
@@ -554,8 +554,6 @@ NOTE: this patch is ready for upstream, LEDE-specific parts are in
 +CONFIG_LZMA=y
 +CONFIG_LZO=y
 +CONFIG_SYS_LONGHELP=y
-+CONFIG_SATA_MV=y
-+CONFIG_CMD_IDE=y
 --- /dev/null
 +++ b/include/configs/nsa310.h
 @@ -0,0 +1,103 @@
