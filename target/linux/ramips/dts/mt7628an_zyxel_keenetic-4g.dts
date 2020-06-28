@@ -18,7 +18,6 @@
 	leds {
 		compatible = "gpio-leds";
 
-		
 		internet {
 			label = "keenetic-4g:green:internet";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
@@ -35,14 +34,13 @@
 	
 	keys {
 		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		poll-interval = <14>;
 
 		reset {
-            label = "reset";
-            gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+            		label = "reset";
+            		gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
         };
-
 
 		wps {
 			label = "wps";
