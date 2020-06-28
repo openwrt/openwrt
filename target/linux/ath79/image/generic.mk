@@ -50,6 +50,29 @@ define Build/cybertan-trx
 	-rm $@-empty.bin
 endef
 
+define Build/mkmylofw_16m
+	$(eval device_id=$(word 1,$(1)))
+	$(eval revision=$(word 2,$(1)))
+
+	# On WPJ344, WPJ531, and WPJ563, the default boot command tries 0x9f680000
+	# first and fails if the remains of the stock image are sill there
+	# - resulting in an infinite boot loop.
+	# The size parameter is grown to have that block deleted if the firmware
+	# isn't big enough by itself.
+
+	let \
+		size="$$(stat -c%s $@)" \
+		pad="$(subst k,* 1024,$(BLOCKSIZE))" \
+		pad="(pad - (size % pad)) % pad" \
+		newsize='size + pad' ; \
+		[ $$newsize -lt $$((0x660000)) ] && newsize=0x660000 ; \
+		$(STAGING_DIR_HOST)/bin/mkmylofw \
+			-B WPE72 -i 0x11f6:$(device_id):0x11f6:$(device_id) -r $(revision) \
+			-s 0x1000000 -p0x30000:$$newsize:al:0x80060000:"OpenWRT":$@ \
+			$@.new
+		@mv $@.new $@
+endef
+
 define Build/mkwrggimg
 	$(STAGING_DIR_HOST)/bin/mkwrggimg -b \
 		-i $@ -o $@.imghdr -d /dev/mtdblock/1 \
@@ -222,6 +245,16 @@ define Device/avm_fritz450e
   SUPPORTED_DEVICES += fritz450e
 endef
 TARGET_DEVICES += avm_fritz450e
+
+define Device/avm_fritzdvbc
+  $(Device/avm)
+  SOC := qca9556
+  IMAGE_SIZE := 15232k
+  DEVICE_MODEL := FRITZ!WLAN Repeater DVB-C
+  DEVICE_PACKAGES += rssileds kmod-ath10k-ct-smallbuffers \
+	ath10k-firmware-qca988x-ct -swconfig
+endef
+TARGET_DEVICES += avm_fritzdvbc
 
 define Device/buffalo_bhr-4grv
   SOC := ar7242
@@ -407,6 +440,22 @@ define Device/comfast_cf-wr752ac-v1
   IMAGE_SIZE := 16192k
 endef
 TARGET_DEVICES += comfast_cf-wr752ac-v1
+
+define Device/compex_wpj531-16m
+  SOC := qca9531
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 16128k
+  DEVICE_VENDOR := Compex
+  DEVICE_MODEL := WPJ531
+  DEVICE_VARIANT := 16M
+  SUPPORTED_DEVICES += wpj531
+  IMAGES += cpximg-7a03.bin cpximg-7a04.bin cpximg-7a06.bin cpximg-7a07.bin
+  IMAGE/cpximg-7a03.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x68a 2
+  IMAGE/cpximg-7a04.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x693 3
+  IMAGE/cpximg-7a06.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x693 3
+  IMAGE/cpximg-7a07.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x693 3
+endef
+TARGET_DEVICES += compex_wpj531-16m
 
 define Device/devolo_dvl1200e
   SOC := qca9558

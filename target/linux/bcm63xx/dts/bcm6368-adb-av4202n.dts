@@ -104,6 +104,11 @@
 	};
 };
 
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci>;
+};
+
 &uart0 {
 	status = "okay";
 };

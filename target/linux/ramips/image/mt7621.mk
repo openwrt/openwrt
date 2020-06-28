@@ -291,6 +291,7 @@ define Device/elecom_wrc-1900gst
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elecom-gst-factory WRC-1900GST 0.00
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
 endef
 TARGET_DEVICES += elecom_wrc-1900gst
 
@@ -302,8 +303,21 @@ define Device/elecom_wrc-2533gst
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elecom-gst-factory WRC-2533GST 0.00
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
 endef
 TARGET_DEVICES += elecom_wrc-2533gst
+
+define Device/elecom_wrc-2533gst2
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 24576k
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WRC-2533GST2
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
+	elecom-gst-factory WRC-2533GST2 0.00
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+endef
+TARGET_DEVICES += elecom_wrc-2533gst2
 
 define Device/firefly_firewrt
   IMAGE_SIZE := 16064k
@@ -687,6 +701,18 @@ define Device/netgear_wac104
   DEVICE_PACKAGES += kmod-mt76x2
 endef
 TARGET_DEVICES += netgear_wac104
+
+define Device/netgear_wac124
+  $(Device/netgear_sercomm_nand)
+  DEVICE_MODEL := WAC124
+  SERCOMM_HWNAME := WAC124
+  SERCOMM_HWID := CTL
+  SERCOMM_HWVER := A003
+  SERCOMM_SWVER := 0x0402
+  IMAGE_SIZE := 40960k
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+endef
+TARGET_DEVICES += netgear_wac124
 
 define Device/netgear_wndr3700-v5
   $(Device/uimage-lzma-loader)

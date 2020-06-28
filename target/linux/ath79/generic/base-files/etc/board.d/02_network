@@ -15,6 +15,7 @@ ath79_setup_interfaces()
 	aruba,ap-105|\
 	avm,fritz1750e|\
 	avm,fritz300e|\
+	avm,fritzdvbc|\
 	comfast,cf-wr752ac-v1|\
 	comfast,cf-e130n-v2|\
 	devolo,dvl1200i|\
@@ -39,6 +40,7 @@ ath79_setup_interfaces()
 	tplink,cpe510-v2|\
 	tplink,cpe510-v3|\
 	tplink,cpe610-v1|\
+	tplink,cpe610-v2|\
 	tplink,re350k-v1|\
 	tplink,re355-v1|\
 	tplink,re450-v1|\
@@ -106,10 +108,12 @@ ath79_setup_interfaces()
 	comfast,cf-e110n-v2|\
 	comfast,cf-e120a-v3|\
 	comfast,cf-e314n-v2|\
+	compex,wpj531-16m|\
 	tplink,cpe210-v1|\
 	tplink,cpe220-v2|\
 	tplink,cpe220-v3|\
 	tplink,cpe510-v1|\
+	tplink,wbs210-v1|\
 	tplink,wbs210-v2|\
 	tplink,wbs510-v1|\
 	tplink,wbs510-v2|\
@@ -350,7 +354,8 @@ ath79_setup_macs()
 		label_mac=$(mtd_get_mac_binary art 0x1002)
 		;;
 	avm,fritz1750e|\
-	avm,fritz450e)
+	avm,fritz450e|\
+	avm,fritzdvbc)
 		label_mac=$(fritz_tffs -n macwlan -i $(find_mtd_part "tffs (1)"))
 		;;
 	avm,fritz300e)

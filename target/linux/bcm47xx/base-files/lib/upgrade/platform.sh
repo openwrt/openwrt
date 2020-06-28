@@ -18,6 +18,7 @@ platform_expected_image() {
 	local model="$(cat /tmp/sysinfo/model)"
 
 	case "$model" in
+		"Netgear R6200 V1")	echo "chk U12H192T00_NETGEAR"; return;;
 		"Netgear WGR614 V8")	echo "chk U12H072T00_NETGEAR"; return;;
 		"Netgear WGR614 V9")	echo "chk U12H094T00_NETGEAR"; return;;
 		"Netgear WGR614 V10")	echo "chk U12H139T01_NETGEAR"; return;;

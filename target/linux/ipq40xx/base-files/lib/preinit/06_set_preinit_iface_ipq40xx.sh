@@ -1,5 +1,3 @@
-#!/bin/sh
-
 set_preinit_iface() {
 	. /lib/functions.sh
 

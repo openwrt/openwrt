@@ -16,10 +16,6 @@
 		led-upgrade = &led_diag;
 	};
 
-	chosen {
-		bootargs = "console=ttyS0,115200";
-	};
-
 	extosc: ref {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;

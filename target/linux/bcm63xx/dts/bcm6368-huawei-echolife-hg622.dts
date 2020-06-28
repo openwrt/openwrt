@@ -86,7 +86,9 @@
 
 &pinctrl {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pci_gnt0 &pinctrl_pci_req0
+	pinctrl-0 = <&pinctrl_ephy0_led &pinctrl_ephy1_led
+		     &pinctrl_ephy2_led &pinctrl_ephy3_led
+		     &pinctrl_pci_gnt0 &pinctrl_pci_req0
 		     &pinctrl_pci_intb &pinctrl_pci_gnt1
 		     &pinctrl_pci_req1>;
 };

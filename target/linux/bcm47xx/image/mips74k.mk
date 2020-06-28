@@ -305,6 +305,16 @@ define Device/linksys-e4200-v1
 endef
 TARGET_DEVICES += linksys-e4200-v1
 
+define Device/netgear-r6200-v1
+  DEVICE_MODEL := R6200
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
+  $(Device/netgear)
+  NETGEAR_BOARD_ID := U12H192T00_NETGEAR
+  NETGEAR_REGION := 1
+endef
+TARGET_DEVICES += netgear-r6200-v1
+
 define Device/netgear-wgr614-v10-na
   DEVICE_MODEL := WGR614
   DEVICE_VARIANT := v10 (NA)

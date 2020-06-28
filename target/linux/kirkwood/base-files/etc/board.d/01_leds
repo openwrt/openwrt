@@ -16,16 +16,6 @@ case "$board" in
 "linksys,viper")
 	ucidef_set_led_default "pulse" "pulse" "viper:white:pulse" "1"
 	;;
-"zyxel,nsa310b")
-	ucidef_set_led_usbhost "usb" "USB" "nsa310:green:usb"
-	ucidef_set_led_ataport "hdd" "HDD" "nsa310:green:hdd" "1"
-	ucidef_set_led_ataport "esata" "eSata" "nsa310:green:esata" "2"
-	;;
-"zyxel,nsa325")
-	ucidef_set_led_usbhost "usb" "USB" "nsa325:green:usb"
-	ucidef_set_led_ataport "hdd1" "HDD1" "nsa325:green:hdd1" "1"
-	ucidef_set_led_ataport "hdd2" "HDD2" "nsa325:green:hdd2" "2"
-	;;
 esac
 
 board_config_flush

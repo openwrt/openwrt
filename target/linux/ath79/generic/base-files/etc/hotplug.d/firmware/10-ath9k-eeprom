@@ -11,7 +11,8 @@ case "$FIRMWARE" in
 	case $board in
 	avm,fritz1750e|\
 	avm,fritz4020|\
-	avm,fritz450e)
+	avm,fritz450e|\
+	avm,fritzdvbc)
 		caldata_extract_reverse "urlader" 0x1541 0x440
 		;;
 	dlink,dap-2695-a1)

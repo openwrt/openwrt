@@ -48,12 +48,14 @@ define Device/tplink-4m
   $(Device/tplink-nolzma)
   TPLINK_FLASHLAYOUT := 4M
   IMAGE_SIZE := 3904k
+  DEFAULT := n
 endef
 
 define Device/tplink-4mlzma
   $(Device/tplink-v1)
   TPLINK_FLASHLAYOUT := 4Mlzma
   IMAGE_SIZE := 3904k
+  DEFAULT := n
 endef
 
 define Device/tplink-8m
@@ -78,6 +80,7 @@ define Device/tplink-safeloader
   $(Device/tplink-v1)
   TPLINK_HWREV := 0x0
   KERNEL := kernel-bin | append-dtb | lzma | tplink-v1-header -O
+  KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
 	append-metadata | check-size
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
@@ -86,6 +89,7 @@ endef
 define Device/tplink-safeloader-uimage
   $(Device/tplink-safeloader)
   KERNEL := kernel-bin | append-dtb | lzma | uImageArcher lzma
+  KERNEL_INITRAMFS := $$(KERNEL)
 endef
 
 define Device/tplink-safeloader-okli
@@ -96,4 +100,5 @@ define Device/tplink-safeloader-okli
   COMPILE/loader-$(1).elf := loader-okli-compile
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | \
 	loader-okli $(1) 12288
+  KERNEL_INITRAMFS := $$(KERNEL)
 endef

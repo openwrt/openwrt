@@ -21,6 +21,7 @@ define Device/Default
 	KERNEL_LOADADDR = 0x42208000
 	DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
 	SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
+	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin = sysupgrade-tar | append-metadata
 	IMAGE/sysupgrade.bin/squashfs :=
 endef
@@ -57,7 +58,7 @@ define Device/DniImage
 	NETGEAR_BOARD_ID :=
 	NETGEAR_HW_ID :=
 	UBINIZE_OPTS := -E 5
-	IMAGES := factory.img sysupgrade.bin
+	IMAGES += factory.img
 	IMAGE/factory.img := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | append-ubi | netgear-dni
 	IMAGE/sysupgrade.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-uImage-fakehdr filesystem | sysupgrade-tar kernel=$$$$@ | append-metadata
 endef
@@ -67,7 +68,7 @@ define Device/TpSafeImage
 	KERNEL = kernel-bin | append-dtb | uImage none
 	KERNEL_NAME := zImage
 	TPLINK_BOARD_ID :=
-	IMAGES := factory.bin sysupgrade.bin
+	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 	IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata
 endef
@@ -76,7 +77,7 @@ define Device/ZyXELImage
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none | pad-to $$(KERNEL_SIZE)
 	KERNEL_NAME := zImage
-	IMAGES := factory.bin sysupgrade.bin
+	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to $$$$(BLOCKSIZE) | zyxel-ras-image separate-kernel
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to $$$$(BLOCKSIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
@@ -90,7 +91,6 @@ define Device/buffalo_wxr-2533dhp
 	PAGESIZE := 2048
 	IMAGE_SIZE := 65536k
 	KERNEL_IN_UBI := 1
-	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-rootfs | buffalo-rootfs-cksum | \
 		sysupgrade-tar rootfs=$$$$@ | append-metadata
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
@@ -121,7 +121,7 @@ define Device/linksys_ea8500
 	BOARD_NAME := ea8500
 	SUPPORTED_DEVICES += ea8500
 	UBINIZE_OPTS := -E 5
-	IMAGES := factory.bin sysupgrade.bin
+	IMAGES += factory.bin
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
 endef
@@ -134,7 +134,6 @@ define Device/nec_wg2600hp
 	SOC := qcom-ipq8064
 	BLOCKSIZE := 64k
 	BOARD_NAME := wg2600hp
-	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
 endef
@@ -295,7 +294,6 @@ define Device/tplink_vr2600v
 	BOARD_NAME := vr2600v
 	SUPPORTED_DEVICES += vr2600v
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
-	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := pad-extra 512 | append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | append-metadata
 endef
 TARGET_DEVICES += tplink_vr2600v

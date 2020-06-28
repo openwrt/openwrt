@@ -284,16 +284,16 @@
  ifdef CONFIG_CODE_COVERAGE
  CFLAGS += -O0 -fprofile-arcs -ftest-coverage
  LIBS += -lgcov
-@@ -887,6 +893,9 @@ OBJS += ../src/pae/ieee802_1x_secy_ops.o
- ifdef CONFIG_AP
- OBJS += ../src/ap/wpa_auth_kay.o
+@@ -956,6 +962,9 @@ ifdef CONFIG_CTRL_IFACE_MIB
+ CFLAGS += -DCONFIG_CTRL_IFACE_MIB
  endif
+ OBJS += ../src/ap/ctrl_iface_ap.o
 +ifdef CONFIG_UBUS
 +OBJS += ../src/ap/ubus.o
 +endif
  endif
  
- ifdef CONFIG_IEEE8021X_EAPOL
+ CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
 @@ -6797,6 +6797,8 @@ struct wpa_supplicant * wpa_supplicant_a

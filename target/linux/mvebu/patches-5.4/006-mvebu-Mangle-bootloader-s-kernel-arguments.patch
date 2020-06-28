@@ -21,10 +21,10 @@ was found, resulting in blank cmdline and failure to boot.
 
 Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
 ---
- arch/arm/Kconfig                        | 11 +++++
- arch/arm/boot/compressed/atags_to_fdt.c | 72 ++++++++++++++++++++++++++++++++-
- init/main.c                             | 16 ++++++++
- 3 files changed, 98 insertions(+), 1 deletion(-)
+ arch/arm/Kconfig                        | 11 ++++
+ arch/arm/boot/compressed/atags_to_fdt.c | 85 ++++++++++++++++++++++++-
+ init/main.c                             | 16 +++++
+ 3 files changed, 111 insertions(+), 1 deletion(-)
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
@@ -57,7 +57,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  #else
  #define do_extend_cmdline 0
  #endif
-@@ -67,6 +69,65 @@ static uint32_t get_cell_size(const void
+@@ -67,6 +69,72 @@ static uint32_t get_cell_size(const void
  	return cell_size;
  }
  
@@ -78,7 +78,8 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
 +		do {
 +			ptr++;
 +			ptr = strchr(ptr, 'r');
-+			if(!ptr) return dest;
++			if (!ptr)
++				goto no_append;
 +
 +		} while (ptr != str && *(ptr-1) != ' ');
 +
@@ -97,25 +98,31 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
 +
 +	/* if append-rootblock property is set use it to append to command line */
 +	rootblock = getprop(fdt, "/chosen", "append-rootblock", &l);
-+	if(rootblock != NULL) {
-+		if(*dest != ' ') {
-+			*dest = ' ';
-+			dest++;
-+			len++;
-+		}
-+		if (len + l + i <= COMMAND_LINE_SIZE) {
-+			memcpy(dest, rootblock, l);
-+			dest += l - 1;
-+			memcpy(dest, ptr, i);
-+			dest += i;
-+		}
-+	} else {
-+		len = strlen(str);
-+		if (len + 1 < COMMAND_LINE_SIZE) {
-+			memcpy(dest, str, len);
-+			dest += len;
-+		}
++	if (rootblock == NULL)
++		goto no_append;
++
++	if (*dest != ' ') {
++		*dest = ' ';
++		dest++;
++		len++;
 +	}
++
++	if (len + l + i <= COMMAND_LINE_SIZE) {
++		memcpy(dest, rootblock, l);
++		dest += l - 1;
++		memcpy(dest, ptr, i);
++		dest += i;
++	}
++
++	return dest;
++
++no_append:
++	len = strlen(str);
++	if (len + 1 < COMMAND_LINE_SIZE) {
++		memcpy(dest, str, len);
++		dest += len;
++	}
++
 +	return dest;
 +}
 +#endif
@@ -123,7 +130,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  static void merge_fdt_bootargs(void *fdt, const char *fdt_cmdline)
  {
  	char cmdline[COMMAND_LINE_SIZE];
-@@ -86,12 +147,21 @@ static void merge_fdt_bootargs(void *fdt
+@@ -86,12 +154,21 @@ static void merge_fdt_bootargs(void *fdt
  
  	/* and append the ATAG_CMDLINE */
  	if (fdt_cmdline) {
@@ -145,7 +152,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  	}
  	*ptr = '\0';
  
-@@ -166,7 +236,9 @@ int atags_to_fdt(void *atag_list, void *
+@@ -166,7 +243,9 @@ int atags_to_fdt(void *atag_list, void *
  			else
  				setprop_string(fdt, "/chosen", "bootargs",
  					       atag->u.cmdline.cmdline);
@@ -156,7 +163,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  			if (memcount >= sizeof(mem_reg_property)/4)
  				continue;
  			if (!atag->u.mem.size)
-@@ -210,6 +282,10 @@ int atags_to_fdt(void *atag_list, void *
+@@ -210,6 +289,10 @@ int atags_to_fdt(void *atag_list, void *
  		setprop(fdt, "/memory", "reg", mem_reg_property,
  			4 * memcount * memsize);
  	}
