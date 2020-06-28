@@ -1,14 +1,6 @@
 DEVICE_VARS += TPLINK_HWID TPLINK_HWREV TPLINK_FLASHLAYOUT TPLINK_HEADER_VERSION
 DEVICE_VARS += TPLINK_BOARD_ID TPLINK_HWREVADD TPLINK_HVERSION
 
-define Build/uImageArcher
-	mkimage -A $(LINUX_KARCH) \
-		-O linux -T kernel -C $(1) -a $(KERNEL_LOADADDR) \
-		-e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
-		-n '$(call toupper,$(LINUX_KARCH)) OpenWrt Linux-$(LINUX_VERSION)' -d $@ $@.new
-	@mv $@.new $@
-endef
-
 define Device/tplink-v1
   DEVICE_VENDOR := TP-Link
   TPLINK_HWID := 0x0
@@ -88,7 +80,7 @@ endef
 
 define Device/tplink-safeloader-uimage
   $(Device/tplink-safeloader)
-  KERNEL := kernel-bin | append-dtb | lzma | uImageArcher lzma
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
   KERNEL_INITRAMFS := $$(KERNEL)
 endef
 
