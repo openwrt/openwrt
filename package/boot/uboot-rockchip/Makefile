@@ -35,7 +35,7 @@ UBOOT_TARGETS := \
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
 UBOOT_MAKE_FLAGS += \
-  BL31=$(STAGING_DIR_IMAGE)/bl31.elf
+  BL31=$(STAGING_DIR_IMAGE)/rk3399_bl31.elf
 
 define Build/Configure
 	$(SED) s/subdir.*pylibfdt//g $(PKG_BUILD_DIR)/scripts/dtc/Makefile
