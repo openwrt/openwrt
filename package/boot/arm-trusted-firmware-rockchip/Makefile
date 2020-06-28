@@ -1,3 +1,6 @@
+#
+# Copyright (C) 2020 Tobias Maedel <openwrt@tbspace.de>
+#
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
