@@ -626,6 +626,6 @@ define Device/zyxel_keenetic-4g
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
-	check-size  | zyimage -d 4624 -v "KN-4G"
+	check-size | zyimage -d 4624 -v "KN-4G"
 endef
 TARGET_DEVICES += zyxel_keenetic-4g
