@@ -13,8 +13,10 @@ define Device/Default
   KERNEL_NAME := zImage
   KERNEL_LOADADDR := 0x80008000
   KERNEL_ENTRY_POINT := 0x80008000
+  IMAGE_SIZE := 64m
   IMAGE/sysupgrade.bin := append-kernel | pad-to 16M | \
-    append-rootfs | pad-rootfs | check-size 50331649 | append-metadata
+    append-rootfs | pad-rootfs | \
+    check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
 endef
 
 define Device/ls1021atwr
@@ -30,7 +32,7 @@ define Device/ls1021atwr
     ls-append $(1)-uboot-env.bin | pad-to 15M | \
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
-    append-rootfs | pad-rootfs | check-size 67108865
+    append-rootfs | pad-rootfs | check-size
   SUPPORTED_DEVICES := fsl,ls1021a-twr
 endef
 TARGET_DEVICES += ls1021atwr
