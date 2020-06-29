@@ -373,6 +373,11 @@ config KERNEL_AIO
 	bool "Compile the kernel with asynchronous IO support"
 	default y if !SMALL_FLASH
 
+config KERNEL_IO_URING
+	bool "Compile the kernel with io_uring support"
+	default y if !SMALL_FLASH
+	depends on LINUX_5_4 
+
 config KERNEL_FHANDLE
 	bool "Compile the kernel with support for fhandle syscalls"
 	default y if !SMALL_FLASH
