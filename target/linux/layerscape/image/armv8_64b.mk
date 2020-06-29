@@ -12,8 +12,10 @@ define Device/Default
   KERNEL := kernel-bin | gzip | uImage gzip
   KERNEL_LOADADDR := 0x80080000
   KERNEL_ENTRY_POINT := 0x80080000
+  IMAGE_SIZE := 64m
   IMAGE/sysupgrade.bin := append-kernel | pad-to 16M | \
-    append-rootfs | pad-rootfs | check-size 50331649 | append-metadata
+    append-rootfs | pad-rootfs | \
+    check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
 endef
 
 define Device/ls1012afrdm
@@ -33,9 +35,10 @@ define Device/ls1012afrdm
     ls-append pfe.itb | pad-to 15M | \
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to $$(BLOCKSIZE) | \
-    append-rootfs | pad-rootfs | check-size 67108865
+    append-rootfs | pad-rootfs | check-size
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | check-size 50331648 | append-metadata
+	append-rootfs | pad-rootfs | \
+        check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
   KERNEL := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   KERNEL_INITRAMFS := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   SUPPORTED_DEVICES := fsl,ls1012a-frdm
@@ -58,7 +61,7 @@ define Device/ls1012ardb
     ls-append pfe.itb | pad-to 15M | \
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
-    append-rootfs | pad-rootfs | check-size 67108865
+    append-rootfs | pad-rootfs | check-size
   SUPPORTED_DEVICES := fsl,ls1012a-rdb
 endef
 TARGET_DEVICES += ls1012ardb
@@ -112,7 +115,7 @@ define Device/ls1043ardb
     ls-append $(1)-fman.bin | pad-to 15M | \
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
-    append-rootfs | pad-rootfs | check-size 67108865
+    append-rootfs | pad-rootfs | check-size
   SUPPORTED_DEVICES := fsl,ls1043a-rdb
 endef
 TARGET_DEVICES += ls1043ardb
@@ -164,7 +167,7 @@ define Device/ls1046ardb
     ls-append $(1)-fman.bin | pad-to 15M | \
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
-    append-rootfs | pad-rootfs | check-size 67108865
+    append-rootfs | pad-rootfs | check-size
   SUPPORTED_DEVICES := fsl,ls1046a-rdb
 endef
 TARGET_DEVICES += ls1046ardb
@@ -219,7 +222,7 @@ define Device/ls1088ardb
     ls-append $(1)-dpc.dtb | pad-to 15M | \
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
-    append-rootfs | pad-rootfs | check-size 67108865
+    append-rootfs | pad-rootfs | check-size
   SUPPORTED_DEVICES := fsl,ls1088a-rdb
 endef
 TARGET_DEVICES += ls1088ardb
@@ -276,7 +279,7 @@ define Device/ls2088ardb
     ls-append $(1)-dpc.dtb | pad-to 15M | \
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
-    append-rootfs | pad-rootfs | check-size 67108865
+    append-rootfs | pad-rootfs | check-size
   SUPPORTED_DEVICES := fsl,ls2088a-rdb
 endef
 TARGET_DEVICES += ls2088ardb
