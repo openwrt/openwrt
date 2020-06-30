@@ -1122,6 +1122,19 @@ endef
 # Missing DSA Setup
 #TARGET_DEVICES += unielec_u4019-32m
 
+define Device/wallys_dr40x9
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Wallys
+	DEVICE_MODEL := DR40X9
+	SOC := qcom-ipq40x9
+	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ipq-wifi-wallys_dr40x9
+endef
+TARGET_DEVICES += wallys_dr40x9
+
 define Device/zte_mf18a
 	$(call Device/FitImage)
 	DEVICE_VENDOR := ZTE
