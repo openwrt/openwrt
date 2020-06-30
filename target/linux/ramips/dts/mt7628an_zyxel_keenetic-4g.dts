@@ -2,14 +2,12 @@
 /dts-v1/;
 
 #include "mt7628an.dtsi"
-
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
 	compatible = "zyxel,keenetic-4g", "mediatek,mt7628an-soc";
 	model = "Zyxel Keenetic 4G";
-
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
@@ -32,7 +30,7 @@
 	
 	keys {
 		compatible = "gpio-keys-polled";
-		poll-interval = <14>;
+		poll-interval = <10>;
 
 		reset {
             		label = "reset";
@@ -61,7 +59,7 @@
 
 &state_default {
 	gpio {
-		groups = "gpio", "p0led_an", "wled_an", "i2s", "refclk", "wdt", "spi cs1";
+		groups = "gpio", "p0led_an", "wled_an", "refclk", "wdt";
 		function = "gpio";
 	};
 };
