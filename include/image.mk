@@ -536,6 +536,7 @@ define Device/Build/image
 	IMAGE_TYPE=$(word 1,$(subst ., ,$(2))) \
 	IMAGE_PREFIX="$(IMAGE_PREFIX)" \
 	DEVICE_TITLE="$(DEVICE_TITLE)" \
+	DEVICE_PACKAGES="$(DEVICE_PACKAGES)" \
 	TARGET="$(BOARD)" \
 	SUBTARGET="$(if $(SUBTARGET),$(SUBTARGET),generic)" \
 	VERSION_NUMBER="$(VERSION_NUMBER)" \
