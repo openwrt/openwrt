@@ -107,7 +107,8 @@ case "$FIRMWARE" in
 	plasmacloud,pa2200 |\
 	qxwlan,e2600ac-c1 |\
 	qxwlan,e2600ac-c2 |\
-	unielec,u4019-32m)
+	unielec,u4019-32m |\
+	wallys,dr40x9)
 		caldata_extract "0:ART" 0x1000 0x2f20
 		;;
 	devolo,magic-2-wifi-next)
@@ -211,7 +212,8 @@ case "$FIRMWARE" in
 	plasmacloud,pa2200 |\
 	qxwlan,e2600ac-c1 |\
 	qxwlan,e2600ac-c2 |\
-	unielec,u4019-32m)
+	unielec,u4019-32m |\
+	wallys,dr40x9)
 		caldata_extract "0:ART" 0x5000 0x2f20
 		;;
 	devolo,magic-2-wifi-next)
