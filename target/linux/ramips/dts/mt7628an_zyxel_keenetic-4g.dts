@@ -19,12 +19,13 @@
 		internet {
 			label = "keenetic-4g:green:internet";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
-			default-state = "keep";
+			default-state = "off";
 		};
 
 		wifi {
 			label = "keenetic-4g:green:wifi";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+			default-state = "off";
 		};
     };
 	
