@@ -33,19 +33,22 @@ for json_file in work_dir.glob("*.json"):
             )
 
 
-output["default_packages"] = run(
+default_packages, output["arch_packages"] = run(
     [
         "make",
         "--no-print-directory",
         "-C",
         f"target/linux/{output['target'].split('/')[0]}",
         "val.DEFAULT_PACKAGES",
+        "val.ARCH_PACKAGES",
     ],
     capture_output=True,
     check=True,
     env=environ.copy().update({"TOPDIR": Path().cwd()}),
     text=True,
-).stdout.split()
+).stdout.splitlines()
+
+output["default_packages"] = default_packages.split()
 
 if output:
     output_path.write_text(json.dumps(output, sort_keys=True, separators=(",", ":")))
