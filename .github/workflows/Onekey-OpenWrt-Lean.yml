@@ -1,0 +1,232 @@
+#=================================================
+# Description: Build OpenWrt using GitHub Actions
+# Author: sirpdboy
+# https://github.com/sirpdboy/openwrt18.06
+
+name: Onekey-OpenWrt-Lean
+
+on:
+  push:
+    branches: 
+      - master
+  schedule:
+    - cron: '0 6 * * *'
+  # release:
+  #   types: [published]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+     - name: Checkout
+       uses: actions/checkout@master
+       with:
+          ref: master
+
+     - name: Init build
+       env:
+        DEBIAN_FRONTEND: noninteractive
+       run: |
+        docker rmi $(docker images -q)
+        sudo -E apt-get remove -y --purge azure-cli ghc zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php*
+        sudo -E apt-get update -y
+        sudo -E apt-get -y install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch python3 unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs gcc-multilib g++-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler antlr3 gperf
+        sudo -E apt-get autoremove -y --purge
+        sudo -E apt-get clean -y
+        sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php
+        df -h
+     - name: 释放空间
+       run: |
+        sudo swapoff -a
+        sudo rm -f /swapfile
+        sudo rm -rf "/usr/local/share/boost"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        df -h
+     - name: 下载源码
+       run: |
+        sudo chown -R runner:runner /home/runner/work/openwrt18.06
+        git clone https://github.com/coolsnowwolf/lede.git
+     - name: 更新插件库
+       run: |
+        wget -P ./lede https://git.io/JJJNa
+        cd lede
+        ./scripts/feeds update -a
+        /bin/bash JJJNa
+        ./scripts/feeds install -a
+        df -h
+     - name: 固件定制选择
+       run: |
+        cd lede
+        rm -f ./.config*
+        touch ./.config
+        #
+        # ========================固件定制部分=======================
+        # 
+        # 
+        # 如果不对本区块做出任何编辑, 则生成默认配置固件. 
+        # 
+        # 以下为定制化固件选项和说明:
+        #
+        #
+        # 有些插件/选项是默认开启的, 如果想要关闭, 请参照以下示例进行编写:
+        # 
+        #          =========================================
+        #         |  # 取消编译VMware镜像:                   |
+        #         |  cat >> .config <<EOF                   |
+        #         |  # CONFIG_VMDK_IMAGES is not set        |
+        #         |  EOF                                    |
+        #          =========================================
+        #
+        # 
+        # 以下是一些提前准备好的一些插件选项.
+        # 直接取消注释相应代码块即可应用. 不要取消注释代码块上的汉字说明.
+        # 如果不需要代码块里的某一项配置, 只需要删除相应行.
+        #
+        # 如果需要其他插件, 请按照示例自行添加.
+        # 注意, 只需添加依赖链顶端的包. 如果你需要插件 A, 同时 A 依赖 B, 即只需要添加 A.
+        # 
+        # 无论你想要对固件进行怎样的定制, 都需要且只需要修改 EOF 回环内的内容.
+        # 
+        # 编译x64固件:
+        cat >> .config <<EOF
+        CONFIG_TARGET_x86=y
+        CONFIG_TARGET_x86_64=y
+        CONFIG_TARGET_x86_64_Generic=y
+        EOF
+        # 固件压缩:
+        cat >> .config <<EOF
+        CONFIG_TARGET_IMAGES_GZIP=y
+        EOF        
+        # 固件空间大小:
+        cat >> .config <<EOF
+        CONFIG_TARGET_ROOTFS_PARTSIZE=460
+        EOF
+        # 编译UEFI固件:
+        cat >> .config <<EOF
+        CONFIG_EFI_IMAGES=y
+        EOF
+        # 取消编译VMware镜像: 
+        cat >> .config <<EOF
+        # CONFIG_VMDK_IMAGES is not set
+        EOF
+        # IPv6支持:
+        cat >> .config <<EOF
+        CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
+        CONFIG_PACKAGE_ipv6helper=y
+        EOF
+        # 多文件系统支持:
+        # cat >> .config <<EOF
+        # CONFIG_PACKAGE_kmod-fs-nfs=y
+        # CONFIG_PACKAGE_kmod-fs-nfs-common=y
+        # CONFIG_PACKAGE_kmod-fs-nfs-v3=y
+        # CONFIG_PACKAGE_kmod-fs-nfs-v4=y
+        # CONFIG_PACKAGE_kmod-fs-squashfs=y
+        # EOF
+        # USB3.0支持:
+        cat >> .config <<EOF
+        CONFIG_PACKAGE_kmod-usb-ohci=y
+        CONFIG_PACKAGE_kmod-usb-ohci-pci=y
+        CONFIG_PACKAGE_kmod-usb2=y
+        CONFIG_PACKAGE_kmod-usb2-pci=y
+        CONFIG_PACKAGE_kmod-usb3=y
+        EOF
+        # 常用LuCI插件选择:
+        cat >> .config <<EOF
+        # CONFIG_PACKAGE_luci-app-accesscontrol is not set
+        CONFIG_PACKAGE_luci-app-adguardhome=y
+        CONFIG_PACKAGE_luci-app-advanced=y
+        # CONFIG_PACKAGE_luci-app-airplay2 is not set
+        # CONFIG_PACKAGE_luci-app-amule is not set
+        CONFIG_PACKAGE_luci-app-aria2=y
+        CONFIG_PACKAGE_luci-app-autopoweroff=y
+        CONFIG_PACKAGE_luci-app-clash=y
+        CONFIG_PACKAGE_luci-app-control-mia=y
+        CONFIG_PACKAGE_luci-app-control-timewol=y
+        CONFIG_PACKAGE_luci-app-control-webrestriction=y
+        CONFIG_PACKAGE_luci-app-control-weburl=y
+        CONFIG_PACKAGE_luci-app-cpulimit=y
+        # CONFIG_PACKAGE_luci-app-dnspod=y
+        CONFIG_PACKAGE_luci-app-beardropper=y
+        CONFIG_PACKAGE_luci-app-eqos=y
+        CONFIG_PACKAGE_luci-app-frpc=y
+        CONFIG_PACKAGE_luci-app-hd-idle=y
+        CONFIG_PACKAGE_luci-app-koolddns=y
+        CONFIG_PACKAGE_luci-app-minidlna=y
+        # CONFIG_PACKAGE_luci-app-music-remote-center is not set
+        # CONFIG_PACKAGE_luci-app-fileassistant=y
+        CONFIG_PACKAGE_luci-app-mwan3=y
+        CONFIG_PACKAGE_luci-app-oaf=y
+        CONFIG_PACKAGE_luci-app-openclash=y
+        # CONFIG_PACKAGE_luci-app-openvpn-server is not set
+        CONFIG_PACKAGE_luci-app-passwall=y
+        CONFIG_PACKAGE_luci-app-serverchan=y
+        CONFIG_PACKAGE_luci-app-smartdns=y
+        # CONFIG_PACKAGE_luci-app-smartinfo=y
+        CONFIG_PACKAGE_luci-app-syncdial=y
+        # CONFIG_PACKAGE_luci-app-vlmcsd is not set
+        CONFIG_PACKAGE_luci-app-vssr=y
+        # CONFIG_PACKAGE_luci-app-xlnetacc is not set
+        # CONFIG_PACKAGE_luci-app-transmission=y
+        CONFIG_LUCI_LANG_redsocks2=y
+        CONFIG_LUCI_LANG_en=y
+        EOF
+        # LuCI主题:
+        cat >> .config <<EOF
+        CONFIG_PACKAGE_luci-theme-argon=y
+        CONFIG_PACKAGE_luci-theme-opentomcat=y
+        CONFIG_PACKAGE_luci-theme-btmod=y
+        EOF
+        # 常用软件包:
+        cat >> .config <<EOF
+        CONFIG_PACKAGE_curl=y
+        CONFIG_PACKAGE_htop=y
+        CONFIG_PACKAGE_screen=y
+        CONFIG_PACKAGE_wget=y
+        EOF
+        # 
+        # ========================固件定制部分结束========================
+        # 
+        sed -i 's/^[ \t]*//g' ./.config
+        make defconfig
+     - name: 编译前依赖下载
+       run: |
+        df -h
+        cd lede
+        make download -j8
+        find ./dl/ -size -1024c -exec rm -f {} \;
+     - name: 编译Openwrt
+       run: |
+        cd lede
+        let make_process=$(nproc)+1
+        make -j${make_process} V=s || make -j${make_process} V=s || make -j1 V=s
+        echo "======================="
+        echo "空间使用信息:"
+        echo "======================="
+        df -h
+        echo "======================="
+        du -h --max-depth=1 ./ --exclude=build_dir --exclude=bin
+        du -h --max-depth=1 ./build_dir
+        du -h --max-depth=1 ./bin
+        
+     - name: 清除固件垃圾
+       run: |
+        find  ./lede/bin/targets/ -type d -name "packages" | xargs rm -rf {}
+        cd ./lede/bin/targets/x86/64
+        rm -rf `ls | grep -v "squashfs"`
+        gzip -d *.gz
+        gzip *.img
+        df -h
+     - name: 上传固件
+       uses: actions/upload-artifact@master
+       with:
+          name: SirpdboyOpenWrt-IPV6-firmware
+          path: ./lede/bin/targets/
+          
+     - name: 上传插件包
+       uses: actions/upload-artifact@master
+       with:
+          name: SirpdboyOpenWrt-x86-IPK
+          path: ./lede/bin/packages/
