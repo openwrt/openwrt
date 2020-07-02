@@ -52,8 +52,12 @@ jobs:
         expire-in: 7days # Setting this to 0 will delete all artifacts
      - name: Prepare openwrt
        run: |
+        pwd
+        ls 
+        sudo chown -R runner:runner /home/runner/work/openwrt18.06
         git clone https://github.com/coolsnowwolf/lede.git
         cd lede
+        mkdir  package/new
         ./scripts/feeds update -a 
         pwd
         ls
@@ -64,23 +68,13 @@ jobs:
         ls
      - name: Prepare Package
        run: |
+        pwd
+        ls
         cd lede
-        pwd
-        ls
-        mkdir  package/new
-        
-        pwd
-        ls
-        sudo chown -R runner:runner /home/runner/work/openwrt18.06/openwrt18.06
-        # wget -P ./lede https://git.io/JJJNa
-        
         wget  https://raw.githubusercontent.com/siropboy/other/master/patch/lede.sh
         pwd
         ls
-        chmod +x  lede.sh
-
-        # cp -r  ../lede.sh ./
-        lede.sh
+        /bin/bash  lede.sh
         ./scripts/feeds install -a
         df -h
         pwd
