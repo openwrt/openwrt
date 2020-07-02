@@ -53,6 +53,8 @@ jobs:
      - name: Prepare openwrt
        run: |
         git clone https://github.com/coolsnowwolf/lede.git
+        git clone https://github.com/siropboy/mypackages package/new
+        git clone https://github.com/siropboy/mysmall package/new
         cd lede
         ./scripts/feeds update -a
      - name: Prepare Package
