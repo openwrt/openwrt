@@ -821,6 +821,16 @@ define Device/glinet_gl-ar750
 endef
 TARGET_DEVICES += glinet_gl-ar750
 
+define Device/glinet_gl-mifi
+  SOC := ar9331
+  DEVICE_VENDOR := GL.iNET
+  DEVICE_MODEL := GL-MiFi
+  DEVICE_PACKAGES := kmod-usb-chipidea2
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += gl-mifi
+endef
+TARGET_DEVICES += glinet_gl-mifi
+
 define Device/glinet_gl-x750
   SOC := qca9531
   DEVICE_VENDOR := GL.iNet
