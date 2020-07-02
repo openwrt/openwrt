@@ -59,13 +59,14 @@ jobs:
      - name: Prepare Package
        run: |
         cd lede
-        ./scripts/feeds update -a 
         mkdir  package/new
+        ./scripts/feeds update -a 
+        pwd
         sudo chown -R runner:runner /home/runner/work/openwrt18.06
         # wget -P ./lede https://git.io/JJJNa
         
         wget  https://raw.githubusercontent.com/siropboy/other/master/patch/lede.sh
-        pwa
+        pwd
 
         # cp -r  ../lede.sh ./
         /bin/bash lede.sh
