@@ -57,7 +57,6 @@ jobs:
         cd lede
         /bin/bash JJJNa
         ./scripts/feeds install -a
-        chmod -R 755 ./
         df -h
      - name: 固件定制选择
        run: |
