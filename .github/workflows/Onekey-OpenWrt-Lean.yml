@@ -53,25 +53,38 @@ jobs:
      - name: Prepare openwrt
        run: |
         git clone https://github.com/coolsnowwolf/lede.git
-        cd lede/package
+        cd lede
+        ./scripts/feeds update -a 
+        pwd
+        ls
+        cd package
         git clone https://github.com/siropboy/mypackages
         git clone https://github.com/siropboy/mysmall
+        pwd
+        ls
      - name: Prepare Package
        run: |
         cd lede
-        mkdir  package/new
-        ./scripts/feeds update -a 
         pwd
+        ls
+        mkdir  package/new
+        
+        pwd
+        ls
         sudo chown -R runner:runner /home/runner/work/openwrt18.06/openwrt18.06
         # wget -P ./lede https://git.io/JJJNa
         
         wget  https://raw.githubusercontent.com/siropboy/other/master/patch/lede.sh
         pwd
+        ls
+        chmod +x  lede.sh
 
         # cp -r  ../lede.sh ./
-        /bin/bash lede.sh
+        lede.sh
         ./scripts/feeds install -a
         df -h
+        pwd
+        ls
      - name: 固件定制
        run: |
         cd lede
