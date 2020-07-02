@@ -1,0 +1,241 @@
+name: Build OpenWrt snapshot
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+
+jobs:
+  determine_targets:
+    name: Find available targets
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.find_targets.outputs.targets }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Find targets
+      id: find_targets
+      run: |
+        TARGETS="$(perl ./scripts/dump-target-info.pl targets 2>/dev/null | awk '{ print $1 }')"
+        JSON='{"targets":['
+        FIRST=1
+        for TARGET in $TARGETS; do
+          [[ $FIRST -ne 1 ]] && JSON="$JSON"','
+          JSON="$JSON"'"'"${TARGET}"'"'
+          FIRST=0
+        done
+        JSON="$JSON"']}'
+
+        echo -e "\n---- targets ----\n"
+        echo "$JSON"
+        echo -e "\n---- targets ----\n"
+
+        echo "::set-output name=targets::$JSON"
+
+  build:
+    name: Build ${{ matrix.targets }}
+    needs: determine_targets
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: False
+      matrix: ${{fromJson(needs.determine_targets.outputs.targets)}}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        repository: "openwrt/openwrt"
+        fetch-depth: 0
+
+    - name: Cache sources
+      uses: davidsbond/cache@master
+      with:
+        path: dl/
+        key: Sources
+        update: True
+
+    - name: Initialization environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo apt-get -y install libncurses-dev
+        TARGET=$(echo ${{ matrix.targets }} | cut -d "/" -f 1)
+        SUBTARGET=$(echo ${{ matrix.targets }} | cut -d "/" -f 2)
+        echo "::set-env name=TARGET::$TARGET"
+        echo "::set-env name=SUBTARGET::$SUBTARGET"
+
+    - name: Update & Install feeds
+      run: |
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+
+    - name: Set configuration
+      run: |
+        cat <<EOT >> .config
+        CONFIG_TARGET_${TARGET}=y
+        CONFIG_TARGET_${TARGET}_${SUBTARGET}=y
+        CONFIG_ALL_KMODS=y
+        CONFIG_ALL_NONSHARED=y
+        CONFIG_AUTOREMOVE=y
+        CONFIG_BUILDBOT=y
+        CONFIG_BUILD_LOG=y
+        CONFIG_COLLECT_KERNEL_DEBUG=y
+        CONFIG_DEVEL=y
+        CONFIG_IB=y
+        CONFIG_JSON_OVERVIEW_IMAGE_INFO=y
+        CONFIG_KERNEL_BUILD_DOMAIN="buildhost"
+        CONFIG_KERNEL_BUILD_USER="builder"
+        CONFIG_SDK=y
+        CONFIG_TARGET_ALL_PROFILES=y
+        CONFIG_TARGET_MULTI_PROFILE=y
+        CONFIG_TARGET_PER_DEVICE_ROOTFS=y
+        EOT
+
+        echo -e "\n---- config input ----\n"
+        cat .config
+        echo -e "\n---- config input ----\n"
+
+        make defconfig
+
+        echo -e "\n---- config post-defconfig ----\n"
+        cat .config
+        echo -e "\n---- config post-defconfig ----\n"
+
+    - name: Download package
+      run: |
+        make download -j$(nproc)
+
+    - name: Build tools
+      run: |
+        make tools/install -j$(nproc) || \
+          make tools/install V=s
+
+    - name: Build toolchain
+      run: |
+        make toolchain/install -j$(nproc) || \
+          make toolchain/install V=s
+
+    - name: Build target
+      run: |
+        make target/compile -j$(nproc) IGNORE_ERRORS='n m' || \
+          make target/compile IGNORE_ERRORS='n m' V=s
+
+    - name: Build packages
+      run: |
+        make package/compile -j$(nproc) IGNORE_ERRORS='n m' || \
+          make package/compile IGNORE_ERRORS='n m' V=s
+
+        make package/install -j$(nproc) || \
+          make package/install V=s
+
+        make package/index CONFIG_SIGNED_PACKAGES= V=s
+
+    - name: Add kmods feed
+      run: |
+        TOPDIR=$(pwd)
+        export TOPDIR
+        STAGE_ROOT="$(make --no-print-directory val.STAGING_DIR_ROOT)"
+        KERNEL_VERSION="$(make --no-print-directory -C target/linux \
+            val.LINUX_VERSION val.LINUX_RELEASE val.LINUX_VERMAGIC | \
+            tr '\n' '-' | head -c -1)"
+
+        mkdir -p files/etc/opkg/
+        sed -e 's#^\(src/gz .*\)_core \(.*\)/packages$#&\n\1_kmods \2/kmods/'"${KERNEL_VERSION}#" \
+          "${STAGE_ROOT}/etc/opkg/distfeeds.conf" > files/etc/opkg/distfeeds.conf
+
+        echo -e "\n---- distfeeds.conf ----\n"
+        cat files/etc/opkg/distfeeds.conf
+        echo -e "\n---- distfeeds.conf ----\n"
+
+        echo ::set-env name=kernel_version::$KERNEL_VERSION
+
+    - name: Build firmware
+      run: |
+        make target/install -j$(nproc) || \
+          make target/install V=s
+
+    - name: Buildinfo
+      run: |
+        make buildinfo V=s
+
+    - name: JSON overview
+      run: |
+        make json_overview_image_info V=s
+
+    - name: Checksum
+      run: |
+        make checksum V=s
+
+    - name: Sanitize target
+      run: echo ::set-env name=target_sani::$(echo ${{ matrix.targets }} | tr "/" "-")
+
+    - name: Upload images
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ env.target_sani }}-images
+        path: bin/targets/${{ matrix.targets }}/openwrt-${{ env.TARGET }}-*
+
+    - name: Upload packages
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ env.target_sani }}-packages
+        path: |
+          bin/targets/${{ matrix.targets }}/packages/*.ipk
+          !bin/targets/${{ matrix.targets }}/packages/kmod-*.ipk
+
+    - name: Upload kmods
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ env.target_sani }}-kmods
+        path: bin/targets/${{ matrix.targets }}/packages/kmod-*.ipk
+
+    - name: Upload supplementary
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ env.target_sani }}-supplementary
+        path: |
+          bin/targets/${{ matrix.targets }}/*.buildinfo
+          bin/targets/${{ matrix.targets }}/*.json
+          bin/targets/${{ matrix.targets }}/*.manifest
+          bin/targets/${{ matrix.targets }}/kernel-debug.tar.zst
+          bin/targets/${{ matrix.targets }}/openwrt-imagebuilder*
+          bin/targets/${{ matrix.targets }}/openwrt-sdk*
+          bin/targets/${{ matrix.targets }}/sha256sums*
+
+    - name: Upload logs
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ env.target_sani }}-logs
+        path: logs/
+
+    - name: Upload folder to S3
+      uses: jakejarvis/s3-sync-action@master
+      with:
+        args: --acl public-read --follow-symlinks --delete --exclude 'kmods/*'
+      env:
+        AWS_S3_BUCKET: openwrt-ci
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_S3_ENDPOINT: https://images.aparcar.org
+        SOURCE_DIR: bin/targets/${{ matrix.targets }}
+        DEST_DIR: snapshot/${{ matrix.targets }}
+
+    - name: Prepare upload of kmods
+      run: |
+        mkdir -p bin/targets/${{ matrix.targets }}/kmods/${{ env.kernel_version }}/
+        cp bin/targets/${{ matrix.targets }}/packages/kmod-*.ipk \
+            bin/targets/${{ matrix.targets }}/kmods/${{ env.kernel_version }}/
+
+    - name: Upload kmods to S3
+      uses: jakejarvis/s3-sync-action@master
+      with:
+        args: --acl public-read --follow-symlinks --delete
+      env:
+        AWS_S3_BUCKET: openwrt-ci
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_S3_ENDPOINT: https://images.aparcar.org
+        SOURCE_DIR: bin/targets/${{ matrix.targets }}/kmods/${{ env.kernel_version }}/
+        DEST_DIR: snapshot/${{ matrix.targets }}/kmods/${{ env.kernel_version }}/
