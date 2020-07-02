@@ -57,10 +57,12 @@ jobs:
         ./scripts/feeds update -a
      - name: Prepare Package
        run: |
-        wget -P ./lede https://git.io/JJJNa
         sudo chown -R runner:runner /home/runner/work/openwrt18.06
+        # wget -P ./lede https://git.io/JJJNa
+        wget -P https://raw.githubusercontent.com/siropboy/other/master/patch/lede.sh
         cd lede
-        /bin/bash JJJNa
+        cp -r  ../lede.sh ./
+        /bin/bash lede.sh
         ./scripts/feeds install -a
         df -h
      - name: 固件定制
