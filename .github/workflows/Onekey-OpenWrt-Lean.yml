@@ -47,15 +47,17 @@ jobs:
         df -h
      - name: 下载源码
        run: |
-        sudo chown -R runner:runner /home/runner/work/openwrt18.06
         git clone https://github.com/coolsnowwolf/lede.git
+        cd lede
+        ./scripts/feeds update -a
      - name: 更新插件库
        run: |
         wget -P ./lede https://git.io/JJJNa
+        sudo chown -R runner:runner /home/runner/work/openwrt18.06
         cd lede
-        ./scripts/feeds update -a
         /bin/bash JJJNa
         ./scripts/feeds install -a
+        chmod -R 755 ./
         df -h
      - name: 固件定制选择
        run: |
