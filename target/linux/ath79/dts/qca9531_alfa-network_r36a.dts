@@ -1,0 +1,190 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca953x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "ALFA Network R36A";
+	compatible = "alfa-network,r36a", "qca,qca9531";
+
+	aliases {
+		label-mac-device = &wmac;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		usb-power {
+			gpio-export,name = "usb-power";
+			gpio-export,output = <1>;
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		watchdog-enable {
+			gpio-export,name = "watchdog-enable";
+			gpio-export,output = <1>;
+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		rfkill {
+			label = "rfkill";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&enable_gpio4 &enable_gpio16>;
+
+		lan {
+			label = "r36a:blue:lan";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status: status {
+			label = "r36a:blue:status";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		usb {
+			label = "r36a:blue:usb";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&hub_port0>;
+			linux,default-trigger = "usbport";
+		};
+
+		wan {
+			label = "r36a:blue:wan";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			label = "r36a:blue:wlan";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+
+	watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+		hw_algo = "toggle";
+		hw_margin_ms = <25000>;
+		always-running;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&swphy4>;
+	mtd-mac-address = <&art 0x0>;
+};
+
+&eth1 {
+	/* Workaround: keep the Ethernet interfaces order/mapping correct
+	 * (GMAC0 -> eth0, GMAC1 -> eth1, same as in old ar71xx target) */
+	compatible = "qca,qca9530-eth", "syscon", "simple-mfd";
+
+	mtd-mac-address = <&art 0x6>;
+};
+
+&pinmux {
+	enable_gpio4: pinmux_enable_gpio4 {
+		pinctrl-single,bits = <0x04 0x0 0xff>;
+	};
+
+	enable_gpio16: pinmux_enable_gpio16 {
+		pinctrl-single,bits = <0x10 0x0 0xff>;
+	};
+};
+
+&spi {
+	status = "okay";
+
+	num-cs = <1>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		m25p,fast-read;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x060000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "u-boot-env";
+				reg = <0x060000 0x010000>;
+			};
+
+			art: partition@70000 {
+				label = "art";
+				reg = <0x070000 0x010000>;
+				read-only;
+			};
+
+			partition@80000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x080000 0xf80000>;
+			};
+		};
+	};
+};
+
+&uart {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	hub_port0: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&wmac {
+	status = "okay";
+
+	mtd-cal-data = <&art 0x1000>;
+};

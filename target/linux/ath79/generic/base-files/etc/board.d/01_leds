@@ -17,6 +17,10 @@ alfa-network,ap121fe|\
 avm,fritz450e)
 	ucidef_set_led_netdev "lan" "LAN" "$boardname:green:lan" "eth0"
 	;;
+alfa-network,r36a)
+	ucidef_set_led_netdev "lan" "LAN" "$boardname:blue:lan" "eth0"
+	ucidef_set_led_switch "wan" "WAN" "$boardname:blue:wan" "switch0" "0x10"
+	;;
 avm,fritz1750e)
 	ucidef_set_led_netdev "lan" "LAN" "$boardname:green:lan" "eth0"
 	ucidef_set_rssimon "wlan1" "200000" "1"

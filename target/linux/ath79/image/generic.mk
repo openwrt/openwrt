@@ -237,6 +237,16 @@ define Device/alfa-network_ap121fe
 endef
 TARGET_DEVICES += alfa-network_ap121fe
 
+define Device/alfa-network_r36a
+  SOC := qca9531
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := R36A
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += r36a
+endef
+TARGET_DEVICES += alfa-network_r36a
+
 define Device/allnet_all-wap02860ac
   SOC := qca9558
   DEVICE_VENDOR := ALLNET
