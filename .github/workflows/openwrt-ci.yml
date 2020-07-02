@@ -1,0 +1,154 @@
+name: Build OpenWrt snapshot pull request
+
+on:
+  pull_request:
+    branches: [ master ]
+
+
+jobs:
+  determine_target:
+    name: Determine target
+    runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.set-matrix.outputs.target }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Info
+      run: |
+        git log -10 --oneline
+        env
+
+    - name: Set matrix
+      id: set-matrix
+      run: |
+        # convert case independent string `ci-target:` to target
+        # multiple targets are separated by white space
+        TARGETS="$(git log -1 --pretty=format:%b | grep -e "^CI-target" | \
+            cut -d ':' -f 2 | tr ' ' '\n' | grep -v -e '^$' | sort | uniq)"
+
+        # use `ci-target` based targets or selection of popular targets
+        TARGETS="${TARGETS:-ath79/generic x86/64 ramips/mt7621 mvebu/cortexa9}"
+
+        JSON='{"target":['
+        FIRST=1
+        for TARGET in $TARGETS; do
+          [[ $FIRST -ne 1 ]] && JSON="$JSON"','
+          JSON="$JSON"'"'"${TARGET}"'"'
+          FIRST=0
+        done
+        JSON="$JSON"']}'
+
+        echo -e "\n---- targets ----\n"
+        echo "$JSON"
+        echo -e "\n---- targets ----\n"
+        echo "::set-output name=target::$JSON"
+
+  build:
+    name: Build ${{ matrix.target }}
+    needs: determine_target
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.determine_target.outputs.target)}}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: Cache sources
+      uses: actions/cache@v2
+      with:
+        path: dl/
+        key: Sources
+
+    - name: Initialization environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo apt-get -y install libncurses-dev
+        TARGET=$(echo ${{ matrix.target }} | cut -d "/" -f 1)
+        SUBTARGET=$(echo ${{ matrix.target }} | cut -d "/" -f 2)
+        echo "::set-env name=CI_TARGET_BUILD_PLATFORM::$TARGET"
+        echo "::set-env name=CI_TARGET_BUILD_SUBTARGET::$SUBTARGET"
+
+    - name: Setup openwrt-ci
+      run: |
+        export CI_SOURCE_URL="https://gitlab.com/ynezz/openwrt-ci/raw/master"
+        wget -q "$CI_SOURCE_URL/Makefile" -O Makefile.ci
+        make ci-prepare -f Makefile.ci
+
+    - name: openwrt-ci prepare
+      run: |
+        CI_TARGET_BUILD_CONFIG_EXTRA="$(git log -1 --pretty=format:%b | \
+            grep -e "^CI-config" | cut -d ':' -f 2 | tr ' ' '\n' | \
+            grep -v -e '^$' | sort | uniq | tr '\n' ' ')"
+        CI_TARGET_BUILD_CONFIG_EXTRA="$CI_TARGET_BUILD_CONFIG_EXTRA +BUILD_LOG"
+        export CI_TARGET_BUILD_CONFIG_EXTRA
+        echo $CI_TARGET_BUILD_CONFIG_EXTRA
+        make ci-target-build-prepare -f Makefile.ci
+
+    - name: openwrt-ci download
+      run: |
+        make ci-target-build-download -f Makefile.ci
+
+    - name: openwrt-ci run
+      run: |
+        make ci-target-build-run -f Makefile.ci
+
+    - name: Sanitize target
+      run: echo ::set-env name=target_sani::$(echo ${{ matrix.target }} | tr "/" "-")
+
+    - name: Upload images
+      uses: actions/upload-artifact@v2
+      with:
+        name: openwrt-ci-${{ env.target_sani }}-images
+        path: |
+          bin/targets/${{ matrix.target }}/*
+          !bin/targets/${{ matrix.target }}/*.buildinfo
+          !bin/targets/${{ matrix.target }}/*.json
+          !bin/targets/${{ matrix.target }}/*.manifest
+          !bin/targets/${{ matrix.target }}/kernel-debug.*
+          !bin/targets/${{ matrix.target }}/openwrt-imagebuilder*
+          !bin/targets/${{ matrix.target }}/openwrt-sdk*
+          !bin/targets/${{ matrix.target }}/packages/*
+          !bin/targets/${{ matrix.target }}/sha256sums*
+
+    - name: Upload packages
+      uses: actions/upload-artifact@v2
+      with:
+        name: openwrt-ci-${{ env.target_sani }}-packages
+        path: |
+          bin/targets/${{ matrix.target }}/packages/
+          !bin/targets/${{ matrix.target }}/packages/kmod-*.ipk
+
+    - name: Upload kmods
+      uses: actions/upload-artifact@v2
+      with:
+        name: openwrt-ci-${{ env.target_sani }}-kmods
+        path: bin/targets/${{ matrix.target }}/packages/kmod-*.ipk
+
+    - name: Upload supplementary
+      uses: actions/upload-artifact@v2
+      with:
+        name: openwrt-ci-${{ env.target_sani }}-supplementary
+        path: |
+          bin/targets/${{ matrix.target }}/*.buildinfo
+          bin/targets/${{ matrix.target }}/*.json
+          bin/targets/${{ matrix.target }}/*.manifest
+          bin/targets/${{ matrix.target }}/kernel-debug.*
+          bin/targets/${{ matrix.target }}/openwrt-imagebuilder*
+          bin/targets/${{ matrix.target }}/openwrt-sdk*
+          bin/targets/${{ matrix.target }}/sha256sums*
+
+    - name: Upload logs
+      uses: actions/upload-artifact@v2
+      with:
+        name: openwrt-ci-${{ env.target_sani }}-logs
+        path: logs/
