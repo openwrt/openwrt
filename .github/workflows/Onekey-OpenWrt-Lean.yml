@@ -53,16 +53,16 @@ jobs:
      - name: Prepare openwrt
        run: |
         git clone https://github.com/coolsnowwolf/lede.git
-        git clone https://github.com/siropboy/mypackages package/new
-        git clone https://github.com/siropboy/mysmall package/new
-        cd lede
-        ./scripts/feeds update -a
+        cd lede/package
+        git clone https://github.com/siropboy/mypackages
+        git clone https://github.com/siropboy/mysmall
      - name: Prepare Package
        run: |
         sudo chown -R runner:runner /home/runner/work/openwrt18.06
         # wget -P ./lede https://git.io/JJJNa
         wget -P https://raw.githubusercontent.com/siropboy/other/master/patch/lede.sh
         cd lede
+        ./scripts/feeds update -a
         cp -r  ../lede.sh ./
         /bin/bash lede.sh
         ./scripts/feeds install -a
