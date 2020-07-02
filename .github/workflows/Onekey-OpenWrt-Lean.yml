@@ -74,7 +74,8 @@ jobs:
         wget  https://raw.githubusercontent.com/siropboy/other/master/patch/lede.sh
         pwd
         ls
-        /bin/bash  lede.sh
+        chmod +x ./lede.sh
+        sudo ./lede.sh
         ./scripts/feeds install -a
         df -h
         pwd
