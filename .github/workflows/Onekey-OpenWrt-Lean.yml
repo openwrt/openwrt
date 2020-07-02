@@ -200,6 +200,9 @@ jobs:
      - name: 编译Openwrt
        run: |
         cd lede
+        chmod -R 755 ./
+        let make_process=$(nproc)+1
+        make toolchain/install -j${make_process} V=s
         let make_process=$(nproc)+1
         make -j${make_process} V=s || make -j${make_process} V=s || make -j1 V=s
         echo "======================="
