@@ -60,7 +60,7 @@ jobs:
        run: |
         sudo chown -R runner:runner /home/runner/work/openwrt18.06
         # wget -P ./lede https://git.io/JJJNa
-        wget -P https://raw.githubusercontent.com/siropboy/other/master/patch/lede.sh
+        wget -O - https://raw.githubusercontent.com/siropboy/other/master/patch/lede.sh
         cd lede
         ./scripts/feeds update -a
         cp -r  ../lede.sh ./
