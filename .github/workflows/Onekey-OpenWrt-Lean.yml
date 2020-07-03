@@ -1,7 +1,7 @@
 #=================================================
 # Description: Build OpenWrt using GitHub Actions
 # Author: sirpdboy
-# https://github.com/sirpdboy/OnkeyOpenwrt
+# https://github.com/sirpdboy/Openwrt
 
 name: Onekey-OpenWrt-Lean-CI
 
@@ -106,10 +106,10 @@ jobs:
         # CONFIG_VMDK_IMAGES is not set
         EOF
         # IPv6支持:
-        cat >> .config <<EOF
-        CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
-        CONFIG_PACKAGE_ipv6helper=y
-        EOF
+        # cat >> .config <<EOF
+        # CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
+        # CONFIG_PACKAGE_ipv6helper=y
+        # EOF
         # 多文件系统支持:
         # cat >> .config <<EOF
         # CONFIG_PACKAGE_kmod-fs-nfs=y
@@ -129,39 +129,45 @@ jobs:
         # 常用LuCI插件选择:
         cat >> .config <<EOF
         # CONFIG_PACKAGE_luci-app-accesscontrol is not set
+        # CONFIG_PACKAGE_luci-app-adbyby-plus is not set
         CONFIG_PACKAGE_luci-app-adguardhome=y
         CONFIG_PACKAGE_luci-app-advanced=y
-        # CONFIG_PACKAGE_luci-app-airplay2 is not set
-        # CONFIG_PACKAGE_luci-app-amule is not set
-        CONFIG_PACKAGE_luci-app-aria2=y
         CONFIG_PACKAGE_luci-app-autopoweroff=y
+        CONFIG_PACKAGE_luci-app-beardropper=y
         CONFIG_PACKAGE_luci-app-clash=y
         CONFIG_PACKAGE_luci-app-control-mia=y
         CONFIG_PACKAGE_luci-app-control-timewol=y
         CONFIG_PACKAGE_luci-app-control-webrestriction=y
         CONFIG_PACKAGE_luci-app-control-weburl=y
-        CONFIG_PACKAGE_luci-app-cpulimit=y
-        # CONFIG_PACKAGE_luci-app-dnspod=y
+        CONFIG_PACKAGE_luci-app-dnscrypt-proxy=y
         CONFIG_PACKAGE_luci-app-eqos=y
         CONFIG_PACKAGE_luci-app-frpc=y
         CONFIG_PACKAGE_luci-app-hd-idle=y
         CONFIG_PACKAGE_luci-app-koolddns=y
+        CONFIG_PACKAGE_luci-app-koolproxyR=y
         CONFIG_PACKAGE_luci-app-minidlna=y
-        # CONFIG_PACKAGE_luci-app-music-remote-center is not set
-        # CONFIG_PACKAGE_luci-app-fileassistant=y
         CONFIG_PACKAGE_luci-app-mwan3=y
         CONFIG_PACKAGE_luci-app-oaf=y
         CONFIG_PACKAGE_luci-app-openclash=y
-        # CONFIG_PACKAGE_luci-app-openvpn-server is not set
         CONFIG_PACKAGE_luci-app-passwall=y
-        CONFIG_PACKAGE_luci-app-serverchan=y
+        CONFIG_PACKAGE_luci-app-qbittorrent=y
         CONFIG_PACKAGE_luci-app-smartdns=y
-        CONFIG_PACKAGE_luci-app-smartinfo=y
         CONFIG_PACKAGE_luci-app-syncdial=y
-        # CONFIG_PACKAGE_luci-app-vlmcsd is not set
-        CONFIG_PACKAGE_luci-app-vssr=y
-        # CONFIG_PACKAGE_luci-app-xlnetacc is not set
         CONFIG_PACKAGE_luci-app-transmission=y
+        # CONFIG_PACKAGE_luci-app-vlmcsd is not set
+        CONFIG_PACKAGE_luci-app-vssr-plus=y
+        # CONFIG_PACKAGE_luci-app-vssr_INCLUDE_ShadowsocksR_Socks is not set
+        # CONFIG_PACKAGE_luci-app-vssr_INCLUDE_Trojan is not set
+        # CONFIG_PACKAGE_luci-app-vssr_INCLUDE_V2ray is not set
+        # CONFIG_PACKAGE_luci-app-xlnetacc is not set
+        # CONFIG_PACKAGE_luci-app-airplay2 is not set
+        # CONFIG_PACKAGE_luci-app-amule is not set
+        CONFIG_PACKAGE_luci-app-aria2=y
+        CONFIG_PACKAGE_luci-app-cpulimit=y
+        # CONFIG_PACKAGE_luci-app-fileassistant=y
+        # CONFIG_PACKAGE_luci-app-openvpn-server is not set
+        # CONFIG_PACKAGE_luci-app-serverchan=y
+        # CONFIG_PACKAGE_luci-app-smartinfo=y
         CONFIG_LUCI_LANG_redsocks2=y
         CONFIG_LUCI_LANG_en=y
         EOF
