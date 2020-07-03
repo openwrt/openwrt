@@ -1368,6 +1368,16 @@ define Device/sitecom_wlr-8100
 endef
 TARGET_DEVICES += sitecom_wlr-8100
 
+define Device/telco_t1
+  SOC := qca9531
+  DEVICE_VENDOR := Telco
+  DEVICE_MODEL := T1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-net-qmi-wwan \
+	kmod-usb-serial-option uqmi -swconfig -uboot-envtools
+  IMAGE_SIZE := 16192k
+endef
+TARGET_DEVICES += telco_t1
+
 define Device/teltonika_rut955
   SOC := ar9344
   DEVICE_VENDOR := Teltonika
