@@ -101,7 +101,6 @@ mac80211_hostapd_setup_base() {
 	json_select config
 
 	[ "$auto_channel" -gt 0 ] && channel=acs_survey
-	[ "$auto_channel" -gt 0 ] && json_get_values channel_list channels
 
 	[ "$auto_channel" -gt 0 ] && json_get_vars acs_exclude_dfs
 	[ -n "$acs_exclude_dfs" ] && [ "$acs_exclude_dfs" -gt 0 ] &&
@@ -109,6 +108,7 @@ mac80211_hostapd_setup_base() {
 
 	json_get_vars noscan ht_coex
 	json_get_values ht_capab_list ht_capab tx_burst
+	json_get_values channel_list channels
 
 	set_default noscan 0
 
