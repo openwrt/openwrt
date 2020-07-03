@@ -31,6 +31,10 @@
 	phy-tx0-term-offset = <0>;
 };
 
+&sata {
+	ports-implemented = <0x1>;
+};
+
 &smb208_s2a {
 	regulator-min-microvolt = <775000>;
 	regulator-max-microvolt = <1275000>;
