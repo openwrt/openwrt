@@ -51,7 +51,8 @@ define Device/cloudengines_pogoplugv4
   DEVICE_VENDOR := Cloud Engines
   DEVICE_MODEL := Pogoplug V4
   DEVICE_DTS := kirkwood-pogoplug-series-4
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 kmod-mvsdio kmod-usb3
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 kmod-mvsdio kmod-usb3 \
+	kmod-gpio-button-hotplug
 endef
 TARGET_DEVICES += cloudengines_pogoplugv4
 
