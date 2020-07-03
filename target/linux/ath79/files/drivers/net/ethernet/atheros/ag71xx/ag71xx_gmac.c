@@ -82,6 +82,14 @@ static void ag71xx_setup_gmac_955x(struct device_node *np, void __iomem *base)
 	ag71xx_of_set(np, "rxd-delay", &val, QCA955X_ETH_CFG_RXD_DELAY_SHIFT, 0x3);
 
 	__raw_writel(val, base + QCA955X_GMAC_REG_ETH_CFG);
+
+	val = __raw_readl(base + QCA955X_GMAC_REG_SGMII_CONFIG);
+
+	ag71xx_of_set(np, "sgmii-mode", &val, QCA955X_SGMII_CONFIG_MODE_CTRL_SHIFT, 0x7);
+	ag71xx_of_bit(np, "sgmii-force-speed", &val, QCA955X_SGMII_CONFIG_FORCE_SPEED);
+	ag71xx_of_set(np, "sgmii-speed", &val, QCA955X_SGMII_CONFIG_SPEED_SHIFT, 0x3);
+
+	__raw_writel(val, base + QCA955X_GMAC_REG_SGMII_CONFIG);
 }
 
 static void ag71xx_setup_gmac_956x(struct device_node *np, void __iomem *base)
