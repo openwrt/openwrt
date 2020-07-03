@@ -14,8 +14,6 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
  drivers/platform/Makefile | 1 +
  2 files changed, 3 insertions(+)
 
-diff --git a/drivers/platform/Kconfig b/drivers/platform/Kconfig
-index c11db8b..0283f0b 100644
 --- a/drivers/platform/Kconfig
 +++ b/drivers/platform/Kconfig
 @@ -8,3 +8,5 @@ endif
@@ -24,8 +22,6 @@ index c11db8b..0283f0b 100644
  source "drivers/platform/chrome/Kconfig"
 +
 +source "drivers/platform/mikrotik/Kconfig"
-diff --git a/drivers/platform/Makefile b/drivers/platform/Makefile
-index d3a6630..ad290c3 100644
 --- a/drivers/platform/Makefile
 +++ b/drivers/platform/Makefile
 @@ -8,3 +8,4 @@ obj-$(CONFIG_MIPS)		+= mips/
@@ -33,6 +29,3 @@ index d3a6630..ad290c3 100644
  obj-$(CONFIG_GOLDFISH)		+= goldfish/
  obj-$(CONFIG_CHROME_PLATFORMS)	+= chrome/
 +obj-$(CONFIG_MIKROTIK)		+= mikrotik/
--- 
-2.11.0
-

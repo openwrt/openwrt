@@ -102,8 +102,8 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
 +	depends on QUICC_ENGINE && FSL_SOC && PPC32
  	select FSL_PQ_MDIO
  	select PHYLIB
- 	---help---
-@@ -94,7 +95,8 @@ config GIANFAR
+ 	select FIXED_PHY
+@@ -96,7 +97,8 @@ config GIANFAR
  	  This driver supports the Gigabit TSEC on the MPC83xx, MPC85xx,
  	  and MPC86xx family of chips, the eTSEC on LS1021A and the FEC
  	  on the 8540.

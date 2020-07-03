@@ -270,7 +270,7 @@ Signed-off-by: Tang Yuantian <andy.tang@nxp.com>
  			writel(AHCI_PORT_AXICC_CFG, reg_base + PORT_AXICC);
 --- a/drivers/ata/libata-core.c
 +++ b/drivers/ata/libata-core.c
-@@ -76,6 +76,7 @@
+@@ -75,6 +75,7 @@
  #define CREATE_TRACE_POINTS
  #include <trace/events/libata.h>
  
@@ -278,7 +278,7 @@ Signed-off-by: Tang Yuantian <andy.tang@nxp.com>
  #include "libata.h"
  #include "libata-transport.h"
  
-@@ -4119,6 +4120,8 @@ int sata_link_hardreset(struct ata_link
+@@ -4118,6 +4119,8 @@ int sata_link_hardreset(struct ata_link
  	 */
  	ata_msleep(link->ap, 1);
  

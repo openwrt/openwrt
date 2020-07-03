@@ -1340,7 +1340,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  		while (ep_ring->dequeue != td->last_trb)
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -1604,13 +1604,38 @@ static int xhci_urb_dequeue(struct usb_h
+@@ -1605,13 +1605,38 @@ static int xhci_urb_dequeue(struct usb_h
  			ret = -ENOMEM;
  			goto done;
  		}

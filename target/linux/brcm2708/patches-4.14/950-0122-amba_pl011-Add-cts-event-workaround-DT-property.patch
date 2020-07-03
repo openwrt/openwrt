@@ -33,7 +33,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
 --- a/drivers/tty/serial/amba-pl011.c
 +++ b/drivers/tty/serial/amba-pl011.c
-@@ -2679,6 +2679,11 @@ static int pl011_probe(struct amba_devic
+@@ -2680,6 +2680,11 @@ static int pl011_probe(struct amba_devic
  	if (IS_ERR(uap->clk))
  		return PTR_ERR(uap->clk);
  
