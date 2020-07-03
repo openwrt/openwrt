@@ -50,7 +50,7 @@ TARGET_DEVICES += cloudengines_pogoe02
 define Device/cloudengines_pogoplugv4
   DEVICE_TITLE := Cloud Engines Pogoplug V4
   DEVICE_DTS := kirkwood-pogoplug-series-4
-  DEVICE_PACKAGES := kmod-usb3
+  DEVICE_PACKAGES := kmod-usb3 kmod-gpio-button-hotplug
 endef
 TARGET_DEVICES += cloudengines_pogoplugv4
 
