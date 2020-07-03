@@ -79,7 +79,7 @@
 			CPU_SPC: spc {
 				compatible = "qcom,idle-state-spc",
 						"arm,idle-state";
-				status = "okay";
+				status = "disabled";
 				entry-latency-us = <400>;
 				exit-latency-us = <900>;
 				min-residency-us = <3000>;
@@ -1219,8 +1219,6 @@
 
 			perst-gpios = <&qcom_pinmux 3 GPIO_ACTIVE_LOW>;
 
-			phy-tx0-term-offset = <7>;
-
 			status = "disabled";
 		};
 
@@ -1273,8 +1271,6 @@
 
 			perst-gpios = <&qcom_pinmux 48 GPIO_ACTIVE_LOW>;
 
-			phy-tx0-term-offset = <7>;
-
 			status = "disabled";
 		};
 
@@ -1326,8 +1322,6 @@
 			pinctrl-names = "default";
 
 			perst-gpios = <&qcom_pinmux 63 GPIO_ACTIVE_LOW>;
-
-			phy-tx0-term-offset = <7>;
 
 			status = "disabled";
 		};
