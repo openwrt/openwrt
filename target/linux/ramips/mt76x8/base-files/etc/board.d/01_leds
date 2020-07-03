@@ -133,6 +133,9 @@ zbtlink,zbt-we1226)
 	ucidef_set_led_switch "lan2" "LAN2" "$boardname:green:lan2" "switch0" "0x02"
 	ucidef_set_led_switch "wan" "WAN" "$boardname:green:wan" "switch0" "0x10"
 	;;
+zyxel,keenetic-4g)
+	ucidef_set_led_switch "internet" "internet" "$boardname:green:internet" "switch0" "0x01"
+	;;
 zyxel,keenetic-extra-ii)
 	set_wifi_led "$boardname:green:wifi"
 	ucidef_set_led_switch "internet" "internet" "$boardname:green:internet" "switch0" "0x01"

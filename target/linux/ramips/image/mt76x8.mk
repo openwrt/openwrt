@@ -657,6 +657,18 @@ define Device/zbtlink_zbt-we1226
 endef
 TARGET_DEVICES += zbtlink_zbt-we1226
 
+define Device/zyxel_keenetic-4g
+  IMAGE_SIZE := 16064k
+  BLOCKSIZE := 64k
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_TITLE := Keenetic 4G
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size | zyimage -d 4624 -v "KN-4G"
+endef
+TARGET_DEVICES += zyxel_keenetic-4g
+
 define Device/zyxel_keenetic-extra-ii
   IMAGE_SIZE := 14912k
   BLOCKSIZE := 64k
