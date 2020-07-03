@@ -3,7 +3,7 @@
 # Author: sirpdboy
 # https://github.com/sirpdboy/Openwrt
 
-name: Onekey-OpenWrt-Lean-CI
+name: Sirpdboy-OpenWrt-Lean-ipv6-CI
 
 on:
   push:
@@ -106,10 +106,10 @@ jobs:
         # CONFIG_VMDK_IMAGES is not set
         EOF
         # IPv6支持:
-        # cat >> .config <<EOF
-        # CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
-        # CONFIG_PACKAGE_ipv6helper=y
-        # EOF
+        cat >> .config <<EOF
+        CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
+        CONFIG_PACKAGE_ipv6helper=y
+        EOF
         # 多文件系统支持:
         # cat >> .config <<EOF
         # CONFIG_PACKAGE_kmod-fs-nfs=y
@@ -166,7 +166,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-cpulimit=y
         # CONFIG_PACKAGE_luci-app-fileassistant=y
         # CONFIG_PACKAGE_luci-app-openvpn-server is not set
-        # CONFIG_PACKAGE_luci-app-serverchan=y
+        CONFIG_PACKAGE_luci-app-serverchan=y
         # CONFIG_PACKAGE_luci-app-smartinfo=y
         CONFIG_LUCI_LANG_redsocks2=y
         CONFIG_LUCI_LANG_en=y
