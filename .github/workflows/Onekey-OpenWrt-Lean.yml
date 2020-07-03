@@ -52,9 +52,7 @@ jobs:
         expire-in: 7days # Setting this to 0 will delete all artifacts
      - name: Prepare openwrt
        run: |
-        pwd
-        ls 
-        sudo chown -R runner:runner /home/runner/work/openwrt18.06
+        # sudo chown -R runner:runner /home/runner/work/openwrt18.06
         git clone https://github.com/coolsnowwolf/lede.git
         cd lede
         mkdir  package/new
