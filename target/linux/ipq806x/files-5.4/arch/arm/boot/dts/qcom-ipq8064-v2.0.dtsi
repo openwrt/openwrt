@@ -1,6 +1,10 @@
 #include "qcom-ipq8064.dtsi"
 
 / {
+	aliases {
+		serial0 = &gsbi4_serial;
+	};
+
 	chosen {
 		stdout-path = "serial0:115200n8";
 	};

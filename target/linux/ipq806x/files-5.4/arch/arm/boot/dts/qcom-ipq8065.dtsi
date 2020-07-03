@@ -4,6 +4,10 @@
 	model = "Qualcomm IPQ8065";
 	compatible = "qcom,ipq8065", "qcom,ipq8064";
 
+	aliases {
+		serial0 = &gsbi4_serial;
+	};
+
 	chosen {
 		stdout-path = "serial0:115200n8";
 	};
