@@ -1,5 +1,11 @@
 #include "qcom-ipq8064.dtsi"
 
+/ {
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+};
+
 &CPU_SPC {
 	status = "okay";
 };

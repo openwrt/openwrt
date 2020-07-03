@@ -4,6 +4,10 @@
 	model = "Qualcomm IPQ8065";
 	compatible = "qcom,ipq8065", "qcom,ipq8064";
 
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
 	cpus {
 		qcom,l2 {
 			qcom,l2-cpufreq = <384000000 600000000 1400000000>;

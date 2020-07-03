@@ -34,7 +34,6 @@
 	chosen {
 		/* use "ubi_rootfs" volume in "ubi" partition as rootfs */
 		bootargs = "ubi.block=0,1 root=/dev/ubiblock0_1 rootfstype=squashfs";
-		stdout-path = "serial0:115200n8";
 	};
 
 	leds {
