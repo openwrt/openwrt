@@ -355,7 +355,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +MODULE_DESCRIPTION("Asynchronous compression type");
 --- a/crypto/algboss.c
 +++ b/crypto/algboss.c
-@@ -247,17 +247,9 @@ static int cryptomgr_schedule_test(struc
+@@ -245,17 +245,9 @@ static int cryptomgr_schedule_test(struc
  	memcpy(param->alg, alg->cra_name, sizeof(param->alg));
  	type = alg->cra_flags;
  

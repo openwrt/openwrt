@@ -43,7 +43,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	  algorithm registration.
 --- a/crypto/algboss.c
 +++ b/crypto/algboss.c
-@@ -248,12 +248,16 @@ static int cryptomgr_schedule_test(struc
+@@ -246,12 +246,16 @@ static int cryptomgr_schedule_test(struc
  	type = alg->cra_flags;
  
  	/* This piece of crap needs to disappear into per-type test hooks. */

@@ -1473,7 +1473,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		while (ep_ring->dequeue != td->last_trb)
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -1616,14 +1616,38 @@ int xhci_urb_dequeue(struct usb_hcd *hcd
+@@ -1617,14 +1617,38 @@ int xhci_urb_dequeue(struct usb_hcd *hcd
  			ret = -ENOMEM;
  			goto done;
  		}

@@ -38,7 +38,7 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
  ;----------------------------------------------------------------
 --- a/arch/arc/kernel/setup.c
 +++ b/arch/arc/kernel/setup.c
-@@ -404,6 +404,8 @@ static inline bool uboot_arg_invalid(uns
+@@ -405,6 +405,8 @@ static inline bool uboot_arg_invalid(uns
  /* We always pass 0 as magic from U-boot */
  #define UBOOT_MAGIC_VALUE	0
  
@@ -47,7 +47,7 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
  void __init handle_uboot_args(void)
  {
  	bool use_embedded_dtb = true;
-@@ -444,7 +446,7 @@ ignore_uboot_args:
+@@ -445,7 +447,7 @@ ignore_uboot_args:
  #endif
  
  	if (use_embedded_dtb) {

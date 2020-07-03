@@ -312,7 +312,7 @@ Signed-off-by: Luke Wren <wren6991@gmail.com>
 +	if (!ret)
 +		return 0;
 +
-+	nand_release(mtd);
++	nand_release(this);
 +	return -EINVAL;
 +}
 +
@@ -320,7 +320,7 @@ Signed-off-by: Luke Wren <wren6991@gmail.com>
 +{
 +	struct bcm2835_smi_nand_host *host = platform_get_drvdata(pdev);
 +
-+	nand_release(&host->mtd);
++	nand_release(&host->nand_chip);
 +
 +	return 0;
 +}
