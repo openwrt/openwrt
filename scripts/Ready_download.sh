@@ -6,10 +6,9 @@
 
 git clone https://github.com/coolsnowwolf/lede.git openwrt
 cd openwrt
-
-./scripts/feeds update -a
 git clone https://github.com/siropboy/mypackages package/mypackages
 git clone https://github.com/siropboy/mysmall package/mysmall
+./scripts/feeds update -a
 mkdir  ../bak
 mv .feeds/luci/applications/luci-app-mwan3/luasrc/model/cbi/mwan/policyconfig.lua  ../bak
 mv ./feeds/luci/modules/luci-mod-admin-full/luasrc/view/admin_system/poweroff.htm  ../bak
