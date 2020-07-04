@@ -536,7 +536,10 @@ sub install_src {
 	# If it's a core package and we don't want to override, just return
 	my $override = 0;
 	if (is_core_src($name)) {
-		return 0 unless $force;
+		if (!$force) {
+			warn "Not overriding core package $name; use -f to force\n";
+			return 0;
+		}
 		$override = 1;
 	}
 
