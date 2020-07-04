@@ -4,21 +4,27 @@
 # https://github.com/sirpdboy/Openwrt
 
 name: Sirpdboy-OpenWrt-Lean-ipv4-CI
-
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branches: 
+      - master
+  schedule:
+    - cron: '0 6 * * *'
+  # release:
+  #   types: [published]
 
 jobs:
- 
+
   build:
 
     runs-on: ubuntu-latest
 
     steps:
-     - uses: actions/checkout@v2
+
+     - name: Checkout
+       uses: actions/checkout@master
+       with:
+          ref: master
 
      - name: Init build
        env:
@@ -231,5 +237,5 @@ jobs:
      - name: Upload  IPK
        uses: actions/upload-artifact@master
        with:
-          name: SirpdboyOnekeyOpenWrt-x86-IPK
+          name: SirpdboyyOpenWrt-x86-IPK
           path: ./openwrt/bin/packages/
