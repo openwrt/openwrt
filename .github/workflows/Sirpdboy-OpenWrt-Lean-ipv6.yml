@@ -4,21 +4,28 @@
 # https://github.com/sirpdboy/Openwrt
 
 name: Sirpdboy-OpenWrt-Lean-ipv6-CI
-
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branches: 
+      - master
+  schedule:
+    - cron: '0 6 * * *'
+  # release:
+  #   types: [published]
 
 jobs:
- 
+
   build:
 
     runs-on: ubuntu-latest
 
     steps:
-     - uses: actions/checkout@v2
+
+     - name: Checkout
+       uses: actions/checkout@master
+       with:
+          ref: master
+
 
      - name: Init build
        env:
@@ -156,6 +163,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-transmission=y
         # CONFIG_PACKAGE_luci-app-vlmcsd is not set
         CONFIG_PACKAGE_luci-app-vssr-plus=y
+        CONFIG_PACKAGE_luci-app-vssr=y
         # CONFIG_PACKAGE_luci-app-vssr_INCLUDE_ShadowsocksR_Socks is not set
         # CONFIG_PACKAGE_luci-app-vssr_INCLUDE_Trojan is not set
         # CONFIG_PACKAGE_luci-app-vssr_INCLUDE_V2ray is not set
@@ -231,5 +239,5 @@ jobs:
      - name: Upload  IPK
        uses: actions/upload-artifact@master
        with:
-          name: SirpdboyOnekeyOpenWrt-x86-IPK
+          name: SirpdboyOpenWrt-x86-IPK
           path: ./openwrt/bin/packages/
