@@ -9,7 +9,7 @@ on:
     branches: 
       - master
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 18 * * *'
   # release:
   #   types: [published]
 
@@ -94,20 +94,12 @@ jobs:
         cat >> .config <<EOF
         CONFIG_TARGET_x86=y
         CONFIG_TARGET_x86_64=y
-        CONFIG_TARGET_x86_64_Generic=y
+        CONFIG_TARGET_x86_64_DEVICE_generic=y
         EOF
         # 固件压缩:
         cat >> .config <<EOF
         CONFIG_TARGET_IMAGES_GZIP=y
         EOF        
-        # 固件空间大小:
-        cat >> .config <<EOF
-        CONFIG_TARGET_ROOTFS_PARTSIZE=460
-        EOF
-        # 编译UEFI固件:
-        cat >> .config <<EOF
-        CONFIG_EFI_IMAGES=y
-        EOF
         # 取消编译VMware镜像: 
         cat >> .config <<EOF
         # CONFIG_VMDK_IMAGES is not set
@@ -127,8 +119,8 @@ jobs:
         # EOF
         # USB3.0支持:
         cat >> .config <<EOF
-        CONFIG_PACKAGE_kmod-usb-ohci=y
-        CONFIG_PACKAGE_kmod-usb-ohci-pci=y
+        CONFIG_PACKAGE_kmod-usb-ehci=y
+        CONFIG_PACKAGE_kmod-usb-uhci=y
         CONFIG_PACKAGE_kmod-usb2=y
         CONFIG_PACKAGE_kmod-usb2-pci=y
         CONFIG_PACKAGE_kmod-usb3=y
@@ -136,43 +128,77 @@ jobs:
         # 常用LuCI插件选择:
         cat >> .config <<EOF
         # CONFIG_PACKAGE_luci-app-accesscontrol is not set
-        # CONFIG_PACKAGE_luci-app-adbyby-plus is not set
+        CONFIG_PACKAGE_luci-app-adblock=m
         CONFIG_PACKAGE_luci-app-adguardhome=y
         CONFIG_PACKAGE_luci-app-advanced=y
+        CONFIG_PACKAGE_luci-app-airplay2=m
+        CONFIG_PACKAGE_luci-app-amule=m
+        CONFIG_PACKAGE_luci-app-aria2=m
         CONFIG_PACKAGE_luci-app-autopoweroff=y
-        CONFIG_PACKAGE_luci-app-beardropper=y
+        CONFIG_PACKAGE_luci-app-baidupcs-web=m
+        CONFIG_PACKAGE_luci-app-beardropper=m
         CONFIG_PACKAGE_luci-app-clash=y
         CONFIG_PACKAGE_luci-app-control-mia=y
         CONFIG_PACKAGE_luci-app-control-timewol=y
         CONFIG_PACKAGE_luci-app-control-webrestriction=y
         CONFIG_PACKAGE_luci-app-control-weburl=y
-        CONFIG_PACKAGE_luci-app-dnscrypt-proxy=y
+        CONFIG_PACKAGE_luci-app-cpulimit=m
+        CONFIG_PACKAGE_luci-app-diskman=m
+        CONFIG_PACKAGE_luci-app-dnscrypt-proxy=m
+        CONFIG_PACKAGE_luci-app-dnsforwarder=m
+        CONFIG_PACKAGE_luci-app-docker=m
         CONFIG_PACKAGE_luci-app-eqos=y
+        CONFIG_PACKAGE_luci-app-familycloud=m
+        CONFIG_PACKAGE_luci-app-fileassistant=m
+        CONFIG_PACKAGE_luci-app-filetransfer=y
         CONFIG_PACKAGE_luci-app-frpc=y
+        CONFIG_PACKAGE_luci-app-frps=m
+        CONFIG_PACKAGE_luci-app-guest-wifi=m
         CONFIG_PACKAGE_luci-app-hd-idle=y
+        CONFIG_PACKAGE_luci-app-ipsec-vpnd=m
+        CONFIG_PACKAGE_luci-app-jd-dailybonus=y
+        CONFIG_PACKAGE_luci-app-kodexplorer=m
         CONFIG_PACKAGE_luci-app-koolddns=y
         CONFIG_PACKAGE_luci-app-koolproxyR=y
         CONFIG_PACKAGE_luci-app-minidlna=y
+        CONFIG_PACKAGE_luci-app-music-remote-center=m
         CONFIG_PACKAGE_luci-app-mwan3=y
+        CONFIG_PACKAGE_luci-app-mwan3helper=m
+        CONFIG_PACKAGE_luci-app-netdata=m
+        CONFIG_PACKAGE_luci-app-nft-qos=m
         CONFIG_PACKAGE_luci-app-oaf=y
         CONFIG_PACKAGE_luci-app-openclash=y
+        CONFIG_PACKAGE_luci-app-openvpn=m
+        CONFIG_PACKAGE_luci-app-openvpn-server=m
         CONFIG_PACKAGE_luci-app-passwall=y
-        CONFIG_PACKAGE_luci-app-qbittorrent=y
+        CONFIG_PACKAGE_luci-app-qbittorrent=m
+        CONFIG_PACKAGE_luci-app-qos=m
+        CONFIG_PACKAGE_luci-app-rclone=m
+        CONFIG_PACKAGE_luci-app-samba4=m
+        CONFIG_PACKAGE_luci-app-serverchan=m
+        CONFIG_PACKAGE_luci-app-shairplay=m
         CONFIG_PACKAGE_luci-app-smartdns=y
+        CONFIG_PACKAGE_luci-app-smartinfo=m
+        CONFIG_PACKAGE_luci-app-softethervpn=m
+        CONFIG_PACKAGE_luci-app-sqm=m
+        CONFIG_PACKAGE_luci-app-ssrserver-python=m
         CONFIG_PACKAGE_luci-app-syncdial=y
-        CONFIG_PACKAGE_luci-app-transmission=y
-        # CONFIG_PACKAGE_luci-app-vlmcsd is not set
-        # CONFIG_PACKAGE_luci-app-vssr-plus=y
+        CONFIG_PACKAGE_luci-app-tinyproxy=m
+        CONFIG_PACKAGE_luci-app-transmission=m
+        CONFIG_PACKAGE_luci-app-ttyd=m
+        CONFIG_PACKAGE_luci-app-uhttpd=m
+        CONFIG_PACKAGE_luci-app-usb-printer=m
+        CONFIG_PACKAGE_luci-app-v2ray-server=m
+        CONFIG_PACKAGE_luci-app-verysync=m
+        CONFIG_PACKAGE_luci-app-vlmcsd=m
+        CONFIG_PACKAGE_luci-app-vsftpd=m
         CONFIG_PACKAGE_luci-app-vssr=y
-        CONFIG_PACKAGE_luci-app-aria2=y
-        CONFIG_PACKAGE_luci-app-cpulimit=y
-        # CONFIG_PACKAGE_luci-app-fileassistant=y
-        # CONFIG_PACKAGE_luci-app-openvpn-server is not set
-        CONFIG_PACKAGE_luci-app-serverchan=y
-        CONFIG_PACKAGE_luci-app-jd-dailybonus=y
-        # CONFIG_PACKAGE_luci-app-smartinfo=y
-        CONFIG_LUCI_LANG_redsocks2=y
-        CONFIG_LUCI_LANG_en=y
+        CONFIG_PACKAGE_luci-app-webadmin=m
+        CONFIG_PACKAGE_luci-app-wifischedule=m
+        CONFIG_PACKAGE_luci-app-wrtbwmon=m
+        CONFIG_PACKAGE_luci-app-xlnetacc=m
+        CONFIG_PACKAGE_luci-app-zerotier=m
+        # CONFIG_PACKAGE_luci-app-adbyby-plus is not set
         EOF
         # LuCI主题:
         cat >> .config <<EOF
@@ -186,6 +212,11 @@ jobs:
         CONFIG_PACKAGE_htop=y
         CONFIG_PACKAGE_screen=y
         CONFIG_PACKAGE_wget=y
+        EOF
+        # 固件空间大小:
+        cat >> .config <<EOF
+        CONFIG_TARGET_ROOTFS_PARTSIZE=460
+        CONFIG_ZSTD_OPTIMIZE_O3=y
         EOF
         # 
         # ========================固件定制部分结束========================
@@ -220,7 +251,7 @@ jobs:
      - name: Prepare artifact
        run: |
         find  ./openwrt/bin/targets/ -type d -name "packages" | xargs rm -rf {}
-        find  ./openwrt/bin/targets/ -type d -name "rootfs" | xargs rm -rf {}
+        find  ./openwrt/bin/targets/ -type f -name "rootfs" | xargs rm -rf {}
         cd ./openwrt/bin/targets/x86/64
         rm -rf `ls | grep -v "squashfs"`
         # gzip -d *.gz
@@ -235,5 +266,5 @@ jobs:
      - name: Upload  IPK
        uses: actions/upload-artifact@master
        with:
-          name: SirpdboyOpenWrt-x86-IPK
+          name: SirpdboyOpenWrt-X86-IPK
           path: ./openwrt/bin/packages/
