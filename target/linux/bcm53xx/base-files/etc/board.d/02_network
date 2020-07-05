@@ -47,6 +47,7 @@ bcm53xx_setup_macs()
 	case "$board" in
 	asus,rt-ac87u)
 		etXmacaddr=$(nvram get et1macaddr)
+		[ "x$etXmacaddr" = "x00:00:00:00:00:00" -o "x$etXmacaddr" = "x" ] && etXmacaddr="$(nvram get 1:macaddr)"
 		offset=1
 		;;
 	dlink,dir-885l | \
@@ -55,11 +56,13 @@ bcm53xx_setup_macs()
 	netgear,r8000 | \
 	netgear,r8500)
 		etXmacaddr=$(nvram get et2macaddr)
+		[ "x$etXmacaddr" = "x00:00:00:00:00:00" -o "x$etXmacaddr" = "x" ] && etXmacaddr="$(nvram get 2:macaddr)"
 		offset=1
 		;;
 	luxul,xwr-3100v1 | \
 	luxul,xwr-3150-v1)
 		etXmacaddr=$(nvram get et0macaddr)
+		[ "x$etXmacaddr" = "x00:00:00:00:00:00" -o "x$etXmacaddr" = "x" ] && etXmacaddr="$(nvram get 0:macaddr)"
 		offset=5
 		;;
 	meraki,mr26)
@@ -69,6 +72,7 @@ bcm53xx_setup_macs()
 		;;
 	*)
 		etXmacaddr=$(nvram get et0macaddr)
+		[ "x$etXmacaddr" = "x00:00:00:00:00:00" -o "x$etXmacaddr" = "x" ] && etXmacaddr="$(nvram get 0:macaddr)"
 		offset=1
 		;;
 	esac
