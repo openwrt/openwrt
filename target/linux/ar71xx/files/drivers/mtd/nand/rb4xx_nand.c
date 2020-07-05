@@ -356,7 +356,7 @@ static int rb4xx_nand_remove(struct platform_device *pdev)
 {
 	struct rb4xx_nand_info *info = platform_get_drvdata(pdev);
 
-	nand_release(&info->chip));
+	nand_release(&info->chip);
 	platform_set_drvdata(pdev, NULL);
 	kfree(info);
 	gpio_free(RB4XX_NAND_GPIO_NCE);
