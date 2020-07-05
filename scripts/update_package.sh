@@ -26,6 +26,7 @@ git clone -b master --single-branch https://github.com/frainzy1477/luci-app-clas
 #svn co https://github.com/kenzok8/openwrt-packages/trunk/luci-app-clash package/new/luci-app-clash
 sed -i 's/), 5)/), 48)/g' package/new/luci-app-clash/luasrc/controller/clash.lua
 svn co https://github.com/Lienol/openwrt-package/trunk/lienol/luci-app-passwall package/new/luci-app-passwall
-svn co https://github.com/jerrykuku/luci-app-vssr/trunk/ package/new/luci-app-vssr
+svn co https://github.com/jerrykuku/luci-app-vssr/trunk/  package/new/luci-app-vssr
+svn co https://github.com/jerrykuku/luci-app-jd-dailybonus/trunk/ package/new/luci-app-jd-dailybonus
 chmod -R 755 ./
 exit 0
