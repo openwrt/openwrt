@@ -9,7 +9,7 @@ on:
     branches: 
       - master
   schedule:
-    - cron: '0 18 * * *'
+    - cron: '0 17 * * *'
   # release:
   #   types: [published]
 
@@ -108,7 +108,7 @@ jobs:
         # cat >> .config <<EOF
         # CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
         # CONFIG_PACKAGE_ipv6helper=y
-        # EOF
+        EOF
         # 多文件系统支持:
         # cat >> .config <<EOF
         # CONFIG_PACKAGE_kmod-fs-nfs=y
@@ -175,7 +175,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-qos=m
         CONFIG_PACKAGE_luci-app-rclone=m
         CONFIG_PACKAGE_luci-app-samba4=m
-        CONFIG_PACKAGE_luci-app-serverchan=m
+        CONFIG_PACKAGE_luci-app-serverchan=y
         CONFIG_PACKAGE_luci-app-shairplay=m
         CONFIG_PACKAGE_luci-app-smartdns=y
         CONFIG_PACKAGE_luci-app-smartinfo=m
@@ -219,7 +219,7 @@ jobs:
         CONFIG_ZSTD_OPTIMIZE_O3=y
         EOF
         # 修改LAN的IP地址将默认192.168.1.1改为192.168.11.1：
-        sed -i 's/192.168.1.1/192.168.11.1/g' package/base-files/files/bin/config_generate
+        # sed -i 's/192.168.1.1/192.168.11.1/g' package/base-files/files/bin/config_generate
         # 
         # ========================固件定制部分结束========================
         # 
@@ -252,20 +252,20 @@ jobs:
         du -h --max-depth=1 ./bin
      - name: Prepare artifact
        run: |
-        find  ./openwrt/bin/targets/ -type f -name '*rootfs.img.gz' | xargs rm -rf {}
-        cd ./openwrt/bin/targets/*/*
+        cd ./openwrt/bin/targets/x86/64
         rm -rf `ls | grep -v "squashfs"`
+        find  ./openwrt/bin/targets/ -type d -name "rootfs" | xargs rm -rf {}
         gzip -d *.gz
         gzip *.img
         df -h
      - name: Upload firmware
        uses: actions/upload-artifact@master
        with:
-          name: SirpdboyOpenWrt-ipv4-firmware
+          name: SirpdboyOpenWrt-IPV4-Firmware
           path: ./openwrt/bin/targets/
           
      - name: Upload  IPK
        uses: actions/upload-artifact@master
        with:
-          name: SirpdboyOpenWrt-ipv4-ipk
+          name: SirpdboyOpenWrt-IPV4-Ipk
           path: ./openwrt/bin/packages/
