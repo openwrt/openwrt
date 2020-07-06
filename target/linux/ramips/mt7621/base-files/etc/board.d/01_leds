@@ -75,6 +75,10 @@ tplink,re650-v1)
 	ucidef_set_led_netdev "eth_act" "LAN act" "$boardname:green:eth_act" "lan" "tx rx"
 	ucidef_set_led_netdev "eth_link" "LAN link" "$boardname:green:eth_link" "lan" "link"
 	;;
+tplink,re500-v1)
+	ucidef_set_led_netdev "eth_act" "LAN act" "$boardname:green:eth_act" "lan" "tx rx"
+	ucidef_set_led_netdev "eth_link" "LAN link" "$boardname:green:eth_link" "lan" "link"
+	;;
 xzwifi,creativebox-v1)
 	ucidef_set_led_netdev "internet" "internet" "$boardname:blue:internet" "wan"
 	;;
