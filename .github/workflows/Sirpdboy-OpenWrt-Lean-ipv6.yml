@@ -97,9 +97,9 @@ jobs:
         CONFIG_TARGET_x86_64_DEVICE_generic=y
         EOF
         # 固件压缩:
-        cat >> .config <<EOF
-        CONFIG_TARGET_IMAGES_GZIP=y
-        EOF        
+        # cat >> .config <<EOF
+        # CONFIG_TARGET_IMAGES_GZIP=y
+        # EOF        
         # 取消编译VMware镜像: 
         cat >> .config <<EOF
         # CONFIG_VMDK_IMAGES is not set
@@ -136,7 +136,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-aria2=m
         CONFIG_PACKAGE_luci-app-autopoweroff=y
         CONFIG_PACKAGE_luci-app-baidupcs-web=m
-        CONFIG_PACKAGE_luci-app-beardropper=y
+        CONFIG_PACKAGE_luci-app-beardropper=m
         CONFIG_PACKAGE_luci-app-clash=y
         CONFIG_PACKAGE_luci-app-control-mia=y
         CONFIG_PACKAGE_luci-app-control-timewol=y
@@ -154,7 +154,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-frpc=y
         CONFIG_PACKAGE_luci-app-frps=m
         CONFIG_PACKAGE_luci-app-guest-wifi=m
-        CONFIG_PACKAGE_luci-app-hd-idle=y
+        CONFIG_PACKAGE_luci-app-hd-idle=m
         CONFIG_PACKAGE_luci-app-ipsec-vpnd=m
         CONFIG_PACKAGE_luci-app-jd-dailybonus=y
         CONFIG_PACKAGE_luci-app-kodexplorer=m
@@ -218,6 +218,8 @@ jobs:
         CONFIG_TARGET_ROOTFS_PARTSIZE=460
         CONFIG_ZSTD_OPTIMIZE_O3=y
         EOF
+        # 修改LAN的IP地址将默认192.168.1.1改为192.168.11.1：
+        sed -i 's/192.168.1.1/192.168.11.1/g' package/base-files/files/bin/config_generate
         # 
         # ========================固件定制部分结束========================
         # 
@@ -253,8 +255,8 @@ jobs:
         find  ./openwrt/bin/targets/ -type f -name '*rootfs.img.gz' | xargs rm -rf {}
         cd ./openwrt/bin/targets/x86/64
         rm -rf `ls | grep -v "squashfs"`
-        # gzip -d *.gz
-        # gzip *.img
+        gzip -d *.gz
+        gzip *.img
         df -h
      - name: Upload firmware
        uses: actions/upload-artifact@master
