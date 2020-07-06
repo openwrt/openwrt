@@ -842,6 +842,16 @@ define Device/tplink_re350-v1
 endef
 TARGET_DEVICES += tplink_re350-v1
 
+define Device/tplink_re500-v1
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := RE500
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7615e wpad-basic
+  TPLINK_BOARD_ID := RE500-V1
+  IMAGE_SIZE := 14208k
+endef
+TARGET_DEVICES += tplink_re500-v1
+
 define Device/tplink_re650-v1
   $(Device/tplink-safeloader)
   DEVICE_MODEL := RE650
