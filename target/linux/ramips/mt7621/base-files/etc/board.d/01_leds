@@ -68,14 +68,14 @@ netgear,r6800)
 	ucidef_set_led_netdev "lan3" "LAN3" "$boardname:white:lan3" "lan3"
 	ucidef_set_led_netdev "lan4" "LAN4" "$boardname:white:lan4" "lan4"
 	;;
-tplink,re350-v1|\
-tplink,re650-v1)
+tplink,re350-v1)
 	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "$boardname:blue:wifi2G" "wlan0"
 	ucidef_set_led_netdev "wifi5g" "Wifi 5G" "$boardname:blue:wifi5G" "wlan1"
 	ucidef_set_led_netdev "eth_act" "LAN act" "$boardname:green:eth_act" "lan" "tx rx"
 	ucidef_set_led_netdev "eth_link" "LAN link" "$boardname:green:eth_link" "lan" "link"
 	;;
-tplink,re500-v1)
+tplink,re500-v1|\
+tplink,re650-v1)
 	ucidef_set_led_netdev "eth_act" "LAN act" "$boardname:green:eth_act" "lan" "tx rx"
 	ucidef_set_led_netdev "eth_link" "LAN link" "$boardname:green:eth_link" "lan" "link"
 	;;
