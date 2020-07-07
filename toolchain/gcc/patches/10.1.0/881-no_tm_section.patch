@@ -6,6 +6,6 @@
  #if !defined(USE_TM_CLONE_REGISTRY) && defined(OBJECT_FORMAT_ELF)
 -# define USE_TM_CLONE_REGISTRY 1
 +# define USE_TM_CLONE_REGISTRY 0
+ #elif !defined(USE_TM_CLONE_REGISTRY)
+ # define USE_TM_CLONE_REGISTRY 0
  #endif
- 
- /* We do not want to add the weak attribute to the declarations of these

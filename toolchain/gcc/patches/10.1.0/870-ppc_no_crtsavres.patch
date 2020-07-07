@@ -1,6 +1,6 @@
---- a/gcc/config/rs6000/rs6000.c
-+++ b/gcc/config/rs6000/rs6000.c
-@@ -24474,7 +24474,7 @@ rs6000_savres_strategy (rs6000_stack_t *
+--- a/gcc/config/rs6000/rs6000-logue.c
++++ b/gcc/config/rs6000/rs6000-logue.c
+@@ -348,7 +348,7 @@ rs6000_savres_strategy (rs6000_stack_t *
    /* Define cutoff for using out-of-line functions to save registers.  */
    if (DEFAULT_ABI == ABI_V4 || TARGET_ELF)
      {
