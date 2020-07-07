@@ -26,7 +26,6 @@ jobs:
        with:
           ref: master
 
-
      - name: Init build
        env:
         DEBIAN_FRONTEND: noninteractive
@@ -38,239 +37,12 @@ jobs:
         sudo -E apt-get autoremove -y --purge
         sudo -E apt-get clean -y
         sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php
-     - name: Free Disk Space
-       run: |
-        sudo swapoff -a
-        sudo rm -f /swapfile
-        sudo rm -rf "/usr/local/share/boost"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-        df -h
      - name: Prepare openwrt
        run: |
         sudo chown -R runner:runner /home/runner/work/openwrt
         cp -r ./scripts/Ready_download.sh ./
         /bin/bash Ready_download.sh
      - name: Prepare Package
-       run: |
-        cd openwrt
-        cp -r ../scripts/update_package.sh ./
-        /bin/bash update_package.sh
-        chmod -R 755 ./
-        df -h
-     - name: Generate configuration file
-       run: |
-        cd openwrt
-        rm -f ./.config*
-        touch ./.config
-        #
-        # ========================固件定制部分=======================
-        # 
-        # 
-        # 如果不对本区块做出任何编辑, 则生成默认配置固件. 
-        # 
-        # 以下为定制化固件选项和说明:
-        #
-        #
-        # 有些插件/选项是默认开启的, 如果想要关闭, 请参照以下示例进行编写:
-        # 
-        #          =========================================
-        #         |  # 取消编译VMware镜像:                   |
-        #         |  cat >> .config <<EOF                   |
-        #         |  # CONFIG_VMDK_IMAGES is not set        |
-        #         |  EOF                                    |
-        #          =========================================
-        #
-        # 
-        # 以下是一些提前准备好的一些插件选项.
-        # 直接取消注释相应代码块即可应用. 不要取消注释代码块上的汉字说明.
-        # 如果不需要代码块里的某一项配置, 只需要删除相应行.
-        #
-        # 如果需要其他插件, 请按照示例自行添加.
-        # 注意, 只需添加依赖链顶端的包. 如果你需要插件 A, 同时 A 依赖 B, 即只需要添加 A.
-        # 
-        # 无论你想要对固件进行怎样的定制, 都需要且只需要修改 EOF 回环内的内容.
-        # 
-        # 编译x64固件:
-        cat >> .config <<EOF
-        CONFIG_TARGET_x86=y
-        CONFIG_TARGET_x86_64=y
-        CONFIG_TARGET_x86_64_DEVICE_generic=y
-        EOF
-        # 固件压缩:
-        # cat >> .config <<EOF
-        # CONFIG_TARGET_IMAGES_GZIP=y
-        # EOF        
-        # 取消编译VMware镜像: 
-        cat >> .config <<EOF
-        # CONFIG_VMDK_IMAGES is not set
-        EOF
-        # IPv6支持:
-        # cat >> .config <<EOF
-        # CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
-        # CONFIG_PACKAGE_ipv6helper=y
-        EOF
-        # 多文件系统支持:
-        # cat >> .config <<EOF
-        # CONFIG_PACKAGE_kmod-fs-nfs=y
-        # CONFIG_PACKAGE_kmod-fs-nfs-common=y
-        # CONFIG_PACKAGE_kmod-fs-nfs-v3=y
-        # CONFIG_PACKAGE_kmod-fs-nfs-v4=y
-        # CONFIG_PACKAGE_kmod-fs-squashfs=y
-        # EOF
-        # USB3.0支持:
-        cat >> .config <<EOF
-        CONFIG_PACKAGE_kmod-usb-ehci=y
-        CONFIG_PACKAGE_kmod-usb-uhci=y
-        CONFIG_PACKAGE_kmod-usb2=y
-        CONFIG_PACKAGE_kmod-usb2-pci=y
-        CONFIG_PACKAGE_kmod-usb3=y
-        EOF
-        # 常用LuCI插件选择:
-        cat >> .config <<EOF
-        # CONFIG_PACKAGE_luci-app-accesscontrol is not set
-        CONFIG_PACKAGE_luci-app-adblock=m
-        CONFIG_PACKAGE_luci-app-adguardhome=y
-        CONFIG_PACKAGE_luci-app-advanced=y
-        CONFIG_PACKAGE_luci-app-airplay2=m
-        CONFIG_PACKAGE_luci-app-amule=m
-        CONFIG_PACKAGE_luci-app-aria2=m
-        CONFIG_PACKAGE_luci-app-autopoweroff=y
-        CONFIG_PACKAGE_luci-app-baidupcs-web=m
-        CONFIG_PACKAGE_luci-app-beardropper=m
-        CONFIG_PACKAGE_luci-app-clash=y
-        CONFIG_PACKAGE_luci-app-control-mia=y
-        CONFIG_PACKAGE_luci-app-control-timewol=y
-        CONFIG_PACKAGE_luci-app-control-webrestriction=y
-        CONFIG_PACKAGE_luci-app-control-weburl=y
-        CONFIG_PACKAGE_luci-app-cpulimit=m
-        CONFIG_PACKAGE_luci-app-diskman=m
-        CONFIG_PACKAGE_luci-app-dnscrypt-proxy=m
-        CONFIG_PACKAGE_luci-app-dnsforwarder=m
-        CONFIG_PACKAGE_luci-app-docker=m
-        CONFIG_PACKAGE_luci-app-eqos=y
-        CONFIG_PACKAGE_luci-app-familycloud=m
-        CONFIG_PACKAGE_luci-app-fileassistant=m
-        CONFIG_PACKAGE_luci-app-filetransfer=y
-        CONFIG_PACKAGE_luci-app-frpc=y
-        CONFIG_PACKAGE_luci-app-frps=m
-        CONFIG_PACKAGE_luci-app-guest-wifi=m
-        CONFIG_PACKAGE_luci-app-hd-idle=m
-        CONFIG_PACKAGE_luci-app-ipsec-vpnd=m
-        CONFIG_PACKAGE_luci-app-jd-dailybonus=y
-        CONFIG_PACKAGE_luci-app-kodexplorer=m
-        CONFIG_PACKAGE_luci-app-koolddns=y
-        CONFIG_PACKAGE_luci-app-koolproxyR=y
-        CONFIG_PACKAGE_luci-app-minidlna=y
-        CONFIG_PACKAGE_luci-app-music-remote-center=m
-        CONFIG_PACKAGE_luci-app-mwan3=y
-        CONFIG_PACKAGE_luci-app-mwan3helper=m
-        CONFIG_PACKAGE_luci-app-netdata=m
-        CONFIG_PACKAGE_luci-app-nft-qos=m
-        CONFIG_PACKAGE_luci-app-oaf=y
-        CONFIG_PACKAGE_luci-app-openclash=y
-        CONFIG_PACKAGE_luci-app-openvpn=m
-        CONFIG_PACKAGE_luci-app-openvpn-server=m
-        CONFIG_PACKAGE_luci-app-passwall=y
-        CONFIG_PACKAGE_luci-app-qbittorrent=m
-        CONFIG_PACKAGE_luci-app-qos=m
-        CONFIG_PACKAGE_luci-app-rclone=m
-        CONFIG_PACKAGE_luci-app-samba4=m
-        CONFIG_PACKAGE_luci-app-serverchan=y
-        CONFIG_PACKAGE_luci-app-shairplay=m
-        CONFIG_PACKAGE_luci-app-smartdns=y
-        CONFIG_PACKAGE_luci-app-smartinfo=m
-        CONFIG_PACKAGE_luci-app-softethervpn=m
-        CONFIG_PACKAGE_luci-app-sqm=m
-        CONFIG_PACKAGE_luci-app-ssrserver-python=m
-        CONFIG_PACKAGE_luci-app-syncdial=y
-        CONFIG_PACKAGE_luci-app-tinyproxy=m
-        CONFIG_PACKAGE_luci-app-transmission=m
-        CONFIG_PACKAGE_luci-app-ttyd=m
-        CONFIG_PACKAGE_luci-app-uhttpd=m
-        CONFIG_PACKAGE_luci-app-usb-printer=m
-        CONFIG_PACKAGE_luci-app-v2ray-server=m
-        CONFIG_PACKAGE_luci-app-verysync=m
-        CONFIG_PACKAGE_luci-app-vlmcsd=m
-        CONFIG_PACKAGE_luci-app-vsftpd=m
-        CONFIG_PACKAGE_luci-app-vssr=y
-        CONFIG_PACKAGE_luci-app-webadmin=m
-        CONFIG_PACKAGE_luci-app-wifischedule=m
-        CONFIG_PACKAGE_luci-app-wrtbwmon=m
-        CONFIG_PACKAGE_luci-app-xlnetacc=m
-        CONFIG_PACKAGE_luci-app-zerotier=m
-        # CONFIG_PACKAGE_luci-app-adbyby-plus is not set
-        EOF
-        # LuCI主题:
-        cat >> .config <<EOF
-        CONFIG_PACKAGE_luci-theme-argon=y
-        CONFIG_PACKAGE_luci-theme-opentomcat=y
-        CONFIG_PACKAGE_luci-theme-btmod=y
-        EOF
-        # 常用软件包:
-        cat >> .config <<EOF
-        CONFIG_PACKAGE_curl=y
-        CONFIG_PACKAGE_htop=y
-        CONFIG_PACKAGE_screen=y
-        CONFIG_PACKAGE_wget=y
-        EOF
-        # 固件空间大小:
-        cat >> .config <<EOF
-        CONFIG_TARGET_ROOTFS_PARTSIZE=460
-        CONFIG_ZSTD_OPTIMIZE_O3=y
-        EOF
-        # 修改LAN的IP地址将默认192.168.1.1改为192.168.11.1：
-        # sed -i 's/192.168.1.1/192.168.11.1/g' package/base-files/files/bin/config_generate
-        # 
-        # ========================固件定制部分结束========================
-        # 
-        sed -i 's/^[ \t]*//g' ./.config
-        make defconfig
-        #=================================================
-# Description: Build OpenWrt using GitHub Actions
-# Author: sirpdboy
-# https://github.com/sirpdboy/Openwrt
-
-name: Sirpdboy-OpenWrt-Lean-ipv4-CI
-on:
-  push:
-    branches: 
-      - master
-  schedule:
-    - cron: '0 17 * * *'
-  # release:
-  #   types: [published]
-
-jobs:
-
-  build:
-
-    runs-on: ubuntu-latest
-
-    steps:
-
-     - name: Checkout
-       uses: actions/checkout@master
-       with:
-          ref: master
-
-
-     - name: Init build
-       env:
-        DEBIAN_FRONTEND: noninteractive
-       run: |
-       docker rmi `docker images -q`
-       sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d
-       sudo -E apt-get -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php*
-       sudo -E apt-get update
-       sudo -E apt-get -y install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch python3 unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs gcc-multilib g++-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler antlr3 gperf swig
-       sudo -E apt-get -y autoremove --purge
-       sudo -E apt-get clean
-     - name: Update feeds
-       run: |
-        sudo chown -R runner:runner /home/runner/work/openwrt
-        cp -r ./scripts/Ready_download.sh ./
-        /bin/bash Ready_download.sh
-     - name: Make download
        run: |
         cd openwrt
         cp -r ../scripts/update_package.sh ./
@@ -330,7 +102,7 @@ jobs:
         # cat >> .config <<EOF
         # CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
         # CONFIG_PACKAGE_ipv6helper=y
-        EOF
+        # EOF
         # 多文件系统支持:
         # cat >> .config <<EOF
         # CONFIG_PACKAGE_kmod-fs-nfs=y
@@ -358,13 +130,13 @@ jobs:
         CONFIG_PACKAGE_luci-app-aria2=m
         CONFIG_PACKAGE_luci-app-autopoweroff=y
         CONFIG_PACKAGE_luci-app-baidupcs-web=m
-        CONFIG_PACKAGE_luci-app-beardropper=m
+        CONFIG_PACKAGE_luci-app-beardropper=y
         CONFIG_PACKAGE_luci-app-clash=y
         CONFIG_PACKAGE_luci-app-control-mia=y
         CONFIG_PACKAGE_luci-app-control-timewol=y
         CONFIG_PACKAGE_luci-app-control-webrestriction=y
         CONFIG_PACKAGE_luci-app-control-weburl=y
-        CONFIG_PACKAGE_luci-app-cpulimit=m
+        CONFIG_PACKAGE_luci-app-cpulimit=y
         CONFIG_PACKAGE_luci-app-diskman=m
         CONFIG_PACKAGE_luci-app-dnscrypt-proxy=m
         CONFIG_PACKAGE_luci-app-dnsforwarder=m
@@ -376,7 +148,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-frpc=y
         CONFIG_PACKAGE_luci-app-frps=m
         CONFIG_PACKAGE_luci-app-guest-wifi=m
-        CONFIG_PACKAGE_luci-app-hd-idle=m
+        CONFIG_PACKAGE_luci-app-hd-idle=y
         CONFIG_PACKAGE_luci-app-ipsec-vpnd=m
         CONFIG_PACKAGE_luci-app-jd-dailybonus=y
         CONFIG_PACKAGE_luci-app-kodexplorer=m
@@ -400,7 +172,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-serverchan=y
         CONFIG_PACKAGE_luci-app-shairplay=m
         CONFIG_PACKAGE_luci-app-smartdns=y
-        CONFIG_PACKAGE_luci-app-smartinfo=m
+        CONFIG_PACKAGE_luci-app-smartinfo=y
         CONFIG_PACKAGE_luci-app-softethervpn=m
         CONFIG_PACKAGE_luci-app-sqm=m
         CONFIG_PACKAGE_luci-app-ssrserver-python=m
@@ -419,7 +191,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-wifischedule=m
         CONFIG_PACKAGE_luci-app-wrtbwmon=m
         CONFIG_PACKAGE_luci-app-xlnetacc=m
-        CONFIG_PACKAGE_luci-app-zerotier=m
+        CONFIG_PACKAGE_luci-app-zerotier=y
         # CONFIG_PACKAGE_luci-app-adbyby-plus is not set
         EOF
         # LuCI主题:
@@ -451,43 +223,6 @@ jobs:
         cd openwrt
         make download -j8
         find ./dl/ -size -1024c -exec rm -f {} \;
-    - name: Compile Openwrt
-       run: |
-        cd openwrt
-        make -j$(nproc) || make -j1 V=s
-        echo "======================="
-        echo "Space usage:"
-        echo "======================="
-        df -h
-        echo "======================="
-        du -h --max-depth=1 ./ --exclude=build_dir --exclude=bin
-        du -h --max-depth=1 ./build_dir
-        du -h --max-depth=1 ./bin
-     - name: Prepare artifact
-       run: |
-        cd ./openwrt/bin/targets/x86/64
-        rm -rf `ls | grep -v "squashfs"`
-        find  ./openwrt/bin/targets/ -type d -name "rootfs" | xargs rm -rf {}
-        gzip -d *.gz
-        gzip *.img
-        df -h
-     - name: Upload firmware
-       uses: actions/upload-artifact@master
-       with:
-          name: SirpdboyOpenWrt-IPV4-Firmware
-          path: ./openwrt/bin/targets/
-          
-     - name: Upload  IPK
-       uses: actions/upload-artifact@master
-       with:
-          name: SirpdboyOpenWrt-IPV4-Ipk
-          path: ./openwrt/bin/packages/
-     - name: Make Download
-       run: |
-        df -h
-        cd openwrt
-        make download -j8
-        find ./dl/ -size -1024c -exec rm -f {} \;
      - name: Make Toolchain
        run: |
         df -h
@@ -509,9 +244,9 @@ jobs:
         du -h --max-depth=1 ./bin
      - name: Prepare artifact
        run: |
+        find  ./openwrt/bin/targets/ -type f -name "rootfs" | xargs rm -rf {}
         cd ./openwrt/bin/targets/x86/64
         rm -rf `ls | grep -v "squashfs"`
-        find  ./openwrt/bin/targets/ -type d -name "rootfs" | xargs rm -rf {}
         gzip -d *.gz
         gzip *.img
         df -h
