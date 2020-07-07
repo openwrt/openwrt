@@ -127,7 +127,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-advanced=y
         CONFIG_PACKAGE_luci-app-airplay2=m
         CONFIG_PACKAGE_luci-app-amule=m
-        CONFIG_PACKAGE_luci-app-aria2=m
+        CONFIG_PACKAGE_luci-app-aria2=y
         CONFIG_PACKAGE_luci-app-autopoweroff=y
         CONFIG_PACKAGE_luci-app-baidupcs-web=m
         CONFIG_PACKAGE_luci-app-beardropper=y
@@ -165,7 +165,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-openvpn=m
         CONFIG_PACKAGE_luci-app-openvpn-server=m
         CONFIG_PACKAGE_luci-app-passwall=y
-        CONFIG_PACKAGE_luci-app-qbittorrent=m
+        CONFIG_PACKAGE_luci-app-qbittorrent=y
         CONFIG_PACKAGE_luci-app-qos=m
         CONFIG_PACKAGE_luci-app-rclone=m
         CONFIG_PACKAGE_luci-app-samba4=m
@@ -178,19 +178,19 @@ jobs:
         CONFIG_PACKAGE_luci-app-ssrserver-python=m
         CONFIG_PACKAGE_luci-app-syncdial=y
         CONFIG_PACKAGE_luci-app-tinyproxy=m
-        CONFIG_PACKAGE_luci-app-transmission=m
+        CONFIG_PACKAGE_luci-app-transmission=y
         CONFIG_PACKAGE_luci-app-ttyd=m
         CONFIG_PACKAGE_luci-app-uhttpd=m
         CONFIG_PACKAGE_luci-app-usb-printer=m
         CONFIG_PACKAGE_luci-app-v2ray-server=m
         CONFIG_PACKAGE_luci-app-verysync=m
         CONFIG_PACKAGE_luci-app-vlmcsd=m
-        CONFIG_PACKAGE_luci-app-vsftpd=m
+        CONFIG_PACKAGE_luci-app-vsftpd=y
         CONFIG_PACKAGE_luci-app-vssr=y
         CONFIG_PACKAGE_luci-app-webadmin=m
         CONFIG_PACKAGE_luci-app-wifischedule=m
         CONFIG_PACKAGE_luci-app-wrtbwmon=m
-        CONFIG_PACKAGE_luci-app-xlnetacc=m
+        CONFIG_PACKAGE_luci-app-xlnetacc=y
         CONFIG_PACKAGE_luci-app-zerotier=y
         # CONFIG_PACKAGE_luci-app-adbyby-plus is not set
         EOF
@@ -247,7 +247,7 @@ jobs:
         find  ./openwrt/bin/targets/ -type f -name "rootfs" | xargs rm -rf {}
         cd ./openwrt/bin/targets/x86/64
         rm -rf `ls | grep -v "squashfs"`
-        gzip -d *.gz
+        # gzip -d *.gz
         gzip *.img
         df -h
      - name: Upload firmware
