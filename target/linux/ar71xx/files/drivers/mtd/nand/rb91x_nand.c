@@ -442,7 +442,7 @@ static int rb91x_nand_remove(struct platform_device *pdev)
 {
 	struct rb91x_nand_info *info = platform_get_drvdata(pdev);
 
-	nand_release(&rbni->chip);
+	nand_release(&info->chip);
 
 	return 0;
 }
