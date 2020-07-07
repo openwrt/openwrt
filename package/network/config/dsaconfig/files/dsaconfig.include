@@ -1,0 +1,11 @@
+#!/bin/sh
+
+setup_switch() {
+	# Skip switch setup on network restart. The netifd process
+	# will be started afterwards and remove all interfaces again...
+	if [ "$initscript" = /etc/init.d/network ] && [ "$action" = restart ]; then
+		return 0
+	fi
+
+	/sbin/dsaconfig apply 2>&1 | logger -t dsaconfig
+}
