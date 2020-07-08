@@ -110,6 +110,14 @@ define Build/ubnt-erx-factory-image
 	fi
 endef
 
+define Device/adslr_g7
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := ADSLR
+  DEVICE_MODEL := G7
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+endef
+TARGET_DEVICES += adslr_g7
+
 define Device/afoundry_ew1200
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := AFOUNDRY
@@ -845,14 +853,6 @@ define Device/totolink_a7000r
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
 endef
 TARGET_DEVICES += totolink_a7000r
-
-define Device/adslr_g7
-  IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := ADSLR
-  DEVICE_MODEL := G7
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
-endef
-TARGET_DEVICES += adslr_g7
 
 define Device/tplink_re350-v1
   $(Device/tplink-safeloader)
