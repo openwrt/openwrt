@@ -204,8 +204,15 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"CPE210(TP-LINK|EU|N300-2|45550000):3.0\r\n"
 			"CPE210(TP-LINK|UN|N300-2|00000000):3.0\r\n"
+			"CPE210(TP-LINK|US|N300-2|55530000):3.0\r\n"
 			"CPE210(TP-LINK|UN|N300-2):3.0\r\n"
-			"CPE210(TP-LINK|EU|N300-2):3.0\r\n",
+			"CPE210(TP-LINK|EU|N300-2):3.0\r\n"
+			"CPE210(TP-LINK|EU|N300-2|45550000):3.1\r\n"
+			"CPE210(TP-LINK|UN|N300-2|00000000):3.1\r\n"
+			"CPE210(TP-LINK|US|N300-2|55530000):3.1\r\n"
+			"CPE210(TP-LINK|EU|N300-2|45550000):3.20\r\n"
+			"CPE210(TP-LINK|UN|N300-2|00000000):3.20\r\n"
+			"CPE210(TP-LINK|US|N300-2|55530000):3.20\r\n",
 		.support_trail = '\xff',
 		.soft_ver = NULL,
 
