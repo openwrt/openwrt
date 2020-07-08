@@ -10,14 +10,15 @@ sed -i 's/"luci.fs"/"luci.sys".net/g' package/new/luci-app-beardropper/luasrc/mo
 sed -i '/firewall/d' package/new/luci-app-beardropper/root/etc/uci-defaults/luci-beardropper
 mv package/new/luci-app-beardropper/po/zh_Hans   package/new/luci-app-beardropper/po/zh-cn
 rm -rf ./package/lean/luci-theme-argon
-rm -rf ./package/lean/luci-theme-rosy
 rm -rf ./package/lean/luci-theme-opentomcat
 svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/new/luci-app-ssr-plus
 ##simple-obfs
 #git clone -b master --single-branch https://github.com/aa65535/openwrt-simple-obfs package/new/simple-obfs
 git clone -b master --single-branch https://github.com/tty228/luci-app-serverchan package/new/luci-app-serverchan
-svn co https://github.com/kenzok8/openwrt-packages/trunk/smartdns package/new/smartdns 
-svn co https://github.com/kenzok8/openwrt-packages/trunk/luci-app-smartdns package/new/luci-app-smartdns
+#svn co https://github.com/kenzok8/openwrt-packages/trunk/smartdns package/new/smartdns 
+#svn co https://github.com/kenzok8/openwrt-packages/trunk/luci-app-smartdns package/new/luci-app-smartdns
+svn co https://github.com/pymumu/smartdns/trunk/package/openwrt package/new/smartdns/smartdns
+svn co https://github.com/project-openwrt/openwrt/branches/18.06-kernel5.4/package/ntlf9t/luci-app-smartdns package/new/smartdns/luci-app-smartdns
 git clone -b master --single-branch https://github.com/destan19/OpenAppFilter package/new/OpenAppFilter
 svn co https://github.com/kenzok8/openwrt-packages/trunk/adguardhome package/new/AdGuardHome
 svn co https://github.com/kenzok8/openwrt-packages/trunk/luci-app-adguardhome package/new/luci-app-adguardhome
