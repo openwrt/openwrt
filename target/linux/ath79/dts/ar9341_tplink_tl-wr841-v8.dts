@@ -32,6 +32,7 @@
 		rfkill {
 			label = "WiFi";
 			linux,code = <KEY_RFKILL>;
+			linux,input-type = <EV_SW>;
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 			debounce-interval = <60>;
 		};
