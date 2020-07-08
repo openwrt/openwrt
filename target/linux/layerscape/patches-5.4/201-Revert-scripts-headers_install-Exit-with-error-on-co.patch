@@ -1,0 +1,51 @@
+From 263f0d2994a9d27f4b558a7b38a2fc3e57c33ffc Mon Sep 17 00:00:00 2001
+From: Yangbo Lu <yangbo.lu@nxp.com>
+Date: Tue, 7 Jul 2020 15:17:34 +0800
+Subject: [PATCH] Revert "scripts: headers_install: Exit with error on config
+ leak"
+
+This reverts commit 5967577231f9b19acd5a59485e9075964065bbe3.
+---
+ scripts/headers_install.sh | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/scripts/headers_install.sh b/scripts/headers_install.sh
+index 224f510..e12a1eb 100755
+--- a/scripts/headers_install.sh
++++ b/scripts/headers_install.sh
+@@ -64,7 +64,7 @@ configs=$(sed -e '
+ 	d
+ ' $OUTFILE)
+ 
+-# The entries in the following list do not result in an error.
++# The entries in the following list are not warned.
+ # Please do not add a new entry. This list is only for existing ones.
+ # The list will be reduced gradually, and deleted eventually. (hopefully)
+ #
+@@ -95,19 +95,18 @@ include/uapi/linux/raw.h:CONFIG_MAX_RAW_DEVS
+ 
+ for c in $configs
+ do
+-	leak_error=1
++	warn=1
+ 
+ 	for ignore in $config_leak_ignores
+ 	do
+ 		if echo "$INFILE:$c" | grep -q "$ignore$"; then
+-			leak_error=
++			warn=
+ 			break
+ 		fi
+ 	done
+ 
+-	if [ "$leak_error" = 1 ]; then
+-		echo "error: $INFILE: leak $c to user-space" >&2
+-		exit 1
++	if [ "$warn" = 1 ]; then
++		echo "warning: $INFILE: leak $c to user-space" >&2
+ 	fi
+ done
+ 
+-- 
+2.7.4
+
