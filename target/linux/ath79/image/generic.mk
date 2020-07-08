@@ -152,6 +152,16 @@ define Device/8dev_carambola2
 endef
 TARGET_DEVICES += 8dev_carambola2
 
+define Device/8dev_lima
+  SOC := qca9531
+  DEVICE_VENDOR := 8devices
+  DEVICE_MODEL := Lima
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 15616k
+  SUPPORTED_DEVICES += lima
+endef
+TARGET_DEVICES += 8dev_lima
+
 define Device/adtran_bsap1880
   SOC := ar7161
   DEVICE_VENDOR := Adtran/Bluesocket
