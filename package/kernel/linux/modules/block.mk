@@ -276,9 +276,9 @@ define KernelPackage/iscsi-initiator
   DEPENDS:=+kmod-scsi-core +kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_INET \
-	CONFIG_SCSI_LOWLEVEL \
+	CONFIG_SCSI_LOWLEVEL=y \
 	CONFIG_ISCSI_TCP \
-	CONFIG_SCSI_ISCSI_ATTRS
+	CONFIG_SCSI_ISCSI_ATTRS=y
   FILES:= \
 	$(LINUX_DIR)/drivers/scsi/iscsi_tcp.ko \
 	$(LINUX_DIR)/drivers/scsi/libiscsi.ko \
