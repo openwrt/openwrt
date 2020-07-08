@@ -16,10 +16,6 @@
 #include "qca955x.dtsi"
 
 / {
-	chosen {
-		bootargs = "console=ttyS0,115200n8";
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -45,10 +41,6 @@
 };
 
 &uart {
-	status = "okay";
-};
-
-&gpio {
 	status = "okay";
 };
 

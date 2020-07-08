@@ -15,6 +15,7 @@ ipq40xx_setup_interfaces()
 	8dev,habanero-dvk|\
 	8dev,jalapeno|\
 	alfa-network,ap120c-ac|\
+	engenius,emr3500|\
 	engenius,ens620ext)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
@@ -129,6 +130,11 @@ ipq40xx_setup_macs()
 	engenius,emd1)
 		lan_mac=$(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
 		label_mac=$lan_mac
+		;;
+	engenius,emr3500)
+		wan_mac=$(mtd_get_mac_ascii 0:APPSBLENV wanaddr)
+		lan_mac=$(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
+		label_mac=$wan_mac
 		;;
 	engenius,ens620ext)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)

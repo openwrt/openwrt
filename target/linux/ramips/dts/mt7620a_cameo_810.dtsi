@@ -93,6 +93,14 @@
 	mediatek,portmap = "llllw";
 };
 
+&gsw {
+	mediatek,port4 = "ephy";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
 &wmac {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pa_pins>;

@@ -47,14 +47,6 @@ config GCC_DEFAULT_SSP
 	help
 	    Use gcc configure option --enable-default-ssp to turn on -fstack-protector-strong by default.
 
-config GCC_LIBSSP
-	bool
-	prompt "Build gcc libssp" if TOOLCHAINOPTS
-	depends on !USE_MUSL
-	default y if !USE_MUSL
-	help
-	    Enable Stack-Smashing Protection support
-
 config SJLJ_EXCEPTIONS
 	bool
 	prompt "Use setjump()/longjump() exceptions" if TOOLCHAINOPTS

@@ -54,6 +54,10 @@ comfast,cf-wr800n)
 	ucidef_set_led_netdev "lan" "lan" "$boardname:white:ethernet" eth0.1
 	set_wifi_led "$boardname:white:wifi"
 	;;
+dlink,dir-810l|\
+trendnet,tew-810dr)
+	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x10"
+	;;
 dlink,dwr-116-a1|\
 head-weblink,hdrm200|\
 ohyeah,oy-0001|\
@@ -190,9 +194,6 @@ tplink,archer-mr200)
 	;;
 tplink,re200-v1)
 	ucidef_set_led_netdev "lan" "lan" "$boardname:green:lan" "eth0"
-	;;
-trendnet,tew-810dr)
-	ucidef_set_led_netdev "wan" "wan" "$boardname:green:wan" "eth0.2"
 	;;
 youku,yk1)
 	set_wifi_led "$boardname:blue:air"

@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
-PKG_VERSION:=2019.78
-PKG_RELEASE:=5
+PKG_VERSION:=2020.80
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://matt.ucc.asn.au/dropbear/releases/ \
 	https://dropbear.nl/mirror/releases/
-PKG_HASH:=525965971272270995364a0eb01f35180d793182e63dd0b0c3eb0292291644a4
+PKG_HASH:=d927941b91f2da150b2033f1a88b6a47999bf0afb1493a73e9216cffdb5d7949
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE libtomcrypt/LICENSE libtommath/LICENSE
@@ -124,8 +124,7 @@ define Build/Configure
 
 	# disable legacy/unsafe methods and unused functionality
 	for OPTION in INETD_MODE DROPBEAR_CLI_NETCAT \
-	DROPBEAR_3DES DROPBEAR_DSS DROPBEAR_ENABLE_CBC_MODE \
-	DROPBEAR_SHA1_96_HMAC DROPBEAR_USE_PASSWORD_ENV; do \
+	DROPBEAR_DSS DROPBEAR_USE_PASSWORD_ENV DO_MOTD ; do \
 		echo "#define $$$$OPTION 0" >> \
 			$(PKG_BUILD_DIR)/localoptions.h; \
 	done

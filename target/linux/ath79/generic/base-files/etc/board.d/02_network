@@ -15,6 +15,7 @@ ath79_setup_interfaces()
 	aruba,ap-105|\
 	avm,fritz1750e|\
 	avm,fritz300e|\
+	avm,fritzdvbc|\
 	comfast,cf-wr752ac-v1|\
 	comfast,cf-e130n-v2|\
 	devolo,dvl1200i|\
@@ -39,6 +40,7 @@ ath79_setup_interfaces()
 	tplink,cpe510-v2|\
 	tplink,cpe510-v3|\
 	tplink,cpe610-v1|\
+	tplink,cpe610-v2|\
 	tplink,re350k-v1|\
 	tplink,re355-v1|\
 	tplink,re450-v1|\
@@ -106,10 +108,12 @@ ath79_setup_interfaces()
 	comfast,cf-e110n-v2|\
 	comfast,cf-e120a-v3|\
 	comfast,cf-e314n-v2|\
+	compex,wpj531-16m|\
 	tplink,cpe210-v1|\
 	tplink,cpe220-v2|\
 	tplink,cpe220-v3|\
 	tplink,cpe510-v1|\
+	tplink,wbs210-v1|\
 	tplink,wbs210-v2|\
 	tplink,wbs510-v1|\
 	tplink,wbs510-v2|\
@@ -127,6 +131,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6@eth1"
 		;;
+	compex,wpj344-16m)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "3:lan" "2:wan"
+		;;
 	devolo,dvl1200e|\
 	devolo,dvl1750e|\
 	ocedo,ursus)
@@ -135,6 +143,9 @@ ath79_setup_interfaces()
 	devolo,magic-2-wifi)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:wan" "3:lan" "4:lan"
+		;;
+	dlink,dap-2695-a1)
+		ucidef_add_switch "switch0" "0@eth0" "2:lan" "3:wan" "6@eth1"
 		;;
 	dlink,dir-825-b1)
 		ucidef_set_interface_wan "eth1"
@@ -204,7 +215,9 @@ ath79_setup_interfaces()
 	netgear,wndr3700|\
 	netgear,wndr3700-v2|\
 	netgear,wndr3800|\
-	netgear,wndr3800ch)
+	netgear,wndr3800ch|\
+	netgear,wndrmac-v1|\
+	netgear,wndrmac-v2)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5u@eth0"
@@ -345,7 +358,8 @@ ath79_setup_macs()
 		label_mac=$(mtd_get_mac_binary art 0x1002)
 		;;
 	avm,fritz1750e|\
-	avm,fritz450e)
+	avm,fritz450e|\
+	avm,fritzdvbc)
 		label_mac=$(fritz_tffs -n macwlan -i $(find_mtd_part "tffs (1)"))
 		;;
 	avm,fritz300e)
@@ -356,8 +370,14 @@ ath79_setup_macs()
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(fritz_tffs -n macb -i $(find_mtd_part "tffs (1)"))
 		;;
+	compex,wpj344-16m)
+		wan_mac=$(mtd_get_mac_binary u-boot 0x2e018)
+		;;
 	devolo,magic-2-wifi)
 		label_mac=$(macaddr_add "$(mtd_get_mac_binary art 0x1002)" 3)
+		;;
+	dlink,dap-2695-a1)
+		label_mac=$(mtd_get_mac_ascii bdcfg "wlanmac")
 		;;
 	dlink,dir-825-b1)
 		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)
@@ -430,7 +450,9 @@ ath79_setup_macs()
 		;;
 	netgear,wndr3700|\
 	netgear,wndr3700-v2|\
-	netgear,wndr3800)
+	netgear,wndr3800|\
+	netgear,wndrmac-v1|\
+	netgear,wndrmac-v2)
 		lan_mac=$(macaddr_setbit_la "$(mtd_get_mac_binary art 0x0)")
 		;;
 	phicomm,k2t)

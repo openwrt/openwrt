@@ -181,7 +181,7 @@ endef
 define KernelPackage/mt7915e
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7915e wireless driver
-  DEPENDS+=@PCI_SUPPORT +kmod-mt7615-common
+  DEPENDS+=@PCI_SUPPORT +kmod-mt7615-common +@DRIVER_11AX_SUPPORT
   FILES:= $(PKG_BUILD_DIR)/mt7915/mt7915e.ko
   AUTOLOAD:=$(call AutoProbe,mt7915e)
 endef

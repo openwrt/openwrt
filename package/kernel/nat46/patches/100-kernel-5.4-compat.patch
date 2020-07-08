@@ -8,7 +8,7 @@
  
  #include "nat46-glue.h"
  #include "nat46-core.h"
-@@ -1598,7 +1599,11 @@ void nat46_ipv6_input(struct sk_buff *ol
+@@ -1601,7 +1602,11 @@ void nat46_ipv6_input(struct sk_buff *ol
    /* Remove any debris in the socket control block */
    memset(IPCB(new_skb), 0, sizeof(struct inet_skb_parm));
    /* Remove netfilter references to IPv6 packet, new netfilter references will be created based on IPv4 packet */
@@ -20,7 +20,7 @@
  
    /* modify packet: actual IPv6->IPv4 transformation */
    truncSize = v6packet_l3size - sizeof(struct iphdr); /* chop first 20 bytes */
-@@ -1803,7 +1808,11 @@ void nat46_ipv4_input(struct sk_buff *ol
+@@ -1806,7 +1811,11 @@ void nat46_ipv4_input(struct sk_buff *ol
    /* Remove any debris in the socket control block */
    memset(IPCB(new_skb), 0, sizeof(struct inet_skb_parm));
    /* Remove netfilter references to IPv4 packet, new netfilter references will be created based on IPv6 packet */

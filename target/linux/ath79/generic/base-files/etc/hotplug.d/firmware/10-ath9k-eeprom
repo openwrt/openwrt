@@ -11,8 +11,13 @@ case "$FIRMWARE" in
 	case $board in
 	avm,fritz1750e|\
 	avm,fritz4020|\
-	avm,fritz450e)
+	avm,fritz450e|\
+	avm,fritzdvbc)
 		caldata_extract_reverse "urlader" 0x1541 0x440
+		;;
+	dlink,dap-2695-a1)
+		caldata_extract "art" 0x1000 0x440
+		ath9k_patch_mac $(mtd_get_mac_ascii bdcfg "wlanmac")
 		;;
 	dlink,dir-505|\
 	dlink,dir-825-c1|\
@@ -127,7 +132,9 @@ case "$FIRMWARE" in
 	netgear,wndr3700|\
 	netgear,wndr3700-v2|\
 	netgear,wndr3800|\
-	netgear,wndr3800ch)
+	netgear,wndr3800ch|\
+	netgear,wndrmac-v1|\
+	netgear,wndrmac-v2)
 		caldata_extract "art" 0x1000 0xeb8
 		;;
 	dlink,dir-825-b1)
@@ -145,7 +152,9 @@ case "$FIRMWARE" in
 	netgear,wndr3700|\
 	netgear,wndr3700-v2|\
 	netgear,wndr3800|\
-	netgear,wndr3800ch)
+	netgear,wndr3800ch|\
+	netgear,wndrmac-v1|\
+	netgear,wndrmac-v2)
 		caldata_extract "art" 0x5000 0xeb8
 		;;
 	dlink,dir-825-b1)

@@ -29,13 +29,15 @@ ramips_setup_interfaces()
 	gnubee,gb-pc2)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
-	linksys,re6500)
+	linksys,re6500|\
+	netgear,wac104)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
 	mikrotik,routerboard-m11g|\
 	netgear,ex6150|\
 	thunder,timecloud|\
 	tplink,re350-v1|\
+	tplink,re500-v1|\
 	tplink,re650-v1|\
 	ubnt,unifi-nanohd)
 		ucidef_set_interface_lan "lan"

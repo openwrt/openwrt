@@ -189,6 +189,25 @@ define Device/mercury_mac1200r-v2
 endef
 TARGET_DEVICES += mercury_mac1200r-v2
 
+define Device/netgear_r6080
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 7552k
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := R6080
+  DEVICE_PACKAGES := kmod-mt76x2
+  SERCOMM_HWID := CFR
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0040
+  IMAGES += factory.img
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+	pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size
+  IMAGE/factory.img := pad-extra 576k | $$(IMAGE/default) | \
+	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip R6080.bin | \
+	sercom-seal
+endef
+TARGET_DEVICES += netgear_r6080
+
 define Device/netgear_r6120
   BLOCKSIZE := 64k
   IMAGE_SIZE := 15744k
@@ -199,7 +218,7 @@ define Device/netgear_r6120
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x0040
   IMAGES += factory.img
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE)| append-rootfs | \
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
 	pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size
   IMAGE/factory.img := pad-extra 576k | $$(IMAGE/default) | \
@@ -233,6 +252,18 @@ define Device/rakwireless_rak633
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += rakwireless_rak633
+
+define Device/ravpower_rp-wd009
+  IMAGE_SIZE := 14272k
+  DEVICE_VENDOR := RAVPower
+  DEVICE_MODEL := RP-WD009
+  UBOOT_PATH := $(STAGING_DIR_IMAGE)/ravpower_rp-wd009-u-boot.bin
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
+	kmod-sdhci-mt7620 kmod-i2c-mt7628 ravpower-mcu
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | ravpower-wd009-factory
+endef
+TARGET_DEVICES += ravpower_rp-wd009
 
 define Device/skylab_skw92a
   IMAGE_SIZE := 16064k
@@ -335,6 +366,16 @@ define Device/tplink_re200-v2
   TPLINK_BOARD_ID := RE200-V2
 endef
 TARGET_DEVICES += tplink_re200-v2
+
+define Device/tplink_re220-v2
+  $(Device/tplink-safeloader)
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := RE220
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-mt76x0e
+  TPLINK_BOARD_ID := RE220-V2
+endef
+TARGET_DEVICES += tplink_re220-v2
 
 define Device/tplink_re305-v1
   $(Device/tplink-safeloader)
@@ -536,6 +577,16 @@ define Device/wavlink_wl-wn575a3
   SUPPORTED_DEVICES += wl-wn575a3
 endef
 TARGET_DEVICES += wavlink_wl-wn575a3
+
+define Device/wavlink_wl-wn577a2
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN577A2
+  DEVICE_ALT0_VENDOR := Maginon
+  DEVICE_ALT0_MODEL := WLR-755
+  DEVICE_PACKAGES := kmod-mt76x0e
+endef
+TARGET_DEVICES += wavlink_wl-wn577a2
 
 define Device/widora_neo-16m
   IMAGE_SIZE := 16064k

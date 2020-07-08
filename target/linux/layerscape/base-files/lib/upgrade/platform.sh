@@ -1,4 +1,3 @@
-#!/bin/sh
 #
 # Copyright 2015-2019 Traverse Technologies
 #

@@ -6,6 +6,7 @@ include ./common-yuncore.mk
 DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX
+DEVICE_VARS += DAP_SIGNATURE
 
 define Build/add-elecom-factory-initramfs
   $(eval edimax_model=$(word 1,$(1)))
@@ -49,6 +50,37 @@ define Build/cybertan-trx
 	-rm $@-empty.bin
 endef
 
+define Build/mkmylofw_16m
+	$(eval device_id=$(word 1,$(1)))
+	$(eval revision=$(word 2,$(1)))
+
+	# On WPJ344, WPJ531, and WPJ563, the default boot command tries 0x9f680000
+	# first and fails if the remains of the stock image are sill there
+	# - resulting in an infinite boot loop.
+	# The size parameter is grown to have that block deleted if the firmware
+	# isn't big enough by itself.
+
+	let \
+		size="$$(stat -c%s $@)" \
+		pad="$(subst k,* 1024,$(BLOCKSIZE))" \
+		pad="(pad - (size % pad)) % pad" \
+		newsize='size + pad' ; \
+		[ $$newsize -lt $$((0x660000)) ] && newsize=0x660000 ; \
+		$(STAGING_DIR_HOST)/bin/mkmylofw \
+			-B WPE72 -i 0x11f6:$(device_id):0x11f6:$(device_id) -r $(revision) \
+			-s 0x1000000 -p0x30000:$$newsize:al:0x80060000:"OpenWRT":$@ \
+			$@.new
+		@mv $@.new $@
+endef
+
+define Build/mkwrggimg
+	$(STAGING_DIR_HOST)/bin/mkwrggimg -b \
+		-i $@ -o $@.imghdr -d /dev/mtdblock/1 \
+		-m $(DEVICE_MODEL)-$(DEVICE_VARIANT) -s $(DAP_SIGNATURE) \
+		-v $(VERSION_DIST) -B $(REVISION)
+	mv $@.imghdr $@
+endef
+
 define Build/nec-enc
   $(STAGING_DIR_HOST)/bin/nec-enc \
     -i $@ -o $@.new -k $(1)
@@ -86,6 +118,10 @@ define Build/teltonika-fw-fake-checksum
 		offs="$$(stat -c%s $@) - 20"; \
 		dd if=$@ bs=1 count=16 skip=76 |\
 		dd of=$@ bs=1 count=16 seek=$$offs conv=notrunc
+endef
+
+define Build/wrgg-pad-rootfs
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 64 >>$@
 endef
 
 define Device/seama
@@ -209,6 +245,16 @@ define Device/avm_fritz450e
   SUPPORTED_DEVICES += fritz450e
 endef
 TARGET_DEVICES += avm_fritz450e
+
+define Device/avm_fritzdvbc
+  $(Device/avm)
+  SOC := qca9556
+  IMAGE_SIZE := 15232k
+  DEVICE_MODEL := FRITZ!WLAN Repeater DVB-C
+  DEVICE_PACKAGES += rssileds kmod-ath10k-ct-smallbuffers \
+	ath10k-firmware-qca988x-ct -swconfig
+endef
+TARGET_DEVICES += avm_fritzdvbc
 
 define Device/buffalo_bhr-4grv
   SOC := ar7242
@@ -395,6 +441,35 @@ define Device/comfast_cf-wr752ac-v1
 endef
 TARGET_DEVICES += comfast_cf-wr752ac-v1
 
+define Device/compex_wpj344-16m
+  SOC := ar9344
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 16128k
+  DEVICE_VENDOR := Compex
+  DEVICE_MODEL := WPJ344
+  DEVICE_VARIANT := 16M
+  SUPPORTED_DEVICES += wpj344
+  IMAGES += cpximg-6a08.bin
+  IMAGE/cpximg-6a08.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x690 3
+endef
+TARGET_DEVICES += compex_wpj344-16m
+
+define Device/compex_wpj531-16m
+  SOC := qca9531
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 16128k
+  DEVICE_VENDOR := Compex
+  DEVICE_MODEL := WPJ531
+  DEVICE_VARIANT := 16M
+  SUPPORTED_DEVICES += wpj531
+  IMAGES += cpximg-7a03.bin cpximg-7a04.bin cpximg-7a06.bin cpximg-7a07.bin
+  IMAGE/cpximg-7a03.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x68a 2
+  IMAGE/cpximg-7a04.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x693 3
+  IMAGE/cpximg-7a06.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x693 3
+  IMAGE/cpximg-7a07.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x693 3
+endef
+TARGET_DEVICES += compex_wpj531-16m
+
 define Device/devolo_dvl1200e
   SOC := qca9558
   DEVICE_VENDOR := devolo
@@ -457,6 +532,26 @@ define Device/devolo_magic-2-wifi
   IMAGE_SIZE := 15872k
 endef
 TARGET_DEVICES += devolo_magic-2-wifi
+
+define Device/dlink_dap-2695-a1
+  SOC := qca9558
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-2965
+  DEVICE_VARIANT := A1
+  IMAGES := factory.img sysupgrade.bin
+  IMAGE_SIZE := 15360k
+  IMAGE/default := append-kernel | pad-offset 65536 160
+  IMAGE/factory.img := $$(IMAGE/default) | append-rootfs | wrgg-pad-rootfs | \
+	mkwrggimg | check-size
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | mkwrggimg | append-rootfs | \
+	wrgg-pad-rootfs | append-metadata |  check-size
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
+  KERNEL_INITRAMFS := $$(KERNEL) | mkwrggimg
+  DAP_SIGNATURE := wapac02_dkbs_dap2695
+  SUPPORTED_DEVICES += dap-2695-a1
+endef
+TARGET_DEVICES += dlink_dap-2695-a1
 
 define Device/dlink_dir-505
   SOC := ar9330
@@ -726,6 +821,16 @@ define Device/glinet_gl-ar750
 endef
 TARGET_DEVICES += glinet_gl-ar750
 
+define Device/glinet_gl-mifi
+  SOC := ar9331
+  DEVICE_VENDOR := GL.iNET
+  DEVICE_MODEL := GL-MiFi
+  DEVICE_PACKAGES := kmod-usb-chipidea2
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += gl-mifi
+endef
+TARGET_DEVICES += glinet_gl-mifi
+
 define Device/glinet_gl-x750
   SOC := qca9531
   DEVICE_VENDOR := GL.iNet
@@ -931,6 +1036,30 @@ define Device/netgear_wndr3800ch
   SUPPORTED_DEVICES += wndr3700
 endef
 TARGET_DEVICES += netgear_wndr3800ch
+
+define Device/netgear_wndrmac-v1
+  $(Device/netgear_wndr3x00)
+  DEVICE_MODEL := WNDRMAC
+  DEVICE_VARIANT := v1
+  NETGEAR_KERNEL_MAGIC := 0x33373031
+  NETGEAR_BOARD_ID := WNDRMAC
+  NETGEAR_HW_ID := 29763654+16+64
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += wndr3700
+endef
+TARGET_DEVICES += netgear_wndrmac-v1
+
+define Device/netgear_wndrmac-v2
+  $(Device/netgear_wndr3x00)
+  DEVICE_MODEL := WNDRMAC
+  DEVICE_VARIANT := v2
+  NETGEAR_KERNEL_MAGIC := 0x33373031
+  NETGEAR_BOARD_ID := WNDRMACv2
+  NETGEAR_HW_ID := 29763654+16+128
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += wndr3700
+endef
+TARGET_DEVICES += netgear_wndrmac-v2
 
 define Device/netgear_wnr2200_common
   SOC := ar7241

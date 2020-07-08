@@ -104,7 +104,6 @@ define Device/Default
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | append-dtb | uImage none
   IMAGES := sysupgrade.bin
-  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | pad-to $$$$(PAGESIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   SUPPORTED_DEVICES = $(subst _,$(comma),$(1))
   UBINIZE_OPTS := -E 5
@@ -138,16 +137,6 @@ define Device/NAND-512K
   PAGESIZE := 4096
 endef
 
-ifeq ($(SUBTARGET),cortexa9)
-include cortexa9.mk
-endif
-
-ifeq ($(SUBTARGET),cortexa53)
-include cortexa53.mk
-endif
-
-ifeq ($(SUBTARGET),cortexa72)
-include cortexa72.mk
-endif
+include $(SUBTARGET).mk
 
 $(eval $(call BuildImage))

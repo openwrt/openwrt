@@ -1,5 +1,3 @@
-#!/bin/sh
-
 . /lib/functions.sh
 . /lib/functions/migrations.sh
 
@@ -9,6 +7,9 @@ boardonly="${board##*,}"
 case "$board" in
 engenius,epg5000)
 	migrate_leds ":wlan-2g=:wlan2g" ":wlan-5g=:wlan5g"
+	;;
+glinet,gl-mifi)
+	migrate_leds ":net=:3g4g"
 	;;
 tplink,archer-c25-v1|\
 tplink,archer-c58-v1|\

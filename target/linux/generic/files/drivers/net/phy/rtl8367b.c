@@ -781,7 +781,6 @@ static int rtl8367b_extif_set_mode(struct rtl8366_smi *smi, int id,
 	/* set port mode */
 	switch (mode) {
 	case RTL8367_EXTIF_MODE_RGMII:
-	case RTL8367_EXTIF_MODE_RGMII_33V:
 		REG_RMW(smi, RTL8367B_CHIP_DEBUG0_REG,
 			RTL8367B_DEBUG0_SEL33(id),
 			RTL8367B_DEBUG0_SEL33(id));

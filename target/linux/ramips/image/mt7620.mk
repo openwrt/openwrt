@@ -670,6 +670,19 @@ define Device/netgear_ex3700
 endef
 TARGET_DEVICES += netgear_ex3700
 
+define Device/netgear_ex6120
+  SOC := mt7620a
+  NETGEAR_BOARD_ID := U12H319T30_NETGEAR
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7744k
+  IMAGES += factory.chk
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size | netgear-chk
+  DEVICE_PACKAGES := kmod-mt76x2
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := EX6120
+endef
+TARGET_DEVICES += netgear_ex6120
+
 define Device/netgear_ex6130
   SOC := mt7620a
   NETGEAR_BOARD_ID := U12H319T50_NETGEAR

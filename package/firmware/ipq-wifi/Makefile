@@ -32,6 +32,7 @@ ALLWIFIBOARDS:= \
 	dlink_dap2610 \
 	engenius_eap2200 \
 	engenius_emd1 \
+	engenius_emr3500 \
 	ezviz_cs-w3-wd1200g-eup \
 	linksys_ea8300 \
 	mobipromo_cm520-79f \
@@ -103,6 +104,7 @@ $(eval $(call generate-ipq-wifi-package,cellc_rtl30vw, Cell C RTL30VW))
 $(eval $(call generate-ipq-wifi-package,dlink_dap2610,D-Link DAP-2610))
 $(eval $(call generate-ipq-wifi-package,engenius_eap2200,EnGenius EAP2200))
 $(eval $(call generate-ipq-wifi-package,engenius_emd1,EnGenius EMD1))
+$(eval $(call generate-ipq-wifi-package,engenius_emr3500,EnGenius EMR3500))
 $(eval $(call generate-ipq-wifi-package,ezviz_cs-w3-wd1200g-eup,EZVIZ CS-W3-WD1200G EUP))
 $(eval $(call generate-ipq-wifi-package,linksys_ea8300,Linksys EA8300))
 $(eval $(call generate-ipq-wifi-package,mobipromo_cm520-79f,MobiPromo CM520-79F))

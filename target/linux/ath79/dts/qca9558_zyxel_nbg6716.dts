@@ -10,10 +10,6 @@
 	compatible = "zyxel,nbg6716", "qca,qca9558";
 	model = "ZyXEL NBG6716";
 
-	chosen {
-		bootargs = "console=ttyS0,115200n8";
-	};
-
 	aliases {
 		led-boot = &led_power;
 		led-failsafe = &led_power;
@@ -257,10 +253,6 @@
 		speed = <1000>;
 		full-duplex;
 	};
-};
-
-&gpio {
-	status = "okay";
 };
 
 &wmac {
