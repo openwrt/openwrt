@@ -273,7 +273,7 @@ $(eval $(call KernelPackage,dm-raid))
 define KernelPackage/iscsi-initiator
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=iSCSI Initiator over TCP/IP
-  DEPENDS:=+kmod-scsi-core
+  DEPENDS:=+kmod-scsi-core +kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_INET \
 	CONFIG_SCSI_LOWLEVEL \
