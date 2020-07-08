@@ -26,7 +26,6 @@ jobs:
        with:
           ref: master
 
-
      - name: Init build
        env:
         DEBIAN_FRONTEND: noninteractive
@@ -38,13 +37,6 @@ jobs:
         sudo -E apt-get autoremove -y --purge
         sudo -E apt-get clean -y
         sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php
-     - name: Free Disk Space
-       run: |
-        sudo swapoff -a
-        sudo rm -f /swapfile
-        sudo rm -rf "/usr/local/share/boost"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-        df -h
      - name: Prepare openwrt
        run: |
         sudo chown -R runner:runner /home/runner/work/openwrt
@@ -60,6 +52,8 @@ jobs:
      - name: Generate configuration file
        run: |
         cd openwrt
+        # 修改LAN的IP地址
+        # sed -i 's/192.168.1.1/192.168.11.1/g' package/base-files/files/bin/config_generate
         rm -f ./.config*
         touch ./.config
         #
@@ -148,14 +142,14 @@ jobs:
         CONFIG_PACKAGE_luci-app-dnsforwarder=m
         CONFIG_PACKAGE_luci-app-docker=m
         CONFIG_PACKAGE_luci-app-eqos=y
-        CONFIG_PACKAGE_luci-app-familycloud=m
+        CONFIG_PACKAGE_luci-app-familycloud=y
         CONFIG_PACKAGE_luci-app-fileassistant=m
         CONFIG_PACKAGE_luci-app-filetransfer=y
         CONFIG_PACKAGE_luci-app-frpc=y
         CONFIG_PACKAGE_luci-app-frps=m
         CONFIG_PACKAGE_luci-app-guest-wifi=m
-        CONFIG_PACKAGE_luci-app-hd-idle=m
-        CONFIG_PACKAGE_luci-app-ipsec-vpnd=m
+        CONFIG_PACKAGE_luci-app-hd-idle=y
+        CONFIG_PACKAGE_luci-app-ipsec-vpnd=y
         CONFIG_PACKAGE_luci-app-jd-dailybonus=y
         CONFIG_PACKAGE_luci-app-kodexplorer=y
         CONFIG_PACKAGE_luci-app-koolddns=y
@@ -166,7 +160,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-mwan3helper=m
         CONFIG_PACKAGE_luci-app-netdata=y
         CONFIG_PACKAGE_luci-app-nft-qos=m
-        CONFIG_PACKAGE_luci-app-oaf=m
+        CONFIG_PACKAGE_luci-app-oaf=y
         CONFIG_PACKAGE_luci-app-openclash=y
         CONFIG_PACKAGE_luci-app-openvpn=m
         CONFIG_PACKAGE_luci-app-openvpn-server=m
@@ -175,20 +169,19 @@ jobs:
         CONFIG_PACKAGE_luci-app-qos=m
         CONFIG_PACKAGE_luci-app-rclone=m
         CONFIG_PACKAGE_luci-app-samba4=m
-        CONFIG_PACKAGE_luci-app-ssr-plus=y
         CONFIG_PACKAGE_luci-app-serverchan=y
         CONFIG_PACKAGE_luci-app-shairplay=m
         CONFIG_PACKAGE_luci-app-smartdns=y
-        CONFIG_PACKAGE_luci-app-smartinfo=y
+        CONFIG_PACKAGE_luci-app-smartinfo=m
         CONFIG_PACKAGE_luci-app-softethervpn=m
         CONFIG_PACKAGE_luci-app-sqm=m
         CONFIG_PACKAGE_luci-app-ssrserver-python=m
         CONFIG_PACKAGE_luci-app-syncdial=y
         CONFIG_PACKAGE_luci-app-tinyproxy=m
-        CONFIG_PACKAGE_luci-app-transmission=m
+        CONFIG_PACKAGE_luci-app-transmission=y
         CONFIG_PACKAGE_luci-app-ttyd=m
         CONFIG_PACKAGE_luci-app-uhttpd=m
-        CONFIG_PACKAGE_luci-app-usb-printer=m
+        CONFIG_PACKAGE_luci-app-usb-printer=y
         CONFIG_PACKAGE_luci-app-v2ray-server=m
         CONFIG_PACKAGE_luci-app-verysync=m
         CONFIG_PACKAGE_luci-app-vlmcsd=m
@@ -197,7 +190,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-webadmin=y
         CONFIG_PACKAGE_luci-app-wifischedule=m
         CONFIG_PACKAGE_luci-app-wrtbwmon=m
-        CONFIG_PACKAGE_luci-app-xlnetacc=m
+        CONFIG_PACKAGE_luci-app-xlnetacc=y
         CONFIG_PACKAGE_luci-app-zerotier=y
         # CONFIG_PACKAGE_luci-app-adbyby-plus is not set
         EOF
@@ -219,8 +212,6 @@ jobs:
         CONFIG_TARGET_ROOTFS_PARTSIZE=460
         CONFIG_ZSTD_OPTIMIZE_O3=y
         EOF
-        # 修改LAN的IP地址将默认192.168.1.1改为192.168.11.1：
-        # sed -i 's/192.168.1.1/192.168.11.1/g' package/base-files/files/bin/config_generate
         # 
         # ========================固件定制部分结束========================
         # 
@@ -230,19 +221,12 @@ jobs:
        run: |
         df -h
         cd openwrt
-        make download -j8
+        make -j8 download V=s 
         find ./dl/ -size -1024c -exec rm -f {} \;
-     - name: Make Toolchain
-       run: |
-        df -h
-        cd openwrt
-        let make_process=$(nproc)+1
-        make toolchain/install -j${make_process} V=s
      - name: Compile Openwrt
        run: |
         cd openwrt
-        let make_process=$(nproc)+1
-        make -j${make_process} V=s || make -j${make_process} V=s || make -j1 V=s
+        make -j$(($(nproc) + 1)) V=s
         echo "======================="
         echo "Space usage:"
         echo "======================="
