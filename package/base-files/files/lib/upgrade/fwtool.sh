@@ -44,13 +44,35 @@ fwtool_check_image() {
 	}
 
 	device="$(cat /tmp/sysinfo/board_name)"
+	devicecompat="$(uci -q get system.@system[0].compat_version)"
+	[ -n "$devicecompat" ] || devicecompat="1.0"
+
+	json_get_var imagecompat compat_version
+	json_get_var compatmessage compat_message
+	[ -n "$imagecompat" ] || imagecompat="1.0"
 
 	json_select supported_devices || return 1
 
 	json_get_keys dev_keys
 	for k in $dev_keys; do
 		json_get_var dev "$k"
-		[ "$dev" = "$device" ] && return 0
+		if [ "$dev" = "$device" ]; then
+			# major compat version -> no sysupgrade
+			if [ "${devicecompat%.*}" != "${imagecompat%.*}" ]; then
+				echo "The device is supported, but this image is incompatible for sysupgrade based on the image version ($devicecompat->$imagecompat)."
+				[ -n "$compatmessage" ] && echo "$compatmessage"
+				return 1
+			fi
+
+			# minor compat version -> sysupgrade with -n required
+			if [ "${devicecompat#.*}" != "${imagecompat#.*}" ] && [ "$SAVE_CONFIG" = "1" ]; then
+				echo "The device is supported, but the config is incompatible to the new image ($devicecompat->$imagecompat). Please upgrade without keeping config (sysupgrade -n)."
+				[ -n "$compatmessage" ] && echo "$compatmessage"
+				return 1
+			fi
+
+			return 0
+		fi
 	done
 
 	echo "Device $device not supported by this image"
