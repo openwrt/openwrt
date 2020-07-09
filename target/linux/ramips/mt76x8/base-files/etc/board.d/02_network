@@ -95,6 +95,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
 		;;
+	netgear,r6020|\
 	netgear,r6080|\
 	netgear,r6120)
 		ucidef_add_switch "switch0" \
@@ -151,6 +152,7 @@ ramips_setup_macs()
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	duzun,dm06|\
+	netgear,r6020|\
 	netgear,r6080|\
 	netgear,r6120|\
 	wrtnode,wrtnode2p|\

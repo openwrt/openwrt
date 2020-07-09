@@ -189,6 +189,25 @@ define Device/mercury_mac1200r-v2
 endef
 TARGET_DEVICES += mercury_mac1200r-v2
 
+define Device/netgear_r6020
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 7104k
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := R6020
+  DEVICE_PACKAGES := kmod-mt76x2
+  SERCOMM_HWID := CFR
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0040
+  IMAGES += factory.img
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+	pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size
+  IMAGE/factory.img := pad-extra 576k | $$(IMAGE/default) | \
+	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip R6020.bin | \
+	sercom-seal
+endef
+TARGET_DEVICES += netgear_r6020
+
 define Device/netgear_r6080
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7552k
