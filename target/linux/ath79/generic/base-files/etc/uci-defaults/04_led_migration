@@ -45,6 +45,10 @@ tplink,re355-v1)
 tplink,re450-v1)
 	migrate_leds "re450:=tp-link:"
 	;;
+tplink,tl-wpa8630-v1)
+	migrate_leds "^tl-wpa8630:=tp-link:" \
+		':wlan$=:wifi2g' ':wlan5$=:wifi5g'
+	;;
 wd,mynet-n750)
 	migrate_leds "wd:=mynet-n750:"
 	;;
