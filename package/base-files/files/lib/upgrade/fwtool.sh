@@ -51,7 +51,12 @@ fwtool_check_image() {
 	json_get_var compatmessage compat_message
 	[ -n "$imagecompat" ] || imagecompat="1.0"
 
-	json_select supported_devices || return 1
+	# select correct supported list based on compat_version
+	# (using this ensures that compatibility check works for devices
+	#  not knowing about compat-version)
+	local supported=supported_devices
+	[ "$imagecompat" != "1.0" ] && supported=new_supported_devices
+	json_select $supported || return 1
 
 	json_get_keys dev_keys
 	for k in $dev_keys; do
