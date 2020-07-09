@@ -148,6 +148,14 @@ define Device/zyxel_nsa310b
 endef
 TARGET_DEVICES += zyxel_nsa310b
 
+define Device/zyxel_nsa310s
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := NSA310S
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 kmod-gpio-button-hotplug
+  DEVICE_DTS := kirkwood-nsa310s
+endef
+TARGET_DEVICES += zyxel_nsa310s
+
 define Device/zyxel_nsa325
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NSA325

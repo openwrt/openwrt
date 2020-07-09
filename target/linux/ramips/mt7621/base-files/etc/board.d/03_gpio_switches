@@ -23,6 +23,9 @@ ubnt,edgerouter-x-sfp)
 	ucidef_add_gpio_switch "poe_power_port3" "PoE Power Port3" "403"
 	ucidef_add_gpio_switch "poe_power_port4" "PoE Power Port4" "404"
 	;;
+zyxel,wap6805)
+	ucidef_add_gpio_switch "qtn_power" "Quantenna Module Power" "496" "1"
+	;;
 esac
 
 board_config_flush

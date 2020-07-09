@@ -50,6 +50,17 @@ define Build/cybertan-trx
 	-rm $@-empty.bin
 endef
 
+define Build/mkdapimg2
+	$(STAGING_DIR_HOST)/bin/mkdapimg2 \
+		-i $@ -o $@.new \
+		-s $(DAP_SIGNATURE) \
+		-v $(VERSION_DIST)-$(firstword $(subst +, , \
+			$(firstword $(subst -, ,$(REVISION))))) \
+		-r Default \
+		$(if $(1),-k $(1))
+	mv $@.new $@
+endef
+
 define Build/mkmylofw_16m
 	$(eval device_id=$(word 1,$(1)))
 	$(eval revision=$(word 2,$(1)))
@@ -152,6 +163,16 @@ define Device/8dev_carambola2
 endef
 TARGET_DEVICES += 8dev_carambola2
 
+define Device/8dev_lima
+  SOC := qca9531
+  DEVICE_VENDOR := 8devices
+  DEVICE_MODEL := Lima
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 15616k
+  SUPPORTED_DEVICES += lima
+endef
+TARGET_DEVICES += 8dev_lima
+
 define Device/adtran_bsap1880
   SOC := ar7161
   DEVICE_VENDOR := Adtran/Bluesocket
@@ -188,6 +209,17 @@ define Device/alfa-network_ap121f
   SUPPORTED_DEVICES += ap121f
 endef
 TARGET_DEVICES += alfa-network_ap121f
+
+define Device/arduino_yun
+  SOC := ar9331
+  DEVICE_VENDOR := Arduino
+  DEVICE_MODEL := Yun
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-chipidea2 kmod-usb-ledtrig-usbport \
+	kmod-usb-storage block-mount -swconfig
+  IMAGE_SIZE := 15936k
+  SUPPORTED_DEVICES += arduino-yun
+endef
+TARGET_DEVICES += arduino_yun
 
 define Device/aruba_ap-105
   SOC := ar7161
@@ -552,6 +584,20 @@ define Device/dlink_dap-2695-a1
   SUPPORTED_DEVICES += dap-2695-a1
 endef
 TARGET_DEVICES += dlink_dap-2695-a1
+
+define Device/dlink_dch-g020-a1
+  SOC := qca9531
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DCH-G020
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := kmod-gpio-pca953x kmod-i2c-gpio kmod-usb2 kmod-usb-acm
+  IMAGES += factory.bin
+  IMAGE_SIZE := 14784k
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | mkdapimg2 0x20000
+  DAP_SIGNATURE := HONEYBEE-FIRMWARE-DCH-G020
+endef
+TARGET_DEVICES += dlink_dch-g020-a1
 
 define Device/dlink_dir-505
   SOC := ar9330

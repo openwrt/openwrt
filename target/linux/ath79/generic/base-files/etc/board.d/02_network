@@ -12,6 +12,7 @@ ath79_setup_interfaces()
 	adtran,bsap1800-v2|\
 	adtran,bsap1840|\
 	alfa-network,ap121f|\
+	arduino,yun|\
 	aruba,ap-105|\
 	avm,fritz1750e|\
 	avm,fritz300e|\
@@ -146,6 +147,10 @@ ath79_setup_interfaces()
 		;;
 	dlink,dap-2695-a1)
 		ucidef_add_switch "switch0" "0@eth0" "2:lan" "3:wan" "6@eth1"
+		;;
+	dlink,dch-g020-a1)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:2" "2:lan:1"
 		;;
 	dlink,dir-825-b1)
 		ucidef_set_interface_wan "eth1"
@@ -357,6 +362,11 @@ ath79_setup_macs()
 	alfa-network,ap121f)
 		label_mac=$(mtd_get_mac_binary art 0x1002)
 		;;
+	arduino,yun)
+		base_mac=$(mtd_get_mac_binary art 0x1002)
+		lan_mac=$(macaddr_setbit $base_mac 29)
+		[ $lan_mac = $base_mac ] && lan_mac=$(macaddr_unsetbit $base_mac 29)
+		;;
 	avm,fritz1750e|\
 	avm,fritz450e|\
 	avm,fritzdvbc)
@@ -378,6 +388,10 @@ ath79_setup_macs()
 		;;
 	dlink,dap-2695-a1)
 		label_mac=$(mtd_get_mac_ascii bdcfg "wlanmac")
+		;;
+	dlink,dch-g020-a1)
+		lan_mac=$(mtd_get_mac_text "mp" 0x1)
+		label_mac=$lan_mac
 		;;
 	dlink,dir-825-b1)
 		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)

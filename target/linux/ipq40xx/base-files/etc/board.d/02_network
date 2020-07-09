@@ -65,6 +65,11 @@ ipq40xx_setup_interfaces()
 	engenius,eap2200)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
+	buffalo,wtr-m2133hp)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "2:lan:3" "3:lan:2" "4:lan:1"
+		;;
 	cellc,rtl30vw)
 		ucidef_set_interface_lan "eth0"
 		ucidef_add_switch "switch0" \
@@ -75,7 +80,8 @@ ipq40xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "2:lan:3" "3:lan:2" "4:lan:1" "0u@eth1" "5:wan"
 		;;
-	glinet,gl-b1300)
+	glinet,gl-b1300 |\
+	glinet,gl-s1300)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "3:lan" "4:lan"

@@ -59,6 +59,11 @@ define U-Boot/nsa310
   BUILD_DEVICES:=zyxel_nsa310b
 endef
 
+define U-Boot/nsa310s
+  NAME:=Zyxel NSA310S
+  BUILD_DEVICES:=zyxel_nsa310s
+endef
+
 define U-Boot/nsa325
   NAME:=Zyxel NSA325v1 and v2
   BUILD_DEVICES:=zyxel_nsa325
@@ -85,6 +90,7 @@ UBOOT_TARGETS := \
 	ib62x0 ib62x0_second_stage \
 	iconnect iconnect_second_stage \
 	nsa310 \
+	nsa310s \
 	nsa325 \
 	pogo_e02 pogo_e02_second_stage \
 	pogoplugv4

@@ -19,8 +19,19 @@ ramips_setup_interfaces()
 	xiaomi,mir3g-v2)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
+	edimax,re23s|\
+	mikrotik,routerboard-m11g|\
+	netgear,ex6150|\
+	thunder,timecloud|\
+	tplink,re350-v1|\
+	tplink,re500-v1|\
+	tplink,re650-v1|\
+	ubnt,unifi-nanohd)
+		ucidef_set_interface_lan "lan"
+		;;
 	gehua,ghl-r-001|\
 	hiwifi,hc5962|\
+	xiaomi,mi-router-ac2100|\
 	xiaomi,mir3p|\
 	xiaomi,redmi-router-ac2100)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
@@ -33,15 +44,6 @@ ramips_setup_interfaces()
 	netgear,wac104)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
-	mikrotik,routerboard-m11g|\
-	netgear,ex6150|\
-	thunder,timecloud|\
-	tplink,re350-v1|\
-	tplink,re500-v1|\
-	tplink,re650-v1|\
-	ubnt,unifi-nanohd)
-		ucidef_set_interface_lan "lan"
-		;;
 	mikrotik,routerboard-750gr3)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
 		;;
@@ -50,6 +52,10 @@ ramips_setup_interfaces()
 		;;
 	ubnt,edgerouter-x-sfp)
 		ucidef_set_interface_lan_wan "eth1 eth2 eth3 eth4 eth5" "eth0"
+		;;
+	zyxel,wap6805)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+		ucidef_set_interface "qtn" ifname "eth1" protocol "static" ipaddr "1.1.1.1" netmask "255.255.255.0"
 		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
