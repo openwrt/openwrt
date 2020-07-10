@@ -7,7 +7,7 @@ include ./common-tp-link.mk
 DEFAULT_SOC := mt7621
 
 KERNEL_DTB += -d21
-DEVICE_VARS += UIMAGE_MAGIC SERCOMM_HWNAME
+DEVICE_VARS += UIMAGE_MAGIC
 
 # The OEM webinterface expects an kernel with initramfs which has the uImage
 # header field ih_name.
