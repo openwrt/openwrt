@@ -24,6 +24,6 @@ define Device/marvell_macchiatobin
   DEVICE_ALT0_MODEL := Armada 8040 Community Board
   DEVICE_PACKAGES += kmod-i2c-mux-pca954x
   DEVICE_DTS := armada-8040-mcbin
-  SUPPORTED_DEVICES := marvell,armada8040-mcbin
+  SUPPORTED_DEVICES := marvell,armada8040-mcbin-doubleshot marvell,armada8040-mcbin
 endef
 TARGET_DEVICES += marvell_macchiatobin
