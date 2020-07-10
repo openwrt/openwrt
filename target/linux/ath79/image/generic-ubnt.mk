@@ -269,6 +269,15 @@ define Device/ubnt_powerbeam-5ac-gen2
 endef
 TARGET_DEVICES += ubnt_powerbeam-5ac-gen2
 
+define Device/ubnt_powerbridge-m
+  $(Device/ubnt-xm)
+  SOC := ar7241
+  DEVICE_MODEL := PowerBridge M
+  DEVICE_PACKAGES += rssileds
+  SUPPORTED_DEVICES += bullet-m
+endef
+TARGET_DEVICES += ubnt_powerbridge-m
+
 define Device/ubnt_rocket-m
   $(Device/ubnt-xm)
   SOC := ar7241
