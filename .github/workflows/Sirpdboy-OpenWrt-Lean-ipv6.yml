@@ -143,14 +143,14 @@ jobs:
         CONFIG_PACKAGE_luci-app-docker=m
         CONFIG_PACKAGE_luci-app-eqos=y
         CONFIG_PACKAGE_luci-app-familycloud=y
-        CONFIG_PACKAGE_luci-app-fileassistant=m
+        CONFIG_PACKAGE_luci-app-fileassistant=y
         CONFIG_PACKAGE_luci-app-filetransfer=y
         CONFIG_PACKAGE_luci-app-frpc=y
         CONFIG_PACKAGE_luci-app-frps=m
         CONFIG_PACKAGE_luci-app-guest-wifi=m
         CONFIG_PACKAGE_luci-app-hd-idle=y
         CONFIG_PACKAGE_luci-app-ipsec-vpnd=y
-        CONFIG_PACKAGE_luci-app-jd-dailybonus=y
+        CONFIG_PACKAGE_luci-app-jd-dailybonus=m
         CONFIG_PACKAGE_luci-app-kodexplorer=y
         CONFIG_PACKAGE_luci-app-koolddns=y
         CONFIG_PACKAGE_luci-app-koolproxyR=y
@@ -172,7 +172,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-serverchan=y
         CONFIG_PACKAGE_luci-app-shairplay=m
         CONFIG_PACKAGE_luci-app-smartdns=y
-        CONFIG_PACKAGE_luci-app-smartinfo=m
+        CONFIG_PACKAGE_luci-app-smartinfo=y
         CONFIG_PACKAGE_luci-app-softethervpn=m
         CONFIG_PACKAGE_luci-app-sqm=m
         CONFIG_PACKAGE_luci-app-ssrserver-python=m
@@ -209,7 +209,7 @@ jobs:
         EOF
         # 固件空间大小:
         cat >> .config <<EOF
-        CONFIG_TARGET_ROOTFS_PARTSIZE=460
+        CONFIG_TARGET_ROOTFS_PARTSIZE=860
         CONFIG_ZSTD_OPTIMIZE_O3=y
         EOF
         # 
@@ -246,7 +246,7 @@ jobs:
      - name: Upload firmware
        uses: actions/upload-artifact@master
        with:
-          name: SirpdboyOpenWrt-IPV6-Firmware
+          name: SirpdboyOpenWrt-IPV6-Firmware880M
           path: ./openwrt/bin/targets/
           
      - name: Upload  IPK
