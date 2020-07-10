@@ -131,12 +131,19 @@ list_changed_conffiles() {
 	done
 }
 
+list_static_conffiles() {
+	local filter=$1
+
+	find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
+		/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
+		\( -type f -o -type l \) $filter 2>/dev/null
+}
+
 add_conffiles() {
 	local file="$1"
-	( find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
-		/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
-		\( -type f -o -type l \) $find_filter 2>/dev/null;
-	  list_changed_conffiles ) | sort -u > "$file"
+
+	( list_static_conffiles "$find_filter"; list_changed_conffiles ) |
+		sort -u > "$file"
 	return 0
 }
 
@@ -154,9 +161,7 @@ add_overlayfiles() {
 
 		# backup files from /etc/sysupgrade.conf and /lib/upgrade/keep.d, but
 		# ignore those aready controlled by opkg conffiles
-		find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
-			/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
-			\( -type f -o -type l \) 2>/dev/null | sort -u |
+		list_static_conffiles | sort -u |
 			grep -h -v -x -F -f $conffiles > "$keepfiles"
 
 		# backup conffiles, but only those changed if '-u'
