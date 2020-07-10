@@ -3,13 +3,13 @@
 # Author: sirpdboy
 # https://github.com/sirpdboy/Openwrt
 
-name: Sirpdboy-OpenWrt-Lean-ipv4-CI
+name: Sirpdboy-OpenWrt-Lean-ipv4-mini-CI
 on:
   push:
     branches: 
       - master
   schedule:
-    - cron: '0 17 * * *'
+    - cron: '0 18 * * *'
   # release:
   #   types: [published]
 
@@ -127,78 +127,78 @@ jobs:
         CONFIG_PACKAGE_luci-app-advanced=y
         CONFIG_PACKAGE_luci-app-airplay2=m
         CONFIG_PACKAGE_luci-app-amule=m
-        CONFIG_PACKAGE_luci-app-aria2=y
+        CONFIG_PACKAGE_luci-app-aria2=m
         CONFIG_PACKAGE_luci-app-autopoweroff=y
         CONFIG_PACKAGE_luci-app-baidupcs-web=m
-        CONFIG_PACKAGE_luci-app-beardropper=y
+        CONFIG_PACKAGE_luci-app-beardropper=m
         CONFIG_PACKAGE_luci-app-clash=y
         CONFIG_PACKAGE_luci-app-control-mia=y
         CONFIG_PACKAGE_luci-app-control-timewol=y
         CONFIG_PACKAGE_luci-app-control-webrestriction=y
         CONFIG_PACKAGE_luci-app-control-weburl=y
-        CONFIG_PACKAGE_luci-app-cpulimit=y
+        CONFIG_PACKAGE_luci-app-cpulimit=m
         CONFIG_PACKAGE_luci-app-diskman=m
         CONFIG_PACKAGE_luci-app-dnscrypt-proxy=m
         CONFIG_PACKAGE_luci-app-dnsforwarder=m
         CONFIG_PACKAGE_luci-app-docker=m
         CONFIG_PACKAGE_luci-app-eqos=y
-        CONFIG_PACKAGE_luci-app-familycloud=y
+        CONFIG_PACKAGE_luci-app-familycloud=m
         CONFIG_PACKAGE_luci-app-fileassistant=m
         CONFIG_PACKAGE_luci-app-filetransfer=y
-        CONFIG_PACKAGE_luci-app-frpc=y
+        CONFIG_PACKAGE_luci-app-frpc=m
         CONFIG_PACKAGE_luci-app-frps=m
         CONFIG_PACKAGE_luci-app-guest-wifi=m
-        CONFIG_PACKAGE_luci-app-hd-idle=y
-        CONFIG_PACKAGE_luci-app-ipsec-vpnd=y
-        CONFIG_PACKAGE_luci-app-jd-dailybonus=y
-        CONFIG_PACKAGE_luci-app-kodexplorer=y
+        CONFIG_PACKAGE_luci-app-hd-idle=m
+        CONFIG_PACKAGE_luci-app-ipsec-vpnd=m
+        CONFIG_PACKAGE_luci-app-jd-dailybonus=m
+        CONFIG_PACKAGE_luci-app-kodexplorer=m
         CONFIG_PACKAGE_luci-app-koolddns=y
         CONFIG_PACKAGE_luci-app-koolproxyR=y
-        CONFIG_PACKAGE_luci-app-minidlna=y
+        CONFIG_PACKAGE_luci-app-minidlna=m
         CONFIG_PACKAGE_luci-app-music-remote-center=m
-        CONFIG_PACKAGE_luci-app-mwan3=y
+        CONFIG_PACKAGE_luci-app-mwan3=m
         CONFIG_PACKAGE_luci-app-mwan3helper=m
-        CONFIG_PACKAGE_luci-app-netdata=y
+        CONFIG_PACKAGE_luci-app-netdata=m
         CONFIG_PACKAGE_luci-app-nft-qos=m
         CONFIG_PACKAGE_luci-app-oaf=y
         CONFIG_PACKAGE_luci-app-openclash=y
         CONFIG_PACKAGE_luci-app-openvpn=m
         CONFIG_PACKAGE_luci-app-openvpn-server=m
         CONFIG_PACKAGE_luci-app-passwall=y
-        CONFIG_PACKAGE_luci-app-qbittorrent=y
+        CONFIG_PACKAGE_luci-app-qbittorrent=m
         CONFIG_PACKAGE_luci-app-qos=m
         CONFIG_PACKAGE_luci-app-rclone=m
         CONFIG_PACKAGE_luci-app-samba4=m
-        CONFIG_PACKAGE_luci-app-serverchan=y
+        CONFIG_PACKAGE_luci-app-serverchan=m
         CONFIG_PACKAGE_luci-app-shairplay=m
         CONFIG_PACKAGE_luci-app-smartdns=y
         CONFIG_PACKAGE_luci-app-smartinfo=m
         CONFIG_PACKAGE_luci-app-softethervpn=m
         CONFIG_PACKAGE_luci-app-sqm=m
         CONFIG_PACKAGE_luci-app-ssrserver-python=m
-        CONFIG_PACKAGE_luci-app-syncdial=y
+        CONFIG_PACKAGE_luci-app-syncdial=m
         CONFIG_PACKAGE_luci-app-tinyproxy=m
-        CONFIG_PACKAGE_luci-app-transmission=y
+        CONFIG_PACKAGE_luci-app-transmission=m
         CONFIG_PACKAGE_luci-app-ttyd=m
         CONFIG_PACKAGE_luci-app-uhttpd=m
-        CONFIG_PACKAGE_luci-app-usb-printer=y
+        CONFIG_PACKAGE_luci-app-usb-printer=m
         CONFIG_PACKAGE_luci-app-v2ray-server=m
         CONFIG_PACKAGE_luci-app-verysync=m
         CONFIG_PACKAGE_luci-app-vlmcsd=m
-        CONFIG_PACKAGE_luci-app-vsftpd=y
-        CONFIG_PACKAGE_luci-app-vssr=y
+        CONFIG_PACKAGE_luci-app-vsftpd=m
+        CONFIG_PACKAGE_luci-app-vssr=m
         CONFIG_PACKAGE_luci-app-webadmin=y
         CONFIG_PACKAGE_luci-app-wifischedule=m
         CONFIG_PACKAGE_luci-app-wrtbwmon=m
-        CONFIG_PACKAGE_luci-app-xlnetacc=y
-        CONFIG_PACKAGE_luci-app-zerotier=y
+        CONFIG_PACKAGE_luci-app-xlnetacc=m
+        CONFIG_PACKAGE_luci-app-zerotier=m
         # CONFIG_PACKAGE_luci-app-adbyby-plus is not set
         EOF
         # LuCI主题:
         cat >> .config <<EOF
         CONFIG_PACKAGE_luci-theme-argon=y
         CONFIG_PACKAGE_luci-theme-opentomcat=y
-        CONFIG_PACKAGE_luci-theme-btmod=y
+        CONFIG_PACKAGE_luci-theme-btmod=m
         EOF
         # 常用软件包:
         cat >> .config <<EOF
@@ -209,7 +209,7 @@ jobs:
         EOF
         # 固件空间大小:
         cat >> .config <<EOF
-        CONFIG_TARGET_ROOTFS_PARTSIZE=460
+        CONFIG_TARGET_ROOTFS_PARTSIZE=160
         CONFIG_ZSTD_OPTIMIZE_O3=y
         EOF
         # 
@@ -246,7 +246,7 @@ jobs:
      - name: Upload firmware
        uses: actions/upload-artifact@master
        with:
-          name: SirpdboyOpenWrt-IPV4-Firmware
+          name: SirpdboyOpenWrt-IPV4-mini-Firmware
           path: ./openwrt/bin/targets/
           
      - name: Upload  IPK
