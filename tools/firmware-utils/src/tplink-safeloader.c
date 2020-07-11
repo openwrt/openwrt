@@ -84,7 +84,7 @@ struct device_info {
 
 /** The content of the soft-version structure */
 struct __attribute__((__packed__)) soft_version {
-	uint32_t magic;
+	uint32_t data_len;
 	uint32_t zero;
 	uint8_t pad1;
 	uint8_t version_major;
@@ -2153,7 +2153,8 @@ static struct image_partition_entry make_soft_version(uint32_t rev) {
 
 	struct tm *tm = gmtime(&t);
 
-	s->magic = htonl(0x0000000c);
+	/* Partition contents size, minus 8 byte header and trailing byte */
+	s->data_len = htonl(entry.size-9);
 	s->zero = 0;
 	s->pad1 = 0xff;
 
