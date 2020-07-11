@@ -16,7 +16,7 @@
 
 usage() {
 	printf "Usage: %s -A arch -C comp -a addr -e entry -v version"\
-		 "-k kernel [-D name -d dtb] -o its_file" "$(basename $0)"
+		 "-k kernel [-D name -d dtb] -o its_file" "$(basename "$0")"
 	printf "\n\t-A ==> set architecture to 'arch'"
 	printf "\n\t-C ==> set compression type 'comp'"
 	printf "\n\t-c ==> set config name 'config'"
