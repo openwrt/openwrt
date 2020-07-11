@@ -9,14 +9,14 @@ IFS=$'\n'
 	exit 1
 }
 cat "$1" | (
-	cd "$2"
+	cd "$2" || exit 1
 	while read entry; do
 		[ -n "$entry" ] || break
 		[ ! -d "$entry" ] || [ -L "$entry" ] && rm -f "$entry"
 	done
 )
 sort -r "$1" | (
-	cd "$2"
+	cd "$2" || exit 1
 	while read entry; do
 		[ -n "$entry" ] || break
 		[ -d "$entry" ] && rmdir "$entry" > /dev/null 2>&1
