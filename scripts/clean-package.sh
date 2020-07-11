@@ -8,13 +8,13 @@ IFS=$'\n'
 	echo "File/directory not found"
 	exit 1
 }
-cat "$1" | (
+(
 	cd "$2" || exit 1
 	while read -r entry; do
 		[ -n "$entry" ] || break
 		[ ! -d "$entry" ] || [ -L "$entry" ] && rm -f "$entry"
 	done
-)
+) < "$1"
 sort -r "$1" | (
 	cd "$2" || exit 1
 	while read -r entry; do
