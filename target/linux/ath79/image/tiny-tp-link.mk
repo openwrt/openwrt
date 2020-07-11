@@ -443,7 +443,7 @@ define Device/tplink_tl-wr941-v2
   TPLINK_HWREV := 2
   SUPPORTED_DEVICES += tl-wr941nd
 endef
-TARGET_DEVICES += tplink_tl-wr941-v2
+#TARGET_DEVICES += tplink_tl-wr941-v2
 
 define Device/tplink_tl-wr941-v4
   $(Device/tplink-4m)
