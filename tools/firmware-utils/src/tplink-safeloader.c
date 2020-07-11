@@ -77,6 +77,7 @@ struct device_info {
 	const char *support_list;
 	char support_trail;
 	const char *soft_ver;
+	uint32_t soft_ver_compat_level;
 	struct flash_partition_entry partitions[MAX_PARTITIONS+1];
 	const char *first_sysupgrade_partition;
 	const char *last_sysupgrade_partition;
@@ -95,7 +96,6 @@ struct __attribute__((__packed__)) soft_version {
 	uint8_t month;
 	uint8_t day;
 	uint32_t rev;
-	uint8_t pad2;
 };
 
 
@@ -2140,8 +2140,13 @@ static inline uint8_t bcd(uint8_t v) {
 
 
 /** Generates the soft-version partition */
-static struct image_partition_entry make_soft_version(uint32_t rev) {
-	struct image_partition_entry entry = alloc_image_partition("soft-version", sizeof(struct soft_version));
+static struct image_partition_entry make_soft_version(struct device_info *info, uint32_t rev) {
+	size_t part_len = sizeof(struct soft_version);
+	if (info->soft_ver_compat_level > 0)
+		part_len += sizeof(uint32_t);
+
+	struct image_partition_entry entry =
+	    alloc_image_partition("soft-version", part_len+1);
 	struct soft_version *s = (struct soft_version *)entry.data;
 
 	time_t t;
@@ -2168,7 +2173,11 @@ static struct image_partition_entry make_soft_version(uint32_t rev) {
 	s->day = bcd(tm->tm_mday);
 	s->rev = htonl(rev);
 
-	s->pad2 = 0xff;
+	if (info->soft_ver_compat_level > 0)
+		*(uint32_t *)(entry.data + sizeof(struct soft_version)) =
+		    htonl(info->soft_ver_compat_level);
+
+	entry.data[entry.size-1] = 0xff;
 
 	return entry;
 }
@@ -2480,7 +2489,7 @@ static void build_image(const char *output,
 	if (info->soft_ver)
 		parts[1] = make_soft_version_from_string(info->soft_ver);
 	else
-		parts[1] = make_soft_version(rev);
+		parts[1] = make_soft_version(info, rev);
 
 	parts[2] = make_support_list(info);
 	parts[3] = read_file("os-image", kernel_image, false, NULL);
