@@ -1059,6 +1059,17 @@ define Device/xzwifi_creativebox-v1
 endef
 TARGET_DEVICES += xzwifi_creativebox-v1
 
+define Device/wio-one
+  SOC := mt7621
+  IMAGE_SIZE := 16064k
+  SUPPORTED_DEVICES := wio,wio-one
+  DEVICE_VENDOR := WIO
+  DEVICE_MODEL := ONE
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 wpad-mini
+endef
+TARGET_DEVICES += wio-one
+
 define Device/youhua_wr1200js
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := YouHua

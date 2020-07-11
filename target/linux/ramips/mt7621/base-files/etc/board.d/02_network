@@ -112,6 +112,16 @@ ramips_setup_macs()
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add $label_mac 1)
 		;;
+	wio,wio-one)
+		local ethaddr="$(mtd_get_mac_ascii u-boot-env ethaddr)"
+		lan_mac=$(mtd_get_mac_binary factory 40)
+		wan_mac=$(mtd_get_mac_binary factory 46)
+		[ "$ethaddr" = "00:AA:BB:CC:DD:EE" -o "${lan_mac%%:ff:ff:ff}" != "$lan_mac" ] && {
+			lan_mac=$(mtd_get_mac_binary factory 57344)
+			wan_mac=$(mtd_get_mac_binary factory 57350)
+		}
+		label_mac=$lan_mac
+		;;
 	zbtlink,zbt-we1326|\
 	zbtlink,zbt-wg3526-16m|\
 	zbtlink,zbt-wg3526-32m)
