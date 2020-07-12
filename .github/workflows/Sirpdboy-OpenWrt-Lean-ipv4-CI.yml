@@ -122,7 +122,7 @@ jobs:
         # 固件空间大小:
         cat >> .config <<EOF
         CONFIG_TARGET_KERNEL_PARTSIZE=20
-        CONFIG_TARGET_ROOTFS_PARTSIZE=160
+        CONFIG_TARGET_ROOTFS_PARTSIZE=860
         CONFIG_ZSTD_OPTIMIZE_O3=y
         EOF
         # 常用LuCI插件选择:
@@ -137,7 +137,7 @@ jobs:
         # CONFIG_PACKAGE_luci-app-unblockmusic is not set
         # CONFIG_PACKAGE_luci-app-vlmcsd is not set
         # CONFIG_PACKAGE_luci-app-vsftpd is not set
-        CONFIG_PACKAGE_luci-app-clash=y
+        CONFIG_PACKAGE_luci-app-clash=m
         CONFIG_PACKAGE_luci-app-control-mia=y
         CONFIG_PACKAGE_luci-app-control-timewol=y
         CONFIG_PACKAGE_luci-app-control-webrestriction=y
@@ -150,20 +150,23 @@ jobs:
         CONFIG_PACKAGE_luci-app-koolddns=y
         CONFIG_PACKAGE_luci-app-koolproxyR=y
         CONFIG_PACKAGE_luci-app-minidlna=m
-        CONFIG_PACKAGE_luci-app-mwan3=m
+        CONFIG_PACKAGE_luci-app-mwan3=y
         CONFIG_PACKAGE_luci-app-netdata=m
-        CONFIG_PACKAGE_luci-app-oaf=y
+        CONFIG_PACKAGE_luci-app-oaf=m
         CONFIG_PACKAGE_luci-app-openclash=y
         CONFIG_PACKAGE_luci-app-passwall=y
         CONFIG_PACKAGE_luci-app-qbittorrent=m
         CONFIG_PACKAGE_luci-app-serverchan=m
-        CONFIG_PACKAGE_luci-app-smartdns=m
+        CONFIG_PACKAGE_luci-app-smartdns=y
         CONFIG_PACKAGE_luci-app-smartinfo=m
-        CONFIG_PACKAGE_luci-app-syncdial=m
+        CONFIG_PACKAGE_luci-app-syncdial=y
         CONFIG_PACKAGE_luci-app-transmission=m
         CONFIG_PACKAGE_luci-app-usb-printer=m
         CONFIG_PACKAGE_luci-app-vssr=m
         CONFIG_PACKAGE_luci-app-webadmin=y
+        CONFIG_PACKAGE_luci-app-wrtbwmon=y
+        CONFIG_PACKAGE_luci-app-xlnetacc is not set
+        CONFIG_PACKAGE_luci-app-zerotier is not set
         EOF
         # LuCI主题:
         cat >> .config <<EOF
