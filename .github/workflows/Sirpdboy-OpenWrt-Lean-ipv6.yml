@@ -9,7 +9,7 @@ on:
     branches: 
       - master
   schedule:
-    - cron: '0 18 * * *'
+    - cron: '0 1 * * *'
   # release:
   #   types: [published]
 
@@ -246,7 +246,7 @@ jobs:
      - name: Upload firmware
        uses: actions/upload-artifact@master
        with:
-          name: SirpdboyOpenWrt-IPV6-Firmware880M
+          name: SirpdboyOpenWrt-IPV6-Firmware
           path: ./openwrt/bin/targets/
           
      - name: Upload  IPK
