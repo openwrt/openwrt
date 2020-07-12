@@ -51,6 +51,20 @@ define Device/globalscale_mirabox
 endef
 TARGET_DEVICES += globalscale_mirabox
 
+define Device/kobol_helios4
+  DEVICE_VENDOR := Kobol
+  DEVICE_MODEL := Helios4
+  KERNEL_INSTALL := 1
+  KERNEL := kernel-bin
+  DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils
+  IMAGES := sdcard.img.gz
+  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
+  SOC := armada-388
+  UBOOT := helios4-u-boot-spl.kwb
+  BOOT_SCRIPT := clearfog
+endef
+TARGET_DEVICES += kobol_helios4
+
 define Device/linksys
   $(Device/NAND-128K)
   DEVICE_VENDOR := Linksys
