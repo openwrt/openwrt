@@ -34,7 +34,7 @@ svn co https://github.com/jerrykuku/luci-app-vssr/trunk/  package/new/luci-app-v
 svn co https://github.com/jerrykuku/luci-app-jd-dailybonus/trunk/ package/new/luci-app-jd-dailybonus
 git clone https://github.com/garypang13/r8125 package/new/r8125
 git clone https://github.com/brvphoenix/luci-app-wrtbwmon  package/new/luci-app-wrtbwmon
-mv package/new/luci-app-wrtbwmon/po/zh_Hans  package/new/luci-app-wrtbwmon/po/zh-cn
+mv package/new/luci-app-wrtbwmon/luci-app-wrtbwmon/po/zh_Hans/  package/new/luci-app-wrtbwmon/luci-app-wrtbwmon/po/zh-cn
 git clone https://github.com/brvphoenix/wrtbwmon package/new/wrtbwmon
 chmod -R 755 ./
 exit 0
