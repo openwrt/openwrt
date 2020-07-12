@@ -91,18 +91,18 @@ jobs:
         CONFIG_TARGET_x86_64_DEVICE_generic=y
         EOF
         # 固件压缩:
-        # cat >> .config <<EOF
+        # cat >> .config <<EOF 
         # CONFIG_TARGET_IMAGES_GZIP=y
-        # EOF        
+        # EOF 
         # 取消编译VMware镜像: 
         cat >> .config <<EOF
         # CONFIG_VMDK_IMAGES is not set
         EOF
         # IPv6支持:
-        # cat >> .config <<EOF
+        # cat >> .config <<EOF 
         # CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
         # CONFIG_PACKAGE_ipv6helper=y
-        # EOF
+        # EOF 
         # 多文件系统支持:
         # cat >> .config <<EOF
         # CONFIG_PACKAGE_kmod-fs-nfs=y
@@ -127,6 +127,8 @@ jobs:
         EOF
         # 常用LuCI插件选择:
         cat >> .config <<EOF
+        CONFIG_PACKAGE_luci-app-advanced=y
+        CONFIG_PACKAGE_luci-app-autopoweroff=y
         # CONFIG_PACKAGE_autosamba is not set
         # CONFIG_PACKAGE_luci-app-accesscontrol is not set
         # CONFIG_PACKAGE_luci-app-adbyby-plus is not set
@@ -135,8 +137,6 @@ jobs:
         # CONFIG_PACKAGE_luci-app-unblockmusic is not set
         # CONFIG_PACKAGE_luci-app-vlmcsd is not set
         # CONFIG_PACKAGE_luci-app-vsftpd is not set
-        CONFIG_PACKAGE_luci-app-advanced=y
-        CONFIG_PACKAGE_luci-app-autopoweroff=y
         CONFIG_PACKAGE_luci-app-clash=y
         CONFIG_PACKAGE_luci-app-control-mia=y
         CONFIG_PACKAGE_luci-app-control-timewol=y
@@ -151,7 +151,6 @@ jobs:
         CONFIG_PACKAGE_luci-app-koolproxyR=y
         CONFIG_PACKAGE_luci-app-minidlna=m
         CONFIG_PACKAGE_luci-app-mwan3=m
-        CONFIG_PACKAGE_luci-app-mwan3helper=m
         CONFIG_PACKAGE_luci-app-netdata=m
         CONFIG_PACKAGE_luci-app-oaf=y
         CONFIG_PACKAGE_luci-app-openclash=y
@@ -178,7 +177,7 @@ jobs:
         CONFIG_PACKAGE_wget=y
         EOF
         # 常用驱动:
-        cat >> .config <<EOF   
+        cat >> .config <<EOF
         CONFIG_PACKAGE_kmod-vmxnet3=y
         CONFIG_PACKAGE_kmod-igbvf=y
         CONFIG_PACKAGE_kmod-ixgbe=y
@@ -193,7 +192,7 @@ jobs:
         CONFIG_PACKAGE_kmod-usb-net-rtl8150=y
         CONFIG_PACKAGE_kmod-usb-net-rtl8152=y
         CONFIG_PACKAGE_kmod-usb-net-asix-ax88179=y
-        EOF        
+        EOF
         # 
         # ========================固件定制部分结束========================
         # 
