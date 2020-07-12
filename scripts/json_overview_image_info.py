@@ -38,7 +38,7 @@ if output:
             "make",
             "--no-print-directory",
             "-C",
-            f"target/linux/{output['target'].split('/')[0]}",
+            "target/linux/{}".format(output['target'].split('/')[0]),
             "val.DEFAULT_PACKAGES",
             "val.ARCH_PACKAGES",
         ],
