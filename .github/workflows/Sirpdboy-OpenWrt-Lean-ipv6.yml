@@ -119,8 +119,16 @@ jobs:
         CONFIG_PACKAGE_kmod-usb2-pci=y
         CONFIG_PACKAGE_kmod-usb3=y
         EOF
+        # 固件空间大小:
+        cat >> .config <<EOF
+        CONFIG_TARGET_KERNEL_PARTSIZE=20
+        CONFIG_TARGET_ROOTFS_PARTSIZE=860
+        CONFIG_ZSTD_OPTIMIZE_O3=y
+        EOF
         # 常用LuCI插件选择:
         cat >> .config <<EOF
+        CONFIG_PACKAGE_autosamba=y
+        CONFIG_PACKAGE_luci-app-samba=y
         # CONFIG_PACKAGE_luci-app-accesscontrol is not set
         CONFIG_PACKAGE_luci-app-adblock=m
         CONFIG_PACKAGE_luci-app-adguardhome=y
@@ -193,7 +201,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-xlnetacc=y
         CONFIG_PACKAGE_luci-app-zerotier=y
         # CONFIG_PACKAGE_luci-app-adbyby-plus is not set
-        CONFIG_PACKAGE_luci-app-uhttpd=n
+        # CONFIG_PACKAGE_luci-app-uhttpd  is not set
         CONFIG_LUCI_LANG_en=y
         EOF
         # nginx相关:
@@ -217,10 +225,22 @@ jobs:
         CONFIG_PACKAGE_screen=y
         CONFIG_PACKAGE_wget=y
         EOF
-        # 固件空间大小:
-        cat >> .config <<EOF
-        CONFIG_TARGET_ROOTFS_PARTSIZE=860
-        CONFIG_ZSTD_OPTIMIZE_O3=y
+        # 常用驱动:
+        cat >> .config <<EOF   
+        CONFIG_PACKAGE_kmod-vmxnet3=y
+        CONFIG_PACKAGE_kmod-igbvf=y
+        CONFIG_PACKAGE_kmod-ixgbe=y
+        CONFIG_PACKAGE_kmod-pcnet32=y
+        CONFIG_PACKAGE_kmod-r8125=y
+        CONFIG_PACKAGE_kmod-r8168=y
+        CONFIG_PACKAGE_kmod-8139cp=y
+        CONFIG_PACKAGE_kmod-8139too=y
+        CONFIG_PACKAGE_kmod-i40e=y
+        CONFIG_PACKAGE_kmod-i40evf=y
+        CONFIG_PACKAGE_kmod-usb-net=y
+        CONFIG_PACKAGE_kmod-usb-net-rtl8150=y
+        CONFIG_PACKAGE_kmod-usb-net-rtl8152=y
+        CONFIG_PACKAGE_kmod-usb-net-asix-ax88179=y
         EOF
         # 
         # ========================固件定制部分结束========================
