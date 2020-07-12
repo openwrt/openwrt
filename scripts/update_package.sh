@@ -6,6 +6,7 @@
 clear
 rm -rf ./package/new
 rm -rf ./package/lean/trojan
+rm -rf ./package/lean/luci-app-wrtbwmon
 git clone https://github.com/NateLol/luci-app-beardropper package/new/luci-app-beardropper
 sed -i 's/"luci.fs"/"luci.sys".net/g' package/new/luci-app-beardropper/luasrc/model/cbi/beardropper/setting.lua
 sed -i '/firewall/d' package/new/luci-app-beardropper/root/etc/uci-defaults/luci-beardropper
@@ -32,5 +33,8 @@ svn co https://github.com/Lienol/openwrt-package/trunk/package/trojan package/ne
 svn co https://github.com/jerrykuku/luci-app-vssr/trunk/  package/new/luci-app-vssr
 svn co https://github.com/jerrykuku/luci-app-jd-dailybonus/trunk/ package/new/luci-app-jd-dailybonus
 git clone https://github.com/garypang13/r8125 package/new/r8125
+git clone https://github.com/brvphoenix/luci-app-wrtbwmon  package/new/luci-app-wrtbwmon
+mv package/new/luci-app-wrtbwmon/po/zh_Hans  package/new/luci-app-wrtbwmon/po/zh-cn
+git clone https://github.com/brvphoenix/wrtbwmon package/new/wrtbwmon
 chmod -R 755 ./
 exit 0
