@@ -150,7 +150,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-hd-idle=y
         CONFIG_PACKAGE_luci-app-ipsec-vpnd=y
         CONFIG_PACKAGE_luci-app-jd-dailybonus=y
-        CONFIG_PACKAGE_luci-app-kodexplorer=y
+        CONFIG_PACKAGE_luci-app-kodexplorer=m
         CONFIG_PACKAGE_luci-app-koolddns=y
         CONFIG_PACKAGE_luci-app-koolproxyR=y
         CONFIG_PACKAGE_luci-app-minidlna=y
@@ -175,19 +175,9 @@ jobs:
         CONFIG_PACKAGE_luci-app-vssr=y
         CONFIG_PACKAGE_luci-app-webadmin=y
         CONFIG_PACKAGE_luci-app-wifischedule=m
-        CONFIG_PACKAGE_luci-app-wrtbwmon=y
         CONFIG_PACKAGE_luci-app-xlnetacc=y
         CONFIG_PACKAGE_luci-app-zerotier=y
-        # CONFIG_PACKAGE_luci-app-uhttpd  is not set
         CONFIG_LUCI_LANG_en=y
-        EOF
-        # nginx相关:
-        cat >> .config <<EOF
-        CONFIG_PACKAGE_luci-ssl-nginx=y
-        CONFIG_NGINX_HTTP_V2=y
-        CONFIG_NGINX_DAV=y
-        CONFIG_NGINX_NAXSI=n
-        CONFIG_PACKAGE_luci=n # uhttpd服务
         EOF
         # LuCI主题:
         cat >> .config <<EOF
