@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 # Licensed under the terms of the GNU GPL License version 2 or later.
 #
@@ -15,18 +15,19 @@
 #
 
 usage() {
-	echo "Usage: $(basename $0) -A arch -C comp -a addr -e entry" \
-		"-v version -k kernel [-D name -d dtb] -o its_file"
-	echo -e "\t-A ==> set architecture to 'arch'"
-	echo -e "\t-C ==> set compression type 'comp'"
-	echo -e "\t-c ==> set config name 'config'"
-	echo -e "\t-a ==> set load address to 'addr' (hex)"
-	echo -e "\t-e ==> set entry point to 'entry' (hex)"
-	echo -e "\t-v ==> set kernel version to 'version'"
-	echo -e "\t-k ==> include kernel image 'kernel'"
-	echo -e "\t-D ==> human friendly Device Tree Blob 'name'"
-	echo -e "\t-d ==> include Device Tree Blob 'dtb'"
-	echo -e "\t-o ==> create output file 'its_file'"
+	printf "Usage: %s -A arch -C comp -a addr -e entry" "$(basename "$0")"
+	printf " -v version -k kernel [-D name -d dtb] -o its_file"
+
+	printf "\n\t-A ==> set architecture to 'arch'"
+	printf "\n\t-C ==> set compression type 'comp'"
+	printf "\n\t-c ==> set config name 'config'"
+	printf "\n\t-a ==> set load address to 'addr' (hex)"
+	printf "\n\t-e ==> set entry point to 'entry' (hex)"
+	printf "\n\t-v ==> set kernel version to 'version'"
+	printf "\n\t-k ==> include kernel image 'kernel'"
+	printf "\n\t-D ==> human friendly Device Tree Blob 'name'"
+	printf "\n\t-d ==> include Device Tree Blob 'dtb'"
+	printf "\n\t-o ==> create output file 'its_file'\n"
 	exit 1
 }
 
@@ -43,7 +44,7 @@ do
 		k ) KERNEL=$OPTARG;;
 		o ) OUTPUT=$OPTARG;;
 		v ) VERSION=$OPTARG;;
-		* ) echo "Invalid option passed to '$0' (options:$@)"
+		* ) echo "Invalid option passed to '$0' (options:$*)"
 		usage;;
 	esac
 done
@@ -55,7 +56,7 @@ if [ -z "${ARCH}" ] || [ -z "${COMPRESS}" ] || [ -z "${LOAD_ADDR}" ] || \
 	usage
 fi
 
-ARCH_UPPER=$(echo $ARCH | tr '[:lower:]' '[:upper:]')
+ARCH_UPPER=$(echo "$ARCH" | tr '[:lower:]' '[:upper:]')
 
 # Conditionally create fdt information
 if [ -n "${DTB}" ]; then
@@ -115,4 +116,4 @@ ${FDT_NODE}
 };"
 
 # Write .its file to disk
-echo "$DATA" > ${OUTPUT}
+echo "$DATA" > "${OUTPUT}"

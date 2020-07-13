@@ -78,7 +78,7 @@
 # The contents of the main eMMC are identical to the SD card layout,
 # with the preloader loading 512KiB of U-Boot starting at 0x50000.
 
-function usage() {
+usage() {
     echo "SYNTAX: $0 sd <file> <preloader image> <u-boot image> <bootfs image> <rootfs image> <bootfs size> <rootfs size>"
     echo " OR:    $0 emmc <file> <preloader image>"
     exit 1

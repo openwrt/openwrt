@@ -400,8 +400,8 @@ define Device/fon_fon2601
   DEVICE_VENDOR := Fon
   DEVICE_MODEL := FON2601
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
-  KERNEL_INITRAMFS := $$(KERNEL) | fonfxcimage
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | fonfxcimage | \
+  KERNEL_INITRAMFS := $$(KERNEL) | uimage-padhdr
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | uimage-padhdr | \
 	pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += fon_fon2601

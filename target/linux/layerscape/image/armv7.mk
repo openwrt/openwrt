@@ -1,5 +1,5 @@
 #
-# Copyright 2018 NXP
+# Copyright 2018-2020 NXP
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,11 +8,15 @@
 define Device/Default
   PROFILES := Default
   FILESYSTEMS := squashfs
-  IMAGES := firmware.bin
+  IMAGES := firmware.bin sysupgrade.bin
   KERNEL := kernel-bin | uImage none
   KERNEL_NAME := zImage
   KERNEL_LOADADDR := 0x80008000
   KERNEL_ENTRY_POINT := 0x80008000
+  IMAGE_SIZE := 64m
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 16M | \
+    append-rootfs | pad-rootfs | \
+    check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
 endef
 
 define Device/ls1021atwr
@@ -28,7 +32,8 @@ define Device/ls1021atwr
     ls-append $(1)-uboot-env.bin | pad-to 15M | \
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to 32M | \
-    append-rootfs | pad-rootfs | check-size 67108865
+    append-rootfs | pad-rootfs | check-size
+  SUPPORTED_DEVICES := fsl,ls1021a-twr
 endef
 TARGET_DEVICES += ls1021atwr
 
@@ -38,7 +43,7 @@ define Device/ls1021atwr-sdboot
   DEVICE_VARIANT := SD Card Boot
   DEVICE_DTS := ls1021a-twr
   FILESYSTEMS := ext4
-  IMAGES := sdcard.img
+  IMAGES := sdcard.img sysupgrade.bin
   IMAGE/sdcard.img := \
     ls-clean | \
     ls-append-sdhead $(1) | pad-to 4K | \
@@ -47,6 +52,12 @@ define Device/ls1021atwr-sdboot
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
     append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 16M | \
+    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | check-size $(LS_SD_IMAGE_SIZE) | append-metadata
+  SUPPORTED_DEVICES := fsl,ls1021a-twr-sdboot
 endef
 TARGET_DEVICES += ls1021atwr-sdboot
 

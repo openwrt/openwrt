@@ -182,7 +182,7 @@ start()
 	zram_comp_streams "$zram_dev"
 	echo $(( $zram_size * 1024 * 1024 )) >"/sys/block/$( basename "$zram_dev" )/disksize"
 	mkswap "$zram_dev"
-	swapon $zram_priority "$zram_dev"
+	swapon -d $zram_priority "$zram_dev"
 }
 
 stop()

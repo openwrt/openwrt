@@ -17,6 +17,8 @@ case "$board" in
 	adtran,bsap1840)
 		macaddr_add "$(mtd_get_mac_binary 'Board data' 2)" $(($PHYNBR * 8 + 1)) > /sys${DEVPATH}/macaddress
 		;;
+	dlink,dap-1330-a1|\
+	dlink,dap-1365-a1|\
 	dlink,dch-g020-a1)
 		mtd_get_mac_text "mp" 0x13 > /sys${DEVPATH}/macaddress
 		;;

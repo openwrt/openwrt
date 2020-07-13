@@ -69,6 +69,13 @@ menuconfig DEVEL
 		help
 		  Compiler cache; see https://ccache.samba.org/
 
+	config CCACHE_DIR
+		string "Set ccache directory" if CCACHE
+		default ""
+		help
+		  Store ccache in this directory.
+		  If not set, uses './.ccache'
+
 	config EXTERNAL_KERNEL_TREE
 		string "Use external kernel tree" if DEVEL
 		default ""
