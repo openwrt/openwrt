@@ -1,0 +1,193 @@
+From: Sven Eckelmann <sven@narfation.org>
+Date: Wed, 8 Feb 2017 16:26:00 +0100
+Subject: [PATCH] ipq40xx: Fix ar40xx port separation
+
+It is currently not possible to submit (or receive) VLAN tagged frames over
+the ar40xx PHY switch and the edma ethernet device.
+
+This can be worked around by disabling enable_vlan. The separation of the
+eth0 and eth1 ports is then done by the vlan_tag information from the
+device tree. But the ar40xx PHY switch then also has to parse the word3
+port bitmap (word3) from the TDP when data was received from the CPU port
+(0).
+
+IssueID: #2857
+
+Forwarded: no
+ The ar40xx.c change was forwarded to Xiaofei Shen <xiaofeis@codeaurora.org>
+ (QCA). But John Crispin will rewrite the driver anyway and we have to check
+ later if this change is required in his driver too.
+---
+ drivers/net/phy/ar40xx.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/phy/ar40xx.c b/drivers/net/phy/ar40xx.c
+index e408e8f7312f749aeb29c73a589047856e9479c7..421399b9b33e6f42d4e38db3f90b0c1d514a0b79 100644
+--- a/drivers/net/phy/ar40xx.c
++++ b/drivers/net/phy/ar40xx.c
+@@ -1200,7 +1200,11 @@ ar40xx_init_port(struct ar40xx_priv *priv, int port)
+ 	ar40xx_rmw(priv, AR40XX_REG_PORT_STATUS(port),
+ 			AR40XX_PORT_AUTO_LINK_EN, 0);
+ 
+-	ar40xx_write(priv, AR40XX_REG_PORT_HEADER(port), 0);
++	/* CPU port is setting headers to limit output ports */
++	if (port == 0)
++		ar40xx_write(priv, AR40XX_REG_PORT_HEADER(port), 0x8);
++	else
++		ar40xx_write(priv, AR40XX_REG_PORT_HEADER(port), 0);
+ 
+ 	ar40xx_write(priv, AR40XX_REG_PORT_VLAN0(port), 0);
+ 
+From: Sven Eckelmann <sven@narfation.org>
+Date: Fri, 17 Mar 2017 11:00:40 +0100
+Subject: [PATCH] ipq40xx: Disable CTAG TX VLAN offloading
+
+The driver requires the offloading to set the VLAN specific header for the
+port selection. It can therefore not be used at the same time to offload
+the setting of the VLAN header on top of essedma interface.
+
+Forwarded: no
+---
+ drivers/net/ethernet/qualcomm/essedma/edma_axi.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/qualcomm/essedma/edma_axi.c b/drivers/net/ethernet/qualcomm/essedma/edma_axi.c
+index 81fc1e1b64daa41b15f21634ac1f08de0f5822a7..db184b82769f53e1554a1c51c53414ef7cadd7f6 100644
+--- a/drivers/net/ethernet/qualcomm/essedma/edma_axi.c
++++ b/drivers/net/ethernet/qualcomm/essedma/edma_axi.c
+@@ -970,7 +970,6 @@ static int edma_axi_probe(struct platform_device *pdev)
+ 		edma_netdev[i]->netdev_ops = &edma_axi_netdev_ops;
+ 		edma_netdev[i]->max_mtu = 9000;
+ 		edma_netdev[i]->features = NETIF_F_HW_CSUM | NETIF_F_RXCSUM
+-				      | NETIF_F_HW_VLAN_CTAG_TX
+ 				      | NETIF_F_HW_VLAN_CTAG_RX | NETIF_F_SG |
+ 				      NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_GRO;
+ 		edma_netdev[i]->hw_features = NETIF_F_HW_CSUM | NETIF_F_RXCSUM |
+From: Sven Eckelmann <sven@narfation.org>
+Date: Fri, 17 Mar 2017 11:04:50 +0100
+Subject: [PATCH] ar40xx: Enable QinQ on the switch
+
+The switch used in by IPQ40xx is using VLANs by default to select the
+outgoing port. It was therefore not possible to sent or receive 802.1q
+tagged frames over the CPU port. This can be allowed by changing the port
+configuration and lookup configuration.
+
+The resulting VLAN-tagged frames send or received by the CPU will therefore
+look like QinQ frames. The outer VLAN tag is the port-VLAN of the port from
+which the data was received or towards which the data has to be sent. The
+inner VLAN tag (when it exists) is the VLAN which was configrued on top of
+the ethernet device.
+
+Forwarded: no
+---
+ drivers/net/phy/ar40xx.c | 23 ++++++++++++++++++++---
+ drivers/net/phy/ar40xx.h |  5 +++++
+ 2 files changed, 25 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/phy/ar40xx.c b/drivers/net/phy/ar40xx.c
+index 421399b9b33e6f42d4e38db3f90b0c1d514a0b79..4af26638d542a9ab5ca27454ce557233bcb64575 100644
+--- a/drivers/net/phy/ar40xx.c
++++ b/drivers/net/phy/ar40xx.c
+@@ -1247,6 +1247,10 @@ ar40xx_init_globals(struct ar40xx_priv *priv)
+ 	t = (AR40XX_PORT0_FC_THRESH_ON_DFLT << 16) |
+ 	      AR40XX_PORT0_FC_THRESH_OFF_DFLT;
+ 	ar40xx_write(priv, AR40XX_REG_PORT_FLOWCTRL_THRESH(0), t);
++
++	/* set service tag to 802.1q */
++	t = ETH_P_8021Q | AR40XX_ESS_SERVICE_TAG_STAG;
++	ar40xx_write(priv, AR40XX_ESS_SERVICE_TAG, t);
+ }
+ 
+ static void
+@@ -1572,7 +1576,11 @@ ar40xx_setup_port(struct ar40xx_priv *priv, int port, u32 members)
+ 	u32 pvid = priv->vlan_id[priv->pvid[port]];
+ 
+ 	if (priv->vlan) {
+-		egress = AR40XX_PORT_VLAN1_OUT_MODE_UNMOD;
++		if (priv->vlan_tagged & BIT(port))
++			egress = AR40XX_PORT_VLAN1_OUT_MODE_TAG;
++		else
++			egress = AR40XX_PORT_VLAN1_OUT_MODE_UNMOD;
++
+ 		ingress = AR40XX_IN_SECURE;
+ 	} else {
+ 		egress = AR40XX_PORT_VLAN1_OUT_MODE_UNTOUCH;
+@@ -1583,8 +1591,17 @@ ar40xx_setup_port(struct ar40xx_priv *priv, int port, u32 members)
+ 	t |= pvid << AR40XX_PORT_VLAN0_DEF_CVID_S;
+ 	ar40xx_write(priv, AR40XX_REG_PORT_VLAN0(port), t);
+ 
+-	t = AR40XX_PORT_VLAN1_PORT_VLAN_PROP;
+-	t |= egress << AR40XX_PORT_VLAN1_OUT_MODE_S;
++	t = egress << AR40XX_PORT_VLAN1_OUT_MODE_S;
++
++	/* set CPU port to core port */
++	if (port == 0)
++		t |= AR40XX_PORT_VLAN1_CORE_PORT;
++
++	if (priv->vlan_tagged & BIT(port))
++		t |= AR40XX_PORT_VLAN1_PORT_VLAN_PROP;
++	else
++		t |= AR40XX_PORT_VLAN1_PORT_TLS_MODE;
++
+ 	ar40xx_write(priv, AR40XX_REG_PORT_VLAN1(port), t);
+ 
+ 	t = members;
+diff --git a/drivers/net/phy/ar40xx.h b/drivers/net/phy/ar40xx.h
+index 722bf6ae4b32fcefa33e007ae34a3202315a3fe1..7ba40ccf753fe833e6a01b32cfe1407a317d92ee 100644
+--- a/drivers/net/phy/ar40xx.h
++++ b/drivers/net/phy/ar40xx.h
+@@ -151,6 +151,9 @@ struct ar40xx_mib_desc {
+ #define   AR40XX_MIB_FUNC_NO_OP		0x0
+ #define   AR40XX_MIB_FUNC_FLUSH		0x1
+ 
++#define AR40XX_ESS_SERVICE_TAG		0x48
++#define AR40XX_ESS_SERVICE_TAG_STAG	BIT(17)
++
+ #define AR40XX_REG_PORT_STATUS(_i)		(0x07c + (_i) * 4)
+ #define   AR40XX_PORT_SPEED			BITS(0, 2)
+ #define   AR40XX_PORT_STATUS_SPEED_S	0
+@@ -179,6 +182,8 @@ struct ar40xx_mib_desc {
+ #define   AR40XX_PORT_VLAN0_DEF_CVID_S		16
+ 
+ #define AR40XX_REG_PORT_VLAN1(_i)		(0x424 + (_i) * 0x8)
++#define   AR40XX_PORT_VLAN1_CORE_PORT		BIT(9)
++#define   AR40XX_PORT_VLAN1_PORT_TLS_MODE	BIT(7)
+ #define   AR40XX_PORT_VLAN1_PORT_VLAN_PROP	BIT(6)
+ #define   AR40XX_PORT_VLAN1_OUT_MODE		BITS(12, 2)
+ #define   AR40XX_PORT_VLAN1_OUT_MODE_S		12
+From: Sven Eckelmann <sven@narfation.org>
+Date: Wed, 29 Mar 2017 16:05:26 +0200
+Subject: [PATCH] ipq40xx: Disable NETIF_F_RXHASH support in essedma
+
+The NETIF_F_RXHASH requires that each skb set the hash correctly with
+skb_set_hash. essedma tries to do that but the set hash always results in
+only used CPU when RPS is allowed for all CPUs.
+
+Disabling RXHASH works around this problem for now.
+
+IssueID: #5477
+Forwarded: no
+ Upstream author was informed via e-mail about the problem
+---
+ drivers/net/ethernet/qualcomm/essedma/edma_axi.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/qualcomm/essedma/edma_axi.c b/drivers/net/ethernet/qualcomm/essedma/edma_axi.c
+index db184b82769f53e1554a1c51c53414ef7cadd7f6..975e119cfe6f1a8cfe54ac0eb8f8752aa4bf22af 100644
+--- a/drivers/net/ethernet/qualcomm/essedma/edma_axi.c
++++ b/drivers/net/ethernet/qualcomm/essedma/edma_axi.c
+@@ -984,10 +984,10 @@ static int edma_axi_probe(struct platform_device *pdev)
+ 					     NETIF_F_GRO;
+ 
+ #ifdef CONFIG_RFS_ACCEL
+-		edma_netdev[i]->features |=  NETIF_F_RXHASH | NETIF_F_NTUPLE;
+-		edma_netdev[i]->hw_features |=  NETIF_F_RXHASH | NETIF_F_NTUPLE;
+-		edma_netdev[i]->vlan_features |= NETIF_F_RXHASH | NETIF_F_NTUPLE;
+-		edma_netdev[i]->wanted_features |= NETIF_F_RXHASH | NETIF_F_NTUPLE;
++		edma_netdev[i]->features |=  NETIF_F_NTUPLE;
++		edma_netdev[i]->hw_features |=  NETIF_F_NTUPLE;
++		edma_netdev[i]->vlan_features |= NETIF_F_NTUPLE;
++		edma_netdev[i]->wanted_features |= NETIF_F_NTUPLE;
+ #endif
+ 		edma_set_ethtool_ops(edma_netdev[i]);
+ 
