@@ -61,6 +61,18 @@ define Package/libpcrecpp
   DEPENDS:=+libpcre $(CXX_DEPENDS)
 endef
 
+include $(INCLUDE_DIR)/host-build.mk
+
+HOST_CONFIGURE_ARGS += \
+	--enable-utf8 \
+	--enable-unicode-properties \
+	--enable-pcre16 \
+	--with-match-limit-recursion=16000 \
+	--enable-cpp
+
+$(eval $(call HostBuild))
+
+
 TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
