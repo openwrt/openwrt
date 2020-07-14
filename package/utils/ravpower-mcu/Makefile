@@ -17,7 +17,6 @@ define Package/ravpower-mcu
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Utility to control the RAVPower RP-WD009 PMIC
-  DEPENDS:=@TARGET_ramips_mt76x8
   URL:=https://github.com/blocktrron/ravpower-mcu/
 endef
 
