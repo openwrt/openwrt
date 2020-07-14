@@ -40,11 +40,13 @@ jobs:
      - name: Prepare openwrt
        run: |
         sudo chown -R runner:runner /home/runner/work/openwrt
-        cp -r ./scripts/ready_download.py ./ && /bin/bash ready_download.py
+        cp -r ./scripts/ready_download.py ./
+        /bin/bash ready_download.py
      - name: Prepare Package
        run: |
         cd openwrt
-        cp -r ../scripts/update_package.py ./ && /bin/bash update_package.py
+        cp -r ../scripts/update_package.py ./
+        /bin/bash update_package.py
         chmod -R 755 ./
         df -h
      - name: Generate configuration file
