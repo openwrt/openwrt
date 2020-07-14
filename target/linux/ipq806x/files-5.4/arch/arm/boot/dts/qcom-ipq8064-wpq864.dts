@@ -336,39 +336,21 @@
 	};
 };
 
-&gsbi4 {
-	status = "okay";
-	qcom,mode = <GSBI_PROT_I2C_UART>;
-};
-
 &gsbi4_serial {
-	status = "okay";
-
 	pinctrl-0 = <&uart0_pins>;
 	pinctrl-names = "default";
 };
 
-&gsbi5 {
-	status = "okay";
+&flash {
+	compatible = "jedec,spi-nor";
+};
 
-	qcom,mode = <GSBI_PROT_SPI>;
+&sata_phy {
+	status = "disabled";
+};
 
-	spi@1a280000 {
-		status = "okay";
-
-		pinctrl-0 = <&spi_pins>;
-		pinctrl-names = "default";
-
-		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
-
-		s25fl256s1@0 {
-			compatible = "jedec,spi-nor";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			reg = <0>;
-			spi-max-frequency = <50000000>;
-		};
-	};
+&sata {
+	status = "disabled";
 };
 
 &ss_phy_0 {		/* USB3 port 0 SS phy */
