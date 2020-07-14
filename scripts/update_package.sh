@@ -24,6 +24,5 @@ sed -i 's/), 5)/), 48)/g' package/new/luci-app-clash/luasrc/controller/clash.lua
 svn co https://github.com/Lienol/openwrt-package/trunk/lienol/luci-app-passwall package/new/luci-app-passwall
 svn co https://github.com/jerrykuku/luci-app-vssr/trunk/  package/new/luci-app-vssr
 svn co https://github.com/jerrykuku/luci-app-jd-dailybonus/trunk/ package/new/luci-app-jd-dailybonus
-git clone https://github.com/garypang13/r8125 package/new/r8125
 chmod -R 755 ./
 exit 0
