@@ -32,7 +32,7 @@ Index: linux-5.4.51/drivers/net/phy/ar40xx.c
 ===================================================================
 --- /dev/null
 +++ linux-5.4.51/drivers/net/phy/ar40xx.c
-@@ -0,0 +1,2097 @@
+@@ -0,0 +1,2118 @@
 +/*
 + * Copyright (c) 2016, The Linux Foundation. All rights reserved.
 + *
@@ -1235,7 +1235,11 @@ Index: linux-5.4.51/drivers/net/phy/ar40xx.c
 +	ar40xx_rmw(priv, AR40XX_REG_PORT_STATUS(port),
 +			AR40XX_PORT_AUTO_LINK_EN, 0);
 +
-+	ar40xx_write(priv, AR40XX_REG_PORT_HEADER(port), 0);
++	/* CPU port is setting headers to limit output ports */
++	if (port == 0)
++		ar40xx_write(priv, AR40XX_REG_PORT_HEADER(port), 0x8);
++	else
++		ar40xx_write(priv, AR40XX_REG_PORT_HEADER(port), 0);
 +
 +	ar40xx_write(priv, AR40XX_REG_PORT_VLAN0(port), 0);
 +
@@ -1278,6 +1282,10 @@ Index: linux-5.4.51/drivers/net/phy/ar40xx.c
 +	t = (AR40XX_PORT0_FC_THRESH_ON_DFLT << 16) |
 +	      AR40XX_PORT0_FC_THRESH_OFF_DFLT;
 +	ar40xx_write(priv, AR40XX_REG_PORT_FLOWCTRL_THRESH(0), t);
++
++	/* set service tag to 802.1q */
++	t = ETH_P_8021Q | AR40XX_ESS_SERVICE_TAG_STAG;
++	ar40xx_write(priv, AR40XX_ESS_SERVICE_TAG, t);
 +}
 +
 +static void
@@ -1603,7 +1611,11 @@ Index: linux-5.4.51/drivers/net/phy/ar40xx.c
 +	u32 pvid = priv->vlan_id[priv->pvid[port]];
 +
 +	if (priv->vlan) {
-+		egress = AR40XX_PORT_VLAN1_OUT_MODE_UNMOD;
++		if (priv->vlan_tagged & BIT(port))
++			egress = AR40XX_PORT_VLAN1_OUT_MODE_TAG;
++		else
++			egress = AR40XX_PORT_VLAN1_OUT_MODE_UNMOD;
++
 +		ingress = AR40XX_IN_SECURE;
 +	} else {
 +		egress = AR40XX_PORT_VLAN1_OUT_MODE_UNTOUCH;
@@ -1614,8 +1626,17 @@ Index: linux-5.4.51/drivers/net/phy/ar40xx.c
 +	t |= pvid << AR40XX_PORT_VLAN0_DEF_CVID_S;
 +	ar40xx_write(priv, AR40XX_REG_PORT_VLAN0(port), t);
 +
-+	t = AR40XX_PORT_VLAN1_PORT_VLAN_PROP;
-+	t |= egress << AR40XX_PORT_VLAN1_OUT_MODE_S;
++	t = egress << AR40XX_PORT_VLAN1_OUT_MODE_S;
++
++	/* set CPU port to core port */
++	if (port == 0)
++		t |= AR40XX_PORT_VLAN1_CORE_PORT;
++
++	if (priv->vlan_tagged & BIT(port))
++		t |= AR40XX_PORT_VLAN1_PORT_VLAN_PROP;
++	else
++		t |= AR40XX_PORT_VLAN1_PORT_TLS_MODE;
++
 +	ar40xx_write(priv, AR40XX_REG_PORT_VLAN1(port), t);
 +
 +	t = members;
@@ -2134,7 +2155,7 @@ Index: linux-5.4.51/drivers/net/phy/ar40xx.h
 ===================================================================
 --- /dev/null
 +++ linux-5.4.51/drivers/net/phy/ar40xx.h
-@@ -0,0 +1,337 @@
+@@ -0,0 +1,342 @@
 +/*
 + * Copyright (c) 2016, The Linux Foundation. All rights reserved.
 + *
@@ -2288,6 +2309,9 @@ Index: linux-5.4.51/drivers/net/phy/ar40xx.h
 +#define   AR40XX_MIB_FUNC_NO_OP		0x0
 +#define   AR40XX_MIB_FUNC_FLUSH		0x1
 +
++#define AR40XX_ESS_SERVICE_TAG		0x48
++#define AR40XX_ESS_SERVICE_TAG_STAG	BIT(17)
++
 +#define AR40XX_REG_PORT_STATUS(_i)		(0x07c + (_i) * 4)
 +#define   AR40XX_PORT_SPEED			BITS(0, 2)
 +#define   AR40XX_PORT_STATUS_SPEED_S	0
@@ -2316,6 +2340,8 @@ Index: linux-5.4.51/drivers/net/phy/ar40xx.h
 +#define   AR40XX_PORT_VLAN0_DEF_CVID_S		16
 +
 +#define AR40XX_REG_PORT_VLAN1(_i)		(0x424 + (_i) * 0x8)
++#define   AR40XX_PORT_VLAN1_CORE_PORT		BIT(9)
++#define   AR40XX_PORT_VLAN1_PORT_TLS_MODE	BIT(7)
 +#define   AR40XX_PORT_VLAN1_PORT_VLAN_PROP	BIT(6)
 +#define   AR40XX_PORT_VLAN1_OUT_MODE		BITS(12, 2)
 +#define   AR40XX_PORT_VLAN1_OUT_MODE_S		12
