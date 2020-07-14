@@ -1,5 +1,7 @@
---- a/drivers/net/phy/Kconfig
-+++ b/drivers/net/phy/Kconfig
+Index: linux-5.4.51/drivers/net/phy/Kconfig
+===================================================================
+--- linux-5.4.51.orig/drivers/net/phy/Kconfig
++++ linux-5.4.51/drivers/net/phy/Kconfig
 @@ -587,6 +587,13 @@ config MDIO_IPQ40XX
  	  This driver supports the MDIO interface found in Qualcomm
  	  Atheros ipq40xx Soc chip.
@@ -14,8 +16,10 @@
  endif # PHYLIB
  
  config MICREL_KS8995MA
---- a/drivers/net/phy/Makefile
-+++ b/drivers/net/phy/Makefile
+Index: linux-5.4.51/drivers/net/phy/Makefile
+===================================================================
+--- linux-5.4.51.orig/drivers/net/phy/Makefile
++++ linux-5.4.51/drivers/net/phy/Makefile
 @@ -70,6 +70,7 @@ ifdef CONFIG_HWMON
  aquantia-objs			+= aquantia_hwmon.o
  endif
@@ -24,9 +28,11 @@
  obj-$(CONFIG_AX88796B_PHY)	+= ax88796b.o
  obj-$(CONFIG_AT803X_PHY)	+= at803x.o
  obj-$(CONFIG_BCM63XX_PHY)	+= bcm63xx.o
+Index: linux-5.4.51/drivers/net/phy/ar40xx.c
+===================================================================
 --- /dev/null
-+++ b/drivers/net/phy/ar40xx.c
-@@ -0,0 +1,2090 @@
++++ linux-5.4.51/drivers/net/phy/ar40xx.c
+@@ -0,0 +1,2097 @@
 +/*
 + * Copyright (c) 2016, The Linux Foundation. All rights reserved.
 + *
@@ -2050,6 +2056,12 @@
 +	/* register switch */
 +	swdev = &priv->dev;
 +
++	if (priv->mii_bus == NULL) {
++		dev_err(&pdev->dev, "Probe failed - Missing PHYs!\n");
++		ret = -ENODEV;
++		goto err_missing_phy;
++	}
++
 +	swdev->alias = dev_name(&priv->mii_bus->dev);
 +
 +	swdev->cpu_port = AR40XX_PORT_CPU;
@@ -2081,6 +2093,7 @@
 +	unregister_switch(&priv->dev);
 +err_unregister_phy:
 +	phy_driver_unregister(&ar40xx_phy_driver);
++err_missing_phy:
 +	platform_set_drvdata(pdev, NULL);
 +	return ret;
 +}
@@ -2117,8 +2130,10 @@
 +
 +MODULE_DESCRIPTION("IPQ40XX ESS driver");
 +MODULE_LICENSE("Dual BSD/GPL");
+Index: linux-5.4.51/drivers/net/phy/ar40xx.h
+===================================================================
 --- /dev/null
-+++ b/drivers/net/phy/ar40xx.h
++++ linux-5.4.51/drivers/net/phy/ar40xx.h
 @@ -0,0 +1,337 @@
 +/*
 + * Copyright (c) 2016, The Linux Foundation. All rights reserved.
