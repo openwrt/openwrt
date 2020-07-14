@@ -135,7 +135,7 @@ jobs:
         # CONFIG_PACKAGE_luci-app-ipsec-vpnd is not set
         # CONFIG_PACKAGE_luci-app-nlbwmon is not set
         # CONFIG_PACKAGE_luci-app-unblockmusic is not set
-        # CONFIG_PACKAGE_luci-app-vlmcsd is not set
+        CONFIG_PACKAGE_luci-app-vlmcsd=y
         # CONFIG_PACKAGE_luci-app-vsftpd is not set
         CONFIG_PACKAGE_luci-app-adguardhome=y
         CONFIG_PACKAGE_luci-app-clash=m
@@ -165,8 +165,8 @@ jobs:
         CONFIG_PACKAGE_luci-app-usb-printer=m
         CONFIG_PACKAGE_luci-app-vssr=m
         CONFIG_PACKAGE_luci-app-webadmin=y
-        CONFIG_PACKAGE_luci-app-xlnetacc is not set
-        CONFIG_PACKAGE_luci-app-zerotier is not set
+        # CONFIG_PACKAGE_luci-app-xlnetacc is not set
+        # CONFIG_PACKAGE_luci-app-zerotier is not set
         EOF
         # LuCI主题:
         cat >> .config <<EOF
