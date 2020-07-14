@@ -232,6 +232,29 @@ define Device/dlink_dir-8xx-a1
 	check-size
 endef
 
+define Device/dlink_dir-xx60-a1
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 40960k
+  UBINIZE_OPTS := -E 5
+  DEVICE_VENDOR := D-Link
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic \
+	kmod-usb3 kmod-usb-ledtrig-usbport
+  KERNEL := $$(KERNEL) | uimage-padhdr 96
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+endef
+
+define Device/dlink_dir-1960-a1
+  $(Device/dlink_dir-xx60-a1)
+  DEVICE_MODEL := DIR-1960
+  DEVICE_VARIANT := A1
+endef
+TARGET_DEVICES += dlink_dir-1960-a1
+
 define Device/dlink_dir-860l-b1
   $(Device/seama)
   BLOCKSIZE := 64k
