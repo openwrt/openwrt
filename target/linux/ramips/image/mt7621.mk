@@ -275,6 +275,13 @@ define Device/dlink_dir-1960-a1
 endef
 TARGET_DEVICES += dlink_dir-1960-a1
 
+define Device/dlink_dir-2660-a1
+  $(Device/dlink_dir-xx60-a1)
+  DEVICE_MODEL := DIR-2660
+  DEVICE_VARIANT := A1
+endef
+TARGET_DEVICES += dlink_dir-2660-a1
+
 define Device/dlink_dir-860l-b1
   $(Device/dsa-migration)
   $(Device/seama)
