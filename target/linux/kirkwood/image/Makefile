@@ -10,6 +10,11 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR:=0x8000
 
+define Device/dsa-migration
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
+endef
+
 define Device/Default
   PROFILES := Default
   DEVICE_DTS = $$(if $$(BOARD_NAME),kirkwood-$$(BOARD_NAME),)
@@ -92,6 +97,7 @@ endef
 TARGET_DEVICES += iom_ix2-200
 
 define Device/linksys_audi
+  $(Device/dsa-migration)
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := EA3500 (Audi)
   DEVICE_PACKAGES := kmod-mwl8k wpad-basic kmod-gpio-button-hotplug
@@ -107,6 +113,7 @@ endef
 TARGET_DEVICES += linksys_audi
 
 define Device/linksys_viper
+  $(Device/dsa-migration)
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := E4200v2 / EA4500 (Viper)
   DEVICE_PACKAGES := kmod-mwl8k wpad-basic kmod-gpio-button-hotplug
