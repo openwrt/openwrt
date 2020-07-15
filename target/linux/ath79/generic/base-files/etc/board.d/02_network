@@ -109,6 +109,7 @@ ath79_setup_interfaces()
 	alfa-network,n5q|\
 	devolo,dvl1200e|\
 	devolo,dvl1750e|\
+	elecom,wab-i1750-ps|\
 	engenius,enstationac-v1|\
 	engenius,ews511ap|\
 	ocedo,ursus|\
@@ -559,6 +560,10 @@ ath79_setup_macs()
 	wd,mynet-n750)
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
+		;;
+	elecom,wab-i1750-ps)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		wan_mac=$lan_mac
 		;;
 	elecom,wrc-1750ghbk2-i|\
 	elecom,wrc-300ghbk2-i)

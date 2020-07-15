@@ -1,0 +1,227 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9558_edimax_wap1750.dtsi"
+
+/delete-node/ &wdt;
+
+/ {
+	model = "ELECOM WAB-I1750-PS";
+	compatible = "elecom,wab-i1750-ps", "qca,qca9558";
+
+	aliases {
+		serial1 = &hsuart;
+		label-mac-device = &eth0;
+
+		led-boot = &led_status_red;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_red;
+		led-upgrade = &led_status_red;
+	};
+
+	beeper {
+		compatible = "gpio-beeper";
+		gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		eject {
+			label = "eject";
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_EJECTCD>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		2ghz {
+			label = "green:2ghz";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led_status_red: status {
+			label = "red:status";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		usb {
+			label = "green:usb";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "usbport";
+			trigger-sources = <&usb_port1>;
+		};
+	};
+};
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&gpio {
+	hs_uart_input {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_HIGH>,
+			<3 GPIO_ACTIVE_HIGH>;
+		input;
+		line-name = "highspeed-uart-input";
+	};
+
+	hs_uart_output {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_HIGH>,
+			<2 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "highspeed-uart-output";
+	};
+
+	usb_power {
+		gpio-hog;
+		gpios = <11 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "usb-power";
+	};
+};
+
+&pinmux {
+	hs_uart_function: hs_uart_function {
+		pinctrl-single,bits = <0x0 0x00130012 0x00ff00ff>;
+	};
+
+	hs_uart_pins: hs_uart_pins {
+		pinctrl-single,bits = <0x3c 0x03010000 0xffff0000>;
+	};
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+
+		reg = <0x0000 0 0 0 0>;
+		ieee80211-freq-limit = <5170000 5710000>;
+	};
+};
+
+&wmac {
+	ieee80211-freq-limit = <2400000 2483000>;
+	qca,no-eeprom;
+};
+
+&hsuart {
+	status = "okay";
+
+	pinctrl-0 = <&hs_uart_function &hs_uart_pins &jtag_disable_pins>;
+	pinctrl-names = "default";
+};
+
+&usb0 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	usb_port1: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+&spi {
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		m25p,fast-read;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "u-boot-env";
+				reg = <0x040000 0x010000>;
+				read-only;
+			};
+
+			art: partition@50000 {
+				label = "art";
+				reg = <0x050000 0x010000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "art_bak";
+				reg = <0x060000 0x010000>;
+				read-only;
+			};
+
+			partition@70000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x070000 0xe00000>;
+			};
+
+			partition@e70000 {
+				label = "manufacture";
+				reg = <0xe70000 0x100000>;
+				read-only;
+			};
+
+			partition@f70000 {
+				label = "backup";
+				reg = <0xf70000 0x010000>;
+				read-only;
+			};
+
+			partition@f80000 {
+				label = "storage";
+				reg = <0xf80000 0x080000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&eth0 {
+	phy-mode = "rgmii-rxid";
+
+	pll-data = <0xae000000 0x80000101 0x80001313>;
+};
+
+&gmac_config {
+	ge0-sgmii = <0>;
+	txen-delay = <0>;
+	txd-delay = <0>;
+	rxdv-delay = <3>;
+	rxd-delay = <3>;
+};
+
+&mdio1 {
+	status = "okay";
+
+	phy1: ethernet-phy@1 {
+		reg = <1>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+
+	phy-handle = <&phy1>;
+	pll-data = <0x03000000 0x00000101 0x00001313>;
+};
