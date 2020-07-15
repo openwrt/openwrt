@@ -1,0 +1,41 @@
+From 28d7b77584423f39f2bb9d24baa4306af83b450d Mon Sep 17 00:00:00 2001
+From: Christopher Ng <facboy@gmail.com>
+Date: Wed, 15 Jul 2020 23:56:17 +0100
+Subject: [PATCH] net: dsa: Enable jumbo frames on qca8k.
+
+---
+ drivers/net/dsa/qca8k.c | 4 ++++
+ drivers/net/dsa/qca8k.h | 2 ++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index b00274caae4f..b556f97a7e31 100644
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -679,6 +679,10 @@ qca8k_setup(struct dsa_switch *ds)
+ 	qca8k_port_set_status(priv, QCA8K_CPU_PORT, 1);
+ 	priv->port_sts[QCA8K_CPU_PORT].enabled = 1;
+ 
++	/* Enable jumbo frames */
++	qca8k_rmw(priv, QCA8K_REG_MAX_FRAME_SIZE,
++		  QCA8K_MAX_FRAME_SIZE_MTU, 9018 + 8 + 2);
++
+ 	/* Enable MIB counters */
+ 	qca8k_mib_init(priv);
+ 
+diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
+index 42d6ea24eb14..de6928d4c434 100644
+--- a/drivers/net/dsa/qca8k.h
++++ b/drivers/net/dsa/qca8k.h
+@@ -56,6 +56,8 @@
+ #define   QCA8K_MDIO_MASTER_MAX_REG			32
+ #define QCA8K_GOL_MAC_ADDR0				0x60
+ #define QCA8K_GOL_MAC_ADDR1				0x64
++#define QCA8K_REG_MAX_FRAME_SIZE			0x078
++#define   QCA8K_MAX_FRAME_SIZE_MTU			GENMASK(13, 0)
+ #define QCA8K_REG_PORT_STATUS(_i)			(0x07c + (_i) * 4)
+ #define   QCA8K_PORT_STATUS_SPEED			GENMASK(1, 0)
+ #define   QCA8K_PORT_STATUS_SPEED_10			0
+-- 
+2.17.1
+
