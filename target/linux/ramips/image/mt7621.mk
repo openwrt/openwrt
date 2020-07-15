@@ -220,6 +220,18 @@ define Device/buffalo_wsr-600dhp
 endef
 TARGET_DEVICES += buffalo_wsr-600dhp
 
+define Device/dlink_dir-8xx-a1
+  IMAGE_SIZE := 16000k
+  DEVICE_VENDOR := D-Link
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+  KERNEL_INITRAMFS := $$(KERNEL) | uimage-padhdr 96
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
+	pad-rootfs | append-metadata | check-size
+  IMAGE/factory.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
+	check-size
+endef
+
 define Device/dlink_dir-860l-b1
   $(Device/seama)
   BLOCKSIZE := 64k
@@ -236,20 +248,27 @@ define Device/dlink_dir-860l-b1
 endef
 TARGET_DEVICES += dlink_dir-860l-b1
 
+define Device/dlink_dir-867-a1
+  $(Device/dlink_dir-8xx-a1)
+  DEVICE_MODEL := DIR-867
+  DEVICE_VARIANT := A1
+endef
+TARGET_DEVICES += dlink_dir-867-a1
+
 define Device/dlink_dir-878-a1
-  IMAGE_SIZE := 16000k
-  DEVICE_VENDOR := D-Link
+  $(Device/dlink_dir-8xx-a1)
   DEVICE_MODEL := DIR-878
   DEVICE_VARIANT := A1
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
-  KERNEL_INITRAMFS := $$(KERNEL) | uimage-padhdr 96
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
-	pad-rootfs | append-metadata | check-size
-  IMAGE/factory.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
-	check-size
 endef
 TARGET_DEVICES += dlink_dir-878-a1
+
+define Device/dlink_dir-882-a1
+  $(Device/dlink_dir-8xx-a1)
+  DEVICE_MODEL := DIR-882
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += dlink_dir-882-a1
 
 define Device/d-team_newifi-d2
   $(Device/uimage-lzma-loader)
