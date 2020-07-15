@@ -1,0 +1,528 @@
+From aac1c11ce4edd9c2e6af7e9ee8abcaba98d8741f Mon Sep 17 00:00:00 2001
+From: Claudiu Zissulescu <claziss@synopsys.com>
+Date: Wed, 31 Oct 2018 12:27:35 +0100
+Subject: [PATCH] [ARC] Add BI/BIH instruction support.
+
+Use BI/BIH instruction to implement casesi pattern. Only ARC V2.
+
+gcc/
+xxxx-xx-xx  Claudiu Zissulescu  <claziss@synopsys.com>
+
+        * config/arc/arc.c (arc_override_options): Remove
+        TARGET_COMPACT_CASESI.
+        * config/arc/arc.h (ASM_OUTPUT_ADDR_DIFF_ELT): Update.
+        (CASE_VECTOR_MODE): Likewise.
+        (CASE_VECTOR_PC_RELATIVE): Likewise.
+        (CASE_VECTOR_SHORTEN_MODE): Likewise.
+        (CASE_VECTOR_SHORTEN_MODE1): Delete.
+        (ADDR_VEC_ALIGN): Update.
+        (ASM_OUTPUT_CASE_LABEL): Undefine.
+        (ASM_OUTPUT_BEFORE_CASE_LABEL): Undefine.
+        (TARGET_BI_BIH): Define.
+        (DEFAULT_BRANCH_INDEX): Likewise.
+        * config/arc/arc.md (casesi): Rework to accept BI/BIH
+        instructions, remove compact_casesi use case.
+        (casesi_compact_jump): Remove.
+        (casesi_dispatch): New pattern.
+        * config/arc/arc.opt: Add mbranch-index option. Deprecate
+        compact_casesi option.
+        * doc/invoke.texi: Document mbranch-index option.
+
+gcc/testsuite
+xxxx-xx-xx  Claudiu Zissulescu  <claziss@synopsys.com>
+
+        * gcc.target/arc/jumptable.c: New test.
+
+From-SVN: r265675
+---
+
+Adapted by Alexandru Ardelean <ardeleanalex@gmail.com> for OpenWrt
+
+ gcc/config/arc/arc.c                     |  19 ---
+ gcc/config/arc/arc.h                     | 110 +++++++-----
+ gcc/config/arc/arc.md                    | 204 ++++++-----------------
+ gcc/config/arc/arc.opt                   |   6 +-
+ gcc/doc/invoke.texi                      |   9 +-
+ 8 files changed, 192 insertions(+), 216 deletions(-)
+ create mode 100644 gcc/testsuite/gcc.target/arc/jumptable.c
+
+diff --git a/gcc/config/arc/arc.c b/gcc/config/arc/arc.c
+index 7cb99ba09..1d0975a97 100644
+--- a/gcc/config/arc/arc.c
++++ b/gcc/config/arc/arc.c
+@@ -1207,32 +1207,14 @@ arc_override_options (void)
+   if (arc_size_opt_level == 3)
+     optimize_size = 1;
+ 
+-  /* Compact casesi is not a valid option for ARCv2 family.  */
+-  if (TARGET_V2)
+-    {
+-      if (TARGET_COMPACT_CASESI)
+-	{
+-	  warning (0, "compact-casesi is not applicable to ARCv2");
+-	  TARGET_COMPACT_CASESI = 0;
+-	}
+-    }
+-  else if (optimize_size == 1
+-	   && !global_options_set.x_TARGET_COMPACT_CASESI)
+-    TARGET_COMPACT_CASESI = 1;
+-
+   if (flag_pic)
+     target_flags |= MASK_NO_SDATA_SET;
+ 
+   if (flag_no_common == 255)
+     flag_no_common = !TARGET_NO_SDATA_SET;
+ 
+-  /* TARGET_COMPACT_CASESI needs the "q" register class.  */
+   if (TARGET_MIXED_CODE)
+     TARGET_Q_CLASS = 1;
+-  if (!TARGET_Q_CLASS)
+-    TARGET_COMPACT_CASESI = 0;
+-  if (TARGET_COMPACT_CASESI)
+-    TARGET_CASE_VECTOR_PC_RELATIVE = 1;
+ 
+   /* Check for small data option */
+   if (!global_options_set.x_g_switch_value && !TARGET_NO_SDATA_SET)
+diff --git a/gcc/config/arc/arc.h b/gcc/config/arc/arc.h
+index dc65d3e8d..48e877e47 100644
+--- a/gcc/config/arc/arc.h
++++ b/gcc/config/arc/arc.h
+@@ -1252,29 +1252,45 @@ do {							\
+   ASM_GENERATE_INTERNAL_LABEL (label, "L", VALUE);	\
+   fprintf (FILE, "\t.word ");				\
+   assemble_name (FILE, label);				\
+-  fprintf(FILE, "\n");					\
++  fprintf (FILE, "\n");					\
+ } while (0)
+ 
+ /* This is how to output an element of a case-vector that is relative.  */
+-#define ASM_OUTPUT_ADDR_DIFF_ELT(FILE, BODY, VALUE, REL) \
+-do {							\
+-  char label[30];					\
+-  ASM_GENERATE_INTERNAL_LABEL (label, "L", VALUE);	\
+-  switch (GET_MODE (BODY))				\
+-    {							\
+-    case E_QImode: fprintf (FILE, "\t.byte "); break;	\
+-    case E_HImode: fprintf (FILE, "\t.hword "); break;	\
+-    case E_SImode: fprintf (FILE, "\t.word "); break;	\
+-    default: gcc_unreachable ();			\
+-    }							\
+-  assemble_name (FILE, label);				\
+-  fprintf (FILE, "-");					\
+-  ASM_GENERATE_INTERNAL_LABEL (label, "L", REL);	\
+-  assemble_name (FILE, label);				\
+-  if (TARGET_COMPACT_CASESI)				\
+-    fprintf (FILE, " + %d", 4 + arc_get_unalign ());	\
+-  fprintf(FILE, "\n");                                  \
+-} while (0)
++#define ASM_OUTPUT_ADDR_DIFF_ELT(FILE, BODY, VALUE, REL)	\
++  do {								\
++    char label[30];						\
++    ASM_GENERATE_INTERNAL_LABEL (label, "L", VALUE);		\
++    if (!TARGET_BI_BIH)						\
++      {								\
++	switch (GET_MODE (BODY))				\
++	  {							\
++	  case E_QImode: fprintf (FILE, "\t.byte "); break;	\
++	  case E_HImode: fprintf (FILE, "\t.hword "); break;	\
++	  case E_SImode: fprintf (FILE, "\t.word "); break;	\
++	  default: gcc_unreachable ();				\
++	  }							\
++	assemble_name (FILE, label);				\
++	fprintf (FILE, "-");					\
++	ASM_GENERATE_INTERNAL_LABEL (label, "L", REL);		\
++	assemble_name (FILE, label);				\
++	fprintf (FILE, "\n");					\
++      }								\
++    else							\
++      {								\
++      switch (GET_MODE (BODY))					\
++	{							\
++	case E_SImode: fprintf (FILE, "\tb\t@"); break;		\
++	case E_HImode:						\
++	case E_QImode: fprintf (FILE, "\tb_s\t@"); break;	\
++	default: gcc_unreachable ();				\
++	}							\
++      assemble_name (FILE, label);				\
++      fprintf(FILE, "\n");					\
++    }								\
++  } while (0)
++
++/* Defined to also emit an .align in elfos.h.  We don't want that.  */
++#undef ASM_OUTPUT_CASE_LABEL
+ 
+ /* ADDR_DIFF_VECs are in the text section and thus can affect the
+    current alignment.  */
+@@ -1370,36 +1386,34 @@ do { \
+    for the index in the tablejump instruction.
+    If we have pc relative case vectors, we start the case vector shortening
+    with QImode.  */
+-#define CASE_VECTOR_MODE \
+-  ((optimize && (CASE_VECTOR_PC_RELATIVE || flag_pic)) ? QImode : Pmode)
++#define CASE_VECTOR_MODE						\
++  (TARGET_BI_BIH ? SImode						\
++   : (optimize && (CASE_VECTOR_PC_RELATIVE || flag_pic)) ? QImode : Pmode)
+ 
+ /* Define as C expression which evaluates to nonzero if the tablejump
+    instruction expects the table to contain offsets from the address of the
+    table.
+    Do not define this if the table should contain absolute addresses.  */
+-#define CASE_VECTOR_PC_RELATIVE TARGET_CASE_VECTOR_PC_RELATIVE
+-
+-#define CASE_VECTOR_SHORTEN_MODE(MIN_OFFSET, MAX_OFFSET, BODY) \
+-  CASE_VECTOR_SHORTEN_MODE_1 \
+-    (MIN_OFFSET, TARGET_COMPACT_CASESI ? MAX_OFFSET + 6 : MAX_OFFSET, BODY)
+-
+-#define CASE_VECTOR_SHORTEN_MODE_1(MIN_OFFSET, MAX_OFFSET, BODY) \
+-((MIN_OFFSET) >= 0 && (MAX_OFFSET) <= 255 \
+- ? (ADDR_DIFF_VEC_FLAGS (BODY).offset_unsigned = 1, QImode) \
+- : (MIN_OFFSET) >= -128 && (MAX_OFFSET) <= 127 \
+- ? (ADDR_DIFF_VEC_FLAGS (BODY).offset_unsigned = 0, QImode) \
+- : (MIN_OFFSET) >= 0 && (MAX_OFFSET) <= 65535 \
+- ? (ADDR_DIFF_VEC_FLAGS (BODY).offset_unsigned = 1, HImode) \
+- : (MIN_OFFSET) >= -32768 && (MAX_OFFSET) <= 32767 \
+- ? (ADDR_DIFF_VEC_FLAGS (BODY).offset_unsigned = 0, HImode) \
+- : SImode)
+-
+-#define ADDR_VEC_ALIGN(VEC_INSN) \
+-  (exact_log2 (GET_MODE_SIZE (as_a <scalar_int_mode> \
+-			      (GET_MODE (PATTERN (VEC_INSN))))))
+-#undef ASM_OUTPUT_BEFORE_CASE_LABEL
+-#define ASM_OUTPUT_BEFORE_CASE_LABEL(FILE, PREFIX, NUM, TABLE) \
+-  ASM_OUTPUT_ALIGN ((FILE), ADDR_VEC_ALIGN (TABLE))
++#define CASE_VECTOR_PC_RELATIVE					\
++  (TARGET_CASE_VECTOR_PC_RELATIVE || TARGET_BI_BIH)
++
++#define CASE_VECTOR_SHORTEN_MODE(MIN_OFFSET, MAX_OFFSET, BODY)		\
++  (TARGET_BI_BIH ?						\
++   ((MIN_OFFSET) >= -512 && (MAX_OFFSET) <= 508 ? HImode : SImode)	\
++   : ((MIN_OFFSET) >= 0 && (MAX_OFFSET) <= 255				\
++      ? (ADDR_DIFF_VEC_FLAGS (BODY).offset_unsigned = 1, QImode)	\
++      : (MIN_OFFSET) >= -128 && (MAX_OFFSET) <= 127			\
++      ? (ADDR_DIFF_VEC_FLAGS (BODY).offset_unsigned = 0, QImode)	\
++      : (MIN_OFFSET) >= 0 && (MAX_OFFSET) <= 65535			\
++      ? (ADDR_DIFF_VEC_FLAGS (BODY).offset_unsigned = 1, HImode)	\
++      : (MIN_OFFSET) >= -32768 && (MAX_OFFSET) <= 32767			\
++      ? (ADDR_DIFF_VEC_FLAGS (BODY).offset_unsigned = 0, HImode)	\
++      : SImode))
++
++#define ADDR_VEC_ALIGN(VEC_INSN)					\
++  (TARGET_BI_BIH ? 0							\
++   : exact_log2 (GET_MODE_SIZE (as_a <scalar_int_mode>			\
++				(GET_MODE (PATTERN (VEC_INSN))))))
+ 
+ #define INSN_LENGTH_ALIGNMENT(INSN)		  \
+   ((JUMP_TABLE_DATA_P (INSN)			  \
+@@ -1622,4 +1636,10 @@ enum
+ /* DBNZ support is available for ARCv2 core3 cpus.  */
+ #define TARGET_DBNZ (TARGET_V2 && (arc_tune == ARC_TUNE_CORE_3))
+ 
++/* BI/BIH feature macro.  */
++#define TARGET_BI_BIH (TARGET_BRANCH_INDEX && TARGET_CODE_DENSITY)
++
++/* The default option for BI/BIH instructions.  */
++#define DEFAULT_BRANCH_INDEX 0
++
+ #endif /* GCC_ARC_H */
+diff --git a/gcc/config/arc/arc.md b/gcc/config/arc/arc.md
+index 779a2aea3..3ff4df83c 100644
+--- a/gcc/config/arc/arc.md
++++ b/gcc/config/arc/arc.md
+@@ -4106,60 +4106,70 @@
+    (set_attr "cond" "canuse,canuse_limm,canuse,canuse,canuse")])
+ 
+ ;; Implement a switch statement.
+-
+ (define_expand "casesi"
+-  [(set (match_dup 5)
+-	(minus:SI (match_operand:SI 0 "register_operand" "")
+-		  (match_operand:SI 1 "nonmemory_operand" "")))
+-   (set (reg:CC CC_REG)
+-	(compare:CC (match_dup 5)
+-		    (match_operand:SI 2 "nonmemory_operand" "")))
+-   (set (pc)
+-	(if_then_else (gtu (reg:CC CC_REG)
+-			   (const_int 0))
+-		      (label_ref (match_operand 4 "" ""))
+-		      (pc)))
+-   (set (match_dup 6)
+-	(unspec:SI [(match_operand 3 "" "")
+-		    (match_dup 5) (match_dup 7)] UNSPEC_ARC_CASESI))
+-   (parallel [(set (pc) (match_dup 6)) (use (match_dup 7))])]
++  [(match_operand:SI 0 "register_operand" "")	; Index
++   (match_operand:SI 1 "const_int_operand" "")	; Lower bound
++   (match_operand:SI 2 "const_int_operand" "")	; Total range
++   (match_operand:SI 3 "" "")		; Table label
++   (match_operand:SI 4 "" "")]		; Out of range label
+   ""
+-  "
+ {
+-  rtx x;
+-
+-  operands[5] = gen_reg_rtx (SImode);
+-  operands[6] = gen_reg_rtx (SImode);
+-  operands[7] = operands[3];
+-  emit_insn (gen_subsi3 (operands[5], operands[0], operands[1]));
+-  emit_insn (gen_cmpsi_cc_insn_mixed (operands[5], operands[2]));
+-  x = gen_rtx_GTU (VOIDmode, gen_rtx_REG (CCmode, CC_REG), const0_rtx);
+-  x = gen_rtx_IF_THEN_ELSE (VOIDmode, x,
+-			    gen_rtx_LABEL_REF (VOIDmode, operands[4]), pc_rtx);
+-  emit_jump_insn (gen_rtx_SET (pc_rtx, x));
+-  if (TARGET_COMPACT_CASESI)
++  if (operands[1] != const0_rtx)
+     {
+-      emit_jump_insn (gen_casesi_compact_jump (operands[5], operands[7]));
++      rtx reg = gen_reg_rtx (SImode);
++      emit_insn (gen_subsi3 (reg, operands[0], operands[1]));
++      operands[0] = reg;
+     }
++  emit_jump_insn (gen_cbranchsi4 (gen_rtx_GTU (SImode, operands[0],
++					       operands[2]),
++				  operands[0], operands[2], operands[4]));
++  if (TARGET_BI_BIH)
++    emit_jump_insn (gen_casesi_dispatch (operands[0], operands[3]));
+   else
+     {
++      rtx reg = gen_reg_rtx (SImode);
++      rtx lbl = operands[3];
+       operands[3] = gen_rtx_LABEL_REF (VOIDmode, operands[3]);
+-      if (flag_pic || !cse_not_expected)
++      if (flag_pic)
+ 	operands[3] = force_reg (Pmode, operands[3]);
+-      emit_insn (gen_casesi_load (operands[6],
+-				  operands[3], operands[5], operands[7]));
++      emit_insn (gen_casesi_load (reg,
++				  operands[3], operands[0], lbl));
+       if (CASE_VECTOR_PC_RELATIVE || flag_pic)
+-	emit_insn (gen_addsi3 (operands[6], operands[6], operands[3]));
+-      emit_jump_insn (gen_casesi_jump (operands[6], operands[7]));
++	emit_insn (gen_addsi3 (reg, reg, operands[3]));
++      emit_jump_insn (gen_casesi_jump (reg, lbl));
+     }
+   DONE;
+-}")
++})
++
++(define_insn "casesi_dispatch"
++  [(set (pc)
++	(unspec:SI [(match_operand:SI 0 "register_operand" "r")
++		    (label_ref (match_operand 1 "" ""))]
++		   UNSPEC_ARC_CASESI))]
++  "TARGET_BI_BIH"
++{
++  rtx diff_vec = PATTERN (next_nonnote_insn (as_a<rtx_insn *> (operands[1])));
++  gcc_assert (GET_CODE (diff_vec) == ADDR_DIFF_VEC);
++  switch (GET_MODE (diff_vec))
++    {
++    case E_SImode:
++      return \"bi\\t[%0]\";
++    case E_HImode:
++    case E_QImode:
++      return \"bih\\t[%0]\";
++    default: gcc_unreachable ();
++    }
++}
++  [(set_attr "type" "brcc_no_delay_slot")
++   (set_attr "iscompact" "false")
++   (set_attr "length" "4")])
+ 
+ (define_insn "casesi_load"
+-  [(set (match_operand:SI 0 "register_operand"             "=Rcq,r,r")
+-	(unspec:SI [(match_operand:SI 1 "nonmemory_operand" "Rcq,c,Cal")
+-		    (match_operand:SI 2 "register_operand"  "Rcq,c,c")
+-		    (label_ref (match_operand 3 "" ""))] UNSPEC_ARC_CASESI))]
++  [(set (match_operand:SI 0 "register_operand"             "=q,r,r")
++	(mem:SI (unspec:SI [(match_operand:SI 1 "nonmemory_operand" "q,r,Cal")
++			    (match_operand:SI 2 "register_operand"  "q,r,r")]
++			   UNSPEC_ARC_CASESI)))
++   (use (label_ref (match_operand 3 "" "")))]
+   ""
+   "*
+ {
+@@ -4175,15 +4185,15 @@
+   switch (GET_MODE (diff_vec))
+     {
+     case E_SImode:
+-      return \"ld.as %0,[%1,%2]%&\";
++      return \"ld.as\\t%0,[%1,%2]%&\";
+     case E_HImode:
+       if (ADDR_DIFF_VEC_FLAGS (diff_vec).offset_unsigned)
+-	return \"ld%_.as %0,[%1,%2]\";
+-      return \"ld%_.x.as %0,[%1,%2]\";
++	return \"ld%_.as\\t%0,[%1,%2]\";
++      return \"ld%_.x.as\\t%0,[%1,%2]\";
+     case E_QImode:
+       if (ADDR_DIFF_VEC_FLAGS (diff_vec).offset_unsigned)
+-	return \"ldb%? %0,[%1,%2]%&\";
+-      return \"ldb.x %0,[%1,%2]\";
++	return \"ldb%?\\t%0,[%1,%2]%&\";
++      return \"ldb.x\\t%0,[%1,%2]\";
+     default:
+       gcc_unreachable ();
+     }
+@@ -4223,110 +4233,6 @@
+    (set_attr "iscompact" "false,maybe,false")
+    (set_attr "cond" "canuse")])
+ 
+-(define_insn "casesi_compact_jump"
+-  [(set (pc)
+-	(unspec:SI [(match_operand:SI 0 "register_operand" "c,q")]
+-		   UNSPEC_ARC_CASESI))
+-   (use (label_ref (match_operand 1 "" "")))
+-   (clobber (match_scratch:SI 2 "=q,0"))]
+-  "TARGET_COMPACT_CASESI"
+-  "*
+-{
+-  rtx diff_vec = PATTERN (next_nonnote_insn (as_a<rtx_insn *> (operands[1])));
+-  int unalign = arc_get_unalign ();
+-  rtx xop[3];
+-  const char *s;
+-
+-  xop[0] = operands[0];
+-  xop[2] = operands[2];
+-  gcc_assert (GET_CODE (diff_vec) == ADDR_DIFF_VEC);
+-
+-  switch (GET_MODE (diff_vec))
+-    {
+-    case E_SImode:
+-      /* Max length can be 12 in this case, but this is OK because
+-	 2 of these are for alignment, and are anticipated in the length
+-	 of the ADDR_DIFF_VEC.  */
+-      if (unalign && !satisfies_constraint_Rcq (xop[0]))
+-	s = \"add2 %2,pcl,%0\n\tld_s %2,[%2,12]\";
+-      else if (unalign)
+-	s = \"add_s %2,%0,2\n\tld.as %2,[pcl,%2]\";
+-      else
+-	s = \"add %2,%0,2\n\tld.as %2,[pcl,%2]\";
+-      arc_clear_unalign ();
+-      break;
+-    case E_HImode:
+-      if (ADDR_DIFF_VEC_FLAGS (diff_vec).offset_unsigned)
+-	{
+-	  if (satisfies_constraint_Rcq (xop[0]))
+-	    {
+-	      s = \"add_s %2,%0,%1\n\tld%_.as %2,[pcl,%2]\";
+-	      xop[1] = GEN_INT ((10 - unalign) / 2U);
+-	    }
+-	  else
+-	    {
+-	      s = \"add1 %2,pcl,%0\n\tld%__s %2,[%2,%1]\";
+-	      xop[1] = GEN_INT (10 + unalign);
+-	    }
+-	}
+-      else
+-	{
+-	  if (satisfies_constraint_Rcq (xop[0]))
+-	    {
+-	      s = \"add_s %2,%0,%1\n\tld%_.x.as %2,[pcl,%2]\";
+-	      xop[1] = GEN_INT ((10 - unalign) / 2U);
+-	    }
+-	  else
+-	    {
+-	      s = \"add1 %2,pcl,%0\n\tld%__s.x %2,[%2,%1]\";
+-	      xop[1] = GEN_INT (10 + unalign);
+-	    }
+-	}
+-      arc_toggle_unalign ();
+-      break;
+-    case E_QImode:
+-      if (ADDR_DIFF_VEC_FLAGS (diff_vec).offset_unsigned)
+-	{
+-	  if ((rtx_equal_p (xop[2], xop[0])
+-	       || find_reg_note (insn, REG_DEAD, xop[0]))
+-	      && satisfies_constraint_Rcq (xop[0]))
+-	    {
+-	      s = \"add_s %0,%0,pcl\n\tldb_s %2,[%0,%1]\";
+-	      xop[1] = GEN_INT (8 + unalign);
+-	    }
+-	  else
+-	    {
+-	      s = \"add %2,%0,pcl\n\tldb_s %2,[%2,%1]\";
+-	      xop[1] = GEN_INT (10 + unalign);
+-	      arc_toggle_unalign ();
+-	    }
+-	}
+-      else if ((rtx_equal_p (xop[0], xop[2])
+-		|| find_reg_note (insn, REG_DEAD, xop[0]))
+-	       && satisfies_constraint_Rcq (xop[0]))
+-	{
+-	  s = \"add_s %0,%0,%1\n\tldb.x %2,[pcl,%0]\";
+-	  xop[1] = GEN_INT (10 - unalign);
+-	  arc_toggle_unalign ();
+-	}
+-      else
+-	{
+-	  /* ??? Length is 12.  */
+-	  s = \"add %2,%0,%1\n\tldb.x %2,[pcl,%2]\";
+-	  xop[1] = GEN_INT (8 + unalign);
+-	}
+-      break;
+-    default:
+-      gcc_unreachable ();
+-    }
+-  output_asm_insn (s, xop);
+-  return \"add_s %2,%2,pcl\n\tj_s%* [%2]\";
+-}"
+-  [(set_attr "length" "10")
+-   (set_attr "type" "jump")
+-   (set_attr "iscompact" "true")
+-   (set_attr "cond" "nocond")])
+-
+ (define_expand "call"
+   ;; operands[1] is stack_size_rtx
+   ;; operands[2] is next_arg_register
+diff --git a/gcc/config/arc/arc.opt b/gcc/config/arc/arc.opt
+index 0c3cdf223..ad72d0414 100644
+--- a/gcc/config/arc/arc.opt
++++ b/gcc/config/arc/arc.opt
+@@ -328,7 +328,7 @@ Target Var(TARGET_CASE_VECTOR_PC_RELATIVE)
+ Use pc-relative switch case tables - this enables case table shortening.
+ 
+ mcompact-casesi
+-Target Var(TARGET_COMPACT_CASESI)
++Target Warn(%qs is deprecated)
+ Enable compact casesi pattern.
+ 
+ mq-class
+@@ -531,3 +531,7 @@ Enum(arc_lpc) String(32) Value(32)
+ mrf16
+ Target Report Mask(RF16)
+ Enable 16-entry register file.
++
++mbranch-index
++Target Report Var(TARGET_BRANCH_INDEX) Init(DEFAULT_BRANCH_INDEX)
++Enable use of BI/BIH instructions when available.
+diff --git a/gcc/doc/invoke.texi b/gcc/doc/invoke.texi
+index f3d7c5720..f4bebf83a 100644
+--- a/gcc/doc/invoke.texi
++++ b/gcc/doc/invoke.texi
+@@ -632,7 +632,7 @@ Objective-C and Objective-C++ Dialects}.
+ -mmixed-code  -mq-class  -mRcq  -mRcw  -msize-level=@var{level} @gol
+ -mtune=@var{cpu}  -mmultcost=@var{num} @gol
+ -munalign-prob-threshold=@var{probability}  -mmpy-option=@var{multo} @gol
+--mdiv-rem  -mcode-density  -mll64  -mfpu=@var{fpu} -mrf16}
++-mdiv-rem  -mcode-density  -mll64  -mfpu=@var{fpu} -mrf16  -mbranch-index}
+ 
+ @emph{ARM Options}
+ @gccoptlist{-mapcs-frame  -mno-apcs-frame @gol
+@@ -15432,6 +15432,11 @@ This option instructs the compiler to generate code for a 16-entry
+ register file.  This option defines the @code{__ARC_RF16__}
+ preprocessor macro.
+ 
++@item -mbranch-index
++@opindex mbranch-index
++Enable use of @code{bi} or @code{bih} instructions to implement jump
++tables.
++
+ @end table
+ 
+ The following options are passed through to the assembler, and also
+@@ -15603,7 +15608,7 @@ This is the default for @option{-Os}.
+ @item -mcompact-casesi
+ @opindex mcompact-casesi
+ Enable compact @code{casesi} pattern.  This is the default for @option{-Os},
+-and only available for ARCv1 cores.
++and only available for ARCv1 cores.  This option is deprecated.
+ 
+ @item -mno-cond-exec
+ @opindex mno-cond-exec
