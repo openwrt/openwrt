@@ -7,7 +7,7 @@ include ./common-tp-link.mk
 DEFAULT_SOC := mt7621
 
 KERNEL_DTB += -d21
-DEVICE_VARS += UIMAGE_MAGIC
+DEVICE_VARS += UIMAGE_MAGIC ELECOM_HWNAME
 
 # The OEM webinterface expects an kernel with initramfs which has the uImage
 # header field ih_name.
@@ -23,7 +23,7 @@ define Build/custom-initramfs-uimage
 	mv $@.new $@
 endef
 
-define Build/elecom-gst-factory
+define Build/elecom-wrc-gs-factory
 	$(eval product=$(word 1,$(1)))
 	$(eval version=$(word 2,$(1)))
 	( $(STAGING_DIR_HOST)/bin/mkhash md5 $@ | tr -d '\n' ) >> $@
@@ -326,63 +326,52 @@ define Device/elecom_wrc-1167ghbk2-s
 endef
 TARGET_DEVICES += elecom_wrc-1167ghbk2-s
 
-define Device/elecom_wrc-1750gs
+define Device/elecom_wrc-gs
   $(Device/uimage-lzma-loader)
-  IMAGE_SIZE := 11264k
   DEVICE_VENDOR := ELECOM
-  DEVICE_MODEL := WRC-1750GS
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	elecom-gst-factory WRC-1750GS 0.00
+	elecom-wrc-gs-factory $$$$(ELECOM_HWNAME) 0.00
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+endef
+
+define Device/elecom_wrc-1750gs
+  $(Device/elecom_wrc-gs)
+  IMAGE_SIZE := 11264k
+  DEVICE_MODEL := WRC-1750GS
+  ELECOM_HWNAME := WRC-1750GS
 endef
 TARGET_DEVICES += elecom_wrc-1750gs
 
 define Device/elecom_wrc-1750gsv
-  $(Device/uimage-lzma-loader)
+  $(Device/elecom_wrc-gs)
   IMAGE_SIZE := 11264k
-  DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-1750GSV
-  IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	elecom-gst-factory WRC-1750GSV 0.00
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+  ELECOM_HWNAME := WRC-1750GSV
 endef
 TARGET_DEVICES += elecom_wrc-1750gsv
 
 define Device/elecom_wrc-1900gst
-  $(Device/uimage-lzma-loader)
+  $(Device/elecom_wrc-gs)
   IMAGE_SIZE := 11264k
-  DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-1900GST
-  IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	elecom-gst-factory WRC-1900GST 0.00
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+  ELECOM_HWNAME := WRC-1900GST
 endef
 TARGET_DEVICES += elecom_wrc-1900gst
 
 define Device/elecom_wrc-2533gst
-  $(Device/uimage-lzma-loader)
+  $(Device/elecom_wrc-gs)
   IMAGE_SIZE := 11264k
-  DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-2533GST
-  IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	elecom-gst-factory WRC-2533GST 0.00
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+  ELECOM_HWNAME := WRC-2533GST
 endef
 TARGET_DEVICES += elecom_wrc-2533gst
 
 define Device/elecom_wrc-2533gst2
-  $(Device/uimage-lzma-loader)
+  $(Device/elecom_wrc-gs)
   IMAGE_SIZE := 24576k
-  DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-2533GST2
-  IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	elecom-gst-factory WRC-2533GST2 0.00
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+  ELECOM_HWNAME := WRC-2533GST2
 endef
 TARGET_DEVICES += elecom_wrc-2533gst2
 
