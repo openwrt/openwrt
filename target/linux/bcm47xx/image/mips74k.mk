@@ -156,6 +156,7 @@ define Device/linksys-wrt160n-v3
   $(Device/linksys)
   DEVICE_ID := N150
   VERSION := 3.0.3
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys-wrt160n-v3
 

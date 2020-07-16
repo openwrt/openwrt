@@ -189,60 +189,51 @@ define Device/mercury_mac1200r-v2
 endef
 TARGET_DEVICES += mercury_mac1200r-v2
 
-define Device/netgear_r6020
+define Device/netgear_r6xxx
   BLOCKSIZE := 64k
-  IMAGE_SIZE := 7104k
   DEVICE_VENDOR := NETGEAR
-  DEVICE_MODEL := R6020
-  DEVICE_PACKAGES := kmod-mt76x2
-  SERCOMM_HWID := CFR
-  SERCOMM_HWVER := A001
-  SERCOMM_SWVER := 0x0040
   IMAGES += factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
 	pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size
   IMAGE/factory.img := pad-extra 576k | $$(IMAGE/default) | \
-	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip R6020.bin | \
-	sercom-seal
+	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | \
+	zip $$$$(SERCOMM_HWNAME).bin | sercom-seal
+endef
+
+define Device/netgear_r6020
+  $(Device/netgear_r6xxx)
+  IMAGE_SIZE := 7104k
+  DEVICE_MODEL := R6020
+  DEVICE_PACKAGES := kmod-mt76x2
+  SERCOMM_HWNAME := R6020
+  SERCOMM_HWID := CFR
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0040
 endef
 TARGET_DEVICES += netgear_r6020
 
 define Device/netgear_r6080
-  BLOCKSIZE := 64k
+  $(Device/netgear_r6xxx)
   IMAGE_SIZE := 7552k
-  DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := R6080
   DEVICE_PACKAGES := kmod-mt76x2
+  SERCOMM_HWNAME := R6080
   SERCOMM_HWID := CFR
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x0040
-  IMAGES += factory.img
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
-	pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size
-  IMAGE/factory.img := pad-extra 576k | $$(IMAGE/default) | \
-	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip R6080.bin | \
-	sercom-seal
 endef
 TARGET_DEVICES += netgear_r6080
 
 define Device/netgear_r6120
-  BLOCKSIZE := 64k
+  $(Device/netgear_r6xxx)
   IMAGE_SIZE := 15744k
-  DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := R6120
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+  SERCOMM_HWNAME := R6120
   SERCOMM_HWID := CGQ
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x0040
-  IMAGES += factory.img
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
-	pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size
-  IMAGE/factory.img := pad-extra 576k | $$(IMAGE/default) | \
-	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip R6120.bin | \
-	sercom-seal
 endef
 TARGET_DEVICES += netgear_r6120
 

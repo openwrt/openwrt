@@ -7,7 +7,7 @@ include ./common-tp-link.mk
 DEFAULT_SOC := mt7621
 
 KERNEL_DTB += -d21
-DEVICE_VARS += UIMAGE_MAGIC SERCOMM_HWNAME
+DEVICE_VARS += UIMAGE_MAGIC
 
 # The OEM webinterface expects an kernel with initramfs which has the uImage
 # header field ih_name.
@@ -235,6 +235,21 @@ define Device/dlink_dir-860l-b1
   SUPPORTED_DEVICES += dir-860l-b1
 endef
 TARGET_DEVICES += dlink_dir-860l-b1
+
+define Device/dlink_dir-878-a1
+  IMAGE_SIZE := 16000k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-878
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+  KERNEL_INITRAMFS := $$(KERNEL) | uimage-padhdr 96
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
+	pad-rootfs | append-metadata | check-size
+  IMAGE/factory.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
+	check-size
+endef
+TARGET_DEVICES += dlink_dir-878-a1
 
 define Device/d-team_newifi-d2
   $(Device/uimage-lzma-loader)
