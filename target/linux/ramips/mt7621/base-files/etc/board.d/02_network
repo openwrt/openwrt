@@ -100,6 +100,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
 		;;
+	linksys,ea7300-v1|\
 	linksys,ea7500-v2)
 		lan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		wan_mac=$lan_mac

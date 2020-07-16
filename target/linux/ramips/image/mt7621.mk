@@ -7,7 +7,7 @@ include ./common-tp-link.mk
 DEFAULT_SOC := mt7621
 
 KERNEL_DTB += -d21
-DEVICE_VARS += UIMAGE_MAGIC ELECOM_HWNAME
+DEVICE_VARS += UIMAGE_MAGIC ELECOM_HWNAME LINKSYS_HWNAME
 
 # The OEM webinterface expects an kernel with initramfs which has the uImage
 # header field ih_name.
@@ -539,21 +539,35 @@ define Device/lenovo_newifi-d1
 endef
 TARGET_DEVICES += lenovo_newifi-d1
 
-define Device/linksys_ea7500-v2
+define Device/linksys_ea7xxx
   $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 36864k
   DEVICE_VENDOR := Linksys
-  DEVICE_MODEL := EA7500
-  DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e kmod-mt7615-firmware wpad-basic uboot-envtools
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e kmod-mt7615-firmware wpad-basic \
+	uboot-envtools
   UBINIZE_OPTS := -E 5
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
-	append-ubi | check-size | linksys-image type=EA7500v2
+	append-ubi | check-size | linksys-image type=$$$$(LINKSYS_HWNAME)
+endef
+
+define Device/linksys_ea7300-v1
+  $(Device/linksys_ea7xxx)
+  DEVICE_MODEL := EA7300
+  DEVICE_VARIANT := v1
+  LINKSYS_HWNAME := EA7300
+endef
+TARGET_DEVICES += linksys_ea7300-v1
+
+define Device/linksys_ea7500-v2
+  $(Device/linksys_ea7xxx)
+  DEVICE_MODEL := EA7500
+  DEVICE_VARIANT := v2
+  LINKSYS_HWNAME := EA7500v2
 endef
 TARGET_DEVICES += linksys_ea7500-v2
 
