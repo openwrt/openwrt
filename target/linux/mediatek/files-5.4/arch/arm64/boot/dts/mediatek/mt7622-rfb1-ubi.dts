@@ -13,8 +13,8 @@
 #include "mt6380.dtsi"
 
 / {
-	model = "Bananapi BPI-R64";
-	compatible = "bananapi,bpi-r64-rootdisk", "mediatek,mt7622";
+	model = "MT7622_MT7531 RFB";
+	compatible = "mediatek,mt7622,ubi";
 
 	aliases {
 		serial0 = &uart0;
@@ -22,7 +22,7 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n1 swiotlb=512 root=/dev/mmcblk0p7 rootfstype=squashfs,f2fs";
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n1 swiotlb=512";
 	};
 
 	cpus {
@@ -52,6 +52,13 @@
 			gpios = <&pio 102 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	gsw: gsw@0 {
+                compatible = "mediatek,mt753x";
+                mediatek,ethsys = <&ethsys>;
+                #address-cells = <1>;
+                #size-cells = <0>;
+        };
 
 	leds {
 		compatible = "gpio-leds";
@@ -101,7 +108,7 @@
 };
 
 &bch {
-	status = "disabled";
+	status = "okay";
 };
 
 &btif {
@@ -143,58 +150,38 @@
 	mdio: mdio-bus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-
-		switch@1f {
-			compatible = "mediatek,mt7531";
-			reg = <0x1f>;
-			reset-gpios = <&pio 54 0>;
-
-			ports {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				wan: port@0 {
-					reg = <0>;
-					label = "wan";
-				};
-
-				port@1 {
-					reg = <1>;
-					label = "lan0";
-				};
-
-				port@2 {
-					reg = <2>;
-					label = "lan1";
-				};
-
-				port@3 {
-					reg = <3>;
-					label = "lan2";
-				};
-
-				port@4 {
-					reg = <4>;
-					label = "lan3";
-				};
-
-				port@6 {
-					reg = <6>;
-					label = "cpu";
-					ethernet = <&gmac0>;
-					phy-mode = "2500base-x";
-
-					fixed-link {
-						speed = <2500>;
-						full-duplex;
-						pause;
-					};
-				};
-			};
-		};
-
 	};
 };
+
+&gsw {
+        mediatek,mdio = <&mdio>;
+        mediatek,portmap = "llllw";
+        mediatek,mdio_master_pinmux = <0>;
+        reset-gpios = <&pio 54 0>;
+        interrupt-parent = <&pio>;
+        interrupts = <53 IRQ_TYPE_LEVEL_HIGH>;
+        status = "okay";
+
+        port5: port@5 {
+                compatible = "mediatek,mt753x-port";
+                reg = <5>;
+                phy-mode = "rgmii";
+                fixed-link {
+                        speed = <1000>;
+                        full-duplex;
+                };
+        };
+
+        port6: port@6 {
+                compatible = "mediatek,mt753x-port";
+                reg = <6>;
+                phy-mode = "sgmii";
+                fixed-link {
+                        speed = <2500>;
+                        full-duplex;
+                };
+        };
+};    
 
 &i2c1 {
 	pinctrl-names = "default";
@@ -258,15 +245,15 @@
 };
 
 &pcie0 {
-        pinctrl-names = "default";
-        pinctrl-0 = <&pcie0_pins>;
-        status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_pins>;
+	status = "okay";
 };
 
 &pcie1 {
-        pinctrl-names = "default";
-        pinctrl-0 = <&pcie1_pins>;
-        status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_pins>;
+	status = "okay";
 };
 
 &pio {
@@ -552,6 +539,67 @@
 	status = "disable";
 };
 
+&snfi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&serial_nand_pins>;
+	status = "okay";
+
+	spi_nand@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		spi-max-frequency = <104000000>;
+		reg = <0>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Preloader";
+				reg = <0x00000 0x0080000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "ATF";
+				reg = <0x80000 0x0040000>;
+			};
+
+			partition@c0000 {
+				label = "Bootloader";
+				reg = <0xc0000 0x0080000>;
+			};
+
+			partition@140000 {
+				label = "Config";
+				reg = <0x140000 0x0080000>;
+			};
+
+			factory: partition@1c0000 {
+				label = "Factory";
+				reg = <0x1c0000 0x0040000>;
+			};
+
+			partition@200000 {
+				label = "kernel";
+				reg = <0x200000 0x400000>;
+			};
+
+			partition@600000 {
+				label = "ubi";
+				reg = <0x600000 0x1C00000>;
+			};
+
+			partition@2200000 {
+				label = "User_data";
+				reg = <0x2200000 0x4000000>;
+			};
+		};
+	};
+};
+
 &spi0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&spic0_pins>;
@@ -589,5 +637,10 @@
 &watchdog {
 	pinctrl-names = "default";
 	pinctrl-0 = <&watchdog_pins>;
+	status = "okay";
+};
+
+&wmac {
+	mediatek,mtd-eeprom = <&factory 0x0000>;
 	status = "okay";
 };
