@@ -143,9 +143,6 @@ Signed-off-by: chuanjia.liu <Chuanjia.Liu@mediatek.com>
  2 files changed, 129 insertions(+), 53 deletions(-)
  create mode 100644 Documentation/devicetree/bindings/pci/mediatek-pcie-cfg.yaml
 
-diff --git a/Documentation/devicetree/bindings/pci/mediatek-pcie-cfg.yaml b/Documentation/devicetree/bindings/pci/mediatek-pcie-cfg.yaml
-new file mode 100644
-index 000000000000..4d2835ab4858
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/pci/mediatek-pcie-cfg.yaml
 @@ -0,0 +1,38 @@
@@ -187,8 +184,6 @@ index 000000000000..4d2835ab4858
 +        reg = <0 0x1a140000 0 0x1000>;
 +    };
 +...
-diff --git a/Documentation/devicetree/bindings/pci/mediatek-pcie.txt b/Documentation/devicetree/bindings/pci/mediatek-pcie.txt
-index 7468d666763a..ddae110d4379 100644
 --- a/Documentation/devicetree/bindings/pci/mediatek-pcie.txt
 +++ b/Documentation/devicetree/bindings/pci/mediatek-pcie.txt
 @@ -8,7 +8,7 @@ Required properties:
