@@ -133,11 +133,9 @@ Signed-off-by: chuanjia.liu <Chuanjia.Liu@mediatek.com>
  arch/arm/boot/dts/mt7629.dtsi    | 23 +++++++++++++----------
  2 files changed, 15 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/boot/dts/mt7629-rfb.dts b/arch/arm/boot/dts/mt7629-rfb.dts
-index 9980c10c6e29..eb536cbebd9b 100644
 --- a/arch/arm/boot/dts/mt7629-rfb.dts
 +++ b/arch/arm/boot/dts/mt7629-rfb.dts
-@@ -140,9 +140,10 @@
+@@ -171,9 +171,10 @@
  	};
  };
  
@@ -149,11 +147,9 @@ index 9980c10c6e29..eb536cbebd9b 100644
  };
  
  &pciephy1 {
-diff --git a/arch/arm/boot/dts/mt7629.dtsi b/arch/arm/boot/dts/mt7629.dtsi
-index 5cbb3d244c75..94567307b842 100644
 --- a/arch/arm/boot/dts/mt7629.dtsi
 +++ b/arch/arm/boot/dts/mt7629.dtsi
-@@ -360,16 +360,21 @@
+@@ -368,16 +368,21 @@
  			#reset-cells = <1>;
  		};
  
@@ -181,7 +177,7 @@ index 5cbb3d244c75..94567307b842 100644
  			clocks = <&pciesys CLK_PCIE_P1_MAC_EN>,
  				 <&pciesys CLK_PCIE_P0_AHB_EN>,
  				 <&pciesys CLK_PCIE_P1_AUX_EN>,
-@@ -390,21 +395,19 @@
+@@ -398,21 +403,19 @@
  			power-domains = <&scpsys MT7622_POWER_DOMAIN_HIF0>;
  			bus-range = <0x00 0xff>;
  			ranges = <0x82000000 0 0x20000000 0x20000000 0 0x10000000>;
