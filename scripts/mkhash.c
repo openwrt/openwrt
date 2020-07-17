@@ -823,8 +823,11 @@ int main(int argc, char **argv)
 	if (argc < 2)
 		return hash_file(t, NULL, add_filename);
 
-	for (i = 0; i < argc - 1; i++)
-		hash_file(t, argv[1 + i], add_filename);
+	for (i = 0; i < argc - 1; i++) {
+		int ret = hash_file(t, argv[1 + i], add_filename);
+		if (ret)
+			return ret;
+	}
 
 	return 0;
 }
