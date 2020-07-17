@@ -1,0 +1,35 @@
+From 907137d9ef048e7d0282c28e47b32aa4084ad395 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Mon, 6 Jul 2020 00:05:12 +0200
+Subject: [PATCH v2] spi: lantiq-ssc: Fix warning by using WQ_MEM_RECLAIM
+
+The lantiq-ssc driver uses internally an own workqueue to wait till the
+data is not only written out of the FIFO but really written to the wire.
+This workqueue is flushed while the SPI subsystem is working in some
+other system workqueue.
+
+The system workqueue is marked as WQ_MEM_RECLAIM, but the workqueue in
+the lantiq-ssc driver does not use WQ_MEM_RECLAIM for now. Add this flag
+too to prevent this warning.
+
+This fixes the following warning:
+[    2.975956] WARNING: CPU: 1 PID: 17 at kernel/workqueue.c:2614 check_flush_dependency+0x168/0x184
+[    2.984752] workqueue: WQ_MEM_RECLAIM kblockd:blk_mq_run_work_fn is flushing !WQ_MEM_RECLAIM 1e100800.spi:0x0
+
+Fixes: 891b7c5fbf61 ("mtd_blkdevs: convert to blk-mq")
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/spi/spi-lantiq-ssc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/spi/spi-lantiq-ssc.c
++++ b/drivers/spi/spi-lantiq-ssc.c
+@@ -907,7 +907,7 @@ static int lantiq_ssc_probe(struct platf
+ 	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(2, 8) |
+ 				     SPI_BPW_MASK(16) | SPI_BPW_MASK(32);
+ 
+-	spi->wq = alloc_ordered_workqueue(dev_name(dev), 0);
++	spi->wq = alloc_ordered_workqueue(dev_name(dev), WQ_MEM_RECLAIM);
+ 	if (!spi->wq) {
+ 		err = -ENOMEM;
+ 		goto err_clk_put;
