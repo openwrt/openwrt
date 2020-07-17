@@ -736,7 +736,10 @@ static int usage(const char *progname)
 {
 	int i;
 
-	fprintf(stderr, "Usage: %s <hash type> [<file>...]\n"
+	fprintf(stderr, "Usage: %s <hash type> [options] [<file>...]\n"
+		"Options:\n"
+		"	-n		Print filename(s)\n"
+		"\n"
 		"Supported hash types:", progname);
 
 	for (i = 0; i < ARRAY_SIZE(types); i++)
