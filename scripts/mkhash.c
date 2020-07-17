@@ -85,6 +85,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #define ARRAY_SIZE(_n) (sizeof(_n) / sizeof((_n)[0]))
 
@@ -770,6 +771,13 @@ static int hash_file(struct hash_type *t, const char *filename, bool add_filenam
 	if (!filename || !strcmp(filename, "-")) {
 		str = t->func(stdin);
 	} else {
+		struct stat path_stat;
+		stat(filename, &path_stat);
+		if (S_ISDIR(path_stat.st_mode)) {
+			fprintf(stderr, "Failed to open '%s': Is a directory\n", filename);
+			return 1;
+		}
+
 		FILE *f = fopen(filename, "r");
 
 		if (!f) {
