@@ -80,11 +80,13 @@
 
 
 #include <endian.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #define ARRAY_SIZE(_n) (sizeof(_n) / sizeof((_n)[0]))
 
@@ -770,6 +772,12 @@ static int hash_file(struct hash_type *t, const char *filename, bool add_filenam
 	if (!filename || !strcmp(filename, "-")) {
 		str = t->func(stdin);
 	} else {
+		struct stat path_stat;
+		stat(filename, &path_stat);
+		if (S_ISDIR(path_stat.st_mode)) {
+			return EISDIR;
+		}
+
 		FILE *f = fopen(filename, "r");
 
 		if (!f) {
@@ -797,7 +805,7 @@ int main(int argc, char **argv)
 {
 	struct hash_type *t;
 	const char *progname = argv[0];
-	int i, ch;
+	int i, ch, ret;
 	bool add_filename = false;
 
 	while ((ch = getopt(argc, argv, "n")) != -1) {
@@ -820,13 +828,20 @@ int main(int argc, char **argv)
 	if (!t)
 		return usage(progname);
 
-	if (argc < 2)
-		return hash_file(t, NULL, add_filename);
+	if (argc < 2) {
+		ret = hash_file(t, NULL, add_filename);
+		if (ret) {
+			fprintf(stderr, "Error: %s\n", strerror(ret));
+			return ret;
+		}
+	}
 
 	for (i = 0; i < argc - 1; i++) {
 		int ret =  hash_file(t, argv[1 + i], add_filename);
-		if (ret)
+		if (ret) {
+			fprintf(stderr, "Error: %s\n", strerror(ret));
 			return ret;
+		}
 	}
 
 	return 0;
