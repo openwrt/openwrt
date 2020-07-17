@@ -498,7 +498,7 @@ TARGET_DEVICES += tplink_tl-wr841n-v13
 
 define Device/tplink_tl-wr841n-v14
   $(Device/tplink-v2)
-  IMAGE_SIZE := 3968k
+  IMAGE_SIZE := 3904k
   DEVICE_MODEL := TL-WR841N
   DEVICE_VARIANT := v14
   TPLINK_FLASHLAYOUT := 4Mmtk
