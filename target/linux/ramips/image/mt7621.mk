@@ -7,7 +7,7 @@ include ./common-tp-link.mk
 DEFAULT_SOC := mt7621
 
 KERNEL_DTB += -d21
-DEVICE_VARS += UIMAGE_MAGIC
+DEVICE_VARS += UIMAGE_MAGIC ELECOM_HWNAME LINKSYS_HWNAME
 
 # The OEM webinterface expects an kernel with initramfs which has the uImage
 # header field ih_name.
@@ -23,7 +23,7 @@ define Build/custom-initramfs-uimage
 	mv $@.new $@
 endef
 
-define Build/elecom-gst-factory
+define Build/elecom-wrc-gs-factory
 	$(eval product=$(word 1,$(1)))
 	$(eval version=$(word 2,$(1)))
 	( $(STAGING_DIR_HOST)/bin/mkhash md5 $@ | tr -d '\n' ) >> $@
@@ -220,6 +220,18 @@ define Device/buffalo_wsr-600dhp
 endef
 TARGET_DEVICES += buffalo_wsr-600dhp
 
+define Device/dlink_dir-8xx-a1
+  IMAGE_SIZE := 16000k
+  DEVICE_VENDOR := D-Link
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+  KERNEL_INITRAMFS := $$(KERNEL) | uimage-padhdr 96
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
+	pad-rootfs | append-metadata | check-size
+  IMAGE/factory.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
+	check-size
+endef
+
 define Device/dlink_dir-860l-b1
   $(Device/seama)
   BLOCKSIZE := 64k
@@ -236,20 +248,27 @@ define Device/dlink_dir-860l-b1
 endef
 TARGET_DEVICES += dlink_dir-860l-b1
 
+define Device/dlink_dir-867-a1
+  $(Device/dlink_dir-8xx-a1)
+  DEVICE_MODEL := DIR-867
+  DEVICE_VARIANT := A1
+endef
+TARGET_DEVICES += dlink_dir-867-a1
+
 define Device/dlink_dir-878-a1
-  IMAGE_SIZE := 16000k
-  DEVICE_VENDOR := D-Link
+  $(Device/dlink_dir-8xx-a1)
   DEVICE_MODEL := DIR-878
   DEVICE_VARIANT := A1
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
-  KERNEL_INITRAMFS := $$(KERNEL) | uimage-padhdr 96
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
-	pad-rootfs | append-metadata | check-size
-  IMAGE/factory.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
-	check-size
 endef
 TARGET_DEVICES += dlink_dir-878-a1
+
+define Device/dlink_dir-882-a1
+  $(Device/dlink_dir-8xx-a1)
+  DEVICE_MODEL := DIR-882
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += dlink_dir-882-a1
 
 define Device/d-team_newifi-d2
   $(Device/uimage-lzma-loader)
@@ -326,39 +345,52 @@ define Device/elecom_wrc-1167ghbk2-s
 endef
 TARGET_DEVICES += elecom_wrc-1167ghbk2-s
 
-define Device/elecom_wrc-1900gst
+define Device/elecom_wrc-gs
   $(Device/uimage-lzma-loader)
-  IMAGE_SIZE := 11264k
   DEVICE_VENDOR := ELECOM
-  DEVICE_MODEL := WRC-1900GST
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	elecom-gst-factory WRC-1900GST 0.00
+	elecom-wrc-gs-factory $$$$(ELECOM_HWNAME) 0.00
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+endef
+
+define Device/elecom_wrc-1750gs
+  $(Device/elecom_wrc-gs)
+  IMAGE_SIZE := 11264k
+  DEVICE_MODEL := WRC-1750GS
+  ELECOM_HWNAME := WRC-1750GS
+endef
+TARGET_DEVICES += elecom_wrc-1750gs
+
+define Device/elecom_wrc-1750gsv
+  $(Device/elecom_wrc-gs)
+  IMAGE_SIZE := 11264k
+  DEVICE_MODEL := WRC-1750GSV
+  ELECOM_HWNAME := WRC-1750GSV
+endef
+TARGET_DEVICES += elecom_wrc-1750gsv
+
+define Device/elecom_wrc-1900gst
+  $(Device/elecom_wrc-gs)
+  IMAGE_SIZE := 11264k
+  DEVICE_MODEL := WRC-1900GST
+  ELECOM_HWNAME := WRC-1900GST
 endef
 TARGET_DEVICES += elecom_wrc-1900gst
 
 define Device/elecom_wrc-2533gst
-  $(Device/uimage-lzma-loader)
+  $(Device/elecom_wrc-gs)
   IMAGE_SIZE := 11264k
-  DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-2533GST
-  IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	elecom-gst-factory WRC-2533GST 0.00
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+  ELECOM_HWNAME := WRC-2533GST
 endef
 TARGET_DEVICES += elecom_wrc-2533gst
 
 define Device/elecom_wrc-2533gst2
-  $(Device/uimage-lzma-loader)
+  $(Device/elecom_wrc-gs)
   IMAGE_SIZE := 24576k
-  DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-2533GST2
-  IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	elecom-gst-factory WRC-2533GST2 0.00
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware wpad-basic
+  ELECOM_HWNAME := WRC-2533GST2
 endef
 TARGET_DEVICES += elecom_wrc-2533gst2
 
@@ -526,21 +558,35 @@ define Device/lenovo_newifi-d1
 endef
 TARGET_DEVICES += lenovo_newifi-d1
 
-define Device/linksys_ea7500-v2
+define Device/linksys_ea7xxx
   $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 36864k
   DEVICE_VENDOR := Linksys
-  DEVICE_MODEL := EA7500
-  DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e kmod-mt7615-firmware wpad-basic uboot-envtools
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e kmod-mt7615-firmware wpad-basic \
+	uboot-envtools
   UBINIZE_OPTS := -E 5
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
-	append-ubi | check-size | linksys-image type=EA7500v2
+	append-ubi | check-size | linksys-image type=$$$$(LINKSYS_HWNAME)
+endef
+
+define Device/linksys_ea7300-v1
+  $(Device/linksys_ea7xxx)
+  DEVICE_MODEL := EA7300
+  DEVICE_VARIANT := v1
+  LINKSYS_HWNAME := EA7300
+endef
+TARGET_DEVICES += linksys_ea7300-v1
+
+define Device/linksys_ea7500-v2
+  $(Device/linksys_ea7xxx)
+  DEVICE_MODEL := EA7500
+  DEVICE_VARIANT := v2
+  LINKSYS_HWNAME := EA7500v2
 endef
 TARGET_DEVICES += linksys_ea7500-v2
 

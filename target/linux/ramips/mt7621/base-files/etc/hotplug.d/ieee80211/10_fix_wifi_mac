@@ -10,6 +10,7 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
+	linksys,ea7300-v1|\
 	linksys,ea7500-v2)
 		hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
