@@ -119,6 +119,12 @@ case "$FIRMWARE" in
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary romfs 0xf100) +2)
 		;;
+	tplink,eap245-v1|\
+	tplink,re450-v2|\
+	tplink,re450-v3)
+		caldata_extract "art" 0x5000 0x844
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) +1)
+		;;
 	tplink,re350k-v1)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) +2)
@@ -127,11 +133,6 @@ case "$FIRMWARE" in
 	tplink,re450-v1)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -2)
-		;;
-	tplink,re450-v2|\
-	tplink,re450-v3)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) +1)
 		;;
 	tplink,tl-wpa8630-v1)
 		caldata_extract "art" 0x5000 0x844
