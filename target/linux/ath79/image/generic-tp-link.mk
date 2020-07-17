@@ -382,6 +382,17 @@ define Device/tplink_eap225-wall-v2
 endef
 TARGET_DEVICES += tplink_eap225-wall-v2
 
+define Device/tplink_eap245-v1
+  $(Device/tplink-eap2x5)
+  SOC := qca9563
+  IMAGE_SIZE := 13824k
+  DEVICE_MODEL := EAP245
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  TPLINK_BOARD_ID := EAP245-V1
+endef
+TARGET_DEVICES += tplink_eap245-v1
+
 define Device/tplink_eap245-v3
   $(Device/tplink-eap2x5)
   SOC := qca9563

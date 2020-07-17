@@ -1327,6 +1327,32 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the EAP245 v1 */
+	{
+		.id     = "EAP245-V1",
+		.support_list =
+			"SupportList:\r\n"
+			"EAP245(TP-LINK|UN|AC1750-D):1.0\r\n",
+		.support_trail = '\xff',
+		.soft_ver = NULL,
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"partition-table", 0x20000, 0x02000},
+			{"default-mac", 0x30000, 0x01000},
+			{"support-list", 0x31000, 0x00100},
+			{"product-info", 0x31100, 0x00400},
+			{"soft-version", 0x32000, 0x00100},
+			{"firmware", 0x40000, 0xd80000},
+			{"user-config", 0xdc0000, 0x30000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
 	/** Firmware layout for the EAP245 v3 */
 	{
 		.id     = "EAP245-V3",
