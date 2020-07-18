@@ -234,12 +234,29 @@ endef
 $(eval $(foreach S,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/template,$(S))))
 $(eval $(foreach S,$(NAND_BLOCKSIZE),$(call Image/mkfs/jffs2-nand/template,$(S))))
 
-define Image/mkfs/squashfs
+define Image/mkfs/squashfs-common
 	$(STAGING_DIR_HOST)/bin/mksquashfs4 $(call mkfs_target_dir,$(1)) $@ \
 		-nopad -noappend -root-owned \
 		-comp $(SQUASHFSCOMP) $(SQUASHFSOPT) \
 		-processors 1
 endef
+
+ifeq ($(CONFIG_TARGET_ROOTFS_SECURITY_LABELS),y)
+define Image/mkfs/squashfs
+	echo "LD_LIBRARY_PATH=\$$LD_LIBRARY_PATH:$(STAGING_DIR_HOSTPKG)/lib" \
+	     "$(STAGING_DIR_HOSTPKG)/sbin/setfiles -r" \
+	     "$(call mkfs_target_dir,$(1))" \
+	     "$(call mkfs_target_dir,$(1))/etc/selinux/targeted/contexts/files/file_contexts " \
+	     "$(call mkfs_target_dir,$(1))" > $@.fakeroot-script
+	echo "$(Image/mkfs/squashfs-common)" >> $@.fakeroot-script
+	chmod +x $@.fakeroot-script
+	$(STAGING_DIR_HOST)/bin/fakeroot $@.fakeroot-script
+endef
+else
+define Image/mkfs/squashfs
+	$(call Image/mkfs/squashfs-common,$(1))
+endef
+endif
 
 # $(1): board name
 # $(2): rootfs type
