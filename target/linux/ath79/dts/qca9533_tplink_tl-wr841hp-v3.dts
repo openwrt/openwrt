@@ -18,11 +18,11 @@
 		led-upgrade = &led_pwr;
 	};
 
-	leds: leds {
+	leds {
 		compatible = "gpio-leds";
 
 		wifi {
-			label = "tp-link:green:wlan";
+			label = "tp-link:green:wifi";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
@@ -38,8 +38,8 @@
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
-		wan_red {
-			label = "tp-link:red:wan";
+		wan_amber {
+			label = "tp-link:amber:wan";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
@@ -51,6 +51,11 @@
 		wps {
 			label = "tp-link:green:wps";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		re {
+			label = "tp-link:green:re";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -64,8 +69,8 @@
 			debounce-interval = <60>;
 		};
 
-		rfkill {
-			label = "RFKILL button";
+		wifi {
+			label = "WiFi button";
 			linux,code = <KEY_RFKILL>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
@@ -77,6 +82,13 @@
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
+
+		re {
+			label = "RE button";
+			linux,code = <KEY_RE_BUTTON>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
 	};
 };
 
@@ -86,7 +98,9 @@
 
 &spi {
 	status = "okay";
+
 	num-cs = <1>;
+
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -124,13 +138,16 @@
 
 &eth0 {
 	status = "okay";
+
 	phy-handle = <&swphy4>;
+
 	mtd-mac-address = <&uboot 0x1fc00>;
 	mtd-mac-address-increment = <1>;
 };
 
 &wmac {
 	status = "okay";
+
 	mtd-cal-data = <&art 0x1000>;
 	mtd-mac-address = <&uboot 0x1fc00>;
 };
