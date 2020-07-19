@@ -665,6 +665,37 @@ out:
 	of_node_put(np);
 }
 
+static void ag71xx_mux_select_sgmii_qca956x(struct device_node *np)
+{
+	struct device_node *np_dev;
+	void __iomem *gmac_base;
+	u32 t;
+
+	np = of_get_child_by_name(np, "gmac-config");
+	if (!np)
+		return;
+
+	np_dev = of_parse_phandle(np, "device", 0);
+	if (!np_dev)
+		goto out;
+
+	gmac_base = of_iomap(np_dev, 0);
+	if (!gmac_base) {
+		pr_err("%pOF: can't map GMAC registers\n", np_dev);
+		goto err_iomap;
+	}
+
+	t = __raw_readl(gmac_base + QCA956X_GMAC_REG_ETH_CFG);
+	t |= QCA956X_ETH_CFG_GE0_SGMII;
+	__raw_writel(t, gmac_base + QCA956X_GMAC_REG_ETH_CFG);
+
+	iounmap(gmac_base);
+err_iomap:
+	of_node_put(np_dev);
+out:
+	of_node_put(np);
+}
+
 static void ath79_mii_ctrl_set_if(struct ag71xx *ag, unsigned int mii_if)
 {
 	u32 t;
@@ -1565,6 +1596,10 @@ static int ag71xx_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "missing phy-mode property in DT\n");
 		return ag->phy_if_mode;
 	}
+
+	if (of_device_is_compatible(np, "qca,qca9560-eth") &&
+	    ag->phy_if_mode == PHY_INTERFACE_MODE_SGMII)
+		ag71xx_mux_select_sgmii_qca956x(np);
 
 	if (of_property_read_u32(np, "qca,mac-idx", &ag->mac_idx))
 		ag->mac_idx = -1;
