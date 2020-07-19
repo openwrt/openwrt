@@ -619,7 +619,6 @@ define Device/tplink_tl-wr841hp-v3
   DEVICE_MODEL := TL-WR841HP
   DEVICE_VARIANT := v3
   TPLINK_HWID := 0x08411003
-  SUPPORTED_DEVICES += tl-wr841hp-v3
 endef
 TARGET_DEVICES += tplink_tl-wr841hp-v3
 
