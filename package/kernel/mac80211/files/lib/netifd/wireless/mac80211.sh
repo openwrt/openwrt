@@ -110,6 +110,9 @@ mac80211_hostapd_setup_base() {
 	json_get_values ht_capab_list ht_capab tx_burst
 	json_get_values channel_list channels
 
+	[ "$auto_channel" = 0 ] && [ -z "$channel_list" ] && \
+		channel_list="$channel"
+
 	set_default noscan 0
 
 	[ "$noscan" -gt 0 ] && hostapd_noscan=1
