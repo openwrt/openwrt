@@ -7,6 +7,50 @@
 	init_proto "$@"
 }
 
+proto_vxlan_setup_peer() {
+	type bridge &> /dev/null || {
+		proto_notify_error "$cfg" "MISSING_BRIDGE_COMMAND"
+		exit
+	}
+
+	local peer_config="$1"
+
+	local vxlan
+	local lladdr
+	local dst
+	local src_vni
+	local vni
+	local port
+	local via
+
+	config_get vxlan   "${peer_config}" "vxlan"
+	config_get lladdr  "${peer_config}" "lladdr"
+	config_get dst     "${peer_config}" "dst"
+	config_get src_vni "${peer_config}" "src_vni"
+	config_get vni     "${peer_config}" "vni"
+	config_get port    "${peer_config}" "port"
+	config_get via     "${peer_config}" "via"
+
+	[ "$cfg" = "$vxlan" ] || {
+		# This peer section belongs to another device
+		return
+	}
+
+	[ -n "${dst}" ] || {
+		proto_notify_error "$cfg" "MISSING_PEER_ADDRESS"
+		exit
+	}
+
+	bridge fdb append \
+		${lladdr:-00:00:00:00:00:00} \
+		dev ${cfg}                   \
+		dst ${dst}                   \
+		${src_vni:+src_vni $src_vni} \
+		${vni:+vni $vni}             \
+		${port:+port $port}          \
+		${via:+via $via}
+}
+
 vxlan_generic_setup() {
 	local cfg="$1"
 	local mode="$2"
@@ -17,7 +61,6 @@ vxlan_generic_setup() {
 
 	local port vid ttl tos mtu macaddr zone rxcsum txcsum
 	json_get_vars port vid ttl tos mtu macaddr zone rxcsum txcsum
-
 
 	proto_init_update "$link" 1
 
@@ -47,6 +90,9 @@ vxlan_generic_setup() {
 	proto_close_data
 
 	proto_send_update "$cfg"
+
+	config_load network
+	config_foreach proto_vxlan_setup_peer "vxlan_peer"
 }
 
 proto_vxlan_setup() {
