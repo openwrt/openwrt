@@ -55,12 +55,6 @@ proto_vxlan_setup() {
 	local ipaddr peeraddr
 	json_get_vars ipaddr peeraddr tunlink
 
-	[ -z "$peeraddr" ] && {
-		proto_notify_error "$cfg" "MISSING_ADDRESS"
-		proto_block_restart "$cfg"
-		exit
-	}
-
 	( proto_add_host_dependency "$cfg" '' "$tunlink" )
 
 	[ -z "$ipaddr" ] && {
@@ -84,12 +78,6 @@ proto_vxlan6_setup() {
 
 	local ip6addr peer6addr
 	json_get_vars ip6addr peer6addr tunlink
-
-	[ -z "$peer6addr" ] && {
-		proto_notify_error "$cfg" "MISSING_ADDRESS"
-		proto_block_restart "$cfg"
-		exit
-	}
 
 	( proto_add_host_dependency "$cfg" '' "$tunlink" )
 
