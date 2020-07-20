@@ -25,6 +25,18 @@ define Build/banana-pi-sdcard
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
 endef
 
+define Device/Default
+  PROFILES = Default $$(DEVICE_NAME)
+  FILESYSTEMS := squashfs
+  DEVICE_DTS_DIR := $(DTS_DIR)
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | append-metadata
+  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
+  KERNEL_NAME := zImage
+  KERNEL := kernel-bin | append-dtb | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+endef
+
 define Device/bpi_bananapi-r2
   DEVICE_VENDOR := Bpi
   DEVICE_MODEL := Banana Pi R2
