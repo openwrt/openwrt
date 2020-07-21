@@ -1,4 +1,5 @@
 KERNEL_LOADADDR := 0x80008000
+DEVICE_VARS += UBOOT_TARGET
 
 ifneq ($(CONFIG_BANANA_PI_BOOT_PARTSIZE),)
 BOOTFS_BLOCK_SIZE := 1024
@@ -25,6 +26,15 @@ define Build/banana-pi-sdcard
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
 endef
 
+define Build/preloader
+	$(CP) $(STAGING_DIR_IMAGE)/$1-preloader.bin $@
+endef
+
+define Build/scatterfile
+	./gen_scatterfile.sh $(subst mt,MT,$(SUBTARGET)) "$1" \
+		$(subst -scatter.txt,,$(notdir $@)) "$(DEVICE_TITLE)" > $@
+endef
+
 define Device/bpi_bananapi-r2
   DEVICE_VENDOR := Bpi
   DEVICE_MODEL := Banana Pi R2
@@ -34,6 +44,9 @@ define Device/bpi_bananapi-r2
   UBOOT_TARGET := mt7623n_bpir2
   IMAGES := img.gz
   IMAGE/img.gz := banana-pi-sdcard | gzip | append-metadata
+  ARTIFACT/preloader.bin := preloader $$(UBOOT_TARGET)
+  ARTIFACT/scatter.txt := scatterfile $$(firstword $$(FILESYSTEMS))-$$(firstword $$(IMAGES))
+  ARTIFACTS = preloader.bin scatter.txt
   SUPPORTED_DEVICES := bananapi,bpi-r2
 endef
 TARGET_DEVICES += bpi_bananapi-r2
