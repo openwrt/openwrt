@@ -35,8 +35,6 @@ define Device/bpi_bananapi-r2
   UBOOT_TARGET := mt7623n_bpir2
   IMAGES := img.gz
   IMAGE/img.gz := banana-pi-sdcard | gzip | append-metadata
-  KERNEL := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
-  KERNEL_INITRAMFS :=
 endef
 TARGET_DEVICES += bpi_bananapi-r2
 
@@ -45,6 +43,9 @@ define Device/unielec_u7623-02-emmc-512m
   DEVICE_MODEL := U7623-02
   DEVICE_VARIANT := eMMC/512MB RAM
   DEVICE_DTS := mt7623a-unielec-u7623-02-emmc-512m
+  KERNEL_NAME := zImage
+  KERNEL := kernel-bin | append-dtb | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
   IMAGES := sysupgrade-emmc.bin.gz
   IMAGE/sysupgrade-emmc.bin.gz := sysupgrade-emmc | gzip | append-metadata
   DEVICE_PACKAGES := kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 kmod-mmc \
