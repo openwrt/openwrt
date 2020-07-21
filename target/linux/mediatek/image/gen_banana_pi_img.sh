@@ -79,7 +79,7 @@
 # with the preloader loading 512KiB of U-Boot starting at 0x50000.
 
 usage() {
-    echo "SYNTAX: $0 sd <file> <preloader image> <u-boot image> <bootfs image> <rootfs image> <bootfs size> <rootfs size>"
+    echo "SYNTAX: $0 sd <file> <preloader image> <u-boot image> <u-boot offset> <bootfs image> <rootfs image> <bootfs size> <rootfs size>"
     echo " OR:    $0 emmc <file> <preloader image>"
     exit 1
 }
@@ -96,20 +96,21 @@ BRLYT="BRLYT\x00\x00\x00\x01\x00\x00\x00\x00\x08\x00\x00\
 
 case $1 in
  sd)
-	[ $# -eq 8 ] || usage
+	[ $# -eq 9 ] || usage
 	OUTPUT="$2"
 	PRELOADER="$3"
 	UBOOT="$4"
-	BOOTFS="$5"
-	ROOTFS="$6"
-	BOOTFSSIZE="$7"
-	ROOTFSSIZE="$8"
+	UBOOTOFS="$5"
+	BOOTFS="$6"
+	ROOTFS="$7"
+	BOOTFSSIZE="$8"
+	ROOTFSSIZE="$9"
 
 	head=4
 	sect=63
 
 	set $(ptgen -o $OUTPUT -h $head -s $sect -a 0 -l 1024 \
-		    -t 41 -p 512k@320k \
+		    -t 41 -p 512k@${UBOOTOFS} \
 		    -t c -p ${BOOTFSSIZE}M \
 		    -t 83 -p ${ROOTFSSIZE}M )
 
@@ -123,7 +124,11 @@ case $1 in
 	echo -en "${SDMMC_BOOT}" | dd bs=1 of="${OUTPUT}" seek=0   conv=notrunc
 	echo -en "${BRLYT}"      | dd bs=1 of="${OUTPUT}" seek=512 conv=notrunc
 
-	dd bs=1024 if="${PRELOADER}" of="${OUTPUT}" seek="${PRELOADER_OFFSET}" conv=notrunc
+	# For eMMC-only boards like U7623 the preloader doesn't need to be included in the
+	# main image as it's only ever needed in the eMMC boot partition.
+	if [ -r ${PRELOADER} ]; then
+	    dd bs=1024 if="${PRELOADER}" of="${OUTPUT}" seek="${PRELOADER_OFFSET}" conv=notrunc
+	fi
 	dd bs=512  if="${UBOOT}"     of="${OUTPUT}" seek="${UBOOT_OFFSET}"     conv=notrunc
 	dd bs=512  if="${BOOTFS}"    of="${OUTPUT}" seek="${BOOTFS_OFFSET}"    conv=notrunc
 	dd bs=512  if="${ROOTFS}"    of="${OUTPUT}" seek="${ROOTFS_OFFSET}"    conv=notrunc
