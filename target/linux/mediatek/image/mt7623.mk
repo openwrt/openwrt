@@ -55,10 +55,33 @@ define Device/bpi_bananapi-r2
 endef
 TARGET_DEVICES += bpi_bananapi-r2
 
-define Device/unielec_u7623-02-emmc-512m
+# Full eMMC image including U-Boot and partition table
+define Device/unielec_u7623-emmc
+  DEVICE_VENDOR := UniElec
+  DEVICE_MODEL := U7623
+  DEVICE_VARIANT := eMMC
+  # When we use FIT images, U-Boot will populate the /memory node with the correct
+  # memory size discovered from the preloader, so we don't need separate builds.
+  DEVICE_DTS := mt7623a-unielec-u7623-02-emmc-512m
+  SUPPORTED_DEVICES := unielec,u7623-02-emmc-512m
+  UBOOT_ENVSIZE := 0x1000
+  UBOOT_OFFSET := 256k
+  UBOOT_TARGET := mt7623a_unielec_u7623
+  IMAGES := img.gz
+  IMAGE/img.gz := mtk-mmc-img | gzip | append-metadata
+  DEVICE_PACKAGES := kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 kmod-mmc \
+       mkf2fs e2fsprogs kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
+  ARTIFACT/scatter.txt := scatterfile $$(firstword $$(FILESYSTEMS))-$$(firstword $$(IMAGES))
+  ARTIFACTS := scatter.txt
+endef
+TARGET_DEVICES += unielec_u7623-emmc
+
+# Legacy partial image for U7623
+# This preserves the vendor U-Boot and starts with a uImage at 0xA00
+define Device/unielec_u7623-02-emmc-512m-legacy
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7623-02
-  DEVICE_VARIANT := eMMC/512MB RAM
+  DEVICE_VARIANT := eMMC/512MiB RAM (legacy image)
   DEVICE_DTS := mt7623a-unielec-u7623-02-emmc-512m
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | append-dtb | uImage none
@@ -67,5 +90,6 @@ define Device/unielec_u7623-02-emmc-512m
 	mkf2fs e2fsprogs kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
   IMAGES := sysupgrade-emmc.bin.gz
   IMAGE/sysupgrade-emmc.bin.gz := sysupgrade-emmc | gzip | append-metadata
+  SUPPORTED_DEVICES := unielec,u7623-02-emmc-512m
 endef
-TARGET_DEVICES += unielec_u7623-02-emmc-512m
+TARGET_DEVICES += unielec_u7623-02-emmc-512m-legacy
