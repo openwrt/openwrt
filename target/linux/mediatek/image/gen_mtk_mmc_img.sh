@@ -27,7 +27,7 @@
 # The second partition is a FAT file system containing the kernel
 # image and a uboot.env file, which is provided to this script as
 # $4 (bootfs image). Its size is configurable with the
-# CONFIG_BANANA_PI_BOOT_PARTSIZE option; by default 32MiB.
+# CONFIG_MTK_BOOT_PARTSIZE option; by default 32MiB.
 #
 # The root filesystem comes next in the third partition.
 #
@@ -56,7 +56,7 @@
 #   |----------------------|
 #   |   MBR partition #2   |
 #   |                      |
-#   |    FAT partition     |   ( BANANA_PI_BOOT_PARTSIZE
+#   |    FAT partition     |   ( MTK_BOOT_PARTSIZE
 #   .                      .     default 32MiB )
 #   .    (kernel, uEnv)    .
 #   |                      |

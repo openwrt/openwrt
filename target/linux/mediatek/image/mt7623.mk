@@ -1,30 +1,30 @@
 KERNEL_LOADADDR := 0x80008000
 DEVICE_VARS += UBOOT_TARGET UBOOT_OFFSET UBOOT_ENVSIZE
 
-ifneq ($(CONFIG_BANANA_PI_BOOT_PARTSIZE),)
+ifneq ($(CONFIG_MTK_BOOT_PARTSIZE),)
 BOOTFS_BLOCK_SIZE := 1024
-BOOTFS_BLOCKS := $(shell echo $$(($(CONFIG_BANANA_PI_BOOT_PARTSIZE)*1024*1024/$(BOOTFS_BLOCK_SIZE))))
+BOOTFS_BLOCKS := $(shell echo $$(($(CONFIG_MTK_BOOT_PARTSIZE)*1024*1024/$(BOOTFS_BLOCK_SIZE))))
 endif
 
-define Build/banana-pi-sdcard
+define Build/mtk-mmc-img
 	rm -f $@.boot
 	mkfs.fat -C $@.boot $(BOOTFS_BLOCKS)
 
 	if [ -r $(STAGING_DIR_IMAGE)/$(UBOOT_TARGET)-preloader.bin ]; then \
-		./gen_banana_pi_img.sh emmc $@.emmc \
+		./gen_mtk_mmc_img.sh emmc $@.emmc \
 			$(STAGING_DIR_IMAGE)/$(UBOOT_TARGET)-preloader.bin; \
 		mcopy -i $@.boot $@.emmc ::eMMCboot.bin; \
 	fi
 	mkenvimage -s $(UBOOT_ENVSIZE) -o $(STAGING_DIR_IMAGE)/$(UBOOT_TARGET)-uboot.env $(UBOOT_TARGET)-uEnv.txt
 	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(UBOOT_TARGET)-uboot.env ::uboot.env
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::uImage
-	./gen_banana_pi_img.sh sd $@ \
+	./gen_mtk_mmc_img.sh sd $@ \
 		$(STAGING_DIR_IMAGE)/$(UBOOT_TARGET)-preloader.bin \
 		$(STAGING_DIR_IMAGE)/$(UBOOT_TARGET)-u-boot*.bin \
 		$(UBOOT_OFFSET) \
 		$@.boot \
 		$(IMAGE_ROOTFS) \
-		$(CONFIG_BANANA_PI_BOOT_PARTSIZE) \
+		$(CONFIG_MTK_BOOT_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
 endef
 
@@ -47,7 +47,7 @@ define Device/bpi_bananapi-r2
   UBOOT_OFFSET := 320k
   UBOOT_TARGET := mt7623n_bpir2
   IMAGES := img.gz
-  IMAGE/img.gz := banana-pi-sdcard | gzip | append-metadata
+  IMAGE/img.gz := mtk-mmc-img | gzip | append-metadata
   ARTIFACT/preloader.bin := preloader $$(UBOOT_TARGET)
   ARTIFACT/scatter.txt := scatterfile $$(firstword $$(FILESYSTEMS))-$$(firstword $$(IMAGES))
   ARTIFACTS = preloader.bin scatter.txt
