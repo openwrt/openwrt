@@ -248,6 +248,13 @@ define Device/dlink_dir-xx60-a1
 	check-size
 endef
 
+define Device/dlink_dir-1960-a1
+  $(Device/dlink_dir-xx60-a1)
+  DEVICE_MODEL := DIR-1960
+  DEVICE_VARIANT := A1
+endef
+TARGET_DEVICES += dlink_dir-1960-a1
+
 define Device/dlink_dir-2660-a1
   $(Device/dlink_dir-xx60-a1)
   DEVICE_MODEL := DIR-2660
