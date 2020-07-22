@@ -1,25 +1,64 @@
+do_get_shield_mode() {
+	# Figure out what mode the Shield is in
+	# We need to determine what Mode the Shield is in - Time to query the GPIOs
+	GPIO=99
+	GPIO16=99
+	GPIO17=99
+
+	# GPIO16 decides Recovery (formally Gateway) Mode.
+	GPIO=16
+	echo ${GPIO} > /sys/class/gpio/export
+	echo in > /sys/class/gpio/gpio$GPIO/direction
+	GPIO16=$(cat /sys/class/gpio/gpio${GPIO}/value)
+	echo $GPIO > /sys/class/gpio/unexport
+
+	# GPIO17 decides between Bridge and Router Mode
+	GPIO=17
+	echo $GPIO > /sys/class/gpio/export
+	echo in > /sys/class/gpio/gpio$GPIO/direction
+	GPIO17=$(cat /sys/class/gpio/gpio${GPIO}/value)
+	echo $GPIO > /sys/class/gpio/unexport
+
+	if [ $GPIO16 -eq 0 ]; then
+	 # Recovery Mode
+	 echo "itusgateway"
+	else
+	 if [ $GPIO17 -eq 0 ]; then
+	    # Bridge Mode
+	       echo "itusbridge"
+	 else
+	    # Router Mode
+	       echo "itusrouter"
+	 fi
+	fi
+}
+
 do_sysinfo_octeon() {
 	local machine
 	local name
 
 	machine=$(grep "^system type" /proc/cpuinfo | sed "s/system type.*: \(.*\)/\1/g")
+	smode=$(do_get_shield_mode)
 
 	case "$machine" in
 	"UBNT_E100"*)
-		name="erlite"
-		;;
+	      name="erlite"
+	      ;;
 
 	"UBNT_E200"*)
-		name="er"
-		;;
+	      name="er"
+	      ;;
 
 	"UBNT_E220"*)
-		name="erpro"
-		;;
+	      name="erpro"
+	      ;;
 
+	"ITUS_SHIELD"*)
+	      name=$smode
+	      ;;
 	*)
-		name="generic"
-		;;
+	      name="generic"
+	      ;;
 	esac
 
 	[ -e "/tmp/sysinfo/" ] || mkdir -p "/tmp/sysinfo/"
@@ -27,5 +66,4 @@ do_sysinfo_octeon() {
 	echo "$name" > /tmp/sysinfo/board_name
 	echo "$machine" > /tmp/sysinfo/model
 }
-
 boot_hook_add preinit_main do_sysinfo_octeon

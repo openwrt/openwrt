@@ -1,6 +1,7 @@
 #
 # Copyright (C) 2014 OpenWrt.org
 #
+RAMFS_COPY_BIN=mkfs.f2fs
 
 platform_get_rootfs() {
 	local rootfsdev
@@ -28,6 +29,21 @@ platform_copy_config() {
 		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
 		umount /mnt
 		;;
+	itusrouter)
+		mount -t vfat /dev/mmcblk1p1 /mnt
+		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
+		umount /mnt
+			;;
+	itusbridge)
+		mount -t vfat /dev/mmcblk1p1 /mnt
+		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
+		umount /mnt
+		;;
+	itusgateway)
+		mount -t vfat /dev/mmcblk1p1 /mnt
+		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
+		umount /mnt
+		;;
 	esac
 }
 
@@ -38,20 +54,34 @@ platform_do_flash() {
 	local rootfs=$4
 
 	mkdir -p /boot
-	mount -t vfat /dev/$kernel /boot
 
-	[ -f /boot/vmlinux.64 -a ! -L /boot/vmlinux.64 ] && {
+	if [ $board == "itusrouter" || $board == "itusbridge" || $board == "itusgateway" ]; then
+	   # mmcblk1p1 (fat) contains all ELF-bin images for the Shield
+	   mount /dev/mmcblk1p1 /boot
+	   echo "flashing Itus Kernel to /boot/$kernel (/dev/mmblk1p1)"
+	   tar -C /tmp -xvf $tar_file
+	   cp /tmp/sysupgrade-$board/kernel /boot/$kernel
+	   umount /boot
+	   echo "flashing rootfs to ${rootfs}"
+	   dd if=/tmp/sysupgrade-$board/root of="${rootfs}"
+	else
+	   echo "flashing kernel to /dev/$kernel"
+	   mount -t vfat /dev/$kernel /boot
+
+	   [ -f /boot/vmlinux.64 -a ! -L /boot/vmlinux.64 ] && {
 		mv /boot/vmlinux.64 /boot/vmlinux.64.previous
 		mv /boot/vmlinux.64.md5 /boot/vmlinux.64.md5.previous
-	}
+	   }
 
-	echo "flashing kernel to /dev/$kernel"
-	tar xf $tar_file sysupgrade-$board/kernel -O > /boot/vmlinux.64
-	md5sum /boot/vmlinux.64 | cut -f1 -d " " > /boot/vmlinux.64.md5
-	echo "flashing rootfs to ${rootfs}"
-	tar xf $tar_file sysupgrade-$board/root -O | dd of="${rootfs}" bs=4096
+	   echo "flashing kernel to /dev/$kernel"
+	   tar xf $tar_file sysupgrade-$board/kernel -O > /boot/vmlinux.64
+	   md5sum /boot/vmlinux.64 | cut -f1 -d " " > /boot/vmlinux.64.md5
+	   umount /boot
+
+	   echo "flashing rootfs to ${rootfs}"
+	   tar xvf $tar_file sysupgrade-$board/root -O | dd of="${rootfs}" bs=4096
+	fi
 	sync
-	umount /boot
 }
 
 platform_do_upgrade() {
@@ -68,6 +98,15 @@ platform_do_upgrade() {
 	erlite)
 		kernel=sda1
 		;;
+	itusrouter)
+		kernel=ItusrouterImage
+		;;
+	itusbridge)
+		kernel=ItusbridgeImage
+		;;
+	itusgateway)
+		kernel=ItusgatewayImage
+		;;
 	*)
 		return 1
 	esac
@@ -75,7 +114,7 @@ platform_do_upgrade() {
 	platform_do_flash $tar_file $board $kernel $rootfs
 
 	return 0
-	
+
 }
 
 platform_check_image() {
@@ -83,7 +122,10 @@ platform_check_image() {
 
 	case "$board" in
 	er | \
-	erlite)
+	erlite | \
+	itusrouter | \
+	itusbridge | \
+	itusgateway)
 		local tar_file="$1"
 		local kernel_length=$(tar xf $tar_file sysupgrade-$board/kernel -O | wc -c 2> /dev/null)
 		local rootfs_length=$(tar xf $tar_file sysupgrade-$board/root -O | wc -c 2> /dev/null)
