@@ -81,13 +81,7 @@
 			partition@10000 {
 				compatible = "tplink,firmware";
 				label = "firmware";
-				reg = <0x10000 0x3d0000>;
-			};
-
-			partition@3e0000 {
-				label = "config";
-				reg = <0x3e0000 0x10000>;
-				read-only;
+				reg = <0x10000 0x3e0000>;
 			};
 
 			factory: partition@3f0000 {
