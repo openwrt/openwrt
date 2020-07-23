@@ -112,6 +112,7 @@ define Package/openvpn-$(BUILD_VARIANT)/install
 		$(1)/etc/init.d \
 		$(1)/etc/config \
 		$(1)/etc/openvpn \
+		$(1)/lib/functions \
 		$(1)/lib/upgrade/keep.d \
 		$(1)/usr/libexec \
 		$(1)/etc/hotplug.d/openvpn
@@ -127,6 +128,10 @@ define Package/openvpn-$(BUILD_VARIANT)/install
 	$(INSTALL_BIN) \
 		files/usr/libexec/openvpn-hotplug \
 		$(1)/usr/libexec/openvpn-hotplug
+
+	$(INSTALL_DATA) \
+		files/lib/functions/openvpn.sh \
+		$(1)/lib/functions/openvpn.sh
 
 	$(INSTALL_DATA) \
 		files/etc/hotplug.d/openvpn/01-user \

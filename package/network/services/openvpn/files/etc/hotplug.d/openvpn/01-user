@@ -1,17 +1,6 @@
 #!/bin/sh
 
-get_option() {
-	local variable="$1"
-	local option="$2"
-
-	local value="$(sed -rne 's/^[ \t]*'"$option"'[ \t]+(([^ \t\\]|\\.)+)[ \t]*$/\1/p' "$config" | tail -n1 | sed -re 's/\\(.)/\1/g')"
-	[ -n "$value" ] || value="$(sed -rne 's/^[ \t]*'"$option"'[ \t]+'"'([^']+)'"'[ \t]*$/\1/p' "$config" | tail -n1)"
-	[ -n "$value" ] || value="$(sed -rne 's/^[ \t]*'"$option"'[ \t]+"(([^"\\]|\\.)+)"[ \t]*$/\1/p' "$config" | tail -n1 | sed -re 's/\\(.)/\1/g')"
-	[ -n "$value" ] || return 1
-
-	export -n "$variable=$value"
-	return 0
-}
+. /lib/functions/openvpn.sh
 
 [ -e "/etc/openvpn.user" ] && {
 	env -i ACTION="$ACTION" INSTANCE="$INSTANCE" \
@@ -23,7 +12,7 @@ get_option() {
 # Wrap user defined scripts on up/down events
 case "$ACTION" in
 	up|down)
-		if get_option command "$ACTION"; then
+		if get_openvpn_option "$config" command "$ACTION"; then
 			exec /bin/sh -c "$command $ACTION $INSTANCE $*"
 		fi
 	;;
