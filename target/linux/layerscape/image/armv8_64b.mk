@@ -37,8 +37,8 @@ define Device/ls1012afrdm
     append-kernel | pad-to $$(BLOCKSIZE) | \
     append-rootfs | pad-rootfs | check-size
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | \
-        check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
+    append-rootfs | pad-rootfs | \
+    check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
   KERNEL := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   KERNEL_INITRAMFS := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   SUPPORTED_DEVICES := fsl,ls1012a-frdm

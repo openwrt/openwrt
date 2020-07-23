@@ -144,11 +144,9 @@ Signed-off-by: chuanjia.liu <Chuanjia.Liu@mediatek.com>
  arch/arm64/boot/dts/mediatek/mt7622.dtsi      | 68 +++++++++++------
  4 files changed, 96 insertions(+), 69 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/mediatek/mt2712e.dtsi b/arch/arm64/boot/dts/mediatek/mt2712e.dtsi
-index 2cd8b33886e5..ab27ff4a869e 100644
 --- a/arch/arm64/boot/dts/mediatek/mt2712e.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt2712e.dtsi
-@@ -797,60 +797,73 @@
+@@ -791,60 +791,73 @@
  		};
  	};
  
@@ -253,11 +251,9 @@ index 2cd8b33886e5..ab27ff4a869e 100644
  				interrupt-controller;
  				#address-cells = <0>;
  				#interrupt-cells = <1>;
-diff --git a/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts b/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
-index 83e10591e0e5..7574d88cc46a 100644
 --- a/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
-@@ -207,18 +207,16 @@
+@@ -294,18 +294,16 @@
  	};
  };
  
@@ -283,11 +279,9 @@ index 83e10591e0e5..7574d88cc46a 100644
  };
  
  &pio {
-diff --git a/arch/arm64/boot/dts/mediatek/mt7622.dtsi b/arch/arm64/boot/dts/mediatek/mt7622.dtsi
-index 339dc9f88f43..d5131c8b6a79 100644
 --- a/arch/arm64/boot/dts/mediatek/mt7622.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7622.dtsi
-@@ -766,45 +766,41 @@
+@@ -790,45 +790,41 @@
  		#reset-cells = <1>;
  	};
  
@@ -350,7 +344,7 @@ index 339dc9f88f43..d5131c8b6a79 100644
  			interrupt-map-mask = <0 0 0 7>;
  			interrupt-map = <0 0 0 1 &pcie_intc0 0>,
  					<0 0 0 2 &pcie_intc0 1>,
-@@ -816,15 +812,39 @@
+@@ -840,15 +836,39 @@
  				#interrupt-cells = <1>;
  			};
  		};
@@ -393,8 +387,8 @@ index 339dc9f88f43..d5131c8b6a79 100644
  			interrupt-map-mask = <0 0 0 7>;
  			interrupt-map = <0 0 0 1 &pcie_intc1 0>,
  					<0 0 0 2 &pcie_intc1 1>,
---- a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts	2020-06-15 18:52:25.092948824 +0800
-+++ b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts	2020-06-15 18:52:15.909094229 +0800
+--- a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
 @@ -244,18 +244,16 @@
  	};
  };

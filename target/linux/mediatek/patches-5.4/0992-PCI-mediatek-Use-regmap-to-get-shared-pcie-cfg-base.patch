@@ -132,8 +132,6 @@ Signed-off-by: chuanjia.liu <Chuanjia.Liu@mediatek.com>
  drivers/pci/controller/pcie-mediatek.c | 25 ++++++++++++++++++-------
  1 file changed, 18 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/pci/controller/pcie-mediatek.c b/drivers/pci/controller/pcie-mediatek.c
-index cb982891b22b..2268d6073eb6 100644
 --- a/drivers/pci/controller/pcie-mediatek.c
 +++ b/drivers/pci/controller/pcie-mediatek.c
 @@ -14,6 +14,7 @@
@@ -167,8 +165,8 @@ index cb982891b22b..2268d6073eb6 100644
 +	struct regmap *cfg;
  	struct clk *free_ck;
  
- 	struct list_head ports;
-@@ -650,7 +654,7 @@ static int mtk_pcie_setup_irq(struct mtk_pcie_port *port,
+ 	struct resource mem;
+@@ -651,7 +655,7 @@ static int mtk_pcie_setup_irq(struct mtk
  		return err;
  	}
  
@@ -177,9 +175,9 @@ index cb982891b22b..2268d6073eb6 100644
  	irq_set_chained_handler_and_data(port->irq,
  					 mtk_pcie_intr_handler, port);
  
-@@ -673,12 +677,11 @@ static int mtk_pcie_startup_port_v2(struct mtk_pcie_port *port)
- 	if (!mem)
- 		return -EINVAL;
+@@ -666,12 +670,11 @@ static int mtk_pcie_startup_port_v2(stru
+ 	u32 val;
+ 	int err;
  
 -	/* MT7622 platforms need to enable LTSSM and ASPM from PCIe subsys */
 -	if (pcie->base) {
@@ -195,7 +193,7 @@ index cb982891b22b..2268d6073eb6 100644
  	}
  
  	/* Assert all reset signals */
-@@ -984,6 +987,7 @@ static int mtk_pcie_subsys_powerup(struct mtk_pcie *pcie)
+@@ -977,6 +980,7 @@ static int mtk_pcie_subsys_powerup(struc
  	struct device *dev = pcie->dev;
  	struct platform_device *pdev = to_platform_device(dev);
  	struct resource *regs;
@@ -203,7 +201,7 @@ index cb982891b22b..2268d6073eb6 100644
  	int err;
  
  	/* get shared registers, which are optional */
-@@ -996,6 +1000,13 @@ static int mtk_pcie_subsys_powerup(struct mtk_pcie *pcie)
+@@ -989,6 +993,13 @@ static int mtk_pcie_subsys_powerup(struc
  		}
  	}
  
