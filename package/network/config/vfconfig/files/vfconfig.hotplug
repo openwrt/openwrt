@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ "$ACTION" = ifup ] && [ "$INTERFACE" = loopback ]; then
+	. /lib/network/dsaconfig.sh
+	setup_switch
+fi
+
