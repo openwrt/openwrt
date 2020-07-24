@@ -4,9 +4,8 @@
 START=97
 USE_PROCD=1
 
-EXTRA_COMMANDS="dslstat lucistat"
-EXTRA_HELP="	dslstat Get DSL status information
-	lucistat Get status information in lua friendly format"
+extra_command "dslstat" "Get DSL status information"
+extra_command "lucistat" "Get status information in lua friendly format"
 
 . /lib/functions/lantiq_dsl.sh
 
