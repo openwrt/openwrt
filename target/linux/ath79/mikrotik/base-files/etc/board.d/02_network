@@ -34,6 +34,10 @@ ath79_setup_macs()
 	local mac_base="$(cat /sys/firmware/mikrotik/hard_config/mac_base)"
 
 	case "$board" in
+	mikrotik,routerboard-wap-g-5hact2hnd)
+		label_mac="$mac_base"
+		lan_mac="$mac_base"
+		;;
 	*)
 		label_mac="$mac_base"
 		wan_mac="$mac_base"
