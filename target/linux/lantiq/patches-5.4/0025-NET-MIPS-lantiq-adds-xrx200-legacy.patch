@@ -209,7 +209,7 @@ Subject: NET: MIPS: lantiq: adds xrx200 ethernet and switch driver
 +};
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200_legacy.c
-@@ -0,0 +1,1927 @@
+@@ -0,0 +1,1913 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -816,20 +816,6 @@ Subject: NET: MIPS: lantiq: adds xrx200 ethernet and switch driver
 +
 +	tem.index = val->port_vlan;
 +	xrx200_pce_table_entry_read(&tem);
-+
-+	// auto-enable this vlan if not enabled already
-+	if (tem.val[0] == 0)
-+	{
-+		struct switch_val v;
-+		v.port_vlan = val->port_vlan;
-+		v.value.i = val->port_vlan;
-+		if(xrx200sw_set_vlan_vid(dev, NULL, &v))
-+			return -EINVAL;
-+
-+		//read updated tem
-+		tem.index = val->port_vlan;
-+		xrx200_pce_table_entry_read(&tem);
-+	}
 +
 +	tem.val[1] = portmap;
 +	tem.val[2] = tagmap;
