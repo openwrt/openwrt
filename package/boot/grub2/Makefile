@@ -18,6 +18,7 @@ PKG_SOURCE_URL:=@GNU/grub
 PKG_HASH:=e5292496995ad42dabe843a0192cf2a2c502e7ffcc7479398232b10a472df77d
 
 HOST_BUILD_PARALLEL:=1
+PKG_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=grub2/host
 
 ifneq ($(BUILD_VARIANT),none)
@@ -148,6 +149,7 @@ endef
 
 define Package/grub2-efi/install
 	sed 's#msdos1#gpt1#g' ./files/grub-early.cfg >$(PKG_BUILD_DIR)/grub-early.cfg
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)/grub2
 	$(STAGING_DIR_HOST)/bin/grub-mkimage \
 		-d $(PKG_BUILD_DIR)/grub-core \
 		-p /boot/grub \
