@@ -200,6 +200,7 @@ menu "Target Images"
 		depends on TARGET_x86
 		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 		select PACKAGE_grub2
+		select PACKAGE_grub2-bios-setup
 		default y
 
 	config GRUB_EFI_IMAGES
@@ -208,6 +209,7 @@ menu "Target Images"
 		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 		select PACKAGE_grub2
 		select PACKAGE_grub2-efi
+		select PACKAGE_grub2-bios-setup
 		select PACKAGE_kmod-fs-vfat
 		default y
 
