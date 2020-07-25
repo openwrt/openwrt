@@ -4,8 +4,8 @@
  
  if(USE_SHARED_MBEDTLS_LIBRARY)
      add_library(mbedcrypto SHARED ${src_crypto})
--    set_target_properties(mbedcrypto PROPERTIES VERSION 2.16.6 SOVERSION 3)
-+    set_target_properties(mbedcrypto PROPERTIES VERSION 2.12.0 SOVERSION 1)
+-    set_target_properties(mbedcrypto PROPERTIES VERSION 2.16.7 SOVERSION 3)
++    set_target_properties(mbedcrypto PROPERTIES VERSION 2.16.7 SOVERSION 1)
      target_link_libraries(mbedcrypto ${libs})
  
      add_library(mbedx509 SHARED ${src_x509})
@@ -13,8 +13,8 @@
      target_link_libraries(mbedx509 ${libs} mbedcrypto)
  
      add_library(mbedtls SHARED ${src_tls})
--    set_target_properties(mbedtls PROPERTIES VERSION 2.16.6 SOVERSION 12)
-+    set_target_properties(mbedtls PROPERTIES VERSION 2.12.0 SOVERSION 10)
+-    set_target_properties(mbedtls PROPERTIES VERSION 2.16.7 SOVERSION 12)
++    set_target_properties(mbedtls PROPERTIES VERSION 2.16.7 SOVERSION 10)
      target_link_libraries(mbedtls ${libs} mbedx509)
  
      install(TARGETS mbedtls mbedx509 mbedcrypto
