@@ -1042,6 +1042,7 @@ endef
 TARGET_DEVICES += nec_wg800hp
 
 define Device/netgear_ex6400_ex7300
+  $(Device/netgear_generic)
   SOC := qca9558
   NETGEAR_KERNEL_MAGIC := 0x27051956
   NETGEAR_BOARD_ID := EX7300series
@@ -1049,8 +1050,11 @@ define Device/netgear_ex6400_ex7300
   IMAGE_SIZE := 15552k
   IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 	netgear-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | \
+	check-size
+  IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | \
+	check-size
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca99x0-ct
-  $(Device/netgear_ath79)
 endef
 
 define Device/netgear_ex6400
@@ -1066,12 +1070,10 @@ endef
 TARGET_DEVICES += netgear_ex7300
 
 define Device/netgear_wndr3x00
+  $(Device/netgear_generic)
   SOC := ar7161
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | \
-	append-rootfs | pad-rootfs
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
 	kmod-leds-reset kmod-owl-loader
-  $(Device/netgear_ath79)
 endef
 
 define Device/netgear_wndr3700
@@ -1147,14 +1149,12 @@ endef
 TARGET_DEVICES += netgear_wndrmac-v2
 
 define Device/netgear_wnr2200_common
+  $(Device/netgear_generic)
   SOC := ar7241
   DEVICE_MODEL := WNR2200
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
   NETGEAR_KERNEL_MAGIC := 0x32323030
   NETGEAR_BOARD_ID := wnr2200
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | \
-	append-rootfs | pad-rootfs
-  $(Device/netgear_ath79)
 endef
 
 define Device/netgear_wnr2200-8m
