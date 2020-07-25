@@ -23,6 +23,10 @@ PKG_BUILD_DEPENDS:=grub2/host
 PKG_ASLR_PIE:=0
 PKG_SSP:=0
 
+ifneq ($(BUILD_VARIANT),none)
+  PKG_TARGETS := bin
+endif
+
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/host-build.mk
