@@ -17,8 +17,10 @@ PKG_HASH:=2c87f1f21e2ab50043e6cd9163c08f1b6c3a6171556bf23ff9ed65b074145484
 HOST_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=grub2/host
 
-PKG_ASLR_PIE:=0
-PKG_SSP:=0
+ifneq ($(BUILD_VARIANT),none)
+  PKG_ASLR_PIE:=0
+  PKG_SSP:=0
+endif
 
 PKG_FLAGS:=nonshared
 
@@ -96,9 +98,9 @@ HOST_MAKE_FLAGS += \
 	TARGET_RANLIB=$(TARGET_RANLIB) \
 	LIBLZMA=$(STAGING_DIR_HOST)/lib/liblzma.a
 
-TARGET_CFLAGS := $(filter-out -O2 -O3 -fno-plt,$(TARGET_CFLAGS))
 
 ifneq ($(BUILD_VARIANT),none)
+  TARGET_CFLAGS := $(filter-out -O2 -O3 -fno-plt,$(TARGET_CFLAGS))
   MAKE_PATH := grub-core
 endif
 
