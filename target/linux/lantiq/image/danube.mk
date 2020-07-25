@@ -29,6 +29,7 @@ define Device/arcadyan_arv4519pw
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa
   SUPPORTED_DEVICES += ARV4519PW
+  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv4519pw
 
@@ -110,6 +111,7 @@ define Device/arcadyan_arv7525pw
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa -swconfig
   SUPPORTED_DEVICES += ARV4510PW
+  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv7525pw
 
@@ -201,6 +203,7 @@ define Device/lantiq_easy50712
   DEVICE_MODEL := Danube (EASY50712)
   SOC := danube
   IMAGE_SIZE := 3776k
+  DEFAULT := n
 endef
 TARGET_DEVICES += lantiq_easy50712
 
