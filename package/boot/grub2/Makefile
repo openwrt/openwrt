@@ -44,7 +44,7 @@ define Package/grub2-editenv
   TITLE:=Grub2 Environment editor
   URL:=http://www.gnu.org/software/grub/
   DEPENDS:=@TARGET_x86
-  VARIANT:=pc
+  VARIANT:=none
 endef
 
 define Package/grub2-editenv/description
@@ -58,7 +58,7 @@ define Package/grub2-bios-setup
   TITLE:=Grub2 BIOS boot setup tool
   URL:=http://www.gnu.org/software/grub/
   DEPENDS:=@TARGET_x86
-  VARIANT:=pc
+  VARIANT:=none
 endef
 
 define Package/grub2-bios-setup/description
@@ -97,6 +97,10 @@ HOST_MAKE_FLAGS += \
 	LIBLZMA=$(STAGING_DIR_HOST)/lib/liblzma.a
 
 TARGET_CFLAGS := $(filter-out -O2 -O3 -fno-plt,$(TARGET_CFLAGS))
+
+ifneq ($(BUILD_VARIANT),none)
+  MAKE_PATH := grub-core
+endif
 
 define Host/Configure
 	$(SED) 's,(RANLIB),(TARGET_RANLIB),' $(HOST_BUILD_DIR)/grub-core/Makefile.in
