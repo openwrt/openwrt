@@ -54,6 +54,20 @@ define Package/grub2-editenv/description
 	Edit grub2 environment files.
 endef
 
+define Package/grub2-bios-setup
+  CATEGORY:=Utilities
+  SECTION:=utils
+  SUBMENU:=Boot Loaders
+  TITLE:=Grub2 BIOS boot setup tool
+  URL:=http://www.gnu.org/software/grub/
+  DEPENDS:=@TARGET_x86
+  VARIANT:=pc
+endef
+
+define Package/grub2-bios-setup/description
+	Set up images to bootable.
+endef
+
 HOST_BUILD_PREFIX := $(STAGING_DIR_HOST)
 
 CONFIGURE_VARS += \
@@ -92,8 +106,6 @@ define Host/Configure
 endef
 
 define Package/grub2/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/grub-bios-setup $(1)/usr/sbin/
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)/grub2
 	$(CP) $(PKG_BUILD_DIR)/grub-core/boot.img $(STAGING_DIR_IMAGE)/grub2/
 	$(CP) $(PKG_BUILD_DIR)/grub-core/cdboot.img $(STAGING_DIR_IMAGE)/grub2/
@@ -151,7 +163,13 @@ define Package/grub2-editenv/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/grub-editenv $(1)/usr/sbin/
 endef
 
+define Package/grub2-bios-setup/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/grub-bios-setup $(1)/usr/sbin/
+endef
+
 $(eval $(call HostBuild))
 $(eval $(call BuildPackage,grub2))
 $(eval $(call BuildPackage,grub2-efi))
 $(eval $(call BuildPackage,grub2-editenv))
+$(eval $(call BuildPackage,grub2-bios-setup))
