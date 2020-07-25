@@ -10,6 +10,7 @@ define Device/netgear_wnr612-v2
   NETGEAR_BOARD_ID := REALWNR612V2
   IMAGE_SIZE := 3712k
   SUPPORTED_DEVICES += wnr612-v2
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wnr612-v2
 
@@ -22,6 +23,7 @@ define Device/on_n150r
   NETGEAR_BOARD_ID := N150R
   IMAGE_SIZE := 3712k
   SUPPORTED_DEVICES += n150r
+  DEFAULT := n
 endef
 TARGET_DEVICES += on_n150r
 
@@ -35,6 +37,7 @@ define Device/netgear_wnr1000-v2
   NETGEAR_HW_ID := 29763331+4+32
   IMAGE_SIZE := 3712k
   SUPPORTED_DEVICES += wnr1000-v2
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wnr1000-v2
 
@@ -51,5 +54,6 @@ define Device/netgear_wnr2000-v3
   IMAGE/factory-NA.img := $$(IMAGE/default) | netgear-dni NA | \
 	check-size
   SUPPORTED_DEVICES += wnr2000-v3
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wnr2000-v3
