@@ -29,9 +29,6 @@ define Device/bpi_bananapi-r2
   DEVICE_VENDOR := Bpi
   DEVICE_MODEL := Banana Pi R2
   DEVICE_DTS := mt7623n-bananapi-bpi-r2
-  KERNEL_NAME := zImage
-  KERNEL := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
-  KERNEL_INITRAMFS :=
   DEVICE_PACKAGES := kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 kmod-mmc \
 	mkf2fs e2fsprogs kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
   UBOOT_TARGET := mt7623n_bpir2
