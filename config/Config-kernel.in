@@ -373,6 +373,20 @@ config KERNEL_DEBUG_INFO
 	help
 	  This will compile your kernel and modules with debug information.
 
+config KERNEL_DEBUG_INFO_BTF
+
+	bool "Enable additional BTF type information"
+	default n
+	depends on !HOST_OS_MACOS
+	depends on KERNEL_DEBUG_INFO && !KERNEL_DEBUG_INFO_REDUCED
+	select DWARVES
+	help
+	  Generate BPF Type Format (BTF) information from DWARF debug info.
+	  Turning this on expects presence of pahole tool, which will convert
+	  DWARF type info into equivalent deduplicated BTF type info.
+
+	  Required to run BPF CO-RE applications.
+
 config KERNEL_DEBUG_INFO_REDUCED
 	bool "Reduce debugging information"
 	default y
