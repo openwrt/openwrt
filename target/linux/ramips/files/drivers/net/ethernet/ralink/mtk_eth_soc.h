@@ -342,6 +342,8 @@ struct fe_rx_dma {
 #define TX_DMA_UDF		BIT(20)
 #define TX_DMA_CHKSUM		(0x7 << 29)
 #define TX_DMA_TSO		BIT(28)
+#define TX_DMA_FPORT_SHIFT	25
+#define TX_DMA_FPORT_MASK	0x7
 
 /* frame engine counters */
 #define FE_PPE_AC_BCNT0		(FE_CMTABLE_OFFSET + 0x00)
@@ -351,6 +353,11 @@ struct fe_rx_dma {
 /* phy device flags */
 #define FE_PHY_FLAG_PORT	BIT(0)
 #define FE_PHY_FLAG_ATTACH	BIT(1)
+
+/* natflow.h */
+#define HWNAT_QUEUE_MAPPING_MAGIC      0x8000
+#define HWNAT_QUEUE_MAPPING_MAGIC_MASK 0xe000
+#define HWNAT_QUEUE_MAPPING_HASH_MASK  0x1fff
 
 struct fe_tx_dma {
 	unsigned int txd1;

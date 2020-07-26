@@ -719,6 +719,14 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 		}
 	}
 
+#ifdef CONFIG_NET_RALINK_OFFLOAD
+	if ((skb->vlan_tci & HWNAT_QUEUE_MAPPING_MAGIC_MASK) == HWNAT_QUEUE_MAPPING_MAGIC &&
+		(skb->hash & HWNAT_QUEUE_MAPPING_MAGIC_MASK) == HWNAT_QUEUE_MAPPING_MAGIC) {
+		st.txd.txd4 &= ~(TX_DMA_FPORT_MASK << TX_DMA_FPORT_SHIFT);
+		st.txd.txd4 |= (0x4 & TX_DMA_FPORT_MASK) << TX_DMA_FPORT_SHIFT;
+	}
+#endif
+
 next_frag:
 	if (skb_headlen(skb) && fe_tx_dma_map_skb(ring, &st, skb))
 		goto err_dma;
@@ -1521,12 +1529,20 @@ fe_flow_offload(enum flow_offload_type type, struct flow_offload *flow,
 		struct flow_offload_hw_path *src,
 		struct flow_offload_hw_path *dest)
 {
-	struct fe_priv *priv;
+	struct fe_priv *priv = NULL;
 
-	if (src->dev != dest->dev)
+	/* for now offload only do support natflow */
+	if (flow->flags != 0) {
 		return -EINVAL;
+	}
 
-	priv = netdev_priv(src->dev);
+	if (src->dev->netdev_ops->ndo_flow_offload == fe_flow_offload) {
+		priv = netdev_priv(src->dev);
+	} else if (dest->dev->netdev_ops->ndo_flow_offload == fe_flow_offload) {
+		priv = netdev_priv(dest->dev);
+	} else {
+		return -EINVAL;
+	}
 
 	return mtk_flow_offload(priv, type, flow, src, dest);
 }

@@ -113,6 +113,7 @@ mtk_w32(struct mtk_eth *eth, u32 val, u32 reg)
 #define   MTK_PPE_TB_CFG_ENTRY_SZ_64B		0
 #define   MTK_PPE_TB_CFG_ENTRY_SZ_MASK		BIT(3)
 #define   MTK_PPE_TB_CFG_TBL_SZ_4K		2
+#define   MTK_PPE_TB_CFG_TBL_SZ_8K		3
 #define   MTK_PPE_TB_CFG_TBL_SZ_MASK		0x7
 
 #define MTK_REG_PPE_HASH_SEED			0xe44
@@ -250,8 +251,8 @@ enum mtk_foe_cpu_reason {
 };
 
 
-/* our table size is 4K */
-#define MTK_PPE_ENTRY_CNT		0x1000
+/* our table size is 8K */
+#define MTK_PPE_ENTRY_CNT		0x2000
 #define MTK_PPE_TBL_SZ			\
 			(MTK_PPE_ENTRY_CNT * sizeof(struct mtk_foe_entry))
 
