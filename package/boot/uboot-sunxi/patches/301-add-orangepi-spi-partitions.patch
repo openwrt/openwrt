@@ -1,0 +1,16 @@
+--- a/configs/orangepi_r1_defconfig
++++ b/configs/orangepi_r1_defconfig
+@@ -11,3 +11,12 @@ CONFIG_DEFAULT_DEVICE_TREE="sun8i-h2-plus-orangepi-r1"
+ CONFIG_SUN8I_EMAC=y
+ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_OHCI_HCD=y
++CONFIG_SPI=y
++CONFIG_SUN4I_SPI=y
++CONFIG_CMD_SF=y
++CONFIG_CMD_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_MACRONIX=y
+\ No newline at end of file

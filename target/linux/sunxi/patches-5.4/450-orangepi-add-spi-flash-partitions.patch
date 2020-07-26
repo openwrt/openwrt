@@ -1,0 +1,46 @@
+--- a/arch/arm/boot/dts/sun8i-h2-plus-orangepi-r1.dts
++++ b/arch/arm/boot/dts/sun8i-h2-plus-orangepi-r1.dts
+@@ -65,6 +65,7 @@
+ 
+ 	aliases {
+ 		ethernet1 = &rtl8189etv;
++		spi0 = &spi0;
+ 	};
+ };
+ 
+@@ -73,6 +74,34 @@
+ 
+ 	flash@0 {
+ 		compatible = "mxicy,mx25l12805d", "jedec,spi-nor";
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "u-boot";
++				reg = <0x000000 0x0E0000>;
++				read-only;
++			};
++
++			partition@e0000 {
++				label = "u-boot-env";
++				reg = <0x0E0000 0x010000>;
++				read-only;
++			};
++
++                       partition@e0000 {
++                               label = "dtb";
++                               reg = <0x0F0000 0x010000>;
++				read-only;
++                       };
++
++			partition@100000 {
++				compatible = "denx,fit";
++				label = "firmware";
++				reg = <0x100000 0xF00000>;
++			};
++		};
+ 	};
+ };
+

@@ -172,6 +172,12 @@ define U-Boot/orangepi_r1
   BUILD_DEVICES:=xunlong_orangepi-r1
 endef
 
+define U-Boot/orangepi_r1_spi
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Orange Pi R1 (H2+) (boot from SPI)
+  BUILD_DEVICES:=xunlong_orengepi-r1-spi
+endef
+
 define U-Boot/orangepi_zero
   BUILD_SUBTARGET:=cortexa7
   NAME:=Orange Pi Zero (H2+)
@@ -305,6 +311,7 @@ UBOOT_TARGETS := \
 	nanopi_neo2 \
 	orangepi_zero \
 	orangepi_r1 \
+	orangepi_r1_spi \
 	orangepi_one \
 	orangepi_pc \
 	orangepi_pc_plus \

@@ -30,6 +30,14 @@ define Build/sunxi-sdcard
 	rm -f $@.boot
 endef
 
+define Build/append-uboot
+	dd if=$(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot-with-spl.bin >> $@
+endef
+
+define Build/add-dtb
+	dd if=$(DTS_DIR)/$(SUNXI_DTS).dtb >> $@
+endef
+
 # why \x00\x00\x00\x00 for zImage-initramfs
 define Device/Default
   PROFILES := Default
@@ -41,6 +49,20 @@ define Device/Default
   SUNXI_DTS_DIR :=
   SUNXI_DTS = $$(SUNXI_DTS_DIR)$$(SOC)-$(lastword $(subst _, ,$(1)))
 endef
+
+define Device/xunlong_orengepi-r1-spi
+  FILESYSTEMS := squashfs
+  IMAGES := spi-factory.img sysupgrade.bin
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 15360k
+  IMAGE/spi-factory.img := append-uboot | check-size 896k | pad-to 960k | add-dtb | pad-to 1024k | append-kernel | append-rootfs | pad-rootfs | append-metadata
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_TITLE:=Xunlong Orange Pi R1 boot from SPI
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-usb-net kmod-usb-net-rtl8152
+  SUPPORTED_DEVICES:=xunlong,orangepi-r1-spi
+  SUNXI_DTS:=sun8i-h2-plus-orangepi-r1
+endef
+TARGET_DEVICES += xunlong_orengepi-r1-spi
 
 include $(SUBTARGET).mk
 
