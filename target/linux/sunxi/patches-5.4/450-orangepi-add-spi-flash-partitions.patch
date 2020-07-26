@@ -8,7 +8,7 @@
  	};
  };
  
-@@ -73,6 +74,34 @@
+@@ -73,6 +74,35 @@
  
  	flash@0 {
  		compatible = "mxicy,mx25l12805d", "jedec,spi-nor";
@@ -29,11 +29,11 @@
 +				read-only;
 +			};
 +
-+                       partition@e0000 {
-+                               label = "dtb";
-+                               reg = <0x0F0000 0x010000>;
++			partition@e0000 {
++				label = "dtb";
++				reg = <0x0F0000 0x010000>;
 +				read-only;
-+                       };
++			};
 +
 +			partition@100000 {
 +				compatible = "denx,fit";
