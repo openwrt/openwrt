@@ -256,10 +256,8 @@ menu "Global build settings"
 			bool "None"
 		config PKG_CC_STACKPROTECTOR_REGULAR
 			bool "Regular"
-			depends on KERNEL_CC_STACKPROTECTOR_REGULAR
 		config PKG_CC_STACKPROTECTOR_STRONG
 			bool "Strong"
-			depends on KERNEL_CC_STACKPROTECTOR_STRONG
 	endchoice
 
 	choice

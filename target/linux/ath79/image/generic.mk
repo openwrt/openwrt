@@ -502,6 +502,18 @@ define Device/compex_wpj531-16m
 endef
 TARGET_DEVICES += compex_wpj531-16m
 
+define Device/compex_wpj563
+  SOC := qca9563
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb3
+  IMAGE_SIZE := 16128k
+  DEVICE_VENDOR := Compex
+  DEVICE_MODEL := WPJ563
+  SUPPORTED_DEVICES += wpj563
+  IMAGES += cpximg-7a02.bin
+  IMAGE/cpximg-7a02.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | mkmylofw_16m 0x694 2
+endef
+TARGET_DEVICES += compex_wpj563
+
 define Device/devolo_dvl1200e
   SOC := qca9558
   DEVICE_VENDOR := devolo

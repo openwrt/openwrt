@@ -1020,6 +1020,18 @@ define Device/wevo_w2914ns-v2
 endef
 TARGET_DEVICES += wevo_w2914ns-v2
 
+define Device/winstars_ws-wn583a6
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Winstars
+  DEVICE_MODEL := WS-WN583A6
+  DEVICE_ALT0_VENDOR := Gemeita
+  DEVICE_ALT0_MODEL := AC2100
+  KERNEL_INITRAMFS_SUFFIX := -WN583A6$$(KERNEL_SUFFIX)
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware wpad-basic
+endef
+TARGET_DEVICES += winstars_ws-wn583a6
+
 define Device/xiaomi-ac2100
   $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k

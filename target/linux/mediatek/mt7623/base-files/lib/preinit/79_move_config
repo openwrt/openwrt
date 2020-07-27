@@ -10,7 +10,11 @@ move_config() {
 		partnum=2
 		;;
 	unielec,u7623-02-emmc-512m)
-		partnum=1
+		if grep -q root=/dev/mmcblk0p2 /proc/cmdline; then
+			partnum=1;
+		else
+			partnum=2;
+		fi
 		;;
 	*)
 		return 1

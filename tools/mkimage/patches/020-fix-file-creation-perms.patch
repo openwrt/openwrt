@@ -1,0 +1,11 @@
+--- a/tools/fit_image.c
++++ b/tools/fit_image.c
+@@ -642,7 +642,7 @@ static int copyfile(const char *src, con
+ 		goto out;
+ 	}
+ 
+-	fd_dst = open(dst, O_WRONLY | O_CREAT, 0700);
++	fd_dst = open(dst, O_WRONLY | O_CREAT, 0744);
+ 	if (fd_dst < 0) {
+ 		printf("Can't open file %s (%s)\n", dst, strerror(errno));
+ 		goto out;
