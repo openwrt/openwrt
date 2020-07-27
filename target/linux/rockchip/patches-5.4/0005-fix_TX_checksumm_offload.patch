@@ -1,0 +1,57 @@
+From patchwork Tue Feb 18 22:10:37 2020
+From: Carlos de Paula <me@carlosedp.com>
+Subject: [PATCH] arm64: dts: rockchip: Add txpbl node for RK3399/RK3328
+Date: Tue, 18 Feb 2020 17:10:37 -0500
+Sender: linux-kernel-owner@vger.kernel.org
+
+Some rockchip SoCs like the RK3399 and RK3328 exhibit an issue
+where tx checksumming does not work with packets larger than 1498.
+
+The default Programmable Buffer Length for TX in these GMAC's is
+not suitable for MTUs higher than 1498. The workaround is to disable
+TX offloading with 'ethtool -K eth0 tx off rx off' causing performance
+impacts as it disables hardware checksumming.
+
+This patch sets snps,txpbl to 0x4 which is a safe number tested ok for
+the most popular MTU value of 1500.
+
+For reference, see https://lkml.org/lkml/2019/4/1/1382.
+
+Signed-off-by: Carlos de Paula <me@carlosedp.com>
+---
+ arch/arm64/boot/dts/rockchip/rk3328.dtsi | 2 ++
+ arch/arm64/boot/dts/rockchip/rk3399.dtsi | 1 +
+ 2 files changed, 3 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3328.dtsi b/arch/arm64/boot/dts/rockchip/rk3328.dtsi
+index 1f53ead52c7f..b7f1de4b7fd0 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3328.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3328.dtsi
+@@ -874,6 +874,7 @@
+ 		resets = <&cru SRST_GMAC2IO_A>;
+ 		reset-names = "stmmaceth";
+ 		rockchip,grf = <&grf>;
++		snps,txpbl = <0x4>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -881,6 +882,7 @@
+ 		compatible = "rockchip,rk3328-gmac";
+ 		reg = <0x0 0xff550000 0x0 0x10000>;
+ 		rockchip,grf = <&grf>;
++		snps,txpbl = <0x4>;
+ 		interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "macirq";
+ 		clocks = <&cru SCLK_MAC2PHY_SRC>, <&cru SCLK_MAC2PHY_RXTX>,
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399.dtsi b/arch/arm64/boot/dts/rockchip/rk3399.dtsi
+index 33cc21fcf4c1..cd5415d7e559 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3399.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3399.dtsi
+@@ -288,6 +288,7 @@
+ 		resets = <&cru SRST_A_GMAC>;
+ 		reset-names = "stmmaceth";
+ 		rockchip,grf = <&grf>;
++		snps,txpbl = <0x4>;
+ 		status = "disabled";
+ 	};
+ 

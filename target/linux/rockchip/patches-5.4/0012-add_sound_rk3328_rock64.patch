@@ -1,0 +1,170 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3328.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3328.dtsi
+@@ -159,6 +159,22 @@
+ 		};
+ 	};
+ 
++	analog_sound: analog-sound {
++		compatible = "simple-audio-card";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,mclk-fs = <256>;
++		simple-audio-card,name = "Analog";
++		status = "disabled";
++
++		simple-audio-card,cpu {
++			sound-dai = <&i2s1>;
++		};
++
++		simple-audio-card,codec {
++			sound-dai = <&codec>;
++		};
++	};
++
+ 	arm-pmu {
+ 		compatible = "arm,cortex-a53-pmu";
+ 		interrupts = <GIC_SPI 100 IRQ_TYPE_LEVEL_HIGH>,
+@@ -173,11 +189,47 @@
+ 		ports = <&vop_out>;
+ 	};
+ 
++	hdmi_sound: hdmi-sound {
++		compatible = "simple-audio-card";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,mclk-fs = <128>;
++		simple-audio-card,name = "HDMI";
++		status = "disabled";
++
++		simple-audio-card,cpu {
++			sound-dai = <&i2s0>;
++		};
++
++		simple-audio-card,codec {
++			sound-dai = <&hdmi>;
++		};
++	};
++
+ 	psci {
+ 		compatible = "arm,psci-1.0", "arm,psci-0.2";
+ 		method = "smc";
+ 	};
+ 
++	spdif_out: spdif-out {
++		compatible = "linux,spdif-dit";
++		#sound-dai-cells = <0>;
++		status = "disabled";
++	};
++
++	spdif_sound: spdif-sound {
++		compatible = "simple-audio-card";
++		simple-audio-card,name = "SPDIF";
++		status = "disabled";
++
++		simple-audio-card,cpu {
++			sound-dai = <&spdif>;
++		};
++
++		simple-audio-card,codec {
++			sound-dai = <&spdif_out>;
++		};
++	};
++
+ 	timer {
+ 		compatible = "arm,armv8-timer";
+ 		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+--- a/arch/arm64/boot/dts/rockchip/rk3328-rock64.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-rock64.dts
+@@ -70,34 +70,14 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 	};
++};
+ 
+-	sound {
+-		compatible = "audio-graph-card";
+-		label = "rockchip,rk3328";
+-		dais = <&i2s1_p0
+-			&spdif_p0>;
+-	};
+-
+-	spdif-dit {
+-		compatible = "linux,spdif-dit";
+-		#sound-dai-cells = <0>;
+-
+-		port {
+-			dit_p0_0: endpoint {
+-				remote-endpoint = <&spdif_p0_0>;
+-			};
+-		};
+-	};
++&analog_sound {
++	status = "okay";
+ };
+ 
+ &codec {
+ 	status = "okay";
+-
+-	port@0 {
+-		codec_p0_0: endpoint {
+-			remote-endpoint = <&i2s1_p0_0>;
+-		};
+-	};
+ };
+ 
+ &cpu0 {
+@@ -155,6 +135,10 @@
+ 	status = "okay";
+ };
+ 
++&hdmi_sound {
++	status = "okay";
++};
++
+ &i2c1 {
+ 	status = "okay";
+ 
+@@ -266,21 +250,15 @@
+ 	};
+ };
+ 
+-&i2s1 {
++&i2s0 {
+ 	status = "okay";
+-
+-	i2s1_p0: port {
+-		i2s1_p0_0: endpoint {
+-			dai-format = "i2s";
+-			mclk-fs = <256>;
+-			remote-endpoint = <&codec_p0_0>;
+-		};
+-	};
+ };
+ 
+-&io_domains {
++&i2s1 {
+ 	status = "okay";
++};
+ 
++&io_domains {
+ 	vccio1-supply = <&vcc_io>;
+ 	vccio2-supply = <&vcc18_emmc>;
+ 	vccio3-supply = <&vcc_io>;
+@@ -324,12 +302,14 @@
+ &spdif {
+ 	pinctrl-0 = <&spdifm0_tx>;
+ 	status = "okay";
++};
+ 
+-	spdif_p0: port {
+-		spdif_p0_0: endpoint {
+-			remote-endpoint = <&dit_p0_0>;
+-		};
+-	};
++&spdif_out {
++	status = "okay";
++};
++
++&spdif_sound {
++	status = "okay";
+ };
+ 
+ &spi0 {

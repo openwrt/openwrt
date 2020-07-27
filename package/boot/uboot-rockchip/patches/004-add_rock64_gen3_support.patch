@@ -1,0 +1,84 @@
+Use the same approach as ROC-RK3328-CC which enables SPL GPIO,
+pinctl and regulator support. This allows the gen3 board to
+boot through SPL and does not break gen2 in the process.
+
+Signed-off-by: Kurt Miller <kurt at intricatesoftware.com>
+---
+
+ arch/arm/dts/rk3328-rock64-u-boot.dtsi | 21 +++++++++++++++++++++
+ configs/rock64-rk3328_defconfig        |  7 ++++++-
+ 2 files changed, 27 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/dts/rk3328-rock64-u-boot.dtsi b/arch/arm/dts/rk3328-rock64-u-boot.dtsi
+index 8318bf4e60..f076075076 100644
+--- a/arch/arm/dts/rk3328-rock64-u-boot.dtsi
++++ b/arch/arm/dts/rk3328-rock64-u-boot.dtsi
+@@ -11,6 +11,28 @@
+ 	};
+ };
+ 
++&gpio0 {
++	u-boot,dm-spl;
++};
++
++&pinctrl {
++	u-boot,dm-spl;
++};
++
++&sdmmc0m1_gpio {
++	u-boot,dm-spl;
++};
++
++&pcfg_pull_up_4ma {
++	u-boot,dm-spl;
++};
++
+ &usb_host0_xhci {
++ 	vbus-supply = <&vcc_host_5v>;
+ 	status = "okay";
+ };
++
++/* Need this and all the pinctrl/gpio stuff above to set pinmux */
++&vcc_sd {
++	u-boot,dm-spl;
++};
+diff --git a/configs/rock64-rk3328_defconfig b/configs/rock64-rk3328_defconfig
+index 7d096d38c6..0bc2198f5c 100644
+--- a/configs/rock64-rk3328_defconfig
++++ b/configs/rock64-rk3328_defconfig
+@@ -1,6 +1,7 @@
+ CONFIG_ARM=y
+ CONFIG_ARCH_ROCKCHIP=y
+ CONFIG_SYS_TEXT_BASE=0x00200000
++CONFIG_SPL_GPIO_SUPPORT=y
+ CONFIG_ENV_OFFSET=0x3F8000
+ CONFIG_ROCKCHIP_RK3328=y
+ CONFIG_TPL_ROCKCHIP_COMMON_BOARD=y
+@@ -25,6 +26,8 @@ CONFIG_DISPLAY_BOARDINFO_LATE=y
+ # CONFIG_SPL_RAW_IMAGE_SUPPORT is not set
+ CONFIG_TPL_SYS_MALLOC_SIMPLE=y
+ CONFIG_SPL_STACK_R=y
++CONFIG_SPL_I2C_SUPPORT=y
++CONFIG_SPL_POWER_SUPPORT=y
+ CONFIG_SPL_ATF=y
+ CONFIG_SPL_ATF_NO_PLATFORM_PARAM=y
+ CONFIG_CMD_BOOTZ=y
+@@ -36,7 +39,7 @@ CONFIG_CMD_TIME=y
+ CONFIG_SPL_OF_CONTROL=y
+ CONFIG_TPL_OF_CONTROL=y
+ CONFIG_DEFAULT_DEVICE_TREE="rk3328-rock64"
+-CONFIG_OF_SPL_REMOVE_PROPS="pinctrl-0 pinctrl-names clock-names interrupt-parent assigned-clocks assigned-clock-rates assigned-clock-parents"
++CONFIG_OF_SPL_REMOVE_PROPS="clock-names interrupt-parent assigned-clocks assigned-clock-rates assigned-clock-parents"
+ CONFIG_TPL_OF_PLATDATA=y
+ CONFIG_ENV_IS_IN_MMC=y
+ CONFIG_SYS_RELOC_GD_ENV_ADDR=y
+@@ -65,7 +68,9 @@ CONFIG_PINCTRL=y
+ CONFIG_SPL_PINCTRL=y
+ CONFIG_DM_PMIC=y
+ CONFIG_PMIC_RK8XX=y
++CONFIG_SPL_DM_REGULATOR=y
+ CONFIG_REGULATOR_PWM=y
++CONFIG_SPL_DM_REGULATOR_FIXED=y
+ CONFIG_DM_REGULATOR_FIXED=y
+ CONFIG_REGULATOR_RK8XX=y
+ CONFIG_PWM_ROCKCHIP=y
