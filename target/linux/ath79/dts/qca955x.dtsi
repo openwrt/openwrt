@@ -249,6 +249,17 @@
 			status = "disabled";
 		};
 
+		hsuart: serial@18500000 {
+			compatible = "qca,ar9330-uart";
+			reg = <0x18500000 0x14>;
+			clocks = <&pll ATH79_CLK_UART1>;
+			clock-names = "uart";
+			interrupt-parent = <&miscintc>;
+			interrupts = <6>;
+
+			status = "disabled";
+		};
+
 		usb0: usb@1b000000 {
 			compatible = "generic-ehci";
 			reg = <0x1b000000 0x1fc>;
