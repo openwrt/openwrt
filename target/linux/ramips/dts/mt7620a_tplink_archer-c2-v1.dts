@@ -20,15 +20,6 @@
 		bootargs = "console=ttyS0,115200";
 	};
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "i2c", "uartf", "wled", "ephy", "spi refclk";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -57,6 +48,7 @@
 		wlan {
 			label = "archer-c2-v1:green:wlan";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 
@@ -87,10 +79,10 @@
 &spi0 {
 	status = "okay";
 
-	m25p80@0 {
+	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <30000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -137,10 +129,10 @@
 };
 
 &ethernet {
-	status = "okay";
-	mtd-mac-address = <&rom 0xf100>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+
+	mtd-mac-address = <&rom 0xf100>;
 
 	port@5 {
 		status = "okay";
@@ -165,8 +157,15 @@
 	status = "okay";
 };
 
+&state_default {
+	gpio {
+		groups = "i2c", "uartf", "wled", "ephy", "spi refclk";
+		function = "gpio";
+	};
+};
+
 &wmac {
-	ralink,mtd-eeprom = <&radio 0>;
+	ralink,mtd-eeprom = <&radio 0x0>;
 	mtd-mac-address = <&rom 0xf100>;
 };
 
@@ -186,5 +185,7 @@
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&radio 0x8000>;
+		mtd-mac-address = <&rom 0xf100>;
+		mtd-mac-address-increment = <(-1)>;
 	};
 };

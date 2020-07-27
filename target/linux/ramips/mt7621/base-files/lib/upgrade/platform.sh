@@ -27,9 +27,9 @@ platform_do_upgrade() {
 			fi
 		}
 		;;
-	mikrotik,rb750gr3|\
-	mikrotik,rbm11g|\
-	mikrotik,rbm33g)
+	mikrotik,routerboard-750gr3|\
+	mikrotik,routerboard-m11g|\
+	mikrotik,routerboard-m33g)
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
 		;;
 	asus,rt-ac65p|\
@@ -45,17 +45,41 @@ platform_do_upgrade() {
 	asus,rt-ac65p|\
 	asus,rt-ac85p|\
 	hiwifi,hc5962|\
+	linksys,ea7300-v1|\
+	linksys,ea7500-v2|\
 	netgear,r6220|\
 	netgear,r6260|\
 	netgear,r6350|\
+	netgear,r6700-v2|\
+	netgear,r6800|\
 	netgear,r6850|\
+	netgear,wac104|\
+	netgear,wac124|\
+	netis,wf2881|\
+	xiaomi,mi-router-ac2100|\
 	xiaomi,mir3g|\
-	xiaomi,mir3p)
+	xiaomi,mir3p|\
+	xiaomi,redmi-router-ac2100)
 		nand_do_upgrade "$1"
 		;;
-	ubiquiti,edgerouterx|\
-	ubiquiti,edgerouterx-sfp)
+	iodata,wn-ax1167gr2|\
+	iodata,wn-ax2033gr|\
+	iodata,wn-dx1167r)
+		iodata_mstc_upgrade_prepare
+		nand_do_upgrade "$1"
+		;;
+	ubnt,edgerouter-x|\
+	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
+		;;
+	zyxel,wap6805)
+		local kernel2_mtd="$(find_mtd_part Kernel2)"
+		[ "$(hexdump -n 4 -e '"%x"' $kernel2_mtd)" = "56190527" ] &&\
+		[ "$(hexdump -n 4 -s 104 -e '"%x"' $kernel2_mtd)" != "0" ] &&\
+		dd bs=4 count=1 seek=26 conv=notrunc if=/dev/zero of=$kernel2_mtd 2>/dev/null &&\
+		echo "Kernel2 sequence number was reset to 0"
+		CI_KERNPART="Kernel"
+		nand_do_upgrade "$1"
 		;;
 	*)
 		default_do_upgrade "$1"

@@ -1,0 +1,64 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "mt7621_tplink_rexx0-v1.dtsi"
+
+/ {
+	compatible = "tplink,re500-v1", "mediatek,mt7621-soc";
+	model = "TP-Link RE500 v1";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "re500-v1:blue:power";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi2g {
+			label = "re500-v1:blue:wifi2g";
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wifi5g {
+			label = "re500-v1:blue:wifi5g";
+			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wps_red {
+			label = "re500-v1:red:wps";
+			gpios = <&gpio 26 GPIO_ACTIVE_HIGH>;
+		};
+
+		wps_blue {
+			label = "re500-v1:blue:wps";
+			gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
+		};
+
+		eth_act {
+			label = "re500-v1:green:eth_act";
+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+		};
+
+		eth_link {
+			label = "re500-v1:green:eth_link";
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "rgmii2", "wdt";
+		function = "gpio";
+	};
+};

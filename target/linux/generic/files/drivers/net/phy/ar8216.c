@@ -943,10 +943,14 @@ ar8229_init_globals(struct ar8xxx_priv *priv)
 	ar8xxx_reg_set(priv, AR8229_REG_QM_CTRL,
 		       AR8229_QM_CTRL_ARP_EN);
 
-	/* Enable Broadcast/Multicast frames transmitted to the CPU */
+	/*
+	 * Enable Broadcast/unknown multicast and unicast frames
+	 * transmitted to the CPU port.
+	 */
 	ar8xxx_reg_set(priv, AR8216_REG_FLOOD_MASK,
 		       AR8229_FLOOD_MASK_BC_DP(0) |
-		       AR8229_FLOOD_MASK_MC_DP(0));
+		       AR8229_FLOOD_MASK_MC_DP(0) |
+		       AR8229_FLOOD_MASK_UC_DP(0));
 
 	/* setup MTU */
 	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
@@ -1008,7 +1012,7 @@ ar7240sw_init_globals(struct ar8xxx_priv *priv)
 
 	/* Enable Broadcast frames transmitted to the CPU */
 	ar8xxx_reg_set(priv, AR8216_REG_FLOOD_MASK,
-		       AR8236_FM_CPU_BROADCAST_EN);
+		       AR8216_FM_CPU_BROADCAST_EN);
 
 	/* setup MTU */
 	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
@@ -1074,9 +1078,14 @@ ar8236_init_globals(struct ar8xxx_priv *priv)
 	ar8xxx_reg_set(priv, AR8216_REG_ATU_CTRL,
 		   AR8236_ATU_CTRL_RES);
 
-	/* enable cpu port to receive multicast and broadcast frames */
+	/*
+	 * Enable Broadcast/unknown multicast and unicast frames
+	 * transmitted to the CPU port.
+	 */
 	ar8xxx_reg_set(priv, AR8216_REG_FLOOD_MASK,
-		   AR8236_FM_CPU_BROADCAST_EN | AR8236_FM_CPU_BCAST_FWD_EN);
+		       AR8229_FLOOD_MASK_BC_DP(0) |
+		       AR8229_FLOOD_MASK_MC_DP(0) |
+		       AR8229_FLOOD_MASK_UC_DP(0));
 
 	/* Enable MIB counters */
 	ar8xxx_rmw(priv, AR8216_REG_MIB_FUNC, AR8216_MIB_FUNC | AR8236_MIB_EN,
@@ -2487,7 +2496,9 @@ ar8xxx_phy_read_status(struct phy_device *phydev)
 	struct switch_port_link link;
 
 	/* check for switch port link changes */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
 	if (phydev->state == PHY_CHANGELINK)
+#endif
 		ar8xxx_check_link_states(priv);
 
 	if (phydev->mdio.addr != 0)
@@ -2628,6 +2639,14 @@ found:
 	priv->use_count++;
 
 	if (phydev->mdio.addr == 0) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+		linkmode_zero(phydev->supported);
+		if (ar8xxx_has_gige(priv))
+			linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, phydev->supported);
+		else
+			linkmode_set_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, phydev->supported);
+		linkmode_copy(phydev->advertising, phydev->supported);
+#else
 		if (ar8xxx_has_gige(priv)) {
 			phydev->supported = SUPPORTED_1000baseT_Full;
 			phydev->advertising = ADVERTISED_1000baseT_Full;
@@ -2635,6 +2654,7 @@ found:
 			phydev->supported = SUPPORTED_100baseT_Full;
 			phydev->advertising = ADVERTISED_100baseT_Full;
 		}
+#endif
 
 		if (priv->chip->config_at_probe) {
 			priv->phy = phydev;
@@ -2645,8 +2665,14 @@ found:
 		}
 	} else {
 		if (ar8xxx_has_gige(priv)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+			linkmode_zero(phydev->supported);
+			linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, phydev->supported);
+			linkmode_copy(phydev->advertising, phydev->supported);
+#else
 			phydev->supported |= SUPPORTED_1000baseT_Full;
 			phydev->advertising |= ADVERTISED_1000baseT_Full;
+#endif
 		}
 		if (priv->chip->phy_rgmii_set)
 			priv->chip->phy_rgmii_set(priv, phydev);

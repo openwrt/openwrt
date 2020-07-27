@@ -35,7 +35,7 @@
 
 		led_wifi: wifi {
 			label = "linkit-smart-7688:orange:wifi";
-			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -44,48 +44,42 @@
 
 		wps {
 			label = "reset";
-			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "gpio";
-			ralink,function = "gpio";
-		};
-
-		refclk {
-			ralink,group = "refclk";
-			ralink,function = "gpio";
-		};
-
-		i2s {
-			ralink,group = "i2s";
-			ralink,function = "gpio";
-		};
-
-		spis {
-			ralink,group = "spis";
-			ralink,function = "gpio";
-		};
-
-		wled_an {
-			ralink,group = "wled_an";
-			ralink,function = "gpio";
-		};
-
-		wdt {
-			ralink,group = "wdt";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		groups = "gpio";
+		function = "gpio";
 	};
-};
 
-&wmac {
-	status = "okay";
+	refclk {
+		groups = "refclk";
+		function = "gpio";
+	};
+
+	i2s {
+		groups = "i2s";
+		function = "gpio";
+	};
+
+	spis {
+		groups = "spis";
+		function = "gpio";
+	};
+
+	wled_an {
+		groups = "wled_an";
+		function = "gpio";
+	};
+
+	wdt {
+		groups = "wdt";
+		function = "gpio";
+	};
 };
 
 &spi0 {
@@ -94,7 +88,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi_pins>, <&spi_cs1_pins>;
 
-	m25p80@0 {
+	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <40000000>;

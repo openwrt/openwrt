@@ -44,6 +44,7 @@ endef
 define Package/gdbserver
 $(call Package/gdb/Default)
   TITLE:=Remote server for GNU Debugger
+  DEPENDS=@!arc
 endef
 
 define Package/gdbserver/description

@@ -60,19 +60,17 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "i2c", "uartf", "spi";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		groups = "i2c", "uartf", "spi";
+		function = "gpio";
 	};
 };
 
 &ethernet {
-	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+
 	mediatek,portmap = "llllw";
 
 	port@4 {

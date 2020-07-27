@@ -18,12 +18,10 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "jtag", "uartf";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		groups = "jtag", "uartf";
+		function = "gpio";
 	};
 };
 
@@ -32,7 +30,7 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&factory 0>;
+	ralink,mtd-eeprom = <&factory 0x0>;
 };
 
 &ehci {

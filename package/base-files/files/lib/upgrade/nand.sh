@@ -231,7 +231,7 @@ nand_upgrade_ubinized() {
 
 # Write the UBIFS image to UBI volume
 nand_upgrade_ubifs() {
-	local rootfs_length=`(cat $1 | wc -c) 2> /dev/null`
+	local rootfs_length=$( (cat $1 | wc -c) 2> /dev/null)
 
 	nand_upgrade_prepare_ubi "$rootfs_length" "ubifs" "0" "0"
 
@@ -249,8 +249,8 @@ nand_upgrade_tar() {
 	local board_dir=$(tar tf $tar_file | grep -m 1 '^sysupgrade-.*/$')
 	board_dir=${board_dir%/}
 
-	local kernel_length=`(tar xf $tar_file ${board_dir}/kernel -O | wc -c) 2> /dev/null`
-	local rootfs_length=`(tar xf $tar_file ${board_dir}/root -O | wc -c) 2> /dev/null`
+	local kernel_length=$( (tar xf $tar_file ${board_dir}/kernel -O | wc -c) 2> /dev/null)
+	local rootfs_length=$( (tar xf $tar_file ${board_dir}/root -O | wc -c) 2> /dev/null)
 
 	local rootfs_type="$(identify_tar "$tar_file" ${board_dir}/root)"
 
@@ -307,7 +307,7 @@ nand_do_upgrade() {
 nand_do_platform_check() {
 	local board_name="$1"
 	local tar_file="$2"
-	local control_length=`(tar xf $tar_file sysupgrade-$board_name/CONTROL -O | wc -c) 2> /dev/null`
+	local control_length=$( (tar xf $tar_file sysupgrade-$board_name/CONTROL -O | wc -c) 2> /dev/null)
 	local file_type="$(identify $2)"
 
 	[ "$control_length" = 0 -a "$file_type" != "ubi" -a "$file_type" != "ubifs" ] && {

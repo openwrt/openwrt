@@ -44,18 +44,17 @@
 
 &ethernet {
 	mtd-mac-address = <&factory 0x4>;
+
 	mediatek,portmap = "wllll";
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&factory 0>;
+	ralink,mtd-eeprom = <&factory 0x0>;
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		default {
-			ralink,group = "ephy", "wled", "pa", "i2c", "wdt", "uartf";
-			ralink,function = "gpio";
-		};
+&state_default {
+	default {
+		groups = "ephy", "wled", "pa", "i2c", "wdt", "uartf";
+		function = "gpio";
 	};
 };

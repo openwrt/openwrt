@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lldpd
-PKG_VERSION:=1.0.3
-PKG_RELEASE:=1
+PKG_VERSION:=1.0.5
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://media.luffy.cx/files/lldpd
-PKG_HASH:=39fced395168015416bfe78b95414facf066f841f349024433aa20ab54e4c360
+PKG_HASH:=2dd3b212f4dbabfcbb2794c0010b245f9f8e74b387984e757be6243a74c6cb99
 
 PKG_MAINTAINER:=Stijn Tintel <stijn@linux-ipv6.be>
 PKG_LICENSE:=ISC

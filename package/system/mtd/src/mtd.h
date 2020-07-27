@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#if defined(target_brcm47xx) || defined(target_bcm53xx)
+#if defined(target_bcm47xx) || defined(target_bcm53xx)
 #define target_brcm 1
 #endif
 

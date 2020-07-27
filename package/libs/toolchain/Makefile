@@ -83,33 +83,6 @@ define Package/libatomic/config
 	endmenu
 endef
 
-define Package/libssp
-$(call Package/gcc/Default)
-  DEPENDS+=@GCC_LIBSSP
-  TITLE:=GCC support library
-endef
-
-define Package/libssp/config
-	menu "Configuration"
-		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libssp
-
-	config LIBSSP_ROOT_DIR
-		string
-		prompt "libssp shared library base directory"
-		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libssp
-		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
-		default "/"  if NATIVE_TOOLCHAIN
-
-	config LIBSSP_FILE_SPEC
-		string
-		prompt "libssp shared library files (use wildcards)"
-		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libssp
-		default "./lib/libssp.so.*"
-
-	endmenu
-endef
-
-
 define Package/libstdcpp
 $(call Package/gcc/Default)
   NAME:=libstdc++
@@ -519,11 +492,6 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 	$(CP) $(TOOLCHAIN_DIR)/lib/libgfortran.so.* $(1)/usr/lib/
   endef
 
-  define Package/libssp/install
-	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib/libssp.so.* $(1)/lib/
-  endef
-
   define Package/libstdcpp/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(TOOLCHAIN_DIR)/lib/libstdc++.so.* $(1)/usr/lib/
@@ -646,6 +614,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Package/ldd/install
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(CP) $(TOOLCHAIN_DIR)/bin/ldd $(1)/usr/bin/
+	sed -i 's,^#!.*,#!/bin/sh,' $(1)/usr/bin/ldd
   endef
 
   define Package/ldconfig/install
@@ -668,14 +637,6 @@ else
 		$(INSTALL_DIR) $(1)/lib ; \
 		$(CP) $(call qstrip,$(CONFIG_LIBGFORTRAN_ROOT_DIR))/$$$$file $(1)/lib/ ; \
 	done
-  endef
-
-  define Package/libssp/install
-	for file in $(call qstrip,$(CONFIG_LIBSSP_FILE_SPEC)); do \
-		$(INSTALL_DIR) $(1)/lib ; \
-		$(CP) $(call qstrip,$(CONFIG_LIBSSP_ROOT_DIR))/$$$$file $(1)/lib/ ; \
-	done ; \
-	exit 0
   endef
 
   define Package/libstdcpp/install
@@ -789,7 +750,6 @@ endif
 $(eval $(call BuildPackage,libc))
 $(eval $(call BuildPackage,libgcc))
 $(eval $(call BuildPackage,libatomic))
-$(eval $(call BuildPackage,libssp))
 $(eval $(call BuildPackage,libstdcpp))
 $(eval $(call BuildPackage,libasan))
 $(eval $(call BuildPackage,libtsan))

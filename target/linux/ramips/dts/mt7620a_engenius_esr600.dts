@@ -136,9 +136,9 @@
 };
 
 &ethernet {
-	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
+
 	mtd-mac-address = <&iNIC_rf 0x4>;
 
 	port@5 {
@@ -165,15 +165,10 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group =	"i2c",	/* gpio0: 1-2 */
-				"uartf",	/* gpio0: 7-14 */
-				"nd_sd",	/* gpio2: 45-59 */
-				"wled";		/* gpio3: 72 */
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		groups = "i2c", "uartf", "nd_sd", "wled";
+		function = "gpio";
 	};
 };
 

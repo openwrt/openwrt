@@ -60,16 +60,39 @@ caldata_from_file() {
 	local source=$1
 	local offset=$(($2))
 	local count=$(($3))
+	local target=$4
 
-	dd if=$source of=/lib/firmware/$FIRMWARE iflag=skip_bytes bs=$count skip=$offset count=1 2>/dev/null || \
+	[ -n "$target" ] || target=/lib/firmware/$FIRMWARE
+
+	# dd doesn't handle partial reads from special files: use cat
+	cat $source | dd of=$target iflag=skip_bytes bs=$count skip=$offset count=1 2>/dev/null || \
 		caldata_die "failed to extract calibration data from $source"
+}
+
+caldata_sysfsload_from_file() {
+	local source=$1
+	local offset=$(($2))
+	local count=$(($3))
+
+	# dd doesn't handle partial reads from special files: use cat
+	# test extract to /dev/null first
+	cat $source | dd of=/dev/null iflag=skip_bytes bs=$count skip=$offset count=1 2>/dev/null || \
+		caldata_die "failed to extract calibration data from $source"
+
+	# can't fail now
+	echo 1 > /sys/$DEVPATH/loading
+	cat $source | dd of=/sys/$DEVPATH/data iflag=skip_bytes bs=$count skip=$offset count=1 2>/dev/null
+	echo 0 > /sys/$DEVPATH/loading
 }
 
 caldata_valid() {
 	local expected="$1"
+	local target=$2
 
-	magic=$(hexdump -v -n 2 -e '1/1 "%02x"' /lib/firmware/$FIRMWARE)
-	[[ "$magic" == "$expected" ]]
+	[ -n "$target" ] || target=/lib/firmware/$FIRMWARE
+
+	magic=$(hexdump -v -n 2 -e '1/1 "%02x"' $target)
+	[ "$magic" = "$expected" ]
 	return $?
 }
 
@@ -77,6 +100,7 @@ caldata_patch_chksum() {
 	local mac=$1
 	local mac_offset=$(($2))
 	local chksum_offset=$(($3))
+	local target=$4
 	local xor_mac
 	local xor_fw_mac
 	local xor_fw_chksum
@@ -91,38 +115,44 @@ caldata_patch_chksum() {
 	xor_fw_chksum=$(xor $xor_fw_chksum $xor_fw_mac $xor_mac)
 
 	printf "%b" "\x${xor_fw_chksum:0:2}\x${xor_fw_chksum:2:2}" | \
-		dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=$chksum_offset count=2
+		dd of=$target conv=notrunc bs=1 seek=$chksum_offset count=2
 }
 
 caldata_patch_mac() {
 	local mac=$1
 	local mac_offset=$(($2))
 	local chksum_offset=$3
+	local target=$4
 
 	[ -z "$mac" -o -z "$mac_offset" ] && return
 
-	[ -n "$chksum_offset" ] && caldata_patch_chksum "$mac" "$mac_offset" "$chksum_offset"
+	[ -n "$target" ] || target=/lib/firmware/$FIRMWARE
 
-	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc oflag=seek_bytes bs=6 seek=$mac_offset count=1 || \
+	[ -n "$chksum_offset" ] && caldata_patch_chksum "$mac" "$mac_offset" "$chksum_offset" "$target"
+
+	macaddr_2bin $mac | dd of=$target conv=notrunc oflag=seek_bytes bs=6 seek=$mac_offset count=1 || \
 		caldata_die "failed to write MAC address to eeprom file"
 }
 
 ath9k_patch_mac() {
 	local mac=$1
+	local target=$2
 
-	caldata_patch_mac "$mac" 0x2
+	caldata_patch_mac "$mac" 0x2 "" "$target"
 }
 
 ath9k_patch_mac_crc() {
 	local mac=$1
 	local mac_offset=$2
 	local chksum_offset=$((mac_offset - 10))
+	local target=$4
 
-	caldata_patch_mac "$mac" "$mac_offset" "$chksum_offset"
+	caldata_patch_mac "$mac" "$mac_offset" "$chksum_offset" "$target"
 }
 
 ath10k_patch_mac() {
 	local mac=$1
+	local target=$2
 
-	caldata_patch_mac "$mac" 0x6 0x2
+	caldata_patch_mac "$mac" 0x6 0x2 "$target"
 }

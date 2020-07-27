@@ -9,14 +9,14 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openvpn
 
-PKG_VERSION:=2.4.7
-PKG_RELEASE:=2
+PKG_VERSION:=2.4.9
+PKG_RELEASE:=3
 
 PKG_SOURCE_URL:=\
 	https://build.openvpn.net/downloads/releases/ \
 	https://swupdate.openvpn.net/community/releases/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_HASH:=a42f53570f669eaf10af68e98d65b531015ff9e12be7a62d9269ea684652f648
+PKG_HASH:=641f3add8694b2ccc39fd4fd92554e4f089ad16a8db6d2b473ec284839a5ebe2
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
@@ -44,7 +44,7 @@ else
 endif
 endef
 
-Package/openvpn-openssl=$(call Package/openvpn/Default,openssl,OpenSSL,+PACKAGE_openvpn-openssl:libopenssl +@OPENSSL_WITH_DEPRECATED)
+Package/openvpn-openssl=$(call Package/openvpn/Default,openssl,OpenSSL,+PACKAGE_openvpn-openssl:libopenssl)
 Package/openvpn-mbedtls=$(call Package/openvpn/Default,mbedtls,mbedTLS,+PACKAGE_openvpn-mbedtls:libmbedtls)
 Package/openvpn-nossl=$(call Package/openvpn/Default,nossl,plaintext (no SSL))
 
@@ -102,6 +102,7 @@ endef
 
 define Package/openvpn-$(BUILD_VARIANT)/conffiles
 /etc/config/openvpn
+/etc/openvpn.user
 endef
 
 define Package/openvpn-$(BUILD_VARIANT)/install
@@ -111,7 +112,10 @@ define Package/openvpn-$(BUILD_VARIANT)/install
 		$(1)/etc/init.d \
 		$(1)/etc/config \
 		$(1)/etc/openvpn \
-		$(1)/lib/upgrade/keep.d
+		$(1)/lib/functions \
+		$(1)/lib/upgrade/keep.d \
+		$(1)/usr/libexec \
+		$(1)/etc/hotplug.d/openvpn
 
 	$(INSTALL_BIN) \
 		$(PKG_INSTALL_DIR)/usr/sbin/openvpn \
@@ -120,6 +124,23 @@ define Package/openvpn-$(BUILD_VARIANT)/install
 	$(INSTALL_BIN) \
 		files/openvpn.init \
 		$(1)/etc/init.d/openvpn
+
+	$(INSTALL_BIN) \
+		files/usr/libexec/openvpn-hotplug \
+		$(1)/usr/libexec/openvpn-hotplug
+
+	$(INSTALL_DATA) \
+		files/lib/functions/openvpn.sh \
+		$(1)/lib/functions/openvpn.sh
+
+	$(INSTALL_DATA) \
+		files/etc/hotplug.d/openvpn/01-user \
+		$(1)/etc/hotplug.d/openvpn/01-user
+
+	$(INSTALL_DATA) \
+		files/etc/openvpn.user \
+		$(1)/etc/openvpn.user
+
 	$(INSTALL_DATA) \
 		files/openvpn.options \
 		$(1)/usr/share/openvpn/openvpn.options

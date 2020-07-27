@@ -6,10 +6,10 @@ BOARDNAME:=Qualcomm Atheros IPQ40XX
 FEATURES:=squashfs fpu ramdisk nand
 CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=neon-vfpv4
-MAINTAINER:=John Crispin <john@phrozen.org>
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=4.19
+KERNEL_PATCHVER:=5.4
+KERNEL_TESTING_PATCHVER:=5.4
 
 KERNELNAME:=zImage Image dtbs
 

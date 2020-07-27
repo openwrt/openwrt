@@ -33,7 +33,6 @@ dlink,dir-300-b7|\
 dlink,dir-320-b1|\
 dlink,dir-600-b1|\
 dlink,dir-610-a1|\
-dlink,dir-615-d|\
 dlink,dir-615-h1|\
 dlink,dir-620-a1|\
 engenius,esr-9753|\
@@ -65,6 +64,10 @@ asiarf,awapn2403)
 	;;
 dlink,dcs-930l-b1)
 	ucidef_set_led_netdev "wifi" "WiFi" "$boardname:blue:wps"
+	;;
+dlink,dir-615-d)
+	ucidef_set_led_netdev "wan" "WAN (green)" "$boardname:green:wan" "eth0.2"
+	set_wifi_led "rt2800soc-phy0::radio"
 	;;
 dlink,dir-620-d1|\
 trendnet,tew-714tru)

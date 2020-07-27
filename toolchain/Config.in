@@ -284,7 +284,7 @@ config USE_MUSL
 	bool
 
 config SSP_SUPPORT
-	default y if USE_MUSL || GCC_LIBSSP
+	default y if !PKG_CC_STACKPROTECTOR_NONE
 	bool
 
 config USE_EXTERNAL_LIBC

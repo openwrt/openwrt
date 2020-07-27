@@ -122,11 +122,10 @@
 };
 
 &ethernet {
-	status = "okay";
-
-	mtd-mac-address = <&factory 0x4>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+
+	mtd-mac-address = <&factory 0x4>;
 
 	port@4 {
 		status = "okay";
@@ -156,16 +155,14 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&factory 0>;
+	ralink,mtd-eeprom = <&factory 0x0>;
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		default {
-			ralink,group = "i2c", "uartf", "pa", "spi refclk",
-				       "wled";
-			ralink,function = "gpio";
-		};
+&state_default {
+	default {
+		groups = "i2c", "uartf", "pa", "spi refclk",
+			       "wled";
+		function = "gpio";
 	};
 };
 

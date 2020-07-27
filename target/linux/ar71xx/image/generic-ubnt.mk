@@ -217,6 +217,7 @@ TARGET_DEVICES += ubnt-rocket-m-xw
 define Device/ubnt-rocket-m-ti
   $(Device/ubnt-xw)
   DEVICE_TITLE := Ubiquiti Rocket M TI
+  DEVICE_PACKAGES += rssileds
   BOARDNAME := UBNT-RM-TI
   UBNT_TYPE := TI
 endef

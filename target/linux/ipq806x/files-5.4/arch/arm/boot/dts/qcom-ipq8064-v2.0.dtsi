@@ -1,0 +1,39 @@
+#include "qcom-ipq8064.dtsi"
+
+/ {
+	aliases {
+		serial0 = &gsbi4_serial;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+};
+
+&CPU_SPC {
+	status = "okay";
+};
+
+&pcie0 {
+	phy-tx0-term-offset = <0>;
+};
+
+&pcie1 {
+	phy-tx0-term-offset = <0>;
+};
+
+&pcie2 {
+	phy-tx0-term-offset = <0>;
+};
+
+&ss_phy_0 {
+	rx_eq = <2>;
+	tx_deamp_3_5db = <32>;
+	mpll = <0xa0>;
+};
+
+&ss_phy_1 {
+	rx_eq = <2>;
+	tx_deamp_3_5db = <32>;
+	mpll = <0xa0>;
+};

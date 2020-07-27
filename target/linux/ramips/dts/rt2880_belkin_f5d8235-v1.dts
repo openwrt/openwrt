@@ -16,7 +16,7 @@
 		led-failsafe = &led_wired_blue;
 	};
 
-	cfi@1f000000 {
+	flash@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0xbc400000 0x800000>;
 		bank-width = <2>;
@@ -193,12 +193,10 @@
 	status = "okay";
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "spi", "i2c", "jtag", "mdio", "uartlite";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		groups = "spi", "i2c", "jtag", "mdio", "uartlite";
+		function = "gpio";
 	};
 };
 

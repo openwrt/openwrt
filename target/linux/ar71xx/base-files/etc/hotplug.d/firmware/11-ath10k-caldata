@@ -121,7 +121,7 @@ case "$FIRMWARE" in
 		;;
 	rb-952ui-5ac2nd|\
 	rb-wapg-5hact2hnd)
-		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 0x5000 0x844
+		ath10kcal_from_file "/sys/firmware/mikrotik/hard_config/wlan_data" 0x5000 0x844
 		;;
 	re355|\
 	re450|\
@@ -158,7 +158,7 @@ case "$FIRMWARE" in
 	rb-921gs-5hpacd-r2|\
 	rb-922uags-5hpacd|\
 	rb-962uigs-5hact2hnt)
-		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 0x5000 0x844
+		ath10kcal_from_file "/sys/firmware/mikrotik/hard_config/wlan_data" 0x5000 0x844
 		;;
 	wlr8100)
 		ath10kcal_extract "art" 0x5000 0x844
@@ -182,7 +182,7 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 0x5000 0x2f20
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
-		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -1)
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -1)
 		;;
 	cf-e385ac)
 		ath10kcal_extract "art" 0x5000 0x2f20

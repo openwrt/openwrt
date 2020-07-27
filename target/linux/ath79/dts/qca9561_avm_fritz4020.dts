@@ -17,10 +17,6 @@
 		led-upgrade = &led_info_red;
 	};
 
-	chosen {
-		bootargs = "console=ttyS0,115200n8";
-	};
-
 	led_spi {
 		compatible = "spi-gpio";
 		#address-cells = <1>;
@@ -104,10 +100,6 @@
 	status = "okay";
 };
 
-&gpio {
-	status = "okay";
-};
-
 &spi {
 	status = "okay";
 
@@ -153,7 +145,6 @@
 &eth0 {
 	status = "okay";
 
-	phy-mode = "mii";
 	phy-handle = <&swphy0>;
 
 	gmac-config {

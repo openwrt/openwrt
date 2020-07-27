@@ -7,14 +7,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ca-certificates
-PKG_VERSION:=20190110
+PKG_VERSION:=20200601
 PKG_RELEASE:=1
 PKG_MAINTAINER:=
 
 PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/c/ca-certificates
-PKG_HASH:=ee4bf0f4c6398005f5b5ca4e0b87b82837ac5c3b0280a1cb3a63c47555c3a675
-
+PKG_HASH:=43766d5a436519503dfd65ab83488ae33ab4d4ca3d0993797b58c92eb9ed4e63
+PKG_BUILD_DIR:=$(BUILD_DIR)/work
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -24,6 +24,7 @@ define Package/ca-certificates
   CATEGORY:=Base system
   TITLE:=System CA certificates
   PKGARCH:=all
+  PROVIDES:=ca-certs
 endef
 
 define Package/ca-bundle
@@ -31,6 +32,7 @@ define Package/ca-bundle
   CATEGORY:=Base system
   TITLE:=System CA certificates as a bundle
   PKGARCH:=all
+  PROVIDES:=ca-certs
 endef
 
 define Build/Install
@@ -59,5 +61,5 @@ define Package/ca-bundle/install
 	cat $(PKG_INSTALL_DIR)/usr/share/ca-certificates/*/*.crt >$(1)/etc/ssl/certs/ca-certificates.crt
 	$(LN) /etc/ssl/certs/ca-certificates.crt $(1)/etc/ssl/cert.pem
 endef
-$(eval $(call BuildPackage,ca-certificates))
 $(eval $(call BuildPackage,ca-bundle))
+$(eval $(call BuildPackage,ca-certificates))

@@ -123,11 +123,12 @@
 
 &ethernet {
 	mtd-mac-address = <&factory 0x4>;
+
 	mediatek,portmap = "llllw";
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&factory 0>;
+	ralink,mtd-eeprom = <&factory 0x0>;
 };
 
 &pcie {
@@ -142,11 +143,9 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		default {
-			ralink,group = "spi refclk", "uartf", "wled";
-			ralink,function = "gpio";
-		};
+&state_default {
+	default {
+		groups = "spi refclk", "uartf", "wled";
+		function = "gpio";
 	};
 };

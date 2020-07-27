@@ -6,7 +6,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
-/{
+/ {
 	compatible = "skylab,skw92a", "mediatek,mt7628an-soc";
 	model = "SKYLAB SKW92A";
 
@@ -15,21 +15,17 @@
 		led-failsafe = &led_power;
 	};
 
-	chosen {
-		bootargs = "console=ttyS0,57600";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
 		led_power: wps {
 			label = "skw92a:green:wps";
-			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
 			label = "skw92a:green:wlan";
-			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -38,18 +34,16 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "wdt", "refclk", "wled_an";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		groups = "wdt", "refclk", "wled_an";
+		function = "gpio";
 	};
 };
 

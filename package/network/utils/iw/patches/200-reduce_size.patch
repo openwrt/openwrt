@@ -150,7 +150,7 @@
  {
 --- a/scan.c
 +++ b/scan.c
-@@ -1197,6 +1197,9 @@ static void print_ht_op(const uint8_t ty
+@@ -1195,6 +1195,9 @@ static void print_ht_op(const uint8_t ty
  	printf("\t\t * secondary channel offset: %s\n",
  		ht_secondary_offset[data[1] & 0x3]);
  	printf("\t\t * STA channel width: %s\n", sta_chan_width[(data[1] & 0x4)>>2]);
@@ -160,7 +160,7 @@
  	printf("\t\t * RIFS: %d\n", (data[1] & 0x8)>>3);
  	printf("\t\t * HT protection: %s\n", protection[data[2] & 0x3]);
  	printf("\t\t * non-GF present: %d\n", (data[2] & 0x4) >> 2);
-@@ -1524,6 +1527,14 @@ static void print_ie(const struct ie_pri
+@@ -1522,6 +1525,14 @@ static void print_ie(const struct ie_pri
  
  static const struct ie_print ieprinters[] = {
  	[0] = { "SSID", print_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK), },
@@ -175,7 +175,7 @@
  	[1] = { "Supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN), },
  	[3] = { "DS Parameter set", print_ds, 1, 1, BIT(PRINT_SCAN), },
  	[5] = { "TIM", print_tim, 4, 255, BIT(PRINT_SCAN), },
-@@ -1533,21 +1544,15 @@ static const struct ie_print ieprinters[
+@@ -1531,21 +1542,15 @@ static const struct ie_print ieprinters[
  	[32] = { "Power constraint", print_powerconstraint, 1, 1, BIT(PRINT_SCAN), },
  	[35] = { "TPC report", print_tpcreport, 2, 2, BIT(PRINT_SCAN), },
  	[42] = { "ERP", print_erp, 1, 255, BIT(PRINT_SCAN), },
@@ -198,7 +198,7 @@
  };
  
  static void print_wifi_wpa(const uint8_t type, uint8_t len, const uint8_t *data,
-@@ -2026,6 +2031,7 @@ void print_ies(unsigned char *ie, int ie
+@@ -2024,6 +2029,7 @@ void print_ies(unsigned char *ie, int ie
  		    ieprinters[ie[0]].flags & BIT(ptype)) {
  			print_ie(&ieprinters[ie[0]],
  				 ie[0], ie[1], ie + 2, &ie_buffer);
@@ -206,7 +206,7 @@
  		} else if (ie[0] == 221 /* vendor */) {
  			print_vendor(ie[1], ie + 2, unknown, ptype);
  		} else if (unknown) {
-@@ -2035,6 +2041,7 @@ void print_ies(unsigned char *ie, int ie
+@@ -2033,6 +2039,7 @@ void print_ies(unsigned char *ie, int ie
  			for (i=0; i<ie[1]; i++)
  				printf(" %.2x", ie[2+i]);
  			printf("\n");
@@ -214,7 +214,7 @@
  		}
  		ielen -= ie[1] + 2;
  		ie += ie[1] + 2;
-@@ -2075,6 +2082,7 @@ static void print_capa_non_dmg(__u16 cap
+@@ -2073,6 +2080,7 @@ static void print_capa_non_dmg(__u16 cap
  		printf(" ESS");
  	if (capa & WLAN_CAPABILITY_IBSS)
  		printf(" IBSS");
@@ -222,7 +222,7 @@
  	if (capa & WLAN_CAPABILITY_CF_POLLABLE)
  		printf(" CfPollable");
  	if (capa & WLAN_CAPABILITY_CF_POLL_REQUEST)
-@@ -2103,6 +2111,7 @@ static void print_capa_non_dmg(__u16 cap
+@@ -2101,6 +2109,7 @@ static void print_capa_non_dmg(__u16 cap
  		printf(" DelayedBACK");
  	if (capa & WLAN_CAPABILITY_IMM_BACK)
  		printf(" ImmediateBACK");
@@ -230,7 +230,7 @@
  }
  
  static int print_bss_handler(struct nl_msg *msg, void *arg)
-@@ -2187,8 +2196,10 @@ static int print_bss_handler(struct nl_m
+@@ -2185,8 +2194,10 @@ static int print_bss_handler(struct nl_m
  	if (bss[NL80211_BSS_FREQUENCY]) {
  		int freq = nla_get_u32(bss[NL80211_BSS_FREQUENCY]);
  		printf("\tfreq: %d\n", freq);
@@ -241,7 +241,7 @@
  	}
  	if (bss[NL80211_BSS_BEACON_INTERVAL])
  		printf("\tbeacon interval: %d TUs\n",
-@@ -2382,6 +2393,7 @@ static int handle_stop_sched_scan(struct
+@@ -2380,6 +2391,7 @@ static int handle_stop_sched_scan(struct
  	return 0;
  }
  
@@ -249,14 +249,14 @@
  COMMAND(scan, sched_start,
  	SCHED_SCAN_OPTIONS,
  	NL80211_CMD_START_SCHED_SCAN, 0, CIB_NETDEV, handle_start_sched_scan,
-@@ -2392,3 +2404,4 @@ COMMAND(scan, sched_start,
+@@ -2390,3 +2402,4 @@ COMMAND(scan, sched_start,
  COMMAND(scan, sched_stop, "",
  	NL80211_CMD_STOP_SCHED_SCAN, 0, CIB_NETDEV, handle_stop_sched_scan,
  	"Stop an ongoing scheduled scan.");
 +#endif
 --- a/util.c
 +++ b/util.c
-@@ -291,6 +291,7 @@ static const char *commands[NL80211_CMD_
+@@ -153,6 +153,7 @@ static const char *commands[NL80211_CMD_
  
  static char cmdbuf[100];
  
@@ -264,7 +264,7 @@
  const char *command_name(enum nl80211_commands cmd)
  {
  	if (cmd <= NL80211_CMD_MAX && commands[cmd])
-@@ -298,6 +299,7 @@ const char *command_name(enum nl80211_co
+@@ -160,6 +161,7 @@ const char *command_name(enum nl80211_co
  	sprintf(cmdbuf, "Unknown command (%d)", cmd);
  	return cmdbuf;
  }
@@ -272,7 +272,7 @@
  
  int ieee80211_channel_to_frequency(int chan, enum nl80211_band band)
  {
-@@ -436,6 +438,9 @@ int parse_keys(struct nl_msg *msg, char
+@@ -298,6 +300,9 @@ int parse_keys(struct nl_msg *msg, char
  	char keybuf[13];
  	int pos = 0;
  
@@ -299,7 +299,7 @@
  ifeq ($(NO_PKG_CONFIG),)
 --- a/station.c
 +++ b/station.c
-@@ -736,10 +736,12 @@ static int handle_station_set_plink(stru
+@@ -759,10 +759,12 @@ static int handle_station_set_plink(stru
   nla_put_failure:
  	return -ENOBUFS;
  }
@@ -312,7 +312,7 @@
  
  static int handle_station_set_vlan(struct nl80211_state *state,
  				   struct nl_msg *msg,
-@@ -834,11 +836,13 @@ static int handle_station_set_mesh_power
+@@ -857,11 +859,13 @@ static int handle_station_set_mesh_power
  nla_put_failure:
  	return -ENOBUFS;
  }

@@ -75,6 +75,7 @@ get_status_led() {
 	fritz300e|\
 	fritz4020|\
 	fritz450e|\
+	gl-ar750s|\
 	gl-usb150|\
 	mr12|\
 	mr16|\
@@ -573,6 +574,9 @@ set_state() {
 		status_led_blink_failsafe
 		;;
 	preinit_regular)
+		status_led_blink_preinit_regular
+		;;
+	upgrade)
 		status_led_blink_preinit_regular
 		;;
 	done)

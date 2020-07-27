@@ -72,7 +72,7 @@
 &spi0 {
 	status = "okay";
 
-	m25p80@0 {
+	flash@0 {
 		compatible = "mx25l25635f", "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <25000000>;
@@ -110,23 +110,23 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		default {
-			ralink,group = "i2c", "rgmii1", "ephy", "wled";
-			ralink,function = "gpio";
-		};
+&state_default {
+	default {
+		groups = "i2c", "rgmii1", "ephy", "wled";
+		function = "gpio";
 	};
 };
 
 &ethernet {
 	pinctrl-names = "default";
+
 	mtd-mac-address = <&factory 0x4>;
+
 	mediatek,portmap = "llllw";
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&factory 0>;
+	ralink,mtd-eeprom = <&factory 0x0>;
 };
 
 &sdhci {

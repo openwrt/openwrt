@@ -41,12 +41,10 @@
 	status = "okay";
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "i2c", "jtag", "rgmii", "mdio", "uartf";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		groups = "i2c", "jtag", "rgmii", "mdio", "uartf";
+		function = "gpio";
 	};
 };
 
@@ -59,5 +57,5 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&factory 0>;
+	ralink,mtd-eeprom = <&factory 0x0>;
 };

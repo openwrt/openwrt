@@ -16,7 +16,7 @@
 		led-upgrade = &led_wps_green;
 	};
 
-	nor-flash@1c000000 {
+	flash@1c000000 {
 		compatible = "cfi-flash";
 		reg = <0x1c000000 0x800000>;
 		bank-width = <2>;
@@ -88,12 +88,10 @@
 	status = "okay";
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "spi", "i2c", "jtag", "uartf";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		groups = "spi", "i2c", "jtag", "uartf";
+		function = "gpio";
 	};
 };
 

@@ -21,7 +21,7 @@
 		compatible = "gpio-leds";
 
 		system_led: system {
-			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -30,72 +30,62 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 38 GPIO_ACTIVE_HIGH>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "gpio";
-			ralink,function = "gpio";
-		};
-
-		perst {
-			ralink,group = "perst";
-			ralink,function = "gpio";
-		};
-
-		refclk {
-			ralink,group = "refclk";
-			ralink,function = "gpio";
-		};
-
-		i2s {
-			ralink,group = "i2s";
-			ralink,function = "gpio";
-		};
-
-		spis {
-			ralink,group = "spis";
-			ralink,function = "gpio";
-		};
-
-		wled_kn {
-			ralink,group = "wled_kn";
-			ralink,function = "gpio";
-		};
-
-		wled_an {
-			ralink,group = "wled_an";
-			ralink,function = "gpio";
-		};
-
-		wdt {
-			ralink,group = "wdt";
-			ralink,function = "gpio";
-		};
-
-		pwm0 {
-			ralink,group = "pwm0";
-			ralink,function = "gpio";
-		};
-
-		pwm1 {
-			ralink,group = "pwm1";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		groups = "gpio";
+		function = "gpio";
 	};
-};
 
-&gpio1 {
-	status = "okay";
-};
+	perst {
+		groups = "perst";
+		function = "gpio";
+	};
 
-&gpio2 {
-	status = "okay";
+	refclk {
+		groups = "refclk";
+		function = "gpio";
+	};
+
+	i2s {
+		groups = "i2s";
+		function = "gpio";
+	};
+
+	spis {
+		groups = "spis";
+		function = "gpio";
+	};
+
+	wled_kn {
+		groups = "wled_kn";
+		function = "gpio";
+	};
+
+	wled_an {
+		groups = "wled_an";
+		function = "gpio";
+	};
+
+	wdt {
+		groups = "wdt";
+		function = "gpio";
+	};
+
+	pwm0 {
+		groups = "pwm0";
+		function = "gpio";
+	};
+
+	pwm1 {
+		groups = "pwm1";
+		function = "gpio";
+	};
 };
 
 &spi0 {
@@ -104,7 +94,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi_pins>, <&spi_cs1_pins>;
 
-	m25p80@0 {
+	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <40000000>;

@@ -16,7 +16,7 @@
 		led-upgrade = &led_wps_green;
 	};
 
-	cfi@1f000000 {
+	flash@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x400000>;
 		bank-width = <2>;
@@ -85,12 +85,10 @@
 	};
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		gpio {
-			ralink,group = "uartf";
-			ralink,function = "gpio";
-		};
+&state_default {
+	gpio {
+		groups = "uartf";
+		function = "gpio";
 	};
 };
 
@@ -103,5 +101,5 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&factory 0>;
+	ralink,mtd-eeprom = <&factory 0x0>;
 };

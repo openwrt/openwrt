@@ -97,17 +97,16 @@
 	status = "okay";
 };
 
-&pinctrl {
-	state_default: pinctrl0 {
-		default {
-			ralink,group = "i2c", "wled";
-			ralink,function = "gpio";
-		};
+&state_default {
+	default {
+		groups = "i2c", "wled";
+		function = "gpio";
 	};
 };
 
 &ethernet {
-	mediatek,portmap = "llllw";
 	pinctrl-names = "default";
 	pinctrl-0 = <&ephy_pins>;
+
+	mediatek,portmap = "llllw";
 };
