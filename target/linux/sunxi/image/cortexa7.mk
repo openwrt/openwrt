@@ -184,6 +184,14 @@ define Device/xunlong_orangepi-r1-spi
   DEVICE_VARIANT := SPI
   DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-usb-net kmod-usb-net-rtl8152
   SOC := sun8i-h2-plus
+  SUNXI_DTS:=sun8i-h2-plus-orangepi-r1
+  FILESYSTEMS := squashfs
+  IMAGES := spi-factory.img sysupgrade.bin
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 15360k
+  IMAGE/spi-factory.img := append-uboot | check-size 896k | pad-to 960k | add-dtb | pad-to 1024k | append-kernel | append-rootfs | pad-rootfs | append-metadata
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  SUPPORTED_DEVICES += orangepi-r1-spi
 endef
 TARGET_DEVICES += xunlong_orangepi-r1-spi
 

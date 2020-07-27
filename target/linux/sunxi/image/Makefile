@@ -50,15 +50,6 @@ define Device/Default
   SUNXI_DTS = $$(SUNXI_DTS_DIR)$$(SOC)-$(lastword $(subst _, ,$(1)))
 endef
 
-define Device/xunlong_orangepi-r1-spi
-  FILESYSTEMS := squashfs
-  IMAGES := spi-factory.img sysupgrade.bin
-  BLOCKSIZE := 64k
-  IMAGE_SIZE := 15360k
-  IMAGE/spi-factory.img := append-uboot | check-size 896k | pad-to 960k | add-dtb | pad-to 1024k | append-kernel | append-rootfs | pad-rootfs | append-metadata
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
-endef
-
 include $(SUBTARGET).mk
 
 $(eval $(call BuildImage))
