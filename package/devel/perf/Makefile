@@ -16,6 +16,7 @@ PKG_USE_MIPS16:=0
 PKG_BUILD_PARALLEL:=1
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_FLAGS:=nonshared
+PKG_ASLR_PIE:=0
 
 # Perf's makefile and headers are not relocatable and must be built from the
 # Linux sources directory
@@ -26,7 +27,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/perf
   SECTION:=devel
   CATEGORY:=Development
-  DEPENDS:= +libelf +libdw +PACKAGE_libunwind:libunwind +libpthread +librt +objdump @!IN_SDK @!TARGET_arc770 @KERNEL_PERF_EVENTS
+  DEPENDS:= +libdw +PACKAGE_libunwind:libunwind +libpthread +librt +objdump @!IN_SDK @!TARGET_arc770 @KERNEL_PERF_EVENTS
   TITLE:=Linux performance monitoring tool
   VERSION:=$(LINUX_VERSION)-$(PKG_RELEASE)
   URL:=http://www.kernel.org
@@ -51,6 +52,7 @@ MAKE_FLAGS = \
 	NO_LIBCRYPTO=1 \
 	NO_LIBUNWIND=1 \
 	NO_LIBCAP=1 \
+	NO_LIBELF=1 \
 	CROSS_COMPILE="$(TARGET_CROSS)" \
 	CC="$(TARGET_CC)" \
 	LD="$(TARGET_CROSS)ld" \
