@@ -175,7 +175,7 @@ endef
 define U-Boot/orangepi_r1_spi
   BUILD_SUBTARGET:=cortexa7
   NAME:=Orange Pi R1 (H2+) (boot from SPI)
-  BUILD_DEVICES:=xunlong_orengepi-r1-spi
+  BUILD_DEVICES:=xunlong_orangepi-r1-spi
   UENV:=spi
 endef
 
