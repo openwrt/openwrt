@@ -137,7 +137,7 @@ define Device/alfa-network_quad-e4g
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := Quad-E4G
   DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 uboot-envtools \
-	-wpad-basic
+	-wpad-basic-wolfssl
 endef
 TARGET_DEVICES += alfa-network_quad-e4g
 
@@ -146,7 +146,7 @@ define Device/asiarf_ap7621-001
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AP7621-001
-  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 -wpad-basic
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 -wpad-basic-wolfssl
 endef
 TARGET_DEVICES += asiarf_ap7621-001
 
@@ -155,7 +155,7 @@ define Device/asiarf_ap7621-nv1
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AP7621-NV1
-  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 -wpad-basic
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 -wpad-basic-wolfssl
 endef
 TARGET_DEVICES += asiarf_ap7621-nv1
 
@@ -469,7 +469,7 @@ define Device/gnubee_gb-pc1
   $(Device/dsa-migration)
   DEVICE_VENDOR := GnuBee
   DEVICE_MODEL := Personal Cloud One
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 -wpad-basic
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 -wpad-basic-wolfssl
   IMAGE_SIZE := 32448k
 endef
 TARGET_DEVICES += gnubee_gb-pc1
@@ -478,7 +478,7 @@ define Device/gnubee_gb-pc2
   $(Device/dsa-migration)
   DEVICE_VENDOR := GnuBee
   DEVICE_MODEL := Personal Cloud Two
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 -wpad-basic
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 -wpad-basic-wolfssl
   IMAGE_SIZE := 32448k
 endef
 TARGET_DEVICES += gnubee_gb-pc2
@@ -672,7 +672,7 @@ define Device/mediatek_ap-mt7621a-v60
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Mediatek
   DEVICE_MODEL := AP-MT7621A-V60 EVB
-  DEVICE_PACKAGES := kmod-usb3 kmod-sdhci-mt7620 kmod-sound-mt7620 -wpad-basic
+  DEVICE_PACKAGES := kmod-usb3 kmod-sdhci-mt7620 kmod-sound-mt7620 -wpad-basic-wolfssl
 endef
 TARGET_DEVICES += mediatek_ap-mt7621a-v60
 
@@ -682,7 +682,7 @@ define Device/mediatek_mt7621-eval-board
   IMAGE_SIZE := 15104k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7621 EVB
-  DEVICE_PACKAGES := -wpad-basic
+  DEVICE_PACKAGES := -wpad-basic-wolfssl
   SUPPORTED_DEVICES += mt7621
 endef
 TARGET_DEVICES += mediatek_mt7621-eval-board
@@ -703,7 +703,7 @@ endef
 define Device/mikrotik_routerboard-750gr3
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD 750Gr3
-  DEVICE_PACKAGES += -wpad-basic
+  DEVICE_PACKAGES += -wpad-basic-wolfssl
   SUPPORTED_DEVICES += mikrotik,rb750gr3
 endef
 TARGET_DEVICES += mikrotik_routerboard-750gr3
@@ -711,14 +711,14 @@ TARGET_DEVICES += mikrotik_routerboard-750gr3
 define Device/mikrotik_routerboard-760igs
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD 760iGS
-  DEVICE_PACKAGES += kmod-sfp -wpad-basic
+  DEVICE_PACKAGES += kmod-sfp -wpad-basic-wolfssl
 endef
 TARGET_DEVICES += mikrotik_routerboard-760igs
 
 define Device/mikrotik_routerboard-m11g
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD M11G
-  DEVICE_PACKAGES := -wpad-basic
+  DEVICE_PACKAGES := -wpad-basic-wolfssl
   SUPPORTED_DEVICES += mikrotik,rbm11g
 endef
 TARGET_DEVICES += mikrotik_routerboard-m11g
@@ -726,7 +726,7 @@ TARGET_DEVICES += mikrotik_routerboard-m11g
 define Device/mikrotik_routerboard-m33g
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD M33G
-  DEVICE_PACKAGES := -wpad-basic
+  DEVICE_PACKAGES := -wpad-basic-wolfssl
   SUPPORTED_DEVICES += mikrotik,rbm33g
 endef
 TARGET_DEVICES += mikrotik_routerboard-m33g
@@ -944,7 +944,7 @@ define Device/planex_vr500
   IMAGE_SIZE := 65216k
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := VR500
-  DEVICE_PACKAGES := kmod-usb3 -wpad-basic
+  DEVICE_PACKAGES := kmod-usb3 -wpad-basic-wolfssl
   SUPPORTED_DEVICES += vr500
 endef
 TARGET_DEVICES += planex_vr500
@@ -985,7 +985,7 @@ define Device/thunder_timecloud
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Thunder
   DEVICE_MODEL := Timecloud
-  DEVICE_PACKAGES := kmod-usb3 -wpad-basic
+  DEVICE_PACKAGES := kmod-usb3 -wpad-basic-wolfssl
   SUPPORTED_DEVICES += timecloud
 endef
 TARGET_DEVICES += thunder_timecloud
@@ -1044,7 +1044,7 @@ define Device/ubnt_edgerouter_common
   KERNEL_INITRAMFS := $$(KERNEL) | \
 	ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES += -wpad-basic
+  DEVICE_PACKAGES += -wpad-basic-wolfssl
 endef
 
 define Device/ubnt_edgerouter-x
@@ -1077,7 +1077,7 @@ define Device/unielec_u7621-06-16m
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 -wpad-basic
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 -wpad-basic-wolfssl
   SUPPORTED_DEVICES += u7621-06-256M-16M unielec,u7621-06-256m-16m
 endef
 TARGET_DEVICES += unielec_u7621-06-16m
@@ -1088,7 +1088,7 @@ define Device/unielec_u7621-06-64m
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
   DEVICE_VARIANT := 64M
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 -wpad-basic
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 -wpad-basic-wolfssl
   SUPPORTED_DEVICES += unielec,u7621-06-512m-64m
 endef
 TARGET_DEVICES += unielec_u7621-06-64m
@@ -1219,7 +1219,7 @@ define Device/xiaoyu_xy-c5
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := XiaoYu
   DEVICE_MODEL := XY-C5
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 -wpad-basic
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 -wpad-basic-wolfssl
 endef
 TARGET_DEVICES += xiaoyu_xy-c5
 
@@ -1229,7 +1229,7 @@ define Device/xzwifi_creativebox-v1
   DEVICE_VENDOR := CreativeBox
   DEVICE_MODEL := v1
   DEVICE_PACKAGES := kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
-	kmod-usb3 -wpad-basic
+	kmod-usb3 -wpad-basic-wolfssl
 endef
 TARGET_DEVICES += xzwifi_creativebox-v1
 
