@@ -1,0 +1,223 @@
+/*
+ * Aerohive HiveAP-370 Device Tree Source
+ *
+ * Copyright (C) 2017 Chris Blake <chrisrblake93@gmail.com>
+ *
+ * This program is free software; you can redistribute  it and/or modify it
+ * under  the terms of  the GNU General  Public License as published by the
+ * Free Software Foundation;  either version 2 of the  License, or (at your
+ * option) any later version.
+ */
+
+/include/ "fsl/p1020si-pre.dtsi"
+/ {
+	model = "Aerohive HiveAP-370";
+	compatible = "aerohive,hiveap-370";
+
+	aliases {
+		led-boot = &tricolor_green;
+		led-failsafe = &tricolor_red;
+		led-running = &tricolor_green;
+		led-upgrade = &tricolor_red;
+		label-mac-device = &enet0;
+	};
+
+	chosen {
+		bootargs-override = "console=ttyS0,9600";
+	};
+
+	memory {
+		device_type = "memory";
+	};
+
+	board_lbc: lbc: localbus@ffe05000 {
+		reg = <0x0 0xffe05000 0x0 0x1000>;
+		ranges = <0x0 0x0 0x0 0xffa00000 0x100000>;
+		
+		nand@0,0 {
+					#address-cells = <0x1>;
+					#size-cells = <0x1>;
+					compatible = "fsl,elbc-fcm-nand";
+					reg = <0x0 0x0 0x4000000>;
+					bank-width = <0x2>;
+					device-width = <0x1>;
+					partition@0 {
+							reg = <0x0 0x20000>;
+							label = "0Uboot";
+					};
+					partition@20000 {
+							reg = <0x20000 0x400000>;
+							label = "Uboot";
+					};
+					partition@420000 {
+							reg = <0x420000 0x40000>;
+							label = "Uboot Env";
+					};
+					partition@460000 {
+							reg = <0x460000 0x40000>;
+							label = "Boot Info";
+					};
+					partition@4a0000 {
+							reg = <0x4a0000 0x40000>;
+							label = "Static Boot Info";
+					};
+					hwinfo: partition@4e0000 {
+							reg = <0x4e0000 0x40000>;
+							label = "Hardware Info";
+					};
+					partition@520000 {
+							reg = <0x520000 0xa00000>;
+							label = "kernel";
+					};
+					partition@f20000 {
+							reg = <0xf20000 0x5000000>;
+							label = "ramdisk";
+					};
+					partition@5f20000 {
+							reg = <0x5f20000 0x500000>;
+							label = "fdt";
+					};
+					partition@6420000 {
+							reg = <0x6420000 0x39be0000>;
+							label = "ubi";
+					};
+	        };
+	};
+
+	board_soc: soc: soc@ffe00000 {
+		ranges = <0x0 0x0 0xffe00000 0x100000>;
+
+		i2c@3100 {
+			tpm@29 {
+				compatible = "atmel,at97sc3204t";
+				reg = <0x29>;
+			};
+
+			lp5521@32 {
+				compatible = "national,lp5521";
+				reg = <0x32>;
+				clock-mode = /bits/ 8 <2>;
+				tricolor_red: chan0 {
+					chan-name = "hiveap-370:red:tricolor0";
+					led-cur = /bits/ 8 <0x2f>;
+					max-cur = /bits/ 8 <0x5f>;
+				};
+				tricolor_green:chan1 {
+					chan-name = "hiveap-370:green:tricolor0";
+					led-cur = /bits/ 8 <0x2f>;
+					max-cur = /bits/ 8 <0x5f>;
+				};
+				chan2 {
+					chan-name = "hiveap-370:blue:tricolor0";
+					led-cur = /bits/ 8 <0x2f>;
+					max-cur = /bits/ 8 <0x5f>;
+				};
+			};
+
+			/* Most likely SoC boot config */
+			eeprom@51 {
+				compatible = "eeprom";
+				reg = <0x51>;
+			};
+		};
+
+		mdio@24000 {
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+			compatible = "fsl,etsec2-mdio";
+			reg = <0x24000 0x1000 0xb0030 0x4>;
+			phy0: ethernet-phy@0 {
+					interrupt-parent = <0x2>;
+					interrupts = <0x3 0x3>;
+					reg = <0x1>;
+					linux,phandle = <0x3>;
+			};
+			phy1: ethernet-phy@1 {
+					interrupt-parent = <0x2>;
+					interrupts = <0x3 0x3>;
+					reg = <0x3>;
+					linux,phandle = <0x4>;
+			};
+		};
+
+		mdio@25000 {
+			status = "disabled";
+		};
+
+		mdio@26000 {
+			status = "disabled";
+		};
+
+		enet1: ethernet@b1000 {
+			status = "okay";
+			model = "eTSEC";
+		    compatible = "fsl,etsec2-mdio";
+			phy-handle = <&phy0>;
+			phy-connection-type = "rgmii-id";
+			mtd-mac-address = <&hwinfo 0>;
+		};
+
+		enet2: ethernet@b2000 {
+			status = "okay";
+			model = "eTSEC";
+		    compatible = "fsl,etsec2-mdio";
+			phy-handle = <&phy1>;
+			phy-connection-type = "rgmii-id";
+			mtd-mac-address = <&hwinfo 0>;
+			mtd-mac-address-increment = <1>;
+		};
+
+		gpio0: gpio-controller@fc00 {
+		};
+
+		usb@22000 {
+			phy_type = "ulpi";
+			dr_mode = "host";
+		};
+
+		usb@23000 {
+			status = "disabled";
+		};
+	};
+
+	pci0: pcie@ffe09000 {
+		reg = <0x0 0xffe09000 0x0 0x1000>;
+		ranges = <0x2000000 0x0 0xa0000000 0x0 0xa0000000 0x0 0x20000000
+			0x1000000 0x0 0x00000000 0x0 0xffc30000 0x0 0x10000>;
+		pcie@0 {
+			ranges = <0x2000000 0x0 0xa0000000
+				  0x2000000 0x0 0xa0000000
+				  0x0 0x20000000
+
+				  0x1000000 0x0 0x0
+				  0x1000000 0x0 0x0
+				  0x0 0x100000>;
+		};
+	};
+
+	pci1: pcie@ffe0a000 {
+		reg = <0x0 0xffe0a000 0x0 0x1000>;
+		ranges = <0x2000000 0x0 0xc0000000 0x0 0xc0000000 0x0 0x20000000
+		      0x1000000 0x0 0x00000000 0x0 0xffc20000 0x0 0x10000>;
+		pcie@0 {
+			ranges = <0x2000000 0x0 0xc0000000
+			      0x2000000 0x0 0xc0000000
+				  0x0 0x20000000
+
+				  0x1000000 0x0 0x0
+				  0x1000000 0x0 0x0
+				  0x0 0x100000>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset button";
+			gpios = <&gpio0 8 1>; /* active low */
+			linux,code = <0x198>; /* KEY_RESTART */
+		};
+	};
+};
+/include/ "fsl/p1020si-post.dtsi"
