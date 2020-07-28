@@ -370,8 +370,9 @@ define Device/netgear-r8500
   DEVICE_PACKAGES := $(BRCMFMAC_4366B1) $(USB3_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H334T00_NETGEAR
+  DEFAULT := n
 endef
-# TARGET_DEVICES += netgear-r8500
+TARGET_DEVICES += netgear-r8500
 
 define Device/smartrg-sr400ac
   DEVICE_VENDOR := SmartRG
