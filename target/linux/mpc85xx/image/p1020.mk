@@ -15,6 +15,27 @@ define Device/aerohive_hiveap-330
 endef
 TARGET_DEVICES += aerohive_hiveap-330
 
+define Device/aerohive_hiveap-370
+  DEVICE_VENDOR := Aerohive
+  DEVICE_MODEL := HiveAP-370
+  DEVICE_PACKAGES := kmod-tpm-i2c-atmel
+  BLOCKSIZE := 128k
+  # does not support FIT
+  # KERNEL := kernel-bin | gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  # does not support appended dtb with lzma
+  # KERNEL := kernel-bin | append-dtb | lzma
+  # does not support combined dtb (Verifying Checksum ... Bad Data CRC)
+  # KERNEL := kernel-bin | append-dtb | uImage gzip
+  KERNEL := kernel-bin | gzip | uImage gzip
+  KERNEL_SIZE := 8m
+  KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux-initramfs | uImage none
+  IMAGES := fdt.bin sysupgrade.bin ramdisk.bin
+  IMAGE/fdt.bin := append-dtb
+  IMAGE/ramdisk.bin := append-uImage-fakehdr ramdisk
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += aerohive_hiveap-370
+
 define Device/enterasys_ws-ap3710i
   DEVICE_VENDOR := Enterasys
   DEVICE_MODEL := WS-AP3710i
