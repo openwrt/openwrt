@@ -8,6 +8,7 @@ define Device/arcadyan_arv4518pwr01
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ath5k wpad-mini
   SUPPORTED_DEVICES += ARV4518PWR01
+  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv4518pwr01
 
@@ -21,6 +22,7 @@ define Device/arcadyan_arv4518pwr01a
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ath5k wpad-basic
   SUPPORTED_DEVICES += ARV4518PWR01A
+  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv4518pwr01a
 
@@ -38,6 +40,7 @@ define Device/arcadyan_arv4520pw
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-rt61-pci wpad-mini
   SUPPORTED_DEVICES += ARV4520PW
+  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv4520pw
 
@@ -53,6 +56,7 @@ define Device/arcadyan_arv4525pw
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa -swconfig
   SUPPORTED_DEVICES += ARV4525PW
+  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv4525pw
 
@@ -68,5 +72,6 @@ define Device/arcadyan_arv452cqw
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa
   SUPPORTED_DEVICES += ARV452CQW
+  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv452cqw
