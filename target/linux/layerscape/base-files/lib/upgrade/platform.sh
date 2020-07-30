@@ -74,7 +74,8 @@ platform_copy_config() {
 	fsl,ls1043a-rdb-sdboot | \
 	fsl,ls1046a-frwy-sdboot | \
 	fsl,ls1046a-rdb-sdboot | \
-	fsl,ls1088a-rdb-sdboot)
+	fsl,ls1088a-rdb-sdboot | \
+	fsl,lx2160a-rdb-sdboot)
 		platform_copy_config_sdboot
 		;;
 	esac
@@ -102,7 +103,9 @@ platform_check_image() {
 	fsl,ls1046a-rdb-sdboot | \
 	fsl,ls1088a-rdb | \
 	fsl,ls1088a-rdb-sdboot | \
-	fsl,ls2088a-rdb)
+	fsl,ls2088a-rdb | \
+	fsl,lx2160a-rdb | \
+	fsl,lx2160a-rdb-sdboot)
 		return 0
 		;;
 	*)
@@ -131,7 +134,8 @@ platform_do_upgrade() {
 	fsl,ls1046a-frwy | \
 	fsl,ls1046a-rdb | \
 	fsl,ls1088a-rdb | \
-	fsl,ls2088a-rdb)
+	fsl,ls2088a-rdb | \
+	fsl,lx2160a-rdb)
 		PART_NAME=firmware
 		default_do_upgrade "$1"
 		;;
@@ -141,7 +145,8 @@ platform_do_upgrade() {
 	fsl,ls1043a-rdb-sdboot | \
 	fsl,ls1046a-frwy-sdboot | \
 	fsl,ls1046a-rdb-sdboot | \
-	fsl,ls1088a-rdb-sdboot)
+	fsl,ls1088a-rdb-sdboot | \
+	fsl,lx2160a-rdb-sdboot)
 		platform_do_upgrade_sdboot "$1"
 		return 0
 		;;
