@@ -357,6 +357,18 @@ config KERNEL_BLK_DEV_BSG
 	bool "Compile the kernel with SCSI generic v4 support for any block device"
 	default n
 
+config KERNEL_TRANSPARENT_HUGEPAGE
+	bool
+
+config KERNEL_HUGETLBFS
+	bool
+
+config KERNEL_HUGETLB_PAGE
+	bool "Compile the kernel with HugeTLB support"
+	select KERNEL_TRANSPARENT_HUGEPAGE
+	select KERNEL_HUGETLBFS
+	default n
+
 config KERNEL_MAGIC_SYSRQ
 	bool "Compile the kernel with SysRq support"
 	default y
@@ -551,21 +563,29 @@ if KERNEL_CGROUPS
 
 	config KERNEL_FREEZER
 		bool
-		default y if KERNEL_CGROUP_FREEZER
 
 	config KERNEL_CGROUP_FREEZER
-		bool "Freezer cgroup subsystem"
-		default y
+		bool "legacy Freezer cgroup subsystem"
+		default n
+		select KERNEL_FREEZER
 		help
 		  Provides a way to freeze and unfreeze all tasks in a
 		  cgroup.
+		  (legacy cgroup1-only controller, in cgroup2 freezer
+		  is integrated in the Memory controller)
 
 	config KERNEL_CGROUP_DEVICE
-		bool "Device controller for cgroups"
-		default y
+		bool "legacy Device controller for cgroups"
+		default n
 		help
 		  Provides a cgroup implementing whitelists for devices which
 		  a process in the cgroup can mknod or open.
+		  (legacy cgroup1-only controller)
+
+	config KERNEL_CGROUP_HUGETLB
+		bool "HugeTLB controller"
+		default y if KERNEL_HUGETLB_PAGE
+		depends on KERNEL_HUGETLB_PAGE
 
 	config KERNEL_CGROUP_PIDS
 		bool "PIDs cgroup subsystem"
@@ -573,6 +593,14 @@ if KERNEL_CGROUPS
 		help
 		  Provides enforcement of process number limits in the scope of a
 		  cgroup.
+
+	config KERNEL_CGROUP_RDMA
+		bool "RDMA controller for cgroups"
+		default y
+
+	config KERNEL_CGROUP_BPF
+		bool "Support for eBPF programs attached to cgroups"
+		default y
 
 	config KERNEL_CPUSETS
 		bool "Cpuset support"
@@ -609,6 +637,7 @@ if KERNEL_CGROUPS
 	config KERNEL_MEMCG
 		bool "Memory Resource Controller for Control Groups"
 		default y if !SMALL_FLASH
+		select KERNEL_FREEZER
 		depends on KERNEL_RESOURCE_COUNTERS || !LINUX_3_18
 		help
 		  Provides a memory resource controller that manages both anonymous
@@ -631,7 +660,7 @@ if KERNEL_CGROUPS
 
 	config KERNEL_MEMCG_SWAP
 		bool "Memory Resource Controller Swap Extension"
-		default n
+		default y if !SMALL_FLASH
 		depends on KERNEL_MEMCG
 		help
 		  Add swap management feature to memory resource controller. When you
@@ -763,12 +792,12 @@ if KERNEL_CGROUPS
 		  files in a cgroup which can be useful for debugging.
 
 	config KERNEL_NET_CLS_CGROUP
-		bool "Control Group Classifier"
-		default y
+		bool "legacy Control Group Classifier"
+		default n
 
 	config KERNEL_CGROUP_NET_PRIO
-		bool "Network priority cgroup"
-		default y
+		bool "legacy Network priority cgroup"
+		default n
 
 endif
 

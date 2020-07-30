@@ -250,8 +250,9 @@ define Device/linksys-ea6300-v1
   DEVICE_MODEL := EA6300
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+  BROKEN := y
 endef
-# TARGET_DEVICES += linksys-ea6300-v1
+TARGET_DEVICES += linksys-ea6300-v1
 
 define Device/linksys-ea6500-v2
   DEVICE_VENDOR := Linksys
@@ -266,16 +267,18 @@ define Device/linksys-ea9200
   DEVICE_MODEL := EA9200
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
+  BROKEN := y
 endef
-# TARGET_DEVICES += linksys-ea9200
+TARGET_DEVICES += linksys-ea9200
 
 define Device/linksys-ea9500
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := EA9500
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
   DEVICE_DTS := bcm47094-linksys-panamera
+  BROKEN := y
 endef
-# TARGET_DEVICES += linksys-ea9500
+TARGET_DEVICES += linksys-ea9500
 
 define Device/luxul
   DEVICE_VENDOR := Luxul
@@ -370,8 +373,9 @@ define Device/netgear-r8500
   DEVICE_PACKAGES := $(BRCMFMAC_4366B1) $(USB3_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H334T00_NETGEAR
+  DEFAULT := n
 endef
-# TARGET_DEVICES += netgear-r8500
+TARGET_DEVICES += netgear-r8500
 
 define Device/smartrg-sr400ac
   DEVICE_VENDOR := SmartRG
@@ -409,8 +413,9 @@ define Device/tplink-archer-c5-v2
   IMAGES := bin
   IMAGE/bin := append-rootfs | bcm53xx-tplink-safeloader
   TPLINK_BOARD := ARCHER-C5-V2
+  BROKEN := y
 endef
-#TARGET_DEVICES += tplink-archer-c5-v2
+TARGET_DEVICES += tplink-archer-c5-v2
 
 define Device/tplink-archer-c9-v1
   DEVICE_VENDOR := TP-LINK
@@ -420,7 +425,8 @@ define Device/tplink-archer-c9-v1
   IMAGES := bin
   IMAGE/bin := append-rootfs | bcm53xx-tplink-safeloader
   TPLINK_BOARD := ARCHERC9
+  BROKEN := y
 endef
-#TARGET_DEVICES += tplink-archer-c9-v1
+TARGET_DEVICES += tplink-archer-c9-v1
 
 $(eval $(call BuildImage))
