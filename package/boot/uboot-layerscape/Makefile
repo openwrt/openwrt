@@ -90,6 +90,16 @@ define U-Boot/fsl_ls2088a-rdb
   UBOOT_CONFIG:=ls2088ardb_tfa
 endef
 
+define U-Boot/fsl_lx2160a-rdb
+  NAME:=NXP LX2160ARDB
+  UBOOT_CONFIG:=lx2160ardb_tfa
+endef
+
+define U-Boot/fsl_lx2160a-rdb-sdboot
+  NAME:=NXP LX2160ARDB SD Card Boot
+  UBOOT_CONFIG:=lx2160ardb_tfa
+endef
+
 define U-Boot/fsl_ls1021a-twr
   NAME:=NXP LS1021ATWR
   BUILD_SUBTARGET:=armv7
@@ -126,6 +136,8 @@ UBOOT_TARGETS := \
   fsl_ls1088a-rdb \
   fsl_ls1088a-rdb-sdboot \
   fsl_ls2088a-rdb \
+  fsl_lx2160a-rdb \
+  fsl_lx2160a-rdb-sdboot \
   fsl_ls1021a-twr \
   fsl_ls1021a-twr-sdboot \
   fsl_ls1021a-iot-sdboot
