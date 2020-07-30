@@ -123,6 +123,20 @@ define Package/tfa-ls2088a-rdb
   BOOT_MODE:=nor
 endef
 
+define Package/tfa-lx2160a-rdb
+  $(Package/tfa-generic)
+  TITLE:=NXP LX2160ARDB Trusted Firmware
+  PLAT:=lx2160ardb
+  BOOT_MODE:=flexspi_nor
+endef
+
+define Package/tfa-lx2160a-rdb-sdboot
+  $(Package/tfa-generic)
+  TITLE:=NXP LX2160ARDB SD Boot Trusted Firmware
+  PLAT:=lx2160ardb
+  BOOT_MODE:=sd
+endef
+
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
 	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/bl2_$(BOOT_MODE).pbl \
@@ -154,7 +168,9 @@ TFAS := \
   ls1046a-rdb-sdboot \
   ls1088a-rdb \
   ls1088a-rdb-sdboot \
-  ls2088a-rdb
+  ls2088a-rdb \
+  lx2160a-rdb \
+  lx2160a-rdb-sdboot
 
 $(eval $(call HostBuild))
 $(foreach tfa,$(TFAS), \

@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ls-mc
 PKG_VERSION:=LSDK-20.04
-PKG_RELEASE:=2
+PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/NXP/qoriq-mc-binary.git
@@ -34,6 +34,8 @@ define Build/InstallDev
 		$(STAGING_DIR_IMAGE)/fsl_ls1088a-rdb-mc.itb
 	$(CP) $(PKG_BUILD_DIR)/ls2088a/mc_10.20.4_ls2088a.itb \
 		$(STAGING_DIR_IMAGE)/fsl_ls2088a-rdb-mc.itb
+	$(CP) $(PKG_BUILD_DIR)/lx2160a/mc_10.20.4_lx2160a.itb \
+		$(STAGING_DIR_IMAGE)/fsl_lx2160a-rdb-mc.itb
 endef
 
 $(eval $(call BuildPackage,layerscape-mc))
