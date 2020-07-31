@@ -244,9 +244,11 @@ define Device/solidrun_clearfog-base-a1
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-base armada-388-clearfog-pro
-  SUPPORTED_DEVICES += armada-388-clearfog-base
   UBOOT := clearfog-u-boot-spl.kwb
   BOOT_SCRIPT := clearfog
+  SUPPORTED_DEVICES += armada-388-clearfog-base
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Ethernet interface rename has been dropped
 endef
 TARGET_DEVICES += solidrun_clearfog-base-a1
 
