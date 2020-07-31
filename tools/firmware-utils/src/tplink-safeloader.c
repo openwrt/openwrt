@@ -1099,6 +1099,40 @@ static struct device_info boards[] = {
 		.first_sysupgrade_partition = "os-image",
 		.last_sysupgrade_partition = "file-system",
 	},
+	/** Firmware layout for the Archer C6U v1 */
+	{
+		.id     = "ARCHER-C6U-V1",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:Archer C6U,product_ver:1.0.0,special_id:45550000}\n",
+		.part_trail = 0x00,
+		.soft_ver = "soft_ver:1.0.2\n",
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x40000},
+			{"firmware", 0x40000, 0xf60000},
+			{"default-mac", 0xfa0000, 0x00200},
+			{"pin", 0xfa0200, 0x00100},
+			{"device-id", 0xfa0300, 0x00100},
+			{"product-info", 0xfa0400, 0x0fc00},
+			{"default-config", 0xfb0000, 0x08000},
+			{"ap-def-config", 0xfb8000, 0x08000},
+			{"user-config", 0xfc0000, 0x0c000},
+			{"certificate", 0xfcc000, 0x04000},
+			{"ap-config", 0xfd0000, 0x08000},
+			{"router-config", 0xfd8000, 0x08000},
+			{"partition-table", 0xfe0000, 0x00800},
+			{"soft-version", 0xfe0800, 0x00100},
+			{"support-list", 0xfe0900, 0x00200},
+			{"profile", 0xfe0b00, 0x03000},
+			{"extra-para", 0xfe3b00, 0x00100},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
 	/** Firmware layout for the C60v1 */
 	{
 		.id     = "ARCHER-C60-V1",
@@ -2872,6 +2906,7 @@ static void build_image(const char *output,
 	    strcasecmp(info->id, "ARCHER-C59-V2") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C60-V2") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C60-V3") == 0 ||
+	    strcasecmp(info->id, "ARCHER-C6U-V1") == 0 ||
 	    strcasecmp(info->id, "TLWR1043NV5") == 0) {
 		const uint8_t extra_para[2] = {0x01, 0x00};
 		parts[5] = make_extra_para(info, extra_para,
