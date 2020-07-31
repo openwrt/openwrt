@@ -2964,7 +2964,7 @@ Signed-off-by: Yuan Yao <yao.yuan@nxp.com>
  			dst_addr = sg_dma_address(sg);
  			soff = 0;
  			doff = fsl_chan->fsc.addr_width;
-@@ -802,6 +858,7 @@ static void fsl_edma_free_chan_resources
+@@ -809,6 +865,7 @@ static void fsl_edma_free_chan_resources
  	fsl_edma_chan_mux(fsl_chan, 0, false);
  	fsl_chan->edesc = NULL;
  	vchan_get_all_descriptors(&fsl_chan->vchan, &head);
@@ -2972,7 +2972,7 @@ Signed-off-by: Yuan Yao <yao.yuan@nxp.com>
  	spin_unlock_irqrestore(&fsl_chan->vchan.lock, flags);
  
  	vchan_dma_desc_free_list(&fsl_chan->vchan, &head);
-@@ -937,6 +994,7 @@ static int fsl_edma_probe(struct platfor
+@@ -944,6 +1001,7 @@ static int fsl_edma_probe(struct platfor
  		fsl_chan->slave_id = 0;
  		fsl_chan->idle = true;
  		fsl_chan->vchan.desc_free = fsl_edma_free_desc;
