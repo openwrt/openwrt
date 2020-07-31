@@ -19,7 +19,8 @@ platform_get_rootfs() {
 
 platform_copy_config() {
 	case "$(board_name)" in
-	erlite)
+	erlite | \
+	ubnt,unifi-security-gateway-3p)
 		mount -t vfat /dev/sda1 /mnt
 		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
 		umount /mnt
@@ -81,7 +82,8 @@ platform_do_upgrade() {
 	er)
 		kernel=mmcblk0p1
 		;;
-	erlite)
+	erlite | \
+	ubnt,unifi-security-gateway-3p)
 		kernel=sda1
 		;;
 	itus,shield-router)
@@ -107,7 +109,8 @@ platform_check_image() {
 	case "$board" in
 	er | \
 	erlite | \
-	itus,shield-router)
+	itus,shield-router \
+	ubnt,unifi-security-gateway-3p)
 		local kernel_length=$(tar xf $tar_file $board_dir/kernel -O | wc -c 2> /dev/null)
 		local rootfs_length=$(tar xf $tar_file $board_dir/root -O | wc -c 2> /dev/null)
 		[ "$kernel_length" = 0 -o "$rootfs_length" = 0 ] && {

@@ -1,0 +1,107 @@
+--- a/arch/mips/boot/dts/cavium-octeon/ubnt_e100.dts
++++ b/arch/mips/boot/dts/cavium-octeon/ubnt_e100.dts
+@@ -5,10 +5,26 @@
+  * Written by: Aaro Koskinen <aaro.koskinen@iki.fi>
+  */
+
++#include <dt-bindings/gpio/gpio.h>
++
+ /include/ "octeon_3xxx.dtsi"
+
+ / {
+-	model = "ubnt,e100";
++	compatible = "ubnt,e100", "ubnt,e120";
++
++	leds {
++		compatible = "gpio-leds";
++
++		white {
++			label = "ubnt:white:dome";
++			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
++		};
++
++		blue {
++			label = "ubnt:blue:dome";
++			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
++		};
++	};
+
+ 	soc@0 {
+ 		smi0: mdio@1180000001800 {
+--- a/arch/mips/boot/dts/cavium-octeon/Makefile
++++ b/arch/mips/boot/dts/cavium-octeon/Makefile
+@@ -1,2 +1,2 @@
+ # SPDX-License-Identifier: GPL-2.0
+-dtb-$(CONFIG_CAVIUM_OCTEON_SOC)	+= octeon_3xxx.dtb octeon_68xx.dtb
++dtb-$(CONFIG_CAVIUM_OCTEON_SOC)	+= octeon_3xxx.dtb octeon_68xx.dtb ubnt_e100.dtb
+--- a/arch/mips/include/asm/octeon/cvmx-bootinfo.h
++++ b/arch/mips/include/asm/octeon/cvmx-bootinfo.h
+@@ -295,6 +295,7 @@ enum cvmx_board_types_enum {
+	 */
+	CVMX_BOARD_TYPE_CUST_PRIVATE_MIN = 20001,
+	CVMX_BOARD_TYPE_UBNT_E100 = 20002,
++	CVMX_BOARD_TYPE_UBNT_E120 = 20004,
+	CVMX_BOARD_TYPE_UBNT_E200 = 20003,
+	CVMX_BOARD_TYPE_UBNT_E220 = 20005,
+	CVMX_BOARD_TYPE_CUST_DSR1000N = 20006,
+@@ -398,6 +399,7 @@ static inline const char *cvmx_board_type_to_string(enum
+		    /* Customer private range */
+		ENUM_BRD_TYPE_CASE(CVMX_BOARD_TYPE_CUST_PRIVATE_MIN)
+		ENUM_BRD_TYPE_CASE(CVMX_BOARD_TYPE_UBNT_E100)
++		ENUM_BRD_TYPE_CASE(CVMX_BOARD_TYPE_UBNT_E120)
+		ENUM_BRD_TYPE_CASE(CVMX_BOARD_TYPE_UBNT_E200)
+		ENUM_BRD_TYPE_CASE(CVMX_BOARD_TYPE_UBNT_E220)
+		ENUM_BRD_TYPE_CASE(CVMX_BOARD_TYPE_CUST_DSR1000N)
+--- a/arch/mips/cavium-octeon/executive/cvmx-helper-board.c
++++ b/arch/mips/cavium-octeon/executive/cvmx-helper-board.c
+@@ -169,6 +169,7 @@ int cvmx_helper_board_get_mii_address(int ipd_port)
+		else
+			return -1;
+	case CVMX_BOARD_TYPE_UBNT_E100:
++	case CVMX_BOARD_TYPE_UBNT_E120:
+		if (ipd_port >= 0 && ipd_port <= 2)
+			return 7 - ipd_port;
+		else
+@@ -413,6 +416,7 @@ enum cvmx_helper_board_usb_clock_types __cvmx_helper_board_usb_get_clock_type(vo
+	case CVMX_BOARD_TYPE_LANAI2_G:
+	case CVMX_BOARD_TYPE_NIC10E_66:
+	case CVMX_BOARD_TYPE_UBNT_E100:
++	case CVMX_BOARD_TYPE_UBNT_E120:
+		return USB_CLOCK_TYPE_CRYSTAL_12;
+	case CVMX_BOARD_TYPE_NIC10E:
+		return USB_CLOCK_TYPE_REF_12;
+--- a/arch/mips/cavium-octeon/octeon-platform.c
++++ b/arch/mips/cavium-octeon/octeon-platform.c
+@@ -387,7 +388,8 @@ static void __init octeon_rx_tx_delay(int eth, int iface, int port)
+			}
+		}
+		break;
+	case CVMX_BOARD_TYPE_UBNT_E100:
++	case CVMX_BOARD_TYPE_UBNT_E120:
+		if (iface == 0 && port <= 2) {
+			_octeon_rx_tx_delay(eth, 0x0, 0x10);
+			return;
+--- a/arch/mips/include/asm/octeon/octeon.h
++++ b/arch/mips/include/asm/octeon/octeon.h
+@@ -284,6 +284,7 @@ int octeon_prune_device_tree(void);
+ extern const char __appended_dtb;
+ extern const char __dtb_octeon_3xxx_begin;
+ extern const char __dtb_octeon_68xx_begin;
++extern const char __dtb_ubnt_e100_begin;
+
+ /**
+  * Write a 32bit value to the Octeon NPI register space
+--- a/arch/mips/cavium-octeon/setup.c
++++ b/arch/mips/cavium-octeon/setup.c
+@@ -1206,6 +1208,11 @@ void __init device_tree_init(void)
+		fdt = &__dtb_octeon_68xx_begin;
+		do_prune = true;
+		fill_mac = true;
++	} else if ((octeon_bootinfo->board_type == CVMX_BOARD_TYPE_UBNT_E100) ||
++			(octeon_bootinfo->board_type == CVMX_BOARD_TYPE_UBNT_E120)) {
++		fdt = &__dtb_ubnt_e100_begin;
++		do_prune = false;
++		fill_mac = true;
+	} else {
+		fdt = &__dtb_octeon_3xxx_begin;
+		do_prune = true;

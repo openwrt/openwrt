@@ -57,4 +57,13 @@ define Device/ubnt_edgerouter-lite
 endef
 TARGET_DEVICES += ubnt_edgerouter-lite
 
+USG3P_CMDLINE:=-mtdparts=phys_mapped_flash:512k(boot0)ro,512k(boot1)ro,64k(eeprom)ro root=/dev/sda2 rootfstype=squashfs,ext4 rootwait
+define Device/ubnt_unifi-security-gateway-3p
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi Security Gateway 3P
+  DEVICE_PACKAGES := kmod-leds-gpio kmod-ledtrig-gpio
+  CMDLINE := $(USG3P_CMDLINE)
+endef
+TARGET_DEVICES += ubnt_unifi-security-gateway-3p
+
 $(eval $(call BuildImage))
