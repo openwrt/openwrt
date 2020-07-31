@@ -1114,6 +1114,20 @@ define Device/totolink_x5000r
 endef
 TARGET_DEVICES += totolink_x5000r
 
+define Device/tplink_archer-c6u-v1
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := Archer C6U
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7603 \
+	kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-usb3 kmod-usb-ledtrig-usbport
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  TPLINK_BOARD_ID := ARCHER-C6U-V1
+  IMAGE_SIZE := 15744k
+endef
+TARGET_DEVICES += tplink_archer-c6u-v1
+
 define Device/tplink_eap235-wall-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
