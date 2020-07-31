@@ -269,6 +269,7 @@ nand_upgrade_tar() {
 	
 	[ "$dtb_length" != 0 -a -n "$dtb_mtd" ] && {
 		tar xf $tar_file ${board_dir}/dtb -O | mtd write - $CI_DTBPART
+		sleep 1
 	}
 
 	nand_upgrade_prepare_ubi "$rootfs_length" "$rootfs_type" "$has_kernel" "$has_env"
