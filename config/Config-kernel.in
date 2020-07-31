@@ -795,6 +795,10 @@ if KERNEL_CGROUPS
 		bool "legacy Control Group Classifier"
 		default n
 
+	config KERNEL_CGROUP_NET_CLASSID
+		bool "legacy Network classid cgroup"
+		default n
+
 	config KERNEL_CGROUP_NET_PRIO
 		bool "legacy Network priority cgroup"
 		default n
