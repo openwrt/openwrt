@@ -16,11 +16,9 @@ Signed-off-By: David Woodhouse <dwmw2@infradead.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c | 19 ++++++++++++++-----
  1 file changed, 14 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index b5408c5b954a..f89f225ab144 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -171,11 +171,21 @@ static int mt7621_gmac0_rgmii_adjust(struct mtk_eth *eth,
+@@ -171,11 +171,21 @@ static int mt7621_gmac0_rgmii_adjust(str
  	return 0;
  }
  
@@ -43,7 +41,7 @@ index b5408c5b954a..f89f225ab144 100644
  	val = (speed == SPEED_1000) ?
  		INTF_MODE_RGMII_1000 : INTF_MODE_RGMII_10_100;
  	mtk_w32(eth, val, INTF_MODE);
-@@ -262,10 +272,9 @@ static void mtk_mac_config(struct phylink_config *config, unsigned int mode,
+@@ -262,10 +272,9 @@ static void mtk_mac_config(struct phylin
  							      state->interface))
  					goto err_phy;
  			} else {
@@ -57,6 +55,3 @@ index b5408c5b954a..f89f225ab144 100644
  
  				/* mt7623_pad_clk_setup */
  				for (i = 0 ; i < NUM_TRGMII_CTRL; i++)
--- 
-2.26.2
-
