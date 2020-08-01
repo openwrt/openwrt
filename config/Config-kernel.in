@@ -360,6 +360,18 @@ config KERNEL_BLK_DEV_BSG
 config KERNEL_TRANSPARENT_HUGEPAGE
 	bool
 
+choice
+	prompt "Transparent Hugepage Support sysfs defaults"
+	depends on KERNEL_TRANSPARENT_HUGEPAGE
+	default KERNEL_TRANSPARENT_HUGEPAGE_ALWAYS
+
+	config KERNEL_TRANSPARENT_HUGEPAGE_ALWAYS
+		bool "always"
+
+	config KERNEL_TRANSPARENT_HUGEPAGE_MADVISE
+		bool "madvise"
+endchoice
+
 config KERNEL_HUGETLBFS
 	bool
 
