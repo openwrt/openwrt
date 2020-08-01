@@ -32,6 +32,14 @@ define Package/librpc/install
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/librpc.so $(1)/lib/
 endef
 
+define Host/Configure
+
+endef
+
+define Host/Compile
+
+endef
+
 define Host/Install
 	$(INSTALL_DIR) $(STAGING_DIR_HOSTPKG)/include/rpc
 	$(INSTALL_DATA) $(HOST_BUILD_DIR)/rpc/types.h $(STAGING_DIR_HOSTPKG)/include/rpc
