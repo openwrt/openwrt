@@ -43,6 +43,7 @@ dnsmasq_ignore_opt() {
 		pxe-*)
 			[ -z "$dnsmasq_has_dhcp" ] ;;
 		dnssec-*|\
+		dnssec|\
 		trust-anchor)
 			[ -z "$dnsmasq_has_dnssec" ] ;;
 		tftp-*)
@@ -960,7 +961,7 @@ dnsmasq_start()
 	}
 
 	config_get_bool dnssec "$cfg" dnssec 0
-	[ "$dnssec" -gt 0 ] && {
+	[ "$dnssec" -gt 0 ] && ! dnsmasq_ignore_opt "dnssec" && {
 		xappend "--conf-file=$TRUSTANCHORSFILE"
 		xappend "--dnssec"
 		[ -x /etc/init.d/sysntpd ] && {
