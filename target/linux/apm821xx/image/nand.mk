@@ -117,5 +117,6 @@ define Device/netgear_wndr4700
   NETGEAR_HW_ID := 29763875+128+256
   UBINIZE_OPTS := -E 5
   SUPPORTED_DEVICES += wndr4700
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wndr4700

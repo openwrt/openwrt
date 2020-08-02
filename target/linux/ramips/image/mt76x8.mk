@@ -160,6 +160,33 @@ define Device/iptime_a604m
 endef
 TARGET_DEVICES += iptime_a604m
 
+define Device/jotale_js76x8
+  DEVICE_VENDOR := Jotale
+  DEVICE_MODEL := JS76x8
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+
+define Device/jotale_js76x8-8m
+  $(Device/jotale_js76x8)
+  IMAGE_SIZE := 7872k
+  DEVICE_VARIANT := 8M
+endef
+TARGET_DEVICES += jotale_js76x8-8m
+
+define Device/jotale_js76x8-16m
+  $(Device/jotale_js76x8)
+  IMAGE_SIZE := 16064k
+  DEVICE_VARIANT := 16M
+endef
+TARGET_DEVICES += jotale_js76x8-16m
+
+define Device/jotale_js76x8-32m
+  $(Device/jotale_js76x8)
+  IMAGE_SIZE := 32448k
+  DEVICE_VARIANT := 32M
+endef
+TARGET_DEVICES += jotale_js76x8-32m
+
 define Device/mediatek_linkit-smart-7688
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := MediaTek

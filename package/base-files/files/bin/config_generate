@@ -264,6 +264,13 @@ generate_static_system() {
 				uci -q set "system.@system[-1].hostname=$hostname"
 			fi
 
+			local compat_version
+			if json_get_var compat_version compat_version; then
+				uci -q set "system.@system[-1].compat_version=$compat_version"
+			else
+				uci -q set "system.@system[-1].compat_version=1.0"
+			fi
+
 			if json_is_a ntpserver array; then
 				local keys key
 				json_get_keys keys ntpserver
