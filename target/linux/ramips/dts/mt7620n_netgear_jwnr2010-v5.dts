@@ -1,0 +1,134 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "mt7620n.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "netgear,jwnr2010-v5", "ralink,mt7620n-soc";
+	model = "Netgear JWNR2010 v5";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "jwnr2010-v5:green:power";
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			label = "jwnr2010-v5:green:wan";
+			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan {
+			label = "jwnr2010-v5:green:wlan";
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0radio";
+		};
+
+		lan1 {
+			label = "jwnr2010-v5:green:lan1";
+			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+		};
+
+		lan2 {
+			label = "jwnr2010-v5:green:lan2";
+			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
+		};
+
+		lan3 {
+			label = "jwnr2010-v5:green:lan3";
+			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+		};
+
+		lan4 {
+			label = "jwnr2010-v5:green:lan4";
+			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <30000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x20000>;
+				read-only;
+			};
+
+			partition@20000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x20000 0x3c0000>;
+			};
+
+			partition@3e0000 {
+				label = "nvram";
+				reg = <0x3e0000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@3f0000 {
+				label = "factory";
+				reg = <0x3f0000 0x10000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0x4>;
+
+	mediatek,portmap = "llllw";
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0x0>;
+};
+
+&state_default {
+	default {
+		groups = "pa", "ephy", "wled";
+		function = "gpio";
+	};
+};
