@@ -440,6 +440,7 @@ define Device/wiznet_wizfi630s
   DTS := WIZFI630S
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_TITLE := WIZnet WizFi630S
+  SUPPORTED_DEVICES += wizfi630s
 endef
 TARGET_DEVICES += wiznet_wizfi630s
 
