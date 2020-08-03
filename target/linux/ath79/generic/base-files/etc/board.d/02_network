@@ -506,6 +506,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "1:wan"
 		;;
+	xwrt,xd1202g)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan" "3:wan"
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
@@ -728,6 +732,7 @@ ath79_setup_macs()
 	xiaomi,aiot-ac2350)
 		lan_mac=$(mtd_get_mac_binary art 0x1002)
 		;;
+	xwrt,xd1202g|\
 	xwrt,csac|\
 	xwrt,csac2|\
 	xwrt,gw521-16m)
