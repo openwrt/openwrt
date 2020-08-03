@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uboot-layerscape
 PKG_VERSION:=LSDK-20.04-update-290520
-PKG_RELEASE:=2
+PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://source.codeaurora.org/external/qoriq/qoriq-components/u-boot
@@ -53,6 +53,16 @@ endef
 define U-Boot/fsl_ls1043a-rdb-sdboot
   NAME:=NXP LS1043ARDB SD Card Boot
   UBOOT_CONFIG:=ls1043ardb_tfa
+endef
+
+define U-Boot/fsl_ls1046a-frwy
+  NAME:=NXP LS1046AFRWY
+  UBOOT_CONFIG:=ls1046afrwy_tfa
+endef
+
+define U-Boot/fsl_ls1046a-frwy-sdboot
+  NAME:=NXP LS1046AFRWY SD Card Boot
+  UBOOT_CONFIG:=ls1046afrwy_tfa
 endef
 
 define U-Boot/fsl_ls1046a-rdb
@@ -109,6 +119,8 @@ UBOOT_TARGETS := \
   fsl_ls1012a-frwy-sdboot \
   fsl_ls1043a-rdb \
   fsl_ls1043a-rdb-sdboot \
+  fsl_ls1046a-frwy \
+  fsl_ls1046a-frwy-sdboot \
   fsl_ls1046a-rdb \
   fsl_ls1046a-rdb-sdboot \
   fsl_ls1088a-rdb \
