@@ -938,7 +938,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C6,product_ver:2.0.0,special_id:52550000}\r\n"
 			"{product_name:Archer C6,product_ver:2.0.0,special_id:4A500000}\r\n",
 		.support_trail = '\x00',
-		.soft_ver = "soft_ver:1.2.1\n",
+		.soft_ver = "soft_ver:1.9.1\n",
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -973,7 +973,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer A6,product_ver:2.0.0,special_id:54570000}\n"
 			"{product_name:Archer C6,product_ver:2.0.0,special_id:55530000}\n",
 		.support_trail = '\x00',
-		.soft_ver = "soft_ver:1.1.1\n",
+		.soft_ver = "soft_ver:1.9.1\n",
 
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
