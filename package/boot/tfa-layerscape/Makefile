@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tfa-layerscape
 PKG_VERSION:=LSDK-20.04-update-290520
-PKG_RELEASE:=2
+PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://source.codeaurora.org/external/qoriq/qoriq-components/atf
@@ -74,6 +74,20 @@ define Package/tfa-ls1043a-rdb-sdboot
   BOOT_MODE:=sd
 endef
 
+define Package/tfa-ls1046a-frwy
+  $(Package/tfa-generic)
+  TITLE:=NXP LS1046AFRWY Trusted Firmware
+  PLAT:=ls1046afrwy
+  BOOT_MODE:=qspi
+endef
+
+define Package/tfa-ls1046a-frwy-sdboot
+  $(Package/tfa-generic)
+  TITLE:=NXP LS1046AFRWY SD Boot Trusted Firmware
+  PLAT:=ls1046afrwy
+  BOOT_MODE:=sd
+endef
+
 define Package/tfa-ls1046a-rdb
   $(Package/tfa-generic)
   TITLE:=NXP LS1046ARDB Trusted Firmware
@@ -134,6 +148,8 @@ TFAS := \
   ls1012a-frwy-sdboot \
   ls1043a-rdb \
   ls1043a-rdb-sdboot \
+  ls1046a-frwy \
+  ls1046a-frwy-sdboot \
   ls1046a-rdb \
   ls1046a-rdb-sdboot \
   ls1088a-rdb \
