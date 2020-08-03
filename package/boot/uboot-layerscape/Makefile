@@ -45,6 +45,16 @@ define U-Boot/fsl_ls1012a-frwy-sdboot
   ENV_SIZE:=0x10000
 endef
 
+define U-Boot/fsl_ls1028a-rdb
+  NAME:=NXP LS1028ARDB
+  UBOOT_CONFIG:=ls1028ardb_tfa
+endef
+
+define U-Boot/fsl_ls1028a-rdb-sdboot
+  NAME:=NXP LS1028ARDB SD Card Boot
+  UBOOT_CONFIG:=ls1028ardb_tfa
+endef
+
 define U-Boot/fsl_ls1043a-rdb
   NAME:=NXP LS1043ARDB
   UBOOT_CONFIG:=ls1043ardb_tfa
@@ -127,6 +137,8 @@ UBOOT_TARGETS := \
   fsl_ls1012a-frdm \
   fsl_ls1012a-rdb \
   fsl_ls1012a-frwy-sdboot \
+  fsl_ls1028a-rdb \
+  fsl_ls1028a-rdb-sdboot \
   fsl_ls1043a-rdb \
   fsl_ls1043a-rdb-sdboot \
   fsl_ls1046a-frwy \

@@ -6,6 +6,19 @@ reorder_layerscape_interfaces() {
 
 	board=$(cat /tmp/sysinfo/board_name)
 	case "$board" in
+	fsl,ls1028a-rdb | \
+	fsl,ls1028a-rdb-sdboot)
+		enetc0=$(ls /sys/bus/pci/devices/0000:00:00.0/net/)
+		enetc2=$(ls /sys/bus/pci/devices/0000:00:00.2/net/)
+		if [ -n $enetc0 ]; then
+			ip link set $enetc0 name eno0
+		fi
+		if [ -n $enetc2 ]; then
+			ip link set $enetc2 name eno2
+			# bringup dsa master
+			ip link set eno2 up
+		fi
+		;;
 	"traverse,ls1043v" | \
 	"traverse,ls1043s")
 
