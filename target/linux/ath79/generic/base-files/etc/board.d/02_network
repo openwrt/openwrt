@@ -192,7 +192,9 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:wan" "2:lan"
 		;;
-	comfast,cf-e560ac)
+	comfast,cf-e560ac|\
+	qca,ap143-8m|\
+	qca,ap143-16m)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
