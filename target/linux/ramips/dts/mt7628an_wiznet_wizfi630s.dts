@@ -28,7 +28,7 @@
 
 		led_run: run {
 			label = "wizfi630s:green:run";
-			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 
 		ledwps {
@@ -61,47 +61,29 @@
 
 		wps {
 			label = "wps";
-			gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		scm1 {
 			label = "SCM1";
-			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_1>;
+			linux,input-type = <EV_SW>;
 		};
 
 		scm2 {
 			label = "SCM2";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_2>;
+			linux,input-type = <EV_SW>;
 		};
 	};
 };
 
 &state_default {
 	gpio {
-		groups = "gpio";
-		function = "gpio";
-	};
-
-	i2s {
-		groups = "i2s";
-		function = "gpio";
-	};
-
-	wdt {
-		groups = "wdt";
-		function = "gpio";
-	};
-
-	i2c {
-		groups = "i2c";
-		function = "gpio";
-	};
-
-	refclk {
-		groups = "refclk";
+		groups = "gpio", "i2s", "i2c", "wdt", "refclk", "p1led_an", "p2led_an";
 		function = "gpio";
 	};
 };
@@ -150,11 +132,11 @@
 	};
 };
 
-&i2c {
+&uart1 {
 	status = "okay";
 };
 
-&uart1 {
+&uart2 {
 	status = "okay";
 };
 
