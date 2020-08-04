@@ -1,6 +1,6 @@
-From eca387ea507bde160558a0e5301bf2e0f1985b3b Mon Sep 17 00:00:00 2001
+From e05fdd93645dab2217bb5bfabcc04845415cf7ed Mon Sep 17 00:00:00 2001
 From: David Woodhouse <dwmw2@infradead.org>
-Date: Fri, 19 Jun 2020 11:34:32 +0100
+Date: Fri, 19 Jun 2020 12:40:20 +0100
 Subject: [PATCH] pinctrl: mediatek: add PUPD/R0/R1 support for MT7623
 
 The pins for the MMC controller weren't being set up correctly because the
@@ -8,6 +8,7 @@ pinctrl driver only sets the GPIO pullup/pulldown config and doesn't
 handle the special cases with PUPD/R0/R1 control.
 
 Signed-off-by: David Woodhouse <dwmw2@infradead.org>
+Tested-by: Frank Wunderlich <frank-w@public-files.de>
 ---
  drivers/pinctrl/mediatek/pinctrl-mt7623.c     | 129 ++++++++++++++++++
  drivers/pinctrl/mediatek/pinctrl-mtk-common.c |  19 ++-
@@ -162,7 +163,7 @@ index d58d840e08..0f5dcb2c63 100644
  
  static const struct mtk_pin_desc mt7623_pins[] = {
 diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-common.c b/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
-index 5fdc150295..f5199fc574 100644
+index e8187a3780..6553dde45c 100644
 --- a/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
 +++ b/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
 @@ -296,7 +296,7 @@ static const struct pinconf_param mtk_conf_params[] = {
