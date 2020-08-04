@@ -767,6 +767,7 @@ endef
 TARGET_DEVICES += nixcore_x1-8m
 
 define Device/olimex_rt5350f-olinuxino
+  $(Device/uimage-lzma-loader)
   SOC := rt5350
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := OLIMEX
@@ -777,6 +778,7 @@ endef
 TARGET_DEVICES += olimex_rt5350f-olinuxino
 
 define Device/olimex_rt5350f-olinuxino-evb
+  $(Device/uimage-lzma-loader)
   SOC := rt5350
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := OLIMEX
