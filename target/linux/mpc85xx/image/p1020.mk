@@ -29,7 +29,7 @@ define Device/aerohive_hiveap-370
   KERNEL := kernel-bin | gzip | uImage gzip
   KERNEL_SIZE := 8m
   KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux-initramfs | uImage none
-  IMAGES := fdt.bin sysupgrade.bin ramdisk.bin
+  IMAGES := fdt.bin ramdisk.bin sysupgrade.bin
   IMAGE/fdt.bin := append-dtb
   IMAGE/ramdisk.bin := append-uImage-fakehdr ramdisk
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
