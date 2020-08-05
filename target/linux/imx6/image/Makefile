@@ -207,7 +207,25 @@ define Device/cubox-i
   BOOT_SCRIPT = bootscript-cubox
   DEVICE_NAME := cubox
   DEVICE_PACKAGES := kmod-drm-imx kmod-drm-imx-hdmi kmod-usb-hid
-  DEVICE_DTS := imx6q-cubox-i imx6dl-cubox-i imx6q-hummingboard imx6dl-hummingboard
+  DEVICE_DTS := \
+	imx6dl-cubox-i \
+	imx6dl-cubox-i-emmc-som-v15 \
+	imx6dl-cubox-i-som-v15 \
+	imx6dl-hummingboard \
+	imx6dl-hummingboard-emmc-som-v15 \
+	imx6dl-hummingboard-som-v15 \
+	imx6dl-hummingboard2 \
+	imx6dl-hummingboard2-emmc-som-v15 \
+	imx6dl-hummingboard2-som-v15 \
+	imx6q-cubox-i \
+	imx6q-cubox-i-emmc-som-v15 \
+	imx6q-cubox-i-som-v15 \
+	imx6q-hummingboard \
+	imx6q-hummingboard-emmc-som-v15 \
+	imx6q-hummingboard-som-v15 \
+	imx6q-hummingboard2 \
+	imx6q-hummingboard2-emmc-som-v15 \
+	imx6q-hummingboard2-som-v15
   IMAGES := combined.bin dtb
   FILESYSTEMS := squashfs
   IMAGE/combined.bin := append-rootfs | pad-extra 128k | imx6-sdcard
