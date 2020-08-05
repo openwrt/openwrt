@@ -474,7 +474,7 @@ define Device/dlink_dwr-512-b
   DEVICE_MODEL := DWR-512
   DEVICE_VARIANT := B
   DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-spi-dev kmod-usb-serial \
-	kmod-usb-serial-option kmod-usb-net kmod-usb-net-cdc-ether comgt-ncm
+	kmod-usb-serial-option kmod-usb-net-cdc-ether comgt-ncm
   DLINK_ROM_ID := DLK6E2412001
   DLINK_FAMILY_MEMBER := 0x6E24
   DLINK_FIRMWARE_SIZE := 0x7E0000

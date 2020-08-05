@@ -1136,7 +1136,7 @@ $(eval $(call KernelPackage,usb-net))
 
 define AddDepends/usb-net
   SUBMENU:=$(USB_MENU)
-  DEPENDS+=kmod-usb-net $(1)
+  DEPENDS+=+kmod-usb-net $(1)
 endef
 
 

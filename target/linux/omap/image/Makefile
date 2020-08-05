@@ -70,7 +70,7 @@ define Device/ti_omap3-beagle
   DEVICE_VENDOR := BeagleBoard.org
   DEVICE_MODEL := OMAP3 TI beagleboard
   # beagleboard doesn't have a network interface, support most common usb net
-  DEVICE_PACKAGES := kmod-usb-net \
+  DEVICE_PACKAGES := \
 	kmod-usb-net-asix kmod-usb-net-asix-ax88179 kmod-usb-net-hso \
 	kmod-usb-net-kaweth kmod-usb-net-pegasus kmod-usb-net-mcs7830 \
 	kmod-usb-net-smsc95xx kmod-usb-net-dm9601-ether

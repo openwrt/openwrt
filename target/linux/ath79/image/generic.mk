@@ -416,8 +416,8 @@ define Device/comfast_cf-e5
   SOC := qca9531
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-E5/E7
-  DEVICE_PACKAGES := rssileds kmod-usb2 kmod-usb-net \
-	kmod-usb-net-qmi-wwan -swconfig -uboot-envtools
+  DEVICE_PACKAGES := rssileds kmod-usb2 kmod-usb-net-qmi-wwan -swconfig \
+	-uboot-envtools
   IMAGE_SIZE := 16192k
 endef
 TARGET_DEVICES += comfast_cf-e5

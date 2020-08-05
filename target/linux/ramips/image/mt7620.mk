@@ -1003,7 +1003,7 @@ define Device/tplink_archer-mr200
   TPLINK_HWID := 0xd7500001
   TPLINK_HWREV := 0x4a
   IMAGES := sysupgrade.bin
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-net kmod-usb-net-rndis \
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-net-rndis \
 	kmod-usb-serial kmod-usb-serial-option adb-enablemodem
   DEVICE_MODEL := Archer MR200
   SUPPORTED_DEVICES += mr200
