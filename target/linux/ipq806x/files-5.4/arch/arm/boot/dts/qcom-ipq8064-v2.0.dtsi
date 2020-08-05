@@ -26,6 +26,10 @@
 	phy-tx0-term-offset = <0>;
 };
 
+&sata {
+	ports-implemented = <0x1>;
+};
+
 &ss_phy_0 {
 	rx_eq = <2>;
 	tx_deamp_3_5db = <32>;
