@@ -658,6 +658,7 @@ define Device/wiznet_wizfi630s
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := WIZnet
   DEVICE_MODEL := WizFi630S
+  SUPPORTED_DEVICES += wizfi630s
 endef
 TARGET_DEVICES += wiznet_wizfi630s
 
