@@ -79,15 +79,15 @@
  static struct board_info __initdata board_963281TAN = {
  	.name				= "963281TAN",
  	.expected_cpu_id		= 0x6328,
-@@ -1151,6 +1223,7 @@ static const struct board_info __initcon
- #endif
+@@ -1149,6 +1221,7 @@ static const struct board_info __initcon
+ #endif /* CONFIG_BCM63XX_CPU_3368 */
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
 +	&board_AR5387un,
  	&board_963281TAN,
  	&board_A4001N1,
  	&board_dsl_274xb_f1,
-@@ -1221,6 +1294,7 @@ static struct of_device_id const bcm963x
+@@ -1216,6 +1289,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "adb,a4001n1", .data = &board_A4001N1, },
  	{ .compatible = "brcm,bcm963281tan", .data = &board_963281TAN, },
  	{ .compatible = "brcm,bcm96328avng", .data = &board_96328avng, },

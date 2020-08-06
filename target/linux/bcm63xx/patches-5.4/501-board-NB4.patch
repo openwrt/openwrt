@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -418,6 +418,60 @@ static struct board_info __initdata boar
+@@ -416,6 +416,60 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
  };
@@ -61,16 +61,16 @@
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
  /*
-@@ -454,6 +508,8 @@ static const struct board_info __initcon
+@@ -451,6 +505,8 @@ static const struct board_info __initcon
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
 +	&board_nb4_ser_r0,
 +	&board_nb4_fxc_r1,
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6358 */
  };
  
-@@ -495,6 +551,8 @@ static struct of_device_id const bcm963x
+@@ -492,6 +548,8 @@ static struct of_device_id const bcm963x
  	{ .compatible = "pirelli,a226m", .data = &board_DWVS0, },
  	{ .compatible = "pirelli,a226m-fwb", .data = &board_DWVS0, },
  	{ .compatible = "pirelli,agpf-s0", .data = &board_AGPFS0, },

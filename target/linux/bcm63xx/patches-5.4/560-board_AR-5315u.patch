@@ -68,15 +68,15 @@
  static struct sprom_fixup __initdata dsl2751b_e1_fixups[] = {
  	{ .offset = 96, .value = 0x2046 },
  	{ .offset = 97, .value = 0xfe9d },
-@@ -2548,6 +2609,7 @@ static const struct board_info __initcon
+@@ -2546,6 +2607,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6318
  	&board_96318ref,
  	&board_96318ref_p300,
 +	&board_AR5315u,
  	&board_dsl_2751b_d1,
  	&board_FAST2704N,
- #endif
-@@ -2653,6 +2715,7 @@ static struct of_device_id const bcm963x
+ #endif /* CONFIG_BCM63XX_CPU_6318 */
+@@ -2648,6 +2710,7 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_6318
  	{ .compatible = "brcm,bcm96318ref", .data = &board_96318ref, },
  	{ .compatible = "brcm,bcm96318ref-p300", .data = &board_96318ref_p300, },

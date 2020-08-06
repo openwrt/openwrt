@@ -21,15 +21,15 @@
  #endif /* CONFIG_BCM63XX_CPU_6338 */
  
  /*
-@@ -660,6 +674,7 @@ static const struct board_info __initcon
+@@ -658,6 +672,7 @@ static const struct board_info __initcon
  	&board_96338gw,
  	&board_96338w,
  	&board_96338w2_e7t,
 +	&board_rta1320_16m,
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6338 */
  #ifdef CONFIG_BCM63XX_CPU_6345
  	&board_96345gw2,
-@@ -704,6 +719,7 @@ static struct of_device_id const bcm963x
+@@ -701,6 +716,7 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_6338
  	{ .compatible = "brcm,bcm96338gw", .data = &board_96338gw, },
  	{ .compatible = "brcm,bcm96338w", .data = &board_96338w, },
