@@ -50,14 +50,22 @@ define Package/brcmfmac-firmware-4329-sdio-cubox-i/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/brcmfmac4329-sdio.txt \
-		$(1)/lib/firmware/brcm/brcmfmac4329-sdio.txt
+		$(1)/lib/firmware/brcm/brcmfmac4329-sdio.solidrun,cubox-i.txt
+	ln -s brcmfmac4329-sdio.solidrun,cubox-i.txt $(1)/lib/firmware/brcm/brcmfmac4329-sdio.solidrun,cubox-i-dl.txt
+	ln -s brcmfmac4329-sdio.solidrun,cubox-i.txt $(1)/lib/firmware/brcm/brcmfmac4329-sdio.solidrun,cubox-i-q.txt
+	ln -s brcmfmac4329-sdio.solidrun,cubox-i.txt $(1)/lib/firmware/brcm/brcmfmac4329-sdio.solidrun,hummingboard-dl.txt
+	ln -s brcmfmac4329-sdio.solidrun,cubox-i.txt $(1)/lib/firmware/brcm/brcmfmac4329-sdio.solidrun,hummingboard-q.txt
 endef
 
 define Package/brcmfmac-firmware-4330-sdio-cubox-i/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/brcmfmac4330-sdio.txt \
-		$(1)/lib/firmware/brcm/brcmfmac4330-sdio.txt
+		$(1)/lib/firmware/brcm/brcmfmac4330-sdio.solidrun,cubox-i.txt
+	ln -s brcmfmac4330-sdio.solidrun,cubox-i.txt $(1)/lib/firmware/brcm/brcmfmac4330-sdio.solidrun,cubox-i-dl.txt
+	ln -s brcmfmac4330-sdio.solidrun,cubox-i.txt $(1)/lib/firmware/brcm/brcmfmac4330-sdio.solidrun,cubox-i-q.txt
+	ln -s brcmfmac4330-sdio.solidrun,cubox-i.txt $(1)/lib/firmware/brcm/brcmfmac4330-sdio.solidrun,hummingboard-dl.txt
+	ln -s brcmfmac4330-sdio.solidrun,cubox-i.txt $(1)/lib/firmware/brcm/brcmfmac4330-sdio.solidrun,hummingboard-q.txt
 endef
 
 define Package/wl18xx-firmware-cubox-i/install
