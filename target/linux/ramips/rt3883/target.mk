@@ -9,8 +9,6 @@ CPU_TYPE:=74kc
 
 DEFAULT_PACKAGES += kmod-rt2800-pci kmod-rt2800-soc wpad-mini swconfig
 
-KERNEL_PATCHVER:=4.14
-
 define Target/Description
 	Build firmware images for Ralink RT3662/RT3883 based boards.
 endef
