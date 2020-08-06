@@ -114,7 +114,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
   * early init callback, read nvram data from flash and checksum it
   */
  void __init board_prom_init(void)
-@@ -782,137 +724,15 @@ void __init board_prom_init(void)
+@@ -796,137 +738,15 @@ void __init board_prom_init(void)
  		if (strncmp(board_name, bcm963xx_boards[i]->name, 16))
  			continue;
  		/* copy, board desc array is marked initdata */
