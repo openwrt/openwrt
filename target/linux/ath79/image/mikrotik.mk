@@ -9,6 +9,15 @@ define Device/mikrotik_routerboard-493g
 endef
 TARGET_DEVICES += mikrotik_routerboard-493g
 
+define Device/mikrotik_routerboard-921gs-5hpacd-15s
+  $(Device/mikrotik_nand)
+  SOC := qca9558
+  DEVICE_MODEL := RouterBOARD mANTBox 15s
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  SUPPORTED_DEVICES += rb-921gs-5hpacd-r2
+endef
+TARGET_DEVICES += mikrotik_routerboard-921gs-5hpacd-15s
+
 define Device/mikrotik_routerboard-922uags-5hpacd
   $(Device/mikrotik_nand)
   SOC := qca9558
@@ -21,7 +30,7 @@ TARGET_DEVICES += mikrotik_routerboard-922uags-5hpacd
 define Device/mikrotik_routerboard-wap-g-5hact2hnd
   $(Device/mikrotik_nor)
   SOC := qca9556
-  DEVICE_MODEL := RouterBOARD wAP G-5HacT2HnD (wAP AC)
+  DEVICE_MODEL := RouterBOARD wAP ac (BE)
   IMAGE_SIZE := 16256k
   DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
   SUPPORTED_DEVICES += rb-wapg-5hact2hnd

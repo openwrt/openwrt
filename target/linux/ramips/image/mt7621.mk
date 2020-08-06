@@ -653,7 +653,7 @@ endef
 
 define Device/mikrotik_routerboard-750gr3
   $(Device/MikroTik)
-  DEVICE_MODEL := RouterBOARD 750Gr3
+  DEVICE_MODEL := RouterBOARD hEX
   DEVICE_PACKAGES += kmod-gpio-beeper
   SUPPORTED_DEVICES += mikrotik,rb750gr3
 endef
