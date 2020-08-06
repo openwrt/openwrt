@@ -565,3 +565,17 @@ define KernelPackage/scsi-tape
 endef
 
 $(eval $(call KernelPackage,scsi-tape))
+
+define KernelPackage/iosched-bfq
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Kernel support for BFQ I/O scheduler
+  KCONFIG:= \
+    CONFIG_IOSCHED_BFQ \
+    CONFIG_BFQ_GROUP_IOSCHED=y \
+    CONFIG_BFQ_CGROUP_DEBUG=n
+  FILES:= \
+    $(LINUX_DIR)/block/bfq.ko
+  AUTOLOAD:=$(call AutoLoad,10,bfq)
+endef
+
+$(eval $(call KernelPackage,iosched-bfq))
