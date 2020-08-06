@@ -206,7 +206,10 @@ define Device/cubox-i
   UBOOT := mx6cuboxi
   BOOT_SCRIPT = bootscript-cubox
   DEVICE_NAME := cubox
-  DEVICE_PACKAGES := kmod-drm-imx kmod-drm-imx-hdmi kmod-usb-hid
+  DEVICE_PACKAGES := \
+	kmod-drm-imx kmod-drm-imx-hdmi \
+	kmod-brcmfmac brcmfmac-firmware-4329-sdio brcmfmac-firmware-4329-sdio-cubox-i brcmfmac-firmware-4330-sdio brcmfmac-firmware-4330-sdio-cubox-i \
+	kmod-wl18xx wl18xx-firmware wl18xx-firmware-cubox-i
   DEVICE_DTS := \
 	imx6dl-cubox-i \
 	imx6dl-cubox-i-emmc-som-v15 \

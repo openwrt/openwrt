@@ -451,6 +451,7 @@ define KernelPackage/brcmfmac/config
 		bool "Enable SDIO bus interface support"
 		default y if TARGET_bcm27xx
 		default y if TARGET_sunxi
+		default y if TARGET_imx6_DEVICE_cubox-i
 		default n
 		help
 		  Enable support for cards attached to an SDIO bus.
