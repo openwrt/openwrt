@@ -382,15 +382,20 @@ endef
 compat_version=$(if $(DEVICE_COMPAT_VERSION),$(DEVICE_COMPAT_VERSION),1.0)
 json_quote=$(subst ','\'',$(subst ",\",$(1)))
 #")')
+
+legacy_supported_message=$(SUPPORTED_DEVICES) - Image version mismatch: image $(compat_version), \
+	device 1.0. Please wipe config during upgrade (force required) or reinstall. \
+	$(if $(DEVICE_COMPAT_MESSAGE),Reason: $(DEVICE_COMPAT_MESSAGE),Please check documentation ...)
+
 metadata_devices=$(if $(1),$(subst "$(space)","$(comma)",$(strip $(foreach v,$(1),"$(call json_quote,$(v))"))))
 metadata_json = \
 	'{ $(if $(IMAGE_METADATA),$(IMAGE_METADATA)$(comma)) \
 		"metadata_version": "1.1", \
 		"compat_version": "$(call json_quote,$(compat_version))", \
 		$(if $(DEVICE_COMPAT_MESSAGE),"compat_message": "$(call json_quote,$(DEVICE_COMPAT_MESSAGE))"$(comma)) \
-		$(if $(filter-out 1.0,$(compat_version)),"new_supported_devices":[$(call metadata_devices,$(SUPPORTED_DEVICES))]$(comma)) \
-		$(if $(filter-out 1.0,$(compat_version)),"supported_devices": \
-			["$(call json_quote,Image version $(compat_version) incompatible to device: $(if $(DEVICE_COMPAT_MESSAGE),$(DEVICE_COMPAT_MESSAGE),Please check documentation ...))"]$(comma)) \
+		$(if $(filter-out 1.0,$(compat_version)),"new_supported_devices": \
+			[$(call metadata_devices,$(SUPPORTED_DEVICES))]$(comma) \
+			"supported_devices": ["$(call json_quote,$(legacy_supported_message))"]$(comma)) \
 		$(if $(filter 1.0,$(compat_version)),"supported_devices":[$(call metadata_devices,$(SUPPORTED_DEVICES))]$(comma)) \
 		"version": { \
 			"dist": "$(call json_quote,$(VERSION_DIST))", \
