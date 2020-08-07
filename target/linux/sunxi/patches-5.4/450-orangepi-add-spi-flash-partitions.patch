@@ -8,7 +8,7 @@
  	};
  };
  
-@@ -73,6 +74,35 @@
+@@ -73,6 +74,22 @@
  
  	flash@0 {
  		compatible = "mxicy,mx25l12805d", "jedec,spi-nor";
@@ -19,26 +19,13 @@
 +
 +			partition@0 {
 +				label = "u-boot";
-+				reg = <0x000000 0x0E0000>;
-+				read-only;
++				reg = <0x000000 0x080000>;
 +			};
 +
-+			partition@e0000 {
-+				label = "u-boot-env";
-+				reg = <0x0E0000 0x010000>;
-+				read-only;
-+			};
-+
-+			partition@f0000 {
-+				label = "dtb";
-+				reg = <0x0F0000 0x010000>;
-+				read-only;
-+			};
-+
-+			partition@100000 {
++			partition@80000 {
 +				compatible = "denx,fit";
 +				label = "firmware";
-+				reg = <0x100000 0xF00000>;
++				reg = <0x080000 0xF80000>;
 +			};
 +		};
  	};

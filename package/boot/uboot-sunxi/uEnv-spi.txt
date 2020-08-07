@@ -1,7 +1,6 @@
 setenv fdt_high ffffffff
 setenv initspi sf probe 0
-setenv loadkernel sf read \$kernel_addr_r 0x100000 0x400000
-setenv loaddtb sf read \$fdt_addr_r 0xf0000 0x10000;
-setenv bootargs console=ttyS0,115200 earlyprintk root=/dev/mtdblock5 rootwait mtdparts=spi0.0:896k(uboot),64k(uboot-env)ro,64k(dtb),-(firmware)
-setenv uenvcmd run initspi \&\& loadkernel \&\& run loaddtb \&\& bootm \$kernel_addr_r - \$fdt_addr_r
+setenv loadimage sf read \$kernel_addr_r 0x100000 0x400000
+setenv bootargs console=ttyS0,115200 earlyprintk root=/dev/mtdblock3 rootwait mtdparts=spi0.0:512k(uboot),-(firmware)
+setenv uenvcmd run initspi \&\& run loadimage \&\& bootm \$kernel_addr_r
 run uenvcmd
