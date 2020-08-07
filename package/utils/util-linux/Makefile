@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.35.1
-PKG_RELEASE:=2
+PKG_VERSION:=2.36
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.35
-PKG_HASH:=d9de3edd287366cd908e77677514b9387b22bc7b88f45b83e1922c3597f1d7f9
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.36
+PKG_HASH:=9e4b1c67eb13b9b67feb32ae1dc0d50e08ce9e5d82e1cccd0ee771ad2fa9e0b1
 PKG_CPE_ID:=cpe:/a:kernel:util-linux
 
 PKG_LICENSE:=GPL-2.0
@@ -126,6 +126,7 @@ define Package/blkdiscard
 $(call Package/util-linux/Default)
   TITLE:=discard sectors on a device
   SUBMENU=Disc
+  DEPENDS:=libblkid
 endef
 
 define Package/blkdiscard/description
