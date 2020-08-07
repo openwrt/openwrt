@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
 PKG_VERSION:=1.31.1
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -27,6 +27,10 @@ PKG_ASLR_PIE:=0
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=LICENSE archival/libarchive/bz/LICENSE
 PKG_CPE_ID:=cpe:/a:busybox:busybox
+
+ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SUID),)
+  PKG_FILE_MODES:=/bin/busybox:root:root:4755
+endif
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -140,9 +144,6 @@ endif
 ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_NTPD),)
 	$(INSTALL_BIN) ./files/sysntpd $(1)/etc/init.d/sysntpd
 	$(INSTALL_BIN) ./files/ntpd-hotplug $(1)/usr/sbin/ntpd-hotplug
-endif
-ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SUID),)
-	$(INSTALL_SUID) $(PKG_INSTALL_DIR)/bin/busybox $(1)/bin/busybox
 endif
 	-rm -rf $(1)/lib64
 endef
