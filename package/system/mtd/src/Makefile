@@ -7,7 +7,6 @@ obj.seama = seama.o md5.o
 obj.wrg = wrg.o md5.o
 obj.wrgg = wrgg.o md5.o
 obj.tpl = tpl_ramips_recoveryflag.o
-obj.ar71xx = trx.o $(obj.seama) $(obj.wrgg)
 obj.ath79 = $(obj.seama) $(obj.wrgg)
 obj.gemini = $(obj.wrgg)
 obj.brcm = trx.o
