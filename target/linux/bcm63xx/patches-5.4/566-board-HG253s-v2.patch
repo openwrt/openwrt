@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1837,6 +1837,37 @@ static struct board_info __initdata boar
+@@ -1842,6 +1842,37 @@ static struct board_info __initdata boar
  		},
  	},
  };
@@ -38,7 +38,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6362 */
  
  /*
-@@ -2800,6 +2831,7 @@ static const struct board_info __initcon
+@@ -2806,6 +2837,7 @@ static const struct board_info __initcon
  	&board_nb6,
  	&board_dgnd3700v2,
  	&board_fast2504n,
@@ -46,7 +46,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6362 */
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_AV4202N,
-@@ -2914,6 +2946,7 @@ static struct of_device_id const bcm963x
+@@ -2920,6 +2952,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "bt,home-hub-2-a", .data = &board_homehub2a, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6362
