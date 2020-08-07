@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -324,6 +324,36 @@ static struct board_info __initdata boar
+@@ -323,6 +323,36 @@ static struct board_info __initdata boar
  		.force_duplex_full	= 1,
  	},
  };
@@ -37,15 +37,15 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  
  /*
-@@ -551,6 +581,7 @@ static const struct board_info __initcon
+@@ -549,6 +579,7 @@ static const struct board_info __initcon
  	&board_96348gw_a,
  	&board_rta1025w_16,
  	&board_96348_D4PW,
 +	&board_spw500v,
- #endif
- 
+ #endif /* CONFIG_BCM63XX_CPU_6348 */
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -592,6 +623,7 @@ static struct of_device_id const bcm963x
+ 	&board_96358vw,
+@@ -589,6 +620,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "dynalink,rta1025w", .data = &board_rta1025w_16, },
  	{ .compatible = "netgear,dg834gt-pn", .data = &board_96348gw_10, },
  	{ .compatible = "sagem,fast-2404", .data = &board_FAST2404, },

@@ -2079,7 +2079,7 @@ static struct image_partition_entry make_soft_version(uint32_t rev) {
 	else if (time(&t) == (time_t)(-1))
 		error(1, errno, "time");
 
-	struct tm *tm = localtime(&t);
+	struct tm *tm = gmtime(&t);
 
 	s->magic = htonl(0x0000000c);
 	s->zero = 0;

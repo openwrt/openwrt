@@ -382,7 +382,8 @@ Signed-off-by: chuanjia.liu <Chuanjia.Liu@mediatek.com>
  			};
  		};
 +	};
-+
+ 
+-		pcie1: pcie@1,0 {
 +	pcie1: pcie@1a145000 {
 +		compatible = "mediatek,mt7622-pcie";
 +		device_type = "pci";
@@ -407,8 +408,7 @@ Signed-off-by: chuanjia.liu <Chuanjia.Liu@mediatek.com>
 +		bus-range = <0x00 0xff>;
 +		ranges = <0x82000000 0 0x28000000  0 0x28000000  0 0x8000000>;
 +		status = "disabled";
- 
--		pcie1: pcie@1,0 {
++
 +		slot1: pcie@1,0 {
  			reg = <0x0800 0 0 0 0>;
  			#address-cells = <3>;

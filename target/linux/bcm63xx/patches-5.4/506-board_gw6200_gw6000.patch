@@ -49,7 +49,7 @@
  static struct board_info __initdata board_FAST2404 = {
  	.name				= "F@ST2404",
  	.expected_cpu_id		= 0x6348,
-@@ -574,6 +616,8 @@ static const struct board_info __initcon
+@@ -572,6 +614,8 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6348
  	&board_96348r,
  	&board_96348gw,
@@ -58,7 +58,7 @@
  	&board_96348gw_10,
  	&board_96348gw_11,
  	&board_FAST2404,
-@@ -624,6 +668,8 @@ static struct of_device_id const bcm963x
+@@ -621,6 +665,8 @@ static struct of_device_id const bcm963x
  	{ .compatible = "netgear,dg834gt-pn", .data = &board_96348gw_10, },
  	{ .compatible = "sagem,fast-2404", .data = &board_FAST2404, },
  	{ .compatible = "t-com,speedport-w-500v", .data = &board_spw500v, },

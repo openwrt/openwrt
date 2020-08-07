@@ -827,22 +827,16 @@ endef
 TARGET_DEVICES += netgear_wac124
 
 define Device/netgear_wndr3700-v5
+  $(Device/netgear_sercomm_nor)
   $(Device/uimage-lzma-loader)
-  BLOCKSIZE := 64k
   IMAGE_SIZE := 15232k
+  DEVICE_MODEL := WNDR3700
+  DEVICE_VARIANT := v5
+  SERCOMM_HWNAME := WNDR3700v5
   SERCOMM_HWID := AYB
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x1054
-  IMAGES += factory.img
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
-	pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size
-  IMAGE/factory.img := pad-extra 320k | $$(IMAGE/default) | \
-	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip WNDR3700v5.bin | \
-	sercom-seal
-  DEVICE_VENDOR := NETGEAR
-  DEVICE_MODEL := WNDR3700
-  DEVICE_VARIANT := v5
+  SERCOMM_PAD := 320k
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport wpad-basic
   SUPPORTED_DEVICES += wndr3700v5

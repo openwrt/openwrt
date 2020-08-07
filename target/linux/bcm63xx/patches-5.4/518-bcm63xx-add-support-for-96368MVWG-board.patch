@@ -10,7 +10,7 @@ Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -792,6 +792,58 @@ static struct board_info __initdata boar
+@@ -790,6 +790,58 @@ static struct board_info __initdata boar
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
  /*
@@ -69,18 +69,17 @@ Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
   * all boards
   */
  static const struct board_info __initconst *bcm963xx_boards[] = {
-@@ -843,6 +895,10 @@ static const struct board_info __initcon
+@@ -840,6 +892,9 @@ static const struct board_info __initcon
  	&board_HW553,
  	&board_spw303v,
- #endif
-+
+ #endif /* CONFIG_BCM63XX_CPU_6358 */
 +#ifdef CONFIG_BCM63XX_CPU_6368
 +	&board_96368mvwg,
-+#endif
++#endif /* CONFIG_BCM63XX_CPU_6368 */
  };
  
  static struct of_device_id const bcm963xx_boards_dt[] = {
-@@ -903,6 +959,7 @@ static struct of_device_id const bcm963x
+@@ -900,6 +955,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6368

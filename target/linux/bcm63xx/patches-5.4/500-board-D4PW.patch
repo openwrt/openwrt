@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -295,6 +295,21 @@ static struct board_info __initdata boar
+@@ -294,6 +294,21 @@ static struct board_info __initdata boar
  
  	.has_ohci0 = 1,
  };
@@ -22,15 +22,15 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  
  /*
-@@ -431,6 +446,7 @@ static const struct board_info __initcon
+@@ -429,6 +444,7 @@ static const struct board_info __initcon
  	&board_DV201AMR,
  	&board_96348gw_a,
  	&board_rta1025w_16,
 +	&board_96348_D4PW,
- #endif
- 
+ #endif /* CONFIG_BCM63XX_CPU_6348 */
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -462,6 +478,7 @@ static struct of_device_id const bcm963x
+ 	&board_96358vw,
+@@ -459,6 +475,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96348gw-10", .data = &board_96348gw_10, },
  	{ .compatible = "brcm,bcm96348gw-11", .data = &board_96348gw_11, },
  	{ .compatible = "brcm,bcm96348gw-a", .data = &board_96348gw_a, },

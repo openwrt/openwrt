@@ -50,15 +50,15 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
  #endif /* CONFIG_BCM63XX_CPU_6328 */
  
  /*
-@@ -918,6 +952,7 @@ static const struct board_info __initcon
- #endif
+@@ -916,6 +950,7 @@ static const struct board_info __initcon
+ #endif /* CONFIG_BCM63XX_CPU_3368 */
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
 +	&board_963281TAN,
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6328 */
  #ifdef CONFIG_BCM63XX_CPU_6338
  	&board_96338gw,
-@@ -974,6 +1009,7 @@ static struct of_device_id const bcm963x
+@@ -970,6 +1005,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "netgear,cvg834g", .data = &board_cvg834g, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328

@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -396,6 +396,31 @@ static struct board_info __initdata boar
+@@ -395,6 +395,31 @@ static struct board_info __initdata boar
  		.num_board_fixups	= ARRAY_SIZE(spw500v_fixups),
  	},
  };
@@ -32,15 +32,15 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  
  /*
-@@ -626,6 +651,7 @@ static const struct board_info __initcon
+@@ -624,6 +649,7 @@ static const struct board_info __initcon
  	&board_rta1025w_16,
  	&board_96348_D4PW,
  	&board_spw500v,
 +	&board_96348sv,
- #endif
- 
+ #endif /* CONFIG_BCM63XX_CPU_6348 */
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -670,6 +696,7 @@ static struct of_device_id const bcm963x
+ 	&board_96358vw,
+@@ -667,6 +693,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "t-com,speedport-w-500v", .data = &board_spw500v, },
  	{ .compatible = "tecom,gw6000", .data = &board_gw6000, },
  	{ .compatible = "tecom,gw6200", .data = &board_gw6200, },

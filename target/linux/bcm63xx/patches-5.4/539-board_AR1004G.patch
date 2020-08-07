@@ -30,15 +30,15 @@ Signed-off-by: Adrian Feliks <mexit@o2.pl>
  
  /* BT Voyager 2110 */
  static struct board_info __initdata board_V2110 = {
-@@ -1649,6 +1664,7 @@ static const struct board_info __initcon
+@@ -1647,6 +1662,7 @@ static const struct board_info __initcon
  	&board_96348A_122,
  	&board_CPVA502plus,
  	&board_96348W3,
 +	&board_96348gw_10_AR1004G,
- #endif
- 
+ #endif /* CONFIG_BCM63XX_CPU_6348 */
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1713,6 +1729,7 @@ static struct of_device_id const bcm963x
+ 	&board_96358vw,
+@@ -1708,6 +1724,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "dynalink,rta770w", .data = &board_rta770w, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6348

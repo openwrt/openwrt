@@ -56,17 +56,17 @@
   * known 6328 boards
   */
  #ifdef CONFIG_BCM63XX_CPU_6328
-@@ -1467,6 +1516,9 @@ static const struct board_info __initcon
+@@ -1465,6 +1514,9 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_3368
  	&board_cvg834g,
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_3368 */
 +#ifdef CONFIG_BCM63XX_CPU_6318
 +	&board_96318ref,
-+#endif
++#endif /* CONFIG_BCM63XX_CPU_6318 */
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
  	&board_AR5381u,
-@@ -1544,6 +1596,9 @@ static struct of_device_id const bcm963x
+@@ -1539,6 +1591,9 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_3368
  	{ .compatible = "netgear,cvg834g", .data = &board_cvg834g, },
  #endif

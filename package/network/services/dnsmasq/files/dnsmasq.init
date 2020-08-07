@@ -42,9 +42,13 @@ dnsmasq_ignore_opt() {
 		bootp-*|\
 		pxe-*)
 			[ -z "$dnsmasq_has_dhcp" ] ;;
-		dnssec-*|\
+		dnssec*|\
 		trust-anchor)
-			[ -z "$dnsmasq_has_dnssec" ] ;;
+			if [ -z "$dnsmasq_has_dnssec" ]; then
+				echo "dnsmasq: \"$opt\" requested, but dnssec support is not available" >&2
+				exit 1
+			fi
+			;;
 		tftp-*)
 			[ -z "$dnsmasq_has_tftp" ] ;;
 		ipset)
