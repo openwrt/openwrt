@@ -399,7 +399,7 @@ $(eval $(call KernelPackage,ip6-vti))
 define KernelPackage/xfrm-interface
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec XFRM Interface
-  DEPENDS:=+kmod-ipsec4 +IPV6:kmod-ipsec6 @!LINUX_4_14
+  DEPENDS:=+kmod-ipsec4 +IPV6:kmod-ipsec6
   KCONFIG:=CONFIG_XFRM_INTERFACE
   FILES:=$(LINUX_DIR)/net/xfrm/xfrm_interface.ko
   AUTOLOAD:=$(call AutoProbe,xfrm_interface)
@@ -788,7 +788,7 @@ $(eval $(call KernelPackage,sched-core))
 define KernelPackage/sched-cake
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Cake fq_codel/blue derived shaper
-  DEPENDS:=@!LINUX_4_14 +kmod-sched-core
+  DEPENDS:=+kmod-sched-core
   KCONFIG:=CONFIG_NET_SCH_CAKE
   FILES:=$(LINUX_DIR)/net/sched/sch_cake.ko
   AUTOLOAD:=$(call AutoProbe,sch_cake)
@@ -1155,7 +1155,7 @@ $(eval $(call KernelPackage,rxrpc))
 define KernelPackage/mpls
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=MPLS support
-  DEPENDS:=+!LINUX_4_14:kmod-iptunnel
+  DEPENDS:=+kmod-iptunnel
   KCONFIG:= \
 	CONFIG_MPLS=y \
 	CONFIG_LWTUNNEL=y \
