@@ -58,10 +58,10 @@ Subject: [PATCH] MIPS: BCM63XX: add inventel Livebox support
  #endif /* __BOARD_COMMON_H */
 --- /dev/null
 +++ b/arch/mips/bcm63xx/boards/board_livebox.c
-@@ -0,0 +1,155 @@
+@@ -0,0 +1,153 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
++ * License. See the file "COPYING" in the main directory of this archive
 + * for more details.
 + *
 + * Copyright (C) 2008 Florian Fainelli <florian@openwrt.org>
@@ -90,28 +90,26 @@ Subject: [PATCH] MIPS: BCM63XX: add inventel Livebox support
 + */
 +#ifdef CONFIG_BCM63XX_CPU_6348
 +static struct board_info __initdata board_livebox_blue5g = {
-+	.name				= "Livebox-blue-5g",
-+	.expected_cpu_id		= 0x6348,
++	.name = "Livebox-blue-5g",
++	.expected_cpu_id = 0x6348,
 +
-+	.has_enet0			= 1,
-+	.has_enet1			= 1,
-+	.has_pci			= 1,
++	.has_pccard = 1,
++	.has_pci = 1,
++	.has_ohci0 = 1,
++	.ephy_reset_gpio = 6,
++	.ephy_reset_gpio_flags = GPIO_ACTIVE_LOW,
 +
++	.has_enet0 = 1,
 +	.enet0 = {
-+		.has_phy		= 1,
-+		.use_internal_phy	= 1,
++		.has_phy = 1,
++		.use_internal_phy = 1,
 +	},
 +
++	.has_enet1 = 1,
 +	.enet1 = {
-+		  .has_phy		= 1,
-+		  .phy_id 		= 31,
++		.has_phy = 1,
++		.phy_id = 31,
 +	},
-+
-+	.ephy_reset_gpio		= 6,
-+	.ephy_reset_gpio_flags		= GPIO_ACTIVE_LOW,
-+
-+	.has_ohci0			= 1,
-+	.has_pccard			= 1,
 +};
 +#endif
 +
@@ -121,7 +119,7 @@ Subject: [PATCH] MIPS: BCM63XX: add inventel Livebox support
 +static const struct board_info __initdata *bcm963xx_boards[] = {
 +#ifdef CONFIG_BCM63XX_CPU_6348
 +	&board_livebox_blue5g
-+#endif
++#endif /* CONFIG_BCM63XX_CPU_6348 */
 +};
 +
 +static struct of_device_id const livebox_boards_dt[] = {
@@ -155,7 +153,7 @@ Subject: [PATCH] MIPS: BCM63XX: add inventel Livebox support
 +		printk(KERN_ERR PFX "unable to fetch mac address\n");
 +		return -ENODEV;
 +	}
-+        mac_addr_used++;
++	mac_addr_used++;
 +
 +	return 0;
 +}

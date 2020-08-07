@@ -6,17 +6,17 @@
  };
 +
 +static struct board_info __initdata board_96348_D4PW = {
-+	.name				= "D-4P-W",
-+	.expected_cpu_id		= 0x6348,
++	.name = "D-4P-W",
++	.expected_cpu_id = 0x6348,
 +
-+	.has_enet1			= 1,
-+	.has_pci			= 1,
++	.has_pci = 1,
 +
++	.has_enet1 = 1,
 +	.enet1 = {
-+		.has_phy		= 1,
-+		.phy_id			= 0,
-+		.force_speed_100	= 1,
-+		.force_duplex_full	= 1,
++		.has_phy = 1,
++		.phy_id = 0,
++		.force_speed_100 = 1,
++		.force_duplex_full = 1,
 +	},
 +};
  #endif /* CONFIG_BCM63XX_CPU_6348 */

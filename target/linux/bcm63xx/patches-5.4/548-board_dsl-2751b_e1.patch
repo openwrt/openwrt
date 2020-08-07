@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -142,6 +142,74 @@ static struct board_info __initdata boar
+@@ -136,6 +136,72 @@ static struct board_info __initdata boar
  		},
  	},
  };
@@ -27,55 +27,53 @@
 +};
 +
 +static struct board_info __initdata board_dsl_2751b_d1 = {
-+	.name				= "AW5200B",
-+	.expected_cpu_id		= 0x6318,
++	.name = "AW5200B",
++	.expected_cpu_id = 0x6318,
 +
-+	.has_pci			= 1,
-+	.use_fallback_sprom		= 1,
++	.has_pci = 1,
++	.has_ohci0 = 1,
++	.has_ehci0 = 1,
++	.num_usbh_ports = 1,
 +
-+	.has_enetsw			= 1,
-+
-+	.has_ohci0			= 1,
-+	.has_ehci0			= 1,
-+	.num_usbh_ports			= 1,
-+
++	.has_enetsw = 1,
 +	.enetsw = {
 +		.used_ports = {
 +			[0] = {
-+				.used	= 1,
++				.used = 1,
 +				.phy_id = 1,
-+				.name	= "Port 1",
++				.name = "Port 1",
 +			},
 +			[1] = {
-+				.used	= 1,
-+				.phy_id	= 2,
-+				.name	= "Port 2",
++				.used = 1,
++				.phy_id = 2,
++				.name = "Port 2",
 +			},
 +			[2] = {
-+				.used	= 1,
-+				.phy_id	= 3,
-+				.name	= "Port 3",
++				.used = 1,
++				.phy_id = 3,
++				.name = "Port 3",
 +			},
 +			[3] = {
-+				.used	= 1,
-+				.phy_id	= 4,
-+				.name	= "Port 4",
++				.used = 1,
++				.phy_id = 4,
++				.name = "Port 4",
 +			},
 +		},
 +	},
 +
++	.use_fallback_sprom = 1,
 +	.fallback_sprom = {
-+		.type 				= SPROM_BCM43217,
-+		.pci_bus			= 1,
-+		.pci_dev			= 0,
-+		.board_fixups			= dsl2751b_e1_fixups,
-+		.num_board_fixups		= ARRAY_SIZE(dsl2751b_e1_fixups),
++		.type = SPROM_BCM43217,
++		.pci_bus = 1,
++		.pci_dev = 0,
++		.board_fixups = dsl2751b_e1_fixups,
++		.num_board_fixups = ARRAY_SIZE(dsl2751b_e1_fixups),
 +	},
 +};
  #endif /* CONFIG_BCM63XX_CPU_6318 */
  
  /*
-@@ -1997,6 +2065,7 @@ static const struct board_info __initcon
+@@ -1938,6 +2004,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6318
  	&board_96318ref,
  	&board_96318ref_p300,
@@ -83,7 +81,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6318 */
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
-@@ -2087,6 +2156,7 @@ static struct of_device_id const bcm963x
+@@ -2028,6 +2095,7 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_6318
  	{ .compatible = "brcm,bcm96318ref", .data = &board_96318ref, },
  	{ .compatible = "brcm,bcm96318ref-p300", .data = &board_96318ref_p300, },

@@ -6,41 +6,37 @@ Signed-off-by: Max Staudt <openwrt.max@enpas.org>
 ---
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1330,6 +1330,41 @@ static struct board_info __initdata boar
+@@ -1308,6 +1308,37 @@ static struct board_info __initdata boar
  		},
  	},
  };
 +
 +static struct board_info __initdata board_fast2504n = {
-+	.name				= "F@ST2504n",
-+	.expected_cpu_id		= 0x6362,
++	.name = "F@ST2504n",
++	.expected_cpu_id = 0x6362,
 +
-+	.has_enetsw			= 1,
-+
++	.has_enetsw = 1,
 +	.enetsw = {
 +		.used_ports = {
 +			[0] = {
-+				.used	= 1,
-+				.phy_id	= 1,
-+				.name	= "Port 1",
++				.used = 1,
++				.phy_id = 1,
++				.name = "Port 1",
 +			},
-+
 +			[1] = {
-+				.used	= 1,
-+				.phy_id	= 2,
-+				.name	= "Port 2",
++				.used = 1,
++				.phy_id = 2,
++				.name = "Port 2",
 +			},
-+
 +			[2] = {
-+				.used	= 1,
-+				.phy_id	= 3,
-+				.name	= "Port 3",
++				.used = 1,
++				.phy_id = 3,
++				.name = "Port 3",
 +			},
-+
 +			[3] = {
-+				.used	= 1,
-+				.phy_id	= 4,
-+				.name	= "Port 4",
++				.used = 1,
++				.phy_id = 4,
++				.name = "Port 4",
 +			},
 +		},
 +	},
@@ -48,7 +44,7 @@ Signed-off-by: Max Staudt <openwrt.max@enpas.org>
  #endif /* CONFIG_BCM63XX_CPU_6362 */
  
  /*
-@@ -1491,6 +1526,7 @@ static const struct board_info __initcon
+@@ -1459,6 +1490,7 @@ static const struct board_info __initcon
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  #ifdef CONFIG_BCM63XX_CPU_6362
  	&board_nb6,
@@ -56,7 +52,7 @@ Signed-off-by: Max Staudt <openwrt.max@enpas.org>
  #endif /* CONFIG_BCM63XX_CPU_6362 */
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
-@@ -1571,6 +1607,7 @@ static struct of_device_id const bcm963x
+@@ -1539,6 +1571,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6362
