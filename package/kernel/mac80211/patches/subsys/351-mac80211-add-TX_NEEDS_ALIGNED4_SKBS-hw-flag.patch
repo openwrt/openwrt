@@ -113,7 +113,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!(mshdr->flags & MESH_FLAGS_AE)) {
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2597,7 +2597,7 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2621,7 +2621,7 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  	struct ieee80211_local *local = rx->local;
  	struct ieee80211_sub_if_data *sdata = rx->sdata;
  	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
@@ -122,7 +122,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int tailroom = 0;
  
  	hdr = (struct ieee80211_hdr *) skb->data;
-@@ -2690,7 +2690,9 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2714,7 +2714,9 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  	if (sdata->crypto_tx_tailroom_needed_cnt)
  		tailroom = IEEE80211_ENCRYPT_TAILROOM;
  
@@ -133,7 +133,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				       sdata->encrypt_headroom,
  				  tailroom, GFP_ATOMIC);
  	if (!fwd_skb)
-@@ -2722,6 +2724,12 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2746,6 +2748,12 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  		return RX_DROP_MONITOR;
  	}
  
@@ -159,7 +159,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct rcu_head rcu_head;
 --- a/net/mac80211/status.c
 +++ b/net/mac80211/status.c
-@@ -515,6 +515,7 @@ static void ieee80211_report_used_skb(st
+@@ -514,6 +514,7 @@ static void ieee80211_report_used_skb(st
  {
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	struct ieee80211_hdr *hdr = (void *)skb->data;
@@ -167,7 +167,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool acked = info->flags & IEEE80211_TX_STAT_ACK;
  
  	if (dropped)
-@@ -531,7 +532,7 @@ static void ieee80211_report_used_skb(st
+@@ -530,7 +531,7 @@ static void ieee80211_report_used_skb(st
  			skb->dev = NULL;
  		} else {
  			unsigned int hdr_size =
@@ -176,7 +176,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  			/* Check to see if packet is a TDLS teardown packet */
  			if (ieee80211_is_data(hdr->frame_control) &&
-@@ -655,9 +656,22 @@ void ieee80211_tx_monitor(struct ieee802
+@@ -654,9 +655,22 @@ void ieee80211_tx_monitor(struct ieee802
  	struct sk_buff *skb2;
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	struct ieee80211_sub_if_data *sdata;

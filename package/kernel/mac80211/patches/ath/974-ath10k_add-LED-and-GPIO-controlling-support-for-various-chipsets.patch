@@ -415,7 +415,7 @@ v13:
  /* Rates */
 --- a/drivers/net/wireless/ath/ath10k/wmi-ops.h
 +++ b/drivers/net/wireless/ath/ath10k/wmi-ops.h
-@@ -216,7 +216,10 @@ struct wmi_ops {
+@@ -217,7 +217,10 @@ struct wmi_ops {
  	struct sk_buff *(*gen_echo)(struct ath10k *ar, u32 value);
  	struct sk_buff *(*gen_pdev_get_tpc_table_cmdid)(struct ath10k *ar,
  							u32 param);
@@ -426,7 +426,7 @@ v13:
  };
  
  int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb, u32 cmd_id);
-@@ -1054,6 +1057,35 @@ ath10k_wmi_force_fw_hang(struct ath10k *
+@@ -1064,6 +1067,35 @@ ath10k_wmi_force_fw_hang(struct ath10k *
  	return ath10k_wmi_cmd_send(ar, skb, ar->wmi.cmd->force_fw_hang_cmdid);
  }
  
@@ -464,7 +464,7 @@ v13:
  {
 --- a/drivers/net/wireless/ath/ath10k/wmi-tlv.c
 +++ b/drivers/net/wireless/ath/ath10k/wmi-tlv.c
-@@ -3976,6 +3976,8 @@ static const struct wmi_ops wmi_tlv_ops
+@@ -3991,6 +3991,8 @@ static const struct wmi_ops wmi_tlv_ops
  	.gen_echo = ath10k_wmi_tlv_op_gen_echo,
  	.gen_vdev_spectral_conf = ath10k_wmi_tlv_op_gen_vdev_spectral_conf,
  	.gen_vdev_spectral_enable = ath10k_wmi_tlv_op_gen_vdev_spectral_enable,

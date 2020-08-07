@@ -385,7 +385,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	 */
 --- a/net/mac80211/status.c
 +++ b/net/mac80211/status.c
-@@ -828,6 +828,12 @@ static void __ieee80211_tx_status(struct
+@@ -827,6 +827,12 @@ static void __ieee80211_tx_status(struct
  			ieee80211_sta_tx_notify(sta->sdata, (void *) skb->data,
  						acked, info->status.tx_time);
  
