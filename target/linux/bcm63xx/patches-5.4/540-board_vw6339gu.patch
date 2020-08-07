@@ -58,10 +58,10 @@
  };
  
 @@ -1716,6 +1759,7 @@ static struct of_device_id const bcm963x
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6368 */
  #ifdef CONFIG_BCM63XX_CPU_63268
  	{ .compatible = "brcm,bcm963269bhr", .data = &board_963269bhr, },
 +	{ .compatible = "inteno,vg50", .data = &board_vw6339gu, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_63268 */
  #endif /* CONFIG_OF */
  	{ },

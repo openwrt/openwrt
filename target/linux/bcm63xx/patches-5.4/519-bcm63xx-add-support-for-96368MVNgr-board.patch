@@ -59,11 +59,11 @@ Subject: [PATCH 33/63] bcm63xx: add support for 96368MVNgr board.
  #endif /* CONFIG_BCM63XX_CPU_6368 */
  };
  
-@@ -933,6 +969,7 @@ static struct of_device_id const bcm963x
- 	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
- #endif
+@@ -937,6 +973,7 @@ static struct of_device_id const bcm963x
+ #ifdef CONFIG_BCM63XX_CPU_6362
+ #endif /* CONFIG_BCM63XX_CPU_6362 */
  #ifdef CONFIG_BCM63XX_CPU_6368
 +	{ .compatible = "brcm,bcm96368mvngr", .data = &board_96368mvngr, },
  	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6368 */
  #ifdef CONFIG_BCM63XX_CPU_63268

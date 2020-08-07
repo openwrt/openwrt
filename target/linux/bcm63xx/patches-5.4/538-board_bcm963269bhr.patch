@@ -59,9 +59,9 @@
  static struct of_device_id const bcm963xx_boards_dt[] = {
 @@ -1655,6 +1698,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6368 */
  #ifdef CONFIG_BCM63XX_CPU_63268
 +	{ .compatible = "brcm,bcm963269bhr", .data = &board_963269bhr, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_63268 */
  #endif /* CONFIG_OF */
  	{ },
