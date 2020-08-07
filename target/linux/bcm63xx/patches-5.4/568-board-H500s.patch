@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -2789,6 +2789,36 @@ static struct board_info __initdata boar
+@@ -2795,6 +2795,36 @@ static struct board_info __initdata boar
  		},
  	},
  };
@@ -37,7 +37,7 @@
  #endif /* CONFIG_BCM63XX_CPU_63268 */
  
  /*
-@@ -2900,6 +2930,7 @@ static const struct board_info __initcon
+@@ -2906,6 +2936,7 @@ static const struct board_info __initcon
  	&board_VR3032u,
  	&board_vw6339gu,
  	&board_BSKYB_63168,
@@ -45,7 +45,7 @@
  #endif /* CONFIG_BCM63XX_CPU_63268 */
  };
  
-@@ -3018,6 +3049,8 @@ static struct of_device_id const bcm963x
+@@ -3024,6 +3055,8 @@ static struct of_device_id const bcm963x
  	{ .compatible = "comtrend,vg-8050", .data = &board_VG8050, },
  	{ .compatible = "comtrend,vr-3032u", .data = &board_VR3032u, },
  	{ .compatible = "inteno,vg50", .data = &board_vw6339gu, },
