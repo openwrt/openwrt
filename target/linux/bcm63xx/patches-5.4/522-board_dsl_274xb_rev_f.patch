@@ -61,7 +61,7 @@ Subject: [PATCH 70/79] MIPS: BCM63XX: Add board definition for D-Link
  #endif /* CONFIG_BCM63XX_CPU_6328 */
  
  /*
-@@ -925,6 +969,7 @@ static const struct board_info __initcon
+@@ -923,6 +967,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
  	&board_963281TAN,
@@ -69,7 +69,7 @@ Subject: [PATCH 70/79] MIPS: BCM63XX: Add board definition for D-Link
  #endif /* CONFIG_BCM63XX_CPU_6328 */
  #ifdef CONFIG_BCM63XX_CPU_6338
  	&board_96338gw,
-@@ -981,6 +1026,7 @@ static struct of_device_id const bcm963x
+@@ -979,6 +1024,7 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_6328
  	{ .compatible = "brcm,bcm963281tan", .data = &board_963281TAN, },
  	{ .compatible = "brcm,bcm96328avng", .data = &board_96328avng, },
