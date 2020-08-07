@@ -18,7 +18,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/include/linux/tcp.h
 +++ b/include/linux/tcp.h
-@@ -368,7 +368,7 @@ struct tcp_sock {
+@@ -370,7 +370,7 @@ struct tcp_sock {
  	u32	*saved_syn;
  };
  
@@ -27,7 +27,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	TSQ_THROTTLED,
  	TSQ_QUEUED,
  	TCP_TSQ_DEFERRED,	   /* tcp_tasklet_func() found socket was owned */
-@@ -379,6 +379,15 @@ enum tsq_flags {
+@@ -381,6 +381,15 @@ enum tsq_flags {
  				    */
  };
  
@@ -45,7 +45,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	return (struct tcp_sock *)sk;
 --- a/net/ipv4/tcp_output.c
 +++ b/net/ipv4/tcp_output.c
-@@ -790,10 +790,10 @@ static void tcp_tasklet_func(unsigned lo
+@@ -792,10 +792,10 @@ static void tcp_tasklet_func(unsigned lo
  	}
  }
  
@@ -60,7 +60,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  /**
   * tcp_release_cb - tcp release_sock() callback
   * @sk: socket
-@@ -814,7 +814,7 @@ void tcp_release_cb(struct sock *sk)
+@@ -816,7 +816,7 @@ void tcp_release_cb(struct sock *sk)
  		nflags = flags & ~TCP_DEFERRED_ALL;
  	} while (cmpxchg(&tp->tsq_flags, flags, nflags) != flags);
  
@@ -69,7 +69,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		tcp_tsq_handler(sk);
  
  	/* Here begins the tricky part :
-@@ -828,15 +828,15 @@ void tcp_release_cb(struct sock *sk)
+@@ -830,15 +830,15 @@ void tcp_release_cb(struct sock *sk)
  	 */
  	sock_release_ownership(sk);
  

@@ -35,7 +35,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  #define SPI_MCR_MASTER		(1 << 31)
 @@ -72,6 +75,11 @@
  #define SPI_SR_TCFQF		0x80000000
- #define SPI_SR_CLEAR		0xdaad0000
+ #define SPI_SR_CLEAR		0x9aaf0000
  
 +#define SPI_RSER_TFFFE		BIT(25)
 +#define SPI_RSER_TFFFD		BIT(24)

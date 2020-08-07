@@ -30,7 +30,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/net/ipv4/tcp_output.c
 +++ b/net/ipv4/tcp_output.c
-@@ -775,6 +775,7 @@ static void tcp_tasklet_func(unsigned lo
+@@ -777,6 +777,7 @@ static void tcp_tasklet_func(unsigned lo
  		list_del(&tp->tsq_node);
  
  		sk = (struct sock *)tp;
