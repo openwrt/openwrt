@@ -5,7 +5,7 @@
  	.expected_cpu_id		= 0x6345,
  };
 +
-+static struct board_info __initdata board_rta770bw = {
++static struct board_info __initdata board_rta770w = {
 +	.name = "RTA770BW",
 +	.expected_cpu_id = 0x6345,
 +
@@ -24,15 +24,16 @@
  #endif /* CONFIG_BCM63XX_CPU_6338 */
  #ifdef CONFIG_BCM63XX_CPU_6345
  	&board_96345gw2,
-+	&board_rta770bw,
++	&board_rta770w,
  #endif /* CONFIG_BCM63XX_CPU_6345 */
  #ifdef CONFIG_BCM63XX_CPU_6348
  	&board_96348r,
-@@ -1323,6 +1337,7 @@ static struct of_device_id const bcm963x
+@@ -1323,6 +1337,8 @@ static struct of_device_id const bcm963x
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6345
  	{ .compatible = "brcm,bcm96345gw2", .data = &board_96345gw2, },
-+	{ .compatible = "dynalink,rta770bw", .data = &board_rta770bw, },
++	{ .compatible = "dynalink,rta770bw", .data = &board_rta770w, },
++	{ .compatible = "dynalink,rta770w", .data = &board_rta770w, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6348
  	{ .compatible = "belkin,f5d7633", .data = &board_96348gw_10, },
