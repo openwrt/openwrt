@@ -196,7 +196,7 @@ hostapd_common_add_bss_config() {
 	config_add_int eapol_version
 
 	config_add_string 'auth_server:host' 'server:host'
-	config_add_string auth_secret
+	config_add_string auth_secret key
 	config_add_int 'auth_port:port' 'port:port'
 
 	config_add_string acct_server
