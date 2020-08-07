@@ -1,0 +1,11 @@
+--- a/include/configs/sunxi-common.h
++++ b/include/configs/sunxi-common.h
+@@ -35,6 +35,8 @@
+ #define CONFIG_SYS_BOOTM_LEN		(32 << 20)
+ #endif
+ 
++#define CONFIG_SYS_BOOTM_LEN            0x10000000
++
+ /* Serial & console */
+ #define CONFIG_SYS_NS16550_SERIAL
+ /* ns16550 reg in the low bits of cpu reg */
