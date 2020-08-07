@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1552,6 +1552,50 @@ static struct board_info __initdata boar
+@@ -1510,6 +1510,45 @@ static struct board_info __initdata boar
  #endif /* CONFIG_BCM63XX_CPU_6368 */
  
  /*
@@ -8,39 +8,34 @@
 + */
 +#ifdef CONFIG_BCM63XX_CPU_63268
 +static struct board_info __initdata board_963269bhr = {
-+	.name				= "963269BHR",
-+	.expected_cpu_id		= 0x63268,
++	.name = "963269BHR",
++	.expected_cpu_id = 0x63268,
 +
-+	.has_pci			= 1,
++	.has_pci = 1,
++	.has_ehci0 = 1,
 +
-+	.has_ehci0			= 1,
-+
-+	.has_enetsw			= 1,
-+
++	.has_enetsw = 1,
 +	.enetsw = {
 +		.used_ports = {
 +			[0] = {
-+				.used	= 1,
-+				.phy_id	= 1,
-+				.name	= "port1",
++				.used = 1,
++				.phy_id = 1,
++				.name = "port1",
 +			},
-+
 +			[1] = {
-+				.used	= 1,
-+				.phy_id	= 2,
-+				.name	= "port2",
++				.used = 1,
++				.phy_id = 2,
++				.name = "port2",
 +			},
-+
 +			[2] = {
-+				.used	= 1,
-+				.phy_id	= 3,
-+				.name	= "port3",
++				.used = 1,
++				.phy_id = 3,
++				.name = "port3",
 +			},
-+
 +			[3] = {
-+				.used	= 1,
-+				.phy_id	= 4,
-+				.name	= "port4",
++				.used = 1,
++				.phy_id = 4,
++				.name = "port4",
 +			},
 +		},
 +	},
@@ -51,7 +46,7 @@
   * all boards
   */
  static const struct board_info __initconst *bcm963xx_boards[] = {
-@@ -1629,6 +1673,9 @@ static const struct board_info __initcon
+@@ -1587,6 +1626,9 @@ static const struct board_info __initcon
  	&board_96368mvwg,
  	&board_96368mvngr,
  #endif /* CONFIG_BCM63XX_CPU_6368 */
@@ -61,7 +56,7 @@
  };
  
  static struct of_device_id const bcm963xx_boards_dt[] = {
-@@ -1716,6 +1763,7 @@ static struct of_device_id const bcm963x
+@@ -1674,6 +1716,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_63268

@@ -1,27 +1,26 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -2867,6 +2867,37 @@ static struct board_info __initdata boar
+@@ -2788,6 +2788,36 @@ static struct board_info __initdata boar
  		},
  	},
  };
 +
 +static struct board_info __initdata board_H500s = {
-+	.name				= "BXK00C-1.6",
-+	.expected_cpu_id		= 0x63268,
++	.name = "BXK00C-1.6",
++	.expected_cpu_id = 0x63268,
 +
-+	.has_ehci0			= 1,
-+	.has_ohci0			= 1,
-+	.num_usbh_ports			= 1,
++	.has_ohci0 = 1,
++	.has_ehci0 = 1,
++	.num_usbh_ports = 1,
 +
-+	.has_enetsw			= 1,
++	.has_enetsw = 1,
 +	.enetsw = {
 +		.used_ports = {
 +			[3] = {
-+				.used   = 1,
++				.used = 1,
 +				.phy_id = 12,
-+				.name   = "WAN",
++				.name = "WAN",
 +			},
-+
 +			[4] = {
 +				.used = 1,
 +				.phy_id = 0,
@@ -38,7 +37,7 @@
  #endif /* CONFIG_BCM63XX_CPU_63268 */
  
  /*
-@@ -2978,6 +3009,7 @@ static const struct board_info __initcon
+@@ -2899,6 +2929,7 @@ static const struct board_info __initcon
  	&board_VR3032u,
  	&board_vw6339gu,
  	&board_BSKYB_63168,
@@ -46,7 +45,7 @@
  #endif /* CONFIG_BCM63XX_CPU_63268 */
  };
  
-@@ -3096,6 +3128,8 @@ static struct of_device_id const bcm963x
+@@ -3017,6 +3048,8 @@ static struct of_device_id const bcm963x
  	{ .compatible = "comtrend,vg-8050", .data = &board_VG8050, },
  	{ .compatible = "comtrend,vr-3032u", .data = &board_VR3032u, },
  	{ .compatible = "inteno,vg50", .data = &board_vw6339gu, },

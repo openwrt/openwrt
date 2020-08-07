@@ -1,29 +1,28 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -964,6 +964,32 @@ static struct board_info __initdata boar
+@@ -944,6 +944,31 @@ static struct board_info __initdata boar
  };
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
 +#ifdef CONFIG_BCM63XX_CPU_6362
 +static struct board_info __initdata board_nb6 = {
-+	.name				= "NB6",
-+	.expected_cpu_id		= 0x6362,
++	.name = "NB6",
++	.expected_cpu_id = 0x6362,
 +
-+	.has_ohci0			= 1,
-+	.has_ehci0			= 1,
-+	.num_usbh_ports			= 2,
++	.has_ohci0 = 1,
++	.has_ehci0 = 1,
++	.num_usbh_ports = 2,
 +
-+	.has_enetsw			= 1,
-+
++	.has_enetsw = 1,
 +	.enetsw = {
 +		.used_ports = {
 +			[4] = {
-+				.used	= 1,
-+				.phy_id	= 0xff,
++				.used = 1,
++				.phy_id = 0xff,
 +				.bypass_link = 1,
 +				.force_speed = 1000,
 +				.force_duplex_full = 1,
-+				.name	= "RGMII",
++				.name = "RGMII",
 +			},
 +		},
 +	},
@@ -33,7 +32,7 @@
  /*
   * known 6368 boards
   */
-@@ -1111,6 +1137,9 @@ static const struct board_info __initcon
+@@ -1081,6 +1106,9 @@ static const struct board_info __initcon
  	&board_spw303v,
  	&board_DVAG3810BN,
  #endif /* CONFIG_BCM63XX_CPU_6358 */
@@ -43,7 +42,7 @@
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
-@@ -1179,6 +1208,9 @@ static struct of_device_id const bcm963x
+@@ -1149,6 +1177,9 @@ static struct of_device_id const bcm963x
  	{ .compatible = "t-com,speedport-w-303v", .data = &board_spw303v, },
  	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
  #endif

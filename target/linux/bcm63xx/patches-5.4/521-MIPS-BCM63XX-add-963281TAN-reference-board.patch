@@ -9,40 +9,39 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -92,6 +92,40 @@ static struct board_info __initdata boar
+@@ -91,6 +91,39 @@ static struct board_info __initdata boar
  		},
  	},
  };
 +
 +static struct board_info __initdata board_963281TAN = {
-+	.name				= "963281TAN",
-+	.expected_cpu_id		= 0x6328,
++	.name = "963281TAN",
++	.expected_cpu_id = 0x6328,
 +
-+	.has_pci			= 1,
++	.has_pci = 1,
 +
-+	.has_enetsw			= 1,
-+
++	.has_enetsw = 1,
 +	.enetsw = {
 +		.used_ports = {
 +			[0] = {
-+				.used	= 1,
++				.used = 1,
 +				.phy_id = 1,
-+				.name	= "Port 1",
++				.name = "Port 1",
 +			},
 +			[1] = {
-+				.used	= 1,
-+				.phy_id	= 2,
-+				.name	= "Port 2",
++				.used = 1,
++				.phy_id = 2,
++				.name = "Port 2",
 +			},
 +			[2] = {
-+				.used	= 1,
-+				.phy_id	= 3,
-+				.name	= "Port 3",
++				.used = 1,
++				.phy_id = 3,
++				.name = "Port 3",
 +			},
 +			[3] = {
-+				.used	= 1,
-+				.phy_id	= 4,
-+				.name	= "Port 4",
++				.used = 1,
++				.phy_id = 4,
++				.name = "Port 4",
 +			},
 +		},
 +	},
@@ -50,7 +49,7 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
  #endif /* CONFIG_BCM63XX_CPU_6328 */
  
  /*
-@@ -916,6 +950,7 @@ static const struct board_info __initcon
+@@ -891,6 +924,7 @@ static const struct board_info __initcon
  #endif /* CONFIG_BCM63XX_CPU_3368 */
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
@@ -58,7 +57,7 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
  #endif /* CONFIG_BCM63XX_CPU_6328 */
  #ifdef CONFIG_BCM63XX_CPU_6338
  	&board_96338gw,
-@@ -970,6 +1005,7 @@ static struct of_device_id const bcm963x
+@@ -945,6 +979,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "netgear,cvg834g", .data = &board_cvg834g, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328
