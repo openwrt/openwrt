@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1528,6 +1528,65 @@ static struct board_info __initdata boar
+@@ -1526,6 +1526,65 @@ static struct board_info __initdata boar
   * known 63268/63269 boards
   */
  #ifdef CONFIG_BCM63XX_CPU_63268
@@ -66,7 +66,7 @@
  static struct board_info __initdata board_963269bhr = {
  	.name = "963269BHR",
  	.expected_cpu_id = 0x63268,
-@@ -1685,6 +1744,7 @@ static const struct board_info __initcon
+@@ -1683,6 +1742,7 @@ static const struct board_info __initcon
  	&board_96368mvngr,
  #endif /* CONFIG_BCM63XX_CPU_6368 */
  #ifdef CONFIG_BCM63XX_CPU_63268
@@ -74,7 +74,7 @@
  	&board_963269bhr,
  	&board_vw6339gu,
  #endif /* CONFIG_BCM63XX_CPU_63268 */
-@@ -1776,6 +1836,7 @@ static struct of_device_id const bcm963x
+@@ -1774,6 +1834,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_63268

@@ -35,7 +35,7 @@
  static struct board_info __initdata board_ct536_ct5621 = {
  	.name = "CT536_CT5621",
  	.expected_cpu_id = 0x6348,
-@@ -784,6 +812,7 @@ static const struct board_info __initcon
+@@ -782,6 +810,7 @@ static const struct board_info __initcon
  	&board_V2110,
  	&board_ct536_ct5621,
  	&board_96348A_122,
@@ -43,7 +43,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  #ifdef CONFIG_BCM63XX_CPU_6358
  	&board_96358vw,
-@@ -835,6 +864,7 @@ static struct of_device_id const bcm963x
+@@ -833,6 +862,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "t-com,speedport-w-500v", .data = &board_spw500v, },
  	{ .compatible = "tecom,gw6000", .data = &board_gw6000, },
  	{ .compatible = "tecom,gw6200", .data = &board_gw6200, },

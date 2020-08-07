@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -944,6 +944,31 @@ static struct board_info __initdata boar
+@@ -942,6 +942,31 @@ static struct board_info __initdata boar
  };
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
@@ -32,7 +32,7 @@
  /*
   * known 6368 boards
   */
-@@ -1081,6 +1106,9 @@ static const struct board_info __initcon
+@@ -1079,6 +1104,9 @@ static const struct board_info __initcon
  	&board_spw303v,
  	&board_DVAG3810BN,
  #endif /* CONFIG_BCM63XX_CPU_6358 */
@@ -42,7 +42,7 @@
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
-@@ -1149,6 +1177,9 @@ static struct of_device_id const bcm963x
+@@ -1147,6 +1175,9 @@ static struct of_device_id const bcm963x
  	{ .compatible = "t-com,speedport-w-303v", .data = &board_spw303v, },
  	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
  #endif

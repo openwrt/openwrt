@@ -23,7 +23,7 @@
  static struct board_info __initdata board_96348gw = {
  	.name				= "96348GW",
  	.expected_cpu_id		= 0x6348,
-@@ -716,6 +732,7 @@ static const struct board_info __initcon
+@@ -715,6 +731,7 @@ static const struct board_info __initcon
  	&board_spw500v,
  	&board_96348sv,
  	&board_V2500V_BB,
@@ -31,7 +31,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  #ifdef CONFIG_BCM63XX_CPU_6358
  	&board_96358vw,
-@@ -754,6 +771,7 @@ static struct of_device_id const bcm963x
+@@ -753,6 +770,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96348gw-10", .data = &board_96348gw_10, },
  	{ .compatible = "brcm,bcm96348gw-11", .data = &board_96348gw_11, },
  	{ .compatible = "brcm,bcm96348gw-a", .data = &board_96348gw_a, },

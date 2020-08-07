@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -222,6 +222,31 @@ static struct board_info __initdata boar
+@@ -222,6 +222,30 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -11,7 +11,6 @@
 +	.has_pccard = 1,
 +	.has_pci = 1,
 +	.has_ohci0 = 1,
-+	.has_ehci0 = 1,
 +
 +	.has_enet1 = 1,
 +	.enet1 = {
@@ -32,7 +31,7 @@
  static struct board_info __initdata board_96348gw = {
  	.name				= "96348GW",
  	.expected_cpu_id		= 0x6348,
-@@ -733,6 +758,7 @@ static const struct board_info __initcon
+@@ -732,6 +756,7 @@ static const struct board_info __initcon
  	&board_96348sv,
  	&board_V2500V_BB,
  	&board_V2110,
@@ -40,7 +39,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  #ifdef CONFIG_BCM63XX_CPU_6358
  	&board_96358vw,
-@@ -773,6 +799,8 @@ static struct of_device_id const bcm963x
+@@ -772,6 +797,8 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96348gw-a", .data = &board_96348gw_a, },
  	{ .compatible = "bt,voyager-2110", .data = &board_V2110, },
  	{ .compatible = "bt,voyager-2500v-bb", .data = &board_V2500V_BB, },

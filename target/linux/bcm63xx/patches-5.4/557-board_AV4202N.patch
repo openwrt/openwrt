@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1695,6 +1695,48 @@ static struct board_info __initdata boar
+@@ -1693,6 +1693,48 @@ static struct board_info __initdata boar
   * known 6368 boards
   */
  #ifdef CONFIG_BCM63XX_CPU_6368
@@ -49,7 +49,7 @@
  static struct board_info __initdata board_96368mvwg = {
  	.name = "96368MVWG",
  	.expected_cpu_id = 0x6368,
-@@ -2389,6 +2431,7 @@ static const struct board_info __initcon
+@@ -2387,6 +2429,7 @@ static const struct board_info __initcon
  	&board_fast2504n,
  #endif /* CONFIG_BCM63XX_CPU_6362 */
  #ifdef CONFIG_BCM63XX_CPU_6368
@@ -57,7 +57,7 @@
  	&board_96368mvwg,
  	&board_96368mvngr,
  	&board_DGND3700v1_3800B,
-@@ -2496,6 +2539,7 @@ static struct of_device_id const bcm963x
+@@ -2494,6 +2537,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "sfr,neufbox-6-sercomm-r0", .data = &board_nb6, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6368
