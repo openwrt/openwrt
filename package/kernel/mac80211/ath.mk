@@ -40,7 +40,6 @@ config-$(CONFIG_PACKAGE_ATH_DYNACK) += ATH9K_DYNACK
 config-$(call config_package,ath9k) += ATH9K
 config-$(call config_package,ath9k-common) += ATH9K_COMMON
 config-$(call config_package,owl-loader) += ATH9K_PCI_NO_EEPROM
-config-$(CONFIG_TARGET_ar71xx) += ATH9K_AHB
 config-$(CONFIG_TARGET_ath79) += ATH9K_AHB
 config-$(CONFIG_TARGET_ipq40xx) += ATH10K_AHB
 config-$(CONFIG_PCI) += ATH9K_PCI
@@ -122,7 +121,7 @@ endef
 define KernelPackage/ath
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros common driver part
-  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT||TARGET_ar71xx||TARGET_ath79||TARGET_ath25 +kmod-mac80211
+  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT||TARGET_ath79||TARGET_ath25 +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath.ko
   MENU:=1
 endef
@@ -187,7 +186,7 @@ define KernelPackage/ath9k-common
   TITLE:=Atheros 802.11n wireless devices (common code for ath9k and ath9k_htc)
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath9k
   HIDDEN:=1
-  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT||TARGET_ar71xx||TARGET_ath79 +kmod-ath +@DRIVER_11N_SUPPORT +@DRIVER_11W_SUPPORT
+  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT||TARGET_ath79 +kmod-ath +@DRIVER_11N_SUPPORT +@DRIVER_11W_SUPPORT
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_common.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_hw.ko
@@ -197,7 +196,7 @@ define KernelPackage/ath9k
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n PCI wireless cards support
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath9k
-  DEPENDS+= @PCI_SUPPORT||TARGET_ar71xx||TARGET_ath79 +kmod-ath9k-common
+  DEPENDS+= @PCI_SUPPORT||TARGET_ath79 +kmod-ath9k-common
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k.ko
   AUTOLOAD:=$(call AutoProbe,ath9k)
@@ -226,7 +225,7 @@ define KernelPackage/ath9k/config
 
 	config ATH9K_UBNTHSR
 		bool "Support for Ubiquiti UniFi Outdoor+ access point"
-		depends on PACKAGE_kmod-ath9k && (TARGET_ar71xx_generic||TARGET_ath79)
+		depends on PACKAGE_kmod-ath9k && TARGET_ath79
 		default y
 
 endef
