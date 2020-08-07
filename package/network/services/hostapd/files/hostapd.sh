@@ -402,7 +402,9 @@ hostapd_set_bss_options() {
 		;;
 		psk|sae|psk-sae)
 			json_get_vars key wpa_psk_file
-			if [ ${#key} -lt 8 ]; then
+			if [ -z "$key" ] && [ -n "$wpa_psk_file" ]; then
+				# Do nothing with key, use wpa_psk file only.
+			elif [ ${#key} -lt 8 ]; then
 				wireless_setup_vif_failed INVALID_WPA_PSK
 				return 1
 			elif [ ${#key} -eq 64 ]; then
