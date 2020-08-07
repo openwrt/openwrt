@@ -9,10 +9,6 @@ ifndef DUMP
   include $(INCLUDE_DIR)/feeds.mk
 endif
 
-# invoke ipkg-build with some default options
-IPKG_BUILD:= \
-  $(SCRIPT_DIR)/ipkg-build -c -o 0 -g 0
-
 IPKG_REMOVE:= \
   $(SCRIPT_DIR)/ipkg-remove
 
@@ -262,7 +258,7 @@ $(_endef)
     endif
 
 	$(INSTALL_DIR) $$(PDIR_$(1))
-	$(IPKG_BUILD) $$(IDIR_$(1)) $$(PDIR_$(1))
+	$(FAKEROOT) $(SCRIPT_DIR)/ipkg-build -m "$(PKG_FILE_MODES)" $$(IDIR_$(1)) $$(PDIR_$(1))
 	@[ -f $$(IPKG_$(1)) ]
 
     $(1)-clean:
