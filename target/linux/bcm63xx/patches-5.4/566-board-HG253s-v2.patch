@@ -48,7 +48,7 @@
  	&board_AV4202N,
 @@ -2901,6 +2933,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "bt,home-hub-2-a", .data = &board_homehub2a, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6358 */
  #ifdef CONFIG_BCM63XX_CPU_6362
 +	{ .compatible = "huawei,hg253s-v2", .data = &board_hg253s_v2, },
  	{ .compatible = "netgear,dgnd3700-v2", .data = &board_dgnd3700v2, },

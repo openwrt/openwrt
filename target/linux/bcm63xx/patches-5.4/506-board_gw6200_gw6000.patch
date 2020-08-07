@@ -56,7 +56,7 @@
  	&board_96348gw_10,
  	&board_96348gw_11,
  	&board_FAST2404,
-@@ -614,6 +656,8 @@ static struct of_device_id const bcm963x
+@@ -616,6 +658,8 @@ static struct of_device_id const bcm963x
  	{ .compatible = "netgear,dg834gt-pn", .data = &board_96348gw_10, },
  	{ .compatible = "sagem,fast-2404", .data = &board_FAST2404, },
  	{ .compatible = "t-com,speedport-w-500v", .data = &board_spw500v, },
@@ -64,4 +64,4 @@
 +	{ .compatible = "tecom,gw6200", .data = &board_gw6200, },
  	{ .compatible = "tp-link,td-w8900gb", .data = &board_96348gw_11, },
  	{ .compatible = "usrobotics,usr9108", .data = &board_96348gw_a, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6348 */

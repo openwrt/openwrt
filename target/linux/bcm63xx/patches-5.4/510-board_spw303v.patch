@@ -29,11 +29,11 @@
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  };
  
-@@ -741,6 +756,7 @@ static struct of_device_id const bcm963x
+@@ -743,6 +758,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "pirelli,agpf-s0", .data = &board_AGPFS0, },
  	{ .compatible = "sfr,neufbox-4-sercomm-r0", .data = &board_nb4_ser_r0, },
  	{ .compatible = "sfr,neufbox-4-foxconn-r1", .data = &board_nb4_fxc_r1, },
 +	{ .compatible = "t-com,speedport-w-303v", .data = &board_spw303v, },
  	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
- #endif
- #ifdef CONFIG_BCM63XX_CPU_6368
+ #endif /* CONFIG_BCM63XX_CPU_6358 */
+ #ifdef CONFIG_BCM63XX_CPU_6362

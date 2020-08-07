@@ -28,11 +28,11 @@
  #endif /* CONFIG_BCM63XX_CPU_6338 */
  #ifdef CONFIG_BCM63XX_CPU_6345
  	&board_96345gw2,
-@@ -690,6 +704,7 @@ static struct of_device_id const bcm963x
+@@ -692,6 +706,7 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_6338
  	{ .compatible = "brcm,bcm96338gw", .data = &board_96338gw, },
  	{ .compatible = "brcm,bcm96338w", .data = &board_96338w, },
 +	{ .compatible = "dynalink,rta1320", .data = &board_rta1320_16m, },
  	{ .compatible = "d-link,dsl-2640u", .data = &board_96338w2_e7t, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6338 */
  #ifdef CONFIG_BCM63XX_CPU_6345

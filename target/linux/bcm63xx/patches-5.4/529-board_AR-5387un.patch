@@ -87,11 +87,11 @@
  	&board_963281TAN,
  	&board_A4001N1,
  	&board_dsl_274xb_f1,
-@@ -1183,6 +1256,7 @@ static struct of_device_id const bcm963x
+@@ -1185,6 +1258,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "adb,a4001n1", .data = &board_A4001N1, },
  	{ .compatible = "brcm,bcm963281tan", .data = &board_963281TAN, },
  	{ .compatible = "brcm,bcm96328avng", .data = &board_96328avng, },
 +	{ .compatible = "comtrend,ar-5387un", .data = &board_AR5387un, },
  	{ .compatible = "d-link,dsl-274xb-f1", .data = &board_dsl_274xb_f1, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6328 */
  #ifdef CONFIG_BCM63XX_CPU_6338

@@ -40,7 +40,7 @@ Signed-off-by: Adrian Feliks <mexit@o2.pl>
  	&board_96358vw,
 @@ -1643,6 +1659,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "dynalink,rta770w", .data = &board_rta770w, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6345 */
  #ifdef CONFIG_BCM63XX_CPU_6348
 +	{ .compatible = "asmax,ar-1004g", .data = &board_96348gw_10_AR1004G, },
  	{ .compatible = "belkin,f5d7633", .data = &board_96348gw_10, },

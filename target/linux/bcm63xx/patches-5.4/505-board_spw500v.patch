@@ -45,11 +45,11 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  #ifdef CONFIG_BCM63XX_CPU_6358
  	&board_96358vw,
-@@ -582,6 +613,7 @@ static struct of_device_id const bcm963x
+@@ -584,6 +615,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "dynalink,rta1025w", .data = &board_rta1025w_16, },
  	{ .compatible = "netgear,dg834gt-pn", .data = &board_96348gw_10, },
  	{ .compatible = "sagem,fast-2404", .data = &board_FAST2404, },
 +	{ .compatible = "t-com,speedport-w-500v", .data = &board_spw500v, },
  	{ .compatible = "tp-link,td-w8900gb", .data = &board_96348gw_11, },
  	{ .compatible = "usrobotics,usr9108", .data = &board_96348gw_a, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6348 */

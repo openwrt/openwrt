@@ -58,10 +58,10 @@
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
 @@ -1534,6 +1577,7 @@ static struct of_device_id const bcm963x
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_3368 */
  #ifdef CONFIG_BCM63XX_CPU_6318
  	{ .compatible = "brcm,bcm96318ref", .data = &board_96318ref, },
 +	{ .compatible = "brcm,bcm96318ref-p300", .data = &board_96318ref_p300, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6318 */
  #ifdef CONFIG_BCM63XX_CPU_6328
  	{ .compatible = "adb,a4001n1", .data = &board_A4001N1, },

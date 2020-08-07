@@ -28,12 +28,12 @@
  #endif /* CONFIG_BCM63XX_CPU_6345 */
  #ifdef CONFIG_BCM63XX_CPU_6348
  	&board_96348r,
-@@ -1323,6 +1337,8 @@ static struct of_device_id const bcm963x
- #endif
+@@ -1325,6 +1339,8 @@ static struct of_device_id const bcm963x
+ #endif /* CONFIG_BCM63XX_CPU_6338 */
  #ifdef CONFIG_BCM63XX_CPU_6345
  	{ .compatible = "brcm,bcm96345gw2", .data = &board_96345gw2, },
 +	{ .compatible = "dynalink,rta770bw", .data = &board_rta770w, },
 +	{ .compatible = "dynalink,rta770w", .data = &board_rta770w, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6345 */
  #ifdef CONFIG_BCM63XX_CPU_6348
  	{ .compatible = "belkin,f5d7633", .data = &board_96348gw_10, },

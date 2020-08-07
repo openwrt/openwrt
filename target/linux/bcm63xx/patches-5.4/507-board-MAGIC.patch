@@ -39,11 +39,11 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  #ifdef CONFIG_BCM63XX_CPU_6358
  	&board_96358vw,
-@@ -658,6 +683,7 @@ static struct of_device_id const bcm963x
+@@ -660,6 +685,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "t-com,speedport-w-500v", .data = &board_spw500v, },
  	{ .compatible = "tecom,gw6000", .data = &board_gw6000, },
  	{ .compatible = "tecom,gw6200", .data = &board_gw6200, },
 +	{ .compatible = "telsey,magic", .data = &board_96348sv, },
  	{ .compatible = "tp-link,td-w8900gb", .data = &board_96348gw_11, },
  	{ .compatible = "usrobotics,usr9108", .data = &board_96348gw_a, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6348 */
