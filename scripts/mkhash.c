@@ -79,7 +79,12 @@
 
 
 
+#ifndef __FreeBSD__
 #include <endian.h>
+#else
+#include <sys/endian.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -89,6 +94,7 @@
 
 #define ARRAY_SIZE(_n) (sizeof(_n) / sizeof((_n)[0]))
 
+#ifndef __FreeBSD__
 static void
 be32enc(void *buf, uint32_t u)
 {
@@ -99,6 +105,7 @@ be32enc(void *buf, uint32_t u)
 	p[2] = ((uint8_t) ((u >> 8) & 0xff));
 	p[3] = ((uint8_t) (u & 0xff));
 }
+#endif
 
 static void
 be64enc(void *buf, uint64_t u)
