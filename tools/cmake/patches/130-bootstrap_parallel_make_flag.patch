@@ -5,7 +5,7 @@
  cmake_original_make_flags="${cmake_make_flags}"
  if [ "x${cmake_parallel_make}" != "x" ]; then
 -  cmake_make_flags="${cmake_make_flags} -j ${cmake_parallel_make}"
-+  case "$cmake_paralle_make" in
++  case "$cmake_parallel_make" in
 +    [0-9]*) cmake_parallel_make="-j ${cmake_parallel_make}";;
 +  esac
 +  cmake_make_flags="${cmake_make_flags} ${cmake_parallel_make}"
