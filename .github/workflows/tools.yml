@@ -1,0 +1,95 @@
+name: tools/compile
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+jobs:
+  determine_affects_tools:
+    name: Determine if tools are affected
+    runs-on: ubuntu-latest
+    outputs:
+      affects_tools: ${{ steps.affects_check.outputs.affects_tools}}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+
+    - name: Affects check
+      id: affects_check
+      run: |
+        AFFECTS=$(git diff origin/master HEAD --name-only | grep -q \
+          -e "^Makefile/" \
+          -e "^config/" \
+          -e "^include/" \
+          -e "^rules.mk" \
+          -e "^tools/" \
+          && echo "true" || echo "false")
+        echo "::set-output name=affects_tools::$AFFECTS"
+        echo $AFFECTS
+
+  macos:
+    name: Compile Host Tools on MacOS
+    needs: determine_affects_tools
+    if: needs.determine_affects_tools.outputs.affects_tools == 'true'
+    runs-on: macOS-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: "openwrt"
+
+      - name: Install dependencies
+        run: |
+          brew install coreutils diffutils findutils gawk gnu-getopt \
+            gnu-tar grep wget quilt make
+
+      - name: Create case-sensitive HFS+
+        run: |
+          hdiutil create -size 2g -type SPARSE -fs "Case-sensitive HFS+" \
+            -volname OpenWrt OpenWrt.sparseimage
+          hdiutil attach OpenWrt.sparseimage
+          cp -fpR $GITHUB_WORKSPACE/openwrt/ /Volumes/OpenWrt
+
+      - name: Create Default Configuration
+        run: |
+          export PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
+          export PATH="/usr/local/opt/gnu-getopt/bin:$PATH"
+          cd /Volumes/OpenWrt
+          make defconfig
+
+      - name: Build Host Tools
+        run: |
+          export PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
+          export PATH="/usr/local/opt/gnu-getopt/bin:$PATH"
+          cd /Volumes/OpenWrt
+          make tools/compile V=s BUILD_LOG=y
+          mkdir -p $GITHUB_WORKSPACE/logs
+          cp -fpR logs/ $GITHUB_WORKSPACE/logs/
+
+      - name: Upload Logs
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos-logs
+          path: logs/
+
+  linux:
+    name: Compile Host Tools on Linux
+    needs: determine_affects_tools
+    if: needs.determine_affects_tools.outputs.affects_tools == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Create Default Configuration
+        run: make defconfig
+
+      - name: Build Host Tools
+        run: make tools/compile V=s BUILD_LOG=y
+
+      - name: Upload Logs
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-logs
+          path: logs/
