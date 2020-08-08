@@ -1823,6 +1823,15 @@ define Device/zbtlink_zbt-we1326
 endef
 TARGET_DEVICES += zbtlink_zbt-we1326
 
+define Device/zbtlink_zbt-wg108
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WG108
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb2 kmod-sdhci-mt7620
+  SUPPORTED_DEVICES += zbt-wg108
+endef
+TARGET_DEVICES += zbtlink_zbt-wg108
+
 define Device/zbtlink_zbt-we3526
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
