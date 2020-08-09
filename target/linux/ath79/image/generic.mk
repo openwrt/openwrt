@@ -1510,3 +1510,20 @@ define Device/zbtlink_zbt-wd323
 	kmod-usb-serial kmod-usb-serial-cp210x uqmi
 endef
 TARGET_DEVICES += zbtlink_zbt-wd323
+
+define Device/zyxel_nbg6616
+  SOC := qca9557
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := NBG6616
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-rtc-pcf8563 \
+	kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15232k
+  RAS_BOARD := NBG6616
+  RAS_ROOTFS_SIZE := 14464k
+  RAS_VERSION := "OpenWrt Linux-$(LINUX_VERSION)"
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | pad-to 64k | check-size | zyxel-ras-image
+  SUPPORTED_DEVICES += nbg6616
+endef
+TARGET_DEVICES += zyxel_nbg6616
