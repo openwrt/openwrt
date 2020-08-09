@@ -1789,7 +1789,7 @@ define Device/xwrt_t-cpe1202kd-v01
   DEVICE_MODEL := T-CPE1202KD
   DEVICE_VARIANT := V01
   DEVICE_PACKAGES := \
-	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport base-settings-xwrt-t-cpe1202kd-v01
 endef
 TARGET_DEVICES += xwrt_t-cpe1202kd-v01
 
