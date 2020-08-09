@@ -10,12 +10,12 @@ Signed-off-by: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
 
 --- a/arch/mips/boot/dts/img/pistachio_marduk.dts
 +++ b/arch/mips/boot/dts/img/pistachio_marduk.dts
-@@ -92,6 +92,17 @@
+@@ -89,6 +89,17 @@
  		spi-max-frequency = <50000000>;
  		linux,mtd-name = "spi-nor";
  	};
 +	flash@1 {
-+		compatible = "gigadevice,gd5f";
++		compatible = "spi-nand";
 +		reg = <1>;
 +		spi-max-frequency = <50000000>;
 +		nand-on-flash-bbt;

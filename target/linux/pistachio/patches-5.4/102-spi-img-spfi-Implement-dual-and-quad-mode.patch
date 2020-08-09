@@ -28,7 +28,7 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
 
 --- a/drivers/spi/spi-img-spfi.c
 +++ b/drivers/spi/spi-img-spfi.c
-@@ -40,7 +40,8 @@
+@@ -37,7 +37,8 @@
  #define SPFI_CONTROL_SOFT_RESET			BIT(11)
  #define SPFI_CONTROL_SEND_DMA			BIT(10)
  #define SPFI_CONTROL_GET_DMA			BIT(9)
@@ -38,7 +38,7 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  #define SPFI_CONTROL_TMODE_SHIFT		5
  #define SPFI_CONTROL_TMODE_MASK			0x7
  #define SPFI_CONTROL_TMODE_SINGLE		0
-@@ -51,6 +52,10 @@
+@@ -48,6 +49,10 @@
  #define SPFI_TRANSACTION			0x18
  #define SPFI_TRANSACTION_TSIZE_SHIFT		16
  #define SPFI_TRANSACTION_TSIZE_MASK		0xffff
@@ -49,7 +49,7 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  
  #define SPFI_PORT_STATE				0x1c
  #define SPFI_PORT_STATE_DEV_SEL_SHIFT		20
-@@ -87,6 +92,7 @@
+@@ -84,6 +89,7 @@
   */
  #define SPFI_32BIT_FIFO_SIZE			64
  #define SPFI_8BIT_FIFO_SIZE			16
@@ -57,7 +57,7 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  
  struct img_spfi {
  	struct device *dev;
-@@ -103,6 +109,8 @@ struct img_spfi {
+@@ -100,6 +106,8 @@ struct img_spfi {
  	struct dma_chan *tx_ch;
  	bool tx_dma_busy;
  	bool rx_dma_busy;
@@ -66,7 +66,7 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  };
  
  struct img_spfi_device_data {
-@@ -123,9 +131,11 @@ static inline void spfi_start(struct img
+@@ -120,9 +128,11 @@ static inline void spfi_start(struct img
  {
  	u32 val;
  
@@ -81,7 +81,7 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  }
  
  static inline void spfi_reset(struct img_spfi *spfi)
-@@ -138,12 +148,21 @@ static int spfi_wait_all_done(struct img
+@@ -135,12 +145,21 @@ static int spfi_wait_all_done(struct img
  {
  	unsigned long timeout = jiffies + msecs_to_jiffies(50);
  

@@ -20,7 +20,7 @@ Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
 
 --- a/drivers/clk/pistachio/clk-pistachio.c
 +++ b/drivers/clk/pistachio/clk-pistachio.c
-@@ -44,7 +44,7 @@ static struct pistachio_gate pistachio_g
+@@ -41,7 +41,7 @@ static struct pistachio_gate pistachio_g
  	GATE(CLK_AUX_ADC_INTERNAL, "aux_adc_internal", "sys_internal_div",
  	     0x104, 22),
  	GATE(CLK_AUX_ADC, "aux_adc", "aux_adc_div", 0x104, 23),
@@ -29,7 +29,7 @@ Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
  	GATE(CLK_BT, "bt", "bt_div", 0x104, 25),
  	GATE(CLK_BT_DIV4, "bt_div4", "bt_div4_div", 0x104, 26),
  	GATE(CLK_BT_DIV8, "bt_div8", "bt_div8_div", 0x104, 27),
-@@ -54,6 +54,7 @@ static struct pistachio_gate pistachio_g
+@@ -51,6 +51,7 @@ static struct pistachio_gate pistachio_g
  static struct pistachio_fixed_factor pistachio_ffs[] __initdata = {
  	FIXED_FACTOR(CLK_WIFI_DIV4, "wifi_div4", "wifi_pll", 4),
  	FIXED_FACTOR(CLK_WIFI_DIV8, "wifi_div8", "wifi_pll", 8),
@@ -39,7 +39,7 @@ Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
  static struct pistachio_div pistachio_divs[] __initdata = {
 --- a/include/dt-bindings/clock/pistachio-clk.h
 +++ b/include/dt-bindings/clock/pistachio-clk.h
-@@ -21,6 +21,7 @@
+@@ -18,6 +18,7 @@
  /* Fixed-factor clocks */
  #define CLK_WIFI_DIV4			16
  #define CLK_WIFI_DIV8			17
