@@ -52,14 +52,16 @@
 		};
 	};
 
-	beeper {
-		compatible = "gpio-beeper";
-		gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
-	};
-
 	gpio_export {
 		compatible = "gpio-export";
 		#size-cells = <0>;
+
+		buzzer {
+			/* Beeper requires PWM for frequency selection */
+			gpio-export,name = "buzzer";
+			gpio-export,output = <0>;
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		};
 
 		usb_power {
 			gpio-export,name = "usb_power";
