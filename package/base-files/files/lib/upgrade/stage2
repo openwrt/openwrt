@@ -45,7 +45,7 @@ switch_to_ramfs() {
 		snapshot snapshot_tool					\
 		$RAMFS_COPY_BIN
 	do
-		local file="$(which "$binary" 2>/dev/null)"
+		local file="$(command -v "$binary" 2>/dev/null)"
 		[ -n "$file" ] && install_bin "$file"
 	done
 	install_file /etc/resolv.conf /lib/*.sh /lib/functions/*.sh /lib/upgrade/*.sh /lib/upgrade/do_stage2 /usr/share/libubox/jshn.sh $RAMFS_COPY_DATA
