@@ -1,5 +1,14 @@
 include ./common-mikrotik.mk
 
+define Device/mikrotik_routerboard-952ui-5a2nd
+  $(Device/mikrotik_nor)
+  SOC := qca9533
+  DEVICE_MODEL := hAP ac lite (RB952Ui-5ac2nD)
+  IMAGE_SIZE := 16256k
+  SUPPORTED_DEVICES += rb-952ui-5ac2nd
+endef
+TARGET_DEVICES += mikrotik_routerboard-952ui-5a2nd
+
 define Device/mikrotik_lhg-2nd
   $(Device/mikrotik_nor)
   SOC := qca9533

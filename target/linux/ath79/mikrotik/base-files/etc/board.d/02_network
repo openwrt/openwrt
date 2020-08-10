@@ -10,6 +10,7 @@ ath79_setup_interfaces()
 	case "$board" in
 	mikrotik,lhg-2nd|\
 	mikrotik,routerboard-922uags-5hpacd|\
+	mikrotik,routerboard-952ui-5ac2nd|\
 	mikrotik,routerboard-wap-g-5hact2hnd)
 		ucidef_set_interface_lan "eth0"
 		;;
@@ -36,6 +37,7 @@ ath79_setup_macs()
 
 	case "$board" in
 	mikrotik,lhg-2nd|\
+	mikrotik,routerboard-952ui-5ac2nd|\
 	mikrotik,routerboard-wap-g-5hact2hnd)
 		label_mac="$mac_base"
 		lan_mac="$mac_base"

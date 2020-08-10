@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "qca9533_mikrotik_16mb.dtsi"
+
+/ {
+	compatible = "mikrotik,routerboard-952ui-5ac2nd", "qca,qca9533";
+	model = "MikroTik hAP ac lite";
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&led_wan_pin>;
+
+		power {
+			label = "mikrotik:green:power";
+			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_user: user {
+			label = "mikrotik:green:user";
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&pinmux {
+	led_wan_pin: pinmux_led_wan_pin {
+		pinctrl-single,bits = <0x4 0x0 0xff>;
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	qca,no-eeprom;
+};
+
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+	reg = <0 0 0 0 0>;
+	};
+};

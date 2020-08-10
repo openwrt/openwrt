@@ -18,6 +18,12 @@ case "$FIRMWARE" in
 		caldata_sysfsload_from_file /tmp/$FIRMWARE 0x0 0x440
 		rm -f /tmp/$FIRMWARE
 		;;
+	mikrotik,routerboard-952ui-5ac2nd)
+		caldata_from_file $wlan_data 0x1000 0x440 /tmp/$FIRMWARE
+		ath9k_patch_mac $(macaddr_add "$mac_base" +6) /tmp/$FIRMWARE
+		caldata_sysfsload_from_file /tmp/$FIRMWARE 0x0 0x440
+		rm -f /tmp/$FIRMWARE
+		;;
 	mikrotik,routerboard-wap-g-5hact2hnd)
 		caldata_from_file $wlan_data 0x1000 0x440 /tmp/$FIRMWARE
 		ath9k_patch_mac $(macaddr_add "$mac_base" +2) /tmp/$FIRMWARE
