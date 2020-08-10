@@ -616,7 +616,7 @@ if KERNEL_CGROUPS
 
 	config KERNEL_CPUSETS
 		bool "Cpuset support"
-		default y if !SMALL_FLASH
+		default y
 		help
 		  This option will let you create and manage CPUSETs which
 		  allow dynamically partitioning a system into sets of CPUs and
@@ -630,14 +630,14 @@ if KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_CPUACCT
 		bool "Simple CPU accounting cgroup subsystem"
-		default y if !SMALL_FLASH
+		default y
 		help
 		  Provides a simple Resource Controller for monitoring the
 		  total CPU consumed by the tasks in a cgroup.
 
 	config KERNEL_RESOURCE_COUNTERS
 		bool "Resource counters"
-		default y if !SMALL_FLASH
+		default y
 		help
 		  This option enables controller independent resource accounting
 		  infrastructure that works with cgroups.
@@ -648,7 +648,7 @@ if KERNEL_CGROUPS
 
 	config KERNEL_MEMCG
 		bool "Memory Resource Controller for Control Groups"
-		default y if !SMALL_FLASH
+		default y
 		select KERNEL_FREEZER
 		depends on KERNEL_RESOURCE_COUNTERS || !LINUX_3_18
 		help
@@ -672,7 +672,7 @@ if KERNEL_CGROUPS
 
 	config KERNEL_MEMCG_SWAP
 		bool "Memory Resource Controller Swap Extension"
-		default y if !SMALL_FLASH
+		default y
 		depends on KERNEL_MEMCG
 		help
 		  Add swap management feature to memory resource controller. When you
@@ -707,7 +707,7 @@ if KERNEL_CGROUPS
 
 	config KERNEL_MEMCG_KMEM
 		bool "Memory Resource Controller Kernel Memory accounting (EXPERIMENTAL)"
-		default y if !SMALL_FLASH
+		default y
 		depends on KERNEL_MEMCG
 		help
 		  The Kernel Memory extension for Memory Resource Controller can limit
@@ -728,7 +728,7 @@ if KERNEL_CGROUPS
 
 	menuconfig KERNEL_CGROUP_SCHED
 		bool "Group CPU scheduler"
-		default y if !SMALL_FLASH
+		default y
 		help
 		  This feature lets CPU scheduler recognize task groups and control CPU
 		  bandwidth allocation to such task groups. It uses cgroups to group
@@ -738,11 +738,11 @@ if KERNEL_CGROUPS
 
 		config KERNEL_FAIR_GROUP_SCHED
 			bool "Group scheduling for SCHED_OTHER"
-			default y if !SMALL_FLASH
+			default y
 
 		config KERNEL_CFS_BANDWIDTH
 			bool "CPU bandwidth provisioning for FAIR_GROUP_SCHED"
-			default n
+			default y
 			depends on KERNEL_FAIR_GROUP_SCHED
 			help
 			  This option allows users to define CPU bandwidth rates (limits) for
@@ -753,7 +753,7 @@ if KERNEL_CGROUPS
 
 		config KERNEL_RT_GROUP_SCHED
 			bool "Group scheduling for SCHED_RR/FIFO"
-			default y if !SMALL_FLASH
+			default y
 			help
 			  This feature lets you explicitly allocate real CPU bandwidth
 			  to task groups. If enabled, it will also make it impossible to
@@ -788,7 +788,7 @@ if KERNEL_CGROUPS
 
 		config KERNEL_BLK_DEV_THROTTLING
 			bool "Enable throttling policy"
-			default y if TARGET_bcm27xx
+			default y
 
 		config KERNEL_BLK_DEV_THROTTLING_LOW
 			bool "Block throttling .low limit interface support (EXPERIMENTAL)"
