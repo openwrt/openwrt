@@ -42,11 +42,9 @@ Cc: richard.purdie@linuxfoundation.org
  arch/mips/vdso/Makefile | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/mips/vdso/Makefile b/arch/mips/vdso/Makefile
-index aa89a41dc5dd..848baeaef1f8 100644
 --- a/arch/mips/vdso/Makefile
 +++ b/arch/mips/vdso/Makefile
-@@ -33,6 +33,7 @@ endif
+@@ -29,6 +29,7 @@ endif
  cflags-vdso := $(ccflags-vdso) \
  	$(filter -W%,$(filter-out -Wa$(comma)%,$(KBUILD_CFLAGS))) \
  	-O3 -g -fPIC -fno-strict-aliasing -fno-common -fno-builtin -G 0 \
@@ -54,6 +52,3 @@ index aa89a41dc5dd..848baeaef1f8 100644
  	-fno-stack-protector -fno-jump-tables -DDISABLE_BRANCH_PROFILING \
  	$(call cc-option, -fno-asynchronous-unwind-tables) \
  	$(call cc-option, -fno-stack-protector)
--- 
-2.17.1
-
