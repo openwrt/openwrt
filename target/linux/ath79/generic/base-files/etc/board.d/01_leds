@@ -144,6 +144,10 @@ dlink,dap-1365-a1)
 dlink,dir-859-a1)
 	ucidef_set_led_switch "internet" "WAN" "$boardname:green:internet" "switch0" "0x20"
 	;;
+dlink,dir-869-a1)
+	ucidef_set_led_switch "power" "WAN" "$boardname:orange:power" "switch0" "0x20"
+	ucidef_set_led_switch "internet" "WAN" "$boardname:white:internet" "switch0" "0x20"
+	;;	
 engenius,ews511ap)
 	ucidef_set_led_netdev "lan1" "LAN1" "$boardname:blue:lan1" "eth1"
 	ucidef_set_led_netdev "lan2" "LAN2" "$boardname:blue:lan2" "eth0"

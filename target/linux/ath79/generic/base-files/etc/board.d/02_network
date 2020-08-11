@@ -168,6 +168,7 @@ ath79_setup_interfaces()
 	dlink,dir-842-c2|\
 	dlink,dir-842-c3|\
 	dlink,dir-859-a1|\
+	dlink,dir-869-a1|\
 	engenius,epg5000|\
 	tplink,archer-c2-v3|\
 	tplink,tl-wr1043nd-v4|\
@@ -428,6 +429,7 @@ ath79_setup_macs()
 		label_mac=$lan_mac
 		;;
 	dlink,dir-859-a1|\
+	dlink,dir-869-a1|\
 	qihoo,c301|\
 	wd,mynet-n750)
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
