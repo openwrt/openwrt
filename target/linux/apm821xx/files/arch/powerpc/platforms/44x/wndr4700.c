@@ -73,27 +73,8 @@ define_machine(wndr4700) {
 	.calibrate_decr = generic_calibrate_decr,
 };
 
-static struct ath9k_platform_data ar9380_wmac0_data = {
-	.led_pin = -1,
-	.eeprom_name = "pci_wmac1.eeprom",
-};
-static struct ath9k_platform_data ar9580_wmac1_data = {
-	.led_pin = -1,
-	.eeprom_name = "pci_wmac0.eeprom",
-};
-
 static int __init wndr4700_ath9k_eeprom_load(void)
 {
-	struct pci_dev *dev;
-
-	dev = pci_get_device(PCI_VENDOR_ID_ATHEROS, 0x0030, NULL);
-	if (dev)
-		dev->dev.platform_data = &ar9380_wmac0_data;
-
-	dev = pci_get_device(PCI_VENDOR_ID_ATHEROS, 0x0033, NULL);
-	if (dev)
-		dev->dev.platform_data = &ar9580_wmac1_data;
-
 	return 0;
 }
 machine_device_initcall(wndr4700, wndr4700_ath9k_eeprom_load);
