@@ -47,6 +47,14 @@ define Device/friendlyarm_nanopi-neo-air
 endef
 TARGET_DEVICES += friendlyarm_nanopi-neo-air
 
+define Device/friendlyarm_zeropi
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := ZeroPi
+  DEVICE_PACKAGES := kmod-rtc-sunxi
+  SOC := sun8i-h3
+endef
+TARGET_DEVICES += friendlyarm_zeropi
+
 define Device/lamobo_lamobo-r1
   DEVICE_VENDOR := Lamobo
   DEVICE_MODEL := Lamobo R1

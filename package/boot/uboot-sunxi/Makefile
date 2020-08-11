@@ -154,6 +154,12 @@ define U-Boot/nanopi_m1_plus
   BUILD_DEVICES:=friendlyarm_nanopi-m1-plus
 endef
 
+define U-Boot/zeropi
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=ZeroPi (H3)
+  BUILD_DEVICES:=friendlyarm_zeropi
+endef
+
 define U-Boot/nanopi_neo_air
   BUILD_SUBTARGET:=cortexa7
   NAME:=U-Boot for NanoPi NEO Air (H3)
@@ -299,6 +305,7 @@ UBOOT_TARGETS := \
 	Linksprite_pcDuino3 \
 	Lamobo_R1 \
 	nanopi_m1_plus \
+	zeropi \
 	nanopi_neo \
 	nanopi_neo_air \
 	nanopi_neo_plus2 \
