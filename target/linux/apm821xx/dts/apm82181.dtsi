@@ -407,6 +407,8 @@
 			dmas = <&AHBDMA0 0 0 1>;
 			dma-names = "sata-dma";
 			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		SATA1: sata@bffd1800 {
@@ -417,6 +419,8 @@
 			dmas = <&AHBDMA0 1 0 2>;
 			dma-names = "sata-dma";
 			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		MSI: ppc4xx-msi@c10000000 {
