@@ -463,7 +463,8 @@
 			dcr-reg = <0x100 0x020>;
 			sdr-base = <0x300>;
 
-			/* Outbound ranges, one memory and one IO,
+			/*
+			 * Outbound ranges, one memory and one IO,
 			 * later cannot be changed
 			 */
 			ranges = <0x02000000 0x00000000 0x80000000 0x0000000e 0x00000000 0x00000000 0x80000000>,
@@ -476,7 +477,8 @@
 			/* This drives busses 0x40 to 0x7f */
 			bus-range = <0x40 0x7f>;
 
-			/* Legacy interrupts (note the weird polarity, the bridge seems
+			/*
+			 * Legacy interrupts (note the weird polarity, the bridge seems
 			 * to invert PCIe legacy interrupts).
 			 * We are de-swizzling here because the numbers are actually for
 			 * port of the root complex virtual P2P bridge. But I want
