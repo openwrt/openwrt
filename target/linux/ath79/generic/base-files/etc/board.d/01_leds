@@ -106,7 +106,8 @@ comfast,cf-e560ac)
 	ucidef_set_led_switch "lan3" "LAN3" "$boardname:blue:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan4" "LAN4" "$boardname:blue:lan4" "switch0" "0x10"
 	;;
-comfast,cf-ew72)
+comfast,cf-ew72|\
+telco,t1)
 	ucidef_set_led_switch "lan" "LAN" "$boardname:blue:lan" "switch0" "0x02"
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:blue:wan" "eth1"
 	;;
@@ -295,6 +296,10 @@ tplink,tl-mr6400-v1)
 	ucidef_set_led_switch "lan" "LAN" "tp-link:white:lan" "switch0" "0x0e"
 	ucidef_set_led_netdev "wan" "WAN" "tp-link:white:wan" "eth1"
 	ucidef_set_led_netdev "4g" "4G" "tp-link:white:4g" "usb0"
+	;;
+tplink,tl-wpa8630p-v2-eu|\
+tplink,tl-wpa8630p-v2-int)
+	ucidef_set_led_switch "lan" "LAN" "tp-link:green:lan" "switch0" "0x3c"
 	;;
 tplink,tl-wr842n-v2)
 	ucidef_set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth1"

@@ -6,17 +6,17 @@
  };
 +
 +static struct board_info __initdata board_96348_D4PW = {
-+	.name				= "D-4P-W",
-+	.expected_cpu_id		= 0x6348,
++	.name = "D-4P-W",
++	.expected_cpu_id = 0x6348,
 +
-+	.has_enet1			= 1,
-+	.has_pci			= 1,
++	.has_pci = 1,
 +
++	.has_enet1 = 1,
 +	.enet1 = {
-+		.has_phy		= 1,
-+		.phy_id			= 0,
-+		.force_speed_100	= 1,
-+		.force_duplex_full	= 1,
++		.has_phy = 1,
++		.phy_id = 0,
++		.force_speed_100 = 1,
++		.force_duplex_full = 1,
 +	},
 +};
  #endif /* CONFIG_BCM63XX_CPU_6348 */
@@ -30,7 +30,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  #ifdef CONFIG_BCM63XX_CPU_6358
  	&board_96358vw,
-@@ -459,6 +475,7 @@ static struct of_device_id const bcm963x
+@@ -461,6 +477,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96348gw-10", .data = &board_96348gw_10, },
  	{ .compatible = "brcm,bcm96348gw-11", .data = &board_96348gw_11, },
  	{ .compatible = "brcm,bcm96348gw-a", .data = &board_96348gw_a, },
