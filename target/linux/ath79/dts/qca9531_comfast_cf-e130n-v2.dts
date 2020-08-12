@@ -122,18 +122,9 @@
 
 &uart {
 	status = "okay";
-
-};
-
-&eth0 {
-	compatible = "syscon", "simple-mfd";
 };
 
 &eth1 {
-	status = "okay";
-
-	phy-handle = <&swphy0>;
-
 	mtd-mac-address = <&art 0x0>;
 
 	gmac-config {
