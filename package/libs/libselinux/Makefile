@@ -50,6 +50,7 @@ HOST_MAKE_FLAGS += \
 MAKE_FLAGS += \
 	FTS_LDLIBS=-lfts \
 	SHLIBDIR=/usr/lib \
+	OS=Linux
 
 define Build/Compile
 	$(call Build/Compile/Default,all)
