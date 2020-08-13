@@ -111,8 +111,6 @@ config PROCD_ZRAM_TMPFS
 endmenu
 endef
 
-Package/procd-selinux/config = $(Package/procd/config)
-
 ifeq ($(BUILD_VARIANT),selinux)
   CMAKE_OPTIONS += -DSELINUX=1
 endif
