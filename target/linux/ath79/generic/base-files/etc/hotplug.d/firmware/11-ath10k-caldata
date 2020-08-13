@@ -59,7 +59,8 @@ case "$FIRMWARE" in
 	engenius,epg5000|\
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr2|\
-	sitecom,wlr-7100)
+	sitecom,wlr-7100|\
+	zyxel,nbg6616)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) +1)
 		;;
@@ -187,7 +188,9 @@ case "$FIRMWARE" in
 	tplink,archer-c60-v2|\
 	tplink,archer-c60-v3|\
 	tplink,archer-c6-v2|\
-	tplink,archer-c6-v2-us)
+	tplink,archer-c6-v2-us|\
+	tplink,tl-wpa8630p-v2-eu|\
+	tplink,tl-wpa8630p-v2-int)
 		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary mac 0x8) -1)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \

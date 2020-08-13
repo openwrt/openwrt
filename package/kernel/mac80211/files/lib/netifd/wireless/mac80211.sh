@@ -993,7 +993,7 @@ drv_mac80211_setup() {
 			add_ap=1
 			ubus wait_for hostapd
 			ubus call hostapd config_add "{\"iface\":\"$primary_ap\", \"config\":\"${hostapd_conf_file}\"}"
-			local hostapd_pid=$(ubus call service list '{"name": "hostapd"}' | jsonfilter -l 1 -e "@['hostapd'].instances['hostapd'].pid")
+			local hostapd_pid=$(ubus call service list '{"name": "wpad"}' | jsonfilter -l 1 -e "@['wpad'].instances['hostapd'].pid")
 			wireless_add_process "$hostapd_pid" "/usr/sbin/hostapd" 1
 		fi
 		ret="$?"
@@ -1048,8 +1048,6 @@ list_phy_interfaces() {
 }
 
 drv_mac80211_teardown() {
-	wireless_process_kill_all
-
 	json_select data
 	json_get_vars phy
 	json_select ..

@@ -6,41 +6,37 @@ Signed-off-by: Max Staudt <openwrt.max@enpas.org>
 ---
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1332,6 +1332,41 @@ static struct board_info __initdata boar
+@@ -1288,6 +1288,37 @@ static struct board_info __initdata boar
  		},
  	},
  };
 +
 +static struct board_info __initdata board_fast2504n = {
-+	.name				= "F@ST2504n",
-+	.expected_cpu_id		= 0x6362,
++	.name = "F@ST2504n",
++	.expected_cpu_id = 0x6362,
 +
-+	.has_enetsw			= 1,
-+
++	.has_enetsw = 1,
 +	.enetsw = {
 +		.used_ports = {
 +			[0] = {
-+				.used	= 1,
-+				.phy_id	= 1,
-+				.name	= "Port 1",
++				.used = 1,
++				.phy_id = 1,
++				.name = "Port 1",
 +			},
-+
 +			[1] = {
-+				.used	= 1,
-+				.phy_id	= 2,
-+				.name	= "Port 2",
++				.used = 1,
++				.phy_id = 2,
++				.name = "Port 2",
 +			},
-+
 +			[2] = {
-+				.used	= 1,
-+				.phy_id	= 3,
-+				.name	= "Port 3",
++				.used = 1,
++				.phy_id = 3,
++				.name = "Port 3",
 +			},
-+
 +			[3] = {
-+				.used	= 1,
-+				.phy_id	= 4,
-+				.name	= "Port 4",
++				.used = 1,
++				.phy_id = 4,
++				.name = "Port 4",
 +			},
 +		},
 +	},
@@ -48,19 +44,19 @@ Signed-off-by: Max Staudt <openwrt.max@enpas.org>
  #endif /* CONFIG_BCM63XX_CPU_6362 */
  
  /*
-@@ -1495,6 +1530,7 @@ static const struct board_info __initcon
- 
+@@ -1438,6 +1469,7 @@ static const struct board_info __initcon
+ #endif /* CONFIG_BCM63XX_CPU_6358 */
  #ifdef CONFIG_BCM63XX_CPU_6362
  	&board_nb6,
 +	&board_fast2504n,
- #endif
- 
+ #endif /* CONFIG_BCM63XX_CPU_6362 */
  #ifdef CONFIG_BCM63XX_CPU_6368
-@@ -1576,6 +1612,7 @@ static struct of_device_id const bcm963x
+ 	&board_96368mvwg,
+@@ -1520,6 +1552,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6358 */
  #ifdef CONFIG_BCM63XX_CPU_6362
 +	{ .compatible = "sagem,fast-2504n", .data = &board_fast2504n, },
  	{ .compatible = "sfr,neufbox-6-sercomm-r0", .data = &board_nb6, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6362 */
  #ifdef CONFIG_BCM63XX_CPU_6368

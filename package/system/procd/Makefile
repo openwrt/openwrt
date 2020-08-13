@@ -12,9 +12,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/procd.git
-PKG_SOURCE_DATE:=2020-07-25
-PKG_SOURCE_VERSION:=5cb3715a079c09d1e66a6455a246347c7cf7b998
-PKG_MIRROR_HASH:=ab4e79ba5d1180ce850c811d346de7275889ba4df6f82e373c416f30da89ad12
+PKG_SOURCE_DATE:=2020-08-10
+PKG_SOURCE_VERSION:=fad899769e1411cc273785461f073a0f7931b9a0
+PKG_MIRROR_HASH:=f56b621f78f821f7070d85f63448f684af7e2fe0c85233a8d054683cc34f6d06
 CMAKE_INSTALL:=1
 
 PKG_LICENSE:=GPL-2.0
@@ -44,7 +44,7 @@ TARGET_LDFLAGS += -flto
 define Package/procd
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+ubusd +ubus +libjson-script +ubox +USE_GLIBC:librt +libubox +libubus +libblobmsg-json +libjson-c
+  DEPENDS:=+ubusd +ubus +libjson-script +ubox +USE_GLIBC:librt +libubox +libubus +libblobmsg-json +libjson-c +PACKAGE_libselinux:libselinux
   TITLE:=OpenWrt system process manager
   USERID:=:dialout=20 :audio=29
 endef
@@ -108,7 +108,8 @@ ifdef CONFIG_PACKAGE_procd-ujail
 endif
 
 SECCOMP=$(if $(CONFIG_PACKAGE_procd-seccomp),1,0)
-CMAKE_OPTIONS += -DSECCOMP_SUPPORT=$(SECCOMP) -DUTRACE_SUPPORT=$(SECCOMP)
+SELINUX=$(if $(CONFIG_PACKAGE_libselinux),1,0)
+CMAKE_OPTIONS += -DSECCOMP_SUPPORT=$(SECCOMP) -DUTRACE_SUPPORT=$(SECCOMP) -DSELINUX=$(SELINUX)
 
 define Package/procd/install
 	$(INSTALL_DIR) $(1)/sbin $(1)/etc $(1)/lib/functions

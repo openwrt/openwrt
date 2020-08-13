@@ -1,7 +1,7 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -324,6 +324,36 @@ static struct board_info __initdata boar
- 		.force_duplex_full	= 1,
+@@ -322,6 +322,36 @@ static struct board_info __initdata boar
+ 		.force_duplex_full = 1,
  	},
  };
 +
@@ -14,42 +14,42 @@
 +};
 +
 +static struct board_info __initdata board_spw500v = {
-+	.name				= "SPW500V",
-+	.expected_cpu_id		= 0x6348,
++	.name = "SPW500V",
++	.expected_cpu_id = 0x6348,
 +
-+	.has_enet0			= 1,
-+	.has_pci			= 1,
-+	.use_fallback_sprom		= 1,
++	.has_pci = 1,
 +
++	.has_enet0 = 1,
 +	.enet0 = {
-+		.has_phy		= 1,
-+		.use_internal_phy	= 1,
++		.has_phy = 1,
++		.use_internal_phy = 1,
 +	},
 +
++	.use_fallback_sprom = 1,
 +	.fallback_sprom = {
-+		.type			= SPROM_BCM4318,
-+		.pci_bus		= 0,
-+		.pci_dev		= 1,
-+		.board_fixups		= spw500v_fixups,
-+		.num_board_fixups	= ARRAY_SIZE(spw500v_fixups),
++		.type = SPROM_BCM4318,
++		.pci_bus = 0,
++		.pci_dev = 1,
++		.board_fixups = spw500v_fixups,
++		.num_board_fixups = ARRAY_SIZE(spw500v_fixups),
 +	},
 +};
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  
  /*
-@@ -551,6 +581,7 @@ static const struct board_info __initcon
+@@ -542,6 +572,7 @@ static const struct board_info __initcon
  	&board_96348gw_a,
  	&board_rta1025w_16,
  	&board_96348_D4PW,
 +	&board_spw500v,
- #endif
- 
+ #endif /* CONFIG_BCM63XX_CPU_6348 */
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -592,6 +623,7 @@ static struct of_device_id const bcm963x
+ 	&board_96358vw,
+@@ -584,6 +615,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "dynalink,rta1025w", .data = &board_rta1025w_16, },
  	{ .compatible = "netgear,dg834gt-pn", .data = &board_96348gw_10, },
  	{ .compatible = "sagem,fast-2404", .data = &board_FAST2404, },
 +	{ .compatible = "t-com,speedport-w-500v", .data = &board_spw500v, },
  	{ .compatible = "tp-link,td-w8900gb", .data = &board_96348gw_11, },
  	{ .compatible = "usrobotics,usr9108", .data = &board_96348gw_a, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6348 */

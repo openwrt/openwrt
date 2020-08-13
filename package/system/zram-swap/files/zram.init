@@ -35,17 +35,17 @@ zram_applicable()
 		return 1
 	}
 
-	which mkswap >/dev/null || {
+	command -v mkswap >/dev/null || {
 		logger -s -t zram_applicable -p daemon.err "[ERROR] 'mkswap' not installed"
 		return 1
 	}
 
-	which swapon >/dev/null || {
+	command -v swapon >/dev/null || {
 		logger -s -t zram_applicable -p daemon.err "[ERROR] 'swapon' not installed"
 		return 1
 	}
 
-	which swapoff >/dev/null || {
+	command -v swapoff >/dev/null || {
 		logger -s -t zram_applicable -p daemon.err "[ERROR] 'swapoff' not installed"
 		return 1
 	}

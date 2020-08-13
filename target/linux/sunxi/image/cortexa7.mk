@@ -173,7 +173,7 @@ TARGET_DEVICES += xunlong_orangepi-plus
 define Device/xunlong_orangepi-r1
   DEVICE_VENDOR := Xunlong
   DEVICE_MODEL := Orange Pi R1
-  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-usb-net kmod-usb-net-rtl8152
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-usb-net-rtl8152
   SOC := sun8i-h2-plus
 endef
 TARGET_DEVICES += xunlong_orangepi-r1

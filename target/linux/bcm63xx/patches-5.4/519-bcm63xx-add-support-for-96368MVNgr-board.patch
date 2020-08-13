@@ -9,65 +9,61 @@ Subject: [PATCH 33/63] bcm63xx: add support for 96368MVNgr board.
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -841,6 +841,45 @@ static struct board_info __initdata boar
- 	.has_ohci0 = 1,
- 	.has_ehci0 = 1,
+@@ -817,6 +817,41 @@ static struct board_info __initdata boar
+ 		},
+ 	},
  };
 +
 +static struct board_info __initdata board_96368mvngr = {
-+	.name				= "96368MVNgr",
-+	.expected_cpu_id		= 0x6368,
++	.name = "96368MVNgr",
++	.expected_cpu_id = 0x6368,
 +
-+	.has_pci			= 1,
-+	.has_enetsw			= 1,
++	.has_pci = 1,
++	.has_ohci0 = 1,
++	.has_ehci0 = 1,
 +
++	.has_enetsw = 1,
 +	.enetsw = {
 +		.used_ports = {
 +			[0] = {
-+				.used	= 1,
-+				.phy_id	= 1,
-+				.name	= "port1",
++				.used = 1,
++				.phy_id = 1,
++				.name = "port1",
 +			},
-+
 +			[1] = {
-+				.used	= 1,
-+				.phy_id	= 2,
-+				.name	= "port2",
++				.used = 1,
++				.phy_id = 2,
++				.name = "port2",
 +			},
-+
 +			[2] = {
-+				.used	= 1,
-+				.phy_id	= 3,
-+				.name	= "port3",
++				.used = 1,
++				.phy_id = 3,
++				.name = "port3",
 +			},
-+
 +			[3] = {
-+				.used	= 1,
-+				.phy_id	= 4,
-+				.name	= "port4",
++				.used = 1,
++				.phy_id = 4,
++				.name = "port4",
 +			},
 +		},
 +	},
-+
-+	.has_ohci0 = 1,
-+	.has_ehci0 = 1,
 +};
  #endif /* CONFIG_BCM63XX_CPU_6368 */
  
  /*
-@@ -898,6 +937,7 @@ static const struct board_info __initcon
- 
+@@ -872,6 +907,7 @@ static const struct board_info __initcon
+ #endif /* CONFIG_BCM63XX_CPU_6358 */
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
 +	&board_96368mvngr,
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6368 */
  };
  
-@@ -959,6 +999,7 @@ static struct of_device_id const bcm963x
- 	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
- #endif
+@@ -937,6 +973,7 @@ static struct of_device_id const bcm963x
+ #ifdef CONFIG_BCM63XX_CPU_6362
+ #endif /* CONFIG_BCM63XX_CPU_6362 */
  #ifdef CONFIG_BCM63XX_CPU_6368
 +	{ .compatible = "brcm,bcm96368mvngr", .data = &board_96368mvngr, },
  	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6368 */
  #ifdef CONFIG_BCM63XX_CPU_63268

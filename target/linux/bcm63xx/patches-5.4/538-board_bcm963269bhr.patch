@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1554,6 +1554,50 @@ static struct board_info __initdata boar
+@@ -1492,6 +1492,46 @@ static struct board_info __initdata boar
  #endif /* CONFIG_BCM63XX_CPU_6368 */
  
  /*
@@ -8,39 +8,35 @@
 + */
 +#ifdef CONFIG_BCM63XX_CPU_63268
 +static struct board_info __initdata board_963269bhr = {
-+	.name				= "963269BHR",
-+	.expected_cpu_id		= 0x63268,
++	.name = "963269BHR",
++	.expected_cpu_id = 0x63268,
 +
-+	.has_pci			= 1,
++	.has_pci = 1,
++	.has_ohci0 = 1,
++	.has_ehci0 = 1,
 +
-+	.has_ehci0			= 1,
-+
-+	.has_enetsw			= 1,
-+
++	.has_enetsw = 1,
 +	.enetsw = {
 +		.used_ports = {
 +			[0] = {
-+				.used	= 1,
-+				.phy_id	= 1,
-+				.name	= "port1",
++				.used = 1,
++				.phy_id = 1,
++				.name = "port1",
 +			},
-+
 +			[1] = {
-+				.used	= 1,
-+				.phy_id	= 2,
-+				.name	= "port2",
++				.used = 1,
++				.phy_id = 2,
++				.name = "port2",
 +			},
-+
 +			[2] = {
-+				.used	= 1,
-+				.phy_id	= 3,
-+				.name	= "port3",
++				.used = 1,
++				.phy_id = 3,
++				.name = "port3",
 +			},
-+
 +			[3] = {
-+				.used	= 1,
-+				.phy_id	= 4,
-+				.name	= "port4",
++				.used = 1,
++				.phy_id = 4,
++				.name = "port4",
 +			},
 +		},
 +	},
@@ -51,21 +47,21 @@
   * all boards
   */
  static const struct board_info __initconst *bcm963xx_boards[] = {
-@@ -1634,6 +1678,9 @@ static const struct board_info __initcon
+@@ -1568,6 +1608,9 @@ static const struct board_info __initcon
  	&board_96368mvwg,
  	&board_96368mvngr,
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6368 */
 +#ifdef CONFIG_BCM63XX_CPU_63268
 +	&board_963269bhr,
-+#endif
++#endif /* CONFIG_BCM63XX_CPU_63268 */
  };
  
  static struct of_device_id const bcm963xx_boards_dt[] = {
-@@ -1721,6 +1768,7 @@ static struct of_device_id const bcm963x
+@@ -1655,6 +1698,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6368 */
  #ifdef CONFIG_BCM63XX_CPU_63268
 +	{ .compatible = "brcm,bcm963269bhr", .data = &board_963269bhr, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_63268 */
  #endif /* CONFIG_OF */
  	{ },

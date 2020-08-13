@@ -10,7 +10,7 @@ Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -792,6 +792,58 @@ static struct board_info __initdata boar
+@@ -774,6 +774,52 @@ static struct board_info __initdata boar
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
  /*
@@ -18,50 +18,44 @@ Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
 + */
 +#ifdef CONFIG_BCM63XX_CPU_6368
 +static struct board_info __initdata board_96368mvwg = {
-+	.name				= "96368MVWG",
-+	.expected_cpu_id		= 0x6368,
++	.name = "96368MVWG",
++	.expected_cpu_id = 0x6368,
 +
-+	.has_pci			= 1,
++	.has_pci = 1,
++	.has_ohci0 = 1,
++	.has_ehci0 = 1,
 +
-+	.has_usbd			= 1,
-+
++	.has_usbd = 1,
 +	.usbd = {
-+		.use_fullspeed		= 0,
-+		.port_no		= 0,
++		.use_fullspeed = 0,
++		.port_no = 0,
 +	},
 +
-+	.has_enetsw			= 1,
-+
++	.has_enetsw = 1,
 +	.enetsw = {
 +		.used_ports = {
 +			[1] = {
-+				.used	= 1,
-+				.phy_id	= 2,
-+				.name	= "port1",
++				.used = 1,
++				.phy_id = 2,
++				.name = "port1",
 +			},
-+
 +			[2] = {
-+				.used	= 1,
-+				.phy_id	= 3,
-+				.name	= "port2",
++				.used = 1,
++				.phy_id = 3,
++				.name = "port2",
 +			},
-+
 +			[4] = {
-+				.used	= 1,
-+				.phy_id	= 0x12,
-+				.name	= "port0",
++				.used = 1,
++				.phy_id = 0x12,
++				.name = "port0",
 +			},
-+
 +			[5] = {
-+				.used	= 1,
-+				.phy_id	= 0x11,
-+				.name	= "port3",
++				.used = 1,
++				.phy_id = 0x11,
++				.name = "port3",
 +			},
 +		},
 +	},
-+
-+	.has_ohci0 = 1,
-+	.has_ehci0 = 1,
 +};
 +#endif /* CONFIG_BCM63XX_CPU_6368 */
 +
@@ -69,25 +63,24 @@ Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
   * all boards
   */
  static const struct board_info __initconst *bcm963xx_boards[] = {
-@@ -843,6 +895,10 @@ static const struct board_info __initcon
+@@ -824,6 +870,9 @@ static const struct board_info __initcon
  	&board_HW553,
  	&board_spw303v,
- #endif
-+
+ #endif /* CONFIG_BCM63XX_CPU_6358 */
 +#ifdef CONFIG_BCM63XX_CPU_6368
 +	&board_96368mvwg,
-+#endif
++#endif /* CONFIG_BCM63XX_CPU_6368 */
  };
  
  static struct of_device_id const bcm963xx_boards_dt[] = {
-@@ -903,6 +959,7 @@ static struct of_device_id const bcm963x
- 	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
- #endif
+@@ -888,6 +937,7 @@ static struct of_device_id const bcm963x
+ #ifdef CONFIG_BCM63XX_CPU_6362
+ #endif /* CONFIG_BCM63XX_CPU_6362 */
  #ifdef CONFIG_BCM63XX_CPU_6368
 +	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6368 */
  #ifdef CONFIG_BCM63XX_CPU_63268
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_63268 */
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
 @@ -81,12 +81,25 @@ void __init board_early_setup(const stru
