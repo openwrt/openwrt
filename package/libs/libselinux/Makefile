@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/libselinux
   SECTION:=libs
-  DEPENDS:=+libsepol +libpcre +musl-fts +@KERNEL_SECURITY +@KERNEL_SECURITY_NETWORK +@KERNEL_SECURITY_SELINUX
+  DEPENDS:=+libsepol +libpcre +musl-fts
   CATEGORY:=Libraries
   TITLE:=Runtime SELinux library
   URL:=http://selinuxproject.org/page/Main_Page
