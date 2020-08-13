@@ -36,7 +36,8 @@ HOST_MAKE_FLAGS += \
 	SHLIBDIR=$(STAGING_DIR_HOSTPKG)/lib
 
 MAKE_FLAGS += \
-	SHLIBDIR=/usr/lib
+	SHLIBDIR=/usr/lib \
+	OS=Linux
 
 define Build/Compile
 	$(call Build/Compile/Default,all)
