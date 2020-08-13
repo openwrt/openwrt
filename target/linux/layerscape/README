@@ -71,6 +71,16 @@ from SD card.
 
 3.2 Program firmware.bin to flash
 ---------------------------------
+* LS1012FRDM (QSPI flash)
+  Board have only one nor flash bank. Those commands will replace stock
+  bootloader and firmware. Please refer point 4 for MAC recovery.
+
+  => tftp a0000000 <firmware_name>-firmware.bin
+  => sf probe 0:0
+  => sf erase 0 +$filesize
+  => sf write a0000000 0 $filesize
+  => reset
+
 * LS1012ARDB (QSPI flash)
   Start up from bank1, and program firmware to bank2 with below commands.
   Switch to bank2 to start up OpenWrt.
@@ -155,6 +165,7 @@ from SD card.
 
   => setenv ethaddr 00:04:9F:04:65:4b
   => setenv eth1addr 00:04:9F:04:65:4c
+  => saveenv
 
 
 5. Other references
