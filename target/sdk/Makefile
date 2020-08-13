@@ -152,7 +152,8 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 	find $(SDK_BUILD_DIR) -name CVS | $(XARGS) rm -rf
 	-make -C $(SDK_BUILD_DIR)/scripts/config clean
 	(cd $(BUILD_DIR); \
-		tar -I 'xz -7e' -cf $@ $(SDK_NAME); \
+		tar -I '$(STAGING_DIR_HOST)/bin/xz -7e -T$(if $(filter 1,$(NPROC)),2,0)' -cf $@ $(SDK_NAME) \
+		--mtime="$(shell date --date=@$(SOURCE_DATE_EPOCH))"; \
 	)
 
 download:
