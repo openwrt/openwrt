@@ -25,7 +25,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		CPU00: cpu@0 {
+		CPU0: cpu@0 {
 			device_type = "cpu";
 			model = "PowerPC,apm82181";
 			reg = <0x00000000>;
@@ -155,7 +155,7 @@
 			dcr-reg = <0x240 0x009>;
 			interrupts = <0x1a IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&UIC2>;
-
+			status = "disabled";
 		};
 
 		TRNG: trng@110000 {
