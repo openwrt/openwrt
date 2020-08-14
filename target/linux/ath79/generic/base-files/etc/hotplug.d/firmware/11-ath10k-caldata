@@ -10,6 +10,11 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:00:00.0.bin")
 	case $board in
+	allnet,all-wap02860ac|\
+	glinet,gl-x750)
+		caldata_extract "art" 0x5000 0x844
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) +2)
+		;;
 	avm,fritz1750e|\
 	avm,fritzdvbc)
 		caldata_extract "urlader" 0x198a 0x844
@@ -71,10 +76,6 @@ case "$FIRMWARE" in
 	glinet,gl-ar750)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) +1)
-		;;
-	glinet,gl-x750)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) +2)
 		;;
 	nec,wg800hp)
 		caldata_extract "art" 0x5000 0x844
