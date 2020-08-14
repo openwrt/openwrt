@@ -29,6 +29,7 @@ PKG_CONFIG_DEPENDS:=\
 
 include $(INCLUDE_DIR)/uclibc++.mk
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 
 define Package/libpcre/default
   SECTION:=libs
@@ -61,7 +62,6 @@ define Package/libpcrecpp
   DEPENDS:=+libpcre $(CXX_DEPENDS)
 endef
 
-include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CONFIGURE_ARGS += \
 	--enable-utf8 \
@@ -69,9 +69,6 @@ HOST_CONFIGURE_ARGS += \
 	--enable-pcre16 \
 	--with-match-limit-recursion=16000 \
 	--enable-cpp
-
-$(eval $(call HostBuild))
-
 
 TARGET_CFLAGS += $(FPIC)
 
@@ -129,3 +126,4 @@ $(eval $(call BuildPackage,libpcre))
 $(eval $(call BuildPackage,libpcre16))
 $(eval $(call BuildPackage,libpcre32))
 $(eval $(call BuildPackage,libpcrecpp))
+$(eval $(call HostBuild))
