@@ -210,6 +210,15 @@ define Device/alfa-network_ap121f
 endef
 TARGET_DEVICES += alfa-network_ap121f
 
+define Device/allnet_all-wap02860ac
+  SOC := qca9558
+  DEVICE_VENDOR := ALLNET
+  DEVICE_MODEL := ALL-WAP02860AC
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 13120k
+endef
+TARGET_DEVICES += allnet_all-wap02860ac
+
 define Device/arduino_yun
   SOC := ar9331
   DEVICE_VENDOR := Arduino
