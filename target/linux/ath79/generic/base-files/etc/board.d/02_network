@@ -186,6 +186,10 @@ ath79_setup_interfaces()
 	ubnt,routerstation)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+	comfast,cf-e375ac)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:wan" "2:lan"
+		;;
 	comfast,cf-e560ac)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
@@ -486,6 +490,9 @@ ath79_setup_macs()
 	avm,fritz4020)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(fritz_tffs -n macb -i $(find_mtd_part "tffs (1)"))
+		;;
+	comfast,cf-e375ac)
+		wan_mac=$(macaddr_add $(mtd_get_mac_binary art 0x0) 1)
 		;;
 	compex,wpj344-16m|\
 	compex,wpj563)
