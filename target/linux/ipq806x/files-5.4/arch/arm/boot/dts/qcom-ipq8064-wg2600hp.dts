@@ -11,16 +11,6 @@
 		device_type = "memory";
 	};
 
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-		rsvd@41200000 {
-			reg = <0x41200000 0x300000>;
-			no-map;
-		};
-	};
-
 	aliases {
 		mdio-gpio0 = &mdio0;
 
@@ -185,15 +175,6 @@
 		speed = <1000>;
 		full-duplex;
 	};
-};
-
-&gsbi4 {
-	status = "okay";
-	qcom,mode = <GSBI_PROT_I2C_UART>;
-};
-
-&gsbi4_serial {
-	status = "okay";
 };
 
 &gsbi5 {
