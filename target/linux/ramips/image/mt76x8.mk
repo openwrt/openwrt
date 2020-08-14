@@ -121,7 +121,7 @@ TARGET_DEVICES += miwifi-nano
 define Device/mt7628
   DTS := MT7628
   BLOCKSIZE := 64k
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_TITLE := MediaTek MT7628 EVB
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 endef
