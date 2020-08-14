@@ -17,6 +17,7 @@ HOST_BUILD_DEPENDS:=libsepol/host pcre/host
 PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 
 define Package/libselinux
   SECTION:=libs
@@ -36,7 +37,6 @@ define Package/libselinux/description
 	older version supported by the kernel) when loading policy.
 endef
 
-include $(INCLUDE_DIR)/host-build.mk
 
 # Needed to link libselinux utilities, which link against
 # libselinux.so, which indirectly depends on libpcre.so, installed in
