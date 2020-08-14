@@ -35,18 +35,18 @@ zram_applicable()
 		return 1
 	}
 
-	command -v mkswap >/dev/null || {
-		logger -s -t zram_applicable -p daemon.err "[ERROR] 'mkswap' not installed"
+	[ -x /sbin/mkswap ] || {
+		logger -s -t zram_applicable -p daemon.err "[ERROR] 'BusyBox mkswap' not installed"
 		return 1
 	}
 
-	command -v swapon >/dev/null || {
-		logger -s -t zram_applicable -p daemon.err "[ERROR] 'swapon' not installed"
+	[ -x /sbin/swapon ] || {
+		logger -s -t zram_applicable -p daemon.err "[ERROR] 'BusyBox swapon' not installed"
 		return 1
 	}
 
-	command -v swapoff >/dev/null || {
-		logger -s -t zram_applicable -p daemon.err "[ERROR] 'swapoff' not installed"
+	[ -x /sbin/swapoff ] || {
+		logger -s -t zram_applicable -p daemon.err "[ERROR] 'BusyBox swapoff' not installed"
 		return 1
 	}
 }
@@ -182,8 +182,8 @@ start()
 	zram_comp_algo "$zram_dev"
 	zram_comp_streams "$zram_dev"
 	echo $(( $zram_size * 1024 * 1024 )) >"/sys/block/$( basename "$zram_dev" )/disksize"
-	mkswap "$zram_dev"
-	swapon -d $zram_priority "$zram_dev"
+	/sbin/mkswap "$zram_dev"
+	/sbin/swapon -d $zram_priority "$zram_dev"
 }
 
 stop()
@@ -192,7 +192,7 @@ stop()
 
 	for zram_dev in $( grep zram /proc/swaps |awk '{print $1}' ); do {
 		logger -s -t zram_stop -p daemon.debug "deactivate swap $zram_dev"
-		swapoff "$zram_dev" && zram_reset "$zram_dev" "claiming memory back"
+		/sbin/swapoff "$zram_dev" && zram_reset "$zram_dev" "claiming memory back"
 		local dev_index="$( echo $zram_dev | grep -o "[0-9]*$" )"
 		if [ $dev_index -ne 0 ]; then
 			logger -s -t zram_stop -p daemon.debug "removing zram $zram_dev"
