@@ -16,6 +16,7 @@ PKG_HASH:=ae6778d01443fdd38cd30eeee846494e19f4d407b09872580372f4aa4bf8a3cc
 PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 
 define Package/libsepol
   SECTION:=libs
@@ -27,9 +28,7 @@ endef
 define Package/libsepol/description
 	Libsepol is the binary policy manipulation library. It doesn't
 	depend upon or use any of the other SELinux components.
-endef #'
-
-include $(INCLUDE_DIR)/host-build.mk
+endef
 
 HOST_MAKE_FLAGS += \
 	PREFIX=$(STAGING_DIR_HOSTPKG) \
