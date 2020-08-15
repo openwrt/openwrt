@@ -37,6 +37,10 @@ platform_do_flash() {
 	local kernel=$3
 	local rootfs=$4
 
+	local board_dir=$(tar tf "$tar_file" | grep -m 1 '^sysupgrade-.*/$')
+	board_dir=${board_dir%/}
+	[ -n "$board_dir" ] || return 1
+
 	mkdir -p /boot
 	mount -t vfat /dev/$kernel /boot
 
@@ -46,10 +50,10 @@ platform_do_flash() {
 	}
 
 	echo "flashing kernel to /dev/$kernel"
-	tar xf $tar_file sysupgrade-$board/kernel -O > /boot/vmlinux.64
+	tar xf $tar_file $board_dir/kernel -O > /boot/vmlinux.64
 	md5sum /boot/vmlinux.64 | cut -f1 -d " " > /boot/vmlinux.64.md5
 	echo "flashing rootfs to ${rootfs}"
-	tar xf $tar_file sysupgrade-$board/root -O | dd of="${rootfs}" bs=4096
+	tar xf $tar_file $board_dir/root -O | dd of="${rootfs}" bs=4096
 	sync
 	umount /boot
 }
@@ -80,13 +84,17 @@ platform_do_upgrade() {
 
 platform_check_image() {
 	local board=$(board_name)
+	local tar_file="$1"
+
+	local board_dir=$(tar tf "$tar_file" | grep -m 1 '^sysupgrade-.*/$')
+	board_dir=${board_dir%/}
+	[ -n "$board_dir" ] || return 1
 
 	case "$board" in
 	er | \
 	erlite)
-		local tar_file="$1"
-		local kernel_length=$(tar xf $tar_file sysupgrade-$board/kernel -O | wc -c 2> /dev/null)
-		local rootfs_length=$(tar xf $tar_file sysupgrade-$board/root -O | wc -c 2> /dev/null)
+		local kernel_length=$(tar xf $tar_file $board_dir/kernel -O | wc -c 2> /dev/null)
+		local rootfs_length=$(tar xf $tar_file $board_dir/root -O | wc -c 2> /dev/null)
 		[ "$kernel_length" = 0 -o "$rootfs_length" = 0 ] && {
 			echo "The upgrade image is corrupt."
 			return 1
