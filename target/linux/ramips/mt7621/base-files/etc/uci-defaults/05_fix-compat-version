@@ -2,7 +2,10 @@
 # Copyright (C) 2020 OpenWrt.org
 #
 
-uci set system.@system[0].compat_version="1.1"
+compat_version=$(cat /etc/board.json | jsonfilter -e "@['system']['compat_version']")
+[ -n "$compat_version" ] || compat_version="1.0"
+
+uci set system.@system[0].compat_version="$compat_version"
 uci commit system
 
 exit 0
