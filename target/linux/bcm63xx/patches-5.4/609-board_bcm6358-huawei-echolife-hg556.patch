@@ -8,7 +8,7 @@
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -1603,6 +1604,94 @@ static struct board_info __initdata boar
+@@ -1424,6 +1425,94 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -103,8 +103,8 @@
   /* T-Home Speedport W 303V Typ B */
  static struct board_info __initdata board_spw303v = {
  	.name = "96358-502V",
-@@ -1714,6 +1803,9 @@ static const struct board_info __initcon
- 	&board_nb4_fxc_r1,
+@@ -1529,6 +1618,9 @@ static const struct board_info __initcon
+ 	&board_nb4,
  	&board_ct6373_1,
  	&board_HW553,
 +	&board_HW556_A,
@@ -113,7 +113,7 @@
  	&board_spw303v,
  	&board_DVAG3810BN,
  #endif /* CONFIG_BCM63XX_CPU_6358 */
-@@ -1792,6 +1884,9 @@ static struct of_device_id const bcm963x
+@@ -1607,6 +1699,9 @@ static struct of_device_id const bcm963x
  	{ .compatible = "d-link,dsl-2650u", .data = &board_96358vw2, },
  	{ .compatible = "d-link,dva-g3810bn-tl", .data = &board_DVAG3810BN, },
  	{ .compatible = "huawei,echolife-hg553", .data = &board_HW553, },

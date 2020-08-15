@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -349,6 +349,60 @@ static struct board_info __initdata boar
+@@ -307,6 +307,60 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -61,16 +61,16 @@
  static struct sprom_fixup __initdata ar5387un_fixups[] = {
  	{ .offset = 2, .value = 0x05bb },
  	{ .offset = 65, .value = 0x1204 },
-@@ -894,6 +948,7 @@ static const struct board_info __initcon
+@@ -851,6 +905,7 @@ static const struct board_info __initcon
  #endif /* CONFIG_BCM63XX_CPU_6318 */
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
 +	&board_AR5381u,
  	&board_AR5387un,
  	&board_963281TAN,
- 	&board_A4001N1,
-@@ -940,6 +995,7 @@ static struct of_device_id const bcm963x
- 	{ .compatible = "adb,a4001n1", .data = &board_A4001N1, },
+ 	&board_A4001N,
+@@ -899,6 +954,7 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "adb,pdg-a4001n-a-000-1a1-ax", .data = &board_A4001N, },
  	{ .compatible = "brcm,bcm963281tan", .data = &board_963281TAN, },
  	{ .compatible = "brcm,bcm96328avng", .data = &board_96328avng, },
 +	{ .compatible = "comtrend,ar-5381u", .data = &board_AR5381u, },

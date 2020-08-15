@@ -9,7 +9,7 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -348,6 +348,39 @@ static struct board_info __initdata boar
+@@ -306,6 +306,39 @@ static struct board_info __initdata boar
  		},
  	},
  };
@@ -49,7 +49,7 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
  #endif /* CONFIG_BCM63XX_CPU_6328 */
  
  /*
-@@ -702,6 +735,7 @@ static const struct board_info __initcon
+@@ -659,6 +692,7 @@ static const struct board_info __initcon
  #endif /* CONFIG_BCM63XX_CPU_6318 */
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
@@ -57,7 +57,7 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
  #endif /* CONFIG_BCM63XX_CPU_6328 */
  #ifdef CONFIG_BCM63XX_CPU_6338
  	&board_96338gw,
-@@ -741,6 +775,7 @@ static struct of_device_id const bcm963x
+@@ -698,6 +732,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "sagem,fast-2704n", .data = &board_FAST2704N, },
  #endif /* CONFIG_BCM63XX_CPU_6318 */
  #ifdef CONFIG_BCM63XX_CPU_6328
