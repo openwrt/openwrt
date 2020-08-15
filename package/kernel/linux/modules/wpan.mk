@@ -119,6 +119,22 @@ endef
 
 $(eval $(call KernelPackage,cc2520))
 
+
+define KernelPackage/ca8210
+  SUBMENU:=$(WPAN_MENU)
+  TITLE:=CA8210 transceiver driver
+  DEPENDS:=+kmod-mac802154
+  KCONFIG:=CONFIG_IEEE802154_CA8210 \
+	CONFIG_SPI=y \
+	CONFIG_SPI_MASTER=y \
+	CONFIG_IEEE802154_CA8210_DEBUGFS=n
+  FILES:=$(LINUX_DIR)/drivers/net/ieee802154/ca8210.ko
+  AUTOLOAD:=$(call AutoProbe,ca8210)
+endef
+
+$(eval $(call KernelPackage,ca8210))
+
+
 define KernelPackage/ieee802154-6lowpan
   SUBMENU:=$(WPAN_MENU)
   TITLE:= 6LoWPAN support over IEEE-802.15.4
