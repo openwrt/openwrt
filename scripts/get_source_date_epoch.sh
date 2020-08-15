@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 export LANG=C
 export LC_ALL=C
-[ -n "$TOPDIR" ] && cd $TOPDIR
+
+if [ -n "$TOPDIR" ]; then
+	cd "$TOPDIR" || exit 1
+fi
 
 try_version() {
 	[ -f version.date ] || return 1
@@ -22,7 +25,7 @@ try_hg() {
 }
 
 try_mtime() {
-	perl -e 'print((stat $ARGV[0])[9])' "$0"
+	SOURCE_DATE_EPOCH=$(perl -e 'print((stat $ARGV[0])[9])' "$0")
 	[ -n "$SOURCE_DATE_EPOCH" ]
 }
 
