@@ -25,12 +25,9 @@ proto_map_setup() {
 	local iface="$2"
 	local link="map-$cfg"
 
-	# uncomment for legacy MAP0 mode
-	#export LEGACY=1
-
-	local type mtu ttl tunlink zone encaplimit
+	local type legacymap mtu ttl tunlink zone encaplimit
 	local rule ipaddr ip4prefixlen ip6prefix ip6prefixlen peeraddr ealen psidlen psid offset
-	json_get_vars type mtu ttl tunlink zone encaplimit
+	json_get_vars type legacymap mtu ttl tunlink zone encaplimit
 	json_get_vars rule ipaddr ip4prefixlen ip6prefix ip6prefixlen peeraddr ealen psidlen psid offset
 
 	[ "$zone" = "-" ] && zone=""
@@ -56,7 +53,7 @@ proto_map_setup() {
 	fi
 
 	echo "rule=$rule" > /tmp/map-$cfg.rules
-	RULE_DATA=$(mapcalc ${tunlink:-\*} $rule)
+	RULE_DATA=$(LEGACY="$legacymap" mapcalc ${tunlink:-\*} $rule)
 	if [ "$?" != 0 ]; then
 		proto_notify_error "$cfg" "INVALID_MAP_RULE"
 		proto_block_restart "$cfg"
@@ -106,7 +103,7 @@ proto_map_setup() {
 	elif [ "$type" = "map-t" -a -f "/proc/net/nat46/control" ]; then
 		proto_init_update "$link" 1
 		local style="MAP"
-		[ "$LEGACY" = 1 ] && style="MAP0"
+		[ "$legacymap" = 1 ] && style="MAP0"
 
 		echo add $link > /proc/net/nat46/control
 		local cfgstr="local.style $style local.v4 $(eval "echo \$RULE_${k}_IPV4PREFIX")/$(eval "echo \$RULE_${k}_PREFIX4LEN")"
@@ -229,6 +226,7 @@ proto_map_init_config() {
 	proto_config_add_int "psidlen"
 	proto_config_add_int "psid"
 	proto_config_add_int "offset"
+	proto_config_add_boolean "legacymap"
 
 	proto_config_add_string "tunlink"
 	proto_config_add_int "mtu"
