@@ -2,6 +2,8 @@
 
 #include "mt7628an.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 / {
 	compatible = "mediatek,mt7628an-eval-board", "mediatek,mt7628an-soc";
 	model = "Mediatek MT7628AN evaluation board";
@@ -9,6 +11,14 @@
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
+	};
+	leds {
+			compatible = "gpio-leds";
+
+			can-pwr {
+				label = "can-pwr";
+				gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+			};
 	};
 };
 
