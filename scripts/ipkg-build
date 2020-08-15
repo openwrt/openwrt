@@ -16,16 +16,10 @@ TAR="${TAR:-$(command -v tar)}"
 GZIP="$(command -v gzip)"
 
 # try to use fixed source epoch
-if [ -n "$SOURCE_DATE_EPOCH" ]; then
+if [ -n "$PKG_SOURCE_DATE_EPOCH" ]; then
+	TIMESTAMP=$(date --date="@$PKG_SOURCE_DATE_EPOCH")
+elif [ -n "$SOURCE_DATE_EPOCH" ]; then
 	TIMESTAMP=$(date --date="@$SOURCE_DATE_EPOCH")
-
-# look up date of last commit
-elif [ -d "$TOPDIR/.git" ]; then
-	GIT="$(command -v git)"
-	TIMESTAMP=$(cd $TOPDIR; $GIT log -1 -s --format=%ci)
-elif [ -d "$TOPDIR/.svn" ]; then
-	SVN="$(command -v svn)"
-	TIMESTAMP=$($SVN info "$TOPDIR" | sed -n "s/^Last Changed Date: \(.*\)/\1/p")
 else
 	TIMESTAMP=$(date)
 fi
