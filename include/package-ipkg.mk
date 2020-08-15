@@ -192,6 +192,7 @@ $(_endef)
     $$(IPKG_$(1)) : export CONTROL=$$(Package/$(1)/CONTROL)
     $$(IPKG_$(1)) : export DESCRIPTION=$$(Package/$(1)/description)
     $$(IPKG_$(1)) : export PATH=$$(TARGET_PATH_PKG)
+    $$(IPKG_$(1)) : export PKG_SOURCE_DATE_EPOCH=$(shell $(TOPDIR)/scripts/get_source_date_epoch.sh $(SOURCE))
     $(PKG_INFO_DIR)/$(1).provides $$(IPKG_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-ipkg.mk
 	@rm -rf $$(IDIR_$(1)); \
 		$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_ipkg_wildcard,$(1))))
