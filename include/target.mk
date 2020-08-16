@@ -13,11 +13,18 @@ __target_inc=1
 DEVICE_TYPE?=router
 
 # Default packages - the really basic set
-DEFAULT_PACKAGES:=base-files libc libgcc busybox dropbear mtd uci opkg netifd fstools uclient-fetch logd urandom-seed urngd
+DEFAULT_PACKAGES:=base-files libc libgcc busybox dropbear mtd uci opkg netifd fstools uclient-fetch logd urandom-seed urngd \
+luci wget default-settings block-mount luci-theme-material \
+luci-app-autoreboot luci-app-cifs-mount luci-app-nlbwmon luci-app-sfe luci-app-ssr-plus luci-app-upnp luci-app-vsftpd \
+kmod-usb-core kmod-usb-ohci kmod-usb-uhci kmod-usb-storage kmod-usb-storage-extras kmod-usb2 \
+kmod-scsi-core kmod-fs-cifs kmod-fs-ext4 kmod-fs-ntfs kmod-fs-vfat \
+kmod-nls-cp437 kmod-nls-cp936 kmod-nls-iso8859-1 kmod-nls-utf8 \
+# For the basic set
+DEFAULT_PACKAGES.basic:=
 # For nas targets
 DEFAULT_PACKAGES.nas:=block-mount fdisk lsblk mdadm
 # For router targets
-DEFAULT_PACKAGES.router:=dnsmasq iptables ip6tables ppp ppp-mod-pppoe firewall odhcpd-ipv6only odhcp6c kmod-ipt-offload
+DEFAULT_PACKAGES.router:=dnsmasq-full iptables ppp ppp-mod-pppoe firewall
 DEFAULT_PACKAGES.bootloader:=
 
 ifneq ($(DUMP),)
