@@ -18,6 +18,6 @@ include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:=zImage dtbs
 
-DEFAULT_PACKAGES += uboot-envtools kmod-usb2 kmod-orion-wdt
+DEFAULT_PACKAGES += uboot-envtools kmod-crypto-marvell-cesa kmod-usb2 kmod-orion-wdt
 
 $(eval $(call BuildTarget))

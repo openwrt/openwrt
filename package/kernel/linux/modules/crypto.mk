@@ -431,6 +431,19 @@ endef
 $(eval $(call KernelPackage,crypto-kpp))
 
 
+define KernelPackage/crypto-marvell-cesa
+  TITLE:=Marvell's Cryptographic Engine driver
+  KCONFIG:=CONFIG_CRYPTO_DEV_MARVELL_CESA
+  DEPENDS:=@(TARGET_mvebu||TARGET_kirkwood) +kmod-crypto-des
+  FILES:= \
+    $(LINUX_DIR)/drivers/crypto/marvell/marvell-cesa.ko
+  AUTOLOAD:=$(call AutoProbe,marvell-cesa)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-marvell-cesa))
+
+
 define KernelPackage/crypto-manager
   TITLE:=CryptoAPI algorithm manager
   DEPENDS:=+kmod-crypto-aead +kmod-crypto-hash +kmod-crypto-pcompress
