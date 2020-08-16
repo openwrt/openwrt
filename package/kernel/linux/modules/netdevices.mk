@@ -241,6 +241,25 @@ endef
 $(eval $(call KernelPackage,phy-realtek))
 
 
+define KernelPackage/net-dsa
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  HIDDEN:=1
+  TITLE:=Distributed Switch Architecture
+  DEPENDS:=+kmod-libphy +kmod-of-mdio +kmod-phylink
+  KCONFIG:= \
+    CONFIG_HAVE_NET_DSA=y \
+    CONFIG_NET_DSA
+  FILES:=$(LINUX_DIR)/net/dsa/dsa_core.ko
+  AUTOLOAD:=$(call AutoProbe,dsa_core)
+endef
+
+define KernelPackage/net-dsa/description
+  enable support for the hardware switches supported by the Distributed Switch Architecture.
+endef
+
+$(eval $(call KernelPackage,net-dsa))
+
+
 define KernelPackage/swconfig
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=switch configuration API

@@ -64,8 +64,9 @@ mvebu_setup_macs()
 	linksys,wrt1900acs|\
 	linksys,wrt3200acm|\
 	linksys,wrt32x)
-		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		label_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(macaddr_setbit_la $label_mac)
+		lan_mac=$(macaddr_setbit_la $label_mac)
 		;;
 	linksys,wrt1900ac-v1)
 		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)

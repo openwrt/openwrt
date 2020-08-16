@@ -17,6 +17,6 @@ KERNEL_TESTING_PATCHVER:=5.4
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += uboot-envtools kmod-crypto-marvell-cesa kmod-gpio-button-hotplug \
-    kmod-orion-wdt
+    kmod-mvneta kmod-net-dsa-mv88e6x kmod-orion-wdt kmod-phy-marvell kmod-sfp
 
 $(eval $(call BuildTarget))
