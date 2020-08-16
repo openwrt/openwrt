@@ -46,6 +46,21 @@ endef
 $(eval $(call KernelPackage,crypto-aead))
 
 
+define KernelPackage/crypto-aes-arm
+  TITLE:=AES cipher algorithms ARM-asm
+  KCONFIG:= \
+    CONFIG_CRYPTO_AES_ARM \
+    CONFIG_CRYPTO_AES_ARM_BS
+  FILES:= \
+    $(LINUX_DIR)/crypto/aes_arm.ko \
+    $(LINUX_DIR)/crypto/aes_arm_bs.ko
+  AUTOLOAD:=$(call AutoProbe,aes_arm)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-aes-arm))
+
+
 define KernelPackage/crypto-arc4
   TITLE:=ARC4 cipher CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_ARC4
