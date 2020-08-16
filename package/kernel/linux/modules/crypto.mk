@@ -693,6 +693,18 @@ endef
 $(eval $(call KernelPackage,crypto-rng))
 
 
+define KernelPackage/crypto-simd
+  TITLE:=SIMD Crypto
+  KCONFIG:= CONFIG_CRYPTO_SIMD
+  FILES:= \
+    $(LINUX_DIR)/crypto/crypto_simd.ko
+  AUTOLOAD:=$(call AutoProbe,crypto_simd)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-simd))
+
+
 define KernelPackage/crypto-seqiv
   TITLE:=CryptoAPI Sequence Number IV Generator
   DEPENDS:=+kmod-crypto-aead +kmod-crypto-rng
