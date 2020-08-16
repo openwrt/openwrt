@@ -12,15 +12,6 @@
 	};
 };
 
-&keys {
-	wifi {
-		label = "WiFi button";
-		linux,code = <KEY_RFKILL>;
-		gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
-		debounce-interval = <60>;
-	};
-};
-
 &partitions {
 	uboot: partition@0 {
 		label = "u-boot";

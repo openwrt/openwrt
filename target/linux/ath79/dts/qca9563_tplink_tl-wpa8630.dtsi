@@ -13,7 +13,7 @@
 		led-upgrade = &led_power;
 	};
 
-	keys: keys {
+	keys {
 		compatible = "gpio-keys";
 
 		reset {
@@ -34,6 +34,13 @@
 			label = "Pair button";
 			linux,code = <BTN_1>;
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wifi {
+			label = "WiFi button";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
 	};
