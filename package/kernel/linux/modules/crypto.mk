@@ -130,6 +130,18 @@ endef
 $(eval $(call KernelPackage,crypto-crc32c))
 
 
+define KernelPackage/crypto-cryptd
+  TITLE:=Software async crypto daemon
+  KCONFIG:= CONFIG_CRYPTO_CRYPTD
+  FILES:= \
+    $(LINUX_DIR)/crypto/cryptd.ko
+  AUTOLOAD:=$(call AutoProbe,cryptd)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-cryptd))
+
+
 define KernelPackage/crypto-ctr
   TITLE:=Counter Mode CryptoAPI module
   DEPENDS:=+kmod-crypto-manager +kmod-crypto-seqiv
