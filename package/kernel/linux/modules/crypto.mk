@@ -217,6 +217,19 @@ endef
 $(eval $(call KernelPackage,crypto-echainiv))
 
 
+define KernelPackage/crypto-essiv
+  TITLE:=ESSIV support for block encryption
+  KCONFIG:= CONFIG_CRYPTO_ESSIV
+  DEPENDS:=+kmod-crypto-authenc
+  FILES:= \
+    $(LINUX_DIR)/crypto/essiv.ko
+  AUTOLOAD:=$(call AutoProbe,essiv)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-essiv))
+
+
 define KernelPackage/crypto-fcrypt
   TITLE:=FCRYPT cipher CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_FCRYPT
