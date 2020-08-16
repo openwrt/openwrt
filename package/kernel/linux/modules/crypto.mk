@@ -313,7 +313,9 @@ $(eval $(call KernelPackage,crypto-ghash))
 
 define KernelPackage/crypto-hash
   TITLE:=CryptoAPI hash support
-  KCONFIG:=CONFIG_CRYPTO_HASH
+  KCONFIG:= \
+    CONFIG_CRYPTO_HASH \
+    CONFIG_CRYPTO_HASH2
   FILES:=$(LINUX_DIR)/crypto/crypto_hash.ko
   AUTOLOAD:=$(call AutoLoad,02,crypto_hash,1)
   $(call AddDepends/crypto)
@@ -622,7 +624,9 @@ $(eval $(call KernelPackage,crypto-misc))
 
 define KernelPackage/crypto-null
   TITLE:=Null CryptoAPI module
-  KCONFIG:=CONFIG_CRYPTO_NULL
+  KCONFIG:= \
+	CONFIG_CRYPTO_NULL \
+	CONFIG_CRYPTO_NULL2
   FILES:=$(LINUX_DIR)/crypto/crypto_null.ko
   AUTOLOAD:=$(call AutoLoad,09,crypto_null)
   $(call AddDepends/crypto, +kmod-crypto-hash)
