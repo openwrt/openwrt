@@ -425,6 +425,22 @@ endef
 $(eval $(call KernelPackage,mvsdio))
 
 
+define KernelPackage/orion-wdt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Orion watchdog
+  DEPENDS:=@(TARGET_mvebu||TARGET_kirkwood)
+  KCONFIG:=CONFIG_ORION_WATCHDOG
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/orion_wdt.ko
+  AUTOLOAD:=$(call AutoProbe,orion_wdt,1)
+endef
+
+define KernelPackage/orion-wdt/description
+  Include support for the watchdog timer in the Marvell Orion5x and Kirkwood ARM SoCs
+endef
+
+$(eval $(call KernelPackage,orion-wdt))
+
+
 define KernelPackage/sdhci
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Secure Digital Host Controller Interface support
