@@ -305,7 +305,7 @@ $(eval $(call KernelPackage,crypto-gf128))
 
 define KernelPackage/crypto-ghash
   TITLE:=GHASH digest CryptoAPI module
-  DEPENDS:=+kmod-crypto-gf128 +kmod-crypto-hash
+  DEPENDS:=+kmod-crypto-cryptd +kmod-crypto-gf128 +kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_CRYPTO_GHASH \
 	CONFIG_CRYPTO_GHASH_ARM_CE
