@@ -782,6 +782,7 @@ define KernelPackage/crypto-sha256
   DEPENDS:=+kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_CRYPTO_SHA256 \
+	CONFIG_CRYPTO_SHA256_ARM \
 	CONFIG_CRYPTO_SHA256_OCTEON \
 	CONFIG_CRYPTO_SHA256_SSSE3
   FILES:= \
@@ -795,6 +796,13 @@ define KernelPackage/crypto-sha256/octeon
   FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-sha256.ko
   AUTOLOAD+=$(call AutoLoad,09,octeon-sha256)
 endef
+
+define KernelPackage/crypto-sha256/arm
+  FILES+=$(LINUX_DIR)/arch/arm/crypto/sha256-arm.ko
+  AUTOLOAD+=$(call AutoLoad,09,sha256-arm)
+endef
+
+KernelPackage/crypto-sha256/mvebu/cortexa9=$(KernelPackage/crypto-sha256/arm)
 
 define KernelPackage/crypto-sha256/x86/64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/sha256-ssse3.ko
