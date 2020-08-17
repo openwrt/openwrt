@@ -187,6 +187,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:wan" "2:lan:3" "3:lan:2"
 		;;
+	engenius,enh202-v1)
+		ucidef_set_interface_wan "eth0"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "4:lan:1"
+		;;
 	engenius,ens202ext-v1)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
@@ -450,6 +455,19 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		label_mac=$(mtd_get_mac_ascii u-boot-env athaddr)
 		;;
+	engenius,enh202-v1|\
+	ubnt,airrouter|\
+	ubnt,bullet-m-ar7240|\
+	ubnt,bullet-m-ar7241|\
+	ubnt,nanobridge-m|\
+	ubnt,nanostation-loco-m|\
+	ubnt,nanostation-m|\
+	ubnt,picostation-m|\
+	ubnt,powerbridge-m|\
+	ubnt,rocket-m|\
+	ubnt,unifi)
+		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
+		;;
 	engenius,epg5000)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
@@ -524,18 +542,6 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_text mac 0x4)
 		wan_mac=$(mtd_get_mac_text mac 0x18)
 		label_mac=$wan_mac
-		;;
-	ubnt,airrouter|\
-	ubnt,bullet-m-ar7240|\
-	ubnt,bullet-m-ar7241|\
-	ubnt,nanobridge-m|\
-	ubnt,nanostation-loco-m|\
-	ubnt,nanostation-m|\
-	ubnt,picostation-m|\
-	ubnt,powerbridge-m|\
-	ubnt,rocket-m|\
-	ubnt,unifi)
-		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;
 	ubnt,litebeam-ac-gen2|\
 	ubnt,powerbeam-5ac-500|\
