@@ -836,6 +836,18 @@ define Device/engenius_loader_okli
 	check-size | engenius-tar-gz $$$$(ENGENIUS_IMGNAME)
 endef
 
+define Device/engenius_enh202-v1
+  $(Device/engenius_loader_okli)
+  SOC := ar7240
+  DEVICE_MODEL := ENH202
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := rssileds
+  IMAGE_SIZE := 4864k
+  LOADER_FLASH_OFFS := 0x1b0000
+  ENGENIUS_IMGNAME := senao-enh202
+endef
+TARGET_DEVICES += engenius_enh202-v1
+
 define Device/engenius_ens202ext-v1
   $(Device/engenius_loader_okli)
   SOC := ar9341
