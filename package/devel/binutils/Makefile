@@ -84,7 +84,8 @@ CONFIGURE_ARGS += \
 	--target=$(REAL_GNU_TARGET_NAME) \
 	--enable-shared \
 	--enable-install-libiberty \
-	--enable-install-libbfd
+	--enable-install-libbfd \
+	--enable-install-libctf
 
 define Build/Install
 	$(call Build/Install/Default)
@@ -106,7 +107,7 @@ endef
 
 define Package/libctf/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libctf.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libctf*.so* $(1)/usr/lib/
 endef
 
 define Package/libopcodes/install

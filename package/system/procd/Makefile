@@ -12,9 +12,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/procd.git
-PKG_SOURCE_DATE:=2020-08-06
-PKG_SOURCE_VERSION:=ab55357dfe5bd0edac0b9556a83e69814df791b1
-PKG_MIRROR_HASH:=38c882e105811bcd10b5ce55f91a16a647ed2ad436aec01cd03fda588b7bfca9
+PKG_SOURCE_DATE:=2020-08-10
+PKG_SOURCE_VERSION:=fad899769e1411cc273785461f073a0f7931b9a0
+PKG_MIRROR_HASH:=f56b621f78f821f7070d85f63448f684af7e2fe0c85233a8d054683cc34f6d06
 CMAKE_INSTALL:=1
 
 PKG_LICENSE:=GPL-2.0
@@ -41,18 +41,34 @@ TARGET_LDFLAGS += $(if $(CONFIG_USE_GLIBC),-lrt)
 TARGET_CFLAGS += -flto
 TARGET_LDFLAGS += -flto
 
-define Package/procd
+define Package/procd/Default
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+ubusd +ubus +libjson-script +ubox +USE_GLIBC:librt +libubox +libubus +libblobmsg-json +libjson-c
+  DEPENDS:=+ubusd +ubus +libjson-script +ubox +USE_GLIBC:librt +libubox \
+	  +libubus +libblobmsg-json +libjson-c
   TITLE:=OpenWrt system process manager
   USERID:=:dialout=20 :audio=29
+endef
+
+define Package/procd
+  $(call Package/procd/Default)
+  VARIANT:=default
+  CONFLICTS:=procd-selinux
+endef
+
+define Package/procd-selinux
+  $(call Package/procd/Default)
+  DEPENDS += +libselinux
+  TITLE += with SELinux support
+  PROVIDES:=procd
+  VARIANT:=selinux
 endef
 
 define Package/procd-ujail
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=@KERNEL_NAMESPACES +@KERNEL_UTS_NS +@KERNEL_IPC_NS +@KERNEL_PID_NS +libubox +libubus +libblobmsg-json
+  DEPENDS:=@KERNEL_NAMESPACES +@KERNEL_UTS_NS +@KERNEL_IPC_NS +@KERNEL_PID_NS \
+	  +libubox +libubus +libblobmsg-json
   TITLE:=OpenWrt process jail helper
 endef
 
@@ -66,7 +82,8 @@ endef
 define Package/procd-seccomp
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=@(arm||armeb||mips||mipsel||i386||powerpc||x86_64) @!TARGET_uml @KERNEL_SECCOMP +libubox +libblobmsg-json
+  DEPENDS:=@(arm||armeb||mips||mipsel||i386||powerpc||x86_64) @!TARGET_uml \
+	  @KERNEL_SECCOMP +libubox +libblobmsg-json
   TITLE:=OpenWrt process seccomp helper + utrace
 endef
 
@@ -80,7 +97,7 @@ endef
 
 define Package/procd/config
 menu "Configuration"
-	depends on PACKAGE_procd
+	depends on PACKAGE_procd || PACKAGE_procd-selinux
 
 config PROCD_SHOW_BOOT
 	bool
@@ -94,6 +111,9 @@ config PROCD_ZRAM_TMPFS
 endmenu
 endef
 
+ifeq ($(BUILD_VARIANT),selinux)
+  CMAKE_OPTIONS += -DSELINUX=1
+endif
 
 ifeq ($(CONFIG_PROCD_SHOW_BOOT),y)
   CMAKE_OPTIONS += -DSHOW_BOOT_ON_CONSOLE=1
@@ -119,6 +139,8 @@ define Package/procd/install
 	$(INSTALL_CONF) ./files/hotplug*.json $(1)/etc/
 	$(INSTALL_DATA) ./files/procd.sh $(1)/lib/functions/
 endef
+
+Package/procd-selinux/install = $(Package/procd/install)
 
 define Package/procd-ujail/install
 	$(INSTALL_DIR) $(1)/sbin
@@ -150,6 +172,7 @@ define Package/uxc/install
 endef
 
 $(eval $(call BuildPackage,procd))
+$(eval $(call BuildPackage,procd-selinux))
 $(eval $(call BuildPackage,procd-ujail))
 $(eval $(call BuildPackage,procd-ujail-console))
 $(eval $(call BuildPackage,procd-seccomp))
