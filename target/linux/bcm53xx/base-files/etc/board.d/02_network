@@ -55,8 +55,8 @@ bcm53xx_setup_interfaces()
 		# vlan2ports=4 5u
 		# and early Netgear R8000 was using
 		# vlan1ports=3 2 1 0 5 7 8*
-		vlan1ports="$(echo $(nvram get vlan1ports | tr " " "\n" | sort))"
-		vlan2ports="$(echo $(nvram get vlan2ports | tr " " "\n" | sort))"
+		vlan1ports="$(nvram get vlan1ports | tr " " "\n" | sort)"
+		vlan2ports="$(nvram get vlan2ports | tr " " "\n" | sort)"
 		if echo "$vlan1ports" | egrep -q "^1 2 3 4 5" && \
 		   echo "$vlan2ports" | egrep -q "^0 5"; then
 			ucidef_add_switch "switch0" \
