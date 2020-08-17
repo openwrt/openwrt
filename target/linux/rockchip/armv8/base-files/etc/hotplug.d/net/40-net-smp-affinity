@@ -6,7 +6,7 @@ get_device_irq() {
 	local device="$1"
 
 	local line=$(grep -m 1 "${device}\$" /proc/interrupts)
-	echo $(echo ${line} | sed 's/:.*//')
+	echo ${line} | sed 's/:.*//'
 }
 
 set_interface_core() {
