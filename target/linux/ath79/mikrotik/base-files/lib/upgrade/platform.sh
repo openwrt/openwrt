@@ -38,6 +38,9 @@ platform_do_upgrade() {
 		platform_do_upgrade_mikrotik_nand "$1"
 		;;
 	*)
+		# NOR devices: erase firmware if booted from initramfs
+		[ -z "$(rootfs_type)" ] && mtd erase firmware
+
 		default_do_upgrade "$1"
 		;;
 	esac
