@@ -102,7 +102,9 @@ define Device/fsl_ls1043a-rdb
   DEVICE_PACKAGES += \
     layerscape-fman \
     tfa-ls1043a-rdb \
-    fmc fmc-eth-config
+    fmc fmc-eth-config \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90
   DEVICE_DTS := freescale/fsl-ls1043a-rdb-sdk
   IMAGE/firmware.bin := \
     ls-clean | \
@@ -123,7 +125,9 @@ define Device/fsl_ls1043a-rdb-sdboot
   DEVICE_PACKAGES += \
     layerscape-fman \
     tfa-ls1043a-rdb-sdboot \
-    fmc fmc-eth-config
+    fmc fmc-eth-config \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90
   DEVICE_DTS := freescale/fsl-ls1043a-rdb-sdk
   FILESYSTEMS := ext4
   IMAGES := sdcard.img sysupgrade.bin
@@ -152,7 +156,9 @@ define Device/fsl_ls1046a-rdb
   DEVICE_PACKAGES += \
     layerscape-fman \
     tfa-ls1046a-rdb \
-    fmc fmc-eth-config
+    fmc fmc-eth-config \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90
   DEVICE_DTS := freescale/fsl-ls1046a-rdb-sdk
   IMAGE/firmware.bin := \
     ls-clean | \
@@ -173,7 +179,9 @@ define Device/fsl_ls1046a-rdb-sdboot
   DEVICE_PACKAGES += \
     layerscape-fman \
     tfa-ls1046a-rdb-sdboot \
-    fmc fmc-eth-config
+    fmc fmc-eth-config \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90
   DEVICE_DTS := freescale/fsl-ls1046a-rdb-sdk
   FILESYSTEMS := ext4
   IMAGES := sdcard.img sysupgrade.bin
@@ -203,7 +211,9 @@ define Device/fsl_ls1088a-rdb
     layerscape-mc \
     layerscape-dpl \
     tfa-ls1088a-rdb \
-    restool
+    restool \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90
   IMAGE/firmware.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
@@ -226,7 +236,9 @@ define Device/fsl_ls1088a-rdb-sdboot
     layerscape-mc \
     layerscape-dpl \
     tfa-ls1088a-rdb-sdboot \
-    restool
+    restool \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90
   DEVICE_DTS := freescale/fsl-ls1088a-rdb
   FILESYSTEMS := ext4
   IMAGES := sdcard.img sysupgrade.bin
