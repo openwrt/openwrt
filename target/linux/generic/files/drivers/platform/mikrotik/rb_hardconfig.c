@@ -495,7 +495,7 @@ static int hc_wlan_data_unpack_lzor(const u8 *inbuf, size_t inlen,
 	/* Temporary buffer same size as the outbuf */
 	templen = *outlen;
 	tempbuf = kmalloc(templen, GFP_KERNEL);
-	if (!outbuf)
+	if (!tempbuf)
 		return -ENOMEM;
 
 	/* Concatenate into the outbuf */
