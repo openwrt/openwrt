@@ -571,6 +571,19 @@ define Device/d-link_dsl-274xb-f1
 endef
 TARGET_DEVICES += d-link_dsl-274xb-f1
 
+define Device/d-link_dsl-2750u-c1
+  $(Device/bcm63xx)
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DSL-2750U
+  DEVICE_VARIANT := C1
+  IMAGES += sysupgrade.bin
+  CFE_BOARD_ID := 963281TAVNG
+  CHIP_ID := 6328
+  FLASH_MB := 8
+  DEVICE_PACKAGES := $(USB2_PACKAGES) $(B43_PACKAGES)
+endef
+TARGET_DEVICES += d-link_dsl-2750u-c1
+
 define Device/d-link_dsl-275xb-d1
   $(Device/bcm63xx)
   DEVICE_VENDOR := D-Link
