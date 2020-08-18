@@ -23,9 +23,6 @@ d-team,newifi-d2)
 	ucidef_set_led_netdev "wlan2g" "WiFi 2.4GHz" "blue:wlan2g" "wlan0"
 	ucidef_set_led_netdev "wlan5g" "WiFi 5GHz" "blue:wlan5g" "wlan1"
 	;;
-dlink,dir-853-r1)
-	ucidef_set_led_netdev "internet" "internet" "blue:net" "wan"
-	;;
 d-team,pbr-m1|\
 gehua,ghl-r-001|\
 jcg,y2|\
@@ -36,6 +33,12 @@ dlink,dir-1960-a1|\
 dlink,dir-2640-a1|\
 dlink,dir-2660-a1)
 	ucidef_set_led_netdev "wan" "wan" "white:net" "wan"
+	;;
+dlink,dir-853-a3)
+	ucidef_set_led_netdev "wan" "wan" "blue:net" "wan"
+	;;
+dlink,dir-853-r1)
+	ucidef_set_led_netdev "internet" "internet" "blue:net" "wan"
 	;;
 dlink,dir-860l-b1|\
 dlink,dir-867-a1|\
