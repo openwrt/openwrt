@@ -56,6 +56,7 @@ platform_do_upgrade() {
 	dlink,dir-1960-a1|\
 	dlink,dir-2640-a1|\
 	dlink,dir-2660-a1|\
+	dlink,dir-853-a3|\
 	hiwifi,hc5962|\
 	jcg,q20|\
 	linksys,e5600|\
