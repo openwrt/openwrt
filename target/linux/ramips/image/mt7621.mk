@@ -342,6 +342,13 @@ define Device/dlink_dir-2660-a1
 endef
 TARGET_DEVICES += dlink_dir-2660-a1
 
+define Device/dlink_dir-853-a3
+  $(Device/dlink_dir-xx60-a1)
+  DEVICE_MODEL := DIR-853
+  DEVICE_VARIANT := A3
+endef
+TARGET_DEVICES += dlink_dir-853-a3
+
 define Device/dlink_dir-853-r1
   $(Device/dlink_dir-8xx-r1)
   DEVICE_MODEL := DIR-853
