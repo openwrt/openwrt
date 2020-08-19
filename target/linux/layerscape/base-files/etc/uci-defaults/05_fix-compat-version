@@ -1,0 +1,19 @@
+#
+# Copyright (C) 2020 OpenWrt.org
+#
+
+. /lib/functions.sh
+
+case "$(board_name)" in
+	fsl,ls1012a-rdb | \
+	fsl,ls1021a-twr | \
+	fsl,ls1043a-rdb | \
+	fsl,ls1046a-rdb | \
+	fsl,ls1088a-rdb | \
+	fsl,ls2088a-rdb)
+		uci set system.@system[0].compat_version="2.0"
+		uci commit system
+		;;
+esac
+
+exit 0

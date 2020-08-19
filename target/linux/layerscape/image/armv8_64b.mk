@@ -15,7 +15,8 @@ define Device/Default
   DEVICE_DTS = freescale/$(subst _,-,$(1))
   SUPPORTED_DEVICES = $(subst _,$(comma),$(1))
   IMAGE_SIZE := 64m
-  IMAGE/sysupgrade.bin := append-kernel | pad-to 16M | \
+  IMAGE/sysupgrade.bin = ls-append-dtb $$(DEVICE_DTS) | pad-to 1M | \
+    append-kernel | pad-to 17M | \
     append-rootfs | pad-rootfs | \
     check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
 endef
@@ -46,6 +47,7 @@ endef
 TARGET_DEVICES += fsl_ls1012a-frdm
 
 define Device/fsl_ls1012a-rdb
+  $(Device/fix-sysupgrade)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1012A-RDB
   DEVICE_PACKAGES += \
@@ -89,13 +91,15 @@ define Device/fsl_ls1012a-frwy-sdboot
     append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
   IMAGE/sysupgrade.bin := \
     ls-clean | \
-    ls-append-sdhead $(1) | pad-to 16M | \
+    ls-append-sdhead $(1) | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
     append-rootfs | check-size $(LS_SD_IMAGE_SIZE) | append-metadata
 endef
 TARGET_DEVICES += fsl_ls1012a-frwy-sdboot
 
 define Device/fsl_ls1043a-rdb
+  $(Device/fix-sysupgrade)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1043A-RDB
   DEVICE_VARIANT := Default
@@ -145,13 +149,15 @@ define Device/fsl_ls1043a-rdb-sdboot
     append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
   IMAGE/sysupgrade.bin := \
     ls-clean | \
-    ls-append-sdhead $(1) | pad-to 16M | \
+    ls-append-sdhead $(1) | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
     append-rootfs | check-size $(LS_SD_IMAGE_SIZE) | append-metadata
 endef
 TARGET_DEVICES += fsl_ls1043a-rdb-sdboot
 
 define Device/fsl_ls1046a-rdb
+  $(Device/fix-sysupgrade)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1046A-RDB
   DEVICE_VARIANT := Default
@@ -201,13 +207,15 @@ define Device/fsl_ls1046a-rdb-sdboot
     append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
   IMAGE/sysupgrade.bin := \
     ls-clean | \
-    ls-append-sdhead $(1) | pad-to 16M | \
+    ls-append-sdhead $(1) | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
     append-rootfs | check-size $(LS_SD_IMAGE_SIZE) | append-metadata
 endef
 TARGET_DEVICES += fsl_ls1046a-rdb-sdboot
 
 define Device/fsl_ls1088a-rdb
+  $(Device/fix-sysupgrade)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1088A-RDB
   DEVICE_VARIANT := Default
@@ -262,13 +270,15 @@ define Device/fsl_ls1088a-rdb-sdboot
     append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
   IMAGE/sysupgrade.bin := \
     ls-clean | \
-    ls-append-sdhead $(1) | pad-to 16M | \
+    ls-append-sdhead $(1) | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
     append-rootfs | check-size $(LS_SD_IMAGE_SIZE) | append-metadata
 endef
 TARGET_DEVICES += fsl_ls1088a-rdb-sdboot
 
 define Device/fsl_ls2088a-rdb
+  $(Device/fix-sysupgrade)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS2088ARDB
   DEVICE_PACKAGES += \

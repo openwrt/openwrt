@@ -61,7 +61,7 @@ platform_do_upgrade_sdboot() {
 	if [ -n "$diff" ]; then
 		dd if="$1" of="/dev/$diskdev" bs=1024 count=4 > /dev/null 2>&1
 		echo "Writing image to /dev/$diskdev..."
-		dd if="$1" of="/dev/$diskdev" bs=1024 skip=16384 seek=16384 > /dev/null 2>&1
+		dd if="$1" of="/dev/$diskdev" bs=1024 skip=15360 seek=15360 > /dev/null 2>&1
 		sync
 
 		# Separate removal and addtion is necessary; otherwise, partition 1
@@ -72,6 +72,9 @@ platform_do_upgrade_sdboot() {
 		return 0
 	fi
 
+	# write dtb
+	echo "Writing dtb to /dev/$diskdev..."
+	dd if="$1" of="/dev/$diskdev" bs=1024 skip=15360 seek=15360 count=1024 > /dev/null 2>&1
 	# write kernel image
 	echo "Writing kernel to /dev/$diskdev..."
 	dd if="$1" of="/dev/$diskdev" bs=1024 skip=16384 seek=16384 count=16384 > /dev/null 2>&1

@@ -11,8 +11,8 @@ LS_SD_ROOTFSPART_OFFSET = 64
 LS_SD_IMAGE_SIZE = $(shell echo $$((($(LS_SD_ROOTFSPART_OFFSET) + \
 	$(CONFIG_TARGET_ROOTFS_PARTSIZE)) * 1024 * 1024)))
 
-# The limitation of flash sysupgrade.bin is 16MB kernel + 32MB rootfs
-LS_SYSUPGRADE_IMAGE_SIZE = 48m
+# The limitation of flash sysupgrade.bin is 1MB dtb + 16MB kernel + 32MB rootfs
+LS_SYSUPGRADE_IMAGE_SIZE = 49m
 
 define Build/ls-clean
 	rm -f $@
@@ -44,6 +44,13 @@ define Build/traverse-fit
 		-D "Traverse_LS1043V" -n "ls1043v" -a $(FDT_LOADADDR) -c 2
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv -f $@.new $@
+endef
+
+define Device/fix-sysupgrade
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := DTB was added to sysupgrade. Image format is different. \
+	To use sysupgrade You need to change firmware partition in bootargs to "49m@0xf00000(firmware)" and saveenv. \
+	After that, You can use "sysupgrade -F".
 endef
 
 include $(SUBTARGET).mk
