@@ -16,12 +16,14 @@ define Device/Default
   DEVICE_DTS = $(lastword $(subst _, ,$(1)))
   SUPPORTED_DEVICES = $(subst _,$(comma),$(1))
   IMAGE_SIZE := 64m
-  IMAGE/sysupgrade.bin := append-kernel | pad-to 16M | \
+  IMAGE/sysupgrade.bin = ls-append-dtb $$(DEVICE_DTS) | pad-to 1M | \
+    append-kernel | pad-to 17M | \
     append-rootfs | pad-rootfs | \
     check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
 endef
 
 define Device/fsl_ls1021a-twr
+  $(Device/fix-sysupgrade)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := TWR-LS1021A
   DEVICE_VARIANT := Default
@@ -54,7 +56,8 @@ define Device/fsl_ls1021a-twr-sdboot
     append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
   IMAGE/sysupgrade.bin := \
     ls-clean | \
-    ls-append-sdhead $(1) | pad-to 16M | \
+    ls-append-sdhead $(1) | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
     append-rootfs | check-size $(LS_SD_IMAGE_SIZE) | append-metadata
 endef
@@ -67,7 +70,7 @@ define Device/fsl_ls1021a-iot-sdboot
   DEVICE_DTS := ls1021a-iot
   FILESYSTEMS := ext4
   SUPPORTED_DEVICES :=
-  IMAGES := sdcard.img
+  IMAGES := sdcard.img sysupgrade.bin
   IMAGE/sdcard.img := \
     ls-clean | \
     ls-append-sdhead $(1) | pad-to 4K | \
@@ -76,5 +79,11 @@ define Device/fsl_ls1021a-iot-sdboot
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
     append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | check-size $(LS_SD_IMAGE_SIZE) | append-metadata
 endef
 TARGET_DEVICES += fsl_ls1021a-iot-sdboot
