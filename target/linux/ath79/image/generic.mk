@@ -1032,6 +1032,19 @@ define Device/hak5_lan-turtle
 endef
 TARGET_DEVICES += hak5_lan-turtle
 
+define Device/hak5_packet-squirrel
+  $(Device/tplink-16mlzma)
+  SOC := ar9331
+  DEVICE_VENDOR := Hak5
+  DEVICE_MODEL := Packet Squirrel
+  TPLINK_HWID := 0x5351524c
+  IMAGES := sysupgrade.bin
+  DEVICE_PACKAGES := kmod-usb-chipidea2 -iwinfo -kmod-ath9k -swconfig \
+	-uboot-envtools -wpad-basic-wolfssl
+  SUPPORTED_DEVICES += packet-squirrel
+endef
+TARGET_DEVICES += hak5_packet-squirrel
+
 define Device/iodata_etg3-r
   SOC := ar9342
   DEVICE_VENDOR := I-O DATA
