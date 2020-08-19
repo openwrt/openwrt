@@ -8,15 +8,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=arm-trusted-firmware-mvebu
-PKG_VERSION:=2.2
-PKG_RELEASE:=2
+PKG_VERSION:=2.3
+PKG_RELEASE:=1
 
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_RELEASE).tar.xz
-PKG_SOURCE_URL:=https://git.trustedfirmware.org/TF-A/trusted-firmware-a.git
-PKG_SOURCE_DATE:=2020-01-21
-PKG_SOURCE_VERSION:=3b3d406ebc6f5dae6b5c9170c674183026e7301b
-PKG_MIRROR_HASH:=7c63da237c52808e1fe49458d5a4ac804a8eb4c365e26c6b2b709256e8fc041f
+PKG_SOURCE:=trusted-firmware-a-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://git.trustedfirmware.org/TF-A/trusted-firmware-a.git/snapshot
+PKG_HASH:=37f917922bcef181164908c470a2f941006791c0113d738c498d39d95d543b21
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/trusted-firmware-a-$(PKG_VERSION)
+
+PKG_LICENSE:=BSD-3-Clause
+PKG_LICENSE_FILES:=docs/license.rst
 
 PKG_MAINTAINER:=Vladimir Vid <vladimir.vid@sartura.hr>
 
@@ -97,6 +98,7 @@ MAKE_VARS= \
 	CROSS_COMPILE="$(TARGET_CROSS)"
 
 MAKE_FLAGS = \
+	OPENSSL_DIR=$(STAGING_DIR_HOST) \
 	CROSS_CM3=$(STAGING_DIR_IMAGE)/$(LINARO_NAME)-$(LINARO_RELEASE).$(LINARO_VERSION)/bin/arm-linux-gnueabi- \
 	BL33=$(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.bin \
 	MV_DDR_PATH=$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
