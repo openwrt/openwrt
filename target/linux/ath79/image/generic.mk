@@ -1045,6 +1045,19 @@ define Device/hak5_packet-squirrel
 endef
 TARGET_DEVICES += hak5_packet-squirrel
 
+define Device/hak5_wifi-pineapple-nano
+  $(Device/tplink-16mlzma)
+  SOC := ar9331
+  DEVICE_VENDOR := Hak5
+  DEVICE_MODEL := WiFi Pineapple NANO
+  TPLINK_HWID := 0x4e414e4f
+  IMAGES := sysupgrade.bin
+  DEVICE_PACKAGES := kmod-ath9k-htc kmod-usb-chipidea2 kmod-usb-storage \
+	-swconfig -uboot-envtools
+  SUPPORTED_DEVICES += wifi-pineapple-nano
+endef
+TARGET_DEVICES += hak5_wifi-pineapple-nano
+
 define Device/iodata_etg3-r
   SOC := ar9342
   DEVICE_VENDOR := I-O DATA
