@@ -370,9 +370,9 @@
 +	if (options.preset == 6 &&
 +			options.extreme == 0 &&
 +			options.lc == LZMA_OPT_LC_DEFAULT &&
-+			options.lp == LZMA_OPT_LC_DEFAULT &&
++			options.lp == LZMA_OPT_LP_DEFAULT &&
 +			options.pb == LZMA_OPT_PB_DEFAULT &&
-+			options.fb == 0 &&
++			options.fb == LZMA_OPT_FB_DEFAULT &&
 +			options.dict_size == block_size &&
 +			flags == 0)
 +		return NULL;
@@ -405,7 +405,7 @@
 +		options.preset = 6;
 +		options.extreme = 0;
 +		options.lc = LZMA_OPT_LC_DEFAULT;
-+		options.lp = LZMA_OPT_LC_DEFAULT;
++		options.lp = LZMA_OPT_LP_DEFAULT;
 +		options.pb = LZMA_OPT_PB_DEFAULT;
 +		options.fb = LZMA_OPT_FB_DEFAULT;
 +		options.dict_size = block_size;
