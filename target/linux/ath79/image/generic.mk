@@ -1019,6 +1019,19 @@ define Device/glinet_gl-x750
 endef
 TARGET_DEVICES += glinet_gl-x750
 
+define Device/hak5_lan-turtle
+  $(Device/tplink-16mlzma)
+  SOC := ar9331
+  DEVICE_VENDOR := Hak5
+  DEVICE_MODEL := LAN Turtle
+  TPLINK_HWID := 0x5348334c
+  IMAGES := sysupgrade.bin
+  DEVICE_PACKAGES := kmod-usb-chipidea2 -iwinfo -kmod-ath9k -swconfig \
+	-uboot-envtools -wpad-basic-wolfssl
+  SUPPORTED_DEVICES += lan-turtle
+endef
+TARGET_DEVICES += hak5_lan-turtle
+
 define Device/iodata_etg3-r
   SOC := ar9342
   DEVICE_VENDOR := I-O DATA
