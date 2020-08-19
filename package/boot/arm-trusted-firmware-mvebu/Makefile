@@ -81,8 +81,7 @@ define Build/Prepare
 	$(eval $(call Download,mv-ddr-marvell))
 	$(eval $(call Download,gcc-linaro))
 
-	rm -rf $(PKG_BUILD_DIR)
-	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(PKG_SOURCE)
+	$(call Build/Prepare/Default,)
 
 	mkdir -p $(STAGING_DIR_IMAGE)
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(A3700_UTILS_SOURCE)
