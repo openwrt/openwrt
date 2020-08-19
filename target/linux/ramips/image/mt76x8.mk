@@ -752,6 +752,14 @@ define Device/xiaomi_mir4a-100m
 endef
 TARGET_DEVICES += xiaomi_mir4a-100m
 
+define Device/xiaomi_mi-router-4c
+  IMAGE_SIZE := 14976k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 4C
+  DEVICE_PACKAGES := uboot-envtools
+endef
+TARGET_DEVICES += xiaomi_mi-router-4c
+
 define Device/xiaomi_miwifi-nano
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Xiaomi
