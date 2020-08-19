@@ -205,6 +205,9 @@ glinet,gl-mifi)
 glinet,gl-x750)
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth1"
 	;;
+hak5,lan-turtle)
+	ucidef_set_led_netdev "wan" "WAN" "$boardname:orange:system" "eth1"
+	;;
 meraki,mr16)
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth0"
 	;;
