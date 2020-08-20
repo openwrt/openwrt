@@ -9,16 +9,17 @@ TECHNICAL INFORMATION:
 Applies to vanilla kernel 3.9.4.
 
 ===============================================================================
---- a/arch/um/Kconfig.net
-+++ b/arch/um/Kconfig.net
-@@ -22,6 +22,19 @@ config UML_NET
-         enable at least one of the following transport options to actually
-         make use of UML networking.
+--- a/arch/um/drivers/Kconfig
++++ b/arch/um/drivers/Kconfig
+@@ -146,6 +146,20 @@ config UML_NET
+ 	  enable at least one of the following transport options to actually
+ 	  make use of UML networking.
  
-+config UML_NET_RANDOM_MAC
-+	bool "Use random MAC addresses for network interfaces"
-+	default n
++config UML_NET_DETERMINISTIC_MAC
++	bool "Use deterministic MAC addresses for network interfaces"
++	default y
 +	depends on UML_NET
++	select CRYPTO_SHA1
 +	help
 +        Virtual network devices inside a User-Mode Linux instance must be
 +        assigned a MAC (Ethernet) address. If none is specified on the UML
@@ -48,11 +49,11 @@ Applies to vanilla kernel 3.9.4.
  #define DRIVER_NAME "uml-netdev"
  
  static DEFINE_SPINLOCK(opened_lock);
-@@ -288,11 +296,53 @@ static void uml_net_user_timer_expire(un
+@@ -286,9 +294,51 @@ static void uml_net_user_timer_expire(st
  #endif
  }
  
-+#ifndef CONFIG_UML_NET_RANDOM_MAC
++#ifdef CONFIG_UML_NET_DETERMINISTIC_MAC
 +
 +/* Compute a SHA1 hash of the UML instance's id and
 + *  * an interface name. */
@@ -93,20 +94,18 @@ Applies to vanilla kernel 3.9.4.
 +
 +#endif
 +
- static void setup_etheraddr(struct net_device *dev, char *str)
+ void uml_net_setup_etheraddr(struct net_device *dev, char *str)
  {
  	unsigned char *addr = dev->dev_addr;
++	u8 hash[SHA1_DIGEST_SIZE];
  	char *end;
  	int i;
-+	u8 hash[SHA1_DIGEST_SIZE];
  
- 	if (str == NULL)
- 		goto random;
-@@ -333,9 +383,26 @@ static void setup_etheraddr(struct net_d
+@@ -331,9 +381,26 @@ void uml_net_setup_etheraddr(struct net_
  	return;
  
  random:
-+#ifdef CONFIG_UML_NET_RANDOM_MAC
++#ifndef CONFIG_UML_NET_DETERMINISTIC_MAC
  	printk(KERN_INFO
  	       "Choosing a random ethernet address for device %s\n", dev->name);
  	eth_hw_addr_random(dev);

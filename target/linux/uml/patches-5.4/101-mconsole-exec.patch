@@ -28,7 +28,7 @@
 --- a/arch/um/drivers/mconsole_kern.c
 +++ b/arch/um/drivers/mconsole_kern.c
 @@ -4,6 +4,7 @@
-  * Licensed under the GPL
+  * Copyright (C) 2001 - 2008 Jeff Dike (jdike@{addtoit,linux.intel}.com)
   */
  
 +#include <linux/kmod.h>
@@ -43,7 +43,7 @@
  #include <asm/switch_to.h>
  
  #include <init.h>
-@@ -122,6 +124,59 @@ void mconsole_log(struct mc_request *req
+@@ -121,6 +123,59 @@ void mconsole_log(struct mc_request *req
  	mconsole_reply(req, "", 0, 0);
  }
  
@@ -123,7 +123,7 @@
  };
 --- a/arch/um/os-Linux/file.c
 +++ b/arch/um/os-Linux/file.c
-@@ -555,6 +555,8 @@ int os_create_unix_socket(const char *fi
+@@ -557,6 +557,8 @@ int os_create_unix_socket(const char *fi
  
  	addr.sun_family = AF_UNIX;
  
@@ -134,7 +134,7 @@
  	err = bind(sock, (struct sockaddr *) &addr, sizeof(addr));
 --- a/include/linux/kmod.h
 +++ b/include/linux/kmod.h
-@@ -45,4 +45,6 @@ static inline int request_module_nowait(
+@@ -32,4 +32,6 @@ static inline int request_module_nowait(
  #define try_then_request_module(x, mod...) (x)
  #endif
  
@@ -143,25 +143,17 @@
  #endif /* __LINUX_KMOD_H__ */
 --- a/include/linux/umh.h
 +++ b/include/linux/umh.h
-@@ -22,6 +22,7 @@ struct subprocess_info {
- 	const char *path;
+@@ -23,6 +23,7 @@ struct subprocess_info {
  	char **argv;
  	char **envp;
+ 	struct file *file;
 +	struct file *stdout;
  	int wait;
  	int retval;
- 	int (*init)(struct subprocess_info *info, struct cred *new);
+ 	pid_t pid;
 --- a/kernel/umh.c
 +++ b/kernel/umh.c
-@@ -25,6 +25,7 @@
- #include <linux/ptrace.h>
- #include <linux/async.h>
- #include <linux/uaccess.h>
-+#include <linux/pipe_fs_i.h>
- 
- #include <trace/events/module.h>
- 
-@@ -70,6 +71,28 @@ static int call_usermodehelper_exec_asyn
+@@ -75,6 +75,28 @@ static int call_usermodehelper_exec_asyn
  	flush_signal_handlers(current, 1);
  	spin_unlock_irq(&current->sighand->siglock);
  
@@ -190,9 +182,9 @@
  	/*
  	 * Our parent (unbound workqueue) runs with elevated scheduling
  	 * priority. Avoid propagating that into the userspace child.
-@@ -393,6 +416,20 @@ struct subprocess_info *call_usermodehel
+@@ -353,6 +375,20 @@ static void helper_unlock(void)
+ 		wake_up(&running_helpers_waitq);
  }
- EXPORT_SYMBOL(call_usermodehelper_setup);
  
 +int call_usermodehelper_stdoutpipe(struct subprocess_info *sub_info,
 +				   struct file **filp)
@@ -209,5 +201,5 @@
 +EXPORT_SYMBOL(call_usermodehelper_stdoutpipe);
 +
  /**
-  * call_usermodehelper_exec - start a usermode application
-  * @sub_info: information about the subprocessa
+  * call_usermodehelper_setup - prepare to call a usermode helper
+  * @path: path to usermode executable

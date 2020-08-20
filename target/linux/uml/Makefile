@@ -21,15 +21,9 @@ BOARD:=uml
 BOARDNAME:=User Mode Linux
 FEATURES:=squashfs ext4 audio source-only
 
-KERNEL_PATCHVER:=4.14
+KERNEL_PATCHVER:=5.4
 
 include $(INCLUDE_DIR)/target.mk
-
-define Kernel/Patch
-	mkdir -p $(LINUX_DIR)/arch/um/include/uapi
-	mv $(LINUX_DIR)/arch/um/include/asm $(LINUX_DIR)/arch/um/include/uapi/
-	$(Kernel/Patch/Default)
-endef
 
 LINUX_TARGET_CONFIG:=$(CURDIR)/config/$(ARCH)
 
