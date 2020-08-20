@@ -107,7 +107,9 @@ MAKE_FLAGS = \
 	fip
 
 define Build/InstallDev
-	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/flash-image.bin $(BIN_DIR)/u-boot-$(BOARDNAME)/
+	$(INSTALL_DIR) $(BIN_DIR)/flash-image-$(BOARDNAME)
+	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/flash-image.bin $(BIN_DIR)/flash-image-$(BOARDNAME)/
+	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/uart-images.tgz $(BIN_DIR)/flash-image-$(BOARDNAME)/
 endef
 
 $(eval $(call BuildPackage,arm-trusted-firmware-mvebu/uDPU))
