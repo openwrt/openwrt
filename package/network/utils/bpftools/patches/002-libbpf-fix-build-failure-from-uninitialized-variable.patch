@@ -1,0 +1,46 @@
+From 74d0dcf7608b1bab116e297468ac51b57eb97ce0 Mon Sep 17 00:00:00 2001
+From: Tony Ambardar <Tony.Ambardar@gmail.com>
+Date: Thu, 20 Aug 2020 10:06:24 -0700
+Subject: [PATCH] libbpf: fix build failure from uninitialized variable warning
+
+While compiling libbpf, some GCC versions (at least 8.4.0) have difficulty
+determining control flow and a emit warning for potentially uninitialized
+usage of 'map', which results in a build error if using "-Werror":
+
+In file included from libbpf.c:56:
+libbpf.c: In function '__bpf_object__open':
+libbpf_internal.h:59:2: warning: 'map' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  libbpf_print(level, "libbpf: " fmt, ##__VA_ARGS__); \
+  ^~~~~~~~~~~~
+libbpf.c:5032:18: note: 'map' was declared here
+  struct bpf_map *map, *targ_map;
+                  ^~~
+
+The warning/error is false based on code inspection, so silence it with a
+NULL initialization.
+
+Fixes: 646f02ffdd49 ("libbpf: Add BTF-defined map-in-map support")
+Ref: 063e68813391 ("libbpf: Fix false uninitialized variable warning")
+
+Signed-off-by: Tony Ambardar <Tony.Ambardar@gmail.com>
+---
+ tools/lib/bpf/libbpf.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/lib/bpf/libbpf.c b/tools/lib/bpf/libbpf.c
+index 11e4725b8b1c..a72296797357 100644
+--- a/tools/lib/bpf/libbpf.c
++++ b/tools/lib/bpf/libbpf.c
+@@ -5028,8 +5028,8 @@ static int bpf_object__collect_map_relos(struct bpf_object *obj,
+ 	int i, j, nrels, new_sz, ptr_sz = sizeof(void *);
+ 	const struct btf_var_secinfo *vi = NULL;
+ 	const struct btf_type *sec, *var, *def;
++	struct bpf_map *map = NULL, *targ_map;
+ 	const struct btf_member *member;
+-	struct bpf_map *map, *targ_map;
+ 	const char *name, *mname;
+ 	Elf_Data *symbols;
+ 	unsigned int moff;
+-- 
+2.25.1
+
