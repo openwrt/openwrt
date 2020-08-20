@@ -89,6 +89,8 @@ define Build/Prepare
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(LINARO_SOURCE)
 endef
 
+export GCC_HONOUR_COPTS=s
+
 TARGET_CFLAGS = ""
 
 MAKE_VARS= \
