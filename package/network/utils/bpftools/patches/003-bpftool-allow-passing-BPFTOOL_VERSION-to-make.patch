@@ -1,0 +1,26 @@
+From 668d1c2951e18512a27aec20b80dea627d01bf04 Mon Sep 17 00:00:00 2001
+From: Tony Ambardar <Tony.Ambardar@gmail.com>
+Date: Thu, 20 Aug 2020 16:05:48 -0700
+Subject: [PATCH] tools/bpftool: allow passing BPFTOOL_VERSION to make
+
+Signed-off-by: Tony Ambardar <Tony.Ambardar@gmail.com>
+---
+ tools/bpf/bpftool/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/bpf/bpftool/Makefile b/tools/bpf/bpftool/Makefile
+index 9e85f101be85..d9d821736c31 100644
+--- a/tools/bpf/bpftool/Makefile
++++ b/tools/bpf/bpftool/Makefile
+@@ -25,7 +25,7 @@ endif
+ 
+ LIBBPF = $(LIBBPF_PATH)libbpf.a
+ 
+-BPFTOOL_VERSION := $(shell make -rR --no-print-directory -sC ../../.. kernelversion)
++BPFTOOL_VERSION ?= $(shell make -rR --no-print-directory -sC ../../.. kernelversion)
+ 
+ $(LIBBPF): FORCE
+ 	$(if $(LIBBPF_OUTPUT),@mkdir -p $(LIBBPF_OUTPUT))
+-- 
+2.25.1
+
