@@ -220,4 +220,12 @@ manifest: FORCE
 		$(if $(PROFILE),USER_PROFILE="$(PROFILE_FILTER)") \
 		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)"))
 
-.SILENT: help info image manifest
+whatdepends: FORCE
+ifeq ($(PACKAGE),)
+	@echo 'Variable `PACKAGE` is not set but required by `whatdepends`'
+	@exit 1
+endif
+	@$(MAKE) -s package_reload
+	@$(OPKG) whatdepends -A $(PACKAGE)
+
+.SILENT: help info image manifest whatdepends
