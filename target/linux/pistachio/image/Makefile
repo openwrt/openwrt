@@ -32,7 +32,7 @@ define Device/marduk
   DEVICE_DTS := img/pistachio_marduk
   BLOCKSIZE := 256KiB
   PAGESIZE := 4KiB
-  DEVICE_PACKAGES := kmod-tpm-i2c-infineon
+  DEVICE_PACKAGES := kmod-tpm-i2c-infineon kmod-ca8210 wpan-tools
 endef
 
 TARGET_DEVICES += marduk
