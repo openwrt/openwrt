@@ -104,7 +104,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  EXPORT_SYMBOL_GPL(ieee80211_calc_rx_airtime);
  
-@@ -530,46 +546,56 @@ static bool ieee80211_fill_rate_info(str
+@@ -530,46 +546,57 @@ static bool ieee80211_fill_rate_info(str
  	return false;
  }
  
@@ -179,7 +179,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +{
 +	struct ieee80211_rx_status stat;
 +
-+	ieee80211_fill_rx_status(&stat, hw, rate, ri, band, len);
++	if (ieee80211_fill_rx_status(&stat, hw, rate, ri, band, len))
++		return 0;
 +
  	return ieee80211_calc_rx_airtime(hw, &stat, len);
  }
