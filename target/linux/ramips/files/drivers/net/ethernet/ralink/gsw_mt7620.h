@@ -17,11 +17,7 @@
 
 #define GSW_REG_PHY_TIMEOUT	(5 * HZ)
 
-#ifdef CONFIG_SOC_MT7621
-#define MT7620A_GSW_REG_PIAC	0x0004
-#else
 #define MT7620A_GSW_REG_PIAC	0x7004
-#endif
 
 #define GSW_NUM_VLANS		16
 #define GSW_NUM_VIDS		4096
@@ -65,11 +61,7 @@
 
 #define PORT_IRQ_ST_CHG		0x7f
 
-#ifdef CONFIG_SOC_MT7621
-#define ESW_PHY_POLLING		0x0000
-#else
 #define ESW_PHY_POLLING		0x7000
-#endif
 
 #define	PMCR_IPG		BIT(18)
 #define	PMCR_MAC_MODE		BIT(16)
