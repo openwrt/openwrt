@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/airtime.c
 +++ b/net/mac80211/airtime.c
-@@ -646,27 +646,40 @@ u32 ieee80211_calc_expected_tx_airtime(s
+@@ -647,27 +647,41 @@ u32 ieee80211_calc_expected_tx_airtime(s
  	if (pubsta) {
  		struct sta_info *sta = container_of(pubsta, struct sta_info,
  						    sta);
@@ -26,11 +26,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -		if (!(rate->flags & (IEEE80211_TX_RC_VHT_MCS |
 -				     IEEE80211_TX_RC_MCS)))
 -			ampdu = false;
-+		ieee80211_fill_rx_status(&stat, hw, rate, ri, band, len);
-+
++		if (ieee80211_fill_rx_status(&stat, hw, rate, ri, band, len))
++			return 0;
+ 
 +		if (stat.encoding == RX_ENC_LEGACY || !ampdu)
 +			return ieee80211_calc_rx_airtime(hw, &stat, len);
- 
++
 +		duration = ieee80211_get_rate_duration(hw, &stat, &overhead);
  		/*
  		 * Assume that HT/VHT transmission on any AC except VO will
