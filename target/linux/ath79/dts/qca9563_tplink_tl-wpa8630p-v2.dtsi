@@ -6,15 +6,6 @@
 	aliases {
 		label-mac-device = &eth0;
 	};
-
-	gpio-export {
-		compatible = "gpio-export";
-
-		led_control {
-			gpio-export,name = "tp-link:led:control";
-			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
-		};
-	};
 };
 
 &partitions {
