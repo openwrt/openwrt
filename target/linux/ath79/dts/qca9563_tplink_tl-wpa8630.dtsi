@@ -25,7 +25,7 @@
 
 		leds {
 			label = "LED control button";
-			linux,code = <BTN_0>;
+			linux,code = <KEY_LIGHTS_TOGGLE>;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
@@ -68,6 +68,16 @@
 			label = "tp-link:green:wifi5g";
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		led_control {
+			gpio-export,name = "tp-link:led:control";
+			gpio-export,output = <0>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
