@@ -19,7 +19,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/spi/spi.c
 +++ b/drivers/spi/spi.c
-@@ -729,7 +729,9 @@ static void spi_set_cs(struct spi_device
+@@ -741,7 +741,9 @@ static void spi_set_cs(struct spi_device
  		enable = !enable;
  
  	if (gpio_is_valid(spi->cs_gpio)) {

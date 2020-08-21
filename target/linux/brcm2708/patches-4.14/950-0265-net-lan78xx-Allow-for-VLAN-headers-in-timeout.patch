@@ -17,7 +17,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
 
 --- a/drivers/net/usb/lan78xx.c
 +++ b/drivers/net/usb/lan78xx.c
-@@ -2196,7 +2196,7 @@ static int lan78xx_change_mtu(struct net
+@@ -2192,7 +2192,7 @@ static int lan78xx_change_mtu(struct net
  	if ((ll_mtu % dev->maxpacket) == 0)
  		return -EDOM;
  
@@ -26,7 +26,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  
  	netdev->mtu = new_mtu;
  
-@@ -2489,7 +2489,8 @@ static int lan78xx_reset(struct lan78xx_
+@@ -2485,7 +2485,8 @@ static int lan78xx_reset(struct lan78xx_
  	buf |= FCT_TX_CTL_EN_;
  	ret = lan78xx_write_reg(dev, FCT_TX_CTL, buf);
  

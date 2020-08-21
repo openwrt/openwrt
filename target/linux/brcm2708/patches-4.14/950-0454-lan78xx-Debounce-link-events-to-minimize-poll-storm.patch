@@ -16,7 +16,7 @@ See: https://github.com/raspberrypi/linux/issues/2447
 
 --- a/drivers/net/usb/lan78xx.c
 +++ b/drivers/net/usb/lan78xx.c
-@@ -426,6 +426,11 @@ static bool enable_tso;
+@@ -422,6 +422,11 @@ static bool enable_tso;
  module_param(enable_tso, bool, 0644);
  MODULE_PARM_DESC(enable_tso, "Enables TCP segmentation offload");
  
@@ -28,17 +28,17 @@ See: https://github.com/raspberrypi/linux/issues/2447
  static int lan78xx_read_reg(struct lan78xx_net *dev, u32 index, u32 *data)
  {
  	u32 *buf = kmalloc(sizeof(u32), GFP_KERNEL);
-@@ -3735,7 +3740,12 @@ static int lan78xx_probe(struct usb_inte
- 	dev->pipe_intr = usb_rcvintpipe(dev->udev,
- 					dev->ep_intr->desc.bEndpointAddress &
- 					USB_ENDPOINT_NUMBER_MASK);
--	period = dev->ep_intr->desc.bInterval;
+@@ -3679,7 +3684,12 @@ static int lan78xx_probe(struct usb_inte
+ 	netdev->max_mtu = MAX_SINGLE_PACKET_SIZE;
+ 	netif_set_gso_max_size(netdev, MAX_SINGLE_PACKET_SIZE - MAX_HEADER);
+ 
+-	period = ep_intr->desc.bInterval;
 +	if (int_urb_interval_ms <= 0)
-+		period = dev->ep_intr->desc.bInterval;
++		period = ep_intr->desc.bInterval;
 +	else
 +		period = int_urb_interval_ms * INT_URB_MICROFRAMES_PER_MS;
 +
 +	netif_notice(dev, probe, netdev, "int urb period %d\n", period);
- 
  	maxp = usb_maxpacket(dev->udev, dev->pipe_intr, 0);
  	buf = kmalloc(maxp, GFP_KERNEL);
+ 	if (buf) {

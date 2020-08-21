@@ -623,7 +623,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  EXPORT_SYMBOL(dma_noop_ops);
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -4367,8 +4367,14 @@ void page_frag_free(void *addr)
+@@ -4372,8 +4372,14 @@ void page_frag_free(void *addr)
  {
  	struct page *page = virt_to_head_page(addr);
  
