@@ -28723,7 +28723,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  #define CRYPTO_ALG_DEAD			0x00000020
 --- a/include/uapi/linux/cryptouser.h
 +++ b/include/uapi/linux/cryptouser.h
-@@ -46,6 +46,7 @@ enum crypto_attr_type_t {
+@@ -48,6 +48,7 @@ enum crypto_attr_type_t {
  	CRYPTOCFGA_REPORT_CIPHER,	/* struct crypto_report_cipher */
  	CRYPTOCFGA_REPORT_AKCIPHER,	/* struct crypto_report_akcipher */
  	CRYPTOCFGA_REPORT_KPP,		/* struct crypto_report_kpp */
@@ -28731,7 +28731,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	__CRYPTOCFGA_MAX
  
  #define CRYPTOCFGA_MAX (__CRYPTOCFGA_MAX - 1)
-@@ -112,5 +113,9 @@ struct crypto_report_kpp {
+@@ -114,5 +115,9 @@ struct crypto_report_kpp {
  	char type[CRYPTO_MAX_NAME];
  };
  
