@@ -61,6 +61,7 @@ platform_do_upgrade() {
 	xiaomi,mi-router-ac2100|\
 	xiaomi,mir3g|\
 	xiaomi,mir3p|\
+	xiaomi,mir4|\
 	xiaomi,redmi-router-ac2100)
 		nand_do_upgrade "$1"
 		;;
