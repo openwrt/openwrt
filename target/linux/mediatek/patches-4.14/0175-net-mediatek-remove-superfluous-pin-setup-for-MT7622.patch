@@ -41,7 +41,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/* Set linkdown as the default for each GMAC. Its own MCR would be set
  	 * up with the more appropriate value when mtk_phy_link_adjust call is
-@@ -2569,11 +2571,13 @@ static int mtk_probe(struct platform_dev
+@@ -2571,11 +2573,13 @@ static int mtk_probe(struct platform_dev
  		}
  	}
  
@@ -60,7 +60,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  
  	for (i = 0; i < 3; i++) {
-@@ -2699,17 +2703,20 @@ static int mtk_remove(struct platform_de
+@@ -2701,17 +2705,20 @@ static int mtk_remove(struct platform_de
  
  static const struct mtk_soc_data mt2701_data = {
  	.caps = MTK_GMAC1_TRGMII,

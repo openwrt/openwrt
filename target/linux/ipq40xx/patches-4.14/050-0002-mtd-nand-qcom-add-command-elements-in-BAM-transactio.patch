@@ -57,7 +57,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  	u32 cmd_sgl_pos;
  	u32 cmd_sgl_start;
  	u32 tx_sgl_pos;
-@@ -462,7 +472,8 @@ alloc_bam_transaction(struct qcom_nand_c
+@@ -464,7 +474,8 @@ alloc_bam_transaction(struct qcom_nand_c
  
  	bam_txn_size =
  		sizeof(*bam_txn) + num_cw *
@@ -67,7 +67,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  		(sizeof(*bam_txn->data_sgl) * QPIC_PER_CW_DATA_SGL));
  
  	bam_txn_buf = devm_kzalloc(nandc->dev, bam_txn_size, GFP_KERNEL);
-@@ -472,6 +483,10 @@ alloc_bam_transaction(struct qcom_nand_c
+@@ -474,6 +485,10 @@ alloc_bam_transaction(struct qcom_nand_c
  	bam_txn = bam_txn_buf;
  	bam_txn_buf += sizeof(*bam_txn);
  
@@ -78,7 +78,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  	bam_txn->cmd_sgl = bam_txn_buf;
  	bam_txn_buf +=
  		sizeof(*bam_txn->cmd_sgl) * QPIC_PER_CW_CMD_SGL * num_cw;
-@@ -489,6 +504,8 @@ static void clear_bam_transaction(struct
+@@ -491,6 +506,8 @@ static void clear_bam_transaction(struct
  	if (!nandc->props->is_bam)
  		return;
  

@@ -1502,7 +1502,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  		}
 --- a/drivers/mtd/nand/qcom_nandc.c
 +++ b/drivers/mtd/nand/qcom_nandc.c
-@@ -1990,7 +1990,7 @@ static int qcom_nandc_write_oob(struct m
+@@ -1992,7 +1992,7 @@ static int qcom_nandc_write_oob(struct m
  	struct nand_ecc_ctrl *ecc = &chip->ecc;
  	u8 *oob = chip->oob_poi;
  	int data_size, oob_size;
@@ -1511,7 +1511,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	host->use_ecc = true;
  
-@@ -2027,11 +2027,7 @@ static int qcom_nandc_write_oob(struct m
+@@ -2029,11 +2029,7 @@ static int qcom_nandc_write_oob(struct m
  		return -EIO;
  	}
  
@@ -1524,7 +1524,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  }
  
  static int qcom_nandc_block_bad(struct mtd_info *mtd, loff_t ofs)
-@@ -2081,7 +2077,7 @@ static int qcom_nandc_block_markbad(stru
+@@ -2083,7 +2079,7 @@ static int qcom_nandc_block_markbad(stru
  	struct qcom_nand_host *host = to_qcom_nand_host(chip);
  	struct qcom_nand_controller *nandc = get_qcom_nand_controller(chip);
  	struct nand_ecc_ctrl *ecc = &chip->ecc;
@@ -1533,7 +1533,7 @@ Date:   Thu Nov 30 18:01:29 2017 +0100
  
  	clear_read_regs(nandc);
  	clear_bam_transaction(nandc);
-@@ -2114,11 +2110,7 @@ static int qcom_nandc_block_markbad(stru
+@@ -2116,11 +2112,7 @@ static int qcom_nandc_block_markbad(stru
  		return -EIO;
  	}
  
