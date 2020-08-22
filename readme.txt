@@ -1,4 +1,4 @@
-ramips: mt7621: add support for Xiaomi Mi Router 4 …
+ramips: mt7621: add support for Xiaomi Mi Router 4
 
 mir4 is the same as mir3g, except for the RAM(256Mib→128Mib) LED and gpio(MiNet button).
 
@@ -20,7 +20,7 @@ WI2 antenna connector: U.FL
 ETH chip1: MediaTek MT7621A
 Switch: MediaTek MT7621A
 
-TTL Serial
+UART Serial
 [o] TX
 [o] GND
 [o] RX
@@ -28,8 +28,8 @@ TTL Serial
 
 Flash instruction
 =================
-1.Create a simple http server using caddy V1.0
-2.set ttl enable
+1.Create a simple http server (nginx etc)
+2.set uart enable
 To enable writing to the console, you must reset to factory settings
 Then you see uboot boot, press the keyboard 4 button (enter uboot command line)
 If it is not successful, repeat the above operation of restoring the factory settings.
@@ -39,15 +39,13 @@ setenv uart_en 1
 saveenv
 boot
 
-3.use shell in ttl
+3.use shell in uart
 cd /tmp
-wget http://"your computerip:80"/openwrt-ramips-mt7621-xiaomi_mir4-squashfs-kernel1.bin
-wget http://"your computer ip:80"/openwrt-ramips-mt7621-xiaomi_mir4-squashfs-rootfs0.bin
+wget http://"your_computer_ip:80"/openwrt-ramips-mt7621-xiaomi_mir4-squashfs-kernel1.bin
+wget http://"your_computer_ip:80"/openwrt-ramips-mt7621-xiaomi_mir4-squashfs-rootfs0.bin
 mtd write openwrt-ramips-mt7621-xiaomi_mir4-squashfs-kernel1.bin kernel1
 mtd write openwrt-ramips-mt7621-xiaomi_mir4-squashfs-rootfs0.bin rootfs0
 nvram set flag_try_sys1_failed=1
 nvram commit
 reboot
 4.login to the router http://192.168.1.1/
-
-Fork Signed-off-by: Zhangshiru <2548379078@qq.com>
