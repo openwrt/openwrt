@@ -35,17 +35,17 @@ zram_applicable()
 		return 1
 	}
 
-	which mkswap >/dev/null || {
+	command -v mkswap >/dev/null || {
 		logger -s -t zram_applicable -p daemon.err "[ERROR] 'mkswap' not installed"
 		return 1
 	}
 
-	which swapon >/dev/null || {
+	command -v swapon >/dev/null || {
 		logger -s -t zram_applicable -p daemon.err "[ERROR] 'swapon' not installed"
 		return 1
 	}
 
-	which swapoff >/dev/null || {
+	command -v swapoff >/dev/null || {
 		logger -s -t zram_applicable -p daemon.err "[ERROR] 'swapoff' not installed"
 		return 1
 	}
@@ -73,7 +73,7 @@ zram_getdev()
 	local zdev=$( zram_dev )
 
 	if [ "$(mount | grep $zdev)" ]; then
-		local idx=`cat /sys/class/zram-control/hot_add`
+		local idx=$(cat /sys/class/zram-control/hot_add)
 		zdev="$( zram_dev $idx )"
 	fi
 
@@ -89,7 +89,7 @@ zram_comp_algo()
 		return 0
 	fi
 
-	if [ `grep -c "$zram_comp_algo" /sys/block/$( basename $dev )/comp_algorithm` -ne 0 ]; then
+	if [ $(grep -c "$zram_comp_algo" /sys/block/$( basename $dev )/comp_algorithm) -ne 0 ]; then
 		logger -s -t zram_comp_algo -p daemon.debug "Set compression algorithm '$zram_comp_algo' for zram '$dev'"
 		echo $zram_comp_algo > "/sys/block/$( basename $dev )/comp_algorithm"
 	else
@@ -147,8 +147,8 @@ zram_compact()
 	# compact zram device (reduce memory allocation overhead)
 	local zdev="/sys/block/$( basename "$1" )"
 
-	local old_mem_used=`awk '{print $3}' <$zdev/mm_stat`
-	local old_overhead=`awk '{print $3-$2}' <$zdev/mm_stat`
+	local old_mem_used=$(awk '{print $3}' <$zdev/mm_stat)
+	local old_overhead=$(awk '{print $3-$2}' <$zdev/mm_stat)
 
 	echo 1 > $zdev/compact
 
@@ -182,7 +182,7 @@ start()
 	zram_comp_streams "$zram_dev"
 	echo $(( $zram_size * 1024 * 1024 )) >"/sys/block/$( basename "$zram_dev" )/disksize"
 	mkswap "$zram_dev"
-	swapon $zram_priority "$zram_dev"
+	swapon -d $zram_priority "$zram_dev"
 }
 
 stop()

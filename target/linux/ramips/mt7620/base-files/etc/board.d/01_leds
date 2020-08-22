@@ -165,6 +165,13 @@ netgear,ex6130)
 	ucidef_set_led_netdev "wlan5g" "ROUTER (green)" "$boardname:green:router" "wlan0"
 	ucidef_set_led_netdev "wlan2g" "DEVICE (green)" "$boardname:green:device" "wlan1"
 	;;
+netgear,jwnr2010-v5)
+	ucidef_set_led_switch "lan1" "lan1" "$boardname:green:lan1" "switch0" "0x08"
+	ucidef_set_led_switch "lan2" "lan2" "$boardname:green:lan2" "switch0" "0x04"
+	ucidef_set_led_switch "lan3" "lan3" "$boardname:green:lan3" "switch0" "0x02"
+	ucidef_set_led_switch "lan4" "lan4" "$boardname:green:lan4" "switch0" "0x01"
+	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x10"
+	;;
 phicomm,psg1208)
 	set_wifi_led "$boardname:white:wlan2g"
 	;;

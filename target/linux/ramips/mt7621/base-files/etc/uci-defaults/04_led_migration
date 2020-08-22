@@ -5,6 +5,9 @@ board=$(board_name)
 boardonly="${board##*,}"
 
 case "$board" in
+asus,rt-ac65p)
+	migrate_leds "^rt-ac85p:=rt-ac65p:"
+	;;
 mikrotik,routerboard-750gr3)
 	migrate_leds "^rb750gr3:=$boardonly:"
 	;;

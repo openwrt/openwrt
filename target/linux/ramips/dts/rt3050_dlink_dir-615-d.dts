@@ -74,23 +74,23 @@
 	leds {
 		compatible = "gpio-leds";
 
-		status {
+		status_amber {
 			label = "dir-615-d:amber:status";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
-		led_status_green: status2 {
+		led_status_green: status_green {
 			label = "dir-615-d:green:status";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
-		wan {
+		wan_amber {
 			label = "dir-615-d:amber:wan";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 
-		wan2 {
+		wan_green {
 			label = "dir-615-d:green:wan";
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};

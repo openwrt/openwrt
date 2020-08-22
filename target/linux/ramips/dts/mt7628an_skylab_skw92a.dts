@@ -6,17 +6,13 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
-/{
+/ {
 	compatible = "skylab,skw92a", "mediatek,mt7628an-soc";
 	model = "SKYLAB SKW92A";
 
 	aliases {
 		led-boot = &led_power;
 		led-failsafe = &led_power;
-	};
-
-	chosen {
-		bootargs = "console=ttyS0,57600";
 	};
 
 	leds {

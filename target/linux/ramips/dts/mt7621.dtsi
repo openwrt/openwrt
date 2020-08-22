@@ -35,6 +35,10 @@
 		serial0 = &uartlite;
 	};
 
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
 	pll: pll {
 		compatible = "mediatek,mt7621-pll", "syscon";
 

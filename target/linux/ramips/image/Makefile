@@ -11,8 +11,8 @@ DEVICE_VARS += LOADER_TYPE
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
-DEVICE_VARS += SERCOMM_HWID SERCOMM_HWVER SERCOMM_SWVER
-DEVICE_VARS += JCG_MAXSIZE
+DEVICE_VARS += SERCOMM_HWNAME SERCOMM_HWID SERCOMM_HWVER SERCOMM_SWVER
+DEVICE_VARS += SERCOMM_PAD JCG_MAXSIZE
 
 loadaddr-y := 0x80000000
 loadaddr-$(CONFIG_TARGET_ramips_rt288x) := 0x88000000
@@ -51,11 +51,6 @@ define Build/elx-header
 	rm -rf $(KDIR)/tmp/$(DEVICE_NAME).header
 endef
 
-define Build/fonfxcimage
-	uimage_padhdr -i $@ -o $@.new
-	mv $@.new $@
-endef
-
 define Build/jcg-header
 	$(STAGING_DIR_HOST)/bin/jcgimage -v $(1) \
 		$(if $(JCG_MAXSIZE), -m $$(($(subst k, * 1024,$(JCG_MAXSIZE)))),) \
@@ -69,7 +64,7 @@ define Build/loader-common
 		PKG_BUILD_DIR="$@.src" \
 		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
 		BOARD="$(BOARDNAME)" PLATFORM="$(LOADER_PLATFORM)" \
-		LZMA_TEXT_START=0x82000000 LOADADDR=$(KERNEL_LOADADDR) \
+		LZMA_TEXT_START=0x81800000 LOADADDR=$(KERNEL_LOADADDR) \
 		$(1) compile loader.$(LOADER_TYPE)
 	mv "$@.$(LOADER_TYPE)" "$@"
 	rm -rf $@.src
@@ -111,6 +106,12 @@ define Build/poray-header
 	mv $@.new $@
 endef
 
+define Build/ravpower-wd009-factory
+	mkimage -A mips -T standalone -C none -a 0x80010000 -e 0x80010000 -n "OpenWrt Bootloader" -d $(UBOOT_PATH) $@.new
+	cat $@ >> $@.new
+	@mv $@.new $@
+endef
+
 define Build/relocate-kernel
 	rm -rf $@.relocate
 	$(CP) ../../generic/image/relocate $@.relocate
@@ -145,6 +146,11 @@ define Build/trx
 		-a 4 -f $(IMAGE_ROOTFS)
 endef
 
+define Build/uimage-padhdr
+	uimage_padhdr $(if $(1),-l $(1)) -i $@ -o $@.new
+	mv $@.new $@
+endef
+
 define Build/umedia-header
 	fix-u-media-header -T 0x46 -B $(1) -i $@ -o $@.new && mv $@.new $@
 endef
@@ -168,6 +174,18 @@ define Device/Default
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   sysupgrade_bin := append-kernel | append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size
+endef
+
+define Device/netgear_sercomm_nor
+  BLOCKSIZE := 64k
+  DEVICE_VENDOR := NETGEAR
+  IMAGES += factory.img
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+	pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | check-size
+  IMAGE/factory.img := pad-extra $$$$(SERCOMM_PAD) | $$(IMAGE/default) | \
+	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | \
+	zip $$$$(SERCOMM_HWNAME).bin | sercom-seal
 endef
 
 define Device/seama

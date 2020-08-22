@@ -42,9 +42,13 @@ dnsmasq_ignore_opt() {
 		bootp-*|\
 		pxe-*)
 			[ -z "$dnsmasq_has_dhcp" ] ;;
-		dnssec-*|\
+		dnssec*|\
 		trust-anchor)
-			[ -z "$dnsmasq_has_dnssec" ] ;;
+			if [ -z "$dnsmasq_has_dnssec" ]; then
+				echo "dnsmasq: \"$opt\" requested, but dnssec support is not available" >&2
+				exit 1
+			fi
+			;;
 		tftp-*)
 			[ -z "$dnsmasq_has_tftp" ] ;;
 		ipset)
@@ -102,9 +106,9 @@ dhcp_check() {
 
 	[ -s "$stamp" ] && return $(cat "$stamp")
 
-	# If there's no carrier yet, skip this interface.
+	# If interface is down, skip it.
 	# The init script will be called again once the link is up
-	case "$(devstatus "$ifname" | jsonfilter -e @.carrier)" in
+	case "$(devstatus "$ifname" | jsonfilter -e @.up)" in
 		false) return 1;;
 	esac
 

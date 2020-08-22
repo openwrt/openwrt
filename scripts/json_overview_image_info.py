@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import json
+from os import getenv, environ
 from pathlib import Path
-from os import getenv
+from subprocess import run, PIPE
 from sys import argv
+import json
 
 if len(argv) != 2:
     print("JSON info files script requires ouput file as argument")
@@ -32,6 +33,23 @@ for json_file in work_dir.glob("*.json"):
             )
 
 if output:
+    default_packages, output["arch_packages"] = run(
+        [
+            "make",
+            "--no-print-directory",
+            "-C",
+            "target/linux/{}".format(output['target'].split('/')[0]),
+            "val.DEFAULT_PACKAGES",
+            "val.ARCH_PACKAGES",
+        ],
+        stdout=PIPE,
+        stderr=PIPE,
+        check=True,
+        env=environ.copy().update({"TOPDIR": Path().cwd()}),
+        universal_newlines=True,
+    ).stdout.splitlines()
+
+    output["default_packages"] = default_packages.split()
     output_path.write_text(json.dumps(output, sort_keys=True, separators=(",", ":")))
 else:
     print("JSON info file script could not find any JSON files for target")

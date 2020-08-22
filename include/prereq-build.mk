@@ -114,6 +114,10 @@ $(eval $(call SetupHostCommand,grep,Please install GNU 'grep', \
 	ggrep --version 2>&1 | grep GNU, \
 	grep --version 2>&1 | grep GNU))
 
+$(eval $(call SetupHostCommand,egrep,Please install GNU 'grep', \
+	gegrep --version 2>&1 | grep GNU, \
+	egrep --version 2>&1 | grep GNU))
+
 $(eval $(call SetupHostCommand,getopt, \
 	Please install an extended getopt version that supports --long, \
 	gnugetopt -o t --long test -- --test | grep '^ *--test *--', \

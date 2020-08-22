@@ -10,10 +10,6 @@
 	compatible = "iptime,a8004t", "mediatek,mt7621-soc";
 	model = "ipTIME A8004T";
 
-	chosen {
-		bootargs = "console=ttyS0,57600";
-	};
-
 	aliases {
 		led-boot = &led_cpu;
 		led-failsafe = &led_cpu;
@@ -65,8 +61,7 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
-		m25p,fast-read;
+		spi-max-frequency = <50000000>;
 
 		partitions {
 			compatible = "fixed-partitions";

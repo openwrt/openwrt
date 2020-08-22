@@ -247,7 +247,7 @@ _procd_set_param() {
 		env|data|limits)
 			_procd_add_table "$type" "$@"
 		;;
-		command|netdev|file|respawn|watch)
+		command|netdev|file|respawn|watch|watchdog)
 			_procd_add_array "$type" "$@"
 		;;
 		error)
@@ -378,7 +378,7 @@ _procd_append_param() {
 		env|data|limits)
 			_procd_add_table_data "$@"
 		;;
-		command|netdev|file|respawn|watch)
+		command|netdev|file|respawn|watch|watchdog)
 			_procd_add_array_data "$@"
 		;;
 		error)

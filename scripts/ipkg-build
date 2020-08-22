@@ -10,10 +10,10 @@
 set -e
 
 version=1.0
-FIND="$(which find)"
-FIND="${FIND:-$(which gfind)}"
-TAR="${TAR:-$(which tar)}"
-GZIP="$(which gzip)"
+FIND="$(command -v find)"
+FIND="${FIND:-$(command -v gfind)}"
+TAR="${TAR:-$(command -v tar)}"
+GZIP="$(command -v gzip)"
 
 # try to use fixed source epoch
 if [ -n "$SOURCE_DATE_EPOCH" ]; then
@@ -21,10 +21,10 @@ if [ -n "$SOURCE_DATE_EPOCH" ]; then
 
 # look up date of last commit
 elif [ -d "$TOPDIR/.git" ]; then
-	GIT="$(which git)"
+	GIT="$(command -v git)"
 	TIMESTAMP=$(cd $TOPDIR; $GIT log -1 -s --format=%ci)
 elif [ -d "$TOPDIR/.svn" ]; then
-	SVN="$(which svn)"
+	SVN="$(command -v svn)"
 	TIMESTAMP=$($SVN info "$TOPDIR" | sed -n "s/^Last Changed Date: \(.*\)/\1/p")
 else
 	TIMESTAMP=$(date)

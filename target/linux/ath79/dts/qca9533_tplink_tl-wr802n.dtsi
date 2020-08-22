@@ -6,10 +6,6 @@
 #include "qca953x.dtsi"
 
 / {
-	chosen {
-		bootargs = "console=ttyS0,115200n8";
-	};
-
 	aliases {
 		led-boot = &led_system;
 		led-failsafe = &led_system;
@@ -78,13 +74,6 @@
 	};
 };
 
-&wmac {
-	status = "okay";
-
-	mtd-cal-data = <&art 0x1000>;
-	mtd-mac-address = <&uboot 0x1fc00>;
-};
-
 &eth0 {
 	status = "okay";
 
@@ -96,4 +85,11 @@
 
 &eth1 {
 	compatible = "syscon", "simple-mfd";
+};
+
+&wmac {
+	status = "okay";
+
+	mtd-cal-data = <&art 0x1000>;
+	mtd-mac-address = <&uboot 0x1fc00>;
 };

@@ -313,6 +313,23 @@ endef
 $(eval $(call KernelPackage,gpio-it87))
 
 
+define KernelPackage/gpio-amd-fch
+  SUBMENU:=$(OTHER_MENU)
+  DEPENDS:=@GPIO_SUPPORT @TARGET_x86
+  TITLE:=GPIO support for AMD Fusion Controller Hub (G-series SOCs)
+  KCONFIG:=CONFIG_GPIO_AMD_FCH
+  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-amd-fch.ko
+  AUTOLOAD:=$(call AutoLoad,25,gpio-amd-fch,1)
+endef
+
+define KernelPackage/gpio-amd-fch/description
+  This option enables driver for GPIO on AMDs Fusion Controller Hub,
+  as found on G-series SOCs (eg. GX-412TC)
+endef
+
+$(eval $(call KernelPackage,gpio-amd-fch))
+
+
 define KernelPackage/ppdev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Parallel port support
@@ -715,6 +732,23 @@ endef
 
 $(eval $(call KernelPackage,rtc-rx8025))
 
+define KernelPackage/rtc-s35390a
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Seico S-35390A
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core
+  KCONFIG:=CONFIG_RTC_DRV_S35390A \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-s35390a.ko
+  AUTOLOAD:=$(call AutoLoad,50,rtc-s35390a,1)
+endef
+
+define KernelPackage/rtc-s35390a/description
+ Kernel module for Seiko Instruments S-35390A I2C RTC chip
+endef
+
+$(eval $(call KernelPackage,rtc-s35390a))
+
 
 define KernelPackage/mtdtests
   SUBMENU:=$(OTHER_MENU)
@@ -896,15 +930,14 @@ $(eval $(call KernelPackage,ikconfig))
 define KernelPackage/zram
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ZRAM
-  DEPENDS:=+kmod-lib-lzo +kmod-lib-lz4
+  DEPENDS:=+kmod-lib-lzo
   KCONFIG:= \
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \
 	CONFIG_ZRAM_DEBUG=n \
 	CONFIG_PGTABLE_MAPPING=n \
 	CONFIG_ZRAM_WRITEBACK=n \
-	CONFIG_ZSMALLOC_STAT=n \
-	CONFIG_ZRAM_LZ4_COMPRESS=y
+	CONFIG_ZSMALLOC_STAT=n
   FILES:= \
 	$(LINUX_DIR)/mm/zsmalloc.ko \
 	$(LINUX_DIR)/drivers/block/zram/zram.ko

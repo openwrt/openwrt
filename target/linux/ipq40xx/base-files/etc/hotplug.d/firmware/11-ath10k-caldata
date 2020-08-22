@@ -31,6 +31,10 @@ case "$FIRMWARE" in
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
 		;;
+	buffalo,wtr-m2133hp)
+		caldata_extract "ART" 0x9000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_binary ORGDATA 0x32)
+		;;
 	engenius,eap2200 |\
 	openmesh,a62)
 		caldata_extract "0:ART" 0x9000 0x2f20
@@ -50,6 +54,7 @@ case "$FIRMWARE" in
 	cilab,meshpoint-one |\
 	ezviz,cs-w3-wd1200g-eup |\
 	glinet,gl-b1300 |\
+	glinet,gl-s1300 |\
 	linksys,ea6350v3 |\
 	mobipromo,cm520-79f |\
 	qcom,ap-dk01.1-c1)
@@ -80,6 +85,10 @@ case "$FIRMWARE" in
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
+		;;
+	buffalo,wtr-m2133hp)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_binary ORGDATA 0x26)
 		;;
 	cellc,rtl30vw |\
 	compex,wpj419 |\
@@ -138,6 +147,7 @@ case "$FIRMWARE" in
 	cilab,meshpoint-one |\
 	ezviz,cs-w3-wd1200g-eup |\
 	glinet,gl-b1300 |\
+	glinet,gl-s1300 |\
 	linksys,ea6350v3 |\
 	mobipromo,cm520-79f |\
 	qcom,ap-dk01.1-c1)
@@ -168,6 +178,10 @@ case "$FIRMWARE" in
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
+		;;
+	buffalo,wtr-m2133hp)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_binary ORGDATA 0x2c)
 		;;
 	cellc,rtl30vw |\
 	compex,wpj419 |\

@@ -9,9 +9,14 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath9k-eeprom-ahb-18100000.wmac.bin")
 	case $board in
+	8dev,lima|\
+	ubnt,unifi)
+		caldata_extract "art" 0x1000 0x800
+		;;
 	avm,fritz1750e|\
 	avm,fritz4020|\
-	avm,fritz450e)
+	avm,fritz450e|\
+	avm,fritzdvbc)
 		caldata_extract_reverse "urlader" 0x1541 0x440
 		;;
 	dlink,dap-2695-a1)
@@ -106,11 +111,9 @@ case "$FIRMWARE" in
 	ubnt,nanostation-loco-m|\
 	ubnt,nanostation-m|\
 	ubnt,picostation-m|\
+	ubnt,powerbridge-m|\
 	ubnt,rocket-m)
 		caldata_extract "art" 0x1000 0x1000
-		;;
-	ubnt,unifi)
-		caldata_extract "art" 0x1000 0x800
 		;;
 	wd,mynet-n750)
 		caldata_extract "art" 0x5000 0x440

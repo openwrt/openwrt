@@ -1,0 +1,82 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "mt7628an_netgear_r6xxx.dtsi"
+
+/ {
+	compatible = "netgear,r6080", "mediatek,mt7628an-soc";
+	model = "Netgear R6080";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		label-mac-device = &ethernet;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		lan {
+			label = "r6080:green:lan";
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power: power {
+			label = "r6080:green:power";
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan2g_green {
+			label = "r6080:green:wlan2g";
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wlan2g_orange {
+			label = "r6080:orange:wlan2g";
+			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_green {
+			label = "r6080:green:wan";
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_orange {
+			label = "r6080:orange:wan";
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "p0led_an", "p1led_an", "p2led_an", "p3led_an",
+		         "p4led_an", "wdt", "wled_an";
+		function = "gpio";
+	};
+};
+
+&partitions {
+	partition@90000 {
+		compatible = "denx,uimage";
+		label = "firmware";
+		reg = <0x90000 0x760000>;
+	};
+
+	partition@7f0000 {
+		label = "reserved";
+		reg = <0x7f0000 0x10000>;
+		read-only;
+	};
+};
+
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
+};

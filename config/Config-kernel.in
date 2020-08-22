@@ -357,6 +357,30 @@ config KERNEL_BLK_DEV_BSG
 	bool "Compile the kernel with SCSI generic v4 support for any block device"
 	default n
 
+config KERNEL_TRANSPARENT_HUGEPAGE
+	bool
+
+choice
+	prompt "Transparent Hugepage Support sysfs defaults"
+	depends on KERNEL_TRANSPARENT_HUGEPAGE
+	default KERNEL_TRANSPARENT_HUGEPAGE_ALWAYS
+
+	config KERNEL_TRANSPARENT_HUGEPAGE_ALWAYS
+		bool "always"
+
+	config KERNEL_TRANSPARENT_HUGEPAGE_MADVISE
+		bool "madvise"
+endchoice
+
+config KERNEL_HUGETLBFS
+	bool
+
+config KERNEL_HUGETLB_PAGE
+	bool "Compile the kernel with HugeTLB support"
+	select KERNEL_TRANSPARENT_HUGEPAGE
+	select KERNEL_HUGETLBFS
+	default n
+
 config KERNEL_MAGIC_SYSRQ
 	bool "Compile the kernel with SysRq support"
 	default y
@@ -551,21 +575,29 @@ if KERNEL_CGROUPS
 
 	config KERNEL_FREEZER
 		bool
-		default y if KERNEL_CGROUP_FREEZER
 
 	config KERNEL_CGROUP_FREEZER
-		bool "Freezer cgroup subsystem"
-		default y
+		bool "legacy Freezer cgroup subsystem"
+		default n
+		select KERNEL_FREEZER
 		help
 		  Provides a way to freeze and unfreeze all tasks in a
 		  cgroup.
+		  (legacy cgroup1-only controller, in cgroup2 freezer
+		  is integrated in the Memory controller)
 
 	config KERNEL_CGROUP_DEVICE
-		bool "Device controller for cgroups"
-		default y
+		bool "legacy Device controller for cgroups"
+		default n
 		help
 		  Provides a cgroup implementing whitelists for devices which
 		  a process in the cgroup can mknod or open.
+		  (legacy cgroup1-only controller)
+
+	config KERNEL_CGROUP_HUGETLB
+		bool "HugeTLB controller"
+		default y if KERNEL_HUGETLB_PAGE
+		depends on KERNEL_HUGETLB_PAGE
 
 	config KERNEL_CGROUP_PIDS
 		bool "PIDs cgroup subsystem"
@@ -574,9 +606,17 @@ if KERNEL_CGROUPS
 		  Provides enforcement of process number limits in the scope of a
 		  cgroup.
 
+	config KERNEL_CGROUP_RDMA
+		bool "RDMA controller for cgroups"
+		default y
+
+	config KERNEL_CGROUP_BPF
+		bool "Support for eBPF programs attached to cgroups"
+		default y
+
 	config KERNEL_CPUSETS
 		bool "Cpuset support"
-		default y if !SMALL_FLASH
+		default y
 		help
 		  This option will let you create and manage CPUSETs which
 		  allow dynamically partitioning a system into sets of CPUs and
@@ -590,14 +630,14 @@ if KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_CPUACCT
 		bool "Simple CPU accounting cgroup subsystem"
-		default y if !SMALL_FLASH
+		default y
 		help
 		  Provides a simple Resource Controller for monitoring the
 		  total CPU consumed by the tasks in a cgroup.
 
 	config KERNEL_RESOURCE_COUNTERS
 		bool "Resource counters"
-		default y if !SMALL_FLASH
+		default y
 		help
 		  This option enables controller independent resource accounting
 		  infrastructure that works with cgroups.
@@ -608,7 +648,8 @@ if KERNEL_CGROUPS
 
 	config KERNEL_MEMCG
 		bool "Memory Resource Controller for Control Groups"
-		default y if !SMALL_FLASH
+		default y
+		select KERNEL_FREEZER
 		depends on KERNEL_RESOURCE_COUNTERS || !LINUX_3_18
 		help
 		  Provides a memory resource controller that manages both anonymous
@@ -631,7 +672,7 @@ if KERNEL_CGROUPS
 
 	config KERNEL_MEMCG_SWAP
 		bool "Memory Resource Controller Swap Extension"
-		default n
+		default y
 		depends on KERNEL_MEMCG
 		help
 		  Add swap management feature to memory resource controller. When you
@@ -666,7 +707,7 @@ if KERNEL_CGROUPS
 
 	config KERNEL_MEMCG_KMEM
 		bool "Memory Resource Controller Kernel Memory accounting (EXPERIMENTAL)"
-		default y if !SMALL_FLASH
+		default y
 		depends on KERNEL_MEMCG
 		help
 		  The Kernel Memory extension for Memory Resource Controller can limit
@@ -687,7 +728,7 @@ if KERNEL_CGROUPS
 
 	menuconfig KERNEL_CGROUP_SCHED
 		bool "Group CPU scheduler"
-		default y if !SMALL_FLASH
+		default y
 		help
 		  This feature lets CPU scheduler recognize task groups and control CPU
 		  bandwidth allocation to such task groups. It uses cgroups to group
@@ -697,11 +738,11 @@ if KERNEL_CGROUPS
 
 		config KERNEL_FAIR_GROUP_SCHED
 			bool "Group scheduling for SCHED_OTHER"
-			default y if !SMALL_FLASH
+			default y
 
 		config KERNEL_CFS_BANDWIDTH
 			bool "CPU bandwidth provisioning for FAIR_GROUP_SCHED"
-			default n
+			default y
 			depends on KERNEL_FAIR_GROUP_SCHED
 			help
 			  This option allows users to define CPU bandwidth rates (limits) for
@@ -712,7 +753,7 @@ if KERNEL_CGROUPS
 
 		config KERNEL_RT_GROUP_SCHED
 			bool "Group scheduling for SCHED_RR/FIFO"
-			default y if !SMALL_FLASH
+			default y
 			help
 			  This feature lets you explicitly allocate real CPU bandwidth
 			  to task groups. If enabled, it will also make it impossible to
@@ -747,7 +788,7 @@ if KERNEL_CGROUPS
 
 		config KERNEL_BLK_DEV_THROTTLING
 			bool "Enable throttling policy"
-			default y if TARGET_bcm27xx
+			default y
 
 		config KERNEL_BLK_DEV_THROTTLING_LOW
 			bool "Block throttling .low limit interface support (EXPERIMENTAL)"
@@ -763,12 +804,16 @@ if KERNEL_CGROUPS
 		  files in a cgroup which can be useful for debugging.
 
 	config KERNEL_NET_CLS_CGROUP
-		bool "Control Group Classifier"
-		default y
+		bool "legacy Control Group Classifier"
+		default n
 
-	config KERNEL_NETPRIO_CGROUP
-		bool "Network priority cgroup"
-		default y
+	config KERNEL_CGROUP_NET_CLASSID
+		bool "legacy Network classid cgroup"
+		default n
+
+	config KERNEL_CGROUP_NET_PRIO
+		bool "legacy Network priority cgroup"
+		default n
 
 endif
 

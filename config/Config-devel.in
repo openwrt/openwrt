@@ -9,7 +9,7 @@ menuconfig DEVEL
 	default n
 
 	config BROKEN
-		bool "Show broken platforms / packages" if DEVEL
+		bool "Show broken platforms / packages / devices" if DEVEL
 		default n
 
 	config BINARY_FOLDER
@@ -68,6 +68,13 @@ menuconfig DEVEL
 		default n
 		help
 		  Compiler cache; see https://ccache.samba.org/
+
+	config CCACHE_DIR
+		string "Set ccache directory" if CCACHE
+		default ""
+		help
+		  Store ccache in this directory.
+		  If not set, uses './.ccache'
 
 	config EXTERNAL_KERNEL_TREE
 		string "Use external kernel tree" if DEVEL
