@@ -596,8 +596,8 @@ if KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_HUGETLB
 		bool "HugeTLB controller"
-		default y if KERNEL_HUGETLB_PAGE
-		depends on KERNEL_HUGETLB_PAGE
+		default n
+		select KERNEL_HUGETLB_PAGE
 
 	config KERNEL_CGROUP_PIDS
 		bool "PIDs cgroup subsystem"
