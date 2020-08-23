@@ -76,7 +76,7 @@ define Package/busybox/conffiles
 /etc/syslog.conf
 endef
 
-Package/busybox-selinux/conffiiles = $(Package/busybox/conffiles)
+Package/busybox-selinux/conffiles = $(Package/busybox/conffiles)
 endif
 
 # don't create a version string containing the actual timestamp
