@@ -16,7 +16,7 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/linux4sam/at91bootstrap.git
 PKG_SOURCE_VERSION:=d96833a4b6680b237708eb4dc9f10708b9e709d8
 PKG_BUILD_DIR = \
-    $(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+	$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
 include at91bootstrap.mk
 include $(INCLUDE_DIR)/package.mk
@@ -118,24 +118,24 @@ define AT91Bootstrap/sama5d2_ptc_eksd_uboot
 endef
 
 AT91BOOTSTRAP_TARGETS := \
-    at91sam9x5eknf_uboot \
-    at91sam9x5eksd_uboot \
-    sama5d2_xplaineddf_uboot \
-    sama5d2_xplaineddf_qspi_uboot \
-    sama5d2_xplainedsd_uboot \
-    sama5d3_xplainednf_uboot \
-    sama5d3_xplainedsd_uboot \
-    sama5d4_xplainednf_uboot_secure \
-    sama5d4_xplaineddf_uboot_secure \
-    sama5d4_xplainedsd_uboot_secure \
-    sama5d27_som1_eksd1_uboot \
-    sama5d27_som1_ekqspi_uboot \
-    sama5d2_ptc_eknf_uboot \
-    sama5d2_ptc_eksd_uboot
+	at91sam9x5eknf_uboot \
+	at91sam9x5eksd_uboot \
+	sama5d2_xplaineddf_uboot \
+	sama5d2_xplaineddf_qspi_uboot \
+	sama5d2_xplainedsd_uboot \
+	sama5d3_xplainednf_uboot \
+	sama5d3_xplainedsd_uboot \
+	sama5d4_xplainednf_uboot_secure \
+	sama5d4_xplaineddf_uboot_secure \
+	sama5d4_xplainedsd_uboot_secure \
+	sama5d27_som1_eksd1_uboot \
+	sama5d27_som1_ekqspi_uboot \
+	sama5d2_ptc_eknf_uboot \
+	sama5d2_ptc_eksd_uboot
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
-        CROSS_COMPILE=$(TARGET_CROSS)
+		CROSS_COMPILE=$(TARGET_CROSS)
 endef
 
 $(eval $(call BuildPackage/AT91Bootstrap))
