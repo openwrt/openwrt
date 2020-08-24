@@ -1081,6 +1081,9 @@ config KERNEL_SQUASHFS_FRAGMENT_CACHE_SIZE
 	default 2 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
 	default 3
 
+config KERNEL_SQUASHFS_XATTR
+	bool "Squashfs XATTR support"
+
 #
 # compile optimiziation setting
 #
@@ -1102,3 +1105,55 @@ config KERNEL_CC_OPTIMIZE_FOR_SIZE
 	  your compiler resulting in a smaller kernel.
 
 endchoice
+
+config KERNEL_AUDIT
+	bool "Auditing support"
+
+config KERNEL_SECURITY
+	bool "Enable different security models"
+
+config KERNEL_SECURITY_NETWORK
+	bool "Socket and Networking Security Hooks"
+	select KERNEL_SECURITY
+
+config KERNEL_SECURITY_SELINUX
+	bool "NSA SELinux Support"
+	select KERNEL_SECURITY_NETWORK
+	select KERNEL_AUDIT
+
+config KERNEL_SECURITY_SELINUX_BOOTPARAM
+	bool "NSA SELinux boot parameter"
+	depends on KERNEL_SECURITY_SELINUX
+
+config KERNEL_SECURITY_SELINUX_DISABLE
+	bool "NSA SELinux runtime disable"
+	depends on KERNEL_SECURITY_SELINUX
+
+config KERNEL_SECURITY_SELINUX_DEVELOP
+	bool "NSA SELinux Development Support"
+	depends on KERNEL_SECURITY_SELINUX
+
+choice
+	prompt "First legacy 'major LSM' to be initialized"
+	depends on KERNEL_SECURITY_SELINUX
+	default KERNEL_DEFAULT_SECURITY_SELINUX
+
+	config KERNEL_DEFAULT_SECURITY_SELINUX
+		bool "SELinux"
+
+	config KERNEL_DEFAULT_SECURITY_DAC
+		bool "Unix Discretionary Access Controls"
+
+endchoice
+
+config KERNEL_EXT4_FS_SECURITY
+	bool "Ext4 Security Labels"
+
+config KERNEL_F2FS_FS_SECURITY
+	bool "F2FS Security Labels"
+
+config KERNEL_UBIFS_FS_SECURITY
+	bool "UBIFS Security Labels"
+
+config KERNEL_JFFS2_FS_SECURITY
+	bool "JFFS2 Security Labels"
