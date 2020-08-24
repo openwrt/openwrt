@@ -40,50 +40,40 @@ endef
 TARGET_DEVICES += fsl_ls1021a-twr
 
 define Device/fsl_ls1021a-twr-sdboot
+  $(Device/rework-sdcard-images)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := TWR-LS1021A
   DEVICE_VARIANT := SD Card Boot
   DEVICE_DTS := ls1021a-twr
-  FILESYSTEMS := ext4
-  IMAGES := sdcard.img sysupgrade.bin
-  IMAGE/sdcard.img := \
+  KERNEL := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  IMAGES := sdcard.img.gz sysupgrade.bin
+  IMAGE/sdcard.img.gz := \
     ls-clean | \
     ls-append-sdhead $(1) | pad-to 4K | \
     ls-append $(1)-uboot.bin | pad-to 3M | \
-    ls-append $(1)-uboot-env.bin | pad-to 15M | \
-    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
-  IMAGE/sysupgrade.bin := \
-    ls-clean | \
-    ls-append-sdhead $(1) | pad-to 15M | \
-    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | check-size $(LS_SD_IMAGE_SIZE) | append-metadata
+    ls-append $(1)-uboot-env.bin | pad-to 16M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += fsl_ls1021a-twr-sdboot
 
 define Device/fsl_ls1021a-iot-sdboot
+  $(Device/rework-sdcard-images)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1021A-IoT
   DEVICE_VARIANT := SD Card Boot
   DEVICE_DTS := ls1021a-iot
-  FILESYSTEMS := ext4
   SUPPORTED_DEVICES :=
-  IMAGES := sdcard.img sysupgrade.bin
-  IMAGE/sdcard.img := \
+  KERNEL := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  IMAGES := sdcard.img.gz sysupgrade.bin
+  IMAGE/sdcard.img.gz := \
     ls-clean | \
     ls-append-sdhead $(1) | pad-to 4K | \
     ls-append $(1)-uboot.bin | pad-to 1M | \
-    ls-append $(1)-uboot-env.bin | pad-to 15M | \
-    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
-  IMAGE/sysupgrade.bin := \
-    ls-clean | \
-    ls-append-sdhead $(1) | pad-to 15M | \
-    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | check-size $(LS_SD_IMAGE_SIZE) | append-metadata
+    ls-append $(1)-uboot-env.bin | pad-to 16M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += fsl_ls1021a-iot-sdboot
