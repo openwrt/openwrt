@@ -109,14 +109,32 @@ platform_do_upgrade_traverse_nandubi() {
 	nand_do_upgrade "$1" || (echo "Upgrade failed, setting bootsys ${bootsys}" && fw_setenv bootsys $bootsys)
 
 }
-platform_copy_config() {
-	local partdev parttype=ext4
+platform_copy_config_sdboot() {
+	local diskdev partdev parttype=ext4
+
+	export_bootdevice && export_partdevice diskdev 0 || {
+		echo "Unable to determine upgrade device"
+		return 1
+	}
 
 	if export_partdevice partdev 1; then
-		mount -t $parttype -o rw,noatime "/dev/$partdev" /mnt
+		mount -t $parttype -o rw,noatime "/dev/$partdev" /mnt 2>&1
 		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
 		umount /mnt
 	fi
+}
+platform_copy_config() {
+	local board=$(board_name)
+
+	case "$board" in
+	fsl,ls1012a-frwy-sdboot | \
+	fsl,ls1021a-twr-sdboot | \
+	fsl,ls1043a-rdb-sdboot | \
+	fsl,ls1046a-rdb-sdboot | \
+	fsl,ls1088a-rdb-sdboot)
+		platform_copy_config_sdboot
+		;;
+	esac
 }
 platform_check_image() {
 	local board=$(board_name)
