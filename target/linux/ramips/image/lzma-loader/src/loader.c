@@ -28,8 +28,7 @@
 #include "printf.h"
 #include "LzmaDecode.h"
 
-#define AR71XX_FLASH_START	0x1f000000
-#define AR71XX_FLASH_END	0x1fe00000
+#define FLASH_START	0x1c000000
 
 #define KSEG0			0x80000000
 #define KSEG1			0xa0000000
@@ -178,7 +177,7 @@ static void lzma_init_data(void)
 	unsigned long kernel_ofs;
 	unsigned long kernel_size;
 
-	flash_base = (unsigned char *) KSEG1ADDR(AR71XX_FLASH_START);
+	flash_base = (unsigned char *) KSEG1ADDR(FLASH_START);
 
 	printf("Looking for OpenWrt image... ");
 

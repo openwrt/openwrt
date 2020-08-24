@@ -495,7 +495,7 @@ define Device/hootoo_ht-tm05
   DEVICE_MODEL := HT-TM05
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-i2c-ralink
   LOADER_TYPE := bin
-  LOADER_FLASH_OFFS := 0xFD200000
+  LOADER_FLASH_OFFS := 0x200000
   COMPILE := loader-$(1).bin
   COMPILE/loader-$(1).bin := loader-okli-compile | pad-to 64k | lzma | \
 	uImage lzma
