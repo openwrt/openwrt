@@ -1035,6 +1035,14 @@ define Device/xwrt_g4303k-v1
 endef
 TARGET_DEVICES += xwrt_g4303k-v1
 
+define Device/xwrt_xf-949
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := XF-949
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += xwrt_xf-949
+
 define Device/zbtlink_zbt-we1226
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Zbtlink
