@@ -67,6 +67,7 @@ endef
 TARGET_DEVICES += fsl_ls1012a-rdb
 
 define Device/fsl_ls1012a-frwy-sdboot
+  $(Device/rework-sdcard-images)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := FRWY-LS1012A
   DEVICE_PACKAGES += \
@@ -74,8 +75,8 @@ define Device/fsl_ls1012a-frwy-sdboot
     tfa-ls1012a-frwy-sdboot \
     kmod-ppfe
   DEVICE_DTS := freescale/fsl-ls1012a-frwy
-  FILESYSTEMS := ext4
-  IMAGES := firmware.bin sdcard.img sysupgrade.bin
+  KERNEL := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  IMAGES := firmware.bin sdcard.img.gz sysupgrade.bin
   IMAGE/firmware.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 128K | \
@@ -83,18 +84,12 @@ define Device/fsl_ls1012a-frwy-sdboot
     ls-append $(1)-fip.bin | pad-to 1856K | \
     ls-append $(1)-uboot-env.bin | pad-to 2048K | \
     check-size 2097153
-  IMAGE/sdcard.img := \
+  IMAGE/sdcard.img.gz := \
     ls-clean | \
-    ls-append-sdhead $(1) | pad-to 15M | \
-    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
-  IMAGE/sysupgrade.bin := \
-    ls-clean | \
-    ls-append-sdhead $(1) | pad-to 15M | \
-    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | check-size $(LS_SD_IMAGE_SIZE) | append-metadata
+    ls-append-sdhead $(1) | pad-to 16M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += fsl_ls1012a-frwy-sdboot
 
@@ -124,6 +119,7 @@ endef
 TARGET_DEVICES += fsl_ls1043a-rdb
 
 define Device/fsl_ls1043a-rdb-sdboot
+  $(Device/rework-sdcard-images)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1043A-RDB
   DEVICE_VARIANT := SD Card Boot
@@ -135,24 +131,18 @@ define Device/fsl_ls1043a-rdb-sdboot
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
   DEVICE_DTS := freescale/fsl-ls1043a-rdb-sdk
-  FILESYSTEMS := ext4
-  IMAGES := sdcard.img sysupgrade.bin
-  IMAGE/sdcard.img := \
+  KERNEL := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  IMAGES := sdcard.img.gz sysupgrade.bin
+  IMAGE/sdcard.img.gz := \
     ls-clean | \
     ls-append-sdhead $(1) | pad-to 4K | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
     ls-append $(1)-fip.bin | pad-to 5M | \
     ls-append $(1)-uboot-env.bin | pad-to 9M | \
-    ls-append fsl_ls1043a-rdb-fman.bin | pad-to 15M | \
-    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
-  IMAGE/sysupgrade.bin := \
-    ls-clean | \
-    ls-append-sdhead $(1) | pad-to 15M | \
-    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | check-size $(LS_SD_IMAGE_SIZE) | append-metadata
+    ls-append fsl_ls1043a-rdb-fman.bin | pad-to 16M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += fsl_ls1043a-rdb-sdboot
 
@@ -182,6 +172,7 @@ endef
 TARGET_DEVICES += fsl_ls1046a-rdb
 
 define Device/fsl_ls1046a-rdb-sdboot
+  $(Device/rework-sdcard-images)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1046A-RDB
   DEVICE_VARIANT := SD Card Boot
@@ -193,24 +184,18 @@ define Device/fsl_ls1046a-rdb-sdboot
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
   DEVICE_DTS := freescale/fsl-ls1046a-rdb-sdk
-  FILESYSTEMS := ext4
-  IMAGES := sdcard.img sysupgrade.bin
-  IMAGE/sdcard.img := \
+  KERNEL := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  IMAGES := sdcard.img.gz sysupgrade.bin
+  IMAGE/sdcard.img.gz := \
     ls-clean | \
     ls-append-sdhead $(1) | pad-to 4K | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
     ls-append $(1)-fip.bin | pad-to 5M | \
     ls-append $(1)-uboot-env.bin | pad-to 9M | \
-    ls-append fsl_ls1046a-rdb-fman.bin | pad-to 15M | \
-    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
-  IMAGE/sysupgrade.bin := \
-    ls-clean | \
-    ls-append-sdhead $(1) | pad-to 15M | \
-    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | check-size $(LS_SD_IMAGE_SIZE) | append-metadata
+    ls-append fsl_ls1046a-rdb-fman.bin | pad-to 16M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += fsl_ls1046a-rdb-sdboot
 
@@ -242,6 +227,7 @@ endef
 TARGET_DEVICES += fsl_ls1088a-rdb
 
 define Device/fsl_ls1088a-rdb-sdboot
+  $(Device/rework-sdcard-images)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1088A-RDB
   DEVICE_VARIANT := SD Card Boot
@@ -254,9 +240,9 @@ define Device/fsl_ls1088a-rdb-sdboot
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
   DEVICE_DTS := freescale/fsl-ls1088a-rdb
-  FILESYSTEMS := ext4
-  IMAGES := sdcard.img sysupgrade.bin
-  IMAGE/sdcard.img := \
+  KERNEL := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  IMAGES := sdcard.img.gz sysupgrade.bin
+  IMAGE/sdcard.img.gz := \
     ls-clean | \
     ls-append-sdhead $(1) | pad-to 4K | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
@@ -264,16 +250,10 @@ define Device/fsl_ls1088a-rdb-sdboot
     ls-append $(1)-uboot-env.bin | pad-to 10M | \
     ls-append fsl_ls1088a-rdb-mc.itb | pad-to 13M | \
     ls-append fsl_ls1088a-rdb-dpl.dtb | pad-to 14M | \
-    ls-append fsl_ls1088a-rdb-dpc.dtb | pad-to 15M | \
-    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | check-size $(LS_SD_IMAGE_SIZE)
-  IMAGE/sysupgrade.bin := \
-    ls-clean | \
-    ls-append-sdhead $(1) | pad-to 15M | \
-    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | check-size $(LS_SD_IMAGE_SIZE) | append-metadata
+    ls-append fsl_ls1088a-rdb-dpc.dtb | pad-to 16M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += fsl_ls1088a-rdb-sdboot
 
