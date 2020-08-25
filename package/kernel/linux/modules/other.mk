@@ -630,6 +630,22 @@ endef
 
 $(eval $(call KernelPackage,rtc-pcf8563))
 
+define KernelPackage/rtc-pcf85363
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=NXP PCF85262/85363 RTC support
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core
+  KCONFIG:=CONFIG_RTC_DRV_PCF85363 \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf85363.ko
+  AUTOLOAD:=$(call AutoProbe,rtc-pcf85363)
+endef
+
+define KernelPackage/rtc-pcf85363/description
+ Kernel module for NXP PCF85263/85363 RTC chip.
+endef
+
+$(eval $(call KernelPackage,rtc-pcf85363))
 
 define KernelPackage/rtc-pcf2123
   SUBMENU:=$(OTHER_MENU)
