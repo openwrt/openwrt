@@ -103,6 +103,7 @@ define Device/fsl_ls1043a-rdb
     layerscape-fman \
     tfa-ls1043a-rdb \
     fmc fmc-eth-config \
+    kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
   DEVICE_DTS := freescale/fsl-ls1043a-rdb-sdk
@@ -126,6 +127,7 @@ define Device/fsl_ls1043a-rdb-sdboot
     layerscape-fman \
     tfa-ls1043a-rdb-sdboot \
     fmc fmc-eth-config \
+    kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
   DEVICE_DTS := freescale/fsl-ls1043a-rdb-sdk
@@ -157,6 +159,7 @@ define Device/fsl_ls1046a-rdb
     layerscape-fman \
     tfa-ls1046a-rdb \
     fmc fmc-eth-config \
+    kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
   DEVICE_DTS := freescale/fsl-ls1046a-rdb-sdk
@@ -180,6 +183,7 @@ define Device/fsl_ls1046a-rdb-sdboot
     layerscape-fman \
     tfa-ls1046a-rdb-sdboot \
     fmc fmc-eth-config \
+    kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
   DEVICE_DTS := freescale/fsl-ls1046a-rdb-sdk
@@ -212,6 +216,7 @@ define Device/fsl_ls1088a-rdb
     layerscape-dpl \
     tfa-ls1088a-rdb \
     restool \
+    kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
   IMAGE/firmware.bin := \
@@ -237,6 +242,7 @@ define Device/fsl_ls1088a-rdb-sdboot
     layerscape-dpl \
     tfa-ls1088a-rdb-sdboot \
     restool \
+    kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
   DEVICE_DTS := freescale/fsl-ls1088a-rdb
@@ -269,7 +275,8 @@ define Device/fsl_ls2088a-rdb
     layerscape-mc \
     layerscape-dpl \
     tfa-ls2088a-rdb \
-    restool
+    restool \
+    kmod-ahci-qoriq
   IMAGE/firmware.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
