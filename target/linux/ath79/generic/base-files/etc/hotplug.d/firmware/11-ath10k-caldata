@@ -11,6 +11,7 @@ case "$FIRMWARE" in
 "ath10k/cal-pci-0000:00:00.0.bin")
 	case $board in
 	allnet,all-wap02860ac|\
+	engenius,enstationac-v1|\
 	glinet,gl-x750)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) +2)

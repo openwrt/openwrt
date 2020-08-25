@@ -1025,6 +1025,18 @@ define Device/engenius_ens202ext-v1
 endef
 TARGET_DEVICES += engenius_ens202ext-v1
 
+define Device/engenius_enstationac-v1
+  $(Device/engenius_loader_okli)
+  SOC := qca9557
+  DEVICE_MODEL := EnStationAC
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct rssileds
+  IMAGE_SIZE := 11520k
+  LOADER_FLASH_OFFS := 0x230000
+  ENGENIUS_IMGNAME := ar71xx-generic-enstationac
+endef
+TARGET_DEVICES += engenius_enstationac-v1
+
 define Device/engenius_epg5000
   SOC := qca9558
   DEVICE_VENDOR := EnGenius
