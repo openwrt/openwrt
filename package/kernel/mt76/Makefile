@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mt76
-PKG_RELEASE=3
+PKG_RELEASE=4
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
@@ -39,7 +39,7 @@ define KernelPackage/mt76-default
   SUBMENU:=Wireless Drivers
   DEPENDS:= \
 	+kmod-mac80211 \
-	+@DRIVER_11AC_SUPPORT +@DRIVER_11N_SUPPORT +@DRIVER_11W_SUPPORT
+	+@DRIVER_11AC_SUPPORT +@DRIVER_11N_SUPPORT
 endef
 
 define KernelPackage/mt76
