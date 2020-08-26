@@ -39,7 +39,7 @@ endef
 # UBNT_VERSION e.g. one of (6.0.0, 8.5.3)
 define Device/ubnt
   DEVICE_VENDOR := Ubiquiti
-  DEVICE_PACKAGES := kmod-usb2
+  DEVICE_PACKAGES := kmod-usb2 -uboot-envtools
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | check-size | mkubntimage-split
