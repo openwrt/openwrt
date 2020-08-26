@@ -3,6 +3,7 @@ DEVICE_VARS += TPLINK_BOARD_ID TPLINK_HWREVADD TPLINK_HVERSION
 
 define Device/tplink-v1
   DEVICE_VENDOR := TP-Link
+  DEVICE_PACKAGES := -uboot-envtools
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0x1
   TPLINK_HEADER_VERSION := 1
@@ -16,6 +17,7 @@ endef
 
 define Device/tplink-v2
   DEVICE_VENDOR := TP-Link
+  DEVICE_PACKAGES := -uboot-envtools
   TPLINK_HWID := 0x0
   TPLINK_HWREV := 0x1
   TPLINK_HWREVADD := 0x0
