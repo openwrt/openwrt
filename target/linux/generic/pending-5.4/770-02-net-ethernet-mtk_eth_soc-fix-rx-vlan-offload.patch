@@ -1,6 +1,16 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 26 Aug 2020 16:52:12 +0200
+Subject: [PATCH] net: ethernet: mtk_eth_soc: fix rx vlan offload
+
+The VLAN ID in the rx descriptor is only valid if the RX_DMA_VID bit is set
+Fixes frames wrongly marked with VLAN tags
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1315,7 +1315,7 @@ static int mtk_poll_rx(struct napi_struc
+@@ -1320,7 +1320,7 @@ static int mtk_poll_rx(struct napi_struc
  		skb->protocol = eth_type_trans(skb, netdev);
  
  		if (netdev->features & NETIF_F_HW_VLAN_CTAG_RX &&
