@@ -13,7 +13,7 @@ __target_inc=1
 DEVICE_TYPE?=router
 
 # Default packages - the really basic set
-DEFAULT_PACKAGES:=base-files libc libgcc busybox dropbear mtd uci opkg netifd fstools uclient-fetch logd urandom-seed urngd
+DEFAULT_PACKAGES:=base-files busybox ca-bundle dropbear fstools libc libgcc logd libustream-wolfssl mtd netifd opkg uci uclient-fetch urandom-seed urngd
 # For the basic set
 DEFAULT_PACKAGES.basic:=
 # For nas targets
