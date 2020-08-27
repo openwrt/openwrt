@@ -39,7 +39,7 @@ endef
 # UBNT_VERSION e.g. one of (6.0.0, 8.5.3)
 define Device/ubnt
   DEVICE_VENDOR := Ubiquiti
-  DEVICE_PACKAGES := kmod-usb2 -uboot-envtools
+  DEVICE_PACKAGES := kmod-usb2
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | check-size | mkubntimage-split
@@ -296,7 +296,7 @@ endef
 TARGET_DEVICES += ubnt_rocket-m
 
 define Device/ubnt_routerstation_common
-  DEVICE_PACKAGES := -kmod-ath9k -wpad-basic-wolfssl -uboot-envtools kmod-usb-ohci \
+  DEVICE_PACKAGES := -kmod-ath9k -wpad-basic-wolfssl kmod-usb-ohci \
 	kmod-usb2 fconfig
   DEVICE_VENDOR := Ubiquiti
   SOC := ar7161

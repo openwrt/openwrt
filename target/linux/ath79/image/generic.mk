@@ -194,7 +194,7 @@ TARGET_DEVICES += 8dev_lima
 define Device/adtran_bsap1880
   SOC := ar7161
   DEVICE_VENDOR := Adtran/Bluesocket
-  DEVICE_PACKAGES += -swconfig -uboot-envtools fconfig
+  DEVICE_PACKAGES += -swconfig fconfig
   KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
   KERNEL_INITRAMFS := kernel-bin | append-dtb
   IMAGE_SIZE := 11200k
@@ -424,7 +424,7 @@ define Device/comfast_cf-e110n-v2
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-E110N
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := rssileds -swconfig -uboot-envtools
+  DEVICE_PACKAGES := rssileds -swconfig
   IMAGE_SIZE := 16192k
 endef
 TARGET_DEVICES += comfast_cf-e110n-v2
@@ -434,7 +434,7 @@ define Device/comfast_cf-e120a-v3
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-E120A
   DEVICE_VARIANT := v3
-  DEVICE_PACKAGES := rssileds -uboot-envtools
+  DEVICE_PACKAGES := rssileds
   IMAGE_SIZE := 8000k
 endef
 TARGET_DEVICES += comfast_cf-e120a-v3
@@ -444,7 +444,7 @@ define Device/comfast_cf-e130n-v2
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-E130N
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := rssileds -swconfig -uboot-envtools
+  DEVICE_PACKAGES := rssileds -swconfig
   IMAGE_SIZE := 7936k
 endef
 TARGET_DEVICES += comfast_cf-e130n-v2
@@ -454,7 +454,7 @@ define Device/comfast_cf-e313ac
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-E313AC
   DEVICE_PACKAGES := rssileds kmod-ath10k-ct-smallbuffers \
-	ath10k-firmware-qca9888-ct -swconfig -uboot-envtools
+	ath10k-firmware-qca9888-ct -swconfig
   IMAGE_SIZE := 7936k
 endef
 TARGET_DEVICES += comfast_cf-e313ac
@@ -473,8 +473,7 @@ define Device/comfast_cf-e5
   SOC := qca9531
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-E5/E7
-  DEVICE_PACKAGES := rssileds kmod-usb2 kmod-usb-net-qmi-wwan -swconfig \
-	-uboot-envtools
+  DEVICE_PACKAGES := rssileds kmod-usb2 kmod-usb-net-qmi-wwan -swconfig
   IMAGE_SIZE := 16192k
 endef
 TARGET_DEVICES += comfast_cf-e5
@@ -493,7 +492,7 @@ define Device/comfast_cf-ew72
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-EW72
   DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct \
-	-uboot-envtools -swconfig
+	-swconfig
   IMAGE_SIZE := 16192k
 endef
 TARGET_DEVICES += comfast_cf-ew72
@@ -523,8 +522,7 @@ define Device/comfast_cf-wr752ac-v1
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-WR752AC
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct \
-	-uboot-envtools
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct
   IMAGE_SIZE := 16192k
 endef
 TARGET_DEVICES += comfast_cf-wr752ac-v1
@@ -1123,7 +1121,7 @@ define Device/jjplus_ja76pf2
   SOC := ar7161
   DEVICE_VENDOR := jjPlus
   DEVICE_MODEL := JA76PF2
-  DEVICE_PACKAGES += -kmod-ath9k -swconfig -wpad-basic-wolfssl -uboot-envtools fconfig
+  DEVICE_PACKAGES += -kmod-ath9k -swconfig -wpad-basic-wolfssl fconfig
   IMAGES := kernel.bin rootfs.bin
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-rootfs | pad-rootfs
@@ -1632,7 +1630,7 @@ define Device/telco_t1
   DEVICE_VENDOR := Telco
   DEVICE_MODEL := T1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-net-qmi-wwan \
-	kmod-usb-serial-option uqmi -swconfig -uboot-envtools
+	kmod-usb-serial-option uqmi -swconfig
   IMAGE_SIZE := 16192k
   SUPPORTED_DEVICES += telco_electronics,tel-t1
 endef
@@ -1643,7 +1641,7 @@ define Device/teltonika_rut955
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT955
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-acm kmod-usb-net-qmi-wwan \
-	kmod-usb-serial-option kmod-hwmon-mcp3021 uqmi -uboot-envtools
+	kmod-usb-serial-option kmod-hwmon-mcp3021 uqmi
   IMAGE_SIZE := 15552k
   TPLINK_HWID := 0x35000001
   TPLINK_HWREV := 0x1
