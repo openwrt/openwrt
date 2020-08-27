@@ -522,6 +522,7 @@ $(eval $(call KernelPackage,sound-hda-codec-hdmi))
 define KernelPackage/sound-hda-intel
   SUBMENU:=$(SOUND_MENU)
   TITLE:=HD Audio Intel Driver
+  DEPENDS:=@TARGET_x86
   KCONFIG:= \
 	CONFIG_SOUND_PCI \
 	CONFIG_SND_HDA_INTEL

@@ -36,19 +36,6 @@ smb_header() {
 	    -e "s#|CHARSET|#$charset#g" \
 	    /etc/samba/smb.conf.template > /var/etc/smb.conf
 
-	local homes
-	config_get_bool homes $1 homes 0
-	[ $homes -gt 0 ] && {
-		cat <<EOT >> /var/etc/smb.conf
-
-[homes]
-	comment     = Home Directories
-	browsable   = no
-	read only   = no
-	create mode = 0750
-EOT
-	}
-
 	[ -L /etc/samba/smb.conf ] || ln -nsf /var/etc/smb.conf /etc/samba/smb.conf
 }
 
@@ -99,7 +86,13 @@ service_triggers() {
 	done
 }
 
-start_service() {
+section_enable() {
+	config_get_bool enable "$1" enable 0
+	[ $enable -gt 0 ]
+}
+
+samba3() {
+	section_enable "$section" || return 1
 	init_config
 
 	procd_open_instance
@@ -114,4 +107,9 @@ start_service() {
 	procd_set_param respawn
 	procd_set_param file /var/etc/smb.conf
 	procd_close_instance
+}
+
+start_service() {
+	config_load 'samba'
+	config_foreach samba3 'samba'
 }

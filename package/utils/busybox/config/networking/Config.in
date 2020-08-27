@@ -972,6 +972,11 @@ config BUSYBOX_CONFIG_FEATURE_TFTP_PROGRESS_BAR
 	default BUSYBOX_DEFAULT_FEATURE_TFTP_PROGRESS_BAR
 	depends on BUSYBOX_CONFIG_TFTP
 
+config BUSYBOX_CONFIG_FEATURE_TFTP_HPA_COMPAT
+	bool "tftp-hpa compat (support -c get/put FILE)"
+	default BUSYBOX_DEFAULT_FEATURE_TFTP_HPA_COMPAT
+	depends on BUSYBOX_CONFIG_TFTP
+
 config BUSYBOX_CONFIG_TFTPD
 	bool "tftpd (10 kb)"
 	default BUSYBOX_DEFAULT_TFTPD
@@ -1191,7 +1196,7 @@ config BUSYBOX_CONFIG_ZCIP
 	See http://www.zeroconf.org for further details, and "zcip.script"
 	in the busybox examples.
 
-source udhcp/Config.in
+source "udhcp/Config.in"
 
 config BUSYBOX_CONFIG_IFUPDOWN_UDHCPC_CMD_OPTIONS
 	string "ifup udhcpc command line options"

@@ -2,9 +2,7 @@
 
 START=99
 
-start() {
-	. /lib/functions.sh
-
+boot() {
 	case $(board_name) in
 	linksys,ea8500)
 		mtd resetbc s_env || true

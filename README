@@ -5,30 +5,64 @@
           |__| W I R E L E S S   F R E E D O M
  -----------------------------------------------------
 
-This is the buildsystem for the OpenWrt Linux distribution.
+这是一个面向日常使用环境的OpenWrt项目，基于OpenWrt 19.07
+主要为中文用户提供一个稳定、易用、本地化的个人路由系统。
+By KGHX on https://iyzm.net
 
-To build your own firmware you need a Linux, BSD or MacOSX system (case
-sensitive filesystem required). Cygwin is unsupported because of the lack
-of a case sensitive file system.
+编译参考信息：
 
-You need gcc, binutils, bzip2, flex, python, perl, make, find, grep, diff,
-unzip, gawk, getopt, subversion, libz-dev and libc headers installed.
+1. 安装并使用 Ubuntu 20.04.1 Desktop (64-bit)
 
-1. Run "./scripts/feeds update -a" to obtain all the latest package definitions
-defined in feeds.conf / feeds.conf.default
+2. 使用非root用户登录 Ubuntu
 
-2. Run "./scripts/feeds install -a" to install symlinks for all obtained
-packages into package/feeds/
+3. 安装编译环境
+sudo apt-get update
 
-3. Run "make menuconfig" to select your preferred configuration for the
-toolchain, target system & firmware packages.
+sudo apt-get install -y build-essential autoconf autopoint \
+libtool gcc-multilib flex python gawk subversion zlib1g-dev \
+git libncurses5-dev asciidoc device-tree-compiler p7zip-full \
+msmtp libssl-dev texinfo libglib2.0-dev libelf-dev qemu-utils \
+upx-ucl curl
 
-4. Run "make" to build your firmware. This will download all sources, build
-the cross-compile toolchain and then cross-compile the Linux kernel & all
-chosen applications for your target system.
+sudo apt-get clean
+
+4. 获取主源代码
+git clone -b openwrt-19.07 https://github.com/ikghx/openwrt-life.git
+
+5. 进入主源代码目录，更新并安装软件库
+./scripts/feeds update -a
+
+./scripts/feeds install -a
+
+6. 打开编译菜单界面，按个人需要进行定制
+make menuconfig
+
+7. 开始编译
+make
+
+ -----------------------------------------------------
+ 
+其它参考命令：
+
+多线程加速编译，例如系统配备了4核心处理器
+make -j4
+
+编译时显示详细信息，用于排查编译错误
+make V=s
+
+打开内核菜单界面，按需定制内核功能
+make kernel_menuconfig
+
+清除软件编译缓存目录，以便快速测试软件更改
+make clean
+
+清空整个编译缓存目录，以便开始全新编译
+make dirclean
+
+ -----------------------------------------------------
 
 Sunshine!
 	Your OpenWrt Community
-	http://www.openwrt.org
+	https://openwrt.org
 
 

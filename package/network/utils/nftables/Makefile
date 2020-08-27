@@ -28,7 +28,7 @@ CONFIGURE_ARGS += \
         --disable-man-doc \
         --with-mini-gmp \
         --without-cli \
-        --disable-python \
+        --disable-python
 
 define Package/nftables
   SECTION:=net

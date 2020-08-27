@@ -135,3 +135,16 @@ define LegacyDevice/NBG6716
   DEVICE_PACKAGES := kmod-rtc-pcf8563 kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 LEGACY_DEVICES += NBG6716
+
+define LegacyDevice/GL-AR750S
+	DEVICE_TITLE := GL-AR750S with nand flash
+	DEVICE_PACKAGES :=  kmod-ath10k-ct ath10k-firmware-qca9887-ct kmod-usb-core \
+	      kmod-usb2 kmod-usb-storage
+endef
+LEGACY_DEVICES += GL-AR750S
+
+define LegacyDevice/GL-AR300M
+	DEVICE_TITLE := GL-AR300M with nand flash
+	DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-usb-storage
+endef
+LEGACY_DEVICES += GL-AR300M

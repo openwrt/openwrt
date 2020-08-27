@@ -100,6 +100,9 @@ mac80211_hostapd_setup_base() {
 	json_get_vars noscan ht_coex
 	json_get_values ht_capab_list ht_capab tx_burst
 
+	[ "$auto_channel" = 0 ] && [ -z "$channel_list" ] && \
+		channel_list="$channel"
+
 	set_default noscan 0
 
 	[ "$noscan" -gt 0 ] && hostapd_noscan=1
@@ -385,7 +388,7 @@ mac80211_generate_mac() {
 	[ "$((0x$mask1))" -gt 0 ] && {
 		b1="0x$1"
 		[ "$id" -gt 0 ] && \
-			b1=$(($b1 ^ ((($id - 1) << 2) | 0x2)))
+			b1=$(($b1 ^ ((($id - !($b1 & 2)) << 2) | 0x2)))
 		printf "%02x:%s:%s:%s:%s:%s" $b1 $2 $3 $4 $5 $6
 		return
 	}
@@ -430,14 +433,14 @@ mac80211_iw_interface_add() {
 	local wdsflag="$4"
 	local rc
 
-	iw phy "$phy" interface add "$ifname" type "$type" $wdsflag
+	iw phy "$phy" interface add "$ifname" type "$type" $wdsflag >/dev/null 2>&1
 	rc="$?"
 
 	[ "$rc" = 233 ] && {
 		# Device might have just been deleted, give the kernel some time to finish cleaning it up
 		sleep 1
 
-		iw phy "$phy" interface add "$ifname" type "$type" $wdsflag
+		iw phy "$phy" interface add "$ifname" type "$type" $wdsflag >/dev/null 2>&1
 		rc="$?"
 	}
 
@@ -754,7 +757,7 @@ drv_mac80211_setup() {
 	staidx=0
 
 	[ -n "$chanbw" ] && {
-		for file in /sys/kernel/debug/ieee80211/$phy/ath9k/chanbw /sys/kernel/debug/ieee80211/$phy/ath5k/bwmode; do
+		for file in /sys/kernel/debug/ieee80211/$phy/ath9k*/chanbw /sys/kernel/debug/ieee80211/$phy/ath5k/bwmode; do
 			[ -f "$file" ] && echo "$chanbw" > "$file"
 		done
 	}
@@ -768,8 +771,8 @@ drv_mac80211_setup() {
 	[ "$rxantenna" = "all" ] && rxantenna=0xffffffff
 
 	iw phy "$phy" set antenna $txantenna $rxantenna >/dev/null 2>&1
-	iw phy "$phy" set antenna_gain $antenna_gain
-	iw phy "$phy" set distance "$distance"
+	iw phy "$phy" set antenna_gain $antenna_gain >/dev/null 2>&1
+	iw phy "$phy" set distance "$distance" >/dev/null 2>&1
 
 	[ -n "$frag" ] && iw phy "$phy" set frag "${frag%%.*}"
 	[ -n "$rts" ] && iw phy "$phy" set rts "${rts%%.*}"

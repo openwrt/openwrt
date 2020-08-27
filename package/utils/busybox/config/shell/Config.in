@@ -497,6 +497,11 @@ config BUSYBOX_CONFIG_FEATURE_SH_MATH_64
 	slightly larger, but will allow computation with very large numbers.
 	This is not in POSIX, so do not rely on this in portable code.
 
+config BUSYBOX_CONFIG_FEATURE_SH_MATH_BASE
+	bool "Support BASE#nnnn literals"
+	default BUSYBOX_DEFAULT_FEATURE_SH_MATH_BASE
+	depends on BUSYBOX_CONFIG_FEATURE_SH_MATH
+
 config BUSYBOX_CONFIG_FEATURE_SH_EXTRA_QUIET
 	bool "Hide message on interactive shell startup"
 	default BUSYBOX_DEFAULT_FEATURE_SH_EXTRA_QUIET

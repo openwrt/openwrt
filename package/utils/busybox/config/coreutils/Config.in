@@ -131,7 +131,7 @@ config BUSYBOX_CONFIG_FEATURE_DATE_COMPAT
 	date -s (and other commands like touch -d) use more sensible
 	formats (for one, ISO format YYYY-MM-DD hh:mm:ss.ssssss).
 
-	With this option off, 'date DATE' is 'date -s DATE' support
+	With this option off, 'date DATE' and 'date -s DATE' support
 	the same format. With it on, 'date DATE' additionally supports
 	MMDDhhmm[[YY]YY][.ss] format.
 config BUSYBOX_CONFIG_DD
@@ -282,11 +282,6 @@ config BUSYBOX_CONFIG_FOLD
 	default BUSYBOX_DEFAULT_FOLD
 	help
 	Wrap text to fit a specific width.
-config BUSYBOX_CONFIG_FSYNC
-	bool "fsync (3.6 kb)"
-	default BUSYBOX_DEFAULT_FSYNC
-	help
-	fsync is used to flush file-related cached blocks to disk.
 config BUSYBOX_CONFIG_HEAD
 	bool "head (3.8 kb)"
 	default BUSYBOX_DEFAULT_HEAD
@@ -667,6 +662,11 @@ config BUSYBOX_CONFIG_FEATURE_SYNC_FANCY
 	help
 	sync -d FILE... executes fdatasync() on each FILE.
 	sync -f FILE... executes syncfs() on each FILE.
+config BUSYBOX_CONFIG_FSYNC
+	bool "fsync (3.6 kb)"
+	default BUSYBOX_DEFAULT_FSYNC
+	help
+	fsync is used to flush file-related cached blocks to disk.
 config BUSYBOX_CONFIG_TAC
 	bool "tac (3.9 kb)"
 	default BUSYBOX_DEFAULT_TAC

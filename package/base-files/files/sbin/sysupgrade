@@ -127,7 +127,7 @@ list_changed_conffiles() {
 	list_conffiles | while read file csum; do
 		[ -r "$file" ] || continue
 
-		echo "${csum}  ${file}" | sha256sum -sc - || echo "$file"
+		echo "${csum}  ${file}" | busybox sha256sum -sc - || echo "$file"
 	done
 }
 
@@ -360,18 +360,15 @@ if [ -n "$FAILSAFE" ]; then
 	printf '%s\x00%s\x00%s' "$RAM_ROOT" "$IMAGE" "$COMMAND" >/tmp/sysupgrade
 	lock -u /tmp/.failsafe
 else
-	force_attr=""
-	[ $FORCE -eq 1 ] && force_attr="\"force\": true,"
-	backup_attr=""
-	[ $SAVE_CONFIG -eq 1 ] && backup_attr="\"backup\": $(json_string $CONF_TAR),"
-	ubus call system sysupgrade "{
-		\"prefix\": $(json_string "$RAM_ROOT"),
-		\"path\": $(json_string "$IMAGE"),
-		$force_attr
-		$backup_attr
-		\"command\": $(json_string "$COMMAND"),
-		\"options\": {
-			\"save_partitions\": $SAVE_PARTITIONS
-		}
-	}"
+	json_init
+	json_add_string prefix "$RAM_ROOT"
+	json_add_string path "$IMAGE"
+	[ $FORCE -eq 1 ] && json_add_boolean force 1
+	[ $SAVE_CONFIG -eq 1 ] && json_add_string backup "$CONF_TAR"
+	json_add_string command "$COMMAND"
+	json_add_object options
+	json_add_int save_partitions "$SAVE_PARTITIONS"
+	json_close_object
+
+	ubus call system sysupgrade "$(json_dump)"
 fi

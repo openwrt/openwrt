@@ -1,0 +1,21 @@
+
+config system
+	option hostname 'OpenWrt-Life'
+	option timezone 'CST-8'
+	option zonename 'Asia/Shanghai'
+	option ttylogin '0'
+	option log_size '64'
+	option urandom_seed '0'
+	option log_proto 'udp'
+	option conloglevel '8'
+	option cronloglevel '8'
+
+config timeserver 'ntp'
+	list server 'ntp.ntsc.ac.cn'
+	list server 'cn.ntp.org.cn'
+	list server 'ntp.aliyun.com'
+	list server 'edu.ntp.org.cn'
+	list server 'time.windows.com'
+	list server 'time.nist.gov'
+	list server 'time.apple.com'
+

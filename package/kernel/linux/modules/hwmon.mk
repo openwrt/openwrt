@@ -26,7 +26,7 @@ $(eval $(call KernelPackage,hwmon-core))
 
 define AddDepends/hwmon
   SUBMENU:=$(HWMON_MENU)
-  DEPENDS:=kmod-hwmon-core $(1)
+  DEPENDS:=+kmod-hwmon-core $(1)
 endef
 
 define KernelPackage/hwmon-ads1015

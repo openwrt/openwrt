@@ -1,0 +1,1340 @@
+--- a/apps/openssl.cnf	2019-09-10 21:13:07.000000000 +0800
++++ b/apps/openssl.cnf	2020-02-12 20:36:55.228836000 +0800
+@@ -1,350 +1,1047 @@
+ #
+-# OpenSSL example configuration file.
+-# This is mostly being used for generation of certificate requests.
+-#
+ 
+-# Note that you can include other files from the main configuration
+-# file using the .include directive.
+-#.include filename
+-
+-# This definition stops the following lines choking if HOME isn't
+-# defined.
+-HOME			= .
+-
+-# Extra OBJECT IDENTIFIER info:
+-#oid_file		= $ENV::HOME/.oid
+-oid_section		= new_oids
+-
+-# To use this configuration file with the "-extfile" option of the
+-# "openssl x509" utility, name here the section containing the
+-# X.509v3 extensions to use:
+-# extensions		=
+-# (Alternatively, use a configuration file that has only
+-# X.509v3 extensions in its main [= default] section.)
+-
+-[ new_oids ]
+-
+-# We can add new OIDs in here for use by 'ca', 'req' and 'ts'.
+-# Add a simple OID like this:
+-# testoid1=1.2.3.4
+-# Or use config file substitution like this:
+-# testoid2=${testoid1}.5.6
+-
+-# Policies used by the TSA examples.
+-tsa_policy1 = 1.2.3.4.1
+-tsa_policy2 = 1.2.3.4.5.6
+-tsa_policy3 = 1.2.3.4.5.7
++             ##::[[---  Linux OpenSSL Config  ---]]::##
++
++#####################################################################
++                       ##----- Notes -----##
++#####################################################################
++
++  # All commands required can be found beginning on line 430
++
++
++  # Windows users:
++
++    # Replace all forward slashes with single/double backslashes.
++
++
++    # Ensure EOLs are CRLF, not LF
++      # Windows uses CRLF, UNIX utilizes LF
++
++
++  # Sophos users:
++
++    # If not using SANs, prior to generating user certs, ensure 'x509_extensions = usr_cert_not_dn'
++      # This results with 'RFC822 Name = user@email.com' in the SubjectAlternativeName of the certificate.
++        # Without this, it will be impossible to authenticate to VPNs on Sophos.
++
++    # Intermediate CAs & Intermediate CA client certs CANNOT be utilized on Sophos UTM due to how Sophos authenticates.
++      # Only exception is the WebAdmin certificate, which can be signed by a Public ICA authority for a FQDN.
++        # For chain of trust to be maintained, CA & ICA must be installed on devices accessing the WebAdmin/User Portal.
++
++#openssl_conf=openssl_conf
++
++#[openssl_conf]
++#engines=engines
++
++#[engines]
++# To enable an engine, install the package, and uncomment it here:
++#devcrypto=devcrypto
++#afalg=afalg
++#padlock=padlock
++
++#[afalg]
++# Leave this alone and configure algorithms with CIPERS/DIGESTS below
++#default_algorithms = ALL
++
++# The following commands are only available if using the alternative
++# (sync) AFALG engine
++# Configuration commands:
++# Run 'openssl engine -t -c -vv -pre DUMP_INFO devcrypto' to see a
++# list of supported algorithms, along with their driver, whether they
++# are hw accelerated or not, and the engine's configuration commands.
++
++# USE_SOFTDRIVERS: specifies whether to use software (not accelerated)
++# drivers (0=use only accelerated drivers, 1=allow all drivers, 2=use
++# if acceleration can't be determined) [default=2]
++#USE_SOFTDRIVERS = 2
++
++# CIPHERS: either ALL, NONE, NO_ECB (all except ECB-mode) or a
++# comma-separated list of ciphers to enable [default=NO_ECB]
++# Starting in 1.2.0, if you use a cipher list, each cipher may be
++# followed by a colon (:) and the minimum request length to use
++# AF_ALG drivers for that cipher; smaller requests are processed by
++# softare; a negative value will use the default for that cipher
++#CIPHERS=AES-128-CBC:1024, AES-256-CBC:768, DES-EDE3-CBC:0
++
++# DIGESTS: either ALL, NONE, or a comma-separated list of digests to
++# enable [default=NONE]
++# It is strongly recommended not to enable digests; their performance
++# is poor, and there are many cases in which they will not work,
++# especially when calling fork with open crypto contexts.  Openssh,
++# for example, does this, and you may not be able to login.
++#DIGESTS = NONE
++
++#[devcrypto]
++# Leave this alone and configure algorithms with CIPERS/DIGESTS below
++#default_algorithms = ALL
++
++# Configuration commands:
++# Run 'openssl engine -t -c -vv -pre DUMP_INFO devcrypto' to see a
++# list of supported algorithms, along with their driver, whether they
++# are hw accelerated or not, and the engine's configuration commands.
++
++# USE_SOFTDRIVERS: specifies whether to use software (not accelerated)
++# drivers (0=use only accelerated drivers, 1=allow all drivers, 2=use
++# if acceleration can't be determined) [default=2]
++#USE_SOFTDRIVERS = 2
++
++# CIPHERS: either ALL, NONE, or a comma-separated list of ciphers to
++# enable [default=ALL]
++# It is recommended to disable the ECB ciphers; in most cases, it will
++# only be used for PRNG, in small blocks, where performance is poor,
++# and there may be problems with apps forking with open crypto
++# contexts, leading to failures.  The CBC ciphers work well:
++#CIPHERS=DES-CBC, DES-EDE3-CBC, AES-128-CBC, AES-192-CBC, AES-256-CBC
++
++# DIGESTS: either ALL, NONE, or a comma-separated list of digests to
++# enable [default=NONE]
++# It is strongly recommended not to enable digests; their performance
++# is poor, and there are many cases in which they will not work,
++# especially when calling fork with open crypto contexts.  Openssh,
++# for example, does this, and you may not be able to login.
++#DIGESTS = NONE
++
++#[padlock]
++#default_algorithms = ALL
++
++#####################################################################
++             ##----- Establish Build Variables -----##
++#####################################################################
++
++dir                             = /etc/ssl
++cnf                             = /etc/ssl/openssl.cnf
++
++#####################################################################
++           ##----- Establish CA Profile and Policy -----##
++#####################################################################
++
++[ default ]
++UTM                             = "Sophos UTM CA"
++WRT                             = "Router 2 ICA"
++VPN                             = "Router 2 VPN ICA"
+ 
+-####################################################################
+ [ ca ]
+-default_ca	= CA_default		# The default ca section
++default_ca                      = CA_default
++
++#####################################################################
+ 
+-####################################################################
+ [ CA_default ]
++certs                           = $dir/certs
++new_certs_dir                   = $dir/new_certs
+ 
+-dir		= ./demoCA		# Where everything is kept
+-certs		= $dir/certs		# Where the issued certs are kept
+-crl_dir		= $dir/crl		# Where the issued crl are kept
+-database	= $dir/index.txt	# database index file.
+-#unique_subject	= no			# Set to 'no' to allow creation of
+-					# several certs with same subject.
+-new_certs_dir	= $dir/newcerts		# default place for new certs.
+-
+-certificate	= $dir/cacert.pem 	# The CA certificate
+-serial		= $dir/serial 		# The current serial number
+-crlnumber	= $dir/crlnumber	# the current crl number
+-					# must be commented out to leave a V1 CRL
+-crl		= $dir/crl.pem 		# The current CRL
+-private_key	= $dir/private/cakey.pem# The private key
+-
+-x509_extensions	= usr_cert		# The extensions to add to the cert
+-
+-# Comment out the following two lines for the "traditional"
+-# (and highly broken) format.
+-name_opt 	= ca_default		# Subject Name options
+-cert_opt 	= ca_default		# Certificate field options
+-
+-# Extension copying option: use with caution.
+-# copy_extensions = copy
+-
+-# Extensions to add to a CRL. Note: Netscape communicator chokes on V2 CRLs
+-# so this is commented out by default to leave a V1 CRL.
+-# crlnumber must also be commented out to leave a V1 CRL.
+-# crl_extensions	= crl_ext
+-
+-default_days	= 365			# how long to certify for
+-default_crl_days= 30			# how long before next CRL
+-default_md	= default		# use public key default MD
+-preserve	= no			# keep passed DN ordering
+-
+-# A few difference way of specifying how similar the request should look
+-# For type CA, the listed attributes must be the same, and the optional
+-# and supplied fields are just that :-)
+-policy		= policy_match
++database                        = $dir/index
++RANDFILE                        = $dir/rand
++serial                          = $dir/serial
++
++crldir                          = $dir/crl
++crlnumber                       = $crldir/crlnumber
++crl                             = $crldir/ca.crl.pem
++default_crl_days                = 3650
++
++certificate                     = "$dir/ca/$UTM.crt.pem"
++private_key                     = "$dir/ca/$UTM.key.pem"
++
++default_days                    = 3650
++preserve                        = no
++default_md                      = sha512
++
++x509_extensions                 = usr_cert_not_dn
++copy_extensions                 = copy
++unique_subject                  = yes
++
++policy                          = policy_match
++name_opt                        = esc_2253,esc_ctrl,esc_msb,sep_comma_plus_space,ignore_type
++cert_opt                        = ca_default
++
++#####################################################################
+ 
+-# For the CA policy
+ [ policy_match ]
+-countryName		= match
+-stateOrProvinceName	= match
+-organizationName	= match
+-organizationalUnitName	= optional
+-commonName		= supplied
+-emailAddress		= optional
+-
+-# For the 'anything' policy
+-# At this point in time, you must list all acceptable 'object'
+-# types.
+-[ policy_anything ]
+-countryName		= optional
+-stateOrProvinceName	= optional
+-localityName		= optional
+-organizationName	= optional
+-organizationalUnitName	= optional
+-commonName		= supplied
+-emailAddress		= optional
++countryName                     = match
++stateOrProvinceName             = match
++organizationName                = match
++organizationalUnitName          = match
++commonName                      = supplied
++emailAddress                    = optional
++
++[ policy_supply ]
++countryName                     = match
++stateOrProvinceName             = match
++localityName                    = match
++organizationName                = match
++organizationalUnitName          = match
++commonName                      = optional
++emailAddress                    = optional
++
++#####################################################################
++            ##----- Establish Certificate Options -----#
++#--------------------------------------------------------------------
++
++    # If you plan on using TLS ECDHE or ECDH, the bits and hash must exceed the value you wish to have.
++
++      # For example, if one wants 2048bit encryption with a SHA256 hash, encryption value must be
++      # greater than 2048 (3072 or 4096) with a hash greater than SHA256 (SHA384 or SHA512).
++        # x64 machines can almost always process SHA512 faster than SHA256.
++
++    # If you're not planning on using TLS ECDHE or ECDH, a key larger than 2048bit isn't necessary.
++
++    # Encrypt key is not currently commented out; however, as one does not want a server's key to have
++    # an encrypted password, when creating the key for the server, add -nodes to the Request command.
++
+ 
+-####################################################################
+ [ req ]
+-default_bits		= 2048
+-default_keyfile 	= privkey.pem
+-distinguished_name	= req_distinguished_name
+-attributes		= req_attributes
+-x509_extensions	= v3_ca	# The extensions to add to the self signed cert
+-
+-# Passwords for private keys if not present they will be prompted for
+-# input_password = secret
+-# output_password = secret
+-
+-# This sets a mask for permitted string types. There are several options.
+-# default: PrintableString, T61String, BMPString.
+-# pkix	 : PrintableString, BMPString (PKIX recommendation before 2004)
+-# utf8only: only UTF8Strings (PKIX recommendation after 2004).
+-# nombstr : PrintableString, T61String (no BMPStrings or UTF8Strings).
+-# MASK:XXXX a literal mask value.
+-# WARNING: ancient versions of Netscape crash on BMPStrings or UTF8Strings.
+-string_mask = utf8only
++default_bits                    = 2048
++default_keyfile                 = private.key.pem
++
++preserve                        = no
++default_md                      = sha512
++
++string_mask                     = utf8only
++utf8                            = yes
++distinguished_name              = req_distinguished_name
++attributes                      = req_attributes
++req_extensions                  = v3_req
++x509_extensions                 = v3_ca
++copy_extensions                 = copy
++encrypt_key                     = yes
++
++[ req_attributes ]
++challengePassword               =
++challengePassword_min           = 12
++challengePassword_max           = 40
++
+ 
+-# req_extensions = v3_req # The extensions to add to a certificate request
++#####################################################################
+ 
+ [ req_distinguished_name ]
+-countryName			= Country Name (2 letter code)
+-countryName_default		= AU
+-countryName_min			= 2
+-countryName_max			= 2
+ 
+-stateOrProvinceName		= State or Province Name (full name)
+-stateOrProvinceName_default	= Some-State
++countryName                     = Country
++countryName_max                 = 2
++stateOrProvinceName             = State
++localityName                    = Locality
++0.organizationName              = Organization
++organizationalUnitName          = Organizational Unit
++commonName                      = Common Name
++commonName_max                  = 64
++emailAddress                    = Email
++emailAddress_max                = 64
++
++countryName_default             = 
++stateOrProvinceName_default     = 
++localityName_default            = 
++0.organizationName_default      = 
++organizationalUnitName_default  = 
++
++
++#####################################################################
++      ##----- Establish SubjectAltName (SAN) Profiles -----##
++#####################################################################
++
++  # All server certs with WebUIs should have their loopback IP specified in their SAN profile
++    # This prevents certificate errors if connecting to the device, router, or server via an SSH tunnel
++      # Certain OS CA certs must have the loopback IP specified in SAN profile (i.e. Sophos UTM's CA)
++
++  # Provided one utilizes the SAN profile, Common Names can be whatever one wishes (i.e. not the DNS or IP)
++    # SANs can be: email (an email address), URI (a uniform resource indicator), DNS (a DNS domain name),
++    # RID (a registered ID: OBJECT IDENTIFIER), IP (an IP address), dirName (a distinguished name), and otherName.
++
++
++#--------------------------------------------------------------------
++               ##----- Certificate Authorities -----##
++#--------------------------------------------------------------------
++
++# Main #
++  [ alt_ca_main ]
++  DNS.1                 = Router.1
++  IP.1                  = 127.0.0.1
++
++# Router 2 #
++  [ alt_ica_router2 ]
++  DNS.1                 = Router.2
++  IP.1                  = 127.0.0.1
++
++# Code Signing #
++  [ alt_signing_ica ]
++  DNS.1                 = Code-Signing
++
++#--------------------------------------------------------------------
++            ##----- Certificate Authority Clients -----##
++#--------------------------------------------------------------------
++
++# Main #
++
++  # Servers #
++    [ alt_sophos ]
++    IP.1                = 192.168.9.1
++    IP.2                = 127.0.0.1
++    DNS.1               = OpenWrt.lan
++    DNS.2               = your.ddns.com
++
++    [ alt_freenas ]
++    IP.1                = 192.168.1.1
++    IP.2                = 192.168.0.1
++    IP.3                = 127.0.0.1
++    DNS.1               = OpenWrt.lan
++    DNS.2               = your-fqdn.com
++
++    [ alt_vpn_server1 ]
++    IP.1                = 10.0.0.1
++    DNS.1               = your.ddns.com
++
++    [ alt_web_server1 ]
++    DNS.1               = test.com
++    DNS.2               = *.test.com
++
++  # Clients #
++    [ alt_vpn1_user1 ]
++    email.1             = user1@email.com
++    DNS.1               = VPN1-Client1-Device-Hostname1
++    DNS.2               = VPN1-Client1-Device-Hostname2
++
++
++#--------------------------------------------------------------------
++     ##----- Intermediate Certificate Authority Clients -----##
++#--------------------------------------------------------------------
++
++# Router 2 #
++
++  # Servers #
++    [ alt_lede ]
++    IP.1                = 192.168.9.1
++    IP.2                = 127.0.0.1
++    DNS.1               = OpenWrt.lan
++
++    [ alt_vpn_server2 ]
++    IP.1                = 192.168.9.1
++    DNS.1               = test.com
++
++  # Clients #
++    [ alt_vpn2_user1 ]
++    DNS.1               = VPNserver-Client1-Device-Hostname
++    email.1             = user1@email.com
++
++    [ alt_vpn2_user2 ]
++    DNS.1               = VPN2-Client2-Device-Hostname1
++    DNS.2               = VPN2-Client2-Device-Hostname2
++    email.1             = user2@email.com
++
++
++# Code Signing #
++
++  # Cert1 #
++    [ alt_codesign ]
++    email.1             = user@email.com
++
++
++#####################################################################
++     ##----- Establish Certificate Authority V3 Profiles -----##
++#--------------------------------------------------------------------
++
++  # These V3 CA profiles must not be modified to contain any more, or any less, KUs
++
++  # These have been configured specifically for security & its imperative no other keyUsages are set
++    # For an ICA to be capable of signing additional CAs/ICAs, pathlen number must mirror number of CAs/ICAs
++    # it can sign.  By default, all ICAs are set to 0, meaning they can sign certs, but not other CAs/ICAs.
+ 
+-localityName			= Locality Name (eg, city)
+ 
+-0.organizationName		= Organization Name (eg, company)
+-0.organizationName_default	= Internet Widgits Pty Ltd
++[ v3_ca ]
++basicConstraints            = critical, CA:TRUE
++subjectKeyIdentifier        = hash
++authorityKeyIdentifier      = keyid:always, issuer:always
++keyUsage                    = critical, cRLSign, digitalSignature, keyCertSign
++
++[ v3_ica ]
++basicConstraints            = critical, CA:TRUE, pathlen:0
++subjectKeyIdentifier        = hash
++authorityKeyIdentifier      = keyid:always, issuer:always
++keyUsage                    = critical, cRLSign, digitalSignature, keyCertSign
++
++[ v3_signing_ica ]
++basicConstraints            = critical, CA:TRUE, pathlen:0
++subjectKeyIdentifier        = hash
++authorityKeyIdentifier      = keyid:always, issuer:always
++keyUsage                    = critical, cRLSign, digitalSignature, keyCertSign
++subjectAltName              = @alt_signing_ica
+ 
+-# we can do this but it is not needed normally :-)
+-#1.organizationName		= Second Organization Name (eg, company)
+-#1.organizationName_default	= World Wide Web Pty Ltd
++[ crl_ext ]
++issuerAltName               = issuer:copy
++authorityKeyIdentifier      = keyid:always, issuer:always
+ 
+-organizationalUnitName		= Organizational Unit Name (eg, section)
+-#organizationalUnitName_default	=
+ 
+-commonName			= Common Name (e.g. server FQDN or YOUR name)
+-commonName_max			= 64
++#####################################################################
++    ##----- Establish Generalized V3 Certificate Profiles -----##
++#--------------------------------------------------------------------
+ 
+-emailAddress			= Email Address
+-emailAddress_max		= 64
++[ v3_req ]
++basicConstraints            = critical, CA:FALSE
++subjectKeyIdentifier        = hash
+ 
+-# SET-ex3			= SET extension number 3
++[ usr_cert_dn ]
++basicConstraints            = critical, CA:FALSE
++subjectKeyIdentifier        = hash
++authorityKeyIdentifier      = keyid:always, issuer:always
++keyUsage                    = critical, nonRepudiation, digitalSignature, keyEncipherment
++extendedKeyUsage            = critical, clientAuth, emailProtection
+ 
+-[ req_attributes ]
+-challengePassword		= A challenge password
+-challengePassword_min		= 4
+-challengePassword_max		= 20
++[ usr_cert_not_dn ]
++basicConstraints            = critical, CA:FALSE
++subjectKeyIdentifier        = hash
++authorityKeyIdentifier      = keyid:always, issuer:always
++subjectAltName              = email:copy
++keyUsage                    = critical, nonRepudiation, digitalSignature, keyEncipherment
++extendedKeyUsage            = critical, clientAuth, emailProtection
+ 
+-unstructuredName		= An optional company name
+ 
+-[ usr_cert ]
++#####################################################################
++      ##----- Establish Client Certificate V3 Profiles -----##
++#--------------------------------------------------------------------
+ 
+-# These extensions are added when 'ca' signs a request.
++  # These V3 profiles should not be modified to contain less than what they are currently configured with.
++    # These have been specifically configured with security in mind.
+ 
+-# This goes against PKIX guidelines but some CAs do it and some software
+-# requires this to avoid interpreting an end user certificate as a CA.
++  # All servers capable of TLS should contain all keyUsages, except for dataEncipherment
++    # VPN and file servers should not have less than digitalSignature, keyEncipherment, keyAgreement
+ 
+-basicConstraints=CA:FALSE
++  # All servers must contain EKU serverAuth
++    # All server [VPN] clients must contain EKU clientAuth
+ 
+-# Here are some examples of the usage of nsCertType. If it is omitted
+-# the certificate can be used for anything *except* object signing.
+ 
+-# This is OK for an SSL server.
+-# nsCertType			= server
++#--------------------------------------------------------------------
++            ##----- Certificate Authority Clients -----##
++#--------------------------------------------------------------------
+ 
+-# For an object signing certificate this would be used.
+-# nsCertType = objsign
++# Main #
+ 
+-# For normal client use this is typical
+-# nsCertType = client, email
++  # Servers #
++    [ v3_sophos ]
++    basicConstraints            = critical, CA:FALSE
++    subjectKeyIdentifier        = hash
++    authorityKeyIdentifier      = keyid:always, issuer:always
++    keyUsage                    = critical, nonRepudiation, digitalSignature, keyEncipherment, keyAgreement
++    extendedKeyUsage            = critical, serverAuth
++    subjectAltName              = @alt_sophos
+ 
+-# and for everything including object signing:
+-# nsCertType = client, email, objsign
++    [ v3_freenas ]
++    basicConstraints            = critical, CA:FALSE
++    subjectKeyIdentifier        = hash
++    authorityKeyIdentifier      = keyid:always, issuer:always
++    keyUsage                    = critical, nonRepudiation, digitalSignature, keyEncipherment, keyAgreement
++    extendedKeyUsage            = critical, serverAuth
++    subjectAltName              = @alt_freenas
+ 
+-# This is typical in keyUsage for a client certificate.
+-# keyUsage = nonRepudiation, digitalSignature, keyEncipherment
++    [ v3_vpn_server1 ]
++    basicConstraints            = critical, CA:FALSE
++    subjectKeyIdentifier        = hash
++    authorityKeyIdentifier      = keyid:always, issuer:always
++    keyUsage                    = critical, nonRepudiation, digitalSignature, keyEncipherment, keyAgreement
++    extendedKeyUsage            = critical, serverAuth
++    subjectAltName              = @alt_vpn_server1
+ 
+-# This will be displayed in Netscape's comment listbox.
+-nsComment			= "OpenSSL Generated Certificate"
++    [ v3_web_server1 ]
++    basicConstraints            = critical, CA:FALSE
++    subjectKeyIdentifier        = hash
++    authorityKeyIdentifier      = keyid:always, issuer:always
++    keyUsage                    = critical, nonRepudiation, digitalSignature, keyEncipherment, keyAgreement
++    extendedKeyUsage            = critical, serverAuth, clientAuth, emailProtection
++    subjectAltName              = @alt_web_server1
+ 
+-# PKIX recommendations harmless if included in all certificates.
+-subjectKeyIdentifier=hash
+-authorityKeyIdentifier=keyid,issuer
++    [ v3_web_server2 ]
++    basicConstraints            = critical, CA:FALSE
++    subjectKeyIdentifier        = hash
++    authorityKeyIdentifier      = keyid:always, issuer:always
++    keyUsage                    = critical, nonRepudiation, digitalSignature, keyEncipherment, keyAgreement
++    extendedKeyUsage            = critical, serverAuth, clientAuth, emailProtection
++    subjectAltName              = @alt_sophos
+ 
+-# This stuff is for subjectAltName and issuerAltname.
+-# Import the email address.
+-# subjectAltName=email:copy
+-# An alternative to produce certificates that aren't
+-# deprecated according to PKIX.
+-# subjectAltName=email:move
++    [ v3_ecdsa1 ]
++    basicConstraints            = critical, CA:FALSE
++    subjectKeyIdentifier        = hash
++    authorityKeyIdentifier      = keyid:always, issuer:always
++    keyUsage                    = critical, digitalSignature
++    extendedKeyUsage            = critical, serverAuth, clientAuth, emailProtection
++    subjectAltName              = @alt_web_server1
+ 
+-# Copy subject details
+-# issuerAltName=issuer:copy
++    [ v3_ecdsa2 ]
++    basicConstraints            = critical, CA:FALSE
++    subjectKeyIdentifier        = hash
++    authorityKeyIdentifier      = keyid:always, issuer:always
++    keyUsage                    = critical, digitalSignature
++    extendedKeyUsage            = critical, serverAuth, clientAuth, emailProtection
++    subjectAltName              = @alt_sophos
+ 
+-#nsCaRevocationUrl		= http://www.domain.dom/ca-crl.pem
+-#nsBaseUrl
+-#nsRevocationUrl
+-#nsRenewalUrl
+-#nsCaPolicyUrl
+-#nsSslServerName
++  # Clients #
++    [ v3_vpn1_user1 ]
++    basicConstraints            = critical,CA:FALSE
++    subjectKeyIdentifier        = hash
++    authorityKeyIdentifier      = keyid:always, issuer:always
++    keyUsage                    = critical, nonRepudiation, digitalSignature, keyEncipherment
++    extendedKeyUsage            = critical, clientAuth
++    subjectAltName              = @alt_vpn1_user1
+ 
+-# This is required for TSA certificates.
+-# extendedKeyUsage = critical,timeStamping
+ 
+-[ v3_req ]
++#--------------------------------------------------------------------
++      ##----- Intermediate Certificate Authority Clients -----##
++#--------------------------------------------------------------------
+ 
+-# Extensions to add to a certificate request
++# Router 2 #
+ 
+-basicConstraints = CA:FALSE
+-keyUsage = nonRepudiation, digitalSignature, keyEncipherment
++  # Servers #
++    [ v3_lede ]
++    basicConstraints            = critical, CA:FALSE
++    subjectKeyIdentifier        = hash
++    authorityKeyIdentifier      = keyid:always, issuer:always
++    keyUsage                    = critical, nonRepudiation, digitalSignature, keyEncipherment, keyAgreement
++    extendedKeyUsage            = critical, serverAuth
++    subjectAltName              = @alt_lede
+ 
+-[ v3_ca ]
++    [ v3_vpn_server2 ]
++    basicConstraints            = critical, CA:FALSE
++    subjectKeyIdentifier        = hash
++    authorityKeyIdentifier      = keyid:always, issuer:always
++    keyUsage                    = critical, nonRepudiation, digitalSignature, keyEncipherment, keyAgreement
++    extendedKeyUsage            = critical, serverAuth
++    subjectAltName              = @alt_vpn_server2
+ 
++  # Clients #
++    [ v3_vpn2_user1 ]
++    basicConstraints            = critical,CA:FALSE
++    subjectKeyIdentifier        = hash
++    authorityKeyIdentifier      = keyid:always, issuer:always
++    keyUsage                    = critical, nonRepudiation, digitalSignature, keyEncipherment
++    extendedKeyUsage            = critical, clientAuth
++    subjectAltName              = @alt_vpn2_user1
+ 
+-# Extensions for a typical CA
++    [ v3_vpn2_user2 ]
++    basicConstraints            = critical,CA:FALSE
++    subjectKeyIdentifier        = hash
++    authorityKeyIdentifier      = keyid:always, issuer:always
++    keyUsage                    = critical, nonRepudiation, digitalSignature, keyEncipherment
++    extendedKeyUsage            = critical, clientAuth
++    subjectAltName              = @alt_vpn2_user2
+ 
+ 
+-# PKIX recommendation.
++# Code Signing #
+ 
+-subjectKeyIdentifier=hash
++  # Certificates #
++    [ v3_codesign ]
++    basicConstraints            = critical, CA:FALSE
++    subjectKeyIdentifier        = hash
++    authorityKeyIdentifier      = keyid:always, issuer:always
++    keyUsage                    = critical, nonRepudiation, digitalSignature
++    extendedKeyUsage            = critical, codeSigning, msCodeInd, msCodeCom, mcCTLSign, timeStamping
++    subjectAltName              = @alt_codesign
+ 
+-authorityKeyIdentifier=keyid:always,issuer
+ 
+-basicConstraints = critical,CA:true
+ 
+-# Key usage: this is typical for a CA certificate. However since it will
+-# prevent it being used as an test self-signed certificate it is best
+-# left out by default.
+-# keyUsage = cRLSign, keyCertSign
++#####################################################################
++#--------------------------------------------------------------------
++                  ##----- OpenSSL Commands -----##
++#--------------------------------------------------------------------
++#####################################################################
+ 
+-# Some might want this also
+-# nsCertType = sslCA, emailCA
++  # Prerequisistes:
+ 
+-# Include email address in subject alt name: another PKIX recommendation
+-# subjectAltName=email:copy
+-# Copy issuer details
+-# issuerAltName=issuer:copy
++  # 1. Create 'serial' file: echo 00 > serial
+ 
+-# DER hex encoding of an extension: beware experts only!
+-# obj=DER:02:03
+-# Where 'obj' is a standard or added object
+-# You can even override a supported extension:
+-# basicConstraints= critical, DER:30:03:01:01:FF
++       # This file maintains the serial for the most recent cert, in order to know what serial to next assign.
++       # Serial is in hex, not dec[imal] format, & one can choose whichever number one wishes to start at.
+ 
+-[ crl_ext ]
++  # 2. Create 'crlnumber' file: mkdir crl && echo 01 > crl\crlnumber
++
++       # This file maintains the current serial for the CRL [Certificate Revocation List] certificate
++       # A CRL should be generated, but will not be used until one revokes a certificate via one's CA or ICA
++
++  # 3. Create 'index' file (leave blank): echo > index
++
++       # This file maintains an index of all certificates issued and is covered under the Index Section below
++       # Maintains a record of all certs issued, and is extremely important if one has revoked a certificate.
++
++  # 4. Create 'rand' file (leave blank): echo > rand
++
++       # File is utilized by for random characters & is querried by openssl during certificate/key creation.
++
++
++  # ENCRYPT_KEY [Establish Certificate Options] is not currently commented out; Server cert keys should not
++  # be created with encryption, so add the additional command option to key creation: -nodes
++
++    # Encrypting a server key will result in the server requiring the passkey every time it's started/restarted;
++    # in other words, a massive inconvenience, and potentially destrimental.
++
++
++  # Provided you utilize the SubjectAltName (SAN) section [highly recommended], the Common Name is not required
++  # to be the IP/DNS/FQDN, and can be whatever name you wish it to be
++
++
++#####################################################################
++#--------------------------------------------------------------------
++#####################################################################
++
++  # For VPN Server certs:
++    # When creating a VPN server cert using 'extendedKeyUsage = serverAuth', in your VPN client config you must
++    # change "remote-cert-tls server" to "remote-cert-eku 'TLS Web Server Authentication'" ( see https://www.v13.gr/blog/?p=386 )
++
++  # For BSD/*nix OSes:
++    # Certificates should have 644 permissions
++      # chmod 644 ./certificate.crt.pem
++
++    # Keys should have 600 permissions
++      # chmod 600 ./certificate.key
++
++
++#--------------------------------------------------------------------
++               ## ----- Certificate Authority ----- ##
++#--------------------------------------------------------------------
++
++  # Generate CA:
++
++      # CA key should have a secure password of at least 20 characters, containing at least:
++        # 2 uppercase letters, 2 lowercase letters, 2 numbers, and 2 symbols
++
++
++    # Request:
++      # openssl req -x509 -new -sha512 -days 3650 -newkey rsa:4096 -keyout CA.key.pem -out CA.crt.pem -config .\openssl.cnf -extensions v3_ca
++
++    # Generate CA CRL Cert:
++      # openssl ca -gencrl -keyfile CA.key.pem -cert CA.crt.pem -out CA.crl.pem -config .\openssl.cnf
++
++    # Convert CA CRL Cert to DER CRL:
++      # openssl crl -inform PEM -in '.\CA.crl.pem' -outform DER -out '.\CA.crl'
++
++
++#--------------------------------------------------------------------
++        ## ----- Intermediate Certificate Authority ----- ##
++#--------------------------------------------------------------------
++
++  # Gernerate Intermediate CA:
++
++    # Intermediate CA key should have a secure password of at least 20 characters, containing at least:
++      # 2 uppercase letters, 2 lowercase letters, 2 numbers, and 2 symbols
++
++
++    # Request:
++      # openssl req -out '.\VPN-ICA.csr' -new -days 3650 -sha512 -newkey rsa:4096 -keyout VPN-ICA.key -config .\openssl.cnf -extensions v3_intermediate_ca
++
++    # Sign Intermediate CA with CA:
++      # openssl x509 -req -sha512 -days 3650 -in '.\VPN-ICA.csr' -CA CA.crt.pem -CAkey CA.key -CAserial .\serial -out VPN-ICA.crt.pem -extfile .\openssl.cnf -extensions v3_intermediate_ca
++
++    # Generate Intermediate CA CRL Cert:
++      # openssl ca -config .\openssl.cnf -gencrl -keyfile VPN-ICA.key -cert VPN-ICA.crt.pem -out '.\VPN-ICA.crl.pem'
++
++    # Convert Intermediate CA CRL Cert to DER CRL:
++      # openssl crl -inform PEM -in '.\VPN-ICA.crl.pem' -outform DER -out '.\VPN-ICA.crl'
++
++#--------------------------------------------------------------------
++
++  # Create Concatenated CA - Intermediate CA Certificate Chain:
++
++    # Windows:
++      # cmd /c type '.\Router 2 ICA.crt.pem' '.\Sophos UTM CA.crt.pem' > '.\Sophos VPN CA Chain.pem'
++
++    # Linux/BSD:
++      # cat './Router 2 ICA.crt.pem' './Sophos UTM CA.crt.pem' > './Sophos VPN CA Chain.pem'
++
++#--------------------------------------------------------------------
++
++  # Export VPN Client with an Intermediate CA:
++    # openssl pkcs12 -export -out '.\VPN Client1.p12' -inkey '.\VPN Client1.key.pem' -in '.\VPN Client1.crt.pem' -certfile '.\Sophos VPN CA Chain.crt.pem'
++
++    # The Intermediate CA is still used to sign the certs it issues, however, the CA - Intermediate CA chain cert must
++    # be exported with the client cert & key to maintain the chain of trust of Certificate -> Intermediate CA -> CA.
++      # The certificate path of the client cert should show a hierarchy of CA -> Intermediate CA -> Client.
++
++
++#--------------------------------------------------------------------
++                ## ----- Client Certificate ----- ##
++#--------------------------------------------------------------------
++
++    # For Server certs, add to end of the Request command:  -nodes
++      # If a server cert is created with an encrypted key, one will need to manually type in the encryption password
++      # whenever starting or restarting the server (inconvenient and impractical for VPN and Web Servers).
++
++
++  # Request:
++    # openssl req -out '.\NextCloud.csr' -new -days 3650 -sha512 -newkey rsa:3072 -keyout '.\NextCloud.key.pem' -config .\openssl.cnf -extensions v3_nextcloud -nodes
++
++    # With multiple common names:
++      # openssl req -out '.\Sophos-UTM-VPN-client.csr' -new -days 3650 -sha512 -newkey rsa:3072 \
++      # -subj '/C=US/ST=ST/L=Locality/O=Sophos UTM/OU=LAN/CN=UserName/CN=User.Name/CN=User_Name/emailAddress=whatever@whichever.com' \
++      # -keyout '.\Sophos-UTM-VPN-client.key.pem' -config .\openssl.cnf -extensions v3_vpn_client
++
++  # Sign:
++    # openssl x509 -req -sha512 -days 3650 -in '.\WRT1900ac.csr' -CA '.\Sophos UTM CA.crt.pem' -CAkey '.\Sophos UTM CA.key.pem' -CAserial .\serial -out '.\crt\WRT1900ac.crt.pem' -extfile .\openssl.cnf -extensions v3_nextcloud
++
++  # Export:
++    # openssl pkcs12 -export -out '.\NextCloud.p12' -inkey '.\NextCloud.key.pem' -in '.\NextCloud.crt.pem' -certfile CA.crt.pem
++
++
++#--------------------------------------------------------------------
++            ## ----- Verification of Certificates ----- ##
++#--------------------------------------------------------------------
++
++  # Verify Certificate Signing Request (CSR):
++    # openssl req -text -noout -verify -in CSR.csr
++
++  # Verify Private Key:
++    # openssl rsa -check -in private.key
++
++  # Verify Certificate:
++    # openssl x509 -text -noout -in certificate.crt
++
++  # Verify PKCS12 Certificate [.pfx/.p12]:
++    # openssl pkcs12 -info -in certificate.p12
++
++
++#--------------------------------------------------------------------
++    ## ----- Intermediate CA Android Build Certificates ----- ##
++#--------------------------------------------------------------------
++
++    # This will apply to the following six certificates: media, platform, releasekeys, shared, superuser, testkey
++      # the following steps will need to be repeated for each of the six
++
++
++  # Generate Individual intermediate Build CA Request:
++    # openssl req -out '.\media.csr' -new -days 3650 -sha512 -config .\openssl.cnf -extensions v3_intermediate_ca -newkey rsa:4096f4 -ouform PEM -keyout '.\media.key.pem'
++
++  # Convert PEM key to PK8:
++    # openssl pkcs8 -in media.key.pem -topk8 -outform DER -out media.pk8 -nocrypt
++
++  # Sign Individual intermediate Build CA Request:
++    # openssl x509 -req -sha512 -days 3650 -in '.\media.csr' -CA CA.crt.pem -CAkey CA.key -CAserial .\serial -out '.\media.x509.pem' -extfile .\openssl.cnf -extensions v3_intermediate_ca
++
++  # Generate Individual intermediate Build CA CRL Cert:
++    # openssl ca -config .\openssl.cnf -gencrl -keyfile '.\media.key.pem' -cert '.\media.x509.pem' -out '.\media.crl.pem' -extfile '.\openssl.cnf' -extensions crl_ext
++
++  # Convert Individual intermediate Build CA CRL Cert to DER crl:
++    # openssl crl -inform PEM -in '.\media.crl.pem' -outform DER -out '.\media.crl'
++
++#--------------------------------------------------------------------
++
++  # Concatenated Intermediate Build CA - CA PEM Certificate:
++
++    # Windows:
++      # cmd /c type 'media.x509.pem' 'Sophos UTM CA.crt.pem' > 'Android-Media-CA-Chain.pem'
++
++    # Linux/BSD:
++      # cat './media.x509.pem' './Sophos UTM CA.crt.pem' > './Android-Media-CA-Chain.pem'
++
++#--------------------------------------------------------------------
++
++  # Create PKCS12 for Import into Keystore:
++    # openssl pkcs12 -export -out .\media.p12 -inkey .\media.key.pem -in .\media.x509.pem  -certfile '.\Android-Media-CA-Chain.pem' -password pass:media -name media
++
++    # The Intermediate CA is still used to sign packages/images, however, the CA - Intermediate CA chain cert
++    # must be exported with the client cert & key to maintain the certificate chain of trust of: Package/Image -> Intermediate CA -> CA
++
++      # Copy the following files into your build directory (location will vary depending on ROM):
++
++        # For each of the six: *.x509.pem, *.pk8, Android-*-CA-Chain.pem, *.p12
++          # i.e. media.x509.pem, media.pk8, Android-Media-CA-Chain.pem, media.p12
++
++
++    # One example of how to import into keystore prior to build:
++      # Source: http://stackoverflow.com/questions/22212869/how-can-i-generate-an-android-keystore-from-a-key-pk8-and-certificate-pem
++
++        # keytool -importkeystore -deststorepass password -destkeystore .keystore -srckeystore media.p12 -srcstoretype PKCS12 -srcstorepass media
++        # keytool -list -v -keystore .keystore
++
++
++#####################################################################
++#--------------------------------------------------------------------
++#####################################################################
++
++                      ##---- Index File -----##
++#--------------------------------------------------------------------
++
++  # If you wish to maintain the index file automatically, you'll need to use 'openssl ca' to sign certs.
++  # You can manually maintain the index file, by inputting 1 cert entry per line in the following format:
++
++    # V    261231235959Z           0a    unknown    /C=US/ST=State/L=Locality/O=Sophos UTM/OU=LAN/CN=Cert Common Name/emailaddress=whatever@whichever.com
++    # 1    2----------->    3->    4->   5----->    6--------------------------------------------------------------------------------------------------->
++
++
++      # 1. Status of Certificate:
++           # V [Valid] R [Revoked] E [Expired]
++
++      # 2. Expiration Date:
++           # Format: YYMMDDHHMMSS followed by 'Z': 2026.12.31 @ 23:59:59
++
++      # 3. Revocation Date [Format: YYMMDDHHMMSSZ,reason]
++           # Certain distros error out without a whitespace for 3 in the index file
++           # Empty if not revoked, otherwise valid reasons are:
++             # keyCompromise
++             # CACompromise
++             # affiliationChanged
++             # superseded
++             # cessationOfOperation
++             # certificateHold
++             # privilegeWithdrawn
++             # AACompromise
++
++      # 4. Serial number in hex format: 0a is hex for 10
++           # Windows:
++             # Calculator has programmer feature which can convert dec <-> hex
++           # Linux/BSD:
++             # cli hex -> dec:
++               # printf '%d\n' 0x0a [returns 10]
++             # cli dec -> hex:
++               # printf '%x\n' 10 [returns 0a]
++
++      # 5. Certificate Filename or Literal String
++           # Certificate filename or literal string 'unknown'
++
++      # 6. Distinguished Name
++
++
++#--------------------------------------------------------------------
++#####################################################################
++                      ##----- Key Usage -----##
++#--------------------------------------------------------------------
++
++
++    # !!!  CA / ICA ONLY  !!! #
++#--------------------------------------------------------------------
++
++  # These extensions MUST ONLY be used for CA / ICA certificates
++
++    # cRLSign:
++      # Is asserted when subject public key is used for verifying signatures on certificate revocation lists.
++
++    # keyCertSign:
++
++      # Is asserted when subject public key is used for verifying signatures on public key certificates.
++        # If keyCertSign is asserted, the CA bit in the basic constraints extension (Section 4.2.1.9) MUST also be asserted.
++
++
++    # All #
++#--------------------------------------------------------------------
++
++  # digitalSignature:
++
++    # Certificates with this flag set can be used to apply a digital signature. Digital signatures are often used for entity
++    # authentication and data origin authentication with integrity.
++      # Is asserted when subject public key is used for verifying digital signatures, other than signatures on certificates
++      # (bit 5) and CRLs (bit 6).
++
++  # nonRepudiation:
++
++    # Certificates with this flag set can be used to sign data as above but the certificate public key may be used to provide
++    # non-repudiation services preventing the signing entity from falsely denying some action.
++      # Is asserted when subject public key is used to verify digital signatures, other than signatures on certificates (bit 5)
++      # and CRLs (bit 6).
++        # NOTE: Recent editions of X.509 have renamed the nonRepudiation bit to contentCommitment.
++
++  # keyEncipherment:
++
++    # Certificates with this flag set may be used by the subject to encrypt a symmetric key which is then transferred to the
++    # target, decrypted, and subsequently used to encrypt and decrypt data sent between the two entities.
++      # Is asserted when subject public key is used for enciphering private or secret keys when an RSA public key is to be
++      # used for encrypting a symmetric content-decryption key or an asymmetric private key.
++
++  # dataEncipherment:
++
++    # Certificates with this flag set can be used by the subject to encrypt and decrypt actual application data.
++      # Is asserted when subject public key is used for directly enciphering raw user data without the use of an intermediate
++      # symmetric cipher.
++        # NOTE: Use of this bit extremely uncommon; all applications use key transport / key agreement to establish a symmetric key.
++
++  # keyAgreement:
++
++    # Certificates with this flag set enable the subject to use a key agreement protocol, such as Diffie-Hellman, to establish
++    # a symmetric key with a target that may then be used to encrypt and decrypt data sent between the two entities
++      # Is asserted when subject public key is used for key agreement (i.e. when a Diffie-Hellman key is used for key management).
++
++  # encipherOnly:
++
++    # Undefined in the absence of the keyAgreement bit (keyAgreement is required).
++      # Public key used only for enciphering data while performing key agreement.
++        # When encipherOnly is asserted AND keyAgreement also set, subject public key may be used ONLY for enciphering data while
++        # performing key agreement.
++
++  # decipherOnly:
++
++    # Undefined in the absence of the keyAgreement bit (keyAgreement is required).
++      # Public key used only for deciphering data while performing key agreement.
++        # When decipherOnly is asserted AND keyAgreement is also set, subject public key may be used ONLY for deciphering data
++        # while performing key agreement.
++
++
++#--------------------------------------------------------------------
++                  ##----- RFC 5280 4.2.1.3 -----##
++#--------------------------------------------------------------------
++
++    # https://tools.ietf.org/html/rfc5280
++
++  # id-ce-keyUsage OBJECT IDENTIFIER ::=  { id-ce 15 }
++
++    # KeyUsage ::= BIT STRING {
++      # digitalSignature        (0),
++
++      # nonRepudiation          (1),
++        # NOTE: Recent editions of X.509 have renamed this bit to contentCommitment
++
++      # keyEncipherment         (2),
++      # dataEncipherment        (3),
++      # keyAgreement            (4),
++      # keyCertSign             (5),
++      # cRLSign                 (6),
++      # encipherOnly            (7),
++      # decipherOnly            (8) }
++
++
++#--------------------------------------------------------------------
++#####################################################################
++                  ##----- Extended Key Usage -----##
++#--------------------------------------------------------------------
++
++  # serverAuth:
++
++    # SSL/TLS Web/VPN Server authentication EKU which is assigned to a server and distinguishes them as a server for which
++    # options, clients can authenticate against.  All VPN servers should be signed with this EKU present.
++      # This supercedes nscertype as the 'ns' in nscertype stands for NetScape [browser], which hasn't existed for some time.
++
++  # clientAuth:
++
++    # SSL/TLS Web/VPN Client authentication EKU which is assigned to a server client, and distinguishes them as a client only.
++      # All VPN clients MUST be signed with this EKU present.
++
++  # codeSigning:
++    # Code Signing... self explanatory
++
++  # emailProtection:
++    # Email Protection via S/MIME, allows you to send and receive encrypted emails
++
++  # timeStamping:
++    # Trusted Timestamping... self explanatory
++
++  # OCSPSigning:
++    # OCSP Signing... self explanatory
++
++
++  # ipsecIKE:
++
++    # IPSec Internet Key Exchange, of which I believe is in the same boat as the three below; however, some research needs
++    # to be Performed to determine if this EKU should also no longer be utilized.
++      # clientAuth can be utilized in a IPSec VPN client cert.
++
++  # ipsecEndSystem, ipsecTunnel, & ipsecUser:
++
++    # !!! SHOULD NOT BE UTILIZED !!!
++
++      # There were three IPsec-related object identifiers in EKU that were assigned in 1999, and the semantics of these
++      # values were never clearly defined. The use of these three EKU values in IKE/IPsec is obsolete and explicitly
++      # deprecated by this specification. CAs SHOULD NOT issue certificates for use in IKE with them.
++
++
++  # msCodeInd:
++    # Microsoft Individual Code Signing (authenticode)... self explanatory
++
++  # msCodeCom:
++    # Microsoft Commerical Code Signing (authenticode)... self explanatory
++
++  # mcCTLSign:
++    # Microsoft Trust List Signing... self explanatory
++
++  # msEFS:
++    # Microsoft Encrypted File System... self explanatory
++
++
++
++#--------------------------------------------------------------------
++                 ##----- RFC 5280 4.2.1.12 -----##
++#--------------------------------------------------------------------
++
++    # https://tools.ietf.org/html/rfc5280
++
++  # anyExtendedKeyUsage OBJECT IDENTIFIER ::= { id-ce-extKeyUsage 0 }
++
++    # id-kp OBJECT IDENTIFIER ::= { id-pkix 3 }
++
++      # id-kp-serverAuth             OBJECT IDENTIFIER ::= { id-kp 1 }
++
++        # TLS WWW server authentication:
++          # Key usage bits that may be consistent:
++            # digitalSignature, keyEncipherment or keyAgreement
++
++      # id-kp-clientAuth             OBJECT IDENTIFIER ::= { id-kp 2 }
++
++        # TLS WWW client authentication:
++          # Key usage bits that may be consistent:
++            # digitalSignature and/or keyAgreement
++
++      # id-kp-codeSigning             OBJECT IDENTIFIER ::= { id-kp 3 }
++
++        # Signing of downloadable executable code
++          # Key usage bits that may be consistent:
++            # digitalSignature
++
++      # id-kp-emailProtection         OBJECT IDENTIFIER ::= { id-kp 4 }
++
++        # Email protection:
++          # Key usage bits that may be consistent:
++            # digitalSignature, nonRepudiation, and/or (keyEncipherment or keyAgreement)
++
++      # id-kp-timeStamping            OBJECT IDENTIFIER ::= { id-kp 8 }
++
++        # Binding the hash of an object to a time
++          # Key usage bits that may be consistent:
++            # digitalSignature and/or nonRepudiation
++
++      # id-kp-OCSPSigning            OBJECT IDENTIFIER ::= { id-kp 9 }
++
++        # Signing OCSP responses:
++          # Key usage bits that may be consistent:
++            # digitalSignature and/or nonRepudiation
++
++
++#--------------------------------------------------------------------
++#####################################################################
++              ##----- Key Exchange Algorithms  -----##
++#--------------------------------------------------------------------
++
++    # RSA:
++
++      # Key exchange occurs via encryption of a random value [chosen by the client] via the server public key. This requires the
++      # server public key to be an RSA key, and the server certificate must utilize the 'keyAgreement' keyUsage extension).
++
++    # DH_RSA:
++
++      # Key exchange occurs via a static Diffie-Hellman key. Server Public Key must be a Diffie-Hellman key, of which must have
++      # been issued by a CA that was using an RSA key signing key.
++
++    # DH_DSA:
++      # Like DH_RSA, except that the CA used a DSA key in lieu of RSA.
++
++    # DHE_RSA:
++
++      # Key exchange occurs via an ephemeral Diffie-Hellman; the server dynamically generates & signs a DH public key, sending it to
++      # the client. Server Public Key must be an RSA key, and it's certificate must utilize the digitalSignature keyUsage extension
++
++    # DHE_DSA:
++      # Like DHE_RSA, except that the CA used a DSA key in lieu of RSA.
++
++
++#--------------------------------------------------------------------
++#####################################################################
++        ##----- Elliptic-Curve Key Exchange Algorithms -----##
++#--------------------------------------------------------------------
++
++    # ECDH_ECDSA:
++
++      # Like DH_DSA, but with elliptic curves: the server public key must be an ECDH key, with a certificate issued by a CA
++      # which utilized an ECDSA public key.
++
++    # ECDH_RSA:
++      # Like ECDH_ECDSA, except that the CA used an RSA key
++
++    # ECDHE_ECDSA:
++
++      # The server sends a dynamically generated EC Diffie-Hellman key and signs it with its own ECDSA key. This is equivalent
++      # to DHE_DSS, but with elliptic curves for both the Diffie-Hellman and signature.
+ 
+-# CRL extensions.
+-# Only issuerAltName and authorityKeyIdentifier make any sense in a CRL.
++    # ECDHE_RSA:
+ 
+-# issuerAltName=issuer:copy
+-authorityKeyIdentifier=keyid:always
++      # Like ECDHE_ECDSA, except that the server public key is an RSA key, utilized for signing the ephemeral elliptic-curve
++      # Diffie-Hellman key.
+ 
+-[ proxy_cert_ext ]
+-# These extensions should be added when creating a proxy certificate
+ 
+-# This goes against PKIX guidelines but some CAs do it and some software
+-# requires this to avoid interpreting an end user certificate as a CA.
+-
+-basicConstraints=CA:FALSE
+-
+-# Here are some examples of the usage of nsCertType. If it is omitted
+-# the certificate can be used for anything *except* object signing.
+-
+-# This is OK for an SSL server.
+-# nsCertType			= server
+-
+-# For an object signing certificate this would be used.
+-# nsCertType = objsign
+-
+-# For normal client use this is typical
+-# nsCertType = client, email
+-
+-# and for everything including object signing:
+-# nsCertType = client, email, objsign
+-
+-# This is typical in keyUsage for a client certificate.
+-# keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+-
+-# This will be displayed in Netscape's comment listbox.
+-nsComment			= "OpenSSL Generated Certificate"
+-
+-# PKIX recommendations harmless if included in all certificates.
+-subjectKeyIdentifier=hash
+-authorityKeyIdentifier=keyid,issuer
+-
+-# This stuff is for subjectAltName and issuerAltname.
+-# Import the email address.
+-# subjectAltName=email:copy
+-# An alternative to produce certificates that aren't
+-# deprecated according to PKIX.
+-# subjectAltName=email:move
+-
+-# Copy subject details
+-# issuerAltName=issuer:copy
+-
+-#nsCaRevocationUrl		= http://www.domain.dom/ca-crl.pem
+-#nsBaseUrl
+-#nsRevocationUrl
+-#nsRenewalUrl
+-#nsCaPolicyUrl
+-#nsSslServerName
+-
+-# This really needs to be in place for it to be a proxy certificate.
+-proxyCertInfo=critical,language:id-ppl-anyLanguage,pathlen:3,policy:foo
+-
+-####################################################################
+-[ tsa ]
+-
+-default_tsa = tsa_config1	# the default TSA section
+-
+-[ tsa_config1 ]
+-
+-# These are used by the TSA reply generation only.
+-dir		= ./demoCA		# TSA root directory
+-serial		= $dir/tsaserial	# The current serial number (mandatory)
+-crypto_device	= builtin		# OpenSSL engine to use for signing
+-signer_cert	= $dir/tsacert.pem 	# The TSA signing certificate
+-					# (optional)
+-certs		= $dir/cacert.pem	# Certificate chain to include in reply
+-					# (optional)
+-signer_key	= $dir/private/tsakey.pem # The TSA private key (optional)
+-signer_digest  = sha256			# Signing digest to use. (Optional)
+-default_policy	= tsa_policy1		# Policy if request did not specify it
+-					# (optional)
+-other_policies	= tsa_policy2, tsa_policy3	# acceptable policies (optional)
+-digests     = sha1, sha256, sha384, sha512  # Acceptable message digests (mandatory)
+-accuracy	= secs:1, millisecs:500, microsecs:100	# (optional)
+-clock_precision_digits  = 0	# number of digits after dot. (optional)
+-ordering		= yes	# Is ordering defined for timestamps?
+-				# (optional, default: no)
+-tsa_name		= yes	# Must the TSA name be included in the reply?
+-				# (optional, default: no)
+-ess_cert_id_chain	= no	# Must the ESS cert id chain be included?
+-				# (optional, default: no)
+-ess_cert_id_alg		= sha1	# algorithm to compute certificate
+-				# identifier (optional, default: sha1)
++#--------------------------------------------------------------------
++#####################################################################

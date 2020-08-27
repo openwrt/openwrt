@@ -24,7 +24,7 @@ config BUSYBOX_DEFAULT_FEATURE_VERBOSE_USAGE
 	default y
 config BUSYBOX_DEFAULT_FEATURE_COMPRESS_USAGE
 	bool
-	default y
+	default n
 config BUSYBOX_DEFAULT_LFS
 	bool
 	default y
@@ -60,7 +60,7 @@ config BUSYBOX_DEFAULT_INSTALL_NO_USR
 	default n
 config BUSYBOX_DEFAULT_FEATURE_SUID
 	bool
-	default y
+	default n
 config BUSYBOX_DEFAULT_FEATURE_SUID_CONFIG
 	bool
 	default n
@@ -77,6 +77,9 @@ config BUSYBOX_DEFAULT_SELINUX
 	bool
 	default n
 config BUSYBOX_DEFAULT_FEATURE_CLEAN_UP
+	bool
+	default n
+config BUSYBOX_DEFAULT_FEATURE_SYSLOG_INFO
 	bool
 	default n
 config BUSYBOX_DEFAULT_FEATURE_SYSLOG
@@ -300,7 +303,7 @@ config BUSYBOX_DEFAULT_FEATURE_SKIP_ROOTFS
 	default n
 config BUSYBOX_DEFAULT_MONOTONIC_SYSCALL
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_IOCTL_HEX2STR_ERROR
 	bool
 	default y
@@ -601,9 +604,6 @@ config BUSYBOX_DEFAULT_FALSE
 config BUSYBOX_DEFAULT_FOLD
 	bool
 	default n
-config BUSYBOX_DEFAULT_FSYNC
-	bool
-	default y
 config BUSYBOX_DEFAULT_HEAD
 	bool
 	default y
@@ -780,7 +780,7 @@ config BUSYBOX_DEFAULT_FEATURE_STAT_FILESYSTEM
 	default n
 config BUSYBOX_DEFAULT_STTY
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_SUM
 	bool
 	default n
@@ -790,6 +790,9 @@ config BUSYBOX_DEFAULT_SYNC
 config BUSYBOX_DEFAULT_FEATURE_SYNC_FANCY
 	bool
 	default n
+config BUSYBOX_DEFAULT_FSYNC
+	bool
+	default y
 config BUSYBOX_DEFAULT_TAC
 	bool
 	default n
@@ -1619,6 +1622,9 @@ config BUSYBOX_DEFAULT_FEATURE_MDEV_EXEC
 config BUSYBOX_DEFAULT_FEATURE_MDEV_LOAD_FIRMWARE
 	bool
 	default n
+config BUSYBOX_DEFAULT_FEATURE_MDEV_DAEMON
+	bool
+	default n
 config BUSYBOX_DEFAULT_MESG
 	bool
 	default n
@@ -2024,6 +2030,9 @@ config BUSYBOX_DEFAULT_I2CDUMP
 config BUSYBOX_DEFAULT_I2CDETECT
 	bool
 	default n
+config BUSYBOX_DEFAULT_I2CTRANSFER
+	bool
+	default n
 config BUSYBOX_DEFAULT_INOTIFYD
 	bool
 	default n
@@ -2126,6 +2135,9 @@ config BUSYBOX_DEFAULT_STRINGS
 config BUSYBOX_DEFAULT_TIME
 	bool
 	default y
+config BUSYBOX_DEFAULT_TS
+	bool
+	default n
 config BUSYBOX_DEFAULT_TTYSIZE
 	bool
 	default n
@@ -2503,6 +2515,9 @@ config BUSYBOX_DEFAULT_TFTP
 	bool
 	default n
 config BUSYBOX_DEFAULT_FEATURE_TFTP_PROGRESS_BAR
+	bool
+	default n
+config BUSYBOX_DEFAULT_FEATURE_TFTP_HPA_COMPAT
 	bool
 	default n
 config BUSYBOX_DEFAULT_TFTPD
@@ -3048,6 +3063,9 @@ config BUSYBOX_DEFAULT_FEATURE_SH_MATH
 config BUSYBOX_DEFAULT_FEATURE_SH_MATH_64
 	bool
 	default y
+config BUSYBOX_DEFAULT_FEATURE_SH_MATH_BASE
+	bool
+	default n
 config BUSYBOX_DEFAULT_FEATURE_SH_EXTRA_QUIET
 	bool
 	default n

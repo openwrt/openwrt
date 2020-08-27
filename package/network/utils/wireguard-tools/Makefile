@@ -11,18 +11,17 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=wireguard-tools
 
-PKG_VERSION:=1.0.20191226
+PKG_VERSION:=1.0.20200513
 PKG_RELEASE:=1
 
 PKG_SOURCE:=wireguard-tools-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://git.zx2c4.com/wireguard-tools/snapshot/
-PKG_HASH:=aa8af0fdc9872d369d8c890a84dbc2a2466b55795dccd5b47721b2d97644b04f
+PKG_HASH:=e73409a9fb8c90506db241d1e1a4e7372a60dbfa400e37f4ab2fd70a92ba495f
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING
 
 PKG_BUILD_PARALLEL:=1
-PKG_USE_MIPS16:=0
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/package-defaults.mk
@@ -33,7 +32,7 @@ MAKE_VARS += PLATFORM=linux
 define Package/wireguard-tools
   $(call Package/wireguard/Default)
   TITLE:=WireGuard userspace control program (wg)
-  DEPENDS:=+libmnl +ip
+  DEPENDS:=+ip
 endef
 
 define Package/wireguard-tools/description
