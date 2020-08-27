@@ -113,7 +113,7 @@ hostapd_prepare_device_config() {
 	local base_cfg=
 
 	json_get_vars country country_ie beacon_int:100 dtim_period:2 doth require_mode legacy_rates \
-		acs_chan_bias local_pwr_constraint spectrum_mgmt_required
+		acs_chan_bias local_pwr_constraint spectrum_mgmt_required airtime_mode
 
 	hostapd_set_log_options base_cfg
 
@@ -121,6 +121,7 @@ hostapd_prepare_device_config() {
 	set_default spectrum_mgmt_required 0
 	set_default doth 1
 	set_default legacy_rates 1
+	set_default airtime_mode 0
 
 	[ "$hwmode" = "b" ] && legacy_rates=1
 
@@ -167,6 +168,7 @@ hostapd_prepare_device_config() {
 	[ -n "$brlist" ] && append base_cfg "basic_rates=$brlist" "$N"
 	append base_cfg "beacon_int=$beacon_int" "$N"
 	append base_cfg "dtim_period=$dtim_period" "$N"
+	[ "$airtime_mode" -gt 0 ] && append base_cfg "airtime_mode=$airtime_mode" "$N"
 
 	json_get_values opts hostapd_options
 	for val in $opts; do
@@ -272,6 +274,8 @@ hostapd_common_add_bss_config() {
 	config_add_array operator_icon
 	config_add_array hs20_conn_capab
 	config_add_string osu_ssid hs20_wan_metrics hs20_operating_class hs20_t_c_filename hs20_t_c_timestamp
+
+	config_add_int airtime_bss_weight airtime_bss_limit
 }
 
 hostapd_set_vlan_file() {
@@ -387,7 +391,8 @@ hostapd_set_bss_options() {
 		iapp_interface eapol_version dynamic_vlan ieee80211w nasid \
 		acct_server acct_secret acct_port acct_interval \
 		bss_load_update_period chan_util_avg_period sae_require_mfp \
-		multi_ap multi_ap_backhaul_ssid multi_ap_backhaul_key
+		multi_ap multi_ap_backhaul_ssid multi_ap_backhaul_key \
+		airtime_bss_weight airtime_bss_limit
 
 	set_default isolate 0
 	set_default maxassoc 0
@@ -405,6 +410,8 @@ hostapd_set_bss_options() {
 	set_default chan_util_avg_period 600
 	set_default utf8_ssid 1
 	set_default multi_ap 0
+	set_default airtime_bss_weight 0
+	set_default airtime_bss_limit 0
 
 	append bss_conf "ctrl_interface=/var/run/hostapd"
 	if [ "$isolate" -gt 0 ]; then
@@ -416,6 +423,9 @@ hostapd_set_bss_options() {
 	if [ "$max_inactivity" -gt 0 ]; then
 		append bss_conf "ap_max_inactivity=$max_inactivity" "$N"
 	fi
+
+	[ "$airtime_bss_weight" -gt 0 ] && append bss_conf "airtime_bss_weight=$airtime_bss_weight" "$N"
+	[ "$airtime_bss_limit" -gt 0 ] && append bss_conf "airtime_bss_limit=$airtime_bss_limit" "$N"
 
 	append bss_conf "bss_load_update_period=$bss_load_update_period" "$N"
 	append bss_conf "chan_util_avg_period=$chan_util_avg_period" "$N"
