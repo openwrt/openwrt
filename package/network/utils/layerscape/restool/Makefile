@@ -25,9 +25,14 @@ define Package/restool
   DEPENDS:=@TARGET_layerscape_armv8_64b
 endef
 
+define Package/restool/config
+  source "$(SOURCE)/Config.in"
+endef
+
 define Build/Compile
 	cd $(PKG_BUILD_DIR); \
 	sed -i 's/v1.6/$(PKG_VERSION)/g' Makefile; \
+	sed -i 's/get_label() {/get_label() { usleep 80000/g' scripts/ls-main; \
 	$(MAKE) CROSS_COMPILE=$(TARGET_CROSS) DESTDIR=$(PKG_BUILD_DIR)/output/ install
 endef
 
