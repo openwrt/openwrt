@@ -1,0 +1,54 @@
+From 07dc42ff9b9c38eae221b36acda7134ab8670af8 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni@codeaurora.org>
+Date: Thu, 26 Mar 2020 15:51:34 +0100
+Subject: [PATCH] mac80211: Check port authorization in the
+ ieee80211_tx_dequeue() case
+
+commit ce2e1ca703071723ca2dd94d492a5ab6d15050da upstream.
+
+mac80211 used to check port authorization in the Data frame enqueue case
+when going through start_xmit(). However, that authorization status may
+change while the frame is waiting in a queue. Add a similar check in the
+dequeue case to avoid sending previously accepted frames after
+authorization change. This provides additional protection against
+potential leaking of frames after a station has been disconnected and
+the keys for it are being removed.
+
+Cc: stable@vger.kernel.org
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+Link: https://lore.kernel.org/r/20200326155133.ced84317ea29.I34d4c47cd8cc8a4042b38a76f16a601fbcbfd9b3@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ net/mac80211/tx.c | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -3496,8 +3496,25 @@ begin:
+ 	tx.sdata = vif_to_sdata(info->control.vif);
+ 	tx.hdrlen = ieee80211_padded_hdrlen(hw, hdr->frame_control);
+ 
+-	if (txq->sta)
++	if (txq->sta) {
+ 		tx.sta = container_of(txq->sta, struct sta_info, sta);
++		/*
++		 * Drop unicast frames to unauthorised stations unless they are
++		 * EAPOL frames from the local station.
++		 */
++		if (unlikely(!ieee80211_vif_is_mesh(&tx.sdata->vif) &&
++			     tx.sdata->vif.type != NL80211_IFTYPE_OCB &&
++			     !is_multicast_ether_addr(hdr->addr1) &&
++			     !test_sta_flag(tx.sta, WLAN_STA_AUTHORIZED) &&
++			     (!(info->control.flags &
++				IEEE80211_TX_CTRL_PORT_CTRL_PROTO) ||
++			      !ether_addr_equal(tx.sdata->vif.addr,
++						hdr->addr2)))) {
++			I802_DEBUG_INC(local->tx_handlers_drop_unauth_port);
++			ieee80211_free_txskb(&local->hw, skb);
++			goto begin;
++		}
++	}
+ 
+ 	/*
+ 	 * The key can be removed while the packet was queued, so need to call

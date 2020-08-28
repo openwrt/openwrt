@@ -1,0 +1,34 @@
+From 8ad73f9e86bdb079043868e3543d302b57068b80 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Sun, 29 Mar 2020 22:50:06 +0200
+Subject: [PATCH] mac80211: fix authentication with iwlwifi/mvm
+
+commit be8c827f50a0bcd56361b31ada11dc0a3c2fd240 upstream.
+
+The original patch didn't copy the ieee80211_is_data() condition
+because on most drivers the management frames don't go through
+this path. However, they do on iwlwifi/mvm, so we do need to keep
+the condition here.
+
+Cc: stable@vger.kernel.org
+Fixes: ce2e1ca70307 ("mac80211: Check port authorization in the ieee80211_tx_dequeue() case")
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Cc: Woody Suwalski <terraluna977@gmail.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ net/mac80211/tx.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -3502,7 +3502,8 @@ begin:
+ 		 * Drop unicast frames to unauthorised stations unless they are
+ 		 * EAPOL frames from the local station.
+ 		 */
+-		if (unlikely(!ieee80211_vif_is_mesh(&tx.sdata->vif) &&
++		if (unlikely(ieee80211_is_data(hdr->frame_control) &&
++			     !ieee80211_vif_is_mesh(&tx.sdata->vif) &&
+ 			     tx.sdata->vif.type != NL80211_IFTYPE_OCB &&
+ 			     !is_multicast_ether_addr(hdr->addr1) &&
+ 			     !test_sta_flag(tx.sta, WLAN_STA_AUTHORIZED) &&
