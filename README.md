@@ -49,13 +49,23 @@ packages into package/feeds/
 
 3. Run "make menuconfig" to select your preferred configuration for the
 toolchain, target system & firmware packages.
+```bash
+cp config.mt76x8 .config
+make menuconfig
+```
 
 4. Run "make" to build your firmware. This will download all sources, build
 the cross-compile toolchain and then cross-compile the Linux kernel & all
 chosen applications for your target system.
+```bash
+make -j4
+```
+
+73, Michael BD7MQB
 
 Sunshine!
-	Your OpenWrt Community
-	http://www.openwrt.org
+
+Your OpenWrt Community
+http://www.openwrt.org
 
 
