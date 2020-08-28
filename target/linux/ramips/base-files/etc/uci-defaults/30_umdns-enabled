@@ -1,0 +1,9 @@
+#!/bin/sh
+uci batch <<-EOF
+	set umdns.network.='lan trm_wwan wan'
+	commit umdns
+EOF
+
+/etc/init.d/umdns restart
+
+exit 0

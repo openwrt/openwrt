@@ -233,7 +233,19 @@ default_postinst() {
 			kmodloader
 		fi
 
-		if grep -m1 -q -s "^/etc/sysctl.d/" "$filelist"; then
+	local shell="$(which bash)"
+	for i in $(grep -s "^/etc/init.d/" "$root$filelist"); do
+		if [ -n "$root" ]; then
+			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" enable
+		else
+			if [ "$PKG_UPGRADE" != "1" ]; then
+				"$i" enable
+			fi
+			"$i" start
+		fi
+	done
+
+	if grep -m1 -q -s "^/etc/sysctl.d/" "$filelist"; then
 			/etc/init.d/sysctl restart
 		fi
 
@@ -248,19 +260,7 @@ default_postinst() {
 
 		rm -f /tmp/luci-indexcache
 	fi
-
-	local shell="$(which bash)"
-	for i in $(grep -s "^/etc/init.d/" "$root$filelist"); do
-		if [ -n "$root" ]; then
-			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" enable
-		else
-			if [ "$PKG_UPGRADE" != "1" ]; then
-				"$i" enable
-			fi
-			"$i" start
-		fi
-	done
-
+	
 	return $ret
 }
 

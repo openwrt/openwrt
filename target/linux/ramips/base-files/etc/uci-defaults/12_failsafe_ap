@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# SSID=OSTAR_$(ifconfig | grep HWaddr | head -1 | awk -F ':' '{print $6$7}')
+
+# uci set wireless.failsafe.ssid=$SSID
+# uci commit wireless
+# wifi
+
+uci set wireless.failsafe.disabled=0
+uci commit wireless
+wifi
+
+exit 0

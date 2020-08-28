@@ -1,0 +1,10 @@
+#!/bin/sh
+uci batch <<-EOF
+	set travelmate.global.trm_enabled='1'
+	set travelmate.global.trm_iface='trm_wwan'
+	commit travelmate
+EOF
+
+/etc/init.d/travelmate restart
+
+exit 0

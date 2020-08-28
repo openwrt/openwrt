@@ -1,0 +1,29 @@
+config system
+	option hostname 'OSTAR'
+	option zonename 'Asia/Shanghai'
+	option timezone 'CST-8'
+	option ttylogin '0'
+	option log_size '64'
+	option urandom_seed '0'
+
+config timeserver 'ntp'
+	option enabled '1'
+	option enable_server '0'
+	list server '0.openwrt.pool.ntp.org'
+	list server '1.openwrt.pool.ntp.org'
+	list server '2.openwrt.pool.ntp.org'
+	list server '3.openwrt.pool.ntp.org'
+
+config button
+	option button 'wps'
+	option action 'pressed'
+	option handler '/usr/bin/aponoff'
+	option min '0'
+	#option max '3'
+
+config button
+	option button 'wps'
+	option action 'released'
+	option handler 'firstboot -y && reboot'
+	option min '10'
+	option max '30'

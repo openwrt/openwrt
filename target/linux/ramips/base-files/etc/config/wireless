@@ -1,0 +1,36 @@
+
+config wifi-device 'radio0'
+	option type 'mac80211'
+	option channel 'auto'
+	option hwmode '11bgn'
+	option path 'platform/10300000.wmac'
+	option htmode 'HT40+'
+	option country 'CN'
+	option disabled '0'
+
+config wifi-iface
+	option device 'radio0'
+	option network 'trm_wwan'
+	option mode 'sta'
+	option encryption 'psk2'
+	option ssid 'yourssid'
+	option key 'passw0rd'
+
+config wifi-iface
+	option device 'radio0'
+	option network 'trm_wwan'
+	option mode 'sta'
+	option encryption 'psk2'
+	option ssid 'yourssid2'
+	option key 'passw0rd'
+
+config wifi-iface 'failsafe'
+	option device 'radio0'
+	option mode 'ap'
+	option network 'lan'
+	option ifname 'ap0'
+	option ssid 'OSTAR-AP'
+	option encryption 'psk2'
+	option key 'Open1234'
+	option hidden '0'
+	option disabled '0'
