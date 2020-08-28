@@ -24,8 +24,8 @@ define Device/buffalo_ls421de
   DEVICE_DTS := armada-370-buffalo-ls421de
   DEVICE_PACKAGES :=  \
     kmod-rtc-rs5c372a kmod-hwmon-gpiofan kmod-hwmon-drivetemp kmod-usb3 \
-    kmod-md-raid0 kmod-md-raid1 kmod-md-mod kmod-fs-xfs mkf2fs e2fsprogs \
-    partx-utils
+    kmod-linkstation-poweroff kmod-md-raid0 kmod-md-raid1 kmod-md-mod \
+    kmod-fs-xfs mkf2fs e2fsprogs partx-utils
 endef
 TARGET_DEVICES += buffalo_ls421de
 
