@@ -1,0 +1,54 @@
+#
+# Copyright (C) 2020 Paul Spooren <mail@aparcar.org>
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=px5g-wolfssl
+PKG_RELEASE:=1
+PKG_LICENSE:=GPL-2.0-or-later
+
+PKG_USE_MIPS16:=0
+
+PKG_MAINTAINER:=Paul Spooren <mail@aparcar.org>
+
+include $(INCLUDE_DIR)/package.mk
+
+define Package/px5g-wolfssl
+  SECTION:=utils
+  CATEGORY:=Utilities
+  SUBMENU:=Encryption
+  TITLE:=X.509 certificate generator (using wolfssl)
+  DEPENDS:=+libwolfssl
+  PROVIDES:=px5g
+  VARIANT:=wolfssl
+endef
+
+define Package/px5g-wolfssl/description
+ Px5g is a tiny X.509 certificate generator.
+ It suitable to create key files and certificates in DER
+ and PEM format for use with stunnel, uhttpd and others.
+endef
+
+define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
+endef
+
+TARGET_LDFLAGS += -lwolfssl
+
+
+TARGET_CFLAGS += -Wl,--gc-sections
+
+define Build/Compile
+	$(TARGET_CC) $(TARGET_CPPFLAGS) $(TARGET_CFLAGS) -o $(PKG_BUILD_DIR)/px5g px5g-wolfssl.c $(TARGET_LDFLAGS)
+endef
+
+define Package/px5g-wolfssl/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/px5g $(1)/usr/sbin/px5g
+endef
+
+$(eval $(call BuildPackage,px5g-wolfssl))
