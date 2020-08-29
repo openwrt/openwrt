@@ -320,6 +320,33 @@ define Device/luxul_xwr-3150
 endef
 TARGET_DEVICES += luxul_xwr-3150
 
+define Device/meraki_mr32
+  DEVICE_VENODR := Meraki
+  DEVICE_MODEL := MR32
+  DEVICE_PACKAGES := $(B43) kmod-i2c-bcm-iproc kmod-i2c-gpio kmod-eeprom-at24 \
+	kmod-leds-pwm kmod-hwmon-ina2xx kmod-bluetooth
+  DEVICE_DTS := bcm53016-meraki-mr32
+# Meraki FW r23 tries to resize the part.safe partition before it will
+# flash the image. This is a bit of a problem, since resizing will fail
+# if the partition is smaller than the old one.
+  KERNEL_LOADADDR := 0x00008000
+  KERNEL_INITRAMFS_SUFFIX := .bin
+  KERNEL_INITRAMFS := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb | \
+	pad-to 10362880
+  KERNEL := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+
+# Currently the only device that uses the new image check
+  SUPPORTED_DEVICES := meraki,mr32
+
+# The loader is specifically looking for fdt@2:
+# [    3.190000] find_itb_subimage: error finding fdt@2: FDT_ERR_NOTFOUND
+# The image won't boot, if it isn't found. :(
+  DEVICE_FDT_NUM := 2
+endef
+TARGET_DEVICES += meraki_mr32
+
 define Device/netgear
   DEVICE_VENDOR := NETGEAR
   IMAGES := chk
