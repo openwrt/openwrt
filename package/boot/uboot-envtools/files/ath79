@@ -13,6 +13,12 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+8dev,lima)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x40000"
+	;;
+8dev,rambutan)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x300000" "0x100000"
+	;;
 alfa-network,ap121f|\
 alfa-network,ap121fe|\
 alfa-network,n2q|\
@@ -20,14 +26,25 @@ alfa-network,n5q|\
 alfa-network,r36a|\
 allnet,all-wap02860ac|\
 arduino,yun|\
+buffalo,bhr-4grv|\
 buffalo,bhr-4grv2|\
+buffalo,wzr-hp-g302h-a1a0|\
+buffalo,wzr-hp-g450h|\
 devolo,magic-2-wifi|\
+domywifi,dw33d|\
+embeddedwireless,dorin|\
 engenius,ecb1750|\
 engenius,enh202-v1|\
 engenius,ens202ext-v1|\
+engenius,epg5000|\
+engenius,ews511ap|\
 etactica,eg200|\
 glinet,gl-ar750s-nor|\
 glinet,gl-ar750s-nor-nand|\
+glinet,gl-e750|\
+glinet,gl-mifi|\
+glinet,gl-x750|\
+iodata,etg3-r|\
 librerouter,librerouter-v1|\
 netgear,ex6400|\
 netgear,ex7300|\
@@ -40,13 +57,16 @@ netgear,wnr2200-16m|\
 netgear,wnr612-v2|\
 ocedo,koala|\
 ocedo,raccoon|\
+ocedo,ursus|\
 openmesh,om5p-ac-v2|\
+pqi,air-pen|\
 samsung,wam250|\
 ubnt,nanostation-m|\
 yuncore,a770|\
 yuncore,a782|\
 yuncore,xd4200|\
-zyxel,nbg6616)
+zyxel,nbg6616|\
+zyxel,nbg6716)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
 	;;
 buffalo,wzr-hp-ag300h)
