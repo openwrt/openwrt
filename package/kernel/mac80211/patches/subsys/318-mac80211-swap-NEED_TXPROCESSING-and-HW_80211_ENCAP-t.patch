@@ -198,7 +198,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto encap_out;
  
  	if (info->control.flags & IEEE80211_TX_CTRL_FAST_XMIT) {
-@@ -4253,7 +4253,7 @@ static void ieee80211_8023_xmit(struct i
+@@ -4247,7 +4247,7 @@ static void ieee80211_8023_xmit(struct i
  		sdata = container_of(sdata->bss,
  				     struct ieee80211_sub_if_data, u.ap);
  
@@ -207,7 +207,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	info->control.vif = &sdata->vif;
  
  	ieee80211_tx_8023(sdata, skb, skb->len, sta, false);
-@@ -4357,7 +4357,7 @@ static bool ieee80211_tx_pending_skb(str
+@@ -4351,7 +4351,7 @@ static bool ieee80211_tx_pending_skb(str
  
  	sdata = vif_to_sdata(info->control.vif);
  
@@ -216,7 +216,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		chanctx_conf = rcu_dereference(sdata->vif.chanctx_conf);
  		if (unlikely(!chanctx_conf)) {
  			dev_kfree_skb(skb);
-@@ -4365,7 +4365,7 @@ static bool ieee80211_tx_pending_skb(str
+@@ -4359,7 +4359,7 @@ static bool ieee80211_tx_pending_skb(str
  		}
  		info->band = chanctx_conf->def.chan->band;
  		result = ieee80211_tx(sdata, NULL, skb, true, 0);
