@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4206,6 +4206,12 @@ static void ieee80211_8023_xmit(struct i
+@@ -4200,6 +4200,12 @@ static void ieee80211_8023_xmit(struct i
  	if (is_zero_ether_addr(ra))
  		goto out_free;
  
