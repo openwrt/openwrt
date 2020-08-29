@@ -169,6 +169,9 @@ glinet,gl-mifi)
 glinet,gl-x750)
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth1"
 	;;
+meraki,mr16)
+	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth0"
+	;;
 netgear,wnr2200-8m|\
 netgear,wnr2200-16m)
 	ucidef_set_led_netdev "wan-amber" "WAN (amber)" "netgear:amber:wan" "eth0"
