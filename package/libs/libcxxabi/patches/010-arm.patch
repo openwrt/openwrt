@@ -1,0 +1,27 @@
+--- a/src/cxa_exception.h
++++ b/src/cxa_exception.h
+@@ -27,6 +27,13 @@ _LIBCXXABI_HIDDEN uint64_t __getExceptio
+ _LIBCXXABI_HIDDEN void     __setExceptionClass  (      _Unwind_Exception*, uint64_t);
+ _LIBCXXABI_HIDDEN bool     __isOurExceptionClass(const _Unwind_Exception*);
+ 
++#if defined(__arm__) && defined(__GNUC__)
++// missing values from _Unwind_Reason_Code enum
++#define _URC_FATAL_PHASE2_ERROR ((_Unwind_Reason_Code)2)
++#define _URC_FATAL_PHASE1_ERROR ((_Unwind_Reason_Code)3)
++#define _URC_NORMAL_STOP ((_Unwind_Reason_Code)4)
++#endif
++
+ struct _LIBCXXABI_HIDDEN __cxa_exception {
+ #if defined(__LP64__) || defined(_WIN64) || defined(_LIBCXXABI_ARM_EHABI)
+     // Now _Unwind_Exception is marked with __attribute__((aligned)),
+--- a/src/cxa_personality.cpp
++++ b/src/cxa_personality.cpp
+@@ -1108,7 +1108,7 @@ __gxx_personality_v0(_Unwind_State state
+ 
+     // Check the undocumented force unwinding behavior
+     bool is_force_unwinding = state & _US_FORCE_UNWIND;
+-    state &= ~_US_FORCE_UNWIND;
++    state = (_Unwind_State)(state & ~_US_FORCE_UNWIND);
+ 
+     scan_results results;
+     switch (state) {
