@@ -1,0 +1,13 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -760,6 +760,10 @@ function(cxx_link_system_libraries targe
+     target_link_libraries(${target} PRIVATE atomic)
+   endif()
+ 
++  if (LIBCXX_HAS_MUSL_LIBC)
++    target_link_libraries(${target} PRIVATE ssp_nonshared)
++  endif()
++
+   if (MINGW)
+     target_link_libraries(${target} PRIVATE "${MINGW_LIBRARIES}")
+   endif()
