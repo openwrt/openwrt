@@ -1,13 +1,11 @@
 #!/bin/sh
 
-# SSID=OSTAR_$(ifconfig | grep HWaddr | head -1 | awk -F ':' '{print $6$7}')
-
-# uci set wireless.failsafe.ssid=$SSID
-# uci commit wireless
-# wifi
-
+MAC=$(cat /sys/class/net/eth0/address|awk -F ":" '{print $5""$6}'| tr a-z A-Z)
 uci set wireless.failsafe.disabled=0
+uci set wireless.failsafe.ssid=OSTAR-$MAC
+uci set wireless.failsafe.key=OSTAR@$MAC
 uci commit wireless
-wifi
+
+/etc/init.d/network reload
 
 exit 0

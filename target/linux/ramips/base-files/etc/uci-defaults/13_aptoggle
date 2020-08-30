@@ -3,6 +3,7 @@
 BIN=/usr/bin/aponoff
 cat > $BIN << "EOF" 
 #!/bin/sh
+
 SW=$(uci -q get wireless.failsafe.disabled)     
 if [ "$SW" == "1" ]; then
 	uci set wireless.failsafe.disabled=0
@@ -11,9 +12,6 @@ else
 	uci set wireless.failsafe.disabled=1
 	logger -s Failsafe AP was off
 fi
-
-SSID=OSTAR_$(ifconfig | grep HWaddr | head -1 | awk -F ':' '{print $6$7}')
-uci set wireless.failsafe.ssid=$SSID
 
 uci commit wireless
 /etc/init.d/network reload
