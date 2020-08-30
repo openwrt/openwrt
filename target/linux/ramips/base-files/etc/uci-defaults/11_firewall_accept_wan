@@ -1,7 +1,11 @@
 #!/bin/sh
 uci batch <<-EOF
+	set firewall.@zone[0].masq=1
 	set firewall.@zone[1].network='wan wan6 trm_wwan'
 	set firewall.@zone[1].input=ACCEPT
+	set firewall.@zone[1].forward=ACCEPT
+	set firewall.@zone[1].masq=1
+
 	commit firewall
 EOF
 

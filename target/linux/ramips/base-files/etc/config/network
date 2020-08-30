@@ -5,18 +5,18 @@ config interface 'loopback'
 	option ipaddr '127.0.0.1'
 	option netmask '255.0.0.0'
 
-config interface 'wan'
-	list ifname 'wlan0'
+config interface 'trm_wwan'
 	option proto 'dhcp'
 
-config interface 'WAN6'
-	list ifname 'wlan0'
+config interface 'wan'
+	option ifname '@trm_wwan'
+	option proto 'dhcp'
+
+config interface 'wan6'
+	option ifname '@trm_wwan'
 	option proto 'dhcpv6'
 	option reqaddress 'try'
 	option reqprefix 'auto'
-
-config interface 'trm_wwan'
-	option proto 'dhcp'
 
 config interface 'lan'
 	option type 'bridge'
