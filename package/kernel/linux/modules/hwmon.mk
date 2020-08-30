@@ -138,6 +138,21 @@ endef
 $(eval $(call KernelPackage,hwmon-f71882fg))
 
 
+define KernelPackage/hwmon-g762
+  TITLE:=G762/G763 fan speed PWM controller support
+  KCONFIG:=CONFIG_SENSORS_G762
+  FILES:=$(LINUX_DIR)/drivers/hwmon/g762.ko
+  AUTOLOAD:=$(call AutoProbe,g762)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-g762/description
+ Kernel module for Global Mixed-mode Technology Inc G762 and G763 fan speed PWM controller chips.
+endef
+
+$(eval $(call KernelPackage,hwmon-g762))
+
+
 define KernelPackage/hwmon-ina209
   TITLE:=INA209 monitoring support
   KCONFIG:=CONFIG_SENSORS_INA209
