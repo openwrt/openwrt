@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=px5g
+PKG_NAME:=px5g-mbedtls
 PKG_RELEASE:=9
 PKG_LICENSE:=LGPL-2.1
 
@@ -55,7 +55,7 @@ endif
 TARGET_CFLAGS += -Wl,--gc-sections -Wall -Werror
 
 define Build/Compile
-	$(TARGET_CC) $(TARGET_CPPFLAGS) $(TARGET_CFLAGS) -o $(PKG_BUILD_DIR)/px5g px5g.c $(TARGET_LDFLAGS)
+	$(TARGET_CC) $(TARGET_CPPFLAGS) $(TARGET_CFLAGS) -o $(PKG_BUILD_DIR)/px5g px5g-mbedtls.c $(TARGET_LDFLAGS)
 endef
 
 define Package/px5g-mbedtls/install
