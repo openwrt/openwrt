@@ -212,6 +212,18 @@ define Device/linksys_ea4500
 endef
 TARGET_DEVICES += linksys_ea4500
 
+define Device/netgear_readynas-duo-v2
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := ReadyNAS Duo
+  DEVICE_VARIANT := v2
+  DEVICE_DTS := kirkwood-netgear_readynas_duo_v2
+  KERNEL_IN_UBI :=
+  IMAGES := sysupgrade.bin
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
+	kmod-gpio-button-hotplug kmod-hwmon-g762 kmod-rtc-rs5c372a kmod-usb3
+endef
+TARGET_DEVICES += netgear_readynas-duo-v2
+
 define Device/raidsonic_ib-nas62x0
   DEVICE_VENDOR := RaidSonic
   DEVICE_MODEL := ICY BOX IB-NAS62x0
