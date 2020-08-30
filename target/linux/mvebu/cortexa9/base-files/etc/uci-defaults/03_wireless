@@ -14,6 +14,7 @@ linksys,wrt1200ac|\
 linksys,wrt1900ac-v1|\
 linksys,wrt1900ac-v2|\
 linksys,wrt1900acs|\
+linksys,wrt3200acm|\
 linksys,wrt32x)
 	SKU=$(strings /dev/mtd3|sed -ne 's/^cert_region=//p')
 	WIFIMAC2G=$(macaddr_add $(cat /sys/class/net/eth0/address) +1)
