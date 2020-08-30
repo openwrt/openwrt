@@ -1,6 +1,6 @@
 #!/bin/sh
 uci batch <<-EOF
-	set umdns.@umdns[-1].network='lan trm_wwan wan'
+	set umdns.@umdns[-1].network='lan trm_wwan wan6'
 	commit umdns
 EOF
 

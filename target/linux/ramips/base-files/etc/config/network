@@ -8,10 +8,6 @@ config interface 'loopback'
 config interface 'trm_wwan'
 	option proto 'dhcp'
 
-config interface 'wan'
-	option ifname '@trm_wwan'
-	option proto 'dhcp'
-
 config interface 'wan6'
 	option ifname '@trm_wwan'
 	option proto 'dhcpv6'

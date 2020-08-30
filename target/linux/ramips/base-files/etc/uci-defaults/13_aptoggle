@@ -16,7 +16,7 @@ SSID=OSTAR_$(ifconfig | grep HWaddr | head -1 | awk -F ':' '{print $6$7}')
 uci set wireless.failsafe.ssid=$SSID
 
 uci commit wireless
-wifi
+/etc/init.d/network reload
 EOF
 
 chmod +x $BIN
