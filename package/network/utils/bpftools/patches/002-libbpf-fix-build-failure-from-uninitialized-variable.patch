@@ -27,12 +27,10 @@ Signed-off-by: Tony Ambardar <Tony.Ambardar@gmail.com>
  tools/lib/bpf/libbpf.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/tools/lib/bpf/libbpf.c b/tools/lib/bpf/libbpf.c
-index 11e4725b8b1c..a72296797357 100644
 --- a/tools/lib/bpf/libbpf.c
 +++ b/tools/lib/bpf/libbpf.c
-@@ -5028,8 +5028,8 @@ static int bpf_object__collect_map_relos(struct bpf_object *obj,
- 	int i, j, nrels, new_sz, ptr_sz = sizeof(void *);
+@@ -5030,8 +5030,8 @@ static int bpf_object__collect_map_relos
+ 	int i, j, nrels, new_sz;
  	const struct btf_var_secinfo *vi = NULL;
  	const struct btf_type *sec, *var, *def;
 +	struct bpf_map *map = NULL, *targ_map;
@@ -41,6 +39,3 @@ index 11e4725b8b1c..a72296797357 100644
  	const char *name, *mname;
  	Elf_Data *symbols;
  	unsigned int moff;
--- 
-2.25.1
-
