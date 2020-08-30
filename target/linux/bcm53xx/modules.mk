@@ -35,3 +35,18 @@ define KernelPackage/phy-bcm-ns-usb3/description
 endef
 
 $(eval $(call KernelPackage,phy-bcm-ns-usb3))
+
+define KernelPackage/i2c-bcm-iproc
+  TITLE:=Broadcom iProc I2C controller
+  KCONFIG:=CONFIG_I2C_BCM_IPROC
+  DEPENDS:=@TARGET_bcm53xx +kmod-i2c-core
+  SUBMENU:=(I2C_MENU)
+  FILES:=$(LINUX_DIR)/drivers/i2c/busses/i2c-bcm-iproc.ko
+  AUTOLOAD:=$(call AutoLoad,59,i2c-bcm-iproc,1)
+endef
+
+define KernelPackage/i2c-bcm-iproc/description
+ Kernel module for the Broadcom iProc I2C controller.
+endef
+
+$(eval $(call KernelPackage,i2c-bcm-iproc))
