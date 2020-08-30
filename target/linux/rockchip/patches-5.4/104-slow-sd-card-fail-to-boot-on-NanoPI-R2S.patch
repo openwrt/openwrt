@@ -1,0 +1,10 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts
+@@ -37,6 +37,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&sdmmc0m1_gpio>;
+ 		regulator-name = "vcc_sd";
++		regulator-boot-on;
+ 		regulator-min-microvolt = <3300000>;
+ 		regulator-max-microvolt = <3300000>;
+ 		vin-supply = <&vcc_io>;
