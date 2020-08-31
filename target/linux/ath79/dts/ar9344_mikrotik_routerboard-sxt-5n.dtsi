@@ -122,13 +122,13 @@
 					read-only;
 				};
 
-				partition@10000 {
-					label = "bootloader2";
-					reg = <0x10000 0x0>;
-					read-only;
+				soft_config {
 				};
 
-				soft_config {
+				partition@10000 {
+					label = "bootloader2";
+					reg = <0x10000 0x10000>;
+					read-only;
 				};
 			};
 		};
