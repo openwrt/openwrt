@@ -1,0 +1,302 @@
+/dts-v1/;
+
+#include "rtl838x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "tp-link,t2500g-10ts", "realtek,rtl838x-soc";
+	model = "TP-Link T2500-10TS Switch";
+
+	aliases {
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+	};	
+
+	chosen {
+		bootargs = "console=ttyS0,38400";
+	};
+	
+	leds {
+		compatible = "gpio-leds";
+
+		led_sys: sys {
+			label = "t2500g-10ts:green:sys";
+			gpios = <&gpio0 148 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan1ge: lan1ge {
+			label = "t2500g-10ts:green:lan1ge";
+			gpios = <&gpio0 118 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan2ge: lan2ge {
+			label = "t2500g-10ts:green:lan2ge";
+			gpios = <&gpio0 119 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan3ge: lan3ge {
+			label = "t2500g-10ts:green:lan3ge";
+			gpios = <&gpio0 120 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan4ge: lan4ge {
+			label = "t2500g-10ts:green:lan4ge";
+			gpios = <&gpio0 121 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan5ge: lan5ge {
+			label = "t2500g-10ts:green:lan5ge";
+			gpios = <&gpio0 122 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan6ge: lan6ge {
+			label = "t2500g-10ts:green:lan6ge";
+			gpios = <&gpio0 123 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan7ge: lan7ge {
+			label = "t2500g-10ts:green:lan7ge";
+			gpios = <&gpio0 124 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan8ge: lan8ge {
+			label = "t2500g-10ts:green:lan8ge";
+			gpios = <&gpio0 125 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan9ge: lan9ge {
+			label = "t2500g-10ts:green:lan9ge";
+			gpios = <&gpio0 126 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan10ge: lan10ge {
+			label = "t2500g-10ts:green:lan10ge";
+			gpios = <&gpio0 127 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan1fe: lan1fe {
+			label = "t2500g-10ts:amber:lan1fe";
+			gpios = <&gpio0 150 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan2fe: lan2fe {
+			label = "t2500g-10ts:amber:lan2fe";
+			gpios = <&gpio0 151 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan3fe: lan3fe {
+			label = "t2500g-10ts:amber:lan3fe";
+			gpios = <&gpio0 152 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan4fe: lan4fe {
+			label = "t2500g-10ts:amber:lan4fe";
+			gpios = <&gpio0 153 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan5fe: lan5fe {
+			label = "t2500g-10ts:amber:lan5fe";
+			gpios = <&gpio0 154 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan6fe: lan6fe {
+			label = "t2500g-10ts:amber:lan6fe";
+			gpios = <&gpio0 155 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan7fe: lan7fe {
+			label = "t2500g-10ts:amber:lan7fe";
+			gpios = <&gpio0 156 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan8fe: lan8fe {
+			label = "t2500g-10ts:amber:lan8fe";
+			gpios = <&gpio0 157 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan9fe: lan9fe {
+			label = "t2500g-10ts:amber:lan9fe";
+			gpios = <&gpio0 158 GPIO_ACTIVE_HIGH>;
+		};
+		led_lan10fe: lan10fe {
+			label = "t2500g-10ts:amber:lan10fe";
+			gpios = <&gpio0 159 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+
+&gpio0 {
+	take-port-leds;
+	leds-per-port = <2>;
+	led-mode = <0xf501ea>;
+	num-leds = <32>;
+	min-led = <0>;
+};
+
+&spi0 {
+	status = "okay";
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0xe0000>;
+				read-only;
+			};
+			partition@40000 {
+				label = "u-boot-env";
+				reg = <0xe0000 0x20000>;
+				read-only;
+			};
+			partition@50000 {
+				label = "u-boot-env2";
+				reg = <0x100000 0x600000>;
+				read-only;
+			};
+			partition@60000 {
+				label = "firmware";
+				reg = <0x700000 0xa00000>;
+				compatible = "denx,uimage";
+			};
+			partition@160000 {
+				label = "userimg2";
+				reg = <0x1100000 0xa00000>;
+				read-only;
+			};
+			partition@b260000 {
+				label = "userappfs";
+				reg = <0x1b00000 0x400000>;
+				read-only;
+			};
+			partition@930000 {
+				label = "para";
+				reg = <0x1f00000 0x100000>;
+			};
+		};
+	};
+};
+
+&ethernet0 {
+	mdio: mdio-bus {
+		compatible = "realtek,rtl838x-mdio";
+		regmap = <&ethernet0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* Internal phy */
+		phy8: ethernet-phy@8 {
+			reg = <8>;
+			compatible = "ethernet-phy-ieee802.3-c22";
+		};
+		phy9: ethernet-phy@9 {
+			reg = <9>;
+			compatible = "ethernet-phy-ieee802.3-c22";
+		};
+		phy10: ethernet-phy@10 {
+			reg = <10>;
+			compatible = "ethernet-phy-ieee802.3-c22";
+		};
+		phy11: ethernet-phy@11 {
+			reg = <11>;
+			compatible = "ethernet-phy-ieee802.3-c22";
+		};
+		phy12: ethernet-phy@12 {
+			reg = <12>;
+			compatible = "ethernet-phy-ieee802.3-c22";
+		};
+		phy13: ethernet-phy@13 {
+			reg = <13>;
+			compatible = "ethernet-phy-ieee802.3-c22";
+		};
+		phy14: ethernet-phy@14 {
+			reg = <14>;
+			compatible = "ethernet-phy-ieee802.3-c22";
+		};
+		phy15: ethernet-phy@15 {
+			reg = <15>;
+			compatible = "ethernet-phy-ieee802.3-c22";
+		};
+		phy24: ethernet-phy@24 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			phy-is-integrated;
+			reg = <24>;
+		};
+		phy26: ethernet-phy@26 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			phy-is-integrated;
+			reg = <26>;
+		};
+	};
+};
+
+	
+&switch0 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <8>;
+			label = "lan1";
+			phy-handle = <&phy8>;
+			phy-mode = "internal";
+		};
+		port@1 {
+			reg = <9>;
+			label = "lan2";
+			phy-handle = <&phy9>;
+			phy-mode = "internal";
+		};
+		port@2 {
+			reg = <10>;
+			label = "lan3";
+			phy-handle = <&phy10>;
+			phy-mode = "internal";
+		};
+		port@3 {
+			reg = <11>;
+			label = "lan4";
+			phy-handle = <&phy11>;
+			phy-mode = "internal";
+		};
+		port@4 {
+			reg = <12>;
+			label = "lan5";
+			phy-handle = <&phy12>;
+			phy-mode = "internal";
+		};
+		port@5 {
+			reg = <13>;
+			label = "lan6";
+			phy-handle = <&phy13>;
+			phy-mode = "internal";
+		};
+		port@6 {
+			reg = <14>;
+			label = "lan7";
+			phy-handle = <&phy14>;
+			phy-mode = "internal";
+		};
+		port@7 {
+			reg = <15>;
+			label = "lan8";
+			phy-handle = <&phy15>;
+			phy-mode = "internal";
+		};
+	
+		port@24 {
+			reg = <24>;
+			label = "lan9";
+			phy-mode = "internal";
+			phy-handle = <&phy24>;
+		};
+		port@26 {
+			reg = <26>;
+			label = "lan10";
+			phy-mode = "internal";
+			phy-handle = <&phy26>;
+		};
+		port@28 {
+			ethernet = <&ethernet0>;
+			reg = <28>;
+			phy-mode = "internal";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};

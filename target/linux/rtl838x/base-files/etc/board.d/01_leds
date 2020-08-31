@@ -1,0 +1,30 @@
+#!/bin/sh
+
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+
+board=$(board_name)
+boardname="${board##*,}"
+
+board_config_update
+
+case $board in
+tp-link,t2500g-10ts)
+	ucidef_set_led_netdev "lan1ge" "LAN1 act" "$boardname:green:lan1ge" "lan1" "tx rx"
+	ucidef_set_led_netdev "lan2ge" "LAN2 act" "$boardname:green:lan2ge" "lan2" "tx rx"
+	ucidef_set_led_netdev "lan3ge" "LAN3 act" "$boardname:green:lan3ge" "lan3" "tx rx"
+	ucidef_set_led_netdev "lan4ge" "LAN4 act" "$boardname:green:lan4ge" "lan4" "tx rx"
+	ucidef_set_led_netdev "lan5ge" "LAN5 act" "$boardname:green:lan5ge" "lan5" "tx rx"
+	ucidef_set_led_netdev "lan6ge" "LAN6 act" "$boardname:green:lan6ge" "lan6" "tx rx"
+	ucidef_set_led_netdev "lan7ge" "LAN7 act" "$boardname:green:lan7ge" "lan7" "tx rx"
+	ucidef_set_led_netdev "lan8ge" "LAN8 act" "$boardname:green:lan8ge" "lan8" "tx rx"
+	ucidef_set_led_netdev "lan9ge" "LAN9 act" "$boardname:green:lan9ge" "lan9" "tx rx"
+	ucidef_set_led_netdev "lan10ge" "LAN10 act" "$boardname:green:lan10ge" "lan10" "tx rx"
+#	ucidef_set_led_switch "eth_link" "LAN link" "$boardname:green:eth_link" "switch0" "0x01"
+	;;
+esac
+
+board_config_flush
+
+exit 0

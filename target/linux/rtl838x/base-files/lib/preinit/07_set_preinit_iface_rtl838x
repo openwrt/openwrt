@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+# Copyright (C) 2020 OpenWrt.org
+#
+
+. /lib/functions.sh
+
+# Reset and Enable master interface and use lan1 as interface
+rtl838x_set_preinit_iface() {
+	echo "rtl838x_set_preinit_iface called"
+	ip link set eth0 down
+	ip link set eth0 up
+	
+	ifname=lan1
+}
+
+boot_hook_add preinit_main rtl838x_set_preinit_iface
