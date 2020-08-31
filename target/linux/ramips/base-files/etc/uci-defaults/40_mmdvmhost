@@ -1,0 +1,16 @@
+#!/bin/sh
+
+sed -i "s/Port=NullModem/Port=\/dev\/ttyS1/g" /etc/MMDVM.ini
+
+/etc/init.d/mmdvmhost reload
+
+/etc/init.d/p25gateway stop
+/etc/init.d/p25parrot stop
+/etc/init.d/ysfgateway stop
+/etc/init.d/ysfparrot stop
+/etc/init.d/nxdngateway stop
+/etc/init.d/nxdnparrot stop
+/etc/init.d/ircddbgateway stop
+/etc/init.d/timeserver stop
+
+exit 0
