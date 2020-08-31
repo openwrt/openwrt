@@ -26,7 +26,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/policycoreutils
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:= +libsemanage +libcap-ng +BUSYBOX_CONFIG_PAM:libpam
+  DEPENDS:= +libsemanage +libcap-ng +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
   TITLE:=SELinux policy utilities
   URL:=http://selinuxproject.org/page/Main_Page
   ALTERNATIVES:=\
