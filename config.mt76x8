@@ -1536,7 +1536,7 @@ CONFIG_PACKAGE_uci=y
 CONFIG_PACKAGE_urandom-seed=y
 CONFIG_PACKAGE_urngd=y
 CONFIG_PACKAGE_usign=y
-# CONFIG_PACKAGE_wireless-tools is not set
+CONFIG_PACKAGE_wireless-tools=m
 # CONFIG_PACKAGE_zram-swap is not set
 
 #
@@ -1790,8 +1790,16 @@ CONFIG_PACKAGE_wireless-regdb=y
 #
 # I2C support
 #
-# CONFIG_PACKAGE_kmod-i2c-core is not set
+CONFIG_PACKAGE_kmod-i2c-core=y
+# CONFIG_PACKAGE_kmod-i2c-algo-bit is not set
+# CONFIG_PACKAGE_kmod-i2c-algo-pca is not set
+# CONFIG_PACKAGE_kmod-i2c-algo-pcf is not set
+# CONFIG_PACKAGE_kmod-i2c-gpio is not set
 # CONFIG_PACKAGE_kmod-i2c-gpio-custom is not set
+CONFIG_PACKAGE_kmod-i2c-mt7628=y
+# CONFIG_PACKAGE_kmod-i2c-mux is not set
+# CONFIG_PACKAGE_kmod-i2c-smbus is not set
+# CONFIG_PACKAGE_kmod-i2c-tiny-usb is not set
 
 #
 # Industrial I/O Modules
@@ -2005,7 +2013,8 @@ CONFIG_PACKAGE_kmod-nfnetlink=y
 #
 # Network Support
 #
-# CONFIG_PACKAGE_kmod-atm is not set
+CONFIG_PACKAGE_kmod-atm=m
+# CONFIG_PACKAGE_kmod-atmtcp is not set
 # CONFIG_PACKAGE_kmod-ax25 is not set
 # CONFIG_PACKAGE_kmod-bonding is not set
 # CONFIG_PACKAGE_kmod-bpf-test is not set
@@ -2018,6 +2027,7 @@ CONFIG_PACKAGE_kmod-nfnetlink=y
 # CONFIG_PACKAGE_kmod-gre6 is not set
 # CONFIG_PACKAGE_kmod-ip6-tunnel is not set
 # CONFIG_PACKAGE_kmod-ipip is not set
+# CONFIG_PACKAGE_kmod-ipoa is not set
 # CONFIG_PACKAGE_kmod-ipsec is not set
 # CONFIG_PACKAGE_kmod-iptunnel6 is not set
 # CONFIG_PACKAGE_kmod-isdn4linux is not set
@@ -2137,8 +2147,11 @@ CONFIG_PACKAGE_kmod-gpio-button-hotplug=y
 # USB Support
 #
 # CONFIG_PACKAGE_kmod-chaoskey is not set
-# CONFIG_PACKAGE_kmod-usb-acm is not set
-# CONFIG_PACKAGE_kmod-usb-atm is not set
+CONFIG_PACKAGE_kmod-usb-acm=m
+CONFIG_PACKAGE_kmod-usb-atm=m
+# CONFIG_PACKAGE_kmod-usb-atm-cxacru is not set
+# CONFIG_PACKAGE_kmod-usb-atm-speedtouch is not set
+# CONFIG_PACKAGE_kmod-usb-atm-ueagle is not set
 # CONFIG_PACKAGE_kmod-usb-cm109 is not set
 CONFIG_PACKAGE_kmod-usb-core=y
 # CONFIG_PACKAGE_kmod-usb-dwc2 is not set
@@ -2907,6 +2920,11 @@ CONFIG_PACKAGE_wpad-mini=m
 # CONFIG_PACKAGE_wpad-wolfssl is not set
 # CONFIG_PACKAGE_wpan-tools is not set
 # CONFIG_PACKAGE_wwan is not set
+
+#
+# Ralink SDK Mango
+#
+# CONFIG_PACKAGE_oled is not set
 
 #
 # Utilities
