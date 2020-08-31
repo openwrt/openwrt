@@ -12,9 +12,14 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/20200710
 PKG_HASH:=22d6c75526e40d1781c30bcf29abf97171bdfe6780923f11c8e1c76a75a21ff8
+PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+PKG_LICENSE:=LGPL-2.1
+PKG_LICENSE_FILES:=COPYING
+PKG_CPE_ID:=cpe:/a:selinuxproject:libsemanage
+
+
 HOST_BUILD_DEPENDS:=audit/host libselinux/host bzip2/host
 
-PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
