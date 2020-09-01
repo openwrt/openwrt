@@ -297,6 +297,15 @@ define Device/avm_fritzdvbc
 endef
 TARGET_DEVICES += avm_fritzdvbc
 
+define Device/belkin_f9j1108-v2
+  SOC := qca9558
+  DEVICE_VENDOR := Belkin
+  DEVICE_MODEL := AC1750 DB Wi-Fi (F9J1108v2)
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += belkin_f9j1108-v2
+
 define Device/buffalo_bhr-4grv
   SOC := ar7242
   DEVICE_VENDOR := Buffalo
