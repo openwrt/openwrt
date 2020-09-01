@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=jansson
 PKG_VERSION:=2.13.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
 
@@ -38,6 +38,9 @@ endef
 define Package/jansson/description
   Jansson is a C library for encoding, decoding and manipulating JSON data
 endef
+
+TARGET_CFLAGS += -flto
+TARGET_LDFLAGS += -flto
 
 define Package/jansson/install
 	$(INSTALL_DIR) $(1)/usr/lib
