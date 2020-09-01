@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnftnl
 PKG_VERSION:=1.1.7
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://netfilter.org/projects/$(PKG_NAME)/files
@@ -39,7 +39,8 @@ define Package/libnftnl/description
  programming interface (API) to the in-kernel nf_tables subsystem.
 endef
 
-TARGET_CFLAGS += $(FPIC)
+TARGET_CFLAGS += $(FPIC) -flto
+TARGET_LDFLAGS += -flto
 
 CONFIGURE_ARGS += \
 	--enable-static \
