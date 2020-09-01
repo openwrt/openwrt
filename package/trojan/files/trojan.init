@@ -1,0 +1,70 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2018 wongsyrone
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+START=95
+USE_PROCD=1
+#PROCD_DEBUG=1
+
+PROG=/usr/sbin/trojan
+CONF=/etc/trojan.json
+
+config_load "trojan"
+
+parse_trojan() {
+    config_get ENABLED "$section" "enabled"
+}
+
+config_foreach parse_trojan 'trojan'
+
+check_multicore() {
+    local is_reuse_port=
+    json_init
+    json_load_file "${CONF}"
+    json_select "tcp"
+    json_get_var is_reuse_port "reuse_port"
+    json_select ".."
+    if [ "1" = "$is_reuse_port" ] || [ "true" = "$is_reuse_port" ]; then
+        multicore_ready=true
+    else
+        multicore_ready=false
+    fi
+    echo multicore_ready is $multicore_ready
+    local cpunum
+    cpunum=$(grep '^cpu\scores' /proc/cpuinfo | uniq |  awk '{print $4}' )
+    echo real cpu core num is $cpunum
+    if [ "x" = "x$cpunum" ]; then
+        cpunum=$(grep -c '^processor' /proc/cpuinfo )
+        echo all cpu core num is $cpunum, including Hyper-threading virtual cores
+    fi
+    if [ "xtrue" = "x$multicore_ready" ]; then
+        return "$cpunum"
+    else
+        return 1
+    fi
+}
+
+start_service() {
+    check_multicore
+    local cpunum=$?
+    echo cpunum is $cpunum
+    if [ "1" = "$ENABLED" ] || [ "on" = "$ENABLED" ] || [ "true" = "$ENABLED" ]; then
+        for i in $(seq 1 ${cpunum});
+        do
+            procd_open_instance
+            procd_set_param command $PROG --config $CONF
+            procd_set_param user root # run service as user root
+            procd_set_param stdout 1 # forward stdout of the command to logd
+            procd_set_param stderr 1 # same for stderr
+            procd_set_param limits nofile="1048576 1048576" # max allowed value can be fetched via /proc/sys/fs/nr_open
+            [ -e /proc/sys/kernel/core_pattern ] && {
+                    procd_append_param limits core="unlimited"
+            }
+            procd_close_instance
+        done
+    else
+        echo "trojan is disabled, please check /etc/config/trojan"
+    fi
+}
