@@ -1,0 +1,60 @@
+diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c	2020-08-25 14:57:28.403764254 +0800
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c	2020-08-25 14:57:39.803438475 +0800
+@@ -2193,7 +2193,7 @@
+ 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA)) {
+ 		mtk_w32(eth,
+ 			MTK_TX_DMA_EN |
+-			MTK_DMA_SIZE_16DWORDS | MTK_NDP_CO_PRO |
++			MTK_DMA_SIZE_32DWORDS | MTK_NDP_CO_PRO |
+ 			MTK_RX_DMA_EN | MTK_RX_2B_OFFSET |
+ 			MTK_RX_BT_32DWORDS,
+ 			MTK_QDMA_GLO_CFG);
+@@ -2434,11 +2434,10 @@
+ 	/* Enable RX VLan Offloading */
+ 	mtk_w32(eth, 1, MTK_CDMP_EG_CTRL);
+ 
+-	/* enable interrupt delay for RX */
+-	mtk_w32(eth, MTK_PDMA_DELAY_RX_DELAY, MTK_PDMA_DELAY_INT);
++	/* enable interrupt delay for RX/TX */
++	mtk_w32(eth, 0x8f0f8f0f, MTK_PDMA_DELAY_INT);
++	mtk_w32(eth, 0x8f0f8f0f, MTK_QDMA_DELAY_INT);
+ 
+-	/* disable delay and normal interrupt */
+-	mtk_w32(eth, 0, MTK_QDMA_DELAY_INT);
+ 	mtk_tx_irq_disable(eth, ~0);
+ 	mtk_rx_irq_disable(eth, ~0);
+ 
+diff -urN a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h	2020-08-25 14:57:22.939920398 +0800
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h	2020-08-25 14:57:43.359336855 +0800
+@@ -19,8 +19,8 @@
+ #define MTK_QDMA_PAGE_SIZE	2048
+ #define	MTK_MAX_RX_LENGTH	1536
+ #define MTK_TX_DMA_BUF_LEN	0x3fff
+-#define MTK_DMA_SIZE		256
+-#define MTK_NAPI_WEIGHT		64
++#define MTK_DMA_SIZE		2048
++#define MTK_NAPI_WEIGHT		256
+ #define MTK_MAC_COUNT		2
+ #define MTK_RX_ETH_HLEN		(VLAN_ETH_HLEN + VLAN_HLEN + ETH_FCS_LEN)
+ #define MTK_RX_HLEN		(NET_SKB_PAD + MTK_RX_ETH_HLEN + NET_IP_ALIGN)
+@@ -198,6 +198,7 @@
+ #define MTK_NDP_CO_PRO		BIT(10)
+ #define MTK_TX_WB_DDONE		BIT(6)
+ #define MTK_DMA_SIZE_16DWORDS	(2 << 4)
++#define MTK_DMA_SIZE_32DWORDS	(3 << 4)
+ #define MTK_RX_DMA_BUSY		BIT(3)
+ #define MTK_TX_DMA_BUSY		BIT(1)
+ #define MTK_RX_DMA_EN		BIT(2)
+@@ -228,8 +229,8 @@
+ #define MTK_TX_DONE_INT1	BIT(1)
+ #define MTK_TX_DONE_INT0	BIT(0)
+ #define MTK_RX_DONE_INT		MTK_RX_DONE_DLY
+-#define MTK_TX_DONE_INT		(MTK_TX_DONE_INT0 | MTK_TX_DONE_INT1 | \
+-				 MTK_TX_DONE_INT2 | MTK_TX_DONE_INT3)
++#define MTK_TX_DONE_DLY         BIT(28)
++#define MTK_TX_DONE_INT         MTK_TX_DONE_DLY
+ 
+ /* QDMA Interrupt grouping registers */
+ #define MTK_QDMA_INT_GRP1	0x1a20
