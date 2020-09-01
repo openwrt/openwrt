@@ -16,16 +16,10 @@ TAR="${TAR:-$(command -v tar)}"
 GZIP="$(command -v gzip)"
 
 # try to use fixed source epoch
-if [ -n "$SOURCE_DATE_EPOCH" ]; then
+if [ -n "$PKG_SOURCE_DATE_EPOCH" ]; then
+	TIMESTAMP=$(date --date="@$PKG_SOURCE_DATE_EPOCH")
+elif [ -n "$SOURCE_DATE_EPOCH" ]; then
 	TIMESTAMP=$(date --date="@$SOURCE_DATE_EPOCH")
-
-# look up date of last commit
-elif [ -d "$TOPDIR/.git" ]; then
-	GIT="$(command -v git)"
-	TIMESTAMP=$(cd $TOPDIR; $GIT log -1 -s --format=%ci)
-elif [ -d "$TOPDIR/.svn" ]; then
-	SVN="$(command -v svn)"
-	TIMESTAMP=$($SVN info "$TOPDIR" | sed -n "s/^Last Changed Date: \(.*\)/\1/p")
 else
 	TIMESTAMP=$(date)
 fi
@@ -77,23 +71,15 @@ pkg_appears_sane() {
 ###
 # ipkg-build "main"
 ###
-ogargs=""
-noclean=0
-usage="Usage: $0 [-c] [-C] [-o owner] [-g group] <pkg_directory> [<destination_directory>]"
-while getopts "cg:ho:v" opt; do
+file_modes=""
+usage="Usage: $0 [-v] [-h] [-m] <pkg_directory> [<destination_directory>]"
+while getopts "hvm:" opt; do
     case $opt in
-	o ) owner=$OPTARG
-	    ogargs="--owner=$owner"
-	    ;;
-	g ) group=$OPTARG
-	    ogargs="$ogargs --group=$group"
-	    ;;
-	c ) ;;
-	C ) noclean=1;;
 	v ) echo $version
 	    exit 0
 	    ;;
 	h ) 	echo $usage  >&2 ;;
+	m )	file_modes=$OPTARG ;;
 	\? ) 	echo $usage  >&2
 	esac
 done
@@ -144,21 +130,38 @@ tmp_dir=$dest_dir/IPKG_BUILD.$$
 mkdir $tmp_dir
 
 echo $CONTROL > $tmp_dir/tarX
-# Preserve permissions (-p) when creating data.tar.gz as non-root user
-( cd $pkg_dir && $TAR $ogargs -X $tmp_dir/tarX --format=gnu --sort=name -cpf -  --mtime="$TIMESTAMP" . | $GZIP -n - > $tmp_dir/data.tar.gz )
+cd $pkg_dir
+for file_mode in $file_modes; do
+	case $file_mode in
+	/*:*:*:*)
+	    ;;
+	*)
+	    echo "ERROR: file modes must use absolute path and contain user:group:mode"
+	    echo "$file_mode"
+	    exit 1
+	    ;;
+	esac
+	path=$(echo "$file_mode" | cut -d ':' -f 1)
+	user_group=$(echo "$file_mode" | cut -d ':' -f 2-3)
+	mode=$(echo "$file_mode" | cut -d ':' -f 4)
+
+	chown "$user_group" "$pkg_dir/$path"
+	chmod  "$mode" "$pkg_dir/$path"
+done
+$TAR -X $tmp_dir/tarX --format=gnu --sort=name -cpf - --mtime="$TIMESTAMP" . | $GZIP -n - > $tmp_dir/data.tar.gz
 
 installed_size=`stat -c "%s" $tmp_dir/data.tar.gz`
 sed -i -e "s/^Installed-Size: .*/Installed-Size: $installed_size/" \
 	$pkg_dir/$CONTROL/control
 
-( cd $pkg_dir/$CONTROL && $TAR $ogargs --format=gnu --sort=name -cf -  --mtime="$TIMESTAMP" . | $GZIP -n - > $tmp_dir/control.tar.gz )
+( cd $pkg_dir/$CONTROL && $TAR --format=gnu --sort=name -cf -  --mtime="$TIMESTAMP" . | $GZIP -n - > $tmp_dir/control.tar.gz )
 rm $tmp_dir/tarX
 
 echo "2.0" > $tmp_dir/debian-binary
 
 pkg_file=$dest_dir/${pkg}_${version}_${arch}.ipk
 rm -f $pkg_file
-( cd $tmp_dir && $TAR $ogargs --format=gnu --sort=name -cf -  --mtime="$TIMESTAMP" ./debian-binary ./data.tar.gz ./control.tar.gz | $GZIP -n - > $pkg_file )
+( cd $tmp_dir && $TAR --format=gnu --sort=name -cf -  --mtime="$TIMESTAMP" ./debian-binary ./data.tar.gz ./control.tar.gz | $GZIP -n - > $pkg_file )
 
 rm $tmp_dir/debian-binary $tmp_dir/data.tar.gz $tmp_dir/control.tar.gz
 rmdir $tmp_dir
