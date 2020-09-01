@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
 PKG_VERSION:=2.36
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.36
@@ -526,6 +526,7 @@ CONFIGURE_ARGS += \
 	--without-python		\
 	--without-udev			\
 	--without-readline		\
+	--without-libmagic		\
 	--with-ncursesw
 
 TARGET_CFLAGS += $(FPIC) -std=gnu99
