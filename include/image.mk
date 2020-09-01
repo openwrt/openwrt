@@ -250,7 +250,7 @@ define Image/mkfs/squashfs
 	     "$(call mkfs_target_dir,$(1))" > $@.fakeroot-script
 	echo "$(Image/mkfs/squashfs-common)" >> $@.fakeroot-script
 	chmod +x $@.fakeroot-script
-	$(STAGING_DIR_HOST)/bin/fakeroot $@.fakeroot-script
+	$(FAKEROOT) "$@.fakeroot-script"
 endef
 else
 define Image/mkfs/squashfs
