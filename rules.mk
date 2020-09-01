@@ -264,7 +264,7 @@ endif
 
 BUILD_KEY=$(TOPDIR)/key-build
 
-FAKEROOT:=$(STAGING_DIR_HOST)/bin/fakeroot
+FAKEROOT:=$(STAGING_DIR_HOST)/bin/fakeroot -l $(STAGING_DIR_HOST)/lib/libfakeroot.so -f $(STAGING_DIR_HOST)/bin/faked
 TARGET_CC:=$(TARGET_CROSS)gcc
 TARGET_CXX:=$(TARGET_CROSS)g++
 KPATCH:=$(SCRIPT_DIR)/patch-kernel.sh
