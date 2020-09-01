@@ -5,9 +5,9 @@
  * Copyright  (C) 2020 B. Koblitz
  * based on the original BSP
  * Copyright (C) 2006-2012 Tony Wu (tonywu@realtek.com)
- * 
+ *
  */
- 
+
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
@@ -71,7 +71,7 @@ static unsigned int rtl838x_ictl_startup_irq(struct irq_data *i)
 }
 
 static void rtl838x_ictl_disable_irq(struct irq_data *i)
-{   
+{
 	unsigned long flags;
 
 	raw_spin_lock_irqsave(&irq_lock, flags);
@@ -79,17 +79,16 @@ static void rtl838x_ictl_disable_irq(struct irq_data *i)
 	raw_spin_unlock_irqrestore(&irq_lock, flags);
 }
 
-
 static void rtl838x_ictl_eoi_irq(struct irq_data *i)
 {
 	unsigned long flags;
 
-	raw_spin_lock_irqsave(&irq_lock, flags); 
+	raw_spin_lock_irqsave(&irq_lock, flags);
 	rtl838x_w32_mask(0, 1 << i->irq, GIMR);
 	raw_spin_unlock_irqrestore(&irq_lock, flags);
 }
 
-static struct irq_chip rtl838x_ictl_irq = { 
+static struct irq_chip rtl838x_ictl_irq = {
 	.name = "RTL838X",
 	.irq_startup = rtl838x_ictl_startup_irq,
 	.irq_shutdown = rtl838x_ictl_disable_irq,
@@ -101,9 +100,9 @@ static struct irq_chip rtl838x_ictl_irq = {
 	.irq_eoi = rtl838x_ictl_eoi_irq,
 };
 
-/* 
+/*
 *   RTL8390/80/28 Interrupt Scheme
-* 
+*
 *   Source       IRQ      CPU INT
 *   --------   -------    -------
 *   UART0          31        IP3
@@ -172,7 +171,7 @@ asmlinkage void plat_irq_dispatch(void)
 {
 	unsigned int pending;
 
-	pending =  read_c0_cause() & read_c0_status() & ST0_IM;  
+	pending =  read_c0_cause() & read_c0_status() & ST0_IM;
 
 	if (pending & CAUSEF_IP7)
 		c0_compare_interrupt(7, NULL);
@@ -194,12 +193,12 @@ static void __init rtl838x_ictl_irq_init(unsigned int irq_base)
 {
 	int i;
 
-	for (i=0; i < RTL838X_IRQ_ICTL_NUM; i++) 
+	for (i=0; i < RTL838X_IRQ_ICTL_NUM; i++)
 		irq_set_chip_and_handler(irq_base + i, &rtl838x_ictl_irq, handle_level_irq);
 
 	setup_irq(RTL838X_ICTL1_IRQ, &irq_cascade1);
 	setup_irq(RTL838X_ICTL2_IRQ, &irq_cascade2);
-	setup_irq(RTL838X_ICTL3_IRQ, &irq_cascade3); 
+	setup_irq(RTL838X_ICTL3_IRQ, &irq_cascade3);
 	setup_irq(RTL838X_ICTL4_IRQ, &irq_cascade4);
 	setup_irq(RTL838X_ICTL5_IRQ, &irq_cascade5);
 
@@ -210,7 +209,6 @@ static void __init rtl838x_ictl_irq_init(unsigned int irq_base)
 	rtl838x_w32(IRR2_SETTING, IRR2);
 	rtl838x_w32(IRR3_SETTING, IRR3);
 }
-
 
 static int intc_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
 {

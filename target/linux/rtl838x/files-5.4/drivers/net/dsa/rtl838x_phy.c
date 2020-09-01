@@ -11,15 +11,40 @@
 #include <linux/of_mdio.h>
 #include <linux/phy.h>
 #include <linux/platform_device.h>
+#include <linux/firmware.h>
+#include <linux/crc32.h>
 
 #include <asm/mach-rtl838x/mach-rtl838x.h>
 #include "rtl838x.h"
 
 /* External RTL8218B and RTL8214FC IDs are identical */
+#define PHY_ID_RTL8214C		0x001cc941
 #define PHY_ID_RTL8214FC	0x001cc981
 #define PHY_ID_RTL8218B_E	0x001cc981
 #define PHY_ID_RTL8218B_I	0x001cca40
-#define PHY_ID_RTL_UNKNOWN	0x001ccab0
+#define PHY_ID_RTL8390_GENERIC	0x001ccab0
+
+struct __attribute__ ((__packed__)) part {
+	uint16_t start;
+	uint8_t wordsize;
+	uint8_t words;
+};
+
+struct __attribute__ ((__packed__)) fw_header {
+	uint32_t magic;
+	uint32_t phy;
+	uint32_t checksum;
+	uint32_t version;
+	struct part parts[10];
+};
+
+#define FIRMWARE_838X_8380_1	"rtl838x_phy/rtl838x_8380.fw"
+#define FIRMWARE_838X_8214FC_1	"rtl838x_phy/rtl838x_8214fc.fw"
+#define FIRMWARE_838X_8218b_1	"rtl838x_phy/rtl838x_8218b.fw"
+
+static const struct firmware rtl838x_8380_fw;
+static const struct firmware rtl838x_8214fc_fw;
+static const struct firmware rtl838x_8218b_fw;
 
 struct rtl838x_phy_priv {
 	char *name;
@@ -99,20 +124,50 @@ void rtl8380_sds_rst(int mac)
 	printk("SERDES reset: %d\n", mac);
 }
 
-u32 rtl838x_6275B_intPhy_perport[][2] = {
-	{0x1f, 0x0b82}, {0x10, 0x0000},
-	{0x1f, 0x0a44}, {0x11, 0x0418}, {0x1f, 0x0bc0}, {0x16, 0x0c00},
-	{0x1f, 0x0000}, {0x1b, 0x809a}, {0x1c, 0x8933}, {0x1b, 0x80a3},
-	{0x1c, 0x9233}, {0x1b, 0x80ac}, {0x1c, 0xa444}, {0x1b, 0x809f},
-	{0x1c, 0x6b20}, {0x1b, 0x80a8}, {0x1c, 0x6b22}, {0x1b, 0x80b1},
-	{0x1c, 0x6b23}, {0, 0}
-};
+static struct fw_header *
+rtl838x_request_fw(struct phy_device *phydev, const struct firmware *fw,
+		   const char *name)
+{
+	struct device *dev = &phydev->mdio.dev;
+	int err;
+	struct fw_header *h;
+	uint32_t checksum, my_checksum;
 
-u32 rtl8218b_6276B_hwEsd_perport[][2] = {
-	{0x1f, 0xbc4}, {0x17, 0xa200}, {0, 0}
-};
+	err = request_firmware(&fw, name, dev);
+	if (err < 0)
+		goto out;
 
-static int rtl8390_configure_unknown(struct phy_device *phydev)
+	if (fw->size < sizeof(struct fw_header)) {
+		pr_err("Firmware size too small.\n");
+		err = -EINVAL;
+		goto out;
+	}
+
+	h = (struct fw_header *) fw->data;
+	printk("Firmware loaded. Size %d, magic: %08x\n", fw->size, h->magic);
+
+	if (h->phy != 0x83800000) {
+		pr_err("Wrong firmware file: PHY mismatch.\n");
+		goto out;
+	}
+
+	checksum = h->checksum;
+	h->checksum = 0;
+	my_checksum = ~crc32(0xFFFFFFFFU, fw->data, fw->size);
+	if (checksum != my_checksum) {
+		pr_err("Firmware checksum mismatch.\n");
+		err = -EINVAL;
+		goto out;
+	}
+	h->checksum = checksum;
+
+	return h;
+out:
+	dev_err(dev, "Unable to load firmware %s (%d)\n", name, err);
+	return NULL;
+}
+
+static int rtl8390_configure_generic(struct phy_device *phydev)
 {
 	u32 val, phy_id;
 //	int i, p, ipd_flag;
@@ -138,6 +193,10 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 	u32 val, phy_id;
 	int i, p, ipd_flag;
 	int mac = phydev->mdio.addr;
+	struct fw_header *h;
+	u32 *rtl838x_6275B_intPhy_perport;
+	u32 *rtl8218b_6276B_hwEsd_perport;
+
 
 	read_phy(mac, 0, 2, &val);
 	phy_id = val << 16;
@@ -156,7 +215,23 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 	
 	/* Internal RTL8218B, version 2 */
 	phydev_info(phydev, "Detected internal RTL8218B\n");
-	if( sw_r32(RTL838X_DMY_REG31) == 0x1 )
+
+	h = rtl838x_request_fw(phydev, &rtl838x_8380_fw, FIRMWARE_838X_8380_1);
+	if (!h)
+		return -1;
+
+	if (h->phy != 0x83800000) {
+		printk("Wrong firmware file: PHY mismatch.\n");
+		return -1;
+	}
+
+	rtl838x_6275B_intPhy_perport = (void *)h + sizeof(struct fw_header)
+			+ h->parts[8].start;
+
+	rtl8218b_6276B_hwEsd_perport = (void *)h + sizeof(struct fw_header)
+			+ h->parts[9].start;
+
+	if (sw_r32(RTL838X_DMY_REG31) == 0x1)
 		ipd_flag = 1;
 
 	read_phy(mac, 0, 0, &val);
@@ -186,69 +261,32 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 	}
 	for (p = 0; p < 8; p++) {
 		i = 0;
-		while (rtl838x_6275B_intPhy_perport[i][0]) {
+		while (rtl838x_6275B_intPhy_perport[i * 2]) {
 			write_phy(mac + p, 0xfff,
-				rtl838x_6275B_intPhy_perport[i][0],
-				rtl838x_6275B_intPhy_perport[i][1]);
+				rtl838x_6275B_intPhy_perport[i * 2],
+				rtl838x_6275B_intPhy_perport[i * 2 + 1]);
 			i++;
 		}
-		while (rtl8218b_6276B_hwEsd_perport[i][0]) {
+		i = 0;
+		while (rtl8218b_6276B_hwEsd_perport[i * 2]) {
 			write_phy(mac + p, 0xfff,
-				rtl8218b_6276B_hwEsd_perport[i][0],
-				rtl8218b_6276B_hwEsd_perport[i][1]);
+				rtl8218b_6276B_hwEsd_perport[i * 2],
+				rtl8218b_6276B_hwEsd_perport[i * 2 + 1]);
 			i++;
 		}
 	}
 	return 0;
 }
 
-u32 rtl8380_rtl8218b_perchip[][3] = {
-	{0, 0x1f, 0x0000}, {0, 0x1e, 0x0008}, {0, 0x1f, 0x0405},
-	{0, 0x14, 0x08ec}, {0, 0x1f, 0x0404}, {0, 0x17, 0x5359},
-	{0, 0x1f, 0x0424}, {0, 0x17, 0x5359}, {0, 0x1f, 0x042c},
-	{0, 0x11, 0x4000}, {0, 0x12, 0x2020}, {0, 0x17, 0x34ac},
-	{0, 0x1f, 0x042d}, {0, 0x12, 0x6078}, {0, 0x1f, 0x042e},
-	{0, 0x11, 0x2189}, {0, 0x1f, 0x0460}, {0, 0x10, 0x4800},
-	{0, 0x1f, 0x0464}, {0, 0x12, 0x1fb0}, {0, 0x13, 0x3e0f},
-	{0, 0x15, 0x202a}, {0, 0x16, 0xf072}, {0, 0x1f, 0x0465},
-	{0, 0x10, 0x4208}, {0, 0x11, 0x3a08}, {0, 0x13, 0x8068},
-	{0, 0x15, 0x29fb}, {0, 0x12, 0x4007}, {0, 0x14, 0x619f},
-	{0, 0x1f, 0x0462}, {0, 0x10, 0xf206}, {0, 0x13, 0x530f},
-	{0, 0x15, 0x2a58}, {0, 0x12, 0x97b3}, {0, 0x1f, 0x0464},
-	{0, 0x17, 0x80f5}, {0, 0x17, 0x00f5}, {0, 0x1f, 0x042d},
-	{0, 0x11, 0xc015}, {0, 0x11, 0xc014}, {0, 0x1f, 0x0467},
-	{0, 0x14, 0x143d}, {0, 0x14, 0x3c15}, {0, 0x14, 0x3c17},
-	{0, 0x14, 0x0000}, {0, 0x1f, 0x0404}, {0, 0x13, 0x7146},
-	{0, 0x13, 0x7106}, {0, 0x1f, 0x0424}, {0, 0x13, 0x7146},
-	{0, 0x13, 0x7106}, {0, 0x1f, 0x0261}, {0, 0x10, 0x6000},
-	{0, 0x10, 0x0000}, {0, 0x1f, 0x0a42}, {0, 0x1e, 0x0000},
-	{0, 0, 0}
-};
-
-u32 rtl8218B_6276B_rtl8380_perport[][2] = {
-	{0x1f, 0x0b82}, {0x10, 0x0000}, {0x1f, 0x0a44}, {0x11, 0x0418},
-	{0x1f, 0x0bc0}, {0x16, 0x0c00}, {0x1f, 0x0000}, {0x1b, 0x809a},
-	{0x1c, 0x8933}, {0x1b, 0x80a3}, {0x1c, 0x9233}, {0x1b, 0x80ac},
-	{0x1c, 0xa444}, {0x1b, 0x809f}, {0x1c, 0x6b20}, {0x1b, 0x80a8},
-	{0x1c, 0x6b22}, {0x1b, 0x80b1}, {0x1c, 0x6b23}, {0, 0}
-};
-
-u32 rtl8380_rtl8218b_perport[][2] = {
-	{0x1f, 0x0b82},{0x10, 0x0000}, {0x1f, 0x0a44},{0x11, 0x0418},
-	{0x1f, 0x0bc0},{0x16, 0x0c00}, {0x1f, 0x0000},{0x1b, 0x809a},
-	{0x1c, 0xa444},{0x1b, 0x80a3}, {0x1c, 0xa444},{0x1b, 0x80ac},
-	{0x1c, 0xa444},{0x1b, 0x809f}, {0x1c, 0x6b20},{0x1b, 0x80a8},
-	{0x1c, 0x6b24},{0x1b, 0x80b1}, {0x1c, 0x6b24},{0x1b, 0x8012},
-	{0x1c, 0xffff},{0x1b, 0x81bd}, {0x1c, 0x2801},{0x1b, 0x8100},
-	{0x1c, 0xe91e},{0x1b, 0x811f}, {0x1c, 0xe90e},{0x1b, 0x827b},
-	{0x1c, 0x0000},{0x1f, 0x0bc4}, {0x17, 0xb200}, {0, 0}
-};
-
 static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 {
 	u32 val, ipd, phy_id;
 	int i, l;
 	int mac = phydev->mdio.addr;
+	struct fw_header *h;
+	u32 *rtl8380_rtl8218b_perchip;
+	u32 *rtl8218B_6276B_rtl8380_perport;
+	u32 *rtl8380_rtl8218b_perport;
 
 	if (soc_info.family == RTL8380_FAMILY_ID && mac != 0 && mac != 16) {
 		phydev_err(phydev, "External RTL8218B must have PHY-IDs 0 or 16!\n");
@@ -269,6 +307,24 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	}
 	phydev_info(phydev, "Detected external RTL8218B\n");
 
+	h = rtl838x_request_fw(phydev, &rtl838x_8218b_fw, FIRMWARE_838X_8218b_1);
+	if (!h)
+		return -1;
+
+	if (h->phy != 0x8218b00) {
+		printk("Wrong firmware file: PHY mismatch.\n");
+		return -1;
+	}
+
+	rtl8380_rtl8218b_perchip = (void *)h + sizeof(struct fw_header)
+			+ h->parts[0].start;
+
+	rtl8218B_6276B_rtl8380_perport = (void *)h + sizeof(struct fw_header)
+			+ h->parts[1].start;
+
+	rtl8380_rtl8218b_perport = (void *)h + sizeof(struct fw_header)
+			+ h->parts[2].start;
+
 	read_phy(mac, 0, 0, &val);
 	if ( val & (1 << 11) )
 		rtl8380_int_phy_on_off(mac, true);
@@ -282,11 +338,11 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	read_phy(mac, 0xfff, 0x1c, &val);
 
 	i = 0;
-	while (rtl8380_rtl8218b_perchip[i][0] 
-		&& rtl8380_rtl8218b_perchip[i][1]) {
-		write_phy(mac + rtl8380_rtl8218b_perchip[i][0],
-					  0xfff, rtl8380_rtl8218b_perchip[i][1],
-					  rtl8380_rtl8218b_perchip[i][2]);
+	while (rtl8380_rtl8218b_perchip[i * 3]
+		&& rtl8380_rtl8218b_perchip[i * 3 +1]) {
+		write_phy(mac + rtl8380_rtl8218b_perchip[i * 3],
+					  0xfff, rtl8380_rtl8218b_perchip[i * 3 + 1],
+					  rtl8380_rtl8218b_perchip[i * 3 + 2]);
 		i++;
 	}
 
@@ -335,9 +391,9 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	ipd = (ipd >> 4) & 0xf;
 
 	i = 0;
-	while (rtl8218B_6276B_rtl8380_perport[i][0]) {
-		write_phy(mac, 0xfff, rtl8218B_6276B_rtl8380_perport[i][0],
-				  rtl8218B_6276B_rtl8380_perport[i][1]);
+	while (rtl8218B_6276B_rtl8380_perport[i * 2]) {
+		write_phy(mac, 0xfff, rtl8218B_6276B_rtl8380_perport[i * 2],
+				  rtl8218B_6276B_rtl8380_perport[i * 2 + 1]);
 		i++;
 	}
 
@@ -359,59 +415,6 @@ static int rtl8218b_ext_match_phy_device(struct phy_device *phydev)
 	return phydev->phy_id == PHY_ID_RTL8218B_E && addr < 8;
 }
 
-static u32 rtl8380_rtl8214fc_perchip[][3] = {
-	/* Values are PHY, Register, Value */
-	{0, 0x1e, 0x0008}, {0, 0x1f, 0x0405}, {0, 0x14, 0x08ec},
-	{0, 0x1f, 0x0404}, {0, 0x17, 0x5359}, {0, 0x1f, 0x0424},
-	{0, 0x17, 0x5359}, {0, 0x1f, 0x042c}, {0, 0x11, 0x4000},
-	{0, 0x12, 0x2020}, {0, 0x17, 0x34ac}, {0, 0x1f, 0x042d},
-	{0, 0x12, 0x6078}, {0, 0x1f, 0x042e}, {0, 0x11, 0x2189},
-	{0, 0x1f, 0x0460}, {0, 0x10, 0x4800}, {0, 0x1f, 0x0464},
-	{0, 0x12, 0x1fb0}, {0, 0x13, 0x3e0f}, {0, 0x15, 0x202a},
-	{0, 0x16, 0xf072}, {0, 0x1f, 0x0465}, {0, 0x10, 0x4208},
-	{0, 0x11, 0x3a08}, {0, 0x13, 0x8068}, {0, 0x15, 0x29fb},
-	{0, 0x12, 0x4007}, {0, 0x14, 0x619f}, {0, 0x1f, 0x0462},
-	{0, 0x10, 0xf206}, {0, 0x13, 0x530f}, {0, 0x15, 0x2a58},
-	{0, 0x12, 0x97b3}, {0, 0x1f, 0x0464}, {0, 0x17, 0x80f5},
-	{0, 0x17, 0x00f5}, {0, 0x1f, 0x042d}, {0, 0x11, 0xc015},
-	{0, 0x11, 0xc014}, {0, 0x1f, 0x0467}, {0, 0x14, 0x143d},
-	{0, 0x14, 0x3c15}, {0, 0x14, 0x3c17}, {0, 0x14, 0x0000},
-	{0, 0x1f, 0x0404}, {0, 0x13, 0x7146}, {0, 0x13, 0x7106},
-	{0, 0x1f, 0x0424}, {0, 0x13, 0x7146}, {0, 0x13, 0x7106},
-	{0, 0x1f, 0x0261}, {0, 0x10, 0x6000}, {0, 0x10, 0x0000},
-	{0, 0x1f, 0x0260}, {0, 0x13, 0x5820}, {0, 0x14, 0x032c},
-	{0, 0x1f, 0x0280}, {0, 0x10, 0xf0bb}, {0, 0x1f, 0x0266},
-	{0, 0x10, 0x0f95}, {0, 0x13, 0x0f95}, {0, 0x14, 0x0f95},
-	{0, 0x15, 0x0f95}, {0, 0x1f, 0x0a42}, {0, 0x1e, 0x0000},
-	{0, 0x1e, 0x0003}, {0, 0x1f, 0x0008}, {0, 0x17, 0x5359},
-	{0, 0x14, 0x974d}, {0, 0x1e, 0x0000}, {1, 0x1e, 0x0003},
-	{1, 0x1f, 0x0008}, {1, 0x17, 0x5359}, {1, 0x14, 0x974d},
-	{1, 0x1e, 0x0000}, {2, 0x1e, 0x0003}, {2, 0x1f, 0x0008},
-	{2, 0x17, 0x5359}, {2, 0x14, 0x974d}, {2, 0x1e, 0x0000},
-	{3, 0x1e, 0x0003}, {3, 0x1f, 0x0008}, {3, 0x17, 0x5359},
-	{3, 0x14, 0x974d}, {3, 0x1e, 0x0000}, {0, 0x1e, 0x0001},
-	{1, 0x1e, 0x0001}, {2, 0x1e, 0x0001}, {3, 0x1e, 0x0001},
-	{0, 0x00, 0x1340}, {1, 0x00, 0x1340}, {2, 0x00, 0x1340},
-	{3, 0x00, 0x1340}, {0, 0x1e, 0x0003}, {1, 0x1e, 0x0003},
-	{2, 0x1e, 0x0003}, {3, 0x1e, 0x0003}, {0, 0x1f, 0x0000},
-	{1, 0x1f, 0x0000}, {2, 0x1f, 0x0000}, {3, 0x1f, 0x0000},
-	{0, 0x10, 0x1340}, {1, 0x10, 0x1340}, {2, 0x10, 0x1340},
-	{3, 0x10, 0x1340}, {0, 0x1e, 0x0000}, {1, 0x1e, 0x0000},
-	{2, 0x1e, 0x0000}, {3, 0x1e, 0x0000}, {0, 0x1f, 0x0a42},
-	{1, 0x1f, 0x0a42}, {2, 0x1f, 0x0a42}, {3, 0x1f, 0x0a42},
-	{0, 0, 0}
-};
-
-static u32 rtl8380_rtl8214fc_perport[][2] = {
-	{0x1f, 0x0b82}, {0x10, 0x0000}, {0x1f, 0x0a44}, {0x11, 0x0418},
-	{0x1f, 0x0bc0}, {0x16, 0x0c00}, {0x1f, 0x0a43}, {0x11, 0x0043},
-	{0x1f, 0x0000}, {0x1b, 0x809a}, {0x1c, 0x8933}, {0x1b, 0x80a3},
-	{0x1c, 0x9233}, {0x1b, 0x80ac}, {0x1c, 0xa444}, {0x1b, 0x809f},
-	{0x1c, 0x6b20}, {0x1b, 0x80a8}, {0x1c, 0x6b22}, {0x1b, 0x80b1},
-	{0x1c, 0x6b23}, {0x1f, 0x0000}, {0x1e, 0x0003}, {0x1f, 0x0003},
-	{0x15, 0xe47f}, {0x1f, 0x0009}, {0x15, 0x46f4}, {0x1f, 0x0000}, 
-	{0x1e, 0x0000}, {0, 0}
-};
 
 static int rtl8380_rtl8218b_write_mmd(struct phy_device *phydev,
 				      int devnum, u16 regnum, u16 val)
@@ -759,12 +762,38 @@ static	int rtl8380_rtl8218b_set_eee(struct phy_device *phydev,
 	return 0;
 }
 
+static int rtl8214c_match_phy_device(struct phy_device *phydev)
+{
+//	int addr = phydev->mdio.addr;
+	return phydev->phy_id == PHY_ID_RTL8214C;
+}
+
+static int rtl8380_configure_rtl8214c(struct phy_device *phydev)
+{
+	u32 phy_id, val;
+	int mac = phydev->mdio.addr;
+
+	read_phy(mac, 0, 2, &val);
+	phy_id = val << 16;
+	read_phy(mac, 0, 3, &val);
+	phy_id |= val;
+	pr_debug("Phy on MAC %d: %x\n", mac, phy_id);
+
+	phydev_info(phydev, "Detected external RTL8214C\n");
+
+	/* GPHY auto conf */
+	write_phy(mac, 0xa42, 29, 0);
+	return 0;
+}
 
 static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 {
 	u32 phy_id, val, page = 0;
 	int i, l;
 	int mac = phydev->mdio.addr;
+	struct fw_header *h;
+	u32 *rtl8380_rtl8214fc_perchip;
+	u32 *rtl8380_rtl8214fc_perport;
 
 	read_phy(mac, 0, 2, &val);
 	phy_id = val << 16;
@@ -785,6 +814,21 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 	}
 	phydev_info(phydev, "Detected external RTL8214FC\n");
 
+	h = rtl838x_request_fw(phydev, &rtl838x_8214fc_fw, FIRMWARE_838X_8214FC_1);
+	if (!h)
+		return -1;
+
+	if (h->phy != 0x8214fc00) {
+		printk("Wrong firmware file: PHY mismatch.\n");
+		return -1;
+	}
+
+	rtl8380_rtl8214fc_perchip = (void *)h + sizeof(struct fw_header)
+		   + h->parts[0].start;
+
+	rtl8380_rtl8214fc_perport = (void *)h + sizeof(struct fw_header)
+		   + h->parts[1].start;
+
 	/* detect phy version */
 	write_phy(mac, 0xfff, 27, 0x0004);
 	read_phy(mac, 0xfff, 28, &val);
@@ -799,23 +843,20 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 	write_phy(mac, 0, 30, 0x0001);
 
 	i = 0;
-	while (rtl8380_rtl8214fc_perchip[i][0] 
-		&& rtl8380_rtl8214fc_perchip[i][1]) {
-		
-		if (rtl8380_rtl8214fc_perchip[i][1] == 0x1f)
-			page = rtl8380_rtl8214fc_perchip[i][2];
-		if (rtl8380_rtl8214fc_perchip[i][1] == 0x13 && page == 0x260) {
-			read_phy(mac + rtl8380_rtl8214fc_perchip[i][0],
-					 0x260, 13, &val);
-			val = (val & 0x1f00) | (rtl8380_rtl8214fc_perchip[i][2]
+	while (rtl8380_rtl8214fc_perchip[i * 3]
+	       && rtl8380_rtl8214fc_perchip[i * 3 + 1]) {
+		if (rtl8380_rtl8214fc_perchip[i * 3 + 1] == 0x1f)
+			page = rtl8380_rtl8214fc_perchip[i * 3 + 2];
+		if (rtl8380_rtl8214fc_perchip[i * 3 + 1] == 0x13 && page == 0x260) {
+			read_phy(mac + rtl8380_rtl8214fc_perchip[i * 3], 0x260, 13, &val);
+			val = (val & 0x1f00) | (rtl8380_rtl8214fc_perchip[i * 3 + 2]
 				& 0xe0ff);
-			write_phy(mac + rtl8380_rtl8214fc_perchip[i][0],
-					  0xfff, rtl8380_rtl8214fc_perchip[i][1],
-					  val);
+			write_phy(mac + rtl8380_rtl8214fc_perchip[i * 3],
+					  0xfff, rtl8380_rtl8214fc_perchip[i * 3 + 1], val);
 		} else {
-			write_phy(mac + rtl8380_rtl8214fc_perchip[i][0],
-					  0xfff, rtl8380_rtl8214fc_perchip[i][1],
-					  rtl8380_rtl8214fc_perchip[i][2]);
+			write_phy(mac + rtl8380_rtl8214fc_perchip[i * 3],
+					  0xfff, rtl8380_rtl8214fc_perchip[i * 3 + 1],
+					  rtl8380_rtl8214fc_perchip[i * 3 + 2]);
 		}
 		i++;
 	}
@@ -876,9 +917,9 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 	mdelay(1);
 
 	i = 0;
-	while (rtl8380_rtl8214fc_perport[i][0]) {
-		write_phy(mac, 0xfff,rtl8380_rtl8214fc_perport[i][0],
-				  rtl8380_rtl8214fc_perport[i][1]);
+	while (rtl8380_rtl8214fc_perport[i * 2]) {
+		write_phy(mac, 0xfff,rtl8380_rtl8214fc_perport[i * 2],
+				  rtl8380_rtl8214fc_perport[i * 2 + 1]);
 		i++;
 	}
 
@@ -906,99 +947,74 @@ static int rtl8214fc_match_phy_device(struct phy_device *phydev)
 	return phydev->phy_id == PHY_ID_RTL8214FC && addr >= 24;
 }
 
-static u32 rtl8380_sds_take_reset[][2] = {
-	{0xbb000034, 0x0000003f}, {0xbb00003c, 0x00000010}, {0xbb00e78c, 0x00007146},
-	{0xbb00e98c, 0x00007146}, {0xbb00eb8c, 0x00007146}, {0xbb00ed8c, 0x00007146},
-	{0xbb00ef8c, 0x00007146}, {0xbb00f18c, 0x00007146}, {0, 0}
-};
-
-static u32 rtl8380_sds_common[][2] = {
-	{0xbb00f878, 0x0000071e}, {0xbb00f978, 0x0000071e}, {0xbb00e784, 0x00000F00},
-	{0xbb00e984, 0x00000F00}, {0xbb00eb84, 0x00000F00}, {0xbb00ed84, 0x00000F00},
-	{0xbb00ef84, 0x00000F00}, {0xbb00f184, 0x00000F00}, {0xbb00e788, 0x00007060},
-	{0xbb00e988, 0x00007060}, {0xbb00eb88, 0x00007060}, {0xbb00ed88, 0x00007060},
-	{0xbb00ef88, 0x00007060}, {0xbb00f188, 0x00007060}, {0xbb00ef90, 0x0000074d},
-	{0xbb00f190, 0x0000074d}, {0, 0}
-};
-
-static u32 rtl8380_sds01_qsgmii_6275b[][2] = {
-	{0xbb00f38c, 0x0000f46f}, {0xbb00f388, 0x000085fa}, {0xbb00f488, 0x000085fa},
-	{0xbb00f398, 0x000020d8}, {0xbb00f498, 0x000020d8}, {0xbb00f3c4, 0x0000B7C9},
-	{0xbb00f4ac, 0x00000482}, {0xbb00f4a8, 0x000080c7}, {0xbb00f3c8, 0x0000ab8e},
-	{0xbb00f3ac, 0x00000482}, {0xbb00f3cc, 
-		/* External RTL8214FC */0x000024ab}, {0xbb00f4c4, 0x00004208},
-	{0xbb00f4c8, 0x0000c208}, {0xbb00f464, 0x00000303}, {0xbb00f564, 0x00000303},
-	{0xbb00f3b8, 0x0000FCC2}, {0xbb00f4b8, 0x0000FCC2}, {0xbb00f3a4, 0x00008e64},
-	{0xbb00f3a4, 0x00008c64}, {0xbb00f4a4, 0x00008e64}, {0xbb00f4a4, 0x00008c64},
-	{0, 0}
-  };
-
-static u32 rtl8380_sds23_qsgmii_6275b[][2] = {
-	{0xbb00f58c, 0x0000f46d}, {0xbb00f588, 0x000085fa}, {0xbb00f688, 0x000085fa},
-	{0xbb00f788, 0x000085fa}, {0xbb00f598, 0x000020d8}, {0xbb00f698, 0x000020d8},
-	{0xbb00f5c4, 0x0000B7C9}, {0xbb00f5c8, 0x0000ab8e}, {0xbb00f5ac, 0x00000482},
-	{0xbb00f6ac, 0x00000482}, {0xbb00f5cc, 0x000024ab}, {0xbb00f6c4, 0x00004208},
-	{0xbb00f6c8, 0x0000c208}, {0xbb00f664, 0x00000303}, {0xbb00f764, 0x00000303},
-	{0xbb00f5b8, 0x0000FCC2}, {0xbb00f6b8, 0x0000FCC2}, {0xbb00f5a4, 0x00008e64},
-	{0xbb00f5a4, 0x00008c64}, {0xbb00f6a4, 0x00008e64}, {0xbb00f6a4, 0x00008c64},
-	{0, 0}
- };
-
-static u32 rtl8380_sds4_fiber_6275b[][2] = {
-	{0xbb00f788, 0x000085fa}, {0xbb00f7ac, 0x00001482}, {0xbb00f798, 0x000020d8},
-	{0xbb00f7a8, 0x000000c3}, {0xbb00f7c4, 0x0000B7C9}, {0xbb00f7c8, 0x0000ab8e},
-	{0xbb00f864, 0x00000303}, {0xbb00f7b8, 0x0000FCC2}, {0xbb00f7a4, 0x00008e64},
-	{0xbb00f7a4, 0x00008c64}, {0, 0}
-};
-
-static u32 rtl8380_sds5_fiber_6275b[][2] = {
-	{0xbb00f888, 0x000085fa}, {0xbb00f88c, 0x00000000}, {0xbb00f890, 0x0000dccc},
-	{0xbb00f894, 0x00000000}, {0xbb00f898, 0x00003600}, {0xbb00f89c, 0x00000003},
-	{0xbb00f8a0, 0x000079aa}, {0xbb00f8a4, 0x00008c64}, {0xbb00f8a8, 0x000000c3},
-	{0xbb00f8ac, 0x00001482}, {0xbb00f960, 0x000014aa}, {0xbb00f964, 0x00000303},
-	{0xbb00f8b8, 0x0000f002}, {0xbb00f96c, 0x000004bf}, {0xbb00f8a4, 0x00008e64},
-	{0xbb00f8a4, 0x00008c64}, {0, 0}
-};
-
-static u32 rtl8380_sds_reset[][2] = {
-	{0xbb00e780, 0x00000c00}, {0xbb00e980, 0x00000c00}, {0xbb00eb80, 0x00000c00},
-	{0xbb00ed80, 0x00000c00}, {0xbb00ef80, 0x00000c00}, {0xbb00f180, 0x00000c00},
-	{0xbb00e780, 0x00000c03}, {0xbb00e980, 0x00000c03}, {0xbb00eb80, 0x00000c03},
-	{0xbb00ed80, 0x00000c03}, {0xbb00ef80, 0x00000c03}, {0xbb00f180, 0x00000c03},
-	{0, 0}
-};
-
-static u32 rtl8380_sds_release_reset[][2] = {
-	{0xbb00e78c, 0x00007106}, {0xbb00e98c, 0x00007106}, {0xbb00eb8c, 0x00007106},
-	{0xbb00ed8c, 0x00007106}, {0xbb00ef8c, 0x00007106}, {0xbb00f18c, 0x00007106},
-	{0, 0}
-};
-
 static int rtl8380_configure_serdes(struct phy_device *phydev)
 {
 	u32 v;
 	u32 sds_conf_value;
 	int i;
+	struct fw_header *h;
+	u32 *rtl8380_sds_take_reset;
+	u32 *rtl8380_sds_common;
+	u32 *rtl8380_sds01_qsgmii_6275b;
+	u32 *rtl8380_sds23_qsgmii_6275b;
+	u32 *rtl8380_sds4_fiber_6275b;
+	u32 *rtl8380_sds5_fiber_6275b;
+	u32 *rtl8380_sds_reset;
+	u32 *rtl8380_sds_release_reset;
 
 	phydev_info(phydev, "Detected internal RTL8380 SERDES\n");
-	/* Back up serdes power down value */
+
+	h = rtl838x_request_fw(phydev, &rtl838x_8218b_fw, FIRMWARE_838X_8380_1);
+	if (!h)
+		return -1;
+
+	if (h->magic != 0x83808380) {
+		printk("Wrong firmware file: magic number mismatch.\n");
+		return -1;
+	}
+
+	rtl8380_sds_take_reset = (void *)h + sizeof(struct fw_header)
+		   + h->parts[0].start;
+
+	rtl8380_sds_common = (void *)h + sizeof(struct fw_header)
+		   + h->parts[1].start;
+
+	rtl8380_sds01_qsgmii_6275b = (void *)h + sizeof(struct fw_header)
+		   + h->parts[2].start;
+
+	rtl8380_sds23_qsgmii_6275b = (void *)h + sizeof(struct fw_header)
+		   + h->parts[3].start;
+
+	rtl8380_sds4_fiber_6275b = (void *)h + sizeof(struct fw_header)
+		   + h->parts[4].start;
+
+	rtl8380_sds5_fiber_6275b = (void *)h + sizeof(struct fw_header)
+		   + h->parts[5].start;
+
+	rtl8380_sds_reset = (void *)h + sizeof(struct fw_header)
+		   + h->parts[6].start;
+
+	rtl8380_sds_release_reset = (void *)h + sizeof(struct fw_header)
+		   + h->parts[7].start;
+
+	/* Back up serdes power off value */
 	sds_conf_value = sw_r32(RTL838X_SDS_CFG_REG);
 	pr_info("SDS power down value: %x\n", sds_conf_value);
 
 	/* take serdes into reset */
 	i = 0;
-	while (rtl8380_sds_take_reset[i][0]) {
-		sw_w32(rtl8380_sds_take_reset[i][1], 
-			(volatile void *)rtl8380_sds_take_reset[i][0]);
+	while (rtl8380_sds_take_reset[2 * i]) {
+		sw_w32(rtl8380_sds_take_reset[2 * i + 1],
+			(volatile void *)rtl8380_sds_take_reset[2 * i]);
 		i++;
 		udelay(1000);
 	}
 
 	/* apply common serdes patch */
 	i = 0;
-	while (rtl8380_sds_common[i][0]) {
-		sw_w32(rtl8380_sds_common[i][1],
-			(volatile void *)rtl8380_sds_common[i][0]);
+	while (rtl8380_sds_common[2 * i]) {
+		sw_w32(rtl8380_sds_common[2 * i + 1],
+			(volatile void *)rtl8380_sds_common[2 * i]);
 		i++;
 		udelay(1000);
 	}
@@ -1018,44 +1034,44 @@ static int rtl8380_configure_serdes(struct phy_device *phydev)
 	pr_info("PLL control register: %x\n", sw_r32(RTL838X_PLL_CML_CTRL));
 	sw_w32_mask(0xfffffff0, 0xaaaaaaaf & 0xf, RTL838X_PLL_CML_CTRL);
 	i = 0;
-	while (rtl8380_sds01_qsgmii_6275b[i][0]) {
-		sw_w32(rtl8380_sds01_qsgmii_6275b[i][1],
-			(volatile void *) rtl8380_sds01_qsgmii_6275b[i][0]);
+	while (rtl8380_sds01_qsgmii_6275b[2 * i]) {
+		sw_w32(rtl8380_sds01_qsgmii_6275b[2 * i + 1],
+			(volatile void *) rtl8380_sds01_qsgmii_6275b[2 * i]);
 		i++;
 	}
 
 	i = 0;
-	while (rtl8380_sds23_qsgmii_6275b[i][0]) {
-		sw_w32(rtl8380_sds23_qsgmii_6275b[i][1],
-			(volatile void *) rtl8380_sds23_qsgmii_6275b[i][0]);
+	while (rtl8380_sds23_qsgmii_6275b[2 * i]) {
+		sw_w32(rtl8380_sds23_qsgmii_6275b[2 * i + 1],
+			(volatile void *) rtl8380_sds23_qsgmii_6275b[2 * i]);
 		i++;
 	}
 
 	i = 0;
-	while (rtl8380_sds4_fiber_6275b[i][0]) {
-		sw_w32(rtl8380_sds4_fiber_6275b[i][1],
-			(volatile void *) rtl8380_sds4_fiber_6275b[i][0]);
+	while (rtl8380_sds4_fiber_6275b[2 * i]) {
+		sw_w32(rtl8380_sds4_fiber_6275b[2 * i + 1],
+			(volatile void *) rtl8380_sds4_fiber_6275b[2 * i]);
 		i++;
 	}
 
 	i = 0;
-	while (rtl8380_sds5_fiber_6275b[i][0]) {
-		sw_w32(rtl8380_sds5_fiber_6275b[i][1],
-			(volatile void *) rtl8380_sds5_fiber_6275b[i][0]);
+	while (rtl8380_sds5_fiber_6275b[2 * i]) {
+		sw_w32(rtl8380_sds5_fiber_6275b[2 * i + 1],
+			(volatile void *) rtl8380_sds5_fiber_6275b[2 * i]);
 		i++;
 	}
 
 	i = 0;
-	while (rtl8380_sds_reset[i][0]) {
-		sw_w32(rtl8380_sds_reset[i][1],
-			(volatile void *) rtl8380_sds_reset[i][0]);
+	while (rtl8380_sds_reset[2 * i]) {
+		sw_w32(rtl8380_sds_reset[2 * i + 1],
+			(volatile void *) rtl8380_sds_reset[2 * i]);
 		i++;
 	}
 
 	i = 0;
-	while (rtl8380_sds_release_reset[i][0]) {
-		sw_w32(rtl8380_sds_release_reset[i][1],
-			(volatile void *) rtl8380_sds_release_reset[i][0]);
+	while (rtl8380_sds_release_reset[2 *i]) {
+		sw_w32(rtl8380_sds_release_reset[2 * i + 1],
+			(volatile void *) rtl8380_sds_release_reset[2 * i]);
 		i++;
 	}
 
@@ -1085,6 +1101,26 @@ static int rtl8214fc_phy_probe(struct phy_device *phydev)
 	if(!(addr % 8)) {
 		/* Configuration must be done whil patching still possible */
 		return rtl8380_configure_rtl8214fc(phydev);
+	}
+	return 0;
+}
+
+static int rtl8214c_phy_probe(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	struct rtl838x_phy_priv *priv;
+	int addr = phydev->mdio.addr;
+
+	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	priv->name = "RTL8214C";
+
+	/* All base addresses of the PHYs start at multiples of 8 */
+	if(!(addr % 8)) {
+		/* Configuration must be done whil patching still possible */
+		return rtl8380_configure_rtl8214c(phydev);
 	}
 	return 0;
 }
@@ -1177,10 +1213,20 @@ static int rtl8390_serdes_probe(struct phy_device *phydev)
 		return -ENOMEM;
 
 	priv->name = "RTL8390 Serdes";
-	return rtl8390_configure_unknown(phydev);
+	return rtl8390_configure_generic(phydev);
 }
 
 static struct phy_driver rtl838x_phy_driver[] = {
+	{
+		PHY_ID_MATCH_MODEL(PHY_ID_RTL8214FC),
+		.name		= "REATLTEK RTL8214C",
+		.features	= PHY_GBIT_FEATURES,
+		.match_phy_device = rtl8214c_match_phy_device,
+		.probe		= rtl8214c_phy_probe,
+		.suspend	= genphy_suspend,
+		.resume		= genphy_resume,
+		.set_loopback	= genphy_loopback,
+	},
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8214FC),
 		.name		= "REATLTEK RTL8214FC",
@@ -1236,8 +1282,8 @@ static struct phy_driver rtl838x_phy_driver[] = {
 		.write_mmd	= rtl8380_rtl8218b_write_mmd,
 	},
 	{
-		PHY_ID_MATCH_MODEL(PHY_ID_RTL_UNKNOWN),
-		.name		= "REATLTEK RTL8390 Unknown",
+		PHY_ID_MATCH_MODEL(PHY_ID_RTL8390_GENERIC),
+		.name		= "REATLTEK RTL8390 Generic",
 		.features	= PHY_GBIT_FIBRE_FEATURES,
 		.probe		= rtl8390_serdes_probe,
 		.suspend	= genphy_suspend,

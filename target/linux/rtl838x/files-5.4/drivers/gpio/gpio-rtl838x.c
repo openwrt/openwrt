@@ -39,11 +39,6 @@ struct rtl838x_gpios {
 
 extern struct mutex smi_lock;
 
-/*
-	TODO: TRY TYPE for RST on Zyxel
-	RTL838X_GPIO_PABC_TYPE
-*/
-
 u32 rtl838x_rtl8231_read(u8 bus_id, u32 reg)
 {
 	u32 t = 0;
@@ -133,7 +128,7 @@ static int rtl8231_pin_dir_get(u8 bus_id, u32 gpio, u32 *dir)
 	 u32  v;
 	 int pin_dir_addr = RTL8231_GPIO_DIR(gpio);
 	 int pin = gpio % 16;
-	 
+
 	 if( gpio > 31 ) {
 		 pin_dir_addr = RTL8231_GPIO_PIN_SEL(gpio);
 		 pin = pin << 5;
@@ -154,7 +149,7 @@ static int rtl8231_pin_set(u8 bus_id, u32 gpio, u32 data)
 		pr_err("Error reading RTL8231\n");
 		return -1;
 	}
-	rtl838x_rtl8231_write(bus_id, RTL8231_GPIO_DATA(gpio), 
+	rtl838x_rtl8231_write(bus_id, RTL8231_GPIO_DATA(gpio),
 			      (v & ~(1 << (gpio % 16))) | (data << (gpio % 16)));
 	return 0;
 }
@@ -184,7 +179,7 @@ static int rtl838x_direction_input(struct gpio_chip *gc, unsigned offset)
 	}
 
 	/* Internal LED driver does not support input */
-	if (offset >=32 && offset <64) 
+	if (offset >=32 && offset <64)
 		return -ENOTSUPP;
 
 	if (offset >= 64 && offset < 100 && gpios->bus_id >= 0)
@@ -203,7 +198,7 @@ static int rtl838x_direction_output(struct gpio_chip *gc, unsigned offset,
 		rtl838x_w32_mask(0, 1 << offset, RTL838X_GPIO_PABC_DIR);
 
 	/* LED for PWR and SYS driver is direction output by default */
-	if (offset >=32 && offset <64) 
+	if (offset >=32 && offset <64)
 		return 0;
 
 	if (offset >= 64 && offset < 100 && gpios->bus_id >= 0)
@@ -225,7 +220,7 @@ static int rtl838x_get_direction(struct gpio_chip *gc, unsigned offset)
 	}
 
 	/* LED driver for PWR and SYS is direction output by default */
-	if (offset >=32 && offset <64) 
+	if (offset >=32 && offset <64)
 		return 0;
 
 	if (offset >= 64 && offset < 100 && gpios->bus_id >= 0) {
@@ -307,7 +302,7 @@ void rtl838x_gpio_set (struct gpio_chip *gc, unsigned offset, int value)
 		bit = offset - 32;
 		if (value)
 			rtl838x_w32_mask(0, 1 << bit, RTL838X_LED_GLB_CTRL);
-		else 
+		else
 			rtl838x_w32_mask(1 << bit, 0, RTL838X_LED_GLB_CTRL);
 		return;
 	}
@@ -319,8 +314,6 @@ void rtl838x_gpio_set (struct gpio_chip *gc, unsigned offset, int value)
 	}
 
 	bit = (offset - 100) % 32;
-/*	printk("%d -> %x: %x %x %x, P_CRTL: %x\n", bit, rtl838x_r32(RTL838X_LED_P_EN_CTRL), rtl838x_r32(RTL838X_LED0_SW_P_EN_CTRL), rtl838x_r32(RTL838X_LED1_SW_P_EN_CTRL), rtl838x_r32(RTL838X_LED2_SW_P_EN_CTRL),
-	       rtl838x_r32(RTL838X_LED_SW_P_CTRL(bit))); */
 	/* First Port-LED */
 	if (offset >= 100 && offset < 132
 	   && offset >= (100 + gpios->min_led)

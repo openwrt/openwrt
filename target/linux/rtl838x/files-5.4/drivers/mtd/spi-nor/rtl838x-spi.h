@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2009 Realtek Semiconductor Corp.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -29,11 +29,11 @@
 #define spi_w32w(val, reg)	__raw_writel(val, reg); SPI_WAIT_READY
 
 
-#define SFRB   ((volatile void *) (0xB8001200))	/*SPI Flash Register Base*/	
-#define SFCR   (SFRB)			/*SPI Flash Configuration Register*/		
-	#define SFCR_CLK_DIV(val)	((val)<<29)		
-	#define SFCR_EnableRBO		(1<<28)		
-	#define SFCR_EnableWBO		(1<<27)		
+#define SFRB   ((volatile void *) (0xB8001200))	/*SPI Flash Register Base*/
+#define SFCR   (SFRB)			/*SPI Flash Configuration Register*/
+	#define SFCR_CLK_DIV(val)	((val)<<29)
+	#define SFCR_EnableRBO		(1<<28)
+	#define SFCR_EnableWBO		(1<<27)
 	#define SFCR_SPI_TCS(val)	((val)<<23) /*4 bit, 1111 */
 
 #define SFCR2  (SFRB+0x04)      /*For memory mapped I/O */
@@ -46,32 +46,32 @@
 	#define SFCR2_DATAIO(val)	((val)<<11) /*2 bit, 11 */
 	#define SFCR2_HOLD_TILL_SFDR2	(1<<10)
 	#define SFCR2_GETSIZE(x)	(((x)&0x00E00000)>>21)
-		
-#define SFCSR  (SFRB+0x08)	/*SPI Flash Control&Status Register*/		
+
+#define SFCSR  (SFRB+0x08)	/*SPI Flash Control&Status Register*/
 	#define SFCSR_SPI_CSB0		(1<<31)
-	#define SFCSR_SPI_CSB1		(1<<30)		
+	#define SFCSR_SPI_CSB1		(1<<30)
 	#define SFCSR_LEN(val)		((val)<<28)  /*2 bits*/
-	#define SFCSR_SPI_RDY		(1<<27)		
+	#define SFCSR_SPI_RDY		(1<<27)
 	#define SFCSR_IO_WIDTH(val)	((val)<<25)  /*2 bits*/
 	#define SFCSR_CHIP_SEL		(1<<24)
 	#define SFCSR_CMD_BYTE(val)	((val)<<16)  /*8 bit, 1111_1111 */
-	
-#define SFDR   (SFRB+0x0C)	/*SPI Flash Data Register*/	
+
+#define SFDR   (SFRB+0x0C)	/*SPI Flash Data Register*/
 #define SFDR2  (SFRB+0x10)	/*SPI Flash Data Register - for post SPI bootup setting*/
 	#define SPI_CS_INIT		(SFCSR_SPI_CSB0 | SFCSR_SPI_CSB1 | SPI_LEN1)
-	#define SPI_CS0			SFCSR_SPI_CSB0	
-	#define SPI_CS1 		SFCSR_SPI_CSB1	
+	#define SPI_CS0			SFCSR_SPI_CSB0
+	#define SPI_CS1 		SFCSR_SPI_CSB1
 	#define SPI_eCS0		((SFCSR_SPI_CSB1)) /*and SFCSR to active CS0*/
 	#define SPI_eCS1		((SFCSR_SPI_CSB0)) /*and SFCSR to active CS1*/
 
-	#define SPI_WIP (1)		/* Write In Progress */	
+	#define SPI_WIP (1)		/* Write In Progress */
 	#define SPI_WEL (1<<1)		/* Write Enable Latch*/
 	#define SPI_SST_QIO_WIP (1<<7)	/* SST QIO Flash Write In Progress */
-	#define SPI_LEN_INIT 0xCFFFFFFF /* and SFCSR to init   */	
-	#define SPI_LEN4    0x30000000	/* or SFCSR to set */	
-	#define SPI_LEN3    0x20000000	/* or SFCSR to set */	
-	#define SPI_LEN2    0x10000000	/* or SFCSR to set */	
-	#define SPI_LEN1    0x00000000	/* or SFCSR to set */		
+	#define SPI_LEN_INIT 0xCFFFFFFF /* and SFCSR to init   */
+	#define SPI_LEN4    0x30000000	/* or SFCSR to set */
+	#define SPI_LEN3    0x20000000	/* or SFCSR to set */
+	#define SPI_LEN2    0x10000000	/* or SFCSR to set */
+	#define SPI_LEN1    0x00000000	/* or SFCSR to set */
 	#define SPI_SETLEN(val) do {		\
 			SPI_REG(SFCSR) &= 0xCFFFFFFF;   \
 			SPI_REG(SFCSR) |= (val-1)<<28;	\

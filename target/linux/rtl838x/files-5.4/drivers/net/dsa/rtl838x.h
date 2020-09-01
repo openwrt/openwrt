@@ -23,7 +23,6 @@
 /*
  * Register definition
  */
- 
 #define RTL838X_CPU_PORT			28
 #define RTL839X_CPU_PORT			52
 

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * 8250 serial console setup for the Realtek RTL838X SoC
- * 
+ *
  * based on the original BSP by
  * Copyright (C) 2006-2012 Tony Wu (tonywu@realtek.com)
- * 
+ *
  * Copyright (C) 2020 B. Koblitz
- * 
+ *
  */
 #include <linux/types.h>
 #include <linux/kernel.h>

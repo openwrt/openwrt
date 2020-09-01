@@ -14,12 +14,12 @@
 		led-failsafe = &led_sys;
 		led-running = &led_sys;
 		led-upgrade = &led_sys;
-	};	
+	};
 
 	chosen {
 		bootargs = "console=ttyS0,38400";
 	};
-	
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -222,7 +222,6 @@
 	};
 };
 
-	
 &switch0 {
 	ports {
 		#address-cells = <1>;
@@ -276,7 +275,7 @@
 			phy-handle = <&phy15>;
 			phy-mode = "internal";
 		};
-	
+
 		port@24 {
 			reg = <24>;
 			label = "lan9";

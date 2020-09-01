@@ -1,11 +1,11 @@
 /*
  * Setup for the Realtek RTL838X SoC:
- *    Memory, Timer and Serial
- * 
+ *	Memory, Timer and Serial
+ *
  * Copyright (C) 2020 B. Koblitz
  * based on the original BSP by
  * Copyright (C) 2006-2012 Tony Wu (tonywu@realtek.com)
- * 
+ *
  */
 #include <linux/console.h>
 #include <linux/init.h>
@@ -30,7 +30,7 @@ extern struct rtl838x_soc_info soc_info;
 
 struct clk {
 	struct clk_lookup cl;
-	unsigned long rate;	
+	unsigned long rate;
 };
 
 struct clk cpu_clk;
@@ -72,7 +72,7 @@ static void rtl838x_halt(void)
 static void __init rtl838x_setup(void)
 {
 	unsigned int val;
-	
+
 	pr_info("Registering _machine_restart\n");
 	_machine_restart = rtl838x_restart;
 	_machine_halt = rtl838x_halt;
@@ -177,7 +177,7 @@ void __init plat_time_init(void)
 
 	pll_reset_value = rtl838x_r32(RTL838X_PLL_CML_CTRL);
 	pr_info("PLL control register: %x\n", pll_reset_value);
-	
+
 	/* With the info from the command line and cpu-freq we can setup the console */
 	rtl838x_serial_init();
 }

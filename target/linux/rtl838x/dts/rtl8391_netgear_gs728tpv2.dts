@@ -14,7 +14,7 @@
 		led-failsafe = &led_sys;
 		led-running = &led_sys;
 		led-upgrade = &led_sys;
-	};	
+	};
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
@@ -89,7 +89,7 @@
 		regmap = <&ethernet0>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		
+
 		/* External phy RTL8218B */
 		phy0: ethernet-phy@0 {
 			reg = <0>;
@@ -265,7 +265,6 @@
 			phy-handle = <&phy7>;
 			phy-mode = "qsgmii";
 		};
-		
 		port@8 {
 			reg = <8>;
 			label = "lan9";

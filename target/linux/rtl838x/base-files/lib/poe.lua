@@ -5,7 +5,7 @@ local rs = require "luars232"
 port_name = "/dev/ttyS1"
 
 out = io.stderr
-	
+
 function initSerial(p)
 	local e, p = rs.open(p)
 	if e ~= rs.RS232_ERR_NOERROR then
@@ -91,7 +91,7 @@ function dumpReply(reply)
 	end
 	io.write("\n");
 end
-	
+
 function getStatus(pCon)
 	local cmd = {0x20, 0x01}
 	local reply = sendCommand(pCon, cmd)
@@ -136,7 +136,7 @@ function setPowerLowAction(pCon, disableNext)
 	end
 	sendCommand(pCon, cmd)
 end
-	
+
 function getPowerStat(pCon)
 	local cmd = {0x23, 0x01}
 	local reply = sendCommand(pCon, cmd)
@@ -165,7 +165,7 @@ function getPortOverview(pCon)
 		end
 		if reply[i] == 0x11 then
 			s[i-3] = "enabled"
-		end 
+		end
 		if reply[i] > 0x11 then
 			s[i-3] = "active"
 		end
@@ -191,8 +191,7 @@ end
 function startupPoE(pCon)
 	local reply = nil
 	reply = getStatus(pCon)
-	
-	
+
 	setGlobalPowerBudget(pCon, 0, 0)
 	setPowerLowAction(pCon, nil)
 	-- do something unknown
@@ -214,11 +213,11 @@ function startupPoE(pCon)
 	end
 	-- use monitor command 25
 	sendCommand(pCon, {0x25, 0x01})
-	
+
 	setGlobalPowerBudget(pCon, 65.0, 7.0)
 	getPowerStat(pCon)
 	-- -> 23 01 00 00 02 44 00 02 ff ff 00 6a
-	
+
 	-- Set 4 unknown port properties:
 	for i = 0, 7 do
 		sendCommand(pCon, {0x11, i, i, 0x01})
@@ -230,7 +229,7 @@ function startupPoE(pCon)
 		enablePort(pCon, i)
 	end
 
-end	
+end
 
 local p = initSerial(port_name)
 -- startupPoE(p)

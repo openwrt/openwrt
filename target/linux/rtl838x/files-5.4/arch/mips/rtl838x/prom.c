@@ -2,12 +2,11 @@
 /*
  * prom.c
  * Early intialization code for the Realtek RTL838X SoC
- * 
+ *
  * based on the original BSP by
  * Copyright (C) 2006-2012 Tony Wu (tonywu@realtek.com)
- * 
  * Copyright (C) 2020 B. Koblitz
- * 
+ *
  */
 
 #include <linux/init.h>
@@ -41,7 +40,7 @@ void unregister_prom_console(void)
 
 void disable_early_printk(void)
 {
-	
+
 }
 
 void prom_putchar(char c)
@@ -57,7 +56,7 @@ void prom_putchar(char c)
 	} while ((rtl838x_r8(UART0_LSR) & LSR_THRE) == TxCHAR_AVAIL);
 
 	/* Send Character */
-	rtl838x_w8(c, UART0_THR);	
+	rtl838x_w8(c, UART0_THR);
 }
 
 char prom_getchar(void)

@@ -22,7 +22,7 @@ struct rtl838x_nor {
 	struct spi_nor nor;
 	struct device *dev;
 	void __iomem *base;	/* nor flash base address */
-	
+
 	bool fourByteMode;
 	u32 chipSize;
 	// Following need to go into spi_nor->priv
@@ -61,7 +61,7 @@ static uint32_t rtl838x_nor_get_SR(struct rtl838x_nor *nor)
 
 static void spi_write_disable(struct rtl838x_nor *nor)
 {
-	uint32_t sfcsr, sfdr; 
+	uint32_t sfcsr, sfdr;
 
 	sfcsr = spi_prep(nor);
 	sfdr = (SPINOR_OP_WRDI) << 24;
@@ -74,7 +74,7 @@ static void spi_write_disable(struct rtl838x_nor *nor)
 
 static void spi_write_enable(struct rtl838x_nor *nor)
 {
-	uint32_t sfcsr, sfdr; 
+	uint32_t sfcsr, sfdr;
 
 	sfcsr = spi_prep(nor);
 	sfdr = (SPINOR_OP_WREN) << 24;
@@ -191,14 +191,14 @@ static ssize_t rtl838x_do_4bf_read(struct rtl838x_nor *nor, loff_t from,
 	/* Send address */
 	spi_w32w(sfcsr | (sfcsr_addr_len << 28), SFCSR);
 	spi_w32w(from << sfdr_addr_shift, SFDR);
-	
+
 	/* Dummy cycles */
 	spi_w32w(sfcsr | SPI_LEN1, SFCSR);
 	spi_w32w(0, SFDR);
-	
+
 	/* Start reading */
 	spi_w32w(sfcsr | SPI_LEN4, SFCSR);
-	
+
 	/* Read Data, 4 bytes at a time */
 	while (length >= 4){
 		SPI_WAIT_READY;
@@ -308,7 +308,7 @@ static ssize_t rtl838x_nor_write(struct spi_nor *nor, loff_t to, size_t len,
 		l -= SPI_MAX_TRANSFER_SIZE;
 		offset += SPI_MAX_TRANSFER_SIZE;
 	}
-	
+
 	if (l > 0) {
 		while(rtl838x_nor_get_SR(rtl838x_nor) & SPI_WIP);
 		do {
@@ -420,7 +420,7 @@ static int rtl838x_nor_read_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len
 	return len;
 }
 
-static int rtl838x_nor_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len) 
+static int rtl838x_nor_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len)
 {
 	uint32_t sfcsr, sfdr;
 	struct rtl838x_nor *rtl838x_nor = nor->priv;
@@ -466,8 +466,8 @@ static int spi_read_id(struct rtl838x_nor *nor)
 }
 
 static int spi_enter_sio(struct spi_nor *nor)
-{	
-	uint32_t sfcsr, sfcr2, sfdr; 
+{
+	uint32_t sfcsr, sfcr2, sfdr;
 	uint32_t ret = 0, reg = 0, size_bits;
 	struct rtl838x_nor *rtl838x_nor = nor->priv;
 
@@ -480,7 +480,7 @@ static int spi_enter_sio(struct spi_nor *nor)
 	pr_debug("SFCR2: %x, size %x, rdopt: %x\n", reg, SFCR2_GETSIZE(reg),
 						  (reg & SFCR2_RDOPT));
 	size_bits = rtl838x_nor->fourByteMode? SFCR2_SIZE(0x6) : SFCR2_SIZE(0x7);
-	
+
 	sfcr2 = SFCR2_HOLD_TILL_SFDR2 | size_bits
 		| (reg & SFCR2_RDOPT) | SFCR2_CMDIO(0)
 		| SFCR2_ADDRIO(0) | SFCR2_DUMMYCYCLE(4)

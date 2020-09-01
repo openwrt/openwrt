@@ -7,7 +7,7 @@ port_name = "/dev/ttyS1"
 out = io.stderr
 -- sequence number
 nseq = 0
-	
+
 function initSerial(p)
 	local e, p = rs.open(p)
 	if e ~= rs.RS232_ERR_NOERROR then
@@ -106,7 +106,7 @@ function dumpReply(reply)
 	end
 	io.write("\n");
 end
-	
+
 function getStatus(pCon)
 	local cmd = {0x20, 0x00}
 	local reply = sendCommand(pCon, cmd)
@@ -151,7 +151,7 @@ function setConsumptionBasedAccounting(pCon, enabled)
 		cmd = {0x17 0x00 0x01}
 	sendCommand(pCon, cmd)
 end
-		
+
 function setGlobalOptions(pCon, preAlloc, powerDelay)
 	local cmd = {0x0b, 0x00, 0x00, 0x00, 0x00}
 	if preAlloc then cmd[3] = 0x01 end
@@ -225,9 +225,9 @@ function getPortOverview(pCon)
 	cmd = {0x28, 0x01, 0x04, 0x01, 0x05, 0x01, 0x06, 0x02, 0x07, 0x01}
 	local reply2 = sendCommand(pCon, cmd)
 	if not reply then return(nil) end
-	for k,v in pairs(reply2) do 
+	for k,v in pairs(reply2) do
 		if k > 2 then
-			reply[k+8] = v 
+			reply[k+8] = v
 		end
 	end
 
@@ -238,13 +238,13 @@ function getPortOverview(pCon)
 		end
 		if reply[2*i+2] == 0x11 then
 			s[i] = "enabled"
-		end 
+		end
 		if reply[2*i+2] > 0x11 then
 			s[i] = "active"
 		end
 	end
 	return(s)
-end
+endpatch_uimage
 
 function setWideRange(pCon, port, enabled)
 	local range = 0x02
@@ -276,7 +276,7 @@ function getPortPowerLimits(pCon, port) -- ?????
 	return(answer)
 end
 
--- 00: 802.3at 02: 802.3af 
+-- 00: 802.3at 02: 802.3af
 function setPortType(pCon, pType)
 	local cmd = {0x1c, 0x00, port, pType}
 	local reply = sendCommand(pCon, cmd)
@@ -311,9 +311,9 @@ function startupPoE(pCon)
 	-- in the sequence 3, 0, 1, 2, 7, 4, 5, 6
 	-- 1d-command is rel-prio on DLink, see above...
 	sendCommand(pCon, {0x1d, 0x00, 0x03, 0x03, 0x00, 0x00, 0x01, 0x01, 0x02, 0x02})
-	
+
 	sendCommand(pCon, {0x1c, 0x00, 0x03, 0x03, 0x00, 0x03, 0x01, 0x03, 0x02, 0x03})
-	
+
 	sendCommand(pCon, {0x15, 0x00, 0x03, 0x01, 0x00, 0x01, 0x01, 0x01, 0x02, 0x01})
 
 	sendCommand(pCon, {0x1d, 0x00, 0x07, 0x07, 0x04, 0x04, 0x05, 0x05, 0x06, 0x06})
@@ -363,7 +363,6 @@ function startupPoE(pCon)
 	getGlobalOptions(pCon)
 	--> 2b sq aa 00 00 00 00 01 01 ff 00 cc
 	setGlobalOptions(pCon, true, true)
-	
 
 	for i = 0, 7 do
 		enablePort(i)

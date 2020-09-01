@@ -2,7 +2,6 @@
 /*
  * Copyright (C) 2006-2012 Tony Wu (tonywu@realtek.com)
  * Copyright (C) 2020 B. Koblitz
- * 
  */
 #ifndef _MACH_RTL838X_H_
 #define _MACH_RTL838X_H_
@@ -16,7 +15,7 @@
 #define rtl838x_w32_mask(clear, set, reg)	\
 	rtl838x_w32((rtl838x_r32(reg) & ~(clear)) | (set), reg)
 
-#define rtl838x_c32(x,y) rtl838x_w32(rtl838x_r32(y) & (~(x)), y) 
+#define rtl838x_c32(x,y) rtl838x_w32(rtl838x_r32(y) & (~(x)), y)
 
 #define rtl838x_r16(reg)	__raw_readw(reg)
 #define rtl838x_w16(val, reg)	__raw_writew(val, reg)
@@ -142,14 +141,14 @@
 
 #define SYSTEM_FREQ		200000000
 #define RTL838X_UART0_BASE	((volatile void *)(0xb8002000UL))
-#define RTL838X_UART0_BAUD	38400  /* ex. 19200 or 38400 or 57600 or 115200 */  
+#define RTL838X_UART0_BAUD	38400  /* ex. 19200 or 38400 or 57600 or 115200 */
 #define RTL838X_UART0_FREQ	(SYSTEM_FREQ - RTL838X_UART0_BAUD * 24)
 #define RTL838X_UART0_MAPBASE	0x18002000UL
 #define RTL838X_UART0_MAPSIZE	0x100
 #define RTL838X_UART0_IRQ	UART0_IRQ
 
-#define RTL838X_UART1_BASE	0xb8002100UL
-#define RTL838X_UART1_BAUD	38400  /* ex. 19200 or 38400 or 57600 or 115200 */  
+#define RTL838X_UART1_BASE	((volatile void *)(0xb8002100UL))
+#define RTL838X_UART1_BAUD	38400  /* ex. 19200 or 38400 or 57600 or 115200 */
 #define RTL838X_UART1_FREQ	(SYSTEM_FREQ - RTL838X_UART1_BAUD * 24)
 #define RTL838X_UART1_MAPBASE	0x18002100UL
 #define RTL838X_UART1_MAPSIZE	0x100
@@ -353,7 +352,7 @@
 /*
  * Reset
  */
-#define	RGCR				(RTL838X_SWITCH_BASE + 0xBB001E70)
+#define	RGCR				(RTL838X_SWITCH_BASE + 0x1E70)
 #define RTL839X_RST_GLB_CTRL		(RTL838X_SWITCH_BASE + 0x14)
 #define RTL838X_RST_GLB_CTRL_1		(RTL838X_SWITCH_BASE + 0x40)
 
