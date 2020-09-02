@@ -646,6 +646,64 @@ define Device/netgear_ex6150v2
 endef
 TARGET_DEVICES += netgear_ex6150v2
 
+define Device/netgear_orbi
+	$(call Device/DniImage)
+	SOC := qcom-ipq4019
+	DEVICE_VENDOR := NETGEAR
+	IMAGE/factory.img := append-kernel | pad-offset 128k 64 | \
+		append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | \
+		append-rootfs | pad-rootfs | netgear-dni
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | \
+		sysupgrade-tar rootfs=$$$$@ | append-metadata
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct e2fsprogs kmod-fs-ext4 losetup
+endef
+
+define Device/netgear_rbx50
+	$(call Device/netgear_orbi)
+	NETGEAR_HW_ID := 29765352+0+4000+512+2x2+2x2+4x4
+	KERNEL_SIZE := 3932160
+	ROOTFS_SIZE := 32243712
+	IMAGE_SIZE := 36175872
+endef
+
+define Device/netgear_rbr50
+	$(call Device/netgear_rbx50)
+	DEVICE_MODEL := RBR50
+	DEVICE_VARIANT := v1
+	NETGEAR_BOARD_ID := RBR50
+endef
+TARGET_DEVICES += netgear_rbr50
+
+define Device/netgear_rbs50
+	$(call Device/netgear_rbx50)
+	DEVICE_MODEL := RBS50
+	DEVICE_VARIANT := v1
+	NETGEAR_BOARD_ID := RBS50
+endef
+TARGET_DEVICES += netgear_rbs50
+
+define Device/netgear_srx60
+	$(call Device/netgear_orbi)
+	NETGEAR_HW_ID := 29765352+0+4096+512+2x2+2x2+4x4
+	KERNEL_SIZE := 3932160
+	ROOTFS_SIZE := 32243712
+	IMAGE_SIZE := 36175872
+endef
+
+define Device/netgear_srr60
+	$(call Device/netgear_srx60)
+	DEVICE_MODEL := SRR60
+	NETGEAR_BOARD_ID := SRR60
+endef
+TARGET_DEVICES += netgear_srr60
+
+define Device/netgear_srs60
+	$(call Device/netgear_srx60)
+	DEVICE_MODEL := SRS60
+	NETGEAR_BOARD_ID := SRS60
+endef
+TARGET_DEVICES += netgear_srs60
+
 define Device/netgear_wac510
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
