@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += LOADER_TYPE
+DEVICE_VARS += LOADER_TYPE LOADER_FLASH_OFFS
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
@@ -21,8 +21,12 @@ loadaddr-$(CONFIG_TARGET_ramips_mt7621) := 0x80001000
 ldrplatform-y := ralink
 ldrplatform-$(CONFIG_TARGET_ramips_mt7621) := mt7621
 
+ldrflashstart-y := 0x1c000000
+ldrflashstart-$(CONFIG_TARGET_ramips_mt7621) := 0x1fc00000
+
 KERNEL_LOADADDR := $(loadaddr-y)
 LOADER_PLATFORM := $(ldrplatform-y)
+LOADER_FLASH_START := $(ldrflashstart-y)
 
 KERNEL_DTB = kernel-bin | append-dtb | lzma
 
@@ -72,6 +76,18 @@ endef
 
 define Build/loader-kernel
 	$(call Build/loader-common,LOADER_DATA="$@")
+endef
+
+define Build/loader-okli-compile
+	$(call Build/loader-common, \
+		FLASH_START=$(LOADER_FLASH_START) \
+		FLASH_OFFS=$(LOADER_FLASH_OFFS) \
+		FLASH_MAX=0 \
+	)
+endef
+
+define Build/append-loader-okli
+	cat "$(KDIR)/loader-$(word 1,$(1)).$(LOADER_TYPE)" >> "$@"
 endef
 
 # combine kernel and rootfs into one image
