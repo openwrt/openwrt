@@ -30,6 +30,34 @@ define Build/add-elecom-factory-initramfs
   fi
 endef
 
+define Build/create-edimax-factory-bin
+  $(eval edimax_magic=$(word 1,$(1)))
+  $(eval edimax_model=$(word 2,$(1)))
+  $(eval kernel_filenanme=$(word 3,$(1)))
+  $(eval rootfs_filename=$(word 4,$(1)))
+  
+  $(STAGING_DIR_HOST)/bin/edimax_fw_header -M $(edimax_magic) -m $(edimax_model)\
+  -v $(VERSION_DIST)$(firstword $(subst +, , $(firstword $(subst -, ,$(REVISION))))) \
+  -n "uImage" \
+  -i $(kernel_filenanme) \
+  -o $(KDIR_TMP)/$(KERNEL_INITRAMFS_PREFIX)-uImage;
+  $(STAGING_DIR_HOST)/bin/edimax_fw_header -M $(edimax_magic) -m $(edimax_model)\
+  -v $(VERSION_DIST)$(firstword $(subst +, , $(firstword $(subst -, ,$(REVISION))))) \
+  -n "rootfs" \
+  -i $(rootfs_filename) \
+  -o $(KDIR_TMP)/$(KERNEL_INITRAMFS_PREFIX)-rootfs;
+  ( \
+  dd if=$(KDIR_TMP)/$(KERNEL_INITRAMFS_PREFIX)-rootfs; \
+  dd if=$(KDIR_TMP)/$(KERNEL_INITRAMFS_PREFIX)-uImage; \
+  ) > $@.factory.new
+
+  if [ "$$(stat -c%s $@.factory.new)" -le $$(($(subst k,* 1024,$(subst m, * 1024k,$(IMAGE_SIZE))))) ]; then \
+	mv $@.factory.new $(BIN_DIR)/$(KERNEL_INITRAMFS_PREFIX)-factory.bin; \
+  else \
+	echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
+  fi
+endef
+
 define Build/addpattern
 	-$(STAGING_DIR_HOST)/bin/addpattern -B $(ADDPATTERN_ID) \
 		-v v$(ADDPATTERN_VERSION) -i $@ -o $@.new
@@ -319,6 +347,19 @@ define Device/belkin_f9j1108-v2
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := AC1750 DB Wi-Fi (F9J1108v2)
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  KERNEL_SIZE := 5120k
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x50000
+  COMPILE := loader-$(1).bin loader-$(1).uImage
+  COMPILE/loader-$(1).bin := loader-okli-compile
+  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | lzma | \
+	uImage lzma
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  IMAGE/rootfs.combined := append-kernel | pad-to $$(KERNEL_SIZE) | append-rootfs | \
+	pad-rootfs | check-size
+  IMAGE/factory.bin := create-edimax-factory-bin F9J1108v1 BR-6679BAC \
+    $(KDIR)/loader-$(1).uImage $(KDIR_TMP)/openwrt-ath79-generic-$(1)-squashfs-rootfs.combined
+  IMAGES += rootfs.combined factory.bin
   IMAGE_SIZE := 15936k
 endef
 TARGET_DEVICES += belkin_f9j1108-v2

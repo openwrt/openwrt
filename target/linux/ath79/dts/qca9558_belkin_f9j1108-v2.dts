@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -6,11 +7,70 @@
 #include "qca955x.dtsi"
 
 / {
-	compatible = "belkin,f9j1108-v2", "qca,qca9558";
 	model = "Belkin AC1750 DB Wi-Fi (F9J1108v2)";
+	compatible = "belkin,f9j1108-v2", "qca,qca9558";
 
 	aliases {
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
 		label-mac-device = &eth1;
+	};
+	
+	leds {
+		compatible = "gpio-leds";
+
+		led_system: system {
+			label = "belkin:blue:system";
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+		};
+
+		usb {
+			label = "belkin:blue:usb";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&hub_port1>;
+			linux,default-trigger = "usbport";
+		};
+
+		wps-blue {
+			label = "belkin:blue:wps";
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+		};
+		
+		wps-amber {
+			label = "belkin:amber:wps";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+	};
+	
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		gpio_usb_power {
+			gpio-export,name = "belkin:usb-power";
+			gpio-export,output = <1>;
+			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+		
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
 	};
 };
 
@@ -115,6 +175,15 @@
 	};
 };
 
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0 0 0 0 0>;
+	};
+};
+
 &wmac {
 	status = "okay";
 
@@ -131,22 +200,27 @@
 
 	partition@40000 {
 		label = "u-boot-env";
-		reg = <0x040000 0x050000>;
+		reg = <0x040000 0x010000>;
 	};
 
-	partition@050000 {
-		label = "rootfs";
-		reg = <0x050000 0xe70000>;
-	};
-	
-	partition@050000 {
+	partition@50000 {
 		label = "kernel";
-		reg = <0x050000 0xe70000>;
+		reg = <0x050000 0x500000>;
 	};
 	
-	partition@ff0000 {
+	partition@550000 {
+		label = "rootfs";
+		reg = <0x550000 0x920000>;
+	};
+	
+	partition@e70000 {
+		label = "loader";
+		reg = <0xe70000 0x180000>;
+	};
+	
+	art: partition@ff0000 {
 		label = "art";
-		reg = <0xff0000 0x1000000>;
+		reg = <0xff0000 0x010000>;
 	};
 	
 	partition@0 {
