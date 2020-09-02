@@ -355,11 +355,11 @@ define Device/belkin_f9j1108-v2
   COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | lzma | \
 	uImage lzma
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
-  IMAGE/rootfs.combined := append-kernel | pad-to $$(KERNEL_SIZE) | append-rootfs | \
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-rootfs | \
 	pad-rootfs | check-size
   IMAGE/factory.bin := create-edimax-factory-bin F9J1108v1 BR-6679BAC \
-    $(KDIR)/loader-$(1).uImage $(KDIR_TMP)/openwrt-ath79-generic-$(1)-squashfs-rootfs.combined
-  IMAGES += rootfs.combined factory.bin
+    $(KDIR)/loader-$(1).uImage $(KDIR_TMP)/openwrt-ath79-generic-$(1)-squashfs-sysupgrade.bin
+  IMAGES += sysupgrade.bin factory.bin
   IMAGE_SIZE := 15936k
 endef
 TARGET_DEVICES += belkin_f9j1108-v2
