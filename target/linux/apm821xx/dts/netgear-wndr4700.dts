@@ -454,6 +454,7 @@
 					/* Atheros AR9380 5GHz */
 					compatible = "pci168c,0030";
 					reg = <0x00430000 0 0 0 0>;
+					interrupts = <3>; /* INTC */
 					qca,no-eeprom;
 					/* wifi CAL & MAC is stored in nvram */
 
@@ -476,6 +477,7 @@
 					/* Atheros AR9381 2.4GHz */
 					compatible = "pci168c,0033";
 					reg = <0x00440000 0 0 0 0>;
+					interrupts = <4>; /* INTD */
 					qca,no-eeprom;
 					/* wifi CAL & MAC is stored in nvram */
 				};
@@ -492,6 +494,7 @@
 					/* Renesas uPD720202 */
 					compatible = "pci1912,0015";
 					reg = <0x00450000 0 0 0 0>;
+					interrupts = <1>; /* INTA */
 
 					#address-cells = <1>;
 					#size-cells = <0>;
