@@ -4,22 +4,23 @@
 #include "mt7620n_sunvalley.dtsi"
 
 / {
-	compatible = "hootoo,ht-tm05", "ralink,mt7620n-soc";
-	model = "HooToo HT-TM05";
+	compatible = "ravpower,rp-wd03", "ralink,mt7620n-soc";
+	model = "RAVPower RP-WD03";
 
 	leds {
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "ht-tm05:blue:power";
+			label = "rp-wd03:blue:power";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		wifi {
-			label = "ht-tm05:green:wifi";
+			label = "rp-wd03:green:wifi";
 			gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 	};
+
 };

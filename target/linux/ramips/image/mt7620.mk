@@ -489,21 +489,12 @@ endef
 TARGET_DEVICES += hnet_c108
 
 define Device/hootoo_ht-tm05
+  $(Device/sunvalley_loader_okli)
   SOC := mt7620n
   IMAGE_SIZE := 6144k
   DEVICE_VENDOR := HooToo
   DEVICE_MODEL := HT-TM05
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-i2c-ralink
-  LOADER_TYPE := bin
-  LOADER_FLASH_OFFS := 0x200000
-  COMPILE := loader-$(1).bin
-  COMPILE/loader-$(1).bin := loader-okli-compile | pad-to 64k | lzma | \
-	uImage lzma
-  KERNEL := $(KERNEL_DTB) | uImage lzma -M 0x4f4b4c49
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma
-  IMAGES += kernel.bin rootfs.bin
-  IMAGE/kernel.bin := append-loader-okli $(1) | check-size 64k
-  IMAGE/rootfs.bin := $$(sysupgrade_bin) | check-size
 endef
 TARGET_DEVICES += hootoo_ht-tm05
 
@@ -924,15 +915,15 @@ define Device/ralink_mt7620a-v22sg-evb
 endef
 TARGET_DEVICES += ralink_mt7620a-v22sg-evb
 
-define Device/ravpower_wd03
+define Device/ravpower_rp-wd03
+  $(Device/sunvalley_loader_okli)
   SOC := mt7620n
-  IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := Ravpower
-  DEVICE_MODEL := WD03
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
-  DEFAULT := n
+  IMAGE_SIZE := 6144k
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-i2c-ralink
+  DEVICE_VENDOR := RAVPower
+  DEVICE_MODEL := RP-WD03
 endef
-TARGET_DEVICES += ravpower_wd03
+TARGET_DEVICES += ravpower_rp-wd03
 
 define Device/sanlinking_d240
   SOC := mt7620a
@@ -953,6 +944,19 @@ define Device/sercomm_na930
   SUPPORTED_DEVICES += na930
 endef
 TARGET_DEVICES += sercomm_na930
+
+define Device/sunvalley_loader_okli
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x200000
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := loader-okli-compile | pad-to 64k | lzma | \
+	uImage lzma
+  KERNEL := $(KERNEL_DTB) | uImage lzma -M 0x4f4b4c49
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma
+  IMAGES += kernel.bin rootfs.bin
+  IMAGE/kernel.bin := append-loader-okli $(1) | check-size 64k
+  IMAGE/rootfs.bin := $$(sysupgrade_bin) | check-size
+endef
 
 define Device/tplink_archer-c20i
   $(Device/tplink-v2)
