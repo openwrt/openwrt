@@ -33,7 +33,7 @@
 +obj-$(CONFIG_NET_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/atheros/ar231x/ar231x.c
-@@ -0,0 +1,1119 @@
+@@ -0,0 +1,1120 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -225,6 +225,7 @@
 +
 +	sp = netdev_priv(dev);
 +	sp->dev = dev;
++	sp->pdev = pdev;
 +	sp->cfg = pdev->dev.platform_data;
 +
 +	sprintf(buf, "eth%d_membase", pdev->id);
@@ -787,7 +788,7 @@
 +			break;
 +		}
 +		/* done with this descriptor */
-+		dma_unmap_single(NULL, txdesc->addr,
++		dma_unmap_single(&sp->pdev->dev, txdesc->addr,
 +				 txdesc->devcs & DMA_TX1_BSIZE_MASK,
 +				 DMA_TO_DEVICE);
 +		txdesc->status = 0;
@@ -1014,7 +1015,7 @@
 +	/* Setup the transmit descriptor. */
 +	td->devcs = ((skb->len << DMA_TX1_BSIZE_SHIFT) |
 +				 (DMA_TX1_LS | DMA_TX1_IC | DMA_TX1_CHAINED));
-+	td->addr = dma_map_single(NULL, skb->data, skb->len, DMA_TO_DEVICE);
++	td->addr = dma_map_single(&sp->pdev->dev, skb->data, skb->len, DMA_TO_DEVICE);
 +	td->status = DMA_TX_OWN;
 +
 +	/* kick transmitter last */
@@ -1155,7 +1156,7 @@
 +
 --- /dev/null
 +++ b/drivers/net/ethernet/atheros/ar231x/ar231x.h
-@@ -0,0 +1,281 @@
+@@ -0,0 +1,282 @@
 +/*
 + * ar231x.h: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -1379,6 +1380,7 @@
 + */
 +struct ar231x_private {
 +	struct net_device *dev;
++	struct platform_device *pdev;
 +	int version;
 +	u32 mb[2];
 +
