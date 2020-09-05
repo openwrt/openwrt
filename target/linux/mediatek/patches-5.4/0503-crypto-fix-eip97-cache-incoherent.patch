@@ -1,6 +1,6 @@
 --- a/drivers/crypto/inside-secure/safexcel.h
 +++ b/drivers/crypto/inside-secure/safexcel.h
-@@ -722,6 +722,9 @@
+@@ -722,6 +722,9 @@ enum safexcel_eip_version {
  /* Priority we use for advertising our algorithms */
  #define SAFEXCEL_CRA_PRIORITY		300
  
@@ -12,7 +12,7 @@
  				"\x8E\x61\x19\x48\x31\xE8\x1A\x8F" \
 --- a/drivers/crypto/inside-secure/safexcel_hash.c
 +++ b/drivers/crypto/inside-secure/safexcel_hash.c
-@@ -57,9 +57,9 @@
+@@ -57,9 +57,9 @@ struct safexcel_ahash_req {
  	u8 block_sz;    /* block size, only set once */
  	u8 digest_sz;   /* output digest size, only set once */
  	__le32 state[SHA3_512_BLOCK_SIZE /
