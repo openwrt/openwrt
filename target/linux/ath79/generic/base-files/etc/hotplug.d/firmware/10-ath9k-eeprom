@@ -90,6 +90,7 @@ case "$FIRMWARE" in
 		caldata_extract "calibrate" 0x5000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env0 RADIOADDR0)
 		;;
+	mercury,mw4530r-v1|\
 	ocedo,raccoon|\
 	tplink,tl-wdr3500-v1|\
 	tplink,tl-wdr3600-v1|\

@@ -1090,6 +1090,18 @@ define Device/meraki_mr16
 endef
 TARGET_DEVICES += meraki_mr16
 
+define Device/mercury_mw4530r-v1
+  $(Device/tplink-8mlzma)
+  SOC := ar9344
+  DEVICE_VENDOR := Mercury
+  DEVICE_MODEL := MW4530R
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x45300001
+  SUPPORTED_DEVICES += tl-wdr4300
+endef
+TARGET_DEVICES += mercury_mw4530r-v1
+
 define Device/nec_wg1200cr
   SOC := qca9563
   DEVICE_VENDOR := NEC
