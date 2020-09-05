@@ -40,11 +40,22 @@ packages into package/feeds/
 ./scripts/feeds install luci-proto-ipv6
 ./scripts/feeds install luci-app-firewal
 ./scripts/feeds install luci-i18n-firewall-zh-cn
+./scripts/feeds install stm32flash
+./scripts/feeds install -a -pmmdvm
+
+```
+
+Optional for MT76x8 
+```
 ./scripts/feeds install travelmate
 ./scripts/feeds install luci-app-travelmate
 ./scripts/feeds install luci-i18n-travelmate-zh-cn
-./scripts/feeds install stm32flash
-./scripts/feeds install -a -pmmdvm
+```
+
+```
+Optional for X86_64
+```
+./scripts/feeds luci-mod-admin-full
 ```
 
 3. Run "make menuconfig" to select your preferred configuration for the
