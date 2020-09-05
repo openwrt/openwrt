@@ -164,10 +164,8 @@ static void edma_configure_rx(struct edma_common_info *edma_cinfo)
 	/* Set Rx FIFO threshold to start to DMA data to host */
 	rxq_ctrl_data = EDMA_FIFO_THRESH_128_BYTE;
 
-	if (!edma_cinfo->is_single_phy) {
 	/* Set RX remove vlan bit */
 	rxq_ctrl_data |= EDMA_RXQ_CTRL_RMV_VLAN;
-	}
 
 	edma_write_reg(EDMA_REG_RXQ_CTRL, rxq_ctrl_data);
 }
@@ -1411,12 +1409,10 @@ netdev_tx_t edma_xmit(struct sk_buff *skb,
 	}
 
 	/* Check and mark VLAN tag offload */
-	if (!adapter->edma_cinfo->is_single_phy) {
-		if (unlikely(skb_vlan_tag_present(skb)))
-			flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_FLAG;
-		else if (adapter->default_vlan_tag)
-			flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_DEFAULT_FLAG;
-	}
+	if (unlikely(skb_vlan_tag_present(skb)))
+		flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_FLAG;
+	else if (!adapter->edma_cinfo->is_single_phy && adapter->default_vlan_tag)
+		flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_DEFAULT_FLAG;
 
 	/* Check and mark checksum offload */
 	if (likely(skb->ip_summed == CHECKSUM_PARTIAL))
