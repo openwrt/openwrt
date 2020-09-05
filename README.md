@@ -52,7 +52,6 @@ Optional for MT76x8
 ./scripts/feeds install luci-i18n-travelmate-zh-cn
 ```
 
-```
 Optional for X86_64
 ```
 ./scripts/feeds luci-mod-admin-full
