@@ -1517,6 +1517,16 @@ define Device/trendnet_tew-823dru
 endef
 TARGET_DEVICES += trendnet_tew-823dru
 
+define Device/wallys_dr531
+  SOC := qca9531
+  DEVICE_VENDOR := Wallys
+  DEVICE_MODEL := DR531
+  DEVICE_PACKAGES := kmod-usb2 rssileds
+  IMAGE_SIZE := 7808k
+  SUPPORTED_DEVICES += dr531
+endef
+TARGET_DEVICES += wallys_dr531
+
 define Device/wd_mynet-n750
   $(Device/seama)
   SOC := ar9344
