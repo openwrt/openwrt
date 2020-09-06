@@ -84,6 +84,7 @@ define Device/ubnt_nanostation-2
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := Nanostation 2 (XS2)
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 128k | mkfwimage XS2 -v XS2.ar2316
+  DEFAULT := n
 endef
 TARGET_DEVICES += ubnt_nanostation-2
 
@@ -91,6 +92,7 @@ define Device/ubnt_nanostation-5
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := Nanostation 5 (XS5)
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 128k | mkfwimage XS5 -v XS5.ar2313
+  DEFAULT := n
 endef
 TARGET_DEVICES += ubnt_nanostation-5
 
