@@ -1,0 +1,51 @@
+From: Alexander Lobakin <alobakin@dlink.ru>
+Date: Mon, 14 Oct 2019 11:00:33 +0300
+Subject: [PATCH] net: core: use listified Rx for GRO_NORMAL in
+ napi_gro_receive()
+
+Commit 323ebb61e32b4 ("net: use listified RX for handling GRO_NORMAL
+skbs") made use of listified skb processing for the users of
+napi_gro_frags().
+The same technique can be used in a way more common napi_gro_receive()
+to speed up non-merged (GRO_NORMAL) skbs for a wide range of drivers
+including gro_cells and mac80211 users.
+This slightly changes the return value in cases where skb is being
+dropped by the core stack, but it seems to have no impact on related
+drivers' functionality.
+gro_normal_batch is left untouched as it's very individual for every
+single system configuration and might be tuned in manual order to
+achieve an optimal performance.
+
+Signed-off-by: Alexander Lobakin <alobakin@dlink.ru>
+Acked-by: Edward Cree <ecree@solarflare.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -5601,12 +5601,13 @@ static void napi_skb_free_stolen_head(st
+ 	kmem_cache_free(skbuff_head_cache, skb);
+ }
+ 
+-static gro_result_t napi_skb_finish(gro_result_t ret, struct sk_buff *skb)
++static gro_result_t napi_skb_finish(struct napi_struct *napi,
++				    struct sk_buff *skb,
++				    gro_result_t ret)
+ {
+ 	switch (ret) {
+ 	case GRO_NORMAL:
+-		if (netif_receive_skb_internal(skb))
+-			ret = GRO_DROP;
++		gro_normal_one(napi, skb);
+ 		break;
+ 
+ 	case GRO_DROP:
+@@ -5638,7 +5639,7 @@ gro_result_t napi_gro_receive(struct nap
+ 
+ 	skb_gro_reset_offset(skb);
+ 
+-	ret = napi_skb_finish(dev_gro_receive(napi, skb), skb);
++	ret = napi_skb_finish(napi, skb, dev_gro_receive(napi, skb));
+ 	trace_napi_gro_receive_exit(ret);
+ 
+ 	return ret;
