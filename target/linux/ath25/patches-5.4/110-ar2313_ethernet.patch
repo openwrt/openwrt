@@ -1113,6 +1113,7 @@
 +
 +static int ar231x_mdiobus_probe(struct net_device *dev)
 +{
++	__ETHTOOL_DECLARE_LINK_MODE_MASK(mask) = { 0, };
 +	struct ar231x_private *const sp = netdev_priv(dev);
 +	struct phy_device *phydev = NULL;
 +
@@ -1134,16 +1135,15 @@
 +	}
 +
 +	/* mask with MAC supported features */
-+	phydev->supported &= (SUPPORTED_10baseT_Half
-+		| SUPPORTED_10baseT_Full
-+		| SUPPORTED_100baseT_Half
-+		| SUPPORTED_100baseT_Full
-+		| SUPPORTED_Autoneg
-+		/* | SUPPORTED_Pause | SUPPORTED_Asym_Pause */
-+		| SUPPORTED_MII
-+		| SUPPORTED_TP);
++	linkmode_set_bit_array(phy_10_100_features_array,
++			       ARRAY_SIZE(phy_10_100_features_array),
++			       mask);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_Autoneg_BIT, mask);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_MII_BIT, mask);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_TP_BIT, mask);
 +
-+	phydev->advertising = phydev->supported;
++	linkmode_and(phydev->supported, phydev->supported, mask);
++	linkmode_copy(phydev->advertising, phydev->supported);
 +
 +	sp->phy_dev = phydev;
 +
