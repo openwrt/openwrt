@@ -22,6 +22,11 @@ tplink,vr2600v)
 	ucidef_add_switch "switch0" \
 		"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
 	;;
+edgecore,ecw5410)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_set_interface_macaddr "lan" "$(mtd_get_mac_binary "0:ART" 0x6)"
+	ucidef_set_interface_macaddr "wan" "$(mtd_get_mac_binary "0:ART" 0x0)"
+	;;
 qcom,ipq8064-ap161)
 	ucidef_set_interface_lan "eth1 eth2"
 	ucidef_add_switch "switch0" \
