@@ -27,6 +27,17 @@ platform_do_upgrade() {
 	zyxel,nbg6817)
 		zyxel_do_upgrade "$1"
 		;;
+	edgecore,ecw5410)
+		part="$(awk -F 'ubi.mtd=' '{printf $2}' /proc/cmdline | sed -e 's/ .*$//')"
+		if [ "$part" = "rootfs1" ]; then
+			fw_setenv active 2 || exit 1
+			CI_UBIPART="rootfs2"
+		else
+			fw_setenv active 1 || exit 1
+			CI_UBIPART="rootfs1"
+		fi
+		nand_do_upgrade "$1"
+		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
 		platform_do_upgrade_linksys "$1"

@@ -126,6 +126,18 @@ define Device/linksys_ea7500-v1
 endef
 TARGET_DEVICES += linksys_ea7500-v1
 
+define Device/edgecore_ecw5410
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_TITLE := Edgecore ECW5410
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS := qcom-ipq8068-ecw5410
+	DEVICE_DTS_CONFIG := config@v2.0-ap160
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct ipq-wifi-edgecore_ecw5410
+endef
+TARGET_DEVICES += edgecore_ecw5410
+
 define Device/linksys_ea8500
 	$(call Device/LegacyImage)
 	DEVICE_VENDOR := Linksys

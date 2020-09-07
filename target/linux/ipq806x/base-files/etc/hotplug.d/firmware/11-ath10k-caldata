@@ -13,6 +13,9 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary ART 0x1e)
 		;;
+	edgecore,ecw5410)
+		ath10kcal_extract "0:ART" 4096 12064
+		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
 		caldata_extract "art" 0x1000 0x2f20
@@ -74,6 +77,13 @@ case "$FIRMWARE" in
 	zyxel,nbg6817)
 		caldata_extract "0:ART" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
+		;;
+	esac
+	;;
+"ath10k/pre-cal-pci-0002:01:00.0.bin")
+	case $board in
+	edgecore,ecw5410)
+		ath10kcal_extract "0:ART" 20480 12064
 		;;
 	esac
 	;;
