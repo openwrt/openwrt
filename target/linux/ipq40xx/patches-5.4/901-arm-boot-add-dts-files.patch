@@ -8,9 +8,11 @@ Signed-off-by: John Crispin <john@phrozen.org>
  arch/arm/boot/dts/Makefile | 23 +++++++++++++++++++++++
  1 file changed, 23 insertions(+)
 
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -837,11 +837,50 @@ dtb-$(CONFIG_ARCH_QCOM) += \
+Index: linux-5.4.63/arch/arm/boot/dts/Makefile
+===================================================================
+--- linux-5.4.63.orig/arch/arm/boot/dts/Makefile
++++ linux-5.4.63/arch/arm/boot/dts/Makefile
+@@ -837,11 +837,51 @@ dtb-$(CONFIG_ARCH_QCOM) += \
  	qcom-apq8074-dragonboard.dtb \
  	qcom-apq8084-ifc6540.dtb \
  	qcom-apq8084-mtp.dtb \
@@ -20,6 +22,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +	qcom-ipq4018-cs-w3-wd1200g-eup.dtb \
 +	qcom-ipq4018-ea6350v3.dtb \
 +	qcom-ipq4018-eap1300.dtb \
++	qcom-ipq4018-ecw5211.dtb \
 +	qcom-ipq4018-emd1.dtb \
 +	qcom-ipq4018-emr3500.dtb \
 +	qcom-ipq4018-ens620ext.dtb \
