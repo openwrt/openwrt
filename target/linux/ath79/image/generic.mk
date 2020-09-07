@@ -453,6 +453,29 @@ define Device/buffalo_wzr-hp-ag300h
 endef
 TARGET_DEVICES += buffalo_wzr-hp-ag300h
 
+define Device/buffalo_wzr-hp-g300nh
+  $(Device/buffalo_common)
+  SOC := ar9132
+  BUFFALO_PRODUCT := WZR-HP-G300NH
+  BUFFALO_HWVER := 1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-gpio-nxp-74hc153
+  BLOCKSIZE := 128k
+  IMAGE_SIZE := 32128k
+  SUPPORTED_DEVICES += wzr-hp-g300nh
+endef
+
+define Device/buffalo_wzr-hp-g300nh-rb
+  $(Device/buffalo_wzr-hp-g300nh)
+  DEVICE_MODEL := WZR-HP-G300NH (RTL8366RB switch)
+endef
+TARGET_DEVICES += buffalo_wzr-hp-g300nh-rb
+
+define Device/buffalo_wzr-hp-g300nh-s
+  $(Device/buffalo_wzr-hp-g300nh)
+  DEVICE_MODEL := WZR-HP-G300NH (RTL8366S switch)
+endef
+TARGET_DEVICES += buffalo_wzr-hp-g300nh-s
+
 define Device/buffalo_wzr-hp-g302h-a1a0
   $(Device/buffalo_common)
   SOC := ar7242
