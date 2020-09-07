@@ -330,6 +330,27 @@ define Device/aruba_ap-105
 endef
 TARGET_DEVICES += aruba_ap-105
 
+define Device/atheros_db120
+  SOC := ar9344
+  DEVICE_VENDOR := Atheros
+  DEVICE_MODEL := DB120
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 7808k
+  SUPPORTED_DEVICES += db120
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x50000
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  COMPILE := loader-$(1).bin loader-$(1).uImage
+  COMPILE/loader-$(1).bin := loader-okli-compile
+  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | lzma | \
+	uImage lzma
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | pad-to 6336k | \
+	append-loader-okli-uimage $(1) | pad-to 64k
+endef
+TARGET_DEVICES += atheros_db120
+
 define Device/avm
   DEVICE_VENDOR := AVM
   KERNEL := kernel-bin | append-dtb | lzma | eva-image

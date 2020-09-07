@@ -116,6 +116,12 @@ ath79_setup_interfaces()
 	ubnt,unifi-ap-outdoor-plus)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
+	atheros,db120)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan" "3:lan" "4:lan" "5:lan" "1:wan"
+		ucidef_add_switch "switch1" \
+			"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:lan"
+		;;
 	avm,fritz4020|\
 	pcs,cr3000|\
 	tplink,archer-c58-v1|\
