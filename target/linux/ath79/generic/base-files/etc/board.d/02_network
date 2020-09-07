@@ -155,6 +155,13 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
+	buffalo,wzr-hp-g300nh-rb|\
+	buffalo,wzr-hp-g300nh-s|\
+	dlink,dir-825-b1)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "5@eth0"
+		;;
 	buffalo,wzr-hp-g302h-a1a0)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "3:lan:4" "4:lan:3" "5:lan:2" "2:wan"
@@ -210,11 +217,6 @@ ath79_setup_interfaces()
 	dlink,dch-g020-a1)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:2" "2:lan:1"
-		;;
-	dlink,dir-825-b1)
-		ucidef_set_interface_wan "eth1"
-		ucidef_add_switch "switch0" \
-			"0:lan" "1:lan" "2:lan" "3:lan" "5@eth0"
 		;;
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1|\

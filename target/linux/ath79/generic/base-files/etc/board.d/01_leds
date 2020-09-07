@@ -83,6 +83,10 @@ avm,fritzdvbc)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "green:rssimediumhigh" "wlan1" "60" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan1" "80" "100"
 	;;
+buffalo,wzr-hp-g300nh-rb|\
+buffalo,wzr-hp-g300nh-s)
+        ucidef_set_led_netdev "router" "Router" "green:router" "eth1"
+        ;;
 comfast,cf-e110n-v2)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth1"
 	ucidef_set_led_switch "wan" "WAN" "green:wan" "switch0" "0x02"
