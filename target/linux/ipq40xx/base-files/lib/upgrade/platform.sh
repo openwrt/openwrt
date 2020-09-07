@@ -67,6 +67,7 @@ platform_do_upgrade() {
 	buffalo,wtr-m2133hp |\
 	cilab,meshpoint-one |\
 	edgecore,ecw5211 |\
+	edgecore,oap100 |\
 	engenius,eap2200 |\
 	mobipromo,cm520-79f |\
 	qxwlan,e2600ac-c2)
