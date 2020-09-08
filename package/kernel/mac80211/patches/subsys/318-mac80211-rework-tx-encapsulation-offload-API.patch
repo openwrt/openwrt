@@ -198,34 +198,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  /**
---- a/net/mac80211/cfg.c
-+++ b/net/mac80211/cfg.c
-@@ -504,6 +504,7 @@ static int ieee80211_del_key(struct wiph
- 	struct ieee80211_local *local = sdata->local;
- 	struct sta_info *sta;
- 	struct ieee80211_key *key = NULL;
-+	bool recalc_offload = false;
- 	int ret;
- 
- 	mutex_lock(&local->sta_mtx);
-@@ -528,6 +529,7 @@ static int ieee80211_del_key(struct wiph
- 		goto out_unlock;
- 	}
- 
-+	recalc_offload = key->conf.cipher == WLAN_CIPHER_SUITE_TKIP;
- 	ieee80211_key_free(key, sdata->vif.type == NL80211_IFTYPE_STATION);
- 
- 	ret = 0;
-@@ -535,6 +537,9 @@ static int ieee80211_del_key(struct wiph
- 	mutex_unlock(&local->key_mtx);
- 	mutex_unlock(&local->sta_mtx);
- 
-+	if (recalc_offload)
-+		ieee80211_recalc_offload(local);
-+
- 	return ret;
- }
- 
 --- a/net/mac80211/debugfs.c
 +++ b/net/mac80211/debugfs.c
 @@ -408,6 +408,7 @@ static const char *hw_flag_names[] = {
@@ -287,16 +259,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  bool __ieee80211_recalc_txpower(struct ieee80211_sub_if_data *sdata)
  {
-@@ -348,6 +349,99 @@ static int ieee80211_check_queues(struct
+@@ -348,6 +349,85 @@ static int ieee80211_check_queues(struct
  	return 0;
  }
  
 +static bool ieee80211_iftype_supports_encap_offload(enum nl80211_iftype iftype)
 +{
 +	switch (iftype) {
++	/* P2P GO and client are mapped to AP/STATION types */
 +	case NL80211_IFTYPE_AP:
-+	case NL80211_IFTYPE_P2P_GO:
-+	case NL80211_IFTYPE_P2P_CLIENT:
 +	case NL80211_IFTYPE_STATION:
 +		return true;
 +	default:
@@ -307,7 +278,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +static bool ieee80211_set_sdata_offload_flags(struct ieee80211_sub_if_data *sdata)
 +{
 +	struct ieee80211_local *local = sdata->local;
-+	struct ieee80211_key *key;
 +	u32 flags;
 +
 +	flags = sdata->vif.offload_flags;
@@ -315,18 +285,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (ieee80211_hw_check(&local->hw, SUPPORTS_TX_ENCAP_OFFLOAD) &&
 +	    ieee80211_iftype_supports_encap_offload(sdata->vif.type)) {
 +		flags |= IEEE80211_OFFLOAD_ENCAP_ENABLED;
-+		mutex_lock(&local->key_mtx);
-+		list_for_each_entry(key, &sdata->key_list, list) {
-+			if (key->conf.cipher == WLAN_CIPHER_SUITE_AES_CMAC ||
-+			    key->conf.cipher == WLAN_CIPHER_SUITE_BIP_GMAC_128 ||
-+			    key->conf.cipher == WLAN_CIPHER_SUITE_BIP_GMAC_256 ||
-+			    key->conf.cipher == WLAN_CIPHER_SUITE_BIP_CMAC_256)
-+				continue;
-+			if (key->conf.cipher == WLAN_CIPHER_SUITE_TKIP ||
-+			    !(key->flags & KEY_FLAG_UPLOADED_TO_HARDWARE))
-+				flags &= ~IEEE80211_OFFLOAD_ENCAP_ENABLED;
-+		}
-+		mutex_unlock(&local->key_mtx);
 +
 +		if (!ieee80211_hw_check(&local->hw, SUPPORTS_TX_FRAG) &&
 +		    local->hw.wiphy->frag_threshold != (u32)-1)
@@ -387,7 +345,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  void ieee80211_adjust_monitor_flags(struct ieee80211_sub_if_data *sdata,
  				    const int offset)
  {
-@@ -587,6 +681,7 @@ int ieee80211_do_open(struct wireless_de
+@@ -587,6 +667,7 @@ int ieee80211_do_open(struct wireless_de
  		if (rtnl_dereference(sdata->bss->beacon)) {
  			ieee80211_vif_vlan_copy_chanctx(sdata);
  			netif_carrier_on(dev);
@@ -395,7 +353,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		} else {
  			netif_carrier_off(dev);
  		}
-@@ -616,6 +711,7 @@ int ieee80211_do_open(struct wireless_de
+@@ -616,6 +697,7 @@ int ieee80211_do_open(struct wireless_de
  
  		ieee80211_adjust_monitor_flags(sdata, 1);
  		ieee80211_configure_filter(local);
@@ -403,7 +361,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		mutex_lock(&local->mtx);
  		ieee80211_recalc_idle(local);
  		mutex_unlock(&local->mtx);
-@@ -625,10 +721,13 @@ int ieee80211_do_open(struct wireless_de
+@@ -625,10 +707,13 @@ int ieee80211_do_open(struct wireless_de
  	default:
  		if (coming_up) {
  			ieee80211_del_virtual_monitor(local);
@@ -417,7 +375,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			res = ieee80211_check_queues(sdata,
  				ieee80211_vif_type_p2p(&sdata->vif));
  			if (res)
-@@ -1286,61 +1385,6 @@ static const struct net_device_ops ieee8
+@@ -1286,61 +1371,6 @@ static const struct net_device_ops ieee8
  
  };
  
@@ -479,7 +437,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void ieee80211_if_free(struct net_device *dev)
  {
  	free_percpu(netdev_tstats(dev));
-@@ -1371,6 +1415,51 @@ static void ieee80211_if_setup_no_queue(
+@@ -1371,6 +1401,32 @@ static void ieee80211_if_setup_no_queue(
  #endif
  }
  
@@ -487,7 +445,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +{
 +	struct ieee80211_local *local = sdata->local;
 +	struct ieee80211_sub_if_data *bss = sdata;
-+	struct ieee80211_key *key;
 +	bool enabled;
 +
 +	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
@@ -506,24 +463,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	    !(bss->vif.offload_flags & IEEE80211_OFFLOAD_ENCAP_4ADDR))
 +		enabled = false;
 +
-+	/*
-+	 * Encapsulation offload cannot be used with software crypto, and a per-VLAN
-+	 * key may have been set
-+	 */
-+	if (enabled && sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
-+		mutex_lock(&local->key_mtx);
-+		list_for_each_entry(key, &sdata->key_list, list) {
-+			if (key->conf.cipher == WLAN_CIPHER_SUITE_AES_CMAC ||
-+			    key->conf.cipher == WLAN_CIPHER_SUITE_BIP_GMAC_128 ||
-+			    key->conf.cipher == WLAN_CIPHER_SUITE_BIP_GMAC_256 ||
-+			    key->conf.cipher == WLAN_CIPHER_SUITE_BIP_CMAC_256)
-+				continue;
-+			if (!(key->flags & KEY_FLAG_UPLOADED_TO_HARDWARE))
-+				enabled = false;
-+		}
-+		mutex_unlock(&local->key_mtx);
-+	}
-+
 +	sdata->dev->netdev_ops = enabled ? &ieee80211_dataif_8023_ops :
 +					   &ieee80211_dataif_ops;
 +}
@@ -531,7 +470,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1553,7 +1642,6 @@ static void ieee80211_setup_sdata(struct
+@@ -1553,7 +1609,6 @@ static void ieee80211_setup_sdata(struct
  	sdata->vif.bss_conf.txpower = INT_MIN; /* unset */
  
  	sdata->noack_map = 0;
@@ -539,7 +478,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* only monitor/p2p-device differ */
  	if (sdata->dev) {
-@@ -1688,6 +1776,7 @@ static int ieee80211_runtime_change_ifty
+@@ -1688,6 +1743,7 @@ static int ieee80211_runtime_change_ifty
  
  	ieee80211_teardown_sdata(sdata);
  
@@ -547,7 +486,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ret = drv_change_interface(local, sdata, internal_type, p2p);
  	if (ret)
  		type = ieee80211_vif_type_p2p(&sdata->vif);
-@@ -1700,6 +1789,7 @@ static int ieee80211_runtime_change_ifty
+@@ -1700,6 +1756,7 @@ static int ieee80211_runtime_change_ifty
  	ieee80211_check_queues(sdata, type);
  
  	ieee80211_setup_sdata(sdata, type);
@@ -586,40 +525,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	case WLAN_CIPHER_SUITE_AES_CMAC:
  	case WLAN_CIPHER_SUITE_BIP_CMAC_256:
  	case WLAN_CIPHER_SUITE_BIP_GMAC_128:
-@@ -824,6 +809,7 @@ int ieee80211_key_link(struct ieee80211_
- 	 */
- 	bool delay_tailroom = sdata->vif.type == NL80211_IFTYPE_STATION;
- 	int ret = -EOPNOTSUPP;
-+	bool recalc_offload = false;
- 
- 	mutex_lock(&sdata->local->key_mtx);
- 
-@@ -864,11 +850,15 @@ int ieee80211_key_link(struct ieee80211_
- 	key->local = sdata->local;
- 	key->sdata = sdata;
- 	key->sta = sta;
-+	recalc_offload = !old_key && key->conf.cipher == WLAN_CIPHER_SUITE_TKIP;
- 
- 	increment_tailroom_need_count(sdata);
- 
- 	ret = ieee80211_key_replace(sdata, sta, pairwise, old_key, key);
- 
-+	if (!(key->flags & KEY_FLAG_UPLOADED_TO_HARDWARE))
-+		recalc_offload = true;
-+
- 	if (!ret) {
- 		ieee80211_debugfs_key_add(key);
- 		ieee80211_key_destroy(old_key, delay_tailroom);
-@@ -879,6 +869,9 @@ int ieee80211_key_link(struct ieee80211_
-  out:
- 	mutex_unlock(&sdata->local->key_mtx);
- 
-+	if (recalc_offload)
-+		ieee80211_recalc_offload(sdata->local);
-+
- 	return ret;
- }
- 
 --- a/net/mac80211/trace.h
 +++ b/net/mac80211/trace.h
 @@ -2733,6 +2733,12 @@ TRACE_EVENT(drv_get_ftm_responder_stats,
@@ -637,15 +542,72 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #undef TRACE_INCLUDE_PATH
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4264,11 +4264,6 @@ netdev_tx_t ieee80211_subif_start_xmit_8
- 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
- 	struct sta_info *sta;
+@@ -4181,11 +4181,10 @@ static bool ieee80211_tx_8023(struct iee
  
+ static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
+ 				struct net_device *dev, struct sta_info *sta,
+-				struct sk_buff *skb)
++				struct ieee80211_key *key, struct sk_buff *skb)
+ {
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 	struct ieee80211_local *local = sdata->local;
+-	struct ieee80211_key *key;
+ 	struct tid_ampdu_tx *tid_tx;
+ 	u8 tid;
+ 
+@@ -4234,7 +4233,6 @@ static void ieee80211_8023_xmit(struct i
+ 	info->control.flags |= IEEE80211_TX_CTRL_HW_80211_ENCAP;
+ 	info->control.vif = &sdata->vif;
+ 
+-	key = rcu_dereference(sta->ptk[sta->ptk_idx]);
+ 	if (key)
+ 		info->control.hw_key = &key->conf;
+ 
+@@ -4251,12 +4249,9 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+ {
+ 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+ 	struct ethhdr *ehdr = (struct ethhdr *)skb->data;
++	struct ieee80211_key *key;
+ 	struct sta_info *sta;
+-
 -	if (WARN_ON(!sdata->hw_80211_encap)) {
 -		kfree_skb(skb);
 -		return NETDEV_TX_OK;
 -	}
--
++	bool offload = true;
+ 
  	if (unlikely(skb->len < ETH_HLEN)) {
  		kfree_skb(skb);
- 		return NETDEV_TX_OK;
+@@ -4265,15 +4260,26 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+ 
+ 	rcu_read_lock();
+ 
+-	if (ieee80211_lookup_ra_sta(sdata, skb, &sta))
++	if (ieee80211_lookup_ra_sta(sdata, skb, &sta)) {
+ 		kfree_skb(skb);
+-	else if (unlikely(IS_ERR_OR_NULL(sta) || !sta->uploaded ||
+-			  !test_sta_flag(sta, WLAN_STA_AUTHORIZED) ||
+-			  sdata->control_port_protocol == ehdr->h_proto))
+-		ieee80211_subif_start_xmit(skb, dev);
++		goto out;
++	}
++
++	if (unlikely(IS_ERR_OR_NULL(sta) || !sta->uploaded ||
++	    !test_sta_flag(sta, WLAN_STA_AUTHORIZED) ||
++		sdata->control_port_protocol == ehdr->h_proto))
++		offload = false;
++	else if ((key = rcu_dereference(sta->ptk[sta->ptk_idx])) &&
++		 (!(key->flags & KEY_FLAG_UPLOADED_TO_HARDWARE) ||
++		  key->conf.cipher == WLAN_CIPHER_SUITE_TKIP))
++		offload = false;
++
++	if (offload)
++		ieee80211_8023_xmit(sdata, dev, sta, key, skb);
+ 	else
+-		ieee80211_8023_xmit(sdata, dev, sta, skb);
++		ieee80211_subif_start_xmit(skb, dev);
+ 
++out:
+ 	rcu_read_unlock();
+ 
+ 	return NETDEV_TX_OK;
