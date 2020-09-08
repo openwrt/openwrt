@@ -1,4 +1,5 @@
 . /lib/functions/network.sh
+. /lib/functions.sh
 
 wpa_supplicant_add_rate() {
 	local var="$1"
@@ -70,6 +71,8 @@ hostapd_append_wpa_key_mgmt() {
 			append wpa_key_mgmt "OWE"
 		;;
 	esac
+
+	[ "$auth_osen" = "1" ] && append wpa_key_mgmt "OSEN"
 }
 
 hostapd_add_log_config() {
@@ -256,10 +259,19 @@ hostapd_common_add_bss_config() {
 	config_add_int mcast_rate
 	config_add_array basic_rate
 	config_add_array supported_rates
-	
+
 	config_add_boolean sae_require_mfp
-	
+
 	config_add_string 'owe_transition_bssid:macaddr' 'owe_transition_ssid:string'
+
+	config_add_boolean hs20 disable_dgaf osen
+	config_add_int anqp_domain_id
+	config_add_int hs20_deauth_req_timeout
+	config_add_array hs20_oper_friendly_name
+	config_add_array osu_provider
+	config_add_array operator_icon
+	config_add_array hs20_conn_capab
+	config_add_string osu_ssid hs20_wan_metrics hs20_operating_class hs20_t_c_filename hs20_t_c_timestamp
 }
 
 hostapd_set_vlan_file() {
@@ -293,6 +305,66 @@ hostapd_set_psk() {
 
 	rm -f /var/run/hostapd-${ifname}.psk
 	for_each_station hostapd_set_psk_file ${ifname}
+}
+
+append_hs20_oper_friendly_name() {
+	append bss_conf "hs20_oper_friendly_name=$1" "$N"
+}
+
+append_osu_provider_service_desc() {
+	append bss_conf "osu_service_desc=$1" "$N"
+}
+
+append_hs20_icon() {
+	local width height lang type path
+	config_get width "$1" width
+	config_get height "$1" height
+	config_get lang "$1" lang
+	config_get type "$1" type
+	config_get path "$1" path
+
+	append bss_conf "hs20_icon=$width:$height:$lang:$type:$1:$path" "$N"
+}
+
+append_hs20_icons() {
+	config_load wireless
+	config_foreach append_hs20_icon hs20-icon
+}
+
+append_operator_icon() {
+	append bss_conf "operator_icon=$1" "$N"
+}
+
+append_osu_icon() {
+	append bss_conf "osu_icon=$1" "$N"
+}
+
+append_osu_provider() {
+	local cfgtype osu_server_uri osu_friendly_name osu_nai osu_nai2 osu_method_list 
+
+	config_load wireless
+	config_get cfgtype "$1" TYPE
+	[ "$cfgtype" != "osu-provider" ] && return
+
+	append bss_conf "# provider $1" "$N"
+	config_get osu_server_uri "$1" osu_server_uri
+	config_get osu_nai "$1" osu_nai
+	config_get osu_nai2 "$1" osu_nai2
+	config_get osu_method_list "$1" osu_method
+
+	append bss_conf "osu_server_uri=$osu_server_uri" "$N"
+	append bss_conf "osu_nai=$osu_nai" "$N"
+	append bss_conf "osu_nai2=$osu_nai2" "$N"
+	append bss_conf "osu_method_list=$osu_method_list" "$N"
+
+	config_list_foreach "$1" osu_service_desc append_osu_provider_service_desc
+	config_list_foreach "$1" osu_icon append_osu_icon
+
+	append bss_conf "$N"
+}
+
+append_hs20_conn_capab() {
+	[ -n "$1" ] && append bss_conf "hs20_conn_capab=$1" "$N"
 }
 
 hostapd_set_bss_options() {
@@ -687,6 +759,34 @@ hostapd_set_bss_options() {
 			append bss_conf "vlan_file=$vlan_file" "$N"
 		}
 	}
+
+	local hs20 disable_dgaf osen anqp_domain_id hs20_deauth_req_timeout \
+		osu_ssid hs20_wan_metrics hs20_operating_class hs20_t_c_filename hs20_t_c_timestamp
+	json_get_vars hs20 disable_dgaf osen anqp_domain_id hs20_deauth_req_timeout \
+		osu_ssid hs20_wan_metrics hs20_operating_class hs20_t_c_filename hs20_t_c_timestamp
+
+	set_default hs20 0
+	set_default disable_dgaf $hs20
+	set_default osen 0
+	set_default anqp_domain_id 0
+	set_default hs20_deauth_req_timeout 60
+	if [ "$hs20" = "1" ]; then
+		append bss_conf "hs20=1" "$N"
+		append_hs20_icons
+		append bss_conf "disable_dgaf=$disable_dgaf" "$N"
+		append bss_conf "osen=$osen" "$N"
+		append bss_conf "anqp_domain_id=$anqp_domain_id" "$N"
+		append bss_conf "hs20_deauth_req_timeout=$hs20_deauth_req_timeout" "$N"
+		[ -n "$osu_ssid" ] && append bss_conf "osu_ssid=$osu_ssid" "$N"
+		[ -n "$hs20_wan_metrics" ] && append bss_conf "hs20_wan_metrics=$hs20_wan_metrics" "$N"
+		[ -n "$hs20_operating_class" ] && append bss_conf "hs20_operating_class=$hs20_operating_class" "$N"
+		[ -n "$hs20_t_c_filename" ] && append bss_conf "hs20_t_c_filename=$hs20_t_c_filename" "$N"
+		[ -n "$hs20_t_c_timestamp" ] && append bss_conf "hs20_t_c_timestamp=$hs20_t_c_timestamp" "$N"
+		json_for_each_item append_hs20_conn_capab hs20_conn_capab
+		json_for_each_item append_hs20_oper_friendly_name hs20_oper_friendly_name
+		json_for_each_item append_osu_provider osu_provider
+		json_for_each_item append_operator_icon operator_icon
+	fi
 
 	bss_md5sum=$(echo $bss_conf | md5sum | cut -d" " -f1)
 	append bss_conf "config_id=$bss_md5sum" "$N"
