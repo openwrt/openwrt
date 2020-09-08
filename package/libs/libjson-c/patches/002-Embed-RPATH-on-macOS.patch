@@ -1,0 +1,20 @@
+Index: json-c-0.14/CMakeLists.txt
+===================================================================
+--- json-c-0.14.orig/CMakeLists.txt
++++ json-c-0.14/CMakeLists.txt
+@@ -2,6 +2,15 @@
+ # specially true in old embedded systems (OpenWRT and friends) where CMake isn't necessarily upgraded.
+ cmake_minimum_required(VERSION 2.8)
+ 
++# Embed RPATH on macOS
++if(POLICY CMP0042)
++	cmake_policy(SET CMP0042 NEW)
++endif()
++
++if(POLICY CMP0068)
++	cmake_policy(SET CMP0068 NEW)
++endif()
++
+ if(POLICY CMP0048)
+ 	cmake_policy(SET CMP0048 NEW)
+ endif()
