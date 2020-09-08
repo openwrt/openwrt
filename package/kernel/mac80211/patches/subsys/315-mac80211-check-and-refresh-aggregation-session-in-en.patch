@@ -1,7 +1,7 @@
 From: Felix Fietkau <nbd@nbd.name>
 Date: Mon, 17 Aug 2020 21:11:25 +0200
-Subject: [PATCH] mac80211: check and refresh aggregation session in encap
- offload tx
+Subject: [PATCH] mac80211: check and refresh aggregation session in
+ encap offload tx
 
 Update the last_tx timestamp to avoid tearing down the aggregation session
 early. Fall back to the slow path if the session setup is still running
