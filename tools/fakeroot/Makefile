@@ -19,4 +19,7 @@ HOST_CONFIGURE_VARS += \
 	ac_cv_header_sys_capability_h=no \
 	ac_cv_func_capset=no
 
+HOST_CONFIGURE_ARGS += \
+	--with-ipc=tcp
+
 $(eval $(call HostBuild))
