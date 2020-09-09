@@ -18,6 +18,11 @@ t-com,speedport-w-303v|\
 t-com,speedport-w-500v)
 	ucidef_set_interface_lan "eth0"
 	;;
+adb,pdg-a4101n-a-000-1a1-ae)
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_add_switch "switch0" \
+		"0:lan" "1:lan" "2:lan" "3:wan" "8t@eth0"
+	;;
 adb,a4001n1|\
 adb,a4001n|\
 adb,pdg-a4001n-a-000-1a1-ax|\
