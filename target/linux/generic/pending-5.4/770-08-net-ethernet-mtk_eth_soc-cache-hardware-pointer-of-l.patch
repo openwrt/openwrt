@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	dma = mtk_r32(eth, MTK_QTX_DRX_PTR);
  
  	desc = mtk_qdma_phys_to_virt(ring, cpu);
-@@ -1389,6 +1389,7 @@ static int mtk_poll_tx_qdma(struct mtk_e
+@@ -1392,6 +1392,7 @@ static int mtk_poll_tx_qdma(struct mtk_e
  		cpu = next_cpu;
  	}
  
@@ -28,7 +28,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	mtk_w32(eth, cpu, MTK_QTX_CRX_PTR);
  
  	return budget;
-@@ -1589,6 +1590,7 @@ static int mtk_tx_alloc(struct mtk_eth *
+@@ -1592,6 +1593,7 @@ static int mtk_tx_alloc(struct mtk_eth *
  	atomic_set(&ring->free_count, MTK_DMA_SIZE - 2);
  	ring->next_free = &ring->dma[0];
  	ring->last_free = &ring->dma[MTK_DMA_SIZE - 1];
@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ring->thresh = MAX_SKB_FRAGS;
  
  	/* make sure that all changes to the dma ring are flushed before we
-@@ -1602,9 +1604,7 @@ static int mtk_tx_alloc(struct mtk_eth *
+@@ -1605,9 +1607,7 @@ static int mtk_tx_alloc(struct mtk_eth *
  		mtk_w32(eth,
  			ring->phys + ((MTK_DMA_SIZE - 1) * sz),
  			MTK_QTX_CRX_PTR);
