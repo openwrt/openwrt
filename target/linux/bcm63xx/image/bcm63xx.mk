@@ -237,6 +237,18 @@ define Device/adb_pdg-a4001n-a-000-1a1-ax
 endef
 TARGET_DEVICES += adb_pdg-a4001n-a-000-1a1-ax
 
+define Device/adb_pdg-a4101n-a-000-1a1-ae
+  $(Device/bcm63xx)
+  DEVICE_VENDOR := ADB
+  DEVICE_MODEL := P.DG A4101N A-000-1A1-AE
+  IMAGES += sysupgrade.bin
+  CFE_BOARD_ID := 96328avngv
+  CHIP_ID := 6328
+  FLASH_MB := 16
+  DEVICE_PACKAGES := $(USB2_PACKAGES) $(B43_PACKAGES)
+endef
+TARGET_DEVICES += adb_pdg-a4101n-a-000-1a1-ae
+
 define Device/adb_av4202n
   $(Device/bcm63xx)
   DEVICE_VENDOR := ADB
