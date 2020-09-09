@@ -930,6 +930,7 @@ define Device/ravpower_wd03
   DEVICE_VENDOR := Ravpower
   DEVICE_MODEL := WD03
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  DEFAULT := n
 endef
 TARGET_DEVICES += ravpower_wd03
 
