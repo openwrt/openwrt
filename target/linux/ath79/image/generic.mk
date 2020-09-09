@@ -9,7 +9,7 @@ DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX DAP_SIGNATURE
 DEVICE_VARS += EDIMAX_HEADER_MAGIC EDIMAX_HEADER_MODEL
-DEVICE_VARS += OPENMESH_CE_TYPE
+DEVICE_VARS += OPENMESH_CE_TYPE ZYXEL_MODEL_STRING
 
 define Build/add-elecom-factory-initramfs
   $(eval edimax_model=$(word 1,$(1)))
@@ -161,6 +161,13 @@ define Build/wrgg-pad-rootfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 64 >>$@
 endef
 
+define Build/zyxel-tar-bz2
+	mkdir -p $@.tmp
+	mv $@ $@.tmp/$(word 2,$(1))
+	cp $(KDIR)/loader-$(DEVICE_NAME).uImage $@.tmp/$(word 1,$(1)).lzma.uImage
+	$(TAR) -cjf $@ -C $@.tmp .
+	rm -rf $@.tmp
+endef
 
 define Device/seama
   KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
@@ -2686,6 +2693,28 @@ define Device/zbtlink_zbt-wd323
 	kmod-usb-serial-cp210x uqmi
 endef
 TARGET_DEVICES += zbtlink_zbt-wd323
+
+define Device/zyxel_nwa11xx
+  $(Device/loader-okli-uimage)
+  SOC := ar9342
+  DEVICE_VENDOR := ZyXEL
+  LOADER_FLASH_OFFS := 0x050000
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  IMAGE_SIZE := 8192k
+  IMAGES += factory-$$$$(ZYXEL_MODEL_STRING).bin
+  IMAGE/factory-$$$$(ZYXEL_MODEL_STRING).bin := \
+	append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+	pad-rootfs | pad-to 8192k | check-size | zyxel-tar-bz2 \
+	vmlinux_mi124_f1e mi124_f1e-jffs2 | append-md5sum-bin
+endef
+
+define Device/zyxel_nwa1121-ni
+  $(Device/zyxel_nwa11xx)
+  DEVICE_MODEL := NWA1121
+  DEVICE_VARIANT := NI
+  ZYXEL_MODEL_STRING := AABJ
+endef
+TARGET_DEVICES += zyxel_nwa1121-ni
 
 define Device/zyxel_nbg6616
   SOC := qca9557
