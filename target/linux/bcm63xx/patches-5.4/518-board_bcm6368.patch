@@ -9,7 +9,7 @@
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -1984,6 +1986,648 @@ static struct board_info __initdata boar
+@@ -2027,6 +2029,648 @@ static struct board_info __initdata boar
  #endif /* CONFIG_BCM63XX_CPU_6362 */
  
  /*
@@ -658,7 +658,7 @@
   * all boards
   */
  static const struct board_info __initconst *bcm963xx_boards[] = {
-@@ -2070,6 +2714,22 @@ static const struct board_info __initcon
+@@ -2114,6 +2758,22 @@ static const struct board_info __initcon
  	&board_hg253s_v2,
  	&board_nb6,
  #endif /* CONFIG_BCM63XX_CPU_6362 */
@@ -681,7 +681,7 @@
  };
  
  static struct of_device_id const bcm963xx_boards_dt[] = {
-@@ -2169,6 +2829,20 @@ static struct of_device_id const bcm963x
+@@ -2214,6 +2874,20 @@ static struct of_device_id const bcm963x
  	{ .compatible = "sfr,neufbox-6-sercomm-r0", .data = &board_nb6, },
  #endif /* CONFIG_BCM63XX_CPU_6362 */
  #ifdef CONFIG_BCM63XX_CPU_6368

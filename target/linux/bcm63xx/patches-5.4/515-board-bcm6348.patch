@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1178,6 +1178,275 @@ static struct board_info __initdata boar
+@@ -1221,6 +1221,275 @@ static struct board_info __initdata boar
  
  	.has_ohci0 = 1,
  };
@@ -276,7 +276,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  
  /*
-@@ -1336,6 +1605,19 @@ static const struct board_info __initcon
+@@ -1380,6 +1649,19 @@ static const struct board_info __initcon
  	&board_DV201AMR,
  	&board_96348gw_a,
  	&board_rta1025w_16,
@@ -296,7 +296,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  #ifdef CONFIG_BCM63XX_CPU_6358
  	&board_96358vw,
-@@ -1386,15 +1668,29 @@ static struct of_device_id const bcm963x
+@@ -1431,15 +1713,29 @@ static struct of_device_id const bcm963x
  	{ .compatible = "dynalink,rta770w", .data = &board_rta770w, },
  #endif /* CONFIG_BCM63XX_CPU_6345 */
  #ifdef CONFIG_BCM63XX_CPU_6348
