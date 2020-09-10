@@ -186,7 +186,7 @@ for BIN in "$@"; do
 			#!/usr/bin/env bash
 			dir="\$(dirname "\$0")"
 			export RUNAS_ARG0="\$0"
-			export LD_PRELOAD="\$dir/${REL:+$REL/}runas.so"
+			export LD_PRELOAD="\${LD_PRELOAD:+\$LD_PRELOAD:}\$dir/${REL:+$REL/}runas.so"
 			exec "\$dir/${REL:+$REL/}$LDSO" --library-path "\$dir/${REL:+$REL/}" "\$dir/.${BIN##*/}.bin" "\$@"
 		EOF
 
