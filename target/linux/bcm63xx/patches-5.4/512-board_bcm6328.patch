@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -348,6 +348,568 @@ static struct board_info __initdata boar
+@@ -348,6 +348,611 @@ static struct board_info __initdata boar
  		},
  	},
  };
@@ -524,6 +524,49 @@
 +	},
 +};
 +
++static struct board_info __initdata board_TG582N = {
++	.name = "DANT-1",
++	.expected_cpu_id = 0x6328,
++
++	.has_pci = 1,
++	.has_ohci0 = 1,
++	.has_ehci0 = 1,
++	.num_usbh_ports = 1,
++
++	.has_enetsw = 1,
++	.enetsw = {
++		.used_ports = {
++			[0] = {
++				.used = 1,
++				.phy_id = 1,
++				.name = "Port 1",
++			},
++			[1] = {
++				.used = 1,
++				.phy_id = 2,
++				.name = "Port 2",
++			},
++			[2] = {
++				.used = 1,
++				.phy_id = 3,
++				.name = "Port 3",
++			},
++			[3] = {
++				.used = 1,
++				.phy_id = 4,
++				.name = "Port 4",
++			},
++		},
++	},
++
++	.use_fallback_sprom = 1,
++	.fallback_sprom = {
++		.type = SPROM_BCM43225,
++		.pci_bus = 1,
++		.pci_dev = 0,
++	},
++};
++
 +static struct board_info __initdata board_TG582N_TELECOM_ITALIA = {
 +	.name = "DANT-V",
 +	.expected_cpu_id = 0x6328,
@@ -569,7 +612,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6328 */
  
  /*
-@@ -703,6 +1265,18 @@ static const struct board_info __initcon
+@@ -703,6 +1308,19 @@ static const struct board_info __initcon
  #endif /* CONFIG_BCM63XX_CPU_6318 */
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
@@ -583,12 +626,13 @@
 +	&board_FAST2704V2,
 +	&board_PDG_A4001N_A_000_1A1_AX,
 +	&board_PDG_A4101N_A_000_1A1_AE,
++	&board_TG582N,
 +	&board_TG582N_TELECOM_ITALIA,
 +	&board_R5010UNV2,
  #endif /* CONFIG_BCM63XX_CPU_6328 */
  #ifdef CONFIG_BCM63XX_CPU_6338
  	&board_96338gw,
-@@ -742,7 +1316,21 @@ static struct of_device_id const bcm963x
+@@ -742,7 +1360,22 @@ static struct of_device_id const bcm963x
  	{ .compatible = "sagem,fast-2704n", .data = &board_FAST2704N, },
  #endif /* CONFIG_BCM63XX_CPU_6318 */
  #ifdef CONFIG_BCM63XX_CPU_6328
@@ -606,6 +650,7 @@
 +	{ .compatible = "sagem,fast-2704-v2", .data = &board_FAST2704V2, },
 +	{ .compatible = "sercomm,ad1018", .data = &board_AD1018, },
 +	{ .compatible = "sercomm,ad1018-nor", .data = &board_AD1018, },
++	{ .compatible = "technicolor,tg582n", .data = &board_TG582N, },
 +	{ .compatible = "technicolor,tg582n-telecom-italia", .data = &board_TG582N_TELECOM_ITALIA, },
  #endif /* CONFIG_BCM63XX_CPU_6328 */
  #ifdef CONFIG_BCM63XX_CPU_6338
