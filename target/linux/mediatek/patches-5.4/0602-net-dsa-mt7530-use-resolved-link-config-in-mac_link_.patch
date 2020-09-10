@@ -102,8 +102,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  {
  	struct mt7530_priv *priv = ds->priv;
 +	u32 mcr;
- 
--	mt7530_port_set_status(priv, port, 1);
++
 +	mcr = PMCR_RX_EN | PMCR_TX_EN | PMCR_FORCE_LNK;
 +
 +	switch (speed) {
@@ -125,7 +124,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +		if (rx_pause)
 +			mcr |= PMCR_RX_FC_EN;
 +	}
-+
+ 
+-	mt7530_port_set_status(priv, port, 1);
 +	mt7530_set(priv, MT7530_PMCR_P(port), mcr);
  }
  
