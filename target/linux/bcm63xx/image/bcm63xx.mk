@@ -1073,6 +1073,19 @@ define Device/t-com_speedport-w-500v
 endef
 TARGET_DEVICES += t-com_speedport-w-500v
 
+### Technicolor ###
+define Device/technicolor_tg582n
+  $(Device/bcm63xx)
+  DEVICE_VENDOR := Technicolor
+  DEVICE_MODEL := TG582n
+  IMAGES += sysupgrade.bin
+  CFE_BOARD_ID := DANT-1
+  CHIP_ID := 6328
+  FLASH_MB := 16
+  DEVICE_PACKAGES := $(USB2_PACKAGES) $(B43_PACKAGES)
+endef
+TARGET_DEVICES += technicolor_tg582n
+
 ### Tecom ###
 define Device/tecom_gw6000
   $(Device/bcm63xx-legacy)

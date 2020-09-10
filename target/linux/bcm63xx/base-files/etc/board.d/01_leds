@@ -91,6 +91,12 @@ sercomm,h500-s-lowi|\
 sercomm,h500-s-vfes)
 	ucidef_set_led_netdev "wan" "WAN" "green:internet" "eth0.2"
 	;;
+technicolor,tg582n)
+	ucidef_set_led_netdev "lan" "LAN" "green:ethernet" "eth0.1"
+	ucidef_set_led_netdev "wan" "WAN" "green:broadband" "eth0.2"
+	ucidef_set_led_netdev "wlan0" "WIFI" "green:wifi" "wlan0"
+	ucidef_set_led_usbdev "usb" "USB" "red:power" "1-1"
+	;;
 telsey,cpva502plus)
 	ucidef_set_led_netdev "lan" "LAN" "amber:link" "eth0"
 	;;
