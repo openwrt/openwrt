@@ -9,6 +9,10 @@
 	compatible = "ravpower,rp-wd03", "ralink,mt7620n-soc";
 	model = "RAVPower RP-WD03";
 
+	aliases {
+		label-mac-device = &ethernet;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -138,7 +142,7 @@
 };
 
 &ethernet {
-	mtd-mac-address = <&factory 0x4000>;
+	mtd-mac-address = <&factory 0x28>;
 };
 
 &wmac {
