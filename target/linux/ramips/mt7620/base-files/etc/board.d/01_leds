@@ -179,6 +179,9 @@ planex,mzk-ex750np|\
 zbtlink,zbt-we826-e)
 	set_wifi_led "$boardname:red:wifi"
 	;;
+ravpower,rp-wd03)
+	ucidef_set_led_netdev "internet" "internet" "$boardname:green:wifi" "eth0"
+	;;
 tplink,archer-c2-v1)
 	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch1" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch1" "0x01"
