@@ -144,6 +144,25 @@ menu "Global build settings"
 		help
 		  Enables IPv6 support in kernel (builtin) and packages.
 
+	choice
+		prompt "Preferred SSL/TLS library"
+		default TLS_LIB_USE_WOLFSSL
+		help
+		  Select the preferred SSL/TLS library.
+
+		config TLS_LIB_USE_NONE
+			bool "None"
+
+		config TLS_LIB_USE_MBEDTLS
+			bool "MbedTLS"
+
+		config TLS_LIB_USE_OPENSSL
+			bool "OpenSSL"
+
+		config TLS_LIB_USE_WOLFSSL
+			bool "wolfSSL"
+	endchoice
+
 	comment "Stripping options"
 
 	choice

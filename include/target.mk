@@ -21,7 +21,7 @@ DEFAULT_PACKAGES:=\
 	fstools \
 	libc \
 	libgcc \
-	libustream-wolfssl \
+	libustream-config \
 	logd \
 	mtd \
 	netifd \

@@ -48,6 +48,21 @@ define Package/libustream-mbedtls
   DEFAULT_VARIANT:=1
 endef
 
+define Package/libustream-config
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=ustream SSL Library (with config)
+ifdef CONFIG_TLS_LIB_USE_MBEDTLS
+  DEPENDS := +libustream-mbedtls
+endif
+ifdef CONFIG_TLS_LIB_USE_OPENSSL
+  DEPENDS := +libustream-openssl
+endif
+ifdef CONFIG_TLS_LIB_USE_WOLFSSL
+  DEPENDS := +libustream-wolfssl
+endif
+endef
+
 ifeq ($(BUILD_VARIANT),wolfssl)
   TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include/wolfssl
   CMAKE_OPTIONS += -DWOLFSSL=on
@@ -61,6 +76,11 @@ define Package/libustream/default/install
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libustream-ssl.so $(1)/lib/
 endef
 
+define Package/libustream-config/install
+	$(INSTALL_DIR) $(1)/tmp
+	touch $(1)/tmp/.libustream-config-placeholder
+endef
+
 Package/libustream-openssl/install = $(Package/libustream/default/install)
 Package/libustream-wolfssl/install = $(Package/libustream/default/install)
 Package/libustream-mbedtls/install = $(Package/libustream/default/install)
@@ -68,3 +88,4 @@ Package/libustream-mbedtls/install = $(Package/libustream/default/install)
 $(eval $(call BuildPackage,libustream-mbedtls))
 $(eval $(call BuildPackage,libustream-wolfssl))
 $(eval $(call BuildPackage,libustream-openssl))
+$(eval $(call BuildPackage,libustream-config))
