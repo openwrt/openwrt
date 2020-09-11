@@ -924,15 +924,16 @@ define Device/ralink_mt7620a-v22sg-evb
 endef
 TARGET_DEVICES += ralink_mt7620a-v22sg-evb
 
-define Device/ravpower_wd03
+define Device/ravpower_rp-wd03
   SOC := mt7620n
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := Ravpower
-  DEVICE_MODEL := WD03
+  DEVICE_VENDOR := RAVPower
+  DEVICE_MODEL := RP-WD03
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += ravpower,wd03
   DEFAULT := n
 endef
-TARGET_DEVICES += ravpower_wd03
+TARGET_DEVICES += ravpower_rp-wd03
 
 define Device/sanlinking_d240
   SOC := mt7620a
