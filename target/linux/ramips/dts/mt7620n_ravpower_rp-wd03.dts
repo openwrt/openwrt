@@ -11,6 +11,10 @@
 
 	aliases {
 		label-mac-device = &ethernet;
+		led-boot = &led_wifi_blue;
+		led-failsafe = &led_wifi_blue;
+		led-running = &led_wifi_blue;
+		led-upgrade = &led_wifi_blue;
 	};
 
 	chosen {
@@ -20,12 +24,12 @@
 	leds {
 		compatible = "gpio-leds";
 
-		green-wifi {
+		wifi_green {
 			label = "rp-wd03:green:wifi";
 			gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
 		};
 
-		blue-wifi {
+		led_wifi_blue: wifi_blue {
 			label = "rp-wd03:blue:wifi";
 			gpios = <&gpio3 0 GPIO_ACTIVE_HIGH>;
 		};
