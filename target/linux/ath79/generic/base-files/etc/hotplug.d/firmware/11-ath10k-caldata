@@ -198,7 +198,8 @@ case "$FIRMWARE" in
 		;;
 	tplink,eap225-wall-v2|\
 	tplink,tl-wpa8630p-v2-eu|\
-	tplink,tl-wpa8630p-v2-int)
+	tplink,tl-wpa8630p-v2-int|\
+	tplink,tl-wpa8630p-v2.1-eu)
 		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) +1)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
