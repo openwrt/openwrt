@@ -564,6 +564,13 @@ define Device/tplink_tl-wpa8630p-v2-int
 endef
 TARGET_DEVICES += tplink_tl-wpa8630p-v2-int
 
+define Device/tplink_tl-wpa8630p-v2.1-eu
+  $(Device/tplink_tl-wpa8630p-v2)
+  DEVICE_VARIANT := v2.1 (EU)
+  TPLINK_BOARD_ID := TL-WPA8630P-V2.1-EU
+endef
+TARGET_DEVICES += tplink_tl-wpa8630p-v2.1-eu
+
 define Device/tplink_tl-wr1043nd-v1
   $(Device/tplink-8m)
   SOC := ar9132
