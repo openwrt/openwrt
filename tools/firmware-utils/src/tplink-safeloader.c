@@ -1513,6 +1513,41 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the TL-WPA8630P v2.1 (EU)*/
+	{
+		.id     = "TL-WPA8630P-V2.1-EU",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:TL-WPA8630P,product_ver:2.1.0,special_id:45550000}\n",
+		.support_trail = '\x00',
+		.soft_ver = NULL,
+
+		.partitions = {
+			{"factory-uboot", 0x00000, 0x20000},
+			{"fs-uboot", 0x20000, 0x20000},
+			{"firmware", 0x40000, 0x5e0000},
+			{"extra-para", 0x680000, 0x01000},
+			{"product-info", 0x690000, 0x01000},
+			{"partition-table", 0x6a0000, 0x02000},
+			{"soft-version", 0x6b0000, 0x01000},
+			{"support-list", 0x6b1000, 0x01000},
+			{"profile", 0x6b2000, 0x08000},
+			{"user-config", 0x6c0000, 0x10000},
+			{"default-config", 0x6d0000, 0x10000},
+			{"default-nvm", 0x6e0000, 0xc0000},
+			{"default-pib", 0x7a0000, 0x40000},
+			{"default-mac", 0x7e0000, 0x00020},
+			{"pin", 0x7e0100, 0x00020},
+			{"device-id", 0x7e0200, 0x00030},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
 	/** Firmware layout for the TL-WR1043 v5 */
 	{
 		.id     = "TLWR1043NV5",

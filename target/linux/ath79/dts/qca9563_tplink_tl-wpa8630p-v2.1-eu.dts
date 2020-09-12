@@ -3,20 +3,16 @@
 #include "qca9563_tplink_tl-wpa8630p-v2.dtsi"
 
 / {
-	compatible = "tplink,tl-wpa8630p-v2-int", "qca,qca9563";
-	model = "TP-Link WPA8630P v2 (Int.)";
+	compatible = "tplink,tl-wpa8630p-v2.1-eu", "qca,qca9563";
+	model = "TP-Link WPA8630P v2.1 (EU)";
 };
 
 &partitions {
-	partition@620000 {
-		label = "partition-table";
-		reg = <0x620000 0x010000>;
-		read-only;
-	};
+	/* 0x620000 to 0x680000 is empty in OEM partitioning */
 
-	partition@630000 {
+	partition@680000 {
 		label = "tplink";
-		reg = <0x630000 0x1b0000>;
+		reg = <0x680000 0x160000>;
 		read-only;
 	};
 
