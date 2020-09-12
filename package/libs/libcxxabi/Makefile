@@ -58,7 +58,7 @@ TARGET_CXXFLAGS += -flto
 TARGET_LDFLAGS += -Wl,--gc-sections,--as-needed
 
 define Build/Prepare
-	$(MAKE) -C $(TOPDIR)/package/libs/libcxx prepare
+	$(MAKE) -C $(TOPDIR)/feeds/base/package/libs/libcxx prepare
 	$(call Build/Prepare/Default)
 endef
 
