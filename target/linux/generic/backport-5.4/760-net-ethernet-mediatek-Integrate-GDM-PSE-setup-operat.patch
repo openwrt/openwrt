@@ -1,15 +1,22 @@
+From: MarkLee <Mark-MC.Lee@mediatek.com>
+Date: Wed, 13 Nov 2019 10:38:42 +0800
+Subject: [PATCH] net: ethernet: mediatek: Integrate GDM/PSE setup operations
+
+Integrate GDM/PSE setup operations into single function "mtk_gdm_config"
+
+Signed-off-by: MarkLee <Mark-MC.Lee@mediatek.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -2240,6 +2240,31 @@ static int mtk_start_dma(struct mtk_eth
+@@ -2211,6 +2211,28 @@ static int mtk_start_dma(struct mtk_eth
  	return 0;
  }
  
 +static void mtk_gdm_config(struct mtk_eth *eth, u32 config)
 +{
 +	int i;
-+
-+	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628))
-+		return;
 +
 +	for (i = 0; i < MTK_MAC_COUNT; i++) {
 +		u32 val = mtk_r32(eth, MTK_GDMA_FWD_CFG(i));
@@ -32,26 +39,8 @@
  static int mtk_open(struct net_device *dev)
  {
  	struct mtk_mac *mac = netdev_priv(dev);
-@@ -2260,6 +2285,8 @@ static int mtk_open(struct net_device *d
- 		if (err)
- 			return err;
- 
-+		mtk_gdm_config(eth, MTK_GDMA_TO_PDMA);
-+
- 		napi_enable(&eth->tx_napi);
- 		napi_enable(&eth->rx_napi);
- 		mtk_tx_irq_enable(eth, MTK_TX_DONE_INT);
-@@ -2315,6 +2342,8 @@ static int mtk_stop(struct net_device *d
- 	if (!refcount_dec_and_test(&eth->dma_refcnt))
- 		return 0;
- 
-+	mtk_gdm_config(eth, MTK_GDMA_DROP_ALL);
-+
- 	mtk_tx_irq_disable(eth, MTK_TX_DONE_INT);
- 	mtk_rx_irq_disable(eth, MTK_RX_DONE_INT);
- 	napi_disable(&eth->tx_napi);
-@@ -2498,8 +2527,6 @@ static int mtk_hw_init(struct mtk_eth *e
- 	/* disable delay and normal interrupt */
+@@ -2406,8 +2428,6 @@ static int mtk_hw_init(struct mtk_eth *e
+ 	mtk_w32(eth, 0, MTK_QDMA_DELAY_INT);
  	mtk_tx_irq_disable(eth, ~0);
  	mtk_rx_irq_disable(eth, ~0);
 -	mtk_w32(eth, RST_GL_PSE, MTK_RST_GL);
@@ -59,7 +48,7 @@
  
  	/* FE int grouping */
  	mtk_w32(eth, MTK_TX_DONE_INT, MTK_PDMA_INT_GRP1);
-@@ -2508,19 +2535,6 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -2416,18 +2436,7 @@ static int mtk_hw_init(struct mtk_eth *e
  	mtk_w32(eth, MTK_RX_DONE_INT, MTK_QDMA_INT_GRP2);
  	mtk_w32(eth, 0x21021000, MTK_FE_INT_GRP);
  
@@ -75,18 +64,17 @@
 -		/* setup the mac dma */
 -		mtk_w32(eth, val, MTK_GDMA_FWD_CFG(i));
 -	}
--
++	mtk_gdm_config(eth, MTK_GDMA_TO_PDMA);
+ 
  	return 0;
  
- err_disable_pm:
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -85,6 +85,8 @@
+@@ -84,6 +84,7 @@
  #define MTK_GDMA_ICS_EN		BIT(22)
  #define MTK_GDMA_TCS_EN		BIT(21)
  #define MTK_GDMA_UCS_EN		BIT(20)
 +#define MTK_GDMA_TO_PDMA	0x0
-+#define MTK_GDMA_DROP_ALL	0x7777
  
  /* Unicast Filter MAC Address Register - Low */
  #define MTK_GDMA_MAC_ADRL(x)	(0x508 + (x * 0x1000))
