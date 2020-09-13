@@ -144,8 +144,20 @@
 	};
 };
 
+&pinctrl {
+	uart3_gpio: uart3-gpio {
+		uart3 {
+			groups = "uart3";
+			function = "gpio";
+		};
+	};
+};
+
 &pcie {
 	status = "okay";
+	pinctrl-0 = <&pcie_pins>, <&uart3_gpio>;
+	reset-gpios = <&gpio 19 GPIO_ACTIVE_LOW>,
+		      <&gpio 7 GPIO_ACTIVE_LOW>;
 };
 
 &pcie0 {
