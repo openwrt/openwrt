@@ -333,15 +333,25 @@ define Device/buffalo_bhr-4grv2
 endef
 TARGET_DEVICES += buffalo_bhr-4grv2
 
-define Device/buffalo_wzr-hp-ag300h
+define Device/buffalo_wzr_ar7161
   $(Device/buffalo_common)
   SOC := ar7161
-  DEVICE_MODEL := WZR-HP-AG300H
   BUFFALO_PRODUCT := WZR-HP-AG300H
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
 	kmod-leds-reset kmod-owl-loader
   IMAGE_SIZE := 32320k
   SUPPORTED_DEVICES += wzr-hp-ag300h
+endef
+
+define Device/buffalo_wzr-600dhp
+  $(Device/buffalo_wzr_ar7161)
+  DEVICE_MODEL := WZR-600DHP
+endef
+TARGET_DEVICES += buffalo_wzr-600dhp
+
+define Device/buffalo_wzr-hp-ag300h
+  $(Device/buffalo_wzr_ar7161)
+  DEVICE_MODEL := WZR-HP-AG300H
 endef
 TARGET_DEVICES += buffalo_wzr-hp-ag300h
 
