@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		skb_record_rx_queue(skb, 0);
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -293,6 +293,7 @@
+@@ -295,6 +295,7 @@
  #define RX_DMA_LSO		BIT(30)
  #define RX_DMA_PLEN0(_x)	(((_x) & 0x3fff) << 16)
  #define RX_DMA_GET_PLEN0(_x)	(((_x) >> 16) & 0x3fff)

@@ -37,7 +37,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <linux/mfd/syscon.h>
  #include <linux/regmap.h>
  #include <linux/clk.h>
-@@ -2476,6 +2477,12 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -2486,6 +2487,12 @@ static int mtk_hw_init(struct mtk_eth *e
  	if (ret)
  		goto err_disable_pm;
  
@@ -50,7 +50,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628)) {
  		ret = device_reset(eth->dev);
  		if (ret) {
-@@ -3078,6 +3085,16 @@ static int mtk_probe(struct platform_dev
+@@ -3088,6 +3095,16 @@ static int mtk_probe(struct platform_dev
  		}
  	}
  
@@ -69,7 +69,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  					  GFP_KERNEL);
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -425,6 +425,11 @@
+@@ -426,6 +426,11 @@
  #define RSTCTRL_FE		BIT(6)
  #define RSTCTRL_PPE		BIT(31)
  
