@@ -59,8 +59,8 @@ vxlan_generic_setup() {
 
 	local link="$cfg"
 
-	local port vid ttl tos mtu macaddr zone rxcsum txcsum
-	json_get_vars port vid ttl tos mtu macaddr zone rxcsum txcsum
+	local port vid ttl tos mtu macaddr zone rxcsum txcsum srcportmin srcportmax ageing maxaddress learning proxy l2miss l3miss gbp
+	json_get_vars port vid ttl tos mtu macaddr zone rxcsum txcsum srcportmin srcportmax ageing maxaddress learning proxy l2miss l3miss gbp
 
 	proto_init_update "$link" 1
 
@@ -78,9 +78,20 @@ vxlan_generic_setup() {
 	json_add_object 'data'
 	[ -n "$port" ] && json_add_int port "$port"
 	[ -n "$vid" ] && json_add_int id "$vid"
+	[ -n "$srcportmin" ] && json_add_int srcportmin "$srcportmin"
+	[ -n "$srcportmax" ] && json_add_int srcportmax "$srcportmax"
+	[ -n "$ageing" ] && json_add_int ageing "$ageing"
+	[ -n "$maxaddress" ] && json_add_int maxaddress "$maxaddress"
 	[ -n "$macaddr" ] && json_add_string macaddr "$macaddr"
 	[ -n "$rxcsum" ] && json_add_boolean rxcsum "$rxcsum"
 	[ -n "$txcsum" ] && json_add_boolean txcsum "$txcsum"
+	[ -n "$learning" ] && json_add_boolean learning "$learning"
+	[ -n "$rsc" ] && json_add_boolean rsc "$rsc"
+	[ -n "$proxy" ] && json_add_boolean proxy "$proxy"
+	[ -n "$l2miss" ] && json_add_boolean l2miss "$l2miss"
+	[ -n "$l3miss" ] && json_add_boolean l3miss "$l3miss"
+	[ -n "$gbp" ] && json_add_boolean gbp "$gbp"
+
 	json_close_object
 
 	proto_close_tunnel
@@ -163,9 +174,20 @@ vxlan_generic_init_config() {
 	proto_config_add_int "ttl"
 	proto_config_add_int "tos"
 	proto_config_add_int "mtu"
+	proto_config_add_int "srcportmin"
+	proto_config_add_int "srcportmax"
+	proto_config_add_int "ageing"
+	proto_config_add_int "maxaddress"
 	proto_config_add_boolean "rxcsum"
 	proto_config_add_boolean "txcsum"
+	proto_config_add_boolean "learning"
+	proto_config_add_boolean "rsc"
+	proto_config_add_boolean "proxy"
+	proto_config_add_boolean "l2miss"
+	proto_config_add_boolean "l3miss"
+	proto_config_add_boolean "gbp"
 	proto_config_add_string "macaddr"
+
 }
 
 proto_vxlan_init_config() {
