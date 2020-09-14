@@ -69,37 +69,23 @@ pkg_appears_sane() {
 }
 
 resolve_file_mode_id() {
-	type="$1"
-	name="$2"
-	position=1
-	if [ "$type" = "group" ]; then
-		position=2
-	fi
+	local var=$1 type=$2 name=$3 id
 
-	# root is always 0
-	if [ "$name" = "root" ]; then
-		echo 0
-		exit 0
-	fi
+	case "$name" in
+		root)
+			id=0
+		;;
+		*[!0-9]*)
+			id=$(sed -ne "s#^$type $name \\([0-9]\\+\\)\\b.*\$#\\1#p" "$TOPDIR/tmp/.packageusergroup" 2>/dev/null)
+		;;
+		*)
+			id=$name
+		;;
+	esac
 
-	# return numeric names
-	if [ "$name" -eq "$name" 2>/dev/null ]; then
-		echo "$name"
-		exit 0
-	fi
+	export "$var=$id"
 
-	ids=$(grep "$name" "$TOPDIR/tmp/userids")
-	for id in $ids; do
-		resolved_name=$(echo "$id" | cut -d ":" -f "$position" | cut -d "=" -f 1)
-		resolved_id=$(echo "$id" | cut -d ":" -f "$position" | cut -d "=" -f 2)
-		if [ "$resolved_name" = "$name" ]; then
-			echo "$resolved_id"
-			exit 0
-		fi
-	done
-
-	>&2 echo "No $type ID found for $name"
-	exit 1
+	[ -n "$id" ]
 }
 
 ###
@@ -135,7 +121,7 @@ case $# in
 	;;
 *)
 	echo $usage >&2
-	exit 1 
+	exit 1
 	;;
 esac
 
@@ -175,13 +161,20 @@ for file_mode in $file_modes; do
 	    exit 1
 	    ;;
 	esac
-	path=$(echo "$file_mode" | cut -d ':' -f 1)
-	user=$(echo "$file_mode" | cut -d ':' -f 2)
-	group=$(echo "$file_mode" | cut -d ':' -f 3)
-	mode=$(echo "$file_mode" | cut -d ':' -f 4)
 
-	uid=$(resolve_file_mode_id user "$user")
-	gid=$(resolve_file_mode_id group "$group")
+	mode=${file_mode##*:}; path=${file_mode%:*}
+	group=${path##*:};     path=${path%:*}
+	user=${path##*:};      path=${path%:*}
+
+	if ! resolve_file_mode_id uid user "$user"; then
+		echo "ERROR: unable to resolve uid of $user" >&2
+		exit 1
+	fi
+
+	if ! resolve_file_mode_id gid group "$group"; then
+		echo "ERROR: unable to resolve gid of $group" >&2
+		exit 1
+	fi
 
 	chown "$uid:$gid" "$pkg_dir/$path"
 	chmod  "$mode" "$pkg_dir/$path"
