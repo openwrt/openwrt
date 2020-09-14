@@ -93,7 +93,6 @@ prepare-tmpinfo: FORCE
 	./scripts/package-metadata.pl pkgaux tmp/.packageinfo > tmp/.packageauxvars || { rm -f tmp/.packageauxvars; false; }
 	./scripts/package-metadata.pl usergroup tmp/.packageinfo > tmp/.packageusergroup || { rm -f tmp/.packageusergroup; false; }
 	touch $(TOPDIR)/tmp/.build
-	grep "Require-User" tmp/.packageinfo | cut -d ' ' -f 2- | sort -u | grep "=" > tmp/userids
 
 .config: ./scripts/config/conf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo)
 	@+if [ \! -e .config ] || ! grep CONFIG_HAVE_DOT_CONFIG .config >/dev/null; then \
