@@ -3,32 +3,35 @@
 # Copyright (C) 2012 OpenWrt.org
 #
 
-[ -e /etc/config/ubootenv ] && exit 0
-
-touch /etc/config/ubootenv
-
 . /lib/uboot-envtools.sh
 . /lib/functions.sh
+
+idx="$(find_mtd_index u-boot-env)"
+
+[ -n "$idx" ] || exit 0
+
+[ -e /etc/config/ubootenv -a "$(uci get ubootenv.@ubootenv[-1].dev)" = "/dev/mtd$idx" ] && exit 0
+
+rm -f /etc/config/ubootenv
+rm -f /etc/fw_env.config
+
+touch /etc/config/ubootenv
 
 board=$(board_name)
 
 case "$board" in
-bt,homehub-v2b)
-	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000" "1"
+bt,homehub-v2b|\
+siemens,gigaset-sx76x)
+	ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x10000" "0x10000" "1"
 	;;
 bt,homehub-v3a)
-	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x4000" "0x4000" "1"
-	;;
-siemens,gigaset-sx76x)
-	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000" "1"
-	;;
-zyxel,p-2812hnu-f1)
-	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x2000" "0x20000" "1"
+	ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x4000" "0x4000" "1"
 	;;
 buffalo,wbmr-300hpd)
-	idx="$(find_mtd_index u-boot-env)"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x2000" "0x1000" "2"
+	ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x2000" "0x1000" "2"
+	;;
+zyxel,p-2812hnu-f1)
+	ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x2000" "0x20000" "1"
 	;;
 esac
 
