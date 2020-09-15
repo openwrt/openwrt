@@ -61,7 +61,10 @@ ipq40xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
 		;;
-	avm,fritzrepeater-3000|\
+	avm,fritzrepeater-3000)
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "4:lan:1" "5:lan:2"
+		;;
 	compex,wpj419|\
 	compex,wpj428|\
 	engenius,eap2200)
