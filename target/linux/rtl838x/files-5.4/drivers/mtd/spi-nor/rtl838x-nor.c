@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-
 #include <linux/device.h>
 #include <linux/init.h>
 #include <linux/module.h>
@@ -21,36 +20,34 @@ extern struct rtl838x_soc_info soc_info;
 struct rtl838x_nor {
 	struct spi_nor nor;
 	struct device *dev;
-	void __iomem *base;	/* nor flash base address */
-
+	volatile void __iomem *base;
 	bool fourByteMode;
 	u32 chipSize;
-	// Following need to go into spi_nor->priv
 	uint32_t flags;
 	uint32_t io_status;
 };
 
-static uint32_t spi_prep(struct rtl838x_nor *nor)
+static uint32_t spi_prep(struct rtl838x_nor *rtl838x_nor)
 {
 	/* Needed because of MMU constraints */
 	SPI_WAIT_READY;
 	spi_w32w(SPI_CS_INIT, SFCSR);	//deactivate CS0, CS1
-	spi_w32w(0, SFCSR); 		//activate CS0,CS1
-	spi_w32w(SPI_CS_INIT, SFCSR); 	//deactivate CS0, CS1
+	spi_w32w(0, SFCSR);		//activate CS0,CS1
+	spi_w32w(SPI_CS_INIT, SFCSR);	//deactivate CS0, CS1
 
-	return ( CS0 & nor->flags) ? (SPI_eCS0 & SPI_LEN_INIT)
+	return (CS0 & rtl838x_nor->flags) ? (SPI_eCS0 & SPI_LEN_INIT)
 			: ((SPI_eCS1 & SPI_LEN_INIT) | SFCSR_CHIP_SEL);
 }
 
-static uint32_t rtl838x_nor_get_SR(struct rtl838x_nor *nor)
+static uint32_t rtl838x_nor_get_SR(struct rtl838x_nor *rtl838x_nor)
 {
 	uint32_t sfcsr, sfdr;
 
-	sfcsr = spi_prep(nor);
+	sfcsr = spi_prep(rtl838x_nor);
 	sfdr  = (SPINOR_OP_RDSR)<<24;
 
-	pr_debug("rtl838x_nor_get_SR: rdid,sfcsr_val = %.8x,SFDR = %.8x \n", sfcsr, sfdr);
-	pr_debug("rdid,sfcsr = %.8x\n",sfcsr | SPI_LEN4);
+	pr_debug("%s: rdid,sfcsr_val = %.8x,SFDR = %.8x\n", __func__, sfcsr, sfdr);
+	pr_debug("rdid,sfcsr = %.8x\n", sfcsr | SPI_LEN4);
 	spi_w32w(sfcsr, SFCSR);
 	spi_w32w(sfdr, SFDR);
 	spi_w32_mask(0, SPI_LEN4, SFCSR);
@@ -59,37 +56,37 @@ static uint32_t rtl838x_nor_get_SR(struct rtl838x_nor *nor)
 	return spi_r32(SFDR);
 }
 
-static void spi_write_disable(struct rtl838x_nor *nor)
+static void spi_write_disable(struct rtl838x_nor *rtl838x_nor)
 {
 	uint32_t sfcsr, sfdr;
 
-	sfcsr = spi_prep(nor);
+	sfcsr = spi_prep(rtl838x_nor);
 	sfdr = (SPINOR_OP_WRDI) << 24;
 	spi_w32w(sfcsr, SFCSR);
 	spi_w32w(sfdr, SFDR);
-	pr_debug("spi_write_disable: sfcsr_val = %.8x,SFDR = %.8x", sfcsr, sfdr);
+	pr_debug("%s: sfcsr_val = %.8x,SFDR = %.8x", __func__, sfcsr, sfdr);
 
-	spi_prep(nor);
+	spi_prep(rtl838x_nor);
 }
 
-static void spi_write_enable(struct rtl838x_nor *nor)
+static void spi_write_enable(struct rtl838x_nor *rtl838x_nor)
 {
 	uint32_t sfcsr, sfdr;
 
-	sfcsr = spi_prep(nor);
+	sfcsr = spi_prep(rtl838x_nor);
 	sfdr = (SPINOR_OP_WREN) << 24;
 	spi_w32w(sfcsr, SFCSR);
 	spi_w32w(sfdr, SFDR);
-	pr_debug("spi_write_enable: sfcsr_val = %.8x,SFDR = %.8x", sfcsr, sfdr);
+	pr_debug("%s: sfcsr_val = %.8x,SFDR = %.8x", __func__, sfcsr, sfdr);
 
-	spi_prep(nor);
+	spi_prep(rtl838x_nor);
 }
 
-static void spi_4b_set(struct rtl838x_nor *nor, bool enable)
+static void spi_4b_set(struct rtl838x_nor *rtl838x_nor, bool enable)
 {
 	uint32_t sfcsr, sfdr;
 
-	sfcsr = spi_prep(nor);
+	sfcsr = spi_prep(rtl838x_nor);
 	if (enable)
 		sfdr = (SPINOR_OP_EN4B) << 24;
 	else
@@ -97,46 +94,46 @@ static void spi_4b_set(struct rtl838x_nor *nor, bool enable)
 
 	spi_w32w(sfcsr, SFCSR);
 	spi_w32w(sfdr, SFDR);
-	pr_debug("spi_4b_set: sfcsr_val = %.8x,SFDR = %.8x", sfcsr, sfdr);
+	pr_debug("%s: sfcsr_val = %.8x,SFDR = %.8x", __func__, sfcsr, sfdr);
 
-	spi_prep(nor);
+	spi_prep(rtl838x_nor);
 }
 
-static int rtl838x_get_addr_mode(void)
+static int rtl838x_get_addr_mode(struct rtl838x_nor *rtl838x_nor)
 {
 	int res = 3;
 	u32 reg;
 
-	rtl838x_w32(0x3, RTL838X_INT_RW_CTRL);
-	if (!rtl838x_r32(RTL838X_EXT_VERSION)) {
-		if (rtl838x_r32(RTL838X_STRAP_DBG) & (1 << 29))
+	sw_w32(0x3, RTL838X_INT_RW_CTRL);
+	if (!sw_r32(RTL838X_EXT_VERSION)) {
+		if (sw_r32(RTL838X_STRAP_DBG) & (1 << 29))
 			res = 4;
 	} else {
-		reg = rtl838x_r32(RTL838X_PLL_CML_CTRL);
+		reg = sw_r32(RTL838X_PLL_CML_CTRL);
 		if ((reg & (1 << 30)) && (reg & (1 << 31)))
 			res = 4;
 		if ((!(reg & (1 << 30)))
-		     && rtl838x_r32(RTL838X_STRAP_DBG) & (1 << 29))
+		     && sw_r32(RTL838X_STRAP_DBG) & (1 << 29))
 			res = 4;
 	}
-	rtl838x_w32(0x0, RTL838X_INT_RW_CTRL);
+	sw_w32(0x0, RTL838X_INT_RW_CTRL);
 	return res;
 }
 
-static int rtl8390_get_addr_mode(void)
+static int rtl8390_get_addr_mode(struct rtl838x_nor *rtl838x_nor)
 {
-	if(rtl838x_r32(RTL8390_SOC_SPI_MMIO_CONF) & (1 << 9))
+	if (spi_r32(RTL8390_SOC_SPI_MMIO_CONF) & (1 << 9))
 		return 4;
 	return 3;
 }
 
-ssize_t rtl838x_do_read(struct rtl838x_nor *nor, loff_t from,
+ssize_t rtl838x_do_read(struct rtl838x_nor *rtl838x_nor, loff_t from,
 			       size_t length, u_char *buffer, uint8_t command)
 {
 	uint32_t sfcsr, sfdr;
 	uint32_t len = length;
 
-	sfcsr = spi_prep(nor);
+	sfcsr = spi_prep(rtl838x_nor);
 	sfdr = command << 24;
 
 	/* Perform SPINOR_OP_READ: 1 byte command & 3 byte addr*/
@@ -147,9 +144,9 @@ ssize_t rtl838x_do_read(struct rtl838x_nor *nor, loff_t from,
 	spi_w32w(sfdr, SFDR);
 
 	/* Read Data, 4 bytes at a time */
-	while (length >= 4){
+	while (length >= 4) {
 		SPI_WAIT_READY;
-		*((uint32_t*) buffer) = spi_r32(SFDR);
+		*((uint32_t *) buffer) = spi_r32(SFDR);
 /*		printk("%.8x  ", *((uint32_t*) buffer)); */
 		buffer += 4;
 		length -= 4;
@@ -172,17 +169,17 @@ ssize_t rtl838x_do_read(struct rtl838x_nor *nor, loff_t from,
 /*
  * Do fast read in 3 or 4 Byte addressing mode
  */
-static ssize_t rtl838x_do_4bf_read(struct rtl838x_nor *nor, loff_t from,
+static ssize_t rtl838x_do_4bf_read(struct rtl838x_nor *rtl838x_nor, loff_t from,
 			       size_t length, u_char *buffer, uint8_t command)
 {
-	int sfcsr_addr_len = nor->fourByteMode? 0x3 : 0x2;
-	int sfdr_addr_shift = nor->fourByteMode? 0 : 8;
+	int sfcsr_addr_len = rtl838x_nor->fourByteMode ? 0x3 : 0x2;
+	int sfdr_addr_shift = rtl838x_nor->fourByteMode ? 0 : 8;
 	uint32_t sfcsr;
 	uint32_t len = length;
 
 	pr_debug("Fast read from %llx, len %x, shift %d\n",
-	         from, sfcsr_addr_len, sfdr_addr_shift);
-	sfcsr = spi_prep(nor);
+		 from, sfcsr_addr_len, sfdr_addr_shift);
+	sfcsr = spi_prep(rtl838x_nor);
 
 	/* Send read command */
 	spi_w32w(sfcsr | SPI_LEN1, SFCSR);
@@ -200,9 +197,9 @@ static ssize_t rtl838x_do_4bf_read(struct rtl838x_nor *nor, loff_t from,
 	spi_w32w(sfcsr | SPI_LEN4, SFCSR);
 
 	/* Read Data, 4 bytes at a time */
-	while (length >= 4){
+	while (length >= 4) {
 		SPI_WAIT_READY;
-		*((uint32_t*) buffer) = spi_r32(SFDR);
+		*((uint32_t *) buffer) = spi_r32(SFDR);
 /*		printk("%.8x  ", *((uint32_t*) buffer)); */
 		buffer += 4;
 		length -= 4;
@@ -226,18 +223,18 @@ static ssize_t rtl838x_do_4bf_read(struct rtl838x_nor *nor, loff_t from,
 /*
  * Do write (Page Programming) in 3 or 4 Byte addressing mode
  */
-static ssize_t rtl838x_do_4b_write(struct rtl838x_nor *nor, loff_t to,
+static ssize_t rtl838x_do_4b_write(struct rtl838x_nor *rtl838x_nor, loff_t to,
 				    size_t length, const u_char *buffer,
 				    uint8_t command)
 {
-	int sfcsr_addr_len = nor->fourByteMode? 0x3 : 0x2;
-	int sfdr_addr_shift = nor->fourByteMode? 0 : 8;
+	int sfcsr_addr_len = rtl838x_nor->fourByteMode ? 0x3 : 0x2;
+	int sfdr_addr_shift = rtl838x_nor->fourByteMode ? 0 : 8;
 	uint32_t sfcsr;
 	uint32_t len = length;
 
 	pr_debug("Write to %llx, len %x, shift %d\n",
 		 to, sfcsr_addr_len, sfdr_addr_shift);
-	sfcsr = spi_prep(nor);
+	sfcsr = spi_prep(rtl838x_nor);
 
 	/* Send write command, command IO-width is 1 (bit 25/26) */
 	spi_w32w(sfcsr | SPI_LEN1 | (0 << 25), SFCSR);
@@ -263,7 +260,7 @@ static ssize_t rtl838x_do_4b_write(struct rtl838x_nor *nor, loff_t to,
 	spi_w32w(sfcsr | SPI_LEN4, SFCSR);
 	while (length >= 4) {
 		SPI_WAIT_READY;
-		spi_w32(*((uint32_t*)buffer), SFDR);
+		spi_w32(*((uint32_t *)buffer), SFDR);
 		buffer += 4;
 		length -= 4;
 	}
@@ -295,11 +292,12 @@ static ssize_t rtl838x_nor_write(struct spi_nor *nor, loff_t to, size_t len,
 		spi_4b_set(rtl838x_nor, true);
 	}
 
-	pr_debug("In rtl838x_nor_write %8x to: %llx\n",
+	pr_debug("In %s %8x to: %llx\n", __func__,
 		 (unsigned int) rtl838x_nor, to);
 
 	while (l >= SPI_MAX_TRANSFER_SIZE) {
-		while(rtl838x_nor_get_SR(rtl838x_nor) & SPI_WIP);
+		while
+			(rtl838x_nor_get_SR(rtl838x_nor) & SPI_WIP);
 		do {
 			spi_write_enable(rtl838x_nor);
 		} while (!(rtl838x_nor_get_SR(rtl838x_nor) & SPI_WEL));
@@ -310,11 +308,12 @@ static ssize_t rtl838x_nor_write(struct spi_nor *nor, loff_t to, size_t len,
 	}
 
 	if (l > 0) {
-		while(rtl838x_nor_get_SR(rtl838x_nor) & SPI_WIP);
+		while
+			(rtl838x_nor_get_SR(rtl838x_nor) & SPI_WIP);
 		do {
 			spi_write_enable(rtl838x_nor);
 		} while (!(rtl838x_nor_get_SR(rtl838x_nor) & SPI_WEL));
-		ret = rtl838x_do_4b_write(rtl838x_nor, to+offset ,
+		ret = rtl838x_do_4b_write(rtl838x_nor, to+offset,
 					  len, buffer+offset, cmd);
 	}
 
@@ -337,13 +336,14 @@ static ssize_t rtl838x_nor_read(struct spi_nor *nor, loff_t from,
 
 	/* TODO: do timeout and return error */
 	pr_debug("Waiting for pending writes\n");
-	while(rtl838x_nor_get_SR(rtl838x_nor) & SPI_WIP);
+	while
+		(rtl838x_nor_get_SR(rtl838x_nor) & SPI_WIP);
 	do {
 		spi_write_enable(rtl838x_nor);
 	} while (!(rtl838x_nor_get_SR(rtl838x_nor) & SPI_WEL));
 
-	pr_debug("cmd is %d \n", cmd);
-	pr_debug("rtl838x_nor_read addr %.8llx to addr %.8x, cmd %.8x, size %d\n",
+	pr_debug("cmd is %d\n", cmd);
+	pr_debug("%s: addr %.8llx to addr %.8x, cmd %.8x, size %d\n", __func__,
 		 from, (u32)buffer, (u32)cmd, length);
 
 	while (l >= SPI_MAX_TRANSFER_SIZE) {
@@ -362,8 +362,8 @@ static ssize_t rtl838x_nor_read(struct spi_nor *nor, loff_t from,
 static int rtl838x_erase(struct spi_nor *nor, loff_t offs)
 {
 	struct rtl838x_nor *rtl838x_nor = nor->priv;
-	int sfcsr_addr_len = rtl838x_nor->fourByteMode? 0x3 : 0x2;
-	int sfdr_addr_shift = rtl838x_nor->fourByteMode? 0 : 8;
+	int sfcsr_addr_len = rtl838x_nor->fourByteMode ? 0x3 : 0x2;
+	int sfdr_addr_shift = rtl838x_nor->fourByteMode ? 0 : 8;
 	uint32_t sfcsr;
 	uint8_t cmd = SPINOR_OP_SE;
 
@@ -375,7 +375,8 @@ static int rtl838x_erase(struct spi_nor *nor, loff_t offs)
 		spi_4b_set(rtl838x_nor, true);
 	}
 	/* TODO: do timeout and return error */
-	while(rtl838x_nor_get_SR(rtl838x_nor) & SPI_WIP);
+	while
+		(rtl838x_nor_get_SR(rtl838x_nor) & SPI_WIP);
 	do {
 		spi_write_enable(rtl838x_nor);
 	} while (!(rtl838x_nor_get_SR(rtl838x_nor) & SPI_WEL));
@@ -400,7 +401,7 @@ static int rtl838x_nor_read_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len
 	uint32_t sfcsr, sfdr;
 	struct rtl838x_nor *rtl838x_nor = nor->priv;
 
-	pr_debug("In rtl838x_nor_read_reg: opcode %x, len %x\n", opcode, len);
+	pr_debug("In %s: opcode %x, len %x\n", __func__, opcode, len);
 
 	sfcsr = spi_prep(rtl838x_nor);
 	sfdr = opcode << 24;
@@ -425,7 +426,7 @@ static int rtl838x_nor_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int le
 	uint32_t sfcsr, sfdr;
 	struct rtl838x_nor *rtl838x_nor = nor->priv;
 
-	pr_debug("In rtl838x_nor_write_reg, opcode %x, len %x\n", opcode, len);
+	pr_debug("In %s, opcode %x, len %x\n", __func__, opcode, len);
 	sfcsr = spi_prep(rtl838x_nor);
 	sfdr = opcode << 24;
 
@@ -438,40 +439,13 @@ static int rtl838x_nor_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int le
 	return 0;
 }
 
-static int spi_read_id(struct rtl838x_nor *nor)
-{
-	uint32_t sfcsr, sfdr;
-	uint32_t size = 4;
-	int ret;
-	uint8_t buf[8];
-	uint8_t *buffer = buf;
-
-	sfcsr = spi_prep(nor);
-	sfdr = (SPINOR_OP_RDID)<<24;
-
-	spi_w32w(sfcsr, SFCSR);
-	spi_w32w(sfdr, SFDR);
-	spi_w32_mask(0, SPI_LEN4, SFCSR);
-	SPI_WAIT_READY;
-
-	ret = spi_r32(SFDR);
-
-	while (size >= 4) {
-		SPI_WAIT_READY;
-		*((uint32_t*) buffer) = spi_r32(SFDR);
-		buffer += 4;
-		size -= 4;
-	}
-	return ret;
-}
-
 static int spi_enter_sio(struct spi_nor *nor)
 {
 	uint32_t sfcsr, sfcr2, sfdr;
 	uint32_t ret = 0, reg = 0, size_bits;
 	struct rtl838x_nor *rtl838x_nor = nor->priv;
 
-	pr_debug("In spi_enter_sio\n");
+	pr_debug("In %s\n", __func__);
 	rtl838x_nor->io_status = 0;
 	sfdr = SPI_C_RSTQIO << 24;
 	sfcsr = spi_prep(rtl838x_nor);
@@ -479,7 +453,7 @@ static int spi_enter_sio(struct spi_nor *nor)
 	reg = spi_r32(SFCR2);
 	pr_debug("SFCR2: %x, size %x, rdopt: %x\n", reg, SFCR2_GETSIZE(reg),
 						  (reg & SFCR2_RDOPT));
-	size_bits = rtl838x_nor->fourByteMode? SFCR2_SIZE(0x6) : SFCR2_SIZE(0x7);
+	size_bits = rtl838x_nor->fourByteMode ? SFCR2_SIZE(0x6) : SFCR2_SIZE(0x7);
 
 	sfcr2 = SFCR2_HOLD_TILL_SFDR2 | size_bits
 		| (reg & SFCR2_RDOPT) | SFCR2_CMDIO(0)
@@ -508,18 +482,14 @@ int rtl838x_spi_nor_scan(struct spi_nor *nor, const char *name)
 			| SNOR_HWCAPS_READ_FAST
 	};
 
-	uint32_t flash_id;
 	struct rtl838x_nor *rtl838x_nor = nor->priv;
 
-	pr_debug("In rtl838x_spi_nor_scan\n");
+	pr_debug("In %s\n", __func__);
 
 	spi_w32_mask(0, SFCR_EnableWBO, SFCR);
 	spi_w32_mask(0, SFCR_EnableRBO, SFCR);
 
-	rtl838x_nor->flags = CS0 |R_MODE;
-
-	flash_id = spi_read_id(rtl838x_nor) >> 8;
-	pr_info("Flash ID: %x\n", flash_id);
+	rtl838x_nor->flags = CS0 | R_MODE;
 
 	spi_nor_scan(nor, NULL, &hwcaps);
 	pr_debug("------------- Got size: %llx\n", nor->mtd.size);
@@ -533,7 +503,7 @@ int rtl838x_nor_init(struct rtl838x_nor *rtl838x_nor,
 	int ret;
 	struct spi_nor *nor;
 
-	pr_info("rtl838x_nor_init called\n");
+	pr_info("%s called\n", __func__);
 	nor = &rtl838x_nor->nor;
 	nor->dev = rtl838x_nor->dev;
 	nor->priv = rtl838x_nor;
@@ -545,7 +515,7 @@ int rtl838x_nor_init(struct rtl838x_nor *rtl838x_nor,
 	nor->write = rtl838x_nor_write;
 	nor->erase = rtl838x_erase;
 	nor->mtd.name = "rtl838x_nor";
-	nor->erase_opcode = rtl838x_nor->fourByteMode? SPINOR_OP_SE_4B
+	nor->erase_opcode = rtl838x_nor->fourByteMode ? SPINOR_OP_SE_4B
 					: SPINOR_OP_SE;
 	/* initialized with NULL */
 	ret = rtl838x_spi_nor_scan(nor, NULL);
@@ -580,9 +550,10 @@ static int rtl838x_nor_drv_probe(struct platform_device *pdev)
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	rtl838x_nor->base = devm_ioremap_resource(&pdev->dev, res);
-	if (IS_ERR(rtl838x_nor->base))
-		return PTR_ERR(rtl838x_nor->base);
+	if (IS_ERR((void *)rtl838x_nor->base))
+		return PTR_ERR((void *)rtl838x_nor->base);
 
+	pr_info("SPI resource base is %08x\n", (u32)rtl838x_nor->base);
 	rtl838x_nor->dev = &pdev->dev;
 
 	/* only support one attached flash */
@@ -595,9 +566,9 @@ static int rtl838x_nor_drv_probe(struct platform_device *pdev)
 
 	/* Get the 3/4 byte address mode as configure by bootloader */
 	if (soc_info.family == RTL8390_FAMILY_ID)
-		addrMode = rtl8390_get_addr_mode();
+		addrMode = rtl8390_get_addr_mode(rtl838x_nor);
 	else
-		addrMode = rtl838x_get_addr_mode();
+		addrMode = rtl838x_get_addr_mode(rtl838x_nor);
 	pr_info("Address mode is %d bytes\n", addrMode);
 	if (addrMode == 4)
 		rtl838x_nor->fourByteMode = true;

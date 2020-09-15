@@ -1,6 +1,3 @@
-#
-# Copyright (C) 2008-2011 OpenWrt.org
-#
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
@@ -10,22 +7,6 @@ include $(INCLUDE_DIR)/image.mk
 KERNEL_LOADADDR = 0x80000000
 KERNEL_ENTRY = 0x80000400
 
-define Device/Default
-  PROFILES = Default
-  KERNEL := kernel-bin | append-dtb | gzip | uImage gzip
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | uImage gzip
-  DEVICE_DTS_DIR := ../dts
-  DEVICE_DTS = $$(SOC)_$(1)
-  IMAGES := sysupgrade.bin
-  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
-  sysupgrade_bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
-endef
-
-define Build/netgear-uImage
-	$(call Build/uImage,$(1) -M $(NETGEAR_KERNEL_MAGIC))
-endef
-
 define Build/custom-uimage
 	mkimage -A $(LINUX_KARCH) \
 		-O linux -T kernel \
@@ -33,6 +14,22 @@ define Build/custom-uimage
 		-e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
 		-n '$(1)' -d $@ $@.new
 	mv $@.new $@
+endef
+
+define Build/netgear-uImage
+	$(call Build/uImage,$(1) -M $(NETGEAR_KERNEL_MAGIC))
+endef
+
+define Device/Default
+  PROFILES = Default
+  KERNEL := kernel-bin | append-dtb | gzip | uImage gzip
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | uImage gzip
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS = $$(SOC)_$(1)
+  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | \
+	append-metadata | check-size
 endef
 
 define Device/allnet_all-sg8208m

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-only
+/* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (C) 2006-2012 Tony Wu (tonywu@realtek.com)
  * Copyright (C) 2020 B. Koblitz
@@ -10,18 +10,27 @@
  * Register access macros
  */
 
+#define RTL838X_SW_BASE		((volatile void *) 0xBB000000)
+
 #define rtl838x_r32(reg)	__raw_readl(reg)
 #define rtl838x_w32(val, reg)	__raw_writel(val, reg)
-#define rtl838x_w32_mask(clear, set, reg)	\
-	rtl838x_w32((rtl838x_r32(reg) & ~(clear)) | (set), reg)
-
-#define rtl838x_c32(x,y) rtl838x_w32(rtl838x_r32(y) & (~(x)), y)
-
-#define rtl838x_r16(reg)	__raw_readw(reg)
-#define rtl838x_w16(val, reg)	__raw_writew(val, reg)
+#define rtl838x_w32_mask(clear, set, reg) rtl838x_w32((rtl838x_r32(reg) & ~(clear)) | (set), reg)
 
 #define rtl838x_r8(reg)		__raw_readb(reg)
 #define rtl838x_w8(val, reg)	__raw_writeb(val, reg)
+
+#define sw_r32(reg)		__raw_readl(RTL838X_SW_BASE + reg)
+#define sw_w32(val, reg)	__raw_writel(val, RTL838X_SW_BASE + reg)
+#define sw_w32_mask(clear, set, reg)	\
+				sw_w32((sw_r32(reg) & ~(clear)) | (set), reg)
+#define sw_r64(reg)		((((u64)__raw_readl(RTL838X_SW_BASE + reg)) << 32) | \
+				__raw_readl(RTL838X_SW_BASE + reg + 4))
+
+#define sw_w64(val, reg)	do { \
+					__raw_writel((u32)((val) >> 32), RTL838X_SW_BASE + reg); \
+					__raw_writel((u32)((val) & 0xffffffff), \
+							RTL838X_SW_BASE + reg + 4); \
+				} while (0)
 
 /*
  * SPRAM
@@ -44,15 +53,15 @@
 
 /*
  *  ICTL
+ *  Base address 0xb8003000UL
  */
-#define RTL838X_ICTL_BASE	((volatile void *)(0xb8003000UL))
 #define RTL838X_ICTL1_IRQ	(RTL838X_IRQ_CPU_BASE + 2)
 #define RTL838X_ICTL2_IRQ	(RTL838X_IRQ_CPU_BASE + 3)
 #define RTL838X_ICTL3_IRQ	(RTL838X_IRQ_CPU_BASE + 4)
 #define RTL838X_ICTL4_IRQ	(RTL838X_IRQ_CPU_BASE + 5)
 #define RTL838X_ICTL5_IRQ	(RTL838X_IRQ_CPU_BASE + 6)
 
-#define GIMR			(RTL838X_ICTL_BASE + 0x0)
+#define GIMR			(0x00)
 #define UART0_IE		(1 << 31)
 #define UART1_IE		(1 << 30)
 #define TC0_IE			(1 << 29)
@@ -67,7 +76,7 @@
 #define WDT_IP1_IE		(1 << 19)
 #define WDT_IP2_IE		(1 << 18)
 
-#define GISR			(RTL838X_ICTL_BASE + 0x4)
+#define GISR			(0x04)
 #define UART0_IP		(1 << 31)
 #define UART1_IP		(1 << 30)
 #define TC0_IP			(1 << 29)
@@ -82,7 +91,7 @@
 #define WDT_IP1_IP		(1 << 19)
 #define WDT_IP2_IP		(1 << 18)
 
-#define IRR0			(RTL838X_ICTL_BASE + 0x8)
+#define IRR0			(0x08)
 #define IRR0_SETTING		((UART0_RS  << 28) | \
 				 (UART1_RS  << 24) | \
 				 (TC0_RS    << 20) | \
@@ -93,7 +102,7 @@
 				 (NIC_RS    << 0)    \
 				)
 
-#define IRR1			(RTL838X_ICTL_BASE + 0xc)
+#define IRR1			(0x0c)
 
 #define IRR1_SETTING		((GPIO_ABCD_RS << 28) | \
 				 (GPIO_EFGH_RS << 24) | \
@@ -101,10 +110,10 @@
 				 (SWCORE_RS    << 16)   \
 				)
 
-#define IRR2			(RTL838X_ICTL_BASE + 0x10)
+#define IRR2			(0x10)
 #define IRR2_SETTING		0
 
-#define IRR3			(RTL838X_ICTL_BASE + 0x14)
+#define IRR3			(0x14)
 #define IRR3_SETTING		0
 
 /* Interrupt Routing Selection */
@@ -174,46 +183,46 @@
 #define UART1_FCR		(RTL838X_UART1_BASE + 0x008)
    #define FCR_EN		0x01
    #define FCR_RXRST		0x02
-   #define     RXRST		0x02
+   #define XRST			0x02
    #define FCR_TXRST		0x04
-   #define     TXRST		0x04
+   #define TXRST		0x04
    #define FCR_DMA		0x08
    #define FCR_RTRG		0xC0
-   #define     CHAR_TRIGGER_01	0x00
-   #define     CHAR_TRIGGER_04	0x40
-   #define     CHAR_TRIGGER_08	0x80
-   #define     CHAR_TRIGGER_14	0xC0
+   #define CHAR_TRIGGER_01	0x00
+   #define CHAR_TRIGGER_04	0x40
+   #define CHAR_TRIGGER_08	0x80
+   #define CHAR_TRIGGER_14	0xC0
 #define UART1_LCR		(RTL838X_UART1_BASE + 0x00C)
    #define LCR_WLN		0x03
-   #define     CHAR_LEN_5	0x00
-   #define     CHAR_LEN_6	0x01
-   #define     CHAR_LEN_7	0x02
-   #define     CHAR_LEN_8	0x03
+   #define CHAR_LEN_5		0x00
+   #define CHAR_LEN_6		0x01
+   #define CHAR_LEN_7		0x02
+   #define CHAR_LEN_8		0x03
    #define LCR_STB		0x04
-   #define     ONE_STOP		0x00
-   #define     TWO_STOP		0x04
+   #define ONE_STOP		0x00
+   #define TWO_STOP		0x04
    #define LCR_PEN		0x08
-   #define     PARITY_ENABLE	0x01
-   #define     PARITY_DISABLE	0x00
+   #define PARITY_ENABLE	0x01
+   #define PARITY_DISABLE	0x00
    #define LCR_EPS		0x30
-   #define     PARITY_ODD	0x00
-   #define     PARITY_EVEN	0x10
-   #define     PARITY_MARK	0x20
-   #define     PARITY_SPACE	0x30
+   #define PARITY_ODD		0x00
+   #define PARITY_EVEN		0x10
+   #define PARITY_MARK		0x20
+   #define PARITY_SPACE		0x30
    #define LCR_BRK		0x40
    #define LCR_DLAB		0x80
-   #define     DLAB		0x80
+   #define DLAB			0x80
 #define UART1_MCR		(RTL838X_UART1_BASE + 0x010)
 #define UART1_LSR		(RTL838X_UART1_BASE + 0x014)
    #define LSR_DR		0x01
-   #define     RxCHAR_AVAIL	0x01
+   #define RxCHAR_AVAIL		0x01
    #define LSR_OE		0x02
    #define LSR_PE		0x04
    #define LSR_FE		0x08
    #define LSR_BI		0x10
    #define LSR_THRE		0x20
-   #define     TxCHAR_AVAIL	0x00
-   #define     TxCHAR_EMPTY	0x20
+   #define TxCHAR_AVAIL		0x00
+   #define TxCHAR_EMPTY		0x20
    #define LSR_TEMT		0x40
    #define LSR_RFE		0x80
 
@@ -289,11 +298,6 @@
 /*
  * GPIO
  */
-#define RTL838X_SWITCH_BASE		((volatile void *) 0xBB000000)
-#define RTL838X_MODEL_NAME_INFO		(RTL838X_SWITCH_BASE + 0x00D4)
-#define RTL839X_MODEL_NAME_INFO		(RTL838X_SWITCH_BASE + 0x0FF0)
-#define RTL838X_LED_GLB_CTRL		((volatile void *) 0xBB00A000)
-#define RTL839X_LED_GLB_CTRL		((volatile void *) 0xBB0000E4)
 #define GPIO_CTRL_REG_BASE		((volatile void *) 0xb8003500)
 #define RTL838X_GPIO_PABC_CNR		(GPIO_CTRL_REG_BASE + 0x0)
 #define RTL838X_GPIO_PABC_TYPE		(GPIO_CTRL_REG_BASE + 0x04)
@@ -303,21 +307,25 @@
 #define RTL838X_GPIO_PAB_IMR		(GPIO_CTRL_REG_BASE + 0x14)
 #define RTL838X_GPIO_PC_IMR		(GPIO_CTRL_REG_BASE + 0x18)
 
-#define RTL838X_EXT_GPIO_DIR_0		(RTL838X_SWITCH_BASE + 0xA08C)
-#define RTL838X_EXT_GPIO_DIR_1		(RTL838X_SWITCH_BASE + 0xA090)
-#define RTL838X_EXT_GPIO_DATA_0		(RTL838X_SWITCH_BASE + 0xA094)
-#define RTL838X_EXT_GPIO_DATA_1		(RTL838X_SWITCH_BASE + 0xA098)
-#define RTL838X_EXT_GPIO_INDRT_ACCESS	(RTL838X_SWITCH_BASE + 0xA09C)
-#define RTL838X_EXTRA_GPIO_CTRL		(RTL838X_SWITCH_BASE + 0xA0E0)
-#define RTL838X_EXTRA_GPIO_DIR_0	(RTL838X_SWITCH_BASE + 0xA0E4)
-#define RTL838X_EXTRA_GPIO_DIR_1	(RTL838X_SWITCH_BASE + 0xA0E8)
-#define RTL838X_EXTRA_GPIO_DATA_0	(RTL838X_SWITCH_BASE + 0xA0EC)
-#define RTL838X_EXTRA_GPIO_DATA_1	(RTL838X_SWITCH_BASE + 0xA0F0)
-#define RTL838X_DMY_REG5		(RTL838X_SWITCH_BASE + 0x144)
-#define RTL838X_EXTRA_GPIO_CTRL		(RTL838X_SWITCH_BASE + 0xA0E0)
+#define RTL838X_MODEL_NAME_INFO		(0x00D4)
+#define RTL839X_MODEL_NAME_INFO		(0x0FF0)
+#define RTL838X_LED_GLB_CTRL		(0xA000)
+#define RTL839X_LED_GLB_CTRL		(0x00E4)
+#define RTL838X_EXT_GPIO_DIR_0		(0xA08C)
+#define RTL838X_EXT_GPIO_DIR_1		(0xA090)
+#define RTL838X_EXT_GPIO_DATA_0		(0xA094)
+#define RTL838X_EXT_GPIO_DATA_1		(0xA098)
+#define RTL838X_EXT_GPIO_INDRT_ACCESS	(0xA09C)
+#define RTL838X_EXTRA_GPIO_CTRL		(0xA0E0)
+#define RTL838X_EXTRA_GPIO_DIR_0	(0xA0E4)
+#define RTL838X_EXTRA_GPIO_DIR_1	(0xA0E8)
+#define RTL838X_EXTRA_GPIO_DATA_0	(0xA0EC)
+#define RTL838X_EXTRA_GPIO_DATA_1	(0xA0F0)
+#define RTL838X_DMY_REG5		(0x0144)
+#define RTL838X_EXTRA_GPIO_CTRL		(0xA0E0)
 
-#define RTL838X_GMII_INTF_SEL		(RTL838X_SWITCH_BASE + 0x1000)
-#define RTL838X_IO_DRIVING_ABILITY_CTRL	(RTL838X_SWITCH_BASE + 0x1010)
+#define RTL838X_GMII_INTF_SEL		(0x1000)
+#define RTL838X_IO_DRIVING_ABILITY_CTRL	(0x1010)
 
 #define RTL838X_GPIO_A7		31
 #define RTL838X_GPIO_A6		30
@@ -344,61 +352,61 @@
 #define RTL838X_GPIO_C1		9
 #define RTL838X_GPIO_C0		8
 
-#define RTL838X_INT_RW_CTRL		(RTL838X_SWITCH_BASE + 0x58)
-#define RTL838X_EXT_VERSION		(RTL838X_SWITCH_BASE + 0xD0)
-#define RTL838X_PLL_CML_CTRL		(RTL838X_SWITCH_BASE + 0xFF8)
-#define RTL838X_STRAP_DBG		(RTL838X_SWITCH_BASE + 0x100C)
+#define RTL838X_INT_RW_CTRL		(0x0058)
+#define RTL838X_EXT_VERSION		(0x00D0)
+#define RTL838X_PLL_CML_CTRL		(0x0FF8)
+#define RTL838X_STRAP_DBG		(0x100C)
 
 /*
  * Reset
  */
-#define	RGCR				(RTL838X_SWITCH_BASE + 0x1E70)
-#define RTL839X_RST_GLB_CTRL		(RTL838X_SWITCH_BASE + 0x14)
-#define RTL838X_RST_GLB_CTRL_1		(RTL838X_SWITCH_BASE + 0x40)
+#define	RGCR				(0x1E70)
+#define RTL839X_RST_GLB_CTRL		(0x0014)
+#define RTL838X_RST_GLB_CTRL_1		(0x0040)
 
 /* LED control by switch */
-#define RTL838X_LED_MODE_SEL		(RTL838X_SWITCH_BASE + 0x1004)
-#define RTL838X_LED_MODE_CTRL		(RTL838X_SWITCH_BASE + 0xA004)
-#define RTL838X_LED_P_EN_CTRL		(RTL838X_SWITCH_BASE + 0xA008)
+#define RTL838X_LED_MODE_SEL		(0x1004)
+#define RTL838X_LED_MODE_CTRL		(0xA004)
+#define RTL838X_LED_P_EN_CTRL		(0xA008)
 
 /* LED control by software */
-#define RTL838X_LED_SW_CTRL		(RTL838X_SWITCH_BASE + 0xA00C)
-#define RTL838X_LED0_SW_P_EN_CTRL	(RTL838X_SWITCH_BASE + 0xA010)
-#define RTL838X_LED1_SW_P_EN_CTRL	(RTL838X_SWITCH_BASE + 0xA014)
-#define RTL838X_LED2_SW_P_EN_CTRL	(RTL838X_SWITCH_BASE + 0xA018)
-#define RTL838X_LED_SW_P_CTRL(p)	(RTL838X_SWITCH_BASE + 0xA01C + ((p) << 2))
+#define RTL838X_LED_SW_CTRL		(0xA00C)
+#define RTL838X_LED0_SW_P_EN_CTRL	(0xA010)
+#define RTL838X_LED1_SW_P_EN_CTRL	(0xA014)
+#define RTL838X_LED2_SW_P_EN_CTRL	(0xA018)
+#define RTL838X_LED_SW_P_CTRL(p)	(0xA01C + ((p) << 2))
 
+#define RTL839X_MAC_EFUSE_CTRL		(0x02ac)
 
-#define RTL839X_MAC_EFUSE_CTRL		(RTL838X_SW_BASE + 0x02ac)
 /*
  * MDIO via Realtek's SMI interface
  */
-#define RTL838X_SMI_GLB_CTRL		(RTL838X_SWITCH_BASE + 0xa100)
-#define RTL838X_SMI_ACCESS_PHY_CTRL_0	(RTL838X_SWITCH_BASE + 0xa1b8)
-#define RTL838X_SMI_ACCESS_PHY_CTRL_1	(RTL838X_SWITCH_BASE + 0xa1bc)
-#define RTL838X_SMI_ACCESS_PHY_CTRL_2	(RTL838X_SWITCH_BASE + 0xa1c0)
-#define RTL838X_SMI_ACCESS_PHY_CTRL_3	(RTL838X_SWITCH_BASE + 0xa1c4)
-#define RTL838X_SMI_PORT0_5_ADDR_CTRL	(RTL838X_SWITCH_BASE + 0xa1c8)
-#define RTL838X_SMI_POLL_CTRL		(RTL838X_SWITCH_BASE + 0xa17c)
+#define RTL838X_SMI_GLB_CTRL		(0xa100)
+#define RTL838X_SMI_ACCESS_PHY_CTRL_0	(0xa1b8)
+#define RTL838X_SMI_ACCESS_PHY_CTRL_1	(0xa1bc)
+#define RTL838X_SMI_ACCESS_PHY_CTRL_2	(0xa1c0)
+#define RTL838X_SMI_ACCESS_PHY_CTRL_3	(0xa1c4)
+#define RTL838X_SMI_PORT0_5_ADDR_CTRL	(0xa1c8)
+#define RTL838X_SMI_POLL_CTRL		(0xa17c)
 
-#define RTL839X_SMI_GLB_CTRL		(RTL838X_SWITCH_BASE + 0x03f8)
-#define RTL839X_SMI_PORT_POLLING_CTRL	(RTL838X_SWITCH_BASE + 0x03fc)
-#define RTL839X_PHYREG_ACCESS_CTRL	(RTL838X_SWITCH_BASE + 0x03DC)
-#define RTL839X_PHYREG_CTRL		(RTL838X_SWITCH_BASE + 0x03E0)
-#define RTL839X_PHYREG_PORT_CTRL(p)	(RTL838X_SWITCH_BASE + 0x03E4 + ((p >> 5) << 2))
-#define RTL839X_PHYREG_DATA_CTRL	(RTL838X_SWITCH_BASE + 0x03F0)
+#define RTL839X_SMI_GLB_CTRL		(0x03f8)
+#define RTL839X_SMI_PORT_POLLING_CTRL	(0x03fc)
+#define RTL839X_PHYREG_ACCESS_CTRL	(0x03DC)
+#define RTL839X_PHYREG_CTRL		(0x03E0)
+#define RTL839X_PHYREG_PORT_CTRL(p)	(0x03E4 + ((p >> 5) << 2))
+#define RTL839X_PHYREG_DATA_CTRL	(0x03F0)
 
 /*
  * Switch interrupts
  */
-#define RTL838X_IMR_GLB			(RTL838X_SWITCH_BASE + 0x1100)
-#define RTL838X_IMR_PORT_LINK_STS_CHG	(RTL838X_SWITCH_BASE + 0x1104)
-#define RTL838X_ISR_GLB_SRC		(RTL838X_SWITCH_BASE + 0x1148)
-#define RTL838X_ISR_PORT_LINK_STS_CHG	(RTL838X_SWITCH_BASE + 0x114C)
-#define RTL839X_IMR_GLB			(RTL838X_SWITCH_BASE + 0x0064)
-#define RTL839X_IMR_PORT_LINK_STS_CHG	(RTL838X_SWITCH_BASE + 0x0068)
-#define RTL839X_ISR_GLB_SRC		(RTL838X_SWITCH_BASE + 0x009c)
-#define RTL839X_ISR_PORT_LINK_STS_CHG	(RTL838X_SWITCH_BASE + 0x00a0)
+#define RTL838X_IMR_GLB			(0x1100)
+#define RTL838X_IMR_PORT_LINK_STS_CHG	(0x1104)
+#define RTL838X_ISR_GLB_SRC		(0x1148)
+#define RTL838X_ISR_PORT_LINK_STS_CHG	(0x114C)
+#define RTL839X_IMR_GLB			(0x0064)
+#define RTL839X_IMR_PORT_LINK_STS_CHG	(0x0068)
+#define RTL839X_ISR_GLB_SRC		(0x009c)
+#define RTL839X_ISR_PORT_LINK_STS_CHG	(0x00a0)
 
 /* Definition of family IDs */
 #define RTL8389_FAMILY_ID   (0x8389)
@@ -413,6 +421,8 @@ struct rtl838x_soc_info {
 	unsigned int id;
 	unsigned int family;
 	unsigned char *compatible;
+	volatile void *sw_base;
+	volatile void *icu_base;
 };
 
 void rtl838x_soc_detect(struct rtl838x_soc_info *i);

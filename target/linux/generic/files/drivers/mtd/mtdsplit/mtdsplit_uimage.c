@@ -319,6 +319,7 @@ static struct mtd_part_parser uimage_netgear_parser = {
 	.of_match_table = mtdsplit_uimage_netgear_of_match_table,
 	.parse_fn = mtdsplit_uimage_parse_netgear,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
+
 };
 
 
@@ -366,7 +367,6 @@ static struct mtd_part_parser uimage_allnet_parser = {
 	.name = "allnet-fw",
 	.of_match_table = mtdsplit_uimage_allnet_of_match_table,
 	.parse_fn = mtdsplit_uimage_parse_allnet,
-	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
 

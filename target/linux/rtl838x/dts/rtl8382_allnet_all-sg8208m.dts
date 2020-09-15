@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /dts-v1/;
 
 #include "rtl838x.dtsi"
@@ -17,12 +18,13 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyS0,115200 mem=128M";
+		bootargs = "console=ttyS0,115200";
 	};
 
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 67 GPIO_ACTIVE_LOW>;
@@ -34,7 +36,7 @@
 		compatible = "gpio-leds";
 
 		led_sys: sys {
-			label = "sg8208m:green:sys";
+			label = "all-sg8208m:green:sys";
 			gpios = <&gpio0 47 GPIO_ACTIVE_HIGH>;
 		};
 		// GPIO 25: power on/off all port leds
@@ -47,6 +49,7 @@
 
 &spi0 {
 	status = "okay";
+
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -62,27 +65,32 @@
 				reg = <0x0 0x80000>;
 				read-only;
 			};
+
 			partition@80000 {
 				label = "u-boot-env";
 				reg = <0x80000 0x10000>;
 				read-only;
 			};
+
 			partition@90000 {
 				label = "u-boot-env2";
 				reg = <0x90000 0x10000>;
 				read-only;
 			};
+
 			partition@a0000 {
 				label = "jffs";
 				reg = <0xa0000 0x100000>;
 			};
+
 			partition@1a0000 {
 				label = "jffs2";
-				reg = <0x160000 0x100000>;
+				reg = <0x1a0000 0x100000>;
 			};
-			partition@b2a0000 {
+
+			partition@2a0000 {
 				label = "firmware";
-				reg = <0x2a0000 0x700000>;
+				reg = <0x2a0000 0xd60000>;
 				compatible = "allnet,uimage";
 			};
 		};
@@ -101,30 +109,37 @@
 			reg = <8>;
 			compatible = "ethernet-phy-ieee802.3-c22";
 		};
+
 		phy9: ethernet-phy@9 {
 			reg = <9>;
 			compatible = "ethernet-phy-ieee802.3-c22";
 		};
+
 		phy10: ethernet-phy@10 {
 			reg = <10>;
 			compatible = "ethernet-phy-ieee802.3-c22";
 		};
+
 		phy11: ethernet-phy@11 {
 			reg = <11>;
 			compatible = "ethernet-phy-ieee802.3-c22";
 		};
+
 		phy12: ethernet-phy@12 {
 			reg = <12>;
 			compatible = "ethernet-phy-ieee802.3-c22";
 		};
+
 		phy13: ethernet-phy@13 {
 			reg = <13>;
 			compatible = "ethernet-phy-ieee802.3-c22";
 		};
+
 		phy14: ethernet-phy@14 {
 			reg = <14>;
 			compatible = "ethernet-phy-ieee802.3-c22";
 		};
+
 		phy15: ethernet-phy@15 {
 			reg = <15>;
 			compatible = "ethernet-phy-ieee802.3-c22";
@@ -143,48 +158,56 @@
 			phy-handle = <&phy8>;
 			phy-mode = "internal";
 		};
+
 		port@1 {
 			reg = <9>;
 			label = "lan2";
 			phy-handle = <&phy9>;
 			phy-mode = "internal";
 		};
+
 		port@2 {
 			reg = <10>;
 			label = "lan3";
 			phy-handle = <&phy10>;
 			phy-mode = "internal";
 		};
+
 		port@3 {
 			reg = <11>;
 			label = "lan4";
 			phy-handle = <&phy11>;
 			phy-mode = "internal";
 		};
+
 		port@4 {
 			reg = <12>;
 			label = "lan5";
 			phy-handle = <&phy12>;
 			phy-mode = "internal";
 		};
+
 		port@5 {
 			reg = <13>;
 			label = "lan6";
 			phy-handle = <&phy13>;
 			phy-mode = "internal";
 		};
+
 		port@6 {
 			reg = <14>;
 			label = "lan7";
 			phy-handle = <&phy14>;
 			phy-mode = "internal";
 		};
+
 		port@7 {
 			reg = <15>;
 			label = "lan8";
 			phy-handle = <&phy15>;
 			phy-mode = "internal";
 		};
+
 		port@28 {
 			ethernet = <&ethernet0>;
 			reg = <28>;

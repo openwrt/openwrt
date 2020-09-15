@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (C) 2009 Realtek Semiconductor Corp.
  *
@@ -21,22 +22,26 @@
  * Register access macros
  */
 
-#define spi_r32(reg)	__raw_readl(reg)
-#define spi_w32(val, reg)	__raw_writel(val, reg)
+#define spi_r32(reg)		__raw_readl(rtl838x_nor->base + reg)
+#define spi_w32(val, reg)	__raw_writel(val, rtl838x_nor->base + reg)
 #define spi_w32_mask(clear, set, reg)	\
 	spi_w32((spi_r32(reg) & ~(clear)) | (set), reg)
-#define SPI_WAIT_READY while( !(spi_r32(SFCSR) & SFCSR_SPI_RDY) )
-#define spi_w32w(val, reg)	__raw_writel(val, reg); SPI_WAIT_READY
 
+#define SPI_WAIT_READY		do { \
+				} while (!(spi_r32(SFCSR) & SFCSR_SPI_RDY))
 
-#define SFRB   ((volatile void *) (0xB8001200))	/*SPI Flash Register Base*/
-#define SFCR   (SFRB)			/*SPI Flash Configuration Register*/
+#define spi_w32w(val, reg)	do { \
+					__raw_writel(val, rtl838x_nor->base + reg); \
+					SPI_WAIT_READY; \
+				} while (0)
+
+#define SFCR   (0x00)			/*SPI Flash Configuration Register*/
 	#define SFCR_CLK_DIV(val)	((val)<<29)
 	#define SFCR_EnableRBO		(1<<28)
 	#define SFCR_EnableWBO		(1<<27)
 	#define SFCR_SPI_TCS(val)	((val)<<23) /*4 bit, 1111 */
 
-#define SFCR2  (SFRB+0x04)      /*For memory mapped I/O */
+#define SFCR2  (0x04)	/*For memory mapped I/O */
 	#define SFCR2_SFCMD(val)	((val)<<24) /*8 bit, 1111_1111 */
 	#define SFCR2_SIZE(val)		((val)<<21) /*3 bit, 111 */
 	#define SFCR2_RDOPT		(1<<20)
@@ -47,7 +52,7 @@
 	#define SFCR2_HOLD_TILL_SFDR2	(1<<10)
 	#define SFCR2_GETSIZE(x)	(((x)&0x00E00000)>>21)
 
-#define SFCSR  (SFRB+0x08)	/*SPI Flash Control&Status Register*/
+#define SFCSR  (0x08)	/*SPI Flash Control&Status Register*/
 	#define SFCSR_SPI_CSB0		(1<<31)
 	#define SFCSR_SPI_CSB1		(1<<30)
 	#define SFCSR_LEN(val)		((val)<<28)  /*2 bits*/
@@ -56,11 +61,11 @@
 	#define SFCSR_CHIP_SEL		(1<<24)
 	#define SFCSR_CMD_BYTE(val)	((val)<<16)  /*8 bit, 1111_1111 */
 
-#define SFDR   (SFRB+0x0C)	/*SPI Flash Data Register*/
-#define SFDR2  (SFRB+0x10)	/*SPI Flash Data Register - for post SPI bootup setting*/
+#define SFDR   (0x0C)	/*SPI Flash Data Register*/
+#define SFDR2  (0x10)	/*SPI Flash Data Register - for post SPI bootup setting*/
 	#define SPI_CS_INIT		(SFCSR_SPI_CSB0 | SFCSR_SPI_CSB1 | SPI_LEN1)
 	#define SPI_CS0			SFCSR_SPI_CSB0
-	#define SPI_CS1 		SFCSR_SPI_CSB1
+	#define SPI_CS1			SFCSR_SPI_CSB1
 	#define SPI_eCS0		((SFCSR_SPI_CSB1)) /*and SFCSR to active CS0*/
 	#define SPI_eCS1		((SFCSR_SPI_CSB0)) /*and SFCSR to active CS1*/
 
@@ -75,11 +80,13 @@
 	#define SPI_SETLEN(val) do {		\
 			SPI_REG(SFCSR) &= 0xCFFFFFFF;   \
 			SPI_REG(SFCSR) |= (val-1)<<28;	\
-		} while(0);
+		} while (0)
+/*
+ * SPI interface control
+ */
+#define RTL8390_SOC_SPI_MMIO_CONF (0x04)
 
 #define IOSTATUS_CIO_MASK (0x00000038)
-
-#define RTL8390_SOC_SPI_MMIO_CONF ((volatile void *) (0xB8001204))
 
 /* Chip select: bits 4-7*/
 #define CS0 (1<<4)

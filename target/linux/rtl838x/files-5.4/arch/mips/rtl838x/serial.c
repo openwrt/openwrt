@@ -9,6 +9,7 @@
  *
  */
 #include <linux/types.h>
+#include <linux/ctype.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/version.h>
@@ -19,27 +20,44 @@
 #include <linux/tty.h>
 #include <linux/clk.h>
 
-#include "mach-rtl838x.h"
+#include <asm/mach-rtl838x/mach-rtl838x.h>
 
 extern char arcs_cmdline[];
+extern struct rtl838x_soc_info soc_info;
 
 int __init rtl838x_serial_init(void)
 {
 #ifdef CONFIG_SERIAL_8250
 	int ret;
 	struct uart_port p;
-	int baud = 0;
+	unsigned long baud = 0;
+	int err;
 	char parity = '\0', bits = '\0', flow = '\0';
-	char *s, *n;
+	char *s;
+	struct device_node *dn;
 
-	/* Enable UART1 */
-	rtl838x_w32(0x10, RTL838X_GMII_INTF_SEL);
+	dn = of_find_compatible_node(NULL, NULL, "ns16550a");
+	if (dn) {
+		pr_info("Found NS16550a: %s (%s)\n", dn->name, dn->full_name);
+		dn = of_find_compatible_node(dn, NULL, "ns16550a");
+		if (dn && of_device_is_available(dn) && soc_info.family == RTL8380_FAMILY_ID) {
+			/* Enable UART1 on RTL838x */
+			pr_info("Enabling uart1\n");
+			sw_w32(0x10, RTL838X_GMII_INTF_SEL);
+		}
+	} else {
+		pr_err("No NS16550a UART found!");
+		return -ENODEV;
+	}
 
 	s = strstr(arcs_cmdline, "console=ttyS0,");
 	if (s) {
 		s += 14;
-		baud = simple_strtoul(s, &n, 10);
-		s = n;
+		baud = kstrtoul(s, 10, &baud);
+		if (err)
+			baud = 0;
+		while (isdigit(*s))
+			s++;
 		if (*s == ',')
 			s++;
 		if (*s)
@@ -56,7 +74,7 @@ int __init rtl838x_serial_init(void)
 
 	if (baud == 0) {
 		baud = 38400;
-		pr_warn("Using default baud rate: %d\n", baud);
+		pr_warn("Using default baud rate: %lu\n", baud);
 	}
 	if (parity != 'n' && parity != 'o' && parity != 'e')
 		parity = 'n';

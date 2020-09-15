@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
 #ifndef RTL838X_IOREMAP_H_
 #define RTL838X_IOREMAP_H_
 

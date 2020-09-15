@@ -17,8 +17,8 @@
 #define RTL8231_GPIO_IO_SEL1			0x0006
 #define RTL8231_GPIO_IO_SEL2			0x0007
 
-#define MDC_WAIT { int i; for(i=0; i < 2; i++); }
-#define I2C_WAIT { int i; for(i=0; i < 5; i++); }
+#define MDC_WAIT { int i; for (i = 0; i < 2; i++); }
+#define I2C_WAIT { int i; for (i = 0; i < 5; i++); }
 
 struct rtl838x_gpios {
 	struct gpio_chip gc;
@@ -42,19 +42,21 @@ extern struct mutex smi_lock;
 u32 rtl838x_rtl8231_read(u8 bus_id, u32 reg)
 {
 	u32 t = 0;
+
 	reg &= 0x1f;
 	bus_id &= 0x1f;
+
 	/* Calculate read register address */
 	t = (bus_id << 2) | (reg << 7);
 
 	mutex_lock(&smi_lock);
 	/* Set execution bit: cleared when operation completed */
 	t |= 1;
-	rtl838x_w32(t, RTL838X_EXT_GPIO_INDRT_ACCESS);
+	sw_w32(t, RTL838X_EXT_GPIO_INDRT_ACCESS);
 	do {	/* TODO: Return 0x80000000 if timeout */
-		t = rtl838x_r32(RTL838X_EXT_GPIO_INDRT_ACCESS);
+		t = sw_r32(RTL838X_EXT_GPIO_INDRT_ACCESS);
 	} while (t & 1);
-	pr_debug("rtl838x_rtl8231_read: %x, %x, %x\n", bus_id, reg, (t & 0xffff0000) >> 16);
+	pr_debug("%s: %x, %x, %x\n", __func__, bus_id, reg, (t & 0xffff0000) >> 16);
 
 	mutex_unlock(&smi_lock);
 	return (t & 0xffff0000) >> 16;
@@ -63,11 +65,12 @@ u32 rtl838x_rtl8231_read(u8 bus_id, u32 reg)
 int rtl838x_rtl8231_write(u8 bus_id, u32 reg, u32 data)
 {
 	u32 t = 0;
+
+	pr_debug("%s: %x, %x, %x\n", __func__, bus_id, reg, data);
 	data &= 0xffff;
 	reg &= 0x1f;
 	bus_id &= 0x1f;
 
-	pr_debug("rtl838x_rtl8231_write: %x, %x, %x\n", bus_id, reg, data);
 	mutex_lock(&smi_lock);
 	t = (bus_id << 2) | (reg << 7) | (data << 16);
 	/* Set write bit */
@@ -75,9 +78,9 @@ int rtl838x_rtl8231_write(u8 bus_id, u32 reg, u32 data)
 
 	/* Set execution bit: cleared when operation completed */
 	t |= 1;
-	rtl838x_w32(t, RTL838X_EXT_GPIO_INDRT_ACCESS);
+	sw_w32(t, RTL838X_EXT_GPIO_INDRT_ACCESS);
 	do {	/* TODO: Return -1 if timeout */
-		t = rtl838x_r32(RTL838X_EXT_GPIO_INDRT_ACCESS);
+		t = sw_r32(RTL838X_EXT_GPIO_INDRT_ACCESS);
 	} while (t & 1);
 
 	mutex_unlock(&smi_lock);
@@ -90,16 +93,16 @@ static int rtl8231_pin_dir(u8 bus_id, u32 gpio, u32 dir)
 	 * dir 0: output
 	 */
 
-	 u32  v;
-	 int pin_sel_addr = RTL8231_GPIO_PIN_SEL(gpio);
-	 int pin_dir_addr = RTL8231_GPIO_DIR(gpio);
-	 int pin = gpio % 16;
-	 int dpin = pin;
+	u32  v;
+	int pin_sel_addr = RTL8231_GPIO_PIN_SEL(gpio);
+	int pin_dir_addr = RTL8231_GPIO_DIR(gpio);
+	int pin = gpio % 16;
+	int dpin = pin;
 
-	 if( gpio > 31 ) {
-		 dpin = pin << 5;
-		 pin_dir_addr = pin_sel_addr;
-	 }
+	if (gpio > 31) {
+		dpin = pin << 5;
+		pin_dir_addr = pin_sel_addr;
+	}
 
 	/* Select GPIO function for pin */
 	v = rtl838x_rtl8231_read(bus_id, pin_sel_addr);
@@ -125,14 +128,14 @@ static int rtl8231_pin_dir_get(u8 bus_id, u32 gpio, u32 *dir)
 	 * dir 0: output
 	 */
 
-	 u32  v;
-	 int pin_dir_addr = RTL8231_GPIO_DIR(gpio);
-	 int pin = gpio % 16;
+	u32  v;
+	int pin_dir_addr = RTL8231_GPIO_DIR(gpio);
+	int pin = gpio % 16;
 
-	 if( gpio > 31 ) {
-		 pin_dir_addr = RTL8231_GPIO_PIN_SEL(gpio);
-		 pin = pin << 5;
-	 }
+	if (gpio > 31) {
+		pin_dir_addr = RTL8231_GPIO_PIN_SEL(gpio);
+		pin = pin << 5;
+	}
 
 	v = rtl838x_rtl8231_read(bus_id, pin_dir_addr);
 	if (v & (1 << pin))
@@ -145,6 +148,7 @@ static int rtl8231_pin_dir_get(u8 bus_id, u32 gpio, u32 *dir)
 static int rtl8231_pin_set(u8 bus_id, u32 gpio, u32 data)
 {
 	u32 v = rtl838x_rtl8231_read(bus_id, RTL8231_GPIO_DATA(gpio));
+
 	if (v & 0x80000000) {
 		pr_err("Error reading RTL8231\n");
 		return -1;
@@ -157,6 +161,7 @@ static int rtl8231_pin_set(u8 bus_id, u32 gpio, u32 data)
 static int rtl8231_pin_get(u8 bus_id, u32 gpio, u16 *state)
 {
 	u32 v = rtl838x_rtl8231_read(bus_id, RTL8231_GPIO_DATA(gpio));
+
 	if (v & 0x80000000) {
 		pr_err("Error reading RTL8231\n");
 		return -1;
@@ -166,12 +171,11 @@ static int rtl8231_pin_get(u8 bus_id, u32 gpio, u16 *state)
 	return 0;
 }
 
-
-static int rtl838x_direction_input(struct gpio_chip *gc, unsigned offset)
+static int rtl838x_direction_input(struct gpio_chip *gc, unsigned int offset)
 {
 	struct rtl838x_gpios *gpios = gpiochip_get_data(gc);
 
-	pr_debug("rtl838x_direction_input: %d\n", offset);
+	pr_debug("%s: %d\n", __func__, offset);
 
 	if (offset < 32) {
 		rtl838x_w32_mask(1 << offset, 0, RTL838X_GPIO_PABC_DIR);
@@ -179,7 +183,7 @@ static int rtl838x_direction_input(struct gpio_chip *gc, unsigned offset)
 	}
 
 	/* Internal LED driver does not support input */
-	if (offset >=32 && offset <64)
+	if (offset >= 32 && offset < 64)
 		return -ENOTSUPP;
 
 	if (offset >= 64 && offset < 100 && gpios->bus_id >= 0)
@@ -188,17 +192,16 @@ static int rtl838x_direction_input(struct gpio_chip *gc, unsigned offset)
 	return -ENOTSUPP;
 }
 
-static int rtl838x_direction_output(struct gpio_chip *gc, unsigned offset,
-				 int value)
+static int rtl838x_direction_output(struct gpio_chip *gc, unsigned int offset, int value)
 {
 	struct rtl838x_gpios *gpios = gpiochip_get_data(gc);
-	pr_debug("rtl838x_direction_output: %d\n", offset);
 
+	pr_debug("%s: %d\n", __func__, offset);
 	if (offset < 32)
 		rtl838x_w32_mask(0, 1 << offset, RTL838X_GPIO_PABC_DIR);
 
 	/* LED for PWR and SYS driver is direction output by default */
-	if (offset >=32 && offset <64)
+	if (offset >= 32 && offset < 64)
 		return 0;
 
 	if (offset >= 64 && offset < 100 && gpios->bus_id >= 0)
@@ -206,12 +209,12 @@ static int rtl838x_direction_output(struct gpio_chip *gc, unsigned offset,
 	return 0;
 }
 
-static int rtl838x_get_direction(struct gpio_chip *gc, unsigned offset)
+static int rtl838x_get_direction(struct gpio_chip *gc, unsigned int offset)
 {
 	u32 v = 0;
 	struct rtl838x_gpios *gpios = gpiochip_get_data(gc);
 
-	pr_debug("rtl838x_get_direction: %d\n", offset);
+	pr_debug("%s: %d\n", __func__, offset);
 	if (offset < 32) {
 		v = rtl838x_r32(RTL838X_GPIO_PABC_DIR);
 		if (v & (1 << offset))
@@ -220,7 +223,7 @@ static int rtl838x_get_direction(struct gpio_chip *gc, unsigned offset)
 	}
 
 	/* LED driver for PWR and SYS is direction output by default */
-	if (offset >=32 && offset <64)
+	if (offset >= 32 && offset < 64)
 		return 0;
 
 	if (offset >= 64 && offset < 100 && gpios->bus_id >= 0) {
@@ -231,14 +234,14 @@ static int rtl838x_get_direction(struct gpio_chip *gc, unsigned offset)
 	return 0;
 }
 
-static int rtl838x_gpio_get(struct gpio_chip *gc, unsigned offset)
+static int rtl838x_gpio_get(struct gpio_chip *gc, unsigned int offset)
 {
 	u32 v;
 	u16 state = 0;
 	int bit;
 	struct rtl838x_gpios *gpios = gpiochip_get_data(gc);
 
-	pr_debug("rtl838x_get: %d\n", offset);
+	pr_debug("%s: %d\n", __func__, offset);
 
 	/* Internal GPIO of the RTL8380 */
 	if (offset < 32) {
@@ -249,8 +252,8 @@ static int rtl838x_gpio_get(struct gpio_chip *gc, unsigned offset)
 	}
 
 	/* LED driver for PWR and SYS */
-	if (offset >=32 && offset <64) {
-		v = rtl838x_r32(RTL838X_LED_GLB_CTRL);
+	if (offset >= 32 && offset < 64) {
+		v = sw_r32(RTL838X_LED_GLB_CTRL);
 		if (v & (1 << (offset-32)))
 			return 1;
 		return 0;
@@ -266,29 +269,29 @@ static int rtl838x_gpio_get(struct gpio_chip *gc, unsigned offset)
 
 	bit = (offset - 100) % 32;
 	if (offset >= 100 && offset < 132) {
-		if (rtl838x_r32(RTL838X_LED1_SW_P_EN_CTRL) & (1 << bit))
+		if (sw_r32(RTL838X_LED1_SW_P_EN_CTRL) & (1 << bit))
 			return 1;
 		return 0;
 	}
 	if (offset >= 132 && offset < 164) {
-		if (rtl838x_r32(RTL838X_LED1_SW_P_EN_CTRL) & (1 << bit))
+		if (sw_r32(RTL838X_LED1_SW_P_EN_CTRL) & (1 << bit))
 			return 1;
 		return 0;
 	}
 	if (offset >= 164 && offset < 196) {
-		if (rtl838x_r32(RTL838X_LED1_SW_P_EN_CTRL) & (1 << bit))
+		if (sw_r32(RTL838X_LED1_SW_P_EN_CTRL) & (1 << bit))
 			return 1;
 		return 0;
 	}
 	return 0;
 }
 
-void rtl838x_gpio_set (struct gpio_chip *gc, unsigned offset, int value)
+void rtl838x_gpio_set(struct gpio_chip *gc, unsigned int offset, int value)
 {
 	int bit;
 	struct rtl838x_gpios *gpios = gpiochip_get_data(gc);
-	pr_debug("rtl838x_set: %d, value: %d\n", offset, value);
 
+	pr_debug("%s: %d, value: %d\n", __func__, offset, value);
 	/* Internal GPIO of the RTL8380 */
 	if (offset < 32) {
 		if (value)
@@ -298,12 +301,12 @@ void rtl838x_gpio_set (struct gpio_chip *gc, unsigned offset, int value)
 	}
 
 	/* LED driver for PWR and SYS */
-	if (offset >=32 && offset < 64) {
+	if (offset >= 32 && offset < 64) {
 		bit = offset - 32;
 		if (value)
-			rtl838x_w32_mask(0, 1 << bit, RTL838X_LED_GLB_CTRL);
+			sw_w32_mask(0, 1 << bit, RTL838X_LED_GLB_CTRL);
 		else
-			rtl838x_w32_mask(1 << bit, 0, RTL838X_LED_GLB_CTRL);
+			sw_w32_mask(1 << bit, 0, RTL838X_LED_GLB_CTRL);
 		return;
 	}
 
@@ -319,25 +322,25 @@ void rtl838x_gpio_set (struct gpio_chip *gc, unsigned offset, int value)
 	   && offset >= (100 + gpios->min_led)
 	   && offset < (100 + gpios->min_led + gpios->num_leds)) {
 		if (value)
-			rtl838x_w32_mask(7, 5, RTL838X_LED_SW_P_CTRL(bit));
+			sw_w32_mask(7, 5, RTL838X_LED_SW_P_CTRL(bit));
 		else
-			rtl838x_w32_mask(7, 0, RTL838X_LED_SW_P_CTRL(bit));
+			sw_w32_mask(7, 0, RTL838X_LED_SW_P_CTRL(bit));
 	}
 	if (offset >= 132 && offset < 164
 	    && offset >= (132 + gpios->min_led)
 	    && offset < (132 + gpios->min_led + gpios->num_leds)) {
 		if (value)
-			rtl838x_w32_mask(7 << 3, 5 << 3, RTL838X_LED_SW_P_CTRL(bit));
+			sw_w32_mask(7 << 3, 5 << 3, RTL838X_LED_SW_P_CTRL(bit));
 		else
-			rtl838x_w32_mask(7 << 3, 0, RTL838X_LED_SW_P_CTRL(bit));
+			sw_w32_mask(7 << 3, 0, RTL838X_LED_SW_P_CTRL(bit));
 	}
 	if (offset >= 164 && offset < 196
 	    && offset >= (164 + gpios->min_led)
 	    && offset < (164 + gpios->min_led + gpios->num_leds)) {
 		if (value)
-			rtl838x_w32_mask(7 << 6, 5 << 6, RTL838X_LED_SW_P_CTRL(bit));
+			sw_w32_mask(7 << 6, 5 << 6, RTL838X_LED_SW_P_CTRL(bit));
 		else
-			rtl838x_w32_mask(7 << 6, 0, RTL838X_LED_SW_P_CTRL(bit));
+			sw_w32_mask(7 << 6, 0, RTL838X_LED_SW_P_CTRL(bit));
 	}
 	__asm__ volatile ("sync");
 }
@@ -347,11 +350,11 @@ int rtl8231_init(struct rtl838x_gpios *gpios)
 	uint32_t v;
 	u8 bus_id = gpios->bus_id;
 
-	printk("rtl8231_init\n");
+	pr_info("%s called\n", __func__);
 
 	/* Enable RTL8231 indirect access mode */
-	rtl838x_w32_mask(0, 1, RTL838X_EXTRA_GPIO_CTRL);
-	rtl838x_w32_mask(3, 1, RTL838X_DMY_REG5);
+	sw_w32_mask(0, 1, RTL838X_EXTRA_GPIO_CTRL);
+	sw_w32_mask(3, 1, RTL838X_DMY_REG5);
 
 	/* Enable RTL8231 via GPIO_A1 line */
 	rtl838x_w32_mask(0, 1 << RTL838X_GPIO_A1, RTL838X_GPIO_PABC_DIR);
@@ -364,9 +367,8 @@ int rtl8231_init(struct rtl838x_gpios *gpios)
 	rtl838x_rtl8231_write(bus_id, RTL8231_GPIO_PIN_SEL2, 0x03ff);
 
 	v = rtl838x_rtl8231_read(bus_id, RTL8231_LED_FUNC0);
-	printk("RTL8231 led function now: %x\n", v);
+	pr_info("RTL8231 led function now: %x\n", v);
 
-	printk("rtl8231_init done\n");
 	return 0;
 }
 
@@ -493,6 +495,7 @@ static void i2c_pin_set(struct rtl838x_gpios *gpios, int pin, u32 data)
 static void i2c_pin_get(struct rtl838x_gpios *gpios, int pin, u32 *data)
 {
 	u32 v;
+
 	rtl8380_smi_read(gpios, RTL8231_GPIO_DATA(pin), &v);
 	if (v & (1 << (pin % 16))) {
 		*data = 1;
@@ -504,6 +507,7 @@ static void i2c_pin_get(struct rtl838x_gpios *gpios, int pin, u32 *data)
 static void i2c_pin_dir(struct rtl838x_gpios *gpios, int pin, u16 direction)
 {
 	u32 v;
+
 	rtl8380_smi_read(gpios, RTL8231_GPIO_DIR(pin), &v);
 	if (direction) // Output
 		v &= ~(1 << (pin % 16));
@@ -516,26 +520,26 @@ static void i2c_start(struct rtl838x_gpios *gpios)
 {
 	i2c_pin_dir(gpios, gpios->i2c_sda, 0); /* Output */
 	i2c_pin_dir(gpios, gpios->i2c_sdc, 0); /* Output */
-	I2C_WAIT
+	I2C_WAIT;
 	i2c_pin_set(gpios, gpios->i2c_sdc, 1);
-	I2C_WAIT
+	I2C_WAIT;
 	i2c_pin_set(gpios, gpios->i2c_sda, 1);
-	I2C_WAIT
+	I2C_WAIT;
 	i2c_pin_set(gpios, gpios->i2c_sda, 0);
-	I2C_WAIT
+	I2C_WAIT;
 	i2c_pin_set(gpios, gpios->i2c_sdc, 0);
-	I2C_WAIT
+	I2C_WAIT;
 }
 
 static void i2c_stop(struct rtl838x_gpios *gpios)
 {
-	I2C_WAIT
+	I2C_WAIT;
 	i2c_pin_set(gpios, gpios->i2c_sdc, 1);
 	i2c_pin_set(gpios, gpios->i2c_sda, 0);
-	I2C_WAIT
+	I2C_WAIT;
 
 	i2c_pin_set(gpios, gpios->i2c_sda, 1);
-	I2C_WAIT
+	I2C_WAIT;
 	i2c_pin_set(gpios, gpios->i2c_sdc, 0);
 
 	i2c_pin_dir(gpios, gpios->i2c_sda, 1); /* Input */
@@ -549,14 +553,12 @@ static void i2c_read_bits(struct rtl838x_gpios *gpios, int len, u32 *data)
 	while (len) {
 		len--;
 		v <<= 1;
-
 		i2c_pin_set(gpios, gpios->i2c_sdc, 1);
-		I2C_WAIT
+		I2C_WAIT;
 		i2c_pin_get(gpios, gpios->i2c_sda, &t);
 		v |= t;
 		i2c_pin_set(gpios, gpios->i2c_sdc, 0);
-		I2C_WAIT
-		//v |= i2c_read_bit(gpios);
+		I2C_WAIT;
 	}
 	*data = v;
 }
@@ -565,13 +567,12 @@ static void i2c_write_bits(struct rtl838x_gpios *gpios, u32 data, int len)
 {
 	while (len) {
 		len--;
-
 		i2c_pin_set(gpios, gpios->i2c_sda, data & (1 << len));
-		I2C_WAIT
+		I2C_WAIT;
 		i2c_pin_set(gpios, gpios->i2c_sdc, 1);
-		I2C_WAIT
+		I2C_WAIT;
 		i2c_pin_set(gpios, gpios->i2c_sdc, 0);
-		I2C_WAIT
+		I2C_WAIT;
 	}
 }
 
@@ -582,14 +583,14 @@ int rtl8380_rtl8321_init(struct rtl838x_gpios *gpios)
 	int mdc = gpios->smi_clock;
 	int mdio = gpios->smi_data;
 
-	printk("Configuring SMI: Clock %d, Data %d\n", mdc, mdio);
-	rtl838x_w32_mask(0, 0x2, RTL838X_IO_DRIVING_ABILITY_CTRL);
+	pr_info("Configuring SMI: Clock %d, Data %d\n", mdc, mdio);
+	sw_w32_mask(0, 0x2, RTL838X_IO_DRIVING_ABILITY_CTRL);
 
 	/* Enter simulated GPIO mode */
-	rtl838x_w32_mask(1, 0, RTL838X_EXTRA_GPIO_CTRL);
+	sw_w32_mask(1, 0, RTL838X_EXTRA_GPIO_CTRL);
 
 	/* MDIO clock to 2.6MHz */
-	rtl838x_w32_mask(0x3 << 8, 0, RTL838X_EXTRA_GPIO_CTRL);
+	sw_w32_mask(0x3 << 8, 0, RTL838X_EXTRA_GPIO_CTRL);
 
 	/* Configure SMI clock and data GPIO pins */
 	rtl838x_w32_mask((1 << mdc) | (1 << mdio), 0, RTL838X_GPIO_PABC_CNR);
@@ -613,37 +614,37 @@ int rtl8380_rtl8321_init(struct rtl838x_gpios *gpios)
 void rtl8380_led_test(u32 mask)
 {
 	int i;
-	u32 mode_sel = rtl838x_r32(RTL838X_LED_MODE_SEL);
-	u32 led_gbl = rtl838x_r32(RTL838X_LED_GLB_CTRL);
-	u32 led_p_en = rtl838x_r32(RTL838X_LED_P_EN_CTRL);
+	u32 mode_sel = sw_r32(RTL838X_LED_MODE_SEL);
+	u32 led_gbl = sw_r32(RTL838X_LED_GLB_CTRL);
+	u32 led_p_en = sw_r32(RTL838X_LED_P_EN_CTRL);
 
 	/* 2 Leds for ports 0-23 and 24-27, 3 would be 0x7 */
-	rtl838x_w32_mask(0x3f, 0x3 | (0x3 << 3), RTL838X_LED_GLB_CTRL);
+	sw_w32_mask(0x3f, 0x3 | (0x3 << 3), RTL838X_LED_GLB_CTRL);
 	/* Enable all leds */
-	rtl838x_w32(0xFFFFFFF, RTL838X_LED_P_EN_CTRL);
+	sw_w32(0xFFFFFFF, RTL838X_LED_P_EN_CTRL);
 
 	/* Enable software control of all leds */
-	rtl838x_w32(0xFFFFFFF, RTL838X_LED_SW_CTRL);
-	rtl838x_w32(0xFFFFFFF, RTL838X_LED0_SW_P_EN_CTRL);
-	rtl838x_w32(0xFFFFFFF, RTL838X_LED1_SW_P_EN_CTRL);
-	rtl838x_w32(0x0000000, RTL838X_LED2_SW_P_EN_CTRL);
+	sw_w32(0xFFFFFFF, RTL838X_LED_SW_CTRL);
+	sw_w32(0xFFFFFFF, RTL838X_LED0_SW_P_EN_CTRL);
+	sw_w32(0xFFFFFFF, RTL838X_LED1_SW_P_EN_CTRL);
+	sw_w32(0x0000000, RTL838X_LED2_SW_P_EN_CTRL);
 
 	for (i = 0; i < 28; i++) {
-		if (mask & (1 <<i) )
-			rtl838x_w32(5 | (5 << 3) | (5 << 6),
+		if (mask & (1 << i))
+			sw_w32(5 | (5 << 3) | (5 << 6),
 			       RTL838X_LED_SW_P_CTRL(i));
 	}
 	msleep(3000);
 
-	rtl838x_w32(led_p_en, RTL838X_LED_P_EN_CTRL);
+	sw_w32(led_p_en, RTL838X_LED_P_EN_CTRL);
 	/* Disable software control of all leds */
-	rtl838x_w32(0x0000000, RTL838X_LED_SW_CTRL);
-	rtl838x_w32(0x0000000, RTL838X_LED0_SW_P_EN_CTRL);
-	rtl838x_w32(0x0000000, RTL838X_LED1_SW_P_EN_CTRL);
-	rtl838x_w32(0x0000000, RTL838X_LED2_SW_P_EN_CTRL);
+	sw_w32(0x0000000, RTL838X_LED_SW_CTRL);
+	sw_w32(0x0000000, RTL838X_LED0_SW_P_EN_CTRL);
+	sw_w32(0x0000000, RTL838X_LED1_SW_P_EN_CTRL);
+	sw_w32(0x0000000, RTL838X_LED2_SW_P_EN_CTRL);
 
-	rtl838x_w32(led_gbl, RTL838X_LED_GLB_CTRL);
-	rtl838x_w32(mode_sel, RTL838X_LED_MODE_SEL);
+	sw_w32(led_gbl, RTL838X_LED_GLB_CTRL);
+	sw_w32(mode_sel, RTL838X_LED_MODE_SEL);
 }
 
 void take_port_leds(struct rtl838x_gpios *gpios)
@@ -651,42 +652,42 @@ void take_port_leds(struct rtl838x_gpios *gpios)
 	int leds_per_port = gpios->leds_per_port;
 	int mode = gpios->led_mode;
 
-	pr_info("take_port_leds, %d, %x\n", leds_per_port, mode);
+	pr_info("%s, %d, %x\n", __func__, leds_per_port, mode);
 	pr_debug("Bootloader settings: %x %x %x\n",
-		rtl838x_r32(RTL838X_LED0_SW_P_EN_CTRL),
-		rtl838x_r32(RTL838X_LED1_SW_P_EN_CTRL),
-		rtl838x_r32(RTL838X_LED2_SW_P_EN_CTRL)
+		sw_r32(RTL838X_LED0_SW_P_EN_CTRL),
+		sw_r32(RTL838X_LED1_SW_P_EN_CTRL),
+		sw_r32(RTL838X_LED2_SW_P_EN_CTRL)
 	);
 
 	pr_debug("led glb: %x, sel %x\n",
-	       rtl838x_r32(RTL838X_LED_GLB_CTRL), rtl838x_r32(RTL838X_LED_MODE_SEL));
-	pr_debug("RTL838X_LED_P_EN_CTRL: %x", rtl838x_r32(RTL838X_LED_P_EN_CTRL));
-	pr_debug("RTL838X_LED_MODE_CTRL: %x", rtl838x_r32(RTL838X_LED_MODE_CTRL));
+	       sw_r32(RTL838X_LED_GLB_CTRL), sw_r32(RTL838X_LED_MODE_SEL));
+	pr_debug("RTL838X_LED_P_EN_CTRL: %x", sw_r32(RTL838X_LED_P_EN_CTRL));
+	pr_debug("RTL838X_LED_MODE_CTRL: %x", sw_r32(RTL838X_LED_MODE_CTRL));
 
-	rtl838x_w32_mask(3, 0, RTL838X_LED_MODE_SEL);
-	rtl838x_w32(mode, RTL838X_LED_MODE_CTRL);
+	sw_w32_mask(3, 0, RTL838X_LED_MODE_SEL);
+	sw_w32(mode, RTL838X_LED_MODE_CTRL);
 
 	/* Enable software control of all leds */
-	rtl838x_w32(0xFFFFFFF, RTL838X_LED_SW_CTRL);
-	rtl838x_w32(0xFFFFFFF, RTL838X_LED_P_EN_CTRL);
+	sw_w32(0xFFFFFFF, RTL838X_LED_SW_CTRL);
+	sw_w32(0xFFFFFFF, RTL838X_LED_P_EN_CTRL);
 
-	rtl838x_w32(0x0000000, RTL838X_LED0_SW_P_EN_CTRL);
-	rtl838x_w32(0x0000000, RTL838X_LED1_SW_P_EN_CTRL);
-	rtl838x_w32(0x0000000, RTL838X_LED2_SW_P_EN_CTRL);
+	sw_w32(0x0000000, RTL838X_LED0_SW_P_EN_CTRL);
+	sw_w32(0x0000000, RTL838X_LED1_SW_P_EN_CTRL);
+	sw_w32(0x0000000, RTL838X_LED2_SW_P_EN_CTRL);
 
-	rtl838x_w32_mask(0x3f, 0, RTL838X_LED_GLB_CTRL);
+	sw_w32_mask(0x3f, 0, RTL838X_LED_GLB_CTRL);
 	switch (leds_per_port) {
 	case 3:
-		rtl838x_w32_mask(0, 0x7 | (0x7 << 3), RTL838X_LED_GLB_CTRL);
-		rtl838x_w32(0xFFFFFFF, RTL838X_LED2_SW_P_EN_CTRL);
+		sw_w32_mask(0, 0x7 | (0x7 << 3), RTL838X_LED_GLB_CTRL);
+		sw_w32(0xFFFFFFF, RTL838X_LED2_SW_P_EN_CTRL);
 		/* FALLTHRU */
 	case 2:
-		rtl838x_w32_mask(0, 0x3 | (0x3 << 3), RTL838X_LED_GLB_CTRL);
-		rtl838x_w32(0xFFFFFFF, RTL838X_LED1_SW_P_EN_CTRL);
+		sw_w32_mask(0, 0x3 | (0x3 << 3), RTL838X_LED_GLB_CTRL);
+		sw_w32(0xFFFFFFF, RTL838X_LED1_SW_P_EN_CTRL);
 		/* FALLTHRU */
 	case 1:
-		rtl838x_w32_mask(0, 0x1 | (0x1 << 3), RTL838X_LED_GLB_CTRL);
-		rtl838x_w32(0xFFFFFFF, RTL838X_LED0_SW_P_EN_CTRL);
+		sw_w32_mask(0, 0x1 | (0x1 << 3), RTL838X_LED_GLB_CTRL);
+		sw_w32(0xFFFFFFF, RTL838X_LED0_SW_P_EN_CTRL);
 		break;
 	default:
 		pr_err("No LEDS configured for software control\n");
@@ -708,7 +709,7 @@ static int rtl838x_gpio_probe(struct platform_device *pdev)
 	int err;
 	u8 indirect_bus_id;
 
-	printk("Probing RTL838X GPIOs\n");
+	pr_info("Probing RTL838X GPIOs\n");
 
 	if (!np) {
 		dev_err(&pdev->dev, "No DT found\n");
@@ -719,7 +720,7 @@ static int rtl838x_gpio_probe(struct platform_device *pdev)
 	if (!gpios)
 		return -ENOMEM;
 
-	gpios->id = rtl838x_r32(RTL838X_MODEL_NAME_INFO) >> 16;
+	gpios->id = sw_r32(RTL838X_MODEL_NAME_INFO) >> 16;
 
 	switch (gpios->id) {
 	case 0x8332:
@@ -727,6 +728,9 @@ static int rtl838x_gpio_probe(struct platform_device *pdev)
 		break;
 	case 0x8380:
 		pr_debug("Found RTL8380M GPIO\n");
+		break;
+	case 0x8381:
+		pr_debug("Found RTL8381M GPIO\n");
 		break;
 	case 0x8382:
 		pr_debug("Found RTL8382M GPIO\n");
@@ -759,11 +763,11 @@ static int rtl838x_gpio_probe(struct platform_device *pdev)
 	gpios->gc.get = rtl838x_gpio_get;
 	gpios->gc.get_direction = rtl838x_get_direction;
 
-	if(!of_property_read_u8(np, "indirect-access-bus-id", &indirect_bus_id)) {
+	if (!of_property_read_u8(np, "indirect-access-bus-id", &indirect_bus_id)) {
 		gpios->bus_id = indirect_bus_id;
 		rtl8231_init(gpios);
 	}
-	if(!of_property_read_u8(np, "smi-bus-id", &indirect_bus_id)) {
+	if (!of_property_read_u8(np, "smi-bus-id", &indirect_bus_id)) {
 		gpios->bus_id = indirect_bus_id;
 		gpios->smi_clock = RTL838X_GPIO_A2;
 		gpios->smi_data = RTL838X_GPIO_A3;
@@ -773,13 +777,13 @@ static int rtl838x_gpio_probe(struct platform_device *pdev)
 	}
 
 	if (of_property_read_bool(np, "take-port-leds")) {
-		if(of_property_read_u32(np, "leds-per-port", &gpios->leds_per_port))
+		if (of_property_read_u32(np, "leds-per-port", &gpios->leds_per_port))
 			gpios->leds_per_port = 2;
-		if(of_property_read_u32(np, "led-mode", &gpios->led_mode))
-			gpios->led_mode = (0x1ea << 15) | 0x1ea ;
-		if(of_property_read_u32(np, "num-leds", &gpios->num_leds))
+		if (of_property_read_u32(np, "led-mode", &gpios->led_mode))
+			gpios->led_mode = (0x1ea << 15) | 0x1ea;
+		if (of_property_read_u32(np, "num-leds", &gpios->num_leds))
 			gpios->num_leds = 32;
-		if(of_property_read_u32(np, "min-led", &gpios->min_led))
+		if (of_property_read_u32(np, "min-led", &gpios->min_led))
 			gpios->min_led = 0;
 		take_port_leds(gpios);
 	}

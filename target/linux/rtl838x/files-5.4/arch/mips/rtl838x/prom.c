@@ -24,7 +24,6 @@
 extern char arcs_cmdline[];
 const void *fdt;
 extern const char __appended_dtb;
-extern int __init rtl838x_serial_init(void);
 
 void prom_console_init(void)
 {
@@ -32,7 +31,6 @@ void prom_console_init(void)
 }
 
 #ifdef CONFIG_EARLY_PRINTK
-
 void unregister_prom_console(void)
 {
 
@@ -75,12 +73,12 @@ const char *get_system_type(void)
 
 void __init prom_free_prom_memory(void)
 {
-	return;
+
 }
 
 void __init device_tree_init(void)
 {
-	pr_info("device_tree_init called\r\n");
+	pr_info("%s called\r\n", __func__);
 	if (!fdt_check_header(&__appended_dtb)) {
 		fdt = &__appended_dtb;
 		pr_info("Using appended Device Tree.\n");
@@ -113,56 +111,58 @@ void __init prom_init(void)
 {
 	uint32_t model;
 
-	pr_info("prom_init called\n");
-	model = rtl838x_r32(RTL838X_MODEL_NAME_INFO);
+	pr_info("%s called\n", __func__);
+	soc_info.sw_base = RTL838X_SW_BASE;
+
+	model = sw_r32(RTL838X_MODEL_NAME_INFO);
 	pr_info("RTL838X model is %x\n", model);
 	model = model >> 16 & 0xFFFF;
 
-	if( (model != 0x8330) && (model != 0x8332)
-		&& (model != 0x8380) && (model != 0x8382) ) {
-			model = rtl838x_r32(RTL839X_MODEL_NAME_INFO);
-			pr_info("RTL839X model is %x\n", model);
-			model = model >> 16 & 0xFFFF;
+	if ((model != 0x8328) && (model != 0x8330) && (model != 0x8332)
+	    && (model != 0x8380) && (model != 0x8382)) {
+		model = sw_r32(RTL839X_MODEL_NAME_INFO);
+		pr_info("RTL839X model is %x\n", model);
+		model = model >> 16 & 0xFFFF;
 	}
 
 	soc_info.id = model;
 
 	switch (model) {
-		case 0x8328:
-			soc_info.name="RTL8328";
-			soc_info.family = RTL8328_FAMILY_ID;
-			break;
-		case 0x8332:
-			soc_info.name="RTL8332";
-			soc_info.family = RTL8380_FAMILY_ID;
-			break;
-		case 0x8380:
-			soc_info.name="RTL8380";
-			soc_info.family = RTL8380_FAMILY_ID;
-			break;
-		case 0x8382:
-			soc_info.name="RTL8382";
-			soc_info.family = RTL8380_FAMILY_ID;
-			break;
-		case 0x8390:
-			soc_info.name="RTL8390";
-			soc_info.family = RTL8390_FAMILY_ID;
-			break;
-		case 0x8391:
-			soc_info.name="RTL8391";
-			soc_info.family = RTL8390_FAMILY_ID;
-			break;
-		case 0x8392:
-			soc_info.name="RTL8392";
-			soc_info.family = RTL8390_FAMILY_ID;
-			break;
-		case 0x8393:
-			soc_info.name="RTL8393";
-			soc_info.family = RTL8390_FAMILY_ID;
-			break;
-		default:
-			soc_info.name="DEFAULT";
-			soc_info.family = 0;
+	case 0x8328:
+		soc_info.name = "RTL8328";
+		soc_info.family = RTL8328_FAMILY_ID;
+		break;
+	case 0x8332:
+		soc_info.name = "RTL8332";
+		soc_info.family = RTL8380_FAMILY_ID;
+		break;
+	case 0x8380:
+		soc_info.name = "RTL8380";
+		soc_info.family = RTL8380_FAMILY_ID;
+		break;
+	case 0x8382:
+		soc_info.name = "RTL8382";
+		soc_info.family = RTL8380_FAMILY_ID;
+		break;
+	case 0x8390:
+		soc_info.name = "RTL8390";
+		soc_info.family = RTL8390_FAMILY_ID;
+		break;
+	case 0x8391:
+		soc_info.name = "RTL8391";
+		soc_info.family = RTL8390_FAMILY_ID;
+		break;
+	case 0x8392:
+		soc_info.name = "RTL8392";
+		soc_info.family = RTL8390_FAMILY_ID;
+		break;
+	case 0x8393:
+		soc_info.name = "RTL8393";
+		soc_info.family = RTL8390_FAMILY_ID;
+		break;
+	default:
+		soc_info.name = "DEFAULT";
+		soc_info.family = 0;
 	}
 	pr_info("SoC Type: %s\n", get_system_type());
 	prom_init_cmdline();

@@ -107,8 +107,7 @@ endef
 
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
-  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA \
-	(early adopters with DSA already set up may just force-flash keeping existing config)
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 
 define Device/adslr_g7
@@ -275,6 +274,13 @@ define Device/dlink_dir-1960-a1
 endef
 TARGET_DEVICES += dlink_dir-1960-a1
 
+define Device/dlink_dir-2660-a1
+  $(Device/dlink_dir-xx60-a1)
+  DEVICE_MODEL := DIR-2660
+  DEVICE_VARIANT := A1
+endef
+TARGET_DEVICES += dlink_dir-2660-a1
+
 define Device/dlink_dir-860l-b1
   $(Device/dsa-migration)
   $(Device/seama)
@@ -327,7 +333,7 @@ TARGET_DEVICES += d-team_newifi-d2
 
 define Device/d-team_pbr-m1
   $(Device/dsa-migration)
-  IMAGE_SIZE := 16064k
+  IMAGE_SIZE := 32448k
   DEVICE_VENDOR := PandoraBox
   DEVICE_MODEL := PBR-M1
   DEVICE_PACKAGES := kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
