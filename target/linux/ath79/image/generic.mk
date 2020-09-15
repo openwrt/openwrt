@@ -1002,6 +1002,16 @@ define Device/engenius_ecb350-v1
 endef
 TARGET_DEVICES += engenius_ecb350-v1
 
+define Device/engenius_ecb600
+  $(Device/engenius_loader_okli)
+  SOC := ar9344
+  DEVICE_MODEL := ECB600
+  IMAGE_SIZE := 12032k
+  LOADER_FLASH_OFFS := 0x230000
+  ENGENIUS_IMGNAME := senao-ecb600
+endef
+TARGET_DEVICES += engenius_ecb600
+
 define Device/engenius_enh202-v1
   $(Device/engenius_loader_okli)
   SOC := ar7240
