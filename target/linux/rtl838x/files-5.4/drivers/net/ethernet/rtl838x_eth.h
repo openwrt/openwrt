@@ -21,6 +21,7 @@
 #define RTL838X_RST_GLB_CTRL_0			(0x003c)
 #define RTL838X_MAC_FORCE_MODE_CTRL		(0xa104)
 #define RTL839X_MAC_FORCE_MODE_CTRL		(0x02bc)
+#define RTL839X_QM_PORT_QNUM(p)			(0x1130 + ((((p) / 10) << 2)))
 
 /* MAC address settings */
 #define RTL838X_MAC				(0xa9ec)
@@ -39,6 +40,7 @@
 #define RTL838X_DMA_IF_RX_CUR			(0x9F20)
 #define RTL839X_DMA_IF_RX_CUR			(0x782c)
 
+#define RTL839X_SDS12_13_XSG0			(0xB800)
 #define RTL838X_DMY_REG31			(0x3b28)
 #define RTL838X_SDS_MODE_SEL			(0x0028)
 #define RTL838X_SDS_CFG_REG			(0x0034)
@@ -72,6 +74,7 @@
 #define RTL838X_TBL_ACCESS_DATA_1(idx)		(0xA4CC + ((idx) << 2))
 #define RTL839X_TBL_ACCESS_L2_CTRL		(0x1180)
 #define RTL839X_TBL_ACCESS_L2_DATA(idx)		(0x1184 + ((idx) << 2))
+
 /* MAC handling */
 #define RTL838X_MAC_LINK_STS			(0xa188)
 #define RTL839X_MAC_LINK_STS			(0x0390)
@@ -79,7 +82,6 @@
 #define RTL839X_MAC_LINK_SPD_STS		(0x03a0)
 #define RTL838X_MAC_LINK_DUP_STS		(0xa19c)
 #define RTL839X_MAC_LINK_DUP_STS		(0x03b0)
-// TODO: RTL8390_MAC_LINK_MEDIA_STS_ADDR ???
 #define RTL838X_MAC_TX_PAUSE_STS		(0xa1a0)
 #define RTL839X_MAC_TX_PAUSE_STS		(0x03b8)
 #define RTL838X_MAC_RX_PAUSE_STS		(0xa1a4)
@@ -99,6 +101,10 @@
 #define DUPLX_MODE				(1 << 3)
 #define TX_PAUSE_EN				(1 << 6)
 #define RX_PAUSE_EN				(1 << 7)
+
+/* RTL839X L2 Notification DMA interface */
+#define RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL	(0x785C)
+#define RTL839X_L2_NOTIFICATION_CTRL		(0x7808)
 
 inline int rtl838x_mac_port_ctrl(int p)
 {
@@ -177,7 +183,7 @@ inline u32 rtl838x_get_mac_link_sts(int port)
 
 inline u32 rtl839x_get_mac_link_sts(int p)
 {
-	return (sw_r32(RTL839X_MAC_LINK_STS + ((p >> 5) << 2)) & (1 << p));
+	return (sw_r32(RTL839X_MAC_LINK_STS + ((p >> 5) << 2)) & (1 << (p % 32)));
 }
 
 inline u32 rtl838x_get_mac_link_dup_sts(int port)
@@ -187,7 +193,7 @@ inline u32 rtl838x_get_mac_link_dup_sts(int port)
 
 inline u32 rtl839x_get_mac_link_dup_sts(int p)
 {
-	return (sw_r32(RTL839X_MAC_LINK_DUP_STS + ((p >> 5) << 2)) & (1 << p));
+	return (sw_r32(RTL839X_MAC_LINK_DUP_STS + ((p >> 5) << 2)) & (1 << (p %32)));
 }
 
 inline u32 rtl838x_get_mac_link_spd_sts(int port)
@@ -215,7 +221,7 @@ inline u32 rtl838x_get_mac_rx_pause_sts(int port)
 
 inline u32 rtl839x_get_mac_rx_pause_sts(int p)
 {
-	return (sw_r32(RTL839X_MAC_RX_PAUSE_STS + ((p >> 5) << 2)) & (1 << p));
+	return (sw_r32(RTL839X_MAC_RX_PAUSE_STS + ((p >> 5) << 2)) & (1 << (p % 32)));
 }
 
 inline u32 rtl838x_get_mac_tx_pause_sts(int port)
@@ -225,7 +231,7 @@ inline u32 rtl838x_get_mac_tx_pause_sts(int port)
 
 inline u32 rtl839x_get_mac_tx_pause_sts(int p)
 {
-	return (sw_r32(RTL839X_MAC_TX_PAUSE_STS + ((p >> 5) << 2)) & (1 << p));
+	return (sw_r32(RTL839X_MAC_TX_PAUSE_STS + ((p >> 5) << 2)) & (1 << (p % 32)));
 }
 
 
