@@ -676,6 +676,17 @@ define Device/tplink_tl-wdr4900-v2
 endef
 TARGET_DEVICES += tplink_tl-wdr4900-v2
 
+define Device/tplink_tl-wdr4900-v2-16m
+  $(Device/tplink-16mlzma)
+  SOC := qca9558
+  DEVICE_MODEL := TL-WDR4900
+  DEVICE_VARIANT := v2 16M
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x49000002
+  SUPPORTED_DEVICES += tl-wdr4900-v2-16m
+endef
+TARGET_DEVICES += tplink_tl-wdr4900-v2-16m
+
 define Device/tplink_tl-wdr7500-v3
   $(Device/tplink-8mlzma)
   SOC := qca9558
