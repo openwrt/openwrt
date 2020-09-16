@@ -94,18 +94,21 @@
 
 		router_auto {
 			linux,code = <BTN_6>;
+			linux,input-type = <EV_SW>;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
 
 		router_off {
 			linux,code = <BTN_5>;
+			linux,input-type = <EV_SW>;
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
 
 		movie_engine {
 			linux,code = <BTN_7>;
+			linux,input-type = <EV_SW>;
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
