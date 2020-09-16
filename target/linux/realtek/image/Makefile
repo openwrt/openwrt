@@ -72,6 +72,15 @@ define Device/d-link_dgs-1210-28
 endef
 TARGET_DEVICES += d-link_dgs-1210-28
 
+define Device/inaba_aml2-17gp
+  SOC := rtl8382
+  IMAGE_SIZE := 13504k
+  DEVICE_VENDOR := INABA
+  DEVICE_MODEL := Abaniact AML2-17GP
+  UIMAGE_MAGIC := 0x83800000
+endef
+TARGET_DEVICES += inaba_aml2-17gp
+
 define Device/netgear_gs108t-v3
   $(Device/netgear_nge)
   DEVICE_MODEL := GS108T
