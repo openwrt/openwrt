@@ -134,6 +134,8 @@ ppp_generic_setup() {
 	[ -n "$connect" ] || json_get_var connect connect
 	[ -n "$disconnect" ] || json_get_var disconnect disconnect
 
+	/lib/netifd/ppp-pre-up "$config"
+
 	proto_run_command "$config" /usr/sbin/pppd \
 		nodetach ipparam "$config" \
 		ifname "$pppname" \
@@ -182,6 +184,8 @@ ppp_generic_teardown() {
 	esac
 
 	proto_kill_command "$interface"
+
+	/lib/netifd/ppp-post-down "$interface"
 }
 
 # PPP on serial device
