@@ -27,11 +27,6 @@ edgecore,ecw5410)
 	ucidef_set_interface_macaddr "lan" "$(mtd_get_mac_binary "0:ART" 0x6)"
 	ucidef_set_interface_macaddr "wan" "$(mtd_get_mac_binary "0:ART" 0x0)"
 	;;
-qcom,ipq8064-ap161)
-	ucidef_set_interface_lan "eth1 eth2"
-	ucidef_add_switch "switch0" \
-		"0:lan" "1:lan" "2:lan" "3u@eth1" "6:wan" "4u@eth0"
-	;;
 linksys,ea7500-v1)
 	hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 	ucidef_add_switch "switch0" \
@@ -54,6 +49,11 @@ netgear,r7800 |\
 tplink,c2600)
 	ucidef_add_switch "switch0" \
 		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "6@eth1" "5:wan" "0@eth0"
+	;;
+qcom,ipq8064-ap161)
+	ucidef_set_interface_lan "eth1 eth2"
+	ucidef_add_switch "switch0" \
+		"0:lan" "1:lan" "2:lan" "3u@eth1" "6:wan" "4u@eth0"
 	;;
 qcom,ipq8064-db149)
 	ucidef_set_interface_lan "eth1 eth2 eth3"
