@@ -108,6 +108,21 @@ void hostapd_ubus_free_iface(struct hostapd_iface *iface)
 		return;
 }
 
+static void hostapd_send_ubus_event(char *bssname, char *event)
+{
+	char *name;
+
+	if (!ctx)
+		return;
+
+	if (asprintf(&name, "hostapd.%s.%s", bssname, event) < 0)
+		return;
+
+	blob_buf_init(&b, 0);
+	ubus_send_event(ctx, name, b.head);
+	free(name);
+}
+
 static void
 hostapd_bss_del_ban(void *eloop_data, void *user_ctx)
 {
@@ -152,7 +167,10 @@ hostapd_bss_reload(struct ubus_context *ctx, struct ubus_object *obj,
 		   struct blob_attr *msg)
 {
 	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
-	return hostapd_reload_config(hapd->iface, 1);
+	int ret = hostapd_reload_config(hapd->iface, 1);
+
+	hostapd_send_ubus_event(hapd->conf->iface, "reload");
+	return ret;
 }
 
 static int
@@ -1086,6 +1104,8 @@ void hostapd_ubus_add_bss(struct hostapd_data *hapd)
 	obj->n_methods = bss_object_type.n_methods;
 	ret = ubus_add_object(ctx, obj);
 	hostapd_ubus_ref_inc();
+
+	hostapd_send_ubus_event(hapd->conf->iface, "add");
 }
 
 void hostapd_ubus_free_bss(struct hostapd_data *hapd)
@@ -1095,6 +1115,8 @@ void hostapd_ubus_free_bss(struct hostapd_data *hapd)
 
 	if (!ctx)
 		return;
+
+	hostapd_send_ubus_event(hapd->conf->iface, "remove");
 
 	if (obj->id) {
 		ubus_remove_object(ctx, obj);
