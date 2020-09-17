@@ -106,9 +106,9 @@ dhcp_check() {
 
 	[ -s "$stamp" ] && return $(cat "$stamp")
 
-	# If there's no carrier yet, skip this interface.
+	# If interface is down, skip it.
 	# The init script will be called again once the link is up
-	case "$(devstatus "$ifname" | jsonfilter -e @.carrier)" in
+	case "$(devstatus "$ifname" | jsonfilter -e @.up)" in
 		false) return 1;;
 	esac
 

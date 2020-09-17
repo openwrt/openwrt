@@ -70,24 +70,6 @@ endef
 $(eval $(call KernelPackage,usb-phy-nop))
 
 
-define KernelPackage/usb-phy-qcom-dwc3
-  TITLE:=DWC3 USB QCOM PHY driver
-  DEPENDS:=@(TARGET_ipq40xx||TARGET_ipq806x)
-  KCONFIG:= CONFIG_PHY_QCOM_DWC3
-  FILES:= \
-    $(LINUX_DIR)/drivers/phy/qualcomm/phy-qcom-dwc3.ko
-  AUTOLOAD:=$(call AutoLoad,45,phy-qcom-dwc3,1)
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-phy-qcom-dwc3/description
- This driver provides support for the integrated DesignWare
- USB3 IP Core within the QCOM SoCs.
-endef
-
-$(eval $(call KernelPackage,usb-phy-qcom-dwc3))
-
-
 define KernelPackage/phy-ath79-usb
   TITLE:=Support for ATH79 USB PHY
   KCONFIG:=CONFIG_PHY_AR7100_USB \
@@ -476,27 +458,9 @@ endef
 $(eval $(call KernelPackage,usb-dwc3))
 
 
-define KernelPackage/usb-dwc3-of-simple
-  TITLE:=DWC3 USB simple OF driver
-  DEPENDS:=@LINUX_4_14 @(TARGET_ipq40xx||TARGET_ipq806x) +kmod-usb-dwc3
-  KCONFIG:= CONFIG_USB_DWC3_OF_SIMPLE
-  FILES:= $(LINUX_DIR)/drivers/usb/dwc3/dwc3-of-simple.ko
-  AUTOLOAD:=$(call AutoLoad,53,dwc3-of-simple,1)
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-dwc3-of-simple/description
- This driver provides generic platform glue for the integrated DesignWare
- USB3 IP Core.
-endef
-
-
-$(eval $(call KernelPackage,usb-dwc3-of-simple))
-
-
 define KernelPackage/usb-dwc3-qcom
   TITLE:=DWC3 Qualcomm USB driver
-  DEPENDS:=@(!LINUX_4_14) @(TARGET_ipq40xx||TARGET_ipq806x) +kmod-usb-dwc3
+  DEPENDS:=@(TARGET_ipq40xx||TARGET_ipq806x) +kmod-usb-dwc3
   KCONFIG:= CONFIG_USB_DWC3_QCOM
   FILES:= $(LINUX_DIR)/drivers/usb/dwc3/dwc3-qcom.ko
   AUTOLOAD:=$(call AutoLoad,53,dwc3-qcom,1)
@@ -1594,7 +1558,7 @@ $(eval $(call KernelPackage,usbip-server))
 
 define KernelPackage/usb-chipidea
   TITLE:=Host and device support for Chipidea controllers
-  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget @TARGET_ar71xx||TARGET_ath79 +kmod-usb-ehci +kmod-usb-phy-nop
+  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget @TARGET_ath79 +kmod-usb-ehci +kmod-usb-phy-nop
   KCONFIG:= \
 	CONFIG_EXTCON \
 	CONFIG_USB_CHIPIDEA \
@@ -1604,7 +1568,7 @@ define KernelPackage/usb-chipidea
   FILES:= \
 	$(LINUX_DIR)/drivers/extcon/extcon-core.ko \
 	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko \
-	$(LINUX_DIR)/drivers/usb/common/ulpi.ko@ge4.18 \
+	$(LINUX_DIR)/drivers/usb/common/ulpi.ko \
 	$(LINUX_DIR)/drivers/usb/roles/roles.ko@ge5.0
   AUTOLOAD:=$(call AutoLoad,39,ci_hdrc,1)
   $(call AddDepends/usb)

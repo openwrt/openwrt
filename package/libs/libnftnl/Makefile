@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnftnl
-PKG_VERSION:=1.1.5
-PKG_RELEASE:=1
+PKG_VERSION:=1.1.7
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://netfilter.org/projects/$(PKG_NAME)/files
-PKG_HASH:=66de4d05227c0a1a731c369b193010d18a05b1185c2735211e0ecf658eeb14f3
+PKG_HASH:=20dbc13f11004aea2c9e479cfb90359cb11fe3446c3140811c18e4ec1648ed8f
 PKG_MAINTAINER:=Steven Barth <steven@midlink.org>
 PKG_LICENSE:=GPL-2.0+
 
@@ -39,7 +39,8 @@ define Package/libnftnl/description
  programming interface (API) to the in-kernel nf_tables subsystem.
 endef
 
-TARGET_CFLAGS += $(FPIC)
+TARGET_CFLAGS += $(FPIC) -flto
+TARGET_LDFLAGS += -flto
 
 CONFIGURE_ARGS += \
 	--enable-static \

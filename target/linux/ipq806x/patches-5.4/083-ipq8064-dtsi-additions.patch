@@ -67,7 +67,7 @@
 +	};
 +
 +	opp_table0: opp_table0 {
-+		compatible = "operating-points-v2-qcom-cpu";
++		compatible = "operating-points-v2-kryo-cpu";
 +		nvmem-cells = <&speedbin_efuse>;
 +
 +		opp-384000000 {
@@ -718,16 +718,16 @@
 +		};
 +
 +		hs_phy_0: hs_phy_0 {
-+			compatible = "qcom,dwc3-hs-usb-phy";
-+			regmap = <&usb3_0>;
++			compatible = "qcom,ipq806x-usb-phy-hs";
++			reg = <0x110f8800 0x30>;
 +			clocks = <&gcc USB30_0_UTMI_CLK>;
 +			clock-names = "ref";
 +			#phy-cells = <0>;
 +		};
 +
 +		ss_phy_0: ss_phy_0 {
-+			compatible = "qcom,dwc3-ss-usb-phy";
-+			regmap = <&usb3_0>;
++			compatible = "qcom,ipq806x-usb-phy-ss";
++			reg = <0x110f8830 0x30>;
 +			clocks = <&gcc USB30_0_MASTER_CLK>;
 +			clock-names = "ref";
 +			#phy-cells = <0>;
@@ -760,16 +760,16 @@
 +		};
 +
 +		hs_phy_1: hs_phy_1 {
-+			compatible = "qcom,dwc3-hs-usb-phy";
-+			regmap = <&usb3_1>;
++			compatible = "qcom,ipq806x-usb-phy-hs";
++			reg = <0x100f8800 0x30>;
 +			clocks = <&gcc USB30_1_UTMI_CLK>;
 +			clock-names = "ref";
 +			#phy-cells = <0>;
 +		};
 +
 +		ss_phy_1: ss_phy_1 {
-+			compatible = "qcom,dwc3-ss-usb-phy";
-+			regmap = <&usb3_1>;
++			compatible = "qcom,ipq806x-usb-phy-ss";
++			reg = <0x100f8830 0x30>;
 +			clocks = <&gcc USB30_1_MASTER_CLK>;
 +			clock-names = "ref";
 +			#phy-cells = <0>;

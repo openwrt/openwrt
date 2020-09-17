@@ -8,8 +8,7 @@
 
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
-  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA \
-	(early adopters with DSA already set up may just force-flash keeping existing config)
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 
 define Device/buffalo_ls421de
@@ -24,8 +23,8 @@ define Device/buffalo_ls421de
   DEVICE_DTS := armada-370-buffalo-ls421de
   DEVICE_PACKAGES :=  \
     kmod-rtc-rs5c372a kmod-hwmon-gpiofan kmod-hwmon-drivetemp kmod-usb3 \
-    kmod-md-raid0 kmod-md-raid1 kmod-md-mod kmod-fs-xfs mkf2fs e2fsprogs \
-    partx-utils
+    kmod-linkstation-poweroff kmod-md-raid0 kmod-md-raid1 kmod-md-mod \
+    kmod-fs-xfs mkf2fs e2fsprogs partx-utils
 endef
 TARGET_DEVICES += buffalo_ls421de
 
@@ -37,7 +36,7 @@ define Device/cznic_turris-omnia
   KERNEL_INITRAMFS := kernel-bin
   DEVICE_PACKAGES :=  \
     mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
-    wpad-basic kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+    wpad-basic-wolfssl kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
     partx-utils kmod-i2c-mux-pca954x
   IMAGES := $$(IMAGE_PREFIX)-sysupgrade.img.gz omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz
   IMAGE/$$(IMAGE_PREFIX)-sysupgrade.img.gz := boot-img | sdcard-img | gzip | append-metadata
@@ -74,7 +73,7 @@ TARGET_DEVICES += kobol_helios4
 define Device/linksys
   $(Device/NAND-128K)
   DEVICE_VENDOR := Linksys
-  DEVICE_PACKAGES := kmod-mwlwifi wpad-basic
+  DEVICE_PACKAGES := kmod-mwlwifi wpad-basic-wolfssl
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 	append-ubi | pad-to $$$$(PAGESIZE)

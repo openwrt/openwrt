@@ -1,6 +1,6 @@
-From d13abe5b2c5b85228bdd34584fcbd642f1883668 Mon Sep 17 00:00:00 2001
+From 3fad1ca28d4c87346d18b89438bf2084fb2c3896 Mon Sep 17 00:00:00 2001
 From: David Woodhouse <dwmw2@infradead.org>
-Date: Sun, 12 Jul 2020 23:23:05 +0100
+Date: Sun, 12 Jul 2020 23:33:03 +0100
 Subject: [PATCH 3/3] board: mediatek: Add support for UniElec U7623 board
 
 This is an MT7623A-based board, very similar to the Banana Pi R2.
@@ -11,16 +11,17 @@ Signed-off-by: David Woodhouse <dwmw2@infradead.org>
 ---
  arch/arm/dts/Makefile                         |   1 +
  .../arm/dts/mt7623a-unielec-u7623-02-emmc.dts | 211 ++++++++++++++++++
+ board/mediatek/mt7623/MAINTAINERS             |   7 +
  configs/mt7623a_unielec_u7623_02_defconfig    |  54 +++++
- 3 files changed, 266 insertions(+)
+ 4 files changed, 273 insertions(+)
  create mode 100644 arch/arm/dts/mt7623a-unielec-u7623-02-emmc.dts
  create mode 100644 configs/mt7623a_unielec_u7623_02_defconfig
 
 diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
-index 89fa448818..a140b1c8d4 100644
+index a3a1e3fbe4..caa7756c5d 100644
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -938,6 +938,7 @@ dtb-$(CONFIG_SOC_K3_J721E) += k3-j721e-common-proc-board.dtb \
+@@ -949,6 +949,7 @@ dtb-$(CONFIG_SOC_K3_J721E) += k3-j721e-common-proc-board.dtb \
  
  dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7622-rfb.dtb \
@@ -245,6 +246,21 @@ index 0000000000..fdeec75b05
 +	pinctrl-0 = <&uart2_pins_b>;
 +	status = "okay";
 +};
+diff --git a/board/mediatek/mt7623/MAINTAINERS b/board/mediatek/mt7623/MAINTAINERS
+index eeb0375d70..1a8d796bd3 100644
+--- a/board/mediatek/mt7623/MAINTAINERS
++++ b/board/mediatek/mt7623/MAINTAINERS
+@@ -5,3 +5,10 @@ S:	Maintained
+ F:	board/mediatek/mt7623
+ F:	include/configs/mt7623.h
+ F:	configs/mt7623n_bpir2_defconfig
++
++UNIELEC U7623
++M:	Ryder Lee <ryder.lee@mediatek.com>
++M:	David Woodhouse <dwmw2@infradead.org>
++S:	Maintained
++F:	arch/arm/dts/mt7623a-unielec-u7623-02-emmc.dts
++F:	configs/mt7623a_unielec_u7623_02_defconfig
 diff --git a/configs/mt7623a_unielec_u7623_02_defconfig b/configs/mt7623a_unielec_u7623_02_defconfig
 new file mode 100644
 index 0000000000..72b5f31092

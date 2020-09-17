@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2016 OpenWrt.org
+# Copyright (C) 2006-2020 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
 PKG_VERSION:=2020.80
-PKG_RELEASE:=1
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
@@ -25,13 +25,14 @@ PKG_BUILD_PARALLEL:=1
 PKG_ASLR_PIE_REGULAR:=1
 PKG_USE_MIPS16:=0
 PKG_FIXUP:=autoreconf
+PKG_FLAGS:=nonshared
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_TARGET_INIT_PATH CONFIG_DROPBEAR_ECC CONFIG_DROPBEAR_ECC_FULL \
 	CONFIG_DROPBEAR_CURVE25519 CONFIG_DROPBEAR_ZLIB \
 	CONFIG_DROPBEAR_ED25519 CONFIG_DROPBEAR_CHACHA20POLY1305 \
 	CONFIG_DROPBEAR_UTMP CONFIG_DROPBEAR_PUTUTLINE \
-	CONFIG_DROPBEAR_DBCLIENT
+	CONFIG_DROPBEAR_DBCLIENT CONFIG_DROPBEAR_SCP
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -53,9 +54,11 @@ define Package/dropbear
   CATEGORY:=Base system
   TITLE:=Small SSH2 client/server
   DEPENDS:= +DROPBEAR_ZLIB:zlib
-  ALTERNATIVES:=\
-	  100:/usr/bin/ssh:/usr/sbin/dropbear \
-	  100:/usr/bin/scp:/usr/sbin/dropbear \
+  ALTERNATIVES:=
+  $(if $(CONFIG_DROPBEAR_SCP),ALTERNATIVES+= \
+	  100:/usr/bin/scp:/usr/sbin/dropbear,)
+  $(if $(CONFIG_DROPBEAR_DBCLIENT),ALTERNATIVES+= \
+	  100:/usr/bin/ssh:/usr/sbin/dropbear,)
 
 endef
 
@@ -146,7 +149,7 @@ endef
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		PROGRAMS="dropbear $(if $(CONFIG_DROPBEAR_DBCLIENT),dbclient,) dropbearkey scp" \
+		PROGRAMS="dropbear $(if $(CONFIG_DROPBEAR_DBCLIENT),dbclient,) dropbearkey $(if $(CONFIG_DROPBEAR_SCP),scp,)" \
 		MULTI=1 SCPPROGRESS=1
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \

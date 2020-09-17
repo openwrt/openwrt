@@ -12,7 +12,7 @@ PKG_VERSION:=3.130.20.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=wl_apsta-$(PKG_VERSION).o
-PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
+PKG_SOURCE_URL:=https://downloads.openwrt.org/sources
 PKG_HASH:=7dba610b1d96dd14e901bcbce14cd6ecd1b1ac6f5c0035b0d6b6dc46a7c3ef90
 
 include $(INCLUDE_DIR)/package.mk

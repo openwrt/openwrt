@@ -6,6 +6,14 @@ include ./common-tp-link.mk
 
 DEFAULT_SOC := mt7628an
 
+define Build/ravpower-wd009-factory
+	mkimage -A mips -T standalone -C none -a 0x80010000 -e 0x80010000 \
+		-n "OpenWrt Bootloader" -d $(UBOOT_PATH) $@.new
+	cat $@ >> $@.new
+	@mv $@.new $@
+endef
+
+
 define Device/alfa-network_awusfree1
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := ALFA Network
@@ -552,6 +560,19 @@ define Device/tplink_tl-wr842n-v5
   IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
 endef
 TARGET_DEVICES += tplink_tl-wr842n-v5
+
+define Device/tplink_tl-wr850n-v2
+  $(Device/tplink-v2)
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := TL-WR850N
+  DEVICE_VARIANT := v2
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x08500002
+  TPLINK_HWREVADD := 0x2
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+endef
+TARGET_DEVICES += tplink_tl-wr850n-v2
 
 define Device/tplink_tl-wr902ac-v3
   $(Device/tplink-v2)

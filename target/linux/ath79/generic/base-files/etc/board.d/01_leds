@@ -144,6 +144,20 @@ dlink,dap-1365-a1)
 dlink,dir-859-a1)
 	ucidef_set_led_switch "internet" "WAN" "$boardname:green:internet" "switch0" "0x20"
 	;;
+engenius,enh202-v1)
+	ucidef_set_led_switch "lan" "LAN" "$boardname:amber:lan" "switch0" "0x10"
+	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth0"
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "$boardname:red:rssilow" "wlan0" "1"  "100"
+	ucidef_set_led_rssi "rssimedium" "RSSIMEDIUM" "$boardname:amber:rssimedium" "wlan0" "33" "100"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "$boardname:green:rssihigh" "wlan0" "67" "100"
+	;;
+engenius,ens202ext-v1)
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "$boardname:red:rssilow" "wlan0" "1"  "100"
+	ucidef_set_led_rssi "rssimedium" "RSSIMEDIUM" "$boardname:amber:rssimedium" "wlan0" "33" "100"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "$boardname:green:rssihigh" "wlan0" "67" "100"
+	;;
 engenius,ews511ap)
 	ucidef_set_led_netdev "lan1" "LAN1" "$boardname:blue:lan1" "eth1"
 	ucidef_set_led_netdev "lan2" "LAN2" "$boardname:blue:lan2" "eth0"
@@ -168,6 +182,9 @@ glinet,gl-mifi)
 	;;
 glinet,gl-x750)
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth1"
+	;;
+meraki,mr16)
+	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth0"
 	;;
 netgear,wnr2200-8m|\
 netgear,wnr2200-16m)
@@ -297,6 +314,7 @@ tplink,tl-mr6400-v1)
 	ucidef_set_led_netdev "wan" "WAN" "tp-link:white:wan" "eth1"
 	ucidef_set_led_netdev "4g" "4G" "tp-link:white:4g" "usb0"
 	;;
+tplink,tl-wpa8630-v1|\
 tplink,tl-wpa8630p-v2-eu|\
 tplink,tl-wpa8630p-v2-int)
 	ucidef_set_led_switch "lan" "LAN" "tp-link:green:lan" "switch0" "0x3c"
