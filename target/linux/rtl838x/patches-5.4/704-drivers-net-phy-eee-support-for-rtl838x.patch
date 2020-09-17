@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1244,6 +1244,11 @@
+@@ -1242,6 +1242,11 @@ int phylink_ethtool_ksettings_set(struct
  
  	/* If we have a PHY, configure the phy */
  	if (pl->phydev) {
@@ -12,7 +12,7 @@
  		ret = phy_ethtool_ksettings_set(pl->phydev, &our_kset);
  		if (ret)
  			return ret;
-@@ -1422,8 +1427,11 @@
+@@ -1420,8 +1425,11 @@ int phylink_ethtool_get_eee(struct phyli
  
  	ASSERT_RTNL();
  
@@ -25,7 +25,7 @@
  
  	return ret;
  }
-@@ -1440,9 +1448,11 @@
+@@ -1438,9 +1446,11 @@ int phylink_ethtool_set_eee(struct phyli
  
  	ASSERT_RTNL();
  
