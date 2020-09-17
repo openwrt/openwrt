@@ -321,7 +321,7 @@
  #endif /* MTK_ETH_H */
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_offload.c
-@@ -0,0 +1,593 @@
+@@ -0,0 +1,609 @@
 +/*   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
 + *   the Free Software Foundation; version 2 of the License
@@ -427,6 +427,22 @@
 +			break;
 +		default:
 +			return -EINVAL;
++		}
++	}
++
++	if (dest->flags & FLOW_OFFLOAD_PATH_DSA) {
++		entry->bfib1.vlan_layer = 1;
++
++		entry->ipv4_hnapt.bfib1.vpm = 0;
++		entry->ipv4_hnapt.etype = BIT(dest->dsa_port);
++
++		if (dest->flags & FLOW_OFFLOAD_PATH_VLAN) {
++			if (dest->vlan_proto != htons(ETH_P_8021Q))
++				return -EINVAL;
++
++			entry->ipv4_hnapt.etype |= BIT(8);
++		} else {
++			entry->ipv4_hnapt.vlan1 = 0;
 +		}
 +	}
 +
