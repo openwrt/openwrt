@@ -78,6 +78,12 @@ ath79_setup_interfaces()
 	alfa-network,ap121fe)
 		ucidef_set_interface_lan "eth0 usb0"
 		;;
+	alfa-network,n2q|\
+	devolo,dvl1200e|\
+	devolo,dvl1750e|\
+	ocedo,ursus)
+		ucidef_set_interface_lan "eth0 eth1"
+		;;
 	avm,fritz4020|\
 	pcs,cr3000|\
 	tplink,archer-c58-v1|\
@@ -146,11 +152,6 @@ ath79_setup_interfaces()
 	compex,wpj563)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:lan" "2:wan"
-		;;
-	devolo,dvl1200e|\
-	devolo,dvl1750e|\
-	ocedo,ursus)
-		ucidef_set_interface_lan "eth0 eth1"
 		;;
 	devolo,magic-2-wifi)
 		ucidef_add_switch "switch0" \
@@ -402,6 +403,7 @@ ath79_setup_macs()
 		;;
 	alfa-network,ap121f|\
 	alfa-network,ap121fe|\
+	alfa-network,n2q|\
 	alfa-network,r36a|\
 	engenius,ens202ext-v1)
 		label_mac=$(mtd_get_mac_binary art 0x1002)
