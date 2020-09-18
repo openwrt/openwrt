@@ -1415,6 +1415,16 @@ define Device/rosinson_wr818
 endef
 TARGET_DEVICES += rosinson_wr818
 
+define Device/samsung_wam250
+  SOC := ar9344
+  DEVICE_VENDOR := Samsung
+  DEVICE_MODEL := WAM250
+  IMAGE_SIZE := 15872k
+  DEVICE_PACKAGES := kmod-usb2
+  SUPPORTED_DEVICES += wam250
+endef
+TARGET_DEVICES += samsung_wam250
+
 define Device/siemens_ws-ap3610
   SOC := ar7161
   DEVICE_VENDOR := Siemens
