@@ -237,6 +237,16 @@ define Device/alfa-network_ap121fe
 endef
 TARGET_DEVICES += alfa-network_ap121fe
 
+define Device/alfa-network_n2q
+  SOC := qca9531
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := N2Q
+  DEVICE_PACKAGES := kmod-i2c-gpio kmod-gpio-pcf857x kmod-usb2 \
+	kmod-usb-ledtrig-usbport rssileds
+  IMAGE_SIZE := 15872k
+endef
+TARGET_DEVICES += alfa-network_n2q
+
 define Device/alfa-network_r36a
   SOC := qca9531
   DEVICE_VENDOR := ALFA Network
