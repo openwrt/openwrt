@@ -553,7 +553,7 @@ static void mtk_offload_keepalive(struct fe_priv *eth, unsigned int hash)
 	rcu_read_unlock();
 }
 
-int mtk_offload_check_rx(struct fe_priv *eth, struct sk_buff *skb, u32 rxd4)
+int ra_offload_check_rx(struct fe_priv *eth, struct sk_buff *skb, u32 rxd4)
 {
 	unsigned int hash;
 
@@ -577,7 +577,7 @@ int mtk_offload_check_rx(struct fe_priv *eth, struct sk_buff *skb, u32 rxd4)
 	}
 }
 
-int mtk_ppe_probe(struct mtk_eth *eth)
+int ra_ppe_probe(struct mtk_eth *eth)
 {
 	int err;
 
@@ -585,14 +585,14 @@ int mtk_ppe_probe(struct mtk_eth *eth)
 	if (err)
 		return err;
 
-	err = mtk_ppe_debugfs_init(eth);
+	err = ra_ppe_debugfs_init(eth);
 	if (err)
 		return err;
 
 	return 0;
 }
 
-void mtk_ppe_remove(struct mtk_eth *eth)
+void ra_ppe_remove(struct mtk_eth *eth)
 {
 	mtk_ppe_stop(eth);
 }

@@ -965,7 +965,7 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 					       RX_DMA_VID(trxd.rxd3));
 
 #ifdef CONFIG_NET_RALINK_OFFLOAD
-		if (mtk_offload_check_rx(priv, skb, trxd.rxd4) == 0) {
+		if (ra_offload_check_rx(priv, skb, trxd.rxd4) == 0) {
 #endif
 			stats->rx_packets++;
 			stats->rx_bytes += pktlen;
@@ -1432,7 +1432,7 @@ static int __init fe_init(struct net_device *dev)
 	fe_reg_w32(val, FE_REG_PDMA_GLO_CFG);
 	spin_unlock_irqrestore(&priv->page_lock, flags);
 #ifdef CONFIG_NET_RALINK_OFFLOAD
-	mtk_ppe_probe(priv);
+	ra_ppe_probe(priv);
 #endif
 
 	return 0;
@@ -1457,7 +1457,7 @@ static void fe_uninit(struct net_device *dev)
 	spin_unlock_irqrestore(&priv->page_lock, flags);
 	fe_free_dma(priv);
 #ifdef CONFIG_NET_RALINK_OFFLOAD
-	mtk_ppe_remove(priv);
+	ra_ppe_remove(priv);
 #endif
 
 	if (priv->phy)
