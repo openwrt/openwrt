@@ -1,0 +1,31 @@
+From bc2745ac8927ab3694781285831afbe5349f270f Mon Sep 17 00:00:00 2001
+From: Adrian Schmutzler <freifunk@adrianschmutzler.de>
+Date: Sat, 19 Sep 2020 19:05:51 +0200
+Subject: [PATCH v2 1/2] dt-bindings: leds: add LED_FUNCTION for wlan2g/wlan5g
+
+Many consumer "routers" have dedicated LEDs for specific WiFi bands,
+e.g. one for 2.4 GHz and one for 5 GHz. These LEDs specifically
+indicate the state of the relevant band, so the latter should be
+included in the function name. LED_FUNCTION_WLAN will remain for
+general cases or when the LED is used for more than one band.
+
+This essentially is equivalent to how we use LED_FUNCTION_LAN and
+LED_FUNCTION_WAN instead of just having LED_FUNCTION_ETHERNET.
+
+Signed-off-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
+
+---
+ include/dt-bindings/leds/common.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/include/dt-bindings/leds/common.h
++++ b/include/dt-bindings/leds/common.h
+@@ -70,6 +70,8 @@
+ #define LED_FUNCTION_USB "usb"
+ #define LED_FUNCTION_WAN "wan"
+ #define LED_FUNCTION_WLAN "wlan"
++#define LED_FUNCTION_WLAN2G "wlan2g"
++#define LED_FUNCTION_WLAN5G "wlan5g"
+ #define LED_FUNCTION_WPS "wps"
+ 
+ #endif /* __DT_BINDINGS_LEDS_H */

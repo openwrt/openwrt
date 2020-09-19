@@ -1,0 +1,28 @@
+From 332e26c4b5edf64d897329ed0b994e7378eab4ad Mon Sep 17 00:00:00 2001
+From: Adrian Schmutzler <freifunk@adrianschmutzler.de>
+Date: Sat, 19 Sep 2020 19:10:54 +0200
+Subject: [PATCH v2 2/2] dt-bindings: leds: add LED_FUNCTION_RSSI
+
+Several consumer "routers" and CPE devices have dedicated LEDs to
+show the received signal strength indicator (RSSI). This is
+different from the "WLAN" LEDs that just show enabled/disabled
+state and sometimes rx/tx activity.
+
+Add a LED function for these LEDs.
+
+Signed-off-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
+
+---
+ include/dt-bindings/leds/common.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/include/dt-bindings/leds/common.h
++++ b/include/dt-bindings/leds/common.h
+@@ -60,6 +60,7 @@
+ #define LED_FUNCTION_PANIC "panic"
+ #define LED_FUNCTION_PROGRAMMING "programming"
+ #define LED_FUNCTION_POWER "power"
++#define LED_FUNCTION_RSSI "rssi"
+ #define LED_FUNCTION_RX "rx"
+ #define LED_FUNCTION_SD "sd"
+ #define LED_FUNCTION_SCROLLLOCK "scrolllock"
