@@ -12,6 +12,18 @@ get_dt_led_path() {
 	echo "$ledpath"
 }
 
+get_dt_led_name() {
+	local dtname=$(basename "$1")
+	local dtparent=$(basename $(dirname $1))
+	local ledpath
+	local ledname
+
+	[ -n "$dtname" ] && ledpath=$(grep -rl '^OF_NAME='$dtname'$' /sys/devices/platform/$dtparent/leds/*/uevent)
+	[ -n "$ledpath" ] && ledname=$(echo $ledpath | sed 's#.*/\([^/]*\)/uevent#\1#')
+
+	[ -n "$ledname" ] && echo "$ledname" || echo "$dtname"
+}
+
 get_dt_led() {
 	local label
 	local ledpath=$(get_dt_led_path $1)
@@ -19,7 +31,7 @@ get_dt_led() {
 	[ -n "$ledpath" ] && \
 		label=$(cat "$ledpath/label" 2>/dev/null) || \
 		label=$(cat "$ledpath/chan-name" 2>/dev/null) || \
-		label=$(basename "$ledpath")
+		label=$(get_dt_led_name "$ledpath")
 
 	echo "$label"
 }
