@@ -14,32 +14,44 @@
 		compatible = "gpio-leds";
 
 		lan0 {
-			label = "tp-link:green:lan0";
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <0>;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
 		lan1 {
-			label = "tp-link:green:lan1";
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
 		link1 {
-			label = "tp-link:green:link1";
+			function = LED_FUNCTION_RSSI;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		link2 {
-			label = "tp-link:green:link2";
+			function = LED_FUNCTION_RSSI;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		link3 {
-			label = "tp-link:green:link3";
+			function = LED_FUNCTION_RSSI;
+			function-enumerator = <3>;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		led_link4: link4 {
-			label = "tp-link:green:link4";
+			function = LED_FUNCTION_RSSI;
+			function-enumerator = <4>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 	};
 };

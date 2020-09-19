@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 #include "qca956x.dtsi"
 
@@ -18,7 +19,8 @@
 		compatible = "gpio-leds";
 
 		led_system: system {
-			label = "tp-link:green:system";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "heartbeat";
 		};
@@ -30,37 +32,48 @@
 		};
 
 		wifi_wps {
-			label = "tp-link:green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			label = "tp-link:green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_fail {
-			label = "tp-link:orange:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		lan1 {
-			label = "tp-link:green:lan1";
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 
 		lan2 {
-			label = "tp-link:green:lan2";
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		lan3 {
-			label = "tp-link:green:lan3";
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 		};
 
 		lan4 {
-			label = "tp-link:green:lan4";
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 	};

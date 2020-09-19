@@ -38,14 +38,18 @@
 
 &leds {
 	usb1 {
-		label = "tp-link:green:usb1";
+		function = LED_FUNCTION_USB;
+		function-enumerator = <1>;
+		color = <LED_COLOR_ID_GREEN>;
 		gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		trigger-sources = <&hub_port1>;
 		linux,default-trigger = "usbport";
 	};
 
 	usb2 {
-		label = "tp-link:green:usb2";
+		function = LED_FUNCTION_USB;
+		function-enumerator = <2>;
+		color = <LED_COLOR_ID_GREEN>;
 		gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		trigger-sources = <&hub_port2>;
 		linux,default-trigger = "usbport";

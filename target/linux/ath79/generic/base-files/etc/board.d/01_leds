@@ -370,6 +370,10 @@ zbtlink,zbt-wd323)
 	ucidef_set_led_switch "lan1" "LAN1" "zbt-wd323:orange:lan1" "switch0" "0x10"
 	ucidef_set_led_switch "lan2" "LAN2" "zbt-wd323:orange:lan2" "switch0" "0x08"
 	;;
+# for testing only
+tplink,tl-wdr4300-v1)
+	ucidef_set_led_netdev "wan" "WAN" "green:wps" "eth0"
+	;;
 esac
 
 board_config_flush
