@@ -31,6 +31,7 @@ define Package/arm-trusted-firmware-mvebu
   CATEGORY:=Boot Loaders
   DEPENDS:=@TARGET_mvebu_cortexa53
   VARIANT:=$(subst arm-trusted-firmware-mvebu-,,$(1))
+  DEFAULT:=y if BUILDBOT
 
   define Package/$(1)/install
 	$$(Package/arm-trusted-firmware-mvebu/install)
