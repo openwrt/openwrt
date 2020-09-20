@@ -46,34 +46,31 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void ieee80211_reset_ap_probe(struct ieee80211_sub_if_data *sdata)
  {
  	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
-@@ -2521,21 +2504,13 @@ void ieee80211_sta_tx_notify(struct ieee
+@@ -2521,13 +2504,10 @@ void ieee80211_sta_tx_notify(struct ieee
  {
  	ieee80211_sta_tx_wmm_ac_notify(sdata, hdr, tx_time);
  
 -	if (!ieee80211_is_data(hdr->frame_control))
 -	    return;
 -
--	if (ieee80211_is_any_nullfunc(hdr->frame_control) &&
--	    sdata->u.mgd.probe_send_count > 0) {
--		if (ack)
+ 	if (ieee80211_is_any_nullfunc(hdr->frame_control) &&
+ 	    sdata->u.mgd.probe_send_count > 0) {
+ 		if (ack)
 -			ieee80211_sta_reset_conn_monitor(sdata);
--		else
--			sdata->u.mgd.nullfunc_failed = true;
--		ieee80211_queue_work(&sdata->local->hw, &sdata->work);
-+	if (!ieee80211_is_any_nullfunc(hdr->frame_control) ||
-+	    !sdata->u.mgd.probe_send_count)
- 		return;
--	}
++			sdata->u.mgd.probe_send_count = 0;
+ 		else
+ 			sdata->u.mgd.nullfunc_failed = true;
+ 		ieee80211_queue_work(&sdata->local->hw, &sdata->work);
+@@ -2535,7 +2515,7 @@ void ieee80211_sta_tx_notify(struct ieee
+ 	}
  
--	if (ack)
+ 	if (ack)
 -		ieee80211_sta_reset_conn_monitor(sdata);
-+	if (!ack)
-+		sdata->u.mgd.nullfunc_failed = true;
-+	ieee80211_queue_work(&sdata->local->hw, &sdata->work);
++		sdata->u.mgd.probe_send_count = 0;
  }
  
  static void ieee80211_mlme_send_probe_req(struct ieee80211_sub_if_data *sdata,
-@@ -3600,8 +3575,8 @@ static bool ieee80211_assoc_success(stru
+@@ -3600,8 +3580,8 @@ static bool ieee80211_assoc_success(stru
  	 * Start timer to probe the connection to the AP now.
  	 * Also start the timer that will detect beacon loss.
  	 */
@@ -83,7 +80,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	ret = true;
   out:
-@@ -4569,10 +4544,26 @@ static void ieee80211_sta_conn_mon_timer
+@@ -4569,10 +4549,26 @@ static void ieee80211_sta_conn_mon_timer
  		from_timer(sdata, t, u.mgd.conn_mon_timer);
  	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
  	struct ieee80211_local *local = sdata->local;
