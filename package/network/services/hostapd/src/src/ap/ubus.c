@@ -863,25 +863,40 @@ hostapd_rrm_nr_set(struct ubus_context *ctx, struct ubus_object *obj,
 		struct wpa_ssid_value ssid;
 		struct wpabuf *data;
 		u8 bssid[ETH_ALEN];
-		char *s;
+		char *s, *nr_s;
 
 		blobmsg_parse_array(nr_e_policy, ARRAY_SIZE(nr_e_policy), tb, blobmsg_data(cur), blobmsg_data_len(cur));
 		if (!tb[0] || !tb[1] || !tb[2])
 			goto invalid;
 
-		s = blobmsg_get_string(tb[0]);
-		if (hwaddr_aton(s, bssid))
-			goto invalid;
-
-		s = blobmsg_get_string(tb[1]);
-		ssid.ssid_len = strlen(s);
-		if (ssid.ssid_len > sizeof(ssid.ssid))
-			goto invalid;
-
-		memcpy(&ssid, s, ssid.ssid_len);
-		data = wpabuf_parse_bin(blobmsg_get_string(tb[2]));
+		/* Neighbor Report binary */
+		nr_s = blobmsg_get_string(tb[2]);
+		data = wpabuf_parse_bin(nr_s);
 		if (!data)
 			goto invalid;
+
+		/* BSSID */
+		s = blobmsg_get_string(tb[0]);
+		if (strlen(s) == 0) {
+			/* Copy BSSID from neighbor report */
+			if (hwaddr_compact_aton(nr_s, bssid))
+				goto invalid;
+		} else if (hwaddr_aton(s, bssid)) {
+			goto invalid;
+		}
+
+		/* SSID */
+		s = blobmsg_get_string(tb[1]);
+		if (strlen(s) == 0) {
+			/* Copy SSID from hostapd BSS conf */
+			memcpy(&ssid, &hapd->conf->ssid, sizeof(ssid));
+		} else {
+			ssid.ssid_len = strlen(s);
+			if (ssid.ssid_len > sizeof(ssid.ssid))
+				goto invalid;
+
+			memcpy(&ssid, s, ssid.ssid_len);
+		}
 
 		hostapd_neighbor_set(hapd, bssid, &ssid, data, NULL, NULL, 0);
 		wpabuf_free(data);
