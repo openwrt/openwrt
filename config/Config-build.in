@@ -175,6 +175,7 @@ menu "Global build settings"
 
 	config STRIP_KERNEL_EXPORTS
 		bool "Strip unnecessary exports from the kernel image"
+		default y if SMALL_FLASH
 		help
 		  Reduces kernel size by stripping unused kernel exports from the kernel
 		  image.  Note that this might make the kernel incompatible with any kernel
@@ -182,6 +183,7 @@ menu "Global build settings"
 
 	config USE_MKLIBS
 		bool "Strip unnecessary functions from libraries"
+		default y if SMALL_FLASH
 		help
 		  Reduces libraries to only those functions that are necessary for using all
 		  selected packages (including those selected as <M>).  Note that this will
