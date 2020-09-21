@@ -260,7 +260,12 @@ $(_endef)
     endif
 
 	$(INSTALL_DIR) $$(PDIR_$(1))
-	$(FAKEROOT) $(SCRIPT_DIR)/ipkg-build -m "$(FILE_MODES)" $$(IDIR_$(1)) $$(PDIR_$(1))
+	$(FAKEROOT) $(SCRIPT_DIR)/ipkg-build \
+		-m "$(FILE_MODES)" \
+		-c "$(if $(CONFIG_TARGET_ROOTFS_SECURITY_LABELS)\
+			,$(STAGING_DIR_HOSTPKG)/etc/selinux/targeted/contexts/files/file_contexts)" \
+		$$(IDIR_$(1)) \
+		$$(PDIR_$(1))
 	@[ -f $$(IPKG_$(1)) ]
 
     $(1)-clean:
