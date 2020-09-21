@@ -135,7 +135,7 @@ endef
 define BuildUtil
   define Package/$(1)/install
 	$(INSTALL_DIR) $$(1)$(2)
-	$(INSTALL_BIN) $$(PKG_INSTALL_DIR)$(2)/$(3) $$(1)$(2)
+	$(INSTALL_BIN) $$(PKG_INSTALL_DIR)$(2)/$(3) $$(1)$(2)/$(if $(ALTS_$(3)),policycoreutils-$(3),$(3))
   endef
 
   $$(eval $$(call BuildPackage,$(1)))
