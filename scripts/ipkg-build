@@ -92,14 +92,16 @@ resolve_file_mode_id() {
 # ipkg-build "main"
 ###
 file_modes=""
-usage="Usage: $0 [-v] [-h] [-m] <pkg_directory> [<destination_directory>]"
-while getopts "hvm:" opt; do
+file_contexts=""
+usage="Usage: $0 [-v] [-h] [-m] [-c <file_contexts>] <pkg_directory> [<destination_directory>]"
+while getopts "hvm:c:" opt; do
     case $opt in
 	v ) echo $version
 	    exit 0
 	    ;;
 	h ) 	echo $usage  >&2 ;;
 	m )	file_modes=$OPTARG ;;
+	c )	file_contexts=$OPTARG ;;
 	\? ) 	echo $usage  >&2
 	esac
 done
@@ -179,6 +181,11 @@ for file_mode in $file_modes; do
 	chown "$uid:$gid" "$pkg_dir/$path"
 	chmod  "$mode" "$pkg_dir/$path"
 done
+
+if [ -n "$file_contexts" ]; then
+	setfiles -v -r "$pkg_dir" "$file_contexts" "$pkg_dir"
+fi
+
 $TAR -X $tmp_dir/tarX --format=gnu --sort=name -cpf - --mtime="$TIMESTAMP" . | $GZIP -n - > $tmp_dir/data.tar.gz
 
 installed_size=`stat -c "%s" $tmp_dir/data.tar.gz`
