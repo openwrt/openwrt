@@ -7,24 +7,69 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libselinux
 PKG_VERSION:=3.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/20200710
 PKG_HASH:=ea5dcbb4d859e3f999c26a13c630da2f16dff9462e3cc8cb7b458ac157d112e7
 HOST_BUILD_DEPENDS:=libsepol/host pcre/host
 
+PKG_LICENSE:=libselinux-1.0
+PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
 
-define Package/libselinux
-  SECTION:=libs
-  DEPENDS:=+libsepol +libpcre +musl-fts
-  CATEGORY:=Libraries
+LIBSELINUX_UTILS := \
+	avcstat \
+	compute_av \
+	compute_create \
+	compute_member \
+	compute_relabel \
+	getconlist \
+	getdefaultcon \
+	getenforce \
+	getfilecon \
+	getpidcon \
+	getsebool \
+	getseuser \
+	matchpathcon \
+	policyvers \
+	sefcontext_compile \
+	selabel_digest \
+	selabel_get_digests_all_partial_matches \
+	selabel_lookup \
+	selabel_lookup_best_match \
+	selabel_partial_match \
+	selinux_check_access \
+	selinux_check_securetty_context \
+	selinuxenabled \
+	selinuxexeccon \
+	setenforce \
+	setfilecon \
+	togglesebool \
+	validatetrans
+
+LIBSELINUX_ALTS := \
+	getenforce \
+	getsebool \
+	matchpathcon \
+	selinuxenabled \
+	setenforce
+
+$(eval $(foreach a,$(LIBSELINUX_ALTS),ALTS_$(a):=300:/usr/sbin/$(a):/usr/sbin/libselinux-$(a)$(newline)))
+
+define Package/libselinux/Default
   TITLE:=Runtime SELinux library
   URL:=http://selinuxproject.org/page/Main_Page
+endef
+
+define Package/libselinux
+  $(call Package/libselinux/Default)
+  SECTION:=libs
+  CATEGORY:=Libraries
+  DEPENDS:=+libsepol +libpcre +musl-fts
 endef
 
 define Package/libselinux/description
@@ -37,13 +82,23 @@ define Package/libselinux/description
 	older version supported by the kernel) when loading policy.
 endef
 
-define Package/libselinux-utils
-  SECTION:=utils
-  DEPENDS:=+libselinux
-  CATEGORY:=Utilities
-  TITLE:=Runtime SELinux utilities
-  URL:=http://selinuxproject.org/page/Main_Page
+define GenUtilPkg
+ define Package/$(1)
+   $(call Package/libselinux/Default)
+   TITLE+= $(2) utility
+   SECTION:=utils
+   DEPENDS:=+libselinux
+   CATEGORY:=Utilities
+   SUBMENU:=libselinux tools
+   ALTERNATIVES:=$(ALTS_$(2))
+ endef
+
+ define Package/$(1)/description
+  libselinux version of the $(2) utility.
+ endef
 endef
+
+$(foreach a,$(LIBSELINUX_UTILS),$(eval $(call GenUtilPkg,libselinux-$(a),$(a))))
 
 # Needed to link libselinux utilities, which link against
 # libselinux.so, which indirectly depends on libpcre.so, installed in
@@ -83,11 +138,15 @@ define Package/libselinux/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libselinux.so.* $(1)/usr/lib/
 endef
 
-define Package/libselinux-utils/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/* $(1)/usr/sbin
+define BuildUtil
+  define Package/$(1)/install
+	$(INSTALL_DIR) $$(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/$(2) $$(1)/usr/sbin/$(if $(ALTS_$(2)),libselinux-$(2),$(2))
+  endef
+
+  $$(eval $$(call BuildPackage,$(1)))
 endef
 
 $(eval $(call HostBuild))
 $(eval $(call BuildPackage,libselinux))
-$(eval $(call BuildPackage,libselinux-utils))
+$(foreach a,$(LIBSELINUX_UTILS),$(eval $(call BuildUtil,libselinux-$(a),$(a))))
