@@ -47,7 +47,7 @@ TARGET_DIR_ORIG := $(TARGET_ROOTFS_DIR)/root.orig-$(BOARD)
 
 ifdef CONFIG_CLEAN_IPKG
   define clean_ipkg
-	-find $(1)/usr/lib/opkg/info -type f -and -not -name '*.control' | $(XARGS) rm -rf
+	-find $(1)/usr/lib/opkg/info -type f -and -not -name '*.control' -delete
 	-sed -i -ne '/^Require-User: /p' $(1)/usr/lib/opkg/info/*.control
 	awk ' \
 		BEGIN { conffiles = 0; print "Conffiles:" } \
@@ -56,7 +56,7 @@ ifdef CONFIG_CLEAN_IPKG
 		conffiles == 1 { print } \
 	' $(1)/usr/lib/opkg/status >$(1)/usr/lib/opkg/status.new
 	mv $(1)/usr/lib/opkg/status.new $(1)/usr/lib/opkg/status
-	-find $(1)/usr/lib/opkg -empty | $(XARGS) rm -rf
+	-find $(1)/usr/lib/opkg -empty -delete
   endef
 endif
 
@@ -88,15 +88,13 @@ define prepare_rootfs
 		done || true \
 	)
 	$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status)
-	@-find $(1) -name CVS   | $(XARGS) rm -rf
-	@-find $(1) -name .svn  | $(XARGS) rm -rf
-	@-find $(1) -name .git  | $(XARGS) rm -rf
-	@-find $(1) -name '.#*' | $(XARGS) rm -f
-	rm -rf $(1)/tmp/*
-	rm -f $(1)/usr/lib/opkg/lists/*
-	rm -f $(1)/usr/lib/opkg/info/*.postinst*
-	rm -f $(1)/var/lock/*.lock
-	rm -rf $(1)/boot
+	@-find $(1) -name CVS -o -name .svn -o -name .git -o -name '.#*' | $(XARGS) rm -rf
+	rm -rf \
+		$(1)/boot \
+		$(1)/tmp/* \
+		$(1)/usr/lib/opkg/info/*.postinst* \
+		$(1)/usr/lib/opkg/lists/* \
+		$(1)/var/lock/*.lock
 	$(call clean_ipkg,$(1))
 	$(call mklibs,$(1))
 	$(if $(SOURCE_DATE_EPOCH),find $(1)/ -mindepth 1 -execdir touch -hcd "@$(SOURCE_DATE_EPOCH)" "{}" +)
