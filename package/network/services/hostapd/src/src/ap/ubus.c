@@ -849,7 +849,6 @@ hostapd_rrm_nr_set(struct ubus_context *ctx, struct ubus_object *obj,
 	struct blob_attr *tb_l[__NR_SET_LIST_MAX];
 	struct blob_attr *tb[ARRAY_SIZE(nr_e_policy)];
 	struct blob_attr *cur;
-	int ret = 0;
 	int rem;
 
 	hostapd_rrm_nr_enable(hapd);
@@ -888,7 +887,7 @@ hostapd_rrm_nr_set(struct ubus_context *ctx, struct ubus_object *obj,
 		continue;
 
 invalid:
-		ret = UBUS_STATUS_INVALID_ARGUMENT;
+		return UBUS_STATUS_INVALID_ARGUMENT;
 	}
 
 	return 0;
