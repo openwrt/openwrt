@@ -15,6 +15,11 @@ PKG_SOURCE_URL:=@GNU/tar
 PKG_HASH:=d0d3ae07f103323be809bc3eac0dcc386d52c5262499fe05511ac4788af1fdd8
 
 HOST_BUILD_PARALLEL:=1
+ifdef CONFIG_TARGET_ROOTFS_SECURITY_LABELS
+  HOST_BUILD_DEPENDS:=libselinux/host
+endif
+
+PKG_CONFIG_DEPENDS:=CONFIG_TARGET_ROOTFS_SECURITY_LABELS
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -23,8 +28,8 @@ HOSTCXX := $(HOSTCXX_NOCACHE)
 
 HOST_CONFIGURE_ARGS += \
 	--without-posix-acls \
-	--without-selinux \
-	--without-xattrs \
+	--with$(if $(CONFIG_TARGET_ROOTFS_SECURITY_LABELS),,out)-selinux \
+	--with$(if $(CONFIG_TARGET_ROOTFS_SECURITY_LABELS),,out)-xattrs \
 	--disable-acl \
 	--disable-nls
 
