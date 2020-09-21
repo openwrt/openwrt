@@ -11,11 +11,9 @@ Signed-off-by: Tony Ambardar <Tony.Ambardar@gmail.com>
  tools/lib/bpf/Makefile | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/tools/lib/bpf/Makefile b/tools/lib/bpf/Makefile
-index bf8ed134cb8a..c820b0be9d63 100644
 --- a/tools/lib/bpf/Makefile
 +++ b/tools/lib/bpf/Makefile
-@@ -152,6 +152,7 @@ GLOBAL_SYM_COUNT = $(shell readelf -s --wide $(BPF_IN_SHARED) | \
+@@ -152,6 +152,7 @@ GLOBAL_SYM_COUNT = $(shell readelf -s --
  			   awk '/GLOBAL/ && /DEFAULT/ && !/UND/ {print $$NF}' | \
  			   sort -u | wc -l)
  VERSIONED_SYM_COUNT = $(shell readelf --dyn-syms --wide $(OUTPUT)libbpf.so | \
@@ -31,6 +29,3 @@ index bf8ed134cb8a..c820b0be9d63 100644
  		    grep -Eo '[^ ]+@LIBBPF_' | cut -d@ -f1 |		 \
  		    sort -u > $(OUTPUT)libbpf_versioned_syms.tmp; 	 \
  		diff -u $(OUTPUT)libbpf_global_syms.tmp			 \
--- 
-2.25.1
-
