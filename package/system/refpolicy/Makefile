@@ -14,6 +14,8 @@ PKG_SOURCE_URL:=https://github.com/SELinuxProject/refpolicy/releases/download/RE
 PKG_HASH:=dec854512ed00cd057408f330c2cea4de7a4405f7a147458f59c994bf578e4b0
 PKG_INSTALL:=1
 PKG_BUILD_DEPENDS:=checkpolicy/host policycoreutils/host
+HOST_BUILD_DEPENDS:=checkpolicy/host policycoreutils/host
+
 
 PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 PKG_CPE_ID:=cpe:/a:tresys:refpolicy
@@ -23,6 +25,7 @@ PKG_LICENSE_FILES:=COPYING
 TAR_OPTIONS:=--transform='s%^refpolicy%$(PKG_NAME)-$(PKG_VERSION)%' -xf -
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 
 define Package/refpolicy
   SECTION:=system
@@ -61,10 +64,24 @@ MAKE_FLAGS += \
 	CC="$(HOSTCC)" \
 	CFLAGS="$(HOST_CFLAGS)"
 
+HOST_MAKE_FLAGS += \
+	TEST_TOOLCHAIN="$(STAGING_DIR_HOSTPKG)" \
+	DESTDIR="$(STAGING_DIR_HOSTPKG)" \
+	BINDIR=/bin \
+	SBINDIR=/sbin \
+	CC="$(HOSTCC)" \
+	CFLAGS="$(HOST_CFLAGS)"
+
 define Build/Configure
 	$(SED) "/MONOLITHIC/c\MONOLITHIC = y" $(PKG_BUILD_DIR)/build.conf
 	$(SED) "/NAME/c\NAME = targeted" $(PKG_BUILD_DIR)/build.conf
 	$(call Build/Compile/Default,conf)
+endef
+
+define Host/Configure
+	$(SED) "/MONOLITHIC/c\MONOLITHIC = y" $(HOST_BUILD_DIR)/build.conf
+	$(SED) "/NAME/c\NAME = targeted" $(HOST_BUILD_DIR)/build.conf
+	$(call Host/Compile/Default,conf)
 endef
 
 define Package/refpolicy/conffiles
@@ -78,3 +95,4 @@ define Package/refpolicy/install
 endef
 
 $(eval $(call BuildPackage,refpolicy))
+$(eval $(call HostBuild))
