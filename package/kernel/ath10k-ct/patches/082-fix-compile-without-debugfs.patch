@@ -1,0 +1,234 @@
+From: Eneas U de Queiroz <cotequeiroz@gmail.com>
+Date: Mon, 4 May 2020 10:31:07 -0300
+Subject: [PATCH] ath10k-ct: fix compilation without debugfs
+
+The debug record in struct ath10k can only be used when compiled with
+debugfs.  This fixes some unconditional uses in coredump.c and wmi.c.
+
+Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
+[mkincaid: backported to 2019-09-09]
+Signed-off-by: Michael Kincaid <mk+github@gbyt.co>
+
+Origin: backport, https://github.com/greearb/ath10k-ct/commit/ebe8143fa1174d03a49f8dea74f0ce022990261d
+---
+diff --git a/ath10k-4.16/coredump.c b/ath10k-4.16/coredump.c
+index 00e1002..2cd29a9 100644
+--- a/ath10k-4.16/coredump.c
++++ b/ath10k-4.16/coredump.c
+@@ -830,7 +830,9 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 	struct ath10k_ce_crash_hdr *ce_hdr;
+ 	struct ath10k_dump_file_data *dump_data;
+ 	struct ath10k_tlv_dump_data *dump_tlv;
++#ifdef CONFIG_ATH10K_DEBUGFS
+ 	struct ath10k_dbglog_entry_storage_user *dbglog_storage;
++#endif
+ 	size_t hdr_len = sizeof(*dump_data);
+ 	size_t len, sofar = 0;
+ 	unsigned char *buf;
+@@ -851,7 +853,9 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 	if (test_bit(ATH10K_FW_CRASH_DUMP_RAM_DATA, &ath10k_coredump_mask))
+ 		len += sizeof(*dump_tlv) + crash_data->ramdump_buf_len;
+ 
++#ifdef CONFIG_ATH10K_DEBUGFS
+ 	len += sizeof(*dump_tlv) + sizeof(ar->debug.dbglog_entry_data);
++#endif
+ 	len += sizeof(*dump_tlv) + sizeof(crash_data->stack_buf);
+ 	len += sizeof(*dump_tlv) + sizeof(crash_data->exc_stack_buf);
+ 
+@@ -945,6 +949,7 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 		sofar += sizeof(*dump_tlv) + crash_data->ramdump_buf_len;
+ 	}
+ 
++#ifdef CONFIG_ATH10K_DEBUGFS
+ 	/* Gather dbg-log */
+ 	tmp = sizeof(ar->debug.dbglog_entry_data);
+ 	dump_tlv = (struct ath10k_tlv_dump_data *)(buf + sofar);
+@@ -959,6 +964,7 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 	dbglog_storage->tail_idx =
+ 		cpu_to_le32(ar->debug.dbglog_entry_data.tail_idx);
+ 	sofar += sizeof(*dump_tlv) + tmp;
++#endif
+ 
+ 	/* Gather firmware stack dump */
+ 	tmp = sizeof(crash_data->stack_buf);
+diff --git a/ath10k-4.16/wmi.c b/ath10k-4.16/wmi.c
+index 7e84bbd..426e9f1 100644
+--- a/ath10k-4.16/wmi.c
++++ b/ath10k-4.16/wmi.c
+@@ -4128,12 +4128,14 @@ static void ath10k_dfs_radar_report(struct ath10k *ar,
+ 
+ #ifdef ATH_HAVE_PULSE_EVENT_MSG /* so we can compile out-of-tree easier */
+ 	ath10k_dbg(ar, ATH10K_DBG_REGULATORY, "dfs radar detected: %s\n", pe.msg);
++# ifdef CONFIG_ATH10K_DEBUGFS
+ 	if (pe.msg[0]) {
+ 		strncpy(ar->debug.dfs_last_msg, pe.msg,
+ 			sizeof(ar->debug.dfs_last_msg));
+ 		/* ensure null term */
+ 		ar->debug.dfs_last_msg[sizeof(ar->debug.dfs_last_msg) - 1] = 0;
+ 	}
++# endif
+ #else
+ 	ath10k_dbg(ar, ATH10K_DBG_REGULATORY, "dfs radar detected\n");
+ #endif
+diff --git a/ath10k-4.19/coredump.c b/ath10k-4.19/coredump.c
+index 62b7fd0..ca9a0ae 100644
+--- a/ath10k-4.19/coredump.c
++++ b/ath10k-4.19/coredump.c
+@@ -1018,7 +1018,9 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 	struct ath10k_ce_crash_hdr *ce_hdr;
+ 	struct ath10k_dump_file_data *dump_data;
+ 	struct ath10k_tlv_dump_data *dump_tlv;
++#ifdef CONFIG_ATH10K_DEBUGFS
+ 	struct ath10k_dbglog_entry_storage_user *dbglog_storage;
++#endif
+ 	size_t hdr_len = sizeof(*dump_data);
+ 	size_t len, sofar = 0;
+ 	unsigned char *buf;
+@@ -1039,7 +1041,9 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 	if (test_bit(ATH10K_FW_CRASH_DUMP_RAM_DATA, &ath10k_coredump_mask))
+ 		len += sizeof(*dump_tlv) + crash_data->ramdump_buf_len;
+ 
++#ifdef CONFIG_ATH10K_DEBUGFS
+ 	len += sizeof(*dump_tlv) + sizeof(ar->debug.dbglog_entry_data);
++#endif
+ 	len += sizeof(*dump_tlv) + sizeof(crash_data->stack_buf);
+ 	len += sizeof(*dump_tlv) + sizeof(crash_data->exc_stack_buf);
+ 
+@@ -1133,6 +1137,7 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 		sofar += sizeof(*dump_tlv) + crash_data->ramdump_buf_len;
+ 	}
+ 
++#ifdef CONFIG_ATH10K_DEBUGFS
+ 	/* Gather dbg-log */
+ 	tmp = sizeof(ar->debug.dbglog_entry_data);
+ 	dump_tlv = (struct ath10k_tlv_dump_data *)(buf + sofar);
+@@ -1147,6 +1152,7 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 	dbglog_storage->tail_idx =
+ 		cpu_to_le32(ar->debug.dbglog_entry_data.tail_idx);
+ 	sofar += sizeof(*dump_tlv) + tmp;
++#endif
+ 
+ 	/* Gather firmware stack dump */
+ 	tmp = sizeof(crash_data->stack_buf);
+diff --git a/ath10k-4.19/wmi.c b/ath10k-4.19/wmi.c
+index ca25024..768ae9f 100644
+--- a/ath10k-4.19/wmi.c
++++ b/ath10k-4.19/wmi.c
+@@ -4295,7 +4295,8 @@ static void ath10k_dfs_radar_report(struct ath10k *ar,
+ 
+ radar_detected:
+ 
+-#ifdef ATH_HAVE_PULSE_EVENT_MSG /* so we can compile out-of-tree easier */
++/* so we can compile out-of-tree easier */
++#if defined(ATH_HAVE_PULSE_EVENT_MSG) && defined(CONFIG_ATH10K_DEBUGFS)
+ 	if (pe.msg[0]) {
+ 		strncpy(ar->debug.dfs_last_msg, pe.msg,
+ 			sizeof(ar->debug.dfs_last_msg));
+diff --git a/ath10k-4.20/coredump.c b/ath10k-4.20/coredump.c
+index 62b7fd0..ca9a0ae 100644
+--- a/ath10k-4.20/coredump.c
++++ b/ath10k-4.20/coredump.c
+@@ -1018,7 +1018,9 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 	struct ath10k_ce_crash_hdr *ce_hdr;
+ 	struct ath10k_dump_file_data *dump_data;
+ 	struct ath10k_tlv_dump_data *dump_tlv;
++#ifdef CONFIG_ATH10K_DEBUGFS
+ 	struct ath10k_dbglog_entry_storage_user *dbglog_storage;
++#endif
+ 	size_t hdr_len = sizeof(*dump_data);
+ 	size_t len, sofar = 0;
+ 	unsigned char *buf;
+@@ -1039,7 +1041,9 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 	if (test_bit(ATH10K_FW_CRASH_DUMP_RAM_DATA, &ath10k_coredump_mask))
+ 		len += sizeof(*dump_tlv) + crash_data->ramdump_buf_len;
+ 
++#ifdef CONFIG_ATH10K_DEBUGFS
+ 	len += sizeof(*dump_tlv) + sizeof(ar->debug.dbglog_entry_data);
++#endif
+ 	len += sizeof(*dump_tlv) + sizeof(crash_data->stack_buf);
+ 	len += sizeof(*dump_tlv) + sizeof(crash_data->exc_stack_buf);
+ 
+@@ -1133,6 +1137,7 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 		sofar += sizeof(*dump_tlv) + crash_data->ramdump_buf_len;
+ 	}
+ 
++#ifdef CONFIG_ATH10K_DEBUGFS
+ 	/* Gather dbg-log */
+ 	tmp = sizeof(ar->debug.dbglog_entry_data);
+ 	dump_tlv = (struct ath10k_tlv_dump_data *)(buf + sofar);
+@@ -1147,6 +1152,7 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 	dbglog_storage->tail_idx =
+ 		cpu_to_le32(ar->debug.dbglog_entry_data.tail_idx);
+ 	sofar += sizeof(*dump_tlv) + tmp;
++#endif
+ 
+ 	/* Gather firmware stack dump */
+ 	tmp = sizeof(crash_data->stack_buf);
+diff --git a/ath10k-4.20/wmi.c b/ath10k-4.20/wmi.c
+index 1623eb1..bdebf36 100644
+--- a/ath10k-4.20/wmi.c
++++ b/ath10k-4.20/wmi.c
+@@ -4342,7 +4342,8 @@ static void ath10k_dfs_radar_report(struct ath10k *ar,
+ 
+ radar_detected:
+ 
+-#ifdef ATH_HAVE_PULSE_EVENT_MSG /* so we can compile out-of-tree easier */
++/* so we can compile out-of-tree easier */
++#if defined(ATH_HAVE_PULSE_EVENT_MSG) && defined(CONFIG_ATH10K_DEBUGFS)
+ 	if (pe.msg[0]) {
+ 		strncpy(ar->debug.dfs_last_msg, pe.msg,
+ 			sizeof(ar->debug.dfs_last_msg));
+diff --git a/ath10k-5.2/coredump.c b/ath10k-5.2/coredump.c
+index b3788b1..89fa2ae 100644
+--- a/ath10k-5.2/coredump.c
++++ b/ath10k-5.2/coredump.c
+@@ -1121,7 +1121,9 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 	struct ath10k_ce_crash_hdr *ce_hdr;
+ 	struct ath10k_dump_file_data *dump_data;
+ 	struct ath10k_tlv_dump_data *dump_tlv;
++#ifdef CONFIG_ATH10K_DEBUGFS
+ 	struct ath10k_dbglog_entry_storage_user *dbglog_storage;
++#endif
+ 	size_t hdr_len = sizeof(*dump_data);
+ 	size_t len, sofar = 0;
+ 	unsigned char *buf;
+@@ -1142,7 +1144,9 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 	if (test_bit(ATH10K_FW_CRASH_DUMP_RAM_DATA, &ath10k_coredump_mask))
+ 		len += sizeof(*dump_tlv) + crash_data->ramdump_buf_len;
+ 
++#ifdef CONFIG_ATH10K_DEBUGFS
+ 	len += sizeof(*dump_tlv) + sizeof(ar->debug.dbglog_entry_data);
++#endif
+ 	len += sizeof(*dump_tlv) + sizeof(crash_data->stack_buf);
+ 	len += sizeof(*dump_tlv) + sizeof(crash_data->exc_stack_buf);
+ 
+@@ -1236,6 +1240,7 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 		sofar += sizeof(*dump_tlv) + crash_data->ramdump_buf_len;
+ 	}
+ 
++#ifdef CONFIG_ATH10K_DEBUGFS
+ 	/* Gather dbg-log */
+ 	tmp = sizeof(ar->debug.dbglog_entry_data);
+ 	dump_tlv = (struct ath10k_tlv_dump_data *)(buf + sofar);
+@@ -1250,6 +1255,7 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
+ 	dbglog_storage->tail_idx =
+ 		cpu_to_le32(ar->debug.dbglog_entry_data.tail_idx);
+ 	sofar += sizeof(*dump_tlv) + tmp;
++#endif
+ 
+ 	/* Gather firmware stack dump */
+ 	tmp = sizeof(crash_data->stack_buf);
+diff --git a/ath10k-5.2/wmi.c b/ath10k-5.2/wmi.c
+index 5856659..c4b661f 100644
+--- a/ath10k-5.2/wmi.c
++++ b/ath10k-5.2/wmi.c
+@@ -4458,7 +4458,8 @@ static void ath10k_dfs_radar_report(struct ath10k *ar,
+ 
+ radar_detected:
+ 
+-#ifdef ATH_HAVE_PULSE_EVENT_MSG /* so we can compile out-of-tree easier */
++/* so we can compile out-of-tree easier */
++#if defined(ATH_HAVE_PULSE_EVENT_MSG) && defined(CONFIG_ATH10K_DEBUGFS)
+ 	if (pe.msg[0]) {
+ 		strncpy(ar->debug.dfs_last_msg, pe.msg,
+ 			sizeof(ar->debug.dfs_last_msg));
