@@ -108,19 +108,20 @@ void hostapd_ubus_free_iface(struct hostapd_iface *iface)
 		return;
 }
 
-static void hostapd_send_ubus_event(char *bssname, char *event)
+static void hostapd_notify_ubus(struct ubus_object *obj, char *bssname, char *event)
 {
-	char *name;
+	char *event_type;
 
-	if (!ctx)
+	if (!ctx || !obj)
 		return;
 
-	if (asprintf(&name, "hostapd.%s.%s", bssname, event) < 0)
+	if (asprintf(&event_type, "bss.%s", event) < 0)
 		return;
 
 	blob_buf_init(&b, 0);
-	ubus_send_event(ctx, name, b.head);
-	free(name);
+	blobmsg_add_string(&b, "name", bssname);
+	ubus_notify(ctx, obj, event_type, b.head, -1);
+	free(event_type);
 }
 
 static void hostapd_send_procd_event(char *bssname, char *event)
@@ -149,10 +150,10 @@ static void hostapd_send_procd_event(char *bssname, char *event)
 	free(name);
 }
 
-static void hostapd_send_shared_event(char *bssname, char *event)
+static void hostapd_send_shared_event(struct ubus_object *obj, char *bssname, char *event)
 {
 	hostapd_send_procd_event(bssname, event);
-	hostapd_send_ubus_event(bssname, event);
+	hostapd_notify_ubus(obj, bssname, event);
 }
 
 static void
@@ -201,7 +202,7 @@ hostapd_bss_reload(struct ubus_context *ctx, struct ubus_object *obj,
 	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
 	int ret = hostapd_reload_config(hapd->iface, 1);
 
-	hostapd_send_shared_event(hapd->conf->iface, "reload");
+	hostapd_send_shared_event(&hapd->iface->interfaces->ubus, hapd->conf->iface, "reload");
 	return ret;
 }
 
@@ -1136,7 +1137,7 @@ void hostapd_ubus_add_bss(struct hostapd_data *hapd)
 	ret = ubus_add_object(ctx, obj);
 	hostapd_ubus_ref_inc();
 
-	hostapd_send_shared_event(hapd->conf->iface, "add");
+	hostapd_send_shared_event(&hapd->iface->interfaces->ubus, hapd->conf->iface, "add");
 }
 
 void hostapd_ubus_free_bss(struct hostapd_data *hapd)
@@ -1147,7 +1148,7 @@ void hostapd_ubus_free_bss(struct hostapd_data *hapd)
 	if (!ctx)
 		return;
 
-	hostapd_send_shared_event(hapd->conf->iface, "remove");
+	hostapd_send_shared_event(&hapd->iface->interfaces->ubus, hapd->conf->iface, "remove");
 
 	if (obj->id) {
 		ubus_remove_object(ctx, obj);
