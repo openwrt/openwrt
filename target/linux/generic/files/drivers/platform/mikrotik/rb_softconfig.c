@@ -64,7 +64,8 @@
  * Also make the driver act read-only if 4K_SECTORS are not enabled, since they
  * are require to handle partial erasing of the small soft_config partition.
  */
-#if defined(CONFIG_MTD_SPI_NOR_USE_4K_SECTORS)
+#if defined(CONFIG_MTD_SPI_NOR_USE_4K_SECTORS) || \
+	defined(CONFIG_MTD_SPI_NOR_USE_VARIABLE_ERASE)
  #define RB_SC_HAS_WRITE_SUPPORT	true
  #define RB_SC_WMODE			S_IWUSR
  #define RB_SC_RMODE			S_IRUSR
