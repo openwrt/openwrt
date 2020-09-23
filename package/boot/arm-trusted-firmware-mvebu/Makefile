@@ -21,6 +21,9 @@ PKG_LICENSE_FILES:=docs/license.rst
 
 PKG_MAINTAINER:=Vladimir Vid <vladimir.vid@sartura.hr>
 
+PKG_TARGETS:=bin
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/arm-trusted-firmware-mvebu
@@ -28,6 +31,10 @@ define Package/arm-trusted-firmware-mvebu
   CATEGORY:=Boot Loaders
   DEPENDS:=@TARGET_mvebu_cortexa53
   VARIANT:=$(subst arm-trusted-firmware-mvebu-,,$(1))
+
+  define Package/$(1)/install
+	$$(Package/arm-trusted-firmware-mvebu/install)
+  endef
 endef
 
 define Package/arm-trusted-firmware-mvebu-espressobin-512mb
@@ -221,10 +228,9 @@ define Build/Compile
 		fip
 endef
 
-define Build/InstallDev
-	$(INSTALL_DIR) $(BIN_DIR)/flash-image-$(BUILD_VARIANT)
-	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/flash-image.bin $(BIN_DIR)/flash-image-$(BUILD_VARIANT)/
-	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/uart-images.tgz $(BIN_DIR)/flash-image-$(BUILD_VARIANT)/
+define Package/arm-trusted-firmware-mvebu/install
+	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/flash-image.bin $(1)/
+	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/uart-images.tgz $(1)/
 endef
 
 $(eval $(call BuildPackage,arm-trusted-firmware-mvebu-espressobin-512mb))
