@@ -104,11 +104,15 @@
 
 #define IRR1			(0x0c)
 
-#define IRR1_SETTING		((GPIO_ABCD_RS << 28) | \
+#define IRR1_SETTING_RTL838X	((GPIO_ABCD_RS << 28) | \
 				 (GPIO_EFGH_RS << 24) | \
 				 (RTC_RS       << 20) | \
 				 (SWCORE_RS    << 16)   \
 				)
+#define IRR1_SETTING_RTL839X	((GPIO_ABCD_RS << 28) | \
+				 (SWCORE_RS    << 16)   \
+				)
+
 
 #define IRR2			(0x10)
 #define IRR2_SETTING		0

@@ -183,7 +183,10 @@ int __init icu_of_init(struct device_node *node, struct device_node *parent)
 
 	/* Set up interrupt routing scheme */
 	icu_w32(IRR0_SETTING, IRR0);
-	icu_w32(IRR1_SETTING, IRR1);
+	if (soc_info.family == RTL8380_FAMILY_ID)
+		rtl838x_w32(IRR1_SETTING_RTL838X, IRR1);
+	else
+		rtl838x_w32(IRR1_SETTING_RTL839X, IRR1);
 	icu_w32(IRR2_SETTING, IRR2);
 	icu_w32(IRR3_SETTING, IRR3);
 
