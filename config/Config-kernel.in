@@ -6,21 +6,19 @@
 
 config KERNEL_BUILD_USER
 	string "Custom Kernel Build User Name"
-	default "builder" if BUILDBOT
-	default ""
+	default "builder"
 	help
 	  Sets the Kernel build user string, which for example will be returned
 	  by 'uname -a' on running systems.
-	  If not set, uses system user at build time.
+	  If not set, uses "builder" to simplify reproducibility.
 
 config KERNEL_BUILD_DOMAIN
 	string "Custom Kernel Build Domain Name"
-	default "buildhost" if BUILDBOT
-	default ""
+	default "buildhost"
 	help
 	  Sets the Kernel build domain string, which for example will be
 	  returned by 'uname -a' on running systems.
-	  If not set, uses system hostname at build time.
+	  If not set, uses "buildhost" to simplify reproducibility.
 
 config KERNEL_PRINTK
 	bool "Enable support for printk"
