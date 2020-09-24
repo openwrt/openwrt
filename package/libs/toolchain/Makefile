@@ -14,6 +14,10 @@ PKG_LICENSE:=GPL-3.0-with-GCC-exception
 
 PKG_FLAGS:=hold essential nonshared
 
+ifdef CONFIG_TARGET_ROOTFS_SECURITY_LABELS
+  HOST_BUILD_DEPENDS += refpolicy/host
+endif
+
 include $(INCLUDE_DIR)/package.mk
 
 ifneq ($(DUMP),1)
