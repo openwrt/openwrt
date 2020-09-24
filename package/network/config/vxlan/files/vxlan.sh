@@ -59,8 +59,8 @@ vxlan_generic_setup() {
 
 	local link="$cfg"
 
-	local port vid ttl tos mtu macaddr zone rxcsum txcsum srcportmin srcportmax ageing maxaddress learning proxy l2miss l3miss gbp
-	json_get_vars port vid ttl tos mtu macaddr zone rxcsum txcsum srcportmin srcportmax ageing maxaddress learning proxy l2miss l3miss gbp
+	local port vid ttl tos mtu macaddr zone rxcsum txcsum srcportmin srcportmax ageing maxaddress learning rsc proxy l2miss l3miss gbp
+	json_get_vars port vid ttl tos mtu macaddr zone rxcsum txcsum srcportmin srcportmax ageing maxaddress learning rsc proxy l2miss l3miss gbp
 
 	proto_init_update "$link" 1
 
