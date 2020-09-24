@@ -125,9 +125,21 @@
 				compatible = "tplink,firmware";
 			};
 
-			config: partition@3b0000 {
+			partition@3b0000 {
+				label = "partition-table";
+				reg = <0x3b0000 0x010000>;
+				read-only;
+			};
+
+			info: partition@3c0000 {
+				label = "info";
+				reg = <0x3c0000 0x010000>;
+				read-only;
+			};
+
+			partition@3d0000 {
 				label = "config";
-				reg = <0x3b0000 0x040000>;
+				reg = <0x3d0000 0x020000>;
 				read-only;
 			};
 
@@ -145,7 +157,7 @@
 
 	phy-handle = <&swphy4>;
 
-	mtd-mac-address = <&config 0x10008>;
+	mtd-mac-address = <&info 0x8>;
 };
 
 &eth1 {
@@ -156,5 +168,5 @@
 	status = "okay";
 
 	mtd-cal-data = <&art 0x1000>;
-	mtd-mac-address = <&config 0x10008>;
+	mtd-mac-address = <&info 0x8>;
 };
