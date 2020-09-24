@@ -10,4 +10,8 @@ endef
 define Profile/Default/Description
 	Default package set compatible with most boards.
 endef
+<<<<<<< HEAD
+=======
+
+>>>>>>> d20007ce91e25385d792faedc3146cbfdc34a8c5
 $(eval $(call Profile,Default))

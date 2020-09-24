@@ -59,6 +59,7 @@ define Package/Default
   ALTERNATIVES:=
   LICENSE:=$(PKG_LICENSE)
   LICENSE_FILES:=$(PKG_LICENSE_FILES)
+  FILE_MODES:=$(PKG_FILE_MODES)
 endef
 
 Build/Patch:=$(Build/Patch/Default)

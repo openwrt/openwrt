@@ -1,6 +1,10 @@
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
+<<<<<<< HEAD
 @@ -441,6 +441,12 @@
+=======
+@@ -441,6 +441,12 @@ config GPIO_REG
+>>>>>>> d20007ce91e25385d792faedc3146cbfdc34a8c5
  	  A 32-bit single register GPIO fixed in/out implementation.  This
  	  can be used to represent any register as a set of GPIO signals.
  
@@ -15,7 +19,11 @@
  	depends on MFD_SYSCON
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
+<<<<<<< HEAD
 @@ -117,6 +117,7 @@
+=======
+@@ -117,6 +117,7 @@ obj-$(CONFIG_GPIO_RC5T583)		+= gpio-rc5t
+>>>>>>> d20007ce91e25385d792faedc3146cbfdc34a8c5
  obj-$(CONFIG_GPIO_RCAR)			+= gpio-rcar.o
  obj-$(CONFIG_GPIO_RDC321X)		+= gpio-rdc321x.o
  obj-$(CONFIG_GPIO_REG)			+= gpio-reg.o

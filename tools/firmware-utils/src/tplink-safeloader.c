@@ -77,6 +77,7 @@ struct device_info {
 	const char *support_list;
 	char support_trail;
 	const char *soft_ver;
+	uint32_t soft_ver_compat_level;
 	struct flash_partition_entry partitions[MAX_PARTITIONS+1];
 	const char *first_sysupgrade_partition;
 	const char *last_sysupgrade_partition;
@@ -84,7 +85,7 @@ struct device_info {
 
 /** The content of the soft-version structure */
 struct __attribute__((__packed__)) soft_version {
-	uint32_t magic;
+	uint32_t data_len;
 	uint32_t zero;
 	uint8_t pad1;
 	uint8_t version_major;
@@ -95,7 +96,6 @@ struct __attribute__((__packed__)) soft_version {
 	uint8_t month;
 	uint8_t day;
 	uint32_t rev;
-	uint8_t pad2;
 };
 
 
@@ -1298,6 +1298,67 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the EAP225-Wall v2 */
+	{
+		.id     = "EAP225-WALL-V2",
+		.support_list =
+			"SupportList:\r\n"
+			"EAP225-Wall(TP-Link|UN|AC1200-D):2.0\r\n",
+		.support_trail = '\xff',
+		.soft_ver = NULL,
+		.soft_ver_compat_level = 1,
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"partition-table", 0x20000, 0x02000},
+			{"default-mac", 0x30000, 0x01000},
+			{"support-list", 0x31000, 0x00100},
+			{"product-info", 0x31100, 0x00400},
+			{"soft-version", 0x32000, 0x00100},
+			{"firmware", 0x40000, 0xd80000},
+			{"user-config", 0xdc0000, 0x30000},
+			{"mutil-log", 0xf30000, 0x80000},
+			{"oops", 0xfb0000, 0x40000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
+	/** Firmware layout for the EAP245 v3 */
+	{
+		.id     = "EAP245-V3",
+		.support_list =
+			"SupportList:\r\n"
+			"EAP245(TP-Link|UN|AC1750-D):3.0\r\n",
+		.support_trail = '\xff',
+		.soft_ver = NULL,
+		.soft_ver_compat_level = 1,
+
+		/** Firmware partition with dynamic kernel/rootfs split */
+		.partitions = {
+			{"factroy-boot", 0x00000, 0x40000},
+			{"fs-uboot", 0x40000, 0x40000},
+			{"partition-table", 0x80000, 0x10000},
+			{"default-mac", 0x90000, 0x01000},
+			{"support-list", 0x91000, 0x00100},
+			{"product-info", 0x91100, 0x00400},
+			{"soft-version", 0x92000, 0x00100},
+			{"radio", 0xa0000, 0x10000},
+			{"extra-para", 0xb0000, 0x10000},
+			{"firmware", 0xc0000, 0xe40000},
+			{"config", 0xf00000, 0x30000},
+			{"mutil-log", 0xf30000, 0x80000},
+			{"oops", 0xfb0000, 0x40000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
 	/** Firmware layout for the TL-WA850RE v2 */
 	{
 		.id     = "TLWA850REV2",
@@ -2140,8 +2201,13 @@ static inline uint8_t bcd(uint8_t v) {
 
 
 /** Generates the soft-version partition */
-static struct image_partition_entry make_soft_version(uint32_t rev) {
-	struct image_partition_entry entry = alloc_image_partition("soft-version", sizeof(struct soft_version));
+static struct image_partition_entry make_soft_version(struct device_info *info, uint32_t rev) {
+	size_t part_len = sizeof(struct soft_version);
+	if (info->soft_ver_compat_level > 0)
+		part_len += sizeof(uint32_t);
+
+	struct image_partition_entry entry =
+	    alloc_image_partition("soft-version", part_len+1);
 	struct soft_version *s = (struct soft_version *)entry.data;
 
 	time_t t;
@@ -2153,7 +2219,8 @@ static struct image_partition_entry make_soft_version(uint32_t rev) {
 
 	struct tm *tm = gmtime(&t);
 
-	s->magic = htonl(0x0000000c);
+	/* Partition contents size, minus 8 byte header and trailing byte */
+	s->data_len = htonl(entry.size-9);
 	s->zero = 0;
 	s->pad1 = 0xff;
 
@@ -2167,7 +2234,11 @@ static struct image_partition_entry make_soft_version(uint32_t rev) {
 	s->day = bcd(tm->tm_mday);
 	s->rev = htonl(rev);
 
-	s->pad2 = 0xff;
+	if (info->soft_ver_compat_level > 0)
+		*(uint32_t *)(entry.data + sizeof(struct soft_version)) =
+		    htonl(info->soft_ver_compat_level);
+
+	entry.data[entry.size-1] = 0xff;
 
 	return entry;
 }
@@ -2479,7 +2550,7 @@ static void build_image(const char *output,
 	if (info->soft_ver)
 		parts[1] = make_soft_version_from_string(info->soft_ver);
 	else
-		parts[1] = make_soft_version(rev);
+		parts[1] = make_soft_version(info, rev);
 
 	parts[2] = make_support_list(info);
 	parts[3] = read_file("os-image", kernel_image, false, NULL);
@@ -2503,6 +2574,9 @@ static void build_image(const char *output,
 	} else if (strcasecmp(info->id, "ARCHER-C6-V2-US") == 0) {
 		const char mdat[11] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00};
 		parts[5] = put_data("extra-para", mdat, 11);
+	} else if (strcasecmp(info->id, "EAP245-V3") == 0) {
+		const char mdat[10] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01};
+		parts[5] = put_data("extra-para", mdat, 10);
 	}
 
 	size_t len;

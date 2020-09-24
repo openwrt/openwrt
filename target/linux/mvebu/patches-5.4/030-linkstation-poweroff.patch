@@ -1,6 +1,6 @@
 --- a/drivers/power/reset/Kconfig
 +++ b/drivers/power/reset/Kconfig
-@@ -99,6 +99,17 @@
+@@ -99,6 +99,17 @@ config POWER_RESET_HISI
  	help
  	  Reboot support for Hisilicon boards.
  
@@ -20,7 +20,7 @@
  	depends on ARCH_QCOM
 --- a/drivers/power/reset/Makefile
 +++ b/drivers/power/reset/Makefile
-@@ -10,6 +10,7 @@
+@@ -10,6 +10,7 @@ obj-$(CONFIG_POWER_RESET_GEMINI_POWEROFF
  obj-$(CONFIG_POWER_RESET_GPIO) += gpio-poweroff.o
  obj-$(CONFIG_POWER_RESET_GPIO_RESTART) += gpio-restart.o
  obj-$(CONFIG_POWER_RESET_HISI) += hisi-reboot.o
@@ -28,7 +28,7 @@
  obj-$(CONFIG_POWER_RESET_MSM) += msm-poweroff.o
  obj-$(CONFIG_POWER_RESET_QCOM_PON) += qcom-pon.o
  obj-$(CONFIG_POWER_RESET_OCELOT_RESET) += ocelot-reset.o
---- a/dev/null
+--- /dev/null
 +++ b/drivers/power/reset/linkstation-poweroff.c
 @@ -0,0 +1,144 @@
 +// SPDX-License-Identifier: GPL-2.0

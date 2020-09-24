@@ -68,6 +68,26 @@ pkg_appears_sane() {
 	return $PKG_ERROR
 }
 
+resolve_file_mode_id() {
+	local var=$1 type=$2 name=$3 id
+
+	case "$name" in
+		root)
+			id=0
+		;;
+		*[!0-9]*)
+			id=$(sed -ne "s#^$type $name \\([0-9]\\+\\)\\b.*\$#\\1#p" "$TOPDIR/tmp/.packageusergroup" 2>/dev/null)
+		;;
+		*)
+			id=$name
+		;;
+	esac
+
+	export "$var=$id"
+
+	[ -n "$id" ]
+}
+
 ###
 # ipkg-build "main"
 ###
@@ -101,7 +121,7 @@ case $# in
 	;;
 *)
 	echo $usage >&2
-	exit 1 
+	exit 1
 	;;
 esac
 
@@ -141,11 +161,22 @@ for file_mode in $file_modes; do
 	    exit 1
 	    ;;
 	esac
-	path=$(echo "$file_mode" | cut -d ':' -f 1)
-	user_group=$(echo "$file_mode" | cut -d ':' -f 2-3)
-	mode=$(echo "$file_mode" | cut -d ':' -f 4)
 
-	chown "$user_group" "$pkg_dir/$path"
+	mode=${file_mode##*:}; path=${file_mode%:*}
+	group=${path##*:};     path=${path%:*}
+	user=${path##*:};      path=${path%:*}
+
+	if ! resolve_file_mode_id uid user "$user"; then
+		echo "ERROR: unable to resolve uid of $user" >&2
+		exit 1
+	fi
+
+	if ! resolve_file_mode_id gid group "$group"; then
+		echo "ERROR: unable to resolve gid of $group" >&2
+		exit 1
+	fi
+
+	chown "$uid:$gid" "$pkg_dir/$path"
 	chmod  "$mode" "$pkg_dir/$path"
 done
 $TAR -X $tmp_dir/tarX --format=gnu --sort=name -cpf - --mtime="$TIMESTAMP" . | $GZIP -n - > $tmp_dir/data.tar.gz

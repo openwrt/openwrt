@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // SPDX-License-Identifier: GPL-2.0
+=======
+// SPDX-License-Identifier: GPL-2.0-only
+>>>>>>> d20007ce91e25385d792faedc3146cbfdc34a8c5
 /* Realtek RTL838X Ethernet MDIO interface driver
  *
  * Copyright (C) 2020 B. Koblitz

@@ -6,6 +6,14 @@ include ./common-tp-link.mk
 
 DEFAULT_SOC := mt7628an
 
+define Build/ravpower-wd009-factory
+	mkimage -A mips -T standalone -C none -a 0x80010000 -e 0x80010000 \
+		-n "OpenWrt Bootloader" -d $(UBOOT_PATH) $@.new
+	cat $@ >> $@.new
+	@mv $@.new $@
+endef
+
+
 define Device/alfa-network_awusfree1
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := ALFA Network

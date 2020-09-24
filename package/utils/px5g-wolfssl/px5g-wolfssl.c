@@ -1,3 +1,7 @@
+// Copyright 2020 Paul Spooren <mail@aparcar.org>
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #define _GNU_SOURCE
 #include <stdbool.h>
 #include <stdint.h>

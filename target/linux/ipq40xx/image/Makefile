@@ -344,6 +344,31 @@ define Device/dlink_dap-2610
 endef
 TARGET_DEVICES += dlink_dap-2610
 
+define Device/edgecore_ecw5211
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_TITLE := Edgecore ECW5211
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
+	DEVICE_DTS := qcom-ipq4018-ecw5211
+	DEVICE_PACKAGES := ipq-wifi-edgecore_ecw5211 kmod-tpm-i2c-atmel kmod-usb-acm uboot-envtools
+endef
+TARGET_DEVICES += edgecore_ecw5211
+
+define Device/edgecore_oap100
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_TITLE := Edgecore OAP100
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGES := nand-sysupgrade.bin
+	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
+	DEVICE_DTS := qcom-ipq4019-oap100
+	DEVICE_PACKAGES := ipq-wifi-edgecore_oap100 kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-qmi uqmi
+endef
+TARGET_DEVICES += edgecore_oap100
+
 define Device/engenius_eap1300
 	$(call Device/FitImage)
 	DEVICE_VENDOR := EnGenius

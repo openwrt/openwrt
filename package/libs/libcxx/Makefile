@@ -7,19 +7,20 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libcxx
-PKG_VERSION:=9.0.1
-PKG_RELEASE:=4
+PKG_VERSION:=10.0.0
+PKG_RELEASE:=1
 
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://git.llvm.org/git/libcxx
-PKG_SOURCE_VERSION:=2076f539f410805ef88692b9c0ce0a0b882a7680
-PKG_MIRROR_HASH:=d527880a18dec9109575c76717cf5288fb91c11381b9d261cae2e5bebcbdab2e
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).src.tar.xz
+PKG_SOURCE_URL:=https://github.com/llvm/llvm-project/releases/download/llvmorg-$(PKG_VERSION)
+PKG_HASH:=270f8a3f176f1981b0f6ab8aa556720988872ec2b48ed3b605d0ced8d09156c7
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION).src
 
 PKG_MAINTAINER:=Rosen Penev <rosenp@gmail.com>
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE.txt
 
 PKG_BUILD_PARALLEL:=1
+PKG_BUILD_DEPENDS:=libcxxabi
 CMAKE_BINARY_SUBDIR:=build
 
 include $(INCLUDE_DIR)/package.mk
@@ -34,12 +35,11 @@ define Package/libcxx
 endef
 
 define Package/libcxx/description
-  LLVM C++ library targeting C++11 and above
+  libc++ is an implementation of the C++ standard library, targeting C++11, C++14 and above.
 endef
 
 CMAKE_OPTIONS += \
-	-DLIBCXX_CXX_ABI="libsupc++" \
-	-DLIBCXX_CXX_ABI_INCLUDE_PATHS="$(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/include/c++/$(CONFIG_GCC_VERSION);$(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/include/c++/$(CONFIG_GCC_VERSION)/$(REAL_GNU_TARGET_NAME)" \
+	-DLIBCXX_CXX_ABI="libcxxabi" \
 	-DLIBCXX_ENABLE_ASSERTIONS=OFF \
 	-DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF \
 	-DLIBCXX_INCLUDE_BENCHMARKS=OFF \

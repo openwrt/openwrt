@@ -46,8 +46,10 @@ platform_do_upgrade() {
 	asus,rt-ac65p|\
 	asus,rt-ac85p|\
 	dlink,dir-1960-a1|\
+	dlink,dir-2660-a1|\
 	hiwifi,hc5962|\
 	linksys,ea7300-v1|\
+	linksys,ea7300-v2|\
 	linksys,ea7500-v2|\
 	netgear,r6220|\
 	netgear,r6260|\
