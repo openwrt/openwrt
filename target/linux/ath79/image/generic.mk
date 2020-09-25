@@ -152,6 +152,7 @@ define Build/wrgg-pad-rootfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 64 >>$@
 endef
 
+
 define Device/seama
   KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
   KERNEL_INITRAMFS := $$(KERNEL) | seama
@@ -799,20 +800,6 @@ define Device/embeddedwireless_dorin
 endef
 TARGET_DEVICES += embeddedwireless_dorin
 
-define Device/engenius_ecb1750
-  SOC := qca9558
-  DEVICE_VENDOR := EnGenius
-  DEVICE_MODEL := ECB1750
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  IMAGE_SIZE := 15680k
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | check-size | \
-	senao-header -r 0x101 -p 0x6d -t 2
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
-	append-metadata | check-size
-endef
-TARGET_DEVICES += engenius_ecb1750
-
 define Device/engenius_loader_okli
   DEVICE_VENDOR := EnGenius
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
@@ -826,6 +813,20 @@ define Device/engenius_loader_okli
 	append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
 	check-size | engenius-tar-gz $$$$(ENGENIUS_IMGNAME)
 endef
+
+define Device/engenius_ecb1750
+  SOC := qca9558
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := ECB1750
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15680k
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | \
+	senao-header -r 0x101 -p 0x6d -t 2
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+	append-metadata | check-size
+endef
+TARGET_DEVICES += engenius_ecb1750
 
 define Device/engenius_enh202-v1
   $(Device/engenius_loader_okli)
