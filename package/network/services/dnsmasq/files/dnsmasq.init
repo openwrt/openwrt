@@ -48,6 +48,7 @@ dnsmasq_ignore_opt() {
 				echo "dnsmasq: \"$opt\" requested, but dnssec support is not available" >&2
 				exit 1
 			fi
+			return 1
 			;;
 		tftp-*)
 			[ -z "$dnsmasq_has_tftp" ] ;;
