@@ -21,13 +21,13 @@
 		/* other LEDs are connected to ath10k (QCA9888) gpiochip */
 
 		led_power_green: power_green {
-			label = "wg1200cr:green:power";
+			label = "green:power";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		led_power_red: power_red {
-			label = "wg1200cr:red:power";
+			label = "red:power";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 	};

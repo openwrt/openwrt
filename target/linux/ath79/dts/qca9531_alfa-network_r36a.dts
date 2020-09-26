@@ -20,29 +20,29 @@
 		pinctrl-0 = <&enable_gpio4 &enable_gpio16>;
 
 		lan {
-			label = "r36a:blue:lan";
+			label = "blue:lan";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status: status {
-			label = "r36a:blue:status";
+			label = "blue:status";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "r36a:blue:usb";
+			label = "blue:usb";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&hub_port0>;
 			linux,default-trigger = "usbport";
 		};
 
 		wan {
-			label = "r36a:blue:wan";
+			label = "blue:wan";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "r36a:blue:wlan";
+			label = "blue:wlan";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};

@@ -32,29 +32,29 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "ens202ext-v1:amber:power";
+			label = "amber:power";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		wlan {
-			label = "ens202ext-v1:amber:wlan";
+			label = "amber:wlan";
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		rssilow {
-			label = "ens202ext-v1:red:rssilow";
+			label = "red:rssilow";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		rssimedium {
-			label = "ens202ext-v1:amber:rssimedium";
+			label = "amber:rssimedium";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 
 		rssihigh {
-			label = "ens202ext-v1:green:rssihigh";
+			label = "green:rssihigh";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 	};

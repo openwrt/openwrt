@@ -52,29 +52,29 @@
 		pinctrl-0 = <&enable_gpio4 &enable_gpio16>;
 
 		lan1 {
-			label = "n2q:orange:lan1";
+			label = "orange:lan1";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		lan2 {
-			label = "n2q:orange:lan2";
+			label = "orange:lan2";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		led_usb: usb {
-			label = "n2q:green:usb";
+			label = "green:usb";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "usbport";
 			trigger-sources = <&hub_port0>;
 		};
 
 		minipcie {
-			label = "n2q:green:minipcie";
+			label = "green:minipcie";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "n2q:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
@@ -84,22 +84,22 @@
 		compatible = "gpio-leds";
 
 		poe-passthrough {
-			label = "n2q:green:poe-passthrough";
+			label = "green:poe-passthrough";
 			gpios = <&pcf8574 1 GPIO_ACTIVE_LOW>;
 		};
 
 		signal1 {
-			label = "n2q:red:signal1";
+			label = "red:signal1";
 			gpios = <&pcf8574 3 GPIO_ACTIVE_LOW>;
 		};
 
 		signal2 {
-			label = "n2q:orange:signal2";
+			label = "orange:signal2";
 			gpios = <&pcf8574 4 GPIO_ACTIVE_LOW>;
 		};
 
 		signal3 {
-			label = "n2q:green:signal3";
+			label = "green:signal3";
 			gpios = <&pcf8574 5 GPIO_ACTIVE_LOW>;
 		};
 	};

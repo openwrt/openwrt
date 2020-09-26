@@ -34,27 +34,27 @@
 		pinctrl-0 = <&jtag_disable_pins &switch_led_disable_pins &clks_disable_pins>;
 
 		rssilow {
-			label = "enh202-v1:red:rssilow";
+			label = "red:rssilow";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		rssimedium {
-			label = "enh202-v1:amber:rssimedium";
+			label = "amber:rssimedium";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		led_rssihigh: rssihigh {
-			label = "enh202-v1:green:rssihigh";
+			label = "green:rssihigh";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		lan {
-			label = "enh202-v1:amber:lan";
+			label = "amber:lan";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			label = "enh202-v1:green:wan";
+			label = "green:wan";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -63,7 +63,7 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "enh202-v1:green:wlan";
+			label = "green:wlan";
 			gpios = <&ath9k 1 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};

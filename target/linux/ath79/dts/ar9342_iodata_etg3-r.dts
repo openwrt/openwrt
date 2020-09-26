@@ -20,13 +20,13 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "etg3-r:green:power";
+			label = "green:power";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		notification {
-			label = "etg3-r:green:notification";
+			label = "green:notification";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 	};
