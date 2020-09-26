@@ -42,37 +42,37 @@
 		compatible = "gpio-leds";
 
 		lan1 {
-			label = "n5q:green:lan1";
+			label = "green:lan1";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 
 		lan2 {
-			label = "n5q:green:lan2";
+			label = "green:lan2";
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 		};
 
 		led_signal4: signal4 {
-			label = "n5q:green:signal4";
+			label = "green:signal4";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 
 		signal1 {
-			label = "n5q:red:signal1";
+			label = "red:signal1";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 
 		signal2 {
-			label = "n5q:orange:signal2";
+			label = "orange:signal2";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
 		signal3 {
-			label = "n5q:green:signal3";
+			label = "green:signal3";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "n5q:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};

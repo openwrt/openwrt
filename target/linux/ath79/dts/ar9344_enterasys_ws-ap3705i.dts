@@ -45,27 +45,27 @@
 		pinctrl-0 = <&enable_gpio_11 &enable_gpio_16>;
 
 		led_power_green: power_green {
-			label = "ws-ap3705i:green:power";
+			label = "green:power";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_red: power_red {
-			label = "ws-ap3705i:red:power";
+			label = "red:power";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		lan_blue {
-			label = "ws-ap3705i:blue:lan";
+			label = "blue:lan";
 			gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
 		};
 
 		lan_green {
-			label = "ws-ap3705i:green:lan";
+			label = "green:lan";
 			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
 		};
 
 		radio2 {
-			label = "ws-ap3705i:green:radio2";
+			label = "green:radio2";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
@@ -75,7 +75,7 @@
 		compatible = "gpio-leds";
 
 		radio1 {
-			label = "ws-ap3705i:green:radio1";
+			label = "green:radio1";
 			gpios = <&ath9k 0 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};

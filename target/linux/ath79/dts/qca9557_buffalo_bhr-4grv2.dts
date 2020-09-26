@@ -20,23 +20,23 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "bhr-4grv2:green:power";
+			label = "green:power";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		diag {
-			label = "bhr-4grv2:orange:diag";
+			label = "orange:diag";
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 
 		vpn_orange {
-			label = "bhr-4grv2:orange:vpn";
+			label = "orange:vpn";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 
 		vpn_green {
-			label = "bhr-4grv2:green:vpn";
+			label = "green:vpn";
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 		};
 	};

@@ -18,23 +18,23 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "gl-mifi:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		lan {
-			label = "gl-mifi:green:lan";
+			label = "green:lan";
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan {
-			label = "gl-mifi:green:wan";
+			label = "green:wan";
 			gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
 		};
 
 		3g4g {
-			label = "gl-mifi:green:3g4g";
+			label = "green:3g4g";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 	};

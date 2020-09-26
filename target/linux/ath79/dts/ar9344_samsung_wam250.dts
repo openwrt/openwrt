@@ -38,23 +38,23 @@
 		compatible = "gpio-leds";
 
 		lan {
-			label = "wam250:white:lan";
+			label = "white:lan";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power: power {
-			label = "wam250:white:power";
+			label = "white:power";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 
 		repeater {
-			label = "wam250:white:repeater";
+			label = "white:repeater";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "wam250:white:wlan";
+			label = "white:wlan";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};

@@ -20,18 +20,18 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "devolo:white:wlan";
+			label = "white:wlan";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
 
 		led_dlan_white: dlan_white {
-			label = "devolo:white:dlan";
+			label = "white:dlan";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		led_dlan_red: dlan_red {
-			label = "devolo:red:dlan";
+			label = "red:dlan";
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};

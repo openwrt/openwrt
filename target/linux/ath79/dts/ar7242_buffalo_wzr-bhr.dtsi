@@ -40,12 +40,12 @@
 		compatible = "gpio-leds";
 
 		led_diag: diag {
-			label = "buffalo:red:diag";
+			label = "red:diag";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "buffalo:green:usb";
+			label = "green:usb";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&hub_port>;
 			linux,default-trigger = "usbport";

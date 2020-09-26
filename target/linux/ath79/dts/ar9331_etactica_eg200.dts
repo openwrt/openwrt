@@ -31,22 +31,22 @@
 		pinctrl-0 = <&switch_led_disable_pins>;
 
 		modbus {
-			label = "eg200:red:modbus";
+			label = "red:modbus";
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_etactica: etactica {
-			label = "eg200:red:etactica";
+			label = "red:etactica";
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
 
 		eth0 {
-			label = "eg200:red:eth0";
+			label = "red:eth0";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "eg200:red:wlan";
+			label = "red:wlan";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};

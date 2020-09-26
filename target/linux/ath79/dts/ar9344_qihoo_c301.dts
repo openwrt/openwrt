@@ -21,12 +21,12 @@
 		pinctrl-0 = <&jtag_disable_pins>;
 
 		led_wlan_g: wlan_g {
-			label = "c301:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 
 		led_wlan_o: wlan_o {
-			label = "c301:orange:wlan";
+			label = "orange:wlan";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};

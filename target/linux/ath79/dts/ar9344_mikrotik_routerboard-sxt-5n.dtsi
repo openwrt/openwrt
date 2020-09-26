@@ -21,38 +21,38 @@
 		compatible = "gpio-leds";
 
 		power {
-			label = "mikrotik:green:power";
+			label = "green:power";
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
 		rssilow {
-			label = "mikrotik:green:rssilow";
+			label = "green:rssilow";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		rssimediumlow {
-			label = "mikrotik:green:rssimediumlow";
+			label = "green:rssimediumlow";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
 		rssimedium {
-			label = "mikrotik:green:rssimedium";
+			label = "green:rssimedium";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		rssimediumhigh {
-			label = "mikrotik:green:rssimediumhigh";
+			label = "green:rssimediumhigh";
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 		};
 
 		rssihigh {
-			label = "mikrotik:green:rssihigh";
+			label = "green:rssihigh";
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 		};
 
 		led_user: user {
-			label = "mikrotik:green:user";
+			label = "green:user";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 	};
