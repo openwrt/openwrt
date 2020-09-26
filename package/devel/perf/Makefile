@@ -22,6 +22,7 @@ PKG_FLAGS:=nonshared
 PKG_BUILD_DIR:=$(LINUX_DIR)/tools/perf-$(TARGET_DIR_NAME)
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/nls.mk
 
 define Package/perf
   SECTION:=devel
@@ -37,6 +38,8 @@ define Package/perf/description
 endef
 
 HOST_CFLAGS += -I$(LINUX_DIR)/tools/include
+
+TARGET_LDFLAGS += $(INTL_LDFLAGS)
 
 MAKE_FLAGS = \
 	ARCH="$(LINUX_KARCH)" \
