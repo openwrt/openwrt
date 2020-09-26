@@ -8,10 +8,10 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2020.10-rc4
+PKG_VERSION:=2020.10
 PKG_RELEASE:=1
 
-PKG_HASH:=0a7bdd2c7df2c14daf2730fcf3277fd917aadfaae935529e29c7412314bbf260
+PKG_HASH:=0d481bbdc05c0ee74908ec2f56a6daa53166cc6a78a0e4fac2ac5d025770a622
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
