@@ -39,17 +39,17 @@
 		compatible = "gpio-leds";
 
 		led_system: system {
-			label = "tp-link:green:system";
+			label = "green:system";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
 		qss {
-			label = "tp-link:green:qss";
+			label = "green:qss";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 
 		led3g {
-			label = "tp-link:green:3g";
+			label = "green:3g";
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&hub_port>;
 			linux,default-trigger = "usbport";
@@ -60,7 +60,7 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "tp-link:green:wlan";
+			label = "green:wlan";
 			gpios = <&ath9k 0 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};

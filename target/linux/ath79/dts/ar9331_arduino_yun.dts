@@ -53,13 +53,13 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "yun:blue:wlan";
+			label = "blue:wlan";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		usb {
-			label = "yun:white:usb";
+			label = "white:usb";
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 			trigger-sources = <&hub_port1>;
 			linux,default-trigger = "usbport";

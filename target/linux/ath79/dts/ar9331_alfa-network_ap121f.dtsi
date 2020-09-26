@@ -31,6 +31,26 @@
 			debounce-interval = <60>;
 		};
 	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		lan {
+			label = "green:lan";
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+
+		led_vpn: vpn {
+			label = "green:vpn";
+			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			label = "green:wlan";
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
 };
 
 &eth0 {

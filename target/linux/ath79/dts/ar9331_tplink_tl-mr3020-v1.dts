@@ -22,23 +22,23 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "tp-link:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		lan {
-			label = "tp-link:green:lan";
+			label = "green:lan";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 
 		led_wps: wps {
-			label = "tp-link:green:wps";
+			label = "green:wps";
 			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
 		};
 
 		led3g {
-			label = "tp-link:green:3g";
+			label = "green:3g";
 			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&hub_port>;
 			linux,default-trigger = "usbport";

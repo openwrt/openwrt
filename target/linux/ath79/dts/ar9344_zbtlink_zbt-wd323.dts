@@ -48,18 +48,18 @@
 		pinctrl-0 = <&enable_gpio20_gpio22>;
 
 		wifi {
-			label = "zbt-wd323:green:wifi";
+			label = "green:wifi";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		lan1 {
-			label = "zbt-wd323:orange:lan1";
+			label = "orange:lan1";
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 
 		lan2 {
-			label = "zbt-wd323:orange:lan2";
+			label = "orange:lan2";
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 	};
