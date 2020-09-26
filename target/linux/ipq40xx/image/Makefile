@@ -359,12 +359,13 @@ TARGET_DEVICES += edgecore_ecw5211
 define Device/edgecore_oap100
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
-	DEVICE_TITLE := Edgecore OAP100
+	DEVICE_VENDOR := Edgecore
+	DEVICE_MODEL := OAP100
+	SOC := qcom-ipq4019
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	IMAGES := nand-sysupgrade.bin
 	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
-	DEVICE_DTS := qcom-ipq4019-oap100
 	DEVICE_PACKAGES := ipq-wifi-edgecore_oap100 kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-qmi uqmi
 endef
 TARGET_DEVICES += edgecore_oap100
