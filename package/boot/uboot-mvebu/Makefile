@@ -68,7 +68,6 @@ Build/Exports:=$(Host/Exports)
 
 define Build/Configure
 	# enable additional options beyond <device>_defconfig
-	echo CONFIG_NET_RANDOM_ETHADDR=y >> $(PKG_BUILD_DIR)/configs/$(UBOOT_CONFIG)_defconfig
 	echo CONFIG_CMD_SETEXPR=y >> $(PKG_BUILD_DIR)/configs/$(UBOOT_CONFIG)_defconfig
 
 	$(call Build/Configure/U-Boot)
