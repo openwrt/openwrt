@@ -10,6 +10,9 @@ case "$board" in
 engenius,epg5000)
 	migrate_leds ":wlan-2g=:wlan2g" ":wlan-5g=:wlan5g"
 	;;
+pcs,cap324)
+	migrate_leds "lan:amber=amber:lan" "lan:green=green:lan"
+	;;
 tplink,archer-c25-v1|\
 tplink,archer-c58-v1|\
 tplink,archer-c59-v1|\
