@@ -28,9 +28,32 @@ migrate_led_sysfs() {
 	done;
 }
 
+remove_devicename_led_sysfs() {
+	local cfg="$1"
+	local sysfs
+	local name
+	local new_sysfs
+
+	config_get sysfs ${cfg} sysfs
+	config_get name ${cfg} name
+
+	echo "${sysfs}" | grep -q ":.*:" || return
+
+	new_sysfs=$(echo ${sysfs} | sed "s/^[^:]*://")
+
+	uci set system.${cfg}.sysfs="${new_sysfs}"
+
+	logger -t led-migration "sysfs option of LED \"${name}\" updated to ${new_sysfs}"
+}
+
 migrate_leds() {
 	config_load system
 	config_foreach migrate_led_sysfs led "$@"
+}
+
+remove_devicename_leds() {
+	config_load system
+	config_foreach remove_devicename_led_sysfs led
 }
 
 migrations_apply() {
