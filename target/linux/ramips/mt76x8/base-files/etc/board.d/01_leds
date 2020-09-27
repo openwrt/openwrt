@@ -11,9 +11,6 @@ board=$(board_name)
 
 board_config_update
 
-led_wlan="$(get_dt_led wlan)"
-[ -n "$led_wlan" ] && ucidef_set_led_wlan "wifi_led" "wifi" "$led_wlan" "phy0tpt"
-
 case $board in
 alfa-network,awusfree1)
 	set_wifi_led "blue:wlan"
@@ -56,7 +53,6 @@ tama,w06)
 	;;
 tplink,archer-c20-v4|\
 tplink,archer-c20-v5|\
-tplink,tl-wr841n-v14|\
 tplink,tl-wr850n-v2)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x01"
@@ -89,6 +85,11 @@ tplink,tl-wr841n-v13)
 	ucidef_set_led_switch "lan3" "lan3" "green:lan3" "switch0" "0x8"
 	ucidef_set_led_switch "lan4" "lan4" "green:lan4" "switch0" "0x10"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x01"
+	;;
+tplink,tl-wr841n-v14)
+	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x1e"
+	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x01"
+	ucidef_set_led_wlan "wifi_led" "wifi" "green:wlan" "phy0tpt"
 	;;
 tplink,tl-wr902ac-v3)
 	ucidef_set_led_wlan "wlan2g" "wlan2g" "green:wlan" "phy0tpt"

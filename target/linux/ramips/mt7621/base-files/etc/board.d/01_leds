@@ -11,9 +11,6 @@ board=$(board_name)
 
 board_config_update
 
-led_wlan="$(get_dt_led wlan)"
-[ -n "$led_wlan" ] && ucidef_set_led_wlan "wifi_led" "wifi" "$led_wlan" "phy0tpt"
-
 case $board in
 d-team,newifi-d2)
 	ucidef_set_led_netdev "internet" "internet" "amber:internet" "wan"
