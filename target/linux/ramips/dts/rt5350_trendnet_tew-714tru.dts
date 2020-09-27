@@ -11,14 +11,14 @@
 		compatible = "gpio-leds";
 
 		usb {
-			label = "tew-714tru:red:usb";
+			label = "red:usb";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
 		};
 
 		wifi {
-			label = "tew-714tru:green:wifi";
+			label = "green:wifi";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 	};
