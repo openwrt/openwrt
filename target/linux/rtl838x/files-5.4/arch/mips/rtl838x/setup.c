@@ -8,10 +8,7 @@
  * Copyright (C) 2006-2012 Tony Wu (tonywu@realtek.com)
  *
  */
-<<<<<<< HEAD
-=======
 
->>>>>>> d20007ce91e25385d792faedc3146cbfdc34a8c5
 #include <linux/console.h>
 #include <linux/init.h>
 #include <linux/clk.h>

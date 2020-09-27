@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-<<<<<<< HEAD
-=======
 
->>>>>>> d20007ce91e25385d792faedc3146cbfdc34a8c5
 #include <linux/gpio/driver.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>

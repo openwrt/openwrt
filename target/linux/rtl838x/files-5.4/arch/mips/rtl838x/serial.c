@@ -8,10 +8,7 @@
  * Copyright (C) 2020 B. Koblitz
  *
  */
-<<<<<<< HEAD
-=======
 
->>>>>>> d20007ce91e25385d792faedc3146cbfdc34a8c5
 #include <linux/types.h>
 #include <linux/ctype.h>
 #include <linux/kernel.h>
@@ -57,11 +54,7 @@ int __init rtl838x_serial_init(void)
 	s = strstr(arcs_cmdline, "console=ttyS0,");
 	if (s) {
 		s += 14;
-<<<<<<< HEAD
-		baud = kstrtoul(s, 10, &baud);
-=======
 		err = kstrtoul(s, 10, &baud);
->>>>>>> d20007ce91e25385d792faedc3146cbfdc34a8c5
 		if (err)
 			baud = 0;
 		while (isdigit(*s))

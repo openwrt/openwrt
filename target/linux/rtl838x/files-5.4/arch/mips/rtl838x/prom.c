@@ -171,7 +171,3 @@ void __init prom_init(void)
 	pr_info("SoC Type: %s\n", get_system_type());
 	prom_init_cmdline();
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> d20007ce91e25385d792faedc3146cbfdc34a8c5

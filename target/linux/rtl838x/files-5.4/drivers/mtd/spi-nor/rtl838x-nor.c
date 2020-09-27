@@ -147,10 +147,6 @@ ssize_t rtl838x_do_read(struct rtl838x_nor *rtl838x_nor, loff_t from,
 	while (length >= 4) {
 		SPI_WAIT_READY;
 		*((uint32_t *) buffer) = spi_r32(SFDR);
-<<<<<<< HEAD
-/*		printk("%.8x  ", *((uint32_t*) buffer)); */
-=======
->>>>>>> d20007ce91e25385d792faedc3146cbfdc34a8c5
 		buffer += 4;
 		length -= 4;
 	}
@@ -162,10 +158,6 @@ ssize_t rtl838x_do_read(struct rtl838x_nor *rtl838x_nor, loff_t from,
 	while (length > 0) {
 		SPI_WAIT_READY;
 		*(buffer) = spi_r32(SFDR) >> 24;
-<<<<<<< HEAD
-/*		printk("%.2x  ", *(buffer)); */
-=======
->>>>>>> d20007ce91e25385d792faedc3146cbfdc34a8c5
 		buffer++;
 		length--;
 	}
@@ -206,10 +198,6 @@ static ssize_t rtl838x_do_4bf_read(struct rtl838x_nor *rtl838x_nor, loff_t from,
 	while (length >= 4) {
 		SPI_WAIT_READY;
 		*((uint32_t *) buffer) = spi_r32(SFDR);
-<<<<<<< HEAD
-/*		printk("%.8x  ", *((uint32_t*) buffer)); */
-=======
->>>>>>> d20007ce91e25385d792faedc3146cbfdc34a8c5
 		buffer += 4;
 		length -= 4;
 	}
@@ -221,10 +209,6 @@ static ssize_t rtl838x_do_4bf_read(struct rtl838x_nor *rtl838x_nor, loff_t from,
 	while (length > 0) {
 		SPI_WAIT_READY;
 		*(buffer) = spi_r32(SFDR) >> 24;
-<<<<<<< HEAD
-/*		printk("%.2x  ", *(buffer)); */
-=======
->>>>>>> d20007ce91e25385d792faedc3146cbfdc34a8c5
 		buffer++;
 		length--;
 	}
