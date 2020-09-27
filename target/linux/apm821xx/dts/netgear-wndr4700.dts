@@ -24,6 +24,7 @@
 
 	chosen {
 		stdout-path = "/plb/opb/serial@ef600300:115200n8";
+		bootargs = "rootfstype=squashfs noinitrd ubi.mtd=ubi ubi.mtd=ecos";
 	};
 
 	thermal-zones {
@@ -240,7 +241,6 @@
 			partition0,9@1fa0000 {
 				label = "ecos";
 				reg = <0x01fa0000 0x06020000>;
-				read-only;
 			};
 
 			partition0,10@7fc0000 {
